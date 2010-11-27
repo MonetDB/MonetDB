@@ -116,36 +116,36 @@ st_type2string(st_type type)
 
 /* #TODO make proper traversal operations */
 stmt *
-stmt_atom_string(char *S)
+stmt_atom_string(sql_allocator *sa, char *S)
 {
 	char *s = sql2str(S);
 	sql_subtype t; 
 
 	sql_find_subtype(&t, "varchar", _strlen(s), 0);
-	return stmt_atom(atom_string(&t, s, 1));
+	return stmt_atom(sa, atom_string(sa, &t, s));
 }
 
 stmt *
-stmt_atom_clob(char *S)
+stmt_atom_clob(sql_allocator *sa, char *S)
 {
 	char *s = sql2str(S);
 	sql_subtype t; 
 
 	sql_find_subtype(&t, "clob", _strlen(s), 0);
-	return stmt_atom(atom_string(&t, s, 1));
+	return stmt_atom(sa, atom_string(sa, &t, s));
 }
 
 stmt *
-stmt_atom_int(int i)
+stmt_atom_int(sql_allocator *sa, int i)
 {
 	sql_subtype t;
 
 	sql_find_subtype(&t, "int", 32, 0);
-	return stmt_atom(atom_int(&t, i));
+	return stmt_atom(sa, atom_int(sa, &t, i));
 }
 
 stmt *
-stmt_atom_wrd(wrd i)
+stmt_atom_wrd(sql_allocator *sa, wrd i)
 {
 	sql_subtype t;
 
@@ -153,11 +153,11 @@ stmt_atom_wrd(wrd i)
 		sql_find_subtype(&t, "wrd", 32, 0);
 	else
 		sql_find_subtype(&t, "wrd", 64, 0);
-	return stmt_atom(atom_int(&t, i));
+	return stmt_atom(sa, atom_int(sa, &t, i));
 }
 
 stmt *
-stmt_atom_wrd_nil()
+stmt_atom_wrd_nil(sql_allocator *sa)
 {
 	sql_subtype t;
 
@@ -165,46 +165,45 @@ stmt_atom_wrd_nil()
 		sql_find_subtype(&t, "wrd", 32, 0);
 	else
 		sql_find_subtype(&t, "wrd", 64, 0);
-	return stmt_atom(atom_general(&t, NULL, 0));
+	return stmt_atom(sa, atom_general(sa, &t, NULL));
 }
 
 stmt *
-stmt_atom_lng(lng l)
+stmt_atom_lng(sql_allocator *sa, lng l)
 {
 	sql_subtype t;
 
 	sql_find_subtype(&t, "bigint", 64, 0);
-	return stmt_atom(atom_int(&t, l));
+	return stmt_atom(sa, atom_int(sa, &t, l));
 }
 
 stmt *
-stmt_bool(int b)
+stmt_bool(sql_allocator *sa, int b)
 {
 	sql_subtype t;
 
 	sql_find_subtype(&t, "boolean", 0, 0);
 	if (b) {
-		return stmt_atom(atom_bool(&t, TRUE));
+		return stmt_atom(sa, atom_bool(sa, &t, TRUE));
 	} else {
-		return stmt_atom(atom_bool(&t, FALSE));
+		return stmt_atom(sa, atom_bool(sa, &t, FALSE));
 	}
 }
 
 static stmt *
-stmt_atom_oid(oid i)
+stmt_atom_oid(sql_allocator *sa, oid i)
 {
 	sql_subtype t;
 
 	sql_find_subtype(&t, "oid", 0, 0);
-	return stmt_atom(atom_int(&t, i));
+	return stmt_atom(sa, atom_int(sa, &t, i));
 }
 
 static stmt *
-stmt_create(st_type type)
+stmt_create(sql_allocator *sa, st_type type)
 {
-	stmt *s = NEW(stmt);
+	stmt *s = SA_NEW(sa, stmt);
 
-	sql_ref_init(&s->ref);
 	s->type = type;
 	s->op1.sval = NULL;
 	s->op2.sval = NULL;
@@ -224,76 +223,56 @@ stmt_create(st_type type)
 }
 
 static stmt *
-stmt_ext(stmt *grp)
+stmt_ext(sql_allocator *sa, stmt *grp)
 {
-	stmt *ns = stmt_create(st_group_ext);
+	stmt *ns = stmt_create(sa, st_group_ext);
 
 	ns->op1.stval = grp;
 	ns->nrcols = grp->nrcols;
 	ns->key = 1;
-	ns->h = stmt_dup(grp->h);
-	ns->t = stmt_dup(grp->t);
+	ns->h = grp->h;
+	ns->t = grp->t;
 	return ns;
 }
 
 stmt *
-stmt_group(stmt *s)
+stmt_group(sql_allocator *sa, stmt *s)
 {
-	stmt *ns = stmt_create(st_group);
+	stmt *ns = stmt_create(sa, st_group);
 
 	ns->op1.stval = s;
 	ns->nrcols = s->nrcols;
 	ns->key = 0;
-	ns->h = stmt_dup(s->h);
-	ns->t = stmt_dup(s->t);
+	ns->h = s->h;
+	ns->t = s->t;
 	return ns;
 }
 
 stmt *
-stmt_derive(stmt *s, stmt *t)
+stmt_derive(sql_allocator *sa, stmt *s, stmt *t)
 {
-	stmt *ns = stmt_create(st_derive);
+	stmt *ns = stmt_create(sa, st_derive);
 
 	ns->op1.stval = s;
 	ns->op2.stval = t;
 	ns->nrcols = s->nrcols;
 	ns->key = 0;
-	ns->h = stmt_dup(s->h);
-	ns->t = stmt_dup(s->t);
+	ns->h = s->h;
+	ns->t = s->t;
 	return ns;
 }
 
-void
-grp_destroy(group *g)
-{
-	if (sql_ref_dec(&g->ref) == 0) {
-		stmt_destroy(g->grp);
-		stmt_destroy(g->ext);
-		_DELETE(g);
-	}
-}
-
 group *
-grp_dup(group *g)
+grp_create(sql_allocator *sa, stmt *s, group *og)
 {
-	if (g)
-		sql_ref_inc(&g->ref);
-	return g;
-}
+	group *g = SA_NEW(sa, group);
 
-group *
-grp_create(stmt *s, group *og)
-{
-	group *g = NEW(group);
-
-	sql_ref_init(&g->ref);
 	if (og) {
-		g->grp = stmt_derive(stmt_dup(og->grp), s);
-		grp_destroy(og);
+		g->grp = stmt_derive(sa, og->grp, s);
 	} else {
-		g->grp = stmt_group(s);
+		g->grp = stmt_group(sa, s);
 	}
-	g->ext = stmt_ext(stmt_dup(g->grp));
+	g->ext = stmt_ext(sa, g->grp);
 	return g;
 }
 
@@ -302,217 +281,6 @@ grp_done(group *g)
 {
 	if (g && g->grp)
 		g->grp->flag = GRP_DONE;
-}
-
-void
-cond_stmt_destroy(stmt *s)
-{
-	if (s)
-		stmt_destroy(s);
-}
-
-void
-stmt_destroy(stmt *s)
-{
-	if (sql_ref_dec(&s->ref) == 0) {
-		switch (s->type) {
-			/* stmt_destroy  op1 */
-		case st_relselect:
-		case st_connection:
-			list_destroy(s->op1.lval);
-			break;
-		case st_releqjoin: 
-			list_destroy(s->op1.lval);
-			list_destroy(s->op2.lval);
-			break;
-		case st_reljoin:
-			if (s->op1.stval)
-				stmt_destroy(s->op1.stval);
-			if (s->op2.lval)
-				list_destroy(s->op2.lval);
-			break;
-
-		case st_diff:
-		case st_union:
-		case st_join:
-		case st_join2:
-		case st_joinN:
-		case st_outerjoin:
-		case st_derive:
-		case st_unique:
-		case st_alias:
-		case st_append:
-		case st_rs_column:
-
-		case st_while:
-		case st_if:
-		case st_return:
-		case st_assign:
-		case st_exception:
-		case st_trans:
-		case st_catalog:
-
-			if (s->op1.stval)
-				stmt_destroy(s->op1.stval);
-			if (s->op2.stval)
-				stmt_destroy(s->op2.stval);
-			if (s->op3.stval)
-				stmt_destroy(s->op3.stval);
-			break;
-
-		case st_list:
-			list_destroy(s->op1.lval);
-			break;
-		case st_var:
-			if (s->op1.sval)
-				_DELETE(s->op1.sval);
-			break;
-
-			/* reference only independently managed resources */
-		case st_table:
-			stmt_destroy(s->op1.stval); 
-			break;
-		case st_basetable:
-		case st_table_clear:
-			if (s->op2.sval)
-				_DELETE(s->op2.sval);
-		case st_bat:
-		case st_dbat:
-		case st_idxbat:
-		case st_none:
-			break;
-
-			/* special cases */
-		case st_temp:
-		case st_single:
-			if (s->op1.stval)
-				stmt_destroy(s->op1.stval);
-
-		case st_append_col:
-		case st_update_col:
-		case st_append_idx:
-		case st_update_idx:
-		case st_delete:
-			if (s->op2.stval)
-				stmt_destroy(s->op2.stval);
-			if (s->op3.stval)
-				stmt_destroy(s->op3.stval);
-			break;
-
-		case st_export:
-			if (s->op1.stval)
-				stmt_destroy(s->op1.stval);
-			if (s->op4.stval) {
-				if (s->op2.lval == NULL || s->op2.lval->h->data)
-					stmt_destroy(s->op4.stval);
-				else
-					list_destroy(s->op4.lval);
-			}
-			if (s->op2.lval)
-				list_destroy(s->op2.lval);
-			break;
-		case st_aggr:
-			if (s->op1.stval)
-				stmt_destroy(s->op1.stval);
-			if (s->op2.stval)
-				stmt_destroy(s->op2.stval);
-			if (s->op3.stval)
-				stmt_destroy(s->op3.stval);
-			sql_subaggr_destroy(s->op4.aggrval);
-			break;
-		case st_convert:
-			if (s->op1.stval)
-				stmt_destroy(s->op1.stval);
-			break;
-		case st_unop:
-		case st_binop:
-		case st_Nop:
-			if (s->op1.stval)
-				stmt_destroy(s->op1.stval);
-			if (s->op2.stval)
-				stmt_destroy(s->op2.stval);
-			if (s->op3.stval)
-				stmt_destroy(s->op3.stval);
-			sql_subfunc_destroy(s->op4.funcval);
-			break;
-		case st_atom:
-			atom_destroy(s->op1.aval);
-			break;
-
-			/* simple case of statements of only statements */
-		case st_const:
-		case st_mark:
-		case st_gen_group:
-		case st_reverse:
-		case st_mirror:
-		case st_limit:
-		case st_order:
-		case st_reorder:
-		case st_ordered:
-		case st_output:
-		case st_affected_rows:
-
-		case st_column:
-			if (s->op1.stval)
-				stmt_destroy(s->op1.stval);
-			if (s->op2.stval)
-				stmt_destroy(s->op2.stval);
-			if (s->op3.stval)
-				stmt_destroy(s->op3.stval);
-			break;
-		case st_group:
-		case st_group_ext:
-
-		case st_select:
-		case st_select2:
-		case st_selectN:
-		case st_uselect:
-		case st_uselect2:
-		case st_uselectN:
-		case st_semijoin:
-			if (s->op1.stval)
-				stmt_destroy(s->op1.stval);
-			if (s->op2.stval)
-				stmt_destroy(s->op2.stval);
-			if (s->op3.stval)
-				stmt_destroy(s->op3.stval);
-			if (s->type != st_selectN && s->type != st_uselectN && s->op4.stval)
-				stmt_destroy(s->op4.stval);
-			break;
-		default:
-			printf("! TODO: stmt_destroy(%u=%s) !\n", s->type, st_type2string(s->type));
-		}
-		if (s->h)
-			stmt_destroy(s->h);
-		if (s->t)
-			stmt_destroy(s->t);
-		if (s->rewritten)
-			stmt_destroy(s->rewritten);
-
-#ifndef NDEBUG
-		if (s->nr2 > 0) {
-/*
- * happens far too often for now, hence, we keep it for debugging, only ...
-			printf("= sql_statement.mx: stmt_destroy: (result of) statement %s (%u) was used %d times less often than its refcnt indicated!\n",
-				st_type2string(s->type), s->type, s->nr2);
- */
-		} else if (s->nr2 == int_nil) {
-/*
- * happens far too often for now, hence, we keep it for debugging, only ...
-
-NIELS: Because the optimizer rewrites partly inplace some parts of the
-  statement tree are really not executed!
-			printf("= sql_statement.mx: stmt_destroy: statement %s (%u) was never executed!\n",
-				st_type2string(s->type), s->type);
-
- */
-		} else if (s->nr2 < 0) {
-			printf("= sql_statement.mx: stmt_destroy: (rssult of) statement %s (%u) was used %d times more often than its refcnt indicated!\n", st_type2string(s->type), s->type, -s->nr2);
-		}
-#endif
-
-		_DELETE(s);
-	}
 }
 
 static void stmt_deps( list *dep_list, stmt *s, int depend_type, int dir);
@@ -601,7 +369,6 @@ stmt_deps(list *dep_list, stmt *s, int depend_type, int dir)
 				push(s->op3.stval);
 			break;
 
-			/* reference only independently managed resources */
 		case st_table:
 			push(s->op1.stval);
 			break;
@@ -653,7 +420,7 @@ stmt_deps(list *dep_list, stmt *s, int depend_type, int dir)
 			if (s->op3.stval)
 				push(s->op3.stval);
 			if (depend_type == FUNC_DEPENDENCY) {
-				dep_list = cond_append(dep_list, &s->op4.funcval->func->base.id);	
+				dep_list = cond_append(dep_list, &s->op4.aggrval->aggr->base.id);	
 			}
 			break;
 		case st_convert:
@@ -728,24 +495,24 @@ stmt_deps(list *dep_list, stmt *s, int depend_type, int dir)
 	_DELETE(stack);
 }
 
-list* stmt_list_dependencies(stmt *s, int depend_type)
+list* stmt_list_dependencies(sql_allocator *sa, stmt *s, int depend_type)
 {
-	list *dep_list = list_create((fdestroy) NULL);
+	list *dep_list = list_new(sa);
 
 	stmt_deps(dep_list, s, depend_type, s->optimized);
 	return dep_list;
 }
 
 stmt *
-stmt_none()
+stmt_none(sql_allocator *sa)
 {
-	return stmt_create(st_none);
+	return stmt_create(sa, st_none);
 }
 
 stmt *
-stmt_var(char *varname, sql_subtype *t, int declare, int level)
+stmt_var(sql_allocator *sa, char *varname, sql_subtype *t, int declare, int level)
 {
-	stmt *s = stmt_create(st_var);
+	stmt *s = stmt_create(sa, st_var);
 
 	s->op1.sval = varname;
 	if (t)
@@ -758,9 +525,9 @@ stmt_var(char *varname, sql_subtype *t, int declare, int level)
 }
 
 stmt *
-stmt_varnr(int nr, sql_subtype *t)
+stmt_varnr(sql_allocator *sa, int nr, sql_subtype *t)
 {
-	stmt *s = stmt_create(st_var);
+	stmt *s = stmt_create(sa, st_var);
 
 	s->op1.sval = NULL;
 	if (t)
@@ -773,9 +540,9 @@ stmt_varnr(int nr, sql_subtype *t)
 }
 
 stmt *
-stmt_table(stmt *cols, int temp)
+stmt_table(sql_allocator *sa, stmt *cols, int temp)
 {
-	stmt *s = stmt_create(st_table);
+	stmt *s = stmt_create(sa, st_table);
 
 	s->op1.stval = cols;
 	s->flag = temp;
@@ -783,19 +550,19 @@ stmt_table(stmt *cols, int temp)
 }
 
 stmt *
-stmt_basetable(sql_table *t, char *name)
+stmt_basetable(sql_allocator *sa, sql_table *t, char *name)
 {
-	stmt *s = stmt_create(st_basetable);
+	stmt *s = stmt_create(sa, st_basetable);
 
 	s->op1.tval = t;
-	s->op2.sval = _strdup(name);
+	s->op2.sval = sa_strdup(sa, name);
 	return s;
 }
 
 stmt *
-stmt_temp(sql_subtype *t)
+stmt_temp(sql_allocator *sa, sql_subtype *t)
 {
-	stmt *s = stmt_create(st_temp);
+	stmt *s = stmt_create(sa, st_temp);
 
 	s->op4.typeval = *t;
 	s->nrcols = 1;
@@ -803,9 +570,9 @@ stmt_temp(sql_subtype *t)
 }
 
 stmt *
-stmt_column(stmt *op1, stmt *table, sql_table *t)
+stmt_column(sql_allocator *sa, stmt *op1, stmt *table, sql_table *t)
 {
-	stmt *s = stmt_create(st_column);
+	stmt *s = stmt_create(sa, st_column);
 
 	s->op1.stval = op1;
 	/* if not single value, its a single column ! */
@@ -819,9 +586,9 @@ stmt_column(stmt *op1, stmt *table, sql_table *t)
 }
 
 stmt *
-stmt_bat(sql_column *c, stmt *basetable, int access )
+stmt_bat(sql_allocator *sa, sql_column *c, stmt *basetable, int access )
 {
-	stmt *s = stmt_create(st_bat);
+	stmt *s = stmt_create(sa, st_bat);
 
 	s->op1.cval = c;
 	s->nrcols = 1;
@@ -831,9 +598,9 @@ stmt_bat(sql_column *c, stmt *basetable, int access )
 }
 
 static stmt *
-stmt_tbat(sql_table *t, int access)
+stmt_tbat(sql_allocator *sa, sql_table *t, int access)
 {
-	stmt *s = stmt_create(st_dbat);
+	stmt *s = stmt_create(sa, st_dbat);
 
 	assert(access == RD_INS);
 
@@ -844,9 +611,9 @@ stmt_tbat(sql_table *t, int access)
 }
 
 stmt *
-stmt_delta_table_bat(sql_column *c, stmt *basetable, int access )
+stmt_delta_table_bat(sql_allocator *sa, sql_column *c, stmt *basetable, int access )
 {
-	stmt *s = stmt_bat(c, basetable, access );
+	stmt *s = stmt_bat(sa, c, basetable, access );
 
 	if (c->t->readonly)
 		return s;
@@ -854,25 +621,25 @@ stmt_delta_table_bat(sql_column *c, stmt *basetable, int access )
 	if (isTable(c->t) &&
 	   (c->base.flag != TR_NEW || c->t->base.flag != TR_NEW /* alter */) &&
 	    access == RDONLY && c->t->persistence == SQL_PERSIST && !c->t->commit_action) {
-		stmt *i = stmt_bat(c, stmt_dup(basetable), RD_INS );
-		stmt *u = stmt_bat(c, stmt_dup(basetable), RD_UPD );
+		stmt *i = stmt_bat(sa, c, basetable, RD_INS );
+		stmt *u = stmt_bat(sa, c, basetable, RD_UPD );
 
-		s = stmt_diff(s, u);
-		s = stmt_union(s, stmt_dup(u));
-		s = stmt_union(s, i);
+		s = stmt_diff(sa, s, u);
+		s = stmt_union(sa, s, u);
+		s = stmt_union(sa, s, i);
 	} 
 	/* even temp tables have deletes because we like to keep void heads */
 	if (access == RDONLY && isTable(c->t)) {
-		stmt *d = stmt_tbat(c->t, RD_INS);
-		s = stmt_diff(s, stmt_reverse(d));
+		stmt *d = stmt_tbat(sa, c->t, RD_INS);
+		s = stmt_diff(sa, s, stmt_reverse(sa, d));
 	}
 	return s;
 }
 
 stmt *
-stmt_idxbat(sql_idx * i, int access)
+stmt_idxbat(sql_allocator *sa, sql_idx * i, int access)
 {
-	stmt *s = stmt_create(st_idxbat);
+	stmt *s = stmt_create(sa, st_idxbat);
 
 	s->op1.idxval = i;
 	s->nrcols = 1;
@@ -881,9 +648,9 @@ stmt_idxbat(sql_idx * i, int access)
 }
 
 stmt *
-stmt_delta_table_idxbat(sql_idx * idx, int access)
+stmt_delta_table_idxbat(sql_allocator *sa, sql_idx * idx, int access)
 {
-	stmt *s = stmt_idxbat(idx, access);
+	stmt *s = stmt_idxbat(sa, idx, access);
 
 	if (idx->t->readonly)
 		return s;
@@ -891,25 +658,25 @@ stmt_delta_table_idxbat(sql_idx * idx, int access)
 	if (isTable(idx->t) &&
 	   (idx->base.flag != TR_NEW || idx->t->base.flag != TR_NEW /* alter */) && 
 	    access == RDONLY && idx->t->persistence == SQL_PERSIST && !idx->t->commit_action) {
-		stmt *i = stmt_idxbat(idx, RD_INS);
-		stmt *u = stmt_idxbat(idx, RD_UPD);
+		stmt *i = stmt_idxbat(sa, idx, RD_INS);
+		stmt *u = stmt_idxbat(sa, idx, RD_UPD);
 
-		s = stmt_diff(s, u);
-		s = stmt_union(s, stmt_dup(u));
-		s = stmt_union(s, i);
+		s = stmt_diff(sa, s, u);
+		s = stmt_union(sa, s, u);
+		s = stmt_union(sa, s, i);
 	} 
 	/* even temp tables have deletes because we like to keep void heads */
 	if (access == RDONLY && isTable(idx->t)) {
-		stmt *d = stmt_tbat(idx->t, RD_INS);
-		s = stmt_diff(s, stmt_reverse(d));
+		stmt *d = stmt_tbat(sa, idx->t, RD_INS);
+		s = stmt_diff(sa, s, stmt_reverse(sa, d));
 	}
 	return s;
 }
 
 stmt *
-stmt_append_col(sql_column *c, stmt *b)
+stmt_append_col(sql_allocator *sa, sql_column *c, stmt *b)
 {
-	stmt *s = stmt_create(st_append_col);
+	stmt *s = stmt_create(sa, st_append_col);
 
 	s->op1.cval = c;
 	s->op2.stval = b;
@@ -917,9 +684,9 @@ stmt_append_col(sql_column *c, stmt *b)
 }
 
 stmt *
-stmt_append_idx(sql_idx *i, stmt *b)
+stmt_append_idx(sql_allocator *sa, sql_idx *i, stmt *b)
 {
-	stmt *s = stmt_create(st_append_idx);
+	stmt *s = stmt_create(sa, st_append_idx);
 
 	s->op1.idxval = i;
 	s->op2.stval = b;
@@ -927,9 +694,9 @@ stmt_append_idx(sql_idx *i, stmt *b)
 }
 
 stmt *
-stmt_update_col(sql_column *c, stmt *b)
+stmt_update_col(sql_allocator *sa, sql_column *c, stmt *b)
 {
-	stmt *s = stmt_create(st_update_col);
+	stmt *s = stmt_create(sa, st_update_col);
 
 	s->op1.cval = c;
 	s->op2.stval = b;
@@ -937,9 +704,9 @@ stmt_update_col(sql_column *c, stmt *b)
 }
 
 stmt *
-stmt_update_idx(sql_idx *i, stmt *b)
+stmt_update_idx(sql_allocator *sa, sql_idx *i, stmt *b)
 {
-	stmt *s = stmt_create(st_update_idx);
+	stmt *s = stmt_create(sa, st_update_idx);
 
 	s->op1.idxval = i;
 	s->op2.stval = b;
@@ -947,9 +714,9 @@ stmt_update_idx(sql_idx *i, stmt *b)
 }
 
 stmt *
-stmt_delete(sql_table *t, stmt *b)
+stmt_delete(sql_allocator *sa, sql_table *t, stmt *b)
 {
-	stmt *s = stmt_create(st_delete);
+	stmt *s = stmt_create(sa, st_delete);
 
 	s->op1.tval = t;
 	s->op2.stval = b;
@@ -957,62 +724,61 @@ stmt_delete(sql_table *t, stmt *b)
 }
 
 static stmt *
-stmt_const_(stmt *s, stmt *val)
+stmt_const_(sql_allocator *sa, stmt *s, stmt *val)
 {
-	stmt *ns = stmt_create(st_const);
+	stmt *ns = stmt_create(sa, st_const);
 
 	ns->op1.stval = s;
 	ns->op2.stval = val;
 	ns->nrcols = s->nrcols;
 	ns->key = s->key;
 	ns->aggr = s->aggr;
-	ns->h = stmt_dup(s->h);
+	ns->h = s->h;
 	return ns;
 }
 
 static stmt *
-push_project(stmt *rows, stmt *val) 
+push_project(sql_allocator *sa, stmt *rows, stmt *val) 
 {
 	switch (val->type) {
 	case st_convert:
-		val->op1.stval = push_project(rows, val->op1.stval);
+		val->op1.stval = push_project(sa, rows, val->op1.stval);
 		break;
 	case st_Nop:
 		if (val->op4.funcval->func->side_effect) {
 			stmt *l = val->op1.stval;
 			node *n = l->op1.lval->h;
 			if (n) {
-				n->data = stmt_const_(stmt_dup(rows), n->data);
+				n->data = stmt_const_(sa, rows, n->data);
 			} else {  /* no args, ie. change into a st_unop */
 				val->type = st_unop;
-				stmt_destroy(val->op1.stval);
-				val->op1.stval = stmt_const_(stmt_dup(rows), stmt_atom_int(0));
+				val->op1.stval = stmt_const_(sa, rows, stmt_atom_int(sa, 0));
 			}
 		} else {
 			/* push through arguments of Nop */
 			node *n;
 			for(n=val->op1.lval->h; n; n = n->next) 
-				n->data = push_project(rows, n->data);
+				n->data = push_project(sa, rows, n->data);
 		}
 		break;
 	case st_binop:
 		if (val->op4.funcval->func->side_effect) {
-			val->op1.stval = stmt_const_(stmt_dup(rows), val->op1.stval);
+			val->op1.stval = stmt_const_(sa, rows, val->op1.stval);
 		} else {
-			val->op1.stval = push_project(rows, val->op1.stval);
-			val->op2.stval = push_project(rows, val->op2.stval);
+			val->op1.stval = push_project(sa, rows, val->op1.stval);
+			val->op2.stval = push_project(sa, rows, val->op2.stval);
 		}
 		break;
 	case st_unop:
 		if (val->op4.funcval->func->side_effect) {
-			val->op1.stval = stmt_const_(stmt_dup(rows), val->op1.stval);
+			val->op1.stval = stmt_const_(sa, rows, val->op1.stval);
 		} else {
-			val->op1.stval = push_project(rows, val->op1.stval);
+			val->op1.stval = push_project(sa, rows, val->op1.stval);
 		}
 		break;
 	default:
 		if (!val->nrcols)
-			val = stmt_const_(stmt_dup(rows), val);
+			val = stmt_const_(sa, rows, val);
 		return val;
 	}
 	val->nrcols = rows->nrcols;
@@ -1055,14 +821,13 @@ has_side_effect(stmt *val)
 }
 
 stmt *
-stmt_const(stmt *rows, stmt *val) 
+stmt_const(sql_allocator *sa, stmt *rows, stmt *val) 
 {
 	if (val && has_side_effect(val)) {
-		stmt *x = push_project(rows, val);
-		stmt_destroy(rows);
+		stmt *x = push_project(sa, rows, val);
 		return x;
 	} else {
-		return stmt_const_(rows, val);
+		return stmt_const_(sa, rows, val);
 	}
 }
 
@@ -1071,82 +836,82 @@ stmt_const(stmt *rows, stmt *val)
  * the generated code.
 */
 stmt *
-stmt_mark(stmt *s, int id)
+stmt_mark(sql_allocator *sa, stmt *s, int id)
 {
-	stmt *ns = stmt_create(st_mark);
+	stmt *ns = stmt_create(sa, st_mark);
 
-	ns->op1.stval = stmt_reverse(s);
-	ns->op2.stval = stmt_atom_oid(id);
+	ns->op1.stval = stmt_reverse(sa, s);
+	ns->op2.stval = stmt_atom_oid(sa, id);
 
 	ns->nrcols = s->nrcols;
 	ns->key = s->key;
 	ns->aggr = s->aggr;
-	ns->h = stmt_dup(s->t);
-	return stmt_reverse(ns);
+	ns->h = s->t;
+	return stmt_reverse(sa, ns);
 }
 
 stmt *
-stmt_mark_tail(stmt *s, int id)
+stmt_mark_tail(sql_allocator *sa, stmt *s, int id)
 {
-	stmt *ns = stmt_create(st_mark);
+	stmt *ns = stmt_create(sa, st_mark);
 
 	ns->op1.stval = s;
-	ns->op2.stval = stmt_atom_oid(id);
+	ns->op2.stval = stmt_atom_oid(sa, id);
 
 	ns->nrcols = s->nrcols;
 	ns->key = s->key;
 	ns->aggr = s->aggr;
-	ns->h = stmt_dup(s->h);
+	ns->h = s->h;
 	return ns;
 }
 
 stmt *
-stmt_gen_group(stmt *s)
+stmt_gen_group(sql_allocator *sa, stmt *s)
 {
-	stmt *ns = stmt_create(st_gen_group);
+	stmt *ns = stmt_create(sa, st_gen_group);
 
 	ns->op1.stval = s;
 
 	ns->nrcols = s->nrcols;
 	ns->key = 0;
 	ns->aggr = 0;
-	ns->h = stmt_dup(s->h);
+	ns->h = s->h;
 	return ns;
 }
 
 stmt *
-stmt_reverse(stmt *s)
+stmt_reverse(sql_allocator *sa, stmt *s)
 {
-	stmt *ns = stmt_create(st_reverse);
+	stmt *ns = stmt_create(sa, st_reverse);
 
 	ns->op1.stval = s;
 	ns->nrcols = s->nrcols;
 	ns->key = s->key;
 	ns->aggr = s->aggr;
-	ns->h = stmt_dup(s->t);
-	ns->t = stmt_dup(s->h);
+	ns->h = s->t;
+	ns->t = s->h;
 	return ns;
 }
 
 stmt *
-stmt_mirror(stmt *s)
+stmt_mirror(sql_allocator *sa, stmt *s)
 {
-	stmt *ns = stmt_create(st_mirror);
+	stmt *ns = stmt_create(sa, st_mirror);
 
 	ns->op1.stval = s;
 	ns->nrcols = 2;
 	ns->key = s->key;
 	ns->aggr = s->aggr;
-	ns->h = stmt_dup(s->h);
-	ns->t = stmt_dup(s->h);
+	ns->h = s->h;
+	ns->t = s->h;
 	return ns;
 }
 
 /* limit maybe atom nil */
 stmt *
-stmt_limit(stmt *s, stmt *offset, stmt *limit, int direction)
+stmt_limit(sql_allocator *sa, stmt *s, stmt *offset, stmt *limit, int direction)
 {
-	stmt *ns = stmt_create(st_limit);
+	stmt *ns = stmt_create(sa, st_limit);
 
 	ns->op1.stval = s;
 	ns->op2.stval = offset;
@@ -1154,15 +919,15 @@ stmt_limit(stmt *s, stmt *offset, stmt *limit, int direction)
 	ns->nrcols = s->nrcols;
 	ns->key = s->key;
 	ns->aggr = s->aggr;
-	ns->t = stmt_dup(s->t);
+	ns->t = s->t;
 	ns->flag = direction;
 	return ns;
 }
 
 stmt *
-stmt_limit2(stmt *a, stmt *b, stmt *offset, stmt *limit, int direction)
+stmt_limit2(sql_allocator *sa, stmt *a, stmt *b, stmt *offset, stmt *limit, int direction)
 {
-	stmt *ns = stmt_create(st_limit);
+	stmt *ns = stmt_create(sa, st_limit);
 
 	ns->op1.stval = b;
 	ns->op2.stval = offset;
@@ -1171,29 +936,29 @@ stmt_limit2(stmt *a, stmt *b, stmt *offset, stmt *limit, int direction)
 	ns->nrcols = b->nrcols;
 	ns->key = b->key;
 	ns->aggr = b->aggr;
-	ns->t = stmt_dup(b->t);
+	ns->t = b->t;
 	ns->flag = direction;
 	return ns;
 }
 
 stmt *
-stmt_order(stmt *s, int direction)
+stmt_order(sql_allocator *sa, stmt *s, int direction)
 {
-	stmt *ns = stmt_create(st_order);
+	stmt *ns = stmt_create(sa, st_order);
 
 	ns->op1.stval = s;
 	ns->flag = direction;
 	ns->nrcols = s->nrcols;
 	ns->key = s->key;
 	ns->aggr = s->aggr;
-	ns->t = stmt_dup(s->t);
+	ns->t = s->t;
 	return ns;
 }
 
 stmt *
-stmt_reorder(stmt *s, stmt *t, int direction)
+stmt_reorder(sql_allocator *sa, stmt *s, stmt *t, int direction)
 {
-	stmt *ns = stmt_create(st_reorder);
+	stmt *ns = stmt_create(sa, st_reorder);
 
 	ns->op1.stval = s;
 	ns->op2.stval = t;
@@ -1201,31 +966,29 @@ stmt_reorder(stmt *s, stmt *t, int direction)
 	ns->nrcols = s->nrcols;
 	ns->key = s->key;
 	ns->aggr = s->aggr;
-	ns->t = stmt_dup(s->t);
+	ns->t = s->t;
 	return ns;
 }
 
 stmt *
-stmt_unique(stmt *s, group *g)
+stmt_unique(sql_allocator *sa, stmt *s, group *g)
 {
-	stmt *ns = stmt_create(st_unique);
+	stmt *ns = stmt_create(sa, st_unique);
 
 	ns->op1.stval = s;
-	if (g) {
-		ns->op2.stval = stmt_dup(g->grp);
-		grp_destroy(g);
-	}
+	if (g) 
+		ns->op2.stval = g->grp;
 	ns->nrcols = s->nrcols;
 	ns->key = 1;		/* ?? maybe change key to unique ? */
 	ns->aggr = s->aggr;
-	ns->t = stmt_dup(s->t);
+	ns->t = s->t;
 	return ns;
 }
 
 stmt *
-stmt_atom(atom *op1)
+stmt_atom(sql_allocator *sa, atom *op1)
 {
-	stmt *s = stmt_create(st_atom);
+	stmt *s = stmt_create(sa, st_atom);
 
 	s->op1.aval = op1;
 	s->key = 1;		/* values are also unique */
@@ -1233,11 +996,11 @@ stmt_atom(atom *op1)
 }
 
 stmt *
-stmt_relselect_init()
+stmt_relselect_init(sql_allocator *sa)
 {
-	stmt *s = stmt_create(st_relselect);
+	stmt *s = stmt_create(sa, st_relselect);
 
-	s->op1.lval = list_create((fdestroy) &stmt_destroy);
+	s->op1.lval = list_new(sa);
 	s->nrcols = 0;
 	return s;
 }
@@ -1249,71 +1012,71 @@ stmt_relselect_fill(stmt *rs, stmt *sel)
 	if (sel->nrcols > rs->nrcols)
 		rs->nrcols = sel->nrcols;
 	if (!rs->h)
-		rs->h = stmt_dup(((stmt *) (rs->op1.lval->h->data))->h);
+		rs->h = ((stmt *) (rs->op1.lval->h->data))->h;
 }
 
 stmt *
-stmt_select(stmt *op1, stmt *op2, comp_type cmptype)
+stmt_select(sql_allocator *sa, stmt *op1, stmt *op2, comp_type cmptype)
 {
-	stmt *s = stmt_create(st_select);
+	stmt *s = stmt_create(sa, st_select);
 
 	s->op1.stval = op1;
 	s->op2.stval = op2;
 	s->flag = cmptype;
         s->nrcols = (op1->nrcols==2)?2:1;
-	s->h = stmt_dup(s->op1.stval->h);
-	s->t = stmt_dup(s->op1.stval->t);
+	s->h = s->op1.stval->h;
+	s->t = s->op1.stval->t;
 	return s;
 }
 
 stmt *
-stmt_likeselect(stmt *op1, stmt *op2, stmt *op3, comp_type cmptype)
+stmt_likeselect(sql_allocator *sa, stmt *op1, stmt *op2, stmt *op3, comp_type cmptype)
 {
-	stmt *s = stmt_create(st_select);
+	stmt *s = stmt_create(sa, st_select);
 
 	s->op1.stval = op1;
 	s->op2.stval = op2;
 	s->op3.stval = op3;
 	s->flag = cmptype;
         s->nrcols = (op1->nrcols==2)?2:1;
-	s->h = stmt_dup(s->op1.stval->h);
-	s->t = stmt_dup(s->op1.stval->t);
+	s->h = s->op1.stval->h;
+	s->t = s->op1.stval->t;
 	return s;
 }
 
 stmt *
-stmt_select2(stmt *op1, stmt *op2, stmt *op3, int cmp)
+stmt_select2(sql_allocator *sa, stmt *op1, stmt *op2, stmt *op3, int cmp)
 {
-	stmt *s = stmt_create(st_select2);
+	stmt *s = stmt_create(sa, st_select2);
 
 	s->op1.stval = op1;
 	s->op2.stval = op2;
 	s->op3.stval = op3;
 	s->flag = cmp;
         s->nrcols = (op1->nrcols==2)?2:1;
-	s->h = stmt_dup(s->op1.stval->h);
-	s->t = stmt_dup(s->op1.stval->t);
+	s->h = s->op1.stval->h;
+	s->t = s->op1.stval->t;
 	return s;
 }
 
 stmt *
-stmt_selectN(stmt *op1, stmt *op2, sql_subfunc *op)
+stmt_selectN(sql_allocator *sa, stmt *op1, stmt *op2, sql_subfunc *op)
 {
-	stmt *s = stmt_create(st_selectN);
+	stmt *s = stmt_create(sa, st_selectN);
 
 	s->op1.stval = op1;
 	s->op2.stval = op2;
 	s->op4.funcval = op;
         s->nrcols = (op1->nrcols==2)?2:1;
-	s->h = stmt_dup(s->op1.stval->h);
-	s->t = stmt_dup(s->op1.stval->t);
+	s->h = s->op1.stval->h;
+	s->t = s->op1.stval->t;
 	return s;
 }
 
 stmt *
-stmt_uselect(stmt *op1, stmt *op2, comp_type cmptype)
+stmt_uselect(sql_allocator *sa, stmt *op1, stmt *op2, comp_type cmptype)
 {
-	stmt *s = stmt_create(st_uselect);
+	stmt *s = stmt_create(sa, st_uselect);
 
 	assert(cmptype != cmp_like && cmptype != cmp_notlike &&
 	       cmptype != cmp_ilike && cmptype != cmp_notilike);
@@ -1321,41 +1084,41 @@ stmt_uselect(stmt *op1, stmt *op2, comp_type cmptype)
 	s->op2.stval = op2;
 	s->flag = cmptype;
         s->nrcols = (op1->nrcols==2)?2:1;
-	s->h = stmt_dup(s->op1.stval->h);
+	s->h = s->op1.stval->h;
 	return s;
 }
 
 stmt *
-stmt_uselect2(stmt *op1, stmt *op2, stmt *op3, int cmp)
+stmt_uselect2(sql_allocator *sa, stmt *op1, stmt *op2, stmt *op3, int cmp)
 {
-	stmt *s = stmt_create(st_uselect2);
+	stmt *s = stmt_create(sa, st_uselect2);
 
 	s->op1.stval = op1;
 	s->op2.stval = op2;
 	s->op3.stval = op3;
 	s->flag = cmp;
         s->nrcols = (op1->nrcols==2)?2:1;
-	s->h = stmt_dup(s->op1.stval->h);
+	s->h = s->op1.stval->h;
 	return s;
 }
 
 stmt *
-stmt_uselectN(stmt *op1, stmt *op2, sql_subfunc *op)
+stmt_uselectN(sql_allocator *sa, stmt *op1, stmt *op2, sql_subfunc *op)
 {
-	stmt *s = stmt_create(st_uselectN);
+	stmt *s = stmt_create(sa, st_uselectN);
 
 	s->op1.stval = op1;
 	s->op2.stval = op2;
 	s->op4.funcval = op;
         s->nrcols = (op1->nrcols==2)?2:1;
-	s->h = stmt_dup(s->op1.stval->h);
+	s->h = s->op1.stval->h;
 	return s;
 }
 
 stmt *
-stmt_semijoin(stmt *op1, stmt *op2)
+stmt_semijoin(sql_allocator *sa, stmt *op1, stmt *op2)
 {
-	stmt *s = stmt_create(st_semijoin);
+	stmt *s = stmt_create(sa, st_semijoin);
 
 	s->op1.stval = op1;
 	s->op2.stval = op2;
@@ -1363,33 +1126,33 @@ stmt_semijoin(stmt *op1, stmt *op2)
 	s->nrcols = op1->nrcols;
 	s->key = op1->key;
 	s->aggr = op1->aggr;
-	s->h = stmt_dup(op1->h);
-	s->t = stmt_dup(op1->t);
+	s->h = op1->h;
+	s->t = op1->t;
 	return s;
 }
 
 stmt *
-stmt_reljoin( stmt *op1, list *neqjoins )
+stmt_reljoin(sql_allocator *sa, stmt *op1, list *neqjoins )
 {
-	stmt *s = stmt_create(st_reljoin);
+	stmt *s = stmt_create(sa, st_reljoin);
 
 	s->op1.stval = op1;
 	s->op2.lval = neqjoins;
 	s->nrcols = 2;
 	if (!op1)
 		op1 = neqjoins->h->data;
-	s->h = stmt_dup(op1->h);
-	s->t = stmt_dup(op1->t);
+	s->h = op1->h;
+	s->t = op1->t;
 	return s;
 }
 
 stmt *
-stmt_releqjoin_init()
+stmt_releqjoin_init(sql_allocator *sa)
 {
-	stmt *s = stmt_create(st_releqjoin);
+	stmt *s = stmt_create(sa, st_releqjoin);
 
-	s->op1.lval = list_create((fdestroy) &stmt_destroy);
-	s->op2.lval = list_create((fdestroy) &stmt_destroy);
+	s->op1.lval = list_new(sa);
+	s->op2.lval = list_new(sa);
 	s->nrcols = 2;
 	return s;
 }
@@ -1400,53 +1163,44 @@ stmt_releqjoin_fill(stmt *rj, stmt *lc, stmt *rc)
 	list_append(rj->op1.lval, lc);
 	list_append(rj->op2.lval, rc);
 	if (!rj->h)
-		rj->h = stmt_dup(((stmt *) (rj->op1.lval->h->data))->h);
+		rj->h = ((stmt *) (rj->op1.lval->h->data))->h;
 	if (!rj->t)
-		rj->t = stmt_dup(((stmt *) (rj->op2.lval->h->data))->h);
+		rj->t = ((stmt *) (rj->op2.lval->h->data))->h;
 }
 
 stmt *
-stmt_releqjoin2(list *l1, list *l2)
+stmt_releqjoin2(sql_allocator *sa, list *l1, list *l2)
 {
-	stmt *s = stmt_create(st_releqjoin);
+	stmt *s = stmt_create(sa, st_releqjoin);
 
 	s->op1.lval = l1;
 	s->op2.lval = l2;
 	s->nrcols = 2;
-	s->h = stmt_dup(((stmt *) (s->op1.lval->h->data))->h);
-	s->t = stmt_dup(((stmt *) (s->op2.lval->h->data))->h);
+	s->h = ((stmt *) (s->op1.lval->h->data))->h;
+	s->t = ((stmt *) (s->op2.lval->h->data))->h;
 	return s;
 }
 
 stmt *
-stmt_releqjoin1(list *joins)
+stmt_releqjoin1(sql_allocator *sa, list *joins)
 {
-	list *l1 = list_create((fdestroy) &stmt_destroy);
-	list *l2 = list_create((fdestroy) &stmt_destroy);
+	list *l1 = list_new(sa);
+	list *l2 = list_new(sa);
 	stmt *L = NULL;
 	node *n = NULL;
 
 	for (n = joins->h; n; n = n->next) {
-		stmt *l = stmt_dup(((stmt *) (n->data))->op1.stval);
-		stmt *r = stmt_dup(((stmt *) (n->data))->op2.stval);
+		stmt *l = ((stmt *) (n->data))->op1.stval;
+		stmt *r = ((stmt *) (n->data))->op2.stval;
 
-		while (l->type == st_reverse) {
-			stmt *t = l;
-
-			l = stmt_dup(l->op1.stval);
-			stmt_destroy(t);
-		}
-		while (r->type == st_reverse) {
-			stmt *t = r;
-
-			r = stmt_dup(r->op1.stval);
-			stmt_destroy(t);
-		}
-		if (l->t != r->t) {
-			r = stmt_reverse(r);
-		}
+		while (l->type == st_reverse) 
+			l = l->op1.stval;
+		while (r->type == st_reverse) 
+			r = r->op1.stval;
+		if (l->t != r->t) 
+			r = stmt_reverse(sa, r);
 		if (L == NULL) {
-			L = stmt_dup(l);
+			L = l;
 		} else if (L->h != l->h) {
 			stmt *t = l;
 
@@ -1456,107 +1210,105 @@ stmt_releqjoin1(list *joins)
 		l1 = list_append(l1, l);
 		l2 = list_append(l2, r);
 	}
-	if (L != NULL)
-		stmt_destroy(L);
-	return stmt_releqjoin2(l1, l2);
+	return stmt_releqjoin2(sa, l1, l2);
 }
 
 stmt *
-stmt_join(stmt *op1, stmt *op2, comp_type cmptype)
+stmt_join(sql_allocator *sa, stmt *op1, stmt *op2, comp_type cmptype)
 {
-	stmt *s = stmt_create(st_join);
+	stmt *s = stmt_create(sa, st_join);
 
 	s->op1.stval = op1;
 	s->op2.stval = op2;
 	s->flag = cmptype;
 	s->key = op1->key;
 	s->nrcols = 2;
-	s->h = stmt_dup(op1->h);
-	s->t = stmt_dup(op2->t);
+	s->h = op1->h;
+	s->t = op2->t;
 	return s;
 }
 
 stmt *
-stmt_project(stmt *op1, stmt *op2)
+stmt_project(sql_allocator *sa, stmt *op1, stmt *op2)
 {
-	return stmt_join(op1, op2, cmp_project);
+	return stmt_join(sa, op1, op2, cmp_project);
 }
 
 stmt *
-stmt_join2(stmt *l, stmt *ra, stmt *rb, int cmp)
+stmt_join2(sql_allocator *sa, stmt *l, stmt *ra, stmt *rb, int cmp)
 {
-	stmt *s = stmt_create(st_join2);
+	stmt *s = stmt_create(sa, st_join2);
 
 	s->op1.stval = l;
 	s->op2.stval = ra;
 	s->op3.stval = rb;
 	s->flag = cmp;
 	s->nrcols = 2;
-	s->h = stmt_dup(l->h);
-	s->t = stmt_dup(ra->h);
+	s->h = l->h;
+	s->t = ra->h;
 	return s;
 }
 
 stmt *
-stmt_joinN(stmt *l, stmt *r, sql_subfunc *op)
+stmt_joinN(sql_allocator *sa, stmt *l, stmt *r, sql_subfunc *op)
 {
-	stmt *s = stmt_create(st_joinN);
+	stmt *s = stmt_create(sa, st_joinN);
 
 	s->op1.stval = l;
 	s->op2.stval = r;
 	s->op4.funcval = op;
 	s->nrcols = 2;
-	s->h = stmt_dup(l->h);
-	s->t = stmt_dup(r->h);
+	s->h = l->h;
+	s->t = r->h;
 	return s;
 }
 
 stmt *
-stmt_outerjoin(stmt *op1, stmt *op2, comp_type cmptype)
+stmt_outerjoin(sql_allocator *sa, stmt *op1, stmt *op2, comp_type cmptype)
 {
-	stmt *s = stmt_create(st_outerjoin);
+	stmt *s = stmt_create(sa, st_outerjoin);
 
 	s->op1.stval = op1;
 	s->op2.stval = op2;
 	s->flag = cmptype;
 	s->nrcols = 2;
-	s->h = stmt_dup(op1->h);
-	s->t = stmt_dup(op2->t);
+	s->h = op1->h;
+	s->t = op2->t;
 	return s;
 }
 
 stmt *
-stmt_diff(stmt *op1, stmt *op2)
+stmt_diff(sql_allocator *sa, stmt *op1, stmt *op2)
 {
-	stmt *s = stmt_create(st_diff);
+	stmt *s = stmt_create(sa, st_diff);
 
 	s->op1.stval = op1;
 	s->op2.stval = op2;
 	s->nrcols = op1->nrcols;
 	s->key = op1->key;
 	s->aggr = op1->aggr;
-	s->h = stmt_dup(op1->h);
-	s->t = stmt_dup(op1->t);
+	s->h = op1->h;
+	s->t = op1->t;
 	return s;
 }
 
 stmt *
-stmt_union(stmt *op1, stmt *op2)
+stmt_union(sql_allocator *sa, stmt *op1, stmt *op2)
 {
-	stmt *s = stmt_create(st_union);
+	stmt *s = stmt_create(sa, st_union);
 
 	s->op1.stval = op1;
 	s->op2.stval = op2;
 	s->nrcols = op1->nrcols;
-	s->h = stmt_dup(op1->h);
-	s->t = stmt_dup(op1->t);
+	s->h = op1->h;
+	s->t = op1->t;
 	return s;
 }
 
 stmt *
-stmt_rs_column(stmt *rs, stmt *name, sql_subtype *tpe)
+stmt_rs_column(sql_allocator *sa, stmt *rs, stmt *name, sql_subtype *tpe)
 {
-	stmt *s = stmt_create(st_rs_column);
+	stmt *s = stmt_create(sa, st_rs_column);
 
 	s->op1.stval = rs;
 	s->op2.stval = name;
@@ -1569,12 +1321,12 @@ stmt_rs_column(stmt *rs, stmt *name, sql_subtype *tpe)
 }
 
 stmt *
-stmt_export(stmt *t, char *sep, char *rsep, char *ssep, char *null_string, stmt *file)
+stmt_export(sql_allocator *sa, stmt *t, char *sep, char *rsep, char *ssep, char *null_string, stmt *file)
 {
-	stmt *s = stmt_create(st_export);
+	stmt *s = stmt_create(sa, st_export);
 
 	s->op1.stval = t;
-	s->op2.lval = list_create((fdestroy)& GDKfree);
+	s->op2.lval = list_new(sa);
 	list_append(s->op2.lval, sep);
 	list_append(s->op2.lval, rsep);
 	list_append(s->op2.lval, ssep);
@@ -1584,9 +1336,9 @@ stmt_export(stmt *t, char *sep, char *rsep, char *ssep, char *null_string, stmt 
 }
 
 stmt *
-stmt_trans(int type, stmt *chain, stmt *name)
+stmt_trans(sql_allocator *sa, int type, stmt *chain, stmt *name)
 {
-	stmt *s = stmt_create(st_trans);
+	stmt *s = stmt_create(sa, st_trans);
 
 	s->op1.stval = chain;
 	s->op2.stval = name;
@@ -1595,9 +1347,9 @@ stmt_trans(int type, stmt *chain, stmt *name)
 }
 
 stmt *
-stmt_catalog(int type, stmt *sname, stmt *auth, stmt *action)
+stmt_catalog(sql_allocator *sa, int type, stmt *sname, stmt *auth, stmt *action)
 {
-	stmt *s = stmt_create(st_catalog);
+	stmt *s = stmt_create(sa, st_catalog);
 
 	s->op1.stval = sname;
 	s->op2.stval = auth;
@@ -1627,9 +1379,9 @@ stmt_set_nrcols(stmt *s)
 }
 
 stmt *
-stmt_list(list *l)
+stmt_list(sql_allocator *sa, list *l)
 {
-	stmt *s = stmt_create(st_list);
+	stmt *s = stmt_create(sa, st_list);
 
 	s->op1.lval = l;
 	stmt_set_nrcols(s);
@@ -1637,9 +1389,9 @@ stmt_list(list *l)
 }
 
 stmt *
-stmt_ordered(stmt *order, stmt *res)
+stmt_ordered(sql_allocator *sa, stmt *order, stmt *res)
 {
-	stmt *ns = stmt_create(st_ordered);
+	stmt *ns = stmt_create(sa, st_ordered);
 
 	ns->type = st_ordered;
 	ns->op1.stval = order;
@@ -1647,33 +1399,33 @@ stmt_ordered(stmt *order, stmt *res)
 	ns->nrcols = res->nrcols;
 	ns->key = res->key;
 	ns->aggr = res->aggr;
-	ns->t = stmt_dup(res->t);
+	ns->t = res->t;
 	return ns;
 }
 
 stmt *
-stmt_output(stmt *l)
+stmt_output(sql_allocator *sa, stmt *l)
 {
-	stmt *s = stmt_create(st_output);
+	stmt *s = stmt_create(sa, st_output);
 
 	s->op1.stval = l;
 	return s;
 }
 
 stmt *
-stmt_affected_rows(stmt *l)
+stmt_affected_rows(sql_allocator *sa, stmt *l)
 {
-	stmt *s = stmt_create(st_affected_rows);
+	stmt *s = stmt_create(sa, st_affected_rows);
 
 	s->op1.stval = l;
 	return s;
 }
 
 stmt*
-stmt_connection(int *id, char *server, int *port, char *db, char * db_alias, char *user, char *passwd, char *lang)
+stmt_connection(sql_allocator *sa, int *id, char *server, int *port, char *db, char * db_alias, char *user, char *passwd, char *lang)
 {
-	stmt *s = stmt_create(st_connection);
-	s->op1.lval = list_create((fdestroy) GDKfree);
+	stmt *s = stmt_create(sa, st_connection);
+	s->op1.lval = list_new(sa);
 
 	if (*id != 0)
 		list_append(s->op1.lval, id);
@@ -1696,23 +1448,23 @@ stmt_connection(int *id, char *server, int *port, char *db, char * db_alias, cha
 }
 
 stmt *
-stmt_append(stmt *c, stmt *a)
+stmt_append(sql_allocator *sa, stmt *c, stmt *a)
 {
-	stmt *s = stmt_create(st_append);
+	stmt *s = stmt_create(sa, st_append);
 
 	s->op1.stval = c;
 	s->op2.stval = a;
-	s->h = stmt_dup(c->h);
-	s->t = stmt_dup(c->t);
+	s->h = c->h;
+	s->t = c->t;
 	s->nrcols = c->nrcols;
 	s->key = c->key;
 	return s;
 }
 
 stmt *
-stmt_table_clear(sql_table *t)
+stmt_table_clear(sql_allocator *sa, sql_table *t)
 {
-	stmt *s = stmt_create(st_table_clear);
+	stmt *s = stmt_create(sa, st_table_clear);
 
 	s->op1.tval = t;
 	s->nrcols = 0;
@@ -1720,29 +1472,29 @@ stmt_table_clear(sql_table *t)
 }
 
 stmt *
-stmt_exception(stmt *cond, char *errstr, int errcode)
+stmt_exception(sql_allocator *sa, stmt *cond, char *errstr, int errcode)
 {
-	stmt *s = stmt_create(st_exception);
+	stmt *s = stmt_create(sa, st_exception);
 
 	assert(cond);
 	s->op1.stval = cond;
-	s->op2.stval = stmt_atom_string(errstr);
-	s->op3.stval = stmt_atom_int(errcode);
+	s->op2.stval = stmt_atom_string(sa, errstr);
+	s->op3.stval = stmt_atom_int(sa, errcode);
 	s->nrcols = 0;
 	return s;
 }
 
 
 stmt *
-stmt_convert(stmt *v, sql_subtype *from, sql_subtype *to)
+stmt_convert(sql_allocator *sa, stmt *v, sql_subtype *from, sql_subtype *to)
 {
-	stmt *s = stmt_create(st_convert);
+	stmt *s = stmt_create(sa, st_convert);
 
 	s->op1.stval = v;
 	s->op3.typeval = *from;
 	s->op4.typeval = *to;
 	s->nrcols = 0;		/* function without arguments returns single value */
-	s->h = stmt_dup(v->h);
+	s->h = v->h;
 	s->key = v->key;
 	s->nrcols = v->nrcols;
 	s->aggr = v->aggr;
@@ -1750,14 +1502,14 @@ stmt_convert(stmt *v, sql_subtype *from, sql_subtype *to)
 }
 
 stmt *
-stmt_unop(stmt *op1, sql_subfunc *op)
+stmt_unop(sql_allocator *sa, stmt *op1, sql_subfunc *op)
 {
-	stmt *s = stmt_create(st_unop);
+	stmt *s = stmt_create(sa, st_unop);
 
 	s->op1.stval = op1;
 	assert(op);
 	s->op4.funcval = op;
-	s->h = stmt_dup(op1->h);
+	s->h = op1->h;
 	s->nrcols = op1->nrcols;
 	s->key = op1->key;
 	s->aggr = op1->aggr;
@@ -1765,9 +1517,9 @@ stmt_unop(stmt *op1, sql_subfunc *op)
 }
 
 stmt *
-stmt_binop(stmt *op1, stmt *op2, sql_subfunc *op)
+stmt_binop(sql_allocator *sa, stmt *op1, stmt *op2, sql_subfunc *op)
 {
-	stmt *s = stmt_create(st_binop);
+	stmt *s = stmt_create(sa, st_binop);
 	int aggr = 0;
 
 	s->op1.stval = op1;
@@ -1778,11 +1530,11 @@ stmt_binop(stmt *op1, stmt *op2, sql_subfunc *op)
 	if (!aggr)
 		aggr = op2->aggr;
 	if (op1->nrcols > op2->nrcols) {
-		s->h = stmt_dup(op1->h);
+		s->h = op1->h;
 		s->nrcols = op1->nrcols;
 		s->key = op1->key;
 	} else {
-		s->h = stmt_dup(op2->h);
+		s->h = op2->h;
 		s->nrcols = op2->nrcols;
 		s->key = op2->key;
 	}
@@ -1791,10 +1543,10 @@ stmt_binop(stmt *op1, stmt *op2, sql_subfunc *op)
 }
 
 stmt *
-stmt_Nop(stmt *ops, sql_subfunc *op)
+stmt_Nop(sql_allocator *sa, stmt *ops, sql_subfunc *op)
 {
 	node *n;
-	stmt *o = NULL, *s = stmt_create(st_Nop);
+	stmt *o = NULL, *s = stmt_create(sa, st_Nop);
 
 	s->op1.stval = ops;
 	assert(op);
@@ -1809,7 +1561,7 @@ stmt_Nop(stmt *ops, sql_subfunc *op)
 	}
 
 	if (o) {
-		s->h = stmt_dup(o->h);
+		s->h = o->h;
 		s->nrcols = o->nrcols;
 		s->key = o->key;
 		s->aggr = o->aggr;
@@ -1821,21 +1573,20 @@ stmt_Nop(stmt *ops, sql_subfunc *op)
 }
 
 stmt *
-stmt_aggr(stmt *op1, group *grp, sql_subaggr *op, int reduce)
+stmt_aggr(sql_allocator *sa, stmt *op1, group *grp, sql_subaggr *op, int reduce)
 {
-	stmt *s = stmt_create(st_aggr);
+	stmt *s = stmt_create(sa, st_aggr);
 
 	s->op1.stval = op1;
 	if (grp) {
-		s->op2.stval = stmt_dup(grp->grp);
-		s->op3.stval = stmt_dup(grp->ext);
+		s->op2.stval = grp->grp;
+		s->op3.stval = grp->ext;
 		s->nrcols = 1;
-		s->h = stmt_dup(grp->grp->h);
-		grp_destroy(grp);
+		s->h = grp->grp->h;
 	} else {
 		if (!reduce)
 			s->nrcols = 1;
-		s->h = stmt_dup(op1->h);
+		s->h = op1->h;
 	}
 	s->key = reduce;
 	s->aggr = reduce;
@@ -1845,15 +1596,15 @@ stmt_aggr(stmt *op1, group *grp, sql_subaggr *op, int reduce)
 }
 
 stmt *
-stmt_aggr2(stmt *op1, stmt *op2, sql_subaggr *op)
+stmt_aggr2(sql_allocator *sa, stmt *op1, stmt *op2, sql_subaggr *op)
 {
-	stmt *s = stmt_create(st_aggr);
+	stmt *s = stmt_create(sa, st_aggr);
 
 	s->op1.stval = op1;
 	s->op2.stval = op2;
 	s->nrcols = 1;
 	s->nrcols = 0;
-	s->h = stmt_dup(op1->h);
+	s->h = op1->h;
 	s->key = 1;
 	s->aggr = 1;
 	s->op4.aggrval = op;
@@ -1862,27 +1613,19 @@ stmt_aggr2(stmt *op1, stmt *op2, sql_subaggr *op)
 }
 
 stmt *
-stmt_alias(stmt *op1, char *tname, char *alias)
+stmt_alias(sql_allocator *sa, stmt *op1, char *tname, char *alias)
 {
-	stmt *s = stmt_create(st_alias);
+	stmt *s = stmt_create(sa, st_alias);
 
 	s->op1.stval = op1;
 	if (tname)
-		s->op2.stval = stmt_atom_string(tname);
-	s->op3.stval = stmt_atom_string(alias);
-	s->h = stmt_dup(op1->h);
-	s->t = stmt_dup(op1->t);
+		s->op2.stval = stmt_atom_string(sa, tname);
+	s->op3.stval = stmt_atom_string(sa, alias);
+	s->h = op1->h;
+	s->t = op1->t;
 	s->nrcols = op1->nrcols;
 	s->key = op1->key;
 	s->aggr = op1->aggr;
-	return s;
-}
-
-stmt *
-stmt_dup(stmt *s)
-{
-	if (s)
-		sql_ref_inc(&s->ref);
 	return s;
 }
 
@@ -2078,22 +1821,22 @@ stmt_has_null( stmt *s )
 }
 
 static char *
-func_name(char *n1, char *n2)
+func_name(sql_allocator *sa, char *n1, char *n2)
 {
 	int l1 = _strlen(n1), l2; 
 
 	if (!n2)
-		return _strdup(n1);
+		return sa_strdup(sa, n1);
 	l2 = _strlen(n2);
 
 	if (l2 > 16) {		/* only support short names */
-		char *ns = NEW_ARRAY(char, l2 + 1);
+		char *ns = SA_NEW_ARRAY(sa, char, l2 + 1);
 
 		strncpy(ns, n2, l2);
 		ns[l2] = 0;
 		return ns;
 	} else {
-		char *ns = NEW_ARRAY(char, l1 + l2 + 2), *s = ns;
+		char *ns = SA_NEW_ARRAY(sa, char, l1 + l2 + 2), *s = ns;
 
 		strncpy(ns, n1, l1);
 		ns += l1;
@@ -2106,13 +1849,13 @@ func_name(char *n1, char *n2)
 }
 
 char *
-column_name(stmt *st)
+column_name(sql_allocator *sa, stmt *st)
 {
 	switch (st->type) {
 	case st_reverse:
 	case st_order:
 	case st_reorder:
-		return column_name(st->op1.stval);
+		return column_name(sa, st->op1.stval);
 	case st_const:
 	case st_join:
 	case st_join2:
@@ -2120,7 +1863,7 @@ column_name(stmt *st)
 	case st_outerjoin:
 	case st_derive:
 	case st_rs_column:
-		return column_name(st->op2.stval);
+		return column_name(sa, st->op2.stval);
 
 	case st_mirror:
 	case st_group:
@@ -2141,44 +1884,38 @@ column_name(stmt *st)
 	case st_diff:
 	case st_unique:
 	case st_convert:
-		return column_name(st->op1.stval);
+		return column_name(sa, st->op1.stval);
 
 	case st_unop:
 	case st_binop:
 	case st_Nop:
 	{
-		char *cn = column_name(st->op1.stval);
-		char *r = func_name(st->op4.funcval->func->base.name, cn);
-
-		if (cn) _DELETE(cn);
-		return r;
+		char *cn = column_name(sa, st->op1.stval);
+		return func_name(sa, st->op4.funcval->func->base.name, cn);
 	}
 	case st_aggr:
 	{
-		char *cn = column_name(st->op1.stval);
-		char *r = func_name(st->op4.aggrval->aggr->base.name, cn);
-
-		if (cn) _DELETE(cn);
-		return r;
+		char *cn = column_name(sa, st->op1.stval);
+		return func_name(sa, st->op4.aggrval->aggr->base.name, cn);
 	}
 	case st_alias:
-		return column_name(st->op3.stval);
+		return column_name(sa, st->op3.stval);
 	case st_bat:
-		return _strdup(st->op1.cval->base.name);
+		return sa_strdup(sa, st->op1.cval->base.name);
 	case st_atom:
 		if (st->op1.aval->data.vtype == TYPE_str)
-			return atom2string(st->op1.aval);
+			return atom2string(sa, st->op1.aval);
 	case st_var:
 	case st_temp:
 	case st_single:
-		return _strdup("single_value");
+		return sa_strdup(sa, "single_value");
 
 	case st_relselect:
 	case st_releqjoin:
 	case st_reljoin:
 	case st_list:
 		if (list_length(st->op1.lval))
-			return column_name(st->op1.lval->h->data);
+			return column_name(sa, st->op1.lval->h->data);
 		return NULL;
 	default:
 		fprintf(stderr, "missing column name %u: %s\n", st->type, st_type2string(st->type));
@@ -2187,18 +1924,18 @@ column_name(stmt *st)
 }
 
 char *
-table_name(stmt *st)
+table_name(sql_allocator *sa, stmt *st)
 {
 	switch (st->type) {
 	case st_reverse:
-		return table_name(st->op1.stval);
+		return table_name(sa, st->op1.stval);
 	case st_const:
 	case st_join:
 	case st_join2:
 	case st_joinN:
 	case st_outerjoin:
 	case st_derive:
-		return table_name(st->op2.stval);
+		return table_name(sa, st->op2.stval);
 	case st_mirror:
 	case st_group:
 	case st_group_ext:
@@ -2218,24 +1955,24 @@ table_name(stmt *st)
 	case st_diff:
 	case st_aggr:
 	case st_unique:
-		return table_name(st->op1.stval);
+		return table_name(sa, st->op1.stval);
 
 	case st_basetable:
 	case st_table_clear:
 		if (st->op2.sval)
-			return _strdup(st->op2.sval);
-		return _strdup(st->op1.tval->base.name);
+			return sa_strdup(sa, st->op2.sval);
+		return sa_strdup(sa, st->op1.tval->base.name);
 	case st_bat:
-		return table_name(st->h);
+		return table_name(sa, st->h);
 	case st_alias:
 		if (st->op2.stval)
-			return table_name(st->op2.stval);
+			return table_name(sa, st->op2.stval);
 		else
 			/* there are no table aliases, ie look into the base column */
-			return table_name(st->op1.stval);
+			return table_name(sa, st->op1.stval);
 	case st_atom:
 		if (st->op1.aval->data.vtype == TYPE_str && st->op1.aval->data.val.sval && _strlen(st->op1.aval->data.val.sval))
-			return atom2string(st->op1.aval);
+			return atom2string(sa, st->op1.aval);
 
 	case st_var:
 	case st_temp:
@@ -2249,18 +1986,18 @@ table_name(stmt *st)
 }
 
 char *
-schema_name(stmt *st)
+schema_name(sql_allocator *sa, stmt *st)
 {
 	switch (st->type) {
 	case st_reverse:
-		return schema_name(st->op1.stval);
+		return schema_name(sa, st->op1.stval);
 	case st_const:
 	case st_join:
 	case st_join2:
 	case st_joinN:
 	case st_outerjoin:
 	case st_derive:
-		return schema_name(st->op2.stval);
+		return schema_name(sa, st->op2.stval);
 	case st_mirror:
 	case st_group:
 	case st_group_ext:
@@ -2283,16 +2020,16 @@ schema_name(stmt *st)
 	case st_binop:
 	case st_Nop:
 	case st_aggr:
-		return schema_name(st->op1.stval);
+		return schema_name(sa, st->op1.stval);
 	case st_alias:
 		/* there are no schema aliases, ie look into the base column */
-		return schema_name(st->op1.stval);
+		return schema_name(sa, st->op1.stval);
 	case st_bat:
-		return _strdup(st->op1.cval->t->s->base.name);
+		return sa_strdup(sa, st->op1.cval->t->s->base.name);
 	case st_column:
 		if (st->op4.tval)
-			return _strdup(st->op4.tval->s->base.name);
-		return schema_name(st->op1.stval);
+			return sa_strdup(sa, st->op4.tval->s->base.name);
+		return schema_name(sa, st->op1.stval);
 	case st_atom:
 		return NULL;
 	case st_var:
@@ -2304,25 +2041,25 @@ schema_name(stmt *st)
 	case st_reljoin:
 	case st_list:
 		if (list_length(st->op1.lval))
-			return schema_name(st->op1.lval->h->data);
+			return schema_name(sa, st->op1.lval->h->data);
 		return NULL;
 	default:
 		return NULL;
 	}
 }
 
-stmt *stmt_while(stmt *cond, stmt *whilestmts )
+stmt *stmt_while(sql_allocator *sa, stmt *cond, stmt *whilestmts )
 {
-	stmt *s = stmt_create(st_while);
+	stmt *s = stmt_create(sa, st_while);
 
 	s->op1.stval = cond;
 	s->op2.stval = whilestmts;
 	return s;
 }
 
-stmt *stmt_if(stmt *cond, stmt *ifstmts, stmt *elsestmts)
+stmt *stmt_if(sql_allocator *sa, stmt *cond, stmt *ifstmts, stmt *elsestmts)
 {
-	stmt *s = stmt_create(st_if);
+	stmt *s = stmt_create(sa, st_if);
 
 	s->op1.stval = cond;
 	s->op2.stval = ifstmts;
@@ -2330,27 +2067,27 @@ stmt *stmt_if(stmt *cond, stmt *ifstmts, stmt *elsestmts)
 	return s;
 }
 
-stmt *stmt_return(stmt *val, int nr_declared_tables)
+stmt *stmt_return(sql_allocator *sa, stmt *val, int nr_declared_tables)
 {
-	stmt *s = stmt_create(st_return);
+	stmt *s = stmt_create(sa, st_return);
 
 	s->op1.stval = val;
 	s->flag = nr_declared_tables;
 	return s;
 }
 
-stmt *stmt_assign(char *varname, stmt *val, int level)
+stmt *stmt_assign(sql_allocator *sa, char *varname, stmt *val, int level)
 {
-	stmt *s = stmt_create(st_assign);
+	stmt *s = stmt_create(sa, st_assign);
 
-	s->op1.stval = stmt_atom_string(_strdup(varname));
+	s->op1.stval = stmt_atom_string(sa, sa_strdup(sa, varname));
 	s->op2.stval = val;
 	s->flag = (level<<1);
 	return s;
 }
 
 static int 
-stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
+stmt_stmt2dot(sql_allocator *sa, stmt *s, int l, int *i, FILE *fp)
 {
 	node *n;
 	int j;
@@ -2361,8 +2098,6 @@ stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
 		fprintf(fp,"id%d[label=\"%s\\n",
 			-(s->optimized), st_type2string(s->type));
 /*
-		if (s->ref.refcnt)
-			fprintf(fp," refcnt=%d", s->ref.refcnt);
 		if (s->nrcols)
 			fprintf(fp," nrcols=%d", (int)s->nrcols);
 */
@@ -2387,7 +2122,7 @@ stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
 		case st_atom:
 			if (s->op1.aval) 
 				fprintf(fp," value='%s'", 
-					atom2string(s->op1.aval));
+					atom2string(sa, s->op1.aval));
 			break;
 		default:
 			break;
@@ -2401,28 +2136,28 @@ stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
 			if (s->op1.lval)
 			    for (j=1, n=s->op1.lval->h; n; n=n->next, j++)
 				fprintf(fp, "id%d -> id%d [headlabel=\"1.%d\"];\n",
-					stmt_stmt2dot(n->data, l, i, fp), -(s->optimized), j);
+					stmt_stmt2dot(sa, n->data, l, i, fp), -(s->optimized), j);
 			if (s->op2.lval)
 			    for (j=1, n=s->op2.lval->h; n; n=n->next, j++)
 				fprintf(fp, "id%d -> id%d [headlabel=\"2.%d\"];\n",
-					stmt_stmt2dot(n->data, l, i, fp), -(s->optimized), j);
+					stmt_stmt2dot(sa, n->data, l, i, fp), -(s->optimized), j);
 			break;
 
 		case st_reljoin:
 			if (s->op1.stval)
 				fprintf(fp, "id%d -> id%d [headlabel=\"1\"];\n",
-					stmt_stmt2dot(s->op1.stval, l, i, fp), -(s->optimized));
+					stmt_stmt2dot(sa, s->op1.stval, l, i, fp), -(s->optimized));
 			if (s->op2.lval)
 			    for (j=1, n=s->op2.lval->h; n; n=n->next, j++)
 				fprintf(fp, "id%d -> id%d [headlabel=\"2.%d\"];\n",
-					stmt_stmt2dot(n->data, l, i, fp), -(s->optimized), j);
+					stmt_stmt2dot(sa, n->data, l, i, fp), -(s->optimized), j);
 			break;
 
 		case st_list:
 			if (s->op1.lval)
 			    for (j=1, n=s->op1.lval->h; n; n=n->next, j++)
 				fprintf(fp, "id%d -> id%d [headlabel=\"1.%d\"];\n",
-					stmt_stmt2dot(n->data, l, i, fp), -(s->optimized), j);
+					stmt_stmt2dot(sa, n->data, l, i, fp), -(s->optimized), j);
 
 
 			break;
@@ -2439,7 +2174,6 @@ stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
 			}
 			break;
 
-		/* reference only independently managed resources */
 		case st_basetable:
 		case st_dbat:
 		case st_delete:
@@ -2462,7 +2196,7 @@ stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
 		case st_convert:
 			if (s->op1.stval) 
 				fprintf(fp, "id%d -> id%d [headlabel=\"1\"];\n",
-					stmt_stmt2dot(s->op1.stval, l, i, fp), -(s->optimized));
+					stmt_stmt2dot(sa, s->op1.stval, l, i, fp), -(s->optimized));
 			break;
 
 		/* large group with only up till 3 operants */ 
@@ -2494,10 +2228,10 @@ stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
 		case st_export:
 			if (s->op1.stval) 
 				fprintf(fp, "id%d -> id%d [headlabel=\"1\"];\n",
-					stmt_stmt2dot(s->op1.stval, l, i, fp), -(s->optimized));
+					stmt_stmt2dot(sa, s->op1.stval, l, i, fp), -(s->optimized));
 			if (s->type == st_export && s->op4.stval) 
 				fprintf(fp, "id%d -> id%d [headlabel=\"4\"];\n",
-					stmt_stmt2dot(s->op4.stval, l, i, fp), -(s->optimized));
+					stmt_stmt2dot(sa, s->op4.stval, l, i, fp), -(s->optimized));
 			break;
 
 		case st_trans:
@@ -2511,17 +2245,17 @@ stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
 		}
 		if (s->h) 
 			fprintf(fp, "id%d -> id%d [headlabel=\"h\",color=green];\n",
-				stmt_stmt2dot(s->h, l, i, fp), -(s->optimized));
+				stmt_stmt2dot(sa, s->h, l, i, fp), -(s->optimized));
 		if (s->t) 
 			fprintf(fp, "id%d -> id%d [headlabel=\"t\",color=orange];\n",
-				stmt_stmt2dot(s->t, l, i, fp), -(s->optimized));
+				stmt_stmt2dot(sa, s->t, l, i, fp), -(s->optimized));
 	}
 
 	return -(s->optimized);
 }
 
 int 
-stmt2dot(stmt *s, int i, char *fn)
+stmt2dot(sql_allocator *sa, stmt *s, int i, char *fn)
 {
 	FILE *fp = fopen(fn, "w");
 	if (fp) {
@@ -2529,7 +2263,7 @@ stmt2dot(stmt *s, int i, char *fn)
 
 		i *= -10;
 		fprintf(fp, "\ndigraph %d {\nnode[shape=box,fontname=Helvetica];\nedge[labelfontname=Helvetica,labelfontcolor=red];\n", i);
-		res = stmt_stmt2dot(s, i, &i, fp);
+		res = stmt_stmt2dot(sa, s, i, &i, fp);
 		fprintf(fp, "}\n");
 		fclose(fp);
 		return res;
@@ -2537,45 +2271,47 @@ stmt2dot(stmt *s, int i, char *fn)
 	return -1;
 }
 
-static void dump1(stmt *s, char *name, int *nr)
+static int print_stmt(sql_allocator *sa, stmt *s, int *nr);
+
+static void dump1(sql_allocator *sa, stmt *s, char *name, int *nr)
 {
 	int o1 = 0;
 
 	if (s->op1.stval)
-		o1 = print_stmt(s->op1.stval, nr);
+		o1 = print_stmt(sa, s->op1.stval, nr);
 
 	printf("s%d = %s( s%d );\n", -s->nr, name, o1);
 }
 
-static void dump2(stmt *s, char *name, int *nr)
+static void dump2(sql_allocator *sa, stmt *s, char *name, int *nr)
 {
 	int o1 = 0, o2 = 0;
 
 	if (s->op1.stval)
-		o1 = print_stmt(s->op1.stval, nr);
+		o1 = print_stmt(sa, s->op1.stval, nr);
 	if (s->op2.stval)
-		o2 = print_stmt(s->op2.stval, nr);
+		o2 = print_stmt(sa, s->op2.stval, nr);
 
 	printf("s%d = %s( s%d, s%d );\n", -s->nr, name, o1, o2);
 }
 
-static void dump3(stmt *s, char *name, int *nr)
+static void dump3(sql_allocator *sa, stmt *s, char *name, int *nr)
 {
 	int o1 = 0, o2 = 0, o3 = 0;
 
 	if (s->op1.stval)
-		o1 = print_stmt(s->op1.stval, nr);
+		o1 = print_stmt(sa, s->op1.stval, nr);
 	if (s->op2.stval)
-		o2 = print_stmt(s->op2.stval, nr);
+		o2 = print_stmt(sa, s->op2.stval, nr);
 	if (s->op3.stval)
-		o3 = print_stmt(s->op3.stval, nr);
+		o3 = print_stmt(sa, s->op3.stval, nr);
 
 	printf("s%d = %s( s%d, s%d, s%d );\n", -s->nr, name, o1, o2, o3);
 }
 
 
-int 
-print_stmt(stmt *s, int *nr)
+static int 
+print_stmt(sql_allocator *sa, stmt *s, int *nr)
 {
 	node *n;
 	str a;
@@ -2614,90 +2350,89 @@ print_stmt(stmt *s, int *nr)
 			else 
 				printf("s%d = A%d\n", -s->nr, s->flag);
 			break;
-	case st_atom:	a = atom2string(s->op1.aval);
+	case st_atom:	a = atom2string(sa, s->op1.aval);
 			printf("s%d = %s\n", -s->nr, a);
-			GDKfree(a);
 			break;
-	case st_column:  s->nr = -print_stmt(s->op1.stval, nr); break;
+	case st_column:  s->nr = -print_stmt(sa, s->op1.stval, nr); break;
 				
 	case st_bat: 	 printf("s%d = Column(\"%s\".\"%s\".\"%s\", %d);\n", -s->nr, s->op1.cval->t->s->base.name, s->op1.cval->t->base.name, s->op1.cval->base.name, s->flag); break;
 	case st_dbat:    printf("s%d = Table(\"%s\".\"%s\");\n", -s->nr, s->op1.tval->s->base.name, s->op1.tval->base.name); break;
 	case st_idxbat:  printf("s%d = Index(\"%s\".\"%s\".\"%s\", %d);\n", -s->nr, s->op1.idxval->t->s->base.name, s->op1.idxval->t->base.name, s->op1.idxval->base.name, s->flag); break;
-	case st_const: 	 dump2(s, "project", nr); break;
-	case st_mark: 	 dump2(s, "mark", nr); break;
-	case st_gen_group: dump1(s, "group", nr); break;
-	case st_reverse: dump1(s, "reverse", nr); break;
-	case st_mirror:  dump1(s, "mirror", nr); break;
-	case st_limit:   dump3(s, "limit", nr); break;
-	case st_order:   dump1(s, "order", nr); break;
-	case st_reorder: dump2(s, "reorder", nr); break;
-	case st_ordered: dump2(s, "ordered", nr); s->nr = -s->op1.stval->nr; break;
+	case st_const: 	 dump2(sa, s, "project", nr); break;
+	case st_mark: 	 dump2(sa, s, "mark", nr); break;
+	case st_gen_group: dump1(sa, s, "group", nr); break;
+	case st_reverse: dump1(sa, s, "reverse", nr); break;
+	case st_mirror:  dump1(sa, s, "mirror", nr); break;
+	case st_limit:   dump3(sa, s, "limit", nr); break;
+	case st_order:   dump1(sa, s, "order", nr); break;
+	case st_reorder: dump2(sa, s, "reorder", nr); break;
+	case st_ordered: dump2(sa, s, "ordered", nr); s->nr = -s->op1.stval->nr; break;
 	case st_select:
 	case st_uselect: 
 			if (s->flag == cmp_like || s->flag == cmp_notlike ||
 			    s->flag == cmp_ilike || s->flag == cmp_notilike)
-				dump3(s, "likeselect", nr);
+				dump3(sa, s, "likeselect", nr);
 			else
-				dump2(s, "select", nr);
+				dump2(sa, s, "select", nr);
 			break;
 	case st_select2:
 	case st_uselect2:
-			dump3(s, "select", nr); break;
+			dump3(sa, s, "select", nr); break;
 	case st_selectN:
 	case st_uselectN:
-			dump2(s, "selectN", nr); break;
-	case st_semijoin: dump2(s, "semijoin", nr); break;
-	case st_diff:	dump2(s, "diff", nr); break;
-	case st_union:	dump2(s, "union", nr); break;
+			dump2(sa, s, "selectN", nr); break;
+	case st_semijoin: dump2(sa, s, "semijoin", nr); break;
+	case st_diff:	dump2(sa, s, "diff", nr); break;
+	case st_union:	dump2(sa, s, "union", nr); break;
 	case st_outerjoin:
 	case st_join:	
 			if (s->flag == cmp_all)
-				dump2(s, "crossproduct", nr); 
+				dump2(sa, s, "crossproduct", nr); 
 			else
-				dump2(s, "join", nr); 
+				dump2(sa, s, "join", nr); 
 			break;
 	case st_join2:	
-			dump3(s, "join", nr); break;
+			dump3(sa, s, "join", nr); break;
 	case st_joinN:	
-			dump2(s, "joinN", nr); break;
-	case st_group:	dump1(s, "group", nr); break;
-	case st_group_ext:	dump1(s, "extent", nr); break;
-	case st_derive:	dump2(s, "derive", nr); break;
-	case st_convert:dump1(s, "convert", nr); break;
-	case st_unop:	dump1(s, s->op4.funcval->func->imp, nr); break;
-	case st_binop:	dump2(s, s->op4.funcval->func->imp, nr); break;
+			dump2(sa, s, "joinN", nr); break;
+	case st_group:	dump1(sa, s, "group", nr); break;
+	case st_group_ext:	dump1(sa, s, "extent", nr); break;
+	case st_derive:	dump2(sa, s, "derive", nr); break;
+	case st_convert:dump1(sa, s, "convert", nr); break;
+	case st_unop:	dump1(sa, s, s->op4.funcval->func->imp, nr); break;
+	case st_binop:	dump2(sa, s, s->op4.funcval->func->imp, nr); break;
 	case st_aggr:	
 			if (s->flag)
-				dump2(s, s->op4.aggrval->aggr->imp, nr);
+				dump2(sa, s, s->op4.aggrval->aggr->imp, nr);
 			else
-				dump1(s, s->op4.aggrval->aggr->imp, nr);
+				dump1(sa, s, s->op4.aggrval->aggr->imp, nr);
 			break;
-	case st_append:	dump2(s, "append", nr); break;
+	case st_append:	dump2(sa, s, "append", nr); break;
 	case st_append_col: 
 	case st_update_col: { 
 			sql_column *c = s->op1.cval; 
 			char *n = (s->type == st_append_col)?"append":"update";
-			int r = print_stmt(s->op2.stval, nr);
+			int r = print_stmt(sa, s->op2.stval, nr);
 			printf("s%d = %s(\"%s\".\"%s\".\"%s\", s%d);\n", -s->nr, n, c->t->s->base.name, c->t->base.name, c->base.name, r);
 	} break;
 	case st_append_idx: 
 	case st_update_idx: {
 			sql_idx *i = s->op1.idxval; 
 			char *n = (s->type == st_append_idx)?"append":"update";
-			int r = print_stmt(s->op2.stval, nr);
+			int r = print_stmt(sa, s->op2.stval, nr);
 			printf("s%d = %s_idx(\"%s\".\"%s\".\"%s\", s%d);\n", -s->nr, n, i->t->s->base.name, i->t->base.name, i->base.name, r);
 	} break;
 	case st_delete:{
 			sql_table *t = s->op1.tval;
-			int r = print_stmt(s->op2.stval, nr);
+			int r = print_stmt(sa, s->op2.stval, nr);
 			printf("s%d = delete(\"%s\".\"%s\", s%d);\n", -s->nr, t->s->base.name, t->base.name, r);
 	} break;
 	case st_table_clear: printf("s%d := clear(\"%s\".\"%s\");\n", -s->nr, s->op1.tval->s->base.name, s->op1.tval->base.name); break;
-	case st_alias: 	dump3(s, "alias", nr); break;
-	case st_output: dump1(s, "output", nr); break;
-	case st_table:  dump1(s, "table", nr); break;
+	case st_alias: 	dump3(sa, s, "alias", nr); break;
+	case st_output: dump1(sa, s, "output", nr); break;
+	case st_table:  dump1(sa, s, "table", nr); break;
 	case st_Nop:	
-		(void)print_stmt(s->op1.stval, nr);
+		(void)print_stmt(sa, s->op1.stval, nr);
 		printf("s%d = %s(list)\n", -s->nr, s->op4.funcval->func->imp);
 		break;
 	case st_list:
@@ -2705,7 +2440,7 @@ print_stmt(stmt *s, int *nr)
 		if (s->type == st_relselect) 
 			printf("s%d = relselect(\n", -s->nr);
 		for (n = s->op1.lval->h; n; n = n->next) 
-			(void) print_stmt(n->data, nr);
+			(void) print_stmt(sa, n->data, nr);
 		if (s->type != st_list)
 			printf(")\n");
 		break;
@@ -2713,20 +2448,20 @@ print_stmt(stmt *s, int *nr)
 		printf("s%d = releqjoin(\n", -s->nr);
 		printf("R(\n");
 		for (n = s->op1.lval->h; n; n = n->next) 
-			(void) print_stmt(n->data, nr);
+			(void) print_stmt(sa, n->data, nr);
 		printf(")\nL(\n");
 		for (n = s->op2.lval->h; n; n = n->next) 
-			(void) print_stmt(n->data, nr);
+			(void) print_stmt(sa, n->data, nr);
 		printf("))\n");
 		break;
 	case st_reljoin:
 		printf("s%d = reljoin(\n", -s->nr);
 		if (s->op1.stval)
-			print_stmt(s->op1.stval, nr);
+			print_stmt(sa, s->op1.stval, nr);
 		printf("(\n");
 		if (s->op2.lval)
 			for (n = s->op2.lval->h; n; n = n->next) 
-				(void) print_stmt(n->data, nr);
+				(void) print_stmt(sa, n->data, nr);
 		printf("))\n");
 		break;
 	case st_basetable:	
@@ -2738,22 +2473,14 @@ print_stmt(stmt *s, int *nr)
 	return s->nr;
 }
 
-void
-Sprint(stmt *s)
-{
-	int nr = 0;
-
-	(void)print_stmt(s, &nr);
-}
-
-stmt *const_column(stmt *val ) 
+stmt *const_column(sql_allocator *sa, stmt *val ) 
 {
 	sql_subtype *ct = tail_type(val);
 /*
 	stmt *temp = stmt_temp(ct);
 	return stmt_append(temp, val);
 */
-	stmt *s = stmt_create(st_single);
+	stmt *s = stmt_create(sa, st_single);
 
 	s->op1.stval = val;
 	s->op4.typeval = *ct;

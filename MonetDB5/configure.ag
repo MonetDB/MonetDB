@@ -102,7 +102,6 @@ AM_MONETDB_LIB_HWCOUNTERS()
 dnl src/modules/mal/mal_mapi.mx does UNIX domain socket handling
 AM_MONETDB_MSG_CONTROL()
 AM_ICONV()
-AC_TYPE_SIGNAL() #RETSIGTYPE
 
 req_pcre_ver='4.5'
 PKG_CHECK_MODULES([pcre], [libpcre >= $req_pcre_ver])
@@ -123,6 +122,7 @@ PKG_CHECK_MODULES([openssl], [openssl >= 0.9.8f])
 PKG_CHECK_EXISTS([libxml-2.0], [have_libxml2="yes"], [have_libxml2="no"])
 if test x"$have_libxml2" = x"yes" ; then
 	PKG_CHECK_MODULES([libxml2], [libxml-2.0])
+	AC_DEFINE(HAVE_LIBXML2, 1, [Define if you have the libxml2 library])
 fi
 AM_CONDITIONAL(HAVE_LIBXML2, test x"$have_libxml2" != xno)
 
@@ -174,7 +174,6 @@ AC_DEFINE(HAVE___RESTRICT__, 1, [Define if the compiler supports the __restrict_
 dnl Checks for library functions.
 AC_SEARCH_LIBS(crypt, crypt, AC_DEFINE(HAVE_CRYPT, 1, [crypt]))
 AC_CHECK_FUNCS([asctime_r ctime_r fpclass fpclassify ftime isinf localtime_r putenv sbrk setenv setsid sigaction strncasecmp strcasestr strtoll sysconf strptime strftime])
-AC_CHECK_DECLS([strtoll])
 
 asctime_r3=yes
 AC_MSG_CHECKING(asctime_r3)

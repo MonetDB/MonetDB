@@ -62,9 +62,8 @@
 #define mod_debug 2
 #define mod_trace 4
 
-struct stmt;
 typedef struct sql_var {
-	void *s;	/* stmt or sql_rel */
+	void *s;	
 	char *name;
 	ValRecord value;
 	sql_subtype type;
@@ -114,7 +113,6 @@ typedef struct mvc {
 
 	sql_session *session;	
 
-	/* current stmt variables */
 	int type;		/* query type */
 	int label;		/* numbers for relational projection labels */
 	list *cascade_action;  /* protection against recursive cascade actions */
@@ -167,7 +165,7 @@ extern sql_key *mvc_bind_ukey(sql_table *t, list *cols);
 extern sql_trigger *mvc_bind_trigger(mvc *c, sql_schema *s, char *tname);
 
 extern sql_type *mvc_create_type(mvc *sql, sql_schema *s, char *sqlname, int digits, int scale, int radix, char *impl);
-extern sql_func *mvc_create_func(mvc *sql, sql_schema *s, char *name, list *args, sql_subtype *res, bit issql, bit aggr, char *mod, char *impl, int is_func);
+extern sql_func *mvc_create_func(mvc *sql, sql_schema *s, char *name, list *args, sql_subtype *res, bit aggr, char *mod, char *impl, char *query, int is_func);
 extern void mvc_drop_func(mvc *c, sql_schema *s, sql_func * func, int drop_action);
 extern void mvc_drop_all_func(mvc *c, sql_schema *s, list *list_func, int drop_action);
 
@@ -215,7 +213,7 @@ extern int mvc_disconnect_catalog_ALL(mvc *m);
 extern list *mvc_get_connection(mvc *m, int id, char *server, char *db, char *db_alias, char * user);
 
 /* variable management */
-extern void stack_push_var(mvc *sql, char *name, struct stmt *var, sql_subtype *type);
+extern void stack_push_var(mvc *sql, char *name, sql_subtype *type);
 extern void stack_push_rel_var(mvc *sql, char *name, sql_rel *var, sql_subtype *type);
 extern void stack_push_rel_view(mvc *sql, char *name, sql_rel *view);
 extern void stack_set_rel_view(mvc *sql, char *name, sql_rel *rel);
@@ -225,11 +223,14 @@ extern void stack_pop_frame(mvc *sql);
 extern void stack_pop_until(mvc *sql, int top);
 extern sql_subtype *stack_find_type(mvc *sql, char *name);
 extern sql_rel *stack_find_rel_view(mvc *sql, char *name);
-extern struct stmt *stack_find_var(mvc *sql, char *name);
+extern int stack_find_var(mvc *sql, char *name);
 extern sql_rel *stack_find_rel_var(mvc *sql, char *name);
 /* find var in current frame */
 extern int frame_find_var(mvc *sql, char *name);
+/* find frame holding variable 'name' */
 extern int stack_find_frame(mvc *sql, char *name);
+/* find frame with given name */
+extern int stack_has_frame(mvc *sql, char *name);
 extern int stack_nr_of_declared_tables(mvc *sql);
 
 extern ValRecord * stack_get_var(mvc *sql, char *name);

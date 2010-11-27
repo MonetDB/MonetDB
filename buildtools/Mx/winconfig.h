@@ -30,12 +30,8 @@
 /* Directory separator */
 #define DIR_SEP '\\'
 
-/* Define to 1 if you have the declaration of `getopt', and to 0 if you don't.
-   */
-#define HAVE_DECL_GETOPT 0
-
-/* Define to 1 if you don't have `vprintf' but do have `_doprnt.' */
-/* #undef HAVE_DOPRNT */
+/* Define to 1 if you have the `getopt' function. */
+/* #undef HAVE_GETOPT */
 
 /* Define to 1 if you have the <getopt.h> header file. */
 /* #undef HAVE_GETOPT_H */
@@ -114,9 +110,6 @@
 
 /* Define to 1 if you have the <utime.h> header file. */
 /* #undef HAVE_UTIME_H */
-
-/* Define to 1 if you have the `vprintf' function. */
-#define HAVE_VPRINTF 1
 
 /* Define to 1 if `lstat' dereferences a symlink specified with a trailing
    slash. */

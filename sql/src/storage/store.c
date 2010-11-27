@@ -279,7 +279,7 @@ load_key(sql_trans *tr, sql_table *t, oid rid)
 	v = table_funcs.column_find_value(tr, find_sql_column(keys, "id"), rid);
  	kid = *(sqlid *)v;			_DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(keys, "name"), rid);
-	base_init(&nk->base, kid, TR_OLD, v);	_DELETE(v);
+	base_init(NULL, &nk->base, kid, TR_OLD, v);	_DELETE(v);
 	nk->type = ktype;
 	nk->columns = list_create((fdestroy) &kc_destroy);
 	nk->t = t;
@@ -390,7 +390,7 @@ load_idx(sql_trans *tr, sql_table *t, oid rid)
 	v = table_funcs.column_find_value(tr, find_sql_column(idxs, "id"), rid);
 	iid = *(sqlid *)v;			_DELETE(v);	
 	v = table_funcs.column_find_value(tr, find_sql_column(idxs, "name"), rid);
-	base_init(&ni->base, iid, TR_OLD, v);	_DELETE(v);
+	base_init(NULL, &ni->base, iid, TR_OLD, v);	_DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(idxs, "type"), rid);
 	ni->type = (idx_type) *(int*)v;		_DELETE(v);
 	ni->columns = list_create((fdestroy) &kc_destroy);
@@ -446,7 +446,7 @@ load_trigger(sql_trans *tr, sql_table *t, oid rid)
 	v = table_funcs.column_find_value(tr, find_sql_column(triggers, "id"), rid);
 	tid = *(sqlid *)v;			_DELETE(v);	
 	v = table_funcs.column_find_value(tr, find_sql_column(triggers, "name"), rid);
-	base_init(&nt->base, tid, TR_OLD, v);	_DELETE(v);
+	base_init(NULL, &nt->base, tid, TR_OLD, v);	_DELETE(v);
 
 	v = table_funcs.column_find_value(tr, find_sql_column(triggers, "time"), rid);
 	nt->time = *(sht*)v;			_DELETE(v);
@@ -499,7 +499,7 @@ load_column(sql_trans *tr, sql_table *t, oid rid)
 	v = table_funcs.column_find_value(tr, find_sql_column(columns, "id"), rid);
 	cid = *(sqlid *)v;			_DELETE(v);	
 	v = table_funcs.column_find_value(tr, find_sql_column(columns, "name"), rid);
-	base_init(&c->base, cid, TR_OLD, v);	_DELETE(v);
+	base_init(NULL, &c->base, cid, TR_OLD, v);	_DELETE(v);
 
 	tpe = table_funcs.column_find_value(tr, find_sql_column(columns, "type"), rid);
 	v = table_funcs.column_find_value(tr, find_sql_column(columns, "type_digits"), rid);
@@ -554,7 +554,7 @@ load_table(sql_trans *tr, sql_schema *s, oid rid)
 	v = table_funcs.column_find_value(tr, find_sql_column(tables, "id"), rid);
 	tid = *(sqlid *)v;			_DELETE(v);	
 	v = table_funcs.column_find_value(tr, find_sql_column(tables, "name"), rid);
-	base_init(&t->base, tid, TR_OLD, v);	_DELETE(v);
+	base_init(NULL, &t->base, tid, TR_OLD, v);	_DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(tables, "query"), rid);
 	t->query = NULL;
 	query = (char *)v;
@@ -650,7 +650,7 @@ load_type(sql_trans *tr, sql_schema *s, oid rid)
 	v = table_funcs.column_find_value(tr, find_sql_column(types, "id"), rid);
 	tid = *(sqlid *)v;			_DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(types, "systemname"), rid);
-	base_init(&t->base, tid, TR_OLD, v);	_DELETE(v);
+	base_init(NULL, &t->base, tid, TR_OLD, v);	_DELETE(v);
 	t->sqlname = table_funcs.column_find_value(tr, find_sql_column(types, "sqlname"), rid);
 	v = table_funcs.column_find_value(tr, find_sql_column(types, "digits"), rid);
 	t->digits = *(int *)v; 			_DELETE(v); 
@@ -724,7 +724,7 @@ load_func(sql_trans *tr, sql_schema *s, oid rid)
 	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "id"), rid);
 	fid = *(sqlid *)v;			_DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "name"), rid);
-	base_init(&t->base, fid, TR_OLD, v); 	_DELETE(v);
+	base_init(NULL, &t->base, fid, TR_OLD, v); 	_DELETE(v);
 	t->imp = table_funcs.column_find_value(tr, find_sql_column(funcs, "func"), rid);
 	t->mod = table_funcs.column_find_value(tr, find_sql_column(funcs, "mod"), rid);
 	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "sql"), rid);
@@ -737,6 +737,10 @@ load_func(sql_trans *tr, sql_schema *s, oid rid)
 	t->res.type = NULL;
 	t->is_func = 0;
 	t->s = s;
+	if (t->sql) {
+		t->query = t->imp;
+		t->imp = NULL;
+	}
 
 	arg_func_id = find_sql_column(args, "func_id");
 	arg_number = find_sql_column(args, "number");
@@ -795,7 +799,7 @@ load_seq(sql_trans *tr, sql_schema * s, oid rid)
 	v = table_funcs.column_find_value(tr, find_sql_column(seqs, "id"), rid);
 	sid = *(sqlid *)v; 			_DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(seqs, "name"), rid);
-	base_init(&seq->base, sid, TR_OLD, v); _DELETE(v);
+	base_init(NULL, &seq->base, sid, TR_OLD, v); _DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(seqs, "start"), rid);
 	seq->start = *(lng *)v;			_DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(seqs, "minvalue"), rid);
@@ -847,7 +851,7 @@ load_schema(sql_trans *tr, sqlid id, oid rid)
 	} else {
 		s = ZNEW(sql_schema);
 		v = table_funcs.column_find_value(tr, find_sql_column(ss, "name"), rid);
-		base_init(&s->base, sid, TR_OLD, v); _DELETE(v);
+		base_init(NULL, &s->base, sid, TR_OLD, v); _DELETE(v);
 		v = table_funcs.column_find_value(tr, 
 			find_sql_column(ss, "authorization"), rid);
 		s->auth_id = *(sqlid *)v; 	_DELETE(v);
@@ -1097,7 +1101,7 @@ bootstrap_create_column(sql_trans *tr, sql_table *t, char *name, char *sqltype, 
 	if (bs_debug)
 		fprintf(stderr, "bootstrap_create_column %s\n", name );
 
-	base_init(&col->base, next_oid(), t->base.flag, name);
+	base_init(NULL, &col->base, next_oid(), t->base.flag, name);
 	sql_find_subtype(&col->type, sqltype, digits, 0);
 	col->def = NULL;
 	col->null = 1;
@@ -1121,7 +1125,7 @@ create_sql_table(sql_allocator *sa, char *name, sht type, bit system, int persis
 	assert((persistence==SQL_PERSIST ||
 		persistence==SQL_DECLARED_TABLE || 
 		commit_action) && commit_action>=0);
-	base_init(&t->base, next_oid(), TR_NEW, name);
+	base_init(sa, &t->base, next_oid(), TR_NEW, name);
 	t->type = type;
 	t->system = system;
 	t->persistence = (temp_t)persistence;
@@ -1145,7 +1149,7 @@ dup_sql_column(sql_allocator *sa, sql_table *t, sql_column *c)
 {
 	sql_column *col = SA_ZNEW(sa, sql_column);
 
-	base_init(&col->base, c->base.id, TR_NEW, c->base.name);
+	base_init(sa, &col->base, c->base.id, TR_NEW, c->base.name);
 	col->type = c->type;
 	col->def = NULL;
 	if (c->def)
@@ -1224,7 +1228,7 @@ bootstrap_create_schema(sql_trans *tr, char *name, int auth_id, int owner)
 	if (bs_debug)
 		fprintf(stderr, "bootstrap_create_schema %s %d %d\n", name, auth_id, owner);
 
-	base_init(&s->base, next_oid(), TR_NEW, name);
+	base_init(NULL, &s->base, next_oid(), TR_NEW, name);
 	s->auth_id = auth_id;
 	s->owner = owner;
 	cs_init(&s->tables, (fdestroy) &table_destroy);
@@ -1598,7 +1602,7 @@ key_dup(sql_trans *tr, int flag, sql_key *k, sql_table *t)
 	    : (sql_key *) ZNEW(sql_fkey);
 	node *n;
 
-	base_init(&nk->base, k->base.id, tr_flag(&k->base, flag), k->base.name);
+	base_init(NULL, &nk->base, k->base.id, tr_flag(&k->base, flag), k->base.name);
 
 	nk->type = k->type;
 	nk->columns = list_create((fdestroy) &kc_destroy);
@@ -1724,7 +1728,7 @@ idx_dup(sql_trans *tr, int flag, sql_idx * i, sql_table *t)
 	sql_idx *ni = ZNEW(sql_idx);
 	node *n;
 
-	base_init(&ni->base, i->base.id, tr_flag(&i->base, flag), i->base.name);
+	base_init(NULL, &ni->base, i->base.id, tr_flag(&i->base, flag), i->base.name);
 
 	ni->columns = list_create((fdestroy) &kc_destroy);
 	ni->t = t;
@@ -1760,7 +1764,7 @@ sql_trans_copy_idx( sql_trans *tr, sql_table *t, sql_idx *i )
 	int nr;
 	sql_idx *ni = ZNEW(sql_idx);
 
-	base_init(&ni->base, i->base.id, TR_NEW, i->base.name);
+	base_init(NULL, &ni->base, i->base.id, TR_NEW, i->base.name);
 
 	ni->columns = list_create((fdestroy) &kc_destroy);
 	ni->t = t;
@@ -1799,7 +1803,7 @@ trigger_dup(sql_trans *tr, int flag, sql_trigger * i, sql_table *t)
 	sql_trigger *nt = ZNEW(sql_trigger);
 	node *n;
 
-	base_init(&nt->base, i->base.id, tr_flag(&i->base, flag), i->base.name);
+	base_init(NULL, &nt->base, i->base.id, tr_flag(&i->base, flag), i->base.name);
 
 	nt->columns = list_create((fdestroy) &kc_destroy);
 	nt->t = t;
@@ -1831,7 +1835,7 @@ column_dup(sql_trans *tr, int flag, sql_column *oc, sql_table *t)
 {
 	sql_column *c = ZNEW(sql_column);
 
-	base_init(&c->base, oc->base.id, tr_flag(&oc->base, flag), oc->base.name);
+	base_init(NULL, &c->base, oc->base.id, tr_flag(&oc->base, flag), oc->base.name);
 	c->type = oc->type;
 	c->def = NULL;
 	if (oc->def)
@@ -1858,7 +1862,7 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c )
 	sql_table *syscolumn = find_sql_table(syss, "_columns");
 	sql_column *col = ZNEW(sql_column);
 
-	base_init(&col->base, c->base.id, TR_NEW, c->base.name);
+	base_init(NULL, &col->base, c->base.id, TR_NEW, c->base.name);
 	col->type = c->type;
 	col->def = NULL;
 	if (c->def)
@@ -1889,7 +1893,7 @@ table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 	node *n;
 	sql_table *t = ZNEW(sql_table);
 
-	base_init(&t->base, ot->base.id, tr_flag(&ot->base, flag), ot->base.name);
+	base_init(NULL, &t->base, ot->base.id, tr_flag(&ot->base, flag), ot->base.name);
 
 	t->type = ot->type;
 	t->system = ot->system;
@@ -1956,7 +1960,7 @@ type_dup(sql_trans *tr, int flag, sql_type *ot, sql_schema * s)
 	sql_type *t = ZNEW(sql_type);
 
 	(void) tr;
-	base_init(&t->base, ot->base.id, tr_flag(&ot->base, flag), ot->base.name);
+	base_init(NULL, &t->base, ot->base.id, tr_flag(&ot->base, flag), ot->base.name);
 
 	t->sqlname = _strdup(ot->sqlname);
 	t->digits = ot->digits;
@@ -1976,10 +1980,11 @@ func_dup(sql_trans *tr, int flag, sql_func *of, sql_schema * s)
 	sql_func *f = ZNEW(sql_func);
 
 	(void)tr;
-	base_init(&f->base, of->base.id, tr_flag(&of->base, flag), of->base.name);
+	base_init(NULL, &f->base, of->base.id, tr_flag(&of->base, flag), of->base.name);
 
-	f->imp = _strdup(of->imp);
-	f->mod = _strdup(of->mod);
+	f->imp = (of->imp)?_strdup(of->imp):NULL;
+	f->mod = (of->mod)?_strdup(of->mod):NULL;
+	f->query = (of->query)?_strdup(of->query):NULL;
 	f->sql = of->sql;
 	f->aggr = of->aggr;
 	f->side_effect = of->side_effect;
@@ -2006,7 +2011,7 @@ seq_dup(sql_trans *tr, int flag, sql_sequence *oseq, sql_schema * s)
 	sql_sequence *seq = ZNEW(sql_sequence);
 
 	(void)tr;
-	base_init(&seq->base, oseq->base.id, tr_flag(&oseq->base, flag), oseq->base.name);
+	base_init(NULL, &seq->base, oseq->base.id, tr_flag(&oseq->base, flag), oseq->base.name);
 
 	seq->start = oseq->start;
 	seq->minvalue = oseq->minvalue;
@@ -2025,7 +2030,7 @@ schema_dup(sql_trans *tr, int flag, sql_schema *os, sql_trans *o)
 	sql_schema *s = ZNEW(sql_schema);
 
 	(void) o;
-	base_init(&s->base, os->base.id, tr_flag(&os->base, flag), os->base.name);
+	base_init(NULL, &s->base, os->base.id, tr_flag(&os->base, flag), os->base.name);
 
 	s->auth_id = os->auth_id;
 	s->owner = os->owner;
@@ -3453,7 +3458,7 @@ sql_trans_create_type(sql_trans *tr, sql_schema * s, char *sqlname, int digits, 
 		return NULL;
 	t = ZNEW(sql_type);
 	systype = find_sql_table(find_sql_schema(tr, "sys"), "types");
-	base_init(&t->base, next_oid(), TR_NEW, impl);
+	base_init(NULL, &t->base, next_oid(), TR_NEW, impl);
 	t->sqlname = _strdup(sqlname);
 	t->digits = digits;
 	t->scale = scale;
@@ -3471,32 +3476,33 @@ sql_trans_create_type(sql_trans *tr, sql_schema * s, char *sqlname, int digits, 
 }
 
 sql_func *
-sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, sql_subtype *res, bit sql, bit aggr, char *mod, char *impl, int is_func)
+sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, sql_subtype *res, bit aggr, char *mod, char *impl, char *query, int is_func)
 {
 	sql_func *t = ZNEW(sql_func);
 	sql_table *sysfunc = find_sql_table(find_sql_schema(tr, "sys"), "functions");
 	sql_table *sysarg = find_sql_table(find_sql_schema(tr, "sys"), "args");
 	node *n;
 	int number = 0;
-	bit se = FALSE;
+	bit se = FALSE, sql;
 
-	base_init(&t->base, next_oid(), TR_NEW, func);
+	base_init(NULL, &t->base, next_oid(), TR_NEW, func);
 	assert(impl && mod);
-	t->imp = _strdup(impl);
-	t->mod = _strdup(mod); 
-	t->sql = sql;
+	t->imp = (impl)?_strdup(impl):NULL;
+	t->mod = (mod)?_strdup(mod):NULL; 
+	sql = t->sql = (query)?1:0;
 	t->aggr = aggr;
 	t->side_effect = se;
 	t->ops = list_dup(args, (fdup)&arg_dup);
 	t->res.scale = t->res.digits = 0;
 	t->res.type = NULL;
 	t->is_func = is_func;
+	t->query = (query)?_strdup(query):NULL;
 	if (res)
 		t->res = *res;
 	t->s = s;
 
 	cs_add(&s->funcs, t, TR_NEW);
-	table_funcs.table_insert(tr, sysfunc, &t->base.id, t->base.name, t->imp, t->mod, &sql, &aggr, &se, &s->base.id);
+	table_funcs.table_insert(tr, sysfunc, &t->base.id, t->base.name, query?query:t->imp, t->mod, &sql, &aggr, &se, &s->base.id);
 	if (t->res.type) {
 		char *name = "result";
 		sqlid id = next_oid();
@@ -3585,7 +3591,7 @@ sql_trans_create_schema(sql_trans *tr, char *name, int auth_id, int owner)
 	sql_schema *s = ZNEW(sql_schema);
 	sql_table *sysschema = find_sql_table(find_sql_schema(tr, "sys"), "schemas");
 
-	base_init(&s->base, next_oid(), TR_NEW, name);
+	base_init(NULL, &s->base, next_oid(), TR_NEW, name);
 	s->auth_id = auth_id;
 	s->owner = owner;
 	cs_init(&s->tables, (fdestroy) &table_destroy);
@@ -3698,7 +3704,7 @@ create_sql_ukey(sql_allocator *sa, sql_table *t, char *name, key_type kt)
  	tk = (sql_ukey *) nk;
 	assert(name);
 
-	base_init(&nk->base, next_oid(), TR_NEW, name);
+	base_init(sa, &nk->base, next_oid(), TR_NEW, name);
 
 	nk->type = kt;
 	nk->columns = list_new(sa);
@@ -3722,7 +3728,7 @@ create_sql_fkey(sql_allocator *sa, sql_table *t, char *name, key_type kt, sql_ke
 	nk = (kt != fkey) ? (sql_key *) SA_ZNEW(sa, sql_ukey) : (sql_key *) SA_ZNEW(sa, sql_fkey);
 
 	assert(name);
-	base_init(&nk->base, next_oid(), TR_NEW, name);
+	base_init(sa, &nk->base, next_oid(), TR_NEW, name);
 	nk->type = kt;
 	nk->columns = list_new(sa);
 	nk->t = t;
@@ -3770,7 +3776,7 @@ create_sql_idx(sql_allocator *sa, sql_table *t, char *name, idx_type it)
 {
 	sql_idx *ni = SA_ZNEW(sa, sql_idx);
 
-	base_init(&ni->base, next_oid(), TR_NEW, name);
+	base_init(sa, &ni->base, next_oid(), TR_NEW, name);
 	ni->columns = list_new(sa);
 	ni->t = t;
 	ni->type = it;
@@ -3784,7 +3790,7 @@ create_sql_column(sql_allocator *sa, sql_table *t, char *name, sql_subtype *tpe)
 {
 	sql_column *col = (sa)?SA_ZNEW(sa, sql_column):ZNEW(sql_column);
 
-	base_init(&col->base, next_oid(), TR_NEW, name);
+	base_init(sa, &col->base, next_oid(), TR_NEW, name);
 	col->type = *tpe;
 	col->def = NULL;
 	col->null = 1;
@@ -4032,7 +4038,7 @@ sql_trans_create_ukey(sql_trans *tr, sql_table *t, char *name, key_type kt)
 	: (sql_key *) ZNEW(sql_fkey);
 
 	assert(name);
-	base_init(&nk->base, next_oid(), TR_NEW, name);
+	base_init(NULL, &nk->base, next_oid(), TR_NEW, name);
 	nk->type = kt;
 	nk->columns = list_create((fdestroy) &kc_destroy);
 	nk->t = t;
@@ -4075,7 +4081,7 @@ sql_trans_create_fkey(sql_trans *tr, sql_table *t, char *name, key_type kt, sql_
 	: (sql_key *) ZNEW(sql_fkey);
 
 	assert(name);
-	base_init(&nk->base, next_oid(), TR_NEW, name);
+	base_init(NULL, &nk->base, next_oid(), TR_NEW, name);
 	nk->type = kt;
 	nk->columns = list_create((fdestroy) &kc_destroy);
 	nk->t = t;
@@ -4309,7 +4315,7 @@ sql_trans_create_idx(sql_trans *tr, sql_table *t, char *name, idx_type it)
 	sql_table *sysidx = find_sql_table(syss, "idxs");
 
 	assert(name);
-	base_init(&ni->base, next_oid(), TR_NEW, name);
+	base_init(NULL, &ni->base, next_oid(), TR_NEW, name);
 	ni->type = it;
 	ni->columns = list_create((fdestroy) &kc_destroy);
 	ni->t = t;
@@ -4421,7 +4427,7 @@ sql_trans_create_trigger(sql_trans *tr, sql_table *t, char *name,
 	str nilptr = ATOMnilptr(TYPE_str);
 
 	assert(name);
-	base_init(&ni->base, next_oid(), TR_NEW, name);
+	base_init(NULL, &ni->base, next_oid(), TR_NEW, name);
 	ni->columns = list_create((fdestroy) &kc_destroy);
 	ni->t = t;
 	ni->time = time;
@@ -4501,7 +4507,7 @@ create_sql_sequence(sql_allocator *sa, sql_schema *s, char *name, lng start, lng
 	sql_sequence *seq = (sa)?SA_ZNEW(sa, sql_sequence):ZNEW(sql_sequence);
 
 	assert(name);
-	base_init(&seq->base, next_oid(), TR_NEW, name);
+	base_init(sa, &seq->base, next_oid(), TR_NEW, name);
 	seq->start = start;
 	seq->minvalue = min;
 	seq->maxvalue = max;

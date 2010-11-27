@@ -1,5 +1,3 @@
-# -*- makefile -*-
-
 # The contents of this file are subject to the MonetDB Public License
 # Version 1.1 (the "License"); you may not use this file except in
 # compliance with the License. You may obtain a copy of the License at
@@ -17,27 +15,6 @@
 # Copyright August 2008-2010 MonetDB B.V.
 # All Rights Reserved.
 
-# treat warnings as errors
-W_CFLAGS = -WX
-
-HAVE_ODBC = 1
-ODBC_LIBS = odbccp32.lib user32.lib
-
-!IFDEF NEED_MX
-RULESMSC = $(TOPDIR)\..\..\buildtools\conf\winrules.msc
-!ELSE
-RULESMSC = ToBeDefined
-!ENDIF
-!INCLUDE $(RULESMSC)
-
-MONETDB_INCLUDEDIR=$(MONETDB_PREFIX)\include\MonetDB
-
-monetdbtools_CFLAGS=-I"$(MONETDB_INCLUDEDIR)\common"
-monetdbtools_LIBS=/libpath:"$(MONETDB_PREFIX)\lib" libstream.lib libmutils.lib
-
-pkg = clients
-CONFIG_H=clients_config.h
-VERSION=1.41.0
-#       ^^^^^^
-# Maintained via vertoo. Please don't modify by hand!
-# Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
+# This loads the MonetDB/SQL module
+library fits;
+include fits;

@@ -258,7 +258,7 @@ main(int argc, char **argv)
 		dump_version(mid, out, "--");
 	}
 	if (functions)
-		c = dump_functions(mid, out, NULL);
+		c = dump_functions(mid, out, NULL, NULL);
 	else
 		c = dump_database(mid, out, describe);
 	mnstr_flush(out);

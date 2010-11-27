@@ -105,26 +105,6 @@
 /* Define if you have the cURL library */
 /* #undef HAVE_CURL */
 
-/* Define to 1 if you have the declaration of `strdup', and to 0 if you don't.
-   */
-#define HAVE_DECL_STRDUP 1
-
-/* Define to 1 if you have the declaration of `strndup', and to 0 if you
-   don't. */
-#define HAVE_DECL_STRNDUP 0
-
-/* Define to 1 if you have the declaration of `strtof', and to 0 if you don't.
-   */
-#define HAVE_DECL_STRTOF 0
-
-/* Define to 1 if you have the declaration of `strtoll', and to 0 if you
-   don't. */
-#if _MSC_VER >= 1300
-#define HAVE_DECL_STRTOLL 1
-#else
-#define HAVE_DECL_STRTOLL 0
-#endif
-
 /* Define to 1 if you have the <dirent.h> header file. */
 /* #undef HAVE_DIRENT_H */
 
@@ -412,12 +392,6 @@
 /* Define if your mallinfo struct has signed elements */
 /* #undef HAVE_SIGNED_MALLINFO) */
 
-/* Define to 1 if you have the `snprintf' function. */
-#define HAVE_SNPRINTF 1
-#ifndef snprintf
-#define snprintf _snprintf
-#endif
-
 /* Define to 1 if the system has the type `socklen_t'. */
 #define HAVE_SOCKLEN_T 1
 typedef int socklen_t;
@@ -546,14 +520,6 @@ typedef int socklen_t;
 /* Define to 1 if you have the <unistd.h> header file. */
 /* #undef HAVE_UNISTD_H */
 
-/* Define to 1 if you have the `vsnprintf' function. */
-#define HAVE_VSNPRINTF 1
-#if _MSC_VER < 1500
-#ifndef vsnprintf
-#define vsnprintf _vsnprintf
-#endif
-#endif
-
 /* Define to 1 if you have the <winsock.h> header file. */
 #define HAVE_WINSOCK_H 1
 
@@ -648,9 +614,6 @@ typedef int socklen_t;
 
 /* Compiler flag */
 /* #undef PROFILE */
-
-/* Define as the return type of signal handlers (`int' or `void'). */
-#define RETSIGTYPE void
 
 /* Define to 1 if the `setpgrp' function takes no argument. */
 /* #undef SETPGRP_VOID */
@@ -776,6 +739,16 @@ typedef int ssize_t;
 
 /* Define to `unsigned' if <sys/types.h> does not define. */
 /* #undef size_t */
+
+#ifndef snprintf
+#define snprintf _snprintf
+#endif
+
+#if _MSC_VER < 1500
+#ifndef vsnprintf
+#define vsnprintf _vsnprintf
+#endif
+#endif
 
 #define __SIZE_TYPE__ size_t
 

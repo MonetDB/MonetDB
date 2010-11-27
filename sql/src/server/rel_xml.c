@@ -85,19 +85,15 @@ rel_xmlelement(mvc *sql, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 	}
 
 	if (!ns_st)
-		ns_st = exp_atom(atom_general(&xml_type, NULL, 0));
+		ns_st = exp_atom(sql->sa, atom_general(sql->sa, &xml_type, NULL));
 	if (!attr_st)
-		attr_st = exp_atom(atom_general(&xml_type, NULL, 0));
+		attr_st = exp_atom(sql->sa, atom_general(sql->sa, &xml_type, NULL));
 	if (!res)
-		res = exp_atom(atom_general(&xml_type, NULL, 0));
+		res = exp_atom(sql->sa, atom_general(sql->sa, &xml_type, NULL));
 
-	if (!ns_st || !attr_st || !res) {
-		exp_destroy(ns_st);
-		exp_destroy(attr_st);
-		exp_destroy(res);
+	if (!ns_st || !attr_st || !res) 
 		return NULL;
-	}
-	return rel_nop_(sql, exp_atom_clob(tag), ns_st, attr_st, res, NULL, "element", 0);
+	return rel_nop_(sql, exp_atom_clob(sql->sa, tag), ns_st, attr_st, res, NULL, "element", 0);
 }
 
 static sql_exp *
@@ -111,11 +107,11 @@ rel_xmlforest(mvc *sql, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 	if (ns) {
 		ns_st = rel_value_exp(sql, rel, ns, f, knd); 
 	} else {
-		ns_st = exp_atom(atom_general(&xml_type, NULL, 0));
+		ns_st = exp_atom(sql->sa, atom_general(sql->sa, &xml_type, NULL));
 	}
 	if (!ns_st)
 		return NULL;
-	attr_st = exp_atom(atom_general(&xml_type, NULL, 0));
+	attr_st = exp_atom(sql->sa, atom_general(sql->sa, &xml_type, NULL));
 	if (elms) {
 		dnode *e;
 
@@ -126,12 +122,8 @@ rel_xmlforest(mvc *sql, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 
 			sql_exp *c_st = rel_value_exp(sql, rel, c, f, knd);
 			sql_subtype *st;
-			if (!c_st) { 
-				exp_destroy(ns_st);
-				exp_destroy(attr_st);
-				exp_destroy(res);
+			if (!c_st) 
 				return NULL;
-			}
 
 			st = exp_subtype(c_st);
 			assert(st);
@@ -139,12 +131,8 @@ rel_xmlforest(mvc *sql, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 				/* convert to string first */
 				c_st = rel_check_type(sql, &str_type, c_st, type_equal);
 				/* then to xml */
-				if (!c_st || (c_st = rel_check_type(sql, &xml_type, c_st, type_equal)) == NULL) {
-					exp_destroy(ns_st);
-					exp_destroy(attr_st);
-					exp_destroy(res);
+				if (!c_st || (c_st = rel_check_type(sql, &xml_type, c_st, type_equal)) == NULL) 
 					return NULL;
-				}
 			}
 				
 			if (!tag) {
@@ -152,7 +140,7 @@ rel_xmlforest(mvc *sql, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 				if (!tag)
 					tag = "single_value";
 			}
-			c_st = rel_nop_(sql, exp_atom_clob(tag), exp_dup(ns_st), exp_dup(attr_st), c_st, NULL, "element", 0);
+			c_st = rel_nop_(sql, exp_atom_clob(sql->sa, tag), ns_st, attr_st, c_st, NULL, "element", 0);
 			/* lets glue the xml content together */
 			if (res) {
 				res = rel_binop_(sql, res, c_st, NULL, "concat", 0); 
@@ -161,8 +149,6 @@ rel_xmlforest(mvc *sql, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 			}
 		}
 	}
-	exp_destroy(ns_st);
-	exp_destroy(attr_st);
 	return res;
 }
 
@@ -196,7 +182,7 @@ rel_xmlattribute(mvc *sql, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 		if (!attr_name)
 			attr_name = "single_value";
 	}
-	attr_name_st = exp_atom_str(attr_name, &str_type);
+	attr_name_st = exp_atom_str(sql->sa, attr_name, &str_type);
 	return rel_binop_(sql, attr_name_st, attr_st, NULL, "attribute", 0); 
 }
 
@@ -211,10 +197,8 @@ rel_xmlconcat(mvc *sql, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 	for (; en; en = en->next) {
 		symbol *c = en->data.sym;
 		concat_st = rel_value_exp(sql, rel, c, f, knd); 
-		if (!concat_st) {
-			exp_destroy(res);
+		if (!concat_st) 
 			return NULL;
-		}
 		if (res) 
 			res = rel_binop_(sql, res, concat_st, NULL, "concat", 0); 
 		else
@@ -244,15 +228,13 @@ rel_xmlpi(mvc *sql, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 	symbol *val = d->next->data.sym;
 	sql_exp *target_st, *val_st;
 
-	target_st = exp_atom_str(target, &str_type);
+	target_st = exp_atom_str(sql->sa, target, &str_type);
 	if (!val)
 		val_st = rel_value_exp(sql, rel, val, f, knd); 
 	else
-		val_st = exp_atom(atom_general(&str_type, NULL, 0));
-	if (!val_st) {
-		exp_destroy(target_st);
+		val_st = exp_atom(sql->sa, atom_general(sql->sa, &str_type, NULL));
+	if (!val_st) 
 		return NULL;
-	}
 	return rel_binop_(sql, target_st, val_st, NULL, "pi", 0); 
 }
 

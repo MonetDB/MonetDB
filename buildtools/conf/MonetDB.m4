@@ -19,7 +19,7 @@ dnl Defaults that differ between development trunk and release branch:
 AC_DEFUN([AM_MONETDB_DEFAULTS],
 [
 if test -f "$srcdir"/vertoo.data; then
-	dnl  Developers compiling from CVS:
+	dnl  Developers compiling from Mercurial:
 	dnl  default is --enable-strict --enable-assert --enable-debug --disable-optimize
 	dft_strict=yes
 	dft_assert=yes
@@ -1665,7 +1665,6 @@ AC_SYS_LARGEFILE()
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
-AC_TYPE_SIGNAL()
 AM_MONETDB_TYPES()
 
 # Checks for library functions.
@@ -2448,10 +2447,10 @@ AC_DEFUN([AM_MONETDB_LIB_OPENSSL],[
 	save_CFLAGS="$CFLAGS"
 	CFLAGS="$CFLAGS $OPENSSL_INCS"
 	if test "x$have_openssl" != xno; then
-		AC_COMPILE_IFELSE(AC_LANG_PROGRAM([#include <openssl/ssl.h>],[]), , [
+		AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <openssl/ssl.h>]],[[]])], , [
 			save_CPPFLAGS="$CPPFLAGS"
 			CPPFLAGS="$CPPFLAGS -DOPENSSL_NO_KRB5"
-			AC_COMPILE_IFELSE(AC_LANG_PROGRAM([#include <openssl/ssl.h>],[]),
+			AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <openssl/ssl.h>]],[[]])],
 				AC_DEFINE(OPENSSL_NO_KRB5, 1, [Define if OpenSSL should not use Kerberos 5]),
 				[ why_no_openssl="OpenSSL library not usable"; if test "x$have_openssl" != xauto; then AC_MSG_ERROR([$why_no_openssl]); fi; have_openssl=no ])
 			CPPFLAGS="$save_CPPFLAGS"])
@@ -2648,7 +2647,7 @@ AC_DEFUN([AM_MONETDB_LIB_Z],[
 		CPPFLAGS="$CPPFLAGS $Z_CFLAGS"
 		save_LIBS="$LIBS"
 		LIBS="$LIBS $Z_LIBS -lz"
-		AC_LINK_IFELSE(AC_LANG_PROGRAM([#include <zlib.h>], [(void) gzopen("","");]),
+		AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <zlib.h>]], [[(void) gzopen("","");]])],
 			Z_LIBS="$Z_LIBS -lz",
 			[ if test "x$have_z" != xauto; then AC_MSG_ERROR([z library not found]); fi; have_z=no ])
 		LIBS="$save_LIBS"
@@ -2695,8 +2694,8 @@ AC_DEFUN([AM_MONETDB_LIB_BZIP2],[
 		CPPFLAGS="$CPPFLAGS $BZ_CFLAGS"
 		save_LIBS="$LIBS"
 		LIBS="$LIBS $BZ_LIBS -lbz2"
-		AC_LINK_IFELSE(AC_LANG_PROGRAM([#include <stdio.h>
-#include <bzlib.h>], [(void)BZ2_bzopen("","");]),
+		AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stdio.h>
+#include <bzlib.h>]], [[(void)BZ2_bzopen("","");]])],
 			BZ_LIBS="$BZ_LIBS -lbz2",
 			[ if test "x$have_bz2" != xauto; then AC_MSG_ERROR([bz2 library not found]); fi; have_bz2=no ])
 		LIBS="$save_LIBS"
@@ -3142,7 +3141,7 @@ AM_CONDITIONAL(HAVE_EXTRA_MK, false)
 
 if test -f "$srcdir"/vertoo.data; then
         dnl check for Mx if we find the not distributed vertoo.data 
-        dnl having (this) file means we're compiling from CVS
+        dnl having (this) file means we're compiling from Mercurial
         dnl and not from the distribution tar ball
 
 	dnl check for Monet and some basic utilities
@@ -3185,7 +3184,7 @@ AC_DEFUN([AM_MONETDB_MEL],[
 have_mel=""
 if test -f "$srcdir"/vertoo.data; then
         dnl check for mel if we find the not distributed vertoo.data 
-        dnl having (this) file means we're compiling from CVS
+        dnl having (this) file means we're compiling from Mercurial
         dnl and not from the distribution tar ball
 
 	MEL=""

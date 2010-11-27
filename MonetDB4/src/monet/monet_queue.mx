@@ -121,12 +121,15 @@ m_export void QMprintStat(void);
 m_export void QMclearStat(void);
 
 #endif /* _MONET_QUEUE_H_ */
+/*
 @}
 @-
 The number of requests entered in the queue is counted.
 This counter is decremented when a requests is finished or forcefully removed from the queue. If it becomes zero there aren't any requests left for
 processing.
 @{
+@h
+*/
 @c
 #include "monetdb4_config.h"
 #include "monet_deparse.h"
@@ -156,7 +159,7 @@ prRequest(stream *fp, Request p)
 	THRprintf(fp, buf);
 }
 
-
+/*
 @
 @}
 @-
@@ -164,6 +167,8 @@ A request should be assembled before it is put into the queue.
 This way a sequence can be prepared with all dependencies in place.
 The request immediately gets a unique time stamp for tracing.
 @{
+@c
+*/
 @c
 Request
 newRequest(Cntxt stk, YYSTREE data, int barrier)
@@ -186,6 +191,7 @@ newRequest(Cntxt stk, YYSTREE data, int barrier)
 	return p;
 }
 
+/*
 @
 @}
 
@@ -195,6 +201,8 @@ and puts it in the queue. A kill request will kill the
 one arbitrary monet Interpreter thread that stumbles on it.
 @{
 @c
+*/
+@c
 void
 putkillRequest(void)
 {
@@ -203,6 +211,7 @@ putkillRequest(void)
 	putRequest(m);
 }
 
+/*
 @
 @}
 @-
@@ -215,6 +224,8 @@ updates the queue accordingly. It leads to delayed execution of the old next
 operation.
 All code should pass the wakeupRequest point.
 @{
+@c
+*/
 @c
 int sem = 0;
 char mybuf[16000], *myp = mybuf;
@@ -256,10 +267,9 @@ putRequest(Request p)
 		qm_last->ev_next = p;
 		qm_last = last;
 	}
-@-
-Now that all requests have been added, we should identify those that
-are eligable for execution. Their state is set accordingly.
-@c
+	/* Now that all requests have been added, we should identify
+	 * those that are eligable for execution. Their state is set
+	 * accordingly. */
 	for (; p; p = p->ev_next)
 		if (p->ev_status == 0) {
 			wakeupRequest(p);
@@ -321,12 +331,15 @@ nxtRequest(Request p)
 	monet_unset_lock(monet_critical, "nxtRequest");
 }
 
+/*
 @-
 The getRequest function is protected by the semaphore, such that
 the processes interested in a request are blocked until one becomes
 available. Note that some requests may be directed towards a specific
 thread. Then it should reset the status before leaving this scope.
 The flag barrier searches requests that lower the barrier request first.
+@c
+*/
 @c
 Request
 getRequest(Request barrier)
@@ -347,7 +360,7 @@ getRequest(Request barrier)
 	}
 	for (q = qm_first; q; q = q->ev_next)
 		if (q->ev_status == EVPENDING) {
-			if (q->ev_process == 0 || q->ev_process == tid) {
+			if ((q->ev_process == 0 && (q->ev_data != 0 || tid != 1)) || q->ev_process == tid) {
 				goto getReq0;
 			}
 		}
@@ -370,6 +383,7 @@ getRequest(Request barrier)
 	return q;
 }
 
+/*
 @-
 Some top level routines need access to the current queue request, so
 as to prepare a dependency list. Since a thread may temporarily suspend
@@ -379,6 +393,8 @@ Two properties are relevant here. The status of the request is always EVRUNNING
 and it is the last one for the thread in the process.
 The corresponding unlink code has been written such that
 this routine need not be placed in a critical section.
+@c
+*/
 @c
 Request
 thisRequest(void)
@@ -409,6 +425,7 @@ topRequest(Client c)
 	return NULL;
 }
 
+/*
 @
 @}
 
@@ -417,6 +434,8 @@ In some cases, such as finalization of a user interaction, the
 dependent requests should be removed from the queue.
 It directly manipulates the stack and also gets rid of the
 old requests.
+@c
+*/
 @c
 void
 rmRequest(Request r)
@@ -437,6 +456,7 @@ rmRequest(Request r)
 	monet_unset_lock(monet_critical, "rmRequest");
 }
 
+/*
 @-
 Once an event is handled the status field should be changed
 to reflect the situation and any runable event should be detected.
@@ -445,6 +465,8 @@ Each new one should lead to increment of the available resources
 semaphore.
 
 @{
+@c
+*/
 @c
 void
 unlinkRequest(Request q)
@@ -465,6 +487,7 @@ unlinkRequest(Request q)
 }
 
 
+/*
 @-
 A request is immediately removed from the queue once it has been handled.
 If the request was traced for performance, it is moved to the history queue,
@@ -480,6 +503,8 @@ when there is a runnable request.
 
 
 The process id is invalidated to avoid collapses with thisRequest().
+@c
+*/
 @c
 void
 clrRequest(Request q)
@@ -503,7 +528,10 @@ clrRequest(Request q)
 	monet_unset_lock(monet_critical, "clrRequest");
 }
 
+/*
 @- Request exeuction
+@c
+*/
 @c
 int
 handleRequest(Thread t, Request q, ValPtr res)
@@ -526,10 +554,8 @@ handleRequest(Thread t, Request q, ValPtr res)
 
 		return 0;
 	}
-@-
-This was needed to ensure proper delivery of output;
-A kill request is handled directly.
-@c
+	/* This was needed to ensure proper delivery of output; A kill
+	 * request is handled directly. */
 	if (lt == NULL) {
 		assert(stk == 0);
 		PARDEBUG {
@@ -571,6 +597,7 @@ doRequest(Thread t, Request preference)
 	}
 }
 
+/*
 @
 @}
 
@@ -585,6 +612,8 @@ behavior to be used to control and exploit parallelism.
 The code is written with the assumption that the user limits himself to
 manipulation with queue keys returned by QMenqueue. They others are generated
 internally.
+@c
+*/
 @c
 int
 QMenqueue(Cntxt stk, YYSTREE data, int barrier, int kill)
@@ -622,9 +651,12 @@ QMclient(Request start, Client c)
 	return 0;
 }
 
+/*
 @-
 Dequeuing a request cascades to its dependents (in all directions).
 This way the user need not keep track of all requests generated on the fly.
+@c
+*/
 @c
 #if 0
 static void
@@ -651,8 +683,11 @@ QMdequeue(int qkey)
 }
 #endif
 
+/*
 @-
 A request can be activated using the queue key.
+@c
+*/
 @c
 void
 QMwakeup(int qkey)
@@ -677,9 +712,12 @@ QMwakeup(int qkey)
 	PARDEBUG THRprintf(GDKerr, "QMwakeup: qkey %d not found\n", qkey);
 }
 
+/*
 @-
 The user is responsible for creation of a synchronization request to
 align multiple parallel requests.
+@c
+*/
 @c
 int
 QMbefore(int qkey1, int qkey2)
@@ -700,9 +738,12 @@ QMbefore(int qkey1, int qkey2)
 	return qkey2;
 }
 
+/*
 @-
 The routine QMopen assess the queue and determines if we have
 run out of eligable requests.
+@c
+*/
 @c
 int
 QMopen(void)
@@ -724,6 +765,7 @@ QMprint(void)
 	}
 }
 
+/*
 @
 @+ Performance tracing
 The performance of the Monet kernel can be traced at the level of
@@ -739,6 +781,8 @@ is turned off.
 	int qm_enter, qm_start, qm_finish;
 	char qm_cmd[IDLENGTH];
 @
+@c
+*/
 @c
 Request qm_top, qm_bot;
 int qm_profile = 0;

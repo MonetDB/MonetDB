@@ -74,7 +74,7 @@ comment "Refresh the content of the vault for a specific object";
 
 command ftpget(src:str,trg:str)
 address VLTftpget
-comment "Use FTP to copy a remote file to a local");
+comment "Use FTP to copy a remote file to a local";
 
 pattern prelude():void 
 address VLTprelude

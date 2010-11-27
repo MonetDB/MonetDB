@@ -150,6 +150,8 @@ OPTdependencies(Client cntxt, MalBlkPtr mb){
 	if ( block ){
 		for (i--; i>=0; i--)
 			GDKfree(list[i]);
+		//GDKfree(list);
+		//GDKfree(var);
 		return NULL;
 	}
 @-
@@ -199,7 +201,7 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i,j, start;
 	InstrPtr *old;
-	int limit;
+	int limit, slimit;
 	Node *dep;
 
 	(void) cntxt;
@@ -208,6 +210,7 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if ( dep == NULL)
 		return 0;
 	limit= mb->stop;
+	slimit= mb->ssize;
 	old = mb->stmt;
 	if ( newMalBlkStmt(mb, mb->ssize) < 0)
 		return 0;
@@ -249,6 +252,9 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	for(i=0; i<limit; i++)
 		if (old[i])
 			pushInstruction(mb,old[i]);
+	for(; i<slimit; i++)
+		if (old[i])
+			freeInstruction(old[i]);
 	OPTremoveDep(dep, limit);
 	GDKfree(old);
 	return 1;

@@ -275,10 +275,6 @@ address mvc_import_table_wrap
 comment "Import a table from bstream s with the 
 	given tuple and seperators (sep/rsep)";
 
-pattern fitsView(fname :str):void
-address fits_view
-comment "Open a FITS file and return catalog of the table HDUs";
-
 function single(x:any_2):bat[:oid,:any_2];
 	b := bat.new(0:oid, x);
 	c := bat.append(b, x);
@@ -306,7 +302,6 @@ function copy_from(
 
 	res := sql.importTable(bs, sname, tname, tsep, rsep, ssep, ns, nr, offset);
 	bstream.destroy(bs);
-	streams.close(s);
 	return res;
 end copy_from;
 
@@ -1035,7 +1030,6 @@ include sql_bpm;
 #include "sql_emptyset.h"
 
 #include <bat/bat_storage.h>
-/* #include "fitsio.h" */
 
 @-
 The back-end structure collects the information needed to support
@@ -1279,7 +1273,6 @@ sql5_export str bat@2_num2dec_@1( int *res, int *v, int *d2, int *s2 );
 @:numcastdown_export(wrd,lng)@
 
 sql5_export str getContext(Client cntxt, MalBlkPtr mb, mvc **c, backend **b );
-sql5_export str fits_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* _SQL_H */
 
@@ -1398,7 +1391,7 @@ rel_need_distinct_query( sql_rel *rel)
 			if (e->type == e_aggr) {
 				list *l = e->l;
 
-				if (l) for(m = l->h; m &&  !need_distinct; m = m->next){
+				if (l) for(m = l->h; m && !need_distinct; m = m->next){
 					sql_exp *a = m->data;
 	
 					if (need_distinct(a))
@@ -1418,11 +1411,6 @@ sql_symbol2stmt(mvc *c, symbol *sym)
 	int status;
 	sql_rel *r;
 
-/*
-	if (sym->token == SQL_MULSTMT) 
-		return sql_symbols2stmt(c, sym);
-*/
-
 	status = c->session->status;
 	r = rel_semantic(c, sym);
 	if (!r) {
@@ -1435,6 +1423,7 @@ sql_symbol2stmt(mvc *c, symbol *sym)
 		}
 	} else {
 		int pq;
+
 		r = rel_optimizer(c, r);
 		pq = rel_is_point_query(r);
 		if (!pq)
@@ -1451,9 +1440,7 @@ sql_symbol2stmt(mvc *c, symbol *sym)
 
 			/* only needed for delta tables */
 			opt = rel2bin(c, s); 	
-			stmt_destroy(s);
 			s = bin_optimizer(c, opt);
-			stmt_destroy(opt);
 			c->point_query = pq;
 			return s;
 		}
@@ -1463,17 +1450,15 @@ sql_symbol2stmt(mvc *c, symbol *sym)
 		stmt *opt;
 
 		if (mvc_debug_on(c,128)) 
-			stmt2dot(s, 1, "/tmp/g1.dot");
+			stmt2dot(c->sa, s, 1, "/tmp/g1.dot");
 		opt = rel2bin(c, s);
-		stmt_destroy(s);
 		s = opt;
 		if (mvc_debug_on(c,128)) 
-			stmt2dot(s, 2, "/tmp/g2.dot");
+			stmt2dot(c->sa, s, 2, "/tmp/g2.dot");
 		opt = bin_optimizer(c, s);
-		stmt_destroy(s);
 		s = opt;
 		if (mvc_debug_on(c,128)) 
-			stmt2dot(s, 3, "/tmp/g3.dot");
+			stmt2dot(c->sa, s, 3, "/tmp/g3.dot");
 	}
 	return s;
 }
@@ -1634,12 +1619,11 @@ create_table_or_view( mvc *sql, char *sname, sql_table *t, int temp)
 			sql->sa = sa_create();
 			snprintf(buf, BUFSIZ, "select %s;", c->def);
 			r = rel_parse(sql, buf, m_deps); 
-			if (!r || !is_project(r->op) || !r->exps || list_length(r->exps) != 1 || (e = rel_check_type(sql, &c->type, exp_dup(r->exps->h->data), type_equal)) == NULL) 
+			if (!r || !is_project(r->op) || !r->exps || list_length(r->exps) != 1 || (e = rel_check_type(sql, &c->type, r->exps->h->data, type_equal)) == NULL) 
 				throw(SQL, "sql.catalog", sql->errstr);
-			exp_destroy(e);
+			rel_destroy(r);
 			sa_destroy(sql->sa);
 			sql->sa = NULL;
-			rel_destroy(r);
 		}
 	}
 
@@ -1668,9 +1652,9 @@ create_table_or_view( mvc *sql, char *sname, sql_table *t, int temp)
 		sql_rel *r = NULL;
 		sql->sa = sa_create();
 		r = rel_parse(sql, t->query, m_deps); 
+		rel_destroy(r);
 		sa_destroy(sql->sa);
 		sql->sa = NULL;
-		rel_destroy(r);
 	}
 	return MAL_SUCCEED;
 }
@@ -5510,49 +5494,3 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif /* RDF */
 }
 
-str fits_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	mvc *m = NULL;
-	sql_schema *sch;
-	sql_table *fits_tbl,  *fits_col;
-	str msg = MAL_SUCCEED; 
-	str fname = *(str*) getArgReference(stk, pci, 1);
-	int id;
-	
-
-	msg = getContext(cntxt, mb, &m, NULL);
-	if (msg)
-		return msg;
-	sch = mvc_bind_schema(m,"sys");
-
-	fits_tbl = mvc_bind_table(m, sch, "fits_tables");
-	if ( fits_tbl == NULL ){
-		fits_tbl = mvc_create_table(m, sch, "fits_tables", tt_table, 0, SQL_PERSIST, 0, 4);
-		mvc_create_column_(m, fits_tbl, "id","int",32);
-		mvc_create_column_(m, fits_tbl, "name","varchar",80);
-		mvc_create_column_(m, fits_tbl, "filename","varchar",80);
-		mvc_create_column_(m, fits_tbl, "hdu","int",32);
-	}
-	fits_col = mvc_bind_table(m, sch, "fits_columns");
-	if ( fits_col == NULL ){
-		fits_col = mvc_create_table(m, sch, "fits_columns", tt_table, 0, SQL_PERSIST, 0, 6);
-		mvc_create_column_(m, fits_col, "id","int",32);
-		mvc_create_column_(m, fits_col, "name","varchar",80);
-		mvc_create_column_(m, fits_col, "type","varchar",80);
-		mvc_create_column_(m, fits_col, "type_digits","int",32);
-		mvc_create_column_(m, fits_col, "table_id","int",32);
-		mvc_create_column_(m, fits_col, "units","varchar",10);
-	}
-	
-	id = 1;
-	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, fits_tbl, "id"), &id, TYPE_int);
-	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, fits_tbl, "name"), fname, TYPE_str);
-	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, fits_tbl, "filename"), "test.fit", TYPE_str);
-	id = 2;
-	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, fits_tbl, "hdu"), &id, TYPE_int);
-	return MAL_SUCCEED;
-}   

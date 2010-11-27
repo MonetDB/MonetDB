@@ -36,14 +36,14 @@ sql_next_seq_name(mvc *m)
 }
 
 static sql_rel *
-rel_drop_seq(char *sname, char *seqname)
+rel_drop_seq(sql_allocator *sa, char *sname, char *seqname)
 {
-	sql_rel *rel = rel_create();
-	list *exps = new_exp_list();
+	sql_rel *rel = rel_create(sa);
+	list *exps = new_exp_list(sa);
 
-	append(exps, exp_atom_int(0));
-	append(exps, exp_atom_clob(sname));
-	append(exps, exp_atom_clob(seqname));
+	append(exps, exp_atom_int(sa, 0));
+	append(exps, exp_atom_clob(sa, sname));
+	append(exps, exp_atom_clob(sa, seqname));
 	rel->l = NULL;
 	rel->r = NULL;
 	rel->op = op_ddl;
@@ -55,17 +55,17 @@ rel_drop_seq(char *sname, char *seqname)
 }
 
 static sql_rel *
-rel_seq(int cat_type, char *sname, sql_sequence *s, sql_rel *r, sql_exp *val)
+rel_seq(sql_allocator *sa, int cat_type, char *sname, sql_sequence *s, sql_rel *r, sql_exp *val)
 {
-	sql_rel *rel = rel_create();
-	list *exps = new_exp_list();
+	sql_rel *rel = rel_create(sa);
+	list *exps = new_exp_list(sa);
 
 	if (val)
 		append(exps, val);
 	else
-		append(exps, exp_atom_int(0));
-	append(exps, exp_atom_str(sname, sql_bind_localtype("str") ));
-	append(exps, exp_atom_ptr(s));
+		append(exps, exp_atom_int(sa, 0));
+	append(exps, exp_atom_str(sa, sname, sql_bind_localtype("str") ));
+	append(exps, exp_atom_ptr(sa, s));
 	rel->l = r;
 	rel->r = NULL;
 	rel->op = op_ddl;
@@ -120,8 +120,9 @@ rel_create_seq(
 
 	seq = create_sql_sequence(sql->sa, s, name, start, min, max, inc, cache, cycle);  
 	seq->bedropped = bedropped;
-	res = rel_seq(DDL_CREATE_SEQ, s->base.name, seq, NULL, NULL);
-	if (res)
+	res = rel_seq(sql->sa, DDL_CREATE_SEQ, s->base.name, seq, NULL, NULL);
+	/* for multi statements we keep the sequence around */
+	if (res && stack_has_frame(sql, "MUL") != 0)
 		stack_push_rel_view(sql, name, rel_dup(res));
 	return res;
 }
@@ -172,7 +173,7 @@ rel_alter_seq(
 	   restart(ssname,seqname,value) */ 
 
 	if (start_type == 0) {
-		val = exp_atom_lng(seq->start);
+		val = exp_atom_lng(sql->sa, seq->start);
 	} else if (start_type == 1) { /* value (exp) */
 		exp_kind ek = {type_value, card_value, FALSE};
 		int is_last = 0;
@@ -185,16 +186,16 @@ rel_alter_seq(
 	} else if (start_type == 2) {
 		switch (start_list->h->next->type) {
 			case type_int:
-				val = exp_atom_lng((lng)start_list->h->next->data.i_val);
+				val = exp_atom_lng(sql->sa, (lng)start_list->h->next->data.i_val);
 				break;
 			case type_lng:
-				val = exp_atom_lng(start_list->h->next->data.l_val);
+				val = exp_atom_lng(sql->sa, start_list->h->next->data.l_val);
 				break;
 			default:
 				assert(0);
 		}
 	}
-	return rel_seq(DDL_ALTER_SEQ, s->base.name, seq, r, val);
+	return rel_seq(sql->sa, DDL_ALTER_SEQ, s->base.name, seq, r, val);
 }
 
 sql_rel *
@@ -263,7 +264,7 @@ rel_sequences(mvc *sql, symbol *s)
 
 				sname = ss->base.name;
 			}
-			res = rel_drop_seq(sname, seqname);
+			res = rel_drop_seq(sql->sa, sname, seqname);
 		}
 		break;
 		default:

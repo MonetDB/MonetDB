@@ -110,7 +110,6 @@ AC_FUNC_MEMCMP
 AC_CHECK_FUNCS([memset fcntl ftime getopt getrlimit getuid kill \
 	lockf nanosleep pipe setenv shutdown strdup strtof uname \
 	strtoll fsync])
-AC_CHECK_DECLS([strdup, strtof])
 
 
 dnl provide different versions of the paths derived above

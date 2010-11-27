@@ -1,6 +1,10 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Thu Nov 25 2010 Fabian Groffen <fabian@cwi.nl>
+- Added support for \df to list functions or describe a specific one
+- Added support for \ds to list sequences or describe a specific one
+
 * Mon Nov 22 2010 Fabian Groffen <fabian@cwi.nl>
 - Added support for wildcards * and ? in object names given to \d
   commands, such that pattern matching is possible, e.g. \d my*

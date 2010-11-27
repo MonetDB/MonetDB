@@ -15,31 +15,90 @@
 # Copyright August 2008-2010 MonetDB B.V.
 # All Rights Reserved.
 
-INCLUDES = ../../include ../../common ../../storage ../../server ../ \
-	$(MONETDB5_INCS) $(CLIENTS_INCS) $(MONETDB_INCS) $(READLINE_INCS) $(MSEED_CFLAGS)
+INCLUDES = ../../../include ../../../common ../../../storage ../../../server ../ \
+	$(MONETDB5_INCS) $(CLIENTS_INCS) $(MONETDB_INCS) $(READLINE_INCS) $(MSEED_CFLAGS) $(CFITSIO_CFLAGS)
 
 lib__vault = {
 	DIR = libdir/MonetDB5/
-	SOURCES = vault.mx mseed.mx
+	SOURCES = vault.mx
+	LIBS = $(MONETDB5_LIBS) -lmonetdb5 \
+		$(MONETDB_LIBS) -lbat $(MSEED_LIBS) 
+}
+
+lib__mseed = {
+	COND = HAVE_MSEED
+	DIR = libdir/MonetDB5/
+	SOURCES = mseed.mx
 	LIBS = $(MONETDB5_LIBS) -lmonetdb5 \
 		$(MONETDB_LIBS) -lbat $(MSEED_LIBS)
+}
+
+lib__fits = {
+    COND = HAVE_CFITSIO
+    DIR = libdir/MonetDB5/
+    SOURCES = fits.mx
+    LIBS = $(MONETDB5_LIBS) -lmonetdb5 $(MONETDB_LIBS) $(CFITSIO_LIBS)
 }
 
 headers_h = {
 	HEADERS = h
 	DIR = includedir/MonetDB5/sql
-	SOURCES = vault.mx mseed.mx
+	SOURCES = vault.mx
+}
+
+headers_mseedh = {
+	COND = HAVE_MSEED
+	HEADERS = h
+	DIR = includedir/MonetDB5/sql
+	SOURCES = mseed.mx
+}
+
+headers_fitsh = {
+	COND = HAVE_CFITSIO
+	HEADERS = h
+	DIR = includedir/MonetDB5/sql
+	SOURCES = fits.mx
 }
 
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/MonetDB5
-	SOURCES = vault.mx mseed.mx vault.sql
+	SOURCES = vault.mx vault.sql
 }
+
+headers_mseedmal = {
+	COND = HAVE_MSEED
+	HEADERS = mal
+	DIR = libdir/MonetDB5
+	SOURCES = mseed.mx
+}
+
+headers_fitsmal = {
+	COND = HAVE_CFITSIO
+	HEADERS = mal
+	DIR = libdir/MonetDB5
+	SOURCES = fits.mx
+}
+
 headers_autoload = {
+	HEADERS = mal
+	DIR = libdir/MonetDB5/autoload
+	SOURCES = 70_vault.mal
+}
+
+headers_mseedautoload = {
+	COND = HAVE_MSEED
+	HEADERS = mal
+	DIR = libdir/MonetDB5/autoload
+	SOURCES = 71_mseed.mal
+}
+
+headers_fitsautoload = {
+    COND = HAVE_CFITSIO
     HEADERS = mal
     DIR = libdir/MonetDB5/autoload
-    SOURCES = 70_vault.mal 71_mseed.mal
+    SOURCES = 72_fits.mal
 }
+
 EXTRA_DIST_DIR = Tests
-EXTRA_DIST = 70_vault.mal 71_mseed.mal vault.sql
+EXTRA_DIST = 70_vault.mal 71_mseed.mal vault.sql 72_fits.mal

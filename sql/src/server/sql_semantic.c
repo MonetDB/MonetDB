@@ -28,6 +28,7 @@
 #include "sql_privileges.h"
 #include "sql_psm.h"
 #include "sql_string.h"
+#include "sql_atom.h"
 
 #include <unistd.h>
 #include <stdio.h>
@@ -125,7 +126,6 @@ sql_convert_arg(mvc *sql, int nr, sql_subtype *rt)
 		if (a->data.vtype != rt->type->localtype) {
 			ptr p;
 
-			a->destroy = 0; /* we cannot destroy a nilptr */
 			a->data.vtype = rt->type->localtype;
 			p = ATOMnilptr(a->data.vtype);
 			VALset(&a->data, a->data.vtype, p);
@@ -145,11 +145,6 @@ sql_destroy_params(mvc *sql)
 void
 sql_destroy_args(mvc *sql)
 {
-	int i;
-
-	for (i=0; i < sql->argc; i++){
-		atom_destroy(sql->args[i]);
-	}
 	sql->argc = 0;
 }
 
@@ -272,7 +267,6 @@ sql_parse(mvc *m, sql_allocator *sa, char *query, char mode)
 	GDKfree(query);
 	GDKfree(b);
 	bstream_destroy(m->scanner.rs);
-	mnstr_destroy(buf);
 	if (m->sa && m->sa != sa)
 		sa_destroy(m->sa);
 	m->sym = NULL;
@@ -419,29 +413,29 @@ fix_scale(mvc *sql, sql_subtype *ct, stmt *s, int both, int always)
 			if (scale_diff < 0) {
 				if (!both)
 					return s;
-				c = sql_bind_func(sql->session->schema, "scale_down", st, it);
+				c = sql_bind_func(sql->sa, sql->session->schema, "scale_down", st, it);
 			} else {
-				c = sql_bind_func(sql->session->schema, "scale_up", st, it);
+				c = sql_bind_func(sql->sa, sql->session->schema, "scale_up", st, it);
 			}
 			if (c) {
 				lng val = scale2value(scale_diff);
-				atom *a = atom_int(it, val);
+				atom *a = atom_int(sql->sa, it, val);
 
 				c->res.scale = (st->scale + scale_diff);
-				return stmt_binop(s, stmt_atom(a), c);
+				return stmt_binop(sql->sa, s, stmt_atom(sql->sa, a), c);
 			}
 		}
 	} else if (always && st->scale) {	/* scale down */
 		int scale_diff = -(int) st->scale;
 		sql_subtype *it = sql_bind_localtype(st->type->base.name);
-		sql_subfunc *c = sql_bind_func(sql->session->schema, "scale_down", st, it);
+		sql_subfunc *c = sql_bind_func(sql->sa, sql->session->schema, "scale_down", st, it);
 
 		if (c) {
 			lng val = scale2value(scale_diff);
-			atom *a = atom_int(it, val);
+			atom *a = atom_int(sql->sa, it, val);
 
 			c->res.scale = 0;
-			return stmt_binop(s, stmt_atom(a), c);
+			return stmt_binop(sql->sa, s, stmt_atom(sql->sa, a), c);
 		} else {
 			printf("scale_down mising (%s)\n", st->type->base.name);
 		}
@@ -461,15 +455,14 @@ inplace_convert(mvc *sql, sql_subtype *ct, stmt *s)
 	atom *a;
 
 	/* exclude named variables */
-	if (s->type != st_var || s->op1.sval || s->ref.refcnt > 1 || 
+	if (s->type != st_var || s->op1.sval || 
 		(ct->scale && ct->type->eclass != EC_FLT))
 		return s;
 
 	a = sql_bind_arg(sql, s->flag);
 	if (atom_cast(a, ct)) {
-		stmt *r = stmt_varnr(s->flag, ct);
+		stmt *r = stmt_varnr(sql->sa, s->flag, ct);
 		sql_convert_arg(sql, s->flag, ct);
-		stmt_destroy(s);
 		return r;
 	}
 	return s;
@@ -509,7 +502,6 @@ check_table_types(mvc *sql, sql_table *ct, stmt *s, check_type tpe)
 
 	if (s->type != st_table) {
 		char *t = (ct->type==tt_generated)?"table":"unknown";
-		stmt_destroy(s);
 		return sql_error(
 			sql, 03,
 			"single value and complex type '%s' are not equal", t);
@@ -517,46 +509,41 @@ check_table_types(mvc *sql, sql_table *ct, stmt *s, check_type tpe)
 	tab = s->op1.stval;
 	temp = s->flag;
 	if (tab->type == st_var) {
-		stmt *base = stack_find_var(sql, tab->op1.sval);
 		sql_table *tbl = tail_type(tab)->comp_type;
+		stmt *base = stmt_basetable(sql->sa, tbl, tab->op1.sval);
 		node *n, *m;
-		list *l = create_stmt_list();
+		list *l = list_new(sql->sa);
+		
+		stack_find_var(sql, tab->op1.sval);
+
 		for (n = ct->columns.set->h, m = tbl->columns.set->h; 
 			n && m; n = n->next, m = m->next) 
 		{
 			sql_column *c = n->data;
 			sql_column *dtc = m->data;
-			stmt *dtcs = stmt_bat(dtc, stmt_dup(base), RDONLY);
+			stmt *dtcs = stmt_bat(sql->sa, dtc, base, RDONLY);
 			stmt *r = check_types(sql, &c->type, dtcs, tpe);
-			if (!r) {
-				list_destroy(l);
-				stmt_destroy(s);
+			if (!r) 
 				return NULL;
-			}
-			r = stmt_alias(r, _strdup(tbl->base.name), _strdup(c->base.name));
+			r = stmt_alias(sql->sa, r, sa_strdup(sql->sa, tbl->base.name), sa_strdup(sql->sa, c->base.name));
 			list_append(l, r);
 		}
-		stmt_destroy(s);
-	 	return stmt_table(stmt_list(l), temp);
+	 	return stmt_table(sql->sa, stmt_list(sql->sa, l), temp);
 	} else if (tab->type == st_list) {
 		node *n, *m;
-		list *l = create_stmt_list();
+		list *l = list_new(sql->sa);
 		for (n = ct->columns.set->h, m = tab->op1.lval->h; 
 			n && m; n = n->next, m = m->next) 
 		{
 			sql_column *c = n->data;
-			stmt *r = check_types(sql, &c->type, stmt_dup(m->data), tpe);
-			if (!r) {
-				list_destroy(l);
-				stmt_destroy(s);
+			stmt *r = check_types(sql, &c->type, m->data, tpe);
+			if (!r) 
 				return NULL;
-			}
-			tname = table_name(r);
-			r = stmt_alias(r, tname, _strdup(c->base.name));
+			tname = table_name(sql->sa, r);
+			r = stmt_alias(sql->sa, r, tname, sa_strdup(sql->sa, c->base.name));
 			list_append(l, r);
 		}
-		stmt_destroy(s);
-		return stmt_table(stmt_list(l), temp);
+		return stmt_table(sql->sa, stmt_list(sql->sa, l), temp);
 	} else { /* single column/value */
 		sql_column *c;
 		stmt *r;
@@ -569,14 +556,13 @@ check_table_types(mvc *sql, sql_table *ct, stmt *s, check_type tpe)
 				st->type->sqlname,
 				(ct->type==tt_generated)?"table":"unknown"
 			);
-			stmt_destroy(s);
 			return res;
 		}
 		c = ct->columns.set->h->data;
 		r = check_types(sql, &c->type, tab, tpe);
-		tname = table_name(r);
-		r = stmt_alias(r, tname, _strdup(c->base.name));
-		return stmt_table(r, temp);
+		tname = table_name(sql->sa, r);
+		r = stmt_alias(sql->sa, r, tname, sa_strdup(sql->sa, c->base.name));
+		return stmt_table(sql->sa, r, temp);
 	}
 }
 
@@ -597,7 +583,6 @@ check_types(mvc *sql, sql_subtype *ct, stmt *s, check_type tpe)
 	if ((!st || !st->type) && stmt_set_type_param(sql, ct, s) == 0) {
 		return s;
 	} else if (!st) {
-	        stmt_destroy(s);
                 return sql_error(sql, 02, "statement has no type information");
 	}
 
@@ -617,7 +602,7 @@ check_types(mvc *sql, sql_subtype *ct, stmt *s, check_type tpe)
 			old = s;
 			s = NULL;
 		} else {
-			s = stmt_convert(s, st, ct);
+			s = stmt_convert(sql->sa, s, st, ct);
 		}
 	} 
 	if (!s) {
@@ -633,8 +618,6 @@ check_types(mvc *sql, sql_subtype *ct, stmt *s, check_type tpe)
 			ct->scale,
 			ct->type->base.name
 		);
-		if (old)
-			stmt_destroy(old);
 		return res;
 	}
 	return s;
@@ -941,7 +924,7 @@ output_semantic(mvc *sql, symbol *s)
 	if (ret) {
 		if (sql->type == Q_TABLE) {
 			if (ret)
-				ret = stmt_output(ret);
+				ret = stmt_output(sql->sa, ret);
 		}
 	}
 	return ret;

@@ -23,7 +23,5 @@
 #include "rel_semantic.h"
 
 extern sql_rel * rel_optimizer(mvc *sql, sql_rel *rel);
-extern sql_rel * rel_groupby(sql_rel *l, list *groupbyexps );
-extern sql_exp * rel_groupby_add_aggr(mvc *sql, sql_rel *rel, sql_exp *e);
 
 #endif /*_REL_OPTIMIZER_H_*/

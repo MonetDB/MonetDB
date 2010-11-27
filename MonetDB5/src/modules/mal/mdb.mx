@@ -217,7 +217,9 @@ comment "Returns a string representation of the current function
 #include <stdarg.h>
 #include <time.h>
 #include <sys/types.h>
+#ifdef HAVE_DIRENT_H
 #include <dirent.h>
+#endif
 #include "mal_resolve.h"
 #include "mal_linker.h"
 #include "mal_client.h"

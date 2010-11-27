@@ -74,14 +74,6 @@
 #define BUFLEN  16384
 #define BUFLEN2 32768
 
-#if !HAVE_DECL_STRDUP
-#ifdef HAVE_STRDUP
-extern char *strdup(const char *);
-#else
-#define strdup(s)      strcpy(malloc(strlen(s)),(s))
-#endif
-#endif
-
 static char *
 HTMLsave(char *s)
 {

@@ -304,9 +304,7 @@ SQLexit(Client c)
 }
 
 #define SQLglobal(name, val) \
-	r = stmt_var(_strdup(name), &ctype, 0, 1); \
-	stack_push_var(sql, name, r, &ctype);	   \
-	stmt_destroy(r);			   \
+	stack_push_var(sql, name, &ctype);	   \
 	stack_set_var(sql, name, VALset(&src, ctype.type->localtype, val));
 
 #define NR_GLOBAL_VARS 9
@@ -318,7 +316,6 @@ global_variables(mvc *sql, char *user, char *schema)
 {
 	sql_subtype ctype;
 	char *typename;
-	stmt *r = NULL;
 	lng sec = 0;
 	bit T = TRUE;
 	bit F = FALSE;
@@ -341,7 +338,7 @@ global_variables(mvc *sql, char *user, char *schema)
 		optimizer= GDKgetenv("sql_optimizer");
 	if (optimizer == NULL)
 		optimizer= "default_pipe";
-	SQLglobal("optimizer", GDKstrdup(setOptimizers(optimizer)));
+	SQLglobal("optimizer", setOptimizers(optimizer));
 	SQLglobal("trace","show,ticks,stmt");
 
 	typename = "sec_interval";
@@ -487,8 +484,10 @@ to initialize the catalog based on the mandatory scripts to be executed.
 				fprintf(stdout, "# SQL catalog created, loading sql scripts once\n");
 				if (bfd && bstream_next(bfd) >= 0)
 					msg = SQLstatementIntern(c, &bfd->buf, "sql.init", TRUE, FALSE);
-				mnstr_close(fd);
-				mnstr_destroy(fd);
+				bstream_destroy(bfd);
+				if (m->sa)
+					sa_destroy(m->sa);
+				m->sa = NULL;
 				return msg;
 			}
 		}
@@ -630,6 +629,8 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 		throw(SQL, "SQLstatement", "Out of memory");
 	*o = *m;
 
+	/* create private allocator */
+	m->sa = NULL;
 	SQLtrans(m);
 	status = m->session->status;
 
@@ -657,9 +658,8 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 	m->argc = 0;
 	m->session->auto_commit = 0;
 
-	/* create private allocator */
-	m->sa = sa_create();
-
+	if (!m->sa)
+		m->sa = sa_create();
 @-
 System has been prepared to parse it and generate code.
 Scan the complete string for SQL statements, stop at the first error.
@@ -757,7 +757,6 @@ endofcompile:
 	GDKfree(n);
 	GDKfree(b);
 	bstream_destroy(m->scanner.rs);
-	mnstr_destroy(buf);
 	if (m->sa)
 		sa_destroy(m->sa);
 	m->sym = NULL;
@@ -813,26 +812,32 @@ script library, we assume it is sufficiently self descriptive.
 str
 SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-    stream *fd;
+    	stream *fd;
 	bstream *bfd;
 	str *name = (str *) getArgReference(stk,pci,1);
 	str msg = MAL_SUCCEED, fullname;
 	str *expr;
+	mvc *m;
 
-    fullname= MSP_locate_sqlscript(*name);
+    	fullname= MSP_locate_sqlscript(*name);
 	if ( fullname == NULL)
 		fullname= *name;
 	fd = open_rastream(fullname);
-    if (mnstr_errnr(fd) == MNSTR_OPEN_ERROR) {
-        mnstr_destroy(fd);
-        throw(MAL, "sql.include", "could not open file: %s\n", *name);
-    }
-    bfd = bstream_create(fd, 128 * BLOCK);
-    if( bstream_next(bfd) < 0)
-        throw(MAL,"sql.include","could not read %s\n", *name);
+    	if (mnstr_errnr(fd) == MNSTR_OPEN_ERROR) {
+        	mnstr_destroy(fd);
+        	throw(MAL, "sql.include", "could not open file: %s\n", *name);
+    	}
+    	bfd = bstream_create(fd, 128 * BLOCK);
+    	if( bstream_next(bfd) < 0)
+        	throw(MAL,"sql.include","could not read %s\n", *name);
 
 	expr = &bfd->buf;
 	msg = SQLstatementIntern(cntxt, expr, "sql.include", TRUE, FALSE);
+	bstream_destroy(bfd);
+	m = cntxt->state[MAL_SCENARIO_OPTIMIZE]; 
+	if (m->sa)
+		sa_destroy(m->sa);
+	m->sa = NULL;
 	(void) mb;
 	return msg;
 }
@@ -1315,20 +1320,20 @@ produce code.
 					  m->type,/* the type of the statement */
 					  sql_escape_str(QUERY(m->scanner)));
 
-			/* passed over to query cache */
-			m->sa = NULL; 
-			m->sym = NULL;
-
 			scanner_query_processed(&(m->scanner));
 			be->q->code = 
 				(backend_code)backend_dumpproc(be, c, be->q, s);
 			be->q->stk = 0;
+
+			/* passed over to query cache, used during dumpproc */
+			m->sa = NULL; 
+			m->sym = NULL;
+
 			/* register name in the namespace */
 			be->q->name = putName(be->q->name, strlen(be->q->name));
 			if (m->emode == m_normal && m->emod == mod_none)
 				m->emode = m_inplace; 
 		} 
-		stmt_destroy(s);
 	}
 	if (be->q){
 		if (m->emode == m_prepare)
@@ -1605,7 +1610,6 @@ SQLrecompile(Client c, backend *be)
 	s = sql_symbol2stmt(m, be->q->s);
 	be->q->code = (backend_code)backend_dumpproc(be, c, be->q, s);
 	be->q->stk = 0;
-	stmt_destroy(s);
 
 	pushEndInstruction(c->curprg->def);
 

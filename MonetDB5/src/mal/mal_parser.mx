@@ -401,10 +401,6 @@ position(Client cntxt)
 	return (long) (CURRENT(cntxt) - s);
 }
 
-#if HAVE_STRTOLL && !HAVE_DECL_STRTOLL
-extern long long strtoll(const char *, char **, int);
-#endif
-
 @-
 Upon encountering an error we skip to the nearest semicolon,
 or comment terminated by a new line
@@ -970,8 +966,10 @@ parseInclude(Client cntxt)
 	skipToEnd(cntxt);
 
 	s = loadLibrary(modnme,FALSE);
-	if (s)
+	if (s) {
 		mnstr_printf(cntxt->fdout, "#WARNING: %s\n", s);
+		GDKfree(s);
+	}
 	if ( (s = malInclude(cntxt, modnme, 0)) ){
 		mnstr_printf(cntxt->fdout, "#WARNING: %s\n", s);
 		GDKfree(s);

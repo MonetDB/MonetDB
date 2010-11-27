@@ -37,10 +37,6 @@
 /* #undef HAVE_CSTDIO */
 #endif
 
-/* Define to 1 if you have the declaration of `strdup', and to 0 if you don't.
-   */
-#define HAVE_DECL_STRDUP 1
-
 /* Define to 1 if you have the <inttypes.h> header file. */
 /* #undef HAVE_INTTYPES_H */
 

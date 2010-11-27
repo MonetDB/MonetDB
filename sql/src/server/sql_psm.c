@@ -49,7 +49,7 @@ psm_set(mvc *sql, dnode *n)
 	exp_kind ek = {type_value, card_value, FALSE};
 	char *name = n->data.sval;
 	symbol *val = n->next->data.sym;
-	stmt *var, *r = NULL;
+	stmt *r = NULL;
 	int level = 0;
 	sql_subtype *tpe = NULL;
 
@@ -59,14 +59,14 @@ psm_set(mvc *sql, dnode *n)
 	*/
 
 	/* check if variable is known from the stack */
-	if ((var=stack_find_var(sql, name)) == NULL) {
+	if (!stack_find_var(sql, name)) {
 		sql_arg *a = sql_bind_param(sql, name);
 
 		if (!a) /* not parameter, ie local var ? */
 			return sql_error(sql, 01, "Variable %s unknown", name);
 		tpe = &a->type;
 	} else { 
-		tpe = tail_type(var);
+		tpe = stack_find_type(sql, name);
 	}
 
 	r = value_exp(sql, val, sql_sel, ek);
@@ -77,16 +77,15 @@ psm_set(mvc *sql, dnode *n)
 	r = check_types(sql, tpe, r, type_cast); 
 	if (!r)
 		return NULL;
-	return stmt_assign(name, r, level);
+	return stmt_assign(sql->sa, name, r, level);
 }
 
 /* TODO add logic to check if variables get initialized */
 static stmt *
 psm_declare(mvc *sql, dnode *n)
 {
-	list *l;
+	list *l = list_new(sql->sa);
 
-	l = create_stmt_list();
 	while(n) { /* list of 'identfiers with type' */
 		dnode *ids = n->data.sym->data.lval->h->data.lval->h;
 		sql_subtype *ctype = &n->data.sym->data.lval->h->next->data.typeval;
@@ -96,18 +95,17 @@ psm_declare(mvc *sql, dnode *n)
 
 			/* check if we overwrite a scope local variable declare x; declare x; */
 			if (frame_find_var(sql, name)) {
-				list_destroy(l);
 				return sql_error(sql, 01, 
 					"Variable '%s' allready declared", name);
 			}
-			r = stmt_var(_strdup(name), ctype, 1, sql->frame );
-			stack_push_var(sql, name, r, ctype);
+			stack_push_var(sql, name, ctype);
+			r = stmt_var(sql->sa, sa_strdup(sql->sa, name), ctype, 1, sql->frame );
 			list_append(l, r);
 			ids = ids->next;
 		}
 		n = n->next;
 	}
-	return stmt_list(l);
+	return stmt_list(sql->sa, l);
 }
 
 static stmt *
@@ -159,12 +157,9 @@ psm_while_do( mvc *sql, sql_subtype *res, dnode *w, int is_func )
 		n = n->next;
 		whilestmts = sequential_block(sql, res, n->data.lval, n->next->data.sval, is_func);
 
-		if (sql->session->status || !cond || !whilestmts) {
-			cond_stmt_destroy(cond);
-			cond_stmt_destroy(whilestmts);
+		if (sql->session->status || !cond || !whilestmts) 
 			return NULL;
-		}
-		return stmt_while( cond, whilestmts );
+		return stmt_while( sql->sa, cond, whilestmts );
 	}
 	return NULL;
 }
@@ -191,13 +186,9 @@ psm_if_then_else( mvc *sql, sql_subtype *res, dnode *elseif, int is_func)
 		n = n->next;
 		elsestmts = psm_if_then_else( sql, res, n, is_func);
 
-		if (sql->session->status || !cond || !ifstmts) {
-			cond_stmt_destroy(cond);
-			cond_stmt_destroy(ifstmts);
-			cond_stmt_destroy(elsestmts);
+		if (sql->session->status || !cond || !ifstmts) 
 			return NULL;
-		}
-		return stmt_if( cond, ifstmts, elsestmts);
+		return stmt_if( sql->sa, cond, ifstmts, elsestmts);
 	} else { /* else */
 		symbol *e = elseif->data.sym;
 
@@ -242,10 +233,8 @@ psm_case( mvc *sql, sql_subtype *res, dnode *case_when, int is_func )
 			return NULL;
 		if (else_statements) {
 			else_stmt = sequential_block( sql, res, else_statements, NULL, is_func);
-			if (!else_stmt) {
-				stmt_destroy(v);
+			if (!else_stmt) 
 				return NULL;
-			}
 		}
 		n = when_statements->h;
 		while(n) {
@@ -255,14 +244,10 @@ psm_case( mvc *sql, sql_subtype *res, dnode *case_when, int is_func )
 			stmt *case_stmt = NULL;
 
 			if (!when_value || 
-			   (cond = sql_binop_(sql, NULL /* default schema */, "=", stmt_dup(v), when_value)) == NULL || 
-			   (if_stmts = sequential_block( sql, res, m->next->data.lval, NULL, is_func)) == NULL ) {
-				stmt_destroy(v);
-				cond_stmt_destroy(else_stmt);
-				cond_stmt_destroy(cond);
+			   (cond = sql_binop_(sql, NULL /* default schema */, "=", v, when_value)) == NULL || 
+			   (if_stmts = sequential_block( sql, res, m->next->data.lval, NULL, is_func)) == NULL ) 
 				return NULL;
-			}
-			case_stmt = stmt_if(cond, if_stmts, NULL);
+			case_stmt = stmt_if(sql->sa, cond, if_stmts, NULL);
 			if (cur_if)
 				cur_if->op3.stval = case_stmt;
 			cur_if = case_stmt;
@@ -293,12 +278,9 @@ psm_case( mvc *sql, sql_subtype *res, dnode *case_when, int is_func )
 			stmt *case_stmt = NULL;
 
 			if (!cond || 
-			   (if_stmts = sequential_block( sql, res, m->next->data.lval, NULL, is_func)) == NULL ) {
-				cond_stmt_destroy(else_stmt);
-				cond_stmt_destroy(cond);
+			   (if_stmts = sequential_block( sql, res, m->next->data.lval, NULL, is_func)) == NULL ) 
 				return NULL;
-			}
-			case_stmt = stmt_if(cond, if_stmts, NULL);
+			case_stmt = stmt_if(sql->sa, cond, if_stmts, NULL);
 			if (cur_if)
 				cur_if->op3.stval = case_stmt;
 			cur_if = case_stmt;
@@ -325,7 +307,7 @@ psm_return( mvc *sql, sql_subtype *restype, symbol *return_sym )
 	res = value_exp(sql, return_sym, sql_sel, ek);
 	if (!res || (res = check_types(sql, restype, res, type_equal)) == NULL)
 		return NULL;
-	return stmt_return(res, stack_nr_of_declared_tables(sql));
+	return stmt_return(sql->sa, res, stack_nr_of_declared_tables(sql));
 }
 
 static int
@@ -355,7 +337,7 @@ sequential_block (mvc *sql, sql_subtype *restype, dlist *blk, char *opt_label, i
 		return sql_error(sql, 10, "SELECT: too many nested operators");
 
 	if (blk->h)
- 		l = create_stmt_list();
+ 		l = list_new(sql->sa);
 	stack_push_frame(sql, opt_label);
 	for (n = blk->h; n; n = n->next ) {
 		stmt *res = NULL;
@@ -419,7 +401,6 @@ sequential_block (mvc *sql, sql_subtype *restype, dlist *blk, char *opt_label, i
 			 token2string(s->token));
 		}
 		if (!res) {
-			list_destroy(l);
 			l = NULL;
 			break;
 		}
@@ -432,12 +413,12 @@ sequential_block (mvc *sql, sql_subtype *restype, dlist *blk, char *opt_label, i
 			sql_var *v = &sql->vars[i];
 
 			if (v->type.comp_type && !v->view) 
-				list_append(l, stmt_assign(v->name, NULL, sql->frame));
+				list_append(l, stmt_assign(sql->sa, v->name, NULL, sql->frame));
 		}
 	}
 	stack_pop_frame(sql);
 	if (l)
-		return stmt_list(l);
+		return stmt_list(sql->sa, l);
 	return NULL;
 }
 
@@ -448,7 +429,7 @@ result_type(mvc *sql, char *fname, symbol *res, int instantiate )
 		return &res->data.lval->h->data.typeval;
 	} else if (res->token == SQL_TABLE) {
 		/* here we create a new table-type */
-		sql_subtype *t = NEW(sql_subtype);
+		sql_subtype *t = SA_NEW(sql->sa, sql_subtype);
 		sql_table *tbl;
 		char *tnme = NEW_ARRAY(char, strlen(fname) + 2);
 
@@ -456,6 +437,7 @@ result_type(mvc *sql, char *fname, symbol *res, int instantiate )
 		strcpy(tnme+1, fname);
 		if (instantiate) {
 			tbl = mvc_bind_table(sql, sql->session->schema, tnme);
+			_DELETE(tnme);
 			if (!tbl)
 				return NULL;
 		} else {
@@ -508,6 +490,7 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 	char *sname = qname_schema(qname);
 	sql_schema *s = NULL;
 	sql_func *f;
+	sql_subfunc *sf;
 	dnode *n;
 	list *l = list_create((fdestroy) &arg_destroy), *type_list = NULL;
 	list *id_func_l = NULL, *id_col_l = NULL, *view_id_l = NULL;
@@ -530,7 +513,7 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 
 	type_list = create_type_list(params, 1);
 	
-	if (create && sql_bind_func_(s, fname, type_list)) {
+	if ((sf = sql_bind_func_(sql->sa, s, fname, type_list)) != NULL && create) {
 		if (params) {
 			char *arg_list = NULL;
 			node *n;
@@ -562,6 +545,8 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 					"for user '%s' in schema '%s'", F,
 					stack_get_string(sql, "current_user"), s->base.name);
 		} else {
+			char *q = QUERY(sql->scanner);
+
 		 	if (params) 
 				for (n = params->h; n; n = n->next) {
 					dnode *an = n->data.lval->h;
@@ -571,7 +556,6 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 				}
 		 	if (body) {		/* sql func */
 				char emode = sql->emode;
-				char *q = QUERY(sql->scanner);
 				stmt *b = NULL;
 	
 				if (create) /* for subtable we only need direct dependencies */
@@ -605,12 +589,11 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 					list_destroy(l);
 					return b;
 				} else if (create) {
-					f = mvc_create_func(sql, sql->session->schema, fname,
-							l, restype, TRUE, is_aggr, "user", q, is_func);
+					f = mvc_create_func(sql, sql->session->schema, fname, l, restype, is_aggr, "user", q, q, is_func);
 					if (b) {
-						id_col_l = stmt_list_dependencies(b, COLUMN_DEPENDENCY);
-						id_func_l = stmt_list_dependencies(b, FUNC_DEPENDENCY);
-						view_id_l = stmt_list_dependencies(b, VIEW_DEPENDENCY);
+						id_col_l = stmt_list_dependencies(sql->sa, b, COLUMN_DEPENDENCY);
+						id_func_l = stmt_list_dependencies(sql->sa, b, FUNC_DEPENDENCY);
+						view_id_l = stmt_list_dependencies(sql->sa, b, VIEW_DEPENDENCY);
 						
 						mvc_create_dependencies(sql, id_col_l, f->base.id,
 								f->is_func ? FUNC_DEPENDENCY : PROC_DEPENDENCY);
@@ -619,24 +602,28 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 						mvc_create_dependencies(sql, view_id_l, f->base.id,
 								f->is_func ? FUNC_DEPENDENCY : PROC_DEPENDENCY);
 	
-						list_destroy(id_col_l);
-						list_destroy(id_func_l);
-						list_destroy(view_id_l);
-						stmt_destroy(b);
 					}
 					list_destroy(l);
 				}
 			} else {
 				char *fmod = qname_module(ext_name);
 				char *fnme = qname_fname(ext_name);
-				mvc_create_func(sql, sql->session->schema, fname, l, restype,
-						FALSE, is_aggr, fmod, fnme, is_func);
+
+				if (create) {
+					mvc_create_func(sql, sql->session->schema, fname, l, restype, is_aggr, fmod, fnme, q, is_func);
+				} else {
+					sql_func *f = sf->func;
+					f->mod = sa_strdup(sql->sa, fmod);
+					f->imp = sa_strdup(sql->sa, fnme);
+					f->res = *restype;
+					f->sql = 0; /* native */
+				}
 				sql_destroy_params(sql);
 				list_destroy(l);
 			}
 		}
 	}
-	return stmt_none();
+	return stmt_none(sql->sa);
 }
 
 stmt* 
@@ -661,10 +648,10 @@ drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int is_func)
 	
 	if (typelist) {	
 		type_list = create_type_list(typelist, 0);
-		sub_func = sql_bind_func_(s,name, type_list);
+		sub_func = sql_bind_func_(sql->sa, s,name, type_list);
 		if (!sub_func && !sname) {
 			s = tmp_schema(sql);
-			sub_func = sql_bind_func_(s, name, type_list);
+			sub_func = sql_bind_func_(sql->sa, s, name, type_list);
 		}
 		if ( sub_func && sub_func->func->is_func == is_func)
 			func = sub_func->func;
@@ -720,7 +707,7 @@ drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int is_func)
 		mvc_drop_table(sql, func->res.comp_type->s, func->res.comp_type, 0);
 	mvc_drop_func(sql, s, func, drop_action);
 
-	return stmt_none();
+	return stmt_none(sql->sa);
 }
 
 stmt* 
@@ -764,7 +751,7 @@ drop_all_func(mvc *sql, dlist *qname, int drop_action, int is_func)
 
 	list_destroy(list_func);
 
-	return stmt_none();
+	return stmt_none(sql->sa);
 }
 
 stmt *

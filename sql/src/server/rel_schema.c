@@ -43,15 +43,15 @@ _bind_table(sql_table *t, sql_schema *ss, sql_schema *s, char *name)
 }
 
 static sql_rel *
-rel_table(int cat_type, char *sname, sql_table *t, int nr)
+rel_table(sql_allocator *sa, int cat_type, char *sname, sql_table *t, int nr)
 {
-	sql_rel *rel = rel_create();
-	list *exps = new_exp_list();
+	sql_rel *rel = rel_create(sa);
+	list *exps = new_exp_list(sa);
 
-	append(exps, exp_atom_int(nr));
-	append(exps, exp_atom_str(sname, sql_bind_localtype("str") ));
+	append(exps, exp_atom_int(sa, nr));
+	append(exps, exp_atom_str(sa, sname, sql_bind_localtype("str") ));
 	if (t)
-		append(exps, exp_atom_ptr(t));
+		append(exps, exp_atom_ptr(sa, t));
 	rel->l = NULL;
 	rel->r = NULL;
 	rel->op = op_ddl;
@@ -63,9 +63,9 @@ rel_table(int cat_type, char *sname, sql_table *t, int nr)
 }
 
 sql_rel *
-rel_list( sql_rel *l, sql_rel *r) 
+rel_list(sql_allocator *sa, sql_rel *l, sql_rel *r) 
 {
-	sql_rel *rel = rel_create();
+	sql_rel *rel = rel_create(sa);
 
 	rel->l = l;
 	rel->r = r;
@@ -79,14 +79,14 @@ view_rename_columns( mvc *sql, char *name, sql_rel *sq, dlist *column_spec)
 {
 	dnode *n = column_spec->h;
 	node *m = sq->exps->h;
-	list *l = new_exp_list();
+	list *l = new_exp_list(sql->sa);
 
 	for (; n && m; n = n->next, m = m->next) {
 		char *cname = n->data.sval;
 		sql_exp *e = m->data;
-		sql_exp *n = exp_is_atom(e)?exp_dup(e):exp_column(exp_relname(e), e->name, exp_subtype(e), sq->card, has_nil(e), is_intern(e));
+		sql_exp *n = exp_is_atom(e)?e:exp_column(sql->sa, exp_relname(e), e->name, exp_subtype(e), sq->card, has_nil(e), is_intern(e));
 
-		exp_setname(n, NULL, cname);
+		exp_setname(sql->sa, n, NULL, cname);
 		list_append(l, n);
 	}
 	/* skip any intern columns */
@@ -100,7 +100,7 @@ view_rename_columns( mvc *sql, char *name, sql_rel *sq, dlist *column_spec)
 		return sql_error(sql, 02, "Column lists do not match");
 	}
 	(void)name;
-	sq = rel_project(sq, l);
+	sq = rel_project(sql->sa, sq, l);
 	set_processed(sq);
 	return sq;
 }
@@ -354,10 +354,9 @@ column_option(
 			if (a->data.vtype == TYPE_str) {
 				mvc_default(sql, cs, a->data.val.sval);
 			} else {
-				char *r = atom2string(a);
+				char *r = atom2string(sql->sa, a);
 
 				mvc_default(sql, cs, r);
-				_DELETE(r);
 			}
 		}
 		res = SQL_OK;
@@ -769,7 +768,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 				return NULL;
 		}
 		temp = (temp == SQL_STREAM)?SQL_PERSIST:temp;
-		return rel_table( DDL_CREATE_TABLE, sname, t, temp);
+		return rel_table(sql->sa, DDL_CREATE_TABLE, sname, t, temp);
 	} else { /* [col name list] as subquery with or without data */
 		sql_rel *sq = NULL, *res = NULL;
 		dlist *as_sq = table_elements_or_subquery->data.lval;
@@ -791,9 +790,9 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 
 		/* insert query result into this table */
 		temp = (temp == SQL_STREAM)?SQL_PERSIST:temp;
-		res = rel_table( DDL_CREATE_TABLE, sname, t, temp);
+		res = rel_table(sql->sa, DDL_CREATE_TABLE, sname, t, temp);
 		if (with_data) {
-			res = rel_insert(res, sq);
+			res = rel_insert(sql->sa, res, sq);
 		} else {
 			rel_destroy(sq);
 		}
@@ -857,7 +856,7 @@ rel_create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symb
 				rel_destroy(sq);
 				return NULL;
 			}
-			return rel_table( DDL_CREATE_VIEW, s->base.name, t, SQL_PERSIST);
+			return rel_table(sql->sa, DDL_CREATE_VIEW, s->base.name, t, SQL_PERSIST);
 		} else {
 			t = mvc_bind_table(sql, s, name);
 		}
@@ -867,18 +866,14 @@ rel_create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symb
 
 		if (deps && sq && persistent) {
 			stmt *sqs = rel_bin(sql, sq);
-			list *view_id_l = stmt_list_dependencies(sqs, VIEW_DEPENDENCY);
-			list *id_l = stmt_list_dependencies(sqs, COLUMN_DEPENDENCY);
-			list *func_id_l = stmt_list_dependencies(sqs, FUNC_DEPENDENCY);
+			list *view_id_l = stmt_list_dependencies(sql->sa, sqs, VIEW_DEPENDENCY);
+			list *id_l = stmt_list_dependencies(sql->sa, sqs, COLUMN_DEPENDENCY);
+			list *func_id_l = stmt_list_dependencies(sql->sa, sqs, FUNC_DEPENDENCY);
 			mvc_create_dependencies(sql, id_l, t->base.id, VIEW_DEPENDENCY);
 			mvc_create_dependencies(sql, view_id_l, t->base.id, VIEW_DEPENDENCY);
 			mvc_create_dependencies(sql, func_id_l, t->base.id, VIEW_DEPENDENCY);
-			list_destroy(id_l);
-			list_destroy(view_id_l);
-			list_destroy(func_id_l);
-			stmt_destroy(sqs);
 			rel_destroy(sq);
-			return rel_project(NULL, NULL);
+			return rel_project(sql->sa, NULL, NULL);
 		}
 		return sq;
 	}
@@ -900,15 +895,15 @@ schema_auth(dlist *name_auth)
 }
 
 static sql_rel *
-rel_schema(int cat_type, char *sname, char *auth, int nr)
+rel_schema(sql_allocator *sa, int cat_type, char *sname, char *auth, int nr)
 {
-	sql_rel *rel = rel_create();
-	list *exps = new_exp_list();
+	sql_rel *rel = rel_create(sa);
+	list *exps = new_exp_list(sa);
 
-	append(exps, exp_atom_int(nr));
-	append(exps, exp_atom_clob(sname));
+	append(exps, exp_atom_int(sa, nr));
+	append(exps, exp_atom_clob(sa, sname));
 	if (auth)
-		append(exps, exp_atom_clob(auth));
+		append(exps, exp_atom_clob(sa, auth));
 	rel->l = NULL;
 	rel->r = NULL;
 	rel->op = op_ddl;
@@ -942,7 +937,7 @@ rel_create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
 		sql_schema *ss = ZNEW(sql_schema);
 		sql_rel *ret;
 
-		ret = rel_schema(DDL_CREATE_SCHEMA, 
+		ret = rel_schema(sql->sa, DDL_CREATE_SCHEMA, 
 			   dlist_get_schema_name(auth_name),
 			   schema_auth(auth_name), 0);
 
@@ -974,7 +969,7 @@ rel_create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
 				rel_destroy(ret);
 				return NULL;
 			}
-			ret = rel_list(ret, res);
+			ret = rel_list(sql->sa, ret, res);
 			n = n->next;
 		}
 		return ret;
@@ -1022,7 +1017,7 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 			int drop_action = l->h->next->data.i_val;
 			
 			sname = get_schema_name(sql, sname, tname);
-			return rel_schema( DDL_DROP_CONSTRAINT, sname, kname, drop_action);
+			return rel_schema(sql->sa, DDL_DROP_CONSTRAINT, sname, kname, drop_action);
 		}
 
 		if (!nt || (te && table_element(sql, te, s, nt, 1) == SQL_ERR)) 
@@ -1036,15 +1031,15 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 
 		if (!te) /* Set Read only */
 			nt = mvc_readonly(sql, nt, 1);
-		res = rel_table( DDL_ALTER_TABLE, sname, nt, 0);
+		res = rel_table(sql->sa, DDL_ALTER_TABLE, sname, nt, 0);
 		if (!te) /* Set Read only */
 			return res;
 
 		/* new columns need update with default values */
 		if (nt->columns.nelm) {
-			list *cols = new_exp_list();
-			sql_exp *e = exp_column(rel_name(res), "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
-			sql_rel *r = rel_project(res, append(new_exp_list(),e));
+			list *cols = new_exp_list(sql->sa);
+			sql_exp *e = exp_column(sql->sa, rel_name(res), "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+			sql_rel *r = rel_project(sql->sa, res, append(new_exp_list(sql->sa),e));
 			for (n = nt->columns.nelm; n; n = n->next) {
 				sql_column *c = n->data;
 				if (c->def) {
@@ -1052,23 +1047,22 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 					e = rel_parse_val(sql, d, sql->emode);
 					_DELETE(d);
 				} else {
-					e = exp_atom(atom_general(&c->type, NULL, 0));
+					e = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
 				}
 				if (!e || (e = rel_check_type(sql, &c->type, e, type_equal)) == NULL) {
-					exp_destroy(e);
 					rel_destroy(r);
 					return NULL;
 				}
-				list_append(cols, exp_column(nt->base.name, c->base.name, &c->type, CARD_MULTI, 0, 0));
+				list_append(cols, exp_column(sql->sa, nt->base.name, c->base.name, &c->type, CARD_MULTI, 0, 0));
 				rel_project_add_exp(sql, r, e);
 			}
-			res = rel_update( res, r /* all */, cols); 
+			res = rel_update(sql->sa, res, r /* all */, cols); 
 		} else {
-			//sql_exp *e = exp_column(rel_name(res), "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
-			//sql_rel *r = rel_project(res, append(new_exp_list(),e));
+			//sql_exp *e = exp_column(sql->sa, rel_name(res), "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+			//sql_rel *r = rel_project(sql->sa, res, append(new_exp_list(sql->sa),e));
 
 			/* new indices or keys */
-			res = rel_update( res, NULL/* r*/ /* all */, NULL); 
+			res = rel_update(sql->sa, res, NULL/* r*/ /* all */, NULL); 
 		}
 		return res;
 	}
@@ -1096,7 +1090,7 @@ rel_schemas(mvc *sql, symbol *s)
 		dlist *auth_name = l->h->data.lval;
 
 		assert(l->h->next->type == type_int);
-		ret = rel_schema(DDL_DROP_SCHEMA, 
+		ret = rel_schema(sql->sa, DDL_DROP_SCHEMA, 
 			   dlist_get_schema_name(auth_name),
 			   NULL,
 			   l->h->next->data.i_val);	/* drop_action */
@@ -1130,7 +1124,7 @@ rel_schemas(mvc *sql, symbol *s)
 
 		assert(l->h->next->type == type_int);
 		sname = get_schema_name(sql, sname, tname);
-		ret = rel_schema(DDL_DROP_TABLE, sname, tname, l->h->next->data.i_val);
+		ret = rel_schema(sql->sa, DDL_DROP_TABLE, sname, tname, l->h->next->data.i_val);
 	} 	break;
 	case SQL_DROP_VIEW:
 	{
@@ -1140,7 +1134,7 @@ rel_schemas(mvc *sql, symbol *s)
 
 		assert(l->h->next->type == type_int);
 		sname = get_schema_name(sql, sname, tname);
-		ret = rel_schema(DDL_DROP_VIEW, sname, tname, l->h->next->data.i_val);
+		ret = rel_schema(sql->sa, DDL_DROP_VIEW, sname, tname, l->h->next->data.i_val);
 	} 	break;
 	case SQL_ALTER_TABLE:
 	{

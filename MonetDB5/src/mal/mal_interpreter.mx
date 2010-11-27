@@ -2111,16 +2111,16 @@ are identified. In the post-execution phase they are removed.
 }
 @-
 @= patterncall
-	if( pci->fcn== NULL)
+	if (pci->fcn == NULL) {
 		ret = createScriptException(mb, stkpc, MAL, NULL,
-				"address of pattern %s.%s missing", pci->modname, pci->fcnname);
-	else {
+			"address of pattern %s.%s missing", pci->modname, pci->fcnname);
+	} else {
 		@:safeTarget(@1)@
 		ret = (str) (*pci->fcn)(cntxt,mb,stk,pci);
 		@:restoreTarget(@1,@3)@
-		@:exceptionHndlr(@1,@2,@3)@
-		@:timingHndlr(@1,@2)@
 	}
+	@:exceptionHndlr(@1,@2,@3)@
+	@:timingHndlr(@1,@2)@
 @-
 MAL function calls are relatively expensive, because they have to assemble
 a new stack frame and do housekeeping, such as garbagecollection of all

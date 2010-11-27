@@ -190,3 +190,14 @@ char *sql_message( const char *format, ... )
 	return _strdup(buf);
 }
 
+char *sa_message( sql_allocator *sa, const char *format, ... )
+{
+	char buf[BUFSIZ];
+	va_list	ap;
+
+	va_start (ap,format);
+	(void) vsnprintf( buf, BUFSIZ, format, ap); 
+	va_end (ap);
+	return sa_strdup(sa, buf);
+}
+

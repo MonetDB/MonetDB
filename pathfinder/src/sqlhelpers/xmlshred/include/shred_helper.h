@@ -75,10 +75,6 @@ char* strsplit(char **in, const char *del);
  */
 char* strdup (const char * s);
 #else
-#if !HAVE_DECL_STRDUP
-extern char* strdup(const char *);
-#endif
-
 #ifdef NATIVE_WIN32
 #define strdup _strdup
 #endif
@@ -94,10 +90,6 @@ extern char* strdup(const char *);
  * @param n  Copy only the first n characters.
  */
 char* strndup (const char * s, size_t n);
-#else
-#if !HAVE_DECL_STRNDUP
-extern char *strndup(const char *, size_t);
-#endif
 #endif
 
 /* global state of the shredder */

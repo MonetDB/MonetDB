@@ -248,7 +248,7 @@ rel_semantic(mvc *sql, symbol *s)
 				node *ne = nrel->exps->h;
 	
 				for (; ne; ne = ne->next) 
-					exp_setname( ne->data, name, NULL );
+					exp_setname(sql->sa, ne->data, name, NULL );
 			}
 		}
 		rel = rel_semantic(sql, select);
@@ -268,7 +268,7 @@ rel_semantic(mvc *sql, symbol *s)
 			if (!nr)
 				return NULL;
 			if (r)
-				r = rel_list(r, nr);
+				r = rel_list(sql->sa, r, nr);
 			else
 				r = nr;
 		}

@@ -226,9 +226,9 @@ findRegist( str sch, str tab, str col, int acc) {
 	reg = catalog;
 	
 	while(reg && !(
-                (strcmp(reg->schema, sch) == 0) &&
-                (strcmp(reg->table, tab) == 0) &&
-                (strcmp(reg->column, col) == 0) &&
+                (strcasecmp(reg->schema, sch) == 0) &&
+                (strcasecmp(reg->table, tab) == 0) &&
+                (strcasecmp(reg->column, col) == 0) &&
                 reg->access == acc
         )) {
                 reg = reg->next;

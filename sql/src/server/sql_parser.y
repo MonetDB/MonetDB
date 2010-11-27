@@ -50,7 +50,7 @@
 #define append_string(l,d)   dlist_append_string( SA, l, d)
 #define append_type(l,d)     dlist_append_type( SA, l, d)
 
-#define _atom_string(t, v)   atom_string2(SA, t, v, 0)
+#define _atom_string(t, v)   atom_string(SA, t, v)
  
 #define YYPARSE_PARAM parm
 #define YYLEX_PARAM parm
@@ -2646,7 +2646,7 @@ null:
 
 	  if (m->emode == m_normal && m->caching) {
 		/* replace by argument */
-		atom *a = atom_general( sql_bind_localtype("str"), NULL, 0);
+		atom *a = atom_general(SA, sql_bind_localtype("str"), NULL);
 
 		sql_add_arg( m, a);
 		$$ = _symbol_create_list( SQL_COLUMN,
@@ -3128,7 +3128,7 @@ opt_limit:
     /* empty */ 	{ $$ = NULL; }
  |  LIMIT nonzerowrd	{ 
 		  	  sql_subtype *t = sql_bind_localtype("wrd");
-			  $$ = _newAtomNode( atom_int(t, (lng)$2)); 
+			  $$ = _newAtomNode( atom_int(SA, t, (lng)$2)); 
 			}
  |  LIMIT param		{ $$ = $2; }
  ;
@@ -3137,7 +3137,7 @@ opt_offset:
 	/* empty */	{ $$ = NULL; }
  |  OFFSET poswrd	{ 
 		  	  sql_subtype *t = sql_bind_localtype("wrd");
-			  $$ = _newAtomNode( atom_int(t, (lng)$2)); 
+			  $$ = _newAtomNode( atom_int(SA, t, (lng)$2)); 
 			}
  |  OFFSET param	{ $$ = $2; }
  ;
@@ -3709,8 +3709,7 @@ atom:
 	   } else {
 	  	AtomNode *an = (AtomNode*)$1;
 		atom *a = an->a; 
-		an->a = atom_copy(a, SA); 
-		atom_destroy(a);
+		an->a = atom_dup(SA, a); 
 		$$ = $1;
 	   }
 	}
@@ -3881,7 +3880,7 @@ literal:
 		  int len = _strlen(s);
 		  sql_subtype t;
 		  sql_find_subtype(&t, "char", len, 0 );
-		  $$ = _newAtomNode( atom_string(&t, s, 0)); }
+		  $$ = _newAtomNode( _atom_string(&t, s)); }
 
  |  HEXADECIMAL { int len = _strlen($1), i = 2, err = 0;
 		  char * hexa = $1;
@@ -3919,7 +3918,7 @@ literal:
 			$$ = NULL;
 			YYABORT;
 		  } else {
-			$$ = _newAtomNode( atom_int(&t, res));
+			$$ = _newAtomNode( atom_int(SA, &t, res));
 		  }
 		}
  |  sqlINT
@@ -3954,7 +3953,7 @@ literal:
 			$$ = NULL;
 			YYABORT;
 		  } else {
-		  	$$ = _newAtomNode( atom_int(&t, value));
+		  	$$ = _newAtomNode( atom_int(SA, &t, value));
 		  }
 		}
  |  INTNUM
@@ -3973,12 +3972,12 @@ literal:
 		  	if (*s == '+' || *s == '-')
 				digits --;
 		  	sql_find_subtype(&t, "decimal", digits, scale );
-		  	$$ = _newAtomNode( atom_dec(&t, value, val)); 
+		  	$$ = _newAtomNode( atom_dec(SA, &t, value, val)); 
 		   } else { 
 		  	double val = strtod($1,NULL);
 
 		  	sql_find_subtype(&t, "double", 51, 0 );
-		  	$$ = _newAtomNode(atom_float(&t, val)); 
+		  	$$ = _newAtomNode(atom_float(SA, &t, val)); 
 		   }
 		}
  |  APPROXNUM
@@ -3986,14 +3985,14 @@ literal:
 		  double val = strtod($1,NULL);
 
 		  sql_find_subtype(&t, "double", 51, 0 );
-		  $$ = _newAtomNode(atom_float(&t, val)); }
+		  $$ = _newAtomNode(atom_float(SA, &t, val)); }
  |  sqlDATE string
 		{ sql_subtype t;
 		  atom *a;
 		  int r;
 
  		  r = sql_find_subtype(&t, "date", 0, 0 );
-		  if (!r || (a = atom_general(&t, $2, 0)) == NULL) {
+		  if (!r || (a = atom_general(SA, &t, $2)) == NULL) {
 			char *msg = sql_message("incorrect date value (%s)", $2);
 
 			yyerror(msg);
@@ -4009,7 +4008,7 @@ literal:
 		  int r;
 
 	          r = sql_find_subtype(&t, ($3)?"timetz":"time", $2, 0);
-		  if (!r || (a = atom_general(&t, $4, 0)) == NULL) {
+		  if (!r || (a = atom_general(SA, &t, $4)) == NULL) {
 			char *msg = sql_message("incorrect time value (%s)", $4);
 
 			yyerror(msg);
@@ -4025,7 +4024,7 @@ literal:
 		  int r;
 
  		  r = sql_find_subtype(&t, ($3)?"timestamptz":"timestamp",$2,0);
-		  if (!r || (a = atom_general(&t, $4, 0)) == NULL) {
+		  if (!r || (a = atom_general(SA, &t, $4)) == NULL) {
 			char *msg = sql_message("incorrect timestamp value (%s)", $4);
 
 			yyerror(msg);
@@ -4043,15 +4042,13 @@ literal:
 
 		  $$ = NULL;
  		  r = sql_find_subtype(&t, "blob", 0, 0);
-	          if (r && (a = atom_general(&t, $2, 0)) != NULL)
+	          if (r && (a = atom_general(SA, &t, $2)) != NULL)
 			$$ = _newAtomNode(a);
 		  if (!$$) {
 			char *msg = sql_message("incorrect blob %s", $2);
 
 			yyerror(msg);
 			_DELETE(msg);
-			if (a)
-				atom_destroy(a);
 			YYABORT;
 		  }
 		}
@@ -4062,15 +4059,13 @@ literal:
 
 		  $$ = NULL;
 		  r = sql_find_subtype(&t, $1, 0, 0);
-	          if (r && (a = atom_general(&t, $2, 0)) != NULL)
+	          if (r && (a = atom_general(SA, &t, $2)) != NULL)
 			$$ = _newAtomNode(a);
 		  if (!$$) {
 			char *msg = sql_message("incorrect %s %s", $1, $2);
 
 			yyerror(msg);
 			_DELETE(msg);
-			if (a)
-				atom_destroy(a);
 			YYABORT;
 		  }
 		}
@@ -4081,15 +4076,13 @@ literal:
 
 		  $$ = NULL;
 		  r = sql_find_subtype(&t, $1, 0, 0);
-	          if (r && (a = atom_general(&t, $2, 0)) != NULL)
+	          if (r && (a = atom_general(SA, &t, $2)) != NULL)
 			$$ = _newAtomNode(a);
 		  if (!$$) {
 			char *msg = sql_message("incorrect %s %s", $1, $2);
 
 			yyerror(msg);
 			_DELETE(msg);
-			if (a)
-				atom_destroy(a);
 			YYABORT;
 		  }
 		}
@@ -4102,7 +4095,7 @@ literal:
 		  if (t) {
 		  	sql_subtype tpe;
 			sql_init_subtype(&tpe, t, 0, 0);
-			a = atom_general(&tpe, $2, 0);
+			a = atom_general(SA, &tpe, $2);
 			if (a)
 				$$ = _newAtomNode(a);
 		  }
@@ -4117,11 +4110,11 @@ literal:
  |  BOOL_FALSE
 		{ sql_subtype t;
 		  sql_find_subtype(&t, "boolean", 0, 0 );
-		  $$ = _newAtomNode( atom_bool(&t, FALSE)); }
+		  $$ = _newAtomNode( atom_bool(SA, &t, FALSE)); }
  |  BOOL_TRUE
 		{ sql_subtype t;
 		  sql_find_subtype(&t, "boolean", 0, 0 );
-		  $$ = _newAtomNode( atom_bool(&t, TRUE)); }
+		  $$ = _newAtomNode( atom_bool(SA, &t, TRUE)); }
  ;
 
 interval_expression:
@@ -4161,7 +4154,7 @@ interval_expression:
 				$$ = NULL;
 				YYABORT;
 			}
-	  		$$ = _newAtomNode( atom_int(&t, i));
+	  		$$ = _newAtomNode( atom_int(SA, &t, i));
 	  	}
 	}
 
@@ -4697,9 +4690,8 @@ intval:
  |	IDENT	{ mvc *m = (mvc*)parm;
 		  char *name = $1;
 		  sql_subtype *tpe;
-		  stmt *var;
 
-		  if (!(var = stack_find_var(m, name))) {
+		  if (!stack_find_var(m, name)) {
 			char *msg = sql_message("constant (%s) unknown", $1);
 
 			yyerror(msg);
@@ -4707,7 +4699,7 @@ intval:
 			$$ = 0;
 			YYABORT;
 		  }
-		  tpe = tail_type(var);
+		  tpe = stack_find_type(m, name);
 		  if (tpe->type->localtype == TYPE_lng ||
 		      tpe->type->localtype == TYPE_int ||
 		      tpe->type->localtype == TYPE_sht ||

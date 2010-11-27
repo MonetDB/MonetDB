@@ -65,6 +65,7 @@ typedef int (*fcmp) (void *data, void *key);
 typedef int (*fcmp2) (void *data, void *v1, void *v2);
 typedef void *(*fdup) (void *data);
 typedef void *(*freduce) (void *v1, void *v2);
+typedef void *(*freduce2) (sql_allocator *sa, void *v1, void *v2);
 typedef void *(*fmap) (void *data, void *clientdata);
 typedef int (*fkeyvalue) (void *data);
 
@@ -76,6 +77,7 @@ extern list *list_order(list *l, fcmp cmp, fdup dup);
 extern list *list_distinct(list *l, fcmp cmp, fdup dup);
 extern list *list_distinct2(list *l, void *data, fcmp2 cmp, fdup dup);
 extern void *list_reduce(list *l, freduce red, fdup dup);
+extern void *list_reduce2(list *l, freduce2 red, sql_allocator *sa);
 extern list *list_map(list *l, void *data, fmap f);
 extern int list_cmp(list *l1, list *l2, fcmp cmp);
 /* cmp the lists in link order */

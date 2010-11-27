@@ -124,7 +124,7 @@ if test "x$have_unixodbc" != xno; then
 fi
 if test "x$have_unixodbc" != xno; then
 	AC_MSG_CHECKING([checking whether SQLColAttribute uses SQLLEN * or SQLPOINTER])
-	AC_COMPILE_IFELSE(
+	AC_COMPILE_IFELSE([
 		AC_LANG_PROGRAM([[
 			#include <sql.h>
 			SQLRETURN SQL_API
@@ -137,7 +137,7 @@ if test "x$have_unixodbc" != xno; then
 				(void) pnValueLength;
 				(void) pnValue;
 				return SQL_SUCCESS;}]],
-			[[SQLColAttribute(0,0,0,0,0,0,0);]]),
+			[[SQLColAttribute(0,0,0,0,0,0,0);]])],
 		[lenp_or_pointer_t='SQLLEN *'],
 		[lenp_or_pointer_t=SQLPOINTER])
 	AC_MSG_RESULT([using "$lenp_or_pointer_t"])
@@ -158,8 +158,6 @@ AC_CHECK_HEADERS([strings.h locale.h iconv.h langinfo.h])
 AC_CHECK_FUNCS([crypt ftime getlogin gethostname localtime_r popen strcasecmp strncasecmp strtod strtof strtoll strtoull])
 
 AM_MONETDB_FUNC_GETOPT()
-
-AC_CHECK_DECLS([strtof, strtoll, strtoull])
 
 AM_MONETDB_MSG_CONTROL()
 AM_ICONV()

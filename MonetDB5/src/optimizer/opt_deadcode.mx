@@ -117,8 +117,8 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		if( se){
 			pushInstruction(mb,p);
 			for(i++; i<limit; i++)
-			if(old[i])
-				pushInstruction(mb,old[i]);
+				if(old[i])
+					pushInstruction(mb,old[i]);
 			break;
 		}
 		if( p->token != NOOPsymbol)

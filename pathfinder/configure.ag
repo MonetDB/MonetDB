@@ -208,6 +208,7 @@ else
                compile the Pathfinder compiler from the development
                sources.])
 fi
+rm -f y.tab.c
 
 fi   dnl Yacc found on the system?
 
@@ -323,7 +324,6 @@ dnl            [Compiler does not understand __attribute__.])
 dnl We use signal handlers to catch segmentation faults and
 dnl give helpful messages to the user, if available.
 AC_CHECK_HEADERS(signal.h)
-AC_TYPE_SIGNAL
 
 dnl Convenience feature: Make argument of --debug case insensitive
 dnl if we have strcasecmp().
@@ -609,16 +609,7 @@ AC_CHECK_HEADERS(time.h sys/time.h string.h)
 dnl The xmlshredder requires strdup() & strndup(). We test here if both are
 dnl available on the system. If not, we will define them ourselves
 dnl in shred_helpers.h & shred_helpers.c
-AC_CHECK_FUNCS([strdup strndup],
-	AC_CHECK_DECLS([strdup, strndup],,,[
-		#ifdef HAVE_STRING_H
-		#ifndef _GNU_SOURCE
-		#define _GNU_SOURCE /* enable strndup prototype (on Linux, only?) */
-		#endif
-		#include <string.h>
-		#endif
-	])
-)
+AC_CHECK_FUNCS([strdup strndup])
 
 AC_HEADER_TIME()
 AC_STRUCT_TM()

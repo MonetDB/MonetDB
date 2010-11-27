@@ -36,6 +36,7 @@ extern char *sql_strdup(char *s);
 extern char *sql_escape_str(char *s);
 extern char *sql_escape_ident(char *s);
 extern char *sql_message(const char *format, ...);
+extern char *sa_message(sql_allocator *sa, const char *format, ...);
 
 #endif /*_SQL_STRING_H_*/
 

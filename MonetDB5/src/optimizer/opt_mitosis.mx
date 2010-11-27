@@ -161,7 +161,7 @@ tarantula optimizer.
 			pieces = MIN ( (int)(rowcnt / MINPARTCNT) , GDKnr_threads );
 		/* when testing, split also small BATs, but avoid empty pieces */
 		FORCEMITODEBUG
-			if (pieces < GDKnr_threads)
+			if (pieces <= GDKnr_threads)
 				pieces = MIN ( GDKnr_threads , (int)rowcnt );
 		/* prevent plan explosion */
 		if (pieces > MAXSLICES)
@@ -228,13 +228,12 @@ tarantula optimizer.
 		for(j=0; j < pieces; j++){
 			q= copyInstruction(p);
 			q= pushOid(mb,q,low.value.val.oval);
-			if (j+1 < pieces){
+			if (j+1 < pieces) {
 				hgh.value.val.oval= low.value.val.oval+slice;
-				q= pushOid(mb,q,hgh.value.val.oval);
-			} else{
-				hgh.value.val.oval= oid_nil;
-				q= pushNil(mb,q, TYPE_oid);
+			} else {
+				hgh.value.val.oval= rowcnt;
 			}
+			q = pushOid(mb,q,hgh.value.val.oval);
 
 			k= getArg(q,0)= newTmpVariable(mb,tpe);
 			setVarUDFtype(mb,k);

@@ -870,6 +870,97 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 }
 
 int
+describe_sequence(Mapi mid, char *schema, char *tname, stream *toConsole)
+{
+	MapiHdl hdl = NULL;
+	char *query;
+	size_t maxquerylen;
+	char *sname = NULL;
+
+	if (schema == NULL) {
+		if ((sname = strchr(tname, '.')) != NULL) {
+			size_t len = sname - tname;
+
+			sname = malloc(len + 1);
+			strncpy(sname, tname, len);
+			sname[len] = 0;
+			tname += len + 1;
+		} else if ((sname = get_schema(mid)) == NULL) {
+			return 1;
+		}
+		schema = sname;
+	}
+
+	maxquerylen = 512 + strlen(tname) + strlen(schema);
+
+	query = malloc(maxquerylen);
+	snprintf(query, maxquerylen,
+		"SELECT \"s\".\"name\","
+		     "\"seq\".\"name\","
+		     "get_value_for(\"s\".\"name\",\"seq\".\"name\"),"
+		     "\"seq\".\"minvalue\","
+		     "\"seq\".\"maxvalue\","
+		     "\"seq\".\"increment\","
+		     "\"seq\".\"cycle\" "
+		"FROM \"sys\".\"sequences\" \"seq\", "
+		     "\"sys\".\"schemas\" \"s\" "
+		"WHERE \"s\".\"id\" = \"seq\".\"schema_id\" "
+		  "AND \"s\".\"name\" = '%s' "
+		  "AND \"seq\".\"name\" = '%s' "
+		"ORDER BY \"s\".\"name\",\"seq\".\"name\"",
+		schema, tname);
+
+	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
+		goto bailout;
+
+	while (mapi_fetch_row(hdl) != 0) {
+		char *schema = mapi_fetch_field(hdl, 0);
+		char *name = mapi_fetch_field(hdl, 1);
+		char *start = mapi_fetch_field(hdl, 2);
+		char *minvalue = mapi_fetch_field(hdl, 3);
+		char *maxvalue = mapi_fetch_field(hdl, 4);
+		char *increment = mapi_fetch_field(hdl, 5);
+		char *cycle = mapi_fetch_field(hdl, 6);
+
+		mnstr_printf(toConsole,
+				 "CREATE SEQUENCE \"%s\".\"%s\" START WITH %s",
+				 schema, name, start);
+		if (strcmp(increment, "1") != 0)
+			mnstr_printf(toConsole, " INCREMENT BY %s", increment);
+		if (strcmp(minvalue, "0") != 0)
+			mnstr_printf(toConsole, " MINVALUE %s", minvalue);
+		if (strcmp(maxvalue, "0") != 0)
+			mnstr_printf(toConsole, " MAXVALUE %s", maxvalue);
+		mnstr_printf(toConsole, " %sCYCLE;\n", strcmp(cycle, "true") == 0 ? "" : "NO ");
+		if (mnstr_errnr(toConsole)) {
+			mapi_close_handle(hdl);
+			hdl = NULL;
+			goto bailout;
+		}
+	}
+	if (mapi_error(mid))
+		goto bailout;
+	mapi_close_handle(hdl);
+	hdl = NULL;
+	return 0;
+
+bailout:
+	if (hdl) {
+		if (mapi_result_error(hdl))
+			mapi_explain_result(hdl, stderr);
+		else if (mapi_error(mid))
+			mapi_explain_query(hdl, stderr);
+		mapi_close_handle(hdl);
+	} else if (mapi_error(mid))
+		mapi_explain(mid, stderr);
+	if (sname != NULL)
+		free(sname);
+	if (query != NULL)
+		free(query);
+	return 1;
+}
+
+int
 dump_table_data(Mapi mid, char *schema, char *tname, stream *toConsole)
 {
 	int cnt, i;
@@ -1021,7 +1112,7 @@ dump_table(Mapi mid, char *schema, char *tname, stream *toConsole, int describe,
 }
 
 static int
-dump_external_functions(Mapi mid, stream *toConsole)
+dump_external_functions(Mapi mid, const char *schema, const char *fname, stream *toConsole, const char dumpSystem)
 {
 	const char functions[] =
 		"SELECT \"f\".\"id\","
@@ -1032,12 +1123,15 @@ dump_external_functions(Mapi mid, stream *toConsole)
 		       "\"a\".\"type\","
 		       "\"a\".\"type_digits\","
 		       "\"a\".\"type_scale\","
-		       "\"a\".\"number\" "
+		       "\"a\".\"number\", "
+			   "\"s\".\"name\" "
 		"FROM \"sys\".\"args\" \"a\","
-		     "\"sys\".\"functions\" \"f\" "
+		     "\"sys\".\"functions\" \"f\", "
+			 "\"sys\".\"schemas\" \"s\" "
 		"WHERE \"f\".\"sql\" = FALSE AND "
 		      "\"a\".\"func_id\" = \"f\".\"id\" AND "
-		      "\"f\".\"id\" %s "
+			  "\"f\".\"schema_id\" = \"s\".\"id\" "
+		      "%s %s "
 		"ORDER BY \"f\".\"id\", \"a\".\"number\"";
 	char query[512];
 	MapiHdl hdl;
@@ -1051,7 +1145,8 @@ dump_external_functions(Mapi mid, stream *toConsole)
 	char *sep = NULL;
 
 	snprintf(query, sizeof(query), functions,
-		 has_systemfunctions(mid) ? "NOT IN (SELECT \"function_id\" FROM \"sys\".\"systemfunctions\")" : "> 2000");
+			dumpSystem ? "" : "AND \"f\".\"id\"",
+			dumpSystem ? "" : has_systemfunctions(mid) ? "NOT IN (SELECT \"function_id\" FROM \"sys\".\"systemfunctions\")" : "> 2000");
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 		goto bailout;
 	while (!mnstr_errnr(toConsole) && mapi_fetch_row(hdl) != 0) {
@@ -1064,6 +1159,12 @@ dump_external_functions(Mapi mid, stream *toConsole)
 		char *a_type_digits = mapi_fetch_field(hdl, 6);
 		char *a_type_scale = mapi_fetch_field(hdl, 7);
 		char *a_number = mapi_fetch_field(hdl, 8);
+		char *s_name = mapi_fetch_field(hdl, 9);
+
+		if (schema != NULL && strcmp(s_name, schema) != 0)
+			continue;
+		if (fname != NULL && strcmp(f_name, fname) != 0)
+			continue;
 
 		if (prev_f_id == NULL || strcmp(prev_f_id, f_id) != 0) {
 			if (prev_f_id) {
@@ -1141,26 +1242,48 @@ dump_external_functions(Mapi mid, stream *toConsole)
 }
 
 int
-dump_functions(Mapi mid, stream *toConsole, const char *sname)
+dump_functions(Mapi mid, stream *toConsole, const char *sname, const char *fname)
 {
 	const char functions[] =
-		"SELECT \"f\".\"func\" "
+		"SELECT \"f\".\"func\", \"f\".\"name\", \"s\".\"name\" "
 		"FROM \"sys\".\"schemas\" \"s\","
 		     "\"sys\".\"functions\" \"f\" "
-		"WHERE \"f\".\"id\" %s AND "
+		"WHERE \"f\".\"sql\" = TRUE AND "
 		      "\"s\".\"id\" = \"f\".\"schema_id\""
+			  "%s %s "
 		      "%s%s%s "
 		"ORDER BY \"f\".\"id\"";
 	MapiHdl hdl;
 	char *q;
 	size_t l;
+	char dumpSystem;
 
-	if (dump_external_functions(mid, toConsole))
+	if (sname == NULL) {
+		char *schema;
+		if (fname == NULL) {
+			schema = NULL;
+		} else if ((schema = strchr(fname, '.')) != NULL) {
+			size_t len = schema - fname;
+
+			schema = malloc(len + 1);
+			strncpy(schema, fname, len);
+			schema[len] = 0;
+			fname += len + 1;
+		} else if ((schema = get_schema(mid)) == NULL) {
+			return 1;
+		}
+		sname = schema;
+	}
+
+	dumpSystem = sname && fname;
+
+	if (dump_external_functions(mid, sname, fname, toConsole, dumpSystem))
 		return 1;
 	l = sizeof(functions) + (sname ? strlen(sname) : 0) + 100;
 	q = malloc(l);
 	snprintf(q, l, functions,
-		 has_systemfunctions(mid) ? "NOT IN (SELECT \"function_id\" FROM \"sys\".\"systemfunctions\")" : "> 2000",
+		 dumpSystem ? "" : "AND \"f\".\"id\"",
+		 dumpSystem ? "" : has_systemfunctions(mid) ? "NOT IN (SELECT \"function_id\" FROM \"sys\".\"systemfunctions\")" : "> 2000",
 		 sname ? " AND \"s\".\"name\" = '" : "",
 		 sname ? sname : "",
 		 sname ? "'" : "");
@@ -1168,9 +1291,15 @@ dump_functions(Mapi mid, stream *toConsole, const char *sname)
 	free(q);
 	if (hdl == NULL || mapi_error(mid))
 		goto bailout;
-	while (!mnstr_errnr(toConsole) &&
-	       mapi_fetch_row(hdl) != 0) {
+	while (!mnstr_errnr(toConsole) && mapi_fetch_row(hdl) != 0) {
 		char *query = mapi_fetch_field(hdl, 0);
+		char *f_name = mapi_fetch_field(hdl, 1);
+		char *s_name = mapi_fetch_field(hdl, 2);
+
+		if (sname != NULL && strcmp(sname, s_name) != 0)
+			continue;
+		if (fname != NULL && strcmp(fname, f_name) != 0)
+			continue;
 
 		mnstr_printf(toConsole, "%s\n", query);
 	}
@@ -1513,7 +1642,7 @@ dump_database(Mapi mid, stream *toConsole, int describe)
 	hdl = NULL;
 
 	/* dump tables and functions */
-	if (dump_external_functions(mid, toConsole))
+	if (dump_external_functions(mid, NULL, NULL, toConsole, 0))
 		goto bailout;
 	snprintf(query, sizeof(query), tables_and_functions,
 		 has_systemfunctions(mid) ? "AND \"f\".\"id\" NOT IN (SELECT \"function_id\" FROM \"sys\".\"systemfunctions\") " : "");

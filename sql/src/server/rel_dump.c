@@ -98,12 +98,11 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, int comma, int alias)
 					isStream(t)?"stream":"table",
 					t->base.name);
 			} else {
-				char *s = atom2string(a);
+				char *s = atom2string(sql->sa, a);
 				if (atom_type(a)->type->localtype == TYPE_str)
 					mnstr_printf(fout, "'%s'", s);
 				else
 					mnstr_printf(fout, "%s", s);
-				_DELETE(s);
 			}
 		} else { /* variables */
 			if (e->r) { /* named parameters */

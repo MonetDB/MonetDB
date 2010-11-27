@@ -20,47 +20,44 @@
 #ifndef _REL_EXP_H_
 #define _REL_EXP_H_
 
-#define new_exp_list() list_create((fdestroy)&exp_destroy)
+#define new_exp_list(sa) list_new(sa)
 
-extern sql_exp *exp_dup(sql_exp* e);
-extern void exp_destroy(sql_exp* e);
-
-extern sql_exp *exp_compare( sql_exp *l, sql_exp *r, int cmptype);
-extern sql_exp *exp_compare2( sql_exp *l, sql_exp *r, sql_exp *h, int cmptype);
-extern sql_exp *exp_or( list *l, list *r);
+extern sql_exp *exp_compare(sql_allocator *sa, sql_exp *l, sql_exp *r, int cmptype);
+extern sql_exp *exp_compare2(sql_allocator *sa, sql_exp *l, sql_exp *r, sql_exp *h, int cmptype);
+extern sql_exp *exp_or(sql_allocator *sa, list *l, list *r);
 
 #define exp_fromtype(e)	((list*)e->r)->h->data
 #define exp_totype(e)	((list*)e->r)->h->next->data
-extern sql_exp *exp_convert( sql_exp *exp, sql_subtype *fromtype, sql_subtype *totype );
+extern sql_exp *exp_convert(sql_allocator *sa, sql_exp *exp, sql_subtype *fromtype, sql_subtype *totype );
 extern str number2name(str s, int len, int i);
-extern sql_exp *exp_op( list *l, sql_subfunc *f );
+extern sql_exp *exp_op(sql_allocator *sa, list *l, sql_subfunc *f );
 
 #define append(l,v) list_append(l,v) 
-#define exp_unop(l,f) \
-	exp_op(append(new_exp_list(),l), f)
-#define exp_binop(l,r,f) \
-	exp_op(append(append(new_exp_list(),l),r), f)
-#define exp_op3(l,r,r2,f) \
-	exp_op(append(append(append(new_exp_list(),l),r),r2), f)
-#define exp_op4(l,r,r2,r3,f) \
-	exp_op(append(append(append(append(new_exp_list(),l),r),r2),r3), f)
-extern sql_exp *exp_aggr( list *l, sql_subaggr *a, int distinct, int no_nils, int card, int has_nil );
-#define exp_aggr1(e, a, d, n, c, hn) \
-	exp_aggr(append(new_exp_list(), e), a, d, n, c, hn)
-extern sql_exp * exp_atom( atom *a);
-extern sql_exp * exp_atom_bool(int b); 
-extern sql_exp * exp_atom_int(int i);
-extern sql_exp * exp_atom_lng(lng l);
-extern sql_exp * exp_atom_wrd(wrd w);
-extern sql_exp * exp_atom_str(str s, sql_subtype *st);
-extern sql_exp * exp_atom_clob(str s);
-extern sql_exp * exp_atom_ptr(void *s);
-extern sql_exp * exp_atom_ref(int i, sql_subtype *tpe);
-extern sql_exp * exp_param(char *name, sql_subtype *tpe, int frame);
-extern sql_exp * exp_column( char *rname, char *name, sql_subtype *t, int card, int has_nils, int intern);
-extern sql_exp * exp_alias( char *arname, char *acname, char *org_rname, char *org_cname, sql_subtype *t, int card, int has_nils, int intern);
-extern void exp_setname( sql_exp *e, char *rname, char *name );
-extern sql_exp* exp_label( sql_exp *e, int nr);
+#define exp_unop(sa,l,f) \
+	exp_op(sa, append(new_exp_list(sa),l), f)
+#define exp_binop(sa,l,r,f) \
+	exp_op(sa, append(append(new_exp_list(sa),l),r), f)
+#define exp_op3(sa,l,r,r2,f) \
+	exp_op(sa, append(append(append(new_exp_list(sa),l),r),r2), f)
+#define exp_op4(sa,l,r,r2,r3,f) \
+	exp_op(sa, append(append(append(append(new_exp_list(sa),l),r),r2),r3), f)
+extern sql_exp *exp_aggr(sql_allocator *sa, list *l, sql_subaggr *a, int distinct, int no_nils, int card, int has_nil );
+#define exp_aggr1(sa, e, a, d, n, c, hn) \
+	exp_aggr(sa, append(new_exp_list(sa), e), a, d, n, c, hn)
+extern sql_exp * exp_atom(sql_allocator *sa, atom *a);
+extern sql_exp * exp_atom_bool(sql_allocator *sa, int b); 
+extern sql_exp * exp_atom_int(sql_allocator *sa, int i);
+extern sql_exp * exp_atom_lng(sql_allocator *sa, lng l);
+extern sql_exp * exp_atom_wrd(sql_allocator *sa, wrd w);
+extern sql_exp * exp_atom_str(sql_allocator *sa, str s, sql_subtype *st);
+extern sql_exp * exp_atom_clob(sql_allocator *sa, str s);
+extern sql_exp * exp_atom_ptr(sql_allocator *sa, void *s);
+extern sql_exp * exp_atom_ref(sql_allocator *sa, int i, sql_subtype *tpe);
+extern sql_exp * exp_param(sql_allocator *sa, char *name, sql_subtype *tpe, int frame);
+extern sql_exp * exp_column(sql_allocator *sa, char *rname, char *name, sql_subtype *t, int card, int has_nils, int intern);
+extern sql_exp * exp_alias(sql_allocator *sa, char *arname, char *acname, char *org_rname, char *org_cname, sql_subtype *t, int card, int has_nils, int intern);
+extern void exp_setname(sql_allocator *sa, sql_exp *e, char *rname, char *name );
+extern sql_exp* exp_label(sql_allocator *sa, sql_exp *e, int nr);
 
 extern void exp_swap( sql_exp *e );
 

@@ -310,11 +310,9 @@ dnl  autoconf says, we cannot use AC_FUNC_SETPGRP when cross-compiling...
 if test x$cross_compiling != xyes; then
 	AC_FUNC_SETPGRP()
 fi
-AC_TYPE_SIGNAL()
-AC_FUNC_VPRINTF()
 AC_FUNC_MEMCMP()
 AC_CHECK_FUNCS(strsignal)
-AC_CHECK_FUNCS(mkdir rmdir getcwd getopt getrlimit vsnprintf snprintf kill pipe setsid)
+AC_CHECK_FUNCS(mkdir rmdir getcwd getopt getrlimit kill pipe setsid)
 AC_CHECK_FUNCS(strcspn strdup strstr strtod strtol strerror strcasecmp strncasecmp)
 AC_CHECK_FUNCS(strtoll strtoull)
 AC_CHECK_FUNCS(gethostname setenv putenv select)

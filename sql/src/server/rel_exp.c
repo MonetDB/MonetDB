@@ -23,10 +23,10 @@
 #include "rel_exp.h"
 
 static sql_exp * 
-exp_create( int type ) 
+exp_create(sql_allocator *sa, int type ) 
 {
-	sql_exp *e = NEW(sql_exp);
-	sql_ref_init(&e->ref);
+	sql_exp *e = SA_NEW(sa, sql_exp);
+
 	e->name = NULL;
 	e->rname = NULL;
 	e->card = 0;
@@ -42,69 +42,10 @@ exp_create( int type )
 	return e;
 }
 
-sql_exp *
-exp_dup(sql_exp *exp)
-{
-	sql_ref_inc(&exp->ref);
-	return exp;
-}
-
-void 
-exp_destroy(sql_exp *exp)
-{
-	if (!exp) 
-		return;
-	if (sql_ref_dec(&exp->ref) > 0)
-		return;
-	if (exp->name) 
-		_DELETE(exp->name);
-	if (exp->rname) 
-		_DELETE(exp->rname);
-	switch(exp->type){
-	case e_atom:
-		if (exp->l) 
-			atom_destroy(exp->l);
-		if (exp->r) 
-			_DELETE(exp->r);
-		break;
-	case e_column:
-		if (exp->l)
-			_DELETE(exp->l);
-		_DELETE(exp->r);
-		break;
-	case e_cmp:
-		if (exp->flag == cmp_or) {
-			list_destroy(exp->l);
-			list_destroy(exp->r);
-		} else {
-			exp_destroy(exp->l);
-			exp_destroy(exp->r);
-			if (exp->f)
-				exp_destroy(exp->f);
-		}
-		break;
-	case e_convert:
-		exp_destroy(exp->l);
-		list_destroy(exp->r);
-		break;
-	case e_aggr:
-		sql_subaggr_destroy(exp->f);
-		if (exp->l) list_destroy(exp->l);
-		break;
-	case e_func:
-		if (exp->f) sql_subfunc_destroy(exp->f);
-		if (exp->l) list_destroy(exp->l);
-		break;
-	default:
-		printf("TODO: exp_destroy %u\n", exp->type);
-	}
-	_DELETE(exp);
-}
-
 sql_exp * 
-exp_compare( sql_exp *l, sql_exp *r, int cmptype) 
+exp_compare(sql_allocator *sa, sql_exp *l, sql_exp *r, int cmptype) 
 {
-	sql_exp *e = exp_create(e_cmp);
+	sql_exp *e = exp_create(sa, e_cmp);
 	e->card = l->card;
 	e->l = l;
 	e->r = r;
@@ -113,9 +54,9 @@ exp_compare( sql_exp *l, sql_exp *r, int cmptype)
 }
 
 sql_exp * 
-exp_compare2( sql_exp *l, sql_exp *r, sql_exp *h, int cmptype) 
+exp_compare2(sql_allocator *sa, sql_exp *l, sql_exp *r, sql_exp *h, int cmptype) 
 {
-	sql_exp *e = exp_create(e_cmp);
+	sql_exp *e = exp_create(sa, e_cmp);
 	e->card = l->card;
 	e->l = l;
 	e->r = r;
@@ -126,10 +67,10 @@ exp_compare2( sql_exp *l, sql_exp *r, sql_exp *h, int cmptype)
 }
 
 sql_exp *
-exp_or( list *l, list *r)
+exp_or(sql_allocator *sa, list *l, list *r)
 {
 	sql_exp *f = NULL;
-	sql_exp *e = exp_create(e_cmp);
+	sql_exp *e = exp_create(sa, e_cmp);
 	
 	f = l->h?l->h->data:r->h?r->h->data:NULL;
 	e->card = l->h?exps_card(l):exps_card(r);
@@ -142,33 +83,30 @@ exp_or( list *l, list *r)
 }
 
 static sql_subtype*
-dup_subtype(sql_subtype *st)
+dup_subtype(sql_allocator *sa, sql_subtype *st)
 {
-	sql_subtype *res = NEW(sql_subtype);
+	sql_subtype *res = SA_NEW(sa, sql_subtype);
 
 	*res = *st;
 	return res;
 }
 
-#define new_subtype_list() list_create((fdestroy)&sql_subtype_destroy)
-
 sql_exp * 
-exp_convert( sql_exp *exp, sql_subtype *fromtype, sql_subtype *totype )
+exp_convert(sql_allocator *sa, sql_exp *exp, sql_subtype *fromtype, sql_subtype *totype )
 {
-	sql_exp *e = exp_create(e_convert);
+	sql_exp *e = exp_create(sa, e_convert);
 	e->card = exp->card;
 	e->l = exp;
-	totype = dup_subtype(totype);
-	e->r = append(append(new_subtype_list(),
-			dup_subtype(fromtype)),totype);
+	totype = dup_subtype(sa, totype);
+	e->r = append(append(list_new(sa), dup_subtype(sa, fromtype)),totype);
 	e->tpe = *totype; 
 	return e;
 }
 
 sql_exp * 
-exp_op( list *l, sql_subfunc *f )
+exp_op( sql_allocator *sa, list *l, sql_subfunc *f )
 {
-	sql_exp *e = exp_create(e_func);
+	sql_exp *e = exp_create(sa, e_func);
 	e->card = exps_card(l);
 	if (!l || list_length(l) == 0)
 		e->card = CARD_ATOM; /* unop returns a single atom */
@@ -178,9 +116,9 @@ exp_op( list *l, sql_subfunc *f )
 }
 
 sql_exp * 
-exp_aggr( list *l, sql_subaggr *a, int distinct, int no_nils, int card, int has_nils )
+exp_aggr( sql_allocator *sa, list *l, sql_subaggr *a, int distinct, int no_nils, int card, int has_nils )
 {
-	sql_exp *e = exp_create(e_aggr);
+	sql_exp *e = exp_create(sa, e_aggr);
 	e->card = card;
 	e->l = l;
 	e->f = a; 
@@ -194,79 +132,79 @@ exp_aggr( list *l, sql_subaggr *a, int distinct, int no_nils, int card, int has_
 }
 
 sql_exp * 
-exp_atom( atom *a) 
+exp_atom(sql_allocator *sa, atom *a) 
 {
-	sql_exp *e = exp_create(e_atom);
+	sql_exp *e = exp_create(sa, e_atom);
 	e->card = CARD_ATOM;
 	e->l = a;
 	return e;
 }
 
 sql_exp *
-exp_atom_bool(int b) 
+exp_atom_bool(sql_allocator *sa, int b) 
 {
 	sql_subtype bt; 
 
 	sql_find_subtype(&bt, "boolean", 0, 0);
 	if (b) 
-		return exp_atom(atom_bool(&bt, TRUE ));
+		return exp_atom(sa, atom_bool(sa, &bt, TRUE ));
 	else
-		return exp_atom(atom_bool(&bt, FALSE ));
+		return exp_atom(sa, atom_bool(sa, &bt, FALSE ));
 }
 
 sql_exp *
-exp_atom_int(int i) 
+exp_atom_int(sql_allocator *sa, int i) 
 {
 	sql_subtype it; 
 
 	sql_find_subtype(&it, "int", 9, 0);
-	return exp_atom(atom_int(&it, i ));
+	return exp_atom(sa, atom_int(sa, &it, i ));
 }
 
 sql_exp *
-exp_atom_lng(lng i) 
+exp_atom_lng(sql_allocator *sa, lng i) 
 {
 	sql_subtype it; 
 
 	sql_find_subtype(&it, "bigint", 19, 0);
-	return exp_atom(atom_int(&it, (lng)i ));
+	return exp_atom(sa, atom_int(sa, &it, (lng)i ));
 }
 
 sql_exp *
-exp_atom_wrd(wrd w) 
+exp_atom_wrd(sql_allocator *sa, wrd w) 
 {
 	sql_subtype it; 
 
 	sql_find_subtype(&it, "wrd", 19, 0);
-	return exp_atom(atom_int(&it, (lng)w ));
+	return exp_atom(sa, atom_int(sa, &it, (lng)w ));
 }
 
 sql_exp *
-exp_atom_str(str s, sql_subtype *st) 
+exp_atom_str(sql_allocator *sa, str s, sql_subtype *st) 
 {
-	return exp_atom(atom_string(st, s?_strdup(s):NULL, 1 ));
+	return exp_atom(sa, atom_string(sa, st, s?sa_strdup(sa, s):NULL));
 }
 
 sql_exp *
-exp_atom_clob(str s) 
+exp_atom_clob(sql_allocator *sa, str s) 
 {
 	sql_subtype clob;
 
 	sql_find_subtype(&clob, "clob", 0, 0);
-	return exp_atom(atom_string(&clob, _strdup(s), 1 ));
+	return exp_atom(sa, atom_string(sa, &clob, sa_strdup(sa, s)));
 }
 
 sql_exp *
-exp_atom_ptr(void *s) 
+exp_atom_ptr(sql_allocator *sa, void *s) 
 {
 	sql_subtype *t = sql_bind_localtype("ptr");
-	return exp_atom(atom_ptr(t, s));
+	return exp_atom(sa, atom_ptr(sa, t, s));
 }
 
 sql_exp * 
-exp_atom_ref(int i, sql_subtype *tpe) 
+exp_atom_ref(sql_allocator *sa, int i, sql_subtype *tpe) 
 {
-	sql_exp *e = exp_create(e_atom);
+	sql_exp *e = exp_create(sa, e_atom);
 	e->card = CARD_ATOM;
 	e->flag = i;
 	if (tpe)
@@ -275,10 +213,10 @@ exp_atom_ref(int i, sql_subtype *tpe)
 }
 
 sql_exp * 
-exp_param(char *name, sql_subtype *tpe, int frame) 
+exp_param(sql_allocator *sa, char *name, sql_subtype *tpe, int frame) 
 {
-	sql_exp *e = exp_create(e_atom);
-	e->r = _strdup(name);
+	sql_exp *e = exp_create(sa, e_atom);
+	e->r = sa_strdup(sa, name);
 	e->card = CARD_ATOM;
 	e->flag = frame;
 	if (tpe)
@@ -287,16 +225,16 @@ exp_param(char *name, sql_subtype *tpe, int frame)
 }
 
 sql_exp * 
-exp_alias( char *arname, char *acname, char *org_rname, char *org_cname, sql_subtype *t, int card, int has_nils, int intern) 
+exp_alias(sql_allocator *sa, char *arname, char *acname, char *org_rname, char *org_cname, sql_subtype *t, int card, int has_nils, int intern) 
 {
-	sql_exp *e = exp_create(e_column);
+	sql_exp *e = exp_create(sa, e_column);
 
 	assert(acname && org_cname);
 	e->card = card;
-	e->rname = (arname)?_strdup(arname):(org_rname)?_strdup(org_rname):NULL;
-	e->name = _strdup(acname);
-	e->l = (org_rname)?_strdup(org_rname):NULL;
-	e->r = _strdup(org_cname);
+	e->rname = (arname)?sa_strdup(sa, arname):(org_rname)?sa_strdup(sa, org_rname):NULL;
+	e->name = sa_strdup(sa, acname);
+	e->l = (org_rname)?sa_strdup(sa, org_rname):NULL;
+	e->r = sa_strdup(sa, org_cname);
 	if (t)
 		e->tpe = *t;
 	if (!has_nils)
@@ -307,15 +245,15 @@ exp_alias( char *arname, char *acname, char *org_rname, char *org_cname, sql_sub
 }
 
 sql_exp * 
-exp_column( char *rname, char *cname, sql_subtype *t, int card, int has_nils, int intern) 
+exp_column(sql_allocator *sa, char *rname, char *cname, sql_subtype *t, int card, int has_nils, int intern) 
 {
-	sql_exp *e = exp_create(e_column);
+	sql_exp *e = exp_create(sa, e_column);
 
 	assert(cname);
 	e->card = card;
-	e->name = _strdup(cname);
-	e->l = (rname)?_strdup(rname):NULL;
-	e->r = _strdup(cname);
+	e->name = sa_strdup(sa, cname);
+	e->l = (rname)?sa_strdup(sa, rname):NULL;
+	e->r = sa_strdup(sa, cname);
 	if (t)
 		e->tpe = *t;
 	if (!has_nils)
@@ -329,16 +267,11 @@ exp_column( char *rname, char *cname, sql_subtype *t, int card, int has_nils, in
    to this expression by this simple name.
  */
 void 
-exp_setname( sql_exp *e, char *rname, char *name )
+exp_setname(sql_allocator *sa, sql_exp *e, char *rname, char *name )
 {
-	if (name) {
-		if (e->name)
-			_DELETE(e->name);
-		e->name = _strdup(name);
-	}
-	if (e->rname)
-		_DELETE(e->rname);
-	e->rname = (rname)?_strdup(rname):NULL;
+	if (name) 
+		e->name = sa_strdup(sa, name);
+	e->rname = (rname)?sa_strdup(sa, rname):NULL;
 }
 
 str
@@ -354,13 +287,13 @@ number2name(str s, int len, int i)
 }
 
 sql_exp*
-exp_label( sql_exp *e, int nr)
+exp_label(sql_allocator *sa, sql_exp *e, int nr)
 {
 	char name[16], *nme;
 
 	nme = number2name(name, 16, nr);
 	assert(e->name == NULL);
-	e->name = _strdup(nme);
+	e->name = sa_strdup(sa, nme);
 	return e;
 }
 

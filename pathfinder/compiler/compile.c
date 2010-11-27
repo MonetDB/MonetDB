@@ -1142,7 +1142,7 @@ PFcompile_MonetDB (char *xquery, char* url,
  *
  * It will print out some informative message and then terminate the program.
  */
-RETSIGTYPE
+void
 segfault_handler (int sig)
 {
     fprintf (stderr,
