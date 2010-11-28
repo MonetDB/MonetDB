@@ -1143,10 +1143,11 @@ runDFLOWworker(void *t)
 		if ( fs->pc >= 0)
 			printInstruction(GDKstdout, fs->flow->mb, 0, getInstrPtr(fs->flow->mb,fs->pc), LIST_MAL_STMT | LIST_MAPI);
 #endif
-		err = DFLOWstep(task, fs);
+		err = fs->pc >0 ? DFLOWstep(task, fs): createException(MAL,"interpreter","flow step failed");
 		/* restore the instruction and wait in specific cases*/
 		if ( err != MAL_SUCCEED && strstr(err,"DFLOWadmission") != NULL && strstr(err,"failed") != NULL){
 			GDKfree(err);
+			fs->pc = ABS(fs->pc);
 			fs->status = DFLOWrunning;
 			q_requeue(task->todo,fs);
 			continue;
