@@ -155,7 +155,7 @@ AC_CHECK_HEADERS([unistd.h netdb.h alloca.h malloc.h string.h])
 AC_CHECK_HEADERS([strings.h locale.h iconv.h langinfo.h])
 
 # Checks for library functions.
-AC_CHECK_FUNCS([crypt ftime getlogin gethostname localtime_r popen strcasecmp strncasecmp strtod strtof strtoll strtoull])
+AC_CHECK_FUNCS([crypt ftime getlogin localtime_r popen strcasecmp strncasecmp strtod strtof strtoll strtoull])
 
 AM_MONETDB_FUNC_GETOPT()
 

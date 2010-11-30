@@ -286,9 +286,6 @@
 /* Define to 1 if you have the `mrand48' function. */
 /* #undef HAVE_MRAND48 */
 
-/* Define to 1 if you have the `nanosleep' function. */
-/* #undef HAVE_NANOSLEEP */
-
 /* Define to 1 if you have the <netdb.h> header file. */
 /* #undef HAVE_NETDB_H */
 

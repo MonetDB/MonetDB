@@ -37,9 +37,6 @@
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
 
-/* Define to 1 if you have the `memset' function. */
-#define HAVE_MEMSET 1
-
 /* Define to 1 if stdbool.h conforms to C99. */
 /* #undef HAVE_STDBOOL_H */
 

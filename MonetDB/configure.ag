@@ -107,8 +107,8 @@ AS_IF([test "x${ac_cv_func_fdatasync}" = "xyes"],
   [AC_DEFINE([HAVE_FDATASYNC],[1],[If the system has a working fdatasync])])
 
 AC_FUNC_MEMCMP
-AC_CHECK_FUNCS([memset fcntl ftime getopt getrlimit getuid kill \
-	lockf nanosleep pipe setenv shutdown strdup strtof uname \
+AC_CHECK_FUNCS([fcntl ftime getopt getrlimit getuid kill \
+	lockf pipe setenv shutdown strdup strtof uname \
 	strtoll fsync])
 
 
