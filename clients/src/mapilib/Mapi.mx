@@ -4039,14 +4039,14 @@ read_into_cache(MapiHdl hdl, int lookahead)
 		if (line == NULL)
 			return mid->error;
 		switch (*line) {
-		case PROMPTBEG:
+		case PROMPTBEG: /* \001 */
 			mid->active = NULL;
 			hdl->active = NULL;
 			/* set needmore flag if line equals PROMPT2 up
 			   to newline */
-			copy = PROMPT2;
+			copy = PROMPT2; /* \001\002\n */
 			while (*line) {
-				if (*line != *copy)
+				if (*line != *copy) /* must be EOF or PROMPT1 \001\001\n */
 					return mid->error;
 				line++;
 				copy++;
@@ -4064,9 +4064,10 @@ read_into_cache(MapiHdl hdl, int lookahead)
 			   yet (duh!), or if we've already seen
 			   normal output for the current one */
 			if (result == NULL ||
-			    result->cache.writer > 0 ||
-			    result->querytype == Q_TABLE ||
-			    result->querytype == Q_UPDATE) {
+					result->cache.writer > 0 ||
+					result->querytype == Q_TABLE ||
+					result->querytype == Q_UPDATE)
+			{
 				result = new_result(hdl);
 				hdl->active = result;
 			}
@@ -4091,7 +4092,7 @@ read_into_cache(MapiHdl hdl, int lookahead)
 			}
 			add_cache(result, strdup(line), !lookahead);
 			if (lookahead > 0 &&
-			    (result->querytype == -1/* unknown (not SQL) */  ||
+			    (result->querytype == -1 /* unknown (not SQL) */ ||
 			     result->querytype == Q_TABLE ||
 			     result->querytype == Q_UPDATE))
 				return mid->error;
