@@ -2133,7 +2133,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 								"WHERE \"o\".\"schema_id\" = \"s\".\"id\" "
 								  "%s "
 								") AS \"all\" "
-								"WHERE \"ntype\" & %d > 0 "
+								"WHERE \"ntype\" & %u > 0 "
 								  "%s "
 								"ORDER BY \"system\", \"name\"",
 								MD_TABLE, MD_VIEW,
