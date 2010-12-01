@@ -75,3 +75,4 @@ join-and-like.Bug-2715
 between-timestamp.Bug-2718
 values.Bug-2726
 select_from_seq.Bug-2730
+huge_nr_of_columns.Bug-2609
