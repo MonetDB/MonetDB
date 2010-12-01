@@ -113,8 +113,8 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		q= getInstrPtr(mb,i);
 		if (getModuleId(q)!= sqlRef || getFunctionId(q)!=bindRef )
 			continue;
-		/* don't split insert or update BATs */
-		if (getVarConstant(mb, getArg(q,5)).val.ival != 0 )
+		/* don't split insert BATs */
+		if (getVarConstant(mb, getArg(q,5)).val.ival == 1 )
 			continue;
 		if( q->argc > 6 )
 			continue; /* already partitioned */
@@ -195,8 +195,8 @@ tarantula optimizer.
 			pushInstruction(mb,p);
 			continue;
 		}
-		/* don't split insert or update BATs */
-		if (getVarConstant(mb, getArg(p,5)).val.ival != 0 ){
+		/* don't split insert BATs */
+		if (getVarConstant(mb, getArg(p,5)).val.ival == 1 ){
 			pushInstruction(mb,p);
 			continue;
 		}

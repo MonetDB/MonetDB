@@ -871,7 +871,7 @@ q_create( int sz )
 		return NULL;
 	q->size = ((sz<<1)>>1); /* we want a multiple of 2 */
 	q->last = 0;
-	q->data = (void*)GDKmalloc(sizeof(void*)*sz);
+	q->data = (void*)GDKmalloc(sizeof(void*)*q->size);
 	if ( q->data == NULL){
 		GDKfree(q);
 		return NULL;
@@ -899,7 +899,7 @@ q_enqueue(queue *q, void *d)
 	if (q->last == q->size) {
 		/* enlarge buffer */
 		q->size <<= 1;
-		q->data = GDKrealloc(q->data, q->size);
+		q->data = GDKrealloc(q->data, sizeof(void*)*q->size);
 	}
 	q->data[q->last++] = d;
 	MT_unset_lock(q->l, "q_enqueue");
@@ -914,7 +914,7 @@ q_requeue(queue *q, void *d)
 	if (q->last == q->size) {
 		/* enlarge buffer */
 		q->size <<= 1;
-		q->data = GDKrealloc(q->data, q->size);
+		q->data = GDKrealloc(q->data, sizeof(void*)*q->size);
 	}
 	for ( i=q->last; i > 0; i--)
 		q->data[i]= q->data[i-1];

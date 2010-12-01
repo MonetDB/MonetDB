@@ -23,7 +23,7 @@ lib_sqlcommon = {
 	NOINST
 	DIR = libdir
 	SOURCES = \
-		sql_mem.c sql_list.c sql_backend.c \
+		sql_mem.c sql_list.c sql_stack.c sql_backend.c \
 		sql_keyword.c sql_changeset.c sql_types.c sql_string.c
 }
 

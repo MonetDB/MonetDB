@@ -216,6 +216,7 @@ static stmt *
 psm_case( mvc *sql, sql_subtype *res, dnode *case_when, int is_func )
 {
 	exp_kind ek = {type_value, card_value, FALSE};
+	list *case_stmts = list_new(sql->sa);
 
 	if (!case_when)
 		return NULL;
@@ -227,8 +228,6 @@ psm_case( mvc *sql, sql_subtype *res, dnode *case_when, int is_func )
 		dlist *when_statements = n->next->data.lval;
 		dlist *else_statements = n->next->next->data.lval;
 		stmt *else_stmt = NULL, *v = value_exp(sql, case_value, sql_sel, ek);
-		stmt *cur_if = NULL, *top = NULL;
-
 		if (!v)
 			return NULL;
 		if (else_statements) {
@@ -248,22 +247,18 @@ psm_case( mvc *sql, sql_subtype *res, dnode *case_when, int is_func )
 			   (if_stmts = sequential_block( sql, res, m->next->data.lval, NULL, is_func)) == NULL ) 
 				return NULL;
 			case_stmt = stmt_if(sql->sa, cond, if_stmts, NULL);
-			if (cur_if)
-				cur_if->op3.stval = case_stmt;
-			cur_if = case_stmt;
-			if (!top)
-				top = case_stmt;
+			list_append(case_stmts, case_stmt);
 			n = n->next;
 		}
-		if (cur_if)
-			cur_if->op3.stval = else_stmt;
-		return top;
+		if (else_stmt)
+			list_append(case_stmts, else_stmt);
+		return stmt_list(sql->sa, case_stmts);
 	} else { 
 		/* case 2 */
 		dnode *n = case_when;
 		dlist *whenlist = n->data.lval;
 		dlist *else_statements = n->next->data.lval;
-		stmt *else_stmt = NULL, *cur_if = NULL, *top = NULL;
+		stmt *else_stmt = NULL;
 
 		if (else_statements) {
 			else_stmt = sequential_block( sql, res, else_statements, NULL, is_func);
@@ -281,16 +276,12 @@ psm_case( mvc *sql, sql_subtype *res, dnode *case_when, int is_func )
 			   (if_stmts = sequential_block( sql, res, m->next->data.lval, NULL, is_func)) == NULL ) 
 				return NULL;
 			case_stmt = stmt_if(sql->sa, cond, if_stmts, NULL);
-			if (cur_if)
-				cur_if->op3.stval = case_stmt;
-			cur_if = case_stmt;
-			if (!top)
-				top = case_stmt;
+			list_append(case_stmts, case_stmt);
 			n = n->next;
 		}
-		if (cur_if)
-			cur_if->op3.stval = else_stmt;
-		return top;
+		if (else_stmt)
+			list_append(case_stmts, else_stmt);
+		return stmt_list(sql->sa, case_stmts);
 	}
 }
 
@@ -315,13 +306,25 @@ has_return(stmt *s )
 {
 	if (s->type == st_return) {
 		return 1;
-	} else if (s->type == st_if) {
-		int res = has_return(s->op2.stval); /* ifstmts */
-		if (res && s->op3.stval)
-			res = has_return(s->op3.stval); /* elsestmts */
+	} else if (s->type == st_list) { 
+		int res = 0;
+		node *n = s->op4.lval->h;
+		stmt *ss = s->op4.lval->t->data;
+
+		/* last statment of sequential block */
+		if (has_return(ss)) 
+			return 1;
+		for (; n && !res; n = n->next ) {
+			stmt *ss = n->data;
+		       	if (ss->type == st_list) {
+				res = has_return(ss);
+			} else if (ss->type == st_cond && n->next && n->next->next) {
+				n = n->next;
+				res = has_return(n->data); /* ifstmts */
+				n = n->next;	/* skip if end */
+			}
+		}
 		return res;
-	} else if (s->type == st_list) { /* sequential block */
-		return has_return(s->op1.lval->t->data);
 	}
 	return 0;
 }
@@ -492,8 +495,7 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 	sql_func *f;
 	sql_subfunc *sf;
 	dnode *n;
-	list *l = list_create((fdestroy) &arg_destroy), *type_list = NULL;
-	list *id_func_l = NULL, *id_col_l = NULL, *view_id_l = NULL;
+	list *id_func_l = NULL, *id_col_l = NULL, *view_id_l = NULL, *type_list = NULL;
 	sql_subtype *restype = NULL;
 	int instantiate = (sql->emode == m_instantiate);
 	int deps = (sql->emode == m_deps);
@@ -546,14 +548,20 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 					stack_get_string(sql, "current_user"), s->base.name);
 		} else {
 			char *q = QUERY(sql->scanner);
+			list *l = NULL;
 
-		 	if (params) 
+		 	if (params) {
 				for (n = params->h; n; n = n->next) {
 					dnode *an = n->data.lval->h;
 		
-					list_append(l, sql_create_arg(_strdup(an->data.sval), &an->next->data.typeval));
 					sql_add_param(sql, an->data.sval, &an->next->data.typeval);
 				}
+				l = sql->params;
+			}
+			if (!l)
+				l = list_new(sql->sa);
+			l->sa = NULL;
+			l->destroy = (fdestroy)arg_destroy;
 		 	if (body) {		/* sql func */
 				char emode = sql->emode;
 				stmt *b = NULL;
@@ -561,32 +569,24 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 				if (create) /* for subtable we only need direct dependencies */
 					sql->emode = m_deps;
 				b = sequential_block(sql, restype, body, NULL, is_func);
+				sql->params = NULL;
 				sql->emode = emode;
-				if (!b) {
-					sql_destroy_params(sql);
-					list_destroy(l);
+				if (!b) 
 					return NULL;
-				}
 			
 				/* check if we have a return statement */
 				if (is_func && restype && !has_return(b)) {
-					sql_destroy_params(sql);
-					list_destroy(l);
 					return sql_error(sql, 01,
 							"CREATE %s: missing return statement", F);
 				}
 				if (!is_func && !restype && has_return(b)) {
-					sql_destroy_params(sql);
-					list_destroy(l);
 					return sql_error(sql, 01, "CREATE %s: procedures "
 							"cannot have return statements", F);
 				}
 	
 				/* in execute mode we instantiate the function */
-				sql_destroy_params(sql);
 
 				if (instantiate) {
-					list_destroy(l);
 					return b;
 				} else if (create) {
 					f = mvc_create_func(sql, sql->session->schema, fname, l, restype, is_aggr, "user", q, q, is_func);
@@ -603,12 +603,12 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 								f->is_func ? FUNC_DEPENDENCY : PROC_DEPENDENCY);
 	
 					}
-					list_destroy(l);
 				}
 			} else {
 				char *fmod = qname_module(ext_name);
 				char *fnme = qname_fname(ext_name);
 
+				sql->params = NULL;
 				if (create) {
 					mvc_create_func(sql, sql->session->schema, fname, l, restype, is_aggr, fmod, fnme, q, is_func);
 				} else {
@@ -618,8 +618,6 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 					f->res = *restype;
 					f->sql = 0; /* native */
 				}
-				sql_destroy_params(sql);
-				list_destroy(l);
 			}
 		}
 	}

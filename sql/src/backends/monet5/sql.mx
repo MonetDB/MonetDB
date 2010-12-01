@@ -1436,29 +1436,17 @@ sql_symbol2stmt(mvc *c, symbol *sym)
 		}
 		rel_destroy(r);
 		if (s) {
-			stmt *opt;
-
 			/* only needed for delta tables */
-			opt = rel2bin(c, s); 	
-			s = bin_optimizer(c, opt);
+			s = rel2bin(c, s); 	
+			s = bin_optimizer(c, s);
 			c->point_query = pq;
 			return s;
 		}
 	}
 
-	if (s){
-		stmt *opt;
-
-		if (mvc_debug_on(c,128)) 
-			stmt2dot(c->sa, s, 1, "/tmp/g1.dot");
-		opt = rel2bin(c, s);
-		s = opt;
-		if (mvc_debug_on(c,128)) 
-			stmt2dot(c->sa, s, 2, "/tmp/g2.dot");
-		opt = bin_optimizer(c, s);
-		s = opt;
-		if (mvc_debug_on(c,128)) 
-			stmt2dot(c->sa, s, 3, "/tmp/g3.dot");
+	if (s) {
+		s = rel2bin(c, s);
+		s = bin_optimizer(c, s);
 	}
 	return s;
 }

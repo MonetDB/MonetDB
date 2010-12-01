@@ -62,18 +62,18 @@ sql_add_arg(mvc *sql, atom *v)
 void
 sql_add_param(mvc *sql, char *name, sql_subtype *st)
 {
-	sql_arg *a = NEW(sql_arg);
+	sql_arg *a = SA_NEW(sql->sa, sql_arg);
 
 	a->name = NULL;
 	if (name)
-		a->name = _strdup(name);
+		a->name = sa_strdup(sql->sa, name);
 	if (st)
 		a->type = *st;
 	else
 		a->type.type = NULL;
 
 	if (!sql->params)
-		sql->params = list_create((fdestroy) &arg_destroy);
+		sql->params = list_new(sql->sa);
 	list_append(sql->params, a);
 }
 
@@ -137,8 +137,6 @@ sql_convert_arg(mvc *sql, int nr, sql_subtype *rt)
 void
 sql_destroy_params(mvc *sql)
 {
-	if (sql->params)
-		list_destroy(sql->params);
 	sql->params = NULL;
 }
 
@@ -455,7 +453,7 @@ inplace_convert(mvc *sql, sql_subtype *ct, stmt *s)
 	atom *a;
 
 	/* exclude named variables */
-	if (s->type != st_var || s->op1.sval || 
+	if (s->type != st_var || s->op1->op4.aval->data.val.sval || 
 		(ct->scale && ct->type->eclass != EC_FLT))
 		return s;
 
@@ -486,7 +484,7 @@ stmt_set_type_param(mvc *sql, sql_subtype *type, stmt *param)
 		return -1;
 
 	if (set_type_param(sql, type, param->flag) == 0) {
-		param->op2.typeval = *type;
+		param->op4.typeval = *type;
 		return 0;
 	}
 	return -1;
@@ -506,15 +504,15 @@ check_table_types(mvc *sql, sql_table *ct, stmt *s, check_type tpe)
 			sql, 03,
 			"single value and complex type '%s' are not equal", t);
 	}
-	tab = s->op1.stval;
+	tab = s->op1;
 	temp = s->flag;
 	if (tab->type == st_var) {
 		sql_table *tbl = tail_type(tab)->comp_type;
-		stmt *base = stmt_basetable(sql->sa, tbl, tab->op1.sval);
+		stmt *base = stmt_basetable(sql->sa, tbl, tab->op1->op4.aval->data.val.sval);
 		node *n, *m;
 		list *l = list_new(sql->sa);
 		
-		stack_find_var(sql, tab->op1.sval);
+		stack_find_var(sql, tab->op1->op4.aval->data.val.sval);
 
 		for (n = ct->columns.set->h, m = tbl->columns.set->h; 
 			n && m; n = n->next, m = m->next) 
@@ -532,7 +530,7 @@ check_table_types(mvc *sql, sql_table *ct, stmt *s, check_type tpe)
 	} else if (tab->type == st_list) {
 		node *n, *m;
 		list *l = list_new(sql->sa);
-		for (n = ct->columns.set->h, m = tab->op1.lval->h; 
+		for (n = ct->columns.set->h, m = tab->op4.lval->h; 
 			n && m; n = n->next, m = m->next) 
 		{
 			sql_column *c = n->data;

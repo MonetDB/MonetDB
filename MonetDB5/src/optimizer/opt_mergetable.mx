@@ -1759,6 +1759,25 @@ mat_union(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m, int n)
 			r = pushArgument(mb, r, vm);
 		}
 	} else {
+		/* if right overlaps full range of left we first semijoin */
+		/* assume if first overlaps all do ? */
+		if (0 && m >= 0 && Hoverlap(mb, getArg(mat[m].mi,1),p->argv[2])) {
+			/* push in between a b.semijoin(mat) */ 
+			InstrPtr semi = copyInstruction(p), bc;
+
+			semi->argv[0] = p->argv[2];
+			semi->argv[1] = p->argv[2];
+			semi->argv[2] = p->argv[1];
+			getFunctionId(semi) = semijoinRef;
+			m = isMATalias(getArg(semi,2), mat, mtop);
+			if ((bc = mat_semijoin(mb, semi, mat, m)) != NULL)
+				mtop = mat_add(mat, mtop, bc, NULL, mat_none );
+			/* now use semijoin result as input to union */
+			p->argv[2] = semi->argv[0];
+			m = isMATalias(getArg(p,1), mat, mtop);
+			n = isMATalias(getArg(p,2), mat, mtop);
+			return mat_union(mb, p, mat, mtop, m, n);
+		}
 		if (m >= 0) {
 			for(k=1; k<mat[m].mi->argc; k++) 
 				r = pushArgument(mb, r, getArg(mat[m].mi,k));
@@ -1929,7 +1948,7 @@ mat_setop(MalBlkPtr mb, InstrPtr p, InstrPtr *old, int oldtop, int cur, mat_t *m
 	n = isMATalias(getArg(p,2), mat, mtop);
 
 	/* recognize kdiff(u).union(u) but also kdiff(u).union(select(u, ..)) */
-	if (getFunctionId(p) == kdifferenceRef &&
+	if (0 && getFunctionId(p) == kdifferenceRef &&
 	    cur + 2 < oldtop && 
 	    (getModuleId(u) == algebraRef || getModuleId(u) == pcreRef) && getFunctionId(u) == kunionRef &&
 	    isSelect(q) &&
@@ -1967,7 +1986,7 @@ mat_setop(MalBlkPtr mb, InstrPtr p, InstrPtr *old, int oldtop, int cur, mat_t *m
 		n = isMATalias(getArg(u,2), mat, mtop);
 		*Mtop = mat_union(mb, u, mat, mtop, m, n);
 		return 2;
-	} else if (getFunctionId(p) == kdifferenceRef &&
+	} else if (0 && getFunctionId(p) == kdifferenceRef &&
 		cur + 1 < oldtop &&
 		getModuleId(q) == algebraRef && getFunctionId(q) == kunionRef &&
 	    	p->argv[0] == q->argv[1] && p->argv[2] == q->argv[2]) { 

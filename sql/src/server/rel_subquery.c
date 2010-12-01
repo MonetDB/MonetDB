@@ -218,7 +218,7 @@ select_into( mvc *sql, symbol *sq, exp_kind ek)
 	sn->into = NULL;
 	s = _subquery(sql, sq, ek);
 	if (into && s) {
-		list *rl = s->op1.lval;
+		list *rl = s->op4.lval;
 		node *m;
 		dnode *n;
 		list *nl = list_new(sql->sa);
@@ -255,12 +255,12 @@ static stmt *
 find_order(stmt *s)
 {
 	if (s->type == st_limit) 
-		assert(s->op1.stval->type == st_order || s->op1.stval->type == st_reorder);
+		assert(s->op1->type == st_order || s->op1->type == st_reorder);
 	else
 		assert(s->type == st_order || s->type == st_reorder);
 		
 	while(s->type == st_reorder)
-		s = s->op1.stval;
+		s = s->op1;
 	return s;
 }
 
@@ -271,10 +271,10 @@ sql_reorder(mvc *sql, stmt *order, stmt *s)
 	node *n;
 	/* we need to keep the order by column, to propagate the sort property*/
 	stmt *o = find_order(order);
-	stmt *x = o->op1.stval;
+	stmt *x = o->op1;
 
 	order = stmt_mark(sql->sa, stmt_reverse(sql->sa, order), 0);
-	for (n = s->op1.lval->h; n; n = n->next) {
+	for (n = s->op4.lval->h; n; n = n->next) {
 		stmt *sc = n->data;
 		char *cname = column_name(sql->sa, sc);
 		char *tname = table_name(sql->sa, sc);
@@ -311,7 +311,7 @@ value_exp(mvc *sql, symbol *sq, int f, exp_kind ek)
 			s = exp_bin(sql, e, NULL, NULL, NULL, NULL);
 		}
 
-		if (s && s->type == st_list && !s->op1.lval->h) {
+		if (s && s->type == st_list && !s->op4.lval->h) {
 			assert(0);
 			s = NULL;
 		}
@@ -321,8 +321,8 @@ value_exp(mvc *sql, symbol *sq, int f, exp_kind ek)
 	}
 	/* we need a relation */
 	if (ek.card == card_relation && s && s->type == st_ordered) {
-		stmt *order = s->op1.stval;
-		stmt *ns = s->op2.stval;
+		stmt *order = s->op1;
+		stmt *ns = s->op2;
 			
 		s = sql_reorder(sql, order, ns);
 	}
@@ -332,7 +332,7 @@ value_exp(mvc *sql, symbol *sq, int f, exp_kind ek)
 			node *n;
 			list *l = list_new(sql->sa);
 
-			for(n=s->op1.lval->h; n; n = n->next)
+			for(n=s->op4.lval->h; n; n = n->next)
 				list_append(l, const_column(sql->sa, (stmt*)n->data));
 			s = stmt_list(sql->sa, l);
 		}
@@ -340,7 +340,7 @@ value_exp(mvc *sql, symbol *sq, int f, exp_kind ek)
 	}
 	/* single column */
 	if (ek.card != card_relation && s && s->type == st_list) {
-		stmt *ns = s->op1.lval->h->data; 
+		stmt *ns = s->op4.lval->h->data; 
 
 		s = ns;
 	}
@@ -512,7 +512,7 @@ logical_value_exp(mvc *sql, symbol *sc, int f, exp_kind ek)
 			s = exp_bin(sql, e, NULL, NULL, NULL, NULL);
 		}
 
-		if (s && s->type == st_list && !s->op1.lval->h) {
+		if (s && s->type == st_list && !s->op4.lval->h) {
 			assert(0);
 			s = NULL;
 		}
@@ -522,8 +522,8 @@ logical_value_exp(mvc *sql, symbol *sc, int f, exp_kind ek)
 	}
 	/* we need a relation */
 	if (ek.card == card_relation && s && s->type == st_ordered) {
-		stmt *order = s->op1.stval;
-		stmt *ns = s->op2.stval;
+		stmt *order = s->op1;
+		stmt *ns = s->op2;
 			
 		s = sql_reorder(sql, order, ns);
 	}
@@ -531,7 +531,7 @@ logical_value_exp(mvc *sql, symbol *sc, int f, exp_kind ek)
 		s = stmt_table(sql->sa, s, 1);
 	/* single column */
 	if (ek.card != card_relation && s && s->type == st_list) {
-		stmt *ns = s->op1.lval->h->data; 
+		stmt *ns = s->op4.lval->h->data; 
 
 		s = ns;
 	}

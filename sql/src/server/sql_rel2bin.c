@@ -32,15 +32,14 @@ tail_column(stmt *st)
 	case st_join:
 	case st_outerjoin:
 	case st_reorder:
-		return tail_column(st->op2.stval);
+		return tail_column(st->op2);
 
 	case st_join2:
 	case st_joinN:
-		return tail_column(st->op2.stval);
-	case st_releqjoin:
-		return tail_column(st->op2.lval->h->data);
 	case st_reljoin:
-		return tail_column(st->op2.lval->t->data);
+		return tail_column(st->op2);
+	case st_releqjoin:
+		return tail_column(st->op4.lval->h->data);
 
 	case st_select:
 	case st_select2:
@@ -50,6 +49,7 @@ tail_column(stmt *st)
 	case st_uselectN:
 	case st_semijoin:
 	case st_limit:
+	case st_limit2:
 
 	case st_diff:
 	case st_union:
@@ -64,18 +64,17 @@ tail_column(stmt *st)
 
 	case st_convert:
 
-		return tail_column(st->op1.stval);
+		return tail_column(st->op1);
 
 	case st_table_clear:
-	case st_column:
 	case st_bat:
 		return st;
 
 	case st_mirror:
 	case st_reverse:
-		return head_column(st->op1.stval);
+		return head_column(st->op1);
 	case st_list:
-		return tail_column(st->op1.lval->h->data);
+		return tail_column(st->op4.lval->h->data);
 
 		/* required for shrink_select_ranges() in sql_rel2bin.mx */
 	case st_rs_column:
@@ -126,6 +125,7 @@ head_column(stmt *st)
 	case st_uselectN:
 	case st_semijoin:
 	case st_limit:
+	case st_limit2:
 
 	case st_join:
 	case st_join2:
@@ -149,28 +149,29 @@ head_column(stmt *st)
 
 	case st_convert:
 
-		return head_column(st->op1.stval);
+		return head_column(st->op1);
 
 	case st_relselect:
 	case st_releqjoin:
-		return head_column(st->op1.lval->h->data);
 	case st_reljoin:
-		return head_column(st->op2.lval->h->data);
-
+		if (st->op2)
+			return head_column(st->op2);
+		if (st->op1)
+			return head_column(st->op1);
+		return NULL;
 	case st_table_clear:
-	case st_column:
 	case st_bat:
 		return st;
 
 	case st_reverse:
-		return tail_column(st->op1.stval);
+		return tail_column(st->op1);
 
 	case st_reorder:
 	case st_derive:
-		return tail_column(st->op2.stval);
+		return tail_column(st->op2);
 
 	case st_list:
-		return head_column(st->op1.lval->h->data);
+		return head_column(st->op4.lval->h->data);
 
 		/* required for eliminate_semijoin() in sql_rel2bin.mx */
 		/* st_temp has no head column coming from any basetable */
@@ -205,8 +206,8 @@ head_column(stmt *st)
 	case st_trans:
 	case st_catalog:
 
-	case st_while:
-	case st_if:
+	case st_cond:
+	case st_control_end:
 	case st_return:
 	case st_assign:
 	case st_connection:
@@ -228,14 +229,10 @@ basecolumn(stmt *st)
 		return NULL;	/* required for shrink_select_ranges() and eliminate_semijoin() */
 	switch (st->type) {
 	case st_reverse:
-		return basecolumn(head_column(st->op1.stval));
+		return basecolumn(head_column(st->op1));
 
 	case st_bat:
-		return st->op1.cval;
-
-	/* relational column (result of view etc) has no direct base column */
-	case st_column:
-		return NULL;
+		return st->op4.cval;
 
 	default:
 		return basecolumn(tail_column(st));
@@ -261,14 +258,14 @@ cmp_sel_oneCol(stmt *sel)
 	int rtrn = -1;
 
 	if (sel->type >= st_select && sel->type <= st_uselect2) {
-		if (sel->op2.stval->nrcols == 0) {
+		if (sel->op2->nrcols == 0) {
 			rtrn = 0;
 		}
 #ifndef NDEBUG
 /*
 	} else {
 		if (sel->type == st_reverse) {
-			printf("= TODO: sql_rel2bin: shrink_select_ranges: handle %s(%s)!\n", st_type2string(sel->type), st_type2string(sel->op1.stval->type));
+			printf("= TODO: sql_rel2bin: shrink_select_ranges: handle %s(%s)!\n", st_type2string(sel->type), st_type2string(sel->op1->type));
 		} else {
 			printf("= TODO: sql_rel2bin: shrink_select_ranges: handle %s!\n", st_type2string(sel->type));
 		}
@@ -318,7 +315,7 @@ cmp_sel_basecol(stmt *sel, stmt *key)
 static int
 cmp_sel_val(stmt *sel, stmt *key)
 {
-	if (sel->op2.stval == key->op2.stval) {
+	if (sel->op2 == key->op2) {
 		return 0;
 	}
 	return -1;
@@ -391,11 +388,11 @@ shrink_select_ranges(mvc *sql, list *oldsels)
 	basecols = list_distinct(haveBasecol, (fcmp) &cmp_sel_basecol, NULL);
 	for (bc = basecols->h; bc; bc = bc->next) {
 		list *colsels = list_select(haveBasecol, bc->data, (fcmp) &cmp_sel_basecol, NULL);
-		sql_subtype *tt = tail_type(((stmt *) (colsels->h->data))->op2.stval);
+		sql_subtype *tt = tail_type(((stmt *) (colsels->h->data))->op2);
 		sql_subtype *tt2 = tt;
 
 		if (list_length(colsels) > 1)
-			tt2 = tail_type(((stmt *) (colsels->h->next->data))->op2.stval);
+			tt2 = tail_type(((stmt *) (colsels->h->next->data))->op2);
 
 		assert(tt);
 		if (list_length(colsels) == 1) {
@@ -458,8 +455,8 @@ shrink_select_ranges(mvc *sql, list *oldsels)
 				default:
 					assert(0);
 				}
-				sl = stmt_uselect(sql->sa, s->op1.stval, s->op2.stval, cl);
-				sr = stmt_uselect(sql->sa, s->op1.stval, s->op3.stval, cr);
+				sl = stmt_uselect(sql->sa, s->op1, s->op2, cl);
+				sr = stmt_uselect(sql->sa, s->op1, s->op3, cr);
 				list_append(sels1[cl], sl);
 				list_append(sels1[cr], sr);
 			}
@@ -489,8 +486,8 @@ shrink_select_ranges(mvc *sql, list *oldsels)
 			for (n = sels1[cmp_equal]->h; n; n = n->next) {
 				stmt *sl, *sr, *s = n->data;
 
-				sl = stmt_uselect(sql->sa, s->op1.stval, s->op2.stval, cmp_gte);
-				sr = stmt_uselect(sql->sa, s->op1.stval, s->op2.stval, cmp_lte);
+				sl = stmt_uselect(sql->sa, s->op1, s->op2, cmp_gte);
+				sr = stmt_uselect(sql->sa, s->op1, s->op2, cmp_lte);
 				list_append(sels1[cmp_gte], sl);
 				list_append(sels1[cmp_lte], sr);
 			}
@@ -513,16 +510,16 @@ shrink_select_ranges(mvc *sql, list *oldsels)
 			 */
 			for (ct = cmp_gt; ct <= cmp_lt; ct++) {
 				if (list_length(sels1[ct]) > 0) {
-					col[ct] = ((stmt *) (sels1[ct]->h->data))->op1.stval;
+					col[ct] = ((stmt *) (sels1[ct]->h->data))->op1;
 				}
 				if (list_length(sels1[ct]) == 1) {
-					bound[ct] = ((stmt *) (sels1[ct]->h->data))->op2.stval;
+					bound[ct] = ((stmt *) (sels1[ct]->h->data))->op2;
 				}
 				if (list_length(sels1[ct]) > 1) {
 					list *bnds = list_new(sql->sa);
 
 					for (n = sels1[ct]->h; n; n = n->next) {
-						list_append(bnds, ((stmt *) (n->data))->op2.stval);
+						list_append(bnds, ((stmt *) (n->data))->op2);
 					}
 					if (ct <= cmp_gte)
 						bound[ct] = (stmt *) list_reduce2(bnds, (freduce2) &stmt_max, sql->sa);
@@ -592,8 +589,8 @@ shrink_select_ranges(mvc *sql, list *oldsels)
 static int 
 sel_find_keycolumn( stmt *s, sql_kc *kc)
 {
-	s = s->op1.stval;
-	if (s && s->type == st_bat && s->op1.cval == kc->c)
+	s = s->op1;
+	if (s && s->type == st_bat && s->op4.cval == kc->c)
 		return 0;
 	return -1;
 }
@@ -625,11 +622,11 @@ select_hash_key( mvc *sql, sql_idx *i, list *l )
 			h = stmt_Nop(sql->sa, stmt_list(sql->sa,  list_append( list_append(
 				list_append(list_new(sql->sa), h), 
 				bits), 
-				s->op2.stval)), 
+				s->op2)), 
 				xor);
 		} else {
 			sql_subfunc *hf = sql_bind_func_result(sql->sa, sql->session->schema, "hash", tail_type(s), NULL, wrd);
-			h = stmt_unop(sql->sa, s->op2.stval, hf);
+			h = stmt_unop(sql->sa, s->op2, hf);
 		}
 	}
 	return stmt_uselect(sql->sa, stmt_idxbat(sql->sa, i, RDONLY), h, cmp_equal);
@@ -721,13 +718,11 @@ _project(mvc *sql, stmt *o, stmt *v )
 static stmt *
 reljoin( mvc *sql, stmt *rj, list *l2 )
 {
-	node *n = l2->h;
+	node *n = l2?l2->h:NULL;
 	stmt *l, *r, *res;
 
-	(void)sql;
 	if (!rj && list_length(l2) == 1) 
 		return l2->h->data;
-
 	if (rj) {
 		l = stmt_mark(sql->sa, stmt_reverse(sql->sa, rj), 50);
 		r = stmt_mark(sql->sa, rj, 50);
@@ -740,8 +735,8 @@ reljoin( mvc *sql, stmt *rj, list *l2 )
 	/* TODO also handle joinN */
 	for (; n; n = n->next) {
 		stmt *j = n->data;
-		stmt *ld = j->op1.stval;
-		stmt *o2 = j->op2.stval;
+		stmt *ld = j->op1;
+		stmt *o2 = j->op2;
 		stmt *rd = (j->type == st_join)?stmt_reverse(sql->sa, o2):o2;
 
 		if (j->type == st_joinN) {
@@ -749,10 +744,10 @@ reljoin( mvc *sql, stmt *rj, list *l2 )
 			list *ol,*nl = list_new(sql->sa);
 			node *m;
 
-			ol = j->op1.stval->op1.lval;
+			ol = j->op1->op4.lval;
 			for (m = ol->h; m; m = m->next) 
 				list_append(nl, _project(sql, l, m->data));
-			ol = j->op2.stval->op1.lval;
+			ol = j->op2->op4.lval;
 			for (m = ol->h; m; m = m->next) 
 				list_append(nl, _project(sql, r, m->data));
 			/* find function */
@@ -765,7 +760,7 @@ reljoin( mvc *sql, stmt *rj, list *l2 )
 			stmt *re = stmt_project(sql->sa, r, rd );
 			comp_type c1 = j->flag&2 ? cmp_gte : cmp_gt;
 			comp_type c2 = j->flag&1 ? cmp_lte : cmp_lt;
-			stmt *r2 = stmt_project(sql->sa, r, j->op3.stval);
+			stmt *r2 = stmt_project(sql->sa, r, j->op3);
 			stmt *cmp1 = stmt_uselect(sql->sa, le, re, c1);
 			stmt *cmp2 = stmt_uselect(sql->sa, le, r2, c2);
 		
@@ -801,7 +796,7 @@ find_unique( stmt *s, void *v)
 	stmt *c = head_column(s);
 
 	(void)v;
-	if (c && c->type == st_bat && c->op1.cval->unique == 1)
+	if (c && c->type == st_bat && c->op4.cval->unique == 1)
 		return 0;
 	return -1;
 }
@@ -814,7 +809,7 @@ push_semijoin( mvc *sql, stmt *select, stmt *s )
 		list *l = list_new(sql->sa);
 		node *n;
 
-		for(n = select->op1.lval->h; n; n = n->next) {
+		for(n = select->op4.lval->h; n; n = n->next) {
 			stmt *a = n->data, *n;
 
 			if (a->nrcols) {
@@ -829,23 +824,24 @@ push_semijoin( mvc *sql, stmt *select, stmt *s )
 		return stmt_list(sql->sa, l);
 	}
 	if (select->type == st_convert){ 
-		sql_subtype f = select->op3.typeval;
-		sql_subtype t = select->op4.typeval;
-		stmt *op1 = select->op1.stval;
+		list *types = select->op4.lval;
+		sql_subtype *f = types->h->data;
+		sql_subtype *t = types->h->next->data;
+		stmt *op1 = select->op1;
 
 		op1 = push_semijoin(sql, op1, s);
-		return stmt_convert(sql->sa, op1, &f, &t);
+		return stmt_convert(sql->sa, op1, f, t);
 	}
 	if (select->type == st_unop){ 
-		stmt *op1 = select->op1.stval;
+		stmt *op1 = select->op1;
 
 		op1 = push_semijoin(sql, op1, s);
 		op1 = stmt_unop(sql->sa, op1, select->op4.funcval);
 		return op1;
 	}
 	if (select->type == st_binop) {
-		stmt *op1 = select->op1.stval;
-		stmt *op2 = select->op2.stval;
+		stmt *op1 = select->op1;
+		stmt *op2 = select->op2;
 		if (op1->nrcols) 
 			op1 = push_semijoin(sql, op1, s);
 		if (op2->nrcols) 
@@ -853,21 +849,21 @@ push_semijoin( mvc *sql, stmt *select, stmt *s )
 		return stmt_binop(sql->sa, op1, op2, select->op4.funcval);
 	}
 	if (select->type == st_Nop) {
-		stmt *ops = select->op1.stval;
+		stmt *ops = select->op1;
 		if (ops->nrcols) 
 			ops = push_semijoin(sql, ops, s);
 		return stmt_Nop(sql->sa, ops, select->op4.funcval);
 	}
 	if (select->type == st_diff) {
-		stmt *op1 = select->op1.stval;
-		stmt *op2 = select->op2.stval;
+		stmt *op1 = select->op1;
+		stmt *op2 = select->op2;
 
 		op1 = push_semijoin(sql, op1, s);
 		return stmt_diff(sql->sa, op1, op2);
 	}
 	if (select->type == st_union) {
-		stmt *op1 = select->op1.stval;
-		stmt *op2 = select->op2.stval;
+		stmt *op1 = select->op1;
+		stmt *op2 = select->op2;
 
 		op1 = push_semijoin(sql, op1, s);
 		op2 = push_semijoin(sql, op2, s);
@@ -876,10 +872,10 @@ push_semijoin( mvc *sql, stmt *select, stmt *s )
 
 	/* semijoin(reverse(semijoin(reverse(x)),s) */
 	if (select->type == st_reverse &&
-	    select->op1.stval->type == st_semijoin &&
-	    select->op1.stval->op1.stval->type == st_reverse) {
-		stmt *op1 = select->op1.stval->op1.stval->op1.stval;
-		stmt *op2 = select->op1.stval->op2.stval;
+	    select->op1->type == st_semijoin &&
+	    select->op1->op1->type == st_reverse) {
+		stmt *op1 = select->op1->op1->op1;
+		stmt *op2 = select->op1->op2;
 
 		op1 = push_semijoin(sql, op1, s );
 		return stmt_reverse(sql->sa, stmt_semijoin(sql->sa,  stmt_reverse(sql->sa, op1), op2));
@@ -888,31 +884,31 @@ push_semijoin( mvc *sql, stmt *select, stmt *s )
 	    select->type != st_select && select->type != st_uselect)
 		return stmt_semijoin(sql->sa, select, s);
 
-	s = push_semijoin(sql, select->op1.stval, s);
+	s = push_semijoin(sql, select->op1, s);
 	if (select->type == st_select2) {
 		comp_type cmp = (comp_type)select->flag;
-		stmt *op2 = select->op2.stval;
-		stmt *op3 = select->op3.stval;
+		stmt *op2 = select->op2;
+		stmt *op3 = select->op3;
 
 		return stmt_select2(sql->sa,  s, op2, op3, cmp);
 	}
 
 	if (select->type == st_uselect2) {
 		comp_type cmp = (comp_type)select->flag;
-		stmt *op2 = select->op2.stval;
-		stmt *op3 = select->op3.stval;
+		stmt *op2 = select->op2;
+		stmt *op3 = select->op3;
 
 		return stmt_uselect2(sql->sa,  s, op2, op3, cmp);
 	}
 
 	if (select->type == st_select) {
 		comp_type cmp = (comp_type)select->flag;
-		stmt *op2 = select->op2.stval;
+		stmt *op2 = select->op2;
 
 		if (cmp == cmp_like || cmp == cmp_notlike ||
 		    cmp == cmp_ilike || cmp == cmp_notilike)
 		{
-			stmt *op3 = select->op3.stval;
+			stmt *op3 = select->op3;
 
 			return stmt_likeselect(sql->sa, s, op2, op3, cmp);
 		} else {
@@ -922,7 +918,7 @@ push_semijoin( mvc *sql, stmt *select, stmt *s )
 
 	if (select->type == st_uselect) {
 		comp_type cmp = (comp_type)select->flag;
-		stmt *op2 = select->op2.stval;
+		stmt *op2 = select->op2;
 
 		return stmt_uselect(sql->sa,  s, op2, cmp);
 	}
@@ -959,7 +955,7 @@ use_ukey( mvc *sql, list *l )
 		if (!(PSEL(s) && s->flag == cmp_equal))
 			return l;
 		/* we only want selects on base columns */
-		if (s->op1.stval->type != st_bat)
+		if (s->op1->type != st_bat)
 			return l;
 	}
 
@@ -1037,7 +1033,7 @@ rel2bin(mvc *c, stmt *s)
 		node *n1, *n2;
 		stmt *res;
 
-		for (n1 = s->op1.lval->h, n2 = s->op2.lval->h; n1 && n2; n1 = n1->next, n2 = n2->next) {
+		for (n1 = s->op1->op4.lval->h, n2 = s->op2->op4.lval->h; n1 && n2; n1 = n1->next, n2 = n2->next) {
 			list_append(l1, rel2bin(c, n1->data));
 			list_append(l2, rel2bin(c, n2->data));
 		}
@@ -1052,20 +1048,15 @@ rel2bin(mvc *c, stmt *s)
 
 	case st_reljoin:{
 
-		stmt *rj = NULL;
-		list *l2 = NULL;
-		node *n;
+		stmt *rj = NULL, *rjr = NULL;
 		stmt *res;
 
-		if (s->op1.stval)
-			rj = rel2bin(c, s->op1.stval);
+		if (s->op1)
+			rj = rel2bin(c, s->op1);
+		if (s->op2)
+			rjr = rel2bin(c, s->op2);
 
-		if (s->op2.lval) {
-			l2 = list_new(c->sa);
-			for (n = s->op2.lval->h; n; n = n->next) 
-				list_append(l2, rel2bin(c, n->data));
-		}
-		res = reljoin(c, rj, l2);
+		res = reljoin(c, rj, (rjr)?rjr->op4.lval:NULL);
 		s->optimized = res->optimized = 2;
 		if (res != s) {
 			assert(s->rewritten==NULL);
@@ -1079,7 +1070,7 @@ rel2bin(mvc *c, stmt *s)
 		stmt *res;
 		node *n;
 
-		list *ol, *l = s->op1.lval;
+		list *ol, *l = s->op1->op4.lval;
 
 		ol = l;
 		assert(list_length(l));
@@ -1117,7 +1108,7 @@ rel2bin(mvc *c, stmt *s)
 
 	case st_semijoin: {
 /*
-		stmt *res = push_semijoin(c, rel2bin(c, s->op1.stval), rel2bin(c, s->op2.stval));
+		stmt *res = push_semijoin(c, rel2bin(c, s->op1), rel2bin(c, s->op2));
 		s->optimized = res->optimized = 2;
 		if (res != s) {
 			assert(s->rewritten==NULL);
@@ -1135,6 +1126,7 @@ rel2bin(mvc *c, stmt *s)
 		*/
 	}
 	case st_limit: 
+	case st_limit2: 
 	case st_join:
 	case st_join2:
 	case st_joinN:
@@ -1165,7 +1157,6 @@ rel2bin(mvc *c, stmt *s)
 	case st_ordered:
 
 	case st_alias:
-	case st_column:
 	case st_append:
 	case st_exception:
 	case st_trans:
@@ -1178,22 +1169,14 @@ rel2bin(mvc *c, stmt *s)
 	case st_convert:
 
 	case st_affected_rows:
-
 	case st_table:
-	case st_while:
-	case st_if:
+
+	case st_cond:
+	case st_control_end:
 	case st_return:
 	case st_assign:
 
 	case st_output: 
-
-		if (s->op1.stval) {
-			stmt *os = s->op1.stval;
-			stmt *ns = rel2bin(c, os);
-
-			assert(ns != s);
-			s->op1.stval = ns;
-		}
 
 	case st_append_col:
 	case st_update_col:
@@ -1201,21 +1184,27 @@ rel2bin(mvc *c, stmt *s)
 	case st_update_idx:
 	case st_delete:
 
-		if (s->type != st_convert) {
-			if (s->op2.stval) {
-				stmt *os = s->op2.stval;
-				stmt *ns = rel2bin(c, os);
+		if (s->op1) {
+			stmt *os = s->op1;
+			stmt *ns = rel2bin(c, os);
+
+			assert(ns != s);
+			s->op1 = ns;
+		}
+
+		if (s->op2) {
+			stmt *os = s->op2;
+			stmt *ns = rel2bin(c, os);
+
+			assert(ns != s);
+			s->op2 = ns;
+		}
+		if (s->op3) {
+			stmt *os = s->op3;
+			stmt *ns = rel2bin(c, os);
 	
-				assert(ns != s);
-				s->op2.stval = ns;
-			}
-			if (s->op3.stval) {
-				stmt *os = s->op3.stval;
-				stmt *ns = rel2bin(c, os);
-	
-				assert(ns != s);
-				s->op3.stval = ns;
-			}
+			assert(ns != s);
+			s->op3 = ns;
 		}
 		s->optimized = 2;
 		return s;
@@ -1224,7 +1213,7 @@ rel2bin(mvc *c, stmt *s)
 
 		stmt *res = NULL;
 		node *n;
-		list *l = s->op1.lval;
+		list *l = s->op4.lval;
 		list *nl = NULL;
 
 		nl = list_new(c->sa);
@@ -1248,7 +1237,7 @@ rel2bin(mvc *c, stmt *s)
 			!mvc_debug_on(c, 32) &&
 			!mvc_debug_on(c, 64) &&
 			!mvc_debug_on(c, 8192)) {
-			stmt *res = stmt_delta_table_bat(c->sa,  s->op1.cval, s->h, s->flag);
+			stmt *res = stmt_delta_table_bat(c->sa,  s->op4.cval, s->h, s->flag);
 			assert(s->rewritten==NULL);
 			s->rewritten = res;
 			s->optimized = res->optimized = 2;
@@ -1264,7 +1253,7 @@ rel2bin(mvc *c, stmt *s)
 			!mvc_debug_on(c, 32) &&
 			!mvc_debug_on(c, 64) &&
 			!mvc_debug_on(c, 8192)) {
-			stmt *res = stmt_delta_table_idxbat(c->sa,  s->op1.idxval, s->flag);
+			stmt *res = stmt_delta_table_idxbat(c->sa,  s->op4.idxval, s->flag);
 			assert(s->rewritten==NULL);
 			s->rewritten = res;
 			s->optimized = res->optimized = 2;

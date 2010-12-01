@@ -80,6 +80,14 @@ sql_allocator *sa_reset( sql_allocator *sa )
 	return sa;
 }
 
+char *sa_realloc( sql_allocator *sa, void *p, size_t sz, size_t oldsz )
+{
+	char *r = sa_alloc(sa, sz);
+
+	memcpy(r, (char*)p, oldsz);
+	return r;
+}
+
 #define round16(sz) ((sz+15)&~15)
 char *sa_alloc( sql_allocator *sa, size_t sz )
 {

@@ -966,19 +966,11 @@ sql_create_type(char *sqlname, unsigned int digits, unsigned int scale, unsigned
 static sql_arg *
 create_arg(char *name, sql_subtype *t)
 {
-	sql_arg *a = sql_create_arg(name, t);
-
-	sql_subtype_destroy(t);
-	return a;
-}
-
-sql_arg *
-sql_create_arg(char *name, sql_subtype *t)
-{
 	sql_arg *a = ZNEW(sql_arg);
 
 	a->name = name;
 	a->type = *t;
+	sql_subtype_destroy(t);
 	return a;
 }
 

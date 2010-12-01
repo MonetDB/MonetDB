@@ -21,10 +21,13 @@ Ready.
 
 Over..
 
-# 22:02:15 >  
-# 22:02:15 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=35700 
-# 22:02:15 >  
+# 21:04:48 >  
+# 21:04:48 >  mclient -lsql -ftest -i -e --host=alf --port=34468 
+# 21:04:48 >  
 
+#select htype, ttype, count from bbp() as bbp 
+#where kind like 'pers%'
+#order by htype, ttype, count;
 % .bbp,	.bbp,	.bbp # table_name
 % htype,	ttype,	count # name
 % clob,	clob,	bigint # type
@@ -49,12 +52,12 @@ Over..
 [ "oid",	"str",	1	]
 [ "oid",	"str",	1	]
 [ "oid",	"str",	18	]
+[ "oid",	"str",	513	]
 [ "oid",	"str",	1102	]
 [ "oid",	"str",	1102	]
 [ "oid",	"str",	1102	]
 [ "oid",	"str",	3036	]
 [ "oid",	"str",	3036	]
-[ "str",	"BAT",	0	]
 #select 'transient', count(*) from bbp() as bbp where kind like 'tran%';
 % .L1,	.bbp # table_name
 % L1,	L2 # name

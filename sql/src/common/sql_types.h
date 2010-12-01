@@ -88,7 +88,6 @@ extern char *subtype2string(sql_subtype *t);
 extern sql_type *sql_create_type(char *sqlname, unsigned int digits, unsigned int scale, unsigned char radix, unsigned char eclass, char *name);
 extern void type_destroy(sql_type *t);
 
-extern sql_arg *sql_create_arg(char *name, sql_subtype *t);
 extern sql_arg *arg_dup(sql_arg *a);
 extern void arg_destroy(sql_arg *a);
 
