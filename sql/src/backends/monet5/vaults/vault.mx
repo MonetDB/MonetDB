@@ -25,10 +25,12 @@ The Data Vault module provides the basic infrastructure to manage
 a repository with datafiles whose integrity and use is shared between
 MonetDB and a client repository.
 
-Once a vault is created, the system administrator can manually add files to the catalog.
-A refresh() operation will fetch the files from the remote site using a path
-to an (ftp) directory.
-Often, this involves semantic knowledge of the target repository and the vault kind.
+Once a vault is created, the system administrator can manually add files to the 
+vault catalog. A target directory, when set, denotes the location where
+temporary copies are to be stored.
+
+A import() operation will perform a batch copy of the files marked as to be copied
+from the remote site using a path to an (ftp) directory.
 
 If source and target files reside on the same file system then a symbolic link is sufficient.
 Alternatively, the vault can be populated using normal updates to the vault catalog.
@@ -46,10 +48,6 @@ refresh			boolean,		-- refresh each time of access
 cached			timestamp,		-- copy stored locally
 target			string			-- file name of source file in vault
 );
-
-create function vaultDir()
-returns string
-external "vault.getDirectory";
 @end verbatim
 
 The module is developed solely for a Linux environment.
@@ -64,13 +62,9 @@ command getdirectory():str
 address VLTgetDirectory
 comment "Return the location of the root vault directory";
 
-command refresh(id:str)
-address VLTrefresh
-comment "Refresh the objects in the vault identified";
-
-command refresh(id:int)
-address VLTrefreshObject
-comment "Refresh the content of the vault for a specific object";
+command import(vid:int)
+address VLTimport
+comment "Import the vault object identified";
 
 command ftpget(src:str,trg:str)
 address VLTftpget
@@ -118,8 +112,7 @@ vault.prelude();
 vault_export str VLTprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 vault_export str VLTftpget(int *ret, str *source, str *target);
 vault_export str VLTgetDirectory(str *ret);
-vault_export str VLTrefresh(int *ret, str *nme);
-vault_export str VLTrefreshObject(int *ret, int *id);
+vault_export str VLTimport(int *ret, str *nme);
 vault_export  str VLTepilogue(int *ret);
 
 vault_export char vaultpath[BUFSIZ];
@@ -127,6 +120,7 @@ vault_export char vaultpath[BUFSIZ];
 @- Module initializaton
 @c
 #include "vault.h"
+#include "mseed.h"
 
 char vaultpath[BUFSIZ];
 @-
@@ -175,6 +169,7 @@ VLTftpget(int *ret, str *source, str *target)
 	//curl_global_init(CURL_GLOBAL_DEFAULT);
 
 	snprintf(path,BUFSIZ,"%s%c%s", vaultpath, DIR_SEP, *target);
+	mnstr_printf(GDKout,"#vault.ftpget: %s\n",path);
 	curl = curl_easy_init();
 	if(curl) {
 		curl_easy_setopt(curl, CURLOPT_URL, *source);
@@ -238,14 +233,11 @@ VLTgetDirectory(str *ret){
 	return MAL_SUCCEED;
 }
 
+@-
+Import checks freshness of the vault entry and adds a copy to the local cache.
+@c
 str 
-VLTrefresh(int *ret, str *nme){
-	(void) ret;
-	(void) nme;
-	return MAL_SUCCEED;
-}
-str 
-VLTrefreshObject(int *ret, int *id){
+VLTimport(int *ret, str *id){
 	(void) ret;
 	(void) id;
 	return MAL_SUCCEED;

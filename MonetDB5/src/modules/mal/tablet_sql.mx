@@ -467,6 +467,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 	int threads= (!maxrow || maxrow > (1<<16)) ? (GDKnr_threads < 16? GDKnr_threads: 16):1;
 	lng lio =0,  tio, t1 = 0, total=0, iototal=0;
 	int vmtrim = GDK_vm_trim;
+	str msg= MAL_SUCCEED;
 
 	for (i = 0; i < 16; i++)
 		ptask[i].cols = 0;
@@ -578,6 +579,15 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 		mlock( task->b->buf, task->b->size);
 #endif
 	while ( (task->b->pos < task->b->len || !task->b->eof) && cnt < (BUN) maxrow && res == 0) {
+
+		if(task->errbuf && task->errbuf[0] ) {
+			msg = catchKernelException(cntxt, msg);
+			if ( msg ){
+				showException(MAL,"copy_from",msg);
+				GDKfree(msg);
+				goto bailout;
+			}
+		}
 
 		if ( task->basesize <= task->b->size){
 			/* end of record not found within 32M */
@@ -813,9 +823,10 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 
   bailout:
 	if (task) {
-		for( i=0; i< as->nr_attrs; i++)
+		for( i=0; i< as->nr_attrs; i++){
 			if (task->fields[i])
 				GDKfree(task->fields[i]);
+		}
 		if (task->fields)
 			GDKfree(task->fields);
 		if (task->time)
