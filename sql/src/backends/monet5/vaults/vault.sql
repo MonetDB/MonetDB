@@ -24,12 +24,12 @@ kind            string,         -- vault kind (CSV, MSEED, FITS,..)
 source          string,         -- remote file name for cURL to access
 target          string,         -- location of source file in the local vault
 refresh         boolean,        -- refresh each time of access
-cached          timestamp       -- if a copy was stored locally
+cached          timestamp       -- when a local copy was stored
 );
 
 create function getVaultDir()
 returns string
-external name vault.getDirectory;
+external name vault.getdirectory;
 
 -- refresh the vault
 create procedure refreshVault(nme string)
