@@ -2580,31 +2580,26 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 
 		if (right) {
 			if (vals_only && !correlated) {
+				list *nvals = list_new(sql->sa);
 				sql_exp *e = NULL;
 				node *n;
 
 				rel_destroy(right);
 				for(n=vals->h; n; n = n->next) {
-					sql_exp *r = n->data, *ne;
+					sql_exp *r = n->data;
 
-					if (rel_convert_types(sql, &l, &r, 1, type_equal) < 0) 
+					r = rel_check_type(sql, exp_subtype(l), r, type_equal);
+					if (!r)
 						return NULL;
-					if (sc->token == SQL_NOT_IN) {
-						ne = exp_compare(sql->sa, l, r, cmp_notequal);
-						rel = rel_select(sql->sa, rel, ne);
-					} else {
-						ne = exp_compare(sql->sa, l, r, cmp_equal);
-						if (!e)
-							e = ne;
-						else
-							e = exp_or(sql->sa,
-							append(new_exp_list(sql->sa),e),
-							append(new_exp_list(sql->sa),ne)
-							);
-					}
+					append(nvals, r);
 				}
-				if (e && sc->token == SQL_IN)
-					rel = rel_select(sql->sa, rel, e);
+
+				if (sc->token == SQL_NOT_IN) {
+					e = exp_in(sql->sa, l, nvals, cmp_notin);
+				} else {
+					e = exp_in(sql->sa, l, nvals, cmp_in);
+				}
+				rel = rel_select(sql->sa, rel, e);
 				return rel;
 			}
 			r = rel_lastexp(sql, right);

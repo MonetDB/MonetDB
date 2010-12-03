@@ -2263,3 +2263,12 @@ print_stmts( sql_allocator *sa, stmt ** stmts )
 		print_stmt(sa, s);
 	}
 }
+
+void
+print_tree( sql_allocator *sa, stmt * s)
+{
+	stmt **stmts = stmt_array(sa, s);
+
+	print_stmts(sa, stmts);
+	clear_stmts(stmts);
+}

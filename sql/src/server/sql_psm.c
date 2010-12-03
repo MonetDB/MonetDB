@@ -615,7 +615,8 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 					sql_func *f = sf->func;
 					f->mod = sa_strdup(sql->sa, fmod);
 					f->imp = sa_strdup(sql->sa, fnme);
-					f->res = *restype;
+					if (res && restype)
+						f->res = *restype;
 					f->sql = 0; /* native */
 				}
 			}

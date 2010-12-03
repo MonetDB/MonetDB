@@ -175,6 +175,32 @@ get_exps( list *n, list *l )
 	}
 }
 
+static stmt *
+handle_in_exps( mvc *sql, sql_exp *ce, list *nl, stmt *left, stmt *right, group *grp, int in, int use_r) 
+{
+	node *n;
+	stmt *s, *c;
+
+	/* create bat append values */
+	s = stmt_temp(sql->sa, exp_subtype(ce));
+	for( n = nl->h; n; n = n->next) {
+		sql_exp *e = n->data;
+		stmt *i = exp_bin(sql, use_r?e->r:e, left, right, grp, NULL);
+		
+		s = stmt_append(sql->sa, s, i);
+	}
+	c = exp_bin(sql, ce, left, right, grp, NULL);
+	/*s = stmt_mark_tail(sql->sa, stmt_reverse(sql->sa, stmt_semijoin(sql->sa, stmt_reverse(sql->sa, c), stmt_reverse(sql->sa, s))), 0);*/
+	/* not really a projection join, therefore make sure left values are unique !! */
+	c = column(sql->sa, c);
+	if (in)
+		s = stmt_project(sql->sa, c, stmt_reverse(sql->sa, stmt_unique(sql->sa, s, NULL)));
+	else 
+		s = stmt_reverse(sql->sa, stmt_diff(sql->sa, stmt_reverse(sql->sa, c), stmt_reverse(sql->sa, stmt_unique(sql->sa, s, NULL))));
+	s = stmt_const(sql->sa, s, NULL);
+	return s;
+}
+
 /* For now this only works if all or's are part of the 'IN' */
 static stmt *
 handle_equality_exps( mvc *sql, list *l, list *r, stmt *left, stmt *right, group *grp )
@@ -182,7 +208,6 @@ handle_equality_exps( mvc *sql, list *l, list *r, stmt *left, stmt *right, group
 	node *n;
 	sql_exp *ce = NULL;
 	list *nl = new_exp_list(sql->sa);
-	stmt *s = NULL, *c;
 
 	get_exps(nl, l);
 	get_exps(nl, r);
@@ -197,21 +222,7 @@ handle_equality_exps( mvc *sql, list *l, list *r, stmt *left, stmt *right, group
 		if (!exp_match(ce, e->l)) 
 			return NULL;
 	} 
-
-	/* create bat append values */
-	s = stmt_temp(sql->sa, exp_subtype(ce));
-	for( n = nl->h; n; n = n->next) {
-		sql_exp *e = n->data;
-		stmt *i = exp_bin(sql, e->r, left, right, grp, NULL);
-		
-		s = stmt_append(sql->sa, s, i);
-	}
-	c = exp_bin(sql, ce, left, right, grp, NULL);
-	/*s = stmt_mark_tail(sql->sa, stmt_reverse(sql->sa, stmt_semijoin(sql->sa, stmt_reverse(sql->sa, c), stmt_reverse(sql->sa, s))), 0);*/
-	/* not really a projection join, therefore make sure left values are unique !! */
-	s = stmt_project(sql->sa, c, stmt_reverse(sql->sa, stmt_unique(sql->sa, s, NULL)));
-	s = stmt_const(sql->sa, s, NULL);
-	return s;
+	return handle_in_exps( sql, ce, nl, left, right, grp, 1, 1);
 }
 
 stmt *
@@ -394,6 +405,9 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 		sql_exp *re = e->r, *re2 = e->f;
 		prop *p;
 
+		if (e->flag == cmp_in || e->flag == cmp_notin) {
+			return handle_in_exps(sql, e->l, e->r, left, right, grp, (e->flag == cmp_in), 0);
+		}
 		if (e->flag == cmp_or) {
 			list *l = e->l;
 			node *n;
@@ -1615,6 +1629,9 @@ rel2bin_select( mvc *sql, sql_rel *rel, list *refs)
 			sel = NULL;
 		} else {
 			sel = stmt_join(sql->sa, sel, predicate, cmp_all);
+			predicate = NULL;
+			if (!sub)
+				predicate = sel;
 		}
 	}
 	/* construct relation */
