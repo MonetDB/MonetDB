@@ -1353,7 +1353,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			    s->op3.typeval.type->eclass &&
 			    s->op3.typeval.type->eclass != EC_INTERVAL &&
 			    s->op3.typeval.type->eclass != EC_DEC &&
-			    s->op4.typeval.digits == 0
+			    (s->op4.typeval.digits == 0 ||
+				 s->op3.typeval.digits == s->op4.typeval.digits)
 			   ) {
 				s->nr = l;	
 				break;
