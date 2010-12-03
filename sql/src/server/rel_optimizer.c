@@ -2495,7 +2495,7 @@ rel_avg2sum_count(int *changes, mvc *sql, sql_rel *rel)
 			if (e->type == e_column && !rel_find_exp(rel->l, e))  
 				append(pexps, e);
 			else 
-				append(pexps, exp_column(sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e)));
+				append(pexps, exp_column(sql->sa, e->name?e->rname:exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e)));
 		}
 		rel->exps = nexps;
 		rel = rel_project(sql->sa, rel, pexps);
