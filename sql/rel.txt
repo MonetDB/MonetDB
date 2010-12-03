@@ -69,6 +69,8 @@ e_atom 	(card ATOM)
 	or
 	-> r	parameter ( ->r = varname, ->type = subtype, ->flag = level)
 	or
+	-> f	list of atom expressions
+	or
 	-> 	numbered variable ( ->flag = nr, ->type = subtype)
 
 e_convert
@@ -88,7 +90,12 @@ e_cmp
         		cmp_notlike = 6,
         		cmp_like = 7,
         		cmp_all = 8,		cross product
-        		cmp_or = 9		or handling 
+        		cmp_or = 9,		or handling 
+			cmp_in = 10,		in list handling		
+			cmp_notin = 11		not in list handling
+
+						cmp_in/cmp_notin
+						->r is a list of values
 		)
 
 e_func

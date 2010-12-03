@@ -1329,6 +1329,8 @@ rel_values( mvc *sql, symbol *tableref)
 	dlist *rowlist = tableref->data.lval;
 	symbol *optname = rowlist->t->data.sym;
 	dnode *o;
+	node *m;
+	list *exps = list_new(sql->sa); 
 
 	exp_kind ek = {type_value, card_value, TRUE};
 	if (!rowlist->h)
@@ -1339,33 +1341,56 @@ rel_values( mvc *sql, symbol *tableref)
 		dlist *values = o->data.lval;
 
 		if (r && list_length(r->exps) != dlist_length(values)) {
-			rel_destroy(r);
 			return sql_error(sql, 02, "VALUES: number of values doesn't match");
 		} else {
-			sql_rel *i = NULL;
-			list *exps = new_exp_list(sql->sa);
 			dnode *n;
 
-			for (n = values->h; n; n = n->next) {
-				sql_rel *r = NULL;
-				sql_exp *e = rel_value_exp(sql, NULL, n->data.sym, sql_sel, ek);
-				if (!e) {
-					rel_destroy(r);
-					return NULL;
+			if (list_empty(exps)) {
+				for (n = values->h; n; n = n->next) {
+					sql_exp *vals = exp_values(sql->sa, list_new(sql->sa));
+					list_append(exps, vals);
+					exp_label(sql->sa, vals, ++sql->label);
 				}
-				if (!e->name)
-					exp_label(sql->sa, e, ++sql->label);
-				list_append(exps, e);
 			}
-			i = rel_project(sql->sa, NULL, exps);
-			if (r) {
-				r = rel_setop(sql->sa, r, i, op_union);
-				r->exps = rel_projections(sql, r, NULL, 1, 1);
-			} else {
-				r = i;
+			for (n = values->h, m = exps->h; n && m; 
+					n = n->next, m = m->next) {
+				sql_exp *vals = m->data;
+				list *vals_list = vals->f;
+				sql_exp *e = rel_value_exp(sql, NULL, n->data.sym, sql_sel, ek);
+				if (!e) 
+					return NULL;
+				list_append(vals_list, e);
 			}
 		}
 	}
+	/* loop to check types */
+	for (m = exps->h; m; m = m->next) {
+		node *n;
+		sql_exp *vals = m->data;
+		list *vals_list = vals->f;
+		list *nexps = list_new(sql->sa);
+
+		/* first get super type */
+		vals->tpe = *exp_subtype(vals_list->h->data);
+
+		for (n = vals_list->h; n; n = n->next) {
+			sql_exp *e = n->data;
+			sql_subtype super;
+
+			supertype(&super, &vals->tpe, exp_subtype(e));
+			vals->tpe = super;
+		}
+		for (n = vals_list->h; n; n = n->next) {
+			sql_exp *e = n->data;
+			
+			e = rel_check_type(sql, &vals->tpe, e, type_equal);
+			if (!e)
+				return NULL;
+			append(nexps, e); 
+		}
+		vals->f = nexps;
+	}
+	r = rel_project(sql->sa, NULL, exps);
 	set_processed(r);
 	rel_table_optname(sql, r, optname);
 	return r;
@@ -2580,31 +2605,26 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 
 		if (right) {
 			if (vals_only && !correlated) {
+				list *nvals = list_new(sql->sa);
 				sql_exp *e = NULL;
 				node *n;
 
 				rel_destroy(right);
 				for(n=vals->h; n; n = n->next) {
-					sql_exp *r = n->data, *ne;
+					sql_exp *r = n->data;
 
-					if (rel_convert_types(sql, &l, &r, 1, type_equal) < 0) 
+					r = rel_check_type(sql, exp_subtype(l), r, type_equal);
+					if (!r)
 						return NULL;
-					if (sc->token == SQL_NOT_IN) {
-						ne = exp_compare(sql->sa, l, r, cmp_notequal);
-						rel = rel_select(sql->sa, rel, ne);
-					} else {
-						ne = exp_compare(sql->sa, l, r, cmp_equal);
-						if (!e)
-							e = ne;
-						else
-							e = exp_or(sql->sa,
-							append(new_exp_list(sql->sa),e),
-							append(new_exp_list(sql->sa),ne)
-							);
-					}
+					append(nvals, r);
 				}
-				if (e && sc->token == SQL_IN)
-					rel = rel_select(sql->sa, rel, e);
+
+				if (sc->token == SQL_NOT_IN) {
+					e = exp_in(sql->sa, l, nvals, cmp_notin);
+				} else {
+					e = exp_in(sql->sa, l, nvals, cmp_in);
+				}
+				rel = rel_select(sql->sa, rel, e);
 				return rel;
 			}
 			r = rel_lastexp(sql, right);

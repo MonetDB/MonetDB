@@ -82,6 +82,20 @@ exp_or(sql_allocator *sa, list *l, list *r)
 	return e;
 }
 
+sql_exp *
+exp_in(sql_allocator *sa, sql_exp *l, list *r, int cmptype)
+{
+	sql_exp *e = exp_create(sa, e_cmp);
+	
+	e->card = l->card;
+	e->l = l;
+	e->r = r;
+	assert( cmptype == cmp_in || cmptype == cmp_notin);
+	e->flag = cmptype;
+	return e;
+}
+
+
 static sql_subtype*
 dup_subtype(sql_allocator *sa, sql_subtype *st)
 {
@@ -221,6 +235,15 @@ exp_param(sql_allocator *sa, char *name, sql_subtype *tpe, int frame)
 	e->flag = frame;
 	if (tpe)
 		e->tpe = *tpe;
+	return e;
+}
+
+sql_exp * 
+exp_values(sql_allocator *sa, list *exps) 
+{
+	sql_exp *e = exp_create(sa, e_atom);
+	e->card = CARD_MULTI;
+	e->f = exps;
 	return e;
 }
 
@@ -431,17 +454,17 @@ exps_match_col_exps( sql_exp *e1, sql_exp *e2)
 	if (e1->type != e_cmp || e2->type != e_cmp)
 		return 0;
 
-	if (e1->flag != cmp_or && e1_r && e1_r->card == 1 &&
-	    e2->flag != cmp_or && e2_r && e2_r->card == 1)
+	if (!is_complex_exp(e1->flag) && e1_r && e1_r->card == 1 &&
+	    !is_complex_exp(e2->flag) && e2_r && e2_r->card == 1)
 		return exp_match_exp(e1->l, e2->l);
 
-	if (e1->flag != cmp_or && e1_r && e1_r->card == 1 &&
+	if (!is_complex_exp(e1->flag) && e1_r && e1_r->card == 1 &&
 	    e2->flag == cmp_or)
  		return exp_match_col_exps(e1->l, e2->l) &&
  		       exp_match_col_exps(e1->l, e2->r); 
 
 	if (e1->flag == cmp_or &&
-	    e2->flag != cmp_or && e2_r && e2_r->card == 1)
+	    !is_complex_exp(e2->flag) && e2_r && e2_r->card == 1)
  		return exp_match_col_exps(e2->l, e1->l) &&
  		       exp_match_col_exps(e2->l, e1->r); 
 
@@ -502,7 +525,7 @@ exp_match_exp( sql_exp *e1, sql_exp *e2)
 	if (e1->type == e2->type) { 
 		switch(e1->type) {
 		case e_cmp:
-			if (e1->flag == e2->flag && e1->flag != cmp_or &&
+			if (e1->flag == e2->flag && !is_complex_exp(e1->flag) &&
 		            exp_match_exp(e1->l, e2->l) && 
 			    exp_match_exp(e1->r, e2->r) && 
 			    ((!e1->f && !e2->f) || exp_match_exp(e1->f, e2->f)))
@@ -558,7 +581,7 @@ exp_is_join_exp(sql_exp *e)
 {
 	sql_exp *l = e->l;
 	sql_exp *r = e->r;
-	if (e->type == e_cmp && e->flag != cmp_or && l && r && r->card >= CARD_AGGR)
+	if (e->type == e_cmp && !is_complex_exp(e->flag) && l && r && r->card >= CARD_AGGR)
 		return 0;
 	if (e->type == e_cmp && e->flag == cmp_or && e->card >= CARD_AGGR)
 		if (exps_are_joins(e->l) == 0 && exps_are_joins(e->r) == 0)
@@ -611,7 +634,7 @@ exp_is_join(sql_exp *e)
 	/* only simple compare expressions, ie not or lists
 		or range expressions (e->f)
 	 */ 
-	if (e->type == e_cmp && e->flag != cmp_or && e->l && e->r && !e->f && e->card >= CARD_AGGR && !complex_select(e))
+	if (e->type == e_cmp && !is_complex_exp(e->flag) && e->l && e->r && !e->f && e->card >= CARD_AGGR && !complex_select(e))
 		return 0;
 	return -1;
 }
@@ -704,7 +727,7 @@ rel_find_exp( sql_rel *rel, sql_exp *e)
 int 
 exp_is_correlation(sql_exp *e, sql_rel *r )
 {
-	if (e->type == e_cmp && e->flag != cmp_or) {
+	if (e->type == e_cmp && !is_complex_exp(e->flag)) {
 		sql_exp *le = rel_find_exp(r->l, e->l);
 		sql_exp *re = rel_find_exp(r->r, e->r);
 

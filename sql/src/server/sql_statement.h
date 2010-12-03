@@ -133,10 +133,17 @@ typedef enum comp_type {
 	cmp_like = 7,
 	cmp_notilike = 8,
 	cmp_ilike = 9,
-	cmp_all = 10,
-	cmp_or = 11,
-	cmp_project = 12
+	cmp_or = 10,
+	cmp_in = 11,
+	cmp_notin = 12,
+
+	cmp_all = 13,		/* special case for crossproducts */
+	cmp_project = 14	/* special case for projection joins */
 } comp_type;
+
+#define is_theta_exp(e) (e == cmp_gt || e == cmp_gte || e == cmp_lte ||\
+		         e == cmp_lt || e == cmp_equal || e == cmp_notequal)
+#define is_complex_exp(e) (e == cmp_or || e == cmp_in || e == cmp_notin)
 
 /* flag to indicate anti join/select */
 #define ANTI 16
@@ -172,6 +179,7 @@ extern const char *st_type2string(st_type type);
 
 extern stmt **stmt_array(sql_allocator *sa, stmt *s);
 extern void print_stmts( sql_allocator *sa, stmt ** stmts );
+extern void print_tree( sql_allocator *sa, stmt * stmts );
 extern void clear_stmts( stmt ** stmts );
 
 extern stmt *stmt_none(sql_allocator *sa);

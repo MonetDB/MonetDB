@@ -62,6 +62,8 @@ cmp_print(mvc *sql, stream *fout, int cmp)
 	case cmp_ilike: 	r = "ilike"; break;
 	case cmp_all: 		r = "all"; break;
 	case cmp_or: 		r = "or"; break;
+	case cmp_in: 		r = "in"; break;
+	case cmp_notin: 	r = "notin"; break;
 	default:
 		r = "";
 	}
@@ -108,6 +110,9 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, int comma, int alias)
 			if (e->r) { /* named parameters */
 				char *name = e->r;
 				mnstr_printf(fout, "%s", name);
+			} else if (e->f) {	/* values list */
+				list *l = e->f;
+				exp_print(sql, fout, l->h->data, depth, 0, 0);
 			} else { /* numbered arguments */
 				mnstr_printf(fout, "A%d", e->flag);
 			}
@@ -141,7 +146,11 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, int comma, int alias)
 			alias = 0;
 	 	break;
 	case e_cmp: 
-		if (e->flag == cmp_or) {
+		if (e->flag == cmp_in || e->flag == cmp_notin) {
+			exp_print(sql, fout, e->l, depth, alias, 1);
+			cmp_print(sql, fout, e->flag );
+			exps_print(sql, fout, e->r, depth, alias, 1);
+		} else if (e->flag == cmp_or) {
 			exps_print(sql, fout, e->l, depth, alias, 1);
 			cmp_print(sql, fout, e->flag );
 			exps_print(sql, fout, e->r, depth, alias, 1);
