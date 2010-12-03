@@ -85,10 +85,10 @@ AC_CHECK_HEADERS([sys/sysctl.h sys/time.h sys/wait.h])
 AM_MONETDB_LIBS()
 
 # Checks for typedefs, structures, and compiler characteristics.
-AC_COMPILE_IFELSE(AC_LANG_SOURCE([int foo(int * restrict p) { return *p; }]),
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([[int foo(int * restrict p) { return *p; }]])],
 	AC_DEFINE(HAVE_RESTRICT, 1,
 		[Define if the compiler supports the restrict keyword]),
-	AC_COMPILE_IFELSE(AC_LANG_SOURCE([int foo(int * __restrict__ p) { return *p; }]),
+	AC_COMPILE_IFELSE([AC_LANG_SOURCE([[int foo(int * __restrict__ p) { return *p; }]])],
 		AC_DEFINE(HAVE___RESTRICT__, 1,
 			[Define if the compiler supports the __restrict__ keyword])))
 
