@@ -1329,6 +1329,8 @@ rel_values( mvc *sql, symbol *tableref)
 	dlist *rowlist = tableref->data.lval;
 	symbol *optname = rowlist->t->data.sym;
 	dnode *o;
+	node *m;
+	list *exps = list_new(sql->sa); 
 
 	exp_kind ek = {type_value, card_value, TRUE};
 	if (!rowlist->h)
@@ -1339,33 +1341,56 @@ rel_values( mvc *sql, symbol *tableref)
 		dlist *values = o->data.lval;
 
 		if (r && list_length(r->exps) != dlist_length(values)) {
-			rel_destroy(r);
 			return sql_error(sql, 02, "VALUES: number of values doesn't match");
 		} else {
-			sql_rel *i = NULL;
-			list *exps = new_exp_list(sql->sa);
 			dnode *n;
 
-			for (n = values->h; n; n = n->next) {
-				sql_rel *r = NULL;
-				sql_exp *e = rel_value_exp(sql, NULL, n->data.sym, sql_sel, ek);
-				if (!e) {
-					rel_destroy(r);
-					return NULL;
+			if (list_empty(exps)) {
+				for (n = values->h; n; n = n->next) {
+					sql_exp *vals = exp_values(sql->sa, list_new(sql->sa));
+					list_append(exps, vals);
+					exp_label(sql->sa, vals, ++sql->label);
 				}
-				if (!e->name)
-					exp_label(sql->sa, e, ++sql->label);
-				list_append(exps, e);
 			}
-			i = rel_project(sql->sa, NULL, exps);
-			if (r) {
-				r = rel_setop(sql->sa, r, i, op_union);
-				r->exps = rel_projections(sql, r, NULL, 1, 1);
-			} else {
-				r = i;
+			for (n = values->h, m = exps->h; n && m; 
+					n = n->next, m = m->next) {
+				sql_exp *vals = m->data;
+				list *vals_list = vals->f;
+				sql_exp *e = rel_value_exp(sql, NULL, n->data.sym, sql_sel, ek);
+				if (!e) 
+					return NULL;
+				list_append(vals_list, e);
 			}
 		}
 	}
+	/* loop to check types */
+	for (m = exps->h; m; m = m->next) {
+		node *n;
+		sql_exp *vals = m->data;
+		list *vals_list = vals->f;
+		list *nexps = list_new(sql->sa);
+
+		/* first get super type */
+		vals->tpe = *exp_subtype(vals_list->h->data);
+
+		for (n = vals_list->h; n; n = n->next) {
+			sql_exp *e = n->data;
+			sql_subtype super;
+
+			supertype(&super, &vals->tpe, exp_subtype(e));
+			vals->tpe = super;
+		}
+		for (n = vals_list->h; n; n = n->next) {
+			sql_exp *e = n->data;
+			
+			e = rel_check_type(sql, &vals->tpe, e, type_equal);
+			if (!e)
+				return NULL;
+			append(nexps, e); 
+		}
+		vals->f = nexps;
+	}
+	r = rel_project(sql->sa, NULL, exps);
 	set_processed(r);
 	rel_table_optname(sql, r, optname);
 	return r;

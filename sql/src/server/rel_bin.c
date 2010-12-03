@@ -225,6 +225,23 @@ handle_equality_exps( mvc *sql, list *l, list *r, stmt *left, stmt *right, group
 	return handle_in_exps( sql, ce, nl, left, right, grp, 1, 1);
 }
 
+static stmt *
+value_list( mvc *sql, list *vals) 
+{
+	node *n;
+	stmt *s;
+
+	/* create bat append values */
+	s = stmt_temp(sql->sa, exp_subtype(vals->h->data));
+	for( n = vals->h; n; n = n->next) {
+		sql_exp *e = n->data;
+		stmt *i = exp_bin(sql, e, NULL, NULL, NULL, NULL);
+		
+		s = stmt_append(sql->sa, s, i);
+	}
+	return s;
+}
+
 stmt *
 exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel) 
 {
@@ -242,6 +259,8 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 			s = stmt_atom(sql->sa, atom_dup(sql->sa, a));
 		} else if (e->r) { 		/* parameters */
 			s = stmt_var(sql->sa, sa_strdup(sql->sa, e->r), e->tpe.type?&e->tpe:NULL, 0, e->flag);
+		} else if (e->f) { 		/* values */
+			s = value_list(sql, e->f);
 		} else { 			/* arguments */
 			s = stmt_varnr(sql->sa, e->flag, e->tpe.type?&e->tpe:NULL);
 		}

@@ -239,6 +239,15 @@ exp_param(sql_allocator *sa, char *name, sql_subtype *tpe, int frame)
 }
 
 sql_exp * 
+exp_values(sql_allocator *sa, list *exps) 
+{
+	sql_exp *e = exp_create(sa, e_atom);
+	e->card = CARD_MULTI;
+	e->f = exps;
+	return e;
+}
+
+sql_exp * 
 exp_alias(sql_allocator *sa, char *arname, char *acname, char *org_rname, char *org_cname, sql_subtype *t, int card, int has_nils, int intern) 
 {
 	sql_exp *e = exp_create(sa, e_column);

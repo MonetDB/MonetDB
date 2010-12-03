@@ -110,6 +110,9 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, int comma, int alias)
 			if (e->r) { /* named parameters */
 				char *name = e->r;
 				mnstr_printf(fout, "%s", name);
+			} else if (e->f) {	/* values list */
+				list *l = e->f;
+				exp_print(sql, fout, l->h->data, depth, 0, 0);
 			} else { /* numbered arguments */
 				mnstr_printf(fout, "A%d", e->flag);
 			}

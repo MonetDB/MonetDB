@@ -69,6 +69,8 @@ e_atom 	(card ATOM)
 	or
 	-> r	parameter ( ->r = varname, ->type = subtype, ->flag = level)
 	or
+	-> f	list of atom expressions
+	or
 	-> 	numbered variable ( ->flag = nr, ->type = subtype)
 
 e_convert
