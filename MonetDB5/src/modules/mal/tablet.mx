@@ -442,7 +442,6 @@ keep it in an ADT.
 @h
 
 typedef struct Table_t {
-	int rawmode;	/* perform bypass load preparation */
 	char *sep;		/* default separator */
 	str ttopbrk, tbotbrk;	/* table brackets */
 	str rlbrk, rrbrk;	/* row brackets */
@@ -1299,21 +1298,12 @@ TABLETcreate_bats(Tablet * as, BUN est)
 	len= strlen(nme);
 	assert(len <BUFSIZ-50);
 
-/*	as->rawmode= TRUE;  TRIAL CODE */
-	as->rawmode = 0;
 	for (i = 0; i < as->nr_attrs; i++) {
 		fmt[i].c[0] = void_bat_create(fmt[i].adt, est);
 		fmt[i].ci[0] = bat_iterator(fmt[i].c[0]);
 		if (!fmt[i].c[0]) {
 			GDKerror("TABLETcreate_bats: Failed to create bat of size " BUNFMT "\n", as->nr);
 			return -1;
-		}
-		if (as->rawmode){
-			fmt[i].batfile= GDKstrdup(BBP_physical(ABS(fmt[i].c[0]->batCacheid)));
-			snprintf(nme+len,BUFSIZ-len,"%cbat%c"BUNFMT".raw",DIR_SEP,DIR_SEP,i);
-			fmt[i].rawfile= GDKstrdup(nme);
-			fmt[i].raw= open_wastream(fmt[i].rawfile);
-			mnstr_printf(GDKout,"#mv %s %s\n",fmt[i].rawfile,fmt[i].batfile);
 		}
 	}
 	return 0;
