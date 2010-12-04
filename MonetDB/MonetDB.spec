@@ -103,7 +103,6 @@ rm -fr $RPM_BUILD_ROOT
 %dir %{_includedir}/%{name}
 %dir %{_includedir}/%{name}/common
 %dir %{_includedir}/%{name}/gdk
-%{_includedir}/%{name}/*.h
 %{_includedir}/%{name}/*/*.[hcm]
 %{_libdir}/libmutils.so
 %{_libdir}/libstream.so
