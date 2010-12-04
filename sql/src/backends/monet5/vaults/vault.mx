@@ -120,7 +120,6 @@ vault_export char vaultpath[BUFSIZ];
 @- Module initializaton
 @c
 #include "vault.h"
-#include "mseed.h"
 
 char vaultpath[BUFSIZ];
 @-
