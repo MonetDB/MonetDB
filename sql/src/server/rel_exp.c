@@ -668,7 +668,8 @@ rel_find_exp_( sql_rel *rel, sql_exp *e)
 			list *l = e->l;
 			node *n = l->h;
 	
-			while (ne == NULL && n != NULL) {
+			ne = n->data;
+			while (ne != NULL && n != NULL) {
 				ne = rel_find_exp_(rel, n->data);
 				n = n->next;
 			}
@@ -677,7 +678,7 @@ rel_find_exp_( sql_rel *rel, sql_exp *e)
 	case e_cmp:	
 		return NULL;
 	case e_atom:
-		return ne;
+		return e;
 	}
 	return ne;
 }

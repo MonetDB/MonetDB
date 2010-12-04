@@ -623,7 +623,9 @@ order_joins(mvc *sql, list *rels, list *exps)
 
 		/* find the involved relations */
 
-		/* TODO all current code assumes expressions only touch 2 (atmost) 2 base tables, but complex expressions my touch multiple base tables */
+		/* complex expressions may touch multiple base tables 
+		 * Should be push up to extra selection.
+		 * */
 		l = find_one_rel(rels, cje->l);
 		r = find_one_rel(rels, cje->r);
 
@@ -720,10 +722,26 @@ order_joins(mvc *sql, list *rels, list *exps)
 				top = n->data;
 		}
 	}
-	if (list_length(exps)) { /* more expressions */
+	if (list_length(exps)) { /* more expressions (add selects) */
 		node *n;
-		for(n=exps->h; n; n = n->next) 
-			rel_join_add_exp(sql->sa, top, n->data);
+		top = rel_select(sql->sa, top, NULL);
+		for(n=exps->h; n; n = n->next) {
+			sql_exp *e = n->data;
+
+			/* find the involved relations */
+
+			/* complex expressions may touch multiple base tables 
+		 	 * Should be push up to extra selection.
+		 	 * */
+			l = find_one_rel(rels, e->l);
+			r = find_one_rel(rels, e->r);
+
+			if (l && r) 
+				rel_join_add_exp(sql->sa, top->l, e);
+			else
+				rel_select_add_exp(top, e);
+		}
+
 	}
 	return top;
 }
@@ -2854,11 +2872,20 @@ exps_mark_used(sql_rel *rel, sql_rel *subrel)
 	int nr = 0;
 	if (rel->exps) {
 		node *n;
-		for (n=rel->exps->h; n; n = n->next) {
-			sql_exp *e = n->data;
+		int len = list_length(rel->exps), i;
+		sql_exp **exps = (sql_exp**)alloca(sizeof(sql_exp*) * len);
 
-			if (!is_project(rel->op) || e->used) 
+		for (n=rel->exps->h, i = 0; n; n = n->next, i++) 
+			exps[i] = n->data;
+
+		for (i = len-1; i >= 0; i--) {
+			sql_exp *e = exps[i];
+
+			if (!is_project(rel->op) || e->used) {
+				if (is_project(rel->op))
+					nr += exp_mark_used(rel, e);
 				nr += exp_mark_used(subrel, e);
+			}
 		}
 	}
 	/* for count/rank we need atleast one column */
