@@ -21,11 +21,61 @@ Ready.
 
 Over..
 
-# 19:20:37 >  
-# 19:20:37 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=35158 
-# 19:20:37 >  
+# 22:51:44 >  
+# 22:51:44 >  mclient -lsql -ftest -i -e --host=alf --port=37337 
+# 22:51:44 >  
 
-% sys.store,	sys.L3,	sys.L7,	sys.L13,	sys.,	sys.,	sys.warehouse # table_name
+#CREATE TABLE "sys"."store" ( 
+#        "store_id" int NOT NULL, 
+#        "store_type" varchar(30), 
+#        "region_id" int, 
+#        "store_name" varchar(30), 
+#        "store_number" int, 
+#        "store_street_address" varchar(30), 
+#        "store_city" varchar(30), 
+#        "store_state" varchar(30), 
+#        "store_postal_code" varchar(30), 
+#        "store_country" varchar(30), 
+#        "store_manager" varchar(30), 
+#        "store_phone" varchar(30), 
+#        "store_fax" varchar(30), 
+#        "first_open
+#CREATE TABLE "sys"."warehouse" (
+#        "warehouse_id" int NOT NULL,
+#        "warehouse_class_id" int,
+#        "stores_id" int,
+#        "warehouse_name" varchar(60),
+#        "wa_address1" varchar(30),
+#        "wa_address2" varchar(30),
+#        "wa_address3" varchar(30),
+#        "wa_address4" varchar(30),
+#        "warehouse_city" varchar(30),
+#        "warehouse_state_province" varchar(30),
+#        "warehouse_postal_code" varchar(30),
+#        "warehouse_country" varchar(30),
+#        "warehouse_owner_name" va
+#CREATE TABLE "sys"."warehouse_class" (
+#        "warehouse_class_id" int NOT NULL,
+#        "description" varchar(30)
+#);
+#select 
+#	"store"."store_type" as "c0", 
+#	count(distinct (
+#	select 
+#		"warehouse_class"."warehouse_class_id" AS "warehouse_class_id" 
+#	from
+#		"warehouse_class" AS "warehouse_class" 
+#	where
+#		"warehouse_class"."warehouse_class_id" = "warehouse"."warehouse_class_id" and 
+#		"warehouse_class"."description" = 'Large Owned')) as "m0",
+#	count(distinct (
+#	select 
+#		"warehouse_class"."warehouse_class_id" AS "warehouse_class_id" 
+#	from 
+#		"warehouse_class" AS "warehouse_class" 
+#	where
+#		"warehouse_class"."warehouse_cl
+% sys.store,	sys.L3,	sys.L7,	sys.L13,	sys.L15,	sys.L17,	sys.warehouse # table_name
 % c0,	m0,	m1,	m2,	m3,	m4,	m5 # name
 % varchar,	wrd,	wrd,	wrd,	wrd,	wrd,	wrd # type
 % 0,	1,	1,	1,	1,	1,	1 # length

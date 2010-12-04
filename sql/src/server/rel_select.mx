@@ -729,7 +729,6 @@ rel_project_add_exp( mvc *sql, sql_rel *rel, sql_exp *e)
 			rel->exps = new_exp_list();
 		append(rel->exps, e);
 	} else if (rel->op == op_groupby) {
-		/* todo fix leak */
 		(void) rel_groupby_add_aggr(sql, rel, e);
 	}
 }
@@ -3485,6 +3484,10 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, char *aggrstr, symbol *sym, int
 
 		no_nil = 1;
 		e = rel_value_exp(sql, &gr, sym, f, ek);
+		if (gr && e && is_project(gr->op) && !is_set(gr->op) && e->type != e_column) {
+			rel_project_add_exp(sql, gr, e);
+			e = exp_alias_or_copy(sql, exp_relname(e), exp_name(e), gr->l, e, 0);
+		}
 		groupby->l = gr;
 	}
 
