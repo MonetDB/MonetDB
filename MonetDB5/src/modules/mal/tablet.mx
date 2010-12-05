@@ -1288,15 +1288,13 @@ TABLETcreate_bats(Tablet * as, BUN est)
 	Column *fmt = as->format;
 	BUN i;
 	char nme[BUFSIZ];
-	size_t len;
 
 	if ( getcwd(nme,BUFSIZ) == NULL){
 		GDKerror("TABLETcreate_bats: Failed to locate directory\n");
 		return -1;
 	}
 
-	len= strlen(nme);
-	assert(len <BUFSIZ-50);
+	assert(strlen(nme) <BUFSIZ-50);
 
 	for (i = 0; i < as->nr_attrs; i++) {
 		fmt[i].c[0] = void_bat_create(fmt[i].adt, est);
