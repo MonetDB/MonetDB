@@ -1512,8 +1512,19 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 		}
 		sub = stmt_list(sql->sa, npl);
 	}
-	if (need_distinct(rel))
+	if (need_distinct(rel)) {
 		psub = rel2bin_distinct(sql, psub);
+		/* also rebuild sub as multiple orderby expressions may use the sub table (ie aren't part of the result columns) */
+		if (sub) {
+			list *npl = list_new(sql->sa);
+			stmt *distinct = stmt_mirror(sql->sa, psub->op4.lval->h->data);
+			
+			pl = sub->op4.lval;
+			for ( n=pl->h ; n; n = n->next) 
+				list_append(npl, stmt_project(sql->sa, distinct, column(sql->sa, n->data))); 
+			sub = stmt_list(sql->sa, npl);
+		}
+	}
 	if ((!topn || need_distinct(rel)) && rel->r) {
 		list *oexps = rel->r;
 		stmt *orderby = NULL;
