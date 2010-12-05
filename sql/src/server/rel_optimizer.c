@@ -741,7 +741,6 @@ order_joins(mvc *sql, list *rels, list *exps)
 			else
 				rel_select_add_exp(top, e);
 		}
-
 	}
 	return top;
 }

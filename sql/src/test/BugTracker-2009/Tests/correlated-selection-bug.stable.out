@@ -21,9 +21,9 @@ Ready.
 
 Over..
 
-# 15:01:39 >  
-# 15:01:39 >  mclient -lsql -ftest -i -e --host=alf --port=35460 
-# 15:01:39 >  
+# 22:51:44 >  
+# 22:51:44 >  mclient -lsql -ftest -i -e --host=alf --port=37337 
+# 22:51:44 >  
 
 #CREATE TABLE "sys"."store" ( 
 #        "store_id" int NOT NULL, 
