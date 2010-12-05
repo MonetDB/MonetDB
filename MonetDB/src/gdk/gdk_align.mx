@@ -218,6 +218,8 @@ VIEWhcreate(BAT *h)
 	recycled = bs = BBPrecycle(TYPE_void, TYPE_void, 1);
 	if (bs == NULL)
 		bs = BATcreatedesc(h->htype, TYPE_void, FALSE);
+	if (bs == NULL)
+		return NULL;
 	bn = &bs->B;
 
 	BATsetdims(bn);
@@ -267,8 +269,10 @@ VIEWcreate_(BAT *h, BAT *t, int slice_view)
 	BATcheck(h, "VIEWcreate_");
 	BATcheck(t, "VIEWcreate_");
 	recycled = bs = BBPrecycle(TYPE_void, TYPE_void, 1);
-	if (!bs)
+	if (bs == NULL)
 		bs = BATcreatedesc(h->htype, t->ttype, FALSE);
+	if (bs == NULL)
+		return NULL;
 	bn = &bs->B;
 
 	hp = VIEWhparent(h);
