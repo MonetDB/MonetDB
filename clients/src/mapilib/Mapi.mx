@@ -4067,10 +4067,10 @@ read_into_cache(MapiHdl hdl, int lookahead)
 			   normal output for the current one */
 			if (result == NULL ||
 					result->cache.writer > 0 ||
-					result->querytype == Q_TABLE ||
-					result->querytype == Q_UPDATE)
+					result->querytype > 0)
 			{
 				result = new_result(hdl);
+				result->commentonly = 0;
 				hdl->active = result;
 			}
 			add_error(result, line + 1 /* skip ! */ );
