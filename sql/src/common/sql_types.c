@@ -272,10 +272,6 @@ sql_bind_subtype(char *name, unsigned int digits, unsigned int scale)
 	return res;
 }
 
-#ifndef NDEBUG
-static int sql_end = 0;
-#endif
-
 void
 type_destroy(sql_type *t)
 {
@@ -1534,26 +1530,9 @@ sqltypeinit(void)
 void
 types_exit(void)
 {
-#ifndef NDEBUG
-	sql_end = END_SUBAGGR;
-#endif
-
-#ifndef NDEBUG
-	sql_end = END_AGGR;
-#endif
-
 	list_destroy(aggrs);
 	list_destroy(funcs);
-
 	list_destroy(localtypes);
-
-#ifndef NDEBUG
-	sql_end = END_SUBTYPE;
-#endif
-
-#ifndef NDEBUG
-	sql_end = END_TYPE;
-#endif
 	list_destroy(aliases);
 	list_destroy(types);
 }
