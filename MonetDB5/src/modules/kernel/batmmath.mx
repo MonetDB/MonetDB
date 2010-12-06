@@ -154,10 +154,10 @@ str CMDscience_bat_cst_@1_@2(int *ret, int *bid, @2 *d)
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	if (b->T->nonil){
 		for(;p<q; o++, p++)
-			*o = (@2) @1(*p,*d);
+			*o = @1@3(*p,*d);
 	} else
 		for(;p<q; o++, p++){
-			*o = *p == @2_nil? @2_nil: (@2) @1(*p,*d);
+			*o = *p == @2_nil? @2_nil: @1@3(*p,*d);
 		}
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
@@ -178,8 +178,8 @@ str CMDscience_bat_cst_@1_@2(int *ret, int *bid, @2 *d)
 	return MAL_SUCCEED;
 }
 @= scienceImpl
-@:scienceFcnImpl(@1,dbl)@
-@:scienceFcnImpl(@1,flt)@
+@:scienceFcnImpl(@1,dbl,)@
+@:scienceFcnImpl(@1,flt,f)@
 @c
 @:scienceImpl(asin)@
 @:scienceImpl(acos)@
