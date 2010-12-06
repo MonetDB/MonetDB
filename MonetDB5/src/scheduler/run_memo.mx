@@ -129,7 +129,7 @@ comment "A sample cost prediction function";
 /* #define DEBUG_RUN_MEMORUN*/
 
 #ifdef WIN32
-#ifndef LIBRUN_MEMO
+#ifndef LIBSCHEDULER
 #define run_memo_export extern __declspec(dllimport)
 #else
 #define run_memo_export extern __declspec(dllexport)

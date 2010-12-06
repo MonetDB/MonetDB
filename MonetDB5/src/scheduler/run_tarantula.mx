@@ -53,7 +53,7 @@ comment "Returns the connection to the server dbname.";
 
 
 #ifdef WIN32
-#ifndef LIBRUN_OCTOPUS
+#ifndef LIBSCHEDULER
 #define tarantula_export extern __declspec(dllimport)
 #else
 #define tarantula_export extern __declspec(dllexport)

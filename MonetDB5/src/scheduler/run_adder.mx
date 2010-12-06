@@ -62,7 +62,7 @@ comment "Generate some statements to add more integers";
 /* #define DEBUG_RUN_ADDER*/
 
 #ifdef WIN32
-#ifndef LIBRUN_ADDER
+#ifndef LIBSCHEDULER
 #define run_adder_export extern __declspec(dllimport)
 #else
 #define run_adder_export extern __declspec(dllexport)
