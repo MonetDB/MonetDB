@@ -1817,8 +1817,9 @@ mapi_next_result(MapiHdl hdl)
 			return MERROR;
 		if (hdl->result &&
 		    (hdl->result->querytype == -1 ||
-		     hdl->result->querytype == Q_TABLE ||
-		     hdl->result->querytype == Q_UPDATE ||
+			 /* basically exclude Q_PARSE and Q_BLOCK */
+			 (hdl->result->querytype >= Q_TABLE &&
+			  hdl->result->querytype <= Q_PREPARE) ||
 		     hdl->result->errorstr != NULL))
 			return 1;
 	}
@@ -1854,8 +1855,9 @@ mapi_more_results(MapiHdl hdl)
 	while (result->next) {
 		result = result->next;
 		if (result->querytype == -1 ||
-		    result->querytype == Q_TABLE ||
-		    result->querytype == Q_UPDATE ||
+			/* basically exclude Q_PARSE and Q_BLOCK */
+			(hdl->result->querytype >= Q_TABLE &&
+			 hdl->result->querytype <= Q_PREPARE) ||
 		    result->errorstr != NULL)
 			return 1;
 	}
