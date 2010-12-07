@@ -22,5 +22,4 @@ lib_geom = {
 	NOINST
 	DIR = libdir/MonetDB
 	SOURCES = libgeom.mx 
-	LIBS = $(MONETDB_LIBS) -lbat -lstream $(GEOS_LIBS) 
 }

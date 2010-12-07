@@ -813,6 +813,8 @@ def msc_library(fd, var, libmap, msc):
     v = sep + libname
     makedll = pref + v + dll
     if libmap.has_key('NOINST') or libmap.has_key('NOINST_MSC'):
+        if libmap.has_key("LIBS") or libmap.has_key("WINLIBS"):
+            print "!WARNING: no sense in having a LIBS section with NOINST"
         makelib = pref + v + '.lib'
     else:
         makelib = makedll
