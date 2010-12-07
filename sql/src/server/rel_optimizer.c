@@ -1711,9 +1711,8 @@ rel_project_cse(int *changes, mvc *sql, sql_rel *rel)
 		node *n, *m;
 
 		for (n=rel->exps->h; n; n = n->next) {
-			sql_exp *o, *e1 = n->data;
+			sql_exp *e1 = n->data;
 
-			o = e1;
 			if (e1->type != e_column && e1->type != e_atom && e1->name) {
 				for (m=nexps->h; m; m = m->next){
 					sql_exp *e2 = m->data;
