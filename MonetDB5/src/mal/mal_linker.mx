@@ -159,8 +159,11 @@ obtained from the source-file MAL script.
 Try the program libraries at large or run through all
 loaded files and try to resolve the functionname again.
 @c
-	if (dl == NULL)
-		dl = dlopen(NULL, RTLD_NOW | RTLD_GLOBAL);
+	if (dl == NULL) {
+		/* the first argument must be the same as the base name of the
+		 * library that is created in src/tools */
+		dl = mdlopen("libmonetdb5", RTLD_NOW | RTLD_GLOBAL);
+	}
 	if( dl != NULL){
 		adr = (MALfcn) dlsym(dl, fcnname);
 		if( adr != NULL) 

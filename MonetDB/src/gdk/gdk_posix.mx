@@ -258,6 +258,8 @@ separator, but should work according to Posix. We remap such functions using a d
 to an equivalent win_*() function (which in its implementation calls through to the WIN32 function).
 @{
 @h
+gdk_export void *mdlopen(const char *library, int mode);
+
 #ifdef NATIVE_WIN32
 
 #define RTLD_LAZY	1
@@ -1303,6 +1305,13 @@ MT_path_absolute(const char *pathname)
 	return (*pathname == DIR_SEP);
 }
 
+void *
+mdlopen(const char *library, int mode)
+{
+	(void) library;
+	return dlopen(NULL, mode);
+}
+
 #ifdef WIN32
 #include <windows.h>
 #endif
@@ -1828,6 +1837,13 @@ gettimeofday(struct timeval *tv, int *ignore_zone)
 	return 0;
 }
 #endif
+
+void *
+mdlopen(const char *library, int mode)
+{
+	(void) mode;
+	return GetModuleHandle(library);
+}
 
 void *
 dlopen(const char *file, int mode)
