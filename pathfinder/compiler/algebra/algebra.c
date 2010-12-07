@@ -955,7 +955,7 @@ PFcol_new_fixed (PFalg_col_t col, unsigned int id)
 PFalg_col_t
 PFcol_ori_name (PFalg_col_t unq, PFalg_col_t free)
 {
-    switch (unq & (col_iter | col_pos | col_item || col_score)) {
+    switch (unq & (col_iter | col_pos | col_item | col_score)) {
         case col_iter:
             if (free & col_iter)   return col_iter;
             if (free & col_iter1)  return col_iter1;
