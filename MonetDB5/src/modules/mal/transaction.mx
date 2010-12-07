@@ -73,7 +73,7 @@ comment	"List deletions since last commit.";
 #include "bat5.h"
 
 #ifdef WIN32
-#ifndef LIBMAL
+#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
 #define transaction_export extern __declspec(dllimport)
 #else
 #define transaction_export extern __declspec(dllexport)

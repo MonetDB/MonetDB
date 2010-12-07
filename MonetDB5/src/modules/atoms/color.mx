@@ -130,7 +130,7 @@ comment	"Extracts Cb(blue color) component from a color atom";
 typedef unsigned int color;
 
 #ifdef WIN32
-#ifndef LIBATOMS
+#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
 #define color_export extern __declspec(dllimport)
 #else
 #define color_export extern __declspec(dllexport)

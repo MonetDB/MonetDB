@@ -237,7 +237,7 @@ extern double cos(double x);
 extern double fabs(double x);
 
 #ifdef WIN32
-#ifndef LIBKERNEL
+#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
 #define mmath_export extern __declspec(dllimport)
 #else
 #define mmath_export extern __declspec(dllexport)

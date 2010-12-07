@@ -251,7 +251,7 @@ str.STRprelude();
 #include "ctype.h"
 
 #ifdef WIN32
-#ifndef LIBATOMS
+#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
 #define str_export extern __declspec(dllimport)
 #else
 #define str_export extern __declspec(dllexport)
