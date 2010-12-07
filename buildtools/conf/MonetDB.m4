@@ -223,10 +223,9 @@ if test "x$have_monetdb" != xno; then
 
   if test "x$have_monetdb" = "xincluded"; then
     have_monetdb=yes
-    MONETDB_INCLUDEDIR="\$(top_srcdir)/../../MonetDB/MonetDB"
-    # root is necessary for sysdefs.h
-    MONETDB_INCS="-I${MONETDB_INCLUDEDIR} -I${MONETDB_INCLUDEDIR}/src/common -I${MONETDB_INCLUDEDIR}/src/gdk"
-    MONETDB_LIBS="-L${MONETDB_INCLUDEDIR} -L${MONETDB_INCLUDEDIR}/src/common -L${MONETDB_INCLUDEDIR}/src/gdk"
+    MONETDB_INCLUDEDIR="\$(top_srcdir)/../../MonetDB/MonetDB/src"
+    MONETDB_INCS="-I${MONETDB_INCLUDEDIR}/common -I${MONETDB_INCLUDEDIR}/gdk"
+    MONETDB_LIBS="-L${MONETDB_INCLUDEDIR}/common -L${MONETDB_INCLUDEDIR}/gdk"
     MONETDB_PREFIX="${prefix}"
     MONETDB_CONFDIR="${pkgdatadir}/conf"
   elif test "x$have_monetdb" != xyes; then

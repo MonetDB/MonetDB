@@ -18,7 +18,7 @@
 man_MANS = monetdb.1
 
 # MONETDB5: Sabaoth
-# MONETDB:  GDKmalloc, stream, sysdefs.h
+# MONETDB:  GDKmalloc, stream
 INCLUDES = \
 	$(MONETDB5_INCS) \
 	$(MONETDB_INCS) \
