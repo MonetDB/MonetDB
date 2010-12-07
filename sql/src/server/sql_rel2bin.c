@@ -366,9 +366,6 @@ list *
 shrink_select_ranges(mvc *sql, list *oldsels)
 {
 	/* find minimal ranges for selects per column on one table */
-	sql_subfunc *min = NULL;
-	sql_subfunc *max = NULL;
-
 	list *newsels, *haveNoBasecol, *haveBasecol, *basecols, *oneColSels, *twoColSels;
 	node *bc;
 
@@ -403,7 +400,7 @@ shrink_select_ranges(mvc *sql, list *oldsels)
 				list_prepend(newsels, s);
 			else
 				list_append(newsels, s);
-		} else if (tt2 != tt ||  tt->type->localtype == TYPE_str || !(min = sql_bind_func_result(sql->sa, sql->session->schema, "sql_min", tt, tt, tt)) || !(max = sql_bind_func_result(sql->sa, sql->session->schema, "sql_max", tt, tt, tt))) {
+		} else if (tt2 != tt ||  tt->type->localtype == TYPE_str || !sql_bind_func_result(sql->sa, sql->session->schema, "sql_min", tt, tt, tt) || !sql_bind_func_result(sql->sa, sql->session->schema, "sql_max", tt, tt, tt)) {
 			/* no "min" and/or "max" available on this data type, hence, we cannot apply the following "tricks" */
 			list_merge(newsels, colsels, NULL);
 		} else {
@@ -1070,9 +1067,8 @@ rel2bin(mvc *c, stmt *s)
 		stmt *res;
 		node *n;
 
-		list *ol, *l = s->op1->op4.lval;
+		list *l = s->op1->op4.lval;
 
-		ol = l;
 		assert(list_length(l));
 		if (list_length(l) == 1) {
 			res = rel2bin(c, l->h->data);

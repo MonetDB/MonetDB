@@ -1602,12 +1602,11 @@ create_table_or_view( mvc *sql, char *sname, sql_table *t, int temp)
 		if (c->def) {
 			char buf[BUFSIZ];
 			sql_rel *r = NULL;
-			sql_exp *e;
 
 			sql->sa = sa_create();
 			snprintf(buf, BUFSIZ, "select %s;", c->def);
 			r = rel_parse(sql, buf, m_deps); 
-			if (!r || !is_project(r->op) || !r->exps || list_length(r->exps) != 1 || (e = rel_check_type(sql, &c->type, r->exps->h->data, type_equal)) == NULL) 
+			if (!r || !is_project(r->op) || !r->exps || list_length(r->exps) != 1 || rel_check_type(sql, &c->type, r->exps->h->data, type_equal) == NULL) 
 				throw(SQL, "sql.catalog", sql->errstr);
 			rel_destroy(r);
 			sa_destroy(sql->sa);

@@ -2698,10 +2698,8 @@ sql_delete_set_Fkeys(mvc *sql, sql_key *k, stmt *rows, int action)
 	int len = 0;
 	node *m, *o;
 	sql_key *rk = &((sql_fkey*)k)->rkey->k;
-	stmt *fts, **new_updates;
+	stmt **new_updates;
 	sql_table *t = mvc_bind_table(sql, k->t->s, k->t->base.name);
-
-	fts = stmt_basetable(sql->sa, k->idx->t, k->idx->t->base.name);
 
 	new_updates = table_update_array(t, &len);
 	for (m = k->idx->columns->h, o = rk->columns->h; m && o; m = m->next, o = o->next) {
@@ -2745,11 +2743,9 @@ sql_update_cascade_Fkeys(mvc *sql, sql_key *k, int updcol, stmt **updates, int a
 	int len = 0;
 	node *m, *o;
 	sql_key *rk = &((sql_fkey*)k)->rkey->k;
-	stmt *fts, **new_updates;
+	stmt **new_updates;
 	stmt *rows;
 	sql_table *t = mvc_bind_table(sql, k->t->s, k->t->base.name);
-
-	fts = stmt_basetable(sql->sa, k->idx->t, k->idx->t->base.name);
 
 	rows = stmt_idxbat(sql->sa, k->idx, RDONLY);
 	rows = stmt_semijoin(sql->sa, stmt_reverse(sql->sa, rows), updates[updcol]->op1);
