@@ -1804,7 +1804,11 @@ if test "x$enable_optim" = xyes; then
     JAVACFLAGS="`echo "$JAVACFLAGS" | sed -e 's| -g | |g' -e 's| -g:[[a-z]]* | |g' -e 's|^ ||' -e 's| $||'`"
     dnl  Optimization flags
     JAVACFLAGS="$JAVACFLAGS -g:none -O"
-    if test "x$GCC" = xyes; then
+    case "$GCC-$CC" in
+    yes-*clang*)
+                      CFLAGS="$CFLAGS -O3 -fomit-frame-pointer -finline-functions"
+      ;;
+    yes-*)
       dnl -fomit-frame-pointer crashes memprof
       case "$host-$gcc_ver" in
       x86_64-*-*-3.[[2-9]]*|i*86-*-*-3.[[2-9]]*|x86_64-*-*-4.*|i*86-*-*-4.*)
@@ -1863,7 +1867,8 @@ if test "x$enable_optim" = xyes; then
                       ;;
       *)              CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions";;
       esac
-    else
+      ;;
+    *)
       case "$host-$icc_ver" in
       dnl handle non-Intel compilers ($icc_ver=""), first
       *solaris*-)      CFLAGS="$CFLAGS -xO5"
@@ -1933,7 +1938,8 @@ if test "x$enable_optim" = xyes; then
                        dnl  hence, we use only "-O2", here.
                        ;;
       esac   
-    fi
+      ;;
+    esac
   fi
 fi
 AC_SUBST(CFLAGS_NO_OPT)
