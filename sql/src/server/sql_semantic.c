@@ -572,7 +572,6 @@ check_types(mvc *sql, sql_subtype *ct, stmt *s, check_type tpe)
 {
 	int c = 0;
 	sql_subtype *t = NULL, *st = NULL;
-	stmt *old = NULL;
 
 	if (ct->comp_type) 
 		return check_table_types(sql, ct->comp_type, s, tpe);
@@ -597,7 +596,6 @@ check_types(mvc *sql, sql_subtype *ct, stmt *s, check_type tpe)
 		c = sql_type_convert(st->type->eclass, ct->type->eclass);
 		if (!c || (c == 2 && tpe == type_set) || 
                    (c == 3 && tpe != type_cast)) { 
-			old = s;
 			s = NULL;
 		} else {
 			s = stmt_convert(sql->sa, s, st, ct);
