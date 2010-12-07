@@ -545,10 +545,10 @@ PHP_LIBS = "$(PHP_INSTDIR)\php5embed.lib"
 	$(MX) $(MXFLAGS) -x L $<
 
 {$(SRCDIR)}.c.obj:
-	$(CC) $(CFLAGS) $(INCLUDES) -c $<
+	$(CC) $(CFLAGS) -c $<
 
 .c.obj:
-	$(CC) $(CFLAGS) $(INCLUDES) -c $<
+	$(CC) $(CFLAGS) -c $<
 
 {$(SRCDIR)}.syms.def:
 	echo EXPORTS > $@
