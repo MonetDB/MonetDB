@@ -49,7 +49,7 @@ bin_Mbeddedsql5 = {
 	SOURCES = prog.c
 	LIBS = libembeddedsql5 ../../server/libsqlserver ../../storage/libstore ../../storage/bat/libbatstore ../../storage/restrict/librestrictstore ../../storage/bpm/libbpmstore ../../common/libsqlcommon \
 		$(MONETDB5_LIBS) -lmonetdb5 \
-		$(CLIENTS_LIBS) $(MONETDB_LIBS) -lbat -lMapi -lmutils
+		$(CLIENTS_LIBS) $(MONETDB_LIBS) -lbat -lMapi -lmutils -lstream $(READLINE_LIBS) $(PTHREAD_LIBS)
 }
 
 headers_h = {

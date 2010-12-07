@@ -155,8 +155,11 @@ BZ_CFLAGS = -DHAVE_LIBBZ2 "-I$(LIBBZIP2)\include"
 !IFNDEF LIBXML2
 LIBXML2 = C:\libxml2-2.6.30.win$(bits)
 !ENDIF
-LIBXML2_CFLAGS = -DHAVE_LIBXML2 "-I$(LIBXML2)\include" $(Z_CFLAGS) $(ICONV_CFLAGS)
-LIBXML2_LIBS = "$(LIBXML2)\lib\libxml2$(DEBUGLIB).lib" $(Z_LIBS) $(ICONV_LIBS)
+libxml2_CFLAGS = -DHAVE_LIBXML2 "-I$(LIBXML2)\include" $(Z_CFLAGS) $(ICONV_CFLAGS)
+libxml2_LIBS = "$(LIBXML2)\lib\libxml2$(DEBUGLIB).lib" $(Z_LIBS) $(ICONV_LIBS)
+# backward compatibility:
+LIBXML2_CFLAGS = $(libxml2_CFLAGS)
+LIBXML2_LIBS = $(libxml2_LIBS)
 !ENDIF
 
 # some programs we use, probably no need to edit
