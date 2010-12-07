@@ -372,8 +372,9 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *pre_size,
 @
 
 @= ll_return
-{   if (del) BBPreclaim(del);
-    if (res && (@1 == GDK_FAIL))
+{   int rtrn = @1;
+    if (del) BBPreclaim(del);
+    if (res && (rtrn == GDK_FAIL))
         BBP_unfix_reclaim(res);
     return @1; }
 @c

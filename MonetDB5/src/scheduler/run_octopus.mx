@@ -244,8 +244,8 @@ OCTOPUSdiscover(Client cntxt){
 	BUN p,q;
 	str msg = MAL_SUCCEED;
 	BATiter bi;
-	char buf[BUFSIZ]= "*/octopus", *s= buf;
 	int i;
+	char buf[BUFSIZ]= "*/octopus", *s= buf;
 
 	nrworkers = 0;
 	octopusLocal = 0;

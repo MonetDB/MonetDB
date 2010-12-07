@@ -535,7 +535,7 @@ abssyn_pretty (PFpnode_t *n, bool qnames_resolved)
                 } break;
 
             case p_replace:
-                PFprettyprintf (n->sem.tru ? "" : "value of");
+                PFprettyprintf ("%s", n->sem.tru ? "" : "value of");
                 break;
 
             default:

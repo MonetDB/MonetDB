@@ -148,8 +148,8 @@ typedef __int64 ssize_t;
 #define LENFMT		"%I64d"
 #define ULENFMT		"%I64u"
 #else
-#define LENFMT		"%lld"
-#define ULENFMT		"%llu"
+#define LENFMT		"%ld"
+#define ULENFMT		"%lu"
 #endif
 #endif
 
