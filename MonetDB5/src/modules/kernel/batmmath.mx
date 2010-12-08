@@ -95,8 +95,10 @@ module batmmath;
 #define batmmath_export extern
 #endif
 
-#define radians(x)       x * 3.14159265358979323846 /180.0
-#define degrees(x)       x * 180.0/3.14159265358979323846
+#define radians(x)       ((x) * 3.14159265358979323846 / 180.0)
+#define degrees(x)       ((x) * 180.0 / 3.14159265358979323846)
+#define radiansf(x)      ((flt) radians(x))
+#define degreesf(x)      ((flt) degrees(x))
 @-
 @= scienceFcnImpl
 batmmath_export str CMDscience_bat_@2_@1(int *ret, int *bid);
@@ -115,10 +117,10 @@ str CMDscience_bat_@2_@1(int *ret, int *bid)
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	if (b->T->nonil){
 		for(;p<q; o++, p++)
-			*o = (@2) @1(*p);
+			*o = @1@3(*p);
 	} else
 		for(;p<q; o++, p++){
-			*o = *p == @2_nil? @2_nil: (@2) @1(*p);
+			*o = *p == @2_nil? @2_nil: @1@3(*p);
 		}
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATsetcount(bn, BATcount(b));
@@ -203,11 +205,11 @@ str CMDscience_bat_cst_@1_@2(int *ret, int *bid, @2 *d)
 	round is not binary...
 	@:scienceBinaryImpl(round,int)@
 @c
-@:scienceBinaryImpl(fmod,dbl)@
-@:scienceBinaryImpl(fmod,flt)@
-@:scienceBinaryImpl(atan2,dbl)@
-@:scienceBinaryImpl(atan2,flt)@
-@:scienceBinaryImpl(pow,dbl)@
-@:scienceBinaryImpl(pow,flt)@
+@:scienceBinaryImpl(fmod,dbl,)@
+@:scienceBinaryImpl(fmod,flt,f)@
+@:scienceBinaryImpl(atan2,dbl,)@
+@:scienceBinaryImpl(atan2,flt,f)@
+@:scienceBinaryImpl(pow,dbl,)@
+@:scienceBinaryImpl(pow,flt,f)@
 
 @}
