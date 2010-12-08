@@ -905,7 +905,7 @@ def msc_library(fd, var, libmap, msc):
     else:
         fd.write("%s.lib: %s%s\n" % (ln, ln, dll))
         fd.write("%s%s: $(%s_DEPS) \n" % (ln, dll, ln.replace('-','_')))
-        fd.write('\t"$(TOPDIR)\\..\\..\\buildtools\\conf\\wincompile.py" $(CC) $(CFLAGS) -LD -Fe%s%s $(%s_OBJS) /link @<<\n$(%s_LIBS)%s\n<<\n' % (ln, dll, ln.replace('-','_'), ln.replace('-','_'), deffile))
+        fd.write('\t"$(TOPDIR)\\..\\..\\buildtools\\conf\\wincompile.py" $(CC) $(CFLAGS) -LD -Fe%s%s @<< /link @<<\n$(%s_OBJS)\n<<\n$(%s_LIBS)%s\n<<\n' % (ln, dll, ln.replace('-','_'), ln.replace('-','_'), deffile))
         fd.write("\tif exist $@.manifest $(MT) -manifest $@.manifest -outputresource:$@;2\n");
         if sep == '_':
             fd.write('\tif not exist .libs $(MKDIR) .libs\n')
