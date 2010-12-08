@@ -2055,6 +2055,8 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 							describe_sequence(mid, NULL, line, toConsole);
 						if (x & MD_FUNC)
 							dump_functions(mid, toConsole, NULL, line);
+						if (x & MD_SCHEMA)
+							describe_schema(mid, line, toConsole);
 #ifdef HAVE_POPEN
 						end_pager(saveFD, saveFD_raw);
 #endif
@@ -2132,6 +2134,19 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 									  "\"sys\".\"schemas\" \"s\" "
 								"WHERE \"o\".\"schema_id\" = \"s\".\"id\" "
 								  "%s "
+								"UNION "
+								"SELECT NULL AS \"name\", "
+								       "(CASE WHEN \"o\".\"name\" LIKE 'sys' "
+									    "THEN 'SYSTEM ' "
+										"ELSE '' END "
+										"|| 'SCHEMA') AS \"type\", "
+									   "CASE WHEN \"o\".\"name\" LIKE 'sys' "
+									   "THEN true "
+									   "ELSE false END AS \"system\", "
+									   "\"o\".\"name\" AS \"sname\", "
+									   "%d AS \"ntype\" "
+								"FROM \"sys\".\"schemas\" \"o\" "
+								"WHERE \"o\".\"name\" LIKE '%s' "
 								") AS \"all\" "
 								"WHERE \"ntype\" & %u > 0 "
 								  "%s "
@@ -2142,6 +2157,8 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 								nameq,
 								MD_FUNC,
 								nameq,
+								MD_SCHEMA,
+								line,
 								x,
 								(wantsSystem ?
 								  "" :
@@ -2153,9 +2170,11 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 							type = mapi_fetch_field(hdl, 1);
 							schema = mapi_fetch_field(hdl, 3);
 							mnstr_printf(toConsole,
-									  "%-*s  %s.%s\n",
+									  "%-*s  %s%s%s\n",
 									  mapi_get_len(hdl, 1),
-									  type, schema, name);
+									  type, schema,
+									  name != NULL ? "." : "",
+									  name != NULL ? name : "");
 						}
 						mapi_close_handle(hdl);
 						hdl = NULL;

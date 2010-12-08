@@ -961,6 +961,49 @@ bailout:
 }
 
 int
+describe_schema(Mapi mid, char *sname, stream *toConsole)
+{
+	MapiHdl hdl = NULL;
+	char schemas[256];
+
+	snprintf(schemas, 256,
+		"SELECT \"s\".\"name\", \"a\".\"name\" "
+		"FROM \"sys\".\"schemas\" \"s\", "
+		     "\"sys\".\"auths\" \"a\" "
+		"WHERE \"s\".\"authorization\" = \"a\".\"id\" AND "
+		      "\"s\".\"name\" = '%s' "
+		"ORDER BY \"s\".\"name\"",
+		sname);
+
+	if ((hdl = mapi_query(mid, schemas)) == NULL || mapi_error(mid)) {
+		if (hdl) {
+			if (mapi_result_error(hdl))
+				mapi_explain_result(hdl, stderr);
+			else
+				mapi_explain_query(hdl, stderr);
+			mapi_close_handle(hdl);
+		} else
+			mapi_explain(mid, stderr);
+
+		return 1;
+	}
+
+	while (mapi_fetch_row(hdl) != 0) {
+		char *sname = mapi_fetch_field(hdl, 0);
+		char *aname = mapi_fetch_field(hdl, 1);
+
+		mnstr_printf(toConsole, "CREATE SCHEMA \"%s\"", sname);
+		if (strcmp(aname, "sysadmin") != 0) {
+			mnstr_printf(toConsole,
+					 " AUTHORIZATION \"%s\"", aname);
+		}
+		mnstr_printf(toConsole, ";\n");
+	}
+
+	return 0;
+}
+
+int
 dump_table_data(Mapi mid, char *schema, char *tname, stream *toConsole)
 {
 	int cnt, i;
