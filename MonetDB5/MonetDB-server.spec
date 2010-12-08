@@ -29,8 +29,6 @@ URL: http://monetdb.cwi.nl/
 Source: http://dev.monetdb.org/downloads/sources/Oct2010/MonetDB5-server-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
-%{!?_with_raptor: %{!?_without_raptor: %define _with_raptor --with-raptor}}
-
 Requires(pre): shadow-utils
 BuildRequires: pcre-devel
 BuildRequires: libxml2-devel
@@ -60,21 +58,17 @@ BuildRequires: MonetDB-client-devel >= 1.40
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 %endif
 
-%if %{?_with_raptor:1}%{!?_with_raptor:0}
 %package rdf
 Summary: MonetDB RDF interface
 Group: Applications/Databases
 Requires: %{name} = %{version}-%{release}
 BuildRequires: raptor-devel >= 1.4.16
-%endif
 
 %package devel
 Summary: MonetDB development package
 Group: Applications/Databases
 Requires: %{name} = %{version}-%{release}
-%if %{?_with_raptor:1}%{!?_with_raptor:0}
 Requires: %{name}-rdf = %{version}-%{release}
-%endif
 Requires: MonetDB-devel
 Requires: MonetDB-client-devel
 Requires: libxml2-devel
@@ -90,7 +84,6 @@ package if you want to work using the MAL language, or if you want to
 use the SQL frontend (in which case you need MonetDB-SQL-server5 as
 well).
 
-%if %{?_with_raptor:1}%{!?_with_raptor:0}
 %description rdf
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
@@ -98,7 +91,6 @@ automatic index management, extensibility of data types and search
 accelerators, SQL- and XML- frontends.
 
 This package contains the MonetDB5 RDF module.
-%endif
 
 %description devel
 MonetDB is a database management system that is developed from a
@@ -122,8 +114,7 @@ rm -rf $RPM_BUILD_ROOT
 	--enable-optimize=yes \
 	--enable-bits=%{bits} \
 	%{?oid32:--enable-oid32} \
-	%{?comp_cc:CC="%{comp_cc}"} \
-	%{?_with_raptor} %{?_without_raptor}
+	%{?comp_cc:CC="%{comp_cc}"}
 
 make
 
@@ -190,12 +181,10 @@ rm -fr $RPM_BUILD_ROOT
 %config(noreplace) %{_sysconfdir}/monetdb5.conf
 %{_mandir}/man5/monetdb5.conf.5.gz
 
-%if %{?_with_raptor:1}%{!?_with_raptor:0}
 %files rdf
 %{_libdir}/MonetDB5/rdf.mal
 %{_libdir}/MonetDB5/lib/lib_rdf.so*
 %{_libdir}/MonetDB5/autoload/*_rdf.mal
-%endif
 
 %files devel
 %defattr(-,root,root)
