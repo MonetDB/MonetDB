@@ -1306,9 +1306,6 @@ MT_path_absolute(const char *pathname)
 }
 
 #ifdef HAVE_DLFCN_H
-# ifdef __APPLE__
-#  define DLOPEN_NO_WARN
-# endif
 # include <dlfcn.h>
 #endif
 
