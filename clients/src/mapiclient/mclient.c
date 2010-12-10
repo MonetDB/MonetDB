@@ -1768,6 +1768,8 @@ showCommands(void)
 #define MD_FUNC     8
 #define MD_SCHEMA  16
 
+enum hmyesno { UNKNOWN, YES, NO };
+
 static int
 doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 {
@@ -1778,6 +1780,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 	MapiMsg rc = MOK;
 	int sent = 0;		/* whether we sent any data to the server */
 	int lineno = 1;
+	enum hmyesno hassysfuncs = UNKNOWN;
 
 #ifdef HAVE_LIBREADLINE
 	if (prompt == NULL)
@@ -2063,23 +2066,67 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 					} else {
 						/* get all object names in current schema */
 						char *type, *name, *schema;
-						char q[2048];
-						char nameq[256];
+						char q[4096];
+						char nameq[128];
+						char funcq[512];
+
+						if (hassysfuncs == UNKNOWN)
+							hassysfuncs = has_systemfunctions(mid) ? YES : NO;
+
 						if (!*line) {
 							line = "%";
 							hasSchema = 0;
 						}
 						if (hasSchema) {
-							snprintf(nameq, 256, 
+							snprintf(nameq, sizeof(nameq), 
 									"AND \"s\".\"name\" || '.' || \"o\".\"name\" LIKE '%s'",
 									line);
 						} else {
-							snprintf(nameq, 256,
+							snprintf(nameq, sizeof(nameq),
 									"AND \"s\".\"name\" = \"current_schema\" "
 									"AND \"o\".\"name\" LIKE '%s'",
 									line);
 						}
-						snprintf(q, 2048,
+						if (hassysfuncs == YES) {
+							snprintf(funcq, sizeof(funcq),
+								"SELECT \"o\".\"name\", "
+								       "(CASE WHEN \"sf\".\"function_id\" IS NOT NULL "
+									     "THEN 'SYSTEM ' "
+										 "ELSE '' END "
+									   "|| 'FUNCTION') AS \"type\", "
+									   "CASE WHEN \"sf\".\"function_id\" IS NULL "
+										 "THEN false "
+										 "ELSE true END AS \"system\", "
+									   "\"s\".\"name\" AS \"sname\", "
+									   "%d AS \"ntype\" "
+								"FROM \"sys\".\"functions\" \"o\" "
+								      "LEFT JOIN \"sys\".\"systemfunctions\" \"sf\" "
+									    "ON \"o\".\"id\" = \"sf\".\"function_id\", "
+									  "\"sys\".\"schemas\" \"s\" "
+								"WHERE \"o\".\"schema_id\" = \"s\".\"id\" "
+								  "%s ",
+								MD_FUNC,
+								nameq);
+						} else {
+							snprintf(funcq, sizeof(funcq),
+								"SELECT \"o\".\"name\", "
+								       "(CASE WHEN \"o\".\"id\" <= 2000 "
+									     "THEN 'SYSTEM ' "
+										 "ELSE '' END "
+									   "|| 'FUNCTION') AS \"type\", "
+									   "CASE WHEN \"o\".\"id\" > 2000 "
+										 "THEN false "
+										 "ELSE true END AS \"system\", "
+									   "\"s\".\"name\" AS \"sname\", "
+									   "%d AS \"ntype\" "
+								"FROM \"sys\".\"functions\" \"o\", "
+									  "\"sys\".\"schemas\" \"s\" "
+								"WHERE \"o\".\"schema_id\" = \"s\".\"id\" "
+								  "%s ",
+								MD_FUNC,
+								nameq);
+						}
+						snprintf(q, sizeof(q),
 								"SELECT \"name\", "
 								       "CAST(\"type\" AS VARCHAR(30)) AS \"type\", "
 								       "\"system\", \"sname\", "
@@ -2118,22 +2165,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 								"WHERE \"o\".\"schema_id\" = \"s\".\"id\" "
 								  "%s "
 								"UNION "
-								"SELECT \"o\".\"name\", "
-								       "(CASE WHEN \"sf\".\"function_id\" IS NOT NULL "
-									     "THEN 'SYSTEM ' "
-										 "ELSE '' END "
-									   "|| 'FUNCTION') AS \"type\", "
-									   "CASE WHEN \"sf\".\"function_id\" IS NULL "
-										 "THEN false "
-										 "ELSE true END AS \"system\", "
-									   "\"s\".\"name\" AS \"sname\", "
-									   "%d AS \"ntype\" "
-								"FROM \"sys\".\"functions\" \"o\" "
-								      "LEFT JOIN \"sys\".\"systemfunctions\" \"sf\" "
-									    "ON \"o\".\"id\" = \"sf\".\"function_id\", "
-									  "\"sys\".\"schemas\" \"s\" "
-								"WHERE \"o\".\"schema_id\" = \"s\".\"id\" "
-								  "%s "
+								"%s "
 								"UNION "
 								"SELECT NULL AS \"name\", "
 								       "(CASE WHEN \"o\".\"name\" LIKE 'sys' "
@@ -2155,8 +2187,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 								nameq,
 								MD_SEQ,
 								nameq,
-								MD_FUNC,
-								nameq,
+								funcq,
 								MD_SCHEMA,
 								line,
 								x,

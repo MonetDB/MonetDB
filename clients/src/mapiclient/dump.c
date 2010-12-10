@@ -114,7 +114,7 @@ get_schema(Mapi mid)
 	return NULL;
 }
 
-static int
+int
 has_systemfunctions(Mapi mid)
 {
 	MapiHdl hdl;
