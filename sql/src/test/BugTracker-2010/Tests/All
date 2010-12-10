@@ -78,3 +78,4 @@ select_from_seq.Bug-2730
 crash_default_unlocked.Bug-2744
 foreign_key_type_mismatch.Bug-2745
 store_function_argument_correctly.Bug-2750
+COPY_INTO_with_backslashes.Bug-2748
