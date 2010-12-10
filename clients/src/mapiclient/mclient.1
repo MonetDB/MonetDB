@@ -365,10 +365,10 @@ specifiers are given, \fBvt\fP is assumed.
 The object can be given with or without a schema, separated by a dot.
 The object name
 can contain the wildcard characters \fB*\fP and \fB_\fP that represent
-zero or more, and exactly a single character respectively.  An object
+zero or more, and exactly one character respectively.  An object
 name is converted to lowercase, unless the object name is quoted by
-double quotes (\fB"\fP).  Examples of this, are e.g. \fI*.mytable\fP or
-\fItabletype*\fP.
+double quotes (\fB"\fP).  Examples of this, are e.g. \fI*.mytable\fP,
+\fItabletype*\fP or \fI"myschema.FOO"\fP.
 .TP
 \fB\eA\fP
 Enable auto commit mode.
