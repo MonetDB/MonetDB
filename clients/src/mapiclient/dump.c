@@ -34,14 +34,23 @@
 #endif
 
 static void
-quoted_print(stream *f, const char *s)
+quoted_print(stream *f, const char *s, const char singleq)
 {
-	mnstr_write(f, "\"", 1, 1);
+	mnstr_write(f, singleq ? "'" : "\"", 1, 1);
 	while (*s) {
 		switch (*s) {
 		case '\\':
-		case '"':
 			mnstr_write(f, "\\", 1, 1);
+			mnstr_write(f, s, 1, 1);
+			break;
+		case '"':
+			if (!singleq)
+				mnstr_write(f, "\\", 1, 1);
+			mnstr_write(f, s, 1, 1);
+			break;
+		case '\'':
+			if (singleq)
+				mnstr_write(f, "\\", 1, 1);
 			mnstr_write(f, s, 1, 1);
 			break;
 		case '\n':
@@ -59,7 +68,7 @@ quoted_print(stream *f, const char *s)
 		}
 		s++;
 	}
-	mnstr_write(f, "\"", 1, 1);
+	mnstr_write(f, singleq ? "'" : "\"", 1, 1);
 }
 
 static char *actions[] = {
@@ -1004,7 +1013,8 @@ describe_schema(Mapi mid, char *sname, stream *toConsole)
 }
 
 int
-dump_table_data(Mapi mid, char *schema, char *tname, stream *toConsole)
+dump_table_data(Mapi mid, char *schema, char *tname, stream *toConsole,
+		const char useInserts)
 {
 	int cnt, i;
 	MapiHdl hdl = NULL;
@@ -1042,9 +1052,9 @@ dump_table_data(Mapi mid, char *schema, char *tname, stream *toConsole)
 		goto bailout;
 	if (mapi_rows_affected(hdl) != 1) {
 		if (mapi_rows_affected(hdl) == 0)
-			fprintf(stderr, "Table %s.%s does not exist.\n", schema, tname);
+			fprintf(stderr, "table '%s.%s' does not exist\n", schema, tname);
 		else
-			fprintf(stderr, "Table %s.%s not unique.\n", schema, tname);
+			fprintf(stderr, "table '%s.%s' is not unique\n", schema, tname);
 		goto bailout;
 	}
 	while ((mapi_fetch_row(hdl)) != 0) {
@@ -1058,25 +1068,27 @@ dump_table_data(Mapi mid, char *schema, char *tname, stream *toConsole)
 	mapi_close_handle(hdl);
 	hdl = NULL;
 
-	snprintf(query, maxquerylen, "SELECT count(*) FROM \"%s\".\"%s\"",
-		 schema, tname);
-	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
-		goto bailout;
-	if (mapi_fetch_row(hdl)) {
-		char *cntfld = mapi_fetch_field(hdl, 0);
+	if (!useInserts) {
+		snprintf(query, maxquerylen, "SELECT count(*) FROM \"%s\".\"%s\"",
+			 schema, tname);
+		if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
+			goto bailout;
+		if (mapi_fetch_row(hdl)) {
+			char *cntfld = mapi_fetch_field(hdl, 0);
 
-		if (strcmp(cntfld, "0") == 0) {
-			/* no records to dump, so return early */
-			goto doreturn;
+			if (strcmp(cntfld, "0") == 0) {
+				/* no records to dump, so return early */
+				goto doreturn;
+			}
+
+			mnstr_printf(toConsole,
+					 "COPY %s RECORDS INTO \"%s\".\"%s\" "
+					 "FROM stdin USING DELIMITERS '\\t','\\n','\"';\n",
+					 cntfld, schema, tname);
 		}
-
-		mnstr_printf(toConsole,
-			     "COPY %s RECORDS INTO \"%s\".\"%s\" "
-			     "FROM stdin USING DELIMITERS '\\t','\\n','\"';\n",
-			     cntfld, schema, tname);
+		mapi_close_handle(hdl);
+		hdl = NULL;
 	}
-	mapi_close_handle(hdl);
-	hdl = NULL;
 
 	snprintf(query, maxquerylen, "SELECT * FROM \"%s\".\"%s\"",
 		 schema, tname);
@@ -1096,20 +1108,32 @@ dump_table_data(Mapi mid, char *schema, char *tname, stream *toConsole)
 	while (mapi_fetch_row(hdl)) {
 		char *s;
 
+		if (useInserts)
+			mnstr_printf(toConsole, "INSERT INTO \"%s\".\"%s\" VALUES (",
+					schema, tname);
+
 		for (i = 0; i < cnt; i++) {
 			s = mapi_fetch_field(hdl, i);
 			if (s == NULL)
 				mnstr_printf(toConsole, "NULL");
 			else if (string[i]) {
-				/* write double-quoted string with
+				/* write double or single-quoted string with
 				   certain characters escaped */
-				quoted_print(toConsole, s);
+				quoted_print(toConsole, s, useInserts);
 			} else
 				mnstr_printf(toConsole, "%s", s);
-			if (i < cnt - 1)
-				mnstr_write(toConsole, "\t", 1, 1);
-			else
-				mnstr_write(toConsole, "\n", 1, 1);
+
+			if (useInserts) {
+				if (i < cnt - 1)
+					mnstr_printf(toConsole, ", ");
+				else
+					mnstr_printf(toConsole, ");\n");
+			} else {
+				if (i < cnt - 1)
+					mnstr_write(toConsole, "\t", 1, 1);
+				else
+					mnstr_write(toConsole, "\n", 1, 1);
+			}
 		}
 		if (mnstr_errnr(toConsole))
 			goto bailout;
@@ -1144,13 +1168,13 @@ dump_table_data(Mapi mid, char *schema, char *tname, stream *toConsole)
 }
 
 int
-dump_table(Mapi mid, char *schema, char *tname, stream *toConsole, int describe, int foreign)
+dump_table(Mapi mid, char *schema, char *tname, stream *toConsole, int describe, int foreign, const char useInserts)
 {
 	int rc;
 
 	rc = describe_table(mid, schema, tname, toConsole, foreign);
 	if (rc == 0 && !describe)
-		rc = dump_table_data(mid, schema, tname, toConsole);
+		rc = dump_table_data(mid, schema, tname, toConsole, useInserts);
 	return rc;
 }
 
@@ -1364,7 +1388,7 @@ dump_functions(Mapi mid, stream *toConsole, const char *sname, const char *fname
 }
 
 int
-dump_database(Mapi mid, stream *toConsole, int describe)
+dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 {
 	const char *start = "START TRANSACTION";
 	const char *end = "ROLLBACK";
@@ -1715,7 +1739,7 @@ dump_database(Mapi mid, stream *toConsole, int describe)
 			if (schema)
 				schema = strdup(schema);
 			tname = strdup(tname);
-			rc = dump_table(mid, schema, tname, toConsole, describe, describe);
+			rc = dump_table(mid, schema, tname, toConsole, describe, describe, useInserts);
 			if (schema)
 				free(schema);
 			free(tname);

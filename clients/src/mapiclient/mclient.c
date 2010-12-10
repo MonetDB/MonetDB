@@ -1769,7 +1769,7 @@ showCommands(void)
 #define MD_SCHEMA  16
 
 static int
-doFileByLines(Mapi mid, FILE *fp, const char *prompt)
+doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 {
 	char *line = NULL;
 	char *oldbuf = NULL, *buf = NULL;
@@ -2202,10 +2202,10 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 #endif
 					if (*line) {
 						mnstr_printf(toConsole, "START TRANSACTION;\n");
-						dump_table(mid, NULL, line, toConsole, 0, 1);
+						dump_table(mid, NULL, line, toConsole, 0, 1, useinserts);
 						mnstr_printf(toConsole, "COMMIT;\n");
 					} else
-						dump_database(mid, toConsole, 0);
+						dump_database(mid, toConsole, 0, useinserts);
 #ifdef HAVE_POPEN
 					end_pager(saveFD, saveFD_raw);
 #endif
@@ -2448,6 +2448,7 @@ usage(const char *prog, int xit)
 	fprintf(stderr, " -r nr       | --rows=nr          for pagination\n");
 	fprintf(stderr, " -w nr       | --width=nr         for pagination\n");
 	fprintf(stderr, " -D          | --dump             create an SQL dump\n");
+	fprintf(stderr, " -N          | --inserts          use INSERT INTO statements when dumping\n");
 
 	fprintf(stderr, "\nXQuery specific options\n");
 	fprintf(stderr, " -C colname  | --collection=colname  collection name\n");
@@ -2473,6 +2474,7 @@ main(int argc, char **argv)
 	char *colname = NULL;
 	int trace = 0;
 	int dump = 0;
+	int useinserts = 0;
 	int algebra = -1;
 	int c = 0;
 	Mapi mid;
@@ -2489,6 +2491,7 @@ main(int argc, char **argv)
 		{"collection", 1, 0, 'C'},
 		{"database", 1, 0, 'd'},
 		{"dump", 0, 0, 'D'},
+		{"inserts", 0, 0, 'N'},
 		{"echo", 0, 0, 'e'},
 #ifdef HAVE_ICONV
 		{"encoding", 1, 0, 'E'},
@@ -2632,7 +2635,7 @@ main(int argc, char **argv)
 		mnstr_destroy(config);
 	}
 
-	while ((c = getopt_long(argc, argv, "C:Dd:e"
+	while ((c = getopt_long(argc, argv, "C:DNd:e"
 #ifdef HAVE_ICONV
 				"E:"
 #endif
@@ -2727,6 +2730,9 @@ main(int argc, char **argv)
 			break;
 		case 'D':
 			dump = 1;
+			break;
+		case 'N':
+			useinserts = 1;
 			break;
 		case 'd':
 			dbname = optarg;
@@ -2836,7 +2842,7 @@ main(int argc, char **argv)
 	mapi_cache_limit(mid, -1);
 	if (dump) {
 		if (mode == SQL) {
-			exit(dump_database(mid, toConsole, 0));
+			exit(dump_database(mid, toConsole, 0, useinserts));
 		} else {
 			fprintf(stderr, "Dump only supported for SQL\n");
 			exit(1);
@@ -2948,7 +2954,7 @@ main(int argc, char **argv)
 				} else {
 					/* note that since fp != stdin,
 					   we don't treat \ special */
-					c |= doFileByLines(mid, fp, NULL);
+					c |= doFileByLines(mid, fp, NULL, useinserts);
 					fclose(fp);
 				}
 			} else
@@ -2972,7 +2978,7 @@ main(int argc, char **argv)
 			fromConsole = stdin;
 		}
 		/* use default rendering if not overruled at commandline */
-		c = doFileByLines(mid, stdin, prompt);
+		c = doFileByLines(mid, stdin, prompt, useinserts);
 
 #ifdef HAVE_LIBREADLINE
 		if (interactive_stdin) {
