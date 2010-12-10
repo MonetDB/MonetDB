@@ -359,11 +359,17 @@ column_option(
 		res = column_constraint_type(sql, opt_name, sym, ss, t, cs);
 	} 	break;
 	case SQL_DEFAULT: {
-		char *r = symbol2string(sql, s->data.sym);
+		char *err = NULL, *r = symbol2string(sql, s->data.sym, &err);
 
-		mvc_default(sql, cs, r);
-		_DELETE(r);
-		res = SQL_OK;
+		if (!r) {
+			(void) sql_error(sql, 02, "incorrect default value '%s'\n", err?err:"");
+			if (err) _DELETE(err);
+			return SQL_ERR;
+		} else {
+			mvc_default(sql, cs, r);
+			_DELETE(r);
+			res = SQL_OK;
+		}
 	} 	break;
 	case SQL_ATOM: {
 		AtomNode *an = (AtomNode *) s;
@@ -637,7 +643,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 	} 	break;
 	case SQL_DEFAULT:
 	{
-		char *r;
+		char *r, *err = NULL;
 		dlist *l = s->data.lval;
 		char *cname = l->h->data.sval;
 		symbol *sym = l->h->next->data.sym;
@@ -647,7 +653,12 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 			sql_error(sql, 02, "ALTER TABLE: no such column '%s'\n", cname);
 			return SQL_ERR;
 		}
-		r = symbol2string(sql, sym);
+		r = symbol2string(sql, sym, &err);
+		if (!r) {
+			(void) sql_error(sql, 02, "incorrect default value '%s'\n", err?err:"");
+			if (err) _DELETE(err);
+			return SQL_ERR;
+		}
 		mvc_default(sql, c, r);
 		_DELETE(r);
 	}
