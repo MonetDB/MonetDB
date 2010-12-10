@@ -368,7 +368,8 @@ can contain the wildcard characters \fB*\fP and \fB_\fP that represent
 zero or more, and exactly one character respectively.  An object
 name is converted to lowercase, unless the object name is quoted by
 double quotes (\fB"\fP).  Examples of this, are e.g. \fI*.mytable\fP,
-\fItabletype*\fP or \fI"myschema.FOO"\fP.
+\fItabletype*\fP or \fI"myschema.FOO"\fP.  Note that wildcard characters
+do not work in quoted objects.
 .TP
 \fB\eA\fP
 Enable auto commit mode.
