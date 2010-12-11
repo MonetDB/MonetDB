@@ -1,6 +1,11 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Fri Dec 10 2010 Fabian Groffen <fabian@cwi.nl>
+- Allow to dump table data using INSERT INTO statements, rather than COPY
+  INTO + CSV data using the -N/--inserts flag of mclient and msqldump.
+  Bug #2727
+
 * Wed Dec  8 2010 Fabian Groffen <fabian@cwi.nl>
 - Added support for \dn to list schemas or describe a specific one
 

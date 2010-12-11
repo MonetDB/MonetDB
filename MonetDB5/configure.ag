@@ -214,7 +214,7 @@ if test "x$have_sphinxclient" != xno; then
 		AC_CHECK_LIB(sphinxclient, sphinx_create,
 			AC_DEFINE(HAVE_SPHINXCLIENT, 1, [Define if you have the sphinxclient library])
 			have_sphinxclient=yes
-			SPHINXCLIENT_LIBS="SPHINXCLIENT_LIBS -lsphinxclient",
+			SPHINXCLIENT_LIBS="$SPHINXCLIENT_LIBS -lsphinxclient",
 			[ if test "x$have_sphinxclient" != xauto; then AC_MSG_ERROR([-lsphinxclient library not found]); fi; have_sphinxclient=no ]),
 		[ if test "x$have_sphinxclient" != xauto; then AC_MSG_ERROR([sphinxclient.h header not found]); fi; have_sphinxclient=no ])
 	LDFLAGS="$save_LDFLAGS"

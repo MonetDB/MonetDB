@@ -39,6 +39,12 @@ must follow immediately after the option.
 \fB\-\-describe\fP (\fB\-D\fP)
 Only dump the database schema.
 .TP
+\fB\-\-inserts\fP (\fB\-N\fP)
+When dumping the table data, use INSERT INTO statements, rather than
+COPY INTO + CSV values.  INSERT INTO statements are better portable, and
+necessary when the load of the dump is processed by e.g. a JDBC
+application.
+.TP
 \fB\-\-functions\fP (\fB\-f\fP)
 Only dump functions definitions.
 .TP
