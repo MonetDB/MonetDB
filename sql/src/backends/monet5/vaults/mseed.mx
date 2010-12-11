@@ -21,15 +21,78 @@ All Rights Reserved.
 @a Martin Kersten
 @v 0.1
 @+ Mseed
-These routines are meant to interpret mseed files in the context of a vault.
+These routines are meant to interpret mseed files stored in the vault.
 The simplifying situation is that mseed has a single model.
 The code base assumes that libmseed has been installed on your system.
 
-Furthermore, the mseed catalog initialization script should have been run.
+The mseed catalog initialization script should have been run.
+@begin verbatim
+-- this schema is intended to experiment with accessing mseed files
+drop FUNCTION mseedImport();
+drop table mseedCatalog;
+drop table mseedRepository;
+
+-- all records in the mseed files correspond to a row in the catalog
+CREATE TABLE mseedCatalog (
+mseed			int, 			-- Vault file id
+chunk			varchar(255),	-- SQL volumn storage container name
+seqno			int,			-- SEED record sequence number, should be between 0 and 999999
+		 PRIMARY KEY (mseed,seqno),
+dataquality 	char,			-- Data record indicator, should be 'D=data unknown qual', 
+								-- 'R=raw no quality', 'Q= quality controlled' or 'M'
+network			varchar(11),	-- Network
+station			varchar(11),	-- Station
+location		varchar(11),	-- Location
+channel			varchar(11),	-- Channel
+starttime 		timestamp,		-- Record start time, the time of the first sample, as a high precision epoch time 
+samplerate		double,			-- Nominal sample rate (Hz) 
+samplecnt		int,			-- Number of samples in record 
+sampletype		string,			-- storage type in mseed record
+minval			float,			-- statistics for search later
+maxval			float
+); 
+
+-- this function inserts the mseed record information into the catalog
+-- errors are returned for off-line analysis.
+CREATE FUNCTION mseedImport(vid int, source string, target string)
+	RETURNS string
+EXTERNAL NAME mseed.import;
+
+-- mseed data volumns may appear in different formats
+-- we try to postpone them, assuming the optimizer can guide JIT.
+--CREATE TABLE chunkname (
+--time	timestamp,
+--mseed	int,
+--adata	varchar(20),	dependent on type
+--idata	int,
+--fdata	float,
+--ddata	double
+--); 
+@end verbatim
+
+@- How to use the mseed catalog.
+First, the vault directory is populated with the location of the mseed source files
+in a remote site. The corresponding local name is set using the basename property,
+and all files creation and access times are set to null.
+Following, a limited number of files are loaded into the vault and analysed.
+The information extracted ends up in the catalog, and remains there forever.
+The underlying mseed file is not decrypted directly, it will be done as soon
+as a query requests its.
+
+A test sequence (after the vault director has been populated)
+@begin verbatim
+create table batch(vid int, source string, target string);
+
+
+insert into batch
+select vid, source, target from vault where created is null limit 2;
+call batchload( select vid, source, target from vault where created is null limit 2);
+drop table batch;
+@end verbatim
 
 @mal
 module mseed;
-pattern import(vid:int, fnme:str):str
+pattern import(vid:int, source:str, target:str):str
 address MseedImport
 comment "Dump the record content of an mseed file from the vault into the mseed catalog";
 
@@ -38,7 +101,7 @@ The intended use is to simply rely on SQL to select elements
 in the vault table for import and to apply the mseed import operation.
 It returns the id list of succesful imports.
 @verbatim
-select import(vid) from vault where ...
+select mseedImport(vid,source,target) from vault where ...
 @end verbatim
 @{
 @h
@@ -84,6 +147,7 @@ MseedImport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 	int *vid = (int*) getArgReference(stk,pci,1); 
 	str *sourcefile = (str*) getArgReference(stk,pci,2); 
+	str *targetfile = (str*) getArgReference(stk,pci,3); 
 	MSRecord *msr = 0;
 
 	int verbose   = 1;
@@ -96,7 +160,8 @@ MseedImport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int j;
 	time_t t;
 	struct tm *tm;
-	char *s, *basename,*kind;
+	char *s, *kind;
+	timestamp answ;
 	char file[BUFSIZ];
 	char buf[BUFSIZ];
 	char starttime[BUFSIZ];
@@ -105,28 +170,30 @@ MseedImport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) mb;
 
-	if ( vaultpath[0] == 0){
-		msg= createException(MAL,"mseed.dump","Vault not initialized");
-		*ret = GDKstrdup(msg);
-		return msg;
-	}
-	basename = strrchr(*sourcefile,DIR_SEP);
-	basename = basename ? basename:  *sourcefile;
-	snprintf(file,BUFSIZ,"%s%c%s",vaultpath, DIR_SEP,basename);
+	if ( strcmp(*sourcefile, *targetfile) ) {
+		if ( vaultpath[0] == 0){
+			msg= createException(MAL,"mseed.dump","Vault not initialized");
+			*ret = GDKstrdup(msg);
+			return msg;
+		}
+		snprintf(file,BUFSIZ,"%s%c%s",vaultpath, DIR_SEP,*targetfile);
 
-	/* only fetch the file if it is not already in the local vault */
-	if ( access(file, R_OK) ){
-		mnstr_printf(cntxt->fdout, "FTP fetch %s -> %s\n",*sourcefile,file);
-		msg= VLTftpget(&j, sourcefile, &basename);
-		if ( msg)
-			return msg;
-		/* remember the location of the copy */
-		s= buf;
-		snprintf(buf,BUFSIZ,"UPDATE vault SET target='%s' WHERE vid = %d;", file,*vid);
-		msg =SQLstatementIntern(cntxt,&s,"mseed.import file",TRUE,FALSE);
-		if ( msg)
-			return msg;
-	}
+		/* only fetch the file if it is not already in the local vault */
+		if ( access(file, R_OK) ){
+			mnstr_printf(cntxt->fdout, "FTP fetch %s -> %s\n",*sourcefile,file);
+			msg= VLTimport(&answ, sourcefile, targetfile);
+			if ( msg)
+				return msg;
+			/* remember the location of the copy */
+			s= buf;
+			snprintf(buf,BUFSIZ,"UPDATE vault SET created=now() WHERE vid = %d;", *vid);
+			msg =SQLstatementIntern(cntxt,&s,"mseed.import file",TRUE,FALSE);
+			if ( msg)
+				return msg;
+		}
+	} else 
+		/* no caching  needed or allowed */
+		snprintf(file,BUFSIZ,"%s",*targetfile);
 
 	/* Loop over the input file */
 	s= buf;

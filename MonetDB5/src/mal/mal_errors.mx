@@ -86,6 +86,7 @@ use a translation table where needed.
 
 #define RUNTIME_IO_EOF "Attempt to read beyond end-of-file"
 #define RUNTIME_FILE_NOT_FOUND "File not found"
+#define RUNTIME_UNLINK "File could not be unlinked"
 #define RUNTIME_DIR_ERROR "Unable to open directory"
 #define RUNTIME_STREAM_FAILED "Could not create stream"
 #define RUNTIME_STREAM_WRITE "Could not write to stream"

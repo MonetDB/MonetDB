@@ -19,19 +19,22 @@
 CREATE SEQUENCE sys.vaultid AS int;
 
 CREATE TABLE sys.vault (
-vid             int PRIMARY KEY DEFAULT NEXT VALUE FOR sys.vaultid ,
+vid             int PRIMARY KEY,-- Internal key
 kind            string,         -- vault kind (CSV, MSEED, FITS,..)
 source          string,         -- remote file name for cURL to access
-target          string,         -- location of source file in the local vault
-refresh         boolean,        -- refresh each time of access
-cached          timestamp       -- when a local copy was stored
+target          string,         -- file name of source file in vault
+created         timestamp,      -- timestamp upon entering the cache
+lru             timestamp       -- least recently used
 );
 
-create function getVaultDir()
+create function getvault()
 returns string
 external name vault.getdirectory;
 
--- refresh the vault
-create procedure refreshVault(nme string)
-external name vault.refresh;
+create function basename(fnme string, split string)
+returns string
+external name vault.basename;
 
+create function import(source string, target string)
+returns string
+external name vault.import;
