@@ -3483,7 +3483,7 @@ sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, sql
 	sql_table *sysarg = find_sql_table(find_sql_schema(tr, "sys"), "args");
 	node *n;
 	int number = 0;
-	bit se = FALSE, sql;
+	bit se, sql;
 
 	base_init(NULL, &t->base, next_oid(), TR_NEW, func);
 	assert(impl && mod);
@@ -3491,7 +3491,7 @@ sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, sql
 	t->mod = (mod)?_strdup(mod):NULL; 
 	sql = t->sql = (query)?1:0;
 	t->aggr = aggr;
-	t->side_effect = se;
+	se = t->side_effect = res?FALSE:TRUE;
 	t->ops = list_dup(args, (fdup)&arg_dup);
 	t->res.scale = t->res.digits = 0;
 	t->res.type = NULL;

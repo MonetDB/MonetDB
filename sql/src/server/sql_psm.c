@@ -613,8 +613,8 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 					mvc_create_func(sql, sql->session->schema, fname, l, restype, is_aggr, fmod, fnme, q, is_func);
 				} else {
 					sql_func *f = sf->func;
-					f->mod = sa_strdup(sql->sa, fmod);
-					f->imp = sa_strdup(sql->sa, fnme);
+					f->mod = _strdup(fmod);
+					f->imp = _strdup(fnme);
 					if (res && restype)
 						f->res = *restype;
 					f->sql = 0; /* native */
