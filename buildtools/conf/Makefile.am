@@ -19,30 +19,3 @@
 
 dist_pkgdata_DATA = rules.mk MonetDB.m4
 dist_bin_SCRIPTS = Mdebootstrap Mbootstrap buildtools-config Maddlog
-
-MonetDB-release-1.1.tar.gz: MonetDB-release.spec MonetDB-release-1.1/monetdb.repo MonetDB-release-1.1/MonetDB-GPG-KEY
-	tar czf MonetDB-release-1.1.tar.gz -C $(srcdir) MonetDB-release.spec MonetDB-release-1.1/monetdb.repo MonetDB-release-1.1/MonetDB-GPG-KEY
-
-srpm: MonetDB-release-1.1.tar.gz
-	mkdir -p rpmbuild/BUILD
-	mkdir -p rpmbuild/BUILDROOT
-	mkdir -p rpmbuild/RPMS
-	mkdir -p rpmbuild/SOURCES
-	mkdir -p rpmbuild/SPECS
-	mkdir -p rpmbuild/SRPMS
-	mkdir -p rpmbuild/tmp
-	rpmbuild --macros "`rpmbuild --showrc | sed -n 's/macrofiles *: *//p'`:$(srcdir)/.rpmmacros" -ts MonetDB-release-1.1.tar.gz
-	mv rpmbuild/SRPMS/*.src.rpm .
-	rpm --addsign --define='_signature gpg' --define='_gpg_name 0x0583366F' *.src.rpm
-
-rpm: MonetDB-release-1.1.tar.gz
-	mkdir -p rpmbuild/BUILD
-	mkdir -p rpmbuild/BUILDROOT
-	mkdir -p rpmbuild/RPMS
-	mkdir -p rpmbuild/SOURCES
-	mkdir -p rpmbuild/SPECS
-	mkdir -p rpmbuild/SRPMS
-	mkdir -p rpmbuild/tmp
-	rpmbuild --macros "`rpmbuild --showrc | sed -n 's/macrofiles *: *//p'`:$(srcdir)/.rpmmacros" -tb MonetDB-release-1.1.tar.gz
-	mv rpmbuild/RPMS/noarch/*.noarch.rpm .
-	rpm --addsign --define='_signature gpg' --define='_gpg_name 0x0583366F' *.noarch.rpm
