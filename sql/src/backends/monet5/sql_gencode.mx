@@ -53,7 +53,8 @@ sql5_export void backend_callinline(backend *be, Client c, stmt *s);
 sql5_export void backend_call(backend *be, Client c, cq *q);
 sql5_export void initSQLreferences(void);
 sql5_export str backend_name(cq *cq);
-sql5_export void monet5_create_function(ptr M, char *name, sql_rel *rel, sql_table *t);
+sql5_export void monet5_create_table_function(ptr M, char *name, sql_rel *rel, sql_table *t);
+sql5_export int monet5_resolve_function(ptr M, sql_func *f);
 
 #endif /* _SQL2MAL_H */
 @c
@@ -2252,7 +2253,7 @@ backend_call(backend *be, Client c, cq *cq)
 }
 
 void
-monet5_create_function(ptr M, char *name, sql_rel *rel, sql_table *t)
+monet5_create_table_function(ptr M, char *name, sql_rel *rel, sql_table *t)
 {
 	sql_rel *r;
 	mvc *m = (mvc*)M;
@@ -2310,6 +2311,24 @@ monet5_create_function(ptr M, char *name, sql_rel *rel, sql_table *t)
 	addQueryToCache(c);
 	if (backup) 
 		c->curprg = backup;
+}
+
+int 
+monet5_resolve_function(ptr M, sql_func *f)
+{
+//	node *n;
+
+	(void)M;
+	(void)f;
+/*
+	newFcnCall(f->mod, f->imp);
+	for (n = f->ops->h; n; n = n->next) {
+		sql_arg *a = n->data;
+
+		q = push ?type? (mb, q, a->);
+	}
+*/
+	return 1;
 }
 
 static void
