@@ -2135,7 +2135,7 @@ join_idx_insert(mvc *sql, sql_idx * i, list *inserts)
 			sql_kc *c = m->data;
 			sql_kc *rc = o->data;
 
-			stmt_relselect_fill(s, stmt_uselect(sql->sa, stmt_bat(sql->sa, rc->c, rts, RDONLY), nth(inserts, c->c->colnr)->op1, cmp_equal));
+			stmt_relselect_fill(s, stmt_uselect(sql->sa, stmt_bat(sql->sa, rc->c, rts, RDONLY), check_types(sql, &rc->c->type, nth(inserts, c->c->colnr)->op1, type_equal), cmp_equal));
 
 			if (c->c->null) {
 				sql_subfunc *isnil = sql_bind_func(sql->sa, sql->session->schema, "isnull", &c->c->type, NULL);
@@ -2168,7 +2168,7 @@ join_idx_insert(mvc *sql, sql_idx * i, list *inserts)
 			sql_kc *c = m->data;
 			sql_kc *rc = o->data;
 
-			stmt_releqjoin_fill(s, nth(inserts, c->c->colnr)->op1, stmt_bat(sql->sa, rc->c, rts, RDONLY));
+			stmt_releqjoin_fill(s, check_types(sql, &rc->c->type, nth(inserts, c->c->colnr)->op1, type_equal), stmt_bat(sql->sa, rc->c, rts, RDONLY));
 			if (c->c->null)
 				nulls = 1;
 		}
@@ -2983,7 +2983,7 @@ join_idx_update(mvc *sql, sql_idx * i, stmt **updates, int updcol)
 
 		if (nulls) /* remove nulls */
 			upd = stmt_semijoin(sql->sa, upd, nnull); 
-		stmt_releqjoin_fill(s, upd, stmt_bat(sql->sa, rc->c, rts, RDONLY));
+		stmt_releqjoin_fill(s, check_types(sql, &rc->c->type, upd, type_equal), stmt_bat(sql->sa, rc->c, rts, RDONLY));
 	}
 	/* add missing nulls */
 	if (nulls)
