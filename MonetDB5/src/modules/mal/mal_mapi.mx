@@ -573,6 +573,7 @@ SERVERlistenThread(SOCKET *Sock)
 					/* nothing special, nothing to do */
 				break;
 				case '1':
+				{	int *c_d;
 					/* filedescriptor, put it in place of msgsock */
 					cmsg = CMSG_FIRSTHDR(&msgh);
 					if (!cmsg->cmsg_type == SCM_RIGHTS) {
@@ -583,7 +584,13 @@ SERVERlistenThread(SOCKET *Sock)
 						continue;
 					}
 					closesocket(msgsock);
-					msgsock = *(int*)CMSG_DATA(cmsg);
+					/* HACK to avoid 
+					 * "dereferencing type-punned pointer will break strict-aliasing rules"
+					 * (with gcc 4.5.1 on Fedora 14)
+					 */
+					c_d = (int*)CMSG_DATA(cmsg);
+					msgsock = *c_d;
+				}
 				break;
 				default:
 					/* some unknown state */

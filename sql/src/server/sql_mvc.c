@@ -1190,7 +1190,7 @@ mvc_default(mvc *m, sql_column *col, char *val)
 		fprintf(stderr, "mvc_default %s %s\n", col->base.name, val);
 
 	if (col->t->persistence == SQL_DECLARED_TABLE) {
-		col->def = sa_strdup(m->sa, val);
+		col->def = val?sa_strdup(m->sa, val):NULL;
 		return col;
 	} else {
 		return sql_trans_alter_default(m->session->tr, col, val);

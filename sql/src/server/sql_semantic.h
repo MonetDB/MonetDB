@@ -97,8 +97,8 @@ extern int set_type_param(mvc *sql, sql_subtype *type, int nr);
 extern int stmt_set_type_param(mvc *sql, sql_subtype *type, stmt *param);
 extern void sql_destroy_params(mvc *sql);	/* used in backend */
 
-extern char *symbol2string(mvc *sql, symbol *s);
-extern char *dlist2string(mvc *sql, dlist *s);
+extern char *symbol2string(mvc *sql, symbol *s, char **err);
+extern char *dlist2string(mvc *sql, dlist *s, char **err);
 
 extern char * toUpperCopy(char *dest, const char *src); 
 

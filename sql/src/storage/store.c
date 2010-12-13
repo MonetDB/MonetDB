@@ -3514,7 +3514,7 @@ sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, sql
 		sql_arg *a = n->data;
 		sqlid id = next_oid();
 
-		table_funcs.table_insert(tr, sysarg, &id, &t->base.id, a->name, a->type.type->sqlname, &a->type.type->digits, &a->type.type->scale, &number);
+		table_funcs.table_insert(tr, sysarg, &id, &t->base.id, a->name, a->type.type->sqlname, &a->type.digits, &a->type.scale, &number);
 	}
 /*
 	if (!aggr && list_length(args) > 0) {

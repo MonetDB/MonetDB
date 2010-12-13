@@ -293,7 +293,9 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs)
 	} 	break;
 	case op_table:
 		print_indent(sql, fout, depth);
-		mnstr_printf(fout, "table");
+		mnstr_printf(fout, "table ");
+		if (rel->l)
+			exp_print(sql, fout, rel->l, depth, 1, 0);
 		if (rel->exps) 
 			exps_print(sql, fout, rel->exps, depth, 1, 0);
 		break;

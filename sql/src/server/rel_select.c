@@ -3270,9 +3270,11 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, char *aggrstr, symbol *sym, int
 		if (groupby->r && exps_intern(groupby->r)) {
 			sql_rel *i = groupby->l;
 
-			e = flatten_exps(sql, i->exps);
-			e = exp_aggr1(sql->sa, e, a, distinct, 1, groupby->card, 0);
-			return e;
+			if (i->exps) {
+				e = flatten_exps(sql, i->exps);
+				e = exp_aggr1(sql->sa, e, a, distinct, 1, groupby->card, 0);
+				return e;
+			}
 		}
 		e = exp_aggr(sql->sa, NULL, a, distinct, 0, groupby->card, 0);
 		if (*rel == groupby && f == sql_sel) /* selection */

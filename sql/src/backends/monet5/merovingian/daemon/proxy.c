@@ -142,6 +142,7 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 		struct cmsghdr *cmsg;
 		struct iovec vec;
 		char buf[1];
+		int *c_d;
 
 		if ((ssock = socket(PF_UNIX, SOCK_STREAM, 0)) < 0)
 			return(newErr("cannot open socket: %s", strerror(errno)));
@@ -165,7 +166,12 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 		cmsg->cmsg_level = SOL_SOCKET;
 		cmsg->cmsg_type = SCM_RIGHTS;
 		cmsg->cmsg_len = CMSG_LEN(sizeof(psock));
-		*(int *)CMSG_DATA(cmsg) = psock;
+		/* HACK to avoid 
+		 * "dereferencing type-punned pointer will break strict-aliasing rules"
+		 * (with gcc 4.5.1 on Fedora 14)
+		 */
+		c_d = (int *)CMSG_DATA(cmsg);
+		*c_d = psock;
 		msg.msg_controllen = cmsg->cmsg_len;
 		msg.msg_flags = 0;
 

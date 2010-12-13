@@ -358,17 +358,28 @@ _ASCIIadt_frStr(Column *c, int type, char *s, char *e, char quote)
 	(void)quote;
 	if (type == TYPE_str) {
 		sql_column *col = (sql_column*)c->extra;
+		int len = (int) (e - s + 1); /* 64bit: should check for overflow */
+		/* or shouldn't len rather be ssize_t, here? */
 
-		if (col->type.digits > 0 && (unsigned)(e-s) > col->type.digits){
-			str v = (str)s;
-			strLength(&len, v);
-
-			if (len == int_nil) 
-				len = 4;
-			if ((unsigned int) len > col->type.digits) 
+		if (c->len < len){
+			c->len = len;
+			c->data = GDKrealloc(c->data,len); 
+		}
+	
+		if (s == e) {
+			len = -1;
+			*(char*)c->data = 0;
+		} else if ((len = (int)GDKstrFromStr(c->data, (unsigned char *) s, (ssize_t) (e - s))) < 0) {
+			/* 64bit: should check for overflow */
+			/* or shouldn't len rather be ssize_t, here? */
+			return NULL;
+		}
+		if (col->type.digits > 0 && len > 0 && len > (int)col->type.digits) { 
+			strLength(&len, c->data);
+			if (len > (int)col->type.digits)
 				return NULL;
 		}
-		return TABLETstrFrStr(c, s, e);
+		return c->data;
 	}
 	 
 	len = (*BATatoms[type].atomFromStr)(s, &c->len, (ptr) &c->data);

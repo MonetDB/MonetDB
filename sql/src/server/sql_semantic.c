@@ -751,14 +751,21 @@ char * toUpperCopy(char *dest, const char *src)
 	return(dest);
 }
 
-char *dlist2string(mvc *sql, dlist *l)
+char *dlist2string(mvc *sql, dlist *l, char **err)
 {
 	char *b = NULL;
 	dnode *n;
 
 	for (n=l->h; n; n = n->next) {
-		char *s = symbol2string(sql, n->data.sym);
+		char *s = NULL;
 
+		if (n->type == type_string && n->data.sval)
+			s = _strdup(n->data.sval);
+		else if (n->type == type_symbol)
+			s = symbol2string(sql, n->data.sym, err);
+
+		if (!s)
+			return NULL;
 		if (b) {
 			char *o = b;
 			b = strconcat(b,s);
@@ -771,7 +778,7 @@ char *dlist2string(mvc *sql, dlist *l)
 	return b;
 }
 
-char *symbol2string(mvc *sql, symbol *se)
+char *symbol2string(mvc *sql, symbol *se, char **err)
 {
 	int len = 0;
 	char buf[BUFSIZ];
@@ -787,7 +794,7 @@ char *symbol2string(mvc *sql, symbol *se)
 		for (; ops; ops = ops->next) {
 			char *tmp;
 			len = snprintf( buf+len, BUFSIZ-len, "%s%s", 
-				tmp = symbol2string(sql, ops->data.sym), 
+				tmp = symbol2string(sql, ops->data.sym, err), 
 				(ops->next)?",":"");
 			_DELETE(tmp);
 		}
@@ -796,8 +803,8 @@ char *symbol2string(mvc *sql, symbol *se)
 	case SQL_BINOP: {
 		dnode *lst = se->data.lval->h;
 		char *op = qname_fname(lst->data.lval);
-		char *l = symbol2string(sql, lst->next->data.sym);
-		char *r = symbol2string(sql, lst->next->next->data.sym);
+		char *l = symbol2string(sql, lst->next->data.sym, err);
+		char *r = symbol2string(sql, lst->next->next->data.sym, err);
 		len = snprintf( buf+len, BUFSIZ-len, "%s(%s,%s)", op, l, r); 
 		_DELETE(l);
 		_DELETE(r);
@@ -810,7 +817,7 @@ char *symbol2string(mvc *sql, symbol *se)
 	case SQL_UNOP: {
 		dnode *lst = se->data.lval->h;
 		char *op = qname_fname(lst->data.lval);
-		char *l = symbol2string(sql, lst->next->data.sym);
+		char *l = symbol2string(sql, lst->next->data.sym, err);
 		len = snprintf( buf+len, BUFSIZ-len, "%s(%s)", op, l); 
 		_DELETE(l);
 		break;
@@ -843,12 +850,14 @@ char *symbol2string(mvc *sql, symbol *se)
 		if (dlist_length(l) == 1 && l->h->type == type_int) {
 			atom *a = sql_bind_arg(sql, l->h->data.i_val);
 			return atom2sql(a);
+		} else {
+			*err = dlist2string(sql, l, err);
 		}
 		return NULL;
 	} 	
 	case SQL_CAST: {
 		dlist *dl = se->data.lval;
-		char *val = symbol2string(sql, dl->h->data.sym);
+		char *val = symbol2string(sql, dl->h->data.sym, err);
 		char *tpe = subtype2string(&dl->h->next->data.typeval);
 	
 		len = snprintf( buf+len, BUFSIZ-len, "cast ( %s as %s )",
