@@ -87,6 +87,8 @@ typedef struct parserData {
 	const char *warningMsg;       /* warning msgs           */
 	const char *errorMsg;         /* error   msgs           */
 	const char *fatalMsg;         /* fatal   msgs           */
+	int line;                     /* locator for errors     */
+	int column;                   /* locator for errors     */
 	                              /**GRAPH DATA             */
 	BAT *graph[N_GRAPH_BAT];      /* BATs for the result
 	                                 shredded RDF graph     */
@@ -114,6 +116,8 @@ static void
 
 	/* check for a valid locator object and only then use it */
 	if (locator != NULL) {
+		pdata->line = locator->line;
+		pdata->column = locator->column;
 	} else {
 	}
 }
@@ -449,8 +453,8 @@ post_processing (parserData *pdata)
 	graph[O_sort] = BATmirror(BATsort(BATmirror(O))); /* sort on O */
 	@:order(graph[O_sort],P,S,PS)@
 	@:order(graph[O_sort],S,P,SP)@
-	BATsetaccess(graph[P_sort], BAT_READ); /* force BATmark not to copy bat */
-	graph[P_sort] = BATmirror(BATmark(BATmirror(graph[P_sort]), 0));
+	BATsetaccess(graph[O_sort], BAT_READ); /* force BATmark not to copy bat */
+	graph[O_sort] = BATmirror(BATmark(BATmirror(graph[O_sort]), 0));
 
 	/* free memory */
 	BBPreclaim(S);
