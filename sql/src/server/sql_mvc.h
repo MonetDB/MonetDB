@@ -79,7 +79,6 @@ typedef struct mvc {
 	sql_allocator *ra;	/* allocator used during the relational phases */
 	sql_allocator *ba;	/* allocator used for binary statement tree */
 	struct qc *qc;
-	struct qc *prepare_qc;
 	int clientid;		/* id of the owner */
 	struct scanner scanner;
 

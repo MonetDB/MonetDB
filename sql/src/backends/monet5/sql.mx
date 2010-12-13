@@ -270,7 +270,7 @@ address mvc_export_value_wrap
 comment "export a single value onto the stream s";
 
 pattern importTable{unsafe}( s:bstream, sname:str, tname:str, 
-	sep:str, rsep:str, ssep:str, ns:str, nr:lng, offset:lng) :bat[:str,:bat]
+	sep:str, rsep:str, ssep:str, ns:str, nr:lng, offset:lng, locked:int) :bat[:str,:bat]
 address mvc_import_table_wrap
 comment "Import a table from bstream s with the 
 	given tuple and seperators (sep/rsep)";
@@ -290,7 +290,8 @@ function copy_from(
 	ns:str,
 	fname:str,
 	nr:lng,
-	offset:lng
+	offset:lng,
+	locked:int
 ):bat[:str,:bat];
 	cs := str.codeset();
 	f  := str.iconv(fname, "UTF-8", cs);
@@ -300,7 +301,7 @@ function copy_from(
 	bs := bstream.create(s, 33554432);
 	#bs := bstream.create(s, 67108864);
 
-	res := sql.importTable(bs, sname, tname, tsep, rsep, ssep, ns, nr, offset);
+	res := sql.importTable(bs, sname, tname, tsep, rsep, ssep, ns, nr, offset, locked);
 	bstream.destroy(bs);
 	return res;
 end copy_from;
@@ -313,10 +314,11 @@ function copyfrom(
 	ssep:str,
 	ns:str,
 	nr:lng,
-	offset:lng
+	offset:lng,
+	locked:int
 ):bat[:str,:bat];
 	in := io.stdin();
-	res := sql.importTable(in, sname, tname, tsep, rsep, ssep, ns, nr, offset);
+	res := sql.importTable(in, sname, tname, tsep, rsep, ssep, ns, nr, offset, locked);
 	return res;
 end copyfrom;
 
@@ -3108,6 +3110,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	unsigned char **N = (unsigned char **) getArgReference(stk, pci, 7);
 	lng *sz = (lng *) getArgReference(stk, pci, 8);
 	lng *offset = (lng *) getArgReference(stk, pci, 9);
+	int *locked = (int *) getArgReference(stk, pci, 10);
 
 	if (msg)
 		return msg;
@@ -3122,7 +3125,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	len = strlen((char*)(*N));
 	GDKstrFromStr(ns=GDKmalloc(len+1), *N, len); len = 0;
-	b = mvc_import_table(cntxt, m, *s, *sname, *tname, (char*)tsep, (char*)rsep, (char*)ssep, (char*)ns, *sz, *offset);
+	b = mvc_import_table(cntxt, m, *s, *sname, *tname, (char*)tsep, (char*)rsep, (char*)ssep, (char*)ns, *sz, *offset, *locked);
 	GDKfree(tsep);
 	GDKfree(rsep);
 	if(ssep)
@@ -4724,8 +4727,10 @@ dump_cache(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BUNins(t, "count", &count->batCacheid, FALSE);
 
 	for(q = m->qc->q; q; q = q->next) {
-		BUNappend(query, q->codestring, FALSE);
-		BUNappend(count, &q->count, FALSE);
+		if (q->type != Q_PREPARE) {
+			BUNappend(query, q->codestring, FALSE);
+			BUNappend(count, &q->count, FALSE);
+		}
 	}
 
 	BBPunfix(query->batCacheid);

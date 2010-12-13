@@ -1377,7 +1377,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if (s->nrcols == 0) { /* simple calc */
 				q = newStmt1(mb, calcRef, convert);
 			} else if (s->nrcols > 0 && 
-				(f->type->eclass == EC_DEC ||
+			 	(t->type->localtype > TYPE_str ||
+				 f->type->eclass == EC_DEC ||
 				 t->type->eclass == EC_DEC ||
 				 t->type->eclass == EC_INTERVAL ||
 				 EC_TEMP(t->type->eclass) ||

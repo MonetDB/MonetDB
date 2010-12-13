@@ -143,6 +143,7 @@ scanner_init_keywords(void)
 	keywords_insert("LIKE", LIKE);
 	keywords_insert("LIMIT", LIMIT);
 	keywords_insert("LOCAL", LOCAL);
+	keywords_insert("LOCKED", LOCKED);
 	keywords_insert("NATURAL", NATURAL);
 	keywords_insert("NOT", NOT);
 	keywords_insert("NULL", sqlNULL);

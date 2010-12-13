@@ -40,7 +40,7 @@ extern int mvc_export_head(mvc *c, stream *s, int res_id, int only_header);
 extern int mvc_export_prepare(mvc *c, stream *s, cq *q, str w);
 extern int mvc_export_chunk(mvc *m, stream *s, int res_id, BUN offset, BUN nr);
 
-extern BAT *mvc_import_table(Client cntxt, mvc *c, bstream *s, char *sname, char *tname, char *sep, char *rsep, char *ssep, char *ns, lng nr, lng offset);
+extern BAT *mvc_import_table(Client cntxt, mvc *c, bstream *s, char *sname, char *tname, char *sep, char *rsep, char *ssep, char *ns, lng nr, lng offset, int locked);
 extern int mvc_result_table(mvc *m, int nr_cols, int type, BAT *order);
 
 extern int mvc_result_column(mvc *m, char *tn, char *name, char *typename, int digits, int scale, BAT *b);
@@ -421,7 +421,7 @@ _ASCIIadt_toStr(void *extra, char **buf, int *len, int type, ptr a)
 
 
 BAT *
-mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, char *sep, char *rsep, char *ssep, char *ns, lng sz, lng offset)
+mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, char *sep, char *rsep, char *ssep, char *ns, lng sz, lng offset, int locked)
 {
 	int i = 0;
 	sql_schema *s = mvc_bind_schema(m, sname);
@@ -497,10 +497,18 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 			fmt[i].rawfile = NULL;
 			fmt[i].batfile = NULL;
 			fmt[i].size = ATOMsize(fmt[i].adt);
+			
+			if (locked) {
+				BAT *b = store_funcs.bind_col(m->session->tr, col, RDONLY);
+				fmt[i].c[0] = b;
+				fmt[i].ci[0] = bat_iterator(fmt[i].c[0]);
+			}
 		}
-		if (TABLETcreate_bats(&as, (BUN) (sz < 0 ? 1000 : sz)) >= 0) {
-			if (SQLload_file(cntxt, &as, bs, out, sep, rsep, ssep?ssep[0]:0, offset, sz) != BUN_NONE && !as.error)
+		if (locked || TABLETcreate_bats(&as, (BUN) (sz < 0 ? 1000 : sz)) >= 0) {
+			if (SQLload_file(cntxt, &as, bs, out, sep, rsep, ssep?ssep[0]:0, offset, sz) != BUN_NONE && !as.error) {
+				/* TODO in case of locked generate views which inserted only */
 				bats = TABLETcollect_bats(&as);
+			}
 		}
 		if (as.error) 
 			sql_error(m, 500, "%s", as.error);

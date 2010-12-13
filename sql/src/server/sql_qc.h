@@ -44,11 +44,13 @@ typedef struct cq {
 typedef struct qc {
 	int clientid;
 	int id;
+	int nr;
 	cq *q;
 } qc;
 
 extern qc *qc_create(int clientid);
 extern void qc_destroy(qc *cache);
+extern void qc_clean(qc *cache);
 extern cq *qc_find(qc *cache, int id);
 extern cq *qc_match(qc *cache, symbol *s, atom **params, int plen, int key);
 extern cq *qc_insert(qc *cache, sql_allocator *sa, symbol *s, atom **params, int paramlen, int key, int type, char *codedstr);

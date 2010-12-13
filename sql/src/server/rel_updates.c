@@ -492,7 +492,7 @@ delete_table(mvc *sql, dlist *qname, symbol *opt_where)
 }
 
 static sql_rel *
-rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns, char *filename, lng nr, lng offset)
+rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns, char *filename, lng nr, lng offset, int locked)
 {
 	sql_rel *res;
 	list *exps, *args;
@@ -515,8 +515,13 @@ rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns,
 
 	if (filename)
 		append( args, exp_atom_str(sql->sa, filename, &tpe)); 
-	import = exp_op(sql->sa,  append( 
-		append( args, exp_atom_lng(sql->sa, nr)), exp_atom_lng(sql->sa, offset)), f); 
+	import = exp_op(sql->sa,  
+		append(
+			append( 
+				append( args, 
+					exp_atom_lng(sql->sa, nr)), 
+					exp_atom_lng(sql->sa, offset)), 
+					exp_atom_int(sql->sa, locked)), f); 
 	
 	exps = new_exp_list(sql->sa);
 	for (n = t->columns.set->h; n; n = n->next) {
@@ -528,7 +533,7 @@ rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns,
 }
 
 static sql_rel *
-copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, str null_string)
+copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, str null_string, int locked)
 {
 	sql_rel *rel = NULL;
 	char *sname = qname_schema(qname);
@@ -571,7 +576,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, st
 
 		for (; n; n = n->next) {
 			char *fname = n->data.sval;
-			sql_rel *nrel = rel_import(sql, t, tsep, rsep, ssep, ns, fname, nr, offset);
+			sql_rel *nrel = rel_import(sql, t, tsep, rsep, ssep, ns, fname, nr, offset, locked);
 
 			if (!rel)
 				rel = nrel;
@@ -581,12 +586,11 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, st
 				return rel;
 		}
 	} else {
-		rel = rel_import(sql, t, tsep, rsep, ssep, ns, NULL, nr, offset);
+		rel = rel_import(sql, t, tsep, rsep, ssep, ns, NULL, nr, offset, locked);
 	}
 	if (!rel)
 		return rel;
-	rel = rel_insert_cluster(sql, t, rel);
-	return rel; 
+	return rel_insert_cluster(sql, t, rel);
 }
 
 static sql_rel *
@@ -651,8 +655,7 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *files)
 		append(exps, exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0));
 	}
 	res = rel_table_func(sql->sa, import, exps);
-	res = rel_insert_cluster(sql, t, res);
-	return res;
+	return rel_insert_cluster(sql, t, res);
 }
 
 static sql_rel *
@@ -710,7 +713,7 @@ rel_updates(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = copyfrom(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.sval);
+		ret = copyfrom(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.sval, l->h->next->next->next->next->next->data.i_val);
 		sql->type = Q_UPDATE;
 	}
 		break;

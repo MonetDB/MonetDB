@@ -443,6 +443,7 @@ int yydebug=1;
 	opt_work
 	opt_chain
 	opt_distinct
+	opt_locked
 	set_distinct
 	opt_with_check_option
 
@@ -469,7 +470,7 @@ int yydebug=1;
 	CURRENT_DATE CURRENT_TIMESTAMP CURRENT_TIME LOCALTIMESTAMP LOCALTIME
 	LEX_ERROR 
 
-%token	USER CURRENT_USER SESSION_USER LOCAL
+%token	USER CURRENT_USER SESSION_USER LOCAL LOCKED
 %token  CURRENT_ROLE sqlSESSION
 %token <sval> sqlDELETE UPDATE SELECT INSERT DATABASE CONNECT DISCONNECT PORT 
 %token <sval> LEFT RIGHT FULL OUTER NATURAL CROSS JOIN INNER
@@ -2297,21 +2298,23 @@ opt_to_savepoint:
  ;
 
 copyfrom_stmt:
-    COPY opt_nr INTO qname FROM string_commalist opt_seps opt_null_string
+    COPY opt_nr INTO qname FROM string_commalist opt_seps opt_null_string opt_locked
 	{ dlist *l = L();
 	  append_list(l, $4);
 	  append_list(l, $6);
 	  append_list(l, $7);
 	  append_list(l, $2);
 	  append_string(l, $8);
+	  append_int(l, $9);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
-  | COPY opt_nr INTO qname FROM STDIN opt_seps opt_null_string
+  | COPY opt_nr INTO qname FROM STDIN opt_seps opt_null_string opt_locked
 	{ dlist *l = L();
 	  append_list(l, $4);
 	  append_list(l, NULL);
 	  append_list(l, $7);
 	  append_list(l, $2);
 	  append_string(l, $8);
+	  append_int(l, $9);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
 /* binary copy from */
    | COPY opt_nr INTO qname FROM '(' string_commalist ')'
@@ -2377,6 +2380,11 @@ opt_nr:
 opt_null_string:
 	/* empty */		{ $$ = NULL; }
  |  	sqlNULL opt_as string	{ $$ = $3; }
+ ;
+
+opt_locked:
+	/* empty */	{ $$ = FALSE; }
+ |  	LOCKED		{ $$ = TRUE; }
  ;
 
 string_commalist:

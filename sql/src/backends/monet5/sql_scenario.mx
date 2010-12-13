@@ -638,7 +638,6 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 	be = sql;
 	sql = backend_create(m, c);
 	m->qc = NULL;
-	m->prepare_qc = NULL;
 	m->caching = 0;
 	m->user_id = m->role_id = USER_MONETDB;
 
@@ -1268,7 +1267,7 @@ produce code.
 	be->q = NULL;
 	if (m->emode == m_execute) {
 		assert(m->sym->data.lval->h->type == type_int);
-		be->q = qc_find(m->prepare_qc, m->sym->data.lval->h->data.i_val);
+		be->q = qc_find(m->qc, m->sym->data.lval->h->data.i_val);
 		if (!be->q) {
 			err = -1;
 			sql_error(m, 2, "no prepared statement with the given id\n");
@@ -1311,12 +1310,13 @@ produce code.
 				m->emode = m_normal; 
 		} else {
 			/* generate a factory instantiation */
-			be->q = qc_insert((m->emode == m_prepare)?m->prepare_qc:m->qc, 
+			be->q = qc_insert(m->qc, 
 					  m->sa,      /* the allocator */
 					  m->sym,     /* the sql symbol tree */
 					  m->args,    /* the argument list */
 					  m->argc,
 					  m->scanner.key ^ m->session->schema->base.id,/* the statement hash key */
+					  (m->emode == m_prepare)?Q_PREPARE:
 					  m->type,/* the type of the statement */
 					  sql_escape_str(QUERY(m->scanner)));
 
