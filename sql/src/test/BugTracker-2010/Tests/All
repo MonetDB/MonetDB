@@ -80,3 +80,4 @@ foreign_key_type_mismatch.Bug-2745
 store_function_argument_correctly.Bug-2750
 COPY_INTO_with_backslashes.Bug-2748
 wrong_error_message_dropping_view.Bug-2713
+call_function_without_warning.Bug-2752

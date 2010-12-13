@@ -53,10 +53,13 @@ extern stmt * sequential_block (mvc *sql, sql_subtype *res, dlist *blk, char *op
 static stmt*
 psm_call(mvc * sql, symbol *se)
 {
-
+	sql_subtype *t;
 	stmt *res = NULL;
 	exp_kind ek = {type_value, card_none, FALSE};
+
 	res = value_exp(sql, se, sql_sel, ek);
+	if (res && (t=tail_type(res)) && t->type)  /* only procedures */
+		return sql_error(sql, 01, "function calls are ignored");
 	return res;
 }
 
