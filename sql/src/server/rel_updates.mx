@@ -600,7 +600,10 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, st
 					"COPY INTO from file(s) requires administrator rights, "
 					"use 'COPY INTO \"%s\" FROM STDIN' instead", tname);
 
-		realpath(GDKgetenv("gdk_dbfarm"), realdbfarm);
+		if (realpath(GDKgetenv("gdk_dbfarm"), realdbfarm) == NULL) {
+			return sql_error(sql, 02, "COPY INTO: failed to get real path for dbfarm '%s'",
+					GDKgetenv("gdk_dbfarm"));
+		}
 
 		for (; n; n = n->next) {
 			char *fname = n->data.sval;
@@ -609,7 +612,10 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, st
 			if (fname && *fname != '/')
 				return sql_error(sql, 02, "COPY INTO: filename must "
 						"have absolute path: %s", fname);
-			realpath(fname, realfile);
+			if (realpath(fname, realfile) == NULL) {
+				return sql_error(sql, 02, "COPY INTO: failed to get real path for '%s'",
+						fname);
+			}
 			if (strncmp(realdbfarm, realfile, strlen(realdbfarm)) == 0)
 				return sql_error(sql, 02, "COPY INTO: file may not "
 						"reside in the server's dbfarm: %s", realfile);
@@ -754,11 +760,17 @@ copyto(mvc *sql, symbol *sq, str filename, dlist *seps, str null_string)
 			return sql_error(sql, 02, "COPY INTO: insufficient privileges: "
 					"COPY INTO file requires administrator rights, "
 					"use 'COPY ... INTO STDOUT' instead");
-		realpath(GDKgetenv("gdk_dbfarm"), realdbfarm);
+		if (realpath(GDKgetenv("gdk_dbfarm"), realdbfarm) == NULL) {
+			return sql_error(sql, 02, "COPY INTO: failed to get real path for dbfarm '%s'",
+					GDKgetenv("gdk_dbfarm"));
+		}
 		if (filename && *filename != '/')
 			return sql_error(sql, 02, "COPY INTO: filename must "
 					"have absolute path: %s", filename);
-		realpath(filename, realfile);
+		if (realpath(filename, realfile) == NULL) {
+			return sql_error(sql, 02, "COPY INTO: failed to get real path for '%s'",
+					filename);
+		}
 		if (strncmp(realdbfarm, realfile, strlen(realdbfarm)) == 0)
 			return sql_error(sql, 02, "COPY INTO: file may not "
 					"reside in the server's dbfarm: %s", realfile);
