@@ -613,7 +613,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, st
 			char *fname = n->data.sval;
 			sql_rel *nrel;
 
-			if (fname && *fname != '/')
+			if (fname && !MT_path_absolute(fname))
 				return sql_error(sql, 02, "COPY INTO: filename must "
 						"have absolute path: %s", fname);
 #ifdef HAVE_REALPATH
