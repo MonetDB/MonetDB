@@ -34,10 +34,13 @@
 static stmt*
 psm_call(mvc * sql, symbol *se)
 {
-
+	sql_subtype *t;
 	stmt *res = NULL;
 	exp_kind ek = {type_value, card_none, FALSE};
+
 	res = value_exp(sql, se, sql_sel, ek);
+	if (res && (t=tail_type(res)) && t->type)  /* only procedures */
+		return sql_error(sql, 01, "function calls are ignored");
 	return res;
 }
 
@@ -610,7 +613,9 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 
 				sql->params = NULL;
 				if (create) {
-					mvc_create_func(sql, sql->session->schema, fname, l, restype, is_aggr, fmod, fnme, q, is_func);
+					sql_func *f = mvc_create_func(sql, sql->session->schema, fname, l, restype, is_aggr, fmod, fnme, q, is_func);
+					if (!backend_resolve_function(sql, f)) 
+						return sql_error(sql, 01, "CREATE %s: external name %s.%s not bound", F, fmod, fnme);
 				} else {
 					sql_func *f = sf->func;
 					f->mod = _strdup(fmod);

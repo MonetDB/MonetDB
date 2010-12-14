@@ -1294,7 +1294,7 @@ rel_named_table_operator(mvc *sql, sql_rel *rel, symbol *query)
 		rel_destroy(sq);
 		return NULL;
 	}
-	backend_create_function(sql, nme, sq, t);
+	backend_create_table_function(sql, nme, sq, t);
 
 	f = SA_NEW(sql->sa, sql_func);
 	base_init(sql->sa, &f->base, store_next_oid(), TR_OLD, nme);

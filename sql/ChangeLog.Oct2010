@@ -1,3 +1,12 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Mon Dec 13 2010 Fabian Groffen <fabian@cwi.nl>
+- Security related fixes to the COPY INTO commands: 1) binary COPY INTO
+  is disallowed for non-administrator users, 2) COPY INTO using a path
+  both for reading and writing is disallowed for non-administrator users,
+  3) paths used with COPY INTO may not be relative, 4) paths used with
+  COPY INTO may not be descendants of the dbfarm directory (where the
+  database files reside) and 5) COPY INTO a file may only be writing to
+  a non-existing file
+

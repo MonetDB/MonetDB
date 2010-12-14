@@ -1555,7 +1555,7 @@ getVarRows(MalBlkPtr mb, int v)
 		return (wrd)p->value.val.lval;
 	if (p->value.vtype == TYPE_int
 #if SIZEOF_BUN <= SIZEOF_INT
-		    && p->value.val.wval <= (int) BUN_MAX
+		    && p->value.val.ival <= (int) BUN_MAX
 #endif
 		)
 		return p->value.val.ival;
