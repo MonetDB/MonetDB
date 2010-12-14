@@ -600,10 +600,12 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, st
 					"COPY INTO from file(s) requires administrator rights, "
 					"use 'COPY INTO \"%s\" FROM STDIN' instead", tname);
 
+#ifdef HAVE_REALPATH
 		if (realpath(GDKgetenv("gdk_dbfarm"), realdbfarm) == NULL) {
 			return sql_error(sql, 02, "COPY INTO: failed to get real path for dbfarm '%s'",
 					GDKgetenv("gdk_dbfarm"));
 		}
+#endif
 
 		for (; n; n = n->next) {
 			char *fname = n->data.sval;
@@ -612,6 +614,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, st
 			if (fname && *fname != '/')
 				return sql_error(sql, 02, "COPY INTO: filename must "
 						"have absolute path: %s", fname);
+#ifdef HAVE_REALPATH
 			if (realpath(fname, realfile) == NULL) {
 				return sql_error(sql, 02, "COPY INTO: failed to get real path for '%s'",
 						fname);
@@ -619,6 +622,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, st
 			if (strncmp(realdbfarm, realfile, strlen(realdbfarm)) == 0)
 				return sql_error(sql, 02, "COPY INTO: file may not "
 						"reside in the server's dbfarm: %s", realfile);
+#endif
 
 			nrel = rel_import(sql, t, tsep, rsep, ssep, ns, fname, nr, offset);
 
@@ -760,13 +764,14 @@ copyto(mvc *sql, symbol *sq, str filename, dlist *seps, str null_string)
 			return sql_error(sql, 02, "COPY INTO: insufficient privileges: "
 					"COPY INTO file requires administrator rights, "
 					"use 'COPY ... INTO STDOUT' instead");
+		if (filename && *filename != '/')
+			return sql_error(sql, 02, "COPY INTO: filename must "
+					"have absolute path: %s", filename);
+#ifdef HAVE_REALPATH
 		if (realpath(GDKgetenv("gdk_dbfarm"), realdbfarm) == NULL) {
 			return sql_error(sql, 02, "COPY INTO: failed to get real path for dbfarm '%s'",
 					GDKgetenv("gdk_dbfarm"));
 		}
-		if (filename && *filename != '/')
-			return sql_error(sql, 02, "COPY INTO: filename must "
-					"have absolute path: %s", filename);
 		if (realpath(filename, realfile) == NULL) {
 			return sql_error(sql, 02, "COPY INTO: failed to get real path for '%s'",
 					filename);
@@ -774,9 +779,10 @@ copyto(mvc *sql, symbol *sq, str filename, dlist *seps, str null_string)
 		if (strncmp(realdbfarm, realfile, strlen(realdbfarm)) == 0)
 			return sql_error(sql, 02, "COPY INTO: file may not "
 					"reside in the server's dbfarm: %s", realfile);
-		if (lstat(realfile, &fs) == 0)
+#endif
+		if (lstat(filename, &fs) == 0)
 			return sql_error(sql, 02, "COPY INTO: file already "
-					"exists: %s", realfile);
+					"exists: %s", filename);
 	}
 
 	return rel_output(r, tsep_e, rsep_e, ssep_e, ns_e, fname_e);
