@@ -573,8 +573,10 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, st
 		return sql_error(sql, 02, "COPY INTO: copy into table '%s' not allowed in readonly mode", tname);
 	if (files) {
 		dnode *n = files->h;
+#ifdef HAVE_REALPATH
 		char realdbfarm[1024];
 		char realfile[1024];
+#endif
 
 		if (sql->user_id != USER_MONETDB)
 			return sql_error(sql, 02, "COPY INTO: insufficient privileges: "
@@ -718,8 +720,10 @@ rel_output(mvc *sql, sql_rel *l, sql_exp *sep, sql_exp *rsep, sql_exp *ssep, sql
 static sql_rel *
 copyto(mvc *sql, symbol *sq, str filename, dlist *seps, str null_string)
 {
+#ifdef HAVE_REALPATH
 	char realdbfarm[1024];
 	char realfile[1024];
+#endif
 	char *tsep = seps->h->data.sval;
 	char *rsep = seps->h->next->data.sval;
 	char *ssep = (seps->h->next->next)?seps->h->next->next->data.sval:"\"";
