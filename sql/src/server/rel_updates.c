@@ -574,8 +574,8 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, st
 	if (files) {
 		dnode *n = files->h;
 #ifdef HAVE_REALPATH
-		char realdbfarm[1024];
-		char realfile[1024];
+		char realdbfarm[PATH_MAX];
+		char realfile[PATH_MAX];
 #endif
 
 		if (sql->user_id != USER_MONETDB)
@@ -594,7 +594,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, st
 			char *fname = n->data.sval;
 			sql_rel *nrel;
 
-			if (fname && *fname != '/')
+			if (fname && !MT_path_absolute(fname))
 				return sql_error(sql, 02, "COPY INTO: filename must "
 						"have absolute path: %s", fname);
 #ifdef HAVE_REALPATH
@@ -721,8 +721,8 @@ static sql_rel *
 copyto(mvc *sql, symbol *sq, str filename, dlist *seps, str null_string)
 {
 #ifdef HAVE_REALPATH
-	char realdbfarm[1024];
-	char realfile[1024];
+	char realdbfarm[PATH_MAX];
+	char realfile[PATH_MAX];
 #endif
 	char *tsep = seps->h->data.sval;
 	char *rsep = seps->h->next->data.sval;
