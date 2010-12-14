@@ -80,8 +80,6 @@ AM_MONETDB_OPTIONS()
 AM_MONETDB_LIBS()
 AM_MONETDB_UTILS()
 
-AC_CHECK_FUNCS([realpath])
-
 req_monetdb5_ver='5.22.0'
 #                 ^^^^^
 # Maintained via vertoo. Please don't modify by hand!
