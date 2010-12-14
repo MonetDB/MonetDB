@@ -573,22 +573,12 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, st
 		return sql_error(sql, 02, "COPY INTO: copy into table '%s' not allowed in readonly mode", tname);
 	if (files) {
 		dnode *n = files->h;
-#ifdef HAVE_REALPATH
-		char realdbfarm[PATH_MAX];
-		char realfile[PATH_MAX];
-#endif
 
 		if (sql->user_id != USER_MONETDB)
 			return sql_error(sql, 02, "COPY INTO: insufficient privileges: "
 					"COPY INTO from file(s) requires administrator rights, "
 					"use 'COPY INTO \"%s\" FROM STDIN' instead", tname);
 
-#ifdef HAVE_REALPATH
-		if (realpath(GDKgetenv("gdk_dbfarm"), realdbfarm) == NULL) {
-			return sql_error(sql, 02, "COPY INTO: failed to get real path for dbfarm '%s'",
-					GDKgetenv("gdk_dbfarm"));
-		}
-#endif
 
 		for (; n; n = n->next) {
 			char *fname = n->data.sval;
@@ -597,15 +587,6 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, st
 			if (fname && !MT_path_absolute(fname))
 				return sql_error(sql, 02, "COPY INTO: filename must "
 						"have absolute path: %s", fname);
-#ifdef HAVE_REALPATH
-			if (realpath(fname, realfile) == NULL) {
-				return sql_error(sql, 02, "COPY INTO: failed to get real path for '%s'",
-						fname);
-			}
-			if (strncmp(realdbfarm, realfile, strlen(realdbfarm)) == 0)
-				return sql_error(sql, 02, "COPY INTO: file may not "
-						"reside in the server's dbfarm: %s", realfile);
-#endif
 
 			nrel = rel_import(sql, t, tsep, rsep, ssep, ns, fname, nr, offset, locked);
 
@@ -720,10 +701,6 @@ rel_output(mvc *sql, sql_rel *l, sql_exp *sep, sql_exp *rsep, sql_exp *ssep, sql
 static sql_rel *
 copyto(mvc *sql, symbol *sq, str filename, dlist *seps, str null_string)
 {
-#ifdef HAVE_REALPATH
-	char realdbfarm[PATH_MAX];
-	char realfile[PATH_MAX];
-#endif
 	char *tsep = seps->h->data.sval;
 	char *rsep = seps->h->next->data.sval;
 	char *ssep = (seps->h->next->next)?seps->h->next->next->data.sval:"\"";
@@ -747,22 +724,9 @@ copyto(mvc *sql, symbol *sq, str filename, dlist *seps, str null_string)
 			return sql_error(sql, 02, "COPY INTO: insufficient privileges: "
 					"COPY INTO file requires administrator rights, "
 					"use 'COPY ... INTO STDOUT' instead");
-		if (filename && *filename != '/')
+		if (filename && !MT_path_absolute(filename))
 			return sql_error(sql, 02, "COPY INTO: filename must "
 					"have absolute path: %s", filename);
-#ifdef HAVE_REALPATH
-		if (realpath(GDKgetenv("gdk_dbfarm"), realdbfarm) == NULL) {
-			return sql_error(sql, 02, "COPY INTO: failed to get real path for dbfarm '%s'",
-					GDKgetenv("gdk_dbfarm"));
-		}
-		if (realpath(filename, realfile) == NULL) {
-			return sql_error(sql, 02, "COPY INTO: failed to get real path for '%s'",
-					filename);
-		}
-		if (strncmp(realdbfarm, realfile, strlen(realdbfarm)) == 0)
-			return sql_error(sql, 02, "COPY INTO: file may not "
-					"reside in the server's dbfarm: %s", realfile);
-#endif
 		if (lstat(filename, &fs) == 0)
 			return sql_error(sql, 02, "COPY INTO: file already "
 					"exists: %s", filename);
