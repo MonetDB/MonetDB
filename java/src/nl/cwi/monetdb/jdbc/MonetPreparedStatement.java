@@ -62,6 +62,8 @@ public class MonetPreparedStatement
 
 	private final String[] values;
 	private final StringBuffer buf;
+	
+	private final MonetConnection connection;
 
 	/* only parse the date patterns once, use multiple times */
 	/** Format of a timestamp with RFC822 time zone */
@@ -117,6 +119,8 @@ public class MonetPreparedStatement
 		values = new String[size];
 		buf = new StringBuffer(6 + 12 * size);
 
+		this.connection = connection;
+
 		// fill the arrays
 		ResultSet rs = super.getResultSet();
 		for (int i = 0; rs.next(); i++) {
@@ -159,6 +163,8 @@ public class MonetPreparedStatement
 		buf = null;
 		id = -1;
 		size = -1;
+
+		this.connection = connection;
 	}
 
 	//== methods interface PreparedStatement
@@ -1320,6 +1326,38 @@ public class MonetPreparedStatement
 	 */
 	public void setURL(int parameterIndex, URL x) throws SQLException {
 		throw new SQLException("Operation currently not supported!");
+	}
+
+	/**
+	 * Releases this PreparedStatement object's database and JDBC
+	 * resources immediately instead of waiting for this to happen when
+	 * it is automatically closed.  It is generally good practice to
+	 * release resources as soon as you are finished with them to avoid
+	 * tying up database resources.
+	 * <br /><br />
+	 * Calling the method close on a PreparedStatement object that is
+	 * already closed has no effect.
+	 * <br /><br />
+	 * <b>Note:</b> A PreparedStatement object is automatically closed
+	 * when it is garbage collected. When a Statement object is closed,
+	 * its current ResultSet object, if one exists, is also closed. 
+	 */
+	public void close() {
+		try {
+			if (!closed && id != -1)
+				connection.sendControlCommand("close " + id);
+		} catch (SQLException e) {
+			// probably server closed connection
+		}
+		super.close();
+	}
+
+	/**
+	 * Call close to release the server-sided handle for this
+	 * PreparedStatement.
+	 */
+	protected void finalize() {
+		close();
 	}
 
 	//== end methods interface PreparedStatement
