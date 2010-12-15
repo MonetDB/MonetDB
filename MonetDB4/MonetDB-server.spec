@@ -1,5 +1,5 @@
 %define name MonetDB4-server
-%define version 4.40.2
+%define version 4.40.3
 %{!?buildno: %define buildno %(date +%Y%m%d)}
 %define release %{buildno}%{?dist}%{?oid32:.oid32}%{!?oid32:.oid%{bits}}
 
