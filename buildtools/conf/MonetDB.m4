@@ -1797,9 +1797,14 @@ if test "x$enable_optim" = xyes; then
   elif test "x$enable_instrument" = xyes; then
     AC_MSG_ERROR([combining --enable-optimize and --enable-instrument is not (yet?) possible.])
   else
-    dnl  remove "-g" as some compilers don't like "-g -Ox" combinations
+    dnl  prepare
     CFLAGS=" $CFLAGS "
-    CFLAGS="`echo "$CFLAGS" | sed -e 's| -g | |g' -e 's|^ ||' -e 's| $||'`"
+    dnl  remove "-g" as some compilers don't like "-g -Ox" combinations
+    CFLAGS="`echo "$CFLAGS" | sed -e 's| -g | |g'`"
+    dnl  remove default "-O2" as we add "-Ox"
+    CFLAGS="`echo "$CFLAGS" | sed -e 's| -O2 | |g'`"
+    dnl  clean-up
+    CFLAGS="`echo "$CFLAGS" | sed -e 's|^ ||' -e 's| $||'`"
     JAVACFLAGS=" $JAVACFLAGS "
     JAVACFLAGS="`echo "$JAVACFLAGS" | sed -e 's| -g | |g' -e 's| -g:[[a-z]]* | |g' -e 's|^ ||' -e 's| $||'`"
     dnl  Optimization flags
@@ -1881,7 +1886,8 @@ if test "x$enable_optim" = xyes; then
       *aix*-)          CFLAGS="$CFLAGS -O3"
                        NO_INLINE_CFLAGS="$NO_INLINE_CFLAGS -qnooptimize"
                        ;;
-      *-*-*-)          ;;
+      *-*-*-)          CFLAGS="$CFLAGS -O2"
+                       ;;
 
       dnl  With icc-8.*, Interprocedural (IP) Optimization does not seem to work with MonetDB:
       dnl  With "-ipo -ipo_obj", pass-through linker options ("-Wl,...") are not handled correctly,
