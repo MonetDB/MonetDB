@@ -1,3 +1,22 @@
+monetdb-client (1.40.3-20101215) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 15 Dec 2010 09:39:11 +0100
+
+monetdb-client (1.40.3-20101215) unstable; urgency=low
+
+  * Workaround usage of strncat to solve mclient/mapilib aborts from
+    bug #2725
+
+ -- Fabian Groffen <fabian@cwi.nl>  Fri, 19 Nov 2010 09:39:10 +0100
+
+monetdb-client (1.40.3-20101215) unstable; urgency=low
+
+  * Fixed a corner case in the table display code.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 12 Nov 2010 09:39:10 +0100
+
 monetdb-client (1.40.1-20101110) unstable; urgency=low
 
   * Rebuilt.

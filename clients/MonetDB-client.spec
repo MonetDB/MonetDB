@@ -26,7 +26,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 URL: http://monetdb.cwi.nl/
-Source: http://dev.monetdb.org/downloads/sources/Oct2010/MonetDB-client-%{version}.tar.gz
+Source: http://dev.monetdb.org/downloads/sources/Oct2010-SP1/MonetDB-client-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
 Requires: MonetDB >= 1.40
@@ -303,6 +303,16 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/MonetDB/Tests/*
 
 %changelog
+* Wed Dec 15 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.40.3-20101215
+- Rebuilt.
+
+* Fri Nov 19 2010 Fabian Groffen <fabian@cwi.nl> - 1.40.3-20101215
+- Workaround usage of strncat to solve mclient/mapilib aborts from
+  bug #2725
+
+* Fri Nov 12 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.40.3-20101215
+- Fixed a corner case in the table display code.
+
 * Wed Nov 10 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.40.1-20101110
 - Rebuilt.
 
