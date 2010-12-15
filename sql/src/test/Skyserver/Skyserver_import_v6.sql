@@ -1,3 +1,5 @@
+SET SCHEMA "skyserver";
+
 COPY 88 RECORDS INTO Ap7Mag FROM 'DATA_DIR/Ap7Mag.dat.bz2' USING DELIMITERS '\t', '\n','"' NULL as 'NULL';
 COPY 111 RECORDS INTO Chunk FROM 'DATA_DIR/Chunk.dat.bz2' USING DELIMITERS '\t', '\n','"' NULL as 'NULL';
 COPY 339 RECORDS INTO DataConstants FROM 'DATA_DIR/DataConstants.dat.bz2' USING DELIMITERS '\t', '\n','"' NULL as 'NULL';

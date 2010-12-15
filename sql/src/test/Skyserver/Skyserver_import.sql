@@ -1,3 +1,4 @@
+SET SCHEMA "skyserver";
 
 COPY 25000 RECORDS INTO RC3 FROM 'DATA/RC3.dat.bz2' USING DELIMITERS '\t', '\015\n', '"';
 
