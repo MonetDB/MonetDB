@@ -1345,7 +1345,7 @@ public class MonetPreparedStatement
 	public void close() {
 		try {
 			if (!closed && id != -1)
-				connection.sendControlCommand("close " + id);
+				connection.sendControlCommand("release " + id);
 		} catch (SQLException e) {
 			// probably server closed connection
 		}
