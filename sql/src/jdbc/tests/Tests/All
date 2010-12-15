@@ -5,7 +5,6 @@ HAVE_JDBCTESTS?Test_Creplysize
 HAVE_JDBCTESTS?Test_Csavepoints
 HAVE_JDBCTESTS?Test_Ctransaction
 HAVE_JDBCTESTS?Test_PSgeneratedkeys
-HAVE_JDBCTESTS?Test_PSlargeamount
 HAVE_JDBCTESTS?Test_PStimedate
 HAVE_JDBCTESTS?Test_PStimezone
 HAVE_JDBCTESTS?Test_PStypes

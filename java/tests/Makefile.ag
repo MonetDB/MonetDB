@@ -23,8 +23,6 @@ EXTRA_DIST = \
 		Test_Csavepoints.java \
 		Test_Ctransaction.java \
 		Test_PSgeneratedkeys.java \
-		Test_PSlargeresponse.java \
-		Test_PSlargeamount.java \
 		Test_PStimedate.java \
 		Test_PStimezone.java \
 		Test_PStypes.java \
