@@ -1204,8 +1204,13 @@ SQLparser(Client c)
 
 			v = (int) strtol(in->buf+in->pos+6,NULL,0);
  			t = res_tables_find(m->results, v);
-			if (t)
+			if (t) {
+				cq *q = NULL;
+
+				if (t->query_type == Q_PREPARE && (q = qc_find(m->qc, t->cur_col)) != NULL) 
+					qc_delete(m->qc, q);
 				m->results = res_tables_remove(m->results, t);
+			}
 			in->pos = in->len;	/* HACK: should use parsed lenght */
 			return NULL;
 		}
@@ -1320,8 +1325,14 @@ produce code.
 					  (m->emode == m_prepare)?Q_PREPARE:
 					  m->type,/* the type of the statement */
 					  sql_escape_str(QUERY(m->scanner)));
-
 			scanner_query_processed(&(m->scanner));
+			/* keep prepared statements in list of results, such
+			   that Xclose statements can clean them up */
+			if (be->q->type == Q_PREPARE) {
+				res_table *t = res_table_create(m->session->tr, m->result_id++, 0, Q_PREPARE, m->results, NULL);
+				m->results = t;
+				t->cur_col = be->q->id;
+			}
 			be->q->code = 
 				(backend_code)backend_dumpproc(be, c, be->q, s);
 			be->q->stk = 0;
