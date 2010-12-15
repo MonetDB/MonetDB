@@ -2914,6 +2914,7 @@ BATsetprop(BAT *b, int idx, int type, void *v)
 	if (!p && (p = (PROPrec *) GDKmalloc(sizeof(PROPrec))) != NULL) {
 		p->id = idx;
 		p->next = b->T->props;
+		p->v.vtype = 0;
 		b->T->props = p;
 	}
 	if (p) {

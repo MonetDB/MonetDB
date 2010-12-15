@@ -100,6 +100,7 @@ constantAtom(backend *sql, MalBlkPtr mb, atom *a)
 	ValRecord cst;
 
 	(void) sql;
+	cst.vtype = 0;
 	VALcopy(&cst,vr);
 	idx = defConstant(mb, vr->vtype, &cst);
 	return idx;

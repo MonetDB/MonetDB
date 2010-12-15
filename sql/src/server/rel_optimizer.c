@@ -495,9 +495,9 @@ find_basetable( sql_rel *r)
 }
 
 list *
-order_join_expressions(list *dje, list *rels)
+order_join_expressions(sql_allocator *sa, list *dje, list *rels)
 {
-	list *res = list_create(dje->destroy);
+	list *res = list_new(sa);
 	node *n = NULL;
 	int i, j, *keys, *pos, cnt = list_length(dje);
 
@@ -530,7 +530,7 @@ order_join_expressions(list *dje, list *rels)
 }
 
 static list *
-find_fk(list *rels, list *exps) 
+find_fk(sql_allocator *sa, list *rels, list *exps) 
 {
 	node *djn;
 	list *sdje, *aje, *dje;
@@ -599,7 +599,7 @@ find_fk(list *rels, list *exps)
 	}
 
 	/* sort expressions on weighted number of reducing operators */
-	sdje = order_join_expressions(dje, rels);
+	sdje = order_join_expressions(sa, dje, rels);
 	return sdje;
 }
 
@@ -613,7 +613,7 @@ order_joins(mvc *sql, list *rels, list *exps)
 	int fnd = 0;
 
 	/* find foreign keys and reorder the expressions on reducing quality */
-	sdje = find_fk(rels, exps);
+	sdje = find_fk(sql->sa, rels, exps);
 
 	/* open problem, some expressions use more then 2 relations */
 	/* For example a.x = b.y * c.z; */
@@ -828,7 +828,7 @@ reorder_join(mvc *sql, sql_rel *rel)
 		list_append(rels, rel->l);
 		list_append(rels, rel->r);
 		cnt = list_length(exps);
-		rel->exps = find_fk(rels, exps);
+		rel->exps = find_fk(sql->sa, rels, exps);
 		if (list_length(rel->exps) != cnt) {
 			rel->exps = list_dup(exps, (fdup)NULL);
 		}

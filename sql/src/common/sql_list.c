@@ -55,6 +55,17 @@ list_new(sql_allocator *sa)
 	return l;
 }
 
+static list *
+list_new_(list *l) 
+{
+	list *res = NULL;
+	if (l->sa) 
+		res = list_new(l->sa);
+	else
+		res = list_create(l->destroy);
+	return res;
+}
+
 int
 list_empty(list *l)
 {
@@ -270,7 +281,7 @@ list_match(list *l1, list *l2, fcmp cmp)
 list *
 list_keysort(list *l, int *keys, fdup dup)
 {
-	list *res = list_create(l->destroy);
+	list *res = list_new_(l);
 	node *n = NULL;
 	int i, j, *pos, cnt = list_length(l);
 
@@ -291,7 +302,7 @@ list_keysort(list *l, int *keys, fdup dup)
 list *
 list_sort(list *l, fkeyvalue key, fdup dup)
 {
-	list *res = list_create(l->destroy);
+	list *res = list_new_(l);
 	node *n = NULL;
 	int i, j, *keys, *pos, cnt = list_length(l);
 
@@ -318,10 +329,7 @@ list_select(list *l, void *key, fcmp cmp, fdup dup)
 	node *n = NULL;
 
 	if (key && l) {
-		if (l->sa)
-			res = list_new(l->sa);
-		else
-			res = list_create(l->destroy);
+		res = list_new_(l);
 		for (n = l->h; n; n = n->next) 
 			if (cmp(n->data, key) == 0) 
 				list_append(res, dup?dup(n->data):n->data);
@@ -333,7 +341,7 @@ list_select(list *l, void *key, fcmp cmp, fdup dup)
 list * 
 list_order(list *l, fcmp cmp, fdup dup)
 {
-	list *res = list_create(l->destroy);
+	list *res = list_new_(l);
 	node *m, *n = NULL;
 
 	/* use simple insert sort */
@@ -354,7 +362,7 @@ list_order(list *l, fcmp cmp, fdup dup)
 list *
 list_distinct(list *l, fcmp cmp, fdup dup)
 {
-	list *res = list_create(l->destroy);
+	list *res = list_new_(l);
 	node *n = NULL;
 
 	for (n = l->h; n; n = n->next) {
@@ -407,7 +415,7 @@ list_fetch(list *l, int pos)
 list *
 list_distinct2(list *l, void *data, fcmp2 cmp, fdup dup)
 {
-	list *res = list_create(l->destroy);
+	list *res = list_new_(l);
 	node *n = NULL;
 
 	for (n = l->h; n; n = n->next) {
@@ -451,7 +459,7 @@ list_reduce2(list *l, freduce2 red, sql_allocator *sa)
 list *
 list_map(list *l, void *data, fmap map)
 {
-	list *res = list_create(l->destroy);
+	list *res = list_new_(l);
 
 	node *n = l->h;
 
@@ -505,11 +513,7 @@ list_merge_destroy(list *l, list *data, fdup dup)
 list *
 list_dup(list *l, fdup dup)
 {
-	list *res = NULL;
-	if (l->sa) 
-		res = list_new(l->sa);
-	else
-		res = list_create(l->destroy);
+	list *res = list_new_(l);
 	return list_merge(res, l, dup);
 }
 

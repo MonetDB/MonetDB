@@ -419,6 +419,7 @@ depositBox(Box box, str name, int type, ValPtr val)
 		chkStack(box->val, i);
 	}
 	v = &box->val->stk[i];
+	VALclear(v);
 	box->val->stktop++;
 	VALcopy(v, val);
 	box->dirty= TRUE;

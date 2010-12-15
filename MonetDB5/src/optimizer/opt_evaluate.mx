@@ -199,6 +199,8 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			}
 			if (msg == MAL_SUCCEED) {
 				ValRecord cst;
+
+				cst.vtype = 0;
 				VALcopy(&cst, &env->stk[getArg(p, 0)]);
 				/* You may not overwrite constants.  They may be used by
 				 * other instructions */
