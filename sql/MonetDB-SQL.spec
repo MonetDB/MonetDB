@@ -26,7 +26,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 URL: http://monetdb.cwi.nl/
-Source: http://dev.monetdb.org/downloads/sources/Oct2010/MonetDB-SQL-%{version}.tar.gz
+Source: http://dev.monetdb.org/downloads/sources/Oct2010-SP1/MonetDB-SQL-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
 BuildRequires: e2fsprogs-devel
@@ -159,6 +159,20 @@ rm -rf $RPM_BUILD_ROOT
 %{_includedir}/MonetDB5/sql/*.h
 
 %changelog
+* Wed Dec 15 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.40.3-20101215
+- Rebuilt.
+
+* Mon Dec 13 2010 Fabian Groffen <fabian@cwi.nl> - 2.40.3-20101215
+- Security related fixes to the COPY INTO commands: 1) binary COPY INTO
+  is disallowed for non-administrator users, 2) COPY INTO using a path
+  both for reading and writing is disallowed for non-administrator users,
+  3) paths used with COPY INTO may not be relative, and 4) COPY INTO a
+  file may only be writing to a non-existing file
+
+* Wed Nov 17 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.40.3-20101215
+- Fixed off-by-one error when abbreviating long database names in the
+  monetdb status command.
+
 * Wed Nov 10 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.40.1-20101110
 - Rebuilt.
 

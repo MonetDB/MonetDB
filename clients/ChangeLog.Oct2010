@@ -1,10 +1,3 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
-* Fri Nov 19 2010 Fabian Groffen <fabian@cwi.nl>
-- Workaround usage of strncat to solve mclient/mapilib aborts from
-  bug #2725
-
-* Fri Nov 12 2010 Sjoerd Mullender <sjoerd@acm.org>
-- Fixed a corner case in the table display code.
-

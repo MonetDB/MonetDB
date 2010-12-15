@@ -1,7 +1,3 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
-* Wed Nov 17 2010 Sjoerd Mullender <sjoerd@acm.org>
-- Fixed off-by-one error when abbreviating long database names in the
-  monetdb status command.
-

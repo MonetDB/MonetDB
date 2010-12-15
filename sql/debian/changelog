@@ -1,3 +1,26 @@
+monetdb-sql (2.40.3-20101215) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 15 Dec 2010 09:39:12 +0100
+
+monetdb-sql (2.40.3-20101215) unstable; urgency=low
+
+  * Security related fixes to the COPY INTO commands: 1) binary COPY INTO
+    is disallowed for non-administrator users, 2) COPY INTO using a path
+    both for reading and writing is disallowed for non-administrator users,
+    3) paths used with COPY INTO may not be relative, and 4) COPY INTO a
+    file may only be writing to a non-existing file
+
+ -- Fabian Groffen <fabian@cwi.nl>  Mon, 13 Dec 2010 09:39:11 +0100
+
+monetdb-sql (2.40.3-20101215) unstable; urgency=low
+
+  * Fixed off-by-one error when abbreviating long database names in the
+    monetdb status command.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 17 Nov 2010 09:39:11 +0100
+
 monetdb-sql (2.40.1-20101110) unstable; urgency=low
 
   * Rebuilt.
