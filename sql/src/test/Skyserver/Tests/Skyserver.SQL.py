@@ -25,7 +25,7 @@ def main():
     out,err = clt1.communicate()
     sys.stdout.write(out)
     sys.stderr.write(err)
-    clt1 = process.client('sql', user = user, passwd = passwd, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
+    clt1 = process.client('sql', user = 'monetdb', passwd = 'monetdb', stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
     sql = open(os.path.join(dir, os.pardir, 'Skyserver_import.sql')).read().replace('DATA',os.path.join(dir,os.pardir,'microsky').replace('\\','\\\\'))
     out,err = clt1.communicate(sql)
     sys.stdout.write(out)
