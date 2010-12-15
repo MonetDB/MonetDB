@@ -1411,6 +1411,10 @@ AC_DEFUN([AM_MONETDB_PROG_PERL],[
 					AC_MSG_ERROR([Must specify --with-perl-incdir --with-perl-libdir --with-perl-library when cross compiling])
 				fi
 				PERL_LIBS=`"$PERL" -MConfig -e 'print "$Config{archlib}/CORE"' 2>/dev/null`
+				dnl  HACK(?) to find & use proper 32-bit libperl on 64-bit system (with default 64-bit perl)
+				if test "$bits" = "32" ; then
+					PERL_LIBS=`echo "$PERL_LIBS" | sed 's|/lib64/|/lib/|' 2>/dev/null`
+				fi
 				;;
 			no)	;;
 			*)
