@@ -59,7 +59,7 @@ public class MonetStatement implements Statement {
 	/** The warnings this Statement object generated */
 	private SQLWarning warnings;
 	/** Whether this Statement object is closed or not */
-	protected boolean closed;
+	private boolean closed;
 	/** The size of the blocks of results to ask for at the server */
 	private int fetchSize = 0;
 	/** The maximum number of rows to return in a ResultSet */
