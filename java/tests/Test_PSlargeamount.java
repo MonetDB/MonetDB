@@ -29,17 +29,12 @@ public class Test_PSlargeamount {
 		Connection con = DriverManager.getConnection(args[0]);
 		Statement stmt = con.createStatement();
 		PreparedStatement pstmt;
-		// retrieve this to simulate a bug report
-		DatabaseMetaData dbmd = con.getMetaData();
 
 		// >> true: auto commit should be on
 		System.out.println("0. true\t" + con.getAutoCommit());
 
 		try {
-			System.out.print("1. DatabaseMetadata environment retrieval... ");
-			System.out.println(dbmd.getURL());
-
-			System.out.println("2. Preparing and executing a unique statement");
+			System.out.println("1. Preparing and executing a unique statement");
 			for (int i = 0; i < 100000; i++) {
 				pstmt = con.prepareStatement("select " + i + ", " + i + " = ?");
 				pstmt.setInt(1, i);
