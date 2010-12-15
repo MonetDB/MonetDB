@@ -33,7 +33,8 @@ Ready.
 # 10:38:37 >  
 
 0. true	true
-1. Preparing and executing a unique statement
+1. DatabaseMetadata environment retrieval... jdbc:monetdb://localhost:39530/mTests_src_jdbc_tests
+2. Preparing and executing a unique statement
 0, true
 1000, true
 2000, true
