@@ -3065,6 +3065,7 @@ def main(argv) :
         vars = vars + [ 'MILCLIENT', 'MALCLIENT', 'SQLCLIENT', 'SQLDUMP', 'XQUERYCLIENT']    #, 'MONETDB_MOD_PATH' ]
 
     env = {}
+    env['DIRSEP'] = os.sep
 
     # most intuitive (?) default settings
     dft['TSTSRCBASE']     = "GetMonetConfig(par['PACKAGE'],'--source')"
