@@ -69,6 +69,7 @@ static struct option long_options[] = {
     { "format",              required_argument, NULL, 'F' },
     { "attributes-separate", no_argument,       NULL, 'a' },
     { "doc-name",            required_argument, NULL, 'd' },
+    { "no-quote-escape",     no_argument,       NULL, 'e' },
     { "in-file",             required_argument, NULL, 'f' },
     { "help",                no_argument,       NULL, 'h' },
     { "names-inline",        no_argument,       NULL, 'n' },
@@ -76,6 +77,7 @@ static struct option long_options[] = {
     { "quiet",               no_argument,       NULL, 'q' },
     { "strip-values",        required_argument, NULL, 's' },
     { "table",               no_argument,       NULL, 't' },
+    { "x100-format",         no_argument,       NULL, 'x' },
     { NULL,                  no_argument,       NULL, 0   }
 };
 /* also see definition of OPT_STRING below */
@@ -138,12 +140,12 @@ static const char
 
 #endif
 
-#define OPT_STRING "F:ad:f:hno:qs:t"
+#define OPT_STRING "F:ad:ef:hno:qs:tx"
                                   
 /** 
  * Default format (for SQL-based XQuery processing)
  */
-#define SQL_FORMAT "%e, %s, %l, %k, %n, %t, %g, %u"
+#define SQL_FORMAT "%e, %s, %l, %k, %n, \"%t\", %g, %u"
 
 /* print help message */
 static void
@@ -169,13 +171,17 @@ print_help (char *progname)
             "\t%%E: node preorder rank in stretched pre/post plane\n"
             "\t%%O: node postorder rank in stretched pre/post plane\n"
             "\t%%h: node ORDPATH label as required by SQL SERVERs hierarchyid type\n"
+            "\t%%r: preorder rank of the document root node\n"
             "\t%%s: size of subtree below node\n"
             "\t%%l: length of path from root to node (level)\n"
             "\t%%k: node kind\n"
             "\t%%p: preorder rank of parent node\n"
             "\t%%P: preorder rank of parent node in stretched pre/post plane\n"
-            "\t%%n: element/attribute localname\n"
-            "\t%%u: element/attribute namespace URI\n"
+            "\t%%X: element/attribute namespace prefix (string)\n"
+            "\t%%n: element/attribute localname id\n"
+            "\t%%N: element/attribute localname (string)\n"
+            "\t%%u: element/attribute namespace URI id\n"
+            "\t%%U: element/attribute namespace URI (string)\n"
             "\t%%t: text node content\n"
             "\t%%d: text node content stored as number (if possible)\n"
             "\t%%g: guide node for node (also writes dataguide to file PREFIX_guide.xml)\n",
@@ -188,12 +194,17 @@ print_help (char *progname)
             long_option (opt_buf, ", --%s", 'n'));
     printf ("  -h%s: print this help message\n",
             long_option (opt_buf, ", --%s", 'h'));
-    printf ("  -s n%s: strip values to n characters\n",
+    printf ("  -s n%s: strip values to n characters (default);\n"
+            "\tset n to 0 to disable value stripping.\n",
             long_option (opt_buf, ", --%s=n", 's'));
+    printf ("  -e%s: do not escape quote characters in text content (default: escape quotes)\n",
+            long_option (opt_buf, ", --%s", 'e'));
     printf ("  -t%s: interpret input as table of document references\n",
             long_option (opt_buf, ", --%s", 't'));
     printf ("  -q%s: don't report warnings\n",
             long_option (opt_buf, ", --%s", 'q'));
+    printf ("  -x%s: generate output to be consumed by X100\n",
+            long_option (opt_buf, ", --%s", 'x'));
 }
 
 #define MAIN_EXIT(rtn)                                  \
@@ -229,6 +240,7 @@ main (int argc, char **argv)
     status.infile = NULL;
     status.outfile = NULL;
     status.statistics = true;
+    status.escape_quotes = true;
     status.names_separate = true;
     status.attributes_separate = false;
     status.quiet = false;
@@ -285,12 +297,23 @@ main (int argc, char **argv)
                 if (!sscanf (optarg, "%u", &status.strip_values))
                     SHoops (SH_FATAL, "option -s requires numeric argument\n");
                 break;
+            case 'e':
+                status.escape_quotes = false;
+                break;
             case 't':
                 status.table = true;
                 break;
             case 'h':
                 print_help (progname);
                 exit (0);
+            case 'x':
+                free (status.format);
+                status.format = strdup ("%r|%%%e|%%%g|%%%s|%%%l|%%%k|%%%u|%%%n|%%%X|%%%U|%%%N|%%%t|%%%d%%|");
+                status.statistics = true;
+                /* no string escaping and no value stripping */
+                status.escape_quotes = false;
+                status.strip_values = 0; 
+                break;
             default:
                 SHoops (SH_FATAL, "try `%s -h'\n", progname);
         }
