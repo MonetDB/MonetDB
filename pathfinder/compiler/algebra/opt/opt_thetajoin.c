@@ -413,7 +413,7 @@ modify_binary_op (PFla_op_t *p,
  * operator eventually collects other predicates and thus
  * becomes more selective.
  */
-static bool do_opt_mvd (PFla_op_t *p, bool modified);
+static bool do_opt_mvd (PFla_op_t *p);
 
 static bool
 opt_mvd (PFla_op_t *p)
@@ -434,12 +434,14 @@ opt_mvd (PFla_op_t *p)
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
         modified = opt_mvd (p->child[i]) || modified;
 
-    return do_opt_mvd (p, modified);
+    return do_opt_mvd (p) || modified;
 }
 
 static bool
-do_opt_mvd (PFla_op_t *p, bool modified)
+do_opt_mvd (PFla_op_t *p)
 {
+    bool modified = false;
+
     unsigned i, j;
 
     /**
@@ -641,13 +643,13 @@ do_opt_mvd (PFla_op_t *p, bool modified)
                                 continue;
                             }
                         } else {
-                            /* check if the result is used with two different names */
-                            for (; j < p->sem.proj.count; j++)
-                                conflict |= (RES_AT (pred, i) ==
-                                             p->sem.proj.items[j].old);
-
                             /* update the column name of the result column */
                             RES_AT (pred, i) = p->sem.proj.items[j].new;
+
+                            /* check if the result is used with two different names */
+                            for (j++; j < p->sem.proj.count; j++)
+                                conflict |= (RES_AT (pred, i) ==
+                                             p->sem.proj.items[j].old);
                         }
                     }
 
