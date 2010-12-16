@@ -188,6 +188,9 @@ main(int argc, char **argv)
 		case 'D':
 			describe = 1;
 			break;
+		case 'N':
+			useinserts = 1;
+			break;
 		case 'f':
 			functions = 1;
 			break;
