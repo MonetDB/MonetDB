@@ -1,12 +1,11 @@
 -- this schema is intended to experiment with accessing mseed files
-drop FUNCTION mseedImport();
+drop PROCEDURE mseedImport();
 drop table mseedCatalog;
 drop table mseedRepository;
 
 -- all records in the mseed files correspond to a row in the catalog
 CREATE TABLE mseedCatalog (
 mseed			int, 			-- Vault file id
-chunk			varchar(255),	-- SQL volumn storage container name
 seqno			int,			-- SEED record sequence number, should be between 0 and 999999
 		 PRIMARY KEY (mseed,seqno),
 dataquality 	char,			-- Data record indicator, should be 'D=data unknown qual', 
@@ -25,17 +24,12 @@ maxval			float
 
 -- this function inserts the mseed record information into the catalog
 -- errors are returned for off-line analysis.
-CREATE FUNCTION mseedImport(vid int)
-	RETURNS string
+CREATE PROCEDURE mseedimport(vid int, source string, target string) 
 EXTERNAL NAME mseed.import;
 
--- mseed data volumns may appear in different formats
--- we try to postpone them, assuming the optimizer can guide JIT.
---CREATE TABLE chunkname (
+-- The records are collected in SQL tables of the following structure
+-- The are ordered on timestamp
+--CREATE TABLE chunk<mseed> (
 --time	timestamp,
---mseed	int,
---adata	varchar(20),	dependent on type
---idata	int,
---fdata	float,
---ddata	double
+--data	int (or float,double,varchar(20),	dependent on type
 --); 

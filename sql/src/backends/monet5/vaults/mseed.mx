@@ -35,7 +35,6 @@ drop table mseedRepository;
 -- all records in the mseed files correspond to a row in the catalog
 CREATE TABLE mseedCatalog (
 mseed			int, 			-- Vault file id
-chunk			varchar(255),	-- SQL volumn storage container name
 seqno			int,			-- SEED record sequence number, should be between 0 and 999999
 		 PRIMARY KEY (mseed,seqno),
 dataquality 	char,			-- Data record indicator, should be 'D=data unknown qual', 
@@ -54,19 +53,14 @@ maxval			float
 
 -- this function inserts the mseed record information into the catalog
 -- errors are returned for off-line analysis.
-CREATE FUNCTION mseedImport(vid int, source string, target string)
-	RETURNS string
+CREATE PROCEDURE mseedImport(vid int, source string, target string)
 EXTERNAL NAME mseed.import;
 
--- mseed data volumns may appear in different formats
--- we try to postpone them, assuming the optimizer can guide JIT.
---CREATE TABLE chunkname (
+-- The records are collected in SQL tables of the following structure
+-- The are ordered on timestamp
+--CREATE TABLE chunk<mseed> (
 --time	timestamp,
---mseed	int,
---adata	varchar(20),	dependent on type
---idata	int,
---fdata	float,
---ddata	double
+--data	int (or float,double,varchar(20),	dependent on type
 --); 
 @end verbatim
 
@@ -83,27 +77,40 @@ A test sequence (after the vault director has been populated)
 @begin verbatim
 create table batch(vid int, source string, target string);
 
-
 insert into batch
 select vid, source, target from vault where created is null limit 2;
-call batchload( select vid, source, target from vault where created is null limit 2);
+call mseedImport( (select vid, source, target from vault where created is null limit 2) );
 drop table batch;
 @end verbatim
 
 @mal
 module mseed;
-pattern import(vid:int, source:str, target:str):str
+pattern import{unsafe}(vid:int, source:str, target:str)
 address MseedImport
 comment "Dump the record content of an mseed file from the vault into the mseed catalog";
 
-@-
-The intended use is to simply rely on SQL to select elements
-in the vault table for import and to apply the mseed import operation.
-It returns the id list of succesful imports.
-@verbatim
-select mseedImport(vid,source,target) from vault where ...
-@end verbatim
 @{
+@-
+Performance experimentation on eir on 17 dec 2010.
+The code base uses the SQLstatementIntern to populate both the catalog and the mseed files.
+Experiment 0 concerns loading the mseedN file using a sequence of inserts. This involves
+the complete code path from generating SQL statement, parsing, optimization and execution.
+No query caching is enabled. The first record from
+ftp://www.orfeus-eu.org/pub/data/POND/1990/002/MN_BNI__BHN.1990.002.20.21.32.mseed
+with 3768 events was loaded in 10.770 msec
+
+The second experiment produced a copy file, separately loaded into MonetDB using
+copy 400000 records into mseed2 from '/tmp/input/' delimiters ',','\n';
+this track leads to a load time of 326ms for the first record.
+The first file with 26 records and 97592 tuples was loaded this way within 8710 msec.
+This approach still uses the SQL logger. The expected speedup for direct update would
+be something like a factor 3.
+
+The third experiment produced the single binary BAT images followed by
+copy into mseed2 from ('/tmp/time','/tmp/data');
+Attach procedure for complete file ran in about 232 ms.
+
+
 @h
 #ifndef _MSEED_H
 #define _MSEED_H
@@ -134,16 +141,20 @@ vault_export str MseedImport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 @c
 #include "mseed.h"
 #include "vault.h"
+
+#define EXPERIMENT0 0
+#define EXPERIMENT1 0
+#define EXPERIMENT2 2
+
 str SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output);
 
-#define QRYinsert "INSERT INTO mseedCatalog(mseed, seqno, dataquality, network, \
-	 station, location, channel, starttime , samplerate, samplecnt, sampletype) \
-	 VALUES(%d, %d,'%c','%s', '%s','%s','%s','%s',%f,%d,%s);"
+#define QRYinsertI "INSERT INTO mseedCatalog(mseed, seqno, dataquality, network, \
+	 station, location, channel, starttime , samplerate, samplecnt, sampletype, minval,maxval) \
+	 VALUES(%d, %d,'%c','%s', '%s','%s','%s','%s',%f,%d,%s,%d,%d);"
 
 str
 MseedImport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str *ret = (str*) getArgReference(stk,pci,0); 
 	str msg = MAL_SUCCEED;
 	int *vid = (int*) getArgReference(stk,pci,1); 
 	str *sourcefile = (str*) getArgReference(stk,pci,2); 
@@ -167,20 +178,22 @@ MseedImport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char starttime[BUFSIZ];
 	char stoptime[BUFSIZ];
 	int stepsize;
+	int imin,imax;
+	int nobat=0;
+	FILE *data=0, *time=0;
 
 	(void) mb;
 
 	if ( strcmp(*sourcefile, *targetfile) ) {
 		if ( vaultpath[0] == 0){
 			msg= createException(MAL,"mseed.dump","Vault not initialized");
-			*ret = GDKstrdup(msg);
 			return msg;
 		}
 		snprintf(file,BUFSIZ,"%s%c%s",vaultpath, DIR_SEP,*targetfile);
 
 		/* only fetch the file if it is not already in the local vault */
 		if ( access(file, R_OK) ){
-			mnstr_printf(cntxt->fdout, "FTP fetch %s -> %s\n",*sourcefile,file);
+			mnstr_printf(cntxt->fdout, "#FTP fetch %s -> %s\n",*sourcefile,file);
 			msg= VLTimport(&answ, sourcefile, targetfile);
 			if ( msg)
 				return msg;
@@ -197,7 +210,7 @@ MseedImport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* Loop over the input file */
 	s= buf;
-	while ( (retcode = ms_readmsr (&msr, file, reclen, NULL, NULL, 1, dataflag, verbose)) == MS_NOERROR )
+	while ( (retcode = ms_readmsr (&msr, file, reclen, NULL, NULL, 1, dataflag, verbose)) == MS_NOERROR  )
 	{
 		totalrecs++;
 		totalsamps += msr->samplecnt;
@@ -209,14 +222,91 @@ MseedImport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		switch(msr->sampletype){
 			case 'a': kind="'string'"; break;
-			case 'i': kind="'int'"; break;
+			case 'i': kind="'int'"; imin= int_nil; imax= int_nil; break;
 			case 'f': kind="'flt'"; break;
 			case 'd': kind="'dbl'"; break;
 			default : kind="null";
 		}
-		snprintf(buf,BUFSIZ,QRYinsert, *vid, msr->sequence_number,msr->dataquality,msr->network, msr->station, msr->location, msr->channel,
-		starttime,msr->samprate, msr->samplecnt,kind);
-		printf("%s\n",buf);
+		if ( nobat==0 ){
+			snprintf(buf,BUFSIZ,"CREATE TABLE sys.mseed%d(time timestamp, data int);",*vid);
+			msg =SQLstatementIntern(cntxt,&s,"mseed.import file",TRUE,FALSE);
+			if ( msg)
+				return msg;
+		}
+		if ( EXPERIMENT1 )
+			data = fopen("/tmp/data","w");
+		if ( EXPERIMENT2  && nobat == 0){
+			snprintf(buf, BUFSIZ, "%s/time",vaultpath);
+			time = fopen(buf,"w");
+			if ( time == 0)
+				throw(MAL,"mseed.import",RUNTIME_CREATE_ERROR);
+			snprintf(buf, BUFSIZ, "%s/data",vaultpath);
+			data = fopen(buf,"w");
+			if ( data == 0)
+				throw(MAL,"mseed.import",RUNTIME_CREATE_ERROR);
+		}
+		nobat++;
+
+		if (msr->datasamples)
+		for ( j=0;j< msr->samplecnt; j++){
+			t= MS_HPTIME2EPOCH(msr->starttime);
+			tm = gmtime(&t);
+			snprintf(stoptime,BUFSIZ,"%d-%02d-%02d %02d:%02d:%02d.%06ld", tm->tm_year +(tm->tm_year > 80?1900:2000), tm->tm_mon+1,tm->tm_mday, tm->tm_hour, tm->tm_min,tm->tm_sec, msr->starttime % HPTMODULUS);
+			msr->starttime += stepsize;
+			switch(msr->sampletype){
+			case 'a':
+				if ( EXPERIMENT0 )
+					snprintf(buf,BUFSIZ, "INSERT INTO mseed%d(time,adata) VALUES (timestamp '%s', %s);", *vid, stoptime, ((char**) msr->datasamples)[j]);
+				if ( EXPERIMENT1 )
+					snprintf(buf,BUFSIZ, "%s, %s", stoptime, ((char**) msr->datasamples)[j]);
+				break;
+			case 'i':
+				if ( EXPERIMENT0 )
+					snprintf(buf,BUFSIZ, "INSERT INTO mseed%d(time,data) VALUES (timestamp '%s', %d);", *vid, stoptime, ((int*) msr->datasamples)[j]);
+				if ( EXPERIMENT1 )
+					snprintf(buf,BUFSIZ, "%s, %d", stoptime, ((int*) msr->datasamples)[j]);
+
+				if ( EXPERIMENT2 ){
+					fwrite((char*) &tm, sizeof(timestamp), 1, time);
+					fwrite( (char*) &((int*) msr->datasamples)[j], sizeof(int), 1, data);
+				}
+				if ( imin == int_nil || imin > ((int*) msr->datasamples)[j]) imin = ((int*) msr->datasamples)[j];
+				if ( imax == int_nil || imax < ((int*) msr->datasamples)[j]) imax = ((int*) msr->datasamples)[j];
+				break;
+			case 'f':
+				if ( EXPERIMENT0 )
+					snprintf(buf,BUFSIZ, "INSERT INTO mseed%d(time,fdata) VALUES (timestamp '%s', %f);", *vid, stoptime, ((flt*) msr->datasamples)[j]);
+				if ( EXPERIMENT1 )
+					snprintf(buf,BUFSIZ, "%s, %f", stoptime, ((flt*) msr->datasamples)[j]);
+				break;
+			case 'd':
+				if ( EXPERIMENT0 )
+					snprintf(buf,BUFSIZ, "INSERT INTO mseed%d(time,ddata) VALUES ( timestamp '%s', %f);", *vid, stoptime, ((dbl*) msr->datasamples)[j]);
+				if ( EXPERIMENT1 )
+					snprintf(buf,BUFSIZ, "%s, %f", stoptime, ((dbl*) msr->datasamples)[j]);
+				break;
+			default:
+				snprintf(buf,BUFSIZ,"undef %d",msr->encoding);
+			}
+			if ( EXPERIMENT1 )
+				fprintf(data,"%s\n",buf);
+			if ( EXPERIMENT0 ){
+				msg =SQLstatementIntern(cntxt,&s,"mseed.import",TRUE,FALSE);
+				if ( msg != MAL_SUCCEED)
+					break;
+			}
+		}
+		switch(msr->sampletype){
+			case 'a': kind="'string'"; break;
+			case 'i': 
+				snprintf(buf,BUFSIZ,QRYinsertI, *vid, msr->sequence_number,msr->dataquality,msr->network, msr->station, msr->location, msr->channel,
+				starttime,msr->samprate, msr->samplecnt,kind,imin,imax);
+				break;
+			case 'f': kind="'flt'"; break;
+			case 'd': kind="'dbl'"; break;
+			default : kind="null";
+		}
+
 		msg =SQLstatementIntern(cntxt,&s,"mseed.import",TRUE,FALSE);
 		if ( msg != MAL_SUCCEED){
 			break;
@@ -229,42 +319,37 @@ MseedImport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			t= MS_HPTIME2EPOCH(msr->starttime);
 			tm = gmtime(&t);
 			snprintf(stoptime,BUFSIZ,"%d-%02d-%02d %02d:%02d:%02d.%06ld", tm->tm_year +(tm->tm_year > 80?1900:2000), tm->tm_mon+1,tm->tm_mday, tm->tm_hour, tm->tm_min,tm->tm_sec, msr->starttime % HPTMODULUS);
-			printf("%s\n",stoptime);
 		}
-		if (msr->datasamples)
-		for ( j=0;j< msr->samplecnt; j++){
-			t= MS_HPTIME2EPOCH(msr->starttime);
-			tm = gmtime(&t);
-			snprintf(stoptime,BUFSIZ,"%d-%02d-%02d %02d:%02d:%02d.%06ld", tm->tm_year +(tm->tm_year > 80?1900:2000), tm->tm_mon+1,tm->tm_mday, tm->tm_hour, tm->tm_min,tm->tm_sec, msr->starttime % HPTMODULUS);
-			msr->starttime += stepsize;
-			switch(msr->sampletype){
-			case 'a':
-				snprintf(buf,BUFSIZ, "INSERT INTO mseedVolumn(time,adata) VALUES (%s, %d,%s);", stoptime, *vid, ((char**) msr->datasamples)[j]);
-				break;
-			case 'i':
-				snprintf(buf,BUFSIZ, "INSERT INTO mseedVolumn(time,idata) VALUES (%s, %d,%d);", stoptime, *vid, ((int*) msr->datasamples)[j]);
-				break;
-			case 'f':
-				snprintf(buf,BUFSIZ, "INSERT INTO mseedVolumn(time,fdata) VALUES (%s, %d,%f);", stoptime, *vid, ((flt*) msr->datasamples)[j]);
-				break;
-			case 'd':
-				snprintf(buf,BUFSIZ, "INSERT INTO mseedVolumn(time,ddata) VALUES (%s, %d,%f);", stoptime, *vid, ((dbl*) msr->datasamples)[j]);
-				break;
-			default:
-				snprintf(buf,BUFSIZ,"undef %d",msr->encoding);
-			}
-			printf("%s\n",buf);
+		if(EXPERIMENT0 && nobat) {
+			retcode = MS_ENDOFFILE;
+			break;
 		}
+
+		if ( EXPERIMENT1){
+			if( data) fclose(data);
+			data = 0;
+			strcpy(buf,"copy 400000 records into mseed2 from '/tmp/data' delimiters ',','\n';");
+			msg =SQLstatementIntern(cntxt,&s,"mseed.import",TRUE,FALSE);
+		}
+	}
+	if ( EXPERIMENT2){
+		if( data) fclose(data);
+		if( time) fclose(time);
+		data = 0;
+		time = 0;
+		snprintf(buf,BUFSIZ,"copy into mseed2 from ('%s/time','%s/data');",vaultpath,vaultpath);
+		msg =SQLstatementIntern(cntxt,&s,"mseed.import",TRUE,FALSE);
 	}
 
 	if ( msg== MAL_SUCCEED && retcode != MS_ENDOFFILE )
 		msg = createException(MAL, "mseed.dump", "Cannot read %s: %s\n", file, ms_errorstr(retcode));
+	else if ( msg == MAL_SUCCEED){
+		strcpy(buf,"commit;");
+		msg =SQLstatementIntern(cntxt,&s,"mseed.import",TRUE,FALSE);
+	}
 
 	/* Make sure everything is cleaned up */
 	ms_readmsr (&msr, NULL, 0, NULL, NULL, 0, 0, 0);
-	if (msg )
-		*ret= GDKstrdup(msg);
-	else *ret= 0;
 	return msg;
 }  
 

@@ -237,7 +237,8 @@ VLTimport(timestamp *ret, str *source, str *target)
 		MTIMEepoch(ret);
 		return MAL_SUCCEED;
 	}
-
+	/* create the subdir */
+	GDKcreatedir(path);
 	curl = curl_easy_init();
 	if(curl) {
 		/* get a copy */
@@ -266,7 +267,7 @@ dependent.
 		curl_easy_cleanup(curl);
 
 		if(CURLE_OK != res)
-			msg= createException(MAL,"vault.import", "curl [%d] %s '%s'\n", res, curl_easy_strerror(res), *source);
+			msg= createException(MAL,"vault.import", "curl [%d] %s '%s' -> '%s'\n", res, curl_easy_strerror(res), *source,path);
 	}
 
 	if(ftpfile.stream)
