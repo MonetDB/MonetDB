@@ -335,7 +335,8 @@ BATattach(int tt, const char *heapfile)
 	BUN cap;
 	char path[PATHLENGTH];
 
-	ERRORcheck(tt <= 0 || tt >= TYPE_str, "BATattach: bad tail type\n");
+	ERRORcheck(tt <= 0 , "BATattach: bad tail type (<=0)\n");
+	ERRORcheck(ATOMvarsized(tt), "BATattach: bad tail type (varsized)\n");
 	ERRORcheck(heapfile == 0, "BATattach: bad heapfile name\n");
 	if (lstat(heapfile, &st) < 0) {
 		GDKerror("BATattach: cannot stat heapfile\n");
