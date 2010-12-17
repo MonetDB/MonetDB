@@ -597,10 +597,11 @@ freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start)
 }
 
 /* #define _SQL_COMPILE */
-@-
-BEWARE, the SQLstatementIntern turns off the autocommit mode.
-It is contrary to normal behavior.
-@c
+
+/*
+BEWARE: SQLstatementIntern only commits after all statements found
+in expr are executed, when autocommit mode is enabled.
+*/
 str
 SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 {
