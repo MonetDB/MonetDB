@@ -279,25 +279,6 @@ _bin_optimizer(mvc *c, stmt *s)
 			os->optimized = ns->optimized = 3;
 			return ns;
 		} else
-		/* incase there is no reduction on the left, push
-		   the topn into the right part */
-		if (s->flag != 0 /* topn, ie limit and orderby */ &&
-		    j->type == st_join && 
-		  ((isEqJoin(j) &&
-		    !is_reduced(j) &&
-		    j->op1->t && j->op1->t == j->op2->h) || 
-		    j->flag == cmp_all)) {
-			stmt *l = j->op1;
-			stmt *r = j->op2;
-
-			r = stmt_limit(c->sa, r, s->op2, s->op3, s->flag);
-			s = stmt_join(c->sa, l, r, cmp_equal); 
-			ns = _bin_optimizer(c, s);
-			assert(os->rewritten==NULL);
-			os->rewritten = ns;
-			os->optimized = ns->optimized = 3;
-			return ns;
-		}
 		/* try to push the limit through the reverse */
 		if (!s->flag && j->type == st_reverse) {
 			s = stmt_reverse(c->sa, stmt_limit(c->sa, j->op1, s->op2,
