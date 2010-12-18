@@ -26,6 +26,9 @@ maxval			float
 -- errors are returned for off-line analysis.
 CREATE PROCEDURE mseedimport(vid int, source string, target string) 
 EXTERNAL NAME mseed.import;
+CREATE PROCEDURE mseedload(vid int, source string, target string)
+EXTERNAL NAME mseed.load;
+
 
 -- The records are collected in SQL tables of the following structure
 -- The are ordered on timestamp
