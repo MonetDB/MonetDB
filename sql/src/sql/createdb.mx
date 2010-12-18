@@ -39,6 +39,7 @@ start transaction;
 @include compress.sql
 @include dictionary.sql
 @include cluster.sql
+@include vacuum.sql
 
 @include dependency_functions.sql
 @include clients.sql

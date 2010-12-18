@@ -579,7 +579,7 @@ of the BAT an fills all the holes that occur due to the deletion list.
 @mal
 command shrink(b:bat[:oid,:any_1],del:bat[:oid,:oid]):bat[:oid,:any_1]
 address BKCshrinkBAT
-comment "shrinkt the BAT based on a list of entries identified as to-be-deleted";
+comment "Shrink the BAT based on a list of entries identified as to-be-deleted";
 
 command shrinkMap(b:bat[:oid,:any_1],del:bat[:oid,:oid]):bat[:oid,:oid]
 address BKCshrinkBATmap
@@ -587,7 +587,7 @@ comment "Derive the oid mapping for shrink BAT based on list of to-be-deleted";
 
 command reuse(b:bat[:oid,:any_1],del:bat[:oid,:oid]):bat[:oid,:any_1]
 address BKCreuseBAT
-comment "shuffle the values around to restore a dense representation of buns.";
+comment "Shuffle the values around to restore a dense representation of buns.";
 
 command reuseMap(b:bat[:oid,:any_1],del:bat[:oid,:oid]):bat[:oid,:oid]
 address BKCreuseBATmap
