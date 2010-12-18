@@ -19,11 +19,16 @@ RETURNS varchar(32)
 BEGIN
 	DECLARE res varchar(32), aux varchar(32);
 	DECLARE ofset int;
-	SET ofset = 0;
-	SET res = SUBSTRING(s1,ofset,st-1);
-	SET res = res || s3;
-	SET ofset = LENGTH(s1)-len;
-	SET aux = SUBSTRING(s1,ofset, len);
+
+    IF ( st < 0 or st > LENGTH(s1))
+        THEN RETURN '';
+    END IF;
+
+    SET ofset = 1;
+    SET res = SUBSTRING(s1,ofset,st-1);
+    SET res = res || s3;
+    SET ofset = st + len;
+    SET aux = SUBSTRING(s1,ofset,LENGTH(s1)-ofset+1);
 	SET res = res || aux;
 	RETURN res;
 END;
