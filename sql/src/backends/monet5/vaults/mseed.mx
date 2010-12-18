@@ -55,6 +55,8 @@ maxval			float
 -- errors are returned for off-line analysis.
 CREATE PROCEDURE mseedImport(vid int, source string, target string)
 EXTERNAL NAME mseed.import;
+CREATE PROCEDURE mseedLoad(vid int, source string, target string)
+EXTERNAL NAME mseed.load;
 
 -- The records are collected in SQL tables of the following structure
 -- The are ordered on timestamp
@@ -87,29 +89,49 @@ drop table batch;
 module mseed;
 pattern import{unsafe}(vid:int, source:str, target:str)
 address MseedImport
-comment "Dump the record content of an mseed file from the vault into the mseed catalog";
+comment "Fetch the record descriptor of a mseed file from the vault into the mseed catalog";
 
+pattern load{unsafe}(vid:int, source:str, target:str)
+address MseedLoad
+comment "Load the content of a mseed file from the vault into a mseed table";
 @{
 @-
 Performance experimentation on eir on 17 dec 2010.
 The code base uses the SQLstatementIntern to populate both the catalog and the mseed files.
-Experiment 0 concerns loading the mseedN file using a sequence of inserts. This involves
+Experiment INSERTLOAD concerns loading the mseedN file using a sequence of inserts. This involves
 the complete code path from generating SQL statement, parsing, optimization and execution.
 No query caching is enabled. The first record from
 ftp://www.orfeus-eu.org/pub/data/POND/1990/002/MN_BNI__BHN.1990.002.20.21.32.mseed
 with 3768 events was loaded in 10.770 msec
+(Total would be around 260 sec, but there are leaks)
 
-The second experiment produced a copy file, separately loaded into MonetDB using
-copy 400000 records into mseed2 from '/tmp/input/' delimiters ',','\n';
+Experiment COPYLOAD produced a copy file, separately loaded into MonetDB using
+copy 400000 records into mseed2 from '/tmp/data/' delimiters ',','\n';
 this track leads to a load time of 326ms for the first record.
 The first file with 26 records and 97592 tuples was loaded this way within 8710 msec.
 This approach still uses the SQL logger. The expected speedup for direct update would
 be something like a factor 3.
 
-The third experiment produced the single binary BAT images followed by
+Experiment ATTACHLOAD produced the single binary BAT images followed by
 copy into mseed2 from ('/tmp/time','/tmp/data');
-Attach procedure for complete file ran in about 232 ms.
+Attach procedure for complete file ran in about 232 ms, which excludes 
+a forced saving of the state on disk.
 
+Experiment MANUALLOAD generates a file with insert statements, which is executed manually
+against mclient. The total time for this first batch is 34 sec.
+This shows the gains from cached plans. (compared to experiment 0)
+The file grows from  0.1GB to 1GB
+-rw-r--r-- 1 mk ins 721464 2010-12-18 10:01 4156.tail
+-rw-r--r-- 1 mk ins 360732 2010-12-18 10:01 4272.tail
+
+
+The current ORFEUS repository is ca 3.2M files (ca 350GB). Excluding ftp transfer cost,
+the following optimistic load times are foreseen:
+Experiment  Loadtime
+INSERTLOAD	28 yrs
+COPYLOAD	322 days
+ATTACHLOAD   10 days (37days at 1sec)
+MANUALLOAD	3.2 yrs
 
 @h
 #ifndef _MSEED_H
@@ -134,6 +156,7 @@ Attach procedure for complete file ran in about 232 ms.
 #endif
 
 vault_export str MseedImport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+vault_export str MseedLoad(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #define _MSEED_DEBUG_
 
@@ -142,9 +165,10 @@ vault_export str MseedImport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 #include "mseed.h"
 #include "vault.h"
 
-#define EXPERIMENT0 0
-#define EXPERIMENT1 0
-#define EXPERIMENT2 2
+#define INSERTLOAD 0
+#define COPYLOAD 0
+#define ATTACHLOAD 0
+#define MANUALLOAD 1
 
 str SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output);
 
@@ -152,8 +176,8 @@ str SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output);
 	 station, location, channel, starttime , samplerate, samplecnt, sampletype, minval,maxval) \
 	 VALUES(%d, %d,'%c','%s', '%s','%s','%s','%s',%f,%d,%s,%d,%d);"
 
-str
-MseedImport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static str
+MseedInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int load)
 {
 	str msg = MAL_SUCCEED;
 	int *vid = (int*) getArgReference(stk,pci,1); 
@@ -233,9 +257,11 @@ MseedImport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if ( msg)
 				return msg;
 		}
-		if ( EXPERIMENT1 )
+		if ( load && MANUALLOAD && nobat==0 )
 			data = fopen("/tmp/data","w");
-		if ( EXPERIMENT2  && nobat == 0){
+		if ( load && COPYLOAD )
+			data = fopen("/tmp/data","w");
+		if ( load && ATTACHLOAD  && nobat == 0){
 			snprintf(buf, BUFSIZ, "%s/time",vaultpath);
 			time = fopen(buf,"w");
 			if ( time == 0)
@@ -255,18 +281,17 @@ MseedImport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			msr->starttime += stepsize;
 			switch(msr->sampletype){
 			case 'a':
-				if ( EXPERIMENT0 )
+				if ( load && (INSERTLOAD || MANUALLOAD))
 					snprintf(buf,BUFSIZ, "INSERT INTO mseed%d(time,adata) VALUES (timestamp '%s', %s);", *vid, stoptime, ((char**) msr->datasamples)[j]);
-				if ( EXPERIMENT1 )
+				if ( load && COPYLOAD )
 					snprintf(buf,BUFSIZ, "%s, %s", stoptime, ((char**) msr->datasamples)[j]);
 				break;
 			case 'i':
-				if ( EXPERIMENT0 )
+				if ( load && (INSERTLOAD || MANUALLOAD ))
 					snprintf(buf,BUFSIZ, "INSERT INTO mseed%d(time,data) VALUES (timestamp '%s', %d);", *vid, stoptime, ((int*) msr->datasamples)[j]);
-				if ( EXPERIMENT1 )
+				if ( load && COPYLOAD )
 					snprintf(buf,BUFSIZ, "%s, %d", stoptime, ((int*) msr->datasamples)[j]);
-
-				if ( EXPERIMENT2 ){
+				if ( load && ATTACHLOAD ){
 					fwrite((char*) &tm, sizeof(timestamp), 1, time);
 					fwrite( (char*) &((int*) msr->datasamples)[j], sizeof(int), 1, data);
 				}
@@ -274,23 +299,23 @@ MseedImport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if ( imax == int_nil || imax < ((int*) msr->datasamples)[j]) imax = ((int*) msr->datasamples)[j];
 				break;
 			case 'f':
-				if ( EXPERIMENT0 )
+				if ( load && (INSERTLOAD || MANUALLOAD ))
 					snprintf(buf,BUFSIZ, "INSERT INTO mseed%d(time,fdata) VALUES (timestamp '%s', %f);", *vid, stoptime, ((flt*) msr->datasamples)[j]);
-				if ( EXPERIMENT1 )
+				if ( load && COPYLOAD )
 					snprintf(buf,BUFSIZ, "%s, %f", stoptime, ((flt*) msr->datasamples)[j]);
 				break;
 			case 'd':
-				if ( EXPERIMENT0 )
+				if ( load && (INSERTLOAD || MANUALLOAD ))
 					snprintf(buf,BUFSIZ, "INSERT INTO mseed%d(time,ddata) VALUES ( timestamp '%s', %f);", *vid, stoptime, ((dbl*) msr->datasamples)[j]);
-				if ( EXPERIMENT1 )
+				if ( load && COPYLOAD )
 					snprintf(buf,BUFSIZ, "%s, %f", stoptime, ((dbl*) msr->datasamples)[j]);
 				break;
 			default:
 				snprintf(buf,BUFSIZ,"undef %d",msr->encoding);
 			}
-			if ( EXPERIMENT1 )
+			if ( load && (COPYLOAD || MANUALLOAD ))
 				fprintf(data,"%s\n",buf);
-			if ( EXPERIMENT0 ){
+			if ( load && INSERTLOAD ){
 				msg =SQLstatementIntern(cntxt,&s,"mseed.import",TRUE,FALSE);
 				if ( msg != MAL_SUCCEED)
 					break;
@@ -307,9 +332,11 @@ MseedImport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			default : kind="null";
 		}
 
-		msg =SQLstatementIntern(cntxt,&s,"mseed.import",TRUE,FALSE);
-		if ( msg != MAL_SUCCEED){
-			break;
+		if ( load == 0 ){
+			msg =SQLstatementIntern(cntxt,&s,"mseed.import",TRUE,FALSE);
+			if ( msg != MAL_SUCCEED){
+				break;
+			}
 		}
 
 		stepsize = 1000000/ msr->samprate;
@@ -320,19 +347,22 @@ MseedImport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			tm = gmtime(&t);
 			snprintf(stoptime,BUFSIZ,"%d-%02d-%02d %02d:%02d:%02d.%06ld", tm->tm_year +(tm->tm_year > 80?1900:2000), tm->tm_mon+1,tm->tm_mday, tm->tm_hour, tm->tm_min,tm->tm_sec, msr->starttime % HPTMODULUS);
 		}
-		if(EXPERIMENT0 && nobat) {
+		if(INSERTLOAD && nobat) {
 			retcode = MS_ENDOFFILE;
 			break;
 		}
 
-		if ( EXPERIMENT1){
+		if ( load && COPYLOAD){
 			if( data) fclose(data);
 			data = 0;
 			strcpy(buf,"copy 400000 records into mseed2 from '/tmp/data' delimiters ',','\n';");
 			msg =SQLstatementIntern(cntxt,&s,"mseed.import",TRUE,FALSE);
 		}
 	}
-	if ( EXPERIMENT2){
+	if ( load && MANUALLOAD){
+		if( data) fclose(data);
+	}
+	if ( load && ATTACHLOAD){
 		if( data) fclose(data);
 		if( time) fclose(time);
 		data = 0;
@@ -352,5 +382,17 @@ MseedImport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ms_readmsr (&msr, NULL, 0, NULL, NULL, 0, 0, 0);
 	return msg;
 }  
+
+str
+MseedImport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return MseedInternal(cntxt,mb,stk,pci,0);
+}
+
+str
+MseedLoad(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return MseedInternal(cntxt,mb,stk,pci,1);
+}
 
 @}
