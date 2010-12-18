@@ -72,8 +72,8 @@ create procedure querylog(filename string)
 
 -- The environment table
 create function environment()
-	returns table (nme string, val string)
-	external name sql.environment;
+	returns table ("name" string, value string)
+	external name sql.sql_environment;
 
 -- The BAT buffer pool overview
 create function bbp () 

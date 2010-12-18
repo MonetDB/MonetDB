@@ -2303,12 +2303,29 @@ monet5_create_table_function(ptr M, char *name, sql_rel *rel, sql_table *t)
 int 
 monet5_resolve_function(ptr M, sql_func *f)
 {
-	mvc *m = (mvc*)M;
-	Client c = MCgetClient(m->clientid);
+	mvc *sql = (mvc*)M;
+	Client c = MCgetClient(sql->clientid);
+	Module m;
 
-	if (!findSymbol(c->nspace, f->mod, f->imp)) 
-		return 0;
-	return 1;
+// fails to search outer modules!
+//	if (!findSymbol(c->nspace, f->mod, f->imp)) 
+//		return 0;
+
+        for (m = findModule(c->nspace, f->mod); m; m= m->outer)
+        	if (strcmp(m->name, f->mod) == 0) {
+			Symbol s = m->subscope[(int)(getSubScope(f->imp))];
+                	for(; s; s = s->peer) {
+				InstrPtr sig = getSignature(s);
+				int argc = sig->argc - sig->retc;
+
+                		if (strcmp(s->name, f->imp) == 0 &&
+				    ((!f->ops && argc == 0) ||
+                            	     list_length(f->ops) == argc)){
+					return 1;
+			}
+                }
+        }
+	return 0;
 /*
 	node *n;
 	newFcnCall(f->mod, f->imp);

@@ -46,7 +46,7 @@ CREATE function isaURL(theUrl url) RETURNS BOOL
 	EXTERNAL NAME url."isaURL";
 CREATE function newurl(protocol STRING, hostname STRING, "port" INT, file STRING) 
 	RETURNS url       
-	EXTERNAL NAME url."newUrl";
+	EXTERNAL NAME url."new";
 CREATE function newurl(protocol STRING, hostname STRING, file STRING) 
 	RETURNS url 
-	EXTERNAL NAME url."newurl";
+	EXTERNAL NAME url."new";
