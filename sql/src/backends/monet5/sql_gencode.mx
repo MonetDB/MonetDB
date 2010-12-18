@@ -2303,11 +2303,14 @@ monet5_create_table_function(ptr M, char *name, sql_rel *rel, sql_table *t)
 int 
 monet5_resolve_function(ptr M, sql_func *f)
 {
-//	node *n;
+	mvc *m = (mvc*)M;
+	Client c = MCgetClient(m->clientid);
 
-	(void)M;
-	(void)f;
+	if (!findSymbol(c->nspace, f->mod, f->imp)) 
+		return 0;
+	return 1;
 /*
+	node *n;
 	newFcnCall(f->mod, f->imp);
 	for (n = f->ops->h; n; n = n->next) {
 		sql_arg *a = n->data;
@@ -2315,7 +2318,6 @@ monet5_resolve_function(ptr M, sql_func *f)
 		q = push ?type? (mb, q, a->);
 	}
 */
-	return 1;
 }
 
 static void
