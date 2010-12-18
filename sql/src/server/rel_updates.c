@@ -150,7 +150,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 	if (columns) {
 		dnode *n;
 
-		collist = list_create((fdestroy) NULL);
+		collist = list_new(sql->sa);
 		for (n = columns->h; n; n = n->next) {
 			sql_column *c = mvc_bind_column(sql, t, n->data.sval);
 
