@@ -5132,7 +5132,7 @@ SQL@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	t->base.rtime = s->base.rtime = tr->rtime = tr->stime;
 
 	/* get the deletions BAT*/
-	del = mvc_bind_dbat(m, *sch, *tbl, 2);
+	del = mvc_bind_dbat(m, *sch, *tbl, RD_INS);
 
 	for (o = t->columns.set->h; o; o = o->next) {
 		sql_delta *d;
@@ -5192,7 +5192,7 @@ SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	tr = m->session->tr;
 
 	/* get the deletions BAT*/
-	del = mvc_bind_dbat(m, *sch, *tbl, 2);
+	del = mvc_bind_dbat(m, *sch, *tbl, RD_INS);
 
 	for (o = t->columns.set->h; o && ordered == 0; o = o->next) {
 		c = o->data;
