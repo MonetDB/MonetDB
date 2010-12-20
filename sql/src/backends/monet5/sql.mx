@@ -5118,7 +5118,8 @@ SQLcluster2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 Shrinking and re-using space to vacuum clean the holes in the relations.
 @= vacuum
 str
-SQL@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+SQL@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	str *sch = (str *) getArgReference(stk,pci,1);
 	str *tbl = (str *) getArgReference(stk,pci,2);
 	sql_trans	*tr;
@@ -5140,6 +5141,27 @@ SQL@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	t = mvc_bind_table(m, s, *tbl);
 	if ( t == NULL)
 		throw(MAL,"sql.@1","Table missing");
+
+	if (m->user_id != USER_MONETDB)
+		throw(MAL,"sql.@1","insufficient privileges");
+	if ((!list_empty(t->idxs.set) || !list_empty(t->keys.set)))
+		throw(MAL,"sql.@1","vacuum not allowed on tables with indices");
+	if (has_snapshots(m->session->tr)) 
+		throw(MAL,"sql.@1","vacuum not allowed on snapshots");
+
+	/* lock the store, for single user/transaction */
+	store_lock();
+	while (store_nr_active > 1) {
+		store_unlock();
+		MT_sleep_ms(100);
+		store_lock();
+
+		/* flush old changes to disk */
+		sql_trans_end(m->session);
+		store_apply_deltas();
+		sql_trans_begin(m->session);
+	}
+
 	tr = m->session->tr;
 	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
 	t->base.rtime = s->base.rtime = tr->rtime = tr->stime;
@@ -5148,37 +5170,43 @@ SQL@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	del = mvc_bind_dbat(m, *sch, *tbl, RD_INS);
 
 	/* this code is insecure, because something may 
-       go wrong while we compress the columns.
-       A two-phase action reduces the risks, but not all.
+	   go wrong while we compress the columns.
+	   A two-phase action reduces the risks, but not all.
 	   e.g. a crash during update of the catalog. */
 	i=0;
 	bids[i]=0;
 	for (o = t->columns.set->h; o; o = o->next,i++) {
 		c = o->data;
 		b = store_funcs.bind_col(tr, c, 0);
-		if (b == NULL)
-			throw(MAL,"sql.@1","Can not access descriptor");
-		msg = BKC@1BAT(&bid, &(b->batCacheid), &(del->batCacheid));
-		BBPreleaseref(b->batCacheid);
-		if (msg){
+		if (b == NULL || 
+	           (msg = BKC@1BAT(&bid, &(b->batCacheid), &(del->batCacheid))) != NULL) {
 			for( i--; i>=0; i--)
 				BBPreleaseref(bids[i]);
+			store_unlock();
+			if (!msg)
+				throw(MAL,"sql.@1","Can not access descriptor");
 			return msg;
 		}
-		if ( i <2048){
-			bids[i++]= bid;
-			bids[i]=0;
+		BBPreleaseref(b->batCacheid);
+		if (i < 2048){
+			bids[i]= bid;
+			bids[i+1]=0;
 		}
 	}
-	if ( i == 2048 )
+	if ( i == 2048 ) {
+		for( i--; i>=0; i--)
+			BBPreleaseref(bids[i]);
+		store_unlock();
 		throw(MAL,"sql.@1","Too many columns to handle, use copy instead");
+	}
+
 	i=0;
 	for (o = t->columns.set->h; o; o = o->next, i++) {
 		sql_delta *d;
 		c = o->data;
 		b = store_funcs.bind_col(tr, c, 0);
 		/* based on previous loop, BAT should be accessible */
-		if (b )
+		if (b)
 			BBPdecref(b->batCacheid, TRUE);
 		d = c->data;
 		d->bid = 0;
@@ -5189,6 +5217,14 @@ SQL@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BBPreleaseref(del->batCacheid);
 	/* bat was cleared */
 	t->cleared = 1;
+
+	sql_trans_commit(m->session->tr);
+	/* write changes to disk */
+	sql_trans_end(m->session);
+	store_apply_deltas();
+	sql_trans_begin(m->session);
+	store_unlock();
+
 	return MAL_SUCCEED;
 }
 @c
@@ -5200,7 +5236,8 @@ The vacuum operation inspects the table for ordered properties and will keep the
 To avoid expensive shuffles, the reorganisation is balanced by the number of outstanding deletions.
 @c
 str
-SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	str *sch = (str *) getArgReference(stk,pci,1);
 	str *tbl = (str *) getArgReference(stk,pci,2);
 	sql_trans	*tr;
@@ -5222,6 +5259,14 @@ SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	t = mvc_bind_table(m, s, *tbl);
 	if ( t == NULL)
 		throw(MAL,"sql.@1","Table missing");
+
+	if (m->user_id != USER_MONETDB)
+		throw(MAL,"sql.@1","insufficient privileges");
+	if ((!list_empty(t->idxs.set) || !list_empty(t->keys.set)))
+		throw(MAL,"sql.@1","vacuum not allowed on tables with indices");
+	if (has_snapshots(m->session->tr)) 
+		throw(MAL,"sql.@1","vacuum not allowed on snapshots");
+
 	tr = m->session->tr;
 
 	/* get the deletions BAT*/
@@ -5230,7 +5275,7 @@ SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	for (o = t->columns.set->h; o && ordered == 0; o = o->next) {
 		c = o->data;
 		b = store_funcs.bind_col(tr, c, 0);
-		if (b == NULL)
+		if (b == NULL) 
 			throw(MAL,"sql.@1","Can not access descriptor");
 		ordered |= BATtordered(b);
 		cnt = BATcount(b);

@@ -3818,9 +3818,9 @@ BKCgetSequenceBase(oid *r, int *bid)
 Shrinking a void-headed BAT using a list of oids to ignore. 
 @= shrinkloop
 {
-    @1 *p = (@1*)Tloc(b, BUNfirst(b));
-    @1 *q = (@1*)Tloc(b, BUNlast(b));
-    @1 *r = (@1*)Tloc(bn, BUNfirst(bn));
+	@1 *p = (@1*)Tloc(b, BUNfirst(b));
+	@1 *q = (@1*)Tloc(b, BUNlast(b));
+	@1 *r = (@1*)Tloc(bn, BUNfirst(bn));
 
 	cnt=0;
 	for (;p<q; oidx++, p++) {
@@ -3866,11 +3866,11 @@ BKCshrinkBAT(int *ret, int *bid, int *did)
 		throw(MAL, "bat.shrink", MAL_MALLOC_FAIL );
 	}
 
-    o = (oid*)Tloc(bs, BUNfirst(bs));
-    ol= (oid*)Tloc(bs, BUNlast(bs));
+    	o = (oid*)Tloc(bs, BUNfirst(bs));
+    	ol= (oid*)Tloc(bs, BUNlast(bs))-1;
 
-    BATaccessBegin(d, USE_TAIL, MMAP_SEQUENTIAL);
-    BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
+	BATaccessBegin(d, USE_TAIL, MMAP_SEQUENTIAL);
+	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	switch(ATOMstorage(b->ttype) ){
 	case TYPE_chr: @:shrinkloop(chr)@ break;
 	case TYPE_bte: @:shrinkloop(bte)@ break;
@@ -3890,17 +3890,17 @@ BKCshrinkBAT(int *ret, int *bid, int *did)
 			throw(MAL, "bat.shrink", "Illegal argument type");
 		}
 	}
-    BATaccessEnd(d, USE_TAIL, MMAP_SEQUENTIAL);
-    BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
+	BATaccessEnd(d, USE_TAIL, MMAP_SEQUENTIAL);
+	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
-    BATsetcount(bn, cnt);
-    bn->tsorted = 0;
-    bn->tdense = 0;
+	BATsetcount(bn, cnt);
+	bn->tsorted = 0;
+	bn->tdense = 0;
 	bn->tkey = b->tkey;
 	bn->T->nonil = b->T->nonil;
 	bn->T->nil = b->T->nil;
 
-    if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(d->batCacheid);
@@ -3946,9 +3946,10 @@ BKCshrinkBATmap(int *ret, int *bid, int *did)
 		throw(MAL, "bat.shrinkMap", MAL_MALLOC_FAIL );
 	}
 
-    o = (oid*)Tloc(bs, BUNfirst(bs));
-    ol= (oid*)Tloc(bs, BUNlast(bs));
-    r = (oid*)Tloc(bn, BUNfirst(bn));
+    	o = (oid*)Tloc(bs, BUNfirst(bs));
+    	ol= (oid*)Tloc(bs, BUNlast(bs));
+    	r = (oid*)Tloc(bn, BUNfirst(bn));
+
 	lim = BATcount(b);
 
     BATaccessBegin(d, USE_TAIL, MMAP_SEQUENTIAL);
@@ -3976,9 +3977,9 @@ BKCshrinkBATmap(int *ret, int *bid, int *did)
 Shrinking a void-headed BAT using a list of oids to ignore. 
 @= reuseloop
 {
-    @1 *p = (@1*)Tloc(b, BUNfirst(b));
-    @1 *q = (@1*)Tloc(b, BUNlast(b));
-    @1 *r = (@1*)Tloc(bn, BUNfirst(bn));
+	@1 *p = (@1*)Tloc(b, BUNfirst(b));
+	@1 *q = (@1*)Tloc(b, BUNlast(b));
+	@1 *r = (@1*)Tloc(bn, BUNfirst(bn));
 
 	for (;p<q; oidx++, p++) {
 		if ( *o == oidx ){
@@ -4027,8 +4028,8 @@ BKCreuseBAT(int *ret, int *bid, int *did)
 	}
 
 	bidx= BUNlast(b)-1;
-    o = (oid*)Tloc(bs, BUNfirst(bs));
-    ol= (oid*)Tloc(bs, BUNlast(bs))-1;
+    	o = (oid*)Tloc(bs, BUNfirst(bs));
+    	ol= (oid*)Tloc(bs, BUNlast(bs))-1;
 
     BATaccessBegin(d, USE_TAIL, MMAP_SEQUENTIAL);
     BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);

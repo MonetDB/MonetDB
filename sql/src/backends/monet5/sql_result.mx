@@ -466,6 +466,7 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 	}
 
 	if (locked) {
+		/* flush old changes to disk */
 		sql_trans_end(m->session);
 		store_apply_deltas();
 		sql_trans_begin(m->session);
