@@ -3867,7 +3867,7 @@ BKCshrinkBAT(int *ret, int *bid, int *did)
 	}
 
     	o = (oid*)Tloc(bs, BUNfirst(bs));
-    	ol= (oid*)Tloc(bs, BUNlast(bs))-1;
+    	ol= (oid*)Tloc(bs, BUNlast(bs));
 
 	BATaccessBegin(d, USE_TAIL, MMAP_SEQUENTIAL);
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
