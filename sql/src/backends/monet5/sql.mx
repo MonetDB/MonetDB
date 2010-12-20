@@ -5118,6 +5118,7 @@ SQL@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	bat bid;
 	BAT *b, *del;
 	node *o;
+	int i,bids[2049];
 
 	if (msg)
 		return msg;
@@ -5134,8 +5135,13 @@ SQL@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	/* get the deletions BAT*/
 	del = mvc_bind_dbat(m, *sch, *tbl, RD_INS);
 
-	for (o = t->columns.set->h; o; o = o->next) {
-		sql_delta *d;
+	/* this code is insecure, because something may 
+       go wrong while we compress the columns.
+       A two-phase action reduces the risks, but not all.
+	   e.g. a crash during update of the catalog. */
+	i=0;
+	bids[i]=0;
+	for (o = t->columns.set->h; o; o = o->next,i++) {
 		c = o->data;
 		b = store_funcs.bind_col(tr, c, 0);
 		if (b == NULL)
@@ -5143,14 +5149,29 @@ SQL@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		msg = BKC@1BAT(&bid, &(b->batCacheid), &(del->batCacheid));
 		BBPreleaseref(b->batCacheid);
 		if (msg){
-			BBPreleaseref(bid);
+			for( i--; i>=0; i--)
+				BBPreleaseref(bids[i]);
 			return msg;
 		}
-		BBPdecref(b->batCacheid, TRUE);
+		if ( i <2048){
+			bids[i++]= bid;
+			bids[i]=0;
+		}
+	}
+	if ( i == 2048 )
+		throw(MAL,"sql.@1","Too many columns to handle, use copy instead");
+	i=0;
+	for (o = t->columns.set->h; o; o = o->next, i++) {
+		sql_delta *d;
+		c = o->data;
+		b = store_funcs.bind_col(tr, c, 0);
+		/* based on previous loop, BAT should be accessible */
+		if (b )
+			BBPdecref(b->batCacheid, TRUE);
 		d = c->data;
 		d->bid = 0;
 		d->ibase = 0;
-		d->ibid = bid; /* use the insert bat */
+		d->ibid = bids[i]; /* use the insert bat */
 		c->base.wtime = c->base.rtime = tr->stime;
 	}
 	BBPreleaseref(del->batCacheid);
