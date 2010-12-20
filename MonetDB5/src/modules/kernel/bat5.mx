@@ -3822,6 +3822,7 @@ Shrinking a void-headed BAT using a list of oids to ignore.
     @1 *q = (@1*)Tloc(b, BUNlast(b));
     @1 *r = (@1*)Tloc(bn, BUNfirst(bn));
 
+	cnt=0;
 	for (;p<q; oidx++, p++) {
 		if ( o < ol && *o == oidx ){
 			o++;
@@ -3851,12 +3852,12 @@ BKCshrinkBAT(int *ret, int *bid, int *did)
 		throw(MAL, "bat.shrink", RUNTIME_OBJECT_MISSING);
 	}
 	bn= BATnew(b->htype, b->ttype, BATcount(b) - BATcount(d) );
-	BATseqbase(bn, 0);
 	if (bn == NULL) {
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(d->batCacheid);
 		throw(MAL, "bat.shrink", MAL_MALLOC_FAIL );
 	}
+	BATseqbase(bn, 0);
 	bs = BATmirror(BATsort(BATmirror(d)));
 	if (bs == NULL) {
 		BBPreleaseref(b->batCacheid);
@@ -3931,12 +3932,12 @@ BKCshrinkBATmap(int *ret, int *bid, int *did)
 	}
 
 	bn= BATnew(TYPE_void, TYPE_oid, BATcount(b) );
-	BATseqbase(bn, 0);
 	if (bn == NULL) {
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(d->batCacheid);
 		throw(MAL, "bat.shrinkMap", MAL_MALLOC_FAIL );
 	}
+	BATseqbase(bn, b->hseqbase);
 	bs = BATmirror(BATsort(BATmirror(d)));
 	if (bs == NULL) {
 		BBPreleaseref(b->batCacheid);
@@ -4011,12 +4012,12 @@ BKCreuseBAT(int *ret, int *bid, int *did)
 		throw(MAL, "bat.reuse", RUNTIME_OBJECT_MISSING);
 	}
 	bn= BATnew(b->htype, b->ttype, BATcount(b) - BATcount(d) );
-	BATseqbase(bn, 0);
 	if (bn == NULL) {
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(d->batCacheid);
 		throw(MAL, "bat.reuse", MAL_MALLOC_FAIL );
 	}
+	BATseqbase(bn, b->hseqbase);
 	bs = BATmirror(BATsort(BATmirror(d)));
 	if (bs == NULL) {
 		BBPreleaseref(b->batCacheid);
@@ -4085,12 +4086,12 @@ BKCreuseBATmap(int *ret, int *bid, int *did)
 		throw(MAL, "bat.shrinkMap", RUNTIME_OBJECT_MISSING);
 	}
 	bn= BATnew(TYPE_void, TYPE_oid, BATcount(b) );
-	BATseqbase(bn, 0);
 	if (bn == NULL) {
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(d->batCacheid);
 		throw(MAL, "bat.shrinkMap", MAL_MALLOC_FAIL );
 	}
+	BATseqbase(bn, b->hseqbase);
 	bs = BATmirror(BATsort(BATmirror(d)));
 	if (bs == NULL) {
 		BBPreleaseref(b->batCacheid);
