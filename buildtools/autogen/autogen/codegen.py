@@ -306,16 +306,14 @@ def do_deps(targets,deps,includes,incmap,cwd,incdirsmap):
                 subsrc = ''
                 subins = ''
                 for src,install in incdirsmap:
-                    m = re.match(re.escape(src),inc)
-                    if m and m.end() > mlen:
-                        mlen = m.end()
+                    slen = len(src)
+                    if slen > mlen and inc.startswith(src):
+                        mlen = slen
                         subsrc = src
                         subins = install
 
                 if mlen > 0:
-                    inc = re.sub(re.escape(subsrc),
-                                 re.escape(re.sub('includedir', '..', subins)),
-                                 inc)
+                    inc.replace(subsrc, subins.replace('includedir', '..'))
                 nvals.append(inc)
         installincs[k] = nvals
     installincs.close()
@@ -468,8 +466,7 @@ def expand_env(i):
 
         if os.environ.has_key( var ):
             value = os.environ[var]
-            value = re.sub('\\{', '(', value)
-            value = re.sub('\\}', ')', value)
+            value = value.replace('{', '(').replace('}', ')')
             return value + rest
     return None
 
