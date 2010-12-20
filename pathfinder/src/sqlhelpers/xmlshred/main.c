@@ -177,6 +177,7 @@ print_help (char *progname)
             "\t%%k: node kind\n"
             "\t%%p: preorder rank of parent node\n"
             "\t%%P: preorder rank of parent node in stretched pre/post plane\n"
+            "\t%%x: element/attribute namespace prefix id\n"
             "\t%%X: element/attribute namespace prefix (string)\n"
             "\t%%n: element/attribute localname id\n"
             "\t%%N: element/attribute localname (string)\n"
@@ -220,15 +221,16 @@ int
 main (int argc, char **argv)
 {
     shred_state_t status;  
-    char *progname   = NULL;
-    char *doc_name   = NULL;
-
-    FILE *shout      = NULL;
-    FILE *attout     = NULL;
-    FILE *namesout   = NULL;
-    FILE *urisout    = NULL;
-    FILE *guideout   = NULL;
-    FILE *tableout   = NULL;
+    char *progname    = NULL;
+    char *doc_name    = NULL;
+                      
+    FILE *shout       = NULL;
+    FILE *attout      = NULL;
+    FILE *namesout    = NULL;
+    FILE *prefixesout = NULL;
+    FILE *urisout     = NULL;
+    FILE *guideout    = NULL;
+    FILE *tableout    = NULL;
 
     /*
      * Determine basename(argv[0]) and dirname(argv[0]) on
@@ -308,7 +310,7 @@ main (int argc, char **argv)
                 exit (0);
             case 'x':
                 free (status.format);
-                status.format = strdup ("%r|%%%e|%%%g|%%%s|%%%l|%%%k|%%%u|%%%n|%%%X|%%%U|%%%N|%%%t|%%%d%%|");
+                status.format = strdup ("%r|%%%e|%%%g|%%%p|%%%s|%%%l|%%%k|%%%x|%%%u|%%%n|%%%t|%%%d%%|");
                 status.statistics = true;
                 /* no string escaping and no value stripping */
                 status.escape_quotes = false;
@@ -344,10 +346,14 @@ main (int argc, char **argv)
         if (status.names_separate) {
             /* names file */
             char namesoutfile[FILENAME_MAX];
+            char prefixesoutfile[FILENAME_MAX];
             char urisoutfile[FILENAME_MAX];
             snprintf (namesoutfile, FILENAME_MAX, "%s_names.csv", status.outfile);
             namesoutfile[sizeof(namesoutfile) - 1] = 0;
             namesout = SHopen_write (namesoutfile);
+            snprintf (prefixesoutfile, FILENAME_MAX, "%s_prefixes.csv", status.outfile);
+            prefixesoutfile[sizeof(prefixesoutfile) - 1] = 0;
+            prefixesout = SHopen_write (prefixesoutfile);
             snprintf (urisoutfile, FILENAME_MAX, "%s_uris.csv", status.outfile);
             urisoutfile[sizeof(urisoutfile) - 1] = 0;
             urisout = SHopen_write (urisoutfile);
@@ -385,12 +391,13 @@ main (int argc, char **argv)
     if (status.table)
         /* shred the XML input file */
         SHshredder_table (status.infile,
-                          shout, attout, namesout, urisout, guideout, tableout,
+                          shout, attout, namesout, prefixesout, urisout,
+                          guideout, tableout,
                           &status);
     else
         /* shred the XML input file */
         SHshredder (status.infile,
-                    shout, attout, namesout, urisout, guideout,
+                    shout, attout, namesout, prefixesout, urisout, guideout,
                     &status);
 
     if (status.outfile)             
@@ -399,6 +406,7 @@ main (int argc, char **argv)
         fclose (attout);
     if (status.names_separate) { 
         fclose (namesout); 
+        fclose (prefixesout); 
         fclose (urisout); 
     }
     if (status.statistics)          

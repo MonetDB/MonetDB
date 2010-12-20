@@ -50,6 +50,7 @@
 FILE *out;
 FILE *out_attr;
 FILE *out_names;
+FILE *out_prefixes;
 FILE *out_uris;
 FILE *guide_out;
 FILE *err;
@@ -77,12 +78,18 @@ static shred_state_t shredstate;
                                   ? (g)->guide             \
                                   : 0)
 
-/* localname and URI hash tables */
+/* localname, prefix, and URI hash tables */
 static hashtable_t localname_hash;
+static hashtable_t prefixes_hash;
 static hashtable_t uris_hash;
+/* localname, prefix, and URI counters */
+static unsigned int global_localname_id;
+static unsigned int global_prefix_id;
+static unsigned int global_uri_id;
 
 #define BAILOUT(...) do { SHoops (SH_FATAL, __VA_ARGS__);   \
                           free_hashtable (localname_hash);  \
+                          free_hashtable (prefixes_hash);   \
                           free_hashtable (uris_hash);       \
                           free (buffer);                    \
                           exit (1);                         \
@@ -197,6 +204,12 @@ print_localname_str (FILE *f, node_t tuple)
 }
     
 void
+print_prefix_id (FILE *f, node_t tuple)
+{
+    fprintf (f, "%i", tuple.prefix_id);
+}
+
+void
 print_prefix_str (FILE *f, node_t tuple)
 {
     fputs ((char *) tuple.prefix, f);
@@ -250,20 +263,23 @@ static void lambda_p (node_t n)
 static void lambda_P (node_t n) 
 { if (n.parent) lambda_E (*(n.parent)); }
 
+static void lambda_x (node_t n) 
+{ print_prefix_id (out, n); }
+
 static void lambda_X (node_t n) 
-{ if (n.uri_id != -1) print_prefix_str (out, n); }
+{ print_prefix_str (out, n); }
 
 static void lambda_n (node_t n) 
-{ if (n.localname_id != -1) print_localname_id (out, n); }
+{ print_localname_id (out, n); }
 
 static void lambda_N (node_t n) 
-{ if (n.localname_id != -1) print_localname_str (out, n); }
+{ print_localname_str (out, n); }
 
 static void lambda_u (node_t n) 
-{ if (n.uri_id != -1) print_uri_id (out, n); }
+{ print_uri_id (out, n); }
 
 static void lambda_U (node_t n) 
-{ if (n.uri_id != -1) print_uri_str (out, n); }
+{ print_uri_str (out, n); }
 
 static void lambda_d (node_t n) 
 { print_number (out, n); }
@@ -295,8 +311,9 @@ static fmt_lambda_t *fmt_lambdas[] = {
   , ['p'] = lambda_p
   , ['P'] = lambda_P
   , ['n'] = lambda_n
-  , ['X'] = lambda_X
   , ['N'] = lambda_N
+  , ['x'] = lambda_x
+  , ['X'] = lambda_X
   , ['u'] = lambda_u
   , ['U'] = lambda_U
   , ['d'] = lambda_d
@@ -355,52 +372,35 @@ compile_fmt (char *fmt)
 }
 
 static int
-generate_localname_id (const xmlChar *localname)
+generate_id (const xmlChar *str, unsigned int *global_id,
+             hashtable_t ht, FILE *f)
 {
-    static unsigned int global_localname_id = 0;
-    int localname_id;
+    int id;
    
-    if (!localname)
-        return -1;
+    if (!str)
+        return 0; /* we ensured in initialize() that there is
+                     always an entry 0 */
                      
-    localname_id = hashtable_find (localname_hash, (char *) localname);
+    id = hashtable_find (ht, (char *) str);
 
-    if (NOKEY (localname_id)) {
+    if (NOKEY (id)) {
         /* key not found, create a new name id */
-        localname_id = global_localname_id++;
-        /* add the (localname, localname_id) pair into the hash table */
-        hashtable_insert (localname_hash, (char *) localname, localname_id);
+        id = (*global_id)++;
+        /* add the (str, id) pair into the hash table */
+        hashtable_insert (ht, (char *) str, id);
         /* print the name binding if necessary */
         if (shredstate.names_separate)
-            fprintf (out_names, "%i, \"%s\"\n", localname_id, (char*) localname);
+            fprintf (f, "%i, \"%s\"\n", id, (char*) str);
     }
 
-    return localname_id;
+    return id;
 }
-
-static int
-generate_uri_id (const xmlChar *URI)
-{  
-    static unsigned int global_uri_id = 0;
-    int uri_id;
-    
-    if (!URI)
-        return -1;
-        
-    uri_id = hashtable_find (uris_hash, (char *) URI);
-
-    if (NOKEY (uri_id)) {
-        /* key not found, create a new URI id */
-        uri_id = global_uri_id++;
-        /* add the (URI, uri_id) pair to the hash table */
-        hashtable_insert (uris_hash, (char *) URI, uri_id);
-        /* print the URI binding if necessary */
-        if (shredstate.names_separate)
-            fprintf (out_uris, "%i, \"%s\"\n", uri_id, (char*) URI);
-    }
-
-    return uri_id;
-}
+#define generate_localname_id(str) \
+        generate_id((str),&global_localname_id,localname_hash,out_names)
+#define generate_prefix_id(str) \
+        generate_id((str),&global_prefix_id,prefixes_hash,out_prefixes)
+#define generate_uri_id(str) \
+        generate_id((str),&global_uri_id,uris_hash,out_uris)
 
 static void
 flush_node (kind_t kind, 
@@ -425,6 +425,8 @@ flush_node (kind_t kind,
         prefix_copy = strndup ((char *) prefix, text_size);
     } else if (prefix)
         prefix_copy = strdup ((char *) prefix);
+    else
+        prefix_copy = strdup ("");
         
     /* check if tagname is larger than text_size characters */
     if (text_size && localname &&
@@ -433,6 +435,8 @@ flush_node (kind_t kind,
         localname_copy = strndup ((char *) localname, text_size);
     } else if (localname)
         localname_copy = strdup ((char *) localname);
+    else
+        localname_copy = strdup ("");
     
     /* check if uri is larger than text_size characters */
     if (text_size && URI && (unsigned int) xmlStrlen (URI) > text_size) {
@@ -440,6 +444,8 @@ flush_node (kind_t kind,
         URI_copy = strndup ((char *) URI, text_size);
     } else if (URI)
         URI_copy = strdup ((char *) URI);
+    else
+        URI_copy = strdup ("");
 
     /* check if value is larger than text_size characters */
     if (text_size && value && (unsigned int) xmlStrlen (value) > text_size) {
@@ -461,6 +467,7 @@ flush_node (kind_t kind,
       , .level          = level
       , .kind           = kind
       , .prefix         = prefix_copy
+      , .prefix_id      = generate_prefix_id (prefix)
       , .localname      = localname_copy
       , .localname_id   = generate_localname_id (localname)
       , .uri            = URI_copy
@@ -538,10 +545,11 @@ start_document (void *ctx)
         , .level          = level
         , .kind           = doc
         , .prefix         = NULL
+        , .prefix_id      = 0
         , .localname      = NULL
-        , .localname_id   = -1
+        , .localname_id   = 0
         , .uri            = NULL
-        , .uri_id         = -1
+        , .uri_id         = 0
         , .value          = doc_name
         , .guide          = guide
     };
@@ -649,6 +657,7 @@ start_element (void *ctx,
       , .level          = level
       , .kind           = elem
       , .prefix         = prefix_copy
+      , .prefix_id      = generate_prefix_id (prefix) 
       , .localname      = localname_copy
       , .localname_id   = generate_localname_id (localname) 
       , .uri            = URI_copy
@@ -676,18 +685,21 @@ start_element (void *ctx,
                     
                 if (shredstate.names_separate)
                     fprintf (out_attr,
-                             SSZFMT ", " SSZFMT ", %i, %i, \"%.*s\"",
+                             SSZFMT ", " SSZFMT ", %i, %i, %i, \"%.*s\"",
                              att_id++,
                              pre,
+                             generate_prefix_id (atts[1]),
                              generate_uri_id (atts[2]),
                              generate_localname_id (atts[0]),
                              (int) (atts[4] - atts[3]),
                              (char*) atts[3]);
                 else                           
                     fprintf (out_attr,
-                             SSZFMT ", " SSZFMT ", \"%s\", \"%s\", \"%.*s\"",
+                             SSZFMT ", " SSZFMT 
+                             ", \"%s\", \"%s\", \"%s\", \"%.*s\"",
                              att_id++,
                              pre,
+                             (char*) atts[1],
                              (char*) atts[2],
                              (char*) atts[0],
                              (int) (atts[4] - atts[3]),
@@ -896,15 +908,17 @@ static void
 initialize (FILE *shout,
             FILE *attout,
             FILE *namesout,
+            FILE *prefixesout,
             FILE *urisout)
 {
     /* bind the different output files to global variables
        to make them accessible inside the callback functions */
-    out       = shout;
-    out_attr  = attout;
-    out_names = namesout; 
-    out_uris  = urisout;
-    err       = stderr;
+    out          = shout;
+    out_attr     = attout;
+    out_names    = namesout; 
+    out_prefixes = prefixesout; 
+    out_uris     = urisout;
+    err          = stderr;
 
     /* how many characters should be stored in
      * the value column */
@@ -917,11 +931,25 @@ initialize (FILE *shout,
     /* compile the -F format string */
     compile_fmt (shredstate.format);
     
-    /* initialize localname and URI hashes */
+    /* initialize localname, prefix, and URI hashes */
     localname_hash = new_hashtable (); 
+    prefixes_hash = new_hashtable ();
     uris_hash = new_hashtable ();
-    /* pre-insert entry for empty namespace URIs */
+    /* initialize localname, prefix, and URI counters */
+    global_localname_id = 0;
+    global_prefix_id    = 0;
+    global_uri_id       = 0;
+
+    /* pre-insert entries */
+    generate_localname_id ((xmlChar *) "");
+    generate_prefix_id ((xmlChar *) "");
     generate_uri_id ((xmlChar *) "");
+
+    /* ensure that there is at least one id
+       for localname, prefix, and URI */
+    assert (global_localname_id == 1 &&
+            global_prefix_id == 1 &&
+            global_uri_id == 1);
     
     /* Whether to escape the quotes in the textnode content */
     if (shredstate.escape_quotes)
@@ -957,6 +985,7 @@ SHshredder (const char *s,
             FILE *shout,
             FILE *attout,
             FILE *namesout,
+            FILE *prefixesout,
             FILE *urisout,
             FILE *guideout,
             shred_state_t *status)
@@ -966,7 +995,7 @@ SHshredder (const char *s,
     shredstate = *status;
 
     assert (shout);
-    initialize (shout, attout, namesout, urisout);
+    initialize (shout, attout, namesout, prefixesout, urisout);
 
     /* start XML parsing via SAX2 interface */
     ctx = xmlCreateFileParserCtxt (s);
@@ -990,6 +1019,7 @@ SHshredder (const char *s,
     }
 
     free_hashtable (localname_hash);
+    free_hashtable (prefixes_hash);
     free_hashtable (uris_hash);
     
     free (buffer);
@@ -1012,6 +1042,7 @@ SHshredder_table (const char *s,
                   FILE *shout,
                   FILE *attout,
                   FILE *namesout,
+                  FILE *prefixesout,
                   FILE *urisout,
                   FILE *guideout,
                   FILE *tableout,
@@ -1036,7 +1067,7 @@ SHshredder_table (const char *s,
          *xml;
 
     assert (shout);
-    initialize (shout, attout, namesout, urisout);
+    initialize (shout, attout, namesout, prefixesout, urisout);
 
     table_file = fopen (s, "r");
     do {
@@ -1139,6 +1170,7 @@ SHshredder_table (const char *s,
     }
 
     free_hashtable (localname_hash);
+    free_hashtable (prefixes_hash);
     free_hashtable (uris_hash);
     
     free (buffer);
