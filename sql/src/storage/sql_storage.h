@@ -290,6 +290,7 @@ extern int
  store_init(int debug, store_type store, char *logdir, char *dbname, backend_stack stk);
 extern void store_exit(void);
 
+extern void store_apply_deltas(void);
 extern void store_manager(void);
 extern void minmax_manager(void);
 

@@ -478,6 +478,7 @@ tablet_export BUN TABLETassign_BATs(Tablet * as, BAT *bats);
 tablet_export BUN TABLETload_file(Tablet * as, bstream *b, stream *out);
 tablet_export BUN SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char quote, lng skip, lng maxrow);
 tablet_export BAT *TABLETcollect_bats(Tablet * as);
+tablet_export BAT *TABLETcollect_parts(Tablet * as, BUN offset);
 tablet_export void TABLETdestroy_format(Tablet * as);
 tablet_export int TABLEToutput_file(Tablet * as, BAT *order, stream *s);
 
@@ -1336,6 +1337,54 @@ TABLETcollect_bats(Tablet * as)
 			BBPunfix(bats->batCacheid);
 			return NULL;
 		}
+	}
+	return bats;
+}
+
+BAT *
+TABLETcollect_parts(Tablet * as, BUN offset)
+{
+	BAT *bats = BATnew(TYPE_str, TYPE_bat, as->nr_attrs);
+	Column *fmt = as->format;
+	BUN i;
+	BUN cnt = BATcount(fmt[0].c[0]);
+
+	if (bats == NULL)
+		return NULL;
+	for (i = 0; i < as->nr_attrs; i++) {
+		BAT *b = fmt[i].c[0];
+		BAT *bv = BATslice(b, offset, BATcount(b));
+
+		BUNins(bats, (ptr) fmt[i].name, (ptr) &bv->batCacheid, FALSE);
+		BATsetaccess(b, BAT_READ);
+		BATaccessBegin(bv, USE_ALL, MMAP_WILLNEED);
+		BATpropcheck(bv, BATPROPS_ALL);
+		/* drop the hashes, we don't need them now  and they consume space */
+		HASHremove(b);
+
+		BATpropcheck(BATmirror(bv), BATPROPS_ALL);
+		/* drop the hashes, we don't need them now  and they consume space */
+		HASHremove(BATmirror(b));
+		BATaccessEnd(bv, USE_ALL, MMAP_WILLNEED);
+
+		b->hkey &= bv->hkey;
+		b->tkey &= bv->tkey;
+		b->H->nonil &= bv->H->nonil;
+		b->T->nonil &= bv->T->nonil;
+		b->hdense &= bv->hdense;
+		b->tdense &= bv->tdense;
+		if (b->hsorted != bv->hsorted)
+			b->hsorted = 0;
+		if (b->tsorted != bv->tsorted)
+			b->tsorted = 0;
+
+		if (cnt != BATcount(b)) {
+			if ( as->error == 0) /* a new error */
+				GDKerror("Error: column %d  count " BUNFMT " differs from " BUNFMT "\n",i,BATcount(b),cnt);
+			BBPunfix(bats->batCacheid);
+			return NULL;
+		}
+		BBPunfix(bv->batCacheid);
 	}
 	return bats;
 }

@@ -1620,14 +1620,18 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			sql_column *c = s->op4.cval;
 			char *n = (s->type==st_append_col)?appendRef:updateRef;
 
-			q = newStmt2(mb, sqlRef, n);
-			q = pushArgument(mb, q, sql->mvc_var); 
-			getArg(q, 0) = sql->mvc_var= newTmpVariable(mb,TYPE_ptr);
-			q = pushSchema(mb, q, c->t);
-			q = pushStr(mb, q, c->t->base.name);
-			q = pushStr(mb, q, c->base.name);
-			q = pushArgument(mb, q, r);
-			sql->mvc_var = s->nr = getDestVar(q);
+			if (s->type == st_append_col && s->flag) { /* fake append */
+				sql->mvc_var = s->nr = r;
+			} else {
+				q = newStmt2(mb, sqlRef, n);
+				q = pushArgument(mb, q, sql->mvc_var); 
+				getArg(q, 0) = sql->mvc_var= newTmpVariable(mb,TYPE_ptr);
+				q = pushSchema(mb, q, c->t);
+				q = pushStr(mb, q, c->t->base.name);
+				q = pushStr(mb, q, c->base.name);
+				q = pushArgument(mb, q, r);
+				sql->mvc_var = s->nr = getDestVar(q);
+			}
 		} break;
 
 		case st_update_idx:
@@ -2064,7 +2068,7 @@ void
 backend_callinline(backend *be, Client c, stmt *s )
 {
 	mvc *m = be->mvc;
-	InstrPtr curInstr = 0;
+	InstrPtr curInstr = 0, p;
 	MalBlkPtr curBlk = c->curprg->def;
 
 	curInstr = getInstrPtr(curBlk, 0);
@@ -2095,6 +2099,12 @@ backend_callinline(backend *be, Client c, stmt *s )
 		}
 	}
 	backend_dumpstmt(be, curBlk, s);
+
+	p = newFcnCall(curBlk, "optimizer", "remap");
+	typeChecker(c->nspace, curBlk, p, TRUE);
+	p = newFcnCall(curBlk, "optimizer", "multiplex");
+	typeChecker(c->nspace, curBlk, p, TRUE);
+	optimizeMALBlock(c, curBlk);
 	c->curprg->def = curBlk;
 }
 
@@ -2311,7 +2321,7 @@ monet5_resolve_function(ptr M, sql_func *f)
 //	if (!findSymbol(c->nspace, f->mod, f->imp)) 
 //		return 0;
 
-        for (m = findModule(c->nspace, f->mod); m; m= m->outer)
+        for (m = findModule(c->nspace, f->mod); m; m= m->outer) {
         	if (strcmp(m->name, f->mod) == 0) {
 			Symbol s = m->subscope[(int)(getSubScope(f->imp))];
                 	for(; s; s = s->peer) {
@@ -2320,11 +2330,13 @@ monet5_resolve_function(ptr M, sql_func *f)
 
                 		if (strcmp(s->name, f->imp) == 0 &&
 				    ((!f->ops && argc == 0) ||
-                            	     list_length(f->ops) == argc)){
+                            	     list_length(f->ops) == argc ||
+				     (sig->varargs & VARARGS) == VARARGS))
 					return 1;
-			}
-                }
-        }
+				
+               		}
+        	}
+	}
 	return 0;
 /*
 	node *n;

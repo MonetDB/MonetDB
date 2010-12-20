@@ -1464,6 +1464,18 @@ sqlcleanup(mvc *c, int err)
 	sql_destroy_params(c);
 	sql_destroy_args(c);
 
+	if ((c->emod & mod_locked) == mod_locked) {
+		/* here we should commit the transaction */
+		if (!err) {
+			sql_trans_commit(c->session->tr);
+			/* write changes to disk */
+			sql_trans_end(c->session);
+			store_apply_deltas();
+			sql_trans_begin(c->session);
+		}
+		store_unlock();
+		c->emod = 0;
+	}
 	/* some statements dynamically disable caching */
 	c->sym = NULL;
 	if (c->sa) 

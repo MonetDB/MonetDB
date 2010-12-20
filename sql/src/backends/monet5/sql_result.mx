@@ -57,6 +57,7 @@ extern int convert2str( mvc *m, int eclass, int d, int sc, int has_tz, ptr p, in
 #include <tablet.h>
 #include <mtime.h>
 #include <bat/res_table.h>
+#include <bat/bat_storage.h>
 
 @= dec_tostr
 	char buf[32];
@@ -441,6 +442,7 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 	BAT *bats = NULL;
 	Tablet as;
 	Column *fmt;
+	size_t cnt = 0;
 
 	if (!t) {
 		sql_error(m, 500, "table %s not found", tname);
@@ -461,6 +463,12 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 		sql_error(m, 500, "offset out of range");
 		m->type = -1;
 		return NULL;
+	}
+
+	if (locked) {
+		sql_trans_end(m->session);
+		store_apply_deltas();
+		sql_trans_begin(m->session);
 	}
 
 	if (offset > 0)
@@ -511,14 +519,37 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 			
 			if (locked) {
 				BAT *b = store_funcs.bind_col(m->session->tr, col, RDONLY);
+       				BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP, 0);
 				fmt[i].c[0] = b;
+				cnt = BATcount(b);
 				fmt[i].ci[0] = bat_iterator(fmt[i].c[0]);
 			}
 		}
 		if (locked || TABLETcreate_bats(&as, (BUN) (sz < 0 ? 1000 : sz)) >= 0) {
 			if (SQLload_file(cntxt, &as, bs, out, sep, rsep, ssep?ssep[0]:0, offset, sz) != BUN_NONE && !as.error) {
-				/* TODO in case of locked generate views which inserted only */
-				bats = TABLETcollect_bats(&as);
+				if (locked) 
+					bats = TABLETcollect_parts(&as, cnt);
+				else
+					bats = TABLETcollect_bats(&as);
+			} else if (locked) { /* restore old counts */
+				for (n = t->columns.set->h, i = 0; n; n = n->next, i++) {
+					sql_column *col = n->data;
+					BAT *b = store_funcs.bind_col(m->session->tr, col, RDONLY);
+					BATsetcount(b, cnt);
+					BBPunfix(b->batCacheid);
+				}
+			}
+		}
+		if (locked) { /* fix delta structures and transaction */
+			for (n = t->columns.set->h, i = 0; n; n = n->next, i++) {
+				sql_column *c = n->data;
+				BAT *b = store_funcs.bind_col(m->session->tr, c, RDONLY);
+				sql_delta *d = c->data;
+
+				c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = m->session->tr->wtime = m->session->tr->stime;
+				d->cnt = BATcount(b);
+
+				BBPunfix(b->batCacheid);
 			}
 		}
 		if (as.error) 

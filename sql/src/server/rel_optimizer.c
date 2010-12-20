@@ -3380,6 +3380,73 @@ rel_select_order(int *changes, mvc *sql, sql_rel *rel)
 	return rel;
 }
 
+static sql_rel *
+rel_simplify_like_select(int *changes, mvc *sql, sql_rel *rel) 
+{
+	(void)sql;
+	*changes = 0; 
+	if (rel->op == op_select && rel->exps) {
+		node *n;
+		list *exps = list_new(sql->sa);
+			
+		for (n = rel->exps->h; n; n = n->next) {
+			sql_exp *e = n->data;
+
+			if (e->type == e_cmp && e->flag == cmp_like) {
+				sql_exp *fmt = e->r;
+				sql_exp *esc = e->f;
+				int rewrite = 0;
+
+				if (fmt->type == e_convert)
+					fmt = fmt->l;
+				/* check for simple like expression */
+				if (is_atom(fmt->type)) {
+					atom *fa = NULL;
+
+					if (fmt->l) {
+						fa = fmt->l;
+					/* simple numbered argument */
+					} else if (!fmt->r && !fmt->f) {
+						fa = sql->args[fmt->flag];
+
+					}
+					if (fa && fa->data.vtype == TYPE_str && 
+					    !strchr(fa->data.val.sval, '%') &&
+					    !strchr(fa->data.val.sval, '_'))
+						rewrite = 1;
+				}
+				if (rewrite && esc && is_atom(esc->type)) {
+			 		atom *ea = NULL;
+
+					if (esc->l) {
+						ea = esc->l;
+					/* simple numbered argument */
+					} else if (!esc->r && !esc->f) {
+						ea = sql->args[esc->flag];
+
+					}
+					if (ea && (ea->data.vtype != TYPE_str ||
+					    strlen(ea->data.val.sval) != 0))
+						rewrite = 0;
+				}
+				if (rewrite) { 	/* rewrite to cmp_equal ! */
+					sql_exp *ne = exp_compare(sql->sa, e->l, e->r, cmp_equal);
+					/* if rewriten don't cache this query */
+					list_append(exps, ne);
+					sql->caching = 0;
+					*changes = 1; 
+				} else {
+					list_append(exps, e);
+				}
+			} else {
+				list_append(exps, e);
+			}
+		}
+		rel->exps = exps;
+	}
+	return rel;
+}
+
 static list *
 exp_merge_range(sql_allocator *sa, list *exps)
 {
@@ -3721,6 +3788,9 @@ rel_optimizer(mvc *sql, sql_rel *rel)
 
 	if (gp.cnt[op_join] || gp.cnt[op_left])
 		rel = rewrite(sql, rel, &rel_join_order); 
+
+	if (gp.cnt[op_select] && !sql->emode == m_prepare) 
+		rel = rewrite(sql, rel, &rel_simplify_like_select); 
 
 	if (gp.cnt[op_select]) 
 		rel = rewrite(sql, rel, &rel_select_order); 

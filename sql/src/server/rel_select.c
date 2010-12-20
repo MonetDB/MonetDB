@@ -4358,6 +4358,12 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 			   We try hard to keep a projection
 			   around this inner relation.
 			*/
+			if (!is_project(inner->op)) {
+				if (outer && pre_prj) 
+					inner = rel_project(sql->sa, inner, pre_prj);
+				else
+					inner = rel_project(sql->sa, inner, new_exp_list(sql->sa));
+			}
 			rel_project_add_exp(sql, inner, ce);
 			rel = inner;
 			continue;

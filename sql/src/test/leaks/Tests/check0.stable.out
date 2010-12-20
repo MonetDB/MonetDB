@@ -21,55 +21,22 @@ Ready.
 
 Over..
 
-# 21:04:48 >  
-# 21:04:48 >  mclient -lsql -ftest -i -e --host=alf --port=34468 
-# 21:04:48 >  
+# 19:46:08 >  
+# 19:46:08 >  mclient -lsql -ftest -i -e --host=alf --port=35135 
+# 19:46:08 >  
 
-#select htype, ttype, count from bbp() as bbp 
-#where kind like 'pers%'
-#order by htype, ttype, count;
-% .bbp,	.bbp,	.bbp # table_name
-% htype,	ttype,	count # name
-% clob,	clob,	bigint # type
-% 3,	3,	4 # length
-[ "int",	"int",	16	]
-[ "int",	"lng",	2	]
-[ "int",	"str",	143	]
-[ "oid",	"bit",	1102	]
-[ "oid",	"bit",	1102	]
-[ "oid",	"bit",	1102	]
-[ "oid",	"int",	18	]
-[ "oid",	"int",	18	]
-[ "oid",	"int",	1102	]
-[ "oid",	"int",	1102	]
-[ "oid",	"int",	3036	]
-[ "oid",	"int",	3036	]
-[ "oid",	"int",	3036	]
-[ "oid",	"int",	3036	]
-[ "oid",	"int",	3036	]
-[ "oid",	"lng",	18	]
-[ "oid",	"str",	0	]
-[ "oid",	"str",	1	]
-[ "oid",	"str",	1	]
-[ "oid",	"str",	18	]
-[ "oid",	"str",	513	]
-[ "oid",	"str",	1102	]
-[ "oid",	"str",	1102	]
-[ "oid",	"str",	1102	]
-[ "oid",	"str",	3036	]
-[ "oid",	"str",	3036	]
 #select 'transient', count(*) from bbp() as bbp where kind like 'tran%';
 % .L1,	.bbp # table_name
 % L1,	L2 # name
 % char,	wrd # type
 % 9,	3 # length
-[ "transient",	487	]
+[ "transient",	492	]
 #select 'persistent', count(*) from bbp() as bbp where kind like 'pers%';
 % .L3,	.bbp # table_name
 % L3,	L4 # name
 % char,	wrd # type
 % 10,	2 # length
-[ "persistent",	26	]
+[ "persistent",	25	]
 
 # 22:02:15 >  
 # 22:02:15 >  Done.

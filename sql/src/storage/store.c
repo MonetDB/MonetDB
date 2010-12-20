@@ -1519,6 +1519,23 @@ store_exit(void)
 	types_exit();
 }
 
+/* call locked ! */
+void
+store_apply_deltas(void)
+{
+	int res = LOG_OK;
+
+	logging = 1;
+	/* make sure we reset all transactions on re-activation */
+	gtrans->stime++;
+	if (store_funcs.gtrans_update)
+		store_funcs.gtrans_update(gtrans);
+	res = logger_funcs.restart();
+	if (logging && res == LOG_OK)
+		res = logger_funcs.cleanup();
+	logging = 0;
+}
+
 void
 store_manager(void)
 {

@@ -571,6 +571,32 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, st
 		return sql_error(sql, 02, "COPY INTO: cannot copy into read only table '%s'", tname);
 	if (t && !isTempTable(t) && STORE_READONLY(active_store_type))
 		return sql_error(sql, 02, "COPY INTO: copy into table '%s' not allowed in readonly mode", tname);
+
+	/* Only the MONETDB user is allowed copy into with 
+	   a lock and only on tables without idx */
+	if (locked && sql->user_id != USER_MONETDB) {
+		return sql_error(sql, 02, "COPY INTO: insufficient privileges: "
+		    "COPY INTO from .. LOCKED requires administrator rights");
+	}
+	if (locked && (!list_empty(t->idxs.set) || !list_empty(t->keys.set))) {
+		return sql_error(sql, 02, "COPY INTO: insufficient privileges: "
+		    "COPY INTO from .. LOCKED requires tables without indices");
+	}
+	if (locked && has_snapshots(sql->session->tr)) {
+		return sql_error(sql, 02, "COPY INTO: not allowed on snapshots");
+	}
+	/* lock the store, for single user/transaction */
+	if (locked) { 
+		store_lock();
+		while (store_nr_active > 1) {
+			store_unlock();
+			MT_sleep_ms(100);
+			store_lock();
+		}
+		sql->emod |= mod_locked;
+		sql->caching = 0; 	/* do not cache this query */
+	}
+		 
 	if (files) {
 		dnode *n = files->h;
 
@@ -602,7 +628,10 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, st
 	}
 	if (!rel)
 		return rel;
-	return rel_insert_cluster(sql, t, rel);
+	rel = rel_insert_cluster(sql, t, rel);
+	if (rel && locked)
+		rel->flag = 1;
+	return rel;
 }
 
 static sql_rel *

@@ -2366,6 +2366,8 @@ rel2bin_insert( mvc *sql, sql_rel *rel, list *refs)
 		sql_column *c = n->data;
 
 		insert = i = stmt_append_col(sql->sa, c, i);
+		if (rel->flag) /* fake append (done in the copy into) */
+			i->flag = 1;
 		list_append(newl, i);
 	}
 	if (!insert)
