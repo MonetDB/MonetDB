@@ -280,5 +280,5 @@ directory.  This file can be overridden by setting
 .I MONETDB5CONF
 in the enviroment.
 .SH "SEE ALSO"
-.BR merovingian (1)
+.BR monetdbd (1)
 .\".BR mserver5 (1)
