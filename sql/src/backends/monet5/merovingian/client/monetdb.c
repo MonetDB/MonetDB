@@ -446,7 +446,7 @@ printStatus(sabdb *stats, int mode, int twidth)
 }
 
 static sabdb *
-globMatchDBS(int argc, char *argv[], sabdb *orig, char *cmd)
+globMatchDBS(int argc, char *argv[], sabdb **orig, char *cmd)
 {
 	sabdb *w = NULL;
 	sabdb *top = NULL;
@@ -459,7 +459,7 @@ globMatchDBS(int argc, char *argv[], sabdb *orig, char *cmd)
 		matched = 0;
 		if (argv[i] != NULL) {
 			prev = NULL;
-			for (stats = orig; stats != NULL; stats = stats->next) {
+			for (stats = *orig; stats != NULL; stats = stats->next) {
 				if (glob(argv[i], stats->dbname)) {
 					matched = 1;
 					/* move out of orig into w, such that we can't
@@ -472,10 +472,10 @@ globMatchDBS(int argc, char *argv[], sabdb *orig, char *cmd)
 						w = w->next = stats;
 					}
 					if (prev == NULL) {
-						orig = stats->next;
+						*orig = stats->next;
 						/* little hack to revisit the now top of the
 						 * list */
-						w->next = orig;
+						w->next = *orig;
 						stats = w;
 						continue;
 					} else {
@@ -595,7 +595,7 @@ simple_command(int argc, char *argv[], char *merocmd, char *successmsg, char glo
 			free(e);
 			exit(2);
 		}
-		stats = globMatchDBS(argc, argv, orig, argv[0]);
+		stats = globMatchDBS(argc, argv, &orig, argv[0]);
 		SABAOTHfreeStatus(&orig);
 		orig = stats;
 
@@ -706,7 +706,7 @@ command_status(int argc, char *argv[])
 	/* look at the arguments and evaluate them based on a glob (hence we
 	 * listed all databases before) */
 	if (doall != 1) {
-		stats = globMatchDBS(argc, argv, orig, "status");
+		stats = globMatchDBS(argc, argv, &orig, "status");
 		SABAOTHfreeStatus(&orig);
 		orig = stats;
 	}
@@ -933,7 +933,7 @@ command_startstop(int argc, char *argv[], startstop mode)
 		exit(2);
 	}
 	if (doall != 1) {
-		stats = globMatchDBS(argc, argv, orig, type);
+		stats = globMatchDBS(argc, argv, &orig, type);
 		SABAOTHfreeStatus(&orig);
 		orig = stats;
 	}
@@ -1059,7 +1059,7 @@ command_set(int argc, char *argv[], meroset type)
 		free(e);
 		exit(2);
 	}
-	stats = globMatchDBS(argc, argv, orig, argv[0]);
+	stats = globMatchDBS(argc, argv, &orig, argv[0]);
 	SABAOTHfreeStatus(&orig);
 	orig = stats;
 
@@ -1206,7 +1206,7 @@ command_get(int argc, char *argv[])
 	/* look at the arguments and evaluate them based on a glob (hence we
 	 * listed all databases before) */
 	if (doall != 1) {
-		stats = globMatchDBS(argc, argv, orig, "get");
+		stats = globMatchDBS(argc, argv, &orig, "get");
 		SABAOTHfreeStatus(&orig);
 		orig = stats;
 	}
@@ -1318,7 +1318,7 @@ command_destroy(int argc, char *argv[])
 		free(e);
 		exit(2);
 	}
-	stats = globMatchDBS(argc, argv, orig, "destroy");
+	stats = globMatchDBS(argc, argv, &orig, "destroy");
 	SABAOTHfreeStatus(&orig);
 	orig = stats;
 
