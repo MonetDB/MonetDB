@@ -189,6 +189,9 @@ push_select( sql_allocator *sa, stmt *select, stmt *s )
 	return NULL;
 }
 
+#if 0
+/sql/src/server/bin_optimizer.c:193:1: error: ‘is_reduced’ defined but not used
+
 static int 
 is_reduced( stmt *s )
 {
@@ -224,6 +227,7 @@ is_reduced( stmt *s )
 		return 0;
 	}
 }
+#endif
 
 
 stmt *
