@@ -1,7 +1,7 @@
 .\" Process this file with
 .\" groff -man -Tascii foo.1
 .\"
-.TH MONETDB 1 "SEPTEMBER 2009" Application "MonetDB Applications"
+.TH MONETDB 1 "DECEMBER 2010" Application "MonetDB Applications"
 .SH NAME
 monetdb \- control a MonetDB Database Server instance
 .SH SYNOPSIS
@@ -45,9 +45,13 @@ Show version, equal to
 The commands for the
 .B monetdb
 utility are
-.BR create ", " destroy ", " lock ", " release ", " status ", " start ", " stop ", " kill ", " set ", " get ", " inherit ", " discover ", " help ", " version .
+.BR create ", " destroy ", " lock ", " release ", " status ", " start ", " stop ", " kill ", " set ", " get ", " inherit ", " discover ", " help " and " version .
 The commands facilitate adding, removing, maintaining, starting and
 stopping a database inside the MonetDB Database Server.
+.P
+For all commands, database arguments can be glob-like expressions.
+This allows to do wildcard matches.  For details on the syntax, see
+.IR EXPRESSIONS .
 .IP "create database [database ...]"
 Initialises a new database in the MonetDB Database Server.  A database
 created with this command makes it available under its database name,
@@ -75,7 +79,7 @@ maintenance can only be connected to by an administrator account
 .I monetdb
 account).  A database which is under maintenance is not started
 automatically by
-.BR merovingian (1),
+.BR monetdbd (1),
 the MonetDB Database Server, when clients request for it.  Use the
 .B release
 command to bring the database back for normal usage.  To start a
@@ -88,16 +92,14 @@ available again for normal use by any client, and is started on demand.
 Use the
 .B lock
 command to take a database under maintenance.
-.IP "status [\-lc] [\-s states] [expression ...]"
-Shows the state of the given database(s) or, when none given, all known
-databases.  The database names can be given as expressions, allowing to
-do wildcard matches.  For details on the syntax, see
-.IR EXPRESSIONS .
+.IP "status [\-lc] [\-s states] [database ...]"
+Shows the state of the given database, or, when none given, all known
+databases.
 Three modes control the level of detail in the displayed
 output.  By default a condensed one-line output per database format is
 used.  This output resembles pretty much the output of various
-.B XXXstat
-functions, and is ideal for quickly gaining an overview of the system
+.B xxxstat
+programs, and is ideal for quickly gaining an overview of the system
 state.
 .IP "  \-c"
 The
@@ -131,11 +133,9 @@ flag is absent, is
 .IP "start [\-a] database [database ...]"
 .IP "stop [\-a] database [database ...]"
 .IP "kill [\-a] database [database ...]"
-Starts, stops or kills the given database(s) or, when
+Starts, stops or kills the given database, or, when
 .I "  \-a"
-is supplied, all known databases, if the MonetDB Database Server
-.BR merovingian (1)
-is running.  The
+is supplied, all known databases.  The
 .B kill
 command immediately sends a SIGKILL and should only be used as last
 resort for a database that doesn't respond any more.  Killing a database
@@ -145,14 +145,14 @@ It is more common to use the
 command to stop a database.  It will first attempt to stop the database,
 waiting for
 .I mero_exittimeout
-seconds and if that fails kill the database.
+seconds and if that fails, kill the database.
 When using the
 .B start
 command,
 .BR monetdb (1)
 will output diagnostic messages if the requested action failed.  When
 encountering an error, one should always consult the logfile of
-.BR merovingian (1)
+.BR monetdbd (1)
 for more details.  For the
 .B kill
 command a diagnostic message indicating the database has crashed is
@@ -162,14 +162,14 @@ Note that in combination with
 the return code of
 .BR monetdb (1)
 indicates failure if one of the databases had a failure, even though
-other databases were successful.
+the operation on other databases was successful.
 .IP "get <all | property[,property]> [database ...]"
 Prints the requested properties, or all known properties, for the given
-databases.  For each property its source and value are printed.  Source
+database.  For each property its source and value are printed.  Source
 indicates where the current value comes from, e.g. the configuration
 file, or a local override.
 .IP "set property=value database [database ...]"
-Sets property to value for the given databases.  For a list of
+Sets property to value for the given database.  For a list of
 properties, run
 .BR "monetdb get all" .
 Most properties require the database to be stopped when set.  The
@@ -194,7 +194,7 @@ the database is shared using that tag, allowing for more sophisticated
 usage.  For information about the tag format and use, see section
 .I "REMOTE DATABASES"
 in the
-.BR merovingian (1)
+.BR monetdbd (1)
 manpage.  Note that this property can be set for a running database, and
 that a change takes immediate effect in the network.
 .IP "  master=<yes|no|id>"
@@ -226,7 +226,7 @@ from the default again.
 .IP "discover [expression]"
 Returns a list of remote merovingians and database URIs
 that were discovered by
-.BR merovingian (1).
+.BR monetdbd (1).
 All databases listed can be connected to via the local MonetDB Database
 Server as if it were local databases using their database name.  The
 connection is redirected or proxied based on configuration settings.  If
@@ -253,7 +253,8 @@ Shows the version of the
 .B monetdb
 utility.
 .SH "EXPRESSIONS"
-For various options, expressions can be used.  These expressions are
+For various options, typically database names, expressions can be used.
+These expressions are
 limited shell-globbing like, where the * in any position is expanded to
 an arbitrary string.  The * can occur multiple times in the expression,
 allowing for more advanced matches.  Note that the empty string also
