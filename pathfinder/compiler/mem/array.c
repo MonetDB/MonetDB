@@ -260,10 +260,12 @@ PFarray_vprintf (PFarray_t *a, const char *fmt, va_list mat)
      */
     va_copy(tmp, mat);
     while ((nchars = vsnprintf (try, len, fmt, tmp)) < 0) {
+        va_end(tmp);
         len *= 2;
         try = realloc(try, len);
         va_copy(tmp, mat);
     }
+    va_end(tmp);
     free(try);
 
 

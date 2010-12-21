@@ -186,11 +186,11 @@ print_array(BAT *val, ...)
 		}
 		batptr[dims++] = tmp;
 	}
+	va_end(ap);
 	if (dims == 0) {
 		GDKerror("print_array: Error, no index bats provided.\n");
 		goto exit_err_none;
 	}
-	va_end(ap);
 
 #ifdef EXCESSIVE_DEBUGGING
 	fprintf(stderr, "[PRINT_ARRAY] Dims = %d\n", dims);
