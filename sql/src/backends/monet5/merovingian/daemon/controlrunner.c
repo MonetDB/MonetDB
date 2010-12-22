@@ -742,10 +742,8 @@ controlRunner(void *d)
 
 					rdb = _mero_remotedbs;
 					while (rdb != NULL) {
-						len = snprintf(buf2, sizeof(buf2), "%s%s%s\t%s\n",
-								rdb->dbname,
-								rdb->tag == NULL ? "" : "/",
-								rdb->tag == NULL ? "" : rdb->tag,
+						len = snprintf(buf2, sizeof(buf2), "%s\t%s\n",
+								rdb->fullname,
 								rdb->conn);
 						send(msgsock, buf2, len, 0);
 						rdb = rdb->next;
