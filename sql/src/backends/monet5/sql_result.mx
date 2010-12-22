@@ -523,6 +523,12 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
        				BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP, 0);
 				fmt[i].c[0] = b;
 				cnt = BATcount(b);
+				if ( BATcapacity(b) < (BUN) sz )
+					if ( (fmt[i].c[0] =  BATextend(fmt[i].c[0], (BUN) sz)) == NULL){
+							for ( i--; i>=0; i--)
+								BBPunfix( fmt[i].c[0]->batCacheid);
+							sql_error(m, 500, "failed to allocate result table sizes ");
+				}
 				fmt[i].ci[0] = bat_iterator(fmt[i].c[0]);
 			}
 		}
