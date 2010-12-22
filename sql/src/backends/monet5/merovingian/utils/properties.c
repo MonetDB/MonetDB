@@ -170,12 +170,15 @@ setProp(char *path, char *key, char *val)
 	kv = findConfKey(props, key);
 	if (kv == NULL) {
 		snprintf(buf, sizeof(buf), "no such property: %s", key);
+		freeConfFile(props);
 		return(strdup(buf));
 	}
 
 	/* first just attempt to set the value (type-check) in memory */
-	if ((err = setConfVal(kv, val)) != NULL)
+	if ((err = setConfVal(kv, val)) != NULL) {
+		freeConfFile(props);
 		return(err);
+	}
 
 	if (val != NULL) {
 		/* handle the semantially enriched types */
@@ -183,13 +186,16 @@ setProp(char *path, char *key, char *val)
 			if (strcmp(val, "proxy") != 0 && strcmp(val, "redirect") != 0) {
 				snprintf(buf, sizeof(buf), "expected 'proxy' or 'redirect' "
 						"for property 'forward', got: %s", val);
+				freeConfFile(props);
 				return(strdup(buf));
 			}
 		} else if (strcmp(key, "shared") == 0) {
 			char *value = val;
 			/* check if tag matches [A-Za-z0-9./]+ */
-			if (*value == '\0')
+			if (*value == '\0') {
+				freeConfFile(props);
 				return(strdup("tag to share cannot be empty"));
+			}
 			while (*value != '\0') {
 				if (!(
 							(*value >= 'A' && *value <= 'Z') ||
@@ -202,6 +208,7 @@ setProp(char *path, char *key, char *val)
 							"invalid character '%c' at %d "
 							"in tag name '%s'\n",
 							*value, (int)(value - val), val);
+					freeConfFile(props);
 					return(strdup(buf));
 				}
 				value++;

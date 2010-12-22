@@ -5145,9 +5145,11 @@ SQL@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (m->user_id != USER_MONETDB)
 		throw(MAL,"sql.@1","insufficient privileges");
 	if ((!list_empty(t->idxs.set) || !list_empty(t->keys.set)))
-		throw(MAL,"sql.@1","vacuum not allowed on tables with indices");
+		throw(MAL,"sql.@1","@1 not allowed on tables with indices");
 	if (has_snapshots(m->session->tr)) 
-		throw(MAL,"sql.@1","vacuum not allowed on snapshots");
+		throw(MAL,"sql.@1","@1 not allowed on snapshots");
+	if (!m->session->auto_commit) 
+		throw(MAL,"sql.@1","@1 only allowed in auto commit mode");
 
 	/* lock the store, for single user/transaction */
 	store_lock();

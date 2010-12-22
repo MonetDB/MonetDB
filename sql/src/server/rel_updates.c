@@ -583,7 +583,10 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, st
 		    "COPY INTO from .. LOCKED requires tables without indices");
 	}
 	if (locked && has_snapshots(sql->session->tr)) {
-		return sql_error(sql, 02, "COPY INTO: not allowed on snapshots");
+		return sql_error(sql, 02, "COPY INTO .. LOCKED: not allowed on snapshots");
+	}
+	if (locked && !sql->session->auto_commit) {
+		return sql_error(sql, 02, "COPY INTO .. LOCKED: only allowed in auto commit mode");
 	}
 	/* lock the store, for single user/transaction */
 	if (locked) { 

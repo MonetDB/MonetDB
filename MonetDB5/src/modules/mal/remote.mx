@@ -216,8 +216,6 @@ remote_export str RMTresolve(int *ret, str *pat) {
 	int fd;
 	char **redirs;
 	char **or;
-	str tmp;
-	int port;
 
 	if (pat == NULL || *pat == NULL || strcmp(*pat, (str)str_nil) == 0)
 		throw(ILLARG, "remote.resolve",
@@ -242,14 +240,8 @@ remote_export str RMTresolve(int *ret, str *pat) {
 	if (list == NULL)
 		throw(MAL, "remote.resolve", MAL_MALLOC_FAIL);
 
-	tmp = GDKgetenv("mero_port");
-	port = 0;
-	if (tmp != NULL)
-		port = atoi(tmp);
-	if (port == 0)
-		port = 50000;  /* hardcoded default from merovingian.c */
-	gethostname(path, 8096);
-	or = redirs = mapi_resolve(path, port, *pat);
+	snprintf(path, 8096, "%s/mapi_socket", GDKgetenv("gdk_dbfarm"));
+	or = redirs = mapi_resolve(path, 0, *pat);
 
 	if (redirs == NULL)
 		throw(MAL, "remote.resolve", "unknown failure when resolving pattern");
