@@ -17,32 +17,39 @@
  * All Rights Reserved.
  */
 
-#ifndef _DISCOVERYRUNNER_H
-#define _DISCOVERYRUNNER_H 1
+#ifndef _MULTIPLEX_H
+#define _MULTIPLEX_H 1
 
-#include "sql_config.h"
 #include <pthread.h>
+#include <Mapi.h>
 
-#include <mal_sabaoth.h>
+typedef struct _multiplex_database {
+	Mapi conn;
+	char *user;
+	char *pass;
+	char *database;
+} multiplex_database;
 
-void broadcast(char *msg);
-void registerMessageTap(int fd);
-void unregisterMessageTap(int fd);
-void discoveryRunner(void *d);
+typedef struct _multiplex_client {
+	char                     *name;
+	int                       sock;
+	stream                   *fdin;
+	stream                   *fout;
+	struct _multiplex_client *next;
+} multiplex_client;
 
-typedef struct _remotedb {
-	str dbname;       /* remote database name */
-	str tag;          /* database tag, if any, default = "" */
-	str fullname;     /* dbname + tag */
-	str conn;         /* remote connection, use in redirect */
-	int ttl;          /* time-to-live in seconds */
-	struct _remotedb* next;
-}* remotedb;
+typedef struct _multiplex {
+	pthread_t            tid;
+	char                *pool;
+	int                  dbcc;
+	multiplex_database **dbcv;
+	multiplex_client    *clients;
+} multiplex;
 
-sabdb *getRemoteDB(char *database);
-
-extern remotedb _mero_remotedbs;
-extern pthread_mutex_t _mero_remotedb_lock;
+multiplex *multiplexInit(char *database);
+void multiplexThread(void *d);
+void multiplexAddClient(multiplex *m, int sock, stream *fout, stream *fdin, char *name);
+void multiplexRemoveClient(multiplex *m, multiplex_client *c);
 
 #endif
 

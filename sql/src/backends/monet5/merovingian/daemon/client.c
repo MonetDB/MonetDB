@@ -40,7 +40,9 @@
 #include "merovingian.h"
 #include "forkmserver.h"
 #include "proxy.h"
+#include "multiplex-funnel.h"
 
+static multiplex *mero_multiplex_funnel = NULL;
 
 static err
 handleClient(int sock, char isusock)
@@ -72,6 +74,33 @@ handleClient(int sock, char isusock)
 	}
 	fout = block_stream(fout);
 
+	if (isusock) {
+		host = "(local)";
+	} else if (getpeername(sock, (struct sockaddr *)&saddr, &saddrlen) == -1) {
+		Mfprintf(stderr, "couldn't get peername of client: %s\n",
+				strerror(errno));
+		host = "(unknown)";
+	} else {
+		size_t len;
+		struct hostent *hoste = 
+			gethostbyaddr(&saddr.sin_addr.s_addr, 4, saddr.sin_family);
+		if (hoste == NULL) {
+			len = (3 + 1 + 3 + 1 + 3 + 1 + 3 + 1 + 5) + 1;
+			host = alloca(sizeof(char) * len);
+			snprintf(host, len, "%u.%u.%u.%u:%u",
+					(unsigned) ((ntohl(saddr.sin_addr.s_addr) >> 24) & 0xff),
+					(unsigned) ((ntohl(saddr.sin_addr.s_addr) >> 16) & 0xff),
+					(unsigned) ((ntohl(saddr.sin_addr.s_addr) >> 8) & 0xff),
+					(unsigned) (ntohl(saddr.sin_addr.s_addr) & 0xff),
+					(unsigned) (ntohs(saddr.sin_port)));
+		} else {
+			len = strlen(hoste->h_name) + 1 + 5 + 1;
+			host = alloca(sizeof(char) * len);
+			snprintf(host, len, "%s:%u",
+					hoste->h_name, (unsigned) (ntohs(saddr.sin_port)));
+		}
+	}
+
 	/* note that we claim to speak proto 8 here */
 	mnstr_printf(fout, "%s:merovingian:8:%s:%s:",
 			"void",  /* some bs */
@@ -88,8 +117,10 @@ handleClient(int sock, char isusock)
 	buf[0] = '\0';
 	if (mnstr_read_block(fdin, buf, 8095, 1) < 0) {
 		/* we didn't get a terminated block :/ */
-		e = newErr("client sent challenge in incomplete block: %s", buf);
-		mnstr_printf(fout, "!merovingian: client sent something this server could not understand, sorry\n", user);
+		e = newErr("client %s sent challenge in incomplete block: %s",
+				host, buf);
+		mnstr_printf(fout, "!merovingian: client sent something this "
+				"server could not understand, sorry\n", user);
 		mnstr_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
@@ -108,7 +139,7 @@ handleClient(int sock, char isusock)
 		/* mnstr_set_byteorder(fin->s, strcmp(user, "BIG") == 0); */
 		user = s + 1;
 	} else {
-		e = newErr("client challenge error: %s", buf);
+		e = newErr("client %s challenge error: %s", host, buf);
 		mnstr_printf(fout, "!merovingian: incomplete challenge '%s'\n", user);
 		mnstr_flush(fout);
 		close_stream(fout);
@@ -123,7 +154,7 @@ handleClient(int sock, char isusock)
 		passwd = s + 1;
 		/* decode algorithm, i.e. {plain}mypasswordchallenge */
 		if (*passwd != '{') {
-			e = newErr("client challenge error: %s", buf);
+			e = newErr("client %s challenge error: %s", host, buf);
 			mnstr_printf(fout, "!merovingian: invalid password entry\n");
 			mnstr_flush(fout);
 			close_stream(fout);
@@ -133,7 +164,7 @@ handleClient(int sock, char isusock)
 		algo = passwd + 1;
 		s = strchr(algo, '}');
 		if (!s) {
-			e = newErr("client challenge error: %s", buf);
+			e = newErr("client %s challenge error: %s", host, buf);
 			mnstr_printf(fout, "!merovingian: invalid password entry\n");
 			mnstr_flush(fout);
 			close_stream(fout);
@@ -143,7 +174,7 @@ handleClient(int sock, char isusock)
 		*s = 0;
 		passwd = s + 1;
 	} else {
-		e = newErr("client challenge error: %s", buf);
+		e = newErr("client %s challenge error: %s", host, buf);
 		mnstr_printf(fout, "!merovingian: incomplete challenge '%s'\n", user);
 		mnstr_flush(fout);
 		close_stream(fout);
@@ -157,7 +188,7 @@ handleClient(int sock, char isusock)
 		*s = 0;
 		lang = s + 1;
 	} else {
-		e = newErr("client challenge error: %s", buf);
+		e = newErr("client %s challenge error: %s", host, buf);
 		mnstr_printf(fout, "!merovingian: incomplete challenge, missing language\n");
 		mnstr_flush(fout);
 		close_stream(fout);
@@ -174,7 +205,7 @@ handleClient(int sock, char isusock)
 		 * for another : */
 		s = strchr(database, ':');
 		if (s == NULL) {
-			e = newErr("client challenge error: %s", buf);
+			e = newErr("client %s challenge error: %s", host, buf);
 			mnstr_printf(fout, "!merovingian: incomplete challenge, missing trailing colon\n");
 			mnstr_flush(fout);
 			close_stream(fout);
@@ -192,37 +223,59 @@ handleClient(int sock, char isusock)
 		mnstr_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
-		return(newErr("no database specified"));
-	} else {
-		if (strcmp(lang, "resolve") == 0) {
-			/* ensure the pattern ends with '/\*' such that we force a
-			 * remote entry, including those for local databases, this
-			 * way we will get a redirect back to merovingian for such
-			 * database if it is proxied and hence not remotely
-			 * available */
-			size_t len = strlen(database);
-			if (len > 2 &&
-					database[len - 2] != '/' &&
-					database[len - 1] != '*')
-			{
-				char *n = alloca(sizeof(char) * len + 2 + 1);
-				snprintf(n, len + 2 + 1, "%s/*", database);
-				database = n;
-			}
-		}
-		if ((e = forkMserver(database, &top, 0)) != NO_ERR) {
-			if (top == NULL) {
-				mnstr_printf(fout, "!merovingian: no such database '%s', please create it first\n", database);
-			} else {
-				mnstr_printf(fout, "!merovingian: internal error while starting mserver, please refer to the logs\n");
-			}
-			mnstr_flush(fout);
-			close_stream(fout);
-			close_stream(fdin);
-			return(e);
-		}
-		stat = top;
+		return(newErr("client %s specified no database", host));
 	}
+
+	if (strcmp(lang, "multiplex-funnel") == 0) {
+		/* SQL multiplexer with funnelling capabilities */
+		/* find/start/attach funnel */
+		/* FIXME: maintain a list, search, match name, etc.
+		if (strcmp(_multiplex_funnel->name, database) == 0)
+		*/
+		if (mero_multiplex_funnel == NULL) {
+			mero_multiplex_funnel = multiplexInit(database);
+			if (pthread_create(&mero_multiplex_funnel->tid,
+					NULL, (void *(*)(void *))multiplexThread,
+					(void *)mero_multiplex_funnel) < 0)
+			{
+				Mfprintf(stderr, "starting multiplex-funnel %s failed\n",
+						database);
+			}
+		}
+		multiplexAddClient(mero_multiplex_funnel, sock, fout, fdin, host);
+
+		return(NO_ERR);
+	}
+
+	if (strcmp(lang, "resolve") == 0) {
+		/* ensure the pattern ends with '/\*' such that we force a
+		 * remote entry, including those for local databases, this
+		 * way we will get a redirect back to merovingian for such
+		 * database if it is proxied and hence not remotely
+		 * available */
+		size_t len = strlen(database);
+		if (len > 2 &&
+				database[len - 2] != '/' &&
+				database[len - 1] != '*')
+		{
+			char *n = alloca(sizeof(char) * len + 2 + 1);
+			snprintf(n, len + 2 + 1, "%s/*", database);
+			database = n;
+		}
+	}
+
+	if ((e = forkMserver(database, &top, 0)) != NO_ERR) {
+		if (top == NULL) {
+			mnstr_printf(fout, "!merovingian: no such database '%s', please create it first\n", database);
+		} else {
+			mnstr_printf(fout, "!merovingian: internal error while starting mserver, please refer to the logs\n");
+		}
+		mnstr_flush(fout);
+		close_stream(fout);
+		close_stream(fdin);
+		return(e);
+	}
+	stat = top;
 
 	/* collect possible redirects */
 	for (stat = top; stat != NULL; stat = stat->next) {
@@ -250,33 +303,6 @@ handleClient(int sock, char isusock)
 		close_stream(fdin);
 		SABAOTHfreeStatus(&top);
 		return(e);
-	}
-
-	if (isusock) {
-		host = "(local)";
-	} else if (getpeername(sock, (struct sockaddr *)&saddr, &saddrlen) == -1) {
-		Mfprintf(stderr, "couldn't get peername of client: %s\n",
-				strerror(errno));
-		host = "(unknown)";
-	} else {
-		size_t len;
-		struct hostent *hoste = 
-			gethostbyaddr(&saddr.sin_addr.s_addr, 4, saddr.sin_family);
-		if (hoste == NULL) {
-			len = (3 + 1 + 3 + 1 + 3 + 1 + 3 + 1 + 5) + 1;
-			host = alloca(sizeof(char) * len);
-			snprintf(host, len, "%u.%u.%u.%u:%u",
-					(unsigned) ((ntohl(saddr.sin_addr.s_addr) >> 24) & 0xff),
-					(unsigned) ((ntohl(saddr.sin_addr.s_addr) >> 16) & 0xff),
-					(unsigned) ((ntohl(saddr.sin_addr.s_addr) >> 8) & 0xff),
-					(unsigned) (ntohl(saddr.sin_addr.s_addr) & 0xff),
-					(unsigned) (ntohs(saddr.sin_port)));
-		} else {
-			len = strlen(hoste->h_name) + 1 + 5 + 1;
-			host = alloca(sizeof(char) * len);
-			snprintf(host, len, "%s:%u",
-					hoste->h_name, (unsigned) (ntohs(saddr.sin_port)));
-		}
 	}
 
 	/* need to send a response, either we are going to proxy, or we send

@@ -22,6 +22,7 @@ man_MANS = monetdbd.1
 INCLUDES = \
 	$(MONETDB5_INCS) \
 	$(MONETDB_INCS) \
+	$(CLIENTS_INCS) \
 	-I..
 
 EXTRA_DIST = $(man_MANS) \
@@ -32,6 +33,7 @@ EXTRA_DIST = $(man_MANS) \
 	discoveryrunner.h \
 	forkmserver.h \
 	handlers.h \
+	multiplex-funnel.h \
 	peering.h \
 	proxy.h
 
@@ -45,12 +47,14 @@ bin_monetdbd = {
 		discoveryrunner.c \
 		forkmserver.c \
 		handlers.c \
+		multiplex-funnel.c \
 		peering.c \
 		proxy.c
 	LIBS = \
 		../utils/libmeroutil \
 		$(MONETDB5_LIBS) -lmonetdb5 \
 		$(MONETDB_LIBS) -lbat -lstream \
+		$(CLIENTS_LIBS) -lMapi \
 		$(SOCKET_LIBS) \
 		$(MALLOC_LIBS) \
 		$(PTHREAD_LIBS)
