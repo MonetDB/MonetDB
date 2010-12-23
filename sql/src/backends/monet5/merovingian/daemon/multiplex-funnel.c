@@ -197,44 +197,14 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 			mapi_close_handle(hdl[i]);
 		return;
 	}
-	/* Compose the header, the tricky part in here is that mapi doesn't
-	 * give us access to everything.  Because it takes too much, we just
-	 * don't give any size estimation (length).  Same for the table id,
-	 * we just send 0, such that we never get a close request. */
+	/* Compose the header.  For the table id, we just send 0, such that
+	 * we never get a close request.  Steal headers from the first node. */
 	mnstr_printf(fout, "&%d 0 %d %d %d\n", Q_TABLE, rlen, fcnt, rlen);
-	mnstr_write(fout, "% ", 2, 1);
-	for (i = 0; i < fcnt; i++) {
-		if (i > 0)
-			mnstr_write(fout, ",\t", 2, 1);
-		mnstr_printf(fout, "%s", mapi_get_table(hdl[0], i));
-	}
-	mnstr_write(fout, " # table_name\n", 14, 1);
-	mnstr_write(fout, "% ", 2, 1);
-	for (i = 0; i < fcnt; i++) {
-		if (i > 0)
-			mnstr_write(fout, ",\t", 2, 1);
-		mnstr_printf(fout, "%s", mapi_get_name(hdl[0], i));
-	}
-	mnstr_write(fout, " # name\n", 8, 1);
-	mnstr_write(fout, "% ", 2, 1);
-	for (i = 0; i < fcnt; i++) {
-		if (i > 0)
-			mnstr_write(fout, ",\t", 2, 1);
-		mnstr_printf(fout, "%s", mapi_get_type(hdl[0], i));
-	}
-	mnstr_write(fout, " # type\n", 8, 1);
-	mnstr_write(fout, "% ", 2, 1);
-	for (i = 0; i < fcnt; i++) {
-		if (i > 0)
-			mnstr_write(fout, ",\t", 2, 1);
-		mnstr_write(fout, "0", 1, 1);
-	}
-	mnstr_write(fout, " # length\n", 10, 1);
 	/* now read the answers, and write them directly to the client */
 	for (i = 0; i < m->dbcc; i++) {
 		while ((t = mapi_fetch_line(hdl[i])) != NULL)
-			if (*t != '%') /* skip server's headers */
-				mnstr_write(fout, t, strlen(t), 1);
+			if (i == 0 || *t != '%') /* skip other server's headers */
+				mnstr_printf(fout, "%s\n", t);
 	}
 	mnstr_flush(fout);
 	/* finish up */
@@ -277,7 +247,8 @@ multiplexThread(void *d)
 			if (mnstr_read_block(c->fdin, buf, 8095, 1) < 0) {
 				/* error, or some garbage */
 				multiplexRemoveClient(m, c);
-				continue;
+				/* don't crash on now stale c */
+				break;
 			}
 			/* we assume (and require) the query to fit in one block,
 			 * that is, we only forward the first block, without having
