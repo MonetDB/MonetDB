@@ -2534,6 +2534,7 @@ main(int argc, char **argv)
 		{"input", 1, 0, 'I'},
 		{"interactive", 0, 0, 'i'},
 		{"language", 1, 0, 'l'},
+		{"taal", 1, 0, 'T'},
 		{"log", 1, 0, 'L'},
 		{"null", 1, 0, 'n'},
 #ifdef HAVE_POPEN
@@ -2670,7 +2671,7 @@ main(int argc, char **argv)
 #ifdef HAVE_ICONV
 				"E:"
 #endif
-				"f:Ggh:I:iL:l:n:"
+				"f:Ggh:I:iL:T:l:n:"
 #ifdef HAVE_POPEN
 				"|:"
 #endif
@@ -2729,6 +2730,10 @@ main(int argc, char **argv)
 				exit(-1);
 			}
 			break;
+		case 'T':
+			/* mere hack */
+			mode = SQL;
+			language = optarg;
 		case 'n':
 			nullstring = optarg;
 			break;
