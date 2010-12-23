@@ -4394,8 +4394,9 @@ mapi_query_part(MapiHdl hdl, const char *query, size_t size)
 		if (sz > 512)
 			sz = 512;
 		hdl->query = malloc(sz + 1);
+		hdl->query[0] = '\0';
 		strncpy(hdl->query, query, sz);
-		hdl->query[sz] = 0;
+		hdl->query[sz] = '\0';
 	} else {
 		size_t sz = 512 - strlen(hdl->query);
 		if (sz > 0) {
