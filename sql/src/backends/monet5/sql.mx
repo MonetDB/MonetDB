@@ -526,6 +526,10 @@ command sql.round( v:@1, r:bte) :@1
 address @1_round_wrap
 comment "round off the floating point v to r digits behind the dot (if r < 0, before the dot)";
 
+command sql.ms_trunc( v:@1, r:int) :@1
+address @1_trunc_wrap
+comment "truncate the floating point v to r digits behind the dot (if r < 0, before the dot)";
+
 @mal
 @:mal_fround(flt)@
 @:mal_fround(dbl)@
@@ -1177,6 +1181,7 @@ sql5_export str SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 @= fround_export
 sql5_export str @1_dec_round_wrap( @1 *res, @1 *v, @1 *r );
 sql5_export str @1_round_wrap( @1 *res, @1 *v, bte *r );
+sql5_export str @1_trunc_wrap( @1 *res, @1 *v, int *r );
 @h
 @:fround_export(flt)@
 @:fround_export(dbl)@
@@ -3618,9 +3623,26 @@ str
 		else
 			*res = (@1) (floor(*v*(@1)scales[d]+.5)/scales[d]);
 	} else {
-		*res = *v;
+		*res = (@1) round(*v); 
 	}
 	return MAL_SUCCEED;
+}
+str
+@1_trunc_wrap( @1 *res, @1 *v, int *r )
+{
+    /* shortcut nil */
+    if (*v == @1_nil) {
+        *res = @1_nil;
+    } else if (*r < 0) {
+		int d = -*r;
+		*res = (@1) (trunc((*v)/((@1)scales[d])) * scales[d]); 
+    } else if (*r > 0) {
+		int d = *r;
+		*res = (@1) (trunc(*v * (@1)scales[d]) / ((@1)scales[d]));
+    } else {
+        *res = trunc(*v);
+    }
+    return MAL_SUCCEED;
 }
 
 @c

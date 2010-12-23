@@ -33,16 +33,20 @@ BEGIN
 	RETURN res;
 END;
 
-CREATE FUNCTION MS_ROUND(num float, precision int, truncat int)
-RETURNS float
+CREATE FUNCTION MS_TRUNC(num double, prc int)
+RETURNS double
+external name sql.ms_trunc;
+
+CREATE FUNCTION MS_ROUND(num double, prc int, truncat int)
+RETURNS double
 BEGIN
-        IF (truncat = 0)
-                THEN RETURN ROUND(num, precision);
-                ELSE RETURN ROUND(FLOOR(num), precision);
-        END IF;
+	IF (truncat = 0)
+		THEN RETURN ROUND(num, prc);
+		ELSE RETURN MS_TRUNC(num, prc);
+	END IF;
 END;
 
-CREATE FUNCTION MS_STR(num float, precision int, truncat int)
+CREATE FUNCTION MS_STR(num float, prc int, truncat int)
 RETURNS string
 BEGIN
         RETURN CAST(num as string);
