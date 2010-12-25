@@ -238,6 +238,7 @@ MseedInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int load)
 	{
 		totalrecs++;
 		totalsamps += msr->samplecnt;
+		stepsize = 1000000/ msr->samprate;
 		//msr_print(msr, ppackets);
 
 		t= MS_HPTIME2EPOCH(msr->starttime);
@@ -339,7 +340,6 @@ MseedInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int load)
 			}
 		}
 
-		stepsize = 1000000/ msr->samprate;
 		if (msr->samplecnt) {
 			/* calculate end of series */
 			msr->starttime += msr->samplecnt * stepsize;
