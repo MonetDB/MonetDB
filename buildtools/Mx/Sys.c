@@ -42,7 +42,6 @@ ofile_printf(char *format, ...)
 	if (mx_out & 1)
 		vfprintf(ofile, format, ap);
 	va_start(ap, format);
-	va_start(ap, format);
 	if (ofile_body && (mx_out & 4))
 		vfprintf(ofile_body, format, ap);
 	va_end(ap);

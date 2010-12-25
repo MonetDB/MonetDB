@@ -668,6 +668,7 @@ just produce an array of bat pointers.
 	while ((tmp = va_arg(ap, BAT *)) != NULL) {
 		if (dims == NC_MAX_DIMS) {
 			GDKerror("dimensionality too high");
+			va_end(ap);
 			return GDK_FAIL;
 		}
 		bi[dims++].b = tmp;
@@ -873,6 +874,7 @@ just produce an array of bat pointers.
 	dims = 0;
 	while ((tmp = va_arg(ap, int *)) != NULL) {
 		if (dims == NC_MAX_DIMS) {
+			va_end(ap);
 			GDKerror("dimensionality too high");
 			return GDK_FAIL;
 		}

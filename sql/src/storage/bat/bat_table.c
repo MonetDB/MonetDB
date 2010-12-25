@@ -114,6 +114,7 @@ column_find_row(sql_trans *tr, sql_column *c, void *value, ...)
 		c = nc;
 		value = nv;
 	}
+	va_end(va);
 	b = full_column(c, d, s);
 	if (s)
 		bat_destroy(s);
@@ -184,6 +185,7 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 		store_funcs.append_col(tr, c, val, c->type.type->localtype);
 		cnt++;
 	}
+	va_end(va);
 	if (n) {
 		fprintf(stderr, "called table_insert(%s) with wrong number of args (%d,%d)\n", t->base.name, list_length(t->columns.set), cnt);
 		assert(0);
@@ -281,6 +283,7 @@ rids_select( sql_trans *tr, sql_column *key, void *key_value_low, void *key_valu
 			key_value_low = nvl;
 			key_value_high = nvh;
 		}
+		va_end(va);
 	}
 	b = full_column(key, d, s);
 	if (s)
