@@ -293,8 +293,13 @@ MseedInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int load)
 				if ( load && COPYLOAD )
 					snprintf(buf,BUFSIZ, "%s, %d", stoptime, ((int*) msr->datasamples)[j]);
 				if ( load && ATTACHLOAD ){
-					fwrite((char*) &tm, sizeof(timestamp), 1, time);
-					fwrite( (char*) &((int*) msr->datasamples)[j], sizeof(int), 1, data);
+					if (fwrite((char*) &tm, sizeof(timestamp), 1, time) < 1 ||
+					    fwrite((char*) &((int*) msr->datasamples)[j], sizeof(int), 1, data) < 1) {
+						fclose(time);
+						fclose(data);
+						msg= createException(MAL,"mseed.dump","fwrite() to 'time' or 'data' file failed");
+						return msg;
+					}
 				}
 				if ( imin > ((int*) msr->datasamples)[j]) imin = ((int*) msr->datasamples)[j];
 				if ( imax < ((int*) msr->datasamples)[j]) imax = ((int*) msr->datasamples)[j];
