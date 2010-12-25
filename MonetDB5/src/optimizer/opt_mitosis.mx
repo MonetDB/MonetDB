@@ -232,7 +232,8 @@ tarantula optimizer.
 			if (j+1 < pieces) {
 				hgh.value.val.oval= low.value.val.oval+slice;
 			} else {
-				hgh.value.val.oval= rowcnt;
+				assert(rowcnt <= (wrd) BUN_MAX);
+				hgh.value.val.oval= (BUN) rowcnt;
 			}
 			q = pushOid(mb,q,hgh.value.val.oval);
 
