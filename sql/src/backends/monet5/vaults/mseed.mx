@@ -202,7 +202,7 @@ MseedInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int load)
 	char starttime[BUFSIZ];
 	char stoptime[BUFSIZ];
 	int stepsize;
-	int imin,imax;
+	int imin = INT_MAX, imax = INT_MIN;
 	int nobat=0;
 	FILE *data=0, *time=0;
 
@@ -247,7 +247,7 @@ MseedInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int load)
 
 		switch(msr->sampletype){
 			case 'a': kind="'string'"; break;
-			case 'i': kind="'int'"; imin= int_nil; imax= int_nil; break;
+			case 'i': kind="'int'"; imin = INT_MAX; imax = INT_MIN; break;
 			case 'f': kind="'flt'"; break;
 			case 'd': kind="'dbl'"; break;
 			default : kind="null";
@@ -296,8 +296,8 @@ MseedInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int load)
 					fwrite((char*) &tm, sizeof(timestamp), 1, time);
 					fwrite( (char*) &((int*) msr->datasamples)[j], sizeof(int), 1, data);
 				}
-				if ( imin == int_nil || imin > ((int*) msr->datasamples)[j]) imin = ((int*) msr->datasamples)[j];
-				if ( imax == int_nil || imax < ((int*) msr->datasamples)[j]) imax = ((int*) msr->datasamples)[j];
+				if ( imin > ((int*) msr->datasamples)[j]) imin = ((int*) msr->datasamples)[j];
+				if ( imax < ((int*) msr->datasamples)[j]) imax = ((int*) msr->datasamples)[j];
 				break;
 			case 'f':
 				if ( load && (INSERTLOAD || MANUALLOAD ))
