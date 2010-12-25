@@ -148,15 +148,15 @@ The pieces to be used may be overruled by the octopus optimizer.
 		/* ensure that GDKnr_threads partitions fit into main memory */
 		r = (BUN) (monet_memory / typewidth / threads);
 		if (rowcnt > r)
-			pieces = MAX ( (int)(rowcnt / r + 1) , threads);
+			pieces = (int) MAX ( (rowcnt / r + 1) , (wrd) threads );
 		else
 		/* exploit parallelism, but ensure minimal partition size to limit overhead */
 		if (rowcnt > MINPARTCNT)
-			pieces = MIN ( (int)(rowcnt / MINPARTCNT) , threads);
+			pieces = (int) MIN ( (rowcnt / MINPARTCNT) , (wrd) threads);
 		/* when testing, split also small BATs, but avoid empty pieces */
 		FORCEMITODEBUG
 			if (pieces < threads)
-				pieces = MIN ( threads , (int)rowcnt );
+				pieces = (int) MIN ( (wrd) threads , rowcnt );
 		/* prevent plan explosion */
 		if (pieces > MAXSLICES)
 			pieces = MAXSLICES;
