@@ -42,7 +42,12 @@
 #include "proxy.h"
 #include "multiplex-funnel.h"
 
-static multiplex *mero_multiplex_funnel = NULL;
+typedef struct _mplist {
+	multiplex *mpf;
+	struct _mplist *next;
+} mplist;
+
+static mplist *mero_multiplex_funnel = NULL;
 
 static err
 handleClient(int sock, char isusock)
@@ -229,20 +234,25 @@ handleClient(int sock, char isusock)
 	if (strcmp(lang, "multiplex-funnel") == 0) {
 		/* SQL multiplexer with funnelling capabilities */
 		/* find/start/attach funnel */
-		/* FIXME: maintain a list, search, match name, etc.
-		if (strcmp(_multiplex_funnel->name, database) == 0)
-		*/
-		if (mero_multiplex_funnel == NULL) {
-			mero_multiplex_funnel = multiplexInit(database);
-			if (pthread_create(&mero_multiplex_funnel->tid,
+		mplist *w;
+		for (w = mero_multiplex_funnel; w != NULL; w = w->next) {
+			if (strcmp(w->mpf->pool, database) == 0)
+				break;
+		}
+		if (w == NULL) {
+			w = malloc(sizeof(mplist));
+			w->next = mero_multiplex_funnel;
+			w->mpf = multiplexInit(database);
+			mero_multiplex_funnel = w;
+			if (pthread_create(&w->mpf->tid,
 					NULL, (void *(*)(void *))multiplexThread,
-					(void *)mero_multiplex_funnel) < 0)
+					(void *)w->mpf) < 0)
 			{
 				Mfprintf(stderr, "starting multiplex-funnel %s failed\n",
 						database);
 			}
 		}
-		multiplexAddClient(mero_multiplex_funnel, sock, fout, fdin, host);
+		multiplexAddClient(w->mpf, sock, fout, fdin, host);
 
 		return(NO_ERR);
 	}
