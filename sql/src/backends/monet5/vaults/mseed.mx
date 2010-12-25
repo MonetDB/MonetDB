@@ -346,8 +346,6 @@ MseedInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int load)
 		}
 
 		if (msr->samplecnt) {
-			/* calculate end of series */
-			msr->starttime += msr->samplecnt * stepsize;
 			t= MS_HPTIME2EPOCH(msr->starttime);
 			tm = gmtime(&t);
 			snprintf(stoptime,BUFSIZ,"%d-%02d-%02d %02d:%02d:%02d.%06ld", tm->tm_year +(tm->tm_year > 80?1900:2000), tm->tm_mon+1,tm->tm_mday, tm->tm_hour, tm->tm_min,tm->tm_sec, msr->starttime % HPTMODULUS);
