@@ -1353,10 +1353,11 @@ TABLETcollect_parts(Tablet * as, BUN offset)
 		return NULL;
 	for (i = 0; i < as->nr_attrs; i++) {
 		BAT *b = fmt[i].c[0];
-		BAT *bv = BATslice(b, offset, BATcount(b));
+		BAT *bv = NULL;
 
-		BUNins(bats, (ptr) fmt[i].name, (ptr) &bv->batCacheid, FALSE);
 		BATsetaccess(b, BAT_READ);
+		bv = BATslice(b, offset, BATcount(b));
+		BUNins(bats, (ptr) fmt[i].name, (ptr) &bv->batCacheid, FALSE);
 		BATaccessBegin(bv, USE_ALL, MMAP_WILLNEED);
 		BATpropcheck(bv, BATPROPS_ALL);
 		/* drop the hashes, we don't need them now  and they consume space */
