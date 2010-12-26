@@ -53,50 +53,54 @@ maxval			float
 
 -- this function inserts the mseed record information into the catalog
 -- errors are returned for off-line analysis.
-CREATE PROCEDURE mseedImport(vid int, source string, target string)
-EXTERNAL NAME mseed.import;
-CREATE PROCEDURE mseedLoad(vid int, source string, target string)
-EXTERNAL NAME mseed.load;
 
+CREATE FUNCTION mseedImport(vid int, source string, target string)
+RETURNS int
+EXTERNAL NAME mseed.import;
+
+CREATE FUNCTION mseedLoad(vid int, source string, target string)
+RETURNS int
+EXTERNAL NAME mseed.load;
 -- The records are collected in SQL tables of the following structure
 -- The are ordered on timestamp
---CREATE TABLE chunk<mseed> (
+--CREATE TABLE mseed<mseedid> (
 --time	timestamp,
 --data	int (or float,double,varchar(20),	dependent on type
 --); 
 @end verbatim
 
 @- How to use the mseed catalog.
-First, the vault directory is populated with the location of the mseed source files
-in a remote site. The corresponding local name is set using the basename property,
+First, the vault directory is populated with the location of the mseed source files.
+The corresponding local name is set using the basename property,
 and all files creation and access times are set to null.
 Following, a limited number of files are loaded into the vault and analysed.
 The information extracted ends up in the catalog, and remains there forever.
 The underlying mseed file is not decrypted directly, it will be done as soon
 as a query requests its.
 
-A test sequence (after the vault director has been populated)
+A test sequence (after the vault directory has been populated)
+to populate the mseedcatalog.
 @begin verbatim
 create table batch(vid int, source string, target string);
 
 insert into batch
 select vid, source, target from vault where created is null limit 2;
-call mseedImport( (select vid, source, target from vault where created is null limit 2) );
+select vid from batch where  mseedImport( vid, source, target ) is not null;
 drop table batch;
 @end verbatim
 
 @mal
 module mseed;
-pattern import{unsafe}(vid:int, source:str, target:str)
+pattern import{unsafe}(vid:int, source:str, target:str):int
 address MseedImport
 comment "Fetch the record descriptor of a mseed file from the vault into the mseed catalog";
 
-pattern load{unsafe}(vid:int, source:str, target:str)
+pattern load{unsafe}(vid:int, source:str, target:str):int
 address MseedLoad
 comment "Load the content of a mseed file from the vault into a mseed table";
 @{
 @-
-Performance experimentation on eir on 17 dec 2010.
+Performance experimentation on Eir on Dec 17, 2010.
 The code base uses the SQLstatementIntern to populate both the catalog and the mseed files.
 Experiment INSERTLOAD concerns loading the mseedN file using a sequence of inserts. This involves
 the complete code path from generating SQL statement, parsing, optimization and execution.
@@ -109,7 +113,7 @@ Experiment COPYLOAD produced a copy file, separately loaded into MonetDB using
 copy 400000 records into mseed2 from '/tmp/data/' delimiters ',','\n';
 this track leads to a load time of 326ms for the first record.
 The first file with 26 records and 97592 tuples was loaded this way within 8710 msec.
-This approach still uses the SQL logger. The expected speedup for direct update would
+This approach still uses the SQL logger. The expected speedup for LOCKED copy into would
 be something like a factor 3.
 
 Experiment ATTACHLOAD produced the single binary BAT images followed by
@@ -120,7 +124,8 @@ a forced saving of the state on disk.
 Experiment MANUALLOAD generates a file with insert statements, which is executed manually
 against mclient. The total time for this first batch is 34 sec.
 This shows the gains from cached plans. (compared to experiment 0)
-The file grows from  0.1GB to 1GB
+
+The database explosion factor is 10.
 -rw-r--r-- 1 mk ins 721464 2010-12-18 10:01 4156.tail
 -rw-r--r-- 1 mk ins 360732 2010-12-18 10:01 4272.tail
 
@@ -129,7 +134,7 @@ The current ORFEUS repository is ca 3.2M files (ca 350GB). Excluding ftp transfe
 the following optimistic load times are foreseen:
 Experiment  Loadtime
 INSERTLOAD	28 yrs
-COPYLOAD	322 days
+COPYLOAD	322 days (107 days with LOCKED)
 ATTACHLOAD   10 days (37days at 1sec)
 MANUALLOAD	3.2 yrs
 
@@ -165,19 +170,20 @@ vault_export str MseedLoad(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 #include "mseed.h"
 #include "vault.h"
 
-#define INSERTLOAD 0
-#define COPYLOAD 0
-#define ATTACHLOAD 0
-#define MANUALLOAD 1
+#define INSERTLOAD 1
+#define COPYLOAD 2
+#define ATTACHLOAD 4
+#define MANUALLOAD 8
+static int experiment = ATTACHLOAD;
 
 str SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output);
 
 #define QRYinsertI "INSERT INTO mseedCatalog(mseed, seqno, dataquality, network, \
 	 station, location, channel, starttime , samplerate, samplecnt, sampletype, minval,maxval) \
-	 VALUES(%d, %d,'%c','%s', '%s','%s','%s','%s',%f,%d,%s,%d,%d);"
+	 VALUES(%d, %d,'%c','%s', '%s','%s','%s','%s',%f,%d,'%s',%d,%d);"
 
 static str
-MseedInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int load)
+MseedInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int forceload)
 {
 	str msg = MAL_SUCCEED;
 	int *vid = (int*) getArgReference(stk,pci,1); 
@@ -195,7 +201,7 @@ MseedInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int load)
 	int j;
 	time_t t;
 	struct tm *tm;
-	char *s, *kind;
+	char *s;
 	timestamp answ;
 	char file[BUFSIZ];
 	char buf[BUFSIZ];
@@ -221,7 +227,7 @@ MseedInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int load)
 			msg= VLTimport(&answ, sourcefile, targetfile);
 			if ( msg)
 				return msg;
-			/* remember the location of the copy */
+			/* remember the freshness of the copy */
 			s= buf;
 			snprintf(buf,BUFSIZ,"UPDATE vault SET created=now() WHERE vid = %d;", *vid);
 			msg =SQLstatementIntern(cntxt,&s,"mseed.import file",TRUE,FALSE);
@@ -246,31 +252,38 @@ MseedInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int load)
 		snprintf(starttime,BUFSIZ,"%d-%02d-%02d %02d:%02d:%02d.%06ld", tm->tm_year +(tm->tm_year > 80?1900:2000), tm->tm_mon+1,tm->tm_mday, tm->tm_hour, tm->tm_min,tm->tm_sec, msr->starttime % HPTMODULUS);
 
 		switch(msr->sampletype){
-			case 'a': kind="'string'"; break;
-			case 'i': kind="'int'"; imin = INT_MAX; imax = INT_MIN; break;
-			case 'f': kind="'flt'"; break;
-			case 'd': kind="'dbl'"; break;
-			default : kind="null";
+			case 'i': 
+				imin = INT_MAX; imax = INT_MIN; 
+				if ( nobat==0 ){
+					snprintf(buf,BUFSIZ,"CREATE TABLE sys.mseed%d(time timestamp, data int);",*vid);
+					msg =SQLstatementIntern(cntxt,&s,"mseed.import file",TRUE,FALSE);
+					if ( msg)
+						goto wrapup;
+				}
+				break;
+			case 'a': case 'f': case 'd':
+			default : 
+				msg = createException(MAL,"mseed.import","data type not yet implemented");
+				goto wrapup;
 		}
-		if ( nobat==0 ){
-			snprintf(buf,BUFSIZ,"CREATE TABLE sys.mseed%d(time timestamp, data int);",*vid);
-			msg =SQLstatementIntern(cntxt,&s,"mseed.import file",TRUE,FALSE);
-			if ( msg)
-				return msg;
-		}
-		if ( load && MANUALLOAD && nobat==0 )
+
+		if ( forceload && experiment & MANUALLOAD && nobat==0 )
 			data = fopen("/tmp/data","w");
-		if ( load && COPYLOAD )
+		if ( forceload && experiment & COPYLOAD )
 			data = fopen("/tmp/data","w");
-		if ( load && ATTACHLOAD  && nobat == 0){
+		if ( forceload && experiment & ATTACHLOAD  && nobat == 0){
 			snprintf(buf, BUFSIZ, "%s/time",vaultpath);
 			time = fopen(buf,"w");
-			if ( time == 0)
-				throw(MAL,"mseed.import",RUNTIME_CREATE_ERROR);
+			if ( time == 0) {
+				msg= createException(MAL,"mseed.import",RUNTIME_CREATE_ERROR);
+				break;
+			} 
 			snprintf(buf, BUFSIZ, "%s/data",vaultpath);
 			data = fopen(buf,"w");
-			if ( data == 0)
-				throw(MAL,"mseed.import",RUNTIME_CREATE_ERROR);
+			if ( data == 0){
+				msg= createException(MAL,"mseed.import",RUNTIME_CREATE_ERROR);
+				break;
+			}
 		}
 		nobat++;
 
@@ -282,120 +295,118 @@ MseedInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int load)
 			msr->starttime += stepsize;
 			switch(msr->sampletype){
 			case 'a':
-				if ( load && (INSERTLOAD || MANUALLOAD))
+				if ( forceload && (experiment & (INSERTLOAD | MANUALLOAD)))
 					snprintf(buf,BUFSIZ, "INSERT INTO mseed%d(time,adata) VALUES (timestamp '%s', %s);", *vid, stoptime, ((char**) msr->datasamples)[j]);
-				if ( load && COPYLOAD )
+				if ( forceload && experiment & COPYLOAD )
 					snprintf(buf,BUFSIZ, "%s, %s", stoptime, ((char**) msr->datasamples)[j]);
 				break;
 			case 'i':
-				if ( load && (INSERTLOAD || MANUALLOAD ))
+				if ( forceload && experiment & (INSERTLOAD | MANUALLOAD ))
 					snprintf(buf,BUFSIZ, "INSERT INTO mseed%d(time,data) VALUES (timestamp '%s', %d);", *vid, stoptime, ((int*) msr->datasamples)[j]);
-				if ( load && COPYLOAD )
+				if ( forceload && experiment & COPYLOAD )
 					snprintf(buf,BUFSIZ, "%s, %d", stoptime, ((int*) msr->datasamples)[j]);
-				if ( load && ATTACHLOAD ){
+				if ( forceload && experiment & ATTACHLOAD ){
 					if (fwrite((char*) &tm, sizeof(timestamp), 1, time) < 1 ||
 					    fwrite((char*) &((int*) msr->datasamples)[j], sizeof(int), 1, data) < 1) {
-						fclose(time);
-						fclose(data);
 						msg= createException(MAL,"mseed.dump","fwrite() to 'time' or 'data' file failed");
-						return msg;
+						goto wrapup;
 					}
 				}
 				if ( imin > ((int*) msr->datasamples)[j]) imin = ((int*) msr->datasamples)[j];
 				if ( imax < ((int*) msr->datasamples)[j]) imax = ((int*) msr->datasamples)[j];
 				break;
 			case 'f':
-				if ( load && (INSERTLOAD || MANUALLOAD ))
+				if ( forceload && experiment & (INSERTLOAD | MANUALLOAD ))
 					snprintf(buf,BUFSIZ, "INSERT INTO mseed%d(time,fdata) VALUES (timestamp '%s', %f);", *vid, stoptime, ((flt*) msr->datasamples)[j]);
-				if ( load && COPYLOAD )
+				if ( forceload && experiment & COPYLOAD )
 					snprintf(buf,BUFSIZ, "%s, %f", stoptime, ((flt*) msr->datasamples)[j]);
 				break;
 			case 'd':
-				if ( load && (INSERTLOAD || MANUALLOAD ))
+				if ( forceload && experiment & (INSERTLOAD | MANUALLOAD ))
 					snprintf(buf,BUFSIZ, "INSERT INTO mseed%d(time,ddata) VALUES ( timestamp '%s', %f);", *vid, stoptime, ((dbl*) msr->datasamples)[j]);
-				if ( load && COPYLOAD )
+				if ( forceload && experiment & COPYLOAD )
 					snprintf(buf,BUFSIZ, "%s, %f", stoptime, ((dbl*) msr->datasamples)[j]);
 				break;
 			default:
 				snprintf(buf,BUFSIZ,"undef %d",msr->encoding);
 			}
-			if ( load && (COPYLOAD || MANUALLOAD ))
+
+			if ( forceload && experiment & (COPYLOAD || MANUALLOAD ))
 				fprintf(data,"%s\n",buf);
-			if ( load && INSERTLOAD ){
+
+			if ( forceload && experiment & INSERTLOAD ){
 				msg =SQLstatementIntern(cntxt,&s,"mseed.import",TRUE,FALSE);
 				if ( msg != MAL_SUCCEED)
-					break;
+					goto wrapup;
 			}
 		}
+
 		switch(msr->sampletype){
-			case 'a': kind="'string'"; break;
 			case 'i': 
 				snprintf(buf,BUFSIZ,QRYinsertI, *vid, msr->sequence_number,msr->dataquality,msr->network, msr->station, msr->location, msr->channel,
-				starttime,msr->samprate, msr->samplecnt,kind,imin,imax);
+				starttime,msr->samprate, msr->samplecnt,"int",imin,imax);
 				break;
-			case 'f': kind="'flt'"; break;
-			case 'd': kind="'dbl'"; break;
-			default : kind="null";
+			default : 
+				msg = createException(MAL,"mseed.import","data type not yet implemented");
+				goto wrapup;
 		}
 
-		if ( load == 0 ){
-			msg =SQLstatementIntern(cntxt,&s,"mseed.import",TRUE,FALSE);
-			if ( msg != MAL_SUCCEED){
+		if ( forceload == 0  && ( msg =SQLstatementIntern(cntxt,&s,"mseed.import",TRUE,FALSE)) != MAL_SUCCEED)
 				break;
-			}
-		}
 
-		if (msr->samplecnt) {
-			t= MS_HPTIME2EPOCH(msr->starttime);
-			tm = gmtime(&t);
-			snprintf(stoptime,BUFSIZ,"%d-%02d-%02d %02d:%02d:%02d.%06ld", tm->tm_year +(tm->tm_year > 80?1900:2000), tm->tm_mon+1,tm->tm_mday, tm->tm_hour, tm->tm_min,tm->tm_sec, msr->starttime % HPTMODULUS);
-		}
-		if(INSERTLOAD && nobat) {
+		if(experiment & INSERTLOAD && nobat) {
 			retcode = MS_ENDOFFILE;
 			break;
 		}
 
-		if ( load && COPYLOAD){
+		if ( forceload && experiment & COPYLOAD){
 			if( data) fclose(data);
 			data = 0;
-			strcpy(buf,"copy 400000 records into mseed2 from '/tmp/data' delimiters ',','\n';");
+			snprintf(buf,BUFSIZ,"copy %d records into mseed2 from '/tmp/data' delimiters ',','\n';", msr->samplecnt);
 			msg =SQLstatementIntern(cntxt,&s,"mseed.import",TRUE,FALSE);
 		}
 	}
-	if ( load && MANUALLOAD){
-		if( data) fclose(data);
-	}
-	if ( load && ATTACHLOAD){
-		if( data) fclose(data);
-		if( time) fclose(time);
-		data = 0;
-		time = 0;
-		snprintf(buf,BUFSIZ,"copy into mseed2 from ('%s/time','%s/data');",vaultpath,vaultpath);
-		msg =SQLstatementIntern(cntxt,&s,"mseed.import",TRUE,FALSE);
-	}
-
-	if ( msg== MAL_SUCCEED && retcode != MS_ENDOFFILE )
-		msg = createException(MAL, "mseed.dump", "Cannot read %s: %s\n", file, ms_errorstr(retcode));
-	else if ( msg == MAL_SUCCEED){
-		strcpy(buf,"commit;");
-		msg =SQLstatementIntern(cntxt,&s,"mseed.import",TRUE,FALSE);
-	}
-
+wrapup:
 	/* Make sure everything is cleaned up */
 	ms_readmsr (&msr, NULL, 0, NULL, NULL, 0, 0, 0);
-	return msg;
+	if( data) fclose(data);
+	if( time) fclose(time);
+	if ( msg)
+		return msg;
+	if ( retcode != MS_ENDOFFILE )
+		throw(MAL, "mseed.dump", "Cannot read %s: %s\n", file, ms_errorstr(retcode));
+
+	if ( forceload && experiment & ATTACHLOAD){
+		snprintf(buf,BUFSIZ,"copy into mseed2 from ('%s/time','%s/data');",vaultpath,vaultpath);
+		return SQLstatementIntern(cntxt,&s,"mseed.import",TRUE,FALSE);
+	}
+
+	strcpy(buf,"commit;");
+	return SQLstatementIntern(cntxt,&s,"mseed.import",TRUE,FALSE);
 }  
 
 str
 MseedImport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return MseedInternal(cntxt,mb,stk,pci,0);
+	int *ret = (int*) getArgReference(stk,pci,0); 
+	str msg= MseedInternal(cntxt,mb,stk,pci,0);
+	if ( msg == MAL_SUCCEED)
+		*ret = *(int*) getArgReference(stk,pci,1); 
+	else
+		*ret = int_nil;
+	return msg;
 }
 
 str
 MseedLoad(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return MseedInternal(cntxt,mb,stk,pci,1);
+	int *ret = (int*) getArgReference(stk,pci,0); 
+	str msg= MseedInternal(cntxt,mb,stk,pci,1);
+	if ( msg == MAL_SUCCEED)
+		*ret = *(int*) getArgReference(stk,pci,1); 
+	else
+		*ret = int_nil;
+	return msg;
 }
 
 @}
