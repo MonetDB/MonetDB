@@ -71,6 +71,8 @@ EXTERNAL NAME mseed.load;
 
 @- How to use the mseed catalog.
 First, the vault directory is populated with the location of the mseed source files.
+This information is gathered with a script, which also creates the tables for the
+individual stations.
 The corresponding local name is set using the basename property,
 and all files creation and access times are set to null.
 Following, a limited number of files are loaded into the vault and analysed.
@@ -85,7 +87,7 @@ create table batch(vid int, source string, target string);
 
 insert into batch
 select vid, source, target from vault where created is null limit 2;
-select vid from batch where  mseedImport( vid, source, target ) is not null;
+select mseedImport( vid, source, target ) from batch;
 drop table batch;
 @end verbatim
 
@@ -138,6 +140,10 @@ COPYLOAD	322 days (107 days with LOCKED)
 ATTACHLOAD   10 days (37days at 1sec)
 MANUALLOAD	3.2 yrs
 
+Ceveat. The way SQL works, leads to clearing the cache whenever we change the catalog.
+Using private mseed files, leads to this situation. However, clearing the cache is
+not reselient fo the context. This means that we may shoot in the foot, removing
+the plan we are just interpreting.
 @h
 #ifndef _MSEED_H
 #define _MSEED_H
@@ -203,6 +209,7 @@ MseedInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int force
 	struct tm *tm;
 	char *s;
 	timestamp answ;
+	char table[BUFSIZ];
 	char file[BUFSIZ];
 	char buf[BUFSIZ];
 	char starttime[BUFSIZ];
@@ -238,6 +245,15 @@ MseedInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int force
 		/* no caching  needed or allowed */
 		snprintf(file,BUFSIZ,"%s",*targetfile);
 
+	/* derive the table name */
+	s= strrchr(*targetfile,DIR_SEP);
+	if ( s == 0)
+		throw(MAL,"mseed.import","Illegal file name");
+	strcpy(table,s+1);
+	s = strchr(table,'.');
+	if ( s)
+		*s = 0;
+	//mnstr_printf(GDKout,"#table %s\n",table);
 	/* Loop over the input file */
 	s= buf;
 	while ( (retcode = ms_readmsr (&msr, file, reclen, NULL, NULL, 1, dataflag, verbose)) == MS_NOERROR  )
@@ -254,12 +270,6 @@ MseedInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int force
 		switch(msr->sampletype){
 			case 'i': 
 				imin = INT_MAX; imax = INT_MIN; 
-				if ( nobat==0 ){
-					snprintf(buf,BUFSIZ,"CREATE TABLE sys.mseed%d(time timestamp, data int);",*vid);
-					msg =SQLstatementIntern(cntxt,&s,"mseed.import file",TRUE,FALSE);
-					if ( msg)
-						goto wrapup;
-				}
 				break;
 			case 'a': case 'f': case 'd':
 			default : 
