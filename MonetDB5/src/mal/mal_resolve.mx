@@ -671,7 +671,7 @@ In those cases, the detailed analysis is performed upon an actual call.
 		if( ! isaSignature(p) && !getInstrPtr(mb,0)->polymorphic )  {
 			mb->errors++;
 			if( !silent) {
-				char errsig[2 * BUFSIZ];
+				char errsig[2 * BUFSIZ]="";
 
 				instructionCall(mb,p,errsig,errsig, 2 * BUFSIZ - 20 - 2 * strlen(getModuleId(p)) - strlen(getFunctionId(p)) -strlen(errsig));
 				showScriptException(mb,getPC(mb,p),TYPE,
