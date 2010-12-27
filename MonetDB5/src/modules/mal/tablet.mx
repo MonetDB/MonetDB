@@ -1383,6 +1383,7 @@ TABLETcollect_parts(Tablet * as, BUN offset)
 			b->hsorted = 0;
 		if (b->tsorted != bv->tsorted)
 			b->tsorted = 0;
+		b->batDirty = TRUE;
 
 		if (cnt != BATcount(b)) {
 			if ( as->error == 0) /* a new error */
