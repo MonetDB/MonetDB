@@ -19,22 +19,38 @@
 CREATE SEQUENCE sys.vaultid AS int;
 
 CREATE TABLE sys.vault (
-vid             int PRIMARY KEY,-- Internal key
-kind            string,         -- vault kind (CSV, MSEED, FITS,..)
-source          string,         -- remote file name for cURL to access
-target          string,         -- file name of source file in vault
-created         timestamp,      -- timestamp upon entering the cache
-lru             timestamp       -- least recently used
+vid 			int PRIMARY KEY,-- Internal key
+kind			string,			-- vault kind (CSV, MSEED, FITS,..)
+source			string,			-- remote file name for cURL to access
+target			string,			-- file name of source file in vault
+created			timestamp,		-- timestamp upon entering the cache
+lru				timestamp		-- least recently used
 );
 
-create function getvault()
+create function vaultLocation()
 returns string
 external name vault.getdirectory;
 
-create function basename(fnme string, split string)
+create function vaultSetLocation(dir string)
+returns string
+external name vault.setdirectory;
+
+create function vaultBasename(fnme string, split string)
 returns string
 external name vault.basename;
 
-create function import(source string, target string)
-returns string
+create function vaultImport(source string, target string)
+returns timestamp
 external name vault.import;
+
+create function vaultRemove(target string)
+returns timestamp
+external name vault.remove;
+
+create procedure vaultVacuum( t timestamp)
+begin
+update vault
+  set created= remove(target),
+  lru = null
+  where  created < t;
+end;
