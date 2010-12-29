@@ -262,8 +262,8 @@ exp_count(int *cnt, int seqnr, sql_exp *e)
 		}
 		switch (e->flag) {
 		case cmp_equal:
-			*cnt += 10;
-			return 10;
+			*cnt += 90;
+			return 90;
 		case cmp_notequal:
 			*cnt += 7;
 			return 7;

@@ -1352,11 +1352,16 @@ TABLETcollect_parts(Tablet * as, BUN offset)
 	if (bats == NULL)
 		return NULL;
 	for (i = 0; i < as->nr_attrs; i++) {
+		int GDKdebug_bak = GDKdebug;
 		BAT *b = fmt[i].c[0];
-		BAT *bv = BATslice(b, offset, BATcount(b));
+		BAT *bv = NULL;
 
-		BUNins(bats, (ptr) fmt[i].name, (ptr) &bv->batCacheid, FALSE);
 		BATsetaccess(b, BAT_READ);
+		bv = BATslice(b, offset, BATcount(b));
+		BUNins(bats, (ptr) fmt[i].name, (ptr) &bv->batCacheid, FALSE);
+		/* we "mis"use BATpropcheck to set rather than verify properties on 
+		 * the newly loaded slice; hence, we locally disable property errors */
+		GDKdebug &= ~PROPMASK;
 		BATaccessBegin(bv, USE_ALL, MMAP_WILLNEED);
 		BATpropcheck(bv, BATPROPS_ALL);
 		/* drop the hashes, we don't need them now  and they consume space */
@@ -1366,6 +1371,7 @@ TABLETcollect_parts(Tablet * as, BUN offset)
 		/* drop the hashes, we don't need them now  and they consume space */
 		HASHremove(BATmirror(b));
 		BATaccessEnd(bv, USE_ALL, MMAP_WILLNEED);
+		GDKdebug = GDKdebug_bak;
 
 		b->hkey &= bv->hkey;
 		b->tkey &= bv->tkey;
@@ -1377,6 +1383,7 @@ TABLETcollect_parts(Tablet * as, BUN offset)
 			b->hsorted = 0;
 		if (b->tsorted != bv->tsorted)
 			b->tsorted = 0;
+		b->batDirty = TRUE;
 
 		if (cnt != BATcount(b)) {
 			if ( as->error == 0) /* a new error */

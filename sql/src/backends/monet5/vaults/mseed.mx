@@ -59,7 +59,7 @@ RETURNS int
 EXTERNAL NAME mseed.import;
 
 CREATE FUNCTION mseedLoad(entry string)
-RETURNS int
+RETURNS TABLE(time timestamp, data int)
 EXTERNAL NAME mseed.load;
 @end verbatim
 
@@ -96,6 +96,10 @@ comment "Fetch the record descriptors of a mseed file and stores them into the m
 pattern load{unsafe}(entry:str)(:bat[:oid,:timestamp],:bat[:oid,:int])
 address MseedLoad
 comment "Load the content of a mseed file into BATs";
+
+pattern load{unsafe}(entry:str):bat[:str,:bat]
+address MseedLoadSQL
+comment "Load the content of a mseed file into SQL TABLE";
 @{
 @-
 Performance experimentation on Eir on Dec 17, 2010.
@@ -150,6 +154,7 @@ the plan we are just interpreting.
 #include "mal_client.h"
 #include "mal_interpreter.h"
 #include "mal_function.h"
+#include "mtime.h"
 #include "libmseed.h"
 
 #ifdef WIN32
@@ -163,7 +168,7 @@ the plan we are just interpreting.
 #endif
 
 vault_export str MseedImport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-vault_export str MseedLoad(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+vault_export str MseedLoadSQL(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #define _MSEED_DEBUG_
 
@@ -171,6 +176,7 @@ vault_export str MseedLoad(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 @c
 #include "mseed.h"
 #include "vault.h"
+#include "mtime.h"
 
 str SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output);
 
@@ -205,6 +211,8 @@ MseedImport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*ret = int_nil;
 
 	snprintf(file,BUFSIZ,"%s%c%s",vaultpath,DIR_SEP,*targetfile);
+	if ( access(file,R_OK) )
+		throw(MAL, "mseed.load", "Cannot access %s\n", file);
 	while ( (retcode = ms_readmsr (&msr, file, reclen, NULL, NULL, 1, dataflag, verbose)) == MS_NOERROR  )
 	{
 		t= MS_HPTIME2EPOCH(msr->starttime);
@@ -243,21 +251,121 @@ wrapup:
 	return msg;
 }  
 
+static str
+MseedLoadIntern(BAT **bbtime, BAT **bbdata, str targetfile)
+{
+	str msg = MAL_SUCCEED;
+	MSRecord *msr = 0;
+	BAT *btime, *bdata;
+
+	int verbose   = 1;
+	//int ppackets  = 2;
+	int reclen    = -1;
+	int dataflag  = 1;
+	int retcode;
+	int j;
+	time_t t;
+	struct tm *tm;
+	timestamp ts;
+	char file[BUFSIZ];
+	date d;
+	daytime dt;
+	tzone tz;
+	int ms,stepsize,minutes=0;
+
+	snprintf(file,BUFSIZ,"%s%c%s",vaultpath,DIR_SEP,targetfile);
+	if ( access(file,R_OK) )
+		throw(MAL, "mseed.load", "Cannot access %s\n", file);
+
+	btime = BATnew(TYPE_void,TYPE_timestamp,0);
+	BATseqbase(btime,0);
+	bdata = BATnew(TYPE_void,TYPE_int,0);
+	BATseqbase(bdata,0);
+	if ( btime == NULL || bdata == NULL ){
+		if ( btime) BBPreleaseref(btime->batCacheid);
+		if ( bdata) BBPreleaseref(bdata->batCacheid);
+		throw(MAL, "mseed.load", MAL_MALLOC_FAIL);
+	} 
+	*bbtime = btime;
+	*bbdata = bdata;
+	MTIMEtzone_create(&tz,  &minutes);
+	while ( (retcode = ms_readmsr (&msr, file, reclen, NULL, NULL, 1, dataflag, verbose)) == MS_NOERROR  )
+	{
+		stepsize = 1000000/ msr->samprate;
+		/* collect the statistics */
+		switch(msr->sampletype){
+		case 'i':
+			if (msr->datasamples)
+			for ( j=0;j< msr->samplecnt; j++){
+					t= MS_HPTIME2EPOCH(msr->starttime);
+					tm = gmtime(&t);
+					tm->tm_year += (tm->tm_year > 80?1900:2000);
+					ms = (msr->starttime % HPTMODULUS)/1000;
+					tm->tm_mon++;
+					MTIMEdate_create(&d,&tm->tm_year, &tm->tm_mon, &tm->tm_mday);
+					MTIMEdaytime_create(&dt, &tm->tm_hour, &tm->tm_min, &tm->tm_sec, &ms);
+					MTIMEtimestamp_create(&ts, &d, &dt, &tz);
+					BUNappend(btime, (ptr) &ts , FALSE);
+					BUNappend(bdata, (ptr)(((int*) msr->datasamples)+j) , FALSE);
+					msr->starttime += stepsize;
+			}
+			break;
+		case 'a': case 'f': case 'd':
+		default:
+			msg = createException(MAL,"mseed.load","data type not yet implemented");
+			goto wrapup;
+		}
+	}
+wrapup:
+	/* Make sure everything is cleaned up */
+	ms_readmsr (&msr, NULL, 0, NULL, NULL, 0, 0, 0);
+	if ( retcode != MS_ENDOFFILE )
+		throw(MAL, "mseed.load", "Cannot read %s: %s\n", *targetfile, ms_errorstr(retcode));
+	return msg;
+}  
+
 str
-MseedLoad(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+MseedLoadSQL(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *ret = (int*) getArgReference(stk,pci,0); 
-/*	int *vid = (int*) getArgReference(stk,pci,1); 
-	str *targetfile = (str*) getArgReference(stk,pci,2);  */
-	str msg= MAL_SUCCEED;
+	str *targetfile = (str*) getArgReference(stk,pci,1); 
+	str msg = MAL_SUCCEED;
+	BAT *btime, *bdata, *table;
 
-	(void) mb;
 	(void) cntxt;
-	if ( msg == MAL_SUCCEED)
-		*ret = *(int*) getArgReference(stk,pci,1); 
-	else
-		*ret = int_nil;
+	(void) mb;
+
+	table = BATnew(TYPE_str,TYPE_bat,0);
+	if ( table == NULL)
+		throw(MAL, "mseed.load", MAL_MALLOC_FAIL);
+	msg = MseedLoadIntern(&btime, &bdata, *targetfile);
+	if ( msg == MAL_SUCCEED){
+		BUNins(table, (ptr)"time", (ptr)&btime->batCacheid, FALSE);
+		BUNins(table, (ptr)"data", (ptr)&bdata->batCacheid, FALSE);
+		BBPreleaseref(btime->batCacheid);
+		BBPreleaseref(bdata->batCacheid);
+		BBPkeepref(*ret= table->batCacheid);
+	}
 	return msg;
 }
 
+str
+MseedLoad(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int *ret0 = (int*) getArgReference(stk,pci,0); 
+	int *ret1 = (int*) getArgReference(stk,pci,1); 
+	str *targetfile = (str*) getArgReference(stk,pci,2); 
+	str msg;
+	BAT *btime, *bdata;
+
+	(void) cntxt;
+	(void) mb;
+
+	msg = MseedLoadIntern(&btime, &bdata, *targetfile);
+	if ( msg == MAL_SUCCEED){
+		BBPkeepref(*ret0 = btime->batCacheid);
+		BBPkeepref(*ret1 = bdata->batCacheid);
+	}
+	return msg;
+}
 @}

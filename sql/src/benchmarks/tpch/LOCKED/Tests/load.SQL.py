@@ -12,3 +12,8 @@ for ln in open(os.path.join(SRCDIR,"load-sf-0.01-LOCKED.sql")):
 out, err = c.communicate()
 sys.stdout.write(out)
 sys.stderr.write(err)
+
+c = process.client('sql', stdin = open(os.path.join(os.environ['TSTSRCDIR'],"check1.sql")), stdout = process.PIPE, stderr = process.PIPE)
+out, err = c.communicate()
+sys.stdout.write(out)
+sys.stderr.write(err)
