@@ -112,6 +112,7 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 	merovingian_proxy *pctos, *pstoc;
 	pthread_t ptid;
 	pthread_attr_t detachattr;
+	int thret;
 
 	/* quick 'n' dirty parsing */
 	if (strncmp(url, "mapi:monetdb://", sizeof("mapi:monetdb://") - 1) == 0) {
@@ -241,12 +242,12 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 	pstoc->name   = NULL;  /* we want only one log-message on disconnect */
 	pstoc->co_thr = 0;
 
-	if (pthread_create(&ptid, NULL,
-				(void *(*)(void *))proxyThread, (void *)pstoc) < 0)
+	if ((thret = pthread_create(&ptid, NULL,
+				(void *(*)(void *))proxyThread, (void *)pstoc)) != 0)
 	{
 		close_stream(sfout);
 		close_stream(sfdin);
-		return(newErr("failed to create proxy thread"));
+		return(newErr("failed to create proxy thread: %s", strerror(thret)));
 	}
 
 	pctos = GDKmalloc(sizeof(merovingian_proxy));
@@ -259,12 +260,12 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 
 	pthread_attr_init(&detachattr);
 	pthread_attr_setdetachstate(&detachattr, PTHREAD_CREATE_DETACHED);
-	if (pthread_create(&ptid, &detachattr,
-				(void *(*)(void *))proxyThread, (void *)pctos) < 0)
+	if ((thret = pthread_create(&ptid, &detachattr,
+				(void *(*)(void *))proxyThread, (void *)pctos)) != 0)
 	{
 		close_stream(sfout);
 		close_stream(sfdin);
-		return(newErr("failed to create proxy thread"));
+		return(newErr("failed to create proxy thread: %s", strerror(thret)));
 	}
 
 	return(NO_ERR);
