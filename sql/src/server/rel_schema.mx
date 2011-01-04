@@ -853,7 +853,7 @@ rel_create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symb
 	if (s == NULL)
 		s = cur_schema(sql);
 
-	if (create && (t = mvc_bind_table(sql, s, name)) != NULL) {
+	if (create && mvc_bind_table(sql, s, name) != NULL) {
 		return sql_error(sql, 02, "CREATE VIEW: name '%s' already in use", name);
 	} else if (create && !schema_privs(sql->role_id, s)) {
 		return sql_error(sql, 02, "CREATE VIEW: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);

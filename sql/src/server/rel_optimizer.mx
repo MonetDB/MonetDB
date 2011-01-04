@@ -90,7 +90,7 @@ name_find_column( sql_rel *rel, char *rname, char *name )
 	}
 	case op_table:
 		if (rel->exps)
-			alias = exps_bind_column(rel->exps, name, NULL);
+			(void) exps_bind_column(rel->exps, name, NULL);
 		/* table func */
 		return NULL;
 	case op_join: 
