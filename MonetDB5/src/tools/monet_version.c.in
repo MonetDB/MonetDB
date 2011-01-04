@@ -14,7 +14,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2010 MonetDB B.V.
+ * Copyright August 2008-2011 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -47,7 +47,7 @@ monet_version(void)
 	else
 		printf("Release %s\n", MONETDB_RELEASE);
 	printf("Copyright (c) 1993-July 2008 CWI\n"
-			"Copyright (c) August 2008-2010 MonetDB B.V., all rights reserved\n");
+			"Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved\n");
 	printf("Visit http://monetdb.cwi.nl/ for further information\n");
 #ifdef WIN32
 	/* Detection of cpus is fine on windows, but multithreading doesn't
