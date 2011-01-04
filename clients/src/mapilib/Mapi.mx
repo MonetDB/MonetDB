@@ -1012,6 +1012,7 @@ struct MapiStruct {
 	char *password;
 	char *language;
 	char *database;		/* to obtain from server */
+	char *uri;
 	int languageId;
 	int versionId;		/* Monet 4 or 5 */
 	char *motd;		/* welcome message from server */
@@ -1264,6 +1265,7 @@ mapi_export char **mapi_fetch_field_array(MapiHdl hdl);
 mapi_export char *mapi_fetch_line(MapiHdl hdl);
 mapi_export int mapi_split_line(MapiHdl hdl);
 mapi_export char *mapi_get_lang(Mapi mid);
+mapi_export char *mapi_get_uri(Mapi mid);
 mapi_export char *mapi_get_dbname(Mapi mid);
 mapi_export char *mapi_get_host(Mapi mid);
 mapi_export char *mapi_get_user(Mapi mid);
@@ -1303,6 +1305,7 @@ static int unquote(const char *msg, char **start, const char **next, int endchar
 static int mapi_slice_row(struct MapiResultSet *result, int cr);
 static void mapi_store_bind(struct MapiResultSet *result, int cr);
 static void parse_uri_query(Mapi mid, char *uri);
+static void set_uri(Mapi mid);
 
 static int mapi_initialized = 0;
 
@@ -2166,6 +2169,8 @@ mapi_mapiuri(const char *url, const char *user, const char *pass, const char *la
 	if (mid->database == NULL && dbname != NULL)
 		mid->database = strdup(dbname);
 
+	set_uri(mid);
+
 	return mid;
 }
 
@@ -2232,6 +2237,8 @@ mapi_mapi(const char *host, int port, const char *username,
 		free(mid->database);
 	mid->database = dbname ? strdup(dbname) : NULL;
 
+	set_uri(mid);
+
 	return mid;
 }
 
@@ -2265,6 +2272,8 @@ mapi_destroy(Mapi mid)
 		free(mid->database);
 	if (mid->server)
 		free(mid->server);
+	if (mid->uri)
+		free(mid->uri);
 
 	r = mid->redirects;
 	while (*r) {
@@ -2318,6 +2327,41 @@ parse_uri_query(Mapi mid, char *uri)
 		} /* else: invalid argument, can't warn, just skip */
 		uri = amp;
 	} while (uri != NULL);
+}
+
+/* construct the uri field of a Mapi struct */
+static void
+set_uri(Mapi mid)
+{
+	char uri[1024];
+
+	/* uri looks as follows:
+	 *  mapi:monetdb://host:port/database
+	 * or
+	 *  mapi:monetdb:///some/path/to?database=database
+	 */
+
+	if (mid->database != NULL) {
+		if (mid->hostname[0] == '/') {
+			snprintf(uri, sizeof(uri), "mapi:monetdb://%s?database=%s",
+					mid->hostname, mid->database);
+		} else {
+			snprintf(uri, sizeof(uri), "mapi:monetdb://%s:%d/%s",
+					mid->hostname, mid->port, mid->database);
+		}
+	} else {
+		if (mid->hostname[0] == '/') {
+			snprintf(uri, sizeof(uri), "mapi:monetdb://%s",
+					mid->hostname);
+		} else {
+			snprintf(uri, sizeof(uri), "mapi:monetdb://%s:%d",
+					mid->hostname, mid->port);
+		}
+	}
+
+	if (mid->uri != NULL)
+		free(mid->uri);
+	mid->uri = strdup(uri);
 }
 
 @- Channel Constructor
@@ -5480,6 +5524,12 @@ char *
 mapi_get_lang(Mapi mid)
 {
 	return mid->language;
+}
+
+char *
+mapi_get_uri(Mapi mid)
+{
+	return mid->uri;
 }
 
 char *
