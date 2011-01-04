@@ -8,7 +8,7 @@ stdout of test 'terms2` in directory 'modules/pftijah` itself:
 # MonetDB Server v4.36.0
 # based on GDK   v1.36.0
 # Copyright (c) 1993-July 2008, CWI. All rights reserved.
-# Copyright (c) August 2008-2010, MonetDB B.V.. All rights reserved.
+# Copyright (c) August 2008-2011, MonetDB B.V.. All rights reserved.
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Detected 7.751 GiB (8322658304 bytes) main-memory.
 # Visit http://monetdb.cwi.nl/ for further information.

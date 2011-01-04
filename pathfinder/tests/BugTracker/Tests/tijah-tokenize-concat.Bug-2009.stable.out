@@ -9,7 +9,7 @@ stdout of test 'tijah-tokenize-concat.Bug-2009` in directory 'tests/BugTracker` 
 # based on GDK   v1.38.4
 # not released
 # Copyright (c) 1993-July 2008, CWI. All rights reserved.
-# Copyright (c) August 2008-2010, MonetDB B.V.. All rights reserved.
+# Copyright (c) August 2008-2011, MonetDB B.V.. All rights reserved.
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Detected 7.751 GiB (8322707456 bytes) main-memory.
 # Visit http://monetdb.cwi.nl/ for further information.

@@ -85,7 +85,7 @@ BEGIN
             // Maintained via vertoo. Please don't modify by hand!
             // Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
             VALUE "InternalName", "libMonetODBCs.dll"
-            VALUE "LegalCopyright", "Copyright (c) MonetDB BV 2008-2010"
+            VALUE "LegalCopyright", "Copyright (c) MonetDB BV 2008-2011"
             VALUE "OriginalFilename", "libMonetODBCs.dll"
             VALUE "ProductName", "MonetDB SQL Server"
             VALUE "ProductVersion", "1.40.3\0"
