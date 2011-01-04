@@ -34,6 +34,7 @@
 #include <utils/properties.h>
 
 #include "merovingian.h"
+#include "multiplex-funnel.h"
 #include "discoveryrunner.h"
 
 
@@ -59,19 +60,14 @@ removeRemoteDB(const char *dbname, const char *conn)
 	remotedb rdb;
 	remotedb prv;
 	char hadmatch = 0;
-	/* look for the database, and verify that its "conn"
-	 * (merovingian) is the same */
-
-	/* technically, we could use Diffie-Hellman (without Debian
-	 * modifications) to negotiate a shared secret key, such
-	 * that only the original registrant can unregister a
-	 * database, however... do we really care that much? */
 
 	pthread_mutex_lock(&_mero_remotedb_lock);
 
 	prv = NULL;
 	rdb = _mero_remotedbs;
 	while (rdb != NULL) {
+		/* look for the database, and verify that its "conn"
+		 * (merovingian) is the same */
 		if (strcmp(dbname, rdb->dbname) == 0 &&
 				strcmp(conn, rdb->conn) == 0)
 		{
@@ -81,6 +77,10 @@ removeRemoteDB(const char *dbname, const char *conn)
 			} else {
 				prv->next = rdb->next;
 			}
+
+			/* inform multiplex-funnels about this removal */
+			multiplexNotifyRemovedDB(rdb->fullname);
+
 			Mfprintf(_mero_discout,
 					"removed neighbour database %s%s\n",
 					conn, rdb->fullname);
@@ -89,7 +89,7 @@ removeRemoteDB(const char *dbname, const char *conn)
 			free(rdb->fullname);
 			free(rdb);
 			hadmatch = 1;
-			/* there may be more, keep looking */
+			/* in the future, there may be more, so keep looking */
 		}
 		prv = rdb;
 		rdb = rdb->next;
@@ -141,6 +141,9 @@ addRemoteDB(const char *dbname, const char *conn, const int ttl) {
 	rdb->next = NULL;
 
 	pthread_mutex_unlock(&_mero_remotedb_lock);
+
+	/* inform multiplex-funnels about this addition */
+	multiplexNotifyAddedDB(rdb->fullname);
 
 	return(1);
 }

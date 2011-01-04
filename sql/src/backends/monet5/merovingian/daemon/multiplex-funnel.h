@@ -23,6 +23,8 @@
 #include <pthread.h>
 #include <Mapi.h>
 
+#include "merovingian.h"
+
 typedef struct _multiplex_database {
 	Mapi conn;
 	char *user;
@@ -46,10 +48,12 @@ typedef struct _multiplex {
 	multiplex_client    *clients;
 } multiplex;
 
-multiplex *multiplexInit(char *database);
+err multiplexInit(multiplex **ret, char *database);
 void multiplexThread(void *d);
 void multiplexAddClient(multiplex *m, int sock, stream *fout, stream *fdin, char *name);
 void multiplexRemoveClient(multiplex *m, multiplex_client *c);
+void multiplexNotifyAddedDB(const char *database);
+void multiplexNotifyRemovedDB(const char *database);
 
 #endif
 

@@ -240,16 +240,30 @@ handleClient(int sock, char isusock)
 				break;
 		}
 		if (w == NULL) {
+			char *err;
 			w = malloc(sizeof(mplist));
 			w->next = mero_multiplex_funnel;
-			w->mpf = multiplexInit(database);
+			if ((err = multiplexInit(&w->mpf, database)) != NULL) {
+				free(w);
+				mnstr_printf(fout, "!merovingian: failed to create "
+						"multiplex-funnel: %s\n", err);
+				mnstr_flush(fout);
+				close_stream(fout);
+				close_stream(fdin);
+				return(err);
+			}
 			mero_multiplex_funnel = w;
 			if (pthread_create(&w->mpf->tid,
 					NULL, (void *(*)(void *))multiplexThread,
 					(void *)w->mpf) < 0)
 			{
-				Mfprintf(stderr, "starting multiplex-funnel %s failed\n",
-						database);
+				mnstr_printf(fout, "!merovingian: internal failure while "
+						"creating multiplex-funnel: unable to start thread\n");
+				mnstr_flush(fout);
+				close_stream(fout);
+				close_stream(fdin);
+				return(newErr("starting thread for multiplex-funnel %s failed",
+							database));
 			}
 		}
 		multiplexAddClient(w->mpf, sock, fout, fdin, host);
