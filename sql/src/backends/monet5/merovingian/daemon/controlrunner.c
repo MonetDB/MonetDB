@@ -279,7 +279,8 @@ controlRunner(void *d)
 							(void *(*)(void *))peeringServerThread,
 							(void *)&msgsock)) != 0)
 				{
-					/* FIXME: FAIL strerror(ret) */
+					Mfprintf(stderr, "failed to create peeringServerThread: %s\n",
+							strerror(ret));
 				}
 			} else {
 				Mfprintf(_mero_ctlout, "%s: invalid mode "
