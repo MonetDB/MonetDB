@@ -15,7 +15,6 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-import string
 import os
 from codegen import find_org
 import re
@@ -37,29 +36,29 @@ am_assign = "+="
 def split_filename(f):
     base = f
     ext = ""
-    if string.find(f, ".") >= 0:
-        return string.split(f, ".", 1)
+    if f.find(".") >= 0:
+        return f.split(".", 1)
     return base, ext
 
 def rsplit_filename(f):
     base = f
     ext = ""
-    s = string.rfind(f, ".")
+    s = f.rfind(".")
     if s >= 0:
         return f[:s], f[s+1:]
     return base, ext
 
 def cond_subdir(fd, dir, i):
     res = ""
-    parts = string.split(dir, "?")
+    parts = dir.split("?")
     if len(parts) == 2:
-        dirs = string.split(parts[1], ":")
+        dirs = parts[1].split(":")
         fd.write("if %s\n" % parts[0])
-        if len(dirs) > 0 and string.strip(dirs[0]) != "":
+        if len(dirs) > 0 and dirs[0].strip() != "":
             fd.write("%s_%d_SUBDIR = %s\n" % (parts[0], i, dirs[0]))
         else:
             fd.write("%s_%d_SUBDIR = \n" % (parts[0], i))
-        if len(dirs) > 1 and string.strip(dirs[1]) != "":
+        if len(dirs) > 1 and dirs[1].strip() != "":
             fd.write("else\n")
             fd.write("%s_%d_SUBDIR = %s\n" % (parts[0], i, dirs[1]))
         else:
@@ -102,7 +101,7 @@ def am_subdirs(fd, var, values, am):
     i = 0
     for dir in values:
         i = i + 1
-        if string.find(dir, "?") > -1:
+        if dir.find("?") > -1:
             dirs.append(cond_subdir(fd, dir, i))
         else:
             dirs.append(dir)
@@ -337,7 +336,7 @@ def is_mil_module(script, deps):
 def am_scripts(fd, var, scripts, am):
 #todo handle 'EXT' for empty ''.
 
-    s, ext = string.split(var, '_', 1)
+    s, ext = var.split('_', 1)
     ext = [ ext ]
     if scripts.has_key("EXT"):
         ext = scripts["EXT"] # list of extentions
@@ -359,8 +358,8 @@ def am_scripts(fd, var, scripts, am):
         s = script
         scriptname = "script_" + script
         if scripts.has_key('COND'):
-            condname = string.join(scripts['COND'], '+')
-            mkname = am_normalize(string.replace(script, '.', '_'))
+            condname = '+'.join(scripts['COND'])
+            mkname = am_normalize(script.replace('.', '_'))
             cond = '#' + condname
             s = "$(C_" + mkname + ")"
             scriptname = "$(C_script_" + mkname + ")"
@@ -445,8 +444,8 @@ def am_headers(fd, var, headers, am):
         cond = ''
         h = header
         if headers.has_key('COND'):
-            cond = '#' + string.join(headers['COND'], '+')
-            mkname = am_normalize(string.replace(header, '.', '_'))
+            cond = '#' + '+'.join(headers['COND'])
+            mkname = am_normalize(header.replace('.', '_'))
             for condname in headers['COND']:
                 fd.write('if %s\n' % condname)
             fd.write('C_%s = %s\n' % (mkname, header))
@@ -516,7 +515,7 @@ def am_doc(fd, var, docmap, am):
     am_deps(fd, docmap['DEPS'], am)
 
 def am_normalize(name):
-    return string.replace(name, '-', '_')
+    return name.replace('-', '_')
 
 def am_binary(fd, var, binmap, am):
 
@@ -587,7 +586,7 @@ def am_binary(fd, var, binmap, am):
     if binmap.has_key('COND'):
         for condname in binmap['COND']:
             fd.write("if %s\n" % condname)
-        cond = '#' + string.join(binmap['COND'], '+')
+        cond = '#' + '+'.join(binmap['COND'])
         fd.write(" C_%s = %s\n" % (name,name))
         fd.write(" %s_PROGRAMS =%s\n" % (norm_binname,  binname))
         for condname in binmap['COND']:
@@ -762,7 +761,7 @@ def am_library(fd, var, libmap, am):
 
     if name[0] == '_':
         name = name[1:]
-    fd.write("lib%s%s_la_CFLAGS=-DLIB%s $(AM_CFLAGS)\n" % (sep,libname,string.upper(name)))
+    fd.write("lib%s%s_la_CFLAGS=-DLIB%s $(AM_CFLAGS)\n" % (sep,libname,name.upper()))
 
     ld = "libdir"
     if libmap.has_key("DIR"):
@@ -936,7 +935,7 @@ def am_libs(fd, var, libsmap, am):
             am['ALL'].append(libname)
 
         fd.write("%sdir = %s\n" % (libname, ld))
-        fd.write("lib%s%s_la_CFLAGS=-DLIB%s $(AM_CFLAGS)\n" % (sep,libname,string.upper(libname)))
+        fd.write("lib%s%s_la_CFLAGS=-DLIB%s $(AM_CFLAGS)\n" % (sep,libname,libname.upper()))
         am['LIBS'].append(('lib', libname, sep, ''))
         am['InstallList'].append("\t"+ld+"/lib"+sep+libname+".so\n")
 
@@ -1089,8 +1088,8 @@ def am_translate_dir(path, am):
     path = path.replace('\\', '/')
     dir = path
     rest = ""
-    if string.find(path, '/') >= 0:
-        dir, rest = string.split(path, '/', 1)
+    if path.find('/') >= 0:
+        dir, rest = path.split('/', 1)
         rest = '/' + rest
 
     if dir in ('bindir', 'builddir', 'datadir', 'includedir', 'infodir',
@@ -1194,7 +1193,7 @@ endif
     am['ALL'] = []
     am['DEPS'] = []
     if conditional:
-        cond = '#' + string.join(conditional, '+')
+        cond = '#' + '+'.join(conditional)
     else:
         cond = ''
     am['InstallList'] = []
@@ -1206,9 +1205,9 @@ endif
 
     for i, v in tree.items():
         j = i
-        if string.find(i, '_') >= 0:
-            k, j = string.split(i, '_', 1)
-            j = string.upper(k)
+        if i.find('_') >= 0:
+            k, j = i.split('_', 1)
+            j = k.upper()
         if output_funcs.has_key(i):
             output_funcs[i](fd, i, v, am)
         elif output_funcs.has_key(j):
