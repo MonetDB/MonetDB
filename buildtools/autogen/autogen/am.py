@@ -18,6 +18,7 @@
 import string
 import os
 from codegen import find_org
+import re
 
 #automake_ext = ['c', 'h', 'y', 'l', 'glue.c']
 automake_ext = ['', 'c', 'def', 'glue.c', 'h', 'lo', 'o', 'php.c', 'pm.c',
@@ -953,6 +954,7 @@ def am_libs(fd, var, libsmap, am):
     am_deps(fd, libsmap['DEPS'], am)
 
 def am_gem(fd, var, gem, am):
+    gemre = re.compile(r'\.files *= *\[ *(.*[^ ]) *\]')
     rd = 'RUBY_DIR'
     if gem.has_key('DIR'):
         rd = gem['DIR'][0]
@@ -964,16 +966,32 @@ def am_gem(fd, var, gem, am):
         fd.write(' %s' % f[:-4])
     fd.write('\n')
     for f in gem['FILES']:
+        srcs = map(lambda x: x.strip('" '),
+                   gemre.search(open(os.path.join(am['CWDRAW'], f)).read()).group(1).split(', '))
+        srcs.append(f)
         sf = f.replace('.', '_')
         am['INSTALL'].append(sf)
         am['UNINSTALL'].append(sf)
-        fd.write('%s: %s\n' % (f[:-4], f))
-        fd.write('\td=$(dir $<); [ "$$d" -ef . ] || (cd "$$d"; tar cf - %s `sed -n \'/.*\.files *= *\[ */{s///;s/ *\].*//;s/"//g;s/ *, */ /g;p;}\' "%s"`) | tar xvf - > files-to-be-cleaned\n' % (f, f))
+        fd.write('%s: %s\n' % (f[:-4], ' '.join(srcs)))
+        dirs = []
+        for src in srcs:
+            if '/' in src:
+                d = os.path.dirname(src)
+                if d not in dirs:
+                    fd.write('\t[ $(srcdir) -ef . ] || mkdir -p %s\n' % os.path.dirname(src))
+                    dirs.append(d)
+                    while '/' in d:
+                        d = os.path.dirname(d)
+                        dirs.append(d)
+            fd.write('\t[ $(srcdir) -ef . ] || cp -p $(srcdir)/%s %s\n' % (src, src))
         fd.write('\tgem build %s\n' % f)
         fd.write('mostlyclean-local: mostlyclean-local-%s\n' % sf)
         fd.write('.PHONY: mostlyclean-local-%s\n' % sf)
         fd.write('mostlyclean-local-%s:\n' % sf)
-        fd.write('\t[ ! -f files-to-be-cleaned ] || rm -f `cat files-to-be-cleaned` files-to-be-cleaned\n')
+        for src in srcs:
+            fd.write('\t[ $(srcdir) -ef . ] || rm -f %s\n' % src)
+        for d in sorted(dirs, reverse = True):
+            fd.write('\t[ $(srcdir) -ef . ] || rmdir %s\n' % d)
         fd.write('install-exec-local-%s: %s\n' % (sf, f[:-4]))
         fd.write('\tmkdir -p $(DESTDIR)%s\n' % rd)
         fd.write('\tgem install --local --install-dir $(DESTDIR)%s --force --rdoc %s\n' % (rd, f[:-4]))
