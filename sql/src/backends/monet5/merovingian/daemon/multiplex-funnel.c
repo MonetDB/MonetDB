@@ -219,7 +219,8 @@ multiplexNotifyAddedDB(const char *database)
 
 	snprintf(dbslash, sizeof(dbslash), "+%s/", database);
 	p = strdup(dbslash);
-	write(mfpipe[1], &p, sizeof(ptr));
+	if (write(mfpipe[1], &p, sizeof(ptr)) != sizeof(ptr))
+		Mfprintf(stderr, "failed to write notify added message to mfpipe\n");
 }
 
 void
@@ -233,7 +234,8 @@ multiplexNotifyRemovedDB(const char *database)
 
 	snprintf(dbslash, sizeof(dbslash), "-%s/", database);
 	p = strdup(dbslash);
-	write(mfpipe[1], &p, sizeof(ptr));
+	if (write(mfpipe[1], &p, sizeof(ptr)) != sizeof(ptr))
+		Mfprintf(stderr, "failed to write notify removed message to mfpipe\n");
 }
 
 err
@@ -340,7 +342,8 @@ multiplexInit(multiplex **ret, char *database)
 		pthread_attr_setdetachstate(&detach, PTHREAD_CREATE_DETACHED);
 
 		/* create communication channel */
-		pipe(mfpipe);
+		if (pipe(mfpipe) != 0)
+			Mfprintf(stderr, "failed to create mfpipe: %s\n", strerror(errno));
 
 		if ((i = pthread_create(&mfmanager, &detach,
 				(void *(*)(void *))MFconnectionManager, (void *)NULL)) != 0)
