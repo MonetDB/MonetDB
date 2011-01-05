@@ -169,7 +169,7 @@ dump_header(mvc *sql, MalBlkPtr mb, stmt *s, list *l)
 		q = pushStr(mb, q, t->type->sqlname);
 		q = pushInt(mb, q, t->digits);
 		q = pushInt(mb, q, t->scale);
-		q = pushArgument(mb, q, c->nr);
+		(void) pushArgument(mb, q, c->nr);
 		_DELETE(ntn);
 		_DELETE(nsn);
 	}
@@ -183,7 +183,7 @@ dump_table(MalBlkPtr mb, sql_table *t)
 	InstrPtr k = newStmt1(mb, sqlRef, "declaredTable");
 
 	nr = getDestVar(k);
-	k = pushStr(mb, k, t->base.name );
+	(void) pushStr(mb, k, t->base.name );
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
 		char *tname = c->t->base.name;
@@ -196,7 +196,7 @@ dump_table(MalBlkPtr mb, sql_table *t)
 		q = pushStr(mb, q, cn);
 		q = pushStr(mb, q, c->type.type->sqlname);
 		q = pushInt(mb, q, c->type.digits);
-		q = pushInt(mb, q, c->type.scale);
+		(void) pushInt(mb, q, c->type.scale);
 		_DELETE(tn);
 	}
 	return nr;
@@ -208,7 +208,7 @@ drop_table(MalBlkPtr mb, str n)
 	InstrPtr k = newStmt1(mb, sqlRef, "dropDeclaredTable");
 	int nr = getDestVar(k);
 
-	k = pushStr(mb, k, n);
+	(void) pushStr(mb, k, n);
 	return nr;
 }
 
@@ -537,7 +537,7 @@ disconnect(MalBlkPtr mb, list *l)
 	setVarType(mb, getArg(q, 0), TYPE_int);
 	
 	if (list_length(l) == 2) {
-		q = pushStr(mb, q, (char *) n->next->data);
+		(void) pushStr(mb, q, (char *) n->next->data);
 	}
 
 }
@@ -567,7 +567,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		case st_none: {
 			q = newAssignment(mb);
 			s->nr = getDestVar(q);
-			q = pushInt(mb, q, 1);
+			(void) pushInt(mb, q, 1);
 		}	break;
 		case st_connection: {
 			if (list_length(s->op4.lval) < 3)
@@ -746,7 +746,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 				q = newStmt2(mb, batRef, appendRef);
 				q = pushArgument(mb, q, k);
-				q = pushArgument(mb, q, l);
+				(void) pushArgument(mb, q, l);
 				l = k;
 			}
 			if (s->flag) {
@@ -1247,7 +1247,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			snprintf(nme, SMALLBUFSIZ, "grp%d", getDestVar(q));
 			q = pushReturn(mb, q, newVariable(mb, nme, TYPE_any));
 			grp = getArg(q, 1);
-			q = pushArgument(mb, q, o1);
+			(void) pushArgument(mb, q, o1);
 
 			q = newAssignment(mb);
 			q = pushArgument(mb, q, grp);
@@ -1285,7 +1285,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			(void) snprintf(buf, SMALLBUFSIZ, "ext%d", g);
 			q = pushArgumentId(mb, q, buf);
 			q = pushArgument(mb, q, g);
-			q = pushArgument(mb, q, l);
+			(void) pushArgument(mb, q, l);
 
 			q = newAssignment(mb);
 			q = pushArgument(mb, q, grp);
@@ -1311,7 +1311,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				(void) snprintf(buf, SMALLBUFSIZ, "ext%d", g);
 				q = pushArgumentId(mb, q, buf);
 				q = pushArgument(mb, q, g);
-				q = pushArgument(mb, q, l);
+				(void) pushArgument(mb, q, l);
 
 				q = newStmt2(mb, batRef, mirrorRef);
 				q = pushArgument(mb, q, e);
@@ -1805,7 +1805,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					q = pushInt(mb, q, t->scale);
 					q = pushInt(mb, q, t->type->eclass);
 					q = pushArgument(mb, q, c->nr);
-					q = pushStr(mb, q, ""); /* warning */
+					(void) pushStr(mb, q, "");   /* warning */
 					_DELETE(ntn);
 					_DELETE(nsn);
 					break;
@@ -1832,7 +1832,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				} else {
 					k = pushInt(mb, k, sql->mvc->type);
 				}
-				k = pushArgument(mb, k, order->nr);
+				(void) pushArgument(mb, k, order->nr);
 				dump_header(sql->mvc, mb, s, l);
 				
 				if (s->type == st_export && s->op2) {
@@ -1873,14 +1873,14 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 */
 				q = newStmt2(mb, sqlRef, exportResultRef);
 				q = pushArgument(mb, q, file);
-				q = pushArgument(mb, q, s->nr);
+				(void) pushArgument(mb, q, s->nr);
 				if (s->type == st_export && s->op2) {
 					q = newStmt(mb, "streams", "close");
-					q = pushArgument(mb, q, file);
+					(void) pushArgument(mb, q, file);
 				}
 			} else {
 				q = newStmt1(mb, sqlRef, "print");
-				q = pushStr(mb, q, "not a valid output list\n");
+				(void) pushStr(mb, q, "not a valid output list\n");
 				s->nr = 1;
 			}
 		}
@@ -1897,11 +1897,11 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = newStmt1(mb, batRef, "new");
 				s->nr = getDestVar(q);
 				q = pushType(mb, q, TYPE_str);
-				q = pushType(mb, q, TYPE_bat);
+				(void) pushType(mb, q, TYPE_bat);
 				s->nr = dump_cols(sql->mvc, mb, l, s->nr);
 			} else {
 				q = newStmt1(mb, sqlRef, "print");
-				q = pushStr(mb, q, "not a valid output list\n");
+				(void) pushStr(mb, q, "not a valid output list\n");
 				s->nr = 1;
 			}
 		}
@@ -1940,7 +1940,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				getArg(q,0) = c;
 				q->argc = q->retc = 1;
 				q->barrier = REDOsymbol;
-				q = pushBit(mb, q, TRUE);
+				(void) pushBit(mb, q, TRUE);
 			} else {
 				q = newAssignment(mb);
 				getArg(q,0) = c;
@@ -1956,7 +1956,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			if (s->flag) { /* drop declared tables */
 				InstrPtr k = newStmt1(mb, sqlRef, "dropDeclaredTables");
-				k = pushInt(mb, k, s->flag);
+				(void) pushInt(mb, k, s->flag);
 			} 
 			q = newInstruction(mb,RETURNsymbol);
 			getArg(q,0) = getArg(getInstrPtr(mb,0),0);
@@ -1991,7 +1991,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushArgument(mb, q, vn);
 				s->nr = 1;
 			}
-			q = pushArgument(mb, q, r);
+			(void) pushArgument(mb, q, r);
 		} 	break;
 
 			/* todo */
@@ -2052,7 +2052,7 @@ static void backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s)
 	be->mvc_var = old_mv;
 	if (c->caching && (c->type == Q_SCHEMA || c->type == Q_TRANS)) {
 		q = newStmt2(mb, sqlRef, exportOperationRef);
-		q = pushStr(mb, q, ""); /* warning */
+		(void) pushStr(mb, q, ""); /* warning */
 	}
 	/* generate a dummy return assignment for functions */
 	if (getArgType(mb,getInstrPtr(mb,0),0) != TYPE_void &&
@@ -2091,10 +2091,10 @@ backend_callinline(backend *be, Client c, stmt *s )
 
 			if (atom_null(a)) {
 				sql_subtype *t = atom_type(a);
-				curInstr = pushNil(curBlk, curInstr, t->type->localtype);
+				(void) pushNil(curBlk, curInstr, t->type->localtype);
 			} else {
 				int _t = constantAtom(be, curBlk, a);
-				curInstr = pushArgument(curBlk, curInstr, _t);
+				(void) pushArgument(curBlk, curInstr, _t);
 			}
 		}
 	}
@@ -2196,7 +2196,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 		q = pushWrd(mb, q, queryid);
 		q = pushStr(mb, q, t);
 		q = pushLng(mb, q, m->Tparse );
-		q = pushLng(mb, q, Toptimize);
+		(void) pushLng(mb, q, Toptimize);
 		m->Tparse = 0;
 	}
 	if (cq)

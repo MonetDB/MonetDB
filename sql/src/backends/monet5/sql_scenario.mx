@@ -1056,13 +1056,13 @@ SQLsetTrace(backend *be, Client c, bit onoff)
 
 	if (onoff){
 		if ( strstr(def,"keep") == 0)
-			q = newStmt(mb,"profiler","reset");
+			(void) newStmt(mb,"profiler","reset");
 		q = newStmt(mb,"profiler","setFilter");
 		q = pushStr(mb,q, "*");
 		q = pushStr(mb,q, "*");
-		q = newStmt(mb,"profiler","start");
+		(void) newStmt(mb,"profiler","start");
 	} else if (def && strstr(def, "show")) {
-		q = newStmt(mb, "profiler", "stop");
+		(void) newStmt(mb, "profiler", "stop");
 
 		do {
 			s = t;
@@ -1128,14 +1128,14 @@ SQLsetTrace(backend *be, Client c, bit onoff)
 					q = pushInt(mb, q, 32);
 				}
 				q = pushInt(mb, q, 0);
-				q = pushArgument(mb, q, rs[j]);
+				(void) pushArgument(mb, q, rs[j]);
 			}
 
 			q = newStmt(mb, ioRef, "stdout");
 			n = getDestVar(q);
 			q = newStmt(mb, sqlRef, "exportResult");
 			q = pushArgument(mb, q, n);
-			q = pushArgument(mb, q, r);
+			(void) pushArgument(mb, q, r);
 		}
 	}
 	GDKfree(def);

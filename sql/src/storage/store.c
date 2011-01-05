@@ -1450,7 +1450,7 @@ store_init(int debug, store_type store, char *logdir, char *dbname, backend_stac
 		}
 	}
 
-	s = bootstrap_create_schema(tr, dt_schema, ROLE_SYSADMIN, USER_MONETDB);
+	(void) bootstrap_create_schema(tr, dt_schema, ROLE_SYSADMIN, USER_MONETDB);
 
 	if (first) {
 		insert_types(tr, types);

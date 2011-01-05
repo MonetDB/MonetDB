@@ -5352,7 +5352,7 @@ Take a SQL table and compress its columns using the dictionary compression schem
 
 	/* actually build the hash on the multi-column primary key */
 
-	for (o = t->columns.set->h; o; o = o->next) {
+	for (o = t->columns.set->h; msg == MAL_SUCCEED && o; o = o->next) {
 		BAT *b, *e;
 		sql_delta *d;
 		sql_column	*c = o->data;
@@ -5377,7 +5377,7 @@ Take a SQL table and compress its columns using the dictionary compression schem
 	t->cleared = 1;
 	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
 	t->base.rtime = s->base.rtime = tr->rtime = tr->stime;
-	return MAL_SUCCEED;
+	return msg;
 @c
 str SQLnewDictionary(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	@:compression(DICTcompress(&ret, &nme, &b->batCacheid))@
@@ -5410,7 +5410,7 @@ LZ compression is inherited from the underlying stream implementation.
 
 	/* actually build the hash on the multi-column primary key */
 
-	for (o = t->columns.set->h; o; o = o->next) {
+	for (o = t->columns.set->h; msg == MAL_SUCCEED && o; o = o->next) {
 		BAT *b;
 		sql_column	*c = o->data;
 
@@ -5423,7 +5423,7 @@ LZ compression is inherited from the underlying stream implementation.
 			BBPreleaseref(b->batCacheid);
 		}
 	}
-	return MAL_SUCCEED;
+	return msg;
 @c
 str SQLgzcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	@:gzcompression(CMDbbpcompress(&ret, &b->batCacheid,&sbuf),gzcompress)@

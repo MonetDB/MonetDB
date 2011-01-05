@@ -2451,7 +2451,7 @@ rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 	e = rel_unop_(sql, rel->exps->h->data, NULL, "identity", 0);
 	set_intern(e);
 	rel_project_add_exp(sql, rel, e);
-	*exp = e = exp_label(sql->sa, e, ++sql->label);
+	*exp = exp_label(sql->sa, e, ++sql->label);
 	return rel;
 }
 
@@ -3040,7 +3040,7 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s,
 		l = ol;
 		r = or;
 		t1 = exp_subtype(l);
-		t2 = exp_subtype(r);
+		(void) exp_subtype(r);
 
 		if ((f = sql_bind_member(sql->sa, s, fname, t1, 2)) != NULL &&
 		   (table_func || !f->res.comp_type)) {
@@ -3837,7 +3837,7 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	if (obe)
 		e->r = obe;
 	else	/* e->r specifies window expression */
-		e->r = obe = new_exp_list(sql->sa);
+		e->r = new_exp_list(sql->sa);
 	return e;
 }
 
