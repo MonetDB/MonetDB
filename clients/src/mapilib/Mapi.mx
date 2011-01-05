@@ -2198,6 +2198,22 @@ mapi_mapi(const char *host, int port, const char *username,
 
 	if (port == 0) {
 		port = 50000;	/* hardwired default */
+		if (mid->hostname == NULL) {
+#ifdef HAVE_SYS_UN_H
+			char buf[1024];
+			struct stat st;
+			snprintf(buf, sizeof(buf),
+				 CLIENTS_PREFIX "/var/MonetDB5/dbfarm/mapi_socket");
+			if (strlen(buf) <= sizeof(((struct sockaddr_un *) 0)->sun_path) &&
+					stat(buf, &st) != -1 &&
+					S_ISSOCK(st.st_mode))
+			{
+				mid->hostname = strdup(buf);
+			} else {
+#endif
+				mid->hostname = strdup("localhost");
+			}
+		}
 	} else {
 		/* make sure we won't search for a unix socket first */
 		if (mid->hostname == NULL)
@@ -2381,15 +2397,6 @@ connect_to_server(Mapi mid)
 		close_connection(mid);
 
 #ifdef HAVE_SYS_UN_H
-	if (mid->hostname == NULL) {
-		struct stat st;
-		snprintf(errbuf, sizeof(errbuf),
-			 CLIENTS_PREFIX "/var/MonetDB5/dbfarm/mapi_socket");
-		if (strlen(errbuf) <= sizeof(((struct sockaddr_un *) 0)->sun_path) &&
-				stat(errbuf, &st) != -1 &&
-				S_ISSOCK(st.st_mode))
-			mid->hostname = strdup(errbuf);
-	}
 	if (mid->hostname && mid->hostname[0] == '/') {
 		struct msghdr msg;
 		struct iovec vec;
