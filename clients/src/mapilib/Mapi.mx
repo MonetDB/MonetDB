@@ -2207,12 +2207,10 @@ mapi_mapi(const char *host, int port, const char *username,
 			if (strlen(buf) <= sizeof(((struct sockaddr_un *) 0)->sun_path) &&
 					stat(buf, &st) != -1 &&
 					S_ISSOCK(st.st_mode))
-			{
 				mid->hostname = strdup(buf);
-			} else {
+			else
 #endif
 				mid->hostname = strdup("localhost");
-			}
 		}
 	} else {
 		/* make sure we won't search for a unix socket first */
