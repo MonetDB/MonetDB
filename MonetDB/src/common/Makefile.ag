@@ -31,7 +31,7 @@ INCLUDES = $(Z_CFLAGS) $(BZ_CFLAGS) $(OPENSSL_INCS) $(CURL_INCS) $(ICONV_CFLAGS)
 
 lib_stream  =  {
 	SOURCES = stream.mx dummy_gdk_utils.mx
-	LIBS = libmutils $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) $(OPENSSL_LIBS) $(CURL_LIBS) $(ICONV_LIBS)
+	LIBS = $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) $(OPENSSL_LIBS) $(CURL_LIBS) $(ICONV_LIBS)
 }
 
 headers_common = {
