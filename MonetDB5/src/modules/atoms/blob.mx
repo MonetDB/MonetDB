@@ -152,7 +152,7 @@ blob_export int sqlblob_fromstr(char *instr, int *l, blob **val);
 
 #endif /* __BLOB_H__ */
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "blob.h"
 
 int TYPE_blob;

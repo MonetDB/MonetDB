@@ -1286,7 +1286,7 @@ sql5_export str getContext(Client cntxt, MalBlkPtr mb, mvc **c, backend **b );
 @-
 First introduce the routines to be called by the front-end.
 @c
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include "sql.h"
 #include "sql_result.h"
 #include "sql_gencode.h"
@@ -1305,8 +1305,8 @@ First introduce the routines to be called by the front-end.
 #include <cluster.h>
 #include <replication.h>
 #include <opt_dictionary.h>
-#ifdef HAVE_MONETDB5_RDF
-	#include <rdf/rdf.h>
+#ifdef HAVE_RAPTOR
+	#include <rdf.h>
 #endif
 
 backend *
@@ -5479,7 +5479,7 @@ BBPunfix(o->batCacheid);
 str
 SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-#ifdef HAVE_MONETDB5_RDF
+#ifdef HAVE_RAPTOR
 	bat docbats;
 	BAT *graph = NULL;
 	BAT *p, *s, *o;

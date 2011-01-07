@@ -6,7 +6,7 @@ includedir=@includedir@
 Name: monetdb-gdk
 Description: MonetDB GDK BAT-kernel library
 Version: @PACKAGE_VERSION@
-Requires: monetdb-mutils = @PACKAGE_VERSION@ monetdb-stream = @PACKAGE_VERSION@
+Requires: monetdb-mutils monetdb-stream
 
 Libs: -L${libdir} -lbat
 Cflags: -I${includedir}/MonetDB/gdk

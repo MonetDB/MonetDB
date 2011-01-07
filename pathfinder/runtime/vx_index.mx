@@ -41,7 +41,7 @@ attribute/element tags.
 @- Combine function C()
 
 @c
-#include "pf_config.h"
+#include "monetdb_config.h"
 #include <gdk.h>
 #include "shredder.h"   /* for XML_DEPTH_MAX */
 #include "ll_upwards.h" /* SKIPHOLES, speculate_skip, PF_SIBLING_PROBES */

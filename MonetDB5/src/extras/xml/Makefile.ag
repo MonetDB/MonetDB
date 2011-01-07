@@ -15,7 +15,10 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-INCLUDES = -I../../mal $(monetdbcommon_CFLAGS) $(libxml2_CFLAGS)
+INCLUDES = ../../mal \
+	../../../../MonetDB/src/common \
+	../../../../MonetDB/src/gdk \
+	$(libxml2_CFLAGS)
 MTSAFE
 
 lib__xml = {
@@ -24,8 +27,10 @@ lib__xml = {
 	SOURCES = xml.mx 
 
 	#SCRIPTS = mal
-	LIBS = ../../tools/libmonetdb5 $(monetdbcommon_LIBS) $(MALLOC_LIBS) \
-		$(libxml2_LIBS)
+	LIBS = ../../tools/libmonetdb5 \
+		../../../../MonetDB/src/common/libmutils \
+		../../../../MonetDB/src/gdk/libbat \
+		$(MALLOC_LIBS) $(libxml2_LIBS)
 }
 
 headers_xml_autoload = {
@@ -50,8 +55,10 @@ lib_batxml = {
 	DIR = libdir/MonetDB5
 	SEP = _
 	SOURCES = batxml.mx
-	LIBS = lib_xml ../../tools/libmonetdb5 $(monetdbcommon_LIBS) $(MATH_LIBS) \
-                $(MALLOC_LIBS) $(libxml2_LIBS)
+	LIBS = lib_xml ../../tools/libmonetdb5 \
+		../../../../MonetDB/src/common/libmutils \
+		../../../../MonetDB/src/gdk/libbat \
+		$(MATH_LIBS) $(MALLOC_LIBS) $(libxml2_LIBS)
 }
 
 headers_batxml_h = {

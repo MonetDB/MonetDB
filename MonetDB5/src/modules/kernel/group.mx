@@ -280,7 +280,7 @@ group_export int CTrefine_rev(BAT **res, BAT *b, BAT *a);
 
 #endif /* _GROUP_H_ */
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "group.h"
 #include "algebra.h"
 static int TYPE_mapentry;

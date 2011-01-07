@@ -16,7 +16,9 @@
 # All Rights Reserved.
 
 INCLUDES = -I../../mal -I../atoms -I../kernel \
-	$(monetdbmapi_CFLAGS) $(monetdbcommon_CFLAGS) $(monetdbmstream_CFLAGS) \
+	../../../../clients/src/mapilib \
+	../../../../MonetDB/src/common \
+	../../../../MonetDB/src/gdk \
 	$(pcre_CFLAGS) $(zlib_CFLAGS) $(BZIP_INCS)
 
 MTSAFE
@@ -97,5 +99,7 @@ headers_mal = {
 		tokenizer.mx zorder.mx
 	#radix.mx
 }
+
+EXTRA_DIST = prelude.mx
 
 EXTRA_DIST_DIR = Tests

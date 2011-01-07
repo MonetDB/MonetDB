@@ -32,7 +32,7 @@
 
 #define TOOLKIT_VERSION   "0.7"
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include "mal_sabaoth.h"
 #include "utils.h"
 #include "properties.h"
@@ -61,9 +61,21 @@
 #ifdef HAVE_TERMIOS_H
 #include <termios.h> /* TIOCGWINSZ/TIOCSWINSZ */
 #endif
+
 #ifdef HAVE_ALLOCA_H
-#include <alloca.h>
+# include <alloca.h>
+#elif defined __GNUC__
+# define alloca __builtin_alloca
+#elif defined _AIX
+# define alloca __alloca
+#elif defined _MSC_VER
+# include <malloc.h>
+# define alloca _alloca
+#else
+# include <stddef.h>
+void *alloca(size_t);
 #endif
+
 #include <errno.h>
 
 #define SOCKPTR struct sockaddr *
@@ -1368,7 +1380,7 @@ main(int argc, char *argv[])
 	int i;
 	int fd;
 	confkeyval ckv[] = {
-		{"prefix",             GDKstrdup(MONETDB5_PREFIX), STR},
+		{"prefix",             GDKstrdup(PREFIX),          STR},
 		{"gdk_dbfarm",         NULL,                       STR},
 		{"gdk_nr_threads",     NULL,                       INT},
 		{"mero_doproxy",       GDKstrdup("yes"),           BOOL},

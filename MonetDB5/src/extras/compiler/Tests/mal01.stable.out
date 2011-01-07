@@ -43,7 +43,7 @@ MCdynamicCompiler: user.tst903
 =   Copyright (c) 2001-2007, CWI.
 =   All rights reserved.
 =*/
-=#include "mal_config.h"
+=#include "monetdb_config.h"
 =#include "mal.h"
 =#include "mal_interpreter.h"
 =#include "mal_function.h"

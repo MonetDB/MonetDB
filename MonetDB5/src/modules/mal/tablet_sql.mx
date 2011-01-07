@@ -45,7 +45,7 @@ this task (1MB). It has been increased to 8MB, which indeed improved.
 The work divider allocates subtasks to threads based on the
 observed time spending so far.
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "tablet.h"
 #include "algebra.h"
 

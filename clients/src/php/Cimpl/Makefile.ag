@@ -40,7 +40,7 @@ lib_monetdb = {
 	PREFIX =
 	NAME = monetdb
 	SOURCES = php_monetdb.h php_monetdb.c
-	LIBS = ../../mapilib/libMapi $(MONETDB_LIBS) -lmutils -lstream $(PHP_LIBS) $(OPENSSL_LIBS) $(SOCKET_LIBS)
+	LIBS = ../../mapilib/libMapi $(MONETDB_LIBS) -lmutils -lstream $(PHP_LIBS) $(openssl_LIBS) $(SOCKET_LIBS)
 	DIR = $(prefix)/$(PHP_EXTENSIONDIR)
 	# we need this flag to allow for a name that does not start with "lib"
 	LDFLAGS = -module

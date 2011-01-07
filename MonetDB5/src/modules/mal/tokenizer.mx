@@ -129,7 +129,7 @@ tokenizer_export str TKNZRgetCardinality   (int *r);
 #endif /* _TKNZR_H */
 
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "bat5.h"
 #include "tokenizer.h"
 #include "mal_linker.h"

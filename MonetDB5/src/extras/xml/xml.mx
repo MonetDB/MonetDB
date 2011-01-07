@@ -159,7 +159,7 @@ xml_export str XMLprelude(void);
 
 #endif /* XML_H */
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "xml.h"
 #include "mal_interpreter.h"
 

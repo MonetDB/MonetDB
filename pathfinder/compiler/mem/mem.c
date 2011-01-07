@@ -36,7 +36,7 @@
  */
 
 #ifndef MEM_GC_C__INCLUDES__MEM_C
-#include "pf_config.h"
+#include "monetdb_config.h"
 #include "pathfinder.h"
 #endif
 

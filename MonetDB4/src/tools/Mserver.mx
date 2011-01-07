@@ -68,7 +68,7 @@ The options have the following meaning:
 
 #endif /* _MONET_GLOBAL_H_ */
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include "Mserver.h"
 
 #ifdef _CRTDBG_MAP_ALLOC
@@ -238,7 +238,7 @@ capabilities depend on the malloc implementation used at run time.
 	if (!(setlen = mo_builtin_settings(&set)))
 		usage(prog, debug, set, setlen);
 
-	setlen = mo_add_option(&set, setlen, opt_config, "prefix", MONETDB4_PREFIX);
+	setlen = mo_add_option(&set, setlen, opt_config, "prefix", PREFIX);
 	setlen = mo_add_option(&set, setlen, opt_config, "config", MONETDB4_CONFFILE);
 
 	for (;;) {

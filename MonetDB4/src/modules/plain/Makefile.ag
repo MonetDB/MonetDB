@@ -15,18 +15,21 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-INCLUDES = -I../../monet \
-	$(MONETDB_INCS) \
-	$(Z_CFLAGS) $(BZ_CFLAGS) $(HWCOUNTERS_INCS) $(PCL_CFLAGS) \
-	$(PCRE_CFLAGS) $(ICONV_CFLAGS)
+INCLUDES = ../../monet \
+	../../../../MonetDB/src/common \
+	../../../../MonetDB/src/gdk \
+	$(zlib_CFLAGS) $(BZ_CFLAGS) $(HWCOUNTERS_INCS) $(PCL_CFLAGS) \
+	$(pcre_CFLAGS) $(ICONV_CFLAGS)
 MTSAFE
 
 lib__streams = {
 	DIR = libdir/MonetDB4
 	SOURCES = streams.mx
 	#SCRIPTS = mil ""
-	LIBS = $(MONETDB_LIBS) -lstream -lbat ../../monet/libmonet \
-		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+	LIBS = ../../../../MonetDB/src/common/libstream \
+		../../../../MonetDB/src/gdk/libbat \
+		../../monet/libmonet \
+		$(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) $(curl_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) 
 }
 
@@ -35,9 +38,10 @@ lib__str = {
 	SEP = _
 	SOURCES = str.mx
 	#SCRIPTS = mil ""
-	LIBS = $(MONETDB_LIBS) -lstream -lbat \
+	LIBS = ../../../../MonetDB/src/common/libstream \
+		../../../../MonetDB/src/gdk/libbat \
 		../../monet/libmonet \
-		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+		$(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) $(ICONV_LIBS)
 }
 
@@ -46,9 +50,10 @@ lib__xtables = {
 	SEP = _
 	SOURCES = xtables.mx
 	#SCRIPTS = mil ""
-	LIBS = $(MONETDB_LIBS) -lstream -lbat \
+	LIBS = ../../../../MonetDB/src/common/libstream \
+		../../../../MonetDB/src/gdk/libbat \
 		../../monet/libmonet lib_algebra \
-		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+		$(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
 
@@ -57,9 +62,10 @@ lib__logger = {
 	SEP = _
 	SOURCES = logger.mx
 	#SCRIPTS = mil ""
-	LIBS = $(MONETDB_LIBS) -lstream -lbat \
+	LIBS = ../../../../MonetDB/src/common/libstream \
+		../../../../MonetDB/src/gdk/libbat \
 		../../monet/libmonet lib_bat \
-		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+		$(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
 
@@ -74,9 +80,10 @@ LIBS = {
 		stats.mx unix.mx url.mx pqueue.mx 
 		#radix.mx tcpip.mx
 	#SCRIPTS = mil ""
-	LIBS = $(MONETDB_LIBS) -lstream -lbat \
+	LIBS = ../../../../MonetDB/src/common/libstream \
+		../../../../MonetDB/src/gdk/libbat \
 		../../monet/libmonet \
-		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+		$(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) $(MATH_LIBS)
 }
 
@@ -87,7 +94,8 @@ lib__aggrX3 = {
 		aggrX3_be_sum.mx aggrX3_be_prod.mx aggrX3_be_avg.mx aggrX3_be_minmax.mx aggrX3_be_count.mx \
 		aggrX3_bge_sum.mx aggrX3_bge_prod.mx aggrX3_bge_avg.mx aggrX3_bge_minmax.mx aggrX3_bge_count.mx
 	#SCRIPTS = mil ""
-	LIBS = $(MONETDB_LIBS) -lstream -lbat \
+	LIBS = ../../../../MonetDB/src/common/libstream \
+		../../../../MonetDB/src/gdk/libbat \
 		../../monet/libmonet
 }
 
@@ -97,9 +105,10 @@ lib__counters = {
 	DIR = libdir/MonetDB4
 	SOURCES = counters.mx
 	#SCRIPTS = mil ""
-	LIBS = $(MONETDB_LIBS) -lstream -lbat \
+	LIBS = ../../../../MonetDB/src/common/libstream \
+		../../../../MonetDB/src/gdk/libbat \
 		../../monet/libmonet \
-		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+		$(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) $(HWCOUNTERS_LIBS)
 }
 
@@ -107,9 +116,10 @@ lib__pcl = {
 	DIR = libdir/MonetDB4
 	SOURCES = pcl.mx
 	#SCRIPTS = mil ""
-	LIBS = $(MONETDB_LIBS) -lstream -lbat \
+	LIBS = ../../../../MonetDB/src/common/libstream \
+		../../../../MonetDB/src/gdk/libbat \
 		../../monet/libmonet \
-		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+		$(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) $(PCL_LIBS)
 }
 
@@ -117,10 +127,11 @@ lib__pcre = {
 	DIR = libdir/MonetDB4
 	SOURCES = pcre.mx
 	#SCRIPTS = mil ""
-	LIBS = $(MONETDB_LIBS) -lstream -lbat \
+	LIBS = ../../../../MonetDB/src/common/libstream \
+		../../../../MonetDB/src/gdk/libbat \
 		../../monet/libmonet \
-		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) $(PCRE_LIBS)
+		$(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) \
+		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) $(pcre_LIBS)
 }
 
 headers_mil = {

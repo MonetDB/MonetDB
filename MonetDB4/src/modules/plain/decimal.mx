@@ -312,7 +312,7 @@ a single false digit of value 10 and an impossibly high scale, forces the nil va
 than any other decimal (again avoiding having to treat it as a special case in the compare).
 \end{description}
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include "decimal.h"
 
 /* lookup tables that avoid having to divide and mod by 10 all the time */

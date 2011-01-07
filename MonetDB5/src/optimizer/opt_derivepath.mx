@@ -81,7 +81,7 @@ opt_export str ALGderiveSum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 #define OPTDEBUGderivePath  if ( optDebug & ((lng)1 <<DEBUG_OPT_DERIVEPATH) )
 
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "opt_derivepath.h"
 #include "group.h"
 

@@ -17,7 +17,7 @@
  * All Rights Reserved.
  */
 
-#include "clients_config.h"
+#include "monetdb_config.h"
 #include <monet_options.h>
 #include "mapilib/Mapi.h"
 #include <unistd.h>

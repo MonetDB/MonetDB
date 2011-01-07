@@ -228,7 +228,7 @@ mal_export size_t			monet_memory;
 #define GRPoptimizers  (1<<27)	/* == OPTMASK; cf., MonetDB/src/gdk/gdk.mx */
 #define GRPforcemito (FORCEMITOMASK)
 @c 
-#include <mal_config.h>
+#include <monetdb_config.h>
 #include <mal.h>
 
 char monet_cwd[PATHLENGTH] = { 0 };

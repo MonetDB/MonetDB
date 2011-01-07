@@ -16,7 +16,9 @@
 # All Rights Reserved.
 
 INCLUDES = -I../../modules/atoms -I../../modules/mal -I../../mal \
-	$(monetdbmapi_CFLAGS) $(monetdbcommon_CFLAGS) $(monetdbstream_CFLAGS) \
+	../../../../clients/src/mapilib \
+	../../../../MonetDB/src/common \
+	../../../../MonetDB/src/gdk \
 	$(raptor_CFLAGS)
 
 MTSAFE
@@ -24,7 +26,10 @@ MTSAFE
 lib__rdf = {
 	DIR = libdir/MonetDB5
 	SOURCES = rdf.mx rdf_shredder.mx
-	LIBS = ../../tools/libmonetdb5 $(monetdbcommon_LIBS) $(monetdbstream_LIBS) \
+	LIBS = ../../tools/libmonetdb5 \
+		../../../../MonetDB/src/common/libmutils \
+		../../../../MonetDB/src/gdk/libbat \
+		../../../../MonetDB/src/common/libstream \
 		$(MALLOC_LIBS) $(raptor_LIBS)
 }
 

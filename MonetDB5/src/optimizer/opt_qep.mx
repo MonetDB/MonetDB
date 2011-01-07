@@ -109,7 +109,7 @@ typedef struct QEPrecord {
 #define OPTDEBUGdumpQEP  if ( optDebug & (1 <<DEBUG_OPT_QEP) )
 #endif /* _OPT_QEP_ */
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "opt_qep.h"
 
 static QEP

@@ -57,7 +57,7 @@ reachable points by (dag!) 'edges'."
 @{
 @* Implementation
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include "oo7.proto.h"
 #include <monet.h>
 

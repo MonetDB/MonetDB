@@ -221,7 +221,7 @@ url_export int URLtoString(str *s, int *len, str src);
 #endif /* URL_H */
 
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "url.h"
 #include "mal.h"
 #include "mal_exception.h"

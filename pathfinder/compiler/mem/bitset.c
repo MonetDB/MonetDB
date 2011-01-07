@@ -40,7 +40,7 @@
  */
 
 
-#include "pf_config.h"
+#include "monetdb_config.h"
 #include "pathfinder.h"
 
 #ifdef HAVE_STDINT_H

@@ -316,7 +316,7 @@ mal_export str PropertyOperatorString( prop_op_t op );
 #endif
 
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "mal_properties.h"
 #include "mal_type.h"		/* for idcmp() */
 

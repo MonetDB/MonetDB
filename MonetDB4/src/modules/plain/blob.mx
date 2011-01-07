@@ -98,7 +98,7 @@ blob_export var_t blobsize(size_t nitems);
 
 #endif /* __BLOB_H__ */
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include "blob.h"
 
 var_t

@@ -51,7 +51,7 @@ opt_export void QOTupdateStatistics(str nme, int prop, lng val);
 opt_export void QOTstatisticsExit(void);
 #endif /* _Q_STATISTICS_H */
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "opt_statistics.h"
 @
 Upon loading the module it should inspect the scenario table

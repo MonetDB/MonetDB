@@ -17,7 +17,7 @@
  * All Rights Reserved.
  */
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include "store_sequence.h"
 #include "sql_storage.h"
 #include <gdk_logger.h>

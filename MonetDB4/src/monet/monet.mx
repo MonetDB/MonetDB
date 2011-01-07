@@ -338,7 +338,7 @@ Ideally, they are all removed.
 m_export const char *MonetDBversion(void);
 #endif /* _MONET_H_ */
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include "monet.h"
 
 static char *_MonetDB_version_string = VERSION;
@@ -409,8 +409,7 @@ monet_hello(stream *out)
 
 		if (out == NULL)
 			out = GDKout;
-		mnstr_printf(out, "# MonetDB Server v%s\n", monet_version);
-		mnstr_printf(out, "# based on GDK   v%s\n", GDKversion());
+		mnstr_printf(out, "# MonetDB 4 Server v%s\n", monet_version);
 		if (strcmp(MONETDB_RELEASE, "unreleased") == 0)
 			mnstr_printf(out, "# not released\n");
 		else

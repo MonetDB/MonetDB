@@ -100,7 +100,7 @@ xquery_export str xquery_print_result_main_wrap(int *res /*dummy*/, str *mode, b
 #endif /* _XQUERY_H */
 
 @c
-#include "pf_config.h"
+#include "monetdb_config.h"
 #include "xquery.h"
 #include "serialize.h"
 

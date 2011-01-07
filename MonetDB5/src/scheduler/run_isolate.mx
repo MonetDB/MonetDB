@@ -79,7 +79,7 @@ run_isolate_export str RUNisolation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, I
 
 @+ Isolation implementation
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "run_isolate.h"
 
 str

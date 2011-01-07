@@ -143,7 +143,7 @@ comment "Resolve the multi-table definitions";
 
 #define OPTDEBUGmergetable  if ( optDebug & (1 <<DEBUG_OPT_MERGETABLE) )
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "opt_mergetable.h"
 #include "bpm.h"
 

@@ -27,7 +27,7 @@
 # Rights Reserved.
 #
 
-INCLUDES = ../include $(MONETDB_INCS)
+INCLUDES = ../include ../../../MonetDB/src/common ../../../MonetDB/src/gdk
 
 lib_core = {
 	NOINST

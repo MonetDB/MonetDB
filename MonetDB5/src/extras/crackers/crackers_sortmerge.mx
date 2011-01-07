@@ -62,7 +62,7 @@ crackers_export str CRKExternalSort_@1(int *vid, int *bid, int *psliceSize);
 @- C file
 
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "algebra.h"
 #include "crackers.h"
 

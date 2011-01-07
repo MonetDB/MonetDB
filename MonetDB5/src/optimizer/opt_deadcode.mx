@@ -86,7 +86,7 @@ comment "Dead code optimizer";
 
 #endif
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "opt_deadcode.h"
 
 static int 

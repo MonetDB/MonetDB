@@ -334,7 +334,7 @@ mal_mapi_export str SERVERmapi_rpc_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk
 
 #endif /* SERVER_H */
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "mal_mapi.h"
 #include <sys/types.h>
 #include <stream_socket.h>

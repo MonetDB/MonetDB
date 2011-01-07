@@ -6219,7 +6219,7 @@ extern int pftijah_debug;
 #define TJ_TIMINGS 777
 
 @c
-#include <pf_config.h>
+#include <monetdb_config.h>
 
 #include <monet.h>
 #include <gdk.h>

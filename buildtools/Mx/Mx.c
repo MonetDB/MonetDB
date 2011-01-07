@@ -17,7 +17,7 @@
  * All Rights Reserved.
  */
 
-#include        <mx_config.h>
+#include        <monetdb_config.h>
 #include	<stdio.h>
 #include	<ctype.h>
 #ifdef HAVE_UNISTD_H
@@ -29,6 +29,9 @@
 #include	"disclaimer.h"
 
 #include "mx_getopt.h"
+#ifndef HAVE_GETOPT
+#include "getopt.c"
+#endif
 
 unsigned int db_flag = 0x00;
 int archived;			/* set for archived portions */

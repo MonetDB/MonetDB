@@ -18,7 +18,7 @@
  */
 
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include "store_connections.h"
 
 

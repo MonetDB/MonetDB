@@ -171,7 +171,7 @@ mal_export char *M5OutOfMemory;	/* pointer to constant string */
 #endif /*  _MAL_EXCEPTION_H*/
 @-
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "mal_exception.h"
 
 static char *exceptionNames[] = {

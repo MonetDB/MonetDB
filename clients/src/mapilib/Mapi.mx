@@ -797,7 +797,7 @@ output returned from the server.
 @{
 @- Implementation
 @c
-#include "clients_config.h"
+#include "monetdb_config.h"
 #include <monet_utils.h>
 #include <stream.h>		/* include before Mapi.h */
 #include <stream_socket.h>
@@ -820,9 +820,21 @@ output returned from the server.
 # include <netdb.h>
 # include <netinet/in.h>
 #endif
+
 #ifdef HAVE_ALLOCA_H
-#include <alloca.h>
+# include <alloca.h>
+#elif defined __GNUC__
+# define alloca __builtin_alloca
+#elif defined _AIX
+# define alloca __alloca
+#elif defined _MSC_VER
+# include <malloc.h>
+# define alloca _alloca
+#else
+# include <stddef.h>
+void *alloca(size_t);
 #endif
+
 #ifdef HAVE_MALLOC_H
 #include <malloc.h>
 #endif
@@ -2203,7 +2215,7 @@ mapi_mapi(const char *host, int port, const char *username,
 			char buf[1024];
 			struct stat st;
 			snprintf(buf, sizeof(buf),
-				 CLIENTS_PREFIX "/var/MonetDB5/dbfarm/mapi_socket");
+				 PREFIX "/var/MonetDB5/dbfarm/mapi_socket");
 			if (strlen(buf) <= sizeof(((struct sockaddr_un *) 0)->sun_path) &&
 					stat(buf, &st) != -1 &&
 					S_ISSOCK(st.st_mode))

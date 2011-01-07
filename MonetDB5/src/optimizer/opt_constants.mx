@@ -50,7 +50,7 @@ comment "Duplicate constant removal optimizer";
 We have to keep an alias table to reorganize the program
 after the variable stack has changed.
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "opt_constants.h"
 
 static int

@@ -329,7 +329,7 @@ CMDifThenElseCst2_@1(int *ret, int *bid, int *tid, @1 *val)
 }
 @:ifthenImpl(@1)@
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "batifthen.h"
 
 @:ifthenelseImpl(bit)@

@@ -1,0 +1,12 @@
+# -*-shell-script-*-
+
+PYTHONPATH=${PWD:-$(pwd)}/buildtools/autogen${PYTHONPATH:+:$PYTHONPATH}
+export PYTHONPATH
+
+python buildtools/autogen/autogen.py &&
+sed '/^AC_CONFIG_FILES/r acout.in' configure.ag > configure.ac &&
+libtoolize -c -f  &&
+aclocal -I . -I buildtools/conf  &&
+autoheader  &&
+automake --add-missing --copy --foreign  &&
+autoconf

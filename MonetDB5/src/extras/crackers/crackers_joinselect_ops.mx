@@ -68,7 +68,7 @@ crackers_export str CRKjointhetauselect_@1(int *res, int *right, @1 *val, str *O
 @- C file
 
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "crackers.h"
 
 /* Local support functions and macros */

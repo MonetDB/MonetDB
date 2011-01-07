@@ -27,7 +27,7 @@
 # Rights Reserved.
 #
 
-INCLUDES = ../include $(MONETDB_INCS)
+INCLUDES = ../include ../../../MonetDB/src/common ../../../MonetDB/src/gdk
 
 # avoid "[PFty_is2ns]:ube: error: Assert has been violated at '/set/mars_patch/builds.intel-S2/nightly.Fri/intel-S2/lang/ube/hf/src/type.c 1583'"
 # with Sun Studio 12 compiler and -xOn & n>1

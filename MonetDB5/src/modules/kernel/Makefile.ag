@@ -16,7 +16,7 @@
 # All Rights Reserved.
 
 INCLUDES = \
-	-I../../mal -I../atoms $(monetdbcommon_CFLAGS) $(HWCOUNTERS_INCS)
+	-I../../mal -I../atoms ../../../../MonetDB/src/common ../../../../MonetDB/src/gdk $(HWCOUNTERS_INCS)
 
 MTSAFE
 
@@ -57,8 +57,6 @@ lib_kernel = {
 		unix.mx
 }
 
-EXTRA_DIST = aggr_ri.mx
-
 headers_h = {
 	DIR = includedir/MonetDB5/kernel
 	SOURCES = \
@@ -82,5 +80,7 @@ headers_mal = {
 		group.mx aggr.mx array.mx \
 		counters.mx logger.mx microbenchmark.mx
 }
+
+EXTRA_DIST = aggr_ri.mx kprelude.mx
 
 EXTRA_DIST_DIR = Tests

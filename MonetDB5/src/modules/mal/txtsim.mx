@@ -111,7 +111,7 @@ txtsim_export str CMDqgramselfjoin(BAT **res, BAT *qgram, BAT *id, BAT *pos, BAT
 
 
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "txtsim.h"
 #include "mal_exception.h"
 

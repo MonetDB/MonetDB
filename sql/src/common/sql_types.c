@@ -28,7 +28,7 @@
  * easy to find something akin you intend to enter.
  */
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include "sql_types.h"
 #include "sql_keyword.h"	/* for keyword_exists(), keywords_insert(), init_keywords(), exit_keywords() */
 #include <string.h>

@@ -17,7 +17,9 @@
 
 ## Process this file with automake to produce Makefile.in
 
-INCLUDES = ../include ../common ../storage $(CLIENTS_INCS) $(MONETDB_INCS)
+INCLUDES = ../include ../common ../storage \
+	../../../clients/src/mapilib \
+	../../../MonetDB/src/common ../../../MonetDB/src/gdk
 
 YFLAGS = -d -p sql
 

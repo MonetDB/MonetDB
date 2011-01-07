@@ -17,7 +17,7 @@
  * All Rights Reserved.
  */
 
-#include <sql_config.h>
+#include <monetdb_config.h>
 #include "sql_semantic.h"
 #include "rel_semantic.h"
 #include "rel_exp.h"

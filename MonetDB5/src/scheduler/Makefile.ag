@@ -17,7 +17,9 @@
 
 INCLUDES = -I../mal -I../modules/atoms -I../modules/mal -I../optimizer \
 	-I../modules/kernel \
-	$(monetdbmapi_CFLAGS) $(monetdbstream_CFLAGS) $(monetdbcommon_CFLAGS)
+	../../../clients/src/mapilib \
+	../../../MonetDB/src/common \
+	../../../MonetDB/src/gdk
 
 MTSAFE
 

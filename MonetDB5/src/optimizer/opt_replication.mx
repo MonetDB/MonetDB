@@ -45,7 +45,7 @@ comment "Replication optimizer";
 #endif
 
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "opt_prelude.h"
 #include "opt_replication.h"
 

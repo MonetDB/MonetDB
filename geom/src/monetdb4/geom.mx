@@ -187,7 +187,7 @@ All Rights Reserved.
 
 @c
 
-#include <geom_config.h>
+#include <monetdb_config.h>
 #include <gdk.h>
 
 #include "geom.h"

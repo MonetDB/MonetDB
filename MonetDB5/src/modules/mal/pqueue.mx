@@ -158,7 +158,7 @@ pqueue_export str PQinit(int *ret, int *bid, wrd *maxsize);
 
 #endif /* _PQUEUE */
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "pqueue.h"
 #include "mal_exception.h"
 #include "mal_interpreter.h"

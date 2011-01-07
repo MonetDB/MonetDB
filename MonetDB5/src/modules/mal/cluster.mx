@@ -159,7 +159,7 @@ cluster_export str CLS_split( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 #endif /* _CLUSTER_H */
 @c
 
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "cluster.h"
 #include <mal_exception.h>
 #include "algebra.h"

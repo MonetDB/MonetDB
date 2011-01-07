@@ -16,12 +16,11 @@
 # All Rights Reserved.
 
 MTSAFE
-INCLUDES = ../include -I$(MONETDB_INCLUDEDIR)
 
 BINS = {
 	DIR = libdir/MonetDB/Tests
 	SOURCES = odbcsample1.c testgetinfo.c
-	LIBS = ../driver/libMonetODBC ../../mapilib/libMapi
+	LIBS = ../driver/libMonetODBC ../../mapilib/libMapi $(curl_LIBS)
 }
 
 bin_odbctest = {

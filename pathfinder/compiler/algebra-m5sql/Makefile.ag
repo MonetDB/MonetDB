@@ -27,7 +27,7 @@
 #
 # Fri Oct 27 10:05:33 CEST 2006, Manuel Mayr
 
-INCLUDES = ../include $(MONETDB_INCS)
+INCLUDES = ../include ../../../MonetDB/src/common ../../../MonetDB/src/gdk
 
 # locally disable "-Werror"
 #X_CFLAGS = "-pedantic"
@@ -37,12 +37,12 @@ INCLUDES = ../include $(MONETDB_INCS)
 lalg2msa_CFLAGS = $(SUN_NOERR_CFLAGS)
 
 lib_msa = {
-        NOINST
-        DIR = libdir
-        SOURCES = \
-                lalg2msa.c \
-                msa.c \
-                msaprint.c
+	NOINST
+	DIR = libdir
+	SOURCES = \
+		lalg2msa.c \
+		msa.c \
+		msaprint.c
 }
 
 #EXTRA_DIST =

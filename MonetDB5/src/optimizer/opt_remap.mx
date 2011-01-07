@@ -79,7 +79,7 @@ a properly typed multi-plexed implementation.
 The policy is to search for bat<mod>.<fcn> before going
 into the iterator code generation.
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "opt_remap.h"
 #include "opt_macro.h"
 

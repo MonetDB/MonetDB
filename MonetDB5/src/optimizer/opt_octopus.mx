@@ -172,7 +172,7 @@ opt_export int OPTlegAdviceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #define OPTDEBUGoctopus  if ( optDebug & (1 <<DEBUG_OPT_OCTOPUS) )
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "opt_octopus.h"
 #include "opt_deadcode.h"
 #include "mal_interpreter.h"	/* for showErrors() */

@@ -20,7 +20,7 @@
 %include "exception.i"
 
 %{
-#include "clients_config.h"
+#include "monetdb_config.h"
 #include <stream.h>
 #include "mapilib/Mapi.h"
 %}

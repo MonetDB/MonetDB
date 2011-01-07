@@ -279,7 +279,7 @@ proc ds_link(BAT[bat,bat] keys) : BAT[oid, oid]
 
 @* Implementation
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include <monet.h>
 #include "mkey.proto.h"
 

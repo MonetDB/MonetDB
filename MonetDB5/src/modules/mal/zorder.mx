@@ -102,7 +102,7 @@ zorder_export str ZORDsql_slice_int(int *r, int *xb, int *yb, int *xt, int *yt);
 #endif /* _ZORDER_H */
 
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "mal.h"
 #include "mal_exception.h"
 #include "zorder.h"

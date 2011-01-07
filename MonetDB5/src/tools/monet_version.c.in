@@ -18,7 +18,7 @@
  * All Rights Reserved.
  */
 
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "mal.h"
 #include <stdio.h>
 #include "monet_version.h"
@@ -38,9 +38,9 @@ monet_version(void)
 	sz_mem_gb = (dbl)(MT_npages() * MT_pagesize()) / (1024.0 * 1024.0 * 1024.0);
 	cores = MT_check_nr_cores();
 
-	printf("MonetDB server v" VERSION " (" SZFMT "-bit), "
-			"based on kernel v%s (" SZFMT "-bit oids)\n",
-			(size_t) (sizeof(ptr) * 8), GDKversion(),
+	printf("MonetDB 5 server v" VERSION
+		   " (" SZFMT "-bit, " SZFMT "-bit oids)\n",
+			(size_t) (sizeof(ptr) * 8),
 			(size_t) (sizeof(oid) * 8));
 	if (strcmp(MONETDB_RELEASE, "unreleased") == 0)
 		printf("Not released\n");
@@ -61,7 +61,7 @@ monet_version(void)
 			"using %d thread%s\n",
 			GDKnr_threads, GDKnr_threads != 1 ? "s" : ""); */
 #endif
-	printf("Configured for prefix: " MONETDB5_PREFIX "\n");
+	printf("Configured for prefix: " PREFIX "\n");
 	printf("Libraries:\n");
 	{
 		char pcreversion[] = "@pcreversion@";

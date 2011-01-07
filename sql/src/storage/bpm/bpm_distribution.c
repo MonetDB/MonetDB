@@ -17,7 +17,7 @@
  * All Rights Reserved.
  */
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include "bpm_distribution.h"
 #include "bat/bat_logger.h"
 #include "bat/bat_utils.h"

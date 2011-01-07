@@ -32,8 +32,8 @@
  * $Id$
  */
 
-/* Always include pf_config.h first! */
-#include "pf_config.h"
+/* Always include monetdb_config.h first! */
+#include "monetdb_config.h"
 #include "pathfinder.h"
 
 #include <assert.h>

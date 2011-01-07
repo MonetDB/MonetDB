@@ -92,7 +92,7 @@ comment "Turn function into a factory";
 #define OPTDEBUGfactorize  if ( optDebug & (1 <<DEBUG_OPT_FACTORIZE) )
 
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "opt_factorize.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_builder.h"

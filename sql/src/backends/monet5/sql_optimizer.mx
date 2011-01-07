@@ -154,7 +154,7 @@ The current heuristic is geared at avoiding trivial
 factory structures.
 @-
 @c
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include "mal_builder.h"
 #include "mal_debugger.h"
 #include "opt_prelude.h"

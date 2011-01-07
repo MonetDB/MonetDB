@@ -28,7 +28,7 @@
  * $Id$
  */
 
-#include "pf_config.h"
+#include "monetdb_config.h"
 
 #include <stdio.h>
 #include <assert.h>

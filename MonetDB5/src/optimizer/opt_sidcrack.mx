@@ -40,7 +40,7 @@ comment "Sideways cracking";
 #define OPTDEBUGsidcrack  if ( optDebug & ((lng)1 <<DEBUG_OPT_SIDCRACK) )
 #endif
 @c  
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "opt_sidcrack.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "opt_prelude.h"

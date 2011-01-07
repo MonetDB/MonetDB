@@ -34,7 +34,7 @@
  */
 
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include "sql_backend.h"
 
 backend_functions be_funcs;

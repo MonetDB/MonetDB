@@ -58,7 +58,7 @@
  */
 #define USE_DEPRECATED_ACCESS_TO_TYPE_SYSTEM 1
 
-#include "pf_config.h"
+#include "monetdb_config.h"
 #include "pathfinder.h"
 
 #include <stdio.h>

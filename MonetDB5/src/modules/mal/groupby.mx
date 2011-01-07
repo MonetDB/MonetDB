@@ -109,7 +109,7 @@ group_by str GROUPmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* _GROUPBY_H */
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "groupby.h"
 
 @-

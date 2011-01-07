@@ -67,7 +67,7 @@ trader_export str TRADERmakeBid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 @-
 Bidding described ...
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include <mal.h>
 #include <mal_exception.h>
 #include <mal_instruction.h>

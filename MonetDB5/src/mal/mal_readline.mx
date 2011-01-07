@@ -78,7 +78,7 @@ mal_export char * getConsoleInput(Client c, const char *prompt, int linemode, in
 
 #endif /* READLINETOOLS_H_INCLUDED */
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "mal.h"
 #undef PATHLENGTH
 #include "mal_client.h"

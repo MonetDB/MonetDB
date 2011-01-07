@@ -50,7 +50,7 @@
  * An XML Query Language'', W3C Working Draft October 29, 2004.
  */
 
-#include "pf_config.h"
+#include "monetdb_config.h"
 #include "pathfinder.h"
 
 #define YY_NO_INPUT

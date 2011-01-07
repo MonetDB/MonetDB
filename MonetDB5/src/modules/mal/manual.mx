@@ -68,7 +68,7 @@ comment "Produces the wordcompletion table.";
 #ifdef _MANUAL_H
 #endif /* _MANUAL_H */
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "gdk.h"
 #include <stdarg.h>
 #include <time.h>

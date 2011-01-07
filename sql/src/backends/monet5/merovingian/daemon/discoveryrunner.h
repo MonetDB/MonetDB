@@ -20,7 +20,7 @@
 #ifndef _DISCOVERYRUNNER_H
 #define _DISCOVERYRUNNER_H 1
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include <pthread.h>
 
 #include <mal_sabaoth.h>

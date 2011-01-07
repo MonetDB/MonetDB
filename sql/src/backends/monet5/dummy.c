@@ -17,7 +17,7 @@
  * All Rights Reserved.
  */
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 
 #ifdef WIN32
 #ifndef LIBSQL_CACHE

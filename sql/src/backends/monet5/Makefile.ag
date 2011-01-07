@@ -17,8 +17,22 @@
 
 SUBDIRS = NOT_WIN32?merovingian NOT_WIN32?vaults
 
+# force sql.o to not depend on .../rdf/rdf.h since it only optionally created
+RDF_INC = -I../../../../MonetDB5/src/extras/rdf
+
 INCLUDES = ../../include ../../common ../../storage ../../server \
-	$(MONETDB5_INCS) $(CLIENTS_INCS) $(MONETDB_INCS) $(READLINE_INCS)
+	../../../../MonetDB5/src/modules/atoms \
+	../../../../MonetDB5/src/compiler \
+	../../../../MonetDB5/src/modules/kernel \
+	../../../../MonetDB5/src/mal \
+	../../../../MonetDB5/src/modules/mal \
+	../../../../MonetDB5/src/optimizer \
+	../../../../MonetDB5/src/scheduler \
+	$(RDF_INC) \
+	../../../../clients/src/mapilib \
+	../../../../MonetDB/src/common \
+	../../../../MonetDB/src/gdk \
+	$(READLINE_INCS)
 
 lib__sql = {
 	DIR = libdir/MonetDB5
@@ -33,23 +47,33 @@ lib__sql = {
 		sql_emptyset.mx \
 		sql_bpm.mx
 	LIBS = ../../server/libsqlserver ../../storage/libstore ../../storage/bat/libbatstore ../../storage/restrict/librestrictstore ../../storage/bpm/libbpmstore ../../common/libsqlcommon \
-		$(MONETDB5_LIBS) -lmonetdb5 \
-		$(MONETDB_LIBS) -lbat -lstream $(READLINE_LIBS) $(PTHREAD_LIBS) 
+		../../../../MonetDB5/src/tools/libmonetdb5 \
+		../../../../MonetDB/src/gdk/libbat \
+		../../../../MonetDB/src/common/libstream \
+		$(READLINE_LIBS) $(PTHREAD_LIBS)
 }
 
 
 lib_embeddedsql5 = {
 	SOURCES = embeddedclient.c.in
 	LIBS = ../../server/libsqlserver ../../storage/libstore ../../storage/bat/libbatstore ../../storage/restrict/librestrictstore ../../storage/bpm/libbpmstore ../../common/libsqlcommon \
-		$(MONETDB5_LIBS) -lmonetdb5 \
-		$(CLIENTS_LIBS) $(MONETDB_LIBS) -lbat -lMapi -lmutils -lstream $(READLINE_LIBS) $(PTHREAD_LIBS)
+		../../../../MonetDB5/src/tools/libmonetdb5 \
+		../../../../MonetDB/src/gdk/libbat \
+		../../../../clients/src/mapilib/libMapi \
+		../../../../MonetDB/src/common/libmutils \
+		../../../../MonetDB/src/common/libstream \
+		$(READLINE_LIBS) $(PTHREAD_LIBS)
 }
 
 bin_Mbeddedsql5 = {
 	SOURCES = prog.c
 	LIBS = libembeddedsql5 ../../server/libsqlserver ../../storage/libstore ../../storage/bat/libbatstore ../../storage/restrict/librestrictstore ../../storage/bpm/libbpmstore ../../common/libsqlcommon \
-		$(MONETDB5_LIBS) -lmonetdb5 \
-		$(CLIENTS_LIBS) $(MONETDB_LIBS) -lbat -lMapi -lmutils -lstream $(READLINE_LIBS) $(PTHREAD_LIBS)
+		../../../../MonetDB5/src/tools/libmonetdb5 \
+		../../../../MonetDB/src/gdk/libbat \
+		../../../../clients/src/mapilib/libMapi \
+		../../../../MonetDB/src/common/libmutils \
+		../../../../MonetDB/src/common/libstream \
+		$(READLINE_LIBS) $(PTHREAD_LIBS) $(curl_LIBS)
 }
 
 headers_h = {

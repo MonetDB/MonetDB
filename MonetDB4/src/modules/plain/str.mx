@@ -245,7 +245,7 @@ proc space(int c) : str {
 
 @{
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include <gdk.h>
 #include "ctype.h"
 #include "str.h"

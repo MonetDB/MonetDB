@@ -46,7 +46,7 @@ comment "Perform local rewrites";
 
 #define OPTDEBUGpeephole  if ( optDebug & (1 <<DEBUG_OPT_PEEPHOLE) )
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "opt_peephole.h"
 #include "opt_aliases.h"
 @}

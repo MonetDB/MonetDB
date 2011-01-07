@@ -23,7 +23,7 @@
  * Simple functions that deal with the property file
  */
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include "properties.h"
 #include "utils.h"
 #include <stdio.h> /* fprintf, fgets */

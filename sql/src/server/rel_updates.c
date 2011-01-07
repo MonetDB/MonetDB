@@ -18,7 +18,7 @@
  */
 
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include "rel_updates.h"
 #include "rel_semantic.h"
 #include "rel_select.h"

@@ -64,7 +64,7 @@ Provides basic similarity metrics for strings.
 .END txtsim;
 
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 
 #include "txtsim.proto.h"
 

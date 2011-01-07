@@ -5966,10 +5966,10 @@ extern MT_Lock pf_runtime_lock[7];
 #endif
 @c
 
-#include "pf_config.h"
+#include "monetdb_config.h"
 #include "pf_support.h"
 #include <gdk_scanselect.h> /* for type-specific HT_bunfastins_nocheck_noinc(), until they're moved to gdk.mx */
-#include <plain/algebra.h> /* needed for result size estimation in CMDenumerate */
+#include <algebra.h> /* needed for result size estimation in CMDenumerate */
 #include <math.h> /* needed for round_up */
 
 /* delete a file from the local tmp/ directory in the dbfarm; protect against abuse */

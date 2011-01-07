@@ -93,7 +93,7 @@ comment "Compare a bat of @1 against a singleton";
 #endif
 
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "batmtime.h"
 
 @-

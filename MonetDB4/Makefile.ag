@@ -17,12 +17,11 @@
 
 SUBDIRS = src conf scripts
 
-EXTRA_DIST = configure.ag RunMtest.in \
+EXTRA_DIST = RunMtest.in \
 		RunMtest.bat.in RunMapprove.in RunMapprove.bat.in \
-		RunMserver.bat.in RunMserver.in \
-		rpm.mk.in MonetDB-server.spec MonetDB-server.spec
+		RunMserver.bat.in RunMserver.in
 
-EXTRA_DIST_DIR = NT tests debian
+EXTRA_DIST_DIR = NT tests
 
 TESTS = RunMtest
 TESTS_ENVIRONMENT = $(SHELL)

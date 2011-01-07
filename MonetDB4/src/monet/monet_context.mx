@@ -100,7 +100,7 @@ m_export Cntxt monet_cntxtlim;
 
 #endif /* _MONET_CNTXT_H_ */
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include "monet.h"
 
 Cntxt monet_cntxtmax = 200 * MAXCLIENTS;

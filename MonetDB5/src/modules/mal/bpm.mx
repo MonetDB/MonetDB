@@ -600,7 +600,7 @@ bpm_export str BPMprelude(int *ret);
 bpm_export str BPMepilogue(int *ret);
 #endif
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "bpm.h"
 #include "bat5.h"
 #include "algebra.h"

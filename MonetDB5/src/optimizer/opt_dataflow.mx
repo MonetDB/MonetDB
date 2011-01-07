@@ -84,7 +84,7 @@ The statemens are all checked for being eligible for dataflow.
 		actions++;
 	}
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "opt_dataflow.h"
 #include "mal_instruction.h"
 #include "mal_interpreter.h"

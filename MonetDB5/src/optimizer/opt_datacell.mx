@@ -126,7 +126,7 @@ comment "Basket expression optimizer";
 @-
 We keep a flow dependency table to detect.
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "opt_datacell.h"
 #include "opt_deadcode.h"
 #include "mal_interpreter.h"	/* for showErrors() */

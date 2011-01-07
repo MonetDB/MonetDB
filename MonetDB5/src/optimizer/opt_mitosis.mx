@@ -65,7 +65,7 @@ comment "Modify the plan to exploit parallel processing on multiple cores";
 #define OPTDEBUGmitosis  if ( optDebug & ((lng)1 <<DEBUG_OPT_MITOSIS) )
 #endif
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "opt_mitosis.h"
 #include "opt_octopus.h"
 #include "opt_tarantula.h"

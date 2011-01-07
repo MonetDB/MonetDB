@@ -131,7 +131,7 @@ The heuristics is sufficient for the code produced by SQL frontend.
 The alternative is to search for all possible subpaths and materialize them.
 For example, using recursion for all common paths.
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "opt_joinpath.h"
 #include "cluster.h"
 

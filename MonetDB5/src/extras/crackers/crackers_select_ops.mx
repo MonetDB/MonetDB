@@ -74,7 +74,7 @@ crackers_export str CRKthetauselect_@1(int *vid, int *bid, @1 *val, str *op);
 @- C file
 
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "crackers.h"
 
 /* Local support functions and macros */

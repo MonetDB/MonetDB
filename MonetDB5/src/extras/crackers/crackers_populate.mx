@@ -97,7 +97,7 @@ CrackPopulateSideways_@1(
 @- C file
 
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "crackers.h"
 
 typedef unsigned char      unsigned_chr;

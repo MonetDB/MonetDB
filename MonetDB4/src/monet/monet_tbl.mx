@@ -177,7 +177,7 @@ m_export int TBL_multiplex_resolve(str name, int argc, ValPtr Argv, monet_sig_t 
 m_export int TBL_setaggr_resolve(str name, int argc, ValPtr Argv, monet_sig_t *sig, Cntxt stk);
 
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include "monet.h"
 
 #include <stdio.h>

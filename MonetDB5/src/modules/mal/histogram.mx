@@ -91,7 +91,7 @@ histogram_export int HSTwhichbinNorm(Histogram h1, Histogram h2);
 #endif /* _HISTOGRAM_H */
 @- 
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "histogram.h"
 
 Histogram

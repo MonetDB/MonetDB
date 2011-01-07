@@ -158,7 +158,7 @@ recycle_export str RECYCLEdumpQPatWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk
 #endif
 @-
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "mal_interpreter.h"
 #include "mal_function.h"
 #include "mal_recycle.h"

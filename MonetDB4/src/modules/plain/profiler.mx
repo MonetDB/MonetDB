@@ -84,7 +84,7 @@ ADDHELP("startProfiler", "manegold", "Feb 05 2004",
 
 #endif
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include "gdk.h"
 #include <stdarg.h>
 #include <time.h>

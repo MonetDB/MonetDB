@@ -494,7 +494,7 @@ The inspections routines are guarded against null value.
 In collecting the timing information we should sum over the thread
 and all its children.
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include "mprof.h"
 #include "algebra.h"
 #include <stdlib.h>

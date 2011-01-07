@@ -72,7 +72,7 @@ Run {\tt calib_init()} once, then extract the results with {\tt calib_info()} in
 @-
 The remainder is a wrapper around the calibrator library.
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include "monet.h"
 #include <gdk.h>
 #include    <stdlib.h>

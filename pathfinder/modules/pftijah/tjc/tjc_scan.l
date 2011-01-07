@@ -33,7 +33,7 @@
 %option prefix="tjc"
 %option nounput
 %{
-#include <pf_config.h>
+#include <monetdb_config.h>
 
 #include <stdlib.h>
 

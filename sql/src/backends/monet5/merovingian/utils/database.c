@@ -19,7 +19,7 @@
 
 /* NOTE: for this file to work correctly, SABAOTHinit must be called. */
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include "mal_sabaoth.h"
 #include <stdio.h> /* fprintf, rename */
 #include <unistd.h> /* stat, rmdir, unlink, ioctl */

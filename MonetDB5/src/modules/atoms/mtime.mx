@@ -867,7 +867,7 @@ typedef int date;
 #define date_nil ((date) int_nil)
 #define date_isnil(X)  (X == date_nil)
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "mtime.h"
 
 @- daytime

@@ -78,7 +78,7 @@ lock_export str LCKdestroy(int *res, monet_lock *l);
 #endif /* _LOCK_H */
 
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "mal.h"
 #include "mal_exception.h"
 #include "lock.h"

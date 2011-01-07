@@ -30,16 +30,19 @@
 
 #SUBDIRS = utils lalgebra
 
-INCLUDES = ../include $(MONETDB_INCS) $(LIBXML2_CFLAGS)
-
+INCLUDES = \
+	../include \
+	../../../MonetDB/src/common \
+	../../../MonetDB/src/gdk \
+	$(libxml2_CFLAGS)
 
 
 
 lib_stringutils = {
-        NOINST
-        DIR = libdir
-        SOURCES = \
-                string_utils.c
+	NOINST
+	DIR = libdir
+	SOURCES = \
+		string_utils.c
 }
 
  

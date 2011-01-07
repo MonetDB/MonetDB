@@ -58,7 +58,7 @@ sql5_export int monet5_resolve_function(ptr M, sql_func *f);
 
 #endif /* _SQL2MAL_H */
 @c
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include "sql_gencode.h"
 #include "sql_optimizer.h"
 #include "sql_scenario.h"

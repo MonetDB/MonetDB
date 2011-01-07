@@ -91,7 +91,7 @@ mal_export str AUTHgetHashAlgorithms(str *ret);
 @-
 @c
 @{
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "mal_authorize.h"
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>

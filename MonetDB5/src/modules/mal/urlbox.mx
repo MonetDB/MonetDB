@@ -139,7 +139,7 @@ The content of this box my only be changed by the Administrator.
 		rethrow("urlBox.@1", tmp, AUTHrequireAdmin(&cntxt));
 	}
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "urlbox.h"
 #include "mal_linker.h"
 #include "mal_authorize.h"

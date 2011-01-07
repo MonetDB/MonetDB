@@ -68,7 +68,7 @@
  * stethoscope -umonetdb -Pmonetdb -hhost +tis "algebra.*" "bat.*" "group.*" "sql.*" "aggr.*"
  */
 
-#include "clients_config.h"
+#include "monetdb_config.h"
 #include "monet_utils.h"
 #include "monet_options.h"
 #include <mapilib/Mapi.h>

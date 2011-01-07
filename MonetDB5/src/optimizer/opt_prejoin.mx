@@ -48,7 +48,7 @@ comment "Recluster the table to reduce random access behavior.";
 
 #define OPTDEBUGprejoin  if ( optDebug & (1 <<DEBUG_OPT_PREJOIN) )
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "opt_prejoin.h"
 #include "math.h"
 @-

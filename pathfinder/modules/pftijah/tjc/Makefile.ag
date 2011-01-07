@@ -29,7 +29,14 @@ PARSERNAME = tjc
 YFLAGS = -d -p $(PARSERNAME)
 LFLAGS = -P$(PARSERNAME)
 
-INCLUDES = $(MONETDB4_INCS) $(MONETDB_INCS)
+INCLUDES = \
+	../../../../MonetDB4/src/monet \
+	../../../../MonetDB4/src/modules/plain \
+	../../../../MonetDB4/src/modules/contrib \
+	../../../../MonetDB4/src/mapi \
+	../../../../MonetDB4/src/modules/calibrator \
+	../../../../MonetDB/src/common \
+	../../../../MonetDB/src/gdk
 
 #  Some versions of flex & bison seem to generate code
 #  that does not compile with `gcc -Wundef`;
@@ -48,7 +55,7 @@ CFLAGS = $(ICC_BISON_CFLAGS) $(GCC_BISON_CFLAGS)
 lib_tjc = {
 	NOINST
 	SOURCES = \
-	        tjc_main.c \
+		tjc_main.c \
 		tjc_scan.l \
 		tjc_parse.y \
 		tjc_conf.h \

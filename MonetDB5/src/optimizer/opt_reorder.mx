@@ -69,7 +69,7 @@ comment "Reorder by dataflow dependencies";
 
 #define OPTDEBUGreorder  if ( optDebug & ((lng)1 <<DEBUG_OPT_REORDER) )
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "opt_reorder.h"
 #include "mal_instruction.h"
 #include "mal_interpreter.h"

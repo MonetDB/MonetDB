@@ -73,7 +73,7 @@ crackers_export str CRKdeleteFromAVL_@1(int *k, int *bid, int *uid);
 @- C file
 
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "crackers.h"
 
 static int maxAVLIndices = 0;

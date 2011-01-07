@@ -137,7 +137,7 @@ libgeom_export int getMbrGeom( mbr *res,  wkb* geom );
 #endif /* LIBGEOM_H */
 @c
 
-#include <geom_config.h>
+#include <monetdb_config.h>
 #include "libgeom.h"
 
 #include <math.h>

@@ -137,7 +137,7 @@ only one will be created.
 @{
 @* Implementation
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include <monet.h>
 #ifdef HAVE_SYS_SOCKET_H
 # include <sys/socket.h>

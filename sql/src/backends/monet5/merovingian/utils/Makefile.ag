@@ -18,8 +18,15 @@
 # MONETDB5: Sabaoth
 # MONETDB:  GDKmalloc, stream
 INCLUDES = \
-	$(MONETDB5_INCS) \
-	$(MONETDB_INCS)
+	../../../../../../MonetDB5/src/modules/atoms \
+	../../../../../../MonetDB5/src/compiler \
+	../../../../../../MonetDB5/src/modules/kernel \
+	../../../../../../MonetDB5/src/mal \
+	../../../../../../MonetDB5/src/modules/mal \
+	../../../../../../MonetDB5/src/optimizer \
+	../../../../../../MonetDB5/src/scheduler \
+	../../../../../../MonetDB/src/common \
+	../../../../../../MonetDB/src/gdk
 
 EXTRA_DIST = \
 	control.h \

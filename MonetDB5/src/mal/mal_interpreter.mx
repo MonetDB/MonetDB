@@ -69,7 +69,7 @@ mal_export void getMemoryClaim(MalStkPtr stk, InstrPtr pci, lng *argclaim, lng *
 mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "mal_interpreter.h"
 #include "mal_debugger.h"   /* for mdbStep() */
 #include "mal_recycle.h"

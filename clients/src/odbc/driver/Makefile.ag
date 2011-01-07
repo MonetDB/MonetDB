@@ -17,7 +17,7 @@
 
 INCLUDES = \
 	../.. \
-	$(monetdbtools_CFLAGS) \
+	../../../../MonetDB/src/common \
 	$(ODBC_INCS)
 
 DEFS = @DEFS@
@@ -116,6 +116,6 @@ lib_MonetODBC = {
 	SQLTransact.c \
 	driver.rc \
 	ODBC.syms
-	LIBS = ../../mapilib/libMapi $(monetdbtools_LIBS) $(ICONV_LIBS) $(ODBC_LIBS) $(SOCKET_LIBS)
+	LIBS = ../../mapilib/libMapi ../../../../MonetDB/src/common/libstream ../../../../MonetDB/src/common/libmutils $(ICONV_LIBS) $(ODBC_LIBS) $(SOCKET_LIBS)
 }
 

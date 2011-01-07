@@ -250,7 +250,7 @@ than hash-lookups in case the tail of the group map (g) is in random order.
 The remainder is a wrapper around the V4 code base.
 
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 @(
 #include <gdk.h>
 #include <gdk_scanselect.h>	/* for type-specific HT_bunfastins_nocheck_noinc(), until they're moved to gdk.mx */

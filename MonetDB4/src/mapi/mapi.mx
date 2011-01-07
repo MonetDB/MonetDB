@@ -184,7 +184,7 @@ mapi_export int active_clients(char *lang);
 
 #endif /* MAPI_H */
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include <monet.h>
 #include "mapi.h"
 #include  <sys/types.h>

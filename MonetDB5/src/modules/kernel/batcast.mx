@@ -272,7 +272,7 @@ bunins_failed:
 @-
 The lengthly list of coercions options could have been generated.
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "batcast.h"
 
 int	oidToStr(char **dst, int *len, oid *src  ){

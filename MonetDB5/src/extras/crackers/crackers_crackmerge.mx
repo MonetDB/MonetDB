@@ -66,7 +66,7 @@ crackers_export str CRKselectCrackMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh,
 @- C file
 
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "crackers.h"
 
 /* Local support functions and macros */

@@ -417,8 +417,8 @@
  *   Interactive Time</a>. Technical Report, CWI, 2005.
  */
 
-/* always include pf_config.h first! */
-#include "pf_config.h"
+/* always include monetdb_config.h first! */
+#include "monetdb_config.h"
 #include "pathfinder.h"
 
 /** handling of variable argument lists */

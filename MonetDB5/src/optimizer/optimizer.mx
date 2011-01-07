@@ -90,7 +90,7 @@ opt_export BUN QOTjoinEstimate(BAT *l, BAT *r);
 
 #endif /* _OPTIMIZER_H */
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "optimizer.h"
 @
 Upon loading the module it should inspect the scenario table

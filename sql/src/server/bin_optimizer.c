@@ -18,7 +18,7 @@
  */
 
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include "bin_optimizer.h"
 #include "sql_types.h"
 #include "sql_rel2bin.h"

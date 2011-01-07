@@ -139,7 +139,7 @@ comment "Set the maximum usable amount of physical swapspace in KB";
 
 @include kprelude.mx
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "gdk.h"
 #include <stdarg.h>
 #include <time.h>

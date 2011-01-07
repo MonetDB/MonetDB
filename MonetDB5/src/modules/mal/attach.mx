@@ -75,7 +75,7 @@ attach_export str ATTlocation(str *fnme, int *bid);
 #endif /* _ATTACH_H */
 @- Module initializaton
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "attach.h"
 
 @- Operator implementation

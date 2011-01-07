@@ -151,7 +151,7 @@ Start XPRC receiver using the default values as specified in \
 "xrpc_server");
 
 @c
-#include "pf_config.h"
+#include "monetdb_config.h"
 
 #include <gdk.h>
 #include <mapi/mapi.h>

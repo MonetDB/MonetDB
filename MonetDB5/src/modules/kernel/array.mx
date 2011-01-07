@@ -94,7 +94,7 @@ comment "Fill an array representation with constants ";
 /*============================================================================*/
 @c
 /*============================================================================*/
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "array.h"
 #include "gdk.h"
 #include <math.h>

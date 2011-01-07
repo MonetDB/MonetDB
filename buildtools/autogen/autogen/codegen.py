@@ -33,6 +33,9 @@ mx2h = re.compile("^@h[ \t\r\n]+", re.MULTILINE)
 mx2c = re.compile("^@c[ \t\r\n]+", re.MULTILINE)
 mx2y = re.compile("^@y[ \t\r\n]+", re.MULTILINE)
 mx2l = re.compile("^@l[ \t\r\n]+", re.MULTILINE)
+mx2cc = re.compile("^@C[ \t\r\n]+", re.MULTILINE)  # C++
+mx2yy = re.compile("^@Y[ \t\r\n]+", re.MULTILINE)  # C++
+mx2ll = re.compile("^@L[ \t\r\n]+", re.MULTILINE)  # C++
 mx2odl = re.compile("^@odl[ \t\r\n]+", re.MULTILINE)
 mx2fgr = re.compile("^@fgr[ \t\r\n]+", re.MULTILINE)
 mx2cfg = re.compile("^@cfg[ \t\r\n]+", re.MULTILINE)
@@ -51,9 +54,12 @@ code_extract = { 'mx': [ (mx2mil, '.tmpmil'),
                   (mx2mal, '.mal'),
                   (mx2mel, '.m'),
                   (mx2c, '.c'),
+                  (mx2cc, '.cc'),       # C++
                   (mx2h, '.h'),
                   (mx2y, '.y'),
+                  (mx2yy, '.yy'),       # C++
                   (mx2l, '.l'),
+                  (mx2ll, '.ll'),       # C++
                   (mx2odl, '.odl'),
                   (mx2cfg, '.cfg'),
                   (mx2fgr, '.fgr'),
@@ -71,9 +77,12 @@ code_extract = { 'mx': [ (mx2mil, '.tmpmil'),
                   (mx2mal, '.mal'),
                   (mx2mel, '.m'),
                   (mx2c, '.c'),
+                  (mx2cc, '.cc'),       # C++
                   (mx2h, '.h'),
                   (mx2y, '.y'),
+                  (mx2yy, '.yy'),       # C++
                   (mx2l, '.l'),
+                  (mx2ll, '.ll'),       # C++
                   (mx2odl, '.odl'),
                   (mx2fgr, '.fgr'),
                   (mx2cfg, '.cfg'),
@@ -94,13 +103,16 @@ end_code_extract = { 'mx': e_mx, 'mx.in': e_mx }
 code_gen = {'m':        [ '.proto.h', '.glue.c', '.mil' ],
             'odl':      [ '_odl.h', '_odl.cc', '_mil.cc', '_odl.m' ],
             'y':        [ '.tab.c', '.tab.h' ],
+            'yy':       [ '.cc', '.h' ], # C++
             'tab.c':    [ '.tab.o' ],
             'l':        [ '.yy.c' ],
+            'll':       [ '.cc' ],      # C++
             'yy.c':     [ '.yy.o' ],
             'mt':       [ '.symbols.h', '.c' ],
             'brg':      [ '.c' ],
             't':        [ '.c' ],
             'c':        [ '.o' ],
+            'cc':       [ '.o' ],       # C++
             'ruby.i':   [ '.ruby.c' ],
             'ruby.c':   [ '.ruby.o' ],
             'tcl.i':    [ '.tcl.c', '.tcl' ],
@@ -158,17 +170,21 @@ tex_inc = re.compile(tex_inc)
 t_inc = re.compile(t_inc, re.MULTILINE)
 mx_inc = re.compile(mx_inc, re.MULTILINE)
 
-scan_map = { 'c': [ c_inc, None, '' ],
-         'h': [ c_inc, None, '' ],
-         'y': [ c_inc, None, '' ],
-         'l': [ c_inc, None, '' ],
-         'mt': [ c_inc, None, '' ],
-         'brg': [ c_inc, None, '' ],
-         't': [ t_inc, None, '' ],
-         'm': [ m_use, m_sep, '.m' ],
-         'xsl': [ xsl_inc, None, '' ],
-         'tex': [ tex_inc, None, '' ],
-         'mx': [ mx_inc, None, '' ],
+scan_map = {
+    'c': [ c_inc, None, '' ],
+    'cc': [ c_inc, None, '' ],          # C++
+    'h': [ c_inc, None, '' ],
+    'y': [ c_inc, None, '' ],
+    'yy': [ c_inc, None, '' ],          # C++
+    'l': [ c_inc, None, '' ],
+    'll': [ c_inc, None, '' ],          # C++
+    'mt': [ c_inc, None, '' ],
+    'brg': [ c_inc, None, '' ],
+    't': [ t_inc, None, '' ],
+    'm': [ m_use, m_sep, '.m' ],
+    'xsl': [ xsl_inc, None, '' ],
+    'tex': [ tex_inc, None, '' ],
+    'mx': [ mx_inc, None, '' ],
 }
 
 dep_rules = { 'glue.c': [ 'm', '.proto.h' ] ,
@@ -375,8 +391,7 @@ def do_scan_target(target,targets,deps,incmap,cwd,incs):
                 pat,sep,incext = scan_map[ext]
                 res = pat.search(b)
                 while res is not None:
-                    p = res.start('fnd')
-                    e = res.end('fnd')
+                    p, e = res.span('fnd')
                     if sep is not None:
                         ressep = sep.search(b, p, e)
                         while ressep is not None:

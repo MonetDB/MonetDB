@@ -108,7 +108,7 @@ oid speculate_skip(oid, oid, oid, int, unsigned int*, unsigned char*);
 #endif /* LL_UPWARDS_H */
 
 @c
-#include "pf_config.h"
+#include "monetdb_config.h"
 #include <gdk.h>
 #include "shredder.h" /* for XML_DEPTH_MAX */
 #include "ll_upwards.h"

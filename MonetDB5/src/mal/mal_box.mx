@@ -252,7 +252,7 @@ only.
 	MT_lock_init(&obj->lock,"M5_box_lock");
 @-
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "mal_box.h"
 #include "mal_interpreter.h"	/* for garbageCollector() & garbageElement() */
 #include "mal_client.h"

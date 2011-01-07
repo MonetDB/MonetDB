@@ -50,7 +50,7 @@
 #define MERO_VERSION   "1.3"
 #define MERO_PORT      50000
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include "mal_sabaoth.h"
 #include <utils/utils.h>
 #include <utils/properties.h>
@@ -71,9 +71,21 @@
 #include <fcntl.h>
 #include <unistd.h> /* unlink, isatty */
 #include <string.h> /* strerror */
+
 #ifdef HAVE_ALLOCA_H
-#include <alloca.h>
+# include <alloca.h>
+#elif defined __GNUC__
+# define alloca __builtin_alloca
+#elif defined _AIX
+# define alloca __alloca
+#elif defined _MSC_VER
+# include <malloc.h>
+# define alloca _alloca
+#else
+# include <stddef.h>
+void *alloca(size_t);
 #endif
+
 #include <errno.h>
 #include <signal.h> /* handle Ctrl-C, etc. */
 #include <pthread.h>
@@ -407,7 +419,7 @@ main(int argc, char *argv[])
 	pthread_mutexattr_t mta;
 	int thret;
 	confkeyval ckv[] = {
-		{"prefix",             GDKstrdup(MONETDB5_PREFIX), STR},
+		{"prefix",             GDKstrdup(PREFIX),          STR},
 		{"gdk_dbfarm",         NULL,                       STR},
 		{"gdk_nr_threads",     NULL,                       INT},
 		{"sql_optimizer",      NULL,                       STR},

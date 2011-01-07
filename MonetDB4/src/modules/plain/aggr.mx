@@ -239,7 +239,7 @@ test scripts were added.
 These implementations need just one scan and a simple hash-maintained data
 structure to compute a group of common aggregates.
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include <gdk.h>
 #include "aggr.proto.h"
 

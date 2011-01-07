@@ -1,6 +1,6 @@
 char rcsid_fe[] = "$Id$";
 
-#include "burg_config.h"
+#include "monetdb_config.h"
 #include <stdio.h>
 #include <string.h>
 #include "b.h"

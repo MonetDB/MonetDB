@@ -102,7 +102,7 @@ m_export void unlockparser(Client c);
 
 #endif /* _MONET_CLIENT_H_ */
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include "monet.h"
 #ifdef HAVE_SYS_SOCKET_H
 # include <sys/socket.h>

@@ -67,7 +67,7 @@ comment "Experiment with partitioned databases";
 
 #define OPTDEBUGpartitions  if ( optDebug & (1 <<DEBUG_OPT_PARTITIONS) )
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "opt_partitions.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 

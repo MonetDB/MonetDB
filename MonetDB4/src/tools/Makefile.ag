@@ -16,7 +16,11 @@
 # All Rights Reserved.
 
 MTSAFE
-INCLUDES = ../monet ../modules/plain $(CLIENTS_INCS) $(MONETDB_INCS) $(OPENSSL_INCS) $(PCRE_CFLAGS)
+INCLUDES = ../monet ../modules/plain \
+	../../../clients/src/mapilib \
+	../../../MonetDB/src/common \
+	../../../MonetDB/src/gdk \
+	$(openssl_CFLAGS) $(pcre_CFLAGS)
 
 GDK_LIBS = $(PTHREAD_LIBS) $(MALLOC_LIBS)
 EXTRA_LIBS = $(SOCKET_LIBS) $(DL_LIBS) $(GDK_LIBS) 
@@ -83,21 +87,32 @@ lib_initmodules = {
 bin_Mserver = {
 	SOURCES = Mserver.mx monet_version.h monet_version.c.in
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
-		../monet/libmonet $(MONETDB_LIBS) -lbat -lmutils -lstream \
-                $(PCRE_LIBS) $(OPENSSL_LIBS)
+		../monet/libmonet \
+		../../../MonetDB/src/gdk/libbat \
+		../../../MonetDB/src/common/libmutils \
+		../../../MonetDB/src/common/libstream \
+                $(pcre_LIBS) $(openssl_LIBS)
 }
 
 lib_embeddedmil = {
 	SOURCES = embeddedclient.c.in
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
-		../monet/libmonet $(MONETDB_LIBS) $(CLIENTS_LIBS) -lbat -lmutils -lMapi -lstream
+		../monet/libmonet \
+		../../../MonetDB/src/gdk/libbat \
+		../../../MonetDB/src/common/libmutils \
+		../../../clients/src/mapilib/libMapi \
+		../../../MonetDB/src/common/libstream
 }
 
 bin_Mbeddedmil = {
 	SOURCES = prog.c
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
 		libembeddedmil \
-		../monet/libmonet $(MONETDB_LIBS) $(CLIENTS_LIBS) -lbat -lmutils -lMapi -lstream
+		../monet/libmonet \
+		../../../MonetDB/src/gdk/libbat \
+		../../../MonetDB/src/common/libmutils \
+		../../../clients/src/mapilib/libMapi \
+		../../../MonetDB/src/common/libstream
 }
 
 EXTRA_DIST_DIR = Tests

@@ -178,7 +178,7 @@ mal_export void updateScenario(str scen, str nme, MALfcn fcn);
 #endif /* _MAL_SCENARIO_H */
 @-
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "mal_scenario.h"
 #include "mal_linker.h"		/* for getAddress() */
 #include "mal_client.h"

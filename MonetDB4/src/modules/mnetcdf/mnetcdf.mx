@@ -88,7 +88,7 @@ Quirks:
 /*============================================================================*/
 @c
 /*============================================================================*/
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include "mnetcdf.h"
 #include <math.h>
 #include <time.h>

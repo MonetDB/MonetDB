@@ -100,7 +100,7 @@ do not like to see millions of error messages. Therefore, both the multiplex and
 use the below macros to shield off bulk error reporting. Some buffers are maintained in order to condense
 all errors in a summary.
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include "monet.h"
 
 #define EXEC_ERROR_WHERE 80

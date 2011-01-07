@@ -17,7 +17,7 @@
  * All Rights Reserved.
  */
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 
 /* Stefan: 
  * "Fake-include" to make msc.py create the proper dependencies;

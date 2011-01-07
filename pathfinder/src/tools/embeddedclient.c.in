@@ -15,7 +15,7 @@
   kernel. This improves performance between 25-50%.
 */
 
-#include <pf_config.h>
+#include <monetdb_config.h>
 #include "embeddedclient.h"
 
 #include "gdk.h"

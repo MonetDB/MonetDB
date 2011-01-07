@@ -119,7 +119,7 @@ typedef ptr Bstream;
 
 #endif /*_STREAMS_H_*/
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include <mal.h>
 #include "streams.h"
 #include <stdio.h>

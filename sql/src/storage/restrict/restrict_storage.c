@@ -17,7 +17,7 @@
  * All Rights Reserved.
  */
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include "restrict_storage.h"
 #include <bat/bat_utils.h>
 #include <sql_string.h>

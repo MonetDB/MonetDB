@@ -92,7 +92,7 @@ opt_export str printRegists(void);
 
 @-
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "opt_datacyclotron.h"
 #include "mal_instruction.h"
 

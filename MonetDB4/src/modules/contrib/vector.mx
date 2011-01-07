@@ -64,7 +64,7 @@ Revision History:
 @* Implementation file
 @c
 
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include <gdk.h>
 #include <stdlib.h>
 #include <string.h>

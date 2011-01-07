@@ -54,7 +54,7 @@
 
 
 /************************   Standard Include Files   *************************/
-#include <pf_config.h>
+#include <monetdb_config.h>
 
 #include <stdio.h>
 #include <string.h>

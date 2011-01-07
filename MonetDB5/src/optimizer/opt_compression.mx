@@ -78,7 +78,7 @@ comment "Compression code injection";
 
 @-
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "opt_compression.h"
 
 static int

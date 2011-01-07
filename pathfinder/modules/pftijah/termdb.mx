@@ -82,7 +82,7 @@ extern int        tdb_close(termDbCtx* tdb);
 extern int        tdb_isEmpty(termDbCtx* tdb);
 
 @c
-#include <pf_config.h>
+#include <monetdb_config.h>
 
 /*******************************************
  * termdb.c : the parallel term database

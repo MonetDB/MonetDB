@@ -20,7 +20,7 @@
 #ifndef _MEROVINGIAN_H
 #define _MEROVINGIAN_H 1
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include <stdio.h>
 #include <netinet/in.h> /* struct sockaddr_in */
 

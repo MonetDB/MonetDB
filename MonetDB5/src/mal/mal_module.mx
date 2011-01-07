@@ -120,7 +120,7 @@ point for the modules to be added later.
 	}
 
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "mal_module.h"
 #include "mal_function.h"   /* for printFunction() */
 #include "mal_namespace.h"

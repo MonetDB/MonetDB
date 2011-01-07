@@ -94,7 +94,7 @@ Quitting or crashing MonetDB will lose those changes. Expert use only!
 @{
 @* Implementation Code
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include "trans.proto.h"
 
 int

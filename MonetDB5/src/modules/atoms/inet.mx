@@ -92,7 +92,7 @@ inet_export str INET_fromstr(inet *ret, str *s);
 
 @c
 @{
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include <gdk.h>
 #include "mal.h"
 #include "mal_exception.h"

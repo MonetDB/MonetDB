@@ -49,7 +49,7 @@ comment "Retrieve the current Resident Set Size.";
 The remainder is a straight forward mapping to the underlying
 facilities
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "mal.h"
 #include "mal_exception.h"
 #include <stdio.h>

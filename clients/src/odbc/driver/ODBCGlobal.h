@@ -42,7 +42,7 @@
 #ifndef _H_ODBCGLOBAL
 #define _H_ODBCGLOBAL
 
-#include "clients_config.h"
+#include "monetdb_config.h"
 
 #ifdef WIN32
 #include <windows.h>

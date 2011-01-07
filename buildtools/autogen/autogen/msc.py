@@ -29,7 +29,7 @@ MAKEFILE_HEAD = '''
 
 #automake_ext = ['c', 'h', 'y', 'l', 'glue.c']
 automake_ext = ['c', 'h', 'tab.c', 'tab.h', 'yy.c', 'glue.c', 'proto.h', 'py.i', 'pm.i', '']
-buildtools_ext = ['mx', 'm', 'y', 'l', 't']
+automake_ext.extend(['cc', 'yy', 'll'])  # C++
 
 def split_filename(f):
     base = f
@@ -73,14 +73,13 @@ def create_dir(fd, v, n, i):
     fd.write('%s-%d-dir: \n\tif not exist "%s" $(MKDIR) "%s"\n' % (n, i, vv, vv))
     fd.write('%s-%d-Makefile: "$(SRCDIR)\\%s\\Makefile.msc"\n' % (n, i, v))
     fd.write('\t$(INSTALL) "$(SRCDIR)\\%s\\Makefile.msc" "%s\\Makefile"\n' % (v, v))
-    fd.write('%s-%d-check: "%s"\n' % (n, i, vv))
+    fd.write('%s-%d-check:\n' % (n, i))
     fd.write('\t$(CD) "%s" && $(MAKE) /nologo $(MAKEDEBUG) "prefix=$(prefix)" "bits=$(bits)" check\n' % vv)
 
-    fd.write('%s-%d-install: "$(bindir)" "$(libdir)"\n' % (n, i))
+    fd.write('%s-%d-install:\n' % (n, i))
     fd.write('\t$(CD) "%s" && $(MAKE) /nologo $(MAKEDEBUG) "prefix=$(prefix)" "bits=$(bits)" install\n' % vv)
 
 def empty_dir(fd, n, i):
-
     fd.write('%s-%d-all:\n' % (n, i))
     fd.write('%s-%d-check:\n' % (n, i))
     fd.write('%s-%d-install:\n' % (n, i))
@@ -312,13 +311,6 @@ def msc_find_target(target, msc):
                     return "LIB", string.upper(name)
     return "UNKNOWN", "UNKNOWN"
 
-def needbuilttool(deplist):
-    for d in deplist:
-        f,ext = rsplit_filename(d)
-        if ext in buildtools_ext:
-            return 1
-    return 0
-
 def msc_dep(fd, tar, deplist, msc):
     t = msc_translate_ext(tar)
     b, ext = split_filename(t)
@@ -376,7 +368,31 @@ def msc_dep(fd, tar, deplist, msc):
         fd.write('\tif exist lex.$(PARSERNAME).c $(MV) lex.$(PARSERNAME).c "%s.yy.c.tmp"\n' % b)
         fd.write('\techo #include "$(CONFIG_H)" > "%s.yy.c"\n' % b)
         fd.write('\ttype "%s.yy.c.tmp" >> "%s.yy.c"\n' % (b, b))
-
+    if ext == "h" and deplist[0][-3:] == '.yy':
+        fd.write(getsrc)
+        x, de = split_filename(deplist[0])
+        of = b + '.' + de
+        of = msc_translate_file(of, msc)
+        fd.write('\t$(YACC) $(YFLAGS) "%s"\n' % of)
+        fd.write("\t$(DEL) y.tab.c\n")
+        fd.write('\t$(MV) y.tab.h "%s.h"\n' % b)
+    if ext == "cc" and deplist[0][-3:] == '.yy':
+        fd.write(getsrc)
+        x, de = split_filename(deplist[0])
+        of = b + '.' + de
+        of = msc_translate_file(of, msc)
+        fd.write('\t$(YACC) $(YFLAGS) "%s"\n' % of)
+        fd.write('\t$(FILTER) $(FILTERPREF)"    ;" y.tab.c > "%s.cc"\n' % b)
+        fd.write("\t$(DEL) y.tab.h\n")
+    if ext == "cc" and deplist[0][-3:] == '.ll':
+        fd.write(getsrc)
+        fd.write('\t$(LEX) $(LFLAGS) "%s.ll"\n' % b)
+        # either lex.<name>.c or lex.yy.c or lex.$(PARSERNAME).c gets generated
+        fd.write('\tif exist lex.%s.c $(MV) lex.%s.c "%s.yy.c.tmp"\n' % (b,b,b))
+        fd.write('\tif exist lex.yy.c $(MV) lex.yy.c "%s.yy.c.tmp"\n' % b)
+        fd.write('\tif exist lex.$(PARSERNAME).c $(MV) lex.$(PARSERNAME).c "%s.yy.c.tmp"\n' % b)
+        fd.write('\techo #include "$(CONFIG_H)" > "%s.cc"\n' % b)
+        fd.write('\ttype "%s.yy.c.tmp" >> "%s.cc"\n' % (b, b))
     if ext == "glue.c":
         fd.write(getsrc)
         fd.write('\t$(MEL) -c $(CONFIG_H) $(INCLUDES) -o "%s" -glue "%s.m"\n' % (t, b))
@@ -415,14 +431,8 @@ def msc_dep(fd, tar, deplist, msc):
 
 def msc_deps(fd, deps, objext, msc):
     if not msc['DEPS']:
-        fd.write("!IFDEF NEED_MX\n")
         for t, deplist in deps.items():
-            if needbuilttool(deplist):
-                msc_dep(fd, t, deplist, msc)
-        fd.write("!ENDIF #NEED_MX\n")
-        for t, deplist in deps.items():
-            if not needbuilttool(deplist):
-                msc_dep(fd, t, deplist, msc)
+            msc_dep(fd, t, deplist, msc)
 
     msc['DEPS'].append("DONE")
 
@@ -527,7 +537,7 @@ def msc_headers(fd, var, headers, msc):
             else:
                 cheader = header
                 condname = ''
-            msc['INSTALL'][header] = cheader, '', sd, '', condname
+            msc['INSTALL'][header] = header, '', sd, '', condname
             msc['SCRIPTS'].append(header)
 
 ##    msc_find_ins(msc, headers)
@@ -642,7 +652,7 @@ def msc_binary(fd, var, binmap, msc):
                 SCRIPTS.append(target)
     fd.write(srcs + "\n")
     fd.write("%s.exe: $(%s_OBJS)\n" % (binname, binname2))
-    fd.write('\t"$(TOPDIR)\\..\\..\\buildtools\\conf\\wincompile.py" $(CC) $(CFLAGS)')
+    fd.write('\t"$(TOPDIR)\\..\\NT\\wincompile.py" $(CC) $(CFLAGS)')
     fd.write(" -Fe%s.exe $(%s_OBJS) /link @<<\n$(%s_LIBS) /subsystem:console /NODEFAULTLIB:LIBC\n<<\n" % (binname, binname2, binname2))
     fd.write("\t$(EDITBIN) $@ /HEAP:1048576,1048576 /LARGEADDRESSAWARE\n");
     fd.write("\tif exist $@.manifest $(MT) -manifest $@.manifest -outputresource:$@;1\n");
@@ -726,7 +736,7 @@ def msc_bins(fd, var, binsmap, msc):
                         SCRIPTS.append(target)
         fd.write(srcs + "\n")
         fd.write("%s.exe: $(%s_OBJS)\n" % (bin, bin.replace('-','_')))
-        fd.write('\t"$(TOPDIR)\\..\\..\\buildtools\\conf\\wincompile.py" $(CC) $(CFLAGS)')
+        fd.write('\t"$(TOPDIR)\\..\\NT\\wincompile.py" $(CC) $(CFLAGS)')
         fd.write(" -Fe%s.exe $(%s_OBJS) /link @<<\n$(%s_LIBS) /subsystem:console /NODEFAULTLIB:LIBC\n<<\n" % (bin, bin.replace('-','_'), bin.replace('-','_')))
         fd.write("\tif exist $@.manifest $(MT) -manifest $@.manifest -outputresource:$@;1\n\n");
 
@@ -905,7 +915,7 @@ def msc_library(fd, var, libmap, msc):
     else:
         fd.write("%s.lib: %s%s\n" % (ln, ln, dll))
         fd.write("%s%s: $(%s_DEPS) \n" % (ln, dll, ln.replace('-','_')))
-        fd.write('\t"$(TOPDIR)\\..\\..\\buildtools\\conf\\wincompile.py" $(CC) $(CFLAGS) -LD -Fe%s%s @<< /link @<<\n$(%s_OBJS)\n<<\n$(%s_LIBS)%s\n<<\n' % (ln, dll, ln.replace('-','_'), ln.replace('-','_'), deffile))
+        fd.write('\t"$(TOPDIR)\\..\\NT\\wincompile.py" $(CC) $(CFLAGS) -LD -Fe%s%s @<< /link @<<\n$(%s_OBJS)\n<<\n$(%s_LIBS)%s\n<<\n' % (ln, dll, ln.replace('-','_'), ln.replace('-','_'), deffile))
         fd.write("\tif exist $@.manifest $(MT) -manifest $@.manifest -outputresource:$@;2\n");
         if sep == '_':
             fd.write('\tif not exist .libs $(MKDIR) .libs\n')
@@ -993,7 +1003,7 @@ def msc_libs(fd, var, libsmap, msc):
         ln = "lib" + sep + libname
         fd.write(ln + ".lib: " + ln + ".dll\n")
         fd.write(ln + ".dll: $(" + ln.replace('-','_') + "_DEPS)\n")
-        fd.write('\t"$(TOPDIR)\\..\\..\\buildtools\\conf\\wincompile.py" $(CC) $(CFLAGS) -LD -Fe%s.dll $(%s_OBJS) /link @<<\n$(%s_LIBS)%s\n<<\n' % (ln, ln.replace('-','_'), ln.replace('-','_'), deffile))
+        fd.write('\t"$(TOPDIR)\\..\\NT\\wincompile.py" $(CC) $(CFLAGS) -LD -Fe%s.dll $(%s_OBJS) /link @<<\n$(%s_LIBS)%s\n<<\n' % (ln, ln.replace('-','_'), ln.replace('-','_'), deffile))
         fd.write("\tif exist $@.manifest $(MT) -manifest $@.manifest -outputresource:$@;2\n");
         if sep == '_':
             fd.write('\tif not exist .libs $(MKDIR) .libs\n')
@@ -1060,6 +1070,24 @@ def msc_gem(fd, var, gem, msc):
         fd.write('%s:\n' % f[:-4])
         fd.write('install_%s:\n' % f)
     fd.write('!ENDIF\n')
+
+def msc_python(fd, var, python, msc):
+    pyre = re.compile(r'packages *= *\[ *(.*[^ ]) *\]')
+    for f in python['FILES']:
+        msc['SCRIPTS'].append('target_python_%s' % f)
+        srcs = map(lambda x: x.strip('\'" ').replace('.', '\\'),
+                   pyre.search(open(os.path.join(msc['cwd'], f)).read()).group(1).split(', '))
+        fd.write('target_python_%s: %s %s\n' % (f, ' '.join(srcs), f))
+        fd.write('\t$(PYTHON) %s build\n' % f)
+        for src in srcs:
+            fd.write('%s: "$(SRCDIR)\\%s"\n' % (src, src))
+            fd.write('\tif not exist "%s" $(MKDIR) "%s"\n' % (src, src))
+            fd.write('\t$(INSTALL) "$(SRCDIR)\\%s"\\*.py "%s"\n' % (src, src))
+        fd.write('%s: "$(SRCDIR)\\%s"\n' % (f, f))
+        fd.write('\t$(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (f, f))
+        msc['INSTALL'][f] = f, '', '', '', ''
+        fd.write('install_%s:\n' % f)
+        fd.write('\t$(PYTHON) %s install --prefix "$(prefix)"\n' % f)
 
 callantno = 0
 def msc_ant(fd, var, ant, msc):
@@ -1132,6 +1160,7 @@ output_funcs = {'SUBDIRS': msc_subdirs,
                 'HEADERS': msc_headers,
                 'ANT': msc_ant,
                 'GEM': msc_gem,
+                'PYTHON': msc_python,
                 }
 
 def output(tree, cwd, topdir):

@@ -190,7 +190,7 @@ XRPCreq_t *xrpc_parse_message(char *err, int errlen, BAT *shredBAT,
 #endif /* XRPC_COMMON_H */
 
 @c
-#include "pf_config.h"
+#include "monetdb_config.h"
 #include "pathfinder.h"
 #include "xrpc_common.h"
 

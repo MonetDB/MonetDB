@@ -53,7 +53,7 @@ comment "Reduce the stack space claims";
 
 #define OPTDEBUGreduce  if ( optDebug & ((lng)1 <<DEBUG_OPT_REDUCE) )
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "opt_reduce.h"
 #include "mal_interpreter.h"
 

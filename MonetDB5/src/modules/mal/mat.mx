@@ -152,7 +152,7 @@ mat_export str MATrefineReverse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 @- 
 Mal symbol table and environment analysis.
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "mat.h"
 #include "group.h"
 

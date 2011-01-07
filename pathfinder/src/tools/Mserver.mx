@@ -70,7 +70,7 @@ The options have the following meaning:
 
 #endif /* _MONET_GLOBAL_H_ */
 @c
-#include "pf_config.h"
+#include "monetdb_config.h"
 #include "Mserver.h"
 
 #ifdef _CRTDBG_MAP_ALLOC

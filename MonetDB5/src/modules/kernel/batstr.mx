@@ -169,7 +169,7 @@ comment "Insert a string into another";
 
 @+ Implementation
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include <gdk.h>
 #include "ctype.h"
 #include <string.h>

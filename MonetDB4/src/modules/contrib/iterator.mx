@@ -143,7 +143,7 @@ PROC test_iterator() : void {
 typedef ptr iter;
 
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include "iterator.h"
 #include "iterator.proto.h"
 

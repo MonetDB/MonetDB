@@ -65,7 +65,7 @@ OPTtraceCall(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #define OPTDEBUGtrace  if ( optDebug & ((lng)1 <<DEBUG_OPT_TRACE) )
 #endif
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "opt_trace.h"
 
 static str defaultLog;

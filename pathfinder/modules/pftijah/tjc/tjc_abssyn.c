@@ -29,7 +29,7 @@
 *            Jan Flokstra
 */
 
-#include <pf_config.h>
+#include <monetdb_config.h>
 #include <gdk.h>
 #include <string.h>
 #include <stdlib.h>

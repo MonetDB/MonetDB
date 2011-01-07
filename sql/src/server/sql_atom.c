@@ -17,7 +17,7 @@
  * All Rights Reserved.
  */
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include "sql_atom.h"
 #include <sql_string.h>
 #include <sql_decimal.h>

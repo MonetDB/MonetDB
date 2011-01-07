@@ -17,7 +17,7 @@
  * All Rights Reserved.
  */
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include "sql_mem.h"
 #include "sql_stack.h"
 #include "sql_statement.h"

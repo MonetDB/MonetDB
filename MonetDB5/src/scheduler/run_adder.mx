@@ -78,7 +78,7 @@ run_adder_export str RUNadder(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 The code below is a mixture of generic routines and
 sample implementations to run the tests.
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "mal_builder.h"
 #include "opt_prelude.h"
 #include "run_adder.h"

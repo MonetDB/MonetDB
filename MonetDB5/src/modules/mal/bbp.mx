@@ -288,7 +288,7 @@ bbp_export str CMDbbpexpand(int *ret, int *bid, str *fnme);
 Access to a box calls for resolving the first parameter
 to a named box. The bbp box is automatically opened.
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "bbp.h"
 
 #define OpenBox(X) \

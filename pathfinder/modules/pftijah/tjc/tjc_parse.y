@@ -33,7 +33,7 @@
 
 /* #define YYDEBUG 1 */
 
-#include <pf_config.h>
+#include <monetdb_config.h>
 
 #include <stdlib.h>
 

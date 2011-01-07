@@ -58,7 +58,7 @@ opt_export str MRgetCloud(int *ret, str *nme);
 
 #endif
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "opt_mapreduce.h"
 #include "mal_interpreter.h"
 #include "remote.h"

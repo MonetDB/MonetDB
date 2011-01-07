@@ -1121,7 +1121,7 @@ algebra_export str ALGmaterialize(int *ret, int *bid);
 algebra_export str ALGreuse(int *ret, int *bid);
 #endif
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "algebra.h"
 #include "gdk_rangejoin.h"
 #include <math.h>

@@ -50,7 +50,7 @@ comment "Expand inline functions";
 
 #endif
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "opt_inline.h"
 
 extern int OPTinlineMultiplex(Client cntxt, MalBlkPtr mb, InstrPtr p);

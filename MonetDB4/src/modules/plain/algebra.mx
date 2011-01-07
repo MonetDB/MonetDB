@@ -1431,7 +1431,7 @@ algebra_export ptr BATmin(BAT *b, ptr res);
 
 #endif
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include "algebra.h"
 #include "gdk_rangejoin.h"
 

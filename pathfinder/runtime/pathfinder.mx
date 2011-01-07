@@ -4313,7 +4313,7 @@ collection_cleanup(_collection_cleanup()); # silently clean up the repository
 
 mapi_register(xquery_frontend()); # open up mapi client access
 if (monet_environment.find("monet_welcome") = "yes") {
-    printf("%c MonetDB/XQuery module v0.41.0 loaded (default back-end is '%s')\n", int(35), monet_environment.find("xquery_backend"));
+    printf("%c MonetDB/XQuery module v11.0.0 loaded (default back-end is '%s')\n", int(35), monet_environment.find("xquery_backend"));
     #                                 ^^^^^^
     # Maintained via vertoo. Please don't modify by hand!
     # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -4404,7 +4404,7 @@ pathfinder_export xquery_type xquery_types[XQUERY_TYPES+1];
 pathfinder_export int xquery_typenr(char* tpe);
 #endif
 @c
-#include "pf_config.h"
+#include "monetdb_config.h"
 #include "pathfinder.h"
 #include "shredder.h"
 
@@ -6604,7 +6604,7 @@ xquery_prelude(void)
         char *prefix = GDKgetenv("prefix");
         char xrpc_docroot[1024];
         snprintf(xrpc_docroot, 1024, "%s%cshare%cMonetDB%cxrpc",
-                 prefix ? prefix : PATHFINDER_PREFIX, DIR_SEP, DIR_SEP, DIR_SEP);
+                 prefix ? prefix : PREFIX, DIR_SEP, DIR_SEP, DIR_SEP);
         GDKsetenv("xrpc_docroot",xrpc_docroot);
     }
 

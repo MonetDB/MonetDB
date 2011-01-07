@@ -497,7 +497,7 @@ extern char *tablet_skip_string(char *s, char quote);
 
 #endif
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "tablet.h"
 #include "algebra.h"
 

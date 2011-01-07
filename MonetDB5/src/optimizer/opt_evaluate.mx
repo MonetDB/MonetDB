@@ -67,7 +67,7 @@ comment "Evaluate constant expressions once.";
 
 #endif
 @c  
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "opt_evaluate.h"
 #include "opt_aliases.h"
 

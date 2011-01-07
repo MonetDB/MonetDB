@@ -126,7 +126,7 @@ Prepare the call to the history manager.
 A tricky piece of code. We invalidate an instruction
 based on the return variable.
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "opt_history.h"
 
 str 

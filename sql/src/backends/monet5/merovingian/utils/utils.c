@@ -26,7 +26,7 @@
 /* NOTE: for this file to work correctly, the random number generator
  * must have been seeded (srand) with something like the current time */
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include "utils.h"
 #include <stdio.h> /* fprintf, fgets */
 #include <unistd.h> /* unlink */

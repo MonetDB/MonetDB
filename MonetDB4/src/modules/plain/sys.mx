@@ -494,7 +494,7 @@ Some explanation of what mem\_usage() and vm\_usage() display:
 
 #endif
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include "monet.h"
 #include "monet_context.h"
 #include "monet_client.h"

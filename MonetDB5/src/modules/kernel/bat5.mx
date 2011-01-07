@@ -713,7 +713,7 @@ bat5_export str BKCreuseBATmap(int *ret, int *bid, int *did);
 #endif /*_BAT_H_*/
 
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "bat5.h"
 #include "mal_exception.h"
 @-

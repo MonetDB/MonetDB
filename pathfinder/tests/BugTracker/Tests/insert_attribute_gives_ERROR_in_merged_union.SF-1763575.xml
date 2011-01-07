@@ -1219,7 +1219,7 @@
 </folder>
 <file name="sysdefs.h" xstart="631629191" xend="631631559"/>
 </folder>
-<folder path="scratch/build/include/pathfinder" name="pathfinder"><file name="pf_config.h" xstart="631631560" xend="631640839"/>
+<folder path="scratch/build/include/pathfinder" name="pathfinder"><file name="monetdb_config.h" xstart="631631560" xend="631640839"/>
 </folder>
 </folder>
 <folder path="scratch/build/lib" name="lib"><folder path="scratch/build/lib/python2.4" name="python2.4"><folder path="scratch/build/lib/python2.4/site-packages" name="site-packages"><folder path="scratch/build/lib/python2.4/site-packages/autogen" name="autogen"><file name="var.py" xstart="631640840" xend="631642508"/>

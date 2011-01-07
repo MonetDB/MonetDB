@@ -15,13 +15,12 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = conf src 
+SUBDIRS = src 
 EXTRA_DIST = RunMtest.in RunMtest.bat.in \
 		RunMapprove.in RunMapprove.bat.in \
 		RunMserver.in RunMserver.bat.in \
-		MonetDB-SQL.spec MonetDB-SQL.spec \
-		rpm.mk.in RunMserver.bat.in
-EXTRA_DIST_DIR = NT debian
+		RunMserver.bat.in
+EXTRA_DIST_DIR = NT
 
 headers_txt = {
 	HEADERS = txt

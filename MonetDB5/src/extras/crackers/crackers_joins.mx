@@ -80,7 +80,7 @@ crackers_export str CRKsortBandJoin_@1(int *resid, int *bidL, int *bidR, @1 *c1,
 @- C file
 
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "crackers.h"
 #include "bat5.h"
 #define SAMPLE_TRESHOLD_LOG 17

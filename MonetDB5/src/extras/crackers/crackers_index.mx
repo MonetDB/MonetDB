@@ -270,7 +270,7 @@ struct Node * addCrackerIndexIncrementalSideways_@1(int m, @1 value, bit inclusi
 @- C file
 
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "crackers.h"
 
 /* Functions shared within the crackers module/library */

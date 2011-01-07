@@ -17,7 +17,16 @@
 
 ## Process this file with automake to produce Makefile.in
 
-INCLUDES = .. ../../include ../../common $(MONETDB_INCS) $(MONETDB5_INCS)
+INCLUDES = .. ../../include ../../common \
+	../../../../MonetDB/src/common \
+	../../../../MonetDB/src/gdk \
+	../../../../MonetDB5/src/modules/atoms \
+	../../../../MonetDB5/src/compiler \
+	../../../../MonetDB5/src/modules/kernel \
+	../../../../MonetDB5/src/mal \
+	../../../../MonetDB5/src/modules/mal \
+	../../../../MonetDB5/src/optimizer \
+	../../../../MonetDB5/src/scheduler
 
 lib_bpmstore = {
 	NOINST

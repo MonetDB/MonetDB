@@ -70,7 +70,7 @@ sql5_export str Cparts(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif /* _SQL_BPM_H_ */
 
 @c
-#include <sql_config.h>
+#include <monetdb_config.h>
 #include <sql_bpm.h>
 #include <sql_mem.h>
 #include <sql_mvc.h>

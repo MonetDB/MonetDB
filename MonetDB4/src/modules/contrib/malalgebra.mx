@@ -143,7 +143,7 @@ Too many bugs.
 #endif /* __MALALGEBRA_H__ */
 
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include "malalgebra.h"
 #include "malalgebra.proto.h"
 

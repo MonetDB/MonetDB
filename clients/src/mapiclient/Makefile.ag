@@ -16,7 +16,7 @@
 # All Rights Reserved.
 
 MTSAFE
-INCLUDES = -I.. $(monetdbtools_CFLAGS) $(READLINE_INCS)
+INCLUDES = -I.. ../../../MonetDB/src/common $(READLINE_INCS)
 
 lib_mcutil = {
 	NOINST
@@ -27,18 +27,25 @@ lib_mcutil = {
 bin_mclient = {
 	SOURCES = mclient.c ReadlineTools.c
 	LIBS = libmcutil ../mapilib/libMapi $(READLINE_LIBS) \
-		$(monetdbtools_LIBS) $(LTLIBICONV)
+		../../../MonetDB/src/common/libstream \
+		../../../MonetDB/src/common/libmutils \
+		$(curl_LIBS) $(LTLIBICONV)
 }
 
 bin_msqldump = {
 	SOURCES = msqldump.c
-	LIBS = libmcutil ../mapilib/libMapi $(monetdbtools_LIBS)
+	LIBS = libmcutil ../mapilib/libMapi \
+		../../../MonetDB/src/common/libstream \
+		../../../MonetDB/src/common/libmutils \
+		$(curl_LIBS)
 }
 
 bin_stethoscope = {
 	SOURCES = stethoscope.c
 	LIBS = libmcutil ../mapilib/libMapi \
-		   $(monetdbtools_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS)
+		../../../MonetDB/src/common/libstream \
+		../../../MonetDB/src/common/libmutils \
+		$(curl_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS)
 }
 
 man_MANS = mclient.1 msqldump.1

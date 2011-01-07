@@ -53,7 +53,7 @@ is called as well to identify operations of interest.
 sql5_export str SQLemptyset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif /*  _SQL_EMPTYSET_*/
 @c
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include "sql_mvc.h"
 #include "sql_emptyset.h"
 @c

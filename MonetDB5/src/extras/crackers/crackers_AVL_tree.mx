@@ -99,7 +99,7 @@ struct NodeSimple * InsertTreeSimple_@1(struct NodeSimple ** head, oid position,
 @- C file
 
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "crackers.h"
 
 /* Local support functions and macros */

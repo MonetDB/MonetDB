@@ -40,7 +40,7 @@ extern char* normalizeTerm(struct tijahContextStruct *ctx, char* term );
 extern int CMDtj_normalizeTerm(char** res, char *term, char *stemmer);
 
 @c
-#include <pf_config.h>
+#include <monetdb_config.h>
 
 /* #define TJ_TRACE 1 */
 

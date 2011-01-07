@@ -20,7 +20,7 @@
 
 /* multi version catalog */
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include <gdk.h>
 
 #include "sql_mvc.h"

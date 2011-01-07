@@ -95,7 +95,7 @@ typedef unsigned int color;
 
 #endif
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include <math.h>
 #include "color.h"
 

@@ -384,11 +384,11 @@ mo_builtin_settings(opt **Set)
 
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("prefix");
-	set[i].value = strdup(MONETDB_PREFIX);
+	set[i].value = strdup(PREFIX);
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("exec_prefix");
-	set[i].value = strdup(MONETDB_EXEC_PREFIX);
+	set[i].value = strdup(EXEC_PREFIX);
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("gdk_dbname");
@@ -397,7 +397,7 @@ mo_builtin_settings(opt **Set)
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("gdk_dbfarm");
 	snprintf(buf, BUFSIZ, "%s%c%s%c%s",
-		 MONETDB_LOCALSTATEDIR, DIR_SEP, PACKAGE, DIR_SEP, "dbfarm");
+		 LOCALSTATEDIR, DIR_SEP, PACKAGE, DIR_SEP, "dbfarm");
 	set[i].value = strdup(buf);
 	i++;
 	set[i].kind = opt_builtin;
@@ -430,10 +430,10 @@ mo_builtin_settings(opt **Set)
 	 * MinGW, we also need libdir/bin */
 #ifdef __MINGW32__
 	snprintf(buf, BUFSIZ, "%s%c%s%c%s%cbin",
-		 MONETDB_LIBDIR, DIR_SEP, PACKAGE, PATH_SEP,
-		 MONETDB_LIBDIR, DIR_SEP);
+		 LIBDIR, DIR_SEP, PACKAGE, PATH_SEP,
+		 LIBDIR, DIR_SEP);
 #else
-	snprintf(buf, BUFSIZ, "%s%c%s", MONETDB_LIBDIR, DIR_SEP, PACKAGE);
+	snprintf(buf, BUFSIZ, "%s%c%s", LIBDIR, DIR_SEP, PACKAGE);
 #endif
 	set[i].value = strdup(buf);
 	i++;

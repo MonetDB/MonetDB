@@ -1,5 +1,5 @@
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include <sql_stack.h>
 
 sql_stack *

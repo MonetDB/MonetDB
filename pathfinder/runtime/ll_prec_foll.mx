@@ -37,7 +37,7 @@ Rights Reserved.
 * ll_prec_foll.c : axis step operators for loop-lifted preceding and following axis
 *
 */
-#include "pf_config.h"
+#include "monetdb_config.h"
 #include <gdk.h>
 
 /**

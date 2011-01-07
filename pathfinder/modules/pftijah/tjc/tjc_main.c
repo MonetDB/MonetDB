@@ -30,7 +30,7 @@
 */
 
 
-#include <pf_config.h>
+#include <monetdb_config.h>
 #include <gdk.h>
 #include <stdio.h>
 #include "tjc_abssyn.h"

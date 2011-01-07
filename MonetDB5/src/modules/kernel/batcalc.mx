@@ -841,7 +841,7 @@ str CMDbataccum@2cst2_@3_@4_@5(int *ret, void *cst, int *r, bit *lflag, bit *rfl
 	@:arithmeticImpl_2(@1,@2,@3,@4,@5,@6)@
 @-
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "batcalc.h"
 
 /* the normal implementation of an operator is to just stick the

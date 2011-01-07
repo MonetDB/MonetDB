@@ -104,7 +104,7 @@ derived from the updated columns are invalidated.
 Separate update instructions in queries, such as bat.append implementing 'OR',
 are monitored and also trigger cleaning the cache.
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "opt_recycler.h"
 #include "mal_instruction.h"
 

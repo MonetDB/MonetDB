@@ -169,7 +169,7 @@ opt_export str DICTgroupid(int *ret, int *idx, int *val);
 #define OPTDEBUGdictionary  if ( optDebug & (1 <<DEBUG_OPT_DICTIONARY) )
 
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "opt_prelude.h"
 #include "opt_dictionary.h"
 #include "mal_instruction.h"

@@ -27,7 +27,7 @@
  * Procedures for preprocessing, stemming and stop word removal
  */
 
-#include <pf_config.h>
+#include <monetdb_config.h>
 
 #include <stdio.h>
 #include <stdlib.h>

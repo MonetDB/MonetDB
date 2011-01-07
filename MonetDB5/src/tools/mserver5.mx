@@ -72,7 +72,7 @@ The server options have the following meaning:
 /* #define MONET_GLOBAL_DEBUG */
 #endif /* _MONET_GLOBAL_H_ */
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "mserver5.h"
 #include "mal_authorize.h"
 #include "mal_sabaoth.h"
@@ -186,8 +186,7 @@ monet_hello(opt *set, int setlen)
 		qi++;
 	}
 
-	snprintf(s,size,"# MonetDB server v" VERSION ", based on kernel v%s\n",
-			GDKversion());
+	snprintf(s,size,"# MonetDB 5 server v" VERSION "\n");
 	size -= strlen(s);
 	s += strlen(s);
 	if (strcmp(MONETDB_RELEASE, "unreleased") == 0)
@@ -368,7 +367,7 @@ faster system start.
 	if (!(setlen = mo_builtin_settings(&set)))
 		usage(prog);
 
-	setlen = mo_add_option(&set, setlen, opt_config, "prefix", MONETDB5_PREFIX);
+	setlen = mo_add_option(&set, setlen, opt_config, "prefix", PREFIX);
 	setlen = mo_add_option(&set, setlen, opt_config, "config", MONETDB5_CONFFILE);
 
 	for (;;) {

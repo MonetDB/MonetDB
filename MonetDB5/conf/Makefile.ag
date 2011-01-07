@@ -17,29 +17,12 @@
 
 man_MANS = monetdb5.conf.5
 
-EXTRA_DIST = $(man_MANS) \
-	config.guess config.sub \
-	install-sh missing \
-	ltmain.sh config.h.in \
-	monetdb5.conf.in
+EXTRA_DIST = monetdb5.conf.in $(man_MANS)
 
 headers_conf = {
 	HEADERS = conf
 	DIR = sysconfdir
 	SOURCES = monetdb5.conf
-}
-
-scripts_sh = {
-	COND = NOT_WIN32
-	EXT = ""
-	DIR = bindir
-	SOURCES = monetdb5-config.in
-}
-
-scripts_bat = {
-	COND = NATIVE_WIN32
-	DIR = bindir
-	SOURCES = monetdb5-config.bat.in 
 }
 
 monetdb_var_logdir = $(localstatedir)/log/MonetDB
@@ -48,5 +31,3 @@ monetdb_var_rundir = $(localstatedir)/run/MonetDB
 monetdb_var_run_DATA = 
 monetdb_var_dbfarmdir = $(localstatedir)/MonetDB5/dbfarm
 monetdb_var_dbfarm_DATA = 
-
-EXTRA_DIST_DIR = Tests

@@ -16,12 +16,22 @@
 # All Rights Reserved.
 
 MTSAFE
-INCLUDES = $(MONETDB_INCS) $(MONETDB5_INCS) $(GEOS_INCS) -I../lib
+INCLUDES = ../../../MonetDB/src/common ../../../MonetDB/src/gdk \
+	../../../MonetDB5/src/modules/atoms \
+	../../../MonetDB5/src/compiler \
+	../../../MonetDB5/src/modules/kernel \
+	../../../MonetDB5/src/mal \
+	../../../MonetDB5/src/modules/mal \
+	../../../MonetDB5/src/optimizer \
+	../../../MonetDB5/src/scheduler \
+	$(GEOS_INCS) -I../lib
 
 lib__geom = {
 	DIR = libdir/MonetDB5
 	SOURCES = geom.mx
-	LIBS = $(MONETDB_LIBS) -lbat -lstream $(MONETDB5_LIBS) -lmonetdb5 \
+	LIBS = ../../../MonetDB/src/gdk/libbat \
+	       ../../../MonetDB/src/common/libstream \
+	       ../../../MonetDB5/src/tools/libmonetdb5 \
 	       $(GEOS_LIBS) ../lib/libgeom
 }
 

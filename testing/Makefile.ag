@@ -15,9 +15,4 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = src conf
-
-EXTRA_DIST = configure.ag rpm.mk.in \
-		MonetDB-testing.spec MonetDB-testing.spec
-
-EXTRA_DIST_DIR = NT debian
+SUBDIRS = src

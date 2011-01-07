@@ -28,8 +28,18 @@
 
 SUBDIRS = tjc
 
-INCLUDES = ../../runtime ../../compiler/include $(MONETDB4_INCS) $(MONETDB_INCS) $(LIBXML2_CFLAGS)
-PF_LIBS = $(LIBXML2_LDADD) $(LIBXML2_LIBS) $(DL_LIBS)
+INCLUDES = \
+	../../runtime \
+	../../compiler/include \
+	../../../MonetDB4/src/monet \
+	../../../MonetDB4/src/modules/plain \
+	../../../MonetDB4/src/modules/contrib \
+	../../../MonetDB4/src \
+	../../../MonetDB4/src/modules/calibrator \
+	../../../MonetDB/src/common \
+	../../../MonetDB/src/gdk \
+	$(libxml2_CFLAGS)
+PF_LIBS = $(libxml2_LIBS) $(DL_LIBS)
 
 YFLAGS = -d -p nexi
 
@@ -54,7 +64,7 @@ pftijah_stem_CFLAGS = $(SUN_NOERR_CFLAGS)
 lib__pftijah = {
 	DIR = libdir/MonetDB4
 	SOURCES = \
-	        termdb.mx \
+		termdb.mx \
 		pftijah.mx \
 		pftijah_stem.mx \
 		snb_header.h \
@@ -95,8 +105,15 @@ lib__pftijah = {
 		./tjc/libtjc  \
 		../../runtime/libserialize \
 		../../runtime/lib_pf_support $(PF_LIBS) \
-		$(MONETDB_LIBS) -lbat -lstream $(MONETDB4_LIBS) -lmonet \
-		$(MONETDB4_MODS) -l_streams -l_builtin -l_ascii_io -l_algebra -l_constant -l_str
+		../../../MonetDB/src/gdk/libbat \
+		../../../MonetDB/src/common/libstream \
+		../../../MonetDB4/src/monet/libmonet \
+		../../../MonetDB4/src/modules/plain/lib_streams \
+		../../../MonetDB4/src/modules/plain/lib_builtin \
+		../../../MonetDB4/src/modules/plain/lib_ascii_io \
+		../../../MonetDB4/src/modules/plain/lib_algebra \
+		../../../MonetDB4/src/modules/plain/lib_constant \
+		../../../MonetDB4/src/modules/plain/lib_str
 }
 
 headers_mil = {

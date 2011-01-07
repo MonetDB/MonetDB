@@ -1,6 +1,6 @@
 char rcsid_queue[] = "$Id$";
 
-#include "burg_config.h"
+#include "monetdb_config.h"
 #include "b.h"
 #include <stdio.h>
 

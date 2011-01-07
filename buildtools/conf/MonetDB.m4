@@ -189,7 +189,7 @@ MONETDB_MODS=""
 MONETDB_MOD_PATH=""
 MONETDB_PREFIX="."
 if test "x$1" = "x"; then
-  MONETDB_REQUIRED_VERSION="1.40.0"
+  MONETDB_REQUIRED_VERSION="11.0.0"
   #                         ^^^^^^
   # Maintained via vertoo. Please don't modify by hand!
   # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -262,7 +262,7 @@ CLIENTS_MODS=""
 CLIENTS_MOD_PATH=""
 CLIENTS_PREFIX="."
 if test "x$1" = "x"; then
-  CLIENTS_REQUIRED_VERSION="1.40.0"
+  CLIENTS_REQUIRED_VERSION="11.0.0"
   #                         ^^^^^^
   # Maintained via vertoo. Please don't modify by hand!
   # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -339,7 +339,7 @@ MONETDB4_MODS=""
 MONETDB4_MOD_PATH=""
 MONETDB4_PREFIX="."
 if test "x$1" = "x"; then
-  MONETDB4_REQUIRED_VERSION="4.40.0"
+  MONETDB4_REQUIRED_VERSION="11.0.0"
   #                          ^^^^^^
   # Maintained via vertoo. Please don't modify by hand!
   # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -432,7 +432,7 @@ MONETDB5_PREFIX="."
 MONETDB5_RDF_LIB=""
 MONETDB5_XML_LIB=""
 if test "x$1" = "x"; then
-  MONETDB5_REQUIRED_VERSION="5.22.0"
+  MONETDB5_REQUIRED_VERSION="11.0.0"
   #                          ^^^^^
   # Maintained via vertoo. Please don't modify by hand!
   # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -2757,346 +2757,6 @@ AC_DEFUN([AM_MONETDB_LIB_M], [
 	AC_SUBST(MATH_LIBS)
 
 ]) dnl AM_MONETDB_LIB_M
-
-AC_DEFUN([AM_MONETDB_LIB_HWCOUNTERS], [
-
-	dnl hwcounters
-	have_hwcounters=auto
-	HWCOUNTERS_LIBS=""
-	HWCOUNTERS_INCS=""
-	AC_ARG_WITH(hwcounters,
-		AS_HELP_STRING([--with-hwcounters=DIR],
-			[hwcounters library is installed in DIR]), 
-		have_hwcounters="$withval")
-	case "$have_hwcounters" in
-	yes|no|auto)
-		;;
-	*)
-		HWCOUNTERS_LIBS="-L$withval/lib"
-		HWCOUNTERS_INCS="-I$withval/include"
-		;;
-	esac
-	if test "x$have_hwcounters" != xno; then
-	  case "$host_os-$host" in
-		linux*-i?86*) HWCOUNTERS_INCS="$HWCOUNTERS_INCS -I/usr/src/linux-`uname -r | sed 's|smp$||'`/include"
-	  esac
-	  save_CPPFLAGS="$CPPFLAGS"
-	  CPPFLAGS="$CPPFLAGS $HWCOUNTERS_INCS"
-	  save_LIBS="$LIBS"
-	  LIBS="$LIBS $HWCOUNTERS_LIBS"
-	  have_hwcounters=no
-	  case "$host_os-$host" in
-	   linux*-i?86*|linux*-x86_64*)
-		AC_CHECK_HEADERS( libperfctr.h ,
-		 AC_CHECK_LIB( perfctr, vperfctr_open , 
-		  [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lperfctr" 
-			AC_DEFINE(HAVE_LIBPERFCTR, 1, [Define if you have the perfctr library])
-			have_hwcounters=yes
-		  ]
-			 )
-		)
-		if test "x$have_hwcounters" != xyes; then
-				AC_CHECK_HEADERS( libpperf.h,
-			 AC_CHECK_LIB( pperf, start_counters, 
-			  [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lpperf" 
-					AC_DEFINE(HAVE_LIBPPERF, 1, [Define if you have the pperf library])
-					have_hwcounters=yes
-			  ]
-			 )
-			)
-		fi
-		;;
-	   linux*-ia64*)
-		AC_CHECK_HEADERS( perfmon/pfmlib.h ,
-		 AC_CHECK_LIB( pfm, pfm_initialize , 
-		  [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lpfm" 
-			AC_DEFINE(HAVE_LIBPFM, 1, [Define if you have the pfm library])
-			have_hwcounters=yes
-		  ]
-			 )
-		)
-		;;
-	   solaris*)
-		AC_CHECK_HEADERS( libcpc.h ,
-		 AC_CHECK_TYPE( cpc_event_t, 
-		  AC_CHECK_LIB( cpc, cpc_access , 
-		   [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lcpc" 
-			 AC_DEFINE(HAVE_LIBCPC, 1, [Define if you have the cpc library])
-			 have_hwcounters=yes
-		   ]
-		  )
-		  , , [#include <libcpc.h>]
-		 )
-		)
-		if test "x$have_hwcounters" != xyes; then
-			AC_CHECK_HEADERS( perfmon.h ,
-			 AC_CHECK_LIB( perfmon, clr_pic , 
-			  [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lperfmon" 
-				AC_DEFINE(HAVE_LIBPERFMON, 1, [Define if you have the perfmon library])
-				have_hwcounters=yes
-			  ]
-			 )
-			)
-		fi
-		;;
-	   irix*)
-		AC_CHECK_LIB( perfex, start_counters , 
-		 [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lperfex" 
-		   have_hwcounters=yes
-		 ]
-		)
-		;;
-	  esac
-	  LIBS="$save_LIBS"
-	  CPPFLAGS="$save_CPPFLAGS"
-
-	  if test "x$have_hwcounters" != xyes; then
-		HWCOUNTERS_LIBS=""
-		HWCOUNTERS_INCS=""
-	   else
-		CFLAGS="$CFLAGS -DHWCOUNTERS -DHW_`uname -s` -DHW_`uname -m`"
-	  fi
-	fi
-	AC_SUBST(HWCOUNTERS_LIBS)
-	AC_SUBST(HWCOUNTERS_INCS)
-
-]) dnl AM_MONETDB_LIB_HWCOUNTERS
-
-AC_DEFUN([AM_MONETDB_LIBS],
-[
-
-AM_MONETDB_LIB_READLINE()
-AM_MONETDB_LIB_OPENSSL()
-AM_MONETDB_LIB_CURL()
-AM_MONETDB_LIB_PTHREAD()
-AM_MONETDB_LIB_SOCKET()
-AM_MONETDB_LIB_DL()
-AM_MONETDB_LIB_MALLOC()
-AM_MONETDB_LIB_M()
-AM_MONETDB_LIB_Z()
-AM_MONETDB_LIB_BZIP2()
-AM_MONETDB_FUNC_GETOPT()
-AM_MONETDB_LIB_HWCOUNTERS()
-
-dnl check for the Perl-compatible regular expressions library 
-have_pcre=auto
-why_no_pcre=""
-PCRE_CFLAGS=""
-PCRE_LIBS=""
-PCRE_CONFIG=""
-PCRETEST=""
-AC_ARG_WITH(pcre,
-	AS_HELP_STRING([--with-pcre=DIR],
-		[pcre library is installed in DIR]),
-	have_pcre="$withval")
-if test "x$have_pcre" != xno; then
-
-	# just avoid /bin in case of empty $withval
-	if test "x$withval" != "x" ; then
-		MPATH="$withval/bin:$PATH"
-	else
-		MPATH="$PATH"
-	fi
-    AC_PATH_PROG(PCRE_CONFIG,pcre-config,,$MPATH)
-    if test "x$PCRE_CONFIG" = x; then
-    	AC_MSG_RESULT(pcre-config not found; please use --with-pcre=<path>)
-    else
-    	PCRE_CFLAGS="`$PCRE_CONFIG --cflags`"
-    	PCRE_LIBS="`$PCRE_CONFIG --libs`"
-    fi
-
-    req_pcre_ver='4.5'
-    AC_MSG_CHECKING(for pcre >= $req_pcre_ver)
-    if test "x$PCRE_CONFIG" = x; then
-    	have_pcre=no
-    	why_no_pcre="(without pcre-config to query the pcre version, we assume it's < $req_pcre_ver)"
-    	AC_MSG_RESULT($have_pcre $why_no_pcre)
-    else
-    	pcre_ver="`$PCRE_CONFIG --version 2>/dev/null`"
-    	if test MONETDB_VERSION_TO_NUMBER(echo $pcre_ver) -ge MONETDB_VERSION_TO_NUMBER(echo "$req_pcre_ver"); then
-      		have_pcre=yes
-      		AC_MSG_RESULT($have_pcre (found $pcre_ver))
-    	else
-      		have_pcre=no
-      		why_no_pcre="(found only $pcre_ver)"
-      		AC_MSG_RESULT($have_pcre $why_no_pcre)
-    	fi
-    fi
-
-    if test "x$have_pcre" = xyes; then
-        AC_PATH_PROG(PCRETEST,pcretest,,$MPATH)
-        AC_MSG_CHECKING(whether pcre comes with UTF-8 support)
-        if test "x$PCRETEST" = x; then
-            have_pcre=no
-            why_no_pcre="(could not find pcretest to check it)"
-            AC_MSG_RESULT($have_pcre $why_no_pcre)
-        else
-            pcre_utf8="`$PCRETEST -C 2>/dev/null | grep 'UTF-8 support' | sed -e 's|^ *||' -e 's| *$||'`"
-            if test "x$pcre_utf8" != "xUTF-8 support"; then
-                have_pcre=no
-            fi
-            why_no_pcre="(pcretest says '$pcre_utf8')"
-            AC_MSG_RESULT($have_pcre $why_no_pcre)
-        fi
-    fi
-
-    if test "x$have_pcre" = xyes; then
-    	save_CPPFLAGS="$CPPFLAGS"
-    	CPPFLAGS="$CPPFLAGS $PCRE_CFLAGS"
-    	AC_CHECK_HEADER(pcre.h, have_pcre=yes, have_pcre=no; why_no_pcre="(no usable pcre.h found)")
-    	CPPFLAGS="$save_CPPFLAGS"
-    fi
-
-    if test "x$have_pcre" = xyes; then
-    	save_LIBS="$LIBS"
-    	LIBS="$LIBS $PCRE_LIBS"
-    	AC_CHECK_LIB(pcre, pcre_compile, have_pcre=yes, have_pcre=no; why_no_pcre="(pcre_compile not found in libpcre)")
-    	LIBS="$save_LIBS"
-    fi
-
-    if test "x$have_pcre" = xyes; then
-    	AC_DEFINE(HAVE_LIBPCRE, 1, [Define if you have the pcre library])
-    else
-    	PCRE_CFLAGS=""
-    	PCRE_LIBS=""
-    fi
-else
-    why_no_pcre="(configure called with --with-pcre=no)"
-fi
-AC_SUBST(PCRE_CFLAGS)
-AC_SUBST(PCRE_LIBS)
-AM_CONDITIONAL(HAVE_PCRE,test x$have_pcre != xno)
-
-AC_CHECK_HEADERS(regex.h)
-
-AC_CHECK_HEADERS(locale.h langinfo.h)
-AC_CHECK_FUNCS(nl_langinfo setlocale)
-
-dnl Check for iconv function: it could be in the -liconv library, and
-dnl it could be called libiconv instead of iconv (Cygwin).  We also
-dnl need the iconv_t type.
-have_iconv=auto
-ICONV_CFLAGS=""
-ICONV_LIBS=""
-AC_ARG_WITH(iconv,
-	AS_HELP_STRING([--with-iconv=DIR],
-		[iconv library is installed in DIR]),
-	have_iconv="$withval")
-case "$have_iconv" in
-yes|no|auto)
-	;;
-*)
-	ICONV_CFLAGS="-I$withval/include"
-	ICONV_LIBS="-L$withval/lib"
-	;;
-esac
-if test "x$have_iconv" != xno; then
-	save_CPPFLAGS="$CPPFLAGS"
-	CPPFLAGS="$CPPFLAGS $ICONV_CFLAGS"
-	AC_CHECK_HEADERS(iconv.h)
-	AC_CHECK_TYPE(iconv_t, , [ if test "x$have_iconv" != xauto; then AC_MSG_ERROR([iconv_t type not found]); fi; have_iconv=no ], [#if HAVE_ICONV_H
-#include <iconv.h>
-#endif])
-	CPPFLAGS="$save_CPPFLAGS"
-fi
-have_libiconv=no
-if test "x$have_iconv" != xno; then
-	save_LIBS="$LIBS"
-	LIBS="$LIBS $ICONV_LIBS"
-	AC_CHECK_LIB(iconv, iconv, ICONV_LIBS="$ICONV_LIBS -liconv", [
-		AC_CHECK_LIB(iconv, libiconv, have_libiconv=yes ICONV_LIBS="$ICONV_LIBS -liconv", [
-			AC_CHECK_FUNC(iconv, , [
-				AC_CHECK_FUNC(libiconv, have_libiconv=yes,
-					[ if test "x$have_iconv" != xauto; then AC_MSG_ERROR([iconv library not found]); fi; have_iconv=no ])])])])
-	LIBS="$save_LIBS"
-fi
-if test "x$have_iconv" != xno; then
-	AC_DEFINE(HAVE_ICONV, 1, [Define if you have the iconv library])
-	if test $have_libiconv = yes; then
-		AC_DEFINE(iconv, libiconv, [Wrapper])
-		AC_DEFINE(iconv_open, libiconv_open, [Wrapper])
-		AC_DEFINE(iconv_close, libiconv_close, [Wrapper])
-	fi
-	AC_MSG_CHECKING([whether the declaration of iconv() needs const for 2nd argument])
-	save_CPPFLAGS="$CPPFLAGS"
-	CPPFLAGS="$CPPFLAGS $ICONV_CFLAGS"
-	AC_TRY_COMPILE([
-#include <stdlib.h>
-#if HAVE_ICONV_H
-#include <iconv.h>
-#endif
-extern
-#ifdef __cplusplus
-"C"
-#endif
-#if defined(__STDC__) || defined(__cplusplus)
-size_t iconv (iconv_t cd, char * *inbuf, size_t *inbytesleft, char * *outbuf, size_t *outbytesleft);
-#else
-size_t iconv();
-#endif
-], [], [ AC_MSG_RESULT(no); iconv_const="" ], [ AC_MSG_RESULT(yes); iconv_const="const" ])
-	AC_DEFINE_UNQUOTED(ICONV_CONST, $iconv_const, 
-		[Define as const if the declaration of iconv() needs const for 2nd argument.])
-	CPPFLAGS="$save_CPPFLAGS"
-else
-	ICONV_CFLAGS=""
-	ICONV_LIBS=""
-fi
-AC_SUBST(ICONV_CFLAGS)
-AC_SUBST(ICONV_LIBS)
-
-AC_CHECK_PROG(TEXI2HTML,texi2html,texi2html)
-AC_CHECK_PROG(LATEX2HTML,latex2html,latex2html)
-AC_CHECK_PROG(LATEX,latex,latex)
-AC_CHECK_PROG(PDFLATEX,pdflatex,pdflatex)
-AC_CHECK_PROG(DVIPS,dvips,dvips)
-AC_CHECK_PROG(FIG2DEV,fig2dev,fig2dev)
-FIG2DEV_EPS=eps
-AC_MSG_CHECKING([$FIG2DEV postscript option])
-[ if test "$FIG2DEV"; then
-        echo "" | $FIG2DEV -L$FIG2DEV_EPS 2>/dev/null
-        if test $? -ne 0; then
-                FIG2DEV_EPS=ps
-        fi
-fi ]
-AC_MSG_RESULT($FIG2DEV_EPS)
-AC_SUBST(FIG2DEV_EPS)
-AM_CONDITIONAL(DOCTOOLS, test -n "$TEXI2HTML" -a -n "$LATEX2HTML" -a -n "$LATEX" -a -n "$PDFLATEX" -a -n "$FIG2DEV" -a -n "$DVIPS") 
-
-INSTALL_BACKUP=""
-AC_MSG_CHECKING([$INSTALL --backup option])
-[ if test "$INSTALL"; then
-	inst=`echo $INSTALL | sed 's/ .*//'`
-	if test ! "`file $inst | grep 'shell script' 2>/dev/null`" ; then
-	    echo "" > c 2>/dev/null
-            $INSTALL --backup=nil c d 1>/dev/null 2>/dev/null
-            if test $? -eq 0; then
-                INSTALL_BACKUP="--backup=nil" 
-            fi
-            $INSTALL -C --backup=nil c e 1>/dev/null 2>/dev/null
-            if test $? -eq 0; then
-                INSTALL_BACKUP="-C --backup=nil" 
-       	    fi
-	fi 
-	rm -f c d e 2>/dev/null
-fi ]
-AC_MSG_RESULT($INSTALL_BACKUP)
-AC_SUBST(INSTALL_BACKUP)
-
-
-AC_SUBST(CFLAGS)
-
-have_problem=no
-if test "x$have_pthread" = xno; then
-	AC_MSG_NOTICE("MonetDB requires libpthread (try --with-pthread)")
-	have_problem=yes
-fi
-
-if test "x$have_problem" != xno; then
-	AC_MSG_ERROR("A required package is missing")
-fi
-
-]) dnl AC_DEFUN AM_MONETDB_LIBS
 
 AC_DEFUN([AM_MONETDB_UTILS],[
 

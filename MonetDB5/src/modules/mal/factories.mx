@@ -81,7 +81,7 @@ factories_export str FCTgetLocations(int *ret);
 factories_export str FCTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif /* _FACTORIES_H */
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "factories.h"
 
 

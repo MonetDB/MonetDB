@@ -140,7 +140,7 @@ mal_compiler_export str MCloadFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk
 #endif /* _MAL_COMPILER_H_ */
 @-
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "mal_compiler.h"
 #include "mal_interpreter.h"
 #include "mal_function.h"
@@ -151,7 +151,7 @@ static char *mccPrelude[] = {
 	"   Copyright (c) August 2008-2011, MonetDB B.V..\n",
 	"   All rights reserved.\n",
 	"*/\n",
-	"#include \"mal_config.h\"\n",
+	"#include \"monetdb_config.h\"\n",
 
 	"#include \"atoms/blob.h\"\n",
 	"#include \"atoms/color.h\"\n",

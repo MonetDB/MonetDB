@@ -17,7 +17,7 @@
  * All Rights Reserved.
  */
 
-#include "testing_config.h"
+#include "monetdb_config.h"
 #include "helpers.h"
 #include "difflib.h"
 

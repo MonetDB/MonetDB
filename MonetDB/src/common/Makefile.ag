@@ -27,11 +27,11 @@ lib_mutils = {
 	SOURCES = monet_utils.mx monet_options.mx monet_getopt.h
 }
 
-INCLUDES = $(Z_CFLAGS) $(BZ_CFLAGS) $(OPENSSL_INCS) $(CURL_INCS) $(ICONV_CFLAGS)
+INCLUDES = $(zlib_CFLAGS) $(BZ_CFLAGS) $(openssl_CFLAGS) $(curl_CFLAGS) $(ICONV_CFLAGS)
 
 lib_stream  =  {
 	SOURCES = stream.mx dummy_gdk_utils.mx
-	LIBS = $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) $(OPENSSL_LIBS) $(CURL_LIBS) $(ICONV_LIBS)
+	LIBS = $(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) $(openssl_LIBS) $(curl_LIBS) $(ICONV_LIBS)
 }
 
 headers_common = {

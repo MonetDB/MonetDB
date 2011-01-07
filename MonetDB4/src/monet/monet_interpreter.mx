@@ -145,7 +145,7 @@ m_export void resetProfiler(void);
 #endif /* _MONET_INTERPRETER_H_ */
 
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include "monet.h"
 
 @= pack_bits

@@ -17,7 +17,7 @@
  * All Rights Reserved.
  */
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 
 #include <stdio.h>
 #include <string.h>  /* strerror, strchr, strcmp */
@@ -27,8 +27,19 @@
 #include <sys/un.h>
 #include <netdb.h>
 #include <netinet/in.h>
+
 #ifdef HAVE_ALLOCA_H
-#include <alloca.h>
+# include <alloca.h>
+#elif defined __GNUC__
+# define alloca __builtin_alloca
+#elif defined _AIX
+# define alloca __alloca
+#elif defined _MSC_VER
+# include <malloc.h>
+# define alloca _alloca
+#else
+# include <stddef.h>
+void *alloca(size_t);
 #endif
 
 #include <stream.h>

@@ -112,7 +112,7 @@ comment "Resolve the multi-table definitions";
 #define OPTDEBUGremoteQueries  if ( optDebug & ((lng)1 <<DEBUG_OPT_REMOTEQUERIES) )
 #endif
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "opt_remoteQueries.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_builder.h"

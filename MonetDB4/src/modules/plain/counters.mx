@@ -179,7 +179,7 @@ typedef struct {
 } counter;
 
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include "counters.h"
 #include "counters.proto.h"
 #include "errno.h"

@@ -118,7 +118,7 @@ PROC test_bitvector() : void {
 @{
 @* Implementation
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include "bitvector.proto.h"
 
 #define numentries(a, b)	(((a) + (b) - 1) / (b))

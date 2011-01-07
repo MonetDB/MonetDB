@@ -17,7 +17,7 @@
  * All Rights Reserved.
  */
 
-#include "clients_config.h"	/* we need SIZEOF_INT and SIZEOF_LONG for sql.h */
+#include "monetdb_config.h"	/* we need SIZEOF_INT and SIZEOF_LONG for sql.h */
 #include <stdio.h>
 #include <stdlib.h>
 #include <sql.h>

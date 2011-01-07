@@ -18,7 +18,7 @@
  */
 
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include "rel_select.h"
 #include "sql_semantic.h"	/* TODO this dependency should be removed, move
 				   the dependent code into sql_mvc */

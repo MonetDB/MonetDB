@@ -437,7 +437,7 @@
  * <a href='http://www.monetdb-xquery.org/'>http://www.monetdb-xquery.org/</a>.
  */
 
-#include "pf_config.h"
+#include "monetdb_config.h"
 #include "pathfinder.h"
 
 #include <stdlib.h>

@@ -151,7 +151,7 @@ will even be the case for long 64-bit integers.
 @{
 @* Implementation
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include "gdk.h"
 #include "streams.h"
 #include "enum.proto.h"

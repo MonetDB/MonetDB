@@ -1,0 +1,1533 @@
+#                                               -*- Autoconf -*-
+#                                               vim: ft=config :
+
+dnl The contents of this file are subject to the MonetDB Public License
+dnl Version 1.1 (the "License"); you may not use this file except in
+dnl compliance with the License. You may obtain a copy of the License at
+dnl http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+dnl
+dnl Software distributed under the License is distributed on an "AS IS"
+dnl basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+dnl License for the specific language governing rights and limitations
+dnl under the License.
+dnl
+dnl The Original Code is the MonetDB Database System.
+dnl
+dnl The Initial Developer of the Original Code is CWI.
+dnl Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+dnl Copyright August 2008-2011 MonetDB B.V.
+dnl All Rights Reserved.
+
+# Process this file with autoconf to produce a configure script.
+
+AC_PREREQ(2.60)
+AC_INIT([MonetDB], [11.0.0], [info@monetdb.org], [MonetDB])
+AC_CONFIG_AUX_DIR([buildtools/conf])
+AC_CONFIG_MACRO_DIR([buildtools/conf])
+AC_CANONICAL_HOST
+AC_CANONICAL_TARGET
+dnl use tar-ustar since we have long (longer than 99 characters) file names
+AM_INIT_AUTOMAKE([tar-ustar])
+AC_CONFIG_SRCDIR([MonetDB/src/gdk/gdk.mx])
+AM_CONFIG_HEADER([monetdb_config.h])
+AC_SUBST([CONFIG_H], [monetdb_config.h])
+
+HOST=[$target]
+AC_DEFINE_UNQUOTED(HOST, "$HOST", [Host identifier])
+
+if test x"$target_os" = xcygwin; then
+        AC_DEFINE(WIN32, 1, [Define on Microsoft Windows (also under Cygwin)])
+fi
+AM_CONDITIONAL(NOT_WIN32, test x"$target_os" != xcygwin)
+AM_CONDITIONAL(NATIVE_WIN32, false)
+
+PKG_PROG_PKG_CONFIG
+
+# BUILD and SOURCE are *only* used for monetdb-config and RunMserver
+# SOURCE is the absolute path name of the source directory
+# (srcdir can be relative)
+
+# The Q versions of various variables are used in places where \'s
+# need to be escapes with an extra \.  Configure does not support \'s
+# in path names, so there is no need to do anything special here
+# except set the variables.  The command to set them in case we do
+# need to escape the \'s is Qvar=`echo "$var" | sed 's/\\\\/\\\\\\\\/g'`
+BUILD=[`pwd`]
+AC_SUBST(BUILD)
+
+SOURCE=[`(cd $srcdir && pwd)`]
+AC_SUBST(SOURCE)
+
+AM_MONETDB_XQ_VARS_1
+
+AM_MONETDB_DEFAULTS
+
+dft_monetdb4=auto
+AC_ARG_ENABLE(monetdb4,
+	AS_HELP_STRING([--enable-monetdb4],
+		[enable support for MonetDB4 (default=auto)]),
+	enable_monetdb4=$enableval,
+	enable_monetdb4=$dft_monetdb4)
+
+dft_monetdb5=auto
+AC_ARG_ENABLE(monetdb5,
+	AS_HELP_STRING([--enable-monetdb5],
+		[enable support for MonetDB5 (default=auto)]),
+	enable_monetdb5=$enableval,
+	enable_monetdb5=$dft_monetdb5)
+
+dft_sql=auto
+AC_ARG_ENABLE(sql,
+	AS_HELP_STRING([--enable-sql],
+		[enable support for MonetDB/SQL (default=auto)]),
+	enable_sql=$enableval,
+	enable_sql=$dft_sql)
+case "$enable_monetdb5-$enable_sql" in
+no-yes)
+	AC_MSG_ERROR([MonetDB/SQL requires MonetDB5.])
+	;;
+no-auto)
+	enable_sql=no
+	;;
+esac
+
+dft_geom=auto
+AC_ARG_ENABLE(geom,
+	AS_HELP_STRING([--enable-geom],
+		[enable support for geom module (default=auto)]),
+	enable_geom=$enableval,
+	enable_geom=$dft_geom)
+case "$enable_monetdb4-$enable_monetdb5-$enable_geom" in
+no-no-yes)
+	AC_MSG_ERROR([geom module requires either or both MonetDB4 and MonetDB5])
+	;;
+no-no-auto)
+	enable_geom=no
+	;;
+esac
+
+dft_pathfinder=auto
+AC_ARG_ENABLE(pathfinder,
+	AS_HELP_STRING([--enable-pathfinder],
+		[enable support for MonetDB/XQuery (default=auto)]),
+	enable_pathfinder=$enableval,
+	enable_pathfinder=$dft_pathfinder)
+
+dft_pftijah=auto
+AC_ARG_ENABLE(pftijah,
+	AS_HELP_STRING([--enable-pftijah],
+		[enable support for TIJAH (default=auto)]),
+	enable_pftijah=$enableval,
+	enable_pftijah=$dft_pftijah)
+case "$enable_monetdb4-$enable_pftijah" in
+no-yes)
+	AC_MSG_ERROR([TIJAH support requires MonetDB4])
+	;;
+no-auto)
+	enable_pftijah=no
+	;;
+esac
+
+dft_probxml=auto
+AC_ARG_ENABLE(probxml,
+	AS_HELP_STRING([--enable-probxml],
+		[enable support for PROBXML (default=auto)]),
+	enable_probxml=$enableval,
+	enable_probxml=$dft_probxml)
+case "$enable_monetdb4-$enable_probxml" in
+no-yes)
+	AC_MSG_ERROR([PROBXML support requires MonetDB4])
+	;;
+no-auto)
+	enable_probxml=no
+	;;
+esac
+
+dft_odbc=auto
+AC_ARG_ENABLE(odbc,
+	AS_HELP_STRING([--enable-odbc],
+		[compile the MonetDB ODBC driver (default=auto)]),
+	enable_odbc=$enableval,
+	enable_odbc=$dft_odbc)
+
+dft_testing=auto
+AC_ARG_ENABLE(testing,
+	AS_HELP_STRING([--enable-testing],
+		[enable support for testing (default=auto)]),
+	enable_testing=$enableval,
+	enable_testing=$dft_testing)
+
+dnl Pathfinder has three different code generators: The
+dnl "milprint_summer" back-end directly translates XQuery Core
+dnl code into MIL, while the "algebra" back-end uses an intermediate
+dnl representation.  The former is more feature complete, and we use
+dnl it as the default if the user does not specify another default
+dnl with --with-default-backend=....  In addition we have a "sql"
+dnl backend that generates a SQL query plan. Note that users can ALWAYS
+dnl select each of the back-ends with the -A, -M or -S switches on the
+dnl compiler command line.
+dnl This configure setting is primarily meant to ease debugging and
+dnl testing.  If you invoke configure with --with-default-backend=algebra,
+dnl Mtest will also use the algebraic back-end.
+dft_backend=algebra
+AC_ARG_WITH(default-backend,
+            AS_HELP_STRING(
+               [--with-default-backend=BACKEND],
+               [select a default back-end (milprint_summer/algebra/sql)
+                for Pathfinder (default=algebra)]),
+            default_backend="$withval",
+            default_backend=$dft_backend)
+case "$default_backend" in
+milprint_summer)
+        AC_DEFINE(ALGEBRA_IS_DEFAULT, 0,
+                  [Use algebra back-end by default?])
+        AC_DEFINE(MILPRINT_SUMMER_IS_DEFAULT, 1,
+                  [Use milprint_summer back-end by default?])
+        AC_DEFINE(SQL_IS_DEFAULT, 0,
+                  [Use sql back-end by default?])
+        DEFAULT_BACKEND=milprint_summer
+	;;
+algebra)
+        AC_DEFINE(ALGEBRA_IS_DEFAULT, 1,
+                  [Use algebra back-end by default?])
+        AC_DEFINE(MILPRINT_SUMMER_IS_DEFAULT, 0,
+                  [Use milprint_summer back-end by default?])
+        AC_DEFINE(SQL_IS_DEFAULT, 0,
+                  [Use sql back-end by default?])
+        DEFAULT_BACKEND=algebra
+	;;
+sql)
+        AC_DEFINE(ALGEBRA_IS_DEFAULT, 0,
+                  [Use algebra back-end by default?])
+        AC_DEFINE(MILPRINT_SUMMER_IS_DEFAULT, 0,
+                  [Use milprint_summer back-end by default?])
+        AC_DEFINE(SQL_IS_DEFAULT, 1,
+                  [Use sql back-end by default?])
+        DEFAULT_BACKEND=sql
+	;;
+*)
+        AC_MSG_ERROR([Only 'milprint_summer', 'algebra', and 'sql' are allowed
+                      as arguments for --with-default-backend.])
+	;;
+esac
+
+dnl The console is a direct client hooked onto the kernel with full
+dnl administrative privileges, bypassing any security checks.  It is
+dnl handy only during development.
+dnl We simply can't disable it for now because Testing gets hopelessly
+dnl upset about it, but we can offer to the user to disable it for
+dnl increased security.
+use_console=yes
+AC_ARG_ENABLE(console,
+	AS_HELP_STRING([--enable-console],
+		[enables direct console on the server (involves security risks)]),
+	use_console="$withval")
+if test x$use_console = xyes ; then
+	AC_DEFINE([HAVE_CONSOLE], 1, [If the console should be used])
+fi
+
+AC_ARG_ENABLE(java,
+	AS_HELP_STRING([--enable-java], [(try to) build Java components]),
+	enable_java="$enableval",
+	enable_java=auto)
+
+if test "x$enable_java" != xno; then
+	AC_ARG_ENABLE(jdbc,
+		AS_HELP_STRING([--enable-jdbc], [build the MonetDB JDBC driver]),
+		enable_jdbc="$enableval",
+		enable_jdbc=auto)
+	case $enable_jdbc in
+		yes|auto) enable_jdbc=$enable_jdbc;;
+		*) enable_jdbc=no;;
+	esac
+
+	AC_ARG_ENABLE(xrpcwrapper,
+		AS_HELP_STRING([--enable-xrpcwrapper], [build the MonetDB XRPC wrapper]),
+		enable_xrpc="$enableval",
+		enable_xrpc=auto)
+	case $enable_xrpc in
+		yes|auto) enable_xrpc=$enable_xrpc;;
+		*) enable_xrpc=no;;
+	esac
+
+	AC_ARG_ENABLE(merocontrol,
+		AS_HELP_STRING([--enable-merocontrol], [build the Merovingian control driver]),
+		enable_control="$enableval",
+		enable_control=auto)
+	case $enable_control in
+		yes|auto) enable_control=$enable_control;;
+		*) enable_control=no;;
+	esac
+else
+	enable_jdbc=no
+	enable_xrpc=no
+	enable_control=no
+fi
+
+dnl RIPEMD160 is patent free, academic and European, but unfortunately
+dnl can't use it by default, as that would exclude JDBC usage (Java
+dnl doesn't natively support RIPEMD160).
+MONETDB5_PASSWDHASH="SHA512"
+AC_ARG_WITH(password-backend,
+	AS_HELP_STRING([--with-password-backend=HASHALG],
+		[password hash algorithm, one of MD5, SHA1, RIPEMD160, SHA224, SHA256, SHA384, SHA512, defaults to SHA512]),
+	password_backend="$withval")
+case "$password_backend" in
+yes|no|auto|"")
+	;;
+MD5|SHA1|RIPEMD160|SHA224|SHA256|SHA384|SHA512)
+	MONETDB5_PASSWDHASH="$password_backend"
+	;;
+*)
+	AC_MSG_ERROR(['$password_backend' invalid, choose one of MD5, SHA1, RIPEMD160, SHA224, SHA256, SHA384, SHA512])
+	;;
+esac
+AC_DEFINE_UNQUOTED([MONETDB5_PASSWDHASH], "$MONETDB5_PASSWDHASH", [The used password hash algorithm])
+
+AC_DISABLE_STATIC
+AC_ENABLE_SHARED
+AM_CONDITIONAL(CROSS_COMPILING, test x$cross_compiling = xyes)
+
+dnl     checks for programs
+AC_LANG([C])
+
+AM_MONETDB_COMPILER
+if test "x$enable_pathfinder" != xno; then
+	AC_PROG_CC_C99
+	if test "x$ac_cv_prog_cc_c99" = xno; then
+		if test "x$enable_pathfinder" = xyes; then
+			AC_MSG_ERROR([Pathfinder requires a C99 compliant C compiler, but your C compiler does not seem to be C99 compliant.])
+		else
+			AC_MSG_WARN([Pathfinder requires a C99 compliant C compiler, but your C compiler does not seem to be C99 compliant.])
+			enable_pathfinder=no
+		fi
+	fi
+fi
+AC_PROG_CXX
+AC_PROG_INSTALL
+AC_LIBTOOL_DLOPEN
+AC_LIBTOOL_WIN32_DLL
+AC_LIBTOOL_SETUP
+AC_PROG_LIBTOOL
+AM_PROG_LIBTOOL
+AM_MONETDB_OPTIONS
+AC_PATH_PROG(BASH,bash, /usr/bin/bash, $PATH)
+AC_CHECK_PROG(RM,rm,rm -f)
+AC_CHECK_PROG(MV,mv,mv -f)
+AC_PROG_LN_S
+AC_CHECK_PROG(LOCKFILE,lockfile,lockfile -r 2,echo)
+
+AC_CHECK_PROGS(RPMBUILD,rpmbuild rpm)
+
+AM_MONETDB_PROG_SWIG
+AM_MONETDB_PROG_PERL
+AM_CONDITIONAL(HAVE_PERL_SWIG,  test "x$have_perl_incdir" != xno -a "x$have_perl_libdir" != xno -a x"$SWIG" != xno)
+AM_MONETDB_PROG_PYTHON
+AM_MONETDB_PROG_RUBY
+AM_MONETDB_PROG_FLEX
+AC_PROG_YACC
+if test "x$enable_pathfinder" != xno; then
+	dnl Pathfinder needs bison (not yacc) and the `locations'
+	dnl feature that comes with bison versions >= 1.33.
+	if test "x$YACC" != "x"; then
+		AC_MSG_CHECKING([for locations feature in bison/yacc])
+		cat > conftest.y << EOF
+%locations
+%token A
+%%
+B : A;
+%%
+EOF
+
+		if $YACC conftest.y >/dev/null 2>&1 ; then
+			AC_MSG_RESULT(yes)
+		else
+			AC_MSG_RESULT(no)
+			if test "x$enable_pathfinder" = xyes; then
+				AC_MSG_ERROR([Your version of yacc/bison does
+					not provide the `locations' feature,
+					coming with bison >= 1.33. You will
+					not be able to compile the Pathfinder
+					compiler.])
+			else
+				AC_MSG_WARN([Your version of yacc/bison does
+					not provide the `locations' feature,
+					coming with bison >= 1.33. You will
+					not be able to compile the Pathfinder
+					compiler.])
+				enable_pathfinder=no
+			fi
+		fi
+		rm -f conftest.y y.tab.c
+	fi
+fi
+AC_DEFINE(YYENABLE_NLS, 0, [Needed to compile bison-generated code.])
+AC_DEFINE(YYLTYPE_IS_TRIVIAL, 0, [Needed to compile bison-generated code.])
+
+AC_CHECK_PROG(TEXI2HTML,texi2html,texi2html)
+AC_CHECK_PROG(LATEX2HTML,latex2html,latex2html)
+AC_CHECK_PROG(LATEX,latex,latex)
+AC_CHECK_PROG(PDFLATEX,pdflatex,pdflatex)
+AC_CHECK_PROG(DVIPS,dvips,dvips)
+AC_CHECK_PROG(FIG2DEV,fig2dev,fig2dev)
+FIG2DEV_EPS=eps
+AC_MSG_CHECKING([$FIG2DEV postscript option])
+[ if test "$FIG2DEV"; then
+        echo "" | $FIG2DEV -L$FIG2DEV_EPS 2>/dev/null
+        if test $? -ne 0; then
+                FIG2DEV_EPS=ps
+        fi
+fi ]
+AC_MSG_RESULT($FIG2DEV_EPS)
+AC_SUBST(FIG2DEV_EPS)
+AM_CONDITIONAL(DOCTOOLS, test -n "$TEXI2HTML" -a -n "$LATEX2HTML" -a -n "$LATEX" -a -n "$PDFLATEX" -a -n "$FIG2DEV" -a -n "$DVIPS")
+
+INSTALL_BACKUP=""
+AC_MSG_CHECKING([$INSTALL --backup option])
+[ if test "$INSTALL"; then
+	inst=`echo $INSTALL | sed 's/ .*//'`
+	if test ! "`file $inst | grep 'shell script' 2>/dev/null`" ; then
+	    echo "" > c 2>/dev/null
+            $INSTALL --backup=nil c d 1>/dev/null 2>/dev/null
+            if test $? -eq 0; then
+                INSTALL_BACKUP="--backup=nil"
+            fi
+            $INSTALL -C --backup=nil c e 1>/dev/null 2>/dev/null
+            if test $? -eq 0; then
+                INSTALL_BACKUP="-C --backup=nil"
+       	    fi
+	fi
+	rm -f c d e 2>/dev/null
+fi ]
+AC_MSG_RESULT($INSTALL_BACKUP)
+AC_SUBST(INSTALL_BACKUP)
+
+AM_MONETDB_PATH_FILE
+
+case "$host_os" in
+    cygwin*)
+	;;
+    *)
+	CYGPATH_W=echo
+	CYGPATH_WP=echo
+	AC_SUBST(CYGPATH_W)
+	AC_SUBST(CYGPATH_WP)
+	;;
+esac
+
+AC_ARG_WITH(ant,
+	AS_HELP_STRING([--with-ant=FILE], [ant is installed as FILE]),
+	ANT="$withval",
+	ANT=ant)
+case "$ANT" in
+yes|auto)
+	ANT=ant
+	;;
+esac
+case "$ANT" in
+no)	;;
+/*)
+	AC_MSG_CHECKING(whether $ANT exists and is executable)
+	if test -x "$ANT"; then
+		AC_MSG_RESULT(yes)
+	else
+		AC_MSG_RESULT(no)
+		ANT=no
+	fi
+	;;
+*)
+	AC_PATH_PROG(ANT,$ANT,no,$PATH)
+	;;
+esac
+AC_SUBST(ANT)
+AM_CONDITIONAL(HAVE_ANT, test x"$ANT" != xno)
+
+dnl  default javac flags
+JAVACFLAGS="$JAVACFLAGS -g:none -O"
+AC_SUBST(JAVACFLAGS)
+
+JAVA_VERSION=""
+JAVA="java"
+JAVAC="javac"
+JAR="jar"
+JAVADOC="javadoc"
+if test "x$enable_java" != xno; then
+	AC_ARG_WITH(java,
+		AS_HELP_STRING([--with-java=DIR],
+			[java, javac, jar and javadoc are installed in DIR/bin]),
+		have_java="$withval",
+		have_java="$enable_java")
+else
+	have_java=no
+fi
+JPATH=$PATH
+case $have_java in
+yes|no|auto)
+	;;
+*)
+	JPATH="$withval/bin:$JPATH"
+	;;
+esac
+if test "x$have_java" != xno; then
+	AC_PATH_PROG(JAVA,java,,$JPATH)
+	if test "x$JAVA" != "x"; then
+		JAVA_VERSION=[`"$JAVA" -version 2>&1 | grep '[0-9]\.[0-9]' | head -n1 | sed -e 's|^[^0-9]*||' -e 's|[^0-9]*$||'`]
+	fi
+
+	AC_PATH_PROG(JAVAC,javac,,$JPATH)
+	AC_PATH_PROG(JAR,jar,,$JPATH)
+	AC_PATH_PROG(JAVADOC,javadoc,,$JPATH)
+	if test "x$have_java" = xyes; then
+		JAVA_HOME="`echo $JAVAC | sed 's:/bin/javac$::'`"
+	fi
+	if test "x$JAVAC" = "x"; then
+		if test "x$have_java" = xyes; then
+			AC_MSG_ERROR([No javac found])
+		fi
+		have_java=no
+	elif test "x$JAR" = "x"; then
+		 if test "x$have_java" = xyes; then
+			AC_MSG_ERROR([No jar found])
+		 fi
+		 have_java=no
+	else
+		 have_java=yes
+	fi
+
+	if test "x$have_java" != xyes; then
+		JAVA_VERSION=""
+		JAVA=""
+		JAVAC=""
+		JAR=""
+		JAVADOC=""
+		CLASSPATH=""
+		JAVA_HOME=""
+	fi
+	if test x"$ANT" = xno; then
+		have_java="no"
+	fi
+fi
+AC_SUBST(JAVA_VERSION)
+AC_SUBST(JAVA)
+AC_SUBST(JAVAC)
+AC_SUBST(JAR)
+AC_SUBST(JAVADOC)
+AC_SUBST(CLASSPATH)
+AC_SUBST(JAVA_HOME)
+
+have_java_jdbc=no
+case $have_java-$enable_jdbc in
+*-no)
+	;;
+no-yes)
+	AC_MSG_ERROR([MonetDB JDBC requires ant and Java])
+	;;
+no-*)
+	;;
+*)
+	req_java_ver_min=1.5 # >= $req_java_ver_min required
+	req_java_ver_max=1.6 # <  $req_java_ver_max required
+	if test MONETDB_VERSION_TO_NUMBER(echo $JAVA_VERSION) -ge MONETDB_VERSION_TO_NUMBER(echo "$req_java_ver_min") -a MONETDB_VERSION_TO_NUMBER(echo $JAVA_VERSION) -lt MONETDB_VERSION_TO_NUMBER(echo "$req_java_ver_max"); then
+		have_java_jdbc=yes
+	else
+		if test "x$enable_jdbc" = xyes; then
+			AC_MSG_ERROR([MonetDB JDBC requires ant and Java >= $req_java_ver_min, but < $req_java_ver_max.])
+		else
+			AC_MSG_WARN([Cannot build MonetDB JDBC as it requires ant and Java >= $req_java_ver_min, but < $req_java_ver_max.])
+		fi
+	fi
+	;;
+esac
+AM_CONDITIONAL(HAVE_JAVAJDBC,test x$have_java_jdbc != xno)
+
+have_java_xrpc=no
+case $have_java-$enable_xrpc in
+*-no)
+	;;
+no-yes)
+	AC_MSG_ERROR([MonetDB XRPC requires ant and Java])
+	;;
+no-*)
+	;;
+*)
+	req_java_ver_min=1.5 # >= $req_java_ver_min required
+	if test MONETDB_VERSION_TO_NUMBER(echo $JAVA_VERSION) -ge MONETDB_VERSION_TO_NUMBER(echo "$req_java_ver_min"); then
+		have_java_xrpc=yes
+	else
+		if test "x$enable_xrpc" = xyes; then
+			AC_MSG_ERROR([MonetDB XRPC requires ant and Java >= $req_java_ver_min.])
+		else
+			AC_MSG_WARN([Cannot build MonetDB XRPC as it requires ant and Java >= $req_java_ver_min.])
+		fi
+	fi
+	;;
+esac
+AM_CONDITIONAL(HAVE_JAVAXRPC,test x$have_java_xrpc != xno)
+
+have_java_control=no
+case $have_java-$enable_control in
+*-no)
+	;;
+no-yes)
+	AC_MSG_ERROR([Merovingian control requires ant and Java])
+	;;
+no-*)
+	;;
+*)
+	req_java_ver_min=1.5 # >= $req_java_ver_min required
+	if test MONETDB_VERSION_TO_NUMBER(echo $JAVA_VERSION) -ge MONETDB_VERSION_TO_NUMBER(echo "$req_java_ver_min"); then
+		have_java_control=yes
+	else
+		if test "x$enable_control" = xyes; then
+			AC_MSG_ERROR([Merovingian control requires ant and Java >= $req_java_ver_min.])
+		else
+			AC_MSG_WARN([Cannot build Merovingian control as it requires ant and Java >= $req_java_ver_min.])
+		fi
+	fi
+	;;
+esac
+AM_CONDITIONAL(HAVE_JAVAMEROCONTROL,test x$have_java_control != xno)
+
+if test x$have_java_jdbc = xno -a x$have_java_xrpc = xno -a x$have_java_control = xno; then
+	# no point doing anything with Java if all Java packages are disabled
+	have_java=no
+fi
+AM_CONDITIONAL(HAVE_JAVA,test x$have_java != xno)
+
+dnl     checks for libraries
+AM_MONETDB_LIB_BZIP2
+AM_MONETDB_LIB_DL
+MATH_LIBS=""
+AC_CHECK_LIB(m, sqrt, [ MATH_LIBS="-lm" ] )
+AC_SUBST(MATH_LIBS)
+AM_MONETDB_LIB_MALLOC
+AM_MONETDB_LIB_PTHREAD
+if test "x$have_pthread" = xno; then
+	AC_MSG_ERROR("MonetDB requires libpthread (try --with-pthread)")
+fi
+AM_MONETDB_LIB_READLINE
+
+AM_ICONV
+
+dnl OpenSSL library
+dnl required for MonetDB5 (and SQL), optional otherwise
+PKG_CHECK_EXISTS([openssl >= 0.9.8f], [have_openssl=yes], [have_openssl=no])
+if test "x$have_openssl" = xyes; then
+	PKG_CHECK_MODULES([openssl], [openssl >= 0.9.8f])
+	AC_DEFINE(HAVE_OPENSSL, 1, [Define if you have the OpenSSL library])
+fi
+case "$enable_monetdb5-$have_openssl" in
+yes-no)
+	AC_MSG_ERROR([OpenSSL library not found but required for MonetDB5])
+	;;
+auto-no)
+	enable_monetdb5=no
+	;;
+esac
+
+dnl PCRE library
+dnl required for MonetDB5 (and SQL), optional otherwise
+req_pcre_ver='4.5'
+PKG_CHECK_EXISTS([libpcre >= $req_pcre_ver], [have_pcre=yes], [have_pcre=no])
+if test "x$have_pcre" = xyes; then
+	PKG_CHECK_MODULES([pcre], [libpcre >= $req_pcre_ver])
+	AC_PATH_PROG(PCRETEST,pcretest)
+	if test "x$PCRETEST" = x; then
+		AC_MSG_ERROR([could not find pcretest])
+	else
+		AC_MSG_CHECKING(whether pcre comes with UTF-8 support)
+		pcre_utf8="`$PCRETEST -C 2>/dev/null | grep 'UTF-8 support' | sed -e 's|^ *||' -e 's| *$||'`"
+		if test "x$pcre_utf8" != "xUTF-8 support"; then
+			AC_MSG_ERROR([PCRE library compiled without UTF-8 support])
+		fi
+		AC_MSG_RESULT([yes])
+	fi
+	AC_DEFINE(HAVE_LIBPCRE, 1, [Define if you have the pcre library])
+fi
+case "$enable_monetdb5-$have_pcre" in
+yes-no)
+	AC_MSG_ERROR([PCRE library not found but required for MonetDB5])
+	;;
+auto-no)
+	enable_monetdb5=no
+	;;
+esac
+
+PKG_CHECK_EXISTS([libxml-2.0], [have_libxml2="yes"], [have_libxml2="no"])
+if test x"$have_libxml2" = x"yes" ; then
+	PKG_CHECK_MODULES([libxml2], [libxml-2.0])
+	AC_DEFINE(HAVE_LIBXML2, 1, [Define if you have the libxml2 library])
+fi
+AM_CONDITIONAL(HAVE_LIBXML2, test x"$have_libxml2" != xno)
+case "$enable_pathfinder-$have_libxml2" in
+yes-no)
+	AC_MSG_ERROR([libxml2 library not found but required for Pathfinder])
+	;;
+auto-no)
+	AC_MSG_WARN([libxml2 library not found but required for Pathfinder])
+	enable_pathfinder=no
+	;;
+no-*)
+	;;
+*-yes)
+	save_CPPFLAGS="$CPPFLAGS"
+	CPPFLAGS="$CPPFLAGS $libxml2_CFLAGS"
+	AC_CHECK_HEADER([libxml/SAX2.h],
+		AC_DEFINE(HAVE_SAX2, 1,
+			[Define if you have SAX2 support in libxml2.]))
+	CPPFLAGS="$save_CPPFLAGS"
+	;;
+esac
+
+req_raptor_ver='1.4.16'
+PKG_CHECK_EXISTS([raptor >= $req_raptor_ver], [have_raptor="yes"], [have_raptor="no"])
+if test x"$have_raptor" = x"yes" ; then
+	PKG_CHECK_MODULES([raptor], [raptor >= $req_raptor_ver])
+	AC_DEFINE(HAVE_RAPTOR, 1, [Define if you have the raptor library])
+fi
+AM_CONDITIONAL(HAVE_RAPTOR, test x"$have_raptor" != xno)
+
+PKG_CHECK_EXISTS([libcurl], [have_curl="yes"], [have_curl="no"])
+if test x"$have_curl" = x"yes" ; then
+	PKG_CHECK_MODULES([curl], [libcurl])
+	AC_DEFINE(HAVE_CURL, 1, [Define if you have the cURL library])
+	AC_SUBST(PKG_CURL, libcurl)
+fi
+
+PKG_CHECK_EXISTS([zlib], [have_zlib="yes"], [have_zlib="no"])
+if test x"$have_zlib" = x"yes" ; then
+	PKG_CHECK_MODULES([zlib], [zlib])
+	AC_DEFINE(HAVE_LIBZ, 1, [Define if you have the z library])
+	AC_SUBST(PKG_ZLIB, zlib)
+fi
+AM_CONDITIONAL(HAVE_LIBZ, test x"$have_zlib" != xno)
+
+# check for sphinxclient
+have_sphinxclient="auto"
+AC_ARG_WITH(sphinxclient,
+    AS_HELP_STRING([--with-sphinxclient=DIR],[sphinxclient library is installed in DIR]),
+    [have_sphinxclient="$withval"], [have_sphinxclient="auto"])
+if test "x$have_sphinxclient" != xno; then
+	case "$have_sphinxclient" in
+	auto|yes)
+	    ;;
+	*)
+	    SPHINXCLIENT_CFLAGS="-I$have_sphinxclient/include"
+	    SPHINXCLIENT_LIBS="-L$have_sphinxclient/lib"
+	    ;;
+	esac
+
+	save_CPPFLAGS="$CPPFLAGS"
+	save_LDFLAGS="$LDFLAGS"
+	CPPFLAGS="$CPPFLAGS $SPHINXCLIENT_CFLAGS"
+	LDFLAGS="$LDFLAGS $SPHINXCLIENT_LIBS"
+	AC_CHECK_HEADER(sphinxclient.h,
+		AC_CHECK_LIB(sphinxclient, sphinx_create,
+			AC_DEFINE(HAVE_SPHINXCLIENT, 1, [Define if you have the sphinxclient library])
+			have_sphinxclient=yes
+			SPHINXCLIENT_LIBS="$SPHINXCLIENT_LIBS -lsphinxclient",
+			[ if test "x$have_sphinxclient" != xauto; then AC_MSG_ERROR([-lsphinxclient library not found]); fi; have_sphinxclient=no ]),
+		[ if test "x$have_sphinxclient" != xauto; then AC_MSG_ERROR([sphinxclient.h header not found]); fi; have_sphinxclient=no ])
+	LDFLAGS="$save_LDFLAGS"
+	CPPFLAGS="$save_CPPFLAGS"
+fi
+AC_SUBST(SPHINXCLIENT_CFLAGS, $SPHINXCLIENT_CFLAGS)
+AC_SUBST(SPHINXCLIENT_LIBS, $SPHINXCLIENT_LIBS)
+AM_CONDITIONAL(HAVE_SPHINXCLIENT, test x"$have_sphinxclient" != xno)
+
+# ODBC, only used by ODBC driver
+if test "x$enable_odbc" != xno; then
+	have_unixodbc=auto
+	ODBC_INCS=''
+	ODBC_LIBS=''
+	AC_ARG_WITH(unixodbc,
+		AS_HELP_STRING([--with-unixodbc=DIR],
+			[unixODBC library is installed in DIR]),
+		have_unixodbc="$withval")
+	if test "x$have_unixodbc" != xno; then
+		case "$have_unixodbc" in
+		yes|auto)
+			;;
+		*)
+			ODBC_INCS="-I$have_unixodbc/include"
+			ODBC_LIBS="-L$have_unixodbc/lib"
+			;;
+		esac
+		save_CPPFLAGS="$CPPFLAGS"
+		CPPFLAGS="$CPPFLAGS $ODBC_INCS"
+		AC_CHECK_HEADER(odbcinst.h,
+			AC_DEFINE(HAVE_ODBCINST_H, 1, [Define to 1 if you have the <odbcinst.h> header file.]),
+			[if test "x$have_unixodbc" != xauto; then AC_MSG_ERROR([odbcinst.h not found]); fi; have_unixodbc=no])
+		CPPFLAGS="$save_CPPFLAGS"
+	fi
+	if test "x$have_unixodbc" != xno; then
+		save_LIBS="$LIBS"
+		LIBS="$LIBS $ODBC_LIBS"
+		AC_CHECK_LIB(odbcinst,
+			SQLGetPrivateProfileString, :,
+			[if test "x$have_unixodbc" != xauto; then AC_MSG_ERROR([-lodbcinst not found]); fi; have_unixodbc=no])
+		LIBS="$save_LIBS"
+	fi
+	if test "x$have_unixodbc" != xno; then
+		ODBC_LIBS="$ODBC_LIBS -lodbcinst"
+		AC_DEFINE(HAVE_SQLGETPRIVATEPROFILESTRING, 1,
+			[Define if you have the SQLGetPrivateProfileString function])
+	fi
+	if test "x$have_unixodbc" != xno; then
+		AC_MSG_CHECKING([checking whether SQLColAttribute uses SQLLEN * or SQLPOINTER])
+		AC_COMPILE_IFELSE([
+			AC_LANG_PROGRAM([[
+				#include <sql.h>
+				SQLRETURN SQL_API
+				SQLColAttribute(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLUSMALLINT nFieldIdentifier, SQLPOINTER pszValue, SQLSMALLINT nValueLengthMax, SQLSMALLINT *pnValueLength, SQLLEN *pnValue) {
+					(void) hStmt;
+					(void) nCol;
+					(void) nFieldIdentifier;
+					(void) pszValue;
+					(void) nValueLengthMax;
+					(void) pnValueLength;
+					(void) pnValue;
+					return SQL_SUCCESS;}]],
+				[[SQLColAttribute(0,0,0,0,0,0,0);]])],
+			[lenp_or_pointer_t='SQLLEN *'],
+			[lenp_or_pointer_t=SQLPOINTER])
+		AC_MSG_RESULT([using "$lenp_or_pointer_t"])
+		AC_DEFINE_UNQUOTED(LENP_OR_POINTER_T, $lenp_or_pointer_t,
+			[Define as SQLLEN * or SQLPOINTER depending on the include file])
+	fi
+	AC_SUBST(ODBC_INCS)
+	AC_SUBST(ODBC_LIBS)
+else
+	have_unixodbc=no
+fi
+AM_CONDITIONAL(HAVE_ODBC, test x$have_unixodbc != xno)
+
+# mseed, only used by sql
+have_mseed="auto"
+AC_ARG_WITH(mseed,
+    AS_HELP_STRING([--with-mseed=DIR],[mseed library is installed in DIR]),
+    [have_mseed="$withval"], [have_mseed="auto"])
+if test "x$have_mseed" != xno; then
+
+	case "$have_mseed" in
+	auto|yes)
+	    ;;
+	*)
+	    MSEED_CFLAGS="-I$have_mseed/include"
+	    MSEED_LIBS="-L$have_mseed/lib -lmseed"
+	    ;;
+	esac
+
+	save_CPPFLAGS="$CPPFLAGS"
+	save_LDFLAGS="$LDFLAGS"
+	CPPFLAGS="$CPPFLAGS $MSEED_CFLAGS"
+	LDFLAGS="$LDFLAGS $MSEED_LIBS"
+	AC_CHECK_HEADER(libmseed.h,
+		AC_CHECK_LIB(mseed, msr_init,
+			AC_DEFINE(HAVE_MSEED, 1, [Define if you have the mseed library])
+			have_mseed=yes,
+			[ if test "x$have_mseed" != xauto; then AC_MSG_ERROR([-lmseed library not found]); fi; have_mseed=no ], "-lm"),
+		[ if test "x$have_mseed" != xauto; then AC_MSG_ERROR([libmseed.h header not found]); fi; have_mseed=no ])
+	LDFLAGS="$save_LDFLAGS"
+	CPPFLAGS="$save_CPPFLAGS"
+  if test "x$have_mseed" = "xyes"; then
+	    MSEED_CFLAGS=
+	    MSEED_LIBS="-lmseed"
+  fi
+fi
+AC_SUBST(MSEED_CFLAGS, $MSEED_CFLAGS)
+AC_SUBST(MSEED_LIBS, $MSEED_LIBS)
+AM_CONDITIONAL(HAVE_MSEED, test x"$have_mseed" != xno)
+
+# geos, only used in geom module
+case "$enable_geom" in
+yes|auto)
+	GEOS_VERSION_REQUIRED_MIN=2.2.0
+	dnl GEOS_VERSION_REQUIRED_MAX=3.0.0
+	have_geos=auto
+	GEOS_CONFIG=''
+	GEOS_INCS=''
+	GEOS_LIBS=''
+	AC_ARG_WITH(geos,
+		AS_HELP_STRING([--with-geos=DIR],
+			[geos library is installed in DIR]),
+		have_geos="$withval")
+	if test "x$have_geos" != xno; then
+		case "$have_geos" in
+		yes|auto)
+			XPATH="$PATH"
+			;;
+		*)
+			XPATH="$have_geos/bin"
+			;;
+		esac
+		AC_PATH_PROG(GEOS_CONFIG,geos-config,,$XPATH)
+		if test "x$GEOS_CONFIG" = x; then
+			AC_MSG_ERROR([geos-config not found in $XPATH])
+			have_geos=no
+		fi
+	fi
+	if test "x$have_geos" != xno; then
+	dnl	AC_MSG_CHECKING([for Geos >= $GEOS_VERSION_REQUIRED_MIN, but < $GEOS_VERSION_REQUIRED_MAX])
+		AC_MSG_CHECKING([for Geos >= $GEOS_VERSION_REQUIRED_MIN])
+		GEOS_VERSION="`$GEOS_CONFIG --version`"
+		AC_MSG_RESULT(found $GEOS_VERSION)
+		wrong=''
+		if test MONETDB_VERSION_TO_NUMBER(echo $GEOS_VERSION) -lt MONETDB_VERSION_TO_NUMBER(echo $GEOS_VERSION_REQUIRED_MIN); then
+			wrong="too old"
+		fi
+	dnl	if test MONETDB_VERSION_TO_NUMBER(echo $GEOS_VERSION) -ge MONETDB_VERSION_TO_NUMBER(echo $GEOS_VERSION_REQUIRED_MAX); then
+	dnl		wrong="not yet supported"
+	dnl	fi
+		if test "x$wrong" != x; then
+			AC_MSG_ERROR([Geos version $GEOS_VERSION is $wrong])
+			have_geos=no
+		fi
+	fi
+	if test "x$have_geos" != xno; then
+		case "$GCC-$CC-`$GEOS_CONFIG --prefix`-`$GEOS_CONFIG --includes`" in
+		-*icc*-/usr-/usr/include)
+			dnl  icc complains about Geos' header file, at
+			dnl  least if Geos is found in the default
+			dnl  place and we set GEOS_INCS & GEOS_LIBS.
+			dnl  Since setting GEOS_INCS & GEOS_LIBS is
+			dnl  not strictly required in this case, we
+			dnl  omit setting them in this case.
+			;;
+		*)
+			dnl GEOS_INCS="-I`$GEOS_CONFIG --includes`"
+			dnl GEOS_LIBS="`$GEOS_CONFIG --libs`"
+			GEOS_INCS="`$GEOS_CONFIG --cflags`"
+			GEOS_LIBS="`$GEOS_CONFIG --ldflags`"
+			;;
+		esac
+		save_CPPFLAGS="$CPPFLAGS"
+		CPPFLAGS="$CPPFLAGS $GEOS_INCS"
+		AC_CHECK_HEADER(geos_c.h, AC_DEFINE(HAVE_GEOS_C_H, 1, [Define to 1 if you have the <geos_c.h> header file.]), [AC_MSG_ERROR([geos_c.h not found]); have_geos=no])
+		CPPFLAGS="$save_CPPFLAGS"
+	fi
+	if test "x$have_geos" != xno; then
+		save_LIBS="$LIBS"
+		LIBS="$LIBS $GEOS_LIBS"
+		AC_CHECK_LIB(geos_c, GEOSEnvelope, :, [AC_MSG_ERROR([-lgeos_c not found]); have_geos=no])
+		LIBS="$save_LIBS"
+	fi
+	if test "x$have_geos" != xno; then
+		GEOS_LIBS="$GEOS_LIBS -lgeos_c"
+		AC_DEFINE(HAVE_SQLGETPRIVATEPROFILESTRING, 1, [Define if you have the SQLGetPrivateProfileString function])
+	fi
+	AC_SUBST(GEOS_INCS)
+	AC_SUBST(GEOS_LIBS)
+	if test "x$have_geos" = xno; then
+		if test "x$enable_geom" = xyes; then
+			AC_MSG_ERROR([No geos library found for geom module])
+		fi
+		# no geos, so don't compile geom
+		enable_geom=no
+	fi
+	;;
+esac
+
+# NetCDF, only used in MonetDB4 mnetcdf module
+dnl check for NetCDF io library (default /usr and /usr/local)
+have_netcdf=$dft_netcdf
+NETCDF_CFLAGS=""
+NETCDF_LIBS=""
+AC_ARG_WITH(netcdf,
+	AS_HELP_STRING([--with-netcdf=DIR],
+		[netcdf library is installed in DIR]),
+	have_netcdf="$withval")
+case "$have_netcdf" in
+yes|no|auto)
+	;;
+*)
+	NETCDF_CFLAGS="-I$withval/include"
+	NETCDF_LIBS="-L$withval/lib"
+	;;
+esac
+if test "x$have_netcdf" != xno; then
+	save_CPPFLAGS="$CPPFLAGS"
+	CPPFLAGS="$CPPFLAGS $NETCDF_CFLAGS"
+	save_LIBS="$LIBS"
+	LIBS="$LIBS $NETCDF_LIBS -lnetcdf"
+	AC_LINK_IFELSE(AC_LANG_PROGRAM([#include <netcdf/netcdf.h>], [(void) nc_open("",0,(int*)0);]),
+		NETCDF_LIBS="$NETCDF_LIBS -lnetcdf",
+		[ if test "x$have_netcdf" != xauto; then AC_MSG_ERROR([netcdf library not found]); fi; have_netcdf=no ])
+	LIBS="$save_LIBS"
+	CPPFLAGS="$save_CPPFLAGS"
+fi
+if test "x$have_netcdf" != xno; then
+	AC_DEFINE(HAVE_LIBNETCDF, 1, [Define if you have the netcdf library])
+else
+	NETCDF_CFLAGS=""
+	NETCDF_LIBS=""
+fi
+AC_SUBST(NETCDF_CFLAGS)
+AC_SUBST(NETCDF_LIBS)
+AM_CONDITIONAL(HAVE_NETCDF, test "x$have_netcdf" != xno)
+NETCDF=$have_netcdf
+AC_SUBST(NETCDF)
+
+dnl check for the performance counters library
+have_pcl=auto
+PCL_CFLAGS=""
+PCL_LIBS=""
+AC_ARG_WITH(pcl,
+	AS_HELP_STRING([--with-pcl=DIR],
+		[pcl library is installed in DIR]),
+	have_pcl="$withval")
+AC_MSG_CHECKING(for libpcl)
+case "$have_pcl" in
+yes|no|auto)
+	;;
+*)
+	PCL_CFLAGS="-I$withval/include"
+	PCL_LIBS="-L$withval/lib"
+        AC_MSG_CHECKING(in $withval)
+	;;
+esac
+if test "x$have_pcl" != xno; then
+	save_CPPFLAGS="$CPPFLAGS"
+	CPPFLAGS="$CPPFLAGS $PCL_CFLAGS"
+	AC_CHECK_HEADER(pcl.h, have_pcl_h=yes,
+		[ if test "x$have_pcl" != xauto; then AC_MSG_ERROR([pcl.h not found]); fi; have_pcl_h=no ])
+	CPPFLAGS="$save_CPPFLAGS"
+
+	if test "x$have_pcl_h" = xyes; then
+		save_LIBS="$LIBS"
+		LIBS="$LIBS $PCL_LIBS"
+		AC_CHECK_LIB(pcl, PCLinit, PCL_LIBS="$PCL_LIBS -lpcl"
+			AC_DEFINE(HAVE_LIBPCL, 1, [Define if you have the pcl library]) have_pcl=yes,
+		 	if test "x$have_pcl" = xyes; then
+				save_LIBS="$LIBS"
+				LIBS="$LIBS $PCL_LIBS"
+				AC_CHECK_LIB(pcl, PCLexit, PCL_LIBS="$PCL_LIBS -lpcl -lperfctr"
+					AC_DEFINE(HAVE_LIBPCL, 1, [Define if you have the pcl library]) have_pcl=yes,
+					[ if test "x$have_pcl" != xauto; then AC_MSG_ERROR([libpcl not found]); fi; have_pcl=no ],
+					"-lperfctr")
+			fi
+		)
+		LIBS="$save_LIBS"
+	else
+		have_pcl=no
+	fi
+
+	if test "x$have_pcl" != xyes; then
+		PCL_CFLAGS=""
+		PCL_LIBS=""
+	fi
+fi
+AC_SUBST(PCL_CFLAGS)
+AC_SUBST(PCL_LIBS)
+
+have_cfitsio="auto"
+AC_ARG_WITH(cfitsio,
+    AS_HELP_STRING([--with-cfitsio=DIR],[cfitsio library is installed in DIR]),
+    [have_cfitsio="$withval"], [have_cfitsio="auto"])
+if test "x$have_cfitsio" != xno; then
+
+    CFITSIO_CONFIG=""
+    XPATH="$PATH"
+    case "$have_cfitsio" in
+    auto|yes)
+	;;
+    *)
+	XPATH="$have_cfitsio/bin"
+	;;
+    esac
+
+    AC_PATH_PROG(CFITSIO_CONFIG,pkg-config,,$XPATH)
+
+    if test "x$CFITSIO_CONFIG" != x; then
+		if `$CFITSIO_CONFIG --exists cfitsio` ; then
+			CFITSIO_CFLAGS="`$CFITSIO_CONFIG cfitsio --cflags`"
+			CFITSIO_LIBS="`$CFITSIO_CONFIG cfitsio --libs`"
+		fi
+    else
+	case "$have_cfitsio" in
+	auto|yes)
+	    ;;
+	*)
+	    CFITSIO_CFLAGS="-I$have_cfitsio/include/cfitsio"
+	    CFITSIO_LIBS="-L$have_cfitsio/lib -lcfitsio"
+	    ;;
+	esac
+    fi
+
+	save_CPPFLAGS="$CPPFLAGS"
+	save_LDFLAGS="$LDFLAGS"
+	CPPFLAGS="$CPPFLAGS $CFITSIO_CFLAGS"
+	LDFLAGS="$LDFLAGS $CFITSIO_LIBS"
+	AC_CHECK_HEADER(fitsio.h,
+		AC_CHECK_LIB(cfitsio, ffopen,
+			AC_DEFINE(HAVE_CFITSIO, 1, [Define if you have the cfitsio library])
+			have_cfitsio=yes,
+			[ if test "x$have_cfitsio" != xauto; then AC_MSG_ERROR([-lcfitsio library not found]); fi; have_cfitsio=no ], "-lm"),
+		[ if test "x$have_cfitsio" != xauto; then AC_MSG_ERROR([fitsio.h header not found]); fi; have_cfitsio=no ])
+	LDFLAGS="$save_LDFLAGS"
+	CPPFLAGS="$save_CPPFLAGS"
+fi
+AC_SUBST(CFITSIO_CFLAGS, $CFITSIO_CFLAGS)
+AC_SUBST(CFITSIO_LIBS, $CFITSIO_LIBS)
+AM_CONDITIONAL(HAVE_CFITSIO, test x"$have_cfitsio" != xno)
+
+if test "x$enable_pathfinder" != xno; then
+	dnl See if we have the Hans Boehm garbage collector available
+	dnl
+	dnl First allow the user to specify a location on the command line.
+	dnl Further down see if we find the library and abort if not.
+	have_gc="auto"
+	AC_ARG_WITH(gc,
+		AS_HELP_STRING([--with-gc=DIR],
+			[Boehm garbage collector library is installed in DIR]),
+		[have_gc="$withval"], [have_gc="auto"])
+
+	if test "x$have_gc" != xauto; then
+		LIBGC_CFLAGS="-I$have_gc/include"
+		LIBGC_LIBS="-L$have_gc/lib"
+	fi
+
+	if test "x$have_gc" = xauto; then
+		LIBGC_CFLAGS=""
+		LIBGC_LIBS=""
+	fi
+
+	save_CPPFLAGS="$CPPFLAGS"
+	save_LDFLAGS="$LDFLAGS"
+	save_LIBS="$LIBS"
+	CPPFLAGS="$CPPFLAGS $LIBGC_CFLAGS"
+	LDFLAGS="$LDFLAGS $LIBGC_LIBS"
+	LIBS=""
+
+	dnl If we have the dl and/or the pthread library, use it
+	dnl (dl and/or pthread are required for the garbage collection
+	dnl library on some systems.)
+	LIBGC_LDADD=""
+	AC_CHECK_LIB(dl, dlopen, [LIBGC_LDADD="$LIBGC_LDADD -ldl"])
+	AC_CHECK_LIB(pthread, pthread_create, [LIBGC_LDADD="$LIBGC_LDADD -lpthread"])
+
+	AC_CHECK_HEADER([gc.h],
+	    [ dnl See if we can link in the gc library.
+	      dnl If we have found the dl and/or pthread library as well, also use it.
+	      dnl If the gc library was not found, clear LIBGC_LDADD.
+	      AC_CHECK_LIB(gc, GC_malloc,
+			   [LIBGC_LDADD="$LIBGC_LDADD -lgc"],
+			   [LIBGC_LDADD=""], [$LIBGC_LDADD])],
+	    [ LIBGC_LDADD=""])
+
+
+	LIBS="$save_LIBS"
+	LDFLAGS="$save_LDFLAGS"
+	CPPFLAGS="$save_CPPFLAGS"
+
+	if test "x$LIBGC_LDADD" = "x"; then
+		AC_MSG_WARN([Unable to find the Hans Boehm garbage collector.
+			Please go get it from
+			http://www.hpl.hp.com/personal/Hans_Boehm/gc/
+			(Compilation will use memory allocation only strategy instead.)])
+		AC_DEFINE(HAVE_GC, 0, [Define if you use garbage collection])
+	fi
+	if test "x$LIBGC_LDADD" != "x"; then
+		AC_DEFINE(HAVE_GC, 1, [Define if you use garbage collection])
+	fi
+
+	dnl Propagate the variable to the Makefiles
+	AC_SUBST(LIBGC_CFLAGS, $LIBGC_CFLAGS)
+	AC_SUBST(LIBGC_LIBS, $LIBGC_LIBS)
+	AC_SUBST(LIBGC_LDADD, $LIBGC_LDADD)
+fi
+
+dnl     checks for header files
+AC_HEADER_STDBOOL
+AC_HEADER_STDC
+AC_HEADER_TIME
+AC_HEADER_DIRENT
+# NOTE: these header files are in alphabetical order to ease maintenance
+AC_CHECK_HEADERS([crypt.h dlfcn.h fcntl.h getopt.h iconv.h ieeefp.h io.h langinfo.h libgen.h libintl.h limits.h locale.h malloc.h netdb.h procfs.h pwd.h regex.h rlimit.h signal.h stddef.h stdint.h string.h strings.h stropts.h sys/file.h sys/ioctl.h sys/mman.h sys/param.h sys/resource.h sys/socket.h sys/sysctl.h sys/time.h sys/times.h sys/types.h sys/un.h sys/utime.h sys/wait.h termios.h time.h unistd.h utime.h winsock.h xmmintrin.h])
+AC_CHECK_HEADERS([uuid/uuid.h],
+	  AC_SEARCH_LIBS([uuid_generate], [uuid],
+		 [AC_DEFINE([HAVE_UUID], 1,
+			[Define when uuid_* is available and linkable on this system])]))
+
+AC_LANG_PUSH([C++])
+AC_CHECK_HEADER(iostream,
+	AC_DEFINE(HAVE_IOSTREAM, 1,
+		[Define to 1 if you have the <iostream> header file.]),,[ ])
+AC_CHECK_HEADER(cstdio,
+	AC_DEFINE(HAVE_CSTDIO, 1,
+		[Define to 1 if you have the <cstdio> header file.]),,[ ])
+AC_LANG_POP([C++])
+AM_MONETDB_LIB_SOCKET
+
+dnl     checks for types
+
+AC_TYPE_SIZE_T
+AC_CHECK_TYPES([ptrdiff_t, ssize_t],,,[#include <stddef.h>
+#include <sys/types.h>])
+AC_CHECK_TYPES([__int64, long long])
+case $host_os in
+*mingw*)
+	AC_DEFINE([LLFMT],["%I64d"],[Format to print 64 bit signed integers.])
+	AC_DEFINE([ULLFMT],["%I64u"],[Format to print 64 bit unsigned integers.])
+	;;
+*)
+	AC_DEFINE([LLFMT],["%lld"],[Format to print 64 bit signed integers.])
+	AC_DEFINE([ULLFMT],["%llu"],[Format to print 64 bit unsigned integers.])
+	;;
+esac
+AC_CHECK_SIZEOF(char)
+AC_CHECK_SIZEOF(short)
+AC_CHECK_SIZEOF(int)
+AC_CHECK_SIZEOF(long)
+AC_CHECK_SIZEOF(void *)
+AC_CHECK_SIZEOF(size_t)
+AC_CHECK_SIZEOF(ssize_t,,[#include <stddef.h>
+#include <sys/types.h>])
+AC_CHECK_SIZEOF(ptrdiff_t,,[#include <stddef.h>
+#include <sys/types.h>])
+AC_CHECK_SIZEOF(long long)
+AC_CHECK_SIZEOF(__int64)
+AC_C_CHAR_UNSIGNED
+AC_TYPE_PID_T
+AC_TYPE_OFF_T
+AC_CHECK_TYPES(bool)
+
+AC_TRY_COMPILE([$ac_includes_default
+#include <malloc.h>], [struct mallinfo m;], AC_DEFINE(HAVE_STRUCT_MALLINFO, 1, [Define if you have struct mallinfo])
+
+AC_TRY_COMPILE([$ac_includes_default
+#include <malloc.h>], [struct mallinfo m = {0};
+/* compilers that don't like <0 comparisons on unsigned data *
+ * will fail here (but then not in src/gdk/gdk_utils.mx)     */
+int x = (m.usmblks < 0);], AC_DEFINE(HAVE_SIGNED_MALLINFO, 1, [Define if your mallinfo struct has signed elements])
+))
+
+dnl     checks for structures
+dnl     checks for compiler characteristics
+AC_SYS_LARGEFILE
+AC_C_CONST
+AC_C_INLINE
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([int foo(int * restrict p) { return *p; }])],
+	AC_DEFINE(HAVE_RESTRICT, 1,
+		[Define if the compiler supports the restrict keyword]),
+	AC_COMPILE_IFELSE([AC_LANG_SOURCE([int foo(int * __restrict__ p) { return *p; }])],
+		AC_DEFINE(HAVE___RESTRICT__, 1,
+			[Define if the compiler supports the __restrict__ keyword])))
+
+if test "x$enable_pathfinder" != xno; then
+	dnl Seems like the compiler on SunOS 5.8 cannot cope with the
+	dnl __attribute__ specifications that can give compilers additional
+	dnl hints about a function (style of variable argument list, functions
+	dnl that never return, etc.)
+	AC_MSG_CHECKING([if your compiler understands `__attribute__'])
+
+	save_CFLAGS="$CFLAGS"
+	case "$GCC-$CC-$host_os" in
+	-*-solaris*)
+		dnl  Sun compiler on Solaris:
+		dnl  treat warnings as errors to fail on
+		dnl  'warning: attribute parameter "printf" is undefined'
+		CFLAGS="$CFLAGS -errwarn=%all"
+		;;
+	esac
+
+	AC_COMPILE_IFELSE(AC_LANG_PROGRAM([[
+	#include <stdlib.h>
+
+	static void foo (const char *a, ...)
+		__attribute__ ((format (printf, 1, 2)));
+
+	static void foo (const char *a, ...)
+		{ (void)a; }
+	]],
+	[[ foo ("%s", ""); ]]
+	),
+	[AC_DEFINE([HAVE_FUNCTION_ATTRIBUTES], 1,
+	  [Does your compiler support function attributes (__attribute__)?])
+	AC_MSG_RESULT(yes)],
+	AC_MSG_RESULT(no))
+
+	CFLAGS="$save_CFLAGS"
+
+	AH_VERBATIM([__attribute__],
+[/* If the compiler does not support function attributes via __attribute__,
+   we just define __attribute__(a) to nothing. */
+#ifndef HAVE_FUNCTION_ATTRIBUTES
+#define __attribute__(a)
+#endif])
+fi
+
+dnl     checks for library functions
+case $host in
+	*-darwin10*)
+		# OSX 10.6 (Snow Leopard) somehow makes configure believe that fdatasync
+		# exists, in reality however, it does not on this platform.
+		ac_cv_func_fdatasync=no
+	;;
+	*)
+		AC_CHECK_FUNCS([fdatasync])
+	;;
+esac
+AS_IF([test "x${ac_cv_func_fdatasync}" = "xyes"],
+  [AC_DEFINE([HAVE_FDATASYNC],[1],[If the system has a working fdatasync])])
+
+AC_FUNC_ALLOCA
+AC_FUNC_FSEEKO
+# NOTE: these functions are in alphabetical order to ease maintenance
+AC_CHECK_FUNCS([asctime_r basename ctime_r drand48 fcntl fpclass fpclassify fstat fsync ftime ftruncate getlogin getopt getopt_long getrlimit GetSystemInfo gettimeofday getuid GlobalMemoryStatus GlobalMemoryStatusEx inet_ntop kill isinf localtime_r lockf madvise mrand48 nl_langinfo pipe popen posix_fadvise posix_madvise putenv QueryPerformanceCounter sbrk setenv setlocale setsid shutdown sigaction strcasecmp strcasestr strdup strftime strncasecmp strndup strptime strsignal strtod strtof strtoll strtoull sysconf times uname])
+dnl functions checked but result not used
+dnl AC_CHECK_FUNCS([closedir getcwd gethostname getpwuid memset mkdir nanosleep readdir rewinddir rmdir select strcspn strerror strstr strtol])
+AC_SEARCH_LIBS(crypt, crypt, AC_DEFINE(HAVE_CRYPT, 1, [crypt]))
+AM_MONETDB_FUNC_GETOPT
+asctime_r3=yes
+AC_MSG_CHECKING(asctime_r3)
+AC_TRY_LINK([$ac_includes_default
+#include <time.h>],
+[char buf[26]; struct tm t; asctime_r(&t,buf,26);],
+[AC_DEFINE(HAVE_ASCTIME_R3, 1, [Define if you have asctime_r(struct tm*,char *buf,size_t s)])], [asctime_r3=no])
+AC_MSG_RESULT($asctime_r3)
+
+ctime_r3=yes
+AC_MSG_CHECKING(ctime_r3)
+AC_TRY_LINK([$ac_includes_default
+#include <time.h>],
+[char buf[26]; time_t t; ctime_r(&t,buf,26);],
+[AC_DEFINE(HAVE_CTIME_R3, 1, [Define if you have ctime_r(time_t*,char *buf,size_t s)])], [ctime_r3=no])
+AC_MSG_RESULT($ctime_r3)
+
+AC_CACHE_CHECK(for _sys_siglist, mn_cv_have__sys_siglist, [
+AC_TRY_LINK([$ac_includes_default], [printf("%s\n", _sys_siglist[0]);], mn_cv_have__sys_siglist=yes, mn_cv_have__sys_siglist=no)])
+if test $mn_cv_have__sys_siglist = yes; then
+	AC_DEFINE(HAVE__SYS_SIGLIST, 1, [Define if you have _sys_siglist])
+fi
+
+dnl     checks for system services
+dnl hwcounters
+have_hwcounters=auto
+HWCOUNTERS_LIBS=""
+HWCOUNTERS_INCS=""
+AC_ARG_WITH(hwcounters,
+	AS_HELP_STRING([--with-hwcounters=DIR],
+		[hwcounters library is installed in DIR]),
+	have_hwcounters="$withval")
+case "$have_hwcounters" in
+yes|no|auto)
+	;;
+*)
+	HWCOUNTERS_LIBS="-L$withval/lib"
+	HWCOUNTERS_INCS="-I$withval/include"
+	;;
+esac
+if test "x$have_hwcounters" != xno; then
+	case "$host_os-$host" in
+	linux*-i?86*) HWCOUNTERS_INCS="$HWCOUNTERS_INCS -I/usr/src/linux-`uname -r | sed 's|smp$||'`/include"
+	esac
+	save_CPPFLAGS="$CPPFLAGS"
+	CPPFLAGS="$CPPFLAGS $HWCOUNTERS_INCS"
+	save_LIBS="$LIBS"
+	LIBS="$LIBS $HWCOUNTERS_LIBS"
+	have_hwcounters=no
+	case "$host_os-$host" in
+	linux*-i?86*|linux*-x86_64*)
+		AC_CHECK_HEADERS( libperfctr.h ,
+		 AC_CHECK_LIB( perfctr, vperfctr_open ,
+		  [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lperfctr"
+			AC_DEFINE(HAVE_LIBPERFCTR, 1, [Define if you have the perfctr library])
+			have_hwcounters=yes
+		  ]
+			 )
+		)
+		if test "x$have_hwcounters" != xyes; then
+				AC_CHECK_HEADERS( libpperf.h,
+			 AC_CHECK_LIB( pperf, start_counters,
+			  [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lpperf"
+					AC_DEFINE(HAVE_LIBPPERF, 1, [Define if you have the pperf library])
+					have_hwcounters=yes
+			  ]
+			 )
+			)
+		fi
+		;;
+	 linux*-ia64*)
+		AC_CHECK_HEADERS( perfmon/pfmlib.h ,
+		 AC_CHECK_LIB( pfm, pfm_initialize ,
+		  [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lpfm"
+			AC_DEFINE(HAVE_LIBPFM, 1, [Define if you have the pfm library])
+			have_hwcounters=yes
+		  ]
+			 )
+		)
+		;;
+	 solaris*)
+		AC_CHECK_HEADERS( libcpc.h ,
+		 AC_CHECK_TYPE( cpc_event_t,
+		  AC_CHECK_LIB( cpc, cpc_access ,
+		   [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lcpc"
+			 AC_DEFINE(HAVE_LIBCPC, 1, [Define if you have the cpc library])
+			 have_hwcounters=yes
+		   ]
+		  )
+		  , , [#include <libcpc.h>]
+		 )
+		)
+		if test "x$have_hwcounters" != xyes; then
+			AC_CHECK_HEADERS( perfmon.h ,
+			 AC_CHECK_LIB( perfmon, clr_pic ,
+			  [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lperfmon"
+				AC_DEFINE(HAVE_LIBPERFMON, 1, [Define if you have the perfmon library])
+				have_hwcounters=yes
+			  ]
+			 )
+			)
+		fi
+		;;
+	 irix*)
+		AC_CHECK_LIB( perfex, start_counters ,
+		 [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lperfex"
+		   have_hwcounters=yes
+		 ]
+		)
+		;;
+	esac
+	LIBS="$save_LIBS"
+	CPPFLAGS="$save_CPPFLAGS"
+
+	if test "x$have_hwcounters" != xyes; then
+		HWCOUNTERS_LIBS=""
+		HWCOUNTERS_INCS=""
+	else
+		CFLAGS="$CFLAGS -DHWCOUNTERS -DHW_`uname -s` -DHW_`uname -m`"
+	fi
+fi
+AC_SUBST(HWCOUNTERS_LIBS)
+AC_SUBST(HWCOUNTERS_INCS)
+
+dnl     miscellany
+AC_DEFINE(MX_CXX_SUFFIX, "cc", [Suffix for C++ files])
+AM_CONDITIONAL(NEED_MX, true)
+AM_CONDITIONAL(HAVE_BUILDTOOLS, true)
+
+dnl Add a dummy define for HAVE_EXTRA_MK (that is used in am.py).
+dnl It has to be overwritten by any project that uses an extra.mk file.
+AM_CONDITIONAL(HAVE_EXTRA_MK, false)
+
+dnl     output
+AM_CONDITIONAL(HAVE_MONETDB4, test "x$enable_monetdb4" = xyes -o "x$enable_monetdb4" = xauto)
+AM_CONDITIONAL(HAVE_MONETDB5, test "x$enable_monetdb5" = xyes -o "x$enable_monetdb5" = xauto)
+AM_CONDITIONAL(HAVE_SQL, test "x$enable_sql" = xyes -o "x$enable_sql" = xauto)
+AM_CONDITIONAL(HAVE_GEOM, test "x$enable_geom" = xyes -o "x$enable_geom" = xauto)
+AM_CONDITIONAL(HAVE_PATHFINDER, test "x$enable_pathfinder" = xyes -o "x$enable_pathfinder" = xauto)
+if test "x$enable_pftijah" = xyes -o "x$enable_pftijah" = xauto; then
+	AC_DEFINE(HAVE_PFTIJAH, 1, [Define if you want TIJAH])
+fi
+AM_CONDITIONAL(HAVE_PFTIJAH, test "x$enable_pftijah" = xyes -o "x$enable_pftijah" = xauto)
+AM_CONDITIONAL(HAVE_PROBXML, test "x$enable_probxml" = xyes -o "x$enable_probxml" = xauto)
+AM_CONDITIONAL(HAVE_TESTING, test "x$enable_testing" = xyes -o "x$enable_testing" = xauto)
+
+AC_SUBST(compilercall, ["$CC $CFLAGS $X_CFLAGS"])
+AC_SUBST(linkercall, ["$LD $LDFLAGS"])
+AC_SUBST(builtby, ["${USER}@`hostname`"])
+pcreversion="not linked to any PCRE library"
+if test "x$have_pcre" = xyes; then
+        pcreversion="compiled with `pkg-config --modversion libpcre 2>/dev/null`"
+fi
+AC_SUBST(pcreversion)
+opensslversion="not linked to any openssl library"
+if test "x$have_openssl" = xyes; then
+        opensslversion="compiled with `openssl version 2>/dev/null`"
+fi
+AC_SUBST(opensslversion)
+libxml2version="not linked to any libxml2 library"
+if test "x$have_libxml2" = xyes; then
+        libxml2version="compiled with `pkg-config --modversion libxml-2.0 2>/dev/null`"
+fi
+AC_SUBST(libxml2version)
+
+AM_MONETDB_XQ_VARS_2
+
+AC_DEFINE_UNQUOTED(PREFIX,"$QXprefix",[architecture-independent files])
+AC_DEFINE_UNQUOTED(EXEC_PREFIX,"$QXexec_prefix",[architecture-dependent files])
+QBUILD="$BUILD"
+XBUILD="`$translatepath "$BUILD"`"
+QXBUILD="`echo "$XBUILD" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(QBUILD)
+AC_SUBST(XBUILD)
+AC_SUBST(QXBUILD)
+QSOURCE="$SOURCE"
+XSOURCE="`$translatepath "$SOURCE"`"
+QXSOURCE="`echo "$XSOURCE" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(QSOURCE)
+AC_SUBST(XSOURCE)
+AC_SUBST(QXSOURCE)
+AC_DEFINE_UNQUOTED(LOCALSTATEDIR,"$QXlocalstatedir",[modifiable single-machine data])
+AC_DEFINE_UNQUOTED(LIBDIR,"$QXlibdir",[object code libraries])
+AC_DEFINE_UNQUOTED(SYSCONFDIR,"$QXsysconfdir",[read-only single-machine data])
+AC_SUBST([MERO_LOG], [${localstatedir}/var/log/MonetDB/merovingian.log])
+AC_DEFINE_UNQUOTED([MERO_LOG], ["${localstatedir}/var/log/MonetDB/merovingian.log"], [where Merovingian will store its logs by default])
+MONETDB4_CONFFILE="${sysconfdir}/MonetDB.conf"
+# expand ${prefix} in ${sysconfdir} if using the default
+eval "eval MONETDB4_CONFFILE=${MONETDB4_CONFFILE}"
+AC_DEFINE_UNQUOTED(MONETDB4_CONFFILE, "$MONETDB4_CONFFILE", [MonetDB4 config file location])
+MONETDB5_CONFFILE="${sysconfdir}/monetdb5.conf"
+# expand ${prefix} in ${sysconfdir} if using the default
+eval "eval MONETDB5_CONFFILE=${MONETDB5_CONFFILE}"
+AC_DEFINE_UNQUOTED(MONETDB5_CONFFILE, "$MONETDB5_CONFFILE", [MonetDB5 config file location])
+
+dnl  On Solaris, libxml2 enables threading only when _REENTRANT, __MT__
+dnl  or _POSIX_C_SOURCE >= 199506L is defined.  The latter is only
+dnl  defined on POSIX compliant Solaris systems (latest of the latest
+dnl  as of this writing), hence defining that here would cause a
+dnl  redefinition error.  To work around it, we define __MT__ here, as
+dnl  _REENTRANT might also enable stuff in other software packages.
+case "$GCC-$host_os" in
+yes-solaris2.11)
+	AC_DEFINE(__MT__, 1, [libxml2 enable threading compiler flag])
+	;;
+esac
+
+dnl  Disabling the following warning is only required for the Intel compiler
+dnl  and if assertions are enabled.
+case "$GCC-$CC-$enable_assert" in
+-*icc*-yes|-*ecc*-yes)
+	dnl  # 279: controlling expression is constant
+	X_CFLAGS="$X_CFLAGS -wd279";;
+esac
+
+dnl  CFLAGS for our code are stricter than what autoconf can cope with.
+CFLAGS="$CFLAGS \$(X_CFLAGS)"
+dnl  pathfinder code is not (yet?) up to this
+case "$GCC-$gcc_ver-$host_os" in
+yes-3.[[4-9]].*-*|yes-[[4-9]].*-*)
+	CFLAGS="$CFLAGS -Wno-declaration-after-statement";;
+esac
+
+dnl bootstrap adds a (long) list of file names inside the
+dnl AC_CONFIG_FILES command
+AC_CONFIG_FILES(
+)
+AC_OUTPUT
+
+if test "x$enable_monetdb4" = xno; then
+	AC_MSG_NOTICE([MonetDB4 will not be compiled])
+fi
+if test "x$enable_monetdb5" = xno; then
+	AC_MSG_NOTICE([MonetDB5 will not be compiled])
+fi
+if test "x$enable_sql" = xno; then
+	AC_MSG_NOTICE([SQL will not be compiled])
+fi
+if test "x$enable_geom" = xno; then
+	AC_MSG_NOTICE([Geom module will not be compiled])
+fi
+if test "x$have_unixodbc" = xno; then
+	AC_MSG_NOTICE([ODBC driver will not be compiled])
+fi
+if test "x$have_java" = xno; then
+	AC_MSG_NOTICE([Java packages will not be compiled])
+fi
+if test "x$enable_pathfinder" = xno; then
+	AC_MSG_NOTICE([Pathfinder will not be compiled])
+fi
+if test "x$enable_testing" = xno; then
+	AC_MSG_NOTICE([testing will not be compiled])
+fi

@@ -45,7 +45,7 @@ m_export char *yydeparseCall(Client c, YYSTREE t, char *buf, char *end);
 To reduce the text produced, it is possible to limit the
 code to a number of characters. This is necessary for debugging.
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include "monet_deparse.h"
 
 char yybuffer[4048], *yylim = yybuffer + 4048;

@@ -44,7 +44,7 @@ address as an internal id. The tables are not persistent.
 Session dependent BATs are marked as non-dirty after creation. This means that
 only after they become used their content is saved on disk.
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include "monet.h"
 #define TEMSIZE	2000
 

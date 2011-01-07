@@ -25,67 +25,71 @@ SUBDIRS = utils schema debug mem parser semantics core algebra mil include sql a
 
 EXTRA_DIST_DIR = Tests
 
-INCLUDES = include $(MONETDB_INCS) $(LIBXML2_CFLAGS)
+INCLUDES = \
+	include \
+	../../MonetDB/src/common \
+	../../MonetDB/src/gdk \
+	$(libxml2_CFLAGS)
 
 
 lib_compiler1 = {
-        NOINST
-        DIR = libdir
-        SOURCES = \
-             compile.c
+	NOINST
+	DIR = libdir
+	SOURCES = \
+		compile.c
 }
 lib_compiler2 = {
-        NOINST
-        DIR = libdir
-        SOURCES = \
-             env.c \
-             oops.c \
-             pfstrings.c \
-             plan_bundle.c \
-             qname.c \
-             scope.c \
-             timer.c \
-             variable.c
+	NOINST
+	DIR = libdir
+	SOURCES = \
+		env.c \
+		oops.c \
+		pfstrings.c \
+		plan_bundle.c \
+		qname.c \
+		scope.c \
+		timer.c \
+		variable.c
 }
 lib_compiler3 = {
-        NOINST
-        DIR = libdir
-        SOURCES = \
-             env.c \
-             oops.c \
-             pfstrings.c \
-             plan_bundle.c \
-             qname.c \
-             timer.c
+	NOINST
+	DIR = libdir
+	SOURCES = \
+		env.c \
+		oops.c \
+		pfstrings.c \
+		plan_bundle.c \
+		qname.c \
+		timer.c
 }
 
 bin_pf = {
-        LIBS = \
-                libcompiler1 \
-                schema/libschema \
-                debug/libdebug \
-                parser/libparser \
-                semantics/libsemantics \
-                core/libcore \
-                algebra/libalgebra \
-                algebra/map/libmap \
-                algebra/opt/libopt \
-                algebra/prop/libprop \
-                mil/libmil \
-                libcompiler2 \
-                mem/libmem \
-                algebra-m5sql/libmsa \
-                sql/libsql \
-                #
-                xmlimport/libxmlimport \
-                utils/libstringutils \
-                # 
-                $(LIBGC_LDADD) $(LIBGC_LIBS) \
-                $(LIBXML2_LDADD) $(LIBXML2_LIBS) \
-                $(SOCKET_LIBS) $(DL_LIBS)
-                
-        SOURCES = \
-             main.c
+	LIBS = \
+		libcompiler1 \
+		schema/libschema \
+		debug/libdebug \
+		parser/libparser \
+		semantics/libsemantics \
+		core/libcore \
+		algebra/libalgebra \
+		algebra/map/libmap \
+		algebra/opt/libopt \
+		algebra/prop/libprop \
+		mil/libmil \
+		libcompiler2 \
+		mem/libmem \
+		algebra-m5sql/libmsa \
+		sql/libsql \
+		#
+		xmlimport/libxmlimport \
+		utils/libstringutils \
+		# 
+		$(LIBGC_LDADD) $(LIBGC_LIBS) \
+		$(libxml2_LIBS) \
+		$(SOCKET_LIBS) $(DL_LIBS)
+		
+	SOURCES = \
+		main.c
 }
 
 # stand-alone binary that reads in a Logical Algbra plan in XML format,
@@ -95,25 +99,25 @@ bin_pf = {
 #  before their definition, which makes e.g., libmem a good candidate
 #  for the last item of the list.)
 bin_pfopt = {
-        LIBS = \
-                algebra/liblogopt \
-                algebra/map/libmap \
-                algebra/opt/libopt \
-                algebra/prop/libprop \
-                xmlimport/libxmlimport \
-                algebra/liblogical \
-                debug/liblogdebug \
-                libcompiler3 \
-                utils/libstringutils \
-                semantics/libns \
-                semantics/liboptions \
-                mem/libmem \
-                $(LIBGC_LDADD) $(LIBGC_LIBS) \
-                $(LIBXML2_LDADD) $(LIBXML2_LIBS) \
-                $(SOCKET_LIBS) $(DL_LIBS)
-                
-        SOURCES = \
-             main_opt.c
+	LIBS = \
+		algebra/liblogopt \
+		algebra/map/libmap \
+		algebra/opt/libopt \
+		algebra/prop/libprop \
+		xmlimport/libxmlimport \
+		algebra/liblogical \
+		debug/liblogdebug \
+		libcompiler3 \
+		utils/libstringutils \
+		semantics/libns \
+		semantics/liboptions \
+		mem/libmem \
+		$(LIBGC_LDADD) $(LIBGC_LIBS) \
+		$(libxml2_LIBS) \
+		$(SOCKET_LIBS) $(DL_LIBS)
+		
+	SOURCES = \
+		main_opt.c
 }
 
 # stand-alone binary that reads in a Logical Algbra plan in XML format
@@ -123,26 +127,26 @@ bin_pfopt = {
 #  before their definition, which makes e.g., libmem a good candidate
 #  for the last item of the list.)
 bin_pfsql = {
-        LIBS = \
-                algebra/liblogopt \
-                algebra/map/libmap \
-                algebra/opt/libopt \
-                algebra/prop/libprop \
-                xmlimport/libxmlimport \
-                algebra/liblogical \
-                sql/libsql \
-                debug/libprettyp \
-                libcompiler3 \
-                utils/libstringutils \
-                semantics/libns \
-                semantics/liboptions \
-                mem/libmem \
-                $(LIBGC_LDADD) $(LIBGC_LIBS) \
-                $(LIBXML2_LDADD) $(LIBXML2_LIBS) \
-                $(SOCKET_LIBS) $(DL_LIBS)
-                
-        SOURCES = \
-             main_sql.c
+	LIBS = \
+		algebra/liblogopt \
+		algebra/map/libmap \
+		algebra/opt/libopt \
+		algebra/prop/libprop \
+		xmlimport/libxmlimport \
+		algebra/liblogical \
+		sql/libsql \
+		debug/libprettyp \
+		libcompiler3 \
+		utils/libstringutils \
+		semantics/libns \
+		semantics/liboptions \
+		mem/libmem \
+		$(LIBGC_LDADD) $(LIBGC_LIBS) \
+		$(libxml2_LIBS) \
+		$(SOCKET_LIBS) $(DL_LIBS)
+		
+	SOURCES = \
+		main_sql.c
 }
 
 # PF/Ferry library that reads in a Logical Algbra plan in XML format,
@@ -152,27 +156,27 @@ bin_pfsql = {
 #  before their definition, which makes e.g., libmem a good candidate
 #  for the last item of the list.)
 lib_pf_ferry = {
-        LIBS = \
-                ./algebra/liblogopt \
-                ./algebra/map/libmap \
-                ./algebra/opt/libopt \
-                ./algebra/prop/libprop \
-                ./xmlimport/libxmlimport \
-                ./algebra/liblogical \
-                ./sql/libsql \
-                ./debug/libprettyp \
-                ./debug/liblogdebug \
-                ./libcompiler3 \
-                ./utils/libstringutils \
-                ./semantics/libns \
-                ./semantics/liboptions \
-                ./mem/libmem_embedded \
-                $(LIBGC_LDADD) $(LIBGC_LIBS) \
-                $(LIBXML2_LDADD) $(LIBXML2_LIBS) \
-                $(SOCKET_LIBS) $(DL_LIBS)
-                
-        SOURCES = \
-             pf_ferry.c
+	LIBS = \
+		./algebra/liblogopt \
+		./algebra/map/libmap \
+		./algebra/opt/libopt \
+		./algebra/prop/libprop \
+		./xmlimport/libxmlimport \
+		./algebra/liblogical \
+		./sql/libsql \
+		./debug/libprettyp \
+		./debug/liblogdebug \
+		./libcompiler3 \
+		./utils/libstringutils \
+		./semantics/libns \
+		./semantics/liboptions \
+		./mem/libmem_embedded \
+		$(LIBGC_LDADD) $(LIBGC_LIBS) \
+		$(libxml2_LIBS) \
+		$(SOCKET_LIBS) $(DL_LIBS)
+		
+	SOURCES = \
+		pf_ferry.c
 }
 
 EXTRA_DIST = win32_getopt.c

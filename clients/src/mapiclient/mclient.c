@@ -24,7 +24,7 @@
  * See mclient.1 for usage information.
  */
 
-#include "clients_config.h"
+#include "monetdb_config.h"
 #include "monet_utils.h"
 #ifndef HAVE_GETOPT_LONG
 #  include "monet_getopt.h"
@@ -45,9 +45,21 @@
 #ifdef HAVE_STRINGS_H
 #include <strings.h>
 #endif
+
 #ifdef HAVE_ALLOCA_H
-#include <alloca.h>
+# include <alloca.h>
+#elif defined __GNUC__
+# define alloca __builtin_alloca
+#elif defined _AIX
+# define alloca __alloca
+#elif defined _MSC_VER
+# include <malloc.h>
+# define alloca _alloca
+#else
+# include <stddef.h>
+void *alloca(size_t);
 #endif
+
 #ifdef HAVE_MALLOC_H
 #include <malloc.h>
 #endif

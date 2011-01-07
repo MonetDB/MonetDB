@@ -27,8 +27,8 @@
 # Rights Reserved.
 #
 
-INCLUDES = ../include $(MONETDB_INCS) 
-CFLAGS = $(LIBXML2_CFLAGS)
+INCLUDES = ../include ../../../MonetDB/src/common ../../../MonetDB/src/gdk 
+CFLAGS = $(libxml2_CFLAGS)
 
 lib_schema = {
 	NOINST

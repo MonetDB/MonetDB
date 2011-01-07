@@ -16,7 +16,7 @@
 # All Rights Reserved.
 
 SWIGFLAGS = -I../.. $(PERL_INCS)
-INCLUDES = -I../.. $(monetdbtools_CFLAGS) $(PERL_INCS)
+INCLUDES = ../.. ../../../../MonetDB/src/common $(PERL_INCS)
 
 #  Both GNU's gcc and Intel's icc do not like to compile swig-generated code
 #  with our strict X_CFLAGS.
@@ -52,5 +52,3 @@ headers_pm = {
 	TARGETS = MapiLib.pm
 	DIR = $(prefix)/$(PERL_LIBDIR)
 }
-
-EXTRA_DIST = MapiLib.pm

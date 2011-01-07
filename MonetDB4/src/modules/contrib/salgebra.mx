@@ -278,7 +278,7 @@ typedef union {
 #endif /* __SALGEBRA_H__ */
 
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include "salgebra.h"
 
 @* Clusterhash implementation

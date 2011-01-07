@@ -377,7 +377,7 @@ replication_export str SLAVEsynchronizing(int *ret);
 replication_export BAT *SLAVEtable(void);
 #endif /* _REPLICATOR_H */
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "replication.h"
 #include <sys/types.h>
 #ifdef HAVE_DIRENT_H

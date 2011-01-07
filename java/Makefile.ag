@@ -15,15 +15,13 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = conf HAVE_JAVAJDBC?tests
+SUBDIRS = HAVE_JAVAJDBC?tests
 
-EXTRA_DIST = configure.ag rpm.mk.in \
-		RunMtest.in RunMtest.bat.in \
+EXTRA_DIST = RunMtest.in RunMtest.bat.in \
 		RunMapprove.in \
 		build.xml build.properties release.txt
 
-EXTRA_DIST_DIR = NT \
-		 src \
+EXTRA_DIST_DIR = src \
 		 lib \
 		 example
 

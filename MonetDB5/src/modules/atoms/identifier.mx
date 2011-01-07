@@ -75,7 +75,7 @@ identifier_export str IDentifier(str *retval, str *in);
 #endif /* _IDTYPE_DEF */
 
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "identifier.h"	/* for the implementation of the functions */
 
 int TYPE_identifier;

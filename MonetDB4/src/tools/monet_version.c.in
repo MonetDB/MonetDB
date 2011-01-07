@@ -18,7 +18,7 @@
  * All Rights Reserved.
  */
 
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include "monet.h"
 #include <stdio.h>
 #include "monet_version.h"
@@ -28,16 +28,13 @@
 #ifdef HAVE_OPENSSL
 #include <openssl/opensslv.h>
 #endif
-#ifdef HAVE_LIBXML2
-#include <libxml/xmlversion.h>
-#endif
 
 void
 monetdb4_version(void)
 {
-	printf("MonetDB server v" VERSION " (" SZFMT "-bit), "
-			"based on kernel v%s (" SZFMT "-bit oids)\n",
-			(size_t) (sizeof(ptr) * 8), GDKversion(),
+	printf("MonetDB 4 server v" VERSION
+		   " (" SZFMT "-bit, " SZFMT "-bit oids)\n",
+			(size_t) (sizeof(ptr) * 8),
 			(size_t) (sizeof(oid) * 8));
 	if (strcmp(MONETDB_RELEASE, "unreleased") == 0)
 		printf("Not released\n");
@@ -45,7 +42,7 @@ monetdb4_version(void)
 		printf("Release %s\n", MONETDB_RELEASE);
 	printf("Copyright (c) 1993-July 2008 CWI\nCopyright (c) August 2008-2011 MonetDB B.V., all rights reserved\n");
 	printf("Visit http://monetdb.cwi.nl/ for further information\n");
-	printf("Configured for prefix: " MONETDB4_PREFIX "\n");
+	printf("Configured for prefix: " PREFIX "\n");
 	printf("Libraries:\n");
 #ifdef HAVE_LIBPCRE
 	{

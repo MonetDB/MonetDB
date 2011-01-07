@@ -653,7 +653,7 @@ PROC test_ddbench() : void {
 
 @* Implementation 
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include <monet.h>
 #include <stdio.h>
 #include <stdarg.h>

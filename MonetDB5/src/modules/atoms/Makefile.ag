@@ -15,7 +15,7 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-INCLUDES = -I../../mal $(monetdbcommon_CFLAGS)
+INCLUDES = ../../mal ../../../../MonetDB/src/common ../../../../MonetDB/src/gdk
 MTSAFE
 
 lib_atoms = {

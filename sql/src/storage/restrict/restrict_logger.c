@@ -17,7 +17,7 @@
  * All Rights Reserved.
  */
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include "restrict_logger.h"
 
 logger *restrict_logger = NULL;

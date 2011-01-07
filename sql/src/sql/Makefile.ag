@@ -27,8 +27,13 @@ headers_sql = {
 }
 
 headers_rdf = {
-	COND = HAVE_MONETDB5_RDF
+	COND = HAVE_RAPTOR
 	HEADERS = sql
 	DIR = libdir/MonetDB5
 	SOURCES = rdf.sql
 }
+
+EXTRA_DIST = clients.sql cluster.sql compress.sql date.sql \
+	dependency_functions.sql dictionary.sql history.sql inet.sql \
+	math.sql mtime.sql skyserver.sql system.sql times.sql \
+	tracelog.sql url.sql zorder.sql

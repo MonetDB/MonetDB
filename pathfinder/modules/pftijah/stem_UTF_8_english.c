@@ -1,4 +1,4 @@
-#include <pf_config.h>
+#include <monetdb_config.h>
 
 /* This file was generated automatically by the Snowball to ANSI C compiler */
 

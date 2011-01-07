@@ -115,7 +115,7 @@ typedef int bitset;
 
 @+ C implementation
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 
 #include "bitset.h"
 

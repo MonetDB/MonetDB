@@ -98,7 +98,7 @@ in the head of the resulting table; the tail contains the matching IDs.
 @{
 @* Implementation
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include <gdk.h>
 #include <math.h>
 #ifdef HAVE_UNISTD_H

@@ -162,7 +162,7 @@ clients_export str CLTwakeup(int *ret, int *id);
 
 clients_export str CLTshutdown(int *ret, bit *forced);
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "clients.h"
 #include "mal_scenario.h"
 #include "mal_instruction.h"

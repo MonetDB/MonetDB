@@ -73,7 +73,7 @@ mb_export str MBMskewed(int *ret, oid *base, int *size, int *domain, int *skew);
 
 #endif /* _MBM_H_ */
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include <mal.h>
 #include <math.h>
 #include <mal_exception.h>

@@ -39,7 +39,7 @@ typedef struct tijahStemmingStruct {
 extern tjStemCtx* getStemmingContext(char* name);
 
 @c
-#include <pf_config.h>
+#include <monetdb_config.h>
 
 #include <gdk.h>
 

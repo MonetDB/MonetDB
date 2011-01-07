@@ -34,13 +34,12 @@ Introduction
 ============
 
 The MonetDB suite of programs consists of a number of components which
-we will describe briefly here.  The general rule is that the
-components should be compiled and installed in the order given here,
-although some components can be compiled and installed in a different
-order.  Unless you know the inter-component dependencies, it is better
-to stick to this order.  Also note that before the next component is
-built, the previous ones need to be installed.  The section names are
-the names of the top-level folders in the Mercurial clone.
+we will describe briefly here.  The section names are the names of the
+top-level folders in the Mercurial clone.
+
+Note that in branches up to and including Oct2010 the build process
+was different.  This document describes the build process for the
+branch this document is part of.
 
 buildtools
 ----------
@@ -88,6 +87,12 @@ sql
 Also known as MonetDB SQL, this component provides an SQL frontend to
 MonetDB5.  This component is required if you need SQL support.
 
+geom
+----
+
+The geom component provides a module for the MonetDB SQL frontend.
+This component is optional.
+
 pathfinder
 ----------
 
@@ -96,17 +101,17 @@ engine on top of a relational database.  You can store XML documents
 in the database and query these documents using XQuery.  This
 component is required if you need XML/XQuery support.
 
-geom
-----
-
-The geom component provides a module for the MonetDB SQL frontend.
-This component is optional.
-
 java
 ----
 
 Also known as MonetDB Java, this component provides both the MonetDB
 JDBC driver and the XRPC wrapper.  This component is optional.
+
+testing
+-------
+
+The testing component contains some files and programs we use for
+testing the MonetDB suite.  This component is optional.
 
 python
 ------
@@ -114,13 +119,8 @@ python
 This component provides a Python module that can be used to
 communicate with the server.  The module is compatible with Python
 DBAPI 2.0 and has support for Python version 2.5 and up (including
-3.X).  This component is optional.
-
-testing
--------
-
-The testing component contains some files and programs we use for
-testing the MonetDB suite.  This component is optional.
+3.X).  This component is optional and independent from all other
+modules.
 
 Prerequisites
 =============
@@ -568,10 +568,10 @@ __ http://www.php.net/
 SWIG (Simplified Wrapper and Interface Generator)
 -------------------------------------------------
 
-We use SWIG__ to build interface files for Perl and Python.  You can
-download SWIG from http://www.swig.org/download.html.  Get the latest
-swigwin ZIP file and extract it somewhere.  It contains the
-``swig.exe`` binary.
+We use SWIG__ to build interface files for Perl.  You can download
+SWIG from http://www.swig.org/download.html.  Get the latest swigwin
+ZIP file and extract it somewhere.  It contains the ``swig.exe``
+binary.
 
 __ http://www.swig.org/
 
@@ -584,7 +584,7 @@ Java__.  Get Java from http://java.sun.com/, but make sure you do
 current JDBC driver is not compatible with Java 1.6 yet, and the XRPC
 wrapper is not compatible with Java 1.4 or older.
 
-In addition to the Java Development Kit, you will also need Apache Ant
+In addition to the Java Development Kit, you will also need `Apache Ant`_
 which is responsible for the actual building of the driver.
 
 __ http://java.sun.com/
@@ -606,22 +606,21 @@ Build Environment
 Placement of Sources
 --------------------
 
-For convenience place the various MonetDB packages in sibling
-subfolders.  You will need at least:
+Place the sources in a location with enough free space.  On Windows,
+you can either build inside the ``NT`` subdirectory, or in an empty
+directory that you create inside the top level of the source tree.
+This means that all intermediate files will also be located on the
+same drive.
 
-- buildtools
-- MonetDB
-- clients
-- one or both of MonetDB4, MonetDB5
+Currently, the sources take up about 1.1 MB, the build takes up
+another 0.2 to 0.6 MB (depending on compiler and compiler options),
+and the installation takes up between 30 kB and 0.1 MB (again,
+depending on compiler and compiler options).  The installation can be
+on a different drive than sources and build.
 
-Optionally:
-
-- sql (requires MonetDB5)
-- pathfinder (requires MonetDB4)
-
-Apart from buildtools, all packages contain a subfolder ``NT`` which
+At the top level of the source tree there is a subfolder ``NT`` which
 contains a few Windows-specific source files.  Like on Unix/Linux, we
-recommend to build in a new folder which is not part of the original
+recommend building in a new folder which is not part of the original
 source tree.  On Windows, this build folder must be a sibling of the
 aforementioned ``NT`` folder.
 
@@ -638,9 +637,7 @@ We use a number of environment variables to tell the build process
 where other parts of the suite can be found, and to tell the build
 process where to install the finished bits.
 
-In addition, you may need to edit some of the ``NT\rules.msc`` files
-(each component has one), or the file ``buildtools\conf\winrules.msc``
-which is included by all ``NT\rules.msc`` files.
+In addition, you may need to edit some of the ``NT\rules.msc`` file.
 
 Environment Variables
 ---------------------
@@ -662,9 +659,18 @@ files that are provided by the compilers:
 
    call "%ProgramFiles%\Microsoft Visual Studio 8\Common7\Tools\vsvars32.bat"
 
+- Microsoft Visual Studio 2008 (also known as Microsoft Visual Studio
+  9.0)::
+
+   call "%ProgramFiles%\Microsoft Visual Studio 8\Common7\Tools\vsvars32.bat"
+
 - Intel(R) C++ Compiler 10.1.013::
 
-   call "C:%ProgramFiles%\Intel\Compiler\C++\10.1.013\IA32\Bin\iclvars.bat"
+   call "%ProgramFiles%\Intel\Compiler\C++\10.1.013\IA32\Bin\iclvars.bat"
+
+- Intel(R) C++ Compiler 11.1.046::
+
+   call "%ProgramFiles%\Intel\Compiler\11.1\046\bin\ia32\iclvars_ia32.bat"
 
 When using the Intel compiler, you also need to set the ``CC`` and
 ``CXX`` variables::
@@ -672,36 +678,18 @@ When using the Intel compiler, you also need to set the ``CC`` and
  set CC=icl -Qstd=c99 -GR- -Qsafeseh-
  set CXX=icl -Qstd=c99 -GR- -Qsafeseh-
 
-(These are the values for the 10.1 version, for 9.1 replace
+(These are the values for the 10.1 and 11.1 versions, for 9.1 replace
 ``-Qstd=c99`` with ``-Qc99``.)
 
 Internal Variables
 ~~~~~~~~~~~~~~~~~~
 
-- ``MONETDB_SOURCE`` - source folder of the MonetDB component
-- ``CLIENTS_SOURCE`` - source folder of the clients component
-- ``MONETDB4_SOURCE`` - source folder of the MonetDB4 component
-- ``MONETDB5_SOURCE`` - source folder of the MonetDB5 component
-- ``SQL_SOURCE`` - source folder of the sql component
-- ``PATHFINDER_SOURCE`` - source folder of the pathfinder component
+- ``SOURCE`` - source folder of the MonetDB suite
+- ``BUILD`` - build folder of the MonetDB suite (sibling of ``%SOURCE%\NT``)
+- ``PREFIX`` - installation folder of the MonetDB suite
 
-- ``MONETDB_BUILD`` - build folder of the MonetDB component (sibling of ``%MONETDB_SOURCE%\NT``)
-- ``CLIENTS_BUILD`` - build folder of the clients component (sibling of ``%CLIENTS_SOURCE%\NT``)
-- ``MONETDB4_BUILD`` - build folder of the MonetDB4 component (sibling of ``%MONETDB4_SOURCE%\NT``)
-- ``MONETDB5_BUILD`` - build folder of the MonetDB5 component (sibling of ``%MONETDB5_SOURCE%\NT``)
-- ``SQL_BUILD`` - build folder of the sql component (sibling of ``%SQL_SOURCE%\NT``)
-- ``PATHFINDER_BUILD`` - build folder of the pathfinder component (sibling of ``%PATHFINDER_SOURCE%\NT``)
-
-- ``MONETDB_PREFIX`` - installation folder of the MonetDB component
-- ``CLIENTS_PREFIX`` - installation folder of the clients component
-- ``MONETDB4_PREFIX`` - installation folder of the MonetDB4 component
-- ``MONETDB5_PREFIX`` - installation folder of the MonetDB5 component
-- ``SQL_PREFIX`` - installation folder of the sql component
-- ``PATHFINDER_PREFIX`` - installation folder of the pathfinder component
-
-We recommend that the various ``PREFIX`` environment variables all
-point to the same location (all contain the same value) which is
-different from the source and build folders.
+We recommend that the ``PREFIX`` environment variable points to a
+location that is different from the source and build folders.
 
 PATH and PYTHONPATH
 ~~~~~~~~~~~~~~~~~~~
@@ -713,104 +701,64 @@ in succession for commands that you are trying to execute (note, this
 is an example: version numbers may differ)::
 
  rem Python is required
- set Path=C:\Python25;C:\Python25\Scripts;%Path%
+ set Path=C:\Python27;%Path%
  rem Bison and Flex (and Diff)
  set Path=%ProgramFiles%\GnuWin32\bin;%Path%
  rem Java is optional, set JAVA_HOME for convenience
- set JAVA_HOME=%ProgramFiles%\Java\jdk1.5.0_13
- set Path=%JAVA_HOME%\bin;%ProgramFiles%\Java\jre1.5.0_13\bin;%Path%
+ set JAVA_HOME=%ProgramFiles%\Java\jdk1.5.0_16
+ set Path=%JAVA_HOME%\bin;%ProgramFiles%\Java\jre1.5.0_16\bin;%Path%
  rem Apache Ant is optional, but required for Java compilation
- set Path=%ProgramFiles%\apache-ant-1.7.0\bin;%Path%
+ set Path=%ProgramFiles%\apache-ant-1.7.1\bin;%Path%
  rem SWIG is optional
- set Path=%ProgramFiles%\swigwin-1.3.31;%Path%
-
-In addition, during the build process we need to execute some programs
-that were built and installed earlier in the process, so we need to
-add those to the ``Path`` as well.  In addition, we use Python to
-execute some Python programs which use Python modules that were also
-installed earlier in the process, so we need to add those to the
-``PYTHONPATH`` variable::
-
- set Path=%BUILDTOOLS_PREFIX%\bin;%Path%
- set Path=%BUILDTOOLS_PREFIX%\Scripts;%Path%
- set PYTHONPATH=%BUILDTOOLS_PREFIX%\Lib\site-packages;%PYTHONPATH%
-
-Here the variable ``BUILDTOOLS_PREFIX`` represents the location where
-the buildtools component is installed.  This variable is not used
-internally, but only used here as a shorthand.
+ set Path=%ProgramFiles%\swigwin-1.3.36;%Path%
 
 For testing purposes it may be handy to add some more folders to the
-``Path``.  To begin with, all DLLs that are used also need to be found
-in the ``Path``, various programs are used during testing, such as
-diff (from GnuWin32) and php, and Python modules that were installed
-need to be found by the Python interpreter::
+``Path``.  This includes the ``bin`` and ``lib`` folders of the
+installation, and all DLLs for the libraries used by the build.  Also,
+various programs are used during testing, such as diff (from GnuWin32)
+and php, and Python modules that were installed need to be found by
+the Python interpreter::
 
  rem PCRE DLL
  set Path=C:\Program Files\PCRE\bin;%Path%
  rem PHP binary
  set Path=C:\Program Files\PHP;%Path%
- if not "%MONETDB_PREFIX%" == "%SQL_PREFIX%" set Path=%SQL_PREFIX%\bin;%SQL_PREFIX%\lib;%SQL_PREFIX%\lib\MonetDB4;%Path%
- set Path=%MONETDB4_PREFIX%\lib\MonetDB4;%Path%
- if not "%MONETDB_PREFIX%" == "%MONETDB4_PREFIX%" set Path=%MONETDB4_PREFIX%\bin;%MONETDB4_PREFIX%\lib;%Path%
- if not "%MONETDB_PREFIX%" == "%CLIENTS_PREFIX%" set Path=%CLIENTS_PREFIX%\bin;%CLIENTS_PREFIX%\lib;%Path%
- set Path=%MONETDB_PREFIX%\bin;%MONETDB_PREFIX%\lib;%Path%
-
- set PYTHONPATH=%CLIENTS_PREFIX%\share\MonetDB\python;%PYTHONPATH%
- set PYTHONPATH=%MONETDB_PREFIX%\share\MonetDB\python;%PYTHONPATH%
- set PYTHONPATH=%SQL_PREFIX%\share\MonetDB\python;%PYTHONPATH%
+ rem assuming we're testing MonetDB5 or SQL, else used MonetDB4:
+ set Path=%PREFIX%\lib\MonetDB5;%Path%
+ set Path=%PREFIX%\bin;%PREFIX%\lib;%Path%
+ rem Python module search path
+ set PYTHONPATH=%PREFIX%\lib\site-packages;%PYTHONPATH%
 
 Compilation
 -----------
 
-Building and Installing Buildtools
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Building and Installing
+~~~~~~~~~~~~~~~~~~~~~~~
 
-The buildtools component needs to be built and installed first::
+To build and install the whole suite, go to your build folder (assumed
+to be a sibling of the top-level ``NT`` folder) and execute the
+command::
 
- cd ...\buildtools
- nmake /nologo /f Makefile.msc "prefix=%BUILDTOOLS_PREFIX%" install
+ nmake /nologo /f ..\NT\Makefile "prefix=%PREFIX%" ...
+ nmake /nologo /f ..\NT\Makefile "prefix=%PREFIX%" ... install
 
-where, again, the ``BUILDTOOLS_PREFIX`` variable represents the
-location where the buildtools component is to be installed.
-
-Building and Installing the Other Components
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The other components of the MonetDB suite are all built and installed
-in the same way.  Do note the order in which the components need to be
-built and installed: MonetDB, clients, MonetDB4/MonetDB5,
-sql/pathfinder.  There is no dependency between MonetDB4 and MonetDB5.
-MonetDB4 is a prerequisite for pathfinder, and pathfinder can use
-MonetDB5 (there is some very preliminary support).  Sql requires
-MonetDB5.
-
-For each of the components, do the following::
-
- mkdir ...\<component>\BUILD_DIR
- cd ...\<component>\BUILD_DIR
- nmake /nologo /f ..\NT\Makefile NEED_MX=1 ... "prefix=%..._PREFIX%"
- nmake /nologo /f ..\NT\Makefile NEED_MX=1 ... "prefix=%..._PREFIX%" install
-
-Here the first ``...`` needs to be replaced by a list of parameters
-that tells the system which of the optional programs and libraries are
-available.  The following parameters are possible:
+The ``...`` needs to be replaced by a list of parameters that tells
+the system which of the optional programs and libraries are available
+and which components are to be built.  The following parameters are
+possible:
 
 - ``DEBUG=1`` - compile with extra debugging information
 - ``NDEBUG=1`` - compile without extra debugging information (this is
   used for creating a binary release);
+- ``HAVE_MONETDB4=1`` - include the MonetDB4 component;
+- ``HAVE_MONETDB5=1`` - include the MonetDB5 component;
+- ``HAVE_SQL=1`` - include the sql component;
+- ``HAVE_GEOM=1`` - include the geom component;
+- ``HAVE_PATHFINDER=1`` - include the pathfinder component;
+- ``HAVE_TESTING=1`` - include the testing component;
 - ``HAVE_ICONV=1`` - the iconv library is available;
 - ``HAVE_JAVA=1`` - Java and Apache Ant are both available;
 - ``HAVE_LIBXML2=1`` - the libxml2 library is available;
-- ``HAVE_MONETDB4=1`` - for sql and pathfinder: MonetDB4 was compiled
-  and installed;
-- ``HAVE_MONETDB5=1`` - for sql and pathfinder: MonetDB5 was compiled
-  and installed;
-- ``HAVE_MONETDB5_XML=1`` - for sql and pathfinder: MonetDB5 was compiled
-  with the xml2 library available (HAVE_LIBXML2=1), and hence provides XML
-  support (i.e., module xml);
-- ``HAVE_MONETDB5_RDF=1`` - for sql and pathfinder: MonetDB5 was compiled
-  with the raptor library available (HAVE_RAPTOR=1), and hence provides RDF
-  support (i.e., module rdf);
 - ``HAVE_RAPTOR=1`` - the raptor library is available;
 - ``HAVE_NETCDF=1`` - the netcdf library is available;
 - ``HAVE_OPENSSL=1`` - the OpenSSL library is available;
@@ -827,14 +775,13 @@ available.  The following parameters are possible:
 In addition, you can add a parameter which points to a file with extra
 definitions for ``nmake``.  This is very convenient to define where
 all packages were installed that the build process depends on since
-you then don't have to edit any of the ``rules.msc`` files in the
-source tree:
+you then don't have to edit the ``rules.msc`` file in the source tree:
 
 - ``"MAKE_INCLUDEFILE=..."`` - file with extra ``nmake`` definitions.
 
 It is recommended to at least put the ``MAKE_INCLUDEFILE`` parameter
 with argument in double quotes to protect any spaces that may appear
-in the file name.
+in the file name.  The file name should be an absolute path name.
 
 The contents of the file referred to with the ``MAKE_INCLUDEFILE``
 parameter may contain something like::

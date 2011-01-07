@@ -47,7 +47,7 @@ comment "Modify the plan to exploit parallel processing on multiple cores";
 #define OPTDEBUGcluster  if ( optDebug & ((lng)1 <<DEBUG_OPT_CLUSTER) )
 
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "opt_cluster.h"
 #include "mal_interpreter.h"
 

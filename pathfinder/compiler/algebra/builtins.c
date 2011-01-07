@@ -41,7 +41,7 @@
  */
 
 /* always include "pathfinder.h", first! */
-#include "pf_config.h"
+#include "monetdb_config.h"
 #include "pathfinder.h"
 #include "oops.h"
 

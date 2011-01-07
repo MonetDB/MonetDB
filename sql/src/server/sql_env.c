@@ -45,7 +45,7 @@
  * The variables can be retrieved using the table producing function var();
  */
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include "sql_env.h"
 #include "sql_semantic.h"
 #include "sql_privileges.h"

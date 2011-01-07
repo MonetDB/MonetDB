@@ -23,7 +23,7 @@ All Rights Reserved.
 @+ Shredder for RDF Documents
 
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "mal_exception.h"
 #include "url.h"
 #include "tokenizer.h"

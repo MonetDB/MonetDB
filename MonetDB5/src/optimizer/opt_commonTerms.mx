@@ -39,7 +39,7 @@ comment "Common sub-expression optimizer"
 
 #endif
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "opt_commonTerms.h"
 #include "mal_exception.h"
 @}

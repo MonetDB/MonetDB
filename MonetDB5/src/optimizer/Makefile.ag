@@ -16,7 +16,9 @@
 # All Rights Reserved.
 
 INCLUDES = -I../mal -I../modules/atoms -I../modules/mal -I../modules/kernel \
-	$(monetdbmapi_CFLAGS) $(monetdbcommon_CFLAGS) $(monetdbstream_CFLAGS)
+	../../../clients/src/mapilib \
+	../../../MonetDB/src/common \
+	../../../MonetDB/src/gdk
 
 
 MTSAFE
@@ -116,5 +118,7 @@ headers_mal = {
 		opt_cluster.mx  opt_replication.mx opt_dictionary.mx opt_mapreduce.mx \
 		opt_mitosis.mx opt_octopus.mx opt_tarantula.mx  opt_history.mx opt_selcrack.mx opt_sidcrack.mx
 }
+
+EXTRA_DIST = optimizerWrapper.mx
 
 EXTRA_DIST_DIR = Tests

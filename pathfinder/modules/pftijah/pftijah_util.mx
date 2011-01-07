@@ -38,7 +38,7 @@ extern int  pftu_make_persistent(BAT* b, char* name);
 extern BAT* pftu_create_bat(char* name, int ht, int tt, int persists);
 
 @c
-#include <pf_config.h>
+#include <monetdb_config.h>
 
 /*******************************************
  * pftijah_util.c : the parallel term database

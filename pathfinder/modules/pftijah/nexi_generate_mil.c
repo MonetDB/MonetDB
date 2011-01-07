@@ -27,7 +27,7 @@
  * Module that generates MIL query plans out of SRA query plans
  */
 
-#include <pf_config.h>
+#include <monetdb_config.h>
 
 #include <math.h>
 #include <stdio.h>

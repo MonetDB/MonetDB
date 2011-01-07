@@ -163,7 +163,7 @@ color_export int color_tostr(char **colorStr, int *len, color *c);
 
 #endif
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "mal.h"
 #include "mal_exception.h"
 #include <math.h>

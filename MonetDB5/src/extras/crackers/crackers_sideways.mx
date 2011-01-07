@@ -165,7 +165,7 @@ crackers_export str CRKdPositionProject_@1_@2(int *res, int *bid, int *pbid, int
 @- C file
 
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "crackers.h"
 
 /* Local support functions and macros */

@@ -54,7 +54,7 @@ They are marked as unsafe.
 #endif
 
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "opt_coercion.h"
 
 static int

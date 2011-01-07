@@ -58,7 +58,7 @@ m_export void    Myyfree(YYSTREE t);
 m_export size_t  Myysize(YYSTREE t, size_t *cnt);
 m_export void    Myyprint(YYSTREE t);
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include "monet.h"
 #include <stdio.h>
 #include <ctype.h>

@@ -27,6 +27,6 @@
 EXTRA_DIST = pfserialize.pl
 
 scripts_pl = {
-    DIR = bindir
-    SOURCES = pfserialize.pl
+	DIR = bindir
+	SOURCES = pfserialize.pl
 }

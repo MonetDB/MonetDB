@@ -39,7 +39,7 @@ Rights Reserved.
  *
  */
 
-#include "pf_config.h"
+#include "monetdb_config.h"
 #include "serialize.h"
 /* contains dummy callback functions */
 #include "serialize_null.h"

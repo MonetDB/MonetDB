@@ -65,7 +65,7 @@ comment "Perform singleton optimization";
 
 #define OPTDEBUGsingleton  if ( optDebug & ((lng)1 <<DEBUG_OPT_SINGLETON) )
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "opt_singleton.h"
 #include "opt_aliases.h"
 #include "mal_interpreter.h"	/* for showErrors() */

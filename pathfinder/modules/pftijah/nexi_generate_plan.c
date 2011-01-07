@@ -27,7 +27,7 @@
  * Module that generates logical query plans and MIL query plans from NEXI queries
  */
 
-#include <pf_config.h>
+#include <monetdb_config.h>
 
 #include <math.h>
 #include <stdio.h>

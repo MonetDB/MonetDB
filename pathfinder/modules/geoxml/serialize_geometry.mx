@@ -39,7 +39,7 @@ extern int serialize_geometry_DRIVER(
         BAT*			strVAL);
 
 @c
-#include <pf_config.h>
+#include <monetdb_config.h>
 #include <ctype.h>
 #include <gdk.h>
 

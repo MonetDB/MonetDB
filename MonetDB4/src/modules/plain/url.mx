@@ -121,7 +121,7 @@ typedef str url;
 #endif /* URL_H */
 
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include "url.h"
 
 void getword(char *word, char *line, char stop);

@@ -75,7 +75,7 @@ crackers_export str CRKverifyCrackerIndex_@1(int *k, int *bid);
 @- C file
 
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "crackers.h"
 
 /* Exported functions */

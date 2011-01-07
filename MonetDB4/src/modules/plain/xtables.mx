@@ -241,7 +241,7 @@ typedef struct grp_t {
 	bat histo;
 } grp;
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include "algebra.h"
 #include "xtables.h"
 #include "xtables.proto.h"

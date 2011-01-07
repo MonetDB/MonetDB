@@ -297,7 +297,7 @@ mmath_export str MATHpi(dbl *pi);
 
 @+ Implementation Code
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "mmath.h"
 
 #ifdef _MSC_VER

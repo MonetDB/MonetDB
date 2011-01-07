@@ -15,8 +15,10 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-INCLUDES = -I../../monet -I../plain \
-	$(MONETDB_INCS) $(Z_CFLAGS) $(BZ_CFLAGS) $(HWCOUNTERS_INCS) $(PCL_CFLAGS)
+INCLUDES = ../../monet ../plain \
+	../../../../MonetDB/src/common \
+	../../../../MonetDB/src/gdk \
+	$(zlib_CFLAGS) $(BZ_CFLAGS) $(HWCOUNTERS_INCS) $(PCL_CFLAGS)
 
 MTSAFE
 
@@ -32,9 +34,10 @@ LIBS = {
 
 		# bitvector.mx ddbench.mx iterator.mx oo7.mx qt.mx
 	#SCRIPTS = mil ""
-	LIBS = $(MONETDB_LIBS) -lstream -lbat \
+	LIBS = ../../../../MonetDB/src/common/libstream \
+		../../../../MonetDB/src/gdk/libbat \
 		../../monet/libmonet ../plain/lib_algebra \
-		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+		$(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) $(MATH_LIBS)
 }
 

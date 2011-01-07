@@ -27,14 +27,18 @@
 # Rights Reserved.
 #
 
-INCLUDES = ../include $(MONETDB_INCS) $(LIBXML2_CFLAGS)
+INCLUDES = \
+	../include \
+	../../../MonetDB/src/common \
+	../../../MonetDB/src/gdk \
+	$(libxml2_CFLAGS)
 
 lib_xmlimport = {
-        NOINST
-        DIR = libdir
-        SOURCES = \
-                xml2lalg_xpath_utils.c \
-                xml2lalg_converters.c \
-                schema_relaxng.c \
-                xml2lalg.c
+	NOINST
+	DIR = libdir
+	SOURCES = \
+		xml2lalg_xpath_utils.c \
+		xml2lalg_converters.c \
+		schema_relaxng.c \
+		xml2lalg.c
 }

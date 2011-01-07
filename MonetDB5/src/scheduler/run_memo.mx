@@ -148,7 +148,7 @@ run_memo_export str RUNpickResult(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 The code below is a mixture of generic routines and
 sample implementations to run the tests.
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "run_memo.h"
 
 static void

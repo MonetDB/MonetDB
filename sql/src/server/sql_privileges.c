@@ -29,7 +29,7 @@
  *
  */
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include "sql_privileges.h"
 #include "sql_statement.h"
 #include <sql_parser.h>

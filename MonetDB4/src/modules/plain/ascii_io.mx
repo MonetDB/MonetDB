@@ -303,7 +303,7 @@ ascii_io_export int has_whitespace(char *sep);
 
 #endif
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 
 #include <gdk.h>
 #include "ascii_io.h"

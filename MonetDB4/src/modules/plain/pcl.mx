@@ -193,7 +193,7 @@ later add low level api
 
 @+ Implementation
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include "gdk.h"
 #include "pcl.proto.h"
 

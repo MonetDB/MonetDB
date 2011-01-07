@@ -31,7 +31,7 @@
  *
  */
 
-#include <pf_config.h>
+#include <monetdb_config.h>
 
 #define YY_NO_INPUT
 

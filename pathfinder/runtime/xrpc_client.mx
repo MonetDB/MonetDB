@@ -377,7 +377,7 @@ PROC doRPC(
 #endif /* XRPC_CLIENT_H */
 
 @c
-#include "pf_config.h"
+#include "monetdb_config.h"
 #include <gdk.h>
 #include <stream_socket.h>
 #ifdef _WIN32   /* Windows specific */

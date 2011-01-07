@@ -165,7 +165,7 @@ mal_export bit isBindInstr(InstrPtr p);
 #endif
 @-
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "mal_recycle.h"
 #include "mal_exception.h"
 #include "mal_interpreter.h"

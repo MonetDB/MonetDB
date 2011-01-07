@@ -235,7 +235,7 @@ opt_export int tubProp;			/* any (tail upper bound) */
 opt_export void optimizerInit(void);
 #endif
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "opt_prelude.h"
 
 str affectedRowsRef;

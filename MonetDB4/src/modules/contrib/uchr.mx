@@ -38,7 +38,7 @@ The uchr atom is just a chr but uses numerical string representations.
 
 @+ C implementation
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 
 /*
 #define DEBUG 

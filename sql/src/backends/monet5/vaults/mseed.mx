@@ -148,7 +148,7 @@ the plan we are just interpreting.
 #ifndef _MSEED_H
 #define _MSEED_H
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include "clients.h"
 #include "mal.h" 
 #include "mal_client.h"

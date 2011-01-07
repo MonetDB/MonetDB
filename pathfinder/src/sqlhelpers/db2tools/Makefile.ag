@@ -27,7 +27,7 @@
 MTSAFE
 
 scripts_sh = {
-    COND = NOT_WIN32
-    DIR = bindir
+	COND = NOT_WIN32
+	DIR = bindir
 	SOURCES = pfcreatetables.sh pfloadtables.sh
 }

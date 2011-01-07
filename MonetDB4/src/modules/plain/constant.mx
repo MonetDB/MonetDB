@@ -208,7 +208,7 @@ proc {avg} ( any::1 b, BAT[oid,oid] g, BAT[oid,any] e) : BAT[oid,dbl]
 }
 @{
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include "constant.proto.h"
 
 int

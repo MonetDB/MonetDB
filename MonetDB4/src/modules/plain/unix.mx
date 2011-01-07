@@ -43,7 +43,7 @@ Provides access to some of the C stdlib.h functions.
 The remainder is a straight forward mapping to the underlying
 facilities
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 
 #include "unix.proto.h"
 

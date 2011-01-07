@@ -74,7 +74,7 @@ tarantula_export str TARconnect(str *c, int *dbid);
 The discovery phase consists of establishing connections with
 the (remote) database servers.
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "mal_interpreter.h"
 #include "mat.h"
 #include "run_tarantula.h"

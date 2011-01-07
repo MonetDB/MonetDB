@@ -752,7 +752,7 @@ extern "C" {
 typedef int date;
 #define date_nil ((date) int_nil)
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include "monettime.h"
 
 @- daytime

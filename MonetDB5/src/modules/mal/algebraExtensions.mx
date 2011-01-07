@@ -63,7 +63,7 @@ ae_export str ALGprojectCstBody(bat *result, int *bid, ptr *p, int tt);
 #endif /* _ALGEBRA_EXTENSIONS_H*/
 
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "algebraExtensions.h"
 
 str

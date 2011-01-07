@@ -69,7 +69,7 @@ typedef struct {
 } monet_timer_t;
 
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include "alarm.h"
 #include "alarm.proto.h"
 #include <time.h>
