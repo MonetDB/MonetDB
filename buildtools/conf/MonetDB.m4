@@ -493,7 +493,7 @@ if test "x$have_monetdb5" != xno; then
     MONETDB5_MOD_PATH="${libdir}/MonetDB5:${libdir}/MonetDB5/lib:${libdir}/MonetDB5/bin"
     MONETDB5_PREFIX="${prefix}"
     MONETDB5_CONFFILE="${sysconfdir}/monetdb5.conf"
-    MONETDB5_LOGDIR="${localstatedir}/var/log/MonetDB"
+    MONETDB5_LOGDIR="${localstatedir}/log/MonetDB"
     # expand ${prefix} if using the default
     eval "eval MONETDB5_CONFFILE=\"${MONETDB5_CONFFILE}\""
     eval "eval MONETDB5_LOGDIR=\"${MONETDB5_LOGDIR}\""

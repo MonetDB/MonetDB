@@ -1462,8 +1462,8 @@ AC_SUBST(QXSOURCE)
 AC_DEFINE_UNQUOTED(LOCALSTATEDIR,"$QXlocalstatedir",[modifiable single-machine data])
 AC_DEFINE_UNQUOTED(LIBDIR,"$QXlibdir",[object code libraries])
 AC_DEFINE_UNQUOTED(SYSCONFDIR,"$QXsysconfdir",[read-only single-machine data])
-AC_SUBST([MERO_LOG], [${localstatedir}/var/log/MonetDB/merovingian.log])
-AC_DEFINE_UNQUOTED([MERO_LOG], ["${localstatedir}/var/log/MonetDB/merovingian.log"], [where Merovingian will store its logs by default])
+AC_SUBST([MERO_LOG], [${localstatedir}/log/MonetDB/merovingian.log])
+AC_DEFINE_UNQUOTED([MERO_LOG], ["${localstatedir}/log/MonetDB/merovingian.log"], [where Merovingian will store its logs by default])
 MONETDB4_CONFFILE="${sysconfdir}/MonetDB.conf"
 # expand ${prefix} in ${sysconfdir} if using the default
 eval "eval MONETDB4_CONFFILE=${MONETDB4_CONFFILE}"
