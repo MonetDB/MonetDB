@@ -1214,48 +1214,46 @@ AC_COMPILE_IFELSE([AC_LANG_SOURCE([int foo(int * restrict p) { return *p; }])],
 		AC_DEFINE(HAVE___RESTRICT__, 1,
 			[Define if the compiler supports the __restrict__ keyword])))
 
-if test "x$enable_pathfinder" != xno; then
-	dnl Seems like the compiler on SunOS 5.8 cannot cope with the
-	dnl __attribute__ specifications that can give compilers additional
-	dnl hints about a function (style of variable argument list, functions
-	dnl that never return, etc.)
-	AC_MSG_CHECKING([if your compiler understands `__attribute__'])
+dnl Seems like the compiler on SunOS 5.8 cannot cope with the
+dnl __attribute__ specifications that can give compilers additional
+dnl hints about a function (style of variable argument list, functions
+dnl that never return, etc.)
+AC_MSG_CHECKING([if your compiler understands `__attribute__'])
 
-	save_CFLAGS="$CFLAGS"
-	case "$GCC-$CC-$host_os" in
-	-*-solaris*)
-		dnl  Sun compiler on Solaris:
-		dnl  treat warnings as errors to fail on
-		dnl  'warning: attribute parameter "printf" is undefined'
-		CFLAGS="$CFLAGS -errwarn=%all"
-		;;
-	esac
+save_CFLAGS="$CFLAGS"
+case "$GCC-$CC-$host_os" in
+-*-solaris*)
+	dnl  Sun compiler on Solaris:
+	dnl  treat warnings as errors to fail on
+	dnl  'warning: attribute parameter "printf" is undefined'
+	CFLAGS="$CFLAGS -errwarn=%all"
+	;;
+esac
 
-	AC_COMPILE_IFELSE(AC_LANG_PROGRAM([[
-	#include <stdlib.h>
+AC_COMPILE_IFELSE(AC_LANG_PROGRAM([[
+#include <stdlib.h>
 
-	static void foo (const char *a, ...)
-		__attribute__ ((format (printf, 1, 2)));
+static void foo (const char *a, ...)
+	__attribute__ ((format (printf, 1, 2)));
 
-	static void foo (const char *a, ...)
-		{ (void)a; }
-	]],
-	[[ foo ("%s", ""); ]]
-	),
-	[AC_DEFINE([HAVE_FUNCTION_ATTRIBUTES], 1,
-	  [Does your compiler support function attributes (__attribute__)?])
-	AC_MSG_RESULT(yes)],
-	AC_MSG_RESULT(no))
+static void foo (const char *a, ...)
+	{ (void)a; }
+]],
+[[ foo ("%s", ""); ]]
+),
+[AC_DEFINE([HAVE_FUNCTION_ATTRIBUTES], 1,
+  [Does your compiler support function attributes (__attribute__)?])
+AC_MSG_RESULT(yes)],
+AC_MSG_RESULT(no))
 
-	CFLAGS="$save_CFLAGS"
+CFLAGS="$save_CFLAGS"
 
-	AH_VERBATIM([__attribute__],
+AH_VERBATIM([__attribute__],
 [/* If the compiler does not support function attributes via __attribute__,
    we just define __attribute__(a) to nothing. */
 #ifndef HAVE_FUNCTION_ATTRIBUTES
 #define __attribute__(a)
 #endif])
-fi
 
 dnl     checks for library functions
 case $host in
