@@ -33,7 +33,7 @@ set PATH=%builddir%\conf;%PATH%
 REM execute Mtest.py in the source directory
 pushd %srcdir%
 
-call "%buildbase%\testing\src\Mtest.py" "--config=%builddir%\conf\MonetDB.conf" --package=%pkg% "--monet_mod_path=%MOD_PATH%" "--dbfarm=%builddir%\dbfarm" "--TSTTRGBASE=%builddir%" %*
+call "%buildbase%\testing\src\Mtest.py" "--config=%builddir%\conf\MonetDB.conf" --package=%pkg% "--monet_mod_path=%MOD_PATH%" "--dbfarm=%builddir%\dbfarm" "--TSTSRCBASE=%srcdir%" "--TSTTRGBASE=%builddir%" %*
 
 popd
 endlocal

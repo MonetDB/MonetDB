@@ -18,7 +18,7 @@ set PATH=%builddir%\conf;%PATH%
 REM execute Mapprove.py in the source directory
 pushd %srcdir%
 
-call "%buildbase%\testing\src\Mapprove.py" "--config=%builddir%\conf\MonetDB.conf" --package=%pkg% "--TSTTRGBASE=%builddir%" %*
+call "%buildbase%\testing\src\Mapprove.py" "--config=%builddir%\conf\MonetDB.conf" --package=%pkg% "--TSTSRCBASE=%srcdir%" "--TSTTRGBASE=%builddir%" %*
 
 popd
 endlocal

@@ -38,7 +38,7 @@ set PATH=%builddir%\src\tools;%PATH%
 REM execute Mtest.py in the source directory
 pushd %srcdir%
 
-call "%buildbase%\testing\src\Mtest.py" -%V% --package=%pkg% "--monet_mod_path=%MOD_PATH%" "--dbfarm=%builddir%\dbfarm" "--xrpc_docroot=%srcdir%\runtime\xrpc" "--TSTTRGBASE=%builddir%" %1 %2 %3 %4 %5 %6 %7 %8 %9
+call "%buildbase%\testing\src\Mtest.py" -%V% --package=%pkg% "--monet_mod_path=%MOD_PATH%" "--dbfarm=%builddir%\dbfarm" "--xrpc_docroot=%srcdir%\runtime\xrpc" "--TSTSRCBASE=%srcdir%" "--TSTTRGBASE=%builddir%" %1 %2 %3 %4 %5 %6 %7 %8 %9
 
 popd
 endlocal

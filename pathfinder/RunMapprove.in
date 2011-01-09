@@ -49,4 +49,4 @@ cd "$srcdir"
 # execute the script.
 # if no arguments, do a recursive approve (Mapprove.py -r), else pass
 # on the arguments
-exec python "${buildbase}/testing/src/Mapprove.py" -$V --package=${pkg} --TSTTRGBASE="${builddir}" "${@--r}"
+exec python "${buildbase}/testing/src/Mapprove.py" -$V --package=${pkg} --TSTSRCBASE="${srcdir}" --TSTTRGBASE="${builddir}" "${@--r}"
