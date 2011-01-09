@@ -18,7 +18,7 @@ set PATH=%builddir%\conf;%PATH%
 REM execute Mapprove.py in the source directory
 pushd %srcdir%
 
-call Mapprove.py --package=%pkg% "--TSTTRGBASE=%builddir%" %*
+call "%buildbase%\testing\src\Mapprove.py" --package=%pkg% "--TSTTRGBASE=%builddir%" %*
 
 popd
 endlocal

@@ -23,7 +23,7 @@ set PYTHONPATH=%srcdir%\src\python;%PYTHONPATH%
 REM execute Mtest.py in the source directory
 pushd %srcdir%
 
-call Mtest.py --package=%pkg% "--TSTTRGBASE=%builddir%" %*
+call "%buildbase%\testing\src\Mtest.py" --package=%pkg% "--TSTTRGBASE=%builddir%" %*
 
 popd
 endlocal
