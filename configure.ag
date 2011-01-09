@@ -950,7 +950,7 @@ if test "x$have_netcdf" != xno; then
 	CPPFLAGS="$CPPFLAGS $NETCDF_CFLAGS"
 	save_LIBS="$LIBS"
 	LIBS="$LIBS $NETCDF_LIBS -lnetcdf"
-	AC_LINK_IFELSE(AC_LANG_PROGRAM([#include <netcdf/netcdf.h>], [(void) nc_open("",0,(int*)0);]),
+	AC_LINK_IFELSE([AC_LANG_PROGRAM([#include <netcdf/netcdf.h>], [(void) nc_open("",0,(int*)0);])],
 		NETCDF_LIBS="$NETCDF_LIBS -lnetcdf",
 		[ if test "x$have_netcdf" != xauto; then AC_MSG_ERROR([netcdf library not found]); fi; have_netcdf=no ])
 	LIBS="$save_LIBS"
@@ -1230,7 +1230,7 @@ case "$GCC-$CC-$host_os" in
 	;;
 esac
 
-AC_COMPILE_IFELSE(AC_LANG_PROGRAM([[
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <stdlib.h>
 
 static void foo (const char *a, ...)
@@ -1240,7 +1240,7 @@ static void foo (const char *a, ...)
 	{ (void)a; }
 ]],
 [[ foo ("%s", ""); ]]
-),
+)],
 [AC_DEFINE([HAVE_FUNCTION_ATTRIBUTES], 1,
   [Does your compiler support function attributes (__attribute__)?])
 AC_MSG_RESULT(yes)],
