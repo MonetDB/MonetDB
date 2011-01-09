@@ -20,6 +20,8 @@ set srcdir=@XSOURCE@\pathfinder
 
 set PATH=%builddir%\conf;%PATH%
 
+set PYTHONPATH=%buildbase%\testing\src;%PYTHONPATH%
+
 REM execute Mapprove.py in the source directory
 pushd %srcdir%
 

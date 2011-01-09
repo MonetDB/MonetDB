@@ -32,7 +32,7 @@ set PATH=%builddir%\src\storage\bat;%PATH%
 set PATH=%builddir%\src\common;%PATH%
 set PATH=%builddir%\conf;%PATH%
 
-set PYTHONPATH=%builddir%\src\backends\python\monet5;%PYTHONPATH%
+set PYTHONPATH=%builddir%\src\backends\python\monet5;%buildbase%\testing\src;%PYTHONPATH%
 
 REM execute Mtest.py in the source directory
 pushd %srcdir%

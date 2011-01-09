@@ -47,6 +47,8 @@ set PATH=%builddir%\conf;%PATH%
 rem to find geos_c.dll
 set PATH=%GEOS%\bin;%PATH%
 
+set PYTHONPATH=%buildbase%\testing\src;%PYTHONPATH%
+
 REM execute Mtest.py in the source directory
 pushd %srcdir%
 

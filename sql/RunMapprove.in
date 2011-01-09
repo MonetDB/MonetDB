@@ -27,6 +27,9 @@ srcdir=`cd '@srcdir@'; pwd`
 PATH="${builddir}/conf:$PATH"
 export PATH
 
+PYTHONPATH="${buildbase}/testing/src:${PYTHONPATH}"
+export PYTHONPATH
+
 # execute Mapprove.py in the source directory
 cd "$srcdir"
 

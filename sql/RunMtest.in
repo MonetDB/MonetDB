@@ -49,7 +49,7 @@ libpath="${MOD_PATH}:${builddir}/src/server/.libs"
 PATH="${binpath}:$PATH"
 export PATH
 
-PYTHONPATH="${builddir}/src/backends/python/monet5/.libs:${builddir}/src/backends/python/monet5:$PYTHONPATH"
+PYTHONPATH="${builddir}/src/backends/python/monet5/.libs:${builddir}/src/backends/python/monet5:${buildbase}/testing/src:$PYTHONPATH"
 export PYTHONPATH
 
 if [ "${LD_LIBRARY_PATH}" ] ; then

@@ -35,6 +35,8 @@ set PATH=%builddir%\compiler;%PATH%
 set PATH=%builddir%\conf;%PATH%
 set PATH=%builddir%\src\tools;%PATH%
 
+set PYTHONPATH=%buildbase%\testing\src;%PYTHONPATH%
+
 REM execute Mtest.py in the source directory
 pushd %srcdir%
 

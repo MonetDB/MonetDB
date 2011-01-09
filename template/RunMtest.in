@@ -59,6 +59,9 @@ libpath="${MOD_PATH}"
 PATH="${binpath}:$PATH"
 export PATH
 
+PYTHONPATH="${buildbase}/testing/src:${PYTHONPATH}"
+export PYTHONPATH
+
 if [ "${LD_LIBRARY_PATH}" ] ; then
 	LD_LIBRARY_PATH=":${LD_LIBRARY_PATH}"
 fi
