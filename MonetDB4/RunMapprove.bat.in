@@ -9,8 +9,9 @@ goto end
 setlocal
 
 set pkg=monetdb4
-set builddir=@XMONETDB4_BUILD@
-set srcdir=@XMONETDB4_SOURCE@
+set buildbase=@XBUILD@
+set builddir=%buildbase%\MonetDB4
+set srcdir=@XSOURCE@\MonetDB4
 
 set PATH=%builddir%\conf;%PATH%
 

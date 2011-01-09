@@ -14,8 +14,9 @@ if "%1" == "-4" set V=4& shift
 if "%1" == "-5" set V=5& shift
 
 set pkg=monetdb-xquery
-set builddir=@XPATHFINDER_BUILD@
-set srcdir=@XPATHFINDER_SOURCE@
+set buildbase=@XBUILD@
+set builddir=%buildbase%\pathfinder
+set srcdir=@XSOURCE@\pathfinder
 
 set PATH=%builddir%\conf;%PATH%
 

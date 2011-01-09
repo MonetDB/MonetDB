@@ -9,8 +9,9 @@ goto end
 setlocal
 
 set pkg=monetdb-sql
-set builddir=@XSQL_BUILD@
-set srcdir=@XSQL_SOURCE@
+set buildbase=@XBUILD@
+set builddir=%buildbase%\sql
+set srcdir=@XSOURCE@\sql
 
 set PATH=%builddir%\conf;%PATH%
 

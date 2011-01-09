@@ -24,7 +24,8 @@
 # Rights Reserved.
 
 pkg=monetdb-xquery
-builddir=@QPATHFINDER_BUILD@
+buildbase=@QBUILD@
+builddir="${buildbase}/pathfinder"
 # make sure srcdir contains absolute path name
 srcdir=`cd '@srcdir@'; pwd`
 

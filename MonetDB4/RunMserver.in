@@ -17,7 +17,8 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-builddir=@QXMONETDB4_BUILD@
+buildbase=@QXBUILD@
+builddir="${buildbase}/MonetDB4"
 # make sure srcdir contains absolute path name
 srcdir=`cd '@Xsrcdir@'; pwd`
 uname=`uname`

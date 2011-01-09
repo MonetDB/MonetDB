@@ -9,8 +9,9 @@ goto end
 setlocal
 
 set pkg=monetdb5
-set builddir=@XMONETDB5_BUILD@
-set srcdir=@XMONETDB5_SOURCE@
+set buildbase=@XBUILD@
+set builddir=%buildbase%\MonetDB5
+set srcdir=@XSOURCE@\MonetDB5
 
 set MOD_PATH=%builddir%\src\compiler\.libs
 set MOD_PATH=%MOD_PATH%;%builddir%\src\compiler

@@ -6,7 +6,8 @@ set monetdb5_prefix=@XMONETDB5_PREFIX@
 
 call "%monetdb5_prefix%\bin\monetdb5-config.bat" --internal
 
-set builddir=@XSQL_BUILD@
+set buildbase=@XBUILD@
+set builddir=%buildbase%\sql
 
 set MOD_PATH=%modpath%
 set MOD_PATH=%builddir%\src\backends\monet5\.libs;%MOD_PATH%

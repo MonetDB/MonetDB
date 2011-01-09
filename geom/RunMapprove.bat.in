@@ -14,8 +14,9 @@ if "%1" == "-4" set V=4& shift
 if "%1" == "-5" set V=5& shift
 
 set pkg=monetdb-sql
-set builddir=@XGEOM_BUILD@
-set srcdir=@XGEOM_SOURCE@
+set buildbase=@XBUILD@
+set builddir=%buildbase%\geom
+set srcdir=@XSOURCE@\geom
 
 set PATH=%builddir%\conf;%PATH%
 

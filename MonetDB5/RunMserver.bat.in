@@ -2,7 +2,8 @@
 
 setlocal
 
-set builddir=@XMONETDB5_BUILD@
+set buildbase=@XBUILD@
+set builddir=%buildbase%\MonetDB5
 
 set MOD_PATH=%builddir%\src\compiler\.libs
 set MOD_PATH=%MOD_PATH%;%builddir%\src\compiler

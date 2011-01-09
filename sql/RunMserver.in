@@ -17,7 +17,8 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-builddir=@QXSQL_BUILD@
+buildbase=@QXBUILD@
+builddir="${buildbase}/sql"
 
 # where compiled modules are to be found
 MOD_PATH="${builddir}/src/backend/monet5/.libs:${builddir}/src/backend/monet5:`monetdb5-config --modpath`"

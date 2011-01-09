@@ -2,7 +2,8 @@
 
 setlocal
 
-set builddir=@XMONETDB4_BUILD@
+set buildbase=@XBUILD@
+set builddir=%buildbase%\MonetDB4
 
 set MOD_PATH=%builddir%\src\modules\plain\.libs
 set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\plain

@@ -13,8 +13,9 @@ set monetdb5_prefix=@XMONETDB5_PREFIX@
 call "%monetdb5_prefix%\bin\monetdb5-config.bat" --internal
 
 set pkg=monetdb-sql
-set builddir=@XSQL_BUILD@
-set srcdir=@XSQL_SOURCE@
+set buildbase=@XBUILD@
+set builddir=%buildbase%\sql
+set srcdir=@XSOURCE@\sql
 
 set MOD_PATH=%modpath%
 set MOD_PATH=%builddir%\src\sql;%MOD_PATH%

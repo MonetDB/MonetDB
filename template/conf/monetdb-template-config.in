@@ -20,8 +20,8 @@
 # minimal inital version as required by Mtest.py
 
 pkg="@PACKAGE@"
-source="@QTEMPLATE_SOURCE@"
-build="@QTEMPLATE_BUILD@"
+source="@QSOURCE@"
+build="@QBUILD@"
 prefix="@Qprefix@"
 exec_prefix="@Qexec_prefix@"
 

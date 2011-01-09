@@ -18,7 +18,8 @@
 # All Rights Reserved.
 
 pkg=monetdb-sql
-builddir=@QSQL_BUILD@
+buildbase=@QBUILD@
+builddir="${buildbase}/sql"
 # make sure srcdir contains absolute path name
 srcdir=`cd '@srcdir@'; pwd`
 uname=`uname`

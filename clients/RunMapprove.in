@@ -18,7 +18,8 @@
 # All Rights Reserved.
 
 pkg=monetdb-clients
-builddir=@QCLIENTS_BUILD@
+buildbase=@QBUILD@
+builddir="${buildbase}/clients"
 # make sure srcdir contains absolute path name
 srcdir=`cd '@srcdir@'; pwd`
 

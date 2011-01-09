@@ -18,7 +18,8 @@
 # All Rights Reserved.
 
 pkg=monetdb4
-builddir=@QMONETDB4_BUILD@
+buildbase=@QBUILD@
+builddir="${buildbase}/MonetDB4"
 # make sure srcdir contains absolute path name
 srcdir=`cd '@srcdir@'; pwd`
 uname=`uname`

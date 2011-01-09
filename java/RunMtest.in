@@ -18,7 +18,8 @@
 # All Rights Reserved.
 
 pkg=monetdb-java
-builddir=@QMONETDB_JAVA_BUILD@
+buildbase=@QBUILD@
+builddir="${buildbase}/java"
 # make sure srcdir contains absolute path name
 srcdir=`cd '@srcdir@'; pwd`
 uname=`uname`

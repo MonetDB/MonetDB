@@ -25,8 +25,9 @@ if %V% == 5 call "%monetdb5_prefix%\bin\monetdb5-config.bat" --internal
 call "%sql_prefix%\bin\monetdb-sql-config.bat" --internal
 
 set pkg=monetdb-geom
-set builddir=@XGEOM_BUILD@
-set srcdir=@XGEOM_SOURCE@
+set buildbase=@XBUILD@
+set builddir=%buildbase%\geom
+set srcdir=@XSOURCE@\geom
 
 set MOD_PATH=%modpath%
 if %V% == 4 set MOD_PATH=%modpath4%;%MOD_PATH%

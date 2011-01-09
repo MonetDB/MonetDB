@@ -6,7 +6,8 @@ set monetdb4_prefix=@XMONETDB4_PREFIX@
 
 call "%monetdb4_prefix%\bin\monetdb4-config.bat" --internal
 
-set builddir=@XPATHFINDER_BUILD@
+set buildbase=@XBUILD@
+set builddir=%buildbase%\pathfinder
 
 set MOD_PATH=%modpath%
 set MOD_PATH=%builddir%\modules\pftijah;%MOD_PATH%

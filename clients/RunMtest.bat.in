@@ -9,8 +9,9 @@ goto end
 setlocal
 
 set pkg=monetdb-clients
-set builddir=@XCLIENTS_BUILD@
-set srcdir=@XCLIENTS_SOURCE@
+set buildbase=@XBUILD@
+set builddir=%buildbase%\clients
+set srcdir=@XSOURCE@\clients
 
 set PATH=%builddir%\conf;%PATH%
 set PATH=%builddir%\src\mapiclient;%PATH%
