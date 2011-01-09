@@ -33,16 +33,8 @@ do
 	cp -f ${srcdir}/$d/[0-9][0-9]_*.mal ${builddir}/$d/autoload/ 2>/dev/null
 done
 
-# make sure scripts are executable
-for x in "${builddir}/conf/${pkg}-config"
-do
-	if [ -s $x ] ; then
-		chmod +x $x
-	fi
-done
-
 # enhance various paths to find our stuff
-binpath="${builddir}/conf:${builddir}/src/tools:${srcdir}/src/tools"
+binpath="${builddir}/src/tools:${srcdir}/src/tools"
 libpath="${MOD_PATH}:${builddir}/src/mal/.libs"
 
 PATH="${binpath}:$PATH"

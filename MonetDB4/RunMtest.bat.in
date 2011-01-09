@@ -28,7 +28,6 @@ set MOD_PATH=%MOD_PATH%;%srcdir%\scripts\tools
 set PATH=%MOD_PATH%;%PATH%
 set PATH=%builddir%\src\monet;%PATH%
 set PATH=%builddir%\src\tools;%PATH%
-set PATH=%builddir%\conf;%PATH%
 
 set PYTHONPATH=%buildbase%\testing\src;%PYTHONPATH%
 

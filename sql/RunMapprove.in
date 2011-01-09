@@ -23,10 +23,6 @@ builddir="${buildbase}/sql"
 # make sure srcdir contains absolute path name
 srcdir=`cd '@srcdir@'; pwd`
 
-# enhance PATH to find ${pkg}-config
-PATH="${builddir}/conf:$PATH"
-export PATH
-
 PYTHONPATH="${buildbase}/testing/src:${PYTHONPATH}"
 export PYTHONPATH
 

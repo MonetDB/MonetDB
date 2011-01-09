@@ -39,7 +39,6 @@ copy /y %srcdir%\src\modules\atoms\??_*.mal %builddir%\src\modules\atoms\autoloa
 set PATH=%MOD_PATH%;%PATH%
 set PATH=%builddir%\src\mal;%PATH%
 set PATH=%builddir%\src\tools;%PATH%
-set PATH=%builddir%\conf;%PATH%
 
 set PYTHONPATH=%buildbase%\testing\src;%PYTHONPATH%
 

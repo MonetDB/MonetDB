@@ -30,7 +30,6 @@ set PATH=%MOD_PATH%;%PATH%
 set PATH=%builddir%\src\server;%PATH%
 set PATH=%builddir%\src\storage\bat;%PATH%
 set PATH=%builddir%\src\common;%PATH%
-set PATH=%builddir%\conf;%PATH%
 
 set PYTHONPATH=%builddir%\src\backends\python\monet5;%buildbase%\testing\src;%PYTHONPATH%
 

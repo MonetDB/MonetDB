@@ -33,10 +33,6 @@ do
     esac
 done
 
-# enhance PATH to find ${pkg}-config
-PATH="${builddir}/conf:$PATH"
-export PATH
-
 PYTHONPATH="${buildbase}/testing/src:${PYTHONPATH}"
 export PYTHONPATH
 

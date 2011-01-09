@@ -47,16 +47,8 @@ do
 done
 MOD_PATH="${MOD_PATH}`monetdb$V-config --modpath`"
 
-# make sure scripts are executable
-for x in "${builddir}/conf/${pkg}-config"
-do
-	if [ -s $x ] ; then
-		chmod +x $x
-	fi
-done
-
 # enhance various paths to find our stuff
-binpath="${builddir}/conf:${builddir}/compiler:${builddir}/src/tools"
+binpath="${builddir}/compiler:${builddir}/src/tools"
 libpath="${MOD_PATH}"
 
 PATH="${binpath}:$PATH"

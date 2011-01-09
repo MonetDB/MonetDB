@@ -42,7 +42,6 @@ if not exist %builddir%\src\monetdb%V%\autoload mkdir %builddir%\src\monetdb%V%\
 copy /y %srcdir%\src\monetdb%V%\??_*.mal %builddir%\src\monetdb%V%\autoload
 
 set PATH=%MOD_PATH%;%PATH%
-set PATH=%builddir%\conf;%PATH%
 
 rem to find geos_c.dll
 set PATH=%GEOS%\bin;%PATH%

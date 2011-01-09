@@ -30,7 +30,6 @@ set MOD_PATH=%builddir%\src\monetdb%V%;%MOD_PATH%
 set MOD_PATH=%builddir%\src\monetdb%V%\.libs;%MOD_PATH%
 
 set PATH=%MOD_PATH%;%PATH%
-set PATH=%builddir%\conf;%PATH%
 
 rem to find geos_c.dll
 set PATH=%GEOS%\bin;%PATH%
