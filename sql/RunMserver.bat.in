@@ -2,8 +2,6 @@
 
 setlocal
 
-set monetdb5_prefix=@XMONETDB5_PREFIX@
-
 set buildbase=@XBUILD@
 set builddir=%buildbase%\sql
 

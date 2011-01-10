@@ -2,8 +2,6 @@
 
 setlocal
 
-set monetdb4_prefix=@XMONETDB4_PREFIX@
-
 set buildbase=@XBUILD@
 set builddir=%buildbase%\pathfinder
 

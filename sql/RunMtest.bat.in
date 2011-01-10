@@ -8,8 +8,6 @@ goto end
 
 setlocal
 
-set monetdb5_prefix=@XMONETDB5_PREFIX@
-
 set pkg=monetdb-sql
 set buildbase=@XBUILD@
 set builddir=%buildbase%\sql

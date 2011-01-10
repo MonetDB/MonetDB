@@ -16,10 +16,6 @@ rem commandline option overrules default
 if "%1" == "-4" set V=4& shift
 if "%1" == "-5" set V=5& shift
 
-set monetdb4_prefix=@XMONETDB4_PREFIX@
-set monetdb5_prefix=@XMONETDB5_PREFIX@
-set sql_prefix=@XSQL_PREFIX@
-
 set pkg=monetdb-geom
 set buildbase=@XBUILD@
 set builddir=%buildbase%\geom
