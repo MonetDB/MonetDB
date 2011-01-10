@@ -36,7 +36,7 @@ done
 PATH="${builddir}/src/mapiclient:${builddir}/src/python:$PATH"
 export PATH
 
-PYTHONPATH="${srcdir}/src/python:${buildbase}/testing/src:${PYTHONPATH}"
+PYTHONPATH="${srcdir}/src/python:${buildbase}/testing/src:${srcdir}/../testing/src:${PYTHONPATH}"
 export PYTHONPATH
 
 # execute Mtest.py in the source directory

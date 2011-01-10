@@ -39,7 +39,7 @@ do
     esac
 done
 
-PYTHONPATH="${buildbase}/testing/src:${PYTHONPATH}"
+PYTHONPATH="${buildbase}/testing/src:${srcdir}/../testing/src:${PYTHONPATH}"
 export PYTHONPATH
 
 # execute Mapprove.py in the source directory

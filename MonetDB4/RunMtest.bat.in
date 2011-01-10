@@ -29,7 +29,7 @@ set PATH=%MOD_PATH%;%PATH%
 set PATH=%builddir%\src\monet;%PATH%
 set PATH=%builddir%\src\tools;%PATH%
 
-set PYTHONPATH=%buildbase%\testing\src;%PYTHONPATH%
+set PYTHONPATH=%buildbase%\testing\src;%srcdir%\..\testing\src;%PYTHONPATH%
 
 REM execute Mtest.py in the source directory
 pushd %srcdir%

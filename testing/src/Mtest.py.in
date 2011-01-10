@@ -109,18 +109,21 @@ def _configure(str):
     return str
 
 try:
-    import MonetDBtesting.subprocess26 as subprocess
+    import subprocess26 as subprocess
 except ImportError:
-    import distutils.sysconfig
-    if os.name != "nt" and os.uname()[0] + os.uname()[2][:1] == "Darwin9" and sys.version[:5] == "2.5.1":
-        p = _configure(os.path.join('@QXprefix@',distutils.sysconfig.get_python_lib(0,1,""),'site-packages'))
-    else:
-        p = _configure(os.path.join('@QXprefix@',distutils.sysconfig.get_python_lib(0,0,"")))
-    sys.path.insert(0, p)
-    import MonetDBtesting.subprocess26 as subprocess
-    if os.environ.has_key('PYTHONPATH'):
-        p = p + os.pathsep + os.environ['PYTHONPATH']
-    os.environ['PYTHONPATH'] = p
+    try:
+        import MonetDBtesting.subprocess26 as subprocess
+    except ImportError:
+        import distutils.sysconfig
+        if os.name != "nt" and os.uname()[0] + os.uname()[2][:1] == "Darwin9" and sys.version[:5] == "2.5.1":
+            p = _configure(os.path.join('@QXprefix@',distutils.sysconfig.get_python_lib(0,1,""),'site-packages'))
+        else:
+            p = _configure(os.path.join('@QXprefix@',distutils.sysconfig.get_python_lib(0,0,"")))
+        sys.path.insert(0, p)
+        import MonetDBtesting.subprocess26 as subprocess
+        if os.environ.has_key('PYTHONPATH'):
+            p = p + os.pathsep + os.environ['PYTHONPATH']
+        os.environ['PYTHONPATH'] = p
 
 def isexecutable(TST, ext = '.sh') :
     if   os.name == "nt":
@@ -151,18 +154,21 @@ def CheckExec(cmd) :
 ### CheckExec(cmd) #
 
 try:
-    from MonetDBtesting import monet_options
+    import monet_options
 except ImportError:
-    import distutils.sysconfig
-    if os.name != "nt" and os.uname()[0] + os.uname()[2][:1] == "Darwin9" and sys.version[:5] == "2.5.1":
-        p = _configure(os.path.join('@QXprefix@',distutils.sysconfig.get_python_lib(0,1,""),'site-packages'))
-    else:
-        p = _configure(os.path.join('@QXprefix@',distutils.sysconfig.get_python_lib(0,0,"")))
-    sys.path.insert(0, p)
-    from MonetDBtesting import monet_options
-    if os.environ.has_key('PYTHONPATH'):
-        p = p + os.pathsep + os.environ['PYTHONPATH']
-    os.environ['PYTHONPATH'] = p
+    try:
+        from MonetDBtesting import monet_options
+    except ImportError:
+        import distutils.sysconfig
+        if os.name != "nt" and os.uname()[0] + os.uname()[2][:1] == "Darwin9" and sys.version[:5] == "2.5.1":
+            p = _configure(os.path.join('@QXprefix@',distutils.sysconfig.get_python_lib(0,1,""),'site-packages'))
+        else:
+            p = _configure(os.path.join('@QXprefix@',distutils.sysconfig.get_python_lib(0,0,"")))
+        sys.path.insert(0, p)
+        from MonetDBtesting import monet_options
+        if os.environ.has_key('PYTHONPATH'):
+            p = p + os.pathsep + os.environ['PYTHONPATH']
+        os.environ['PYTHONPATH'] = p
 
 import threading, signal
 
@@ -4001,7 +4007,10 @@ VALUES (%s, '%s', '%s', '%s',
 if __name__ == "__main__":
     if '--trace' in sys.argv:
         sys.argv.remove('--trace')
-        from MonetDBtesting import trace
+        try:
+            import trace
+        except ImportError:
+            from MonetDBtesting import trace
         t = trace.Trace(trace=1, count=0, ignoremods=('ntpath','monet_options','Mfilter','re', 'sre_parse', 'sre_compile'))
         t.runfunc(main, sys.argv)
     else:

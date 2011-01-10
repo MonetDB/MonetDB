@@ -13,7 +13,7 @@ set buildbase=@XBUILD@
 set builddir=%buildbase%\sql
 set srcdir=@XSOURCE@\sql
 
-set PYTHONPATH=%buildbase%\testing\src;%PYTHONPATH%
+set PYTHONPATH=%buildbase%\testing\src;%srcdir%\..\testing\src;%PYTHONPATH%
 
 REM execute Mapprove.py in the source directory
 pushd %srcdir%

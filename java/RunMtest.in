@@ -24,7 +24,7 @@ builddir="${buildbase}/java"
 srcdir=`cd '@srcdir@'; pwd`
 uname=`uname`
 
-PYTHONPATH="${buildbase}/testing/src:${PYTHONPATH}"
+PYTHONPATH="${buildbase}/testing/src:${srcdir}/../testing/src:${PYTHONPATH}"
 export PYTHONPATH
 
 # execute Mtest.py in the source directory

@@ -23,7 +23,7 @@ builddir="${buildbase}/sql"
 # make sure srcdir contains absolute path name
 srcdir=`cd '@srcdir@'; pwd`
 
-PYTHONPATH="${buildbase}/testing/src:${PYTHONPATH}"
+PYTHONPATH="${buildbase}/testing/src:${srcdir}/../testing/src:${PYTHONPATH}"
 export PYTHONPATH
 
 # execute Mapprove.py in the source directory
