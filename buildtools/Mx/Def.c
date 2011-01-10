@@ -505,7 +505,7 @@ DefBlk(void)
 		}
 		if (f + size + 1 > blk + M_BLK)
 			Fatal("Mx:Too long block, use extra directives:[%s:%d].\n", mx_file, mx_line);
-		strncat(f, line, M_BLK - (f - blk));
+		strncat(f, line, size + 1);
 		f += size;
 		line = NextLine();
 	}
