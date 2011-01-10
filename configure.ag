@@ -609,6 +609,13 @@ AM_MONETDB_LIB_READLINE
 
 AM_ICONV
 
+save_LIBS="$LIBS"
+LIBS=
+AC_SEARCH_LIBS([uuid_generate], [uuid], [AC_DEFINE([HAVE_UUID], 1, [uuid])])
+UUID_LIBS="$LIBS"
+LIBS="$save_LIBS"
+AC_SUBST(UUID_LIBS)
+
 dnl OpenSSL library
 dnl required for MonetDB5 (and SQL), optional otherwise
 PKG_CHECK_EXISTS([openssl >= 0.9.8f], [have_openssl=yes], [have_openssl=no])
@@ -1143,11 +1150,51 @@ AC_HEADER_STDC
 AC_HEADER_TIME
 AC_HEADER_DIRENT
 # NOTE: these header files are in alphabetical order to ease maintenance
-AC_CHECK_HEADERS([crypt.h dlfcn.h fcntl.h getopt.h iconv.h ieeefp.h io.h langinfo.h libgen.h libintl.h limits.h locale.h malloc.h netdb.h procfs.h pwd.h regex.h rlimit.h signal.h stddef.h stdint.h string.h strings.h stropts.h sys/file.h sys/ioctl.h sys/mman.h sys/param.h sys/resource.h sys/socket.h sys/sysctl.h sys/time.h sys/times.h sys/types.h sys/un.h sys/utime.h sys/wait.h termios.h time.h unistd.h utime.h winsock.h xmmintrin.h])
-AC_CHECK_HEADERS([uuid/uuid.h],
-	  AC_SEARCH_LIBS([uuid_generate], [uuid],
-		 [AC_DEFINE([HAVE_UUID], 1,
-			[Define when uuid_* is available and linkable on this system])]))
+AC_CHECK_HEADERS([crypt.h \
+				  dlfcn.h \
+				  fcntl.h \
+				  getopt.h \
+				  iconv.h \
+				  ieeefp.h \
+				  io.h \
+				  langinfo.h \
+				  libgen.h \
+				  libintl.h \
+				  limits.h \
+				  locale.h \
+				  malloc.h \
+				  netdb.h \
+				  procfs.h \
+				  pwd.h \
+				  regex.h \
+				  rlimit.h \
+				  signal.h \
+				  stddef.h \
+				  stdint.h \
+				  string.h \
+				  strings.h \
+				  stropts.h \
+				  sys/file.h \
+				  sys/ioctl.h \
+				  sys/mman.h \
+				  sys/param.h \
+				  sys/resource.h \
+				  sys/socket.h \
+				  sys/sysctl.h \
+				  sys/time.h \
+				  sys/times.h \
+				  sys/types.h \
+				  sys/un.h \
+				  sys/utime.h \
+				  sys/wait.h \
+				  termios.h \
+				  time.h \
+				  unistd.h \
+				  utime.h \
+				  uuid/uuid.h \
+				  winsock.h \
+				  xmmintrin.h \
+				  ])
 
 AC_LANG_PUSH([C++])
 AC_CHECK_HEADER(iostream,
