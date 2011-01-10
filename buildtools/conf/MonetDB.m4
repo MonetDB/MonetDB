@@ -1868,49 +1868,45 @@ AC_ARG_ENABLE(debug,
 AC_MSG_CHECKING([for --enable-debug])
 origCFLAGS=$CFLAGS
 if test "x$enable_debug" = xyes; then
-  if test "x$enable_optim" = xyes; then
-    AC_MSG_ERROR([combining --enable-optimize and --enable-debug is not possible.])
-  else
-    dnl  remove "-Ox" as some compilers don't like "-g -Ox" combinations
-    CFLAGS=" $CFLAGS "
-    CFLAGS="`echo "$CFLAGS" | sed -e 's| -O[[0-9]] | |g' -e 's| -g | |g' -e 's|^ ||' -e 's| $||'`"
-    JAVACFLAGS=" $JAVACFLAGS "
-    JAVACFLAGS="`echo "$JAVACFLAGS" | sed -e 's| -O | |g' -e 's| -g | |g' -e 's| -g:[[a-z]]* | |g' -e 's|^ ||' -e 's| $||'`"
-    dnl  add "-g"
-    CFLAGS="$CFLAGS -g"
-    JAVACFLAGS="$JAVACFLAGS -g"
-    case "$GCC-$host_os" in
-      yes-aix*)
-        CFLAGS="$CFLAGS -gxcoff"
-        ;;
-      -solaris*)
-        SUN_NOOPT_CFLAGS="-xO0"
-        ;;
-    esac
-  fi
-elif test "x$enable_debug" = xno; then
-    dnl  remove "-g"; keep al other defaults (e.g., -O2 for gcc)
-    CFLAGS=" $CFLAGS "
-    CFLAGS="`echo "$CFLAGS" | sed -e 's| -g | |g' -e 's| -gxcoff | |g' -e 's|^ ||' -e 's| $||'`"
-    JAVACFLAGS=" $JAVACFLAGS "
-    JAVACFLAGS="`echo "$JAVACFLAGS" | sed -e 's| -g | |g' -e 's| -g:[[a-z]]* | |g' -e 's|^ ||' -e 's| $||'`"
-fi
+	if test "x$enable_optim" = xyes; then
+		AC_MSG_ERROR([combining --enable-optimize and --enable-debug is not possible.])
+	else
+		dnl  remove "-Ox" as some compilers don't like "-g -Ox" combinations
+		CFLAGS=" $CFLAGS "
+		CFLAGS="`echo "$CFLAGS" | sed -e 's| -O[[0-9]] | |g' -e 's| -g | |g' -e 's|^ ||' -e 's| $||'`"
+		JAVACFLAGS=" $JAVACFLAGS "
+		JAVACFLAGS="`echo "$JAVACFLAGS" | sed -e 's| -O | |g' -e 's| -g | |g' -e 's| -g:[[a-z]]* | |g' -e 's|^ ||' -e 's| $||'`"
+		dnl  add "-g"
+		CFLAGS="$CFLAGS -g"
+		JAVACFLAGS="$JAVACFLAGS -g"
+		case "$GCC-$host_os" in
+		  yes-aix*)
+			CFLAGS="$CFLAGS -gxcoff"
+			;;
+		  -solaris*)
+			SUN_NOOPT_CFLAGS="-xO0"
+			;;
+		esac
+	fi
 
-changedCFLAGS=
-for flag in $origCFLAGS ; do
-	case " $CFLAGS " in
-		*" $flag "*) ;;
-		*) changedCFLAGS="$changedCFLAGS, removed $flag";;
-	esac
-done
-for flag in $CFLAGS $SUN_NOOPT_CFLAGS ; do
-	case " $origCFLAGS " in
-		*" $flag "*) ;;
-		*) changedCFLAGS="$changedCFLAGS, added $flag";;
-	esac
-done
-changedCFLAGS="`echo $changedCFLAGS | sed -e 's|^, ||'`"
-AC_MSG_RESULT([$enable_debug: $changedCFLAGS])
+	changedCFLAGS=
+	for flag in $origCFLAGS ; do
+		case " $CFLAGS " in
+			*" $flag "*) ;;
+			*) changedCFLAGS="$changedCFLAGS, removed $flag";;
+		esac
+	done
+	for flag in $CFLAGS $SUN_NOOPT_CFLAGS ; do
+		case " $origCFLAGS " in
+			*" $flag "*) ;;
+			*) changedCFLAGS="$changedCFLAGS, added $flag";;
+		esac
+	done
+	changedCFLAGS="`echo $changedCFLAGS | sed -e 's|^, ||'`"
+	AC_MSG_RESULT([$enable_debug: $changedCFLAGS])
+else
+	AC_MSG_RESULT([no])
+fi
 AC_SUBST(SUN_NOOPT_CFLAGS)
 
 dnl --enable-assert
