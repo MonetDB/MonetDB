@@ -36,6 +36,8 @@ copy /y %srcdir%\src\modules\mal\rdf\??_*.mal %builddir%\src\modules\mal\rdf\aut
 if not exist %builddir%\src\modules\atoms\autoload mkdir %builddir%\src\modules\atoms\autoload
 copy /y %srcdir%\src\modules\atoms\??_*.mal %builddir%\src\modules\atoms\autoload
 
+set PATH=%buildbase%\testing\src;%PATH%
+
 set PATH=%MOD_PATH%;%PATH%
 set PATH=%builddir%\src\mal;%PATH%
 set PATH=%builddir%\src\tools;%PATH%

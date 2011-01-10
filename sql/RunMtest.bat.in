@@ -44,6 +44,8 @@ copy /y %srcdir%\..\MonetDB5\src\modules\mal\rdf\??_*.mal %buildbase%\MonetDB5\s
 if not exist %buildbase%\MonetDB5\src\modules\atoms\autoload mkdir %buildbase%\MonetDB5\src\modules\atoms\autoload
 copy /y %srcdir%\..\MonetDB5\src\modules\atoms\??_*.mal %buildbase%\MonetDB5\src\modules\atoms\autoload
 
+set PATH=%buildbase%\testing\src;%PATH%
+
 set PATH=%MOD_PATH%;%PATH%
 set PATH=%builddir%\src\server;%PATH%
 set PATH=%builddir%\src\storage\bat;%PATH%

@@ -34,7 +34,7 @@ do
 done
 
 # enhance various paths to find our stuff
-binpath="${builddir}/src/tools:${srcdir}/src/tools"
+binpath="${builddir}/src/tools:${srcdir}/src/tools:${buildbase}/testing/src"
 libpath="${MOD_PATH}:${builddir}/src/mal/.libs"
 
 PATH="${binpath}:$PATH"

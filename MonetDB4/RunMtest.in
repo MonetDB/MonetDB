@@ -32,7 +32,7 @@ done
 MOD_PATH="${MOD_PATH}${srcdir}/scripts/tools"
 
 # enhance various paths to find our stuff
-binpath="${builddir}/src/tools"
+binpath="${builddir}/src/tools:${buildbase}/testing/src"
 libpath="${MOD_PATH}:${builddir}/src/monet/.libs"
 
 PATH="${binpath}:$PATH"

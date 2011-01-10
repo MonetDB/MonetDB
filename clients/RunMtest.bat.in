@@ -13,6 +13,8 @@ set buildbase=@XBUILD@
 set builddir=%buildbase%\clients
 set srcdir=@XSOURCE@\clients
 
+set PATH=%buildbase%\testing\src;%PATH%
+
 set PATH=%builddir%\src\mapiclient;%PATH%
 set PATH=%builddir%\src\mapilib;%PATH%
 set PATH=%builddir%\src\python;%PATH%

@@ -24,6 +24,10 @@ builddir="${buildbase}/java"
 srcdir=`cd '@srcdir@'; pwd`
 uname=`uname`
 
+# enhance various paths to find our stuff
+PATH="${buildbase}/testing/src:$PATH"
+export PATH
+
 PYTHONPATH="${buildbase}/testing/src:${srcdir}/../testing/src:${PYTHONPATH}"
 export PYTHONPATH
 

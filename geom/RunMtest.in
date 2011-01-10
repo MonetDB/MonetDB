@@ -77,6 +77,8 @@ esac
 
 # enhance various paths to find our stuff
 libpath="${MOD_PATH}"
+PATH="${buildbase}/testing/src:$PATH"
+export PATH
 
 PYTHONPATH="${buildbase}/testing/src:${srcdir}/../testing/src:${PYTHONPATH}"
 export PYTHONPATH
