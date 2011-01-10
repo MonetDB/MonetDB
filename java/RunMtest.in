@@ -28,6 +28,8 @@ uname=`uname`
 PATH="${buildbase}/testing/src:$PATH"
 export PATH
 
+chmod +x ${buildbase}/testing/src/Mlog
+
 PYTHONPATH="${buildbase}/testing/src:${srcdir}/../testing/src:${PYTHONPATH}"
 export PYTHONPATH
 

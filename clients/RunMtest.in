@@ -36,6 +36,8 @@ done
 PATH="${builddir}/src/mapiclient:${builddir}/src/python:${buildbase}/testing/src:$PATH"
 export PATH
 
+chmod +x ${buildbase}/testing/src/Mlog
+
 PYTHONPATH="${srcdir}/src/python:${buildbase}/testing/src:${srcdir}/../testing/src:${PYTHONPATH}"
 export PYTHONPATH
 
