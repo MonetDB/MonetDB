@@ -24,7 +24,7 @@ builddir="${buildbase}/MonetDB4"
 srcdir=`cd '@srcdir@'; pwd`
 uname=`uname`
 
-# where compiled modules are to be found
+# where compiled MonetDB4 modules are to be found
 for d in src/modules/plain src/modules/contrib src/modules/calibrator src/mapi @HAVE_NETCDF_TRUE@ src/modules/mnetcdf
 do
 	MOD_PATH="${MOD_PATH}${builddir}/$d/.libs:${builddir}/$d:"

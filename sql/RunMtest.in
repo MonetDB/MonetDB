@@ -24,7 +24,7 @@ builddir="${buildbase}/sql"
 srcdir=`cd '@srcdir@'; pwd`
 uname=`uname`
 
-# where compiled modules are to be found
+# where compiled SQL modules are to be found
 for d in src/backends/monet5 src/sql
 do
 	MOD_PATH="${MOD_PATH}${builddir}/$d/.libs:${builddir}/$d:"
@@ -32,7 +32,15 @@ do
 	mkdir -p ${builddir}/$d/autoload
 	cp -f ${srcdir}/$d/[0-9][0-9]_*.mal ${builddir}/$d/autoload/ 2>/dev/null
 done
-MOD_PATH="${MOD_PATH}`monetdb5-config --modpath`"
+
+# where compiled MonetDB5 modules are to be found
+for d in src/compiler src/optimizer src/scheduler src/modules/atoms src/modules/kernel src/modules/mal src/modules/mal/crackers src/modules/mal/rdf
+do
+	MOD_PATH="${MOD_PATH}${buildbase}/MonetDB5/$d/.libs:${builddir}/$d:"
+	# enable auto-loading of modules before `make install`
+	mkdir -p ${buildbase}/MonetDB5/$d/autoload
+	cp -f ${srcdir}/../MonetDB5/$d/[0-9][0-9]_*.mal ${buildbase}/MonetDB5/$d/autoload/ 2>/dev/null
+done
 
 # enhance various paths to find our stuff
 binpath="${builddir}/src/backends/monet5"

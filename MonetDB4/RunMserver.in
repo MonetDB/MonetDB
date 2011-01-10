@@ -23,9 +23,9 @@ builddir="${buildbase}/MonetDB4"
 srcdir=`cd '@Xsrcdir@'; pwd`
 uname=`uname`
 
-# where compiled modules are to be found
-MOD_PATH="${builddir}/src/modules/plain/.libs:${builddir}/src/modules/plain:${srcdir}/src/modules/plain:${builddir}/src/modules/contrib/.libs:${builddir}/src/modules/contrib:${srcdir}/src/modules/contrib:${builddir}/src/modules/calibrator/.libs:${builddir}/src/modules/calibrator:${srcdir}/src/modules/calibrator:${builddir}/src/mapi/.libs:${builddir}/src/mapi:${srcdir}/src/mapi"
-@HAVE_NETCDF_TRUE@ MOD_PATH="${MOD_PATH}:${builddir}/src/modules/mnetcdf/.libs:${builddir}/src/modules/mnetcdf:${srcdir}/src/modules/mnetcdf"
+# where compiled MonetDB4 modules are to be found
+MOD_PATH="${builddir}/src/modules/plain/.libs:${builddir}/src/modules/plain:${builddir}/src/modules/contrib/.libs:${builddir}/src/modules/contrib:${builddir}/src/modules/calibrator/.libs:${builddir}/src/modules/calibrator:${builddir}/src/mapi/.libs:${builddir}/src/mapi"
+@HAVE_NETCDF_TRUE@ MOD_PATH="${MOD_PATH}:${builddir}/src/modules/mnetcdf/.libs:${builddir}/src/modules/mnetcdf"
 
 if [ "${LD_LIBRARY_PATH}" ] ; then
 	LD_LIBRARY_PATH=":${LD_LIBRARY_PATH}"

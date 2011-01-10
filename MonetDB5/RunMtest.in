@@ -24,7 +24,7 @@ builddir="${buildbase}/MonetDB5"
 srcdir=`cd '@srcdir@'; pwd`
 uname=`uname`
 
-# where compiled modules are to be found
+# where compiled MonetDB5 modules are to be found
 for d in src/compiler src/optimizer src/scheduler src/modules/atoms src/modules/kernel src/modules/mal src/modules/mal/crackers src/modules/mal/rdf
 do
 	MOD_PATH="${MOD_PATH}${builddir}/$d/.libs:${builddir}/$d:"

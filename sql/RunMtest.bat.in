@@ -10,21 +10,41 @@ setlocal
 
 set monetdb5_prefix=@XMONETDB5_PREFIX@
 
-call "%monetdb5_prefix%\bin\monetdb5-config.bat" --internal
-
 set pkg=monetdb-sql
 set buildbase=@XBUILD@
 set builddir=%buildbase%\sql
 set srcdir=@XSOURCE@\sql
 
-set MOD_PATH=%modpath%
-set MOD_PATH=%builddir%\src\sql;%MOD_PATH%
-set MOD_PATH=%builddir%\src\backends\monet5;%MOD_PATH%
-set MOD_PATH=%builddir%\src\backends\monet5\.libs;%MOD_PATH%
+set MOD_PATH=%builddir%\src\backends\monet5\.libs
+set MOD_PATH=%MOD_PATH%;%builddir%\src\backends\monet5
+set MOD_PATH=%MOD_PATH%;%builddir%\src\sql
 
 REM enable auto-loading of modules before `make install`
 if not exist %builddir%\src\backends\monet5\autoload mkdir %builddir%\src\backends\monet5\autoload
 copy /y %srcdir%\src\backends\monet5\??_*.mal %builddir%\src\backends\monet5\autoload
+
+set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\compiler\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\compiler
+set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\optimizer\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\optimizer
+set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\scheduler\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\scheduler
+set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\modules\atoms\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\modules\atoms
+set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\modules\kernel\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\modules\kernel
+set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\modules\mal\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\modules\mal
+set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\modules\mal\crackers\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\modules\mal\crackers
+set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\modules\mal\rdf\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\modules\mal\rdf
+
+REM enable auto-loading of modules before `make install`
+if not exist %buildbase%\MonetDB5\src\modules\mal\rdf\autoload mkdir %buildbase%\MonetDB5\src\modules\mal\rdf\autoload
+copy /y %srcdir%\..\MonetDB5\src\modules\mal\rdf\??_*.mal %buildbase%\MonetDB5\src\modules\mal\rdf\autoload
+if not exist %buildbase%\MonetDB5\src\modules\atoms\autoload mkdir %buildbase%\MonetDB5\src\modules\atoms\autoload
+copy /y %srcdir%\..\MonetDB5\src\modules\atoms\??_*.mal %buildbase%\MonetDB5\src\modules\atoms\autoload
 
 set PATH=%MOD_PATH%;%PATH%
 set PATH=%builddir%\src\server;%PATH%

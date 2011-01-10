@@ -37,7 +37,7 @@ do
     esac
 done
 
-# where compiled modules are to be found
+# where compiled Geom modules are to be found
 for d in src/monetdb$V
 do
 	MOD_PATH="${MOD_PATH}${builddir}/$d/.libs:${builddir}/$d:"
@@ -45,8 +45,35 @@ do
 	mkdir -p ${builddir}/$d/autoload
 	cp -f ${srcdir}/$d/[0-9][0-9]_*.mal ${builddir}/$d/autoload/ 2>/dev/null
 done
-MOD_PATH="${MOD_PATH}`monetdb-sql-config --modpath$V`:"
-MOD_PATH="${MOD_PATH}`monetdb$V-config --modpath`"
+
+case "$V" in
+4)
+# where compiled MonetDB4 modules are to be found
+for d in src/modules/plain src/modules/contrib src/modules/calibrator src/mapi @HAVE_NETCDF_TRUE@ src/modules/mnetcdf
+do
+	MOD_PATH="${MOD_PATH}${buildbase}/MonetDB4/$d/.libs:${builddir}/$d:"
+done
+MOD_PATH="${MOD_PATH}${srcdir}/../MonetDB4/scripts/tools"
+;;
+5)
+# where compiled SQL modules are to be found
+for d in src/backends/monet5 src/sql
+do
+	MOD_PATH="${MOD_PATH}${buildbase}/sql/$d/.libs:${builddir}/$d:"
+	# enable auto-loading of modules before `make install`
+	mkdir -p ${buildbase}/sql/$d/autoload
+	cp -f ${srcdir}/../sql/$d/[0-9][0-9]_*.mal ${buildbase}/sql/$d/autoload/ 2>/dev/null
+done
+# where compiled MonetDB5 modules are to be found
+for d in src/compiler src/optimizer src/scheduler src/modules/atoms src/modules/kernel src/modules/mal src/modules/mal/crackers src/modules/mal/rdf
+do
+	MOD_PATH="${MOD_PATH}${buildbase}/MonetDB5/$d/.libs:${builddir}/$d:"
+	# enable auto-loading of modules before `make install`
+	mkdir -p ${buildbase}/MonetDB5/$d/autoload
+	cp -f ${srcdir}/../MonetDB5/$d/[0-9][0-9]_*.mal ${buildbase}/MonetDB5/$d/autoload/ 2>/dev/null
+done
+;;
+esac
 
 # enhance various paths to find our stuff
 libpath="${MOD_PATH}"

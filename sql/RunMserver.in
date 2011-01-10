@@ -20,7 +20,10 @@
 buildbase=@QXBUILD@
 builddir="${buildbase}/sql"
 
-# where compiled modules are to be found
-MOD_PATH="${builddir}/src/backend/monet5/.libs:${builddir}/src/backend/monet5:`monetdb5-config --modpath`"
+# where compiled SQL modules are to be found
+MOD_PATH="${builddir}/src/backend/monet5/.libs:${builddir}/src/backend/monet5"
+
+# where compiled MonetDB5 modules are to be found
+MOD_PATH="${MOD_PATH}:${buildbase}/MonetDB5/src/compiler/.libs:${buildbase}/MonetDB5/src/compiler:${buildbase}/MonetDB5/src/optimizer/.libs:${buildbase}/MonetDB5/src/optimizer:${buildbase}/MonetDB5/src/scheduler/.libs:${buildbase}/MonetDB5/src/scheduler:${buildbase}/MonetDB5/src/modules/atoms/.libs:${buildbase}/MonetDB5/src/modules/atoms:${buildbase}/MonetDB5/src/modules/kernel/.libs:${buildbase}/MonetDB5/src/modules/kernel:${buildbase}/MonetDB5/src/modules/mal/.libs:${buildbase}/MonetDB5/src/modules/mal"
 
 exec mserver5 --set monet_mod_path="${MOD_PATH}" --dbfarm="${builddir}/dbfarm" ${1+"$@"}
