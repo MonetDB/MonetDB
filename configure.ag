@@ -1552,27 +1552,18 @@ AC_CONFIG_FILES(
 )
 AC_OUTPUT
 
-if test "x$enable_monetdb4" = xno; then
-	AC_MSG_NOTICE([MonetDB4 will not be compiled])
-fi
-if test "x$enable_monetdb5" = xno; then
-	AC_MSG_NOTICE([MonetDB5 will not be compiled])
-fi
-if test "x$enable_sql" = xno; then
-	AC_MSG_NOTICE([SQL will not be compiled])
-fi
-if test "x$enable_geom" = xno; then
-	AC_MSG_NOTICE([Geom module will not be compiled])
-fi
-if test "x$have_unixodbc" = xno; then
-	AC_MSG_NOTICE([ODBC driver will not be compiled])
-fi
-if test "x$have_java" = xno; then
-	AC_MSG_NOTICE([Java packages will not be compiled])
-fi
-if test "x$enable_pathfinder" = xno; then
-	AC_MSG_NOTICE([Pathfinder will not be compiled])
-fi
-if test "x$enable_testing" = xno; then
-	AC_MSG_NOTICE([testing will not be compiled])
-fi
+echo
+echo
+echo "MonetDB is configured as follows:"
+echo "* Compilation specifics:"
+echo "    Host:       ${ac_cv_host}"
+echo "    Compiler:   ${CC}/${CXX}"
+echo "    CFLAGS:     ${CFLAGS}"
+echo "    X_CFLAGS:   ${X_CFLAGS}"
+echo "    LDFLAGS:    ${LDFLAGS}"
+echo
+echo "* Enabled/disabled components:"
+for comp in common monetdb{4,5} sql geom unixodbc java pathfinder testing; do
+	echo $ECHO_N "    $comp is $ECHO_C"
+	eval "if test \"x\$enable_$comp\" = xno ; then echo \"${ECHO_T}disabled\"; else echo \"${ECHO_T}enabled\"; fi"
+done
