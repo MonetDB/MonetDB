@@ -38,6 +38,7 @@ bin_monetdb = {
 	SOURCES = monetdb.c monetdb.1.in
 	LIBS = \
 		../utils/libmeroutil \
+		$(UUID_LIBS) \
 		../../../../../../MonetDB5/src/tools/libmonetdb5 \
 		../../../../../../MonetDB/src/gdk/libbat \
 		../../../../../../MonetDB/src/common/libstream \

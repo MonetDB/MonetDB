@@ -37,7 +37,6 @@ EXTRA_DIST = \
 
 lib_meroutil = {
 	NOINST
-	LIBS = $(UUID_LIBS)
 	SOURCES = \
 		control.c \
 		database.c \
