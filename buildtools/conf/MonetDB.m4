@@ -1485,13 +1485,6 @@ AC_DEFUN([AM_MONETDB_PROG_RUBY],[
 		have_rubygem_dir="$withval")
 
 	case "$have_rubygem_dir" in
-		yes|no|auto) ;;
-		*)
-			RUBY_DIR="$have_rubygem_dir"
-			;;
-	esac
-
-	case "$have_rubygem_dir" in
 		yes|auto)
 			AC_PATH_PROG(RUBY,$RUBY,no,$PATH)
 			if test "x$RUBY" = xno; then
@@ -1500,15 +1493,20 @@ AC_DEFUN([AM_MONETDB_PROG_RUBY],[
 				fi
 				have_rubygem_dir=no
 			else
-				d=`which "$RUBY"`
-				d=`dirname "$d"`
-				d=`dirname "$d"`
-				RUBY_DIR=`$RUBY -rubygems -e 'puts Gem::dir' 2>/dev/null | sed "s|^$d/||"`
+				AC_MSG_CHECKING([where rubygems are stored])
+				RUBY_DIR=
+				d=`$RUBY -rrbconfig -e "puts Config::CONFIG[['prefix']]" 2>/dev/null`
+				RUBY_DIR=`$RUBY -rrbconfig -e "puts Config::CONFIG[['sitelibdir']]" 2>/dev/null | sed -e "s|^$d/||" -e 's/site_ruby/gems/'`
+				if test x"$RUBY_DIR" = x ; then
+					AC_MSG_ERROR([unable to determine rubygems location])
+				else
+					AC_MSG_RESULT([$RUBY_DIR])
+				fi
 			fi
 			;;
 		no) ;;
 		*)
-			RUBY_DIR=$have_rubygem_dir
+			RUBY_DIR="$have_rubygem_dir"
 			;;
 	esac
 	AC_SUBST(RUBY_DIR)
