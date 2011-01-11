@@ -67,7 +67,7 @@ done
 esac
 
 # enhance various paths to find our stuff
-binpath="${builddir}/compiler:${builddir}/src/tools:${buildbase}/testing/src"
+binpath="${builddir}/compiler:${builddir}/src/tools:${buildbase}/MonetDB$V/src/tools:${buildbase}/testing/src"
 libpath="${MOD_PATH}"
 
 PATH="${binpath}:$PATH"
