@@ -51,7 +51,7 @@ export PATH
 
 chmod +x ${buildbase}/testing/src/Mlog
 
-PYTHONPATH="${builddir}/src/backends/python/monet5/.libs:${builddir}/src/backends/python/monet5:${buildbase}/testing/src:$PYTHONPATH"
+PYTHONPATH="${builddir}/src/backends/python/monet5/.libs:${builddir}/src/backends/python/monet5:${buildbase}/testing/src:${srcdir}/../testing/src:$PYTHONPATH"
 export PYTHONPATH
 
 if [ "${LD_LIBRARY_PATH}" ] ; then
