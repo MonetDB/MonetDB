@@ -8,7 +8,7 @@ goto end
 
 setlocal
 
-set pkg=monetdb-clients
+set pkg=clients
 set buildbase=@XBUILD@
 set builddir=%buildbase%\clients
 set srcdir=@XSOURCE@\clients
@@ -24,7 +24,7 @@ set PYTHONPATH=%srcdir%\src\python;%buildbase%\testing\src;%srcdir%\..\testing\s
 REM execute Mtest.py in the source directory
 pushd %srcdir%
 
-call "%buildbase%\testing\src\Mtest.py" --package=%pkg% "--dbfarm=%builddir%\dbfarm" "--TSTSRCBASE=%srcdir%" "--TSTTRGBASE=%builddir%" %*
+call "%buildbase%\testing\src\Mtest.py" --package=%pkg% "--dbfarm=%builddir%\dbfarm" "--TSTTRGBASE=%builddir%" %*
 
 popd
 endlocal

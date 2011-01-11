@@ -13,7 +13,7 @@ set V=4
 if "%1" == "-4" set V=4& shift
 if "%1" == "-5" set V=5& shift
 
-set pkg=monetdb-xquery
+set pkg=pathfinder
 set buildbase=@XBUILD@
 set builddir=%buildbase%\pathfinder
 set srcdir=@XSOURCE@\pathfinder
@@ -23,7 +23,7 @@ set PYTHONPATH=%buildbase%\testing\src;%srcdir%\..\testing\src;%PYTHONPATH%
 REM execute Mapprove.py in the source directory
 pushd %srcdir%
 
-call "%buildbase%\testing\src\Mapprove.py" -%V% --package=%pkg% "--TSTSRCBASE=%srcdir%" "--TSTTRGBASE=%builddir%" %1 %2 %3 %4 %5 %6 %7 %8 %9
+call "%buildbase%\testing\src\Mapprove.py" -%V% --package=%pkg% "--TSTTRGBASE=%builddir%" %1 %2 %3 %4 %5 %6 %7 %8 %9
 
 popd
 endlocal

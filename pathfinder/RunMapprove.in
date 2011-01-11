@@ -23,7 +23,7 @@
 # 2008-2011 Eberhard Karls Universitaet Tuebingen, respectively.  All
 # Rights Reserved.
 
-pkg=monetdb-xquery
+pkg=pathfinder
 buildbase=@QBUILD@
 builddir="${buildbase}/pathfinder"
 # make sure srcdir contains absolute path name
@@ -48,4 +48,4 @@ cd "$srcdir"
 # execute the script.
 # if no arguments, do a recursive approve (Mapprove.py -r), else pass
 # on the arguments
-exec python "${buildbase}/testing/src/Mapprove.py" -$V --package=${pkg} --TSTSRCBASE="${srcdir}" --TSTTRGBASE="${builddir}" "${@--r}"
+exec python "${buildbase}/testing/src/Mapprove.py" -$V --package=${pkg} --TSTTRGBASE="${builddir}" "${@--r}"

@@ -8,7 +8,7 @@ goto end
 
 setlocal
 
-set pkg=monetdb5
+set pkg=MonetDB5
 set buildbase=@XBUILD@
 set builddir=%buildbase%\MonetDB5
 set srcdir=@XSOURCE@\MonetDB5
@@ -47,7 +47,7 @@ set PYTHONPATH=%buildbase%\testing\src;%srcdir%\..\testing\src;%PYTHONPATH%
 REM execute Mtest.py in the source directory
 pushd %srcdir%
 
-call "%buildbase%\testing\src\Mtest.py" --config="%builddir%\conf\monetdb5.conf" --package=%pkg% "--monet_mod_path=%MOD_PATH%" "--dbfarm=%builddir%\dbfarm" "--TSTSRCBASE=%srcdir%" "--TSTTRGBASE=%builddir%" %*
+call "%buildbase%\testing\src\Mtest.py" --config="%builddir%\conf\monetdb5.conf" --package=%pkg% "--monet_mod_path=%MOD_PATH%" "--dbfarm=%builddir%\dbfarm" "--TSTTRGBASE=%builddir%" %*
 
 popd
 endlocal

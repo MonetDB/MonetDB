@@ -1617,7 +1617,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
             ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.mal|.malC|.milS|.milC|.sql|.xq]`")
         return TX,Failed,Failed,elem
 
-    if par['PACKAGE'] not in ('monetdb', 'monetdb-java', 'monetdb-clients'):
+    if par['PACKAGE'] not in ('MonetDB', 'java', 'clients'):
         MissingMods = CheckMods(env, TST, SERVER, CALL)
         MissingBATs = CheckBATs(env, TST, TSTDB)
     else:
@@ -2996,21 +2996,9 @@ URLSUFFIX_F = ''
 ##URLSUFFIX_D = '?cvsroot=Monet-4.3'
 URLSUFFIX_D = ''
 
-_PackageDict = {
-    'java':       'monetdb-java',
-    'clients':    'monetdb-clients',
-    'template':   'monetdb-template',
-    'sql':        'monetdb-sql',
-    'xquery':     'monetdb-xquery',
-    'pathfinder': 'monetdb-xquery',
-    'xml':        'monetdb-xml',
-    'geom':       'monetdb-geom',
-    'datacell':   'monetdb-datacell',
-    }
-
 par = {}
 # the default; only used for usage information in case -p/--package has not been given
-par['PACKAGE'] = 'monetdb'
+par['PACKAGE'] = 'MonetDB'
 # try to be "smart"
 repo = ''
 try:
@@ -3028,13 +3016,13 @@ try:
 except:
     pass
 if not repo:
-    repo = os.getcwd().split(os.sep)[-1]
+    src = os.path.normcase(os.path.normpath(os.path.realpath(_configure('@QXSOURCE@'))))
+    cwd = os.path.normcase(os.path.normpath(os.path.realpath(os.getcwd())))
+    if src == cwd[:len(src)]:
+        repo = cwd[len(src+os.sep):].split(os.sep)[0]
 if repo:
-    repo = repo.lower()
-    if repo[:7] != 'monetdb':
-        repo = _PackageDict.get(repo, repo)
     if repo == '.':
-        repo = 'monetdb'
+        repo = 'MonetDB'
     par['PACKAGE'] = repo
 
 dft = {}
@@ -3052,12 +3040,12 @@ def main(argv) :
     env['DIRSEP'] = os.sep
 
     # most intuitive (?) default settings
-    dft['TSTSRCBASE']     = "'@QXSOURCE@'"
+    dft['TSTSRCBASE']     = "os.path.join(_configure('@QXSOURCE@'),par['PACKAGE'])"
     dft['TSTTRGBASE']     = "_configure('@QXprefix@')"   # or os.getcwd() ?
     if THISFILE == "Mtest.py":
         dft['GDK_DEBUG']      = "TSTDBG"
         dft['GDK_NR_THREADS'] = "TSTTHREADS"
-        dft['MONETDB_MOD_PATH'] = "''"   #"GetMonetConfig(par['PACKAGE'],'--modpath')"
+        dft['MONETDB_MOD_PATH'] = "''"
         dft['setMONETDB_MOD_PATH'] = "'--set \"monet_mod_path='+env['MONETDB_MOD_PATH']+'\"'"
         dft['setGDK_DBFARM']     = "'--set \"gdk_dbfarm='+env['GDK_DBFARM']+'\"'"
         dft['setXRPC_DOCROOT']   = "'--set \"xrpc_docroot='+env['XRPC_DOCROOT']+'\"'"
@@ -3082,11 +3070,11 @@ def main(argv) :
     cmd_options = [
         # long name, short name, GDK option, argument, comment
         ('package', 'p', 'package', '<package>',
-         "package to be tested, e.g.:\nmonetdb(|4|5), [monetdb-](java|clients|template|sql|xquery|xml|geom|datacell);\ndefault: %s" % par['PACKAGE']),
+         "package to be tested, e.g.:\nMonetDB(|4|5), (java|clients|template|sql|pathfinder|geom);\ndefault: %s" % par['PACKAGE']),
         ('MonetDB4', '4', 'MonetDB4', None,
-         "use Mserver of MonetDB Version 4 (default with <package> not in {monetdb5, monetdb-datacell})"),
+         "use Mserver of MonetDB Version 4 (default with <package> in {MonetDB4, pathfinder})"),
         ('MonetDB5', '5', 'MonetDB5', None,
-         "use mserver5 of MonetDB Version 5 (default with <package> in {monetdb5, monetdb-datacell})"),
+         "use mserver5 of MonetDB Version 5 (default with <package> not in {MonetDB4, pathfinder})"),
         ('algebra', 'G', 'algebra', None,
          "use the algebra version of the XQuery compiler"),
         ('no-algebra', 'g', 'no-algebra', None,
@@ -3094,7 +3082,7 @@ def main(argv) :
         ('recursive', 'r', 'recursive', None,
          "recurse into subdirectories (implies 'All')"),
         ('TSTSRCBASE', None, 'TSTSRCBASE', '<path>',
-         'default: "%s"' % _configure('@QXSOURCE@')),
+         'default: "%s"' % os.path.join(_configure('@QXSOURCE@'),par['PACKAGE'])),
         ('TSTTRGBASE', None, 'TSTTRGBASE', '<path>',
          'default: "%s"' % _configure('@QXprefix@')),
         ('quiet', 'q', 'quiet', None,
@@ -3184,40 +3172,25 @@ def main(argv) :
 
     pkg = opts.get('package')
     if pkg is None:
-        if par['PACKAGE'] == 'monetdb':
+        if par['PACKAGE'] == 'MonetDB':
             if par['M4']:
-                par['PACKAGE'] = 'monetdb4'
+                par['PACKAGE'] = 'MonetDB4'
             if par['M5']:
-                par['PACKAGE'] = 'monetdb5'
+                par['PACKAGE'] = 'MonetDB5'
             Warn('No (suitable) ./CVS/Repository found and no -p/--package specified. Using default package="%s". Please use -p/--package to overrule.' % par['PACKAGE'])
     else:
-        pkg = pkg.lower()
-        if pkg[:7] != 'monetdb':
-            if _PackageDict.has_key(pkg):
-                pkg = _PackageDict[pkg]
         par['PACKAGE'] = pkg
 
-    if par['PACKAGE'] in ('monetdb', 'monetdb-clients', 'monetdb4', 'monetdb5'):
-        pass
-    elif par['PACKAGE'] != 'monetdb-java':
-        if par['M4']:
-            par['PACKAGE'] = 'monetdb4'
-        elif par['M5']:
-            par['PACKAGE'] = 'monetdb5'
-        else:
-            par['PACKAGE'] = 'monetdb'
-        Warn('Using default package="%s".' % par['PACKAGE'])
-
-    if par['M4'] and par['PACKAGE'] == 'monetdb5':
-        ErrXit('"-4/--MonetDB4" conflicts with "--package=monetdb5"!')
-    if par['M5'] and par['PACKAGE'] == 'monetdb4':
-        ErrXit('"-5/--MonetDB5" conflicts with "--package=monetdb4"!')
-    if not par['M4'] and not par['M5'] and par['PACKAGE'] not in ('monetdb', 'monetdb-java', 'monetdb-clients'):
-        par['M4'] = par['PACKAGE'] not in ['monetdb5', 'monetdb-datacell', 'monetdb-template', 'monetdb-sql', 'monetdb-geom']
-        par['M5'] = par['PACKAGE']     in ['monetdb5', 'monetdb-datacell', 'monetdb-template', 'monetdb-sql', 'monetdb-geom']
+    if par['M4'] and par['PACKAGE'] == 'MonetDB5':
+        ErrXit('"-4/--MonetDB4" conflicts with "--package=MonetDB5"!')
+    if par['M5'] and par['PACKAGE'] == 'MonetDB4':
+        ErrXit('"-5/--MonetDB5" conflicts with "--package=MonetDB4"!')
+    if not par['M4'] and not par['M5'] and par['PACKAGE'] not in ('MonetDB', 'java', 'clients'):
+        par['M4'] = par['PACKAGE']     in ['MonetDB4', 'pathfinder']
+        par['M5'] = par['PACKAGE'] not in ['MonetDB4', 'pathfinder']
 
     config = opts.get('config')
-    if config is None and par['PACKAGE'] not in ('monetdb', 'monetdb-java', 'monetdb-clients'):
+    if config is None and par['PACKAGE'] not in ('MonetDB', 'java', 'clients'):
         # no --config given on the command line; we assume the M4/M5 default
         # and have monet_options.parse_options() re-parse the command line arguments
         if par['M5']:
@@ -3694,7 +3667,7 @@ def main(argv) :
         env['TST_STATIC'] = ""
         env['TST_ALGEBRA'] = ""
         env['TST_NOALGEBRA'] = ""
-        if par['PACKAGE'] in ('monetdb', 'monetdb-java', 'monetdb-clients'):
+        if par['PACKAGE'] in ('MonetDB', 'java', 'clients'):
             if   CONDITIONALS.has_key('BITS32') and CONDITIONALS['BITS32']:
                 env['TST_BITS'] = "32bit"
             elif CONDITIONALS.has_key('BITS64') and CONDITIONALS['BITS64']:
@@ -3713,7 +3686,7 @@ def main(argv) :
             print "Modules: ", env['TST_MODS']
         STDOUT.flush()
 
-        is_sql = par['PACKAGE'] == 'monetdb-sql'
+        is_sql = par['PACKAGE'] == 'sql'
         if is_sql:
             MissingMods = CheckMods(env, '', 'SQL', '')
             if MissingMods:
@@ -3724,7 +3697,7 @@ def main(argv) :
                 if Check('%s --dbname=%s "--dbinit=%s"' % (env['exe']['Mserver'][1], TSTPREF, mod_load), QUIT):
                     ErrXit('Stopping SQL testing as module "%s" fails to load!' % mod_name)
 
-        is_pf = par['PACKAGE'] == 'monetdb-xquery'
+        is_pf = par['PACKAGE'] == 'pathfinder'
         if is_pf:
             if not CheckExec('pf'):
                 ErrXit('Stopping Pathfinder testing as XQuery compiler "pf" is not available!')
@@ -3772,7 +3745,7 @@ def main(argv) :
             if Check('%s --dbname=%s "--dbinit=%s"' % (env['exe']['Mserver'][1], TSTPREF, mod_load), QUIT):
                 ErrXit('Stopping Pathfinder testing as module "%s" fails to load!' % mod_name)
 
-        if par['PACKAGE'] == 'monetdb-geom':
+        if par['PACKAGE'] == 'geom':
             MissingMods = CheckMods(env, '', 'SQL', '')
             if 'geom' not in env['TST_MODS']:
                 MissingMods.append('geom')
@@ -3784,11 +3757,11 @@ def main(argv) :
                 if Check('%s --dbname=%s "--dbinit=%s"' % (env['exe']['Mserver'][1], TSTPREF, mod_load), QUIT):
                     ErrXit('Stopping Geom testing as module "%s" fails to load!' % mod_name)
 
-        if par['PACKAGE'][:8] == 'monetdb-' and par['PACKAGE'][8:] in ('sql','geom'):
+        if par['PACKAGE'] in ('sql','geom'):
             if not env['exe']['SQL_Client'][0]:
-                ErrXit('Stopping %s testing as "%s" is not available!' % (par['PACKAGE'][8:], env['SQLCLIENT'].split(None, 1)[0]))
+                ErrXit('Stopping %s testing as "%s" is not available!' % (par['PACKAGE'], env['SQLCLIENT'].split(None, 1)[0]))
 
-        if par['PACKAGE'] == 'monetdb-xquery':
+        if par['PACKAGE'] == 'pathfinder':
             if not env['exe']['XQuery_Client'][0]:
                 ErrXit('Stopping XQuery testing as "%s" is not available!' % env['XQUERYCLIENT'].split(None, 1)[0])
 

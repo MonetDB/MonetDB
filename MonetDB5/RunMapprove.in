@@ -17,7 +17,7 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-pkg=monetdb5
+pkg=MonetDB5
 buildbase=@QBUILD@
 builddir="${buildbase}/MonetDB5"
 # make sure srcdir contains absolute path name
@@ -32,4 +32,4 @@ cd "$srcdir"
 # execute the script.
 # if no arguments, do a recursive approve (Mapprove.py -r), else pass
 # on the arguments
-exec python "${buildbase}/testing/src/Mapprove.py" --config="${builddir}/conf/monetdb5.conf" --package=${pkg} --TSTSRCBASE="${srcdir}" --TSTTRGBASE="${builddir}" "${@--r}"
+exec python "${buildbase}/testing/src/Mapprove.py" --config="${builddir}/conf/monetdb5.conf" --package=${pkg} --TSTTRGBASE="${builddir}" "${@--r}"
