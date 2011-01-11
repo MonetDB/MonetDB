@@ -1548,8 +1548,7 @@ esac
 
 dnl bootstrap adds a (long) list of file names inside the
 dnl AC_CONFIG_FILES command
-AC_CONFIG_FILES(
-)
+AC_CONFIG_FILES
 AC_OUTPUT
 
 echo

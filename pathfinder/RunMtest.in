@@ -73,8 +73,6 @@ libpath="${MOD_PATH}"
 PATH="${binpath}:$PATH"
 export PATH
 
-chmod +x ${buildbase}/testing/src/Mlog
-
 PYTHONPATH="${buildbase}/testing/src:${srcdir}/../testing/src:${PYTHONPATH}"
 export PYTHONPATH
 

@@ -49,8 +49,6 @@ libpath="${MOD_PATH}:${builddir}/src/server/.libs"
 PATH="${binpath}:$PATH"
 export PATH
 
-chmod +x ${buildbase}/testing/src/Mlog
-
 PYTHONPATH="${builddir}/src/backends/python/monet5/.libs:${builddir}/src/backends/python/monet5:${buildbase}/testing/src:${srcdir}/../testing/src:$PYTHONPATH"
 export PYTHONPATH
 
