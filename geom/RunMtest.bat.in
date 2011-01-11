@@ -76,7 +76,7 @@ if not exist %buildbase%\MonetDB5\src\modules\atoms\autoload mkdir %buildbase%\M
 copy /y %srcdir%\..\MonetDB5\src\modules\atoms\??_*.mal %buildbase%\MonetDB5\src\modules\atoms\autoload
 :skip_5
 
-set PATH=%buildbase%\testing\src;%PATH%
+set PATH=%buildbase%\MonetDB%V%\src\tools;%buildbase%\testing\src;%PATH%
 
 set PATH=%MOD_PATH%;%PATH%
 
