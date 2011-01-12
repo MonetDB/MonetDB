@@ -475,9 +475,6 @@ rm -fr $RPM_BUILD_ROOT
 %files devel
 %defattr(-,root,root)
 %{_bindir}/calibrator
-%{_bindir}/Maddlog
-%{_bindir}/Mbootstrap
-%{_bindir}/Mdebootstrap
 %dir %{_includedir}/MonetDB
 %dir %{_includedir}/MonetDB/common
 %dir %{_includedir}/MonetDB/gdk

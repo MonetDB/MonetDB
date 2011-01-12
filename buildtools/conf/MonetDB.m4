@@ -25,6 +25,7 @@ if test -f "$srcdir"/vertoo.data; then
 	dft_assert=yes
 	dft_debug=yes
 	dft_optimi=no
+	dft_develop=yes
 else
 	dnl  Users compiling from source tarball(s):
 	dnl  default is --disable-strict --disable-assert --disable-debug --disable-optimize
@@ -32,6 +33,7 @@ else
 	dft_assert=no
 	dft_debug=no
 	dft_optimi=no
+	dft_develop=no
 fi
 dft_warning=no
 dft_netcdf=auto

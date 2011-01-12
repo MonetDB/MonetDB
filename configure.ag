@@ -157,6 +157,12 @@ AC_ARG_ENABLE(testing,
 	enable_testing=$enableval,
 	enable_testing=$dft_testing)
 
+AC_ARG_ENABLE(developer,
+	AS_HELP_STRING([--enable-developer],
+		[enable support for MonetDB development (default=auto)]),
+	enable_developer=$enableval,
+	enable_developer=$dft_develop)
+
 dnl Pathfinder has three different code generators: The
 dnl "milprint_summer" back-end directly translates XQuery Core
 dnl code into MIL, while the "algebra" back-end uses an intermediate
@@ -1468,6 +1474,7 @@ fi
 AM_CONDITIONAL(HAVE_PFTIJAH, test "x$enable_pftijah" = xyes -o "x$enable_pftijah" = xauto)
 AM_CONDITIONAL(HAVE_PROBXML, test "x$enable_probxml" = xyes -o "x$enable_probxml" = xauto)
 AM_CONDITIONAL(HAVE_TESTING, test "x$enable_testing" = xyes -o "x$enable_testing" = xauto)
+AM_CONDITIONAL(HAVE_DEVELOPER, test "x$enable_developer" = xyes)
 
 AC_SUBST(compilercall, ["$CC $CFLAGS $X_CFLAGS"])
 AC_SUBST(linkercall, ["$LD $LDFLAGS"])

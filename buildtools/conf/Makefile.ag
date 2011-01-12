@@ -16,7 +16,7 @@
 # All Rights Reserved.
 
 scripts_sh = {
-	COND = NOT_WIN32
+	COND = HAVE_DEVELOPER
 	EXT = ""
 	DIR = bindir
 	SOURCES = Maddlog
