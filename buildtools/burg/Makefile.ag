@@ -18,6 +18,7 @@
 YFLAGS = -d
 
 bin_burg = {
+	NOINST
 	SCRIPTS = h tab.h
 	SOURCES = be.c burs.c closure.c delta.c fe.c gram.y item.c lex.c \
 		list.c main.c map.c nonterminal.c operator.c pattern.c \

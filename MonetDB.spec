@@ -478,9 +478,6 @@ rm -fr $RPM_BUILD_ROOT
 %{_bindir}/Maddlog
 %{_bindir}/Mbootstrap
 %{_bindir}/Mdebootstrap
-%{_bindir}/Mx
-%{_bindir}/burg
-%{_bindir}/mel
 %dir %{_includedir}/MonetDB
 %dir %{_includedir}/MonetDB/common
 %dir %{_includedir}/MonetDB/gdk

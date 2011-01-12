@@ -614,7 +614,10 @@ def msc_binary(fd, var, binmap, msc):
         msc['BINS'].append((binname, '$(C_%s_exe)' % binname2, condname))
     else:
         condname = ''
-        msc['BINS'].append((binname, binname, condname))
+        if binmap.has_key('NOINST'):
+            msc['NBINS'].append((binname, binname, condname))
+        else:
+            msc['BINS'].append((binname, binname, condname))
 
     if binmap.has_key("DIR"):
         bd = binmap["DIR"][0] # use first name given
@@ -701,7 +704,10 @@ def msc_bins(fd, var, binsmap, msc):
         else:
             fd.write("%sdir = $(bindir)\n" % (bin.replace('-','_')) );
 
-        msc['BINS'].append((bin, bin, ''))
+        if binsmap.has_key('NOINST'):
+            msc['NBINS'].append((bin, bin, ''))
+        else:
+            msc['BINS'].append((bin, bin, ''))
 
         if binsmap.has_key(bin + "_LIBS"):
             msc_additional_libs(fd, bin, "", "BIN", binsmap[bin + "_LIBS"], [], msc, '', '.exe')
@@ -1185,6 +1191,7 @@ def output(tree, cwd, topdir):
     msc['NLIBS'] = []           # archives (libraries which are not installed)
     msc['SCRIPTS'] = []
     msc['BINS'] = []
+    msc['NBINS'] = []
     msc['HDRS'] = []
     msc['INSTALL'] = {}
     msc['LIBDIR'] = 'lib'
@@ -1266,6 +1273,13 @@ def output(tree, cwd, topdir):
                 fd.write(' %s' % v)
             else:
                 fd.write(' "%s"' % v)
+
+    if msc['NBINS']:
+        for x, v, cond in msc['NBINS']:
+            if v[:1] == '$':
+                fd.write(' %s' % v)
+            else:
+                fd.write(' "%s.exe"' % v)
 
     if msc['BINS']:
         for x, v, cond in msc['BINS']:

@@ -19,6 +19,7 @@ YFLAGS = -d
 W_CFLAGS = -wd4018
 
 bin_mel = {
+	NOINST
 	SOURCES = FileInfo.cc ListIterator.cc any_arg.cc atom.cc \
 		atomops.cc atom_arg.cc bat_arg.cc builtin.cc \
 		command.cc debug.cc depend.cc dependency.cc \

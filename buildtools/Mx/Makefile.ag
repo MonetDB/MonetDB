@@ -16,6 +16,7 @@
 # All Rights Reserved.
 
 bin_Mx = {
+	NOINST
 	SOURCES = Code.c Def.c Display.c Form.c Io.c Mx.c Print.c Sys.c Tok.c disclaimer.c
 }
 

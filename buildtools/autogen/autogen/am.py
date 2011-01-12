@@ -577,8 +577,10 @@ def am_binary(fd, var, binmap, am):
         for condname in binmap['COND']:
             fd.write("endif\n")
         cname = "$(C_" + name + ")"
+    elif binmap.has_key('NOINST'):
+        am['NBINS'].append(binname)
     else:
-        fd.write("%s_PROGRAMS =%s\n" % (norm_binname,  binname))
+        am['BINS'].append(binname)
 
     am['InstallList'].append("\t%s/%s%s\n" % (bd, binname, cond))
 
@@ -619,7 +621,7 @@ def am_binary(fd, var, binmap, am):
     fd.write(nsrcs + "\n")
     fd.write(srcs + "\n")
     if len(SCRIPTS) > 0:
-        fd.write("%s_scripts = %s\n" % (norm_binname, am_list2string(SCRIPTS, " ", "")))
+        fd.write("%s_scripts =%s\n" % (norm_binname, am_list2string(SCRIPTS, " ", "")))
         am['BUILT_SOURCES'].append("$(" + name + "_scripts)")
         fd.write("all-local-%s: $(%s_scripts)\n" % (name, name))
         am['ALL'].append(cname)
@@ -649,6 +651,8 @@ def am_bins(fd, var, binsmap, am):
 
         if binsmap.has_key("DIR"):
             lbins.append(bin)
+        elif binsmap.has_key('NOINST'):
+            am['NBINS'].append(bin)
         else:
             am['BINS'].append(bin)
 
@@ -1204,6 +1208,7 @@ AUTOMAKE_OPTIONS = no-dependencies 1.4 foreign
     am['LIBS'] = []                     # all libraries (am_libs and am_library)
     am['NLIBS'] = []                    # all libraries which are not installed
     am['BINS'] = []
+    am['NBINS'] = []
     am['BIN_SCRIPTS'] = []
     am['INSTALL'] = []
     am['DATA_INSTALL'] = []
@@ -1270,6 +1275,9 @@ AUTOMAKE_OPTIONS = no-dependencies 1.4 foreign
         for (pref, lib, sep) in am['NLIBS']:
             fd.write('install-%sLTLIBRARIES:\n' % lib)
 
+    if am['NBINS']:
+        fd.write("noinst_PROGRAMS =%s\n" % am_list2string(am['NBINS'], " ", ""))
+
     if len(am['BINS']) > 0:
         fd.write("bin_PROGRAMS =%s\n" % am_list2string(am['BINS'], " ", ""))
         for i in am['BINS']:
@@ -1277,7 +1285,7 @@ AUTOMAKE_OPTIONS = no-dependencies 1.4 foreign
 
     if len(am['BIN_SCRIPTS']) > 0:
         scripts = am['BIN_SCRIPTS']
-        fd.write("bin_SCRIPTS = %s\n" % am_list2string(scripts, " ", ""))
+        fd.write("bin_SCRIPTS =%s\n" % am_list2string(scripts, " ", ""))
         fd.write("install-exec-local-SCRIPTS: \n")
         fd.write("all-local-SCRIPTS: $(bin_SCRIPTS)\n")
 
@@ -1307,7 +1315,7 @@ AUTOMAKE_OPTIONS = no-dependencies 1.4 foreign
         else:
             name="top"
             fd.write("%sincludedir = $(pkgincludedir)\n" % (name))
-        fd.write("nodist_%sinclude_HEADERS = %s %s\n" % (name, am_list2string(am['HDRS'], " ", ""), incs))
+        fd.write("nodist_%sinclude_HEADERS =%s %s\n" % (name, am_list2string(am['HDRS'], " ", ""), incs))
 
     fd.write('''
   include $(top_srcdir)/buildtools/conf/rules.mk
