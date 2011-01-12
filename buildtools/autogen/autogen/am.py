@@ -1306,16 +1306,12 @@ AUTOMAKE_OPTIONS = no-dependencies 1.4 foreign
             am_list2string(am['ALL'], " all-local-", ""))
 
     if len(am['HDRS']) > 0:
-        incs = ""
-        # breaks make dist, used to be needed for sub projects?
-        #if os.path.exists(".incs.in"):
-            #incs = ".incs.in"
         if len(name) > 0:
             fd.write("%sincludedir = $(pkgincludedir)/%s\n" % (name, name))
         else:
             name="top"
             fd.write("%sincludedir = $(pkgincludedir)\n" % (name))
-        fd.write("nodist_%sinclude_HEADERS =%s %s\n" % (name, am_list2string(am['HDRS'], " ", ""), incs))
+        fd.write("nodist_%sinclude_HEADERS =%s\n" % (name, am_list2string(am['HDRS'], " ", "")))
 
     fd.write('''
   include $(top_srcdir)/buildtools/conf/rules.mk

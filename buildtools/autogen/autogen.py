@@ -195,3 +195,5 @@ OutList = map(filter, OutList)
 OutListFd = open("acout.in", "w")
 OutListFd.writelines(OutList)
 OutListFd.close()
+
+os.path.walk(topdir, cleanup, None)

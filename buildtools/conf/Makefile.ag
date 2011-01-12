@@ -19,7 +19,7 @@ scripts_sh = {
 	COND = NOT_WIN32
 	EXT = ""
 	DIR = bindir
-	SOURCES = Mdebootstrap Mbootstrap.in Maddlog
+	SOURCES = Maddlog
 }
 
 headers_bmp = {
@@ -50,6 +50,6 @@ headers_html = {
 	SOURCES = website.html
 }
 
-EXTRA_DIST = rules.mk MonetDB.m4
+EXTRA_DIST = rules.mk MonetDB.m4 Mdebootstrap
 
 EXTRA_DIST_DIR = mock
