@@ -952,19 +952,17 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	oid l,h;
 	str tnm;
 	char rname[BUFSIZ];
-	MalBlkPtr *tentacle= (MalBlkPtr *) GDKmalloc(sizeof(MalBlkPtr) * MAXSLICES);
+	MalBlkPtr *tentacle = NULL;
 
 	(void) stk;
 
-	if ( tentacle == NULL)
-		return 0;
-
 	/*	optDebug |= 1 << DEBUG_OPT_OCTOPUS; */
-/*	OPTDEBUGoctopus{
+	OPTDEBUGoctopus{
 		mnstr_printf(cntxt->fdout, "#Octopus optimizer called\n");
-		printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAL_PROPS);
+		chkProgram(cntxt->nspace,mb);  
+		printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT | LIST_MAL_TYPE | LIST_MAPI);
 	}
-*/
+
 	(void) fixModule(cntxt->nspace,octopusRef);
 	old = mb->stmt;
 	limit = mb->stop;
@@ -979,10 +977,8 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		}
 	}
 	/* we do not  support yet update operations in the octopus */
-	if ( update || autocommit==0 ) {
-		GDKfree(tentacle);
+	if ( update || autocommit==0 ) 
 		return 0;
-	}
 
 	mb->legid = octopusSeq++;
 
@@ -1003,6 +999,11 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 				z = getArg(p,j);
 				getArg(p,j) = alias[z];
 			}
+		if ( p->barrier == EXITsymbol ) { /* exits use the same variable */
+			if ( varadd )
+				getArg(p,0) = alias[getArg(p,0)];
+			continue;
+		}
 		for( j = 0; j < p->retc; j++ ){
 			z = getArg(p,j);
 			if ( set[z] ){
@@ -1109,13 +1110,16 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	for (i = 1; i < octClCnt; i++){
 		if ( octCluster[i].retcnt == 0 ){
 			mnstr_printf(cntxt->fdout, "Tentacle %d without result\n", i); 
-			GDKfree(tentacle);
-			GDKfree(malPart);
-			return 0;
+			goto cleanup;
 		}
 	}
 
 	/* create tentacles */
+
+	tentacle= (MalBlkPtr *) GDKmalloc(sizeof(MalBlkPtr) * MAXSLICES);
+	if ( tentacle == NULL)
+		goto cleanup;
+
 	v2 = newVariable(mb, GDKstrdup("version"), TYPE_int);
 	for (i = 1; i < octClCnt; i++){
 		tentacle[i] = OCTnewTentacle(cntxt, mb,i, v2, malPart);
@@ -1123,18 +1127,17 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		actions++;
 	}
 
-	if ( actions ){
-		OCTnewBidding(cntxt, octClCnt-1);
-	}
+	if ( !actions )
+		goto cleanup;
+
+	OCTnewBidding(cntxt, octClCnt-1);
 
 	/* modify plan at the head */
 	sig = old[0];
 
-	if ( newMalBlkStmt(mb, mb->ssize) < 0){
-		GDKfree(tentacle);
-		GDKfree(malPart);
-		return 0;
-	}
+	if ( newMalBlkStmt(mb, mb->ssize) < 0)
+		goto cleanup;
+
 	pushInstruction(mb, sig); 
 
 	last = limit;
@@ -1185,14 +1188,17 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	}	
 
 	clrDeclarations(mb);
-	chkProgram(cntxt->nspace,mb);  
 	OPTDEBUGoctopus{
-		/*		printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT | LIST_MAPI); */
+		chkProgram(cntxt->nspace,mb); 
+		printFunction(cntxt->fdout, mb, 0,  LIST_MAL_STMT | LIST_MAL_TYPE | LIST_MAPI); 
 	}
 
-	GDKfree(malPart);
-	GDKfree(tentacle);
 	GDKfree(old);
+
+ cleanup:
+	GDKfree(malPart);
+	if (tentacle)
+		GDKfree(tentacle);
 	return actions;
 }
 
