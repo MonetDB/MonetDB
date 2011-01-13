@@ -2084,11 +2084,11 @@ ic_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 	/* if unconverted data from a previous call remains, add it to
 	   the start of the new data, using temporary space */
 	if (ic->buflen > 0) {
-		char *s = alloca(ic->buflen + inbytesleft);
+		char *bf = alloca(ic->buflen + inbytesleft);
 
-		memcpy(s, ic->buffer, ic->buflen);
-		memcpy(s + ic->buflen, buf, inbytesleft);
-		buf = s;
+		memcpy(bf, ic->buffer, ic->buflen);
+		memcpy(bf + ic->buflen, buf, inbytesleft);
+		buf = bf;
 		inbytesleft += ic->buflen;
 		ic->buflen = 0;
 	}
