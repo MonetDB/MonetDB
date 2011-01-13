@@ -122,12 +122,12 @@ gdk_export void BBPcacheit(BATstore *bs, int lock);
 gdk_export void BBPuncacheit(bat bid);
 gdk_export int BBPreclaim(BAT *b);
 gdk_export int BBPsave(BAT *b);
-gdk_export int BBPrename(bat bid, str nme);
+gdk_export int BBPrename(bat bid, const char *nme);
 gdk_export BATstore *BBPrecycle(int ht, int tt, size_t cap);
 gdk_export wrd BBPrecycle_minsize(wrd);
 
 /* query interface */
-gdk_export bat BBPindex(str nme);
+gdk_export bat BBPindex(const char *nme);
 gdk_export BAT *BBPdescriptor(bat b);
 
 /* swapping interface */
@@ -335,7 +335,7 @@ BBP_getpid(void)
 static int BBPunloadCnt = 0;
 
 void
-BBPlock(str nme)
+BBPlock(const char *nme)
 {
 	int i;
 
@@ -357,7 +357,7 @@ BBPlock(str nme)
 }
 
 void
-BBPunlock(str nme)
+BBPunlock(const char *nme)
 {
 	int i;
 
@@ -1573,7 +1573,7 @@ BBP index lookup by BAT name:
 */
 @c
 static INLINE bat
-BBP_find(str nme, int lock)
+BBP_find(const char *nme, int lock)
 {
 	bat i = BBPnamecheck(nme);
 
@@ -1599,7 +1599,7 @@ BBP_find(str nme, int lock)
 }
 
 bat
-BBPindex(str nme)
+BBPindex(const char *nme)
 {
 	return BBP_find(nme, TRUE);
 }
@@ -1938,7 +1938,7 @@ old repositories (you won't see them anymore in new repositories).
 */
 @c
 int
-BBPrename(bat bid, str nme)
+BBPrename(bat bid, const char *nme)
 {
 	BAT *b = BBPdescriptor(bid);
 	long_str dirname;
@@ -3631,12 +3631,10 @@ can thus always roll back.
 */
 @c
 static int
-file_move(str srcdir, str dstdir, str name, str e)
+file_move(const char *srcdir, const char *dstdir, const char *name, const char *ext)
 {
-	long_str ext;
 	int ret = 0;
 
-	strcpy(ext, e);
 	ret = GDKmove(srcdir, name, ext, dstdir, name, ext);
 	if (ret == 0) {
 		return 0;

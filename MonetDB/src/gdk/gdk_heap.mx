@@ -56,8 +56,8 @@ Todo: check DESCsetmodes/HEAPcheckmode (gdk_storage.mx).
 #include "monetdb_config.h"
 #include "gdk.h"
 
-static int HEAPload_intern(Heap *h, str nme, str ext, str suffix, int trunc);
-static int HEAPsave_intern(Heap *h, str nme, str ext, str suffix);
+static int HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, int trunc);
+static int HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix);
 
 static char *
 decompose_filename(str nme)
@@ -422,7 +422,7 @@ its previous contents.
 @{
 @c
 static int
-HEAPload_intern(Heap *h, str nme, str ext, str suffix, int trunc)
+HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, int trunc)
 {
 	size_t truncsize = (1 + (((size_t) (h->free * 1.05)) >> REMAP_PAGE_MAXBITS)) << REMAP_PAGE_MAXBITS;
 	size_t minsize = (1 + ((h->size - 1) >> REMAP_PAGE_MAXBITS)) << REMAP_PAGE_MAXBITS;
@@ -499,7 +499,7 @@ HEAPload_intern(Heap *h, str nme, str ext, str suffix, int trunc)
 }
 
 int
-HEAPload(Heap *h, str nme, str ext, int trunc)
+HEAPload(Heap *h, const char *nme, const char *ext, int trunc)
 {
 	return HEAPload_intern(h, nme, ext, ".new", trunc);
 }
@@ -518,7 +518,7 @@ After GDKsave returns successfully (>=0), we assume the heaps are safe on stable
 @{
 @c
 static int
-HEAPsave_intern(Heap *h, str nme, str ext, str suffix)
+HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix)
 {
 	int store = h->newstorage;
 	long_str extension;
@@ -542,7 +542,7 @@ HEAPsave_intern(Heap *h, str nme, str ext, str suffix)
 }
 
 int
-HEAPsave(Heap *h, str nme, str ext)
+HEAPsave(Heap *h, const char *nme, const char *ext)
 {
 	return HEAPsave_intern(h, nme, ext, ".new");
 }
@@ -553,7 +553,7 @@ Delete any saved heap file. For memory mapped files, also try to remove any rema
 @{
 @c
 int
-HEAPdelete(Heap *h, str o, str ext)
+HEAPdelete(Heap *h, const char *o, const char *ext)
 {
 	char ext2[64];
 

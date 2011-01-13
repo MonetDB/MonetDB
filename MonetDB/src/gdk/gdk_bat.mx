@@ -2401,14 +2401,14 @@ complicated.
 @{
 @c
 int
-BATname(BAT *b, str nme)
+BATname(BAT *b, const char *nme)
 {
 	BATcheck(b, "BATname");
 	return BBPrename(b->batCacheid, nme);
 }
 
 str
-BATrename(BAT *b, str nme)
+BATrename(BAT *b, const char *nme)
 {
 	int ret;
 
@@ -2430,7 +2430,7 @@ BATrename(BAT *b, str nme)
 
 
 BAT *
-BATroles(BAT *b, str hnme, str tnme)
+BATroles(BAT *b, const char *hnme, const char *tnme)
 {
 	BATcheck(b, "BATroles");
 	if (b->hident && !default_ident(b->hident))
@@ -2449,7 +2449,7 @@ BATroles(BAT *b, str hnme, str tnme)
 }
 
 BAT *
-BATcol_name(BAT *b, str tnme)
+BATcol_name(BAT *b, const char *tnme)
 {
 	BATcheck(b, "BATcol_name");
 	if (b->tident && !default_ident(b->tident))

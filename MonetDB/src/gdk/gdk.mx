@@ -1080,13 +1080,13 @@ they isolate you from the different ways heaps can be accessed.
 gdk_export int HEAPalloc(Heap *h, size_t nitems, size_t itemsize);
 gdk_export int HEAPfree(Heap *h);
 gdk_export int HEAPextend(Heap *h, size_t size);
-gdk_export int HEAPload(Heap *h, str nme, str ext, int trunc);
-gdk_export int HEAPsave(Heap *h, str nme, str ext);
+gdk_export int HEAPload(Heap *h, const char *nme, const char *ext, int trunc);
+gdk_export int HEAPsave(Heap *h, const char *nme, const char *ext);
 gdk_export int HEAPshare(Heap *dst, Heap *src, int copy_on_write);
 gdk_export int HEAPcopy(Heap *dst, Heap *src);
 gdk_export int HEAPwarm(Heap *h);
 gdk_export size_t HEAPsubcopy(Heap *dst, Heap *src, size_t size, size_t offset);
-gdk_export int HEAPdelete(Heap *h, str o, str ext);
+gdk_export int HEAPdelete(Heap *h, const char *o, const char *ext);
 gdk_export size_t HEAPvmsize(Heap *h);
 gdk_export size_t HEAPmemsize(Heap *h);
 
@@ -1708,7 +1708,7 @@ was in there.
 @{
 @h
 */
-gdk_export str BATrename(BAT *b, str nme);
+gdk_export str BATrename(BAT *b, const char *nme);
 #ifndef BATcount
 gdk_export BUN BATcount(BAT *b);
 #endif
@@ -1721,9 +1721,9 @@ gdk_export BUN BATgrows(BAT *b);
 gdk_export BAT *BATkey(BAT *b, int onoff);
 gdk_export BAT *BATset(BAT *b, int onoff);
 gdk_export BAT *BATmode(BAT *b, int onoff);
-gdk_export BAT *BATroles(BAT *b, str hnme, str tnme);
-gdk_export BAT *BATcol_name(BAT *b, str tnme);
-gdk_export int BATname(BAT *b, str nme);
+gdk_export BAT *BATroles(BAT *b, const char *hnme, const char *tnme);
+gdk_export BAT *BATcol_name(BAT *b, const char *tnme);
+gdk_export int BATname(BAT *b, const char *nme);
 gdk_export BAT *BATseqbase(BAT *b, oid o);
 gdk_export BAT *BATsetaccess(BAT *b, int mode);
 gdk_export int BATgetaccess(BAT *b);
@@ -1861,7 +1861,7 @@ gdk_export int GDK_mem_pagebits;	/* page size for non-linear mmaps */
 #define USE_THASH	8	/* hash index */
 #define USE_ALL	(USE_HEAD|USE_TAIL|USE_HHASH|USE_THASH)
 
-gdk_export BAT *BATload(str nme);
+gdk_export BAT *BATload(const char *nme);
 gdk_export BAT *BATload_intern(bat bid, int lock);
 #define BATaccessBegin(b,what,advice) BATaccess(b,what,advice,1)
 #define BATaccessEnd(b,what,advice) BATaccess(b,what,advice,-1)
@@ -1873,16 +1873,16 @@ gdk_export int BATdelete(BAT *b);
 gdk_export size_t BATvmsize(BAT *b, int dirty);
 gdk_export size_t BATmemsize(BAT *b, int dirty);
 
-gdk_export int GDKfdlocate(str nme, str mode, str ext);
-gdk_export FILE *GDKfilelocate(str nme, str mode, str ext);
-gdk_export void GDKfilepath(str path, str nme, str mode, str ext);
-gdk_export int GDKcreatedir(str nme);
-gdk_export int GDKremovedir(str nme);
+gdk_export int GDKfdlocate(const char *nme, const char *mode, const char *ext);
+gdk_export FILE *GDKfilelocate(const char *nme, const char *mode, const char *ext);
+gdk_export void GDKfilepath(str path, const char *nme, const char *mode, const char *ext);
+gdk_export int GDKcreatedir(const char *nme);
+gdk_export int GDKremovedir(const char *nme);
 
-gdk_export char *GDKload(str nme, str ext, size_t size, size_t chunk, int mode);
-gdk_export int GDKsave(str nme, str ext, void *buf, size_t size, int mode);
-gdk_export int GDKunlink(str dir, str nme, str extension);
-gdk_export int GDKmove(str dir1, str nme1, str ext1, str dir2, str nme2, str ext2);
+gdk_export char *GDKload(const char *nme, const char *ext, size_t size, size_t chunk, int mode);
+gdk_export int GDKsave(const char *nme, const char *ext, void *buf, size_t size, int mode);
+gdk_export int GDKunlink(const char *dir, const char *nme, const char *extension);
+gdk_export int GDKmove(const char *dir1, const char *nme1, const char *ext1, const char *dir2, const char *nme2, const char *ext2);
 /*
 @
 @}
@@ -2139,12 +2139,12 @@ gdk_export BBPrec *BBP;
 #define BBPRENAME_ILLEGAL	(-2)
 #define BBPRENAME_LONG		(-3)
 
-gdk_export void BBPlock(str s);
+gdk_export void BBPlock(const char *s);
 
 gdk_export void BBPhot(bat b);
 gdk_export void BBPcold(bat b);
 gdk_export void BBPtrim(size_t memdelta, size_t vmdelta);
-gdk_export void BBPunlock(str s);
+gdk_export void BBPunlock(const char *s);
 
 gdk_export str BBPlogical(bat b, str buf);
 gdk_export str BBPphysical(bat b, str buf);
@@ -2778,7 +2778,7 @@ gdk_export Thread THRget(int tid);
 gdk_export Thread THRnew(MT_Id pid, str name);
 gdk_export void THRdel(Thread t);
 gdk_export int THRinit(void);
-gdk_export int THRexit(str nme);
+gdk_export int THRexit(const char *nme);
 gdk_export int THRcnt(void);
 gdk_export void THRsetdata(int, ptr);
 gdk_export void *THRgetdata(int);

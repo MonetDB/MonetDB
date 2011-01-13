@@ -2342,7 +2342,7 @@ The easiest way to terminate a thread is to identify its name
 A zero is returned when the thread could not be found
 @c
 int
-THRexit(str nme)
+THRexit(const char *nme)
 {
 	Thread t;
 	Thread s;
