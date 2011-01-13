@@ -657,7 +657,7 @@ ATOMindex(str nme)
 char *
 ATOMname(int t)
 {
-	return (t >= 0 && t < GDKatomcnt && BATatoms[t].name) ? BATatoms[t].name : "null";
+	return t >= 0 && t < GDKatomcnt && *BATatoms[t].name ? BATatoms[t].name : "null";
 }
 
 int
