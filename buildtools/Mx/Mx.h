@@ -51,8 +51,6 @@
 #define	DB_CODE	0x40
 #define	DB_TOK	0x41
 
-#define	assert(e, m)	if( !(e) ) Fatal(m, "Assertion failed"); else
-
 extern unsigned int db_flag;
 extern int archived;
 

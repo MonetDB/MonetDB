@@ -2377,8 +2377,8 @@ as the mask and link list for all phash invocations.
 }
 
 #define NOTSOfastINSERT(b, dummy1, dummy2, hb, hp, tb, tp) { \
-	    REGISTER BUN _p = BUNlast(b);\
-	    REGISTER int _bunsize = BUNsize(b);\
+	    register BUN _p = BUNlast(b);\
+	    register int _bunsize = BUNsize(b);\
 	    if ((b)->batBuns->free + _bunsize > (b)->batBuns->size) {\
 		if (BATextend((b), BATgrows(b)) == NULL) goto bunins_failed;\
 		_p = BUNlast(b);\
@@ -3941,7 +3941,7 @@ prefetching, a software prefetch is implemented, ie a simple prefetch loop.
 #endif
 
 #if defined(ATHLON)
-static INLINE size_t
+static inline size_t
 Mem2Cache(int *__r from, size_t size)
 {
 	int cnt = (int) (size / 128);
@@ -3961,7 +3961,7 @@ Mem2Cache(int *__r from, size_t size)
 
 #ifdef HAVE_XMMINTRIN_H
 /* L2 has 128 byte cachelines */
-static INLINE size_t
+static inline size_t
 Mem2Cache(int *__r from, size_t size)
 {
 	char *data = (char *) from;
@@ -3982,7 +3982,7 @@ Mem2Cache(int *__r from, size_t size)
 #define CACHELINE (128)
 #define INTCACHELINE (CACHELINE/sizeof(int))
 
-static INLINE size_t
+static inline size_t
 Mem2Cache(int *__r p, size_t size)
 {
 	size_t sum0 = 0, sum1 = 0, i = 0;

@@ -532,7 +532,7 @@ GDKmem_heapinuse(void)
 
 volatile int GDK_heapcheck_last = 0;
 
-static INLINE void
+static inline void
 GDKmem_heapcheck(int t)
 {
 	/* correct heap estimate with the real thing */
@@ -901,7 +901,7 @@ GDKmprint(int *pidx)
 void
 add_mem(BAT *b, mem_t mem, int idx)
 {
-	REGISTER BUN last;
+	register BUN last;
 	const static int bunsize = sizeof(mem_t) + sizeof(int);
 
 	if (b->batBuns->free + bunsize > b->batBuns->size) {
@@ -920,7 +920,7 @@ add_mem(BAT *b, mem_t mem, int idx)
 void
 del_mem(BAT *b, mem_t mem)
 {
-	REGISTER BUN first = BUNfirst(b), p = BUNlast(b);
+	register BUN first = BUNfirst(b), p = BUNlast(b);
 	const static int bunsize = sizeof(mem_t) + sizeof(int);
 
 	for (p -= bunsize; p >= first; p -= bunsize) {
@@ -2248,7 +2248,7 @@ THRget(int tid)
 	return (GDKthreads + tid - 1);
 }
 
-static INLINE size_t
+static inline size_t
 THRsp(void)
 {
 	int l = 0;

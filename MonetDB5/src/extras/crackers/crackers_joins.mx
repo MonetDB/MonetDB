@@ -187,7 +187,7 @@ crackers_export str CRKsortBandJoin_@1(int *resid, int *bidL, int *bidR, @1 *c1,
 		 MAX(1,((lcur-lfirst)*((dbl) (rend-rfirst))+(dbl) (rcur-rfirst))))
 
 #define bunfastins_limit(b, h, t, limit, percdone) {			\
-                REGISTER BUN _p = BUNlast(b);				\
+                register BUN _p = BUNlast(b);				\
 		if (_p == BUN_MAX) /* reached maximum, can't do more */	\
 			goto bunins_done;				\
                 if (_p + 1 > BATcapacity(b)) {				\

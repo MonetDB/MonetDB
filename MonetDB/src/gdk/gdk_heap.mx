@@ -687,7 +687,7 @@ typedef struct hfblock {
 #define roundup_4(x)	(((x)+3)&~3)
 #define blocksize(h,p)	((p)->size)
 
-static INLINE size_t
+static inline size_t
 roundup_num(size_t number, int alignment)
 {
 	size_t rval;

@@ -23,13 +23,13 @@ EXTRA_DIST = monet_getopt.h getopt.c getopt1.c memcmp.c valgrind.h
 
 lib_mutils = { 
 	NAME = mutils
-	SOURCES = monet_utils.mx monet_options.mx monet_getopt.h
+	SOURCES = monet_options.mx monet_getopt.h
 }
 
 headers_common = {
 	DIR = includedir/MonetDB/common
 	HEADERS = h
-	SOURCES = monet_utils.mx monet_options.mx monet_getopt.h \
+	SOURCES = monet_options.mx monet_getopt.h \
 	          dummy_gdk_utils.mx
 }
 

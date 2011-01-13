@@ -111,7 +111,7 @@ void echoInput(Client cntxt)
 	}
 }
 
-static INLINE void 
+static inline void 
 skipSpace(Client cntxt)
 {
 	char *s= &currChar(cntxt);
@@ -129,7 +129,7 @@ skipSpace(Client cntxt)
 	}
 }
 
-static INLINE void 
+static inline void 
 advance(Client cntxt, int length)
 {
 	cntxt->yycur += length;
@@ -270,7 +270,7 @@ Keyphrase testing is limited to a few characters only
 (check manually). To speed this up we use a pipelined and
 inline macros.
 @c
-static INLINE int 
+static inline int 
 keyphrase1(Client cntxt, str kw)
 {
 	skipSpace(cntxt);
@@ -281,7 +281,7 @@ keyphrase1(Client cntxt, str kw)
 	return 0;
 }
 
-static INLINE int 
+static inline int 
 keyphrase2(Client cntxt, str kw)
 {
 	skipSpace(cntxt);
@@ -291,7 +291,7 @@ keyphrase2(Client cntxt, str kw)
 	}
 	return 0;
 }
-static INLINE int 
+static inline int 
 keyphrase(Client cntxt, str kw,int length)
 {
 	skipSpace(cntxt);
@@ -405,7 +405,7 @@ position(Client cntxt)
 Upon encountering an error we skip to the nearest semicolon,
 or comment terminated by a new line
 @c
-static INLINE void 
+static inline void 
 skipToEnd(Client cntxt)
 {	char c;
 	while( (c= *CURRENT(cntxt)) != ';' && c && c !='\n') nextChar(cntxt);
@@ -747,7 +747,7 @@ parseTypeId(Client cntxt, int defaultType)
 	return defaultType;
 }
 
-static INLINE int typeElm(Client cntxt, int def)
+static inline int typeElm(Client cntxt, int def)
 {
 	if (currChar(cntxt) != ':')
 		return def;	/* no type qualifier */

@@ -1380,7 +1380,7 @@ strEpilogue(void)
 		*(@2)++ = 0x80 | ((@1) & 0x3F);
 	}
 @c
-static INLINE wrd
+static inline wrd
 UTF8_strlen(str val)
 {
 	unsigned char *s = (unsigned char *) val;
@@ -1414,7 +1414,7 @@ UTF8_strlen(str val)
 	return pos;
 }
 
-static INLINE wrd
+static inline wrd
 UTF8_strpos(str val, str end)
 {
 	unsigned char *s = (unsigned char *) val;
@@ -1453,7 +1453,7 @@ UTF8_strpos(str val, str end)
 	return pos;
 }
 
-static INLINE str
+static inline str
 UTF8_strtail(str val, wrd pos)
 {
 	unsigned char *s = (unsigned char *) val;

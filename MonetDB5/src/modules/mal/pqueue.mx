@@ -164,7 +164,7 @@ pqueue_export str PQinit(int *ret, int *bid, wrd *maxsize);
 #include "mal_interpreter.h"
 
 /*returns the parent of a pqueue position*/
-static INLINE BUN parent(BUN posel)
+static inline BUN parent(BUN posel)
 {
   if (posel%2) /*odd*/
 	return posel/2;

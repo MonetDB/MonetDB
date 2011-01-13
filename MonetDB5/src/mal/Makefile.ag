@@ -15,8 +15,11 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-INCLUDES = ../../../MonetDB/src/common ../../../common/stream ../../../MonetDB/src/gdk \
-	$(READLINE_INCS) $(openssl_CFLAGS)
+INCLUDES = ../../../MonetDB/src/common \
+		   ../../../common/stream \
+		   ../../../clients/src/mapilib \
+		   ../../../MonetDB/src/gdk \
+		   $(READLINE_INCS) $(openssl_CFLAGS)
 MTSAFE
 
 lib_mal = {

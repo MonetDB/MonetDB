@@ -1556,7 +1556,7 @@ one now must do:
 @end verbatim
 @
 @c
-static INLINE BUN
+static inline BUN
 BUNdelete_(BAT *b, BUN p, bit force)
 {
 	BATiter bi = bat_iterator(b);

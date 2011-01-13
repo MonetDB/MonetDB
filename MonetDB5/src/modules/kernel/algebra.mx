@@ -1795,7 +1795,7 @@ The string pattern matching routine has been added. It should be
 dynamically linked.
 A simple string matcher is included. It should be refined later on
 @c
-static INLINE int
+static inline int
 like(char *x, char *y, BUN ylen)
 {
 	char *r;

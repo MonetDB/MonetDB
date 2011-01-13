@@ -53,8 +53,6 @@
 # include <ctype.h>
 #endif
 
-#include "monet_utils.h"
-
 #ifdef	__cplusplus
 extern "C" {
 #endif

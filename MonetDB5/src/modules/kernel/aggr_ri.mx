@@ -27,7 +27,7 @@ All Rights Reserved.
 */
 @= init_result
 {
-	REGISTER BUN _cnt = BATcount(e);
+	register BUN _cnt = BATcount(e);
 	BAT *bm = 0;
 
 	bn->tsorted = 0;

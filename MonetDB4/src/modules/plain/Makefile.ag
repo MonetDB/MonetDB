@@ -18,6 +18,7 @@
 INCLUDES = ../../monet \
 	../../../../MonetDB/src/common \
 	../../../../common/stream \
+	../../../../clients/src/mapilib \
 	../../../../MonetDB/src/gdk \
 	$(zlib_CFLAGS) $(BZ_CFLAGS) $(HWCOUNTERS_INCS) $(PCL_CFLAGS) \
 	$(pcre_CFLAGS) $(ICONV_CFLAGS)

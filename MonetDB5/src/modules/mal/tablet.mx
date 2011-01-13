@@ -378,6 +378,7 @@ pre presented on the screen directly.
 #include <mal_exception.h>
 #include <mal_client.h>
 #include <mal_interpreter.h>
+#include <Mapi.h> /* for PROMPT1, PROMPT2 */
 #include "histogram.h"
 
 #ifdef WIN32
@@ -974,7 +975,7 @@ static ptr
 bun_tail(BAT *b, BUN nr)
 {
 	BATiter bi = bat_iterator(b);
-	REGISTER BUN _i = BUNfirst(b);
+	register BUN _i = BUNfirst(b);
 
 	return (ptr) BUNtail(bi, _i + nr);
 }
@@ -1409,7 +1410,7 @@ sync_bats(Tablet * as)
 		}
 }
 
-static INLINE char *
+static inline char *
 rstrip(char *s, char *e)
 {
 	e--;
@@ -1420,7 +1421,7 @@ rstrip(char *s, char *e)
 	return e;
 }
 
-static INLINE char *
+static inline char *
 find_quote(char *s, char quote)
 {
 	while (*s != quote)
@@ -1428,7 +1429,7 @@ find_quote(char *s, char quote)
 	return s;
 }
 
-static INLINE char *
+static inline char *
 rfind_quote(char *s, char *e, char quote)
 {
 	while (*e != quote && e>s)
@@ -1436,7 +1437,7 @@ rfind_quote(char *s, char *e, char quote)
 	return e;
 }
 
-static INLINE int
+static inline int
 insert_val(Column * fmt, char *s, char *e, char quote, ptr key, str *err, int c)
 {
 	char bak=0;
@@ -1530,7 +1531,7 @@ tablet_skip_string(char *s, char quote)
 	return s;
 }
 
-INLINE int
+inline int
 insert_line(Tablet * as, char *line, ptr key, BUN col1, BUN col2 )
 {
 	Column *fmt = as->format;
@@ -1621,7 +1622,7 @@ TABLET_error(stream *s)
 	return -1;
 }
 
-static INLINE int
+static inline int
 dump_line(char **buf, int *len, Column * fmt, stream *fd, BUN nr_attrs, BUN id)
 {
 	BUN i;
@@ -1651,7 +1652,7 @@ dump_line(char **buf, int *len, Column * fmt, stream *fd, BUN nr_attrs, BUN id)
 	return 0;
 }
 
-static INLINE int
+static inline int
 output_line(char **buf, int *len, Column * fmt, stream *fd, BUN nr_attrs, ptr id)
 {
 	BUN i;
@@ -1691,7 +1692,7 @@ output_line(char **buf, int *len, Column * fmt, stream *fd, BUN nr_attrs, ptr id
 	return 0;
 }
 
-static INLINE int
+static inline int
 output_line_dense(char **buf, int *len, Column * fmt, stream *fd, BUN nr_attrs)
 {
 	BUN i;
@@ -1719,7 +1720,7 @@ output_line_dense(char **buf, int *len, Column * fmt, stream *fd, BUN nr_attrs)
 	return 0;
 }
 
-static INLINE int
+static inline int
 output_line_lookup(char **buf, int *len, Column * fmt, stream *fd, BUN nr_attrs, BUN id)
 {
 	BUN i;

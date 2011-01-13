@@ -280,7 +280,7 @@ XRPCreq_free(XRPCreq_t *req)
     GDKfree(req);
 }
 
-static INLINE oid
+static inline oid
 skip_text_nodes(char *pre_kindT, oid pre, oid max) 
 {
     while(pre < max && pre_kindT[pre] == TEXT) pre++;
@@ -332,7 +332,7 @@ get_node_type(str typename) {
 /**
  * @return PRE, or 0 if not found.
  */
-static INLINE oid
+static inline oid
 get_pre_by_qname(
         str qname,
         oid start_pre,

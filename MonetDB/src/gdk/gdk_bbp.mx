@@ -198,7 +198,7 @@ static BAT *getBBPdescriptor(bat i, int lock);
 
 
 static int stamp = 0;
-static INLINE int
+static inline int
 BBPstamp(void)
 {
 	return ++stamp;
@@ -324,7 +324,7 @@ actions are to go on unlocked while other entries in the BBP may be modified).
 @c
 static MT_Id locked_by = 0;
 
-static INLINE MT_Id
+static inline MT_Id
 BBP_getpid(void)
 {
 	MT_Id x = MT_getpid();
@@ -443,7 +443,7 @@ BBPextend(dbl factor, int buildhash)
 	BBP_notrim = 0;
 }
 
-static INLINE char *
+static inline char *
 BBPparse(str *cur)
 {
 	char *base, *c = *cur;
@@ -458,7 +458,7 @@ BBPparse(str *cur)
 }
 
 
-static INLINE str
+static inline str
 BBPtmpname(str s, int len, bat i)
 {
 	int reverse = i < 0;
@@ -479,7 +479,7 @@ BBPtmpname(str s, int len, bat i)
 	return s + len;
 }
 
-static INLINE str
+static inline str
 BBPphysicalname(str s, int len, bat i)
 {
 	s[--len] = 0;
@@ -1572,7 +1572,7 @@ BBP index lookup by BAT name:
 @c
 */
 @c
-static INLINE bat
+static inline bat
 BBP_find(const char *nme, int lock)
 {
 	bat i = BBPnamecheck(nme);
@@ -1657,7 +1657,7 @@ An existing BAT is inserted into the BBP
 @c
 */
 @c
-static INLINE str
+static inline str
 BBPsubdir_recursive(str s, bat i)
 {
 	i >>= 6;
@@ -1671,7 +1671,7 @@ BBPsubdir_recursive(str s, bat i)
 	return s;
 }
 
-static INLINE void
+static inline void
 BBPgetsubdir(str s, bat i)
 {
 	if (i >= 0100) {
@@ -1863,7 +1863,7 @@ BBPuncacheit_(bat i, int unloaddesc)
 @c
 */
 @c
-static INLINE void
+static inline void
 bbpclear(bat i, int idx, str lock)
 {
 	BATDEBUG {
@@ -2024,7 +2024,7 @@ incremented with @%BBPfix@ and decremented with @%BBPunfix@.
 @h
 */
 @c
-static INLINE void
+static inline void
 BBPspin(bat i, str s, int event)
 {
 	if (BBPcheck(i, "BBPspin") && (BBP_status(i) & event)) {
@@ -2038,7 +2038,7 @@ BBPspin(bat i, str s, int event)
 	}
 }
 
-static INLINE int
+static inline int
 incref(bat i, int logical, int lock)
 {
 	int refs;
@@ -2163,7 +2163,7 @@ BBPshare(bat parent)
 		gdk_unset_lock(GDKswapLock(parent), "BBPshare");
 }
 
-static INLINE int
+static inline int
 decref(bat i, int logical, int releaseShare, int lock)
 {
 	int refs = 0, swap = 0;
@@ -2353,7 +2353,7 @@ BBPreleaseref(bat i)
         decref(i, FALSE, FALSE, lock);
 }
 
-static INLINE void
+static inline void
 GDKunshare(bat parent)
 {
 	if (parent < 0)
@@ -3245,7 +3245,7 @@ BBPinitcache(void)
 }
 
 /* throw the LRU bat out using the fifo list */
-static INLINE batcache_int
+static inline batcache_int
 batcache_del(batcache_t * bc)
 {
 	batcache_int i = bc->first;
@@ -3281,7 +3281,7 @@ batcache_del(batcache_t * bc)
 }
 
 /* insert a new bat into the cache */
-static INLINE int
+static inline int
 batcache_put(batcache_t * bc, int bin, bat bid)
 {
 	/* get a free slot */
@@ -3320,7 +3320,7 @@ batcache_put(batcache_t * bc, int bin, bat bid)
 }
 
 /* return and revive a cached bat from the cache */
-static INLINE bat
+static inline bat
 batcache_get(batcache_t * bc, int bin)
 {
 	batcache_int i;

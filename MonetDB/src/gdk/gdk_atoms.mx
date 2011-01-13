@@ -270,31 +270,31 @@ lngHash(lng *v)
 
 @+ Standard Atoms
 @c
-static INLINE void
+static inline void
 shtConvert(sht *s)
 {
 	*s = short_int_SWAP(*s);
 }
 
-static INLINE void
+static inline void
 intConvert(int *s)
 {
 	*s = normal_int_SWAP(*s);
 }
 
-static INLINE void
+static inline void
 lngConvert(lng *s)
 {
 	*s = long_long_SWAP(*s);
 }
 
-static INLINE int
+static inline int
 batFix(bat *b)
 {
 	return BBPincref(*b, TRUE);
 }
 
-static INLINE int
+static inline int
 batUnfix(bat *b)
 {
 	return BBPdecref(*b, TRUE);

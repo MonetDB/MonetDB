@@ -468,7 +468,7 @@ pack_all_mats(mat_t *mat, int mtop, MalBlkPtr mb )
 }
 */
 
-INLINE static int
+inline static int
 mat_add(mat_t *mat, int mtop, InstrPtr q, InstrPtr r, mat_type type) 
 {
 	mat[mtop].mi = q;

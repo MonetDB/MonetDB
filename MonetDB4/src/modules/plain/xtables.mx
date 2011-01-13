@@ -1076,7 +1076,7 @@ CTsubhisto(BAT **ret, BAT *sel, BAT *grp, BAT *dom)
 @c
 #define DEFAULT_SIZE 10000
 
-static INLINE BUN
+static inline BUN
 sort_flush(var_t *off, oid *o, BUN size, int tpe, char *base, oid *hdst, oid *tdst, oid *idp, int reverse)
 {
 	int (*cmp) (ptr, ptr) = BATatoms[tpe].atomCmp;

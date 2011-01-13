@@ -196,7 +196,7 @@ remote_export str RMTepilogue(int *ret);
 @c
 static connection conns = NULL;
 
-static INLINE str RMTquery(MapiHdl *ret, str func, Mapi conn, str query);
+static inline str RMTquery(MapiHdl *ret, str func, Mapi conn, str query);
 
 @h
 remote_export str RMTresolve(int *ret, str *pat);
@@ -429,7 +429,7 @@ str RMTdisconnect(int *ret, str *conn) {
  * already.
  * NOTE: this function acquires the mal_remoteLock before accessing conns
  */
-static INLINE str
+static inline str
 RMTfindconn(connection *ret, str conn) {
 	connection c;
 
@@ -459,7 +459,7 @@ RMTfindconn(connection *ret, str conn) {
  * Re-use of this remote identifier should be done with care.
  * The encoding of the type allows for ease of type checking later on.
  */
-static INLINE str
+static inline str
 RMTgetId(char *buf, MalBlkPtr mb, InstrPtr p, int arg) {
 	InstrPtr f;
 	char *mod;
@@ -490,7 +490,7 @@ RMTgetId(char *buf, MalBlkPtr mb, InstrPtr p, int arg) {
  * should have been checked already.
  * NOTE: this function assumes a lock for conn is set
  */
-static INLINE str
+static inline str
 RMTquery(MapiHdl *ret, str func, Mapi conn, str query) {
 	MapiHdl mhdl;
 

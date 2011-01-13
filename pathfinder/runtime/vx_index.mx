@@ -55,7 +55,7 @@ attribute/element tags.
 #define XQH_CLC_SHFT(v,o) ((v << o) | (XQH_MASK27(XQH_UNSGN(v) >> (27-o))))
 
 /* hash function H */
-static INLINE int XQH_H(str v) {
+static inline int XQH_H(str v) {
     int c;
     int h_val = 0, ofs = 0;
 
@@ -102,7 +102,7 @@ int CMD_XQH_H_bat(BAT **res, BAT* b) {
 }
 
 /* Combine function C */
-static INLINE int XQH_C(int l, int r) {
+static inline int XQH_C(int l, int r) {
     int h_comb = 0;
     int ofs = 0;
 
@@ -329,7 +329,7 @@ static unsigned char STT[60][59] = {
  * statements go until 4 in worst case. As a result this function never
  * reaches the end.
  */
-static INLINE unsigned char dbl_fsm(str v) {
+static inline unsigned char dbl_fsm(str v) {
     unsigned char state = rej;
     unsigned char lead  = 0;
 

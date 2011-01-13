@@ -27,8 +27,8 @@ All Rights Reserved.
 */
 @= init_result
 {
-	REGISTER BUN _p = BUNlast(bn);
-	REGISTER BUN _cnt = BATcount(e);
+	register BUN _p = BUNlast(bn);
+	register BUN _cnt = BATcount(e);
 	BATiter ei = bat_iterator(e);
 
 	bn->tsorted = bn->hsorted = 0;

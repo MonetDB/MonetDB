@@ -99,7 +99,6 @@ mutils_export void mo_free_options(opt *set, int setlen);
 @c
 #include "monetdb_config.h"
 #include "monet_options.h"
-#include "monet_utils.h"
 #ifndef HAVE_GETOPT_LONG
 #  include "monet_getopt.h"
 #else

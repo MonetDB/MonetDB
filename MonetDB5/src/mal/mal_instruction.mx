@@ -1191,7 +1191,7 @@ location of a temporary variable should be flagged as an error.
 @-
 Temporary names are not materialized as strings unless necessary.
 @c
-INLINE str
+inline str
 getVarName(MalBlkPtr mb, int i)
 {
 	str nme;
@@ -1206,7 +1206,7 @@ getVarName(MalBlkPtr mb, int i)
 	return nme;
 }
 
-INLINE void
+inline void
 resetVarName(MalBlkPtr mb, int i){
 	str nme;
 	char buf[PATHLENGTH];
@@ -1223,7 +1223,7 @@ resetVarName(MalBlkPtr mb, int i){
 	} 
 }
 
-INLINE str
+inline str
 getRefName(MalBlkPtr mb, int i)
 {
 	str nme;
@@ -2232,7 +2232,7 @@ Beware, that we only consider the instruction polymorphic
 if it has an index or belongs to the signature.
 In other cases it merely has to be filled.
 @c
-INLINE void
+inline void
 setPolymorphic(InstrPtr p, int tpe, int force)
 {
 	int c1 = 0, c2 = 0;

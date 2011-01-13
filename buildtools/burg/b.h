@@ -300,12 +300,6 @@ extern int debugTables;
 #define TABLE_INCR	8
 #define STATES_INCR	64
 
-#ifdef NDEBUG
-#define assert(c) ((void) 0)
-#else
-#define assert(c) ((void) ((c) || fatal(__FILE__,__LINE__)))
-#endif
-
 extern void doStart ARGS((char *));
 extern int fatal ARGS((char *, int));
 extern void yyerror ARGS((char *));

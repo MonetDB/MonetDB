@@ -317,8 +317,6 @@ An error at this stage normally lead to an abort.
 #ifndef _GDK_H_
 #define _GDK_H_
 
-#include <monet_utils.h>
-
 /* standard includes upon which all configure tests depend */
 #include <stdio.h>
 #ifdef HAVE_SYS_TYPES_H
@@ -1468,7 +1466,7 @@ in advance that the head-atom resp. tail-atom of a BAT is variable sized.
 
 #define bunfastins(b, h, t)						\
 	do {								\
-		REGISTER BUN _p = BUNlast(b);				\
+		register BUN _p = BUNlast(b);				\
 		if (_p == BUN_MAX || BATcount(b) == BUN_MAX) {		\
 			GDKerror("bunfastins: bat too large\n");	\
 			goto bunins_failed;				\
@@ -1605,7 +1603,7 @@ typedef var_t stridx_t; /* TODO: should also be unsigned short, but kept at var_
 #define BUNhead(bi,p)	((bi).b->hvarsized?BUNhvar(bi,p):BUNhloc(bi,p))
 #define BUNtail(bi,p)	((bi).b->tvarsized?BUNtvar(bi,p):BUNtloc(bi,p))
 
-static INLINE BATiter
+static inline BATiter
 bat_iterator(BAT *b) 
 {
 	BATiter bi;
@@ -1619,7 +1617,7 @@ bat_iterator(BAT *b)
 #ifdef NDEBUG
 #define BUNlast(b)	((b)->batFirst + (b)->batCount)
 #else
-static INLINE BUN
+static inline BUN
 BUNlast(BAT *b)
 {
 	BUN last;
@@ -2721,6 +2719,15 @@ gdk_export MT_Lock GDKtmLock;
 #define FORCEMITOMASK	(1<<29)
 #define FORCEMITODEBUG	if (GDKdebug & FORCEMITOMASK)
 
+#define short_int_SWAP(s) ((short)(((0x00ff&(s))<<8) | ((0xff00&(s))>>8)))
+
+#define normal_int_SWAP(i) (((0x000000ff&(i))<<24) | ((0x0000ff00&(i))<<8) | \
+	               ((0x00ff0000&(i))>>8)  | ((0xff000000&(i))>>24))
+
+#define long_long_SWAP(l) \
+		((((lng)normal_int_SWAP(l))<<32) |\
+		 (0xffffffff&normal_int_SWAP(l>>32)))
+
 gdk_export int GDKnrofthreads;
 gdk_export int GDKembedded;
 gdk_export int GDKprotected;
@@ -2804,11 +2811,11 @@ gdk_export void *THRdata[16];
 extern "C" {
 #endif
 
-static INLINE bat
-BBPcheck(REGISTER bat x, REGISTER const char *y)
+static inline bat
+BBPcheck(register bat x, register const char *y)
 {
 	if (x && x != bat_nil) {
-		REGISTER bat z = ABS(x);
+		register bat z = ABS(x);
 
 		if (z >= BBPsize || BBP[z].nme[0] == NULL) {
 			CHECKDEBUG THRprintf(GDKout,"#%s: range error %d\n", y, (int) x);
@@ -2819,10 +2826,10 @@ BBPcheck(REGISTER bat x, REGISTER const char *y)
 	return 0;
 }
 
-static INLINE BAT *
-BATdescriptor(REGISTER bat i)
+static inline BAT *
+BATdescriptor(register bat i)
 {
-	REGISTER BAT *b = NULL;
+	register BAT *b = NULL;
 
 	if (BBPcheck(i, "BATdescriptor")) {
 		BBPfix(i);
@@ -2833,7 +2840,7 @@ BATdescriptor(REGISTER bat i)
 	return b;
 }
 
-static INLINE char *
+static inline char *
 Hpos(BATiter *bi, BUN p)
 {
 	bi->hvid = bi->b->hseqbase;
@@ -2842,7 +2849,7 @@ Hpos(BATiter *bi, BUN p)
 	return (char*)&bi->hvid;
 }
 
-static INLINE char *
+static inline char *
 Tpos(BATiter *bi, BUN p)
 {
 	bi->tvid = bi->b->tseqbase;
@@ -2851,8 +2858,8 @@ Tpos(BATiter *bi, BUN p)
 	return (char*)&bi->tvid;
 }
 
-static INLINE BAT *
-BATmirror(REGISTER BAT *b)
+static inline BAT *
+BATmirror(register BAT *b)
 {
 	if (b == NULL)
 		return NULL;
