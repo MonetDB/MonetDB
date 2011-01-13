@@ -416,7 +416,7 @@ _ASCIIadt_toStr(void *extra, char **buf, int *len, int type, ptr a)
 		if (c->quote) {
 			dst[0] = c->quote;
 			l2 = 1;
-			l = escapedStr(dst+l2, src);
+			l = escapedStr(dst + l2, src, *len - l2);
 		} else {
 			strncpy(dst + l2, src, l);
 		}

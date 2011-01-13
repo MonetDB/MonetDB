@@ -181,7 +181,7 @@ gdk_export int strElimDoubles(Heap *h);
 gdk_export var_t strLocate(Heap *h, str v);
 gdk_export int strCmpNoNil(unsigned char *l, unsigned char *r);
 gdk_export int escapedStrlen(const char *src);
-gdk_export int escapedStr(char *dst, const char *src);
+gdk_export int escapedStr(char *dst, const char *src, int dstlen);
 
 #ifdef __cplusplus
 }
@@ -2313,41 +2313,41 @@ escapedStrlen(const char *src)
 }
 
 int
-escapedStr(char *dst, const char *src)
+escapedStr(char *dst, const char *src, int dstlen)
 {
-	char *s, *r = (char *) src;
 	int cur = 0, l = 0;
 
-	for (s = dst; r[cur]; cur++)
-		if (r[cur] == '\t') {
-			s[l++] = '\\';
-			s[l++] = 't';
-		} else if (r[cur] == '\n') {
-			s[l++] = '\\';
-			s[l++] = 'n';
-		} else if (r[cur] == '\\') {
-			s[l++] = '\\';
-			s[l++] = '\\';
-		} else if (r[cur] == '"') {
-			s[l++] = '\\';
-			s[l++] = '"';
-		} else if (!printable_chr(r[cur])
+	for (; src[cur] && l < dstlen; cur++)
+		if (src[cur] == '\t') {
+			dst[l++] = '\\';
+			dst[l++] = 't';
+		} else if (src[cur] == '\n') {
+			dst[l++] = '\\';
+			dst[l++] = 'n';
+		} else if (src[cur] == '\\') {
+			dst[l++] = '\\';
+			dst[l++] = '\\';
+		} else if (src[cur] == '"') {
+			dst[l++] = '\\';
+			dst[l++] = '"';
+		} else if (!printable_chr(src[cur])
 #ifndef ASCII_CHR
-			   || (r[cur] == (char) '\302' &&
-			       0200 <= ((int) r[cur + 1] & 0377) &&
-			       ((int) r[cur + 1] & 0377) <= 0237)
+			   || (src[cur] == '\302' &&
+			       0200 <= (src[cur + 1] & 0377) &&
+			       ((int) src[cur + 1] & 0377) <= 0237)
 			   || (cur > 0 &&
-			       r[cur - 1] == (char) '\302' &&
-			       0200 <= ((int) r[cur] & 0377) &&
-			       ((int) r[cur] & 0377) <= 0237)
+			       src[cur - 1] == '\302' &&
+			       0200 <= (src[cur] & 0377) &&
+			       (src[cur] & 0377) <= 0237)
 #endif
 		    ) {
-			sprintf(s + l, "\\%03o", (unsigned char) r[cur]);
+			snprintf(dst + l, dstlen - l, "\\%03o", (unsigned char) src[cur]);
 			l += 4;
 		} else {
-			s[l++] = r[cur];
+			dst[l++] = src[cur];
 		}
-	s[l] = 0;
+	assert(l < dstlen);
+	dst[l] = 0;
 	return l;
 }
 
@@ -2364,7 +2364,7 @@ strToStr(char **dst, int *len, char *src)
 	} else {
 		int sz = escapedStrlen(src);
 		@:atommem(char,sz+3)@
-		l = escapedStr((*dst) + 1, src);
+		l = escapedStr((*dst) + 1, src, *len - 1);
 		l++;
 		(*dst)[0] = (*dst)[l++] = '"';
 		(*dst)[l] = 0;
