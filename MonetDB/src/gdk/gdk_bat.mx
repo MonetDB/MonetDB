@@ -1498,7 +1498,7 @@ BUNappend(BAT *b, ptr t, bit force)
 			b->tseqbase = bm->hseqbase = *(oid *) t;
 		} else if (b->ttype == TYPE_void && b->tseqbase != oid_nil) {
 			if (*(oid *) t == oid_nil) {
-				BATmaterializet(b);
+				b = BATmaterializet(b);
 				countonly = 0;
 				if (b == NULL)
 					return NULL;
@@ -2422,8 +2422,6 @@ BATrename(BAT *b, const char *nme)
 		GDKerror("BATrename: illegal temporary name: '%s'\n", nme);
 	} else if (ret == BBPRENAME_LONG) {
 		GDKerror("BATrename: name too long: '%s'\n", nme);
-	} else if (b == NULL) {
-		GDKerror("BATrename: BAT argument missing\n");
 	}
 	return BBPname(b->batCacheid);
 }
@@ -3409,10 +3407,11 @@ for determining which algebra commands set properties sub-optimally.
 				BAT *bv = VIEWcreate(b, b);
 				Heap *hp = (Heap *) GDKzalloc(sizeof(Heap));
 				str nme = BBP_physical(bv->batCacheid);
+				size_t nmelen = strlen(nme);
 
-				hp->filename = GDKmalloc(strlen(nme) + 12);
+				hp->filename = GDKmalloc(nmelen + 12);
 				if (hp->filename != NULL)
-					sprintf(hp->filename, "%s.%chash", nme, bv->batCacheid > 0 ? 'h' : 't');
+					snprintf(hp->filename, nmelen + 12, "%s.%chash", nme, bv->batCacheid > 0 ? 'h' : 't');
 				if (hp->filename == NULL ||
 				    (bv->H->hash = HASHnew(hp, tpe, yy + lim, HASHmask(lim))) == NULL) {
 					GDKfree(hp->filename);
