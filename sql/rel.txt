@@ -6,7 +6,8 @@ BASETABLE
 
 TABLE 	(card MULTI)
 	-> exps		is list of column expressions (also used for aliases)
-	-> l		table function expression
+	-> l 		optional input relation
+	-> r		table function expression
 
 /* Wrapping relational operator, is a big complex top level only 
    operator, which only does DDL kind of statements

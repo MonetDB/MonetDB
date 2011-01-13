@@ -521,9 +521,12 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 			if (locked) {
 				BAT *b = store_funcs.bind_col(m->session->tr, col, RDONLY);
        				BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP, 1);
+				HASHremove(b);
+				HASHremove(BATmirror(b));
+
 				fmt[i].c[0] = b;
 				cnt = BATcount(b);
-				if ( BATcapacity(b) < (BUN) sz )
+				if ( sz > 0 && BATcapacity(b) < (BUN) sz )
 					if ( (fmt[i].c[0] =  BATextend(fmt[i].c[0], (BUN) sz)) == NULL){
 							for ( i--; i>=0; i--)
 								BBPunfix( fmt[i].c[0]->batCacheid);

@@ -452,12 +452,12 @@ rel_basetable(sql_allocator *sa, sql_table *t, char *atname)
 }
 
 sql_rel *
-rel_table_func(sql_allocator *sa, sql_exp *f, list *exps)
+rel_table_func(sql_allocator *sa, sql_rel *l, sql_exp *f, list *exps)
 {
 	sql_rel *rel = rel_create(sa);
 
-	rel->l = f;
-	rel->r = NULL;
+	rel->l = l;
+	rel->r = f;
 	rel->op = op_table;
 	rel->exps = exps;
 	rel->card = CARD_MULTI;
@@ -1237,7 +1237,7 @@ rel_named_table_function(mvc *sql, sql_rel *rel, symbol *query)
 	/* column or table function */
 	st = exp_subtype(e);
 	if (!st->comp_type) {
-		(void) sql_error(sql, 02, "SELECT: '%s' does not return a table", tname);
+		(void) sql_error(sql, 02, "SELECT: '%s' does not return a table", exp_func_name(e));
 		return NULL;
 	}
 
@@ -1247,7 +1247,7 @@ rel_named_table_function(mvc *sql, sql_rel *rel, symbol *query)
 		sql_column *c = m->data;
 		append(exps, exp_column(sql->sa, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0));
 	}
-	return rel_table_func(sql->sa, e, exps);
+	return rel_table_func(sql->sa, rel, e, exps);
 }
 
 static sql_exp *
@@ -1290,6 +1290,7 @@ rel_named_table_operator(mvc *sql, sql_rel *rel, symbol *query)
 		column_spec = query->data.lval->h->next->data.sym->data.lval->h->next->data.lval;
 	}
 
+	/* TODO niels this needs a cleanup, shouldn't be needed anymore */
 	if ((t = mvc_create_table_as_subquery(sql, sq, sql->session->schema, tname, column_spec, tt_stream, CA_COMMIT)) == NULL) {
 		rel_destroy(sq);
 		return NULL;
@@ -1318,7 +1319,7 @@ rel_named_table_operator(mvc *sql, sql_rel *rel, symbol *query)
 		sql_column *c = m->data;
 		append(exps, exp_column(sql->sa, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0));
 	}
-	return rel_table_func(sql->sa, e, exps);
+	return rel_table_func(sql->sa, sq, e, exps);
 }
 
 static sql_rel *

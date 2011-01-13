@@ -528,7 +528,7 @@ rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns,
 		sql_column *c = n->data;
 		append(exps, exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0));
 	}
-	res = rel_table_func(sql->sa, import, exps);
+	res = rel_table_func(sql->sa, NULL, import, exps);
 	return res;
 }
 
@@ -704,7 +704,7 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *files)
 		sql_column *c = n->data;
 		append(exps, exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0));
 	}
-	res = rel_table_func(sql->sa, import, exps);
+	res = rel_table_func(sql->sa, NULL, import, exps);
 	return rel_insert_cluster(sql, t, res);
 }
 
