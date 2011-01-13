@@ -1135,8 +1135,6 @@ ASCIIload(BAT *names, BAT *seps, BAT *types, char *datafile, BUN nr)
 	}
 	res = ASCIIinput(names, seps, types, b = bstream_create(s, SIZE), NULL, nr);
 	bstream_destroy(b);
-	mnstr_close(s);
-	mnstr_destroy(s);
 	return res;
 }
 
