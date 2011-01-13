@@ -29,8 +29,7 @@ lib_mutils = {
 headers_common = {
 	DIR = includedir/MonetDB/common
 	HEADERS = h
-	SOURCES = monet_options.mx monet_getopt.h \
-	          dummy_gdk_utils.mx
+	SOURCES = monet_options.mx monet_getopt.h
 }
 
 headers_pc = {
