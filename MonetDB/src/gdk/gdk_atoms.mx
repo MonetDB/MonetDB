@@ -548,7 +548,7 @@ ATOMproperty(str id, str property, GDKfcn arg, int val)
 		FATALcheck(GDKatomcnt == MAXATOMS, "ATOMproperty:too many types");
 		FATALcheck(strlen(id) >= IDLENGTH, "ATOMproperty:name too long");
 		memset(BATatoms + t, 0, sizeof(atomDesc));
-		strcpy(BATatoms[t].name, id);
+		strncpy(BATatoms[t].name, id, IDLENGTH);
 		BATatoms[t].size = sizeof(int);	/* default */
 		assert_shift_width(ATOMelmshift(BATatoms[t].size), BATatoms[t].size);
 		BATatoms[t].align = sizeof(int);	/* default */
@@ -575,7 +575,7 @@ ATOMproperty(str id, str property, GDKfcn arg, int val)
 		BATatoms[t].align = val;
 	} else if (strcmp("storage", property) == 0) {
 		BATatoms[t] = BATatoms[val];	/* copy from example */
-		strcpy(BATatoms[t].name, id);	/* restore name */
+		strncpy(BATatoms[t].name, id, IDLENGTH); /* restore name */
 	} else if (strcmp("fromstr", property) == 0) {
 		BATatoms[t].atomFromStr = (int (*)(char *, int *, void **)) arg;
 	} else if (strcmp("tostr", property) == 0) {
@@ -657,7 +657,7 @@ ATOMindex(str nme)
 char *
 ATOMname(int t)
 {
-	return (t >= 0 && t < GDKatomcnt && BATatoms[t].name) ? BATatoms[t].name : "null";
+	return t >= 0 && t < GDKatomcnt && *BATatoms[t].name ? BATatoms[t].name : "null";
 }
 
 int
@@ -1056,7 +1056,7 @@ ATOMformat(int t, ptr p, char **buf)
 	*buf = GDKmalloc(4);
 	if (*buf == NULL)
 		return -1;
-	strcpy(*buf, "nil");
+	strncpy(*buf, "nil", 4);
 	return 3;
 }
 
@@ -1098,7 +1098,7 @@ int
 {
 	@:atommem(char,@1Strlen)@
 	if (*src == @1_nil) {
-		strcpy(*dst, "nil");
+		strncpy(*dst, "nil", *len);
 		return 3;
 	}
 	snprintf(*dst, *len, @2, (@3) *src);
@@ -1129,9 +1129,9 @@ int
 voidToStr(str *dst, int *len, void *src)
 {
 	(void) src;
-	@:atommem(char,3)@
+	@:atommem(char,4)@
 
-	strcpy(*dst, "nil");
+	strncpy(*dst, "nil", *len);
 	return 3;
 }
 
@@ -1340,7 +1340,7 @@ chrToStr(str *dst, int *len, chr *src)
 	@:atommem(char,chrStrlen)@
 
 	if (*src == chr_nil) {
-		strcpy(*dst, "nil");
+		strncpy(*dst, "nil", *len);
 		return 3;
 	} else {
 		str p = *dst;
@@ -1348,7 +1348,7 @@ chrToStr(str *dst, int *len, chr *src)
 		*p++ = '\'';
 		if (*src & 0x80) {
 #ifdef ASCII_CHR
-			strcpy(*dst, "nil");
+			strncpy(*dst, "nil", *len);
 			return 3;
 #else
 			*p++ = 0xC0 | ((*src >> 6) & 0x03);
@@ -1427,13 +1427,13 @@ bitToStr(char **dst, int *len, bit *src)
 	@:atommem(char,6)@
 
 	if (*src == bit_nil) {
-		strcpy(*dst, "nil");
+		strncpy(*dst, "nil", *len);
 		return 3;
 	} else if (*src) {
-		strcpy(*dst, "true");
+		strncpy(*dst, "true", *len);
 		return 4;
 	}
-	strcpy(*dst, "false");
+	strncpy(*dst, "false", *len);
 	return 5;
 }
 
@@ -1489,7 +1489,7 @@ batToStr(char **dst, int *len, bat *src)
 	if (b == bat_nil || (s = BBPname(b)) == NULL || *s == 0) {
 		@:atommem(char,4)@
 
-		strcpy(*dst, "nil");
+		strncpy(*dst, "nil", *len);
 		return 3;
 	}
 	i = (int) (strlen(s) + 4);
@@ -1605,10 +1605,10 @@ lngToStr(char **dst, int *len, lng *src)
    
 	@:atommem(char,lngStrlen)@
 	if (*src == lng_nil) {
-		strcpy(*dst, "nil");
+		strncpy(*dst, "nil", *len);
 		return 3;
 	} 
-	sprintf(*dst, LLFMT, *src);
+	snprintf(*dst, *len, LLFMT, *src);
 	return strlen(*dst);
 }
 @c
@@ -2359,7 +2359,7 @@ strToStr(char **dst, int *len, char *src)
 	if (GDK_STRNIL((str) src)) {
 		@:atommem(char,4)@
 
-		strcpy(*dst, "nil");
+		strncpy(*dst, "nil", *len);
 		return 3;
 	} else {
 		int sz = escapedStrlen(src);
@@ -2572,7 +2572,7 @@ OIDtoStr(char **dst, int *len, oid *src)
 	@:atommem(char,oidStrlen)@
 
 	if (*src == oid_nil) {
-		strcpy(*dst, "nil");
+		strncpy(*dst, "nil", *len);
 		return 3;
 	}
 	snprintf(*dst, *len, OIDFMT "@0", *src);

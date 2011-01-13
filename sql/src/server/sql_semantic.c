@@ -290,7 +290,8 @@ sql_parse(mvc *m, sql_allocator *sa, char *query, char mode)
 		m->session->status = status;
 		m->cascade_action = cascade_action;
 		if (e) {
-			strcpy(m->errstr, e);
+			strncpy(m->errstr, e, ERRSIZE);
+			m->errstr[ERRSIZE - 1] = '\0';
 			_DELETE(e);
 		}
 	}
