@@ -15,27 +15,4 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-## Process this file with automake to produce Makefile.in
-
-MTSAFE
-
-EXTRA_DIST = monet_getopt.h getopt.c getopt1.c memcmp.c valgrind.h
-
-lib_mutils = { 
-	NAME = mutils
-	SOURCES = monet_utils.mx monet_options.mx monet_getopt.h
-}
-
-headers_common = {
-	DIR = includedir/MonetDB/common
-	HEADERS = h
-	SOURCES = monet_utils.mx monet_options.mx monet_getopt.h \
-	          dummy_gdk_utils.mx
-}
-
-headers_pc = {
-	COND = NOT_WIN32
-	HEADERS = pc
-	DIR = libdir/pkgconfig
-	SOURCES = monetdb-mutils.pc.in
-}
+SUBDIRS = stream

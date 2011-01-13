@@ -21,7 +21,6 @@
 
 %{
 #include "monetdb_config.h"
-#include <stream.h>
 #include "mapilib/Mapi.h"
 %}
 

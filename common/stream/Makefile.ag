@@ -19,23 +19,33 @@
 
 MTSAFE
 
-EXTRA_DIST = monet_getopt.h getopt.c getopt1.c memcmp.c valgrind.h
+EXTRA_DIST = stream_socket.h
 
-lib_mutils = { 
-	NAME = mutils
-	SOURCES = monet_utils.mx monet_options.mx monet_getopt.h
+INCLUDES = $(zlib_CFLAGS) \
+		   $(BZ_CFLAGS) \
+		   $(openssl_CFLAGS) \
+		   $(curl_CFLAGS) \
+		   $(ICONV_CFLAGS)
+
+lib_stream  =  {
+	SOURCES = stream.c stream.h
+	LIBS = $(SOCKET_LIBS) \
+		   $(zlib_LIBS) \
+		   $(BZ_LIBS) \
+		   $(openssl_LIBS) \
+		   $(curl_LIBS) \
+		   $(ICONV_LIBS)
 }
 
 headers_common = {
-	DIR = includedir/MonetDB/common
+	DIR = includedir/monetdb
 	HEADERS = h
-	SOURCES = monet_utils.mx monet_options.mx monet_getopt.h \
-	          dummy_gdk_utils.mx
+	SOURCES = stream_socket.h stream.h
 }
 
 headers_pc = {
 	COND = NOT_WIN32
 	HEADERS = pc
 	DIR = libdir/pkgconfig
-	SOURCES = monetdb-mutils.pc.in
+	SOURCES = monetdb-stream.pc.in
 }

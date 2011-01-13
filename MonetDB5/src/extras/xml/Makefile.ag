@@ -18,6 +18,7 @@
 INCLUDES = ../../mal \
 	../../../../MonetDB/src/common \
 	../../../../MonetDB/src/gdk \
+	../../../../common/stream \
 	$(libxml2_CFLAGS)
 MTSAFE
 

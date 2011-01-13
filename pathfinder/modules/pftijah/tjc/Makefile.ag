@@ -36,6 +36,7 @@ INCLUDES = \
 	../../../../MonetDB4/src/mapi \
 	../../../../MonetDB4/src/modules/calibrator \
 	../../../../MonetDB/src/common \
+	../../../../common/stream \
 	../../../../MonetDB/src/gdk
 
 #  Some versions of flex & bison seem to generate code

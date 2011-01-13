@@ -1,293 +1,92 @@
-@/
-The contents of this file are subject to the MonetDB Public License
-Version 1.1 (the "License"); you may not use this file except in
-compliance with the License. You may obtain a copy of the License at
-http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
-
-Software distributed under the License is distributed on an "AS IS"
-basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-License for the specific language governing rights and limitations
-under the License.
-
-The Original Code is the MonetDB Database System.
-
-The Initial Developer of the Original Code is CWI.
-Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2011 MonetDB B.V.
-All Rights Reserved.
-@
-
-@f stream
-@a Niels Nes
-@* An simple interface to streams
-Processing files, streams, and sockets is quite different on Linux and Windows
-platforms. To improve portability between both, we advise to replace the stdio
-actions with the stream functionality provided here.
-
-This interface can also be used to open 'non compressed, gzipped, bz2zipped'
-data files and sockets. Using this interface one could easily switch between
-the various underlying storage types.
-
-@h
-#ifndef _STREAM_H_
-#define _STREAM_H_
-
 /*
- * File: stream.h
- * Auteur: Niels J. Nes
- * Date: 09-01-2001
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
  *
- * Version 0.1: start
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
  *
- * This is the general interface to input/output. Each stream will
- * contains some stream info (for now only byteorder). This is
- * required for proper conversion on different byte order platforms.
+ * The Original Code is the MonetDB Database System.
+ *
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2011 MonetDB B.V.
+ * All Rights Reserved.
  */
 
-#include <unistd.h>
-#include <ctype.h>
-#include <assert.h>
-#include <stdio.h>
-
-#include <stdlib.h>
-#include <signal.h>
-#include <limits.h>
-
-/* avoid using "#ifdef WIN32" so that this file does not need our config.h */
-#if defined(_MSC_VER) || defined(__CYGWIN__) || defined(__MINGW32__)
-#ifndef LIBSTREAM
-#define stream_export extern __declspec(dllimport)
-#else
-#define stream_export extern __declspec(dllexport)
-#endif
-#else
-#define stream_export extern
-#endif
-
-#define EOT 4
-
-#define ST_ASCII  0
-#define ST_BIN 1
-
-#define ST_READ  0
-#define ST_WRITE 1
-
-#define short_int_SWAP(s) ((short)(((0x00ff&(s))<<8) | ((0xff00&(s))>>8)))
-
-#define normal_int_SWAP(i) (((0x000000ff&(i))<<24) | ((0x0000ff00&(i))<<8) | \
-	               ((0x00ff0000&(i))>>8)  | ((0xff000000&(i))>>24))
-
-#ifdef SIZEOF_LNG
-#define long_long_SWAP(l) \
-		((((lng)normal_int_SWAP(l))<<32) |\
-		 (0xffffffff&normal_int_SWAP(l>>32)))
-#endif
-
-typedef struct stream stream;
-
-/* some os specific initialization */
-stream_export int mnstr_init(void);
-
-/* all mnstr_readX/mnstr_writeX 
-   return 
-	0 on error 
-       !0 on success
+/* stream
+ * ======
+ * Niels Nes
+ * An simple interface to streams
+ *
+ * Processing files, streams, and sockets is quite different on Linux
+ * and Windows platforms. To improve portability between both, we advise
+ * to replace the stdio actions with the stream functionality provided
+ * here.
+ *
+ * This interface can also be used to open 'non compressed, gzipped,
+ * bz2zipped' data files and sockets. Using this interface one could
+ * easily switch between the various underlying storage types.
+ *
+ * buffered streams
+ * ----------------
+ *
+ * The bstream (or buffered_stream) can be used for efficient reading of
+ * a stream. Reading can be done in large chunks and access can be done
+ * in smaller bits, by directly accessing the underlying buffer.
+ *
+ * Beware that a flush on a buffered stream emits an empty block to
+ * synchronize with the other side, telling it has reached the end of
+ * the sequence and can close its descriptors.
+ *
+ * bstream functions
+ * -----------------
+ *
+ * The bstream_create gets a read stream (rs) as input and the initial
+ * chunk size and creates a buffered stream from this. A spare byte is
+ * kept at the end of the buffer.  The bstream_read will at least read
+ * the next 'size' bytes. If the not read data (aka pos < len) together
+ * with the new data will not fit in the current buffer it is resized.
+ * The spare byte is kept.
+ *
+ * tee streams
+ * -----------
+ *
+ * A tee stream is a write stream that duplicates all output to two
+ * write streams of the same type (asc/bin).
  */
-stream_export int mnstr_readBte(stream *s, signed char *val);
-stream_export int mnstr_writeBte(stream *s, signed char val);
-stream_export int mnstr_readSht(stream *s, short *val);
-stream_export int mnstr_writeSht(stream *s, short val);
-stream_export int mnstr_readInt(stream *s, int *val);
-stream_export int mnstr_writeInt(stream *s, int val);
-#ifdef SIZEOF_LNG
-stream_export int mnstr_readLng(stream *s, lng *val);
-stream_export int mnstr_writeLng(stream *s, lng val);
+
+
+/* AC_FUNC_ALLOCA autoconf documented code */
+/* AIX requires this to be the first thing in the file.  */
+#ifndef __GNUC__
+# if HAVE_ALLOCA_H
+#  include <alloca.h>
+# else
+#  ifdef _AIX
+ #pragma alloca
+#  else
+#   ifndef alloca /* predefined by HP cc +Olibcalls */
+char *alloca ();
+#   endif
+#  endif
+# endif
 #endif
 
-stream_export int mnstr_readBteArray(stream *s, signed char *val, size_t cnt);
-stream_export int mnstr_writeBteArray(stream *s, const signed char *val, size_t cnt);
-stream_export int mnstr_readShtArray(stream *s, short *val, size_t cnt);
-stream_export int mnstr_writeShtArray(stream *s, const short *val, size_t cnt);
-stream_export int mnstr_readIntArray(stream *s, int *val, size_t cnt);
-stream_export int mnstr_writeIntArray(stream *s, const int *val, size_t cnt);
-#ifdef SIZEOF_LNG
-stream_export int mnstr_readLngArray(stream *s, lng *val, size_t cnt);
-stream_export int mnstr_writeLngArray(stream *s, const lng *val, size_t cnt);
-#endif
-stream_export int mnstr_printf(stream *s, const char *format, ...);
-stream_export ssize_t mnstr_read(stream *s, void *buf, size_t elmsize, size_t cnt);
-stream_export ssize_t mnstr_readline(stream *s, void *buf, size_t maxcnt);
-stream_export ssize_t mnstr_write(stream *s, const void *buf, size_t elmsize, size_t cnt);
-stream_export void mnstr_close(stream *s);
-stream_export void mnstr_destroy(stream *s);
-stream_export char *mnstr_error(stream *s);
-stream_export int mnstr_flush(stream *s);
-stream_export int mnstr_fsync(stream *s);
-#ifdef SIZEOF_LNG
-stream_export int mnstr_fgetpos(stream *s, lng *p);
-stream_export int mnstr_fsetpos(stream *s, lng p);
-#endif
-stream_export char *mnstr_name(stream *s);
-stream_export int mnstr_errnr(stream *s);
-stream_export void mnstr_clearerr(stream *s);
-stream_export int mnstr_type(stream *s);
-stream_export int mnstr_byteorder(stream *s);
-stream_export void mnstr_set_byteorder(stream *s, char bigendian);
-stream_export stream *mnstr_rstream(stream *s);
-stream_export stream *mnstr_wstream(stream *s);
 
-stream_export stream *open_rstream(const char *filename);
-stream_export stream *open_wstream(const char *filename);
-
-/* append to stream */
-stream_export stream *append_wstream(const char *filename);
-
-/* open in ascii stream in read mode */
-stream_export stream *open_rastream(const char *filename);
-
-/* open in ascii stream in write mode*/
-stream_export stream *open_wastream(const char *filename);
-
-/* append to ascii stream */
-stream_export stream *append_wastream(const char *filename);
-
-#ifdef HAVE_LIBZ
-stream_export stream *open_gzrstream(const char *filename);
-stream_export stream *open_gzwstream(const char *filename);
-stream_export stream *open_gzrastream(const char *filename);
-stream_export stream *open_gzwastream(const char *filename);
-#endif
-
-#ifdef HAVE_LIBBZ2
-stream_export stream *open_bzrstream(const char *filename);
-stream_export stream *open_bzwstream(const char *filename);
-stream_export stream *open_bzrastream(const char *filename);
-stream_export stream *open_bzwastream(const char *filename);
-#endif
-
-stream_export void close_stream(stream *s);
-
-#ifdef HAVE_CURL
-stream_export stream *open_urlstream(const char *url);
-#endif
-
-stream_export stream *udp_rastream(char *hostname, int port, const char *name);
-stream_export stream *udp_wastream(char *hostname, int port, const char *name);
-
-stream_export stream *file_rstream(FILE *fp, const char *name);
-stream_export stream *file_wstream(FILE *fp, const char *name);
-stream_export stream *file_rastream(FILE *fp, const char *name);
-stream_export stream *file_wastream(FILE *fp, const char *name);
-
-stream_export FILE *getFile(stream *s);
-stream_export stream *dupFileStream(stream *s);
-
-#ifdef HAVE_ICONV
-stream_export stream *iconv_rstream(stream *ss, const char *charset, const char *name);
-stream_export stream *iconv_wstream(stream *ss, const char *charset, const char *name);
-#endif
-
-stream_export int rendezvous_streams(stream **in, stream **out, const char *name);
-
-typedef struct buffer {
-	char *buf;
-	size_t pos;
-	size_t len;
-} buffer;
-
-stream_export void buffer_init(buffer *b, char *buf, size_t size);
-stream_export buffer *buffer_create(size_t size);
-stream_export char *buffer_get_buf(buffer *b);
-stream_export void buffer_destroy(buffer *b);
-
-stream_export stream *buffer_rastream(buffer *b, const char *name);
-stream_export stream *buffer_wastream(buffer *b, const char *name);
-stream_export buffer *mnstr_get_buffer(stream *s);
-
-/* note, the size is fixed to 8K, you cannot simply change it to any
-   value */
-#define BLOCK (8 * 1024 - 2)
-/*
-   Block stream is a stream which sends data in blocks of a known
-   size (BLOCK size or dynamically changed using CHANGE_BLOCK_SIZE msg).
-
-   A block is written once more then BLOCK size data has been written using
-   the write commands or when the flush command is sent.
-
-   All full blocks together with a single not full block form a major
-   block. Major blocks can be used to synchronize the communication.
-   Example server sends some reply, ie a major block consisting of
-   various minor blocks. The header of the major block can contain
-   special info which the client can interpret.
-
-   Each read attempt tries to return the number of bytes. Once a lower number
-   of bytes can be read the end of the major block is found. The next
-   read will then start with a new major block.
- */
-stream_export stream *wbstream(stream *s, size_t buflen);
-stream_export stream *block_stream(stream *s);
-stream_export ssize_t bs_read_next(stream *s, void *buf, size_t nbytes, int *last);
-stream_export int isa_block_stream(stream *s);
-/* read block of data including the end of block marker */
-stream_export ssize_t mnstr_read_block(stream *s, void *buf, size_t elmsize, size_t cnt);
-
-@+ buffered streams
-
-The bstream (or buffered_stream) can be used for efficient reading
-of a stream. Reading can be done in large chunks and
-access can be done in smaller bits, by directly accessing the underlying
-buffer.
-
-Beware that a flush on a buffered stream emits an empty block to
-synchronize with the other side, telling it has reached the end
-of the sequence and can close its descriptors.
-@h
-typedef struct bstream {
-	stream *s;
-	char *buf;
-	size_t size;		/* size of buf */
-	size_t pos;		/* the data cursor (ie read uptil pos) */
-	size_t len;		/* len of the data (could < size but usually == size) */
-	int eof;
-	int mode;		/* 0 line mode else size for block mode */
-} bstream;
-
-stream_export bstream *bstream_create(stream *rs, size_t chunk_size);
-stream_export void bstream_destroy(bstream *s);
-stream_export ssize_t bstream_read(bstream *s, size_t size);
-stream_export ssize_t bstream_next(bstream *s);
-
-@+ bstream functions
-The bstream_create gets a read stream (rs) as input and the initial chunk size
-and creates a buffered stream from this. A spare byte is kept at the end
-of the buffer.
-The bstream_read will at least read the next 'size' bytes. If the not read data
-(aka pos < len) together with the new data will not fit in the current buffer
-it is resized. The spare byte is kept.
-
-@+ tee streams
-
-A tee stream is a write stream that duplicates all output to two write
-streams of the same type (asc/bin).
-@h
-stream_export stream *attach_teestream(stream *orig, stream *log);
-stream_export void detach_teestream(stream *ts);
-
-
-typedef enum mnstr_errors {
-	MNSTR_NO__ERROR = 0,
-	MNSTR_OPEN_ERROR,
-	MNSTR_READ_ERROR,
-	MNSTR_WRITE_ERROR
-} mnstr_errors;
-
-#endif /*_STREAM_H_*/
-@c
 #include "monetdb_config.h"
-#include <monet_utils.h>
 #include "stream.h"
 #include "stream_socket.h"
+
 #include <string.h>
+#include <stdio.h>		/* NULL, printf etc. */
+#include <stdlib.h>
+#include <errno.h>
+#include <stdarg.h>		/* va_alist.. */
+#include <assert.h>
 
 #ifdef HAVE_NETDB_H
 # include <sys/types.h>
@@ -335,6 +134,16 @@ typedef enum mnstr_errors {
 #ifdef NATIVE_WIN32
 #define pclose _pclose
 #endif
+
+#define short_int_SWAP(s) ((short)(((0x00ff&(s))<<8) | ((0xff00&(s))>>8)))
+
+#define normal_int_SWAP(i) (((0x000000ff&(i))<<24) | ((0x0000ff00&(i))<<8) | \
+	               ((0x00ff0000&(i))>>8)  | ((0xff000000&(i))>>24))
+
+#define long_long_SWAP(l) \
+		((((lng)normal_int_SWAP(l))<<32) |\
+		 (0xffffffff&normal_int_SWAP(l>>32)))
+
 
 struct stream {
 	short byteorder;
@@ -844,12 +653,9 @@ file_fsetpos(stream *s, lng p)
 	return res;
 }
 
-@-
-Front-ends may wish to have more control
-over the designated file activity. For this
-they need access to the file descriptor
-or even duplicate it. (e.g. tablet loader)
-@c
+/* Front-ends may wish to have more control over the designated file
+ * activity. For this they need access to the file descriptor or even
+ * duplicate it. (e.g. tablet loader) */
 FILE *
 getFile(stream *s)
 {
@@ -1021,6 +827,23 @@ open_gzwastream(const char *filename)
 {
 	return open_gzwastream_(filename, "wb");
 }
+#else
+stream *open_gzrstream(const char *filename) {
+	(void) filename;
+	return NULL;
+}
+stream *open_gzwstream(const char *filename) {
+	(void) filename;
+	return NULL;
+}
+stream *open_gzrastream(const char *filename) {
+	(void) filename;
+	return NULL;
+}
+stream *open_gzwastream(const char *filename) {
+	(void) filename;
+	return NULL;
+}
 #endif
 
 /* ------------------------------------------------------------------ */
@@ -1147,6 +970,23 @@ stream *
 open_bzwastream(const char *filename)
 {
 	return open_bzwastream_(filename, "wb");
+}
+#else
+stream *open_bzrstream(const char *filename) {
+	(void) filename;
+	return NULL;
+}
+stream *open_bzwstream(const char *filename) {
+	(void) filename;
+	return NULL;
+}
+stream *open_bzrastream(const char *filename) {
+	(void) filename;
+	return NULL;
+}
+stream *open_bzwastream(const char *filename) {
+	(void) filename;
+	return NULL;
 }
 #endif
 
@@ -1542,6 +1382,11 @@ open_urlstream(const char *url)
 	return s;
 }
 
+#else
+stream *open_urlstream(const char *url) {
+	(void) url;
+	return NULL;
+}
 #endif /* HAVE_CURL */
 
 /* ------------------------------------------------------------------ */
@@ -2291,6 +2136,27 @@ iconv_wstream(stream *ss, const char *charset, const char *name)
 	return s;
 }
 
+#else
+stream *iconv_rstream(stream *ss, const char *charset, const char *name) {
+	(void) name;
+
+	if (strcmp(charset, "utf-8") == 0 ||
+			strcmp(charset, "UTF-8") == 0 ||
+			strcmp(charset, "UTF8") == 0)
+		return ss;
+	
+	return NULL;
+}
+stream *iconv_wstream(stream *ss, const char *charset, const char *name) {
+	(void) name;
+
+	if (strcmp(charset, "utf-8") == 0 ||
+			strcmp(charset, "UTF-8") == 0 ||
+			strcmp(charset, "UTF8") == 0)
+		return ss;
+	
+	return NULL;
+}
 #endif /* HAVE_ICONV */
 
 /* ------------------------------------------------------------------ */
@@ -2900,14 +2766,11 @@ mnstr_read_block(stream *s, void *buf, size_t elmsize, size_t cnt)
 	return len;
 }
 
-@= mnstr_readVal
 int
-mnstr_read@1(stream *s, @2 *val)
+mnstr_readBte(stream *s, signed char *val)
 {
 	switch (s->read(s, (void *) val, sizeof(*val), 1)) {
 	case 1:
-		if (s->byteorder != 1234)
-			*val = @3_SWAP(*val);
 		return 1;
 	case 0:
 		/* consider EOF an error */
@@ -2918,11 +2781,6 @@ mnstr_read@1(stream *s, @2 *val)
 		return 0;
 	}
 }
-@c
-
-#define no_SWAP(x) x
-
-@:mnstr_readVal(Bte,signed char,no)@
 
 int
 mnstr_writeBte(stream *s, signed char val)
@@ -2932,7 +2790,23 @@ mnstr_writeBte(stream *s, signed char val)
 	return s->write(s, (void *) &val, sizeof(val), 1) == 1;
 }
 
-@:mnstr_readVal(Sht,short,short_int)@
+int
+mnstr_readSht(stream *s, short *val)
+{
+	switch (s->read(s, (void *) val, sizeof(*val), 1)) {
+	case 1:
+		if (s->byteorder != 1234)
+			*val = short_int_SWAP(*val);
+		return 1;
+	case 0:
+		/* consider EOF an error */
+		s->errnr = MNSTR_READ_ERROR;
+		/* fall through */
+	default:
+		/* read failed */
+		return 0;
+	}
+}
 
 int
 mnstr_writeSht(stream *s, short val)
@@ -2942,7 +2816,23 @@ mnstr_writeSht(stream *s, short val)
 	return s->write(s, (void *) &val, sizeof(val), 1) == 1;
 }
 
-@:mnstr_readVal(Int,int,normal_int)@
+int
+mnstr_readInt(stream *s, int *val)
+{
+	switch (s->read(s, (void *) val, sizeof(*val), 1)) {
+	case 1:
+		if (s->byteorder != 1234)
+			*val = normal_int_SWAP(*val);
+		return 1;
+	case 0:
+		/* consider EOF an error */
+		s->errnr = MNSTR_READ_ERROR;
+		/* fall through */
+	default:
+		/* read failed */
+		return 0;
+	}
+}
 
 int
 mnstr_writeInt(stream *s, int val)
@@ -2952,7 +2842,23 @@ mnstr_writeInt(stream *s, int val)
 	return s->write(s, (void *) &val, sizeof(val), (size_t) 1) == 1;
 }
 
-@:mnstr_readVal(Lng,lng,long_long)@
+int
+mnstr_readLng(stream *s, lng *val)
+{
+	switch (s->read(s, (void *) val, sizeof(*val), 1)) {
+	case 1:
+		if (s->byteorder != 1234)
+			*val = long_long_SWAP(*val);
+		return 1;
+	case 0:
+		/* consider EOF an error */
+		s->errnr = MNSTR_READ_ERROR;
+		/* fall through */
+	default:
+		/* read failed */
+		return 0;
+	}
+}
 
 int
 mnstr_writeLng(stream *s, lng val)
@@ -2962,25 +2868,17 @@ mnstr_writeLng(stream *s, lng val)
 	return s->write(s, (void *) &val, sizeof(val), (size_t) 1) == 1;
 }
 
-@= mnstr_readArray
+
 int
-mnstr_read@1Array(stream *s, @2 *val, size_t cnt)
+mnstr_readBteArray(stream *s, signed char *val, size_t cnt)
 {
 	if (s->read(s, (void *) val, sizeof(*val), cnt) < (ssize_t) cnt) {
 		s->errnr = MNSTR_READ_ERROR;
 		return 0;
 	}
 
-	if (s->byteorder != 1234) {
-		size_t i;
-		for (i = 0; i < cnt; i++, val++)
-			*val = @3_SWAP(*val);	
-	}
 	return 1;
 }
-@c
-
-@:mnstr_readArray(Bte,signed char,no)@
 
 int
 mnstr_writeBteArray(stream *s, const signed char *val, size_t cnt)
@@ -2990,7 +2888,21 @@ mnstr_writeBteArray(stream *s, const signed char *val, size_t cnt)
 	return s->write(s, (void *) val, sizeof(*val), cnt) == (ssize_t) cnt;
 }
 
-@:mnstr_readArray(Sht,short,short_int)@
+int
+mnstr_readShtArray(stream *s, short *val, size_t cnt)
+{
+	if (s->read(s, (void *) val, sizeof(*val), cnt) < (ssize_t) cnt) {
+		s->errnr = MNSTR_READ_ERROR;
+		return 0;
+	}
+
+	if (s->byteorder != 1234) {
+		size_t i;
+		for (i = 0; i < cnt; i++, val++)
+			*val = short_int_SWAP(*val);	
+	}
+	return 1;
+}
 
 int
 mnstr_writeShtArray(stream *s, const short *val, size_t cnt)
@@ -3000,7 +2912,21 @@ mnstr_writeShtArray(stream *s, const short *val, size_t cnt)
 	return s->write(s, (void *) val, sizeof(*val), cnt) == (ssize_t) cnt;
 }
 
-@:mnstr_readArray(Int,int,normal_int)@
+int
+mnstr_readIntArray(stream *s, int *val, size_t cnt)
+{
+	if (s->read(s, (void *) val, sizeof(*val), cnt) < (ssize_t) cnt) {
+		s->errnr = MNSTR_READ_ERROR;
+		return 0;
+	}
+
+	if (s->byteorder != 1234) {
+		size_t i;
+		for (i = 0; i < cnt; i++, val++)
+			*val = normal_int_SWAP(*val);	
+	}
+	return 1;
+}
 
 int
 mnstr_writeIntArray(stream *s, const int *val, size_t cnt)
@@ -3010,7 +2936,21 @@ mnstr_writeIntArray(stream *s, const int *val, size_t cnt)
 	return s->write(s, (void *) val, sizeof(*val), cnt) == (ssize_t) cnt;
 }
 
-@:mnstr_readArray(Lng,lng,long_long)@
+int
+mnstr_readLngArray(stream *s, lng *val, size_t cnt)
+{
+	if (s->read(s, (void *) val, sizeof(*val), cnt) < (ssize_t) cnt) {
+		s->errnr = MNSTR_READ_ERROR;
+		return 0;
+	}
+
+	if (s->byteorder != 1234) {
+		size_t i;
+		for (i = 0; i < cnt; i++, val++)
+			*val = long_long_SWAP(*val);	
+	}
+	return 1;
+}
 
 int
 mnstr_writeLngArray(stream *s, const lng *val, size_t cnt)
@@ -3030,12 +2970,9 @@ mnstr_printf(stream *s, const char *format, ...)
 	if (!s || s->errnr)
 		return (-1);
 
-@= mnstr_printf_va_vsnprintf
 	va_start(ap, format);
 	i = vsnprintf(bf, bfsz, format, ap);
 	va_end (ap);
-@c
-	@:mnstr_printf_va_vsnprintf@
 	while (i < 0 || (size_t) i >= bfsz) {
 		if (i >= 0)	/* glibc 2.1 */
 			bfsz = (size_t) i + 1;	/* precisely what is needed */
@@ -3048,7 +2985,9 @@ mnstr_printf(stream *s, const char *format, ...)
 			s->errnr = MNSTR_WRITE_ERROR;
 			return -1;
 		}
-		@:mnstr_printf_va_vsnprintf@
+		va_start(ap, format);
+		i = vsnprintf(bf, bfsz, format, ap);
+		va_end (ap);
 	}
 	s->write(s, (void *) bf, (size_t) i, (size_t) 1);
 	if (bf != buf)

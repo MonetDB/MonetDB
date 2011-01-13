@@ -15,7 +15,7 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-INCLUDES = ../../../MonetDB/src/common ../../../MonetDB/src/gdk \
+INCLUDES = ../../../MonetDB/src/common ../../../common/stream ../../../MonetDB/src/gdk \
 	$(READLINE_INCS) $(openssl_CFLAGS)
 MTSAFE
 

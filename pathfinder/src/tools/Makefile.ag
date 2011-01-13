@@ -23,6 +23,7 @@ INCLUDES = \
 	../../../MonetDB4/src/modules/calibrator \
 	../../../clients/src/mapilib \
 	../../../MonetDB/src/common \
+	../../../common/stream \
 	../../../MonetDB/src/gdk
 
 GDK_LIBS = $(PTHREAD_LIBS) $(MALLOC_LIBS)
@@ -83,7 +84,7 @@ bin_Mserver = {
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
 		../../../MonetDB/src/gdk/libbat \
 		../../../MonetDB/src/common/libmutils \
-		../../../MonetDB/src/common/libstream \
+		../../../common/stream/libstream \
 		../../../MonetDB4/src/monet/libmonet
 }
 
@@ -92,7 +93,7 @@ lib_embeddedxq = {
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
 		../../../MonetDB/src/gdk/libbat \
 		../../../MonetDB/src/common/libmutils \
-		../../../MonetDB/src/common/libstream \
+		../../../common/stream/libstream \
 		../../../MonetDB4/src/monet/libmonet \
 		../../../clients/src/mapilib/libMapi
 }
@@ -103,7 +104,7 @@ bin_Mbeddedxq = {
 		libembeddedxq \
 		../../../MonetDB/src/gdk/libbat \
 		../../../MonetDB/src/common/libmutils \
-		../../../MonetDB/src/common/libstream \
+		../../../common/stream/libstream \
 		../../../MonetDB4/src/monet/libmonet \
 		../../../clients/src/mapilib/libMapi
 }

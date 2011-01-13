@@ -17,6 +17,7 @@
 
 INCLUDES = ../../monet ../plain \
 	../../../../MonetDB/src/common \
+	../../../../common/stream \
 	../../../../MonetDB/src/gdk \
 	$(zlib_CFLAGS) $(BZ_CFLAGS) $(HWCOUNTERS_INCS) $(PCL_CFLAGS)
 
@@ -34,7 +35,7 @@ LIBS = {
 
 		# bitvector.mx ddbench.mx iterator.mx oo7.mx qt.mx
 	#SCRIPTS = mil ""
-	LIBS = ../../../../MonetDB/src/common/libstream \
+	LIBS = ../../../../common/stream/libstream \
 		../../../../MonetDB/src/gdk/libbat \
 		../../monet/libmonet ../plain/lib_algebra \
 		$(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) \

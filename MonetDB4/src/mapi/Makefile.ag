@@ -17,7 +17,7 @@
 
 INCLUDES = -I.. -I../monet \
 	   -I../modules/plain -I../modules/plain/stream \
-	   ../../../MonetDB/src/common ../../../MonetDB/src/gdk \
+	   ../../../MonetDB/src/common ../../../common/stream ../../../MonetDB/src/gdk \
 	   $(openssl_CFLAGS)
 
 MTSAFE
@@ -28,7 +28,7 @@ lib__mapi = {
 	SOURCES = mapi.mx
 	#SCRIPTS = mil ""
 	LIBS =  ../../../MonetDB/src/common/libmutils \
-		../../../MonetDB/src/common/libstream \
+		../../../common/stream/libstream \
 		../../../MonetDB/src/gdk/libbat \
 		../monet/libmonet \
 		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) \

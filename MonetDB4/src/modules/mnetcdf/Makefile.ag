@@ -17,6 +17,7 @@
 
 INCLUDES = -I../../monet -I../plain \
 	../../../../MonetDB/src/common \
+	../../../../common/stream \
 	../../../../MonetDB/src/gdk \
 	$(zlib_CFLAGS) $(BZ_CFLAGS) $(HWCOUNTERS_INCS) $(PCL_CFLAGS) \
 	$(NETCDF_CFLAGS)
@@ -27,7 +28,7 @@ LIB_mnetcdf = {
 	SEP = _
 	COND = HAVE_NETCDF
 	SOURCES = mnetcdf.mx 
-	LIBS = ../../../../MonetDB/src/common/libstream \
+	LIBS = ../../../../common/stream/libstream \
 		../../../../MonetDB/src/gdk/libbat \
 		../../monet/libmonet ../plain/lib_algebra \
 		$(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) \

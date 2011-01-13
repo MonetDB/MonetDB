@@ -15,8 +15,11 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-INCLUDES = ../../mal ../../../../MonetDB/src/common ../../../../MonetDB/src/gdk \
-	$(SPHINXCLIENT_CFLAGS)
+INCLUDES = ../../mal \
+		   ../../../../MonetDB/src/common \
+		   ../../../../common/stream \
+		   ../../../../MonetDB/src/gdk \
+		   $(SPHINXCLIENT_CFLAGS)
 
 lib__sphinx = {
 	DIR = libdir/MonetDB5

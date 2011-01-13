@@ -25,7 +25,7 @@
 
 @NO_X_CFLAGS@
 
-INCLUDES = ../../../MonetDB/src/common ../../../MonetDB/src/gdk
+INCLUDES = ../../../MonetDB/src/common ../../../common/stream ../../../MonetDB/src/gdk
 
 YFLAGS = -d
 
@@ -46,7 +46,7 @@ lib_monet = {
 		monet_context.mx monet_parse.mx monet_deparse.mx \
 		monet_process.mx monet.feps libmonet.rc
 	LIBS = ../../../MonetDB/src/common/libmutils \
-		../../../MonetDB/src/common/libstream \
+		../../../common/stream/libstream \
 		../../../MonetDB/src/gdk/libbat \
 		$(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) $(curl_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)

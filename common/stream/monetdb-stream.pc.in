@@ -9,4 +9,4 @@ Version: @PACKAGE_VERSION@
 Requires: @PKG_CURL@ @PKG_ZLIB@
 
 Libs: -L${libdir} -lstream
-Cflags: -I${includedir}/MonetDB/common
+Cflags: -I${includedir}/monetdb

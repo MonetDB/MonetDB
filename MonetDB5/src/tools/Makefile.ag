@@ -19,6 +19,7 @@ MTSAFE
 INCLUDES = ../mal \
 	../../../clients/src/mapilib \
 	../../../MonetDB/src/common \
+	../../../common/stream \
 	../../../MonetDB/src/gdk \
 	$(openssl_CFLAGS) $(pcre_CFLAGS) $(libxml2_CFLAGS)
 
@@ -34,7 +35,7 @@ lib_monetdb5 = {
 		../optimizer/liboptimizer ../scheduler/libscheduler \
 		../../../MonetDB/src/common/libmutils \
 		../../../MonetDB/src/gdk/libbat \
-		../../../MonetDB/src/common/libstream \
+		../../../common/stream/libstream \
 		../../../clients/src/mapilib/libMapi $(curl_LIBS) \
 		$(MATH_LIBS) $(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) \
 		$(DL_LIBS) $(READLINE_LIBS) $(openssl_LIBS) $(pcre_LIBS) \
@@ -46,7 +47,7 @@ bin_mserver5 = {
 	LIBS = libmonetdb5 @SHARED_LIBS@ \
 		../../../MonetDB/src/common/libmutils \
 		../../../MonetDB/src/gdk/libbat \
-		../../../MonetDB/src/common/libstream \
+		../../../common/stream/libstream \
 		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) \
 		$(curl_LIBS) $(pcre_LIBS) $(openssl_LIBS)
 }
@@ -56,7 +57,7 @@ lib_embeddedmal = {
 	LIBS = libmonetdb5 @SHARED_LIBS@ \
 		../../../MonetDB/src/common/libmutils \
 		../../../MonetDB/src/gdk/libbat \
-		../../../MonetDB/src/common/libstream \
+		../../../common/stream/libstream \
 		../../../clients/src/mapilib/libMapi $(curl_LIBS) \
 		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
@@ -66,7 +67,7 @@ bin_Mbeddedmal = {
 	LIBS = libembeddedmal @SHARED_LIBS@ \
 		../../../MonetDB/src/common/libmutils \
 		../../../MonetDB/src/gdk/libbat \
-		../../../MonetDB/src/common/libstream \
+		../../../common/stream/libstream \
 		../../../clients/src/mapilib/libMapi $(curl_LIBS) \
 		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }

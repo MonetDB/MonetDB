@@ -15,7 +15,7 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = buildtools MonetDB clients \
+SUBDIRS = buildtools common MonetDB clients \
 	HAVE_MONETDB4?MonetDB4 \
 	HAVE_MONETDB5?MonetDB5 \
 	HAVE_SQL?sql \

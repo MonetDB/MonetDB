@@ -19,6 +19,7 @@ MTSAFE
 INCLUDES = ../monet ../modules/plain \
 	../../../clients/src/mapilib \
 	../../../MonetDB/src/common \
+	../../../common/stream \
 	../../../MonetDB/src/gdk \
 	$(openssl_CFLAGS) $(pcre_CFLAGS)
 
@@ -90,7 +91,7 @@ bin_Mserver = {
 		../monet/libmonet \
 		../../../MonetDB/src/gdk/libbat \
 		../../../MonetDB/src/common/libmutils \
-		../../../MonetDB/src/common/libstream \
+		../../../common/stream/libstream \
                 $(pcre_LIBS) $(openssl_LIBS)
 }
 
@@ -101,7 +102,7 @@ lib_embeddedmil = {
 		../../../MonetDB/src/gdk/libbat \
 		../../../MonetDB/src/common/libmutils \
 		../../../clients/src/mapilib/libMapi \
-		../../../MonetDB/src/common/libstream
+		../../../common/stream/libstream
 }
 
 bin_Mbeddedmil = {
@@ -112,7 +113,7 @@ bin_Mbeddedmil = {
 		../../../MonetDB/src/gdk/libbat \
 		../../../MonetDB/src/common/libmutils \
 		../../../clients/src/mapilib/libMapi \
-		../../../MonetDB/src/common/libstream
+		../../../common/stream/libstream
 }
 
 EXTRA_DIST_DIR = Tests

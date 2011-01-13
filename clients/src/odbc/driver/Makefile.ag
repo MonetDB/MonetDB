@@ -116,6 +116,6 @@ lib_MonetODBC = {
 	SQLTransact.c \
 	driver.rc \
 	ODBC.syms
-	LIBS = ../../mapilib/libMapi ../../../../MonetDB/src/common/libstream ../../../../MonetDB/src/common/libmutils $(ICONV_LIBS) $(ODBC_LIBS) $(SOCKET_LIBS)
+	LIBS = ../../mapilib/libMapi ../../../../MonetDB/src/common/libmutils $(ICONV_LIBS) $(ODBC_LIBS) $(SOCKET_LIBS)
 }
 

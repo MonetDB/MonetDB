@@ -24,7 +24,9 @@ EXTRA_DIST = sql_storage.h store_connections.h store_dependency.h \
 
 SUBDIRS = bat restrict m4 bpm 
 
-INCLUDES = ../include ../common ../../../MonetDB/src/common ../../../MonetDB/src/gdk
+INCLUDES = ../include ../common \
+		   ../../../MonetDB/src/common ../../../common/stream \
+		   ../../../MonetDB/src/gdk
 
 lib_store = {
 	NOINST

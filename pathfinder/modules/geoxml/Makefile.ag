@@ -35,6 +35,7 @@ INCLUDES = \
 	../../../MonetDB4/src/mapi \
 	../../../MonetDB4/src/modules/calibrator \
 	../../../MonetDB/src/common \
+	../../../common/stream \
 	../../../MonetDB/src/gdk \
 	$(libxml2_CFLAGS)
 PF_LIBS = $(libxml2_LIBS) $(DL_LIBS)
@@ -46,7 +47,7 @@ lib__geoxml = {
 	LIBS = \
 		../../runtime/lib_pf_support $(PF_LIBS) \
 		../../../MonetDB/src/gdk/libbat \
-		../../../MonetDB/src/common/libstream \
+		../../../common/stream/libstream \
 		../../../MonetDB4/src/monet/libmonet \
 		../../../MonetDB4/src/modules/plain/lib_streams \
 		../../../MonetDB4/src/modules/plain/lib_builtin \

@@ -38,6 +38,7 @@ INCLUDES = \
 	../../MonetDB4/src \
 	../../MonetDB4/src/modules/calibrator \
 	../../MonetDB/src/common \
+	../../common/stream \
 	../../MonetDB/src/gdk \
 	$(libxml2_CFLAGS)
 PF_LIBS = $(libxml2_LIBS) $(DL_LIBS)
@@ -75,7 +76,7 @@ lib__pf_support = {
 	LIBS = \
 		libserialize libpf $(PF_LIBS) \
 		../../MonetDB/src/gdk/libbat \
-		../../MonetDB/src/common/libstream \
+		../../common/stream/libstream \
 		../../MonetDB4/src/monet/libmonet \
 		$(PTHREAD_LIBS) \
 		../../MonetDB4/src/modules/plain/lib_lock \
@@ -95,7 +96,7 @@ lib__pf_standoff = {
 	LIBS = \
 		$(PF_LIBS) \
 		../../MonetDB/src/gdk/libbat \
-		../../MonetDB/src/common/libstream \
+		../../common/stream/libstream \
 		../../MonetDB4/src/monet/libmonet \
 		../../MonetDB4/src/modules/plain/lib_streams \
 		../../MonetDB4/src/modules/plain/lib_builtin \
@@ -130,7 +131,7 @@ lib__pathfinder = {
 		../compiler/utils/libstringutils \
 		$(PF_LIBS) \
 		../../MonetDB/src/gdk/libbat \
-		../../MonetDB/src/common/libstream \
+		../../common/stream/libstream \
 		../../MonetDB4/src/monet/libmonet \
 		$(PTHREAD_LIBS) \
 		../../MonetDB4/src/modules/plain/lib_logger \
@@ -151,7 +152,7 @@ lib__xrpc_client = {
 		lib_pf_support lib_pathfinder \
 		$(PF_LIBS) $(SOCKET_LIBS) \
 		../../MonetDB/src/gdk/libbat \
-		../../MonetDB/src/common/libstream \
+		../../common/stream/libstream \
 		../../MonetDB4/src/monet/libmonet \
 		../../MonetDB4/src/modules/plain/lib_streams \
 		../../MonetDB4/src/modules/plain/lib_builtin \
@@ -168,7 +169,7 @@ lib__xrpc_server = {
 		lib_pf_support lib_pathfinder \
 		$(PF_LIBS) $(SOCKET_LIBS) \
 		../../MonetDB/src/gdk/libbat \
-		../../MonetDB/src/common/libstream \
+		../../common/stream/libstream \
 		../../MonetDB4/src/monet/libmonet \
 		$(PTHREAD_LIBS) \
 		../../MonetDB4/src/modules/plain/lib_logger \

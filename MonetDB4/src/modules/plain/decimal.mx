@@ -967,6 +967,7 @@ decimal_length(decimal *d)
 	return TOTLEN_NOMAXCHECK(PREC(d));
 }
 
+
 void
 decimal_convert(decimal *d, int dummy)
 {

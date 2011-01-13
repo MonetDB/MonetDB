@@ -42,9 +42,9 @@
 void *alloca(size_t);
 #endif
 
+#include <mal_sabaoth.h>
 #include <stream.h>
 #include <stream_socket.h>
-#include <mal_sabaoth.h>
 #include <utils/utils.h> /* freeConfFile */
 #include <utils/properties.h> /* readProps */
 

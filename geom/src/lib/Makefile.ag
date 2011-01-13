@@ -16,7 +16,7 @@
 # All Rights Reserved.
 
 MTSAFE
-INCLUDES = ../../../MonetDB/src/common ../../../MonetDB/src/gdk $(GEOS_INCS)
+INCLUDES = ../../../MonetDB/src/common ../../../common/stream ../../../MonetDB/src/gdk $(GEOS_INCS)
 
 lib_geom = {
 	NOINST

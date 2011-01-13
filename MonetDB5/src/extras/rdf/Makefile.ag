@@ -18,6 +18,7 @@
 INCLUDES = -I../../modules/atoms -I../../modules/mal -I../../mal \
 	../../../../clients/src/mapilib \
 	../../../../MonetDB/src/common \
+	../../../../common/stream \
 	../../../../MonetDB/src/gdk \
 	$(raptor_CFLAGS)
 
@@ -29,7 +30,7 @@ lib__rdf = {
 	LIBS = ../../tools/libmonetdb5 \
 		../../../../MonetDB/src/common/libmutils \
 		../../../../MonetDB/src/gdk/libbat \
-		../../../../MonetDB/src/common/libstream \
+		../../../../common/stream/libstream \
 		$(MALLOC_LIBS) $(raptor_LIBS)
 }
 

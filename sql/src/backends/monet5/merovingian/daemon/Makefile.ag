@@ -30,7 +30,8 @@ INCLUDES = \
 	../../../../../../MonetDB/src/common \
 	../../../../../../MonetDB/src/gdk \
 	../../../../../../clients/src/mapilib \
-	-I..
+	../../../../../../common/stream \
+	..
 
 EXTRA_DIST = $(man_MANS) \
 	merovingian.h \
@@ -62,8 +63,8 @@ bin_monetdbd = {
 		$(UUID_LIBS) \
 		../../../../../../MonetDB5/src/tools/libmonetdb5 \
 		../../../../../../MonetDB/src/gdk/libbat \
-		../../../../../../MonetDB/src/common/libstream \
 		../../../../../../clients/src/mapilib/libMapi \
+		../../../../../../common/stream/libstream \
 		$(curl_LIBS) \
 		$(CLIENTS_LIBS) -lMapi \
 		$(SOCKET_LIBS) \
