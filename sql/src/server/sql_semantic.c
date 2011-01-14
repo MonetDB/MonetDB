@@ -13,12 +13,12 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2010 MonetDB B.V.
+ * Copyright August 2008-2011 MonetDB B.V.
  * All Rights Reserved.
  */
 
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include "sql_parser.h"
 #include "sql_symbol.h"
 #include "sql_statement.h"
@@ -62,18 +62,18 @@ sql_add_arg(mvc *sql, atom *v)
 void
 sql_add_param(mvc *sql, char *name, sql_subtype *st)
 {
-	sql_arg *a = NEW(sql_arg);
+	sql_arg *a = SA_NEW(sql->sa, sql_arg);
 
 	a->name = NULL;
 	if (name)
-		a->name = _strdup(name);
+		a->name = sa_strdup(sql->sa, name);
 	if (st)
 		a->type = *st;
 	else
 		a->type.type = NULL;
 
 	if (!sql->params)
-		sql->params = list_create((fdestroy) &arg_destroy);
+		sql->params = list_new(sql->sa);
 	list_append(sql->params, a);
 }
 
@@ -137,8 +137,6 @@ sql_convert_arg(mvc *sql, int nr, sql_subtype *rt)
 void
 sql_destroy_params(mvc *sql)
 {
-	if (sql->params)
-		list_destroy(sql->params);
 	sql->params = NULL;
 }
 
@@ -292,7 +290,8 @@ sql_parse(mvc *m, sql_allocator *sa, char *query, char mode)
 		m->session->status = status;
 		m->cascade_action = cascade_action;
 		if (e) {
-			strcpy(m->errstr, e);
+			strncpy(m->errstr, e, ERRSIZE);
+			m->errstr[ERRSIZE - 1] = '\0';
 			_DELETE(e);
 		}
 	}
@@ -455,7 +454,7 @@ inplace_convert(mvc *sql, sql_subtype *ct, stmt *s)
 	atom *a;
 
 	/* exclude named variables */
-	if (s->type != st_var || s->op1.sval || 
+	if (s->type != st_var || s->op1->op4.aval->data.val.sval || 
 		(ct->scale && ct->type->eclass != EC_FLT))
 		return s;
 
@@ -486,7 +485,7 @@ stmt_set_type_param(mvc *sql, sql_subtype *type, stmt *param)
 		return -1;
 
 	if (set_type_param(sql, type, param->flag) == 0) {
-		param->op2.typeval = *type;
+		param->op4.typeval = *type;
 		return 0;
 	}
 	return -1;
@@ -506,15 +505,15 @@ check_table_types(mvc *sql, sql_table *ct, stmt *s, check_type tpe)
 			sql, 03,
 			"single value and complex type '%s' are not equal", t);
 	}
-	tab = s->op1.stval;
+	tab = s->op1;
 	temp = s->flag;
 	if (tab->type == st_var) {
 		sql_table *tbl = tail_type(tab)->comp_type;
-		stmt *base = stmt_basetable(sql->sa, tbl, tab->op1.sval);
+		stmt *base = stmt_basetable(sql->sa, tbl, tab->op1->op4.aval->data.val.sval);
 		node *n, *m;
 		list *l = list_new(sql->sa);
 		
-		stack_find_var(sql, tab->op1.sval);
+		stack_find_var(sql, tab->op1->op4.aval->data.val.sval);
 
 		for (n = ct->columns.set->h, m = tbl->columns.set->h; 
 			n && m; n = n->next, m = m->next) 
@@ -532,7 +531,7 @@ check_table_types(mvc *sql, sql_table *ct, stmt *s, check_type tpe)
 	} else if (tab->type == st_list) {
 		node *n, *m;
 		list *l = list_new(sql->sa);
-		for (n = ct->columns.set->h, m = tab->op1.lval->h; 
+		for (n = ct->columns.set->h, m = tab->op4.lval->h; 
 			n && m; n = n->next, m = m->next) 
 		{
 			sql_column *c = n->data;
@@ -574,7 +573,6 @@ check_types(mvc *sql, sql_subtype *ct, stmt *s, check_type tpe)
 {
 	int c = 0;
 	sql_subtype *t = NULL, *st = NULL;
-	stmt *old = NULL;
 
 	if (ct->comp_type) 
 		return check_table_types(sql, ct->comp_type, s, tpe);
@@ -599,7 +597,6 @@ check_types(mvc *sql, sql_subtype *ct, stmt *s, check_type tpe)
 		c = sql_type_convert(st->type->eclass, ct->type->eclass);
 		if (!c || (c == 2 && tpe == type_set) || 
                    (c == 3 && tpe != type_cast)) { 
-			old = s;
 			s = NULL;
 		} else {
 			s = stmt_convert(sql->sa, s, st, ct);
@@ -755,14 +752,21 @@ char * toUpperCopy(char *dest, const char *src)
 	return(dest);
 }
 
-char *dlist2string(mvc *sql, dlist *l)
+char *dlist2string(mvc *sql, dlist *l, char **err)
 {
 	char *b = NULL;
 	dnode *n;
 
 	for (n=l->h; n; n = n->next) {
-		char *s = symbol2string(sql, n->data.sym);
+		char *s = NULL;
 
+		if (n->type == type_string && n->data.sval)
+			s = _strdup(n->data.sval);
+		else if (n->type == type_symbol)
+			s = symbol2string(sql, n->data.sym, err);
+
+		if (!s)
+			return NULL;
 		if (b) {
 			char *o = b;
 			b = strconcat(b,s);
@@ -775,7 +779,7 @@ char *dlist2string(mvc *sql, dlist *l)
 	return b;
 }
 
-char *symbol2string(mvc *sql, symbol *se)
+char *symbol2string(mvc *sql, symbol *se, char **err)
 {
 	int len = 0;
 	char buf[BUFSIZ];
@@ -791,7 +795,7 @@ char *symbol2string(mvc *sql, symbol *se)
 		for (; ops; ops = ops->next) {
 			char *tmp;
 			len = snprintf( buf+len, BUFSIZ-len, "%s%s", 
-				tmp = symbol2string(sql, ops->data.sym), 
+				tmp = symbol2string(sql, ops->data.sym, err), 
 				(ops->next)?",":"");
 			_DELETE(tmp);
 		}
@@ -800,8 +804,8 @@ char *symbol2string(mvc *sql, symbol *se)
 	case SQL_BINOP: {
 		dnode *lst = se->data.lval->h;
 		char *op = qname_fname(lst->data.lval);
-		char *l = symbol2string(sql, lst->next->data.sym);
-		char *r = symbol2string(sql, lst->next->next->data.sym);
+		char *l = symbol2string(sql, lst->next->data.sym, err);
+		char *r = symbol2string(sql, lst->next->next->data.sym, err);
 		len = snprintf( buf+len, BUFSIZ-len, "%s(%s,%s)", op, l, r); 
 		_DELETE(l);
 		_DELETE(r);
@@ -814,7 +818,7 @@ char *symbol2string(mvc *sql, symbol *se)
 	case SQL_UNOP: {
 		dnode *lst = se->data.lval->h;
 		char *op = qname_fname(lst->data.lval);
-		char *l = symbol2string(sql, lst->next->data.sym);
+		char *l = symbol2string(sql, lst->next->data.sym, err);
 		len = snprintf( buf+len, BUFSIZ-len, "%s(%s)", op, l); 
 		_DELETE(l);
 		break;
@@ -847,12 +851,14 @@ char *symbol2string(mvc *sql, symbol *se)
 		if (dlist_length(l) == 1 && l->h->type == type_int) {
 			atom *a = sql_bind_arg(sql, l->h->data.i_val);
 			return atom2sql(a);
+		} else {
+			*err = dlist2string(sql, l, err);
 		}
 		return NULL;
 	} 	
 	case SQL_CAST: {
 		dlist *dl = se->data.lval;
-		char *val = symbol2string(sql, dl->h->data.sym);
+		char *val = symbol2string(sql, dl->h->data.sym, err);
 		char *tpe = subtype2string(&dl->h->next->data.typeval);
 	
 		len = snprintf( buf+len, BUFSIZ-len, "cast ( %s as %s )",

@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2010 MonetDB B.V.
+ * Copyright August 2008-2011 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -55,7 +55,7 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif

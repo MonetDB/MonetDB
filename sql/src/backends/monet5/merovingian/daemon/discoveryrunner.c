@@ -13,11 +13,11 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2010 MonetDB B.V.
+ * Copyright August 2008-2011 MonetDB B.V.
  * All Rights Reserved.
  */
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h> /* str* */
@@ -29,10 +29,12 @@
 
 #include <gdk.h>
 #include <mal_sabaoth.h>
+#include <utils/glob.h>
 #include <utils/utils.h>
 #include <utils/properties.h>
 
 #include "merovingian.h"
+#include "multiplex-funnel.h"
 #include "discoveryrunner.h"
 
 
@@ -58,19 +60,14 @@ removeRemoteDB(const char *dbname, const char *conn)
 	remotedb rdb;
 	remotedb prv;
 	char hadmatch = 0;
-	/* look for the database, and verify that its "conn"
-	 * (merovingian) is the same */
-
-	/* technically, we could use Diffie-Hellman (without Debian
-	 * modifications) to negotiate a shared secret key, such
-	 * that only the original registrant can unregister a
-	 * database, however... do we really care that much? */
 
 	pthread_mutex_lock(&_mero_remotedb_lock);
 
 	prv = NULL;
 	rdb = _mero_remotedbs;
 	while (rdb != NULL) {
+		/* look for the database, and verify that its "conn"
+		 * (merovingian) is the same */
 		if (strcmp(dbname, rdb->dbname) == 0 &&
 				strcmp(conn, rdb->conn) == 0)
 		{
@@ -80,6 +77,10 @@ removeRemoteDB(const char *dbname, const char *conn)
 			} else {
 				prv->next = rdb->next;
 			}
+
+			/* inform multiplex-funnels about this removal */
+			multiplexNotifyRemovedDB(rdb->fullname);
+
 			Mfprintf(_mero_discout,
 					"removed neighbour database %s%s\n",
 					conn, rdb->fullname);
@@ -88,7 +89,7 @@ removeRemoteDB(const char *dbname, const char *conn)
 			free(rdb->fullname);
 			free(rdb);
 			hadmatch = 1;
-			/* there may be more, keep looking */
+			/* in the future, there may be more, so keep looking */
 		}
 		prv = rdb;
 		rdb = rdb->next;
@@ -141,7 +142,92 @@ addRemoteDB(const char *dbname, const char *conn, const int ttl) {
 
 	pthread_mutex_unlock(&_mero_remotedb_lock);
 
+	/* inform multiplex-funnels about this addition */
+	multiplexNotifyAddedDB(rdb->fullname);
+
 	return(1);
+}
+
+sabdb *
+getRemoteDB(char *database)
+{
+	struct _remotedb dummy = { NULL, NULL, NULL, NULL, 0, NULL };
+	remotedb rdb = NULL;
+	remotedb pdb = NULL;
+	remotedb down = NULL;
+	sabdb *walk = NULL;
+	sabdb *stats = NULL;
+	size_t dbsize = strlen(database);
+	char *mdatabase = GDKmalloc(sizeof(char) * (dbsize + 2 + 1));
+	char mfullname[8096];  /* should be enough for everyone... */
+
+	/* each request has an implicit /'* (without ') added to match
+	 * all sub-levels to the request, such that a request for e.g. X
+	 * will return X/level1/level2/... */
+	memcpy(mdatabase, database, dbsize + 1);
+	if (dbsize <= 2 ||
+			mdatabase[dbsize - 2] != '/' ||
+			mdatabase[dbsize - 1] != '*')
+	{
+		mdatabase[dbsize++] = '/';
+		mdatabase[dbsize++] = '*';
+		mdatabase[dbsize++] = '\0';
+	}
+
+	/* check the remote databases, in private */
+	pthread_mutex_lock(&_mero_remotedb_lock);
+
+	dummy.next = _mero_remotedbs;
+	rdb = dummy.next;
+	pdb = &dummy;
+	while (rdb != NULL) {
+		snprintf(mfullname, sizeof(mfullname), "%s/", rdb->fullname);
+		if (glob(mdatabase, mfullname) == 1) {
+			/* create a fake sabdb struct, chain where necessary */
+			if (walk != NULL) {
+				walk = walk->next = GDKmalloc(sizeof(sabdb));
+			} else {
+				walk = stats = GDKmalloc(sizeof(sabdb));
+			}
+			walk->dbname = GDKstrdup(rdb->dbname);
+			walk->path = walk->dbname; /* only freed by sabaoth */
+			walk->locked = 0;
+			walk->state = SABdbRunning;
+			walk->scens = GDKmalloc(sizeof(sablist));
+			walk->scens->val = GDKstrdup("sql");
+			walk->scens->next = NULL;
+			walk->conns = GDKmalloc(sizeof(sablist));
+			walk->conns->val = GDKstrdup(rdb->conn);
+			walk->conns->next = NULL;
+			walk->next = NULL;
+			walk->uplog = NULL;
+
+			/* cut out first returned entry, put it down the list
+			 * later, as to implement a round-robin DNS-like
+			 * algorithm */
+			if (down == NULL) {
+				down = rdb;
+				if (pdb->next == _mero_remotedbs) {
+					_mero_remotedbs = pdb->next = rdb->next;
+				} else {
+					pdb->next = rdb->next;
+				}
+				rdb->next = NULL;
+				rdb = pdb;
+			}
+		}
+		pdb = rdb;
+		rdb = rdb->next;
+	}
+
+	if (down != NULL)
+		pdb->next = down;
+
+	pthread_mutex_unlock(&_mero_remotedb_lock);
+
+	GDKfree(mdatabase);
+
+	return(stats);
 }
 
 typedef struct _disc_message_tap {

@@ -12,11 +12,11 @@
 #
 # The Initial Developer of the Original Code is CWI.
 # Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2010 MonetDB B.V.
+# Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
 MTSAFE
-INCLUDES = ../.. $(MONETDB_INCS) $(READLINE_INCS)
+INCLUDES = ../.. ../../../../MonetDB/src/common $(READLINE_INCS)
 
 MAPI_LIBS = $(SOCKET_LIBS) 
 
@@ -24,5 +24,7 @@ BINS = {
 	DIR = libdir/MonetDB/Tests
 	SOURCES = sample0.c sample1.c sample2.c sample3.c sample4.c \
 		smack00.c  smack01.c
-	LIBS = $(MAPI_LIBS) ../../mapilib/libMapi $(monetdbtools_LIBS)
+	LIBS = $(MAPI_LIBS) ../../mapilib/libMapi \
+		../../../../MonetDB/src/common/libmutils \
+		$(curl_LIBS)
 }

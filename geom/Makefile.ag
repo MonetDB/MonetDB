@@ -12,13 +12,13 @@
 #
 # The Initial Developer of the Original Code is CWI.
 # Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2010 MonetDB B.V.
+# Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = conf src
+SUBDIRS = src
 
-EXTRA_DIST = RunMtest.in RunMapprove.in rpm.mk.in MonetDB-geom.spec MonetDB-geom.spec
-EXTRA_DIST_DIR = NT debian BugTracker
+EXTRA_DIST = RunMtest.in RunMapprove.in
+EXTRA_DIST_DIR = NT BugTracker
 
 TESTS = RunMtest
 TESTS_ENVIRONMENT = $(SHELL)

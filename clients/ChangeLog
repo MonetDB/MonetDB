@@ -1,6 +1,17 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Tue Jan  4 2011 Fabian Groffen <fabian@cwi.nl>
+- Added mapi_get_uri function to retrieve mapi URI for the connection
+
+* Fri Dec 10 2010 Fabian Groffen <fabian@cwi.nl>
+- Allow to dump table data using INSERT INTO statements, rather than COPY
+  INTO + CSV data using the -N/--inserts flag of mclient and msqldump.
+  Bug #2727
+
+* Wed Dec  8 2010 Fabian Groffen <fabian@cwi.nl>
+- Added support for \dn to list schemas or describe a specific one
+
 * Thu Nov 25 2010 Fabian Groffen <fabian@cwi.nl>
 - Added support for \df to list functions or describe a specific one
 - Added support for \ds to list sequences or describe a specific one

@@ -16,10 +16,10 @@ The Original Code is the PfTijah system.
 
 The Initial Developer of the Original Code is the "University of Twente".
 Portions created by the "University of Twente" are
-Copyright (C) 2006-2010 "University of Twente".
+Copyright (C) 2006-2011 "University of Twente".
 
 Portions created by the "CWI" are
-Copyright (C) 2008-2010 "CWI".
+Copyright (C) 2008-2011 "CWI".
 
 All Rights Reserved.
 @
@@ -6219,7 +6219,7 @@ extern int pftijah_debug;
 #define TJ_TIMINGS 777
 
 @c
-#include <pf_config.h>
+#include <monetdb_config.h>
 
 #include <monet.h>
 #include <gdk.h>
@@ -7381,7 +7381,7 @@ int CMDsplitbat ( BAT** result, BAT* origbat, BAT* splitbat )
 
 @= init_result
 {
-	REGISTER BUN _p = BUNlast(bn);
+	register BUN _p = BUNlast(bn);
 
 	bn->tsorted = bn->hsorted = 0;
 	ALIGNsetH(bn, e);

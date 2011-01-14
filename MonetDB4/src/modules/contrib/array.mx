@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -69,7 +69,7 @@ All Rights Reserved.
 /*============================================================================*/
 @c
 /*============================================================================*/
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include "array.h"
 #include <math.h>
 #include <time.h>
@@ -186,11 +186,11 @@ print_array(BAT *val, ...)
 		}
 		batptr[dims++] = tmp;
 	}
+	va_end(ap);
 	if (dims == 0) {
 		GDKerror("print_array: Error, no index bats provided.\n");
 		goto exit_err_none;
 	}
-	va_end(ap);
 
 #ifdef EXCESSIVE_DEBUGGING
 	fprintf(stderr, "[PRINT_ARRAY] Dims = %d\n", dims);

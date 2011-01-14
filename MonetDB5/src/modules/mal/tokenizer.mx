@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -102,7 +102,7 @@ comment "debugging function that returns the unique tokens at each level";
 #include "mal_interpreter.h"
 
 #ifdef WIN32
-#ifndef LIBMAL
+#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
 #define tokenizer_export extern __declspec(dllimport)
 #else
 #define tokenizer_export extern __declspec(dllexport)
@@ -129,7 +129,7 @@ tokenizer_export str TKNZRgetCardinality   (int *r);
 #endif /* _TKNZR_H */
 
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "bat5.h"
 #include "tokenizer.h"
 #include "mal_linker.h"

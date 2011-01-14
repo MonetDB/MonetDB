@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -297,12 +297,13 @@ actions to obtain client records.
 
 @{
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "mal_client.h"
 #include "mal_readline.h"
 #include "mal_import.h"
 #include "mal_parser.h"
 #include "mal_namespace.h"
+#include <Mapi.h> /* for PROMPT1 */
 
 
 /* This should be in src/mal/mal.h, as the function is implemented in 

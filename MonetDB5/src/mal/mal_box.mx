@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -252,7 +252,7 @@ only.
 	MT_lock_init(&obj->lock,"M5_box_lock");
 @-
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "mal_box.h"
 #include "mal_interpreter.h"	/* for garbageCollector() & garbageElement() */
 #include "mal_client.h"
@@ -419,6 +419,7 @@ depositBox(Box box, str name, int type, ValPtr val)
 		chkStack(box->val, i);
 	}
 	v = &box->val->stk[i];
+	VALclear(v);
 	box->val->stktop++;
 	VALcopy(v, val);
 	box->dirty= TRUE;

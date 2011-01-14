@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -143,7 +143,7 @@ comment "create a BAT of the given type and size, and load values from the input
 /* #define _DEBUG_MAPI_		    trace mapi interaction */
 
 #ifdef WIN32
-#ifndef LIBMAL
+#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
 
 #define remote_export extern __declspec(dllimport)
 #else
@@ -153,7 +153,7 @@ comment "create a BAT of the given type and size, and load values from the input
 #define remote_export extern
 #endif
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include <mal.h>
 #include <mal_exception.h>
 #include <mal_interpreter.h>
@@ -196,7 +196,7 @@ remote_export str RMTepilogue(int *ret);
 @c
 static connection conns = NULL;
 
-static INLINE str RMTquery(MapiHdl *ret, str func, Mapi conn, str query);
+static inline str RMTquery(MapiHdl *ret, str func, Mapi conn, str query);
 
 @h
 remote_export str RMTresolve(int *ret, str *pat);
@@ -216,8 +216,6 @@ remote_export str RMTresolve(int *ret, str *pat) {
 	int fd;
 	char **redirs;
 	char **or;
-	str tmp;
-	int port;
 
 	if (pat == NULL || *pat == NULL || strcmp(*pat, (str)str_nil) == 0)
 		throw(ILLARG, "remote.resolve",
@@ -242,14 +240,8 @@ remote_export str RMTresolve(int *ret, str *pat) {
 	if (list == NULL)
 		throw(MAL, "remote.resolve", MAL_MALLOC_FAIL);
 
-	tmp = GDKgetenv("mero_port");
-	port = 0;
-	if (tmp != NULL)
-		port = atoi(tmp);
-	if (port == 0)
-		port = 50000;  /* hardcoded default from merovingian.c */
-	gethostname(path, 8096);
-	or = redirs = mapi_resolve(path, port, *pat);
+	snprintf(path, 8096, "%s/mapi_socket", GDKgetenv("gdk_dbfarm"));
+	or = redirs = mapi_resolve(path, 0, *pat);
 
 	if (redirs == NULL)
 		throw(MAL, "remote.resolve", "unknown failure when resolving pattern");
@@ -437,7 +429,7 @@ str RMTdisconnect(int *ret, str *conn) {
  * already.
  * NOTE: this function acquires the mal_remoteLock before accessing conns
  */
-static INLINE str
+static inline str
 RMTfindconn(connection *ret, str conn) {
 	connection c;
 
@@ -467,7 +459,7 @@ RMTfindconn(connection *ret, str conn) {
  * Re-use of this remote identifier should be done with care.
  * The encoding of the type allows for ease of type checking later on.
  */
-static INLINE str
+static inline str
 RMTgetId(char *buf, MalBlkPtr mb, InstrPtr p, int arg) {
 	InstrPtr f;
 	char *mod;
@@ -498,7 +490,7 @@ RMTgetId(char *buf, MalBlkPtr mb, InstrPtr p, int arg) {
  * should have been checked already.
  * NOTE: this function assumes a lock for conn is set
  */
-static INLINE str
+static inline str
 RMTquery(MapiHdl *ret, str func, Mapi conn, str query) {
 	MapiHdl mhdl;
 

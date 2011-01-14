@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -143,7 +143,7 @@ PROC test_iterator() : void {
 typedef ptr iter;
 
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include "iterator.h"
 #include "iterator.proto.h"
 
@@ -258,7 +258,7 @@ ITERinit(ITER *input, str name, NEXTfcn next, FREEfcn freefcn, GUESSfcn guess, B
 	return it;
 }
 
-static INLINE size_t
+static inline size_t
 ITERnext(ITER *it)
 {
 	size_t cnt = (*it->next) (it);

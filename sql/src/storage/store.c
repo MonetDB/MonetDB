@@ -13,11 +13,11 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2010 MonetDB B.V.
+ * Copyright August 2008-2011 MonetDB B.V.
  * All Rights Reserved.
  */
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include "sql_types.h"
 #include "sql_storage.h"
 #include "store_dependency.h"
@@ -1450,7 +1450,7 @@ store_init(int debug, store_type store, char *logdir, char *dbname, backend_stac
 		}
 	}
 
-	s = bootstrap_create_schema(tr, dt_schema, ROLE_SYSADMIN, USER_MONETDB);
+	(void) bootstrap_create_schema(tr, dt_schema, ROLE_SYSADMIN, USER_MONETDB);
 
 	if (first) {
 		insert_types(tr, types);
@@ -1517,6 +1517,23 @@ store_exit(void)
 #endif
 	MT_unset_lock(bs_lock, "store_exit");
 	types_exit();
+}
+
+/* call locked ! */
+void
+store_apply_deltas(void)
+{
+	int res = LOG_OK;
+
+	logging = 1;
+	/* make sure we reset all transactions on re-activation */
+	gtrans->stime++;
+	if (store_funcs.gtrans_update)
+		store_funcs.gtrans_update(gtrans);
+	res = logger_funcs.restart();
+	if (logging && res == LOG_OK)
+		res = logger_funcs.cleanup();
+	logging = 0;
 }
 
 void
@@ -3483,7 +3500,7 @@ sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, sql
 	sql_table *sysarg = find_sql_table(find_sql_schema(tr, "sys"), "args");
 	node *n;
 	int number = 0;
-	bit se = FALSE, sql;
+	bit se, sql;
 
 	base_init(NULL, &t->base, next_oid(), TR_NEW, func);
 	assert(impl && mod);
@@ -3491,7 +3508,7 @@ sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, sql
 	t->mod = (mod)?_strdup(mod):NULL; 
 	sql = t->sql = (query)?1:0;
 	t->aggr = aggr;
-	t->side_effect = se;
+	se = t->side_effect = res?FALSE:TRUE;
 	t->ops = list_dup(args, (fdup)&arg_dup);
 	t->res.scale = t->res.digits = 0;
 	t->res.type = NULL;
@@ -3514,7 +3531,7 @@ sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, sql
 		sql_arg *a = n->data;
 		sqlid id = next_oid();
 
-		table_funcs.table_insert(tr, sysarg, &id, &t->base.id, a->name, a->type.type->sqlname, &a->type.type->digits, &a->type.type->scale, &number);
+		table_funcs.table_insert(tr, sysarg, &id, &t->base.id, a->name, a->type.type->sqlname, &a->type.digits, &a->type.scale, &number);
 	}
 /*
 	if (!aggr && list_length(args) > 0) {

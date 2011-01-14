@@ -1246,7 +1246,7 @@ Over..
 </folder>
 <file nid="2444" xend="631631559" xstart="631629191" name="sysdefs.h"/>
 </folder>
-<folder nid="2447" name="pathfinder" path="scratch/build/include/pathfinder"><file nid="2448" xend="631640839" xstart="631631560" name="pf_config.h"/>
+<folder nid="2447" name="pathfinder" path="scratch/build/include/pathfinder"><file nid="2448" xend="631640839" xstart="631631560" name="monetdb_config.h"/>
 </folder>
 </folder>
 <folder nid="2452" name="lib" path="scratch/build/lib"><folder nid="2453" name="python2.4" path="scratch/build/lib/python2.4"><folder nid="2454" name="site-packages" path="scratch/build/lib/python2.4/site-packages"><folder nid="2455" name="autogen" path="scratch/build/lib/python2.4/site-packages/autogen"><file nid="2456" xend="631642508" xstart="631640840" name="var.py"/>

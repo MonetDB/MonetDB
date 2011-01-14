@@ -13,15 +13,17 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2010 MonetDB B.V.
+ * Copyright August 2008-2011 MonetDB B.V.
  * All Rights Reserved.
  */
 
 #ifndef _DISCOVERYRUNNER_H
 #define _DISCOVERYRUNNER_H 1
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include <pthread.h>
+
+#include <mal_sabaoth.h>
 
 void broadcast(char *msg);
 void registerMessageTap(int fd);
@@ -36,6 +38,8 @@ typedef struct _remotedb {
 	int ttl;          /* time-to-live in seconds */
 	struct _remotedb* next;
 }* remotedb;
+
+sabdb *getRemoteDB(char *database);
 
 extern remotedb _mero_remotedbs;
 extern pthread_mutex_t _mero_remotedb_lock;

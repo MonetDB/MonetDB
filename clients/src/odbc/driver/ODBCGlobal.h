@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2010 MonetDB B.V.
+ * Copyright August 2008-2011 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -42,7 +42,7 @@
 #ifndef _H_ODBCGLOBAL
 #define _H_ODBCGLOBAL
 
-#include "clients_config.h"
+#include "monetdb_config.h"
 
 #ifdef WIN32
 #include <windows.h>
@@ -95,27 +95,27 @@
 #include <assert.h>
 
 #ifdef NATIVE_WIN32
-#define strdup _strdup
+# define strdup _strdup
 #endif
 
 #ifndef HAVE_SSIZE_T
-#if SIZEOF_SIZE_T == SIZEOF_INT
+# if SIZEOF_SIZE_T == SIZEOF_INT
 typedef int ssize_t;
 
-#define HAVE_SSIZE_T 1
-#else
-#if SIZEOF_SIZE_T == SIZEOF_LONG
+#  define HAVE_SSIZE_T 1
+# else
+#  if SIZEOF_SIZE_T == SIZEOF_LONG
 typedef long ssize_t;
 
-#define HAVE_SSIZE_T 1
-#else
-#ifdef _WIN64
+#   define HAVE_SSIZE_T 1
+#  else
+#   ifdef _WIN64
 typedef __int64 ssize_t;
 
-#define HAVE_SSIZE_T 1
-#endif
-#endif
-#endif
+#    define HAVE_SSIZE_T 1
+#   endif
+#  endif
+# endif
 #endif
 
 /* define printf format for printing pointer values */
@@ -148,8 +148,8 @@ typedef __int64 ssize_t;
 #define LENFMT		"%I64d"
 #define ULENFMT		"%I64u"
 #else
-#define LENFMT		"%lld"
-#define ULENFMT		"%llu"
+#define LENFMT		"%ld"
+#define ULENFMT		"%lu"
 #endif
 #endif
 

@@ -23,23 +23,26 @@
 # University of Konstanz, the Technische Universitaet Muenchen, and the
 # Universitaet Tuebingen are Copyright (C) 2000-2005 University of
 # Konstanz, (C) 2005-2008 Technische Universitaet Muenchen, and (C)
-# 2008-2010 Eberhard Karls Universitaet Tuebingen, respectively.  All
+# 2008-2011 Eberhard Karls Universitaet Tuebingen, respectively.  All
 # Rights Reserved.
 #
 
 
 #SUBDIRS = utils lalgebra
 
-INCLUDES = ../include $(MONETDB_INCS) $(LIBXML2_CFLAGS)
-
+INCLUDES = \
+	../include \
+	../../../MonetDB/src/common \
+	../../../MonetDB/src/gdk \
+	$(libxml2_CFLAGS)
 
 
 
 lib_stringutils = {
-        NOINST
-        DIR = libdir
-        SOURCES = \
-                string_utils.c
+	NOINST
+	DIR = libdir
+	SOURCES = \
+		string_utils.c
 }
 
  

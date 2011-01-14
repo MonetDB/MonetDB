@@ -1,3 +1,6 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Wed Dec 15 2010 Niels Nes <niels@cwi.nl>
+- Allow clients to release prepared handles using Xrelease commands
+

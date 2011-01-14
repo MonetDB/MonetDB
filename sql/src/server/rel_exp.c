@@ -13,11 +13,11 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2010 MonetDB B.V.
+ * Copyright August 2008-2011 MonetDB B.V.
  * All Rights Reserved.
  */
 
-#include <sql_config.h>
+#include <monetdb_config.h>
 #include "sql_semantic.h"
 #include "rel_semantic.h"
 #include "rel_exp.h"
@@ -81,6 +81,20 @@ exp_or(sql_allocator *sa, list *l, list *r)
 	e->flag = cmp_or;
 	return e;
 }
+
+sql_exp *
+exp_in(sql_allocator *sa, sql_exp *l, list *r, int cmptype)
+{
+	sql_exp *e = exp_create(sa, e_cmp);
+	
+	e->card = l->card;
+	e->l = l;
+	e->r = r;
+	assert( cmptype == cmp_in || cmptype == cmp_notin);
+	e->flag = cmptype;
+	return e;
+}
+
 
 static sql_subtype*
 dup_subtype(sql_allocator *sa, sql_subtype *st)
@@ -225,6 +239,15 @@ exp_param(sql_allocator *sa, char *name, sql_subtype *tpe, int frame)
 }
 
 sql_exp * 
+exp_values(sql_allocator *sa, list *exps) 
+{
+	sql_exp *e = exp_create(sa, e_atom);
+	e->card = CARD_MULTI;
+	e->f = exps;
+	return e;
+}
+
+sql_exp * 
 exp_alias(sql_allocator *sa, char *arname, char *acname, char *org_rname, char *org_cname, sql_subtype *t, int card, int has_nils, int intern) 
 {
 	sql_exp *e = exp_create(sa, e_column);
@@ -364,6 +387,20 @@ exp_relname( sql_exp *e )
 	return NULL;
 }
 
+char *
+exp_func_name( sql_exp *e )
+{
+	if (e->type == e_func && e->f) {
+		sql_subfunc *f = e->f;
+		return f->func->base.name;
+	}
+	if (e->name)
+		return e->name;
+	if (e->type == e_convert && e->l)
+		return exp_name(e->l);
+	return NULL;
+}
+
 
 char *
 exp_find_rel_name(sql_exp *e)
@@ -431,17 +468,17 @@ exps_match_col_exps( sql_exp *e1, sql_exp *e2)
 	if (e1->type != e_cmp || e2->type != e_cmp)
 		return 0;
 
-	if (e1->flag != cmp_or && e1_r && e1_r->card == 1 &&
-	    e2->flag != cmp_or && e2_r && e2_r->card == 1)
+	if (!is_complex_exp(e1->flag) && e1_r && e1_r->card == 1 &&
+	    !is_complex_exp(e2->flag) && e2_r && e2_r->card == 1)
 		return exp_match_exp(e1->l, e2->l);
 
-	if (e1->flag != cmp_or && e1_r && e1_r->card == 1 &&
+	if (!is_complex_exp(e1->flag) && e1_r && e1_r->card == 1 &&
 	    e2->flag == cmp_or)
  		return exp_match_col_exps(e1->l, e2->l) &&
  		       exp_match_col_exps(e1->l, e2->r); 
 
 	if (e1->flag == cmp_or &&
-	    e2->flag != cmp_or && e2_r && e2_r->card == 1)
+	    !is_complex_exp(e2->flag) && e2_r && e2_r->card == 1)
  		return exp_match_col_exps(e2->l, e1->l) &&
  		       exp_match_col_exps(e2->l, e1->r); 
 
@@ -502,7 +539,7 @@ exp_match_exp( sql_exp *e1, sql_exp *e2)
 	if (e1->type == e2->type) { 
 		switch(e1->type) {
 		case e_cmp:
-			if (e1->flag == e2->flag && e1->flag != cmp_or &&
+			if (e1->flag == e2->flag && !is_complex_exp(e1->flag) &&
 		            exp_match_exp(e1->l, e2->l) && 
 			    exp_match_exp(e1->r, e2->r) && 
 			    ((!e1->f && !e2->f) || exp_match_exp(e1->f, e2->f)))
@@ -558,7 +595,7 @@ exp_is_join_exp(sql_exp *e)
 {
 	sql_exp *l = e->l;
 	sql_exp *r = e->r;
-	if (e->type == e_cmp && e->flag != cmp_or && l && r && r->card >= CARD_AGGR)
+	if (e->type == e_cmp && !is_complex_exp(e->flag) && l && r && r->card >= CARD_AGGR)
 		return 0;
 	if (e->type == e_cmp && e->flag == cmp_or && e->card >= CARD_AGGR)
 		if (exps_are_joins(e->l) == 0 && exps_are_joins(e->r) == 0)
@@ -611,7 +648,7 @@ exp_is_join(sql_exp *e)
 	/* only simple compare expressions, ie not or lists
 		or range expressions (e->f)
 	 */ 
-	if (e->type == e_cmp && e->flag != cmp_or && e->l && e->r && !e->f && e->card >= CARD_AGGR && !complex_select(e))
+	if (e->type == e_cmp && !is_complex_exp(e->flag) && e->l && e->r && !e->f && e->card >= CARD_AGGR && !complex_select(e))
 		return 0;
 	return -1;
 }
@@ -645,7 +682,8 @@ rel_find_exp_( sql_rel *rel, sql_exp *e)
 			list *l = e->l;
 			node *n = l->h;
 	
-			while (ne == NULL && n != NULL) {
+			ne = n->data;
+			while (ne != NULL && n != NULL) {
 				ne = rel_find_exp_(rel, n->data);
 				n = n->next;
 			}
@@ -654,7 +692,7 @@ rel_find_exp_( sql_rel *rel, sql_exp *e)
 	case e_cmp:	
 		return NULL;
 	case e_atom:
-		return ne;
+		return e;
 	}
 	return ne;
 }
@@ -704,7 +742,7 @@ rel_find_exp( sql_rel *rel, sql_exp *e)
 int 
 exp_is_correlation(sql_exp *e, sql_rel *r )
 {
-	if (e->type == e_cmp && e->flag != cmp_or) {
+	if (e->type == e_cmp && !is_complex_exp(e->flag)) {
 		sql_exp *le = rel_find_exp(r->l, e->l);
 		sql_exp *re = rel_find_exp(r->r, e->r);
 

@@ -22,7 +22,7 @@ Karls Universitaet Tuebingen, Germany.  Portions created by the
 University of Konstanz, the Technische Universitaet Muenchen, and the
 Universitaet Tuebingen are Copyright (C) 2000-2005 University of
 Konstanz, (C) 2005-2008 Technische Universitaet Muenchen, and (C)
-2008-2010 Eberhard Karls Universitaet Tuebingen, respectively.  All
+2008-2011 Eberhard Karls Universitaet Tuebingen, respectively.  All
 Rights Reserved.
 @
 @f vx_index
@@ -41,7 +41,7 @@ attribute/element tags.
 @- Combine function C()
 
 @c
-#include "pf_config.h"
+#include "monetdb_config.h"
 #include <gdk.h>
 #include "shredder.h"   /* for XML_DEPTH_MAX */
 #include "ll_upwards.h" /* SKIPHOLES, speculate_skip, PF_SIBLING_PROBES */
@@ -55,7 +55,7 @@ attribute/element tags.
 #define XQH_CLC_SHFT(v,o) ((v << o) | (XQH_MASK27(XQH_UNSGN(v) >> (27-o))))
 
 /* hash function H */
-static INLINE int XQH_H(str v) {
+static inline int XQH_H(str v) {
     int c;
     int h_val = 0, ofs = 0;
 
@@ -102,7 +102,7 @@ int CMD_XQH_H_bat(BAT **res, BAT* b) {
 }
 
 /* Combine function C */
-static INLINE int XQH_C(int l, int r) {
+static inline int XQH_C(int l, int r) {
     int h_comb = 0;
     int ofs = 0;
 
@@ -329,7 +329,7 @@ static unsigned char STT[60][59] = {
  * statements go until 4 in worst case. As a result this function never
  * reaches the end.
  */
-static INLINE unsigned char dbl_fsm(str v) {
+static inline unsigned char dbl_fsm(str v) {
     unsigned char state = rej;
     unsigned char lead  = 0;
 

@@ -20,7 +20,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include <pf_config.h>
+#include <monetdb_config.h>
 
 #if ! HAVE_SOCKLEN_T
 #define NO_SOCKLEN_T 1

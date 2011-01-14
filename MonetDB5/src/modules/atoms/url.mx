@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -62,6 +62,10 @@ address URLnew
 comment "Create an URL from a string literal";
 
 command url(s:url) :url
+address URLnoop
+comment "Create an URL from a string literal";
+
+command calc.url(s:str) :url
 address URLnoop
 comment "Create an URL from a string literal";
 
@@ -179,7 +183,7 @@ secure concurrent use from different threads.
 typedef str url;
 
 #ifdef WIN32
-#ifndef LIBATOMS
+#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
 #define url_export extern __declspec(dllimport)
 #else
 #define url_export extern __declspec(dllexport)
@@ -217,7 +221,7 @@ url_export int URLtoString(str *s, int *len, str src);
 #endif /* URL_H */
 
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "url.h"
 #include "mal.h"
 #include "mal_exception.h"

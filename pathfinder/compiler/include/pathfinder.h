@@ -28,7 +28,7 @@
  * University of Konstanz, the Technische Universitaet Muenchen, and the
  * Universitaet Tuebingen are Copyright (C) 2000-2005 University of
  * Konstanz, (C) 2005-2008 Technische Universitaet Muenchen, and (C)
- * 2008-2010 Eberhard Karls Universitaet Tuebingen, respectively.  All
+ * 2008-2011 Eberhard Karls Universitaet Tuebingen, respectively.  All
  * Rights Reserved.
  *
  * $Id$
@@ -37,17 +37,18 @@
 #ifndef PATHFINDER_H
 #define PATHFINDER_H
 
-/* AIX requires this to be the first thing in the file.  */
 #ifdef HAVE_ALLOCA_H
-#  include <alloca.h>
+# include <alloca.h>
+#elif defined __GNUC__
+# define alloca __builtin_alloca
+#elif defined _AIX
+# define alloca __alloca
+#elif defined _MSC_VER
+# include <malloc.h>
+# define alloca _alloca
 #else
-#  ifdef _AIX
-#pragma alloca
-#  else
-#   ifndef alloca       /* predefined by HP cc +Olibcalls */
+# include <stddef.h>
 void *alloca(size_t);
-#   endif
-#  endif
 #endif
 
 #include <setjmp.h>

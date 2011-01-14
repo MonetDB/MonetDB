@@ -15,7 +15,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 -->
 
@@ -109,6 +109,7 @@ All Rights Reserved.
     <antcall target="Test_Ctransaction" />
     <antcall target="Test_PSgeneratedkeys" />
     <antcall target="Test_PSlargeresponse" />
+    <antcall target="Test_PSlargeamount" />
     <antcall target="Test_PStimedate" />
     <antcall target="Test_PStimezone" />
     <antcall target="Test_PStypes" />
@@ -192,6 +193,12 @@ All Rights Reserved.
   <target name="Test_PSlargeresponse">
     <antcall target="test_class">
       <param name="test.class" value="Test_PSlargeresponse" />
+    </antcall>
+  </target>
+
+  <target name="Test_PSlargeamount">
+    <antcall target="test_class">
+      <param name="test.class" value="Test_PSlargeamount" />
     </antcall>
   </target>
 

@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2010 MonetDB B.V.
+ * Copyright August 2008-2011 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -24,8 +24,7 @@
  * See mclient.1 for usage information.
  */
 
-#include "clients_config.h"
-#include "monet_utils.h"
+#include "monetdb_config.h"
 #ifndef HAVE_GETOPT_LONG
 #  include "monet_getopt.h"
 #else
@@ -45,9 +44,21 @@
 #ifdef HAVE_STRINGS_H
 #include <strings.h>
 #endif
+
 #ifdef HAVE_ALLOCA_H
-#include <alloca.h>
+# include <alloca.h>
+#elif defined __GNUC__
+# define alloca __builtin_alloca
+#elif defined _AIX
+# define alloca __alloca
+#elif defined _MSC_VER
+# include <malloc.h>
+# define alloca _alloca
+#else
+# include <stddef.h>
+void *alloca(size_t);
 #endif
+
 #ifdef HAVE_MALLOC_H
 #include <malloc.h>
 #endif
@@ -1768,8 +1779,10 @@ showCommands(void)
 #define MD_FUNC     8
 #define MD_SCHEMA  16
 
+enum hmyesno { UNKNOWN, YES, NO };
+
 static int
-doFileByLines(Mapi mid, FILE *fp, const char *prompt)
+doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 {
 	char *line = NULL;
 	char *oldbuf = NULL, *buf = NULL;
@@ -1778,6 +1791,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 	MapiMsg rc = MOK;
 	int sent = 0;		/* whether we sent any data to the server */
 	int lineno = 1;
+	enum hmyesno hassysfuncs = UNKNOWN;
 
 #ifdef HAVE_LIBREADLINE
 	if (prompt == NULL)
@@ -2055,29 +2069,75 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 							describe_sequence(mid, NULL, line, toConsole);
 						if (x & MD_FUNC)
 							dump_functions(mid, toConsole, NULL, line);
+						if (x & MD_SCHEMA)
+							describe_schema(mid, line, toConsole);
 #ifdef HAVE_POPEN
 						end_pager(saveFD, saveFD_raw);
 #endif
 					} else {
 						/* get all object names in current schema */
 						char *type, *name, *schema;
-						char q[2048];
-						char nameq[256];
+						char q[4096];
+						char nameq[128];
+						char funcq[512];
+
+						if (hassysfuncs == UNKNOWN)
+							hassysfuncs = has_systemfunctions(mid) ? YES : NO;
+
 						if (!*line) {
 							line = "%";
 							hasSchema = 0;
 						}
 						if (hasSchema) {
-							snprintf(nameq, 256, 
+							snprintf(nameq, sizeof(nameq), 
 									"AND \"s\".\"name\" || '.' || \"o\".\"name\" LIKE '%s'",
 									line);
 						} else {
-							snprintf(nameq, 256,
+							snprintf(nameq, sizeof(nameq),
 									"AND \"s\".\"name\" = \"current_schema\" "
 									"AND \"o\".\"name\" LIKE '%s'",
 									line);
 						}
-						snprintf(q, 2048,
+						if (hassysfuncs == YES) {
+							snprintf(funcq, sizeof(funcq),
+								"SELECT \"o\".\"name\", "
+								       "(CASE WHEN \"sf\".\"function_id\" IS NOT NULL "
+									     "THEN 'SYSTEM ' "
+										 "ELSE '' END "
+									   "|| 'FUNCTION') AS \"type\", "
+									   "CASE WHEN \"sf\".\"function_id\" IS NULL "
+										 "THEN false "
+										 "ELSE true END AS \"system\", "
+									   "\"s\".\"name\" AS \"sname\", "
+									   "%d AS \"ntype\" "
+								"FROM \"sys\".\"functions\" \"o\" "
+								      "LEFT JOIN \"sys\".\"systemfunctions\" \"sf\" "
+									    "ON \"o\".\"id\" = \"sf\".\"function_id\", "
+									  "\"sys\".\"schemas\" \"s\" "
+								"WHERE \"o\".\"schema_id\" = \"s\".\"id\" "
+								  "%s ",
+								MD_FUNC,
+								nameq);
+						} else {
+							snprintf(funcq, sizeof(funcq),
+								"SELECT \"o\".\"name\", "
+								       "(CASE WHEN \"o\".\"id\" <= 2000 "
+									     "THEN 'SYSTEM ' "
+										 "ELSE '' END "
+									   "|| 'FUNCTION') AS \"type\", "
+									   "CASE WHEN \"o\".\"id\" > 2000 "
+										 "THEN false "
+										 "ELSE true END AS \"system\", "
+									   "\"s\".\"name\" AS \"sname\", "
+									   "%d AS \"ntype\" "
+								"FROM \"sys\".\"functions\" \"o\", "
+									  "\"sys\".\"schemas\" \"s\" "
+								"WHERE \"o\".\"schema_id\" = \"s\".\"id\" "
+								  "%s ",
+								MD_FUNC,
+								nameq);
+						}
+						snprintf(q, sizeof(q),
 								"SELECT \"name\", "
 								       "CAST(\"type\" AS VARCHAR(30)) AS \"type\", "
 								       "\"system\", \"sname\", "
@@ -2116,32 +2176,31 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 								"WHERE \"o\".\"schema_id\" = \"s\".\"id\" "
 								  "%s "
 								"UNION "
-								"SELECT \"o\".\"name\", "
-								       "(CASE WHEN \"sf\".\"function_id\" IS NOT NULL "
-									     "THEN 'SYSTEM ' "
-										 "ELSE '' END "
-									   "|| 'FUNCTION') AS \"type\", "
-									   "CASE WHEN \"sf\".\"function_id\" IS NULL "
-										 "THEN false "
-										 "ELSE true END AS \"system\", "
-									   "\"s\".\"name\" AS \"sname\", "
+								"%s "
+								"UNION "
+								"SELECT NULL AS \"name\", "
+								       "(CASE WHEN \"o\".\"name\" LIKE 'sys' "
+									    "THEN 'SYSTEM ' "
+										"ELSE '' END "
+										"|| 'SCHEMA') AS \"type\", "
+									   "CASE WHEN \"o\".\"name\" LIKE 'sys' "
+									   "THEN true "
+									   "ELSE false END AS \"system\", "
+									   "\"o\".\"name\" AS \"sname\", "
 									   "%d AS \"ntype\" "
-								"FROM \"sys\".\"functions\" \"o\" "
-								      "LEFT JOIN \"sys\".\"systemfunctions\" \"sf\" "
-									    "ON \"o\".\"id\" = \"sf\".\"function_id\", "
-									  "\"sys\".\"schemas\" \"s\" "
-								"WHERE \"o\".\"schema_id\" = \"s\".\"id\" "
-								  "%s "
+								"FROM \"sys\".\"schemas\" \"o\" "
+								"WHERE \"o\".\"name\" LIKE '%s' "
 								") AS \"all\" "
-								"WHERE \"ntype\" & %d > 0 "
+								"WHERE \"ntype\" & %u > 0 "
 								  "%s "
 								"ORDER BY \"system\", \"name\"",
 								MD_TABLE, MD_VIEW,
 								nameq,
 								MD_SEQ,
 								nameq,
-								MD_FUNC,
-								nameq,
+								funcq,
+								MD_SCHEMA,
+								line,
 								x,
 								(wantsSystem ?
 								  "" :
@@ -2153,9 +2212,11 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 							type = mapi_fetch_field(hdl, 1);
 							schema = mapi_fetch_field(hdl, 3);
 							mnstr_printf(toConsole,
-									  "%-*s  %s.%s\n",
+									  "%-*s  %s%s%s\n",
 									  mapi_get_len(hdl, 1),
-									  type, schema, name);
+									  type, schema,
+									  name != NULL ? "." : "",
+									  name != NULL ? name : "");
 						}
 						mapi_close_handle(hdl);
 						hdl = NULL;
@@ -2183,10 +2244,10 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 #endif
 					if (*line) {
 						mnstr_printf(toConsole, "START TRANSACTION;\n");
-						dump_table(mid, NULL, line, toConsole, 0, 1);
+						dump_table(mid, NULL, line, toConsole, 0, 1, useinserts);
 						mnstr_printf(toConsole, "COMMIT;\n");
 					} else
-						dump_database(mid, toConsole, 0);
+						dump_database(mid, toConsole, 0, useinserts);
 #ifdef HAVE_POPEN
 					end_pager(saveFD, saveFD_raw);
 #endif
@@ -2429,6 +2490,7 @@ usage(const char *prog, int xit)
 	fprintf(stderr, " -r nr       | --rows=nr          for pagination\n");
 	fprintf(stderr, " -w nr       | --width=nr         for pagination\n");
 	fprintf(stderr, " -D          | --dump             create an SQL dump\n");
+	fprintf(stderr, " -N          | --inserts          use INSERT INTO statements when dumping\n");
 
 	fprintf(stderr, "\nXQuery specific options\n");
 	fprintf(stderr, " -C colname  | --collection=colname  collection name\n");
@@ -2454,6 +2516,7 @@ main(int argc, char **argv)
 	char *colname = NULL;
 	int trace = 0;
 	int dump = 0;
+	int useinserts = 0;
 	int algebra = -1;
 	int c = 0;
 	Mapi mid;
@@ -2470,6 +2533,7 @@ main(int argc, char **argv)
 		{"collection", 1, 0, 'C'},
 		{"database", 1, 0, 'd'},
 		{"dump", 0, 0, 'D'},
+		{"inserts", 0, 0, 'N'},
 		{"echo", 0, 0, 'e'},
 #ifdef HAVE_ICONV
 		{"encoding", 1, 0, 'E'},
@@ -2481,6 +2545,7 @@ main(int argc, char **argv)
 		{"input", 1, 0, 'I'},
 		{"interactive", 0, 0, 'i'},
 		{"language", 1, 0, 'l'},
+		{"taal", 1, 0, 'T'},
 		{"log", 1, 0, 'L'},
 		{"null", 1, 0, 'n'},
 #ifdef HAVE_POPEN
@@ -2613,11 +2678,11 @@ main(int argc, char **argv)
 		mnstr_destroy(config);
 	}
 
-	while ((c = getopt_long(argc, argv, "C:Dd:e"
+	while ((c = getopt_long(argc, argv, "C:DNd:e"
 #ifdef HAVE_ICONV
 				"E:"
 #endif
-				"f:Ggh:I:iL:l:n:"
+				"f:Ggh:I:iL:T:l:n:"
 #ifdef HAVE_POPEN
 				"|:"
 #endif
@@ -2676,6 +2741,10 @@ main(int argc, char **argv)
 				exit(-1);
 			}
 			break;
+		case 'T':
+			/* mere hack */
+			mode = SQL;
+			language = optarg;
 		case 'n':
 			nullstring = optarg;
 			break;
@@ -2708,6 +2777,9 @@ main(int argc, char **argv)
 			break;
 		case 'D':
 			dump = 1;
+			break;
+		case 'N':
+			useinserts = 1;
 			break;
 		case 'd':
 			dbname = optarg;
@@ -2817,7 +2889,7 @@ main(int argc, char **argv)
 	mapi_cache_limit(mid, -1);
 	if (dump) {
 		if (mode == SQL) {
-			exit(dump_database(mid, toConsole, 0));
+			exit(dump_database(mid, toConsole, 0, useinserts));
 		} else {
 			fprintf(stderr, "Dump only supported for SQL\n");
 			exit(1);
@@ -2929,7 +3001,7 @@ main(int argc, char **argv)
 				} else {
 					/* note that since fp != stdin,
 					   we don't treat \ special */
-					c |= doFileByLines(mid, fp, NULL);
+					c |= doFileByLines(mid, fp, NULL, useinserts);
 					fclose(fp);
 				}
 			} else
@@ -2953,7 +3025,7 @@ main(int argc, char **argv)
 			fromConsole = stdin;
 		}
 		/* use default rendering if not overruled at commandline */
-		c = doFileByLines(mid, stdin, prompt);
+		c = doFileByLines(mid, stdin, prompt, useinserts);
 
 #ifdef HAVE_LIBREADLINE
 		if (interactive_stdin) {

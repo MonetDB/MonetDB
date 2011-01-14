@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -270,7 +270,7 @@ address mvc_export_value_wrap
 comment "export a single value onto the stream s";
 
 pattern importTable{unsafe}( s:bstream, sname:str, tname:str, 
-	sep:str, rsep:str, ssep:str, ns:str, nr:lng, offset:lng) :bat[:str,:bat]
+	sep:str, rsep:str, ssep:str, ns:str, nr:lng, offset:lng, locked:int) :bat[:str,:bat]
 address mvc_import_table_wrap
 comment "Import a table from bstream s with the 
 	given tuple and seperators (sep/rsep)";
@@ -290,7 +290,8 @@ function copy_from(
 	ns:str,
 	fname:str,
 	nr:lng,
-	offset:lng
+	offset:lng,
+	locked:int
 ):bat[:str,:bat];
 	cs := str.codeset();
 	f  := str.iconv(fname, "UTF-8", cs);
@@ -300,7 +301,7 @@ function copy_from(
 	bs := bstream.create(s, 33554432);
 	#bs := bstream.create(s, 67108864);
 
-	res := sql.importTable(bs, sname, tname, tsep, rsep, ssep, ns, nr, offset);
+	res := sql.importTable(bs, sname, tname, tsep, rsep, ssep, ns, nr, offset, locked);
 	bstream.destroy(bs);
 	return res;
 end copy_from;
@@ -313,10 +314,11 @@ function copyfrom(
 	ssep:str,
 	ns:str,
 	nr:lng,
-	offset:lng
+	offset:lng,
+	locked:int
 ):bat[:str,:bat];
 	in := io.stdin();
-	res := sql.importTable(in, sname, tname, tsep, rsep, ssep, ns, nr, offset);
+	res := sql.importTable(in, sname, tname, tsep, rsep, ssep, ns, nr, offset, locked);
 	return res;
 end copyfrom;
 
@@ -478,6 +480,11 @@ comment "dump the trace statistics";
 pattern dump_slave() :bat[:str,:bat]
 address dump_slave
 comment "Dump the status of the slave synchronization";
+
+pattern storage():bat[:str,:bat]
+address sql_storage
+comment "return a table with storage information ";
+
 @- SQL function aliases
 The code generate should identify the precise module
 target for all functions. This creates quite some
@@ -523,6 +530,10 @@ comment "round off the value v to nearests multiple of r";
 command sql.round( v:@1, r:bte) :@1
 address @1_round_wrap
 comment "round off the floating point v to r digits behind the dot (if r < 0, before the dot)";
+
+command sql.ms_trunc( v:@1, r:int) :@1
+address @1_trunc_wrap
+comment "truncate the floating point v to r digits behind the dot (if r < 0, before the dot)";
 
 @mal
 @:mal_fround(flt)@
@@ -817,6 +828,10 @@ comment "Consolidate the deletion table over all columns reusing deleted slots";
 pattern vacuum(sch:str, tbl:str)
 address SQLvacuum
 comment "Choose an approach to consolidate the deletions";
+
+pattern drop_hash(sch:str, tbl:str)
+address SQLdrop_hash
+comment "Drop hash indices for the given table";
 
 pattern newdictionary(sch:str, tbl:str):void
 address SQLnewDictionary
@@ -1118,6 +1133,7 @@ sql5_export str SQLcluster2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 sql5_export str SQLshrink(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLnewDictionary(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLdropDictionary(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLgzcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -1175,6 +1191,7 @@ sql5_export str SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 @= fround_export
 sql5_export str @1_dec_round_wrap( @1 *res, @1 *v, @1 *r );
 sql5_export str @1_round_wrap( @1 *res, @1 *v, bte *r );
+sql5_export str @1_trunc_wrap( @1 *res, @1 *v, int *r );
 @h
 @:fround_export(flt)@
 @:fround_export(dbl)@
@@ -1279,7 +1296,7 @@ sql5_export str getContext(Client cntxt, MalBlkPtr mb, mvc **c, backend **b );
 @-
 First introduce the routines to be called by the front-end.
 @c
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include "sql.h"
 #include "sql_result.h"
 #include "sql_gencode.h"
@@ -1298,8 +1315,8 @@ First introduce the routines to be called by the front-end.
 #include <cluster.h>
 #include <replication.h>
 #include <opt_dictionary.h>
-#ifdef HAVE_MONETDB5_RDF
-	#include <rdf/rdf.h>
+#ifdef HAVE_RAPTOR
+	#include <rdf.h>
 #endif
 
 backend *
@@ -1367,12 +1384,19 @@ rel_is_point_query( sql_rel *rel)
 	if (is_project(rel->op))
 		return rel_is_point_query(rel->l);
 	if (is_select(rel->op) && rel_is_table(rel->l) && rel->exps) {
+/*
 		node *n;
 		is_point = 1;
 		for (n=rel->exps->h; n && is_point; n = n->next) {
 			if (!exp_is_point_select(n->data))
 				is_point = 0;
 		}
+*/
+		is_point = 0;
+		/* just one point expression makes this a point query */
+		if (rel->exps->h)
+			if (exp_is_point_select(rel->exps->h->data))
+				is_point = 1;
 	}
 	return is_point;
 }
@@ -1436,29 +1460,17 @@ sql_symbol2stmt(mvc *c, symbol *sym)
 		}
 		rel_destroy(r);
 		if (s) {
-			stmt *opt;
-
 			/* only needed for delta tables */
-			opt = rel2bin(c, s); 	
-			s = bin_optimizer(c, opt);
+			s = rel2bin(c, s); 	
+			s = bin_optimizer(c, s);
 			c->point_query = pq;
 			return s;
 		}
 	}
 
-	if (s){
-		stmt *opt;
-
-		if (mvc_debug_on(c,128)) 
-			stmt2dot(c->sa, s, 1, "/tmp/g1.dot");
-		opt = rel2bin(c, s);
-		s = opt;
-		if (mvc_debug_on(c,128)) 
-			stmt2dot(c->sa, s, 2, "/tmp/g2.dot");
-		opt = bin_optimizer(c, s);
-		s = opt;
-		if (mvc_debug_on(c,128)) 
-			stmt2dot(c->sa, s, 3, "/tmp/g3.dot");
+	if (s) {
+		s = rel2bin(c, s);
+		s = bin_optimizer(c, s);
 	}
 	return s;
 }
@@ -1474,6 +1486,18 @@ sqlcleanup(mvc *c, int err)
 	sql_destroy_params(c);
 	sql_destroy_args(c);
 
+	if ((c->emod & mod_locked) == mod_locked) {
+		/* here we should commit the transaction */
+		if (!err) {
+			sql_trans_commit(c->session->tr);
+			/* write changes to disk */
+			sql_trans_end(c->session);
+			store_apply_deltas();
+			sql_trans_begin(c->session);
+		}
+		store_unlock();
+		c->emod = 0;
+	}
 	/* some statements dynamically disable caching */
 	c->sym = NULL;
 	if (c->sa) 
@@ -1614,12 +1638,11 @@ create_table_or_view( mvc *sql, char *sname, sql_table *t, int temp)
 		if (c->def) {
 			char buf[BUFSIZ];
 			sql_rel *r = NULL;
-			sql_exp *e;
 
 			sql->sa = sa_create();
 			snprintf(buf, BUFSIZ, "select %s;", c->def);
 			r = rel_parse(sql, buf, m_deps); 
-			if (!r || !is_project(r->op) || !r->exps || list_length(r->exps) != 1 || (e = rel_check_type(sql, &c->type, r->exps->h->data, type_equal)) == NULL) 
+			if (!r || !is_project(r->op) || !r->exps || list_length(r->exps) != 1 || rel_check_type(sql, &c->type, r->exps->h->data, type_equal) == NULL) 
 				throw(SQL, "sql.catalog", sql->errstr);
 			rel_destroy(r);
 			sa_destroy(sql->sa);
@@ -1834,7 +1857,7 @@ drop_view(mvc *sql, char *sname, char *tname, int drop_action)
 	} else if (!t) {
 		return sql_message("DROP VIEW: unknown view '%s'", tname);
 	} else if (!isView(t)) {
-		return sql_message("DROP VIEW: unable to drop view '%s'", tname);
+		return sql_message("DROP VIEW: unable to drop view '%s': is a table", tname);
 	} else if (t->system) {
 		return sql_message("DROP VIEW: cannot drop system view '%s'", tname);
 	} else if (! drop_action && mvc_check_dependency(sql, t->base.id, VIEW_DEPENDENCY, NULL)) {
@@ -3121,6 +3144,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	unsigned char **N = (unsigned char **) getArgReference(stk, pci, 7);
 	lng *sz = (lng *) getArgReference(stk, pci, 8);
 	lng *offset = (lng *) getArgReference(stk, pci, 9);
+	int *locked = (int *) getArgReference(stk, pci, 10);
 
 	if (msg)
 		return msg;
@@ -3135,7 +3159,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	len = strlen((char*)(*N));
 	GDKstrFromStr(ns=GDKmalloc(len+1), *N, len); len = 0;
-	b = mvc_import_table(cntxt, m, *s, *sname, *tname, (char*)tsep, (char*)rsep, (char*)ssep, (char*)ns, *sz, *offset);
+	b = mvc_import_table(cntxt, m, *s, *sname, *tname, (char*)tsep, (char*)rsep, (char*)ssep, (char*)ns, *sz, *offset, *locked);
 	GDKfree(tsep);
 	GDKfree(rsep);
 	if(ssep)
@@ -3609,9 +3633,26 @@ str
 		else
 			*res = (@1) (floor(*v*(@1)scales[d]+.5)/scales[d]);
 	} else {
-		*res = *v;
+		*res = (@1) round(*v); 
 	}
 	return MAL_SUCCEED;
+}
+str
+@1_trunc_wrap( @1 *res, @1 *v, int *r )
+{
+    /* shortcut nil */
+    if (*v == @1_nil) {
+        *res = @1_nil;
+    } else if (*r < 0) {
+		int d = -*r;
+		*res = (@1) (trunc((*v)/((@1)scales[d])) * scales[d]); 
+    } else if (*r > 0) {
+		int d = *r;
+		*res = (@1) (trunc(*v * (@1)scales[d]) / ((@1)scales[d]));
+    } else {
+        *res = trunc(*v);
+    }
+    return MAL_SUCCEED;
 }
 
 @c
@@ -4737,8 +4778,10 @@ dump_cache(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BUNins(t, "count", &count->batCacheid, FALSE);
 
 	for(q = m->qc->q; q; q = q->next) {
-		BUNappend(query, q->codestring, FALSE);
-		BUNappend(count, &q->count, FALSE);
+		if (q->type != Q_PREPARE) {
+			BUNappend(query, q->codestring, FALSE);
+			BUNappend(count, &q->count, FALSE);
+		}
 	}
 
 	BBPunfix(query->batCacheid);
@@ -5114,7 +5157,8 @@ SQLcluster2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 Shrinking and re-using space to vacuum clean the holes in the relations.
 @= vacuum
 str
-SQL@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+SQL@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	str *sch = (str *) getArgReference(stk,pci,1);
 	str *tbl = (str *) getArgReference(stk,pci,2);
 	sql_trans	*tr;
@@ -5126,6 +5170,7 @@ SQL@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	bat bid;
 	BAT *b, *del;
 	node *o;
+	int i,bids[2049];
 
 	if (msg)
 		return msg;
@@ -5135,35 +5180,93 @@ SQL@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	t = mvc_bind_table(m, s, *tbl);
 	if ( t == NULL)
 		throw(MAL,"sql.@1","Table missing");
+
+	if (m->user_id != USER_MONETDB)
+		throw(MAL,"sql.@1","insufficient privileges");
+	if ((!list_empty(t->idxs.set) || !list_empty(t->keys.set)))
+		throw(MAL,"sql.@1","@1 not allowed on tables with indices");
+	if (has_snapshots(m->session->tr)) 
+		throw(MAL,"sql.@1","@1 not allowed on snapshots");
+	if (!m->session->auto_commit) 
+		throw(MAL,"sql.@1","@1 only allowed in auto commit mode");
+
+	/* lock the store, for single user/transaction */
+	store_lock();
+	while (store_nr_active > 1) {
+		store_unlock();
+		MT_sleep_ms(100);
+		store_lock();
+
+		/* flush old changes to disk */
+		sql_trans_end(m->session);
+		store_apply_deltas();
+		sql_trans_begin(m->session);
+	}
+
 	tr = m->session->tr;
 	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
 	t->base.rtime = s->base.rtime = tr->rtime = tr->stime;
 
 	/* get the deletions BAT*/
-	del = mvc_bind_dbat(m, *sch, *tbl, 2);
+	del = mvc_bind_dbat(m, *sch, *tbl, RD_INS);
 
-	for (o = t->columns.set->h; o; o = o->next) {
+	/* this code is insecure, because something may 
+	   go wrong while we compress the columns.
+	   A two-phase action reduces the risks, but not all.
+	   e.g. a crash during update of the catalog. */
+	i=0;
+	bids[i]=0;
+	for (o = t->columns.set->h; o; o = o->next,i++) {
+		c = o->data;
+		b = store_funcs.bind_col(tr, c, 0);
+		if (b == NULL || 
+	           (msg = BKC@1BAT(&bid, &(b->batCacheid), &(del->batCacheid))) != NULL) {
+			for( i--; i>=0; i--)
+				BBPreleaseref(bids[i]);
+			store_unlock();
+			if (!msg)
+				throw(MAL,"sql.@1","Can not access descriptor");
+			return msg;
+		}
+		BBPreleaseref(b->batCacheid);
+		if (i < 2048){
+			bids[i]= bid;
+			bids[i+1]=0;
+		}
+	}
+	if ( i == 2048 ) {
+		for( i--; i>=0; i--)
+			BBPreleaseref(bids[i]);
+		store_unlock();
+		throw(MAL,"sql.@1","Too many columns to handle, use copy instead");
+	}
+
+	i=0;
+	for (o = t->columns.set->h; o; o = o->next, i++) {
 		sql_delta *d;
 		c = o->data;
 		b = store_funcs.bind_col(tr, c, 0);
-		if (b == NULL)
-			throw(MAL,"sql.@1","Can not access descriptor");
-		msg = BKC@1BAT(&bid, &(b->batCacheid), &(del->batCacheid));
-		BBPreleaseref(b->batCacheid);
-		if (msg){
-			BBPreleaseref(bid);
-			return msg;
-		}
-		BBPdecref(b->batCacheid, TRUE);
+		/* based on previous loop, BAT should be accessible */
+		if (b)
+			BBPdecref(b->batCacheid, TRUE);
 		d = c->data;
 		d->bid = 0;
 		d->ibase = 0;
-		d->ibid = bid; /* use the insert bat */
+		d->ibid = bids[i]; /* use the insert bat */
 		c->base.wtime = c->base.rtime = tr->stime;
 	}
+	BATclear(del);
 	BBPreleaseref(del->batCacheid);
 	/* bat was cleared */
 	t->cleared = 1;
+
+	sql_trans_commit(m->session->tr);
+	/* write changes to disk */
+	sql_trans_end(m->session);
+	store_apply_deltas();
+	sql_trans_begin(m->session);
+	store_unlock();
+
 	return MAL_SUCCEED;
 }
 @c
@@ -5175,7 +5278,8 @@ The vacuum operation inspects the table for ordered properties and will keep the
 To avoid expensive shuffles, the reorganisation is balanced by the number of outstanding deletions.
 @c
 str
-SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	str *sch = (str *) getArgReference(stk,pci,1);
 	str *tbl = (str *) getArgReference(stk,pci,2);
 	sql_trans	*tr;
@@ -5197,15 +5301,23 @@ SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	t = mvc_bind_table(m, s, *tbl);
 	if ( t == NULL)
 		throw(MAL,"sql.@1","Table missing");
+
+	if (m->user_id != USER_MONETDB)
+		throw(MAL,"sql.@1","insufficient privileges");
+	if ((!list_empty(t->idxs.set) || !list_empty(t->keys.set)))
+		throw(MAL,"sql.@1","vacuum not allowed on tables with indices");
+	if (has_snapshots(m->session->tr)) 
+		throw(MAL,"sql.@1","vacuum not allowed on snapshots");
+
 	tr = m->session->tr;
 
 	/* get the deletions BAT*/
-	del = mvc_bind_dbat(m, *sch, *tbl, 2);
+	del = mvc_bind_dbat(m, *sch, *tbl, RD_INS);
 
 	for (o = t->columns.set->h; o && ordered == 0; o = o->next) {
 		c = o->data;
 		b = store_funcs.bind_col(tr, c, 0);
-		if (b == NULL)
+		if (b == NULL) 
 			throw(MAL,"sql.@1","Can not access descriptor");
 		ordered |= BATtordered(b);
 		cnt = BATcount(b);
@@ -5225,6 +5337,43 @@ SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 	return MAL_SUCCEED;
 }
+@-
+The drop_hash operation cleans up any hash indices on any of the tables columns.
+@c
+str
+SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str *sch = (str *) getArgReference(stk,pci,1);
+	str *tbl = (str *) getArgReference(stk,pci,2);
+	sql_schema	*s;
+	sql_table 	*t;
+	sql_column	*c;
+	mvc *m = NULL;
+	str msg = getContext(cntxt,mb, &m, NULL);
+	BAT *b;
+	node *o;
+
+	if (msg)
+		return msg;
+   	s = mvc_bind_schema(m, *sch);
+	if ( s == NULL)
+		throw(MAL,"sql.drop_hash","Schema missing");
+	t = mvc_bind_table(m, s, *tbl);
+	if ( t == NULL)
+		throw(MAL,"sql.drop_hash","Table missing");
+
+	for (o = t->columns.set->h; o; o = o->next) {
+		c = o->data;
+		b = store_funcs.bind_col(m->session->tr, c, RDONLY);
+		if (b == NULL) 
+			throw(MAL,"sql.drop_hash","Can not access descriptor");
+		HASHremove(b);
+		HASHremove(BATmirror(b));
+		BBPreleaseref(b->batCacheid);
+	}
+	return MAL_SUCCEED;
+}
+
 @-
 Take a SQL table and compress its columns using the dictionary compression scheme.
 @= compression
@@ -5250,7 +5399,7 @@ Take a SQL table and compress its columns using the dictionary compression schem
 
 	/* actually build the hash on the multi-column primary key */
 
-	for (o = t->columns.set->h; o; o = o->next) {
+	for (o = t->columns.set->h; msg == MAL_SUCCEED && o; o = o->next) {
 		BAT *b, *e;
 		sql_delta *d;
 		sql_column	*c = o->data;
@@ -5275,7 +5424,7 @@ Take a SQL table and compress its columns using the dictionary compression schem
 	t->cleared = 1;
 	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
 	t->base.rtime = s->base.rtime = tr->rtime = tr->stime;
-	return MAL_SUCCEED;
+	return msg;
 @c
 str SQLnewDictionary(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	@:compression(DICTcompress(&ret, &nme, &b->batCacheid))@
@@ -5308,7 +5457,7 @@ LZ compression is inherited from the underlying stream implementation.
 
 	/* actually build the hash on the multi-column primary key */
 
-	for (o = t->columns.set->h; o; o = o->next) {
+	for (o = t->columns.set->h; msg == MAL_SUCCEED && o; o = o->next) {
 		BAT *b;
 		sql_column	*c = o->data;
 
@@ -5321,7 +5470,7 @@ LZ compression is inherited from the underlying stream implementation.
 			BBPreleaseref(b->batCacheid);
 		}
 	}
-	return MAL_SUCCEED;
+	return msg;
 @c
 str SQLgzcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	@:gzcompression(CMDbbpcompress(&ret, &b->batCacheid,&sbuf),gzcompress)@
@@ -5377,7 +5526,7 @@ BBPunfix(o->batCacheid);
 str
 SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-#ifdef HAVE_MONETDB5_RDF
+#ifdef HAVE_RAPTOR
 	bat docbats;
 	BAT *graph = NULL;
 	BAT *p, *s, *o;
@@ -5494,3 +5643,129 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif /* RDF */
 }
 
+@-
+Inspection of the actual storage footprint is a recurring question of users.
+This is modelled as a generic SQL table producing function.
+create function storage()
+returns table ("schema" string, "table" string, "column" string, location string, "count" bigint, capacity bigint, width int, size bigint, hashsize bigint)
+external name sql.storage;
+@c
+str
+sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int *res = (int*) getArgReference(stk,pci,0);
+	BAT *sch, *tab, *col, *loc, *cnt, *cap, *atom, *size, *aux, *r;
+	sql_schema	*s;
+	sql_table 	*t;
+	sql_column 	*c;
+	mvc *m = NULL;
+	str msg = getContext(cntxt,mb, &m, NULL);
+	sql_trans *tr = m->session->tr;
+	node *nsch, *ntab, *ncol;
+	int w;
+
+	if (msg)
+		return msg;
+	(void) s;
+	(void) t;
+	(void) c;
+
+	sch = BATnew(TYPE_void,TYPE_str, 0);
+	BATseqbase(sch, 0);
+	tab = BATnew(TYPE_void,TYPE_str, 0);
+	BATseqbase(tab, 0);
+	col = BATnew(TYPE_void,TYPE_str, 0);
+	BATseqbase(col, 0);
+	loc = BATnew(TYPE_void,TYPE_str, 0);
+	BATseqbase(loc, 0);
+	cnt = BATnew(TYPE_void,TYPE_lng, 0);
+	BATseqbase(cnt, 0);
+	cap = BATnew(TYPE_void,TYPE_lng, 0);
+	BATseqbase(cap, 0);
+	atom = BATnew(TYPE_void,TYPE_int, 0);
+	BATseqbase(atom, 0);
+	size = BATnew(TYPE_void,TYPE_lng, 0);
+	BATseqbase(size, 0);
+	aux = BATnew(TYPE_void,TYPE_lng, 0);
+	BATseqbase(aux, 0);
+	if ( sch == NULL || tab == NULL || col == NULL || loc == NULL ||
+		 cnt == NULL || cap == NULL || atom == NULL || size == NULL || aux == NULL){
+		if ( sch ) BBPreleaseref(sch->batCacheid);
+		if ( tab ) BBPreleaseref(tab->batCacheid);
+		if ( col ) BBPreleaseref(col->batCacheid);
+		if ( loc ) BBPreleaseref(loc->batCacheid);
+		if ( cnt ) BBPreleaseref(cnt->batCacheid);
+		if ( cap ) BBPreleaseref(cap->batCacheid);
+		if ( atom ) BBPreleaseref(atom->batCacheid);
+		if ( size ) BBPreleaseref(size->batCacheid);
+		if ( aux ) BBPreleaseref(aux->batCacheid);
+		throw(SQL,"sql.storage", MAL_MALLOC_FAIL);
+	}
+	for( nsch= tr->schemas.set->h; nsch; nsch= nsch->next){
+		sql_base *b= nsch->data;
+		s= (sql_schema*) nsch->data;
+		if ( isalpha((int)b->name[0]) )
+		for(ntab= (s)->tables.set->h ;ntab; ntab= ntab->next){
+			sql_base *bt= ntab->data;
+			t= (sql_table*) bt;
+			if (isTable(t))
+			for (ncol= (t)->columns.set->h; ncol; ncol= ncol->next){
+				sql_base *bc = ncol->data;
+				sql_column *c= (sql_column *) ncol->data;
+				BAT *bn = store_funcs.bind_col(tr, c, 0);
+				BUN sz;
+
+				//printf("schema %s.%s.%s" , b->name, bt->name, bc->name);
+				sch = BUNappend(sch, b->name, FALSE);
+				tab = BUNappend(tab, bt->name, FALSE);
+				col = BUNappend(col, bc->name, FALSE);
+
+				//printf(" cnt "BUNFMT, BATcount(bn));
+				sz= BATcount(bn);
+				cnt = BUNappend(cnt, &sz, FALSE);
+				//printf(" cap "BUNFMT, BATcapacity(bn));
+				sz= BATcapacity(bn);
+				cap = BUNappend(cap, &sz, FALSE);
+
+				//printf(" loc %s", BBP_physical(bn->batCacheid));
+				loc = BUNappend(loc, BBP_physical(bn->batCacheid), FALSE);
+				//printf(" width %d", bn->T->width);
+				w= bn->T->width;
+				atom = BUNappend(atom, &w, FALSE);
+				//printf(" size "BUNFMT, tailsize(bn,BATcount(bn)) + (bn->T->vheap? bn->T->vheap->size:0));
+				sz = tailsize(bn,BATcapacity(bn)) + (bn->T->vheap? bn->T->vheap->size:0);
+				sz += headsize(bn,BATcapacity(bn)) + (bn->H->vheap? bn->H->vheap->size:0);
+				size = BUNappend(size, &sz, FALSE);
+				
+				sz =  bn->T->hash?bn->T->hash->heap->size:0;
+				sz += bn->H->hash?bn->H->hash->heap->size:0;
+				aux = BUNappend(aux, &sz, FALSE);
+				//printf(" auxsize "BUNFMT, bn->T->hash?bn->T->hash->heap->size:0);
+				//printf("\n");
+				BBPunfix(bn->batCacheid);
+			}
+		}
+	}
+
+	r = BATnew(TYPE_str,TYPE_bat,1);
+	BUNins(r, "schema", &sch->batCacheid, FALSE);
+	BUNins(r, "table", &tab->batCacheid, FALSE);
+	BUNins(r, "column", &col->batCacheid, FALSE);
+	BUNins(r, "location", &loc->batCacheid, FALSE);
+	BUNins(r, "count", &cnt->batCacheid, FALSE);
+	BUNins(r, "capacity", &cap->batCacheid, FALSE);
+	BUNins(r, "width", &atom->batCacheid, FALSE);
+	BUNins(r, "size", &size->batCacheid, FALSE);
+	BUNins(r, "hashsize", &aux->batCacheid, FALSE);
+	BBPunfix(sch->batCacheid);
+	BBPunfix(tab->batCacheid);
+	BBPunfix(col->batCacheid);
+	BBPunfix(loc->batCacheid);
+	BBPunfix(cnt->batCacheid);
+	BBPunfix(cap->batCacheid);
+	BBPunfix(atom->batCacheid);
+	BBPunfix(size->batCacheid);
+	BBPunfix(aux->batCacheid);
+	BBPkeepref(*res = r->batCacheid);
+	return MAL_SUCCEED;
+}

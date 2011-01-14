@@ -13,12 +13,11 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2010 MonetDB B.V.
+ * Copyright August 2008-2011 MonetDB B.V.
  * All Rights Reserved.
  */
 
-#include "clients_config.h"
-#include "monet_utils.h"
+#include "monetdb_config.h"
 #ifndef HAVE_GETOPT_LONG
 #  include "monet_getopt.h"
 #else
@@ -66,6 +65,7 @@ usage(const char *prog, int xit)
 	fprintf(stderr, " -d database | --database=database  database to connect to\n");
 	fprintf(stderr, " -f          | --functions        dump functions\n");
 	fprintf(stderr, " -D          | --describe         describe database\n");
+	fprintf(stderr, " -N          | --inserts          use INSERT INTO statements\n");
 	fprintf(stderr, " -q          | --quiet            don't print welcome message\n");
 	fprintf(stderr, " -t          | --trace            trace mapi network interaction\n");
 	fprintf(stderr, " -?          | --help             show this usage message\n");
@@ -86,6 +86,7 @@ main(int argc, char **argv)
 	int trace = 0;
 	int describe = 0;
 	int functions = 0;
+	int useinserts = 0;
 	int c;
 	Mapi mid;
 	int quiet = 0;
@@ -99,6 +100,7 @@ main(int argc, char **argv)
 		{"database", 1, 0, 'd'},
 		{"describe", 0, 0, 'D'},
 		{"functions", 0, 0, 'f'},
+		{"inserts", 0, 0, 'N'},
 		{"trace", 2, 0, 't'},
 		{"user", 1, 0, 'u'},
 		{"quiet", 0, 0, 'q'},
@@ -167,7 +169,7 @@ main(int argc, char **argv)
 		mnstr_destroy(config);
 	}
 
-	while ((c = getopt_long(argc, argv, "u:p:d:Dfqh:t::?", long_options, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "u:p:d:DNfqh:t::?", long_options, NULL)) != -1) {
 		switch (c) {
 		case 'u':
 			user = optarg;
@@ -184,6 +186,9 @@ main(int argc, char **argv)
 			break;
 		case 'D':
 			describe = 1;
+			break;
+		case 'N':
+			useinserts = 1;
 			break;
 		case 'f':
 			functions = 1;
@@ -260,7 +265,7 @@ main(int argc, char **argv)
 	if (functions)
 		c = dump_functions(mid, out, NULL, NULL);
 	else
-		c = dump_database(mid, out, describe);
+		c = dump_database(mid, out, describe, useinserts);
 	mnstr_flush(out);
 
 	mapi_disconnect(mid);

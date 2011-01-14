@@ -13,11 +13,11 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2010 MonetDB B.V.
+ * Copyright August 2008-2011 MonetDB B.V.
  * All Rights Reserved.
  */
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include "bpm_distribution.h"
 #include "bat/bat_logger.h"
 #include "bat/bat_utils.h"

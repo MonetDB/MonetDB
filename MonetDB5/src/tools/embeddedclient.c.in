@@ -15,11 +15,11 @@
   kernel. This improves performance between 25-50%.
 */
 
-#include <mal_config.h>
+#include <monetdb_config.h>
+#include "gdk.h"
 #include "embeddedclient.h"
 #include "monet_options.h"
 
-#include "gdk.h"
 #ifdef HAVE_PTHREAD_H
 /* pthread.h on Windows includes config.h if HAVE_CONFIG_H is set */
 #undef HAVE_CONFIG_H
@@ -44,7 +44,6 @@ Monet_init(opt **set, int setlen)
 	setlen = mo_add_option(set, setlen, opt_cmdline, "gdk_embedded", "yes");
 	if (!GDKinit(*set, setlen))
 		return;
-	monet_daemon = GDKembedded;
 }
 
 static opt *embedded_set = NULL;
@@ -97,7 +96,7 @@ start_mal_server(void *arg)
 		/* make sure the authorisation BATs are loaded */
 		if (AUTHinitTables() != MAL_SUCCEED)
 			return 0;
-		MSinitClientPrg(mal_clients, "user","main");
+		MSinitClientPrg(MCgetClient(0), "user", "main");
 		initialized = 1;
 	}
 
@@ -108,7 +107,7 @@ start_mal_server(void *arg)
 		"in  := \"" PTRFMT "\":streams;\n"
 		"out := \"" PTRFMT "\":streams;\n"
 		"mapi.malclient(in, out);\n", PTRFMTCAST in, PTRFMTCAST out);
-	callString(mal_clients, buf, 0);
+	callString(MCgetClient(0), buf, 0);
 	return 0;
 }
 

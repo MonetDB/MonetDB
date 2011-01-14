@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -100,7 +100,7 @@ do not like to see millions of error messages. Therefore, both the multiplex and
 use the below macros to shield off bulk error reporting. Some buffers are maintained in order to condense
 all errors in a summary.
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include "monet.h"
 
 #define EXEC_ERROR_WHERE 80

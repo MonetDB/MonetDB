@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -67,7 +67,7 @@ comment "Evaluate constant expressions once.";
 
 #endif
 @c  
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "opt_evaluate.h"
 #include "opt_aliases.h"
 
@@ -199,6 +199,8 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			}
 			if (msg == MAL_SUCCEED) {
 				ValRecord cst;
+
+				cst.vtype = 0;
 				VALcopy(&cst, &env->stk[getArg(p, 0)]);
 				/* You may not overwrite constants.  They may be used by
 				 * other instructions */

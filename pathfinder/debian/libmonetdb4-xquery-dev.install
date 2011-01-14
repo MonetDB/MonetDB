@@ -1,4 +1,0 @@
-debian/tmp/usr/lib/libembeddedxq.so /usr/lib
-debian/tmp/usr/lib/libpf_ferry.so /usr/lib
-debian/tmp/usr/include/pf_ferry.h /usr/include
-debian/tmp/usr/bin/monetdb-xquery-config /usr/bin

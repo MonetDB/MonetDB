@@ -22,12 +22,12 @@
 # University of Konstanz, the Technische Universitaet Muenchen, and the
 # Universitaet Tuebingen are Copyright (C) 2000-2005 University of
 # Konstanz, (C) 2005-2008 Technische Universitaet Muenchen, and (C)
-# 2008-2010 Eberhard Karls Universitaet Tuebingen, respectively.  All
+# 2008-2011 Eberhard Karls Universitaet Tuebingen, respectively.  All
 # Rights Reserved.
 #
 # Fri Oct 27 10:05:33 CEST 2006, Manuel Mayr
 
-INCLUDES = ../include $(MONETDB_INCS)
+INCLUDES = ../include ../../../MonetDB/src/common ../../../MonetDB/src/gdk
 
 # locally disable "-Werror"
 #X_CFLAGS = "-pedantic"
@@ -37,12 +37,12 @@ INCLUDES = ../include $(MONETDB_INCS)
 lalg2msa_CFLAGS = $(SUN_NOERR_CFLAGS)
 
 lib_msa = {
-        NOINST
-        DIR = libdir
-        SOURCES = \
-                lalg2msa.c \
-                msa.c \
-                msaprint.c
+	NOINST
+	DIR = libdir
+	SOURCES = \
+		lalg2msa.c \
+		msa.c \
+		msaprint.c
 }
 
 #EXTRA_DIST =

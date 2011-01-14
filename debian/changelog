@@ -1,0 +1,6 @@
+monetdb (11.0.0-0) unstable; urgency=low
+
+  * Created top-level bootstrap/configure/make with new version numbers.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 04 Jan 2011 15:44:10 +0100
+

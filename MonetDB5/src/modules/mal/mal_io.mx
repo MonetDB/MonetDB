@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -145,7 +145,7 @@ typedef struct {
 typedef FILE *fstream;
 
 #ifdef WIN32
-#ifndef LIBMAL
+#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
 #define io_export extern __declspec(dllimport)
 #else
 #define io_export extern __declspec(dllexport)
@@ -194,7 +194,7 @@ Beware, the types of the objects to be printed should be
 obtained from the stack, because the symbol table may actually
 allow for any type to be assigned.
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "mal_io.h"
 
 #define MAXFORMAT 64*1024
@@ -375,12 +375,12 @@ IOprintf_(str *res, str format, ...)
 		*res = GDKstrdup(format);
 		return MAL_SUCCEED;
 	}
-	va_start(ap,format);
 	buf = dst = (str) GDKmalloc(size = 80);
 	if ( buf == NULL)
 		throw(MAL,"io.printf",MAL_MALLOC_FAIL);
 	*res = NULL;
 
+	va_start(ap,format);
 	for (cur = format; *cur; cur++) {
 		if (paramseen) {
 			char meta[100];
@@ -408,6 +408,7 @@ IOprintf_(str *res, str format, ...)
 				}
 			}
 			if ((p = va_arg(ap, char *)) == NULL) {
+				va_end(ap);
 				return_error(toofew_error);
 			}
 			type = ATOMstorage(va_arg(ap, int));
@@ -433,6 +434,7 @@ IOprintf_(str *res, str format, ...)
 				int ival;
 
 				if (dotseen) {
+					va_end(ap);
 					return_error(format_error);
 				} else if (type == TYPE_chr) {
 					ival = (int) *(chr *) p;
@@ -449,6 +451,7 @@ IOprintf_(str *res, str format, ...)
 				} else if (type == TYPE_int) {
 					ival = *(int *) p;
 				} else {
+					va_end(ap);
 					return_error(type_error);
 				}
 				@:sprintf(ival)@
@@ -459,6 +462,7 @@ IOprintf_(str *res, str format, ...)
 				lng lval;
 
 				if (dotseen) {
+					va_end(ap);
 					return_error(format_error);
 				}
 			largetypes:
@@ -479,6 +483,7 @@ IOprintf_(str *res, str format, ...)
 				} else if (type == TYPE_lng) {
 					lval = *(lng *) p;
 				} else {
+					va_end(ap);
 					return_error(type_error);
 				}
 				if (!extra) {
@@ -506,6 +511,7 @@ IOprintf_(str *res, str format, ...)
 				} else if (type == TYPE_dbl) {
 					dval = *(dbl *) p;
 				} else {
+					va_end(ap);
 					return_error(type_error);
 				}
 				width += (1 + prec);
@@ -514,8 +520,10 @@ IOprintf_(str *res, str format, ...)
 				int length;
 
 				if (extra) {
+					va_end(ap);
 					return_error(format_error);
 				} else if (type != TYPE_str) {
+					va_end(ap);
 					return_error(type_error);
 				}
 				length = strLen(p);
@@ -527,6 +535,7 @@ IOprintf_(str *res, str format, ...)
 					width = (size_t) length;
 				@:sprintf(p)@
 			} else {
+				va_end(ap);
 				return_error(format_error);
 			}
 			width = strlen(add);

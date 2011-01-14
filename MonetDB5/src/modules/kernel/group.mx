@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -257,7 +257,7 @@ macros identical to file names.
 #include "gdk.h"
 
 #ifdef WIN32
-#ifndef LIBKERNEL
+#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
 #define group_export extern __declspec(dllimport)
 #else
 #define group_export extern __declspec(dllexport)
@@ -280,7 +280,7 @@ group_export int CTrefine_rev(BAT **res, BAT *b, BAT *a);
 
 #endif /* _GROUP_H_ */
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "group.h"
 #include "algebra.h"
 static int TYPE_mapentry;
@@ -1483,7 +1483,7 @@ CTderive(BAT **M, BAT **H, BAT *ct_histo, BAT *ct_map, BAT *b)
 @c
 #define DEFAULT_SIZE 10000
 
-static INLINE BUN
+static inline BUN
 sort_flush(var_t *off, oid *o, BUN size, int tpe, char *base, oid *hdst, oid *tdst, oid *idp, int reverse)
 {
 	int (*cmp) (ptr, ptr) = BATatoms[tpe].atomCmp;

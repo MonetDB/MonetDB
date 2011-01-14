@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -378,10 +378,11 @@ pre presented on the screen directly.
 #include <mal_exception.h>
 #include <mal_client.h>
 #include <mal_interpreter.h>
+#include <Mapi.h> /* for PROMPT1, PROMPT2 */
 #include "histogram.h"
 
 #ifdef WIN32
-#ifndef LIBMAL
+#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
 #define tablet_export extern __declspec(dllimport)
 #else
 #define tablet_export extern __declspec(dllexport)
@@ -442,7 +443,6 @@ keep it in an ADT.
 @h
 
 typedef struct Table_t {
-	int rawmode;	/* perform bypass load preparation */
 	char *sep;		/* default separator */
 	str ttopbrk, tbotbrk;	/* table brackets */
 	str rlbrk, rrbrk;	/* row brackets */
@@ -479,6 +479,7 @@ tablet_export BUN TABLETassign_BATs(Tablet * as, BAT *bats);
 tablet_export BUN TABLETload_file(Tablet * as, bstream *b, stream *out);
 tablet_export BUN SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char quote, lng skip, lng maxrow);
 tablet_export BAT *TABLETcollect_bats(Tablet * as);
+tablet_export BAT *TABLETcollect_parts(Tablet * as, BUN offset);
 tablet_export void TABLETdestroy_format(Tablet * as);
 tablet_export int TABLEToutput_file(Tablet * as, BAT *order, stream *s);
 
@@ -497,7 +498,7 @@ extern char *tablet_skip_string(char *s, char quote);
 
 #endif
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "tablet.h"
 #include "algebra.h"
 
@@ -974,7 +975,7 @@ static ptr
 bun_tail(BAT *b, BUN nr)
 {
 	BATiter bi = bat_iterator(b);
-	REGISTER BUN _i = BUNfirst(b);
+	register BUN _i = BUNfirst(b);
 
 	return (ptr) BUNtail(bi, _i + nr);
 }
@@ -1289,31 +1290,20 @@ TABLETcreate_bats(Tablet * as, BUN est)
 	Column *fmt = as->format;
 	BUN i;
 	char nme[BUFSIZ];
-	size_t len;
 
 	if ( getcwd(nme,BUFSIZ) == NULL){
 		GDKerror("TABLETcreate_bats: Failed to locate directory\n");
 		return -1;
 	}
 
-	len= strlen(nme);
-	assert(len <BUFSIZ-50);
+	assert(strlen(nme) <BUFSIZ-50);
 
-/*	as->rawmode= TRUE;  TRIAL CODE */
-	as->rawmode = 0;
 	for (i = 0; i < as->nr_attrs; i++) {
 		fmt[i].c[0] = void_bat_create(fmt[i].adt, est);
 		fmt[i].ci[0] = bat_iterator(fmt[i].c[0]);
 		if (!fmt[i].c[0]) {
 			GDKerror("TABLETcreate_bats: Failed to create bat of size " BUNFMT "\n", as->nr);
 			return -1;
-		}
-		if (as->rawmode){
-			fmt[i].batfile= GDKstrdup(BBP_physical(ABS(fmt[i].c[0]->batCacheid)));
-			snprintf(nme+len,BUFSIZ-len,"%cbat%c"BUNFMT".raw",DIR_SEP,DIR_SEP,i);
-			fmt[i].rawfile= GDKstrdup(nme);
-			fmt[i].raw= open_wastream(fmt[i].rawfile);
-			mnstr_printf(GDKout,"#mv %s %s\n",fmt[i].rawfile,fmt[i].batfile);
 		}
 	}
 	return 0;
@@ -1352,6 +1342,61 @@ TABLETcollect_bats(Tablet * as)
 	return bats;
 }
 
+BAT *
+TABLETcollect_parts(Tablet * as, BUN offset)
+{
+	BAT *bats = BATnew(TYPE_str, TYPE_bat, as->nr_attrs);
+	Column *fmt = as->format;
+	BUN i;
+	BUN cnt = BATcount(fmt[0].c[0]);
+
+	if (bats == NULL)
+		return NULL;
+	for (i = 0; i < as->nr_attrs; i++) {
+		int GDKdebug_bak = GDKdebug;
+		BAT *b = fmt[i].c[0];
+		BAT *bv = NULL;
+
+		BATsetaccess(b, BAT_READ);
+		bv = BATslice(b, offset, BATcount(b));
+		BUNins(bats, (ptr) fmt[i].name, (ptr) &bv->batCacheid, FALSE);
+		/* we "mis"use BATpropcheck to set rather than verify properties on 
+		 * the newly loaded slice; hence, we locally disable property errors */
+		GDKdebug &= ~PROPMASK;
+		BATaccessBegin(bv, USE_ALL, MMAP_WILLNEED);
+		BATpropcheck(bv, BATPROPS_ALL);
+		/* drop the hashes, we don't need them now  and they consume space */
+		HASHremove(b);
+
+		BATpropcheck(BATmirror(bv), BATPROPS_ALL);
+		/* drop the hashes, we don't need them now  and they consume space */
+		HASHremove(BATmirror(b));
+		BATaccessEnd(bv, USE_ALL, MMAP_WILLNEED);
+		GDKdebug = GDKdebug_bak;
+
+		b->hkey &= bv->hkey;
+		b->tkey &= bv->tkey;
+		b->H->nonil &= bv->H->nonil;
+		b->T->nonil &= bv->T->nonil;
+		b->hdense &= bv->hdense;
+		b->tdense &= bv->tdense;
+		if (b->hsorted != bv->hsorted)
+			b->hsorted = 0;
+		if (b->tsorted != bv->tsorted)
+			b->tsorted = 0;
+		b->batDirty = TRUE;
+
+		if (cnt != BATcount(b)) {
+			if ( as->error == 0) /* a new error */
+				GDKerror("Error: column %d  count " BUNFMT " differs from " BUNFMT "\n",i,BATcount(b),cnt);
+			BBPunfix(bats->batCacheid);
+			return NULL;
+		}
+		BBPunfix(bv->batCacheid);
+	}
+	return bats;
+}
+
 void
 sync_bats(Tablet * as)
 {
@@ -1365,7 +1410,7 @@ sync_bats(Tablet * as)
 		}
 }
 
-static INLINE char *
+static inline char *
 rstrip(char *s, char *e)
 {
 	e--;
@@ -1376,7 +1421,7 @@ rstrip(char *s, char *e)
 	return e;
 }
 
-static INLINE char *
+static inline char *
 find_quote(char *s, char quote)
 {
 	while (*s != quote)
@@ -1384,7 +1429,7 @@ find_quote(char *s, char quote)
 	return s;
 }
 
-static INLINE char *
+static inline char *
 rfind_quote(char *s, char *e, char quote)
 {
 	while (*e != quote && e>s)
@@ -1392,7 +1437,7 @@ rfind_quote(char *s, char *e, char quote)
 	return e;
 }
 
-static INLINE int
+static inline int
 insert_val(Column * fmt, char *s, char *e, char quote, ptr key, str *err, int c)
 {
 	char bak=0;
@@ -1486,7 +1531,7 @@ tablet_skip_string(char *s, char quote)
 	return s;
 }
 
-INLINE int
+inline int
 insert_line(Tablet * as, char *line, ptr key, BUN col1, BUN col2 )
 {
 	Column *fmt = as->format;
@@ -1577,7 +1622,7 @@ TABLET_error(stream *s)
 	return -1;
 }
 
-static INLINE int
+static inline int
 dump_line(char **buf, int *len, Column * fmt, stream *fd, BUN nr_attrs, BUN id)
 {
 	BUN i;
@@ -1607,7 +1652,7 @@ dump_line(char **buf, int *len, Column * fmt, stream *fd, BUN nr_attrs, BUN id)
 	return 0;
 }
 
-static INLINE int
+static inline int
 output_line(char **buf, int *len, Column * fmt, stream *fd, BUN nr_attrs, ptr id)
 {
 	BUN i;
@@ -1647,7 +1692,7 @@ output_line(char **buf, int *len, Column * fmt, stream *fd, BUN nr_attrs, ptr id
 	return 0;
 }
 
-static INLINE int
+static inline int
 output_line_dense(char **buf, int *len, Column * fmt, stream *fd, BUN nr_attrs)
 {
 	BUN i;
@@ -1675,7 +1720,7 @@ output_line_dense(char **buf, int *len, Column * fmt, stream *fd, BUN nr_attrs)
 	return 0;
 }
 
-static INLINE int
+static inline int
 output_line_lookup(char **buf, int *len, Column * fmt, stream *fd, BUN nr_attrs, BUN id)
 {
 	BUN i;

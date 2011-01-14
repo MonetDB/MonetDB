@@ -12,7 +12,7 @@
 #
 # The Initial Developer of the Original Code is CWI.
 # Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2010 MonetDB B.V.
+# Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
 
@@ -254,7 +254,7 @@ tarantula_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosi
 mapreduce_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mapreduce,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector
 #
 # The default + datacyclotron
-datacyclotron_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,datacyclotron,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,history,replication,multiplex,garbageCollector
+datacyclotron_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,datacyclotron,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,replication,multiplex,garbageCollector
 #
 # The default + derivePath
 derive_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,derivePath,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector

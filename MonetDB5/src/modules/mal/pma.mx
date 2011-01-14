@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -84,7 +84,7 @@ comment "test the function of deletion"
 #define _PMA_H_
 
 #ifdef WIN32
-#ifndef LIBMAL
+#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
 #define pma_export extern __declspec(dllimport)
 #else
 #define pma_export extern __declspec(dllexport)
@@ -117,7 +117,7 @@ pma_export str PMAtestdel_@1(void *dummy, bat *b);
 
 @+ PMA implementation
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "mal_exception.h"
 #include <gdk_utils.h>
 #include "pma.h"

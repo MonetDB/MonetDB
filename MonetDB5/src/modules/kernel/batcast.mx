@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -133,7 +133,7 @@ against overflow.
 #include "mal_exception.h"
 
 #ifdef WIN32
-#ifndef LIBKERNEL
+#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
 #define batcast_export extern __declspec(dllimport)
 #else
 #define batcast_export extern __declspec(dllexport)
@@ -272,7 +272,7 @@ bunins_failed:
 @-
 The lengthly list of coercions options could have been generated.
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "batcast.h"
 
 int	oidToStr(char **dst, int *len, oid *src  ){

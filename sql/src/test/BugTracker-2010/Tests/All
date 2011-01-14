@@ -75,3 +75,12 @@ join-and-like.Bug-2715
 between-timestamp.Bug-2718
 values.Bug-2726
 select_from_seq.Bug-2730
+huge_nr_of_columns.Bug-2609
+values_type_cast.Bug-2735
+crash_default_unlocked.Bug-2744
+foreign_key_type_mismatch.Bug-2745
+store_function_argument_correctly.Bug-2750
+COPY_INTO_with_backslashes.Bug-2748
+wrong_error_message_dropping_view.Bug-2713
+call_function_without_warning.Bug-2752
+vacuum

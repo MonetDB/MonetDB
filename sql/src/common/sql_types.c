@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2010 MonetDB B.V.
+ * Copyright August 2008-2011 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -28,7 +28,7 @@
  * easy to find something akin you intend to enter.
  */
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include "sql_types.h"
 #include "sql_keyword.h"	/* for keyword_exists(), keywords_insert(), init_keywords(), exit_keywords() */
 #include <string.h>
@@ -271,10 +271,6 @@ sql_bind_subtype(char *name, unsigned int digits, unsigned int scale)
 	}
 	return res;
 }
-
-#ifndef NDEBUG
-static int sql_end = 0;
-#endif
 
 void
 type_destroy(sql_type *t)
@@ -966,19 +962,11 @@ sql_create_type(char *sqlname, unsigned int digits, unsigned int scale, unsigned
 static sql_arg *
 create_arg(char *name, sql_subtype *t)
 {
-	sql_arg *a = sql_create_arg(name, t);
-
-	sql_subtype_destroy(t);
-	return a;
-}
-
-sql_arg *
-sql_create_arg(char *name, sql_subtype *t)
-{
 	sql_arg *a = ZNEW(sql_arg);
 
 	a->name = name;
 	a->type = *t;
+	sql_subtype_destroy(t);
 	return a;
 }
 
@@ -1542,26 +1530,9 @@ sqltypeinit(void)
 void
 types_exit(void)
 {
-#ifndef NDEBUG
-	sql_end = END_SUBAGGR;
-#endif
-
-#ifndef NDEBUG
-	sql_end = END_AGGR;
-#endif
-
 	list_destroy(aggrs);
 	list_destroy(funcs);
-
 	list_destroy(localtypes);
-
-#ifndef NDEBUG
-	sql_end = END_SUBTYPE;
-#endif
-
-#ifndef NDEBUG
-	sql_end = END_TYPE;
-#endif
 	list_destroy(aliases);
 	list_destroy(types);
 }

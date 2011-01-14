@@ -13,12 +13,12 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2010 MonetDB B.V.
+ * Copyright August 2008-2011 MonetDB B.V.
  * All Rights Reserved.
  */
 
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include "rel_updates.h"
 #include "rel_semantic.h"
 #include "rel_select.h"
@@ -150,7 +150,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 	if (columns) {
 		dnode *n;
 
-		collist = list_create((fdestroy) NULL);
+		collist = list_new(sql->sa);
 		for (n = columns->h; n; n = n->next) {
 			sql_column *c = mvc_bind_column(sql, t, n->data.sval);
 
@@ -492,7 +492,7 @@ delete_table(mvc *sql, dlist *qname, symbol *opt_where)
 }
 
 static sql_rel *
-rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns, char *filename, lng nr, lng offset)
+rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns, char *filename, lng nr, lng offset, int locked)
 {
 	sql_rel *res;
 	list *exps, *args;
@@ -515,20 +515,25 @@ rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns,
 
 	if (filename)
 		append( args, exp_atom_str(sql->sa, filename, &tpe)); 
-	import = exp_op(sql->sa,  append( 
-		append( args, exp_atom_lng(sql->sa, nr)), exp_atom_lng(sql->sa, offset)), f); 
+	import = exp_op(sql->sa,  
+		append(
+			append( 
+				append( args, 
+					exp_atom_lng(sql->sa, nr)), 
+					exp_atom_lng(sql->sa, offset)), 
+					exp_atom_int(sql->sa, locked)), f); 
 	
 	exps = new_exp_list(sql->sa);
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
 		append(exps, exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0));
 	}
-	res = rel_table_func(sql->sa, import, exps);
+	res = rel_table_func(sql->sa, NULL, import, exps);
 	return res;
 }
 
 static sql_rel *
-copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, str null_string)
+copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, str null_string, int locked)
 {
 	sql_rel *rel = NULL;
 	char *sname = qname_schema(qname);
@@ -566,12 +571,53 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, st
 		return sql_error(sql, 02, "COPY INTO: cannot copy into read only table '%s'", tname);
 	if (t && !isTempTable(t) && STORE_READONLY(active_store_type))
 		return sql_error(sql, 02, "COPY INTO: copy into table '%s' not allowed in readonly mode", tname);
+
+	/* Only the MONETDB user is allowed copy into with 
+	   a lock and only on tables without idx */
+	if (locked && sql->user_id != USER_MONETDB) {
+		return sql_error(sql, 02, "COPY INTO: insufficient privileges: "
+		    "COPY INTO from .. LOCKED requires administrator rights");
+	}
+	if (locked && (!list_empty(t->idxs.set) || !list_empty(t->keys.set))) {
+		return sql_error(sql, 02, "COPY INTO: insufficient privileges: "
+		    "COPY INTO from .. LOCKED requires tables without indices");
+	}
+	if (locked && has_snapshots(sql->session->tr)) {
+		return sql_error(sql, 02, "COPY INTO .. LOCKED: not allowed on snapshots");
+	}
+	if (locked && !sql->session->auto_commit) {
+		return sql_error(sql, 02, "COPY INTO .. LOCKED: only allowed in auto commit mode");
+	}
+	/* lock the store, for single user/transaction */
+	if (locked) { 
+		store_lock();
+		while (store_nr_active > 1) {
+			store_unlock();
+			MT_sleep_ms(100);
+			store_lock();
+		}
+		sql->emod |= mod_locked;
+		sql->caching = 0; 	/* do not cache this query */
+	}
+		 
 	if (files) {
 		dnode *n = files->h;
 
+		if (sql->user_id != USER_MONETDB)
+			return sql_error(sql, 02, "COPY INTO: insufficient privileges: "
+					"COPY INTO from file(s) requires administrator rights, "
+					"use 'COPY INTO \"%s\" FROM STDIN' instead", tname);
+
+
 		for (; n; n = n->next) {
 			char *fname = n->data.sval;
-			sql_rel *nrel = rel_import(sql, t, tsep, rsep, ssep, ns, fname, nr, offset);
+			sql_rel *nrel;
+
+			if (fname && !MT_path_absolute(fname))
+				return sql_error(sql, 02, "COPY INTO: filename must "
+						"have absolute path: %s", fname);
+
+			nrel = rel_import(sql, t, tsep, rsep, ssep, ns, fname, nr, offset, locked);
 
 			if (!rel)
 				rel = nrel;
@@ -581,12 +627,14 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, st
 				return rel;
 		}
 	} else {
-		rel = rel_import(sql, t, tsep, rsep, ssep, ns, NULL, nr, offset);
+		rel = rel_import(sql, t, tsep, rsep, ssep, ns, NULL, nr, offset, locked);
 	}
 	if (!rel)
 		return rel;
 	rel = rel_insert_cluster(sql, t, rel);
-	return rel; 
+	if (rel && locked)
+		rel->flag = 1;
+	return rel;
 }
 
 static sql_rel *
@@ -605,6 +653,12 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *files)
 	sql_exp *import;
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
 	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", 2); 
+
+	if (sql->user_id != USER_MONETDB) {
+		(void) sql_error(sql, 02, "COPY INTO: insufficient privileges: "
+				"binary COPY INTO requires administrator rights");
+		return NULL;
+	}
 
 	if (sname && !(s=mvc_bind_schema(sql, sname))) {
 		(void) sql_error(sql, 02, "COPY INTO: no such schema '%s'", sname);
@@ -650,9 +704,8 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *files)
 		sql_column *c = n->data;
 		append(exps, exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0));
 	}
-	res = rel_table_func(sql->sa, import, exps);
-	res = rel_insert_cluster(sql, t, res);
-	return res;
+	res = rel_table_func(sql->sa, NULL, import, exps);
+	return rel_insert_cluster(sql, t, res);
 }
 
 static sql_rel *
@@ -696,6 +749,21 @@ copyto(mvc *sql, symbol *sq, str filename, dlist *seps, str null_string)
 	ssep_e = exp_atom_clob(sql->sa, ssep);
 	ns_e = exp_atom_clob(sql->sa, ns);
 	fname_e = filename?exp_atom_clob(sql->sa, filename):NULL;
+
+	if (filename) {
+		struct stat fs;
+		if (sql->user_id != USER_MONETDB)
+			return sql_error(sql, 02, "COPY INTO: insufficient privileges: "
+					"COPY INTO file requires administrator rights, "
+					"use 'COPY ... INTO STDOUT' instead");
+		if (filename && !MT_path_absolute(filename))
+			return sql_error(sql, 02, "COPY INTO: filename must "
+					"have absolute path: %s", filename);
+		if (lstat(filename, &fs) == 0)
+			return sql_error(sql, 02, "COPY INTO: file already "
+					"exists: %s", filename);
+	}
+
 	return rel_output(sql, r, tsep_e, rsep_e, ssep_e, ns_e, fname_e);
 }
 
@@ -710,7 +778,7 @@ rel_updates(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = copyfrom(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.sval);
+		ret = copyfrom(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.sval, l->h->next->next->next->next->next->data.i_val);
 		sql->type = Q_UPDATE;
 	}
 		break;

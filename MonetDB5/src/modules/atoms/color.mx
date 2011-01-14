@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -130,7 +130,7 @@ comment	"Extracts Cb(blue color) component from a color atom";
 typedef unsigned int color;
 
 #ifdef WIN32
-#ifndef LIBATOMS
+#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
 #define color_export extern __declspec(dllimport)
 #else
 #define color_export extern __declspec(dllexport)
@@ -163,7 +163,7 @@ color_export int color_tostr(char **colorStr, int *len, color *c);
 
 #endif
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "mal.h"
 #include "mal_exception.h"
 #include <math.h>

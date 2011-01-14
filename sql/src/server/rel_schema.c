@@ -13,12 +13,12 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2010 MonetDB B.V.
+ * Copyright August 2008-2011 MonetDB B.V.
  * All Rights Reserved.
  */
 
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include "rel_trans.h"
 #include "rel_select.h"
 #include "rel_updates.h"
@@ -337,11 +337,17 @@ column_option(
 		res = column_constraint_type(sql, opt_name, sym, ss, t, cs);
 	} 	break;
 	case SQL_DEFAULT: {
-		char *r = symbol2string(sql, s->data.sym);
+		char *err = NULL, *r = symbol2string(sql, s->data.sym, &err);
 
-		mvc_default(sql, cs, r);
-		_DELETE(r);
-		res = SQL_OK;
+		if (!r) {
+			(void) sql_error(sql, 02, "incorrect default value '%s'\n", err?err:"");
+			if (err) _DELETE(err);
+			return SQL_ERR;
+		} else {
+			mvc_default(sql, cs, r);
+			_DELETE(r);
+			res = SQL_OK;
+		}
 	} 	break;
 	case SQL_ATOM: {
 		AtomNode *an = (AtomNode *) s;
@@ -614,7 +620,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 	} 	break;
 	case SQL_DEFAULT:
 	{
-		char *r;
+		char *r, *err = NULL;
 		dlist *l = s->data.lval;
 		char *cname = l->h->data.sval;
 		symbol *sym = l->h->next->data.sym;
@@ -624,7 +630,12 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 			sql_error(sql, 02, "ALTER TABLE: no such column '%s'\n", cname);
 			return SQL_ERR;
 		}
-		r = symbol2string(sql, sym);
+		r = symbol2string(sql, sym, &err);
+		if (!r) {
+			(void) sql_error(sql, 02, "incorrect default value '%s'\n", err?err:"");
+			if (err) _DELETE(err);
+			return SQL_ERR;
+		}
 		mvc_default(sql, c, r);
 		_DELETE(r);
 	}
@@ -819,7 +830,7 @@ rel_create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symb
 	if (s == NULL)
 		s = cur_schema(sql);
 
-	if (create && (t = mvc_bind_table(sql, s, name)) != NULL) {
+	if (create && mvc_bind_table(sql, s, name) != NULL) {
 		return sql_error(sql, 02, "CREATE VIEW: name '%s' already in use", name);
 	} else if (create && !schema_privs(sql->role_id, s)) {
 		return sql_error(sql, 02, "CREATE VIEW: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);

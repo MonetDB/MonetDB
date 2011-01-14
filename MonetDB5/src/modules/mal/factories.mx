@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -62,7 +62,7 @@ comment "Close a factory.";
 #include "mal_namespace.h"
 
 #ifdef WIN32
-#ifndef LIBMAL
+#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
 #define factories_export extern __declspec(dllimport)
 #else
 #define factories_export extern __declspec(dllexport)
@@ -81,7 +81,7 @@ factories_export str FCTgetLocations(int *ret);
 factories_export str FCTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif /* _FACTORIES_H */
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "factories.h"
 
 

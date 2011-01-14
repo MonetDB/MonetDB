@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -28,7 +28,7 @@ All Rights Reserved.
 These implementations need just one scan and a simple hash-maintained data
 structure to compute a group of common aggregates.
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include <gdk.h>
 #include <gdk_scanselect.h>	/* for type-specific HT_bunfastins_nocheck_noinc(), until they're moved to gdk.mx */
 #include "aggr.h"

@@ -40,7 +40,7 @@ extern char* normalizeTerm(struct tijahContextStruct *ctx, char* term );
 extern int CMDtj_normalizeTerm(char** res, char *term, char *stemmer);
 
 @c
-#include <pf_config.h>
+#include <monetdb_config.h>
 
 /* #define TJ_TRACE 1 */
 
@@ -51,8 +51,8 @@ extern int CMDtj_normalizeTerm(char** res, char *term, char *stemmer);
  *
  */
 
-#include "stream.h"
 #include "pf_support.h"
+#include "stream.h"
 #include "serialize.h"
 /* contains dummy callback functions */
 #include "serialize_null.h"
@@ -300,7 +300,7 @@ static int ipg_startdoc(IpgBase* base, str doc) {
 }
 
 /* allocate one new frame element on top of stack */
-static INLINE int ipg_frame_alloc(IpgBase* base) {
+static inline int ipg_frame_alloc(IpgBase* base) {
 	int newtop = base->top+base->stack[base->top].level.ntags + 1;
 
 	if ( newtop >= base->max ) {
@@ -368,7 +368,7 @@ static int ipg_pushtag(IpgBase* base, str tag, oid o) {
 	return 1;
 }
 
-static INLINE int ipg_poptag(IpgBase* base) {
+static inline int ipg_poptag(IpgBase* base) {
 	base->top = base->stack[base->top].level.prev_frame;
 
 	/* mnstr_printf(GDKout,"-IPG[pop: path=%s]\n",base->pathbuff); */
@@ -472,7 +472,7 @@ typedef struct tijahContextStruct {
 
 #define DOEMIT(TJCTX)	((TJCTX)->emitting)
 
-static INLINE int
+static inline int
 tj_pushTag(tjCtx* tjctx, oid start, oid tagoid) {
 	if ( tjctx->tagStackPtr >= MAXTAGDEPTH ) {
 	     GDKerror("tj_pushTag: MAXTAGDEPTH exceeded.\n");
@@ -486,7 +486,7 @@ tj_pushTag(tjCtx* tjctx, oid start, oid tagoid) {
 	return 1;
 }
 
-INLINE static oid
+inline static oid
 tj_popTag(tjCtx* tjctx) {
 	--tjctx->tagStackPtr;
 	if ( tjctx->tagswitch[tjctx->tagOidStack[tjctx->tagStackPtr]] != 2 ) {
@@ -499,7 +499,7 @@ tj_popTag(tjCtx* tjctx) {
  *
  */
 
-INLINE static oid
+inline static oid
 tj_tagOid(tjCtx* tjctx, str t) {
 #ifdef USE_TERMDB
     /* incomplete, also tag check here */
@@ -536,7 +536,7 @@ tj_tagOid(tjCtx* tjctx, str t) {
 #endif
 }
 
-INLINE static oid
+inline static oid
 tj_checkTerm(tjCtx* tjctx, char *t) {
 #ifdef USE_TERMDB
    INCOMPLETE
@@ -550,7 +550,7 @@ tj_checkTerm(tjCtx* tjctx, char *t) {
    return (res < tjctx->lastStopWord) ? 0 : res;
 }
 
-INLINE static oid
+inline static oid
 tj_termOid(tjCtx* tjctx, char *t) {
 #ifdef USE_TERMDB
     return tdb_lookupTerm(tjctx->tdb,t);
@@ -577,7 +577,7 @@ tj_termOid(tjCtx* tjctx, char *t) {
 #endif
 }
 
-INLINE static oid
+inline static oid
 tj_extend_plane(struct tijahContextStruct *tjctx) {
     oid base = tjctx->tijahPre - tjctx->dbat_collPre.seqbase; 
 

@@ -18,6 +18,7 @@ Options are:
  -d database | --database=database  database to connect to
  -f          | --functions      dump functions
  -D          | --describe       describe database
+ -N          | --inserts          use INSERT INTO statements
  -q          | --quiet          don't print welcome message
  -t          | --trace          trace mapi network interaction
  -?          | --help           show this usage message

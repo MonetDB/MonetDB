@@ -98,7 +98,7 @@ PROC wkb_geometry(BAT[void,BAT] ws, BAT[void,oid] id_iter, BAT[void,oid] id_item
 #define PX_DUMMY "dummy"
 
 @c
-#include <pf_config.h>
+#include <monetdb_config.h>
 
 #include <monet.h>
 #include <gdk.h>

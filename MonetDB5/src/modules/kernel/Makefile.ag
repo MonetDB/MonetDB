@@ -12,11 +12,11 @@
 #
 # The Initial Developer of the Original Code is CWI.
 # Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2010 MonetDB B.V.
+# Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
 INCLUDES = \
-	-I../../mal -I../atoms $(monetdbcommon_CFLAGS) $(HWCOUNTERS_INCS)
+	../../mal ../atoms ../../../../MonetDB/src/common ../../../../common/stream ../../../../MonetDB/src/gdk $(HWCOUNTERS_INCS)
 
 MTSAFE
 
@@ -57,8 +57,6 @@ lib_kernel = {
 		unix.mx
 }
 
-EXTRA_DIST = aggr_ri.mx
-
 headers_h = {
 	DIR = includedir/MonetDB5/kernel
 	SOURCES = \
@@ -82,5 +80,7 @@ headers_mal = {
 		group.mx aggr.mx array.mx \
 		counters.mx logger.mx microbenchmark.mx
 }
+
+EXTRA_DIST = aggr_ri.mx kprelude.mx
 
 EXTRA_DIST_DIR = Tests

@@ -31,7 +31,7 @@
  * University of Konstanz, the Technische Universitaet Muenchen, and the
  * Universitaet Tuebingen are Copyright (C) 2000-2005 University of
  * Konstanz, (C) 2005-2008 Technische Universitaet Muenchen, and (C)
- * 2008-2010 Eberhard Karls Universitaet Tuebingen, respectively.  All
+ * 2008-2011 Eberhard Karls Universitaet Tuebingen, respectively.  All
  * Rights Reserved.
  *
  * $Id$
@@ -417,8 +417,8 @@
  *   Interactive Time</a>. Technical Report, CWI, 2005.
  */
 
-/* always include pf_config.h first! */
-#include "pf_config.h"
+/* always include monetdb_config.h first! */
+#include "monetdb_config.h"
 #include "pathfinder.h"
 
 /** handling of variable argument lists */
@@ -955,7 +955,7 @@ PFcol_new_fixed (PFalg_col_t col, unsigned int id)
 PFalg_col_t
 PFcol_ori_name (PFalg_col_t unq, PFalg_col_t free)
 {
-    switch (unq & (col_iter | col_pos | col_item || col_score)) {
+    switch (unq & (col_iter | col_pos | col_item | col_score)) {
         case col_iter:
             if (free & col_iter)   return col_iter;
             if (free & col_iter1)  return col_iter1;

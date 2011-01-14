@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -258,6 +258,8 @@ separator, but should work according to Posix. We remap such functions using a d
 to an equivalent win_*() function (which in its implementation calls through to the WIN32 function).
 @{
 @h
+gdk_export void *mdlopen(const char *library, int mode);
+
 #ifdef NATIVE_WIN32
 
 #define RTLD_LAZY	1
@@ -289,7 +291,6 @@ gdk_export int win_mkdir(const char *, const int mode);
 
 #define NAME_MAX 255
 
-#ifndef HAVE_OPENDIR
 struct DIR {
 	char *dir_name;
 	int just_opened;
@@ -302,17 +303,14 @@ struct direct {
 	char d_name[NAME_MAX + 1];
 	int d_namelen;
 };
-#endif
 
 #ifndef HAVE_FTRUNCATE
 gdk_export int ftruncate(int fd, off_t size);
 #endif
-#ifndef HAVE_OPENDIR
 gdk_export DIR *opendir(const char *dirname);
 gdk_export struct direct *readdir(DIR *dir);
 gdk_export void rewinddir(DIR *dir);
 gdk_export int closedir(DIR *dir);
-#endif
 
 #endif
 
@@ -1307,6 +1305,17 @@ MT_path_absolute(const char *pathname)
 	return (*pathname == DIR_SEP);
 }
 
+#ifdef HAVE_DLFCN_H
+# include <dlfcn.h>
+#endif
+
+void *
+mdlopen(const char *library, int mode)
+{
+	(void) library;
+	return dlopen(NULL, mode);
+}
+
 #ifdef WIN32
 #include <windows.h>
 #endif
@@ -1681,7 +1690,6 @@ ftruncate(int fd, off_t size)
 }
 #endif
 
-#ifndef HAVE_OPENDIR
 DIR *
 opendir(const char *dirname)
 {
@@ -1805,7 +1813,6 @@ closedir(DIR *dir)
 
 	return 0;
 }
-#endif /* HAVE_OPENDIR */
 
 #ifndef HAVE_GETTIMEOFDAY
 static int nodays[12] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
@@ -1834,6 +1841,13 @@ gettimeofday(struct timeval *tv, int *ignore_zone)
 	return 0;
 }
 #endif
+
+void *
+mdlopen(const char *library, int mode)
+{
+	(void) mode;
+	return GetModuleHandle(library);
+}
 
 void *
 dlopen(const char *file, int mode)

@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -137,7 +137,7 @@ comment "Merge the instructions stored in the
 #include "mal_interpreter.h"
 
 #ifdef WIN32
-#ifndef LIBMAL
+#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
 #define language_export extern __declspec(dllimport)
 #else
 #define language_export extern __declspec(dllexport)
@@ -168,7 +168,7 @@ language_export str MALassertTriple(Client cntxt, MalBlkPtr mb, MalStkPtr stk, I
 #endif /* _LANGUAGE_H */
 @c
 
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "language.h"
 
 str
@@ -285,7 +285,7 @@ CMDregisterFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	msg= compileString(&sym, cntxt,*code);
 	if( sym) {
-		mnstr_printf(cntxt->fdout,"#REGISTER FUNCTION %s.%s\n",
+		mnstr_printf(cntxt->fdout,"#register FUNCTION %s.%s\n",
 			getModuleId(sym->def->stmt[0]), getFunctionId(sym->def->stmt[0]));
 		mb= sym->def;
 		if( help)

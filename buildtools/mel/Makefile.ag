@@ -1,0 +1,43 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2011 MonetDB B.V.
+# All Rights Reserved.
+
+YFLAGS = -d
+W_CFLAGS = -wd4018
+
+bin_mel = {
+	NOINST
+	SOURCES = FileInfo.cc ListIterator.cc any_arg.cc atom.cc \
+		atomops.cc atom_arg.cc bat_arg.cc builtin.cc \
+		command.cc debug.cc depend.cc dependency.cc \
+		epilogue.cc glue.cc html.cc iterator.cc lexer.ll link.cc \
+		mel.cc mil.cc module.cc object.cc operator.cc ops.cc \
+		parser.yy prelude.cc proto.cc symbol.cc symtable.cc \
+		type_arg.cc use.cc var_arg.cc \
+		FileInfo.h ListIterator.h any_arg.h atom.h atomops.h \
+		atom_arg.h bat_arg.h builtin.h command.h debug.h \
+		depend.h dependency.h epilogue.h glue.h html.h \
+		iterator.h language.h link.h list.h mel.h mil.h \
+		module.h object.h operator.h ops.h prelude.h proto.h \
+		symbol.h symtable.h type_arg.h use.h var_arg.h
+}
+
+EXTRA_DIST = FileInfo.h ListIterator.h any_arg.h atom.h atomops.h \
+		atom_arg.h bat_arg.h builtin.h command.h debug.h \
+		depend.h dependency.h epilogue.h glue.h html.h \
+		iterator.h language.h link.h list.h mel.h mil.h \
+		module.h object.h operator.h ops.h prelude.h proto.h \
+		symbol.h symtable.h type_arg.h use.h var_arg.h

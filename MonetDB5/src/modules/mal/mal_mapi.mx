@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -262,7 +262,7 @@ mapi.listen();
 #include <stream.h>
 
 #ifdef WIN32
-#ifndef LIBMAL
+#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
 #define mal_mapi_export extern __declspec(dllimport)
 #else
 #define mal_mapi_export extern __declspec(dllexport)
@@ -334,7 +334,7 @@ mal_mapi_export str SERVERmapi_rpc_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk
 
 #endif /* SERVER_H */
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "mal_mapi.h"
 #include <sys/types.h>
 #include <stream_socket.h>
@@ -573,6 +573,7 @@ SERVERlistenThread(SOCKET *Sock)
 					/* nothing special, nothing to do */
 				break;
 				case '1':
+				{	int *c_d;
 					/* filedescriptor, put it in place of msgsock */
 					cmsg = CMSG_FIRSTHDR(&msgh);
 					if (!cmsg->cmsg_type == SCM_RIGHTS) {
@@ -583,7 +584,13 @@ SERVERlistenThread(SOCKET *Sock)
 						continue;
 					}
 					closesocket(msgsock);
-					msgsock = *(int*)CMSG_DATA(cmsg);
+					/* HACK to avoid 
+					 * "dereferencing type-punned pointer will break strict-aliasing rules"
+					 * (with gcc 4.5.1 on Fedora 14)
+					 */
+					c_d = (int*)CMSG_DATA(cmsg);
+					msgsock = *c_d;
+				}
 				break;
 				default:
 					/* some unknown state */

@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2010 MonetDB B.V.
+ * Copyright August 2008-2011 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -68,8 +68,7 @@
  * stethoscope -umonetdb -Pmonetdb -hhost +tis "algebra.*" "bat.*" "group.*" "sql.*" "aggr.*"
  */
 
-#include "clients_config.h"
-#include "monet_utils.h"
+#include "monetdb_config.h"
 #include "monet_options.h"
 #include <mapilib/Mapi.h>
 #include <stream.h>

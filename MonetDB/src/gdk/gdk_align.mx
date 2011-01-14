@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -218,6 +218,8 @@ VIEWhcreate(BAT *h)
 	recycled = bs = BBPrecycle(TYPE_void, TYPE_void, 1);
 	if (bs == NULL)
 		bs = BATcreatedesc(h->htype, TYPE_void, FALSE);
+	if (bs == NULL)
+		return NULL;
 	bn = &bs->B;
 
 	BATsetdims(bn);
@@ -267,8 +269,10 @@ VIEWcreate_(BAT *h, BAT *t, int slice_view)
 	BATcheck(h, "VIEWcreate_");
 	BATcheck(t, "VIEWcreate_");
 	recycled = bs = BBPrecycle(TYPE_void, TYPE_void, 1);
-	if (!bs)
+	if (bs == NULL)
 		bs = BATcreatedesc(h->htype, t->ttype, FALSE);
+	if (bs == NULL)
+		return NULL;
 	bn = &bs->B;
 
 	hp = VIEWhparent(h);
@@ -589,6 +593,7 @@ VIEWreset(BAT *b)
 		BATstore *bs;
 		BUN cnt;
 		str nme;
+		size_t nmelen;
 
 		/* alloc heaps */
 		memset(&head, 0, sizeof(Heap));
@@ -603,40 +608,41 @@ VIEWreset(BAT *b)
 		bs = BBP_desc(n->batCacheid);
 		cnt = BATcount(n) + 1;
 		nme = BBP_physical(n->batCacheid);
+		nmelen = nme ? strlen(nme) : 0;
 
 		assert(n->batCacheid > 0);
 		assert(hp || !b->htype);
 		assert(tp || !b->ttype);
 
 		if (n->htype) {
-			head.filename = (str) GDKmalloc(strlen(nme) + 12);
+			head.filename = (str) GDKmalloc(nmelen + 12);
 			if (head.filename == NULL)
 				goto bailout;
-			sprintf(head.filename, "%s.head", nme);
+			snprintf(head.filename, nmelen + 12, "%s.head", nme);
 			if (n->htype && HEAPalloc(&head, cnt, Hsize(n)) < 0)
 				goto bailout;
 		}
 		if (n->ttype) {
-			tail.filename = (str) GDKmalloc(strlen(nme) + 12);
+			tail.filename = (str) GDKmalloc(nmelen + 12);
 			if (tail.filename == NULL)
 				goto bailout;
-			sprintf(tail.filename, "%s.tail", nme);
+			snprintf(tail.filename, nmelen + 12, "%s.tail", nme);
 			if (n->ttype && HEAPalloc(&tail, cnt, Tsize(n)) < 0)
 				goto bailout;
 		}
 		if (n->H->vheap) {
-			hh.filename = (str) GDKmalloc(strlen(nme) + 12);
+			hh.filename = (str) GDKmalloc(nmelen + 12);
 			if (hh.filename == NULL)
 				goto bailout;
-			sprintf(hh.filename, "%s.hheap", nme);
+			snprintf(hh.filename, nmelen + 12, "%s.hheap", nme);
 			if (ATOMheap(n->htype, &hh, cnt) < 0)
 				goto bailout;
 		}
 		if (n->T->vheap) {
-			th.filename = (str) GDKmalloc(strlen(nme) + 12);
+			th.filename = (str) GDKmalloc(nmelen + 12);
 			if (th.filename == NULL)
 				goto bailout;
-			sprintf(th.filename, "%s.theap", nme);
+			snprintf(th.filename, nmelen + 12, "%s.theap", nme);
 			if (ATOMheap(n->ttype, &th, cnt) < 0)
 				goto bailout;
 		}

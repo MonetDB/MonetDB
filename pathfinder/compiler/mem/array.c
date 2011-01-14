@@ -52,13 +52,13 @@
  * University of Konstanz, the Technische Universitaet Muenchen, and the
  * Universitaet Tuebingen are Copyright (C) 2000-2005 University of
  * Konstanz, (C) 2005-2008 Technische Universitaet Muenchen, and (C)
- * 2008-2010 Eberhard Karls Universitaet Tuebingen, respectively.  All
+ * 2008-2011 Eberhard Karls Universitaet Tuebingen, respectively.  All
  * Rights Reserved.
  *
  * $Id$
  */
 
-#include "pf_config.h"
+#include "monetdb_config.h"
 #include "pathfinder.h"
 
 #include <stdio.h>
@@ -260,10 +260,12 @@ PFarray_vprintf (PFarray_t *a, const char *fmt, va_list mat)
      */
     va_copy(tmp, mat);
     while ((nchars = vsnprintf (try, len, fmt, tmp)) < 0) {
+        va_end(tmp);
         len *= 2;
         try = realloc(try, len);
         va_copy(tmp, mat);
     }
+    va_end(tmp);
     free(try);
 
 

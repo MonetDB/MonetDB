@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -227,7 +227,7 @@ with a BAT descriptor. Upon failure we can simply abort the function.
 #include "bat5.h"
 
 #ifdef WIN32
-#ifndef LIBMAL
+#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
 #define bbp_export extern __declspec(dllimport)
 #else
 #define bbp_export extern __declspec(dllexport)
@@ -288,7 +288,7 @@ bbp_export str CMDbbpexpand(int *ret, int *bid, str *fnme);
 Access to a box calls for resolving the first parameter
 to a named box. The bbp box is automatically opened.
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "bbp.h"
 
 #define OpenBox(X) \

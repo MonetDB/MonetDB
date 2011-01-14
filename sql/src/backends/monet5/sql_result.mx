@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -25,12 +25,12 @@ All Rights Reserved.
 #ifndef sql_result_H
 #define sql_result_H
 
+#include "mal_client.h"
 #include <stream.h>
 #include <sql_mvc.h>
 #include <sql_catalog.h>
 #include <sql_qc.h>
 #include <sql_parser.h>		/* sql_error */
-#include "mal_client.h"
 
 extern int mvc_export_affrows(mvc *m, stream *s, lng val, str w);
 extern int mvc_export_operation(mvc *m, stream *s, str w);
@@ -40,7 +40,7 @@ extern int mvc_export_head(mvc *c, stream *s, int res_id, int only_header);
 extern int mvc_export_prepare(mvc *c, stream *s, cq *q, str w);
 extern int mvc_export_chunk(mvc *m, stream *s, int res_id, BUN offset, BUN nr);
 
-extern BAT *mvc_import_table(Client cntxt, mvc *c, bstream *s, char *sname, char *tname, char *sep, char *rsep, char *ssep, char *ns, lng nr, lng offset);
+extern BAT *mvc_import_table(Client cntxt, mvc *c, bstream *s, char *sname, char *tname, char *sep, char *rsep, char *ssep, char *ns, lng nr, lng offset, int locked);
 extern int mvc_result_table(mvc *m, int nr_cols, int type, BAT *order);
 
 extern int mvc_result_column(mvc *m, char *tn, char *name, char *typename, int digits, int scale, BAT *b);
@@ -51,12 +51,13 @@ extern int convert2str( mvc *m, int eclass, int d, int sc, int has_tz, ptr p, in
 #endif /* sql_result_H */
 @c
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include "sql_result.h"
 #include <str.h>
 #include <tablet.h>
 #include <mtime.h>
 #include <bat/res_table.h>
+#include <bat/bat_storage.h>
 
 @= dec_tostr
 	char buf[32];
@@ -358,17 +359,28 @@ _ASCIIadt_frStr(Column *c, int type, char *s, char *e, char quote)
 	(void)quote;
 	if (type == TYPE_str) {
 		sql_column *col = (sql_column*)c->extra;
+		int len = (int) (e - s + 1); /* 64bit: should check for overflow */
+		/* or shouldn't len rather be ssize_t, here? */
 
-		if (col->type.digits > 0 && (unsigned)(e-s) > col->type.digits){
-			str v = (str)s;
-			strLength(&len, v);
-
-			if (len == int_nil) 
-				len = 4;
-			if ((unsigned int) len > col->type.digits) 
+		if (c->len < len){
+			c->len = len;
+			c->data = GDKrealloc(c->data,len); 
+		}
+	
+		if (s == e) {
+			len = -1;
+			*(char*)c->data = 0;
+		} else if ((len = (int)GDKstrFromStr(c->data, (unsigned char *) s, (ssize_t) (e - s))) < 0) {
+			/* 64bit: should check for overflow */
+			/* or shouldn't len rather be ssize_t, here? */
+			return NULL;
+		}
+		if (col->type.digits > 0 && len > 0 && len > (int)col->type.digits) { 
+			strLength(&len, c->data);
+			if (len > (int)col->type.digits)
 				return NULL;
 		}
-		return TABLETstrFrStr(c, s, e);
+		return c->data;
 	}
 	 
 	len = (*BATatoms[type].atomFromStr)(s, &c->len, (ptr) &c->data);
@@ -404,7 +416,7 @@ _ASCIIadt_toStr(void *extra, char **buf, int *len, int type, ptr a)
 		if (c->quote) {
 			dst[0] = c->quote;
 			l2 = 1;
-			l = escapedStr(dst+l2, src);
+			l = escapedStr(dst + l2, src, *len - l2);
 		} else {
 			strncpy(dst + l2, src, l);
 		}
@@ -421,7 +433,7 @@ _ASCIIadt_toStr(void *extra, char **buf, int *len, int type, ptr a)
 
 
 BAT *
-mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, char *sep, char *rsep, char *ssep, char *ns, lng sz, lng offset)
+mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, char *sep, char *rsep, char *ssep, char *ns, lng sz, lng offset, int locked)
 {
 	int i = 0;
 	sql_schema *s = mvc_bind_schema(m, sname);
@@ -430,6 +442,7 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 	BAT *bats = NULL;
 	Tablet as;
 	Column *fmt;
+	size_t cnt = 0;
 
 	if (!t) {
 		sql_error(m, 500, "table %s not found", tname);
@@ -450,6 +463,13 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 		sql_error(m, 500, "offset out of range");
 		m->type = -1;
 		return NULL;
+	}
+
+	if (locked) {
+		/* flush old changes to disk */
+		sql_trans_end(m->session);
+		store_apply_deltas();
+		sql_trans_begin(m->session);
 	}
 
 	if (offset > 0)
@@ -497,10 +517,50 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 			fmt[i].rawfile = NULL;
 			fmt[i].batfile = NULL;
 			fmt[i].size = ATOMsize(fmt[i].adt);
+			
+			if (locked) {
+				BAT *b = store_funcs.bind_col(m->session->tr, col, RDONLY);
+       				BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP, 1);
+				HASHremove(b);
+				HASHremove(BATmirror(b));
+
+				fmt[i].c[0] = b;
+				cnt = BATcount(b);
+				if ( sz > 0 && BATcapacity(b) < (BUN) sz )
+					if ( (fmt[i].c[0] =  BATextend(fmt[i].c[0], (BUN) sz)) == NULL){
+							for ( i--; i>=0; i--)
+								BBPunfix( fmt[i].c[0]->batCacheid);
+							sql_error(m, 500, "failed to allocate result table sizes ");
+				}
+				fmt[i].ci[0] = bat_iterator(fmt[i].c[0]);
+			}
 		}
-		if (TABLETcreate_bats(&as, (BUN) (sz < 0 ? 1000 : sz)) >= 0) {
-			if (SQLload_file(cntxt, &as, bs, out, sep, rsep, ssep?ssep[0]:0, offset, sz) != BUN_NONE && !as.error)
-				bats = TABLETcollect_bats(&as);
+		if (locked || TABLETcreate_bats(&as, (BUN) (sz < 0 ? 1000 : sz)) >= 0) {
+			if (SQLload_file(cntxt, &as, bs, out, sep, rsep, ssep?ssep[0]:0, offset, sz) != BUN_NONE && !as.error) {
+				if (locked) 
+					bats = TABLETcollect_parts(&as, cnt);
+				else
+					bats = TABLETcollect_bats(&as);
+			} else if (locked) { /* restore old counts */
+				for (n = t->columns.set->h, i = 0; n; n = n->next, i++) {
+					sql_column *col = n->data;
+					BAT *b = store_funcs.bind_col(m->session->tr, col, RDONLY);
+					BATsetcount(b, cnt);
+					BBPunfix(b->batCacheid);
+				}
+			}
+		}
+		if (locked) { /* fix delta structures and transaction */
+			for (n = t->columns.set->h, i = 0; n; n = n->next, i++) {
+				sql_column *c = n->data;
+				BAT *b = store_funcs.bind_col(m->session->tr, c, RDONLY);
+				sql_delta *d = c->data;
+
+				c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = m->session->tr->wtime = m->session->tr->stime;
+				d->cnt = BATcount(b);
+
+				BBPunfix(b->batCacheid);
+			}
 		}
 		if (as.error) 
 			sql_error(m, 500, "%s", as.error);

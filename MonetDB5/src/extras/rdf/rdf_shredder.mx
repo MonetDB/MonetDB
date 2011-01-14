@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -23,7 +23,7 @@ All Rights Reserved.
 @+ Shredder for RDF Documents
 
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "mal_exception.h"
 #include "url.h"
 #include "tokenizer.h"
@@ -87,6 +87,8 @@ typedef struct parserData {
 	const char *warningMsg;       /* warning msgs           */
 	const char *errorMsg;         /* error   msgs           */
 	const char *fatalMsg;         /* fatal   msgs           */
+	int line;                     /* locator for errors     */
+	int column;                   /* locator for errors     */
 	                              /**GRAPH DATA             */
 	BAT *graph[N_GRAPH_BAT];      /* BATs for the result
 	                                 shredded RDF graph     */
@@ -114,6 +116,8 @@ static void
 
 	/* check for a valid locator object and only then use it */
 	if (locator != NULL) {
+		pdata->line = locator->line;
+		pdata->column = locator->column;
 	} else {
 	}
 }
@@ -449,8 +453,8 @@ post_processing (parserData *pdata)
 	graph[O_sort] = BATmirror(BATsort(BATmirror(O))); /* sort on O */
 	@:order(graph[O_sort],P,S,PS)@
 	@:order(graph[O_sort],S,P,SP)@
-	BATsetaccess(graph[P_sort], BAT_READ); /* force BATmark not to copy bat */
-	graph[P_sort] = BATmirror(BATmark(BATmirror(graph[P_sort]), 0));
+	BATsetaccess(graph[O_sort], BAT_READ); /* force BATmark not to copy bat */
+	graph[O_sort] = BATmirror(BATmark(BATmirror(graph[O_sort]), 0));
 
 	/* free memory */
 	BBPreclaim(S);

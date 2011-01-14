@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -80,7 +80,7 @@ crackers_export str CRKsortBandJoin_@1(int *resid, int *bidL, int *bidR, @1 *c1,
 @- C file
 
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "crackers.h"
 #include "bat5.h"
 #define SAMPLE_TRESHOLD_LOG 17
@@ -187,7 +187,7 @@ crackers_export str CRKsortBandJoin_@1(int *resid, int *bidL, int *bidR, @1 *c1,
 		 MAX(1,((lcur-lfirst)*((dbl) (rend-rfirst))+(dbl) (rcur-rfirst))))
 
 #define bunfastins_limit(b, h, t, limit, percdone) {			\
-                REGISTER BUN _p = BUNlast(b);				\
+                register BUN _p = BUNlast(b);				\
 		if (_p == BUN_MAX) /* reached maximum, can't do more */	\
 			goto bunins_done;				\
                 if (_p + 1 > BATcapacity(b)) {				\

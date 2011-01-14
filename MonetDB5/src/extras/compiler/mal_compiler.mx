@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -140,7 +140,7 @@ mal_compiler_export str MCloadFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk
 #endif /* _MAL_COMPILER_H_ */
 @-
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "mal_compiler.h"
 #include "mal_interpreter.h"
 #include "mal_function.h"
@@ -148,10 +148,10 @@ mal_compiler_export str MCloadFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk
 static char *mccPrelude[] = {
 	"/* MAL to C compiler\n",
 	"   Copyright (c) 2001-July 2008, CWI.\n",
-	"   Copyright (c) August 2008-2010, MonetDB B.V..\n",
+	"   Copyright (c) August 2008-2011, MonetDB B.V..\n",
 	"   All rights reserved.\n",
 	"*/\n",
-	"#include \"mal_config.h\"\n",
+	"#include \"monetdb_config.h\"\n",
 
 	"#include \"atoms/blob.h\"\n",
 	"#include \"atoms/color.h\"\n",

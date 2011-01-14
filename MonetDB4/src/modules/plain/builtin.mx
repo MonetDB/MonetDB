@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -270,7 +270,7 @@ Each command is passed the parse tree and a pointer where the result
 should be delivered.
 
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include "gdk.h"
 #include "monet.h"
 #include "monet_context.h"
@@ -1221,6 +1221,7 @@ CMDprint_otable(int *order, BAT *arg1, ...)
 		}
 		piv[nbats++] = b;
 	}
+	va_end(ap);
 	return CMDprint_bats(nbats, piv, *order);
 }
 
@@ -1242,6 +1243,7 @@ CMDprint_table(BAT *b, ...)
 		}
 		piv[nbats++] = b;
 	} while ((b = va_arg(ap, BAT *)) != NULL);
+	va_end(ap);
 
 	return CMDprint_bats(nbats, piv, 0);
 }

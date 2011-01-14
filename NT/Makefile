@@ -1,0 +1,76 @@
+# -*- makefile -*-
+
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2011 MonetDB B.V.
+# All Rights Reserved.
+
+TOPDIR = .
+SRCDIR = $(TOPDIR)\..
+
+prefix = $(MAKEDIR)
+
+!INCLUDE "$(TOPDIR)\..\NT\rules.msc"
+
+all: "$(SRCDIR)\Makefile.msc" monetdb_config.h unistd.h inttypes.h
+	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" all
+
+install: targetdirs all
+	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" install
+
+$(SRCDIR)\Makefile.msc: "$(SRCDIR)\Makefile.ag"
+        cd "$(SRCDIR)"&&set PYTHONPATH=buildtools\autogen&&python buildtools\autogen\autogen.py
+
+monetdb_config.h: "$(SRCDIR)\NT\monetdb_config.h.in"
+	$(CONFIGURE) "$(SRCDIR)\NT\monetdb_config.h.in" > monetdb_config.h
+
+unistd.h:
+	$(ECHO) #ifndef UNISTD_H > unistd.h
+	$(ECHO) #define UNISTD_H >> unistd.h
+	$(ECHO) #include "io.h" >> unistd.h
+	$(ECHO) #ifndef __cplusplus >> unistd.h
+	$(ECHO) #define open _open >> unistd.h
+	$(ECHO) #define read _read >> unistd.h
+	$(ECHO) #define write _write >> unistd.h
+	$(ECHO) #define close _close >> unistd.h
+	$(ECHO) #define getpid _getpid >> unistd.h
+	$(ECHO) #define umask _umask >> unistd.h
+	$(ECHO) #endif >> unistd.h
+	$(ECHO) #endif >> unistd.h
+
+inttypes.h:
+	$(ECHO) typedef signed char int8_t; > inttypes.h
+	$(ECHO) typedef unsigned char uint8_t; >> inttypes.h
+	$(ECHO) typedef short int16_t; >> inttypes.h
+	$(ECHO) typedef unsigned short uint16_t; >> inttypes.h
+	$(ECHO) typedef int int32_t; >> inttypes.h
+	$(ECHO) typedef unsigned int uint32_t; >> inttypes.h
+
+targetdirs:
+	if not exist "$(bindir)"		$(MKDIR) "$(bindir)"
+	if not exist "$(sbindir)"		$(MKDIR) "$(sbindir)"
+	if not exist "$(libexecdir)"		$(MKDIR) "$(libexecdir)"
+	if not exist "$(datadir)"		$(MKDIR) "$(datadir)"
+	if not exist "$(sysconfdir)"		$(MKDIR) "$(sysconfdir)"
+	if not exist "$(sharedstatedir)"	$(MKDIR) "$(sharedstatedir)"
+	if not exist "$(localstatedir)"		$(MKDIR) "$(localstatedir)"
+	if not exist "$(libdir)"		$(MKDIR) "$(libdir)"
+	if not exist "$(infodir)"		$(MKDIR) "$(infodir)"
+	if not exist "$(mandir)"		$(MKDIR) "$(mandir)"
+	if not exist "$(includedir)"		$(MKDIR) "$(includedir)"
+	if not exist "$(pkgdatadir)"		$(MKDIR) "$(pkgdatadir)"
+	if not exist "$(pkglibdir)"		$(MKDIR) "$(pkglibdir)"
+	if not exist "$(pkgincludedir)"		$(MKDIR) "$(pkgincludedir)"
+

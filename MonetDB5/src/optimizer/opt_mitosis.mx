@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -65,7 +65,7 @@ comment "Modify the plan to exploit parallel processing on multiple cores";
 #define OPTDEBUGmitosis  if ( optDebug & ((lng)1 <<DEBUG_OPT_MITOSIS) )
 #endif
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "opt_mitosis.h"
 #include "opt_octopus.h"
 #include "opt_tarantula.h"
@@ -113,8 +113,8 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		q= getInstrPtr(mb,i);
 		if (getModuleId(q)!= sqlRef || getFunctionId(q)!=bindRef )
 			continue;
-		/* don't split insert or update BATs */
-		if (getVarConstant(mb, getArg(q,5)).val.ival != 0 )
+		/* don't split insert BATs */
+		if (getVarConstant(mb, getArg(q,5)).val.ival == 1 )
 			continue;
 		if( q->argc > 6 )
 			continue; /* already partitioned */
@@ -155,15 +155,15 @@ tarantula optimizer.
 		/* ensure that GDKnr_threads partitions fit into main memory */
 		r = (BUN) (monet_memory / typewidth / threads);
 		if (rowcnt > r)
-			pieces = MAX ( (int)(rowcnt / r + 1) , threads);
+			pieces = (int) MAX ( (rowcnt / r + 1) , (wrd) threads );
 		else
 		/* exploit parallelism, but ensure minimal partition size to limit overhead */
 		if (rowcnt > MINPARTCNT)
-			pieces = MIN ( (int)(rowcnt / MINPARTCNT) , threads);
+			pieces = (int) MIN ( (rowcnt / MINPARTCNT) , (wrd) threads);
 		/* when testing, split also small BATs, but avoid empty pieces */
 		FORCEMITODEBUG
 			if (pieces < threads)
-				pieces = MIN ( threads , (int)rowcnt );
+				pieces = (int) MIN ( (wrd) threads , rowcnt );
 		/* prevent plan explosion */
 		if (pieces > MAXSLICES)
 			pieces = MAXSLICES;
@@ -195,8 +195,8 @@ tarantula optimizer.
 			pushInstruction(mb,p);
 			continue;
 		}
-		/* don't split insert or update BATs */
-		if (getVarConstant(mb, getArg(p,5)).val.ival != 0 ){
+		/* don't split insert BATs */
+		if (getVarConstant(mb, getArg(p,5)).val.ival == 1 ){
 			pushInstruction(mb,p);
 			continue;
 		}
@@ -232,7 +232,8 @@ tarantula optimizer.
 			if (j+1 < pieces) {
 				hgh.value.val.oval= low.value.val.oval+slice;
 			} else {
-				hgh.value.val.oval= rowcnt;
+				assert(rowcnt <= (wrd) BUN_MAX);
+				hgh.value.val.oval= (BUN) rowcnt;
 			}
 			q = pushOid(mb,q,hgh.value.val.oval);
 

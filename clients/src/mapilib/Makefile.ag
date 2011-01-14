@@ -12,16 +12,17 @@
 #
 # The Initial Developer of the Original Code is CWI.
 # Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2010 MonetDB B.V.
+# Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
 MTSAFE
 
-INCLUDES = $(monetdbtools_CFLAGS) $(openssl_CFLAGS)
+INCLUDES = ../../../MonetDB/src/common ../../../common/stream $(openssl_CFLAGS)
 
 lib_Mapi = {
 	SOURCES = Mapi.mx Mapi.rc
-	LIBS = $(SOCKET_LIBS) $(monetdbtools_LIBS) $(openssl_LIBS)
+	LIBS = $(SOCKET_LIBS) ../../../common/stream/libstream \
+		../../../MonetDB/src/common/libmutils $(openssl_LIBS)
 }
 
 headers_mapi = {

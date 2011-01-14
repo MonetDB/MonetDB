@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -297,7 +297,7 @@ event records on the event stream. Since this event stream is owned
 by a client, we should ensure that the profiler is automatically be
 reset once the owner leaves. The routine profilerReset() handles the case.
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "mal_function.h"
 #include "mal_profiler.h"
 #include "mal_debugger.h"

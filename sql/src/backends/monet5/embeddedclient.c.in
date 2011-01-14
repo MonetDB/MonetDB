@@ -15,11 +15,11 @@
   kernel. This improves performance between 25-50%.
 */
 
-#include <sql_config.h>
+#include <monetdb_config.h>
+#include "gdk.h"
 #include "embeddedclient.h"
 #include "monet_options.h"
 
-#include "gdk.h"
 #ifdef HAVE_PTHREAD_H
 /* pthread.h on Windows includes config.h if HAVE_CONFIG_H is set */
 #undef HAVE_CONFIG_H
@@ -154,7 +154,7 @@ monetdb_sql(char *dbfarm, char *dbname)
 	int len = mo_builtin_settings(&embedded_set);
 
 	/* needed, to prevent the MonetDB config file to be used */  
-	len = mo_add_option(&embedded_set, len, opt_config, "prefix", MONETDB5_PREFIX);
+	len = mo_add_option(&embedded_set, len, opt_config, "prefix", PREFIX);
 	len = mo_add_option(&embedded_set, len, opt_config, "config", MONETDB5_CONFFILE);
 	len = mo_add_option(&embedded_set, len, opt_config, "monet_mod_path",
 			    "@QXlibdir@@QDIRSEP@MonetDB5@PATHSEP@@QXlibdir@@QDIRSEP@MonetDB5@QDIRSEP@lib@PATHSEP@@QXlibdir@@QDIRSEP@MonetDB5@QDIRSEP@bin");

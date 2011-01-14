@@ -20,11 +20,12 @@
 # University of Konstanz, the Technische Universitaet Muenchen, and the
 # Universitaet Tuebingen are Copyright (C) 2000-2005 University of
 # Konstanz, (C) 2005-2008 Technische Universitaet Muenchen, and (C)
-# 2008-2010 Eberhard Karls Universitaet Tuebingen, respectively.  All
+# 2008-2011 Eberhard Karls Universitaet Tuebingen, respectively.  All
 # Rights Reserved.
 
-pkg=monetdb-xquery
-builddir=@QPATHFINDER_BUILD@
+pkg=pathfinder
+buildbase=@QBUILD@
+builddir="${buildbase}/pathfinder"
 # make sure srcdir contains absolute path name
 srcdir=`cd '@srcdir@'; pwd`
 uname=`uname`
@@ -44,22 +45,36 @@ for d in runtime modules/pftijah
 do
 	MOD_PATH="${MOD_PATH}${builddir}/$d/.libs:${builddir}/$d:"
 done
-MOD_PATH="${MOD_PATH}`monetdb$V-config --modpath`"
-
-# make sure scripts are executable
-for x in "${builddir}/conf/${pkg}-config"
+case "$V" in
+4)
+# where compiled MonetDB4 modules are to be found
+for d in src/modules/plain src/modules/contrib src/modules/calibrator src/mapi @HAVE_NETCDF_TRUE@ src/modules/mnetcdf
 do
-	if [ -s $x ] ; then
-		chmod +x $x
-	fi
+	MOD_PATH="${MOD_PATH}${buildbase}/MonetDB4/$d/.libs:${builddir}/$d:"
 done
+MOD_PATH="${MOD_PATH}${srcdir}/../MonetDB4/scripts/tools"
+;;
+5)
+# where compiled MonetDB5 modules are to be found
+for d in src/compiler src/optimizer src/scheduler src/modules/atoms src/modules/kernel src/modules/mal src/modules/mal/crackers src/modules/mal/rdf
+do
+	MOD_PATH="${MOD_PATH}${buildbase}/MonetDB5/$d/.libs:${builddir}/$d:"
+	# enable auto-loading of modules before `make install`
+	mkdir -p ${buildbase}/MonetDB5/$d/autoload
+	cp -f ${srcdir}/../MonetDB5/$d/[0-9][0-9]_*.mal ${buildbase}/MonetDB5/$d/autoload/ 2>/dev/null
+done
+;;
+esac
 
 # enhance various paths to find our stuff
-binpath="${builddir}/conf:${builddir}/compiler:${builddir}/src/tools"
+binpath="${builddir}/compiler:${builddir}/src/tools:${buildbase}/MonetDB$V/src/tools:${buildbase}/testing/src"
 libpath="${MOD_PATH}"
 
 PATH="${binpath}:$PATH"
 export PATH
+
+PYTHONPATH="${buildbase}/testing/src:${srcdir}/../testing/src:${PYTHONPATH}"
+export PYTHONPATH
 
 if [ "${LD_LIBRARY_PATH}" ] ; then
 	LD_LIBRARY_PATH=":${LD_LIBRARY_PATH}"
@@ -90,4 +105,4 @@ cd "$srcdir"
 # arguments.
 # if the environment variable MTEST_AT is set (value does not matter), pass
 # the --at flag to Mtest.py so that it uses the at command as a watchdog.
-exec Mtest.py -$V --package=${pkg} --monet_mod_path="${MOD_PATH}" --dbfarm="${builddir}/dbfarm" --xrpc_docroot="${srcdir}/runtime/xrpc" --TSTTRGBASE="${builddir}" ${MTEST_AT+--at} "${@--rq}"
+exec python "${buildbase}/testing/src/Mtest.py" -$V --package=${pkg} --monet_mod_path="${MOD_PATH}" --dbfarm="${builddir}/dbfarm" --xrpc_docroot="${srcdir}/runtime/xrpc" --TSTTRGBASE="${builddir}" ${MTEST_AT+--at} "${@--rq}"

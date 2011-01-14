@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2010 MonetDB B.V.
+ * Copyright August 2008-2011 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -50,7 +50,7 @@
 #define MERO_VERSION   "1.3"
 #define MERO_PORT      50000
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include "mal_sabaoth.h"
 #include <utils/utils.h>
 #include <utils/properties.h>
@@ -71,9 +71,21 @@
 #include <fcntl.h>
 #include <unistd.h> /* unlink, isatty */
 #include <string.h> /* strerror */
+
 #ifdef HAVE_ALLOCA_H
-#include <alloca.h>
+# include <alloca.h>
+#elif defined __GNUC__
+# define alloca __builtin_alloca
+#elif defined _AIX
+# define alloca __alloca
+#elif defined _MSC_VER
+# include <malloc.h>
+# define alloca _alloca
+#else
+# include <stddef.h>
+void *alloca(size_t);
 #endif
+
 #include <errno.h>
 #include <signal.h> /* handle Ctrl-C, etc. */
 #include <pthread.h>
@@ -405,8 +417,9 @@ main(int argc, char *argv[])
 	struct stat sb;
 	FILE *oerr = NULL;
 	pthread_mutexattr_t mta;
+	int thret;
 	confkeyval ckv[] = {
-		{"prefix",             GDKstrdup(MONETDB5_PREFIX), STR},
+		{"prefix",             GDKstrdup(PREFIX),          STR},
 		{"gdk_dbfarm",         NULL,                       STR},
 		{"gdk_nr_threads",     NULL,                       INT},
 		{"sql_optimizer",      NULL,                       STR},
@@ -834,8 +847,9 @@ main(int argc, char *argv[])
 	pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_RECURSIVE);
 	pthread_mutex_init(&_mero_topdp_lock, &mta);
 
-	if (pthread_create(&tid, NULL, (void *(*)(void *))logListener, (void *)NULL) < 0) {
-		Mfprintf(oerr, "%s: unable to create logthread, exiting\n", argv[0]);
+	if ((thret = pthread_create(&tid, NULL, (void *(*)(void *))logListener, (void *)NULL)) != 0) {
+		Mfprintf(oerr, "%s: FATAL: unable to create logthread: %s\n",
+				argv[0], strerror(thret));
 		MERO_EXIT(1);
 	}
 
@@ -847,7 +861,8 @@ main(int argc, char *argv[])
 			sigaction(SIGQUIT, &sa, NULL) == -1 ||
 			sigaction(SIGTERM, &sa, NULL) == -1)
 	{
-		Mfprintf(oerr, "%s: unable to create signal handlers\n", argv[0]);
+		Mfprintf(oerr, "%s: FATAL: unable to create signal handlers: %s\n",
+				argv[0], strerror(errno));
 		MERO_EXIT(1);
 	}
 
@@ -855,7 +870,8 @@ main(int argc, char *argv[])
 	sa.sa_flags = 0;
 	sa.sa_handler = huphandler;
 	if (sigaction(SIGHUP, &sa, NULL) == -1) {
-		Mfprintf(oerr, "%s: unable to create signal handlers\n", argv[0]);
+		Mfprintf(oerr, "%s: FATAL: unable to create signal handlers: %s\n",
+				argv[0], strerror(errno));
 		MERO_EXIT(1);
 	}
 
@@ -863,7 +879,8 @@ main(int argc, char *argv[])
 	sa.sa_flags = 0;
 	sa.sa_handler = SIG_IGN;
 	if (sigaction(SIGPIPE, &sa, NULL) == -1) {
-		Mfprintf(oerr, "%s: unable to create signal handlers\n", argv[0]);
+		Mfprintf(oerr, "%s: FATAL: unable to create signal handlers: %s\n",
+				argv[0], strerror(errno));
 		MERO_EXIT(1);
 	}
 
@@ -871,7 +888,8 @@ main(int argc, char *argv[])
 	sigemptyset(&sa.sa_mask);
 	sa.sa_sigaction = childhandler;
 	if (sigaction(SIGCHLD, &sa, NULL) == -1) {
-		Mfprintf(oerr, "%s: unable to create signal handlers\n", argv[0]);
+		Mfprintf(oerr, "%s: FATAL: unable to create signal handlers: %s\n",
+				argv[0], strerror(errno));
 		MERO_EXIT(1);
 	}
 
@@ -929,18 +947,21 @@ main(int argc, char *argv[])
 		/* handle control commands */
 		csocks[0] = unsock;
 		csocks[1] = csock;
-		if (pthread_create(&ctid, NULL, (void *(*)(void *))controlRunner,
-					(void *)&csocks) < 0)
+		if ((thret = pthread_create(&ctid, NULL,
+						(void *(*)(void *))controlRunner,
+						(void *)&csocks)) != 0)
 		{
-			Mfprintf(stderr, "unable to create control command thread\n");
+			Mfprintf(stderr, "unable to create control command thread: %s\n",
+					strerror(thret));
 			ctid = 0;
 		}
 
 		/* start neighbour discovery and notification thread */ 
-		if (usock >= 0 && pthread_create(&dtid, NULL,
-					(void *(*)(void *))discoveryRunner, (void *)&usock) < 0)
+		if (usock >= 0 && (thret = pthread_create(&dtid, NULL,
+					(void *(*)(void *))discoveryRunner, (void *)&usock)) != 0)
 		{
-			Mfprintf(stderr, "unable to start neighbour discovery thread\n");
+			Mfprintf(stderr, "unable to start neighbour discovery thread: %s\n",
+					strerror(thret));
 			dtid = 0;
 		}
 
@@ -994,11 +1015,12 @@ shutdown:
 			}
 
 			tlw->next = NULL;
-			if (pthread_create(&(tlw->tid), NULL,
-						(void *(*)(void *))terminateProcess, (void *)t) < 0)
+			if ((thret = pthread_create(&(tlw->tid), NULL,
+						(void *(*)(void *))terminateProcess, (void *)t)) != 0)
 			{
 				Mfprintf(stderr, "%s: unable to create thread to terminate "
-						"database '%s'\n", argv[0], d->dbname);
+						"database '%s': %s\n",
+						argv[0], d->dbname, strerror(thret));
 				tlw->tid = 0;
 			}
 

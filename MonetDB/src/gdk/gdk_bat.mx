@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -335,7 +335,8 @@ BATattach(int tt, const char *heapfile)
 	BUN cap;
 	char path[PATHLENGTH];
 
-	ERRORcheck(tt <= 0 || tt >= TYPE_str, "BATattach: bad tail type\n");
+	ERRORcheck(tt <= 0 , "BATattach: bad tail type (<=0)\n");
+	ERRORcheck(ATOMvarsized(tt), "BATattach: bad tail type (varsized)\n");
 	ERRORcheck(heapfile == 0, "BATattach: bad heapfile name\n");
 	if (lstat(heapfile, &st) < 0) {
 		GDKerror("BATattach: cannot stat heapfile\n");
@@ -1497,7 +1498,7 @@ BUNappend(BAT *b, ptr t, bit force)
 			b->tseqbase = bm->hseqbase = *(oid *) t;
 		} else if (b->ttype == TYPE_void && b->tseqbase != oid_nil) {
 			if (*(oid *) t == oid_nil) {
-				BATmaterializet(b);
+				b = BATmaterializet(b);
 				countonly = 0;
 				if (b == NULL)
 					return NULL;
@@ -1555,7 +1556,7 @@ one now must do:
 @end verbatim
 @
 @c
-static INLINE BUN
+static inline BUN
 BUNdelete_(BAT *b, BUN p, bit force)
 {
 	BATiter bi = bat_iterator(b);
@@ -2400,14 +2401,14 @@ complicated.
 @{
 @c
 int
-BATname(BAT *b, str nme)
+BATname(BAT *b, const char *nme)
 {
 	BATcheck(b, "BATname");
 	return BBPrename(b->batCacheid, nme);
 }
 
 str
-BATrename(BAT *b, str nme)
+BATrename(BAT *b, const char *nme)
 {
 	int ret;
 
@@ -2421,15 +2422,13 @@ BATrename(BAT *b, str nme)
 		GDKerror("BATrename: illegal temporary name: '%s'\n", nme);
 	} else if (ret == BBPRENAME_LONG) {
 		GDKerror("BATrename: name too long: '%s'\n", nme);
-	} else if (b == NULL) {
-		GDKerror("BATrename: BAT argument missing\n");
 	}
 	return BBPname(b->batCacheid);
 }
 
 
 BAT *
-BATroles(BAT *b, str hnme, str tnme)
+BATroles(BAT *b, const char *hnme, const char *tnme)
 {
 	BATcheck(b, "BATroles");
 	if (b->hident && !default_ident(b->hident))
@@ -2448,7 +2447,7 @@ BATroles(BAT *b, str hnme, str tnme)
 }
 
 BAT *
-BATcol_name(BAT *b, str tnme)
+BATcol_name(BAT *b, const char *tnme)
 {
 	BATcheck(b, "BATcol_name");
 	if (b->tident && !default_ident(b->tident))
@@ -3408,10 +3407,11 @@ for determining which algebra commands set properties sub-optimally.
 				BAT *bv = VIEWcreate(b, b);
 				Heap *hp = (Heap *) GDKzalloc(sizeof(Heap));
 				str nme = BBP_physical(bv->batCacheid);
+				size_t nmelen = strlen(nme);
 
-				hp->filename = GDKmalloc(strlen(nme) + 12);
+				hp->filename = GDKmalloc(nmelen + 12);
 				if (hp->filename != NULL)
-					sprintf(hp->filename, "%s.%chash", nme, bv->batCacheid > 0 ? 'h' : 't');
+					snprintf(hp->filename, nmelen + 12, "%s.%chash", nme, bv->batCacheid > 0 ? 'h' : 't');
 				if (hp->filename == NULL ||
 				    (bv->H->hash = HASHnew(hp, tpe, yy + lim, HASHmask(lim))) == NULL) {
 					GDKfree(hp->filename);
@@ -3506,7 +3506,7 @@ failed to disprove on exhaustive check => succeeded to prove
 		BATseqbase(b, *(oid *) BUNhloc(bi, BUNfirst(b)));
 	}
       exit:
-	if (mode & BATPROPS_CHECK) {
+	if ((mode & BATPROPS_CHECK) == BATPROPS_CHECK) {
 		if ((sorted_bak & 1) && !(BAThordered(b) & 1)) {
 			GDKerror("BATpropcheck: BAT %s(%d)[%s,%s] with " BUNFMT " tuples was incorrectly marked sorted!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), b->batCount);
 			if (BAThordered(b))

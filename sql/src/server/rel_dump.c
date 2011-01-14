@@ -13,11 +13,11 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2010 MonetDB B.V.
+ * Copyright August 2008-2011 MonetDB B.V.
  * All Rights Reserved.
  */
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 #define LINESIZE 160
 #define TABSTOP 2
 
@@ -62,6 +62,8 @@ cmp_print(mvc *sql, stream *fout, int cmp)
 	case cmp_ilike: 	r = "ilike"; break;
 	case cmp_all: 		r = "all"; break;
 	case cmp_or: 		r = "or"; break;
+	case cmp_in: 		r = "in"; break;
+	case cmp_notin: 	r = "notin"; break;
 	default:
 		r = "";
 	}
@@ -108,6 +110,9 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, int comma, int alias)
 			if (e->r) { /* named parameters */
 				char *name = e->r;
 				mnstr_printf(fout, "%s", name);
+			} else if (e->f) {	/* values list */
+				list *l = e->f;
+				exp_print(sql, fout, l->h->data, depth, 0, 0);
 			} else { /* numbered arguments */
 				mnstr_printf(fout, "A%d", e->flag);
 			}
@@ -141,7 +146,11 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, int comma, int alias)
 			alias = 0;
 	 	break;
 	case e_cmp: 
-		if (e->flag == cmp_or) {
+		if (e->flag == cmp_in || e->flag == cmp_notin) {
+			exp_print(sql, fout, e->l, depth, alias, 1);
+			cmp_print(sql, fout, e->flag );
+			exps_print(sql, fout, e->r, depth, alias, 1);
+		} else if (e->flag == cmp_or) {
 			exps_print(sql, fout, e->l, depth, alias, 1);
 			cmp_print(sql, fout, e->flag );
 			exps_print(sql, fout, e->r, depth, alias, 1);
@@ -284,7 +293,11 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs)
 	} 	break;
 	case op_table:
 		print_indent(sql, fout, depth);
-		mnstr_printf(fout, "table");
+		mnstr_printf(fout, "table ");
+		if (rel->l)
+			rel_print_(sql, fout, rel->l, depth+1, refs);
+		if (rel->r)
+			exp_print(sql, fout, rel->r, depth, 1, 0);
 		if (rel->exps) 
 			exps_print(sql, fout, rel->exps, depth, 1, 0);
 		break;

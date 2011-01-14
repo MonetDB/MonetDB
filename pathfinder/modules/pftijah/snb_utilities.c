@@ -1,4 +1,4 @@
-#include <pf_config.h>
+#include <monetdb_config.h>
 
 #include <stdio.h>
 #include <stdlib.h>

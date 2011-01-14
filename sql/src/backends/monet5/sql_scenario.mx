@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -68,7 +68,7 @@ Before we are can process SQL statements the global catalog
 should be initialized. Thereafter, each time a client enters
 we update its context descriptor to denote an SQL scenario.
 @c
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include "sql_scenario.h"
 #include "sql_result.h"
 #include "sql_gencode.h"
@@ -105,7 +105,7 @@ monet5_freestack(int clientid, backend_stack stk)
 
 	(void)clientid;
 	if (p != NULL)
-		GDKfree(p);
+		freeStack(p);
 #ifdef _SQL_SCENARIO_DEBUG
 	mnstr_printf(GDKout, "#monet5_freestack\n");
 #endif
@@ -260,7 +260,8 @@ SQLinit(void)
 	memset((char*)&be_funcs, 0, sizeof(backend_functions));
 	be_funcs.fstack		= &monet5_freestack;
 	be_funcs.fcode		= &monet5_freecode;
-	be_funcs.fcreate_function	= &monet5_create_function;
+	be_funcs.fcreate_table_function	= &monet5_create_table_function;
+	be_funcs.fresolve_function	= &monet5_resolve_function;
 	monet5_user_init(&be_funcs);
 
 	MTIMEtimezone(&tz, &gmt);
@@ -596,6 +597,11 @@ freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start)
 }
 
 /* #define _SQL_COMPILE */
+
+/*
+BEWARE: SQLstatementIntern only commits after all statements found
+in expr are executed, when autocommit mode is enabled.
+*/
 str
 SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 {
@@ -638,7 +644,6 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 	be = sql;
 	sql = backend_create(m, c);
 	m->qc = NULL;
-	m->prepare_qc = NULL;
 	m->caching = 0;
 	m->user_id = m->role_id = USER_MONETDB;
 
@@ -1051,13 +1056,13 @@ SQLsetTrace(backend *be, Client c, bit onoff)
 
 	if (onoff){
 		if ( strstr(def,"keep") == 0)
-			q = newStmt(mb,"profiler","reset");
+			(void) newStmt(mb,"profiler","reset");
 		q = newStmt(mb,"profiler","setFilter");
 		q = pushStr(mb,q, "*");
 		q = pushStr(mb,q, "*");
-		q = newStmt(mb,"profiler","start");
+		(void) newStmt(mb,"profiler","start");
 	} else if (def && strstr(def, "show")) {
-		q = newStmt(mb, "profiler", "stop");
+		(void) newStmt(mb, "profiler", "stop");
 
 		do {
 			s = t;
@@ -1123,14 +1128,14 @@ SQLsetTrace(backend *be, Client c, bit onoff)
 					q = pushInt(mb, q, 32);
 				}
 				q = pushInt(mb, q, 0);
-				q = pushArgument(mb, q, rs[j]);
+				(void) pushArgument(mb, q, rs[j]);
 			}
 
 			q = newStmt(mb, ioRef, "stdout");
 			n = getDestVar(q);
 			q = newStmt(mb, sqlRef, "exportResult");
 			q = pushArgument(mb, q, n);
-			q = pushArgument(mb, q, r);
+			(void) pushArgument(mb, q, r);
 		}
 	}
 	GDKfree(def);
@@ -1204,8 +1209,17 @@ SQLparser(Client c)
 
 			v = (int) strtol(in->buf+in->pos+6,NULL,0);
  			t = res_tables_find(m->results, v);
-			if (t)
+			if (t) 
 				m->results = res_tables_remove(m->results, t);
+			in->pos = in->len;	/* HACK: should use parsed lenght */
+			return NULL;
+		}
+		if( strncmp(in->buf+in->pos,"release ", 8)==0 ){
+			cq *q = NULL;
+
+			v = (int) strtol(in->buf+in->pos+ 8,NULL,0);
+			if ((q = qc_find(m->qc, v)) != NULL) 
+					qc_delete(m->qc, q);
 			in->pos = in->len;	/* HACK: should use parsed lenght */
 			return NULL;
 		}
@@ -1268,7 +1282,7 @@ produce code.
 	be->q = NULL;
 	if (m->emode == m_execute) {
 		assert(m->sym->data.lval->h->type == type_int);
-		be->q = qc_find(m->prepare_qc, m->sym->data.lval->h->data.i_val);
+		be->q = qc_find(m->qc, m->sym->data.lval->h->data.i_val);
 		if (!be->q) {
 			err = -1;
 			sql_error(m, 2, "no prepared statement with the given id\n");
@@ -1311,15 +1325,15 @@ produce code.
 				m->emode = m_normal; 
 		} else {
 			/* generate a factory instantiation */
-			be->q = qc_insert((m->emode == m_prepare)?m->prepare_qc:m->qc, 
+			be->q = qc_insert(m->qc, 
 					  m->sa,      /* the allocator */
 					  m->sym,     /* the sql symbol tree */
 					  m->args,    /* the argument list */
 					  m->argc,
 					  m->scanner.key ^ m->session->schema->base.id,/* the statement hash key */
+					  (m->emode == m_prepare)?Q_PREPARE:
 					  m->type,/* the type of the statement */
 					  sql_escape_str(QUERY(m->scanner)));
-
 			scanner_query_processed(&(m->scanner));
 			be->q->code = 
 				(backend_code)backend_dumpproc(be, c, be->q, s);

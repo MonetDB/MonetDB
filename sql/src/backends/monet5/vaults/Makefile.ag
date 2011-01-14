@@ -12,32 +12,43 @@
 #
 # The Initial Developer of the Original Code is CWI.
 # Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2010 MonetDB B.V.
+# Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-INCLUDES = ../../../include ../../../common ../../../storage ../../../server ../ \
-	$(MONETDB5_INCS) $(CLIENTS_INCS) $(MONETDB_INCS) $(READLINE_INCS) $(MSEED_CFLAGS) $(CFITSIO_CFLAGS)
+INCLUDES = ../../../include ../../../common ../../../storage ../../../server .. \
+	../../../../../MonetDB5/src/modules/atoms \
+	../../../../../MonetDB5/src/compiler \
+	../../../../../MonetDB5/src/modules/kernel \
+	../../../../../MonetDB5/src/mal \
+	../../../../../MonetDB5/src/modules/mal \
+	../../../../../MonetDB5/src/optimizer \
+	../../../../../MonetDB5/src/scheduler \
+	../../../../../clients/src/mapilib \
+	../../../../../MonetDB/src/common \
+	../../../../../common/stream \
+	../../../../../MonetDB/src/gdk \
+	$(READLINE_INCS) $(MSEED_CFLAGS) $(CFITSIO_CFLAGS)
 
 lib__vault = {
-	DIR = libdir/MonetDB5/
+	DIR = libdir/MonetDB5
 	SOURCES = vault.mx
-	LIBS = $(MONETDB5_LIBS) -lmonetdb5 \
-		$(MONETDB_LIBS) -lbat $(MSEED_LIBS) 
+	LIBS = ../../../../../MonetDB5/src/tools/libmonetdb5 \
+		../../../../../MonetDB/src/gdk/libbat $(MSEED_LIBS) 
 }
 
 lib__mseed = {
 	COND = HAVE_MSEED
-	DIR = libdir/MonetDB5/
+	DIR = libdir/MonetDB5
 	SOURCES = mseed.mx
-	LIBS = $(MONETDB5_LIBS) -lmonetdb5 \
-		$(MONETDB_LIBS) -lbat $(MSEED_LIBS)
+	LIBS = ../../../../../MonetDB5/src/tools/libmonetdb5 \
+		../../../../../MonetDB/src/gdk/libbat $(MSEED_LIBS)
 }
 
 lib__fits = {
     COND = HAVE_CFITSIO
-    DIR = libdir/MonetDB5/
+    DIR = libdir/MonetDB5
     SOURCES = fits.mx
-    LIBS = $(MONETDB5_LIBS) -lmonetdb5 $(MONETDB_LIBS) $(CFITSIO_LIBS)
+    LIBS = ../../../../../MonetDB5/src/tools/libmonetdb5 $(CFITSIO_LIBS)
 }
 
 headers_h = {
@@ -63,7 +74,13 @@ headers_fitsh = {
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/MonetDB5
-	SOURCES = vault.mx vault.sql
+	SOURCES = vault.mx
+}
+
+headers_sql = {
+	HEADERS = sql
+	DIR = libdir/MonetDB5
+	SOURCES = vault.mx
 }
 
 headers_mseedmal = {
@@ -101,4 +118,4 @@ headers_fitsautoload = {
 }
 
 EXTRA_DIST_DIR = Tests
-EXTRA_DIST = 70_vault.mal 71_mseed.mal vault.sql 72_fits.mal
+EXTRA_DIST = 70_vault.mal 71_mseed.mal 72_fits.mal

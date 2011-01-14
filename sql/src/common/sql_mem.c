@@ -13,11 +13,11 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2010 MonetDB B.V.
+ * Copyright August 2008-2011 MonetDB B.V.
  * All Rights Reserved.
  */
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 
 /* Stefan: 
  * "Fake-include" to make msc.py create the proper dependencies;
@@ -78,6 +78,14 @@ sql_allocator *sa_reset( sql_allocator *sa )
 	sa->nr = 1;
 	sa->used = 0;
 	return sa;
+}
+
+char *sa_realloc( sql_allocator *sa, void *p, size_t sz, size_t oldsz )
+{
+	char *r = sa_alloc(sa, sz);
+
+	memcpy(r, (char*)p, oldsz);
+	return r;
 }
 
 #define round16(sz) ((sz+15)&~15)

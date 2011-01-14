@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2010 MonetDB B.V.
+ * Copyright August 2008-2011 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -138,6 +138,8 @@ typedef enum operator_type {
 	op_delete 	/* delete(l=table, r delete expression) */
 } operator_type;
 
+#define is_atom(et) \
+	(et == e_atom)
 #define is_column(et) \
 	(et != e_cmp)
 #define is_rank_op(e) \

@@ -13,11 +13,11 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2010 MonetDB B.V.
+ * Copyright August 2008-2011 MonetDB B.V.
  * All Rights Reserved.
  */
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include <stdio.h> /* fprintf */
 #include <sys/types.h>
 #include <sys/stat.h> /* stat */
@@ -29,8 +29,19 @@
 #include <fcntl.h>
 #include <string.h> /* strerror */
 #include <pthread.h>
+
 #ifdef HAVE_ALLOCA_H
-#include <alloca.h>
+# include <alloca.h>
+#elif defined __GNUC__
+# define alloca __builtin_alloca
+#elif defined _AIX
+# define alloca __alloca
+#elif defined _MSC_VER
+# include <malloc.h>
+# define alloca _alloca
+#else
+# include <stddef.h>
+void *alloca(size_t);
 #endif
 
 #include <gdk.h>
@@ -112,6 +123,7 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 	merovingian_proxy *pctos, *pstoc;
 	pthread_t ptid;
 	pthread_attr_t detachattr;
+	int thret;
 
 	/* quick 'n' dirty parsing */
 	if (strncmp(url, "mapi:monetdb://", sizeof("mapi:monetdb://") - 1) == 0) {
@@ -142,6 +154,7 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 		struct cmsghdr *cmsg;
 		struct iovec vec;
 		char buf[1];
+		int *c_d;
 
 		if ((ssock = socket(PF_UNIX, SOCK_STREAM, 0)) < 0)
 			return(newErr("cannot open socket: %s", strerror(errno)));
@@ -165,7 +178,12 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 		cmsg->cmsg_level = SOL_SOCKET;
 		cmsg->cmsg_type = SCM_RIGHTS;
 		cmsg->cmsg_len = CMSG_LEN(sizeof(psock));
-		*(int *)CMSG_DATA(cmsg) = psock;
+		/* HACK to avoid 
+		 * "dereferencing type-punned pointer will break strict-aliasing rules"
+		 * (with gcc 4.5.1 on Fedora 14)
+		 */
+		c_d = (int *)CMSG_DATA(cmsg);
+		*c_d = psock;
 		msg.msg_controllen = cmsg->cmsg_len;
 		msg.msg_flags = 0;
 
@@ -235,12 +253,12 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 	pstoc->name   = NULL;  /* we want only one log-message on disconnect */
 	pstoc->co_thr = 0;
 
-	if (pthread_create(&ptid, NULL,
-				(void *(*)(void *))proxyThread, (void *)pstoc) < 0)
+	if ((thret = pthread_create(&ptid, NULL,
+				(void *(*)(void *))proxyThread, (void *)pstoc)) != 0)
 	{
 		close_stream(sfout);
 		close_stream(sfdin);
-		return(newErr("failed to create proxy thread"));
+		return(newErr("failed to create proxy thread: %s", strerror(thret)));
 	}
 
 	pctos = GDKmalloc(sizeof(merovingian_proxy));
@@ -253,12 +271,12 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 
 	pthread_attr_init(&detachattr);
 	pthread_attr_setdetachstate(&detachattr, PTHREAD_CREATE_DETACHED);
-	if (pthread_create(&ptid, &detachattr,
-				(void *(*)(void *))proxyThread, (void *)pctos) < 0)
+	if ((thret = pthread_create(&ptid, &detachattr,
+				(void *(*)(void *))proxyThread, (void *)pctos)) != 0)
 	{
 		close_stream(sfout);
 		close_stream(sfdin);
-		return(newErr("failed to create proxy thread"));
+		return(newErr("failed to create proxy thread: %s", strerror(thret)));
 	}
 
 	return(NO_ERR);

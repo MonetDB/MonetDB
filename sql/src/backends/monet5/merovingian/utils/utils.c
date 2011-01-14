@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2010 MonetDB B.V.
+ * Copyright August 2008-2011 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -26,14 +26,14 @@
 /* NOTE: for this file to work correctly, the random number generator
  * must have been seeded (srand) with something like the current time */
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include "utils.h"
 #include <stdio.h> /* fprintf, fgets */
 #include <unistd.h> /* unlink */
 #include <string.h> /* memcpy */
 #include <strings.h> /* strcasecmp */
 #include <gdk.h> /* GDKmalloc */
-#ifdef HAVE_UUID
+#ifdef HAVE_UUID_UUID_H
 #include <uuid/uuid.h>
 #endif
 
@@ -345,7 +345,7 @@ generatePassphraseFile(char *path)
 char *
 generateUUID(void)
 {
-#ifdef HAVE_UUID
+#ifdef HAVE_UUID_UUID_H
 # ifdef UUID_PRINTABLE_STRING_LENGTH
 	/* Solaris */
 	char out[UUID_PRINTABLE_STRING_LENGTH];

@@ -13,11 +13,11 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2010 MonetDB B.V.
+ * Copyright August 2008-2011 MonetDB B.V.
  * All Rights Reserved.
  */
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include "bpm_table.h"
 #include "bat/bat_table.h"
 #include "bpm_storage.h"
@@ -55,6 +55,7 @@ column_find_row(sql_trans *tr, sql_column *c, void *value, ...)
 		c = nc;
 		value = nv;
 	}
+	va_end(va);
 	b = full_column(c, d, s);
 	if (s)
 		bat_destroy(s);
@@ -125,6 +126,7 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 		store_funcs.append_col(tr, c, val, c->type.type->localtype);
 		cnt++;
 	}
+	va_end(va);
 	if (n) {
 		fprintf(stderr, "called table_insert(%s) with wrong number of args (%d,%d)\n", t->base.name, list_length(t->columns.set), cnt);
 		assert(0);
@@ -222,6 +224,7 @@ rids_select( sql_trans *tr, sql_column *key, void *key_value_low, void *key_valu
 			key_value_low = nvl;
 			key_value_high = nvh;
 		}
+		va_end(va);
 	}
 	b = full_column(key, d, s);
 	if (s)

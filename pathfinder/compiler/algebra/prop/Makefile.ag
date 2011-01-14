@@ -23,36 +23,39 @@
 # University of Konstanz, the Technische Universitaet Muenchen, and the
 # Universitaet Tuebingen are Copyright (C) 2000-2005 University of
 # Konstanz, (C) 2005-2008 Technische Universitaet Muenchen, and (C)
-# 2008-2010 Eberhard Karls Universitaet Tuebingen, respectively.  All
+# 2008-2011 Eberhard Karls Universitaet Tuebingen, respectively.  All
 # Rights Reserved.
 #
 
 
 SUBDIRS = 
 
-INCLUDES = ../../include $(MONETDB_INCS)
+INCLUDES = \
+	../../include \
+	../../../../MonetDB/src/common \
+	../../../../MonetDB/src/gdk
 
 lib_prop = {
-        NOINST
-        DIR = libdir
-        SOURCES = \
-                prop_card.c \
-                prop_composite_key.c \
-                prop_const.c \
-                prop_dom.c \
-                prop_fd.c \
-                prop_guide.c \
-                prop_icol.c \
-                prop_key.c \
-                prop_level.c \
-                prop_lineage.c \
-                prop_name_origin.c \
-                prop_ocol.c \
-                prop_ori_names.c \
-                prop_rec_delta.c \
-                prop_req_node.c \
-                prop_reqval.c \
-                prop_set.c \
-                prop_trace_names.c \
-                prop_unq_names.c
+	NOINST
+	DIR = libdir
+	SOURCES = \
+		prop_card.c \
+		prop_composite_key.c \
+		prop_const.c \
+		prop_dom.c \
+		prop_fd.c \
+		prop_guide.c \
+		prop_icol.c \
+		prop_key.c \
+		prop_level.c \
+		prop_lineage.c \
+		prop_name_origin.c \
+		prop_ocol.c \
+		prop_ori_names.c \
+		prop_rec_delta.c \
+		prop_req_node.c \
+		prop_reqval.c \
+		prop_set.c \
+		prop_trace_names.c \
+		prop_unq_names.c
 }

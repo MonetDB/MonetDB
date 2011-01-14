@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -102,8 +102,9 @@ m_export void unlockparser(Client c);
 
 #endif /* _MONET_CLIENT_H_ */
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include "monet.h"
+#include <Mapi.h> /* for PROMPT1, PROMPT2 */
 #ifdef HAVE_SYS_SOCKET_H
 # include <sys/socket.h>
 #endif

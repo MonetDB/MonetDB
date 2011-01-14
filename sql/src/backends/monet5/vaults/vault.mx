@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -23,58 +23,114 @@ All Rights Reserved.
 @+ Data Vaults
 The Data Vault module provides the basic infrastructure to manage
 a repository with datafiles whose integrity and use is shared between
-MonetDB and a client repository.
+MonetDB and the repository owner. 
 
-Once a vault is created, the system administrator can manually add files to the catalog.
-A refresh() operation will fetch the files from the remote site using a path
-to an (ftp) directory.
-Often, this involves semantic knowledge of the target repository and the vault kind.
+Once a vault is created, the system administrator or crontab job adds files to the vault catalog.
+The source attribute provides the universal resource identifier (URI)
+in a format understood by the CURL library. In most cases, it represents a file
+to be accessed using FTP.
 
-If source and target files reside on the same file system then a symbolic link is sufficient.
-Alternatively, the vault can be populated using normal updates to the vault catalog.
+A target denotes its name in the staging area, i.e. a local cache where copies are to be stored.
+The local cache can be hierarchical structured to spread the load over multiple volumns
+and to retain the structure of the source repository.
+Files are dropped from the local cache using a SQL vacuum() operation based on a LRU time stamp.
+The retention period depends on the amount of disk resources available. 
+The vaultVacuum() operation should be automatically triggered when disk space becomes a scarce resource.
 
-The SQL view on the vault merely describes the files being imported,
-their freshness and properties required to fetch them from a remote source.
-It is an ordinary SQL table, which can be the target for updates using SQL.
-See the source file for the script.
+An vaultImport() operation copies a file from the remote repository into the staging area.
+
+The vaultBasename() operation extract the tail of the argument. It can be used to derive
+target filename locations.
+
+If source and target files reside on the same file system then a symbolic link is sufficient
+and vaultVacuum() need not be triggered.
+
+The file mapping catalog is kept lean. The attribute 'created' marks the actual time
+the file was obtained from the remote source. The lru attribute is set each time we access its content.  
+Files that are bound to internal database structures may want to set it into the future.
 @verbatim
+CREATE SEQUENCE sys.vaultid AS int;
+
 CREATE TABLE sys.vault (
 vid 			int PRIMARY KEY,-- Internal key
 kind			string,			-- vault kind (CSV, MSEED, FITS,..)
 source			string,			-- remote file name for cURL to access
-refresh			boolean,		-- refresh each time of access
-cached			timestamp,		-- copy stored locally
-target			string			-- file name of source file in vault
+target			string,			-- file name of source file in vault
+created			timestamp,		-- timestamp upon entering the cache
+lru				timestamp		-- least recently used
 );
 
-create function vaultDir()
+create function vaultLocation()
 returns string
-external "vault.getDirectory";
+external name vault.getdirectory;
+
+create function vaultSetLocation(dir string)
+returns string
+external name vault.setdirectory;
+
+create function vaultBasename(fnme string, split string)
+returns string
+external name vault.basename;
+
+create function vaultImport(source string, target string)
+returns timestamp
+external name vault.import;
+
+create function vaultRemove(target string)
+returns timestamp
+external name vault.remove;
+
+create procedure vaultVacuum( t timestamp)
+begin
+update vault
+  set created= remove(target),
+  lru = null
+  where  created < t;
+end;
 @end verbatim
 
 The module is developed solely for a Linux environment.
 The vault root is a subdirectory of the dbfarm/<dbname>/vault/ and contains
 a subdirectory for each vault kind. In turn, each vault kind comes
-with a refinement of the catalog identified above using the vid
-to relate the two.
+with a refinement of the catalog identified above using the vid to relate the two.
+
+For large staging pools it may be advisable to pre-create the repository
+structure, e.g. mounting multiple volumns for its partitions.
+
+The session structure would be something like:
+@begin verbatim
+insert into vault(vid,kind,source) values(0,'dummy','ftp://ftp.rep.edu/repos/station-1'),
+	(1,'dummy','ftp://ftp.rep.edu/repos/station-2');
+update vault
+  set target = basename(source,'repos');
+update vault
+  set created= import(source,target)
+  where created is null;
+select * from vault limit 2;
+call vacuum(now());
+@end
 @mal
 module vault;
 
+pattern import(src:str,trg:str):timestamp
+address VLTimport
+comment "Use FTP to copy a remote file to the cache";
+
+command remove(t:str):timestamp
+address VLTremove
+comment "Drop a file from the local cache";
+
+command basename( fnme:str, split:str):str
+address VLTbasename
+comment "Split the fnme string just before the split marker.";
+
+command setdirectory(src:str):str
+address VLTsetLocation
+comment "Change  the location of the root vault directory";
+
 command getdirectory():str
-address VLTgetDirectory
+address VLTgetLocation
 comment "Return the location of the root vault directory";
-
-command refresh(id:str)
-address VLTrefresh
-comment "Refresh the objects in the vault identified";
-
-command refresh(id:int)
-address VLTrefreshObject
-comment "Refresh the content of the vault for a specific object";
-
-command ftpget(src:str,trg:str)
-address VLTftpget
-comment "Use FTP to copy a remote file to a local";
 
 pattern prelude():void 
 address VLTprelude
@@ -85,17 +141,59 @@ address VLTepilogue
 comment "Cleanup the vault.";
 
 vault.prelude();
+@sql
+-- The data vault interface for SQL
+
+CREATE SEQUENCE sys.vaultid AS int;
+
+CREATE TABLE sys.vault (
+vid 			int PRIMARY KEY,-- Internal key
+kind			string,			-- vault kind (CSV, MSEED, FITS,..)
+source			string,			-- remote file name for cURL to access
+target			string,			-- file name of source file in vault
+created			timestamp,		-- timestamp upon entering the cache
+lru				timestamp		-- least recently used
+);
+
+create function vaultLocation()
+returns string
+external name vault.getdirectory;
+
+create function vaultSetLocation(dir string)
+returns string
+external name vault.setdirectory;
+
+create function vaultBasename(fnme string, split string)
+returns string
+external name vault.basename;
+
+create function vaultImport(source string, target string)
+returns timestamp
+external name vault.import;
+
+create function vaultRemove(target string)
+returns timestamp
+external name vault.remove;
+
+create procedure vaultVacuum( t timestamp)
+begin
+update vault
+  set created= remove(target),
+  lru = null
+  where  created < t;
+end;
 @{
 @-
 @+ Implementation
 @h
 #ifndef _VAULT_H
 #define _VAULT_H
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include "clients.h"
 #include "mal.h"
 #include "mal_client.h"
 #include "mal_interpreter.h"
+#include "mtime.h"
 
 #ifdef HAVE_CURL
 #include <curl/curl.h>
@@ -116,10 +214,11 @@ vault.prelude();
 #define _VAULT_DEBUG_
 
 vault_export str VLTprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-vault_export str VLTftpget(int *ret, str *source, str *target);
-vault_export str VLTgetDirectory(str *ret);
-vault_export str VLTrefresh(int *ret, str *nme);
-vault_export str VLTrefreshObject(int *ret, int *id);
+vault_export str VLTimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+vault_export str VLTsetLocation(str *ret, str *src);
+vault_export str VLTgetLocation(str *ret);
+vault_export str VLTremove(timestamp *ret, str *t);
+vault_export str VLTbasename(str *ret, str *fnme, str *splot);
 vault_export  str VLTepilogue(int *ret);
 
 vault_export char vaultpath[BUFSIZ];
@@ -134,10 +233,10 @@ char vaultpath[BUFSIZ];
 	if ( vaultpath[0] == 0){
 		snprintf(vaultpath, PATHLENGTH, "%s%c%s%cvault", GDKgetenv("gdk_dbfarm"), DIR_SEP, GDKgetenv("gdk_dbname"), DIR_SEP);
 		if (mkdir(vaultpath, 0755) < 0 && errno != EEXIST) 
-			return createException(MAL,"vault.getDirectory", "can not access vault directory");
+			return createException(MAL,"vault.getLocation", "can not access vault directory");
 	}
 @-
-The curl sample code has been copied from http://curl.haxx.se/libcurl/c/ftpget.html
+The curl sample code has been copied from http://curl.haxx.se/libcurl/c/import.html
 @c
 #ifdef HAVE_CURL
 struct FtpFile {
@@ -159,8 +258,11 @@ static size_t my_fwrite(void *buffer, size_t size, size_t nmemb, void *stream)
 #endif
 
 str
-VLTftpget(int *ret, str *source, str *target)
+VLTimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	timestamp *ret = (timestamp*) getArgReference(stk,pci,0); 
+	str *source = (str*) getArgReference(stk,pci,1);
+	str *target = (str*) getArgReference(stk,pci,2);
 	str msg = MAL_SUCCEED;
 
 #ifdef HAVE_CURL
@@ -175,9 +277,27 @@ VLTftpget(int *ret, str *source, str *target)
 	//curl_global_init(CURL_GLOBAL_DEFAULT);
 
 	snprintf(path,BUFSIZ,"%s%c%s", vaultpath, DIR_SEP, *target);
+	//mnstr_printf(GDKout,"#vault.import: %s\n",path);
+	if (strcmp(path, *source) == 0) {
+		MTIMEepoch(ret);
+		return MAL_SUCCEED;
+	}
+	/* create the subdir */
+	GDKcreatedir(path);
 	curl = curl_easy_init();
 	if(curl) {
+		/* get a copy */
 		curl_easy_setopt(curl, CURLOPT_URL, *source);
+@-
+Actually, before copying the file it is better to check its
+properties, such as last modified date to see if it needs a refresh.
+Have to find the CURL method to enact this. It may be protocol
+dependent.
+@c
+		if (access(path, R_OK) == 0){
+			/* TODO */
+		}
+
 		/* Define our callback to get called when there's data to be written */ 
 		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, my_fwrite);
 		/* Set a pointer to our struct to pass to the callback */ 
@@ -192,7 +312,7 @@ VLTftpget(int *ret, str *source, str *target)
 		curl_easy_cleanup(curl);
 
 		if(CURLE_OK != res)
-			msg= createException(MAL,"vault.ftpget", "curl told us %d\n", res);
+			msg= createException(MAL,"vault.import", "curl [%d] %s '%s' -> '%s'\n", res, curl_easy_strerror(res), *source,path);
 	}
 
 	if(ftpfile.stream)
@@ -202,9 +322,13 @@ VLTftpget(int *ret, str *source, str *target)
 #else
 	(void) source;
 	(void) target;
-	msg = createException(MAL,"vault.ftpget", "No curl library");
+	msg = createException(MAL,"vault.import", "No curl library");
 #endif
-	*ret= 0;
+	if ( msg)
+		return msg;
+	MTIMEepoch(ret);
+	(void) mb;
+	(void) cntxt;
 	return msg;
 }
 
@@ -227,27 +351,42 @@ VLTprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
+VLTbasename(str *ret, str *fname, str *split)
+{
+	str r;
+	r= strstr(*fname, *split);
+	
+	if ( r ){
+		*ret = GDKstrdup( r);
+		return MAL_SUCCEED;
+	}
+	throw(MAL,"vault.basename","Split of file failed:%s",*fname);
+}
+
+str VLTremove(timestamp *ret, str *t)
+{
+	(void) unlink(*t);
+	*ret = *timestamp_nil;
+	return MAL_SUCCEED;
+}
+
+str
 VLTepilogue(int *ret)
 {
 	(void)ret;
 	return MAL_SUCCEED;
 }
+
 str 
-VLTgetDirectory(str *ret){
+VLTsetLocation(str *ret, str *src){
+	strncpy(vaultpath,*src,PATHLENGTH);
 	*ret= GDKstrdup(vaultpath);
 	return MAL_SUCCEED;
 }
 
 str 
-VLTrefresh(int *ret, str *nme){
-	(void) ret;
-	(void) nme;
-	return MAL_SUCCEED;
-}
-str 
-VLTrefreshObject(int *ret, int *id){
-	(void) ret;
-	(void) id;
+VLTgetLocation(str *ret){
+	*ret= GDKstrdup(vaultpath);
 	return MAL_SUCCEED;
 }
 @}

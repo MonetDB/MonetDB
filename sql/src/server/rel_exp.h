@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2010 MonetDB B.V.
+ * Copyright August 2008-2011 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -25,6 +25,7 @@
 extern sql_exp *exp_compare(sql_allocator *sa, sql_exp *l, sql_exp *r, int cmptype);
 extern sql_exp *exp_compare2(sql_allocator *sa, sql_exp *l, sql_exp *r, sql_exp *h, int cmptype);
 extern sql_exp *exp_or(sql_allocator *sa, list *l, list *r);
+extern sql_exp *exp_in(sql_allocator *sa, sql_exp *l, list *r, int cmptype);
 
 #define exp_fromtype(e)	((list*)e->r)->h->data
 #define exp_totype(e)	((list*)e->r)->h->next->data
@@ -54,6 +55,8 @@ extern sql_exp * exp_atom_clob(sql_allocator *sa, str s);
 extern sql_exp * exp_atom_ptr(sql_allocator *sa, void *s);
 extern sql_exp * exp_atom_ref(sql_allocator *sa, int i, sql_subtype *tpe);
 extern sql_exp * exp_param(sql_allocator *sa, char *name, sql_subtype *tpe, int frame);
+extern sql_exp * exp_values(sql_allocator *sa, list *exps);
+
 extern sql_exp * exp_column(sql_allocator *sa, char *rname, char *name, sql_subtype *t, int card, int has_nils, int intern);
 extern sql_exp * exp_alias(sql_allocator *sa, char *arname, char *acname, char *org_rname, char *org_cname, sql_subtype *t, int card, int has_nils, int intern);
 extern void exp_setname(sql_allocator *sa, sql_exp *e, char *rname, char *name );
@@ -64,6 +67,7 @@ extern void exp_swap( sql_exp *e );
 extern sql_subtype * exp_subtype( sql_exp *e );
 extern char * exp_name( sql_exp *e );
 extern char * exp_relname( sql_exp *e );
+extern char * exp_func_name( sql_exp *e );
 
 extern char *exp_find_rel_name(sql_exp *e);
 

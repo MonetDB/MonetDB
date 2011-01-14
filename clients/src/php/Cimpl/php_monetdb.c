@@ -24,7 +24,7 @@
 /* afterwards the file was changed for MonetDB by MonetDB developers */
 
 /* $Id$ */
-#include <clients_config.h>
+#include <monetdb_config.h>
 
 #define SMART_STR_PREALLOC 512
 

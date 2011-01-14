@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -69,7 +69,7 @@ mal_export void getMemoryClaim(MalStkPtr stk, InstrPtr pci, lng *argclaim, lng *
 mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "mal_interpreter.h"
 #include "mal_debugger.h"   /* for mdbStep() */
 #include "mal_recycle.h"
@@ -97,10 +97,12 @@ static int hottop = 0;
 #define heapinfo(X) if((X) && (X)->base) vol = (X)->free; else vol = 0;
 #define hashinfo(X) if((X) && (X)->mask) vol = ((X)->mask+(X)->lim+1)*sizeof(int) + sizeof(*(X)); else vol = 0;
 
+#define FREE_EXCEPTION(p) { if (p && p != M5OutOfMemory) GDKfree(p); }
+
 @-
 The struct alignment leads to 40% gain in simple instructions when set.
 @c
-INLINE
+inline
 ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k)
 {
 #ifdef STRUCT_ALIGNED
@@ -154,7 +156,7 @@ Moreover, it is not thread safe and it can not correctly handle
 aliases embedded in MAL assignments.
 This means that the footprint is only to be used as indicative.
 @c
-static INLINE void
+static inline void
 updateBigFoot(Client cntxt, int bid, int add)
 {
 	BAT *b;
@@ -871,7 +873,7 @@ q_create( int sz )
 		return NULL;
 	q->size = ((sz<<1)>>1); /* we want a multiple of 2 */
 	q->last = 0;
-	q->data = (void*)GDKmalloc(sizeof(void*)*sz);
+	q->data = (void*)GDKmalloc(sizeof(void*)*q->size);
 	if ( q->data == NULL){
 		GDKfree(q);
 		return NULL;
@@ -899,7 +901,7 @@ q_enqueue(queue *q, void *d)
 	if (q->last == q->size) {
 		/* enlarge buffer */
 		q->size <<= 1;
-		q->data = GDKrealloc(q->data, q->size);
+		q->data = GDKrealloc(q->data, sizeof(void*)*q->size);
 	}
 	q->data[q->last++] = d;
 	MT_unset_lock(q->l, "q_enqueue");
@@ -914,7 +916,7 @@ q_requeue(queue *q, void *d)
 	if (q->last == q->size) {
 		/* enlarge buffer */
 		q->size <<= 1;
-		q->data = GDKrealloc(q->data, q->size);
+		q->data = GDKrealloc(q->data, sizeof(void*)*q->size);
 	}
 	for ( i=q->last; i > 0; i--)
 		q->data[i]= q->data[i-1];
@@ -1143,10 +1145,11 @@ runDFLOWworker(void *t)
 		if ( fs->pc >= 0)
 			printInstruction(GDKstdout, fs->flow->mb, 0, getInstrPtr(fs->flow->mb,fs->pc), LIST_MAL_STMT | LIST_MAPI);
 #endif
-		err = DFLOWstep(task, fs);
+		err = fs->pc >0 ? DFLOWstep(task, fs): createException(MAL,"interpreter","flow step failed");
 		/* restore the instruction and wait in specific cases*/
 		if ( err != MAL_SUCCEED && strstr(err,"DFLOWadmission") != NULL && strstr(err,"failed") != NULL){
-			GDKfree(err);
+			FREE_EXCEPTION(err);
+			fs->pc = ABS(fs->pc);
 			fs->status = DFLOWrunning;
 			q_requeue(task->todo,fs);
 			continue;
@@ -1612,7 +1615,7 @@ str runMALprocess(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int start, int stop
 			ret = createScriptException(mb, mb->stop-1,
 					getExceptionType(getVarName(mb,exceptionVar)),
 					ret, "Exception not caught");
-			GDKfree(oldret);
+			FREE_EXCEPTION(oldret);
 		} else {
 			if (stk->stk[exceptionVar].vtype == TYPE_str) {
 				ret = createScriptException(mb, mb->stop-1, MAL,
@@ -2319,7 +2322,7 @@ str catchKernelException(Client cntxt, str ret){
 if(cntxt->errbuf && cntxt->errbuf[0] ) {
 	str oldret = ret;
 	ret = catchKernelException(cntxt, oldret);
-	if( oldret) GDKfree(oldret);
+	FREE_EXCEPTION(oldret);
 }
 
 if( ret != MAL_SUCCEED ) {
@@ -2343,7 +2346,7 @@ if( ret != MAL_SUCCEED ) {
 	/* Detect any exception received from the implementation. */
 	/* The first identifier is an optional exception name */
 	if( strstr(ret,"!skip-to-end") ){
-		GDKfree(ret);			/* no need to check for M5OutOfMemory */
+		GDKfree(ret);		/* no need to check for M5OutOfMemory */
 		ret= MAL_SUCCEED;
 		stkpc= mb->stop;
 		@2;
@@ -2373,15 +2376,14 @@ all.
 	if (getVarType(mb,exceptionVar) == TYPE_str){
 		v=  &stk->stk[exceptionVar];
 		if ( v->val.sval)
-			GDKfree(v->val.sval);	/* old exception*/
+			FREE_EXCEPTION(v->val.sval);	/* old exception*/
 		v->vtype = TYPE_str;
 		v->val.sval= ret;
 		v->len= (int)strlen(v->val.sval);
 		ret = 0;
 	} else {
 		mnstr_printf(cntxt->fdout,"%s",ret);
-		if (ret != M5OutOfMemory)
-			GDKfree(ret);
+		FREE_EXCEPTION(ret);
 	}
 	/* position yourself at the catch instruction for further decisions */
 	@:skipToCatch(exceptionVar,@2,@3)@

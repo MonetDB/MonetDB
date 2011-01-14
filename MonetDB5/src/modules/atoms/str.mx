@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -251,7 +251,7 @@ str.STRprelude();
 #include "ctype.h"
 
 #ifdef WIN32
-#ifndef LIBATOMS
+#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
 #define str_export extern __declspec(dllimport)
 #else
 #define str_export extern __declspec(dllexport)
@@ -337,7 +337,7 @@ str_export str STRspace(str *ret, int *l);
 
 @{
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "str.h"
 #include <string.h>
 
@@ -1471,7 +1471,7 @@ strEpilogue(void)
 		*(@2)++ = 0x80 | ((@1) & 0x3F);
 	}
 @c
-static INLINE int
+static inline int
 UTF8_strlen(str val)
 {
 	unsigned char *s = (unsigned char *) val;
@@ -1505,7 +1505,7 @@ UTF8_strlen(str val)
 	return pos;
 }
 
-static INLINE int
+static inline int
 UTF8_strpos(str val, str end)
 {
 	unsigned char *s = (unsigned char *) val;
@@ -1544,7 +1544,7 @@ UTF8_strpos(str val, str end)
 	return pos;
 }
 
-static INLINE str
+static inline str
 UTF8_strtail(str val, int pos)
 {
 	unsigned char *s = (unsigned char *) val;

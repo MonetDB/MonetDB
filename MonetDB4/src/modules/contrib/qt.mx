@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -98,7 +98,7 @@ in the head of the resulting table; the tail contains the matching IDs.
 @{
 @* Implementation
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include <gdk.h>
 #include <math.h>
 #ifdef HAVE_UNISTD_H

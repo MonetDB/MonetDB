@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2010 MonetDB B.V.
+ * Copyright August 2008-2011 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -30,9 +30,9 @@
  * primary goals of this tool.
  */
 
-#define TOOLKIT_VERSION   "0.6"
+#define TOOLKIT_VERSION   "0.7"
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include "mal_sabaoth.h"
 #include "utils.h"
 #include "properties.h"
@@ -61,9 +61,21 @@
 #ifdef HAVE_TERMIOS_H
 #include <termios.h> /* TIOCGWINSZ/TIOCSWINSZ */
 #endif
+
 #ifdef HAVE_ALLOCA_H
-#include <alloca.h>
+# include <alloca.h>
+#elif defined __GNUC__
+# define alloca __builtin_alloca
+#elif defined _AIX
+# define alloca __alloca
+#elif defined _MSC_VER
+# include <malloc.h>
+# define alloca _alloca
+#else
+# include <stddef.h>
+void *alloca(size_t);
 #endif
+
 #include <errno.h>
 
 #define SOCKPTR struct sockaddr *
@@ -186,103 +198,6 @@ command_version()
 {
 	printf("MonetDB Database Server Toolkit v%s (%s)\n",
 			TOOLKIT_VERSION, MONETDB_RELEASE);
-}
-
-/**
- * Helper function to run over argv, skip all values that are NULL,
- * perform merocmd for the value and reporting status on the performed
- * command.  Either a message is printed when success, or when premsg is
- * not NULL, premsg is printed before the action, and "done" printed
- * afterwards.
- */
-static void
-simple_argv_cmd(int argc, char *argv[], char *merocmd,
-		char *successmsg, char *premsg)
-{
-	int i;
-	int state = 0;        /* return status */
-	int hadwork = 0;      /* if we actually did something */
-	char *ret;
-	char *out;
-
-	/* do for each listed database */
-	for (i = 1; i < argc; i++) {
-		if (argv[i] == NULL)
-			continue;
-
-		if (premsg != NULL && !monetdb_quiet) {
-			printf("%s '%s'... ", premsg, argv[i]);
-			fflush(stdout);
-		}
-
-		ret = control_send(&out, mero_host, mero_port,
-				argv[i], merocmd, 0, mero_pass);
-
-		if (ret != NULL) {
-			if (premsg != NULL && !monetdb_quiet)
-				printf("FAILED\n");
-			fprintf(stderr, "%s: failed to perform command: %s\n",
-					argv[0], ret);
-			free(ret);
-			exit(2);
-		}
-
-		if (strcmp(out, "OK") == 0) {
-			if (!monetdb_quiet) {
-				if (premsg != NULL) {
-					printf("done\n");
-				} else {
-					printf("%s: %s\n", successmsg, argv[i]);
-				}
-			}
-		} else {
-			if (premsg != NULL && !monetdb_quiet)
-				printf("FAILED\n");
-			fprintf(stderr, "%s: %s\n", argv[0], out);
-			free(out);
-
-			state |= 1;
-		}
-
-		hadwork = 1;
-	}
-
-	if (hadwork == 0) {
-		command_help(2, &argv[-1]);
-		exit(1);
-	}
-}
-
-/**
- * Helper function for commands in their most general form: no option
- * flags and just pushing all (database) arguments over to merovingian
- * for performing merocmd action.
- */
-static void
-simple_command(int argc, char *argv[], char *merocmd, char *successmsg)
-{
-	int i;
-
-	if (argc == 1) {
-		/* print help message for this command */
-		command_help(2, &argv[-1]);
-		exit(1);
-	}
-	
-	/* walk through the arguments and hunt for "options" */
-	for (i = 1; i < argc; i++) {
-		if (strcmp(argv[i], "--") == 0) {
-			argv[i] = NULL;
-			break;
-		}
-		if (argv[i][0] == '-') {
-			fprintf(stderr, "%s: unknown option: %s\n", argv[0], argv[i]);
-			command_help(argc + 1, &argv[-1]);
-			exit(1);
-		}
-	}
-
-	simple_argv_cmd(argc, argv, merocmd, successmsg, NULL);
 }
 
 static int
@@ -542,6 +457,180 @@ printStatus(sabdb *stats, int mode, int twidth)
 	}
 }
 
+static sabdb *
+globMatchDBS(int argc, char *argv[], sabdb **orig, char *cmd)
+{
+	sabdb *w = NULL;
+	sabdb *top = NULL;
+	sabdb *prev;
+	sabdb *stats;
+	int i;
+	char matched;
+
+	for (i = 1; i < argc; i++) {
+		matched = 0;
+		if (argv[i] != NULL) {
+			prev = NULL;
+			for (stats = *orig; stats != NULL; stats = stats->next) {
+				if (glob(argv[i], stats->dbname)) {
+					matched = 1;
+					/* move out of orig into w, such that we can't
+					 * get double matches in the same output list
+					 * (as side effect also avoids a double free
+					 * lateron) */
+					if (w == NULL) {
+						top = w = stats;
+					} else {
+						w = w->next = stats;
+					}
+					if (prev == NULL) {
+						*orig = stats->next;
+						/* little hack to revisit the now top of the
+						 * list */
+						w->next = *orig;
+						stats = w;
+						continue;
+					} else {
+						prev->next = stats->next;
+						stats = prev;
+					}
+				}
+				prev = stats;
+			}
+			if (w != NULL)
+				w->next = NULL;
+			if (matched == 0) {
+				fprintf(stderr, "%s: no such database: %s\n", cmd, argv[i]);
+				argv[i] = NULL;
+			}
+		}
+	}
+	return(top);
+}
+
+/**
+ * Helper function to run over the sabdb list and perform merocmd for
+ * the value and reporting status on the performed command.  Either a
+ * message is printed when success, or when premsg is not NULL, premsg
+ * is printed before the action, and "done" printed afterwards.
+ */
+static void
+simple_argv_cmd(char *cmd, sabdb *dbs, char *merocmd,
+		char *successmsg, char *premsg)
+{
+	int state = 0;        /* return status */
+	int hadwork = 0;      /* if we actually did something */
+	char *ret;
+	char *out;
+
+	/* do for each listed database */
+	for (; dbs != NULL; dbs = dbs->next) {
+		if (premsg != NULL && !monetdb_quiet) {
+			printf("%s '%s'... ", premsg, dbs->dbname);
+			fflush(stdout);
+		}
+
+		ret = control_send(&out, mero_host, mero_port,
+				dbs->dbname, merocmd, 0, mero_pass);
+
+		if (ret != NULL) {
+			if (premsg != NULL && !monetdb_quiet)
+				printf("FAILED\n");
+			fprintf(stderr, "%s: failed to perform command: %s\n",
+					cmd, ret);
+			free(ret);
+			exit(2);
+		}
+
+		if (strcmp(out, "OK") == 0) {
+			if (!monetdb_quiet) {
+				if (premsg != NULL) {
+					printf("done\n");
+				} else {
+					printf("%s: %s\n", successmsg, dbs->dbname);
+				}
+			}
+		} else {
+			if (premsg != NULL && !monetdb_quiet)
+				printf("FAILED\n");
+			fprintf(stderr, "%s: %s\n", cmd, out);
+			free(out);
+
+			state |= 1;
+		}
+
+		hadwork = 1;
+	}
+
+	if (hadwork == 0) {
+		char *argv[2] = { "monetdb", cmd };
+		command_help(2, argv);
+		exit(1);
+	}
+}
+
+/**
+ * Helper function for commands in their most general form: no option
+ * flags and just pushing all (database) arguments over to merovingian
+ * for performing merocmd action.
+ */
+static void
+simple_command(int argc, char *argv[], char *merocmd, char *successmsg, char glob)
+{
+	int i;
+	sabdb *orig = NULL;
+	sabdb *stats = NULL;
+	err e;
+
+	if (argc == 1) {
+		/* print help message for this command */
+		command_help(2, &argv[-1]);
+		exit(1);
+	}
+	
+	/* walk through the arguments and hunt for "options" */
+	for (i = 1; i < argc; i++) {
+		if (strcmp(argv[i], "--") == 0) {
+			argv[i] = NULL;
+			break;
+		}
+		if (argv[i][0] == '-') {
+			fprintf(stderr, "%s: unknown option: %s\n", argv[0], argv[i]);
+			command_help(argc + 1, &argv[-1]);
+			exit(1);
+		}
+	}
+
+	if (glob) {
+		if ((e = MEROgetStatus(&orig, NULL)) != NULL) {
+			fprintf(stderr, "%s: internal error: %s\n", argv[0], e);
+			free(e);
+			exit(2);
+		}
+		stats = globMatchDBS(argc, argv, &orig, argv[0]);
+		SABAOTHfreeStatus(&orig);
+		orig = stats;
+
+		if (orig == NULL)
+			exit(1);
+	} else {
+		for (i = 1; i < argc; i++) {
+			if (argv[i] != NULL) {
+				/* maintain input order */
+				if (orig == NULL) {
+					stats = orig = GDKzalloc(sizeof(sabdb));
+				} else {
+					stats = stats->next = GDKzalloc(sizeof(sabdb));
+				}
+				stats->dbname = GDKstrdup(argv[i]);
+			}
+		}
+	}
+
+	simple_argv_cmd(argv[0], orig, merocmd, successmsg, NULL);
+	SABAOTHfreeStatus(&orig);
+}
+
 static void
 command_status(int argc, char *argv[])
 {
@@ -556,7 +645,6 @@ command_status(int argc, char *argv[])
 	int t;
 	int dbwidth = 0;
 	int twidth = TERMWIDTH;
-	sabdb *w = NULL;
 
 	if (argc == 0) {
 		exit(2);
@@ -622,7 +710,7 @@ command_status(int argc, char *argv[])
 	}
 
 	if ((e = MEROgetStatus(&orig, NULL)) != NO_ERR) {
-		fprintf(stderr, "status: %s\n", e);
+		fprintf(stderr, "status: internal error: %s\n", e);
 		free(e);
 		exit(2);
 	}
@@ -630,48 +718,9 @@ command_status(int argc, char *argv[])
 	/* look at the arguments and evaluate them based on a glob (hence we
 	 * listed all databases before) */
 	if (doall != 1) {
-		sabdb *top = w;
-		sabdb *prev;
-		for (i = 1; i < argc; i++) {
-			t = 0;
-			if (argv[i] != NULL) {
-				prev = NULL;
-				for (stats = orig; stats != NULL; stats = stats->next) {
-					if (glob(argv[i], stats->dbname)) {
-						t = 1;
-						/* move out of orig into w, such that we can't
-						 * get double matches in the same output list
-						 * (as side effect also avoids a double free
-						 * lateron) */
-						if (w == NULL) {
-							top = w = stats;
-						} else {
-							w = w->next = stats;
-						}
-						if (prev == NULL) {
-							orig = stats->next;
-							/* little hack to revisit the now top of the
-							 * list */
-							w->next = orig;
-							stats = w;
-							continue;
-						} else {
-							prev->next = stats->next;
-							stats = prev;
-						}
-					}
-					prev = stats;
-				}
-				if (w != NULL)
-					w->next = NULL;
-				if (t == 0) {
-					fprintf(stderr, "status: no such database: %s\n", argv[i]);
-					argv[i] = NULL;
-				}
-			}
-		}
+		stats = globMatchDBS(argc, argv, &orig, "status");
 		SABAOTHfreeStatus(&orig);
-		orig = top;
+		orig = stats;
 	}
 	/* calculate width, BUG: SABdbState selection is only done at
 	 * printing */
@@ -834,6 +883,7 @@ command_startstop(int argc, char *argv[], startstop mode)
 	err e;
 	sabdb *orig = NULL;
 	sabdb *stats;
+	sabdb *prev;
 	char *type = NULL;
 	char *action = NULL;
 	char *p;
@@ -889,44 +939,55 @@ command_startstop(int argc, char *argv[], startstop mode)
 		}
 	}
 
-	if (doall == 1) {
-		/* Don't look at the arguments, because we are instructed to
-		 * start all known databases.  In this mode we should omit
-		 * starting already started databases, so we need to check
-		 * first. */
-		if ((e = MEROgetStatus(&orig, NULL)) != NULL) {
-			fprintf(stderr, "%s: internal error: %s\n", type, e);
-			free(e);
-			exit(2);
-		}
+	if ((e = MEROgetStatus(&orig, NULL)) != NULL) {
+		fprintf(stderr, "%s: internal error: %s\n", type, e);
+		free(e);
+		exit(2);
+	}
+	if (doall != 1) {
+		stats = globMatchDBS(argc, argv, &orig, type);
+		SABAOTHfreeStatus(&orig);
+		orig = stats;
+	}
 
-		argv = alloca(sizeof(char *) * 64);
-		i = 0;
-		argv[i++] = type;
+	argv = alloca(sizeof(char *) * 64);
+	i = 0;
+	argv[i++] = type;
 
-		stats = orig;
-		while (stats != NULL) {
-			if (((mode == STOP || mode == KILL) && stats->state == SABdbRunning)
-					|| (mode == START && stats->state != SABdbRunning))
-			{
-				if (i > 64) {
-					printf("WARNING: too many databases to fit, "
-							"please report a bug\n");
-					break;
-				}
-				argv[i++] = stats->dbname;
+	stats = orig;
+	prev = NULL;
+	while (stats != NULL) {
+		/* When -a was given, we're supposed to start all known
+		 * databases.  In this mode we should omit starting already
+		 * started databases, so we need to check first. */
+
+		if (doall != 1 && (
+				((mode == STOP || mode == KILL) && stats->state != SABdbRunning)
+				|| (mode == START && stats->state == SABdbRunning)))
+		{
+			/* needs not to be started/stopped, remove from list */
+			if (prev == NULL) {
+				orig = stats->next;
+			} else {
+				prev->next = stats->next;
 			}
-			stats = stats->next;
+			stats->next = NULL;
+			SABAOTHfreeStatus(&stats);
+			if (prev == NULL) {
+				stats = orig;
+				continue;
+			}
+			stats = prev;
 		}
-		argc = i;
+		prev = stats;
+		stats = stats->next;
 	}
 	
-	/* -a can return nothing, avoid help message in that case */
-	if (argc > 1)
-		simple_argv_cmd(argc, argv, type, NULL, action);
 
-	if (orig != NULL)
+	if (orig != NULL) {
+		simple_argv_cmd(argv[0], orig, type, NULL, action);
 		SABAOTHfreeStatus(&orig);
+	}
 
 	return;
 }
@@ -946,6 +1007,9 @@ command_set(int argc, char *argv[], meroset type)
 	confkeyval *props = getDefaultProps();
 	char *res;
 	char *out;
+	sabdb *orig = NULL;
+	sabdb *stats = NULL;
+	err e;
 
 	if (argc >= 1 && argc <= 2) {
 		/* print help message for this command */
@@ -1002,6 +1066,15 @@ command_set(int argc, char *argv[], meroset type)
 		exit(1);
 	}
 
+	if ((e = MEROgetStatus(&orig, NULL)) != NULL) {
+		fprintf(stderr, "%s: internal error: %s\n", argv[0], e);
+		free(e);
+		exit(2);
+	}
+	stats = globMatchDBS(argc, argv, &orig, argv[0]);
+	SABAOTHfreeStatus(&orig);
+	orig = stats;
+
 	/* handle rename separately due to single argument constraint */
 	if (strcmp(property, "name") == 0) {
 		if (type == INHERIT) {
@@ -1009,14 +1082,14 @@ command_set(int argc, char *argv[], meroset type)
 			exit(1);
 		}
 
-		if (argc > 3) {
+		if (orig->next != NULL) {
 			fprintf(stderr, "%s: cannot rename multiple databases to "
 					"the same name\n", argv[0]);
 			exit(1);
 		}
 
 		out = control_send(&res, mero_host, mero_port,
-				argv[2], p, 0, mero_pass);
+				orig->dbname, p, 0, mero_pass);
 		if (out != NULL || strcmp(res, "OK") != 0) {
 			res = out == NULL ? res : out;
 			fprintf(stderr, "%s: %s\n", argv[0], res);
@@ -1024,20 +1097,18 @@ command_set(int argc, char *argv[], meroset type)
 		}
 		free(res);
 
+		SABAOTHfreeStatus(&orig);
 		GDKfree(props);
 		exit(state);
 	}
 
-	for (i = 1; i < argc; i++) {
-		if (argv[i] == NULL)
-			continue;
-
+	for (stats = orig; stats != NULL; stats = stats->next) {
 		if (type == INHERIT) {
 			strncat(property, "=", sizeof(property));
 			p = property;
 		}
 		out = control_send(&res, mero_host, mero_port,
-				argv[i], p, 0, mero_pass);
+				stats->dbname, p, 0, mero_pass);
 		if (out != NULL || strcmp(res, "OK") != 0) {
 			res = out == NULL ? res : out;
 			fprintf(stderr, "%s: %s\n", argv[0], res);
@@ -1046,6 +1117,7 @@ command_set(int argc, char *argv[], meroset type)
 		free(res);
 	}
 
+	SABAOTHfreeStatus(&orig);
 	GDKfree(props);
 	exit(state);
 }
@@ -1137,38 +1209,24 @@ command_get(int argc, char *argv[])
 	readPropsBuf(defprops, buf + 3);
 	free(buf);
 
-	if (doall == 1) {
-		/* don't even look at the arguments, because we are instructed
-		 * to list all known databases */
-		if ((e = MEROgetStatus(&orig, NULL)) != NULL) {
-			fprintf(stderr, "get: internal error: %s\n", e);
-			free(e);
-			exit(2);
-		}
-	} else {
-		sabdb *w = NULL;
-		orig = NULL;
-		for (i = 1; i < argc; i++) {
-			if (argv[i] != NULL) {
-				if ((e = MEROgetStatus(&stats, argv[i])) != NULL) {
-					fprintf(stderr, "get: internal error: %s\n", e);
-					free(e);
-					exit(2);
-				}
+	if ((e = MEROgetStatus(&orig, NULL)) != NULL) {
+		fprintf(stderr, "get: internal error: %s\n", e);
+		free(e);
+		exit(2);
+	}
 
-				if (stats == NULL) {
-					fprintf(stderr, "get: no such database: %s\n", argv[i]);
-					argv[i] = NULL;
-				} else {
-					if (orig == NULL) {
-						orig = stats;
-						w = stats;
-					} else {
-						w = w->next = stats;
-					}
-				}
-			}
-		}
+	/* look at the arguments and evaluate them based on a glob (hence we
+	 * listed all databases before) */
+	if (doall != 1) {
+		stats = globMatchDBS(argc, argv, &orig, "get");
+		SABAOTHfreeStatus(&orig);
+		orig = stats;
+	}
+
+	/* suppress header when there are no results */
+	if (orig == NULL) {
+		GDKfree(props);
+		return;
 	}
 
 	/* name = 15 */
@@ -1224,15 +1282,14 @@ command_get(int argc, char *argv[])
 		}
 	}
 
-	if (orig != NULL)
-		SABAOTHfreeStatus(&orig);
+	SABAOTHfreeStatus(&orig);
 	GDKfree(props);
 }
 
 static void
 command_create(int argc, char *argv[])
 {
-	simple_command(argc, argv, "create", "created database in maintenance mode");
+	simple_command(argc, argv, "create", "created database in maintenance mode", 0);
 }
 
 static void
@@ -1240,6 +1297,9 @@ command_destroy(int argc, char *argv[])
 {
 	int i;
 	int force = 0;    /* ask for confirmation */
+	err e;
+	sabdb *orig = NULL;
+	sabdb *stats = NULL;
 
 	if (argc == 1) {
 		/* print help message for this command */
@@ -1265,36 +1325,49 @@ command_destroy(int argc, char *argv[])
 		}
 	}
 
+	if ((e = MEROgetStatus(&orig, NULL)) != NULL) {
+		fprintf(stderr, "destroy: internal error: %s\n", e);
+		free(e);
+		exit(2);
+	}
+	stats = globMatchDBS(argc, argv, &orig, "destroy");
+	SABAOTHfreeStatus(&orig);
+	orig = stats;
+
+	if (orig == NULL)
+		exit(1);
+
 	if (force == 0) {
 		char answ;
-		printf("you are about to remove database%s ", argc > 2 ? "s" : "");
-		for (i = 1; i < argc; i++)
-			printf("%s'%s'", i > 1 ? ", " : "", argv[i]);
+		printf("you are about to remove database%s ", orig->next != NULL ? "s" : "");
+		for (stats = orig; stats != NULL; stats = stats->next)
+			printf("%s'%s'", stats != orig ? ", " : "", stats->dbname);
 		printf("\nALL data in %s will be lost, are you sure? [y/N] ",
-				argc > 2 ? "these databases" : "this database");
+				orig->next != NULL ? "these databases" : "this database");
 		if (scanf("%c", &answ) >= 1 &&
 				(answ == 'y' || answ == 'Y'))
 		{
 			/* do it! */
 		} else {
 			printf("aborted\n");
-			exit(0);
+			exit(1);
 		}
 	}
 
-	simple_argv_cmd(argc, argv, "destroy", "destroyed database", NULL);
+	simple_argv_cmd(argv[0], orig, "destroy", "destroyed database", NULL);
+	SABAOTHfreeStatus(&orig);
 }
 
 static void
 command_lock(int argc, char *argv[])
 {
-	simple_command(argc, argv, "lock", "put database under maintenance");
+	simple_command(argc, argv, "lock", "put database under maintenance", 1);
 }
 
 static void
 command_release(int argc, char *argv[])
 {
-	simple_command(argc, argv, "release", "taken database out of maintenance mode");
+	simple_command(argc, argv, "release", "taken database out of maintenance mode", 1);
 }
 
 
@@ -1307,7 +1380,7 @@ main(int argc, char *argv[])
 	int i;
 	int fd;
 	confkeyval ckv[] = {
-		{"prefix",             GDKstrdup(MONETDB5_PREFIX), STR},
+		{"prefix",             GDKstrdup(PREFIX),          STR},
 		{"gdk_dbfarm",         NULL,                       STR},
 		{"gdk_nr_threads",     NULL,                       INT},
 		{"mero_doproxy",       GDKstrdup("yes"),           BOOL},

@@ -20,11 +20,12 @@
 # University of Konstanz, the Technische Universitaet Muenchen, and the
 # Universitaet Tuebingen are Copyright (C) 2000-2005 University of
 # Konstanz, (C) 2005-2008 Technische Universitaet Muenchen, and (C)
-# 2008-2010 Eberhard Karls Universitaet Tuebingen, respectively.  All
+# 2008-2011 Eberhard Karls Universitaet Tuebingen, respectively.  All
 # Rights Reserved.
 
-pkg=monetdb-xquery
-builddir=@QPATHFINDER_BUILD@
+pkg=pathfinder
+buildbase=@QBUILD@
+builddir="${buildbase}/pathfinder"
 # make sure srcdir contains absolute path name
 srcdir=`cd '@srcdir@'; pwd`
 
@@ -38,9 +39,8 @@ do
     esac
 done
 
-# enhance PATH to find ${pkg}-config
-PATH="${builddir}/conf:$PATH"
-export PATH
+PYTHONPATH="${buildbase}/testing/src:${srcdir}/../testing/src:${PYTHONPATH}"
+export PYTHONPATH
 
 # execute Mapprove.py in the source directory
 cd "$srcdir"
@@ -48,4 +48,4 @@ cd "$srcdir"
 # execute the script.
 # if no arguments, do a recursive approve (Mapprove.py -r), else pass
 # on the arguments
-exec Mapprove.py -$V --package=${pkg} --TSTTRGBASE="${builddir}" "${@--r}"
+exec python "${buildbase}/testing/src/Mapprove.py" -$V --package=${pkg} --TSTTRGBASE="${builddir}" "${@--r}"

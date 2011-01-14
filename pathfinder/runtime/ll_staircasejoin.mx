@@ -22,7 +22,7 @@ Karls Universitaet Tuebingen, Germany.  Portions created by the
 University of Konstanz, the Technische Universitaet Muenchen, and the
 Universitaet Tuebingen are Copyright (C) 2000-2005 University of
 Konstanz, (C) 2005-2008 Technische Universitaet Muenchen, and (C)
-2008-2010 Eberhard Karls Universitaet Tuebingen, respectively.  All
+2008-2011 Eberhard Karls Universitaet Tuebingen, respectively.  All
 Rights Reserved.
 @
 @' $Id$
@@ -39,7 +39,7 @@ Rights Reserved.
 *
 */
 
-#include "pf_config.h"
+#include "monetdb_config.h"
 #include <gdk.h>
 #include "shredder.h" /* for XML_DEPTH_MAX */
 
@@ -372,8 +372,9 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *pre_size,
 @
 
 @= ll_return
-{   if (del) BBPreclaim(del);
-    if (res && (@1 == GDK_FAIL))
+{   int rtrn = @1;
+    if (del) BBPreclaim(del);
+    if (res && (rtrn == GDK_FAIL))
         BBP_unfix_reclaim(res);
     return @1; }
 @c

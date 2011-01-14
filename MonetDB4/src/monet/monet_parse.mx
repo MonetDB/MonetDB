@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -430,7 +430,7 @@ Ah. and don't confuse the parser module-stack with the execution module-stack (i
 That one is used to obtain the module-id of the currently *executing* (not parsing) module
 initialization script.
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include "monet_parse.h"
 
 Client ll_client = 0;
@@ -725,7 +725,7 @@ parses the grammar, executing the inlined C statements along the way.
 
 
 %{
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 
 #ifndef YYSTYPE
 #define YYSTYPE	YYSTREE

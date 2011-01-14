@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -108,7 +108,7 @@ It will be prepended to the symbol list as it is more restrictive.
 This effectively overloads the MAL procedure.
 
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "mal_resolve.h"
 #include "mal_namespace.h"
 
@@ -671,7 +671,7 @@ In those cases, the detailed analysis is performed upon an actual call.
 		if( ! isaSignature(p) && !getInstrPtr(mb,0)->polymorphic )  {
 			mb->errors++;
 			if( !silent) {
-				char errsig[2 * BUFSIZ];
+				char errsig[2 * BUFSIZ]="";
 
 				instructionCall(mb,p,errsig,errsig, 2 * BUFSIZ - 20 - 2 * strlen(getModuleId(p)) - strlen(getFunctionId(p)) -strlen(errsig));
 				showScriptException(mb,getPC(mb,p),TYPE,

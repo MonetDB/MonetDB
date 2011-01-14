@@ -64,9 +64,10 @@ function user.main():void;
     x := calc.isnil(a);
     io.print(x);
     io.print("integers");
-    i := calc.int("nil");
-    x := calc.isnil(i);
-    io.print(x);
+# interference with sql overloading 
+#    i := calc.int("nil"); 
+#    x := calc.isnil(i); 
+#    io.print(x); 
     y := calc.isnil(0);
     io.print(y);
     io.print("floats");
@@ -89,7 +90,6 @@ end main;
 [ false ]
 [ true ]
 [ "integers" ]
-[ true ]
 [ false ]
 [ "floats" ]
 [ true ]

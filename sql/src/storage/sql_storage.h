@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2010 MonetDB B.V.
+ * Copyright August 2008-2011 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -290,6 +290,7 @@ extern int
  store_init(int debug, store_type store, char *logdir, char *dbname, backend_stack stk);
 extern void store_exit(void);
 
+extern void store_apply_deltas(void);
 extern void store_manager(void);
 extern void minmax_manager(void);
 

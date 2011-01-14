@@ -1,6 +1,6 @@
 char rcsid_table[] = "$Id$";
 
-#include "burg_config.h"
+#include "monetdb_config.h"
 #include "b.h"
 #include <string.h>
 #include <stdio.h>

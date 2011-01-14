@@ -32,7 +32,7 @@
  * Flex script to tokenize NEXI queries and to build logical and physical query plan
  */
 
-#include <pf_config.h>
+#include <monetdb_config.h>
 
 #define YY_NO_INPUT
 

@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -241,7 +241,7 @@ typedef struct grp_t {
 	bat histo;
 } grp;
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include "algebra.h"
 #include "xtables.h"
 #include "xtables.proto.h"
@@ -1076,7 +1076,7 @@ CTsubhisto(BAT **ret, BAT *sel, BAT *grp, BAT *dom)
 @c
 #define DEFAULT_SIZE 10000
 
-static INLINE BUN
+static inline BUN
 sort_flush(var_t *off, oid *o, BUN size, int tpe, char *base, oid *hdst, oid *tdst, oid *idp, int reverse)
 {
 	int (*cmp) (ptr, ptr) = BATatoms[tpe].atomCmp;

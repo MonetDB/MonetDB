@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -316,8 +316,6 @@ An error at this stage normally lead to an abort.
 @h
 #ifndef _GDK_H_
 #define _GDK_H_
-
-#include <monet_utils.h>
 
 /* standard includes upon which all configure tests depend */
 #include <stdio.h>
@@ -1080,13 +1078,13 @@ they isolate you from the different ways heaps can be accessed.
 gdk_export int HEAPalloc(Heap *h, size_t nitems, size_t itemsize);
 gdk_export int HEAPfree(Heap *h);
 gdk_export int HEAPextend(Heap *h, size_t size);
-gdk_export int HEAPload(Heap *h, str nme, str ext, int trunc);
-gdk_export int HEAPsave(Heap *h, str nme, str ext);
+gdk_export int HEAPload(Heap *h, const char *nme, const char *ext, int trunc);
+gdk_export int HEAPsave(Heap *h, const char *nme, const char *ext);
 gdk_export int HEAPshare(Heap *dst, Heap *src, int copy_on_write);
 gdk_export int HEAPcopy(Heap *dst, Heap *src);
 gdk_export int HEAPwarm(Heap *h);
 gdk_export size_t HEAPsubcopy(Heap *dst, Heap *src, size_t size, size_t offset);
-gdk_export int HEAPdelete(Heap *h, str o, str ext);
+gdk_export int HEAPdelete(Heap *h, const char *o, const char *ext);
 gdk_export size_t HEAPvmsize(Heap *h);
 gdk_export size_t HEAPmemsize(Heap *h);
 
@@ -1301,7 +1299,9 @@ in advance that the head-atom resp. tail-atom of a BAT is variable sized.
 			if ((b)->H->width < SIZEOF_VAR_T &&		\
 			    ((b)->H->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->H->width))) { \
 				/* doesn't fit in current heap, upgrade it */ \
+				BATaccessBegin(b, USE_HEAD, MMAP_SEQUENTIAL); \
 				GDKupgradevarheap((b)->H, _d, (copyall)); \
+				BATaccessEnd(b, USE_HEAD, MMAP_SEQUENTIAL); \
 			}						\
 			_ptr = (p);					\
 			switch ((b)->H->width) {			\
@@ -1330,7 +1330,9 @@ in advance that the head-atom resp. tail-atom of a BAT is variable sized.
 			if ((b)->T->width < SIZEOF_VAR_T &&		\
 			    ((b)->T->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->T->width))) { \
 				/* doesn't fit in current heap, upgrade it */ \
+				BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL); \
 				GDKupgradevarheap((b)->T, _d, (copyall)); \
+				BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL); \
 			}						\
 			_ptr = (p);					\
 			switch ((b)->T->width) {			\
@@ -1464,7 +1466,7 @@ in advance that the head-atom resp. tail-atom of a BAT is variable sized.
 
 #define bunfastins(b, h, t)						\
 	do {								\
-		REGISTER BUN _p = BUNlast(b);				\
+		register BUN _p = BUNlast(b);				\
 		if (_p == BUN_MAX || BATcount(b) == BUN_MAX) {		\
 			GDKerror("bunfastins: bat too large\n");	\
 			goto bunins_failed;				\
@@ -1601,7 +1603,7 @@ typedef var_t stridx_t; /* TODO: should also be unsigned short, but kept at var_
 #define BUNhead(bi,p)	((bi).b->hvarsized?BUNhvar(bi,p):BUNhloc(bi,p))
 #define BUNtail(bi,p)	((bi).b->tvarsized?BUNtvar(bi,p):BUNtloc(bi,p))
 
-static INLINE BATiter
+static inline BATiter
 bat_iterator(BAT *b) 
 {
 	BATiter bi;
@@ -1615,7 +1617,7 @@ bat_iterator(BAT *b)
 #ifdef NDEBUG
 #define BUNlast(b)	((b)->batFirst + (b)->batCount)
 #else
-static INLINE BUN
+static inline BUN
 BUNlast(BAT *b)
 {
 	BUN last;
@@ -1704,7 +1706,7 @@ was in there.
 @{
 @h
 */
-gdk_export str BATrename(BAT *b, str nme);
+gdk_export str BATrename(BAT *b, const char *nme);
 #ifndef BATcount
 gdk_export BUN BATcount(BAT *b);
 #endif
@@ -1717,9 +1719,9 @@ gdk_export BUN BATgrows(BAT *b);
 gdk_export BAT *BATkey(BAT *b, int onoff);
 gdk_export BAT *BATset(BAT *b, int onoff);
 gdk_export BAT *BATmode(BAT *b, int onoff);
-gdk_export BAT *BATroles(BAT *b, str hnme, str tnme);
-gdk_export BAT *BATcol_name(BAT *b, str tnme);
-gdk_export int BATname(BAT *b, str nme);
+gdk_export BAT *BATroles(BAT *b, const char *hnme, const char *tnme);
+gdk_export BAT *BATcol_name(BAT *b, const char *tnme);
+gdk_export int BATname(BAT *b, const char *nme);
 gdk_export BAT *BATseqbase(BAT *b, oid o);
 gdk_export BAT *BATsetaccess(BAT *b, int mode);
 gdk_export int BATgetaccess(BAT *b);
@@ -1857,7 +1859,7 @@ gdk_export int GDK_mem_pagebits;	/* page size for non-linear mmaps */
 #define USE_THASH	8	/* hash index */
 #define USE_ALL	(USE_HEAD|USE_TAIL|USE_HHASH|USE_THASH)
 
-gdk_export BAT *BATload(str nme);
+gdk_export BAT *BATload(const char *nme);
 gdk_export BAT *BATload_intern(bat bid, int lock);
 #define BATaccessBegin(b,what,advice) BATaccess(b,what,advice,1)
 #define BATaccessEnd(b,what,advice) BATaccess(b,what,advice,-1)
@@ -1869,16 +1871,16 @@ gdk_export int BATdelete(BAT *b);
 gdk_export size_t BATvmsize(BAT *b, int dirty);
 gdk_export size_t BATmemsize(BAT *b, int dirty);
 
-gdk_export int GDKfdlocate(str nme, str mode, str ext);
-gdk_export FILE *GDKfilelocate(str nme, str mode, str ext);
-gdk_export void GDKfilepath(str path, str nme, str mode, str ext);
-gdk_export int GDKcreatedir(str nme);
-gdk_export int GDKremovedir(str nme);
+gdk_export int GDKfdlocate(const char *nme, const char *mode, const char *ext);
+gdk_export FILE *GDKfilelocate(const char *nme, const char *mode, const char *ext);
+gdk_export void GDKfilepath(str path, const char *nme, const char *mode, const char *ext);
+gdk_export int GDKcreatedir(const char *nme);
+gdk_export int GDKremovedir(const char *nme);
 
-gdk_export char *GDKload(str nme, str ext, size_t size, size_t chunk, int mode);
-gdk_export int GDKsave(str nme, str ext, void *buf, size_t size, int mode);
-gdk_export int GDKunlink(str dir, str nme, str extension);
-gdk_export int GDKmove(str dir1, str nme1, str ext1, str dir2, str nme2, str ext2);
+gdk_export char *GDKload(const char *nme, const char *ext, size_t size, size_t chunk, int mode);
+gdk_export int GDKsave(const char *nme, const char *ext, void *buf, size_t size, int mode);
+gdk_export int GDKunlink(const char *dir, const char *nme, const char *extension);
+gdk_export int GDKmove(const char *dir1, const char *nme1, const char *ext1, const char *dir2, const char *nme2, const char *ext2);
 /*
 @
 @}
@@ -2135,12 +2137,12 @@ gdk_export BBPrec *BBP;
 #define BBPRENAME_ILLEGAL	(-2)
 #define BBPRENAME_LONG		(-3)
 
-gdk_export void BBPlock(str s);
+gdk_export void BBPlock(const char *s);
 
 gdk_export void BBPhot(bat b);
 gdk_export void BBPcold(bat b);
 gdk_export void BBPtrim(size_t memdelta, size_t vmdelta);
-gdk_export void BBPunlock(str s);
+gdk_export void BBPunlock(const char *s);
 
 gdk_export str BBPlogical(bat b, str buf);
 gdk_export str BBPphysical(bat b, str buf);
@@ -2717,6 +2719,15 @@ gdk_export MT_Lock GDKtmLock;
 #define FORCEMITOMASK	(1<<29)
 #define FORCEMITODEBUG	if (GDKdebug & FORCEMITOMASK)
 
+#define short_int_SWAP(s) ((short)(((0x00ff&(s))<<8) | ((0xff00&(s))>>8)))
+
+#define normal_int_SWAP(i) (((0x000000ff&(i))<<24) | ((0x0000ff00&(i))<<8) | \
+	               ((0x00ff0000&(i))>>8)  | ((0xff000000&(i))>>24))
+
+#define long_long_SWAP(l) \
+		((((lng)normal_int_SWAP(l))<<32) |\
+		 (0xffffffff&normal_int_SWAP(l>>32)))
+
 gdk_export int GDKnrofthreads;
 gdk_export int GDKembedded;
 gdk_export int GDKprotected;
@@ -2774,7 +2785,7 @@ gdk_export Thread THRget(int tid);
 gdk_export Thread THRnew(MT_Id pid, str name);
 gdk_export void THRdel(Thread t);
 gdk_export int THRinit(void);
-gdk_export int THRexit(str nme);
+gdk_export int THRexit(const char *nme);
 gdk_export int THRcnt(void);
 gdk_export void THRsetdata(int, ptr);
 gdk_export void *THRgetdata(int);
@@ -2800,11 +2811,11 @@ gdk_export void *THRdata[16];
 extern "C" {
 #endif
 
-static INLINE bat
-BBPcheck(REGISTER bat x, REGISTER const char *y)
+static inline bat
+BBPcheck(register bat x, register const char *y)
 {
 	if (x && x != bat_nil) {
-		REGISTER bat z = ABS(x);
+		register bat z = ABS(x);
 
 		if (z >= BBPsize || BBP[z].nme[0] == NULL) {
 			CHECKDEBUG THRprintf(GDKout,"#%s: range error %d\n", y, (int) x);
@@ -2815,10 +2826,10 @@ BBPcheck(REGISTER bat x, REGISTER const char *y)
 	return 0;
 }
 
-static INLINE BAT *
-BATdescriptor(REGISTER bat i)
+static inline BAT *
+BATdescriptor(register bat i)
 {
-	REGISTER BAT *b = NULL;
+	register BAT *b = NULL;
 
 	if (BBPcheck(i, "BATdescriptor")) {
 		BBPfix(i);
@@ -2829,7 +2840,7 @@ BATdescriptor(REGISTER bat i)
 	return b;
 }
 
-static INLINE char *
+static inline char *
 Hpos(BATiter *bi, BUN p)
 {
 	bi->hvid = bi->b->hseqbase;
@@ -2838,7 +2849,7 @@ Hpos(BATiter *bi, BUN p)
 	return (char*)&bi->hvid;
 }
 
-static INLINE char *
+static inline char *
 Tpos(BATiter *bi, BUN p)
 {
 	bi->tvid = bi->b->tseqbase;
@@ -2847,8 +2858,8 @@ Tpos(BATiter *bi, BUN p)
 	return (char*)&bi->tvid;
 }
 
-static INLINE BAT *
-BATmirror(REGISTER BAT *b)
+static inline BAT *
+BATmirror(register BAT *b)
 {
 	if (b == NULL)
 		return NULL;

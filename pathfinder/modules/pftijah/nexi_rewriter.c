@@ -27,7 +27,7 @@
  * Procedures for rewriting internal query representation
  */
 
-#include <pf_config.h>
+#include <monetdb_config.h>
 
 #include <monet.h>
 #include <gdk.h>

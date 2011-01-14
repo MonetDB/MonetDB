@@ -8,16 +8,17 @@ goto end
 
 setlocal
 
-set pkg=monetdb-clients
-set builddir=@XCLIENTS_BUILD@
-set srcdir=@XCLIENTS_SOURCE@
+set pkg=clients
+set buildbase=@XBUILD@
+set builddir=%buildbase%\clients
+set srcdir=@XSOURCE@\clients
 
-set PATH=%builddir%\conf;%PATH%
+set PYTHONPATH=%buildbase%\testing\src;%srcdir%\..\testing\src;%PYTHONPATH%
 
 REM execute Mapprove.py in the source directory
 pushd %srcdir%
 
-call Mapprove.py --package=%pkg% "--TSTTRGBASE=%builddir%" %*
+call "%buildbase%\testing\src\Mapprove.py" --package=%pkg% "--TSTTRGBASE=%builddir%" %*
 
 popd
 endlocal

@@ -17,10 +17,10 @@
 *
 * The Initial Developer of the Original Code is the "University of Twente".
 * Portions created by the "University of Twente" are
-* Copyright (C) 2006-2010 "University of Twente".
+* Copyright (C) 2006-2011 "University of Twente".
 *
 * Portions created by the "CWI" are
-* Copyright (C) 2008-2010 "CWI".
+* Copyright (C) 2008-2011 "CWI".
 *
 * All Rights Reserved.
 * 
@@ -33,7 +33,7 @@
 
 /* #define YYDEBUG 1 */
 
-#include <pf_config.h>
+#include <monetdb_config.h>
 
 #include <stdlib.h>
 

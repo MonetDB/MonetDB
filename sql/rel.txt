@@ -6,7 +6,8 @@ BASETABLE
 
 TABLE 	(card MULTI)
 	-> exps		is list of column expressions (also used for aliases)
-	-> l		table function expression
+	-> l 		optional input relation
+	-> r		table function expression
 
 /* Wrapping relational operator, is a big complex top level only 
    operator, which only does DDL kind of statements
@@ -59,6 +60,7 @@ TOPN	(card ATOM, AGGR, or MULTI (same card as lower relation))
 INSERT|DELETE|UPDATE 	(card MULTI)
 	-> l 		is relation to modify
 	-> r		to be inserted/deleted/updated relation
+	-> flag		( if set don't insert (is done allready))
 only (UPDATE)
 	-> exps		list of columns to update (ugh) !
 
@@ -68,6 +70,8 @@ e_atom 	(card ATOM)
 	-> l	literal (-> l = atom)
 	or
 	-> r	parameter ( ->r = varname, ->type = subtype, ->flag = level)
+	or
+	-> f	list of atom expressions
 	or
 	-> 	numbered variable ( ->flag = nr, ->type = subtype)
 
@@ -88,7 +92,12 @@ e_cmp
         		cmp_notlike = 6,
         		cmp_like = 7,
         		cmp_all = 8,		cross product
-        		cmp_or = 9		or handling 
+        		cmp_or = 9,		or handling 
+			cmp_in = 10,		in list handling		
+			cmp_notin = 11		not in list handling
+
+						cmp_in/cmp_notin
+						->r is a list of values
 		)
 
 e_func

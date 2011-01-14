@@ -65,7 +65,7 @@
  *  
  */
 
-#include <pf_config.h>
+#include <monetdb_config.h>
 
 #include <monet.h>
 #include <gdk.h>

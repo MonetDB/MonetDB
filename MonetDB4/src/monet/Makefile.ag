@@ -12,7 +12,7 @@
 #
 # The Initial Developer of the Original Code is CWI.
 # Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2010 MonetDB B.V.
+# Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
 # In some cases, there is a (possibly) uninitialized variable in
@@ -25,7 +25,10 @@
 
 @NO_X_CFLAGS@
 
-INCLUDES = $(MONETDB_INCS)
+INCLUDES = ../../../MonetDB/src/common \
+		   ../../../common/stream \
+		   ../../../clients/src/mapilib \
+		   ../../../MonetDB/src/gdk
 
 YFLAGS = -d
 
@@ -45,8 +48,10 @@ lib_monet = {
 		monet_client.mx monet_multiplex.mx monet_tbl.mx \
 		monet_context.mx monet_parse.mx monet_deparse.mx \
 		monet_process.mx monet.feps libmonet.rc
-	LIBS = $(MONETDB_LIBS) -lmutils -lstream -lbat \
-		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+	LIBS = ../../../MonetDB/src/common/libmutils \
+		../../../common/stream/libstream \
+		../../../MonetDB/src/gdk/libbat \
+		$(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) $(curl_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 
 }

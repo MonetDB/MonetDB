@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -170,18 +170,18 @@ gdk_export int strFromStr(str src, int *len, str *dst);
 gdk_export int strToStr(str *dst, int *len, str src);
 gdk_export str strRead(str a, stream *s, size_t cnt);
 gdk_export int strWrite(str a, stream *s, size_t cnt);
-gdk_export BUN strHash(str s);
+gdk_export BUN strHash(const char *s);
 gdk_export void strCleanHash(Heap *hp, int rebuild);
-gdk_export var_t strPut(Heap *b, var_t *off, str src);
+gdk_export var_t strPut(Heap *b, var_t *off, const char *src);
 gdk_export void strHeap(Heap *d, size_t cap);
 gdk_export int strLen(const char *s);
-gdk_export int strCmp(str l, str r);
-gdk_export int strNil(str s);
+gdk_export int strCmp(const char *l, const char *r);
+gdk_export int strNil(const char *s);
 gdk_export int strElimDoubles(Heap *h);
-gdk_export var_t strLocate(Heap *h, str v);
-gdk_export int strCmpNoNil(unsigned char *l, unsigned char *r);
+gdk_export var_t strLocate(Heap *h, const char *v);
+gdk_export int strCmpNoNil(const unsigned char *l, const unsigned char *r);
 gdk_export int escapedStrlen(const char *src);
-gdk_export int escapedStr(char *dst, const char *src);
+gdk_export int escapedStr(char *dst, const char *src, int dstlen);
 
 #ifdef __cplusplus
 }
@@ -270,31 +270,31 @@ lngHash(lng *v)
 
 @+ Standard Atoms
 @c
-static INLINE void
+static inline void
 shtConvert(sht *s)
 {
 	*s = short_int_SWAP(*s);
 }
 
-static INLINE void
+static inline void
 intConvert(int *s)
 {
 	*s = normal_int_SWAP(*s);
 }
 
-static INLINE void
+static inline void
 lngConvert(lng *s)
 {
 	*s = long_long_SWAP(*s);
 }
 
-static INLINE int
+static inline int
 batFix(bat *b)
 {
 	return BBPincref(*b, TRUE);
 }
 
-static INLINE int
+static inline int
 batUnfix(bat *b)
 {
 	return BBPdecref(*b, TRUE);
@@ -548,7 +548,7 @@ ATOMproperty(str id, str property, GDKfcn arg, int val)
 		FATALcheck(GDKatomcnt == MAXATOMS, "ATOMproperty:too many types");
 		FATALcheck(strlen(id) >= IDLENGTH, "ATOMproperty:name too long");
 		memset(BATatoms + t, 0, sizeof(atomDesc));
-		strcpy(BATatoms[t].name, id);
+		strncpy(BATatoms[t].name, id, IDLENGTH);
 		BATatoms[t].size = sizeof(int);	/* default */
 		assert_shift_width(ATOMelmshift(BATatoms[t].size), BATatoms[t].size);
 		BATatoms[t].align = sizeof(int);	/* default */
@@ -575,7 +575,7 @@ ATOMproperty(str id, str property, GDKfcn arg, int val)
 		BATatoms[t].align = val;
 	} else if (strcmp("storage", property) == 0) {
 		BATatoms[t] = BATatoms[val];	/* copy from example */
-		strcpy(BATatoms[t].name, id);	/* restore name */
+		strncpy(BATatoms[t].name, id, IDLENGTH); /* restore name */
 	} else if (strcmp("fromstr", property) == 0) {
 		BATatoms[t].atomFromStr = (int (*)(char *, int *, void **)) arg;
 	} else if (strcmp("tostr", property) == 0) {
@@ -657,7 +657,7 @@ ATOMindex(str nme)
 char *
 ATOMname(int t)
 {
-	return (t >= 0 && t < GDKatomcnt && BATatoms[t].name) ? BATatoms[t].name : "null";
+	return t >= 0 && t < GDKatomcnt && *BATatoms[t].name ? BATatoms[t].name : "null";
 }
 
 int
@@ -1056,7 +1056,7 @@ ATOMformat(int t, ptr p, char **buf)
 	*buf = GDKmalloc(4);
 	if (*buf == NULL)
 		return -1;
-	strcpy(*buf, "nil");
+	strncpy(*buf, "nil", 4);
 	return 3;
 }
 
@@ -1098,7 +1098,7 @@ int
 {
 	@:atommem(char,@1Strlen)@
 	if (*src == @1_nil) {
-		strcpy(*dst, "nil");
+		strncpy(*dst, "nil", *len);
 		return 3;
 	}
 	snprintf(*dst, *len, @2, (@3) *src);
@@ -1129,9 +1129,9 @@ int
 voidToStr(str *dst, int *len, void *src)
 {
 	(void) src;
-	@:atommem(char,3)@
+	@:atommem(char,4)@
 
-	strcpy(*dst, "nil");
+	strncpy(*dst, "nil", *len);
 	return 3;
 }
 
@@ -1340,7 +1340,7 @@ chrToStr(str *dst, int *len, chr *src)
 	@:atommem(char,chrStrlen)@
 
 	if (*src == chr_nil) {
-		strcpy(*dst, "nil");
+		strncpy(*dst, "nil", *len);
 		return 3;
 	} else {
 		str p = *dst;
@@ -1348,7 +1348,7 @@ chrToStr(str *dst, int *len, chr *src)
 		*p++ = '\'';
 		if (*src & 0x80) {
 #ifdef ASCII_CHR
-			strcpy(*dst, "nil");
+			strncpy(*dst, "nil", *len);
 			return 3;
 #else
 			*p++ = 0xC0 | ((*src >> 6) & 0x03);
@@ -1427,13 +1427,13 @@ bitToStr(char **dst, int *len, bit *src)
 	@:atommem(char,6)@
 
 	if (*src == bit_nil) {
-		strcpy(*dst, "nil");
+		strncpy(*dst, "nil", *len);
 		return 3;
 	} else if (*src) {
-		strcpy(*dst, "true");
+		strncpy(*dst, "true", *len);
 		return 4;
 	}
-	strcpy(*dst, "false");
+	strncpy(*dst, "false", *len);
 	return 5;
 }
 
@@ -1489,7 +1489,7 @@ batToStr(char **dst, int *len, bat *src)
 	if (b == bat_nil || (s = BBPname(b)) == NULL || *s == 0) {
 		@:atommem(char,4)@
 
-		strcpy(*dst, "nil");
+		strncpy(*dst, "nil", *len);
 		return 3;
 	}
 	i = (int) (strlen(s) + 4);
@@ -1605,10 +1605,10 @@ lngToStr(char **dst, int *len, lng *src)
    
 	@:atommem(char,lngStrlen)@
 	if (*src == lng_nil) {
-		strcpy(*dst, "nil");
+		strncpy(*dst, "nil", *len);
 		return 3;
 	} 
-	sprintf(*dst, LLFMT, *src);
+	snprintf(*dst, *len, LLFMT, *src);
 	return strlen(*dst);
 }
 @c
@@ -1826,12 +1826,12 @@ we have to take corrective action to ensure that str(nil) is the smallest value 
 #define GDK_STRNIL(s)    ((s) == NULL || *(chr*) (s) == GDK_chr_min)
 #define GDK_STRLEN(s)    ((GDK_STRNIL(s)?1:strlen(s))+1)
 #define GDK_STRCMP(l,r)  (GDK_STRNIL(l)?(GDK_STRNIL(r)?0:-1):GDK_STRNIL(r)?1: \
-                          (*(unsigned char*)(l) < *(unsigned char*)(r))?-1: \
-                          (*(unsigned char*)(l) > *(unsigned char*)(r))?1: \
-                          strCmpNoNil((unsigned char*)(l),(unsigned char*)(r)))
+                          (*(const unsigned char*)(l) < *(const unsigned char*)(r))?-1: \
+                          (*(const unsigned char*)(l) > *(const unsigned char*)(r))?1: \
+                          strCmpNoNil((const unsigned char*)(l),(const unsigned char*)(r)))
 @c
 int
-strNil(str s)
+strNil(const char *s)
 {
 	return GDK_STRNIL(s);
 }
@@ -1843,13 +1843,13 @@ strLen(const char *s)
 }
 
 int
-strCmp(str l, str r)
+strCmp(const char *l, const char *r)
 {
 	return GDK_STRCMP(l, r);
 }
 
 int
-strCmpNoNil(unsigned char *l, unsigned char *r)
+strCmpNoNil(const unsigned char *l, const unsigned char *r)
 {
 	while (*l == *r) {
 		if (*l == 0)
@@ -1886,7 +1886,7 @@ at a time (adding 16-bits to the hash value each iteration).
 @h
 #define GDK_STRHASH(x,y)				\
 	do {						\
-		str _key = (str) (x);			\
+		const char *_key = (const char *) (x);	\
 		BUN _i;					\
 		for (_i = y = 0; _key[_i]; _i++) {	\
 		    y += _key[_i];			\
@@ -1900,7 +1900,7 @@ at a time (adding 16-bits to the hash value each iteration).
 
 @c
 BUN
-strHash(str s)
+strHash(const char *s)
 {
 	BUN res;
 
@@ -1928,7 +1928,7 @@ zero.
 #define EXTRALEN ((SIZEOF_BUN + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1))
 
 var_t
-strLocate(Heap *h, str v)
+strLocate(Heap *h, const char *v)
 {
 	stridx_t *ref, *next;
 	size_t extralen = h->hashash ? EXTRALEN : 0;
@@ -1951,7 +1951,7 @@ strLocate(Heap *h, str v)
 }
 
 var_t
-strPut(Heap *h, var_t *dst, str v)
+strPut(Heap *h, var_t *dst, const char *v)
 {
 	size_t elimbase = GDK_ELIMBASE(h->free);
 	size_t pad = GDK_VARALIGN - (h->free & (GDK_VARALIGN - 1));
@@ -2313,41 +2313,41 @@ escapedStrlen(const char *src)
 }
 
 int
-escapedStr(char *dst, const char *src)
+escapedStr(char *dst, const char *src, int dstlen)
 {
-	char *s, *r = (char *) src;
 	int cur = 0, l = 0;
 
-	for (s = dst; r[cur]; cur++)
-		if (r[cur] == '\t') {
-			s[l++] = '\\';
-			s[l++] = 't';
-		} else if (r[cur] == '\n') {
-			s[l++] = '\\';
-			s[l++] = 'n';
-		} else if (r[cur] == '\\') {
-			s[l++] = '\\';
-			s[l++] = '\\';
-		} else if (r[cur] == '"') {
-			s[l++] = '\\';
-			s[l++] = '"';
-		} else if (!printable_chr(r[cur])
+	for (; src[cur] && l < dstlen; cur++)
+		if (src[cur] == '\t') {
+			dst[l++] = '\\';
+			dst[l++] = 't';
+		} else if (src[cur] == '\n') {
+			dst[l++] = '\\';
+			dst[l++] = 'n';
+		} else if (src[cur] == '\\') {
+			dst[l++] = '\\';
+			dst[l++] = '\\';
+		} else if (src[cur] == '"') {
+			dst[l++] = '\\';
+			dst[l++] = '"';
+		} else if (!printable_chr(src[cur])
 #ifndef ASCII_CHR
-			   || (r[cur] == (char) '\302' &&
-			       0200 <= ((int) r[cur + 1] & 0377) &&
-			       ((int) r[cur + 1] & 0377) <= 0237)
+			   || (src[cur] == '\302' &&
+			       0200 <= (src[cur + 1] & 0377) &&
+			       ((int) src[cur + 1] & 0377) <= 0237)
 			   || (cur > 0 &&
-			       r[cur - 1] == (char) '\302' &&
-			       0200 <= ((int) r[cur] & 0377) &&
-			       ((int) r[cur] & 0377) <= 0237)
+			       src[cur - 1] == '\302' &&
+			       0200 <= (src[cur] & 0377) &&
+			       (src[cur] & 0377) <= 0237)
 #endif
 		    ) {
-			sprintf(s + l, "\\%03o", (unsigned char) r[cur]);
+			snprintf(dst + l, dstlen - l, "\\%03o", (unsigned char) src[cur]);
 			l += 4;
 		} else {
-			s[l++] = r[cur];
+			dst[l++] = src[cur];
 		}
-	s[l] = 0;
+	assert(l < dstlen);
+	dst[l] = 0;
 	return l;
 }
 
@@ -2359,12 +2359,12 @@ strToStr(char **dst, int *len, char *src)
 	if (GDK_STRNIL((str) src)) {
 		@:atommem(char,4)@
 
-		strcpy(*dst, "nil");
+		strncpy(*dst, "nil", *len);
 		return 3;
 	} else {
 		int sz = escapedStrlen(src);
 		@:atommem(char,sz+3)@
-		l = escapedStr((*dst) + 1, src);
+		l = escapedStr((*dst) + 1, src, *len - 1);
 		l++;
 		(*dst)[0] = (*dst)[l++] = '"';
 		(*dst)[l] = 0;
@@ -2572,7 +2572,7 @@ OIDtoStr(char **dst, int *len, oid *src)
 	@:atommem(char,oidStrlen)@
 
 	if (*src == oid_nil) {
-		strcpy(*dst, "nil");
+		strncpy(*dst, "nil", *len);
 		return 3;
 	}
 	snprintf(*dst, *len, OIDFMT "@0", *src);

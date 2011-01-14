@@ -12,12 +12,14 @@
 #
 # The Initial Developer of the Original Code is CWI.
 # Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2010 MonetDB B.V.
+# Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
 INCLUDES = -I../../monet -I../plain \
-	$(MONETDB_INCS) \
-	$(Z_CFLAGS) $(BZ_CFLAGS) $(HWCOUNTERS_INCS) $(PCL_CFLAGS) \
+	../../../../MonetDB/src/common \
+	../../../../common/stream \
+	../../../../MonetDB/src/gdk \
+	$(zlib_CFLAGS) $(BZ_CFLAGS) $(HWCOUNTERS_INCS) $(PCL_CFLAGS) \
 	$(NETCDF_CFLAGS)
 MTSAFE
 
@@ -26,9 +28,10 @@ LIB_mnetcdf = {
 	SEP = _
 	COND = HAVE_NETCDF
 	SOURCES = mnetcdf.mx 
-	LIBS = $(MONETDB_LIBS) -lstream -lbat \
+	LIBS = ../../../../common/stream/libstream \
+		../../../../MonetDB/src/gdk/libbat \
 		../../monet/libmonet ../plain/lib_algebra \
-		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+		$(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) \
 		$(NETCDF_LIBS) $(MATH_LIBS)
 }

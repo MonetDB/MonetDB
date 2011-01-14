@@ -12,7 +12,7 @@
 @'
 @' The Initial Developer of the Original Code is CWI.
 @' Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-@' Copyright August 2008-2010 MonetDB B.V.
+@' Copyright August 2008-2011 MonetDB B.V.
 @' All Rights Reserved.
 
 @a M. Ivanova, M. Kersten, N. Nes
@@ -32,6 +32,10 @@ pattern attach(fname :str):void
 address FITSattach
 comment "Open a FITS file and return catalog of the table HDUs";
 
+pattern load(tablename :str):void
+address FITSloadTable
+comment "Load a FITS table from an attached file";
+
 
 @h
 #ifndef _FITS_
@@ -41,8 +45,9 @@ comment "Open a FITS file and return catalog of the table HDUs";
 #include "fitsio.h"
 #include "fitsio2.h"
 #include "longnam.h"
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include <sql_mvc.h>
+#include <sql_scenario.h>
 #include <sql.h>
 #include "clients.h"
 #include "mal.h" 
@@ -61,12 +66,15 @@ comment "Open a FITS file and return catalog of the table HDUs";
 
 fits_export str FITStest(int *res, str *fname);
 fits_export str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+fits_export str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif
 
 @-
 
 @c
 #include "fits.h"
+#define FITS_INS_COL "INSERT INTO fits_columns(id, name, type, units, number, table_id) \
+	 VALUES(%d,'%s','%s','%s',%d,%d);"
 
 str
 FITStest(int *res, str *fname)
@@ -107,6 +115,7 @@ FITSinitCatalog(mvc *m)
 		fits_tbl = mvc_create_table(m, sch, "fits_tables", tt_table, 0, SQL_PERSIST, 0, 4);
 		mvc_create_column_(m, fits_tbl, "id","int",32);
 		mvc_create_column_(m, fits_tbl, "name","varchar",80);
+		mvc_create_column_(m, fits_tbl, "columns","int",32);
 		mvc_create_column_(m, fits_tbl, "file_id","int",32);
 		mvc_create_column_(m, fits_tbl, "hdu","int",32);
 	}
@@ -117,9 +126,9 @@ FITSinitCatalog(mvc *m)
 		mvc_create_column_(m, fits_col, "id","int",32);
 		mvc_create_column_(m, fits_col, "name","varchar",80);
 		mvc_create_column_(m, fits_col, "type","varchar",80);
-		mvc_create_column_(m, fits_col, "mtype","int",32);
-		mvc_create_column_(m, fits_col, "table_id","int",32);
 		mvc_create_column_(m, fits_col, "units","varchar",10);
+		mvc_create_column_(m, fits_col, "number","int",32);
+		mvc_create_column_(m, fits_col, "table_id","int",32);
 	}
 	
 }   
@@ -127,8 +136,7 @@ FITSinitCatalog(mvc *m)
 static int
 fits2mtype( int t )
 {
-    printf("%d\n", t );
-    switch(t) {
+	switch(t) {
     case TBIT:
     case TLOGICAL:
         return TYPE_bit;
@@ -159,6 +167,49 @@ fits2mtype( int t )
     return -1;
 }
 
+static int
+fits2subtype(sql_subtype *tpe, int t, long rep, long wid)
+{
+	(void) rep;
+    switch(t) {
+    case TBIT:
+    case TLOGICAL:
+		sql_find_subtype(tpe, "boolean", 0, 0 );
+		break;
+    case TBYTE:
+    case TSBYTE:
+		sql_find_subtype(tpe, "char", 1, 0 );
+		break;
+    case TSTRING:
+		sql_find_subtype(tpe, "varchar", (unsigned int)wid, 0);
+		break;
+    case TUSHORT:
+    case TSHORT:
+		sql_find_subtype(tpe, "smallint", 16, 0);
+		break;
+    case TUINT:
+    case TINT:
+    case TULONG:
+    case TLONG:
+		sql_find_subtype(tpe, "int", 32, 0);
+		break;
+    case TLONGLONG:
+		sql_find_subtype(tpe, "bigint", 64, 0);
+		break;
+    case TFLOAT:
+		sql_find_subtype(tpe, "real", 32, 0 );
+		break;
+    case TDOUBLE:
+		sql_find_subtype(tpe, "double", 51, 0 );
+		break;
+    /* missing */
+    case TCOMPLEX:
+    case TDBLCOMPLEX:
+        return -1;
+    }
+    return 1;
+}
+
 str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
@@ -169,14 +220,11 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str fname = *(str*) getArgReference(stk, pci, 1);
 	fitsfile *fptr;  /* pointer to the FITS file */
 	int status = 0, i, j, hdutype, hdunum = 1, cnum = 0;
-	int tpcode = 0, mtype;
-	oid  fid, tid, rid = oid_nil;
-	char tname[BUFSIZ];
-	long tbcol, rep, wid;
-    char cname[BUFSIZ], tform[BUFSIZ], tunit[BUFSIZ], tnull[BUFSIZ], tdisp[BUFSIZ];
+	oid  fid, tid, cid, rid = oid_nil;
+	char tname[BUFSIZ], *tname_low = NULL, *s, bname[BUFSIZ], stmt[BUFSIZ];
+	long tbcol;
+	char cname[BUFSIZ], tform[BUFSIZ], tunit[BUFSIZ], tnull[BUFSIZ], tdisp[BUFSIZ];
 	double tscal, tzero;
-	
-
 	
 	msg = getContext(cntxt, mb, &m, NULL);
 	if (msg)
@@ -217,6 +265,14 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	col = mvc_bind_column(m, fits_tbl, "id");
 	tid = store_funcs.count_col(col) + 1;
 
+	if ((s = strrchr(fname, DIR_SEP)) == NULL)
+		s = fname;
+	else
+		s++;
+	strcpy(bname, s);
+  	s = strrchr(bname,'.');
+	if ( s ) *s = 0;
+
 	fits_get_num_hdus(fptr, &hdunum, &status);
 	for (i = 1; i <= hdunum; i++){
 		fits_movabs_hdu(fptr, i, &hdutype, &status);
@@ -226,44 +282,42 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		/* SQL table name - the name of FITS extention */
 		fits_read_key(fptr, TSTRING, "EXTNAME", tname, NULL, &status);
 		if ( status ) {
-			snprintf(tname,BUFSIZ,"%s_%d",fname,i);
+			snprintf(tname,BUFSIZ,"%s_%d",bname,i);
 			status = 0;
 		}
-		else {	/* check table name for existence */
-			tbl = mvc_bind_table(m, sch, tname);
-			if ( tbl )
-				snprintf(tname,BUFSIZ,"%s_%d",fname,i);
+		else {	/* check table name for existence in the fits catalog */
+			tname_low = toLower(tname);
+			col = mvc_bind_column(m, fits_tbl, "name");
+			rid = table_funcs.column_find_row(m->session->tr, col, tname_low, NULL);
+				/* or as regular SQL table */
+			tbl = mvc_bind_table(m, sch, tname_low);
+			if (  rid != oid_nil || tbl ){
+				snprintf(tname,BUFSIZ,"%s_%d",bname,i);
+				tname_low = toLower(tname);
+			}
 		}
 
+		fits_get_num_cols(fptr, &cnum, &status);
+
 		store_funcs.append_col(m->session->tr,
-				mvc_bind_column(m, fits_tbl, "id"), &tid, TYPE_int);
+			mvc_bind_column(m, fits_tbl, "id"), &tid, TYPE_int);
 		store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, fits_tbl, "name"), tname, TYPE_str);
+			mvc_bind_column(m, fits_tbl, "name"), tname_low, TYPE_str);
+		store_funcs.append_col(m->session->tr,
+			mvc_bind_column(m, fits_tbl, "columns"), &cnum, TYPE_str);
 		store_funcs.append_col(m->session->tr,
 			mvc_bind_column(m, fits_tbl, "file_id"), &fid, TYPE_int);
 		store_funcs.append_col(m->session->tr,
 			mvc_bind_column(m, fits_tbl, "hdu"), &i, TYPE_int);
 
 		/* read columns description */
-
-		fits_get_num_cols(fptr, &cnum, &status);
-		for ( j = 1; j <= cnum; j++){
+		s = stmt;
+		col = mvc_bind_column(m, fits_col, "id");
+		cid = store_funcs.count_col(col) + 1;
+		for ( j = 1; j <= cnum; j++, cid++){
 		    fits_get_acolparms(fptr, j, cname, &tbcol, tunit, tform, &tscal, &tzero, tnull, tdisp, &status);
-			fits_get_coltype(fptr, j, &tpcode, &rep, &wid, &status);
-			mtype = fits2mtype(tpcode);
-
-			store_funcs.append_col(m->session->tr,
-				mvc_bind_column(m, fits_col, "id"), &j, TYPE_int);
-			store_funcs.append_col(m->session->tr,
-				mvc_bind_column(m, fits_col, "name"), cname, TYPE_str);
-			store_funcs.append_col(m->session->tr,
-				mvc_bind_column(m, fits_col, "type"), tform, TYPE_str);
-			store_funcs.append_col(m->session->tr,
-				mvc_bind_column(m, fits_col, "mtype"), &mtype, TYPE_int);
-			store_funcs.append_col(m->session->tr,
-				mvc_bind_column(m, fits_col, "table_id"), &tid, TYPE_int);
-			store_funcs.append_col(m->session->tr,
-				mvc_bind_column(m, fits_col, "units"), tunit, TYPE_str);
+			snprintf(stmt, BUFSIZ, FITS_INS_COL, (int)cid, cname, tform, tunit, j, (int)tid);
+			msg = SQLstatementIntern(cntxt, &s,"fits.attach",TRUE,FALSE);
 		}
 		tid++;
 	}
@@ -272,5 +326,148 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }   
 
+str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *m = NULL;
+	sql_schema *sch;
+	sql_table *fits_fl, *fits_tbl, *tbl = NULL;
+	sql_column *col;
+	sql_subtype tpe;
+	fitsfile *fptr; 
+	str tname = *(str*) getArgReference(stk, pci, 1);
+	str fname;
+	str msg = MAL_SUCCEED; 
+	oid rid = oid_nil, frid = oid_nil;
+	int status = 0, cnum = 0, fid, hdu, hdutype, i, j, anynull, mtype;
+	int *tpcode = NULL;
+	long *rep=NULL, *wid=NULL, rows;
+	char keywrd[80], **cname, **v = NULL, nm[FLEN_VALUE];
+	BAT *b, *tmp = NULL;
+	ptr nilptr;
+	
+
+	msg = getContext(cntxt, mb, &m, NULL);
+	if (msg)
+		return msg;
+	sch = mvc_bind_schema(m,"sys");
+
+	fits_tbl = mvc_bind_table(m, sch, "fits_tables");
+	if ( fits_tbl == NULL ){
+	 	msg = createException(MAL, "fits.loadtable", "FITS catalog is missing.\n");
+		return msg;
+	}
+
+	tbl = mvc_bind_table(m, sch, tname);
+	if ( tbl ) {
+	 	msg = createException(MAL, "fits.loadtable", "Table %d is already created.\n", tname);
+		return msg;
+	};
+
+	col = mvc_bind_column(m, fits_tbl, "name");
+	rid = table_funcs.column_find_row(m->session->tr, col, tname, NULL);
+	if ( rid == oid_nil ){
+		msg = createException(MAL, "fits.loadtable", "Table %s is unknown in FITS catalog. Attach first the containing file\n", tname);
+		return msg;
+	}
+
+	/* Open FITS file and move to the table HDU */
+ 	col = mvc_bind_column(m, fits_tbl, "file_id");
+	fid = *(int*) table_funcs.column_find_value(m->session->tr, col, rid);
+
+	fits_fl = mvc_bind_table(m, sch, "fits_files");
+	col = mvc_bind_column(m, fits_fl, "id");
+	frid = table_funcs.column_find_row(m->session->tr, col, (void *) &fid, NULL);
+	col = mvc_bind_column(m, fits_fl, "name");
+	fname = (char *) table_funcs.column_find_value(m->session->tr, col, frid);
+	if ( fits_open_file(&fptr, fname, READONLY, &status) ){
+		msg = createException(MAL, "fits.loadtable", "Missing FITS file %s.\n", fname);
+		return msg;
+	}
+
+ 	col = mvc_bind_column(m, fits_tbl, "hdu");
+	hdu = *(int*) table_funcs.column_find_value(m->session->tr, col, rid);
+	fits_movabs_hdu(fptr, hdu, &hdutype, &status);
+	if ( hdutype != ASCII_TBL && hdutype != BINARY_TBL ){
+		msg = createException(MAL, "fits.loadtable", "HDU %d is not a table.\n", hdu);
+		fits_close_file(fptr, &status);
+		return msg;
+	}
+
+	/* create a SQL table to hold the FITS table */
+	col = mvc_bind_column(m, fits_tbl, "columns");
+	cnum = *(int*) table_funcs.column_find_value(m->session->tr, col, rid);
+	tbl = mvc_create_table(m, sch, tname, tt_table, 0, SQL_PERSIST, 0, cnum);
+
+	tpcode = (int *)GDKzalloc(sizeof(int) * cnum);
+	rep = (long *)GDKzalloc(sizeof(long) * cnum);
+	wid = (long *)GDKzalloc(sizeof(long) * cnum);
+	cname = (char **)GDKzalloc(sizeof(char *) * cnum);
+
+	for ( j = 1; j <= cnum; j++ ){
+		/*		fits_get_acolparms(fptr, j, cname, &tbcol, tunit, tform, &tscal, &tzero, tnull, tdisp, &status); */
+		snprintf(keywrd,80,"TTYPE%d", j);
+		fits_read_key(fptr, TSTRING, keywrd, nm, NULL, &status);
+		if ( status ) {
+			snprintf(nm,FLEN_VALUE,"column_%d", j);
+			status = 0;
+		}
+		cname[j-1] = GDKstrdup(toLower(nm));
+		fits_get_coltype(fptr, j, &tpcode[j-1], &rep[j-1], &wid[j-1], &status);
+		fits2subtype(&tpe, tpcode[j-1], rep[j-1], wid[j-1]);
+		mvc_create_column(m, tbl, cname[j-1], &tpe);
+	}
+
+	/* data load */
+	fits_get_num_rows(fptr, &rows, &status);
+	for ( j = 1; j <= cnum; j++ ){
+		mtype = fits2mtype(tpcode[j-1]);
+		nilptr = ATOMnil(mtype);
+
+		if (mtype != TYPE_str ){
+			tmp = BATnew(TYPE_void, mtype, rows);
+			BATseqbase(tmp, 0);
+			fits_read_col(fptr, tpcode[j-1], j, 1, 1, rows, nilptr, (void *) BUNtloc(bat_iterator(tmp),BUNfirst(tmp)), &anynull, &status ); 
+		}
+		else {
+			v = (char **) GDKzalloc(sizeof(char *) * rows);
+			for(i = 0; i < rows; i++)
+				v[i] = GDKzalloc(wid[j-1]);
+			fits_read_col(fptr, tpcode[j-1], j, 1, 1, rows, nilptr, (void *)v, &anynull, &status );
+		}
+
+		if ( status ){
+			char buf[FLEN_ERRMSG+1];
+			fits_read_errmsg(buf);
+			msg = createException(MAL, "fits.loadtable", "Cannot load column %s of %s table: %s.\n", cname[j-1], tname, buf);
+			/*	GDKfree(v); */
+			goto finish;
+		}
+
+		col = mvc_bind_column(m, tbl, cname[j-1]);
+		if (mtype != TYPE_str ){
+			BATsetcount(tmp, rows);
+			b = store_funcs.bind_col(m->session->tr, col, RDONLY);
+			BATappend(b,tmp,TRUE); 
+			BBPunfix(b->batCacheid);
+			BBPreclaim(tmp);
+		}
+		else {
+			for (i = 0; i<rows; i++)
+				store_funcs.append_col(m->session->tr, col, v[i], mtype);
+			for(i = 0; i < rows; i++)
+				GDKfree(v[i]);
+			GDKfree(v); 
+		}
+	}
+
+ finish:
+	GDKfree(tpcode);
+	GDKfree(rep);
+	GDKfree(wid);
+	GDKfree(cname);
+
+	fits_close_file(fptr, &status);
+	return msg;
+}
 
 @}

@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2010 MonetDB B.V.
+ * Copyright August 2008-2011 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -50,8 +50,6 @@
 #define	DB_TEXT	0x20
 #define	DB_CODE	0x40
 #define	DB_TOK	0x41
-
-#define	assert(e, m)	if( !(e) ) Fatal(m, "Assertion failed"); else
 
 extern unsigned int db_flag;
 extern int archived;

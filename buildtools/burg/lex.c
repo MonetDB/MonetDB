@@ -1,12 +1,12 @@
 char rcsid_lex[] = "$Id$";
 
-#include "burg_config.h"
+#include "monetdb_config.h"
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 #include "b.h"
 #include "fe.h"
-#include "gram.h"
+#include "gram.tab.h"
 
 static char buf[BUFSIZ];
 
@@ -211,7 +211,7 @@ yylex(void)
 				do {
 					if (ptr >= &buf[BUFSIZ]) {
 						yyerror("ID too long");
-						return(ERROR);
+						return(brgERROR);
 					} else {
 						*ptr++ = ch;
 					}
@@ -233,7 +233,7 @@ yylex(void)
 				do {
 					if (ptr >= &buf[BUFSIZ]) {
 						yyerror("ID too long");
-						return(ERROR);
+						return(brgERROR);
 					} else {
 						*ptr++ = ch;
 					}
@@ -253,7 +253,7 @@ yylex(void)
 				} while (isdigit(ch));
 				ungetc(ch, stdin);
 				yylval.y_int = val;
-				return(INT);
+				return(brgINT);
 			}
 			yyerror1("illegal char ");
 			fprintf(stderr, "(\\%03o)\n", ch);

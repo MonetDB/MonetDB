@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -797,8 +797,7 @@ output returned from the server.
 @{
 @- Implementation
 @c
-#include "clients_config.h"
-#include <monet_utils.h>
+#include "monetdb_config.h"
 #include <stream.h>		/* include before Mapi.h */
 #include <stream_socket.h>
 #include "Mapi.h"
@@ -820,9 +819,21 @@ output returned from the server.
 # include <netdb.h>
 # include <netinet/in.h>
 #endif
+
 #ifdef HAVE_ALLOCA_H
-#include <alloca.h>
+# include <alloca.h>
+#elif defined __GNUC__
+# define alloca __builtin_alloca
+#elif defined _AIX
+# define alloca __alloca
+#elif defined _MSC_VER
+# include <malloc.h>
+# define alloca _alloca
+#else
+# include <stddef.h>
+void *alloca(size_t);
 #endif
+
 #ifdef HAVE_MALLOC_H
 #include <malloc.h>
 #endif
@@ -868,7 +879,7 @@ _CRTIMP char *__cdecl crypt(const char *key, const char *salt);
 #endif
 @h
 #ifndef _MAPI_H_INCLUDED
-#define _MAPI_H_INCLUDED
+#define _MAPI_H_INCLUDED 1
 
 #include <stdio.h>		/* for FILE * */
 
@@ -913,6 +924,12 @@ typedef int MapiMsg;
 #define LANG_MIL	1
 #define LANG_SQL	2
 #define LANG_XQUERY	3
+
+/* prompts for MAPI protocol */
+#define PROMPTBEG	'\001'	/* start prompt bracket */
+#define PROMPT1		"\001\001\n"	/* prompt: ready for new query */
+#define PROMPT2		"\001\002\n"	/* prompt: more data needed */
+
 @-
 The table field information is extracted from the table headers
 obtained from the server. This list may be extended in the future.
@@ -1012,6 +1029,7 @@ struct MapiStruct {
 	char *password;
 	char *language;
 	char *database;		/* to obtain from server */
+	char *uri;
 	int languageId;
 	int versionId;		/* Monet 4 or 5 */
 	char *motd;		/* welcome message from server */
@@ -1264,6 +1282,7 @@ mapi_export char **mapi_fetch_field_array(MapiHdl hdl);
 mapi_export char *mapi_fetch_line(MapiHdl hdl);
 mapi_export int mapi_split_line(MapiHdl hdl);
 mapi_export char *mapi_get_lang(Mapi mid);
+mapi_export char *mapi_get_uri(Mapi mid);
 mapi_export char *mapi_get_dbname(Mapi mid);
 mapi_export char *mapi_get_host(Mapi mid);
 mapi_export char *mapi_get_user(Mapi mid);
@@ -1303,6 +1322,7 @@ static int unquote(const char *msg, char **start, const char **next, int endchar
 static int mapi_slice_row(struct MapiResultSet *result, int cr);
 static void mapi_store_bind(struct MapiResultSet *result, int cr);
 static void parse_uri_query(Mapi mid, char *uri);
+static void set_uri(Mapi mid);
 
 static int mapi_initialized = 0;
 
@@ -1815,8 +1835,9 @@ mapi_next_result(MapiHdl hdl)
 			return MERROR;
 		if (hdl->result &&
 		    (hdl->result->querytype == -1 ||
-		     hdl->result->querytype == Q_TABLE ||
-		     hdl->result->querytype == Q_UPDATE ||
+			 /* basically exclude Q_PARSE and Q_BLOCK */
+			 (hdl->result->querytype >= Q_TABLE &&
+			  hdl->result->querytype <= Q_PREPARE) ||
 		     hdl->result->errorstr != NULL))
 			return 1;
 	}
@@ -1852,8 +1873,9 @@ mapi_more_results(MapiHdl hdl)
 	while (result->next) {
 		result = result->next;
 		if (result->querytype == -1 ||
-		    result->querytype == Q_TABLE ||
-		    result->querytype == Q_UPDATE ||
+			/* basically exclude Q_PARSE and Q_BLOCK */
+			(hdl->result->querytype >= Q_TABLE &&
+			 hdl->result->querytype <= Q_PREPARE) ||
 		    result->errorstr != NULL)
 			return 1;
 	}
@@ -2164,6 +2186,8 @@ mapi_mapiuri(const char *url, const char *user, const char *pass, const char *la
 	if (mid->database == NULL && dbname != NULL)
 		mid->database = strdup(dbname);
 
+	set_uri(mid);
+
 	return mid;
 }
 
@@ -2191,6 +2215,20 @@ mapi_mapi(const char *host, int port, const char *username,
 
 	if (port == 0) {
 		port = 50000;	/* hardwired default */
+		if (mid->hostname == NULL) {
+#ifdef HAVE_SYS_UN_H
+			char buf[1024];
+			struct stat st;
+			snprintf(buf, sizeof(buf),
+				 PREFIX "/var/MonetDB5/dbfarm/mapi_socket");
+			if (strlen(buf) <= sizeof(((struct sockaddr_un *) 0)->sun_path) &&
+					stat(buf, &st) != -1 &&
+					S_ISSOCK(st.st_mode))
+				mid->hostname = strdup(buf);
+			else
+#endif
+				mid->hostname = strdup("localhost");
+		}
 	} else {
 		/* make sure we won't search for a unix socket first */
 		if (mid->hostname == NULL)
@@ -2230,6 +2268,8 @@ mapi_mapi(const char *host, int port, const char *username,
 		free(mid->database);
 	mid->database = dbname ? strdup(dbname) : NULL;
 
+	set_uri(mid);
+
 	return mid;
 }
 
@@ -2263,6 +2303,8 @@ mapi_destroy(Mapi mid)
 		free(mid->database);
 	if (mid->server)
 		free(mid->server);
+	if (mid->uri)
+		free(mid->uri);
 
 	r = mid->redirects;
 	while (*r) {
@@ -2318,6 +2360,41 @@ parse_uri_query(Mapi mid, char *uri)
 	} while (uri != NULL);
 }
 
+/* construct the uri field of a Mapi struct */
+static void
+set_uri(Mapi mid)
+{
+	char uri[1024];
+
+	/* uri looks as follows:
+	 *  mapi:monetdb://host:port/database
+	 * or
+	 *  mapi:monetdb:///some/path/to?database=database
+	 */
+
+	if (mid->database != NULL) {
+		if (mid->hostname[0] == '/') {
+			snprintf(uri, sizeof(uri), "mapi:monetdb://%s?database=%s",
+					mid->hostname, mid->database);
+		} else {
+			snprintf(uri, sizeof(uri), "mapi:monetdb://%s:%d/%s",
+					mid->hostname, mid->port, mid->database);
+		}
+	} else {
+		if (mid->hostname[0] == '/') {
+			snprintf(uri, sizeof(uri), "mapi:monetdb://%s",
+					mid->hostname);
+		} else {
+			snprintf(uri, sizeof(uri), "mapi:monetdb://%s:%d",
+					mid->hostname, mid->port);
+		}
+	}
+
+	if (mid->uri != NULL)
+		free(mid->uri);
+	mid->uri = strdup(uri);
+}
+
 @- Channel Constructor
 The first call of an application is to establish a connection with
 an already server. The username and password are sent as part of
@@ -2335,15 +2412,6 @@ connect_to_server(Mapi mid)
 		close_connection(mid);
 
 #ifdef HAVE_SYS_UN_H
-	if (mid->hostname == NULL) {
-		struct stat st;
-		snprintf(errbuf, sizeof(errbuf),
-			 CLIENTS_PREFIX "/var/MonetDB5/dbfarm/mapi_socket");
-		if (strlen(errbuf) <= sizeof(((struct sockaddr_un *) 0)->sun_path) &&
-				stat(errbuf, &st) != -1 &&
-				S_ISSOCK(st.st_mode))
-			mid->hostname = strdup(errbuf);
-	}
 	if (mid->hostname && mid->hostname[0] == '/') {
 		struct msghdr msg;
 		struct iovec vec;
@@ -3008,7 +3076,7 @@ mapi_resolve(const char *host, int port, const char *pattern)
 	Mapi mid;
 
 	/* if it doesn't make sense, don't try to crash */
-	if (host == NULL || port <= 0 || pattern == NULL)
+	if (host == NULL || (host[0] != '/' && port <= 0) || pattern == NULL)
 		return NULL;
 
 	mid = mapi_mapi(host, port, "mero", "mero", "resolve", pattern);
@@ -4025,14 +4093,14 @@ read_into_cache(MapiHdl hdl, int lookahead)
 		if (line == NULL)
 			return mid->error;
 		switch (*line) {
-		case PROMPTBEG:
+		case PROMPTBEG: /* \001 */
 			mid->active = NULL;
 			hdl->active = NULL;
 			/* set needmore flag if line equals PROMPT2 up
 			   to newline */
-			copy = PROMPT2;
+			copy = PROMPT2; /* \001\002\n */
 			while (*line) {
-				if (*line != *copy)
+				if (*line != *copy) /* must be EOF or PROMPT1 \001\001\n */
 					return mid->error;
 				line++;
 				copy++;
@@ -4050,10 +4118,11 @@ read_into_cache(MapiHdl hdl, int lookahead)
 			   yet (duh!), or if we've already seen
 			   normal output for the current one */
 			if (result == NULL ||
-			    result->cache.writer > 0 ||
-			    result->querytype == Q_TABLE ||
-			    result->querytype == Q_UPDATE) {
+					result->cache.writer > 0 ||
+					result->querytype > 0)
+			{
 				result = new_result(hdl);
+				result->commentonly = 0;
 				hdl->active = result;
 			}
 			add_error(result, line + 1 /* skip ! */ );
@@ -4077,7 +4146,7 @@ read_into_cache(MapiHdl hdl, int lookahead)
 			}
 			add_cache(result, strdup(line), !lookahead);
 			if (lookahead > 0 &&
-			    (result->querytype == -1/* unknown (not SQL) */  ||
+			    (result->querytype == -1 /* unknown (not SQL) */ ||
 			     result->querytype == Q_TABLE ||
 			     result->querytype == Q_UPDATE))
 				return mid->error;
@@ -4377,14 +4446,17 @@ mapi_query_part(MapiHdl hdl, const char *query, size_t size)
 		if (sz > 512)
 			sz = 512;
 		hdl->query = malloc(sz + 1);
+		assert(hdl->query);
+		hdl->query[0] = '\0';
 		strncpy(hdl->query, query, sz);
-		hdl->query[sz] = 0;
+		hdl->query[sz] = '\0';
 	} else {
-		size_t sz = 512 - strlen(hdl->query);
+		size_t ln = strlen(hdl->query), sz = 512 - ln;
 		if (sz > 0) {
 			if (size < sz)
 				sz = size;
-			hdl->query = realloc(hdl->query, strlen(hdl->query) + sz + 1);
+			hdl->query = realloc(hdl->query, ln + sz + 1);
+			assert(hdl->query);
 			strncat(hdl->query, query, sz);
 		}
 	}
@@ -5474,6 +5546,12 @@ char *
 mapi_get_lang(Mapi mid)
 {
 	return mid->language;
+}
+
+char *
+mapi_get_uri(Mapi mid)
+{
+	return mid->uri;
 }
 
 char *

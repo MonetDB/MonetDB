@@ -13,14 +13,16 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2010 MonetDB B.V.
+ * Copyright August 2008-2011 MonetDB B.V.
  * All Rights Reserved.
  */
 
 extern int describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int foreign);
 extern int describe_sequence(Mapi mid, char *schema, char *sname, stream *toConsole);
-extern int dump_table_data(Mapi mid, char *schema, char *tname, stream *toConsole);
-extern int dump_table(Mapi mid, char *schema, char *tname, stream *toConsole, int describe, int foreign);
+extern int describe_schema(Mapi mid, char *sname, stream *toConsole);
+extern int dump_table_data(Mapi mid, char *schema, char *tname, stream *toConsole, const char useInserts);
+extern int dump_table(Mapi mid, char *schema, char *tname, stream *toConsole, int describe, int foreign, const char useInserts);
 extern int dump_functions(Mapi mid, stream *toConsole, const char *sname, const char *fname);
-extern int dump_database(Mapi mid, stream *toConsole, int describe);
+extern int dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts);
 extern void dump_version(Mapi mid, stream *toConsole, const char *prefix);
+extern int has_systemfunctions(Mapi mid);

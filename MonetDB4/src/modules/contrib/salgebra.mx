@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -278,7 +278,7 @@ typedef union {
 #endif /* __SALGEBRA_H__ */
 
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include "salgebra.h"
 
 @* Clusterhash implementation
@@ -298,7 +298,7 @@ Note that we really need two locks, because when we insert the clusterhash,
 the atomFix is called and we would end up with a deadlock.
 @c
 /* unsafe implementation:
-static INLINE char* local_itoa(int i){
+static inline char* local_itoa(int i){
   static char buf[32];
   sprintf(buf,"%d",i);
   return buf;
@@ -306,7 +306,7 @@ static INLINE char* local_itoa(int i){
 */
 
 /* safe implementation with potential memory leak */
-static INLINE char *
+static inline char *
 local_itoa(int i)
 {
 	char *buf = GDKmalloc(33);
@@ -317,7 +317,7 @@ local_itoa(int i)
 
 
 @= SWAP
-static INLINE void 
+static inline void 
 SWAP@1ptr(@1 **b1, @1 **b2) {
   @1 *h = *b1;
   *b1 = *b2;
@@ -520,7 +520,7 @@ typedef struct {
 #define DICTprobe(CH,V) HASHprobe(CH->s.bhash, V)
 #define DICTentry(CH,B) ((dict_entry*) CH->s.dict->base)[B]
 
-static INLINE int
+static inline int
 DICTclustersize(clusterhash *ch, ptr v)
 {
 	BUN bucket = DICTprobe(ch, v);
@@ -532,7 +532,7 @@ DICTclustersize(clusterhash *ch, ptr v)
 		return DICTentry(ch, bucket).e - s + 1;
 }
 
-static INLINE void
+static inline void
 DICTclear(dict_entry *d, size_t n)
 {
 	size_t i;

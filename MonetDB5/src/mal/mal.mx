@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -183,7 +183,7 @@ as well as in user defined module implementations.
 #include <gdk_utils.h>
 
 #ifdef WIN32
-#ifndef LIBMAL
+#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
 #define mal_export extern __declspec(dllimport)
 #else
 #define mal_export extern __declspec(dllexport)
@@ -228,7 +228,7 @@ mal_export size_t			monet_memory;
 #define GRPoptimizers  (1<<27)	/* == OPTMASK; cf., MonetDB/src/gdk/gdk.mx */
 #define GRPforcemito (FORCEMITOMASK)
 @c 
-#include <mal_config.h>
+#include <monetdb_config.h>
 #include <mal.h>
 
 char monet_cwd[PATHLENGTH] = { 0 };

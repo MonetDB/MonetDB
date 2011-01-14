@@ -572,7 +572,7 @@ zn:= 2147483647 + 2;
 d:= calc.dbl(zn);
 io.print(d);
 io.printf("# should this produce nil (overflow)?\n");
-zk:= -2147483647 - 2l;
+zk:= -2147483647 - 2;
 d:= calc.dbl(zk);
 io.print(d);
 

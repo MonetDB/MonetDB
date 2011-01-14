@@ -12,33 +12,39 @@
 #
 # The Initial Developer of the Original Code is CWI.
 # Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2010 MonetDB B.V.
+# Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
 MTSAFE
-INCLUDES = -I.. $(monetdbtools_CFLAGS) $(READLINE_INCS)
+INCLUDES = -I.. ../../../MonetDB/src/common ../../../common/stream $(READLINE_INCS)
 
 lib_mcutil = {
 	NOINST
 	SOURCES = dump.c prompt.c
 }
 
-#Name alignment of tools in M5 context. 
 bin_mclient = {
 	SOURCES = mclient.c ReadlineTools.c
 	LIBS = libmcutil ../mapilib/libMapi $(READLINE_LIBS) \
-		$(monetdbtools_LIBS) $(LTLIBICONV)
+		../../../common/stream/libstream \
+		../../../MonetDB/src/common/libmutils \
+		$(curl_LIBS) $(LTLIBICONV)
 }
 
 bin_msqldump = {
 	SOURCES = msqldump.c
-	LIBS = libmcutil ../mapilib/libMapi $(monetdbtools_LIBS)
+	LIBS = libmcutil ../mapilib/libMapi \
+		../../../common/stream/libstream \
+		../../../MonetDB/src/common/libmutils \
+		$(curl_LIBS)
 }
 
 bin_stethoscope = {
 	SOURCES = stethoscope.c
 	LIBS = libmcutil ../mapilib/libMapi \
-		   $(monetdbtools_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS)
+		../../../common/stream/libstream \
+		../../../MonetDB/src/common/libmutils \
+		$(curl_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS)
 }
 
 man_MANS = mclient.1 msqldump.1

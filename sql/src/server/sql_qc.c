@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2010 MonetDB B.V.
+ * Copyright August 2008-2011 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -47,9 +47,10 @@
  * a cache entry.
  */
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 
 #include "sql_qc.h"
+#include "sql_mvc.h"
 #include "sql_atom.h"
 
 qc *
@@ -58,6 +59,7 @@ qc_create(int clientid)
 	qc *r = NEW(qc);
 	r->clientid = clientid;
 	r->id = 0;
+	r->nr = 0;
 
 	r->q = NULL;
 	return r;
@@ -92,8 +94,31 @@ qc_delete(qc *cache, cq *q)
 				cache->q = q->next;
 			}
 			cq_delete(cache->clientid, q);
+			cache->nr--;
 			break;
 		}
+	}
+}
+
+void
+qc_clean(qc *cache)
+{
+	cq *n, *q, *p = NULL;
+
+	for (q = cache->q; q; ) {
+		if (q->type != Q_PREPARE) {
+			n = q->next;
+			if (p) 
+				p->next = n;
+			else
+				cache->q = n;
+			cq_delete(cache->clientid, q);
+			cache->nr--;
+			q = n;
+			continue;
+		}
+		p = q;
+		q = q->next;
 	}
 }
 
@@ -106,6 +131,7 @@ qc_destroy(qc *cache)
 		n = q->next;
 
 		cq_delete(cache->clientid, q);
+		cache->nr--;
 	}
 	_DELETE(cache);
 }
@@ -209,7 +235,8 @@ qc_insert(qc *cache, sql_allocator *sa, symbol *s, atom **params, int paramlen, 
 	int i, namelen;
 	cq *n = NEW(cq);
 
-	n->id = cache->id ++;
+	n->id = cache->id++;
+	cache->nr++;
 
 	n->sa = sa;
 	n->s = s;
@@ -240,5 +267,5 @@ qc_insert(qc *cache, sql_allocator *sa, symbol *s, atom **params, int paramlen, 
 int
 qc_size(qc *cache)
 {
-	return cache->id;
+	return cache->nr;
 }

@@ -58,7 +58,7 @@ PROC probxml_ping() : void :=
 #define PX_DUMMY "dummy"
 
 @c
-#include <pf_config.h>
+#include <monetdb_config.h>
 
 #include <monet.h>
 #include <gdk.h>

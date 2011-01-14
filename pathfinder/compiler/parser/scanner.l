@@ -32,7 +32,7 @@
  * University of Konstanz, the Technische Universitaet Muenchen, and the
  * Universitaet Tuebingen are Copyright (C) 2000-2005 University of
  * Konstanz, (C) 2005-2008 Technische Universitaet Muenchen, and (C)
- * 2008-2010 Eberhard Karls Universitaet Tuebingen, respectively.  All
+ * 2008-2011 Eberhard Karls Universitaet Tuebingen, respectively.  All
  * Rights Reserved.
  *
  * $Id$
@@ -50,7 +50,7 @@
  * An XML Query Language'', W3C Working Draft October 29, 2004.
  */
 
-#include "pf_config.h"
+#include "monetdb_config.h"
 #include "pathfinder.h"
 
 #define YY_NO_INPUT

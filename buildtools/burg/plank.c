@@ -1,6 +1,6 @@
 char rcsid_plank[] = "$Id$";
 
-#include "burg_config.h"
+#include "monetdb_config.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

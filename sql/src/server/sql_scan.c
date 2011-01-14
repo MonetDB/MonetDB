@@ -13,12 +13,12 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2010 MonetDB B.V.
+ * Copyright August 2008-2011 MonetDB B.V.
  * All Rights Reserved.
  */
 
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include <sql_mem.h>
 #include "sql_scan.h"
 #include "sql_types.h"
@@ -143,6 +143,7 @@ scanner_init_keywords(void)
 	keywords_insert("LIKE", LIKE);
 	keywords_insert("LIMIT", LIMIT);
 	keywords_insert("LOCAL", LOCAL);
+	keywords_insert("LOCKED", LOCKED);
 	keywords_insert("NATURAL", NATURAL);
 	keywords_insert("NOT", NOT);
 	keywords_insert("NULL", sqlNULL);
@@ -454,7 +455,7 @@ utf8_putchar(struct scanner *lc, int ch)
 	}
 }
 
-static INLINE int
+static inline int
 scanner_read_more(struct scanner *lc, int n)
 {
 	bstream *b = lc->rs;
@@ -482,7 +483,7 @@ scanner_read_more(struct scanner *lc, int n)
 	return 1;
 }
 
-static INLINE int
+static inline int
 scanner_getc(struct scanner *lc)
 {
 	bstream *b = lc->rs;
@@ -909,7 +910,7 @@ valid_ident(char *s, char *dst)
 	return 1;
 }
 
-static INLINE int
+static inline int
 sql_get_next_token(YYSTYPE *yylval, void *parm) {
 	mvc *c = (mvc*)parm;
 	struct scanner *lc = &c->scanner;

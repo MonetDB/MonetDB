@@ -29,14 +29,14 @@
  * University of Konstanz, the Technische Universitaet Muenchen, and the
  * Universitaet Tuebingen are Copyright (C) 2000-2005 University of
  * Konstanz, (C) 2005-2008 Technische Universitaet Muenchen, and (C)
- * 2008-2010 Eberhard Karls Universitaet Tuebingen, respectively.  All
+ * 2008-2011 Eberhard Karls Universitaet Tuebingen, respectively.  All
  * Rights Reserved.
  *
  * $Id$
  */
 
-/* always include pf_config.h first! */
-#include "pf_config.h"
+/* always include monetdb_config.h first! */
+#include "monetdb_config.h"
 #include "pathfinder.h"
 
 /** handling of variable argument lists */

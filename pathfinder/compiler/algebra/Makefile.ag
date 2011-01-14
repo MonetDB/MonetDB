@@ -23,7 +23,7 @@
 # University of Konstanz, the Technische Universitaet Muenchen, and the
 # Universitaet Tuebingen are Copyright (C) 2000-2005 University of
 # Konstanz, (C) 2005-2008 Technische Universitaet Muenchen, and (C)
-# 2008-2010 Eberhard Karls Universitaet Tuebingen, respectively.  All
+# 2008-2011 Eberhard Karls Universitaet Tuebingen, respectively.  All
 # Rights Reserved.
 #
 
@@ -31,7 +31,11 @@
 #SUBDIRS = hskparser
 SUBDIRS = opt prop map
 
-INCLUDES = ../include $(MONETDB_INCS) $(LIBXML2_CFLAGS)
+INCLUDES = \
+	../include \
+	../../../MonetDB/src/common \
+	../../../MonetDB/src/gdk \
+	$(libxml2_CFLAGS)
 
 # locally disable "-Werror"
 #X_CFLAGS = "-pedantic"
@@ -41,44 +45,44 @@ INCLUDES = ../include $(MONETDB_INCS) $(LIBXML2_CFLAGS)
 planner_CFLAGS = $(SUN_NOERR_CFLAGS)
 
 lib_algebra = {
-        NOINST
-        DIR = libdir
-        SOURCES = \
-                alg_dag.c \
-                algebra.c \
-                algebra_cse.c \
-                algopt.c \
-                builtins.c \
-                core2alg.brg \
-                intro_borders.c \
-                load_stats.c \
-                logical.c \
-                ordering.c \
-                physical.c \
-                planner.c \
-                properties.c
+	NOINST
+	DIR = libdir
+	SOURCES = \
+		alg_dag.c \
+		algebra.c \
+		algebra_cse.c \
+		algopt.c \
+		builtins.c \
+		core2alg.brg \
+		intro_borders.c \
+		load_stats.c \
+		logical.c \
+		ordering.c \
+		physical.c \
+		planner.c \
+		properties.c
 }
 
 # optimizers needed for pf_opt
 lib_logopt = {
-        NOINST
-        DIR = libdir
-        SOURCES = \
-                algopt.c \
-                load_stats.c \
-                properties.c
+	NOINST
+	DIR = libdir
+	SOURCES = \
+		algopt.c \
+		load_stats.c \
+		properties.c
 }
 
 # constructors needed for pf_opt
 lib_logical = {
-        NOINST
-        DIR = libdir
-        SOURCES = \
-                algebra_cse.c \
-                logical.c \
-                algebra.c \
-                alg_dag.c \
-                ordering.c
+	NOINST
+	DIR = libdir
+	SOURCES = \
+		algebra_cse.c \
+		logical.c \
+		algebra.c \
+		alg_dag.c \
+		ordering.c
 }
 
 #EXTRA_DIST =

@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -172,7 +172,7 @@ could be replaced by partitioned hash-join with radix-cluster/decluster.
 #include "mal_exception.h"
 
 #ifdef WIN32
-#ifndef LIBMAL
+#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
 #define mkey_export extern __declspec(dllimport)
 #else
 #define mkey_export extern __declspec(dllexport)
@@ -206,7 +206,7 @@ first one by one create a hash value out of the multiple attributes.
 This hash value is computed by xoring and rotating individual hash
 values together. We create a hash and rotate command to do this.
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "mkey.h"
 /* TODO: nil handling. however; we do not want to lose time in bulk_rotate_xor_hash with that */
 int

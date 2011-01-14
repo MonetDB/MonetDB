@@ -22,7 +22,7 @@ Karls Universitaet Tuebingen, Germany.  Portions created by the
 University of Konstanz, the Technische Universitaet Muenchen, and the
 Universitaet Tuebingen are Copyright (C) 2000-2005 University of
 Konstanz, (C) 2005-2008 Technische Universitaet Muenchen, and (C)
-2008-2010 Eberhard Karls Universitaet Tuebingen, respectively.  All
+2008-2011 Eberhard Karls Universitaet Tuebingen, respectively.  All
 Rights Reserved.
 @
 @' $Id$
@@ -65,7 +65,7 @@ pf_support_export int CMDshred_stream(BAT *docBAT, Stream *s, lng *percentage, l
 
 #define PRINT_STAT 0
 
-#include <pf_config.h>
+#include <monetdb_config.h>
 #include <gdk.h>
 #include <monet.h>
 
@@ -468,7 +468,7 @@ shredBAT_extend(shredBAT *sb,
 }
 
 
-static INLINE oid 
+static inline oid 
 shredBAT_append_str(shredCtxStruct *shredCtx, 
                     int idx, 
                     str v)
@@ -516,7 +516,7 @@ shredBAT_append_str(shredCtxStruct *shredCtx,
  * - emit_string() emit a text node (calls emit_node)
  * ==================================================================================== */
 
-static INLINE int
+static inline int
 emit_tuple(shredCtxStruct* shredCtx, 
            oid pre, 
            int size, 

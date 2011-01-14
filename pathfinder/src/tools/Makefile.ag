@@ -15,38 +15,54 @@
 # All Rights Reserved.
 
 MTSAFE
-INCLUDES = $(MONETDB4_INCS) $(CLIENTS_INCS) $(MONETDB_INCS)
+INCLUDES = \
+	../../../MonetDB4/src/monet \
+	../../../MonetDB4/src/modules/plain \
+	../../../MonetDB4/src/modules/contrib \
+	../../../MonetDB4/src \
+	../../../MonetDB4/src/modules/calibrator \
+	../../../clients/src/mapilib \
+	../../../MonetDB/src/common \
+	../../../common/stream \
+	../../../MonetDB/src/gdk
 
 GDK_LIBS = $(PTHREAD_LIBS) $(MALLOC_LIBS)
 EXTRA_LIBS = $(SOCKET_LIBS) $(DL_LIBS) $(GDK_LIBS) 
 
-STATIC_MODS = $(MONETDB4_MODS) \
-	-l_builtin -l_arith -l_bat -l_algebra -l_sys -l_trans -l_str -l_constant
+STATIC_MODS = \
+	../../../MonetDB4/src/modules/plain/lib_builtin \
+	../../../MonetDB4/src/modules/plain/lib_arith \
+	../../../MonetDB4/src/modules/plain/lib_bat \
+	../../../MonetDB4/src/modules/plain/lib_algebra \
+	../../../MonetDB4/src/modules/plain/lib_sys \
+	../../../MonetDB4/src/modules/plain/lib_trans \
+	../../../MonetDB4/src/modules/plain/lib_str \
+	../../../MonetDB4/src/modules/plain/lib_constant
 
 smallTOC_SHARED_MODS =	\
-	-l_mapi	\
+	../../../MonetDB4/src/mapi/lib_mapi	\
 	\
-	-l_aggr	\
-	-l_aggrX3	\
-	-l_alarm	\
-	-l_ascii_io	\
-	-l_bat_arith	\
-	-l_blob	\
-	-l_enum	\
-	-l_lock	\
-	-l_logger	\
-	-l_mkey	\
-	-l_mmath	\
-	-l_monettime	\
-	-l_pcre	\
-	-l_pqueue	\
-	-l_streams	\
-	-l_unix	\
-	-l_url	\
-	-l_xtables	\
+	../../../MonetDB4/src/modules/plain/lib_aggr	\
+	../../../MonetDB4/src/modules/plain/lib_aggrX3	\
+	../../../MonetDB4/src/modules/plain/lib_alarm	\
+	../../../MonetDB4/src/modules/plain/lib_ascii_io	\
+	../../../MonetDB4/src/modules/plain/lib_bat_arith	\
+	../../../MonetDB4/src/modules/plain/lib_blob	\
+	../../../MonetDB4/src/modules/plain/lib_enum	\
+	../../../MonetDB4/src/modules/plain/lib_lock	\
+	../../../MonetDB4/src/modules/plain/lib_logger	\
+	../../../MonetDB4/src/modules/plain/lib_mkey	\
+	../../../MonetDB4/src/modules/plain/lib_mmath	\
+	../../../MonetDB4/src/modules/plain/lib_monettime	\
+	../../../MonetDB4/src/modules/plain/lib_pcre	\
+	../../../MonetDB4/src/modules/plain/lib_pqueue	\
+	../../../MonetDB4/src/modules/plain/lib_streams	\
+	../../../MonetDB4/src/modules/plain/lib_unix	\
+	../../../MonetDB4/src/modules/plain/lib_url	\
+	../../../MonetDB4/src/modules/plain/lib_xtables	\
 	\
-	-l_malalgebra	\
-	-l_txtsim	\
+	../../../MonetDB4/src/modules/plain/lib_malalgebra	\
+	../../../MonetDB4/src/modules/plain/lib_txtsim	\
 	\
 	../../runtime/lib_pf_support \
 	../../runtime/lib_pathfinder \
@@ -66,21 +82,32 @@ bin_Mserver = {
 	COND = LINK_STATIC
 	SOURCES = Mserver.mx
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
-		$(MONETDB_LIBS) -lbat -lmutils -lstream $(MONETDB4_LIBS) -lmonet
+		../../../MonetDB/src/gdk/libbat \
+		../../../MonetDB/src/common/libmutils \
+		../../../common/stream/libstream \
+		../../../MonetDB4/src/monet/libmonet
 }
 
 lib_embeddedxq = {
 	SOURCES = embeddedclient.c.in
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
-		$(MONETDB_LIBS) -lbat -lmutils -lstream $(MONETDB4_LIBS) -lmonet $(CLIENTS_LIBS) -lMapi
+		../../../MonetDB/src/gdk/libbat \
+		../../../MonetDB/src/common/libmutils \
+		../../../common/stream/libstream \
+		../../../MonetDB4/src/monet/libmonet \
+		../../../clients/src/mapilib/libMapi
 }
 
 bin_Mbeddedxq = {
 	SOURCES = prog.c
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
 		libembeddedxq \
-		$(MONETDB_LIBS) -lbat -lmutils -lstream $(MONETDB4_LIBS) -lmonet $(CLIENTS_LIBS) -lMapi
+		../../../MonetDB/src/gdk/libbat \
+		../../../MonetDB/src/common/libmutils \
+		../../../common/stream/libstream \
+		../../../MonetDB4/src/monet/libmonet \
+		../../../clients/src/mapilib/libMapi
 }
 
-EXTRA_DIST = embeddedclient.h
+EXTRA_DIST = embeddedclient.h static_modules.mx
 EXTRA_DIST_DIR = Tests

@@ -14,17 +14,18 @@
 #
 # The Initial Developer of the Original Code is CWI.
 # Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2010 MonetDB B.V.
+# Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-pkg=monetdb-clients
-builddir=@QCLIENTS_BUILD@
+pkg=clients
+buildbase=@QBUILD@
+builddir="${buildbase}/clients"
 # make sure srcdir contains absolute path name
 srcdir=`cd '@srcdir@'; pwd`
 uname=`uname`
 
 # make sure scripts are executable
-for x in "${builddir}/conf/${pkg}-config" "${builddir}/src/python/mclient.py"
+for x in "${builddir}/src/python/mclient.py"
 do
 	if [ -s $x ] ; then
 		chmod +x $x
@@ -32,10 +33,10 @@ do
 done
 
 # enhance various paths to find our stuff
-PATH="${builddir}/conf:${builddir}/src/mapiclient:${builddir}/src/python:$PATH"
+PATH="${builddir}/src/mapiclient:${builddir}/src/python:${buildbase}/testing/src:$PATH"
 export PATH
 
-PYTHONPATH="${srcdir}/src/python:${PYTHONPATH}"
+PYTHONPATH="${srcdir}/src/python:${buildbase}/testing/src:${srcdir}/../testing/src:${PYTHONPATH}"
 export PYTHONPATH
 
 # execute Mtest.py in the source directory
@@ -46,4 +47,4 @@ cd "$srcdir"
 # arguments.
 # if the environment variable MTEST_AT is set (value does not matter), pass
 # the --at flag to Mtest.py so that it uses the at command as a watchdog.
-exec Mtest.py --package=${pkg} --TSTTRGBASE="${builddir}" ${MTEST_AT+--at} "${@--rq}"
+exec python "${buildbase}/testing/src/Mtest.py" --package=${pkg} --dbfarm="${builddir}/dbfarm" --TSTTRGBASE="${builddir}" ${MTEST_AT+--at} "${@--rq}"

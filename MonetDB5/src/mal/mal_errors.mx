@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -86,7 +86,9 @@ use a translation table where needed.
 
 #define RUNTIME_IO_EOF "Attempt to read beyond end-of-file"
 #define RUNTIME_FILE_NOT_FOUND "File not found"
+#define RUNTIME_UNLINK "File could not be unlinked"
 #define RUNTIME_DIR_ERROR "Unable to open directory"
+#define RUNTIME_CREATE_ERROR "Unable to create file/directory"
 #define RUNTIME_STREAM_FAILED "Could not create stream"
 #define RUNTIME_STREAM_WRITE "Could not write to stream"
 #define RUNTIME_STREAM_INPUT "Could not read from stream"

@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -45,7 +45,7 @@ this task (1MB). It has been increased to 8MB, which indeed improved.
 The work divider allocates subtasks to threads based on the
 observed time spending so far.
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "tablet.h"
 #include "algebra.h"
 
@@ -126,7 +126,7 @@ the null-replacement string then we grab the underlying nil.
 If the string starts with the quote identified from SQL, we locate the tail
 and interpret the body.
 @c
-static INLINE int
+static inline int
 SQLinsert_val(Column * fmt, char *s, char quote, ptr key, str *err, int col)
 {
 	ptr *adt;
@@ -467,6 +467,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 	int threads= (!maxrow || maxrow > (1<<16)) ? (GDKnr_threads < 16? GDKnr_threads: 16):1;
 	lng lio =0,  tio, t1 = 0, total=0, iototal=0;
 	int vmtrim = GDK_vm_trim;
+	str msg= MAL_SUCCEED;
 
 	for (i = 0; i < 16; i++)
 		ptask[i].cols = 0;
@@ -578,6 +579,15 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 		mlock( task->b->buf, task->b->size);
 #endif
 	while ( (task->b->pos < task->b->len || !task->b->eof) && cnt < (BUN) maxrow && res == 0) {
+
+		if(task->errbuf && task->errbuf[0] ) {
+			msg = catchKernelException(cntxt, msg);
+			if ( msg ){
+				showException(MAL,"copy_from",msg);
+				GDKfree(msg);
+				goto bailout;
+			}
+		}
 
 		if ( task->basesize <= task->b->size){
 			/* end of record not found within 32M */
@@ -813,9 +823,10 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 
   bailout:
 	if (task) {
-		for( i=0; i< as->nr_attrs; i++)
+		for( i=0; i< as->nr_attrs; i++){
 			if (task->fields[i])
 				GDKfree(task->fields[i]);
+		}
 		if (task->fields)
 			GDKfree(task->fields);
 		if (task->time)

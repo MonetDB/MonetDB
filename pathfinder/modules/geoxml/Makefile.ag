@@ -22,12 +22,23 @@
 # University of Konstanz, the Technische Universitaet Muenchen, and the
 # Universitaet Tuebingen are Copyright (C) 2000-2005 University of
 # Konstanz, (C) 2005-2008 Technische Universitaet Muenchen, and (C)
-# 2008-2010 Eberhard Karls Universitaet Tuebingen, respectively.  All
+# 2008-2011 Eberhard Karls Universitaet Tuebingen, respectively.  All
 # Rights Reserved.
 #
 
-INCLUDES = ../../runtime ../../compiler/include $(MONETDB4_INCS) $(MONETDB_INCS) $(LIBXML2_CFLAGS)
-PF_LIBS = $(LIBXML2_LDADD) $(LIBXML2_LIBS) $(DL_LIBS)
+INCLUDES = \
+	../../runtime \
+	../../compiler/include \
+	../../../MonetDB4/src/monet \
+	../../../MonetDB4/src/modules/plain \
+	../../../MonetDB4/src/modules/contrib \
+	../../../MonetDB4/src/mapi \
+	../../../MonetDB4/src/modules/calibrator \
+	../../../MonetDB/src/common \
+	../../../common/stream \
+	../../../MonetDB/src/gdk \
+	$(libxml2_CFLAGS)
+PF_LIBS = $(libxml2_LIBS) $(DL_LIBS)
 
 lib__geoxml = {
 	DIR = libdir/MonetDB4
@@ -35,8 +46,14 @@ lib__geoxml = {
 
 	LIBS = \
 		../../runtime/lib_pf_support $(PF_LIBS) \
-		$(MONETDB_LIBS) -lbat -lstream $(MONETDB4_LIBS) -lmonet \
-		$(MONETDB4_MODS) -l_streams -l_builtin -l_ascii_io -l_algebra -l_constant
+		../../../MonetDB/src/gdk/libbat \
+		../../../common/stream/libstream \
+		../../../MonetDB4/src/monet/libmonet \
+		../../../MonetDB4/src/modules/plain/lib_streams \
+		../../../MonetDB4/src/modules/plain/lib_builtin \
+		../../../MonetDB4/src/modules/plain/lib_ascii_io \
+		../../../MonetDB4/src/modules/plain/lib_algebra \
+		../../../MonetDB4/src/modules/plain/lib_constant
 }
 
 headers_mil = {

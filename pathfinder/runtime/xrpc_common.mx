@@ -22,7 +22,7 @@ Karls Universitaet Tuebingen, Germany.  Portions created by the
 University of Konstanz, the Technische Universitaet Muenchen, and the
 Universitaet Tuebingen are Copyright (C) 2000-2005 University of
 Konstanz, (C) 2005-2008 Technische Universitaet Muenchen, and (C)
-2008-2010 Eberhard Karls Universitaet Tuebingen, respectively.  All
+2008-2011 Eberhard Karls Universitaet Tuebingen, respectively.  All
 Rights Reserved.
 @
 @' $Id$
@@ -190,7 +190,7 @@ XRPCreq_t *xrpc_parse_message(char *err, int errlen, BAT *shredBAT,
 #endif /* XRPC_COMMON_H */
 
 @c
-#include "pf_config.h"
+#include "monetdb_config.h"
 #include "pathfinder.h"
 #include "xrpc_common.h"
 
@@ -280,7 +280,7 @@ XRPCreq_free(XRPCreq_t *req)
     GDKfree(req);
 }
 
-static INLINE oid
+static inline oid
 skip_text_nodes(char *pre_kindT, oid pre, oid max) 
 {
     while(pre < max && pre_kindT[pre] == TEXT) pre++;
@@ -332,7 +332,7 @@ get_node_type(str typename) {
 /**
  * @return PRE, or 0 if not found.
  */
-static INLINE oid
+static inline oid
 get_pre_by_qname(
         str qname,
         oid start_pre,

@@ -13,11 +13,11 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2010 MonetDB B.V.
+ * Copyright August 2008-2011 MonetDB B.V.
  * All Rights Reserved.
  */
 
-#include	<mx_config.h>
+#include	<monetdb_config.h>
 #include	<stdio.h>
 #include	<ctype.h>
 #include 	<stdlib.h>
@@ -41,7 +41,6 @@ ofile_printf(char *format, ...)
 /*	format = va_arg(ap, char*);*/
 	if (mx_out & 1)
 		vfprintf(ofile, format, ap);
-	va_start(ap, format);
 	va_start(ap, format);
 	if (ofile_body && (mx_out & 4))
 		vfprintf(ofile_body, format, ap);

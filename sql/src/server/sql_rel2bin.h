@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2010 MonetDB B.V.
+ * Copyright August 2008-2011 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -21,7 +21,7 @@
 #ifndef _SQL_REL2BIN_H
 #define _SQL_REL2BIN_H
 
-#define PSEL(s) ((s->type == st_select || s->type == st_uselect) && !s->op2.stval->nrcols)
+#define PSEL(s) ((s->type == st_select || s->type == st_uselect) && !s->op2->nrcols)
 #define RSEL(s) (s->type == st_select2 || s->type == st_uselect2)
 #define USEL(s) (s->type == st_uselect || s->type == st_uselect2)
 

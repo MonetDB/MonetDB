@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2010 MonetDB B.V.
+ * Copyright August 2008-2011 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -37,7 +37,7 @@
 #include <sys/times.h>
 #endif
 
-#include <mapilib/Mapi.h>
+#include <Mapi.h>
 
 #define ERRSIZE 8192
 
@@ -61,6 +61,8 @@
 #define mod_none 0
 #define mod_debug 2
 #define mod_trace 4
+/* locked needs unlocking */
+#define mod_locked 8 
 
 typedef struct sql_var {
 	void *s;	
@@ -76,40 +78,37 @@ typedef struct mvc {
 	char errstr[ERRSIZE];
 
 	sql_allocator *sa;
-	sql_allocator *ra;	/* allocator used during the relational phases */
-	sql_allocator *ba;	/* allocator used for binary statement tree */
 	struct qc *qc;
-	struct qc *prepare_qc;
 	int clientid;		/* id of the owner */
 	struct scanner scanner;
 
 	list *params;
 	sql_var *vars; 		/* stack of variables, frames are simply a
 				   NULL in the var stack 
-					(sometimes with name (label) )*/ 
-	int topvars; 
+					(sometimes with name (label) ) */
+	int topvars;
 	int sizevars;
 	int frame;
 	atom **args;
 	int argc;
 	int argmax;
 	struct symbol *sym;
-	int point_query;	/* */
+	int point_query;	/* mark when a query is a point query */
 
 	int user_id;
 	int role_id;
-	lng last_id;	
+	lng last_id;
 
 	/* current session variables */
 	int timezone;		/* minutes west of UTC */
 	int cache;		/* some queries should not be cached ! */
 	int caching;		/* cache current query ? */
 	int history;		/* queries statistics are kept  */
-	int reply_size;		/* reply size */ 
+	int reply_size;		/* reply size */
 	int debug;
 
 	char emode;		/* execution mode */
-	char emod;		/* execution modifier */		
+	char emod;		/* execution modifier */
 
 	sql_session *session;	
 
@@ -145,6 +144,8 @@ extern int mvc_type(mvc *c);
  * Rollbacks can be either full or until a given savepoint. 
  * The special mvc_release can be used to release savepoints. 
  */
+#define has_snapshots(tr) ((tr) && (tr)->parent && (tr)->parent->parent)
+
 extern void mvc_trans(mvc *c);
 extern int mvc_commit(mvc *c, int chain, char *name);
 extern int mvc_rollback(mvc *c, int chain, char *name);

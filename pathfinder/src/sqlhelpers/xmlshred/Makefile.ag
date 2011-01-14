@@ -15,11 +15,16 @@
 # All Rights Reserved.
 
 MTSAFE
-INCLUDES = ./include ../../../compiler/include ../../../compiler $(MONETDB_INCS) $(LIBXML2_CFLAGS)
+INCLUDES = ./include \
+	../../../compiler/include \
+	../../../compiler \
+	../../../../MonetDB/src/common \
+	../../../../MonetDB/src/gdk \
+	$(libxml2_CFLAGS)
 
 EXTRA_DIST_DIR = include
 
 bin_pfshred = {
-    SOURCES = main.c shred_helper.c hash.c guides.c encoding.c oops.c
-	LIBS = $(LIBXML2_LDADD) $(LIBXML2_LIBS) 
+	SOURCES = main.c shred_helper.c hash.c guides.c encoding.c oops.c
+	LIBS = $(libxml2_LIBS) 
 }

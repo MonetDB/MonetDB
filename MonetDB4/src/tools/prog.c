@@ -13,11 +13,11 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2010 MonetDB B.V.
+ * Copyright August 2008-2011 MonetDB B.V.
  * All Rights Reserved.
  */
 
-#include <monetdb4_config.h>
+#include <monetdb_config.h>
 #include "embeddedclient.h"
 
 #ifdef HAVE_STRING_H
@@ -114,7 +114,7 @@ main(int argc, char **av)
 		usage(prog);
 
 	/* needed, to prevent the MonetDB/4 config file from being used */  
-	setlen = mo_add_option(&set, setlen, opt_config, "prefix", MONETDB4_PREFIX);
+	setlen = mo_add_option(&set, setlen, opt_config, "prefix", PREFIX);
 	setlen = mo_add_option(&set, setlen, opt_config, "config", MONETDB4_CONFFILE);
 
 	for (;;) {

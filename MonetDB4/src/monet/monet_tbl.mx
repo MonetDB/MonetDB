@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -37,7 +37,7 @@ vice versa.
 
 #include <assert.h>
 
-INLINE static void *
+inline static void *
 BUNtailfnd( BAT *b, ptr v) 
 {
 	BATiter bi = bat_iterator(b);
@@ -177,7 +177,7 @@ m_export int TBL_multiplex_resolve(str name, int argc, ValPtr Argv, monet_sig_t 
 m_export int TBL_setaggr_resolve(str name, int argc, ValPtr Argv, monet_sig_t *sig, Cntxt stk);
 
 @c
-#include "monetdb4_config.h"
+#include "monetdb_config.h"
 #include "monet.h"
 
 #include <stdio.h>
@@ -323,9 +323,6 @@ m_export int DL_regfcn(void *tbl, ptr fcnptr, str name);
 #ifndef MONETDB_STATIC
 
 #ifdef HAVE_DLFCN_H
-# ifdef __APPLE__
-#  define DLOPEN_NO_WARN
-# endif
 # include <dlfcn.h>
 #endif
 
@@ -879,7 +876,7 @@ TBL_checkparams_init(paramcheck_t *pt, int argc, ValPtr argv, BAT *atomtbl)
 
 #define same_type(s1,s2)	(strcmp(s1, s2) == 0)
 
-static INLINE int
+static inline int
 TBL_checkparam(paramcheck_t *pt, ValPtr v1, str tp1, str ltp, str tp2, bit void_equal_oid)
 {
 	int j, k;

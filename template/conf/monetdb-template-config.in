@@ -14,7 +14,7 @@
 #
 # The Initial Developer of the Original Code is CWI.
 # Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2010 MonetDB B.V.
+# Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
 # minimal inital version as required by Mtest.py
@@ -92,7 +92,6 @@ while test $# -gt 0; do
     --conds)
 	echo BITS32=@BITS32_FALSE@
 	echo BITS64=@BITS64_FALSE@
-	echo DOCTOOLS=@DOCTOOLS_FALSE@
 	echo HAVE_BUILDTOOLS=@HAVE_BUILDTOOLS_FALSE@
 	echo HAVE_EXTRA_MK=@HAVE_EXTRA_MK_FALSE@
 	echo HAVE_MONETDB4=@HAVE_MONETDB4_FALSE@

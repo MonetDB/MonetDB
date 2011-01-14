@@ -1,7 +1,7 @@
 %{
 char rcsid_gram[] = "$Id$";
 
-#include "burg_config.h"
+#include "monetdb_config.h"
 #include <stdio.h>
 #include "b.h"
 #include "fe.h"
@@ -22,14 +22,14 @@ extern void doGram(List);
 
 %start full
 
-%token ERROR
+%token brgERROR
 %token K_TERM
 %token K_GRAM
 %token K_START
 %token K_PPERCENT
 
 %token <y_string> ID
-%token <y_int> INT
+%token <y_int> brgINT
 
 %type <y_arity> decl
 %type <y_binding> binding
@@ -66,14 +66,14 @@ bindinglist	: /* lambda */		 { $$ = 0; }
 		| bindinglist binding	 { $$ = newList($2, $1); }
 		;
 
-binding	: ID '=' INT	 { $$ = newBinding($1, $3); }
+binding	: ID '=' brgINT	 { $$ = newBinding($1, $3); }
 	;
 
 rules	: /* lambda */	 { $$ = 0; }
 	| rules rule	 { $$ = newList($2, $1); }
 	;
 
-rule	: ID ':' pattern '=' INT cost ';'	 { $$ = newRuleAST($1, $3, $5, $6); }
+rule	: ID ':' pattern '=' brgINT cost ';'	 { $$ = newRuleAST($1, $3, $5, $6); }
 		;
 
 pattern	: ID 					 { $$ = newPatternAST($1, 0); }
@@ -82,10 +82,10 @@ pattern	: ID 					 { $$ = newPatternAST($1, 0); }
 	;
 
 cost	: /* lambda */		 { $$ = 0; }
-	| '(' INT costtail ')'	 { $$ = newIntList($2, $3); }
+	| '(' brgINT costtail ')'	 { $$ = newIntList($2, $3); }
 	;
 
 costtail	: /* lambda */		 { $$ = 0; }
-		| ',' INT costtail	 { $$ = newIntList($2, $3); }
-		| INT costtail		 { $$ = newIntList($1, $2); }
+		| ',' brgINT costtail	 { $$ = newIntList($2, $3); }
+		| brgINT costtail		 { $$ = newIntList($1, $2); }
 		;

@@ -13,13 +13,13 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2010 MonetDB B.V.
+ * Copyright August 2008-2011 MonetDB B.V.
  * All Rights Reserved.
  */
 
 /* NOTE: for this file to work correctly, SABAOTHinit must be called. */
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include "mal_sabaoth.h"
 #include <stdio.h> /* fprintf, rename */
 #include <unistd.h> /* stat, rmdir, unlink, ioctl */

@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -65,7 +65,7 @@ comment "Run a private copy of the MAL program";
 #define DEBUG_RUN_ISOLATION
 
 #ifdef WIN32
-#ifndef LIBRUN_ISOLATE
+#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
 #define run_isolate_export extern __declspec(dllimport)
 #else
 #define run_isolate_export extern __declspec(dllexport)
@@ -79,7 +79,7 @@ run_isolate_export str RUNisolation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, I
 
 @+ Isolation implementation
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "run_isolate.h"
 
 str

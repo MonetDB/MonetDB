@@ -22,12 +22,23 @@
 # University of Konstanz, the Technische Universitaet Muenchen, and the
 # Universitaet Tuebingen are Copyright (C) 2000-2005 University of
 # Konstanz, (C) 2005-2008 Technische Universitaet Muenchen, and (C)
-# 2008-2010 Eberhard Karls Universitaet Tuebingen, respectively.  All
+# 2008-2011 Eberhard Karls Universitaet Tuebingen, respectively.  All
 # Rights Reserved.
 #
 
-INCLUDES = ../compiler/include ../runtime $(MONETDB5_INCS) $(MONETDB_INCS) $(LIBXML2_CFLAGS)
-PF_LIBS = $(LIBXML2_LDADD) $(LIBXML2_LIBS) $(DL_LIBS)
+INCLUDES = ../compiler/include ../runtime \
+	../../MonetDB5/src/modules/atoms \
+	../../MonetDB5/src/compiler \
+	../../MonetDB5/src/modules/kernel \
+	../../MonetDB5/src/mal \
+	../../MonetDB5/src/modules/mal \
+	../../MonetDB5/src/optimizer \
+	../../MonetDB5/src/scheduler \
+	../../MonetDB/src/common \
+	../../common/stream \
+	../../MonetDB/src/gdk \
+	$(libxml2_CFLAGS)
+PF_LIBS = $(libxml2_LIBS) $(DL_LIBS)
 
 lib__xquery = {
 	DIR = libdir/MonetDB5
@@ -35,11 +46,14 @@ lib__xquery = {
 		xquery.mx \
 		xquery_scenario.mx \
 		xquery_backend.mx 
-        LIBS = \
-                $(PF_LIBS) \
-                $(MONETDB5_MODS) -l_optimizer -l_bat5 \
-		../runtime/libserialize ../runtime/libpf \
-		$(MONETDB_LIBS) $(MONETDB5_LIBS) -lmonetdb5 -lbat -lstream $(READLINE_LIBS) $(PTHREAD_LIBS)
+	LIBS = \
+		$(PF_LIBS) \
+		../runtime/libserialize \
+		../runtime/libpf \
+		../../MonetDB5/src/tools/libmonetdb5 \
+		../../MonetDB/src/gdk/libbat \
+		../../common/stream/libstream \
+		$(READLINE_LIBS) $(PTHREAD_LIBS)
 }
 
 headers_mal = {

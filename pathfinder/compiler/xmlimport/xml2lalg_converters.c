@@ -30,14 +30,14 @@
  * University of Konstanz, the Technische Universitaet Muenchen, and the
  * Universitaet Tuebingen are Copyright (C) 2000-2005 University of
  * Konstanz, (C) 2005-2008 Technische Universitaet Muenchen, and (C)
- * 2008-2010 Eberhard Karls Universitaet Tuebingen, respectively.  All
+ * 2008-2011 Eberhard Karls Universitaet Tuebingen, respectively.  All
  * Rights Reserved.
  *
  * $Id: xml2lalg_converters.c,v 1.0 2007/10/31 22:00:00 ts-tum 
  * Exp $ 
  */
 
-#include "pf_config.h"
+#include "monetdb_config.h"
 #include "pathfinder.h"
 #include "xml2lalg_converters.h"
 

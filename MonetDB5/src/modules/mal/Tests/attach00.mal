@@ -3,14 +3,36 @@
 b:= bat.new(:oid,:int);
 bat.append(b,1);
 bat.append(b,2);
+bat.append(b,3);
+bat.append(b,1);
+bat.append(b,2);
+bat.append(b,3);
+bat.append(b,1);
+bat.append(b,2);
+bat.append(b,3);
+bat.append(b,1);
+bat.append(b,2);
+bat.append(b,3);
+bat.append(b,1);
+bat.append(b,2);
+bat.append(b,3);
+bat.append(b,1);
+bat.append(b,2);
+bat.append(b,3);
+bat.append(b,1);
+bat.append(b,2);
+bat.append(b,3);
 bat.setPersistent(b,true);
-bat.save(b); #essential to flush to disk
+#bat.save(b); #essential to flush to disk
 bbp.commit(b); # to make entry visible for others
 
 fnme:= attach.location(b);
-io.print(fnme);
+#io.print(fnme);
+b:= nil;
 
 c:bat[:oid,:int]:= attach.bind(fnme);
+cnt:= aggr.count(c);
+io.print(cnt);
 #io.print(c);
 #io.print(b);
 

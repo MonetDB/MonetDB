@@ -14,16 +14,17 @@
 #
 # The Initial Developer of the Original Code is CWI.
 # Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2010 MonetDB B.V.
+# Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-pkg=monetdb5
-builddir=@QMONETDB5_BUILD@
+pkg=MonetDB5
+buildbase=@QBUILD@
+builddir="${buildbase}/MonetDB5"
 # make sure srcdir contains absolute path name
 srcdir=`cd '@srcdir@'; pwd`
 uname=`uname`
 
-# where compiled modules are to be found
+# where compiled MonetDB5 modules are to be found
 for d in src/compiler src/optimizer src/scheduler src/modules/atoms src/modules/kernel src/modules/mal src/modules/mal/crackers src/modules/mal/rdf
 do
 	MOD_PATH="${MOD_PATH}${builddir}/$d/.libs:${builddir}/$d:"
@@ -32,20 +33,15 @@ do
 	cp -f ${srcdir}/$d/[0-9][0-9]_*.mal ${builddir}/$d/autoload/ 2>/dev/null
 done
 
-# make sure scripts are executable
-for x in "${builddir}/conf/${pkg}-config"
-do
-	if [ -s $x ] ; then
-		chmod +x $x
-	fi
-done
-
 # enhance various paths to find our stuff
-binpath="${builddir}/conf:${builddir}/src/tools:${srcdir}/src/tools"
+binpath="${builddir}/src/tools:${srcdir}/src/tools:${buildbase}/testing/src"
 libpath="${MOD_PATH}:${builddir}/src/mal/.libs"
 
 PATH="${binpath}:$PATH"
 export PATH
+
+PYTHONPATH="${buildbase}/testing/src:${srcdir}/../testing/src:${PYTHONPATH}"
+export PYTHONPATH
 
 if [ "${LD_LIBRARY_PATH}" ] ; then
 	LD_LIBRARY_PATH=":${LD_LIBRARY_PATH}"
@@ -76,4 +72,4 @@ cd "$srcdir"
 # arguments.
 # if the environment variable MTEST_AT is set (value does not matter), pass
 # the --at flag to Mtest.py so that it uses the at command as a watchdog.
-exec Mtest.py --config="${builddir}/conf/monetdb5.conf" --package=${pkg} --monet_mod_path="${MOD_PATH}" --dbfarm="${builddir}/dbfarm" --TSTTRGBASE="${builddir}" ${MTEST_AT+--at} "${@--rq}"
+exec python "${buildbase}/testing/src/Mtest.py" --config="${builddir}/conf/monetdb5.conf" --package=${pkg} --monet_mod_path="${MOD_PATH}" --dbfarm="${builddir}/dbfarm" --TSTTRGBASE="${builddir}" ${MTEST_AT+--at} "${@--rq}"

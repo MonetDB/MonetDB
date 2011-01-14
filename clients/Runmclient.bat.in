@@ -2,7 +2,8 @@
 
 setlocal
 
-set builddir=@XCLIENTS_BUILD@
+set buildbase=@XBUILD@
+set builddir=%buildbase%\clients
 
 set PATH=%builddir%\src\mapiclient;%builddir%\src\mapilib;%PATH%
 

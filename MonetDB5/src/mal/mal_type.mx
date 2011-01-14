@@ -13,7 +13,7 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
@@ -115,7 +115,7 @@ mal_export int isAmbiguousType(int type);
 At any point we should be able to construct an ascii representation of
 the type descriptor. Including the variable references.
 @c
-#include "mal_config.h"
+#include "monetdb_config.h"
 #include "mal_type.h"
 
 str
@@ -185,7 +185,7 @@ It is assumed that the type table does not change in the mean time.
 Use the information that identifiers are at least one character
 and are terminated by a null to speedup comparison
 @c
-INLINE int
+inline int
 idcmp(str n, str m)
 {
 	if (* n == * m)
@@ -287,7 +287,7 @@ isAmbiguousType(int type){
 	}
 	return 0;
 }
-INLINE int
+inline int
 findGDKtype(int type)
 {
 	if (type == TYPE_any || type== TYPE_void)
@@ -306,7 +306,7 @@ newTmpName(char tag, int i)
 	return GDKstrdup(buf);
 }
 
-INLINE int
+inline int
 isTmpName(str n)
 {
 	return n && *n == TMPMARKER;

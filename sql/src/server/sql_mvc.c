@@ -13,14 +13,14 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2010 MonetDB B.V.
+ * Copyright August 2008-2011 MonetDB B.V.
  * All Rights Reserved.
  */
 
 
 /* multi version catalog */
 
-#include "sql_config.h"
+#include "monetdb_config.h"
 #include <gdk.h>
 
 #include "sql_mvc.h"
@@ -160,14 +160,14 @@ mvc_trans(mvc *m)
 
 	store_lock();
 	schema_changed = sql_trans_begin(m->session);
-	if (m->cache && (schema_changed || m->qc->id > 10000 || err)){
-		if (m->qc)
-			qc_destroy(m->qc);
-		m->qc = qc_create(m->clientid);
-	}
-	if (m->prepare_qc && (schema_changed || err)) {
-		qc_destroy(m->prepare_qc);
-		m->prepare_qc = qc_create(m->clientid);
+	if (m->qc && (schema_changed || m->qc->nr > 20000 || err)){
+		if (schema_changed || err) {
+			if (m->qc)
+				qc_destroy(m->qc);
+			m->qc = qc_create(m->clientid);
+		} else { /* clean all but the prepared statements */
+			qc_clean(m->qc);
+		}
 	}
 	if (m->session->active) 
 		m->type = Q_TRANS;
@@ -276,10 +276,8 @@ mvc_rollback(mvc *m, int chain, char *name)
 	assert(m->session->active);	/* only abort an active transaction */
 
 	store_lock();
-	if (m->qc) {
-		qc_destroy(m->qc);
-		m->qc = qc_create(m->clientid);
-	}
+	if (m->qc) 
+		qc_clean(m->qc);
 	if (name && name[0] != '\0') {
 		while (tr && (!tr->name || strcmp(tr->name, name) != 0))
 			tr = tr->parent;
@@ -380,7 +378,6 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 	m->errstr[ERRSIZE-1] = '\0';
 
 	m->qc = qc_create(clientid);
-	m->prepare_qc = qc_create(clientid);
 	m->sa = sa_create();
 
 	m->params = NULL;
@@ -522,9 +519,6 @@ mvc_destroy(mvc *m)
 	if (m->qc)
 		qc_destroy(m->qc);
 	m->qc = NULL;
-	if (m->prepare_qc)
-		qc_destroy(m->prepare_qc);
-	m->prepare_qc = NULL;
 
 	_DELETE(m->args);
 	m->args = NULL;
@@ -1196,7 +1190,7 @@ mvc_default(mvc *m, sql_column *col, char *val)
 		fprintf(stderr, "mvc_default %s %s\n", col->base.name, val);
 
 	if (col->t->persistence == SQL_DECLARED_TABLE) {
-		col->def = sa_strdup(m->sa, val);
+		col->def = val?sa_strdup(m->sa, val):NULL;
 		return col;
 	} else {
 		return sql_trans_alter_default(m->session->tr, col, val);

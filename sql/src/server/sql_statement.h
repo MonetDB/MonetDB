@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2010 MonetDB B.V.
+ * Copyright August 2008-2011 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -27,17 +27,13 @@
 #include "sql_mvc.h"
 
 typedef union stmtdata {
-	int ival;
-	char *sval;
 	struct atom *aval;
 	struct list *lval;
-	struct stmt *stval;
-	struct group *gval;
+
 	struct sql_column *cval;
-	struct sql_key *kval;
 	struct sql_idx *idxval;
 	struct sql_table *tval;
-	struct sql_schema *schema;
+
 	sql_subtype typeval;
 	struct sql_subaggr *aggrval;
 	struct sql_subfunc *funcval;
@@ -52,7 +48,6 @@ typedef enum stmt_type {
 	st_temp,		/* temporal bat */
 	st_single,		/* single value bat */
 	st_rs_column,
-	st_column,		/* relational column result */
 	st_bat,
 	st_dbat,
 	st_idxbat,
@@ -63,6 +58,7 @@ typedef enum stmt_type {
 	st_mirror,
 
 	st_limit,
+	st_limit2,
 	st_order,
 	st_reorder,
 
@@ -120,8 +116,8 @@ typedef enum stmt_type {
 	st_list,
 
 	/* flow control statements */
-	st_while,
-	st_if,
+	st_cond,
+	st_control_end,
 	st_return,
 	st_assign
 } st_type;
@@ -137,10 +133,17 @@ typedef enum comp_type {
 	cmp_like = 7,
 	cmp_notilike = 8,
 	cmp_ilike = 9,
-	cmp_all = 10,
-	cmp_or = 11,
-	cmp_project = 12
+	cmp_or = 10,
+	cmp_in = 11,
+	cmp_notin = 12,
+
+	cmp_all = 13,		/* special case for crossproducts */
+	cmp_project = 14	/* special case for projection joins */
 } comp_type;
+
+#define is_theta_exp(e) (e == cmp_gt || e == cmp_gte || e == cmp_lte ||\
+		         e == cmp_lt || e == cmp_equal || e == cmp_notequal)
+#define is_complex_exp(e) (e == cmp_or || e == cmp_in || e == cmp_notin)
 
 /* flag to indicate anti join/select */
 #define ANTI 16
@@ -148,9 +151,9 @@ typedef enum comp_type {
 
 typedef struct stmt {
 	st_type type;
-	stmtdata op1;
-	stmtdata op2;
-	stmtdata op3;
+	struct stmt* op1;
+	struct stmt* op2;
+	struct stmt* op3;
 	stmtdata op4;		/* only op4 will hold other types */
 
 	char nrcols;
@@ -160,7 +163,6 @@ typedef struct stmt {
 	int flag;
 
 	int nr;			/* variable assignment */
-	int nr2;		/* usage count */
 
 	struct stmt *h;
 	struct stmt *t;
@@ -175,7 +177,10 @@ typedef struct group {
 
 extern const char *st_type2string(st_type type);
 
-extern int stmt2dot(sql_allocator *sa, stmt *s, int i, char *fn);
+extern stmt **stmt_array(sql_allocator *sa, stmt *s);
+extern void print_stmts( sql_allocator *sa, stmt ** stmts );
+extern void print_tree( sql_allocator *sa, stmt * stmts );
+extern void clear_stmts( stmt ** stmts );
 
 extern stmt *stmt_none(sql_allocator *sa);
 
@@ -190,7 +195,6 @@ extern stmt *stmt_basetable(sql_allocator *sa, sql_table *t, char *tname);
 #define isbasetable(s) (s->type == st_basetable && isTable(s->op1.tval))
 #define basetable_table(s) s->op1.tval
 
-extern stmt *stmt_column(sql_allocator *sa, stmt *i, stmt *basetable, sql_table *t);	/* relational column */
 extern stmt *stmt_rs_column(sql_allocator *sa, stmt *result_set, stmt *v, sql_subtype *tpe);
 
 extern stmt *stmt_bat(sql_allocator *sa, sql_column *c, stmt *basetable, int access );
@@ -294,6 +298,8 @@ extern stmt *stmt_output(sql_allocator *sa, stmt *l);
 extern stmt *stmt_affected_rows(sql_allocator *sa, stmt *l);
 
 /* flow control statements */
+extern stmt *stmt_cond(sql_allocator *sa, stmt *cond, stmt *outer, int loop);
+extern stmt *stmt_control_end(sql_allocator *sa, stmt *cond);
 extern stmt *stmt_while(sql_allocator *sa, stmt *cond, stmt *whilestmts );
 extern stmt *stmt_if(sql_allocator *sa, stmt *cond, stmt *ifstmts, stmt *elsestmts);
 extern stmt *stmt_return(sql_allocator *sa, stmt *val, int nr_of_declared_tables);

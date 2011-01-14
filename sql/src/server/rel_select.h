@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2010 MonetDB B.V.
+ * Copyright August 2008-2011 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -43,7 +43,7 @@ extern sql_rel *rel_select(sql_allocator *sa, sql_rel *l, sql_exp *e);
 extern sql_rel *rel_select_copy(sql_allocator *sa, sql_rel *l, list *exps);
 extern sql_rel *rel_basetable(sql_allocator *sa, sql_table *t, char *tname);
 extern sql_rel *rel_recursive_func(sql_allocator *sa, list *exps);
-extern sql_rel *rel_table_func(sql_allocator *sa, sql_exp *f, list *exps);
+extern sql_rel *rel_table_func(sql_allocator *sa, sql_rel *l, sql_exp *f, list *exps);
 
 extern sql_exp *rel_bind_column( mvc *sql, sql_rel *rel, char *cname, int f );
 extern sql_exp *rel_bind_column2( mvc *sql, sql_rel *rel, char *tname, char *cname, int f );
