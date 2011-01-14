@@ -51,6 +51,21 @@ minval			float,			-- statistics for search later
 maxval			float
 ); 
 
+-- The reference table for querying is simply
+CREATE TABLE mseed(
+mseed			int, 			-- Vault file id
+seqno			int,			-- SEED record sequence number, should be between 0 and 999999
+time			timestamp,		-- click
+data			int,			-- The actual measurement value.
+FOREIGN KEY (mseed,seqno) REFERENCES mseedCatalog(mseed,seqno)
+); 
+
+SELECT * FROM mseed WHERE data >3000;
+-- can be answered by preselecting the catalog first.
+SELECT mseed FROM mseedcatalog WHERE maxval >3000;
+-- followed by loading the corresponding files if they are not cached yet
+SELECT * from mseed((SELECT * FROM tmp));
+
 -- this function inserts the mseed record information into the catalog
 -- errors are returned for off-line analysis.
 
@@ -84,6 +99,7 @@ select null, vid, source, target from vault where created is null limit 2;
 select vaultImport( source, target) from batch;
 update vault set created = now() where target in (select target from batch where created is not null);
 select mseedImport(vid,target) from batch;
+select mseedLoad(target) from batch limit 10;
 drop table batch;
 @end verbatim
 
@@ -207,6 +223,10 @@ MseedImport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char starttime[BUFSIZ];
 	int imin = INT_MAX, imax = INT_MIN;
 
+	/* keep state of a file to detect major deviances */
+	str network =0, station = 0 , location = 0 , channel = 0;
+	char sampletype = 0;
+
 	(void) mb;
 	*ret = int_nil;
 
@@ -215,6 +235,25 @@ MseedImport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "mseed.load", "Cannot access %s\n", file);
 	while ( (retcode = ms_readmsr (&msr, file, reclen, NULL, NULL, 1, dataflag, verbose)) == MS_NOERROR  )
 	{
+		if ( network == 0){
+			network= GDKstrdup(msr->network);
+			station= GDKstrdup(msr->station);
+			location= GDKstrdup(msr->location);
+			channel= GDKstrdup(msr->channel);
+			sampletype = msr->sampletype;
+		} else {
+			if( strcmp(network,msr->network))
+				msg = createException(MAL,"mseed.import","network name is not stable");
+			if( strcmp(station,msr->station))
+				msg = createException(MAL,"mseed.import","station name is not stable");
+			if( strcmp(location,msr->location))
+				msg = createException(MAL,"mseed.import","location name is not stable");
+			if( strcmp(channel,msr->channel))
+				msg = createException(MAL,"mseed.import","channel name is not stable");
+			if ( sampletype != msr->sampletype)
+				msg = createException(MAL,"mseed.import","sample type is not stable");
+			if (msg) goto wrapup;
+		}
 		t= MS_HPTIME2EPOCH(msr->starttime);
 		tm = gmtime(&t);
 		snprintf(starttime,BUFSIZ,"%d-%02d-%02d %02d:%02d:%02d.%06ld", tm->tm_year +(tm->tm_year > 80?1900:2000), tm->tm_mon+1,tm->tm_mday, tm->tm_hour, tm->tm_min,tm->tm_sec, msr->starttime % HPTMODULUS);
@@ -243,6 +282,10 @@ MseedImport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 wrapup:
 	/* Make sure everything is cleaned up */
 	ms_readmsr (&msr, NULL, 0, NULL, NULL, 0, 0, 0);
+	if ( network) GDKfree(network);
+	if ( station) GDKfree(station);
+	if ( location) GDKfree(location);
+	if ( channel) GDKfree(channel);
 	if ( msg)
 		return msg;
 	if ( retcode != MS_ENDOFFILE )
