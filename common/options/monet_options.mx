@@ -50,7 +50,7 @@ extern "C" {
 #ifndef moptions_export
 /* avoid using "#ifdef WIN32" so that this file does not need our config.h */
 #if defined(_MSC_VER) || defined(__CYGWIN__) || defined(__MINGW32__)
-#ifndef LIBMOPTIONS
+#ifndef MONETDB_RELEASE		/* assume only defined within MonetDB */
 #define moptions_export extern __declspec(dllimport)
 #else
 #define moptions_export extern __declspec(dllexport)
