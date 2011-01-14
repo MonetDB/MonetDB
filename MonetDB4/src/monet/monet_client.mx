@@ -104,7 +104,7 @@ m_export void unlockparser(Client c);
 @c
 #include "monetdb_config.h"
 #include "monet.h"
-#include <Mapi.h> /* for PROMPT1, PROMPT2 */
+#include <mapi.h> /* for PROMPT1, PROMPT2 */
 #ifdef HAVE_SYS_SOCKET_H
 # include <sys/socket.h>
 #endif

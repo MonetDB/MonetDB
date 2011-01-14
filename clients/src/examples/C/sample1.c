@@ -20,7 +20,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <mapilib/Mapi.h>
+#include <mapi.h>
 
 #define die(dbh,hdl)	do {						\
 				if (hdl)				\

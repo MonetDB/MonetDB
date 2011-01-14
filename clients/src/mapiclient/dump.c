@@ -19,7 +19,7 @@
 
 #include "monetdb_config.h"
 #include <monet_options.h>
-#include "mapilib/Mapi.h"
+#include "mapi.h"
 #include "stream.h"
 #include <unistd.h>
 #include <stdlib.h>

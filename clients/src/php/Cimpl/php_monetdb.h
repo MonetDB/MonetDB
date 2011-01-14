@@ -129,7 +129,7 @@ PHP_FUNCTION(monetdb_select);
 # undef _POSIX_C_SOURCE
 #endif
 
-#include "mapilib/Mapi.h"
+#include "mapi.h"
 /* typedefs for convenience; not using Mapi's as those already are a
  * pointer to the struct*/
 typedef struct MapiStruct Mconn;

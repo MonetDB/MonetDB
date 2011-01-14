@@ -159,7 +159,7 @@ comment "create a BAT of the given type and size, and load values from the input
 #include <mal_interpreter.h>
 #include <mal_function.h> /* for printFunction */
 #include <mal_instruction.h> /* for getmodule/func macros */
-#include <Mapi.h>
+#include <mapi.h>
 #include "remote.h"	/* for the implementation of the functions */
 
 #ifndef WIN32

@@ -95,7 +95,7 @@ lib_embeddedxq = {
 		../../../common/options/libmoptions \
 		../../../common/stream/libstream \
 		../../../MonetDB4/src/monet/libmonet \
-		../../../clients/src/mapilib/libMapi
+		../../../clients/src/mapilib/libmapi
 }
 
 bin_Mbeddedxq = {
@@ -106,7 +106,7 @@ bin_Mbeddedxq = {
 		../../../common/options/libmoptions \
 		../../../common/stream/libstream \
 		../../../MonetDB4/src/monet/libmonet \
-		../../../clients/src/mapilib/libMapi
+		../../../clients/src/mapilib/libmapi
 }
 
 EXTRA_DIST = embeddedclient.h static_modules.mx

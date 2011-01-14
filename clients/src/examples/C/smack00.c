@@ -25,7 +25,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <mapilib/Mapi.h>
+#include <mapi.h>
 
 #ifdef _MSC_VER
 #define snprintf _snprintf

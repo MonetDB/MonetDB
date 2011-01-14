@@ -243,7 +243,7 @@ opt_export int OPTtarantulaAdviceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 #include "monetdb_config.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_builder.h"
-#include <Mapi.h>
+#include <mapi.h>
 #include "remote.h"
 #include "mal_sabaoth.h"
 #include "opt_tarantula.h"

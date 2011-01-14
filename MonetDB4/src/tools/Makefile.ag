@@ -101,7 +101,7 @@ lib_embeddedmil = {
 		../monet/libmonet \
 		../../../gdk/libbat \
 		../../../common/options/libmoptions \
-		../../../clients/src/mapilib/libMapi \
+		../../../clients/src/mapilib/libmapi \
 		../../../common/stream/libstream
 }
 
@@ -112,7 +112,7 @@ bin_Mbeddedmil = {
 		../monet/libmonet \
 		../../../gdk/libbat \
 		../../../common/options/libmoptions \
-		../../../clients/src/mapilib/libMapi \
+		../../../clients/src/mapilib/libmapi \
 		../../../common/stream/libstream
 }
 

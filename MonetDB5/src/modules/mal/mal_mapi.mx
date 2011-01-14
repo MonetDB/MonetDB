@@ -338,7 +338,7 @@ mal_mapi_export str SERVERmapi_rpc_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk
 #include "mal_mapi.h"
 #include <sys/types.h>
 #include <stream_socket.h>
-#include <Mapi.h>
+#include <mapi.h>
 
 #ifdef _WIN32   /* Windows specific */
 # include <winsock.h>

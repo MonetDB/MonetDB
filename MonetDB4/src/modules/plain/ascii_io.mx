@@ -306,7 +306,7 @@ ascii_io_export int has_whitespace(char *sep);
 #include "monetdb_config.h"
 
 #include <gdk.h>
-#include <Mapi.h> /* for PROMPT2 */
+#include <mapi.h> /* for PROMPT2 */
 #include "ascii_io.h"
 
 #include <string.h>

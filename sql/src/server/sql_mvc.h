@@ -37,7 +37,7 @@
 #include <sys/times.h>
 #endif
 
-#include <Mapi.h>
+#include <mapi.h>
 
 #define ERRSIZE 8192
 

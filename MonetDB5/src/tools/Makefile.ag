@@ -36,7 +36,7 @@ lib_monetdb5 = {
 		../../../common/options/libmoptions \
 		../../../gdk/libbat \
 		../../../common/stream/libstream \
-		../../../clients/src/mapilib/libMapi $(curl_LIBS) \
+		../../../clients/src/mapilib/libmapi $(curl_LIBS) \
 		$(MATH_LIBS) $(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) \
 		$(DL_LIBS) $(READLINE_LIBS) $(openssl_LIBS) $(pcre_LIBS) \
 		$(LTLIBICONV) $(zlib_LIBS)
@@ -58,7 +58,7 @@ lib_embeddedmal = {
 		../../../common/options/libmoptions \
 		../../../gdk/libbat \
 		../../../common/stream/libstream \
-		../../../clients/src/mapilib/libMapi $(curl_LIBS) \
+		../../../clients/src/mapilib/libmapi $(curl_LIBS) \
 		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
 
@@ -68,7 +68,7 @@ bin_Mbeddedmal = {
 		../../../common/options/libmoptions \
 		../../../gdk/libbat \
 		../../../common/stream/libstream \
-		../../../clients/src/mapilib/libMapi $(curl_LIBS) \
+		../../../clients/src/mapilib/libmapi $(curl_LIBS) \
 		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
 

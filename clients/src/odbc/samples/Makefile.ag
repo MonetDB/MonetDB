@@ -20,7 +20,7 @@ MTSAFE
 BINS = {
 	DIR = libdir/MonetDB/Tests
 	SOURCES = odbcsample1.c testgetinfo.c
-	LIBS = ../driver/libMonetODBC ../../mapilib/libMapi $(curl_LIBS)
+	LIBS = ../driver/libMonetODBC ../../mapilib/libmapi $(curl_LIBS)
 }
 
 bin_odbctest = {

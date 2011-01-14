@@ -22,6 +22,8 @@
 
 #ifdef HAVE_LIBREADLINE
 
+#include <mapi.h>
+
 void init_readline(Mapi mid, char *language, int save_history);
 void deinit_readline(void);
 void save_line(const char *s);

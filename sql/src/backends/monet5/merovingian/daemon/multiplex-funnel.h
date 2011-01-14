@@ -21,7 +21,7 @@
 #define _MULTIPLEX_H 1
 
 #include <pthread.h>
-#include <Mapi.h>
+#include <mapi.h>
 
 #include "merovingian.h"
 

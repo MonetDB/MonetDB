@@ -15,8 +15,8 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-SWIGFLAGS = -I../.. $(PERL_INCS)
-INCLUDES = ../.. ../../../../common/options $(PERL_INCS)
+SWIGFLAGS = -I../../mapilib $(PERL_INCS)
+INCLUDES = ../../mapilib ../../../../common/options $(PERL_INCS)
 
 #  Both GNU's gcc and Intel's icc do not like to compile swig-generated code
 #  with our strict X_CFLAGS.
@@ -40,7 +40,7 @@ lib_MapiLib = {
 	PREFIX =
 	NAME = MapiLib
 	SOURCES = MapiLib.pm.i
-	LIBS = ../../mapilib/libMapi $(PERL_LIBS) $(MATH_LIBS)
+	LIBS = ../../mapilib/libmapi $(PERL_LIBS) $(MATH_LIBS)
 	DIR = $(prefix)/$(PERL_LIBDIR)
 	# we need this flag to allow for a name that does not start with "lib"
 	LDFLAGS = -module

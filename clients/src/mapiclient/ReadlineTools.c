@@ -22,7 +22,6 @@
  */
 #include "monetdb_config.h"
 #include <monet_options.h>
-#include "mapilib/Mapi.h"
 
 #ifdef HAVE_LIBREADLINE
 

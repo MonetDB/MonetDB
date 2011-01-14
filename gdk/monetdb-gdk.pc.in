@@ -9,4 +9,4 @@ Version: @PACKAGE_VERSION@
 Requires: monetdb-mutils monetdb-stream
 
 Libs: -L${libdir} -lbat
-Cflags: -I${includedir}/MonetDB/gdk
+Cflags: -I${includedir}/monetdb/gdk

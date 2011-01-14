@@ -14,7 +14,7 @@
 
 #include <stdio.h>
 #include <stream.h>
-#include <Mapi.h>
+#include <mapi.h>
 #include <monet_options.h>
 
 #ifdef __cplusplus

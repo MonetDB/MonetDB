@@ -26,7 +26,7 @@
 
 #include <gdk.h>
 #include <mal_sabaoth.h>
-#include <Mapi.h>
+#include <mapi.h>
 
 #include "utils/glob.h"
 

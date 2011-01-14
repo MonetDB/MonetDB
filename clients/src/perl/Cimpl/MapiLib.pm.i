@@ -21,7 +21,7 @@
 
 %{
 #include "monetdb_config.h"
-#include "mapilib/Mapi.h"
+#include "mapi.h"
 %}
 
 // don't care for the guard symbol

@@ -331,7 +331,7 @@ slave.prelude();
 #include "mal_instruction.h"
 #include "mal_interpreter.h"
 #include "mal_namespace.h"
-#include <Mapi.h>
+#include <mapi.h>
 #include "mtime.h"
 
 /*#define _DEBUG_REPLICATION_  */

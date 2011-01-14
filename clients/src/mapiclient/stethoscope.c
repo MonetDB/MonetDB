@@ -70,7 +70,7 @@
 
 #include "monetdb_config.h"
 #include "monet_options.h"
-#include <mapilib/Mapi.h>
+#include <mapi.h>
 #include <stream.h>
 #include <stdio.h>
 #include <string.h>

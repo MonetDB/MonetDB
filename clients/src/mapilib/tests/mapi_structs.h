@@ -5,7 +5,7 @@
 #define HAVE_LONG_LONG
 #define HAVE___INT64
 
-#include <Mapi.h>
+#include <mapi.h>
 #include <stream.h>
 
 

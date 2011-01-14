@@ -17,7 +17,7 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f Mapi
+@f mapi
 @a M.L. Kersten, K.S. Mullender, Fabian Groffen
 @v 2.0
 @* The MonetDB Programming Interface
@@ -49,7 +49,7 @@ operations.
 
 @example
 @verbatim
-#include <mapilib/Mapi.h>
+#include <mapi.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -171,7 +171,7 @@ We give a short example with a minimal Mapi program:
 @example
 @verbatim
 #include <stdio.h>
-#include <Mapi.h>
+#include <mapi.h>
 #include <stdlib.h>
      
 int
@@ -231,7 +231,7 @@ Once properly installed, the application can be compiled and linked as
 follows:
 @example
 @verbatim
-cc sample.c `monetdb-clients-config --cflags --libs` -lMapi -o sample
+cc sample.c `monetdb-clients-config --cflags --libs` -lmapi -o sample
 ./sample
 @end verbatim
 @end example
@@ -242,7 +242,7 @@ then the following option can be used on most ELF platforms.
 
 @example
 @verbatim
-cc sample.c `monetdb-clients-config --cflags --libs` -lMapi -o sample \
+cc sample.c `monetdb-clients-config --cflags --libs` -lmapi -o sample \
 `monetdb-clients-config --libs | sed -e's:-L:-R:g'`
 ./sample
 @end verbatim
@@ -798,9 +798,9 @@ output returned from the server.
 @- Implementation
 @c
 #include "monetdb_config.h"
-#include <stream.h>		/* include before Mapi.h */
+#include <stream.h>		/* include before mapi.h */
 #include <stream_socket.h>
-#include "Mapi.h"
+#include "mapi.h"
 
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
@@ -818,20 +818,6 @@ output returned from the server.
 #ifdef HAVE_NETDB_H
 # include <netdb.h>
 # include <netinet/in.h>
-#endif
-
-#ifdef HAVE_ALLOCA_H
-# include <alloca.h>
-#elif defined __GNUC__
-# define alloca __builtin_alloca
-#elif defined _AIX
-# define alloca __alloca
-#elif defined _MSC_VER
-# include <malloc.h>
-# define alloca _alloca
-#else
-# include <stddef.h>
-void *alloca(size_t);
 #endif
 
 #ifdef HAVE_MALLOC_H
