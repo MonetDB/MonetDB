@@ -194,7 +194,7 @@
 #define HAVE_GLOBALMEMORYSTATUSEX 1 /* only on >= NT 5 */
 
 /* Define if you have the iconv() function and it works. */
-#undef HAVE_ICONV		/* optionally defined in rules.msc */
+/* #undef HAVE_ICONV */		/* optionally defined in rules.msc */
 
 /* Define to 1 if you have the <iconv.h> header file. */
 #ifdef HAVE_ICONV
@@ -952,7 +952,7 @@ typedef int ssize_t;
 
 /* If the compiler does not support function attributes via __attribute__,
    we just define __attribute__(a) to nothing. */
-#if HAVE_FUNCTION_ATTRIBUTES != 1
+#ifndef HAVE_FUNCTION_ATTRIBUTES
 #define __attribute__(a)
 #endif
 
@@ -997,7 +997,7 @@ typedef unsigned char uint8_t;
 #endif
 #endif
 
-/* if nothing define, ALGEBRA is default.
+/* if nothing defined, ALGEBRA is default.
    if ALGEBRA_IS_DEFAULT is defined to 0, SQL is default.
    if both ALGEBRA_IS_DEFAULT and SQL_IS_DEFAULT are defined to 0, we
    fallback to MPS */
