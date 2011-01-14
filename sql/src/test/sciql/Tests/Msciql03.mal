@@ -1,0 +1,53 @@
+# CREATE ARRAY stripes( x int dimension[4], y int dimension[4], val float DEFAULT 0.0);
+#create table stripes (x int, y int, val float);
+#insert into stripes values(0,0,0.0), (0,1,1.0), (1,0,2.0), (1,1,3.0);
+
+# base arrays are initialized once in most situations considered! (appends are allowed)
+
+#UPDATE stripes SET val = x + y; 
+# What is the storage model ? explicit dimensions? or implicit?
+
+# explicit model, after definition we have to instanciate the array
+	# create the x- and y- bats, initialize with their value
+	#pattern array.newIndex(min:any_0,max:any_0,step:any_0):bat[:oid,:any_0]
+	#pattern array.newIndex(xmin:any_0,xmax:any_0,xstep:any_0,ymin:any_1,ymax:any_1,ystep:any_1)(x:bat[:oid,:any_0],y:bat[:oid,:any_1])
+	#idem z, t
+	#pattern array.setDefault(idx:bat[:oid,:any_0], def:any_1):bat[:oid,:any_1];
+
+	# for a fixed array the post dimension operations are to be called explicitly
+	#(x,y):= array.newIndex(0,4,1,0,4,1);
+    #val  := array.setDefault(x,0.0);
+	# create the val bat
+
+function user.s1_1{autoCommit=true}():void;
+    _2 := sql.mvc();
+#if we have a dimension with fixed bounds then there can not be updates
+   (_3:bat[:oid,:int],_23:bat[:oid,:int])  := array.dimension(_2,"sys","stripes","x",0,4,1,"y",0,4,1);
+   _4:bat[:int,:oid]  := bat.reverse(_3);
+   _5:bat[:oid,:oid]  := bat.mirror(_4);
+   _32:bat[:oid,:int]  := batcalc.+(_3,_23);
+    _33 := batcalc.dbl(_32);
+    _34 := algebra.join(_5,_33);
+    _37:= aggr.count(_34);
+    sql.update(_2,"sys","stripes","val",_34);
+    sql.affectedRows(_37,"");
+end s1_1;
+
+#-- for stripes2 it becomes
+function user.s1_1{autoCommit=true}():void;
+    _2 := sql.mvc();
+#if we have a dimension with free bounds then we need an explicit representation of x
+   (_3:bat[:oid,:int],_23:bat[:oid,:int])  := array.dimension(_2,"sys","stripes","x",null,null,null,"y",null,null,null);
+   _4:bat[:int,:oid]  := bat.reverse(_3);
+   _5:bat[:oid,:oid]  := bat.mirror(_4);
+   _32:bat[:oid,:int]  := batcalc.+(_3,_23);
+    _33 := batcalc.dbl(_32);
+    _34 := algebra.join(_5,_33);
+    _37:= aggr.count(_34);
+    sql.update(_2,"sys","stripes","val",_34);
+    sql.affectedRows(_37,"");
+end s1_1; 
+
+#UPDATE grid
+#SET val = CASE WHEN x > y THEN x + y  WHEN X<y THEN x - y ELSE 0 END;
+#UPDATE diagonal SET val = x +y; UPDATE sparse SET val = mod(rand(),16);

@@ -1,0 +1,26 @@
+#SELECT ARRAY (1,2,3,4); 
+#SELECT ARRAY((1,2),(3,4)); 
+#SELECT x, y, val FROM matrix WHERE val >2; 
+
+#SELECT x, y, val FROM stripes WHERE val >2; 
+function user.s0_0{autoCommit=true}():void;
+    _2 := sql.mvc();
+    _9:bat[:oid,:dbl]  := sql.bind(_2,"sys","stripes","val",0);
+    _10 := algebra.thetauselect(_9,2:dbl,">");
+    _12 := algebra.markT(_10,0@0:oid);
+    _13 := bat.reverse(_12);
+    _5:bat[:oid,:int]  := array.dimension(_2,"sys","stripes","x",0,0,4,1);
+    _14 := algebra.leftjoin(_13,_5);
+    _18 := algebra.leftjoin(_13,_9);
+    _16:bat[:oid,:int]  := array.dimension(_2,"sys","stripes","y",0,0,4,1);
+    _17 := algebra.leftjoin(_13,_16);
+    _19 := sql.resultSet(3,1,_14);
+    sql.rsColumn(_19,"sys.stripes","x","int",32,0,_14);
+    sql.rsColumn(_19,"sys.stripes","y","int",32,0,_17);
+    sql.rsColumn(_19,"sys.stripes","val":str,"double",53,0,_18);
+    _33 := io.stdout();
+    sql.exportResult(_33,_19);
+end s0_0;
+
+#SELECT [x], [y], val FROM matrix WHERE val >2; 
+#SELECT [T.k], [y], val FROM matrix JOIN T ON matrix.x = T.i;
