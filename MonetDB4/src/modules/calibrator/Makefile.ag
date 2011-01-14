@@ -15,7 +15,7 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-INCLUDES = -I../../monet ../../../../MonetDB/src/common ../../../../common/stream \
+INCLUDES = -I../../monet ../../../../common/options ../../../../common/stream \
 	../../../../MonetDB/src/gdk $(HWCOUNTERS_INCS) 
 MTSAFE
 

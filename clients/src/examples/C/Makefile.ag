@@ -16,7 +16,7 @@
 # All Rights Reserved.
 
 MTSAFE
-INCLUDES = ../.. ../../../../MonetDB/src/common $(READLINE_INCS)
+INCLUDES = ../.. ../../../../common/options $(READLINE_INCS)
 
 MAPI_LIBS = $(SOCKET_LIBS) 
 
@@ -25,6 +25,6 @@ BINS = {
 	SOURCES = sample0.c sample1.c sample2.c sample3.c sample4.c \
 		smack00.c  smack01.c
 	LIBS = $(MAPI_LIBS) ../../mapilib/libMapi \
-		../../../../MonetDB/src/common/libmutils \
+		../../../../common/options/libmoptions \
 		$(curl_LIBS)
 }

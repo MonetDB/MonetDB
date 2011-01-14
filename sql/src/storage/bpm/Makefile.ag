@@ -18,7 +18,7 @@
 ## Process this file with automake to produce Makefile.in
 
 INCLUDES = .. ../../include ../../common \
-	../../../../MonetDB/src/common \
+	../../../../common/options \
 	../../../../common/stream \
 	../../../../MonetDB/src/gdk \
 	../../../../MonetDB5/src/modules/atoms \

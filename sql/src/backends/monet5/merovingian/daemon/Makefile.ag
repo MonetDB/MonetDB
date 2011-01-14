@@ -27,7 +27,7 @@ INCLUDES = \
 	../../../../../../MonetDB5/src/modules/mal \
 	../../../../../../MonetDB5/src/optimizer \
 	../../../../../../MonetDB5/src/scheduler \
-	../../../../../../MonetDB/src/common \
+	../../../../../../common/options \
 	../../../../../../MonetDB/src/gdk \
 	../../../../../../clients/src/mapilib \
 	../../../../../../common/stream \

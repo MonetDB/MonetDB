@@ -16,7 +16,7 @@
 # All Rights Reserved.
 
 INCLUDES = ../../mal \
-	../../../../MonetDB/src/common \
+	../../../../common/options \
 	../../../../MonetDB/src/gdk \
 	../../../../common/stream \
 	$(libxml2_CFLAGS)
@@ -29,7 +29,7 @@ lib__xml = {
 
 	#SCRIPTS = mal
 	LIBS = ../../tools/libmonetdb5 \
-		../../../../MonetDB/src/common/libmutils \
+		../../../../common/options/libmoptions \
 		../../../../MonetDB/src/gdk/libbat \
 		$(MALLOC_LIBS) $(libxml2_LIBS)
 }
@@ -57,7 +57,7 @@ lib_batxml = {
 	SEP = _
 	SOURCES = batxml.mx
 	LIBS = lib_xml ../../tools/libmonetdb5 \
-		../../../../MonetDB/src/common/libmutils \
+		../../../../common/options/libmoptions \
 		../../../../MonetDB/src/gdk/libbat \
 		$(MATH_LIBS) $(MALLOC_LIBS) $(libxml2_LIBS)
 }

@@ -15,7 +15,7 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-INCLUDES = ../../../MonetDB/src/common \
+INCLUDES = ../../../common/options \
 		   ../../../common/stream \
 		   ../../../clients/src/mapilib \
 		   ../../../MonetDB/src/gdk \

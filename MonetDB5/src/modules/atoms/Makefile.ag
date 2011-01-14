@@ -15,7 +15,7 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-INCLUDES = ../../mal ../../../../MonetDB/src/common ../../../../common/stream ../../../../MonetDB/src/gdk
+INCLUDES = ../../mal ../../../../common/options ../../../../common/stream ../../../../MonetDB/src/gdk
 MTSAFE
 
 lib_atoms = {

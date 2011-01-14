@@ -33,7 +33,7 @@ SUBDIRS = opt prop map
 
 INCLUDES = \
 	../include \
-	../../../MonetDB/src/common \
+	../../../common/options \
 	../../../MonetDB/src/gdk \
 	$(libxml2_CFLAGS)
 

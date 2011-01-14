@@ -16,7 +16,7 @@
 # All Rights Reserved.
 
 MTSAFE
-INCLUDES = -I.. ../../../MonetDB/src/common ../../../common/stream $(READLINE_INCS)
+INCLUDES = -I.. ../../../common/options ../../../common/stream $(READLINE_INCS)
 
 lib_mcutil = {
 	NOINST
@@ -27,7 +27,7 @@ bin_mclient = {
 	SOURCES = mclient.c ReadlineTools.c
 	LIBS = libmcutil ../mapilib/libMapi $(READLINE_LIBS) \
 		../../../common/stream/libstream \
-		../../../MonetDB/src/common/libmutils \
+		../../../common/options/libmoptions \
 		$(curl_LIBS) $(LTLIBICONV)
 }
 
@@ -35,7 +35,7 @@ bin_msqldump = {
 	SOURCES = msqldump.c
 	LIBS = libmcutil ../mapilib/libMapi \
 		../../../common/stream/libstream \
-		../../../MonetDB/src/common/libmutils \
+		../../../common/options/libmoptions \
 		$(curl_LIBS)
 }
 
@@ -43,7 +43,7 @@ bin_stethoscope = {
 	SOURCES = stethoscope.c
 	LIBS = libmcutil ../mapilib/libMapi \
 		../../../common/stream/libstream \
-		../../../MonetDB/src/common/libmutils \
+		../../../common/options/libmoptions \
 		$(curl_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS)
 }
 

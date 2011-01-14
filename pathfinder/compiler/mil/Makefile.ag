@@ -27,7 +27,7 @@
 # Rights Reserved.
 #
 
-INCLUDES = ../include ../../../MonetDB/src/common ../../../MonetDB/src/gdk
+INCLUDES = ../include ../../../common/options ../../../MonetDB/src/gdk
 
 # ignore warning "null dimension: sizeof()"
 # with Sun Studio 12 compiler

@@ -16,7 +16,7 @@
 # All Rights Reserved.
 
 INCLUDES = -I../../monet -I../plain \
-	../../../../MonetDB/src/common \
+	../../../../common/options \
 	../../../../common/stream \
 	../../../../MonetDB/src/gdk \
 	$(zlib_CFLAGS) $(BZ_CFLAGS) $(HWCOUNTERS_INCS) $(PCL_CFLAGS) \

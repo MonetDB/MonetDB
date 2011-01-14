@@ -34,7 +34,7 @@ INCLUDES = ../compiler/include ../runtime \
 	../../MonetDB5/src/modules/mal \
 	../../MonetDB5/src/optimizer \
 	../../MonetDB5/src/scheduler \
-	../../MonetDB/src/common \
+	../../common/options \
 	../../common/stream \
 	../../MonetDB/src/gdk \
 	$(libxml2_CFLAGS)

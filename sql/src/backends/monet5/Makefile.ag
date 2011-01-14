@@ -30,7 +30,7 @@ INCLUDES = ../../include ../../common ../../storage ../../server \
 	../../../../MonetDB5/src/scheduler \
 	$(RDF_INC) \
 	../../../../clients/src/mapilib \
-	../../../../MonetDB/src/common \
+	../../../../common/options \
 	../../../../common/stream \
 	../../../../MonetDB/src/gdk \
 	$(READLINE_INCS)
@@ -61,7 +61,7 @@ lib_embeddedsql5 = {
 		../../../../MonetDB5/src/tools/libmonetdb5 \
 		../../../../MonetDB/src/gdk/libbat \
 		../../../../clients/src/mapilib/libMapi \
-		../../../../MonetDB/src/common/libmutils \
+		../../../../common/options/libmoptions \
 		../../../../common/stream/libstream \
 		$(READLINE_LIBS) $(PTHREAD_LIBS)
 }
@@ -72,7 +72,7 @@ bin_Mbeddedsql5 = {
 		../../../../MonetDB5/src/tools/libmonetdb5 \
 		../../../../MonetDB/src/gdk/libbat \
 		../../../../clients/src/mapilib/libMapi \
-		../../../../MonetDB/src/common/libmutils \
+		../../../../common/options/libmoptions \
 		../../../../common/stream/libstream \
 		$(READLINE_LIBS) $(PTHREAD_LIBS) $(curl_LIBS)
 }

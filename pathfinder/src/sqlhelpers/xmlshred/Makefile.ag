@@ -18,7 +18,7 @@ MTSAFE
 INCLUDES = ./include \
 	../../../compiler/include \
 	../../../compiler \
-	../../../../MonetDB/src/common \
+	../../../../common/options \
 	../../../../MonetDB/src/gdk \
 	$(libxml2_CFLAGS)
 

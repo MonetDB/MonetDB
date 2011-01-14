@@ -43,7 +43,7 @@ CFLAGS = $(GCC_BISON_CFLAGS)
 
 INCLUDES = \
 	../include \
-	../../../MonetDB/src/common \
+	../../../common/options \
 	../../../MonetDB/src/gdk \
 	$(libxml2_CFLAGS)
 

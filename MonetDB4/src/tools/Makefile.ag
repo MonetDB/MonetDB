@@ -18,7 +18,7 @@
 MTSAFE
 INCLUDES = ../monet ../modules/plain \
 	../../../clients/src/mapilib \
-	../../../MonetDB/src/common \
+	../../../common/options \
 	../../../common/stream \
 	../../../MonetDB/src/gdk \
 	$(openssl_CFLAGS) $(pcre_CFLAGS)
@@ -90,7 +90,7 @@ bin_Mserver = {
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
 		../monet/libmonet \
 		../../../MonetDB/src/gdk/libbat \
-		../../../MonetDB/src/common/libmutils \
+		../../../common/options/libmoptions \
 		../../../common/stream/libstream \
                 $(pcre_LIBS) $(openssl_LIBS)
 }
@@ -100,7 +100,7 @@ lib_embeddedmil = {
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
 		../monet/libmonet \
 		../../../MonetDB/src/gdk/libbat \
-		../../../MonetDB/src/common/libmutils \
+		../../../common/options/libmoptions \
 		../../../clients/src/mapilib/libMapi \
 		../../../common/stream/libstream
 }
@@ -111,7 +111,7 @@ bin_Mbeddedmil = {
 		libembeddedmil \
 		../monet/libmonet \
 		../../../MonetDB/src/gdk/libbat \
-		../../../MonetDB/src/common/libmutils \
+		../../../common/options/libmoptions \
 		../../../clients/src/mapilib/libMapi \
 		../../../common/stream/libstream
 }

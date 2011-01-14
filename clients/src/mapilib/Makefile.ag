@@ -17,12 +17,12 @@
 
 MTSAFE
 
-INCLUDES = ../../../MonetDB/src/common ../../../common/stream $(openssl_CFLAGS)
+INCLUDES = ../../../common/options ../../../common/stream $(openssl_CFLAGS)
 
 lib_Mapi = {
 	SOURCES = Mapi.mx Mapi.rc
 	LIBS = $(SOCKET_LIBS) ../../../common/stream/libstream \
-		../../../MonetDB/src/common/libmutils $(openssl_LIBS)
+		../../../common/options/libmoptions $(openssl_LIBS)
 }
 
 headers_mapi = {

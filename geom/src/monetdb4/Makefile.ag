@@ -16,7 +16,7 @@
 # All Rights Reserved.
 
 MTSAFE
-INCLUDES = ../../../MonetDB/src/common ../../../common/stream \
+INCLUDES = ../../../common/options ../../../common/stream \
 	../../../MonetDB/src/gdk \
 	../../../MonetDB4/src/monet \
 	../../../MonetDB4/src/modules/plain \

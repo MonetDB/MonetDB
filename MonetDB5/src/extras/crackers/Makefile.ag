@@ -16,7 +16,7 @@
 # All Rights Reserved.
 
 INCLUDES = -I../../modules/atoms -I../../modules/kernel \
-        -I../../mal ../../../../MonetDB/src/common \
+        -I../../mal ../../../../common/options \
 		../../../../common/stream ../../../../MonetDB/src/gdk
 
 MTSAFE
@@ -30,7 +30,7 @@ lib_crackers = {
 		crackers_joinselect_ops.mx crackers_select_ops.mx crackers_sideways.mx crackers_partial_sideways.mx crackers_updates.mx crackers_joins.mx crackers_sortmerge.mx crackers_crackmerge.mx crackers_pq.mx \
 		crackers_populate.mx
 	LIBS = ../../tools/libmonetdb5 \
-		../../../../MonetDB/src/common/libmutils \
+		../../../../common/options/libmoptions \
 		../../../../MonetDB/src/gdk/libbat \
 		../../../../common/stream/libstream \
                 $(MALLOC_LIBS)

@@ -37,7 +37,7 @@ INCLUDES = \
 	../../MonetDB4/src/modules/contrib \
 	../../MonetDB4/src \
 	../../MonetDB4/src/modules/calibrator \
-	../../MonetDB/src/common \
+	../../common/options \
 	../../common/stream \
 	../../MonetDB/src/gdk \
 	$(libxml2_CFLAGS)

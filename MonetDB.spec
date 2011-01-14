@@ -469,7 +469,6 @@ rm -fr $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root)
 %{_libdir}/libbat.so.*
-%{_libdir}/libmutils.so.*
 %{_libdir}/libstream.so.*
 
 %files devel

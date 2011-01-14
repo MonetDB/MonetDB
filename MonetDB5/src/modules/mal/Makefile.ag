@@ -17,7 +17,7 @@
 
 INCLUDES = -I../../mal -I../atoms -I../kernel \
 	../../../../clients/src/mapilib \
-	../../../../MonetDB/src/common \
+	../../../../common/options \
 	../../../../common/stream \
 	../../../../MonetDB/src/gdk \
 	$(pcre_CFLAGS) $(zlib_CFLAGS) $(BZIP_INCS)

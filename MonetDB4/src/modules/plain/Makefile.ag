@@ -16,7 +16,7 @@
 # All Rights Reserved.
 
 INCLUDES = ../../monet \
-	../../../../MonetDB/src/common \
+	../../../../common/options \
 	../../../../common/stream \
 	../../../../clients/src/mapilib \
 	../../../../MonetDB/src/gdk \

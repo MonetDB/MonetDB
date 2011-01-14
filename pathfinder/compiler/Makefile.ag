@@ -27,7 +27,7 @@ EXTRA_DIST_DIR = Tests
 
 INCLUDES = \
 	include \
-	../../MonetDB/src/common \
+	../../common/options \
 	../../MonetDB/src/gdk \
 	$(libxml2_CFLAGS)
 

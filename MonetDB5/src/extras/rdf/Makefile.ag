@@ -17,7 +17,7 @@
 
 INCLUDES = -I../../modules/atoms -I../../modules/mal -I../../mal \
 	../../../../clients/src/mapilib \
-	../../../../MonetDB/src/common \
+	../../../../common/options \
 	../../../../common/stream \
 	../../../../MonetDB/src/gdk \
 	$(raptor_CFLAGS)
@@ -28,7 +28,7 @@ lib__rdf = {
 	DIR = libdir/MonetDB5
 	SOURCES = rdf.mx rdf_shredder.mx
 	LIBS = ../../tools/libmonetdb5 \
-		../../../../MonetDB/src/common/libmutils \
+		../../../../common/options/libmoptions \
 		../../../../MonetDB/src/gdk/libbat \
 		../../../../common/stream/libstream \
 		$(MALLOC_LIBS) $(raptor_LIBS)

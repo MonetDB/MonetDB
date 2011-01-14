@@ -16,7 +16,7 @@
 # All Rights Reserved.
 
 INCLUDES = ../../mal \
-		   ../../../../MonetDB/src/common \
+		   ../../../../common/options \
 		   ../../../../common/stream \
 		   ../../../../MonetDB/src/gdk \
 		   $(SPHINXCLIENT_CFLAGS)

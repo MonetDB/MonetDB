@@ -16,7 +16,7 @@
 # All Rights Reserved.
 
 SWIGFLAGS = -I../.. $(PERL_INCS)
-INCLUDES = ../.. ../../../../MonetDB/src/common $(PERL_INCS)
+INCLUDES = ../.. ../../../../common/options $(PERL_INCS)
 
 #  Both GNU's gcc and Intel's icc do not like to compile swig-generated code
 #  with our strict X_CFLAGS.

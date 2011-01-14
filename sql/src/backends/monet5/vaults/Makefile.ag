@@ -24,7 +24,7 @@ INCLUDES = ../../../include ../../../common ../../../storage ../../../server .. 
 	../../../../../MonetDB5/src/optimizer \
 	../../../../../MonetDB5/src/scheduler \
 	../../../../../clients/src/mapilib \
-	../../../../../MonetDB/src/common \
+	../../../../../common/options \
 	../../../../../common/stream \
 	../../../../../MonetDB/src/gdk \
 	$(READLINE_INCS) $(MSEED_CFLAGS) $(CFITSIO_CFLAGS)
