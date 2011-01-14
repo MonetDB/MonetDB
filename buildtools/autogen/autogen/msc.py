@@ -655,8 +655,8 @@ def msc_binary(fd, var, binmap, msc):
                 SCRIPTS.append(target)
     fd.write(srcs + "\n")
     fd.write("%s.exe: $(%s_OBJS)\n" % (binname, binname2))
-    fd.write('\t"$(TOPDIR)\\..\\NT\\wincompile.py" $(CC) $(CFLAGS)')
-    fd.write(" -Fe%s.exe $(%s_OBJS) /link @<<\n$(%s_LIBS) /subsystem:console /NODEFAULTLIB:LIBC\n<<\n" % (binname, binname2, binname2))
+    fd.write('\t$(CC) $(CFLAGS)')
+    fd.write(" -Fe%s.exe $(%s_OBJS) /link $(%s_LIBS) /subsystem:console /NODEFAULTLIB:LIBC\n" % (binname, binname2, binname2))
     fd.write("\t$(EDITBIN) $@ /HEAP:1048576,1048576 /LARGEADDRESSAWARE\n");
     fd.write("\tif exist $@.manifest $(MT) -manifest $@.manifest -outputresource:$@;1\n");
     if condname:
@@ -742,8 +742,8 @@ def msc_bins(fd, var, binsmap, msc):
                         SCRIPTS.append(target)
         fd.write(srcs + "\n")
         fd.write("%s.exe: $(%s_OBJS)\n" % (bin, bin.replace('-','_')))
-        fd.write('\t"$(TOPDIR)\\..\\NT\\wincompile.py" $(CC) $(CFLAGS)')
-        fd.write(" -Fe%s.exe $(%s_OBJS) /link @<<\n$(%s_LIBS) /subsystem:console /NODEFAULTLIB:LIBC\n<<\n" % (bin, bin.replace('-','_'), bin.replace('-','_')))
+        fd.write('\t$(CC) $(CFLAGS)')
+        fd.write(" -Fe%s.exe $(%s_OBJS) /link $(%s_LIBS) /subsystem:console /NODEFAULTLIB:LIBC\n" % (bin, bin.replace('-','_'), bin.replace('-','_')))
         fd.write("\tif exist $@.manifest $(MT) -manifest $@.manifest -outputresource:$@;1\n\n");
 
     if SCRIPTS:
