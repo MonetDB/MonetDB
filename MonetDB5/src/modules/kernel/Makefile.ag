@@ -16,7 +16,7 @@
 # All Rights Reserved.
 
 INCLUDES = \
-	../../mal ../atoms ../../../../common/options ../../../../common/stream ../../../../MonetDB/src/gdk $(HWCOUNTERS_INCS)
+	../../mal ../atoms ../../../../common/options ../../../../common/stream ../../../../gdk $(HWCOUNTERS_INCS)
 
 MTSAFE
 

@@ -17,7 +17,7 @@
 
 INCLUDES = -I../../modules/atoms -I../../modules/kernel \
         -I../../mal ../../../../common/options \
-		../../../../common/stream ../../../../MonetDB/src/gdk
+		../../../../common/stream ../../../../gdk
 
 MTSAFE
 
@@ -31,7 +31,7 @@ lib_crackers = {
 		crackers_populate.mx
 	LIBS = ../../tools/libmonetdb5 \
 		../../../../common/options/libmoptions \
-		../../../../MonetDB/src/gdk/libbat \
+		../../../../gdk/libbat \
 		../../../../common/stream/libstream \
                 $(MALLOC_LIBS)
 }

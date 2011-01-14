@@ -19,7 +19,7 @@
 
 INCLUDES = .. ../../include ../../common \
 	../../../../common/options ../../../../common/stream \
-	../../../../MonetDB/src/gdk
+	../../../../gdk
 
 lib_m4store = {
 	NOINST

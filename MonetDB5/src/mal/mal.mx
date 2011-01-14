@@ -212,7 +212,7 @@ mal_export size_t			monet_memory;
 #define mal_down_sema(X,Y) if(GDKprotected) MT_down_sema(X,Y)
 
 /*
-   See MonetDB/src/gdk/gdk.mx for the definition of all debug masks.
+   See gdk/gdk.mx for the definition of all debug masks.
    See `man monetdb5.conf` or MonetDB5/conf/monetdb5.conf.5
    for a documentation of all debug options.
 */
@@ -225,7 +225,7 @@ mal_export size_t			monet_memory;
 #define GRPalgorithms (ALGOMASK | ESTIMASK)
 #define GRPxproperties (XPROPMASK )
 #define GRPperformance (JOINPROPMASK | DEADBEEFMASK)
-#define GRPoptimizers  (1<<27)	/* == OPTMASK; cf., MonetDB/src/gdk/gdk.mx */
+#define GRPoptimizers  (1<<27)	/* == OPTMASK; cf., gdk/gdk.mx */
 #define GRPforcemito (FORCEMITOMASK)
 @c 
 #include <monetdb_config.h>

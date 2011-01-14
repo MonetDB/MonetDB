@@ -18,7 +18,7 @@
 INCLUDES = ../../../common/options \
 		   ../../../common/stream \
 		   ../../../clients/src/mapilib \
-		   ../../../MonetDB/src/gdk \
+		   ../../../gdk \
 		   $(READLINE_INCS) $(openssl_CFLAGS)
 MTSAFE
 

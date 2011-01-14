@@ -20,7 +20,7 @@ INCLUDES = ../mal \
 	../../../clients/src/mapilib \
 	../../../common/options \
 	../../../common/stream \
-	../../../MonetDB/src/gdk \
+	../../../gdk \
 	$(openssl_CFLAGS) $(pcre_CFLAGS) $(libxml2_CFLAGS)
 
 # the name (libmonetdb5) is also used in ../mal/mal_linker.mx
@@ -34,7 +34,7 @@ lib_monetdb5 = {
 		../modules/kernel/libkernel ../modules/mal/libmal \
 		../optimizer/liboptimizer ../scheduler/libscheduler \
 		../../../common/options/libmoptions \
-		../../../MonetDB/src/gdk/libbat \
+		../../../gdk/libbat \
 		../../../common/stream/libstream \
 		../../../clients/src/mapilib/libMapi $(curl_LIBS) \
 		$(MATH_LIBS) $(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) \
@@ -46,7 +46,7 @@ bin_mserver5 = {
 	SOURCES = mserver5.mx monet_version.h monet_version.c.in
 	LIBS = libmonetdb5 @SHARED_LIBS@ \
 		../../../common/options/libmoptions \
-		../../../MonetDB/src/gdk/libbat \
+		../../../gdk/libbat \
 		../../../common/stream/libstream \
 		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) \
 		$(curl_LIBS) $(pcre_LIBS) $(openssl_LIBS)
@@ -56,7 +56,7 @@ lib_embeddedmal = {
 	SOURCES = embeddedclient.c.in
 	LIBS = libmonetdb5 @SHARED_LIBS@ \
 		../../../common/options/libmoptions \
-		../../../MonetDB/src/gdk/libbat \
+		../../../gdk/libbat \
 		../../../common/stream/libstream \
 		../../../clients/src/mapilib/libMapi $(curl_LIBS) \
 		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
@@ -66,7 +66,7 @@ bin_Mbeddedmal = {
 	SOURCES = prog.c
 	LIBS = libembeddedmal @SHARED_LIBS@ \
 		../../../common/options/libmoptions \
-		../../../MonetDB/src/gdk/libbat \
+		../../../gdk/libbat \
 		../../../common/stream/libstream \
 		../../../clients/src/mapilib/libMapi $(curl_LIBS) \
 		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)

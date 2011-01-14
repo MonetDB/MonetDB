@@ -24,7 +24,7 @@ INCLUDES = \
 	../../../clients/src/mapilib \
 	../../../common/options \
 	../../../common/stream \
-	../../../MonetDB/src/gdk
+	../../../gdk
 
 GDK_LIBS = $(PTHREAD_LIBS) $(MALLOC_LIBS)
 EXTRA_LIBS = $(SOCKET_LIBS) $(DL_LIBS) $(GDK_LIBS) 
@@ -82,7 +82,7 @@ bin_Mserver = {
 	COND = LINK_STATIC
 	SOURCES = Mserver.mx
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
-		../../../MonetDB/src/gdk/libbat \
+		../../../gdk/libbat \
 		../../../common/options/libmoptions \
 		../../../common/stream/libstream \
 		../../../MonetDB4/src/monet/libmonet
@@ -91,7 +91,7 @@ bin_Mserver = {
 lib_embeddedxq = {
 	SOURCES = embeddedclient.c.in
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
-		../../../MonetDB/src/gdk/libbat \
+		../../../gdk/libbat \
 		../../../common/options/libmoptions \
 		../../../common/stream/libstream \
 		../../../MonetDB4/src/monet/libmonet \
@@ -102,7 +102,7 @@ bin_Mbeddedxq = {
 	SOURCES = prog.c
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
 		libembeddedxq \
-		../../../MonetDB/src/gdk/libbat \
+		../../../gdk/libbat \
 		../../../common/options/libmoptions \
 		../../../common/stream/libstream \
 		../../../MonetDB4/src/monet/libmonet \

@@ -20,7 +20,7 @@ INCLUDES = -I../mal -I../modules/atoms -I../modules/mal -I../optimizer \
 	../../../clients/src/mapilib \
 	../../../common/options \
 	../../../common/stream \
-	../../../MonetDB/src/gdk
+	../../../gdk
 
 MTSAFE
 

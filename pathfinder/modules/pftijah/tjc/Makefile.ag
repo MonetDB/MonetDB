@@ -37,7 +37,7 @@ INCLUDES = \
 	../../../../MonetDB4/src/modules/calibrator \
 	../../../../common/options \
 	../../../../common/stream \
-	../../../../MonetDB/src/gdk
+	../../../../gdk
 
 #  Some versions of flex & bison seem to generate code
 #  that does not compile with `gcc -Wundef`;

@@ -30,7 +30,7 @@
 INCLUDES = \
 	../include \
 	../../../common/options \
-	../../../MonetDB/src/gdk \
+	../../../gdk \
 	$(libxml2_CFLAGS)
 
 lib_xmlimport = {

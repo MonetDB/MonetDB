@@ -17,7 +17,7 @@
 
 INCLUDES = ../../mal \
 	../../../../common/options \
-	../../../../MonetDB/src/gdk \
+	../../../../gdk \
 	../../../../common/stream \
 	$(libxml2_CFLAGS)
 MTSAFE
@@ -30,7 +30,7 @@ lib__xml = {
 	#SCRIPTS = mal
 	LIBS = ../../tools/libmonetdb5 \
 		../../../../common/options/libmoptions \
-		../../../../MonetDB/src/gdk/libbat \
+		../../../../gdk/libbat \
 		$(MALLOC_LIBS) $(libxml2_LIBS)
 }
 
@@ -58,7 +58,7 @@ lib_batxml = {
 	SOURCES = batxml.mx
 	LIBS = lib_xml ../../tools/libmonetdb5 \
 		../../../../common/options/libmoptions \
-		../../../../MonetDB/src/gdk/libbat \
+		../../../../gdk/libbat \
 		$(MATH_LIBS) $(MALLOC_LIBS) $(libxml2_LIBS)
 }
 

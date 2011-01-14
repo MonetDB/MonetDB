@@ -19,7 +19,7 @@ INCLUDES = ./include \
 	../../../compiler/include \
 	../../../compiler \
 	../../../../common/options \
-	../../../../MonetDB/src/gdk \
+	../../../../gdk \
 	$(libxml2_CFLAGS)
 
 EXTRA_DIST_DIR = include

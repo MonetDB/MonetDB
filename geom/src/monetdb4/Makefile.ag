@@ -17,7 +17,7 @@
 
 MTSAFE
 INCLUDES = ../../../common/options ../../../common/stream \
-	../../../MonetDB/src/gdk \
+	../../../gdk \
 	../../../MonetDB4/src/monet \
 	../../../MonetDB4/src/modules/plain \
 	../../../MonetDB4/src/modules/contrib \
@@ -28,7 +28,7 @@ INCLUDES = ../../../common/options ../../../common/stream \
 lib__geom = {
 	DIR = libdir/MonetDB4
 	SOURCES = geom.mx
-	LIBS = ../../../MonetDB/src/gdk/libbat \
+	LIBS = ../../../gdk/libbat \
 	       ../../../common/stream/libstream \
 	       ../../../MonetDB4/src/monet/libmonet \
 	       $(GEOS_LIBS) ../lib/libgeom

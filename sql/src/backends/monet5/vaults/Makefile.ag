@@ -26,14 +26,14 @@ INCLUDES = ../../../include ../../../common ../../../storage ../../../server .. 
 	../../../../../clients/src/mapilib \
 	../../../../../common/options \
 	../../../../../common/stream \
-	../../../../../MonetDB/src/gdk \
+	../../../../../gdk \
 	$(READLINE_INCS) $(MSEED_CFLAGS) $(CFITSIO_CFLAGS)
 
 lib__vault = {
 	DIR = libdir/MonetDB5
 	SOURCES = vault.mx
 	LIBS = ../../../../../MonetDB5/src/tools/libmonetdb5 \
-		../../../../../MonetDB/src/gdk/libbat $(MSEED_LIBS) 
+		../../../../../gdk/libbat $(MSEED_LIBS) 
 }
 
 lib__mseed = {
@@ -41,7 +41,7 @@ lib__mseed = {
 	DIR = libdir/MonetDB5
 	SOURCES = mseed.mx
 	LIBS = ../../../../../MonetDB5/src/tools/libmonetdb5 \
-		../../../../../MonetDB/src/gdk/libbat $(MSEED_LIBS)
+		../../../../../gdk/libbat $(MSEED_LIBS)
 }
 
 lib__fits = {

@@ -52,7 +52,7 @@ monet_version(void)
 #ifdef WIN32
 	/* Detection of cpus is fine on windows, but multithreading doesn't
 	 * work, so it's forced to 1.  Don't suggest we misdetect #cpus.
-	 * See: MonetDB/src/gdk/gdk_system.mx */
+	 * See: gdk/gdk_system.mx */
 	printf("Found %.1fGiB available memory\n", sz_mem_gb);
 #else
 	printf("Found %.1fGiB available memory, %d available cpu core%s\n",

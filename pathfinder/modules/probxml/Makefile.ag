@@ -36,7 +36,7 @@ INCLUDES = \
 	../../../MonetDB4/src/modules/calibrator \
 	../../../common/options \
 	../../../common/stream \
-	../../../MonetDB/src/gdk \
+	../../../gdk \
 	$(libxml2_CFLAGS)
 PF_LIBS = $(libxml2_LIBS) $(DL_LIBS)
 
@@ -47,7 +47,7 @@ lib__probxml = {
 	LIBS = \
 		../../runtime/lib_pf_support \
 		$(PF_LIBS) \
-		../../../MonetDB/src/gdk/libbat \
+		../../../gdk/libbat \
 		../../../common/stream/libstream \
 		../../../MonetDB4/src/monet/libmonet \
 		../../../MonetDB4/src/modules/plain/lib_streams \

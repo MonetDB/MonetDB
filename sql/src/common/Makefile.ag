@@ -18,7 +18,7 @@
 ## Process this file with automake to produce Makefile.in
 
 INCLUDES = .. ../include ../storage \
-	../../../common/options ../../../common/stream ../../../MonetDB/src/gdk
+	../../../common/options ../../../common/stream ../../../gdk
 
 lib_sqlcommon = {
 	NOINST

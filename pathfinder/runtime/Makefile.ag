@@ -39,7 +39,7 @@ INCLUDES = \
 	../../MonetDB4/src/modules/calibrator \
 	../../common/options \
 	../../common/stream \
-	../../MonetDB/src/gdk \
+	../../gdk \
 	$(libxml2_CFLAGS)
 PF_LIBS = $(libxml2_LIBS) $(DL_LIBS)
 
@@ -75,7 +75,7 @@ lib__pf_support = {
 		shredder.mx 
 	LIBS = \
 		libserialize libpf $(PF_LIBS) \
-		../../MonetDB/src/gdk/libbat \
+		../../gdk/libbat \
 		../../common/stream/libstream \
 		../../MonetDB4/src/monet/libmonet \
 		$(PTHREAD_LIBS) \
@@ -95,7 +95,7 @@ lib__pf_standoff = {
 
 	LIBS = \
 		$(PF_LIBS) \
-		../../MonetDB/src/gdk/libbat \
+		../../gdk/libbat \
 		../../common/stream/libstream \
 		../../MonetDB4/src/monet/libmonet \
 		../../MonetDB4/src/modules/plain/lib_streams \
@@ -130,7 +130,7 @@ lib__pathfinder = {
 		../compiler/xmlimport/libxmlimport \
 		../compiler/utils/libstringutils \
 		$(PF_LIBS) \
-		../../MonetDB/src/gdk/libbat \
+		../../gdk/libbat \
 		../../common/stream/libstream \
 		../../MonetDB4/src/monet/libmonet \
 		$(PTHREAD_LIBS) \
@@ -151,7 +151,7 @@ lib__xrpc_client = {
 		libserialize libxrpc_common \
 		lib_pf_support lib_pathfinder \
 		$(PF_LIBS) $(SOCKET_LIBS) \
-		../../MonetDB/src/gdk/libbat \
+		../../gdk/libbat \
 		../../common/stream/libstream \
 		../../MonetDB4/src/monet/libmonet \
 		../../MonetDB4/src/modules/plain/lib_streams \
@@ -168,7 +168,7 @@ lib__xrpc_server = {
 		libxrpc_common \
 		lib_pf_support lib_pathfinder \
 		$(PF_LIBS) $(SOCKET_LIBS) \
-		../../MonetDB/src/gdk/libbat \
+		../../gdk/libbat \
 		../../common/stream/libstream \
 		../../MonetDB4/src/monet/libmonet \
 		$(PTHREAD_LIBS) \

@@ -26,7 +26,7 @@ INCLUDES = \
 	../../../../../../MonetDB5/src/optimizer \
 	../../../../../../MonetDB5/src/scheduler \
 	../../../../../../common/options \
-	../../../../../../MonetDB/src/gdk \
+	../../../../../../gdk \
 	../../../../../../common/stream
 
 EXTRA_DIST = \

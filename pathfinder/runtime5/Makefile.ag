@@ -36,7 +36,7 @@ INCLUDES = ../compiler/include ../runtime \
 	../../MonetDB5/src/scheduler \
 	../../common/options \
 	../../common/stream \
-	../../MonetDB/src/gdk \
+	../../gdk \
 	$(libxml2_CFLAGS)
 PF_LIBS = $(libxml2_LIBS) $(DL_LIBS)
 
@@ -51,7 +51,7 @@ lib__xquery = {
 		../runtime/libserialize \
 		../runtime/libpf \
 		../../MonetDB5/src/tools/libmonetdb5 \
-		../../MonetDB/src/gdk/libbat \
+		../../gdk/libbat \
 		../../common/stream/libstream \
 		$(READLINE_LIBS) $(PTHREAD_LIBS)
 }

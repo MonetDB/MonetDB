@@ -15,7 +15,7 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = buildtools common MonetDB clients \
+SUBDIRS = buildtools common gdk clients \
 	HAVE_MONETDB4?MonetDB4 \
 	HAVE_MONETDB5?MonetDB5 \
 	HAVE_SQL?sql \
@@ -25,6 +25,7 @@ SUBDIRS = buildtools common MonetDB clients \
 	HAVE_TESTING?testing \
 	HAVE_PYTHON?python
 
-EXTRA_DIST = bootstrap configure configure.ac configure.ag MonetDB.spec rpm.mk.in
+EXTRA_DIST = bootstrap configure configure.ac configure.ag \
+			 MonetDB.spec rpm.mk.in COPYING license.txt HowToStart.rst
 
 EXTRA_DIST_DIR = NT debian template

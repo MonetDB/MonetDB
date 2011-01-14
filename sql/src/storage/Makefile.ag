@@ -26,7 +26,7 @@ SUBDIRS = bat restrict m4 bpm
 
 INCLUDES = ../include ../common \
 		   ../../../common/options ../../../common/stream \
-		   ../../../MonetDB/src/gdk
+		   ../../../gdk
 
 lib_store = {
 	NOINST

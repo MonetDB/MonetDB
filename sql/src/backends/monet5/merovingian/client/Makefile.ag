@@ -28,7 +28,7 @@ INCLUDES = \
 	../../../../../../MonetDB5/src/optimizer \
 	../../../../../../MonetDB5/src/scheduler \
 	../../../../../../common/options \
-	../../../../../../MonetDB/src/gdk \
+	../../../../../../gdk \
 	../../../../../../common/stream \
 	../utils
 
@@ -41,7 +41,7 @@ bin_monetdb = {
 		../utils/libmeroutil \
 		$(UUID_LIBS) \
 		../../../../../../MonetDB5/src/tools/libmonetdb5 \
-		../../../../../../MonetDB/src/gdk/libbat \
+		../../../../../../gdk/libbat \
 		../../../../../../common/stream/libstream \
 		$(curl_LIBS) \
 		$(SOCKET_LIBS) \

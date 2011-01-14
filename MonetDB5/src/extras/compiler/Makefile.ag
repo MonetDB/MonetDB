@@ -17,7 +17,7 @@
 
 INCLUDES = -I../../modules/atoms -I../../mal \
 	../../../../common/options ../../../../common/stream \
-	../../../../MonetDB/src/gdk
+	../../../../gdk
 
 
 MTSAFE
@@ -31,7 +31,7 @@ LIBS = {
 	#SCRIPTS = mal
 	LIBS = ../../tools/libmonetdb5 \
 		../../../../common/options/libmoptions \
-		../../../../MonetDB/src/gdk/libbat \
+		../../../../gdk/libbat \
 		../../../../common/stream/libstream \
 		$(MALLOC_LIBS) 
 }

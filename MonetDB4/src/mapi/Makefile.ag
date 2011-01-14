@@ -17,7 +17,7 @@
 
 INCLUDES = -I.. -I../monet \
 	   -I../modules/plain -I../modules/plain/stream \
-	   ../../../common/options ../../../common/stream ../../../MonetDB/src/gdk \
+	   ../../../common/options ../../../common/stream ../../../gdk \
 	   $(openssl_CFLAGS)
 
 MTSAFE
@@ -29,7 +29,7 @@ lib__mapi = {
 	#SCRIPTS = mil ""
 	LIBS =  ../../../common/options/libmoptions \
 		../../../common/stream/libstream \
-		../../../MonetDB/src/gdk/libbat \
+		../../../gdk/libbat \
 		../monet/libmonet \
 		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) \
 		$(DL_LIBS) $(openssl_LIBS)

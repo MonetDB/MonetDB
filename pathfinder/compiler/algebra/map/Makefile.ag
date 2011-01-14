@@ -33,7 +33,7 @@ SUBDIRS =
 INCLUDES = \
 	../../include \
 	../../../../common/options \
-	../../../../MonetDB/src/gdk
+	../../../../gdk
 
 lib_map = {
 	NOINST

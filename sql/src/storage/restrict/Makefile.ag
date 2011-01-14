@@ -19,7 +19,7 @@
 
 INCLUDES = .. ../../include ../../common ../bat \
 	../../../../common/options ../../../../common/stream \
-	../../../../MonetDB/src/gdk
+	../../../../gdk
 
 lib_restrictstore = {
 	NOINST

@@ -20,7 +20,7 @@ INCLUDES = ../monet ../modules/plain \
 	../../../clients/src/mapilib \
 	../../../common/options \
 	../../../common/stream \
-	../../../MonetDB/src/gdk \
+	../../../gdk \
 	$(openssl_CFLAGS) $(pcre_CFLAGS)
 
 GDK_LIBS = $(PTHREAD_LIBS) $(MALLOC_LIBS)
@@ -89,7 +89,7 @@ bin_Mserver = {
 	SOURCES = Mserver.mx monet_version.h monet_version.c.in
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
 		../monet/libmonet \
-		../../../MonetDB/src/gdk/libbat \
+		../../../gdk/libbat \
 		../../../common/options/libmoptions \
 		../../../common/stream/libstream \
                 $(pcre_LIBS) $(openssl_LIBS)
@@ -99,7 +99,7 @@ lib_embeddedmil = {
 	SOURCES = embeddedclient.c.in
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
 		../monet/libmonet \
-		../../../MonetDB/src/gdk/libbat \
+		../../../gdk/libbat \
 		../../../common/options/libmoptions \
 		../../../clients/src/mapilib/libMapi \
 		../../../common/stream/libstream
@@ -110,7 +110,7 @@ bin_Mbeddedmil = {
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
 		libembeddedmil \
 		../monet/libmonet \
-		../../../MonetDB/src/gdk/libbat \
+		../../../gdk/libbat \
 		../../../common/options/libmoptions \
 		../../../clients/src/mapilib/libMapi \
 		../../../common/stream/libstream
