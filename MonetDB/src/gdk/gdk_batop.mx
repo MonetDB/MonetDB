@@ -240,13 +240,15 @@ BATins(BAT *b, BAT *n, bit force)
 {
 	BAT *tmp = NULL, *res = NULL;
 	int fastpath = 0;
-	int countonly = (b->htype == TYPE_void && b->ttype == TYPE_void);
+	int countonly;
 
 	if (b == NULL || n == NULL || BATcount(n) == 0) {
 		return b;
 	}
 	ALIGNins(b, "BATins", force);
 	BATcompatible(b, n);
+
+	countonly = (b->htype == TYPE_void && b->ttype == TYPE_void);
 
 	if (BUNlast(b) + BATcount(n) > BUN_MAX) {
 		GDKerror("BATins: combined BATs too large\n");
