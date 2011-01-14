@@ -973,12 +973,12 @@ function octopus.getBid(dbname:str, fn:str, bidtype:sht):lng;
 res:lng := -1:lng;
 barrier remotewrk := calc.!=(dbname,"NOTworker");
 	conn := octopus.connect(dbname);
-    r_fn := remote.put(conn,fn);
-    r_bt := remote.put(conn,bidtype);
-    r_getBid := remote.put(conn,res);
-    r_getBid := remote.exec(conn,"trader","makeBid",r_fn,r_bt);
-    res:lng  := remote.get(conn,r_getBid);
-    catch ANYexception:str;
+	r_fn := remote.put(conn,fn);
+	r_bt := remote.put(conn,bidtype);
+	r_getBid := remote.put(conn,res);
+	r_getBid := remote.exec(conn,"trader","makeBid",r_fn,r_bt);
+	res:lng  := remote.get(conn,r_getBid);
+	catch ANYexception:str;
  	   raise ANYexception:str ;
 	exit ANYexception:str ;
 exit remotewrk;
@@ -1718,7 +1718,7 @@ alter_table( mvc *sql, char *sname, sql_table *t)
 		return sql_message("ALTER TABLE: no such schema '%s'", sname);
 
 	if ((nt = mvc_bind_table(sql, s, t->base.name)) == NULL) {
-                return sql_message("ALTER TABLE: no such table '%s'", t->base.name);
+		return sql_message("ALTER TABLE: no such table '%s'", t->base.name);
 
 	} else if (!schema_privs(sql->role_id, s)){
 		return sql_message("ALTER TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
@@ -2802,9 +2802,9 @@ mvc_result_file_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if (isaBatType(mtype)) {
 		bat *order_bid = (bat *)getArgReference(stk, pci, 6);
-        	if ((order = BATdescriptor(*order_bid)) == NULL ) {
-               		throw(SQL, "sql.resultSet", "Cannot access descriptor");
-        	}
+		if ((order = BATdescriptor(*order_bid)) == NULL ) {
+			throw(SQL, "sql.resultSet", "Cannot access descriptor");
+		}
 	}
 	m->results = t = res_table_create(m->session->tr, m->result_id++, *nr_cols, Q_TABLE, m->results, order);
 	len = strlen((char*)(*T));
@@ -2843,9 +2843,9 @@ mvc_result_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	if (msg)
 		return msg;
-        if ((order = BATdescriptor(*order_bid)) == NULL ) {
-                throw(SQL, "sql.resultSet", "Cannot access descriptor");
-        }
+	if ((order = BATdescriptor(*order_bid)) == NULL ) {
+		throw(SQL, "sql.resultSet", "Cannot access descriptor");
+	}
 	*res_id = mvc_result_table(m, *nr_cols, *qtype, order);
 	if (*res_id < 0)
 		res= createException(SQL, "sql.resultSet", "failed");
@@ -2949,9 +2949,9 @@ mvc_declared_table_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	if (msg)
 		return msg;
 	if (*rs != 0)
-                throw(SQL, "sql.dtColumn", "Cannot access declared table");
+		throw(SQL, "sql.dtColumn", "Cannot access declared table");
 	if (!sql_find_subtype(&tpe, *type, *digits, *scale))
-                throw(SQL, "sql.dtColumn", "Cannot find column type");
+		throw(SQL, "sql.dtColumn", "Cannot find column type");
 	s = mvc_bind_schema(m, dt_schema);
 	if ( s == NULL)
 		throw(MAL,"sql.declared_table_column","Schema missing");
@@ -3273,7 +3273,7 @@ zero_or_one(ptr ret, int *bid)
 		char buf[BUFSIZ];
 
 		p = NULL;
-                snprintf(buf, BUFSIZ, "cardinality violation (" BUNFMT ">1)", c);
+		snprintf(buf, BUFSIZ, "cardinality violation (" BUNFMT ">1)", c);
 		throw(SQL, "zero_or_one", buf);
 	}
 	_s = ATOMsize(ATOMtype(b->ttype));
@@ -3665,19 +3665,19 @@ str
 str
 @1_trunc_wrap( @1 *res, @1 *v, int *r )
 {
-    /* shortcut nil */
-    if (*v == @1_nil) {
-        *res = @1_nil;
-    } else if (*r < 0) {
+	/* shortcut nil */
+	if (*v == @1_nil) {
+		*res = @1_nil;
+	} else if (*r < 0) {
 		int d = -*r;
 		*res = (@1) (trunc((*v)/((@1)scales[d])) * scales[d]); 
-    } else if (*r > 0) {
+	} else if (*r > 0) {
 		int d = *r;
 		*res = (@1) (trunc(*v * (@1)scales[d]) / ((@1)scales[d]));
-    } else {
-	    *res = (@1) trunc(*v);
-    }
-    return MAL_SUCCEED;
+	} else {
+		*res = (@1) trunc(*v);
+	}
+	return MAL_SUCCEED;
 }
 
 @c
@@ -3706,7 +3706,7 @@ str_2_@1( @3 *res, str *val )
 		char buf[BUFSIZ];
 		if (p)
 			GDKfree(p);
-                snprintf(buf, BUFSIZ,"conversion of string '%s' failed",*val);
+		snprintf(buf, BUFSIZ,"conversion of string '%s' failed",*val);
 		throw(SQL, "@1", buf);
 	}
 	@4;
@@ -4911,7 +4911,7 @@ sql_rowid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( s == NULL)
 		throw(MAL,"sql.rowid","Table missing");
 	if (!s || !t || !t->columns.set->h)
-                throw(SQL, "calc.rowid", "Cannot find column");
+		throw(SQL, "calc.rowid", "Cannot find column");
 	c = t->columns.set->h->data;
 	/* HACK, get insert bat */
 	b = store_funcs.bind_col(m->session->tr, c, RD_INS);
@@ -5133,8 +5133,8 @@ SQLcluster2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL,"sql.cluster","Table missing");
 	tr = m->session->tr;
 
-        t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
-        t->base.rtime = s->base.rtime = tr->rtime = tr->stime;
+	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
+	t->base.rtime = s->base.rtime = tr->rtime = tr->stime;
 	for (o = t->columns.set->h; o; o = o->next) {
 		sql_delta *d;
 		c = o->data;
@@ -5245,7 +5245,7 @@ SQL@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		c = o->data;
 		b = store_funcs.bind_col(tr, c, 0);
 		if (b == NULL || 
-	           (msg = BKC@1BAT(&bid, &(b->batCacheid), &(del->batCacheid))) != NULL) {
+		    (msg = BKC@1BAT(&bid, &(b->batCacheid), &(del->batCacheid))) != NULL) {
 			for( i--; i>=0; i--)
 				BBPreleaseref(bids[i]);
 			store_unlock();
