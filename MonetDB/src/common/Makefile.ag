@@ -19,7 +19,7 @@
 
 MTSAFE
 
-EXTRA_DIST = monet_getopt.h getopt.c getopt1.c memcmp.c
+EXTRA_DIST = monet_getopt.h getopt.c getopt1.c
 
 lib_mutils = { 
 	NAME = mutils
