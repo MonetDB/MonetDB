@@ -57,6 +57,19 @@
 extern "C" {
 #endif
 
+#ifndef mutils_export
+/* avoid using "#ifdef WIN32" so that this file does not need our config.h */
+#if defined(_MSC_VER) || defined(__CYGWIN__) || defined(__MINGW32__)
+#ifndef LIBMUTILS
+#define mutils_export extern __declspec(dllimport)
+#else
+#define mutils_export extern __declspec(dllexport)
+#endif
+#else
+#define mutils_export extern
+#endif
+#endif
+
 /* For communication from `getopt' to the caller.
    When `getopt' finds an option that takes an argument,
    the argument value is returned here.
