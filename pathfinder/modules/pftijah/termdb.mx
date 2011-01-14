@@ -97,7 +97,7 @@ extern int        tdb_isEmpty(termDbCtx* tdb);
 
 static int tdb_destroyCnt = 0;
 
-INLINE static BAT *tdb_prepare2destroy(BAT* bat) {
+inline static BAT *tdb_prepare2destroy(BAT* bat) {
     char buff[32];
 
     sprintf(buff,"tdb_destroy%d",tdb_destroyCnt++);
@@ -106,7 +106,7 @@ INLINE static BAT *tdb_prepare2destroy(BAT* bat) {
     return bat;
 }
 
-INLINE static int tdb_destroyBAT(str name) {
+inline static int tdb_destroyBAT(str name) {
     bat b = BBPindex(name);
 
     if ( b == bat_nil ) {
@@ -122,7 +122,7 @@ INLINE static int tdb_destroyBAT(str name) {
     }
 }
 
-INLINE static char* hashbatName(char* format, int i) {
+inline static char* hashbatName(char* format, int i) {
     static char buff[32];
 
     sprintf(buff,format,i);
@@ -130,7 +130,7 @@ INLINE static char* hashbatName(char* format, int i) {
 }
 
 
-INLINE static oid tdb_findOid(BAT* void_oid_bat, oid idx) {
+inline static oid tdb_findOid(BAT* void_oid_bat, oid idx) {
         BATiter void_oid_bati = bat_iterator(void_oid_bat);
 	BUN bun;
 
@@ -142,7 +142,7 @@ INLINE static oid tdb_findOid(BAT* void_oid_bat, oid idx) {
 	}
 }
 
-INLINE static int tdb_replaceOid(BAT* void_oid_bat, oid idx, oid v) {
+inline static int tdb_replaceOid(BAT* void_oid_bat, oid idx, oid v) {
 	if ( !BUNreplace(void_oid_bat,&idx,&v,0) ) {
             mnstr_printf(GDKout,"#tdb_replaceOid: BUNreplace failed.\n");
 	    return 0;
@@ -438,7 +438,7 @@ int tdb_close(termDbCtx* tdb) {
     return 1;
 }
 
-INLINE static unsigned long hashTerm(char* str) {
+inline static unsigned long hashTerm(char* str) {
     unsigned long res = 0;
     int ch;
 

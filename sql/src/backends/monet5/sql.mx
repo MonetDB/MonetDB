@@ -829,6 +829,10 @@ pattern vacuum(sch:str, tbl:str)
 address SQLvacuum
 comment "Choose an approach to consolidate the deletions";
 
+pattern drop_hash(sch:str, tbl:str)
+address SQLdrop_hash
+comment "Drop hash indices for the given table";
+
 pattern newdictionary(sch:str, tbl:str):void
 address SQLnewDictionary
 comment "Perform dictionary compression on a table";
@@ -1129,6 +1133,7 @@ sql5_export str SQLcluster2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 sql5_export str SQLshrink(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLnewDictionary(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLdropDictionary(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLgzcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -5332,6 +5337,43 @@ SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	return MAL_SUCCEED;
 }
+@-
+The drop_hash operation cleans up any hash indices on any of the tables columns.
+@c
+str
+SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str *sch = (str *) getArgReference(stk,pci,1);
+	str *tbl = (str *) getArgReference(stk,pci,2);
+	sql_schema	*s;
+	sql_table 	*t;
+	sql_column	*c;
+	mvc *m = NULL;
+	str msg = getContext(cntxt,mb, &m, NULL);
+	BAT *b;
+	node *o;
+
+	if (msg)
+		return msg;
+   	s = mvc_bind_schema(m, *sch);
+	if ( s == NULL)
+		throw(MAL,"sql.drop_hash","Schema missing");
+	t = mvc_bind_table(m, s, *tbl);
+	if ( t == NULL)
+		throw(MAL,"sql.drop_hash","Table missing");
+
+	for (o = t->columns.set->h; o; o = o->next) {
+		c = o->data;
+		b = store_funcs.bind_col(m->session->tr, c, RDONLY);
+		if (b == NULL) 
+			throw(MAL,"sql.drop_hash","Can not access descriptor");
+		HASHremove(b);
+		HASHremove(BATmirror(b));
+		BBPreleaseref(b->batCacheid);
+	}
+	return MAL_SUCCEED;
+}
+
 @-
 Take a SQL table and compress its columns using the dictionary compression scheme.
 @= compression

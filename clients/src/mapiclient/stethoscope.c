@@ -69,7 +69,6 @@
  */
 
 #include "monetdb_config.h"
-#include "monet_utils.h"
 #include "monet_options.h"
 #include <mapilib/Mapi.h>
 #include <stream.h>

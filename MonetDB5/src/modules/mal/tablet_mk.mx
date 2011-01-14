@@ -106,7 +106,7 @@ Tablet *SLICEinit(Tablet *as, int slices, Histogram h[])
 }
 #endif
 
-static INLINE ptr*
+static inline ptr*
 get_val(Column * fmt, char *s, char quote, str *err, int c)
 {
 	char buf[BUFSIZ];
@@ -290,7 +290,7 @@ bunins_failed:
 }
 #endif
 
-static INLINE int
+static inline int
 SQLinsert_val(Column * fmt, char *s, char quote, ptr key, str *err, int c)
 {
 	ptr *adt;

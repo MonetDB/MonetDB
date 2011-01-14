@@ -164,7 +164,7 @@ m_export void resetProfiler(void);
 	@:pack_bits(4,_log)@
 	@:pack_bits(_log,_tpe)@ }
 @c
-static INLINE int
+static inline int
 monet_sig_pack(monet_sig_t *s, int argc, ValPtr argv)
 {
 	int i = 1, bitoffset = 0, *wordptr = s->words + 1;
@@ -198,7 +198,7 @@ monet_sig_pack(monet_sig_t *s, int argc, ValPtr argv)
 	return 0;
 }
 
-static INLINE int
+static inline int
 monet_sig_eq(monet_sig_t *s1, monet_sig_t *s2)
 {
 	int *e2, *b1 = s1->words, *b2 = s2->words;

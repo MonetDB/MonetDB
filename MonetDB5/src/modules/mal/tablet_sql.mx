@@ -126,7 +126,7 @@ the null-replacement string then we grab the underlying nil.
 If the string starts with the quote identified from SQL, we locate the tail
 and interpret the body.
 @c
-static INLINE int
+static inline int
 SQLinsert_val(Column * fmt, char *s, char quote, ptr key, str *err, int col)
 {
 	ptr *adt;

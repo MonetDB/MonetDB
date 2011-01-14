@@ -16,4 +16,4 @@
 # All Rights Reserved.
 
 # This loads the MonetDB/SQL module
-include vault;
+#include vault;

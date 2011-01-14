@@ -368,7 +368,7 @@ HEAP_check_stub(Heap *h, HeapRepair *hr)
 }
 
 /* 10-folds are recognized by a leading one and all trailing zeros */
-static INLINE int
+static inline int
 ISTENFOLD(decimal *d)
 {
 	unsigned int *src = d->num;
@@ -524,7 +524,7 @@ one go and adapt the scale accordingly (10 becomes 1E1).  A special case caught 
 value, which is required to have precision 1 and sign positive (this will override a given
 minimum precision parameter).
 @c
-static INLINE void
+static inline void
 decimal_normalize(decimal *d, decimal *v, int offset, int fixed_precision, int del_trailing)
 {
 	int x = offset, precision, first_nonzero = 0, last_nonzero = PREC(v);
@@ -1452,7 +1452,7 @@ as follows:
 \end{verbatim}
 @c
 /* auxiliary function: assumes equal sign and scale and no overflow */
-static INLINE void
+static inline void
 decimal_simple_inc(decimal *v1, decimal *v2)
 {
 	int x = PREC(v1), y = PREC(v2);
@@ -1478,7 +1478,7 @@ decimal_simple_inc(decimal *v1, decimal *v2)
 }
 
 /* auxiliary function: assumes equal sign and scale and no overflow */
-static INLINE void
+static inline void
 decimal_simple_dec(decimal *v1, decimal *v2)
 {
 	int x = PREC(v1), y = PREC(v2);
@@ -1733,7 +1733,7 @@ decimal_multiply(decimal **ret, decimal *v1, decimal *v2)
 @- divide
 Uses a multiplication table containing div*1,.., div*9 to speed up matching.
 @c
-static INLINE void
+static inline void
 decimal_mult_table(decimal *dv, decimal *mult[10])
 {
 	int i, len = TOTLEN(PREC(dv) + 1);
@@ -1758,7 +1758,7 @@ decimal_mult_table(decimal *dv, decimal *mult[10])
 	}
 
 /* the guts of the "staartdeling" implementation of division */
-static INLINE void
+static inline void
 decimal_divide_intern(decimal *tot, decimal *num, decimal *dv, decimal *mult[], int precision)
 {
 	decimal *chunk = mult[0];

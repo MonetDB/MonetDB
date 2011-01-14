@@ -916,13 +916,13 @@ monettime_synonyms(bit *allow)
 	return GDK_SUCCEED;
 }
 
-static INLINE int
+static inline int
 leapyear(int year)
 {
 	return year % 4 == 0 && (year % 100 != 0 || year % 400 == 0);
 }
 
-static INLINE int
+static inline int
 leapyears(int year)
 {
 	/* count the 4-fold years that passed since jan-1-0 */
@@ -937,7 +937,7 @@ leapyears(int year)
 	return y4 + y400 - y100;	/* may be negative */
 }
 
-static INLINE date
+static inline date
 todate(int day, int month, int year)
 {
 	date n = date_nil;
@@ -989,7 +989,7 @@ fromdate(int n, int *d, int *m, int *y)
 	}
 }
 
-static INLINE daytime
+static inline daytime
 totime(int hour, int min, int sec, int msec)
 {
 	if (TIME(hour, min, sec, msec)) {
@@ -1015,7 +1015,7 @@ fromtime(int n, int *hour, int *min, int *sec, int *msec)
 }
 
 /* matches regardless of case and extra spaces */
-static INLINE int
+static inline int
 fleximatch(str s, str pat, int min)
 {
 	int hit, spacy = 0;
@@ -1037,7 +1037,7 @@ fleximatch(str s, str pat, int min)
 	return (hit >= min) ? hit : 0;
 }
 
-static INLINE int
+static inline int
 parse_substr(int *ret, str s, int min, str list[], int size)
 {
 	int j = 0, i = 0;
@@ -1052,7 +1052,7 @@ parse_substr(int *ret, str s, int min, str list[], int size)
 	return j;
 }
 
-static INLINE int
+static inline int
 date_dayofweek(date v)
 {
 	v %= 7;
@@ -1061,7 +1061,7 @@ date_dayofweek(date v)
 
 #define SKIP_DAYS(d,w,i) d += i; w = (w + i)%7; if (w <= 0) w += 7;
 
-static INLINE date
+static inline date
 compute_rule(rule *val, int y)
 {
 	int m = val->s.month, cnt = ABS(val->s.day - DAY_ZERO);
@@ -1105,7 +1105,7 @@ static int dummy;
 
 #define BEFORE(d1,m1,d2,m2) (d1 < d2 || (d1 == d2 && m1 <= m2))
 
-static INLINE int
+static inline int
 timestamp_inside(timestamp *ret, timestamp *t, tzone *z, lng offset)
 {
 	/* starts with GMT time t, and returns whether it is in the DST for z */

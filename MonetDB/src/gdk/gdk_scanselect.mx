@@ -235,7 +235,7 @@ replacing their generic versions there.
 	} while (0)
 #define @1@4_bunfastins(b, h, t)					\
 	do {								\
-		REGISTER BUN _p = BUNlast(b);				\
+		register BUN _p = BUNlast(b);				\
 		if (BATcount(b) + 1 > BATcapacity(b)){			\
 			if (BATextend(b, BATgrows(b)) == NULL)  	\
 				goto bunins_failed; 			\

@@ -962,7 +962,7 @@ getMatrixBATrecord (XqueryCtx* ctx, int contID, int batID)
     return bd;
 }
 
-static INLINE BAT *
+static inline BAT *
 getMatrixBAT (XqueryCtx* ctx, int contID, int batID)
 {
      wsBatDescr* res = getMatrixBATrecord(ctx,contID,batID);
@@ -2287,7 +2287,7 @@ dach_free(struct DuplAttrChk* dach) {
     return 1;
 }
 
-static INLINE void
+static inline void
 dach_start_build(struct DuplAttrChk* dach, char* elname) {
     dach->elname 	= elname;
     dach->alist_cur	= 0;
@@ -2297,13 +2297,13 @@ dach_start_build(struct DuplAttrChk* dach, char* elname) {
     dach->building	= 1;
 }
 
-static INLINE void
+static inline void
 dach_start_check(struct DuplAttrChk* dach) {
     dach->equal 	= 1; /* true until otherwise proven */
     dach->building	= 0;
 }
 
-static INLINE void
+static inline void
 dach_finish_check(struct DuplAttrChk* dach) {
     if ( dach->equal ) { /* still equal */
 	for(int i=0; i<dach->alist_cur; i++) {
@@ -2315,7 +2315,7 @@ dach_finish_check(struct DuplAttrChk* dach) {
     }
 }
 
-static INLINE int
+static inline int
 dach_add2buff(struct DuplAttrChk* dach, char* s) {
     int l = strlen(s) + 1;
     if ( (dach->abuff_cur + l) > dach->abuff_max ) {

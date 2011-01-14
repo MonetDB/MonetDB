@@ -468,7 +468,7 @@ shredBAT_extend(shredBAT *sb,
 }
 
 
-static INLINE oid 
+static inline oid 
 shredBAT_append_str(shredCtxStruct *shredCtx, 
                     int idx, 
                     str v)
@@ -516,7 +516,7 @@ shredBAT_append_str(shredCtxStruct *shredCtx,
  * - emit_string() emit a text node (calls emit_node)
  * ==================================================================================== */
 
-static INLINE int
+static inline int
 emit_tuple(shredCtxStruct* shredCtx, 
            oid pre, 
            int size, 

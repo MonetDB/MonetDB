@@ -258,7 +258,7 @@ ITERinit(ITER *input, str name, NEXTfcn next, FREEfcn freefcn, GUESSfcn guess, B
 	return it;
 }
 
-static INLINE size_t
+static inline size_t
 ITERnext(ITER *it)
 {
 	size_t cnt = (*it->next) (it);

@@ -303,6 +303,7 @@ actions to obtain client records.
 #include "mal_import.h"
 #include "mal_parser.h"
 #include "mal_namespace.h"
+#include <Mapi.h> /* for PROMPT1 */
 
 
 /* This should be in src/mal/mal.h, as the function is implemented in 

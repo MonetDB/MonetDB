@@ -37,7 +37,7 @@ vice versa.
 
 #include <assert.h>
 
-INLINE static void *
+inline static void *
 BUNtailfnd( BAT *b, ptr v) 
 {
 	BATiter bi = bat_iterator(b);
@@ -876,7 +876,7 @@ TBL_checkparams_init(paramcheck_t *pt, int argc, ValPtr argv, BAT *atomtbl)
 
 #define same_type(s1,s2)	(strcmp(s1, s2) == 0)
 
-static INLINE int
+static inline int
 TBL_checkparam(paramcheck_t *pt, ValPtr v1, str tp1, str ltp, str tp2, bit void_equal_oid)
 {
 	int j, k;

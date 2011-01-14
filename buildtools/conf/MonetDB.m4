@@ -1545,9 +1545,28 @@ AC_DEFUN([AM_MONETDB_PROG_RUBY],[
 AC_DEFUN([AM_MONETDB_TYPES],[
 
 	AC_TYPE_SIZE_T
-	AC_CHECK_TYPES([ptrdiff_t, ssize_t],,,[#include <stddef.h>
-#include <sys/types.h>])
+	AC_TYPE_SSIZE_T
+	AC_TYPE_PID_T
+	AC_TYPE_OFF_T
+
 	AC_CHECK_TYPES([__int64, long long])
+	AC_CHECK_TYPES([ptrdiff_t],,,[#include <stddef.h>
+#include <sys/types.h>])
+	AC_CHECK_TYPES(bool)
+
+	AC_CHECK_SIZEOF(char)
+	AC_CHECK_SIZEOF(short)
+	AC_CHECK_SIZEOF(int)
+	AC_CHECK_SIZEOF(long)
+	AC_CHECK_SIZEOF(void *)
+	AC_CHECK_SIZEOF(size_t)
+	AC_CHECK_SIZEOF(ssize_t)
+	AC_CHECK_SIZEOF(ptrdiff_t,,[#include <stddef.h>
+#include <sys/types.h>])
+	AC_CHECK_SIZEOF(long long)
+	AC_CHECK_SIZEOF(__int64)
+	AC_C_CHAR_UNSIGNED
+
 	case $host_os in
 		*mingw*)
 			AC_DEFINE([LLFMT],["%I64d"],[Format to print 64 bit signed integers.])
@@ -1558,19 +1577,8 @@ AC_DEFUN([AM_MONETDB_TYPES],[
 			AC_DEFINE([ULLFMT],["%llu"],[Format to print 64 bit unsigned integers.])
 			;;
 	esac
-	AC_CHECK_SIZEOF(char)
-	AC_CHECK_SIZEOF(short)
-	AC_CHECK_SIZEOF(int)
-	AC_CHECK_SIZEOF(long)
-	AC_CHECK_SIZEOF(void *)
-	AC_CHECK_SIZEOF(size_t)
-	AC_CHECK_SIZEOF(ssize_t,,[#include <stddef.h>
-#include <sys/types.h>])
-	AC_CHECK_SIZEOF(ptrdiff_t,,[#include <stddef.h>
-#include <sys/types.h>])
-	AC_CHECK_SIZEOF(long long)
-	AC_CHECK_SIZEOF(__int64)
-	AC_C_CHAR_UNSIGNED
+
+])
 
 ]) dnl AM_MONETDB_TYPES
 

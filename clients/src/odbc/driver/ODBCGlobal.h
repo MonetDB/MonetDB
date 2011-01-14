@@ -95,27 +95,27 @@
 #include <assert.h>
 
 #ifdef NATIVE_WIN32
-#define strdup _strdup
+# define strdup _strdup
 #endif
 
 #ifndef HAVE_SSIZE_T
-#if SIZEOF_SIZE_T == SIZEOF_INT
+# if SIZEOF_SIZE_T == SIZEOF_INT
 typedef int ssize_t;
 
-#define HAVE_SSIZE_T 1
-#else
-#if SIZEOF_SIZE_T == SIZEOF_LONG
+#  define HAVE_SSIZE_T 1
+# else
+#  if SIZEOF_SIZE_T == SIZEOF_LONG
 typedef long ssize_t;
 
-#define HAVE_SSIZE_T 1
-#else
-#ifdef _WIN64
+#   define HAVE_SSIZE_T 1
+#  else
+#   ifdef _WIN64
 typedef __int64 ssize_t;
 
-#define HAVE_SSIZE_T 1
-#endif
-#endif
-#endif
+#    define HAVE_SSIZE_T 1
+#   endif
+#  endif
+# endif
 #endif
 
 /* define printf format for printing pointer values */

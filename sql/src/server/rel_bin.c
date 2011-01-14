@@ -765,8 +765,9 @@ rel2bin_table( mvc *sql, sql_rel *rel, list *refs)
 	stmt *sub = NULL;
 	node *en;
 			
-	(void)refs;
-	sub = exp_bin(sql, rel->l, NULL, NULL, NULL, NULL); /* table function */
+	if (rel->l)
+		sub = subrel_bin(sql, rel->l, refs);
+	sub = exp_bin(sql, rel->r, sub, NULL, NULL, NULL); /* table function */
 	if (!sub) { 
 		assert(0);
 		return NULL;	

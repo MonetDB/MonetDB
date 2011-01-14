@@ -387,6 +387,20 @@ exp_relname( sql_exp *e )
 	return NULL;
 }
 
+char *
+exp_func_name( sql_exp *e )
+{
+	if (e->type == e_func && e->f) {
+		sql_subfunc *f = e->f;
+		return f->func->base.name;
+	}
+	if (e->name)
+		return e->name;
+	if (e->type == e_convert && e->l)
+		return exp_name(e->l);
+	return NULL;
+}
+
 
 char *
 exp_find_rel_name(sql_exp *e)

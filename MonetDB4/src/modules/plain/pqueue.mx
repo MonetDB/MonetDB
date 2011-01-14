@@ -84,7 +84,7 @@ organized in the heap with respect to their values (tail column).
 #include "pqueue.proto.h"
   
 /*returns the parent of a pqueue position*/
-static INLINE BUN parent(BUN posel)
+static inline BUN parent(BUN posel)
 {
   if (posel%2) /*odd*/
 	return posel/2;

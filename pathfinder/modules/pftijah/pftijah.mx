@@ -7381,7 +7381,7 @@ int CMDsplitbat ( BAT** result, BAT* origbat, BAT* splitbat )
 
 @= init_result
 {
-	REGISTER BUN _p = BUNlast(bn);
+	register BUN _p = BUNlast(bn);
 
 	bn->tsorted = bn->hsorted = 0;
 	ALIGNsetH(bn, e);

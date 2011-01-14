@@ -1483,7 +1483,7 @@ CTderive(BAT **M, BAT **H, BAT *ct_histo, BAT *ct_map, BAT *b)
 @c
 #define DEFAULT_SIZE 10000
 
-static INLINE BUN
+static inline BUN
 sort_flush(var_t *off, oid *o, BUN size, int tpe, char *base, oid *hdst, oid *tdst, oid *idp, int reverse)
 {
 	int (*cmp) (ptr, ptr) = BATatoms[tpe].atomCmp;

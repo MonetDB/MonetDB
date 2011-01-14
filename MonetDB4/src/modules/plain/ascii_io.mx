@@ -306,6 +306,7 @@ ascii_io_export int has_whitespace(char *sep);
 #include "monetdb_config.h"
 
 #include <gdk.h>
+#include <Mapi.h> /* for PROMPT2 */
 #include "ascii_io.h"
 
 #include <string.h>
@@ -317,7 +318,7 @@ static ptr
 bun_tail(BAT *b, BUN nr)
 {
 	BATiter bi = bat_iterator(b);
-	REGISTER BUN _i = BUNfirst(b);
+	register BUN _i = BUNfirst(b);
 
 	return (ptr) BUNtail(bi, _i + nr);
 }
@@ -621,7 +622,7 @@ ASCIIcollect_bats(ascii *as)
 	return bats;
 }
 
-static INLINE char *
+static inline char *
 lstrip(char *s)
 {
 	while (myisspace((int) *s)) 
@@ -629,7 +630,7 @@ lstrip(char *s)
 	return s;
 }
 
-static INLINE char *
+static inline char *
 rstrip(char *e)
 {
 	e--;
@@ -641,7 +642,7 @@ rstrip(char *e)
 	return e;
 }
 
-static INLINE char *
+static inline char *
 find_quote(char *s, char quote)
 {
 	while (*s != quote)
@@ -649,7 +650,7 @@ find_quote(char *s, char quote)
 	return s;
 }
 
-static INLINE char *
+static inline char *
 rfind_quote(char *s, char quote)
 {
 	while (*s != quote)
@@ -657,7 +658,7 @@ rfind_quote(char *s, char quote)
 	return s;
 }
 
-static INLINE int
+static inline int
 insert_val(ascii_io *fmt, char *s, char *e, char quote, BUN c)
 {
 	char *end = e;
@@ -707,7 +708,7 @@ bunins_failed:
 	return -1;
 }
 
-static INLINE char *
+static inline char *
 skip_string(char *s, char quote)
 {
 	int esc = 0;
@@ -728,7 +729,7 @@ skip_string(char *s, char quote)
 	return s;
 }
 
-static INLINE int
+static inline int
 insert_line(ascii * as, char *line)
 {
 	int res = 0;
@@ -795,7 +796,7 @@ ascii_io_error(stream *s)
 	return -1;
 }
 
-static INLINE int
+static inline int
 dump_line(char **buf, int *len, ascii_io *fmt, stream *fd, BUN nr_attrs, BUN id)
 {
 	BUN i;
@@ -825,7 +826,7 @@ dump_line(char **buf, int *len, ascii_io *fmt, stream *fd, BUN nr_attrs, BUN id)
 	return 0;
 }
 
-static INLINE int
+static inline int
 output_line(char **buf, int *len, ascii_io *fmt, stream *fd, BUN nr_attrs, ptr id)
 {
 	BUN i;
@@ -865,7 +866,7 @@ output_line(char **buf, int *len, ascii_io *fmt, stream *fd, BUN nr_attrs, ptr i
 	return 0;
 }
 
-static INLINE int
+static inline int
 output_line_dense(char **buf, int *len, ascii_io *fmt, stream *fd, BUN nr_attrs)
 {
 	BUN i;
@@ -894,7 +895,7 @@ output_line_dense(char **buf, int *len, ascii_io *fmt, stream *fd, BUN nr_attrs)
 	return 0;
 }
 
-static INLINE int
+static inline int
 output_line_lookup(char **buf, int *len, ascii_io *fmt, stream *fd, BUN nr_attrs, BUN id)
 {
 	BUN i;
@@ -922,7 +923,7 @@ output_line_lookup(char **buf, int *len, ascii_io *fmt, stream *fd, BUN nr_attrs
 	return 0;
 }
 
-static INLINE int
+static inline int
 read_more(bstream *in, stream *out, size_t n)
 {
 	if (out) {

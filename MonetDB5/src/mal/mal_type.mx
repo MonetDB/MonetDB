@@ -185,7 +185,7 @@ It is assumed that the type table does not change in the mean time.
 Use the information that identifiers are at least one character
 and are terminated by a null to speedup comparison
 @c
-INLINE int
+inline int
 idcmp(str n, str m)
 {
 	if (* n == * m)
@@ -287,7 +287,7 @@ isAmbiguousType(int type){
 	}
 	return 0;
 }
-INLINE int
+inline int
 findGDKtype(int type)
 {
 	if (type == TYPE_any || type== TYPE_void)
@@ -306,7 +306,7 @@ newTmpName(char tag, int i)
 	return GDKstrdup(buf);
 }
 
-INLINE int
+inline int
 isTmpName(str n)
 {
 	return n && *n == TMPMARKER;

@@ -25,7 +25,10 @@
 
 @NO_X_CFLAGS@
 
-INCLUDES = ../../../MonetDB/src/common ../../../common/stream ../../../MonetDB/src/gdk
+INCLUDES = ../../../MonetDB/src/common \
+		   ../../../common/stream \
+		   ../../../clients/src/mapilib \
+		   ../../../MonetDB/src/gdk
 
 YFLAGS = -d
 

@@ -170,16 +170,16 @@ gdk_export int strFromStr(str src, int *len, str *dst);
 gdk_export int strToStr(str *dst, int *len, str src);
 gdk_export str strRead(str a, stream *s, size_t cnt);
 gdk_export int strWrite(str a, stream *s, size_t cnt);
-gdk_export BUN strHash(str s);
+gdk_export BUN strHash(const char *s);
 gdk_export void strCleanHash(Heap *hp, int rebuild);
-gdk_export var_t strPut(Heap *b, var_t *off, str src);
+gdk_export var_t strPut(Heap *b, var_t *off, const char *src);
 gdk_export void strHeap(Heap *d, size_t cap);
 gdk_export int strLen(const char *s);
-gdk_export int strCmp(str l, str r);
-gdk_export int strNil(str s);
+gdk_export int strCmp(const char *l, const char *r);
+gdk_export int strNil(const char *s);
 gdk_export int strElimDoubles(Heap *h);
-gdk_export var_t strLocate(Heap *h, str v);
-gdk_export int strCmpNoNil(unsigned char *l, unsigned char *r);
+gdk_export var_t strLocate(Heap *h, const char *v);
+gdk_export int strCmpNoNil(const unsigned char *l, const unsigned char *r);
 gdk_export int escapedStrlen(const char *src);
 gdk_export int escapedStr(char *dst, const char *src, int dstlen);
 
@@ -270,31 +270,31 @@ lngHash(lng *v)
 
 @+ Standard Atoms
 @c
-static INLINE void
+static inline void
 shtConvert(sht *s)
 {
 	*s = short_int_SWAP(*s);
 }
 
-static INLINE void
+static inline void
 intConvert(int *s)
 {
 	*s = normal_int_SWAP(*s);
 }
 
-static INLINE void
+static inline void
 lngConvert(lng *s)
 {
 	*s = long_long_SWAP(*s);
 }
 
-static INLINE int
+static inline int
 batFix(bat *b)
 {
 	return BBPincref(*b, TRUE);
 }
 
-static INLINE int
+static inline int
 batUnfix(bat *b)
 {
 	return BBPdecref(*b, TRUE);
@@ -1826,12 +1826,12 @@ we have to take corrective action to ensure that str(nil) is the smallest value 
 #define GDK_STRNIL(s)    ((s) == NULL || *(chr*) (s) == GDK_chr_min)
 #define GDK_STRLEN(s)    ((GDK_STRNIL(s)?1:strlen(s))+1)
 #define GDK_STRCMP(l,r)  (GDK_STRNIL(l)?(GDK_STRNIL(r)?0:-1):GDK_STRNIL(r)?1: \
-                          (*(unsigned char*)(l) < *(unsigned char*)(r))?-1: \
-                          (*(unsigned char*)(l) > *(unsigned char*)(r))?1: \
-                          strCmpNoNil((unsigned char*)(l),(unsigned char*)(r)))
+                          (*(const unsigned char*)(l) < *(const unsigned char*)(r))?-1: \
+                          (*(const unsigned char*)(l) > *(const unsigned char*)(r))?1: \
+                          strCmpNoNil((const unsigned char*)(l),(const unsigned char*)(r)))
 @c
 int
-strNil(str s)
+strNil(const char *s)
 {
 	return GDK_STRNIL(s);
 }
@@ -1843,13 +1843,13 @@ strLen(const char *s)
 }
 
 int
-strCmp(str l, str r)
+strCmp(const char *l, const char *r)
 {
 	return GDK_STRCMP(l, r);
 }
 
 int
-strCmpNoNil(unsigned char *l, unsigned char *r)
+strCmpNoNil(const unsigned char *l, const unsigned char *r)
 {
 	while (*l == *r) {
 		if (*l == 0)
@@ -1886,7 +1886,7 @@ at a time (adding 16-bits to the hash value each iteration).
 @h
 #define GDK_STRHASH(x,y)				\
 	do {						\
-		str _key = (str) (x);			\
+		const char *_key = (const char *) (x);	\
 		BUN _i;					\
 		for (_i = y = 0; _key[_i]; _i++) {	\
 		    y += _key[_i];			\
@@ -1900,7 +1900,7 @@ at a time (adding 16-bits to the hash value each iteration).
 
 @c
 BUN
-strHash(str s)
+strHash(const char *s)
 {
 	BUN res;
 
@@ -1928,7 +1928,7 @@ zero.
 #define EXTRALEN ((SIZEOF_BUN + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1))
 
 var_t
-strLocate(Heap *h, str v)
+strLocate(Heap *h, const char *v)
 {
 	stridx_t *ref, *next;
 	size_t extralen = h->hashash ? EXTRALEN : 0;
@@ -1951,7 +1951,7 @@ strLocate(Heap *h, str v)
 }
 
 var_t
-strPut(Heap *h, var_t *dst, str v)
+strPut(Heap *h, var_t *dst, const char *v)
 {
 	size_t elimbase = GDK_ELIMBASE(h->free);
 	size_t pad = GDK_VARALIGN - (h->free & (GDK_VARALIGN - 1));

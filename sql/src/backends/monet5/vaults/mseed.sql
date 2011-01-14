@@ -30,5 +30,5 @@ RETURNS int
 EXTERNAL NAME mseed.import;
 
 CREATE FUNCTION mseedLoad(entry string)
-RETURNS int
+RETURNS TABLE (a int)
 EXTERNAL NAME mseed.load;

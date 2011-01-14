@@ -102,7 +102,7 @@ static int hottop = 0;
 @-
 The struct alignment leads to 40% gain in simple instructions when set.
 @c
-INLINE
+inline
 ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k)
 {
 #ifdef STRUCT_ALIGNED
@@ -156,7 +156,7 @@ Moreover, it is not thread safe and it can not correctly handle
 aliases embedded in MAL assignments.
 This means that the footprint is only to be used as indicative.
 @c
-static INLINE void
+static inline void
 updateBigFoot(Client cntxt, int bid, int add)
 {
 	BAT *b;
