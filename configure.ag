@@ -1303,7 +1303,10 @@ AS_IF([test "x${ac_cv_func_fdatasync}" = "xyes"],
 AC_FUNC_ALLOCA
 AC_FUNC_FSEEKO
 # NOTE: these functions are in alphabetical order to ease maintenance
-AC_CHECK_FUNCS([asctime_r basename ctime_r drand48 fcntl fpclass fpclassify fstat fsync ftime ftruncate getlogin getopt getopt_long getrlimit GetSystemInfo gettimeofday getuid GlobalMemoryStatus GlobalMemoryStatusEx inet_ntop kill isinf localtime_r lockf madvise mrand48 nl_langinfo pipe popen posix_fadvise posix_madvise putenv QueryPerformanceCounter sbrk setenv setlocale setsid shutdown sigaction strcasecmp strcasestr strdup strftime strncasecmp strndup strptime strsignal strtod strtof strtoll strtoull sysconf times uname])
+save_LIBS="$LIBS"
+LIBS="$LIBS $MATH_LIBS"
+AC_CHECK_FUNCS([asctime_r basename ctime_r drand48 fcntl fpclass fpclassify fstat fsync ftime ftruncate getlogin getopt getopt_long getrlimit GetSystemInfo gettimeofday getuid GlobalMemoryStatus GlobalMemoryStatusEx inet_ntop kill isinf localtime_r lockf madvise mrand48 nl_langinfo pipe popen posix_fadvise posix_madvise putenv QueryPerformanceCounter round sbrk setenv setlocale setsid shutdown sigaction strcasecmp strcasestr strdup strftime strncasecmp strndup strptime strsignal strtod strtof strtoll strtoull sysconf times trunc uname])
+LIBS="$save_LIBS"
 dnl functions checked but result not used
 dnl AC_CHECK_FUNCS([closedir getcwd gethostname getpwuid memset mkdir nanosleep readdir rewinddir rmdir select strcspn strerror strstr strtol])
 AC_SEARCH_LIBS(crypt, crypt, AC_DEFINE(HAVE_CRYPT, 1, [crypt]))
