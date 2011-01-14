@@ -3689,8 +3689,7 @@ heap_move(Heap *hp, str srcdir, str dstdir, str nme, str ext)
 		long_str kill_ext;
 		long_str path;
 
-		strcpy(kill_ext, ext);
-		strcat(kill_ext, ".kill");
+		snprintf(kill_ext, sizeof(kill_ext), "%s.kill", ext);
 		GDKfilepath(path, dstdir, nme, kill_ext);
 		fp = fopen(path, "w");
 		IODEBUG THRprintf(GDKout, "#open %s = %d\n", path, fp ? 0 : -1);
@@ -3791,7 +3790,8 @@ BBPbackup(BAT *b, bit subcommit)
 	s = strrchr(srcdir, DIR_SEP);
 	if (!s)
 		return -1;
-	strcpy(nme, ++s);
+	strncpy(nme, ++s, sizeof(nme));
+	nme[sizeof(nme) - 1] = 0;
 	srcdir[s - srcdir] = 0;
 
 @= backup
@@ -3823,8 +3823,7 @@ BBPbackup(BAT *b, bit subcommit)
 		}
        		if (subcommit && (@2->storage == STORE_PRIV || @2->newstorage == STORE_PRIV)) {
 			long_str kill_ext;
-			strcpy(kill_ext, ext);
-			strcat(kill_ext, ".new.kill");
+			snprintf(kill_ext, sizeof(kill_ext), "%s.new.kill", ext);
 			if (file_exists(BAKDIR, nme, kill_ext)) {
 				ret |= file_move(BAKDIR, SUBDIR, nme, kill_ext);
 			}
@@ -4189,15 +4188,20 @@ BBPdiskscan(const char *parent)
 	struct dirent *dent;
 	long_str fullname;
 	str dst = fullname;
+	size_t dstlen = sizeof(fullname);
 	const char *src = parent;
 
 	if (dirp == NULL)
 		return -1;	/* nothing to do */
 
-	while (*src)
+	while (*src) {
 		*dst++ = *src++;
-	if (dst[-1] != DIR_SEP)
+		dstlen--;
+	}
+	if (dst > fullname && dst[-1] != DIR_SEP) {
 		*dst++ = DIR_SEP;
+		dstlen--;
+	}
 
 	while ((dent = readdir(dirp)) != NULL) {
 		str p;
@@ -4219,7 +4223,16 @@ BBPdiskscan(const char *parent)
 		ok = p && bid;
 		delete = FALSE;
 
-		strcpy(dst, dent->d_name);
+		if (strlen(dent->d_name) >= dstlen) {
+			/* found a file with too long a name
+			   (i.e. unknown); stop pruning in this
+			   subdir */
+			IODEBUG THRprintf(GDKout, "BBPdiskscan: unexpected file %s, leaving %s.\n", dent->d_name, parent);
+			break;
+		}
+		strncpy(dst, dent->d_name, dstlen);
+		fullname[sizeof(fullname) - 1] = 0;
+
 		if (p == NULL && BBPdiskscan(fullname) == 0) {
 			/* it was a directory */
 			continue;
