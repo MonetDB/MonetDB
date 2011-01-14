@@ -85,7 +85,7 @@ BAT *GDKenv = NULL;
 #endif
 #endif
 
-#if defined(__GNUC__)
+#if defined(__GNUC__) && defined(HAVE_VALGRIND)
 #include <valgrind.h>
 #else
 #define VALGRIND_MALLOCLIKE_BLOCK(addr, sizeB, rzB, is_zeroed)

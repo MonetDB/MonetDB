@@ -715,6 +715,12 @@ if test x"$have_zlib" = x"yes" ; then
 fi
 AM_CONDITIONAL(HAVE_LIBZ, test x"$have_zlib" != xno)
 
+PKG_CHECK_MODULES([valgrind], [valgrind],
+				  [have_valgrind=yes], [have_valgrind=no])
+if test "x$have_valgrind" = xyes; then
+	AC_DEFINE(HAVE_VALGRIND, 1, [Define if you have valgrind installed])
+fi
+
 # check for sphinxclient
 have_sphinxclient="auto"
 AC_ARG_WITH(sphinxclient,

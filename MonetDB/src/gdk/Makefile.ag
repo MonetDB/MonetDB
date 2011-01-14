@@ -17,7 +17,7 @@
 
 MTSAFE
 
-INCLUDES = ../common ../../../common/stream
+INCLUDES = ../common ../../../common/stream $(valgrind_CFLAGS)
 
 gdk_scanselect_CFLAGS = $(NO_INLINE_CFLAGS)
 # gdk_relop.mx
