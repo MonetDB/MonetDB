@@ -49,12 +49,17 @@ from the Mercurial repository.  If you get the pre-packaged sources
 (i.e. the one in tar balls), you don't need the buildtools component
 (although this has not been tested on Windows).
 
-MonetDB
--------
+common
+------
 
-Also known as the MonetDB Common component contains the database
-kernel, i.e. the heart of MonetDB, and some generally useful
-libraries.  This component is required.
+Also known as the MonetDB Common component contains some generally
+useful libraries.  This component is required.
+
+gdk
+---
+
+Also known as the Goblin Database Kernel contains the database kernel,
+i.e. the heart of MonetDB This component is required.
 
 clients
 -------
@@ -755,9 +760,11 @@ possible:
 - ``HAVE_SQL=1`` - include the sql component;
 - ``HAVE_GEOM=1`` - include the geom component;
 - ``HAVE_PATHFINDER=1`` - include the pathfinder component;
+- ``HAVE_JAVA=1`` - include the java component (only use if Java and
+  Apache Ant are both available);
 - ``HAVE_TESTING=1`` - include the testing component;
+- ``HAVE_PYTHON=1`` - include the python component;
 - ``HAVE_ICONV=1`` - the iconv library is available;
-- ``HAVE_JAVA=1`` - Java and Apache Ant are both available;
 - ``HAVE_LIBXML2=1`` - the libxml2 library is available;
 - ``HAVE_RAPTOR=1`` - the raptor library is available;
 - ``HAVE_NETCDF=1`` - the netcdf library is available;
@@ -769,8 +776,7 @@ possible:
   available (also need ``HAVE_PERL=1``);
 - ``HAVE_PHP=1`` - PHP is available;
 - ``HAVE_PROBXML=1`` - compile in support for probabilistic XML (an
-  experimental extension to the pathfinder component);
-- ``HAVE_PYTHON=1`` - Python is available.
+  experimental extension to the pathfinder component).
 
 In addition, you can add a parameter which points to a file with extra
 definitions for ``nmake``.  This is very convenient to define where
