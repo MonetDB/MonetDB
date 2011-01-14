@@ -3675,7 +3675,7 @@ str
 		int d = *r;
 		*res = (@1) (trunc(*v * (@1)scales[d]) / ((@1)scales[d]));
     } else {
-        *res = trunc(*v);
+	    *res = (@1) trunc(*v);
     }
     return MAL_SUCCEED;
 }
