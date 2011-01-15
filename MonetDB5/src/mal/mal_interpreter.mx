@@ -2301,7 +2301,7 @@ str catchKernelException(Client cntxt, str ret){
 @= exceptionHndlr
 if(cntxt->errbuf && cntxt->errbuf[0] ) {
 	str oldret = ret;
-	ret = catchKernelException(cntxt, oldret);
+	ret = catchKernelException(cntxt, ret);
 	if( oldret) GDKfree(oldret);
 }
 

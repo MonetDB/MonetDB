@@ -614,7 +614,7 @@ error:
  * localhost.
  */
 void SERVERannounce(struct in_addr addr, int port, str usockfile) {
-	str buf = alloca(sizeof(char) * 1024);
+	str buf;
 	str host = NULL;
 	int ret = 0;
 

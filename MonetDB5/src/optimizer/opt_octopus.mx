@@ -239,7 +239,7 @@ OCTexitcode(MalBlkPtr mb, int conn, int varid)
 	pushEndInstruction(mb);
 	p = newStmt(mb, optimizerRef, putName("aliases", 7));
 	p = pushStr(mb, p, octopusRef);
-	p = pushStr(mb, p, getFunctionId(getInstrPtr(mb, 0)));
+	(void) pushStr(mb, p, getFunctionId(getInstrPtr(mb, 0)));
 }
 
 static MalBlkPtr 

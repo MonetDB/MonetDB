@@ -1153,7 +1153,7 @@ CTderive_clustered(BAT **H, BAT **M, BAT *_histo, BAT *_map, BAT *_b, int tt, wr
 		return GDK_FAIL;
 	/* complete result histo */
 	hn = BATnew(TYPE_oid, TYPE_wrd, BATcount(_b));
-	if (!mn) {
+	if (!hn) {
 		BBPreclaim(mn);
 		return GDK_FAIL;
 	}
