@@ -1305,8 +1305,7 @@ getType(MalBlkPtr mb, str nme)
 	i = findVariable(mb, nme);
 	if (i < 0)
 		return getTypeIndex(nme, -1, TYPE_any);
-	if (i >= 0)
-		return getVarType(mb, i);
+	return getVarType(mb, i);
 }
 
 str

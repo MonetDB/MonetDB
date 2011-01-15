@@ -990,8 +990,7 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 	THRset_errbuf(THRget(THRgettid()), cntxt->errbuf);	/* where to leave errors */
 	if (stk->cmd || mb->trap) {
 		lng tm = 0;
-		if( oldtimer)
-			tm = GDKusec();
+		tm = GDKusec();
 		mdbStep(cntxt,mb,stk, getPC(mb,pci));
 		if (stk->cmd == 'x' || cntxt->mode == FINISHING) {
 			/* need a way to skip */
@@ -999,16 +998,14 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 			fs->status = -1;
 			return ret;
 		}
-		if (oldtimer ) {
-			/* ignore debugger waiting time*/
-			tm = GDKusec()-tm;
-			oldtimer += tm;
+		/* ignore debugger waiting time*/
+		tm = GDKusec()-tm;
+		oldtimer += tm;
 #ifdef HAVE_SYS_RESOURCE_H
-			getrusage(RUSAGE_SELF, &oldResource);
+		getrusage(RUSAGE_SELF, &oldResource);
 #endif
-			if (cntxt->flags & memoryFlag)
-				oldMemory = MT_mallinfo();
-		}
+		if (cntxt->flags & memoryFlag)
+			oldMemory = MT_mallinfo();
 	}
 
 	@:beginProfile(t,0)@
