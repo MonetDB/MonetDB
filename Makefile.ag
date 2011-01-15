@@ -16,16 +16,15 @@
 # All Rights Reserved.
 
 SUBDIRS = buildtools common gdk clients \
-	HAVE_MONETDB4?MonetDB4 \
-	HAVE_MONETDB5?MonetDB5 \
+	HAVE_MONETDB4?monetdb4 \
+	HAVE_MONETDB5?monetdb5 \
 	HAVE_SQL?sql \
 	HAVE_GEOM?geom \
 	HAVE_PATHFINDER?pathfinder \
 	HAVE_JAVA?java \
 	HAVE_TESTING?testing \
-	HAVE_PYTHON?python
 
 EXTRA_DIST = bootstrap configure configure.ac configure.ag \
-			 MonetDB.spec rpm.mk.in COPYING license.txt HowToStart.rst
+			 MonetDB.spec rpm.mk.in COPYING README license.txt HowToStart.rst
 
 EXTRA_DIST_DIR = NT debian template

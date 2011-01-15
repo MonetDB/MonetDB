@@ -1,0 +1,85 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2011 MonetDB B.V.
+# All Rights Reserved.
+
+## Process this file with automake to produce Makefile.in
+
+INCLUDES = ../include ../common ../storage \
+		   ../../clients/mapilib \
+		   ../../common/options \
+		   ../../common/stream \
+		   ../../gdk
+
+YFLAGS = -d -p sql
+
+#  Some versions of flex & bison seem to generate code
+#  that does not compile with `gcc -Wundef`;
+#  we use GCC_BISON_CFLAGS to disable the respective warning as
+#  locally as possible via "-Wno-undef"
+#  (see also monetdb4/monet/Makefile.ag, buildtools/conf/monet.m4,
+#  pathfinder/modules/pftijah/Makefile.ag).
+#
+#  (At least on Fedora Core 4,) bison 2.0 seems to generate code
+#  that icc does not like; since the problem only occurs with
+#  sql/src/server/sql_parser.y,
+#  we use ICC_BISON_CFLAGS
+#  to disable the respective warning as locally as possible
+#  via "-wd592" (#592: variable "." is used before its value is set)
+#  (see also MonetDB/conf/monet.m4).
+CFLAGS = $(ICC_BISON_CFLAGS) $(GCC_BISON_CFLAGS)
+
+lib_sqlserver = {
+	NOINST
+	DIR = libdir
+	SOURCES = \
+		sql_atom.c \
+		sql_datetime.c \
+		sql_decimal.c \
+		sql_statement.c \
+		sql_schema.c \
+		sql_semantic.c \
+		sql_rel2bin.c \
+		bin_optimizer.c \
+		sql_qc.c \
+		sql_symbol.c \
+		sql_scan.c \   
+		sql_parser.y \  
+		sql_mvc.c \    
+		sql_env.c \    
+		sql_privileges.c \  
+		sql_psm.c \  
+		rel_semantic.c \
+		rel_select.c \
+		rel_updates.c \
+		rel_trans.c \
+		rel_schema.c \
+		rel_sequence.c \
+		rel_subquery.c \
+		rel_prop.c \
+		rel_exp.c \
+		rel_optimizer.c \
+		rel_bin.c \
+		rel_xml.c \
+		rel_dump.c
+}
+
+EXTRA_DIST = bin_optimizer.h rel_bin.h rel_dump.h rel_exp.h \
+	rel_optimizer.h rel_prop.h rel_schema.h rel_select.h \
+	rel_semantic.h rel_sequence.h rel_subquery.h rel_trans.h \
+	rel_updates.h rel_xml.h sql_atom.h sql_datetime.h \
+	sql_decimal.h sql_env.h sql_mvc.h sql_parser.h \
+	sql_privileges.h sql_psm.h sql_qc.h sql_rel2bin.h sql_scan.h \
+	sql_schema.h sql_semantic.h sql_statement.h sql_symbol.h

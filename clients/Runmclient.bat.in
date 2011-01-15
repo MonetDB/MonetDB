@@ -5,8 +5,8 @@ setlocal
 set buildbase=@XBUILD@
 set builddir=%buildbase%\clients
 
-set PATH=%builddir%\src\mapiclient;%builddir%\src\mapilib;%PATH%
+set PATH=%builddir%\mapiclient;%builddir%\mapilib;%PATH%
 
-"%builddir%\src\mapiclient\mclient.exe" %*
+"%builddir%\mapiclient\mclient.exe" %*
 
 endlocal

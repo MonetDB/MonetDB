@@ -15,7 +15,7 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = src
+SUBDIRS = mapilib mapiclient HAVE_ODBC?odbc HAVE_PERL?perl php HAVE_RUBYGEM?ruby examples HAVE_PYTHON?python
 
 EXTRA_DIST = RunMtest.in RunMtest.bat.in \
 		RunMapprove.in \

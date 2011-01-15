@@ -32,11 +32,11 @@ EXTRA_DIST_DIR = Tests
 
 INCLUDES = \
 	.. \
-	../../MonetDB4/src/monet \
-	../../MonetDB4/src/modules/plain \
-	../../MonetDB4/src/modules/contrib \
-	../../MonetDB4/src \
-	../../MonetDB4/src/modules/calibrator \
+	../../monetdb4/monet \
+	../../monetdb4/modules/plain \
+	../../monetdb4/modules/contrib \
+	../../monetdb4/modules \
+	../../monetdb4/modules/calibrator \
 	../../common/options \
 	../../common/stream \
 	../../gdk \
@@ -77,15 +77,15 @@ lib__pf_support = {
 		libserialize libpf $(PF_LIBS) \
 		../../gdk/libbat \
 		../../common/stream/libstream \
-		../../MonetDB4/src/monet/libmonet \
+		../../monetdb4/monet/libmonet \
 		$(PTHREAD_LIBS) \
-		../../MonetDB4/src/modules/plain/lib_lock \
-		../../MonetDB4/src/modules/plain/lib_monettime \
-		../../MonetDB4/src/modules/plain/lib_streams \
-		../../MonetDB4/src/modules/plain/lib_builtin \
-		../../MonetDB4/src/modules/plain/lib_ascii_io \
-		../../MonetDB4/src/modules/plain/lib_algebra \
-		../../MonetDB4/src/modules/plain/lib_constant
+		../../monetdb4/modules/plain/lib_lock \
+		../../monetdb4/modules/plain/lib_monettime \
+		../../monetdb4/modules/plain/lib_streams \
+		../../monetdb4/modules/plain/lib_builtin \
+		../../monetdb4/modules/plain/lib_ascii_io \
+		../../monetdb4/modules/plain/lib_algebra \
+		../../monetdb4/modules/plain/lib_constant
 }
 
 lib__pf_standoff = {
@@ -97,13 +97,13 @@ lib__pf_standoff = {
 		$(PF_LIBS) \
 		../../gdk/libbat \
 		../../common/stream/libstream \
-		../../MonetDB4/src/monet/libmonet \
-		../../MonetDB4/src/modules/plain/lib_streams \
-		../../MonetDB4/src/modules/plain/lib_builtin \
-		../../MonetDB4/src/modules/plain/lib_ascii_io \
-		../../MonetDB4/src/modules/plain/lib_algebra \
-		../../MonetDB4/src/modules/plain/lib_sys \
-		../../MonetDB4/src/modules/plain/lib_constant
+		../../monetdb4/monet/libmonet \
+		../../monetdb4/modules/plain/lib_streams \
+		../../monetdb4/modules/plain/lib_builtin \
+		../../monetdb4/modules/plain/lib_ascii_io \
+		../../monetdb4/modules/plain/lib_algebra \
+		../../monetdb4/modules/plain/lib_sys \
+		../../monetdb4/modules/plain/lib_constant
 }
 
 lib__pathfinder = {
@@ -132,16 +132,16 @@ lib__pathfinder = {
 		$(PF_LIBS) \
 		../../gdk/libbat \
 		../../common/stream/libstream \
-		../../MonetDB4/src/monet/libmonet \
+		../../monetdb4/monet/libmonet \
 		$(PTHREAD_LIBS) \
-		../../MonetDB4/src/modules/plain/lib_logger \
-		../../MonetDB4/src/modules/plain/lib_streams \
-		../../MonetDB4/src/modules/plain/lib_builtin \
-		../../MonetDB4/src/modules/plain/lib_ascii_io \
-		../../MonetDB4/src/modules/plain/lib_algebra \
-		../../MonetDB4/src/modules/plain/lib_sys \
-		../../MonetDB4/src/modules/plain/lib_constant \
-		../../MonetDB4/src/mapi/lib_mapi
+		../../monetdb4/modules/plain/lib_logger \
+		../../monetdb4/modules/plain/lib_streams \
+		../../monetdb4/modules/plain/lib_builtin \
+		../../monetdb4/modules/plain/lib_ascii_io \
+		../../monetdb4/modules/plain/lib_algebra \
+		../../monetdb4/modules/plain/lib_sys \
+		../../monetdb4/modules/plain/lib_constant \
+		../../monetdb4/modules/mapi/lib_mapi
 }
 
 lib__xrpc_client = {
@@ -153,10 +153,10 @@ lib__xrpc_client = {
 		$(PF_LIBS) $(SOCKET_LIBS) \
 		../../gdk/libbat \
 		../../common/stream/libstream \
-		../../MonetDB4/src/monet/libmonet \
-		../../MonetDB4/src/modules/plain/lib_streams \
-		../../MonetDB4/src/modules/plain/lib_builtin \
-		../../MonetDB4/src/modules/plain/lib_ascii_io
+		../../monetdb4/monet/libmonet \
+		../../monetdb4/modules/plain/lib_streams \
+		../../monetdb4/modules/plain/lib_builtin \
+		../../monetdb4/modules/plain/lib_ascii_io
 }
 
 lib__xrpc_server = {
@@ -170,13 +170,13 @@ lib__xrpc_server = {
 		$(PF_LIBS) $(SOCKET_LIBS) \
 		../../gdk/libbat \
 		../../common/stream/libstream \
-		../../MonetDB4/src/monet/libmonet \
+		../../monetdb4/monet/libmonet \
 		$(PTHREAD_LIBS) \
-		../../MonetDB4/src/modules/plain/lib_logger \
-		../../MonetDB4/src/mapi/lib_mapi \
-		../../MonetDB4/src/modules/plain/lib_streams \
-		../../MonetDB4/src/modules/plain/lib_builtin \
-		../../MonetDB4/src/modules/plain/lib_ascii_io
+		../../monetdb4/modules/plain/lib_logger \
+		../../monetdb4/modules/mapi/lib_mapi \
+		../../monetdb4/modules/plain/lib_streams \
+		../../monetdb4/modules/plain/lib_builtin \
+		../../monetdb4/modules/plain/lib_ascii_io
 }
 
 headers_mil = {

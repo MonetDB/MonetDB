@@ -27,13 +27,13 @@
 #
 
 INCLUDES = ../compiler/include ../runtime \
-	../../MonetDB5/src/modules/atoms \
-	../../MonetDB5/src/compiler \
-	../../MonetDB5/src/modules/kernel \
-	../../MonetDB5/src/mal \
-	../../MonetDB5/src/modules/mal \
-	../../MonetDB5/src/optimizer \
-	../../MonetDB5/src/scheduler \
+	../../monetdb5/modules/atoms \
+	../../monetdb5/compiler \
+	../../monetdb5/modules/kernel \
+	../../monetdb5/mal \
+	../../monetdb5/modules/mal \
+	../../monetdb5/optimizer \
+	../../monetdb5/scheduler \
 	../../common/options \
 	../../common/stream \
 	../../gdk \
@@ -50,7 +50,7 @@ lib__xquery = {
 		$(PF_LIBS) \
 		../runtime/libserialize \
 		../runtime/libpf \
-		../../MonetDB5/src/tools/libmonetdb5 \
+		../../monetdb5/tools/libmonetdb5 \
 		../../gdk/libbat \
 		../../common/stream/libstream \
 		$(READLINE_LIBS) $(PTHREAD_LIBS)
