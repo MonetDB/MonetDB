@@ -1,8 +1,8 @@
 # unit test suite for monetdb.
-# connects to the 'ruby' database and runs test on the server capabilities and SQL language.
+# connects to the 'ruby_test' database and runs test on the server capabilities and SQL language.
 # Create first a database with the command:
-# $ monetdb create ruby
-# $ monetdb run ruby
+# $ monetdb create ruby_test
+# $ monetdb start ruby_start
 #
 # Tests examples have been taken from the python and java internfaces and mysql driver.
 
