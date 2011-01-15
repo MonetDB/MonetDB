@@ -3621,13 +3621,13 @@ str_2_@1( @3 *res, str *val )
 	ptr p = NULL;
 	int len = 0;
 	int e; 
+	char buf[BUFSIZ];
 	
 	e = ATOMfromstr(TYPE_@1, &p, &len, *val);
 	if (e < 0 || !p || 
 	   (ATOMcmp(TYPE_@1, p, ATOMnilptr(TYPE_@1)) == 0 &&
 	    ATOMcmp(TYPE_str, *val, ATOMnilptr(TYPE_str)) != 0))
 	{
-		char buf[BUFSIZ];
 		if (p)
 			GDKfree(p);
                 snprintf(buf, BUFSIZ,"conversion of string '%s' failed",*val);

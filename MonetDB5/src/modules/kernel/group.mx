@@ -1715,6 +1715,8 @@ GRPprelude(void)
 {
 	/* printf("#init group\n"); */
 	TYPE_mapentry = malAtomFixed(sizeof(mapentry_t), sizeof(oid), "mapentry");
+	if ( TYPE_mapentry < 0)
+		throw(MAL,"group.prelude", RUNTIME_OBJECT_MISSING);
 	return MAL_SUCCEED;
 }
 
