@@ -112,8 +112,7 @@ OPTcompressImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				getVarConstant(mb,getArg(p,2)).val.sval,
 				getVarConstant(mb,getArg(p,3)).val.sval,
 				getVarConstant(mb,getArg(p,4)).val.ival);
-			q= pushStr(mb,q,buf);
-			p= q;
+			p= pushStr(mb,q,buf);
 			actions++;
 			continue;
 		} 

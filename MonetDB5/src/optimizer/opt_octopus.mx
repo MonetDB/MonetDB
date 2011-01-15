@@ -502,7 +502,7 @@ when scheduled correctly, would not lead to duplicate work.
 			/* initialize the result variables */
 			q= newAssignment(mb);
 			getArg(q,0)= getArg(p,0);
-			q= pushNil(mb,q, resType);
+			(void) pushNil(mb,q, resType);
 
 			/* Generate register block */
 			r = newStmt2(mb,schedulerRef,registerRef);
@@ -662,7 +662,7 @@ when scheduled correctly, would not lead to duplicate work.
 
 			q = newStmt(sm, octopusRef,connectRef);
 			conn= getArg(q,0);
-			q = pushArgument(sm, q, dbvar);
+			(void) pushArgument(sm, q, dbvar);
 
 			/* v:= remote.put(conn,version) */
 			q= newFcnCall(sm,remoteRef,putRef);
@@ -757,11 +757,11 @@ The tentacle code should be optimized by the remaining optimizers too.
 						getFunctionId(old[j]) == putName("reduce", 6)) {
 					q = newStmt(tmb, optimizerRef, putName("recycle", 7));
 					q = pushStr(tmb, q, octopusRef);
-					q = pushStr(tmb, q, getFunctionId(getInstrPtr(tmb, 0)));
+					(void) pushStr(tmb, q, getFunctionId(getInstrPtr(tmb, 0)));
 				}
 				q = newStmt(tmb, getModuleId(old[j]), getFunctionId(old[j]));
 				q = pushStr(tmb, q, octopusRef);
-				q = pushStr(tmb, q, getFunctionId(getInstrPtr(tmb, 0)));
+				(void) pushStr(tmb, q, getFunctionId(getInstrPtr(tmb, 0)));
 			}
 	for (i = 0; i < tn; i++) {
 		clrDeclarations(tentacle[i]);

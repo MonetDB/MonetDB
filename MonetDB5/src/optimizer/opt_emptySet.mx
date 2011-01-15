@@ -198,7 +198,7 @@ We assume here that string constants have been matched already.
 				}
 
 				q = newStmt1(mb, constraintsRef, "emptySet");
-				q = pushArgument(mb, q, getArg(p,0) );
+				(void) pushArgument(mb, q, getArg(p,0) );
 				constraints[ctop++]= p;
 			}
 		ignoreConstraint:
@@ -216,7 +216,7 @@ We assume here that string constants have been matched already.
 						setFunctionId(p, NULL);
 						p->argc = 1;
 						p->token = ASSIGNsymbol;
-						p= pushBit(mb, p, FALSE);
+						(void) pushBit(mb, p, FALSE);
 						actions++;
 						break;
 					} 
@@ -277,7 +277,7 @@ of removal of superflous constructions.
 					setFunctionId(p, newRef);
 					p= pushArgument(mb, p, 
 						newTypeVariable(mb, getHeadType(tpe)));
-					p= pushArgument(mb, p, 
+					(void) pushArgument(mb, p, 
 						newTypeVariable(mb, getTailType(tpe)));
 					actions++;
 					break;

@@ -154,7 +154,7 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	mb->recid = recycleSeq++;
 
 	/* create a handle for recycler */
-	q= newFcnCall(mb,"recycle","prelude");
+	(void) newFcnCall(mb,"recycle","prelude");
 	in = 1;
 	for (i = 1; i<limit; i++) {
 		p = old[i];

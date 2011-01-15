@@ -589,7 +589,7 @@ Derived paths are similar to the group new.
 				setVarType(mb,getArg(qq,0), newBatType(getHeadType(getVarType(mb,idx[getArg(q,j)])), getTailType(getVarType(mb,val[getArg(q,j)]))));
 				qq= pushArgument(mb,qq,idx[getArg(q,j)]);
 				qq= pushArgument(mb,qq,val[getArg(q,j)]);
-				qq= pushLng(mb,qq, lng_nil);
+				(void) pushLng(mb,qq, lng_nil);
 				idx[getArg(q,j)] = 0;
 				val[getArg(q,j)] = 0;
 			}

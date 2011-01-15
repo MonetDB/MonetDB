@@ -92,7 +92,7 @@ SPcombi000(MalBlkPtr mb, int pc1, int pc2)
 				setFunctionId(p, putName("reverse_select", 14));
 				p = pushArgument(mb, p, q->argv[1]);
 				p = pushArgument(mb, p, q->argv[2]);
-				p = pushArgument(mb, p, q->argv[3]);
+				(void) pushArgument(mb, p, q->argv[3]);
 				removeInstruction(mb, q);
 				chkFlow(mb);
 				chkDeclarations(mb);
