@@ -41,7 +41,7 @@ INCLUDES = \
 PF_LIBS = $(libxml2_LIBS) $(DL_LIBS)
 
 lib__probxml = {
-	DIR = libdir/MonetDB4
+	DIR = libdir/monetdb4
 	SOURCES = probxml.mx
 
 	LIBS = \
@@ -59,7 +59,7 @@ lib__probxml = {
 
 headers_mil = {
 	HEADERS = mil
-	DIR = libdir/MonetDB4
+	DIR = libdir/monetdb4
 	SOURCES = probxml.mx
 }
 

@@ -30,7 +30,7 @@ INCLUDES = ../lib \
 		   $(GEOS_INCS)
 
 lib__geom = {
-	DIR = libdir/MonetDB5
+	DIR = libdir/monetdb5
 	SOURCES = geom.mx
 	LIBS = ../lib/libgeom \
 		   ../../gdk/libbat \
@@ -41,13 +41,13 @@ lib__geom = {
 
 headers_mal = {
 	HEADERS = mal
-	DIR = libdir/MonetDB5
+	DIR = libdir/monetdb5
 	SOURCES = geom.mx
 }
 
 headers_autoload = {
 	HEADERS = mal
-	DIR = libdir/MonetDB5/autoload
+	DIR = libdir/monetdb5/autoload
 	SOURCES = 50_geom.mal
 }
 

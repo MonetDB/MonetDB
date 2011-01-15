@@ -63,7 +63,7 @@ CFLAGS = $(ICC_BISON_CFLAGS) $(GCC_BISON_CFLAGS)
 pftijah_stem_CFLAGS = $(SUN_NOERR_CFLAGS)
 
 lib__pftijah = {
-	DIR = libdir/MonetDB4
+	DIR = libdir/monetdb4
 	SOURCES = \
 		termdb.mx \
 		pftijah.mx \
@@ -119,7 +119,7 @@ lib__pftijah = {
 
 headers_mil = {
 	HEADERS = mil
-	DIR = libdir/MonetDB4
+	DIR = libdir/monetdb4
 	SOURCES = pftijah.mx
 }
 

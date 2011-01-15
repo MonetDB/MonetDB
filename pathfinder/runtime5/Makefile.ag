@@ -41,7 +41,7 @@ INCLUDES = ../compiler/include ../runtime \
 PF_LIBS = $(libxml2_LIBS) $(DL_LIBS)
 
 lib__xquery = {
-	DIR = libdir/MonetDB5
+	DIR = libdir/monetdb5
 	SOURCES = \
 		xquery.mx \
 		xquery_scenario.mx \
@@ -58,6 +58,6 @@ lib__xquery = {
 
 headers_mal = {
 	HEADERS = mal
-	DIR = libdir/MonetDB5
+	DIR = libdir/monetdb5
 	SOURCES = xquery.mx
 }

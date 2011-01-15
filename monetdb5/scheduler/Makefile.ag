@@ -35,15 +35,9 @@ lib_scheduler = {
 		run_tarantula.mx
 }
 
-headers_h = {
-	DIR = includedir/MonetDB5/scheduler
-	SOURCES = run_adder.mx run_isolate.mx run_pipeline.mx run_memo.mx run_octopus.mx run_tarantula.mx
-	HEADERS = h 
-}
-
 headers_mal = {
 	HEADERS = mal
-	DIR = libdir/MonetDB5
+	DIR = libdir/monetdb5
 	SOURCES = run_adder.mx run_isolate.mx run_pipeline.mx run_memo.mx run_octopus.mx run_tarantula.mx
 }
 

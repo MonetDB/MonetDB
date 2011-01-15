@@ -23,7 +23,7 @@ INCLUDES = ../../modules/atoms ../../modules/kernel ../../mal \
 MTSAFE
 
 lib_crackers = {
-	DIR = libdir/MonetDB5
+	DIR = libdir/monetdb5
 	SEP = _
 	SOURCES = crackers.mx \
 		crackers_AVL_index.mx crackers_AVL_tree.mx crackers_index.mx \
@@ -37,19 +37,9 @@ lib_crackers = {
 		   $(MALLOC_LIBS)
 }
 
-headers_crackers = {
-	DIR = includedir/MonetDB5/crackers
-	SOURCES = crackers.mx \
-		crackers_AVL_index.mx crackers_AVL_tree.mx crackers_index.mx \
-		crackers_core_ordered.mx crackers_core_unordered.mx crackers_validation.mx \
-		crackers_joinselect_ops.mx crackers_select_ops.mx crackers_sideways.mx crackers_partial_sideways.mx crackers_updates.mx crackers_joins.mx crackers_sortmerge.mx crackers_crackmerge.mx crackers_pq.mx \
-		crackers_populate.mx
-	HEADERS = h 
-}
-
 headers_mal = {
 	HEADERS = mal
-	DIR = libdir/MonetDB5
+	DIR = libdir/monetdb5
 	SOURCES = crackers.mx 
 }
 

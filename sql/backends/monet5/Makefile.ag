@@ -36,7 +36,7 @@ INCLUDES = ../../include ../../common ../../storage ../../server \
 		   $(READLINE_INCS)
 
 lib__sql = {
-	DIR = libdir/MonetDB5
+	DIR = libdir/monetdb5
 	SOURCES = \
 		sql.mx \
 		sql_user.mx \
@@ -76,7 +76,7 @@ lib_embeddedsql5 = {
 		   $(READLINE_LIBS) $(PTHREAD_LIBS)
 }
 
-bin_Mbeddedsql5 = {
+bin_mbeddedsql5 = {
 	SOURCES = prog.c
 	LIBS = libembeddedsql5 \
 		   ../../server/libsqlserver \
@@ -95,7 +95,7 @@ bin_Mbeddedsql5 = {
 
 headers_h = {
 	HEADERS = h
-	DIR = includedir/MonetDB5/sql
+	DIR = includedir/monetdb/sql
 	SOURCES = embeddedclient.h
 }
 
@@ -108,13 +108,13 @@ headers_pc = {
 
 headers_mal = {
 	HEADERS = mal
-	DIR = libdir/MonetDB5
+	DIR = libdir/monetdb5
 	SOURCES = sql.mx sql_bpm.mx sql_emptyset.mx
 }
 
 headers_autoload = {
 	HEADERS = mal
-	DIR = libdir/MonetDB5/autoload
+	DIR = libdir/monetdb5/autoload
 	SOURCES = 40_sql.mal
 }
 

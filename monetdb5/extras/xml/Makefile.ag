@@ -23,11 +23,10 @@ INCLUDES = ../../mal \
 MTSAFE
 
 lib__xml = {
-	DIR = libdir/MonetDB5
+	DIR = libdir/monetdb5
 	SEP = _
 	SOURCES = xml.mx 
 
-	#SCRIPTS = mal
 	LIBS = ../../tools/libmonetdb5 \
 		   ../../../common/options/libmoptions \
 		   ../../../gdk/libbat \
@@ -36,24 +35,18 @@ lib__xml = {
 
 headers_xml_autoload = {
 	HEADERS = mal
-	DIR = libdir/MonetDB5/autoload
+	DIR = libdir/monetdb5/autoload
 	SOURCES = 05_xml.mal
-}
-
-headers_xml_h = {
-	DIR = includedir/MonetDB5/atoms
-	SOURCES = xml.mx
-	HEADERS = h 
 }
 
 headers_xml_mal = {
 	HEADERS = mal
-	DIR = libdir/MonetDB5
+	DIR = libdir/monetdb5
 	SOURCES = xml.mx
 }
 
 lib_batxml = {
-	DIR = libdir/MonetDB5
+	DIR = libdir/monetdb5
 	SEP = _
 	SOURCES = batxml.mx
 	LIBS = lib_xml ../../tools/libmonetdb5 \
@@ -62,15 +55,9 @@ lib_batxml = {
 		   $(MATH_LIBS) $(MALLOC_LIBS) $(libxml2_LIBS)
 }
 
-headers_batxml_h = {
-	DIR = includedir/MonetDB5/mal
-	SOURCES = batxml.mx
-	HEADERS = h 
-}
-
 headers_batxml_mal = {
 	HEADERS = mal
-	DIR = libdir/MonetDB5
+	DIR = libdir/monetdb5
 	SOURCES = batxml.mx
 }
 

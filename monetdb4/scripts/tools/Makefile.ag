@@ -19,6 +19,6 @@ EXTRA_DIST  = backup.mil restore.mil
 
 headers_mil = {
 	HEADERS = mil
-	DIR = libdir/MonetDB4
+	DIR = libdir/monetdb4
 	SOURCES = backup.mil restore.mil
 }

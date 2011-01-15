@@ -22,22 +22,16 @@ INCLUDES = ../../mal \
 		   $(SPHINXCLIENT_CFLAGS)
 
 lib__sphinx = {
-	DIR = libdir/MonetDB5
+	DIR = libdir/monetdb5
 	SEP = _
 	SOURCES = sphinx.mx
 
 	LIBS = ../../tools/libmonetdb5 $(SPHINXCLIENT_LIBS)
 }
 
-headers_sphinx_h = {
-	DIR = includedir/MonetDB5/kernel
-	SOURCES = sphinx.mx
-	HEADERS = h 
-}
-
 headers_sphinx_mal = {
 	HEADERS = mal
-	DIR = libdir/MonetDB5
+	DIR = libdir/monetdb5
 	SOURCES = sphinx.mx
 }
 

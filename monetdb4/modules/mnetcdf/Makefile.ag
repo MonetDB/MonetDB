@@ -24,7 +24,7 @@ INCLUDES = ../../monet ../plain \
 MTSAFE
 
 LIB_mnetcdf = {
-	DIR = libdir/MonetDB4
+	DIR = libdir/monetdb4
 	SEP = _
 	COND = HAVE_NETCDF
 	SOURCES = mnetcdf.mx 
@@ -36,16 +36,9 @@ LIB_mnetcdf = {
 		$(NETCDF_LIBS) $(MATH_LIBS)
 }
 
-HEADERS_mnetcdf = {
-	DIR = includedir/MonetDB4/mnetcdf
-	COND = HAVE_NETCDF
-	SOURCES = mnetcdf.mx 
-	HEADERS = h proto.h m
-}
-
 headers_mil = {
 	HEADERS = mil
-	DIR = libdir/MonetDB4
+	DIR = libdir/monetdb4
 	COND = HAVE_NETCDF
 	SOURCES = mnetcdf.mx 
 }

@@ -577,6 +577,26 @@ def am_binary(fd, var, binmap, am):
         for condname in binmap['COND']:
             fd.write("endif\n")
         cname = "$(C_" + name + ")"
+    elif binmap.has_key('CONDINST'):
+        for condname in binmap['CONDINST']:
+            fd.write("if %s\n" % condname)
+        cond = '#' + '+'.join(binmap['CONDINST'])
+        fd.write(" C_inst_%s = %s\n" % (name, name))
+        fd.write(" C_noinst_%s = \n" % (name))
+        for condname in binmap['CONDINST']:
+            fd.write("endif\n")
+
+        for condname in binmap['CONDINST']:
+            fd.write("if !%s\n" % condname)
+        fd.write(" C_inst_%s = \n" % (name))
+        fd.write(" C_noinst_%s = %s\n" % (name, name))
+        for condname in binmap['CONDINST']:
+            fd.write("endif\n")
+        cname = "$(C_inst_" + name + ")"
+        am['BINS'].append(cname)
+        cname = "$(C_noinst_" + name + ")"
+        am['NBINS'].append(cname)
+        cname = ''
     elif binmap.has_key('NOINST'):
         am['NBINS'].append(binname)
     else:
@@ -649,12 +669,33 @@ def am_bins(fd, var, binsmap, am):
         bin, ext = split_filename(binsrc)
         am['EXTRA_DIST'].append(binsrc)
 
-        if binsmap.has_key("DIR"):
-            lbins.append(bin)
+        if binsmap.has_key('CONDINST'):
+            for condname in binsmap['CONDINST']:
+                fd.write("if %s\n" % condname)
+            cond = '#' + '+'.join(binsmap['CONDINST'])
+            fd.write(" C_inst_%s = %s\n" % (bin, bin))
+            fd.write(" C_noinst_%s = \n" % (bin))
+            for condname in binsmap['CONDINST']:
+                fd.write("endif\n")
+
+            for condname in binsmap['CONDINST']:
+                fd.write("if !%s\n" % condname)
+            cond = '#!' + '+'.join(binsmap['CONDINST'])
+            fd.write(" C_inst_%s = \n" % (bin))
+            fd.write(" C_noinst_%s = %s\n" % (bin, bin))
+            for condname in binsmap['CONDINST']:
+                fd.write("endif\n")
+            cname = "$(C_inst_" + bin + ")"
+            am['BINS'].append(cname)
+            cname = "$(C_noinst_" + bin + ")"
+            am['NBINS'].append(cname)
+            cname = ''
         elif binsmap.has_key('NOINST'):
             am['NBINS'].append(bin)
         else:
             am['BINS'].append(bin)
+            if binsmap.has_key("DIR"):
+                lbins.append(bin)
 
         if binsmap.has_key(bin + "_LIBS"):
             fd.write(am_additional_libs(bin, "", "BIN", binsmap[bin + "_LIBS"], am))

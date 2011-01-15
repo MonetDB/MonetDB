@@ -34,16 +34,9 @@ lib_atoms = {
 		url.mx
 }
 
-headers_h = {
-	DIR = includedir/MonetDB5/atoms
-	SOURCES = blob.mx url.mx mtime.mx streams.mx inet.mx color.mx \
-			  str.mx identifier.mx
-	HEADERS = h 
-}
-
 headers_mal = {
 	HEADERS = mal
-	DIR = libdir/MonetDB5
+	DIR = libdir/monetdb5
 	SOURCES = str.mx blob.mx url.mx mtime.mx streams.mx inet.mx color.mx \
 			  identifier.mx
 }

@@ -21,9 +21,10 @@ INCLUDES = ../../mapilib ../../../common/options $(READLINE_INCS)
 MAPI_LIBS = $(SOCKET_LIBS) 
 
 BINS = {
-	DIR = libdir/MonetDB/Tests
+	CONDINST = HAVE_TESTING
+	DIR = libdir/monetdb/tests
 	SOURCES = sample0.c sample1.c sample2.c sample3.c sample4.c \
-		smack00.c  smack01.c
+		smack00.c smack01.c
 	LIBS = $(MAPI_LIBS) ../../mapilib/libmapi \
 		../../../common/options/libmoptions \
 		$(curl_LIBS)

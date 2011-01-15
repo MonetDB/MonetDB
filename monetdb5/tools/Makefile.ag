@@ -28,7 +28,7 @@ INCLUDES = ../mal \
 lib_monetdb5 = {
 	NAME = monetdb5
 	SCRIPTS = mal
-	DIR = libdir
+	DIR = libdir/monetdb5/lib
 	SOURCES = libmonetdb5.rc
 	LIBS = ../mal/libmal ../modules/atoms/libatoms \
 		../modules/kernel/libkernel ../modules/mal/libmal \
@@ -62,7 +62,7 @@ lib_embeddedmal = {
 		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
 
-bin_Mbeddedmal = {
+bin_mbeddedmal = {
 	SOURCES = prog.c
 	LIBS = libembeddedmal @SHARED_LIBS@ \
 		../../common/options/libmoptions \
@@ -74,7 +74,7 @@ bin_Mbeddedmal = {
 
 headers_h = {
 	HEADERS = h
-	DIR = includedir/MonetDB5/tools
+	DIR = includedir/monetdb/m5
 	SOURCES = embeddedclient.h
 }
 
@@ -82,7 +82,7 @@ headers_pc = {
 	COND = NOT_WIN32
 	HEADERS = pc
 	DIR = libdir/pkgconfig
-	SOURCES = monetdb-mal.pc.in monetdb-embeddedclient.pc.in
+	SOURCES = monetdb-embeddedclient.pc.in
 }
 
 EXTRA_DIST_DIR = Tests

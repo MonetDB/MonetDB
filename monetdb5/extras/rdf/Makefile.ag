@@ -25,7 +25,7 @@ INCLUDES = ../../modules/atoms ../../modules/mal ../../mal \
 MTSAFE
 
 lib__rdf = {
-	DIR = libdir/MonetDB5
+	DIR = libdir/monetdb5
 	SOURCES = rdf.mx rdf_shredder.mx
 	LIBS = ../../tools/libmonetdb5 \
 		../../../common/options/libmoptions \
@@ -34,21 +34,15 @@ lib__rdf = {
 		$(MALLOC_LIBS) $(raptor_LIBS)
 }
 
-headers_rdf = {
-	DIR = includedir/MonetDB5/rdf
-	SOURCES = rdf.mx rdf_shredder.mx
-	HEADERS = h
-}
-
 headers_mal = {
 	HEADERS = mal
-	DIR = libdir/MonetDB5
+	DIR = libdir/monetdb5
 	SOURCES = rdf.mx
 }
 
 headers_autoload = {
 	HEADERS = mal
-	DIR = libdir/MonetDB5/autoload
+	DIR = libdir/monetdb5/autoload
 	SOURCES = 10_rdf.mal
 }
 

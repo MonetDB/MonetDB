@@ -18,7 +18,8 @@
 MTSAFE
 
 BINS = {
-	DIR = libdir/MonetDB/Tests
+	CONDINST = HAVE_TESTING
+	DIR = libdir/monetdb/tests
 	SOURCES = odbcsample1.c testgetinfo.c
 	LIBS = ../driver/libMonetODBC ../../mapilib/libmapi $(curl_LIBS)
 }

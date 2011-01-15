@@ -19,7 +19,7 @@ MT_SAFE
 
 headers_sql = {
 	HEADERS = sql
-	DIR = libdir/MonetDB5
+	DIR = libdir/monetdb5
 	SOURCES = \
 		createdb.mx \
 		cache.sql octopus.sql parts.sql \
@@ -29,7 +29,7 @@ headers_sql = {
 headers_rdf = {
 	COND = HAVE_RAPTOR
 	HEADERS = sql
-	DIR = libdir/MonetDB5
+	DIR = libdir/monetdb5
 	SOURCES = rdf.sql
 }
 

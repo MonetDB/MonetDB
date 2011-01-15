@@ -28,7 +28,7 @@ INCLUDES = ../lib \
 		   $(GEOS_INCS)
 
 lib__geom = {
-	DIR = libdir/MonetDB4
+	DIR = libdir/monetdb4
 	SOURCES = geom.mx
 	LIBS = ../lib/libgeom \
 		   ../../gdk/libbat \
@@ -38,6 +38,6 @@ lib__geom = {
 }
 
 scripts_mil = {
-	DIR = libdir/MonetDB4
+	DIR = libdir/monetdb4
 	SOURCES = geom.mx
 }

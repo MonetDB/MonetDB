@@ -25,7 +25,7 @@ INCLUDES = ../../monet \
 MTSAFE
 
 lib__streams = {
-	DIR = libdir/MonetDB4
+	DIR = libdir/monetdb4
 	SOURCES = streams.mx
 	#SCRIPTS = mil ""
 	LIBS = ../../../common/stream/libstream \
@@ -36,7 +36,7 @@ lib__streams = {
 }
 
 lib__str = {
-	DIR = libdir/MonetDB4
+	DIR = libdir/monetdb4
 	SEP = _
 	SOURCES = str.mx
 	#SCRIPTS = mil ""
@@ -48,7 +48,7 @@ lib__str = {
 }
 
 lib__xtables = {
-	DIR = libdir/MonetDB4
+	DIR = libdir/monetdb4
 	SEP = _
 	SOURCES = xtables.mx
 	#SCRIPTS = mil ""
@@ -60,7 +60,7 @@ lib__xtables = {
 }
 
 lib__logger = {
-	DIR = libdir/MonetDB4
+	DIR = libdir/monetdb4
 	SEP = _
 	SOURCES = logger.mx
 	#SCRIPTS = mil ""
@@ -72,7 +72,7 @@ lib__logger = {
 }
 
 LIBS = {
-	DIR = libdir/MonetDB4
+	DIR = libdir/monetdb4
 	SEP = _
 	SOURCES = \
 		algebra.mx arith.mx bat.mx builtin.mx sys.mx trans.mx \
@@ -90,7 +90,7 @@ LIBS = {
 }
 
 lib__aggrX3 = {
-	DIR = libdir/MonetDB4
+	DIR = libdir/monetdb4
 	SEP = _
 	SOURCES = aggrX3.mx \
 		aggrX3_be_sum.mx aggrX3_be_prod.mx aggrX3_be_avg.mx aggrX3_be_minmax.mx aggrX3_be_count.mx \
@@ -104,7 +104,7 @@ lib__aggrX3 = {
 EXTRA_DIST = aggrX3_ri.mx
 
 lib__counters = {
-	DIR = libdir/MonetDB4
+	DIR = libdir/monetdb4
 	SOURCES = counters.mx
 	#SCRIPTS = mil ""
 	LIBS = ../../../common/stream/libstream \
@@ -115,7 +115,7 @@ lib__counters = {
 }
 
 lib__pcl = {
-	DIR = libdir/MonetDB4
+	DIR = libdir/monetdb4
 	SOURCES = pcl.mx
 	#SCRIPTS = mil ""
 	LIBS = ../../../common/stream/libstream \
@@ -126,7 +126,7 @@ lib__pcl = {
 }
 
 lib__pcre = {
-	DIR = libdir/MonetDB4
+	DIR = libdir/monetdb4
 	SOURCES = pcre.mx
 	#SCRIPTS = mil ""
 	LIBS = ../../../common/stream/libstream \
@@ -138,7 +138,7 @@ lib__pcre = {
 
 headers_mil = {
 	HEADERS = mil
-	DIR = libdir/MonetDB4
+	DIR = libdir/monetdb4
 	SOURCES = streams.mx str.mx xtables.mx constant.mx \
          	algebra.mx arith.mx bat.mx builtin.mx sys.mx trans.mx \
                 mkey.mx profiler.mx \
@@ -148,18 +148,6 @@ headers_mil = {
 		unix.mx url.mx counters.mx pcl.mx pcre.mx pqueue.mx \
 		logger.mx
 		# radix.mx tcpip.mx
-}
-
-headers_plain = {
-	HEADERS = h proto.h m
-	DIR = includedir/MonetDB4/plain
-	SOURCES = streams.mx str.mx xtables.mx logger.mx \
-		algebra.mx arith.mx bat.mx builtin.mx sys.mx trans.mx \
-		mkey.mx profiler.mx constant.mx \
-		aggr.mx aggrX3.mx alarm.mx ascii_io.mx bat_arith.mx blob.mx \
-		decimal.mx enum.mx lock.mx mmath.mx monettime.mx \
-		stats.mx unix.mx url.mx pqueue.mx \
-		counters.mx pcl.mx pcre.mx
 }
 
 EXTRA_DIST_DIR = Tests
