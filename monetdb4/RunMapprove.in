@@ -17,9 +17,9 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-pkg=MonetDB4
+pkg=monetdb4
 buildbase=@QBUILD@
-builddir="${buildbase}/MonetDB4"
+builddir="${buildbase}/monetdb4"
 # make sure srcdir contains absolute path name
 srcdir=`cd '@srcdir@'; pwd`
 

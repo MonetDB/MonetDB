@@ -21,62 +21,62 @@ set buildbase=@XBUILD@
 set builddir=%buildbase%\geom
 set srcdir=@XSOURCE@\geom
 
-set MOD_PATH=%builddir%\src\monetdb%V%\.libs
-set MOD_PATH=%MOD_PATH%;%builddir%\src\monetdb%V%
-set MOD_PATH=%MOD_PATH%;%builddir%\src\sql
+set MOD_PATH=%builddir%\monetdb%V%\.libs
+set MOD_PATH=%MOD_PATH%;%builddir%\monetdb%V%
+set MOD_PATH=%MOD_PATH%;%builddir%\sql
 
 REM enable auto-loading of modules before `make install`
-if not exist %builddir%\src\monetdb%V%\autoload mkdir %builddir%\src\monetdb%V%\autoload
-copy /y %srcdir%\src\monetdb%V%\??_*.mal %builddir%\src\monetdb%V%\autoload
+if not exist %builddir%\monetdb%V%\autoload mkdir %builddir%\monetdb%V%\autoload
+copy /y %srcdir%\monetdb%V%\??_*.mal %builddir%\monetdb%V%\autoload
 
 if not %V% == 4 goto skip_4
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB4\src\modules\plain\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB4\src\modules\plain
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB4\src\modules\contrib\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB4\src\modules\contrib
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB4\src\modules\calibrator\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB4\src\modules\calibrator
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB4\src\mapi\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB4\src\mapi
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB4\src\modules\mnetcdf\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB4\src\modules\mnetcdf
-set MOD_PATH=%MOD_PATH%;%srcdir%\..\MonetDB4\scripts\tools
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\plain\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\plain
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\contrib\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\contrib
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\calibrator\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\calibrator
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\mapi\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\mapi
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\mnetcdf\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\mnetcdf
+set MOD_PATH=%MOD_PATH%;%srcdir%\..\monetdb4\scripts\tools
 :skip_4
 
 if not %V% == 5 goto skip_5
-set MOD_PATH=%MOD_PATH%;%buildbase%\sql\src\backends\monet5\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\sql\src\backends\monet5
-set MOD_PATH=%MOD_PATH%;%buildbase%\sql\src\sql
+set MOD_PATH=%MOD_PATH%;%buildbase%\sql\backends\monet5\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\sql\backends\monet5
+set MOD_PATH=%MOD_PATH%;%buildbase%\sql\sql
 
 REM enable auto-loading of modules before `make install`
-if not exist %buildbase%\sql\src\backends\monet5\autoload mkdir %buildbase%\sql\src\backends\monet5\autoload
-copy /y %srcdir%\..\sql\src\backends\monet5\??_*.mal %buildbase%\sql\src\backends\monet5\autoload
+if not exist %buildbase%\sql\backends\monet5\autoload mkdir %buildbase%\sql\backends\monet5\autoload
+copy /y %srcdir%\..\sql\backends\monet5\??_*.mal %buildbase%\sql\backends\monet5\autoload
 
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\compiler\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\compiler
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\optimizer\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\optimizer
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\scheduler\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\scheduler
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\modules\atoms\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\modules\atoms
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\modules\kernel\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\modules\kernel
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\modules\mal\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\modules\mal
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\modules\mal\crackers\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\modules\mal\crackers
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\modules\mal\rdf\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\modules\mal\rdf
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\compiler\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\compiler
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\optimizer\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\optimizer
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\scheduler\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\scheduler
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\modules\atoms\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\modules\atoms
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\modules\kernel\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\modules\kernel
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\modules\mal\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\modules\mal
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\extras\crackers\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\extras\crackers
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\extras\rdf\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\extras\rdf
 
 REM enable auto-loading of modules before `make install`
-if not exist %buildbase%\MonetDB5\src\modules\mal\rdf\autoload mkdir %buildbase%\MonetDB5\src\modules\mal\rdf\autoload
-copy /y %srcdir%\..\MonetDB5\src\modules\mal\rdf\??_*.mal %buildbase%\MonetDB5\src\modules\mal\rdf\autoload
-if not exist %buildbase%\MonetDB5\src\modules\atoms\autoload mkdir %buildbase%\MonetDB5\src\modules\atoms\autoload
-copy /y %srcdir%\..\MonetDB5\src\modules\atoms\??_*.mal %buildbase%\MonetDB5\src\modules\atoms\autoload
+if not exist %buildbase%\monetdb5\modules\mal\rdf\autoload mkdir %buildbase%\monetdb5\modules\mal\rdf\autoload
+copy /y %srcdir%\..\monetdb5\modules\mal\rdf\??_*.mal %buildbase%\monetdb5\modules\mal\rdf\autoload
+if not exist %buildbase%\monetdb5\modules\atoms\autoload mkdir %buildbase%\monetdb5\modules\atoms\autoload
+copy /y %srcdir%\..\monetdb5\modules\atoms\??_*.mal %buildbase%\monetdb5\modules\atoms\autoload
 :skip_5
 
-set PATH=%buildbase%\MonetDB%V%\src\tools;%buildbase%\testing\src;%PATH%
+set PATH=%buildbase%\monetdb%V%\tools;%buildbase%\testing\src;%PATH%
 
 set PATH=%MOD_PATH%;%PATH%
 

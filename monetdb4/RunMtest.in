@@ -17,23 +17,23 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-pkg=MonetDB4
+pkg=monetdb4
 buildbase=@QBUILD@
-builddir="${buildbase}/MonetDB4"
+builddir="${buildbase}/monetdb4"
 # make sure srcdir contains absolute path name
 srcdir=`cd '@srcdir@'; pwd`
 uname=`uname`
 
-# where compiled MonetDB4 modules are to be found
-for d in src/modules/plain src/modules/contrib src/modules/calibrator src/mapi @HAVE_NETCDF_TRUE@ src/modules/mnetcdf
+# where compiled monetdb4 modules are to be found
+for d in modules/plain modules/contrib modules/calibrator mapi @HAVE_NETCDF_TRUE@ modules/mnetcdf
 do
 	MOD_PATH="${MOD_PATH}${builddir}/$d/.libs:${builddir}/$d:"
 done
 MOD_PATH="${MOD_PATH}${srcdir}/scripts/tools"
 
 # enhance various paths to find our stuff
-binpath="${builddir}/src/tools:${buildbase}/testing/src"
-libpath="${MOD_PATH}:${builddir}/src/monet/.libs"
+binpath="${builddir}/tools:${buildbase}/testing/src"
+libpath="${MOD_PATH}:${builddir}/monet/.libs"
 
 PATH="${binpath}:$PATH"
 export PATH

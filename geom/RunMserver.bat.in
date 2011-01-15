@@ -13,41 +13,41 @@ if "%1" == "-5" set V=5& shift
 set buildbase=@BUILD@
 set builddir=%buildbase%\geom
 
-set MOD_PATH=%builddir%\src\monetdb%V%\.libs
-set MOD_PATH=%MOD_PATH%;%builddir%\src\monetdb%V%
-set MOD_PATH=%MOD_PATH%;%builddir%\src\sql
+set MOD_PATH=%builddir%\monetdb%V%\.libs
+set MOD_PATH=%MOD_PATH%;%builddir%\monetdb%V%
+set MOD_PATH=%MOD_PATH%;%builddir%\sql
 
 if not %V% == 4 goto skip_4
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB4\src\modules\plain\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB4\src\modules\plain
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB4\src\modules\contrib\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB4\src\modules\contrib
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB4\src\modules\calibrator\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB4\src\modules\calibrator
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB4\src\mapi\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB4\src\mapi
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB4\src\modules\mnetcdf\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB4\src\modules\mnetcdf
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB4\scripts
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB4\scripts\tools
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\plain\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\plain
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\contrib\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\contrib
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\calibrator\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\calibrator
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\mapi\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\mapi
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\mnetcdf\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\mnetcdf
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\scripts
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\scripts\tools
 :skip_4
 
 if not %V == 5 goto skip_5
-set MOD_PATH=%MOD_PATH%;%buildbase%\sql\src\backends\monet5\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\sql\src\backends\monet5\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\sql\backends\monet5\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\sql\backends\monet5\.libs
 
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\compiler\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\compiler
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\optimizer\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\optimizer
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\scheduler\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\scheduler
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\modules\atoms\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\modules\atoms
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\modules\kernel\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\modules\kernel
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\modules\mal\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\modules\mal
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\compiler\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\compiler
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\optimizer\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\optimizer
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\scheduler\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\scheduler
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\modules\atoms\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\modules\atoms
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\modules\kernel\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\modules\kernel
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\modules\mal\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\modules\mal
 :skip_5
 
 set PATH=%MOD_PATH%;%PATH%

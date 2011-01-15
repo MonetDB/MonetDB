@@ -23,7 +23,7 @@ builddir="${buildbase}/geom"
 # make sure srcdir contains absolute path name
 srcdir=`cd '@srcdir@'; pwd`
 
-# default back-end is MonetDB5
+# default back-end is monetdb5
 V=5
 for arg
 do

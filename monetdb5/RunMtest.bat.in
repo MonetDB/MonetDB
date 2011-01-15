@@ -8,31 +8,31 @@ goto end
 
 setlocal
 
-set pkg=MonetDB5
+set pkg=monetdb5
 set buildbase=@XBUILD@
-set builddir=%buildbase%\MonetDB5
-set srcdir=@XSOURCE@\MonetDB5
+set builddir=%buildbase%\monetdb5
+set srcdir=@XSOURCE@\monetdb5
 
-set MOD_PATH=%builddir%\src\compiler\.libs
-set MOD_PATH=%MOD_PATH%;%builddir%\src\compiler
-set MOD_PATH=%MOD_PATH%;%builddir%\src\optimizer\.libs
-set MOD_PATH=%MOD_PATH%;%builddir%\src\optimizer
-set MOD_PATH=%MOD_PATH%;%builddir%\src\scheduler\.libs
-set MOD_PATH=%MOD_PATH%;%builddir%\src\scheduler
-set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\atoms\.libs
-set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\atoms
-set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\kernel\.libs
-set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\kernel
-set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\mal\.libs
-set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\mal
-set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\mal\crackers\.libs
-set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\mal\crackers
-set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\mal\rdf\.libs
-set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\mal\rdf
+set MOD_PATH=%builddir%\compiler\.libs
+set MOD_PATH=%MOD_PATH%;%builddir%\compiler
+set MOD_PATH=%MOD_PATH%;%builddir%\optimizer\.libs
+set MOD_PATH=%MOD_PATH%;%builddir%\optimizer
+set MOD_PATH=%MOD_PATH%;%builddir%\scheduler\.libs
+set MOD_PATH=%MOD_PATH%;%builddir%\scheduler
+set MOD_PATH=%MOD_PATH%;%builddir%\modules\atoms\.libs
+set MOD_PATH=%MOD_PATH%;%builddir%\modules\atoms
+set MOD_PATH=%MOD_PATH%;%builddir%\modules\kernel\.libs
+set MOD_PATH=%MOD_PATH%;%builddir%\modules\kernel
+set MOD_PATH=%MOD_PATH%;%builddir%\modules\mal\.libs
+set MOD_PATH=%MOD_PATH%;%builddir%\modules\mal
+set MOD_PATH=%MOD_PATH%;%builddir%\extras\crackers\.libs
+set MOD_PATH=%MOD_PATH%;%builddir%\extras\crackers
+set MOD_PATH=%MOD_PATH%;%builddir%\extras\rdf\.libs
+set MOD_PATH=%MOD_PATH%;%builddir%\extras\rdf
 
 REM enable auto-loading of modules before `make install`
-if not exist %builddir%\src\modules\mal\rdf\autoload mkdir %builddir%\src\modules\mal\rdf\autoload
-copy /y %srcdir%\src\modules\mal\rdf\??_*.mal %builddir%\src\modules\mal\rdf\autoload
+if not exist %builddir%\extras\rdf\autoload mkdir %builddir%\extras\rdf\autoload
+copy /y %srcdir%\extras\rdf\??_*.mal %builddir%\extras\rdf\autoload
 if not exist %builddir%\src\modules\atoms\autoload mkdir %builddir%\src\modules\atoms\autoload
 copy /y %srcdir%\src\modules\atoms\??_*.mal %builddir%\src\modules\atoms\autoload
 

@@ -18,14 +18,14 @@
 # All Rights Reserved.
 
 buildbase=@QXBUILD@
-builddir="${buildbase}/MonetDB4"
+builddir="${buildbase}/monetdb4"
 # make sure srcdir contains absolute path name
 srcdir=`cd '@Xsrcdir@'; pwd`
 uname=`uname`
 
-# where compiled MonetDB4 modules are to be found
-MOD_PATH="${builddir}/src/modules/plain/.libs:${builddir}/src/modules/plain:${builddir}/src/modules/contrib/.libs:${builddir}/src/modules/contrib:${builddir}/src/modules/calibrator/.libs:${builddir}/src/modules/calibrator:${builddir}/src/mapi/.libs:${builddir}/src/mapi"
-@HAVE_NETCDF_TRUE@ MOD_PATH="${MOD_PATH}:${builddir}/src/modules/mnetcdf/.libs:${builddir}/src/modules/mnetcdf"
+# where compiled monetdb4 modules are to be found
+MOD_PATH="${builddir}/modules/plain/.libs:${builddir}/modules/plain:${builddir}/modules/contrib/.libs:${builddir}/modules/contrib:${builddir}/modules/calibrator/.libs:${builddir}/modules/calibrator:${builddir}/mapi/.libs:${builddir}/mapi"
+@HAVE_NETCDF_TRUE@ MOD_PATH="${MOD_PATH}:${builddir}/modules/mnetcdf/.libs:${builddir}/modules/mnetcdf"
 
 if [ "${LD_LIBRARY_PATH}" ] ; then
 	LD_LIBRARY_PATH=":${LD_LIBRARY_PATH}"
@@ -38,15 +38,15 @@ if [ "${uname}" = "AIX"  -a  "${LIBPATH}" ] ; then
 fi
 
 # enhance various paths to find our stuff
-PATH="${builddir}/src/tools:$PATH"
+PATH="${builddir}/tools:$PATH"
 if [ "${uname}" = "IRIX64" ] ; then
 	# on IRIX64 (at least when compiled with the MIPS compiler),
-	# running Mserver via the wrapper-script ${builddir}/src/tools/Mserver
+	# running Mserver via the wrapper-script ${builddir}/tools/Mserver
 	# results in a bus error;
-	# hence, we directly run the binary ${builddir}/src/tools/.libs/Mserver
-	PATH="${builddir}/src/tools/.libs:$PATH"
+	# hence, we directly run the binary ${builddir}/tools/.libs/Mserver
+	PATH="${builddir}/tools/.libs:$PATH"
 fi
-libpath="${MOD_PATH}:${builddir}/src/monet/.libs"
+libpath="${MOD_PATH}:${builddir}/monet/.libs"
 LD_LIBRARY_PATH="${libpath}${LD_LIBRARY_PATH}"
 if [ "${uname}" = "Darwin" ] ; then
 	DYLD_LIBRARY_PATH="${libpath}${DYLD_LIBRARY_PATH}"

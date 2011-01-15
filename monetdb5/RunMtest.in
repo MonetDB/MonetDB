@@ -17,15 +17,15 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-pkg=MonetDB5
+pkg=monetdb5
 buildbase=@QBUILD@
-builddir="${buildbase}/MonetDB5"
+builddir="${buildbase}/monetdb5"
 # make sure srcdir contains absolute path name
 srcdir=`cd '@srcdir@'; pwd`
 uname=`uname`
 
-# where compiled MonetDB5 modules are to be found
-for d in src/compiler src/optimizer src/scheduler src/modules/atoms src/modules/kernel src/modules/mal src/modules/mal/crackers src/modules/mal/rdf
+# where compiled monetdb5 modules are to be found
+for d in compiler optimizer scheduler modules/atoms modules/kernel modules/mal extras/crackers extras/rdf
 do
 	MOD_PATH="${MOD_PATH}${builddir}/$d/.libs:${builddir}/$d:"
 	# enable auto-loading of modules before `make install`
@@ -34,8 +34,8 @@ do
 done
 
 # enhance various paths to find our stuff
-binpath="${builddir}/src/tools:${srcdir}/src/tools:${buildbase}/testing/src"
-libpath="${MOD_PATH}:${builddir}/src/mal/.libs"
+binpath="${builddir}/tools:${srcdir}/tools:${buildbase}/testing/src"
+libpath="${MOD_PATH}:${builddir}/mal/.libs"
 
 PATH="${binpath}:$PATH"
 export PATH

@@ -18,13 +18,13 @@
 # All Rights Reserved.
 
 buildbase=@QXBUILD@
-builddir="${buildbase}/MonetDB5"
+builddir="${buildbase}/monetdb5"
 # make sure srcdir contains absolute path name
 srcdir=`cd '@Xsrcdir@'; pwd`
 uname=`uname`
 
-# where compiled MonetDB5 modules are to be found
-MOD_PATH="${builddir}/src/compiler/.libs:${builddir}/src/compiler:${builddir}/src/optimizer/.libs:${builddir}/src/optimizer:${builddir}/src/scheduler/.libs:${builddir}/src/scheduler:${builddir}/src/modules/atoms/.libs:${builddir}/src/modules/atoms:${builddir}/src/modules/kernel/.libs:${builddir}/src/modules/kernel:${builddir}/src/modules/mal/.libs:${builddir}/src/modules/mal"
+# where compiled monetdb5 modules are to be found
+MOD_PATH="${builddir}/compiler/.libs:${builddir}/compiler:${builddir}/optimizer/.libs:${builddir}/optimizer:${builddir}/scheduler/.libs:${builddir}/scheduler:${builddir}/modules/atoms/.libs:${builddir}/modules/atoms:${builddir}/modules/kernel/.libs:${builddir}/modules/kernel:${builddir}/modules/mal/.libs:${builddir}/modules/mal"
 
 if [ "${LD_LIBRARY_PATH}" ] ; then
 	LD_LIBRARY_PATH=":${LD_LIBRARY_PATH}"
@@ -37,8 +37,8 @@ if [ "${uname}" = "AIX"  -a  "${LIBPATH}" ] ; then
 fi
 
 # enhance various paths to find our stuff
-PATH="${builddir}/src/tools:$PATH"
-libpath="${MOD_PATH}:${builddir}/src/mal/.libs"
+PATH="${builddir}/tools:$PATH"
+libpath="${MOD_PATH}:${builddir}/mal/.libs"
 LD_LIBRARY_PATH="${libpath}${LD_LIBRARY_PATH}"
 if [ "${uname}" = "Darwin" ] ; then
 	DYLD_LIBRARY_PATH="${libpath}${DYLD_LIBRARY_PATH}"

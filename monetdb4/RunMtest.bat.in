@@ -8,28 +8,28 @@ goto end
 
 setlocal
 
-set pkg=MonetDB4
+set pkg=monetdb4
 set buildbase=@XBUILD@
-set builddir=%buildbase%\MonetDB4
-set srcdir=@XSOURCE@\MonetDB4
+set builddir=%buildbase%\monetdb4
+set srcdir=@XSOURCE@\monetdb4
 
-set MOD_PATH=%builddir%\src\modules\plain\.libs
-set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\plain
-set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\contrib\.libs
-set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\contrib
-set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\calibrator\.libs
-set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\calibrator
-set MOD_PATH=%MOD_PATH%;%builddir%\src\mapi\.libs
-set MOD_PATH=%MOD_PATH%;%builddir%\src\mapi
-set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\mnetcdf\.libs
-set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\mnetcdf
+set MOD_PATH=%builddir%\modules\plain\.libs
+set MOD_PATH=%MOD_PATH%;%builddir%\modules\plain
+set MOD_PATH=%MOD_PATH%;%builddir%\modules\contrib\.libs
+set MOD_PATH=%MOD_PATH%;%builddir%\modules\contrib
+set MOD_PATH=%MOD_PATH%;%builddir%\modules\calibrator\.libs
+set MOD_PATH=%MOD_PATH%;%builddir%\modules\calibrator
+set MOD_PATH=%MOD_PATH%;%builddir%\modules\mapi\.libs
+set MOD_PATH=%MOD_PATH%;%builddir%\modules\mapi
+set MOD_PATH=%MOD_PATH%;%builddir%\modules\mnetcdf\.libs
+set MOD_PATH=%MOD_PATH%;%builddir%\modules\mnetcdf
 set MOD_PATH=%MOD_PATH%;%srcdir%\scripts\tools
 
 set PATH=%buildbase%\testing\src;%PATH%
 
 set PATH=%MOD_PATH%;%PATH%
-set PATH=%builddir%\src\monet;%PATH%
-set PATH=%builddir%\src\tools;%PATH%
+set PATH=%builddir%\monet;%PATH%
+set PATH=%builddir%\tools;%PATH%
 
 set PYTHONPATH=%buildbase%\testing\src;%srcdir%\..\testing\src;%PYTHONPATH%
 

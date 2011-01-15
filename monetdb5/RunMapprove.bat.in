@@ -8,10 +8,10 @@ goto end
 
 setlocal
 
-set pkg=MonetDB5
+set pkg=monetdb5
 set buildbase=@XBUILD@
-set builddir=%buildbase%\MonetDB5
-set srcdir=@XSOURCE@\MonetDB5
+set builddir=%buildbase%\monetdb5
+set srcdir=@XSOURCE@\monetdb5
 
 set PYTHONPATH=%buildbase%\testing\src;%srcdir%\..\testing\src;%PYTHONPATH%
 

@@ -25,7 +25,7 @@ srcdir=`cd '@srcdir@'; pwd`
 uname=`uname`
 
 # where compiled SQL modules are to be found
-for d in src/backends/monet5 src/sql
+for d in backends/monet5 sql
 do
 	MOD_PATH="${MOD_PATH}${builddir}/$d/.libs:${builddir}/$d:"
 	# enable auto-loading of modules before `make install`
@@ -33,23 +33,23 @@ do
 	cp -f ${srcdir}/$d/[0-9][0-9]_*.mal ${builddir}/$d/autoload/ 2>/dev/null
 done
 
-# where compiled MonetDB5 modules are to be found
-for d in src/compiler src/optimizer src/scheduler src/modules/atoms src/modules/kernel src/modules/mal src/modules/mal/crackers src/modules/mal/rdf
+# where compiled monetdb5 modules are to be found
+for d in compiler optimizer scheduler modules/atoms modules/kernel modules/mal extras/crackers extras/rdf
 do
-	MOD_PATH="${MOD_PATH}${buildbase}/MonetDB5/$d/.libs:${builddir}/$d:"
+	MOD_PATH="${MOD_PATH}${buildbase}/monetdb5/$d/.libs:${builddir}/$d:"
 	# enable auto-loading of modules before `make install`
-	mkdir -p ${buildbase}/MonetDB5/$d/autoload
-	cp -f ${srcdir}/../MonetDB5/$d/[0-9][0-9]_*.mal ${buildbase}/MonetDB5/$d/autoload/ 2>/dev/null
+	mkdir -p ${buildbase}/monetdb5/$d/autoload
+	cp -f ${srcdir}/../monetdb5/$d/[0-9][0-9]_*.mal ${buildbase}/monetdb5/$d/autoload/ 2>/dev/null
 done
 
 # enhance various paths to find our stuff
-binpath="${builddir}/src/backends/monet5:${buildbase}/MonetDB5/src/tools:${buildbase}/testing/src"
-libpath="${MOD_PATH}:${builddir}/src/server/.libs"
+binpath="${builddir}/backends/monet5:${buildbase}/monetdb5/tools:${buildbase}/testing/src"
+libpath="${MOD_PATH}:${builddir}/server/.libs"
 
 PATH="${binpath}:$PATH"
 export PATH
 
-PYTHONPATH="${builddir}/src/backends/python/monet5/.libs:${builddir}/src/backends/python/monet5:${buildbase}/testing/src:${srcdir}/../testing/src:$PYTHONPATH"
+PYTHONPATH="${builddir}/backends/python/monet5/.libs:${builddir}/backends/python/monet5:${buildbase}/testing/src:${srcdir}/../testing/src:$PYTHONPATH"
 export PYTHONPATH
 
 if [ "${LD_LIBRARY_PATH}" ] ; then
