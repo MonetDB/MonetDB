@@ -710,7 +710,7 @@ We don;t search the cache for a previous incarnation yet.
 #endif
 			scanner_query_processed(&(m->scanner));
 			if (s==0 || (err = mvc_status(m))) {
-				msg = createException(PARSE, "SQLparser", "%s", m->errstr?m->errstr:"");
+				msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 				handle_error(m, c->fdout, status);
 				sqlcleanup(m, err);
 				/* restore the state */

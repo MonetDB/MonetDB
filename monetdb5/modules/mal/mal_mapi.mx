@@ -624,7 +624,7 @@ error:
  * localhost.
  */
 void SERVERannounce(struct in_addr addr, int port, str usockfile) {
-	str buf = alloca(sizeof(char) * 1024);
+	str buf;
 	str host = NULL;
 	int ret = 0;
 
@@ -760,7 +760,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 
 		/* prevent silent truncation, sun_path is typically around 108
 		 * chars long :/ */
-		if (strlen(usockfile) > sizeof(userver.sun_path))
+		if (strlen(usockfile) >= sizeof(userver.sun_path))
 			throw(MAL, "mal_mapi.listen",
 					OPERATION_FAILED ": UNIX socket path too long: %s",
 					usockfile);

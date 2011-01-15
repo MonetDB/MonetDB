@@ -449,7 +449,7 @@ str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc,
 		int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller)
 {
 	ValPtr lhs,rhs,v;
-	int i,k; 
+	int i,k;
 	InstrPtr pci=0;
 	int exceptionVar,prevpc=0;
 	str ret=0;
@@ -2321,7 +2321,7 @@ str catchKernelException(Client cntxt, str ret){
 @= exceptionHndlr
 if(cntxt->errbuf && cntxt->errbuf[0] ) {
 	str oldret = ret;
-	ret = catchKernelException(cntxt, oldret);
+	ret = catchKernelException(cntxt, ret);
 	FREE_EXCEPTION(oldret);
 }
 

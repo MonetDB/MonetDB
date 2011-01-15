@@ -179,7 +179,7 @@ find the actual arguments at the proper place of the callee.
 	q= pushReturn(mb, q, hvar);
 	tvar = newTmpVariable(mb, TYPE_any);
 	q= pushReturn(mb, q, tvar);
-	q= pushArgument(mb, q, iter);
+	(void) pushArgument(mb, q, iter);
 
 	/* $1:= bat.find(Ai,h) or constant */
 	alias[i] = tvar;
@@ -190,7 +190,7 @@ find the actual arguments at the proper place of the callee.
 			alias[i] = newTmpVariable(mb, getTailType(getArgType(mb, pci, i)));
 			getArg(q, 0) = alias[i];
 			q= pushArgument(mb, q, getArg(pci, i));
-			q= pushArgument(mb, q, hvar);
+			(void) pushArgument(mb, q, hvar);
 		}
 
 	/* cr:= mod.CMD($1,...,$n); */
@@ -210,7 +210,7 @@ find the actual arguments at the proper place of the callee.
 	q = newFcnCall(mb, batRef, insertRef);
 	q= pushArgument(mb, q, resB);
 	q= pushArgument(mb, q, hvar);
-	q= pushArgument(mb, q, cr);
+	(void) pushArgument(mb, q, cr);
 
 /* redo (mloop,h,r):= hasMoreElements(refBat); */
 	q = newFcnCall(mb, batRef, "hasMoreElements");
@@ -218,17 +218,17 @@ find the actual arguments at the proper place of the callee.
 	getArg(q, 0) = mloop;
 	q= pushReturn(mb, q, hvar);
 	q= pushReturn(mb, q, tvar);
-	q= pushArgument(mb, q, iter);
+	(void) pushArgument(mb, q, iter);
 
 	q = newAssignment(mb);
 	q->barrier = EXITsymbol;
 	getArg(q, 0) = mloop;
 	q= pushReturn(mb, q, hvar);
-	q= pushReturn(mb, q, tvar);
+	(void) pushReturn(mb, q, tvar);
 
 	q = newAssignment(mb);
 	getArg(q, 0) = getArg(pci, 0);
-	q= pushArgument(mb, q, resB);
+	(void) pushArgument(mb, q, resB);
 	GDKfree(alias);
 	return MAL_SUCCEED;
 }

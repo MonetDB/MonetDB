@@ -94,6 +94,7 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 					/* re-use a constant */
 					alias[i]= index[k];
 					fnd=1;
+					actions++;
 					break;
 				}
 			}

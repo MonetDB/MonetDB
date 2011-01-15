@@ -2437,8 +2437,6 @@ isBATVector(Tablet * t)
 	unsigned int i;
 	BUN cnt;
 
-	if (t->columns[0].c == 0)
-		return 0;
 	cnt = BATcount(t->columns[0].c[0]);
 	for (i = 0; i < t->nr_attrs; i++)
 		if (t->columns[i].c[0] == 0)

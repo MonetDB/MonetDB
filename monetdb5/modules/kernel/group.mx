@@ -1153,7 +1153,7 @@ CTderive_clustered(BAT **H, BAT **M, BAT *_histo, BAT *_map, BAT *_b, int tt, wr
 		return GDK_FAIL;
 	/* complete result histo */
 	hn = BATnew(TYPE_oid, TYPE_wrd, BATcount(_b));
-	if (!mn) {
+	if (!hn) {
 		BBPreclaim(mn);
 		return GDK_FAIL;
 	}
@@ -1715,6 +1715,8 @@ GRPprelude(void)
 {
 	/* printf("#init group\n"); */
 	TYPE_mapentry = malAtomFixed(sizeof(mapentry_t), sizeof(oid), "mapentry");
+	if ( TYPE_mapentry < 0)
+		throw(MAL,"group.prelude", RUNTIME_OBJECT_MISSING);
 	return MAL_SUCCEED;
 }
 

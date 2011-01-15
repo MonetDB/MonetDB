@@ -276,6 +276,7 @@ mal_export lng getDiskReads(void);
 mal_export lng getDiskWrites(void);
 mal_export lng getUserTime(void);
 mal_export lng getSystemTime(void);
+mal_export void _initTrace(void);
 
 #endif
 @+ Performance tracing
@@ -765,6 +766,7 @@ When you receive the message to start profiling, we
 should wait for the next instruction the stream
 is initiated. This is controlled by a delay-switch
 @c
+static int TRACE_init = 0;
 str
 startProfiling(void)
 {
@@ -774,7 +776,8 @@ startProfiling(void)
 		delayswitch = 1;
 	} else
 		cachedProfiling = TRUE;
-	initTrace();
+	if (TRACE_init == 0)
+		_initTrace();
 	malProfileMode = TRUE;
 	mal_unset_lock(mal_profileLock, "profileLock");
 	return MAL_SUCCEED;
@@ -976,7 +979,6 @@ to avoid disc overflow using profiler.reset().
 All properties identified below are maintained, because this allows
 for easy integration with SQL.
 @c
-static int TRACE_init = 0;
 static int TRACE_event = 0;
 static BAT *TRACE_id_event = 0;
 static BAT *TRACE_id_time = 0;

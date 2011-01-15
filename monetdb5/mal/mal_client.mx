@@ -461,9 +461,9 @@ MCexitClient(Client c)
 #ifdef MAL_CLIENT_DEBUG
 	printf("# Exit client %d\n", c->idx);
 #endif
+	MPresetProfiler(c->fdout);
 	if (c->father == NULL) { /* normal client */
 		if( c->fdout && c->fdout != GDKstdout){
-			MPresetProfiler(c->fdout);
 			(void) mnstr_close(c->fdout);
 			(void) mnstr_destroy(c->fdout);
 		}
@@ -484,9 +484,9 @@ MCwait(Client c)
 		mal_set_lock(mal_contextLock, "wait");
 		c->mode = AWAITING;
 		/* close streams */
+		mal_unset_lock(mal_contextLock, "wait");
 		MCexitClient(c);
 		/* wait for work */
-		mal_unset_lock(mal_contextLock, "wait");
 #ifdef MAL_DEBUG_CLIENT
 		mnstr_printf(c->fdout,"Put client into pool %d\n",c->idx);
 #endif

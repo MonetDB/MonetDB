@@ -116,7 +116,7 @@ OPTbarrierList(MalBlkPtr mb, InstrPtr p, int *alias){
 		q->argv[0]= getArg(p,j);
 		OPTDEBUGpartitions
 			printf("barrier %d ->%d\n",getArg(p,j), alias[getArg(p,j)]);
-		q= pushArgument(mb, q, 
+		(void) pushArgument(mb, q, 
 			(alias[getArg(p,j)]?alias[getArg(p,j)]:getArg(p,j)) );
 	}
 }
@@ -139,7 +139,7 @@ OPTredoList(MalBlkPtr mb, InstrPtr p, int *alias){
 		q = newStmt(mb, bpmRef, "hasMoreElements");
 		q->barrier= REDOsymbol;
 		q->argv[0]= getArg(p,j);
-		q= pushArgument(mb, q, 
+		(void) pushArgument(mb, q, 
 			(alias[getArg(p,j)]?alias[getArg(p,j)]:getArg(p,j)) );
 	}
 
@@ -178,7 +178,7 @@ OPTbakeIterator(MalBlkPtr mb, InstrPtr p, int *alias, int *garbage){
 	/* save the temporary partitions */
 	q = newStmt(mb,"bpm","addPartition");
 	q= pushArgument(mb,q,getArg(anchor,0));
-	q= pushArgument(mb,q,getArg(p,0));
+	(void) pushArgument(mb,q,getArg(p,0));
 
 	OPTredoList(mb,p,alias);
 }
@@ -334,7 +334,7 @@ the garbage collection statements for the partitioned bats.
 	if( garbage[k]){
 		q=newStmt(mb,bpmRef,"garbage");
 		setVarType(mb,getArg(q,0),TYPE_void);
-		q= pushArgument(mb,q,k);
+		(void) pushArgument(mb,q,k);
 	}
 	q= newAssignment(mb);
 	getArg(q,0)= j;
@@ -348,7 +348,7 @@ the garbage collection statements for the partitioned bats.
 	if( garbage[k]){
 		q=newStmt(mb,bpmRef,"garbage");
 		setVarType(mb,getArg(q,0),TYPE_void);
-		q= pushArgument(mb,q,k);
+		(void) pushArgument(mb,q,k);
 	}
 	for(;i< limit; i++)
 		pushInstruction(mb,old[i]);

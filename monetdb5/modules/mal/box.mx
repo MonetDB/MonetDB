@@ -261,7 +261,7 @@ BOXiterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@:OpenBox(iterator)@
 	cursor = (lng *) getArgReference(stk, pci, 0);
 	v = getArgReference(stk,pci,2); 
-	nextBoxElement(box, cursor, v);
+	(void) nextBoxElement(box, cursor, v);
 	return MAL_SUCCEED;
 }
 

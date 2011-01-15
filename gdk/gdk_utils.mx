@@ -129,6 +129,8 @@ GDKenvironment(str dbname, str dbfarm)
 		return 0;
 	}
 
+	assert(strlen(dbname) < PATHLENGTH);
+	assert(strlen(dbfarm) < PATHLENGTH);
 	strncpy(GDKdbnameStr, dbname, PATHLENGTH);
 	strncpy(GDKdbfarmStr, dbfarm, PATHLENGTH);
 	return 1;

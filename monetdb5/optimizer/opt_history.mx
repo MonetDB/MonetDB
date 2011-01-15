@@ -176,7 +176,7 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	/* run the keepQuery operation once only */
 	pushInstruction(mb, q = copyInstruction(keepQuery));
 	q->token = ASSIGNsymbol;
-	q = newStmt1(mb, sqlRef, "forgetPrevious");
+	(void) newStmt1(mb, sqlRef, "forgetPrevious");
 
 	/* collect the statistics */
 	@:initCounters@
@@ -194,7 +194,7 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		}	
 		if (getModuleId(p)==sqlRef && idcmp(getFunctionId(p),"resultSet")==0 ){
 			@:initCounter(tuples,aggr,count,wrd)@
-			q= pushArgument(mb,q, getArg(p,3));
+			(void) pushArgument(mb,q, getArg(p,3));
 		}
 		if ( p->token== ENDsymbol || p->barrier == RETURNsymbol || p->barrier == YIELDsymbol){
 			if (rtime ){
@@ -230,7 +230,7 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			q = pushArgument(mb, q, memory); 
 			q = pushArgument(mb, q, tuples); 
 			q = pushArgument(mb, q, inblock);/* inblock */
-			q = pushArgument(mb, q, oublock);/* oublock */
+			(void) pushArgument(mb, q, oublock);/* oublock */
 			pushInstruction(mb,p);
 			continue;
 		}

@@ -262,7 +262,8 @@ OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	old= mb->stmt;
 	limit= mb->stop;
 	slimit= mb->ssize;
-	newMalBlkStmt(mb,mb->ssize);
+	if ( newMalBlkStmt(mb,mb->ssize) < 0)
+		return 0;
 
 	/* beware, new variables and instructions are introduced */
 	pc= (int*) GDKzalloc(sizeof(int)* mb->vtop * 2); /* to find last assignment */

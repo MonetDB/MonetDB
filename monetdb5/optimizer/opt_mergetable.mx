@@ -1821,7 +1821,7 @@ static InstrPtr
 mat_mark(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 {
 	int k, tpe = getArgType(mb,p,0), nr = mat[m].mi->argc-1;
-	InstrPtr q, r = newInstruction(mb, ASSIGNsymbol);
+	InstrPtr q, r;
 	
 	OPTDEBUGmergetable {
 		mnstr_printf(GDKout,"#MAT optimizer, mat_group_union\n");

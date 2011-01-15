@@ -3782,7 +3782,7 @@ BBPbackup(BAT *b, bit subcommit)
 	if (BBPprepare(subcommit)) {
 		return -1;
 	}
-	if (b->batCopiedtodisk == 0 || nme == NULL || b->batPersistence != PERSISTENT) {
+	if (b->batCopiedtodisk == 0 || b->batPersistence != PERSISTENT) {
 		return 0;
 	}
 	/* determine location dir and physical suffix */
