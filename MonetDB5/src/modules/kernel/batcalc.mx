@@ -700,22 +700,22 @@ The accumulator variants may re-use the storage of an argument only when it is n
 nor being a persistent BAT
 */
 batcalc_export str CMDbataccum@2_@3_@4_@5(int *ret, int *l, int *r, bit *lflag, bit *rflag);
-str CMDbataccum@2_@3_@4_@5(int *ret, int *l, int *r, bit *lflag, bit *rflag)
+str CMDbataccum@2_@3_@4_@5(int *ret, int *l, int *ri, bit *lflag, bit *rflag)
 {	
 	BAT *bn, *b, *right;
 	char *res = MAL_SUCCEED;
 
 	@:getBATdescriptor(l,b,"batcalc.@1")@
-	@:getBATdescriptor(r,right,"batcalc.@1")@
+	@:getBATdescriptor(ri,right,"batcalc.@1")@
 
 	if( *lflag && !isVIEW(b) && BBP_refs(*l) == 1 && BBP_lrefs(*l) == 1)
 		bn = b;
-	else if( *rflag && !isVIEW(right) && BBP_refs(*r) == 1 &&  BBP_lrefs(*r) == 1)
+	else if( *rflag && !isVIEW(right) && BBP_refs(*ri) == 1 &&  BBP_lrefs(*ri) == 1)
 		bn = right;
 	else {
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(right->batCacheid);
-		return CMDbat@2_@3_@4_@5(ret,l,r);
+		return CMDbat@2_@3_@4_@5(ret,l,ri);
 	}
 
 	@:chkSize(bn,b,CMDbataccum@2)@
@@ -1412,10 +1412,10 @@ str CMD_@2_@3(int *ret, int *l, int *r)
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
 
 	if (b->htype != bn->htype) {
-		BAT *r = VIEWcreate(b,bn);
+		BAT *rview = VIEWcreate(b,bn);
 
 		BBPreleaseref(bn->batCacheid);
-		bn = r;
+		bn = rview;
 	}
 	BBPkeepref(*ret= bn->batCacheid);
 	BBPreleaseref(b->batCacheid);

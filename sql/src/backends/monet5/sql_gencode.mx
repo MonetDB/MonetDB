@@ -2123,11 +2123,11 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 	if (m->history == 1) {
 		sql_schema *sys = mvc_bind_schema(m, "sys");
 		sql_subfunc *kq = sql_find_func(sys, "keepquery", NR_KEEPQUERY_ARGS);
-		sql_subfunc *cq = sql_find_func(sys, "keepcall", NR_KEEPCALL_ARGS);
+		sql_subfunc *rq = sql_find_func(sys, "keepcall", NR_KEEPCALL_ARGS);
 
-		assert(kq && cq);
+		assert(kq && rq);
 		backend_create_func(be, kq->func);
-		backend_create_func(be, cq->func);
+		backend_create_func(be, rq->func);
 		/* only needed once */
 		m->history = 2;
 	}
