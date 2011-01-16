@@ -23,7 +23,7 @@ builddir="${buildbase}/template"
 # make sure srcdir contains absolute path name
 srcdir=`cd '@srcdir@'; pwd`
 
-# default back-end is MonetDB4
+# default back-end is monetdb4
 V=4
 for arg
 do

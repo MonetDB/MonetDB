@@ -1,0 +1,15 @@
+s1:= "hello";
+s2:= "world";
+s3:= nil:str;
+
+a1:= calc.max(s1,s2); io.print(a1);
+a2:= calc.max(s1,s3); io.print(a2);
+
+b1:= calc.min(s1,s2); io.print(b1);
+b2:= calc.min(s1,s3); io.print(b2);
+
+c1:= calc.max_no_nil(s1,s2); io.print(c1);
+c2:= calc.max_no_nil(s1,s3); io.print(c2);
+
+d1:= calc.min_no_nil(s1,s2); io.print(d1);
+d2:= calc.min_no_nil(s1,s3); io.print(d2);

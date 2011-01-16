@@ -1,0 +1,3 @@
+io.print("before EMPTY line");
+
+io.print("after EMPTY line");

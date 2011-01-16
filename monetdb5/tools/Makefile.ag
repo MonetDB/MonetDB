@@ -1,0 +1,88 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2011 MonetDB B.V.
+# All Rights Reserved.
+
+MTSAFE
+INCLUDES = ../mal \
+	../../clients/mapilib \
+	../../common/options \
+	../../common/stream \
+	../../gdk \
+	$(openssl_CFLAGS) $(pcre_CFLAGS) $(libxml2_CFLAGS)
+
+# the name (libmonetdb5) is also used in ../mal/mal_linker.mx
+# if you change the name here, change it there as well
+lib_monetdb5 = {
+	NAME = monetdb5
+	SCRIPTS = mal
+	DIR = libdir/monetdb5/lib
+	SOURCES = libmonetdb5.rc
+	LIBS = ../mal/libmal ../modules/atoms/libatoms \
+		../modules/kernel/libkernel ../modules/mal/libmal \
+		../optimizer/liboptimizer ../scheduler/libscheduler \
+		../../common/options/libmoptions \
+		../../gdk/libbat \
+		../../common/stream/libstream \
+		../../clients/mapilib/libmapi $(curl_LIBS) \
+		$(MATH_LIBS) $(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) \
+		$(DL_LIBS) $(READLINE_LIBS) $(openssl_LIBS) $(pcre_LIBS) \
+		$(LTLIBICONV) $(zlib_LIBS)
+}
+
+bin_mserver5 = {
+	SOURCES = mserver5.mx monet_version.h monet_version.c.in
+	LIBS = libmonetdb5 @SHARED_LIBS@ \
+		../../common/options/libmoptions \
+		../../gdk/libbat \
+		../../common/stream/libstream \
+		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) \
+		$(curl_LIBS) $(pcre_LIBS) $(openssl_LIBS)
+}
+
+lib_embeddedmal = {
+	SOURCES = embeddedclient.c.in
+	LIBS = libmonetdb5 @SHARED_LIBS@ \
+		../../common/options/libmoptions \
+		../../gdk/libbat \
+		../../common/stream/libstream \
+		../../clients/mapilib/libmapi $(curl_LIBS) \
+		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
+}
+
+bin_mbeddedmal = {
+	SOURCES = prog.c
+	LIBS = libembeddedmal @SHARED_LIBS@ \
+		../../common/options/libmoptions \
+		../../gdk/libbat \
+		../../common/stream/libstream \
+		../../clients/mapilib/libmapi $(curl_LIBS) \
+		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
+}
+
+headers_h = {
+	HEADERS = h
+	DIR = includedir/monetdb/m5
+	SOURCES = embeddedclient.h
+}
+
+headers_pc = {
+	COND = NOT_WIN32
+	HEADERS = pc
+	DIR = libdir/pkgconfig
+	SOURCES = monetdb-embeddedclient.pc.in
+}
+
+EXTRA_DIST_DIR = Tests

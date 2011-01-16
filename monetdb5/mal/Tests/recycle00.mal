@@ -1,0 +1,17 @@
+#test the basics of the replicator
+
+function qry();
+	i:=23;
+	j:=i*i;
+	io.print(j);
+end qry;
+
+recycle.setAdmPolicy(1);
+optimizer.recycle("user","qry");
+io.print("start");
+qry();
+io.print("next");
+qry();
+io.print("last");
+qry();
+recycle.dump();

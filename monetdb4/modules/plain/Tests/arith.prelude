@@ -1,0 +1,2 @@
+# empty .prelude, just make Mserver echo the commands of the real
+# test-script which it gets from stdin

@@ -1,0 +1,19 @@
+## test dayofweek and weeknumber using more than two years as consecutive days
+    date_00:= mtime.date(2000,01,01);
+
+	date_seq:= bat.new(:int,:date);
+#var date_seq := bat.new(int, date);
+	i:= -375;
+#var i := -375;
+barrier	lf_a:= true;
+	i:= i+1;
+	of_a := calc.<(i,375);
+barrier	mf_a:= of_a;
+#while ((i :+= 1) < 375) {
+	pf_a := mtime.adddays(date_00,i);
+	bat.insert(date_seq,i,pf_a);
+#	date_seq.bat.insert(i,adddays(date_00,i));
+redo	lf_a;
+exit	mf_a;
+exit	lf_a;
+#}

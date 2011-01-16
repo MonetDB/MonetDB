@@ -1,0 +1,77 @@
+chopper01
+chopper02
+chopper03
+clients01
+
+compress
+
+inspect00
+inspect05
+inspect10
+#inspect40 word size problems on different platforms
+
+register00
+
+mserver00
+
+statistics00
+statistics01
+
+call00
+
+#radix
+
+ascii_io2
+
+mat
+
+remoteInit
+
+remote01
+remote02
+remote03
+remote04
+remote06
+# needs Merovingian and aims at SQL
+#remote88
+#remote89
+remote99
+
+remote10
+
+attach00
+
+# this will always return something else
+#sabaoth00
+sabaoth01
+
+partition
+printf
+#some remote related tests
+mapi04
+mapi05
+mapi06
+mapi07
+mapi01
+
+
+HAVE_LIBXML2?xml00
+HAVE_LIBXML2?xml01
+HAVE_LIBXML2?xml02
+HAVE_LIBXML2?xml03
+HAVE_LIBXML2?xml04
+HAVE_LIBXML2?xml05
+HAVE_LIBXML2?xml10
+
+cluster00
+tokenizer00
+zorder
+
+#HAVE_RAPTOR?rdf
+
+# might show different output if openssl is compiled without full sha2
+# support
+clients-hashes
+# shows different output if the password backend is different (or
+# monetdb password has been changed)
+clients-getpasswd

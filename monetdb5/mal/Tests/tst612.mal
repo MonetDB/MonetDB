@@ -1,0 +1,4 @@
+b:= bbp.bind("test");
+io.print(b);
+bat.setPersistent(b,false);
+transaction.commit();

@@ -1,0 +1,6 @@
+module(xtables);
+var x := CTgroup(new(void,int).insert(nil,0).seqbase(0@0));
+x.print();
+CTmap(x).print();
+CTextend(x).print();
+CThistogram(x).print();

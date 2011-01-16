@@ -1,0 +1,11 @@
+#testing the statistics
+n:bat[:oid,:str]:= inspect.getStatistics("names");
+io.print(n);
+c:bat[:oid,:int]:= inspect.getStatistics("calls");
+io.print(c);
+a:bat[:oid,:int]:= inspect.getStatistics("actions");
+io.print(a);
+t:bat[:oid,:int]:= inspect.getStatistics("timings");
+io.print(t);
+
+io.print(n,c,a,t);

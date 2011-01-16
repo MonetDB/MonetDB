@@ -194,7 +194,7 @@
 #define HAVE_GLOBALMEMORYSTATUSEX 1 /* only on >= NT 5 */
 
 /* Define if you have the iconv() function and it works. */
-#undef HAVE_ICONV		/* optionally defined in rules.msc */
+/* #undef HAVE_ICONV */		/* optionally defined in rules.msc */
 
 /* Define to 1 if you have the <iconv.h> header file. */
 #ifdef HAVE_ICONV
@@ -411,6 +411,9 @@
 /* Define to 1 if you have the <rlimit.h> header file. */
 /* #undef HAVE_RLIMIT_H */
 
+/* Define to 1 if you have the `round' function. */
+/* #undef HAVE_ROUND */
+
 /* Define if you have SAX2 support in libxml2. */
 #ifdef HAVE_LIBXML2
 #define HAVE_SAX2 1
@@ -448,16 +451,12 @@
 
 /* Define to 1 if the system has the type `socklen_t'. */
 #define HAVE_SOCKLEN_T 1
-typedef int socklen_t;
 
 /* Define if you have the sphinxclient library */
 /* #undef HAVE_SPHINXCLIENT */
 
 /* Define if you have the SQLGetPrivateProfileString function */
 #define HAVE_SQLGETPRIVATEPROFILESTRING 1
-
-/* Define to 1 if the system has the type `ssize_t'. */
-#define HAVE_SSIZE_T 1		/* see below */
 
 /* Define to 1 if stdbool.h conforms to C99. */
 /* #undef HAVE_STDBOOL_H */
@@ -603,6 +602,9 @@ typedef int socklen_t;
 /* Define to 1 if you have the <time.h> header file. */
 /* #undef HAVE_TIME_H */
 
+/* Define to 1 if you have the `trunc' function. */
+/* #undef HAVE_TRUNC */
+
 /* Define to 1 if you have the `uname' function. */
 /* #undef HAVE_UNAME */
 
@@ -615,7 +617,7 @@ typedef int socklen_t;
 /* Define to 1 if you have the <utime.h> header file. */
 /* #undef HAVE_UTIME_H */
 
-/* Define when uuid_* is available and linkable on this system */
+/* uuid */
 /* #undef HAVE_UUID */
 
 /* Define to 1 if you have the <uuid/uuid.h> header file. */
@@ -792,40 +794,24 @@ typedef int socklen_t;
 #define SIZEOF_LONG_LONG 8
 #endif
 
+/* The size of `ptrdiff_t', as computed by sizeof. */
+#ifdef _WIN64
+#define SIZEOF_PTRDIFF_T 8
+#else
+#define SIZEOF_PTRDIFF_T 4
+#endif
+
 /* The size of `short', as computed by sizeof. */
 #define SIZEOF_SHORT 2
 
-#ifdef _WIN64
-
-/* The size of `ptrdiff_t', as computed by sizeof. */
-#define SIZEOF_PTRDIFF_T 8
-
 /* The size of `size_t', as computed by sizeof. */
-#define SIZEOF_SIZE_T 8
+#define SIZEOF_SIZE_T SIZEOF_PTRDIFF_T
 
 /* The size of `ssize_t', as computed by sizeof. */
-#define SIZEOF_SSIZE_T 8
-typedef __int64 ssize_t;
+#define SIZEOF_SSIZE_T SIZEOF_PTRDIFF_T
 
 /* The size of `void *', as computed by sizeof. */
-#define SIZEOF_VOID_P 8
-
-#else
-
-/* The size of `ptrdiff_t', as computed by sizeof. */
-#define SIZEOF_PTRDIFF_T 4
-
-/* The size of `size_t', as computed by sizeof. */
-#define SIZEOF_SIZE_T 4
-
-/* The size of `ssize_t', as computed by sizeof. */
-#define SIZEOF_SSIZE_T 4
-typedef int ssize_t;
-
-/* The size of `void *', as computed by sizeof. */
-#define SIZEOF_VOID_P 4
-
-#endif	/* _WIN64 */
+#define SIZEOF_VOID_P SIZEOF_PTRDIFF_T
 
 /* The size of `__int64', as computed by sizeof. */
 #define SIZEOF___INT64 8
@@ -946,9 +932,10 @@ typedef int ssize_t;
 
 /* If the compiler does not support function attributes via __attribute__,
    we just define __attribute__(a) to nothing. */
-#if HAVE_FUNCTION_ATTRIBUTES != 1
+#ifndef HAVE_FUNCTION_ATTRIBUTES
 #define __attribute__(a)
 #endif
+
 
 /* function to close a socket */
 /* #undef closesocket */
@@ -978,7 +965,14 @@ typedef int ssize_t;
 #endif
 
 /* type used by connect */
-/* #undef socklen_t */
+#define socklen_t int
+
+/* Define to `int' if <sys/types.h> does not define. */
+#ifdef _WIN64
+#define ssize_t __int64
+#else
+#define ssize_t int
+#endif
 
 /* no va_copy in win32 */
 #define va_copy(x,y) ((x) = (y))
@@ -991,7 +985,7 @@ typedef unsigned char uint8_t;
 #endif
 #endif
 
-/* if nothing define, ALGEBRA is default.
+/* if nothing defined, ALGEBRA is default.
    if ALGEBRA_IS_DEFAULT is defined to 0, SQL is default.
    if both ALGEBRA_IS_DEFAULT and SQL_IS_DEFAULT are defined to 0, we
    fallback to MPS */
@@ -1027,3 +1021,44 @@ typedef unsigned char uint8_t;
 #if (ALGEBRA_IS_DEFAULT + MILPRINT_SUMMER_IS_DEFAULT + SQL_IS_DEFAULT) != 1
 #error "Only one of ALGEBRA_IS_DEFAULT, MILPRINT_SUMMER_IS_DEFAULT, SQL_IS_DEFAULT can be set to 1"
 #endif
+
+#ifndef _SEEN_MONETDB_CONFIG_H
+#define _SEEN_MONETDB_CONFIG_H 1
+
+#include <sys/types.h>
+#include <stdio.h>		/* NULL, printf etc. */
+#include <stdlib.h>
+#include <errno.h>
+#include <stdarg.h>		/* va_alist.. */
+
+#include <assert.h>
+
+#define SLASH_2_DIR_SEP(s) {char *t; for(t=strchr(s, '/'    ); t; t=strchr(t+1, '/'    )) *t=DIR_SEP;}
+#define DIR_SEP_2_SLASH(s) {char *t; for(t=strchr(s, DIR_SEP); t; t=strchr(t+1, DIR_SEP)) *t='/'    ;}
+
+#ifdef HAVE_LONG_LONG
+typedef long long lng;
+# define SIZEOF_LNG SIZEOF_LONG_LONG
+#else
+typedef __int64 lng;
+# define SIZEOF_LNG SIZEOF___INT64
+#endif
+
+/* define printf formats for printing size_t and ssize_t variables */
+#if defined(__MINGW32__)
+# define SZFMT "%u"
+# define SSZFMT "%ld"
+#elif SIZEOF_SIZE_T == SIZEOF_INT
+# define SZFMT "%u"
+# define SSZFMT "%d"
+#elif SIZEOF_SIZE_T == SIZEOF_LONG
+# define SZFMT "%lu"
+# define SSZFMT "%ld"
+#elif SIZEOF_SIZE_T == SIZEOF_LONG_LONG || SIZEOF_SIZE_T == SIZEOF___INT64
+# define SZFMT ULLFMT
+# define SSZFMT LLFMT
+#else
+# error no definition for SZFMT/SSZFMT
+#endif
+
+#endif /* _SEEN_MONETDB_CONFIG_H */

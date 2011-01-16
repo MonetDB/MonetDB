@@ -1,0 +1,232 @@
+@/
+The contents of this file are subject to the MonetDB Public License
+Version 1.1 (the "License"); you may not use this file except in
+compliance with the License. You may obtain a copy of the License at
+http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+
+Software distributed under the License is distributed on an "AS IS"
+basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+License for the specific language governing rights and limitations
+under the License.
+
+The Original Code is the MonetDB Database System.
+
+The Initial Developer of the Original Code is CWI.
+Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+Copyright August 2008-2011 MonetDB B.V.
+All Rights Reserved.
+@
+
+@f aggrX3
+@a S. Manegold
+@t Improved & Extended Aggregates Module
+@v 1.0
+
+This module contains some efficient aggregate functions that compute their
+result in one scan, rather than in the iterative manner of the generic
+MIL aggregrate implementations.
+
+The implementation code is derived from the original aggr module.
+Major changes are
+\begin{itemize}
+\item
+complete type-specific code expansion to avoid any type-checking in the inner-most loops;
+\item
+where feasible, replaced (expensive) hash-lookup by significantly cheaper positional
+void-lookups (if the head-column of the group-extend BAT ("e") is "void") or at least by
+(also positional) array lookups (in case the group-ids span a reasonably small range);
+\item
+in addition to the 2-parameter {}(BAT[oid,any::1] b, BAT[oid,any] e)
+functions, there are now also 3-parameter {}(BAT[void,any::1] b,
+BAT[void,oid] g, BAT[oid,any] e) functions, that require b & g to be
+head-aligned, and do the fetchjoin(reverse(g),b) on-the-fly;
+\end{itemize}
+
+@m
+.MODULE aggrX3;
+
+
+@= sumprod_signatures
+.COMMAND {sum_@2}(BAT[oid,@1] b, BAT[oid,any] e) : BAT[oid,@2] = CMDaggrX3_sum_@1_@2;
+	"grouped tail sum on @1"
+.COMMAND {sum_@2}(BAT[oid,@1] b, BAT[oid,oid] g, BAT[oid,any] e) : BAT[oid,@2] = CMDaggrX3_sum3_@1_@2;
+	"grouped tail sum on @1"
+.COMMAND {prod_@2}(BAT[oid,@1] b, BAT[oid,any] e) : BAT[oid,@2] = CMDaggrX3_prod_@1_@2;
+	"grouped tail prod on @1"
+.COMMAND {prod_@2}(BAT[oid,@1] b, BAT[oid,oid] g, BAT[oid,any] e) : BAT[oid,@2] = CMDaggrX3_prod3_@1_@2;
+	"grouped tail prod on @1"
+@m
+@:sumprod_signatures(bte,bte)@
+@:sumprod_signatures(bte,sht)@
+@:sumprod_signatures(bte,int)@
+@:sumprod_signatures(bte,wrd)@
+@:sumprod_signatures(bte,lng)@
+@:sumprod_signatures(sht,sht)@
+@:sumprod_signatures(sht,int)@
+@:sumprod_signatures(sht,wrd)@
+@:sumprod_signatures(sht,lng)@
+@:sumprod_signatures(int,int)@
+@:sumprod_signatures(int,wrd)@
+@:sumprod_signatures(int,lng)@
+@:sumprod_signatures(wrd,wrd)@
+@:sumprod_signatures(wrd,lng)@
+@:sumprod_signatures(lng,wrd)@
+@:sumprod_signatures(lng,lng)@
+@:sumprod_signatures(flt,flt)@
+@:sumprod_signatures(flt,dbl)@
+@:sumprod_signatures(dbl,dbl)@
+
+@= avg_signatures
+.COMMAND {avg}(BAT[oid,@1] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggrX3_avg_@1;
+	"grouped tail average on @1"
+.COMMAND {avg}(BAT[oid,@1] b, BAT[oid,oid] g, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggrX3_avg3_@1;
+	"grouped tail average on @1"
+@m
+@:avg_signatures(bte)@
+@:avg_signatures(sht)@
+@:avg_signatures(int)@
+@:avg_signatures(wrd)@
+@:avg_signatures(lng)@
+@:avg_signatures(flt)@
+@:avg_signatures(dbl)@
+
+.COMMAND {min}(BAT[oid,any::1] b, BAT[oid,any] e) : BAT[oid,any::1] = CMDaggrX3_min;
+	"grouped tail minimum"
+.COMMAND {max}(BAT[oid,any::1] b, BAT[oid,any] e) : BAT[oid,any::1] = CMDaggrX3_max;
+	"grouped tail maximum"
+.COMMAND {min}(BAT[oid,any::1] b, BAT[oid,oid] g, BAT[oid,any] e) : BAT[oid,any::1] = CMDaggrX3_min3;
+	"grouped tail minimum"
+.COMMAND {max}(BAT[oid,any::1] b, BAT[oid,oid] g, BAT[oid,any] e) : BAT[oid,any::1] = CMDaggrX3_max3;
+	"grouped tail maximum"
+
+.COMMAND {count}(BAT[oid,any] b, BAT[oid,any] e, bit ignore_nils) : BAT[oid,int] = CMDaggrX3_count;
+	"grouped count; ignores nil values iff ignore_nils==TRUE"
+.COMMAND {count}(BAT[oid,any] b, BAT[oid,oid] g, BAT[oid,any] e, bit ignore_nils) : BAT[oid,int] = CMDaggrX3_count3;
+	"grouped count; ignores nil values iff ignore_nils==TRUE"
+
+.COMMAND {size}(BAT[oid,bit] b, BAT[oid,any] e) : BAT[oid,wrd] = CMDaggrX3_size;
+	"grouped count of true values"
+
+.END aggrX3;
+
+@mil
+    proc {count}(BAT[oid,any] b, BAT[oid,any] e) : BAT[oid,int] {
+		return {count}(b,e,FALSE);
+    }
+    ADDHELP("{count}", "manegold", "Jun 03 2003",
+    "short-cut for {count}(b,e,FALSE)", "aggrX3");
+
+    proc {count_no_nil}(BAT[oid,any] b, BAT[oid,any] e) : BAT[oid,int] {
+		return {count}(b,e,TRUE);
+    }
+    ADDHELP("{count_no_nil}", "manegold", "Jun 03 2003",
+    "short-cut for {count}(b,e,TRUE)", "aggrX3");
+
+    proc {count}(BAT[oid,any] b, BAT[oid,oid] g, BAT[oid,any] e) : BAT[oid,int] {
+		return {count}(b,g,e,FALSE);
+    }
+    ADDHELP("{count}", "manegold", "Jun 03 2003",
+    "short-cut for {count}(b,g,e,FALSE)", "aggrX3");
+
+    proc {count_no_nil}(BAT[oid,any] b, BAT[oid,oid] g, BAT[oid,any] e) : BAT[oid,int] {
+		return {count}(b,g,e,TRUE);
+    }
+    ADDHELP("{count_no_nil}", "manegold", "Jun 03 2003",
+    "short-cut for {count}(b,g,e,TRUE)", "aggrX3");
+
+    proc size(BAT[any,bit] b) : wrd {
+	var h := b.histogram();
+	if (h.exist(true))
+		return h.find(true).wrd(); # 64bit: when histogram() returns wrd, remove cast
+	return wrd(0);
+    }
+
+@= sumprod_defaults
+    proc {sum}(BAT[oid,@1] b, bat[oid,any] e ) : BAT[oid,@1] {
+		return	{sum_@1}(b,e);
+    }
+    proc {sum}(BAT[oid,@1] b, bat[oid,oid] g, bat[oid,any] e ) :BAT[oid,@1] {
+		return	{sum_@1}(b,g,e);
+    }
+    proc {prod}(BAT[oid,@1] b, bat[oid,any] e ) : BAT[oid,@1] {
+		return	{prod_@1}(b,e);
+    }
+    proc {prod}(BAT[oid,@1] b, bat[oid,oid] g, bat[oid,any] e ) :BAT[oid,@1] {
+		return	{prod_@1}(b,g,e);
+    }
+@mil
+@:sumprod_defaults(bte)@
+@:sumprod_defaults(sht)@
+@:sumprod_defaults(int)@
+@:sumprod_defaults(wrd)@
+@:sumprod_defaults(lng)@
+@:sumprod_defaults(flt)@
+@:sumprod_defaults(dbl)@
+
+    proc card(BAT[any,any] b) : wrd {
+	return b.tunique().count().[wrd](); # 64bit: when count() returns wrd, remove cast
+    }
+
+    proc {card}(BAT[oid,any] b, BAT[oid,any] e) : BAT[oid,wrd] {
+	return {count}(b.sunique(),e).[wrd](); # 64bit: when count() returns wrd, remove cast
+    }
+
+    proc {card}(BAT[oid,any] b, bat[oid,oid] g, BAT[oid,any] e) : BAT[oid,wrd] {
+	return {count}(b.sunique(),g,e).[wrd](); # 64bit: when count() returns wrd, remove cast
+    }
+
+@{
+@{
+@+ Implementation
+These implementations need just one scan and a simple hash-maintained data
+structure to compute a group of common aggregates.
+
+@-
+With group OIDs spanning a range of less than SMALL_AGGR_MAX (the actual
+number of groups might be even less, in case there are "holes" in the group
+OID range), we use a simple array as temporary sum/cnt table on order to
+benefit from positional lookups; with size of sum <= 8 bytes and size of
+cnt == 4 bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache.
+@h
+#define SMALL_AGGR_MAX 1024
+
+@-
+The macro CHKrange is just for array-lookups, analogously to BUNfndVOID &
+HASHfnd_oid for void- and hash-lookups, respectively
+@h
+/* if the test succeeds, we must return something not equal to
+   BUN_NONE, but the actual value doesn't matter since it is not
+   otherwise used */
+#define CHKrange(r, bn, h)	r = (BUN)(*(oid*)(h) >= min && *(oid*)(h) <= max ? 0 : BUN_NONE)
+
+@-
+In case the group OIDs span a range of more than SMALL_AGGR_MAX,
+but the number of groups is less then SCAN_AGGR_MAX,
+we use (backward-) "scan"-lookup (unrolled implementation exploiting
+fall-through in C's switch statment) instead of hash-lookup,
+as the latter turned out to be rather expensive ...
+@h
+#define SCAN_AGGR_MAX 8
+
+#define SCAN_aggr_init \
+	oid _h; \
+	BUN _j = BATcount(bn); \
+	oid *_bnh = (oid*) BUNhloc(bni, BUNfirst(bn)); \
+	BUN _r = BUNfirst(bn);
+
+#define SCANfndOID(r, bn, h)	\
+	_h = *(oid*)(h), _j = BATcount(bn.b);         \
+	r = BUN_NONE;                                     \
+	switch (_j) {                                     \
+	case 8: if (_bnh[7] == _h) { r = _r + 7; break; } \
+	case 7: if (_bnh[6] == _h) { r = _r + 6; break; } \
+	case 6: if (_bnh[5] == _h) { r = _r + 5; break; } \
+	case 5: if (_bnh[4] == _h) { r = _r + 4; break; } \
+	case 4: if (_bnh[3] == _h) { r = _r + 3; break; } \
+	case 3: if (_bnh[2] == _h) { r = _r + 2; break; } \
+	case 2: if (_bnh[1] == _h) { r = _r + 1; break; } \
+	case 1: if (_bnh[0] == _h) { r = _r + 0; break; } \
+	}
+
+@}
+@}

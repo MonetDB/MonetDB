@@ -1,0 +1,2 @@
+i:= mat.pack(1,2,3);
+io.print(i);

@@ -13,45 +13,45 @@ set buildbase=@XBUILD@
 set builddir=%buildbase%\sql
 set srcdir=@XSOURCE@\sql
 
-set MOD_PATH=%builddir%\src\backends\monet5\.libs
-set MOD_PATH=%MOD_PATH%;%builddir%\src\backends\monet5
-set MOD_PATH=%MOD_PATH%;%builddir%\src\sql
+set MOD_PATH=%builddir%\backends\monet5\.libs
+set MOD_PATH=%MOD_PATH%;%builddir%\backends\monet5
+set MOD_PATH=%MOD_PATH%;%builddir%\sql
 
 REM enable auto-loading of modules before `make install`
-if not exist %builddir%\src\backends\monet5\autoload mkdir %builddir%\src\backends\monet5\autoload
-copy /y %srcdir%\src\backends\monet5\??_*.mal %builddir%\src\backends\monet5\autoload
+if not exist %builddir%\backends\monet5\autoload mkdir %builddir%\backends\monet5\autoload
+copy /y %srcdir%\backends\monet5\??_*.mal %builddir%\backends\monet5\autoload
 
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\compiler\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\compiler
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\optimizer\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\optimizer
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\scheduler\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\scheduler
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\modules\atoms\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\modules\atoms
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\modules\kernel\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\modules\kernel
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\modules\mal\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\modules\mal
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\modules\mal\crackers\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\modules\mal\crackers
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\modules\mal\rdf\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\MonetDB5\src\modules\mal\rdf
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\compiler\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\compiler
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\optimizer\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\optimizer
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\scheduler\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\scheduler
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\modules\atoms\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\modules\atoms
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\modules\kernel\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\modules\kernel
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\modules\mal\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\modules\mal
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\extras\crackers\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\extras\crackers
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\extras\rdf\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\extras\rdf
 
 REM enable auto-loading of modules before `make install`
-if not exist %buildbase%\MonetDB5\src\modules\mal\rdf\autoload mkdir %buildbase%\MonetDB5\src\modules\mal\rdf\autoload
-copy /y %srcdir%\..\MonetDB5\src\modules\mal\rdf\??_*.mal %buildbase%\MonetDB5\src\modules\mal\rdf\autoload
-if not exist %buildbase%\MonetDB5\src\modules\atoms\autoload mkdir %buildbase%\MonetDB5\src\modules\atoms\autoload
-copy /y %srcdir%\..\MonetDB5\src\modules\atoms\??_*.mal %buildbase%\MonetDB5\src\modules\atoms\autoload
+if not exist %buildbase%\monetdb5\extras\rdf\autoload mkdir %buildbase%\monetdb5\extras\rdf\autoload
+copy /y %srcdir%\..\monetdb5\extras\rdf\??_*.mal %buildbase%\monetdb5\extras\rdf\autoload
+if not exist %buildbase%\monetdb5\modules\atoms\autoload mkdir %buildbase%\monetdb5\modules\atoms\autoload
+copy /y %srcdir%\..\monetdb5\modules\atoms\??_*.mal %buildbase%\monetdb5\modules\atoms\autoload
 
-set PATH=%buildbase%\MonetDB5\src\tools;%buildbase%\testing\src;%PATH%
+set PATH=%buildbase%\monetdb5\tools;%buildbase%\testing\src;%PATH%
 
 set PATH=%MOD_PATH%;%PATH%
-set PATH=%builddir%\src\server;%PATH%
-set PATH=%builddir%\src\storage\bat;%PATH%
-set PATH=%builddir%\src\common;%PATH%
+set PATH=%builddir%\server;%PATH%
+set PATH=%builddir%\storage\bat;%PATH%
+set PATH=%builddir%\common;%PATH%
 
-set PYTHONPATH=%builddir%\src\backends\python\monet5;%buildbase%\testing\src;%srcdir%\..\testing\src;%PYTHONPATH%
+set PYTHONPATH=%builddir%\backends\python\monet5;%buildbase%\testing\src;%srcdir%\..\testing\src;%PYTHONPATH%
 
 REM execute Mtest.py in the source directory
 pushd %srcdir%

@@ -1,0 +1,6 @@
+#contact the master and roll forward the local copy.
+#mimick the master being yourself
+uri := sabaoth.getLocalConnectionURI();
+master.synchronize(uri);
+
+master.synchronize();

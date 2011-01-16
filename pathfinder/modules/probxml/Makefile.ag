@@ -29,37 +29,37 @@
 INCLUDES = \
 	../../runtime \
 	../../compiler/include \
-	../../../MonetDB4/src/monet \
-	../../../MonetDB4/src/modules/plain \
-	../../../MonetDB4/src/modules/contrib \
-	../../../MonetDB4/src \
-	../../../MonetDB4/src/modules/calibrator \
-	../../../MonetDB/src/common \
+	../../../monetdb4/monet \
+	../../../monetdb4/modules/plain \
+	../../../monetdb4/modules/contrib \
+	../../../monetdb4/modules \
+	../../../monetdb4/modules/calibrator \
+	../../../common/options \
 	../../../common/stream \
-	../../../MonetDB/src/gdk \
+	../../../gdk \
 	$(libxml2_CFLAGS)
 PF_LIBS = $(libxml2_LIBS) $(DL_LIBS)
 
 lib__probxml = {
-	DIR = libdir/MonetDB4
+	DIR = libdir/monetdb4
 	SOURCES = probxml.mx
 
 	LIBS = \
 		../../runtime/lib_pf_support \
 		$(PF_LIBS) \
-		../../../MonetDB/src/gdk/libbat \
+		../../../gdk/libbat \
 		../../../common/stream/libstream \
-		../../../MonetDB4/src/monet/libmonet \
-		../../../MonetDB4/src/modules/plain/lib_streams \
-		../../../MonetDB4/src/modules/plain/lib_builtin \
-		../../../MonetDB4/src/modules/plain/lib_ascii_io \
-		../../../MonetDB4/src/modules/plain/lib_algebra \
-		../../../MonetDB4/src/modules/plain/lib_constant
+		../../../monetdb4/monet/libmonet \
+		../../../monetdb4/modules/plain/lib_streams \
+		../../../monetdb4/modules/plain/lib_builtin \
+		../../../monetdb4/modules/plain/lib_ascii_io \
+		../../../monetdb4/modules/plain/lib_algebra \
+		../../../monetdb4/modules/plain/lib_constant
 }
 
 headers_mil = {
 	HEADERS = mil
-	DIR = libdir/MonetDB4
+	DIR = libdir/monetdb4
 	SOURCES = probxml.mx
 }
 

@@ -1,0 +1,13 @@
+# series of BBP test cases
+# delete the bat from tst1020 upon exit
+
+bbp.open();
+b:bat[:int,:int]:= bbp.take("keepit");
+io.print(b);
+bat.setTransient(b);
+bbp.close();
+#remains in store.
+bbp.open();
+v:bat[:int,:int]:= bbp.take("keepit");
+io.print(v);
+bbp.close();

@@ -1,0 +1,6 @@
+printf("foo\n");
+if (bit(0)) {
+printf("Foo\n");
+} else {
+printf("Bar\n");
+}

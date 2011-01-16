@@ -1,0 +1,3 @@
+var dbgmsk := debugmask();
+dbgmsk := or(and(dbgmsk,xor(INT_MAX,8)),2);
+debugmask(dbgmsk);

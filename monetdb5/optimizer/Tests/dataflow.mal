@@ -1,0 +1,38 @@
+# a simple dataflow test
+
+function slow():bat[:oid,:lng];
+b:= bat.new(:oid,:lng);
+barrier (go,i):= language.newRange(0:lng);
+	k:= mmath.rand();
+	l:= calc.lng(k);
+	bat.insert(b,nil:oid,l);
+	redo (go,i):= language.nextElement(1:lng,1000000:lng);
+exit (go,i);
+	return b;
+end slow;
+
+function tst();
+s:= slow();
+l:= aggr.min(s);
+h:= l;
+mdb.setTimer(true);
+mdb.setThread(true);
+z:= nil:bat[:oid,:lng];
+barrier go:= language.dataflow();
+	t1:= algebra.select(s,l,h);
+	t2:= algebra.select(s,l,h);
+	t3:= algebra.select(s,l,h);
+	t4:= algebra.select(s,l,h);
+	t5:= algebra.select(s,l,h);
+	t6:= algebra.select(s,l,h);
+	t7:= algebra.select(s,l,h);
+	t8:= algebra.select(s,l,h);
+	z:= mat.pack(t1,t2);
+exit go;
+c:= aggr.count(z);
+io.print(c);
+io.print("done");
+end tst;
+optimizer.garbageCollector("user","tst");
+mdb.List("user","tst");
+tst();

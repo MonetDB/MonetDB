@@ -1,0 +1,9 @@
+proc test() : void {
+  while (true) {
+    print("good");
+    return;
+  }
+  print("bad");
+}
+
+test();

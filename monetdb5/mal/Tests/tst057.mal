@@ -1,0 +1,15 @@
+#leave tests
+
+i:= 1;
+barrier always:=true;
+	io.print("enter always");
+	leave always:= i == 1;
+	io.print("didn't leave properly");
+exit always;
+	io.print("left always 1");
+barrier always:=true;
+	io.print("enter always 2");
+	leave always:= i != 2;
+	io.print("didn't leave properly");
+exit always;
+	io.print("left always 2");

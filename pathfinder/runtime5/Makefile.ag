@@ -27,21 +27,21 @@
 #
 
 INCLUDES = ../compiler/include ../runtime \
-	../../MonetDB5/src/modules/atoms \
-	../../MonetDB5/src/compiler \
-	../../MonetDB5/src/modules/kernel \
-	../../MonetDB5/src/mal \
-	../../MonetDB5/src/modules/mal \
-	../../MonetDB5/src/optimizer \
-	../../MonetDB5/src/scheduler \
-	../../MonetDB/src/common \
+	../../monetdb5/modules/atoms \
+	../../monetdb5/compiler \
+	../../monetdb5/modules/kernel \
+	../../monetdb5/mal \
+	../../monetdb5/modules/mal \
+	../../monetdb5/optimizer \
+	../../monetdb5/scheduler \
+	../../common/options \
 	../../common/stream \
-	../../MonetDB/src/gdk \
+	../../gdk \
 	$(libxml2_CFLAGS)
 PF_LIBS = $(libxml2_LIBS) $(DL_LIBS)
 
 lib__xquery = {
-	DIR = libdir/MonetDB5
+	DIR = libdir/monetdb5
 	SOURCES = \
 		xquery.mx \
 		xquery_scenario.mx \
@@ -50,14 +50,14 @@ lib__xquery = {
 		$(PF_LIBS) \
 		../runtime/libserialize \
 		../runtime/libpf \
-		../../MonetDB5/src/tools/libmonetdb5 \
-		../../MonetDB/src/gdk/libbat \
+		../../monetdb5/tools/libmonetdb5 \
+		../../gdk/libbat \
 		../../common/stream/libstream \
 		$(READLINE_LIBS) $(PTHREAD_LIBS)
 }
 
 headers_mal = {
 	HEADERS = mal
-	DIR = libdir/MonetDB5
+	DIR = libdir/monetdb5
 	SOURCES = xquery.mx
 }

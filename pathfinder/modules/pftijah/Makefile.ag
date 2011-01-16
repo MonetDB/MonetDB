@@ -31,14 +31,14 @@ SUBDIRS = tjc
 INCLUDES = \
 	../../runtime \
 	../../compiler/include \
-	../../../MonetDB4/src/monet \
-	../../../MonetDB4/src/modules/plain \
-	../../../MonetDB4/src/modules/contrib \
-	../../../MonetDB4/src \
-	../../../MonetDB4/src/modules/calibrator \
-	../../../MonetDB/src/common \
+	../../../monetdb4/monet \
+	../../../monetdb4/modules/plain \
+	../../../monetdb4/modules/contrib \
+	../../../monetdb4/modules \
+	../../../monetdb4/modules/calibrator \
+	../../../common/options \
 	../../../common/stream \
-	../../../MonetDB/src/gdk \
+	../../../gdk \
 	$(libxml2_CFLAGS)
 PF_LIBS = $(libxml2_LIBS) $(DL_LIBS)
 
@@ -48,7 +48,7 @@ YFLAGS = -d -p nexi
 #  that does not compile with `gcc -Wundef`;
 #  we use GCC_BISON_CFLAGS to disable the respective warning as
 #  locally as possible via "-Wno-undef"
-#  (see also MonetDB4/src/monet/Makefile.ag, sql/src/server/Makefile.ag,
+#  (see also monetdb4/monet/Makefile.ag, sql/src/server/Makefile.ag,
 #  buildtools/conf/monet.m4).
 #
 #  Some versions of flex & bison seem to generate code that icc does not like;
@@ -63,7 +63,7 @@ CFLAGS = $(ICC_BISON_CFLAGS) $(GCC_BISON_CFLAGS)
 pftijah_stem_CFLAGS = $(SUN_NOERR_CFLAGS)
 
 lib__pftijah = {
-	DIR = libdir/MonetDB4
+	DIR = libdir/monetdb4
 	SOURCES = \
 		termdb.mx \
 		pftijah.mx \
@@ -106,20 +106,20 @@ lib__pftijah = {
 		./tjc/libtjc  \
 		../../runtime/libserialize \
 		../../runtime/lib_pf_support $(PF_LIBS) \
-		../../../MonetDB/src/gdk/libbat \
+		../../../gdk/libbat \
 		../../../common/stream/libstream \
-		../../../MonetDB4/src/monet/libmonet \
-		../../../MonetDB4/src/modules/plain/lib_streams \
-		../../../MonetDB4/src/modules/plain/lib_builtin \
-		../../../MonetDB4/src/modules/plain/lib_ascii_io \
-		../../../MonetDB4/src/modules/plain/lib_algebra \
-		../../../MonetDB4/src/modules/plain/lib_constant \
-		../../../MonetDB4/src/modules/plain/lib_str
+		../../../monetdb4/monet/libmonet \
+		../../../monetdb4/modules/plain/lib_streams \
+		../../../monetdb4/modules/plain/lib_builtin \
+		../../../monetdb4/modules/plain/lib_ascii_io \
+		../../../monetdb4/modules/plain/lib_algebra \
+		../../../monetdb4/modules/plain/lib_constant \
+		../../../monetdb4/modules/plain/lib_str
 }
 
 headers_mil = {
 	HEADERS = mil
-	DIR = libdir/MonetDB4
+	DIR = libdir/monetdb4
 	SOURCES = pftijah.mx
 }
 

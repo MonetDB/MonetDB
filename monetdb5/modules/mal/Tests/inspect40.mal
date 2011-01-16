@@ -1,0 +1,5 @@
+#testing Atoms, result is system dependent
+t:= inspect.getAtomNames();
+s:= inspect.getAtomSuperNames();
+v:= inspect.getAtomSizes();
+io.print(t,s,v);

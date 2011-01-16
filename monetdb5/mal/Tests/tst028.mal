@@ -1,0 +1,17 @@
+function f(a:bat[:int,:any]):void;
+	io.print(a);
+end f;
+function h(a:bat[:any,:int]):void;
+	io.print(a);
+end h;
+#function g(b:bat[:int,:any]):void;
+	#f(b);
+#end g;
+function g(b:any):void;
+end g;
+
+z:= bat.new(:int,:str);
+f(z);
+g(z);
+zrev:= bat.reverse(z);
+h(zrev);

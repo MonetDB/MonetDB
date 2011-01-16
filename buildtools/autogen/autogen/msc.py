@@ -612,6 +612,18 @@ def msc_binary(fd, var, binmap, msc):
         fd.write('!IF %s\n' % condname)
         fd.write('C_%s_exe = %s.exe\n' % (binname2, binname))
         msc['BINS'].append((binname, '$(C_%s_exe)' % binname2, condname))
+    elif binmap.has_key('CONDINST'):
+        condname = 'defined(' + ') && defined('.join(binmap['CONDINST']) + ')'
+        fd.write('!IF %s\n' % condname)
+        fd.write('C_inst_%s_exe = %s.exe\n' % (binname2, binname))
+        fd.write('C_noinst_%s_exe = \n' % (binname2))
+        fd.write('!ELSE\n')
+        fd.write('C_inst_%s_exe = \n' % (binname2))
+        fd.write('C_noinst_%s_exe = %s.exe\n' % (binname2, binname))
+        fd.write('!ENDIF\n')
+        msc['BINS'].append((binname, '$(C_inst_%s_exe)' % binname2, condname))
+        condname = '!defined(' + ') && !defined('.join(binmap['CONDINST']) + ')'
+        msc['NBINS'].append((binname, '$(C_noinst_%s_exe)' % binname2, condname))
     else:
         condname = ''
         if binmap.has_key('NOINST'):
@@ -655,8 +667,8 @@ def msc_binary(fd, var, binmap, msc):
                 SCRIPTS.append(target)
     fd.write(srcs + "\n")
     fd.write("%s.exe: $(%s_OBJS)\n" % (binname, binname2))
-    fd.write('\t"$(TOPDIR)\\..\\NT\\wincompile.py" $(CC) $(CFLAGS)')
-    fd.write(" -Fe%s.exe $(%s_OBJS) /link @<<\n$(%s_LIBS) /subsystem:console /NODEFAULTLIB:LIBC\n<<\n" % (binname, binname2, binname2))
+    fd.write('\t$(CC) $(CFLAGS)')
+    fd.write(" -Fe%s.exe $(%s_OBJS) /link $(%s_LIBS) /subsystem:console /NODEFAULTLIB:LIBC\n" % (binname, binname2, binname2))
     fd.write("\t$(EDITBIN) $@ /HEAP:1048576,1048576 /LARGEADDRESSAWARE\n");
     fd.write("\tif exist $@.manifest $(MT) -manifest $@.manifest -outputresource:$@;1\n");
     if condname:
@@ -697,13 +709,26 @@ def msc_bins(fd, var, binsmap, msc):
         bin, ext = split_filename(binsrc)
         #if ext not in automake_ext:
         msc['EXTRA_DIST'].append(binsrc)
+        bin2 = bin.replace('-','_')
 
         if binsmap.has_key("DIR"):
             bd = binsmap["DIR"][0] # use first name given
-            fd.write("%sdir = %s\n" % (bin.replace('-','_'), msc_translate_dir(bd,msc)) );
+            fd.write("%sdir = %s\n" % (bin2, msc_translate_dir(bd,msc)) );
         else:
-            fd.write("%sdir = $(bindir)\n" % (bin.replace('-','_')) );
+            fd.write("%sdir = $(bindir)\n" % (bin2) );
 
+        if binsmap.has_key('CONDINST'):
+            condname = 'defined(' + ') && defined('.join(binsmap['CONDINST']) + ')'
+            fd.write('!IF %s\n' % condname)
+            fd.write('C_inst_%s_exe = %s.exe\n' % (bin2, bin))
+            fd.write('C_noinst_%s_exe = \n' % (bin2))
+            fd.write('!ELSE\n')
+            fd.write('C_inst_%s_exe = \n' % (bin2))
+            fd.write('C_noinst_%s_exe = %s.exe\n' % (bin2, bin))
+            fd.write('!ENDIF\n')
+            msc['BINS'].append((bin, '$(C_inst_%s_exe)' % bin2, condname))
+            condname = '!defined(' + ') && !defined('.join(binsmap['CONDINST']) + ')'
+            msc['NBINS'].append((bin, '$(C_noinst_%s_exe)' % bin2, condname))
         if binsmap.has_key('NOINST'):
             msc['NBINS'].append((bin, bin, ''))
         else:
@@ -742,8 +767,8 @@ def msc_bins(fd, var, binsmap, msc):
                         SCRIPTS.append(target)
         fd.write(srcs + "\n")
         fd.write("%s.exe: $(%s_OBJS)\n" % (bin, bin.replace('-','_')))
-        fd.write('\t"$(TOPDIR)\\..\\NT\\wincompile.py" $(CC) $(CFLAGS)')
-        fd.write(" -Fe%s.exe $(%s_OBJS) /link @<<\n$(%s_LIBS) /subsystem:console /NODEFAULTLIB:LIBC\n<<\n" % (bin, bin.replace('-','_'), bin.replace('-','_')))
+        fd.write('\t$(CC) $(CFLAGS)')
+        fd.write(" -Fe%s.exe $(%s_OBJS) /link $(%s_LIBS) /subsystem:console /NODEFAULTLIB:LIBC\n" % (bin, bin.replace('-','_'), bin.replace('-','_')))
         fd.write("\tif exist $@.manifest $(MT) -manifest $@.manifest -outputresource:$@;1\n\n");
 
     if SCRIPTS:
@@ -1375,3 +1400,5 @@ def output(tree, cwd, topdir):
             for h in tHDRS:
                 fd.write('\t$(INSTALL) "%s" "$(%sincludedir)"\n' % (h,name.replace('-','_')))
     fd.write("\n")
+
+# vim:ts=4 sw=4 expandtab:

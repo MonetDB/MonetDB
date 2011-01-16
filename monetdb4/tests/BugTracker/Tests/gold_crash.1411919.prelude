@@ -1,0 +1,6 @@
+# copy of gold demo load script with tiny change
+module(ascii_io);module(unix);
+var path:=+("","");
+make_persistent(load_data(load_format(path+"/format"), path+"/test100k", 100000));
+commit();
+quit();

@@ -1,0 +1,77 @@
+@/
+The contents of this file are subject to the MonetDB Public License
+Version 1.1 (the "License"); you may not use this file except in
+compliance with the License. You may obtain a copy of the License at
+http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+
+Software distributed under the License is distributed on an "AS IS"
+basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+License for the specific language governing rights and limitations
+under the License.
+
+The Original Code is the MonetDB Database System.
+
+The Initial Developer of the Original Code is CWI.
+Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+Copyright August 2008-2011 MonetDB B.V.
+All Rights Reserved.
+@
+
+@a S. Manegold
+@t Improved & Extended Aggregates Module
+@v 1.0
+
+@- Result initialization
+/*	init_result
+	@1:	tail-type:	bte/sht/int/wrd/lng/flt/dbl / any / void
+*/
+@= init_result
+{
+	register BUN _p = BUNlast(bn);
+	register BUN _cnt = BATcount(e);
+	BATiter ei = bat_iterator(e);
+
+	bn->tsorted = bn->hsorted = 0;
+	bn->T->nonil = 0;
+	min = max = (oid) 0;
+	ALIGNsetH(bn, e);
+	/* set all sums/avgs/counts to zero; for prod, zero is 1 */
+	/* where necessary, calculate min/max oid with minimal effort */
+	if (e->htype == TYPE_void) {
+		oid onil = oid_nil;
+		(void) onil;	/* silence compiler about unused variable */
+		ALGODEBUG THRprintf(GDKout, "#init_result(@1): e->htype == TYPE_void, e->hseqbase=" OIDFMT "\n", e->hseqbase);
+		BATloop(e, p, q) {
+			void@1_bunfastins_nocheck_noinc(bn, _p, &onil, &zero);
+			_p++;
+		}
+		BATseqbase(bn,e->hseqbase);
+	} else if (BAThordered(e)&1) {
+		if (_cnt)
+			min = *(oid*)BUNhloc(ei, BUNfirst(e));
+		BATloop(e, p, q) {
+			oid@1_bunfastins_nocheck_noinc(bn, _p, BUNhloc(ei,p), &zero);
+			_p++;
+		}
+		if (_cnt)
+			max = *(oid*)BUNhloc(ei, BUNlast(e)-1);
+		ALGODEBUG THRprintf(GDKout, "#init_result(@1): BAThordered(e)&1, min=" OIDFMT ", max=" OIDFMT "\n", min, max);
+	} else {
+		oid i;
+		if (_cnt)
+			min = max = *(oid*)BUNhloc(ei, BUNfirst(e));
+		BATloop(e, p, q) {
+			oid@1_bunfastins_nocheck_noinc(bn, _p, BUNhloc(ei,p), &zero);
+			_p++;
+			i = *(oid*)BUNhloc(ei, p);
+			if (i < min)
+				min = i;
+			else if (i > max)
+				max = i;
+		}
+		ALGODEBUG THRprintf(GDKout, "#init_result(@1): min=" OIDFMT ", max=" OIDFMT "\n", min, max);
+	}
+	BATsetcount(bn, _p);
+	if (!bn->batDirty)
+		bn->batDirty = TRUE;
+}

@@ -15,12 +15,13 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = src 
+SUBDIRS = include common storage server backends sql
+
 EXTRA_DIST = RunMtest.in RunMtest.bat.in \
 		RunMapprove.in RunMapprove.bat.in \
 		RunMserver.in RunMserver.bat.in \
 		RunMserver.bat.in
-EXTRA_DIST_DIR = NT
+EXTRA_DIST_DIR = test benchmarks odbc/samples/Tests jdbc/tests NT
 
 headers_txt = {
 	HEADERS = txt

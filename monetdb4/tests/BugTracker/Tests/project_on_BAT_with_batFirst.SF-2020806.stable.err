@@ -1,0 +1,12 @@
+stderr of test 'project_on_BAT_with_batFirst.SF-2020806` in directory 'tests/BugTracker` itself:
+
+
+# 17:06:53 >  
+# 17:06:53 >   Mserver "--config=/net/jarl/export/scratch0/zhang/monet-install/stable/debug/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/net/jarl/export/scratch0/zhang/monet-install/stable/debug/lib/MonetDB4:/net/jarl/export/scratch0/zhang/monet-install/stable/debug/lib/MonetDB4/lib:/net/jarl/export/scratch0/zhang/monet-install/stable/debug/lib/MonetDB4/bin" --set "gdk_dbfarm=/net/jarl/export/scratch0/zhang/monet-install/stable/debug/var/MonetDB4/dbfarm" --set "sql_logdir=/net/jarl/export/scratch0/zhang/monet-install/stable/debug/var/MonetDB4/sql_logs" --set "xquery_logdir=/net/jarl/export/scratch0/zhang/monet-install/stable/debug/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=35312 --set xrpc_port=48125 --set monet_prompt= --trace  --dbname=mTests_tests_BugTracker  
+# 17:06:53 >  
+
+
+# 17:06:53 >  
+# 17:06:53 >  Done.
+# 17:06:53 >  
+

@@ -1,0 +1,5 @@
+#testing some optimizer constructions
+
+optimizer.aliases();
+z:= "nil";
+d:= mtime.date(z);

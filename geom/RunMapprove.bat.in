@@ -8,7 +8,7 @@ goto end
 
 setlocal
 
-rem default back end is MonetDB5
+rem default back end is monetdb5
 set V=5
 if "%1" == "-4" set V=4& shift
 if "%1" == "-5" set V=5& shift

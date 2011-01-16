@@ -1,0 +1,12 @@
+# Exception identifiers can be introduced at any place
+
+function tst();
+	raise myNewException:= "new exception";
+	io.printf("should not come here\n");
+#exception block;
+catch	myNewException:str;
+	io.printf("caught exception\n");
+exit	myNewException;
+end tst;
+
+tst();

@@ -1,0 +1,26 @@
+# for testweb, we need to ask the server itself how it is available, use
+# sabaoth for that
+include sabaoth;
+
+# create a connecton to ourself
+uri := sabaoth.getLocalConnectionURI();
+conn := remote.connect(uri, "monetdb", "monetdb");
+io.print(conn);
+
+# retrieve a value (that for sure won't exist)
+x:str := remote.get(conn, "b1_str");
+# bit weird that a "may not be used before being initialised" error is a
+# TypeException
+catch TypeException:str;
+	io.printf("!%s\n", TypeException);
+exit TypeException;
+
+# help testweb a bit, since currently no cleanup is done on server
+# shutdown
+remote.disconnect(conn);
+
+# this should fail now
+remote.disconnect(conn);
+catch MALException:str;
+	io.printf("!%s\n",MALException);
+exit MALException;

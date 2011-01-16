@@ -1,0 +1,22 @@
+factory random(seed:int,limit:int):int;
+    rnd:=seed;
+    lim:= limit;
+barrier goon:= true;
+    leave goon:= lim<0;
+    lim:= lim-1;
+    io.print("doit");
+    rnd:= rnd*125;
+    rnd:= rnd+1;
+    yield rnd:= rnd % 32676;
+    redo goon:=true;
+exit goon;
+    return rnd;
+end random;
+
+v:= user.random(0,0);
+io.print(v);
+v:= user.random(0,0);
+io.print(v);
+v:= user.random(0,0);
+io.print(v);
+factories.shutdown("user","random");

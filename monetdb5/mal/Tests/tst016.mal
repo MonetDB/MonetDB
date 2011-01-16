@@ -1,0 +1,11 @@
+# handling basic strings
+a:= "Dit is een test\n";
+b:= blob.toblob(a);
+c:= blob.tostring(b);
+
+io.print(a);
+io.print(b);
+io.print(c);
+
+
+

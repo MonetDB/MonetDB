@@ -1,0 +1,6 @@
+#propagate INT exception
+raise	IllegalAccess := 1234;
+	io.print("should not come here\n");
+catch IllegalAccess;
+	io.printf("caught %d\n",IllegalAccess);
+exit IllegalAccess;

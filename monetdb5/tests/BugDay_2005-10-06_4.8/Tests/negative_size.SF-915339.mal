@@ -1,0 +1,2 @@
+c:= bat.new(:int,:int,-5000);
+io.print(c);

@@ -1,0 +1,19 @@
+b:= "Mary Ann Walker";
+c:= "brown";
+
+n:= nil:xml;
+io.print(n);
+ns:= xml.str(n);
+io.print(ns);
+
+bx:= xml.xml(b);
+cx:= xml.xml(c);
+
+xp:= xml.element("person",bx);
+io.print(xp);
+xh:= xml.element("hair",nil:xml,nil:xml,cx);
+io.print(xh);
+
+xx:= xml.forest(xp,xh);
+xs:= xml.str(xx);
+io.print(xs);

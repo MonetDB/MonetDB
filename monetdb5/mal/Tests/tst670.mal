@@ -1,0 +1,3 @@
+io.print("go");
+clients.quit();
+io.print("gone");

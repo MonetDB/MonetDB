@@ -1,0 +1,8 @@
+# series of BBP test cases
+# create a persistent bat and delete it in the tst1021
+
+bbp.open();
+bbp.deposit("keepit",b);
+b:bat[:int,:int] := bbp.take("keepit");
+io.print(b);
+bbp.close();

@@ -1,0 +1,41 @@
+stdout of test 'void-outerjoin.SF-1216457` in directory 'tests/BugDay_2005-12-19_4.9.3` itself:
+
+
+# 14:49:20 >  
+# 14:49:20 >  Mtimeout -timeout 60 Mserver "--config=/ufs/marcin/local/monet-GNU-OPT/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/marcin/local/monet-GNU-OPT/lib64/MonetDB:/ufs/marcin/local/monet-GNU-OPT/lib64/MonetDB/lib:/ufs/marcin/local/monet-GNU-OPT/lib64/MonetDB/bin" --set "gdk_dbfarm=/ufs/marcin/local/monet-GNU-OPT/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/marcin/local/monet-GNU-OPT/var/MonetDB/sql_logs" --set "xquery_logdir=/ufs/marcin/local/monet-GNU-OPT/var/MonetDB/xquery_logs" --set mapi_port=32416 --set monet_prompt= --trace --dbname=mTests_tests_BugDay_2005-12-19_4.9.3  < void-outerjoin.SF-1216457.milS
+# 14:49:20 >  
+
+# Monet Database Server V4.15.0
+# Copyright (c) 1993-2006, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+var x:=new(void,int).seqbase(0@0);
+x.insert(oid(0),0).insert(oid(1),2).insert(oid(2),1);
+
+var y:=new(int,chr);
+y.insert(0,'0').insert(2,'2').insert(1,'1');
+x.outerjoin(y).print();
+#-----------------#
+# h	t	  # name
+# void	chr	  # type
+#-----------------#
+[ 0@0,	  '0'	  ]
+[ 1@0,	  '2'	  ]
+[ 2@0,	  '1'	  ]
+
+var y:=new(int,chr);
+y.insert(0,'0').insert(1,'1').insert(2,'2');
+x.outerjoin(y).print();
+#-----------------#
+# h	t	  # name
+# void	chr	  # type
+#-----------------#
+[ 0@0,	  '0'	  ]
+[ 1@0,	  '2'	  ]
+[ 2@0,	  '1'	  ]
+quit();
+
+# 14:49:20 >  
+# 14:49:20 >  Done.
+# 14:49:20 >  
+

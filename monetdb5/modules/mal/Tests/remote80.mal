@@ -1,0 +1,44 @@
+# test octopus framework
+# The script aims at creating concurreny problems during connections
+
+#profiler.activate("statement");
+#profiler.setFilter("*","*");
+#profiler.openStream("console");
+#profiler.start();
+
+include sql;
+uri := sabaoth.getLocalConnectionURI();
+
+a1:= bat.new(:int,:str);
+
+barrier (k,v):= language.newRange(0:int);
+c1:= nil:str;
+c2:= nil:str;
+c3:= nil:str;
+c4:= nil:str;
+
+barrier go:= language.dataflow();
+	c1:= remote.connect(uri, "monetdb", "monetdb","msql");
+	l1:= remote.put(c1,a1);
+	l1:= remote.exec(c1,"inspect","getAtomNames");
+
+	c2:= remote.connect(uri, "monetdb", "monetdb","msql");
+	l2:= remote.put(c2,a1);
+	l2:= remote.exec(c1,"inspect","getAtomNames");
+
+	c3:= remote.connect(uri, "monetdb", "monetdb","msql");
+	l3:= remote.put(c3,a1);
+	l3:= remote.exec(c1,"inspect","getAtomNames");
+
+	c4:= remote.connect(uri, "monetdb", "monetdb","msql");
+	l4:= remote.put(c4,a1);
+	l4:= remote.exec(c1,"inspect","getAtomNames");
+exit go;
+
+	remote.disconnect(c1);
+	remote.disconnect(c2);
+	remote.disconnect(c3);
+	remote.disconnect(c4);
+	redo (k,v) := language.nextElement(1:int,50:int);
+exit (k,v);
+io.print("survived the attack");

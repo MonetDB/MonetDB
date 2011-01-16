@@ -1,0 +1,2 @@
+module top;
+function first(i:sht):sht; return first:= 0:sht; end first;

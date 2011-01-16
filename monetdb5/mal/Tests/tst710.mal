@@ -1,0 +1,7 @@
+# testing ommission of target variable
+
+	i:= 1;
+	io.print(i);
+catch 	GDKerror:str;
+	io.printf("GDKerror, do something\n");
+exit	GDKerror;

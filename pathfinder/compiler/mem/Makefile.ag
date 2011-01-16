@@ -27,7 +27,7 @@
 # Rights Reserved.
 #
 
-INCLUDES = ../include ../../../MonetDB/src/common ../../../MonetDB/src/gdk 
+INCLUDES = ../include ../../../common/options ../../../gdk 
 CFLAGS = $(LIBGC_CFLAGS)
 
 lib_mem = {

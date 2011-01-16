@@ -1,0 +1,19 @@
+-- select distinct(A) from T
+-- only needs the group extend table, which means we can use a kunique.
+function tst();
+b:= bat.new(:oid,:str);
+
+bat.append(b,"hello");
+bat.append(b,"hello");
+bat.append(b,"world");
+br:= bat.reverse(b);
+k:= algebra.kunique(br);
+kr:= bat.reverse(k);
+io.print(kr);
+(e,g):= group.new(b);
+io.print(e);
+end tst;
+
+user.tst();
+optimizer.derivePath("user","tst");
+mdb.List("user","tst");

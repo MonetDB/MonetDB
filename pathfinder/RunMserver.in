@@ -22,8 +22,8 @@ builddir="${buildbase}/pathfinder"
 # where compiled Pathfinder modules are to be found
 MOD_PATH="${builddir}/runtime/.libs:${builddir}/runtime:${builddir}/modules/pftijah/.libs:${builddir}/modules/pftijah"
 
-# where compiled MonetDB4 modules are to be found
-MOD_PATH="${MOD_PATH}:${buildbase}/MonetDB4/src/modules/plain/.libs:${buildbase}/MonetDB4/src/modules/plain:${buildbase}/MonetDB4/src/modules/contrib/.libs:${buildbase}/MonetDB4/src/modules/contrib:${buildbase}/MonetDB4/src/modules/calibrator/.libs:${buildbase}/MonetDB4/src/modules/calibrator:${buildbase}/MonetDB4/src/mapi/.libs:${buildbase}/MonetDB4/src/mapi"
-@HAVE_NETCDF_TRUE@ MOD_PATH="${MOD_PATH}:${buildbase}/MonetDB4/src/modules/mnetcdf/.libs:${buildbase}/MonetDB4/src/modules/mnetcdf"
+# where compiled monetdb4 modules are to be found
+MOD_PATH="${MOD_PATH}:${buildbase}/monetdb4/modules/plain/.libs:${buildbase}/monetdb4/modules/plain:${buildbase}/monetdb4/modules/contrib/.libs:${buildbase}/monetdb4/modules/contrib:${buildbase}/monetdb4/modules/calibrator/.libs:${buildbase}/monetdb4/modules/calibrator:${buildbase}/monetdb4/modules/mapi/.libs:${buildbase}/monetdb4/modules/mapi"
+@HAVE_NETCDF_TRUE@ MOD_PATH="${MOD_PATH}:${buildbase}/monetdb4/modules/mnetcdf/.libs:${buildbase}/monetdb4/modules/mnetcdf"
 
 exec Mserver --set monet_mod_path="${MOD_PATH}" --dbfarm="${builddir}/dbfarm" ${1+"$@"}

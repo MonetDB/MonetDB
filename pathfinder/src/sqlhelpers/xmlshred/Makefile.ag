@@ -18,8 +18,8 @@ MTSAFE
 INCLUDES = ./include \
 	../../../compiler/include \
 	../../../compiler \
-	../../../../MonetDB/src/common \
-	../../../../MonetDB/src/gdk \
+	../../../../common/options \
+	../../../../gdk \
 	$(libxml2_CFLAGS)
 
 EXTRA_DIST_DIR = include
