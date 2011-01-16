@@ -1,4 +1,0 @@
-io.print('c');
-io.print("s");
-#print(type("s")); not supported
-#print(type('c')); not supported

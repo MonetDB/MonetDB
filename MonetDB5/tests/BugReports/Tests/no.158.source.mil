@@ -1,4 +1,0 @@
-var test2 := new(int,int);
-include "mil_algebra_procs";
-include "mil_system_procs";
-test2.insert(2,2);

@@ -1,9 +1,0 @@
-# observed 13-08-2008: printf accepts a long for an int formatter,
-# whereas it should complain (additionally the error could be clearer)
-# SF bug #2051290
-
-l := 12:lng;
-f := 5:flt;
-
-io.printf("%d\n", l);
-io.printf("%d\n", f);

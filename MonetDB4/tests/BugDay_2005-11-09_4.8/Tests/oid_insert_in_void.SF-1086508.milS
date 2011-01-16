@@ -1,9 +1,0 @@
-var a := new (void, int).seqbase (0@0);
-a.insert (0@0, 1);
-var b := new (oid, int);
-b.insert (1@0, 10);
-b.insert (4@0, 20);
-a.insert (b);
-a.print ();
-
-quit();

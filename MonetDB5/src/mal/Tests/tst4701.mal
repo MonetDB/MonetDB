@@ -1,5 +1,0 @@
-# after the routine tst903 is it can be linked
-
-command tst903()
-address MCCAdmin_tst903;
-tst903();

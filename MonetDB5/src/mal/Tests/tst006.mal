@@ -1,8 +1,0 @@
-	r:=0;
-barrier	l:= r < 1;
-	io.print(l);
-	io.print(r);
-	r:= r+1;
-	l:= false;
-	redo l;
-exit	l;

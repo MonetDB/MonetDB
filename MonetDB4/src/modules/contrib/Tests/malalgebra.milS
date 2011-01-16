@@ -1,3 +1,0 @@
-module("malalgebra");
-test_malalgebra();
-quit();

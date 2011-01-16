@@ -1,7 +1,0 @@
-# the calls are wrong, they violate the type constraint
-command + (L:any_1, R:any_1):any_1 
-address addIntInt
-comment "unknown function";
-
-a:=1+"hello";
-b:=3.5+1;

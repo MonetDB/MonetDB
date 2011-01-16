@@ -1,5 +1,0 @@
-language.call("io.print(1);");
-language.call("io.print(\"hello\");");
-language.call("s:=\"goodbye\";io.print(s);");
-# tricky due to double unquoting 
-language.call("language.call(\"io.print(\\\\\"hello\\\\\");\");");

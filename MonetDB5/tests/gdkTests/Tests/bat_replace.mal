@@ -1,5 +1,0 @@
-a := bat.new(:oid,:oid);
-bat.append(a,1@0);
-# this used to give the error BATpropcheck: BAT tmp_XX is dense but not key!?
-bat.replace(a,0@0,2@0);
-io.print(a);

@@ -1,5 +1,0 @@
-VAR res := bat(nil); 
-res.print();
-res := 1;
-res.print();
-quit();

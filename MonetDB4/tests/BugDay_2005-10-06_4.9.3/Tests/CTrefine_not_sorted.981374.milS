@@ -1,8 +1,0 @@
-module(xtables);
-var var_usage := bat(oid,oid).insert(0@0,1@0).insert(1@0,1@0);
-# without the next line it doesn't crash
-var_usage := var_usage.unique().reverse();
-var vu_vid := var_usage.reverse().mark(1000@0).reverse();
-var vu_fid := var_usage.mark(1000@0).reverse();
-var sorting := vu_fid.CTrefine(vu_vid);
-sorting.print();

@@ -1,2 +1,0 @@
-var int := 1 ;
-printf("= int=%d\n",int);

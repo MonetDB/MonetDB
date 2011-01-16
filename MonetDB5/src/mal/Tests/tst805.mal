@@ -1,9 +1,0 @@
-b:= bat.new(:oid,:int);
-bat.setName(b,"BAT_b");
-c:= bat.new(:str,:bat);
-bat.insert(c,"a",b);
-io.print(c);
-
-barrier (x:lng,s:str,d:bat[:oid,:int]):= bat.newIterator(c);
-	io.print(d);
-exit (x:lng,s:str,d);

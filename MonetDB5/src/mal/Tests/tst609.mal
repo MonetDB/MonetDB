@@ -1,4 +1,0 @@
-# The include operation screwed up the welcome
-io.print("welcome");
-include algebra;
-io.print("done");
