@@ -1,4 +1,4 @@
-stderr of test 'mload` in directory 'src/tools` itself:
+stderr of test 'mload` in directory 'tools` itself:
 
 #> Mtest (20:09:05):	other mload 2400
 #> Mtest (20:09:06):	Mtimeout -timeout 2400 ./mload mload

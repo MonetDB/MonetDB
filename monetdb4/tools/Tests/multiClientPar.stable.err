@@ -1,4 +1,4 @@
-stderr of test 'multiClientPar` in directory 'src/tools` itself:
+stderr of test 'multiClientPar` in directory 'tools` itself:
 
 #> Mtest:	milCXp multiClientPar milC
 #> Mtest:	Mtimeout -timeout 123 Mserver -yaccsilent -d8 -db src_tools -background &

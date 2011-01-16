@@ -1,4 +1,4 @@
-stderr of test 'bitset` in directory 'src/modules/contrib` itself:
+stderr of test 'bitset` in directory 'modules/contrib` itself:
 
 #> Mtest (13:32:19):	other bitset 1200
 #> Mtest (13:32:20):	Mtimeout -timeout 1200 ./bitset bitset

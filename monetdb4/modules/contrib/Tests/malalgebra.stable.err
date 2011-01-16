@@ -1,4 +1,4 @@
-stderr of test 'malalgebra` in directory 'src/modules/contrib` itself:
+stderr of test 'malalgebra` in directory 'modules/contrib` itself:
 
 #> Mtest (13:33:34):	other malalgebra 1200
 #> Mtest (13:33:34):	Mtimeout -timeout 1200 ./malalgebra malalgebra
