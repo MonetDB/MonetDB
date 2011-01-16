@@ -1,4 +1,4 @@
-stderr of test 'mprof_niels` in directory 'src/modules/contrib` itself:
+stderr of test 'mprof_niels` in directory 'modules/contrib` itself:
 
 #> Mtest:	other mprof_niels
 #> Mtest:	./mprof_niels mprof_niels

@@ -29,7 +29,7 @@
 # FIXME:  remove this notice for the installed monetdb5.conf  #
 # ----------------------------------------------------------- #
 # Please keep the comments below aligned with the defaults in #
-# MonetDB/src/common/monet_options.mx                         #
+# common/options/monet_options.mx                             #
 # ----------------------------------------------------------- #
 
 # Absolute path where MonetDB is installed
@@ -40,7 +40,7 @@ exec_prefix=@Xexec_prefix@
 #============
 # All databases are stored as a directory under the directory given
 # below.  Use this value to change the overall location of your data.
-gdk_dbfarm=@Xlocalstatedir@@DIRSEP@MonetDB5@DIRSEP@dbfarm
+gdk_dbfarm=@Xlocalstatedir@@DIRSEP@monetdb5@DIRSEP@dbfarm
 #
 # MonetDB can only handle one database at a time.  When you start an
 # mserver5 manually without specifying the database name yourself, the
@@ -55,7 +55,7 @@ gdk_dbfarm=@Xlocalstatedir@@DIRSEP@MonetDB5@DIRSEP@dbfarm
 #
 # Where do the MonetDB modules reside? The second path is for windows
 # dlls.
-monet_mod_path=@Xlibdir@@DIRSEP@MonetDB5@PATHSEP@@Xlibdir@@DIRSEP@MonetDB5@DIRSEP@lib@PATHSEP@@Xlibdir@@DIRSEP@MonetDB5@DIRSEP@bin
+monet_mod_path=@Xlibdir@@DIRSEP@monetdb5@PATHSEP@@Xlibdir@@DIRSEP@monetdb5@DIRSEP@lib@PATHSEP@@Xlibdir@@DIRSEP@monetdb5@DIRSEP@bin
 #
 # Start mserver in daemon mode, or start with MAL interactive
 # interface?
@@ -85,13 +85,13 @@ monet_mod_path=@Xlibdir@@DIRSEP@MonetDB5@PATHSEP@@Xlibdir@@DIRSEP@MonetDB5@DIRSE
 # mero_errlog pointing to the same file, as in the default below.
 # Setting mero_msglog and/or mero_errlog to the empty string, results
 # in merovingian to log to the screen.
-#mero_msglog=@Xlocalstatedir@@DIRSEP@log@DIRSEP@MonetDB@DIRSEP@merovingian.log
-#mero_errlog=@Xlocalstatedir@@DIRSEP@log@DIRSEP@MonetDB@DIRSEP@merovingian.log
+#mero_msglog=@Xlocalstatedir@@DIRSEP@log@DIRSEP@monetdb@DIRSEP@merovingian.log
+#mero_errlog=@Xlocalstatedir@@DIRSEP@log@DIRSEP@monetdb@DIRSEP@merovingian.log
 #
 # Merovingian forks itself to detach into the background.  It stores
 # its pid in the following file, which can be used to stop Merovingian
 # again.
-mero_pidfile=@Xlocalstatedir@@DIRSEP@run@DIRSEP@MonetDB@DIRSEP@merovingian.pid
+mero_pidfile=@Xlocalstatedir@@DIRSEP@run@DIRSEP@monetdb@DIRSEP@merovingian.pid
 #
 # In normal use, Merovingian replaces an mserver, and hence listens
 # for connections on the same port as an mserver would do (mapi_port).
@@ -155,7 +155,7 @@ mero_pidfile=@Xlocalstatedir@@DIRSEP@run@DIRSEP@MonetDB@DIRSEP@merovingian.pid
 # listens to that port for remote control commands.  This is an all or
 # nothing scenario, hence any remote monetdb(1) can create, destroy,
 # etc.  As a little protective measure, the file
-# @Xlocalstatedir@@DIRSEP@MonetDB5@DIRSEP@dbfarm@DIRSEP@.merovingian_pass
+# @Xlocalstatedir@@DIRSEP@monetdb5@DIRSEP@dbfarm@DIRSEP@.merovingian_pass
 # contains the passphrase that a remote monetdb(1) needs to issue to
 # be able to perform any command.  For this file the same rules hold
 # as for the monet_vault_key file.  If this file is missing,

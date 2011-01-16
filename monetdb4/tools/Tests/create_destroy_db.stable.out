@@ -1,4 +1,4 @@
-stdout of test 'create_destroy_db` in directory 'src/tools` itself:
+stdout of test 'create_destroy_db` in directory 'tools` itself:
 
 #> Mtest (18:04:55):	other create_destroy_db 1890
 #> Mtest (18:04:55):	Mtimeout -timeout 1890 ./create_destroy_db create_destroy_db

@@ -1,4 +1,4 @@
-stderr of test 'dump` in directory 'src/tools` itself:
+stderr of test 'dump` in directory 'tools` itself:
 
 #> Mtest:	other dump -prelude dump.prelude
 #> Mtest:	Mtimeout -timeout 7200 ./dump dump -prelude dump.prelude

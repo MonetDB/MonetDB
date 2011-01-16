@@ -1,4 +1,4 @@
-stdout of test 'str_heap` in directory 'src/gdk` itself:
+stdout of test 'str_heap` in directory 'gdk` itself:
 
 #> Mtest (13:50:12):	milM str_heap milM
 #> Mtest (13:50:12):	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db src_gdk str_heap.milM

@@ -1,4 +1,4 @@
-stdout of test 'malalgebra` in directory 'src/modules/contrib` itself:
+stdout of test 'malalgebra` in directory 'modules/contrib` itself:
 
 #> Mtest (21:31:53):	other malalgebra 1200
 #> Mtest (21:31:53):	Mtimeout -timeout 1200 ./malalgebra malalgebra

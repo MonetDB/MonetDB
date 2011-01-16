@@ -1,4 +1,4 @@
-stdout of test 'setaggr_exist` in directory 'src/monet` itself:
+stdout of test 'setaggr_exist` in directory 'monet` itself:
 
 #> Mtest (13:51:58):	milM setaggr_exist milM
 #> Mtest (13:51:58):	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db src_monet setaggr_exist.milM
