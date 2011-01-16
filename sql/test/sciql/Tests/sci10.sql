@@ -9,3 +9,8 @@ CREATE ARRAY vector (
 SELECT (A.v+B.v)/2 FROM vector A, 
   (SELECT x+1, w FROM vector) B;
 
+CREATE ARRAY vmatrix (  x INTEGER DIMENSION[-1:4], 
+  y INTEGER DIMENSION[-1:4],
+  w FLOAT DEFAULT 0) AS
+SELECT x-1, y, v FROM matrix WHERE x > 2
+UNION SELECT x, y, 0 FROM matrix WHERE x =3;
