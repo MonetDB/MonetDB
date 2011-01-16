@@ -1,6 +1,10 @@
---CREATE TABLE experiment( 
---	run date DIMENSION[  TIMESTAMP '2010-01-01':*: INTERVAL'1' day], 
---	payload float ARRAY[4][4] DEFAULT 0.0 );
-CREATE TABLE experiment( 
-	run date,
-	payload float DEFAULT 0.0 );
+#CREATE TABLE experiment( 
+#	run timestamp DIMENSION[  TIMESTAMP '2010-01-01':*: INTERVAL'1' day], 
+#	payload float ARRAY[4][4] DEFAULT 0.0 );
+#additional operations required for explicit indices
+run:bat[:oid,:timestamp]:= array.newDimension("sys","experiment","run",0,"2010-01-01":timestamp,null:timestamp,"1:0:0":timestamp);
+
+#CREATE TABLE timeseries( 
+#	run timestamp DIMENSION,
+#	payload float DEFAULT 0.0 );
+run:bat[:oid,:timestamp]:= array.newDimension("sys","timeseries","run",0,null:timestamp,null:timestamp,null:timestamp);

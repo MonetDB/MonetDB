@@ -24,6 +24,7 @@ All Rights Reserved.
 The SQL user and authorisation implementation differs per backend.  This
 file implements the authorisation and user management based on the M5
 system authorisation.
+@{
 @h
 #ifndef _SQL_USER_H_
 #define _SQL_USER_H_
@@ -513,4 +514,4 @@ monet5_user_get_def_schema(mvc *m, oid user)
 	return schema;
 }
 
-
+@}

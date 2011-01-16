@@ -9,20 +9,11 @@
 
 # explicit model, after definition we have to instanciate the array
 	# create the x- and y- bats, initialize with their value
-	#pattern array.newIndex(min:any_0,max:any_0,step:any_0):bat[:oid,:any_0]
-	#pattern array.newIndex(xmin:any_0,xmax:any_0,xstep:any_0,ymin:any_1,ymax:any_1,ystep:any_1)(x:bat[:oid,:any_0],y:bat[:oid,:any_1])
-	#idem z, t
-	#pattern array.setDefault(idx:bat[:oid,:any_0], def:any_1):bat[:oid,:any_1];
-
-	# for a fixed array the post dimension operations are to be called explicitly
-	#(x,y):= array.newIndex(0,4,1,0,4,1);
-    #val  := array.setDefault(x,0.0);
-	# create the val bat
 
 function user.s1_1{autoCommit=true}():void;
     _2 := sql.mvc();
 #if we have a dimension with fixed bounds then there can not be updates
-   (_3:bat[:oid,:int],_23:bat[:oid,:int])  := array.dimension(_2,"sys","stripes","x",0,4,1,"y",0,4,1);
+   (_3:bat[:oid,:int],_23:bat[:oid,:int])  := sciql.dimension(_2,"sys","stripes","x",0,0,4,1,"y",0,4,1);
    _4:bat[:int,:oid]  := bat.reverse(_3);
    _5:bat[:oid,:oid]  := bat.mirror(_4);
    _32:bat[:oid,:int]  := batcalc.+(_3,_23);
@@ -37,7 +28,7 @@ end s1_1;
 function user.s1_1{autoCommit=true}():void;
     _2 := sql.mvc();
 #if we have a dimension with free bounds then we need an explicit representation of x
-   (_3:bat[:oid,:int],_23:bat[:oid,:int])  := array.dimension(_2,"sys","stripes","x",null,null,null,"y",null,null,null);
+   (_3:bat[:oid,:int],_23:bat[:oid,:int])  := sciql.dimension(_2,"sys","stripes","x",null:int,null:int,null:int,"y",null:int,null:int,null:int);
    _4:bat[:int,:oid]  := bat.reverse(_3);
    _5:bat[:oid,:oid]  := bat.mirror(_4);
    _32:bat[:oid,:int]  := batcalc.+(_3,_23);
