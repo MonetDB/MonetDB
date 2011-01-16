@@ -28,7 +28,6 @@ module ActiveRecord
   class Base
     # Establishes a connection to the database that's used by all Active Record objects
     def self.monetdb_connection(config) 
-    	puts "ACTIVERECORD\n"
       require_library_or_gem('MonetDB')
       
       # extract connection parameters
@@ -44,9 +43,7 @@ module ActiveRecord
       
       # use empty string as database name if none is specified
       database = config[:database] || ""
-      
-      p "DB:" + database
-      
+            
       dbh = MonetDB.new
       ConnectionAdapters::MonetDBAdapter.new(dbh, logger, [host, port, username, password, database, lang], config)
     end

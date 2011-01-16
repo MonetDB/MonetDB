@@ -224,29 +224,29 @@
     # Establish a new connection using named parameters.
     #                * user: username (default is monetdb)
     #                * passwd: password (default is monetdb)
-    #                * lang: language (default is sql) 
-    #                * host: server hostanme or ip  (default is localhost)
-    #                * port: server port (default is 50000)
-    #                * db_name: name of the database to connect to
+    #                * language: {sql, xquery} (default is sql) 
+    #                * host: host to connect to  (default is localhost)
+    #                * port: port to connect to (default is 50000)
+    #                * database: name of the database to connect to
     #                * auth_type: hashing function to use during authentication (default is SHA1)
     #
     # Conventionally named parameters are passed as an hash.
     #
     # Ruby 1.8:
-    # MonetDB::conn({ :user => "username", :passwd => "password", :db_name => "database"})
+    # MonetDB::conn({ :user => "username", :passwd => "password", :database => "database"})
     #
     # Ruby 1.9:
-    # MonetDB::conn(user: "username", passwd: "password", db_name: "database")
+    # MonetDB::conn(user: "username", passwd: "password", database: "database")
     def conn(options)      
-      user      = options[:user] || DEFAULT_USERNAME
-      passwd    = options[:passwd] || DEFAULT_PASSWORD
-      lang      = options[:lang] || DEFAULT_LANG
-      host      = options[:host] || DEFAULT_HOST
-      port      = options[:port] || DEFAULT_PORT
-      db_name   = options[:db_name] || DEFAULT_DATABASE
-      auth_type = options[:auth_type] || DEFAULT_AUTHTYPE
+      user        = options[:user] || DEFAULT_USERNAME
+      passwd      = options[:passwd] || DEFAULT_PASSWORD
+      language    = options[:language] || DEFAULT_LANG
+      host        = options[:host] || DEFAULT_HOST
+      port        = options[:port] || DEFAULT_PORT
+      database    = options[:database] || DEFAULT_DATABASE
+      auth_type   = options[:auth_type] || DEFAULT_AUTHTYPE
       
-      connect(user, passwd, lang, host, port, db_name, auth_type)
+      connect(user, passwd, language, host, port, database, auth_type)
     end
   
     # Send a <b> user submitted </b> query to the server and store the response.

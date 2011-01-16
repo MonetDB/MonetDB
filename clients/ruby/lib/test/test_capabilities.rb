@@ -13,7 +13,6 @@ require 'time'
 require 'date'
 
 
-
 class TC_MonetDBCapabilities < Test::Unit::TestCase
   # ruby rand function does not support MIN..MAX bounds.
   # This alias adds that feature.
@@ -303,7 +302,7 @@ class TC_MonetDBCapabilities < Test::Unit::TestCase
   def test_conn_with_named_parameters    
     db = MonetDB.new()
         
-    db.conn({ :user => "monetdb", :passwd => "monetdb", :port => 50000, :host => "localhost", :db_name => "ruby_test"})
+    db.conn({ :user => "monetdb", :passwd => "monetdb", :port => 50000, :host => "localhost", :database => "ruby_test"})
     assert_equal(true, db.is_connected?)
     db.close
   end
