@@ -23,7 +23,7 @@ All Rights Reserved.
 @+ SciQL
 This module contains the additions for the SciQL extensions of SQL.
 This current focus is on testing the code generation.
-@m
+@mal
 module sciql;
 pattern newDimension(sch:str, tab:str, col:str, kind:int, start:any_0, stop:any_0, step:any_0):bat[:oid,:any_0]
 address SCI1D

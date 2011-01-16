@@ -46,7 +46,7 @@ lib__sql = {
 		sql_result.mx \
 		sql_readline.mx \
 		sql_emptyset.mx \
-		sql_sciql.mx \
+		sciql.mx \
 		sql_bpm.mx
 	LIBS = ../../server/libsqlserver \
 		   ../../storage/libstore \
@@ -110,7 +110,7 @@ headers_pc = {
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
-	SOURCES = sql.mx sql_bpm.mx sql_emptyset.mx sql_sciql.mx
+	SOURCES = sql.mx sql_bpm.mx sql_emptyset.mx sciql.mx
 }
 
 headers_autoload = {
