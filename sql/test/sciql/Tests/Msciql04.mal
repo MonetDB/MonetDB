@@ -1,1 +1,0 @@
-INSERT INTO grid VALUES(1,1,25);
