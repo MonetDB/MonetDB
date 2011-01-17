@@ -8,7 +8,7 @@ MANIFEST$
 Makefile\.in$
 Makefile\.am
 Makefile\.msc
-MonetDB4/NT/MonetDB\.pc$
+monetdb4/NT/MonetDB\.pc$
 NT/RunMapprove\.bat$
 NT/RunMserver\.bat$
 NT/RunMtest\.bat$
