@@ -16,6 +16,8 @@ import string
 # the files from those libraries that contain functions that happen to
 # be referenced somewhere.
 
+verbose = False
+
 # the splitcommand function is a straight copy of the same function in
 # ../../testing/src/process.py.
 def splitcommand(cmd):
@@ -67,6 +69,9 @@ def process(args, recursive = False):
 
 argv = process(sys.argv[1:])
 
+if verbose:
+    sys.stdout.write('EXECUTE: %s\n' % ' '.join(argv))
+    sys.stdout.flush()
 p = subprocess.Popen(argv, shell = False, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
 out, err = p.communicate()
 sys.stdout.write(out.replace('\r\n', '\n'))
