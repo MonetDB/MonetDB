@@ -2,6 +2,7 @@
 /\.\#
 /@
 ~$
+^\..*\.swp$
 configure.ac
 MANIFEST$
 Makefile\.in$
