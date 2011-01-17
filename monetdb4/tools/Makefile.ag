@@ -90,8 +90,6 @@ bin_Mserver = {
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
 		../monet/libmonet \
 		../../gdk/libbat \
-		../../common/options/libmoptions \
-		../../common/stream/libstream \
                 $(pcre_LIBS) $(openssl_LIBS)
 }
 
@@ -100,9 +98,7 @@ lib_embeddedmil = {
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
 		../monet/libmonet \
 		../../gdk/libbat \
-		../../common/options/libmoptions \
-		../../clients/mapilib/libmapi \
-		../../common/stream/libstream
+		../../clients/mapilib/libmapi
 }
 
 bin_Mbeddedmil = {
@@ -111,9 +107,7 @@ bin_Mbeddedmil = {
 		libembeddedmil \
 		../monet/libmonet \
 		../../gdk/libbat \
-		../../common/options/libmoptions \
-		../../clients/mapilib/libmapi \
-		../../common/stream/libstream
+		../../clients/mapilib/libmapi
 }
 
 EXTRA_DIST_DIR = Tests

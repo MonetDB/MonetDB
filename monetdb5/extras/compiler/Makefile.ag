@@ -29,7 +29,6 @@ LIBS = {
 	SOURCES = mal_compiler.mx 
 
 	LIBS = ../../tools/libmonetdb5 \
-		../../../common/options/libmoptions \
 		../../../gdk/libbat \
 		../../../common/stream/libstream \
 		$(MALLOC_LIBS) 

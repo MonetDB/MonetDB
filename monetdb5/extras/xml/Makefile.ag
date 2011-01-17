@@ -28,7 +28,6 @@ lib__xml = {
 	SOURCES = xml.mx 
 
 	LIBS = ../../tools/libmonetdb5 \
-		   ../../../common/options/libmoptions \
 		   ../../../gdk/libbat \
 		   $(MALLOC_LIBS) $(libxml2_LIBS)
 }
@@ -50,7 +49,6 @@ lib_batxml = {
 	SEP = _
 	SOURCES = batxml.mx
 	LIBS = lib_xml ../../tools/libmonetdb5 \
-		   ../../../common/options/libmoptions \
 		   ../../../gdk/libbat \
 		   $(MATH_LIBS) $(MALLOC_LIBS) $(libxml2_LIBS)
 }

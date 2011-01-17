@@ -71,7 +71,6 @@ lib_embeddedsql5 = {
 		   ../../../monetdb5/tools/libmonetdb5 \
 		   ../../../gdk/libbat \
 		   ../../../clients/mapilib/libmapi \
-		   ../../../common/options/libmoptions \
 		   ../../../common/stream/libstream \
 		   $(READLINE_LIBS) $(PTHREAD_LIBS)
 }
@@ -88,7 +87,6 @@ bin_mbeddedsql5 = {
 		   ../../../monetdb5/tools/libmonetdb5 \
 		   ../../../gdk/libbat \
 		   ../../../clients/mapilib/libmapi \
-		   ../../../common/options/libmoptions \
 		   ../../../common/stream/libstream \
 		   $(READLINE_LIBS) $(PTHREAD_LIBS) $(curl_LIBS)
 }

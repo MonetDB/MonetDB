@@ -83,8 +83,6 @@ bin_Mserver = {
 	SOURCES = Mserver.mx
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
 		../../../gdk/libbat \
-		../../../common/options/libmoptions \
-		../../../common/stream/libstream \
 		../../../monetdb4/monet/libmonet
 }
 
@@ -92,8 +90,6 @@ lib_embeddedxq = {
 	SOURCES = embeddedclient.c.in
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
 		../../../gdk/libbat \
-		../../../common/options/libmoptions \
-		../../../common/stream/libstream \
 		../../../monetdb4/monet/libmonet \
 		../../../clients/mapilib/libmapi
 }
@@ -103,8 +99,6 @@ bin_Mbeddedxq = {
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
 		libembeddedxq \
 		../../../gdk/libbat \
-		../../../common/options/libmoptions \
-		../../../common/stream/libstream \
 		../../../monetdb4/monet/libmonet \
 		../../../clients/mapilib/libmapi
 }

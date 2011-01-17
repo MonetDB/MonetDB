@@ -33,10 +33,10 @@ lib_monetdb5 = {
 	LIBS = ../mal/libmal ../modules/atoms/libatoms \
 		../modules/kernel/libkernel ../modules/mal/libmal \
 		../optimizer/liboptimizer ../scheduler/libscheduler \
-		../../common/options/libmoptions \
 		../../gdk/libbat \
+		../../clients/mapilib/libmapi \
 		../../common/stream/libstream \
-		../../clients/mapilib/libmapi $(curl_LIBS) \
+		$(curl_LIBS) \
 		$(MATH_LIBS) $(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) \
 		$(DL_LIBS) $(READLINE_LIBS) $(openssl_LIBS) $(pcre_LIBS) \
 		$(LTLIBICONV) $(zlib_LIBS)
@@ -45,9 +45,7 @@ lib_monetdb5 = {
 bin_mserver5 = {
 	SOURCES = mserver5.mx monet_version.h monet_version.c.in
 	LIBS = libmonetdb5 @SHARED_LIBS@ \
-		../../common/options/libmoptions \
 		../../gdk/libbat \
-		../../common/stream/libstream \
 		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) \
 		$(curl_LIBS) $(pcre_LIBS) $(openssl_LIBS)
 }
@@ -55,9 +53,7 @@ bin_mserver5 = {
 lib_embeddedmal = {
 	SOURCES = embeddedclient.c.in
 	LIBS = libmonetdb5 @SHARED_LIBS@ \
-		../../common/options/libmoptions \
 		../../gdk/libbat \
-		../../common/stream/libstream \
 		../../clients/mapilib/libmapi $(curl_LIBS) \
 		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
@@ -65,9 +61,7 @@ lib_embeddedmal = {
 bin_mbeddedmal = {
 	SOURCES = prog.c
 	LIBS = libembeddedmal @SHARED_LIBS@ \
-		../../common/options/libmoptions \
 		../../gdk/libbat \
-		../../common/stream/libstream \
 		../../clients/mapilib/libmapi $(curl_LIBS) \
 		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }

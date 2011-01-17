@@ -28,9 +28,7 @@ lib__rdf = {
 	DIR = libdir/monetdb5
 	SOURCES = rdf.mx rdf_shredder.mx
 	LIBS = ../../tools/libmonetdb5 \
-		../../../common/options/libmoptions \
 		../../../gdk/libbat \
-		../../../common/stream/libstream \
 		$(MALLOC_LIBS) $(raptor_LIBS)
 }
 
