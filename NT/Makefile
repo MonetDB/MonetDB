@@ -31,7 +31,7 @@ install: targetdirs all
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" install
 	$(INSTALL) ..\NT\installer$(bits)\*.sln "$(prefix)"
 	$(INSTALL) ..\NT\installer$(bits)\*.vdproj "$(prefix)"
-	-if exist "C:\Program Files (x86)" if $(bits)==32 C:\cygwin\bin\sed.exe -i "s/Program Files/Program Files (x86)/" "$(prefix)"\*.vdproj
+	-if exist "C:\Program Files (x86)" if $(bits)==32 cd "$(prefix)"&&C:\cygwin\bin\sed.exe -i "s/Program Files/Program Files (x86)/" *.vdproj
 
 $(SRCDIR)\Makefile.msc: "$(SRCDIR)\Makefile.ag"
         cd "$(SRCDIR)"&&set PYTHONPATH=buildtools\autogen&&python buildtools\autogen\autogen.py
