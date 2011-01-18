@@ -1209,7 +1209,8 @@ opt_complex (PFla_op_t *p)
     /* action code */
     switch (p->kind) {
         case la_serialize_seq:
-            if (PFprop_card (p->prop) == 1) {
+            if (PFprop_card (p->prop) == 1 &&
+                p->sem.ser_seq.pos != p->sem.ser_seq.item) {
                 R(p) = PFla_attach (
                            PFla_project (
                                R(p),
