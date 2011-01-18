@@ -292,6 +292,9 @@ def find_org(deps,f):
 # in a .incs.ag file. And after translating to the install include dirs
 # also in .incs.in
 
+buildincsfiles = {}
+installincsfiles = {}
+
 def do_deps(targets,deps,includes,incmap,cwd,incdirsmap):
     basename = os.path.basename(cwd)
     incs = {}
@@ -299,18 +302,12 @@ def do_deps(targets,deps,includes,incmap,cwd,incdirsmap):
     do_dep_rules(deps,cwd,incs)
     do_dep_combine(deps,includes,cwd,incs)
 
-    buildincsfile = os.path.join(cwd, '.incs.ag')
-    if os.path.exists( buildincsfile ):
-        os.unlink(buildincsfile)
-    buildincs = shelve.open( buildincsfile, "c")
+    normcwd = os.path.normpath(cwd)
+    buildincs = buildincsfiles[normcwd] = {}
     for k,vals in incs.items():
         buildincs[k] = vals
-    buildincs.close()
 
-    installincsfile = os.path.join(cwd, '.incs.in')
-    if os.path.exists( installincsfile ):
-        os.unlink(installincsfile)
-    installincs = shelve.open( installincsfile, "c")
+    installincs = installincsfiles[normcwd] = {}
     for k,vals in incs.items():
         nvals = []
         for i in vals:
@@ -332,7 +329,6 @@ def do_deps(targets,deps,includes,incmap,cwd,incdirsmap):
                     inc.replace(subsrc, subins.replace('includedir', '..'))
                 nvals.append(inc)
         installincs[k] = nvals
-    installincs.close()
 
 def do_recursive_combine(deplist,includes,incs,depfiles):
     for d in deplist:
@@ -535,13 +531,15 @@ def collect_includes(incdirs, cwd, topdir):
     for dir,org in dirs:
         if dir.startswith('$'):
             continue
-        dir = os.path.join(cwd, dir)
-        f = os.path.join(dir, ".incs.ag")
-        if not os.path.exists(f):
-            f = os.path.join(dir, ".incs.in")
+        dir = os.path.normpath(os.path.join(cwd, dir))
+        if buildincsfiles.has_key(dir):
+            incs = buildincsfiles[dir]
+        elif installincsfiles.has_key(dir):
+            incs = installincsfiles[dir]
+        else:
+            incs = None
 
-        if os.path.exists(f):
-            incs = shelve.open(f)
+        if incs is not None:
             for file in incs.keys():
                 incfiles = []
                 for inc in incs[file]:
@@ -550,7 +548,6 @@ def collect_includes(incdirs, cwd, topdir):
                     incfiles.append(inc)
                 includes[os.path.join(org,file)] = incfiles
                 incmap[file] = org
-            incs.close()
         else:
             if os.path.exists(dir):
                 for inc in os.listdir(dir):
