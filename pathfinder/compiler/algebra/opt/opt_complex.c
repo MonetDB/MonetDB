@@ -2139,7 +2139,8 @@ opt_complex (PFla_op_t *p)
             /* Replace the rownumber operator by a rowrank operator
                if it is only used to provide the correct link to
                the outer relation in a ferry setting. */
-            if (PFprop_req_link_col (p->prop, p->sem.sort.res)) {
+            if (PFprop_req_link_col (p->prop, p->sem.sort.res) ||
+                PFord_count (p->sem.sort.sortby) == 1) {
                 PFalg_schema_t schema;
                 schema.count = PFord_count (p->sem.sort.sortby);
                 schema.items = PFmalloc (schema.count *
