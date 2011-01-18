@@ -15,8 +15,6 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = BITS32?MonetDB-ODBC-Installer BITS64?MonetDB-ODBC-Installer64
-
 INCLUDES = \
 	../include \
 	../driver \
