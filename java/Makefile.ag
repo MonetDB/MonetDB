@@ -22,7 +22,6 @@ EXTRA_DIST = RunMtest.in RunMtest.bat.in \
 		build.xml build.properties release.txt
 
 EXTRA_DIST_DIR = src \
-		 lib \
 		 example
 
 ant_distjdbc = {

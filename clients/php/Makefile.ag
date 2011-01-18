@@ -18,5 +18,3 @@
 MTSAFE
 
 SUBDIRS = native
-
-EXTRA_DIST_DIR = phpdoc
