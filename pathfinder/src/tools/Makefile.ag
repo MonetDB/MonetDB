@@ -78,14 +78,6 @@ lib_initmodules = {
 	SOURCES = initmodules.mx
 }
 
-bin_Mserver = {
-	COND = LINK_STATIC
-	SOURCES = Mserver.mx
-	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
-		../../../gdk/libbat \
-		../../../monetdb4/monet/libmonet
-}
-
 lib_embeddedxq = {
 	SOURCES = embeddedclient.c.in
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
