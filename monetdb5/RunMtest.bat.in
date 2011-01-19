@@ -33,14 +33,14 @@ set MOD_PATH=%MOD_PATH%;%builddir%\extras\rdf
 REM enable auto-loading of modules before `make install`
 if not exist %builddir%\extras\rdf\autoload mkdir %builddir%\extras\rdf\autoload
 copy /y %srcdir%\extras\rdf\??_*.mal %builddir%\extras\rdf\autoload
-if not exist %builddir%\src\modules\atoms\autoload mkdir %builddir%\src\modules\atoms\autoload
-copy /y %srcdir%\src\modules\atoms\??_*.mal %builddir%\src\modules\atoms\autoload
+if not exist %builddir%\modules\atoms\autoload mkdir %builddir%\modules\atoms\autoload
+copy /y %srcdir%\modules\atoms\??_*.mal %builddir%\modules\atoms\autoload
 
 set PATH=%buildbase%\testing;%PATH%
 
 set PATH=%MOD_PATH%;%PATH%
-set PATH=%builddir%\src\mal;%PATH%
-set PATH=%builddir%\src\tools;%PATH%
+set PATH=%builddir%\mal;%PATH%
+set PATH=%builddir%\tools;%PATH%
 
 set PYTHONPATH=%buildbase%\testing;%srcdir%\..\testing;%PYTHONPATH%
 
