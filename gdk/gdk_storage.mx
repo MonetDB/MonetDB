@@ -49,6 +49,9 @@ extern int DESCsetmodes(BAT *b);
 #include "gdk.h"
 #include <stdlib.h>
 #include "gdk_storage.h"
+#ifdef HAVE_FCNTL_H
+#include <fcntl.h>
+#endif
 
 @
 @c

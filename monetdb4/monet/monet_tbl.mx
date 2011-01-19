@@ -182,6 +182,9 @@ m_export int TBL_setaggr_resolve(str name, int argc, ValPtr Argv, monet_sig_t *s
 
 #include <stdio.h>
 #include <string.h>
+#ifdef HAVE_FCNTL_H
+#include <fcntl.h>
+#endif
 
 #define dlPRINT(text)	DLDEBUG	THRprintf(GDKerr, text)
 #define dlFPRINTF	DLDEBUG	THRprintf

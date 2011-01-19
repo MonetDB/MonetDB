@@ -49,32 +49,6 @@ the latest iteration of this layer.
 #define gdk_export extern
 #endif
 
-#ifdef HAVE_UNISTD_H
-# include <unistd.h>		/* io functions */
-#endif
-#ifdef HAVE_IO_H
-# include <io.h>
-#endif
-#ifdef HAVE_FCNTL_H
-# include <fcntl.h>
-#endif
-#include <sys/types.h>
-#ifdef HAVE_SYS_TIME_H
-# include <sys/time.h>
-#endif
-#ifdef HAVE_SYS_SYSCTL_H
-# if defined(__OpenBSD__)
-#  include <sys/param.h>
-# endif
-# include <sys/sysctl.h>
-#endif
-#ifdef HAVE_SIGNAL_H
-# include <signal.h>
-#endif
-#if defined(HAVE_GETRLIMIT) && defined(HAVE_SYS_RESOURCE_H)
-# include <sys/resource.h>
-#endif
-
 @- pthreads Includes and Definitions
 @h
 #ifdef HAVE_PTHREAD_H
@@ -251,6 +225,10 @@ gdk_export int MT_check_nr_cores(void);
 @c
 #include "monetdb_config.h"
 #include "gdk_system.h"
+
+#ifdef HAVE_SIGNAL_H
+# include <signal.h>
+#endif
 
 MT_Lock MT_system_lock
 #ifdef PTHREAD_MUTEX_INITIALIZER
