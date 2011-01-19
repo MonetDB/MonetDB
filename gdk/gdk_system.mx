@@ -460,7 +460,7 @@ rm_winthread(struct winthread *w)
 	if (*wp)
 		*wp = w->next;
 	LeaveCriticalSection(&winthread_cs);
-	GDKfree(w);
+	free(w);
 }
 
 static DWORD WINAPI
@@ -476,7 +476,7 @@ thread_starter(LPVOID arg)
 int
 MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d)
 {
-	struct winthread *w = GDKmalloc(sizeof(*w));
+	struct winthread *w = malloc(sizeof(*w));
 
 	if (winthread_cs_init == 0) {
 		/* we only get here before any threads are created,
@@ -867,7 +867,7 @@ MT_check_nr_cores_(void)
 	double lasttime = 0, thistime;
 	while (1) {
 		lng t0, t1;
-		MT_Id *threads = GDKmalloc(sizeof(MT_Id) * curr);
+		MT_Id *threads = malloc(sizeof(MT_Id) * curr);
 
 		t0 = GDKusec();
 		for (i = 0; i < curr; i++)
@@ -875,7 +875,7 @@ MT_check_nr_cores_(void)
 		for (i = 0; i < curr; i++)
 			MT_join_thread(threads[i]);
 		t1 = GDKusec();
-		GDKfree(threads);
+		free(threads);
 		thistime = (double) (t1 - t0) / 1000000;
 		if (lasttime > 0 && thistime / lasttime > 1 + SMP_TOLERANCE)
 			break;
