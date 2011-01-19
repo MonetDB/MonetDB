@@ -113,6 +113,7 @@ gdk_export int GDKdebug;
 /* lock performance tracing */
 /* #define MT_LOCK_TRACE 1 */
 #ifdef MT_LOCK_TRACE
+gdk_export MT_Id MT_locktrace;
 gdk_export void MT_locktrace_start();
 gdk_export void MT_locktrace_end();
 gdk_export unsigned long long MT_locktrace_cnt[65536];
@@ -161,8 +162,6 @@ gdk_export int MT_kill_thread(MT_Id t);
 #ifdef HAVE_PTHREAD_SIGMASK
 gdk_export void MT_thread_sigmask(sigset_t * new_mask, sigset_t * orig_mask);
 #endif
-
-gdk_export MT_Id MT_locktrace;
 
 #if SIZEOF_VOID_P == 4
 /* "limited" stack size on 32-bit systems */
@@ -332,22 +331,18 @@ MT_clock()
 #endif /* defined(i386) */
 	return tsc;
 }
-#endif
 MT_Id MT_locktrace = 0;
 
 void
 MT_locktrace_start()
 {
-#ifdef MT_LOCK_TRACE
 	memset(MT_locktrace_cnt, 0, 65536 * sizeof(unsigned long long));
-#endif
 	MT_locktrace = MT_getpid();
 }
 
 void
 MT_locktrace_end()
 {
-#ifdef MT_LOCK_TRACE
 	unsigned long long my_cnt[65536];
 	memset(my_cnt, 0, 65536 * sizeof(unsigned long long));
 	for (int i = 0; i < 65536; i++)
@@ -364,9 +359,9 @@ MT_locktrace_end()
 				printf("%s %llu\n", MT_locktrace_nme[i], my_cnt[idx]);
 			my_cnt[idx] = 0;
 		}
-#endif
 	MT_locktrace = 0;
 }
+#endif	/* MT_LOCK_TRACE */
 
 void
 MT_init(void)
