@@ -19,7 +19,7 @@ import string
 verbose = False
 
 # the splitcommand function is a straight copy of the same function in
-# ../../testing/src/process.py.
+# ../../testing/process.py.
 def splitcommand(cmd):
     '''Like string.split, except take quotes into account.'''
     q = None

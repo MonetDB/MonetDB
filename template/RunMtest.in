@@ -66,10 +66,10 @@ esac
 
 # enhance various paths to find our stuff
 libpath="${MOD_PATH}"
-PATH="${buildbase}/monetdb$V/tools:${buildbase}/testing/src:$PATH"
+PATH="${buildbase}/monetdb$V/tools:${buildbase}/testing:$PATH"
 export PATH
 
-PYTHONPATH="${buildbase}/testing/src:${srcdir}/../testing/src:${PYTHONPATH}"
+PYTHONPATH="${buildbase}/testing:${srcdir}/../testing:${PYTHONPATH}"
 export PYTHONPATH
 
 if [ "${LD_LIBRARY_PATH}" ] ; then
@@ -101,4 +101,4 @@ cd "$srcdir"
 # arguments.
 # if the environment variable MTEST_AT is set (value does not matter), pass
 # the --at flag to Mtest.py so that it uses the at command as a watchdog.
-exec python "${buildbase}/testing/src/Mtest.py" -$V --package=${pkg} --monet_mod_path="${MOD_PATH}" --dbfarm="${builddir}/dbfarm" --TSTTRGBASE="${builddir}" ${MTEST_AT+--at} "${@--rq}"
+exec python "${buildbase}/testing/Mtest.py" -$V --package=${pkg} --monet_mod_path="${MOD_PATH}" --dbfarm="${builddir}/dbfarm" --TSTTRGBASE="${builddir}" ${MTEST_AT+--at} "${@--rq}"

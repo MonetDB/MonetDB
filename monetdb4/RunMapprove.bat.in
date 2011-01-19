@@ -13,12 +13,12 @@ set buildbase=@XBUILD@
 set builddir=%buildbase%\monetdb4
 set srcdir=@XSOURCE@\monetdb4
 
-set PYTHONPATH=%buildbase%\testing\src;%srcdir%\..\testing\src;%PYTHONPATH%
+set PYTHONPATH=%buildbase%\testing;%srcdir%\..\testing;%PYTHONPATH%
 
 REM execute Mapprove.py in the source directory
 pushd %srcdir%
 
-call "%buildbase%\testing\src\Mapprove.py" "--config=%builddir%\conf\MonetDB.conf" --package=%pkg% "--TSTTRGBASE=%builddir%" %*
+call "%buildbase%\testing\Mapprove.py" "--config=%builddir%\conf\MonetDB.conf" --package=%pkg% "--TSTTRGBASE=%builddir%" %*
 
 popd
 endlocal

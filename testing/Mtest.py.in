@@ -3020,6 +3020,8 @@ if not repo:
     cwd = os.path.normcase(os.path.normpath(os.path.realpath(os.getcwd())))
     if src == cwd[:len(src)]:
         repo = cwd[len(src+os.sep):].split(os.sep)[0]
+if not repo:
+    repo = os.getcwd().split(os.sep)[-1]
 if repo:
     if repo == '.':
         repo = 'MonetDB'

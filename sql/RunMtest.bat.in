@@ -44,19 +44,19 @@ copy /y %srcdir%\..\monetdb5\extras\rdf\??_*.mal %buildbase%\monetdb5\extras\rdf
 if not exist %buildbase%\monetdb5\modules\atoms\autoload mkdir %buildbase%\monetdb5\modules\atoms\autoload
 copy /y %srcdir%\..\monetdb5\modules\atoms\??_*.mal %buildbase%\monetdb5\modules\atoms\autoload
 
-set PATH=%buildbase%\monetdb5\tools;%buildbase%\testing\src;%PATH%
+set PATH=%buildbase%\monetdb5\tools;%buildbase%\testing;%PATH%
 
 set PATH=%MOD_PATH%;%PATH%
 set PATH=%builddir%\server;%PATH%
 set PATH=%builddir%\storage\bat;%PATH%
 set PATH=%builddir%\common;%PATH%
 
-set PYTHONPATH=%builddir%\backends\python\monet5;%buildbase%\testing\src;%srcdir%\..\testing\src;%PYTHONPATH%
+set PYTHONPATH=%builddir%\backends\python\monet5;%buildbase%\testing;%srcdir%\..\testing;%PYTHONPATH%
 
 REM execute Mtest.py in the source directory
 pushd %srcdir%
 
-call "%buildbase%\testing\src\Mtest.py" "--package=%pkg%" "--monet_mod_path=%MOD_PATH%" "--dbfarm=%builddir%\dbfarm" "--TSTTRGBASE=%builddir%" %1 %2 %3 %4 %5 %6 %7 %8 %9
+call "%buildbase%\testing\Mtest.py" "--package=%pkg%" "--monet_mod_path=%MOD_PATH%" "--dbfarm=%builddir%\dbfarm" "--TSTTRGBASE=%builddir%" %1 %2 %3 %4 %5 %6 %7 %8 %9
 
 popd
 endlocal

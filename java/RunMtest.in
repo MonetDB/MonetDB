@@ -25,10 +25,10 @@ srcdir=`cd '@srcdir@'; pwd`
 uname=`uname`
 
 # enhance various paths to find our stuff
-PATH="${buildbase}/testing/src:$PATH"
+PATH="${buildbase}/testing:$PATH"
 export PATH
 
-PYTHONPATH="${buildbase}/testing/src:${srcdir}/../testing/src:${PYTHONPATH}"
+PYTHONPATH="${buildbase}/testing:${srcdir}/../testing:${PYTHONPATH}"
 export PYTHONPATH
 
 # execute Mtest.py in the source directory
@@ -39,4 +39,4 @@ cd "$srcdir"
 # arguments.
 # if the environment variable MTEST_AT is set (value does not matter), pass
 # the --at flag to Mtest.py so that it uses the at command as a watchdog.
-exec python "${buildbase}/testing/src/Mtest.py" --package=${pkg} --dbfarm="${builddir}/dbfarm" --TSTTRGBASE="${builddir}" ${MTEST_AT+--at} "${@--rq}"
+exec python "${buildbase}/testing/Mtest.py" --package=${pkg} --dbfarm="${builddir}/dbfarm" --TSTTRGBASE="${builddir}" ${MTEST_AT+--at} "${@--rq}"

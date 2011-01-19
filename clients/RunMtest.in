@@ -33,10 +33,10 @@ do
 done
 
 # enhance various paths to find our stuff
-PATH="${builddir}/mapiclient:${builddir}/python:${buildbase}/testing/src:$PATH"
+PATH="${builddir}/mapiclient:${builddir}/python:${buildbase}/testing:$PATH"
 export PATH
 
-PYTHONPATH="${srcdir}/python:${buildbase}/testing/src:${srcdir}/../testing/src:${PYTHONPATH}"
+PYTHONPATH="${srcdir}/python:${buildbase}/testing:${srcdir}/../testing:${PYTHONPATH}"
 export PYTHONPATH
 
 # execute Mtest.py in the source directory
@@ -47,4 +47,4 @@ cd "$srcdir"
 # arguments.
 # if the environment variable MTEST_AT is set (value does not matter), pass
 # the --at flag to Mtest.py so that it uses the at command as a watchdog.
-exec python "${buildbase}/testing/src/Mtest.py" --package=${pkg} --dbfarm="${builddir}/dbfarm" --TSTTRGBASE="${builddir}" ${MTEST_AT+--at} "${@--rq}"
+exec python "${buildbase}/testing/Mtest.py" --package=${pkg} --dbfarm="${builddir}/dbfarm" --TSTTRGBASE="${builddir}" ${MTEST_AT+--at} "${@--rq}"

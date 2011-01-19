@@ -76,19 +76,19 @@ if not exist %buildbase%\monetdb5\modules\atoms\autoload mkdir %buildbase%\monet
 copy /y %srcdir%\..\monetdb5\modules\atoms\??_*.mal %buildbase%\monetdb5\modules\atoms\autoload
 :skip_5
 
-set PATH=%buildbase%\monetdb%V%\tools;%buildbase%\testing\src;%PATH%
+set PATH=%buildbase%\monetdb%V%\tools;%buildbase%\testing;%PATH%
 
 set PATH=%MOD_PATH%;%PATH%
 
 rem to find geos_c.dll
 set PATH=%GEOS%\bin;%PATH%
 
-set PYTHONPATH=%buildbase%\testing\src;%srcdir%\..\testing\src;%PYTHONPATH%
+set PYTHONPATH=%buildbase%\testing;%srcdir%\..\testing;%PYTHONPATH%
 
 REM execute Mtest.py in the source directory
 pushd %srcdir%
 
-call "%buildbase%\testing\src\Mtest.py" -%V% "--package=%pkg%" "--monet_mod_path=%MOD_PATH%" "--dbfarm=%builddir%\dbfarm" "--TSTTRGBASE=%builddir%" %1 %2 %3 %4 %5 %6 %7 %8 %9
+call "%buildbase%\testing\Mtest.py" -%V% "--package=%pkg%" "--monet_mod_path=%MOD_PATH%" "--dbfarm=%builddir%\dbfarm" "--TSTTRGBASE=%builddir%" %1 %2 %3 %4 %5 %6 %7 %8 %9
 
 popd
 endlocal
