@@ -1064,9 +1064,9 @@ def am_python(fd, var, python, am):
         fd.write("\t$(PYTHON) '%s' install --prefix='$(DESTDIR)$(prefix)'\n" % f)
     fd.write('uninstall-local-%s:\n' % var)
     for pkgdir in sorted(pkgdirs, reverse = True):
-        fd.write("\trm -r '$(DESTDIR)$(prefix)$(PYTHON_LIBDIR)/%s'\n" % pkgdir)
+        fd.write("\trm -r '$(DESTDIR)$(prefix)/$(PYTHON_LIBDIR)/%s'\n" % pkgdir)
     for name in pkgnams:
-        fd.write("\trm '$(DESTDIR)$(prefix)$(PYTHON_LIBDIR)'/%s-*.egg-info\n" % name.replace('-', '_'))
+        fd.write("\trm '$(DESTDIR)$(prefix)/$(PYTHON_LIBDIR)'/%s-*.egg-info\n" % name.replace('-', '_'))
     fd.write('mostlyclean-local:\n')
     for pkgdir in sorted(pkgdirs, reverse = True):
         fd.write("\t[ '$(srcdir)' -ef . ] || rm -r '%s'\n" % pkgdir)
