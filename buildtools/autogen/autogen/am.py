@@ -1028,7 +1028,7 @@ def am_gem(fd, var, gem, am):
         fd.write("install-exec-local-%s: %s\n" % (sf, f[:-4]))
         fd.write("\tmkdir -p $(DESTDIR)'%s'\n" % rd)
         fd.write("\tgem install --local --install-dir $(DESTDIR)'%s' --force --rdoc '%s'\n" % (rd, f[:-4]))
-        fd.write("uninstall-exec-local-%s: '%s'\n" % (sf, f[:-4]))
+        fd.write("uninstall-local-%s: %s\n" % (sf, f[:-4]))
         fd.write("\tgem uninstall --install-dir $(DESTDIR)'%s' '%s'\n" % (rd, f[:-4]))
         am['BUILT_SOURCES'].append(f[:-4])
         am['CLEAN'].append(f[:-4])
@@ -1036,7 +1036,7 @@ def am_gem(fd, var, gem, am):
     for f in gem['FILES']:
         sf = f.replace('.', '_')
         fd.write("install-exec-local-%s:\n" % sf)
-        fd.write('uninstall-exec-local-%s:\n' % sf)
+        fd.write('uninstall-local-%s:\n' % sf)
     fd.write('endif\n')
 
 def am_python(fd, var, python, am):
