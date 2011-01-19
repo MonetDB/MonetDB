@@ -1617,7 +1617,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
             ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.mal|.malC|.milS|.milC|.sql|.xq]`")
         return TX,Failed,Failed,elem
 
-    if par['PACKAGE'] not in ('MonetDB', 'java', 'clients'):
+    if par['PACKAGE'] not in ('common', 'clients', 'gdk', 'java'):
         MissingMods = CheckMods(env, TST, SERVER, CALL)
         MissingBATs = CheckBATs(env, TST, TSTDB)
     else:
@@ -2998,7 +2998,7 @@ URLSUFFIX_D = ''
 
 par = {}
 # the default; only used for usage information in case -p/--package has not been given
-par['PACKAGE'] = 'MonetDB'
+par['PACKAGE'] = 'none'
 # try to be "smart"
 repo = ''
 try:
@@ -3024,7 +3024,7 @@ if not repo:
     repo = os.getcwd().split(os.sep)[-1]
 if repo:
     if repo == '.':
-        repo = 'MonetDB'
+        repo = 'none'
     par['PACKAGE'] = repo
 
 dft = {}
@@ -3174,7 +3174,7 @@ def main(argv) :
 
     pkg = opts.get('package')
     if pkg is None:
-        if par['PACKAGE'] == 'MonetDB':
+        if par['PACKAGE'] == 'none':
             if par['M4']:
                 par['PACKAGE'] = 'monetdb4'
             if par['M5']:
@@ -3187,12 +3187,12 @@ def main(argv) :
         ErrXit('"-4/--monetdb4" conflicts with "--package=monetdb5"!')
     if par['M5'] and par['PACKAGE'] == 'monetdb4':
         ErrXit('"-5/--monetdb5" conflicts with "--package=monetdb4"!')
-    if not par['M4'] and not par['M5'] and par['PACKAGE'] not in ('MonetDB', 'java', 'clients'):
+    if not par['M4'] and not par['M5'] and par['PACKAGE'] not in ('common', 'clients', 'gdk', 'java'):
         par['M4'] = par['PACKAGE']     in ['monetdb4', 'pathfinder']
         par['M5'] = par['PACKAGE'] not in ['monetdb4', 'pathfinder']
 
     config = opts.get('config')
-    if config is None and par['PACKAGE'] not in ('MonetDB', 'java', 'clients'):
+    if config is None and par['PACKAGE'] not in ('common', 'clients', 'gdk', 'java'):
         # no --config given on the command line; we assume the M4/M5 default
         # and have monet_options.parse_options() re-parse the command line arguments
         if par['M5']:
@@ -3669,7 +3669,7 @@ def main(argv) :
         env['TST_STATIC'] = ""
         env['TST_ALGEBRA'] = ""
         env['TST_NOALGEBRA'] = ""
-        if par['PACKAGE'] in ('MonetDB', 'java', 'clients'):
+        if par['PACKAGE'] in ('common', 'clients', 'gdk', 'java'):
             if   CONDITIONALS.has_key('BITS32') and CONDITIONALS['BITS32']:
                 env['TST_BITS'] = "32bit"
             elif CONDITIONALS.has_key('BITS64') and CONDITIONALS['BITS64']:
