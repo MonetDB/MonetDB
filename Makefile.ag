@@ -15,7 +15,7 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = buildtools common gdk clients \
+SUBDIRS = buildtools common clients gdk \
 	HAVE_MONETDB4?monetdb4 \
 	HAVE_MONETDB5?monetdb5 \
 	HAVE_SQL?sql \
