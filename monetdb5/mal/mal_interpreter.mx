@@ -879,8 +879,8 @@ q_create( int sz )
 		return NULL;
 	}
 
-	MT_init_lock(q->l, "q_create");
-	MT_init_sema(q->s, 0, "q_create");
+	MT_lock_init(&q->l, "q_create");
+	MT_sema_init(&q->s, 0, "q_create");
 	return q;
 }
 
@@ -897,22 +897,22 @@ q_destroy( queue *q )
 static void
 q_enqueue(queue *q, void *d)
 {
-	MT_set_lock(q->l, "q_enqueue");
+	MT_lock_set(&q->l, "q_enqueue");
 	if (q->last == q->size) {
 		/* enlarge buffer */
 		q->size <<= 1;
 		q->data = GDKrealloc(q->data, sizeof(void*)*q->size);
 	}
 	q->data[q->last++] = d;
-	MT_unset_lock(q->l, "q_enqueue");
-	MT_up_sema(q->s, "q_enqueue");
+	MT_lock_unset(&q->l, "q_enqueue");
+	MT_sema_up(&q->s, "q_enqueue");
 }
 
 static void
 q_requeue(queue *q, void *d)
 {
 	int i;
-	MT_set_lock(q->l, "q_requeue");
+	MT_lock_set(&q->l, "q_requeue");
 	if (q->last == q->size) {
 		/* enlarge buffer */
 		q->size <<= 1;
@@ -922,8 +922,8 @@ q_requeue(queue *q, void *d)
 		q->data[i]= q->data[i-1];
 	q->data[0] = d;
 	q->last++;
-	MT_unset_lock(q->l, "q_requeue");
-	MT_up_sema(q->s, "q_requeue");
+	MT_lock_unset(&q->l, "q_requeue");
+	MT_sema_up(&q->s, "q_requeue");
 }
 
 static void *
@@ -931,13 +931,13 @@ q_dequeue(queue *q)
 {
 	void *r = NULL;
 
-	MT_down_sema(q->s, "q_dequeue");
-	MT_set_lock(q->l, "q_dequeue");
+	MT_sema_down(&q->s, "q_dequeue");
+	MT_lock_set(&q->l, "q_dequeue");
 	assert(q->last > 0);
 	/* LIFO favors garbage collection*/
 	r = q->data[--q->last];
 
-	MT_unset_lock(q->l, "q_dequeue");
+	MT_lock_unset(&q->l, "q_dequeue");
 	return r;
 }
 
@@ -2593,7 +2593,7 @@ It simply skips the barrier block upon return.
 @= timingHndlr
 if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
 	if (lock)
-		MT_set_lock(*lock, "timing");
+		MT_lock_set(&*lock, "timing");
 	mnstr_printf(cntxt->fdout,"= ");	/* single column rendering */
 	if( cntxt->flags & timerFlag){
 		char buf[32];
@@ -2647,7 +2647,7 @@ if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
 	if( cntxt->flags & timerFlag)
 		cntxt->timer = GDKusec();
 	if (lock)
-		MT_unset_lock(*lock, "timing");
+		MT_lock_unset(&*lock, "timing");
 }
 @-
 #endif

@@ -330,10 +330,10 @@ m_export char monet_version[PATHLENGTH];
 Locking in an embedded situation can be relaxed.
 Ideally, they are all removed.
 @h
-#define monet_set_lock(X,Y)   if(GDKprotected) MT_set_lock(X,Y)
-#define monet_unset_lock(X,Y) if(GDKprotected) MT_unset_lock(X,Y)
-#define monet_up_sema(X,Y)    if(GDKprotected) MT_up_sema(X,Y)
-#define monet_down_sema(X,Y)  if(GDKprotected) MT_down_sema(X,Y)
+#define monet_set_lock(X,Y)   if(GDKprotected) MT_lock_set(&X,Y)
+#define monet_unset_lock(X,Y) if(GDKprotected) MT_lock_unset(&X,Y)
+#define monet_up_sema(X,Y)    if(GDKprotected) MT_sema_up(&X,Y)
+#define monet_down_sema(X,Y)  if(GDKprotected) MT_sema_down(&X,Y)
 
 m_export const char *MonetDBversion(void);
 #endif /* _MONET_H_ */
@@ -462,14 +462,14 @@ protectMonet(void)
 		TMDEBUG printf("# protectMonet: upgrade protection %d>0\n", monet_forks);
 		TMDEBUG printf("# Monet locks created\n");
 
-		MT_init_lock(monet_critical, "monet_critical");
-		MT_init_lock(monet_contextLock, "monet_contextLock");
-		MT_init_lock(monet_parserLock, "monet_parserLock");
-		MT_init_lock(monet_notifyLock, "monet_notifyLock");
-		MT_init_lock(monet_voidLock, "monet_voidLock");
-		MT_init_sema(monet_available, 0, "monet_available");
-		MT_init_sema(monet_forksync, 0, "monet_forksync");
-		MT_init_lock(profilerLock, "profilerLock");
+		MT_lock_init(&monet_critical, "monet_critical");
+		MT_lock_init(&monet_contextLock, "monet_contextLock");
+		MT_lock_init(&monet_parserLock, "monet_parserLock");
+		MT_lock_init(&monet_notifyLock, "monet_notifyLock");
+		MT_lock_init(&monet_voidLock, "monet_voidLock");
+		MT_sema_init(&monet_available, 0, "monet_available");
+		MT_sema_init(&monet_forksync, 0, "monet_forksync");
+		MT_lock_init(&profilerLock, "profilerLock");
 		TBL_protect();
 		GDKprotect();
 		monet_needshared = 0;

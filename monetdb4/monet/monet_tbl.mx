@@ -1501,9 +1501,9 @@ TBL_protect(void)
 {
 	TMDEBUG printf("# TBL locks created\n");
 
-	MT_init_lock(TBL_protector, "TBL_protector");
-	MT_init_lock(TBL_writelock, "TBL_writelock");
-	MT_init_sema(TBL_barrier, 0, "TBL_barrier");
+	MT_lock_init(&TBL_protector, "TBL_protector");
+	MT_lock_init(&TBL_writelock, "TBL_writelock");
+	MT_sema_init(&TBL_barrier, 0, "TBL_barrier");
 }
 void
 TBL_init(void)

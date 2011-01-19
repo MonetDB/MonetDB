@@ -197,14 +197,6 @@ typedef pthread_mutex_t MT_Lock;
 #define MT_lock_try(l)       pthread_mutex_trylock((pthread_mutex_t *) l)
 #define MT_lock_dump(l,fp,n) MT_log(/*nothing*/, &l, "MT_dump_lock", n, fp)
 
-/* backward compatability API */
-#define MT_init_lock(l,n)    MT_lock_init(&l,n)
-#define MT_destroy_lock(l)   MT_lock_destroy(&l)
-#define MT_set_lock(l,n)     MT_lock_set(&l,n)
-#define MT_unset_lock(l,n)   MT_lock_unset(&l,n)
-#define MT_try_lock(l)       MT_lock_try(&l)
-#define MT_dump_lock(l,fp,n) MT_lock_dump(&l,fp,n)
-
 gdk_export MT_Lock MT_system_lock;
 
 @- MT Semaphore API
@@ -242,13 +234,6 @@ typedef pthread_sema_t MT_Sema;
 #define MT_sema_down(s,n)    MT_log_trace(pthread_sema_down(s), s, "MT_down_sema", n, stderr, s)
 #define MT_sema_dump(s,fp,n) MT_log(/*nothing*/, s, "MT_dump_sema", n, fp)
 
-/* backward compatability API */
-#define MT_init_sema(s,nr,n) MT_sema_init(&s,nr,n)
-#define MT_destroy_sema(s)   MT_sema_destroy(&s)
-#define MT_up_sema(s,n)      MT_sema_up(&s,n)
-#define MT_down_sema(s,n)    MT_sema_down(&s,n)
-#define MT_dump_sema(s,fp,n) MT_sema_dump(&s,fp,n)
-
 @- MT Conditional Variable API
 @h
 #if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
@@ -269,12 +254,6 @@ typedef pthread_cond_t MT_Cond;
 #define MT_cond_destroy(c)   pthread_cond_destroy((pthread_cond_t*) c)
 #define MT_cond_signal(c,n)  MT_log(pthread_cond_signal((pthread_cond_t*) c), c, "MT_signal_cond", n, stderr)
 #define MT_cond_wait(c,l,n)  MT_log_trace(pthread_cond_wait((pthread_cond_t*) c, (pthread_mutex_t *) l), c, "MT_wait_cond", n, stderr, c)
-
-/* backward compatability API */
-#define MT_init_cond(c,n)    MT_cond_init(&c,n)
-#define MT_destroy_cond(c)   MT_cond_destroy(&c)
-#define MT_signal_cond(c,n)  MT_cond_signal(&c,n)
-#define MT_wait_cond(c,l,n)  MT_cond_wait(&c,&l,n)
 
 gdk_export int MT_check_nr_cores(void);
 

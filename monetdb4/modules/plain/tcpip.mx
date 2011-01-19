@@ -418,7 +418,7 @@ cache_new(str name)
 	c->tpe = TYPE_void;
 	c->conn = -1;
 	c->errbuf = NULL;
-	MT_init_sema(c->barrier,0, "TCPsema");
+	MT_sema_init(&c->barrier,0, "TCPsema");
 	return c;
 }
 
@@ -429,7 +429,7 @@ cache record from the @%cache_idx@ BAT.
 static int
 cache_free(cache_t *c)
 {
-	MT_destroy_sema(c->barrier);
+	MT_sema_destroy(&c->barrier);
 	GDKfree(c);
 	return 0;
 }
@@ -465,7 +465,7 @@ A blocked @%TCPimport@ (if any) can now proceed.
 static int
 cache_fill(cache_t *c, int tpe, union cache_t_val val, int i)
 {
-	MT_set_lock(TCPlock, "cache_fill");
+	MT_lock_set(&TCPlock, "cache_fill");
 	if (c->tpe == TYPE_bat ? c->val.bval != 0 : c->val.pval != 0) {
 		GDKwarning("cache_fill: replacing the value for %s.\n", c->name);
 		if (c->tpe == TYPE_bat) {
@@ -481,9 +481,9 @@ cache_fill(cache_t *c, int tpe, union cache_t_val val, int i)
 		BBPincref(c->val.bval, TRUE);
 	}
 	if (c->locked) {
-		MT_up_sema(c->barrier, "cache_fill");
+		MT_sema_up(&c->barrier, "cache_fill");
 	}
-	MT_unset_lock(TCPlock, "cache_fill");
+	MT_lock_unset(&TCPlock, "cache_fill");
 	return 0;
 }
 
@@ -607,11 +607,11 @@ conn_findByThread(MT_Id pid)
 {
 	int i;
 
-	MT_set_lock(TCPlock, "TCPopen");
+	MT_lock_set(&TCPlock, "TCPopen");
 	for (i = 0; i < MAX_CONN; i++)
 		if (connections[i].waiter && connections[i].waiter->pid == pid)
 			break;
-	MT_unset_lock(TCPlock, "TCPopen");
+	MT_lock_unset(&TCPlock, "TCPopen");
 
 	return i == MAX_CONN ? -1 : i;
 }
@@ -684,9 +684,9 @@ conn_write(int conn_id, int len, char *src, char *msg)
 
 	if (socket_write(connections[conn_id].sock, len, src, msg))
 		return TRUE;
-	MT_set_lock(TCPlock, "TCPopen");
+	MT_lock_set(&TCPlock, "TCPopen");
 	conn_invalidate(conn_id);
-	MT_unset_lock(TCPlock, "TCPopen");
+	MT_lock_unset(&TCPlock, "TCPopen");
 	return FALSE;
 }
 #endif
@@ -866,11 +866,11 @@ All said and done, now we clean up any returned values.
 @- Receiving Values
 Insert an empty value into the cache.
 @c
-				MT_set_lock(TCPlock, "conn_waiter");
+				MT_lock_set(&TCPlock, "conn_waiter");
 				c = cache_find(nm);
 				if (c->tpe == TYPE_bat ? c->val.bval != 0 : c->val.pval != 0)
 					c = cache_new(nm);
-				MT_unset_lock(TCPlock, "conn_waiter");
+				MT_lock_unset(&TCPlock, "conn_waiter");
 
 @- err:<name>:<len>
 Name is the id of a 'mil' request.
@@ -1042,9 +1042,9 @@ Mark the value as totally ready in the cache.
 		}
 		THRdel(thr);
 	}
-	MT_set_lock(TCPlock, "conn_waiter");
+	MT_lock_set(&TCPlock, "conn_waiter");
 	conn_delete(i);
-	MT_unset_lock(TCPlock, "conn_waiter");
+	MT_lock_unset(&TCPlock, "conn_waiter");
 	MT_exit_thread(0);
 }
 
@@ -1162,7 +1162,7 @@ Init the global structures.
 bat *
 TCPprelude(void)
 {
-	MT_init_lock(TCPlock, "TCPlock");
+	MT_lock_init(&TCPlock, "TCPlock");
 	cache_idx = BATnew(TYPE_str, TYPE_ptr, 1000);
 	if (cache_idx == NULL)
 		return NULL;
@@ -1185,7 +1185,7 @@ TCPepilogue(void)
 @-
 kill all listening threads.
 @c
-	MT_set_lock(TCPlock, "TCPepilogue");
+	MT_lock_set(&TCPlock, "TCPepilogue");
 	while (j > 0) {
 		if (ports[i]) {
 			TCPterminate(ports + i);
@@ -1197,18 +1197,18 @@ kill all listening threads.
 now wait till they are all dead
 @c
 	do {
-		MT_unset_lock(TCPlock, "TCPepilogue");
+		MT_lock_unset(&TCPlock, "TCPepilogue");
 		GDKwarning("TCPepilogue: terminate %d listeners\n", listeners);
 		MT_sleep_ms(1000);
-		MT_set_lock(TCPlock, "TCPepilogue");
+		MT_lock_set(&TCPlock, "TCPepilogue");
 	} while (listeners > 0);
 @-
 close all connections, and destroy our global structures.
 @c
 	conn_closeall();
 	BBPreclaim(cache_idx);
-	MT_unset_lock(TCPlock, "TCPepilogue");
-	MT_destroy_lock(TCPlock);
+	MT_lock_unset(&TCPlock, "TCPepilogue");
+	MT_lock_destroy(&TCPlock);
 
 	/* kill the extra asynchronous interpreter thread */
 	putkillRequest();
@@ -1233,7 +1233,7 @@ TCPlisten(int *port)
 @-
 Register ourselves
 @c
-	MT_set_lock(TCPlock, "TCPlisten");
+	MT_lock_set(&TCPlock, "TCPlisten");
 	while (port_no < MAX_LISTENERS && ports[port_no])
 		port_no++;
 	if (port_no == MAX_LISTENERS) {
@@ -1242,7 +1242,7 @@ Register ourselves
 	}
 	ports[port_no] = *port;
 	listeners++;
-	MT_unset_lock(TCPlock, "TCPlisten");
+	MT_lock_unset(&TCPlock, "TCPlisten");
 @-
 create the socket
 @c
@@ -1302,14 +1302,14 @@ This is the special command to shut down the listener.
 @-
 a new connection is born
 @c
-			MT_set_lock(TCPlock, "TCPlisten");
+			MT_lock_set(&TCPlock, "TCPlisten");
 			conn_insert(line, client.sin_port, *port, msgsock);
-			MT_unset_lock(TCPlock, "TCPlisten");
+			MT_lock_unset(&TCPlock, "TCPlisten");
 		}
-	MT_set_lock(TCPlock, "TCPlisten");
+	MT_lock_set(&TCPlock, "TCPlisten");
 	ports[port_no] = 0;
 	listeners--;
-	MT_unset_lock(TCPlock, "TCPlisten");
+	MT_lock_unset(&TCPlock, "TCPlisten");
 	socket_close(sock);
 	GDKfree(line);
 	return GDK_SUCCEED;
@@ -1384,9 +1384,9 @@ TCPopen(int *retval, str address)
 		}
 	}
 
-	MT_set_lock(TCPlock, "TCPopen");
+	MT_lock_set(&TCPlock, "TCPopen");
 	i = conn_find(host, port);
-	MT_unset_lock(TCPlock, "TCPopen");
+	MT_lock_unset(&TCPlock, "TCPopen");
 @-
 If this exact connection already exists, just use it.
 @c
@@ -1394,9 +1394,9 @@ If this exact connection already exists, just use it.
 		*retval = i;
 		return GDK_SUCCEED;
 	}
-	MT_set_lock(TCPlock, "TCPopen");
+	MT_lock_set(&TCPlock, "TCPopen");
 	i = conn_find(host, -1);
-	MT_unset_lock(TCPlock, "TCPopen");
+	MT_lock_unset(&TCPlock, "TCPopen");
 @-
 If the connection exists the other way round, don't try to create it
 @c
@@ -1408,7 +1408,7 @@ If the connection exists the other way round, don't try to create it
 Wait.. try to make the connection.
 @c
 	fd = socket_open(host, port, "TCPopen");
-	MT_set_lock(TCPlock, "TCPopen");
+	MT_lock_set(&TCPlock, "TCPopen");
 @-
 In the meantime, the other way round might have gotten through.  If so, use it.
 @c
@@ -1418,7 +1418,7 @@ In the meantime, the other way round might have gotten through.  If so, use it.
 			socket_close(fd);
 		*retval = i;
 	} else if (fd == 0) {
-		MT_unset_lock(TCPlock, "TCPopen");
+		MT_lock_unset(&TCPlock, "TCPopen");
 		return GDK_FAIL;
 	} else {
 		char buf[64];
@@ -1431,11 +1431,11 @@ We really initiated a new connection
 		if (send(fd, buf, (int) strlen(buf), 0) != (int) strlen(buf)) {
 			GDKsyserror("conn_insert: could not communicate.\n");
 			conn_delete(*retval);
-			MT_unset_lock(TCPlock, "TCPopen");
+			MT_lock_unset(&TCPlock, "TCPopen");
 			return GDK_FAIL;
 		}
 	}
-	MT_unset_lock(TCPlock, "TCPopen");
+	MT_lock_unset(&TCPlock, "TCPopen");
 	return GDK_SUCCEED;
 }
 
@@ -1448,18 +1448,18 @@ TCPclose(int *connect_id	/* pointer to integer. */
 {
 	int ret;
 
-	MT_set_lock(TCPlock, "TCPclose");
+	MT_lock_set(&TCPlock, "TCPclose");
 	ret = conn_kill(*connect_id);
-	MT_unset_lock(TCPlock, "TCPclose");
+	MT_lock_unset(&TCPlock, "TCPclose");
 	return ret;
 }
 
 int
 TCPcloseall(void)
 {
-	MT_set_lock(TCPlock, "TCPcloseall");
+	MT_lock_set(&TCPlock, "TCPcloseall");
 	conn_closeall();
-	MT_unset_lock(TCPlock, "TCPcloseall");
+	MT_lock_unset(&TCPlock, "TCPcloseall");
 	return GDK_SUCCEED;
 }
 
@@ -1604,21 +1604,21 @@ TCPimport(ptr retval,		/* put pointer atom here */
 @-
 Lookup or create (if it did not exist) a cache item by this name.
 @c
-	MT_set_lock(TCPlock, "TCPimport");
+	MT_lock_set(&TCPlock, "TCPimport");
 	c = cache_find(name);
 	if (c->tpe == TYPE_bat ? c->val.bval != 0 : c->val.pval != 0)
 		goto get_direct;
 	c->locked++;
-	MT_unset_lock(TCPlock, "TCPimport");
+	MT_lock_unset(&TCPlock, "TCPimport");
 @-
 Try to pass the barrier. This makes you wait till the BAT arrived.
 @c
-	MT_down_sema(c->barrier, "TCPimport");
+	MT_sema_down(&c->barrier, "TCPimport");
 @-
 Delayed free of the cache item; this occurs when the cache
 was cleared (or your line went down) while you were waiting.
 @c
-	MT_set_lock(TCPlock, "TCPimport");
+	MT_lock_set(&TCPlock, "TCPimport");
 	c->locked--;
 @-
 Raise remote warnings and errors here.
@@ -1635,7 +1635,7 @@ check whether we really have a value
 
 		if (c->locked == 0)
 			cache_free(c);
-		MT_unset_lock(TCPlock, "TCPimport");
+		MT_lock_unset(&TCPlock, "TCPimport");
 		if (c->conn == -1)
 			msg = "c->conn == -1";
 		else if (c->tpe == TYPE_bat)
@@ -1663,9 +1663,9 @@ Copy from the cache into the return value.
 	if (*rm) {
 		cache_del(c);
 	} else if (c->locked) {
-		MT_up_sema(c->barrier, "TCPimport");
+		MT_sema_up(&c->barrier, "TCPimport");
 	}
-	MT_unset_lock(TCPlock, "TCPimport");
+	MT_lock_unset(&TCPlock, "TCPimport");
 	return GDK_SUCCEED;
 }
 
@@ -1698,9 +1698,9 @@ TCPmil(int *conn_id,		/* connection id */
 @- format 'mil:<name>:<mil-expr>'
 Compress the MIL command by removing all newlines and tabs.
 @c
-		MT_set_lock(TCPlock, "TCPmil");
+		MT_lock_set(&TCPlock, "TCPmil");
 		sprintf(buf, "mil:mil%08d:", evalnr++);
-		MT_unset_lock(TCPlock, "TCPmil");
+		MT_lock_unset(&TCPlock, "TCPmil");
 		for (q = buf + strlen(buf); *s; s++) {
 			*q++ = ((*s != '\n') && (*s != '\t')) ? *s : ' ';
 		}
@@ -1770,9 +1770,9 @@ It move the cmd pointer to the "current" position.
 		/* Make an unique name for retrieving the result
 		 * of this expression.
 		 */
-		MT_set_lock(TCPlock, "TCP@1");
+		MT_lock_set(&TCPlock, "TCP@1");
 		eval_id = evalnr++;
-		MT_unset_lock(TCPlock, "TCP@1");
+		MT_lock_unset(&TCPlock, "TCP@1");
 		sprintf(id, "@1%08d", eval_id);
 
 		/* Like TCPmil, we use the "mil:name:expr" protocol.

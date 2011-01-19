@@ -35,9 +35,9 @@ PartID()
 	int p;
 
 	/* needs locks */
-	MT_set_lock(part_lock, "PartID");
+	MT_lock_set(&part_lock, "PartID");
 	p = part++;
-	MT_unset_lock(part_lock, "PartID");
+	MT_lock_unset(&part_lock, "PartID");
 	return p;
 }
 

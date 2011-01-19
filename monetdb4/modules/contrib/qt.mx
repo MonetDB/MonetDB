@@ -247,7 +247,7 @@ qt_prelude(void)
 	zid_t lid;
 	int n;
 
-	MT_init_lock(qt_lock, "qt_lock");
+	MT_lock_init(&qt_lock, "qt_lock");
 
 	levels = (qtlevel_t *) GDKmalloc(nlevels * sizeof(qtlevel_t));
 	assert(levels);
@@ -348,13 +348,13 @@ qt_epilogue(void)
 {
 	int n;
 
-	MT_set_lock(qt_lock, "qt_epilogue");
+	MT_lock_set(&qt_lock, "qt_epilogue");
 	for (n = 0; n != NCROSSES; n++)
 		if (crosses[n].c_crossid > 0) {
-			MT_unset_lock(qt_lock, "qt_epilogue");
+			MT_lock_unset(&qt_lock, "qt_epilogue");
 			return;
 		}
-	MT_destroy_lock(qt_lock);
+	MT_lock_destroy(&qt_lock);
 
 	for (n = 0; n != nlevels; n++) {
 		GDKfree(levels[n].lvl_idtoxy);
@@ -565,7 +565,7 @@ qt_makecross(int *crossid, BAT *qt_hue, BAT *qt_sat, BAT *qt_val, int *cspace)
 
 	/* Now we have all the variables we need for the spot.  Fill them
 	   in a cross data structure. */
-	MT_set_lock(qt_lock, "qt_makecross");
+	MT_lock_set(&qt_lock, "qt_makecross");
 
 	/* Find a free cross */
 	for (n = 0; n != NCROSSES; n++)
@@ -580,7 +580,7 @@ qt_makecross(int *crossid, BAT *qt_hue, BAT *qt_sat, BAT *qt_val, int *cspace)
 	c = &crosses[n];
 	c->c_crossid = crossuniq++;
 
-	MT_unset_lock(qt_lock, "qt_makecross");
+	MT_lock_unset(&qt_lock, "qt_makecross");
 
 	if (debug)
 		printf("makecross: hcenter %d, vcenter %d\n", hcenter, vcenter);
@@ -608,20 +608,20 @@ qt_delcross(int *crossid)
 	cross_t *c;
 	int n;
 
-	MT_set_lock(qt_lock, "qt_delcross");
+	MT_lock_set(&qt_lock, "qt_delcross");
 	for (n = 0; n != NCROSSES; n++)
 		if (*crossid == crosses[n].c_crossid)
 			break;
 
 	if (n == NCROSSES) {
-		MT_unset_lock(qt_lock, "qt_delcross");
+		MT_lock_unset(&qt_lock, "qt_delcross");
 		GDKerror("[qt_delcross]: Cross ID %d does not exist\n", *crossid);
 		return GDK_FAIL;
 	}
 
 	c = &crosses[n];
 	if (c->c_refs > 0) {
-		MT_unset_lock(qt_lock, "qt_delcross");
+		MT_lock_unset(&qt_lock, "qt_delcross");
 
 		GDKerror("[qt_delcross]: Cross %d busy\n", *crossid);
 		return GDK_FAIL;
@@ -632,7 +632,7 @@ qt_delcross(int *crossid)
 	GDKfree(c->c_spot);
 	memset(c, 0, sizeof(cross_t));
 
-	MT_unset_lock(qt_lock, "qt_delcross");
+	MT_lock_unset(&qt_lock, "qt_delcross");
 	return GDK_SUCCEED;
 }
 
@@ -710,25 +710,25 @@ qt_match(int *crossid, oid *ioid, BAT *qt_ioffs, BAT *qt_inum, BAT *qt_id, BAT *
 	if (debug)
 		printf("qt_match: number of features %d (lastid %d)\n", nfeatures, lastid);
 
-	MT_set_lock(qt_lock, "qt_match");
+	MT_lock_set(&qt_lock, "qt_match");
 	for (i = 0; i != NCROSSES; i++)
 		if (*crossid == crosses[i].c_crossid)
 			break;
 
 	if (i == NCROSSES) {
 		GDKerror("[qt_match]: Cross id %d does not exist\n", *crossid);
-		MT_unset_lock(qt_lock, "qt_match");
+		MT_lock_unset(&qt_lock, "qt_match");
 		return GDK_FAIL;
 	}
 
 	c = &crosses[i];
 	if (c->c_cspace != (colorspace_t) *cspace) {
 		GDKerror("[qt_match]: Non matching color space (%d, %d)\n", c->c_cspace, *cspace);
-		MT_unset_lock(qt_lock, "qt_match");
+		MT_lock_unset(&qt_lock, "qt_match");
 		return GDK_FAIL;
 	}
 	c->c_refs++;
-	MT_unset_lock(qt_lock, "qt_match");
+	MT_lock_unset(&qt_lock, "qt_match");
 
 	/* construct an in-core version of the quad tree */
 	quadtree = (gdk_int16 *) GDKmalloc(nfeatures * sizeof(gdk_int16));
@@ -1193,18 +1193,18 @@ qt_cross_pre_select(BAT **candidates, int *crossid, int *cspace, wrd *nimages)
 	bit initial;
 
 	printf("qt_cross_pre_select: Preselecting images\n");
-	MT_set_lock(qt_lock, "qt_cross_pre_select");
+	MT_lock_set(&qt_lock, "qt_cross_pre_select");
 	for (n = 0; n != NCROSSES; n++)
 		if (crosses[n].c_crossid == *crossid)
 			break;
 	if (n == NCROSSES) {
 		GDKerror("[qt_cross_pre_select]: Cannot find cross %d\n", *crossid);
-		MT_unset_lock(qt_lock, "qt_cross_pre_select");
+		MT_lock_unset(&qt_lock, "qt_cross_pre_select");
 		return GDK_FAIL;
 	}
 	c = &crosses[n];
 	c->c_refs++;
-	MT_unset_lock(qt_lock, "qt_cross_pre_select");
+	MT_lock_unset(&qt_lock, "qt_cross_pre_select");
 
 	printf("qt_cross_pre_select: allocating bitvector " SSZFMT "\n", (ssize_t) *nimages);
 	/* Analyze the spot and select the right bit-fields.  Allocate an 
@@ -1288,18 +1288,18 @@ qt_pre_select(BAT **candidates, int *crossid, int *cspace, wrd *nimages)
 	bit initial;
 
 	printf("qt_pre_select: Preselecting images\n");
-	MT_set_lock(qt_lock, "qt_pre_select");
+	MT_lock_set(&qt_lock, "qt_pre_select");
 	for (n = 0; n != NCROSSES; n++)
 		if (crosses[n].c_crossid == *crossid)
 			break;
 	if (n == NCROSSES) {
 		GDKerror("[qt_pre_select]: Cannot find cross %d\n", *crossid);
-		MT_unset_lock(qt_lock, "qt_pre_select");
+		MT_lock_unset(&qt_lock, "qt_pre_select");
 		return GDK_FAIL;
 	}
 	c = &crosses[n];
 	c->c_refs++;
-	MT_unset_lock(qt_lock, "qt_pre_select");
+	MT_lock_unset(&qt_lock, "qt_pre_select");
 
 	printf("qt_pre_select: allocating bitvector " SSZFMT "\n", (ssize_t) *nimages);
 	/* Analyze the spot and select the right bit-fields.  Allocate an 

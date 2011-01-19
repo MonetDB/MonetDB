@@ -3223,7 +3223,7 @@ BBPinitcache(void)
 
 	/* initialize the cache */
 	for (j = 0; j < BATCACHE_MAXBUCKETS; j++) {
-		MT_init_lock(batcache[j].lock, "GDKbinsLock");
+		MT_lock_init(&batcache[j].lock, "GDKbinsLock");
 
 		for (i = 0; i < BATCACHE_SIZE; i++) {
 			batcache[j].elt[i].bid = 0;
@@ -3286,7 +3286,7 @@ batcache_put(batcache_t * bc, int bin, bat bid)
 {
 	/* get a free slot */
 	batcache_int j, i;
-	MT_set_lock(bc->lock, "batcache_put");
+	MT_lock_set(&bc->lock, "batcache_put");
 
 	i = bc->free;
 	if (i >= 0) {
@@ -3314,7 +3314,7 @@ batcache_put(batcache_t * bc, int bin, bat bid)
 	*BBP_logical(bid) = '.';
 	*BBP_logical(-bid) = '.';
 
-	MT_unset_lock(bc->lock, "batcache_put");
+	MT_lock_unset(&bc->lock, "batcache_put");
 
 	return i;
 }
@@ -3326,7 +3326,7 @@ batcache_get(batcache_t * bc, int bin)
 	batcache_int i;
 	bat bid = 0;
 
-	MT_set_lock(bc->lock, "batcache_get");
+	MT_lock_set(&bc->lock, "batcache_get");
 
 	i = bc->batbin[bin];
 	if (i >= 0) {
@@ -3367,7 +3367,7 @@ batcache_get(batcache_t * bc, int bin)
 		/* clearing bits can be done without the lock */
 		BBP_status_off(bid, BBPUNLOADING, "BBPrecycle");
 	}
-	MT_unset_lock(bc->lock, "batcache_get");
+	MT_lock_unset(&bc->lock, "batcache_get");
 
 	return bid;
 }

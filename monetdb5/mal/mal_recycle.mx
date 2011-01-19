@@ -456,7 +456,7 @@ static void RECYCLEspace()
 }
 
 void RECYCLEinit(void){
-	MT_init_lock(recycleLock,"recycleLock");
+	MT_lock_init(&recycleLock,"recycleLock");
 	RECYCLEinitQPat(20);
 }
 

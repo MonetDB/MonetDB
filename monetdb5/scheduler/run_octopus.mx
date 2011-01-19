@@ -356,7 +356,7 @@ static int admitSerialConn(void *cntxt, void *mb, void *stk, void *pci)
 	/* peer uri is the first argument */
 	dburi = *(str*)getArgReference(s, p,p->retc);
 
-	MT_set_lock(s->stklock,"serialConn");
+	MT_lock_set(&s->stklock,"serialConn");
 	i = OCTOPUSfindPeer(dburi);
 	if ( i >= 0 ) {
 		if ( !peers[i].inuse ) {
@@ -380,7 +380,7 @@ static int admitSerialConn(void *cntxt, void *mb, void *stk, void *pci)
 #endif
 	}	
 		
-	MT_unset_lock(s->stklock,"serialConn");
+	MT_lock_unset(&s->stklock,"serialConn");
 
 	return adm;
 }
@@ -404,7 +404,7 @@ static int wrapupSerialConn(void *cntxt, void *mb, void *stk, void *pci)
 	dburi = *(str*)getArgReference(s, p,p->retc);
 	i = OCTOPUSfindPeer(dburi);
 
-	MT_set_lock(s->stklock,"serialConn");
+	MT_lock_set(&s->stklock,"serialConn");
 	if ( i >= 0 ) {
 		peers[i].inuse = 0;
 #ifdef DEBUG_RUN_OCTOPUS
@@ -412,7 +412,7 @@ static int wrapupSerialConn(void *cntxt, void *mb, void *stk, void *pci)
 		printInstruction(((Client)cntxt)->fdout,(MalBlkPtr)mb,0, p, LIST_MAL_ALL);
 #endif
 	}
-	MT_unset_lock(s->stklock,"serialConn");
+	MT_lock_unset(&s->stklock,"serialConn");
 
 	return 0;
 }

@@ -697,7 +697,7 @@ xrpc_handle_wsat_request(mapi_client *mc, struct shttpd_callback_arg *arg)
             } /* else: abort */
             xrpc_commit_active->qid = msg; /* hack: put message in qid for logging */
             xrpc_commit_active = NULL;
-            MT_up_sema(xrpc_commit_sema, "xrpc_handle_wsat_request");
+            MT_sema_up(&xrpc_commit_sema, "xrpc_handle_wsat_request");
         } 
     }
     return GDK_SUCCEED;
@@ -751,7 +751,7 @@ xrpc_fork_mapiclient(struct shttpd_callback_arg *arg)
                 /* override xquery_client_engine (will be restored later) */ 
                 mc->engine = xrpc_client_engine;
                 mc->arg = (char*) arg; /* HACK! pass xrpc arg */
-                MT_up_sema(mc->s, "XRPC"); /* activate the thread */
+                MT_sema_up(&mc->s, "XRPC"); /* activate the thread */
                 return 0;
             }
         }
@@ -855,7 +855,7 @@ CMDxrpc_2pc_wait_for_commit(str qid, str caller, lng* seqnr, ptr* handle) {
     assert(xrpc_commit_active == NULL);
     assert(strcmp(c->qid,qid) == 0);
     xrpc_commit_active = c;
-    MT_down_sema(xrpc_commit_sema, "xrpc_2pc_wait_for_commit");
+    MT_sema_down(&xrpc_commit_sema, "xrpc_2pc_wait_for_commit");
     if (c->s == NULL) {
         GDKerror("XRPC transaction %s aborted!", qid);
         return GDK_FAIL;
@@ -914,7 +914,7 @@ bat* xrpc_prelude(void) {
     @:xrpc_bat(user,str)@
 
     CMDmy_hostname(&xrpc_hostname);
-    MT_init_sema(xrpc_commit_sema,0, "XRPC_COMMIT_SEMA");
+    MT_sema_init(&xrpc_commit_sema,0, "XRPC_COMMIT_SEMA");
     assert(xrpc_hostname);
     return NULL;
 }

@@ -446,7 +446,7 @@ static int mtrace = 0;
 static MT_Lock mbyteslock;
 #define malloc_lock() gdk_set_lock(mbyteslock, "malloc")
 #define	malloc_unlock()	gdk_unset_lock(mbyteslock, "malloc");
-#define malloc_lock_init() MT_init_lock(mbyteslock, "mbyteslock")
+#define malloc_lock_init() MT_lock_init(&mbyteslock, "mbyteslock")
 #else
 #define malloc_lock()
 #define	malloc_unlock()
@@ -1470,19 +1470,19 @@ GDKprotect(void)
 		TMDEBUG printf("# GDKlocks created\n");
 
 		for (i = 0; i <= BBP_BATMASK; i++) {
-			MT_init_lock(GDKbatLock[i].swap, "GDKswapLock");
-			MT_init_lock(GDKbatLock[i].hash, "GDKhashLock");
+			MT_lock_init(&GDKbatLock[i].swap, "GDKswapLock");
+			MT_lock_init(&GDKbatLock[i].hash, "GDKhashLock");
 		}
 		for (i = 0; i <= BBP_THREADMASK; i++) {
-			MT_init_lock(GDKbbpLock[i].alloc, "GDKcacheLock");
-			MT_init_lock(GDKbbpLock[i].trim, "GDKtrimLock");
+			MT_lock_init(&GDKbbpLock[i].alloc, "GDKcacheLock");
+			MT_lock_init(&GDKbbpLock[i].trim, "GDKtrimLock");
 			GDKbbpLock[i].free = 0;
 		}
-		MT_init_lock(GDKnameLock, "GDKnameLock");
-		MT_init_lock(GDKthreadLock, "GDKthreadLock");
-		MT_init_lock(GDKunloadLock, "GDKunloadLock");
-		MT_init_cond(GDKunloadCond, "GDKunloadCond");
-		MT_init_lock(GDKtmLock, "GDKtmLock");
+		MT_lock_init(&GDKnameLock, "GDKnameLock");
+		MT_lock_init(&GDKthreadLock, "GDKthreadLock");
+		MT_lock_init(&GDKunloadLock, "GDKunloadLock");
+		MT_cond_init(&GDKunloadCond, "GDKunloadCond");
+		MT_lock_init(&GDKtmLock, "GDKtmLock");
 		malloc_lock_init();
 		GDKprotected = 1;
 	}

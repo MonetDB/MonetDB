@@ -946,9 +946,9 @@ static sqlid
 next_oid(void)
 {
 	int id = 0;
-	MT_set_lock(bs_lock, "next_oid");
+	MT_lock_set(&bs_lock, "next_oid");
 	id = store_oid++;
-	MT_unset_lock(bs_lock, "next_oid");
+	MT_lock_unset(&bs_lock, "next_oid");
 	return id;
 }
 
@@ -1479,7 +1479,7 @@ static int logging = 0;
 void
 store_exit(void)
 {
-	MT_set_lock(bs_lock, "store_exit");
+	MT_lock_set(&bs_lock, "store_exit");
 
 #ifdef STORE_DEBUG
 	fprintf(stderr, "store exit locked\n");
@@ -1488,15 +1488,15 @@ store_exit(void)
 
 	/* busy wait till the logmanager is ready */
 	while (logging) {
-		MT_unset_lock(bs_lock, "store_exit");
+		MT_lock_unset(&bs_lock, "store_exit");
 		MT_sleep_ms(100);
-		MT_set_lock(bs_lock, "store_exit");
+		MT_lock_set(&bs_lock, "store_exit");
 	}
 
 	if (gtrans) {
-		MT_unset_lock(bs_lock, "store_exit");
+		MT_lock_unset(&bs_lock, "store_exit");
 		sequences_exit();
-		MT_set_lock(bs_lock, "store_exit");
+		MT_lock_set(&bs_lock, "store_exit");
 	}
 	if (spares > 0) 
 		destroy_spare_transactions();
@@ -1515,7 +1515,7 @@ store_exit(void)
 #ifdef STORE_DEBUG
 	fprintf(stderr, "store exit unlocked\n");
 #endif
-	MT_unset_lock(bs_lock, "store_exit");
+	MT_lock_unset(&bs_lock, "store_exit");
 	types_exit();
 }
 
@@ -1543,10 +1543,10 @@ store_manager(void)
 		int res = LOG_OK;
 
 		MT_sleep_ms(30000);
-		MT_set_lock(bs_lock, "store_manager");
+		MT_lock_set(&bs_lock, "store_manager");
 		if (store_nr_active || !active || 
 			logger_funcs.changes() < 1000) {
-			MT_unset_lock(bs_lock, "store_manager");
+			MT_lock_unset(&bs_lock, "store_manager");
 			continue;
 		}
 		logging = 1;
@@ -1555,7 +1555,7 @@ store_manager(void)
 		if (store_funcs.gtrans_update)
 			store_funcs.gtrans_update(gtrans);
 		res = logger_funcs.restart();
-		MT_unset_lock(bs_lock, "store_manager");
+		MT_lock_unset(&bs_lock, "store_manager");
 		if (logging && res == LOG_OK)
 			res = logger_funcs.cleanup();
 		logging = 0;
@@ -1567,14 +1567,14 @@ minmax_manager(void)
 {
 	while (active) {
 		MT_sleep_ms(30000);
-		MT_set_lock(bs_lock, "store_manager");
+		MT_lock_set(&bs_lock, "store_manager");
 		if (store_nr_active || !active) {
-			MT_unset_lock(bs_lock, "store_manager");
+			MT_lock_unset(&bs_lock, "store_manager");
 			continue;
 		}
 		if (store_funcs.gtrans_minmax)
 			store_funcs.gtrans_minmax(gtrans);
-		MT_unset_lock(bs_lock, "store_manager");
+		MT_lock_unset(&bs_lock, "store_manager");
 	}
 }
 
@@ -1582,7 +1582,7 @@ minmax_manager(void)
 void
 store_lock(void)
 {
-	MT_set_lock(bs_lock, "trans_lock");
+	MT_lock_set(&bs_lock, "trans_lock");
 #ifdef STORE_DEBUG
 	fprintf(stderr, "locked\n");
 #endif
@@ -1594,7 +1594,7 @@ store_unlock(void)
 #ifdef STORE_DEBUG
 	fprintf(stderr, "unlocked\n");
 #endif
-	MT_unset_lock(bs_lock, "trans_unlock");
+	MT_lock_unset(&bs_lock, "trans_unlock");
 }
 
 static sql_kc *

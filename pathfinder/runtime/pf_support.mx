@@ -8436,46 +8436,46 @@ int CMDpflock_begin(lng *wsid)
 {
     int mode = ((*wsid) & (3LL << 30)) >> 30;
 
-    MT_set_lock(PF_META_LOCK, "pflock_begin: metaLock for querycount");
+    MT_lock_set(&PF_META_LOCK, "pflock_begin: metaLock for querycount");
     if (nqueries++ == 0) {
-        MT_down_sema(PF_COMMIT_BARRIER, "pflock_begin: commitBarrier");
+        MT_sema_down(&PF_COMMIT_BARRIER, "pflock_begin: commitBarrier");
     }
     if (mode == PF_MODE_DOCMGT) {
         /* multiple docmgts may be active in parallel. the first takes the meta-barrier */
         int take_barrier;
-        MT_set_lock(PF_SHORT_LOCK, "pflock_begin: shortLock for mgmt");
+        MT_lock_set(&PF_SHORT_LOCK, "pflock_begin: shortLock for mgmt");
         take_barrier = (pf_ndocmgt++ == 0);
-        MT_unset_lock(PF_SHORT_LOCK, "pflock_begin: shortLock for mgmt");
+        MT_lock_unset(&PF_SHORT_LOCK, "pflock_begin: shortLock for mgmt");
         if (take_barrier) {
-            MT_down_sema(PF_META_BARRIER, "pflock_begin: metaBarrier");
+            MT_sema_down(&PF_META_BARRIER, "pflock_begin: metaBarrier");
         }
     }
-    MT_unset_lock(PF_META_LOCK, "pflock_begin: metaLock for querycount");
+    MT_lock_unset(&PF_META_LOCK, "pflock_begin: metaLock for querycount");
 
     if (mode == PF_MODE_RDONLY || mode == PF_MODE_DOCMGT)
         return GDK_SUCCEED;
 
     /* we only have update queries below this point; first check if we are in exclusive retry mode */
-    MT_set_lock(PF_SHORT_LOCK, "pflock_begin: shortLock for convoy"); /* protects pf_convoy */
+    MT_lock_set(&PF_SHORT_LOCK, "pflock_begin: shortLock for convoy"); /* protects pf_convoy */
     if (mode == PF_MODE_RETRY) {
         pf_convoy += PF_CONVOY; /* re-try: schedule a convoy */
     } else if (pf_convoy > 0) {
         mode = PF_MODE_RETRY; pf_convoy--; /* convert to exclusive execution due to convoy */
     } 
-    MT_unset_lock(PF_SHORT_LOCK, "pflock_begin: shortLock for convoy");
+    MT_lock_unset(&PF_SHORT_LOCK, "pflock_begin: shortLock for convoy");
 
     if (mode == PF_MODE_UPDATE) {
 	/* update in concurrent mode */
-        MT_set_lock(PF_UPDATE_LOCK, "pflock_begin: updateLock for update");
+        MT_lock_set(&PF_UPDATE_LOCK, "pflock_begin: updateLock for update");
         if (pf_nreaders++ == 0) 
-            MT_down_sema(PF_UPDATE_BARRIER, "pflock_begin: updateBarrier for update");
-        MT_unset_lock(PF_UPDATE_LOCK, "pflock_begin: updateLock for update");
+            MT_sema_down(&PF_UPDATE_BARRIER, "pflock_begin: updateBarrier for update");
+        MT_lock_unset(&PF_UPDATE_LOCK, "pflock_begin: updateLock for update");
     } else {
 	/* update in exclusive mode */
-        MT_down_sema(PF_UPDATE_BARRIER, "pflock_begin: updateBarrier for retry");
-        MT_set_lock(PF_SHORT_LOCK, "pflock_begin: shortLock for writer");
+        MT_sema_down(&PF_UPDATE_BARRIER, "pflock_begin: updateBarrier for retry");
+        MT_lock_set(&PF_SHORT_LOCK, "pflock_begin: shortLock for writer");
         pf_writer = *wsid;
-        MT_unset_lock(PF_SHORT_LOCK, "pflock_begin: shortLock for writer");
+        MT_lock_unset(&PF_SHORT_LOCK, "pflock_begin: shortLock for writer");
     }
     return GDK_SUCCEED;
 }
@@ -8494,10 +8494,10 @@ int CMDpflock_end(lng *wsid)
          */
         if (*wsid == pf_special) {
             pf_special = -1;
-            MT_up_sema(PF_META_BARRIER, "pflock_end: metaBarrier for special docmgt");
+            MT_sema_up(&PF_META_BARRIER, "pflock_end: metaBarrier for special docmgt");
         } else {
             pf_ndocmgt--;
-            MT_up_sema(PF_META_BARRIER, "pflock_end: metaBarrier for docmgt");
+            MT_sema_up(&PF_META_BARRIER, "pflock_end: metaBarrier for docmgt");
         }
     } else {
         /* last active meta-information query releases meta-barrier 
@@ -8509,7 +8509,7 @@ int CMDpflock_end(lng *wsid)
         BUNdelHead(ws_overlaps_ws, wsid, FALSE); /* release all active info on this query */
         others_passed = BUNfnd(BATmirror(ws_overlaps_ws), &nil);
         if (self_passed != BUN_NONE && others_passed == BUN_NONE) {
-            MT_up_sema(PF_META_BARRIER, "pflock_end: metaBarrier");
+            MT_sema_up(&PF_META_BARRIER, "pflock_end: metaBarrier");
         }
 
         /* last active update query releases update-barrier 
@@ -8517,29 +8517,29 @@ int CMDpflock_end(lng *wsid)
         if (pf_writer == *wsid) {
             /* finish in exclusive mode */
             pf_writer = -1;
-            MT_up_sema(PF_UPDATE_BARRIER, "pflock_end: exclusive updateBarrier");
+            MT_sema_up(&PF_UPDATE_BARRIER, "pflock_end: exclusive updateBarrier");
         } else if (mode != PF_MODE_RDONLY) { 
             /* finish in concurrent mode */
             if (--pf_nreaders == 0)
-                MT_up_sema(PF_UPDATE_BARRIER, "pflock_end: updateBarrier");
+                MT_sema_up(&PF_UPDATE_BARRIER, "pflock_end: updateBarrier");
         }
     }
-    MT_set_lock(PF_META_LOCK, "pflock_end: metaLock for querycount");
+    MT_lock_set(&PF_META_LOCK, "pflock_end: metaLock for querycount");
     if (--nqueries == 0) {
-        MT_up_sema(PF_COMMIT_BARRIER, "pflock_end: commitBarrier");
+        MT_sema_up(&PF_COMMIT_BARRIER, "pflock_end: commitBarrier");
     }
-    MT_unset_lock(PF_META_LOCK, "pflock_end: metaLock for querycount");
+    MT_lock_unset(&PF_META_LOCK, "pflock_end: metaLock for querycount");
     return GDK_SUCCEED;
 }
 
 int CMDpflock_trycommit(bit *res) {
     *res = FALSE;
-    MT_set_lock(PF_META_LOCK, "pflock_trycommit: metaLock for querycount");
+    MT_lock_set(&PF_META_LOCK, "pflock_trycommit: metaLock for querycount");
     if (nqueries == 0) {
-        MT_down_sema(PF_COMMIT_BARRIER, "pflock_trycommit: commitBarrier");
+        MT_sema_down(&PF_COMMIT_BARRIER, "pflock_trycommit: commitBarrier");
         *res = TRUE;
     }
-    MT_unset_lock(PF_META_LOCK, "pflock_trycommit: metaLock for querycount");
+    MT_lock_unset(&PF_META_LOCK, "pflock_trycommit: metaLock for querycount");
     return GDK_SUCCEED;
 } 
 
@@ -8552,9 +8552,9 @@ int CMDpflock_meta(lng *wsid)
     lng nil = lng_nil;
     BUN others_passed; /* there are multiple such queries active? */
 
-    MT_set_lock(PF_SHORT_LOCK, "pflock_meta: shortLock precheck");
+    MT_lock_set(&PF_SHORT_LOCK, "pflock_meta: shortLock precheck");
     if (*wsid == pf_special || BUNlocate(ws_overlaps_ws, wsid, &nil) != BUN_NONE) {
-        MT_unset_lock(PF_SHORT_LOCK, "pflock_meta: shortLock precheck");
+        MT_lock_unset(&PF_SHORT_LOCK, "pflock_meta: shortLock precheck");
         return GDK_SUCCEED; /* already got permission to proceed */
     }
     if (mode == PF_MODE_DOCMGT) {
@@ -8563,27 +8563,27 @@ int CMDpflock_meta(lng *wsid)
          */
         int reapply_barrier = (pf_ndocmgt > 1);
         if (reapply_barrier) pf_ndocmgt--; 
-        MT_unset_lock(PF_SHORT_LOCK, "pflock_meta: metaLock precheck");
+        MT_lock_unset(&PF_SHORT_LOCK, "pflock_meta: metaLock precheck");
         if (reapply_barrier) {
-            MT_down_sema(PF_META_BARRIER, "pflock_meta: metaBarrier for convert");
-            MT_set_lock(PF_SHORT_LOCK, "pflock_meta: shortLock special");
+            MT_sema_down(&PF_META_BARRIER, "pflock_meta: metaBarrier for convert");
+            MT_lock_set(&PF_SHORT_LOCK, "pflock_meta: shortLock special");
             pf_special = *wsid;
-            MT_unset_lock(PF_SHORT_LOCK, "pflock_meta: shortLock special");
+            MT_lock_unset(&PF_SHORT_LOCK, "pflock_meta: shortLock special");
         }
         return GDK_SUCCEED;
     }
-    MT_unset_lock(PF_SHORT_LOCK, "pflock_meta: shortLock precheck");
+    MT_lock_unset(&PF_SHORT_LOCK, "pflock_meta: shortLock precheck");
 
-    MT_set_lock(PF_META_LOCK, "pflock_meta: metaLock");
-    MT_set_lock(PF_SHORT_LOCK, "pflock_meta: shortLock insert");
+    MT_lock_set(&PF_META_LOCK, "pflock_meta: metaLock");
+    MT_lock_set(&PF_SHORT_LOCK, "pflock_meta: shortLock insert");
     others_passed = BUNfnd(BATmirror(ws_overlaps_ws), &nil);
     BUNins(ws_overlaps_ws, wsid, &nil, FALSE);
-    MT_unset_lock(PF_SHORT_LOCK, "pflock_meta: shortLock insert");
+    MT_lock_unset(&PF_SHORT_LOCK, "pflock_meta: shortLock insert");
     if (others_passed == BUN_NONE) {
         /* first query with meta function: get barrier */
-        MT_down_sema(PF_META_BARRIER, "pflock_meta: metaBarrier");
+        MT_sema_down(&PF_META_BARRIER, "pflock_meta: metaBarrier");
     }
-    MT_unset_lock(PF_META_LOCK, "pflock_meta: metaLock");
+    MT_lock_unset(&PF_META_LOCK, "pflock_meta: metaLock");
     return GDK_SUCCEED;
 }
 
@@ -8881,17 +8881,17 @@ xquery_print_doc_main (str mode, BAT* ws, str docName)
 }
 
 bat* pf_support_prelude() {
-    MT_init_lock(pf_runtime_lock[0], "PF_SHORT_LOCK");
-    MT_init_lock(pf_runtime_lock[1], "PF_WAL_LOCK");
-    MT_init_lock(pf_runtime_lock[2], "PF_FREE_LOCK");
-    MT_init_lock(pf_runtime_lock[3], "PF_EXTEND_LOCK");
-    MT_init_lock(pf_runtime_lock[4], "PF_UPDATE_LOCK");
-    MT_init_lock(pf_runtime_lock[5], "PF_META_LOCK");
-    MT_init_lock(pf_runtime_lock[6], "PF_XRPC_LOCK");
-    MT_init_sema(pf_runtime_sema[0],1, "PF_META_BARRIER");
-    MT_init_sema(pf_runtime_sema[1],1, "PF_UPDATE_BARRIER");
-    MT_init_sema(pf_runtime_sema[2],1, "PF_EXTEND_BARRIER");
-    MT_init_sema(pf_runtime_sema[3],1, "PF_COMMIT_BARRIER");
+    MT_lock_init(&pf_runtime_lock[0], "PF_SHORT_LOCK");
+    MT_lock_init(&pf_runtime_lock[1], "PF_WAL_LOCK");
+    MT_lock_init(&pf_runtime_lock[2], "PF_FREE_LOCK");
+    MT_lock_init(&pf_runtime_lock[3], "PF_EXTEND_LOCK");
+    MT_lock_init(&pf_runtime_lock[4], "PF_UPDATE_LOCK");
+    MT_lock_init(&pf_runtime_lock[5], "PF_META_LOCK");
+    MT_lock_init(&pf_runtime_lock[6], "PF_XRPC_LOCK");
+    MT_sema_init(&pf_runtime_sema[0],1, "PF_META_BARRIER");
+    MT_sema_init(&pf_runtime_sema[1],1, "PF_UPDATE_BARRIER");
+    MT_sema_init(&pf_runtime_sema[2],1, "PF_EXTEND_BARRIER");
+    MT_sema_init(&pf_runtime_sema[3],1, "PF_COMMIT_BARRIER");
     ws_overlaps_ws = BATnew(TYPE_lng, TYPE_lng, 1024);
     BBPrename(ws_overlaps_ws->batCacheid, "ws_overlaps_ws");
     (void) BATprepareHash(ws_overlaps_ws);
@@ -8903,17 +8903,17 @@ bat* pf_support_prelude() {
 }
 
 void pf_support_epilogue() {
-    MT_destroy_lock(pf_runtime_lock[0]);
-    MT_destroy_lock(pf_runtime_lock[1]);
-    MT_destroy_lock(pf_runtime_lock[2]);
-    MT_destroy_lock(pf_runtime_lock[3]);
-    MT_destroy_lock(pf_runtime_lock[4]);
-    MT_destroy_lock(pf_runtime_lock[5]);
-    MT_destroy_lock(pf_runtime_lock[6]);
-    MT_destroy_sema(pf_runtime_sema[0]);
-    MT_destroy_sema(pf_runtime_sema[1]);
-    MT_destroy_sema(pf_runtime_sema[2]);
-    MT_destroy_sema(pf_runtime_sema[3]);
+    MT_lock_destroy(&pf_runtime_lock[0]);
+    MT_lock_destroy(&pf_runtime_lock[1]);
+    MT_lock_destroy(&pf_runtime_lock[2]);
+    MT_lock_destroy(&pf_runtime_lock[3]);
+    MT_lock_destroy(&pf_runtime_lock[4]);
+    MT_lock_destroy(&pf_runtime_lock[5]);
+    MT_lock_destroy(&pf_runtime_lock[6]);
+    MT_sema_destroy(&pf_runtime_sema[0]);
+    MT_sema_destroy(&pf_runtime_sema[1]);
+    MT_sema_destroy(&pf_runtime_sema[2]);
+    MT_sema_destroy(&pf_runtime_sema[3]);
 }
 
 int

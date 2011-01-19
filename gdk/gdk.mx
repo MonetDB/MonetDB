@@ -2745,12 +2745,12 @@ active.
 @{
 @h
 */
-#define gdk_set_lock(X,Y)	if (GDKprotected) MT_set_lock(X,Y)
-#define gdk_unset_lock(X,Y)	if (GDKprotected) MT_unset_lock(X,Y)
-#define gdk_up_sema(X,Y)	if (GDKprotected) MT_up_sema(X,Y)
-#define gdk_down_sema(X,Y)	if (GDKprotected) MT_down_sema(X,Y)
-#define gdk_signal_cond(X,Y)	if (GDKprotected) MT_signal_cond(X,Y)
-#define gdk_wait_cond(X,Y,Z)	if (GDKprotected) MT_wait_cond(X,Y,Z)
+#define gdk_set_lock(X,Y)	if (GDKprotected) MT_lock_set(&X,Y)
+#define gdk_unset_lock(X,Y)	if (GDKprotected) MT_lock_unset(&X,Y)
+#define gdk_up_sema(X,Y)	if (GDKprotected) MT_sema_up(&X,Y)
+#define gdk_down_sema(X,Y)	if (GDKprotected) MT_sema_down(&X,Y)
+#define gdk_signal_cond(X,Y)	if (GDKprotected) MT_cond_signal(&X,Y)
+#define gdk_wait_cond(X,Y,Z)	if (GDKprotected) MT_cond_wait(&X,&Y,Z)
 /*
 @}
 @-

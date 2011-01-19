@@ -44,9 +44,9 @@ HostID()
         int p;
 
         /* needs locks */
-        MT_set_lock(host_lock, "HostID");
+        MT_lock_set(&host_lock, "HostID");
         p = host++;
-        MT_unset_lock(host_lock, "HostID");
+        MT_lock_unset(&host_lock, "HostID");
         return p;
 }
 

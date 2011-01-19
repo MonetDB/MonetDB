@@ -212,7 +212,7 @@ init_client_cache(void)
 {
 	int i;
 
-	MT_init_lock(mapi_cache_lock, "mapi_cache_lock");
+	MT_lock_init(&mapi_cache_lock, "mapi_cache_lock");
 
 	for(i = 0; i < MAX_FRONTENDS; i++)
 		mapi_frontends[i] = 0;
@@ -233,17 +233,17 @@ exit_client_cache(void)
 {
 	int i;
 
-	MT_set_lock(mapi_cache_lock, "exit_client_cache");
+	MT_lock_set(&mapi_cache_lock, "exit_client_cache");
 	for(i=0; i<MAXCLIENTS; i++) { 
 		if (mapi_clients[i].frontend != MAX_FRONTENDS) { 
 			/* no active client killing jet */
 			mapi_client *fc = mapi_clients+i;
 			
 			fc->inuse = 2;
-			MT_up_sema(fc->s, "exit_client_cache");
+			MT_sema_up(&fc->s, "exit_client_cache");
 		}
 	}
-	MT_unset_lock(mapi_cache_lock, "exit_client_cache");
+	MT_lock_unset(&mapi_cache_lock, "exit_client_cache");
 	/* wait for clients to finish */
 	while(nr_mapi_clients > 0) 
 		MT_sleep_ms(1000);	
@@ -367,11 +367,11 @@ mapi_client_free(mapi_client *fc)
 {
 	mapi_frontend *f = mapi_frontends[fc->frontend];
 
-	MT_destroy_sema(fc->s);
+	MT_sema_destroy(&fc->s);
 	fc->c->mode = BLOCKMODE;
 	closeClient(fc->c, 0);
 
-	MT_set_lock(mapi_cache_lock, "mapi_client_free");
+	MT_lock_set(&mapi_cache_lock, "mapi_client_free");
 	f->clients --;
 	nr_mapi_clients --;
 
@@ -379,7 +379,7 @@ mapi_client_free(mapi_client *fc)
 	fc->frontend = MAX_FRONTENDS;
 	fc->inuse = 0;
 
-	MT_unset_lock(mapi_cache_lock, "mapi_client_free");
+	MT_lock_unset(&mapi_cache_lock, "mapi_client_free");
 	if (fc->thread)
 		THRdel(fc->thread); 
 }
@@ -397,7 +397,7 @@ mapi_client_alloc_(mapi_frontend *f, Client c, stream* s)
 	mc->inuse = 1;
 	mc->c = c;
 	mc->t = ~(MT_Id)0;
-	MT_init_sema(mc->s, 0, "mapi_client_sema");
+	MT_sema_init(&mc->s, 0, "mapi_client_sema");
 	mc->lastvar = monet_cntxt[mc->stk].var;
 	if ((err = f->f_alloc(mc)) != NULL){
 		if (s) {
@@ -418,13 +418,13 @@ mapi_client_alloc(mapi_frontend *f, Client father, Cntxt stk, stream *s)
 	char *mp = GDKgetenv("monet_prompt");
 	Client c = NULL;
 	
-	MT_set_lock(mapi_cache_lock, "mapi_client_alloc");
+	MT_lock_set(&mapi_cache_lock, "mapi_client_alloc");
  	c = initClient("mapi", mp, FALSE);
 	if (c) {
 		f->clients ++;
 		nr_mapi_clients ++;
 	}
-	MT_unset_lock(mapi_cache_lock, "mapi_client_alloc");
+	MT_lock_unset(&mapi_cache_lock, "mapi_client_alloc");
 	if (c == 0) {
 		if (s) {
 			mnstr_printf(s, "!ERROR: failed to init client\n");
@@ -448,7 +448,7 @@ mapi_client_find(mapi_frontend *f )
 	mapi_client *res = NULL;
 	int i = 0;
 
-	MT_set_lock(mapi_cache_lock, "mapi_client_find");
+	MT_lock_set(&mapi_cache_lock, "mapi_client_find");
 	for (i=1; i<MAXCLIENTS; i++) {
 		mapi_client *mc = mapi_clients+i;
 		
@@ -458,7 +458,7 @@ mapi_client_find(mapi_frontend *f )
 			break;
 		}
 	}
-	MT_unset_lock(mapi_cache_lock, "mapi_client_find");
+	MT_lock_unset(&mapi_cache_lock, "mapi_client_find");
 	return res;
 }
 
@@ -468,7 +468,7 @@ mapi_client_get(mapi_frontend *f, Client c )
 	mapi_client *mc, *res = NULL;
 	int i = (int) (c - monet_clients);
 
-	MT_set_lock(mapi_cache_lock, "mapi_client_get");
+	MT_lock_set(&mapi_cache_lock, "mapi_client_get");
 	mc = mapi_clients+i;
 	mc->c = c;
 	mc->thread = THRget(THRgettid());
@@ -479,7 +479,7 @@ mapi_client_get(mapi_frontend *f, Client c )
 	} else {
 		res = mapi_client_alloc_(f, c, c->fdout);
 	}
-	MT_unset_lock(mapi_cache_lock, "mapi_client_get");
+	MT_lock_unset(&mapi_cache_lock, "mapi_client_get");
 	return res;
 }
 
@@ -491,7 +491,7 @@ mapi_client_engine(void *FC )
 
 	fc->thread = THRnew(MT_getpid(), "mapi_client_engine"); 
 	while(fc->thread) {
-		MT_down_sema(fc->s, "mapi_client_engine"); /* wait for work */
+		MT_sema_down(&fc->s, "mapi_client_engine"); /* wait for work */
 		if (fc->inuse == 2)
 			break;
 
@@ -950,7 +950,7 @@ Get the new information for the server socket and start listening.
 				fc->t = ~(MT_Id) 0;
 			}
 			/* (re)activate thread */
-			MT_up_sema(fc->s, "MAPIlisten");
+			MT_sema_up(&fc->s, "MAPIlisten");
 			PARDEBUG THRprintf(GDKerr, "MAPIlisten:client accepted %d\n", msgsock);
 		}
 	} while (1);

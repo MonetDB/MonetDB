@@ -415,7 +415,7 @@ enum_load(int *retval, BAT *h)
 {
 	int i;
 
-	MT_set_lock(enum_lock, "enum_load");
+	MT_lock_set(&enum_lock, "enum_load");
 	for (i = 0; i < MAX_ENUM; i++) {
 		if (enum_map[i] == 0) {
 			char *name = BATgetId(h);
@@ -429,18 +429,18 @@ enum_load(int *retval, BAT *h)
 				ATOMproperty(name, "tostr", (GDKfcn) enum_conv[i].tosht, 0);
 				ATOMproperty(name, "fromstr", (GDKfcn) enum_conv[i].fromsht, 0);
 			} else {
-				MT_unset_lock(enum_lock, "enum_load");
+				MT_lock_unset(&enum_lock, "enum_load");
 				GDKerror("enum_load: too many values (" BUNFMT ") for enum types.\n", BATcount(h));
 				return GDK_FAIL;
 			}
 			enum_tpe[i] = *retval = ATOMindex(name);
 			enum_map[i] = h->batCacheid;
 			BBPfix(h->batCacheid);
-			MT_unset_lock(enum_lock, "enum_load");
+			MT_lock_unset(&enum_lock, "enum_load");
 			return GDK_SUCCEED;
 		}
 	}
-	MT_unset_lock(enum_lock, "enum_load");
+	MT_lock_unset(&enum_lock, "enum_load");
 	GDKerror("enum_load: too many active enum types.\n");
 	return GDK_FAIL;
 }
@@ -465,13 +465,13 @@ int
 enum_destroy(int *enum_t)
 {
 	ENUM_CHK(*enum_t, "drop");
-	MT_set_lock(enum_lock, "enum_destroy");
+	MT_lock_set(&enum_lock, "enum_destroy");
 	ATOMdelete(*enum_t);
 	BBPunfix(enum_map[xx]);
 	enum_histo[xx] = 0;
 	enum_map[xx] = 0;
 	enum_tpe[xx] = 0;
-	MT_unset_lock(enum_lock, "enum_destroy");
+	MT_lock_unset(&enum_lock, "enum_destroy");
 	return GDK_SUCCEED;
 }
 
@@ -852,7 +852,7 @@ enum_ishisto(bit *ret, int *enum_t, BAT *column)
 bat *
 enum_prelude(void)
 {
-	MT_init_lock(enum_lock, "enum_lock");
+	MT_lock_init(&enum_lock, "enum_lock");
 	return NULL;
 }
 
@@ -861,7 +861,7 @@ enum_epilogue(void)
 {
 	int xx;
 
-	MT_destroy_lock(enum_lock);
+	MT_lock_destroy(&enum_lock);
 	for (xx = 0; xx < MAX_ENUM; xx++) {
 		if (enum_map[xx]) {
 			BBPunfix(enum_map[xx]);

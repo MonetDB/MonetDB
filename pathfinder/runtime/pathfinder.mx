@@ -4754,7 +4754,7 @@ xquery_compile_exec(xquery_client *ctx,
     if ((GDKgetenv("standoff") != NULL) && (strcmp(GDKgetenv("standoff"),"enabled") == 0))
         options |= COMPILE_OPTION_STANDOFF;
 
-    MT_set_lock(pf_compiler_lock, "xquery_compile_exec");
+    MT_lock_set(&pf_compiler_lock, "xquery_compile_exec");
     if (is_url) {
         int l = strlen(xquery);
         is_mil = (l > 4 && xquery[l-4] == '.' && xquery[l-3] == 'm' && xquery[l-2] == 'i' && xquery[l-1] == 'l');
@@ -4849,7 +4849,7 @@ xquery_compile_exec(xquery_client *ctx,
             len = p - err;
         }
     }
-    MT_unset_lock(pf_compiler_lock, "xquery_compile_exec");
+    MT_lock_unset(&pf_compiler_lock, "xquery_compile_exec");
     
     /* write errors and debug info on client stream, however, in case of
      * XRPC, we leave the error message to the XRPC receiver, so that it
@@ -5153,7 +5153,7 @@ xquery_function_call(xquery_client *ctx,
         
     /* generate small MIL query that calls the function PROC */
     if (fun->mil == NULL) {
-        MT_set_lock(pf_cache_lock, "xquery_function_call");
+        MT_lock_set(&pf_cache_lock, "xquery_function_call");
         if (fun->mil == NULL) {
             int ret;
 
@@ -5191,7 +5191,7 @@ xquery_function_call(xquery_client *ctx,
             *cur = 0;
             fun->mil = GDKstrdup(mil);
         }
-        MT_unset_lock(pf_cache_lock, "xquery_function_call");
+        MT_lock_unset(&pf_cache_lock, "xquery_function_call");
     }
     if (fun->mil == NULL)
        return "xquery_function_call: malloc failed.\n";
@@ -5390,14 +5390,14 @@ xquery_module_load(xquery_client *ctx,
             return "xquery_module_load: could not allocate.\n";
         mod->def = NULL;
 
-        MT_set_lock(pf_module_lock, "xquery_module_load");
+        MT_lock_set(&pf_module_lock, "xquery_module_load");
         for(def = xquery_compiled_modules; def; def = def->next) 
             if (strcmp(def->location, location) == 0) break;
 
         if (def == NULL){
             mod->def = xquery_module_compile(ctx, location);
         }
-        MT_unset_lock(pf_module_lock, "xquery_module_load");
+        MT_lock_unset(&pf_module_lock, "xquery_module_load");
 
         /* if a compiled module was found, we still need to execute it */
         if (def && xquery_mil_exec(ctx, def->prologue))
@@ -5432,7 +5432,7 @@ xquery_client_flushall(void)
 {
     int i, wait = 100;
     while(wait) {
-        MT_set_lock(pf_cache_lock, "xquery_client_flushall");
+        MT_lock_set(&pf_cache_lock, "xquery_client_flushall");
         i = active_clients("xquery");
         if (i == 0) {
             /* ok, no xquery clients are active */
@@ -5446,7 +5446,7 @@ xquery_client_flushall(void)
             PFurlcache_flush();
             wait = 0;
         }
-        MT_unset_lock(pf_cache_lock, "xquery_client_flushall");
+        MT_lock_unset(&pf_cache_lock, "xquery_client_flushall");
         MT_sleep_ms(wait);
     }
 }
@@ -5742,7 +5742,7 @@ xquery_client_reset(xquery_client *ctx, char *err)
         *ctx->xrpc_timeout = 30000LL;
     }
 
-    MT_set_lock(pf_cache_lock, "xquery_client_reset");
+    MT_lock_set(&pf_cache_lock, "xquery_client_reset");
     /* only deactivate the loaded modules */
     xquery_loaded_module *mod= ctx->loaded_modules; 
     while(mod) {
@@ -5750,7 +5750,7 @@ xquery_client_reset(xquery_client *ctx, char *err)
             mod->ns = NULL; 
             mod = mod->next;
     }
-    MT_unset_lock(pf_cache_lock, "xquery_client_reset");
+    MT_lock_unset(&pf_cache_lock, "xquery_client_reset");
 
     if (err) 
         fprintf(stderr, "xquery_server: client %d %s\n", ctx->stk, err);
@@ -6432,16 +6432,16 @@ CMDxquery(Cntxt stk,
     CNTXTclient(stk, &c);
     ctx = xquery_client_new(c->stk);
     ctx->fderr = GDKerr;
-    MT_set_lock(pf_cache_lock, "CMDxquery");
+    MT_lock_set(&pf_cache_lock, "CMDxquery");
     err = xquery_client_alloc_(ctx);
     if (!err)
         err = xquery_client_init_(ctx);
-    MT_unset_lock(pf_cache_lock, "CMDxquery");
+    MT_lock_unset(&pf_cache_lock, "CMDxquery");
 
     if (err == NULL && *is_url == TRUE) { 
-        MT_set_lock(pf_compiler_lock, "CMDxquery");
+        MT_lock_set(&pf_compiler_lock, "CMDxquery");
         PFURLCACHE("CMDxquery", xquery, 1);
-        MT_unset_lock(pf_compiler_lock, "CMDxquery");
+        MT_lock_unset(&pf_compiler_lock, "CMDxquery");
     }
     err = xquery_change_genType(ctx, mode);
     if (err == NULL) {
@@ -6474,9 +6474,9 @@ CMDxquery(Cntxt stk,
             err = "CMDxquery: failed to allocate streambuffer";
         }
     }
-    MT_set_lock(pf_cache_lock, "CMDxquery");
+    MT_lock_set(&pf_cache_lock, "CMDxquery");
     xquery_client_free_(ctx);
-    MT_unset_lock(pf_cache_lock, "CMDxquery");
+    MT_lock_unset(&pf_cache_lock, "CMDxquery");
     if (err) {
         GDKerror((err==xquery_nondescriptive_error)?res->val.sval:err);
         VALclear(res);
@@ -6608,9 +6608,9 @@ xquery_prelude(void)
         GDKsetenv("xrpc_docroot",xrpc_docroot);
     }
 
-    MT_init_lock(pf_compiler_lock, "pf_compiler_lock");
-    MT_init_lock(pf_module_lock, "pf_module_lock");
-    MT_init_lock(pf_cache_lock, "pf_cache_lock");
+    MT_lock_init(&pf_compiler_lock, "pf_compiler_lock");
+    MT_lock_init(&pf_module_lock, "pf_module_lock");
+    MT_lock_init(&pf_cache_lock, "pf_cache_lock");
 
     xmlMemSetup(GDKfree, GDKmalloc, GDKrealloc, GDKstrdup);
     xmlInitParser();
@@ -6626,7 +6626,7 @@ void
 xquery_epilogue(void)
 {
     xquery_client_flushall();
-    MT_destroy_lock(pf_compiler_lock);
-    MT_destroy_lock(pf_cache_lock);
+    MT_lock_destroy(&pf_compiler_lock);
+    MT_lock_destroy(&pf_cache_lock);
 }
 /* vim:set shiftwidth=4 expandtab: */
