@@ -3072,7 +3072,7 @@ def main(argv) :
     cmd_options = [
         # long name, short name, GDK option, argument, comment
         ('package', 'p', 'package', '<package>',
-         "package to be tested, e.g.:\nmonetdb(|4|5), (java|clients|template|sql|pathfinder|geom);\ndefault: %s" % par['PACKAGE']),
+         "package to be tested, e.g.:\nmonetdb[45], (java|clients|template|sql|pathfinder|geom);\ndefault: %s" % par['PACKAGE']),
         ('monetdb4', '4', 'monetdb4', None,
          "use Mserver of MonetDB Version 4 (default with <package> in {monetdb4, pathfinder})"),
         ('monetdb5', '5', 'monetdb5', None,
