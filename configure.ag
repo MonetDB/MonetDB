@@ -657,6 +657,7 @@ if test "x$have_pcre" = xyes; then
 	fi
 	AC_DEFINE(HAVE_LIBPCRE, 1, [Define if you have the pcre library])
 fi
+AM_CONDITIONAL(HAVE_PCRE, test x"$have_pcre" != xno)
 case "$enable_monetdb5-$have_pcre" in
 yes-no)
 	AC_MSG_ERROR([PCRE library not found but required for MonetDB5])
@@ -665,6 +666,7 @@ auto-no)
 	enable_monetdb5=no
 	;;
 esac
+
 
 PKG_CHECK_EXISTS([libxml-2.0], [have_libxml2="yes"], [have_libxml2="no"])
 if test x"$have_libxml2" = x"yes" ; then

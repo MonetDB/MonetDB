@@ -228,6 +228,7 @@ CONDITIONALS = {
     'HAVE_NETCDF'          : "@HAVE_NETCDF_FALSE@",
     'HAVE_ODBC'            : "@HAVE_ODBC_FALSE@",
     'HAVE_PATHFINDER'      : "@HAVE_PATHFINDER_FALSE@",
+    'HAVE_PCRE'            : "@HAVE_PCRE_FALSE@",
     'HAVE_PFTIJAH'         : "@HAVE_PFTIJAH_FALSE@",
     'HAVE_PROBXML'         : "@HAVE_PROBXML_FALSE@",
     'HAVE_RAPTOR'          : "@HAVE_RAPTOR_FALSE@",
