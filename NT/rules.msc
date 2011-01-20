@@ -427,10 +427,10 @@ PHP_LIBS = "$(PHP_INSTDIR)\php5embed.lib"
 CONFIG_H = monetdb_config.h
 
 {$(SRCDIR)}.mx.h:
-	$(MX) $(MXFLAGS) -x h $<
+	$(MX) $(MXFLAGS) -l -x h $<
 
 .mx.h:
-	$(MX) $(MXFLAGS) -x h $<
+	$(MX) $(MXFLAGS) -l -x h $<
 
 {$(SRCDIR)}.mx.c:
 	$(MX) $(MXFLAGS) -x c $<
@@ -439,10 +439,10 @@ CONFIG_H = monetdb_config.h
 	$(MX) $(MXFLAGS) -x c $<
 
 {$(SRCDIR)}.mx.m:
-	$(MX) $(MXFLAGS) -x m $<
+	$(MX) $(MXFLAGS) -l -x m $<
 
 .mx.m:
-	$(MX) $(MXFLAGS) -x m $<
+	$(MX) $(MXFLAGS) -l -x m $<
 
 .m.mil: 
 	$(MEL) -c $(CONFIG_H) $(INCLUDES) -mil $*.m > $@
@@ -472,20 +472,20 @@ CONFIG_H = monetdb_config.h
 	$(MX) $(MXFLAGS) -l -x mil $<
 
 {$(SRCDIR)}.mx.mal:
-	$(MX) $(MXFLAGS) -x mal $<
+	$(MX) $(MXFLAGS) -l -x mal $<
 	if not exist .libs $(MKDIR) .libs
 	$(INSTALL) $@ .libs\$@
 
 .mx.mal:
-	$(MX) $(MXFLAGS) -x mal $<
+	$(MX) $(MXFLAGS) -l -x mal $<
 	if not exist .libs $(MKDIR) .libs
 	$(INSTALL) $@ .libs\$@
 
 {$(SRCDIR)}.mx.sql:
-	$(MX) $(MXFLAGS) -x sql $<
+	$(MX) $(MXFLAGS) -l -x sql $<
 
 .mx.sql:
-	$(MX) $(MXFLAGS) -x sql $<
+	$(MX) $(MXFLAGS) -l -x sql $<
 
 {$(SRCDIR)}.mx.y:
 	$(MX) $(MXFLAGS) -x y $<

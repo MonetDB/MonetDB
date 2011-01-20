@@ -108,7 +108,7 @@ BURG = $(top_builddir)/buildtools/burg/burg
 	$(MX) $(MXFLAGS) -x L $<
 
 %.m: %.mx
-	$(MX) $(MXFLAGS) -x m $<
+	$(MX) $(MXFLAGS) -l -x m $<
 
 %.mil: %.m %.tmpmil $(MEL)
 	$(MEL) -c $(CONFIG_H) $(INCLUDES) -mil $*.m > $@
@@ -122,16 +122,16 @@ BURG = $(top_builddir)/buildtools/burg/burg
 	$(MEL) -c $(CONFIG_H) $(INCLUDES) -mil $*.m > $@
 
 %.mil: %.mx
-	$(MX) $(MXFLAGS) -x mil $<
+	$(MX) $(MXFLAGS) -l -x mil $<
 
 %.mal: %.mx
-	$(MX) $(MXFLAGS) -x mal $<
+	$(MX) $(MXFLAGS) -l -x mal $<
 
 %.sql: %.mx
-	$(MX) $(MXFLAGS) -x sql $<
+	$(MX) $(MXFLAGS) -l -x sql $<
 
 %: %.mx 
-	$(MX) $(MXFLAGS) -x sh $<
+	$(MX) $(MXFLAGS) -l -x sh $<
 	chmod a+x $@
 
 %.proto.h: %.m $(MEL)
