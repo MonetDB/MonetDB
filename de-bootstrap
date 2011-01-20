@@ -43,10 +43,15 @@ function RM () {
 		G='/$|'
 	fi
 
+	if [ $# -eq 0 ]; then
+		# nothing to do
+		return
+	fi
+
 	x=N
-	n=`ls -A $L $* 2>/dev/null | egrep -v "^total [0-9]*$|^$|^[^ ]*:$" | wc -l | sed 's|^ *||'` 
+	n=`ls -Ad $L $* 2>/dev/null | egrep -v "^total [0-9]*$|^$|^[^ ]*:$" | wc -l | sed 's|^ *||'` 
 	if [ $n != '0' ]; then
-		ls -lAF $L $* 2>/dev/null | egrep -v "$G^total [0-9]*$|^$" 
+		ls -lAFd $L $* 2>/dev/null | egrep -v "$G^total [0-9]*$|^$" 
 		echo -e "Delete these $n files/directories? (y/N) \c"
 		read x 
 		if [ "x$x" = 'xy' ]; then
@@ -65,9 +70,4 @@ MonetDB'\''s Mercurial (HG) source clone.
 	exit 1
 fi
 
-RM -rf `find .[^.]* [^_]* -name Makefile.\* -o -name \*.pyc | egrep -v '\.(ag|PL)$'` aclocal.m4 acout.in autom4te.cache buildtools/conf/{config.{guess,sub},install-sh,ltmain.sh,l[ti]*.m4,missing,ylwrap} configure{,.ac} {doc,install}.lst monetdb_config.h.in
-echo '
-It might be a good idea to run "hg status -d", now,
-to check whether required files have been removed accidentally.
-If so, these files can be restored by "hg revert <file>".
-'
+RM -rf `hg purge --all -p -I{\*\*Makefile.\*,\*\*.pyc,aclocal.m4,acout.in,autom4te.cache,buildtools/conf/{config.{guess,sub},install-sh,ltmain.sh,l[ti]\*.m4,missing,ylwrap},configure{,.ac},{doc,install}.lst,monetdb_config.h.in}`
