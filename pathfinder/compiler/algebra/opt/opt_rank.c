@@ -1126,7 +1126,7 @@ opt_rank (PFla_op_t *p, unsigned char mode)
                     new_sortby = PFarray (sizeof (sort_struct), count + lcount);
 
                     lsortby = L(p)->sem.rank_opt.sortby;
-                    
+
                     /* keep the first sort criteria */
                     for (unsigned int j = 0; j < i; j++)
                         *(sort_struct *) PFarray_add (new_sortby) =
@@ -1569,6 +1569,12 @@ PFalgopt_rank (PFla_op_t *root)
        a new traversal. */
     while (opt_rank (root, RANK))
         PFla_dag_reset (root);
+    PFla_dag_reset (root);
+
+    /* One more traversal to ensure the query runs faster
+       in some cases (combination of aggr and rank where
+       the rank operator provides the grouping criteria). */
+    opt_rank (root, RANK);
     PFla_dag_reset (root);
 
     /* Replace the internal rank representation by
