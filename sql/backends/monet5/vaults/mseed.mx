@@ -158,7 +158,7 @@ MANUALLOAD	3.2 yrs
 
 Caveat. The way SQL works, leads to clearing the cache whenever we change the catalog.
 Using private mseed files, leads to this situation. However, clearing the cache is
-not reselient fo the context. This means that we may shoot in the foot, removing
+not resilient fo the context. This means that we may shoot in the foot, removing
 the plan we are just interpreting.
 @h
 #ifndef _MSEED_H
