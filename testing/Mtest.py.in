@@ -199,54 +199,52 @@ FAILURES = {
 CONDITIONALS = {
     # X == true   =>  @X_TRUE@='',  @X_FALSE@='#'
     # X == false  =>  @X_TRUE@='#', @X_FALSE@=''
-    # from buildtools/conf/MonetDB.m4:
+    # from configure.ag:
     'BITS32'               : "@BITS32_FALSE@",
     'BITS64'               : "@BITS64_FALSE@",
-    'HAVE_CLIENTS'         : "@HAVE_CLIENTS_FALSE@",
-    'HAVE_LIBBZ2'          : "@HAVE_LIBBZ2_FALSE@",
-    'HAVE_MONETDB'         : "@HAVE_MONETDB_FALSE@",
-    'HAVE_MONETDB5_RDF'    : "@HAVE_MONETDB5_RDF_FALSE@",
-    'HAVE_MONETDB5_XML'    : "@HAVE_MONETDB5_XML_FALSE@",
-    'HAVE_PERL'            : "@HAVE_PERL_FALSE@",
-    'HAVE_PERL_DEVEL'      : "@HAVE_PERL_DEVEL_FALSE@",
-    'HAVE_PYTHON'          : "@HAVE_PYTHON_FALSE@",
-    'HAVE_RUBYGEM'         : "@HAVE_RUBYGEM_FALSE@",
-    'HAVE_SWIG'            : "@HAVE_SWIG_FALSE@",
-    'LINK_STATIC'          : "@LINK_STATIC_FALSE@",
-    'PROFILING'            : "@PROFILING_FALSE@",
-    # from configure.ag:
     'CROSS_COMPILING'      : "@CROSS_COMPILING_FALSE@",
     'DOCTOOLS'             : "@DOCTOOLS_FALSE@",
+    'HAVE_ANT'             : "@HAVE_ANT_FALSE@",
+    'HAVE_BUILDTOOLS'      : "@HAVE_BUILDTOOLS_FALSE@",
     'HAVE_CFITSIO'         : "@HAVE_CFITSIO_FALSE@",
+    'HAVE_CLIENTS'         : "@HAVE_CLIENTS_FALSE@",
     'HAVE_DEVELOPER'       : "@HAVE_DEVELOPER_FALSE@",
+    'HAVE_EXTRA_MK'        : "@HAVE_EXTRA_MK_FALSE@",
     'HAVE_GEOM'            : "@HAVE_GEOM_FALSE@",
+    'HAVE_JAVA'            : "@HAVE_JAVA_FALSE@",
     'HAVE_JAVAJDBC'        : "@HAVE_JAVAJDBC_FALSE@",
     'HAVE_JAVAMEROCONTROL' : "@HAVE_JAVAMEROCONTROL_FALSE@",
     'HAVE_JAVAXRPC'        : "@HAVE_JAVAXRPC_FALSE@",
+    'HAVE_LIBBZ2'          : "@HAVE_LIBBZ2_FALSE@",
     'HAVE_LIBXML2'         : "@HAVE_LIBXML2_FALSE@",
+    'HAVE_LIBZ'            : "@HAVE_LIBZ_FALSE@",
+    'HAVE_MONETDB4'        : "@HAVE_MONETDB4_FALSE@",
+    'HAVE_MONETDB5'        : "@HAVE_MONETDB5_FALSE@",
+    'HAVE_MONETDB5_RDF'    : "@HAVE_MONETDB5_RDF_FALSE@",
+    'HAVE_MONETDB5_XML'    : "@HAVE_MONETDB5_XML_FALSE@",
+    'HAVE_MONETDB'         : "@HAVE_MONETDB_FALSE@",
     'HAVE_MSEED'           : "@HAVE_MSEED_FALSE@",
     'HAVE_NETCDF'          : "@HAVE_NETCDF_FALSE@",
     'HAVE_ODBC'            : "@HAVE_ODBC_FALSE@",
     'HAVE_PATHFINDER'      : "@HAVE_PATHFINDER_FALSE@",
     'HAVE_PCRE'            : "@HAVE_PCRE_FALSE@",
+    'HAVE_PERL_DEVEL'      : "@HAVE_PERL_DEVEL_FALSE@",
+    'HAVE_PERL'            : "@HAVE_PERL_FALSE@",
+    'HAVE_PERL_SWIG'       : "@HAVE_PERL_SWIG_FALSE@",
     'HAVE_PFTIJAH'         : "@HAVE_PFTIJAH_FALSE@",
     'HAVE_PROBXML'         : "@HAVE_PROBXML_FALSE@",
+    'HAVE_PYTHON'          : "@HAVE_PYTHON_FALSE@",
     'HAVE_RAPTOR'          : "@HAVE_RAPTOR_FALSE@",
+    'HAVE_RUBYGEM'         : "@HAVE_RUBYGEM_FALSE@",
     'HAVE_SPHINXCLIENT'    : "@HAVE_SPHINXCLIENT_FALSE@",
     'HAVE_SQL'             : "@HAVE_SQL_FALSE@",
+    'HAVE_SWIG'            : "@HAVE_SWIG_FALSE@",
     'HAVE_TESTING'         : "@HAVE_TESTING_FALSE@",
-    # from both buildtools/conf/MonetDB.m4 & configure.ag !??:
-    'HAVE_ANT'             : "@HAVE_ANT_FALSE@",
-    'HAVE_BUILDTOOLS'      : "@HAVE_BUILDTOOLS_FALSE@",
-    'HAVE_EXTRA_MK'        : "@HAVE_EXTRA_MK_FALSE@",
-    'HAVE_JAVA'            : "@HAVE_JAVA_FALSE@",
-    'HAVE_LIBZ'            : "@HAVE_LIBZ_FALSE@",
-    'HAVE_MONETDB4'        : "@HAVE_MONETDB4_FALSE@",
-    'HAVE_MONETDB5'        : "@HAVE_MONETDB5_FALSE@",
-    'HAVE_PERL_SWIG'       : "@HAVE_PERL_SWIG_FALSE@",
+    'LINK_STATIC'          : "@LINK_STATIC_FALSE@",
     'NATIVE_WIN32'         : "@NATIVE_WIN32_FALSE@",
     'NEED_MX'              : "@NEED_MX_FALSE@",
     'NOT_WIN32'            : "@NOT_WIN32_FALSE@",
+    'PROFILING'            : "@PROFILING_FALSE@",
     # unknown at compile time;
     # hence, we set them only at runtime in main() below
     'HAVE_MONETDBJDBC_JAR' : "",
@@ -2918,7 +2916,7 @@ if sys.platform == 'linux2' and CONDITIONALS['CROSS_COMPILING']:
     RELEASE = "5.2"
 
 if SYST == "Linux":
-    #  Please keep this aligned / in sync with buildtools/conf/MonetDB.m4 & TestTools/.Mconfig.rc & TestTools/MdoServer !
+    #  Please keep this aligned / in sync with configure.ag & TestTools/.Mconfig.rc & TestTools/MdoServer !
     LINUX_DIST=''
     if os.path.isfile('/etc/fedora-release'):
         l = open('/etc/fedora-release').readline()

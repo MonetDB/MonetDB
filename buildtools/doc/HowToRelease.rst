@@ -62,7 +62,7 @@ Preparation of a Major Release
 - Check out the new branch (e.g. ``cvs co -rMonetDB_1-24 MonetDB``).
 - Set version numbers in the new stable branch (e.g. ``vertoo.py -m
   MonetDB set 1.24.0``).
-- Change defaults in ``buildtools/conf/MonetDB.m4`` for release builds
+- Change defaults in ``configure.ag`` for release builds
   (``dft_strict=no``, ``dft_assert=no``, ``dft_optimi=yes``,
   ``dft_netcdf=no``).
 - Create a tag on the head of the new branch for propagation purposes

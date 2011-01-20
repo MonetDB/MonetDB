@@ -23,7 +23,7 @@ INCLUDES = ../../mapilib ../../../common/options $(PERL_INCS)
 #  Instead of diabling the strict X_CFLAGS completely,
 #  we use GCC_SWIG_CFLAGS and ICC_SWIG_CFLAGS, respectively,
 #  to disable only the problematic warnings/errors as locally as possbile.
-#  See buildtools/conf/MonetDB.m4 for details.
+#  See configure.ag for details.
 #CFLAGS = $(GCC_SWIG_CFLAGS) $(ICC_SWIG_CFLAGS) -D_GNU_SOURCE
 #
 #  However, at least with gcc 4.2.2 and swig 1.3.31 on Gentoo 1.12.9, we still get
