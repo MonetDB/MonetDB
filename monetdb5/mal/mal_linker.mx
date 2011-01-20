@@ -65,7 +65,7 @@ For the time being we assume that all commands are statically linked.
 #define MONET64 1
 mal_export MALfcn getAddress(str filename, str modnme, str fcnname,int silent);
 mal_export char *MSP_locate_script(const char *mod_name);
-mal_export char *MSP_locate_sqlscript(const char *mod_name);
+mal_export char *MSP_locate_sqlscript(const char *mod_name, bit recurse);
 mal_export char *MSP_locate_file(const char *mod_name);
 mal_export str loadLibrary(str modulename, int flag);
 mal_export void unloadLibraries(void);
@@ -346,7 +346,7 @@ cmpstr(const void *_p1, const void *_p2)
 
 #define MAXMULTISCRIPT 48
 static char *
-locate_file(const char *basename, const char *ext, const bit recurse)
+locate_file(const char *basename, const char *ext, bit recurse)
 {
 	char *mod_path = GDKgetenv("monet_mod_path");
 	char *fullname;
@@ -455,10 +455,10 @@ MSP_locate_script(const char *filename)
 }
 
 char *
-MSP_locate_sqlscript(const char *filename)
+MSP_locate_sqlscript(const char *filename, bit recurse)
 {
 	/* no directory semantics (yet) */
-	return locate_file(filename, SQL_EXT, 0);
+	return locate_file(filename, SQL_EXT, recurse);
 }
 
 char *

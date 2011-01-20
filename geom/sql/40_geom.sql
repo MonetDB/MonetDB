@@ -43,11 +43,11 @@ CREATE FUNCTION Y(g Geometry) RETURNS double external name geom."Y";
 
 CREATE FUNCTION Point(x double,y double) RETURNS Point external name geom.point;
 
-CREATE FUNCTION Point(g Geometry) RETURNS Point external name geom.point;
-CREATE FUNCTION Curve(g Geometry) RETURNS Curve external name geom.curve;
-CREATE FUNCTION LineString(g Geometry) RETURNS LineString external name geom.linestring;
-CREATE FUNCTION Surface(g Geometry) RETURNS Surface external name geom.surface;
-CREATE FUNCTION Polygon(g Geometry) RETURNS Polygon external name geom.polygon;
+-- CREATE FUNCTION Point(g Geometry) RETURNS Point external name geom.point;
+-- CREATE FUNCTION Curve(g Geometry) RETURNS Curve external name geom.curve;
+-- CREATE FUNCTION LineString(g Geometry) RETURNS LineString external name geom.linestring;
+-- CREATE FUNCTION Surface(g Geometry) RETURNS Surface external name geom.surface;
+-- CREATE FUNCTION Polygon(g Geometry) RETURNS Polygon external name geom.polygon;
 
 -- ogc basic methods
 CREATE FUNCTION Dimension(g Geometry) RETURNS integer external name geom."Dimension";

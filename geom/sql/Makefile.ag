@@ -17,8 +17,8 @@
 
 headers_sql = {
 	HEADERS = sql
-	DIR = datadir/MonetDB/sql
-	SOURCES = geom.sql
+	DIR = libdir/monetdb5/createdb
+	SOURCES = 40_geom.sql
 }
 
 EXTRA_DIST_DIR = Tests

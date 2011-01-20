@@ -474,25 +474,37 @@ to initialize the catalog based on the mandatory scripts to be executed.
 		SQLnewcatalog = 0;
 		snprintf(path, PATHLENGTH, "createdb");
 		slash_2_dir_sep(path);
-		fullname = MSP_locate_sqlscript(path);
+		fullname = MSP_locate_sqlscript(path, 1);
 		if (fullname) {
-			fd = open_rastream(fullname);
-			GDKfree(fullname);
+			str filename = fullname;
+			str p;
+			fprintf(stdout, "# SQL catalog created, loading sql scripts once\n");
+			do {
+				p = strchr(filename, PATH_SEP);
+				if (p)
+					*p = '\0';
+				fd = open_rastream(filename);
+				if (p)
+					filename = p + 1;
 
-			if (fd) {
-				str msg = MAL_SUCCEED;
-				bfd = bstream_create(fd, 128 * BLOCK);
-				fprintf(stdout, "# SQL catalog created, loading sql scripts once\n");
-				if (bfd && bstream_next(bfd) >= 0)
-					msg = SQLstatementIntern(c, &bfd->buf, "sql.init", TRUE, FALSE);
-				bstream_destroy(bfd);
-				if (m->sa)
-					sa_destroy(m->sa);
-				m->sa = NULL;
-				return msg;
-			}
-		}
-		fprintf(stderr, "!could not read createdb.sql\n");
+				if (fd) {
+					str msg = MAL_SUCCEED;
+					bfd = bstream_create(fd, 128 * BLOCK);
+					if (bfd && bstream_next(bfd) >= 0)
+						msg = SQLstatementIntern(c, &bfd->buf, "sql.init", TRUE, FALSE);
+					bstream_destroy(bfd);
+					if (m->sa)
+						sa_destroy(m->sa);
+					m->sa = NULL;
+					if (msg) {
+						GDKfree(fullname);
+						return msg;
+					}
+				}
+			} while (p);
+			GDKfree(fullname);
+		} else
+			fprintf(stderr, "!could not read createdb.sql\n");
 	}
 	fflush(stdout);
 	fflush(stderr);
@@ -824,7 +836,7 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str *expr;
 	mvc *m;
 
-    	fullname= MSP_locate_sqlscript(*name);
+    	fullname= MSP_locate_sqlscript(*name, 0);
 	if ( fullname == NULL)
 		fullname= *name;
 	fd = open_rastream(fullname);
