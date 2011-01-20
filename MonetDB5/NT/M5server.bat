@@ -14,28 +14,25 @@ set PATH=%MONETDB%\bin;%MONETDB%\lib;%MONETDB%\lib\MonetDB5;%PATH%
 
 rem prepare the arguments to mserver5 to tell it where to put the dbfarm
 
-rem do this in two if statements because of weird command interpreter
-if "%APPDATA%" == "" (
+if "%APPDATA%" == "" goto usevar
+rem if the APPDATA variable does exist, put the database there
+set MONETDBDIR=%APPDATA%\MonetDB5
+set MONETDBFARM="--dbfarm=%MONETDBDIR%\dbfarm"
+goto skipusevar
+:usevar
 rem if the APPDATA variable does not exist, put the database in the
 rem installation folder (i.e. default location, so no command line argument)
 set MONETDBDIR=%MONETDB%\var\MonetDB5
-) else (
-rem if the APPDATA variable does exist, put the database there
-set MONETDBDIR=%APPDATA%\MonetDB5
-)
-if "%APPDATA%" == "" (
 set MONETDBFARM=
-) else (
-set MONETDBFARM="--dbfarm=%MONETDBDIR%\dbfarm"
-)
+:skipusevar
 
 rem the SQL log directory used to be in %MONETDBDIR%, but we now
 rem prefer it inside the dbfarm, so move it there
 
-if exist "%MONETDBDIR%\sql_logs" (
+if not exist "%MONETDBDIR%\sql_logs" goto skipmove
 for /d %%i in ("%MONETDBDIR%"\sql_logs\*) do move "%%i" "%MONETDBDIR%\dbfarm"\%%~ni\sql_logs
 rmdir "%MONETDBDIR%\sql_logs"
-)
+:skipmove
 
 rem start the real server
 "%MONETDB%\bin\mserver5.exe" --set "prefix=%MONETDB%" --set "exec_prefix=%MONETDB%" %MONETDBFARM% %*
