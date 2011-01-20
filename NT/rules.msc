@@ -499,18 +499,6 @@ CONFIG_H = monetdb_config.h
 .mx.l:
 	$(MX) $(MXFLAGS) -x l $<
 
-{$(SRCDIR)}.mx.yy:
-	$(MX) $(MXFLAGS) -x Y $<
-
-.mx.yy:
-	$(MX) $(MXFLAGS) -x Y $<
-
-{$(SRCDIR)}.mx.ll:
-	$(MX) $(MXFLAGS) -x L $<
-
-.mx.ll:
-	$(MX) $(MXFLAGS) -x L $<
-
 {$(SRCDIR)}.ll.cc:
 	$(LEX) $(LFLAGS) $<
 	# either lex.<name>.c or lex.yy.c or lex.$(PARSERNAME).c gets generated

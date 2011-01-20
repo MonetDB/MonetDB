@@ -98,15 +98,6 @@ BURG = $(top_builddir)/buildtools/burg/burg
 %.l: %.mx
 	$(MX) $(MXFLAGS) -x l $< 
 
-%.cc: %.mx
-	$(MX) $(MXFLAGS) -x C $<
-
-%.yy: %.mx
-	$(MX) $(MXFLAGS) -x Y $< 
-
-%.ll: %.mx
-	$(MX) $(MXFLAGS) -x L $<
-
 %.m: %.mx
 	$(MX) $(MXFLAGS) -l -x m $<
 
