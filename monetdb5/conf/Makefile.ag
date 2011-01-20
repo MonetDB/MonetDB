@@ -25,9 +25,9 @@ headers_conf = {
 	SOURCES = monetdb5.conf
 }
 
-monetdb_var_logdir = $(localstatedir)/log/MonetDB
+monetdb_var_logdir = $(localstatedir)/log/monetDB
 monetdb_var_log_DATA = 
-monetdb_var_rundir = $(localstatedir)/run/MonetDB
+monetdb_var_rundir = $(localstatedir)/run/monetDB
 monetdb_var_run_DATA = 
-monetdb_var_dbfarmdir = $(localstatedir)/MonetDB5/dbfarm
+monetdb_var_dbfarmdir = $(localstatedir)/monetDB5/dbfarm
 monetdb_var_dbfarm_DATA = 
