@@ -50,6 +50,6 @@ headers_html = {
 	SOURCES = website.html
 }
 
-EXTRA_DIST = rules.mk MonetDB.m4
+EXTRA_DIST = rules.mk
 
 EXTRA_DIST_DIR = mock
