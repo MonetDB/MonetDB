@@ -1,13 +1,13 @@
 CREATE ARRAY vmatrix (
   x INTEGER DIMENSION[-1:4],
   y INTEGER DIMENSION[-1:4],
-  w FLOAT DEFAULT 0);AS SELECT y, x, v FROM matrix; 
+  w FLOAT DEFAULT 0) AS SELECT y, x, v FROM matrix; 
 
 CREATE ARRAY vector (
   x INTEGER DIMENSION[-1:4],
   w FLOAT DEFAULT 0);
-SELECT (A.v+B.v)/2 FROM vector A, 
-  (SELECT x+1, w FROM vector) B;
+SELECT (A.v+B.v)/2 FROM vector AS A JOIN
+  (SELECT x+1 AS x, w FROM vector) AS B ON A.x = B.x;
 
 CREATE ARRAY vmatrix (  x INTEGER DIMENSION[-1:4], 
   y INTEGER DIMENSION[-1:4],
