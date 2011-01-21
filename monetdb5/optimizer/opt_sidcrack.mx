@@ -99,7 +99,7 @@ OPTsidcrackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			}
 
 			/* avoid cracking delta bats used for updates */
-			if (mb->var[getArg(p,4)]->value.val.ival != 0 ) 
+			if (mb->var[getArg(p,5)]->value.val.ival != 0 ) 
 				continue;		
 				
 			vp = VALset(&v, TYPE_int,&i);

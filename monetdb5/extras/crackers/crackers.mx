@@ -135,6 +135,7 @@ ultra fast.
 @:@1(dbl,str)@
 @:@1(dbl,int)@
 @:@1(dbl,dbl)@
+@:@1(int,lng)@
 @
 
 @= TypeSwitch_joins1
