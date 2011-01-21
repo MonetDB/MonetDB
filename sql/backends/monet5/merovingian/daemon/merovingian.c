@@ -51,7 +51,7 @@
 #define MERO_PORT      50000
 
 #include "monetdb_config.h"
-#include "mal_sabaoth.h"
+#include <msabaoth.h>
 #include <utils/utils.h>
 #include <utils/properties.h>
 #include <utils/glob.h>
@@ -71,20 +71,6 @@
 #include <fcntl.h>
 #include <unistd.h> /* unlink, isatty */
 #include <string.h> /* strerror */
-
-#ifdef HAVE_ALLOCA_H
-# include <alloca.h>
-#elif defined __GNUC__
-# define alloca __builtin_alloca
-#elif defined _AIX
-# define alloca __alloca
-#elif defined _MSC_VER
-# include <malloc.h>
-# define alloca _alloca
-#else
-# include <stddef.h>
-void *alloca(size_t);
-#endif
 
 #include <errno.h>
 #include <signal.h> /* handle Ctrl-C, etc. */
@@ -284,11 +270,11 @@ terminateProcess(void *p)
 	char *dbname = alloca(sizeof(char) * (strlen(d->dbname) + 1));
 	memcpy(dbname, d->dbname, strlen(d->dbname) + 1);
 
-	er = SABAOTHgetStatus(&stats, dbname);
-	if (er != MAL_SUCCEED) {
+	er = msab_getStatus(&stats, dbname);
+	if (er != NULL) {
 		Mfprintf(stderr, "cannot terminate process " LLFMT ": %s\n",
 				(long long int)pid, er);
-		GDKfree(er);
+		free(er);
 		return;
 	}
 
@@ -306,17 +292,17 @@ terminateProcess(void *p)
 			Mfprintf(stderr, "cannot shut down database '%s', mserver "
 					"(pid " LLFMT ") has crashed\n",
 					dbname, (long long int)pid);
-			SABAOTHfreeStatus(&stats);
+			msab_freeStatus(&stats);
 			return;
 		case SABdbInactive:
 			Mfprintf(stdout, "database '%s' appears to have shut down already\n",
 					dbname);
 			fflush(stdout);
-			SABAOTHfreeStatus(&stats);
+			msab_freeStatus(&stats);
 			return;
 		default:
 			Mfprintf(stderr, "unknown state: %d", (int)stats->state);
-			SABAOTHfreeStatus(&stats);
+			msab_freeStatus(&stats);
 			return;
 	}
 
@@ -326,12 +312,12 @@ terminateProcess(void *p)
 	kill(pid, SIGTERM);
 	for (i = 0; i < _mero_exit_timeout * 2; i++) {
 		if (stats != NULL)
-			SABAOTHfreeStatus(&stats);
-		MT_sleep_ms(500);
-		er = SABAOTHgetStatus(&stats, dbname);
-		if (er != MAL_SUCCEED) {
+			msab_freeStatus(&stats);
+		sleep_ms(500);
+		er = msab_getStatus(&stats, dbname);
+		if (er != NULL) {
 			Mfprintf(stderr, "unexpected problem: %s\n", er);
-			GDKfree(er);
+			free(er);
 			/* don't die, just continue, so we KILL in the end */
 		} else if (stats == NULL) {
 			Mfprintf(stderr, "hmmmm, database '%s' suddenly doesn't exist "
@@ -344,12 +330,12 @@ terminateProcess(void *p)
 				case SABdbCrashed:
 					Mfprintf (stderr, "database '%s' crashed after SIGTERM\n",
 							dbname);
-					SABAOTHfreeStatus(&stats);
+					msab_freeStatus(&stats);
 					return;
 				case SABdbInactive:
 					Mfprintf(stdout, "database '%s' has shut down\n", dbname);
 					fflush(stdout);
-					SABAOTHfreeStatus(&stats);
+					msab_freeStatus(&stats);
 					return;
 				default:
 					Mfprintf(stderr, "unknown state: %d", (int)stats->state);
@@ -383,7 +369,7 @@ newErr(char *fmt, ...)
 
 	va_end(ap);
 
-	ret = GDKstrdup(message);
+	ret = strdup(message);
 	return(ret);
 }
 
@@ -419,20 +405,20 @@ main(int argc, char *argv[])
 	pthread_mutexattr_t mta;
 	int thret;
 	confkeyval ckv[] = {
-		{"prefix",             GDKstrdup(PREFIX),          STR},
-		{"gdk_dbfarm",         NULL,                       STR},
-		{"gdk_nr_threads",     NULL,                       INT},
-		{"sql_optimizer",      NULL,                       STR},
-		{"mero_msglog",        GDKstrdup(MERO_LOG),        STR},
-		{"mero_errlog",        GDKstrdup(MERO_LOG),        STR},
-		{"mero_port",          NULL,                       INT},
-		{"mero_exittimeout",   NULL,                       INT},
-		{"mero_pidfile",       NULL,                       STR},
-		{"mero_doproxy",       NULL,                       BOOL},
-		{"mero_discoveryttl",  NULL,                       INT},
-		{"mero_discoveryport", NULL,                       INT},
-		{"mero_controlport",   NULL,                       INT},
-		{ NULL,                NULL,                       INVALID}
+		{"prefix",             strdup(PREFIX),          STR},
+		{"gdk_dbfarm",         NULL,                    STR},
+		{"gdk_nr_threads",     NULL,                    INT},
+		{"sql_optimizer",      NULL,                    STR},
+		{"mero_msglog",        strdup(MERO_LOG),        STR},
+		{"mero_errlog",        strdup(MERO_LOG),        STR},
+		{"mero_port",          NULL,                    INT},
+		{"mero_exittimeout",   NULL,                    INT},
+		{"mero_pidfile",       NULL,                    STR},
+		{"mero_doproxy",       NULL,                    BOOL},
+		{"mero_discoveryttl",  NULL,                    INT},
+		{"mero_discoveryport", NULL,                    INT},
+		{"mero_controlport",   NULL,                    INT},
+		{ NULL,                NULL,                    INVALID}
 	};
 	confkeyval *kv;
 
@@ -510,13 +496,13 @@ main(int argc, char *argv[])
 	kv = findConfKey(ckv, "mero_msglog");
 	_mero_msglogfile = replacePrefix(kv->val, prefix);
 	if (strcmp(kv->val, "") == 0) { /* has default, must be set */
-		GDKfree(kv->val);
+		free(kv->val);
 		kv->val = NULL;
 	}
 	kv = findConfKey(ckv, "mero_errlog");
 	_mero_errlogfile = replacePrefix(kv->val, prefix);
 	if (strcmp(kv->val, "") == 0) { /* has default, must be set */
-		GDKfree(kv->val);
+		free(kv->val);
 		kv->val = NULL;
 	}
 	kv = findConfKey(ckv, "mero_exittimeout");
@@ -582,27 +568,27 @@ main(int argc, char *argv[])
 	/* setup default properties */
 	_mero_props = getDefaultProps();
 	kv = findConfKey(_mero_props, "forward");
-	kv->val = GDKstrdup(doproxy == 1 ? "proxy" : "redirect");
+	kv->val = strdup(doproxy == 1 ? "proxy" : "redirect");
 	kv = findConfKey(_mero_props, "shared");
-	kv->val = GDKstrdup(discoveryport == 0 ? "no" : "yes");
+	kv->val = strdup(discoveryport == 0 ? "no" : "yes");
 	kv = findConfKey(ckv, "gdk_nr_threads");
 	if (kv->val != NULL) {
 		ret = atoi(kv->val);
 		kv = findConfKey(_mero_props, "nthreads");
 		snprintf(buf, sizeof(buf), "%d", ret);
-		kv->val = GDKstrdup(buf);
+		kv->val = strdup(buf);
 	}
 	kv = findConfKey(_mero_props, "master");
-	kv->val = GDKstrdup("no");
+	kv->val = strdup("no");
 	kv = findConfKey(_mero_props, "slave");
 	kv->val = NULL; /* MURI */
 	kv = findConfKey(_mero_props, "readonly");
-	kv->val = GDKstrdup("no");
+	kv->val = strdup("no");
 	kv = findConfKey(ckv, "sql_optimizer");
 	p = kv->val;
 	if (p != NULL) {
 		kv = findConfKey(_mero_props, "optpipe");
-		kv->val = GDKstrdup(p);
+		kv->val = strdup(p);
 	}
 
 	/* we no longer need prefix */
@@ -706,7 +692,7 @@ main(int argc, char *argv[])
 	}
 
 	/* lock such that we are alone on this world */
-	if ((ret = MT_lockf(".merovingian_lock", F_TLOCK, 4, 1)) == -1) {
+	if ((ret = gdk_lockf(".merovingian_lock")) == -1) {
 		/* locking failed */
 		Mfprintf(stderr, "another merovingian is already running\n");
 		MERO_EXIT(1);
@@ -897,8 +883,8 @@ main(int argc, char *argv[])
 			MERO_VERSION, MONETDB_RELEASE);
 	Mfprintf(stdout, "monitoring dbfarm %s\n", dbfarm);
 
-	SABAOTHinit(dbfarm, NULL);
-	GDKfree(dbfarm);
+	msab_init(dbfarm, NULL);
+	free(dbfarm);
 
 	/* set up control channel path */
 	control_usock = ".merovingian_control";
@@ -1055,19 +1041,19 @@ shutdown:
 	if (_mero_topdp->out != _mero_topdp->err)
 		close(_mero_topdp->err);
 
-	GDKfree(_mero_msglogfile);
-	GDKfree(_mero_errlogfile);
+	free(_mero_msglogfile);
+	free(_mero_errlogfile);
 
 	/* remove files that suggest our existence */
 	unlink(".merovingian_lock");
 	if (pidfilename != NULL) {
 		unlink(pidfilename);
-		GDKfree(pidfilename);
+		free(pidfilename);
 	}
 
 	/* mostly for valgrind... */
 	freeConfFile(_mero_props);
-	GDKfree(_mero_props);
+	free(_mero_props);
 
 	/* the child's return code at this point doesn't matter, as noone
 	 * will see it */

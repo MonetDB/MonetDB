@@ -23,7 +23,7 @@
 #include "monetdb_config.h"
 #include <pthread.h>
 
-#include <mal_sabaoth.h>
+#include <msabaoth.h>
 
 void broadcast(char *msg);
 void registerMessageTap(int fd);
@@ -31,11 +31,11 @@ void unregisterMessageTap(int fd);
 void discoveryRunner(void *d);
 
 typedef struct _remotedb {
-	str dbname;       /* remote database name */
-	str tag;          /* database tag, if any, default = "" */
-	str fullname;     /* dbname + tag */
-	str conn;         /* remote connection, use in redirect */
-	int ttl;          /* time-to-live in seconds */
+	char *dbname;       /* remote database name */
+	char *tag;          /* database tag, if any, default = "" */
+	char *fullname;     /* dbname + tag */
+	char *conn;         /* remote connection, use in redirect */
+	int ttl;            /* time-to-live in seconds */
 	struct _remotedb* next;
 }* remotedb;
 

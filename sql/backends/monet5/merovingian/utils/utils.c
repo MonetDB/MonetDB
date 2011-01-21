@@ -32,13 +32,25 @@
 #include <unistd.h> /* unlink */
 #include <string.h> /* memcpy */
 #include <strings.h> /* strcasecmp */
-#include <gdk.h> /* GDKmalloc */
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #ifdef HAVE_UUID_UUID_H
-#include <uuid/uuid.h>
+# include <uuid/uuid.h>
+#endif
+#ifdef TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# ifdef HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
 #endif
 
 /**
- * Returns a GDKmalloced copy of s, with the first occurrence of
+ * Returns a malloced copy of s, with the first occurrence of
  * "${prefix}" replaced by prefix.  If s is NULL, this function returns
  * also NULL.
  */
@@ -62,7 +74,7 @@ replacePrefix(char *s, char *prefix)
 		memcpy(buf, s, strlen(s) + 1);
 	}
 	
-	return(GDKstrdup(buf));
+	return(strdup(buf));
 }
 
 /**
@@ -83,7 +95,7 @@ readConfFile(confkeyval *list, FILE *cnf) {
 			len = strlen(t->key);
 			if (*buf && strncmp(buf, t->key, len) == 0 && buf[len] == '=') {
 				if ((err = setConfVal(t, buf + len + 1)) != NULL)
-					GDKfree(err); /* ignore, just fall back to default */
+					free(err); /* ignore, just fall back to default */
 			}
 		}
 	}
@@ -96,7 +108,7 @@ inline void
 freeConfFile(confkeyval *list) {
 	while (list->key != NULL) {
 		if (list->val != NULL) {
-			GDKfree(list->val);
+			free(list->val);
 			list->val = NULL;
 		}
 		list++;
@@ -131,7 +143,7 @@ setConfVal(confkeyval *ckv, char *val) {
 	/* handle the unset directly */
 	if (val == NULL) {
 		if (ckv->val != NULL) {
-			GDKfree(ckv->val);
+			free(ckv->val);
 			ckv->val = NULL;
 		}
 		return(NULL);
@@ -144,7 +156,7 @@ setConfVal(confkeyval *ckv, char *val) {
 			snprintf(buf, sizeof(buf),
 					"key '%s' is unitialised (invalid value), internal error",
 					ckv->key);
-			return(GDKstrdup(buf));
+			return(strdup(buf));
 		}; break;
 		case INT: {
 			char *p = val;
@@ -155,7 +167,7 @@ setConfVal(confkeyval *ckv, char *val) {
 				snprintf(buf, sizeof(buf),
 						"key '%s' requires an integer-type value, got: %s",
 						ckv->key, val);
-				return(GDKstrdup(buf));
+				return(strdup(buf));
 			}
 		}; break;
 		case BOOL: {
@@ -174,7 +186,7 @@ setConfVal(confkeyval *ckv, char *val) {
 				snprintf(buf, sizeof(buf),
 						"key '%s' requires a boolean-type value, got: %s",
 						ckv->key, val);
-				return(GDKstrdup(buf));
+				return(strdup(buf));
 			}
 		}; break;
 		case MURI: {
@@ -185,7 +197,7 @@ setConfVal(confkeyval *ckv, char *val) {
 				snprintf(buf, sizeof(buf),
 						"key '%s' requires a mapi:monetdb:// URI value, got: %s",
 						ckv->key, val);
-				return(GDKstrdup(buf));
+				return(strdup(buf));
 			}
 			/* TODO: check full URL? */
 		}; break;
@@ -195,8 +207,8 @@ setConfVal(confkeyval *ckv, char *val) {
 		break;
 	}
 	if (ckv->val != NULL)
-		GDKfree(ckv->val);
-	ckv->val = GDKstrdup(val);
+		free(ckv->val);
+	ckv->val = strdup(val);
 
 	return(NULL);
 }
@@ -373,6 +385,36 @@ generateUUID(void)
 	p += snprintf(p, 5, "%04x", rand() % 65536);
 #endif
 	return(strdup(out));
+}
+
+void
+sleep_ms(size_t ms)
+{
+	struct timeval tv;
+
+	tv.tv_sec = ms / 1000;
+	tv.tv_usec = 1000 * (ms % 1000);
+	(void) select(0, NULL, NULL, NULL, &tv);
+}
+
+/* returns -1 when locking failed,
+ * returns -2 when the lock file could not be opened/created
+ * returns the (open) file descriptor to the file otherwise */
+int
+gdk_lockf(const char *filename)
+{
+	int fd = open(filename, O_CREAT | O_RDWR,
+			S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+
+	if (fd < 0)
+		return -2;
+
+	if (lseek(fd, 4, SEEK_SET) == 4 && lockf(fd, 2, 1) == 0) {
+		/* do not close else we lose the lock we want */
+		return fd;
+	}
+	close(fd);
+	return -1;
 }
 
 /* vim:set ts=4 sw=4 noexpandtab: */

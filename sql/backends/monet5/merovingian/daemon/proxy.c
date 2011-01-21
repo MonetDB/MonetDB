@@ -30,21 +30,6 @@
 #include <string.h> /* strerror */
 #include <pthread.h>
 
-#ifdef HAVE_ALLOCA_H
-# include <alloca.h>
-#elif defined __GNUC__
-# define alloca __builtin_alloca
-#elif defined _AIX
-# define alloca __alloca
-#elif defined _MSC_VER
-# include <malloc.h>
-# define alloca _alloca
-#else
-# include <stddef.h>
-void *alloca(size_t);
-#endif
-
-#include <gdk.h>
 #include <stream.h>
 #include <stream_socket.h>
 
@@ -94,7 +79,7 @@ proxyThread(void *d)
 			Mfprintf(stdout, "server has terminated proxy connection, "
 					"disconnecting client %s\n", p->name);
 		}
-		GDKfree(p->name);
+		free(p->name);
 
 		/* wait for the other thread to finish, after which we can
 		 * finally destroy the streams */
@@ -105,7 +90,7 @@ proxyThread(void *d)
 		mnstr_destroy(p->co_in);
 	}
 
-	GDKfree(p);
+	free(p);
 }
 
 err
@@ -245,7 +230,7 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 	 * stoc: in = D, out = C, co_in = A, co_out = B
 	 */
 
-	pstoc = GDKmalloc(sizeof(merovingian_proxy));
+	pstoc = malloc(sizeof(merovingian_proxy));
 	pstoc->in     = sfdin;
 	pstoc->out    = cfout;
 	pstoc->co_in  = cfdin;
@@ -261,12 +246,12 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 		return(newErr("failed to create proxy thread: %s", strerror(thret)));
 	}
 
-	pctos = GDKmalloc(sizeof(merovingian_proxy));
+	pctos = malloc(sizeof(merovingian_proxy));
 	pctos->in     = cfdin;
 	pctos->out    = sfout;
 	pctos->co_in  = sfdin;
 	pctos->co_out = cfout;
-	pctos->name   = GDKstrdup(client);
+	pctos->name   = strdup(client);
 	pctos->co_thr = ptid;
 
 	pthread_attr_init(&detachattr);

@@ -23,9 +23,8 @@
 #include <unistd.h>
 #include <string.h>
 #include <pthread.h>
+#include <sys/types.h>
 
-#include <gdk.h>
-#include <mal_sabaoth.h>
 #include <mapi.h>
 
 #include "utils/glob.h"
@@ -59,14 +58,14 @@ MFconnectionManager(void *d)
 	multiplexlist *w;
 	char buf[1024];
 	size_t len;
-	ptr p;
+	void *p;
 	char *msg;
 
 	(void)d;
 
 	while (_mero_keep_listening) {
 		/* FIXME: use select for timeout */
-		if (read(mfpipe[0], &p, sizeof(ptr)) < 0) {
+		if (read(mfpipe[0], &p, sizeof(void *)) < 0) {
 			Mfprintf(stderr, "failed reading from notification pipe: %s\n",
 					strerror(errno));
 			break;
@@ -110,7 +109,7 @@ MFconnectionManager(void *d)
 							}
 							snprintf(buf, sizeof(buf), "%s%s",
 									stats->conns->val, stats->dbname);
-							SABAOTHfreeStatus(&stats);
+							msab_freeStatus(&stats);
 							Mfprintf(stdout, "setting up multiplexer "
 									"target %s->%s\n",
 									m->dbcv[i]->database, buf);
@@ -189,7 +188,7 @@ MFconnectionManager(void *d)
 									m->dbcv[i]->conn = NULL;
 									mapi_disconnect(tm);
 									mapi_destroy(tm);
-									SABAOTHfreeStatus(&stats);
+									msab_freeStatus(&stats);
 									continue;
 								}
 
@@ -199,7 +198,7 @@ MFconnectionManager(void *d)
 								mapi_disconnect(ttm);
 								mapi_destroy(ttm);
 							}
-							SABAOTHfreeStatus(&stats);
+							msab_freeStatus(&stats);
 						}
 					}
 				}
@@ -212,14 +211,14 @@ void
 multiplexNotifyAddedDB(const char *database)
 {
 	char dbslash[256];
-	ptr p;
+	void *p;
 
 	if (mfmanager == 0)
 		return;
 
 	snprintf(dbslash, sizeof(dbslash), "+%s/", database);
 	p = strdup(dbslash);
-	if (write(mfpipe[1], &p, sizeof(ptr)) != sizeof(ptr))
+	if (write(mfpipe[1], &p, sizeof(void *)) != sizeof(void *))
 		Mfprintf(stderr, "failed to write notify added message to mfpipe\n");
 }
 
@@ -227,14 +226,14 @@ void
 multiplexNotifyRemovedDB(const char *database)
 {
 	char dbslash[256];
-	ptr p;
+	void *p;
 
 	if (mfmanager == 0)
 		return;
 
 	snprintf(dbslash, sizeof(dbslash), "-%s/", database);
 	p = strdup(dbslash);
-	if (write(mfpipe[1], &p, sizeof(ptr)) != sizeof(ptr))
+	if (write(mfpipe[1], &p, sizeof(void *)) != sizeof(void *))
 		Mfprintf(stderr, "failed to write notify removed message to mfpipe\n");
 }
 
@@ -366,7 +365,7 @@ multiplexInit(multiplex **ret, char *database)
 				m->dbcv[i]->database, buf);
 		m->dbcv[i]->conn = mapi_mapiuri(buf,
 				m->dbcv[i]->user, m->dbcv[i]->pass, "sql");
-		SABAOTHfreeStatus(&stats);
+		msab_freeStatus(&stats);
 	}
 
 	mpl = malloc(sizeof(multiplexlist));

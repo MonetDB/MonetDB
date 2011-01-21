@@ -21,10 +21,10 @@
 #define _FORKMSERVER_H 1
 
 #include "monetdb_config.h"
-#include <mal_sabaoth.h> /* sabdb */
+#include <msabaoth.h> /* sabdb */
 #include "merovingian.h" /* err */
 
-err forkMserver(str database, sabdb** stats, int force);
+err forkMserver(char* database, sabdb** stats, int force);
 
 #endif
 

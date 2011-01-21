@@ -22,6 +22,7 @@
 
 #include <pthread.h>
 #include <mapi.h>
+#include <stream.h>
 
 #include "merovingian.h"
 

@@ -16,7 +16,7 @@
 # All Rights Reserved.
 
 MTSAFE
-INCLUDES = ../mal \
+INCLUDES = ../misc ../mal \
 	../../clients/mapilib \
 	../../common/options \
 	../../common/stream \
@@ -30,7 +30,7 @@ lib_monetdb5 = {
 	SCRIPTS = mal
 	DIR = libdir/monetdb5/lib
 	SOURCES = libmonetdb5.rc
-	LIBS = ../mal/libmal ../modules/atoms/libatoms \
+	LIBS = ../misc/libsabaoth ../mal/libmal ../modules/atoms/libatoms \
 		../modules/kernel/libkernel ../modules/mal/libmal \
 		../optimizer/liboptimizer ../scheduler/libscheduler \
 		../../gdk/libbat \

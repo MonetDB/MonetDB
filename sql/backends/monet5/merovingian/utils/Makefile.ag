@@ -16,9 +16,7 @@
 # All Rights Reserved.
 
 # MONETDB5: Sabaoth
-# GDK:      GDKmalloc
-INCLUDES = ../../../../../monetdb5/mal \
-		   ../../../../../gdk \
+INCLUDES = ../../../../../monetdb5/misc \
 		   ../../../../../common/stream \
 		   ../../../../../common/options
 

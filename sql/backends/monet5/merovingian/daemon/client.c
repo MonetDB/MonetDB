@@ -28,21 +28,7 @@
 #include <netdb.h>
 #include <netinet/in.h>
 
-#ifdef HAVE_ALLOCA_H
-# include <alloca.h>
-#elif defined __GNUC__
-# define alloca __builtin_alloca
-#elif defined _AIX
-# define alloca __alloca
-#elif defined _MSC_VER
-# include <malloc.h>
-# define alloca _alloca
-#else
-# include <stddef.h>
-void *alloca(size_t);
-#endif
-
-#include <mal_sabaoth.h>
+#include <msabaoth.h>
 #include <stream.h>
 #include <stream_socket.h>
 #include <utils/utils.h> /* freeConfFile */
@@ -64,7 +50,7 @@ static err
 handleClient(int sock, char isusock)
 {
 	stream *fdin, *fout;
-	str buf = alloca(sizeof(char) * 8096);
+	char *buf = alloca(sizeof(char) * 8096);
 	char *user = NULL, *algo = NULL, *passwd = NULL, *lang = NULL;
 	char *database = NULL, *s;
 	char *host = NULL;
@@ -251,18 +237,18 @@ handleClient(int sock, char isusock)
 				break;
 		}
 		if (w == NULL) {
-			char *err;
+			char *merr;
 			int ret;
 			w = malloc(sizeof(mplist));
 			w->next = mero_multiplex_funnel;
-			if ((err = multiplexInit(&w->mpf, database)) != NULL) {
+			if ((merr = multiplexInit(&w->mpf, database)) != NO_ERR) {
 				free(w);
 				mnstr_printf(fout, "!merovingian: failed to create "
-						"multiplex-funnel: %s\n", err);
+						"multiplex-funnel: %s\n", merr);
 				mnstr_flush(fout);
 				close_stream(fout);
 				close_stream(fdin);
-				return(err);
+				return(merr);
 			}
 			mero_multiplex_funnel = w;
 			if ((ret = pthread_create(&w->mpf->tid,
@@ -338,7 +324,7 @@ handleClient(int sock, char isusock)
 		mnstr_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
-		SABAOTHfreeStatus(&top);
+		msab_freeStatus(&top);
 		return(e);
 	}
 
@@ -364,7 +350,7 @@ handleClient(int sock, char isusock)
 		mydoproxy = strcmp(kv->val, "proxy") == 0;
 		if (ckv != NULL) {
 			freeConfFile(ckv);
-			GDKfree(ckv);
+			free(ckv);
 		}
 	}
 
@@ -406,19 +392,19 @@ handleClient(int sock, char isusock)
 			close_stream(fout);
 			close_stream(fdin);
 			Mfprintf(stdout, "starting a proxy failed: %s\n", e);
-			SABAOTHfreeStatus(&top);
+			msab_freeStatus(&top);
 			return(e);
 		};
 	}
 
-	SABAOTHfreeStatus(&top);
+	msab_freeStatus(&top);
 	return(NO_ERR);
 }
 
-str
+char *
 acceptConnections(int sock, int usock)
 {
-	str msg;
+	char *msg;
 	int retval;
 	fd_set fds;
 	int msgsock;

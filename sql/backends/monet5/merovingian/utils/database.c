@@ -17,15 +17,16 @@
  * All Rights Reserved.
  */
 
-/* NOTE: for this file to work correctly, SABAOTHinit must be called. */
+/* NOTE: for this file to work correctly, msab_init must be called. */
 
 #include "monetdb_config.h"
-#include "mal_sabaoth.h"
+#include <msabaoth.h>
 #include <stdio.h> /* fprintf, rename */
 #include <unistd.h> /* stat, rmdir, unlink, ioctl */
 #include <dirent.h> /* readdir */
 #include <sys/stat.h> /* mkdir, stat, umask */
 #include <sys/types.h> /* mkdir, readdir */
+#include <string.h>
 #include <errno.h>
 #include "utils.h"
 
@@ -69,36 +70,36 @@ char* db_create(char* dbname) {
 
 	/* the argument is the database to create, see what Sabaoth can
 	 * tell us about it */
-	if ((e = SABAOTHgetStatus(&stats, dbname)) != MAL_SUCCEED) {
+	if ((e = msab_getStatus(&stats, dbname)) != NULL) {
 		snprintf(buf, sizeof(buf), "internal error: %s", e);
-		GDKfree(e);
+		free(e);
 		return(strdup(buf));
 	}
 
 	/* if sabaoth doesn't know, then it's green light for us! */
 	if (stats != NULL) {
-		SABAOTHfreeStatus(&stats);
+		msab_freeStatus(&stats);
 		snprintf(buf, sizeof(buf), "database '%s' already exists", dbname);
 		return(strdup(buf));
 	}
 
-	if ((e = SABAOTHgetDBfarm(&dbfarm)) != MAL_SUCCEED) {
+	if ((e = msab_getDBfarm(&dbfarm)) != NULL) {
 		snprintf(buf, sizeof(buf), "internal error: %s", e);
-		GDKfree(e);
+		free(e);
 		return(strdup(buf));
 	}
 
 	/* create the directory */
 	c = snprintf(path, sizeof(path), "%s/%s", dbfarm, dbname);
 	if (c >= sizeof(path)) {
-		GDKfree(dbfarm);
+		free(dbfarm);
 		return(strdup("path/dbname combination too long, "
 				"path would get truncated"));
 	}
 	if (mkdir(path, 0755) == -1) {
 		snprintf(buf, sizeof(buf), "unable to create %s: %s",
 				dbname, strerror(errno));
-		GDKfree(dbfarm);
+		free(dbfarm);
 		return(strdup(buf));
 	}
 
@@ -110,7 +111,7 @@ char* db_create(char* dbname) {
 		/* try to cleanup */
 		snprintf(path, sizeof(path), "%s/%s", dbfarm, dbname);
 		rmdir(path);
-		GDKfree(dbfarm);
+		free(dbfarm);
 		return(strdup("path/dbname combination too long, "
 				"filenames inside would get truncated"));
 	}
@@ -126,7 +127,7 @@ char* db_create(char* dbname) {
 	if ((f = fopen(path, "w")) == NULL) {
 		snprintf(buf, sizeof(buf), "cannot write lock file: %s",
 				strerror(errno));
-		GDKfree(dbfarm);
+		free(dbfarm);
 		return(strdup(buf));
 	}
 	/* to all insanity, .gdk_lock is "valid" if it contains a
@@ -135,7 +136,7 @@ char* db_create(char* dbname) {
 	if (fwrite("bla:", 1, 4, f) < 4) {
 		snprintf(buf, sizeof(buf), "cannot write lock file: %s",
 				strerror(errno));
-		GDKfree(dbfarm);
+		free(dbfarm);
 		return(strdup(buf));
 	}
 	fclose(f);
@@ -143,7 +144,7 @@ char* db_create(char* dbname) {
 	/* generate a vault key */
 	snprintf(path, sizeof(path), "%s/%s/.vaultkey", dbfarm, dbname);
 	if ((e = generatePassphraseFile(path)) != NULL) {
-		GDKfree(dbfarm);
+		free(dbfarm);
 		return(e);
 	}
 
@@ -152,7 +153,7 @@ char* db_create(char* dbname) {
 	snprintf(path, sizeof(path), "%s/%s/.uplog", dbfarm, dbname);
 	fclose(fopen(path, "w"));
 
-	GDKfree(dbfarm);
+	free(dbfarm);
 	return(NULL);
 }
 
@@ -161,8 +162,8 @@ static char* deletedir(char *dir) {
 	DIR *d;
 	struct dirent *e;
 	struct stat s;
-	char buf[8096];
-	char path[PATHLENGTH + 1];
+	char buf[8192];
+	char path[4096];
 
 	d = opendir(dir);
 	if (d == NULL) {
@@ -227,9 +228,9 @@ char* db_destroy(char* dbname) {
 
 	/* the argument is the database to destroy, see what Sabaoth can
 	 * tell us about it */
-	if ((e = SABAOTHgetStatus(&stats, dbname)) != MAL_SUCCEED) {
+	if ((e = msab_getStatus(&stats, dbname)) != NULL) {
 		snprintf(buf, sizeof(buf), "internal error: %s", e);
-		GDKfree(e);
+		free(e);
 		return(strdup(buf));
 	}
 
@@ -241,7 +242,7 @@ char* db_destroy(char* dbname) {
 	if (stats->state == SABdbRunning) {
 		snprintf(buf, sizeof(buf), "database '%s' is still running, "
 				"please stop database first", dbname);
-		SABAOTHfreeStatus(&stats);
+		msab_freeStatus(&stats);
 		return(strdup(buf));
 	}
 
@@ -251,10 +252,10 @@ char* db_destroy(char* dbname) {
 		snprintf(buf, sizeof(buf), "failed to destroy '%s': %s",
 				dbname, e);
 		free(e);
-		SABAOTHfreeStatus(&stats);
+		msab_freeStatus(&stats);
 		return(strdup(buf));
 	}
-	SABAOTHfreeStatus(&stats);
+	msab_freeStatus(&stats);
 
 	return(NULL);
 }
@@ -272,9 +273,9 @@ char* db_rename(char *olddb, char *newdb) {
 	if ((p = db_validname(newdb)) != NULL)
 		return(p);
 
-	if ((p = SABAOTHgetStatus(&stats, olddb)) != MAL_SUCCEED) {
+	if ((p = msab_getStatus(&stats, olddb)) != NULL) {
 		snprintf(buf, sizeof(buf), "internal error: %s", p);
-		GDKfree(p);
+		free(p);
 		return(strdup(buf));
 	}
 
@@ -286,7 +287,7 @@ char* db_rename(char *olddb, char *newdb) {
 	if (stats->state == SABdbRunning) {
 		snprintf(buf, sizeof(buf), "database '%s' is still running, "
 				"please stop database first", olddb);
-		SABAOTHfreeStatus(&stats);
+		msab_freeStatus(&stats);
 		return(strdup(buf));
 	}
 
@@ -296,7 +297,7 @@ char* db_rename(char *olddb, char *newdb) {
 	if (p == NULL) {
 		snprintf(buf, sizeof(buf), "non-absolute database path? '%s'",
 				stats->path);
-		SABAOTHfreeStatus(&stats);
+		msab_freeStatus(&stats);
 		return(strdup(buf));
 	}
 	snprintf(p + 1, sizeof(new) - (p + 1 - new), "%s", newdb);
@@ -306,11 +307,11 @@ char* db_rename(char *olddb, char *newdb) {
 	if (rename(stats->path, new) != 0) {
 		snprintf(buf, sizeof(buf), "failed to rename database from "
 				"'%s' to '%s': %s\n", stats->path, new, strerror(errno));
-		SABAOTHfreeStatus(&stats);
+		msab_freeStatus(&stats);
 		return(strdup(buf));
 	}
 
-	SABAOTHfreeStatus(&stats);
+	msab_freeStatus(&stats);
 	return(NULL);
 }
 
@@ -323,9 +324,9 @@ char* db_lock(char *dbname) {
 
 	/* the argument is the database to take under maintenance, see
 	 * what Sabaoth can tell us about it */
-	if ((e = SABAOTHgetStatus(&stats, dbname)) != MAL_SUCCEED) {
+	if ((e = msab_getStatus(&stats, dbname)) != NULL) {
 		snprintf(buf, sizeof(buf), "internal error: %s", e);
-		GDKfree(e);
+		free(e);
 		return(strdup(buf));
 	}
 
@@ -335,7 +336,7 @@ char* db_lock(char *dbname) {
 	}
 
 	if (stats->locked == 1) {
-		SABAOTHfreeStatus(&stats);
+		msab_freeStatus(&stats);
 		snprintf(buf, sizeof(buf), "database '%s' already is "
 				"under maintenance", dbname);
 		return(strdup(buf));
@@ -343,7 +344,7 @@ char* db_lock(char *dbname) {
 
 	/* put this database in maintenance mode */
 	snprintf(path, sizeof(path), "%s/.maintenance", stats->path);
-	SABAOTHfreeStatus(&stats);
+	msab_freeStatus(&stats);
 	if ((f = fopen(path, "w")) == NULL) {
 		snprintf(buf, sizeof(buf), "could not create '%s' for '%s': %s",
 				path, dbname, strerror(errno));
@@ -362,9 +363,9 @@ char *db_release(char *dbname) {
 
 	/* the argument is the database to take under maintenance, see
 	 * what Sabaoth can tell us about it */
-	if ((e = SABAOTHgetStatus(&stats, dbname)) != MAL_SUCCEED) {
+	if ((e = msab_getStatus(&stats, dbname)) != NULL) {
 		snprintf(buf, sizeof(buf), "internal error: %s", e);
-		GDKfree(e);
+		free(e);
 		return(strdup(buf));
 	}
 
@@ -374,7 +375,7 @@ char *db_release(char *dbname) {
 	}
 
 	if (stats->locked != 1) {
-		SABAOTHfreeStatus(&stats);
+		msab_freeStatus(&stats);
 		snprintf(buf, sizeof(buf), "database '%s' is not "
 				"under maintenance", dbname);
 		return(strdup(buf));
@@ -382,7 +383,7 @@ char *db_release(char *dbname) {
 
 	/* get this database out of maintenance mode */
 	snprintf(path, sizeof(path), "%s/.maintenance", stats->path);
-	SABAOTHfreeStatus(&stats);
+	msab_freeStatus(&stats);
 	if (unlink(path) != 0) {
 		snprintf(buf, sizeof(buf), "could not remove '%s' for '%s': %s",
 				path, dbname, strerror(errno));

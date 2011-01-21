@@ -22,28 +22,14 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/un.h>
+#include <sys/stat.h>
 #include <unistd.h>
-#include <string.h> /* str* */
+#include <string.h> /* char ** */
 #include <time.h> /* localtime */
 #include <errno.h>
 #include <pthread.h>
 
-#ifdef HAVE_ALLOCA_H
-# include <alloca.h>
-#elif defined __GNUC__
-# define alloca __builtin_alloca
-#elif defined _AIX
-# define alloca __alloca
-#elif defined _MSC_VER
-# include <malloc.h>
-# define alloca _alloca
-#else
-# include <stddef.h>
-void *alloca(size_t);
-#endif
-
-#include <gdk.h>
-#include <mal_sabaoth.h>
+#include <msabaoth.h>
 #include <utils/utils.h>
 #include <utils/glob.h>
 #include <utils/properties.h>
@@ -58,26 +44,26 @@ void *alloca(size_t);
  * forbidden by restart policy, e.g. when in maintenance.
  */
 err
-forkMserver(str database, sabdb** stats, int force)
+forkMserver(char *database, sabdb** stats, int force)
 {
 	pid_t pid;
-	str er;
+	char *er;
 	sabuplog info;
 	struct tm *t;
 	char tstr[20];
 	int pfdo[2];
 	int pfde[2];
 	dpair dp;
-	str vaultkey = NULL;
+	char *vaultkey = NULL;
 	struct stat statbuf;
 	char upmin[8];
 	char upavg[8];
 	char upmax[8];
 
-	er = SABAOTHgetStatus(stats, database);
-	if (er != MAL_SUCCEED) {
+	er = msab_getStatus(stats, database);
+	if (er != NULL) {
 		err e = newErr("%s", er);
-		GDKfree(er);
+		free(er);
 		return(e);
 	}
 
@@ -98,11 +84,11 @@ forkMserver(str database, sabdb** stats, int force)
 	 * one here. */
 
 	/* retrieve uplog information to print a short conclusion */
-	er = SABAOTHgetUplogInfo(&info, *stats);
-	if (er != MAL_SUCCEED) {
+	er = msab_getUplogInfo(&info, *stats);
+	if (er != NULL) {
 		err e = newErr("could not retrieve uplog information: %s", er);
-		GDKfree(er);
-		SABAOTHfreeStatus(stats);
+		free(er);
+		msab_freeStatus(stats);
 		return(e);
 	}
 
@@ -144,7 +130,7 @@ forkMserver(str database, sabdb** stats, int force)
 					info.startcntr, info.stopcntr, info.crashcntr);
 		break;
 		default:
-			SABAOTHfreeStatus(stats);
+			msab_freeStatus(stats);
 			return(newErr("unknown state: %d", (int)(*stats)->state));
 	}
 
@@ -157,7 +143,7 @@ forkMserver(str database, sabdb** stats, int force)
 	vaultkey = alloca(sizeof(char) * 512);
 	snprintf(vaultkey, 511, "%s/.vaultkey", (*stats)->path);
 	if (stat(vaultkey, &statbuf) == -1) {
-		SABAOTHfreeStatus(stats);
+		msab_freeStatus(stats);
 		return(newErr("cannot start database '%s': no .vaultkey found "
 					"(did you create the database with `monetdb create %s`?)",
 					database, database));
@@ -166,30 +152,30 @@ forkMserver(str database, sabdb** stats, int force)
 	/* create the pipes (filedescriptors) now, such that we and the
 	 * child have the same descriptor set */
 	if (pipe(pfdo) == -1) {
-		SABAOTHfreeStatus(stats);
+		msab_freeStatus(stats);
 		return(newErr("unable to create pipe: %s", strerror(errno)));
 	}
 	if (pipe(pfde) == -1) {
 		close(pfdo[0]);
 		close(pfdo[1]);
-		SABAOTHfreeStatus(stats);
+		msab_freeStatus(stats);
 		return(newErr("unable to create pipe: %s", strerror(errno)));
 	}
 
 	pid = fork();
 	if (pid == 0) {
-		str conffile = alloca(sizeof(char) * 512);
-		str dbname = alloca(sizeof(char) * 512);
-		str port = alloca(sizeof(char) * 24);
-		str muri = alloca(sizeof(char) * 512); /* possibly undersized */
-		str usock = alloca(sizeof(char) * 512);
+		char *conffile = alloca(sizeof(char) * 512);
+		char *dbname = alloca(sizeof(char) * 512);
+		char *port = alloca(sizeof(char) * 24);
+		char *muri = alloca(sizeof(char) * 512); /* possibly undersized */
+		char *usock = alloca(sizeof(char) * 512);
 		char mydoproxy;
-		str nthreads = NULL;
-		str master = NULL;
-		str slave = NULL;
-		str pipeline = NULL;
-		str readonly = NULL;
-		str argv[27];	/* for the exec arguments */
+		char *nthreads = NULL;
+		char *master = NULL;
+		char *slave = NULL;
+		char *pipeline = NULL;
+		char *readonly = NULL;
+		char *argv[27];	/* for the exec arguments */
 		confkeyval *ckv, *kv;
 		int c = 0;
 
@@ -238,7 +224,7 @@ forkMserver(str database, sabdb** stats, int force)
 			readonly = "--readonly";
 
 		freeConfFile(ckv);
-		GDKfree(ckv); /* can make ckv static and reuse it all the time */
+		free(ckv); /* can make ckv static and reuse it all the time */
 
 		/* redirect stdout and stderr to a new pair of fds for
 		 * logging help */
@@ -335,31 +321,31 @@ forkMserver(str database, sabdb** stats, int force)
 		dp = _mero_topdp;
 		while (dp->next != NULL)
 			dp = dp->next;
-		dp = dp->next = GDKmalloc(sizeof(struct _dpair));
+		dp = dp->next = malloc(sizeof(struct _dpair));
 		dp->out = pfdo[0];
 		close(pfdo[1]);
 		dp->err = pfde[0];
 		close(pfde[1]);
 		dp->next = NULL;
 		dp->pid = pid;
-		dp->dbname = GDKstrdup(database);
+		dp->dbname = strdup(database);
 
 		pthread_mutex_unlock(&_mero_topdp_lock);
 
 		/* wait for the child to open up a communication channel */
 		for (i = 0; i < 20; i++) {	/* wait up to 10 seconds */
 			/* give the database a break */
-			MT_sleep_ms(500);
+			sleep_ms(500);
 			/* stats cannot be NULL, as we don't allow starting non
 			 * existing databases, note that we need to run this loop at
 			 * least once not to leak */
-			SABAOTHfreeStatus(stats);
-			er = SABAOTHgetStatus(stats, database);
-			if (er != MAL_SUCCEED) {
+			msab_freeStatus(stats);
+			er = msab_getStatus(stats, database);
+			if (er != NULL) {
 				/* since the client mserver lives its own life anyway,
 				 * it's not really a problem we exit here */
 				err e = newErr("%s", er);
-				GDKfree(er);
+				free(er);
 				return(e);
 			}
 			if ((*stats)->state == SABdbRunning &&
@@ -383,7 +369,7 @@ forkMserver(str database, sabdb** stats, int force)
 			dpair pdp;
 
 			/* starting failed */
-			SABAOTHfreeStatus(stats);
+			msab_freeStatus(stats);
 
 			/* in the meanwhile the list may have changed so refetch the
 			 * parent and self */

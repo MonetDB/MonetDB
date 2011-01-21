@@ -27,26 +27,12 @@
 #include <netinet/in.h>
 #include <time.h>
 #include <unistd.h>  /* select */
-
-#ifdef HAVE_ALLOCA_H
-# include <alloca.h>
-#elif defined __GNUC__
-# define alloca __builtin_alloca
-#elif defined _AIX
-# define alloca __alloca
-#elif defined _MSC_VER
-# include <malloc.h>
-# define alloca _alloca
-#else
-# include <stddef.h>
-void *alloca(size_t);
-#endif
+#include <signal.h>
 
 #include <errno.h>
 #include <pthread.h>
 
-#include <gdk.h> /* GDKfree */
-#include <mal_sabaoth.h>
+#include <msabaoth.h>
 #include <utils/utils.h>
 #include <utils/properties.h>
 #include <utils/database.h>
@@ -77,7 +63,7 @@ leavedbS(sabdb *stats)
 	if (stats->locked != 1 && (kv->val == NULL || strcmp(kv->val, "no") != 0))
 		leavedb(stats->dbname);
 	freeConfFile(props);
-	GDKfree(props);
+	free(props);
 }
 
 static void
@@ -99,7 +85,7 @@ anncdbS(sabdb *stats)
 		broadcast(buf);
 	}
 	freeConfFile(props);
-	GDKfree(props);
+	free(props);
 }
 
 inline static int
@@ -354,11 +340,11 @@ controlRunner(void *d)
 				*p++ = '\0';
 				if (strcmp(p, "start") == 0) {
 					err e;
-					if ((e = SABAOTHgetStatus(&stats, q)) != MAL_SUCCEED) {
+					if ((e = msab_getStatus(&stats, q)) != NULL) {
 						len = snprintf(buf2, sizeof(buf2),
 								"internal error, please review the logs\n");
 						send(msgsock, buf2, len, 0);
-						Mfprintf(_mero_ctlerr, "%s: start: SABAOTHgetStatus: "
+						Mfprintf(_mero_ctlerr, "%s: start: msab_getStatus: "
 								"%s\n", origin, e);
 						freeErr(e);
 						continue;
@@ -380,11 +366,11 @@ controlRunner(void *d)
 							len = snprintf(buf2, sizeof(buf2),
 									"database is already running: %s\n", q);
 							send(msgsock, buf2, len, 0);
-							SABAOTHfreeStatus(&stats);
+							msab_freeStatus(&stats);
 							continue;
 						}
 
-						SABAOTHfreeStatus(&stats);
+						msab_freeStatus(&stats);
 					}
 					if ((e = forkMserver(q, &stats, 1)) != NO_ERR) {
 						Mfprintf(_mero_ctlerr, "%s: failed to fork mserver: "
@@ -403,7 +389,7 @@ controlRunner(void *d)
 					}
 
 					if (stats != NULL)
-						SABAOTHfreeStatus(&stats);
+						msab_freeStatus(&stats);
 				} else if (strcmp(p, "stop") == 0 ||
 						strcmp(p, "kill") == 0)
 				{
@@ -504,18 +490,18 @@ controlRunner(void *d)
 						/* announce database, but need to do it the
 						 * right way so we don't accidentially announce
 						 * an unshared database */
-						if ((e = SABAOTHgetStatus(&stats, q)) != MAL_SUCCEED) {
+						if ((e = msab_getStatus(&stats, q)) != NULL) {
 							len = snprintf(buf2, sizeof(buf2),
 									"internal error, please review the logs\n");
 							send(msgsock, buf2, len, 0);
 							Mfprintf(_mero_ctlerr, "%s: release: "
-									"SABAOTHgetStatus: %s\n", origin, e);
+									"msab_getStatus: %s\n", origin, e);
 							freeErr(e);
 							/* we need to OK regardless, as releasing
 							 * succeed */
 						} else {
 							anncdbS(stats);
-							SABAOTHfreeStatus(&stats);
+							msab_freeStatus(&stats);
 						}
 						Mfprintf(_mero_ctlout, "%s: released database '%s'\n",
 								origin, q);
@@ -533,8 +519,8 @@ controlRunner(void *d)
 						send(msgsock, buf2, len, 0);
 						free(e);
 					} else {
-						if ((e = SABAOTHgetStatus(&stats, p)) != MAL_SUCCEED) {
-							Mfprintf(_mero_ctlerr, "%s: name: SABAOTHgetStatus:"
+						if ((e = msab_getStatus(&stats, p)) != NULL) {
+							Mfprintf(_mero_ctlerr, "%s: name: msab_getStatus:"
 									" %s\n", origin, e);
 							freeErr(e);
 							/* should not fail, since the rename was
@@ -542,7 +528,7 @@ controlRunner(void *d)
 						} else {
 							leavedb(q); /* could be spam, but shouldn't harm */
 							anncdbS(stats);
-							SABAOTHfreeStatus(&stats);
+							msab_freeStatus(&stats);
 						}
 						Mfprintf(_mero_ctlout, "%s: renamed database '%s' "
 								"to '%s'\n", origin, q, p);
@@ -553,11 +539,11 @@ controlRunner(void *d)
 					char *val;
 					char doshare = 0;
 
-					if ((e = SABAOTHgetStatus(&stats, q)) != MAL_SUCCEED) {
+					if ((e = msab_getStatus(&stats, q)) != NULL) {
 						len = snprintf(buf2, sizeof(buf2),
 								"internal error, please review the logs\n");
 						send(msgsock, buf2, len, 0);
-						Mfprintf(_mero_ctlerr, "%s: set: SABAOTHgetStatus: "
+						Mfprintf(_mero_ctlerr, "%s: set: msab_getStatus: "
 								"%s\n", origin, e);
 						freeErr(e);
 						continue;
@@ -604,7 +590,7 @@ controlRunner(void *d)
 								"cannot set property '%s' on running "
 								"database\n", p);
 						send(msgsock, buf2, len, 0);
-						SABAOTHfreeStatus(&stats);
+						msab_freeStatus(&stats);
 						continue;
 					}
 
@@ -618,14 +604,14 @@ controlRunner(void *d)
 								"%s\n", e);
 						send(msgsock, buf2, len, 0);
 						free(e);
-						SABAOTHfreeStatus(&stats);
+						msab_freeStatus(&stats);
 						continue;
 					} else if (doshare) {
 						/* announce in new personality */
 						anncdbS(stats);
 					}
 
-					SABAOTHfreeStatus(&stats);
+					msab_freeStatus(&stats);
 
 					if (val != NULL) {
 						Mfprintf(_mero_ctlout, "%s: set property '%s' for "
@@ -649,18 +635,18 @@ controlRunner(void *d)
 						send(msgsock, buf2, len, 0);
 						writePropsBuf(_mero_props, &pbuf);
 						send(msgsock, pbuf, strlen(pbuf), 0);
-						GDKfree(props);
+						free(props);
 
 						Mfprintf(_mero_ctlout, "%s: served default property "
 								"list\n", origin);
 						break;
 					}
 
-					if ((e = SABAOTHgetStatus(&stats, q)) != MAL_SUCCEED) {
+					if ((e = msab_getStatus(&stats, q)) != NULL) {
 						len = snprintf(buf2, sizeof(buf2),
 								"internal error, please review the logs\n");
 						send(msgsock, buf2, len, 0);
-						Mfprintf(_mero_ctlerr, "%s: get: SABAOTHgetStatus: "
+						Mfprintf(_mero_ctlerr, "%s: get: msab_getStatus: "
 								"%s\n", origin, e);
 						freeErr(e);
 						break;
@@ -683,8 +669,8 @@ controlRunner(void *d)
 					writePropsBuf(props, &pbuf);
 					send(msgsock, pbuf, strlen(pbuf), 0);
 					freeConfFile(props);
-					GDKfree(props);
-					SABAOTHfreeStatus(&stats);
+					free(props);
+					msab_freeStatus(&stats);
 
 					Mfprintf(_mero_ctlout, "%s: served property list for "
 							"database '%s'\n", origin, q);
@@ -700,11 +686,11 @@ controlRunner(void *d)
 
 					/* return a list of sabdb structs for our local
 					 * databases */
-					if ((e = SABAOTHgetStatus(&stats, q)) != MAL_SUCCEED) {
+					if ((e = msab_getStatus(&stats, q)) != NULL) {
 						len = snprintf(buf2, sizeof(buf2),
 								"internal error, please review the logs\n");
 						send(msgsock, buf2, len, 0);
-						Mfprintf(_mero_ctlerr, "%s: status: SABAOTHgetStatus: "
+						Mfprintf(_mero_ctlerr, "%s: status: msab_getStatus: "
 								"%s\n", origin, e);
 						freeErr(e);
 						break;
@@ -725,11 +711,11 @@ controlRunner(void *d)
 
 					for (topdb = stats; stats != NULL; stats = stats->next) {
 						/* currently never fails (just crashes) */
-						SABAOTHserialise(&sdb, stats);
+						msab_serialise(&sdb, stats);
 						len = snprintf(buf2, sizeof(buf2),
 								"%s\n", sdb);
 						send(msgsock, buf2, len, 0);
-						GDKfree(sdb);
+						free(sdb);
 					}
 
 					if (q == NULL) {
@@ -740,7 +726,7 @@ controlRunner(void *d)
 								"'%s'\n", origin, q);
 					}
 
-					SABAOTHfreeStatus(&topdb);
+					msab_freeStatus(&topdb);
 					break;
 				} else if (strcmp(q, "anelosimus") == 0 &&
 						strcmp(p, "eximius") == 0)

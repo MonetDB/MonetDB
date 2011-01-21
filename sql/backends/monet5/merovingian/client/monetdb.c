@@ -33,12 +33,12 @@
 #define TOOLKIT_VERSION   "0.7"
 
 #include "monetdb_config.h"
-#include "mal_sabaoth.h"
 #include "utils.h"
 #include "properties.h"
 #include "glob.h"
 #include "database.h"
 #include "control.h"
+#include <msabaoth.h>
 #include <stdlib.h> /* exit, getenv, qsort */
 #include <stdarg.h>	/* variadic stuff */
 #include <stdio.h> /* fprintf, rename */
@@ -61,32 +61,9 @@
 #ifdef HAVE_TERMIOS_H
 #include <termios.h> /* TIOCGWINSZ/TIOCSWINSZ */
 #endif
-
-#ifdef HAVE_ALLOCA_H
-# include <alloca.h>
-#elif defined __GNUC__
-# define alloca __builtin_alloca
-#elif defined _AIX
-# define alloca __alloca
-#elif defined _MSC_VER
-# include <malloc.h>
-# define alloca _alloca
-#else
-# include <stddef.h>
-void *alloca(size_t);
-#endif
-
 #include <errno.h>
 
-#define SOCKPTR struct sockaddr *
-
-typedef char* err;
-
-#define freeErr(X) GDKfree(X)
-#define getErrMsg(X) X
-#define NO_ERR (err)0
-
-static str dbfarm = NULL;
+static char *dbfarm = NULL;
 static int mero_running = 0;
 static char *mero_host = NULL;
 static int mero_port = -1;
@@ -211,7 +188,7 @@ cmpsabdb(const void *p1, const void *p2)
 
 /**
  * Helper function to perform the equivalent of
- * SABAOTHgetStatus(&stats, x) but over the network.
+ * msab_getStatus(&stats, x) but over the network.
  */
 static char *
 MEROgetStatus(sabdb **ret, char *database)
@@ -242,11 +219,11 @@ MEROgetStatus(sabdb **ret, char *database)
 			return(p);
 		}
 		for (swpos = 0; (p = strtok(NULL, "\n")) != NULL; swpos++) {
-			e = SABAOTHdeserialise(&stats, &p);
+			e = msab_deserialise(&stats, p);
 			if (e != NULL) {
 				printf("WARNING: failed to parse response from "
 						"merovingian: %s\n", e);
-				GDKfree(e);
+				free(e);
 				continue;
 			}
 			if (swpos == swlen)
@@ -277,11 +254,11 @@ static void
 printStatus(sabdb *stats, int mode, int twidth)
 {
 	sabuplog uplog;
-	str e;
+	char *e;
 
-	if ((e = SABAOTHgetUplogInfo(&uplog, stats)) != MAL_SUCCEED) {
+	if ((e = msab_getUplogInfo(&uplog, stats)) != NULL) {
 		fprintf(stderr, "status: internal error: %s\n", e);
-		GDKfree(e);
+		free(e);
 		return;
 	}
 
@@ -580,7 +557,7 @@ simple_command(int argc, char *argv[], char *merocmd, char *successmsg, char glo
 	int i;
 	sabdb *orig = NULL;
 	sabdb *stats = NULL;
-	err e;
+	char *e;
 
 	if (argc == 1) {
 		/* print help message for this command */
@@ -608,7 +585,7 @@ simple_command(int argc, char *argv[], char *merocmd, char *successmsg, char glo
 			exit(2);
 		}
 		stats = globMatchDBS(argc, argv, &orig, argv[0]);
-		SABAOTHfreeStatus(&orig);
+		msab_freeStatus(&orig);
 		orig = stats;
 
 		if (orig == NULL)
@@ -618,17 +595,18 @@ simple_command(int argc, char *argv[], char *merocmd, char *successmsg, char glo
 			if (argv[i] != NULL) {
 				/* maintain input order */
 				if (orig == NULL) {
-					stats = orig = GDKzalloc(sizeof(sabdb));
+					stats = orig = malloc(sizeof(sabdb));
 				} else {
-					stats = stats->next = GDKzalloc(sizeof(sabdb));
+					stats = stats->next = malloc(sizeof(sabdb));
 				}
-				stats->dbname = GDKstrdup(argv[i]);
+				memset(stats, 0, sizeof(sabdb));
+				stats->dbname = strdup(argv[i]);
 			}
 		}
 	}
 
 	simple_argv_cmd(argv[0], orig, merocmd, successmsg, NULL);
-	SABAOTHfreeStatus(&orig);
+	msab_freeStatus(&orig);
 }
 
 static void
@@ -639,7 +617,7 @@ command_status(int argc, char *argv[])
 	char *state = "rscl"; /* contains states to show */
 	int i;
 	char *p;
-	str e;
+	char *e;
 	sabdb *stats;
 	sabdb *orig;
 	int t;
@@ -709,7 +687,7 @@ command_status(int argc, char *argv[])
 		}
 	}
 
-	if ((e = MEROgetStatus(&orig, NULL)) != NO_ERR) {
+	if ((e = MEROgetStatus(&orig, NULL)) != NULL) {
 		fprintf(stderr, "status: internal error: %s\n", e);
 		free(e);
 		exit(2);
@@ -719,7 +697,7 @@ command_status(int argc, char *argv[])
 	 * listed all databases before) */
 	if (doall != 1) {
 		stats = globMatchDBS(argc, argv, &orig, "status");
-		SABAOTHfreeStatus(&orig);
+		msab_freeStatus(&orig);
 		orig = stats;
 	}
 	/* calculate width, BUG: SABdbState selection is only done at
@@ -772,7 +750,7 @@ command_status(int argc, char *argv[])
 	}
 
 	if (orig != NULL)
-		SABAOTHfreeStatus(&orig);
+		msab_freeStatus(&orig);
 }
 
 static int
@@ -880,7 +858,7 @@ command_startstop(int argc, char *argv[], startstop mode)
 {
 	int doall = 0;
 	int i;
-	err e;
+	char *e;
 	sabdb *orig = NULL;
 	sabdb *stats;
 	sabdb *prev;
@@ -946,7 +924,7 @@ command_startstop(int argc, char *argv[], startstop mode)
 	}
 	if (doall != 1) {
 		stats = globMatchDBS(argc, argv, &orig, type);
-		SABAOTHfreeStatus(&orig);
+		msab_freeStatus(&orig);
 		orig = stats;
 	}
 
@@ -972,7 +950,7 @@ command_startstop(int argc, char *argv[], startstop mode)
 				prev->next = stats->next;
 			}
 			stats->next = NULL;
-			SABAOTHfreeStatus(&stats);
+			msab_freeStatus(&stats);
 			if (prev == NULL) {
 				stats = orig;
 				continue;
@@ -986,7 +964,7 @@ command_startstop(int argc, char *argv[], startstop mode)
 
 	if (orig != NULL) {
 		simple_argv_cmd(argv[0], orig, type, NULL, action);
-		SABAOTHfreeStatus(&orig);
+		msab_freeStatus(&orig);
 	}
 
 	return;
@@ -1009,7 +987,7 @@ command_set(int argc, char *argv[], meroset type)
 	char *out;
 	sabdb *orig = NULL;
 	sabdb *stats = NULL;
-	err e;
+	char *e;
 
 	if (argc >= 1 && argc <= 2) {
 		/* print help message for this command */
@@ -1072,7 +1050,7 @@ command_set(int argc, char *argv[], meroset type)
 		exit(2);
 	}
 	stats = globMatchDBS(argc, argv, &orig, argv[0]);
-	SABAOTHfreeStatus(&orig);
+	msab_freeStatus(&orig);
 	orig = stats;
 
 	/* handle rename separately due to single argument constraint */
@@ -1097,8 +1075,8 @@ command_set(int argc, char *argv[], meroset type)
 		}
 		free(res);
 
-		SABAOTHfreeStatus(&orig);
-		GDKfree(props);
+		msab_freeStatus(&orig);
+		free(props);
 		exit(state);
 	}
 
@@ -1117,8 +1095,8 @@ command_set(int argc, char *argv[], meroset type)
 		free(res);
 	}
 
-	SABAOTHfreeStatus(&orig);
-	GDKfree(props);
+	msab_freeStatus(&orig);
+	free(props);
 	exit(state);
 }
 
@@ -1129,7 +1107,7 @@ command_get(int argc, char *argv[])
 	char *p;
 	char *property = NULL;
 	char *buf;
-	err e;
+	char *e;
 	int i;
 	sabdb *orig, *stats;
 	int twidth = TERMWIDTH;
@@ -1176,7 +1154,7 @@ command_get(int argc, char *argv[])
 				size_t off = 0;
 				/* die hard leak (can't use constant, strtok modifies
 				 * (and hence crashes)) */
-				property = GDKmalloc(sizeof(char) * 512);
+				property = malloc(sizeof(char) * 512);
 				kv = defprops;
 				off += snprintf(property, 512, "name");
 				while (kv->key != NULL) {
@@ -1219,13 +1197,13 @@ command_get(int argc, char *argv[])
 	 * listed all databases before) */
 	if (doall != 1) {
 		stats = globMatchDBS(argc, argv, &orig, "get");
-		SABAOTHfreeStatus(&orig);
+		msab_freeStatus(&orig);
 		orig = stats;
 	}
 
 	/* suppress header when there are no results */
 	if (orig == NULL) {
-		GDKfree(props);
+		free(props);
 		return;
 	}
 
@@ -1282,8 +1260,8 @@ command_get(int argc, char *argv[])
 		}
 	}
 
-	SABAOTHfreeStatus(&orig);
-	GDKfree(props);
+	msab_freeStatus(&orig);
+	free(props);
 }
 
 static void
@@ -1297,7 +1275,7 @@ command_destroy(int argc, char *argv[])
 {
 	int i;
 	int force = 0;    /* ask for confirmation */
-	err e;
+	char *e;
 	sabdb *orig = NULL;
 	sabdb *stats = NULL;
 
@@ -1331,7 +1309,7 @@ command_destroy(int argc, char *argv[])
 		exit(2);
 	}
 	stats = globMatchDBS(argc, argv, &orig, "destroy");
-	SABAOTHfreeStatus(&orig);
+	msab_freeStatus(&orig);
 	orig = stats;
 
 	if (orig == NULL)
@@ -1355,7 +1333,7 @@ command_destroy(int argc, char *argv[])
 	}
 
 	simple_argv_cmd(argv[0], orig, "destroy", "destroyed database", NULL);
-	SABAOTHfreeStatus(&orig);
+	msab_freeStatus(&orig);
 }
 
 static void
@@ -1374,19 +1352,19 @@ command_release(int argc, char *argv[])
 int
 main(int argc, char *argv[])
 {
-	str p, prefix;
+	char *p, *prefix;
 	FILE *cnf = NULL;
 	char buf[1024];
 	int i;
 	int fd;
 	confkeyval ckv[] = {
-		{"prefix",             GDKstrdup(PREFIX),          STR},
-		{"gdk_dbfarm",         NULL,                       STR},
-		{"gdk_nr_threads",     NULL,                       INT},
-		{"mero_doproxy",       GDKstrdup("yes"),           BOOL},
-		{"mero_discoveryport", NULL,                       INT},
-		{"#master",            GDKstrdup("no"),            BOOL},
-		{ NULL,                NULL,                       INVALID}
+		{"prefix",             strdup(PREFIX),          STR},
+		{"gdk_dbfarm",         NULL,                    STR},
+		{"gdk_nr_threads",     NULL,                    INT},
+		{"mero_doproxy",       strdup("yes"),           BOOL},
+		{"mero_discoveryport", NULL,                    INT},
+		{"#master",            strdup("no"),            BOOL},
+		{ NULL,                NULL,                    INVALID}
 	};
 	confkeyval *kv;
 #ifdef TIOCGWINSZ
@@ -1423,7 +1401,7 @@ main(int argc, char *argv[])
 
 	mero_running = 1;
 	snprintf(buf, 1024, "%s/.merovingian_lock", dbfarm);
-	fd = MT_lockf(buf, F_TLOCK, 4, 1);
+	fd = gdk_lockf(buf);
 	if (fd >= 0 || fd <= -2) {
 		if (fd >= 0) {
 			close(fd);

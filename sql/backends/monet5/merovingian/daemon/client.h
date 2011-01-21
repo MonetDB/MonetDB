@@ -20,9 +20,7 @@
 #ifndef _CLIENT_H
 #define _CLIENT_H 1
 
-#include "merovingian.h"
-
-str acceptConnections(int sock, int usock);
+char *acceptConnections(int sock, int usock);
 
 #endif
 

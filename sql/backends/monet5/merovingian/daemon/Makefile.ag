@@ -18,12 +18,9 @@
 man_MANS = monetdbd.1
 
 # MONETDB5: Sabaoth
-# GDK:      GDKmalloc
 INCLUDES = .. \
-		   ../../../../../monetdb5/mal \
-		   ../../../../../gdk \
+		   ../../../../../monetdb5/misc \
 		   ../../../../../common/stream \
-		   ../../../../../common/options \
 		   ../../../../../clients/mapilib
 
 EXTRA_DIST = $(man_MANS) \
@@ -52,9 +49,9 @@ bin_monetdbd = {
 			  peering.c \
 			  proxy.c
 	LIBS = ../utils/libmeroutil \
-		   ../../../../../monetdb5/tools/libmonetdb5 \
-		   ../../../../../gdk/libbat \
+		   ../../../../../monetdb5/misc/libsabaoth \
 		   ../../../../../common/stream/libstream \
+		   ../../../../../clients/mapilib/libmapi \
 		   $(UUID_LIBS) \
 		   $(curl_LIBS) \
 		   $(SOCKET_LIBS) \

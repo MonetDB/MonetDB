@@ -27,8 +27,7 @@
 #include <fcntl.h>
 #include <time.h>
 
-#include <gdk.h>
-#include <mal_sabaoth.h>
+#include <msabaoth.h>
 #include <utils/glob.h>
 #include <utils/utils.h>
 #include <utils/properties.h>
@@ -158,7 +157,7 @@ getRemoteDB(char *database)
 	sabdb *walk = NULL;
 	sabdb *stats = NULL;
 	size_t dbsize = strlen(database);
-	char *mdatabase = GDKmalloc(sizeof(char) * (dbsize + 2 + 1));
+	char *mdatabase = malloc(sizeof(char) * (dbsize + 2 + 1));
 	char mfullname[8096];  /* should be enough for everyone... */
 
 	/* each request has an implicit /'* (without ') added to match
@@ -185,19 +184,19 @@ getRemoteDB(char *database)
 		if (glob(mdatabase, mfullname) == 1) {
 			/* create a fake sabdb struct, chain where necessary */
 			if (walk != NULL) {
-				walk = walk->next = GDKmalloc(sizeof(sabdb));
+				walk = walk->next = malloc(sizeof(sabdb));
 			} else {
-				walk = stats = GDKmalloc(sizeof(sabdb));
+				walk = stats = malloc(sizeof(sabdb));
 			}
-			walk->dbname = GDKstrdup(rdb->dbname);
+			walk->dbname = strdup(rdb->dbname);
 			walk->path = walk->dbname; /* only freed by sabaoth */
 			walk->locked = 0;
 			walk->state = SABdbRunning;
-			walk->scens = GDKmalloc(sizeof(sablist));
-			walk->scens->val = GDKstrdup("sql");
+			walk->scens = malloc(sizeof(sablist));
+			walk->scens->val = strdup("sql");
 			walk->scens->next = NULL;
-			walk->conns = GDKmalloc(sizeof(sablist));
-			walk->conns->val = GDKstrdup(rdb->conn);
+			walk->conns = malloc(sizeof(sablist));
+			walk->conns->val = strdup(rdb->conn);
 			walk->conns->next = NULL;
 			walk->next = NULL;
 			walk->uplog = NULL;
@@ -225,7 +224,7 @@ getRemoteDB(char *database)
 
 	pthread_mutex_unlock(&_mero_remotedb_lock);
 
-	GDKfree(mdatabase);
+	free(mdatabase);
 
 	return(stats);
 }
@@ -247,11 +246,11 @@ registerMessageTap(int fd)
 	fcntl(fd, F_SETFD, O_NONBLOCK);
 	pthread_mutex_lock(&_mero_remotedb_lock);
 	if (h == NULL) {
-		h = GDKmalloc(sizeof(struct _disc_message_tap));
+		h = malloc(sizeof(struct _disc_message_tap));
 	} else {
 		for (; h->next != NULL; h = h->next)
 			;
-		h = h->next = GDKmalloc(sizeof(struct _disc_message_tap));
+		h = h->next = malloc(sizeof(struct _disc_message_tap));
 	}
 	h->next = NULL;
 	h->fd = fd;
@@ -271,7 +270,7 @@ unregisterMessageTap(int fd)
 			} else {
 				lasth->next = h->next;
 			}
-			GDKfree(h);
+			free(h);
 			break;
 		}
 	}
@@ -325,10 +324,10 @@ discoveryRunner(void *d)
 			deadline = now + _mero_discoveryttl;
 
 			/* list all known databases */
-			if ((e = SABAOTHgetStatus(&stats, NULL)) != MAL_SUCCEED) {
-				Mfprintf(_mero_discerr, "SABAOTHgetStatus error: %s, "
+			if ((e = msab_getStatus(&stats, NULL)) != NULL) {
+				Mfprintf(_mero_discerr, "msab_getStatus error: %s, "
 						"discovery services disabled\n", e);
-				GDKfree(e);
+				free(e);
 				return;
 			}
 
@@ -351,7 +350,7 @@ discoveryRunner(void *d)
 			}
 
 			if (orig != NULL)
-				SABAOTHfreeStatus(&orig);
+				msab_freeStatus(&orig);
 			
 			if (_mero_controlport != 0) {
 				/* announce control port */
@@ -440,7 +439,7 @@ discoveryRunner(void *d)
 			/* sleep a random amount of time to avoid an avalanche of
 			 * ANNC messages flooding the network */
 			c = 1 + (int)(2500.0 * (rand() / (RAND_MAX + 1.0)));
-			MT_sleep_ms(c);
+			sleep_ms(c);
 			/* force an announcement round by dropping the deadline */
 			forceannc = 1;
 			continue;
@@ -495,10 +494,10 @@ discoveryRunner(void *d)
 	/* now notify of our soon to be absence ;) */
 
 	/* list all known databases */
-	if ((e = SABAOTHgetStatus(&stats, NULL)) != MAL_SUCCEED) {
-		Mfprintf(_mero_discerr, "SABAOTHgetStatus error: %s, "
+	if ((e = msab_getStatus(&stats, NULL)) != NULL) {
+		Mfprintf(_mero_discerr, "msab_getStatus error: %s, "
 				"discovery services disabled\n", e);
-		GDKfree(e);
+		free(e);
 		return;
 	}
 
@@ -519,7 +518,7 @@ discoveryRunner(void *d)
 	}
 
 	if (orig != NULL)
-		SABAOTHfreeStatus(&orig);
+		msab_freeStatus(&orig);
 
 	/* deregister this merovingian, so it doesn't remain a stale entry */
 	if (_mero_controlport != 0) {
@@ -528,7 +527,7 @@ discoveryRunner(void *d)
 		broadcast(buf);
 	}
 
-	GDKfree(ckv);
+	free(ckv);
 }
 
 /* vim:set ts=4 sw=4 noexpandtab: */

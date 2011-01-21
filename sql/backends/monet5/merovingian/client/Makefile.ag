@@ -18,16 +18,8 @@
 man_MANS = monetdb.1
 
 # MONETDB5: Sabaoth
-# MONETDB:  GDKmalloc, stream
-INCLUDES = ../../../../../monetdb5/modules/atoms \
-		   ../../../../../monetdb5/compiler \
-		   ../../../../../monetdb5/modules/kernel \
-		   ../../../../../monetdb5/mal \
-		   ../../../../../monetdb5/modules/mal \
-		   ../../../../../monetdb5/optimizer \
-		   ../../../../../monetdb5/scheduler \
-		   ../../../../../common/options \
-		   ../../../../../gdk \
+# COMMON:   stream
+INCLUDES = ../../../../../monetdb5/misc \
 		   ../../../../../common/stream \
 		   ../utils
 
@@ -37,8 +29,7 @@ bin_monetdb = {
 	# hack: include monetdb.1.in here to get it expanded
 	SOURCES = monetdb.c monetdb.1.in
 	LIBS = ../utils/libmeroutil \
-		   ../../../../../monetdb5/tools/libmonetdb5 \
-		   ../../../../../gdk/libbat \
+		   ../../../../../monetdb5/misc/libsabaoth \
 		   ../../../../../common/stream/libstream \
 		   $(UUID_LIBS) \
 		   $(curl_LIBS) \

@@ -19,6 +19,13 @@ man_MANS = monetdb5.conf.5
 
 EXTRA_DIST = monetdb5.conf.in $(man_MANS)
 
+INCLUDES = ../../gdk
+
+lib_sabaoth = {
+	NOINST
+	SOURCES = msabaoth.h msabaoth.c
+}
+
 headers_conf = {
 	HEADERS = conf
 	DIR = sysconfdir

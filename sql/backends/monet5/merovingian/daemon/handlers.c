@@ -30,8 +30,6 @@
 #include <errno.h>
 #include <pthread.h>
 
-#include <gdk.h>
-
 #include "merovingian.h"
 
 
@@ -215,8 +213,8 @@ childhandler(int sig, siginfo_t *si, void *unused)
 						(long long int)p->pid);
 			}
 			if (p->dbname)
-				GDKfree(p->dbname);
-			GDKfree(p);
+				free(p->dbname);
+			free(p);
 			pthread_mutex_unlock(&_mero_topdp_lock);
 			return;
 		}

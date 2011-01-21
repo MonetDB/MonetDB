@@ -35,7 +35,7 @@
 
 typedef char* err;
 
-#define freeErr(X) GDKfree(X)
+#define freeErr(X) free(X)
 #define getErrMsg(X) X
 #define NO_ERR (err)0
 

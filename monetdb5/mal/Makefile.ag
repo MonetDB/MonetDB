@@ -15,7 +15,8 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-INCLUDES = ../../common/options \
+INCLUDES = ../misc \
+		   ../../common/options \
 		   ../../common/stream \
 		   ../../clients/mapilib \
 		   ../../gdk \

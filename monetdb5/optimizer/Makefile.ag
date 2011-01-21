@@ -15,7 +15,7 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-INCLUDES = ../mal ../modules/atoms ../modules/mal ../modules/kernel \
+INCLUDES = ../misc ../mal ../modules/atoms ../modules/mal ../modules/kernel \
 	../../clients/mapilib \
 	../../common/options \
 	../../common/stream \

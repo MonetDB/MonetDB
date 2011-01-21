@@ -22,7 +22,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <gdk.h>
 
 #include "merovingian.h"
 #include "discoveryrunner.h"
@@ -69,7 +68,7 @@ peeringServerThread(void *d)
 	len = read(s, data, sizeof(data));
 	if (len > 0 && strncmp(data, "tunnel ", 7) == 0) {
 		/* tunnel mode */
-		masquerade = GDKstrdup(data + 7);
+		masquerade = strdup(data + 7);
 		snprintf(data, sizeof(data),
 				"tunnel %s:%hu\n", _mero_hostname, _mero_port);
 		if (write(s, data, strlen(data)) == -1) {
