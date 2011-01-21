@@ -296,7 +296,7 @@ msab_marchConnection(const char *host, const int port)
 	char *path = alloca(sizeof(char) * (PATHLENGTH));
 	char *tmp;
 
-	if ((tmp = getDBPath(&path, PATHLENGTH, SCENARIOFILE)) != NULL)
+	if ((tmp = getDBPath(&path, PATHLENGTH, CONNECTIONFILE)) != NULL)
 		return(tmp);
 
 	if (port <= 0 && host[0] != '/')
