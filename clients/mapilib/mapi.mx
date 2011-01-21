@@ -2206,7 +2206,7 @@ mapi_mapi(const char *host, int port, const char *username,
 			char buf[1024];
 			struct stat st;
 			snprintf(buf, sizeof(buf),
-				 PREFIX "/var/MonetDB5/dbfarm/mapi_socket");
+				 PREFIX "/var/monetdb5/dbfarm/mapi_socket");
 			if (strlen(buf) <= sizeof(((struct sockaddr_un *) 0)->sun_path) &&
 					stat(buf, &st) != -1 &&
 					S_ISSOCK(st.st_mode))
