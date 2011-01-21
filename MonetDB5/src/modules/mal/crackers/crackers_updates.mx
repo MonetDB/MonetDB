@@ -37,6 +37,7 @@ All Rights Reserved.
 @:@1(dbl,simple,,oid)@
 @:@1(date,atom,TYPE_,oid)@
 
+@:@1(int,simple,,lng)@
 @:@1(int,simple,,int)@
 @:@1(int,simple,,str)@
 @:@1(int,simple,,date)@

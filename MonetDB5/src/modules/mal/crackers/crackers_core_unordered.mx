@@ -46,6 +46,7 @@ All Rights Reserved.
 
 @= TypeSwitch_4
 /* TODO: add the rest of the type combinations once code is stable */
+@:@1(int,lng,simple,,,@2)@
 @:@1(int,int,simple,,,@2)@
 @:@1(int,date,simple,,,@2)@
 @:@1(int,oid,simple,,,@2)@
