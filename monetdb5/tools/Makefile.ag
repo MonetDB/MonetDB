@@ -28,7 +28,7 @@ INCLUDES = ../misc ../mal \
 lib_monetdb5 = {
 	NAME = monetdb5
 	SCRIPTS = mal
-	DIR = libdir/monetdb5/lib
+	DIR = libdir
 	SOURCES = libmonetdb5.rc
 	LIBS = ../misc/libsabaoth ../mal/libmal ../modules/atoms/libatoms \
 		../modules/kernel/libkernel ../modules/mal/libmal \

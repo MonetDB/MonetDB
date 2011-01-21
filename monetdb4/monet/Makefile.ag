@@ -43,7 +43,7 @@ CFLAGS = $(GCC_BISON_CFLAGS)
 MTSAFE
 
 lib_monet = { 
-	DIR = libdir/monetdb4
+	DIR = libdir
 	SOURCES = \
 		monet.mx monet_interpreter.mx monet_queue.mx yytree.mx \
 		monet_client.mx monet_multiplex.mx monet_tbl.mx \
