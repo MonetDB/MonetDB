@@ -78,7 +78,7 @@ OPTcrackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					continue;
 
 			/* avoid cracking delta bats used for updates */
-			if (getModuleId(p)== sqlRef && mb->var[getArg(p,4)]->value.val.ival != 0 ) 
+			if (getModuleId(p)== sqlRef && mb->var[getArg(p,5)]->value.val.ival != 0 ) 
 				continue;		
 				
 			varSetProp(mb, getArg(p, 0), canBeCrackedProp, 0, NULL);
