@@ -117,6 +117,7 @@ MFconnectionManager(void *d)
 									m->dbcv[i]->user, m->dbcv[i]->pass, "sql");
 							if (mapi_reconnect(tm) == MOK) {
 								m->dbcv[i]->conn = tm;
+								mapi_cache_limit(tm, -1); /* don't page */
 							} else {
 								Mfprintf(stdout, "failed to connect to %s: %s\n",
 										buf, mapi_error_str(tm));
@@ -191,6 +192,7 @@ MFconnectionManager(void *d)
 									msab_freeStatus(&stats);
 									continue;
 								}
+								mapi_cache_limit(tm, -1); /* don't page */
 
 								/* set the new connection live */
 								ttm = m->dbcv[i]->conn;
@@ -398,15 +400,18 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 					m->dbcv[i]->database);
 			return;
 		}
-		if (!mapi_is_connected(m->dbcv[i]->conn) &&
-				mapi_reconnect(m->dbcv[i]->conn) != MOK)
-		{
-			mnstr_printf(fout, "!failed to establish connection for %s: %s\n",
-					m->dbcv[i]->database, mapi_error_str(m->dbcv[i]->conn));
-			mnstr_flush(fout);
-			Mfprintf(stderr, "mapi_reconnect for %s failed: %s\n",
-					m->dbcv[i]->database, mapi_error_str(m->dbcv[i]->conn));
-			return;
+		if (!mapi_is_connected(m->dbcv[i]->conn)) {
+			if (mapi_reconnect(m->dbcv[i]->conn) != MOK) {
+				mnstr_printf(fout, "!failed to establish connection "
+						"for %s: %s\n", m->dbcv[i]->database,
+						mapi_error_str(m->dbcv[i]->conn));
+				mnstr_flush(fout);
+				Mfprintf(stderr, "mapi_reconnect for %s failed: %s\n",
+						m->dbcv[i]->database,
+						mapi_error_str(m->dbcv[i]->conn));
+				return;
+			}
+			mapi_cache_limit(m->dbcv[i]->conn, -1); /* don't page */
 		}
 
 		hdl[i] = mapi_query(m->dbcv[i]->conn, buf);
