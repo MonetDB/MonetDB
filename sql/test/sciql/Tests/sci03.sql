@@ -4,8 +4,4 @@ UPDATE stripes SET x = x+1;  -- what does it mean
 UPDATE grid
 SET v = CASE WHEN x > y THEN x + y  WHEN X<y THEN x - y ELSE 0 END;
 UPDATE diagonal SET v = x +y;
-
--- This query crashes mserver5 with: Segmentation fault.
---   at .../monet/default/sql/server/sql_statement.c:708:
---   n->data = push_project(sa, rows, n->data);
 UPDATE sparse SET v = mod(rand(),16);
