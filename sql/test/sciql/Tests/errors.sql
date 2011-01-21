@@ -11,15 +11,15 @@ create array err5( s varchar(25) dimension[1:3:1], v float);
 
 -- array dimensions may have undetermined step sizes
 
-create array10(x integer dimension[1:128:*], v float);
+create array array10(x integer dimension[1:128:*], v float);
 
 -- default value expressions should be of the proper type
 
-create array15( x integer dimension[1:128:1],
+create array array15( x integer dimension[1:128:1],
 	v float default 'unknown');
-create array16( x integer dimension[1:128:1],
+create array array16( x integer dimension[1:128:1],
 	v float default v > 0);
-create array17( x integer dimension[1:128:1],
+create array array17( x integer dimension[1:128:1],
 	v float default true);
 
 drop array err1;
