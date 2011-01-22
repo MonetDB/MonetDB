@@ -24,6 +24,10 @@
 @mal
 module fits;
 
+pattern listdir(dirname:str):void
+address FITSdir
+comment "Attach all FITS files in the directory";
+
 command fitstest(filename:str):int
 address FITStest
 comment "Returns the type of first extension in the FITS file filename";
@@ -65,6 +69,7 @@ comment "Load a FITS table from an attached file";
 #endif
 
 fits_export str FITStest(int *res, str *fname);
+ fits_export str FITSdir(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 fits_export str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 fits_export str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif
@@ -75,25 +80,9 @@ fits_export str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 #include "fits.h"
 #define FITS_INS_COL "INSERT INTO fits_columns(id, name, type, units, number, table_id) \
 	 VALUES(%d,'%s','%s','%s',%d,%d);"
-
-str
-FITStest(int *res, str *fname)
-{
-    fitsfile *fptr;       /* pointer to the FITS file, defined in fitsio.h */
-	str msg = MAL_SUCCEED;
-    int status = 0, hdutype;
-
-    *res = 0;
-    if ( fits_open_file(&fptr, *fname, READONLY, &status) )
-       	msg = createException(MAL, "fits.test", "Missing FITS file %s", fname);
-	else {
-	    fits_movabs_hdu(fptr, 2, &hdutype, &status);
-		*res = hdutype;
-    	fits_close_file(fptr, &status);
-	}
-
-    return msg;
-}
+#define FILE_INS "INSERT INTO fits_files(id, name) VALUES (%d, '%s');"
+#define DEL_TABLE "DELETE FROM fitsfiles;"
+#define ATTACHDIR "call fitsattach('%s');"
 
 static void
 FITSinitCatalog(mvc *m)
@@ -210,6 +199,64 @@ fits2subtype(sql_subtype *tpe, int t, long rep, long wid)
     return 1;
 }
 
+str FITSdir(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str msg = MAL_SUCCEED;
+	str dir = *(str*) getArgReference(stk, pci, 1); 
+	DIR *dp;
+	struct dirent *ep; 
+	fitsfile *fptr;
+	char *s;
+	int status = 0;
+	(void) mb;
+     
+	dp = opendir(dir);
+	if (dp != NULL) {
+		char stmt[BUFSIZ]; 
+		char fname[BUFSIZ];
+
+		s = stmt;	
+
+		while ((ep = readdir(dp)) != NULL) {
+			snprintf(fname,BUFSIZ,"%s%s",dir,ep->d_name);
+		
+			status = 0;
+       		fits_open_file(&fptr, fname, READONLY, &status);
+			if (status == 0) {			
+				snprintf(stmt, BUFSIZ, ATTACHDIR, fname);
+				msg = SQLstatementIntern(cntxt, &s,"fits.listofdir",TRUE, FALSE);
+
+				fits_close_file(fptr, &status);
+			}
+		}
+		(void) closedir (dp);
+	}
+    else
+		msg = createException(MAL, "listdir", "Couldn't open the directory");
+
+	return msg;
+}
+
+
+str
+FITStest(int *res, str *fname)
+{
+    fitsfile *fptr;       /* pointer to the FITS file, defined in fitsio.h */
+	str msg = MAL_SUCCEED;
+    int status = 0, hdutype;
+
+    *res = 0;
+    if ( fits_open_file(&fptr, *fname, READONLY, &status) )
+       	msg = createException(MAL, "fits.test", "Missing FITS file %s", fname);
+	else {
+	    fits_movabs_hdu(fptr, 2, &hdutype, &status);
+		*res = hdutype;
+    	fits_close_file(fptr, &status);
+	}
+
+    return msg;
+}
+
 str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
@@ -283,6 +330,7 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		fits_read_key(fptr, TSTRING, "EXTNAME", tname, NULL, &status);
 		if ( status ) {
 			snprintf(tname,BUFSIZ,"%s_%d",bname,i);
+			tname_low = toLower(tname);
 			status = 0;
 		}
 		else {	/* check table name for existence in the fits catalog */

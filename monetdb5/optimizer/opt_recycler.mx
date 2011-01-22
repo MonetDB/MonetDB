@@ -109,7 +109,7 @@ are monitored and also trigger cleaning the cache.
 #include "mal_instruction.h"
 
 static lng recycleSeq = 0;
-static bte baseTableMode = 1;
+static bte baseTableMode = 0;
 
 static int
 OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
