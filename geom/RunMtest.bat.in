@@ -76,7 +76,7 @@ if not exist %buildbase%\monetdb5\modules\atoms\autoload mkdir %buildbase%\monet
 copy /y %srcdir%\..\monetdb5\modules\atoms\??_*.mal %buildbase%\monetdb5\modules\atoms\autoload
 :skip_5
 
-set PATH=%buildbase%\monetdb%V%\tools;%buildbase%\testing;%PATH%
+set PATH=%buildbase%\monetdb%V%\tools;%buildbase%\clients\mapiclient;%buildbase%\testing;%PATH%
 
 set PATH=%MOD_PATH%;%PATH%
 

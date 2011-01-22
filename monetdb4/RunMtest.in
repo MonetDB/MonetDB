@@ -32,7 +32,7 @@ done
 MOD_PATH="${MOD_PATH}${srcdir}/scripts/tools"
 
 # enhance various paths to find our stuff
-binpath="${builddir}/tools:${buildbase}/testing"
+binpath="${builddir}/tools:${buildbase}/clients/mapiclient:${buildbase}/testing"
 libpath="${MOD_PATH}:${builddir}/monet/.libs"
 
 PATH="${binpath}:$PATH"

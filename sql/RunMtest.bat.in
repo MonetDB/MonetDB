@@ -44,7 +44,7 @@ copy /y %srcdir%\..\monetdb5\extras\rdf\??_*.mal %buildbase%\monetdb5\extras\rdf
 if not exist %buildbase%\monetdb5\modules\atoms\autoload mkdir %buildbase%\monetdb5\modules\atoms\autoload
 copy /y %srcdir%\..\monetdb5\modules\atoms\??_*.mal %buildbase%\monetdb5\modules\atoms\autoload
 
-set PATH=%buildbase%\monetdb5\tools;%buildbase%\testing;%PATH%
+set PATH=%buildbase%\monetdb5\tools;%buildbase%\clients\mapiclient;%buildbase%\testing;%PATH%
 
 set PATH=%MOD_PATH%;%PATH%
 set PATH=%builddir%\server;%PATH%

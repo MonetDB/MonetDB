@@ -67,7 +67,7 @@ done
 esac
 
 # enhance various paths to find our stuff
-binpath="${builddir}/compiler:${builddir}/tools:${buildbase}/monetdb$V/tools:${buildbase}/testing"
+binpath="${builddir}/compiler:${builddir}/tools:${buildbase}/monetdb$V/tools:${buildbase}/clients/mapiclient:${buildbase}/testing"
 libpath="${MOD_PATH}"
 
 PATH="${binpath}:$PATH"
