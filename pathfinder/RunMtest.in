@@ -54,6 +54,7 @@ do
 done
 MOD_PATH="${MOD_PATH}${srcdir}/../monetdb4/scripts/tools"
 cfg="${buildbase}/monetdb4/conf/MonetDB.conf"
+;;
 5)
 # where compiled monetdb5 modules are to be found
 for d in compiler optimizer scheduler modules/atoms modules/kernel modules/mal extras/crackers extras/rdf
