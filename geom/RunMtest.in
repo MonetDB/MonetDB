@@ -62,7 +62,7 @@ cfg="${buildbase}/monetdb4/conf/MonetDB.conf"
 ;;
 5)
 # where compiled SQL modules are to be found
-for d in backends/monet5 sql
+for d in backends/monet5 backends/monet5/vaults sql
 do
 	MOD_PATH="${MOD_PATH}${buildbase}/sql/$d/.libs:${buildbase}/sql/$d:"
 	# enable auto-loading of modules before `make install`

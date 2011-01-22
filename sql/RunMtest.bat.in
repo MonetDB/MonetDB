@@ -15,11 +15,15 @@ set srcdir=@XSOURCE@\sql
 
 set MOD_PATH=%builddir%\backends\monet5\.libs
 set MOD_PATH=%MOD_PATH%;%builddir%\backends\monet5
+set MOD_PATH=%MOD_PATH%;%builddir%\backends\monet5\vaults\.libs
+set MOD_PATH=%MOD_PATH%;%builddir%\backends\monet5\vaults
 set MOD_PATH=%MOD_PATH%;%builddir%\sql
 
 REM enable auto-loading of modules before `make install`
 if not exist %builddir%\backends\monet5\autoload mkdir %builddir%\backends\monet5\autoload
 copy /y %srcdir%\backends\monet5\??_*.mal %builddir%\backends\monet5\autoload
+if not exist %builddir%\backends\monet5\vaults\autoload mkdir %builddir%\backends\monet5\vaults\autoload
+copy /y %srcdir%\backends\monet5\vaults\??_*.mal %builddir%\backends\monet5\vaults\autoload
 
 REM enable auto-loading of SQL createdb scripts before `make install`
 if not exist %builddir%\sql\createdb mkdir %builddir%\sql\createdb

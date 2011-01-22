@@ -25,7 +25,7 @@ srcdir=`cd '@srcdir@'; pwd`
 uname=`uname`
 
 # where compiled SQL modules are to be found
-for d in backends/monet5 sql
+for d in backends/monet5 backends/monet5/vaults sql
 do
 	MOD_PATH="${MOD_PATH}${builddir}/$d/.libs:${builddir}/$d:"
 	# enable auto-loading of modules before `make install`

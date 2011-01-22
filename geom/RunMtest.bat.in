@@ -52,11 +52,15 @@ set cfg=%buildbase%\monetdb4\conf\MonetDB.conf
 if not %V% == 5 goto skip_5
 set MOD_PATH=%MOD_PATH%;%buildbase%\sql\backends\monet5\.libs
 set MOD_PATH=%MOD_PATH%;%buildbase%\sql\backends\monet5
+set MOD_PATH=%MOD_PATH%;%buildbase%\sql\backends\monet5\vaults\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\sql\backends\monet5\vaults
 set MOD_PATH=%MOD_PATH%;%buildbase%\sql\sql
 
 REM enable auto-loading of modules before `make install`
 if not exist %buildbase%\sql\backends\monet5\autoload mkdir %buildbase%\sql\backends\monet5\autoload
 copy /y %srcdir%\..\sql\backends\monet5\??_*.mal %buildbase%\sql\backends\monet5\autoload
+if not exist %buildbase%\sql\backends\monet5\vaults\autoload mkdir %buildbase%\sql\backends\monet5\vaults\autoload
+copy /y %srcdir%\..\sql\backends\monet5\vaults\??_*.mal %buildbase%\sql\backends\monet5\vaults\autoload
 
 REM enable auto-loading of SQL createdb scripts before `make install`
 if not exist %buildbase%\sql\sql\createdb mkdir %buildbase%\sql\sql\createdb
