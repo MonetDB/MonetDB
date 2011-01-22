@@ -46,6 +46,8 @@ do
 	cp -f ${srcdir}/../monetdb5/$d/[0-9][0-9]_*.mal ${buildbase}/monetdb5/$d/autoload/ 2>/dev/null
 done
 
+cfg="${buildbase}/monetdb5/misc/monetdb5.conf"
+
 # enhance various paths to find our stuff
 binpath="${builddir}/backends/monet5:${buildbase}/monetdb5/tools:${buildbase}/clients/mapiclient:${buildbase}/testing"
 libpath="${MOD_PATH}:${builddir}/server/.libs"
@@ -85,4 +87,4 @@ cd "$srcdir"
 # arguments.
 # if the environment variable MTEST_AT is set (value does not matter), pass
 # the --at flag to Mtest.py so that it uses the at command as a watchdog.
-exec python "${buildbase}/testing/Mtest.py" --package=${pkg} --monet_mod_path="${MOD_PATH}" --dbfarm="${builddir}/dbfarm" --TSTTRGBASE="${builddir}" ${MTEST_AT+--at} "${@--rq}"
+exec python "${buildbase}/testing/Mtest.py" --config="${cfg}" --package=${pkg} --monet_mod_path="${MOD_PATH}" --dbfarm="${builddir}/dbfarm" --TSTTRGBASE="${builddir}" ${MTEST_AT+--at} "${@--rq}"

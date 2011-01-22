@@ -35,6 +35,8 @@ set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\mapi
 set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\mnetcdf\.libs
 set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\mnetcdf
 set MOD_PATH=%MOD_PATH%;%srcdir%\..\monetdb4\scripts\tools
+
+set cfg=%buildbase%\monetdb4\conf\MonetDB.conf
 :skip_4
 
 if not %V% == 5 goto skip_5
@@ -60,6 +62,8 @@ if not exist %buildbase%\monetdb5\extras\rdf\autoload mkdir %buildbase%\monetdb5
 copy /y %srcdir%\..\monetdb5\extras\rdf\??_*.mal %buildbase%\monetdb5\extras\rdf\autoload
 if not exist %buildbase%\monetdb5\modules\atoms\autoload mkdir %buildbase%\monetdb5\modules\atoms\autoload
 copy /y %srcdir%\..\monetdb5\modules\atoms\??_*.mal %buildbase%\monetdb5\modules\atoms\autoload
+
+set cfg=%buildbase%\monetdb5\misc\monetdb5.conf
 :skip_5
 
 set PATH=%buildbase%\monetdb%V%\tools;%buildbase%\clients\mapiclient;%buildbase%\testing;%PATH%
@@ -73,7 +77,7 @@ set PYTHONPATH=%buildbase%\testing;%srcdir%\..\testing;%PYTHONPATH%
 REM execute Mtest.py in the source directory
 pushd %srcdir%
 
-call "%buildbase%\testing\Mtest.py" -%V% --package=%pkg% "--monet_mod_path=%MOD_PATH%" "--dbfarm=%builddir%\dbfarm" "--xrpc_docroot=%srcdir%\runtime\xrpc" "--TSTTRGBASE=%builddir%" %1 %2 %3 %4 %5 %6 %7 %8 %9
+call "%buildbase%\testing\Mtest.py" "--config=%cfg%" -%V% --package=%pkg% "--monet_mod_path=%MOD_PATH%" "--dbfarm=%builddir%\dbfarm" "--xrpc_docroot=%srcdir%\runtime\xrpc" "--TSTTRGBASE=%builddir%" %1 %2 %3 %4 %5 %6 %7 %8 %9
 
 popd
 endlocal

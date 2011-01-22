@@ -58,6 +58,7 @@ do
 	MOD_PATH="${MOD_PATH}${buildbase}/monetdb4/$d/.libs:${buildbase}/monetdb4/$d:"
 done
 MOD_PATH="${MOD_PATH}${srcdir}/../monetdb4/scripts/tools"
+cfg="${buildbase}/monetdb4/conf/MonetDB.conf"   
 ;;
 5)
 # where compiled SQL modules are to be found
@@ -79,6 +80,7 @@ do
 	mkdir -p ${buildbase}/monetdb5/$d/autoload
 	cp -f ${srcdir}/../monetdb5/$d/[0-9][0-9]_*.mal ${buildbase}/monetdb5/$d/autoload/ 2>/dev/null
 done
+cfg="${buildbase}/monetdb5/misc/monetdb5.conf"
 ;;
 esac
 
@@ -119,4 +121,4 @@ cd "$srcdir"
 # arguments.
 # if the environment variable MTEST_AT is set (value does not matter), pass
 # the --at flag to Mtest.py so that it uses the at command as a watchdog.
-exec python "${buildbase}/testing/Mtest.py" -$V --package=${pkg} --monet_mod_path="${MOD_PATH}" --dbfarm="${builddir}/dbfarm" --TSTTRGBASE="${builddir}" ${MTEST_AT+--at} "${@--rq}"
+exec python "${buildbase}/testing/Mtest.py" --config="${cfg}" -$V --package=${pkg} --monet_mod_path="${MOD_PATH}" --dbfarm="${builddir}/dbfarm" --TSTTRGBASE="${builddir}" ${MTEST_AT+--at} "${@--rq}"
