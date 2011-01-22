@@ -48,7 +48,7 @@ case "$V" in
 # where compiled monetdb4 modules are to be found
 for d in modules/plain modules/contrib modules/calibrator modules/mapi @HAVE_NETCDF_TRUE@ modules/mnetcdf
 do
-	MOD_PATH="${MOD_PATH}${buildbase}/monetdb4/$d/.libs:${builddir}/$d:"
+	MOD_PATH="${MOD_PATH}${buildbase}/monetdb4/$d/.libs:${buildbase}/monetdb4/$d:"
 done
 MOD_PATH="${MOD_PATH}${srcdir}/../monetdb4/scripts/tools"
 ;;
@@ -56,7 +56,7 @@ MOD_PATH="${MOD_PATH}${srcdir}/../monetdb4/scripts/tools"
 # where compiled monetdb5 modules are to be found
 for d in compiler optimizer scheduler modules/atoms modules/kernel modules/mal extras/crackers extras/rdf
 do
-	MOD_PATH="${MOD_PATH}${buildbase}/monetdb5/$d/.libs:${builddir}/$d:"
+	MOD_PATH="${MOD_PATH}${buildbase}/monetdb5/$d/.libs:${buildbase}/monetdb5/$d:"
 	# enable auto-loading of modules before `make install`
 	mkdir -p ${buildbase}/monetdb5/$d/autoload
 	cp -f ${srcdir}/../monetdb5/$d/[0-9][0-9]_*.mal ${buildbase}/monetdb5/$d/autoload/ 2>/dev/null
