@@ -29,6 +29,10 @@ REM enable auto-loading of modules before `make install`
 if not exist %builddir%\monetdb%V%\autoload mkdir %builddir%\monetdb%V%\autoload
 copy /y %srcdir%\monetdb%V%\??_*.mal %builddir%\monetdb%V%\autoload
 
+REM enable auto-loading of SQL createdb scripts before `make install`
+if not exist %builddir%\sql\createdb mkdir %builddir%\sql\createdb
+copy /y %srcdir%\sql\??_*.sql %builddir%\sql\createdb
+
 if not %V% == 4 goto skip_4
 set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\plain\.libs
 set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\plain
@@ -51,6 +55,10 @@ set MOD_PATH=%MOD_PATH%;%buildbase%\sql\sql
 REM enable auto-loading of modules before `make install`
 if not exist %buildbase%\sql\backends\monet5\autoload mkdir %buildbase%\sql\backends\monet5\autoload
 copy /y %srcdir%\..\sql\backends\monet5\??_*.mal %buildbase%\sql\backends\monet5\autoload
+
+REM enable auto-loading of SQL createdb scripts before `make install`
+if not exist %buildbase%\sql\sql\createdb mkdir %buildbase%\sql\sql\createdb
+copy /y %srcdir%\..\sql\sql\??_*.sql %buildbase%\sql\sql\createdb
 
 set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\compiler\.libs
 set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\compiler

@@ -33,6 +33,10 @@ do
 	cp -f ${srcdir}/$d/[0-9][0-9]_*.mal ${builddir}/$d/autoload/ 2>/dev/null
 done
 
+# enable auto-loading of SQL createdb scripts before `make install`
+mkdir -p ${builddir}/sql/createdb
+cp -f ${srcdir}/sql/[0-9][0-9]_*.sql ${builddir}/sql/createdb/ 2>/dev/null
+
 # where compiled monetdb5 modules are to be found
 for d in compiler optimizer scheduler modules/atoms modules/kernel modules/mal extras/crackers extras/rdf
 do

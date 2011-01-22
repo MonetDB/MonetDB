@@ -21,6 +21,10 @@ REM enable auto-loading of modules before `make install`
 if not exist %builddir%\backends\monet5\autoload mkdir %builddir%\backends\monet5\autoload
 copy /y %srcdir%\backends\monet5\??_*.mal %builddir%\backends\monet5\autoload
 
+REM enable auto-loading of SQL createdb scripts before `make install`
+if not exist %builddir%\sql\createdb mkdir %builddir%\sql\createdb
+copy /y %srcdir%\sql\??_*.sql %builddir%\sql\createdb
+
 set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\compiler\.libs
 set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\compiler
 set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\optimizer\.libs
