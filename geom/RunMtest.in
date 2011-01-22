@@ -73,7 +73,7 @@ done
 mkdir -p ${buildbase}/sql/sql/createdb
 cp -f ${srcdir}/../sql/sql/[0-9][0-9]_*.sql ${buildbase}/sql/sql/createdb/ 2>/dev/null
 # where compiled monetdb5 modules are to be found
-for d in compiler optimizer scheduler modules/atoms modules/kernel modules/mal modules/mal/crackers modules/mal/rdf
+for d in optimizer scheduler modules/atoms modules/kernel modules/mal extras/crackers extras/rdf extras/xml
 do
 	MOD_PATH="${MOD_PATH}${buildbase}/monetdb5/$d/.libs:${buildbase}/monetdb5/$d:"
 	# enable auto-loading of modules before `make install`

@@ -40,8 +40,6 @@ set cfg=%buildbase%\monetdb4\conf\MonetDB.conf
 :skip_4
 
 if not %V% == 5 goto skip_5
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\compiler\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\compiler
 set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\optimizer\.libs
 set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\optimizer
 set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\scheduler\.libs
@@ -56,12 +54,14 @@ set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\extras\crackers\.libs
 set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\extras\crackers
 set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\extras\rdf\.libs
 set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\extras\rdf
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\extras\xml\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\extras\xml
 
 REM enable auto-loading of modules before `make install`
 if not exist %buildbase%\monetdb5\extras\rdf\autoload mkdir %buildbase%\monetdb5\extras\rdf\autoload
 copy /y %srcdir%\..\monetdb5\extras\rdf\??_*.mal %buildbase%\monetdb5\extras\rdf\autoload
-if not exist %buildbase%\monetdb5\modules\atoms\autoload mkdir %buildbase%\monetdb5\modules\atoms\autoload
-copy /y %srcdir%\..\monetdb5\modules\atoms\??_*.mal %buildbase%\monetdb5\modules\atoms\autoload
+if not exist %buildbase%\monetdb5\extras\xml\autoload mkdir %buildbase%\monetdb5\extras\xml\autoload
+copy /y %srcdir%\..\monetdb5\extras\xml\??_*.mal %buildbase%\monetdb5\extras\xml\autoload
 
 set cfg=%buildbase%\monetdb5\misc\monetdb5.conf
 :skip_5
