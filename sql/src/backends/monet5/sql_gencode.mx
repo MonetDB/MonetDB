@@ -154,12 +154,9 @@ dump_header(MalBlkPtr mb, stmt *s, list *l)
 		char *cn = column_name(c);
 		char *ntn = sql_escape_ident(tn);
 		char *nsn = sql_escape_ident(sn);
-		char *fqtn = alloca(sizeof(char) * (strlen(nsn) + 1 + strlen(ntn) + 1));
+		char fqtn[512];
 
-		fqtn[0]=0;
-		strcat(fqtn, nsn);
-		strcat(fqtn, ".");
-		strcat(fqtn, ntn);
+		snprintf(fqtn,512,"%s.%s", nsn,ntn);
 
 		q = newStmt1(mb, sqlRef, "rsColumn");
 		q = pushArgument(mb, q, s->nr);
@@ -2231,9 +2228,9 @@ backend_call(backend *be, Client c, cq *cq)
 			sql_subtype *pt = cq->params+i;
 
 			if (!atom_cast(a, pt)) {
-				char buf[BUFSIZ];
+				char buf[512];
 
-				snprintf(buf, BUFSIZ, "wrong type for argument %d of "
+				snprintf(buf, 512, "wrong type for argument %d of "
 					"function call: %s, expected %s\n",
 					i + 1, atom_type(a)->type->sqlname,
 					pt->type->sqlname);
