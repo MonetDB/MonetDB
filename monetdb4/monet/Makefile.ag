@@ -27,6 +27,7 @@
 
 INCLUDES = ../../common/options \
 		   ../../common/stream \
+		   ../../common/utils \
 		   ../../clients/mapilib \
 		   ../../gdk
 

@@ -106,17 +106,6 @@ typedef	DWORD			pthread_t;
 #define strdup _strdup
 #endif
 
-/* POSIX dirent interface */
-struct dirent {
-	char	*d_name;
-};
-typedef struct DIR {
-	long			handle;
-	struct _finddata_t	info;
-	struct dirent		result;
-	char			*name;
-} DIR;
-
 #else			/* UNIX specific #includes and #defines */
 
 #include <sys/wait.h>
@@ -137,6 +126,7 @@ typedef struct DIR {
 #define	LPTHREAD_START_ROUTINE	void * (*) (void *)
 #endif	/* _WIN32 */
 
+#include "mutils.h"
 #include <sys/types.h>		/* Common #includes (ANSI and SSL) */
 #include <sys/stat.h>
 #include <stdio.h>

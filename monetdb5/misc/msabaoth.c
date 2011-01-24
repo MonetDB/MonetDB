@@ -43,9 +43,12 @@
 #include <assert.h>
 
 #include "msabaoth.h"
+#include "mutils.h"
 
 #if defined(_MSC_VER) && _MSC_VER >= 1400
 #define close _close
+#define strdup _strdup
+#define unlink _unlink
 #endif
 
 /** the directory where the databases are (aka dbfarm) */
@@ -425,24 +428,6 @@ msab_getMyStatus(sabdb** ret)
 	return(NULL);
 }
 
-/* copy of MT_lockf to avoid dependency on GDK just because of this */
-static inline int
-gdk_lockf(const char *filename)
-{
-	int fd = open(filename, O_CREAT | O_RDWR,
-			S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
-
-	if (fd < 0)
-		return -2;
-
-	if (lseek(fd, 4, SEEK_SET) == 4 && lockf(fd, 2, 1) == 0) {
-		/* do not close else we lose the lock we want */
-		return fd;
-	}
-	close(fd);
-	return -1;
-}
-
 #define MAINTENANCEFILE ".maintenance"
 /**
  * Returns a list of populated sabdb structs.  If dbname == NULL, the
@@ -565,7 +550,7 @@ msab_getStatus(sabdb** ret, char *dbname)
 			/* if we are the mserver that is running this database,
 			 * don't touch the lock! */
 			sdb->state = SABdbRunning;
-		} else if ((fd = gdk_lockf(buf)) == -2) {
+		} else if ((fd = MT_lockf(buf, F_TLOCK, 4, 1)) == -2) {
 			/* Locking failed; this can be because the lockfile couldn't
 			 * be created.  Probably there is no Mserver running for
 			 * that case also.

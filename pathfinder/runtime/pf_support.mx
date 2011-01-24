@@ -5968,6 +5968,7 @@ extern MT_Lock pf_runtime_lock[7];
 
 #include "monetdb_config.h"
 #include "pf_support.h"
+#include "mutils.h"
 #include <gdk_scanselect.h> /* for type-specific HT_bunfastins_nocheck_noinc(), until they're moved to gdk.mx */
 #include <algebra.h> /* needed for result size estimation in CMDenumerate */
 #include <math.h> /* needed for round_up */

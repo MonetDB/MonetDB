@@ -17,7 +17,7 @@
 
 MTSAFE
 
-INCLUDES = ../common/options ../common/stream $(valgrind_CFLAGS)
+INCLUDES = ../common/options ../common/stream ../common/utils $(valgrind_CFLAGS)
 
 gdk_scanselect_CFLAGS = $(NO_INLINE_CFLAGS)
 # gdk_relop.mx
@@ -46,7 +46,8 @@ lib_gdk = {
 		gdk_posix.mx gdk_logger.mx bat.feps bat1.feps bat2.feps \
 		libbat.rc
 	LIBS = ../common/options/libmoptions \
-		   ../common/stream/libstream \
+		../common/stream/libstream \
+		../common/utils/libmutils \
 		$(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }

@@ -152,6 +152,7 @@ gdk_export int BBPbackup(BAT *b, bit subcommit);
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_storage.h"
+#include "mutils.h"
 /*
 @}
 @-

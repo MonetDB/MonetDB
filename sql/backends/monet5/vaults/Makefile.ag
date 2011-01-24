@@ -29,6 +29,7 @@ INCLUDES = ../../../include \
 		   ../../../../clients/mapilib \
 		   ../../../../common/options \
 		   ../../../../common/stream \
+		   ../../../../common/utils \
 		   ../../../../gdk \
 		   $(READLINE_INCS) $(MSEED_CFLAGS) $(CFITSIO_CFLAGS)
 

@@ -95,6 +95,7 @@ the consistency of this counter.
 #include "mal_function.h"	/* for throw() */
 #include "mal_import.h"		/* for slash_2_dir_sep() */
 
+#include "mutils.h"
 #include <sys/types.h> /* opendir */
 #ifdef HAVE_DIRENT_H
 #include <dirent.h>

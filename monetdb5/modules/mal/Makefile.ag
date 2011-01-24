@@ -19,6 +19,7 @@ INCLUDES = ../../misc ../../mal ../atoms ../kernel \
 	../../../clients/mapilib \
 	../../../common/options \
 	../../../common/stream \
+	../../../common/utils \
 	../../../gdk \
 	$(pcre_CFLAGS) $(zlib_CFLAGS) $(BZIP_INCS)
 

@@ -31,6 +31,7 @@ bin_monetdb = {
 	LIBS = ../utils/libmeroutil \
 		   ../../../../../monetdb5/misc/libsabaoth \
 		   ../../../../../common/stream/libstream \
+		   ../../../../../common/utils/libmutils \
 		   $(UUID_LIBS) \
 		   $(curl_LIBS) \
 		   $(SOCKET_LIBS) \

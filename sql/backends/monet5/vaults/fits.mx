@@ -78,6 +78,7 @@ fits_export str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 
 @c
 #include "fits.h"
+#include "mutils.h"
 #define FITS_INS_COL "INSERT INTO fits_columns(id, name, type, units, number, table_id) \
 	 VALUES(%d,'%s','%s','%s',%d,%d);"
 #define FILE_INS "INSERT INTO fits_files(id, name) VALUES (%d, '%s');"

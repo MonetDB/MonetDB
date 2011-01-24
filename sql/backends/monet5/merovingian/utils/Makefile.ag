@@ -18,7 +18,8 @@
 # MONETDB5: Sabaoth
 INCLUDES = ../../../../../monetdb5/misc \
 		   ../../../../../common/stream \
-		   ../../../../../common/options
+		   ../../../../../common/options \
+		   ../../../../../common/utils
 
 EXTRA_DIST = \
 	control.h \

@@ -29,6 +29,7 @@
 #include <string.h>
 #include <errno.h>
 #include "utils.h"
+#include "mutils.h"
 
 /* check if dbname matches [A-Za-z0-9-_]+ */
 char* db_validname(char *dbname) {

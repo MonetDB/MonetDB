@@ -111,11 +111,7 @@ gdk_export struct Mallinfo MT_mallinfo(void);
 
 @- locking, sleep
 @h
-#define F_TLOCK 2		/* test and lock a region for exclusive use */
-#define F_ULOCK 0		/* unlock a previously locked region */
-#define F_LOCK 1		/* lock a region for exclusive use */
 
-gdk_export int MT_lockf(char *filename, int mode, off_t off, off_t len);
 gdk_export void MT_sleep_ms(unsigned int ms);
 
 @- virtual memory
@@ -289,28 +285,9 @@ gdk_export int win_mkdir(const char *, const int mode);
 #define link		win_link
 #endif
 
-#define NAME_MAX 255
-
-struct DIR {
-	char *dir_name;
-	int just_opened;
-	HANDLE find_file_handle;
-	char *find_file_data;
-};
-
-typedef struct DIR DIR;
-struct direct {
-	char d_name[NAME_MAX + 1];
-	int d_namelen;
-};
-
 #ifndef HAVE_FTRUNCATE
 gdk_export int ftruncate(int fd, off_t size);
 #endif
-gdk_export DIR *opendir(const char *dirname);
-gdk_export struct direct *readdir(DIR *dir);
-gdk_export void rewinddir(DIR *dir);
-gdk_export int closedir(DIR *dir);
 
 #endif
 
@@ -318,6 +295,7 @@ gdk_export int closedir(DIR *dir);
 @c
 #include "monetdb_config.h"
 #include "gdk.h"
+#include "mutils.h"
 #include <stdio.h>
 #include <unistd.h>		/* sbrk on Solaris */
 
@@ -1331,8 +1309,6 @@ mdlopen(const char *library, int mode)
 #undef rmdir
 #undef mkdir
 
-#undef NAME_MAX
-
 #include <windows.h>
 
 #ifdef _MSC_VER
@@ -1689,130 +1665,6 @@ ftruncate(int fd, off_t size)
 	return 0;
 }
 #endif
-
-DIR *
-opendir(const char *dirname)
-{
-	DIR *result = NULL;
-	char *mask;
-	size_t k;
-
-	if (dirname == NULL)
-		return NULL;
-
-	result = (DIR *) malloc(sizeof(DIR));
-	result->find_file_data = malloc(sizeof(WIN32_FIND_DATA));
-	result->dir_name = strdup(dirname);
-
-	k = strlen(result->dir_name);
-	if (k && result->dir_name[k - 1] == '\\') {
-		result->dir_name[k - 1] = '\0';
-		k--;
-	}
-	mask = malloc(strlen(result->dir_name) + 3);
-	sprintf(mask, "%s\\*", result->dir_name);
-
-	result->find_file_handle = FindFirstFile(mask, (LPWIN32_FIND_DATA) result->find_file_data);
-	free(mask);
-
-	if (result->find_file_handle == INVALID_HANDLE_VALUE) {
-		free(result->dir_name);
-		free(result->find_file_data);
-		free(result);
-		SetLastError(ERROR_OPEN_FAILED);	/* enforce EIO */
-		return NULL;
-	}
-	result->just_opened = TRUE;
-
-	return result;
-}
-
-static char *
-basename(const char *file_name)
-{
-	register char *base;
-
-	if (file_name == NULL)
-		return NULL;
-
-	base = strrchr(file_name, '\\');
-	if (base)
-		return base + 1;
-
-	if (isalpha((int) (unsigned char) file_name[0]) && file_name[1] == ':')
-		return (char *) file_name + 2;
-
-	return (char *) file_name;
-}
-
-
-struct direct *
-readdir(DIR *dir)
-{
-	static struct direct result;
-
-	if (dir == NULL)
-		return NULL;
-
-	if (dir->just_opened)
-		dir->just_opened = FALSE;
-	else {
-		if (!FindNextFile(dir->find_file_handle, (LPWIN32_FIND_DATA) dir->find_file_data)) {
-			int error = GetLastError();
-
-			if (error) {
-				if (error != ERROR_NO_MORE_FILES)
-					SetLastError(ERROR_OPEN_FAILED);	/* enforce EIO */
-				return NULL;
-			}
-		}
-	}
-	strcpy(result.d_name, basename(((LPWIN32_FIND_DATA) dir->find_file_data)->cFileName));
-	result.d_namelen = (int) strlen(result.d_name);
-
-	return &result;
-}
-
-void
-rewinddir(DIR *dir)
-{
-	char *mask;
-
-	if (dir == NULL)
-		return;
-
-	if (!FindClose(dir->find_file_handle))
-		mnstr_printf(GDKerr, "#rewinddir(): FindClose() failed\n");
-
-	mask = malloc(strlen(dir->dir_name) + 3);
-	sprintf(mask, "%s\\*", dir->dir_name);
-	dir->find_file_handle = FindFirstFile(mask, (LPWIN32_FIND_DATA) dir->find_file_data);
-	free(mask);
-
-	if (dir->find_file_handle == INVALID_HANDLE_VALUE) {
-		SetLastError(ERROR_OPEN_FAILED);	/* enforce EIO */
-		return;
-	}
-	dir->just_opened = TRUE;
-}
-
-int
-closedir(DIR *dir)
-{
-	if (dir == NULL)
-		return -1;
-
-	if (!FindClose(dir->find_file_handle)) {
-		SetLastError(ERROR_OPEN_FAILED);	/* enforce EIO */
-		return -1;
-	}
-
-	free(dir->dir_name);
-	free(dir->find_file_data);
-	free(dir);
-
-	return 0;
-}
 
 #ifndef HAVE_GETTIMEOFDAY
 static int nodays[12] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
@@ -2204,49 +2056,6 @@ MT_vmrealloc(void *voidptr, size_t oldsize, size_t newsize, size_t oldmaxsize, s
 	return p;
 }
 
-#if defined(HAVE_LOCKF) && defined(__MACH__)
-/* lockf() seems to be there, but I didn't find any header file that declares the prototype ... */
-extern int lockf(int fd, int cmd, off_t len);
-#endif
-
-#ifndef HAVE_LOCKF
-/* Cygwin implementation: struct flock is there, but lockf() is
-   missing.
- */
-static int
-lockf(int fd, int cmd, off_t len)
-{
-	struct flock l;
-
-	if (cmd == F_LOCK || cmd == F_TLOCK)
-		l.l_type = F_WRLCK;
-	else if (cmd == F_ULOCK)
-		l.l_type = F_UNLCK;
-	l.l_whence = SEEK_CUR;
-	l.l_start = 0;
-	l.l_len = len;
-	return fcntl(fd, cmd == F_TLOCK ? F_SETLKW : F_SETLK, &l);
-}
-#endif
-/* returns -1 when locking failed,
- * returns -2 when the lock file could not be opened/created
- * returns the (open) file descriptor to the file otherwise */
-int
-MT_lockf(char *filename, int mode, off_t off, off_t len)
-{
-	int fd = open(filename, O_CREAT | O_RDWR, MONETDB_MODE);
-
-	if (fd < 0)
-		return -2;
-
-	if (lseek(fd, off, SEEK_SET) == off && lockf(fd, mode, len) == 0) {
-		/* do not close else we lose the lock we want */
-		return fd;
-	}
-	close(fd);
-	return -1;
-}
-
 void
 MT_sleep_ms(unsigned int ms)
 {
@@ -2353,70 +2162,6 @@ MT_vmrealloc(void *v, size_t oldsize, size_t newsize, size_t oldmaxsize, size_t 
 	}
 	*newmaxsize = MAX(oldmaxsize, newsize);
 	return a;
-}
-
-/* see contract of unix MT_lockf */
-int
-MT_lockf(char *filename, int mode, off_t off, off_t len)
-{
-	int ret = 1, illegalmode = 0, fd = -1;
-	OVERLAPPED ov;
-	OSVERSIONINFO os;
-	HANDLE fh = CreateFile(filename,
-			       GENERIC_READ | GENERIC_WRITE, 0,
-			       NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-
-	os.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-	GetVersionEx(&os);
-	memset(&ov, 0, sizeof(ov));
-#if defined(DUMMYSTRUCTNAME) && (defined(NONAMELESSUNION) || !defined(_MSC_EXTENSIONS))	/* Windows SDK v7.0 */
-	ov.u.s.Offset = (unsigned int) off;
-#if 0
-	ov.u.s.OffsetHigh = off >> 32;
-#else
-	ov.u.s.OffsetHigh = 0;	/* sizeof(off) == 4, i.e. off >> 32 is not possible */
-#endif
-#else
-	ov.Offset = (unsigned int) off;
-#if 0
-	ov.OffsetHigh = off >> 32;
-#else
-	ov.OffsetHigh = 0;	/* sizeof(off) == 4, i.e. off >> 32 is not possible */
-#endif
-#endif
-
-	if (fh == NULL) {
-		return -2;
-	}
-	if (mode == F_ULOCK) {
-		if (os.dwPlatformId != VER_PLATFORM_WIN32_WINDOWS)
-			ret = UnlockFileEx(fh, 0, 0, len, &ov);
-	} else if (mode == F_TLOCK) {
-		if (os.dwPlatformId != VER_PLATFORM_WIN32_WINDOWS)
-			ret = LockFileEx(fh, LOCKFILE_FAIL_IMMEDIATELY | LOCKFILE_EXCLUSIVE_LOCK, 0, 0, len, &ov);
-	} else if (mode == F_LOCK) {
-		if (os.dwPlatformId != VER_PLATFORM_WIN32_WINDOWS)
-			ret = LockFileEx(fh, LOCKFILE_EXCLUSIVE_LOCK, 0, 0, len, &ov);
-	} else {
-		illegalmode = 1;
-	}
-	CloseHandle(fh);
-	if (illegalmode) {
-		SetLastError(ERROR_INVALID_DATA);
-	}
-	if (ret != 0) {
-		fd = open(filename, O_CREAT | O_RDWR, MONETDB_MODE);
-		if (fd < 0) {
-			/* this is nasty, but I "trust" windows that it in this case
-			 * also cannot open the file into a filehandle any more, so
-			 * unlocking is in vain. */
-			return -2;
-		} else {
-			return fd;
-		}
-	} else {
-		return -1;
-	}
 }
 
 void

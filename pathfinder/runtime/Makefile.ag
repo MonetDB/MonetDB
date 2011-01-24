@@ -39,6 +39,7 @@ INCLUDES = \
 	../../monetdb4/modules/calibrator \
 	../../common/options \
 	../../common/stream \
+	../../common/utils \
 	../../gdk \
 	$(libxml2_CFLAGS)
 PF_LIBS = $(libxml2_LIBS) $(DL_LIBS)

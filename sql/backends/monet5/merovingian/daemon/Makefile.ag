@@ -52,6 +52,7 @@ bin_monetdbd = {
 		   ../../../../../monetdb5/misc/libsabaoth \
 		   ../../../../../common/stream/libstream \
 		   ../../../../../clients/mapilib/libmapi \
+		   ../../../../../common/utils/libmutils \
 		   $(UUID_LIBS) \
 		   $(curl_LIBS) \
 		   $(SOCKET_LIBS) \
