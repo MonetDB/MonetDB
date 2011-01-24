@@ -1,6 +1,10 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Mon Jan 24 2011 Fabian Groffen <fabian@cwi.nl>
+- Disable timer functionality for non-XQuery languages since it is
+  incorrect, bug #2705
+
 * Tue Jan  4 2011 Fabian Groffen <fabian@cwi.nl>
 - Added mapi_get_uri function to retrieve mapi URI for the connection
 

@@ -180,9 +180,6 @@ files specified on the command line are run, and before the
 interactive session is started (if the \fB\-\-interactive\fP option is
 given).
 .TP
-\fB\-\-time\fP (\fB\-t\fP)
-Print timing information to standard error.
-.TP
 \fB\-\-Xdebug\fP (\fB\-X\fP)
 Trace network interaction between
 .I mclient
@@ -242,6 +239,9 @@ option.
 Shredding is done before any queries specified with the
 .B \-\-statement
 option or in files specified on the command line are executed.
+.TP
+\fB\-\-time\fP (\fB\-t\fP)
+Print timing information to standard error.
 .SH BACKSLASH COMMANDS
 .SS
 General Commands
@@ -277,9 +277,6 @@ is given, revert to writing output to standard output.
 Show the
 .IR readline (3)
 history.
-.TP
-\fB\et\fP
-Toggle the timer.
 .TP
 \fB\eL\fP \fIfile\fP
 Log client/server interaction in the given
@@ -398,5 +395,8 @@ mode to format the output.
 Possible modes are
 .B dm
 and \fBxml\fP[\fB\-noheader\fP][\fB\-typed\fP|\fB\-noroot\fP|\fB\-root\-FOOBAR\fP].
+.TP
+\fB\et\fP
+Toggle the timer.
 .SH SEE ALSO
 .IR msqldump (1)

@@ -292,7 +292,7 @@ timerEnd(void)
 	mnstr_flush(toConsole);
 	t1 = gettime();
 	assert(t1 >= t0);
-	if (mark && specials == NOmodifier) {
+	if (mode == XQUERY && mark && specials == NOmodifier) {
 		fprintf(stderr, "%s %7ld.%03ld msec %s\n", mark, (long) ((t1 - t0) / 1000), (long) ((t1 - t0) % 1000), mark2 ? mark2 : "");
 		fflush(stderr);
 	}
@@ -1936,6 +1936,8 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 					free(buf);
 					return errseen;
 				case 't':
+					if (mode != XQUERY)
+						break;
 					mark = mark ? NULL : "Timer";
 					if (mark2)
 						free(mark2);
@@ -2478,7 +2480,6 @@ usage(const char *prog, int xit)
 	fprintf(stderr, " -l language | --language=lang    {sql,xquery,mal,mil}\n");
 	fprintf(stderr, " -L logfile  | --log=logfile      save client/server interaction\n");
 	fprintf(stderr, " -s stmt     | --statement=stmt   run single statement\n");
-	fprintf(stderr, " -t          | --time             time commands\n");
 	fprintf(stderr, " -X          | --Xdebug           trace mapi network interaction\n");
 #ifdef HAVE_POPEN
 	fprintf(stderr, " -| cmd      | --pager=cmd        for pagination\n");
@@ -2497,6 +2498,7 @@ usage(const char *prog, int xit)
 	fprintf(stderr, " -I docname  | --input=docname    document name, XML document on standard input\n");
 	fprintf(stderr, " -G          | --algebra          use algebra frontend\n");
 	fprintf(stderr, " -g          | --no-algebra       use old frontend\n");
+	fprintf(stderr, " -t          | --time             time commands\n");
 	exit(xit);
 }
 
@@ -2901,7 +2903,7 @@ main(int argc, char **argv)
 
 	if (algebra != -1 && mode == XQUERY)
 		mapi_setAlgebra(mid, algebra);
-	mapi_profile(mid, mark != NULL);
+	mapi_profile(mid, mode == XQUERY && mark != NULL);
 	mapi_trace(mid, trace);
 	if (output) {
 		setFormatter(mid, output);
