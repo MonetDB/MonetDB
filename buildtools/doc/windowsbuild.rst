@@ -44,10 +44,9 @@ branch this document is part of.
 buildtools
 ----------
 
-The buildtools component is required in order to build the sources
-from the Mercurial repository.  If you get the pre-packaged sources
-(i.e. the one in tar balls), you don't need the buildtools component
-(although this has not been tested on Windows).
+The buildtools component contains tools that are used to build the
+other components.  This component is required, but not all parts of
+this component are required for all configurations.
 
 common
 ------
@@ -67,9 +66,13 @@ clients
 Also known as the MonetDB Client component contains a library which
 forms the basis for communicating with the MonetDB server components,
 and some interface programs that use this library to communicate with
-the server.  This component is required.
+the server.  Additionally, this component contains modules for some
+other languages (Python, Perl, PHP, Ruby) to enable communication with
+the server from programs written in those languages.  The Python and
+Ruby modules can be built separately; the PHP module does not need to
+be built.  This component is required.
 
-MonetDB4
+monetdb4
 --------
 
 The deprecated (but still used) database server MonetDB4 Server.  This
@@ -78,7 +81,7 @@ component.  This is the old server which uses MIL (the MonetDB
 Interface Language) as programming interface.  This component is only
 required if you need MIL or if you need the MonetDB XQuery component.
 
-MonetDB5
+monetdb5
 --------
 
 The MonetDB5 Server component is the new database server.  It uses MAL
@@ -117,15 +120,6 @@ testing
 
 The testing component contains some files and programs we use for
 testing the MonetDB suite.  This component is optional.
-
-python
-------
-
-This component provides a Python module that can be used to
-communicate with the server.  The module is compatible with Python
-DBAPI 2.0 and has support for Python version 2.5 and up (including
-3.X).  This component is optional and independent from all other
-modules.
 
 Prerequisites
 =============
