@@ -268,7 +268,7 @@ def msc_additional_libs(fd, name, sep, type, list, dlibs, msc, pref, ext):
             global libno
             v = 'LIB%d' % libno
             libno = libno + 1
-            cond += '!IF %s\n%s = %s\n!ELSE\n%s =\n!ENDIF\n' % (c, v, l, v)
+            cond += '!IF defined(%s)\n%s = %s\n!ELSE\n%s =\n!ENDIF\n' % (c, v, l, v)
             l = '$(%s)' % v
             if d:
                 deps = '%s %s' % (deps, l)
