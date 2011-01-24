@@ -85,3 +85,4 @@ wrong_error_message_dropping_view.Bug-2713
 call_function_without_warning.Bug-2752
 vacuum
 with-between.Bug-2732
+sequence-restart-with-null.Bug-2648
