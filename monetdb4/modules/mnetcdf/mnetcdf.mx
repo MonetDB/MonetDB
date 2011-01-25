@@ -93,7 +93,7 @@ Quirks:
 #include <math.h>
 #include <time.h>
 
-#include <netcdf/netcdf.h>
+#include <netcdf.h>
 
 /*----------------------------------------------------------------------------*/
 

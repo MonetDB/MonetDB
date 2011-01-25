@@ -31,7 +31,7 @@ INCLUDES = ../../../include \
 		   ../../../../common/stream \
 		   ../../../../common/utils \
 		   ../../../../gdk \
-		   $(READLINE_INCS) $(MSEED_CFLAGS) $(CFITSIO_CFLAGS)
+		   $(READLINE_INCS) $(MSEED_CFLAGS) $(cfitsio_CFLAGS)
 
 lib__vault = {
 	DIR = libdir/monetdb5
@@ -54,7 +54,7 @@ lib__fits = {
     DIR = libdir/monetdb5
     SOURCES = fits.mx
     LIBS = ../../../../monetdb5/tools/libmonetdb5 \
-		   $(CFITSIO_LIBS)
+		   $(cfitsio_LIBS)
 }
 
 headers_mal = {
