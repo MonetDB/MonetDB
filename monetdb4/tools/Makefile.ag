@@ -78,7 +78,7 @@ largeTOC_SHARED_MODS =	\
 	\
 	../modules/contrib/lib_vector
 
-EXTRA_DIST = static_modules.mx embeddedclient.h
+EXTRA_DIST = static_modules.mx
 
 lib_initmodules = {
 	NOINST
@@ -91,23 +91,6 @@ bin_Mserver = {
 		../monet/libmonet \
 		../../gdk/libbat \
                 $(pcre_LIBS) $(openssl_LIBS)
-}
-
-lib_embeddedmil = {
-	SOURCES = embeddedclient.c.in
-	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
-		../monet/libmonet \
-		../../gdk/libbat \
-		../../clients/mapilib/libmapi
-}
-
-bin_Mbeddedmil = {
-	SOURCES = prog.c
-	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
-		libembeddedmil \
-		../monet/libmonet \
-		../../gdk/libbat \
-		../../clients/mapilib/libmapi
 }
 
 EXTRA_DIST_DIR = Tests

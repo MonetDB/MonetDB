@@ -50,33 +50,4 @@ bin_mserver5 = {
 		$(curl_LIBS) $(pcre_LIBS) $(openssl_LIBS)
 }
 
-lib_embeddedmal = {
-	SOURCES = embeddedclient.c.in
-	LIBS = libmonetdb5 @SHARED_LIBS@ \
-		../../gdk/libbat \
-		../../clients/mapilib/libmapi $(curl_LIBS) \
-		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
-}
-
-bin_mbeddedmal = {
-	SOURCES = prog.c
-	LIBS = libembeddedmal @SHARED_LIBS@ \
-		../../gdk/libbat \
-		../../clients/mapilib/libmapi $(curl_LIBS) \
-		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
-}
-
-headers_h = {
-	HEADERS = h
-	DIR = includedir/monetdb/m5
-	SOURCES = embeddedclient.h
-}
-
-headers_pc = {
-	COND = NOT_WIN32
-	HEADERS = pc
-	DIR = libdir/pkgconfig
-	SOURCES = monetdb-embeddedclient.pc.in
-}
-
 EXTRA_DIST_DIR = Tests
