@@ -695,6 +695,7 @@ developer.
         --enable-bits=%{bits} \
 	--enable-java=no \
 	--with-gc=no \
+	--with-valgrind=no \
         %{?oid32:--enable-oid32} \
         %{?comp_cc:CC="%{comp_cc}"} \
 	%{?_with_netcdf} %{?_without_netcdf}
