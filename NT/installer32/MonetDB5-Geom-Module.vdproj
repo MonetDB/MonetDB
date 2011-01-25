@@ -27,13 +27,13 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_4FC22BC37061413FA8B8F80F91330E61"
+        "MsmKey" = "8:_491E5654F3564DA2AE65516A1D652A81"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_5BE7FE00E4D843E8BC2DBCFC75D469B4"
+        "MsmKey" = "8:_4FC22BC37061413FA8B8F80F91330E61"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -189,12 +189,12 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_4FC22BC37061413FA8B8F80F91330E61"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_491E5654F3564DA2AE65516A1D652A81"
             {
-            "SourcePath" = "8:Lib\\MonetDB5\\autoload\\50_geom.mal"
-            "TargetName" = "8:50_geom.mal"
+            "SourcePath" = "8:lib\\monetdb5\\createdb\\40_geom.sql"
+            "TargetName" = "8:40_geom.sql"
             "Tag" = "8:"
-            "Folder" = "8:_8FBEE32B5DFA4DCEA7CA122FC483D244"
+            "Folder" = "8:_D750A5D32EAD46558AC7EE1BFCB3E1E0"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -209,12 +209,12 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_5BE7FE00E4D843E8BC2DBCFC75D469B4"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_4FC22BC37061413FA8B8F80F91330E61"
             {
-            "SourcePath" = "8:share\\MonetDB\\sql\\geom.sql"
-            "TargetName" = "8:geom.sql"
+            "SourcePath" = "8:Lib\\MonetDB5\\autoload\\50_geom.mal"
+            "TargetName" = "8:50_geom.mal"
             "Tag" = "8:"
-            "Folder" = "8:_25A421B0D66B48068FB65F6C5BB97556"
+            "Folder" = "8:_8FBEE32B5DFA4DCEA7CA122FC483D244"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -365,35 +365,13 @@
                                         {
                                         }
                                     }
-                                }
-                            }
-                        }
-                    }
-                    "{9EF0B969-E518-4E46-987F-47570745A589}:_D32725D6DFA64301BDD999A0846B9D3B"
-                    {
-                    "Name" = "8:share"
-                    "AlwaysCreate" = "11:FALSE"
-                    "Condition" = "8:"
-                    "Transitive" = "11:FALSE"
-                    "Property" = "8:_43ED3174086746B9B5D7799434738856"
-                        "Folders"
-                        {
-                            "{9EF0B969-E518-4E46-987F-47570745A589}:_562B007DB0FC4C0D8EBC256D71FF091B"
-                            {
-                            "Name" = "8:MonetDB"
-                            "AlwaysCreate" = "11:FALSE"
-                            "Condition" = "8:"
-                            "Transitive" = "11:FALSE"
-                            "Property" = "8:_4A03AE416B024750BE72FE07625A57DE"
-                                "Folders"
-                                {
-                                    "{9EF0B969-E518-4E46-987F-47570745A589}:_25A421B0D66B48068FB65F6C5BB97556"
+                                    "{9EF0B969-E518-4E46-987F-47570745A589}:_D750A5D32EAD46558AC7EE1BFCB3E1E0"
                                     {
-                                    "Name" = "8:sql"
+                                    "Name" = "8:createdb"
                                     "AlwaysCreate" = "11:FALSE"
                                     "Condition" = "8:"
                                     "Transitive" = "11:FALSE"
-                                    "Property" = "8:_712B8212F12A47CA8C27E2C1B63E4C64"
+                                    "Property" = "8:_BA2AC4ED8A9246D0B97289186ECCD461"
                                         "Folders"
                                         {
                                         }

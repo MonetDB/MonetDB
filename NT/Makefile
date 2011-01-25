@@ -24,11 +24,12 @@ prefix = $(MAKEDIR)
 
 !INCLUDE "$(TOPDIR)\..\NT\rules.msc"
 
-all: "$(SRCDIR)\Makefile.msc" monetdb_config.h unistd.h inttypes.h
+all: "$(SRCDIR)\Makefile.msc" monetdb_config.h unistd.h inttypes.h .monetdb
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" all
 
 install: targetdirs all
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" install
+	$(INSTALL) .monetdb "$(sysconfdir)"
 	$(INSTALL) ..\NT\installer$(bits)\*.sln "$(prefix)"
 	$(INSTALL) ..\NT\installer$(bits)\*.vdproj "$(prefix)"
 	-if exist "C:\Program Files (x86)" if $(bits)==32 cd "$(prefix)"&&C:\cygwin\bin\sed.exe -i "s/Program Files/Program Files (x86)/" *.vdproj
@@ -60,6 +61,10 @@ inttypes.h:
 	$(ECHO) typedef unsigned short uint16_t; >> inttypes.h
 	$(ECHO) typedef int int32_t; >> inttypes.h
 	$(ECHO) typedef unsigned int uint32_t; >> inttypes.h
+
+.monetdb:
+	$(ECHO) user=monetdb> .monetdb
+	$(ECHO) password=monetdb>> .monetdb
 
 targetdirs:
 	if not exist "$(bindir)"		$(MKDIR) "$(bindir)"

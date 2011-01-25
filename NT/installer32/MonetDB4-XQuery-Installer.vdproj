@@ -33,12 +33,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_050AB95BFF544D0EB04C54457B719F80"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_0631B58B8488483F9D280E38FBB646C5"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -387,12 +381,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_76ACE18448C84B76BD06F7A20D958888"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_778EBECF7BCE467FB89B54CB42701480"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -681,12 +669,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_CB3C9EC9B4FF49E9815AC97E05BB8A46"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_CBFFD783FC354873B5A5137667A6A5F5"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -706,6 +688,12 @@
         "Entry"
         {
         "MsmKey" = "8:_CDF313BBB2C74DDD9AF9B5285BAD6DB9"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_D0453158655041DCBE710008E8981EBE"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -1058,26 +1046,6 @@
             {
             "SourcePath" = "8:share\\MonetDB\\xrpc\\admin\\multimedian_logo.png"
             "TargetName" = "8:multimedian_logo.png"
-            "Tag" = "8:"
-            "Folder" = "8:_71271857FB974539AB5464AFFDA316BD"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_050AB95BFF544D0EB04C54457B719F80"
-            {
-            "SourcePath" = "8:share\\MonetDB\\xrpc\\admin\\cwi_logo.png"
-            "TargetName" = "8:cwi_logo.png"
             "Tag" = "8:"
             "Folder" = "8:_71271857FB974539AB5464AFFDA316BD"
             "Condition" = "8:"
@@ -2254,26 +2222,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_76ACE18448C84B76BD06F7A20D958888"
-            {
-            "SourcePath" = "8:lib\\libMapi.dll"
-            "TargetName" = "8:libMapi.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_778EBECF7BCE467FB89B54CB42701480"
             {
             "SourcePath" = "8:C:\\Libraries\\libxml2-2.7.7.win32\\lib\\libxml2.dll"
@@ -3214,26 +3162,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_CB3C9EC9B4FF49E9815AC97E05BB8A46"
-            {
-            "SourcePath" = "8:lib\\libmutils.dll"
-            "TargetName" = "8:libmutils.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_CBFFD783FC354873B5A5137667A6A5F5"
             {
             "SourcePath" = "8:lib\\MonetDB4\\lib_bitset.dll"
@@ -3300,6 +3228,26 @@
             "TargetName" = "8:lib_uchr.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_D0453158655041DCBE710008E8981EBE"
+            {
+            "SourcePath" = "8:lib\\libmapi.dll"
+            "TargetName" = "8:libmapi.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -4221,7 +4169,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB4"
         "ProductCode" = "8:{F49EF5E9-4562-4AEC-90B7-8658E01E25FB}"
-        "PackageCode" = "8:{286E0413-7780-40C1-BE92-CEB6882233A4}"
+        "PackageCode" = "8:{A5FB07EB-EB77-482F-BBFB-C544B8431C27}"
         "UpgradeCode" = "8:{4F980AC7-863E-4C5E-A3BF-138F9DEDDB8A}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"

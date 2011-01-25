@@ -15,13 +15,13 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = monet modules tools conf scripts
+SUBDIRS = monet modules tools conf scripts NATIVE_WIN32?NT
 
 EXTRA_DIST = RunMtest.in \
 		RunMtest.bat.in RunMapprove.in RunMapprove.bat.in \
 		RunMserver.bat.in RunMserver.in
 
-EXTRA_DIST_DIR = gdk/Tests NT tests
+EXTRA_DIST_DIR = gdk/Tests tests
 
 TESTS = RunMtest
 TESTS_ENVIRONMENT = $(SHELL)

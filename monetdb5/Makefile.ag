@@ -19,13 +19,13 @@
 # mal, modules, optimizer, scheduler: the main libmonetdb5 body, needs misc
 # tools: builds libmonetdb5 from mal, modules, optimizer, scheduler
 # extras: builds optional/separate libraries that require libmonetdb5
-SUBDIRS = misc mal modules optimizer scheduler tools extras
+SUBDIRS = misc mal modules optimizer scheduler tools extras NATIVE_WIN32?NT
 
 EXTRA_DIST = RunMtest.in \
 		RunMtest.bat.in RunMapprove.in RunMapprove.bat.in \
 		RunMserver.in RunMserver.bat.in
 
-EXTRA_DIST_DIR = NT tests
+EXTRA_DIST_DIR = tests
 
 TESTS = RunMtest
 TESTS_ENVIRONMENT = $(SHELL)
