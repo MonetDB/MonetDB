@@ -60,23 +60,6 @@
  */
 
 
-/* AC_FUNC_ALLOCA autoconf documented code */
-/* AIX requires this to be the first thing in the file.  */
-#ifndef __GNUC__
-# if HAVE_ALLOCA_H
-#  include <alloca.h>
-# else
-#  ifdef _AIX
- #pragma alloca
-#  else
-#   ifndef alloca /* predefined by HP cc +Olibcalls */
-char *alloca ();
-#   endif
-#  endif
-# endif
-#endif
-
-
 #include "monetdb_config.h"
 #include "stream.h"
 #include "stream_socket.h"
@@ -194,46 +177,6 @@ mnstr_init(void)
 
 /* #define STREAM_DEBUG 1  */
 /* #define BSTREAM_DEBUG 1 */
-
-#ifdef STREAM_DEBUG
-/* code adapted from gdk.mx */
-/* define printf formats for printing size_t and ssize_t variables */
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901 && !defined(__svr4__) && !defined(WIN32) && !defined(__sgi)
-#define SZFMT "%zu"
-#elif SIZEOF_SIZE_T == SIZEOF_INT
-#define SZFMT "%u"
-#elif SIZEOF_SIZE_T == SIZEOF_LONG
-#define SZFMT "%lu"
-#elif SIZEOF_SIZE_T == SIZEOF_LONG_LONG
-#define SZFMT "%llu"
-#elif SIZEOF_SIZE_T == SIZEOF___INT64
-#define SZFMT "%I64u"
-#else
-#error no definition for SZFMT
-#endif
-/* define printf format for printing pointer values */
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901
-#define PTRFMT		"%p"
-#define PTRFMTCAST		/* no cast needed */
-#elif defined(_MSC_VER)
-/* On Windows, always use 64 bit integers (even on 32-bit architectures)
- * to not get the warning C4311: 'type cast' : pointer truncation from
- * 'void *' to 'unsigned int' */
-#define PTRFMT		"%I64x"
-#define PTRFMTCAST	(unsigned __int64)
-#elif SIZEOF_VOID_P == SIZEOF_INT
-#define PTRFMT		"%x"
-#define PTRFMTCAST	(unsigned int)
-#elif SIZEOF_VOID_P == SIZEOF_LONG
-#define PTRFMT		"%lx"
-#define PTRFMTCAST	(unsigned long)
-#elif SIZEOF_VOID_P == SIZEOF_LONG_LONG
-#define PTRFMT		"%llx"
-#define PTRFMTCAST	(unsigned long long)
-#else
-#error no definition for PTRFMT
-#endif
-#endif /* STREAM_DEBUG */
 
 /* Read at most cnt elements of size elmsize from the stream.  Returns
    the number of elements actually read. */

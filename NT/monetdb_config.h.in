@@ -665,9 +665,6 @@
 /* object code libraries */
 #define LIBDIR "${exec_prefix}\\lib"
 
-/* Format to print 64 bit signed integers. */
-#define LLFMT "%I64d"
-
 /* modifiable single-machine data */
 #define LOCALSTATEDIR "${prefix}\\var"
 
@@ -842,9 +839,6 @@
 
 /* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
 /* #undef TIME_WITH_SYS_TIME */
-
-/* Format to print 64 bit unsigned integers. */
-#define ULLFMT "%I64u"
 
 /* Enable extensions on AIX 3, Interix.  */
 #ifndef _ALL_SOURCE
@@ -1045,6 +1039,12 @@ typedef __int64 lng;
 # define SIZEOF_LNG SIZEOF___INT64
 #endif
 
+/* Format to print 64 bit signed integers. */
+#define LLFMT "%I64d"
+
+/* Format to print 64 bit unsigned integers. */
+#define ULLFMT "%I64u"
+
 /* define printf formats for printing size_t and ssize_t variables */
 #if defined(__MINGW32__)
 # define SZFMT "%u"
@@ -1061,5 +1061,21 @@ typedef __int64 lng;
 #else
 # error no definition for SZFMT/SSZFMT
 #endif
+
+#if SIZEOF_PTRDIFF_T == SIZEOF_INT
+#define PDFMT "%d"
+#elif SIZEOF_PTRDIFF_T == SIZEOF_LONG
+#define PDFMT "%ld"
+#elif SIZEOF_PTRDIFF_T == SIZEOF_LONG_LONG || SIZEOF_PTRDIFF_T == SIZEOF___INT64
+#define PDFMT LLFMT
+#else
+#error no definition for PDFMT
+#endif
+
+/* On Windows, always use 64 bit integers (even on 32-bit architectures)
+ * to not get the warning C4311: 'type cast' : pointer truncation from
+ * 'void *' to 'unsigned int' */
+#define PTRFMT		"%I64x"
+#define PTRFMTCAST	(unsigned __int64)
 
 #endif /* _SEEN_MONETDB_CONFIG_H */

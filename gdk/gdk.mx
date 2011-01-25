@@ -567,42 +567,6 @@ typedef __int64 gdk_int64;
 #endif
 #endif
 
-/* define printf formats for printing ptrdiff_t variables */
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901 && !defined(__svr4__) && !defined(WIN32) && !defined(__sgi) || defined(__hpux)
-#define PDFMT "%td"
-#elif SIZEOF_PTRDIFF_T == SIZEOF_INT
-#define PDFMT "%d"
-#elif SIZEOF_PTRDIFF_T == SIZEOF_LONG
-#define PDFMT "%ld"
-#elif SIZEOF_PTRDIFF_T == SIZEOF_LONG_LONG || SIZEOF_PTRDIFF_T == SIZEOF___INT64
-#define PDFMT LLFMT
-#else
-#error no definition for PDFMT
-#endif
-
-/* define printf format for printing pointer values */
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901
-#define PTRFMT		"%p"
-#define PTRFMTCAST		/* no cast needed */
-#elif defined(_MSC_VER)
-/* On Windows, always use 64 bit integers (even on 32-bit architectures)
- * to not get the warning C4311: 'type cast' : pointer truncation from
- * 'void *' to 'unsigned int' */
-#define PTRFMT		"%I64x"
-#define PTRFMTCAST	(unsigned __int64)
-#elif SIZEOF_VOID_P == SIZEOF_INT
-#define PTRFMT		"%x"
-#define PTRFMTCAST	(unsigned int)
-#elif SIZEOF_VOID_P == SIZEOF_LONG
-#define PTRFMT		"%lx"
-#define PTRFMTCAST	(unsigned long)
-#elif SIZEOF_VOID_P == SIZEOF_LONG_LONG
-#define PTRFMT		"%llx"
-#define PTRFMTCAST	(unsigned long long)
-#else
-#error no definition for PTRFMT
-#endif
-
 typedef char long_str[IDLENGTH];	/* standard GDK static string */
 typedef char short_str[OLDLENGTH];	/* old GDK small static string */
 
