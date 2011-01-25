@@ -13,7 +13,7 @@
 %endif
 
 # by default we do not build the netcdf package
-%{!?_with_netcdf: %{!?_without_netcdf: %define _without_netcdf --without-netcdf}}
+%{!?_with_netcdf: %{!?_without_netcdf: %define _without_netcdf --with-netcdf=no}}
 
 Name: %{name}
 Version: %{version}
