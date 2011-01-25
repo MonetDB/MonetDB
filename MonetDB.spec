@@ -27,6 +27,7 @@ URL: http://monetdb.cwi.nl/
 Source: http://dev.monetdb.org/downloads/sources/Oct2010/%{name}-%{version}.tar.gz
 
 BuildRequires: bzip2-devel
+BuildRequires: cfitsio-devel
 BuildRequires: geos-devel >= 2.2.0
 BuildRequires: libcurl-devel
 BuildRequires: libxml2-devel
@@ -693,6 +694,7 @@ developer.
         --enable-optimize=yes \
         --enable-bits=%{bits} \
 	--enable-java=no \
+	--with-gc=no \
         %{?oid32:--enable-oid32} \
         %{?comp_cc:CC="%{comp_cc}"} \
 	%{?_with_netcdf} %{?_without_netcdf}
