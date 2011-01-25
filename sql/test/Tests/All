@@ -85,7 +85,7 @@ order_by_complex_exp
 
 setoptimizer
 string
-NOT_WIN32?crashme
+#NOT_WIN32?crashme
 50ways
 load_with_offset
 copy_into
