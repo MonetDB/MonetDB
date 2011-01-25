@@ -1107,18 +1107,19 @@ wkb@1( @2 *out, wkb **geom);
 str
 wkb@1( @2 *out, wkb **geom)
 {
-	str ret = "";
 	GEOSGeom geosGeometry = wkb2geos(*geom);
 
-	if (geosGeometry) { 
-		if ((*out=@4(@3( geosGeometry))) != @5) {
-			ret = MAL_SUCCEED;
-		}
-		GEOSGeom_destroy(geosGeometry);
-	}
-	if (ret)
-		throw(MAL, "geom.@1", "Failed");
-	return ret;
+	if (!geosGeometry)
+		throw(MAL, "geom.@1", "wkb2geos failed");
+
+	*out = @4(@3(geosGeometry));
+
+	GEOSGeom_destroy(geosGeometry);
+
+	if (*out != @5)
+		return MAL_SUCCEED;
+
+	throw(MAL, "geom.@1", "@3 failed");
 }
 @c
 @:basic(Dimension,int,GEOSGeom_getDimensions,,0)@
