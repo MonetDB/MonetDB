@@ -2766,10 +2766,7 @@ def CheckClassPath(quiet) :
                 CONDITIONALS[C] = '#'
     # check for known JARs in CLASSPATH directories
     # + fall-back using pkgdatadir/lib
-    #               and pkgdatadir/Tests
-    cpx += _configure(os.path.join('@QXdatadir@','MonetDB','lib'))
-    cpx += os.pathsep
-    cpx += _configure(os.path.join('@QXdatadir@','MonetDB','Tests'))
+    cpx += _configure(os.path.join('@QXdatadir@','monetdb','lib'))
     for d in cpx.split(os.pathsep):
         if os.path.isdir(d):
             for f in os.listdir(d):
@@ -3448,6 +3445,14 @@ def main(argv) :
     #for v in 'RELSRCBASE':
     #       print v+" = "+str(env[v])
     #STDOUT.flush()
+
+    # inject vars that tell various languages where to find their libs
+    env['PERLLIB'] = _configure(os.path.join('@QXprefix@', '@PERL_LIBDIR@'))
+# set dynamically for python test lib
+#    env['PYTHONPATH'] = _configure(os.path.join('@QXprefix@', '@PYTHON_LIBDIR@'));
+    env['PHP_INCPATH'] = _configure(os.path.join('@datadir@', 'php'))
+    env['BINDIR'] = _configure('@bindir@')
+    vars_ = vars_ + ['PERLLIB', 'PHP_INCPATH', 'BINDIR']
 
     # find mil script for MIL and SQL server
     if THISFILE == "Mtest.py":
