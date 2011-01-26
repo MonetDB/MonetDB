@@ -233,7 +233,7 @@ program.
 %defattr(-,root,root)
 %{_prefix}/%{perl_libdir}/*
 %dir %{_datadir}/MonetDB/perl
-%{_datadir}/MonetDB/perl/*
+%{_datadir}/monetdb/perl/*
 
 %package client-ruby
 Summary: MonetDB ruby interface
