@@ -3,8 +3,8 @@
 call monetdb-clients-config --internal
 
 rem must be aligned with the installation directory chosen in
-rem clients/src/python/test/Makefile.ag
-set testpath=%TSTSRCBASE%\..\python\test
+rem clients/python/test/Makefile.ag
+set testpath=%TSTSRCBASE%\..\clients\python\test
 set PYTHONPATH=%testpath%;%PYTHONPATH%
 
 prompt # $t $g  

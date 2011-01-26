@@ -1,6 +1,8 @@
 #!/bin/sh
 
-path="`monetdb-clients-config --pkglibdir`/Tests"
-dir="`monetdb-clients-config --datadir`/php"
+path="`type -P sqlsample.php`"
+dir="`dirname $path`"
+dir="`dirname $dir`"
+dir="$dir/share/php"
 
-Mlog -x "php -n -d include_path=$dir -f $path/sqlsample.php $MAPIPORT $TSTDB"
+Mlog -x "php -n -d include_path=$dir -f $path $MAPIPORT $TSTDB"
