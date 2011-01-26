@@ -2254,6 +2254,9 @@ AC_SUBST(READLINE_INCS)
 
 AM_ICONV
 
+dnl UUID: remember that most UNIX systems have uuid_* functions in their
+dnl       libc, not as separate library, such as from util-linux.  We
+dnl       can't just use pkg-config check because of that.
 save_LIBS="$LIBS"
 LIBS=
 AC_SEARCH_LIBS([uuid_generate], [uuid], [AC_DEFINE([HAVE_UUID], 1, [uuid])])
