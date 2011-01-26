@@ -93,19 +93,6 @@ bin_mbeddedsql5 = {
 		   $(READLINE_LIBS) $(PTHREAD_LIBS) $(curl_LIBS)
 }
 
-headers_h = {
-	HEADERS = h
-	DIR = includedir/monetdb/sql
-	SOURCES = embeddedclient.h
-}
-
-headers_pc = {
-	COND = NOT_WIN32
-	HEADERS = pc
-	DIR = libdir/pkgconfig
-	SOURCES = monetdb-embeddedsql.pc.in
-}
-
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
