@@ -40,7 +40,7 @@ basket00
 reorder00
 reorder01
 
-mapreduce00
+#mapreduce00   has no output, won't run this way
 
 #mat00
 #mat01
