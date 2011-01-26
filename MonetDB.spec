@@ -270,10 +270,14 @@ program.
 %package client-tests
 Summary: MonetDB Client tests package
 Group: Applications/Databases
+Requires: MonetDB4-server = %{version}-%{release}
+Requires: MonetDB4-XQuery = %{version}-%{release}
+Requires: MonetDB5-server = %{version}-%{release}
 Requires: %{name}-client = %{version}-%{release}
 Requires: %{name}-client-odbc = %{version}-%{release}
 Requires: %{name}-client-perl = %{version}-%{release}
 Requires: %{name}-client-php = %{version}-%{release}
+Requires: %{name}-SQL-server5 = %{version}-%{release}
 Requires: python-monetdb = %{version}-%{release}
 
 %description client-tests
@@ -288,8 +292,6 @@ developer.
 
 %files client-tests
 %defattr(-,root,root)
-%dir %{_libdir}/monetdb
-%dir %{_libdir}/monetdb/tests
 %{_bindir}/odbcsample1
 %{_bindir}/sample0
 %{_bindir}/sample1
@@ -299,7 +301,12 @@ developer.
 %{_bindir}/smack00
 %{_bindir}/smack01
 %{_bindir}/testgetinfo
-%{_libdir}/monetdb/tests/*
+%{_bindir}/malsample.pl
+%{_bindir}/milsample.pl
+%{_bindir}/sqlsample.php
+%{_bindir}/sqlsample.pl
+%{_bindir}/sqlsample.py
+%{_bindir}/xquerysample.php
 
 %package geom-MonetDB4
 Summary: MonetDB4 SQL GIS modules
