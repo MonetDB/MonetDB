@@ -223,7 +223,7 @@ mnstr_write_stringwrap(int *ret, Stream *S, str *data)
 	stream *s = *(stream **)S;
 	(void)ret;
 
-	if (mnstr_write(s, data, 1, strlen(*data)) < 0)
+	if (mnstr_write(s, *data, 1, strlen(*data)) < 0)
 		throw(IO, "streams.writeStr", "failed to write string");
 
 	return MAL_SUCCEED;
