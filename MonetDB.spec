@@ -26,10 +26,13 @@ License: MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 URL: http://monetdb.cwi.nl/
 Source: http://dev.monetdb.org/downloads/sources/Oct2010/%{name}-%{version}.tar.gz
 
+BuildRequires: bison
 BuildRequires: bzip2-devel
 BuildRequires: cfitsio-devel
+BuildRequires: flex
 BuildRequires: geos-devel >= 2.2.0
 BuildRequires: libcurl-devel
+BuildRequires: libuuid-devel
 BuildRequires: libxml2-devel
 BuildRequires: openssl-devel >= 0.9.8f
 BuildRequires: pcre-devel >= 4.5
@@ -702,7 +705,7 @@ developer.
         %{?comp_cc:CC="%{comp_cc}"} \
 	%{?_with_netcdf} %{?_without_netcdf}
 
-make %{?_smp_mflags}
+make
 
 %install
 rm -rf $RPM_BUILD_ROOT
