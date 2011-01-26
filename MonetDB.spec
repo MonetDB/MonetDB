@@ -556,13 +556,13 @@ need this package.
 %{_bindir}/pfopt
 %{_bindir}/pfshred
 %{_bindir}/pfsql
-%dir %{_datadir}/MonetDB/xrpc
-%dir %{_datadir}/MonetDB/xrpc/admin
-%dir %{_datadir}/MonetDB/xrpc/demo
-%dir %{_datadir}/MonetDB/xrpc/export
-%{_datadir}/MonetDB/xrpc/admin/*
-%{_datadir}/MonetDB/xrpc/demo/*
-%{_datadir}/MonetDB/xrpc/export/*
+%dir %{_datadir}/monetdb/xrpc
+%dir %{_datadir}/monetdb/xrpc/admin
+%dir %{_datadir}/monetdb/xrpc/demo
+%dir %{_datadir}/monetdb/xrpc/export
+%{_datadir}/monetdb/xrpc/admin/*
+%{_datadir}/monetdb/xrpc/demo/*
+%{_datadir}/monetdb/xrpc/export/*
 %{_libdir}/monetdb4/lib/lib_pathfinder*
 %{_libdir}/monetdb4/lib/lib_pf*
 %{_libdir}/monetdb4/lib/lib_probxml*

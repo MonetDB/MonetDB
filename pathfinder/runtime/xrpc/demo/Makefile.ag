@@ -28,7 +28,7 @@
 
 headers_html = {
 	HEADERS = html js css xml
-	DIR = datadir/MonetDB/xrpc/demo
+	DIR = datadir/monetdb/xrpc/demo
 	SOURCES = \
 		style.css \
 		res1.xml \
@@ -38,13 +38,13 @@ headers_html = {
 
 headers_xq = {
 	HEADERS = xq
-	DIR = datadir/MonetDB/xrpc/demo
+	DIR = datadir/monetdb/xrpc/demo
 	SOURCES = demo-mod.xq demo-xrpcmod.xq
 }
 
 headers_img = {
 	HEADERS = bmp gif png gif map
-	DIR = datadir/MonetDB/xrpc/demo
+	DIR = datadir/monetdb/xrpc/demo
 	SOURCES = \
 		cwi_logo.png \
 		MultimediaN.png \

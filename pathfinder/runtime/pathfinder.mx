@@ -6603,7 +6603,7 @@ xquery_prelude(void)
     if (GDKgetenv("xrpc_docroot") == NULL) {
         char *prefix = GDKgetenv("prefix");
         char xrpc_docroot[1024];
-        snprintf(xrpc_docroot, 1024, "%s%cshare%cMonetDB%cxrpc",
+        snprintf(xrpc_docroot, 1024, "%s%cshare%cmonetdb%cxrpc",
                  prefix ? prefix : PREFIX, DIR_SEP, DIR_SEP, DIR_SEP);
         GDKsetenv("xrpc_docroot",xrpc_docroot);
     }

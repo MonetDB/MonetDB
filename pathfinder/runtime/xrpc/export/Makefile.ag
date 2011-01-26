@@ -28,12 +28,12 @@
 
 headers_html = {
 	HEADERS = html
-	DIR = datadir/MonetDB/xrpc/export
+	DIR = datadir/monetdb/xrpc/export
 	SOURCES = index.html xrpc.html
 }
 
 headers_xq = {
 	HEADERS = xq
-	DIR = datadir/MonetDB/xrpc/export
+	DIR = datadir/monetdb/xrpc/export
 	SOURCES = export.xq xrpc-mod.xq
 }

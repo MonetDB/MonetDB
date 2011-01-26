@@ -32,7 +32,7 @@ EXTRA_DIST_DIR = Tests
 
 headers_html = {
 	HEADERS = bmp gif html js png xq
-	DIR = datadir/MonetDB/xrpc/admin
+	DIR = datadir/monetdb/xrpc/admin
 	SOURCES = \
 		admin.js \
 		admin.xq \
@@ -52,7 +52,7 @@ headers_html = {
 
 headers_xml = {
 	HEADERS = xml
-	DIR = datadir/MonetDB/xrpc/admin
+	DIR = datadir/monetdb/xrpc/admin
 	SOURCES = \
 		xmark1.xml \
 		xmark2.xml

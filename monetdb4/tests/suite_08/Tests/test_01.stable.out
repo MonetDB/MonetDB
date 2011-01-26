@@ -281,7 +281,7 @@ printf("#~BeginVariableOutput~#\n"); view_gdk_env().print(); printf("#~EndVariab
 [ "xrpc_options",	  ""																																														  ]
 [ "xrpc_admin",		  "http://127.0.0.1;127.0.0.1;http://localhost;localhost"																																																																																																																																																							  ]
 [ "xrpc_user",		  "http://127.0.0.1;127.0.0.1;http://localhost;localhost"																																																																																																																																																							  ]
-[ "xrpc_trusted",	  "http://monetdb.cwi.nl;http://127.0.0.1;http://localhost;/ufs/sjoerd/Monet-candidate/share/MonetDB/xrpc/export"									  ]
+[ "xrpc_trusted",	  "http://monetdb.cwi.nl;http://127.0.0.1;http://localhost;/ufs/sjoerd/Monet-candidate/share/monetdb/xrpc/export"									  ]
 [ "monet_cwd",		  "/net/ottar/export/scratch0/sjoerd/bin/candidate/mTests/tests/suite_08"														  ]
 [ "gdk_mem_pagebits",	  "14"																							  ]
 [ "gdk_mem_bigsize",	  "1048576"																						  ]

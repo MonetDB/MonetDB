@@ -4,6 +4,6 @@ debian/tmp/usr/bin/pfshred usr/bin
 debian/tmp/usr/bin/pfsql usr/bin
 debian/tmp/usr/bin/pf usr/bin
 debian/tmp/usr/lib/MonetDB4/*.mil usr/lib/MonetDB4
-debian/tmp/usr/share/MonetDB/xrpc/admin/* /usr/share/MonetDB/xrpc/admin
-debian/tmp/usr/share/MonetDB/xrpc/demo/* /usr/share/MonetDB/xrpc/demo
-debian/tmp/usr/share/MonetDB/xrpc/export/* /usr/share/MonetDB/xrpc/export
+debian/tmp/usr/share/monetdb/xrpc/admin/* /usr/share/MonetDB/xrpc/admin
+debian/tmp/usr/share/monetdb/xrpc/demo/* /usr/share/MonetDB/xrpc/demo
+debian/tmp/usr/share/monetdb/xrpc/export/* /usr/share/MonetDB/xrpc/export

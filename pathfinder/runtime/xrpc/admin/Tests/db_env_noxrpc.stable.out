@@ -113,7 +113,7 @@ Over..
 #    http://127.0.0.1;127.0.0.1;http://localhost;localhost
   </bun>
   <bun head="xrpc_docroot">
-#    /net/jarl/export/scratch0/zhang/monet-install/dev/debug/share/MonetDB/xrpc/
+#    /net/jarl/export/scratch0/zhang/monet-install/dev/debug/share/monetdb/xrpc/
   </bun>
   <bun head="xrpc_open">
 #    true
@@ -125,7 +125,7 @@ Over..
 #    44344
   </bun>
   <bun head="xrpc_trusted">
-#    http://monetdb.cwi.nl;http://127.0.0.1;http://localhost;/net/jarl/export/scratch0/zhang/monet-install/stable/debug/share/MonetDB/xrpc/export
+#    http://monetdb.cwi.nl;http://127.0.0.1;http://localhost;/net/jarl/export/scratch0/zhang/monet-install/stable/debug/share/monetdb/xrpc/export
   </bun>
   <bun head="xrpc_user">
 #    http://127.0.0.1;127.0.0.1;http://localhost;localhost
