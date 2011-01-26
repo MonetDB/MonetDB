@@ -26,19 +26,19 @@ EXTRA_DIST_DIR = src \
 
 ant_distjdbc = {
 	COND = HAVE_JAVAJDBC
-	DIR = datadir/MonetDB/lib
+	DIR = datadir/monetdb/lib
 	FILES = monetdb-1.6-mcl.jar monetdb-1.17-jdbc.jar jdbcclient.jar
 }
 
 ant_distxrpc = {
 	COND = HAVE_JAVAXRPC
-	DIR = datadir/MonetDB/lib
+	DIR = datadir/monetdb/lib
 	FILES = xrpcapi.jar xrpcwrapper.jar xrpcclient.jar
 }
 
 ant_distmerocontrol = {
 	COND = HAVE_JAVAMEROCONTROL
-	DIR = datadir/MonetDB/lib
+	DIR = datadir/monetdb/lib
 	FILES = merocontrol.jar
 }
 
