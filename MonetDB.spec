@@ -733,9 +733,6 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libmonet.la
 rm -f $RPM_BUILD_ROOT%{_libdir}/libmonet.so
 rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.la
 rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
-# embedded stuff
-rm -f $RPM_BUILD_ROOT%{_bindir}/mbedded*
-rm -f $RPM_BUILD_ROOT%{_libdir}/libembedded*
 
 %post -p /sbin/ldconfig
 
