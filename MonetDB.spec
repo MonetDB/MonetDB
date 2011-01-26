@@ -162,7 +162,7 @@ This package contains the files needed to develop with the
 %{_libdir}/pkgconfig/monetdb-mapi.pc
 
 %package client-odbc
-Summary: MonetDB SQL odbc
+Summary: MonetDB ODBC driver
 Group: Applications/Databases
 Requires: %{name}-client = %{version}-%{release}
 Requires(pre): unixODBC
@@ -235,7 +235,7 @@ program.
 %files client-perl
 %defattr(-,root,root)
 %{_prefix}/%{perl_libdir}/*
-%dir %{_datadir}/MonetDB/perl
+%dir %{_datadir}/monetdb/perl
 %{_datadir}/monetdb/perl/*
 
 %package client-ruby
