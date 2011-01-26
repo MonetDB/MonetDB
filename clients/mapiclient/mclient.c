@@ -2852,7 +2852,7 @@ main(int argc, char **argv)
 	if (encoding != NULL) {
 		toConsole = iconv_wstream(toConsole, encoding, "stdout");
 		if (toConsole == NULL || mnstr_errnr(toConsole)) {
-			fprintf(stderr, "%s: warning: cannot convert local character set %s to UTF-8\n", argv[0], encoding);
+			fprintf(stderr, "warning: cannot convert local character set %s to UTF-8\n", encoding);
 			if (toConsole != NULL) {
 				mnstr_close(toConsole);
 				mnstr_destroy(toConsole);
@@ -2861,9 +2861,12 @@ main(int argc, char **argv)
 		}
 		stdout_stream = toConsole;
 		if ((cd_in = iconv_open("utf-8", encoding)) == (iconv_t) -1)
-			fprintf(stderr, "%s: warning: cannot convert UTF-8 to local character set %s\n", argv[0], encoding);
+			fprintf(stderr, "warning: cannot convert UTF-8 to local character set %s\n", encoding);
 	}
 #endif /* HAVE_ICONV */
+	if (mark != NULL && mode != XQUERY) {
+		fprintf(stderr, "warning: --timer (-t) option only available with XQuery\n");
+	}
 
 	/* when config file would provide defaults */
 	if (user_set_as_flag)
