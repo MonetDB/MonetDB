@@ -36,7 +36,7 @@ BuildRequires: pcre-devel >= 4.5
 BuildRequires: perl
 BuildRequires: perl-devel
 BuildRequires: python
-BuildRequires: raptor-devel >= 1.4.16
+# BuildRequires: raptor-devel >= 1.4.16
 BuildRequires: readline-devel
 BuildRequires: ruby
 BuildRequires: rubygems
@@ -422,6 +422,7 @@ Group: Applications/Databases
 Requires(pre): shadow-utils
 Requires: %{name}-client = %{version}-%{release}
 Obsoletes: MonetDB5-server-devel
+Obsoletes: MonetDB5-server-rdf
 
 %description -n MonetDB5-server
 MonetDB is a database management system that is developed from a
@@ -465,7 +466,7 @@ fi
 %dir %{_libdir}/monetdb5/autoload
 %dir %{_libdir}/monetdb5/lib
 %exclude %{_libdir}/monetdb5/geom.mal
-%exclude %{_libdir}/monetdb5/rdf.mal
+# %exclude %{_libdir}/monetdb5/rdf.mal
 %exclude %{_libdir}/monetdb5/sql.mal
 %exclude %{_libdir}/monetdb5/sql_bpm.mal
 %{_libdir}/monetdb5/*.mal
@@ -473,30 +474,30 @@ fi
 %{_libdir}/monetdb5/autoload/*_vault.mal
 %{_libdir}/monetdb5/autoload/*_xml.mal
 %exclude %{_libdir}/monetdb5/lib/lib_geom.*
-%exclude %{_libdir}/monetdb5/lib/lib_rdf.*
+# %exclude %{_libdir}/monetdb5/lib/lib_rdf.*
 %exclude %{_libdir}/monetdb5/lib/lib_sql.*
 %{_libdir}/monetdb5/lib/*.so*
 %doc %{_mandir}/man5/monetdb5.conf.5.gz
 
-%package -n MonetDB5-server-rdf
-Summary: MonetDB RDF interface
-Group: Applications/Databases
-Requires: MonetDB5-server = %{version}-%{release}
+# %package -n MonetDB5-server-rdf
+# Summary: MonetDB RDF interface
+# Group: Applications/Databases
+# Requires: MonetDB5-server = %{version}-%{release}
 
-%description -n MonetDB5-server-rdf
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators, SQL- and XML- frontends.
+# %description -n MonetDB5-server-rdf
+# MonetDB is a database management system that is developed from a
+# main-memory perspective with use of a fully decomposed storage model,
+# automatic index management, extensibility of data types and search
+# accelerators, SQL- and XML- frontends.
 
-This package contains the MonetDB5 RDF module.
+# This package contains the MonetDB5 RDF module.
 
-%files -n MonetDB5-server-rdf
-%defattr(-,root,root)
-%{_libdir}/monetdb5/autoload/*_rdf.mal
-%{_libdir}/monetdb5/lib/lib_rdf.so*
-%{_libdir}/monetdb5/rdf.mal
-%{_libdir}/monetdb5/createdb/*_rdf.sql
+# %files -n MonetDB5-server-rdf
+# %defattr(-,root,root)
+# %{_libdir}/monetdb5/autoload/*_rdf.mal
+# %{_libdir}/monetdb5/lib/lib_rdf.so*
+# %{_libdir}/monetdb5/rdf.mal
+# %{_libdir}/monetdb5/createdb/*_rdf.sql
 
 %package SQL-server5
 Summary: MonetDB5 SQL server modules
@@ -525,7 +526,7 @@ use SQL with MonetDB, you will need to install this package.
 %{_libdir}/monetdb5/*.sql
 %dir %{_libdir}/monetdb5/createdb
 %exclude %{_libdir}/monetdb5/createdb/*_geom.sql
-%exclude %{_libdir}/monetdb5/createdb/*_rdf.sql
+# %exclude %{_libdir}/monetdb5/createdb/*_rdf.sql
 %{_libdir}/monetdb5/createdb/*
 %{_libdir}/monetdb5/sql*.mal
 %doc %{_mandir}/man1/monetdb.1.gz
@@ -694,6 +695,7 @@ developer.
         --enable-optimize=yes \
         --enable-bits=%{bits} \
 	--enable-java=no \
+	--enable-rdf=no \
 	--with-gc=no \
 	--with-valgrind=no \
         %{?oid32:--enable-oid32} \
