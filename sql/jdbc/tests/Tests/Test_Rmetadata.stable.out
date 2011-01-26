@@ -26,7 +26,7 @@ Over..
 
 0. false	false
 0. 4 columns:	5
-1.	mTests_src_jdbc_tests
+1.	mTests_jdbc_tests
 	classname     java.lang.Integer
 	displaysize   1
 	label         myint
@@ -46,7 +46,7 @@ Over..
 	searchable    true
 	signed        true
 	writable      false
-2.	mTests_src_jdbc_tests
+2.	mTests_jdbc_tests
 	classname     java.lang.Double
 	displaysize   22
 	label         mydouble
@@ -66,7 +66,7 @@ Over..
 	searchable    true
 	signed        true
 	writable      false
-3.	mTests_src_jdbc_tests
+3.	mTests_jdbc_tests
 	classname     java.lang.Boolean
 	displaysize   5
 	label         mybool
@@ -86,7 +86,7 @@ Over..
 	searchable    true
 	signed        false
 	writable      false
-4.	mTests_src_jdbc_tests
+4.	mTests_jdbc_tests
 	classname     java.lang.String
 	displaysize   8
 	label         myvarchar
@@ -106,7 +106,7 @@ Over..
 	searchable    true
 	signed        false
 	writable      false
-5.	mTests_src_jdbc_tests
+5.	mTests_jdbc_tests
 	classname     java.sql.Clob
 	displaysize   11
 	label         myclob
