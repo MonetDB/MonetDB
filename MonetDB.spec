@@ -734,8 +734,6 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
 # embedded stuff
 rm -f $RPM_BUILD_ROOT%{_bindir}/mbedded*
 rm -f $RPM_BUILD_ROOT%{_libdir}/libembedded*
-rm -f $RPM_BUILD_ROOT%{_libdir}/pkgconfig/monetdb-embedded*
-rm -rf $RPM_BUILD_ROOT%{_includedir}/monetdb/sql
 
 %post -p /sbin/ldconfig
 
