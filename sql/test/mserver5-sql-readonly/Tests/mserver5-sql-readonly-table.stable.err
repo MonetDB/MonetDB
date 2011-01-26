@@ -67,38 +67,38 @@ stderr of test 'mserver5-sql-readonly-table` in directory 'test/mserver5-sql-rea
 # cmdline opt 	mal_listing = 2
 # cmdline opt 	gdk_dbname = mTests_src_test_mserver5-sql-readonly
 #warning: please don't forget to set your vault key!
-#(see /export/scratch0/rijke/monetdbdefault20100729/etc/monetdb5.conf)
-MAPI  = monetdb@yngling:36267
+#(see /ufs/fabian/scratch/monetdb/current/program-x86_64/etc/monetdb5.conf)
+MAPI  = monetdb@volund:38754
 QUERY = drop table t1;
 ERROR = !schema statements cannot be executed on a readonly database.
-MAPI  = monetdb@yngling:36267
+MAPI  = monetdb@volund:38754
 QUERY = create table t2 (a int);
-ERROR = !MALException:(unknown):schema statements cannot be executed on a readonly database.
-MAPI  = monetdb@yngling:36267
+ERROR = !SQLException:sql.catalog: schema statements cannot be executed on a readonly database.
+MAPI  = monetdb@volund:38754
 QUERY = create table t3 (a) as select * from t1 with data;
-ERROR = !MALException:(unknown):schema statements cannot be executed on a readonly database.
-MAPI  = monetdb@yngling:36267
+ERROR = !SQLException:sql.catalog: schema statements cannot be executed on a readonly database.
+MAPI  = monetdb@volund:38754
 QUERY = create table t4 (a) as select * from t1 with no data;
-ERROR = !MALException:(unknown):schema statements cannot be executed on a readonly database.
-MAPI  = monetdb@yngling:36267
+ERROR = !SQLException:sql.catalog: schema statements cannot be executed on a readonly database.
+MAPI  = monetdb@volund:38754
 QUERY = create table t5 ( like t1 );
-ERROR = !MALException:(unknown):schema statements cannot be executed on a readonly database.
-MAPI  = monetdb@yngling:36267
+ERROR = !SQLException:sql.catalog: schema statements cannot be executed on a readonly database.
+MAPI  = monetdb@volund:38754
 QUERY = create temporary table t6 ( a int);
-ERROR = !MALException:(unknown):schema statements cannot be executed on a readonly database.
-MAPI  = monetdb@yngling:36267
+ERROR = !SQLException:sql.catalog: schema statements cannot be executed on a readonly database.
+MAPI  = monetdb@volund:38754
 QUERY = create local temporary table t7 ( a int );
-ERROR = !MALException:(unknown):schema statements cannot be executed on a readonly database.
-MAPI  = monetdb@yngling:36267
+ERROR = !SQLException:sql.catalog: schema statements cannot be executed on a readonly database.
+MAPI  = monetdb@volund:38754
 QUERY = create global temporary table t8 ( a int );
-ERROR = !MALException:(unknown):schema statements cannot be executed on a readonly database.
-MAPI  = monetdb@yngling:36267
+ERROR = !SQLException:sql.catalog: schema statements cannot be executed on a readonly database.
+MAPI  = monetdb@volund:38754
 QUERY = insert into t1 (a) values ( 1 );
 ERROR = !INSERT INTO: insert into table 't1' not allowed in readonly mode
-MAPI  = monetdb@yngling:36267
+MAPI  = monetdb@volund:38754
 QUERY = update t1 set a = 2 where a = 1;
 ERROR = !UPDATE: update table 't1' not allowed in readonly mode
-MAPI  = monetdb@yngling:36267
+MAPI  = monetdb@volund:38754
 QUERY = delete from t1 where a = 1;
 ERROR = !DELETE FROM: delete from table 't1' not allowed in readonly mode
 # builtin opt 	gdk_arch = 64bitx86_64-unknown-linux-gnu
