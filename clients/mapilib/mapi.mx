@@ -1049,6 +1049,7 @@ struct MapiResultSet {
 	struct MapiStatement *hdl;
 	int tableid;		/* SQL id of current result set */
 	int querytype;		/* type of SQL query */
+	mapi_int64 tuple_count;
 	mapi_int64 row_count;
 	mapi_int64 last_id;
 	int fieldcnt;
@@ -1654,6 +1655,7 @@ new_result(MapiHdl hdl)
 	result->querytype = -1;
 	result->errorstr = NULL;
 
+	result->tuple_count = 0;
 	result->row_count = 0;
 	result->last_id = -1;
 
@@ -1700,11 +1702,17 @@ close_result(MapiHdl hdl)
 		       (hdl->npending_close > 0 && hdl->pending_close != NULL));
 		if (mid->active &&
 		    (mid->active->active != result ||
-		     result->cache.tuplecount < result->row_count)) {
-			/* can't write "X" commands now, so save for later */
-			REALLOC(hdl->pending_close, hdl->npending_close + 1);
-			hdl->pending_close[hdl->npending_close] = result->tableid;
-			hdl->npending_close++;
+		     result->cache.tuplecount < result->row_count))
+		{
+			/* results for which we got all tuples at the initial
+			 * response, need not to be closed as the server already
+			 * did that immediately */
+			if (result->row_count > result->tuple_count) {
+				/* can't write "X" commands now, so save for later */
+				REALLOC(hdl->pending_close, hdl->npending_close + 1);
+				hdl->pending_close[hdl->npending_close] = result->tableid;
+				hdl->npending_close++;
+			}
 		} else if (mid->to != NULL) {
 			/* first close saved up to-be-closed tables */
 			for (i = 0; i < hdl->npending_close; i++) {
@@ -1725,7 +1733,7 @@ close_result(MapiHdl hdl)
 			if (hdl->pending_close)
 				free(hdl->pending_close);
 			hdl->pending_close = NULL;
-			if (mid->to != NULL && result->cache.tuplecount < result->row_count) {
+			if (mid->to != NULL && result->tuple_count < result->row_count) {
 				char msg[256];
 
 				snprintf(msg, sizeof(msg), "Xclose %d\n", result->tableid);
@@ -3947,9 +3955,7 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 			break;
 		case Q_TABLE:
 		case Q_PREPARE:{
-			int ntuples;	/* not used */
-
-			sscanf(nline, "%d " LLFMT " %d %d", &result->tableid, &result->row_count, &result->fieldcnt, &ntuples);
+			sscanf(nline, "%d " LLFMT " %d " LLFMT, &result->tableid, &result->row_count, &result->fieldcnt, &result->tuple_count);
 			break;
 		}
 		case Q_BLOCK:
@@ -4176,6 +4182,7 @@ mapi_virtual_result(MapiHdl hdl, int columns, const char **columnnames, const ch
 			result->fields[i].columnlength = columnlengths[i];
 	}
 	if (tuplecount > 0) {
+		result->tuple_count = tuplecount;
 		result->row_count = tuplecount;
 		result->cache.rowlimit = tuplecount;
 	}
