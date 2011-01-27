@@ -39,6 +39,7 @@
 #include "database.h"
 #include "control.h"
 #include <msabaoth.h>
+#include <mutils.h>
 #include <stdlib.h> /* exit, getenv, qsort */
 #include <stdarg.h>	/* variadic stuff */
 #include <stdio.h> /* fprintf, rename */
@@ -1401,7 +1402,7 @@ main(int argc, char *argv[])
 
 	mero_running = 1;
 	snprintf(buf, 1024, "%s/.merovingian_lock", dbfarm);
-	fd = gdk_lockf(buf);
+	fd = MT_lockf(buf, F_TLOCK, 4, 1);
 	if (fd >= 0 || fd <= -2) {
 		if (fd >= 0) {
 			close(fd);

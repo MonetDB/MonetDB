@@ -49,7 +49,6 @@ void generateSalt(char *buf, unsigned int len);
 char *generatePassphraseFile(char *path);
 char *generateUUID(void);
 void sleep_ms(size_t ms);
-int gdk_lockf(const char *filename);
 
 #endif
 

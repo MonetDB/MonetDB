@@ -21,6 +21,7 @@ man_MANS = monetdb.1
 # COMMON:   stream
 INCLUDES = ../../../../../monetdb5/misc \
 		   ../../../../../common/stream \
+		   ../../../../../common/utils \
 		   ../utils
 
 EXTRA_DIST = $(man_MANS)

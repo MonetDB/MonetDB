@@ -52,6 +52,7 @@
 
 #include "monetdb_config.h"
 #include <msabaoth.h>
+#include <mutils.h>
 #include <utils/utils.h>
 #include <utils/properties.h>
 #include <utils/glob.h>
@@ -692,7 +693,7 @@ main(int argc, char *argv[])
 	}
 
 	/* lock such that we are alone on this world */
-	if ((ret = gdk_lockf(".merovingian_lock")) == -1) {
+	if ((ret = MT_lockf(".merovingian_lock", F_TLOCK, 4, 1)) == -1) {
 		/* locking failed */
 		Mfprintf(stderr, "another merovingian is already running\n");
 		MERO_EXIT(1);

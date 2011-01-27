@@ -397,24 +397,4 @@ sleep_ms(size_t ms)
 	(void) select(0, NULL, NULL, NULL, &tv);
 }
 
-/* returns -1 when locking failed,
- * returns -2 when the lock file could not be opened/created
- * returns the (open) file descriptor to the file otherwise */
-int
-gdk_lockf(const char *filename)
-{
-	int fd = open(filename, O_CREAT | O_RDWR,
-			S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
-
-	if (fd < 0)
-		return -2;
-
-	if (lseek(fd, 4, SEEK_SET) == 4 && lockf(fd, 2, 1) == 0) {
-		/* do not close else we lose the lock we want */
-		return fd;
-	}
-	close(fd);
-	return -1;
-}
-
 /* vim:set ts=4 sw=4 noexpandtab: */

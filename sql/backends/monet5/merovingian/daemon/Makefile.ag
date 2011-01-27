@@ -21,6 +21,7 @@ man_MANS = monetdbd.1
 INCLUDES = .. \
 		   ../../../../../monetdb5/misc \
 		   ../../../../../common/stream \
+		   ../../../../../common/utils \
 		   ../../../../../clients/mapilib
 
 EXTRA_DIST = $(man_MANS) \
