@@ -107,7 +107,9 @@
 	    
 	    if ($lang == "") {
 	        $lang = "sql";
-	    }
+		} else if (strstr($lang, "sql") == $lang) {
+			$lang = "sql";
+		}
 	    
 	    $options["hashfunc"] = $hashfunc;
         $options["lang"]     = $lang;
