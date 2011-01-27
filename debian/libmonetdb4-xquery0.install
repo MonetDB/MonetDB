@@ -1,2 +1,4 @@
-debian/tmp/usr/lib/MonetDB4/lib/lib*.so* usr/lib/MonetDB4/lib
-debian/tmp/usr/lib/libembeddedxq.so.* /usr/lib
+debian/tmp/usr/lib/monetdb4/lib/lib_pathfinder* usr/lib/monetdb4/lib
+debian/tmp/usr/lib/monetdb4/lib/lib_pf* usr/lib/monetdb4/lib
+debian/tmp/usr/lib/monetdb4/lib/lib_probxml* usr/lib/monetdb4/lib
+debian/tmp/usr/lib/monetdb4/lib/lib_xrpc* usr/lib/monetdb4/lib

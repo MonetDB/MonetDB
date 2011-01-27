@@ -10,9 +10,19 @@ case "$1" in
         if ! getent passwd monetdb > /dev/null; then
             adduser --system --ingroup monetdb --home /var/lib/monetdb --disabled-password --shell /usr/sbin/nologin monetdb
         fi
-	mkdir -p /var/MonetDB4/dbfarm
-	chown monetdb:monetdb /var/MonetDB4 /var/MonetDB4/dbfarm
-	chmod ug=rwx,g+s,o= /var/MonetDB4 /var/MonetDB4/dbfarm
+	# move database from old location to new location
+	if [ -d /var/MonetDB4/dbfarm -a -d /var/monetdb4/dbfarm -a ! /var/MonetDB4/dbfarm -ef /var/monetdb4/dbfarm ]; then
+		# old database exists and is different from new
+		if [ ! -d /var/monetdb4 ] || [ `find /var/monetdb4 -print | wc -l` -le 2 ]; then
+			# new database is still empty
+			[ -d /var/monetdb4/dbfarm ] && rmdir /var/monetdb4/dbfarm
+			[ -d /var/monetdb4 ] && rmdir /var/monetdb4
+			mv /var/MonetDB4 /var/monetdb4
+		fi
+	fi
+	mkdir -p /var/monetdb4/dbfarm
+	chown monetdb:monetdb /var/monetdb4 /var/monetdb4/dbfarm
+	chmod ug=rwx,g+s,o= /var/monetdb4 /var/monetdb4/dbfarm
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)

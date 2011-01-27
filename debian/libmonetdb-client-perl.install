@@ -1,5 +1,2 @@
-debian/tmp/usr/share/MonetDB/perl/Mapi.pm usr/share/MonetDB/perl
-debian/tmp/usr/lib/perl5/DBD usr/lib/perl5
-debian/tmp/usr/lib/perl5/MapiLib.pm usr/lib/perl5
-debian/tmp/usr/lib/perl5/MapiLib.so* usr/lib/perl5
-debian/tmp/usr/lib/perl5/MonetDB usr/lib/perl5
+debian/tmp/usr/share/MonetDB/perl/* usr/share/MonetDB/perl
+debian/tmp/usr/lib/perl5/* usr/lib/perl5
