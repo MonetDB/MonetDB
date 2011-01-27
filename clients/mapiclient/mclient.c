@@ -2683,7 +2683,7 @@ main(int argc, char **argv)
 #ifdef HAVE_ICONV
 				"E:"
 #endif
-				"f:Ggh:I:iL:T:l:n:"
+				"f:Ggh:I:iL:l:n:"
 #ifdef HAVE_POPEN
 				"|:"
 #endif
