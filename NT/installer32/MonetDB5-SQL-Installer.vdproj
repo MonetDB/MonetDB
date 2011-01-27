@@ -2435,7 +2435,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_510F78343E3A45E2A6AA55AE6D608E78"
             {
-            "SourcePath" = "8:Lib\\libstream.lib"
+            "SourcePath" = "8:lib\\libstream.lib"
             "TargetName" = "8:libstream.lib"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -2815,7 +2815,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_6C605D6DB31644C1B23703C74D5B6228"
             {
-            "SourcePath" = "8:Lib\\MonetDB5\\autoload\\05_xml.mal"
+            "SourcePath" = "8:lib\\monetdb5\\autoload\\05_xml.mal"
             "TargetName" = "8:05_xml.mal"
             "Tag" = "8:"
             "Folder" = "8:_A4A821D237B943CFACE8D54F3F3971E3"
@@ -3235,7 +3235,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_80092FE83F0146B98DA3C95796BC0CA2"
             {
-            "SourcePath" = "8:Lib\\MonetDB5\\autoload\\40_sql.mal"
+            "SourcePath" = "8:lib\\monetdb5\\autoload\\40_sql.mal"
             "TargetName" = "8:40_sql.mal"
             "Tag" = "8:"
             "Folder" = "8:_A4A821D237B943CFACE8D54F3F3971E3"
@@ -4535,7 +4535,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_D7804D9F02174C4AB0CF147DCB1387C2"
             {
-            "SourcePath" = "8:Lib\\libmonetdb5.dll"
+            "SourcePath" = "8:lib\\libmonetdb5.dll"
             "TargetName" = "8:libmonetdb5.dll"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -5175,7 +5175,7 @@
                         {
                             "{9EF0B969-E518-4E46-987F-47570745A589}:_B593DAA0787744D6A44D17884E0C3951"
                             {
-                            "Name" = "8:MonetDB5"
+                            "Name" = "8:monetdb5"
                             "AlwaysCreate" = "11:FALSE"
                             "Condition" = "8:"
                             "Transitive" = "11:FALSE"

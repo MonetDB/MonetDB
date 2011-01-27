@@ -211,7 +211,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_4FC22BC37061413FA8B8F80F91330E61"
             {
-            "SourcePath" = "8:Lib\\MonetDB5\\autoload\\50_geom.mal"
+            "SourcePath" = "8:lib\\monetdb5\\autoload\\50_geom.mal"
             "TargetName" = "8:50_geom.mal"
             "Tag" = "8:"
             "Folder" = "8:_8FBEE32B5DFA4DCEA7CA122FC483D244"
@@ -271,7 +271,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_D147424A3FAE4B65A5E6354CD1874429"
             {
-            "SourcePath" = "8:Lib\\MonetDB5\\geom.mal"
+            "SourcePath" = "8:lib\\monetdb5\\geom.mal"
             "TargetName" = "8:geom.mal"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -291,7 +291,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_F73D102F3CF04E928A754F374EE52EA5"
             {
-            "SourcePath" = "8:Lib\\MonetDB5\\lib_geom.dll"
+            "SourcePath" = "8:lib\\monetdb5\\lib_geom.dll"
             "TargetName" = "8:lib_geom.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -347,7 +347,7 @@
                         {
                             "{9EF0B969-E518-4E46-987F-47570745A589}:_B593DAA0787744D6A44D17884E0C3951"
                             {
-                            "Name" = "8:MonetDB5"
+                            "Name" = "8:monetdb5"
                             "AlwaysCreate" = "11:FALSE"
                             "Condition" = "8:"
                             "Transitive" = "11:FALSE"
