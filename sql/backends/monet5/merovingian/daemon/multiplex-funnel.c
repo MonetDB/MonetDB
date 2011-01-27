@@ -423,10 +423,11 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 	/* only support Q_TABLE, because appending is easy */
 	for (i = 0; i < m->dbcc; i++) {
 		if (mapi_read_response(hdl[i]) != MOK) {
+			t = mapi_result_error(hdl[i]);
 			mnstr_printf(fout, "!node %s failed: no response\n",
 					m->dbcv[i]->database);
-			Mfprintf(stderr, "mapi_read_response for %s returned 0\n",
-					m->dbcv[i]->database);
+			Mfprintf(stderr, "mapi_read_response for %s failed: %s\n",
+					m->dbcv[i]->database, t ? t : "(no error)");
 			break;
 		}
 		if ((t = mapi_result_error(hdl[i])) != NULL) {
