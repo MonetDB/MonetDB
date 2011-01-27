@@ -226,7 +226,7 @@ public class MonetConnection implements Connection {
 
 		// we seem to have managed to log in, let's store the
 		// language used
-		if ("sql".equals(language)) {
+		if (language.startsWith("sql")) {
 			lang = LANG_SQL;
 		} else if ("xquery".equals(language)) {
 			lang = LANG_XQUERY;

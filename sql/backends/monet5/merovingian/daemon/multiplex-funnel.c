@@ -387,6 +387,7 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 	char *t;
 	mapi_int64 rlen;
 	int fcnt;
+	char emptyres, isempty;
 
 	/* first send the query to all, such that we don't waste time
 	 * waiting for each server to produce an answer, but wait for all of
@@ -420,7 +421,7 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 	t = NULL;
 	rlen = 0;
 	fcnt = -1;
-	/* only support Q_TABLE, because appending is easy */
+	emptyres = 0;
 	for (i = 0; i < m->dbcc; i++) {
 		if (mapi_read_response(hdl[i]) != MOK) {
 			t = mapi_result_error(hdl[i]);
@@ -437,6 +438,21 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 					m->dbcv[i]->database, t);
 			break;
 		}
+		isempty = 0;
+		/* mapi return Q_PARSE for empty results */
+		if (mapi_get_querytype(hdl[i]) == Q_PARSE)
+			emptyres = isempty = 1;
+		if (emptyres && !isempty) {
+			t = "err"; /* for cleanup code below */
+			mnstr_printf(fout, "!node %s returned a result while previous "
+					"did not\n", m->dbcv[i]->database);
+			Mfprintf(stderr, "encountered mix of empty and non-empty "
+					"results\n");
+			break;
+		}
+		if (isempty)
+			continue;
+		/* only support Q_TABLE, because appending is easy */
 		if (mapi_get_querytype(hdl[i]) != Q_TABLE) {
 			t = "err"; /* for cleanup code below */
 			mnstr_printf(fout, "!node %s returned a non-table result\n",
@@ -461,7 +477,7 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 			}
 		}
 	}
-	if (t != NULL) {
+	if (t != NULL || emptyres) {
 		mnstr_flush(fout);
 		for (i = 0; i < m->dbcc; i++)
 			mapi_close_handle(hdl[i]);
@@ -520,10 +536,28 @@ multiplexThread(void *d)
 				/* don't crash on now stale c */
 				break;
 			}
+			switch (*buf) {
+				case 's':
+				case 'S':
+					/* accepted, just SQL queries */
+					break;
+				case 'X':
+					/* ignored, some clients just really insist on using
+					 * these */
+					mnstr_flush(c->fout);
+					continue;
+				default:
+					mnstr_printf(c->fout, "!modifier %c not supported by "
+							"multiplex-funnel\n", *buf);
+					mnstr_flush(c->fout);
+					Mfprintf(stderr, "client attempted to perform %c "
+							"type query: %s", *buf, buf);
+					continue;
+			}
 			/* we assume (and require) the query to fit in one block,
 			 * that is, we only forward the first block, without having
 			 * any idea what it is */
-			multiplexQuery(m, buf, c->fout);
+			multiplexQuery(m, buf + 1, c->fout);
 		}
 	}
 }

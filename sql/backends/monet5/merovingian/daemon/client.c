@@ -228,7 +228,7 @@ handleClient(int sock, char isusock)
 		return(newErr("client %s specified no database", host));
 	}
 
-	if (strcmp(lang, "multiplex-funnel") == 0) {
+	if (strcmp(lang, "sql+mf") == 0) {
 		/* SQL multiplexer with funnelling capabilities */
 		/* find/start/attach funnel */
 		mplist *w;
