@@ -414,7 +414,7 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 			mapi_cache_limit(m->dbcv[i]->conn, -1); /* don't page */
 		}
 
-		hdl[i] = mapi_query(m->dbcv[i]->conn, buf);
+		hdl[i] = mapi_send(m->dbcv[i]->conn, buf);
 	}
 	/* fail as soon as one of the servers fails */
 	t = NULL;
@@ -422,6 +422,13 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 	fcnt = -1;
 	/* only support Q_TABLE, because appending is easy */
 	for (i = 0; i < m->dbcc; i++) {
+		if (mapi_read_response(hdl[i]) != MOK) {
+			mnstr_printf(fout, "!node %s failed: no response\n",
+					m->dbcv[i]->database);
+			Mfprintf(stderr, "mapi_read_response for %s returned 0\n",
+					m->dbcv[i]->database);
+			break;
+		}
 		if ((t = mapi_result_error(hdl[i])) != NULL) {
 			mnstr_printf(fout, "!node %s failed: %s\n",
 					m->dbcv[i]->database, t);

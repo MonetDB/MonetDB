@@ -1246,6 +1246,8 @@ mapi_export MapiMsg mapi_query_done(MapiHdl hdl);
 mapi_export MapiHdl mapi_quick_query(Mapi mid, const char *cmd, FILE *fd);
 mapi_export MapiHdl mapi_query_array(Mapi mid, const char *cmd, char **val);
 mapi_export MapiHdl mapi_quick_query_array(Mapi mid, const char *cmd, char **val, FILE *fd);
+mapi_export MapiHdl mapi_send(Mapi mid, const char *cmd);
+mapi_export MapiMsg mapi_read_response(MapiHdl hdl);
 mapi_export MapiHdl mapi_stream_query(Mapi mid, const char *cmd, int windowsize);
 mapi_export MapiMsg mapi_cache_limit(Mapi mid, int limit);
 mapi_export MapiMsg mapi_cache_shuffle(MapiHdl hdl, int percentage);
@@ -4323,7 +4325,7 @@ mapi_execute_internal(MapiHdl hdl)
 	mnstr_flush(mid->to);
 	check_stream(mid, mid->to, "write error on stream", "mapi_execute", mid->error);
 	mid->active = hdl;
-	return read_into_cache(hdl, 1);
+	return MOK;
 }
 
 MapiMsg
@@ -4332,7 +4334,9 @@ mapi_execute(MapiHdl hdl)
 	int ret;
 
 	mapi_hdl_check(hdl, "mapi_execute");
-	ret = mapi_execute_internal(hdl);
+	if ((ret = mapi_execute_internal(hdl)) == MOK)
+		return read_into_cache(hdl, 1);
+
 	return ret;
 }
 
@@ -4345,6 +4349,8 @@ mapi_execute_array(MapiHdl hdl, char **val)
 	ret = mapi_prepare_array_internal(hdl, val);
 	if (ret == MOK)
 		ret = mapi_execute_internal(hdl);
+	if (ret == MOK)
+		ret = read_into_cache(hdl, 1);
 	if (ret == MOK)
 		ret = read_into_cache(hdl, 1);
 	return ret;
@@ -4361,7 +4367,30 @@ mapi_query(Mapi mid, const char *cmd)
 	ret = mid->error;
 	if (ret == MOK)
 		ret = mapi_execute_internal(hdl);
+	if (ret == MOK)
+		ret = read_into_cache(hdl, 1);
 	return hdl;
+}
+
+/* version of mapi_query that does not wait for a response */
+MapiHdl
+mapi_send(Mapi mid, const char *cmd)
+{
+	int ret;
+	MapiHdl hdl;
+
+	mapi_check0(mid, "mapi_send");
+	hdl = prepareQuery(mapi_new_handle(mid), cmd);
+	ret = mid->error;
+	if (ret == MOK)
+		ret = mapi_execute_internal(hdl);
+	return hdl;
+}
+
+MapiMsg
+mapi_read_response(MapiHdl hdl)
+{
+	return read_into_cache(hdl, 1);
 }
 
 MapiMsg
@@ -4376,6 +4405,8 @@ mapi_query_handle(MapiHdl hdl, const char *cmd)
 	ret = hdl->mid->error;
 	if (ret == MOK)
 		ret = mapi_execute_internal(hdl);
+	if (ret == MOK)
+		ret = read_into_cache(hdl, 1);
 	return ret;
 }
 
@@ -4394,6 +4425,8 @@ mapi_query_array(Mapi mid, const char *cmd, char **val)
 		ret = mapi_prepare_array_internal(hdl, val);
 	if (ret == MOK)
 		ret = mapi_execute_internal(hdl);
+	if (ret == MOK)
+		ret = read_into_cache(hdl, 1);
 	return hdl;
 }
 
@@ -4500,6 +4533,8 @@ mapi_quick_query(Mapi mid, const char *cmd, FILE *fd)
 	if (ret == MOK)
 		ret = mapi_execute_internal(hdl);
 	if (ret == MOK)
+		ret = read_into_cache(hdl, 1);
+	if (ret == MOK)
 		ret = mapi_quick_response(hdl, fd);
 	if (mid->trace == MAPI_TRACE)
 		printf("mapi_quick_query return:%d\n", ret);
@@ -4521,6 +4556,8 @@ mapi_quick_query_array(Mapi mid, const char *cmd, char **val, FILE *fd)
 		ret = mapi_prepare_array_internal(hdl, val);
 	if (ret == MOK)
 		ret = mapi_execute_internal(hdl);
+	if (ret == MOK)
+		ret = read_into_cache(hdl, 1);
 	if (ret == MOK) {
 		/* look ahead to detect errors */
 		ret = mapi_quick_response(hdl, fd);
