@@ -2547,7 +2547,6 @@ main(int argc, char **argv)
 		{"input", 1, 0, 'I'},
 		{"interactive", 0, 0, 'i'},
 		{"language", 1, 0, 'l'},
-		{"taal", 1, 0, 'T'},
 		{"log", 1, 0, 'L'},
 		{"null", 1, 0, 'n'},
 #ifdef HAVE_POPEN
@@ -2634,7 +2633,7 @@ main(int argc, char **argv)
 				q = NULL;
 			} else if (strcmp(buf, "language") == 0) {
 				language = strdup(q);	/* leak */
-				if (strcmp(language, "sql") == 0) {
+				if (strstr(language, "sql") == language) {
 					mode = SQL;
 					q = NULL;
 				} else if (strcmp(language, "mal") == 0) {
@@ -2716,8 +2715,9 @@ main(int argc, char **argv)
 		case 'l':
 			/* accept unambiguous prefix of language */
 			if (strcmp(optarg, "sql") == 0 ||
-			    strcmp(optarg, "sq") == 0 || strcmp(optarg, "s") == 0) {
-				language = "sql";
+			    strcmp(optarg, "sq") == 0 || strcmp(optarg, "s") == 0 ||
+				strstr(optarg, "sql") == optarg) {
+				language = optarg;
 				mode = SQL;
 			} else if (strcmp(optarg, "mil") == 0 ||
 				   strcmp(optarg, "mi") == 0) {
@@ -2742,11 +2742,6 @@ main(int argc, char **argv)
 				fprintf(stderr, "language option needs to be one of sql, mil, mal, or xquery\n");
 				exit(-1);
 			}
-			break;
-		case 'T':
-			/* mere hack */
-			mode = SQL;
-			language = optarg;
 			break;
 		case 'n':
 			nullstring = optarg;
