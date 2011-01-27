@@ -37,7 +37,8 @@ lib__geom = {
 	       $(GEOS_LIBS)
 }
 
-scripts_mil = {
+headers_mil = {
+	HEADERS = mil
 	DIR = libdir/monetdb4
 	SOURCES = geom.mx
 }
