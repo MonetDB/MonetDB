@@ -2747,6 +2747,7 @@ main(int argc, char **argv)
 			/* mere hack */
 			mode = SQL;
 			language = optarg;
+			break;
 		case 'n':
 			nullstring = optarg;
 			break;
