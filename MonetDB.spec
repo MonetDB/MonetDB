@@ -376,11 +376,23 @@ useradd -r -g monetdb -d %{_localstatedir}/MonetDB -s /sbin/nologin \
     -c "MonetDB Server" monetdb
 exit 0
 
+%post -n MonetDB4-server
+# move database from old location to new location
+if [ -d %{_localstatedir}/MonetDB4/dbfarm -a ! %{_localstatedir}/MonetDB4/dbfarm -ef %{_localstatedir}/monetdb4/dbfarm ]; then
+	# old database exists and is different from new
+	if [ $(find %{_localstatedir}/monetdb4 -print | wc -l) -le 2 ]; then
+		# new database is still empty
+		rmdir %{_localstatedir}/monetdb4/dbfarm
+		rmdir %{_localstatedir}/monetdb4
+		mv %{_localstatedir}/MonetDB4 %{_localstatedir}/monetdb4
+	fi
+fi
+
 %files -n MonetDB4-server
 %defattr(-,root,root)
 %attr(750,monetdb,monetdb) %dir %{_localstatedir}/MonetDB
-%attr(2770,monetdb,monetdb) %dir %{_localstatedir}/MonetDB4
-%attr(2770,monetdb,monetdb) %dir %{_localstatedir}/MonetDB4/dbfarm
+%attr(2770,monetdb,monetdb) %dir %{_localstatedir}/monetdb4
+%attr(2770,monetdb,monetdb) %dir %{_localstatedir}/monetdb4/dbfarm
 %{_bindir}/Mserver
 %config(noreplace) %{_sysconfdir}/MonetDB.conf
 %dir %{_libdir}/monetdb4
@@ -720,7 +732,7 @@ rm -rf $RPM_BUILD_ROOT
 %makeinstall
 
 mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/MonetDB
-mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/MonetDB4/dbfarm
+mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/monetdb4/dbfarm
 mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/monetdb5/dbfarm
 mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/log/monetdb
 mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/run/monetdb
