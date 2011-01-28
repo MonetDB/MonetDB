@@ -1,2 +1,2 @@
-shlibs:Depends=libc6 (>= 2.4), libgeos-c1 (>= 3.2.0), libmonetdb1, libstream1, monetdb5-server
+shlibs:Depends=libc6 (>= 2.4), libgeos-c1 (>= 3.2.0), libmonetdb-stream1, libmonetdb1, monetdb5-server
 misc:Depends=
