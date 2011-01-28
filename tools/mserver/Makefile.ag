@@ -15,25 +15,18 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-# MONETDB5: Sabaoth
-INCLUDES = ../../../../../monetdb5/misc \
-		   ../../../../../common/stream \
-		   ../../../../../common/options \
-		   ../../../../../common/utils
+MTSAFE
+INCLUDES = ../../monetdb5/mal \
+		   ../../monetdb5/misc \
+		   ../../gdk \
+		   ../../common/stream \
+		   ../../common/options \
+		   $(openssl_CFLAGS) $(pcre_CFLAGS) $(libxml2_CFLAGS)
 
-EXTRA_DIST = \
-	control.h \
-	database.h \
-	glob.h \
-	properties.h \
-	utils.h
-
-lib_meroutil = {
-	NOINST
-	SOURCES = \
-		control.c \
-		database.c \
-		glob.c \
-		properties.c \
-		utils.c
+bin_mserver5 = {
+	SOURCES = mserver5.mx monet_version.h monet_version.c.in
+	LIBS = ../../monetdb5/tools/libmonetdb5 @SHARED_LIBS@ \
+		../../gdk/libbat \
+		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) \
+		$(curl_LIBS) $(pcre_LIBS) $(openssl_LIBS)
 }

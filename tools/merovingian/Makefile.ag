@@ -15,26 +15,4 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-man_MANS = monetdb.1
-
-# MONETDB5: Sabaoth
-# COMMON:   stream
-INCLUDES = ../../../../../monetdb5/misc \
-		   ../../../../../common/stream \
-		   ../../../../../common/utils \
-		   ../utils
-
-EXTRA_DIST = $(man_MANS)
-
-bin_monetdb = {
-	# hack: include monetdb.1.in here to get it expanded
-	SOURCES = monetdb.c monetdb.1.in
-	LIBS = ../utils/libmeroutil \
-		   ../../../../../monetdb5/misc/libsabaoth \
-		   ../../../../../common/stream/libstream \
-		   ../../../../../common/utils/libmutils \
-		   $(UUID_LIBS) \
-		   $(curl_LIBS) \
-		   $(SOCKET_LIBS) \
-		   $(MALLOC_LIBS)
-}
+SUBDIRS = NOT_WIN32?utils NOT_WIN32?client NOT_WIN32?daemon

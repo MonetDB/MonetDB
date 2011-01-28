@@ -15,4 +15,25 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = utils client daemon
+# MONETDB5: Sabaoth
+INCLUDES = ../../../monetdb5/misc \
+		   ../../../common/stream \
+		   ../../../common/options \
+		   ../../../common/utils
+
+EXTRA_DIST = \
+	control.h \
+	database.h \
+	glob.h \
+	properties.h \
+	utils.h
+
+lib_meroutil = {
+	NOINST
+	SOURCES = \
+		control.c \
+		database.c \
+		glob.c \
+		properties.c \
+		utils.c
+}

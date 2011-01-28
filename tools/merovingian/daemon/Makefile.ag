@@ -19,10 +19,10 @@ man_MANS = monetdbd.1
 
 # MONETDB5: Sabaoth
 INCLUDES = .. \
-		   ../../../../../monetdb5/misc \
-		   ../../../../../common/stream \
-		   ../../../../../common/utils \
-		   ../../../../../clients/mapilib
+		   ../../../monetdb5/misc \
+		   ../../../common/stream \
+		   ../../../common/utils \
+		   ../../../clients/mapilib
 
 EXTRA_DIST = $(man_MANS) \
 	merovingian.h \
@@ -50,10 +50,10 @@ bin_monetdbd = {
 			  peering.c \
 			  proxy.c
 	LIBS = ../utils/libmeroutil \
-		   ../../../../../monetdb5/misc/libsabaoth \
-		   ../../../../../common/stream/libstream \
-		   ../../../../../clients/mapilib/libmapi \
-		   ../../../../../common/utils/libmutils \
+		   ../../../monetdb5/misc/libsabaoth \
+		   ../../../common/stream/libstream \
+		   ../../../clients/mapilib/libmapi \
+		   ../../../common/utils/libmutils \
 		   $(UUID_LIBS) \
 		   $(curl_LIBS) \
 		   $(SOCKET_LIBS) \
