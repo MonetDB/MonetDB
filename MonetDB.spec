@@ -309,7 +309,7 @@ developer.
 %{_bindir}/xquerysample.php
 
 %package geom-MonetDB4
-Summary: MonetDB4 SQL GIS modules
+Summary: MonetDB4 GIS module
 Group: Applications/Databases
 Requires: MonetDB4-server = %{version}-%{release}
 Obsoletes: %{name}-geom
@@ -330,7 +330,7 @@ extensions for MonetDB4-server.
 %{_libdir}/monetdb4/lib/lib_geom.so*
 
 %package geom-MonetDB5
-Summary: MonetDB5 SQL GIS modules
+Summary: MonetDB5 SQL GIS support module
 Group: Applications/Databases
 Requires: MonetDB5-server = %{version}-%{release}
 Obsoletes: %{name}-geom
@@ -657,7 +657,6 @@ program.
 %package testing
 Summary: MonetDB - Monet Database Management System
 Group: Applications/Databases
-Requires: %{name}-testing-python = %{version}-%{release}
 Obsoletes: MonetDB-python
 
 %description testing
@@ -668,7 +667,7 @@ accelerators, SQL- and XML- frontends.
 
 This package contains the programs and files needed for testing the
 MonetDB packages.  You probably don't need this, unless you are a
-developer.
+developer.  If you do want to test, install %{name}-testing-python.
 
 %files testing
 %defattr(-,root,root)
@@ -680,6 +679,7 @@ developer.
 %package testing-python
 Summary: MonetDB - Monet Database Management System
 Group: Applications/Databases
+Requires: %{name}-testing = %{version}-%{release}
 Requires: %{name}-client-tests = %{version}-%{release}
 Requires: python
 BuildArch: noarch
@@ -692,7 +692,7 @@ accelerators, SQL- and XML- frontends.
 
 This package contains the Python programs and files needed for testing
 the MonetDB packages.  You probably don't need this, unless you are a
-developer.
+developer, but if you do want to test, this is the package you need.
 
 %files testing-python
 %defattr(-,root,root)
