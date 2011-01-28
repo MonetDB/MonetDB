@@ -108,23 +108,9 @@ sed \
 	-e "s|Release date: 20[0-9][0-9]-[01][0-9]-[0-3][0-9]|Release date: `date +%F`|" \
 	${file} | ${diff} ${file} - | ${patch}
 
-file="configure.ag"
-sed \
-	-e "s|^\(\[MonetDB Java\], \)\[${ESC_MAJOR}\.${ESC_MINOR}.${ESC_SUFFIX//[^0-9]/}\]|\1\[${NEW_MAJOR}.${NEW_MINOR}.${NEW_SUFFIX//[^0-9]/}\]|" \
-	-e "s|\[20[0-9][0-9][01][0-9][0-3][0-9]\]|[$(date +%Y%m%d)]|" \
-	${file} | ${diff} ${file} - | ${patch}
-
-file="NT/rules.msc"
-sed \
-	-e "s|^\(VERSION=\)${ESC_MAJOR}\.${ESC_MINOR}.${ESC_SUFFIX//[^0-9]/}|\1${NEW_MAJOR}.${NEW_MINOR}.${NEW_SUFFIX//[^0-9]/}|" \
-	-e "s|VERSION=20[0-9][0-9][01][0-9][0-3][0-9]|VERSION=$(date +%Y%m%d)|" \
-	${file} | ${diff} ${file} - | ${patch}
-
 for file in \
 	Makefile.ag \
 	; do
-	[[ ${file} == *"*"* ]] \
-		&& file=$(eval echo "${file%/\*/*}"/*/"${file#*/\*/}")
 	if [[ -f ${file} ]] ; then
 		for f in $FILES ; do
 			fr=${f//XXX/${NEW_MAJOR}.${NEW_MINOR}}
