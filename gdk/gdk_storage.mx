@@ -370,12 +370,12 @@ GDKload(const char *nme, const char *ext, size_t size, size_t maxsize, int mode)
 		     /* mmap storage is auto-extended here */
 		     ((fp = fopen(path, "rb+")) != NULL &&
 #ifdef _WIN64
-		      _fseeki64(fp, (ssize_t) maxsize, SEEK_SET) >= 0 &&
+		      _fseeki64(fp, (ssize_t) maxsize-1, SEEK_SET) >= 0 &&
 #else
 #ifdef HAVE_FSEEKO
-		      fseeko(fp, (off_t) maxsize, SEEK_SET) >= 0 &&
+		      fseeko(fp, (off_t) maxsize-1, SEEK_SET) >= 0 &&
 #else
-		      fseek(fp, (long) maxsize, SEEK_SET) >= 0 &&
+		      fseek(fp, (long) maxsize-1, SEEK_SET) >= 0 &&
 #endif
 #endif
 		      fputc('\n', fp) >= 0 &&

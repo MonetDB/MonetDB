@@ -56,6 +56,141 @@ Todo: check DESCsetmodes/HEAPcheckmode (gdk_storage.mx).
 #include "monetdb_config.h"
 #include "gdk.h"
 
+/* The heap cache should reduce mmap/munmap calls which are very expensive.
+ * Instead we try to reuse mmap's. This however requires file renames.
+ * The cache has a limited size!
+ */
+
+#define HEAP_CACHE_SIZE 5
+
+typedef struct heap_cache_e {
+	void *base;
+	size_t maxsz;
+	char fn[PATHLENGTH]; 	/* tmp file name */
+} heap_cache_e;
+
+typedef struct heap_cache {
+	int sz;
+	int used;
+	heap_cache_e *hc;
+} heap_cache;
+
+static heap_cache *hc = NULL;
+static MT_Lock HEAPcacheLock;
+
+void
+HEAPcacheInit(void) 
+{
+	if (!hc) {
+		MT_lock_init(&HEAPcacheLock, "HEAPcache_init");
+		gdk_set_lock(HEAPcacheLock, "HEAPcache_init");
+		hc = (heap_cache*)GDKmalloc(sizeof(heap_cache));
+		hc->used = 0;
+		hc->sz = HEAP_CACHE_SIZE;
+		hc->hc = (heap_cache_e*)GDKmalloc(sizeof(heap_cache_e)*hc->sz);
+		GDKcreatedir(HCDIR DIR_SEP_STR);
+		gdk_unset_lock(HEAPcacheLock, "HEAPcache_init");
+	}
+}
+
+static int
+HEAPcacheAdd( void *base, size_t maxsz, char *fn, int storage, int free_file )
+{
+	int added = 0;
+
+	if (free_file && fn && storage == STORE_MMAP && hc->used < hc->sz) {
+		gdk_set_lock(HEAPcacheLock, "HEAPcache_init");
+		if (hc->used < hc->sz) {
+			heap_cache_e *e = hc->hc+hc->used; 
+
+			e->base = base;
+			e->maxsz = maxsz;
+			snprintf(e->fn, PATHLENGTH, "%d", hc->used);
+			GDKunlink(HCDIR, e->fn, NULL);
+			GDKmove(BATDIR, fn, NULL, HCDIR, e->fn, NULL);
+			hc->used++;
+			added = 1;
+		}
+		gdk_unset_lock(HEAPcacheLock, "HEAPcache_init");
+	}
+	if (!added) 
+		return GDKmunmap(base, maxsz);
+	return 0;
+}
+
+static void *
+HEAPcacheFind( size_t *maxsz, char *fn, int mode )
+{
+	void *base = NULL;
+
+	*maxsz = (1 + (*maxsz >> 16)) << 16;	/* round up to 64K */
+	if (mode == STORE_MMAP && hc->used < hc->sz) {
+		gdk_set_lock(HEAPcacheLock, "HEAPcache_init");
+
+		if (hc->used) {
+			/* Simply use first and extend
+			 *
+			 * if (hc->hc[0].maxsz < *maxsz) {
+			 * only on linux we could use mremap.
+			 * instead we do mmap before munmap.
+			 * res = MT_mmap_remap(hdl, *maxsz - hc->hc[0].maxsz, hc->hc[0].maxsz)
+			 */
+			if (hc->hc[0].maxsz < *maxsz) {
+				/* resize file ? */
+				FILE *fp;
+				long_str fn;
+				int mod = MMAP_READ | MMAP_WRITE | MMAP_SEQUENTIAL | MMAP_SYNC;
+				GDKfilepath(fn, HCDIR, hc->hc[0].fn, NULL);
+
+		     		if ((fp = fopen(fn, "rb+")) != NULL &&
+#ifdef _WIN64
+		      		   _fseeki64(fp, (ssize_t) *maxsz-1, SEEK_SET) >= 0 &&
+#else
+#ifdef HAVE_FSEEKO
+		      		   fseeko(fp, (off_t) *maxsz-1, SEEK_SET) >= 0 &&
+#else
+		      		   fseek(fp, (long) *maxsz-1, SEEK_SET) >= 0 &&
+#endif
+#endif
+		      		   fputc('\n', fp) >= 0 &&
+		      		   fflush(fp) >= 0 &&
+		      		   fclose(fp) >= 0) {
+					void *base = GDKload(fn, NULL, *maxsz, *maxsz, mod);
+					GDKmunmap(hc->hc[0].base, hc->hc[0].maxsz);
+					hc->hc[0].base = base;
+					hc->hc[0].maxsz = *maxsz;
+				}
+			}
+			base = hc->hc[0].base;
+			*maxsz = hc->hc[0].maxsz;
+			if (GDKmove(HCDIR, hc->hc[0].fn, NULL, BATDIR, fn, NULL)<0) {
+				/* try to create the directory, if that was the problem */
+				char path[PATHLENGTH];
+
+				GDKfilepath(path, BATDIR, fn, NULL);
+				GDKcreatedir(path);
+				GDKmove(HCDIR, hc->hc[0].fn, NULL, BATDIR, fn, NULL);
+			}
+			hc->used--;
+			if (hc->used) {
+				hc->hc[0].base = hc->hc[hc->used].base;
+				hc->hc[0].maxsz = hc->hc[hc->used].maxsz;
+				GDKmove(HCDIR, hc->hc[hc->used].fn, NULL, HCDIR, hc->hc[0].fn, NULL);
+			} 
+		}
+		gdk_unset_lock(HEAPcacheLock, "HEAPcache_init");
+	}
+	if (!base) {
+		FILE *fp = GDKfilelocate(fn, "wb", NULL);
+
+		if (fp) {
+			fclose(fp);
+			return GDKload(fn, NULL, *maxsz, *maxsz, mode);
+		}
+	}
+	return base;
+}
+
 static int HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, int trunc);
 static int HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix);
 
@@ -121,19 +256,29 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 		ALLOCDEBUG fprintf(stderr, "#HEAPalloc " SZFMT " " SZFMT " " PTRFMT "\n", h->size, h->maxsize, PTRFMTCAST h->base);
 	}
 	if (h->filename && h->base == NULL) {
+		long_str ofn;
 		char *of = h->filename;
 		FILE *fp;
+		struct stat st;
 
 		h->filename = NULL;
-		fp = GDKfilelocate(nme, "wb", ext);
-		if (fp != NULL) {
-			fclose(fp);
-			h->newstorage = STORE_MMAP;
-			HEAPload(h, nme, ext, FALSE);
-			if (h->base != NULL)
-				MT_madvise(h->base, h->size, MMAP_SEQUENTIAL);
+
+		GDKfilepath(ofn, BATDIR, of, NULL);
+		if (stat(ofn, &st) != 0) {
+			h->storage = STORE_MMAP;
+			h->base = HEAPcacheFind(&h->maxsize, of, h->storage );
+			h->filename = of;
+		} else {
+			fp = GDKfilelocate(nme, "wb", ext);
+			if (fp != NULL) {
+				fclose(fp);
+				h->newstorage = STORE_MMAP;
+				HEAPload(h, nme, ext, FALSE);
+				if (h->base != NULL)
+					MT_madvise(h->base, h->size, MMAP_SEQUENTIAL);
+			}
+			GDKfree(of);
 		}
-		GDKfree(of);
 	}
 	if (h->base == NULL) {
 		GDKerror("HEAPalloc: Insufficient space for HEAP of " SZFMT " bytes.", h->size);
@@ -385,14 +530,14 @@ Is now called even on heaps without memory, just to free the pre-allocated filen
 simple: alloc and copy.
 @{
 @c
-int
-HEAPfree(Heap *h)
+static int
+HEAPfree_(Heap *h, int free_file)
 {
 	if (h->base) {
 		if (h->storage == STORE_MEM) {	/* plain memory */
 			GDKfree(h->base);
 		} else {	/* mapped file, or STORE_PRIV */
-			int ret = GDKmunmap(h->base, h->maxsize);
+			int ret = HEAPcacheAdd(h->base, h->maxsize, h->filename, h->storage, free_file);
 
 			if (ret < 0) {
 				GDKsyserror("HEAPfree: %s was not mapped\n", h->filename);
@@ -410,6 +555,12 @@ HEAPfree(Heap *h)
 		h->filename = NULL;
 	}
 	return 0;
+}
+
+int
+HEAPfree(Heap *h)
+{
+	return HEAPfree_(h, 0);
 }
 
 @}
@@ -561,22 +712,8 @@ HEAPdelete(Heap *h, const char *o, const char *ext)
 		assert(h->base == 0);
 		return 0;
 	}
-	if (h->base) {
-		if (h->copied == 0 && h->storage == STORE_MMAP) {
-			/* truncate file, so OS does not try to flush
-			   dirty data in mmap to file that is deleted
-			   anyway */
-			int ret, fd = GDKfdlocate(h->filename, "rb+", NULL);
-			IODEBUG THRprintf(GDKout, "#HEAPdelete(%s) GDKfdlocate(\"rb+\") = %d\n", h->filename, fd);
-
-			ret = ftruncate(fd, LL_CONSTANT(0));
-			IODEBUG THRprintf(GDKout, "#HEAPdelete(%s) ftruncate(%d,0LL) = %d\n", h->filename, fd, ret);
-
-			ret = close(fd);
-			IODEBUG THRprintf(GDKout, "#HEAPdelete(%s) close(%d) = %d\n", h->filename, fd, ret);
-		}
-		HEAPfree(h);
-	}
+	if (h->base) 
+		HEAPfree_(h, 1);
 	if (h->copied) {
 		return 0;
 	}

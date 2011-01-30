@@ -433,12 +433,14 @@ extern "C" {
 #define BAKDIR		"bat/BACKUP"
 #define SUBDIR		"bat/BACKUP/SUBCOMMIT"
 #define LEFTDIR		"bat/LEFTOVERS"
+#define HCDIR		"bat/HC"
 #else
 #define BATDIR		"bat"
 #define DELDIR		"bat\\DELETE_ME"
 #define BAKDIR		"bat\\BACKUP"
 #define SUBDIR		"bat\\BACKUP\\SUBCOMMIT"
 #define LEFTDIR		"bat\\LEFTOVERS"
+#define HCDIR		"bat\\HC"
 #endif
 #define DBLOGFILE	"MonetLog"
 
@@ -1051,6 +1053,7 @@ gdk_export size_t HEAPsubcopy(Heap *dst, Heap *src, size_t size, size_t offset);
 gdk_export int HEAPdelete(Heap *h, const char *o, const char *ext);
 gdk_export size_t HEAPvmsize(Heap *h);
 gdk_export size_t HEAPmemsize(Heap *h);
+gdk_export void HEAPcacheInit(void);
 
 /*
 @}
