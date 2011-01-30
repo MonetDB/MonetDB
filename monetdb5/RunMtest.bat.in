@@ -40,7 +40,7 @@ set PATH=%buildbase%\clients\mapiclient;%buildbase%\testing;%PATH%
 
 set PATH=%MOD_PATH%;%PATH%
 set PATH=%builddir%\mal;%PATH%
-set PATH=%builddir%\tools;%PATH%
+set PATH=%buildbase%\tools\mserver;%PATH%
 
 set PYTHONPATH=%buildbase%\testing;%srcdir%\..\testing;%PYTHONPATH%
 

@@ -36,6 +36,7 @@ set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\mnetcdf\.libs
 set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\mnetcdf
 set MOD_PATH=%MOD_PATH%;%srcdir%\..\monetdb4\scripts\tools
 
+set PATH=%buildbase%\monetdb4\tools;%PATH%
 set cfg=%buildbase%\monetdb4\conf\MonetDB.conf
 :skip_4
 
@@ -63,10 +64,11 @@ copy /y %srcdir%\..\monetdb5\extras\rdf\??_*.mal %buildbase%\monetdb5\extras\rdf
 if not exist %buildbase%\monetdb5\extras\xml\autoload mkdir %buildbase%\monetdb5\extras\xml\autoload
 copy /y %srcdir%\..\monetdb5\extras\xml\??_*.mal %buildbase%\monetdb5\extras\xml\autoload
 
+set PATH=%buildbase%\tools\mserver;%PATH%
 set cfg=%buildbase%\monetdb5\misc\monetdb5.conf
 :skip_5
 
-set PATH=%buildbase%\monetdb%V%\tools;%buildbase%\clients\mapiclient;%buildbase%\testing;%PATH%
+set PATH=%buildbase%\clients\mapiclient;%buildbase%\testing;%PATH%
 
 set PATH=%MOD_PATH%;%PATH%
 set PATH=%builddir%\extras\compiler;%PATH%
