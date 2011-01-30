@@ -3909,6 +3909,7 @@ str bat@2_2_@1( int *res, int *bid )
 	p = (@2*) Tloc(b, BUNfirst(b));
 	q = (@2*) Tloc(b, BUNlast(b));
 	bn->T->nonil = 1;
+	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	if ( b->T->nonil){
 		for (; p<q; p++, o++)
 			*o = (@1)*p;
@@ -3920,6 +3921,7 @@ str bat@2_2_@1( int *res, int *bid )
 		} else
 			*o = (@1)*p;
 	}
+	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
@@ -3980,6 +3982,7 @@ str bat@2_2_@1( int *res, int *bid )
 	o = (@1*) Tloc(bn,BUNfirst(bn));
 	p = (@2*) Tloc(b, BUNfirst(b));
 	q = (@2*) Tloc(b, BUNlast(b));
+	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	if ( b->T->nonil){
 		for (; p<q; p++, o++){
 			val = *p;
@@ -4008,6 +4011,7 @@ str bat@2_2_@1( int *res, int *bid )
 			}
 		}
 	}
+	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
@@ -4113,6 +4117,7 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 	p = (@2*) Tloc(b, BUNfirst(b));
 	q = (@2*) Tloc(b, BUNlast(b));
 	bn->T->nonil = 1;
+	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	if ( b->T->nonil){
 		if (scale)
 			for (; p<q; p++, o++)
@@ -4132,6 +4137,7 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 			}
 		}
 	}
+	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
@@ -4164,6 +4170,7 @@ str bat@2_dec2dec_@1( int *res, int *S1, int *bid, int *d2, int *S2 )
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
 	BATseqbase(dst, b->hseqbase);
+	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
 		@2 *v = (@2*)BUNtail(bi,p);
 		@1 r;
@@ -4172,6 +4179,7 @@ str bat@2_dec2dec_@1( int *res, int *S1, int *bid, int *d2, int *S2 )
 			break;
 		BUNins(dst, BUNhead(bi,p), &r, FALSE);
 	}
+	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BBPkeepref( *res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
@@ -4189,6 +4197,7 @@ str bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
 	BATseqbase(dst, b->hseqbase);
+	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
 		@2 *v = (@2*)BUNtail(bi,p);
 		@1 r;
@@ -4197,6 +4206,7 @@ str bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 			break;
 		BUNins(dst, BUNhead(bi,p), &r, FALSE);
 	}
+	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BBPkeepref( *res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
@@ -4270,6 +4280,7 @@ bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
 	BATseqbase(dst, b->hseqbase);
+	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
 		@2 *v = (@2*)BUNtail(bi,p);
 		@1 r;
@@ -4278,6 +4289,7 @@ bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 			break;
 		BUNins(dst, BUNhead(bi,p), &r, FALSE);
 	}
+	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BBPkeepref( *res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
@@ -4379,6 +4391,7 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 	p = (@2*) Tloc(b, BUNfirst(b));
 	q = (@2*) Tloc(b, BUNlast(b));
 	bn->T->nonil = 1;
+	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	if ( b->T->nonil){
 		for (; p<q; p++, o++) 
 			*o = (((@1)*p)/scales[scale]);
@@ -4391,6 +4404,7 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 				*o = (((@1)*p)/scales[scale]);
 		}
 	}
+	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
@@ -4423,6 +4437,7 @@ str bat@2_dec2dec_@1( int *res, int *S1, int *bid, int *d2, int *S2 )
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
 	BATseqbase(dst, b->hseqbase);
+	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
 		@2 *v = (@2*)BUNtail(bi,p);
 		@1 r;
@@ -4431,6 +4446,7 @@ str bat@2_dec2dec_@1( int *res, int *S1, int *bid, int *d2, int *S2 )
 			break;
 		BUNins(dst, BUNhead(bi,p), &r, FALSE);
 	}
+	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BBPkeepref( *res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
@@ -4449,6 +4465,7 @@ str bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
 	BATseqbase(dst, b->hseqbase);
+	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
 		@2 *v = (@2*)BUNtail(bi,p);
 		@1 r;
@@ -4457,6 +4474,7 @@ str bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 			break;
 		BUNins(dst, BUNhead(bi,p), &r, FALSE);
 	}
+	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BBPkeepref( *res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
@@ -4567,6 +4585,7 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 	p = (@2*) Tloc(b, BUNfirst(b));
 	q = (@2*) Tloc(b, BUNlast(b));
 	bn->T->nonil = 1;
+	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	if ( b->T->nonil){
 		for (; p<q; p++, o++) {
 			if (scale) 
@@ -4577,6 +4596,7 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 			if (val > GDK_@1_min && val <= GDK_@1_max)
 				*o = (@1)val;
 			else {
+				BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 				BBPreleaseref(b->batCacheid);
 				BBPreleaseref(bn->batCacheid);
 				throw(SQL, "convert", "value (" LLFMT ") exceeds limits of type @1", val);
@@ -4596,6 +4616,7 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 				if (val > GDK_@1_min && val <= GDK_@1_max)
 					*o = (@1)val;
 				else {
+					BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 					BBPreleaseref(b->batCacheid);
 					BBPreleaseref(bn->batCacheid);
 					throw(SQL, "convert", "value (" LLFMT ") exceeds limits of type @1", val);
@@ -4603,6 +4624,7 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 			}
 		}
 	}
+	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
@@ -4635,6 +4657,7 @@ str bat@2_dec2dec_@1( int *res, int *S1, int *bid, int *d2, int *S2 )
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
 	BATseqbase(dst, b->hseqbase);
+	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
 		@2 *v = (@2*)BUNtail(bi,p);
 		@1 r;
@@ -4643,6 +4666,7 @@ str bat@2_dec2dec_@1( int *res, int *S1, int *bid, int *d2, int *S2 )
 			break;
 		BUNins(dst, BUNhead(bi,p), &r, FALSE);
 	}
+	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BBPkeepref( *res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
@@ -4661,6 +4685,7 @@ str bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
 	BATseqbase(dst, b->hseqbase);
+	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
 		@2 *v = (@2*)BUNtail(bi,p);
 		@1 r;
@@ -4669,6 +4694,7 @@ str bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 			break;
 		BUNins(dst, BUNhead(bi,p), &r, FALSE);
 	}
+	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BBPkeepref( *res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
