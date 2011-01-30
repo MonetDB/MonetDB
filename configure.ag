@@ -2370,7 +2370,7 @@ AC_ARG_WITH(valgrind,
 	have_valgrind=$withval)
 if test "x$have_valgrind" != xno; then
 	PKG_CHECK_MODULES([valgrind], [valgrind],
-		[have_valgrind=yes], [if test "x$have_valgrind" =xyes; then AC_MSG_ERROR([no valgrind support found]); else have_valgrind=no; fi])
+		[have_valgrind=yes], [if test "x$have_valgrind" = xyes; then AC_MSG_ERROR([no valgrind support found]); else have_valgrind=no; fi])
 	if test "x$have_valgrind" = xyes; then
 		AC_DEFINE(HAVE_VALGRIND, 1, [Define if you have valgrind installed])
 	fi
