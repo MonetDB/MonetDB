@@ -309,7 +309,6 @@ MakeDefs(char *name)
 		case OQLspec:
 		case SQL:
 		case Java:
-		case Tcl:
 		case Qnap:
 		case ProC:
 		case Shell:

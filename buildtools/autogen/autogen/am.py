@@ -29,8 +29,7 @@ automake_ext.extend(['cc', 'yy', 'll'])  # C++
 # buildtools/conf.  The generated sources should therefore be included
 # in the tar ball and not be removed with `make distclean' when
 # running "in" said tar ball.
-buildtools_ext = ['brg', 'l', 'm', 'mx', 'php.i', 'pm.i', 'py.i',
-                  'ruby.i', 'syms', 't', 'tcl.i', 'y']
+buildtools_ext = ['brg', 'l', 'm', 'mx', 'pm.i', 'syms', 't', 'y']
 
 am_assign = "+="
 
