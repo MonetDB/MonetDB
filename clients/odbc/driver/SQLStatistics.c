@@ -143,12 +143,12 @@ SQLStatistics_(ODBCStmt *stmt,
 		"cast(null as integer) as pages, "
 		"cast(null as varchar(1)) as filter_condition "
 		"from sys.\"idxs\" i, sys.\"schemas\" s, sys.\"tables\" t, "
-		"sys.\"columns\" c,  sys.\"keycolumns\" kc, sys.\"keys\" k "
+		"sys.\"columns\" c,  sys.\"objects\" kc, sys.\"keys\" k "
 		"where i.\"table_id\" = t.\"id\" and "
 		"t.\"schema_id\" = s.\"id\" and "
 		"i.\"id\" = kc.\"id\" and "
 		"t.\"id\" = c.\"table_id\" and "
-		"kc.\"column\" = c.\"name\" and "
+		"kc.\"name\" = c.\"name\" and "
 		"(k.\"type\" is null or k.\"type\" = 1)",
 		SQL_INDEX_HASHED, SQL_INDEX_OTHER);
 	query_end += strlen(query_end);

@@ -387,13 +387,13 @@ sub primary_key_info {
 select cast( null        as varchar( 128 ) ) as table_cat
      , s."name"                              as table_schem
      , t."name"                              as table_name
-     , c."column"                            as column_name
+     , c."name"                            as column_name
      , cast( c."nr" + 1  as smallint       ) as key_seq
      , k."name"                              as pk_name
   from sys."schemas"     s
      , sys."tables"      t
      , sys."keys"        k
-     , sys."keycolumns"  c
+     , sys."objects"  c
  where t."schema_id"   = s."id"
    and k."table_id"    = t."id"
    and c."id"          = k."id"
@@ -415,11 +415,11 @@ sub foreign_key_info {
 select cast( null         as varchar( 128 ) ) as uk_table_cat
      , uks."name"                             as uk_table_schem
      , ukt."name"                             as uk_table_name
-     , ukc."column"                           as uk_column_name
+     , ukc."name"                           as uk_column_name
      , cast( null         as varchar( 128 ) ) as fk_table_cat
      , fks."name"                             as fk_table_schem
      , fkt."name"                             as fk_table_name
-     , fkc."column"                           as fk_column_name
+     , fkc."name"                           as fk_column_name
      , cast( fkc."nr" + 1 as smallint       ) as ordinal_position
      , cast( 3            as smallint       ) as update_rule    -- SQL_NO_ACTION
      , cast( 3            as smallint       ) as delete_rule    -- SQL_NO_ACTION
@@ -434,11 +434,11 @@ select cast( null         as varchar( 128 ) ) as uk_table_cat
   from sys."schemas"    uks
      , sys."tables"     ukt
      , sys."keys"       ukk
-     , sys."keycolumns" ukc
+     , sys."objects" ukc
      , sys."schemas"    fks
      , sys."tables"     fkt
      , sys."keys"       fkk
-     , sys."keycolumns" fkc
+     , sys."objects" fkc
  where ukt."schema_id"  = uks."id"
    and ukk."table_id"   = ukt."id"
    and ukc."id"         = ukk."id"
