@@ -971,6 +971,19 @@ mvc_create_table(mvc *m, sql_schema *s, char *name, int tt, bit system, int pers
 }
 
 sql_table *
+mvc_create_cluster(mvc *m, sql_schema *s, char *name, bit system, int persistence, int commit_action, int sz)
+{
+	sql_table *t = NULL;
+
+	if (mvc_debug)
+		fprintf(stderr, "mvc_create_cluster %s %s %d %d %d\n", s->base.name, name, system, persistence, commit_action);
+
+	t = sql_trans_create_table(m->session->tr, s, name, NULL, tt_cluster, system, persistence, commit_action, sz);
+	return t;
+}
+
+
+sql_table *
 mvc_create_view(mvc *m, sql_schema *s, char *name, int persistence, char *sql, bit system)
 {
 	sql_table *t = NULL;

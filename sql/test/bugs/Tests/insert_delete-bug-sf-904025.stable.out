@@ -15,37 +15,32 @@ Ready.
 
 Over..
 
-# 21:30:34 >  
-# 21:30:34 >  mclient -lsql -ftest -i -e --host=alf --port=30040 
-# 21:30:34 >  
+# 18:18:00 >  
+# 18:18:00 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=32098  < insert_delete-bug-sf-904025.sql
+# 18:18:00 >  
 
-#create table tmp(name string, id int);
-#insert into tmp select name, id from tables where "type" = 0;
-[ 28	]
+[ 27	]
 #select count(*) from tmp;
 % sys.tmp # table_name
 % L1 # name
 % wrd # type
 % 2 # length
-[ 28	]
-#delete from tmp;
-[ 28	]
+[ 27	]
+[ 27	]
 #select count(*) from tmp;
 % sys.tmp # table_name
 % L2 # name
 % wrd # type
 % 1 # length
 [ 0	]
-#insert into tmp select name, id from tables where "type" = 0;
-[ 28	]
+[ 27	]
 #select count(*) from tmp;
 % sys.tmp # table_name
 % L3 # name
 % wrd # type
 % 2 # length
-[ 28	]
-#delete from tmp;
-[ 28	]
+[ 27	]
+[ 27	]
 #select count(*) from tmp;
 % sys.tmp # table_name
 % L4 # name

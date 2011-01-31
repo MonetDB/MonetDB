@@ -40,6 +40,9 @@ user=skyserver
 password=skyserver
 EOF
 
+$SQL < ../../sql/math.sql
+$SQL < ../../sql/skyserver.sql
+
 echo tables
 $SQL < Skyserver_tables.sql
 

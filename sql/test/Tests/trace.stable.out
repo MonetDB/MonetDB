@@ -30,8 +30,7 @@ Over..
 % L1 # name
 % wrd # type
 % 2 # length
-[ 42	]
-#SELECT COUNT(*) FROM tracelog();
+[ 29	]
 % . # table_name
 % L2 # name
 % wrd # type

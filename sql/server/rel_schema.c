@@ -151,8 +151,7 @@ sql_table *
 mvc_create_table_as_subquery( mvc *sql, sql_rel *sq, sql_schema *s, char *tname, dlist *column_spec, int temp, int commit_action )
 {
 	char *n;
-	int tt = (temp == SQL_STREAM)?tt_stream:
-	         ((temp == SQL_MERGE_TABLE)?tt_merge_table:tt_table);
+	int tt = (temp != SQL_STREAM)?tt_table:tt_stream;
 
 	sql_table *t = mvc_create_table(sql, s, tname, tt, 0, SQL_DECLARED_TABLE, commit_action, -1);
 	if ((n = as_subquery( sql, t, sq, column_spec)) != NULL) {
@@ -567,13 +566,10 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 {
 	int res = SQL_OK;
 
-	if (alter && (isView(t) || (isMergeTable(t) && s->token != SQL_TABLE && s->token != SQL_DROP_TABLE) || (isTable(t) && (s->token == SQL_TABLE || s->token == SQL_DROP_TABLE)) )){
+	if (alter && !isTable(t)) {
 		char *msg = "";
 
 		switch (s->token) {
-		case SQL_TABLE: 	
-			msg = "add table to"; 
-			break;
 		case SQL_COLUMN: 	
 			msg = "add column to"; 
 			break;
@@ -589,9 +585,6 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		case SQL_DROP_DEFAULT:
 			msg = "drop default column option from"; 
 			break;
-		case SQL_DROP_TABLE:
-			msg = "drop table from"; 
-			break;
 		case SQL_DROP_COLUMN:
 			msg = "drop column from"; 
 			break;
@@ -599,10 +592,8 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 			msg = "drop constraint from"; 
 			break;
 		}
-		sql_error(sql, 02, "ALTER TABLE: cannot %s %s '%s'\n",
-				msg, 
-				isMergeTable(t)?"MERGE TABLE":"VIEW",
-				t->base.name);
+		sql_error(sql, 02, "ALTER TABLE: cannot %s VIEW '%s'\n",
+				msg, t->base.name);
 		return SQL_ERR;
 	}
 
@@ -749,19 +740,16 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 	int instantiate = (sql->emode == m_instantiate);
 	int deps = (sql->emode == m_deps);
 	int create = (!instantiate && !deps);
-	int tt = (temp == SQL_STREAM)?tt_stream:
-	         ((temp == SQL_MERGE_TABLE)?tt_merge_table:tt_table);
 
 	(void)create;
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, "CREATE TABLE: no such schema '%s'", sname);
 
-	if (temp != SQL_PERSIST && tt == tt_table && 
-			commit_action == CA_COMMIT)
+	if (temp != SQL_PERSIST && temp != SQL_STREAM && commit_action == CA_COMMIT)
 		commit_action = CA_DELETE;
 	
 	if (temp != SQL_DECLARED_TABLE) {
-		if (temp != SQL_PERSIST && tt == tt_table) {
+		if (temp != SQL_PERSIST) {
 			s = mvc_bind_schema(sql, "tmp");
 		} else if (s == NULL) {
 			s = ss;
@@ -778,6 +766,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 		return sql_error(sql, 02, "CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	} else if (table_elements_or_subquery->token == SQL_CREATE_TABLE) { 
 		/* table element list */
+		int tt = (temp != SQL_STREAM)?tt_table:tt_stream;
 		sql_table *t = mvc_create_table(sql, s, name, tt, 0, SQL_DECLARED_TABLE, commit_action, -1);
 		dnode *n;
 		dlist *columns = table_elements_or_subquery->data.lval;
@@ -789,7 +778,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 			if (res == SQL_ERR) 
 				return NULL;
 		}
-		temp = (tt == tt_table)?temp:SQL_PERSIST;
+		temp = (temp == SQL_STREAM)?SQL_PERSIST:temp;
 		return rel_table(sql->sa, DDL_CREATE_TABLE, sname, t, temp);
 	} else { /* [col name list] as subquery with or without data */
 		sql_rel *sq = NULL, *res = NULL;
@@ -811,7 +800,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 		}
 
 		/* insert query result into this table */
-		temp = (tt == tt_table)?temp:SQL_PERSIST;
+		temp = (temp == SQL_STREAM)?SQL_PERSIST:temp;
 		res = rel_table(sql->sa, DDL_CREATE_TABLE, sname, t, temp);
 		if (with_data) {
 			res = rel_insert(sql->sa, res, sq);
@@ -1056,27 +1045,6 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 		res = rel_table(sql->sa, DDL_ALTER_TABLE, sname, nt, 0);
 		if (!te) /* Set Read only */
 			return res;
-		/* table add table */
-		if (te->token == SQL_TABLE) {
-			char *ntname = te->data.lval->h->data.sval;
-			sql_table *nnt = mvc_bind_table(sql, s, ntname);
-
-			if (nnt)
-				cs_add(&nt->tables, nnt, TR_NEW); 
-		}
-		/* table drop table */
-		if (te->token == SQL_DROP_TABLE) {
-			char *ntname = te->data.lval->h->data.sval;
-			int drop_action = te->data.lval->h->next->data.i_val;
-			node *n = cs_find_name(&nt->tables, ntname);
-
-			if (n) {
-				sql_table *ntt = n->data;
-
-				ntt->drop_action = drop_action;
-				cs_del(&nt->tables, n, ntt->base.flag); 
-			}
-		}
 
 		/* new columns need update with default values */
 		if (nt->columns.nelm) {

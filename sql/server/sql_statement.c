@@ -2187,6 +2187,7 @@ print_stmt( sql_allocator *sa, stmt *s )
 		printf(");\n");
 	}	break;
 	case st_basetable:
+	case st_relselect:
 	case st_reljoin:
 	case st_releqjoin:
 		assert(0);

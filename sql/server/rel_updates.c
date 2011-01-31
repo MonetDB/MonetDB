@@ -65,6 +65,8 @@ rel_insert(sql_allocator *sa, sql_rel *t, sql_rel *inserts)
 {
 	sql_rel * r = rel_create(sa);
 
+//	if (t->clustered) /* needs a way to propagate ! */
+//		t->clustered = 0;
 	r->op = op_insert;
 	r->l = t;
 	r->r = inserts;
@@ -72,9 +74,38 @@ rel_insert(sql_allocator *sa, sql_rel *t, sql_rel *inserts)
 }
 
 static sql_rel *
-rel_insert_table(mvc *sql, sql_table *t, char *name, sql_rel *inserts)
+rel_insert_cluster(mvc *sql, sql_table *t, sql_rel *inserts)
 {
-	return rel_insert(sql->sa, rel_basetable(sql->sa, t, name), inserts);
+	sql_rel * r = rel_create(sql->sa);
+
+	if (t->cluster) {
+		/* order inserts on cluster columns */
+		list *obe = new_exp_list(sql->sa);
+		node *n, *m;
+
+		for(n=t->cluster->columns->h; n; n = n->next) {
+			sql_exp *oe, *e;
+			sql_kc *c = n->data;
+			int nr;
+
+			nr = c->c->colnr;
+			for(m=inserts->exps->h; m && nr; m = m->next) 
+				nr--;
+			if (nr || !m) {
+				/* todo error */
+				return NULL;
+			}
+			e = m->data;
+			oe = exp_column(sql->sa, e->rname, e->name, exp_subtype(e), inserts->card, has_nil(e), is_intern(e));
+			set_direction(oe, 1 /* ASC */);
+			list_append(obe, oe);
+		}
+		inserts = rel_orderby(sql, inserts, obe);
+	}
+	r->op = op_insert;
+	r->l = rel_basetable(sql->sa, t, t->base.name);
+	r->r = inserts;
+	return r;
 }
 
 static sql_rel *
@@ -237,7 +268,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 	_DELETE(inserts);
 	list_destroy(r->exps);
 	r->exps = exps;
-	return rel_insert_table(sql, t, tname, r);
+	return rel_insert(sql->sa, rel_basetable(sql->sa, t, tname), r);
 }
 
 sql_rel *
@@ -600,7 +631,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, st
 	}
 	if (!rel)
 		return rel;
-	rel = rel_insert_table(sql, t, t->base.name, rel);
+	rel = rel_insert_cluster(sql, t, rel);
 	if (rel && locked)
 		rel->flag = 1;
 	return rel;
@@ -674,7 +705,7 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *files)
 		append(exps, exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0));
 	}
 	res = rel_table_func(sql->sa, NULL, import, exps);
-	return rel_insert_table(sql, t, t->base.name, res);
+	return rel_insert_cluster(sql, t, res);
 }
 
 static sql_rel *
