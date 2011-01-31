@@ -203,9 +203,6 @@ GenForm(void)
 				case Qnap:
 					PrCodeDisplay(d, "qnp");
 					break;
-				case Tcl:
-					PrCodeDisplay(d, "tcl");
-					break;
 				case Java:
 					PrCodeDisplay(d, "java");
 					break;

@@ -39,7 +39,6 @@ mx2ll = re.compile("^@L[ \t\r\n]+", re.MULTILINE)  # C++
 mx2odl = re.compile("^@odl[ \t\r\n]+", re.MULTILINE)
 mx2fgr = re.compile("^@fgr[ \t\r\n]+", re.MULTILINE)
 mx2cfg = re.compile("^@cfg[ \t\r\n]+", re.MULTILINE)
-mx2tcl = re.compile("^@tcl[ \t\r\n]+", re.MULTILINE)
 mx2swig = re.compile("^@swig[ \t\r\n]+", re.MULTILINE)
 mx2sql = re.compile("^@sql[ \t\r\n]+", re.MULTILINE)
 mx2java = re.compile("^@java[ \t\r\n]+", re.MULTILINE)
@@ -63,7 +62,6 @@ code_extract = { 'mx': [ (mx2mil, '.tmpmil'),
                   (mx2odl, '.odl'),
                   (mx2cfg, '.cfg'),
                   (mx2fgr, '.fgr'),
-                  (mx2tcl, '.tcl'),
                   (mx2sql, '.sql'),
                   (mx2swig, '.i'),
                   (mx2java, '.java'),
@@ -86,7 +84,6 @@ code_extract = { 'mx': [ (mx2mil, '.tmpmil'),
                   (mx2odl, '.odl'),
                   (mx2fgr, '.fgr'),
                   (mx2cfg, '.cfg'),
-                  (mx2tcl, '.tcl'),
                   (mx2sql, '.sql'),
                   (mx2swig, '.i'),
                   (mx2java, '.java'),
@@ -113,12 +110,6 @@ code_gen = {'m':        [ '.proto.h', '.glue.c', '.mil' ],
             't':        [ '.c' ],
             'c':        [ '.o' ],
             'cc':       [ '.o' ],       # C++
-            'ruby.i':   [ '.ruby.c' ],
-            'ruby.c':   [ '.ruby.o' ],
-            'tcl.i':    [ '.tcl.c', '.tcl' ],
-            'php.i':    [ '.php.c', '.php' ],
-            'py.i':     [ '.py.c', '.py' ],
-            'py.c':     [ '.py.o' ],
             'pm.i':     [ '.pm.c', '.pm' ],
             'pm.c':     [ '.pm.o' ],
             'glue.c':   [ '.glue.o' ],

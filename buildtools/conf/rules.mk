@@ -173,39 +173,6 @@ BURG = $(top_builddir)/buildtools/burg/burg
 # We also make sure that "$(CONFIG_H)" is included first, also with
 # swig-generated files.  This is crucial to prevent inconsistent
 # (re-)definitions of macros.
-%.tcl.c: %.tcl.i
-	$(SWIG) -tcl $(SWIGFLAGS) -outdir . -o $@ $<
-	$(MV) $@ $@.tmp
-	echo '#include <'"$(CONFIG_H)"'>' > $@
-	grep -v '^#include.*[<"]'"$(CONFIG_H)"'[">]' $@.tmp >> $@
-	$(RM) $@.tmp
-
-%.tcl: %.tcl.i
-	$(SWIG) -tcl $(SWIGFLAGS) -outdir . -o dummy.c $<
-	$(RM) dummy.c
-
-%.php.c: %.php.i
-	$(SWIG) -php $(SWIGFLAGS) -outdir . -o $@ $<
-	$(MV) $@ $@.tmp
-	echo '#include <'"$(CONFIG_H)"'>' > $@
-	grep -v '^#include.*[<"]'"$(CONFIG_H)"'[">]' $@.tmp >> $@
-	$(RM) $@.tmp
-
-%.php: %.php.i
-	$(SWIG) -php $(SWIGFLAGS) -outdir . -o dummy.c $<
-	$(RM) dummy.c
-
-%.py.c: %.py.i
-	$(SWIG) -python $(SWIGFLAGS) -outdir . -o $@ $<
-	$(MV) $@ $@.tmp
-	echo '#include <'"$(CONFIG_H)"'>' > $@
-	grep -v '^#include.*[<"]'"$(CONFIG_H)"'[">]' $@.tmp >> $@
-	$(RM) $@.tmp
-
-%.py: %.py.i
-	$(SWIG) -python $(SWIGFLAGS) -outdir . -o dummy.c $<
-	$(RM) dummy.c
-
 %.pm.c: %.pm.i
 	$(SWIG) -perl5 $(SWIGFLAGS) -outdir . -o $@ $<
 	$(MV) $@ $@.tmp
@@ -215,17 +182,6 @@ BURG = $(top_builddir)/buildtools/burg/burg
 
 %.pm: %.pm.i
 	$(SWIG) -perl5 $(SWIGFLAGS) -outdir . -o dummy.c $<
-	$(RM) dummy.c
-
-%.ruby.c: %.ruby.i
-	$(SWIG) -ruby $(SWIGFLAGS) -outdir . -o $@ $<
-	$(MV) $@ $@.tmp
-	echo '#include <'"$(CONFIG_H)"'>' > $@
-	grep -v '^#include.*[<"]'"$(CONFIG_H)"'[">]' $@.tmp >> $@
-	$(RM) $@.tmp
-
-%.ruby: %.ruby.i
-	$(SWIG) -ruby $(SWIGFLAGS) -outdir . -o dummy.c $<
 	$(RM) dummy.c
 
 %.tex: %.mx
