@@ -765,8 +765,8 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libmonet.so
 rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.la
 rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
 # deprecated monetdb4
-rm -f %{_bindir}/milsample.pl
-rm -f %{_bindir}/xquerysample.php
+rm -f $RPM_BUILD_ROOT%{_bindir}/milsample.pl
+rm -f $RPM_BUILD_ROOT%{_bindir}/xquerysample.php
 
 %post -p /sbin/ldconfig
 
