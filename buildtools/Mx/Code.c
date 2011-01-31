@@ -90,7 +90,6 @@ GenCode(void)
 		case Java:
 		case fGrammar:
 		case Macro:
-		case Tcl:
 		case XML:
 		case DTD:
 		case XSL:
@@ -390,7 +389,6 @@ CodeLine(void)
 		case fGrammar:
 			ofile_printf("\n/* %s:%d */\n", mx_file, mx_line);
 			break;
-		case Tcl:
 		case Config:
 			ofile_printf("\n# %s:%d \n", mx_file, mx_line);
 			break;
