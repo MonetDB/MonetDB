@@ -108,7 +108,7 @@ HEAPcacheAdd( void *base, size_t maxsz, char *fn, int storage, int free_file )
 	int added = 0;
 
 
-	ALLOCDEBUG fprintf(stderr, "#HEAPcacheAdd (%s)" SZFMT " " PTRFMT "%d %d %d\n", fn, maxsz, PTRFMTCAST base, storage, free_file, hc->used);
+	ALLOCDEBUG fprintf(stderr, "#HEAPcacheAdd (%s) " SZFMT " " PTRFMT " %d %d %d\n", fn, maxsz, PTRFMTCAST base, storage, free_file, hc->used);
 	if (hc && free_file && fn && storage == STORE_MMAP && hc->used < hc->sz) {
 		gdk_set_lock(HEAPcacheLock, "HEAPcache_init");
 		if (hc->used < hc->sz) {
