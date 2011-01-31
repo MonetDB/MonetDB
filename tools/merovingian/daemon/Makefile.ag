@@ -32,7 +32,6 @@ EXTRA_DIST = $(man_MANS) \
 	discoveryrunner.h \
 	forkmserver.h \
 	handlers.h \
-	peering.h \
 	proxy.h
 
 bin_monetdbd = {
@@ -45,7 +44,6 @@ bin_monetdbd = {
 			  discoveryrunner.c \
 			  forkmserver.c \
 			  handlers.c \
-			  peering.c \
 			  proxy.c
 	LIBS = ../utils/libmeroutil \
 		   ../../../monetdb5/misc/libsabaoth \
