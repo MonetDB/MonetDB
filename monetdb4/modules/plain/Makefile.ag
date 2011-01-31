@@ -28,8 +28,8 @@ lib__streams = {
 	DIR = libdir/monetdb4
 	SOURCES = streams.mx
 	#SCRIPTS = mil ""
-	LIBS = ../../../common/stream/libstream \
-		../../../gdk/libbat \
+	LIBS = ../../../common/stream/libstream4 \
+		../../../gdk/libbat4 \
 		../../monet/libmonet \
 		$(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) $(curl_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) 
@@ -40,8 +40,8 @@ lib__str = {
 	SEP = _
 	SOURCES = str.mx
 	#SCRIPTS = mil ""
-	LIBS = ../../../common/stream/libstream \
-		../../../gdk/libbat \
+	LIBS = ../../../common/stream/libstream4 \
+		../../../gdk/libbat4 \
 		../../monet/libmonet \
 		$(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) $(ICONV_LIBS)
@@ -52,8 +52,8 @@ lib__xtables = {
 	SEP = _
 	SOURCES = xtables.mx
 	#SCRIPTS = mil ""
-	LIBS = ../../../common/stream/libstream \
-		../../../gdk/libbat \
+	LIBS = ../../../common/stream/libstream4 \
+		../../../gdk/libbat4 \
 		../../monet/libmonet lib_algebra \
 		$(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
@@ -64,8 +64,8 @@ lib__logger = {
 	SEP = _
 	SOURCES = logger.mx
 	#SCRIPTS = mil ""
-	LIBS = ../../../common/stream/libstream \
-		../../../gdk/libbat \
+	LIBS = ../../../common/stream/libstream4 \
+		../../../gdk/libbat4 \
 		../../monet/libmonet lib_bat \
 		$(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
@@ -82,8 +82,8 @@ LIBS = {
 		stats.mx unix.mx url.mx pqueue.mx 
 		#radix.mx tcpip.mx
 	#SCRIPTS = mil ""
-	LIBS = ../../../common/stream/libstream \
-		../../../gdk/libbat \
+	LIBS = ../../../common/stream/libstream4 \
+		../../../gdk/libbat4 \
 		../../monet/libmonet \
 		$(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) $(MATH_LIBS)
@@ -96,8 +96,8 @@ lib__aggrX3 = {
 		aggrX3_be_sum.mx aggrX3_be_prod.mx aggrX3_be_avg.mx aggrX3_be_minmax.mx aggrX3_be_count.mx \
 		aggrX3_bge_sum.mx aggrX3_bge_prod.mx aggrX3_bge_avg.mx aggrX3_bge_minmax.mx aggrX3_bge_count.mx
 	#SCRIPTS = mil ""
-	LIBS = ../../../common/stream/libstream \
-		../../../gdk/libbat \
+	LIBS = ../../../common/stream/libstream4 \
+		../../../gdk/libbat4 \
 		../../monet/libmonet
 }
 
@@ -107,8 +107,8 @@ lib__counters = {
 	DIR = libdir/monetdb4
 	SOURCES = counters.mx
 	#SCRIPTS = mil ""
-	LIBS = ../../../common/stream/libstream \
-		../../../gdk/libbat \
+	LIBS = ../../../common/stream/libstream4 \
+		../../../gdk/libbat4 \
 		../../monet/libmonet \
 		$(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) $(HWCOUNTERS_LIBS)
@@ -118,8 +118,8 @@ lib__pcl = {
 	DIR = libdir/monetdb4
 	SOURCES = pcl.mx
 	#SCRIPTS = mil ""
-	LIBS = ../../../common/stream/libstream \
-		../../../gdk/libbat \
+	LIBS = ../../../common/stream/libstream4 \
+		../../../gdk/libbat4 \
 		../../monet/libmonet \
 		$(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) $(PCL_LIBS)
@@ -129,8 +129,8 @@ lib__pcre = {
 	DIR = libdir/monetdb4
 	SOURCES = pcre.mx
 	#SCRIPTS = mil ""
-	LIBS = ../../../common/stream/libstream \
-		../../../gdk/libbat \
+	LIBS = ../../../common/stream/libstream4 \
+		../../../gdk/libbat4 \
 		../../monet/libmonet \
 		$(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) $(pcre_LIBS)

@@ -1,6 +1,10 @@
 debian/tmp/etc/MonetDB.conf etc
 debian/tmp/usr/bin/Mserver usr/bin
+debian/tmp/usr/bin/m4client usr/bin
 debian/tmp/usr/lib/libmonet.so.* usr/lib
+debian/tmp/usr/lib/libbat4.so.* usr/lib
+debian/tmp/usr/lib/libmapi4.so.* usr/lib
+debian/tmp/usr/lib/libstream4.so.* usr/lib
 debian/tmp/usr/lib/monetdb4/aggr.mil usr/lib/monetdb4
 debian/tmp/usr/lib/monetdb4/aggrX3.mil usr/lib/monetdb4
 debian/tmp/usr/lib/monetdb4/alarm.mil usr/lib/monetdb4

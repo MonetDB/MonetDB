@@ -1204,8 +1204,8 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_10AB8DCD4D3D45BB90C8DF897878ABE2"
             {
-            "SourcePath" = "8:bin\\mclient.exe"
-            "TargetName" = "8:mclient.exe"
+            "SourcePath" = "8:bin\\mclient4.exe"
+            "TargetName" = "8:mclient4.exe"
             "Tag" = "8:"
             "Folder" = "8:_1EC19BD0D849484790DB6A7D69758E24"
             "Condition" = "8:"
@@ -2744,8 +2744,8 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_AE4DE6CBA77D450EA12BDD0424DF2E30"
             {
-            "SourcePath" = "8:lib\\libbat.dll"
-            "TargetName" = "8:libbat.dll"
+            "SourcePath" = "8:lib\\libbat4.dll"
+            "TargetName" = "8:libbat4.dll"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
             "Condition" = "8:"
@@ -3244,8 +3244,8 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_D0453158655041DCBE710008E8981EBE"
             {
-            "SourcePath" = "8:lib\\libmapi.dll"
-            "TargetName" = "8:libmapi.dll"
+            "SourcePath" = "8:lib\\libmapi4.dll"
+            "TargetName" = "8:libmapi4.dll"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
             "Condition" = "8:"
@@ -3444,8 +3444,8 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_DB3242097F75443EAEE116BCC9A4247C"
             {
-            "SourcePath" = "8:lib\\libstream.dll"
-            "TargetName" = "8:libstream.dll"
+            "SourcePath" = "8:lib\\libstream4.dll"
+            "TargetName" = "8:libstream4.dll"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
             "Condition" = "8:"

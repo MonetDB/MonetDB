@@ -31,8 +31,8 @@ lib__geom = {
 	DIR = libdir/monetdb4
 	SOURCES = geom.mx
 	LIBS = ../lib/libgeom \
-		   ../../gdk/libbat \
-	       ../../common/stream/libstream \
+		   ../../gdk/libbat4 \
+	       ../../common/stream/libstream4 \
 	       ../../monetdb4/monet/libmonet \
 	       $(GEOS_LIBS)
 }

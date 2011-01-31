@@ -51,8 +51,8 @@ lib__xquery = {
 		../runtime/libserialize \
 		../runtime/libpf \
 		../../monetdb5/tools/libmonetdb5 \
-		../../gdk/libbat \
-		../../common/stream/libstream \
+		../../gdk/libbat4 \
+		../../common/stream/libstream4 \
 		$(READLINE_LIBS) $(PTHREAD_LIBS)
 }
 

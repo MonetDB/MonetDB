@@ -270,8 +270,6 @@ program.
 %package client-tests
 Summary: MonetDB Client tests package
 Group: Applications/Databases
-Requires: MonetDB4-server = %{version}-%{release}
-Requires: MonetDB4-XQuery = %{version}-%{release}
 Requires: MonetDB5-server = %{version}-%{release}
 Requires: %{name}-client = %{version}-%{release}
 Requires: %{name}-client-odbc = %{version}-%{release}
@@ -302,11 +300,9 @@ developer.
 %{_bindir}/smack01
 %{_bindir}/testgetinfo
 %{_bindir}/malsample.pl
-%{_bindir}/milsample.pl
 %{_bindir}/sqlsample.php
 %{_bindir}/sqlsample.pl
 %{_bindir}/sqlsample.py
-%{_bindir}/xquerysample.php
 
 %package geom-MonetDB4
 Summary: MonetDB4 GIS module
@@ -394,6 +390,7 @@ fi
 %attr(2770,monetdb,monetdb) %dir %{_localstatedir}/monetdb4
 %attr(2770,monetdb,monetdb) %dir %{_localstatedir}/monetdb4/dbfarm
 %{_bindir}/Mserver
+%{_bindir}/m4client
 %config(noreplace) %{_sysconfdir}/MonetDB.conf
 %dir %{_libdir}/monetdb4
 %dir %{_libdir}/monetdb4/lib
@@ -402,6 +399,9 @@ fi
 %exclude %{_libdir}/monetdb4/mnetcdf.mil
 %endif
 %{_libdir}/libmonet.so.*
+%{_libdir}/libbat4.so.*
+%{_libdir}/libstream4.so.*
+%{_libdir}/libmapi4.so.*
 %exclude %{_libdir}/monetdb4/lib/lib_geom.so*
 %exclude %{_libdir}/monetdb4/lib/lib_pathfinder*
 %exclude %{_libdir}/monetdb4/lib/lib_pf*
@@ -597,7 +597,7 @@ need this package.
 %package -n MonetDB4-XQuery-ferry
 Summary: MonetDB XQuery Ferry library
 Group: Applications/Databases
-Requires: MonetDB4-XQuery = %{version}-%{release}
+# Requires: MonetDB4-XQuery = %{version}-%{release}
 
 %description -n MonetDB4-XQuery-ferry
 MonetDB is a database management system that is developed from a
@@ -718,6 +718,8 @@ developer, but if you do want to test, this is the package you need.
         --enable-bits=%{bits} \
 	--enable-java=no \
 	--enable-rdf=no \
+	--enable-monetdb4=yes \
+	--enable-pathfinder=yes \
 	--with-gc=no \
 	--with-valgrind=no \
 	--with-mseed=no \
@@ -751,11 +753,20 @@ rm -f $RPM_BUILD_ROOT%{_bindir}/calibrator
 rm -f $RPM_BUILD_ROOT%{_bindir}/Maddlog
 rm -f $RPM_BUILD_ROOT%{_libdir}/libbat.la
 rm -f $RPM_BUILD_ROOT%{_libdir}/libbat.so
+rm -f $RPM_BUILD_ROOT%{_libdir}/libbat4.la
+rm -f $RPM_BUILD_ROOT%{_libdir}/libbat4.so
+rm -f $RPM_BUILD_ROOT%{_libdir}/libstream4.la
+rm -f $RPM_BUILD_ROOT%{_libdir}/libstream4.so
+rm -f $RPM_BUILD_ROOT%{_libdir}/libmapi4.la
+rm -f $RPM_BUILD_ROOT%{_libdir}/libmapi4.so
 rm -f $RPM_BUILD_ROOT%{_libdir}/libMonetODBC*.la
 rm -f $RPM_BUILD_ROOT%{_libdir}/libmonet.la
 rm -f $RPM_BUILD_ROOT%{_libdir}/libmonet.so
 rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.la
 rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
+# deprecated monetdb4
+rm -f %{_bindir}/milsample.pl
+rm -f %{_bindir}/xquerysample.php
 
 %post -p /sbin/ldconfig
 

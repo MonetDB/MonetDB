@@ -76,8 +76,8 @@ lib__pf_support = {
 		shredder.mx 
 	LIBS = \
 		libserialize libpf $(PF_LIBS) \
-		../../gdk/libbat \
-		../../common/stream/libstream \
+		../../gdk/libbat4 \
+		../../common/stream/libstream4 \
 		../../monetdb4/monet/libmonet \
 		$(PTHREAD_LIBS) \
 		../../monetdb4/modules/plain/lib_lock \
@@ -96,8 +96,8 @@ lib__pf_standoff = {
 
 	LIBS = \
 		$(PF_LIBS) \
-		../../gdk/libbat \
-		../../common/stream/libstream \
+		../../gdk/libbat4 \
+		../../common/stream/libstream4 \
 		../../monetdb4/monet/libmonet \
 		../../monetdb4/modules/plain/lib_streams \
 		../../monetdb4/modules/plain/lib_builtin \
@@ -131,8 +131,8 @@ lib__pathfinder = {
 		../compiler/xmlimport/libxmlimport \
 		../compiler/utils/libstringutils \
 		$(PF_LIBS) \
-		../../gdk/libbat \
-		../../common/stream/libstream \
+		../../gdk/libbat4 \
+		../../common/stream/libstream4 \
 		../../monetdb4/monet/libmonet \
 		$(PTHREAD_LIBS) \
 		../../monetdb4/modules/plain/lib_logger \
@@ -152,8 +152,8 @@ lib__xrpc_client = {
 		libserialize libxrpc_common \
 		lib_pf_support lib_pathfinder \
 		$(PF_LIBS) $(SOCKET_LIBS) \
-		../../gdk/libbat \
-		../../common/stream/libstream \
+		../../gdk/libbat4 \
+		../../common/stream/libstream4 \
 		../../monetdb4/monet/libmonet \
 		../../monetdb4/modules/plain/lib_streams \
 		../../monetdb4/modules/plain/lib_builtin \
@@ -169,8 +169,8 @@ lib__xrpc_server = {
 		libxrpc_common \
 		lib_pf_support lib_pathfinder \
 		$(PF_LIBS) $(SOCKET_LIBS) \
-		../../gdk/libbat \
-		../../common/stream/libstream \
+		../../gdk/libbat4 \
+		../../common/stream/libstream4 \
 		../../monetdb4/monet/libmonet \
 		$(PTHREAD_LIBS) \
 		../../monetdb4/modules/plain/lib_logger \

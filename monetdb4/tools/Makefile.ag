@@ -89,7 +89,7 @@ bin_Mserver = {
 	SOURCES = Mserver.mx monet_version.h monet_version.c.in
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
 		../monet/libmonet \
-		../../gdk/libbat \
+		../../gdk/libbat4 \
                 $(pcre_LIBS) $(openssl_LIBS)
 }
 

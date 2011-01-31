@@ -51,8 +51,8 @@ lib_monet = {
 		monet_context.mx monet_parse.mx monet_deparse.mx \
 		monet_process.mx monet.feps libmonet.rc
 	LIBS = ../../common/options/libmoptions \
-		../../common/stream/libstream \
-		../../gdk/libbat \
+		../../common/stream/libstream4 \
+		../../gdk/libbat4 \
 		$(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) $(curl_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 

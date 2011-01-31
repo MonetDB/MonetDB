@@ -28,8 +28,8 @@ LIB_mnetcdf = {
 	SEP = _
 	COND = HAVE_NETCDF
 	SOURCES = mnetcdf.mx 
-	LIBS = ../../../common/stream/libstream \
-		../../../gdk/libbat \
+	LIBS = ../../../common/stream/libstream4 \
+		../../../gdk/libbat4 \
 		../../monet/libmonet ../plain/lib_algebra \
 		$(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) \

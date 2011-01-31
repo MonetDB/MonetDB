@@ -120,10 +120,10 @@ esac
 
 AC_DEFINE(MONETDB_RELEASE, "unreleased", [Release name or "unreleased"])
 
-dft_monetdb4=auto
+dft_monetdb4=no
 AC_ARG_ENABLE(monetdb4,
 	AS_HELP_STRING([--enable-monetdb4],
-		[enable support for MonetDB4 (default=auto)]),
+		[enable support for MonetDB4 (default=no)]),
 	enable_monetdb4=$enableval,
 	enable_monetdb4=$dft_monetdb4)
 
@@ -171,10 +171,10 @@ no-no-auto)
 	;;
 esac
 
-dft_pathfinder=auto
+dft_pathfinder=no
 AC_ARG_ENABLE(pathfinder,
 	AS_HELP_STRING([--enable-pathfinder],
-		[enable support for MonetDB/XQuery (default=auto)]),
+		[enable support for MonetDB/XQuery (default=no)]),
 	enable_pathfinder=$enableval,
 	enable_pathfinder=$dft_pathfinder)
 
@@ -3419,6 +3419,16 @@ typedef lng ptrdiff_t;
 #define PTRFMTCAST	(unsigned long long)
 #else
 #error no definition for PTRFMT
+#endif
+
+#ifdef LIBGDK4
+#define LIBGDK 1
+#endif
+#ifdef LIBSTREAM4
+#define LIBSTREAM 1
+#endif
+#ifdef LIBMAPI4
+#define LIBMAPI 1
 #endif
 
 #endif /* _SEEN_MONETDB_CONFIG_H */

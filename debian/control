@@ -7,10 +7,10 @@ Build-Depends: debhelper (>= 5), autotools-dev, cdbs, bison, flex, libbz2-dev, l
 # Build-Depends: libraptor1-dev
 Standards-Version: 3.8.0
 
-Package: libmonetdb1
+Package: libmonetdb11
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Conflicts: libmonetdb-dev
+Conflicts: libmonetdb1, libmonetdb-dev
 Description: MonetDB core library
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,
@@ -21,7 +21,7 @@ Description: MonetDB core library
  single shared library.  If you want to use MonetDB, you will certainly
  need this package, but you will also need one of the server packages.
 
-Package: libmonetdb-stream1
+Package: libmonetdb-stream11
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: MonetDB stream library
@@ -45,9 +45,10 @@ Description: MonetDB stream library development files
  This package contains the files to develop with the
  libmonetdb-stream1 library.
 
-Package: libmonetdb-client1
+Package: libmonetdb-client11
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
+Conflicts: libmonetdb-client1
 Description: MonetDB client/server interface library
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,
@@ -83,10 +84,10 @@ Description: MonetDB database client
  database so that it can be loaded back later.  If you want to use
  MonetDB, you will very likely need this package.
 
-Package: libmonetdb-client-odbc1
+Package: libmonetdb-client-odbc11
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Conflicts: libmonetdb-client-odbc-dev
+Conflicts: libmonetdb-client-odbc1, libmonetdb-client-odbc-dev
 Description: MonetDB ODBC driver
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,
@@ -135,7 +136,7 @@ Description: MonetDB Ruby client module
 
 Package: monetdb-client-testing
 Architecture: any
-Depends: ${shlibs:Depends}, libmonetdb-client-odbc1, monetdb4-server, monetdb5-server, monetdb-xquery, perl-monetdb-client, php5-monetdb-client, python-monetdb, monetdb5-sql
+Depends: ${shlibs:Depends}, libmonetdb-client-odbc1, monetdb5-server, perl-monetdb-client, php5-monetdb-client, python-monetdb, monetdb5-sql
 Description: MonetDB client testing tools
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,
@@ -146,25 +147,25 @@ Description: MonetDB client testing tools
  MonetDB packages.  You probably don't need this, unless you are a
  developer.
 
-Package: libmonetdb4-server-geom0
-Section: libs
-Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, monetdb4-server
-Conflicts: monetdb-geom, monetdb-geom-dev
-Description: MonetDB4 GIS module
- MonetDB is a database management system that is developed from a
- main-memory perspective with use of a fully decomposed storage model,
- automatic index management, extensibility of data types and search
- accelerators, SQL- and XML- frontends.
- .
- This package contains the GIS (Geographic Information System)
- extensions for monetdb4-server.
+# Package: libmonetdb4-server-geom11
+# Section: libs
+# Architecture: any
+# Depends: ${shlibs:Depends}, ${misc:Depends}, monetdb4-server
+# Conflicts: libmonetdb4-server-geom0, monetdb-geom, monetdb-geom-dev
+# Description: MonetDB4 GIS module
+#  MonetDB is a database management system that is developed from a
+#  main-memory perspective with use of a fully decomposed storage model,
+#  automatic index management, extensibility of data types and search
+#  accelerators, SQL- and XML- frontends.
+#  .
+#  This package contains the GIS (Geographic Information System)
+#  extensions for monetdb4-server.
 
-Package: libmonetdb5-server-geom0
+Package: libmonetdb5-server-geom11
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, monetdb5-sql
-Conflicts: monetdb-geom, monetdb-geom-dev
+Conflicts: libmonetdb5-server-geom0, monetdb-geom, monetdb-geom-dev
 Description: MonetDB5 SQL GIS support module
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,
@@ -214,10 +215,11 @@ Description: MonetDB xquery support for MonetDB4-server
  .
  This package contains the XQuery frontend.
 
-Package: libpf-ferry0
+Package: libpf-ferry11
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
+Conflicts: libpf-ferry0
 Description: MonetDB XQuery Ferry library
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,
@@ -239,11 +241,11 @@ Description: MonetDB XQuery Ferry library development files
  This package contains the files needed to develop with the
  libpf-ferry0 package.
 
-Package: libmonetdb4-xquery0
+Package: libmonetdb4-xquery11
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Conflicts: libmonetdb4-xquery-dev
+Conflicts: libmonetdb4-xquery0, libmonetdb4-xquery-dev
 Description: MonetDB xquery libraries
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,

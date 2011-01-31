@@ -47,8 +47,8 @@ lib__probxml = {
 	LIBS = \
 		../../runtime/lib_pf_support \
 		$(PF_LIBS) \
-		../../../gdk/libbat \
-		../../../common/stream/libstream \
+		../../../gdk/libbat4 \
+		../../../common/stream/libstream4 \
 		../../../monetdb4/monet/libmonet \
 		../../../monetdb4/modules/plain/lib_streams \
 		../../../monetdb4/modules/plain/lib_builtin \

@@ -35,8 +35,8 @@ LIBS = {
 
 		# bitvector.mx ddbench.mx iterator.mx oo7.mx qt.mx
 	#SCRIPTS = mil ""
-	LIBS = ../../../common/stream/libstream \
-		../../../gdk/libbat \
+	LIBS = ../../../common/stream/libstream4 \
+		../../../gdk/libbat4 \
 		../../monet/libmonet ../plain/lib_algebra \
 		$(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) $(MATH_LIBS)
