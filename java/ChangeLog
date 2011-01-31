@@ -1,7 +1,3 @@
 # ChangeLog file for java
 # This file is updated with Maddlog
 
-* Wed Dec 15 2010 Fabian Groffen <fabian@cwi.nl>
-- PreparedStatements now free the server-side resources attached to them
-  when closed.  This implements bug #2720
-

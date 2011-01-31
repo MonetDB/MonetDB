@@ -1,5 +1,3 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
-* Fri Jan 14 2011 Fabian Groffen <fabian@cwi.nl>
-- MonetDB/src/gdk was moved to gdk
