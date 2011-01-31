@@ -20,6 +20,7 @@
 #include "monetdb_config.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <string.h> /* str* */
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -33,7 +34,6 @@
 #include <utils/properties.h>
 
 #include "merovingian.h"
-#include "multiplex-funnel.h"
 #include "discoveryrunner.h"
 
 
@@ -76,9 +76,6 @@ removeRemoteDB(const char *dbname, const char *conn)
 			} else {
 				prv->next = rdb->next;
 			}
-
-			/* inform multiplex-funnels about this removal */
-			multiplexNotifyRemovedDB(rdb->fullname);
 
 			Mfprintf(_mero_discout,
 					"removed neighbour database %s%s\n",
@@ -140,9 +137,6 @@ addRemoteDB(const char *dbname, const char *conn, const int ttl) {
 	rdb->next = NULL;
 
 	pthread_mutex_unlock(&_mero_remotedb_lock);
-
-	/* inform multiplex-funnels about this addition */
-	multiplexNotifyAddedDB(rdb->fullname);
 
 	return(1);
 }

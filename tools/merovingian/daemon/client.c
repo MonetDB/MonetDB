@@ -37,14 +37,6 @@
 #include "merovingian.h"
 #include "forkmserver.h"
 #include "proxy.h"
-#include "multiplex-funnel.h"
-
-typedef struct _mplist {
-	multiplex *mpf;
-	struct _mplist *next;
-} mplist;
-
-static mplist *mero_multiplex_funnel = NULL;
 
 static err
 handleClient(int sock, char isusock)
@@ -226,48 +218,6 @@ handleClient(int sock, char isusock)
 		close_stream(fout);
 		close_stream(fdin);
 		return(newErr("client %s specified no database", host));
-	}
-
-	if (strcmp(lang, "sql+mf") == 0) {
-		/* SQL multiplexer with funnelling capabilities */
-		/* find/start/attach funnel */
-		mplist *w;
-		for (w = mero_multiplex_funnel; w != NULL; w = w->next) {
-			if (strcmp(w->mpf->pool, database) == 0)
-				break;
-		}
-		if (w == NULL) {
-			char *merr;
-			int ret;
-			w = malloc(sizeof(mplist));
-			w->next = mero_multiplex_funnel;
-			if ((merr = multiplexInit(&w->mpf, database)) != NO_ERR) {
-				free(w);
-				mnstr_printf(fout, "!merovingian: failed to create "
-						"multiplex-funnel: %s\n", merr);
-				mnstr_flush(fout);
-				close_stream(fout);
-				close_stream(fdin);
-				return(merr);
-			}
-			mero_multiplex_funnel = w;
-			if ((ret = pthread_create(&w->mpf->tid,
-					NULL, (void *(*)(void *))multiplexThread,
-					(void *)w->mpf)) != 0)
-			{
-				mnstr_printf(fout, "!merovingian: internal failure while "
-						"creating multiplex-funnel: unable to start thread: %s\n",
-						strerror(ret));
-				mnstr_flush(fout);
-				close_stream(fout);
-				close_stream(fdin);
-				return(newErr("starting thread for multiplex-funnel %s failed: %s",
-							database, strerror(ret)));
-			}
-		}
-		multiplexAddClient(w->mpf, sock, fout, fdin, host);
-
-		return(NO_ERR);
 	}
 
 	if (strcmp(lang, "resolve") == 0) {

@@ -32,7 +32,6 @@ EXTRA_DIST = $(man_MANS) \
 	discoveryrunner.h \
 	forkmserver.h \
 	handlers.h \
-	multiplex-funnel.h \
 	peering.h \
 	proxy.h
 
@@ -46,7 +45,6 @@ bin_monetdbd = {
 			  discoveryrunner.c \
 			  forkmserver.c \
 			  handlers.c \
-			  multiplex-funnel.c \
 			  peering.c \
 			  proxy.c
 	LIBS = ../utils/libmeroutil \
