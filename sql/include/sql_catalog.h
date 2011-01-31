@@ -106,6 +106,7 @@ typedef enum temp_t {
 	SQL_LOCAL_TEMP,
 	SQL_GLOBAL_TEMP,
 	SQL_DECLARED_TABLE,	/* variable inside a stored procedure */
+	SQL_MERGE_TABLE,
 	SQL_STREAM
 } temp_t;
 
@@ -258,8 +259,6 @@ typedef struct sql_kc {
 typedef enum idx_type {
 	hash_idx,
 	join_idx,
-	clustered,		/* ie has a clustered replica */
-	isclustered,		/* the table is (kept) clustered */
 	oph_idx,		/* order preserving hash */
 	no_idx,			/* no idx, ie no storage */
 	new_idx_types
@@ -356,14 +355,14 @@ typedef enum table_types {
 	tt_table = 0, 		/* table */
 	tt_view = 1, 		/* view */
 	tt_generated = 2,	/* generated (functions can be sql or c-code) */
-	tt_cluster = 3,		/* table supporting the clustered index */
+	tt_merge_table = 3,	/* multiple tables form one table */
 	tt_stream = 4		/* stream */
 } table_types;
 
-#define isTable(x) 	(x->type==tt_table||x->type==tt_cluster)
+#define isTable(x) 	(x->type==tt_table)
 #define isView(x)  	(x->type==tt_view)
 #define isGenerated(x)  (x->type==tt_generated)
-#define isCluster(x)  	(x->type==tt_cluster)
+#define isMergeTable(x) (x->type==tt_merge_table)
 #define isStream(x)  	(x->type==tt_stream)
 
 typedef struct sql_table {
@@ -381,12 +380,12 @@ typedef struct sql_table {
 	int  sz;
 
 	sql_ukey *pkey;
-	sql_idx	 *cluster;	/* cluster column list */
-	int clustered;		/* is clustered or needs a recluster round */
 	changeset columns;
 	changeset idxs;
 	changeset keys;
 	changeset triggers;
+	changeset tables;
+	int drop_action;	/* only needed for alter drop table */
 
 	int cleared;		/* cleared in the current transaction */
 	void *data;

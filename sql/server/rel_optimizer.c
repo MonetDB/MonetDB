@@ -1890,9 +1890,14 @@ rel_push_aggr(int *changes, mvc *sql, sql_rel *rel)
 		sql_rel *g = rel;
 		sql_rel *l = u->l;
 		sql_rel *r = u->r;
-		list *lexps = l->exps;
-		list *rexps = r->exps;
+		list *lexps, *rexps;
 
+		if (!is_project(l->op)) 
+			u->l = l = rel_project(sql->sa, l, rel_projections(sql, l, NULL, 1, 1));
+		if (!is_project(r->op)) 
+			u->r = r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
+	       	lexps = l->exps;
+		rexps = r->exps;
 		/* make sure we don't create group by on group by's */
 		if (l->op != op_groupby && r->op != op_groupby) {
 			node *n, *m;
@@ -1952,6 +1957,8 @@ rel_push_aggr(int *changes, mvc *sql, sql_rel *rel)
 				    for(m = ol->h; m; m = m->next){
 					sql_exp *oe = m->data;
 		
+					/* TODO: rel_find_exp finds the e_column expression in oe in the union's exp list 
+					 * sometimes aggr's include projection expressions (such as converts), these need to be added again! */
 					int p = list_position(u->exps, rel_find_exp(u, oe));
 					ne = list_fetch(lexps, p);
 					append(nll, exp_column(sql->sa, exp_find_rel_name(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne)));

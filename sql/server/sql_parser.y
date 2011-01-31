@@ -525,7 +525,7 @@ CONTINUE CURRENT CURSOR FOUND GOTO GO LANGUAGE
 SQLCODE SQLERROR UNDER WHENEVER
 */
 
-%token TEMPORARY STREAM
+%token TEMPORARY STREAM MERGE
 %token<sval> ASC DESC AUTHORIZATION
 %token CHECK CONSTRAINT CREATE
 %token TYPE PROCEDURE FUNCTION AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
@@ -539,7 +539,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token<sval> PUBLIC REFERENCES SCHEMA SET AUTO_COMMIT
 %token RETURN 
 
-%token ALTER ADD TABLE COLUMN TO UNIQUE CLUSTERED CLUSTER VALUES VIEW WHERE WITH
+%token ALTER ADD TABLE COLUMN TO UNIQUE VALUES VIEW WHERE WITH
 %token<sval> sqlDATE TIME TIMESTAMP INTERVAL
 %token YEAR MONTH DAY HOUR MINUTE SECOND ZONE
 %token LIMIT OFFSET
@@ -929,6 +929,11 @@ alter_statement:
 	  append_list(l, $3);
 	  append_symbol(l, $6);
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
+ | ALTER TABLE qname ADD TABLE qname
+	{ dlist *l = L();
+	  append_list(l, $3);
+	  append_symbol(l, _symbol_create_list( SQL_TABLE, $6));
+	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
  | ALTER TABLE qname ALTER alter_table_element
 	{ dlist *l = L();
 	  append_list(l, $3);
@@ -1017,6 +1022,11 @@ drop_table_element:
 	  append_string(l, $2 );
 	  append_int(l, $3 );
 	  $$ = _symbol_create_list( SQL_DROP_CONSTRAINT, l ); }
+  |  TABLE ident drop_action
+	{ dlist *l = L();
+	  append_string(l, $2 );
+	  append_int(l, $3 );
+	  $$ = _symbol_create_list( SQL_DROP_TABLE, l ); }
   ;
 
 opt_column:
@@ -1219,23 +1229,15 @@ index_def:
 	  append_list(l, $6);
 	  append_list(l, $8);
 	  $$ = _symbol_create_list( SQL_CREATE_INDEX, l); }
-  | create CLUSTER ident ON qname '(' ident_commalist ')'
-	{ dlist *l = L();
-	  append_string(l, $3);
-	  append_int(l, isclustered);
-	  append_list(l, $5);
-	  append_list(l, $7);
-	  $$ = _symbol_create_list( SQL_CREATE_INDEX, l); }
   ;
 
 opt_index_type:
      UNIQUE		{ $$ = hash_idx; }
- |   CLUSTERED		{ $$ = clustered; }
  |   /* empty */	{ $$ = hash_idx; }
  ;
 
 /* sql-server def
-CREATE [ UNIQUE ] [ CLUSTERED | NONCLUSTERED ] INDEX index_name
+CREATE [ UNIQUE ] INDEX index_name
     ON { table | view } ( column [ ASC | DESC ] [ ,...n ] )
 [ WITH < index_option > [ ,...n] ]
 [ ON filegroup ]
@@ -1291,6 +1293,7 @@ opt_temp:
  |  LOCAL TEMPORARY	{ $$ = SQL_LOCAL_TEMP; }
  |  GLOBAL TEMPORARY	{ $$ = SQL_GLOBAL_TEMP; }
  |  STREAM		{ $$ = SQL_STREAM; }
+ |  MERGE		{ $$ = SQL_MERGE_TABLE; }
  ;
 
 opt_on_commit: /* only for temporary tables */
@@ -2185,7 +2188,6 @@ drop_statement:
  |  DROP ROLE qname	  { $$ = _symbol_create_list( SQL_DROP_ROLE, $3 ); }
  |  DROP USER ident	  { $$ = _symbol_create( SQL_DROP_USER, $3 ); }
  |  DROP INDEX qname	  { $$ = _symbol_create_list( SQL_DROP_INDEX, $3 ); }
- |  DROP CLUSTER qname	  { $$ = _symbol_create_list( SQL_DROP_INDEX, $3 ); }
  |  DROP TRIGGER qname	  { $$ = _symbol_create_list( SQL_DROP_TRIGGER, $3 ); }
  ;
 

@@ -865,13 +865,13 @@ clear_del(sql_trans *tr, sql_table *t)
 }
 
 static int 
-update_bpm( sql_trans *tr, sql_bpm *op, sql_bpm *cp, int cluster)
+update_bpm( sql_trans *tr, sql_bpm *op, sql_bpm *cp)
 {
 	int i, ok = LOG_OK;
 
 	/* todo handle increase of parts !! */
 	for (i = 0; i<cp->nr && ok == LOG_OK; i++) {
-		tr_update_delta(tr, &op->parts[i], &cp->parts[i], cluster, BPM_SPLIT);
+		tr_update_delta(tr, &op->parts[i], &cp->parts[i], BPM_SPLIT);
 	}
 	return ok;
 }
@@ -910,7 +910,7 @@ bpm_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 
 		if (!cc->base.wtime) 
 			continue;
-		update_bpm(tr, oc->data, cc->data, isCluster(ft));
+		update_bpm(tr, oc->data, cc->data);
 
 		if (cc->base.rtime)
 			oc->base.rtime = tr->stime;
@@ -928,7 +928,7 @@ bpm_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 
 			if (!ci->base.wtime) 
 				continue;
-			update_bpm(tr, oi->data, ci->data, isCluster(ft));
+			update_bpm(tr, oi->data, ci->data);
 
 			if (ci->base.rtime)
 				oi->base.rtime = tr->stime;

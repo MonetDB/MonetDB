@@ -8,7 +8,7 @@ AS "TYPE_SCHEM", null AS "TYPE_NAME", 'id' AS
 "ptables"."schema_id" = "schemas"."id" AND
 "ptables"."type" = 0 AND "ptables"."system" = true
 AND "ptables"."name" IN ('args', 'columns', 'functions', 'idxs',
-    'keycolumns', 'keys', 'modules', 'sequences')
+    'objects', 'keys', 'modules', 'sequences')
 UNION ALL SELECT null AS
 "TABLE_CAT", "schemas"."name" AS "TABLE_SCHEM",
 "ttables"."name" AS "TABLE_NAME", 'TABLE' AS
@@ -18,7 +18,7 @@ AS "TYPE_SCHEM", null AS "TYPE_NAME", 'id' AS
 "REF_GENERATION" FROM tmp."_tables" as ttables, "schemas" WHERE
 "ttables"."schema_id" = "schemas"."id"  and "ttables"."system" = true
 AND "ttables"."name" IN ('args', 'columns', 'functions', 'idxs',
-    'keycolumns', 'keys', 'modules', 'sequences')
+    'objects', 'keys', 'modules', 'sequences')
 ) AS "ttables" WHERE 1 = 1 
 ORDER BY "TABLE_TYPE", "TABLE_SCHEM", "TABLE_NAME";
 
@@ -32,7 +32,7 @@ null AS "TYPE_NAME", 'id' AS
 FROM "_tables" as ptables, "schemas" WHERE "ptables"."schema_id" =
 "schemas"."id" AND "ptables"."type" = 0 AND "ptables"."system" = true
 AND "ptables"."name" IN ('args', 'columns', 'functions', 'idxs',
-    'keycolumns', 'keys', 'modules', 'sequences')
+    'objects', 'keys', 'modules', 'sequences')
 UNION ALL
 SELECT null AS "TABLE_CAT", "schemas"."name" AS
 "TABLE_SCHEM", "ttables"."name" AS "TABLE_NAME",
@@ -43,7 +43,7 @@ null AS "TYPE_NAME", 'id' AS
 FROM tmp."_tables" as ttables, "schemas" WHERE "ttables"."schema_id" =
 "schemas"."id" AND "ttables"."type" = 0 and "ttables"."system" = true
 AND "ttables"."name" IN ('args', 'columns', 'functions', 'idxs',
-    'keycolumns', 'keys', 'modules', 'sequences')
+    'objects', 'keys', 'modules', 'sequences')
 UNION ALL
 SELECT null AS "TABLE_CAT", "schemas"."name" AS
 "TABLE_SCHEM", "ttables"."name" AS "TABLE_NAME",
@@ -54,6 +54,6 @@ null AS "TYPE_NAME", 'id' AS
 FROM tmp."_tables" as ttables, "schemas" WHERE "ttables"."schema_id" =
 "schemas"."id" AND "ttables"."commit_action" > 0 
 AND "ttables"."name" IN ('args', 'columns', 'functions', 'idxs',
-    'keycolumns', 'keys', 'modules', 'sequences')
+    'objects', 'keys', 'modules', 'sequences')
 ) AS "ttables" WHERE 1 = 1
 ORDER BY "TABLE_TYPE", "TABLE_SCHEM", "TABLE_NAME";

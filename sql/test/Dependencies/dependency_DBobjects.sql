@@ -88,10 +88,10 @@ SELECT t.name, f.name, 'DEP_FUNC' from functions as f, tables as t, dependencies
 SELECT c.name, v.name, 'DEP_VIEW' from columns as c, tables as v, dependencies as dep where c.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type = 1;
 
 --Column c has a dependency on key k
-SELECT c.name, k.name, 'DEP_KEY' from columns as c, keycolumns as kc, keys as k where kc."column" = c.name AND kc.id = k.id AND k.table_id = c.table_id AND k.rkey = -1;
+SELECT c.name, k.name, 'DEP_KEY' from columns as c, objects as kc, keys as k where kc."name" = c.name AND kc.id = k.id AND k.table_id = c.table_id AND k.rkey = -1;
 
 --Column c has a dependency on index i 
-SELECT c.name, i.name, 'DEP_INDEX' from columns as c, keycolumns as kc, idxs as i where kc."column" = c.name AND kc.id = i.id AND c.table_id = i.table_id AND i.name not in (select name from keys);
+SELECT c.name, i.name, 'DEP_INDEX' from columns as c, objects as kc, idxs as i where kc."name" = c.name AND kc.id = i.id AND c.table_id = i.table_id AND i.name not in (select name from keys);
 
 --Column c has a dependency on function f
 SELECT c.name, f.name,'DEP_FUNC' from functions as f, columns as c, dependencies as dep where c.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7;

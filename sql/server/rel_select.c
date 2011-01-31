@@ -445,6 +445,14 @@ rel_basetable(sql_allocator *sa, sql_table *t, char *atname)
 		append(rel->exps, exp_alias(sa, atname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0));
 	}
 	append(rel->exps, exp_alias(sa, atname, "%TID%", tname, "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
+	if (t->idxs.set) {
+		for (cn = t->idxs.set->h; cn; cn = cn->next) {
+			sql_idx *i = cn->data;
+			sql_subtype *t = sql_bind_localtype("int"); /* hash "int", TODO other types */
+
+			append(rel->exps, exp_alias(sa, atname, i->base.name, tname, i->base.name, t, CARD_MULTI, 0, 1));
+		}
+	}
 
 	rel->card = CARD_MULTI;
 	rel->nrcols = list_length(t->columns.set);
@@ -837,6 +845,9 @@ static char * rel_get_name( sql_rel *rel )
 {
 	switch(rel->op) {
 	case op_table:
+		if (rel->r) 
+			return exp_name(rel->r);
+		return NULL;
 	case op_basetable:
 		return rel->r;
 	default:
@@ -1472,6 +1483,29 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 					if (e->card == CARD_AGGR)
 						e->card = CARD_MULTI;
 */
+				}
+			}
+			return rel;
+		} else if (isMergeTable(t)) {
+			/* instantiate merge tabel */
+			sql_rel *rel = NULL;
+
+			if (sql->emode == m_deps) {
+				rel = rel_basetable(sql->sa, t, tname);
+			} else {
+				node *n;
+
+				if (list_empty(t->tables.set)) 
+					rel = rel_basetable(sql->sa, t, tname);
+				if (t->tables.set)
+				for (n = t->tables.set->h; n; n = n->next) {
+					sql_table *pt = n->data;
+					sql_rel *prel = rel_basetable(sql->sa, pt, tname);
+					if (rel) { 
+						rel = rel_setop(sql->sa, rel, prel, op_union);
+						rel->exps = rel_projections(sql, rel, NULL, 1, 1);
+					} else
+						rel = prel;
 				}
 			}
 			return rel;

@@ -723,6 +723,16 @@ rel2bin_basetable( mvc *sql, sql_rel *rel, list *refs)
 		sc = stmt_alias(sql->sa, sc, rnme, sa_strdup(sql->sa, TID));
 		list_append(l, sc);
 	}
+	if (t->idxs.set) {
+		for (n = t->idxs.set->h; n; n = n->next) {
+			sql_idx *i = n->data;
+			stmt *sc = stmt_idxbat(sql->sa, i, RDONLY);
+			char *rnme = sa_strdup(sql->sa, t->base.name);
+
+			sc = stmt_alias(sql->sa, sc, rnme, sa_strdup(sql->sa, i->base.name));
+			list_append(l, sc);
+		}
+	}
 
 	sub = stmt_list(sql->sa, l);
 	/* add aliases */
@@ -744,16 +754,6 @@ rel2bin_basetable( mvc *sql, sql_rel *rel, list *refs)
 			list_append(l, s);
 		}
 		sub = stmt_list(sql->sa, l);
-	}
-	if (t->idxs.set) {
-		for (n = t->idxs.set->h; n; n = n->next) {
-			sql_idx *i = n->data;
-			stmt *sc = stmt_idxbat(sql->sa, i, RDONLY);
-			char *rnme = sa_strdup(sql->sa, tname);
-
-			sc = stmt_alias(sql->sa, sc, rnme, sa_strdup(sql->sa, i->base.name));
-			list_append(l, sc);
-		}
 	}
 	return sub;
 }
@@ -1074,6 +1074,8 @@ rel2bin_union( mvc *sql, sql_rel *rel, list *refs)
 			(also not save loses unique head oids) 
 
 		   so we create append on copies.
+			TODO: mark columns non base columns, ie were no
+			copy is needed
 		*/
 		s = stmt_append(sql->sa, Column(sql->sa, c1), c2);
 		s = stmt_alias(sql->sa, s, rnme, nme);
@@ -2091,7 +2093,7 @@ hash_insert(mvc *sql, sql_idx * i, list *inserts)
 				stmt_atom_int(sql->sa, bits)), 
 				(o)?stmt_join(sql->sa, o, is, cmp_equal):is)), 
 				xor);
-		} else if (h)  { 
+		} else if (h)  { /* order preserving hash */
 			stmt *h2;
 			sql_subfunc *lsh = sql_bind_func_result(sql->sa, sql->session->schema, "left_shift", wrd, it, wrd);
 			sql_subfunc *lor = sql_bind_func_result(sql->sa, sql->session->schema, "bit_or", wrd, wrd, wrd);

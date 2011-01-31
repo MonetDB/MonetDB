@@ -663,62 +663,6 @@ create_index(mvc *sql, sql_schema *ss, char *iname, int itype, dlist *qname, dli
 				mvc_create_dependency(sql, c->base.id, i->base.id, INDEX_DEPENDENCY);
 			}
 		}
-#if 1
-		/* now we need to create the cluster table */
-		if (!idx_is_column(itype) && itype == clustered) {
-			list *sl;
-			char buf[BUFSIZ];
-			int l;
-			node *n;
-			sql_kc *ic = NULL;
-			sql_table *t = mvc_create_cluster(sql, s, i->base.name, 1, SQL_PERSIST, CA_COMMIT, 0); 
-			stmt *s;
-
-			/* TODO create isclustered index */
-			if (!t) 
-				return sql_error(sql, 02, "CREATE INDEX: cannot create cluster table '%s'", iname);
-			for( n = i->columns->h; n; n = n->next) {
-				sql_kc *ic = n->data;
-				mvc_create_column(sql, t, ic->c->base.name, &ic->c->type);
-			}
-			/* oid to link back to the original table */
-			mvc_create_column(sql, t, "NID", sql_bind_localtype("oid"));
-
-			/* Add triggers for, insert, update and delete on the				   original table */
-			l = snprintf(buf, BUFSIZ, "create trigger ins_%s before insert on %s referencing old as tab new as ins for each row insert into %s values(", t->base.name, i->t->base.name, t->base.name);
-			for( n = i->columns->h; n; n = n->next) {
-				ic = n->data;
-				l += snprintf(buf+l, BUFSIZ-l, "ins.%s, ", ic->c->base.name);
-			}
-			l += snprintf(buf+l, BUFSIZ-l, "rowid(ins.%s, '%s', '%s'));", ic->c->base.name, ic->c->t->s->base.name, ic->c->t->base.name);
-			sl = list_new(sql->sa);
-			s = sql_parse(sql, NULL, _strdup(buf), m_normal);
-			if (!s) goto error;
-			list_append(sl, s);
-	
-			l = 0;
-			l += snprintf(buf+l, BUFSIZ-l, "create trigger upd_%s before update on %s referencing old as tab new as upd for each row update %s set ", t->base.name, i->t->base.name, t->base.name);
-			for( n = i->columns->h; n; n = n->next) {
-				ic = n->data;
-				l += snprintf(buf+l, BUFSIZ-l, "%s = upd.%s%c", ic->c->base.name, ic->c->base.name, (n->next)?',':' ');
-			}
-			l += snprintf(buf+l, BUFSIZ-l, "where upd.NID = %s.NID;", t->base.name);
-			s = sql_parse(sql, NULL, _strdup(buf), m_normal);
-			if (!s) goto error;
-			list_append(sl, s);
-
-			l = 0;
-			l += snprintf(buf+l, BUFSIZ-l, "create trigger del_%s before delete on %s referencing old as del for each row delete from %s ", t->base.name, i->t->base.name, t->base.name);
-			l += snprintf(buf+l, BUFSIZ-l, "where del.NID = %s.NID;", t->base.name);
-			s = sql_parse(sql, NULL, _strdup(buf), m_normal);
-			if (!s) goto error;
-			list_append(sl, s);
-			return stmt_list(sql->sa, sl);
-error:
-			list_destroy(sl);
-			return NULL;
-		}
-#endif
 		return stmt_none(sql->sa);
 	}
 }

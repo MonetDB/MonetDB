@@ -28,7 +28,7 @@ Over..
 % sys.schemas,	.tables,	.columns # table_name
 % name,	name,	name # name
 % varchar,	varchar,	varchar # type
-% 3,	10,	12 # length
+% 3,	9,	12 # length
 [ "sys",	"args",	"func_id"	]
 [ "sys",	"args",	"id"	]
 [ "sys",	"args",	"name"	]
@@ -58,16 +58,15 @@ Over..
 [ "sys",	"idxs",	"name"	]
 [ "sys",	"idxs",	"table_id"	]
 [ "sys",	"idxs",	"type"	]
-[ "sys",	"keycolumns",	"column"	]
-[ "sys",	"keycolumns",	"id"	]
-[ "sys",	"keycolumns",	"nr"	]
-[ "sys",	"keycolumns",	"trunc"	]
 [ "sys",	"keys",	"action"	]
 [ "sys",	"keys",	"id"	]
 [ "sys",	"keys",	"name"	]
 [ "sys",	"keys",	"rkey"	]
 [ "sys",	"keys",	"table_id"	]
 [ "sys",	"keys",	"type"	]
+[ "sys",	"objects",	"id"	]
+[ "sys",	"objects",	"name"	]
+[ "sys",	"objects",	"nr"	]
 [ "sys",	"sequences",	"cacheinc"	]
 [ "sys",	"sequences",	"cycle"	]
 [ "sys",	"sequences",	"id"	]
@@ -81,20 +80,30 @@ Over..
 [ "tmp",	"idxs",	"name"	]
 [ "tmp",	"idxs",	"table_id"	]
 [ "tmp",	"idxs",	"type"	]
-[ "tmp",	"keycolumns",	"column"	]
-[ "tmp",	"keycolumns",	"id"	]
-[ "tmp",	"keycolumns",	"nr"	]
-[ "tmp",	"keycolumns",	"trunc"	]
 [ "tmp",	"keys",	"action"	]
 [ "tmp",	"keys",	"id"	]
 [ "tmp",	"keys",	"name"	]
 [ "tmp",	"keys",	"rkey"	]
 [ "tmp",	"keys",	"table_id"	]
 [ "tmp",	"keys",	"type"	]
+[ "tmp",	"objects",	"id"	]
+[ "tmp",	"objects",	"name"	]
+[ "tmp",	"objects",	"nr"	]
+#select s.name, t.name, c.name from 
+#	columns c
+#		inner join 
+#	tables t
+#		on (c.table_id = t.id) 
+#		inner join 
+#	schemas s on (t.schema_id = s.id)
+# where t."system" = true
+# 	and t.name in ('args', 'columns', 'functions', 'idxs',
+#			'objects', 'keys', 'modules', 'sequences')
+# order by s.name, t.name, c.name;
 % sys.s,	.t,	.c # table_name
 % name,	name,	name # name
 % varchar,	varchar,	varchar # type
-% 3,	10,	12 # length
+% 3,	9,	12 # length
 [ "sys",	"args",	"func_id"	]
 [ "sys",	"args",	"id"	]
 [ "sys",	"args",	"name"	]
@@ -124,16 +133,15 @@ Over..
 [ "sys",	"idxs",	"name"	]
 [ "sys",	"idxs",	"table_id"	]
 [ "sys",	"idxs",	"type"	]
-[ "sys",	"keycolumns",	"column"	]
-[ "sys",	"keycolumns",	"id"	]
-[ "sys",	"keycolumns",	"nr"	]
-[ "sys",	"keycolumns",	"trunc"	]
 [ "sys",	"keys",	"action"	]
 [ "sys",	"keys",	"id"	]
 [ "sys",	"keys",	"name"	]
 [ "sys",	"keys",	"rkey"	]
 [ "sys",	"keys",	"table_id"	]
 [ "sys",	"keys",	"type"	]
+[ "sys",	"objects",	"id"	]
+[ "sys",	"objects",	"name"	]
+[ "sys",	"objects",	"nr"	]
 [ "sys",	"sequences",	"cacheinc"	]
 [ "sys",	"sequences",	"cycle"	]
 [ "sys",	"sequences",	"id"	]
@@ -147,18 +155,17 @@ Over..
 [ "tmp",	"idxs",	"name"	]
 [ "tmp",	"idxs",	"table_id"	]
 [ "tmp",	"idxs",	"type"	]
-[ "tmp",	"keycolumns",	"column"	]
-[ "tmp",	"keycolumns",	"id"	]
-[ "tmp",	"keycolumns",	"nr"	]
-[ "tmp",	"keycolumns",	"trunc"	]
 [ "tmp",	"keys",	"action"	]
 [ "tmp",	"keys",	"id"	]
 [ "tmp",	"keys",	"name"	]
 [ "tmp",	"keys",	"rkey"	]
 [ "tmp",	"keys",	"table_id"	]
 [ "tmp",	"keys",	"type"	]
+[ "tmp",	"objects",	"id"	]
+[ "tmp",	"objects",	"name"	]
+[ "tmp",	"objects",	"nr"	]
 
-# 12:48:38 >  
-# 12:48:38 >  Done.
-# 12:48:38 >  
+# 15:05:59 >  
+# 15:05:59 >  Done.
+# 15:05:59 >  
 

@@ -22,5 +22,5 @@ WHERE columns.table_id = tables.id
   AND tables.schema_id = schemas.id
   AND tables.system = true 
   AND tables.name IN ('args', 'columns', 'functions', 'idx',
-    'keycolumns', 'keys', 'modules', 'sequences')
+    'objects', 'keys', 'modules', 'sequences')
 ORDER BY TABLE_SCHEM, TABLE_NAME, ORDINAL_POSITION;

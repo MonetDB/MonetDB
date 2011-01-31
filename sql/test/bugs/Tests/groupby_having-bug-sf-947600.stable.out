@@ -22,44 +22,48 @@ Over..
 % .a,	.b,	.a # table_name
 % name,	name,	L23 # name
 % varchar,	varchar,	wrd # type
-% 10,	10,	2 # length
+% 9,	9,	2 # length
 [ "args",	"columns",	6	]
 [ "args",	"idxs",	6	]
-[ "args",	"keycolumns",	2	]
 [ "args",	"keys",	6	]
+[ "args",	"objects",	4	]
 [ "args",	"sequences",	2	]
 [ "functions",	"args",	2	]
 [ "functions",	"columns",	2	]
 [ "functions",	"idxs",	4	]
-[ "functions",	"keycolumns",	2	]
 [ "functions",	"keys",	4	]
+[ "functions",	"objects",	4	]
 [ "functions",	"sequences",	3	]
 [ "idxs",	"columns",	8	]
 [ "idxs",	"idxs",	4	]
-[ "idxs",	"keycolumns",	3	]
 [ "idxs",	"keys",	4	]
-[ "keycolumns",	"columns",	2	]
-[ "keycolumns",	"idxs",	1	]
-[ "keycolumns",	"keycolumns",	4	]
-[ "keycolumns",	"keys",	1	]
+[ "idxs",	"objects",	6	]
 [ "keys",	"columns",	8	]
 [ "keys",	"idxs",	12	]
-[ "keys",	"keycolumns",	3	]
 [ "keys",	"keys",	6	]
+[ "keys",	"objects",	6	]
+[ "objects",	"columns",	4	]
+[ "objects",	"idxs",	2	]
+[ "objects",	"keys",	2	]
+[ "objects",	"objects",	3	]
 [ "sequences",	"columns",	2	]
 [ "sequences",	"idxs",	4	]
-[ "sequences",	"keycolumns",	2	]
 [ "sequences",	"keys",	4	]
+[ "sequences",	"objects",	4	]
+#select name from tables where "type" = 0 and "system" = true
+#and name IN ('args', 'columns', 'functions', 'idxs', 'objects',
+#'keys', 'modules', 'sequences') group by name having 1=1;
 % .tables # table_name
 % name # name
 % varchar # type
-% 10 # length
+% 9 # length
 [ "functions"	]
 [ "args"	]
 [ "sequences"	]
 [ "keys"	]
 [ "idxs"	]
-[ "keycolumns"	]
+[ "objects"	]
+#select name from tables where "type" = 0 and "system" = true group by name having 1=0;
 % .tables # table_name
 % name # name
 % varchar # type

@@ -1740,6 +1740,22 @@ alter_table( mvc *sql, char *sname, sql_table *t)
 		mvc_readonly( sql, nt, t->readonly);
 
 	/* check for changes */
+	if (t->tables.dset) for (n = t->tables.dset->h; n; n = n->next) {
+		/* propagate alter table .. drop table */
+		sql_table *at = n->data;
+		sql_table *pt = mvc_bind_table(sql, nt->s, at->base.name);
+
+		sql_trans_del_table(sql->session->tr, nt, pt, at->drop_action);
+	}
+	for (n = t->tables.nelm; n; n = n->next) {
+		/* propagate alter table .. add table */
+		sql_table *at = n->data;
+ 		sql_table *pt = mvc_bind_table(sql, nt->s, at->base.name);
+
+		sql_trans_add_table(sql->session->tr, nt, pt);
+	}
+
+	/* check for changes */
 	if (t->columns.dset) for (n = t->columns.dset->h; n; n = n->next) {
 		/* propagate alter table .. drop column */
 		sql_column *c = n->data;

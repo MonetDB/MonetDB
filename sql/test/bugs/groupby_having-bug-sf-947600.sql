@@ -8,19 +8,19 @@ WHERE    a.id < b.id AND
          a."system" = true AND 
          b."system" = true AND
          a.name IN ('args', 'columns', 'functions', 'idxs',
-             'keycolumns', 'keys', 'modules', 'sequences') AND
+             'objects', 'keys', 'modules', 'sequences') AND
          b.name IN ('args', 'columns', 'functions', 'idxs',
-             'keycolumns', 'keys', 'modules', 'sequences')
+             'objects', 'keys', 'modules', 'sequences')
 GROUP BY a.name, b.name
 HAVING COUNT(*) >= 1
 ORDER BY a.name, b.name;
 
 select name from tables where "type" = 0 and "system" = true
-and name IN ('args', 'columns', 'functions', 'idxs', 'keycolumns',
+and name IN ('args', 'columns', 'functions', 'idxs', 'objects',
 'keys', 'modules', 'sequences') having 1=1;
 select name from tables where "type" = 0 and "system" = true having 1=0;
 
 select name from tables where "type" = 0 and "system" = true
-and name IN ('args', 'columns', 'functions', 'idxs', 'keycolumns',
+and name IN ('args', 'columns', 'functions', 'idxs', 'objects',
 'keys', 'modules', 'sequences') group by name having 1=1;
 select name from tables where "type" = 0 and "system" = true group by name having 1=0;

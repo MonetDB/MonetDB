@@ -21,11 +21,32 @@ Ready.
 
 Over..
 
-# 11:50:39 >  
-# 11:50:39 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < BATpropcheck_error.SF-1012739.sql
-# 11:50:39 >  
+# 14:57:12 >  
+# 14:57:12 >  mclient -lsql -ftest -i -e --host=alf --port=39294 
+# 14:57:12 >  
 
-% .,	sys.schemas,	.tables,	sys.keycolumns,	sys.keys,	sys.keys # table_name
+#SELECT
+#    null AS "TABLE_CAT", 
+#    "schemas"."name" AS "TABLE_SCHEM",
+#    "tables"."name" AS "TABLE_NAME", 
+#    "objects"."name" AS "COLUMN_NAME",
+#    "keys"."type" AS "KEY_SEQ", 
+#    "keys"."name" AS "PK_NAME"
+#FROM "keys", "objects", "tables", "schemas" 
+#WHERE 
+#    "keys"."id" = "objects"."id" 
+#AND
+#    "keys"."table_id" = "tables"."id" 
+#AND 
+#    "tables"."schema_id" = "schemas"."id" 
+#AND
+#    "keys"."type" = 0 
+#AND
+#    "schemas"."name" LIKE 'sys' 
+#AND 
+#    "tables"."name" LIKE 'voyages'
+#ORDER BY "COLUMN_N
+% .,	sys.schemas,	.tables,	sys.objects,	sys.keys,	sys.keys # table_name
 % TABLE_CAT,	TABLE_SCHEM,	TABLE_NAME,	COLUMN_NAME,	KEY_SEQ,	PK_NAME # name
 % char,	varchar,	varchar,	varchar,	int,	varchar # type
 % 0,	0,	0,	0,	1,	0 # length
