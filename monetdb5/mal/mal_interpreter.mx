@@ -680,10 +680,7 @@ if (stk->stk[getArg(pci,i)].vtype == TYPE_bat){
 		total += 4 * BATcount(b) ;
 		total = total >(lng) (MEMORY_THRESHOLD * monet_memory)? (lng) (MEMORY_THRESHOLD * monet_memory):total;
 	}
-	h = b->batCacheid;
-	if ( isVIEW(b))
-		h= VIEWtparent(b);
-	BBPunfix( b->batCacheid);
+	BBPunfix( h = b->batCacheid);
 }
 @c
 void
