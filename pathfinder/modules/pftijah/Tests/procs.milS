@@ -1,3 +1,0 @@
-module(pathfinder);
-procs();
-quit();

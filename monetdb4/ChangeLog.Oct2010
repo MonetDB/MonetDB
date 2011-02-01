@@ -1,7 +1,0 @@
-# ChangeLog file for MonetDB4
-# This file is updated with Maddlog
-
-* Thu Jan 20 2011 Sjoerd Mullender <sjoerd@acm.org>
-- Fix problem with Windows cmd script if installation folder name
-  contains parentheses.
-

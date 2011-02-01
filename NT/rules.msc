@@ -282,9 +282,6 @@ HAVE_LIBBZ2_FALSE=^#
 !IFDEF HAVE_LIBZ
 HAVE_LIBZ_FALSE=^#
 !ENDIF
-!IFDEF HAVE_MONETDB4
-HAVE_MONETDB4_FALSE=^#
-!ENDIF
 !IFDEF HAVE_MONETDB5
 HAVE_MONETDB5_FALSE=^#
 !ENDIF
@@ -348,7 +345,6 @@ CONFIGURE=$(PYTHON) $(CONFIGURE_PY) \
 	"HAVE_LIBBZ2_FALSE=$(HAVE_LIBBZ2_FALSE)" \
 	"HAVE_LIBXML2_FALSE=$(HAVE_LIBXML2_FALSE)" \
 	"HAVE_LIBZ_FALSE=$(HAVE_LIBZ_FALSE)" \
-	"HAVE_MONETDB4_FALSE=$(HAVE_MONETDB4_FALSE)" \
 	"HAVE_MONETDB5_FALSE=$(HAVE_MONETDB5_FALSE)" \
 	"HAVE_NETCDF_FALSE=$(HAVE_NETCDF_FALSE)" \
 	"HAVE_OPENSSL_FALSE=$(HAVE_OPENSSL_FALSE)" \
@@ -500,43 +496,6 @@ CONFIG_H = monetdb_config.h
 
 .mx.l:
 	$(MX) $(MXFLAGS) -x l $<
-
-{$(SRCDIR)}.ll.cc:
-	$(LEX) $(LFLAGS) $<
-	# either lex.<name>.c or lex.yy.c or lex.$(PARSERNAME).c gets generated
-	if exist lex.$*.c $(MV) lex.$*.c $*.yy.c.tmp
-	if exist lex.yy.c $(MV) lex.yy.c $*.yy.c.tmp
-	if exist lex.$(PARSERNAME).c $(MV) lex.$(PARSERNAME).c $*.yy.c.tmp
-	echo #include "$(CONFIG_H)" > $@
-	type $*.yy.c.tmp >> $@
-
-.ll.cc:
-	$(LEX) $(LFLAGS) $<
-	# either lex.<name>.c or lex.yy.c or lex.$(PARSERNAME).c gets generated
-	if exist lex.$*.c $(MV) lex.$*.c $*.yy.c.tmp
-	if exist lex.yy.c $(MV) lex.yy.c $*.yy.c.tmp
-	if exist lex.$(PARSERNAME).c $(MV) lex.$(PARSERNAME).c $*.yy.c.tmp
-	echo #include "$(CONFIG_H)" > $@
-	type $*.yy.c.tmp >> $@
-
-{$(SRCDIR)}.yy.cc:
-	$(YACC) $(YFLAGS) $<
-	$(FILTER) $(FILTERPREF)"    ;" y.tab.c > $@
-
-.yy.cc:
-	$(YACC) $(YFLAGS) $<
-	$(FILTER) $(FILTERPREF)"    ;" y.tab.c > $@
-	$(DEL) y.tab.h
-
-{$(SRCDIR)}.yy.h:
-	$(YACC) $(YFLAGS) $<
-	$(DEL) y.tab.c
-	$(MV) y.tab.h $@
-
-.yy.h:
-	$(YACC) $(YFLAGS) $<
-	$(DEL) y.tab.c
-	$(MV) y.tab.h $@
 
 {$(SRCDIR)}.c.obj:
 	$(CC) $(CFLAGS) -c $<

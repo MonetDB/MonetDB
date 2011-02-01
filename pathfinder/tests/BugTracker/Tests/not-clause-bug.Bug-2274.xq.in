@@ -1,5 +1,0 @@
-pf:add-doc("$TSTSRCDIR/not-clause-bug.Bug-2274.xml","not-clause-bug.Bug-2274.xml")
-<>
-doc("not-clause-bug.Bug-2274.xml")//a[p/x/@xx]
-<>
-doc("not-clause-bug.Bug-2274.xml")//a[not(xyz) and p/x/@xx]

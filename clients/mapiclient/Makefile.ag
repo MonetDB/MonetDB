@@ -31,15 +31,6 @@ bin_mclient = {
 		$(curl_LIBS) $(LTLIBICONV)
 }
 
-bin_m4client = {
-	COND = HAVE_MONETDB4
-	SOURCES = mclient.c ReadlineTools.c
-	LIBS = libmcutil ../mapilib/libmapi4 \
-		../../common/stream/libstream4 \
-		$(READLINE_LIBS) \
-		$(curl_LIBS) $(LTLIBICONV)
-}
-
 bin_msqldump = {
 	SOURCES = msqldump.c
 	LIBS = libmcutil ../mapilib/libmapi \

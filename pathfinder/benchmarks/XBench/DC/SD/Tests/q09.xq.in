@@ -1,4 +1,0 @@
-for $a in doc("$TSTTRGDIR/small.catalog.xml")/catalog/item
-where $a/@id="I5"
-return
-    $a//ISBN/text()

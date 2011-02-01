@@ -147,20 +147,6 @@ Description: MonetDB client testing tools
  MonetDB packages.  You probably don't need this, unless you are a
  developer.
 
-# Package: libmonetdb4-server-geom11
-# Section: libs
-# Architecture: any
-# Depends: ${shlibs:Depends}, ${misc:Depends}, monetdb4-server
-# Conflicts: libmonetdb4-server-geom0, monetdb-geom, monetdb-geom-dev
-# Description: MonetDB4 GIS module
-#  MonetDB is a database management system that is developed from a
-#  main-memory perspective with use of a fully decomposed storage model,
-#  automatic index management, extensibility of data types and search
-#  accelerators, SQL- and XML- frontends.
-#  .
-#  This package contains the GIS (Geographic Information System)
-#  extensions for monetdb4-server.
-
 Package: libmonetdb5-server-geom11
 Section: libs
 Architecture: any
@@ -175,21 +161,6 @@ Description: MonetDB5 SQL GIS support module
  This package contains the GIS (Geographic Information System)
  extensions for MonetDB-SQL-server5.
 
-Package: monetdb4-server
-Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, adduser
-Conflicts: libmonetdb4-server-dev, libmonetdb4-server4
-Description: MonetDB database server version 4
- MonetDB is a database management system that is developed from a
- main-memory perspective with use of a fully decomposed storage model,
- automatic index management, extensibility of data types and search
- accelerators, SQL- and XML- frontends.
- .
- This package contains the MonetDB4 server component.  You need this
- package if you want to work using the MIL language, or if you want to
- use the XQuery frontend (in which case you need monetdb4-xquery as
- well).
-
 Package: monetdb5-server
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, adduser
@@ -203,57 +174,6 @@ Description: MonetDB database server version 5
  This package contains the MonetDB5 server component.  You need this
  package if you want to work using the MAL language, or if you want to
  use the SQL frontend (in which case you need monetdb5-sql as well).
-
-Package: monetdb-xquery
-Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, monetdb4-server
-Description: MonetDB xquery support for MonetDB4-server
- MonetDB is a database management system that is developed from a
- main-memory perspective with use of a fully decomposed storage model,
- automatic index management, extensibility of data types and search
- accelerators, SQL- and XML- frontends.
- .
- This package contains the XQuery frontend.
-
-Package: libpf-ferry11
-Section: libs
-Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
-Conflicts: libpf-ferry0
-Description: MonetDB XQuery Ferry library
- MonetDB is a database management system that is developed from a
- main-memory perspective with use of a fully decomposed storage model,
- automatic index management, extensibility of data types and search
- accelerators, SQL- and XML- frontends.
- .
- This package contains the pf_ferry library.
-
-Package: libpf-ferry-dev
-Section: libs
-Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libpf-ferry0
-Description: MonetDB XQuery Ferry library development files
- MonetDB is a database management system that is developed from a
- main-memory perspective with use of a fully decomposed storage model,
- automatic index management, extensibility of data types and search
- accelerators, SQL- and XML- frontends.
- .
- This package contains the files needed to develop with the
- libpf-ferry0 package.
-
-Package: libmonetdb4-xquery11
-Section: libs
-Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
-Conflicts: libmonetdb4-xquery0, libmonetdb4-xquery-dev
-Description: MonetDB xquery libraries
- MonetDB is a database management system that is developed from a
- main-memory perspective with use of a fully decomposed storage model,
- automatic index management, extensibility of data types and search
- accelerators, SQL- and XML- frontends.
- .
- This package contains the files needed to develop with MonetDB/XQuery
- library.
 
 Package: monetdb5-sql
 Architecture: any

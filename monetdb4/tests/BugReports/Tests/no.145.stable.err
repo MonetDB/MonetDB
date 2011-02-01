@@ -1,4 +1,0 @@
-stderr of test 'no.145` in directory 'tests/BugReports` itself:
-
-#> Mtest:	milS no.145 milS -prelude no.145.prelude
-#> Mtest:	Mserver -yaccsilent -d8 -home /ufs/manegold/Current/monet/IRIX6.3 -db tests_BugReports -single -prelude no.145.prelude no.145.milS

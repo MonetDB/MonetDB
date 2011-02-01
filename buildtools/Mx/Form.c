@@ -179,12 +179,6 @@ GenForm(void)
 				case MALcode:
 					PrCodeDisplay(d, "mal");
 					break;
-				case MILcode:
-					PrCodeDisplay(d, "mil");
-					break;
-				case Monet:
-					PrCodeDisplay(d, "m");
-					break;
 				case OQLspec:
 					PrCodeDisplay(d, "oql");
 					break;

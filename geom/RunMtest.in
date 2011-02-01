@@ -24,15 +24,12 @@ builddir="${buildbase}/geom"
 srcdir=`cd '@srcdir@'; pwd`
 uname=`uname`
 
-# if both M4 & M5 are available, M5 is default;
-# otherwise, the available one is default
-@HAVE_MONETDB4_TRUE@V=4
+# M5 is default
 @HAVE_MONETDB5_TRUE@V=5
 # commandline option overrules default
 for arg
 do
     case "$arg" in
-    -4) V=4;;
     -5) V=5;;
     esac
 done
@@ -51,16 +48,6 @@ mkdir -p ${builddir}/sql/createdb
 cp -f ${srcdir}/sql/[0-9][0-9]_*.sql ${builddir}/sql/createdb/ 2>/dev/null
 
 case "$V" in
-4)
-# where compiled monetdb4 modules are to be found
-for d in modules/plain modules/contrib modules/calibrator modules/mapi @HAVE_NETCDF_TRUE@ modules/mnetcdf
-do
-	MOD_PATH="${MOD_PATH}${buildbase}/monetdb4/$d/.libs:${buildbase}/monetdb4/$d:"
-done
-MOD_PATH="${MOD_PATH}${srcdir}/../monetdb4/scripts/tools"
-PATH="${buildbase}/monetdb4/tools:$PATH"
-cfg="${buildbase}/monetdb4/conf/MonetDB.conf"   
-;;
 5)
 # where compiled SQL modules are to be found
 for d in backends/monet5 backends/monet5/vaults sql

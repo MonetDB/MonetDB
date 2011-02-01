@@ -1,6 +1,0 @@
-car_age,",",int
-car_gender,",",chr
-car_carprice,",",int
-car_category,",",str
-car_town,",",str
-car_class,"\n",str

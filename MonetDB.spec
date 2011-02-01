@@ -12,9 +12,6 @@
 %define bits 64
 %endif
 
-# by default we do not build the netcdf package
-%{!?_with_netcdf: %{!?_without_netcdf: %define _without_netcdf --with-netcdf=no}}
-
 Name: %{name}
 Version: %{version}
 Release: %{release}
@@ -304,27 +301,6 @@ developer.
 %{_bindir}/sqlsample.pl
 %{_bindir}/sqlsample.py
 
-%package geom-MonetDB4
-Summary: MonetDB4 GIS module
-Group: Applications/Databases
-Requires: MonetDB4-server = %{version}-%{release}
-Obsoletes: %{name}-geom
-Obsoletes: %{name}-geom-devel
-
-%description geom-MonetDB4
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators, SQL- and XML- frontends.
-
-This package contains the GIS (Geographic Information System)
-extensions for MonetDB4-server.
-
-%files geom-MonetDB4
-%defattr(-,root,root)
-%{_libdir}/monetdb4/geom.mil
-%{_libdir}/monetdb4/lib/lib_geom.so*
-
 %package geom-MonetDB5
 Summary: MonetDB5 SQL GIS support module
 Group: Applications/Databases
@@ -347,96 +323,6 @@ extensions for MonetDB-SQL-server5.
 %{_libdir}/monetdb5/createdb/*_geom.sql
 %{_libdir}/monetdb5/geom.mal
 %{_libdir}/monetdb5/lib/lib_geom.so*
-
-%package -n MonetDB4-server
-Summary: MonetDB - Monet Database Management System
-Group: Applications/Databases
-Requires(pre): shadow-utils
-Obsoletes: MonetDB4-server-devel
-
-%description -n MonetDB4-server
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators, SQL- and XML- frontends.
-
-This package contains the MonetDB4 server component.  You need this
-package if you want to work using the MIL language, or if you want to
-use the XQuery frontend (in which case you need MonetDB-XQuery as
-well).
-
-%pre -n MonetDB4-server
-getent group monetdb >/dev/null || groupadd -r monetdb
-getent passwd monetdb >/dev/null || \
-useradd -r -g monetdb -d %{_localstatedir}/MonetDB -s /sbin/nologin \
-    -c "MonetDB Server" monetdb
-exit 0
-
-%post -n MonetDB4-server
-# move database from old location to new location
-if [ -d %{_localstatedir}/MonetDB4/dbfarm -a ! %{_localstatedir}/MonetDB4/dbfarm -ef %{_localstatedir}/monetdb4/dbfarm ]; then
-	# old database exists and is different from new
-	if [ $(find %{_localstatedir}/monetdb4 -print | wc -l) -le 2 ]; then
-		# new database is still empty
-		rmdir %{_localstatedir}/monetdb4/dbfarm
-		rmdir %{_localstatedir}/monetdb4
-		mv %{_localstatedir}/MonetDB4 %{_localstatedir}/monetdb4
-	fi
-fi
-
-%files -n MonetDB4-server
-%defattr(-,root,root)
-%attr(750,monetdb,monetdb) %dir %{_localstatedir}/MonetDB
-%attr(2770,monetdb,monetdb) %dir %{_localstatedir}/monetdb4
-%attr(2770,monetdb,monetdb) %dir %{_localstatedir}/monetdb4/dbfarm
-%{_bindir}/Mserver
-%{_bindir}/m4client
-%config(noreplace) %{_sysconfdir}/MonetDB.conf
-%dir %{_libdir}/monetdb4
-%dir %{_libdir}/monetdb4/lib
-%if %{?_with_netcdf:1}%{!?_with_netcdf:0}
-%exclude %{_libdir}/monetdb4/lib/lib_mnetcdf.so*
-%exclude %{_libdir}/monetdb4/mnetcdf.mil
-%endif
-%{_libdir}/libmonet.so.*
-%{_libdir}/libbat4.so.*
-%{_libdir}/libstream4.so.*
-%{_libdir}/libmapi4.so.*
-%exclude %{_libdir}/monetdb4/lib/lib_geom.so*
-%exclude %{_libdir}/monetdb4/lib/lib_pathfinder*
-%exclude %{_libdir}/monetdb4/lib/lib_pf*
-%exclude %{_libdir}/monetdb4/lib/lib_probxml*
-%exclude %{_libdir}/monetdb4/lib/lib_xrpc*
-%{_libdir}/monetdb4/lib/*.so*
-%exclude %{_libdir}/monetdb4/geom.mil
-%exclude %{_libdir}/monetdb4/pathfinder.mil
-%exclude %{_libdir}/monetdb4/pf*.mil
-%exclude %{_libdir}/monetdb4/probxml.mil
-%exclude %{_libdir}/monetdb4/xrpc_*.mil
-%{_libdir}/monetdb4/*.mil
-
-%if %{?_with_netcdf:1}%{!?_with_netcdf:0}
-%package -n MonetDB4-server-netcdf
-Summary: MonetDB4 module for using NetCDF
-Group: Applications/Databases
-Requires: MonetDB4-server = %{version}-%{release}
-BuildRequires: netcdf-devel
-
-%description -n MonetDB4-server-netcdf
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators, SQL- and XML- frontends.
-
-This package contains a module for use with the MonetDB4 server
-component to interface to the NetCDF (network Common Data Form)
-libraries.
-
-%files -n MonetDB4-server-netcdf
-%defattr(-,root,root)
-%{_libdir}/monetdb4/lib/lib_mnetcdf.so*
-%{_libdir}/monetdb4/mnetcdf.mil
-%endif
 
 %package -n MonetDB5-server
 Summary: MonetDB - Monet Database Management System
@@ -556,81 +442,6 @@ use SQL with MonetDB, you will need to install this package.
 %docdir %{_datadir}/doc/MonetDB-SQL-%{version}
 %{_datadir}/doc/MonetDB-SQL-%{version}/*
 
-%package -n MonetDB4-XQuery
-Summary: MonetDB XQuery - Monet Database Management System
-Group: Applications/Databases
-Requires: MonetDB4-server = %{version}-%{release}
-Obsoletes: MonetDB4-XQuery-devel
-
-%description -n MonetDB4-XQuery
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators, SQL- and XQuery- frontends.
-
-This package contains the XQuery frontend.  If you want to store XML
-documents in MonetDB and use XQuery to query those documents, you will
-need this package.
-
-%files -n MonetDB4-XQuery
-%defattr(-,root,root)
-%{_bindir}/pf
-%{_bindir}/pfopt
-%{_bindir}/pfshred
-%{_bindir}/pfsql
-%dir %{_datadir}/monetdb/xrpc
-%dir %{_datadir}/monetdb/xrpc/admin
-%dir %{_datadir}/monetdb/xrpc/demo
-%dir %{_datadir}/monetdb/xrpc/export
-%{_datadir}/monetdb/xrpc/admin/*
-%{_datadir}/monetdb/xrpc/demo/*
-%{_datadir}/monetdb/xrpc/export/*
-%{_libdir}/monetdb4/lib/lib_pathfinder*
-%{_libdir}/monetdb4/lib/lib_pf*
-%{_libdir}/monetdb4/lib/lib_probxml*
-%{_libdir}/monetdb4/lib/lib_xrpc*
-%{_libdir}/monetdb4/pathfinder.mil
-%{_libdir}/monetdb4/pf*.mil
-%{_libdir}/monetdb4/probxml.mil
-%{_libdir}/monetdb4/xrpc_*.mil
-
-%package -n MonetDB4-XQuery-ferry
-Summary: MonetDB XQuery Ferry library
-Group: Applications/Databases
-# Requires: MonetDB4-XQuery = %{version}-%{release}
-
-%description -n MonetDB4-XQuery-ferry
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators, SQL- and XQuery- frontends.
-
-This package contains the pf_ferry library.
-
-%files -n MonetDB4-XQuery-ferry
-%defattr(-,root,root)
-%{_libdir}/libpf_ferry.so.*
-
-%package -n MonetDB4-XQuery-ferry-devel
-Summary: MonetDB XQuery Ferry library
-Group: Applications/Databases
-Requires: MonetDB4-XQuery-ferry = %{version}-%{release}
-
-%description -n MonetDB4-XQuery-ferry-devel
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators, SQL- and XQuery- frontends.
-
-This package contains the files needed to develop with the
-MonetDB4-XQuery-ferry package.
-
-%files -n MonetDB4-XQuery-ferry-devel
-%defattr(-,root,root)
-%{_includedir}/pf_ferry.h
-%{_libdir}/libpf_ferry.la
-%{_libdir}/libpf_ferry.so
-
 %package -n python-monetdb
 Summary: Native MonetDB client Python API
 Group: Applications/Databases
@@ -718,8 +529,6 @@ developer, but if you do want to test, this is the package you need.
         --enable-bits=%{bits} \
 	--enable-java=no \
 	--enable-rdf=no \
-	--enable-monetdb4=yes \
-	--enable-pathfinder=yes \
 	--with-gc=no \
 	--with-valgrind=no \
 	--with-mseed=no \
@@ -735,38 +544,23 @@ rm -rf $RPM_BUILD_ROOT
 %makeinstall
 
 mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/MonetDB
-mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/monetdb4/dbfarm
 mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/monetdb5/dbfarm
 mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/log/monetdb
 mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/run/monetdb
 
 # remove unwanted stuff
 # .la files
-rm -f $RPM_BUILD_ROOT%{_libdir}/monetdb4/lib/*.la
 rm -f $RPM_BUILD_ROOT%{_libdir}/monetdb5/lib/*.la
-# DB2 specific stuff:
-rm -f $RPM_BUILD_ROOT%{_bindir}/pfserialize.pl
-rm -f $RPM_BUILD_ROOT%{_bindir}/pfloadtables.sh
-rm -f $RPM_BUILD_ROOT%{_bindir}/pfcreatetables.sh
 # internal development stuff
 rm -f $RPM_BUILD_ROOT%{_bindir}/calibrator
 rm -f $RPM_BUILD_ROOT%{_bindir}/Maddlog
 rm -f $RPM_BUILD_ROOT%{_libdir}/libbat.la
 rm -f $RPM_BUILD_ROOT%{_libdir}/libbat.so
-rm -f $RPM_BUILD_ROOT%{_libdir}/libbat4.la
-rm -f $RPM_BUILD_ROOT%{_libdir}/libbat4.so
-rm -f $RPM_BUILD_ROOT%{_libdir}/libstream4.la
-rm -f $RPM_BUILD_ROOT%{_libdir}/libstream4.so
-rm -f $RPM_BUILD_ROOT%{_libdir}/libmapi4.la
-rm -f $RPM_BUILD_ROOT%{_libdir}/libmapi4.so
 rm -f $RPM_BUILD_ROOT%{_libdir}/libMonetODBC*.la
 rm -f $RPM_BUILD_ROOT%{_libdir}/libmonet.la
 rm -f $RPM_BUILD_ROOT%{_libdir}/libmonet.so
 rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.la
 rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
-# deprecated monetdb4
-rm -f $RPM_BUILD_ROOT%{_bindir}/milsample.pl
-rm -f $RPM_BUILD_ROOT%{_bindir}/xquerysample.php
 
 %post -p /sbin/ldconfig
 

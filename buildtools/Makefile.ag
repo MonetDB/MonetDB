@@ -15,6 +15,6 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = Mx HAVE_MONETDB4?mel HAVE_PATHFINDER?burg conf
+SUBDIRS = Mx conf
 
 EXTRA_DIST_DIR = autogen doc

@@ -217,7 +217,6 @@ CONDITIONALS = {
     'HAVE_LIBBZ2'          : "@HAVE_LIBBZ2_FALSE@",
     'HAVE_LIBXML2'         : "@HAVE_LIBXML2_FALSE@",
     'HAVE_LIBZ'            : "@HAVE_LIBZ_FALSE@",
-    'HAVE_MONETDB4'        : "@HAVE_MONETDB4_FALSE@",
     'HAVE_MONETDB5'        : "@HAVE_MONETDB5_FALSE@",
     'HAVE_MSEED'           : "@HAVE_MSEED_FALSE@",
     'HAVE_NETCDF'          : "@HAVE_NETCDF_FALSE@",
@@ -1288,23 +1287,6 @@ def GetBitsAndOIDsAndModsAndStatic(env) :
                 io.printf(s);
                 clients.quit();
             '''
-        if par['M4']:
-            input = '''\
-                help("kunion");
-                {
-                    # print a list of all modules found
-                    # "Modules: mod1, mod2, ..."
-                    var MODs := kunion(bat("monet_mod_nme").reverse().mark(oid(nil)),view_modules().reverse().mark(oid(nil))).kunique();
-                    printf("\\nModules: ");
-                    var x := "";
-                    MODs@batloop(){
-                        printf("%s\'%s\'",x,$h);
-                        x:=",";
-                    }
-                    printf("\\n");
-                }
-                quit();
-            '''
         ##module("NoModule");
         qOut, qErr = proc.communicate(input = input)
         t.cancel()
@@ -1383,8 +1365,6 @@ def CheckMods(env, TST, SERVER, CALL) :
             if m not in env['TST_MODS']:
                 missing.append(m)
     if SERVER == "SQL":
-        if par['M4']:
-            sql_mods = ["sql_server", "streams", "ascii_io", "monettime", "alarm", "xtables", "aggrX3", "blob", "txtsim", "mmath", "mkey", "bat_arith", "pcre"]
         if par['M5']:
             sql_mods = ["sql"]
         for m in sql_mods:
@@ -1653,8 +1633,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
         elem = SkipTest(env, TST, EXT, "as required test%s '%s' failed." % (len(MissingTests) != 1 and 's' or '', "', '".join(MissingTests)))
     elif ( EXT[:4] == ".mil" or SERVER == "MIL" ) and par['M5']:
         elem = SkipTest(env, TST, EXT, "as MonetDB v5 does not support MIL.")
-    elif ( EXT[:4] == ".mal" or SERVER == "MAL" ) and par['M4']:
-        elem = SkipTest(env, TST, EXT, "as MonetDB v4 does not support MAL.")
     elif EXT == ".milC" and  not env['exe']['MIL_Client'][0]:
         elem = SkipTest(env, TST, EXT, "as "+env['MILCLIENT'].split(None, 1)[0]+" is not available.")
     elif EXT == ".malC" and  not env['exe']['MAL_Client'][0]:
@@ -1766,8 +1744,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
         PRELUDE = ""
         #if EXT not in  ['.milC','.sql','.xq']:
         if EXT not in  ['.sql','.xq']:
-            if os.path.isfile(TST+".prelude")  and  par['M4']:
-                PRELUDE = TST+".prelude"
             if os.path.isfile(TST+".prelude5")  and  par['M5']:
                 PRELUDE = TST+".prelude5"
 
@@ -2360,8 +2336,6 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
 
     if par['M5']:
         PRINTF = "io.printf"
-    if par['M4']:
-        PRINTF = "printf"
 
     # Release reserved sockets and run the actual test
     MAPIsockets[0].close()
@@ -2384,14 +2358,9 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             ClntOut = open(ClntOutFile,"w")
             ClntErr = open(ClntErrFile,"w")
             PROLOGUE = ""
-            if os.path.isfile(TST+".prologue") and par['M4']:
-                PROLOGUE = " "+TST+".prologue"
             if os.path.isfile(TST+".prologue5") and par['M5']:
                 PROLOGUE = " "+TST+".prologue5"
             DBINIT=""
-            if os.path.isfile(TST+".dbinit") and par['M4']:
-                dbinit = TST+".dbinit"
-                DBINIT = open(dbinit).readline().strip()
             if os.path.isfile(TST+".dbinit5") and par['M5']:
                 dbinit = TST+".dbinit5"
                 DBINIT = open(dbinit).readline().strip()
@@ -2416,8 +2385,6 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                     Srvr = '%s --set mal_listing=0' % Srvr
                     if DBINIT:
                         Srvr = '%s "--dbinit=%s"' % (Srvr, DBINIT)
-                if par['M4']:
-                    Srvr = '%s "--dbinit=%s module(sql_server);"' % (Srvr, DBINIT)
             if SERVER == "XQUERY":
                 lang="xquery"
                 Srvr = '%s "--dbinit=%s module(pathfinder);"' % (Srvr, DBINIT)
@@ -2474,8 +2441,6 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                             timedout = RunIt(cmd + f, open(os.devnull), ClntOut, ClntErr, TIMEOUT)
                         elif par['M5']:
                             timedout = RunIt(cmd+" --dbinit=\"include mil_scenario; mil();\" "+f, open(os.devnull), ClntOut, ClntErr, TIMEOUT)
-                        elif par['M4']:
-                            timedout = RunIt(cmd, open(f), ClntOut, ClntErr, TIMEOUT)
                     if timedout:
                         break
             elif CALL in ["milC", "milCXs", "malC", "malCXs"]:
@@ -2548,8 +2513,6 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
 
         if SERVER in ["MIL", "MAL", "SQL", "XQUERY"]:
             EPILOGUE = None
-            if os.path.isfile(TST+".epilogue") and par['M4']:
-                EPILOGUE = open(TST+".epilogue",'r')
             if os.path.isfile(TST+".epilogue5") and par['M5']:
                 EPILOGUE = open(TST+".epilogue5",'r')
             if EPILOGUE:
@@ -2574,8 +2537,6 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             try:
                 if par['M5']:
                     pSrvr.stdin.write('clients.quit();\n')
-                if par['M4']:
-                    pSrvr.stdin.write('quit();\n')
                 pSrvr.stdin.flush()
             except IOError:
                 pass
@@ -3091,10 +3052,8 @@ def main(argv) :
         # long name, short name, GDK option, argument, comment
         ('package', 'p', 'package', '<package>',
          "package to be tested, e.g.:\nmonetdb[45], (java|clients|template|sql|pathfinder|geom);\ndefault: %s" % par['PACKAGE']),
-        ('monetdb4', '4', 'monetdb4', None,
-         "use Mserver of MonetDB Version 4 (default with <package> in {monetdb4, pathfinder})"),
         ('monetdb5', '5', 'monetdb5', None,
-         "use mserver5 of MonetDB Version 5 (default with <package> not in {monetdb4, pathfinder})"),
+         "use mserver5 of MonetDB Version 5 (default)"),
         ('algebra', 'G', 'algebra', None,
          "use the algebra version of the XQuery compiler"),
         ('no-algebra', 'g', 'no-algebra', None,
@@ -3185,38 +3144,26 @@ def main(argv) :
     except monet_options.Error:
         sys.exit(1)
 
-    par['M4'] = opts.get('monetdb4', 0)
     par['M5'] = opts.get('monetdb5', 0)
-    if par['M4'] and par['M5']:
-        ErrXit('Specifying both "-4/--monetdb4" and "-5/monetdb5" is not allowed!')
 
     pkg = opts.get('package')
     if pkg is None:
         if par['PACKAGE'] == 'none':
-            if par['M4']:
-                par['PACKAGE'] = 'monetdb4'
             if par['M5']:
                 par['PACKAGE'] = 'monetdb5'
             Warn('No (suitable) ./CVS/Repository found and no -p/--package specified. Using default package="%s". Please use -p/--package to overrule.' % par['PACKAGE'])
     else:
         par['PACKAGE'] = pkg
 
-    if par['M4'] and par['PACKAGE'] == 'monetdb5':
-        ErrXit('"-4/--monetdb4" conflicts with "--package=monetdb5"!')
-    if par['M5'] and par['PACKAGE'] == 'monetdb4':
-        ErrXit('"-5/--monetdb5" conflicts with "--package=monetdb4"!')
-    if not par['M4'] and not par['M5'] and par['PACKAGE'] not in ('common', 'clients', 'gdk', 'java'):
-        par['M4'] = par['PACKAGE']     in ['monetdb4', 'pathfinder']
-        par['M5'] = par['PACKAGE'] not in ['monetdb4', 'pathfinder']
+    if not par['M5'] and par['PACKAGE'] not in ('common', 'clients', 'gdk', 'java'):
+        par['M5'] = True
 
     config = opts.get('config')
     if config is None and par['PACKAGE'] not in ('common', 'clients', 'gdk', 'java'):
-        # no --config given on the command line; we assume the M4/M5 default
+        # no --config given on the command line; we assume the M5 default
         # and have monet_options.parse_options() re-parse the command line arguments
         if par['M5']:
             config = _configure(os.path.join('@QXsysconfdir@', 'monetdb5.conf'))
-        if par['M4']:
-            config = _configure(os.path.join('@QXsysconfdir@', 'MonetDB.conf'))
         if config:
             try:
                 opts, args = monet_options.parse_options(['--config='+config] + argv[1:], options, Usage, False)
@@ -3314,13 +3261,8 @@ def main(argv) :
 #         CONDITIONALS['HAVE_PHP'] = ''
     if par['M5']:
         CONDITIONALS['HAVE_MONETDB5'] = '#'
-        CONDITIONALS['HAVE_MONETDB4'] = ''
-    elif par['M4']:
-        CONDITIONALS['HAVE_MONETDB5'] = ''
-        CONDITIONALS['HAVE_MONETDB4'] = '#'
     else:
         CONDITIONALS['HAVE_MONETDB5'] = ''
-        CONDITIONALS['HAVE_MONETDB4'] = ''
     CheckClassPath(quiet)
     if par['ALGEBRA']:
         CONDITIONALS['WITH_ALGEBRA'] = '#'
@@ -3339,8 +3281,6 @@ def main(argv) :
     if CONDITIONALS['NOT_ALGEBRA']:
         env['TST_NOALGEBRA'] = "NoAlgebra"
         os.environ['TST_NOALGEBRA'] = "NoAlgebra"
-    if par['M4']:
-        env['GDK_NR_THREADS'] = "1"
 
     # tidy-up and fall-back to defaults where necessary
     if THISFILE == "Mtest.py":
@@ -3528,9 +3468,6 @@ def main(argv) :
         if par['M5']:
             exe['Mserver']       = CheckExec('mserver5')     , '%s mserver5 "--config=%s" --debug=%s --set gdk_nr_threads=%s %s %s %s --set mapi_open=true --set xrpc_open=true --set mapi_port=%s --set xrpc_port=%s --set monet_prompt= --trace --forcemito --set mal_listing=2 %s' % \
                                                                (env['setDBG'], config, env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setXRPC_DOCROOT'], env['MAPIPORT'], env['XRPCPORT'], env['MSERVER_SET'])
-        if par['M4']:
-            exe['Mserver']       = CheckExec('Mserver')      , '%s Mserver "--config=%s" --debug=%s --set gdk_nr_threads=%s %s %s %s --set mapi_open=true --set xrpc_open=true --set mapi_port=%s --set xrpc_port=%s --set monet_prompt= --trace %s' % \
-                                                               (env['setDBG'], config, env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setXRPC_DOCROOT'], env['MAPIPORT'], env['XRPCPORT'], env['MSERVER_SET'])
         exe['Mdiff']         = CheckExec('Mdiff')        , 'Mdiff'
         exe['python']        = CheckExec(sys.executable) , sys.executable
         exe['MIL_Client']    = CheckExec(env['MILCLIENT'].split(None, 1)[0])  , '%s -i -e --host=%s --port=%s' % (env['MILCLIENT'], HOST, env['MAPIPORT'])
@@ -3685,8 +3622,6 @@ def main(argv) :
 
         if par['M5']:
             QUIT = 'clients.quit();\n'
-        if par['M4']:
-            QUIT = 'quit();\n'
 
         env['TST_MODS'] = []
         env['TST_BITS'] = ""
@@ -3719,11 +3654,6 @@ def main(argv) :
             MissingMods = CheckMods(env, '', 'SQL', '')
             if MissingMods:
                 ErrXit('Stopping SQL testing as modules "%s" are missing!' % str(MissingMods))
-            if par['M4']:
-                mod_name = 'sql_server'
-                mod_load = 'module(%s);' % mod_name
-                if Check('%s --dbname=%s "--dbinit=%s"' % (env['exe']['Mserver'][1], TSTPREF, mod_load), QUIT):
-                    ErrXit('Stopping SQL testing as module "%s" fails to load!' % mod_name)
 
         is_pf = par['PACKAGE'] == 'pathfinder'
         if is_pf:
@@ -3768,8 +3698,6 @@ def main(argv) :
             mod_name = 'pathfinder'
             if par['M5']:
                 mod_load = 'include %s;' % mod_name
-            if par['M4']:
-                mod_load = 'module(%s);' % mod_name
             if Check('%s --dbname=%s "--dbinit=%s"' % (env['exe']['Mserver'][1], TSTPREF, mod_load), QUIT):
                 ErrXit('Stopping Pathfinder testing as module "%s" fails to load!' % mod_name)
 
@@ -3780,10 +3708,6 @@ def main(argv) :
             if MissingMods:
                 ErrXit('Stopping Geom testing as modules "%s" are missing!' % str(MissingMods))
             mod_name = 'geom'
-            if par['M4']:
-                mod_load = 'module(%s);' % mod_name
-                if Check('%s --dbname=%s "--dbinit=%s"' % (env['exe']['Mserver'][1], TSTPREF, mod_load), QUIT):
-                    ErrXit('Stopping Geom testing as module "%s" fails to load!' % mod_name)
 
         if par['PACKAGE'] in ('sql','geom'):
             if not env['exe']['SQL_Client'][0]:

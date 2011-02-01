@@ -8,12 +8,9 @@ goto end
 
 setlocal
 
-rem if both M4 & M5 are available, M5 is default;
-rem otherwise, the available one is default
-if "@HAVE_MONETDB4_FALSE@" == "#" set V=4
+rem M5 is default
 if "@HAVE_MONETDB5_FALSE@" == "#" set V=5
 rem commandline option overrules default
-if "%1" == "-4" set V=4& shift
 if "%1" == "-5" set V=5& shift
 
 set pkg=geom
@@ -32,23 +29,6 @@ copy /y %srcdir%\monetdb%V%\??_*.mal %builddir%\monetdb%V%\autoload
 REM enable auto-loading of SQL createdb scripts before `make install`
 if not exist %builddir%\sql\createdb mkdir %builddir%\sql\createdb
 copy /y %srcdir%\sql\??_*.sql %builddir%\sql\createdb
-
-if not %V% == 4 goto skip_4
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\plain\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\plain
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\contrib\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\contrib
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\calibrator\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\calibrator
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\mapi\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\mapi
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\mnetcdf\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\mnetcdf
-set MOD_PATH=%MOD_PATH%;%srcdir%\..\monetdb4\scripts\tools
-
-set PATH=%buildbase%\monetdb4\tools;%PATH%
-set cfg=%buildbase%\monetdb4\conf\MonetDB.conf
-:skip_4
 
 if not %V% == 5 goto skip_5
 set MOD_PATH=%MOD_PATH%;%buildbase%\sql\backends\monet5\.libs

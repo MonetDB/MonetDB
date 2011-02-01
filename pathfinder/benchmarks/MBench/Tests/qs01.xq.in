@@ -1,3 +1,0 @@
-for $e in doc("$TSTTRGDIR/sf0.1.xml")//eNest[@aString = 'Sing a song of oneB4'] return
-  <eNest aUnique1="{$e/@aUnique1}" aString="{$e/@aString}">
-  </eNest>

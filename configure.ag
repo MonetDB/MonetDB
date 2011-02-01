@@ -120,13 +120,6 @@ esac
 
 AC_DEFINE(MONETDB_RELEASE, "unreleased", [Release name or "unreleased"])
 
-dft_monetdb4=no
-AC_ARG_ENABLE(monetdb4,
-	AS_HELP_STRING([--enable-monetdb4],
-		[enable support for MonetDB4 (default=no)]),
-	enable_monetdb4=$enableval,
-	enable_monetdb4=$dft_monetdb4)
-
 dft_monetdb5=auto
 AC_ARG_ENABLE(monetdb5,
 	AS_HELP_STRING([--enable-monetdb5],
@@ -162,49 +155,12 @@ AC_ARG_ENABLE(geom,
 		[enable support for geom module (default=auto)]),
 	enable_geom=$enableval,
 	enable_geom=$dft_geom)
-case "$enable_monetdb4-$enable_monetdb5-$enable_geom" in
-no-no-yes)
-	AC_MSG_ERROR([geom module requires either or both MonetDB4 and MonetDB5])
+case "$enable_monetdb5-$enable_geom" in
+no-yes)
+	AC_MSG_ERROR([geom module requires MonetDB5])
 	;;
 no-no-auto)
 	enable_geom=no
-	;;
-esac
-
-dft_pathfinder=no
-AC_ARG_ENABLE(pathfinder,
-	AS_HELP_STRING([--enable-pathfinder],
-		[enable support for MonetDB/XQuery (default=no)]),
-	enable_pathfinder=$enableval,
-	enable_pathfinder=$dft_pathfinder)
-
-dft_pftijah=auto
-AC_ARG_ENABLE(pftijah,
-	AS_HELP_STRING([--enable-pftijah],
-		[enable support for TIJAH (default=auto)]),
-	enable_pftijah=$enableval,
-	enable_pftijah=$dft_pftijah)
-case "$enable_monetdb4-$enable_pftijah" in
-no-yes)
-	AC_MSG_ERROR([TIJAH support requires MonetDB4])
-	;;
-no-auto)
-	enable_pftijah=no
-	;;
-esac
-
-dft_probxml=auto
-AC_ARG_ENABLE(probxml,
-	AS_HELP_STRING([--enable-probxml],
-		[enable support for PROBXML (default=auto)]),
-	enable_probxml=$enableval,
-	enable_probxml=$dft_probxml)
-case "$enable_monetdb4-$enable_probxml" in
-no-yes)
-	AC_MSG_ERROR([PROBXML support requires MonetDB4])
-	;;
-no-auto)
-	enable_probxml=no
 	;;
 esac
 
@@ -227,60 +183,6 @@ AC_ARG_ENABLE(developer,
 		[enable support for MonetDB development (default=auto)]),
 	enable_developer=$enableval,
 	enable_developer=$dft_develop)
-
-dnl Pathfinder has three different code generators: The
-dnl "milprint_summer" back-end directly translates XQuery Core
-dnl code into MIL, while the "algebra" back-end uses an intermediate
-dnl representation.  The former is more feature complete, and we use
-dnl it as the default if the user does not specify another default
-dnl with --with-default-backend=....  In addition we have a "sql"
-dnl backend that generates a SQL query plan. Note that users can ALWAYS
-dnl select each of the back-ends with the -A, -M or -S switches on the
-dnl compiler command line.
-dnl This configure setting is primarily meant to ease debugging and
-dnl testing.  If you invoke configure with --with-default-backend=algebra,
-dnl Mtest will also use the algebraic back-end.
-dft_backend=algebra
-AC_ARG_WITH(default-backend,
-            AS_HELP_STRING(
-               [--with-default-backend=BACKEND],
-               [select a default back-end (milprint_summer/algebra/sql)
-                for Pathfinder (default=algebra)]),
-            default_backend="$withval",
-            default_backend=$dft_backend)
-case "$default_backend" in
-milprint_summer)
-        AC_DEFINE(ALGEBRA_IS_DEFAULT, 0,
-                  [Use algebra back-end by default?])
-        AC_DEFINE(MILPRINT_SUMMER_IS_DEFAULT, 1,
-                  [Use milprint_summer back-end by default?])
-        AC_DEFINE(SQL_IS_DEFAULT, 0,
-                  [Use sql back-end by default?])
-        DEFAULT_BACKEND=milprint_summer
-	;;
-algebra)
-        AC_DEFINE(ALGEBRA_IS_DEFAULT, 1,
-                  [Use algebra back-end by default?])
-        AC_DEFINE(MILPRINT_SUMMER_IS_DEFAULT, 0,
-                  [Use milprint_summer back-end by default?])
-        AC_DEFINE(SQL_IS_DEFAULT, 0,
-                  [Use sql back-end by default?])
-        DEFAULT_BACKEND=algebra
-	;;
-sql)
-        AC_DEFINE(ALGEBRA_IS_DEFAULT, 0,
-                  [Use algebra back-end by default?])
-        AC_DEFINE(MILPRINT_SUMMER_IS_DEFAULT, 0,
-                  [Use milprint_summer back-end by default?])
-        AC_DEFINE(SQL_IS_DEFAULT, 1,
-                  [Use sql back-end by default?])
-        DEFAULT_BACKEND=sql
-	;;
-*)
-        AC_MSG_ERROR([Only 'milprint_summer', 'algebra', and 'sql' are allowed
-                      as arguments for --with-default-backend.])
-	;;
-esac
 
 dnl The console is a direct client hooked onto the kernel with full
 dnl administrative privileges, bypassing any security checks.  It is
@@ -579,15 +481,14 @@ yes-*-*)
 	X_CFLAGS="$X_CFLAGS -Wundef"
 	dnl  The default configure invocation when doing an rpmbuild also uses this
 	X_CFLAGS="$X_CFLAGS -Wp,-D_FORTIFY_SOURCE=2"
-	dnl  Some versions of flex & bison seem to generate code
+	dnl  Some versions of bison seem to generate code
 	dnl  that does not compile with `gcc -Wundef`;
 	dnl  we use GCC_BISON_CFLAGS to disable the respective warning as
 	dnl  locally as possible via "-Wno-undef"
-	dnl  (see also MonetDB4/src/monet/Makefile.ag, sql/src/server/Makefile.ag,
-	dnl   pathfinder/modules/pftijah/Makefile.ag).
+	dnl  (see also sql/server/Makefile.ag).
 	GCC_BISON_CFLAGS="$GCC_BISON_CFLAGS -Wno-undef"
-	dnl  Likewise, at least with gcc 4.3.0 and flex 2.5.33 and bison 2.3 on Gentoo 1.12.11.1,
-	dnl  gcc complains about some bison/flex-generated code that defines an unused static function:
+	dnl  Likewise, at least with gcc 4.3.0 and bison 2.3 on Gentoo 1.12.11.1,
+	dnl  gcc complains about some bison-generated code that defines an unused static function:
 	dnl  "warning: 'input' defined but not used".
 	case "$gcc_ver-$host_os" in
 	4.[[3-9]]*-*|[[5-9]].*-*)
@@ -728,7 +629,7 @@ yes-*-*)
 		;;
 	esac
 	
-	dnl  Some versions of flex & bison seem to generate code that icc does not like;
+	dnl  Some versions of bison seem to generate code that icc does not like;
 	dnl  we use ICC_BISON_CFLAGS to disable the respective warning as
 	dnl  locally as possible via "-wd177"
 	dnl  (#177: label "." was declared but never referenced)
@@ -763,17 +664,6 @@ yes-*-*)
 	dnl  Sun compiler on Solaris
 	dnl  treat warnings as errors
 	X_CFLAGS="$X_CFLAGS -errwarn=%all"
-	dnl  Some pathfinder code triggers warnings that we cannot avoid (yet?);
-	dnl  hence, we do not treat warnings as errors for these files, only:
-	dnl  compiler/mil/milgen.brg: "null dimension: sizeof()"
-	dnl  compiler/sql/lalg2sql.brg: "null dimension: sizeof()"
-	dnl  compiler/algebra/planner.c: "null dimension: sizeof()"
-	dnl  modules/pftijah/pftijah_stem.mx: "too many struct/union initializers"
-	SUN_NOERR_CFLAGS="-errwarn=%none"
-	dnl  pathfinder/compiler/semantics/subtyping.c causes
-	dnl  "[PFty_is2ns]:ube: error: Assert has been violated at '/set/mars_patch/builds.intel-S2/nightly.Fri/intel-S2/lang/ube/hf/src/type.c 1583'"
-	dnl  with -xOn & n>1
-	SUN_NOOPT_CFLAGS="-xO1"
 	;;
 esac
 fi
@@ -792,25 +682,17 @@ case "$GCC-$CC-$host_os" in
 esac
 
 dnl some dirty hacks
-dnl we use LEXLIB=-ll because this is usually correctly installed 
-dnl and -lfl usually only in the 32bit version
 THREAD_SAVE_FLAGS="\$(thread_safe_flag_spec) -D_REENTRANT"
 # only needed in monet
-MEL_LIBS=""
 NO_OPTIMIZE_FILES=""
 case "$host_os" in
 solaris*)
     case "$GCC" in
       yes) ;;
       *) 
-	MEL_LIBS="-z muldefs"
         THREAD_SAVE_FLAGS="$THREAD_SAVE_FLAGS -mt"
         ;;
     esac
-    LEXLIB=-ll
-    ;;
-irix*)
-    LEXLIB=-ll
     ;;
 aix*)
     THREAD_SAVE_FLAGS="$THREAD_SAVE_FLAGS -D_THREAD_SAFE"
@@ -826,27 +708,14 @@ aix*)
         ;;
       *)
         THREAD_SAVE_FLAGS="$THREAD_SAVE_FLAGS -qthreaded"
-        MEL_LIBS="-qstaticinline"
         ;;
     esac
     ;;
 esac
-AC_SUBST(MEL_LIBS)
 AC_SUBST(thread_safe_flag_spec)
 AC_SUBST(THREAD_SAVE_FLAGS)
 AC_SUBST(NO_OPTIMIZE_FILES)
 
-if test "x$enable_pathfinder" != xno; then
-	AC_PROG_CC_C99
-	if test "x$ac_cv_prog_cc_c99" = xno; then
-		if test "x$enable_pathfinder" = xyes; then
-			AC_MSG_ERROR([Pathfinder requires a C99 compliant C compiler, but your C compiler does not seem to be C99 compliant.])
-		else
-			AC_MSG_WARN([Pathfinder requires a C99 compliant C compiler, but your C compiler does not seem to be C99 compliant.])
-			enable_pathfinder=no
-		fi
-	fi
-fi
 AC_PROG_CXX
 AC_PROG_INSTALL
 AC_LIBTOOL_DLOPEN
@@ -1665,65 +1534,7 @@ fi
 AC_SUBST(RUBYGEM)
 AM_CONDITIONAL(HAVE_RUBYGEM, test x"$have_rubygem" != xno -a x"$have_rubygem_dir" != xno)
 
-dnl Pathfinder's and MEL's lexer code do not work properly with flex 2.5.31;
-dnl they work fine with both flex 2.5.4 and 2.5.33.
-dnl To avoid any problems, we refuse to work with flex 2.5.31 "everywhre",
-dnl not only with Pathfider & MEL.
-
-AM_PROG_LEX()
-
-dnl flex found on the system?
-if test "x$LEX" != "x"; then
-
-	AC_MSG_CHECKING([for flex version])
-	flex_ver="`$LEX -V | head -n1`"
-	AC_MSG_RESULT($flex_ver)
-
-	case "$flex_ver" in
-		*2.5.31*)
-			AC_MSG_ERROR([MonetDB's lexer code does not work properly with flex 2.5.31;
-					please install/use flex 2.5.4 or flex >=2.5.33 instead.])
-			;;
-	esac
-
-fi
-
 AC_PROG_YACC
-if test "x$enable_pathfinder" != xno; then
-	dnl Pathfinder needs bison (not yacc) and the `locations'
-	dnl feature that comes with bison versions >= 1.33.
-	if test "x$YACC" != "x"; then
-		AC_MSG_CHECKING([for locations feature in bison/yacc])
-		cat > conftest.y << EOF
-%locations
-%token A
-%%
-B : A;
-%%
-EOF
-
-		if $YACC conftest.y >/dev/null 2>&1 ; then
-			AC_MSG_RESULT(yes)
-		else
-			AC_MSG_RESULT(no)
-			if test "x$enable_pathfinder" = xyes; then
-				AC_MSG_ERROR([Your version of yacc/bison does
-					not provide the `locations' feature,
-					coming with bison >= 1.33. You will
-					not be able to compile the Pathfinder
-					compiler.])
-			else
-				AC_MSG_WARN([Your version of yacc/bison does
-					not provide the `locations' feature,
-					coming with bison >= 1.33. You will
-					not be able to compile the Pathfinder
-					compiler.])
-				enable_pathfinder=no
-			fi
-		fi
-		rm -f conftest.y y.tab.c
-	fi
-fi
 AC_DEFINE(YYENABLE_NLS, 0, [Needed to compile bison-generated code.])
 AC_DEFINE(YYLTYPE_IS_TRIVIAL, 0, [Needed to compile bison-generated code.])
 
@@ -2316,25 +2127,6 @@ if test x"$have_libxml2" = x"yes" ; then
 	AC_DEFINE(HAVE_LIBXML2, 1, [Define if you have the libxml2 library])
 fi
 AM_CONDITIONAL(HAVE_LIBXML2, test x"$have_libxml2" != xno)
-case "$enable_pathfinder-$have_libxml2" in
-yes-no)
-	AC_MSG_ERROR([libxml2 library not found but required for Pathfinder])
-	;;
-auto-no)
-	AC_MSG_WARN([libxml2 library not found but required for Pathfinder])
-	enable_pathfinder=no
-	;;
-no-*)
-	;;
-*-yes)
-	save_CPPFLAGS="$CPPFLAGS"
-	CPPFLAGS="$CPPFLAGS $libxml2_CFLAGS"
-	AC_CHECK_HEADER([libxml/SAX2.h],
-		AC_DEFINE(HAVE_SAX2, 1,
-			[Define if you have SAX2 support in libxml2.]))
-	CPPFLAGS="$save_CPPFLAGS"
-	;;
-esac
 
 have_raptor=no
 if test "x$enable_rdf" != xno; then
@@ -2602,21 +2394,6 @@ yes|auto)
 	;;
 esac
 
-# NetCDF, only used in MonetDB4 mnetcdf module
-have_netcdf=$dft_netcdf
-AC_ARG_WITH(netcdf,
-	AS_HELP_STRING([--with-netcdf],
-		[search for NetCDF library]),
-	have_netcdf=$withval)
-if test "x$have_netcdf" != xno; then
-	PKG_CHECK_EXISTS([netcdf], [have_netcdf=yes], [if test "x$have_netcdf" = xyes; then AC_MSG_ERROR([no NetCDF library found]); else have_netcdf=no; fi])
-	if test "x$have_netcdf" = xyes; then
-		PKG_CHECK_MODULES([netcdf], [netcdf])
-		AC_DEFINE(HAVE_NETCDF, 1, [Define if you have the netcdf library])
-	fi
-fi
-AM_CONDITIONAL(HAVE_NETCDF, test x"$have_netcdf" != xno)
-
 dnl check for the performance counters library
 have_pcl=auto
 PCL_CFLAGS=""
@@ -2679,71 +2456,6 @@ AM_CONDITIONAL(HAVE_CFITSIO, test x"$have_cfitsio" != xno)
 LIBGC_CFLAGS=
 LIBGC_LIBS=
 LIBGC_LDADD=
-if test "x$enable_pathfinder" != xno; then
-	dnl See if we have the Hans Boehm garbage collector available
-	dnl
-	dnl First allow the user to specify a location on the command line.
-	dnl Further down see if we find the library and abort if not.
-	have_gc="auto"
-	AC_ARG_WITH(gc,
-		AS_HELP_STRING([--with-gc=DIR],
-			[Boehm garbage collector library is installed in DIR]),
-		[have_gc="$withval"], [have_gc="auto"])
-
-	if test "x$have_gc" != xno; then
-		case "$have_gc" in
-		yes|auto)
-			LIBGC_CFLAGS=
-			LIBGC_LIBS=
-			;;
-		*)
-			LIBGC_CFLAGS="-I$have_gc/include"
-			LIBGC_LIBS="-L$have_gc/lib"
-			;;
-		esac
-
-		save_CPPFLAGS="$CPPFLAGS"
-		save_LDFLAGS="$LDFLAGS"
-		save_LIBS="$LIBS"
-		CPPFLAGS="$CPPFLAGS $LIBGC_CFLAGS"
-		LDFLAGS="$LDFLAGS $LIBGC_LIBS"
-		LIBS=""
-
-		dnl If we have the dl and/or the pthread library, use
-		dnl it (dl and/or pthread are required for the garbage
-		dnl collection library on some systems.)
-		LIBGC_LDADD=""
-		AC_CHECK_LIB(dl, dlopen, [LIBGC_LDADD="$LIBGC_LDADD -ldl"])
-		AC_CHECK_LIB(pthread, pthread_create, [LIBGC_LDADD="$LIBGC_LDADD -lpthread"])
-
-		AC_CHECK_HEADER([gc.h],
-		    [ dnl See if we can link in the gc library.  If we
-		      dnl have found the dl and/or pthread library as
-		      dnl well, also use it.  If the gc library was
-		      dnl not found, clear LIBGC_LDADD.
-		      AC_CHECK_LIB(gc, GC_malloc,
-				   [LIBGC_LDADD="$LIBGC_LDADD -lgc"],
-				   [LIBGC_LDADD=""], [$LIBGC_LDADD])],
-		    [ LIBGC_LDADD=""])
-
-		LIBS="$save_LIBS"
-		LDFLAGS="$save_LDFLAGS"
-		CPPFLAGS="$save_CPPFLAGS"
-
-		if test "x$LIBGC_LDADD" = "x"; then
-			if test  "x$have_gc" = xyes; then
-				AC_MSG_ERROR([Unable to find the Hans Boehm garbage collector])
-			else
-				AC_MSG_WARN([Unable to find the Hans Boehm garbage collector.
-					Please go get it from
-					http://www.hpl.hp.com/personal/Hans_Boehm/gc/
-					(Compilation will use memory allocation only strategy instead.)])
-			fi
-		else
-			AC_DEFINE(HAVE_GC, 1, [Define if you use garbage collection])
-		fi
-	fi
-fi
 dnl Propagate the variable to the Makefiles
 AC_SUBST(LIBGC_CFLAGS, $LIBGC_CFLAGS)
 AC_SUBST(LIBGC_LIBS, $LIBGC_LIBS)
@@ -3148,16 +2860,9 @@ dnl It has to be overwritten by any project that uses an extra.mk file.
 AM_CONDITIONAL(HAVE_EXTRA_MK, false)
 
 dnl     output
-AM_CONDITIONAL(HAVE_MONETDB4, test "x$enable_monetdb4" = xyes -o "x$enable_monetdb4" = xauto)
 AM_CONDITIONAL(HAVE_MONETDB5, test "x$enable_monetdb5" = xyes -o "x$enable_monetdb5" = xauto)
 AM_CONDITIONAL(HAVE_SQL, test "x$enable_sql" = xyes -o "x$enable_sql" = xauto)
 AM_CONDITIONAL(HAVE_GEOM, test "x$enable_geom" = xyes -o "x$enable_geom" = xauto)
-AM_CONDITIONAL(HAVE_PATHFINDER, test "x$enable_pathfinder" = xyes -o "x$enable_pathfinder" = xauto)
-if test "x$enable_pftijah" = xyes -o "x$enable_pftijah" = xauto; then
-	AC_DEFINE(HAVE_PFTIJAH, 1, [Define if you want TIJAH])
-fi
-AM_CONDITIONAL(HAVE_PFTIJAH, test "x$enable_pftijah" = xyes -o "x$enable_pftijah" = xauto)
-AM_CONDITIONAL(HAVE_PROBXML, test "x$enable_probxml" = xyes -o "x$enable_probxml" = xauto)
 AM_CONDITIONAL(HAVE_TESTING, test "x$enable_testing" = xyes -o "x$enable_testing" = xauto)
 AM_CONDITIONAL(HAVE_DEVELOPER, test "x$enable_developer" = xyes)
 
@@ -3288,10 +2993,7 @@ AC_DEFINE_UNQUOTED(LIBDIR,"$QXlibdir",[object code libraries])
 AC_DEFINE_UNQUOTED(SYSCONFDIR,"$QXsysconfdir",[read-only single-machine data])
 AC_SUBST([MERO_LOG], [${localstatedir}/log/monetdb/merovingian.log])
 AC_DEFINE_UNQUOTED([MERO_LOG], ["${localstatedir}/log/monetdb/merovingian.log"], [where Merovingian will store its logs by default])
-MONETDB4_CONFFILE="${sysconfdir}/MonetDB.conf"
 # expand ${prefix} in ${sysconfdir} if using the default
-eval "eval MONETDB4_CONFFILE=${MONETDB4_CONFFILE}"
-AC_DEFINE_UNQUOTED(MONETDB4_CONFFILE, "$MONETDB4_CONFFILE", [MonetDB4 config file location])
 MONETDB5_CONFFILE="${sysconfdir}/monetdb5.conf"
 # expand ${prefix} in ${sysconfdir} if using the default
 eval "eval MONETDB5_CONFFILE=${MONETDB5_CONFFILE}"
@@ -3421,16 +3123,6 @@ typedef lng ptrdiff_t;
 #error no definition for PTRFMT
 #endif
 
-#ifdef LIBGDK4
-#define LIBGDK 1
-#endif
-#ifdef LIBSTREAM4
-#define LIBSTREAM 1
-#endif
-#ifdef LIBMAPI4
-#define LIBMAPI 1
-#endif
-
 #endif /* _SEEN_MONETDB_CONFIG_H */
 ])
 
@@ -3466,7 +3158,7 @@ echo "    X_CFLAGS:   ${X_CFLAGS}"
 echo "    LDFLAGS:    ${LDFLAGS}"
 echo
 echo "* Enabled/disabled components:"
-for comp in common monetdb{4,5} sql geom unixodbc java pathfinder testing; do
+for comp in common monetdb{4,5} sql geom unixodbc java testing; do
 	echo $ECHO_N "    $comp is $ECHO_C"
 	eval "if test \"x\$enable_$comp\" = xno ; then echo \"${ECHO_T}disabled\"; else echo \"${ECHO_T}enabled\"; fi"
 done

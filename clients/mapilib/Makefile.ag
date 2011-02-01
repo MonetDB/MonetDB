@@ -25,13 +25,6 @@ lib_mapi = {
 		../../common/options/libmoptions $(openssl_LIBS)
 }
 
-lib_mapi4 = {
-	COND = HAVE_MONETDB4
-	SOURCES = mapi.mx mapi.rc
-	LIBS = $(SOCKET_LIBS) ../../common/stream/libstream4 \
-		../../common/options/libmoptions $(openssl_LIBS)
-}
-
 headers_mapi = {
 	DIR = includedir/monetdb
 	HEADERS = h

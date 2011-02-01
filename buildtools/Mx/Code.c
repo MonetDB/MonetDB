@@ -77,11 +77,9 @@ GenCode(void)
 		case Haskell:
 		case OQLspec:
 		case ODLspec:
-		case Monet:
 		case SQL:
 		case HTML:
 		case MALcode:
-		case MILcode:
 		case Qnap:
 		case Pspec:
 		case ProC:

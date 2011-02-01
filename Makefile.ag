@@ -16,11 +16,9 @@
 # All Rights Reserved.
 
 SUBDIRS = buildtools common clients gdk \
-	HAVE_MONETDB4?monetdb4 \
 	HAVE_MONETDB5?monetdb5 \
 	HAVE_SQL?sql \
 	HAVE_GEOM?geom \
-	HAVE_PATHFINDER?pathfinder \
 	tools \
 	HAVE_JAVA?java \
 	HAVE_TESTING?testing \

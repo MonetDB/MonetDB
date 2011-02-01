@@ -1,7 +1,0 @@
-setoid(oid(20000000));
-#problem: Monet -prelude fatal sometimes leaves a monet thread behind.
-var b:= new(int,str,0);
-var bn:= fragment(b,1,5,str(nil),str(nil));
-print(bn);
-quit();
-

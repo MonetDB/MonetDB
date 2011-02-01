@@ -1,8 +1,0 @@
-#!/bin/sh
-
-Mlog -x mkdir -p $GDK_DBFARM/TestDB1
-Mlog   "echo 'quit;' | $MSERVER --dbname=TestDB1"
-        echo 'quit;' | $MSERVER --dbname=TestDB1
-echo
-Mlog -x rm -rf $GDK_DBFARM/TestDB1
-

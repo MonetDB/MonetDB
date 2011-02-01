@@ -1,2 +1,0 @@
-import module namespace ecv = "http://www.cs.utwente.nl/~belinfan/ecv" at "$TSTSRCDIR/slow_compilation.SF-2898944.mod1.xq";
-ecv:view-from-save("eprints-export-conv-fmt.xml")

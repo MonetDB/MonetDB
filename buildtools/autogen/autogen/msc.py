@@ -27,9 +27,7 @@ MAKEFILE_HEAD = '''
 
 '''
 
-#automake_ext = ['c', 'h', 'y', 'l', 'glue.c']
-automake_ext = ['c', 'h', 'tab.c', 'tab.h', 'yy.c', 'glue.c', 'proto.h', 'py.i', 'pm.i', '']
-automake_ext.extend(['cc', 'yy', 'll'])  # C++
+automake_ext = ['c', 'h', 'tab.c', 'tab.h', 'yy.c', 'pm.i', '']
 
 def split_filename(f):
     base = f
@@ -368,59 +366,15 @@ def msc_dep(fd, tar, deplist, msc):
         fd.write('\tif exist lex.$(PARSERNAME).c $(MV) lex.$(PARSERNAME).c "%s.yy.c.tmp"\n' % b)
         fd.write('\techo #include "$(CONFIG_H)" > "%s.yy.c"\n' % b)
         fd.write('\ttype "%s.yy.c.tmp" >> "%s.yy.c"\n' % (b, b))
-    if ext == "h" and deplist[0][-3:] == '.yy':
-        fd.write(getsrc)
-        x, de = split_filename(deplist[0])
-        of = b + '.' + de
-        of = msc_translate_file(of, msc)
-        fd.write('\t$(YACC) $(YFLAGS) "%s"\n' % of)
-        fd.write("\t$(DEL) y.tab.c\n")
-        fd.write('\t$(MV) y.tab.h "%s.h"\n' % b)
-    if ext == "cc" and deplist[0][-3:] == '.yy':
-        fd.write(getsrc)
-        x, de = split_filename(deplist[0])
-        of = b + '.' + de
-        of = msc_translate_file(of, msc)
-        fd.write('\t$(YACC) $(YFLAGS) "%s"\n' % of)
-        fd.write('\t$(FILTER) $(FILTERPREF)"    ;" y.tab.c > "%s.cc"\n' % b)
-        fd.write("\t$(DEL) y.tab.h\n")
-    if ext == "cc" and deplist[0][-3:] == '.ll':
-        fd.write(getsrc)
-        fd.write('\t$(LEX) $(LFLAGS) "%s.ll"\n' % b)
-        # either lex.<name>.c or lex.yy.c or lex.$(PARSERNAME).c gets generated
-        fd.write('\tif exist lex.%s.c $(MV) lex.%s.c "%s.yy.c.tmp"\n' % (b,b,b))
-        fd.write('\tif exist lex.yy.c $(MV) lex.yy.c "%s.yy.c.tmp"\n' % b)
-        fd.write('\tif exist lex.$(PARSERNAME).c $(MV) lex.$(PARSERNAME).c "%s.yy.c.tmp"\n' % b)
-        fd.write('\techo #include "$(CONFIG_H)" > "%s.cc"\n' % b)
-        fd.write('\ttype "%s.yy.c.tmp" >> "%s.cc"\n' % (b, b))
-    if ext == "glue.c":
-        fd.write(getsrc)
-        fd.write('\t$(MEL) -c $(CONFIG_H) $(INCLUDES) -o "%s" -glue "%s.m"\n' % (t, b))
-    if ext == "proto.h":
-        fd.write(getsrc)
-        fd.write('\t$(MEL) -c $(CONFIG_H) $(INCLUDES) -o "%s" -proto "%s.m"\n' % (t, b))
-    if ext == "mil":
-        fd.write(getsrc)
-        if b+".tmpmil" in deplist:
-            fd.write('\t$(MEL) -c $(CONFIG_H) $(INCLUDES) -mil "%s.m" > "%s.mil"\n' % (b, b))
-            fd.write('\ttype "%s.tmpmil" >> "%s.mil"\n' % (b, b))
-            fd.write('\tif not exist .libs $(MKDIR) .libs\n')
-            fd.write('\t$(INSTALL) "%s.mil" ".libs\\%s.mil"\n' % (b, b))
-    if ext in ("obj", "glue.obj", "tab.obj", "yy.obj"):
+    if ext in ("obj", "tab.obj", "yy.obj"):
         target, name = msc_find_target(tar, msc)
         if name[0] == '_':
             name = name[1:]
         if target == "LIB":
             d, dext = split_filename(deplist[0])
-            if dext in ("c", "glue.c", "yy.c", "tab.c"):
-                # -DCOMPILE_DL_%s is for PHP extensions
-                fd.write('\t$(CC) $(CFLAGS) $(%s_CFLAGS) $(GENDLL) -DLIB%s -DCOMPILE_DL_%s -Fo"%s" -c "%s"\n' %
-                         (split_filename(msc_basename(src))[0], name, name, t, src))
-    if ext == 'py' and deplist[0].endswith('.py.i'):
-        fd.write('\t$(SWIG) -python $(SWIGFLAGS) -outdir . -o dummy.c "%s"\n' % src)
-        fd.write('\t$(DEL) dummy.c\n')
-    if ext == 'py.c' and deplist[0].endswith('.py.i'):
-        fd.write('\t$(SWIG) -python $(SWIGFLAGS) -outdir . -o "$@" "%s"\n' % src)
+            if dext in ("c", "yy.c", "tab.c"):
+                fd.write('\t$(CC) $(CFLAGS) $(%s_CFLAGS) $(GENDLL) -DLIB%s -Fo"%s" -c "%s"\n' %
+                         (split_filename(msc_basename(src))[0], name, t, src))
     if ext == 'pm' and deplist[0].endswith('.pm.i'):
         fd.write('\t$(SWIG) -perl $(SWIGFLAGS) -outdir . -o dummy.c "%s"\n' % src)
         fd.write('\t$(DEL) dummy.c\n')
@@ -650,8 +604,6 @@ def msc_binary(fd, var, binmap, msc):
         t, ext = split_filename(target)
         if ext == "o":
             srcs = srcs + " " + t + ".obj"
-        elif ext == "glue.o":
-            srcs = srcs + " " + t + ".glue.obj"
         elif ext == "tab.o":
             srcs = srcs + " " + t + ".tab.obj"
         elif ext == "yy.o":
@@ -752,8 +704,6 @@ def msc_bins(fd, var, binsmap, msc):
                 t, ext = split_filename(target)
                 if ext == "o":
                     srcs = srcs + " " + t + ".obj"
-                elif ext == "glue.o":
-                    srcs = srcs + " " + t + ".glue.obj"
                 elif ext == "tab.o":
                     srcs = srcs + " " + t + ".tab.obj"
                 elif ext == "yy.o":
@@ -803,30 +753,6 @@ def msc_library(fd, var, libmap, msc):
         else:
             pref = ''
     instlib = 1
-    if libmap['SOURCES'][0].endswith('.py.i'):
-        # if the first source ends in .py.i, it's a Python module
-        dll = '.pyd'
-        instlib = 0
-    else:
-        # if underneath a directory called "python" (up to 3 levels),
-        # set DLL suffix to ".pyd" and set instlib to 0
-        # if underneath a directory called "php" (also up to 3 levels),
-        # set instlib to 0 and pref to 'php_'
-        h,t = os.path.split(msc['cwd'])
-        if t == 'python' or t == 'php':
-            if t == 'python':
-                dll = '.pyd'
-            else:
-                pref = 'php_'
-            instlib = 0
-        else:
-            h,t = os.path.split(h)
-            if t == 'python' or os.path.basename(h) == 'python':
-                dll = '.pyd'
-                instlib = 0
-            elif t == 'php' or os.path.basename(h) == 'php':
-                instlib = 0
-                pref = 'php_'
 
     if (libname[0] == "_"):
         sep = "_"
@@ -916,14 +842,10 @@ def msc_library(fd, var, libmap, msc):
             t, ext = split_filename(target)
             if ext == "o":
                 srcs = srcs + " " + t + ".obj"
-            elif ext == "glue.o":
-                srcs = srcs + " " + t + ".glue.obj"
             elif ext == "tab.o":
                 srcs = srcs + " " + t + ".tab.obj"
             elif ext == "yy.o":
                 srcs = srcs + " " + t + ".yy.obj"
-            elif ext == "py.o":
-                srcs = srcs + " " + t + ".py.obj"
             elif ext == "pm.o":
                 srcs = srcs + " " + t + ".pm.obj"
             elif ext == 'res':
@@ -1015,8 +937,6 @@ def msc_libs(fd, var, libsmap, msc):
                 t, ext = split_filename(target)
                 if ext == "o":
                     srcs = srcs + " " + t + ".obj"
-                elif ext == "glue.o":
-                    srcs = srcs + " " + t + ".glue.obj"
                 elif ext == "tab.o":
                     srcs = srcs + " " + t + ".tab.obj"
                 elif ext == "yy.o":

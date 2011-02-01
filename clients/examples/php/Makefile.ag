@@ -20,5 +20,5 @@ MTSAFE
 scripts_php = {
 	COND = HAVE_TESTING
 	DIR = bindir
-	SOURCES = sqlsample.php xquerysample.php
+	SOURCES = sqlsample.php
 }

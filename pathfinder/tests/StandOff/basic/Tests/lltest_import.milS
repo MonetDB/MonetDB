@@ -1,6 +1,0 @@
-environment().insert("standoff","enabled");
-module("pathfinder");
-module("unix");
-var doc := getenv("TSTSRCDIR")+"/lltest.xml";
-shred_doc(doc,"lltest.xml");
-quit();
