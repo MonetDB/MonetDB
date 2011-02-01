@@ -1204,8 +1204,8 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_10AB8DCD4D3D45BB90C8DF897878ABE2"
             {
-            "SourcePath" = "8:bin\\mclient4.exe"
-            "TargetName" = "8:mclient4.exe"
+            "SourcePath" = "8:bin\\m4client.exe"
+            "TargetName" = "8:m4client.exe"
             "Tag" = "8:"
             "Folder" = "8:_1EC19BD0D849484790DB6A7D69758E24"
             "Condition" = "8:"
@@ -1304,8 +1304,8 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_14A0495208064DCA9A6222547E8C9052"
             {
-            "SourcePath" = "8:mclient.bat"
-            "TargetName" = "8:mclient.bat"
+            "SourcePath" = "8:m4client.bat"
+            "TargetName" = "8:m4client.bat"
             "Tag" = "8:"
             "Folder" = "8:_D9A7267FC9784D8BBD3CBC6EC1754DBE"
             "Condition" = "8:"
