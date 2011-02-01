@@ -1,5 +1,5 @@
 %define name MonetDB
-%define version 11.0.0
+%define version 11.2.0
 %{!?buildno: %define buildno %(date +%Y%m%d)}
 %define release %{buildno}%{?dist}%{?oid32:.oid32}%{!?oid32:.oid%{bits}}
 
