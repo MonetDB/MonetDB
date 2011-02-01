@@ -75,6 +75,10 @@ gdk_export int gprof_pthread_create(pthread_t * __restrict, __const pthread_attr
 # include <semaphore.h>
 #endif
 
+#ifdef HAVE_SYS_SYSCTL_H
+# include <sys/sysctl.h>
+#endif
+
 /* new pthread interface, where the thread id changed to a struct */
 #ifdef PTW32_VERSION
 #define PTW32 1
