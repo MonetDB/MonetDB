@@ -102,9 +102,7 @@ void *alloca(size_t);
 enum modes {
 	NOLANGUAGE,
 	MAL,
-	SQL,
-	XQUERY,
-	MIL
+	SQL
 };
 
 static enum modes mode = NOLANGUAGE;
@@ -143,9 +141,11 @@ char *output = NULL;		/* output format as string */
 
 /* use a 64 bit integer for the timer */
 typedef lng timertype;
+#if 0
+static char *mark, *mark2;
+#endif
 
 static timertype t0, t1;	/* used for timing */
-static char *mark, *mark2;
 
 #define UTF8BOM		"\xEF\xBB\xBF"	/* UTF-8 encoding of Unicode BOM */
 #define UTF8BOMLENGTH	3	/* length of above */
@@ -292,10 +292,12 @@ timerEnd(void)
 	mnstr_flush(toConsole);
 	t1 = gettime();
 	assert(t1 >= t0);
-	if (mode == XQUERY && mark && specials == NOmodifier) {
+#if 0
+	if (mark && specials == NOmodifier) {
 		fprintf(stderr, "%s %7ld.%03ld msec %s\n", mark, (long) ((t1 - t0) / 1000), (long) ((t1 - t0) % 1000), mark2 ? mark2 : "");
 		fflush(stderr);
 	}
+#endif
 }
 
 static timertype th = 0;
@@ -967,27 +969,12 @@ static void
 RAWrenderer(MapiHdl hdl)
 {
 	char *line;
-	size_t n;
 
 	SQLqueryEcho(hdl);
 	while ((line = fetch_line(hdl)) != 0) {
-		/* HACK to send also PF/XQuery break-down timings to stderr */
-		if (mode == XQUERY && mark && *line != '=' &&
-		    (n = strlen(line)) >= 22 &&  /* 7+10+5 */
-		    line[n-9] == '.' &&     /* decimal '.' */
-		    strncmp(line + n - 5, " msec", 5) == 0 &&
-		    (strncmp(line, "Trans  ", 7) == 0 ||
-		     strncmp(line, "Shred  ", 7) == 0 ||
-		     strncmp(line, "Query  ", 7) == 0 ||
-		     strncmp(line, "Print  ", 7) == 0 ||
-		     strncmp(line, "Update ", 7) == 0)) {
-			mnstr_flush(toConsole);
-			fprintf(stderr, "%s\n", line);
-		} else {
-			if (*line == '=')
-				line++;
-			mnstr_printf(toConsole, "%s\n", line);
-		}
+		if (*line == '=')
+			line++;
+		mnstr_printf(toConsole, "%s\n", line);
 	}
 }
 
@@ -1061,9 +1048,11 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 	int ps = rowsperpage, silent = 0;
 	mapi_int64 rows = 0;
 
+#if 0
 	if (mark2)
 		free(mark2);
 	mark2 = NULL;
+#endif
 
 	croppedfields = 0;
 	fields = mapi_get_field_count(hdl);
@@ -1249,7 +1238,9 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 		SQLseparator(len, printfields, '-');
 	rows = mapi_get_row_count(hdl);
 	snprintf(buf, sizeof(buf), LLFMT " rows", rows);
-	mark2 = strdup(buf); /* for the timer output */
+#if 0
+	mark2 = strdup(buf);	/* for the timer output */
+#endif
 	printf(LLFMT " tuple%s%s%s%s", rows, rows != 1 ? "s" : "",
 			singleinstr ? " (" : "",
 			singleinstr ? timerHuman() : "",
@@ -1282,20 +1273,13 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 }
 
 static void
-setFormatter(Mapi mid, char *s)
+setFormatter(char *s)
 {
 #ifdef WIN32
 	if (formatter == TESTformatter)
 		_set_output_format(0);
 #endif
-	if (mode == XQUERY) {
-		mapi_output(mid, s);
-		if (s != output) {
-			if (output != NULL)
-				free(output);
-			output = strdup(s);
-		}
-	} else if (strcmp(s, "sql") == 0)
+	if (strcmp(s, "sql") == 0)
 		formatter = TABLEformatter;
 	else if (strcmp(s, "csv") == 0)
 		formatter = CSVformatter;
@@ -1595,7 +1579,6 @@ doFile(Mapi mid, const char *file)
 	MapiHdl hdl = NULL;
 	MapiMsg rc = MOK;
 	int bufsize = 0;
-	int xquery_sep = 0;	/* we saw an XQuery separator (<>\n) */
 	int first = 1;		/* first line processing */
 	size_t skip;
 
@@ -1618,23 +1601,7 @@ doFile(Mapi mid, const char *file)
 	timerStart();
 	do {
 		timerPause();
-		if (mode == XQUERY) {
-			/* In XQuery mode we must read one line at a
-			   time so that we can stop when we encounter
-			   a line with just "<>" on it. */
-			if (fgets(buf, bufsize, fp) == NULL) {
-				/* end of file */
-				if (file != NULL) {
-					fclose(fp);
-					file = NULL;
-				}
-				length = 0;
-				if (hdl == NULL)
-					break;	/* nothing more to do */
-			} else {
-				length = strlen(buf);
-			}
-		} else if ((length = fread(buf, 1, bufsize, fp)) == 0) {
+		if ((length = fread(buf, 1, bufsize, fp)) == 0) {
 			/* end of file */
 			if (file != NULL) {
 				fclose(fp);
@@ -1664,16 +1631,14 @@ doFile(Mapi mid, const char *file)
 		else
 			skip = 0;
 		first = 0;
-		xquery_sep = mode == XQUERY && length >= 3 + skip && buf[skip] == '<' && buf[skip + 1] == '>' && (buf[skip + 2] == '\n' || buf[skip + 2] == '\r');
-		if (length > skip && !xquery_sep) {
+		if (length > skip) {
 			assert(hdl != NULL);
 
 			mapi_query_part(hdl, buf + skip, length - skip);
 			CHECK_RESULT(mid, hdl, buf + skip, continue);
 
-			/* in case of XQuery, do the whole file in one go;
-			   otherwise, make sure there is a newline in the buffer */
-			if (mode == XQUERY || strchr(buf + skip, '\n') == NULL)
+			/*  make sure there is a newline in the buffer */
+			if (strchr(buf + skip, '\n') == NULL)
 				continue;
 		}
 
@@ -1720,25 +1685,6 @@ doFile(Mapi mid, const char *file)
 static void
 showCommands(void)
 {
-	/* XQuery prelude */
-	if (mode == XQUERY) {
-		mnstr_printf(toConsole, "mclient interactive MonetDB/XQuery session: type an XQuery or XQUF update.\n");
-		mnstr_printf(toConsole, "\nSupported document-management XQuery extensions:\n");
-		mnstr_printf(toConsole, " pf:collections() as node()\n");
-		mnstr_printf(toConsole, " pf:documents($collectionName as xs:string) as node()\n");
-		mnstr_printf(toConsole, " pf:del-doc($documentName as xs:string)\n");
-		mnstr_printf(toConsole, " pf:add-doc($uri as xs:string, $documentName as xs:string\n");
-		mnstr_printf(toConsole, "     [,$collectionName as xs:string [,$freePercentage as xs:integer]])\n");
-		mnstr_printf(toConsole, "\nSession commands:\n");
-		mnstr_printf(toConsole, "<>      - send query to server (or %s)\n",
-#ifdef WIN32
-			      "CTRL-Z"
-#else
-			      "CTRL-D"
-#endif
-		    );
-	}
-
 	/* shared control options */
 	mnstr_printf(toConsole, "\\?      - show this message\n");
 	if (mode == MAL)
@@ -1756,18 +1702,10 @@ showCommands(void)
 		mnstr_printf(toConsole, "\\A      - enable auto commit\n");
 		mnstr_printf(toConsole, "\\a      - disable auto commit\n");
 	}
-	if (mode == XQUERY) {
-		mnstr_printf(toConsole, "\\G      - switch to algebra frontend\n");
-		mnstr_printf(toConsole, "\\g      - switch to old frontend\n");
-	}
-	if (mode == XQUERY) {
-		mnstr_printf(toConsole, "\\f      - result format: dm or xml[-noheader][-typed|-noroot|-root-FOOBAR]\n");
-	} else {
-		mnstr_printf(toConsole, "\\e      - echo the query in sql formatting mode\n");
-		mnstr_printf(toConsole, "\\f      - format using a built-in renderer {csv,tab,raw,sql,xml}\n");
-		mnstr_printf(toConsole, "\\w#     - set maximal page width (-1=unlimited, 0=terminal width, >0=limit to num)\n");
-		mnstr_printf(toConsole, "\\r#     - set maximum rows per page (-1=raw)\n");
-	}
+	mnstr_printf(toConsole, "\\e      - echo the query in sql formatting mode\n");
+	mnstr_printf(toConsole, "\\f      - format using a built-in renderer {csv,tab,raw,sql,xml}\n");
+	mnstr_printf(toConsole, "\\w#     - set maximal page width (-1=unlimited, 0=terminal width, >0=limit to num)\n");
+	mnstr_printf(toConsole, "\\r#     - set maximum rows per page (-1=raw)\n");
 	mnstr_printf(toConsole, "\\L file - save client/server interaction\n");
 	mnstr_printf(toConsole, "\\X      - trace mclient code\n");
 	mnstr_printf(toConsole, "\\q      - terminate session\n");
@@ -1895,8 +1833,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 			    strncmp(line, UTF8BOM, UTF8BOMLENGTH) == 0)
 			line += UTF8BOMLENGTH;	/* skip Byte Order Mark (BOM) */
 		lineno++;
-		if (line == NULL ||
-		    (mode == XQUERY && line[0] == '<' && line[1] == '>')) {
+		if (line == NULL) {
 			/* end of file */
 			if (hdl == NULL) {
 				if (line != NULL)
@@ -1935,16 +1872,14 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 				case 'q':
 					free(buf);
 					return errseen;
+#if 0
 				case 't':
-					if (mode != XQUERY)
-						break;
 					mark = mark ? NULL : "Timer";
 					if (mark2)
 						free(mark2);
 					mark2 = strdup(line + 2);
-					if (mode == XQUERY)
-						mapi_profile(mid, mark != NULL);
 					continue;
+#endif
 				case 'X':
 					/* toggle interaction trace */
 					mapi_trace(mid, !mapi_get_trace(mid));
@@ -1958,16 +1893,6 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 					if (mode != SQL)
 						break;
 					mapi_setAutocommit(mid, 0);
-					continue;
-				case 'G':
-					if (mode != XQUERY)
-						break;
-					mapi_setAlgebra(mid, 1);
-					continue;
-				case 'g':
-					if (mode != XQUERY)
-						break;
-					mapi_setAlgebra(mid, 0);
 					continue;
 				case 'w':
 					pagewidth = atoi(line + 2);
@@ -2360,35 +2285,31 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 						;
 					if (*line == 0) {
 						mnstr_printf(toConsole, "Current formatter: ");
-						if (mode == XQUERY)
-							mnstr_printf(toConsole, "%s\n", output == NULL ? "dm" : output);
-						else {
-							switch (formatter) {
-							case RAWformatter:
-								mnstr_printf(toConsole, "raw\n");
-								break;
-							case TABLEformatter:
-								mnstr_printf(toConsole, "sql\n");
-								break;
-							case CSVformatter:
-								mnstr_printf(toConsole, "csv\n");
-								break;
-							case TABformatter:
-								mnstr_printf(toConsole, "tab\n");
-								break;
-							case TESTformatter:
-								mnstr_printf(toConsole, "test\n");
-								break;
-							case XMLformatter:
-								mnstr_printf(toConsole, "xml\n");
-								break;
-							default:
-								mnstr_printf(toConsole, "none\n");
-								break;
-							}
+						switch (formatter) {
+						case RAWformatter:
+							mnstr_printf(toConsole, "raw\n");
+							break;
+						case TABLEformatter:
+							mnstr_printf(toConsole, "sql\n");
+							break;
+						case CSVformatter:
+							mnstr_printf(toConsole, "csv\n");
+							break;
+						case TABformatter:
+							mnstr_printf(toConsole, "tab\n");
+							break;
+						case TESTformatter:
+							mnstr_printf(toConsole, "test\n");
+							break;
+						case XMLformatter:
+							mnstr_printf(toConsole, "xml\n");
+							break;
+						default:
+							mnstr_printf(toConsole, "none\n");
+							break;
 						}
 					} else
-						setFormatter(mid, line);
+						setFormatter(line);
 					continue;
 				default:
 					showCommands();
@@ -2419,18 +2340,11 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 		   If the server still wants more (shouldn't
 		   happen according to the protocol) we break
 		   out of the loop (via the continue).  The
-		   assertion at the end will then go off.
-
-		   Note that XQuery is weird: we continue
-		   sending more until we reach end-of-file,
-		   and *then* we send the mapi_query_done.  To
-		   exit, you need to send an end-of-file
-		   again. */
-		if (mode == XQUERY || mapi_query_done(hdl) == MMORE) {
+		   assertion at the end will then go off. */
+		if (mapi_query_done(hdl) == MMORE) {
 			if (line != NULL) {
 				continue;	/* get more data */
 			} else if (mapi_query_done(hdl) == MMORE) {
-				assert(mode != XQUERY);	/* XQuery never sends MMORE */
 				hdl = NULL;
 				continue;	/* done */
 			}
@@ -2447,10 +2361,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 		timerEnd();
 		mapi_close_handle(hdl);
 		hdl = NULL;
-
-		/* for XQuery, only exit when end-of-file and we
-		   didn't send any data */
-	} while (line != NULL || (mode == XQUERY && sent));
+	} while (line != NULL);
 	/* reached on end of file */
 	assert(hdl == NULL);
 	return errseen;
@@ -2459,7 +2370,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 static void
 usage(const char *prog, int xit)
 {
-	fprintf(stderr, "Usage: %s --language=(sql|xquery|mal|mil) [ options ]\n", prog);
+	fprintf(stderr, "Usage: %s --language=(sql|mal) [ options ]\n", prog);
 	fprintf(stderr, "\nOptions are:\n");
 #ifdef HAVE_SYS_UN_H
 	fprintf(stderr, " -h hostname | --host=hostname    host or UNIX domain socket to connect to\n");
@@ -2474,10 +2385,10 @@ usage(const char *prog, int xit)
 #ifdef HAVE_ICONV
 	fprintf(stderr, " -E charset  | --encoding=charset specify encoding (character set) of the terminal\n");
 #endif
-	fprintf(stderr, " -f kind     | --format=kind      specify output format {xml,typed,dm} for XQuery, or {csv,tab,raw,sql,xml}\n");
+	fprintf(stderr, " -f kind     | --format=kind      specify output format {csv,tab,raw,sql,xml}\n");
 	fprintf(stderr, " -H          | --history          load/save cmdline history (default off)\n");
 	fprintf(stderr, " -i          | --interactive      read stdin after command line args\n");
-	fprintf(stderr, " -l language | --language=lang    {sql,xquery,mal,mil}\n");
+	fprintf(stderr, " -l language | --language=lang    {sql,mal}\n");
 	fprintf(stderr, " -L logfile  | --log=logfile      save client/server interaction\n");
 	fprintf(stderr, " -s stmt     | --statement=stmt   run single statement\n");
 	fprintf(stderr, " -X          | --Xdebug           trace mapi network interaction\n");
@@ -2492,13 +2403,6 @@ usage(const char *prog, int xit)
 	fprintf(stderr, " -w nr       | --width=nr         for pagination\n");
 	fprintf(stderr, " -D          | --dump             create an SQL dump\n");
 	fprintf(stderr, " -N          | --inserts          use INSERT INTO statements when dumping\n");
-
-	fprintf(stderr, "\nXQuery specific options\n");
-	fprintf(stderr, " -C colname  | --collection=colname  collection name\n");
-	fprintf(stderr, " -I docname  | --input=docname    document name, XML document on standard input\n");
-	fprintf(stderr, " -G          | --algebra          use algebra frontend\n");
-	fprintf(stderr, " -g          | --no-algebra       use old frontend\n");
-	fprintf(stderr, " -t          | --time             time commands\n");
 	exit(xit);
 }
 
@@ -2514,12 +2418,9 @@ main(int argc, char **argv)
 	char *host = NULL;
 	char *command = NULL;
 	char *dbname = NULL;
-	char *input = NULL;
-	char *colname = NULL;
 	int trace = 0;
 	int dump = 0;
 	int useinserts = 0;
-	int algebra = -1;
 	int c = 0;
 	Mapi mid;
 	int save_history = 0;
@@ -2530,9 +2431,6 @@ main(int argc, char **argv)
 	stream *config = NULL;
 	char user_set_as_flag = 0;
 	static struct option long_options[] = {
-		{"algebra", 0, 0, 'G'},
-		{"no-algebra", 0, 0, 'g'},
-		{"collection", 1, 0, 'C'},
 		{"database", 1, 0, 'd'},
 		{"dump", 0, 0, 'D'},
 		{"inserts", 0, 0, 'N'},
@@ -2544,7 +2442,6 @@ main(int argc, char **argv)
 		{"help", 0, 0, '?'},
 		{"history", 0, 0, 'H'},
 		{"host", 1, 0, 'h'},
-		{"input", 1, 0, 'I'},
 		{"interactive", 0, 0, 'i'},
 		{"language", 1, 0, 'l'},
 		{"log", 1, 0, 'L'},
@@ -2555,7 +2452,9 @@ main(int argc, char **argv)
 		{"port", 1, 0, 'p'},
 		{"rows", 1, 0, 'r'},
 		{"statement", 1, 0, 's'},
+#if 0
 		{"time", 0, 0, 't'},
+#endif
 		{"user", 1, 0, 'u'},
 		{"version", 0, 0, 'v'},
 		{"width", 1, 0, 'w'},
@@ -2580,8 +2479,10 @@ main(int argc, char **argv)
 	if (fstat(fileno(stdin), &statb) == 0 && S_ISCHR(statb.st_mode))
 		interactive_stdin = 1;
 
+#if 0
 	mark = NULL;
 	mark2 = NULL;
+#endif
 
 	/* parse config file first, command line options override */
 	if (getenv("DOTMONETDBFILE") == NULL) {
@@ -2639,9 +2540,6 @@ main(int argc, char **argv)
 				} else if (strcmp(language, "mal") == 0) {
 					mode = MAL;
 					q = NULL;
-				} else if (strcmp(language, "xquery") == 0) {
-					mode = XQUERY;
-					q = NULL;
 				} else {
 					/* make sure we don't set garbage */
 					mnstr_printf(stderr_stream,
@@ -2679,15 +2577,18 @@ main(int argc, char **argv)
 		mnstr_destroy(config);
 	}
 
-	while ((c = getopt_long(argc, argv, "C:DNd:e"
+	while ((c = getopt_long(argc, argv, "DNd:e"
 #ifdef HAVE_ICONV
 				"E:"
 #endif
-				"f:Ggh:I:iL:l:n:"
+				"f:h:iL:l:n:"
 #ifdef HAVE_POPEN
 				"|:"
 #endif
-				"w:r:p:s:tXu:vH?",
+#if 0
+				"t"
+#endif
+				"w:r:p:s:Xu:vH?",
 				long_options, &option_index)) != -1) {
 		switch (c) {
 		case 0:
@@ -2697,9 +2598,6 @@ main(int argc, char **argv)
 				(void) pager;	/* will be further used later */
 			}
 #endif
-			break;
-		case 'C':
-			colname = optarg;
 			break;
 		case 'e':
 			echoquery = 1;
@@ -2719,10 +2617,6 @@ main(int argc, char **argv)
 				strstr(optarg, "sql") == optarg) {
 				language = optarg;
 				mode = SQL;
-			} else if (strcmp(optarg, "mil") == 0 ||
-				   strcmp(optarg, "mi") == 0) {
-				language = "mil";
-				mode = MIL;
 			} else if (strcmp(optarg, "mal") == 0 ||
 				   strcmp(optarg, "ma") == 0) {
 				language = "mal";
@@ -2730,16 +2624,8 @@ main(int argc, char **argv)
 			} else if (strcmp(optarg, "msql") == 0) {
 				language = "msql";
 				mode = MAL;
-			} else if (strcmp(optarg, "xquery") == 0 ||
-				   strcmp(optarg, "xquer") == 0 ||
-				   strcmp(optarg, "xque") == 0 ||
-				   strcmp(optarg, "xqu") == 0 ||
-				   strcmp(optarg, "xq") == 0 ||
-				   strcmp(optarg, "x") == 0) {
-				language = "xquery";
-				mode = XQUERY;
 			} else {
-				fprintf(stderr, "language option needs to be one of sql, mil, mal, or xquery\n");
+				fprintf(stderr, "language option needs to be sql or mal\n");
 				exit(-1);
 			}
 			break;
@@ -2755,20 +2641,11 @@ main(int argc, char **argv)
 				free(output);
 			output = strdup(optarg);	/* output format */
 			break;
-		case 'I':
-			input = optarg;
-			break;
 		case 'i':
 			interactive = 1;
 			break;
 		case 'h':
 			host = optarg;
-			break;
-		case 'G':
-			algebra = 1;
-			break;
-		case 'g':
-			algebra = 0;
 			break;
 		case 'p':
 			port = atoi(optarg);
@@ -2797,9 +2674,11 @@ main(int argc, char **argv)
 			pager = optarg;
 			break;
 #endif
+#if 0
 		case 't':
 			mark = "Timer";
 			break;
+#endif
 		case 'X':
 			trace = MAPI_TRACE;
 			break;
@@ -2830,14 +2709,6 @@ main(int argc, char **argv)
 		fprintf(stderr, "Please specify a language option\n\n");
 		usage(argv[0], -1);
 	}
-	if (input != NULL && mode != XQUERY) {
-		fprintf(stderr, "--input (-I) option only with XQuery\n\n");
-		usage(argv[0], -1);
-	}
-	if (input != NULL && interactive) {
-		fprintf(stderr, "--input (-I) and --interactive (-i) cannot both be specified\n\n");
-		usage(argv[0], -1);
-	}
 #ifdef HAVE_ICONV
 #ifdef HAVE_NL_LANGINFO
 	if (encoding == NULL)
@@ -2860,9 +2731,6 @@ main(int argc, char **argv)
 			fprintf(stderr, "warning: cannot convert UTF-8 to local character set %s\n", encoding);
 	}
 #endif /* HAVE_ICONV */
-	if (mark != NULL && mode != XQUERY) {
-		fprintf(stderr, "warning: --timer (-t) option only available with XQuery\n");
-	}
 
 	/* when config file would provide defaults */
 	if (user_set_as_flag)
@@ -2900,51 +2768,28 @@ main(int argc, char **argv)
 	if (logfile)
 		mapi_log(mid, logfile);
 
-	if (algebra != -1 && mode == XQUERY)
-		mapi_setAlgebra(mid, algebra);
-	mapi_profile(mid, mode == XQUERY && mark != NULL);
 	mapi_trace(mid, trace);
 	if (output) {
-		setFormatter(mid, output);
+		setFormatter(output);
 	} else {
 		if (mode == SQL) {
-			setFormatter(mid, "sql");
+			setFormatter("sql");
 		} else {
-			setFormatter(mid, "raw");
+			setFormatter("raw");
 		}
 	}
 
 	c = 0;
 	has_fileargs = optind != argc;
 
-	if (input != NULL && mode == XQUERY) {
-		/* stream xml document into the server */
-		MapiMsg rc;
-
-		rc = mapi_stream_into(mid, input, colname, stdin);
-		if (rc != MOK) {
-			mapi_explain(mid, stderr);
-			exit(1);
-		}
-		/* we just read stdin, so can't be interactive */
-		interactive = 0;
-	}
-
 	/* give the user a welcome message with some general info */
 	if ((interactive || (!has_fileargs && command == NULL)) && interactive_stdin) {
 		char *lang;
 
-		switch (mode) {
-		case SQL:
+		if (mode == SQL)
 			lang = "/SQL";
-			break;
-		case XQUERY:
-			lang = "/XQuery";
-			break;
-		default:
+		else
 			lang = "";
-			break;
-		}
 
 		mnstr_printf(toConsole,
 			      "Welcome to mclient, the MonetDB%s "
