@@ -249,6 +249,8 @@ gdk_export int MT_check_nr_cores(void);
 # include <signal.h>
 #endif
 
+#include <unistd.h>		/* for sysconf symbols */
+
 MT_Lock MT_system_lock
 #ifdef PTHREAD_MUTEX_INITIALIZER
 	= PTHREAD_MUTEX_INITIALIZER
