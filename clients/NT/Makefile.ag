@@ -25,5 +25,5 @@ scripts_bat4 = {
 	COND = HAVE_MONETDB4
 	EXT = bat
 	DIR = prefix
-	SOURCES = mclient4.bat
+	SOURCES = m4client.bat
 }
