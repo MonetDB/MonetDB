@@ -78,16 +78,8 @@ main(int argc, char **argv)
 		if ((hdl = mapi_query(dbh, "io.print(emp);")) == NULL || mapi_error(dbh))
 			die(dbh, hdl);
 	} else {
-		if ((hdl = mapi_query(dbh, "var emp:= new(str,int);")) == NULL || mapi_error(dbh))
-			die(dbh, hdl);
-		if (mapi_close_handle(hdl) != MOK)
-			die(dbh, hdl);
-		if ((hdl = mapi_query_array(dbh, "emp.insert(\"?\",?);", parm)) == NULL || mapi_error(dbh))
-			die(dbh, hdl);
-		if (mapi_close_handle(hdl) != MOK)
-			die(dbh, hdl);
-		if ((hdl = mapi_query(dbh, "print(emp);")) == NULL || mapi_error(dbh))
-			die(dbh, hdl);
+		fprintf(stderr, "%s: unknown language, only mal and sql supported\n", argv[0]);
+		exit(1);
 	}
 
 	if (mapi_bind(hdl, 0, &nme))

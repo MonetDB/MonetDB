@@ -48,8 +48,8 @@ main(int argc, char **argv)
 	MapiHdl hdl = NULL;
 	int i, port, n = 20000;
 	char buf[40];
-	int lang = 0;
-	char *l = "mil";
+	int lang = 1;
+	char *l = "sql";
 
 	/* char *line; */
 
@@ -61,12 +61,9 @@ main(int argc, char **argv)
 		l = argv[2];
 		if (strcmp(argv[2], "sql") == 0) 
 			lang = 1;
-		else if (strcmp(argv[2], "xquery") == 0)
-			lang = 2;
 		else if (strcmp(argv[2], "mal") == 0)
 			lang = 3;
 	}
-  	if (lang == 2) n /= 40; /* xquery is so slow..*/
 
 	port = atol(argv[1]);
 	dbh = mapi_connect("localhost", port, "monetdb", "monetdb", l, NULL);
@@ -78,14 +75,10 @@ main(int argc, char **argv)
 		die(dbh,NULL);
 
 	for (i = 0; i < n; i++) {
-		if (lang==2)
-			snprintf(buf, 40, "%d", i);
-		else if (lang==1)
+		if (lang==1)
 			snprintf(buf, 40, "select %d;", i);
-		else if (lang==3)
-			snprintf(buf, 40, "io.print(%d);", i);
 		else
-			snprintf(buf, 40, "print(%d);", i);
+			snprintf(buf, 40, "io.print(%d);", i);
 		if ((hdl = mapi_query(dbh, buf)) == NULL || mapi_error(dbh))
 			die(dbh, hdl);
 		while ( (/*line= */ mapi_fetch_line(hdl)) != NULL) {

@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
 
 The @code{mapi_connect()} operation establishes a communication channel with
 a running server.
-The query language interface is either "sql", "mil" or "xquery".
+The query language interface is either "sql" or "mal".
 
 Errors on the interaction can be captured using @code{mapi_error()},
 possibly followed by a request to dump a short error message
@@ -154,13 +154,12 @@ printing as offered by the @code{table.print()} commands.
 @node An Example 
 @subsection An Example 
 
-C and C++ programs can use the MAPI library to execute queries on MonetDB/XQuery.
+C and C++ programs can use the MAPI library to execute queries on MonetDB.
 
 We give a short example with a minimal Mapi program:
 @itemize
 @item @code{mapi_connect()} and @code{mapi_disconnect()}: make a connection to a database server (@code{Mapi mid;}).
-      @strong{note:} pass the value @code{"xquery"} in the @code{language} parameter, when connecting.
-@item @code{mapi_profile()} and @code{mapi_output()}: configure query timing and XML output format.
+      @strong{note:} pass the value @code{"sql"} in the @code{language} parameter, when connecting.
 @item @code{mapi_error()} and @code{mapi_error_str()}: check for and print connection errors (on @code{Mapi mid}).
 @item @code{mapi_query()} and @code{mapi_close_handle()} do a query and get a handle to it (@code{MapiHdl hdl}).
 @item @code{mapi_result_error()}: check for query evaluation errors (on @code{MapiHdl hdl}).
@@ -189,14 +188,12 @@ main(int argc, char** argv) {
 		fprintf(fp, "usage: %s <host>    <db> <port> <mode> <query>\n", prog);
 		fprintf(fp, "  e.g. %s localhost demo 50000  xml    '1+1'\n",   prog);
 	} else {
-		/* CONNECT TO SERVER, default unsecure user/password, language="xquery" */
-		Mapi    mid = mapi_connect(host, port, "monetdb", "monetdb", "xquery", db);
+		/* CONNECT TO SERVER, default unsecure user/password, language="sql" */
+		Mapi    mid = mapi_connect(host, port, "monetdb", "monetdb", "sql", db);
 		MapiHdl hdl;
 		if (mid == NULL) {
 			fprintf(fp, "%s: failed to connect.\n", prog);
 		} else {
-			mapi_profile(mid, 1);    /* SWITCH ON SERVER-SIDE QUERY TIMING */
-			mapi_output(mid, mode);  /* SET XML OUTPUT FORMAT */
 			hdl = mapi_query(mid, query); /* FIRE OFF A QUERY */
 
 			if (hdl == NULL || mapi_error(mid) != MOK) /* CHECK CONNECTION ERROR */
@@ -323,13 +320,9 @@ section.
 @item mapi_rows_affected()	@tab Obtain number of rows changed
 @item mapi_seek_row()	@tab	Move row reader to specific location in cache
 @item mapi_setAutocommit()	@tab	Set auto-commit flag
-@item mapi_setAlgebra()	@tab	Use algebra backend
 @item mapi_stream_query()	@tab Send query and prepare for reading tuple stream
 @item mapi_table()	@tab	Get current table name
 @item mapi_timeout()	@tab	Set timeout for long-running queries[TODO]
-@item mapi_output()	@tab	Set output format 
-@item mapi_stream_into()	@tab	Stream document into server 
-@item mapi_profile()	@tab	Set profile flag
 @item mapi_trace()	@tab	Set trace flag
 @item mapi_virtual_result()	@tab Submit a virtual result set
 @item mapi_unquote()	@tab	remove escaped characters
@@ -424,8 +417,8 @@ host is actually the name of a UNIX domain socket, and port is ignored.
 If port == 0, a default port is used.  If username == NULL,
 the username of the owner of the client application
 containing the Mapi code is used.  If password == NULL, the password
-is omitted.  The preferred query language is any of
-@verb{ { }sql,mil,mal,xquery @verb{ } }.  On success, the function returns a
+is omitted.  The preferred query language is
+@verb{ { }sql,mal @verb{ } }.  On success, the function returns a
 pointer to a structure with administration about the connection.
 
 @item MapiMsg mapi_disconnect(Mapi mid)
@@ -707,10 +700,6 @@ Set the autocommit flag (default is on).  This only has an effect
 when the language is SQL.  In that case, the server commits after each
 statement sent to the server.
 
-@item MapiMsg mapi\_setAlgebra(Mapi mid, int algebra)
-
-Tell the backend to use or stop using the algebra-based compiler.
-
 @item MapiMsg mapi_cache_limit(Mapi mid, int maxrows)
 
 A limited number of tuples are pre-fetched after each @code{execute()}.  If
@@ -746,21 +735,6 @@ should be freed by the caller.
 The reverse action of @code{mapi_quote()}, turning the database
 representation into a C-representation. The storage space is
 dynamically created and should be freed after use.
-
-@item MapiMsg  mapi_output(Mapi mid, char *output)
-
-Set the output format for results send by the server.
-
-@item MapiMsg  mapi_stream_into(Mapi mid, char *docname, char *colname, FILE *fp)
-
-Stream a document into the server.  The name of the document is
-specified in docname, the collection is optionally specified in
-colname (if NULL, it defaults to docname), and the content of the
-document comes from fp.
-
-@item MapiMsg  mapi_profile(Mapi mid, int flag)
-
-Set the profile flag to time commands send to the server.
 
 @item MapiMsg  mapi_trace(Mapi mid, int flag)
 
@@ -907,9 +881,7 @@ typedef int MapiMsg;
 #define MSERVER		(-4)
 
 #define LANG_MAL	0
-#define LANG_MIL	1
 #define LANG_SQL	2
-#define LANG_XQUERY	3
 
 /* prompts for MAPI protocol */
 #define PROMPTBEG	'\001'	/* start prompt bracket */
@@ -1020,7 +992,6 @@ struct MapiStruct {
 	int versionId;		/* Monet 4 or 5 */
 	char *motd;		/* welcome message from server */
 
-	int profile;		/* profile Mapi interaction */
 	int trace;		/* Trace Mapi interaction */
 	int auto_commit;
 	char *noexplain;	/* on error, don't explain, only print result */
@@ -1203,9 +1174,6 @@ mapi_export void mapi_noexplain(Mapi mid, char *errorprefix);
 mapi_export MapiMsg mapi_explain(Mapi mid, FILE *fd);
 mapi_export MapiMsg mapi_explain_query(MapiHdl hdl, FILE *fd);
 mapi_export MapiMsg mapi_explain_result(MapiHdl hdl, FILE *fd);
-mapi_export MapiMsg mapi_output(Mapi mid, char *output);
-mapi_export MapiMsg mapi_stream_into(Mapi mid, char *docname, char *colname, FILE *fp);
-mapi_export MapiMsg mapi_profile(Mapi mid, int flag);
 mapi_export MapiMsg mapi_trace(Mapi mid, int flag);
 #ifdef ST_READ			/* if stream.h was included */
 mapi_export stream *mapi_get_from(Mapi mid);
@@ -1215,7 +1183,6 @@ mapi_export int mapi_get_trace(Mapi mid);
 mapi_export int mapi_get_autocommit(Mapi mid);
 mapi_export MapiMsg mapi_log(Mapi mid, const char *nme);
 mapi_export MapiMsg mapi_setAutocommit(Mapi mid, int autocommit);
-mapi_export MapiMsg mapi_setAlgebra(Mapi mid, int algebra);
 mapi_export char *mapi_result_error(MapiHdl hdl);
 mapi_export MapiMsg mapi_next_result(MapiHdl hdl);
 mapi_export MapiMsg mapi_needmore(MapiHdl hdl);
@@ -1619,9 +1586,6 @@ mapi_ping(Mapi mid)
 		break;
 	case LANG_MAL:
 		hdl = mapi_query(mid, "io.print(1);");
-		break;
-	case LANG_MIL:
-		hdl = mapi_query(mid, "print(1);");
 		break;
 	}
 	if (hdl)
@@ -2034,9 +1998,9 @@ mapi_new(void)
 	mid->error = MOK;
 	mid->hostname = strdup("localhost");
 	mid->server = NULL;
-	mid->language = strdup("mil");
+	mid->language = strdup("sql");
 
-	mid->languageId = LANG_MIL;
+	mid->languageId = LANG_SQL;
 	mid->versionId = 4;
 	mid->noexplain = NULL;
 	mid->motd = NULL;
@@ -2159,14 +2123,10 @@ mapi_mapiuri(const char *url, const char *user, const char *pass, const char *la
 	mid->password = strdup(pass);
 	free(mid->language);
 	mid->language = strdup(lang);
-	if (strcmp(lang, "mil") == 0)
-		mid->languageId = LANG_MIL;
-	else if (strcmp(lang, "mal") == 0)
+	if (strcmp(lang, "mal") == 0)
 		mid->languageId = LANG_MAL;
 	else if (strstr(lang, "sql") == lang)
 		mid->languageId = LANG_SQL;
-	else if (strcmp(lang, "xquery") == 0)
-		mid->languageId = LANG_XQUERY;
 	if (mid->database)
 		free(mid->database);
 	mid->database = NULL;
@@ -2247,18 +2207,14 @@ mapi_mapi(const char *host, int port, const char *username,
 	mid->port = port;
 
 	if (lang == NULL)
-		lang = "mil";
+		lang = "sql";
 	free(mid->language);
 	mid->language = strdup(lang);
 
-	if (strcmp(lang, "mil") == 0)
-		mid->languageId = LANG_MIL;
-	else if (strcmp(lang, "mal") == 0)
+	if (strcmp(lang, "mal") == 0)
 		mid->languageId = LANG_MAL;
 	else if (strstr(lang, "sql") == lang)
 		mid->languageId = LANG_SQL;
-	else if (strcmp(lang, "xquery") == 0)
-		mid->languageId = LANG_XQUERY;
 
 	if (mid->database)
 		free(mid->database);
@@ -2336,14 +2292,10 @@ parse_uri_query(Mapi mid, char *uri)
 			} else if (strcmp("language", uri) == 0) {
 				free(mid->language);
 				mid->language = strdup(val);
-				if (strcmp(val, "mil") == 0)
-					mid->languageId = LANG_MIL;
-				else if (strcmp(val, "mal") == 0)
+				if (strcmp(val, "mal") == 0)
 					mid->languageId = LANG_MAL;
 				else if (strstr(val, "sql") == val)
 					mid->languageId = LANG_SQL;
-				else if (strcmp(val, "xquery") == 0)
-					mid->languageId = LANG_XQUERY;
 			} else if (strcmp("user", uri) == 0) {
 				/* until we figure out how this can be
 				   done safely wrt security, ignore */
@@ -3668,72 +3620,6 @@ mapi_setAutocommit(Mapi mid, int autocommit)
 }
 
 MapiMsg
-mapi_setAlgebra(Mapi mid, int algebra)
-{
-	return mapi_Xcommand(mid, "algebra", algebra ? "1" : "0");
-}
-
-MapiMsg
-mapi_output(Mapi mid, char *output)
-{
-	mapi_clrError(mid);
-	if (mid->languageId == LANG_XQUERY)
-		return mapi_Xcommand(mid, "output", output);
-	return MOK;
-}
-
-MapiMsg
-mapi_stream_into(Mapi mid, char *docname, char *colname, FILE *fp)
-{
-	char buf[BUFSIZ];
-	int i;
-	size_t length;
-	MapiMsg rc;
-	MapiHdl hdl;
-	char *err;
-
-	mapi_clrError(mid);
-	if (mid->languageId != LANG_XQUERY)
-		mapi_setError(mid, "only allowed in XQuery mode", "mapi_stream_into", MERROR);
-
-	i = snprintf(buf, sizeof(buf), "%s%s%s", docname, colname ? "," : "", colname ? colname : "");
-	if (i < 0)
-		return MERROR;
-	rc = mapi_Xcommand(mid, "copy", buf);
-	if (rc != MOK)
-		return rc;
-	while ((length = fread(buf, 1, sizeof(buf), fp)) > 0) {
-		mnstr_write(mid->to, buf, 1, length);
-		check_stream(mid, mid->to, "write error on stream", "mapi_stream_into", mid->error);
-	}
-	mnstr_flush(mid->to);
-	check_stream(mid, mid->to, "write error on stream", "mapi_stream_into", mid->error);
-	hdl = mapi_new_handle(mid);
-	if (hdl == NULL)
-		return MERROR;
-	mid->active = hdl;
-	rc = read_into_cache(hdl, 0);
-	if ((err = mapi_result_error(hdl)) != NULL)
-		err = strdup(err);
-	mapi_close_handle(hdl);
-	if (err != NULL) {
-		mapi_setError(mid, err, "mapi_stream_into", rc);
-		free(err);
-	}
-	return rc;
-}
-
-MapiMsg
-mapi_profile(Mapi mid, int flag)
-{
-	mapi_clrError(mid);
-	mid->profile = flag;
-	if (mid->profile && mid->languageId == LANG_XQUERY)
-		return mapi_Xcommand(mid, "profile", "");
-	return MOK;
-}
-
-MapiMsg
 mapi_trace(Mapi mid, int flag)
 {
 	mapi_clrError(mid);
@@ -3978,7 +3864,7 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 	if (result == NULL)
 		result = new_result(hdl);
 
-	if (line[0] == '#' && hdl->mid->languageId != LANG_MAL && hdl->mid->languageId != LANG_MIL) {
+	if (line[0] == '#' && hdl->mid->languageId != LANG_MAL) {
 		/* comment */
 		return result;
 	}
@@ -4227,7 +4113,7 @@ mapi_execute_internal(MapiHdl hdl)
 	if (mid->trace == MAPI_TRACE) {
 		printf("mapi_query:" SZFMT ":%s\n", size, cmd);
 	}
-	if (mid->languageId == LANG_SQL || mid->languageId == LANG_XQUERY) {
+	if (mid->languageId == LANG_SQL) {
 		if (size > MAXQUERYSIZE) {
 			/* If the query is large and we don't do
 			   anything about it, deadlock may occur: the
@@ -4444,7 +4330,7 @@ mapi_query_prep(Mapi mid)
 	if (mid->active && read_into_cache(mid->active, 0) != MOK)
 		return NULL;
 	assert(mid->active == NULL);
-	if (mid->languageId == LANG_SQL || mid->languageId == LANG_XQUERY) {
+	if (mid->languageId == LANG_SQL) {
 		/* indicate to server this is a SQL command */
 		mnstr_write(mid->to, "S", 1, 1);
 		if (mid->tracelog) {
