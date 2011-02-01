@@ -361,14 +361,14 @@ mo_builtin_settings(opt **Set)
 	if (Set == NULL)
 		return 0;
 
-#define N_OPTIONS	26	/*MUST MATCH # OPTIONS BELOW */
+#define N_OPTIONS	25	/*MUST MATCH # OPTIONS BELOW */
 	set = malloc(sizeof(opt) * N_OPTIONS);
 	if (set == NULL)
 		return 0;
 
 	/* -------------------------------------------------------------- */
 	/* Please keep the below defaults aligned with the comments in    */
-	/* MonetDB4/conf/MonetDB.conf.in & MonetDB5/conf/monetdb5.conf.in */
+	/* monetdb5/misc/monetdb5.conf.in                                 */
 	/* -------------------------------------------------------------- */
 
 	set[i].kind = opt_builtin;
@@ -422,19 +422,6 @@ mo_builtin_settings(opt **Set)
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("monet_welcome");
 	set[i].value = strdup("yes");
-	i++;
-	set[i].kind = opt_builtin;
-	set[i].name = strdup("monet_mod_path");
-	/* on most platforms, we only need libdir/PACKAGE, but with
-	 * MinGW, we also need libdir/bin */
-#ifdef __MINGW32__
-	snprintf(buf, BUFSIZ, "%s%c%s%c%s%cbin",
-		 LIBDIR, DIR_SEP, PACKAGE, PATH_SEP,
-		 LIBDIR, DIR_SEP);
-#else
-	snprintf(buf, BUFSIZ, "%s%c%s", LIBDIR, DIR_SEP, PACKAGE);
-#endif
-	set[i].value = strdup(buf);
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("monet_daemon");

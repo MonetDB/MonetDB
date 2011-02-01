@@ -53,10 +53,6 @@ gdk_dbfarm=@Xlocalstatedir@@DIRSEP@monetdb5@DIRSEP@dbfarm
 # Prompt when using MAL interface
 #monet_prompt=>
 #
-# Where do the MonetDB modules reside? The second path is for windows
-# dlls.
-monet_mod_path=@Xlibdir@@DIRSEP@monetdb5@PATHSEP@@Xlibdir@@DIRSEP@monetdb5@DIRSEP@lib@PATHSEP@@Xlibdir@@DIRSEP@monetdb5@DIRSEP@bin
-#
 # Start mserver in daemon mode, or start with MAL interactive
 # interface?
 #monet_daemon=no
