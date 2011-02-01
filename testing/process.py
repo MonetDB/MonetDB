@@ -11,7 +11,7 @@ import Queue
 
 from subprocess import PIPE
 
-__all__ = ['PIPE', 'Popen', 'client', 'pf', 'server']
+__all__ = ['PIPE', 'Popen', 'client', 'server']
 
 verbose = False
 
@@ -40,12 +40,9 @@ def splitcommand(cmd):
         del command[0]
     return command
 
-_mil_client = splitcommand(os.getenv('MIL_CLIENT', 'mclient -lmil'))
 _mal_client = splitcommand(os.getenv('MAL_CLIENT', 'mclient -lmal'))
 _sql_client = splitcommand(os.getenv('SQL_CLIENT', 'mclient -lsql'))
-_xquery_client = splitcommand(os.getenv('XQUERY_CLIENT', 'mclient -lxquery -fxml'))
 _sql_dump = splitcommand(os.getenv('SQL_DUMP', 'msqldump -q'))
-_pf_compiler = splitcommand(os.getenv('PF', 'pf'))
 _server = splitcommand(os.getenv('MSERVER', ''))
 
 _dotmonetdbfile = []
@@ -223,14 +220,10 @@ def client(lang, args = [], stdin = None, stdout = None, stderr = None,
            port = os.getenv('MAPIPORT'), host = None,
            user = 'monetdb', passwd = 'monetdb', log = False):
     '''Start a client process.'''
-    if lang == 'mil':
-        cmd = _mil_client[:]
-    elif lang == 'mal':
+    if lang == 'mal':
         cmd = _mal_client[:]
     elif lang == 'sql':
         cmd = _sql_client[:]
-    elif lang == 'xquery':
-        cmd = _xquery_client[:]
     elif lang == 'sqldump':
         cmd = _sql_dump[:]
 
@@ -300,47 +293,6 @@ def client(lang, args = [], stdin = None, stdout = None, stderr = None,
         p.stderr = _BufferedPipe(p.stderr)
     return p
 
-def pf(args = [], stdin = None, stdout = None, stderr = None, log = False):
-    '''Start the pathfinder compiler.'''
-    cmd = _pf_compiler[:]
-    if verbose:
-        print 'Executing', ' '.join(cmd +  args)
-        sys.stdout.flush()
-    if log:
-        prompt = time.strftime('# %H:%M:%S >  ')
-        cmdstr = ' '.join(cmd +  args)
-        if hasattr(stdin, 'name'):
-            cmdstr += ' < "%s"' % stdin.name
-        print
-        print prompt
-        print '%s%s' % (prompt, cmdstr)
-        print prompt
-        print
-        sys.stdout.flush()
-        print >> sys.stderr
-        print >> sys.stderr, prompt
-        print >> sys.stderr, '%s%s' % (prompt, cmdstr)
-        print >> sys.stderr, prompt
-        print >> sys.stderr
-        sys.stderr.flush()
-    if stdin is None:
-        # if no input provided, use /dev/null as input
-        stdin = open(os.devnull)
-    p = Popen(cmd + args,
-              stdin = stdin,
-              stdout = stdout,
-              stderr = stderr,
-              shell = False,
-              universal_newlines = True)
-## don't use the asynchronous _BufferedPipe since when pf is
-## called with a PIPE as stdout, it is to create an actual pipe
-## to a server
-##     if stdout == PIPE:
-##         p.stdout = _BufferedPipe(p.stdout)
-##     if stderr == PIPE:
-##         p.stderr = _BufferedPipe(p.stderr)
-    return p
-
 def server(lang, args = [], stdin = None, stdout = None, stderr = None,
            mapiport = None, xrpcport = None, dbname = os.getenv('TSTDB'),
            dbfarm = None, dbinit = None, bufsize = 0, log = False,
@@ -348,18 +300,14 @@ def server(lang, args = [], stdin = None, stdout = None, stderr = None,
     '''Start a server process.'''
     cmd = _server[:]
     if not cmd:
-        if lang in ('mil', 'xquery'):
-            cmd = ['Mserver']
-        else:
-            cmd = ['mserver5']
-        cmd.extend(['--set', 'mapi_open=true', '--set', 'gdk_nr_threads=1',
-                    '--set', 'xrpc_open=true', '--set', 'monet_prompt=',
-                    '--trace'])
+        cmd = ['mserver5',
+               '--set', 'mapi_open=true',
+               '--set', 'gdk_nr_threads=1',
+               '--set', 'xrpc_open=true',
+               '--set', 'monet_prompt=',
+               '--trace'])
     if notrace and '--trace' in cmd:
         cmd.remove('--trace')
-    if dbinit is None:
-        if lang == 'xquery':
-            dbinit = 'module(pathfinder);'
     if dbinit is not None:
         cmd.append('--dbinit')
         cmd.append(dbinit)
@@ -425,11 +373,7 @@ def server(lang, args = [], stdin = None, stdout = None, stderr = None,
             # server is ready.  This is done by sending a print
             # command and waiting for the result to appear.
             rdy = '\nServer Ready.\n'
-            if lang in ('mil', 'xquery'):
-                cmd = 'printf'
-            else:
-                cmd = 'io.printf'
-            cmd = '%s("%s");\n' % (cmd, rdy.replace('\n', '\\n'))
+            cmd = 'io.printf("%s");\n' % rdy.replace('\n', '\\n')
             p.stdout = _BufferedPipe(p.stdout, rdy, cmd)
             p.stdin.write(cmd)
             p.stdin.flush()
