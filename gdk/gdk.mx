@@ -442,7 +442,6 @@ extern "C" {
 #define LEFTDIR		"bat\\LEFTOVERS"
 #define HCDIR		"bat\\HC"
 #endif
-#define DBLOGFILE	"MonetLog"
 
 #ifdef MAXPATHLEN
 #define PATHLENGTH 	MAXPATHLEN
@@ -485,7 +484,6 @@ below.  The global variables should not be modified directly.
 #define BOUND2BTRUE	2	/* TRUE, and bound to be so */
 
 #define IDLENGTH	64	/* maximum BAT id length */
-#define OLDLENGTH	32	/* old max  BAT id length */
 #define BATMARGIN	1.2	/* extra free margin for new heaps */
 #define BATTINY_BITS 	8
 #define BATTINY		((BUN)1<<BATTINY_BITS)	/* minimum allocation buncnt for a BAT */
@@ -548,29 +546,7 @@ typedef char *str;
 #	define LL_CONSTANT(val)	(val##i64)
 #endif
 
-/* Base types for all architectures.  These types work on IRIX (64 & 32)
-   and for gcc on Linux. */
-typedef unsigned char gdk_uint8;
-typedef char gdk_int8;
-
-typedef unsigned short gdk_uint16;
-typedef short gdk_int16;
-
-typedef unsigned int gdk_uint32;
-typedef int gdk_int32;
-
-#ifdef HAVE_LONG_LONG
-typedef unsigned long long gdk_uint64;
-typedef long long gdk_int64;
-#else
-#ifdef HAVE___INT64
-typedef unsigned __int64 gdk_uint64;
-typedef __int64 gdk_int64;
-#endif
-#endif
-
 typedef char long_str[IDLENGTH];	/* standard GDK static string */
-typedef char short_str[OLDLENGTH];	/* old GDK small static string */
 
 typedef oid var_t;		/* type used for heap index of var-sized BAT */
 #define SIZEOF_VAR_T	SIZEOF_OID
@@ -619,7 +595,6 @@ gdk_export int GDKsilent;	/* should GDK shut up? */
 		return 0;					\
 	}
 
-/* needed for mel */
 #define ATOMextern(t)	(ATOMstorage(t) >= TYPE_str)
 
 #define TYPEcastable(t1,t2)	(ATOMtype(t1)==ATOMtype(t2))

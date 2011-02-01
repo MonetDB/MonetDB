@@ -134,9 +134,9 @@ HEAPcacheFind( size_t *maxsz, char *fn, int mode )
 {
 	void *base = NULL;
 
-	ALLOCDEBUG fprintf(stderr, "#HEAPcacheAdd (%s)" SZFMT " %d %d\n", fn, *maxsz, mode, hc->used);
 	*maxsz = (1 + (*maxsz >> 16)) << 16;	/* round up to 64K */
 	if (hc && mode == STORE_MMAP && hc->used < hc->sz) {
+		ALLOCDEBUG fprintf(stderr, "#HEAPcacheFind (%s)" SZFMT " %d %d\n", fn, *maxsz, mode, hc->used);
 		gdk_set_lock(HEAPcacheLock, "HEAPcache_init");
 
 		if (hc->used) {
