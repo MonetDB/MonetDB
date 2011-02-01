@@ -15,6 +15,6 @@ if "%DOTMONETDBFILE%"=="" if exist "%MONETDB%\etc\.monetdb" set DOTMONETDBFILE=%
 :skip
 
 rem start the real client
-"%MONETDB%\bin\mclient.exe" %1 %2 %3 %4 %5 %6 %7 %8
+"%MONETDB%\bin\m4client.exe" %1 %2 %3 %4 %5 %6 %7 %8
 
 if ERRORLEVEL 1 pause
