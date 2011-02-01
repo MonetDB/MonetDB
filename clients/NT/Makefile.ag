@@ -20,3 +20,10 @@ scripts_bat = {
 	DIR = prefix
 	SOURCES = mclient.bat msqldump.bat
 }
+
+scripts_bat4 = {
+	COND = HAVE_MONETDB4
+	EXT = bat
+	DIR = prefix
+	SOURCES = mclient4.bat
+}
