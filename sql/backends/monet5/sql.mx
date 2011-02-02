@@ -5711,9 +5711,6 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *res = (int*) getArgReference(stk,pci,0);
 	BAT *sch, *tab, *col, *loc, *cnt, *cap, *atom, *size, *aux, *r;
-	sql_schema	*s;
-	sql_table 	*t;
-	sql_column 	*c;
 	mvc *m = NULL;
 	str msg = getContext(cntxt,mb, &m, NULL);
 	sql_trans *tr = m->session->tr;
@@ -5722,9 +5719,6 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (msg)
 		return msg;
-	(void) s;
-	(void) t;
-	(void) c;
 
 	sch = BATnew(TYPE_void,TYPE_str, 0);
 	BATseqbase(sch, 0);
@@ -5759,11 +5753,11 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	for( nsch= tr->schemas.set->h; nsch; nsch= nsch->next){
 		sql_base *b= nsch->data;
-		s= (sql_schema*) nsch->data;
+		sql_schema *s= (sql_schema*) nsch->data;
 		if ( isalpha((int)b->name[0]) )
 		for(ntab= (s)->tables.set->h ;ntab; ntab= ntab->next){
 			sql_base *bt= ntab->data;
-			t= (sql_table*) bt;
+			sql_table *t= (sql_table*) bt;
 			if (isTable(t))
 			for (ncol= (t)->columns.set->h; ncol; ncol= ncol->next){
 				sql_base *bc = ncol->data;
