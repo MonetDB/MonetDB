@@ -205,10 +205,8 @@ CONDITIONALS = {
     'CROSS_COMPILING'      : "@CROSS_COMPILING_FALSE@",
     'DOCTOOLS'             : "@DOCTOOLS_FALSE@",
     'HAVE_ANT'             : "@HAVE_ANT_FALSE@",
-    'HAVE_BUILDTOOLS'      : "@HAVE_BUILDTOOLS_FALSE@",
     'HAVE_CFITSIO'         : "@HAVE_CFITSIO_FALSE@",
     'HAVE_DEVELOPER'       : "@HAVE_DEVELOPER_FALSE@",
-    'HAVE_EXTRA_MK'        : "@HAVE_EXTRA_MK_FALSE@",
     'HAVE_GEOM'            : "@HAVE_GEOM_FALSE@",
     'HAVE_JAVA'            : "@HAVE_JAVA_FALSE@",
     'HAVE_JAVAJDBC'        : "@HAVE_JAVAJDBC_FALSE@",
@@ -221,13 +219,10 @@ CONDITIONALS = {
     'HAVE_MSEED'           : "@HAVE_MSEED_FALSE@",
     'HAVE_NETCDF'          : "@HAVE_NETCDF_FALSE@",
     'HAVE_ODBC'            : "@HAVE_ODBC_FALSE@",
-    'HAVE_PATHFINDER'      : "@HAVE_PATHFINDER_FALSE@",
     'HAVE_PCRE'            : "@HAVE_PCRE_FALSE@",
     'HAVE_PERL_DEVEL'      : "@HAVE_PERL_DEVEL_FALSE@",
     'HAVE_PERL'            : "@HAVE_PERL_FALSE@",
     'HAVE_PERL_SWIG'       : "@HAVE_PERL_SWIG_FALSE@",
-    'HAVE_PFTIJAH'         : "@HAVE_PFTIJAH_FALSE@",
-    'HAVE_PROBXML'         : "@HAVE_PROBXML_FALSE@",
     'HAVE_PYTHON'          : "@HAVE_PYTHON_FALSE@",
     'HAVE_RAPTOR'          : "@HAVE_RAPTOR_FALSE@",
     'HAVE_RUBYGEM'         : "@HAVE_RUBYGEM_FALSE@",
@@ -237,7 +232,6 @@ CONDITIONALS = {
     'HAVE_TESTING'         : "@HAVE_TESTING_FALSE@",
     'LINK_STATIC'          : "@LINK_STATIC_FALSE@",
     'NATIVE_WIN32'         : "@NATIVE_WIN32_FALSE@",
-    'NEED_MX'              : "@NEED_MX_FALSE@",
     'NOT_WIN32'            : "@NOT_WIN32_FALSE@",
     'PROFILING'            : "@PROFILING_FALSE@",
     # unknown at compile time;
@@ -1360,18 +1354,10 @@ def CheckMods(env, TST, SERVER, CALL) :
             m = m.strip()
             if m  and  m[0] != "#"  and  m not in env['TST_MODS']:
                 missing.append(m)
-    if SERVER == "MIL":
-        for m in "streams", "mapi":
-            if m not in env['TST_MODS']:
-                missing.append(m)
     if SERVER == "SQL":
         if par['M5']:
             sql_mods = ["sql"]
         for m in sql_mods:
-            if m not in env['TST_MODS']:
-                missing.append(m)
-    if SERVER == "XQUERY":
-        for m in "pathfinder", "pf_support", "ascii_io", "alarm", "malalgebra", "aggrX3", "xtables", "mapi":
             if m not in env['TST_MODS']:
                 missing.append(m)
     return missing
@@ -1537,40 +1523,20 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
     x  = isexecutable(TST)
     if not x[0]:
         x  = isexecutable(TST,'')
-    xI = isexecutable(TST+".MIL")
     xA = isexecutable(TST+".MAL")
     xS = isexecutable(TST+".SQL")
-    xQ = isexecutable(TST+".XQUERY")
     if   x[0]:
         EXT = x[1]          ; CALL = "other"
-    elif xI[0]:
-        EXT = ".MIL"+xI[1]  ; CALL = "other"  ; SERVER = "MIL"
     elif xA[0]:
         EXT = ".MAL"+xA[1]  ; CALL = "other"  ; SERVER = "MAL"
     elif xS[0]:
         EXT = ".SQL"+xS[1]  ; CALL = "other"  ; SERVER = "SQL"
-    elif xQ[0]:
-        EXT = ".XQUERY"+xQ[1] ; CALL = "other" ; SERVER = "XQUERY"
     elif os.path.isfile(TST+".py")            or  os.path.isfile(TST+".py.src"):
         EXT = ".py"         ; CALL = "python"
-    elif os.path.isfile(TST+".MIL"+".py")     or  os.path.isfile(TST+".MIL"+".py.src")     or  os.path.isfile(TST+".MIL"+".py.in"):
-        EXT = ".MIL.py"     ; CALL = "python" ; SERVER = "MIL"
     elif os.path.isfile(TST+".MAL"+".py")     or  os.path.isfile(TST+".MAL"+".py.src")     or  os.path.isfile(TST+".MAL"+".py.in"):
         EXT = ".MAL.py"     ; CALL = "python" ; SERVER = "MAL"
     elif os.path.isfile(TST+".SQL"+".py")     or  os.path.isfile(TST+".SQL"+".py.src")     or  os.path.isfile(TST+".SQL"+".py.in"):
         EXT = ".SQL.py"     ; CALL = "python" ; SERVER = "SQL"
-    elif os.path.isfile(TST+".XQUERY"+".py")  or  os.path.isfile(TST+".XQUERY"+".py.src")  or  os.path.isfile(TST+".XQUERY"+".py.in"):
-        EXT = ".XQUERY.py"  ; CALL = "python" ; SERVER = "XQUERY"
-    elif os.path.isfile(TST+".milS")          or  os.path.isfile(TST+".milS.src")          or  os.path.isfile(TST+".milS.in"):
-        EXT = ".milS"       ; CALL = "milS"
-    elif os.path.isfile(TST+".milC")          or  os.path.isfile(TST+".milC.src")          or  os.path.isfile(TST+".milC.in"):
-        EXT = ".milC"       ; CALL = "milC"   ; SERVER = "MIL"
-    elif os.path.isfile(TST+"_s00.milS")      or  os.path.isfile(TST+"_s00.milS.src")      or  os.path.isfile(TST+"_s00.milS.in"):
-        EXT = ".milS"       ; CALL = "milSXs"
-    elif os.path.isfile(TST+"_s00.milC")      or  os.path.isfile(TST+"_s00.milC.src")      or  os.path.isfile(TST+"_s00.milC.in"):
-        EXT = ".milC"       ; CALL = "milCXs" ; SERVER = "MIL"
-    elif os.path.isfile(TST+"_p00.milC")      or  os.path.isfile(TST+"_p00.milC.src")      or  os.path.isfile(TST+"_p00.milC.in"):
-        EXT = ".milC"       ; CALL = "milCXp" ; SERVER = "MIL"
     elif os.path.isfile(TST+".mal")           or  os.path.isfile(TST+".mal.src")           or  os.path.isfile(TST+".mal.in"):
         EXT = ".mal"        ; CALL = "mal"
     elif os.path.isfile(TST+"_s00.mal")       or  os.path.isfile(TST+"_s00.mal.src")       or  os.path.isfile(TST+"_s00.mal.in"):
@@ -1587,12 +1553,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
         EXT = ".sql"        ; CALL = "sqlXs"  ; SERVER = "SQL"
     elif os.path.isfile(TST+"_p00.sql")       or  os.path.isfile(TST+"_p00.sql.src")       or  os.path.isfile(TST+"_p00.sql.in"):
         EXT = ".sql"        ; CALL = "sqlXp"  ; SERVER = "SQL"
-    elif os.path.isfile(TST+".xq")            or  os.path.isfile(TST+".xq.src")            or  os.path.isfile(TST+".xq.in"):
-        EXT = ".xq"         ; CALL = "xq"     ; SERVER = "XQUERY"
-    elif os.path.isfile(TST+"_s00.xq")        or  os.path.isfile(TST+"_s00.xq.src")        or  os.path.isfile(TST+"_s00.xq.in"):
-        EXT = ".xq"         ; CALL = "xqXs"   ; SERVER = "XQUERY"
-    elif os.path.isfile(TST+"_p00.xq")        or  os.path.isfile(TST+"_p00.xq.src")        or  os.path.isfile(TST+"_p00.xq.in"):
-        EXT = ".xq"         ; CALL = "xqXp"   ; SERVER = "XQUERY"
         #TODO:
         #elif [ -f "$TST.java"       ] ; then  EXT="java" ; CALL="Java   "+TST+" "+EXT
         #elif [ -f "${TST}_s00.java" ] ; then  EXT="java" ; CALL="JavaXs "+TST+" "+EXT
@@ -1608,11 +1568,11 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
         elif COND and not CONDITIONALS[COND]:
             elem = SkipTest(env, TST, EXT, "as conditional '%s' does not hold." % COND)
         elif os.name == "nt":
-            ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+".(exe|com|bat|cmd|py|mal|malC|milS|milC|sql|xq)`")
+            ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+".(exe|com|bat|cmd|py|mal|malC|sql)`")
             #TODO:
             #elif os.name == "posix":
         else:
-            ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.mal|.malC|.milS|.milC|.sql|.xq]`")
+            ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.mal|.malC|.sql]`")
         return TX,Failed,Failed,elem
 
     if par['PACKAGE'] not in ('common', 'clients', 'gdk', 'java'):
@@ -1631,27 +1591,18 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
         elem = SkipTest(env, TST, EXT, "as conditional '%s' does not hold." % COND)
     elif MissingTests:
         elem = SkipTest(env, TST, EXT, "as required test%s '%s' failed." % (len(MissingTests) != 1 and 's' or '', "', '".join(MissingTests)))
-    elif ( EXT[:4] == ".mil" or SERVER == "MIL" ) and par['M5']:
-        elem = SkipTest(env, TST, EXT, "as MonetDB v5 does not support MIL.")
-    elif EXT == ".milC" and  not env['exe']['MIL_Client'][0]:
-        elem = SkipTest(env, TST, EXT, "as "+env['MILCLIENT'].split(None, 1)[0]+" is not available.")
     elif EXT == ".malC" and  not env['exe']['MAL_Client'][0]:
         elem = SkipTest(env, TST, EXT, "as "+env['MALCLIENT'].split(None, 1)[0]+" is not available.")
     elif EXT == ".sql" and  not env['exe']['SQL_Client'][0]:
         elem = SkipTest(env, TST, EXT, "as "+env['SQLCLIENT'].split(None, 1)[0]+" is not available.")
     elif EXT == ".sql" and  not env['exe']['SQL_Dump'][0]:
         elem = SkipTest(env, TST, EXT, "as "+env['SQLDUMP'].split(None, 1)[0]+" is not available.")
-    elif EXT == ".xq" and  not env['exe']['XQuery_Client'][0]:
-        elem = SkipTest(env, TST, EXT, "as "+env['XQUERYCLIENT'].split(None, 1)[0]+" is not available.")
-    elif SERVER in ["MIL", "MAL", "SQL", "XQUERY"] and not env['exe']['Mserver'][0]:
+    elif SERVER in ["MAL", "SQL"] and not env['exe']['Mserver'][0]:
         elem = SkipTest(env, TST, EXT, "as "+env['MSERVER'].split(None, 1)[0]+" is not available.")
-    elif EXT in [".milS", ".malS"] and not env['exe']['Mserver'][0]:
+    elif EXT == ".malS" and not env['exe']['Mserver'][0]:
         elem = SkipTest(env, TST, EXT, "as "+env['MSERVER'].split(None, 1)[0]+" is not available.")
     elif CALL == "python"  and  not env['exe']['python'][0]:
         elem = SkipTest(env, TST, EXT, "as python is not available.")
-        #TODO:
-        #elif EXT == ".milC":
-        #elem = SkipTest(env, TST, EXT, "as mclient-tests are temporary not supported by "+THISFILE+".")
         #TODO:
         #elif [ "$EXT" = "java"  -a  ! "`type -path java`" ] ; then
         #elem = SkipTest(env, TST, EXT, "as java is not in $PATH.")
@@ -1659,18 +1610,12 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
         elem = SkipTest(env, TST, EXT, "as modules '"+str(MissingMods)+"` are missing.")
     elif MissingBATs:
         elem = SkipTest(env, TST, EXT, "as BATs '"+str(MissingBATs)+"` are missing in database '"+TSTDB+"`.")
-    elif CALL == "milCXp":
-        elem = SkipTest(env, TST, EXT, "as multiple MIL clients in parallel are currently not supported by "+THISFILE+".")
     elif CALL == "malCXp":
         elem = SkipTest(env, TST, EXT, "as multiple MAL clients in parallel are currently not supported by "+THISFILE+".")
     elif CALL == "sqlXp":
         elem = SkipTest(env, TST, EXT, "as multiple SQL clients in parallel are currently not supported by "+THISFILE+".")
-    elif CALL == "xqXp":
-        elem = SkipTest(env, TST, EXT, "as multiple XQuery clients in parallel are currently not supported by "+THISFILE+".")
-    elif SERVER in ["MIL", "MAL", "SQL", "XQUERY"] and "MAPI" in BusyPorts:
+    elif SERVER in ["MAL", "SQL"] and "MAPI" in BusyPorts:
         elem = SkipTest(env, TST, EXT, "as MAPIPORT=%s is not available." % (env['MAPIPORT']))
-    elif SERVER == "XQUERY" and "XRPC" in BusyPorts:
-        elem = SkipTest(env, TST, EXT, "as XRPCPORT=%s is not available." % (env['XRPCPORT']))
     else:
         test = re.compile("^"+TST+"((_[sp][0-9][0-9])?\..*)?$", re.MULTILINE)
         for f in os.listdir(RELSRCDIR):
@@ -1742,8 +1687,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
             ACCURACYerr = 0
 
         PRELUDE = ""
-        #if EXT not in  ['.milC','.sql','.xq']:
-        if EXT not in  ['.sql','.xq']:
+        if EXT !=  '.sql':
             if os.path.isfile(TST+".prelude5")  and  par['M5']:
                 PRELUDE = TST+".prelude5"
 
@@ -1775,18 +1719,18 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
                     else:
                         TOx = 1
                     CTIMEOUT = CTIMEOUT + ( TOx * TIMEOUT )
-        elif CALL in ["malXs", "milSXs", "milCXs", "sqlXs", "xqXs"]:
+        elif CALL in ["malXs", "sqlXs"]:
             test = re.compile("^"+TST+"_s[0-9][0-9]"+EXT+"$", re.MULTILINE)
             d = os.listdir(os.getcwd())
             for f in d:
                 if test.match(f):
                     CTIMEOUT = CTIMEOUT + TIMEOUT
-        elif CALL in ["mal", "malC", "milS", "milC", "sql", "xq"]:
+        elif CALL in ["mal", "malC", "sql"]:
             CTIMEOUT = CTIMEOUT + TIMEOUT
         if  CTIMEOUT < TIMEOUT:
             CTIMEOUT = TIMEOUT
         STIMEOUT = CTIMEOUT
-        if  SERVER in ["MIL", "MAL", "SQL", "XQUERY"] and TIMEOUT > 0:
+        if  SERVER in ["MAL", "SQL"] and TIMEOUT > 0:
             STIMEOUT = STIMEOUT + TIMEOUT + min(TIMEOUT, par['TIMEOUT'])
 
         ME = ""
@@ -2149,17 +2093,13 @@ def CheckSocket2(env,SERVER) :  #,SrvrErr) :
         op = 'port=%d' % port
         np = 'port=%s' % env[SERVER+'PORT']
         env['exe']['Mserver']       = env['exe']['Mserver'][0]       , env['exe']['Mserver'][1].replace(op, np)
-        env['exe']['MIL_Client']    = env['exe']['MIL_Client'][0]    , env['exe']['MIL_Client'][1].replace(op, np)
         env['exe']['MAL_Client']    = env['exe']['MAL_Client'][0]    , env['exe']['MAL_Client'][1].replace(op, np)
         env['exe']['SQL_Client']    = env['exe']['SQL_Client'][0]    , env['exe']['SQL_Client'][1].replace(op, np)
         env['exe']['SQL_Dump']      = env['exe']['SQL_Dump'][0]      , env['exe']['SQL_Dump'][1].replace(op, np)
-        env['exe']['XQuery_Client'] = env['exe']['XQuery_Client'][0] , env['exe']['XQuery_Client'][1].replace(op, np)
         os.environ['MSERVER']       = os.environ['MSERVER'].replace(op, np)
-        os.environ['MIL_CLIENT']    = os.environ['MIL_CLIENT'].replace(op, np)
         os.environ['MAL_CLIENT']    = os.environ['MAL_CLIENT'].replace(op, np)
         os.environ['SQL_CLIENT']    = os.environ['SQL_CLIENT'].replace(op, np)
         os.environ['SQL_DUMP']      = os.environ['SQL_DUMP'].replace(op, np)
-        os.environ['XQUERY_CLIENT'] = os.environ['XQUERY_CLIENT'].replace(op, np)
         Smsg = Smsg + """
 ! Using new %sPORT=%s !
 """ % (SERVER, env[SERVER+'PORT'])
@@ -2348,7 +2288,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
     pSrvr = None
     pSrvrTimer = None
     try:
-        if SERVER in ["MIL", "MAL", "SQL", "XQUERY"]:
+        if SERVER in ["MAL", "SQL"]:
             SrvrOutFile = TST+".server.out"
             SrvrErrFile = TST+".server.err"
             SrvrOut = open(SrvrOutFile,"w")
@@ -2366,16 +2306,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 DBINIT = open(dbinit).readline().strip()
 
             Srvr = '%s%s "--dbname=%s"' % (exe['Mserver'][1], LOCAL_CONF, TSTDB)
-            if par['ALGEBRA']:
-                Srvr += ' --set xquery_backend=algebra'
-            if par['NOALGEBRA']:
-                Srvr += ' --set xquery_backend=milprint_summer'
-
             lang=""
 
-            if SERVER == "MIL":
-                lang="mil"
-                Srvr = '%s "--dbinit=%s module(mapi); mil_start();"' % (Srvr, DBINIT)
             if SERVER == "MAL":
                 lang="mal"
                 Srvr = '%s --set mal_listing=2 "--dbinit=%s"' % (Srvr, DBINIT)
@@ -2385,9 +2317,6 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                     Srvr = '%s --set mal_listing=0' % Srvr
                     if DBINIT:
                         Srvr = '%s "--dbinit=%s"' % (Srvr, DBINIT)
-            if SERVER == "XQUERY":
-                lang="xquery"
-                Srvr = '%s "--dbinit=%s module(pathfinder);"' % (Srvr, DBINIT)
             Srvr = Srvr+PROLOGUE
             if os.name == "nt":
                 Srvr = Srvr+' & echo.& '
@@ -2407,9 +2336,6 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             if ServerReady:
                 port = int(env['MAPIPORT'])
                 ServerReady = mapi_ping(port, lang)
-            #if ServerReady and SERVER = "XQUERY":
-            #    port = int(env['XRPCPORT'])
-            #    ServerReady = mapi_ping(port, lang)
 
         else:
             ClntOut = open(TestOutFile, 'a')
@@ -2422,13 +2348,9 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             elif CALL == "python":
                 cmd = exe['python'][1]+" "+TST+EXT+" "+TST+" "+PRELUDE
                 timedout = RunIt(cmd, "", ClntOut, ClntErr, CTIMEOUT)
-            elif CALL in ["mal", "malXs", "milS", "milSXs"]:
+            elif CALL in ["mal", "malXs"]:
                 cmd = '%s%s --dbname=%s %s ' % (exe['Mserver'][1], LOCAL_CONF, TSTDB, PRELUDE)
-                if par['ALGEBRA']:
-                    cmd += ' --set xquery_backend=algebra'
-                if par['NOALGEBRA']:
-                    cmd += ' --set xquery_backend=milprint_summer'
-                if CALL in ["mal", "milS"]:
+                if CALL == "mal":
                     X=""
                 else:
                     X="_s[0-9][0-9]"
@@ -2443,9 +2365,9 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                             timedout = RunIt(cmd+" --dbinit=\"include mil_scenario; mil();\" "+f, open(os.devnull), ClntOut, ClntErr, TIMEOUT)
                     if timedout:
                         break
-            elif CALL in ["milC", "milCXs", "malC", "malCXs"]:
+            elif CALL in ["malC", "malCXs"]:
                 TSTs = []
-                if CALL in ("milC", "malC"):
+                if CALL == "malC":
                     X=""
                 else:
                     X="_s[0-9][0-9]"
@@ -2456,9 +2378,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                     if test.match(f):
                         TSTs.append(f)
 
-                if CALL[:3] == "mil":
-                    Clnt = exe['MIL_Client'][1]
-                elif CALL[:3] == "mal":
+                if CALL[:3] == "mal":
                     Clnt = exe['MAL_Client'][1]
                 else:
                     Clnt = ''               # cannot happen
@@ -2467,8 +2387,6 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                     if timedout:
                         break
 
-                #TODO
-                #elif CALL == "milCXp":
             elif CALL in ["sql", "sqlXs"]:
                 TSTs = []
                 if CALL == "sql":
@@ -2487,31 +2405,13 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                     timedout = RunIt(Clnt, open(f), ClntOut, ClntErr, TIMEOUT)
                     if timedout:
                         break
-            elif CALL in ["xq", "xqXs"]:
-                TSTs = []
-                if CALL == "xq":
-                    X=""
-                else:
-                    X="_s[0-9][0-9]"
-                test = re.compile("^"+TST+X+EXT+"$", re.MULTILINE)
-                d = os.listdir(os.getcwd())
-                d.sort()
-                for f in d:
-                    if test.match(f):
-                        TSTs.append(f)
-
-                Clnt = exe['XQuery_Client'][1]+" "
-                for f in TSTs:
-                    timedout = RunIt(Clnt+f, "", ClntOut, ClntErr, TIMEOUT)
-                    if timedout:
-                        break
         else:
             for fp in ClntOut,ClntErr:
                 fp.write('\n\n! Server not ready; skipping attempt to start client!\n\n')
         ClntOut.close()
         ClntErr.close()
 
-        if SERVER in ["MIL", "MAL", "SQL", "XQUERY"]:
+        if SERVER in ["MAL", "SQL"]:
             EPILOGUE = None
             if os.path.isfile(TST+".epilogue5") and par['M5']:
                 EPILOGUE = open(TST+".epilogue5",'r')
@@ -2963,11 +2863,8 @@ else:
 URLPREFIXMAP = {
     'MonetDB': 'http://monetdb.cvs.sourceforge.net/monetdb/MonetDB/',
     'sql': 'http://monetdb.cvs.sourceforge.net/monetdb/sql/',
-    'pathfinder': 'http://monetdb.cvs.sourceforge.net/monetdb/pathfinder/',
     'xml': 'http://monetdb.cvs.sourceforge.net/monetdb/xml/',
     'buildtools': 'http://monetdb.cvs.sourceforge.net/monetdb/buildtools/',
-    'pf-tools': 'http://monetdb.cvs.sourceforge.net/monetdb/pf-tools/',
-    'pf-haskell': 'http://monetdb.cvs.sourceforge.net/monetdb/pf-haskell/',
     }
 URLPREFIX   = None
 ##URLSUFFIX_F = '?cvsroot=Monet-4.3'
@@ -3015,7 +2912,7 @@ def main(argv) :
 
     vars = ['TSTSRCBASE', 'TSTTRGBASE']
     if THISFILE == "Mtest.py":
-        vars = vars + [ 'MILCLIENT', 'MALCLIENT', 'SQLCLIENT', 'SQLDUMP', 'XQUERYCLIENT']    #, 'MONETDB_MOD_PATH' ]
+        vars = vars + [ 'MALCLIENT', 'SQLCLIENT', 'SQLDUMP']    #, 'MONETDB_MOD_PATH' ]
 
     env = {}
     env['DIRSEP'] = os.sep
@@ -3032,11 +2929,9 @@ def main(argv) :
         dft['setXRPC_DOCROOT']   = "'--set \"xrpc_docroot='+env['XRPC_DOCROOT']+'\"'"
         dft['MAPIPORT']       = "str(randomPort(30000,39999))"
         dft['XRPCPORT']       = "str(randomPort(40000,49999))"
-        dft['MILCLIENT']      = "'mclient -lmil -ftest'"
         dft['MALCLIENT']      = "'mclient -lmal -ftest'"
         dft['SQLCLIENT']      = "'mclient -lsql -ftest'"
         dft['SQLDUMP']        = "'msqldump -q'"
-        dft['XQUERYCLIENT']   = "'mclient -lxquery -fxml'"
 
     #par = {}
     # get current environment
@@ -3051,13 +2946,9 @@ def main(argv) :
     cmd_options = [
         # long name, short name, GDK option, argument, comment
         ('package', 'p', 'package', '<package>',
-         "package to be tested, e.g.:\nmonetdb[45], (java|clients|template|sql|pathfinder|geom);\ndefault: %s" % par['PACKAGE']),
+         "package to be tested, e.g.:\nmonetdb5, (java|clients|template|sql|geom);\ndefault: %s" % par['PACKAGE']),
         ('monetdb5', '5', 'monetdb5', None,
          "use mserver5 of MonetDB Version 5 (default)"),
-        ('algebra', 'G', 'algebra', None,
-         "use the algebra version of the XQuery compiler"),
-        ('no-algebra', 'g', 'no-algebra', None,
-         "do not use the algebra version of the XQuery compiler"),
         ('recursive', 'r', 'recursive', None,
          "recurse into subdirectories (implies 'All')"),
         ('TSTSRCBASE', None, 'TSTSRCBASE', '<path>',
@@ -3092,16 +2983,12 @@ def main(argv) :
              "override default location of database directory"),
             ('xrpc_docroot', None, 'xrpc_docroot', '<directory>',
              "override default root directory from which the XRPC HTTP server will serve files"),
-            ('MILCLIENT', None, 'MILCLIENT', '<mil-client program>',
-             'default: %s' % dft['MILCLIENT']),
             ('MALCLIENT', None, 'MALCLIENT', '<mal-client program>',
              'default: %s' % dft['MALCLIENT']),
             ('SQLCLIENT', None, 'SQLCLIENT', '<sql-client program>',
              'default: %s' % dft['SQLCLIENT']),
             ('SQLDUMP', None, 'SQLDUMP', '<sql-dump program>',
              'default: %s' % dft['SQLDUMP']),
-            ('XQUERYCLIENT', None, 'XQUERYCLIENT', '<XQuery-client program>',
-             'default: %s' % dft['XQUERYCLIENT']),
             ('at', None, 'use_at', None, 'Use at command as watchdog'),
             ('concurrent', None, 'concurrent', None,
              'There are concurrent Mtest runs using the same MonetDB installation'),
@@ -3470,17 +3357,9 @@ def main(argv) :
                                                                (env['setDBG'], config, env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setXRPC_DOCROOT'], env['MAPIPORT'], env['XRPCPORT'], env['MSERVER_SET'])
         exe['Mdiff']         = CheckExec('Mdiff')        , 'Mdiff'
         exe['python']        = CheckExec(sys.executable) , sys.executable
-        exe['MIL_Client']    = CheckExec(env['MILCLIENT'].split(None, 1)[0])  , '%s -i -e --host=%s --port=%s' % (env['MILCLIENT'], HOST, env['MAPIPORT'])
         exe['MAL_Client']    = CheckExec(env['MALCLIENT'].split(None, 1)[0])  , '%s -i -e --host=%s --port=%s' % (env['MALCLIENT'], HOST, env['MAPIPORT'])
         exe['SQL_Client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -i -e --host=%s --port=%s %s' % (env['SQLCLIENT'], HOST, env['MAPIPORT'], env['SQL_TRACE'])
         exe['SQL_Dump']      = CheckExec(env['SQLDUMP'].split(None, 1)[0])     , '%s --host=%s --port=%s %s' % (env['SQLDUMP'], HOST, env['MAPIPORT'], env['SQL_TRACE'])
-        exe['XQuery_Client'] = CheckExec(env['XQUERYCLIENT'].split(None, 1)[0]), '%s --host=%s --port=%s' % (env['XQUERYCLIENT'], HOST, env['MAPIPORT'])
-        if par['ALGEBRA']:
-            exe['SQL_Client']    = exe['SQL_Client'][0]   , exe['SQL_Client'][1]   +' -G'
-            exe['XQuery_Client'] = exe['XQuery_Client'][0], exe['XQuery_Client'][1]+' -G'
-        if par['NOALGEBRA']:
-            exe['SQL_Client']    = exe['SQL_Client'][0]   , exe['SQL_Client'][1]   +' -g'
-            exe['XQuery_Client'] = exe['XQuery_Client'][0], exe['XQuery_Client'][1]+' -g'
         if par['TIMEOUT'] == 0 or not exe['Mtimeout'][0]:
             exe['Mtimeout'] = '', ''
         env['exe'] = exe
@@ -3655,52 +3534,6 @@ def main(argv) :
             if MissingMods:
                 ErrXit('Stopping SQL testing as modules "%s" are missing!' % str(MissingMods))
 
-        is_pf = par['PACKAGE'] == 'pathfinder'
-        if is_pf:
-            if not CheckExec('pf'):
-                ErrXit('Stopping Pathfinder testing as XQuery compiler "pf" is not available!')
-            if par['ALGEBRA']:
-                env['PF'] = 'pf -A'
-                CONDITIONALS['WITH_ALGEBRA'] = '#'
-                CONDITIONALS['NOT_ALGEBRA']  = ''
-            elif par['NOALGEBRA']:
-                env['PF'] = 'pf -M'
-                CONDITIONALS['WITH_ALGEBRA'] = ''
-                CONDITIONALS['NOT_ALGEBRA']  = '#'
-            else:
-                env['PF'] = 'pf'
-                CONDITIONALS['WITH_ALGEBRA'] = ''
-                CONDITIONALS['NOT_ALGEBRA']  = '#'
-                rA = re.compile('-A.* \(default\)')
-                rM = re.compile('-M.* \(default\)')
-                if verbose:
-                    print 'main: starting process "pf" "-h" (inpipe,outpipe)\n'
-                proc = subprocess.Popen(['pf','-h'], stdin = subprocess.PIPE, stdout = subprocess.PIPE, universal_newlines = True)
-                qOut, qErr = proc.communicate()
-                if verbose:
-                    print 'main: process exited "pf" "-h" (%s)\n' % proc.returncode
-                if rA.search(qOut) is not None:
-                    CONDITIONALS['WITH_ALGEBRA'] = '#'
-                    CONDITIONALS['NOT_ALGEBRA']  = ''
-                if rM.search(qOut) is not None:
-                    CONDITIONALS['WITH_ALGEBRA'] = ''
-                    CONDITIONALS['NOT_ALGEBRA']  = '#'
-            if CONDITIONALS['WITH_ALGEBRA']:
-                env['TST_ALGEBRA'] = "Algebra"
-                os.environ['TST_ALGEBRA'] = "Algebra"
-            if CONDITIONALS['NOT_ALGEBRA']:
-                env['TST_NOALGEBRA'] = "NoAlgebra"
-                os.environ['TST_NOALGEBRA'] = "NoAlgebra"
-            os.environ['PF'] = env['PF']
-            MissingMods = CheckMods(env, '', 'XQUERY', '')
-            if MissingMods:
-                ErrXit('Stopping Pathfinder testing as modules "%s" are missing!' % str(MissingMods))
-            mod_name = 'pathfinder'
-            if par['M5']:
-                mod_load = 'include %s;' % mod_name
-            if Check('%s --dbname=%s "--dbinit=%s"' % (env['exe']['Mserver'][1], TSTPREF, mod_load), QUIT):
-                ErrXit('Stopping Pathfinder testing as module "%s" fails to load!' % mod_name)
-
         if par['PACKAGE'] == 'geom':
             MissingMods = CheckMods(env, '', 'SQL', '')
             if 'geom' not in env['TST_MODS']:
@@ -3712,10 +3545,6 @@ def main(argv) :
         if par['PACKAGE'] in ('sql','geom'):
             if not env['exe']['SQL_Client'][0]:
                 ErrXit('Stopping %s testing as "%s" is not available!' % (par['PACKAGE'], env['SQLCLIENT'].split(None, 1)[0]))
-
-        if par['PACKAGE'] == 'pathfinder':
-            if not env['exe']['XQuery_Client'][0]:
-                ErrXit('Stopping XQuery testing as "%s" is not available!' % env['XQUERYCLIENT'].split(None, 1)[0])
 
         for SRVR in 'MAPI', 'XRPC':
             port = int(env[SRVR+'PORT'])

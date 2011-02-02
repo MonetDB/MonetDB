@@ -182,7 +182,6 @@ RUBY_DIR = lib\ruby\gems\1.9.1
 # install python, flex and bison on your systems 
 PYTHON = python
 YACC = bison -b y -y
-LEX = flex 
 SWIG = swig
 
 ARCHIVER = lib
@@ -243,9 +242,7 @@ LIBC_INCS = $(PTHREAD_INCS)
 MATH_LIBS =
 SOCKET_LIBS = wsock32.lib Ws2_32.lib
 
-MEL=$(TOPDIR)\buildtools\mel\mel.exe
 MX=$(TOPDIR)\buildtools\Mx\Mx.exe
-BURG=$(TOPDIR)\buildtools\burg\burg.exe
 CP=copy
 MV=copy
 DEL=del
@@ -309,12 +306,6 @@ HAVE_PERL_SWIG_FALSE=^#
 !IFDEF HAVE_PHP
 HAVE_PHP_FALSE=^#
 !ENDIF
-!IFDEF HAVE_PFTIJAH
-HAVE_PFTIJAH_FALSE=^#
-!ENDIF
-!IFDEF HAVE_PROBXML
-HAVE_PROBXML_FALSE=^#
-!ENDIF
 !IFDEF HAVE_PYTHON
 HAVE_PYTHON_FALSE=^#
 !ENDIF
@@ -329,9 +320,6 @@ PROFILING_FALSE=^#
 !ENDIF
 !IFDEF HAVE_LIBXML2
 HAVE_LIBXML2_FALSE=^#
-!ENDIF
-!IFDEF NEED_MX
-NEED_MX_FALSE=^#
 !ENDIF
 
 CONFIGURE=$(PYTHON) $(CONFIGURE_PY) \
@@ -354,8 +342,6 @@ CONFIGURE=$(PYTHON) $(CONFIGURE_PY) \
 	"HAVE_PERL_FALSE=$(HAVE_PERL_FALSE)" \
 	"HAVE_PERL_SWIG_FALSE=$(HAVE_PERL_SWIG_FALSE)" \
 	"HAVE_PHP_FALSE=$(HAVE_PHP_FALSE)" \
-	"HAVE_PFTIJAH_FALSE=$(HAVE_PFTIJAH_FALSE)" \
-	"HAVE_PROBXML_FALSE=$(HAVE_PROBXML_FALSE)" \
 	"HAVE_PYTHON_FALSE=$(HAVE_PYTHON_FALSE)" \
 	"HAVE_RAPTOR_FALSE=$(HAVE_RAPTOR_FALSE)" \
 	"HAVE_RUBYGEM_FALSE=$(HAVE_RUBYGEM_FALSE)" \
@@ -419,8 +405,6 @@ CFLAGS = $(CFLAGS) -DMONET_OID64
 !ENDIF
 !ENDIF
 
-CXXFLAGS = $(CFLAGS) -EHsc
-
 PHP_INCS = "-I$(PHP_SRCDIR)" "-I$(PHP_SRCDIR)\main" "-I$(PHP_SRCDIR)\TSRM" "-I$(PHP_SRCDIR)\Zend" -DPHP_WIN32 -DZEND_WIN32 -DZEND_DEBUG=0 -DZTS=1
 PHP_LIBS = "$(PHP_INSTDIR)\php5embed.lib"
 
@@ -437,39 +421,6 @@ CONFIG_H = monetdb_config.h
 
 .mx.c:
 	$(MX) $(MXFLAGS) -x c $<
-
-{$(SRCDIR)}.mx.m:
-	$(MX) $(MXFLAGS) -l -x m $<
-
-.mx.m:
-	$(MX) $(MXFLAGS) -l -x m $<
-
-.m.mil: 
-	$(MEL) -c $(CONFIG_H) $(INCLUDES) -mil $*.m > $@
-	type $*.tmpmil >> $@
-	if not exist .libs $(MKDIR) .libs
-	$(INSTALL) $@ .libs\$@
-
-.m.mil:
-	$(MEL) -c $(CONFIG_H) $(INCLUDES) -mil $*.m > $@
-	if not exist .libs $(MKDIR) .libs
-	$(INSTALL) $@ .libs\$@
-
-{$(SRCDIR)}.mx.tmpmil:
-	$(MX) $(MXFLAGS) -l -x mil $<
-	$(MV) $*.mil $*.tmpmil
-	$(DEL) $*.mil
-
-{$(SRCDIR)}.mx.mil:
-	$(MX) $(MXFLAGS) -l -x mil $<
-
-.mx.tmpmil:
-	$(MX) $(MXFLAGS) -l -x mil $<
-	$(MV) $*.mil $*.tmpmil
-	$(DEL) $*.mil
-
-.mx.mil:
-	$(MX) $(MXFLAGS) -l -x mil $<
 
 {$(SRCDIR)}.mx.mal:
 	$(MX) $(MXFLAGS) -l -x mal $<
@@ -493,23 +444,11 @@ CONFIG_H = monetdb_config.h
 .mx.y:
 	$(MX) $(MXFLAGS) -x y $<
 
-{$(SRCDIR)}.mx.l:
-	$(MX) $(MXFLAGS) -x l $<
-
-.mx.l:
-	$(MX) $(MXFLAGS) -x l $<
-
 {$(SRCDIR)}.c.obj:
 	$(CC) $(CFLAGS) -c $<
 
 .c.obj:
 	$(CC) $(CFLAGS) -c $<
-
-{$(SRCDIR)}.cc.obj:
-	$(CXX) $(CXXFLAGS) -c $<
-
-.cc.obj:
-	$(CXX) $(CXXFLAGS) -c $<
 
 {$(SRCDIR)}.syms.def:
 	echo EXPORTS > $@
@@ -519,11 +458,4 @@ CONFIG_H = monetdb_config.h
 	echo EXPORTS > $@
 	type $< >> $@
 
-{$(SRCDIR)}.brg.c:
-	$(BURG) -c 1000 -d -I -p PF$* -o $@ < $<
-
-.brg.c:
-	$(BURG) -c 1000 -d -I -p PF$* -o $@ < $<
-
-.SUFFIXES: .m .mx .proto_h .mil .glue_c .syms .def .brg
-.PRECIOUS: .m 
+.SUFFIXES: .mx .syms .def

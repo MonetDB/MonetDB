@@ -2912,12 +2912,6 @@ AC_SUBST(HWCOUNTERS_INCS)
 
 dnl     miscellany
 AC_DEFINE(MX_CXX_SUFFIX, "cc", [Suffix for C++ files])
-AM_CONDITIONAL(NEED_MX, true)
-AM_CONDITIONAL(HAVE_BUILDTOOLS, true)
-
-dnl Add a dummy define for HAVE_EXTRA_MK (that is used in am.py).
-dnl It has to be overwritten by any project that uses an extra.mk file.
-AM_CONDITIONAL(HAVE_EXTRA_MK, false)
 
 dnl     output
 AM_CONDITIONAL(HAVE_MONETDB5, test "x$enable_monetdb5" = xyes -o "x$enable_monetdb5" = xauto)
