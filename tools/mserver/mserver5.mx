@@ -175,8 +175,6 @@ usage(char *prog)
 static void
 monet_hello(void)
 {
-	size_t size = 2048;
-	char *s = alloca(size);
 #ifdef MONETDB_STATIC
 	char *linkinfo = "statically";
 #else
@@ -194,40 +192,25 @@ monet_hello(void)
 		qi++;
 	}
 
-	snprintf(s,size,"# MonetDB 5 server v" VERSION "\n");
-	size -= strlen(s);
-	s += strlen(s);
+	printf("# MonetDB 5 server v" VERSION);
 	if (strcmp(MONETDB_RELEASE, "unreleased") == 0)
-		snprintf(s, size, "# Not released\n");
+		printf("\n# This is an unreleased version");
 	else
-		snprintf(s, size, "# Release %s\n", MONETDB_RELEASE);
-	size -= strlen(s);
-	s += strlen(s);
-	snprintf(s,size,"# Serving database '%s', using %d thread%s\n",
+		printf(" \"%s\"", MONETDB_RELEASE);
+	printf("\n# Serving database '%s', using %d thread%s\n",
 			GDKgetenv("gdk_dbname"),
 			GDKnr_threads, (GDKnr_threads != 1) ? "s" : "");
-	size -= strlen(s);
-	s += strlen(s);
-	snprintf(s,size,"# Compiled for %s/" SZFMT "bit with " SZFMT "bit OIDs %s linked\n",
+	printf("# Compiled for %s/" SZFMT "bit with " SZFMT "bit OIDs %s linked\n",
 			HOST, sizeof(ptr) * 8, sizeof(oid) * 8, linkinfo);
-	size -= strlen(s);
-	s += strlen(s);
-	snprintf(s,size,"# Found %.3f %ciB available main-memory.\n", 
+	printf("# Found %.3f %ciB available main-memory.\n", 
 			sz_mem_h, qc[qi]);
-	size -= strlen(s);
-	s += strlen(s);
 #ifdef MONET_GLOBAL_DEBUG
-	snprintf(s,size,"# Configuration:%s\n", GDKgetenv("config"));
-	size -= strlen(s);
-	s += strlen(s);
-	snprintf(s,size,"# Database farm:%s\n", GDKgetenv("gdk_dbfarm"));
-	size -= strlen(s);
-	s += strlen(s);
+	printf("# Configuration:%s\n", GDKgetenv("config"));
+	printf("# Database farm:%s\n", GDKgetenv("gdk_dbfarm"));
+	printf("# Module path:%s\n", GDKgetenv("monet_mod_path"));
 #endif
-	snprintf(s,size,"# Copyright (c) 1993-July 2008 CWI.\n");
-	size -= strlen(s);
-	s += strlen(s);
-	snprintf(s,size,"# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved\n");
+	printf("# Copyright (c) 1993-July 2008 CWI.\n");
+	printf("# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved\n");
 	printf("# Visit http://monetdb.cwi.nl/ for further information\n");
 }
 

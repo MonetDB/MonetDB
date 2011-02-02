@@ -38,14 +38,14 @@ monet_version(void)
 	sz_mem_gb = (dbl)(MT_npages() * MT_pagesize()) / (1024.0 * 1024.0 * 1024.0);
 	cores = MT_check_nr_cores();
 
-	printf("MonetDB 5 server v" VERSION
-		   " (" SZFMT "-bit, " SZFMT "-bit oids)\n",
+	printf("MonetDB 5 server v" VERSION " ");
+	if (strcmp(MONETDB_RELEASE, "unreleased") != 0)
+		printf("\"%s\" ", MONETDB_RELEASE);
+	printf("(" SZFMT "-bit, " SZFMT "-bit oids)\n",
 			(size_t) (sizeof(ptr) * 8),
 			(size_t) (sizeof(oid) * 8));
 	if (strcmp(MONETDB_RELEASE, "unreleased") == 0)
-		printf("Not released\n");
-	else
-		printf("Release %s\n", MONETDB_RELEASE);
+		printf("This is an unreleased version\n");
 	printf("Copyright (c) 1993-July 2008 CWI\n"
 			"Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved\n");
 	printf("Visit http://monetdb.cwi.nl/ for further information\n");
