@@ -425,8 +425,8 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 	for (i = 0; i < m->dbcc; i++) {
 		if (mapi_read_response(hdl[i]) != MOK) {
 			t = mapi_result_error(hdl[i]);
-			mnstr_printf(fout, "!node %s failed: no response\n",
-					m->dbcv[i]->database);
+			mnstr_printf(fout, "!node %s failed: %s\n",
+					m->dbcv[i]->database, t ? t : "no response");
 			Mfprintf(stderr, "mapi_read_response for %s failed: %s\n",
 					m->dbcv[i]->database, t ? t : "(no error)");
 			break;
