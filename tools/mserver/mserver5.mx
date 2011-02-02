@@ -73,14 +73,19 @@ The server options have the following meaning:
 #endif /* _MONET_GLOBAL_H_ */
 @c
 #include "monetdb_config.h"
-#include "mserver5.h"
-#include "mal_authorize.h"
-#include "mal_sabaoth.h"
 #include <stdio.h>
 #include <errno.h>
 #include <string.h> /* strerror */
 #include <locale.h>
 #include "monet_version.h"
+#include "mserver5.h"
+#include "mal_authorize.h"
+#include "mal_sabaoth.h"
+#include "mutils.h"
+
+#ifdef HAVE_LIBGEN_H
+#include <libgen.h>
+#endif
 
 #ifndef HAVE_GETOPT_LONG
 #  include "monet_getopt.h"
@@ -88,6 +93,10 @@ The server options have the following meaning:
 # ifdef HAVE_GETOPT_H
 #  include "getopt.h"
 # endif
+#endif
+
+#ifdef _MSC_VER
+#include <Psapi.h>		/* for GetModuleFileName */
 #endif
 
 #ifdef _CRTDBG_MAP_ALLOC
@@ -280,6 +289,42 @@ handler(int sig)
 	mal_exit();
 }
 
+static char _mserver_bin_path[1024];
+static char *
+get_mserver_bin_path(void)
+{
+	/* getting the path to the executable's binary, isn't all that
+	 * simple, unfortunately */
+#if defined(_MSC_VER)		/* Windows */
+	if (GetModuleFileName(NULL, _mserver_bin_path,
+			      (DWORD) sizeof(_mserver_bin_path)) != 0)
+		return _mserver_bin_path;
+#elif defined(HAVE__NSGETEXECUTABLEPATH)  /* Darwin/OSX */
+	uint32_t size = sizeof(_mserver_bin_path);
+	if (_NSGetExecutablePath(_mserver_bin_path, &size) == 0)
+		return _mserver_bin_path;
+#elif defined(HAVE_SYS_SYSCTL_H) && defined(KERN_PROC_PATHNAME)  /* BSD */
+	int mib[4];
+	size_t cb = sizeof(_mserver_bin_path);
+	mib[0] = CTL_KERN;
+	mib[1] = KERN_PROC;
+	mib[2] = KERN_PROC_PATHNAME;
+	mib[3] = -1;
+	if (sysctl(mib, 4, _mserver_bin_path, &cb, NULL, 0) == 0)
+		return _mserver_bin_path;
+#elif defined(HAVE_GETEXECNAME)  /* Solaris */
+	char execn = getexecname();
+	/* copy, such that the caller can actually modify this string */
+	snprintf(_mserver_bin_path, sizeof(_mserver_bin_path), "%s", execn);
+#else  /* try Linux approach */
+	if (readlink("/proc/self/exe",
+				_mserver_bin_path, sizeof(_mserver_bin_path)) != -1)
+			return _mserver_bin_path;
+#endif
+	/* could use argv[0] (passed) to deduce location based on PATH */
+	return NULL;
+}
+
 int
 main(int argc, char **av)
 {
@@ -288,6 +333,8 @@ main(int argc, char **av)
 	int idx = 0, grpdebug=0, debug = 0, setlen = 0, listing = 0, i = 0;
 	str dbinit = NULL;
 	str err = MAL_SUCCEED;
+	char prmodpath[1024];
+	char *modpath = NULL;
 
 	static struct option long_options[] = {
 		{"config", 1, 0, 'c'},
@@ -527,6 +574,32 @@ faster system start.
 	mo_free_options(set, setlen);
 
 	GDKsetenv("monet_version", VERSION);
+
+	if ((modpath = GDKgetenv("monet_mod_path")) == NULL) {
+		/* start probing based on some heuristics given the binary
+		 * location:
+		 * bin/mserver5 -> ../
+		 * libX/monetdb5/lib/
+		 * probe libX = lib, lib32, lib64, lib/64 */
+		char *libdirs[] = { "lib", "lib64", "lib/64", "lib32", NULL };
+		size_t i;
+		struct stat sb;
+		char *binpath = get_mserver_bin_path();
+		if (binpath != NULL) {
+			binpath = dirname(binpath);
+			binpath = dirname(binpath);
+			for (i = 0; libdirs[i] != NULL; i++) {
+				snprintf(prmodpath, sizeof(prmodpath), "%s%c%s%cmonetdb5",
+						binpath, DIR_SEP, libdirs[i], DIR_SEP);
+				if (stat(prmodpath, &sb) == 0) {
+					modpath = prmodpath;
+					break;
+				}
+			}
+		}
+		if (modpath != NULL)
+			GDKsetenv("monet_mod_path", modpath);
+	}
 
 	/* configure sabaoth to use the right dbfarm and active database */
 	SABAOTHinit(GDKgetenv("gdk_dbfarm"), GDKgetenv("gdk_dbname"));

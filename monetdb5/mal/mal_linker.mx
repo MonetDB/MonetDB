@@ -107,9 +107,6 @@ the consistency of this counter.
 #include <sys/stat.h>
 #endif
 #include <unistd.h>
-#ifdef HAVE_LIBGEN_H
-#include <libgen.h>
-#endif
 
 #if defined(_MSC_VER) && _MSC_VER >= 1400
 #define open _open
@@ -352,82 +349,21 @@ cmpstr(const void *_p1, const void *_p2)
 	return strcmp(f1?f1:p1, f2?f2:p2);
 }
 
-#ifdef _MSC_VER
-#include <Psapi.h>		/* for GetModuleFileName */
-#endif
-
-static char _mserver_bin_path[1024];
-static char *
-get_mserver_bin_path()
-{
-	/* getting the path to the executable's binary, isn't all that
-	 * simple, unfortunately */
-#if defined(_MSC_VER)		/* Windows */
-	if (GetModuleFileName(NULL, _mserver_bin_path,
-			      (DWORD) sizeof(_mserver_bin_path)) != 0)
-		return _mserver_bin_path;
-#elif defined(HAVE__NSGETEXECUTABLEPATH)  /* Darwin/OSX */
-	uint32_t size = sizeof(_mserver_bin_path);
-	if (_NSGetExecutablePath(_mserver_bin_path, &size) == 0)
-		return _mserver_bin_path;
-#elif defined(HAVE_SYS_SYSCTL_H) && defined(KERN_PROC_PATHNAME)  /* BSD */
-	int mib[4];
-	size_t cb = sizeof(_mserver_bin_path);
-	mib[0] = CTL_KERN;
-	mib[1] = KERN_PROC;
-	mib[2] = KERN_PROC_PATHNAME;
-	mib[3] = -1;
-	if (sysctl(mib, 4, _mserver_bin_path, &cb, NULL, 0) == 0)
-		return _mserver_bin_path;
-#elif defined(HAVE_GETEXECNAME)  /* Solaris */
-	char execn = getexecname();
-	/* copy, such that the caller can actually modify this string */
-	snprintf(_mserver_bin_path, sizeof(_mserver_bin_path), "%s", execn);
-#else  /* try Linux approach */
-	if (readlink("/proc/self/exe",
-				_mserver_bin_path, sizeof(_mserver_bin_path)) != -1)
-			return _mserver_bin_path;
-#endif
-	return NULL;
-}
 
 #define MAXMULTISCRIPT 48
 static char *
 locate_file(const char *basename, const char *ext, bit recurse)
 {
 	char *mod_path = GDKgetenv("monet_mod_path");
-	char prmodpath[1024];
 	char *fullname;
 	size_t fullnamelen;
 	size_t filelen = strlen(basename) + strlen(ext);
 	str strs[MAXMULTISCRIPT]; /* hardwired limit */
 	int lasts = 0;
 
-	if (mod_path == NULL) {
-		/* start probing based on some heuristics given the binary
-		 * location:
-		 * bin/mserver5 -> ../
-		 * libX/monetdb5/lib/
-		 * probe libX = lib, lib32, lib64, lib/64 */
-		char *libdirs[] = { "lib", "lib64", "lib/64", "lib32", NULL };
-		size_t i;
-		struct stat sb;
-		char *binpath = get_mserver_bin_path();
-		if (binpath == NULL)
-			return NULL;
-		binpath = dirname(binpath);
-		binpath = dirname(binpath);
-		for (i = 0; libdirs[i] != NULL; i++) {
-			snprintf(prmodpath, sizeof(prmodpath), "%s%c%s%cmonetdb5",
-					binpath, DIR_SEP, libdirs[i], DIR_SEP);
-			if (stat(prmodpath, &sb) == 0) {
-				mod_path = prmodpath;
-				break;
-			}
-		}
-		if (mod_path == NULL)
-			return NULL;
-	}
+	if (mod_path == NULL)
+		return NULL;
+
 	while (*mod_path == PATH_SEP)
 		mod_path++;
 	if (*mod_path == 0)

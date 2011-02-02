@@ -20,6 +20,7 @@ INCLUDES = ../../monetdb5/mal \
 		   ../../monetdb5/misc \
 		   ../../gdk \
 		   ../../common/stream \
+		   ../../common/utils \
 		   ../../common/options \
 		   $(openssl_CFLAGS) $(pcre_CFLAGS) $(libxml2_CFLAGS)
 
@@ -28,5 +29,5 @@ bin_mserver5 = {
 	LIBS = ../../monetdb5/tools/libmonetdb5 @SHARED_LIBS@ \
 		../../gdk/libbat \
 		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) \
-		$(curl_LIBS) $(pcre_LIBS) $(openssl_LIBS)
+		$(curl_LIBS) $(pcre_LIBS) $(openssl_LIBS) $(PSAPILIB)
 }
