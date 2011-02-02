@@ -49,6 +49,8 @@ struct child_list_t {
 struct guide_tree_t {
     char         *uri;
     char         *localname;
+    int           uri_id;
+    int           localname_id;
     nat           count;
     nat           occur;
     nat           min_occur;
@@ -61,7 +63,7 @@ struct guide_tree_t {
 };
 
 /* Insert an XML node into the guide tree */
-guide_tree_t* insert_guide_node(const char*, const char*, 
+guide_tree_t* insert_guide_node(const char*, const char*, int, int,
                                 guide_tree_t*, kind_t);
 
 /* Adjust minimum and maximum occurrence of guide nodes */
