@@ -407,7 +407,7 @@ main(int argc, char *argv[])
 	int thret;
 	confkeyval ckv[] = {
 		{"prefix",             strdup(PREFIX),          STR},
-		{"gdk_dbfarm",         NULL,                    STR},
+		{"gdk_dbfarm",         strdup(LOCALSTATEDIR "/monetdb5/dbfarm"), STR},
 		{"gdk_nr_threads",     NULL,                    INT},
 		{"sql_optimizer",      NULL,                    STR},
 		{"mero_msglog",        strdup(MERO_LOG),        STR},
@@ -493,7 +493,7 @@ main(int argc, char *argv[])
 	kv = findConfKey(ckv, "prefix");
 	prefix = kv->val; /* has default, must be set */
 	kv = findConfKey(ckv, "gdk_dbfarm");
-	dbfarm = replacePrefix(kv->val ? kv->val : LOCALSTATEDIR "/monetdb5/dbfarm" , prefix);
+	dbfarm = replacePrefix(kv->val, prefix); /* has default, must be set */
 	kv = findConfKey(ckv, "mero_msglog");
 	_mero_msglogfile = replacePrefix(kv->val, prefix);
 	if (strcmp(kv->val, "") == 0) { /* has default, must be set */
