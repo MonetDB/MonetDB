@@ -1305,7 +1305,7 @@ def GetBitsAndOIDsAndModsAndStatic(env) :
     env['TST_STATIC'] = ""
     if qOut:
         tbs = re.compile("^# Compiled for .*/([63][42]bit) with ([63][42])bit OIDs;? (.*) linked", re.MULTILINE)
-        tm = re.compile("^Modules: (.*)$", re.MULTILINE)
+        tm = re.compile("^Modules: (.+)$", re.MULTILINE)
         #ts = re.compile("^!ERROR: DL_open: library not found \(STATIC\).$", re.MULTILINE)
         for l in qOut.split('\n'):
             bs = tbs.match(l)
@@ -1421,7 +1421,7 @@ def CheckBATs(env, TST, TSTDB) :
         raise
     TST_BATS = []
     if qOut:
-        tb = re.compile("^BATs: (.*)$", re.MULTILINE)
+        tb = re.compile("^BATs: (.+)$", re.MULTILINE)
         for l in qOut.split('\n'):
             b = tb.match(l)
             if b:
