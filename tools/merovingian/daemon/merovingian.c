@@ -493,7 +493,7 @@ main(int argc, char *argv[])
 	kv = findConfKey(ckv, "prefix");
 	prefix = kv->val; /* has default, must be set */
 	kv = findConfKey(ckv, "gdk_dbfarm");
-	dbfarm = replacePrefix(kv ? kv->val : LOCALSTATEDIR "/monetdb5/dbfarm" , prefix);
+	dbfarm = replacePrefix(kv->val ? kv->val : LOCALSTATEDIR "/monetdb5/dbfarm" , prefix);
 	kv = findConfKey(ckv, "mero_msglog");
 	_mero_msglogfile = replacePrefix(kv->val, prefix);
 	if (strcmp(kv->val, "") == 0) { /* has default, must be set */
