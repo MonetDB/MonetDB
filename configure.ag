@@ -2714,13 +2714,10 @@ save_LIBS="$LIBS"
 LIBS="$LIBS $MATH_LIBS"
 AC_CHECK_FUNCS([\
 				asctime_r \
-				basename \
 				ctime_r \
-				drand48 \
 				fcntl \
 				fpclass \
 				fpclassify \
-				fstat \
 				fsync \
 				ftime \
 				ftruncate \
@@ -2734,13 +2731,11 @@ AC_CHECK_FUNCS([\
 				getuid \
 				GlobalMemoryStatus \
 				GlobalMemoryStatusEx \
-				inet_ntop \
 				isinf \
 				kill \
 				localtime_r \
 				lockf \
 				madvise \
-				mrand48 \
 				nl_langinfo \
 				_NSGetExecutablePath \
 				pipe \
@@ -2756,12 +2751,9 @@ AC_CHECK_FUNCS([\
 				setsid \
 				shutdown \
 				sigaction \
-				strcasecmp \
 				strcasestr \
-				strdup \
 				strftime \
 				strncasecmp \
-				strndup \
 				strptime \
 				strsignal \
 				strtod \
