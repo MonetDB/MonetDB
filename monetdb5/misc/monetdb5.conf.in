@@ -32,34 +32,7 @@
 # common/options/monet_options.mx                             #
 # ----------------------------------------------------------- #
 
-# Absolute path where MonetDB is installed
-prefix=@Xprefix@
-exec_prefix=@Xexec_prefix@
 
-# GDK Section
-#============
-# All databases are stored as a directory under the directory given
-# below.  Use this value to change the overall location of your data.
-gdk_dbfarm=@Xlocalstatedir@@DIRSEP@monetdb5@DIRSEP@dbfarm
-#
-# MonetDB can only handle one database at a time.  When you start an
-# mserver5 manually without specifying the database name yourself, the
-# following database name is used.
-#gdk_dbname=demo
-
-# Monet Section
-#==============
-#monet_admin=adm			#administrator user name
-# Prompt when using MAL interface
-#monet_prompt=>
-#
-# Start mserver in daemon mode, or start with MAL interactive
-# interface?
-#monet_daemon=no
-#
-# Display version and copyright information upon startup?
-#monet_welcome=yes
-#
 # Where is the file that stores the secret key to unlock the password
 # vault?  The file is read up to the first null-byte ('\0'), so you
 # can padd the file with trailing null-bytes to obfuscate the key
@@ -159,23 +132,6 @@ mero_pidfile=@Xlocalstatedir@@DIRSEP@run@DIRSEP@monetdb@DIRSEP@merovingian.pid
 # the file cannot be opened for some reason, Merovingian will not
 # start.
 mero_controlport=50001
-
-# Monet Application Interface Section
-#====================================
-# default TCP port opened by mserver5 for a client to connect to
-#mapi_port=50000
-#
-# whether or not to automatically find a free port if mapi_port is
-# already taken by another application
-#mapi_autosense=false
-#
-# whether or not to allow remote access to the server (bind to any
-# interface or just localhost)
-#mapi_open=false
-#
-# mapi_usock is ignored on platforms that do not support UNIX domain
-# sockets, it is disabled by default, but e.g. enabled by Merovingian
-#mapi_usock=${gdk_dbfarm}@DIRSEP@mapi_socket
 
 # SQL Interface Section
 #======================
