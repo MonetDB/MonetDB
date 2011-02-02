@@ -1366,11 +1366,11 @@ MT_mmap_open(MT_mmap_hdl *hdl, char *path, int mode, off_t off, size_t len, size
 		}
 	}
 
-	h2 = CreateFileMapping(h1, &sa, mode3, (DWORD) ((((gdk_int64) off + (gdk_int64) len) >> 32) & LL_CONSTANT(0xFFFFFFFF)), (DWORD) ((off + len) & LL_CONSTANT(0xFFFFFFFF)), NULL);
+	h2 = CreateFileMapping(h1, &sa, mode3, (DWORD) ((((__int64) off + (__int64) len) >> 32) & LL_CONSTANT(0xFFFFFFFF)), (DWORD) ((off + len) & LL_CONSTANT(0xFFFFFFFF)), NULL);
 	if (h2 == NULL) {
 		GDKsyserror("MT_mmap: CreateFileMapping(" PTRFMT ", &sa, %lu, %lu, %lu, NULL) failed\n",
 			    PTRFMTCAST h1, mode3,
-			    (DWORD) ((((gdk_int64) off + (gdk_int64) len) >> 32) & LL_CONSTANT(0xFFFFFFFF)),
+			    (DWORD) ((((__int64) off + (__int64) len) >> 32) & LL_CONSTANT(0xFFFFFFFF)),
 			    (DWORD) ((off + len) & LL_CONSTANT(0xFFFFFFFF)));
 		CloseHandle(h1);
 		return (void *) -1;
@@ -1419,7 +1419,7 @@ MT_mmap_remap(MT_mmap_hdl *hdl, off_t off, size_t len)
 	remap_t *map = (remap_t *) hdl->map;
 	void *ret;
 
-	ret = MapViewOfFileEx((HANDLE) hdl->hdl, hdl->mode, (DWORD) ((gdk_int64) off >> 32), (DWORD) off, len, (void *) ((char *) hdl->fixed));
+	ret = MapViewOfFileEx((HANDLE) hdl->hdl, hdl->mode, (DWORD) ((__int64) off >> 32), (DWORD) off, len, (void *) ((char *) hdl->fixed));
 	if (ret == NULL) {
 		return (void *) -1;
 	}
