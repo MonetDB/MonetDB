@@ -40,7 +40,8 @@
  * Insert an XML node into the guide tree 
  */
 guide_tree_t * 
-insert_guide_node (const char *URI, const char *localname, 
+insert_guide_node (const char *URI, const char *localname,
+                   int URI_id, int localname_id,
                    guide_tree_t *parent, kind_t kind)
 {
     static nat    guide_count    = 1;
@@ -93,15 +94,17 @@ insert_guide_node (const char *URI, const char *localname,
     guide_node = (guide_tree_t *) malloc (sizeof (guide_tree_t));
 
     *guide_node = (guide_tree_t) {
-        .uri        = URI ? strdup (URI) : NULL
-      , .localname  = localname ? strdup (localname) : NULL
-      , .count      = 1
-      , .occur      = 1
-      , .parent     = parent
-      , .child_list = NULL 
-      , .last_child = NULL
-      , .guide      = guide_count++
-      , .kind       = kind
+        .uri          = URI ? strdup (URI) : NULL
+      , .localname    = localname ? strdup (localname) : NULL
+      , .uri_id       = URI_id
+      , .localname_id = localname_id
+      , .count        = 1
+      , .occur        = 1
+      , .parent       = parent
+      , .child_list   = NULL 
+      , .last_child   = NULL
+      , .guide        = guide_count++
+      , .kind         = kind
     };
 
     if (parent) {
@@ -190,10 +193,13 @@ print_guide_tree (FILE *guide_out, guide_tree_t *guide, int tree_depth)
     fputc ('\"', guide_out);
 
     if (guide->uri)
-        fprintf (guide_out, " uri=\"%s\"", (char *) guide->uri);
+        fprintf (guide_out, " uri=\"%s\" uriId=\"%i\"",
+                 (char *) guide->uri, guide->uri_id);
 
     if (guide->localname)
         fprintf (guide_out, " name=\"%s\"", (char *) guide->localname);
+    if (guide->localname_id != -1)
+        fprintf (guide_out, " nameId=\"%i\"", guide->localname_id);
 
     if (!guide->child_list) {
         fputc ('/', guide_out);

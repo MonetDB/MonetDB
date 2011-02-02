@@ -98,6 +98,7 @@ struct shred_state_t {
     char *outfile;             /** < path of the out-file                     */
     char *doc_name;            /** < name of the document                     */
     bool  quiet;               /** < shredder gives no addtional information. */
+    bool  escape_quotes;       /** < escape quotes during printing            */
     bool  attributes_separate; /** < print attributes into a separate file    */
     bool  names_separate;      /** < print names into a separate file         */
     bool  statistics;          /** < print guides into a separate file        */

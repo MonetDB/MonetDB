@@ -72,6 +72,8 @@ struct node_t {
     nat           children;             /* # of children nodes collected so far */
     int           level;                /* length of path from node to root */
     kind_t        kind;                 /* XML node kind */
+    char         *prefix;               /* namespace prefix of element/attribute */
+    int           prefix_id;            /* unique ID of namespace prefix */
     char         *localname;            /* localname of element/attribute */
     int           localname_id;         /* unique ID of localname */
     char         *uri;                  /* namespace URI of element/attribute */
@@ -94,6 +96,7 @@ void SHshredder (const char *s,
                  FILE *shout, 
                  FILE *attout, 
                  FILE *namesout, 
+                 FILE *prefixesout,
                  FILE *urisout,
                  FILE *guideout, 
                  shred_state_t *status);
@@ -105,6 +108,7 @@ void SHshredder_table (const char *s,
                        FILE *shout, 
                        FILE *attout, 
                        FILE *namesout, 
+                       FILE *prefixesout,
                        FILE *urisout,
                        FILE *guideout, 
                        FILE *tableout, 

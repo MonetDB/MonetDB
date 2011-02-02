@@ -21,7 +21,7 @@
 # 2008-2011 Eberhard Karls Universitaet Tuebingen, respectively.  All
 # Rights Reserved.
 
-SUBDIRS = utils schema debug mem parser semantics core algebra mil include sql algebra-m5sql xmlimport 
+SUBDIRS = utils schema debug mem parser semantics core algebra mil include sql xmlimport 
 
 EXTRA_DIST_DIR = Tests
 
@@ -78,7 +78,6 @@ bin_pf = {
 		mil/libmil \
 		libcompiler2 \
 		mem/libmem \
-		algebra-m5sql/libmsa \
 		sql/libsql \
 		#
 		xmlimport/libxmlimport \
