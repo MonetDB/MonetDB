@@ -50,6 +50,8 @@ mutils_export struct dirent *readdir(DIR *dir);
 mutils_export void rewinddir(DIR *dir);
 mutils_export int closedir(DIR *dir);
 
+mutils_export char *dirname(char *path);
+
 #endif
 
 #ifndef S_IRUSR

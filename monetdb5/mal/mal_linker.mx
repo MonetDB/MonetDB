@@ -107,7 +107,9 @@ the consistency of this counter.
 #include <sys/stat.h>
 #endif
 #include <unistd.h>
+#ifdef HAVE_LIBGEN_H
 #include <libgen.h>
+#endif
 
 #if defined(_MSC_VER) && _MSC_VER >= 1400
 #define open _open
@@ -356,7 +358,12 @@ get_mserver_bin_path()
 {
 	/* getting the path to the executable's binary, isn't all that
 	 * simple, unfortunately */
-#if defined(HAVE__NSGETEXECUTABLEPATH)  /* Darwin/OSX */
+#if defined(_MSC_VER)		/* Windows */
+	DWORD buflen = (DWORD) sizeof(_mserver_bin_path);
+	if (QueryFullProcessImageName(GetCurrentProcess(), 0,
+				      _mserver_bin_path, &buflen) != 0)
+		return _mserver_bin_path;
+#elif defined(HAVE__NSGETEXECUTABLEPATH)  /* Darwin/OSX */
 	uint32_t size = sizeof(_mserver_bin_path);
 	if (_NSGetExecutablePath(_mserver_bin_path, &size) == 0)
 		return _mserver_bin_path;

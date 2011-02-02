@@ -152,6 +152,20 @@ closedir(DIR *dir)
 	return 0;
 }
 
+char *
+dirname(char *path)
+{
+	char *p, *q;
+
+	for (p = path, q = NULL; *p; p++)
+		if (*p == '/' || *p == '\\')
+			q = p;
+	if (q == NULL)
+		return ".";
+	*q = '\0';
+	return path;
+}
+
 /* see contract of unix MT_lockf */
 int
 MT_lockf(char *filename, int mode, off_t off, off_t len)
