@@ -506,13 +506,13 @@ multiplexThread(void *d)
 	fd_set fds;
 	multiplex_client *c;
 	int msock = -1;
-	char buf[8096];
+	char buf[BLOCK + 1];
 	int r;
 
 	/* select on upstream clients, on new data, read query, forward,
 	 * union all results, send back, and restart cycle. */
 	
-	buf[8095] = '\0';
+	buf[BLOCK] = '\0';
 	while (_mero_keep_listening == 1) {
 		FD_ZERO(&fds);
 		for (c = m->clients; c != NULL; c = c->next) {
@@ -530,7 +530,7 @@ multiplexThread(void *d)
 		for (c = m->clients; c != NULL; c = c->next) {
 			if (!FD_ISSET(c->sock, &fds))
 				continue;
-			if (mnstr_read_block(c->fdin, buf, 8095, 1) < 0) {
+			if (mnstr_read_block(c->fdin, buf, BLOCK, 1) < 0) {
 				/* error, or some garbage */
 				multiplexRemoveClient(m, c);
 				/* don't crash on now stale c */
