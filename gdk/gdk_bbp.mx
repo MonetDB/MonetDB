@@ -2020,7 +2020,7 @@ Only real bats without memory references can be unloaded.
 /*
 @-
 The @%BBP_ref@ contains the amount of live references to a BAT.
-These might be in recursive BATs, C or MIL variables.  The count is
+These might be in recursive BATs, C or MAL variables.  The count is
 incremented with @%BBPfix@ and decremented with @%BBPunfix@.
 @h
 */
@@ -3122,7 +3122,7 @@ and then benchmark it (missing in the previous exercise) :
  @{ var t := time(), i := 0; while((i :+= 1) < 100000) bat(int,int); print(time() - t); @}
  [ 847 ]
 
-so with caching *some* MIL programs can be nearly twice as fast (optimized compile),
+so with caching *some* programs can be nearly twice as fast (optimized compile),
 though I expect the gains to be smaller in general.
 @{
 @c

@@ -2126,7 +2126,7 @@ sem_post(sem_t * sem)
 @}
 
 @+ Memory fragmentation monitoring
-On 32-bits systems, Monet's aggressive use of virtual memory may bring it into
+On 32-bits systems, MonetDB's aggressive use of virtual memory may bring it into
 trouble as the limits of what is addressable in a 32-bits system are reached 
 (an 32-bits OS only allows 2 to 4GB of memory to be used). In order to aid debugging
 situations where VM allocs fail (due to memory fragmentation), a monitoring
@@ -2137,9 +2137,9 @@ value from the following domain:
 @table @samp
 @item 0-9 
 thread stack space of thread <num>
-@item B 
+@item H 
 in use for a large BAT heap.
-@item b 
+@item h 
 free (last usage was B)
 @item S 
 in use for a malloc block
@@ -2153,10 +2153,6 @@ free (last usage was P)
 in use as memory mapped region
 @item m 
 free (last usage was M)
-@item C 
-in use as MIL context buffer
-@item c 
-free (last usage was C)
 @end table
 
 The MT_alloc_printmap condenses the map by printing a char for each MB,
@@ -2199,7 +2195,6 @@ struct {
 	'p', "0x00F2BD16", "free (last usage was P)"}, {
 	'M', "0x00959516", "in use as memory mapped region"}, {
 	'm', "0x00CEDC16", "free (last usage was M)"}, {
-	'C', "0x004EFDC7", "in use as MIL context buffer"}, {
 	'c', "0x00FFFD2D", "free (last usage was M)"}, {
 	0, "0x00FFFDFE", "free"}
 };

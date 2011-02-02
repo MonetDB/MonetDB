@@ -1256,8 +1256,7 @@ GDKfree_(void *blk)
 		 * To avoid performance penalty in the "production version",
 		 * we only do this in debugging/development mode (i.e.,
 		 * when configured with --enable-assert).
-		 * Disable at runtime via `Mserver --debug=33554432` or
-		 * `debugmask(or(debugmask(),33554432));` in MIL.
+		 * Disable at command line using --debug=33554432
 		 */
 		DEADBEEFCHK memset(s, 0xDB, size - (8 + (size & 1)));	/* 0xDeadBeef */
 #endif
