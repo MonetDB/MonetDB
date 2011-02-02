@@ -2479,6 +2479,7 @@ AC_CHECK_HEADERS([crypt.h \
 	libintl.h \
 	limits.h \
 	locale.h \
+	mach-o/dyld.h \
 	malloc.h \
 	netdb.h \
 	procfs.h \
