@@ -408,19 +408,12 @@ locate_file(const char *basename, const char *ext, bit recurse)
 		binpath = dirname(binpath);
 		binpath = dirname(binpath);
 		for (i = 0; libdirs[i] != NULL; i++) {
-			snprintf(prmodpath, sizeof(prmodpath), "%s%c%s%cmonetdb5%clib",
-					binpath, DIR_SEP, libdirs[i], DIR_SEP, DIR_SEP);
+			snprintf(prmodpath, sizeof(prmodpath), "%s%c%s%cmonetdb5",
+					binpath, DIR_SEP, libdirs[i], DIR_SEP);
 			if (stat(prmodpath, &sb) == 0) {
 				snprintf(prmodpath, sizeof(prmodpath),
-						"%s%c%s%cmonetdb5:"
-#ifndef __MINGW32__
-						"%s%c%s%cmonetdb5%clib"
-#else
-						"%s%c%s%cmonetdb5%cbin"
-#endif
-						,
-						binpath, DIR_SEP, libdirs[i], DIR_SEP,
-						binpath, DIR_SEP, libdirs[i], DIR_SEP, DIR_SEP);
+					 "%s%c%s%cmonetdb5",
+					 binpath, DIR_SEP, libdirs[i], DIR_SEP);
 				mod_path = prmodpath;
 				break;
 			}

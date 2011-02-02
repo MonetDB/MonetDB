@@ -790,9 +790,6 @@ def am_library(fd, var, libmap, am):
         scripts_ext = libmap['SCRIPTS']
 
     ld = am_translate_dir(ld, am)
-    if sep == '_' and pref:
-        # if no prefix, also don't put in subdirectory
-        ld = ld + '/lib'
     fd.write("%sdir = %s\n" % (libname, ld))
     if libmap.has_key('NOINST'):
         am['NLIBS'].append((pref, libname, sep))
@@ -880,9 +877,6 @@ def am_libs(fd, var, libsmap, am):
     if libsmap.has_key('SEP'):
         sep = libsmap['SEP'][0]
 
-    if sep == '_':
-        ld = ld + '/lib'
-
     scripts_ext = []
     if libsmap.has_key('SCRIPTS'):
         scripts_ext = libsmap['SCRIPTS']
@@ -952,7 +946,7 @@ def am_libs(fd, var, libsmap, am):
         fd.write("%sdir = %s\n" % (libname, ld))
         fd.write("lib%s%s_la_CFLAGS=-DLIB%s $(AM_CFLAGS)\n" % (sep,libname,libname.upper()))
         am['LIBS'].append(('lib', libname, sep, ''))
-        am['InstallList'].append("\t"+ld+"/lib"+sep+libname+".so\n")
+        am['InstallList'].append("\t"+ld+sep+libname+".so\n")
 
     if libsmap.has_key('HEADERS'):
         HDRS = []
