@@ -352,6 +352,10 @@ cmpstr(const void *_p1, const void *_p2)
 	return strcmp(f1?f1:p1, f2?f2:p2);
 }
 
+#ifdef _MSC_VER
+#include <Psapi.h>		/* for GetModuleFileName */
+#endif
+
 static char _mserver_bin_path[1024];
 static char *
 get_mserver_bin_path()
@@ -359,9 +363,8 @@ get_mserver_bin_path()
 	/* getting the path to the executable's binary, isn't all that
 	 * simple, unfortunately */
 #if defined(_MSC_VER)		/* Windows */
-	DWORD buflen = (DWORD) sizeof(_mserver_bin_path);
-	if (QueryFullProcessImageName(GetCurrentProcess(), 0,
-				      _mserver_bin_path, &buflen) != 0)
+	if (GetModuleFileName(NULL, _mserver_bin_path,
+			      (DWORD) sizeof(_mserver_bin_path)) != 0)
 		return _mserver_bin_path;
 #elif defined(HAVE__NSGETEXECUTABLEPATH)  /* Darwin/OSX */
 	uint32_t size = sizeof(_mserver_bin_path);

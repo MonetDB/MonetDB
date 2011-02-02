@@ -397,6 +397,8 @@ MAKEDEBUG=
 MAKEDEBUG=DEBUG=1
 !ENDIF
 
+PSAPILIB = psapi.lib
+
 # When compiled with plain `nmake`,
 # 32-bit OIDs are used by default on 64-bit Windows
 # (see winconfig.h for details);
