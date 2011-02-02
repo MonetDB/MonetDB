@@ -10,6 +10,6 @@ for t in $tsts; do
 	while [ $i -lt $iter ]; do
 		i=$[$i + 1];
 		echo -n "$t:	"
-		time mserver5 -c perf.conf $t.mal </dev/null >$t.out 2>$t.err
+		time mserver5 $t.mal </dev/null >$t.out 2>$t.err
 	done
 done

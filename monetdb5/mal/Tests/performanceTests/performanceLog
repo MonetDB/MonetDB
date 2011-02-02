@@ -1160,3 +1160,30 @@ tst400e		 0.250/0.229/0.011	1M incr fcn
 
 tst901a		 0.583/0.539/0.038	[+] call
 tst901b		 1.654/1.605/0.033	[+] call
+======================== 2 Feb 20119 ===================
+Make sure the complete power of the cpu is used (cpuspeed)
+and reduced some cost in the interpreter
+The compilation mode for V5 is --disable-optimize --enable-debug
+command: time mserver5  TST </dev/null >/dev/null
+base		0.163/0.089/0.026
+tst400a		0.216/0.154/0.023
+tst400bHuge	0.367/0.324/0.039
+tst400cHuge	0.619/0.536/0.038
+tst400d		1.268/1.193/0.039
+tst400e		0.867/0.836/0.025
+
+tst901b		4.021/3.973/0.041
+======================== 2 Feb 20119 ===================
+Make sure the complete power of the cpu is used (cpuspeed)
+and reduced some cost in the interpreter
+The compilation mode for V5 is --enable-optimize --disable-debug
+compilation took 28 minutes
+command: time mserver5 TST </dev/null >/dev/null
+base		0.115/0.062/0.027
+tst400a		0.115/0.082/0.026
+tst400bHuge	0.216/0.162/0.043
+tst400cHuge	0.369/0.275/0.043
+tst400d		0.666/0.624/0.030
+tst400e		0.466/0.421/0.031
+
+tst901b		1.918/1.867/0.043
