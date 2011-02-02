@@ -172,17 +172,16 @@ usage(char *prog)
 	exit(0);
 }
 
-void
-monet_hello(opt *set, int setlen)
+static void
+monet_hello(void)
 {
-	char *s= monet_motd;
-	size_t size= 2048;
+	size_t size = 2048;
+	char *s = alloca(size);
 #ifdef MONETDB_STATIC
 	char *linkinfo = "statically";
 #else
 	char *linkinfo = "dynamically";
 #endif
-	char *msg = mo_find_option(set, setlen, "monet_welcome");
 
 	dbl    sz_mem_h;
 	char  *qc = " kMGTPE";
@@ -229,11 +228,7 @@ monet_hello(opt *set, int setlen)
 	size -= strlen(s);
 	s += strlen(s);
 	snprintf(s,size,"# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved\n");
-	if (msg && strcmp(msg, "yes") == 0){
-		printf("%s",monet_motd);
-		printf("# Visit http://monetdb.cwi.nl/ for further information\n");
-	}
-	/* extend monet_motd with compilation information for performance tracing */
+	printf("# Visit http://monetdb.cwi.nl/ for further information\n");
 }
 
 @-
@@ -274,7 +269,7 @@ monet_init(opt *set, int setlen)
 #endif
 	}
 #endif
-	monet_hello(set, setlen);
+	monet_hello();
 	return 1;
 }
 

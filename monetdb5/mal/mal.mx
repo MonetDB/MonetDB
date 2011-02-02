@@ -203,7 +203,6 @@ mal_export char            monet_cwd[PATHLENGTH];
 mal_export int             monet_welcome; 
 mal_export str             *monet_script;
 mal_export int 				monet_daemon;
-mal_export char 			monet_motd[2048];
 mal_export size_t			monet_memory;
 
 #define mal_set_lock(X,Y) if(GDKprotected) MT_lock_set(&X,Y)
@@ -235,7 +234,6 @@ char monet_cwd[PATHLENGTH] = { 0 };
 int monet_welcome = 1;
 str *monet_script;
 int monet_daemon=0;
-char monet_motd[2048];
 size_t monet_memory;
 @}
 @-

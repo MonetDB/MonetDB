@@ -3009,7 +3009,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * @throws SQLException if a database access error occurs
 	 */
 	public int getDatabaseMajorVersion() throws SQLException {
-		String version = getEnv("gdk_version");
+		String version = getEnv("monet_version");
 		int major = 0;
 		try {
 			major = Integer.parseInt(version.substring(0, version.indexOf(".")));
@@ -3027,7 +3027,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * @throws SQLException if a database access error occurs
 	 */
 	public int getDatabaseMinorVersion() throws SQLException {
-		String version = getEnv("gdk_version");
+		String version = getEnv("monet_version");
 		int minor = 0;
 		try {
 			int start = version.indexOf(".");

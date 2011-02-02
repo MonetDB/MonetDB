@@ -361,7 +361,7 @@ mo_builtin_settings(opt **Set)
 	if (Set == NULL)
 		return 0;
 
-#define N_OPTIONS	25	/*MUST MATCH # OPTIONS BELOW */
+#define N_OPTIONS	11	/*MUST MATCH # OPTIONS BELOW */
 	set = malloc(sizeof(opt) * N_OPTIONS);
 	if (set == NULL)
 		return 0;
@@ -371,24 +371,6 @@ mo_builtin_settings(opt **Set)
 	/* monetdb5/misc/monetdb5.conf.in                                 */
 	/* -------------------------------------------------------------- */
 
-	set[i].kind = opt_builtin;
-	set[i].name = strdup("gdk_arch");
-	snprintf(buf, BUFSIZ, "%dbit%s", (int) sizeof(char *) * 8, HOST);
-	set[i].value = strdup(buf);
-	i++;
-	set[i].kind = opt_builtin;
-	set[i].name = strdup("gdk_version");
-	set[i].value = strdup(VERSION);
-	i++;
-
-	set[i].kind = opt_builtin;
-	set[i].name = strdup("prefix");
-	set[i].value = strdup(PREFIX);
-	i++;
-	set[i].kind = opt_builtin;
-	set[i].name = strdup("exec_prefix");
-	set[i].value = strdup(EXEC_PREFIX);
-	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("gdk_dbname");
 	set[i].value = strdup("demo");
@@ -412,32 +394,16 @@ mo_builtin_settings(opt **Set)
 	set[i].value = strdup("yes");
 	i++;
 	set[i].kind = opt_builtin;
-	set[i].name = strdup("monet_admin");
-	set[i].value = strdup("adm");
-	i++;
-	set[i].kind = opt_builtin;
 	set[i].name = strdup("monet_prompt");
 	set[i].value = strdup(">");
-	i++;
-	set[i].kind = opt_builtin;
-	set[i].name = strdup("monet_welcome");
-	set[i].value = strdup("yes");
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("monet_daemon");
 	set[i].value = strdup("no");
 	i++;
 	set[i].kind = opt_builtin;
-	set[i].name = strdup("host");
-	set[i].value = strdup("localhost");
-	i++;
-	set[i].kind = opt_builtin;
 	set[i].name = strdup("mapi_port");
 	set[i].value = strdup("50000");
-	i++;
-	set[i].kind = opt_builtin;
-	set[i].name = strdup("mapi_clients");
-	set[i].value = strdup("2");
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("mapi_open");
@@ -463,23 +429,6 @@ mo_builtin_settings(opt **Set)
 	set[i].name = strdup("sql_debug");
 	set[i].value = strdup("0");
 	i++;
-	set[i].kind = opt_builtin;
-	set[i].name = strdup("standoff_ns");
-	set[i].value = strdup("");
-	i++;
-	set[i].kind = opt_builtin;
-	set[i].name = strdup("standoff_start");
-	set[i].value = strdup("start");
-	i++;
-	set[i].kind = opt_builtin;
-	set[i].name = strdup("standoff_end");
-	set[i].value = strdup("end");
-	i++;
-
-	/* -------------------------------------------------------------- */
-	/* Please keep the above defaults aligned with the comments in    */
-	/* MonetDB4/conf/MonetDB.conf.in & MonetDB5/conf/monetdb5.conf.in */
-	/* -------------------------------------------------------------- */
 
 	assert(i == N_OPTIONS);
 	*Set = set;
