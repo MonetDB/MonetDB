@@ -200,7 +200,10 @@ mo_substitute(opt *set, int setlen, char *val)
 			char *p, *t;
 
 			*r = 0;
-			p = mo_find_option(set, setlen, q + 2);
+			if (strcmp(q + 2, "prefix") == 0)
+				p = PREFIX;
+			else
+				p = mo_find_option(set, setlen, q + 2);
 			if (!p) {
 				*r = '}';
 				return s;
@@ -378,7 +381,7 @@ mo_builtin_settings(opt **Set)
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("gdk_dbfarm");
 	snprintf(buf, BUFSIZ, "%s%c%s%c%s",
-		 LOCALSTATEDIR, DIR_SEP, PACKAGE, DIR_SEP, "dbfarm");
+		 LOCALSTATEDIR, DIR_SEP, "monetdb5", DIR_SEP, "dbfarm");
 	set[i].value = strdup(buf);
 	i++;
 	set[i].kind = opt_builtin;
