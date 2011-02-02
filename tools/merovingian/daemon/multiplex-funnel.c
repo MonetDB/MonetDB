@@ -531,7 +531,7 @@ multiplexThread(void *d)
 			if (m->dbcv[i]->connupdate) {
 				/* put new connection live */
 				Mfprintf(stdout, "performing deferred connection cycle "
-						"for %s from %s to %s",
+						"for %s from %s to %s\n",
 						m->dbcv[i]->database,
 						mapi_get_uri(m->dbcv[i]->conn),
 						mapi_get_uri(m->dbcv[i]->newconn));
