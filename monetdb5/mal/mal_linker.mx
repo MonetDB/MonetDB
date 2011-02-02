@@ -418,9 +418,6 @@ locate_file(const char *basename, const char *ext, bit recurse)
 			snprintf(prmodpath, sizeof(prmodpath), "%s%c%s%cmonetdb5",
 					binpath, DIR_SEP, libdirs[i], DIR_SEP);
 			if (stat(prmodpath, &sb) == 0) {
-				snprintf(prmodpath, sizeof(prmodpath),
-					 "%s%c%s%cmonetdb5",
-					 binpath, DIR_SEP, libdirs[i], DIR_SEP);
 				mod_path = prmodpath;
 				break;
 			}
