@@ -155,9 +155,9 @@ MFconnectionManager(void *d)
 								Mfprintf(stderr, "target %s can no longer "
 										"be resolved\n",
 										m->dbcv[i]->database);
-								m->dbcv[i]->conn = NULL;
-								mapi_disconnect(tm);
-								mapi_destroy(tm);
+								/* schedule to drop connection */
+								m->dbcv[i]->newconn = NULL;
+								m->dbcv[i]->connupdate = 1;
 								continue;
 							}
 							/* walk all connections, in an attempt to
@@ -171,7 +171,6 @@ MFconnectionManager(void *d)
 									break;
 							}
 							if (walk == NULL) {
-								Mapi ttm;
 								snprintf(buf, sizeof(buf), "%s%s",
 										stats->conns->val, stats->dbname);
 								Mfprintf(stdout, "changing multiplexer target %s: %s->%s\n",
@@ -185,20 +184,17 @@ MFconnectionManager(void *d)
 											m->dbcv[i]->database,
 											mapi_error_str(tm));
 									mapi_destroy(tm);
-									tm = m->dbcv[i]->conn;
-									m->dbcv[i]->conn = NULL;
-									mapi_disconnect(tm);
-									mapi_destroy(tm);
+									/* schedule connection for removal */
+									m->dbcv[i]->newconn = NULL;
+									m->dbcv[i]->connupdate = 1;
 									msab_freeStatus(&stats);
 									continue;
 								}
 								mapi_cache_limit(tm, -1); /* don't page */
 
-								/* set the new connection live */
-								ttm = m->dbcv[i]->conn;
-								m->dbcv[i]->conn = tm;
-								mapi_disconnect(ttm);
-								mapi_destroy(ttm);
+								/* let the new connection go live */
+								m->dbcv[i]->newconn = tm;
+								m->dbcv[i]->connupdate = 1;
 							}
 							msab_freeStatus(&stats);
 						}
@@ -298,6 +294,8 @@ multiplexInit(multiplex **ret, char *database)
 		*p = '\0';
 		m->dbcv[i]->database = p + 1;
 		m->dbcv[i]->conn = NULL;
+		m->dbcv[i]->newconn = NULL;
+		m->dbcv[i]->connupdate = 0;
 
 		i++;
 		p = q + 1;
@@ -332,6 +330,8 @@ multiplexInit(multiplex **ret, char *database)
 			*p = '\0';
 			m->dbcv[i]->database = p + 1;
 			m->dbcv[i]->conn = NULL;
+			m->dbcv[i]->newconn = NULL;
+			m->dbcv[i]->connupdate = 0;
 		}
 	}
 
@@ -507,7 +507,7 @@ multiplexThread(void *d)
 	multiplex_client *c;
 	int msock = -1;
 	char buf[BLOCK + 1];
-	int r;
+	int r, i;
 
 	/* select on upstream clients, on new data, read query, forward,
 	 * union all results, send back, and restart cycle. */
@@ -520,10 +520,29 @@ multiplexThread(void *d)
 			if (c->sock > msock)
 				msock = c->sock;
 		}
-		/* wait up to 5 seconds. */
-		tv.tv_sec = 5;
+
+		/* wait up to 1 second. */
+		tv.tv_sec = 1;
 		tv.tv_usec = 0;
 		r = select(msock + 1, &fds, NULL, NULL, &tv);
+
+		/* evaluate if connections have to be switched */
+		for (i = 0; i < m->dbcc; i++) {
+			if (m->dbcv[i]->connupdate) {
+				/* put new connection live */
+				Mfprintf(stdout, "performing deferred connection cycle "
+						"for %s from %s to %s",
+						m->dbcv[i]->database,
+						mapi_get_uri(m->dbcv[i]->conn),
+						mapi_get_uri(m->dbcv[i]->newconn));
+				mapi_disconnect(m->dbcv[i]->conn);
+				mapi_destroy(m->dbcv[i]->conn);
+				m->dbcv[i]->conn = m->dbcv[i]->newconn;
+				m->dbcv[i]->newconn = NULL;
+				m->dbcv[i]->connupdate = 0;
+			}
+		}
+
 		/* nothing interesting has happened */
 		if (r == 0)
 			continue;

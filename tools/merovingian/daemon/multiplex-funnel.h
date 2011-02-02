@@ -27,7 +27,9 @@
 #include "merovingian.h"
 
 typedef struct _multiplex_database {
-	Mapi conn;
+	Mapi conn;              /* current connection in use */
+	Mapi newconn;           /* new connection we should set live (or NULL) */
+	char connupdate;        /* if set, we have to cycle newconn into conn */
 	char *user;
 	char *pass;
 	char *database;
