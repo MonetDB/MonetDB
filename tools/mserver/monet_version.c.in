@@ -61,7 +61,6 @@ monet_version(void)
 			"using %d thread%s\n",
 			GDKnr_threads, GDKnr_threads != 1 ? "s" : ""); */
 #endif
-	printf("Configured for prefix: " PREFIX "\n");
 	printf("Libraries:\n");
 	{
 		char pcreversion[] = "@pcreversion@";

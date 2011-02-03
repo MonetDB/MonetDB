@@ -1359,7 +1359,6 @@ main(int argc, char *argv[])
 	int i;
 	int fd;
 	confkeyval ckv[] = {
-		{"prefix",             strdup(PREFIX),          STR},
 		{"gdk_dbfarm",         strdup(LOCALSTATEDIR "/monetdb5/dbfarm"), STR},
 		{"gdk_nr_threads",     NULL,                    INT},
 		{"mero_doproxy",       strdup("yes"),           BOOL},

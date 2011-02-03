@@ -2960,6 +2960,8 @@ AC_SUBST(QXsrcdir)
 Qlocalstatedir="$localstatedir"
 Xlocalstatedir="`$translatepath "$localstatedir"`"
 QXlocalstatedir="`echo "$Xlocalstatedir" | sed 's/\\\\/\\\\\\\\/g'`"
+eval "Elocalstatedir=${Xlocalstatedir}"
+QElocalstatedir="`echo "$Elocalstatedir" | sed 's/\\\\/\\\\\\\\/g'`"
 AC_SUBST(Qlocalstatedir)
 AC_SUBST(Xlocalstatedir)
 AC_SUBST(QXlocalstatedir)
@@ -2978,6 +2980,8 @@ AC_SUBST(QXsysconfdir)
 Qbindir="$bindir"
 Xbindir="`$translatepath "$bindir"`"
 QXbindir="`echo "$Xbindir" | sed 's/\\\\/\\\\\\\\/g'`"
+eval "Ebindir=${Xbindir}"
+QEbindir="`echo "$Ebindir" | sed 's/\\\\/\\\\\\\\/g'`"
 AC_SUBST(Qbindir)
 AC_SUBST(Xbindir)
 AC_SUBST(QXbindir)
@@ -3021,8 +3025,6 @@ AC_SUBST(Qinfodir)
 AC_SUBST(Xinfodir)
 AC_SUBST(QXinfodir)
 
-AC_DEFINE_UNQUOTED(PREFIX,"$QXprefix",[architecture-independent files])
-AC_DEFINE_UNQUOTED(EXEC_PREFIX,"$QXexec_prefix",[architecture-dependent files])
 QBUILD="$BUILD"
 XBUILD="`$translatepath "$BUILD"`"
 QXBUILD="`echo "$XBUILD" | sed 's/\\\\/\\\\\\\\/g'`"
@@ -3035,11 +3037,10 @@ QXSOURCE="`echo "$XSOURCE" | sed 's/\\\\/\\\\\\\\/g'`"
 AC_SUBST(QSOURCE)
 AC_SUBST(XSOURCE)
 AC_SUBST(QXSOURCE)
-AC_DEFINE_UNQUOTED(LOCALSTATEDIR,"$QXlocalstatedir",[modifiable single-machine data])
-AC_DEFINE_UNQUOTED(LIBDIR,"$QXlibdir",[object code libraries])
-AC_DEFINE_UNQUOTED(SYSCONFDIR,"$QXsysconfdir",[read-only single-machine data])
-AC_SUBST([MERO_LOG], [${localstatedir}/log/monetdb/merovingian.log])
-AC_DEFINE_UNQUOTED([MERO_LOG], ["${localstatedir}/log/monetdb/merovingian.log"], [where Merovingian will store its logs by default])
+AC_DEFINE_UNQUOTED(LOCALSTATEDIR,"$QElocalstatedir",[modifiable single-machine data])
+AC_DEFINE_UNQUOTED(BINDIR,"$QEbindir",[location where binaries are installed])
+AC_SUBST([MERO_LOG], [${Elocalstatedir}/log/monetdb/merovingian.log])
+AC_DEFINE_UNQUOTED([MERO_LOG], ["${Elocalstatedir}/log/monetdb/merovingian.log"], [where Merovingian will store its logs by default])
 
 dnl  On Solaris, libxml2 enables threading only when _REENTRANT, __MT__
 dnl  or _POSIX_C_SOURCE >= 199506L is defined.  The latter is only

@@ -406,7 +406,6 @@ main(int argc, char *argv[])
 	pthread_mutexattr_t mta;
 	int thret;
 	confkeyval ckv[] = {
-		{"prefix",             strdup(PREFIX),          STR},
 		{"gdk_dbfarm",         strdup(LOCALSTATEDIR "/monetdb5/dbfarm"), STR},
 		{"gdk_nr_threads",     NULL,                    INT},
 		{"sql_optimizer",      NULL,                    STR},

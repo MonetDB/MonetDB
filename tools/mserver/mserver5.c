@@ -307,8 +307,6 @@ main(int argc, char **av)
 	if (!(setlen = mo_builtin_settings(&set)))
 		usage(prog);
 
-	setlen = mo_add_option(&set, setlen, opt_config, "prefix", PREFIX);
-
 	for (;;) {
 		int option_index = 0;
 
