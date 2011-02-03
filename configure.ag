@@ -3040,11 +3040,6 @@ AC_DEFINE_UNQUOTED(LIBDIR,"$QXlibdir",[object code libraries])
 AC_DEFINE_UNQUOTED(SYSCONFDIR,"$QXsysconfdir",[read-only single-machine data])
 AC_SUBST([MERO_LOG], [${localstatedir}/log/monetdb/merovingian.log])
 AC_DEFINE_UNQUOTED([MERO_LOG], ["${localstatedir}/log/monetdb/merovingian.log"], [where Merovingian will store its logs by default])
-# expand ${prefix} in ${sysconfdir} if using the default
-MONETDB5_CONFFILE="${sysconfdir}/monetdb5.conf"
-# expand ${prefix} in ${sysconfdir} if using the default
-eval "eval MONETDB5_CONFFILE=${MONETDB5_CONFFILE}"
-AC_DEFINE_UNQUOTED(MONETDB5_CONFFILE, "$MONETDB5_CONFFILE", [MonetDB5 config file location])
 
 dnl  On Solaris, libxml2 enables threading only when _REENTRANT, __MT__
 dnl  or _POSIX_C_SOURCE >= 199506L is defined.  The latter is only

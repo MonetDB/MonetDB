@@ -1379,7 +1379,7 @@ main(int argc, char *argv[])
 	 * specify where to look using the MONETDB5CONF environment variable */
 	p = getenv("MONETDB5CONF");
 	if (p == NULL)
-		p = MONETDB5_CONFFILE;
+		p = NULL;
 	cnf = fopen(p, "r");
 	if (cnf == NULL) {
 		fprintf(stderr, "cannot open config file %s\n", p);
