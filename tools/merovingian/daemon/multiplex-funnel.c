@@ -631,6 +631,7 @@ multiplexRemoveClient(multiplex *m, multiplex_client *c)
 			free(c);
 			break;
 		}
+		p = w;
 	}
 }
 
