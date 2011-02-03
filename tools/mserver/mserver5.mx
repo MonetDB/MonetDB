@@ -641,8 +641,6 @@ faster system start.
 		if (GDKgetenv("monet_vault_key") == NULL) {
 			/* use a default (hard coded, non safe) key */
 			secret = "Xas632jsi2whjds8";
-			fprintf(stderr, "#warning: please don't forget to set your "
-					"vault key!\n#(see %s)\n", GDKgetenv("config"));
 		} else {
 			if ((secretf = fopen(GDKgetenv("monet_vault_key"), "r")) == NULL) {
 				snprintf(secret, 1023, "unable to open vault_key_file %s: %s",
