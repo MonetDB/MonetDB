@@ -103,11 +103,7 @@ class MonetDBConnection
     if @@DEBUG == true
       require 'logger'
     end
-
-    if @lang[0, 3] == 'sql'
-      @lang = "sql"
-    end
-
+    
   end
   
   # Connect to the database, creates a new socket
