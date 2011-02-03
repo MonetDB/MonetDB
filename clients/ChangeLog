@@ -1,3 +1,7 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Thu Feb  3 2011 Fabian Groffen <fabian@cwi.nl>
+- Make SQL the default language for mclient, e.g. to use when --language=
+  or -l is omitted
+

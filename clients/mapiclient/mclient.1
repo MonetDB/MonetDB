@@ -3,7 +3,6 @@
 mclient \- the MonetDB command-line tool
 .SH SYNOPSIS
 .B mclient
-.BI \-\-language= language
 [
 .I options
 ] [
@@ -18,7 +17,7 @@ main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
 accelerators, SQL- and XML- frontends.
 .PP
-.I Mclient
+.I mclient
 is the command-line interface to the MonetDB server.
 .PP
 If the
@@ -96,11 +95,11 @@ Specify the query language.  The following languages are recognized:
 and
 .BR sql .
 A unique prefix suffices.
-The
+When the
 .B \-\-language
-option is required unless the
-.B \-\-help
-option is given.
+option is omitted, the default of
+.B sql
+is assumed.
 .TP
 \fB\-\-help\fP (\fB\-?\fP)
 Print usage information and exit.  If preceded by the

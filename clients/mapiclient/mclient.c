@@ -100,18 +100,17 @@ void *alloca(size_t);
 #endif
 
 enum modes {
-	NOLANGUAGE,
 	MAL,
 	SQL
 };
 
-static enum modes mode = NOLANGUAGE;
+static enum modes mode = SQL;
 static stream *toConsole;
 static stream *toConsole_raw;	/* toConsole without iconv conversion */
 static stream *stdout_stream;
 static stream *stderr_stream;
 static FILE *fromConsole = NULL;
-static char *language = NULL;
+static char *language = "sql";
 static char *logfile = NULL;
 static char promptbuf[16];
 static int echoquery = 0;
@@ -2370,7 +2369,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 static void
 usage(const char *prog, int xit)
 {
-	fprintf(stderr, "Usage: %s --language=(sql|mal) [ options ]\n", prog);
+	fprintf(stderr, "Usage: %s [ options ]\n", prog);
 	fprintf(stderr, "\nOptions are:\n");
 #ifdef HAVE_SYS_UN_H
 	fprintf(stderr, " -h hostname | --host=hostname    host or UNIX domain socket to connect to\n");
@@ -2703,11 +2702,6 @@ main(int argc, char **argv)
 		default:
 			usage(argv[0], -1);
 		}
-	}
-	/* language value is mandatory */
-	if (mode == NOLANGUAGE) {
-		fprintf(stderr, "Please specify a language option\n\n");
-		usage(argv[0], -1);
 	}
 #ifdef HAVE_ICONV
 #ifdef HAVE_NL_LANGINFO
