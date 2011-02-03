@@ -507,12 +507,12 @@ multiplexThread(void *d)
 	multiplex_client *c;
 	int msock = -1;
 	char buf[BLOCK + 1];
+	ssize_t len;
 	int r, i;
 
 	/* select on upstream clients, on new data, read query, forward,
 	 * union all results, send back, and restart cycle. */
 	
-	buf[BLOCK] = '\0';
 	while (_mero_keep_listening == 1) {
 		FD_ZERO(&fds);
 		for (c = m->clients; c != NULL; c = c->next) {
@@ -549,12 +549,17 @@ multiplexThread(void *d)
 		for (c = m->clients; c != NULL; c = c->next) {
 			if (!FD_ISSET(c->sock, &fds))
 				continue;
-			if (mnstr_read_block(c->fdin, buf, BLOCK, 1) < 0) {
+			if ((len = mnstr_read(c->fdin, buf, 1, BLOCK)) < 0) {
 				/* error, or some garbage */
 				multiplexRemoveClient(m, c);
 				/* don't crash on now stale c */
 				break;
+			} else if (len == 0) {
+				/* flush from client, ignore */
+				continue;
 			}
+
+			buf[len] = '\0';
 			switch (*buf) {
 				case 's':
 				case 'S':
@@ -570,7 +575,7 @@ multiplexThread(void *d)
 							"multiplex-funnel\n", *buf);
 					mnstr_flush(c->fout);
 					Mfprintf(stderr, "client attempted to perform %c "
-							"type query: %s", *buf, buf);
+							"type query: %s\n", *buf, buf);
 					continue;
 			}
 			/* we assume (and require) the query to fit in one block,
