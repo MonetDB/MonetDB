@@ -17,7 +17,7 @@
 
 MTSAFE
 
-man_MANS = mserver5.conf.1
+man_MANS = mserver5.1
 
 EXTRA_DIST = $(man_MANS)
 
