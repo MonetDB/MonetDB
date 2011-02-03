@@ -2163,7 +2163,7 @@ mapi_mapiuri(const char *url, const char *user, const char *pass, const char *la
 		mid->languageId = LANG_MIL;
 	else if (strcmp(lang, "mal") == 0)
 		mid->languageId = LANG_MAL;
-	else if (strstr(lang, "sql") == lang)
+	else if (strcmp(lang, "sql") == 0)
 		mid->languageId = LANG_SQL;
 	else if (strcmp(lang, "xquery") == 0)
 		mid->languageId = LANG_XQUERY;
@@ -2255,7 +2255,7 @@ mapi_mapi(const char *host, int port, const char *username,
 		mid->languageId = LANG_MIL;
 	else if (strcmp(lang, "mal") == 0)
 		mid->languageId = LANG_MAL;
-	else if (strstr(lang, "sql") == lang)
+	else if (strcmp(lang, "sql") == 0)
 		mid->languageId = LANG_SQL;
 	else if (strcmp(lang, "xquery") == 0)
 		mid->languageId = LANG_XQUERY;
@@ -2340,7 +2340,7 @@ parse_uri_query(Mapi mid, char *uri)
 					mid->languageId = LANG_MIL;
 				else if (strcmp(val, "mal") == 0)
 					mid->languageId = LANG_MAL;
-				else if (strstr(val, "sql") == val)
+				else if (strcmp(val, "sql") == 0)
 					mid->languageId = LANG_SQL;
 				else if (strcmp(val, "xquery") == 0)
 					mid->languageId = LANG_XQUERY;
@@ -5528,7 +5528,7 @@ mapi_get_querytype(MapiHdl hdl)
 	if ((result = hdl->result) != 0)
 		return result->querytype;
 	mapi_setError(hdl->mid, "No query result", "mapi_get_querytype", MERROR);
-	return 0; /* Q_PARSE! */
+	return 0;
 }
 
 int
