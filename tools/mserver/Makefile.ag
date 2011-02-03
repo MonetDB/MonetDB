@@ -16,6 +16,11 @@
 # All Rights Reserved.
 
 MTSAFE
+
+man_MANS = mserver5.conf.1
+
+EXTRA_DIST = $(man_MANS)
+
 INCLUDES = ../../monetdb5/mal \
 		   ../../monetdb5/misc \
 		   ../../gdk \
@@ -25,7 +30,7 @@ INCLUDES = ../../monetdb5/mal \
 		   $(openssl_CFLAGS) $(pcre_CFLAGS) $(libxml2_CFLAGS)
 
 bin_mserver5 = {
-	SOURCES = mserver5.mx monet_version.h monet_version.c.in
+	SOURCES = mserver5.c monet_version.h monet_version.c.in
 	LIBS = ../../monetdb5/tools/libmonetdb5 @SHARED_LIBS@ \
 		../../gdk/libbat \
 		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) \

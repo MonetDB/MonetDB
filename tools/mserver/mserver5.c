@@ -1,84 +1,34 @@
-@/
-The contents of this file are subject to the MonetDB Public License
-Version 1.1 (the "License"); you may not use this file except in
-compliance with the License. You may obtain a copy of the License at
-http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+/*
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * The Original Code is the MonetDB Database System.
+ *
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2011 MonetDB B.V.
+ * All Rights Reserved.
+ */
 
-Software distributed under the License is distributed on an "AS IS"
-basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-License for the specific language governing rights and limitations
-under the License.
-
-The Original Code is the MonetDB Database System.
-
-The Initial Developer of the Original Code is CWI.
-Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2011 MonetDB B.V.
-All Rights Reserved.
-@
-
-@f mserver5
-@a M.L. Kersten, P. Boncz, Niels Nes, Stefan Manegold, Sjoerd Mullender
-@v 5.0
-@* The Monet Server
-The program @code{mserver5} is the MonetDB server. It is started by the database
-administrator.  The console is primarilly meant to further initialize
-the server, such as starting internet listeners.
-
-@+ Manual Page
-The server is a multithreaded program. There is one system thread, and for
-each service, e.g. a client session or transaction service,
-there is one worker thread.
-As a default, the server also starts the internet listener thread,
-on the port number specified in the parameter file.
-
-@- Usage
-@verbatim
-usage: mserver5 [options] [scripts]
-    --dbname=<database_name>  Specify database name
-    --dbfarm=<directory>      Specify database location
-    --dbinit=<stmt>           Execute statement at startup
-    --config=<config_file>    Use configuration to read options
-    --daemon=yes|no           Do not read commands from standard input [no]
-    --single-user             Allow only one user at a time
-    --readonly                Safeguard database
-    --set <option>=<value>    Set configuration option
-    --help                    Print this list of options
-    --version                 Print version and compile time info
-@end verbatim
-
-The server options have the following meaning:
-@table @code
-@item --dbname <db-name>
-	open the database <db-name>.
-@item --config <config-file>
-	where to find the environment settings
-@item --dbinit <stmt>
-        execute the statement first.
-@end table
-
-@{
-@+ Implementation
-@h
-#ifndef _MONET_GLOBAL_H_
-#define _MONET_GLOBAL_H_
+#include "monetdb_config.h"
+#include <stdio.h>
+#include <errno.h>
+#include <string.h> /* strerror */
+#include <locale.h>
 #include "monet_options.h"
 #include "mal.h"
 #include "mal_session.h"
 #include "mal_import.h"
 #include "mal_client.h"
 #include "mal_function.h"
-
-/* #define MONET_GLOBAL_DEBUG */
-#endif /* _MONET_GLOBAL_H_ */
-@c
-#include "monetdb_config.h"
-#include <stdio.h>
-#include <errno.h>
-#include <string.h> /* strerror */
-#include <locale.h>
 #include "monet_version.h"
-#include "mserver5.h"
 #include "mal_authorize.h"
 #include "mal_sabaoth.h"
 #include "mutils.h"
@@ -114,20 +64,7 @@ The server options have the following meaning:
 #if defined(_MSC_VER) && _MSC_VER >= 1400
 #define getcwd _getcwd
 #endif
-@-
-The architecture is setup to handle multiple streams of requests.
-The first thread started represents the server. It reads from standard input
-and writes to standard input. This is also a way to recognize the server
-actions. 
-To start the server in the background one should use the argument -background.
-This closes standard input. Direct execution in the background may cause
-the server to hang in stdio for input from the terminal.
-@ 
-The server thread started remains in existence until all other threads die.
-The server is stopped by cntrl-D or receiving the quit command.
-@
 
-@c
 static int malloc_init = 1;
 /* NEEDED? */
 #if defined(_MSC_VER) && defined(__cplusplus)
@@ -170,7 +107,7 @@ usage(char *prog)
 	fprintf(stderr,"     --forcemito\n");
 	fprintf(stderr,"     --debug=<bitmask>\n");
 #ifndef NATIVE_WIN32
-	fprintf(stderr,"(See `man monetdb5.conf` for the documentation.)\n");
+	fprintf(stderr,"(See `man mserver5.conf` for the documentation.)\n");
 #endif
 
 	exit(0);
@@ -217,9 +154,6 @@ monet_hello(void)
 	printf("# Visit http://monetdb.cwi.nl/ for further information\n");
 }
 
-@-
-Version information, and compile time options.
-@c
 str
 absolute_path(str s)
 {
@@ -233,10 +167,6 @@ absolute_path(str s)
 	return GDKstrdup(s);
 }
 
-@-
-The options obtained during initialization should be maintained as
-a global structure for other components to extract information.
-@c
 #define BSIZE 8192
 
 int
@@ -344,21 +274,14 @@ main(int argc, char **av)
 		{0, 0, 0, 0}
 	};
 
-@-
-We give malloc advice here. Main goal: prevent fragmentation.
-We do this by declaring everything below 2K as 'small'. These
-values will be drawn from a fixed pools of 400K.
-A grain size of 128 bytes is used to keep overhead low.
+#if defined(_MSC_VER) && defined(__cplusplus)
+	set_terminate(mserver_abort);
+#endif
+        if (setlocale(LC_CTYPE, "") == NULL) {
+                GDKfatal("cannot set locale\n");
+        }
 
-We do this by declaring everything below 2K as 'small'. These
-values will be drawn from a fixed pools of 400K.
-A grain size of 128 bytes is used to keep overhead low.
-Trivial remark: for dynamically linked executables the mallopt
-capabilities depend on the malloc implementation used at run time.
-
-Unlike V4 we ignore the alloc_map advice, which leads to a much
-faster system start.
-@= mallopt
+#ifdef HAVE_MALLOPT
 	if (malloc_init) {
 /* for (Red Hat) Linux (6.2) unused and ignored at least as of glibc-2.1.3-15 */
 /* for (Red Hat) Linux (8) used at least as of glibc-2.2.93-5 */
@@ -372,17 +295,6 @@ faster system start.
 #endif
         }
 	malloc_init=0;
-@c
-
-#if defined(_MSC_VER) && defined(__cplusplus)
-	set_terminate(mserver_abort);
-#endif
-        if (setlocale(LC_CTYPE, "") == NULL) {
-                GDKfatal("cannot set locale\n");
-        }
-
-#ifdef HAVE_MALLOPT
-	@:mallopt@
 #else
 	(void) malloc_init;	/* still unused */
 #endif
@@ -706,4 +618,3 @@ faster system start.
 
 	return 0;
 }
-@}

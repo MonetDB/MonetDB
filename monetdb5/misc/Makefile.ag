@@ -15,9 +15,6 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-man_MANS = monetdb5.conf.5
-
-EXTRA_DIST = monetdb5.conf.in $(man_MANS)
 
 INCLUDES = ../../gdk ../../common/utils
 
@@ -26,15 +23,3 @@ lib_sabaoth = {
 	SOURCES = msabaoth.h msabaoth.c
 }
 
-headers_conf = {
-	HEADERS = conf
-	DIR = sysconfdir
-	SOURCES = monetdb5.conf
-}
-
-monetdb_var_logdir = $(localstatedir)/log/monetdb
-monetdb_var_log_DATA = 
-monetdb_var_rundir = $(localstatedir)/run/monetdb
-monetdb_var_run_DATA = 
-monetdb_var_dbfarmdir = $(localstatedir)/monetdb5/dbfarm
-monetdb_var_dbfarm_DATA = 
