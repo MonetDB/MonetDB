@@ -38,7 +38,7 @@ usage: mserver5 [options] [scripts]
     --dbname=<database_name>  Specify database name
     --dbfarm=<directory>      Specify database location
     --dbinit=<stmt>           Execute statement at startup
-    --config=<config_file>    Specify location of configuration file
+    --config=<config_file>    Use configuration to read options
     --daemon=yes|no           Do not read commands from standard input [no]
     --single-user             Allow only one user at a time
     --readonly                Safeguard database
@@ -148,7 +148,7 @@ usage(char *prog)
 	fprintf(stderr, "    --dbname=<database_name>  Specify database name\n");
 	fprintf(stderr, "    --dbfarm=<directory>      Specify database location\n");
 	fprintf(stderr, "    --dbinit=<stmt>           Execute statement at startup\n");
-	fprintf(stderr, "    --config=<config_file>    Specify location of configuration file\n");
+	fprintf(stderr, "    --config=<config_file>    Use config_file to read options from\n");
 	fprintf(stderr, "    --daemon=yes|no           Do not read commands from standard input [no]\n");
 	fprintf(stderr, "    --single-user             Allow only one user at a time\n");
 	fprintf(stderr, "    --readonly                Safeguard database\n");
@@ -209,7 +209,6 @@ monet_hello(void)
 	printf("# Found %.3f %ciB available main-memory.\n", 
 			sz_mem_h, qc[qi]);
 #ifdef MONET_GLOBAL_DEBUG
-	printf("# Configuration:%s\n", GDKgetenv("config"));
 	printf("# Database farm:%s\n", GDKgetenv("gdk_dbfarm"));
 	printf("# Module path:%s\n", GDKgetenv("monet_mod_path"));
 #endif
@@ -397,7 +396,6 @@ faster system start.
 		usage(prog);
 
 	setlen = mo_add_option(&set, setlen, opt_config, "prefix", PREFIX);
-	setlen = mo_add_option(&set, setlen, opt_config, "config", MONETDB5_CONFFILE);
 
 	for (;;) {
 		int option_index = 0;
