@@ -20,6 +20,7 @@ MTSAFE
 INCLUDES = ../../common/options ../../common/stream $(openssl_CFLAGS)
 
 lib_mapi = {
+	VERSION = $(MAPI_VERSION)
 	SOURCES = mapi.mx mapi.rc
 	LIBS = $(SOCKET_LIBS) ../../common/stream/libstream \
 		../../common/options/libmoptions $(openssl_LIBS)

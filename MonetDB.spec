@@ -191,8 +191,8 @@ fi
 
 %files client-odbc
 %defattr(-,root,root)
-%{_libdir}/libMonetODBC.*
-%{_libdir}/libMonetODBCs.*
+%{_libdir}/libMonetODBC.so
+%{_libdir}/libMonetODBCs.so
 
 %package client-php
 Summary: MonetDB php interface
@@ -322,7 +322,7 @@ extensions for MonetDB-SQL-server5.
 %{_libdir}/monetdb5/autoload/*_geom.mal
 %{_libdir}/monetdb5/createdb/*_geom.sql
 %{_libdir}/monetdb5/geom.mal
-%{_libdir}/monetdb5/lib_geom.so*
+%{_libdir}/monetdb5/lib_geom.so
 
 %package -n MonetDB5-server
 Summary: MonetDB - Monet Database Management System
@@ -380,10 +380,10 @@ fi
 %{_libdir}/monetdb5/autoload/*_fits.mal
 %{_libdir}/monetdb5/autoload/*_vault.mal
 %{_libdir}/monetdb5/autoload/*_xml.mal
-%exclude %{_libdir}/monetdb5/lib_geom.*
-# %exclude %{_libdir}/monetdb5/lib_rdf.*
-%exclude %{_libdir}/monetdb5/lib_sql.*
-%{_libdir}/monetdb5/*.so*
+%exclude %{_libdir}/monetdb5/lib_geom.so
+# %exclude %{_libdir}/monetdb5/lib_rdf.so
+%exclude %{_libdir}/monetdb5/lib_sql.so
+%{_libdir}/monetdb5/*.so
 %doc %{_mandir}/man5/monetdb5.conf.5.gz
 
 # %package -n MonetDB5-server-rdf
@@ -402,7 +402,7 @@ fi
 # %files -n MonetDB5-server-rdf
 # %defattr(-,root,root)
 # %{_libdir}/monetdb5/autoload/*_rdf.mal
-# %{_libdir}/monetdb5/lib_rdf.so*
+# %{_libdir}/monetdb5/lib_rdf.so
 # %{_libdir}/monetdb5/rdf.mal
 # %{_libdir}/monetdb5/createdb/*_rdf.sql
 
@@ -429,7 +429,7 @@ use SQL with MonetDB, you will need to install this package.
 %dir %attr(775,monetdb,monetdb) %{_localstatedir}/log/monetdb
 %dir %attr(775,monetdb,monetdb) %{_localstatedir}/run/monetdb
 %{_libdir}/monetdb5/autoload/*_sql.mal
-%{_libdir}/monetdb5/lib_sql.so*
+%{_libdir}/monetdb5/lib_sql.so
 %{_libdir}/monetdb5/*.sql
 %dir %{_libdir}/monetdb5/createdb
 %exclude %{_libdir}/monetdb5/createdb/*_geom.sql

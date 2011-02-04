@@ -29,6 +29,7 @@ INCLUDES = $(zlib_CFLAGS) \
 
 lib_stream  =  {
 	SOURCES = stream.c stream.h
+	VERSION = $(STREAM_VERSION)
 	LIBS = $(SOCKET_LIBS) \
 		   $(zlib_LIBS) \
 		   $(BZ_LIBS) \

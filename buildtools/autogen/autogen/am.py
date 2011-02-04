@@ -600,6 +600,8 @@ def am_binary(fd, var, binmap, am):
     else:
         ldflags = []
     ldflags.append('-export-dynamic')
+    if binmap.has_key('NOINST'):
+        ldflags.append('-no-install')
     fd.write(am_additional_flags(norm_binname, "", "BIN", ldflags, am))
 
     for src in binmap['SOURCES']:
@@ -690,6 +692,8 @@ def am_bins(fd, var, binsmap, am):
         else:
             ldflags = []
         ldflags.append('-export-dynamic')
+        if binsmap.has_key('NOINST'):
+            ldflags.append('-no-install')
         fd.write(am_additional_flags(bin, "", "BIN", ldflags, am))
 
         nsrcs = "nodist_"+am_normalize(bin)+"_SOURCES ="
@@ -805,14 +809,15 @@ def am_library(fd, var, libmap, am):
         fd.write(am_additional_install_libs(libname, sep, libmap["LIBS"], am))
 
     ldflags = []
-    if sep == '_' and pref == '':
+    if libmap.has_key('MODULE'):
         ldflags.append('-module')
+        ldflags.append('-avoid-version')
     if libmap.has_key("LDFLAGS"):
         for x in libmap["LDFLAGS"]:
             ldflags.append(x)
-    if not libmap.has_key('NOINST'):
-        ldflags.append('-version-number')
-        ldflags.append('$(subst .,:,$(VERSION))')
+    if libmap.has_key('VERSION'):
+        ldflags.append('-version-info')
+        ldflags.append(libmap['VERSION'][0])
 
     for src in libmap['SOURCES']:
         base, ext = split_filename(src)
@@ -907,11 +912,15 @@ def am_libs(fd, var, libsmap, am):
             _libs += libsmap["LIBS"]
         if libsmap.has_key("LDFLAGS"):
             _libs += libsmap["LDFLAGS"]
-        fd.write(am_additional_flags(libname, sep, "LIB", ['-version-number','$(subst .,:,$(VERSION))'], am))
+        if libsmap.has_key('VERSION'):
+            version = ['-version-info', libsmap['VERSION'][0]]
+        elif libsmap.has_key('MODULE'):
+            version = ['-module', '-avoid-version']
+        else:
+            version = []
+        fd.write(am_additional_flags(libname, sep, "LIB", version, am))
         if len(_libs) > 0:
             fd.write(am_additional_libs(libname, sep, "LIB", _libs, am))
-##        if sep == '_':
-##            fd.write(am_additional_flags(libname, sep, "LIB", ['-module'], am))
 
         fullpref = "lib"+sep+libname+'_la'
         nsrcs = "nodist_"+fullpref+"_SOURCES ="

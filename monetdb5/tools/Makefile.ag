@@ -26,6 +26,7 @@ INCLUDES = ../misc ../mal \
 # the name (libmonetdb5) is also used in ../mal/mal_linker.mx
 # if you change the name here, change it there as well
 lib_monetdb5 = {
+	VERSION = $(MONETDB5_VERSION)
 	NAME = monetdb5
 	SCRIPTS = mal
 	DIR = libdir

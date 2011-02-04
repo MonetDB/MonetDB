@@ -3,7 +3,7 @@ debian/tmp/usr/bin/monetdb usr/bin
 debian/tmp/usr/lib/monetdb5/*.sql usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/autoload/*_sql.mal usr/lib/monetdb5/autoload
 debian/tmp/usr/lib/monetdb5/sql*.mal usr/lib/monetdb5
-debian/tmp/usr/lib/monetdb5/lib_sql.so* usr/lib/monetdb5
+debian/tmp/usr/lib/monetdb5/lib_sql.so usr/lib/monetdb5
 debian/tmp/usr/share/doc/MonetDB-SQL-* usr/share/doc
 debian/tmp/usr/lib/monetdb5/createdb/10_math.sql usr/lib/monetdb5/createdb
 debian/tmp/usr/lib/monetdb5/createdb/11_times.sql usr/lib/monetdb5/createdb

@@ -62,6 +62,12 @@ AC_SUBST(BUILD)
 SOURCE=[`(cd $srcdir && pwd)`]
 AC_SUBST(SOURCE)
 
+. $srcdir/libversions
+AC_SUBST(GDK_VERSION)
+AC_SUBST(MAPI_VERSION)
+AC_SUBST(MONETDB5_VERSION)
+AC_SUBST(STREAM_VERSION)
+
 # if no --prefix option, we must set Qprefix to the default value
 # the problem is that prefix is set very late in the process if it
 # wasn't set by --prefix

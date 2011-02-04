@@ -23,6 +23,7 @@ INCLUDES = ../../modules/atoms ../../modules/kernel ../../mal \
 MTSAFE
 
 lib_crackers = {
+	MODULE
 	DIR = libdir/monetdb5
 	SEP = _
 	SOURCES = crackers.mx \

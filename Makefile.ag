@@ -23,7 +23,7 @@ SUBDIRS = buildtools common clients gdk \
 	HAVE_JAVA?java \
 	HAVE_TESTING?testing \
 
-EXTRA_DIST = bootstrap configure configure.ac configure.ag \
+EXTRA_DIST = bootstrap configure configure.ac configure.ag libversions \
 			 MonetDB.spec rpm.mk.in COPYING README license.txt HowToStart.rst
 
 EXTRA_DIST_DIR = NT debian template

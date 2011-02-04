@@ -23,6 +23,7 @@ INCLUDES = \
 DEFS = @DEFS@
 
 lib_MonetODBC = {
+	MODULE
 	SOURCES = \
 	ODBCConvert.c \
 	ODBCDbc.c \
