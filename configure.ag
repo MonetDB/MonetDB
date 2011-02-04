@@ -2767,8 +2767,6 @@ AC_CHECK_FUNCS([\
 				uname \
 				])
 LIBS="$save_LIBS"
-dnl functions checked but result not used
-dnl AC_CHECK_FUNCS([closedir getcwd gethostname getpwuid memset mkdir nanosleep readdir rewinddir rmdir select strcspn strerror strstr strtol])
 AC_SEARCH_LIBS(crypt, crypt, AC_DEFINE(HAVE_CRYPT, 1, [crypt]))
 
 dnl check for getopt in standard library
