@@ -305,7 +305,7 @@ def server(lang, args = [], stdin = None, stdout = None, stderr = None,
                '--set', 'gdk_nr_threads=1',
                '--set', 'xrpc_open=true',
                '--set', 'monet_prompt=',
-               '--trace'])
+               '--trace']
     if notrace and '--trace' in cmd:
         cmd.remove('--trace')
     if dbinit is not None:
