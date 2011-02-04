@@ -30,6 +30,7 @@ INCLUDES = ../lib \
 		   $(GEOS_INCS)
 
 lib__geom = {
+	MODULE
 	DIR = libdir/monetdb5
 	SOURCES = geom.mx
 	LIBS = ../lib/libgeom \

@@ -9,7 +9,7 @@ Build-Depends: debhelper (>= 5), autotools-dev, cdbs, bison, flex, libbz2-dev, l
 # Build-Depends: libraptor1-dev
 Standards-Version: 3.8.0
 
-Package: libmonetdb11
+Package: libmonetdb2
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Conflicts: libmonetdb1, libmonetdb-dev
@@ -24,7 +24,7 @@ Description: MonetDB core library
  single shared library.  If you want to use MonetDB, you will certainly
  need this package, but you will also need one of the server packages.
 
-Package: libmonetdb-stream11
+Package: libmonetdb-stream2
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: MonetDB stream library
@@ -48,7 +48,7 @@ Description: MonetDB stream library development files
  This package contains the files to develop with the
  libmonetdb-stream1 library.
 
-Package: libmonetdb-client11
+Package: libmonetdb-client2
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Conflicts: libmonetdb-client1
@@ -88,7 +88,7 @@ Description: MonetDB database client
  database so that it can be loaded back later.  If you want to use
  MonetDB, you will very likely need this package.
 
-Package: libmonetdb-client-odbc11
+Package: libmonetdb-client-odbc
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Conflicts: libmonetdb-client-odbc1, libmonetdb-client-odbc-dev
@@ -153,7 +153,7 @@ Description: MonetDB client testing tools
  MonetDB packages.  You probably don't need this, unless you are a
  developer.
 
-# Package: libmonetdb4-server-geom11
+# Package: libmonetdb4-server-geom
 # Section: libs
 # Architecture: any
 # Depends: ${shlibs:Depends}, ${misc:Depends}, monetdb4-server
@@ -168,7 +168,7 @@ Description: MonetDB client testing tools
 #  This package contains the GIS (Geographic Information System)
 #  extensions for monetdb4-server.
 
-Package: libmonetdb5-server-geom11
+Package: libmonetdb5-server-geom
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, monetdb5-sql
@@ -225,12 +225,10 @@ Description: MonetDB xquery support for MonetDB4-server
  .
  This package contains the XQuery frontend.
 
-Package: libpf-ferry11
+Package: libpf-ferry0
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Conflicts: libpf-ferry0
-Replaces: libpf-ferry0
 Description: MonetDB XQuery Ferry library
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,
@@ -252,7 +250,7 @@ Description: MonetDB XQuery Ferry library development files
  This package contains the files needed to develop with the
  libpf-ferry0 package.
 
-Package: libmonetdb4-xquery11
+Package: libmonetdb4-xquery
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}

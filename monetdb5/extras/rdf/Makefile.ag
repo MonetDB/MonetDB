@@ -25,6 +25,7 @@ INCLUDES = ../../modules/atoms ../../modules/mal ../../mal \
 MTSAFE
 
 lib__rdf = {
+	MODULE
 	DIR = libdir/monetdb5
 	SOURCES = rdf.mx rdf_shredder.mx
 	LIBS = ../../tools/libmonetdb5 \

@@ -194,8 +194,8 @@ fi
 
 %files client-odbc
 %defattr(-,root,root)
-%{_libdir}/libMonetODBC.*
-%{_libdir}/libMonetODBCs.*
+%{_libdir}/libMonetODBC.so
+%{_libdir}/libMonetODBCs.so
 
 %package client-php
 Summary: MonetDB php interface
@@ -323,7 +323,7 @@ extensions for MonetDB4-server.
 %files geom-MonetDB4
 %defattr(-,root,root)
 %{_libdir}/monetdb4/geom.mil
-%{_libdir}/monetdb4/lib/lib_geom.so*
+%{_libdir}/monetdb4/lib/lib_geom.so
 
 %package geom-MonetDB5
 Summary: MonetDB5 SQL GIS support module
@@ -346,7 +346,7 @@ extensions for MonetDB-SQL-server5.
 %{_libdir}/monetdb5/autoload/*_geom.mal
 %{_libdir}/monetdb5/createdb/*_geom.sql
 %{_libdir}/monetdb5/geom.mal
-%{_libdir}/monetdb5/lib/lib_geom.so*
+%{_libdir}/monetdb5/lib/lib_geom.so
 
 %package -n MonetDB4-server
 Summary: MonetDB - Monet Database Management System
@@ -395,19 +395,19 @@ fi
 %dir %{_libdir}/monetdb4
 %dir %{_libdir}/monetdb4/lib
 %if %{?_with_netcdf:1}%{!?_with_netcdf:0}
-%exclude %{_libdir}/monetdb4/lib/lib_mnetcdf.so*
+%exclude %{_libdir}/monetdb4/lib/lib_mnetcdf.so
 %exclude %{_libdir}/monetdb4/mnetcdf.mil
 %endif
 %{_libdir}/libmonet.so.*
 %{_libdir}/libbat4.so.*
 %{_libdir}/libstream4.so.*
 %{_libdir}/libmapi4.so.*
-%exclude %{_libdir}/monetdb4/lib/lib_geom.so*
-%exclude %{_libdir}/monetdb4/lib/lib_pathfinder*
+%exclude %{_libdir}/monetdb4/lib/lib_geom.so
+%exclude %{_libdir}/monetdb4/lib/lib_pathfinder.so
 %exclude %{_libdir}/monetdb4/lib/lib_pf*
-%exclude %{_libdir}/monetdb4/lib/lib_probxml*
+%exclude %{_libdir}/monetdb4/lib/lib_probxml.so
 %exclude %{_libdir}/monetdb4/lib/lib_xrpc*
-%{_libdir}/monetdb4/lib/*.so*
+%{_libdir}/monetdb4/lib/*.so
 %exclude %{_libdir}/monetdb4/geom.mil
 %exclude %{_libdir}/monetdb4/pathfinder.mil
 %exclude %{_libdir}/monetdb4/pf*.mil
@@ -434,7 +434,7 @@ libraries.
 
 %files -n MonetDB4-server-netcdf
 %defattr(-,root,root)
-%{_libdir}/monetdb4/lib/lib_mnetcdf.so*
+%{_libdir}/monetdb4/lib/lib_mnetcdf.so
 %{_libdir}/monetdb4/mnetcdf.mil
 %endif
 
@@ -495,10 +495,10 @@ fi
 %{_libdir}/monetdb5/autoload/*_fits.mal
 %{_libdir}/monetdb5/autoload/*_vault.mal
 %{_libdir}/monetdb5/autoload/*_xml.mal
-%exclude %{_libdir}/monetdb5/lib/lib_geom.*
-# %exclude %{_libdir}/monetdb5/lib/lib_rdf.*
-%exclude %{_libdir}/monetdb5/lib/lib_sql.*
-%{_libdir}/monetdb5/lib/*.so*
+%exclude %{_libdir}/monetdb5/lib/lib_geom.so
+# %exclude %{_libdir}/monetdb5/lib/lib_rdf.so
+%exclude %{_libdir}/monetdb5/lib/lib_sql.so
+%{_libdir}/monetdb5/lib/*.so
 %doc %{_mandir}/man5/monetdb5.conf.5.gz
 
 # %package -n MonetDB5-server-rdf
@@ -517,7 +517,7 @@ fi
 # %files -n MonetDB5-server-rdf
 # %defattr(-,root,root)
 # %{_libdir}/monetdb5/autoload/*_rdf.mal
-# %{_libdir}/monetdb5/lib/lib_rdf.so*
+# %{_libdir}/monetdb5/lib/lib_rdf.so
 # %{_libdir}/monetdb5/rdf.mal
 # %{_libdir}/monetdb5/createdb/*_rdf.sql
 
@@ -544,7 +544,7 @@ use SQL with MonetDB, you will need to install this package.
 %dir %attr(775,monetdb,monetdb) %{_localstatedir}/log/monetdb
 %dir %attr(775,monetdb,monetdb) %{_localstatedir}/run/monetdb
 %{_libdir}/monetdb5/autoload/*_sql.mal
-%{_libdir}/monetdb5/lib/lib_sql.so*
+%{_libdir}/monetdb5/lib/lib_sql.so
 %{_libdir}/monetdb5/*.sql
 %dir %{_libdir}/monetdb5/createdb
 %exclude %{_libdir}/monetdb5/createdb/*_geom.sql
@@ -585,9 +585,9 @@ need this package.
 %{_datadir}/monetdb/xrpc/admin/*
 %{_datadir}/monetdb/xrpc/demo/*
 %{_datadir}/monetdb/xrpc/export/*
-%{_libdir}/monetdb4/lib/lib_pathfinder*
+%{_libdir}/monetdb4/lib/lib_pathfinder.so
 %{_libdir}/monetdb4/lib/lib_pf*
-%{_libdir}/monetdb4/lib/lib_probxml*
+%{_libdir}/monetdb4/lib/lib_probxml.so
 %{_libdir}/monetdb4/lib/lib_xrpc*
 %{_libdir}/monetdb4/pathfinder.mil
 %{_libdir}/monetdb4/pf*.mil

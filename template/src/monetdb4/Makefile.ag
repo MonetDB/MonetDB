@@ -21,6 +21,7 @@ MTSAFE
 INCLUDES = $(MONETDB4_INCS) $(MONETDB_INCS)
 
 lib__example = {
+	MODULE
 	DIR = libdir/MonetDB4
 	SOURCES = example.mx
 	LIBS = $(MONETDB4_MODS) 

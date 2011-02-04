@@ -25,6 +25,7 @@ gdk_scanselect_CFLAGS = $(NO_INLINE_CFLAGS)
 EXTRA_DIST = gdk_scanselect_defs.mx
 
 lib_gdk = { 
+	VERSION = $(GDK_VERSION)
 	NAME = bat
 	SOURCES = \
 		gdk_scanselect_defs_chr.mx \

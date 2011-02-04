@@ -23,8 +23,8 @@ INCLUDES = ../../mal \
 MTSAFE
 
 lib__xml = {
+	MODULE
 	DIR = libdir/monetdb5
-	SEP = _
 	SOURCES = xml.mx 
 
 	LIBS = ../../tools/libmonetdb5 \
@@ -45,6 +45,7 @@ headers_xml_mal = {
 }
 
 lib_batxml = {
+	MODULE
 	DIR = libdir/monetdb5
 	SEP = _
 	SOURCES = batxml.mx

@@ -34,6 +34,7 @@ INCLUDES = ../../../include \
 		   $(READLINE_INCS) $(MSEED_CFLAGS) $(cfitsio_CFLAGS)
 
 lib__vault = {
+	MODULE
 	DIR = libdir/monetdb5
 	SOURCES = vault.mx
 	LIBS = ../../../../monetdb5/tools/libmonetdb5 \
@@ -41,6 +42,7 @@ lib__vault = {
 }
 
 lib__mseed = {
+	MODULE
 	COND = HAVE_MSEED
 	DIR = libdir/monetdb5
 	SOURCES = mseed.mx
@@ -50,10 +52,11 @@ lib__mseed = {
 }
 
 lib__fits = {
-    COND = HAVE_CFITSIO
-    DIR = libdir/monetdb5
-    SOURCES = fits.mx
-    LIBS = ../../../../monetdb5/tools/libmonetdb5 \
+	MODULE
+	COND = HAVE_CFITSIO
+	DIR = libdir/monetdb5
+	SOURCES = fits.mx
+	LIBS = ../../../../monetdb5/tools/libmonetdb5 \
 		   $(cfitsio_LIBS)
 }
 

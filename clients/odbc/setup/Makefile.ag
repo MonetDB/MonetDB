@@ -20,5 +20,6 @@ INCLUDES = ../include
 DEFS = @DEFS@
 
 lib_MonetODBCs = {
+	MODULE
 	SOURCES = drvcfg.c drvcfg.h
 }

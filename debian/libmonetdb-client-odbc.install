@@ -1,0 +1,2 @@
+debian/tmp/usr/lib/libMonetODBC.so usr/lib
+debian/tmp/usr/lib/libMonetODBCs.so usr/lib

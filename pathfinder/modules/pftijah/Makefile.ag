@@ -63,6 +63,7 @@ CFLAGS = $(ICC_BISON_CFLAGS) $(GCC_BISON_CFLAGS)
 pftijah_stem_CFLAGS = $(SUN_NOERR_CFLAGS)
 
 lib__pftijah = {
+	MODULE
 	DIR = libdir/monetdb4
 	SOURCES = \
 		termdb.mx \
