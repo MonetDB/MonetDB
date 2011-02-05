@@ -20,13 +20,13 @@ set srcdir=@XSOURCE@\geom
 
 set MOD_PATH=%builddir%\monetdb%V%\.libs
 set MOD_PATH=%MOD_PATH%;%builddir%\monetdb%V%
-set MOD_PATH=%MOD_PATH%;%builddir%\sql
 
 REM enable auto-loading of modules before `make install`
 if not exist %builddir%\monetdb%V%\autoload mkdir %builddir%\monetdb%V%\autoload
 copy /y %srcdir%\monetdb%V%\??_*.mal %builddir%\monetdb%V%\autoload
 
 REM enable auto-loading of SQL createdb scripts before `make install`
+set MOD_PATH=%MOD_PATH%;%builddir%\sql
 if not exist %builddir%\sql\createdb mkdir %builddir%\sql\createdb
 copy /y %srcdir%\sql\??_*.sql %builddir%\sql\createdb
 
