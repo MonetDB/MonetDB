@@ -47,6 +47,7 @@ do
 done
 
 # enable auto-loading of SQL createdb scripts before `make install`
+MOD_PATH="${MOD_PATH}:${builddir}/sql"
 mkdir -p ${builddir}/sql/createdb
 cp -f ${srcdir}/sql/[0-9][0-9]_*.sql ${builddir}/sql/createdb/ 2>/dev/null
 
