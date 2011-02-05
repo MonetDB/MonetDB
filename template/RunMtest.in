@@ -37,7 +37,7 @@ done
 # where compiled Pathfinder modules are to be found
 for d in src/monetdb$V
 do
-	MOD_PATH="${MOD_PATH}${builddir}/$d/.libs:${builddir}/$d:"
+	MOD_PATH="${MOD_PATH}:${builddir}/$d/.libs:${builddir}/$d"
 done
 
 case "$V" in
@@ -45,7 +45,7 @@ case "$V" in
 # where compiled monetdb5 modules are to be found
 for d in optimizer scheduler modules/atoms modules/kernel modules/mal extras/crackers extras/rdf extras/xml
 do
-	MOD_PATH="${MOD_PATH}${buildbase}/monetdb5/$d/.libs:${buildbase}/monetdb5/$d:"
+	MOD_PATH="${MOD_PATH}:${buildbase}/monetdb5/$d/.libs:${buildbase}/monetdb5/$d"
 	# enable auto-loading of modules before `make install`
 	mkdir -p ${buildbase}/monetdb5/$d/autoload
 	cp -f ${srcdir}/../monetdb5/$d/[0-9][0-9]_*.mal ${buildbase}/monetdb5/$d/autoload/ 2>/dev/null
@@ -56,6 +56,7 @@ cfg="${buildbase}/monetdb5/misc/monetdb5.conf"
 esac
 
 # enhance various paths to find our stuff
+MOD_PATH="${MOD_PATH#:}"
 libpath="${MOD_PATH}"
 PATH="${buildbase}/clients/mapiclient:${buildbase}/testing:$PATH"
 export PATH

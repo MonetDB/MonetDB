@@ -27,7 +27,7 @@ uname=`uname`
 # where compiled SQL modules are to be found
 for d in backends/monet5 backends/monet5/vaults sql
 do
-	MOD_PATH="${MOD_PATH}${builddir}/$d/.libs:${builddir}/$d:"
+	MOD_PATH="${MOD_PATH}:${builddir}/$d/.libs:${builddir}/$d"
 	# enable auto-loading of modules before `make install`
 	mkdir -p ${builddir}/$d/autoload
 	cp -f ${srcdir}/$d/[0-9][0-9]_*.mal ${builddir}/$d/autoload/ 2>/dev/null
@@ -40,7 +40,7 @@ cp -f ${srcdir}/sql/[0-9][0-9]_*.sql ${builddir}/sql/createdb/ 2>/dev/null
 # where compiled monetdb5 modules are to be found
 for d in optimizer scheduler modules/atoms modules/kernel modules/mal extras/crackers extras/rdf extras/xml
 do
-	MOD_PATH="${MOD_PATH}${buildbase}/monetdb5/$d/.libs:${buildbase}/monetdb5/$d:"
+	MOD_PATH="${MOD_PATH}:${buildbase}/monetdb5/$d/.libs:${buildbase}/monetdb5/$d"
 	# enable auto-loading of modules before `make install`
 	mkdir -p ${buildbase}/monetdb5/$d/autoload
 	cp -f ${srcdir}/../monetdb5/$d/[0-9][0-9]_*.mal ${buildbase}/monetdb5/$d/autoload/ 2>/dev/null
@@ -49,6 +49,7 @@ done
 cfg="${buildbase}/monetdb5/misc/monetdb5.conf"
 
 # enhance various paths to find our stuff
+MOD_PATH="${MOD_PATH#:}"
 binpath="${builddir}/backends/monet5:${buildbase}/tools/mserver:${buildbase}/clients/mapiclient:${buildbase}/testing"
 libpath="${MOD_PATH}:${builddir}/server/.libs"
 
