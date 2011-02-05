@@ -683,6 +683,20 @@ if (stk->stk[getArg(pci,i)].vtype == TYPE_bat){
 	BBPunfix( h = b->batCacheid);
 }
 @c
+static lng
+getHotClaim()
+{
+	lng total = 0;
+	int i;
+	for ( i = 0; i < hottop; i++)
+		total += hotpotatoes[i].claim;
+	return total;
+}
+
+@-
+Calculate the memory need of a single instruction and also determine how much of the
+hot potatoes it will eat.
+@c
 void
 getMemoryClaim(MalStkPtr stk, InstrPtr pci, lng *argclaim, lng *retclaim, lng *hotclaim)
 {
@@ -823,16 +837,28 @@ updMemoryUsed(MalStkPtr stk, InstrPtr pci, lng argclaim)
 int
 DFLOWadmission(lng argclaim, lng retclaim, lng hotclaim)
 {
+	lng hot;
 	/* optimistically set memory */
 	if ( argclaim + retclaim == 0)
 		return 0;
 
 	mal_set_lock(mal_contextLock, "DFLOWdelay");
-	if (memorypool <= 0 && memoryclaims == 0)
+	if (memorypool <= 0 && memoryclaims == 0) {
 			memorypool = (lng) (MEMORY_THRESHOLD * monet_memory);
+			hottop = 0;
+	}
 
 	if ( argclaim + retclaim > 0 ) {
 		if (memoryclaims == 0 || memorypool - memoryused > argclaim + retclaim -hotclaim){
+			hot = getHotClaim();
+			if ( memoryclaims && hotclaim == 0  && argclaim + retclaim > memorypool - memoryused - hot) {
+				/* don't start unless you can eat the hot potatoes first */
+#ifdef DEBUG_MEMORY_CLAIM
+				mnstr_printf(GDKerr,"#Delayed due to hot potatoes pool " LLFMT " used " LLFMT " hot " LLFMT "\n", memorypool, memoryused,hot);
+#endif
+				mal_unset_lock(mal_contextLock, "DFLOWdelay");
+				return -1;
+			}
 			memorypool -= (argclaim + retclaim);
 			memoryclaims ++;
 #ifdef DEBUG_MEMORY_CLAIM
@@ -1419,7 +1445,7 @@ DFLOWscheduler( DataFlow flow )
 			@:DFLOWscheduler_body( DFLOWeligible(flow,fs,i,p,pc) && (*flow->stk->admit)(flow->cntxt, flow->mb, flow->stk, p) )@
 		}
 @= DFLOWscheduler_body
-		/* first try to find all instructions that use the released target */
+		/* first try to find an instructions that use the released target */
 		candidates = 0;
 		for(i = pc; i < limit ; i++)
 			if (fs[i].status == DFLOWpending ) {
