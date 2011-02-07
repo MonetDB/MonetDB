@@ -83,9 +83,8 @@ static int GDKstopped = 1;
 
 @}
 @+ Monet configuration file
-Parse a possible MonetDB.conf file (either in the default location
-<prefix>/etc/MonetDB.conf, or as specified by either an environment variable
-$MONETDB_CONFIG, or by command line option -c/--config)
+Parse a possible MonetDB config file
+(if specified by command line option -c/--config)
 to extract pre-settings of system variables.
 Un-recognized parameters are simply skipped, because they  may be
 picked up by other components of the system.
@@ -94,7 +93,7 @@ may be unnoticed for a long time.
 Syntax errors are immediately flagged, though.
 
 Since the GDK kernel moves into the database directory, we need
-to keep the absolute path to the MonetDB.conf file for top-levels
+to keep the absolute path to the MonetDB config file for top-levels
 to access its information.
 @{
 @c
@@ -384,7 +383,7 @@ the memory consumption.
 size_t GDK_mmap_minsize = GDK_VM_MAXSIZE;
 size_t GDK_mem_maxsize_max = GDK_VM_MAXSIZE;
 size_t GDK_mem_maxsize = GDK_VM_MAXSIZE;
-size_t GDK_mem_bigsize = 1 << 20; /* please keep in sync with MonetDB.conf.in & monetdb5.conf.in */
+size_t GDK_mem_bigsize = 1 << 20;
 size_t GDK_vm_maxsize = GDK_VM_MAXSIZE;
 
 int GDK_vm_allocs = 0;

@@ -2579,7 +2579,7 @@ gdk_export MT_Cond GDKunloadCond;
 gdk_export MT_Lock GDKtmLock;
 
 /*
-   See `man monetdb5.conf` or MonetDB5/conf/monetdb5.conf.5
+   See `man mserver5` or tools/mserver/mserver5.1
    for a documentation of the following debug options.
 */
 

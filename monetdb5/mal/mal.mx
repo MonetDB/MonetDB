@@ -194,7 +194,8 @@ as well as in user defined module implementations.
 
 @+ Monet Calling Options
 The number of invocation arguments is kept to a minimum.
-See the monetdb5.conf file for additional system variable settings
+See `man mserver5` or tools/mserver/mserver5.1
+for additional system variable settings.
 @
 @h
 #define MAXSCRIPT 64
@@ -212,7 +213,7 @@ mal_export size_t			monet_memory;
 
 /*
    See gdk/gdk.mx for the definition of all debug masks.
-   See `man monetdb5.conf` or MonetDB5/conf/monetdb5.conf.5
+   See `man mserver5` or tools/mserver/mserver5.1
    for a documentation of all debug options.
 */
 #define GRPthreads ( 1 | PARMASK)

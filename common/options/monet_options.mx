@@ -296,11 +296,6 @@ mo_builtin_settings(opt **Set)
 	if (set == NULL)
 		return 0;
 
-	/* -------------------------------------------------------------- */
-	/* Please keep the below defaults aligned with the comments in    */
-	/* monetdb5/misc/monetdb5.conf.in                                 */
-	/* -------------------------------------------------------------- */
-
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("gdk_dbname");
 	set[i].value = strdup("demo");
