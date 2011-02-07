@@ -117,7 +117,6 @@ find_module_root() {
 		case ${repo} in
 			MonetDB/*)   rmpath=${repo#MonetDB}   ;;
 			clients/*)   rmpath=${repo#clients}   ;;
-			MonetDB4/*)  rmpath=${repo#MonetDB4}  ;;
 			MonetDB5/*)  rmpath=${repo#MonetDB5}  ;;
 			sql/*)       rmpath=${repo#sql}       ;;
 			geom/*)      rmpath=${repo#geom}      ;;
@@ -144,13 +143,6 @@ find_module_root() {
 		fi
 		if type -P monetdb-clients-config > /dev/null ; then
 			spath=$(monetdb-clients-config --source)
-			if [[ ${path} == ${spath}/* ]] ; then
-				echo "${spath}"
-				return 0
-			fi
-		fi
-		if type -p monetdb4-config > /dev/null ; then
-			spath=$(monetdb4-config --source)
 			if [[ ${path} == ${spath}/* ]] ; then
 				echo "${spath}"
 				return 0

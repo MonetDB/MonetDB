@@ -50,8 +50,6 @@ test = (
                 # MAPI & XRPC port numbers
                     r"^MAPI  = .*@.*:[0-9]*$",
                     r'^QUERY = execute at { ".*:[0-9]*" }$',
-                # Pathfinder revision number (`pf -{h,H}` in pathfinder/compiler/Tests/usage{,H}*)
-                    r"^Pathfinder XQuery Compiler \(.Revision: .* .\)$",
                 # Tokens depend on flex/bison
                     r'^\[ "TOK_[A-Z]+",\t* +"int",\t* +"frozen",\t* +"constant",\t* +"[0-9]+"\t* +\]',
                 # ignore big- vs. little-endian byte-orders in test tests/BugDay_2005-10-06_4.8/Tests/print_CTgroup.SF-1315791.*:
@@ -63,8 +61,6 @@ test = (
                 # `fuser` (in MkillUsers) triggers these errors on Gentoo with "hardened" kernel
                     r'^! Cannot open /proc/net/unix: Permission denied$',
                     r'^! Cannot stat file /proc/[0-9]+/fd/[0-9]+: (?:No such file or directory|Permission denied)$',
-                # Pathfinder: extra error messages that occur only with assertions enabled
-                    r'^[ \t]*!# halted in .*, line [0-9]+$',
                 # suspicious output/messages/errors? most probably triggered by MkillUsers, but apparently not causing any harm:
                     r'^! /.*/bin/[Mm](?:(?:server5?|apiClient|timeout|diff):e+|log:)$',
                     r'^! /usr/bin/mserver5:  m$',
@@ -81,14 +77,10 @@ test = (
                     r'^\[ .*(?:,\t* ? "?158\.765432098765(?:22|36?|44|59|64)"?)+\t* ? \]$',
                 # src/gdk/cast:
                     r'^\[ (?:\-|)0 \]$',
-                # MonetDB4/src/modules/plain/Tests/mmath.milS (SunOS/Solaris: GNU vs. Sun compiler):
-                    r'^\[ (?:\-|)[Ii]nfinity \]$',
                 # src/monet/modrefcnt1 & tests/BugDay_2005-11-09_4.9.3/double_load_double_drop.SF-1082293 (on Itanium)
                     r"^!ERROR: DESCload: atom 'lock' unknown, in BAT '[0-9]+'.$",
                 # Broken sql error messages:
                     r'^QUERY = (?:\-\-|select|insert|INSERT) ',
-                # suggested alternatives in case of XQuery type errors:
-                    r'^type error:   .*$',
                 # Debugging "strange" errors on Solaris x86:
                     "^!ERROR: interpret: no matching MIL operator to '\xdb\xdb\xdb\xdb\xdb\xdb\xdb\xdb\xdb\xdb\xdb\xdb\xdb\xdb\xdb\xdb.*$",
                  ])+')',  re.MULTILINE),
@@ -145,7 +137,6 @@ norm_in  = re.compile('(?:'+')|(?:'.join([
     r'^(!.*Exception:remote\.[^:]*:\(mapi:monetdb://monetdb@)([^/]*)(/mTests_.*\).*)\n',                                                        # 25: 3
 #   r'^(ERROR = !sql_stmt symbol\()(.*)(\)->token = CREATE_SCHEMA)\n',                                                                          # 26: 3
     r'^(ERROR = !IOException:mapi.connect:Could not connect: getaddrinfo failed: )(No .* is|.* not)( known[\. ]*)\n',                           # 27: 3
-    r'^( *pf:add-doc\(")(.*.pathfinder.tests.BugTracker.Tests.)(empty_file.SF-2017862-.*\.xml",".*\.xml"\).*)\n',                               # 50: 3
 #   r'^(ERROR =|       )( !ERROR: | !SQLException:assert:| !SQLException:sql: | !SQLException:| !MALException:)([^:]+)(: *)([^ ].*)\n',         # 90: 5
     r'^(.*: at )(\([0-9]+,[0-9]+\-[0-9]+,[0-9]+\))(: .*)\n',                                                                                    # 91: 3
 #   r'^(fatal error|ERROR)(: err:FORG0005, fn:exactly-one called with a sequence containing zero or more than one item..*)()\n',                # 99: 3
@@ -180,7 +171,6 @@ norm_out = (
     None, 'localhost', None,                                                                            # 25: 3
 #   None, '...', None,                                                                                  # 26: 3
     None, 'un', 'known',                                                                                # 27: 3
-    None, '<path>', None,                                                                               # 50: 3
 #   None, ' !ERROR', '', ': ', None,                                                                    # 90: 5
     None, '...', None,                                                                                  # 91: 3
 #   '=ERROR', None, '\n#',                                                                              # 99: 3
