@@ -37,7 +37,7 @@ organized in the heap with respect to their values (tail column).
 @mal
 module pqueue;
 
-command init(a:bat[:void,:any_1],maxsize:wrd):bat[:oid,:any_1] 
+command init(a:bat[:oid,:any_1],maxsize:wrd):bat[:oid,:any_1] 
 address PQinit
 comment "Creates an empty pqueue of bat a's tailtype with maximum size maxsize";
 
@@ -58,15 +58,8 @@ command topn_@2(t:bat[:oid,:@1], n:wrd) :bat[:oid,:oid]
 address PQtopn_@1@2
 comment "Return the topn elements of the bat t using a @2-pqueue";
 
-command topn_@2(t:bat[:void,:@1], n:wrd) :bat[:oid,:oid] 
-address PQtopn_@1@2
-comment "Return the topn elements of the bat t using a @2-pqueue";
 
 command utopn_@2(t:bat[:oid,:@1], n:wrd) :bat[:oid,:oid] 
-address PQutopn_@1@2
-comment "Return the unique topn elements of the bat t using a @2-pqueue";
-
-command utopn_@2(t:bat[:void,:@1], n:wrd) :bat[:oid,:oid] 
 address PQutopn_@1@2
 comment "Return the unique topn elements of the bat t using a @2-pqueue";
 
@@ -87,15 +80,7 @@ command topn_@1(t:bat[:oid,:any_1], n:wrd) :bat[:oid,:oid]
 address PQtopn_any@1
 comment "Return the topn elements of the bat t using a @1-pqueue";
 
-command topn_@1(t:bat[:void,:any_1], n:wrd) :bat[:oid,:oid] 
-address PQtopn_any@1
-comment "Return the topn elements of the bat t using a @1-pqueue";
-
 command utopn_@1(t:bat[:oid,:any_1], n:wrd) :bat[:oid,:oid] 
-address PQutopn_any@1
-comment "Return the unique topn elements of the bat t using a @1-pqueue";
-
-command utopn_@1(t:bat[:void,:any_1], n:wrd) :bat[:oid,:oid] 
 address PQutopn_any@1
 comment "Return the unique topn elements of the bat t using a @1-pqueue";
 
