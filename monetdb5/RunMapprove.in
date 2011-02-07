@@ -32,4 +32,4 @@ cd "$srcdir"
 # execute the script.
 # if no arguments, do a recursive approve (Mapprove.py -r), else pass
 # on the arguments
-exec python "${buildbase}/testing/Mapprove.py" --config="${builddir}/conf/monetdb5.conf" --package=${pkg} --TSTTRGBASE="${builddir}" "${@--r}"
+exec python "${buildbase}/testing/Mapprove.py" --package=${pkg} --TSTTRGBASE="${builddir}" "${@--r}"

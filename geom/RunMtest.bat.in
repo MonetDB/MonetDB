@@ -71,7 +71,6 @@ if not exist %buildbase%\monetdb5\extras\xml\autoload mkdir %buildbase%\monetdb5
 copy /y %srcdir%\..\monetdb5\extras\xml\??_*.mal %buildbase%\monetdb5\extras\xml\autoload
 
 set PATH=%buildbase%\tools\mserver;%PATH%
-set cfg=%buildbase%\monetdb5\misc\monetdb5.conf
 :skip_5
 
 set PATH=%buildbase%\clients\mapiclient;%buildbase%\testing;%PATH%
@@ -86,7 +85,7 @@ set PYTHONPATH=%buildbase%\testing;%srcdir%\..\testing;%PYTHONPATH%
 REM execute Mtest.py in the source directory
 pushd %srcdir%
 
-call "%buildbase%\testing\Mtest.py" "--config=%cfg%" -%V% "--package=%pkg%" "--monet_mod_path=%MOD_PATH%" "--dbfarm=%builddir%\dbfarm" "--TSTTRGBASE=%builddir%" %1 %2 %3 %4 %5 %6 %7 %8 %9
+call "%buildbase%\testing\Mtest.py" -%V% "--package=%pkg%" "--monet_mod_path=%MOD_PATH%" "--dbfarm=%builddir%\dbfarm" "--TSTTRGBASE=%builddir%" %1 %2 %3 %4 %5 %6 %7 %8 %9
 
 popd
 endlocal
