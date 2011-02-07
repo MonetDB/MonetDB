@@ -235,13 +235,11 @@ All Rights Reserved.
     <filter token="MCL_MAJOR" value="${MCL_MAJOR}" />
     <filter token="MCL_MINOR" value="${MCL_MINOR}" />
     <filter token="JDBC_DEF_PORT" value="${JDBC_DEF_PORT}" />
-    <filter token="JDBC_DEF_PORT_XQUERY" value="${JDBC_DEF_PORT_XQUERY}" />
     <filter token="JDBC_VER_SUFFIX" value="${JDBC_VER_SUFFIX} ${TODAY}" />
 
     <fail unless="JDBC_MAJOR" message="'JDBC_MAJOR' undefined. Please follow the directions in build.properties."/>
     <fail unless="JDBC_MINOR" message="'JDBC_MINOR' undefined. Please follow the directions in build.properties."/>
     <fail unless="JDBC_DEF_PORT" message="'JDBC_DEF_PORT' undefined. Please follow the directions in build.properties."/>
-    <fail unless="JDBC_DEF_PORT_XQUERY" message="'JDBC_DEF_PORT_XQUERY' undefined. Please follow the directions in build.properties."/>
     <fail unless="JDBC_VER_SUFFIX" message="'JDBC_VER_SUFFIX' undefined. Please follow the directions in build.properties."/>
 
     <!-- now copy and filter the file -->

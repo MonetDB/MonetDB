@@ -103,10 +103,6 @@ public class MonetConnection implements Connection {
 
 	/** the SQL language */
 	final static int LANG_SQL = 0;
-	/** the XQuery language */
-	final static int LANG_XQUERY = 1;
-	/** the MIL language (officially *NOT* supported) */
-	final static int LANG_MIL = 2;
 	/** the MAL language (officially *NOT* supported) */
 	final static int LANG_MAL = 3;
 	/** an unknown language */
@@ -228,10 +224,6 @@ public class MonetConnection implements Connection {
 		// language used
 		if (language.startsWith("sql")) {
 			lang = LANG_SQL;
-		} else if ("xquery".equals(language)) {
-			lang = LANG_XQUERY;
-		} else if ("mil".equals(language)) {
-			lang = LANG_MIL;
 		} else if ("mal".equals(language)) {
 			lang = LANG_MAL;
 		} else {
@@ -247,15 +239,7 @@ public class MonetConnection implements Connection {
 			commandTempl[0] = "X";		// pre
 			commandTempl[1] = null;		// post
 			commandTempl[2] = "\nX";	// separator
-		} else if (lang == LANG_XQUERY) {
-			queryTempl[0] = "s";
-			queryTempl[1] = null;
-			queryTempl[2] = ",";
-
-			commandTempl[0] = "X";		// pre
-			commandTempl[1] = null;		// post
-			commandTempl[2] = "\nX";	// separator
-		} else if (lang == LANG_MIL || lang == LANG_MAL) {
+		} else if (lang == LANG_MAL) {
 			queryTempl[0] = null;
 			queryTempl[1] = ";\n";
 			queryTempl[2] = ";\n";
@@ -278,12 +262,6 @@ public class MonetConnection implements Connection {
 			offset -= (offset / 60) * 60;
 			tz += (offset < 10 ? "0" : "") + offset;
 			sendIndependantCommand("SET TIME ZONE INTERVAL '" + tz + "' HOUR TO MINUTE");
-		}
-		// the following initialisers are only valid when the language
-		// is XQUERY...
-		if (lang == LANG_XQUERY) {
-			// output format 
-			sendControlCommand("output seq");
 		}
 
 		// we're absolutely not closed, since we're brand new
@@ -1056,9 +1034,7 @@ public class MonetConnection implements Connection {
 	 */
 	public String toString() {
 		String language = "";
-		if (lang == LANG_XQUERY) language = "?language=xquery";
-		else if (lang == LANG_MIL) language = "?language=mil";
-		else if (lang == LANG_MAL) language = "?language=mal";
+		if (lang == LANG_MAL) language = "?language=mal";
 		return("MonetDB Connection (jdbc:monetdb://" + hostname +
 				":" + port + "/" + database + language + ") " + 
 				(closed ? "connected" : "disconnected"));
