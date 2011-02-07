@@ -17,11 +17,9 @@ Java 1.6 and up to compile the driver from source.
 
 Below a list of supported features can be found.  Please read this list
 if you intend to use this driver.  If you feel some features are
-missing, please let us know at our SourceForge feature request page:
-http://sourceforge.net/tracker/?group_id=56967&atid=482471
-
-Feel free to file bugs, when they appear, at our SourceForge bug page as
-well.
+missing, please let us know at our bugtracker:
+  http://bugs.monetdb.org/
+Feel free to file bugs there as well.
 
 
 Currently implemented:
