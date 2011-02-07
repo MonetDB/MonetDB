@@ -41,9 +41,6 @@
 	define("PROTOCOL_v9", 9); // supported protocol(s)
 
 	define("LANG_SQL", "sql");
-	define("LANG_XQUERY", "xquery");
-
-	define("XQUERY_OUTPUT_SEQ", "output seq");
 
 	define("MEROVINGIAN", "merovingian");
 	define("MSERVER", "mserver");
@@ -91,9 +88,7 @@
 		$buf = mapi_write($socket, format_query($query, $conn["lang"]));
 		$data = mapi_read($socket);
 
-		if ( ($conn['lang'] == LANG_SQL) || ( ($conn['lang'] == LANG_XQUERY) && (defined('XQUERY_OUTPUT_SEQ')) ) ) {
-			/* We are using sql or xquery with 'outpu seq' */
-
+		if ($conn['lang'] == LANG_SQL) {
 			$handle = array("conn" => "", "header" => array(), "query" => "", "record_set" => array(), "operation" => -1, "last_row" => 0);
 			$handle["conn"] = $conn["id"];
 
@@ -114,10 +109,6 @@
 			}
 
 			return $handle;
-		}
-		else if (($conn['lang'] == LANG_XQUERY) && (!defined('XQUERY_OUTPUT_SEQ'))) {
-			/* We are using xquery without 'output seq'. Return the xml file */
-			return $data;
 		}
 	}
 
@@ -610,12 +601,6 @@
 					$last_error = $response;
 					return FALSE;
 				}
-			} else if (($options['lang'] == LANG_XQUERY) && (defined('XQUERY_OUTPUT_SEQ'))) {
-				$buf = mapi_write($socket, format_command("output seq"));
-				if ( ($response = mapi_read($socket)) != MSG_PROMPT) {
-					$last_error = $response;
-					return FALSE;
-				}
 			} else {
 				return FALSE;
 			}
@@ -649,10 +634,6 @@
 			switch($conn['lang']) {
 				case LANG_SQL:
 					$res = mapi_execute($conn, "select true;");
-					break;
-
-				case LANG_XQUERY:
-					$res = mapi_execute($conn, "io.print(1);");
 					break;
 			}
 			if ($res != NULL) {
@@ -789,9 +770,6 @@
 		if ($lang == LANG_SQL) {
 
 			return "s" . $query . ";";
-		}
-		else if ($lang == LANG_XQUERY) {
-			return "s" . $query;
 		}
 		return FALSE;
 	}

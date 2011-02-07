@@ -2,7 +2,7 @@
 # This file is updated with Maddlog
 
 * Mon Feb  7 2011 Fabian Groffen <fabian@cwi.nl>
-- Remove XQuery related code from Ruby adapter
+- Remove XQuery related code from Ruby adapter and PHP driver
 
 * Thu Feb  3 2011 Fabian Groffen <fabian@cwi.nl>
 - Make SQL the default language for mclient, e.g. to use when --language=

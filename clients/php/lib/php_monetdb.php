@@ -36,7 +36,7 @@
 	/**
 	 * Opens a connection to a MonetDB server.  
 	 * 
-	 * @param string language to be used (sql or xquery)
+	 * @param string language to be used (sql)
 	 * @param string hostname to connect to (default is localhost)
 	 * @param int    port to use (default is 50000)
 	 * @param string username (default is monetdb)
@@ -81,7 +81,7 @@
 	 *
 	 * This type of link is therefore called 'persistent'. 
 	 *
-	 * @param string language to be used (sql or xquery)
+	 * @param string language to be used (sql)
 	 * @param string hostname to connect to (default is localhost)
 	 * @param int    port to use (default is 50000)
 	 * @param string username (default is monetdb)
