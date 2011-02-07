@@ -2,5 +2,5 @@
 # This file is updated with Maddlog
 
 * Mon Feb  7 2011 Fabian Groffen <fabian@cwi.nl>
-- Removed XQuery related XRPC wrapper code
+- Removed XQuery related XRPC wrapper and XML:DB code
 

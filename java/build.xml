@@ -36,7 +36,6 @@ All Rights Reserved.
   <property name="builddir"             value="build" />
   <property name="docdir"               value="doc" />
   <property name="jdbc-package"         value="nl/cwi/monetdb/jdbc" />
-  <property name="xmldb-package"        value="nl/cwi/monetdb/xmldb" />
   <property name="mcl-package"          value="nl/cwi/monetdb/mcl" />
   <property name="client-package"       value="nl/cwi/monetdb/client" />
   <property name="util-package"         value="nl/cwi/monetdb/util" />
@@ -51,8 +50,6 @@ All Rights Reserved.
     value="${jardir}/jdbcclient.jar" />
   <property name="mcl-jar"
     value="${jardir}/monetdb-${MCL_MAJOR}.${MCL_MINOR}-mcl.jar" />
-  <property name="xmldb-jar"
-    value="${jardir}/monetdb-${JDBC_MAJOR}.${JDBC_MINOR}-xmldb.jar" />
 
   <property name="mero-control-jar"
     value="${jardir}/merocontrol.jar" />
@@ -60,10 +57,6 @@ All Rights Reserved.
   <!-- full target -->
   <target name="all">
     <antcall target="distjdbc" />
-
-    <!-- xmldb is not in distjdbc because it needs a library which needs
-         to be fetched first -->
-    <antcall target="jar_xmldb" />
 
     <antcall target="distmerocontrol" />
 
@@ -97,14 +90,6 @@ All Rights Reserved.
       <fileset dir="${builddir}">
         <include name="${jdbc-package}/**/*.class" />
         <include name="${mcl-package}/**/*.class" />
-      </fileset>
-    </jar>
-  </target>
-
-  <target name="jar_xmldb" depends="compile_xmldb">
-    <jar jarfile="${xmldb-jar}">
-      <fileset dir="${builddir}">
-        <include name="${xmldb-package}/**/*.class" />
       </fileset>
     </jar>
   </target>
@@ -171,22 +156,6 @@ All Rights Reserved.
       <src path="${srcdir}" />
       <src path="${builddir}/src" />
       <include name="${jdbc-package}/**/*.java" />
-    </javac>
-  </target>
-
-  <target name="compile_xmldb" depends="prepare,driver">
-    <echo message="Compiling XML:DB driver" />
-    <javac
-      classpath="${srcdir}:${libdir}/xmldb.jar"
-      destdir="${builddir}"
-      debug="${debug}"
-      optimize="${optimize}"
-      target="${javac_version}"
-      source="${javac_version}"
-      >
-      <src path="${srcdir}" />
-      <src path="${builddir}/src" />
-      <include name="${xmldb-package}/**/*.java" />
     </javac>
   </target>
 
@@ -281,11 +250,6 @@ All Rights Reserved.
       tofile="${builddir}/src/${jdbc-package}/MonetDriver.java"
       filtering="yes" />
 
-    <copy file="${srcdir}/${xmldb-package}/base/MonetDBDatabase.java.in"
-      overwrite="true"
-      tofile="${builddir}/src/${xmldb-package}/base/MonetDBDatabase.java"
-      filtering="yes" />
-
     <echo message="Configured build for the ${JDBC_MAJOR}.${JDBC_MINOR} (${JDBC_VER_SUFFIX}) edition driver" />
   </target>
 
@@ -330,14 +294,6 @@ All Rights Reserved.
             <include name="build.local.properties" />
             <include name="${jdbc-package}/MonetDriver.java.in" />
             <include name="${jdbc-package}/**/*.java" />
-          </srcfiles>
-        </uptodate>
-        <uptodate
-          targetfile="${builddir}/src/${xmldb-package}/base/MonetDBDatabase.java">
-          <srcfiles dir="${srcdir}">
-            <include name="build.properties" />
-            <include name="build.local.properties" />
-            <include name="${xmldb-package}/base/MonetDBDatabase.java.in" />
           </srcfiles>
         </uptodate>
       </and>
