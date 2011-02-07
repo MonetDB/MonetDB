@@ -17,4 +17,6 @@
 
 MTSAFE
 
-SUBDIRS = native
+SUBDIRS = lib
+
+EXTRA_DIST_DIR = doc examples
