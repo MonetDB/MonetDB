@@ -224,7 +224,7 @@
     # Establish a new connection using named parameters.
     #                * user: username (default is monetdb)
     #                * passwd: password (default is monetdb)
-    #                * language: {sql, xquery} (default is sql) 
+    #                * language: lang (default is sql) 
     #                * host: host to connect to  (default is localhost)
     #                * port: port to connect to (default is 50000)
     #                * database: name of the database to connect to

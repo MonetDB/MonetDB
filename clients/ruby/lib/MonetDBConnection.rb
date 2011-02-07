@@ -48,10 +48,6 @@ MONET_ERROR           = -1
 
 LANG_SQL = "sql"
 
-# Xquery support
-LANG_XQUERY = "xquery"
-XQUERY_OUTPUT_SEQ = true # use monetdb xquery's output seq
-
 # Protocols
 MAPIv8 = 8
 MAPIv9 = 9
@@ -120,9 +116,6 @@ class MonetDBConnection
       if @lang == LANG_SQL
         set_timezone 
         set_reply_size
-      elsif (@lang == LANG_XQUERY) and XQUERY_OUTPUT_SEQ
-        # require xquery output to be in seq format
-        send(format_command("output seq"))
       end
       true
     end

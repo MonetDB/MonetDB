@@ -56,7 +56,7 @@ class MonetDBData
     record_set = "" # temporarly store retrieved rows
     record_set = receive_record_set(data)
 
-    if (@lang == LANG_SQL) or (@lang == LANG_XQUERY and XQUERY_OUTPUT_SEQ)
+    if (@lang == LANG_SQL)
       rows = receive_record_set(data)
       # the fired query is a SELECT; store and return the whole record set
       if @action == Q_TABLE
@@ -80,8 +80,6 @@ class MonetDBData
       if @record_set.length != @query['rows'].to_i
         raise MonetDBQueryError, "Warning: Query #{@query['id']} declared to result in #{@query['rows']} but #{@record_set.length} returned instead"
       end
-    elsif (@lang == XQUERY and ! XQUERY_OUTPUT_SEQ)
-      return data # return an xml file
     end
     @record_set.freeze  
   end
@@ -242,10 +240,8 @@ class MonetDBData
   
   # Formats a query <i>string</i> so that it can be parsed by the server
   def format_query(q)
-    if @lang.downcase == LANG_SQL
+    if @lang == LANG_SQL
         return "s" + q + ";"
-    elsif @lang.downcase == LANG_XQUERY
-        return "s" + q
     else
       raise LanguageNotSupported, @lang
     end
