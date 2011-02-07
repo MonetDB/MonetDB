@@ -145,7 +145,7 @@ sub doRequest {
   my($self,$cmd) = @_;
 
   $cmd =~ s/\n/ /g;    # remove newlines ???
-  $cmd = "S" . $cmd if ($self->{lang} eq 'sql' || $self->{lang} eq 'xquery');
+  $cmd = "S" . $cmd if $self->{lang} eq 'sql';
   print "doRequest:$cmd\n" if ($self->{trace});
   $self->putblock($cmd); # TODO handle exceptions || die "!ERROR can't send $cmd: $!";
   $self->resetState();
