@@ -368,7 +368,6 @@ fi
 %attr(2770,monetdb,monetdb) %dir %{_localstatedir}/monetdb5
 %attr(2770,monetdb,monetdb) %dir %{_localstatedir}/monetdb5/dbfarm
 %{_bindir}/mserver5
-%config(noreplace) %{_sysconfdir}/monetdb5.conf
 %{_libdir}/libmonetdb5.so.*
 %dir %{_libdir}/monetdb5
 %dir %{_libdir}/monetdb5/autoload
@@ -384,7 +383,6 @@ fi
 # %exclude %{_libdir}/monetdb5/lib_rdf.so
 %exclude %{_libdir}/monetdb5/lib_sql.so
 %{_libdir}/monetdb5/*.so
-%doc %{_mandir}/man5/monetdb5.conf.5.gz
 
 # %package -n MonetDB5-server-rdf
 # Summary: MonetDB RDF interface
