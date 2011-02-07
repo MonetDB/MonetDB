@@ -383,6 +383,7 @@ fi
 # %exclude %{_libdir}/monetdb5/lib_rdf.so
 %exclude %{_libdir}/monetdb5/lib_sql.so
 %{_libdir}/monetdb5/*.so
+%doc %{_mandir}/man1/mserver5.1.gz
 
 # %package -n MonetDB5-server-rdf
 # Summary: MonetDB RDF interface
