@@ -8,7 +8,7 @@ How To Start with MonetDB
 This document helps you compile and install the MonetDB suite from
 scratch on Unix-like systems (this includes of course Linux, but also
 MacOS X and Cygwin).  This document is meant to be used when you want
-to compile and install from CVS source.  When you use the prepared tar
+to compile and install from Mercurial source.  When you use the prepared tar
 balls, some of the steps described here should be skipped.
 
 In case you prefer installing a pre-compiled binary distribution,
@@ -26,27 +26,26 @@ __ Windows-Installation.html
 The Suite
 ---------
 
-The MonetDB software suite consists of the following parts which need
-to be built in the correct order:
+The following are the most important parts of the MonetDB software suite:
 
 buildtools
 	Tools used only for building the other parts of the suite.
-	These tools are only needed when building from CVS.  When
+	These tools are only needed when building from Mercurial.  When
 	building from the source distribution (i.e. the tar balls),
 	you do not need this.
 
-MonetDB
+common
 	Fundamental libraries used in the other parts of the suite.
 
 clients
 	Libraries and programs to communicate with the server(s) that
 	are part of the suite.
 
-MonetDB4
+monetdb4
 	The MIL-based server.  This is required if you want to use
 	XML/XQuery (pathfinder), and can be used with SQL.
 
-MonetDB5
+monetdb5
 	The MAL-based server.  This can be used with and is
 	recommended for SQL.
 
@@ -57,15 +56,6 @@ sql
 	The SQL server built on top of (targeted on) either MonetDB4
 	or MonetDB5.
 
-MonetDB4 and MonetDB5 are the basic database engines.  One or the
-other is required, but you can have both.  Pathfinder currently needs
-MonetDB4, sql can run on both MonetDB4 and MonetDB5 (the latter is
-recommended).
-
-The order of compilation and installation is important.  It is best to
-use the above order (where pathfinder and sql can be interchanged) and
-to configure-make-make install each package before proceeding with the
-next.
 
 Prerequisites
 -------------
@@ -115,16 +105,6 @@ standard software development tools
 	- perl
 	- php
 
-buildtools (Mx, mel, autogen, and burg)
-	These tools are not needed when you start with the source
-	distribution.
-
-	Before building any of the other packages from the Mercurial
-	sources, you first need to build and install the buildtools.
-	You can find them in the directory `buildtools`.
-	Follow the instructions in the README file, then proceed
-	with MonetDB.  Only for this step you need the C++ compiler.
-
 libxml2
     The XML parsing library `libxml2`__ is used by monetdb5 and
     pathfinder for xml functionality.  The library is used for:
@@ -153,16 +133,13 @@ The packages take about this much space:
  Package    Source   Build    Install
 ==========  =======  =======  =======
 buildtools  1.5 MB   8 MB     2.5 MB
-MonetDB     2 MB     21 MB    4 MB
+common      2 MB     21 MB    4 MB
 clients     9 MB     25 MB    10 MB
-MonetDB4    35.5 MB  50 MB    14 MB
-MonetDB5    26 MB    46 MB    12 MB
+monetdb4    35.5 MB  50 MB    14 MB
+monetdb5    26 MB    46 MB    12 MB
 sql         100 MB   22.5 MB  8 MB
 pathfinder  130 MB   43 MB    12 MB
 ==========  =======  =======  =======
-
-Some of the source packages are so large because they include lots of
-data for testing purposes.
 
 
 Getting the Software
@@ -170,12 +147,12 @@ Getting the Software
 
 There are two ways to get the source code:
 
-(1) checking it out from the CVS repository on SourceForge;
+(1) checking it out from the Mercurial repository on dev.monetdb.org;
 (2) downloading the pre-packaged source distribution from
     `our download page`__.
 
 The following instructions first describe how to check out the source
-code from the CVS repository on SourceForge; in case you downloaded
+code from the Mercurial repository; in case you downloaded
 the pre-packaged source distribution, you can skip this section and
 proceed to `Bootstrap, Configure and Make`_.
 
@@ -199,34 +176,17 @@ in ``buildtools/README`` before continuing with the others.
 Bootstrap, Configure and Make
 -----------------------------
 
-Before executing the following steps, make sure that your shell
-environment (especially the variables ``PATH``.  ``LD_LIBRARY_PATH``,
-and ``PYTHONPATH``) is set up so that the tools listed above can be
-found.  Also, set up PATH to include the *prefix*/bin directory where
-*prefix* is the prefix is where you want everything to be installed,
-and set up PYTHONPATH to include the *prefix*/lib/*python2.X*
-directory where *python2.X* is the version of Python being used.  It
-is recommended to use the same *prefix* for all packages.  Only the
-*prefix*/lib/*python2.X* directory for buildtools is needed in
-PYTHONPATH.
-
-In case you checked out the CVS version, you have to run ``bootstrap``
-first; in case you downloaded the pre-packaged source distribution,
-you should skip ``bootstrap`` and start with ``configure`` (see
-`Configure`_).
-
-For each of the packages do all the following steps (bootstrap,
-configure, make, make install) *before* proceeding to the next
-package.
+In case you checked out the Mercurial version, you have to run
+``bootstrap`` first; in case you downloaded the pre-packaged source
+distribution, you should skip ``bootstrap`` and start with ``configure``
+(see `Configure`_).
 
 Bootstrap
 ~~~~~~~~~
 
-This step is only needed when building from CVS.
+This step is only needed when building from Mercurial.
 
-In the top-level directory of the package type the command (note that
-this uses ``autogen.py`` which is part of the ``buildtools`` package
---- make sure it can be found in your ``$PATH``)::
+In the top-level directory of the package type the command::
 
  ./bootstrap
 
@@ -276,7 +236,7 @@ configure options
 
  --enable-strict, --enable-assert, --enable-debug, --enable-optimize
 
-When compiling from CVS sources
+When compiling from Mercurial sources
 (as mainly done by developers):
 
 ::
@@ -299,7 +259,7 @@ For building binary distributions (RPMs):
 ``(*)``
 IMPORTANT NOTE:
 
-Since ``--enable-optimize=yes`` is no longer the default for any case except
+Since ``--enable-optimize=yes`` is not the default for any case except
 binary packages, it is *strongly recommended* to (re)compile everything from
 scratch, *explicitly configured* with
 
@@ -372,7 +332,7 @@ in the package top-level directory issue the command
 
 where *package* is one of ``clients``, ``MonetDB4``, ``MonetDB5``, ``sql``,
 or ``pathfinder`` (the ``--package=<package>`` option can be omitted when
-using a CVS checkout; see
+using a Mercurial checkout; see
 
 ::
 
@@ -402,39 +362,13 @@ To run MonetDB5 interactively, just run::
 
  mserver5
 
-The disadvantage of running the systems interactively is that you
-don't get readline support (if available on your system).  A more
-pleasant environment can be had by using the system as a server and
-using ``mclient`` to interact with the system.
+A more pleasant environment can be had by using the system as a server
+and using ``mclient`` to interact with the system.  In that case it is
+easiest to start ``monetdbd`` and create, start, stop, remove, etc.
+databases using the ``monetdb`` tool.  monetdbd is only available for mserver5
 
-When MonetDB5 is started as above, it automatically starts the MAL
-server in addition to the interactive "console".  In case the
-MonetDB/SQL package is also installed, MonetDB5 does automatically
-load it and start the SQL server.
-
-In case of MonetDB4, to start only the MIL server use::
-
- Mserver --dbinit 'module(mapi); mil_start();'
-
-In order to use the XQuery back-end, which is only available with
-MonetDB4, start the server as follows::
-
- Mserver --dbinit 'module(pathfinder);'
-
-If you want to have a MIL server in addition to the XQuery server,
-use::
-
- Mserver --dbinit 'module(pathfinder); mil_start();'
-
-Once the server is running, you can use ``mclient`` to interact
-with the server.  ``mclient`` needs to be told which language you
-want to use, but it does not need to be told whether you're using
-MonetDB4 or MonetDB5.  In another shell window start::
-
- mclient -l<language>
-
-where *language* is one of ``mil``, ``mal``, ``sql``, or ``xquery``.
-If no ``-l`` option is given, ``mil`` is the default.
+When MonetDB5 is started interactively, it automatically starts the MAL
+server in addition to the interactive "console".
 
 With ``mclient``, you get a text-based interface that supports
 command-line editing and a command-line history.  The latter can even
@@ -467,34 +401,6 @@ or is an incompatible version.
 
 ``bootstrap`` adds files to the source directory, so it must have
 write permissions.
-
-During ``bootstrap``, warnings like
-
-::
-
- Remember to add `AC_PROG_LIBTOOL' to `configure.in'.
- You should add the contents of `/usr/share/aclocal/libtool.m4' to `aclocal.m4'.
- configure.in:37: warning: do not use m4_patsubst: use patsubst or m4_bpatsubst
- configure.in:104: warning: AC_PROG_LEX invoked multiple times
- configure.in:334: warning: do not use m4_regexp: use regexp or m4_bregexp
- automake/aclocal 1.6.3 is older than 1.7.
- Patching aclocal.m4 for Intel compiler on Linux (icc/ecc).
- patching file aclocal.m4
- Hunk #1 FAILED at 2542.
- 1 out of 1 hunk FAILED -- saving rejects to file aclocal.m4.rej
- patching file aclocal.m4
- Hunk #1 FAILED at 1184.
- Hunk #2 FAILED at 2444.
- Hunk #3 FAILED at 2464.
- 3 out of 3 hunks FAILED -- saving rejects to file aclocal.m4.rej
-
-might occur.  For some technical reasons, it's hard to completely
-avoid them.  However, it is usually safe to ignore them and simply
-proceed with the usual compilation procedure.  Only in case the
-subsequent ``configure`` or ``make`` fails, these warning might have
-to be taken more seriously.  In any case, you should include the
-``bootstrap`` output whenever you report (see `Reporting Problems`_)
-compilation problems.
 
 ``configure`` will fail if certain essential programs cannot be found
 or certain essential tasks (such as compiling a C program) cannot be
@@ -533,12 +439,12 @@ the pre-packaged source distribution, you can skip steps 2 and 3):
 
    and type ``y`` when asked whether to remove the listed files.  This
    will remove all the files that were created during ``bootstrap``.
-   Only do this with sources obtained through CVS.
+   Only do this with sources obtained through Mercurial.
 3) In the top-level source directory, re-run::
 
 	./bootstrap
 
-   Only do this with sources obtained through CVS.
+   Only do this with sources obtained through Mercurial.
 4) In the build-directory, re-run::
 
 	/path/to/configure
