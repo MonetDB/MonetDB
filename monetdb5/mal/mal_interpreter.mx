@@ -1463,7 +1463,7 @@ DFLOWscheduler( DataFlow flow )
 					}
 			}
 		/* if all work done then inspect rest */
-		if (candidates == 0)
+		if (candidates < flow->nway)
 			for(i = pc ; i < limit && queued < flow->nway ; i++)
 				if (fs[i].status == DFLOWpending ) {
 					p = getInstrPtr(flow->mb, fs[i].pc);
