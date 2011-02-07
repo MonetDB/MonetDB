@@ -22,16 +22,12 @@ EXTRA_DIST = build.xml build.properties release.txt
 EXTRA_DIST_DIR = src \
 		 example
 
+JAVA_HOME = @JAVA_HOME@
+
 ant_distjdbc = {
 	COND = HAVE_JAVAJDBC
 	DIR = datadir/monetdb/lib
 	FILES = monetdb-1.6-mcl.jar monetdb-1.18-jdbc.jar jdbcclient.jar
-}
-
-ant_distxrpc = {
-	COND = HAVE_JAVAXRPC
-	DIR = datadir/monetdb/lib
-	FILES = xrpcapi.jar xrpcwrapper.jar xrpcclient.jar
 }
 
 ant_distmerocontrol = {
@@ -39,7 +35,5 @@ ant_distmerocontrol = {
 	DIR = datadir/monetdb/lib
 	FILES = merocontrol.jar
 }
-
-JAVA_HOME = @JAVA_HOME@
 
 # vim: ft=automake :
