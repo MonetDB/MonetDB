@@ -77,8 +77,7 @@ comment "Hook directly into the 'nested-loop-thetajoin' implementation
 	swapped during processing, and hence, the order of the left input's 
 	head in maintained in the result.
 	Also, for each left tuple, all matching right tuples will appear in 
-	their order of appearrance in the right BAT. This property is handy 
-for XQuery processing.";
+	their order of appearrance in the right BAT. ";
 
 
 @= select
