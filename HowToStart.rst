@@ -99,16 +99,23 @@ standard software development tools
 	- php
 
 libxml2
-	The XML parsing library `libxml2`__ is only used by
+	The XML parsing library `libxml2`__ is used by
 	the xml module of monetdb5.
 
 	If libxml2 is not available on your system, this module is skipped
     and it will not be available at runtime.
 
+pcre
+    The Perl Compatible Regular Expressions library `pcre`__ is used by
+    monetdb5 and sql.  Most prominently, complex SQL LIKE expressions are
+    evaluated with help of the pcre library.
+
 __ http://dev.monetdb.org/downloads/sources/
 __ http://www.gnu.org/software/autoconf/
 __ http://www.gnu.org/software/automake/
 __ http://www.gnu.org/software/libtool/
+__ http://www.xmlsoft.org/
+__ http://www.pcre.org/
 
 Space Requirements
 ~~~~~~~~~~~~~~~~~~

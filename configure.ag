@@ -2128,11 +2128,18 @@ esac
 
 
 PKG_CHECK_EXISTS([libxml-2.0], [have_libxml2="yes"], [have_libxml2="no"])
-if test x"$have_libxml2" = x"yes" ; then
+case "$enable_monetdb5-$have_libxml2" in
+yes-no)
+	AC_MSG_ERROR([libxml2 library not found but required for MonetDB5])
+	;;
+auto-no)
+	enable_monetdb5=no
+	;;
+*-yes)
 	PKG_CHECK_MODULES([libxml2], [libxml-2.0])
-	AC_DEFINE(HAVE_LIBXML2, 1, [Define if you have the libxml2 library])
-fi
-AM_CONDITIONAL(HAVE_LIBXML2, test x"$have_libxml2" != xno)
+	;;
+esac
+
 
 have_raptor=no
 if test "x$enable_rdf" != xno; then

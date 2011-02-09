@@ -16,12 +16,6 @@
 # All Rights Reserved.
 
 MTSAFE
-INCLUDES = ../misc ../mal \
-	../../clients/mapilib \
-	../../common/options \
-	../../common/stream \
-	../../gdk \
-	$(openssl_CFLAGS) $(pcre_CFLAGS) $(libxml2_CFLAGS)
 
 # the name (libmonetdb5) is also used in ../mal/mal_linker.mx
 # if you change the name here, change it there as well
@@ -40,7 +34,7 @@ lib_monetdb5 = {
 		$(curl_LIBS) \
 		$(MATH_LIBS) $(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) \
 		$(DL_LIBS) $(READLINE_LIBS) $(openssl_LIBS) $(pcre_LIBS) \
-		$(LTLIBICONV) $(zlib_LIBS)
+		$(LTLIBICONV) $(zlib_LIBS) $(libxml2_LIBS)
 }
 
 EXTRA_DIST_DIR = Tests

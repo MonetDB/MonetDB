@@ -24,9 +24,7 @@
 #include "monet_version.h"
 #include <pcre.h>
 #include <openssl/opensslv.h>
-#ifdef HAVE_LIBXML2
 #include <libxml/xmlversion.h>
-#endif
 
 void
 monet_version(void)
@@ -76,7 +74,6 @@ monet_version(void)
 			printf(" (%s)", opensslversion);
 		printf("\n");
 	}
-#ifdef HAVE_LIBXML2
 	{
 		char libxml2version[] = "@libxml2version@";
 		printf("  libxml2: %s", LIBXML_DOTTED_VERSION);
@@ -84,7 +81,6 @@ monet_version(void)
 			printf(" (%s)", libxml2version);
 		printf("\n");
 	}
-#endif
 	printf("Compiled by: %s (" HOST ")\n", "@builtby@");
 	printf("Compilation: %s\n", "@compilercall@");
 #ifdef MONETDB_STATIC
