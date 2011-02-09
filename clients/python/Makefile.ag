@@ -19,5 +19,5 @@ python_setup = {
 	FILES = setup.py
 }
 
-EXTRA_DIST = COPYRIGHT README.rst setup.py
+EXTRA_DIST = README.rst setup.py
 EXTRA_DIST_DIR = examples monetdb test
