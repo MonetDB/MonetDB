@@ -1012,8 +1012,8 @@ BBPimportEntry(char *nme)
 
 	if (bn->htype != TYPE_void ) {
 		@:linkHeap(H,heap,bufhead,head)@
-		if (bn->tvarsized) {
-			@:linkvHeap(T,bufhheap,hheap)@
+		if (bn->hvarsized) {
+			@:linkvHeap(H,bufhheap,hheap)@
 		}
 	}
 	if (bn->ttype != TYPE_void ) {
