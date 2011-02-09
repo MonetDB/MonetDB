@@ -23,7 +23,7 @@ HIDE=1
 MX = $(top_builddir)/buildtools/Mx/Mx
 
 # in the next few rules, make sure that "$(CONFIG_H)" is included
-# first, also with [f]lex- and bison-generated files.  This is crucial
+# first, also with bison-generated files.  This is crucial
 # to prevent inconsistent (re-)definitions of macros.
 %.tab.c: %.y
 	$(LOCKFILE) waiting
@@ -54,9 +54,6 @@ MX = $(top_builddir)/buildtools/Mx/Mx
 
 %.y: %.mx
 	$(MX) $(MXFLAGS) -x y $< 
-
-%.l: %.mx
-	$(MX) $(MXFLAGS) -x l $< 
 
 %.mal: %.mx
 	$(MX) $(MXFLAGS) -l -x mal $<
