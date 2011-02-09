@@ -73,6 +73,7 @@ typedef int MapiMsg;
  * The type of both the 'param' and 'binding'
  * variables refer to their underlying C-type. They are used for
  * automatic type coercion between back-end and application.
+ */
 typedef struct MapiStruct *Mapi;
 
 /* this definition is a straight copy from sql/include/sql_query.h */

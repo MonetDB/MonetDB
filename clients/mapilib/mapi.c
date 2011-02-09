@@ -838,7 +838,6 @@ _CRTIMP char *__cdecl crypt(const char *key, const char *salt);
 #ifndef INVALID_SOCKET
 #define INVALID_SOCKET (-1)
 #endif
- */
 
 #define MAPIBLKSIZE	256	/* minimum buffer shipped */
 
@@ -1174,7 +1173,7 @@ mapi_explain(Mapi mid, FILE *fd)
 		if (mid->hostname[0] == '/')
 			fprintf(fd, "MAPI  = (%s) %s\n", mid->username, mid->hostname);
 		else
-			fprintf(fd, "MAPI  = %s\@%s:%d\n",
+			fprintf(fd, "MAPI  = %s@%s:%d\n",
 				mid->username, mid->hostname, mid->port);
 		if (mid->action)
 			fprintf(fd, "ACTION= %s\n", mid->action);
@@ -1200,7 +1199,7 @@ mapi_explain_query(MapiHdl hdl, FILE *fd)
 		if (mid->hostname[0] == '/')
 			fprintf(fd, "MAPI  = (%s) %s\n", mid->username, mid->hostname);
 		else
-			fprintf(fd, "MAPI  = %s\@%s:%d\n",
+			fprintf(fd, "MAPI  = %s@%s:%d\n",
 				mid->username, mid->hostname, mid->port);
 		if (mid->action)
 			fprintf(fd, "ACTION= %s\n", mid->action);
@@ -1234,7 +1233,7 @@ mapi_explain_result(MapiHdl hdl, FILE *fd)
 		if (mid->hostname[0] == '/')
 			fprintf(fd, "MAPI  = (%s) %s\n", mid->username, mid->hostname);
 		else
-			fprintf(fd, "MAPI  = %s\@%s:%d\n",
+			fprintf(fd, "MAPI  = %s@%s:%d\n",
 				mid->username, mid->hostname, mid->port);
 		if (mid->action)
 			fprintf(fd, "ACTION= %s\n", mid->action);
