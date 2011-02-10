@@ -52,7 +52,7 @@ while read f; do [ -x $f.in ] && echo "AC_CONFIG_FILES([$f], [chmod +x $f])"; do
 sed '1,/^AC_CONFIG_FILES/d' configure.ag
 ) > configure.ac &&
 $libtoolize -c -f  &&
-aclocal -I . -I buildtools/conf ${_m4_extra_dirs} &&
+aclocal ${_m4_extra_dirs} &&
 autoheader  &&
 automake --add-missing --copy --foreign  &&
 autoconf
