@@ -21,7 +21,7 @@ INCLUDES = ../../monet \
 	../../../clients/mapilib \
 	../../../gdk \
 	$(zlib_CFLAGS) $(BZ_CFLAGS) $(HWCOUNTERS_INCS) $(PCL_CFLAGS) \
-	$(pcre_CFLAGS) $(ICONV_CFLAGS)
+	$(pcre_CFLAGS)
 MTSAFE
 
 lib__streams = {
@@ -45,7 +45,7 @@ lib__str = {
 		../../../gdk/libbat4 \
 		../../monet/libmonet \
 		$(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) \
-		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) $(ICONV_LIBS)
+		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) $(LTLIBICONV)
 }
 
 lib__xtables = {

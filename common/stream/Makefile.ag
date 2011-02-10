@@ -24,8 +24,7 @@ EXTRA_DIST = stream_socket.h
 INCLUDES = $(zlib_CFLAGS) \
 		   $(BZ_CFLAGS) \
 		   $(openssl_CFLAGS) \
-		   $(curl_CFLAGS) \
-		   $(ICONV_CFLAGS)
+		   $(curl_CFLAGS)
 
 lib_stream  =  {
 	SOURCES = stream.c stream.h
@@ -35,7 +34,7 @@ lib_stream  =  {
 		   $(BZ_LIBS) \
 		   $(openssl_LIBS) \
 		   $(curl_LIBS) \
-		   $(ICONV_LIBS)
+		   $(LTLIBICONV)
 }
 
 lib_stream4  =  {
@@ -47,7 +46,7 @@ lib_stream4  =  {
 		   $(BZ_LIBS) \
 		   $(openssl_LIBS) \
 		   $(curl_LIBS) \
-		   $(ICONV_LIBS)
+		   $(LTLIBICONV)
 }
 
 headers_common = {
