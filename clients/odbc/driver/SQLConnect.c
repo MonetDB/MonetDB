@@ -70,8 +70,7 @@ SQLConnect_(ODBCDbc *dbc,
 	char uid[32];
 	char pwd[32];
 	char buf[256];
-	char db[1024];
-	char lang[32];
+	char db[32];
 	char *s;
 	int n;
 	Mapi mid;
@@ -124,12 +123,6 @@ SQLConnect_(ODBCDbc *dbc,
 		strncpy(pwd, (char *) szPWD, nPWDLength);
 		pwd[nPWDLength] = 0;
 	}
-	if (dsn && *dsn)
-		n = SQLGetPrivateProfileString(dsn, "language", "sql", lang, sizeof(lang), "odbc.ini");
-	else
-		n = 0;
-	if (n == 0)
-		strncpy(lang, "sql", sizeof(lang));
 
 	if (schema == NULL || *schema == 0) {
 		if (dsn && *dsn) {
@@ -166,7 +159,7 @@ SQLConnect_(ODBCDbc *dbc,
 
 	/* connect to a server on host via port */
 	/* FIXME: use dbname/catalog from ODBC connect string/options here */
-	mid = mapi_connect(host, port, uid, pwd, lang, schema);
+	mid = mapi_connect(host, port, uid, pwd, "sql", schema);
 	if (mid == NULL || mapi_error(mid)) {
 		/* Client unable to establish connection */
 		addDbcError(dbc, "08001", NULL, 0);

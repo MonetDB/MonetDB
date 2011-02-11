@@ -101,7 +101,6 @@ struct data {
 	char *host;
 	char *port;
 	char *database;
-	char *language;
 	HWND parent;
 	WORD request;
 };
@@ -150,7 +149,6 @@ DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		SetDlgItemText(hwndDlg, IDC_EDIT_HOST, datap->host ? datap->host : "");
 		SetDlgItemText(hwndDlg, IDC_EDIT_PORT, datap->port ? datap->port : "");
 		SetDlgItemText(hwndDlg, IDC_EDIT_DATABASE, datap->database ? datap->database : "");
-		SetDlgItemText(hwndDlg, IDC_EDIT_LANGUAGE, datap->language ? datap->language : "sql");
 		if (datap->request == ODBC_ADD_DSN && datap->dsn && *datap->dsn)
 			EnableWindow(GetDlgItem(hwndDlg, IDC_EDIT_DSN), FALSE);
 		return TRUE;
@@ -192,10 +190,6 @@ DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			if (datap->database)
 				free(datap->database);
 			datap->database = strdup(buf);
-			GetDlgItemText(hwndDlg, IDC_EDIT_LANGUAGE, buf, sizeof(buf));
-			if (datap->language)
-				free(datap->language);
-			datap->language = strdup(buf);
 			/* fall through */
 		case IDCANCEL:
 			EndDialog(hwndDlg, LOWORD(wParam));
@@ -239,7 +233,6 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 	data.host = NULL;
 	data.port = NULL;
 	data.database = NULL;
-	data.language = NULL;
 	data.parent = parent;
 	data.request = request;
 
@@ -265,8 +258,6 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 			data.port = strdup(value);
 		else if (strncasecmp("database=", attributes, value - attributes) == 0)
 			data.database = strdup(value);
-		else if (strncasecmp("language=", attributes, value - attributes) == 0)
-			data.language = strdup(value);
 		attributes = value + strlen(value) + 1;
 	}
 
@@ -286,16 +277,14 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 	MergeFromProfileString(data.dsn, &data.host, "host", "localhost");
 	MergeFromProfileString(data.dsn, &data.port, "port", "50000");
 	MergeFromProfileString(data.dsn, &data.database, "database", "");
-	MergeFromProfileString(data.dsn, &data.language, "language", "");
 
-	ODBCLOG("ConfigDSN values: dsn=%s uid=%s pwd=%s host=%s port=%s database=%s language=%s\n",
+	ODBCLOG("ConfigDSN values: dsn=%s uid=%s pwd=%s host=%s port=%s database=%s\n",
 		data.dsn ? data.dsn : "(null)",
 		data.uid ? data.uid : "(null)",
 		data.pwd ? data.pwd : "(null)",
 		data.host ? data.host : "(null)",
 		data.port ? data.port : "(null)",
-		data.database ? data.database : "(null)",
-		data.language ? data.language : "(null)");
+		data.database ? data.database : "(null)");
 
 	/* we're optimistic: default return value */
 	rc = TRUE;
@@ -381,21 +370,19 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 			goto finish;
 		}
 	}
-	ODBCLOG("ConfigDSN writing values: dsn=%s uid=%s pwd=%s host=%s port=%s database=%s language=%s\n",
+	ODBCLOG("ConfigDSN writing values: dsn=%s uid=%s pwd=%s host=%s port=%s database=%s\n",
 		data.dsn ? data.dsn : "(null)",
 		data.uid ? data.uid : "(null)",
 		data.pwd ? data.pwd : "(null)",
 		data.host ? data.host : "(null)",
 		data.port ? data.port : "(null)",
-		data.database ? data.database : "(null)",
-		data.language ? data.language : "(null)");
+		data.database ? data.database : "(null)");
 
 	if (!SQLWritePrivateProfileString(data.dsn, "uid", data.uid, "odbc.ini") ||
 	    !SQLWritePrivateProfileString(data.dsn, "pwd", data.pwd, "odbc.ini") ||
 	    !SQLWritePrivateProfileString(data.dsn, "host", data.host, "odbc.ini") ||
 	    !SQLWritePrivateProfileString(data.dsn, "port", data.port, "odbc.ini") ||
-	    !SQLWritePrivateProfileString(data.dsn, "database", data.database, "odbc.ini") ||
-	    !SQLWritePrivateProfileString(data.dsn, "language", data.language, "odbc.ini")) {
+	    !SQLWritePrivateProfileString(data.dsn, "database", data.database, "odbc.ini")) {
 		rc = FALSE;
 		if (parent)
 			MessageBox(parent,
@@ -420,8 +407,6 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 		free(data.port);
 	if (data.database)
 		free(data.database);
-	if (data.language)
-		free(data.language);
 	ODBCLOG("ConfigDSN returning %s\n", rc ? "TRUE" : "FALSE");
 	return rc;
 }
