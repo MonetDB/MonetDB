@@ -17,12 +17,16 @@
 
 MTSAFE
 
-BINS = {
-	CONDINST = HAVE_TESTING
-	DIR = libdir/monetdb/tests
-	SOURCES = odbcsample1.c testgetinfo.c
-	LIBS = ../driver/libMonetODBC ../../mapilib/libmapi $(curl_LIBS)
-}
+# FIXME: libMonetODBC is actually a module, once cannot link against
+# that on Darwin.  We need to properly link against (unix)ODBC and use
+# it's drivermanager which correctly dlopens the MonetODBC module.  This
+# requires a odbc.ini file, and testing to be aware of it as well.
+#BINS = {
+#	CONDINST = HAVE_TESTING
+#	DIR = libdir/monetdb/tests
+#	SOURCES = odbcsample1.c testgetinfo.c
+#	LIBS = ../driver/libMonetODBC ../../mapilib/libmapi $(curl_LIBS)
+#}
 
 bin_odbctest = {
 	COND = NATIVE_WIN32
