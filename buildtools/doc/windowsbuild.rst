@@ -535,30 +535,15 @@ __ http://www.activestate.com/Products/activeperl/
 PHP
 ---
 
-PHP__ is only needed to create an interface that can be used from a
-PHP program to communicate with a MonetDB server.
+There is a PHP__ interface that can be used from a PHP program to
+communicate with a MonetDB server.  This interface is written
+completely in PHP, so there is no compilation involved.  This means
+that no installation of PHP is required for building, but only for
+testing.
 
-Download the Windows installer and source
-package of PHP 5 from http://www.php.net/.
-Install the binary package and extract the sources somewhere (e.g. as
-a subfolder of the binary installation).
-
-In order to get MonetDB to compile with these sources a few changes
-had to be made to the sources:
-
-- In the file ``Zend\zend.h``, move the line
-  ::
-
-   #include <stdio.h>
-
-  down until just *after* the block where ``zend_config.h`` is
-  included.
-- In the file ``main\php_network.h``, delete the line
-  ::
-
-   #include "arpa/inet.h"
-
-We have no support yet for Windows64.
+Download the Windows installer and source package of PHP 5 from
+http://www.php.net/.  Install the binary package and extract the
+sources somewhere (e.g. as a subfolder of the binary installation).
 
 __ http://www.php.net/
 
@@ -787,8 +772,6 @@ The contents of the file referred to with the ``MAKE_INCLUDEFILE``
 parameter may contain something like::
 
  bits=32
- PHP_SRCDIR=C:\Program Files\PHP\php-5.3.3
- PHP_INSTDIR=C:\Program Files\PHP
  LIBPERL=C:\Perl
  LIBPCRE=C:\Program Files\PCRE
  LIBICONV=C:\iconv-1.11.win32
