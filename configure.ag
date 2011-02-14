@@ -2341,6 +2341,14 @@ no-*)
 	CPPFLAGS="$save_CPPFLAGS"
 	;;
 esac
+case "$enable_monetdb5-$have_libxml2" in
+yes-no)
+	AC_MSG_ERROR([libxml2 library not found but required for MonetDB5])
+	;;
+auto-no)
+	enable_monetdb5=no
+	;;
+esac
 
 have_raptor=no
 if test "x$enable_rdf" != xno; then

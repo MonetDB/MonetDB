@@ -126,22 +126,23 @@ buildtools (Mx, mel, autogen, and burg)
 	with MonetDB.  Only for this step you need the C++ compiler.
 
 libxml2
-	The XML parsing library `libxml2`__ is only used by
-	XML/XQuery (pathfinder).  The library is used for:
+    The XML parsing library `libxml2`__ is used by monetdb5 and
+    pathfinder for xml functionality.  The library is used for:
 
-	(a) the XML Schema import feature of the Pathfinder compiler, and
-	(b) the XML document loader (runtime/shredder.mx).
+    (a) the XML Schema import feature of the Pathfinder compiler, and
+    (b) the XML document loader (runtime/shredder.mx).
 
-	If libxml2 is not available on your system, the Pathfinder
-	compiler will be compiled without XML Schema support.  The XML
-	document loader will not be compiled at all in that case.
-	Current Linux distributions all come with libxml2.
+    If libxml2 is not available on your system, the Pathfinder
+    compiler will be compiled without XML Schema support.  The XML
+    document loader will not be compiled at all in that case.  MonetDB5
+    cannot be compiled without libxml2.
+    Current Linux distributions all come with libxml2.
 
 __ http://dev.monetdb.org/downloads/sources/
 __ http://www.gnu.org/software/autoconf/
 __ http://www.gnu.org/software/automake/
 __ http://www.gnu.org/software/libtool/
-__ http://www.xmlsoft.org
+__ http://www.xmlsoft.org/
 
 Space Requirements
 ~~~~~~~~~~~~~~~~~~
