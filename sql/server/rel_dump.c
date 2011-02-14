@@ -534,7 +534,7 @@ rel_print(mvc *sql, sql_rel *rel, int depth)
 	mnstr_printf(fd, "%% .plan # table_name\n");
 	mnstr_printf(fd, "%% rel # name\n");
 	mnstr_printf(fd, "%% clob # type\n");
-	mnstr_printf(fd, "%% " SZFMT " # length\n", len - 2 /* remove = and \n */);
+	mnstr_printf(fd, "%% " SZFMT " # length\n", len - 1 /* remove = */);
 
 	/* output the data */
 	mnstr_printf(fd, "%s\n", b->buf + 1 /* omit starting \n */);
