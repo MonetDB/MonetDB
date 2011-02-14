@@ -99,11 +99,11 @@ standard software development tools
 	- php
 
 libxml2
-	The XML parsing library `libxml2`__ is used by
-	the xml module of monetdb5.
+    The XML parsing library `libxml2`__ is used by
+    the xml module of monetdb5.
 
-	If libxml2 is not available on your system, this module is skipped
-    and it will not be available at runtime.
+    MonetDB5 cannot be compiled without libxml2.  Current Linux
+    distributions all come with libxml2.
 
 pcre
     The Perl Compatible Regular Expressions library `pcre`__ is used by
