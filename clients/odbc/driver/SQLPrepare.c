@@ -253,7 +253,16 @@ SQLPrepare_(ODBCStmt *stmt,
 		 * initialized */
 		rec->sql_desc_length = ODBCDisplaySize(rec);
 		rec->sql_desc_display_size = rec->sql_desc_length;
-		rec->sql_desc_octet_length = rec->sql_desc_length;
+		if (rec->sql_desc_concise_type == SQL_CHAR ||
+		    rec->sql_desc_concise_type == SQL_VARCHAR ||
+		    rec->sql_desc_concise_type == SQL_LONGVARCHAR) {
+			/* in theory, each character (really: Unicode
+			 * code point) could need 6 bytes in the UTF-8
+			 * encoding, plus we need a byte for the
+			 * terminating NUL byte */
+			rec->sql_desc_octet_length = 6 * rec->sql_desc_length + 1;
+		} else
+			rec->sql_desc_octet_length = rec->sql_desc_length;
 	}
 
 	/* update the internal state */
