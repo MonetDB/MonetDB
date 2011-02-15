@@ -104,7 +104,6 @@ else
 	dft_develop=no
 fi
 dft_warning=no
-dft_netcdf=auto
 
 dnl small hack to get icc -no-gcc, done here because AC_PROG_CC shouldn't
 dnl set GCC=yes if we use icc.
@@ -3190,7 +3189,6 @@ esac
 
 dnl  CFLAGS for our code are stricter than what autoconf can cope with.
 CFLAGS="$CFLAGS \$(X_CFLAGS)"
-dnl  pathfinder code is not (yet?) up to this
 case "$GCC-$gcc_ver-$host_os" in
 yes-3.[[4-9]].*-*|yes-[[4-9]].*-*)
 	CFLAGS="$CFLAGS -Wno-declaration-after-statement";;
