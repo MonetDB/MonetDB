@@ -494,7 +494,6 @@ fi
 %{_libdir}/monetdb5/*.mal
 %{_libdir}/monetdb5/autoload/*_fits.mal
 %{_libdir}/monetdb5/autoload/*_vault.mal
-%{_libdir}/monetdb5/autoload/*_xml.mal
 %exclude %{_libdir}/monetdb5/lib/lib_geom.so
 # %exclude %{_libdir}/monetdb5/lib/lib_rdf.so
 %exclude %{_libdir}/monetdb5/lib/lib_sql.so
