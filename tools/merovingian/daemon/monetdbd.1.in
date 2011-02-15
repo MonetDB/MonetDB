@@ -1,15 +1,16 @@
 .\" Process this file with
 .\" groff -man -Tascii foo.1
 .\"
-.TH MONETDBD 1 "SEP 2010" Application "MonetDB Applications"
+.TH MONETDBD 1 "FEB 2011" MonetDB "MonetDB 5"
 .SH NAME
 monetdbd \- the MonetDB Database Server daemon
 .SH SYNOPSIS
 .B monetdbd
 .SH DESCRIPTION
 .B monetdbd
-is the MonetDB Database Server daemon.  It is not meant to be used in
-interactive environments, and hence has no help command or flag.
+is the MonetDB Database Server daemon.  The program is mainly meant to
+be used as deamon, but it also allows to setup and change the
+configuration of a dbfarm.
 The typical use of
 .B monetdbd
 is to be started from a startup script, such as from
@@ -333,3 +334,91 @@ The configuration file default location to write log output to.
 .SH "SEE ALSO"
 .BR monetdb (1)
 .\".BR mserver5 (1)
+
+# Merovingian section
+#====================
+# Merovingian logs messages and errors by default to the stdout and
+# stderr channels on the console.  By setting one or both of the
+# variables below, one can specify messages and/or errors to be logged
+# to a file instead.  It is legitimate to have both mero_msglog and
+# mero_errlog pointing to the same file, as in the default below.
+# Setting mero_msglog and/or mero_errlog to the empty string, results
+# in merovingian to log to the screen.
+#mero_msglog=@Xlocalstatedir@@DIRSEP@log@DIRSEP@monetdb@DIRSEP@merovingian.log
+#mero_errlog=@Xlocalstatedir@@DIRSEP@log@DIRSEP@monetdb@DIRSEP@merovingian.log
+#
+# Merovingian forks itself to detach into the background.  It stores
+# its pid in the following file, which can be used to stop Merovingian
+# again.
+mero_pidfile=@Xlocalstatedir@@DIRSEP@run@DIRSEP@monetdb@DIRSEP@merovingian.pid
+#
+# In normal use, Merovingian replaces an mserver, and hence listens
+# for connections on the same port as an mserver would do (mapi_port).
+# For certain configs, however, it may be more suitable to use an
+# alternate port, which can be specified here.
+#mero_port=50000
+#
+# mservers that were started by Merovingian are shut down when the
+# Merovingian is shut down.  This behaviour is desirable if the
+# Merovingian is ran as daemon process that represents MonetDB, such
+# as in an init.d script.  Setting the time-out value below to a
+# positive non-zero value will shut down each mserver that was started
+# with a given time-out in seconds.  If the time-out expires, the
+# mserver is killed using the SIGKILL signal.  A time-out value of 0
+# means that no mserver is shut down, meaning they will live on after
+# the Merovingian has shut down.  The default is to shut down all
+# started mservers with a time-out of 60 seconds.
+#mero_exittimeout=60
+#
+# Merovingian has two ways in which it can "attach" a connecting
+# client to the target database.  The first method uses a redirect to
+# the responsible mserver process, the second method proxies the
+# client to the mserver over Merovingian.  While the first is more
+# efficient, it requires the connecting client to be able to connect
+# to the mserver.  In many settings this may be undesirable or even
+# impossible, since a wide range of open ports are necessary for this.
+# In such case the proxy behaviour of Merovingian is a good solution,
+# which also allows a Merovingian on the border of a network to serve
+# requests to nodes in the local (unreachable) network.  Hence, proxy
+# mode is the default.  Uncomment the value below to use the first
+# method of using redirects.  Note that Merovingian will use an
+# efficient method to connect the client with a local target database
+# when proxy mode is active.  This method is performance wise equal to
+# forwarding, but completely hides the actual way of connecting to the
+# target database, like proxying.
+#mero_doproxy=no
+#
+# Neighbour discovery allows Merovingian to discover other running
+# Merovingian processes in the local network.  Merovingian publishes
+# locally available databases to others periodically.  The interval
+# used here depends on the time-to-live of the databases before they
+# need to get refreshed.  The default is 10 minutes, which should keep
+# traffic in your network fairly low.  Additions and removals are
+# processed immediately regardless of this timeout.  If you are in a
+# network environment where links disappear often, you may want to
+# decrease this value to more quickly remove no longer reachable
+# databases.
+#mero_discoveryttl=600
+#
+# Neighbour discovery is done using UDP broadcasts on the port set by
+# mero_discoveryport.  It's value defaults to the value of mero_port,
+# which usually is 50000.  Setting this value to 0 disables the
+# neighbour discovery service entirely.
+#mero_discoveryport=50000
+#
+# Each Merovingian can be controlled by monetdb(1).  By default,
+# Merovingian binds to a local UNIX domain socket which allows a local
+# monetdb(1) to connect based on the UNIX file system permissions.
+# Merovingian can also listen on a TCP socket to serve requests from a
+# monetdb(1) elsewhere.  If mero_controlport is set, Merovingian
+# listens to that port for remote control commands.  This is an all or
+# nothing scenario, hence any remote monetdb(1) can create, destroy,
+# etc.  As a little protective measure, the file
+# @Xlocalstatedir@@DIRSEP@monetdb5@DIRSEP@dbfarm@DIRSEP@.merovingian_pass
+# contains the passphrase that a remote monetdb(1) needs to issue to
+# be able to perform any command.  For this file the same rules hold
+# as for the monet_vault_key file.  If this file is missing,
+# Merovingian will attempt to create it with a random password.  If
+# the file cannot be opened for some reason, Merovingian will not
+# start.
+mero_controlport=50001

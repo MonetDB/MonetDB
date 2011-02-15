@@ -26,8 +26,9 @@
  * proxy, with capabilities to start mserver5s when necessary.
  * 
  * Since some people appear to have trouble pronouncing or remembering
- * its name, one can also refer to Merovingian as Mero.  In any case,
- * people having difficulties here should watch The Matrix once more.
+ * its name, one can also refer to Merovingian as Mero or its name for
+ * dummies: monetdbd.  In any case, people having difficulties here
+ * should watch The Matrix once more.
  * 
  * Most of Merovingian's decisions are based on information provided by
  * Sabaoth.  Sabaoth is a file-system based administration shared
@@ -43,12 +44,18 @@
  * client asks for it, in the future, Merovingian can decide to only
  * start a database if the crashlog information maintained by Sabaoth
  * shows that the mserver5 doesn't behave badly.  For example 
- * Merovingian can refuse to start an database if it has crashed a
- * number of times over a recent period.
+ * Merovingian can refuse to start a database if it has crashed a
+ * number of times over a recent period.  Note that to date, no such
+ * thing has been implemented as the need for it has not arisen yet.
+ *
+ * By default, merovingian will monitor and control the dbfarm in the
+ * build-time configured prefix under var/monetdb5/dbfarm.  However,
+ * when a path is given as first argument, merovingian will attempt to
+ * monitor and control the directory the path points to.  This allows
+ * users to create their own dbfarm, but also expert users to run
+ * multiple merovingians on the same system easily, since the
+ * (persistent) configuration is read from the dbfarm directory.
  */
-
-#define MERO_VERSION   "1.3"
-#define MERO_PORT      50000
 
 #include "monetdb_config.h"
 #include <msabaoth.h>
@@ -72,7 +79,6 @@
 #include <fcntl.h>
 #include <unistd.h> /* unlink, isatty */
 #include <string.h> /* strerror */
-
 #include <errno.h>
 #include <signal.h> /* handle Ctrl-C, etc. */
 #include <pthread.h>
@@ -84,6 +90,7 @@
 #include "controlrunner.h"
 #include "discoveryrunner.h"
 #include "handlers.h"
+#include "argvcmds.h"
 
 
 /* private structs */
@@ -98,8 +105,6 @@ typedef struct _threadlist {
 
 /* full path to the mserver5 binary */
 char *_mero_mserver = NULL;
-/* full path to the monetdb5 config file */
-char *_mero_conffile = NULL;
 /* list of databases that we have started */
 dpair _mero_topdp = NULL;
 /* lock to _mero_topdp, initialised as recursive lateron */
@@ -108,39 +113,25 @@ pthread_mutex_t _mero_topdp_lock;
 int _mero_keep_logging = 1;
 /* for accepting connections, when set to 0, listening socket terminates */
 char _mero_keep_listening = 1;
-/* stream to the stdout output device (tty or file) */
-FILE *_mero_streamout = NULL;
-/* stream to the stderr output device (tty or file) */
-FILE *_mero_streamerr = NULL;
-/* timeout when waiting for a database to shutdown (seconds) */
-int _mero_exit_timeout = 60;
-/* the port merovingian listens on for client connections */
-unsigned short _mero_port = MERO_PORT;
-/* the time-to-live to announce for each shared database (seconds) */
-int _mero_discoveryttl = 600;
+/* stream to where to write the log */
+FILE *_mero_logfile = NULL;
 /* stream to the stdout for the neighbour discovery service */
 FILE *_mero_discout = NULL;
 /* stream to the stderr for the neighbour discovery service */
 FILE *_mero_discerr = NULL;
-/* the port merovingian listens for TCP control commands */
-unsigned short _mero_controlport = 0;
 /* stream to the stdout for the control runner */
 FILE *_mero_ctlout = NULL;
 /* stream to the stderr for the control runner */
 FILE *_mero_ctlerr = NULL;
 /* broadcast socket for announcements */
-int _mero_broadcastsock;
+int _mero_broadcastsock = -1;
 /* broadcast address/port */
 struct sockaddr_in _mero_broadcastaddr;
 /* hostname of this machine */
 char _mero_hostname[128];
-/* control channel passphrase */
-char _mero_controlpass[128];
-/* full path to logfile for stdout messages, or NULL if tty */
-char *_mero_msglogfile = NULL;
-/* full path to logfile for stderr messages, or NULL if tty */
-char *_mero_errlogfile = NULL;
 /* default options read from config file */
+confkeyval *_mero_db_props = NULL;
+/* merovingian's own properties */
 confkeyval *_mero_props = NULL;
 
 
@@ -190,16 +181,11 @@ logListener(void *x)
 {
 	dpair d = _mero_topdp;
 	dpair w;
-	char equalouterr;
 	struct timeval tv;
 	fd_set readfds;
 	int nfds;
 
 	(void)x;
-
-	equalouterr = 0;
-	if (_mero_streamout == _mero_streamerr)
-		equalouterr = 1;
 
 	/* the first entry in the list of d is where our output should go to
 	 * but we only use the streams, so we don't care about it in the
@@ -239,18 +225,16 @@ logListener(void *x)
 		while (w != NULL) {
 			if (FD_ISSET(w->out, &readfds) != 0)
 				logFD(w->out, "MSG", w->dbname,
-						(long long int)w->pid, _mero_streamout);
+						(long long int)w->pid, _mero_logfile);
 			if (w->err != w->out && FD_ISSET(w->err, &readfds) != 0)
 				logFD(w->err, "ERR", w->dbname,
-						(long long int)w->pid, _mero_streamerr);
+						(long long int)w->pid, _mero_logfile);
 			w = w->next;
 		}
 
 		pthread_mutex_unlock(&_mero_topdp_lock);
 
-		fflush(_mero_streamout);
-		if (equalouterr == 0)
-			fflush(_mero_streamerr);
+		fflush(_mero_logfile);
 	} while (_mero_keep_logging != 0);
 }
 
@@ -266,6 +250,7 @@ terminateProcess(void *p)
 	sabdb *stats;
 	char *er;
 	int i;
+	confkeyval *kv;
 	/* make local copies since d will disappear when killed */
 	pid_t pid = d->pid;
 	char *dbname = alloca(sizeof(char) * (strlen(d->dbname) + 1));
@@ -311,7 +296,8 @@ terminateProcess(void *p)
 	Mfprintf(stdout, "sending process " LLFMT " (database '%s') the "
 			"TERM signal\n", (long long int)pid, dbname);
 	kill(pid, SIGTERM);
-	for (i = 0; i < _mero_exit_timeout * 2; i++) {
+	kv = findConfKey(_mero_props, "exittimeout");
+	for (i = 0; i < atoi(kv->val) * 2; i++) {
 		if (stats != NULL)
 			msab_freeStatus(&stats);
 		sleep_ms(500);
@@ -344,9 +330,9 @@ terminateProcess(void *p)
 			}
 		}
 	}
-	Mfprintf(stderr, "timeout of %d seconds expired, sending process " LLFMT
+	Mfprintf(stderr, "timeout of %s seconds expired, sending process " LLFMT
 			" (database '%s') the KILL signal\n",
-			_mero_exit_timeout, (long long int)pid, dbname);
+			kv->val, (long long int)pid, dbname);
 	kill(pid, SIGKILL);
 	return;
 }
@@ -374,24 +360,67 @@ newErr(char *fmt, ...)
 	return(ret);
 }
 
+/**
+ * Explicitly pulled out functionality that is just implemented to
+ * obtain an automatic upgrade path.
+ *
+ * Starting from the Apr2011 release, the .merovingian_pass file is no
+ * longer used.  Instead, the phrase is inside the
+ * .merovingian_properties file that is used since that release also.
+ * If the file exists, read its contents, and set it as value for the
+ * key "passphrase" in the given confkeyval.  Afterwards, delete the old
+ * .merovingian_pass file.
+ *
+ * Returns 0 if a .merovingian_pass file existed, contained a valid key,
+ * was set in ckv, and the .merovingian_pass file was removed.
+ */
+static char
+autoUpgradePassphraseMar2011Apr2011(confkeyval *ckv)
+{
+	struct stat statbuf;
+	FILE *secretf;
+	size_t len;
+	char buf[128];
+
+	if (stat(".merovingian_pass", &statbuf) == -1)
+		return(1);
+
+	if ((secretf = fopen(".merovingian_pass", "r")) == NULL)
+		return(1);
+
+	len = fread(buf, 1, sizeof(buf) - 1, secretf);
+	fclose(secretf);
+	buf[len] = '\0';
+	len = strlen(buf); /* secret can contain null-bytes */
+	/* strip trailing newlines */
+	for (; len > 0 && buf[len - 1] == '\n'; len--)
+		buf[len - 1] = '\0';
+	if (len == 0)
+		return(1);
+
+	ckv = findConfKey(ckv, "passphrase");
+	setConfVal(ckv, buf);
+
+	if (!unlink(".merovingian_pass"))
+		return(1);
+
+	return(0);
+}
 
 int
 main(int argc, char *argv[])
 {
 	err e;
 	int argp;
-	char *dbfarm;
+	char *dbfarm = LOCALSTATEDIR "/monetdb5/dbfarm";
 	char *pidfilename;
 	char *p;
-	char *prefix;
-	FILE *cnf = NULL, *pidfile = NULL;
-	char *control_usock;
-	char *mapi_usock;
-	char buf[1024];
+	FILE *pidfile = NULL;
+	char control_usock[1024];
+	char mapi_usock[1024];
 	dpair d = NULL;
 	int pfd[2];
-	int retfd = -1;
-	pthread_t tid;
+	pthread_t tid = 0;
 	struct sigaction sa;
 	int ret;
 	int sock = -1;
@@ -399,28 +428,32 @@ main(int argc, char *argv[])
 	int unsock = -1;
 	int csock = -1;
 	int socku = -1;
-	char doproxy = 1;
-	unsigned short discoveryport;
+	unsigned short port = 0;
+	unsigned short discoveryport = 0;
+	unsigned short controlport = 0;
 	struct stat sb;
 	FILE *oerr = NULL;
 	pthread_mutexattr_t mta;
 	int thret;
 	confkeyval ckv[] = {
-		{"gdk_dbfarm",         strdup(LOCALSTATEDIR "/monetdb5/dbfarm"), STR},
-		{"gdk_nr_threads",     NULL,                    INT},
-		{"sql_optimizer",      NULL,                    STR},
-		{"mero_msglog",        strdup(MERO_LOG),        STR},
-		{"mero_errlog",        strdup(MERO_LOG),        STR},
-		{"mero_port",          NULL,                    INT},
-		{"mero_exittimeout",   NULL,                    INT},
-		{"mero_pidfile",       NULL,                    STR},
-		{"mero_doproxy",       NULL,                    BOOL},
-		{"mero_discoveryttl",  NULL,                    INT},
-		{"mero_discoveryport", NULL,                    INT},
-		{"mero_controlport",   NULL,                    INT},
-		{ NULL,                NULL,                    INVALID}
+		{"logfile",       strdup("merovingian.log"), 0,                STR},
+		{"pidfile",       strdup("merovingian.pid"), 0,                STR},
+
+		{"sockdir",       strdup("/tmp"),          0,                  STR},
+		{"port",          strdup(MERO_PORT),       atoi(MERO_PORT),    INT},
+		{"controlport",   strdup(CONTROL_PORT),    atoi(CONTROL_PORT), INT},
+		{"discoveryport", strdup(MERO_PORT),       atoi(MERO_PORT),    INT},
+
+		{"exittimeout",   strdup("60"),            60,                 INT},
+		{"forward",       strdup("proxy"),         0,                  OTHER},
+		{"discoveryttl",  strdup("600"),           600,                INT},
+
+		{"passphrase",    NULL,                    0,                  STR},
+		{ NULL,           NULL,                    0,                  INVALID}
 	};
 	confkeyval *kv;
+#ifndef MERO_DONTFORK
+	int retfd = -1;
 
 	/* Fork into the background immediately.  By doing this our child
 	 * can simply do everything it needs to do itself.  Via a pipe it
@@ -429,7 +462,6 @@ main(int argc, char *argv[])
 		Mfprintf(stderr, "unable to create pipe: %s\n", strerror(errno));
 		return(1);
 	}
-#ifndef MERO_DONTFORK
 	switch (fork()) {
 		case -1:
 			/* oops, forking went wrong! */
@@ -459,248 +491,183 @@ main(int argc, char *argv[])
 			close(pfd[0]);
 			return(buf[0]); /* whatever the child returned, we return */
 	}
-#endif
 
-	/* hunt for the config file, and read it, allow the caller to
-	 * specify where to look using the MONETDB5CONF environment variable */
-	p = getenv("MONETDB5CONF");
-	if (p == NULL)
-		p = NULL;
-	cnf = fopen(p, "r");
-	if (cnf == NULL) {
-		Mfprintf(stderr, "cannot open config file %s\n", p);
-		return(1);
-	}
-	/* store this conffile for later use in forkMserver */
-	_mero_conffile = p;
-
+/* use after the logger thread has started */
 #define MERO_EXIT(status) { \
-	char s = status; \
-	if (write(retfd, &s, 1) != 1 || close(retfd) != 0) { \
-		Mfprintf(stderr, "could not write to parent\n"); \
-	} \
+		char s = status; \
+		if (write(retfd, &s, 1) != 1 || close(retfd) != 0) { \
+			Mfprintf(stderr, "could not write to parent\n"); \
+		} \
+		if (status != 0) { \
+			Mfprintf(stderr, "fatal startup condition encountered, " \
+					"aborting startup\n"); \
+			goto shutdown; \
+		} \
+	}
+/* use before logger thread has started */
+#define MERO_EXIT_CLEAN(status) { \
+		char s = status; \
+		if (write(retfd, &s, 1) != 1 || close(retfd) != 0) { \
+			Mfprintf(stderr, "could not write to parent\n"); \
+		} \
+		exit(status); \
+	}
+#else
+#define MERO_EXIT(status) \
 	if (status != 0) { \
 		Mfprintf(stderr, "fatal startup condition encountered, " \
 				"aborting startup\n"); \
 		goto shutdown; \
-	} \
-}
+	}
+#define MERO_EXIT_CLEAN(status) \
+		exit(status);
+#endif
 
-	readConfFile(ckv, cnf);
-	fclose(cnf);
-
-	kv = findConfKey(ckv, "prefix");
-	prefix = kv->val; /* has default, must be set */
-	kv = findConfKey(ckv, "gdk_dbfarm");
-	dbfarm = replacePrefix(kv->val, prefix); /* has default, must be set */
-	kv = findConfKey(ckv, "mero_msglog");
-	_mero_msglogfile = replacePrefix(kv->val, prefix);
-	if (strcmp(kv->val, "") == 0) { /* has default, must be set */
-		free(kv->val);
-		kv->val = NULL;
-	}
-	kv = findConfKey(ckv, "mero_errlog");
-	_mero_errlogfile = replacePrefix(kv->val, prefix);
-	if (strcmp(kv->val, "") == 0) { /* has default, must be set */
-		free(kv->val);
-		kv->val = NULL;
-	}
-	kv = findConfKey(ckv, "mero_exittimeout");
-	if (kv && kv->val != NULL)
-		_mero_exit_timeout = atoi(kv->val);
-	kv = findConfKey(ckv, "mero_pidfile");
-	pidfilename = replacePrefix(kv ? kv->val : NULL, prefix);
-	kv = findConfKey(ckv, "mero_port");
-	if (kv && kv->val != NULL) {
-		ret = atoi(kv->val);
-		if (ret <= 0 || ret > 65535) {
-			Mfprintf(stderr, "invalid port number: %s\n", kv->val);
-			MERO_EXIT(1);
-		}
-		_mero_port = (unsigned short)ret;
-	}
-	kv = findConfKey(ckv, "mero_doproxy");
-	if (kv && kv->val != NULL) {
-		if (strcmp(kv->val, "yes") == 0 ||
-				strcmp(kv->val, "true") == 0 ||
-				strcmp(kv->val, "1") == 0)
-		{
-			doproxy = 1;
-		} else {
-			doproxy = 0;
-		}
-	}
-	kv = findConfKey(ckv, "mero_discoveryttl");
-	if (kv && kv->val != NULL)
-		_mero_discoveryttl = atoi(kv->val);
-	discoveryport = _mero_port;  /* defaults to same port as mero_port */
-	kv = findConfKey(ckv, "mero_discoveryport");
-	if (kv && kv->val != NULL) {
-		ret = atoi(kv->val);
-		if (ret < 0 || ret > 65535) {
-			Mfprintf(stderr, "invalid port number: %s\n", kv->val);
-			MERO_EXIT(1);
-		}
-		discoveryport = (unsigned short)ret;
-	}
-	kv = findConfKey(ckv, "mero_controlport");
-	if (kv && kv->val != NULL) {
-		ret = atoi(kv->val);
-		if (ret < 0 || ret > 65535) {
-			Mfprintf(stderr, "invalid port number: %s\n", kv->val);
-			MERO_EXIT(1);
-		}
-		_mero_controlport = (unsigned short)ret;
-	}
-
+	/* seed the randomiser for when we create a database, send responses
+	 * to HELO, etc */
+	srand(time(NULL));
+	/* figure out our hostname */
+	gethostname(_mero_hostname, 128);
 	/* where is the mserver5 binary we fork on demand? */
-	snprintf(buf, sizeof(buf), "%s/bin/mserver5", prefix);
-	_mero_mserver = alloca(sizeof(char) * (strlen(buf) + 1));
-	memcpy(_mero_mserver, buf, strlen(buf) + 1);
-	/* exit early if this is not going to work well */
-	if (stat(_mero_mserver, &sb) == -1) {
-		Mfprintf(stderr, "cannot stat %s executable: %s\n",
-				_mero_mserver, strerror(errno));
-
-		MERO_EXIT(1);
-	}
-
-	/* setup default properties */
-	_mero_props = getDefaultProps();
-	kv = findConfKey(_mero_props, "forward");
-	kv->val = strdup(doproxy == 1 ? "proxy" : "redirect");
-	kv = findConfKey(_mero_props, "shared");
-	kv->val = strdup(discoveryport == 0 ? "no" : "yes");
-	kv = findConfKey(ckv, "gdk_nr_threads");
-	if (kv->val != NULL) {
-		ret = atoi(kv->val);
-		kv = findConfKey(_mero_props, "nthreads");
-		snprintf(buf, sizeof(buf), "%d", ret);
-		kv->val = strdup(buf);
-	}
-	kv = findConfKey(_mero_props, "master");
+	_mero_mserver = BINDIR "/mserver5";
+	/* setup default database properties, constants: unlike previous
+	 * versions, we do not want changing defaults any more */
+	_mero_db_props = getDefaultProps();
+	kv = findConfKey(_mero_db_props, "shared");
+	kv->val = strdup("yes");
+	kv = findConfKey(_mero_db_props, "master");
 	kv->val = strdup("no");
-	kv = findConfKey(_mero_props, "slave");
+	kv = findConfKey(_mero_db_props, "slave");
 	kv->val = NULL; /* MURI */
-	kv = findConfKey(_mero_props, "readonly");
+	kv = findConfKey(_mero_db_props, "readonly");
 	kv->val = strdup("no");
-	kv = findConfKey(ckv, "sql_optimizer");
-	p = kv->val;
-	if (p != NULL) {
-		kv = findConfKey(_mero_props, "optpipe");
-		kv->val = strdup(p);
+
+	/* in case of no arguments, we act backwards compatible: start
+	 * merovingian in the hardwired dbfarm location */
+	if (argc > 1) {
+		/* future: support -v or something like monetdb(1), for now we
+		 * just don't */
+		if (strcmp(argv[1], "--help") == 0 ||
+				strcmp(argv[1], "-h") == 0 ||
+				strcmp(argv[1], "help") == 0)
+		{
+			MERO_EXIT_CLEAN(command_help(argc - 1, &argv[1]));
+		} else if (strcmp(argv[1], "--version") == 0 ||
+				strcmp(argv[1], "-v") == 0 ||
+				strcmp(argv[1], "version") == 0)
+		{
+			MERO_EXIT_CLEAN(command_version());
+		} else if (strcmp(argv[1], "create") == 0) {
+			MERO_EXIT_CLEAN(command_create(argc - 1, &argv[1]));
+		} else if (strcmp(argv[1], "get") == 0) {
+			MERO_EXIT_CLEAN(command_get(ckv, argc - 1, &argv[1]));
+		} else if (strcmp(argv[1], "set") == 0) {
+			MERO_EXIT_CLEAN(command_set(ckv, argc - 1, &argv[1]));
+		} else if (strcmp(argv[1], "start") == 0) {
+			/* start without argument just means start hardwired dbfarm */
+			if (argc > 2)
+				dbfarm = argv[2];
+		} else if (strcmp(argv[1], "stop") == 0) {
+			MERO_EXIT_CLEAN(command_stop(ckv, argc - 1, &argv[1]));
+		} else {
+			fprintf(stderr, "monetdbd: unknown command: %s\n", argv[1]);
+			command_help(0, NULL);
+			MERO_EXIT_CLEAN(1);
+		}
 	}
 
-	/* we no longer need prefix */
-	freeConfFile(ckv);
-	prefix = NULL;
-
-	/* we need a dbfarm */
-	if (dbfarm == NULL) {
-		Mfprintf(stderr, "cannot find dbfarm via config file\n");
-		MERO_EXIT(1);
-	} else {
-		/* check if dbfarm actually exists */
-		struct stat statbuf;
-		if (stat(dbfarm, &statbuf) == -1) {
-			/* try to create the dbfarm */
-			char *p = dbfarm;
-			while ((p = strchr(p + 1, '/')) != NULL) {
-				*p = '\0';
-				if (stat(dbfarm, &statbuf) == -1 && mkdir(dbfarm, 0755)) {
-					Mfprintf(stderr, "unable to create directory '%s': %s\n",
-							dbfarm, strerror(errno));
-					MERO_EXIT(1);
-				}
-				*p = '/';
-			}
-			if (mkdir(dbfarm, 0755)) {
-				Mfprintf(stderr, "unable to create directory '%s': %s\n",
-						dbfarm, strerror(errno));
-				MERO_EXIT(1);
-			}
-		}
+	/* check if dbfarm actually exists */
+	if (stat(dbfarm, &sb) == -1) {
+		Mfprintf(stderr, "dbfarm directory '%s' does not exist, "
+				"use monetdbd create first\n", dbfarm);
+		MERO_EXIT_CLEAN(1);
 	}
 
 	/* chdir to dbfarm so we are at least in a known to exist location */
 	if (chdir(dbfarm) < 0) {
 		Mfprintf(stderr, "could not move to dbfarm '%s': %s\n",
 				dbfarm, strerror(errno));
-		MERO_EXIT(1);
+		MERO_EXIT_CLEAN(1);
 	}
 
-	/* figure out our hostname */
-	gethostname(_mero_hostname, 128);
-
-	if (argc > 1) {
-		Mfprintf(stderr, "Merovingian %s (%s) on host %s\n", MERO_VERSION,
-				MONETDB_RELEASE, _mero_hostname);
-		Mfprintf(stderr, "Using config file: %s\n", _mero_conffile);
-		Mfprintf(stderr, "  monitoring dbfarm: %s\n", dbfarm);
-		Mfprintf(stderr, "  forking mserver5: %s\n", _mero_mserver);
-		Mfprintf(stderr, "  allows remote control: %s\n",
-				(_mero_controlport != 0 ? "yes" : "no"));
-		Mfprintf(stderr, "  performs neighbour discovery: %s\n",
-				(discoveryport != 0 ? "yes" : "no"));
-		MERO_EXIT(0);
-		return(0);
+	/* exit early if this is not going to work well */
+	if (stat(_mero_mserver, &sb) == -1) {
+		Mfprintf(stderr, "cannot stat %s executable: %s\n",
+				_mero_mserver, strerror(errno));
+		MERO_EXIT_CLEAN(1);
 	}
 
-	/* seed the randomiser for when we create a database, send responses
-	 * to HELO, etc */
-	srand(time(NULL));
+	/* read the merovingian properties from the dbfarm */
+	readProps(ckv, dbfarm);
+	_mero_props = ckv;
 
-	/* see if we have the passphrase if we do remote control stuff */
-	if (_mero_controlport != 0) {
-		struct stat statbuf;
-		FILE *secretf;
-		size_t len;
+	kv = findConfKey(_mero_props, "pidfile");
+	pidfilename = kv->val;
 
-		if (stat(".merovingian_pass", &statbuf) == -1) {
-			if ((e = generatePassphraseFile(".merovingian_pass")) != NULL) {
-				Mfprintf(stderr, "cannot open .merovingian_pass for "
-						"writing: %s\n", e);
-				free(e);
-				MERO_EXIT(1);
-			}
+	kv = findConfKey(_mero_props, "forward");
+	if (strcmp(kv->val, "redirect") != 0 &&
+			strcmp(kv->val, "proxy") != 0)
+	{
+		Mfprintf(stderr, "invalid forwarding mode: %s, defaulting to proxy\n",
+				kv->val);
+		setConfVal(kv, "proxy");
+		writeProps(_mero_props, dbfarm);
+	}
+
+	kv = findConfKey(_mero_props, "passphrase");
+	if (kv->val == NULL || strlen(kv->val) == 0) {
+		if (!autoUpgradePassphraseMar2011Apr2011(_mero_props)) {
+			char phrase[128];
+			Mfprintf(stderr, "control passphrase unset or has zero-length, "
+					"generating one\n");
+			generateSalt(phrase, sizeof(phrase));
+			setConfVal(kv, phrase);
 		}
-
-		if ((secretf = fopen(".merovingian_pass", "r")) == NULL) {
-			Mfprintf(stderr, "unable to open .merovingian_pass: %s\n",
-					strerror(errno));
-			MERO_EXIT(1);
-		}
-
-		len = fread(_mero_controlpass, 1,
-				sizeof(_mero_controlpass) - 1, secretf);
-		fclose(secretf);
-		_mero_controlpass[len] = '\0';
-		len = strlen(_mero_controlpass); /* secret can contain null-bytes */
-		/* strip trailing newlines */
-		for (; len > 0 && _mero_controlpass[len - 1] == '\n'; len--)
-			_mero_controlpass[len - 1] = '\0';
-		if (len == 0) {
-			Mfprintf(stderr, "control passphrase has zero-length\n");
-			MERO_EXIT(1);
-		}
+		writeProps(_mero_props, dbfarm);
 	}
 
-	/* we need a pidfile */
-	if (pidfilename == NULL) {
-		Mfprintf(stderr, "cannot find pidfilename via config file\n");
-		MERO_EXIT(1);
+	kv = findConfKey(_mero_props, "port");
+	if (kv->ival <= 0 || kv->ival > 65535) {
+		Mfprintf(stderr, "invalid port number: %s, defaulting to %s\n",
+				kv->val, MERO_PORT);
+		setConfVal(kv, MERO_PORT);
+		writeProps(_mero_props, dbfarm);
 	}
+	port = (unsigned short)kv->ival;
+	kv = findConfKey(_mero_props, "discoveryport");
+	if (kv->ival <= 0 || kv->ival > 65535) {
+		Mfprintf(stderr, "invalid discovery port number: %s, defaulting to %s\n",
+				kv->val, MERO_PORT);
+		setConfVal(kv, MERO_PORT);
+		writeProps(_mero_props, dbfarm);
+	}
+	discoveryport = (unsigned int)kv->ival;
+	kv = findConfKey(_mero_props, "controlport");
+	if (kv->ival <= 0 || kv->ival > 65535) {
+		Mfprintf(stderr, "invalid control port number: %s, defaulting to %s\n",
+				kv->val, CONTROL_PORT);
+		setConfVal(kv, CONTROL_SOCK);
+		writeProps(_mero_props, dbfarm);
+	}
+	controlport = (unsigned short)kv->ival;
+
+	/* set up UNIX socket paths for control and mapi */
+	p = getConfVal(_mero_props, "sockdir");
+	snprintf(control_usock, sizeof(control_usock), "%s/" CONTROL_SOCK "%d",
+			p, getConfNum(_mero_props, "controlport"));
+	snprintf(mapi_usock, sizeof(control_usock), "%s/" MERO_SOCK "%d",
+			p, getConfNum(_mero_props, "port"));
 
 	/* lock such that we are alone on this world */
 	if ((ret = MT_lockf(".merovingian_lock", F_TLOCK, 4, 1)) == -1) {
 		/* locking failed */
 		Mfprintf(stderr, "another merovingian is already running\n");
-		MERO_EXIT(1);
+		MERO_EXIT_CLEAN(1);
 	} else if (ret == -2) {
 		/* directory or something doesn't exist */
-		Mfprintf(stderr, "unable to create .merovingian_lock file in %s: %s\n",
+		Mfprintf(stderr, "unable to create %s/.merovingian_lock file: %s\n",
 				dbfarm, strerror(errno));
-		MERO_EXIT(1);
+		MERO_EXIT_CLEAN(1);
 	}
 
 	_mero_topdp = alloca(sizeof(struct _dpair));
@@ -708,56 +675,20 @@ main(int argc, char *argv[])
 	_mero_topdp->dbname = NULL;
 
 	/* where should our msg output go to? */
-	if (_mero_msglogfile == NULL) {
-		/* stdout, save it */
-		argp = dup(1);
-		_mero_topdp->out = argp;
-	} else {
-		/* write to the given file */
-		_mero_topdp->out = open(_mero_msglogfile, O_WRONLY | O_APPEND | O_CREAT,
-				S_IRUSR | S_IWUSR);
-		if (_mero_topdp->out == -1) {
-			Mfprintf(stderr, "unable to open '%s': %s\n",
-					_mero_msglogfile, strerror(errno));
-			MERO_EXIT(1);
-		}
+	p = getConfVal(_mero_props, "logfile");
+	/* write to the given file */
+	_mero_topdp->out = open(p, O_WRONLY | O_APPEND | O_CREAT,
+			S_IRUSR | S_IWUSR);
+	if (_mero_topdp->out == -1) {
+		Mfprintf(stderr, "unable to open '%s': %s\n",
+				p, strerror(errno));
+		MERO_EXIT_CLEAN(1);
 	}
+	_mero_topdp->err = _mero_topdp->out;
 
-	/* where should our err output go to? */
-	if (_mero_errlogfile == NULL) {
-		/* stderr, save it */
-		argp = dup(2);
-		_mero_topdp->err = argp;
-	} else {
-		/* write to the given file */
-		if (strcmp(_mero_msglogfile, _mero_errlogfile) == 0) {
-			_mero_topdp->err = _mero_topdp->out;
-		} else {
-			_mero_topdp->err = open(_mero_errlogfile, O_WRONLY | O_APPEND | O_CREAT,
-					S_IRUSR | S_IWUSR);
-			if (_mero_topdp->err == -1) {
-				Mfprintf(stderr, "unable to open '%s': %s\n",
-						_mero_errlogfile, strerror(errno));
-				MERO_EXIT(1);
-			}
-		}
-	}
-
-	_mero_streamout = fdopen(_mero_topdp->out, "a");
-	if (_mero_topdp->out == _mero_topdp->err) {
-		_mero_streamerr = _mero_streamout;
-	} else {
-		_mero_streamerr = fdopen(_mero_topdp->err, "a");
-	}
+	_mero_logfile = fdopen(_mero_topdp->out, "a");
 
 	d = _mero_topdp->next = alloca(sizeof(struct _dpair));
-
-	/* make sure we will be able to write our pid */
-	if ((pidfile = fopen(pidfilename, "w")) == NULL) {
-		Mfprintf(stderr, "unable to open '%s' for writing: %s\n",
-				pidfilename, strerror(errno));
-		MERO_EXIT(1);
-	}
 
 	/* redirect stdout */
 	if (pipe(pfd) == -1) {
@@ -824,10 +755,6 @@ main(int argc, char *argv[])
 	d->dbname = "control";
 	d->next = NULL;
 
-	/* write out the pid */
-	Mfprintf(pidfile, "%d\n", (int)d->pid);
-	fclose(pidfile);
-
 	/* allow a thread to relock this mutex */
 	pthread_mutexattr_init(&mta);
 	pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_RECURSIVE);
@@ -879,48 +806,58 @@ main(int argc, char *argv[])
 		MERO_EXIT(1);
 	}
 
+	/* make sure we will be able to write our pid */
+	if ((pidfile = fopen(pidfilename, "w")) == NULL) {
+		Mfprintf(stderr, "unable to open '%s%s%s' for writing: %s\n",
+				pidfilename[0] == '/' ? dbfarm : "",
+				pidfilename[0] == '/' ? "/" : "",
+				pidfilename, strerror(errno));
+		MERO_EXIT(1);
+	}
+
+	/* write out the pid */
+	Mfprintf(pidfile, "%d\n", (int)d->pid);
+	fclose(pidfile);
+
 	Mfprintf(stdout, "Merovingian %s (%s) starting\n",
 			MERO_VERSION, MONETDB_RELEASE);
 	Mfprintf(stdout, "monitoring dbfarm %s\n", dbfarm);
 
 	msab_init(dbfarm, NULL);
-	free(dbfarm);
-
-	/* set up control channel path */
-	control_usock = ".merovingian_control";
 	unlink(control_usock);
-	mapi_usock = "mapi_socket";
 	unlink(mapi_usock);
 
 	/* open up connections */
 	if (
-			(e = openConnectionTCP(&sock, _mero_port, stdout)) == NO_ERR &&
+			(e = openConnectionTCP(&sock, port, stdout)) == NO_ERR &&
 			(e = openConnectionUNIX(&socku, mapi_usock, 0, stdout)) == NO_ERR &&
 			(e = openConnectionUDP(&usock, discoveryport)) == NO_ERR &&
 			(e = openConnectionUNIX(&unsock, control_usock, S_IRWXO, _mero_ctlout)) == NO_ERR &&
-			(_mero_controlport == 0 || (e = openConnectionTCP(&csock, _mero_controlport, _mero_ctlout)) == NO_ERR)
+			(controlport == 0 || (e = openConnectionTCP(&csock, controlport, _mero_ctlout)) == NO_ERR)
 	   )
 	{
 		pthread_t ctid = 0;
 		pthread_t dtid = 0;
 		int csocks[2];
 
-		_mero_broadcastsock = socket(AF_INET, SOCK_DGRAM, 0);
-		ret = 1;
-		if ((setsockopt(_mero_broadcastsock,
-						SOL_SOCKET, SO_BROADCAST, &ret, sizeof(ret))) == -1)
-		{
-			Mfprintf(stderr, "cannot create broadcast package, "
-					"discovery services disabled\n");
-			close(usock);
-			usock = -1;
-		}
+		if (discoveryport > 0) {
+			_mero_broadcastsock = socket(AF_INET, SOCK_DGRAM, 0);
+			ret = 1;
+			if ((setsockopt(_mero_broadcastsock,
+							SOL_SOCKET, SO_BROADCAST, &ret, sizeof(ret))) == -1)
+			{
+				Mfprintf(stderr, "cannot create broadcast package, "
+						"discovery services disabled\n");
+				close(usock);
+				usock = -1;
+			}
 
-		_mero_broadcastaddr.sin_family = AF_INET;
-		_mero_broadcastaddr.sin_addr.s_addr = htonl(INADDR_BROADCAST);
-		/* the target port is our configured port, not elegant, but how
-		 * else can we do it? can't broadcast to all ports or something */
-		_mero_broadcastaddr.sin_port = htons(discoveryport);
+			_mero_broadcastaddr.sin_family = AF_INET;
+			_mero_broadcastaddr.sin_addr.s_addr = htonl(INADDR_BROADCAST);
+			/* the target port is our configured port, not elegant, but how
+			 * else can we do it? can't broadcast to all ports or something */
+			_mero_broadcastaddr.sin_port = htons(discoveryport);
+		}
 
 		/* From this point merovingian considers itself to be in position to
 		 * start running, so flag the parent we will have fun. */
@@ -984,7 +921,9 @@ main(int argc, char *argv[])
 
 shutdown:
 	/* stop started mservers */
-	if (d != NULL && _mero_exit_timeout > 0) {
+
+	kv = findConfKey(ckv, "exittimeout");
+	if (d != NULL && atoi(kv->val) > 0) {
 		dpair t;
 		threadlist tl = NULL, tlw = tl;
 
@@ -1032,17 +971,16 @@ shutdown:
 	Mfprintf(stdout, "Merovingian %s stopped\n", MERO_VERSION);
 
 	_mero_keep_logging = 0;
-	if ((argp = pthread_join(tid, NULL)) != 0) {
+	if (tid != 0 && (argp = pthread_join(tid, NULL)) != 0) {
 		Mfprintf(oerr, "failed to wait for logging thread: %s\n",
 				strerror(argp));
 	}
 
-	close(_mero_topdp->out);
-	if (_mero_topdp->out != _mero_topdp->err)
-		close(_mero_topdp->err);
-
-	free(_mero_msglogfile);
-	free(_mero_errlogfile);
+	if (_mero_topdp != NULL) {
+		close(_mero_topdp->out);
+		if (_mero_topdp->out != _mero_topdp->err)
+			close(_mero_topdp->err);
+	}
 
 	/* remove files that suggest our existence */
 	unlink(".merovingian_lock");
@@ -1052,8 +990,11 @@ shutdown:
 	}
 
 	/* mostly for valgrind... */
-	freeConfFile(_mero_props);
-	free(_mero_props);
+	freeConfFile(ckv);
+	if (_mero_db_props != NULL) {
+		freeConfFile(_mero_db_props);
+		free(_mero_db_props);
+	}
 
 	/* the child's return code at this point doesn't matter, as noone
 	 * will see it */

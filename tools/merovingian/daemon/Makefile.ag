@@ -22,7 +22,7 @@ monetdb_var_log_DATA =
 monetdb_var_rundir = $(localstatedir)/run/monetdb
 monetdb_var_run_DATA = 
 monetdb_var_dbfarmdir = $(localstatedir)/monetdb5/dbfarm
-monetdb_var_dbfarm_DATA = 
+monetdb_var_dbfarm_DATA = .merovingian_properties
 
 # MONETDB5: Sabaoth
 INCLUDES = .. \
@@ -31,8 +31,9 @@ INCLUDES = .. \
 		   ../../../common/utils \
 		   ../../../clients/mapilib
 
-EXTRA_DIST = $(man_MANS) \
+EXTRA_DIST = $(man_MANS) .merovingian_properties \
 	merovingian.h \
+	argvcmds.h \
 	client.h \
 	connections.h \
 	controlrunner.h \
@@ -44,9 +45,11 @@ EXTRA_DIST = $(man_MANS) \
 	proxy.h
 
 bin_monetdbd = {
-	# hack: include merovingian.1.in here to get it expanded
-	SOURCES = monetdbd.1.in \
+	# hack: include monetdbd.1.in and .merovingian_properties.in here to
+	#       get them expanded
+	SOURCES = monetdbd.1.in .merovingian_properties.in \
 			  merovingian.c \
+			  argvcmds.c \
 			  client.c \
 			  connections.c \
 			  controlrunner.c \

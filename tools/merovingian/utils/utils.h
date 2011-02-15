@@ -35,13 +35,15 @@ enum valtype {
 typedef struct _confkeyval {
 	char *key;
 	char *val;
+	int ival;
 	enum valtype type;
 } confkeyval;
 
-char *replacePrefix(char *s, char *prefix);
 void readConfFile(confkeyval *list, FILE *cnf);
 void freeConfFile(confkeyval *list);
 confkeyval *findConfKey(confkeyval *list, char *key);
+char *getConfVal(confkeyval *list, char *key);
+int getConfNum(confkeyval *list, char *key);
 char *setConfVal(confkeyval *ckv, char *val);
 void secondsToString(char *buf, time_t t, int longness);
 void abbreviateString(char *ret, const char *in, size_t width);

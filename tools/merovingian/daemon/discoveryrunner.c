@@ -46,6 +46,8 @@ void
 broadcast(char *msg)
 {
 	int len = strlen(msg) + 1;
+	if (_mero_broadcastsock < 0)
+		return;
 	if (sendto(_mero_broadcastsock, msg, len, 0,
 				(struct sockaddr *)&_mero_broadcastaddr,
 				sizeof(_mero_broadcastaddr)) != len)
@@ -296,10 +298,12 @@ discoveryRunner(void *d)
 	sabdb *stats;
 	confkeyval *ckv;
 	confkeyval *kv;
+	confkeyval *discttl;
 	err e;
 	remotedb rdb;
 	remotedb prv;
 	char *val;
+	unsigned int controlport;
 
 	ssize_t nread;
 	char buf[512]; /* our packages should be pretty small */
@@ -312,6 +316,7 @@ discoveryRunner(void *d)
 	broadcast(buf);
 
 	ckv = getDefaultProps();
+	discttl = findConfKey(_mero_props, "discoveryttl");
 
 	/* main loop */
 	while (_mero_keep_listening == 1) {
@@ -321,7 +326,7 @@ discoveryRunner(void *d)
 		if (forceannc == 1 || deadline <= now) {
 			forceannc = 0;
 			/* set new deadline */
-			deadline = now + _mero_discoveryttl;
+			deadline = now + discttl->ival;
 
 			/* list all known databases */
 			if ((e = msab_getStatus(&stats, NULL)) != NULL) {
@@ -342,8 +347,8 @@ discoveryRunner(void *d)
 						val = "";
 					snprintf(buf, 512, "ANNC %s%s%s mapi:monetdb://%s:%hu/ %d",
 							stats->dbname, val[0] == '\0' ? "" : "/", val,
-							_mero_hostname, _mero_port,
-							_mero_discoveryttl + 60);
+							_mero_hostname, getConfNum(_mero_props, "port"),
+							discttl->ival + 60);
 					broadcast(buf);
 				}
 				freeConfFile(ckv);
@@ -351,12 +356,13 @@ discoveryRunner(void *d)
 
 			if (orig != NULL)
 				msab_freeStatus(&orig);
-			
-			if (_mero_controlport != 0) {
+
+			controlport = (unsigned int)getConfNum(_mero_props, "controlport");
+			if (controlport != 0) {
 				/* announce control port */
 				snprintf(buf, 512, "ANNC * %s:%hu %d",
-						_mero_hostname, _mero_controlport,
-						_mero_discoveryttl + 60);
+						_mero_hostname, controlport,
+						discttl->ival + 60);
 				broadcast(buf);
 			}
 		}
@@ -509,7 +515,8 @@ discoveryRunner(void *d)
 		kv = findConfKey(ckv, "shared");
 		if (kv->val != NULL && strcmp(kv->val, "no") != 0) {
 			snprintf(buf, 512, "LEAV %s mapi:monetdb://%s:%hu/",
-					stats->dbname, _mero_hostname, _mero_port);
+					stats->dbname, _mero_hostname,
+					(unsigned int)getConfNum(_mero_props, "port"));
 			broadcast(buf);
 			c = 1;
 		}
@@ -521,9 +528,10 @@ discoveryRunner(void *d)
 		msab_freeStatus(&orig);
 
 	/* deregister this merovingian, so it doesn't remain a stale entry */
-	if (_mero_controlport != 0) {
+	controlport = (unsigned int)getConfNum(_mero_props, "controlport");
+	if (controlport != 0) {
 		snprintf(buf, 512, "LEAV * %s:%hu",
-				_mero_hostname, _mero_controlport);
+				_mero_hostname, controlport);
 		broadcast(buf);
 	}
 

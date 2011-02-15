@@ -51,17 +51,19 @@ leavedb(char *name)
 	char buf[128];
 	snprintf(buf, sizeof(buf),
 			"LEAV %s mapi:monetdb://%s:%hu/",
-			name, _mero_hostname, _mero_port);
+			name, _mero_hostname,
+			(unsigned int)getConfNum(_mero_props, "port"));
 	broadcast(buf);
 }
 
 static void
 leavedbS(sabdb *stats)
 {
-	confkeyval *kv, *props = getDefaultProps();
+	confkeyval *props = getDefaultProps();
+	char *shared;
 	readProps(props, stats->path);
-	kv = findConfKey(props, "shared");
-	if (stats->locked != 1 && (kv->val == NULL || strcmp(kv->val, "no") != 0))
+	shared = getConfVal(props, "shared");
+	if (stats->locked != 1 && (shared == NULL || strcmp(shared, "no") != 0))
 		leavedb(stats->dbname);
 	freeConfFile(props);
 	free(props);
@@ -71,18 +73,19 @@ static void
 anncdbS(sabdb *stats)
 {
 	char buf[128];
-	confkeyval *kv, *props = getDefaultProps();
+	confkeyval *props = getDefaultProps();
+	char *shared;
 	readProps(props, stats->path);
-	kv = findConfKey(props, "shared");
-	if (stats->locked != 1 && (kv->val == NULL || strcmp(kv->val, "no") != 0)) {
+	shared = getConfVal(props, "shared");
+	if (stats->locked != 1 && (shared == NULL || strcmp(shared, "no") != 0)) {
 		snprintf(buf, sizeof(buf),
 				"ANNC %s%s%s mapi:monetdb://%s:%hu/ %d",
 				stats->dbname,
-				kv->val == NULL ? "" : "/",
-				kv->val == NULL ? "" : kv->val,
+				shared == NULL ? "" : "/",
+				shared == NULL ? "" : shared,
 				_mero_hostname,
-				_mero_port,
-				_mero_discoveryttl + 60);
+				(unsigned int)getConfNum(_mero_props, "port"),
+				getConfNum(_mero_props, "discoveryttl") + 60);
 		broadcast(buf);
 	}
 	freeConfFile(props);
@@ -254,7 +257,7 @@ controlRunner(void *d)
 			}
 			*q++ = '\0';
 
-			p = control_hash(_mero_controlpass, p);
+			p = control_hash(getConfVal(_mero_props, "passphrase"), p);
 			if (strcmp(buf2, p) != 0) {
 				Mfprintf(_mero_ctlout, "%s: permission denied "
 						"(bad passphrase)\n", origin);
@@ -567,8 +570,8 @@ controlRunner(void *d)
 						confkeyval *kv;
 
 						/* bail out if we don't do discovery at all */
-						kv = findConfKey(_mero_props, "shared");
-						if (strcmp(kv->val, "no") == 0) {
+						kv = findConfKey(_mero_props, "discoveryport");
+						if (kv->ival == 0) {
 							/* can't do much */
 							len = snprintf(buf2, sizeof(buf2),
 									"discovery service is globally disabled, "
@@ -576,8 +579,7 @@ controlRunner(void *d)
 							send(msgsock, buf2, len, 0);
 							Mfprintf(_mero_ctlerr, "%s: set: cannot perform "
 									"client share request: discovery service "
-									"is globally disabled in %s\n", 
-									origin, _mero_conffile);
+									"is globally disabled\n", origin);
 							continue;
 						}
 
@@ -634,7 +636,7 @@ controlRunner(void *d)
 						/* send defaults to client */
 						len = snprintf(buf2, sizeof(buf2), "OK\n");
 						send(msgsock, buf2, len, 0);
-						writePropsBuf(_mero_props, &pbuf);
+						writePropsBuf(_mero_db_props, &pbuf);
 						send(msgsock, pbuf, strlen(pbuf), 0);
 						free(props);
 

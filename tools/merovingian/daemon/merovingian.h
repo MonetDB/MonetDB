@@ -26,6 +26,12 @@
 
 #include "utils/utils.h" /* confkeyval */
 
+#define MERO_VERSION   "1.4"
+#define MERO_PORT      "50000"
+#define CONTROL_PORT   "50001"
+#define MERO_SOCK      ".s.monetdb."
+#define CONTROL_SOCK   ".s.merovingian."
+
 #define SOCKPTR struct sockaddr *
 #ifdef HAVE_SOCKLEN_T
 #define SOCKLEN socklen_t
@@ -57,16 +63,12 @@ typedef struct _dpair {
 }* dpair;
 
 extern char *_mero_mserver;
-extern char *_mero_conffile;
 extern dpair _mero_topdp;
 extern pthread_mutex_t _mero_topdp_lock;
 extern int _mero_keep_logging;
 extern char _mero_keep_listening;
-extern FILE *_mero_streamout;
-extern FILE *_mero_streamerr;
-extern int _mero_exit_timeout;
+extern FILE *_mero_logfile;
 extern unsigned short _mero_port;
-extern int _mero_discoveryttl;
 extern FILE *_mero_discout;
 extern FILE *_mero_discerr;
 extern unsigned short _mero_controlport;
@@ -75,9 +77,7 @@ extern FILE *_mero_ctlerr;
 extern int _mero_broadcastsock;
 extern struct sockaddr_in _mero_broadcastaddr;
 extern char _mero_hostname[128];
-extern char _mero_controlpass[128];
-extern char *_mero_msglogfile;
-extern char *_mero_errlogfile;
+extern confkeyval *_mero_db_props;
 extern confkeyval *_mero_props;
 
 #endif

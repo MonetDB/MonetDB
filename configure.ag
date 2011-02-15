@@ -2974,6 +2974,7 @@ eval "Elocalstatedir=${Xlocalstatedir}"
 QElocalstatedir="`echo "$Elocalstatedir" | sed 's/\\\\/\\\\\\\\/g'`"
 AC_SUBST(Qlocalstatedir)
 AC_SUBST(Xlocalstatedir)
+AC_SUBST(Elocalstatedir)
 AC_SUBST(QXlocalstatedir)
 Qlibdir="$libdir"
 Xlibdir="`$translatepath "$libdir"`"
@@ -2990,7 +2991,8 @@ AC_SUBST(QXsysconfdir)
 Qbindir="$bindir"
 Xbindir="`$translatepath "$bindir"`"
 QXbindir="`echo "$Xbindir" | sed 's/\\\\/\\\\\\\\/g'`"
-eval "Ebindir=${Xbindir}"
+Ebindir="`echo "$Xbindir" | sed 's/{exec_prefix}/{prefix}/'`"
+eval "Ebindir=${Ebindir}"
 QEbindir="`echo "$Ebindir" | sed 's/\\\\/\\\\\\\\/g'`"
 AC_SUBST(Qbindir)
 AC_SUBST(Xbindir)
@@ -3049,8 +3051,6 @@ AC_SUBST(XSOURCE)
 AC_SUBST(QXSOURCE)
 AC_DEFINE_UNQUOTED(LOCALSTATEDIR,"$QElocalstatedir",[modifiable single-machine data])
 AC_DEFINE_UNQUOTED(BINDIR,"$QEbindir",[location where binaries are installed])
-AC_SUBST([MERO_LOG], [${Elocalstatedir}/log/monetdb/merovingian.log])
-AC_DEFINE_UNQUOTED([MERO_LOG], ["${Elocalstatedir}/log/monetdb/merovingian.log"], [where Merovingian will store its logs by default])
 
 dnl  On Solaris, libxml2 enables threading only when _REENTRANT, __MT__
 dnl  or _POSIX_C_SOURCE >= 199506L is defined.  The latter is only

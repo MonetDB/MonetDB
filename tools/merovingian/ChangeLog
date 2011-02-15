@@ -1,3 +1,17 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
+* Tue Feb 15 2011 Fabian Groffen <fabian@cwi.nl>
+- monetdbd can no longer log error and normal messages to separate
+  logfiles, logging to stdout and stderr is no longer possible either.
+- The .merovingian_pass file is no longer in use, and replaced by the
+  .merovingian_properties file.  Use monetdbd (get|set) passphrase to
+  view/edit the control passphrase.  Existing .merovingian_pass files
+  will automatically be migrated upon startup of monetdbd.
+- monetdbd now understands commands that allow to create, start, stop,
+  get and set properties on a given dbfarm.  This behaviour is intended
+  as primary way to start a MonetDB Database Server, on a given location
+  of choice.  monetdbd get and set are the replacement of editing the
+  monetdb5.conf file (which is no longer in use as of the Apr2011
+  release).  See monetdbd(1).
+

@@ -164,7 +164,6 @@ forkMserver(char *database, sabdb** stats, int force)
 
 	pid = fork();
 	if (pid == 0) {
-		char *conffile = alloca(sizeof(char) * 512);
 		char *dbname = alloca(sizeof(char) * 512);
 		char *port = alloca(sizeof(char) * 24);
 		char *muri = alloca(sizeof(char) * 512); /* possibly undersized */
@@ -175,21 +174,22 @@ forkMserver(char *database, sabdb** stats, int force)
 		char *slave = NULL;
 		char *pipeline = NULL;
 		char *readonly = NULL;
-		char *argv[27];	/* for the exec arguments */
+		char *argv[26];	/* for the exec arguments */
 		confkeyval *ckv, *kv;
 		int c = 0;
+		unsigned int mport;
 
 		ckv = getDefaultProps();
 		readProps(ckv, (*stats)->path);
 
 		kv = findConfKey(ckv, "forward");
 		if (kv->val == NULL)
-			kv = findConfKey(_mero_props, "forward");
+			kv = findConfKey(_mero_db_props, "forward");
 		mydoproxy = strcmp(kv->val, "proxy") == 0;
 
 		kv = findConfKey(ckv, "nthreads");
 		if (kv->val == NULL)
-			kv = findConfKey(_mero_props, "nthreads");
+			kv = findConfKey(_mero_db_props, "nthreads");
 		if (kv->val != NULL) {
 			nthreads = alloca(sizeof(char) * 24);
 			snprintf(nthreads, 24, "gdk_nr_threads=%s", kv->val);
@@ -197,7 +197,7 @@ forkMserver(char *database, sabdb** stats, int force)
 
 		kv = findConfKey(ckv, "optpipe");
 		if (kv->val == NULL)
-			kv = findConfKey(_mero_props, "optpipe");
+			kv = findConfKey(_mero_db_props, "optpipe");
 		if (kv->val != NULL) {
 			pipeline = alloca(sizeof(char) * 512);
 			snprintf(pipeline, 512, "sql_optimizer=%s", kv->val);
@@ -236,14 +236,14 @@ forkMserver(char *database, sabdb** stats, int force)
 		dup2(pfde[1], 2);
 		close(pfde[1]);
 
+		mport = (unsigned int)getConfNum(_mero_props, "port");
+
 		/* ok, now exec that mserver we want */
-		snprintf(conffile, 512, "--config=%s", _mero_conffile);
 		snprintf(dbname, 512, "--dbname=%s", database);
 		snprintf(vaultkey, 512, "monet_vault_key=%s/.vaultkey", (*stats)->path);
-		snprintf(muri, 512, "merovingian_uri=mapi:monetdb://%s:%d/%s",
-				_mero_hostname, _mero_port, database);
+		snprintf(muri, 512, "merovingian_uri=mapi:monetdb://%s:%hu/%s",
+				_mero_hostname, mport, database);
 		argv[c++] = _mero_mserver;
-		argv[c++] = conffile;
 		argv[c++] = dbname;
 		argv[c++] = "--set"; argv[c++] = muri;
 		if (mydoproxy == 1) {
@@ -259,7 +259,7 @@ forkMserver(char *database, sabdb** stats, int force)
 			} else {
 				argv[c++] = "--set"; argv[c++] = "mapi_autosense=true";
 				/* for logic here, see comment below */
-				snprintf(port, 24, "mapi_port=%d", _mero_port + 1);
+				snprintf(port, 24, "mapi_port=%hu", mport + 1);
 				snprintf(usock, 512, "mapi_usock=");
 			}
 		} else {
@@ -269,7 +269,7 @@ forkMserver(char *database, sabdb** stats, int force)
 			 * but on another interface, (INADDR_ANY ... sigh) causing
 			 * endless redirects since 0.0.0.0 is not a valid address to
 			 * connect to, and hence the hostname is advertised instead */
-			snprintf(port, 24, "mapi_port=%d", _mero_port + 1);
+			snprintf(port, 24, "mapi_port=%hu", mport + 1);
 			snprintf(usock, 512, "mapi_usock=");
 		}
 		argv[c++] = "--set"; argv[c++] = port;

@@ -983,7 +983,6 @@ command_set(int argc, char *argv[], meroset type)
 	char property[24] = "";
 	int i;
 	int state = 0;
-	confkeyval *props = getDefaultProps();
 	char *res;
 	char *out;
 	sabdb *orig = NULL;
@@ -1077,7 +1076,6 @@ command_set(int argc, char *argv[], meroset type)
 		free(res);
 
 		msab_freeStatus(&orig);
-		free(props);
 		exit(state);
 	}
 
@@ -1097,7 +1095,6 @@ command_set(int argc, char *argv[], meroset type)
 	}
 
 	msab_freeStatus(&orig);
-	free(props);
 	exit(state);
 }
 
@@ -1153,9 +1150,7 @@ command_get(int argc, char *argv[])
 			argv[i] = NULL;
 			if (strcmp(property, "all") == 0) {
 				size_t off = 0;
-				/* die hard leak (can't use constant, strtok modifies
-				 * (and hence crashes)) */
-				property = malloc(sizeof(char) * 512);
+				property = alloca(sizeof(char) * 512);
 				kv = defprops;
 				off += snprintf(property, 512, "name");
 				while (kv->key != NULL) {
@@ -1359,12 +1354,12 @@ main(int argc, char *argv[])
 	int i;
 	int fd;
 	confkeyval ckv[] = {
-		{"gdk_dbfarm",         strdup(LOCALSTATEDIR "/monetdb5/dbfarm"), STR},
-		{"gdk_nr_threads",     NULL,                    INT},
-		{"mero_doproxy",       strdup("yes"),           BOOL},
-		{"mero_discoveryport", NULL,                    INT},
-		{"#master",            strdup("no"),            BOOL},
-		{ NULL,                NULL,                    INVALID}
+		{"gdk_dbfarm",         strdup(LOCALSTATEDIR "/monetdb5/dbfarm"), 0, STR},
+		{"gdk_nr_threads",     NULL,                    0, INT},
+		{"mero_doproxy",       strdup("yes"),           1, BOOL},
+		{"mero_discoveryport", NULL,                    0, INT},
+		{"#master",            strdup("no"),            0, BOOL},
+		{ NULL,                NULL,                    0, INVALID}
 	};
 	confkeyval *kv;
 #ifdef TIOCGWINSZ
@@ -1392,7 +1387,7 @@ main(int argc, char *argv[])
 	prefix = kv->val;
 
 	kv = findConfKey(ckv, "gdk_dbfarm");
-	dbfarm = replacePrefix(kv->val, prefix);
+	dbfarm = kv->val;
 	if (dbfarm == NULL) {
 		fprintf(stderr, "%s: cannot find gdk_dbfarm in config file\n", argv[0]);
 		exit(2);

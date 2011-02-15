@@ -17,20 +17,16 @@
  * All Rights Reserved.
  */
 
-#ifndef _SEEN_PROPERTIES_H
-#define _SEEN_PROPERTIES_H 1
+#ifndef _ARGVCMDS_H
+#define _ARGVCMDS_H 1
 
-#include "utils.h"
+#include <utils/utils.h>
 
-#define MEROPROPFILE ".merovingian_properties"
-
-confkeyval *getDefaultProps(void);
-int writeProps(confkeyval *ckv, char *path);
-void writePropsBuf(confkeyval *ckv, char **buf);
-int readProps(confkeyval *ckv, char *path);
-void readPropsBuf(confkeyval *ckv, char *buf);
-char *setProp(char *path, char *key, char *val);
+int command_help(int argc, char *argv[]);
+int command_version(void);
+int command_create(int argc, char *argv[]);
+int command_get(confkeyval *ckv, int argc, char *argv[]);
+int command_set(confkeyval *ckv, int argc, char *argv[]);
+int command_stop(confkeyval *ckv, int argc, char *argv[]);
 
 #endif
-
-/* vim:set ts=4 sw=4 noexpandtab: */

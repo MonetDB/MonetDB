@@ -30,6 +30,8 @@
 #include <errno.h>
 #include <pthread.h>
 
+#include <utils/properties.h>
+
 #include "merovingian.h"
 
 
@@ -80,76 +82,48 @@ handler(int sig)
 }
 
 /**
- * Handler for SIGHUP, causes logfiles to be reopened, if not attached
- * to a terminal.
+ * Handler for SIGHUP, causes a re-read of the .merovingian_properties
+ * file and the logfile to be reopened.
  */
 void
 huphandler(int sig)
 {
+	int t;
+	time_t now = time(NULL);
+	struct tm *tmp = localtime(&now);
+	char mytime[20];
+	char *f;
+
 	(void)sig;
 
-	if (!isatty(_mero_topdp->out) || !isatty(_mero_topdp->err)) {
-		int t;
-		time_t now = time(NULL);
-		struct tm *tmp = localtime(&now);
-		char mytime[20];
+	/* re-read properties, we're in our dbfarm */
+	readProps(_mero_props, ".");
 
-		/* have to make sure the logger is not logging anything */
-		pthread_mutex_lock(&_mero_topdp_lock);
+	/* have to make sure the logger is not logging anything */
+	pthread_mutex_lock(&_mero_topdp_lock);
 
-		strftime(mytime, sizeof(mytime), "%Y-%m-%d %H:%M:%S", tmp);
+	strftime(mytime, sizeof(mytime), "%Y-%m-%d %H:%M:%S", tmp);
 
-		if (_mero_msglogfile != NULL) {
-			/* reopen original file */
-			t = open(_mero_msglogfile, O_WRONLY | O_APPEND | O_CREAT,
-					S_IRUSR | S_IWUSR);
-			if (t == -1) {
-				Mfprintf(stderr, "forced to ignore SIGHUP: unable to open "
-						"'%s': %s\n", _mero_msglogfile, strerror(errno));
-			} else {
-				Mfprintf(_mero_streamout, "%s END merovingian[" LLFMT "]: "
-						"caught SIGHUP, closing logfile\n",
-						mytime, (long long int)_mero_topdp->next->pid);
-				fflush(_mero_streamout);
-				fclose(_mero_streamout);
-				_mero_topdp->out = t;
-				_mero_streamout = fdopen(_mero_topdp->out, "a");
-				Mfprintf(_mero_streamout, "%s BEG merovingian[" LLFMT "]: "
-						"reopening logfile\n",
-						mytime, (long long int)_mero_topdp->next->pid);
-			}
-		}
-		if (_mero_errlogfile != NULL) {
-			/* reopen original file */
-			if (strcmp(_mero_msglogfile, _mero_errlogfile) == 0) {
-				_mero_topdp->err = _mero_topdp->out;
-			} else {
-				t = open(_mero_errlogfile, O_WRONLY | O_APPEND | O_CREAT,
-						S_IRUSR | S_IWUSR);
-				if (t == -1) {
-					Mfprintf(stderr, "forced to ignore SIGHUP: "
-							"unable to open '%s': %s\n",
-							_mero_errlogfile, strerror(errno));
-				} else {
-					Mfprintf(_mero_streamerr, "%s END merovingian[" LLFMT "]: "
-							"caught SIGHUP, closing logfile\n",
-							mytime, (long long int)_mero_topdp->next->pid);
-					fclose(_mero_streamerr);
-					_mero_topdp->err = t;
-					_mero_streamerr = fdopen(_mero_topdp->err, "a");
-					Mfprintf(_mero_streamerr, "%s BEG merovingian[" LLFMT "]: "
-							"reopening logfile\n",
-							mytime, (long long int)_mero_topdp->next->pid);
-				}
-			}
-		}
-
-		/* logger go ahead! */
-		pthread_mutex_unlock(&_mero_topdp_lock);
+	f = getConfVal(_mero_props, "logfile");
+	/* reopen (or open new) file */
+	t = open(f, O_WRONLY | O_APPEND | O_CREAT, S_IRUSR | S_IWUSR);
+	if (t == -1) {
+		Mfprintf(stderr, "forced to ignore SIGHUP: unable to open "
+				"'%s': %s\n", f, strerror(errno));
 	} else {
-		Mfprintf(stdout, "caught SIGHUP, ignoring signal "
-				"(logging to terminal)");
+		Mfprintf(_mero_logfile, "%s END merovingian[" LLFMT "]: "
+				"caught SIGHUP, closing logfile\n",
+				mytime, (long long int)_mero_topdp->next->pid);
+		fflush(_mero_logfile);
+		_mero_topdp->out = _mero_topdp->err = t;
+		_mero_logfile = fdopen(t, "a");
+		Mfprintf(_mero_logfile, "%s BEG merovingian[" LLFMT "]: "
+				"reopening logfile\n",
+				mytime, (long long int)_mero_topdp->next->pid);
 	}
+
+	/* logger go ahead! */
+	pthread_mutex_unlock(&_mero_topdp_lock);
 }
 
 /**
@@ -187,8 +161,7 @@ childhandler(int sig, siginfo_t *si, void *unused)
 	while (p != NULL) {
 		if (p->pid == si->si_pid) {
 			/* log everything that's still in the pipes */
-			logFD(p->out, "MSG", p->dbname, (long long int)p->pid, _mero_streamout);
-			logFD(p->err, "ERR", p->dbname, (long long int)p->pid, _mero_streamerr);
+			logFD(p->out, "MSG", p->dbname, (long long int)p->pid, _mero_logfile);
 			/* remove from the list */
 			q->next = p->next;
 			/* close the descriptors */

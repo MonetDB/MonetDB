@@ -50,34 +50,6 @@
 #endif
 
 /**
- * Returns a malloced copy of s, with the first occurrence of
- * "${prefix}" replaced by prefix.  If s is NULL, this function returns
- * also NULL.
- */
-inline char *
-replacePrefix(char *s, char *prefix)
-{
-	char *p;
-	char buf[1024];
-
-	if (s == NULL)
-		return(NULL);
-
-	/* replace first occurence of ${prefix}, return a modified copy */
-	p = strstr(s, "${prefix}");
-	if (p != NULL) {
-		memcpy(buf, s, p - s);
-		memcpy(buf + (p - s), prefix, strlen(prefix));
-		memcpy(buf + (p - s) + strlen(prefix), s + (p - s) + 9,
-				strlen(s) - 9 - (p - s) + 1);
-	} else {
-		memcpy(buf, s, strlen(s) + 1);
-	}
-	
-	return(strdup(buf));
-}
-
-/**
  * Parses the given file stream matching the keys from list.  If a match
  * is found, the value is set in list->value.  Values are GDKmalloced.
  */
@@ -130,6 +102,34 @@ findConfKey(confkeyval *list, char *key) {
 }
 
 /**
+ * Returns a pointer to the value for the given key, or NULL if not
+ * found (or set to NULL)
+ */
+inline char *
+getConfVal(confkeyval *list, char *key) {
+	while (list->key != NULL) {
+		if (strcmp(list->key, key) == 0)
+			return(list->val);
+		list++;
+	}
+	return(NULL);
+}
+
+/**
+ * Returns the int-representation of the value for the given key, or
+ * 0 if not found.
+ */
+inline int
+getConfNum(confkeyval *list, char *key) {
+	while (list->key != NULL) {
+		if (strcmp(list->key, key) == 0)
+			return(list->ival);
+		list++;
+	}
+	return(0);
+}
+
+/**
  * Sets the value in the given confkeyval struct to val ensuring it is
  * of the desired type.  In case of type BOOL, val is converted to "yes"
  * or "no", based on val.  If the type does not match, this function
@@ -140,11 +140,14 @@ findConfKey(confkeyval *list, char *key) {
  */
 char *
 setConfVal(confkeyval *ckv, char *val) {
+	int ival = 0;
+
 	/* handle the unset directly */
 	if (val == NULL) {
 		if (ckv->val != NULL) {
 			free(ckv->val);
 			ckv->val = NULL;
+			ckv->ival = 0;
 		}
 		return(NULL);
 	}
@@ -169,6 +172,7 @@ setConfVal(confkeyval *ckv, char *val) {
 						ckv->key, val);
 				return(strdup(buf));
 			}
+			ival = atoi(val);
 		}; break;
 		case BOOL: {
 			if (strcasecmp(val, "true") == 0 ||
@@ -176,11 +180,13 @@ setConfVal(confkeyval *ckv, char *val) {
 					strcmp(val, "1") == 0)
 			{
 				val = "yes";
+				ival = 1;
 			} else if (strcasecmp(val, "false") == 0 ||
 					strcasecmp(val, "no") == 0 ||
 					strcmp(val, "0") == 0)
 			{
 				val = "no";
+				ival = 0;
 			} else {
 				char buf[256];
 				snprintf(buf, sizeof(buf),
@@ -209,6 +215,7 @@ setConfVal(confkeyval *ckv, char *val) {
 	if (ckv->val != NULL)
 		free(ckv->val);
 	ckv->val = strdup(val);
+	ckv->ival = ival;
 
 	return(NULL);
 }
