@@ -41,7 +41,6 @@ INCLUDES = \
 PF_LIBS = $(libxml2_LIBS) $(DL_LIBS)
 
 lib__probxml = {
-	MODULE
 	DIR = libdir/monetdb4
 	SOURCES = probxml.mx
 

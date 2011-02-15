@@ -41,7 +41,6 @@ INCLUDES = ../compiler/include ../runtime \
 PF_LIBS = $(libxml2_LIBS) $(DL_LIBS)
 
 lib__xquery = {
-	MODULE
 	DIR = libdir/monetdb5
 	SOURCES = \
 		xquery.mx \

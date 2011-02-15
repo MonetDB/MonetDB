@@ -24,7 +24,6 @@ INCLUDES = ../../monet ../plain \
 MTSAFE
 
 LIBS = {
-	MODULE
 	DIR = libdir/monetdb4
 	SEP = _
 	SOURCES = \

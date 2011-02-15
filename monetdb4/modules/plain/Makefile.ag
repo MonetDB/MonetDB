@@ -25,7 +25,6 @@ INCLUDES = ../../monet \
 MTSAFE
 
 lib__streams = {
-	MODULE
 	DIR = libdir/monetdb4
 	SOURCES = streams.mx
 	#SCRIPTS = mil ""
@@ -37,7 +36,6 @@ lib__streams = {
 }
 
 lib__str = {
-	MODULE
 	DIR = libdir/monetdb4
 	SOURCES = str.mx
 	#SCRIPTS = mil ""
@@ -49,7 +47,6 @@ lib__str = {
 }
 
 lib__xtables = {
-	MODULE
 	DIR = libdir/monetdb4
 	SOURCES = xtables.mx
 	#SCRIPTS = mil ""
@@ -61,7 +58,6 @@ lib__xtables = {
 }
 
 lib__logger = {
-	MODULE
 	DIR = libdir/monetdb4
 	SOURCES = logger.mx
 	#SCRIPTS = mil ""
@@ -74,7 +70,6 @@ lib__logger = {
 
 LIBS = {
 	DIR = libdir/monetdb4
-	MODULE
 	SEP = _
 	SOURCES = \
 		algebra.mx arith.mx bat.mx builtin.mx sys.mx trans.mx \
@@ -92,7 +87,6 @@ LIBS = {
 }
 
 lib__aggrX3 = {
-	MODULE
 	DIR = libdir/monetdb4
 	SOURCES = aggrX3.mx \
 		aggrX3_be_sum.mx aggrX3_be_prod.mx aggrX3_be_avg.mx aggrX3_be_minmax.mx aggrX3_be_count.mx \
@@ -106,7 +100,6 @@ lib__aggrX3 = {
 EXTRA_DIST = aggrX3_ri.mx
 
 lib__counters = {
-	MODULE
 	DIR = libdir/monetdb4
 	SOURCES = counters.mx
 	#SCRIPTS = mil ""
@@ -118,7 +111,6 @@ lib__counters = {
 }
 
 lib__pcl = {
-	MODULE
 	DIR = libdir/monetdb4
 	SOURCES = pcl.mx
 	#SCRIPTS = mil ""
@@ -130,7 +122,6 @@ lib__pcl = {
 }
 
 lib__pcre = {
-	MODULE
 	DIR = libdir/monetdb4
 	SOURCES = pcre.mx
 	#SCRIPTS = mil ""

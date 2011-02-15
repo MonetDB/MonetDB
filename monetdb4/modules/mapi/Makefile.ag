@@ -23,7 +23,6 @@ INCLUDES = .. ../../monet \
 MTSAFE
 
 lib__mapi = {
-	MODULE
 	DIR = libdir/monetdb4
 	SOURCES = mapi.mx
 	LIBS =  ../../../common/options/libmoptions \

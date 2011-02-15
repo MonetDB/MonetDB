@@ -70,7 +70,6 @@ lib_xrpc_common = {
 }
 
 lib__pf_support = {
-	MODULE
 	DIR = libdir/monetdb4
 	SOURCES = \
 		pf_support.mx \
@@ -91,7 +90,6 @@ lib__pf_support = {
 }
 
 lib__pf_standoff = {
-	MODULE
 	DIR = libdir/monetdb4
 	SOURCES = \
 		pf_standoff.mx 
@@ -110,7 +108,6 @@ lib__pf_standoff = {
 }
 
 lib__pathfinder = {
-	MODULE
 	DIR = libdir/monetdb4
 	SOURCES = \
 		pathfinder.mx
@@ -148,7 +145,6 @@ lib__pathfinder = {
 }
 
 lib__xrpc_client = {
-	MODULE
 	DIR = libdir/monetdb4
 	SOURCES = xrpc_client.mx
 	LIBS = \
@@ -164,7 +160,6 @@ lib__xrpc_client = {
 }
 
 lib__xrpc_server = {
-	MODULE
 	DIR = libdir/monetdb4
 	SOURCES = \
 		shttpd.c shttpd.h \

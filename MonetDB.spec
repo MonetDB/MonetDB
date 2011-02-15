@@ -323,7 +323,7 @@ extensions for MonetDB4-server.
 %files geom-MonetDB4
 %defattr(-,root,root)
 %{_libdir}/monetdb4/geom.mil
-%{_libdir}/monetdb4/lib/lib_geom.so
+%{_libdir}/monetdb4/lib/lib_geom.so*
 
 %package geom-MonetDB5
 Summary: MonetDB5 SQL GIS support module
@@ -395,19 +395,19 @@ fi
 %dir %{_libdir}/monetdb4
 %dir %{_libdir}/monetdb4/lib
 %if %{?_with_netcdf:1}%{!?_with_netcdf:0}
-%exclude %{_libdir}/monetdb4/lib/lib_mnetcdf.so
+%exclude %{_libdir}/monetdb4/lib/lib_mnetcdf.so*
 %exclude %{_libdir}/monetdb4/mnetcdf.mil
 %endif
 %{_libdir}/libmonet.so.*
 %{_libdir}/libbat4.so.*
 %{_libdir}/libstream4.so.*
 %{_libdir}/libmapi4.so.*
-%exclude %{_libdir}/monetdb4/lib/lib_geom.so
-%exclude %{_libdir}/monetdb4/lib/lib_pathfinder.so
+%exclude %{_libdir}/monetdb4/lib/lib_geom.so*
+%exclude %{_libdir}/monetdb4/lib/lib_pathfinder.so*
 %exclude %{_libdir}/monetdb4/lib/lib_pf*
-%exclude %{_libdir}/monetdb4/lib/lib_probxml.so
+%exclude %{_libdir}/monetdb4/lib/lib_probxml.so*
 %exclude %{_libdir}/monetdb4/lib/lib_xrpc*
-%{_libdir}/monetdb4/lib/*.so
+%{_libdir}/monetdb4/lib/*.so*
 %exclude %{_libdir}/monetdb4/geom.mil
 %exclude %{_libdir}/monetdb4/pathfinder.mil
 %exclude %{_libdir}/monetdb4/pf*.mil
@@ -434,7 +434,7 @@ libraries.
 
 %files -n MonetDB4-server-netcdf
 %defattr(-,root,root)
-%{_libdir}/monetdb4/lib/lib_mnetcdf.so
+%{_libdir}/monetdb4/lib/lib_mnetcdf.so*
 %{_libdir}/monetdb4/mnetcdf.mil
 %endif
 
@@ -585,9 +585,9 @@ need this package.
 %{_datadir}/monetdb/xrpc/admin/*
 %{_datadir}/monetdb/xrpc/demo/*
 %{_datadir}/monetdb/xrpc/export/*
-%{_libdir}/monetdb4/lib/lib_pathfinder.so
+%{_libdir}/monetdb4/lib/lib_pathfinder.so*
 %{_libdir}/monetdb4/lib/lib_pf*
-%{_libdir}/monetdb4/lib/lib_probxml.so
+%{_libdir}/monetdb4/lib/lib_probxml.so*
 %{_libdir}/monetdb4/lib/lib_xrpc*
 %{_libdir}/monetdb4/pathfinder.mil
 %{_libdir}/monetdb4/pf*.mil

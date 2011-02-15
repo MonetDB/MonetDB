@@ -24,7 +24,6 @@ INCLUDES = ../../monet ../plain \
 MTSAFE
 
 LIB_mnetcdf = {
-	MODULE
 	DIR = libdir/monetdb4
 	SEP = _
 	COND = HAVE_NETCDF
