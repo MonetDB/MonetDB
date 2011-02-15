@@ -1,7 +1,7 @@
 .\" Process this file with
 .\" groff -man -Tascii foo.1
 .\"
-.TH MONETDB 1 "DECEMBER 2010" Application "MonetDB Applications"
+.TH MONETDB 1 "FEBRUARY 2011" MonetDB "MonetDB Applications"
 .SH NAME
 monetdb \- control a MonetDB Database Server instance
 .SH SYNOPSIS

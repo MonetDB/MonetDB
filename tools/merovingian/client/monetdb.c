@@ -30,7 +30,7 @@
  * primary goals of this tool.
  */
 
-#define TOOLKIT_VERSION   "0.7"
+#define TOOLKIT_VERSION   "0.8"
 
 #include "monetdb_config.h"
 #include "utils.h"
@@ -64,8 +64,6 @@
 #endif
 #include <errno.h>
 
-static char *dbfarm = NULL;
-static int mero_running = 0;
 static char *mero_host = NULL;
 static int mero_port = -1;
 static char *mero_pass = NULL;
@@ -1348,68 +1346,14 @@ command_release(int argc, char *argv[])
 int
 main(int argc, char *argv[])
 {
-	char *p, *prefix;
-	FILE *cnf = NULL;
 	char buf[1024];
 	int i;
-	int fd;
-	confkeyval ckv[] = {
-		{"gdk_dbfarm",         strdup(LOCALSTATEDIR "/monetdb5/dbfarm"), 0, STR},
-		{"gdk_nr_threads",     NULL,                    0, INT},
-		{"mero_doproxy",       strdup("yes"),           1, BOOL},
-		{"mero_discoveryport", NULL,                    0, INT},
-		{"#master",            strdup("no"),            0, BOOL},
-		{ NULL,                NULL,                    0, INVALID}
-	};
-	confkeyval *kv;
 #ifdef TIOCGWINSZ
 	struct winsize ws;
 
 	if (ioctl(fileno(stdin), TIOCGWINSZ, &ws) == 0 && ws.ws_col > 0)
 		TERMWIDTH = ws.ws_col;
 #endif
-
-	/* hunt for the config file, and read it, allow the caller to
-	 * specify where to look using the MONETDB5CONF environment variable */
-	p = getenv("MONETDB5CONF");
-	if (p == NULL)
-		p = NULL;
-	cnf = fopen(p, "r");
-	if (cnf == NULL) {
-		fprintf(stderr, "cannot open config file %s\n", p);
-		exit(1);
-	}
-
-	readConfFile(ckv, cnf);
-	fclose(cnf);
-
-	kv = findConfKey(ckv, "prefix");
-	prefix = kv->val;
-
-	kv = findConfKey(ckv, "gdk_dbfarm");
-	dbfarm = kv->val;
-	if (dbfarm == NULL) {
-		fprintf(stderr, "%s: cannot find gdk_dbfarm in config file\n", argv[0]);
-		exit(2);
-	}
-	freeConfFile(ckv);
-
-	mero_running = 1;
-	snprintf(buf, 1024, "%s/.merovingian_lock", dbfarm);
-	fd = MT_lockf(buf, F_TLOCK, 4, 1);
-	if (fd >= 0 || fd <= -2) {
-		if (fd >= 0) {
-			close(fd);
-		} else {
-			/* see if it is a permission problem, if so nicely abort */
-			if (errno == EACCES) {
-				fprintf(stderr, "permission denied\n");
-				exit(1);
-			}
-		}
-		/* locking succeed or locking was impossible */
-		mero_running = 0;
-	}
 
 	/* Start handling the arguments.
 	 * monetdb [monetdb_options] command [options] [database [...]]
@@ -1494,14 +1438,9 @@ main(int argc, char *argv[])
 	if (mero_pass != NULL && mero_host == NULL) {
 		fprintf(stderr, "monetdb: -P requires -h to be used\n");
 		exit(1);
-	} else if (mero_port != -1 && mero_host == NULL) {
-		fprintf(stderr, "monetdb: -p requires -h to be used\n");
-		exit(1);
 	} else if (mero_host != NULL && mero_pass == NULL) {
 		fprintf(stderr, "monetdb: -h requires -P to be used\n");
 		exit(1);
-	} else if (mero_host != NULL && mero_port == -1) {
-		mero_port = 50001;
 	}
 
 	/* see if we still have arguments at this stage */
@@ -1519,26 +1458,59 @@ main(int argc, char *argv[])
 		return(0);
 	}
 
-	/* if Merovingian isn't running, there's not much we can do, unless
-	 * we go remote */
-	if (mero_running == 0 && mero_host == NULL) {
-		fprintf(stderr, "monetdb: cannot perform: MonetDB Database Server "
-				"(merovingian) is not running\n");
-		return(1);
-	}
-
 	/* use UNIX socket if no hostname given */
-	if (mero_host == NULL) {
-		/* avoid overrunning the sun_path buffer by moving into the
-		 * directory where the UNIX socket resides (sun_path is
-		 * typically around 108 chars long) */
-		if (chdir(dbfarm) < 0) {
-			fprintf(stderr, "monetdb: could not move to dbfarm '%s': %s\n",
-					dbfarm, strerror(errno));
-			return(1);
+	if (mero_host == NULL || *mero_host == '/') {
+		/* a socket looks like /tmp/.s.merovingian.<tcpport>, try
+		 * finding such port.  If mero_host is set, it is the location
+		 * where we should search, which defaults to '/tmp' */
+		if (mero_host == NULL)
+			mero_host = "/tmp";
+		do {
+			/* first try the port given (or else its default) */
+			snprintf(buf, sizeof(buf), "%s/.s.merovingian.%d",
+					mero_host, mero_port == -1 ? 50001 : mero_port);
+			if (control_ping(buf, -1, NULL) == 0) {
+				mero_host = buf;
+				break;
+			}
+
+			/* if port wasn't given, we can try and search for available
+			 * sockets */
+			if (mero_port == -1) {
+				DIR *d;
+				struct dirent *e;
+				struct stat s;
+
+				d = opendir(mero_host);
+				if (d == NULL) {
+					fprintf(stderr, "monetdb: cannot find a control socket, use -h and/or -p\n");
+					exit(1);
+				}
+				while ((e = readdir(d)) != NULL) {
+					if (strncmp(e->d_name, ".s.merovingian.", 15) != 0)
+						continue;
+					snprintf(buf, sizeof(buf), "%s/%s", mero_host, e->d_name);
+					if (stat(buf, &s) == -1)
+						continue;
+					if (S_ISSOCK(s.st_mode)) {
+						if (control_ping(buf, -1, NULL) == 0) {
+							mero_host = buf;
+							break;
+						}
+					}
+				}
+				closedir(d);
+			}
+		} while(0);
+
+		if (mero_host != buf) {
+			fprintf(stderr, "monetdb: cannot find a control socket, use -h and/or -p\n");
+			exit(1);
 		}
-		mero_host = ".merovingian_control";
 	}
+	/* for TCP connections */
+	if (mero_host != NULL && *mero_host != '/' && mero_port == -1)
+		mero_port = 50001;
 
 	/* handle regular commands */
 	if (strcmp(argv[i], "create") == 0) {
