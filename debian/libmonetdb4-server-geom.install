@@ -1,2 +1,2 @@
 debian/tmp/usr/lib/monetdb4/geom.mil usr/lib/monetdb4
-debian/tmp/usr/lib/monetdb4/lib/lib_geom.so usr/lib/monetdb4/lib
+debian/tmp/usr/lib/monetdb4/lib/lib_geom.so* usr/lib/monetdb4/lib
