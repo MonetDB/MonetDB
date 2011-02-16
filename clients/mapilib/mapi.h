@@ -226,7 +226,6 @@ mapi_export char *mapi_get_host(Mapi mid);
 mapi_export char *mapi_get_user(Mapi mid);
 mapi_export char *mapi_get_mapi_version(Mapi mid);
 mapi_export char *mapi_get_monet_version(Mapi mid);
-mapi_export int mapi_get_monet_versionId(Mapi mid);
 mapi_export char *mapi_get_motd(Mapi mid);
 mapi_export int mapi_is_connected(Mapi mid);
 mapi_export char *mapi_get_table(MapiHdl hdl, int fnr);

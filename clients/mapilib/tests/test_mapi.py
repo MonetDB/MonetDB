@@ -349,9 +349,6 @@ class MapiFunctionsTests(MapiBaseTests):
     def mapi_get_monet_version(self):
         self.fail("not yet implemented")
 
-    def mapi_get_monet_versionId(self):
-        self.fail("not yet implemented")
-
     def mapi_get_motd(self):
         self.fail("not yet implemented")
 
