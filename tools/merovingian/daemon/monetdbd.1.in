@@ -6,51 +6,61 @@
 monetdbd \- the MonetDB Database Server daemon
 .SH SYNOPSIS
 .B monetdbd
+[command [command_args] [dbfarm]]
 .SH DESCRIPTION
 .B monetdbd
 is the MonetDB Database Server daemon.  The program is mainly meant to
 be used as deamon, but it also allows to setup and change the
 configuration of a dbfarm.
-The typical use of
+The use of
 .B monetdbd
-is to be started from a startup script, such as from
+is either as user-oriented way to configure, start and stop a database
+farm, or to be started from a startup script, such as from
 .I /etc/init.d/
 on Linux systems or
 .BR smf (5)
 on Solaris systems, as part of a system startup.
 .P
 .B monetdbd
-was formerly known as
+is the system formerly known as
 .BR merovingian .
-Internally,
+It was renamed to
 .B monetdbd
-keeps on using the name
-.BR merovingian ,
-but it was renamed to better match the expectations of the product to
-regular end-users.
+since the name
+.B merovingian
+proved to be confusing to most regular end-users.  Internally,
+.B monetdbd
+uses the name
+.B merovingian
+at many places for historical reasons.
 .P
 A
 .B monetdbd
-instance manages one local cluster based on the dbfarm specified in the
-.I @MONETDB5_CONFFILE@
-config file.  Within this local cluster
+instance manages one local cluster based, which is a directory in the
+system, referred to as the
+.IR dbfarm .
+Nowadays, it is preferred to always give the dbfarm location as argument
+to
+.BR monetdbd .
+For system-wide installs, the default dbfarm location is set to
+@Elocalstatedir@/monetdb5/dbfarm.
+.P
+Within its local cluster
 .B monetdbd
 takes care of starting up databases when necessary, and stopping them
 either upon request via
 .BR monetdb (1)
-or when being shut down.  Client connections initially are made against
+or when being shut down.  Client database connections are made against
 .B monetdbd
-which redirects or proxies the client to the appropriate database
-process, started on the fly when necessary.
+initially which redirects or proxies the client to the appropriate
+database process, started on the fly when necessary.
 .P
 When started,
 .B monetdbd
 runs in the background, sending log messages to
-.IR @MERO_LOG@ ,
-until being sent a stop, terminate or interrupt signal.  Any arguments
-given when starting
-.B monetdbd
-cause the version to be printed followed by a shutdown of
+.IR merovingian.log ,
+until being sent a stop, terminate or interrupt signal, possibly using
+the stop command of
 .BR monetdbd .
 .P
 .B monetdbd
@@ -61,147 +71,167 @@ instances are made available to a locally connecting client.  Remote
 databases never override local databases, and their availability is
 controlled by the remote
 .B monetdbd
-process.
+process.  See also the sharing capabilities of
+.BR monetdb (1)
+and the
+.I REMOTE DATABASES
+section below.
+.SH COMMANDS
+The commands for
+.B monetdbd
+are
+.BR create ", " start ", " stop ", " get ", " set ", " version ", and "
+help .
+The commands facilitate initialising a dbfarm, starting and stopping the
+MonetDB Database Server, and retrieving or setting options.
+.IP "create dbfarm"
+Initialises a new database farm, such that a MonetDB Database Server can
+be started on that location.  All necessary directories are attempted to
+be created, and an initial properties file is created in the directory
+itself.
+.I dbfarm
+must be a location addressable in the local filesystem hierarchy.
+.IP "start [dbfarm]"
+Starts
+.BR monetdbd ,
+the MonetDB Database Server, on the given dbfarm, or its default, the
+system-wide location @Elocalstatedir@/monetdb5/dbfarm.
+.IP "stop [dbfarm]"
+Sends a stop signal to the
+.B monetdbd
+process responsible for the given dbfarm, or the default system-wide
+location @Elocalstatedir@/monetdb5/dbfarm.
+.IP "get <all | property[,property[,..]]> [dbfarm]"
+Prints the requested properties, or all known properties, for the given
+database.  For each property and its value are printed.  Some properties
+are virtual, and given for information purposes only, they cannot be
+modified using the
+.I set
+command.
+.IP "set property=value [dbfarm]"
+Sets property to value for the given database.  For a list of
+properties, run
+.BR "monetdbd get all" .
+Most properties require a restart of the MonetDB Database Server.  The
+.I set
+command, will however always write the property, and tell the running
+.B monetdbd
+to reload the properties file (if running).  For an explanation of the
+properties, see the
+.I CONFIGURATION
+section below.
 .SH CONFIGURATION
 .B monetdbd
-defaults to use the configuration file
-.I @MONETDB5_CONFFILE@
-that was placed in the file
-system during installation to control its behaviour.  If the environment
-variable
-.I MONETDB5CONF
-is set,
+reads its properties from the
+.I .merovingian_properties
+file inside the dbfarm.  This file is created by the
+.I create
+command.  This file is not meant to be editted manually, instead it
+should be updated using the
+.I set
+command.  The following properties can be set:
+.IP logfile
+This property points to the file where all log messages are written to.
+It is relative to the dbfarm directory, but can be absolute to point to
+e.g. another medium.
+.IP pidfile
 .B monetdbd
-uses the value of this variable as configuration file to load instead.
-In the configuration file the following options can be specified.  Most
-are typically to be found under the
-.I Merovingian
-section in the default configuration file.
-.IP gdk_dbfarm
-The value of this setting determines which local cluster
+stores the process ID of the background server in the file pointed to by
+this property.  The same rules apply as for the
+.I logfile
+property.
+.IP sockdir
+For faster access,
 .B monetdbd
-will monitor.
-.IP mero_msglog
-.IP mero_errlog
-When both options are set to an empty string,
+uses UNIX domain sockets for its control mechanism and regular database
+connections.  The sockets are placed as files in the filesystem
+hierarchy.  The
+.I sockdir
+property controls in which directory they are placed.  In general this
+setting should not be changed.
+.IP port
+This property specifies which TCP port
 .B monetdbd
-logs messages and errors to the stdout and stderr channels on the
-caller's console.  By setting one or both of the
-.B mero_msglog
-and
-.B mero_errlog
-variables, one can specify messages and/or errors to be logged to a file
-instead.  It is legitimate to have both
-.B mero_msglog
-and
-.B mero_errlog
-pointing to the same file, which is the default
-.RI ( @MERO_LOG@ ).
-.IP mero_pidfile
-Location pointing to the pidfile used by
+should listen to for regular database connection requests.  Defaults to
+50000.
+.IP controlport
+For remote management of
+.BR monetdbd,
+the
+.I controlport
+property specifies the TCP port that is opened up for listening.  Note
+that for these connections, a passphrase is required, see below.
+Defaults to 50001
+.IP discoveryport
+Neighbour discovery is done using UDP broadcasts on the port set by
+.IR discoveryport .
+Setting this property to 0 disables the
+neighbour discovery service entirely.  Defaults to 50000.
+.IP discoveryttl
 .B monetdbd
-to write the process id of the daemon process that was started in the
-background.  This pid can be used to stop
+publishes locally available databases to others periodically.  The
+interval used here, defined in seconds, depends on the time-to-live of
+the databases before they need to get refreshed.  The default is 600
+seconds (10 minutes), which should keep traffic in your network fairly
+low.  Additions and removals are processed immediately regardless of
+this timeout.  If you are in a network environment where physical
+network links disappear often, you may want to decrease this value to
+more quickly remove no longer reachable databases.
+.IP exittimeout
+mservers that were started by the MonetDB Database Server are shut down
+when
 .B monetdbd
-again by sending a termination signal to the process id found in the file.
-.IP mero_port
-The port
+is shut down.  Setting the
+.I exittimeout
+property to a positive non-zero value will shut down each running
+mserver with the given time-out in seconds.  If the time-out expires,
+the mserver process is killed using the SIGKILL signal.  A time-out
+value of 0 means no mservers will be shut down, and hence they will
+continue to run after
 .B monetdbd
-will open up and listen to connections for.  When unset, the default
-port
-.I 50000
-is used, which should be fine for most setups.
-.IP mero_exittimeout
-All database servers that were started by
+has shut down.  Note that this particular configuration is extremely
+inconvenient.  The default time-out is 60 seconds.  If your databases
+are rather large and find your databases consistently being killed by
 .B monetdbd
-are shut down when
-.B monetdbd
-is shut down.  This behaviour is desirable if the
-.B monetdbd
-process is ran from a start script that represents the MonetDB Database
-Server.  Setting the
-.B mero_exittimeout
-option to a positive
-non-zero value, causes each started database server to be shut down by
-.B monetdbd
-when it shuts down itself with a given time-out in seconds.  If the
-time-out expires, the database server is killed using the SIGKILL
-signal.  A time-out value of
-.B 0
-means that no attempt is made to shut down started database servers.  As
-a result, database servers will remain active after
-.B monetdbd
-has stopped.  The default value for
-.B mero_exittimeout
-is
-.B 60
-seconds.  If your databases are rather large and find your databases
-consistently being killed by
-.B monetdbd
-upon shutdown, you may have to increase this timeout.
-.IP mero_doproxy
+upon shutdown, you may want to increase this time-out.
+.IP forward
 .B monetdbd
 has two ways in which it can "attach" a connecting client to the target
-database.  The first method uses a redirect to the responsible mserver
-process, the second method proxies the client to the mserver over
+database.  The first method,
+.IR redirect ,
+uses a redirect sent to the client with the responsible mserver process.
+The second method,
+.IR proxy,
+proxies the client to the mserver over
 .BR monetdbd .
-While the first is more efficient, it requires the connecting client
-to be able to connect to the mserver.  In many settings this may be
-undesirable or even impossible, since a wide range of open ports and
-routing are necessary for this.  In such case the proxy behaviour of
+While
+.I redirect
+is more efficient, it requires the connecting client to be able to
+connect to the mserver.  In many settings this may be undesirable or
+even impossible, since a wide range of open ports and routing are
+necessary for this.  In such case the
+.I proxy
+technique of
 .B monetdbd
 is a good solution, which also allows a
 .B monetdbd
-on the border of a network to serve requests to nodes in the local
-(unreachable) network.
-.IP mero_discoveryttl
-Neighbour discovery allows
+instance on the border of a network to serve requests to nodes in the
+local (unreachable) network.  Note that for local databases, the
+.I proxy
+method uses a UNIX domain socket feature to pass file-descriptors to the
+local mserver.  This effectively is as efficient as the
+.I redirect
+approach, but still hides away the mservers properly behind
+.BR monetdbd .
+Hence, in practice it is only relevant for connections to remote
+databases to use redirects instead of proxies.
+.IP passphrase
+To control
 .B monetdbd
-to discover other running
-.B monetdbd
-processes in the local network.
-.B monetdbd
-publishes locally available databases to others periodically.  The
-interval used here depends on the time-to-live of the databases before
-they need to get refreshed.  The default is 10 minutes, which should
-keep traffic in your network fairly low.  If you add and/or remove
-databases often, you may want to use a low ttl.  The value of this
-option is expressed in seconds.
-.IP mero_discoveryport
-The neighbour discovery service uses UDP broadcasting to announce
-itself.  For this
-.B monetdbd
-listens to the given port, which defaults to the setting of
-.BR mero_port .
-If the port is set to 0, the neighbour discovery service is disabled and
-hence no announcements will be made, nor received.
-.IP mero_controlport
-Each
-.B monetdbd
-can possibly be controlled from a remote site, using
+from a remote machine, a passphrase is necessary, to be given to
 .BR monetdb (1).
-The port to use can be set via this option.  If unset,
-.B monetdbd
-cannot be controlled remotely, but only via the local system by means of
-a UNIX domain socket.  Remote control requests are required to be
-authenticated using a password.  The password for this is stored in
-the .merovingian_pass file in the dbfarm.  If it doesn't exist,
-.B monetdbd
-will create one to protect itself in case remote control is enabled.
-One can set a password in this file.  Note that
-.B monetdbd
-needs to be restarted in order to pick up changes in
-the .merovingian_pass file.
-.P
-Next to these global settings,
-.B monetdbd
-respects per-database settings that are managed via
-.BR monetdb (1).
-The properties 
-.IR shared " and " forward
-overrule the defaults from
-.IR mero_discoveryport " and " mero_doproxy .
-To obtain a list of properties, use `monetdb get all`.
+This passphrase is setup for each newly created dbfarm.  It is
+recommended to keep this value long and non-trivial.
 .SH "REMOTE DATABASES"
 The neighbour discovery capabilities of
 .B monetdbd
@@ -304,121 +334,21 @@ terminating itself.
 .IP SIGHUP
 When this signal is received by
 .B monetdbd
-it will reopen the logfiles as pointed to by
-.B mero_msglog
-and
-.BR mero_errlog .
-When these two are unset or point to a file attached to a terminal,
-.B monetdbd
-will not reopen the associated filedescriptor.
+it will reopen the logfile as pointed to by the
+.I logfile
+setting.  Before it reopens the logfile, it will re-read the properties
+file from the dbfarm, which might result in opening a different file to
+continue logging.
 .SH "RETURN VALUE"
 .B monetdbd
 returns exit code
 .B 0
-if it was able to successfully launch the background process or when the
-version information was printed.  When an
-error occurs during startup that prevents
+if it was able to successfully perform the requested action, e.g. start,
+stop, etc.  When an error occurs during the action, that prevents
 .B monetdbd
-from functioning properly, an exit code
+from successfully performing the action, the exit code
 .B 1
 is returned.
-.SH FILES
-.I @MONETDB5_CONFFILE@
-.RS
-The configuration file for MonetDB, located in the system configuration
-directory.
-.RE
-.I @MERO_LOG@
-.RS
-The configuration file default location to write log output to.
 .SH "SEE ALSO"
 .BR monetdb (1)
-.\".BR mserver5 (1)
-
-# Merovingian section
-#====================
-# Merovingian logs messages and errors by default to the stdout and
-# stderr channels on the console.  By setting one or both of the
-# variables below, one can specify messages and/or errors to be logged
-# to a file instead.  It is legitimate to have both mero_msglog and
-# mero_errlog pointing to the same file, as in the default below.
-# Setting mero_msglog and/or mero_errlog to the empty string, results
-# in merovingian to log to the screen.
-#mero_msglog=@Xlocalstatedir@@DIRSEP@log@DIRSEP@monetdb@DIRSEP@merovingian.log
-#mero_errlog=@Xlocalstatedir@@DIRSEP@log@DIRSEP@monetdb@DIRSEP@merovingian.log
-#
-# Merovingian forks itself to detach into the background.  It stores
-# its pid in the following file, which can be used to stop Merovingian
-# again.
-mero_pidfile=@Xlocalstatedir@@DIRSEP@run@DIRSEP@monetdb@DIRSEP@merovingian.pid
-#
-# In normal use, Merovingian replaces an mserver, and hence listens
-# for connections on the same port as an mserver would do (mapi_port).
-# For certain configs, however, it may be more suitable to use an
-# alternate port, which can be specified here.
-#mero_port=50000
-#
-# mservers that were started by Merovingian are shut down when the
-# Merovingian is shut down.  This behaviour is desirable if the
-# Merovingian is ran as daemon process that represents MonetDB, such
-# as in an init.d script.  Setting the time-out value below to a
-# positive non-zero value will shut down each mserver that was started
-# with a given time-out in seconds.  If the time-out expires, the
-# mserver is killed using the SIGKILL signal.  A time-out value of 0
-# means that no mserver is shut down, meaning they will live on after
-# the Merovingian has shut down.  The default is to shut down all
-# started mservers with a time-out of 60 seconds.
-#mero_exittimeout=60
-#
-# Merovingian has two ways in which it can "attach" a connecting
-# client to the target database.  The first method uses a redirect to
-# the responsible mserver process, the second method proxies the
-# client to the mserver over Merovingian.  While the first is more
-# efficient, it requires the connecting client to be able to connect
-# to the mserver.  In many settings this may be undesirable or even
-# impossible, since a wide range of open ports are necessary for this.
-# In such case the proxy behaviour of Merovingian is a good solution,
-# which also allows a Merovingian on the border of a network to serve
-# requests to nodes in the local (unreachable) network.  Hence, proxy
-# mode is the default.  Uncomment the value below to use the first
-# method of using redirects.  Note that Merovingian will use an
-# efficient method to connect the client with a local target database
-# when proxy mode is active.  This method is performance wise equal to
-# forwarding, but completely hides the actual way of connecting to the
-# target database, like proxying.
-#mero_doproxy=no
-#
-# Neighbour discovery allows Merovingian to discover other running
-# Merovingian processes in the local network.  Merovingian publishes
-# locally available databases to others periodically.  The interval
-# used here depends on the time-to-live of the databases before they
-# need to get refreshed.  The default is 10 minutes, which should keep
-# traffic in your network fairly low.  Additions and removals are
-# processed immediately regardless of this timeout.  If you are in a
-# network environment where links disappear often, you may want to
-# decrease this value to more quickly remove no longer reachable
-# databases.
-#mero_discoveryttl=600
-#
-# Neighbour discovery is done using UDP broadcasts on the port set by
-# mero_discoveryport.  It's value defaults to the value of mero_port,
-# which usually is 50000.  Setting this value to 0 disables the
-# neighbour discovery service entirely.
-#mero_discoveryport=50000
-#
-# Each Merovingian can be controlled by monetdb(1).  By default,
-# Merovingian binds to a local UNIX domain socket which allows a local
-# monetdb(1) to connect based on the UNIX file system permissions.
-# Merovingian can also listen on a TCP socket to serve requests from a
-# monetdb(1) elsewhere.  If mero_controlport is set, Merovingian
-# listens to that port for remote control commands.  This is an all or
-# nothing scenario, hence any remote monetdb(1) can create, destroy,
-# etc.  As a little protective measure, the file
-# @Xlocalstatedir@@DIRSEP@monetdb5@DIRSEP@dbfarm@DIRSEP@.merovingian_pass
-# contains the passphrase that a remote monetdb(1) needs to issue to
-# be able to perform any command.  For this file the same rules hold
-# as for the monet_vault_key file.  If this file is missing,
-# Merovingian will attempt to create it with a random password.  If
-# the file cannot be opened for some reason, Merovingian will not
-# start.
-mero_controlport=50001
+.BR mserver5 (1)
