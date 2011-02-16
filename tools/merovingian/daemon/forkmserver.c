@@ -164,6 +164,8 @@ forkMserver(char *database, sabdb** stats, int force)
 
 	pid = fork();
 	if (pid == 0) {
+		char *sabdbfarm;
+		char *dbfarm = alloca(sizeof(char) * 1024);
 		char *dbname = alloca(sizeof(char) * 512);
 		char *port = alloca(sizeof(char) * 24);
 		char *muri = alloca(sizeof(char) * 512); /* possibly undersized */
@@ -174,10 +176,12 @@ forkMserver(char *database, sabdb** stats, int force)
 		char *slave = NULL;
 		char *pipeline = NULL;
 		char *readonly = NULL;
-		char *argv[26];	/* for the exec arguments */
+		char *argv[28];	/* for the exec arguments */
 		confkeyval *ckv, *kv;
 		int c = 0;
 		unsigned int mport;
+
+		msab_getDBfarm(&sabdbfarm);
 
 		ckv = getDefaultProps();
 		readProps(ckv, (*stats)->path);
@@ -236,11 +240,13 @@ forkMserver(char *database, sabdb** stats, int force)
 		mport = (unsigned int)getConfNum(_mero_props, "port");
 
 		/* ok, now exec that mserver we want */
+		snprintf(dbfarm, 1024, "gdk_dbfarm=%s", sabdbfarm);
 		snprintf(dbname, 512, "--dbname=%s", database);
 		snprintf(vaultkey, 512, "monet_vault_key=%s/.vaultkey", (*stats)->path);
 		snprintf(muri, 512, "merovingian_uri=mapi:monetdb://%s:%hu/%s",
 				_mero_hostname, mport, database);
 		argv[c++] = _mero_mserver;
+		argv[c++] = "--set"; argv[c++] = dbfarm;
 		argv[c++] = dbname;
 		argv[c++] = "--set"; argv[c++] = muri;
 		if (mydoproxy == 1) {
