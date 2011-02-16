@@ -397,19 +397,19 @@ CFLAGS = $(CFLAGS) -DMONET_OID64
 
 CONFIG_H = monetdb_config.h
 
-{$(SRCDIR)}.mx.h:
+{$(srcdir)}.mx.h:
 	$(MX) $(MXFLAGS) -l -x h $<
 
 .mx.h:
 	$(MX) $(MXFLAGS) -l -x h $<
 
-{$(SRCDIR)}.mx.c:
+{$(srcdir)}.mx.c:
 	$(MX) $(MXFLAGS) -x c $<
 
 .mx.c:
 	$(MX) $(MXFLAGS) -x c $<
 
-{$(SRCDIR)}.mx.mal:
+{$(srcdir)}.mx.mal:
 	$(MX) $(MXFLAGS) -l -x mal $<
 	if not exist .libs $(MKDIR) .libs
 	$(INSTALL) $@ .libs\$@
@@ -419,25 +419,25 @@ CONFIG_H = monetdb_config.h
 	if not exist .libs $(MKDIR) .libs
 	$(INSTALL) $@ .libs\$@
 
-{$(SRCDIR)}.mx.sql:
+{$(srcdir)}.mx.sql:
 	$(MX) $(MXFLAGS) -l -x sql $<
 
 .mx.sql:
 	$(MX) $(MXFLAGS) -l -x sql $<
 
-{$(SRCDIR)}.mx.y:
+{$(srcdir)}.mx.y:
 	$(MX) $(MXFLAGS) -x y $<
 
 .mx.y:
 	$(MX) $(MXFLAGS) -x y $<
 
-{$(SRCDIR)}.c.obj:
+{$(srcdir)}.c.obj:
 	$(CC) $(CFLAGS) -c $<
 
 .c.obj:
 	$(CC) $(CFLAGS) -c $<
 
-{$(SRCDIR)}.syms.def:
+{$(srcdir)}.syms.def:
 	echo EXPORTS > $@
 	type $< >> $@
 
