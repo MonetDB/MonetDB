@@ -415,19 +415,19 @@ CXXFLAGS = $(CFLAGS) -EHsc
 
 CONFIG_H = monetdb_config.h
 
-{$(SRCDIR)}.mx.h:
+{$(srcdir)}.mx.h:
 	$(MX) $(MXFLAGS) -l -x h $<
 
 .mx.h:
 	$(MX) $(MXFLAGS) -l -x h $<
 
-{$(SRCDIR)}.mx.c:
+{$(srcdir)}.mx.c:
 	$(MX) $(MXFLAGS) -x c $<
 
 .mx.c:
 	$(MX) $(MXFLAGS) -x c $<
 
-{$(SRCDIR)}.mx.m:
+{$(srcdir)}.mx.m:
 	$(MX) $(MXFLAGS) -l -x m $<
 
 .mx.m:
@@ -444,12 +444,12 @@ CONFIG_H = monetdb_config.h
 	if not exist .libs $(MKDIR) .libs
 	$(INSTALL) $@ .libs\$@
 
-{$(SRCDIR)}.mx.tmpmil:
+{$(srcdir)}.mx.tmpmil:
 	$(MX) $(MXFLAGS) -l -x mil $<
 	$(MV) $*.mil $*.tmpmil
 	$(DEL) $*.mil
 
-{$(SRCDIR)}.mx.mil:
+{$(srcdir)}.mx.mil:
 	$(MX) $(MXFLAGS) -l -x mil $<
 
 .mx.tmpmil:
@@ -460,7 +460,7 @@ CONFIG_H = monetdb_config.h
 .mx.mil:
 	$(MX) $(MXFLAGS) -l -x mil $<
 
-{$(SRCDIR)}.mx.mal:
+{$(srcdir)}.mx.mal:
 	$(MX) $(MXFLAGS) -l -x mal $<
 	if not exist .libs $(MKDIR) .libs
 	$(INSTALL) $@ .libs\$@
@@ -470,25 +470,25 @@ CONFIG_H = monetdb_config.h
 	if not exist .libs $(MKDIR) .libs
 	$(INSTALL) $@ .libs\$@
 
-{$(SRCDIR)}.mx.sql:
+{$(srcdir)}.mx.sql:
 	$(MX) $(MXFLAGS) -l -x sql $<
 
 .mx.sql:
 	$(MX) $(MXFLAGS) -l -x sql $<
 
-{$(SRCDIR)}.mx.y:
+{$(srcdir)}.mx.y:
 	$(MX) $(MXFLAGS) -x y $<
 
 .mx.y:
 	$(MX) $(MXFLAGS) -x y $<
 
-{$(SRCDIR)}.mx.l:
+{$(srcdir)}.mx.l:
 	$(MX) $(MXFLAGS) -x l $<
 
 .mx.l:
 	$(MX) $(MXFLAGS) -x l $<
 
-{$(SRCDIR)}.ll.cc:
+{$(srcdir)}.ll.cc:
 	$(LEX) $(LFLAGS) $<
 	# either lex.<name>.c or lex.yy.c or lex.$(PARSERNAME).c gets generated
 	if exist lex.$*.c $(MV) lex.$*.c $*.yy.c.tmp
@@ -506,7 +506,7 @@ CONFIG_H = monetdb_config.h
 	echo #include "$(CONFIG_H)" > $@
 	type $*.yy.c.tmp >> $@
 
-{$(SRCDIR)}.yy.cc:
+{$(srcdir)}.yy.cc:
 	$(YACC) $(YFLAGS) $<
 	$(FILTER) $(FILTERPREF)"    ;" y.tab.c > $@
 
@@ -515,7 +515,7 @@ CONFIG_H = monetdb_config.h
 	$(FILTER) $(FILTERPREF)"    ;" y.tab.c > $@
 	$(DEL) y.tab.h
 
-{$(SRCDIR)}.yy.h:
+{$(srcdir)}.yy.h:
 	$(YACC) $(YFLAGS) $<
 	$(DEL) y.tab.c
 	$(MV) y.tab.h $@
@@ -525,19 +525,19 @@ CONFIG_H = monetdb_config.h
 	$(DEL) y.tab.c
 	$(MV) y.tab.h $@
 
-{$(SRCDIR)}.c.obj:
+{$(srcdir)}.c.obj:
 	$(CC) $(CFLAGS) -c $<
 
 .c.obj:
 	$(CC) $(CFLAGS) -c $<
 
-{$(SRCDIR)}.cc.obj:
+{$(srcdir)}.cc.obj:
 	$(CXX) $(CXXFLAGS) -c $<
 
 .cc.obj:
 	$(CXX) $(CXXFLAGS) -c $<
 
-{$(SRCDIR)}.syms.def:
+{$(srcdir)}.syms.def:
 	echo EXPORTS > $@
 	type $< >> $@
 
@@ -545,7 +545,7 @@ CONFIG_H = monetdb_config.h
 	echo EXPORTS > $@
 	type $< >> $@
 
-{$(SRCDIR)}.brg.c:
+{$(srcdir)}.brg.c:
 	$(BURG) -c 1000 -d -I -p PF$* -o $@ < $<
 
 .brg.c:

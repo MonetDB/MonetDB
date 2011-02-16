@@ -71,8 +71,8 @@ def create_dir(fd, v, n, i):
     fd.write('%s-%d-all: "%s-%d-dir" "%s-%d-Makefile"\n' % (n, i, n, i, n, i))
     fd.write('\t$(CD) "%s" && $(MAKE) /nologo $(MAKEDEBUG) "prefix=$(prefix)" "bits=$(bits)" all \n' % vv)
     fd.write('%s-%d-dir: \n\tif not exist "%s" $(MKDIR) "%s"\n' % (n, i, vv, vv))
-    fd.write('%s-%d-Makefile: "$(SRCDIR)\\%s\\Makefile.msc"\n' % (n, i, v))
-    fd.write('\t$(INSTALL) "$(SRCDIR)\\%s\\Makefile.msc" "%s\\Makefile"\n' % (v, v))
+    fd.write('%s-%d-Makefile: "$(srcdir)\\%s\\Makefile.msc"\n' % (n, i, v))
+    fd.write('\t$(INSTALL) "$(srcdir)\\%s\\Makefile.msc" "%s\\Makefile"\n' % (v, v))
     fd.write('%s-%d-check:\n' % (n, i))
     fd.write('\t$(CD) "%s" && $(MAKE) /nologo $(MAKEDEBUG) "prefix=$(prefix)" "bits=$(bits)" check\n' % vv)
 
@@ -155,7 +155,7 @@ def msc_add_srcdir(path, msc, prefix =""):
     if dir[0] == '$':
         return ""
     elif not os.path.isabs(dir):
-        dir = "$(SRCDIR)/" + dir
+        dir = "$(srcdir)/" + dir
     else:
         return ""
     return prefix+string.replace(dir, '/', '\\')
@@ -172,7 +172,7 @@ def msc_translate_dir(path, msc):
     elif dir == "builddir":
         dir = "."
     elif dir == "srcdir":
-        dir = "$(SRCDIR)"
+        dir = "$(srcdir)"
     elif dir in ('bindir', 'builddir', 'datadir', 'includedir', 'infodir',
                  'libdir', 'libexecdir', 'localstatedir', 'mandir',
                  'oldincludedir', 'pkgbindir', 'pkgdatadir', 'pkgincludedir',
@@ -186,7 +186,7 @@ def msc_translate_dir(path, msc):
 
 def msc_translate_file(path, msc):
     if os.path.isfile(os.path.join(msc['cwd'], path)):
-        return "$(SRCDIR)\\" + path
+        return "$(srcdir)\\" + path
     return path
 
 def msc_space_sep_list(l):
@@ -456,7 +456,7 @@ def msc_scripts(fd, var, scripts, msc):
         if msc['INSTALL'].has_key(script):
             continue
         if os.path.isfile(os.path.join(msc['cwd'], script+'.in')):
-            inf = '$(SRCDIR)\\%s.in' % script
+            inf = '$(srcdir)\\%s.in' % script
             if inf not in msc['_IN']:
                 # TODO
                 # replace this hack by something like configure ...
@@ -464,8 +464,8 @@ def msc_scripts(fd, var, scripts, msc):
                 fd.write('\t$(CONFIGURE) "%s" > "%s"\n' % (inf, script))
                 msc['_IN'].append(inf)
         elif os.path.isfile(os.path.join(msc['cwd'], script)):
-            fd.write('%s: "$(SRCDIR)\\%s"\n' % (script, script))
-            fd.write('\t$(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (script, script))
+            fd.write('%s: "$(srcdir)\\%s"\n' % (script, script))
+            fd.write('\t$(INSTALL) "$(srcdir)\\%s" "%s"\n' % (script, script))
         if scripts.has_key('COND'):
             condname = 'defined(' + ') && defined('.join(scripts['COND']) + ')'
             mkname = script.replace('.', '_').replace('-', '_')
@@ -513,7 +513,7 @@ def msc_headers(fd, var, headers, msc):
         h, ext = split_filename(header)
         if ext in hdrs_ext:
             if os.path.isfile(os.path.join(msc['cwd'], header+'.in')):
-                inf = '$(SRCDIR)\\%s.in' % header
+                inf = '$(srcdir)\\%s.in' % header
                 if inf not in msc['_IN']:
                     # TODO
                     # replace this hack by something like configure ...
@@ -521,10 +521,10 @@ def msc_headers(fd, var, headers, msc):
                     fd.write('\t$(CONFIGURE) "%s" > "%s"\n' % (inf, header))
                     msc['_IN'].append(inf)
             elif os.path.isfile(os.path.join(msc['cwd'], header)):
-                fd.write('%s: "$(SRCDIR)\\%s"\n' % (header, header))
-##                fd.write('\t$(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (header, header))
-##                fd.write('\tif not exist "%s" if exist "$(SRCDIR)\\%s" $(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (header, header, header, header))
-                fd.write('\t$(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (header, header))
+                fd.write('%s: "$(srcdir)\\%s"\n' % (header, header))
+##                fd.write('\t$(INSTALL) "$(srcdir)\\%s" "%s"\n' % (header, header))
+##                fd.write('\tif not exist "%s" if exist "$(srcdir)\\%s" $(INSTALL) "$(srcdir)\\%s" "%s"\n' % (header, header, header, header))
+                fd.write('\t$(INSTALL) "$(srcdir)\\%s" "%s"\n' % (header, header))
             if headers.has_key('COND'):
                 condname = 'defined(' + ') && defined('.join(headers['COND']) + ')'
                 mkname = header.replace('.', '_').replace('-', '_')
@@ -555,11 +555,11 @@ def msc_binary(fd, var, binmap, msc):
                 if os.path.isfile(os.path.join(msc['cwd'], i+'.in')):
                     # TODO
                     # replace this hack by something like configure ...
-                    fd.write('%s: "$(SRCDIR)\\%s.in"\n' % (i, i))
-                    fd.write('\t$(CONFIGURE) "$(SRCDIR)\\%s.in" > "%s"\n' % (i, i))
+                    fd.write('%s: "$(srcdir)\\%s.in"\n' % (i, i))
+                    fd.write('\t$(CONFIGURE) "$(srcdir)\\%s.in" > "%s"\n' % (i, i))
                 elif os.path.isfile(os.path.join(msc['cwd'], i)):
-                    fd.write('%s: "$(SRCDIR)\\%s"\n' % (i, i))
-                    fd.write('\t$(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (i, i))
+                    fd.write('%s: "$(srcdir)\\%s"\n' % (i, i))
+                    fd.write('\t$(INSTALL) "$(srcdir)\\%s" "%s"\n' % (i, i))
                 msc['INSTALL'][i] = i, '', '$(bindir)', '', ''
         else: # link
             binmap = binmap[0]
@@ -1057,7 +1057,7 @@ def msc_libs(fd, var, libsmap, msc):
     msc_deps(fd, libsmap['DEPS'], ".obj", msc)
 
 def msc_includes(fd, var, values, msc):
-    incs = "-I$(SRCDIR)"
+    incs = "-I$(srcdir)"
     for i in values:
         # replace all occurrences of @XXX@ with $(XXX)
         i = re.sub('@([A-Z_]+)@', r'$(\1)', i)
@@ -1086,11 +1086,11 @@ def msc_gem(fd, var, gem, msc):
         fd.write('\tgem build %s\n' % f)
         for src in srcs:
             src = src.replace('/', '\\')
-            fd.write('%s: "$(SRCDIR)\\%s"\n' % (src, src))
+            fd.write('%s: "$(srcdir)\\%s"\n' % (src, src))
             if '\\' in src:
                 d = src[:src.rfind('\\')]
                 fd.write('\tif not exist "%s" $(MKDIR) "%s"\n' % (d, d))
-            fd.write('\t$(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (src, src))
+            fd.write('\t$(INSTALL) "$(srcdir)\\%s" "%s"\n' % (src, src))
         msc['INSTALL'][f] = f, '', '', '', 'defined(HAVE_RUBYGEM)'
         fd.write('install_%s: "%s" "%s"\n' % (f, f[:-4], rd))
         fd.write('\tgem install "%s" --local --install-dir "%s" --force --rdoc\n' % (f[:-4], rd))
@@ -1111,11 +1111,11 @@ def msc_python(fd, var, python, msc):
         fd.write('target_python_%s: %s %s\n' % (f, ' '.join(srcs), f))
         fd.write('\t$(PYTHON) %s build\n' % f)
         for src in srcs:
-            fd.write('%s: "$(SRCDIR)\\%s"\n' % (src, src))
+            fd.write('%s: "$(srcdir)\\%s"\n' % (src, src))
             fd.write('\tif not exist "%s" $(MKDIR) "%s"\n' % (src, src))
-            fd.write('\t$(INSTALL) "$(SRCDIR)\\%s"\\*.py "%s"\n' % (src, src))
-        fd.write('%s: "$(SRCDIR)\\%s"\n' % (f, f))
-        fd.write('\t$(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (f, f))
+            fd.write('\t$(INSTALL) "$(srcdir)\\%s"\\*.py "%s"\n' % (src, src))
+        fd.write('%s: "$(srcdir)\\%s"\n' % (f, f))
+        fd.write('\t$(INSTALL) "$(srcdir)\\%s" "%s"\n' % (f, f))
         msc['INSTALL'][f] = f, '', '', '', ''
         fd.write('install_%s:\n' % f)
         fd.write('\t$(PYTHON) %s install --prefix "$(prefix)"\n' % f)
@@ -1148,7 +1148,7 @@ def msc_ant(fd, var, ant, msc):
     fd.write("callant%d.bat:\n" % callantno)
     fd.write("\techo @set thisdir=%%~dp0>callant%d.bat\n" % callantno)
     fd.write("\techo @set thisdir=%%thisdir:~0,-1%%>>callant%d.bat\n" % callantno)
-    fd.write("\techo @$(ANT) -f $(SRCDIR)\\build.xml \"-Dbuilddir=%%thisdir%%\" \"-Djardir=%%thisdir%%\" %s>>callant%d.bat\n" % (target, callantno))
+    fd.write("\techo @$(ANT) -f $(srcdir)\\build.xml \"-Dbuilddir=%%thisdir%%\" \"-Djardir=%%thisdir%%\" %s>>callant%d.bat\n" % (target, callantno))
     fd.write("%s_ant_target: callant%d.bat\n" % (target, callantno))
     fd.write("\tcallant%d.bat\n" % callantno)
     callantno = callantno + 1
@@ -1236,7 +1236,7 @@ def output(tree, cwd, topdir):
             d, t = os.path.split(d)
 
     fd.write("TOPDIR = %s\n" % string.replace(reldir, '/', '\\'))
-    fd.write("SRCDIR = $(TOPDIR)\\..%s\n" % string.replace(srcdir, '/', '\\'))
+    fd.write("srcdir = $(TOPDIR)\\..%s\n" % string.replace(srcdir, '/', '\\'))
     fd.write("!INCLUDE $(TOPDIR)\\..\\NT\\rules.msc\n")
     if tree.has_key("SUBDIRS"):
         fd.write("all: all-recursive all-msc\n")
