@@ -295,7 +295,6 @@
  * @item mapi_get_query()	@tab	Query being executed
  * @item mapi_get_language()	@tab Query language name
  * @item mapi_get_mapi_version()	@tab Mapi version name
- * @item mapi_get_monet_versionId()	@tab MonetDB version identifier
  * @item mapi_get_monet_version()	@tab MonetDB version name
  * @item mapi_get_motd()	@tab	Get server welcome message
  * @item mapi_get_row_count()	@tab	Number of rows in cache or -1
@@ -919,7 +918,6 @@ struct MapiStruct {
 	char *database;		/* to obtain from server */
 	char *uri;
 	int languageId;
-	int versionId;		/* Monet 4 or 5 */
 	char *motd;		/* welcome message from server */
 
 	int trace;		/* Trace Mapi interaction */
@@ -1769,7 +1767,6 @@ mapi_new(void)
 	mid->language = strdup("sql");
 
 	mid->languageId = LANG_SQL;
-	mid->versionId = 4;
 	mid->noexplain = NULL;
 	mid->motd = NULL;
 	mid->mapiversion = "mapi 1.0";
@@ -2861,8 +2858,6 @@ mapi_start_talking(Mapi mid)
 				return mid->error;
 			}
 		}
-
-		mid->versionId = strcmp("Mserver 5.0", result->cache.line[0].rows) == 0 ? 5 : 4;
 	}
 	mapi_close_handle(hdl);
 
@@ -5326,13 +5321,6 @@ mapi_get_monet_version(Mapi mid)
 {
 	mapi_check0(mid, "mapi_get_monet_version");
 	return mid->server ? mid->server : "";
-}
-
-int
-mapi_get_monet_versionId(Mapi mid)
-{
-	mapi_check0(mid, "mapi_get_monet_versionId");
-	return mid->versionId;
 }
 
 char *
