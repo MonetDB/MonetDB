@@ -453,6 +453,7 @@ main(int argc, char *argv[])
 	};
 	confkeyval *kv;
 #ifndef MERO_DONTFORK
+	char buf[4];
 	int retfd = -1;
 
 	/* Fork into the background immediately.  By doing this our child
