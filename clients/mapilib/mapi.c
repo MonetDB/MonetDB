@@ -789,6 +789,9 @@
 #ifdef HAVE_SYS_UN_H
 #include <sys/un.h>
 #include <sys/stat.h>
+# ifdef HAVE_DIRENT_H
+#  include <dirent.h>
+# endif
 #endif
 #ifdef HAVE_NETDB_H
 # include <netdb.h>
@@ -1919,6 +1922,9 @@ mapi_mapi(const char *host, int port, const char *username,
 	  const char *password, const char *lang, const char *dbname)
 {
 	Mapi mid;
+#ifdef HAVE_SYS_UN_H
+	char buf[1024];
+#endif
 
 	if (!mapi_initialized) {
 		mapi_initialized = 1;
@@ -1930,31 +1936,149 @@ mapi_mapi(const char *host, int port, const char *username,
 	if (mid == NULL)
 		return NULL;
 
-	if (mid->hostname)
-		free(mid->hostname);
-	mid->hostname = host ? strdup(host) : NULL;
-
-	if (port == 0) {
-		port = 50000;	/* hardwired default */
-		if (mid->hostname == NULL) {
+	/* connection searching strategy:
+	 * 0) if host and port are given, resort to those
+	 * 1) if no dbname given, make TCP connection (merovingian will
+	 *    complain regardless, so it is more likely an mserver is
+	 *    meant to be directly addressed)
+	 *    a) resort to default (hardwired) port 50000, unless port given, then
+	 *    b) resort to port given
+	 * 2) a dbname is given
+	 *    a) if a port is given, open unix socket for that port, resort
+	 *       to TCP connection if not found
+	 *    b) no port given, start looking for a matching merovingian, by
+	 *       searching through socket files, attempting connect to given
+	 *       dbname
+	 *       I) try available sockets that have a matching owner with
+	 *          the current user
+	 *       II) try other sockets
+	 *       III) resort to TCP connection on hardwired port
+	 *            (localhost:50000)
+	 */
+	if (host != NULL && port != 0) {
+		/* case 0), just do what the user told us */
 #ifdef HAVE_SYS_UN_H
-			char buf[1024];
+		if (*host == '/') {
+			/* don't stat or anything, the connect_to_server will return
+			 * the error if it doesn't exists, falling back to TCP with
+			 * a hostname like '/var/sockets' won't work anyway */
+			snprintf(buf, sizeof(buf), "%s/.s.monetdb.%d", host, port);
+			host = buf;
+		}
+#endif
+	} else if (dbname == NULL) {
+		/* case 1) */
+		if (port == 0)
+			port = 50000;	/* case 1a), hardwired default */
+		if (host == NULL)
+			host = "localhost";
+	} else {
+		/* case 2), dbname is given */
+		if (port != 0) {
+			/* case 2a), if unix socket found, use it, otherwise TCP */
+#ifdef HAVE_SYS_UN_H
 			struct stat st;
-			snprintf(buf, sizeof(buf),
-				 LOCALSTATEDIR "/monetdb5/dbfarm/mapi_socket");
-			if (strlen(buf) <= sizeof(((struct sockaddr_un *) 0)->sun_path) &&
-					stat(buf, &st) != -1 &&
-					S_ISSOCK(st.st_mode))
-				mid->hostname = strdup(buf);
+			snprintf(buf, sizeof(buf), "/tmp/.s.monetdb.%d", port);
+			if (stat(buf, &st) != -1 && S_ISSOCK(st.st_mode))
+				host = buf;
 			else
 #endif
-				mid->hostname = strdup("localhost");
+				host = "localhost";
+		} else if (host != NULL) {
+#ifdef HAVE_SYS_UN_H
+			if (*host == '/') {
+				/* see comment above for why we don't stat */
+				snprintf(buf, sizeof(buf), "%s/.s.monetdb.50000", host);
+				host = buf;
+			}
+#endif
+			port = 50000;
+		} else {
+			/* case 2b), no host, no port, but a dbname, search for meros */
+#ifdef HAVE_SYS_UN_H
+			DIR *d;
+			struct dirent *e;
+			struct stat st;
+			char found = 0;
+			int socks[24];
+			int i = 0;
+			int len;
+			uid_t me = getuid();
+
+			d = opendir("/tmp");
+			if (d != NULL) {
+				while ((e = readdir(d)) != NULL) {
+					if (strncmp(e->d_name, ".s.monetdb.", 11) != 0)
+						continue;
+					snprintf(buf, sizeof(buf), "/tmp/%s", e->d_name);
+					if (stat(buf, &st) != -1 && S_ISSOCK(st.st_mode))
+						socks[i++] = atoi(e->d_name + 11);
+					if (i == sizeof(socks))
+						break;
+				}
+				closedir(d);
+				len = i;
+				/* case 2bI) first those with a matching owner */
+				for (i = 0; found == 0 && i < len; i++) {
+					snprintf(buf, sizeof(buf), "/tmp/.s.monetdb.%d", socks[i]);
+					if (socks[i] != 0 &&
+							stat(buf, &st) != -1 && st.st_uid == me)
+					{
+						Mapi tmid;
+						/* try this server for the database */
+						tmid = mapi_mapi("/tmp", socks[i], "mero", "mero",
+								lang, dbname);
+						tmid->redirmax = 0;
+						if (mapi_reconnect(tmid) == MOK ||
+								*tmid->redirects != NULL ||
+								(tmid->errorstr != NULL &&
+								 strstr(tmid->errorstr, "under maintenance") != NULL))
+						{
+							host = buf;
+							port = socks[i];
+							found = 1;
+						}
+						mapi_disconnect(tmid);
+						mapi_destroy(tmid);
+						socks[i] = 0; /* don't need to try again */
+					}
+				}
+				/* case 2bII) the other sockets */
+				for (i = 0; found == 0 && i < len; i++) {
+					snprintf(buf, sizeof(buf), "/tmp/.s.monetdb.%d", socks[i]);
+					if (socks[i] != 0 && stat(buf, &st) != -1) {
+						Mapi tmid;
+						/* try this server for the database */
+						tmid = mapi_mapi("/tmp", socks[i], "mero", "mero",
+								lang, dbname);
+						tmid->redirmax = 0;
+						if (mapi_reconnect(tmid) == MOK ||
+								*tmid->redirects != NULL ||
+								(tmid->errorstr != NULL &&
+								 strstr(tmid->errorstr, "under maintenance") != NULL))
+						{
+							host = buf;
+							port = socks[i];
+							found = 1;
+						}
+						mapi_disconnect(tmid);
+						mapi_destroy(tmid);
+					}
+				}
+			}
+			if (!found)
+#endif
+			{
+				/* case 2bIII) resort to TCP connection on hardwired port */
+				host = "localhost";
+				port = 50000;
+			}
 		}
-	} else {
-		/* make sure we won't search for a unix socket first */
-		if (mid->hostname == NULL)
-			mid->hostname = strdup("localhost");
 	}
+
+	if (mid->hostname)
+		free(mid->hostname);
+	mid->hostname = strdup(host);
 
 	/* fill some defaults for user/pass, this should actually never happen */
 	if (username == NULL)
