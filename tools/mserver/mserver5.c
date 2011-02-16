@@ -30,7 +30,7 @@
 #include "mal_function.h"
 #include "monet_version.h"
 #include "mal_authorize.h"
-#include "mal_sabaoth.h"
+#include "msabaoth.h"
 #include "mutils.h"
 
 #ifdef HAVE_LIBGEN_H
@@ -492,18 +492,18 @@ main(int argc, char **av)
 	}
 
 	/* configure sabaoth to use the right dbfarm and active database */
-	SABAOTHinit(GDKgetenv("gdk_dbfarm"), GDKgetenv("gdk_dbname"));
+	msab_init(GDKgetenv("gdk_dbfarm"), GDKgetenv("gdk_dbname"));
 	/* wipe out all cruft, if left over */
-	if ((err = SABAOTHwildRetreat(&i)) != MAL_SUCCEED) {
+	if ((err = msab_wildRetreat()) != NULL) {
 		/* just swallow the error */
-		GDKfree(err);
+		free(err);
 	}
 	/* From this point, the server should exit cleanly.  Discussion:
 	 * even earlier?  Sabaoth here registers the server has started up. */
-	if ((err = SABAOTHregisterStart(&i)) != MAL_SUCCEED) {
+	if ((err = msab_registerStart()) != NULL) {
 		/* throw the error at the user, but don't die */
 		fprintf(stderr, "!%s\n", err);
-		GDKfree(err);
+		free(err);
 	}
 
 #ifdef HAVE_SIGACTION
@@ -532,10 +532,10 @@ main(int argc, char **av)
 	{
 		str lang = "mal";
 		/* we inited mal before, so publish its existence */
-		if ((err = SABAOTHmarchScenario(&i, &lang)) != MAL_SUCCEED) {
+		if ((err = msab_marchScenario(lang)) != NULL) {
 			/* throw the error at the user, but don't die */
 			fprintf(stderr, "!%s\n", err);
-			GDKfree(err);
+			free(err);
 		}
 	}
 
@@ -555,7 +555,7 @@ main(int argc, char **av)
 						GDKgetenv("monet_vault_key"), strerror(errno));
 				secret[1023] = '\0';
 				/* don't show this as a crash */
-				SABAOTHregisterStop(&i);
+				msab_registerStop();
 				GDKfatal(secret);
 			}
 			len = fread(secret, 1, 1023, secretf);
@@ -564,7 +564,7 @@ main(int argc, char **av)
 			if (len == 0) {
 				snprintf(secret, 1023, "vault key has zero-length!");
 				/* don't show this as a crash */
-				SABAOTHregisterStop(&i);
+				msab_registerStop();
 				GDKfatal(secret);
 			} else if (len < 5) {
 				fprintf(stderr, "#warning: your vault key is too short "
