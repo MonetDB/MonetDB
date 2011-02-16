@@ -342,7 +342,10 @@ controlRunner(void *d)
 						origin, q);
 			} else {
 				*p++ = '\0';
-				if (strcmp(p, "start") == 0) {
+				if (strcmp(p, "ping") == 0) {
+					len = snprintf(buf2, sizeof(buf2), "OK\n");
+					send(msgsock, buf2, len, 0);
+				} else if (strcmp(p, "start") == 0) {
 					err e;
 					if ((e = msab_getStatus(&stats, q)) != NULL) {
 						len = snprintf(buf2, sizeof(buf2),
