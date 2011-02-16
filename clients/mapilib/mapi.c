@@ -2807,28 +2807,6 @@ mapi_resolve(const char *host, int port, const char *pattern)
 	return NULL;
 }
 
-stream **
-mapi_embedded_init(Mapi *midp, char *lang)
-{
-	Mapi mid;
-	stream **streams;
-
-	mid = mapi_mapi(NULL, -1, "monetdb", "monetdb", lang, NULL);
-	if (mid == NULL)
-		return NULL;
-	streams = malloc(2 * sizeof(*streams));
-	if (streams == NULL ||
-	    rendezvous_streams(&streams[0], &mid->to, "to server") == 0 ||
-	    rendezvous_streams(&mid->from, &streams[1], "from server") == 0) {
-		mapi_destroy(mid);
-		return NULL;
-	}
-	mapi_log_record(mid, "Connection established\n");
-	mid->connected = 1;
-	*midp = mid;
-	return streams;
-}
-
 static void
 close_connection(Mapi mid)
 {

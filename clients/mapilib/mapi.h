@@ -146,9 +146,6 @@ mapi_export MapiMsg mapi_destroy(Mapi mid);
 mapi_export MapiMsg mapi_start_talking(Mapi mid);
 mapi_export Mapi mapi_connect(const char *host, int port, const char *username, const char *password, const char *lang, const char *dbname);
 mapi_export char **mapi_resolve(const char *host, int port, const char *pattern);
-#ifdef ST_READ			/* if stream.h was included */
-mapi_export stream **mapi_embedded_init(Mapi *midp, char *lang);
-#endif
 mapi_export MapiMsg mapi_disconnect(Mapi mid);
 mapi_export MapiMsg mapi_reconnect(Mapi mid);
 mapi_export MapiMsg mapi_ping(Mapi mid);
