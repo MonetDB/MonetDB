@@ -413,11 +413,10 @@
  * Setup a connection with a Mserver at a @emph{host}:@emph{port} and login
  * with @emph{username} and @emph{password}. If host == NULL, the local
  * host is accessed.  If host starts with a '/' and the system supports it,
- * host is actually the name of a UNIX domain socket, and port is ignored.
- * If port == 0, a default port is used.  If username == NULL,
- * the username of the owner of the client application
- * containing the Mapi code is used.  If password == NULL, the password
- * is omitted.  The preferred query language is
+ * host is the directory where should be searched for UNIX domain
+ * sockets.  Port is not ignored, but used to identify which socket to
+ * use.  If port == 0, a default port is used.
+ * The preferred query language is
  * @verb{ { }sql,mal @verb{ } }.  On success, the function returns a
  * pointer to a structure with administration about the connection.
  *
@@ -2077,18 +2076,13 @@ mapi_mapi(const char *host, int port, const char *username,
 		free(mid->hostname);
 	mid->hostname = strdup(host);
 
-	/* fill some defaults for user/pass, this should actually never happen */
-	if (username == NULL)
-		username = "guest";
 	if (mid->username != NULL)
 		free(mid->username);
-	mid->username = strdup(username);
+	mid->username = username == NULL ? NULL : strdup(username);
 
-	if (password == NULL)
-		password = "guest";
 	if (mid->password)
 		free(mid->password);
-	mid->password = strdup(password);
+	mid->password = password == NULL ? NULL : strdup(password);
 
 	mid->port = port;
 
@@ -2429,6 +2423,12 @@ mapi_start_talking(Mapi mid)
 		char *serverhash = NULL;
 
 		/* rBuCQ9WTn3:mserver:9:RIPEMD160,SHA256,SHA1,MD5:LIT:SHA1: */
+
+		if (mid->username == NULL || mid->password == NULL) {
+			mapi_setError(mid, "username and password must be set",
+					"mapi_start_talking", MERROR);
+			return mid->error;
+		}
 
 		/* the database has sent a list of supported hashes to us, it's
 		 * in the form of a comma separated list and in the variable
