@@ -182,10 +182,7 @@ forkMserver(char *database, sabdb** stats, int force)
 		ckv = getDefaultProps();
 		readProps(ckv, (*stats)->path);
 
-		kv = findConfKey(ckv, "forward");
-		if (kv->val == NULL)
-			kv = findConfKey(_mero_db_props, "forward");
-		mydoproxy = strcmp(kv->val, "proxy") == 0;
+		mydoproxy = strcmp(getConfVal(_mero_props, "forward"), "proxy") == 0;
 
 		kv = findConfKey(ckv, "nthreads");
 		if (kv->val == NULL)

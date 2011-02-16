@@ -1,6 +1,10 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
+* Wed Feb 16 2011 Fabian Groffen <fabian@cwi.nl>
+- The forward property for databases has been removed.  Instead, only
+  a global proxy or redirect mode can be set using monetdbd.
+
 * Tue Feb 15 2011 Fabian Groffen <fabian@cwi.nl>
 - monetdbd can no longer log error and normal messages to separate
   logfiles, logging to stdout and stderr is no longer possible either.
