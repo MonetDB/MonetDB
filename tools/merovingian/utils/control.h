@@ -29,5 +29,6 @@ char* control_send(
 		char wait,
 		char* pass);
 char* control_hash(char *pass, char *salt);
+char control_ping(char *host, int port, char *pass);
 
 #endif

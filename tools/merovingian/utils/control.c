@@ -34,7 +34,7 @@
 #define SOCKPTR struct sockaddr *
 
 /* Sends command for database to merovingian listening at host and port.
- * If host is a path, and port is 0, a UNIX socket connection for host
+ * If host is a path, and port is -1, a UNIX socket connection for host
  * is opened.  The response of merovingian is returned as a malloced
  * string.  If wait is set to a non-zero value, this function will only
  * return after it has seen an EOF from the server.  This is useful with
@@ -112,8 +112,8 @@ char* control_send(
 			{
 				snprintf(sbuf, sizeof(sbuf), "cannot connect: "
 						"server looks like a mapi server, "
-						"are you using merovingian's control port (e.g. 50001) "
-						"instead of its mapi port (e.g. 50000)?");
+						"are you using monetdbd's mapi port (default 50000) "
+						"instead of its control port (default 50001)?");
 			} else {
 				snprintf(sbuf, sizeof(sbuf), "cannot connect: "
 						"unsupported merovingian server");
@@ -217,4 +217,23 @@ control_hash(char *pass, char *salt) {
 
 	snprintf(buf, sizeof(buf), "%u", h);
 	return(strdup(buf));
+}
+
+/**
+ * Returns if the merovingian server at host, port using pass is alive
+ * or not.  If alive, 0 is returned.  The same rules for host, port and
+ * pass hold as for control_send regarding the use of a UNIX vs TCP
+ * socket.
+ */
+char
+control_ping(char *host, int port, char *pass) {
+	char *res;
+	char *err;
+	if ((err = control_send(&res, host, port, "", "ping", 0, pass)) == NULL) {
+		if (res != NULL)
+			free(res);
+		return(0);
+	}
+	free(err);
+	return(1);
 }
