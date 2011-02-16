@@ -140,9 +140,9 @@ fits2mtype( int t )
         return TYPE_sht;
     case TUINT:
     case TINT:
-    case TULONG:
-    case TLONG:
         return TYPE_int;
+    case TLONG:	
+    case TULONG:
     case TLONGLONG:
         return TYPE_lng;
     case TFLOAT:
@@ -179,10 +179,10 @@ fits2subtype(sql_subtype *tpe, int t, long rep, long wid)
 		break;
     case TUINT:
     case TINT:
-    case TULONG:
-    case TLONG:
 		sql_find_subtype(tpe, "int", 32, 0);
 		break;
+    case TULONG:
+    case TLONG:
     case TLONGLONG:
 		sql_find_subtype(tpe, "bigint", 64, 0);
 		break;
@@ -463,6 +463,9 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		cname[j-1] = GDKstrdup(toLower(nm));
 		fits_get_coltype(fptr, j, &tpcode[j-1], &rep[j-1], &wid[j-1], &status);
 		fits2subtype(&tpe, tpcode[j-1], rep[j-1], wid[j-1]);
+	
+		/*		mnstr_printf(cntxt->fdout,"%d %ld %ld - M: %s\n", tpcode[j-1], rep[j-1], wid[j-1], tpe.type->sqlname); */
+
 		mvc_create_column(m, tbl, cname[j-1], &tpe);
 	}
 
