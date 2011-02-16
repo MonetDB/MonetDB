@@ -258,7 +258,7 @@ mapi.listen();
 #include "mal_exception.h"
 #include "mal_interpreter.h"
 #include "mal_authorize.h"
-#include "mal_sabaoth.h"
+#include "msabaoth.h"
 #include <stream.h>
 
 #ifdef WIN32
@@ -626,7 +626,6 @@ error:
 void SERVERannounce(struct in_addr addr, int port, str usockfile) {
 	str buf;
 	str host = NULL;
-	int ret = 0;
 
 	if (port > 0) {
 		if (addr.s_addr == INADDR_ANY) {
@@ -645,13 +644,21 @@ void SERVERannounce(struct in_addr addr, int port, str usockfile) {
 					(unsigned) ((ntohl(addr.s_addr) >> 8) & 0xff),
 					(unsigned) (ntohl(addr.s_addr) & 0xff));
 		}
-		if ((buf = SABAOTHmarchConnection(&ret, &host, &port)) != MAL_SUCCEED && buf != M5OutOfMemory)
-			GDKfree(buf);
+		if ((buf = msab_marchConnection(host, port)) != NULL)
+			free(buf);
+		else 
+			/* announce that we're now reachable */
+			printf("# Listening for connection requests on "
+					"mapi:monetdb://%s:%i/\n", host, port);
 	}
 	if (usockfile != NULL) {
 		port = 0;
-		if ((buf = SABAOTHmarchConnection(&ret, &usockfile, &port)) != MAL_SUCCEED && buf != M5OutOfMemory)
-			GDKfree(buf);
+		if ((buf = msab_marchConnection(usockfile, port)) != NULL)
+			free(buf);
+		else
+			/* announce that we're now reachable */
+			printf("# Listening for UNIX domain connection requests on "
+					"mapi:monetdb://%s\n", usockfile);
 	}
 }
 
