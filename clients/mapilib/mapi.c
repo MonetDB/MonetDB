@@ -803,7 +803,6 @@
 #include  <string.h>
 #include  <memory.h>
 
-/*additional definitions for date and time*/
 #ifdef HAVE_FTIME
 #include <sys/timeb.h>
 #endif
@@ -974,17 +973,17 @@ struct MapiStatement {
 	MapiHdl prev, next;
 };
 
-/*
- * All external calls to the library should pass the mapi-check
- * routine. It assures a working connection and proper reset of
- * the error status of the Mapi structure.
- */
 #ifdef DEBUG
 #define debugprint(fmt,arg)	printf(fmt,arg)
 #else
 #define debugprint(fmt,arg)	((void) 0)
 #endif
 
+/*
+ * All external calls to the library should pass the mapi-check
+ * routine. It assures a working connection and proper reset of
+ * the error status of the Mapi structure.
+ */
 #define mapi_check(X,C)							\
 	do {								\
 		debugprint("entering %s\n", (C));			\
@@ -1058,9 +1057,9 @@ static int mapi_initialized = 0;
  * Blocking
  * --------
  *
- * The server side code works with a common/stream package, a fast buffered IO scheme.
- * However, this package is not always available for every language runtime system.
- * For those cases a simple line-based protocol is also supported by the server.
+ * The server side code works with a common/stream package, a fast
+ * buffered IO scheme.  Nowadays this should be the only protocol used,
+ * while historical uses were line-based instead.
  * 
  *
  * Error Handling
@@ -2109,14 +2108,6 @@ set_uri(Mapi mid)
 	mid->uri = strdup(uri);
 }
 
-/*
- * Channel Constructor
- * -------------------
- *
- * The first call of an application is to establish a connection with
- * an already server. The username and password are sent as part of
- * the initialization sequence.
- */
 /* (Re-)establish a connection with the server. */
 static MapiMsg
 connect_to_server(Mapi mid)
@@ -2838,10 +2829,6 @@ mapi_embedded_init(Mapi *midp, char *lang)
 	return streams;
 }
 
-/*
- * Disconnection from the server leads to removal of the
- * Mapi structure. Subsequent access may lead to a crash.
- */
 static void
 close_connection(Mapi mid)
 {
@@ -2882,10 +2869,6 @@ mapi_disconnect(Mapi mid)
 	return MOK;
 }
 
-/*
- * Binding placeholders and column names provide some convenience
- * for bulk interacting with a server.
- */
 #define testBinding(hdl,fnr,funcname)					\
 	do {								\
 		mapi_hdl_check(hdl, funcname);				\
@@ -3063,13 +3046,6 @@ mapi_Xcommand(Mapi mid, char *cmdname, char *cmdvalue)
 	return MOK;
 }
 
-/*
- * The routine mapi_query is one of the most heavily used ones.
- * It sends a complete statement for execution
- * (i.e., ending in a newline; possibly including additional newlines).
- * Interaction with the server is sped up using block based interaction.
- * The query is retained in the Mapi structure to repeat shipping.
- */
 MapiMsg
 mapi_prepare_handle(MapiHdl hdl, const char *cmd)
 {
@@ -4018,6 +3994,13 @@ mapi_execute_array(MapiHdl hdl, char **val)
 	return ret;
 }
 
+/*
+ * The routine mapi_query is one of the most heavily used ones.
+ * It sends a complete statement for execution
+ * (i.e., ending in a newline; possibly including additional newlines).
+ * Interaction with the server is sped up using block based interaction.
+ * The query is retained in the Mapi structure to repeat shipping.
+ */
 MapiHdl
 mapi_query(Mapi mid, const char *cmd)
 {
@@ -4374,14 +4357,6 @@ mapi_cache_freeup(MapiHdl hdl, int percentage)
 	return mapi_cache_freeup_internal(result, k);
 }
 
-/*
- * The routine mapi_fetch_line forms the basic interaction with the server.
- * It simply retrieves the next line and stores it in the row cache.
- * The field anchor structure is prepared for subsequent use by
- * mapi_fetch_row.
- * The content received is analyzed further by mapi_getRow()
- * 
- */
 static char *
 mapi_fetch_line_internal(MapiHdl hdl)
 {
@@ -4408,6 +4383,13 @@ mapi_fetch_line_internal(MapiHdl hdl)
 	return reply;
 }
 
+/*
+ * The routine mapi_fetch_line forms the basic interaction with the server.
+ * It simply retrieves the next line and stores it in the row cache.
+ * The field anchor structure is prepared for subsequent use by
+ * mapi_fetch_row.
+ * The content received is analyzed further by mapi_getRow()
+ */
 char *
 mapi_fetch_line(MapiHdl hdl)
 {
@@ -4464,7 +4446,6 @@ mapi_finish(MapiHdl hdl)
  * The best way to use this shortcut execution is calling
  * mapi_quick_query(), otherwise we are forced to first
  * empty the row cache.
- * 
  */
 MapiMsg
 mapi_quick_response(MapiHdl hdl, FILE *fd)
@@ -4481,20 +4462,6 @@ mapi_quick_response(MapiHdl hdl, FILE *fd)
 	return hdl->mid->error ? hdl->mid->error : (hdl->needmore ? MMORE : MOK);
 }
 
-/*
- * The routine mapi_get_row retrieves lines from the channel until
- * it finds either a valid row, or encounters an error.
- * In passing, it interprets comment lines to detect table headers.
- * It returns with 0 upon encountering the prompt
- * (MOK) or an error. The row cache buffer is extended until the limit
- * is reached.
- * 
- * TODO, header line does not appear in cache, reuse of old line is erroneous
- */
-/*
- * Unquoting of a string is done in place. It returns the start
- * of the unquoted part section.
- */
 /* msg is a string consisting comma-separated values.  The list of
    values is terminated by endchar or by the end-of-string NULL byte.
    Values can be quoted strings or unquoted values.  Upon return,
@@ -4710,14 +4677,6 @@ mapi_quote(const char *msg, int size)
 	return s;
 }
 
-/*
- * The low level routine mapi_slice_row breaks the last row received into pieces
- * and binds the field descriptors with their location. All escaped characters
- * are immediately replaced, such that we end with a list of C-strings.
- * It overwrites the contents of the row buffer, because de-escaping
- * only reduces the size.
- * It also silently extends the field descriptor table.
- */
 static int
 mapi_extend_bindings(MapiHdl hdl, int minbindings)
 {
@@ -4749,12 +4708,6 @@ mapi_extend_params(MapiHdl hdl, int minparams)
 	hdl->maxparams = nm;
 	return MOK;
 }
-
-/*
- * The values of a row are delivered to any bounded variable before
- * fetch_row returns. Automatic conversion based on common types
- * simplifies the work for the programmers.
- */
 
 static MapiMsg
 store_field(struct MapiResultSet *result, int cr, int fnr, int outtype, void *dst)
@@ -4890,6 +4843,14 @@ mapi_store_bind(struct MapiResultSet *result, int cr)
 			store_field(result, cr, i, hdl->bindings[i].outtype, hdl->bindings[i].outparam);
 }
 
+/*
+ * The low level routine mapi_slice_row breaks the last row received
+ * into pieces and binds the field descriptors with their location. All
+ * escaped characters are immediately replaced, such that we end with a
+ * list of C-strings.  It overwrites the contents of the row buffer,
+ * because de-escaping only reduces the size.  It also silently extends
+ * the field descriptor table.
+ */
 static int
 mapi_slice_row(struct MapiResultSet *result, int cr)
 {
