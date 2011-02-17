@@ -54,9 +54,9 @@ comment "Load a FITS table from an attached file";
 #include <sql_scenario.h>
 #include <sql.h>
 #include "clients.h"
-#include "mal.h" 
+#include "mal.h"
 #include "mal_client.h"
-#include "mal_exception.h" 
+#include "mal_exception.h"
 
 #ifdef WIN32
 #ifndef LIBFITS
@@ -90,7 +90,7 @@ FITSinitCatalog(mvc *m)
 {
 	sql_schema *sch;
 	sql_table *fits_fl, *fits_tbl,  *fits_col;
-	
+
 	sch = mvc_bind_schema(m,"sys");
 
 	fits_fl = mvc_bind_table(m, sch, "fits_files");
@@ -120,8 +120,8 @@ FITSinitCatalog(mvc *m)
 		mvc_create_column_(m, fits_col, "number","int",32);
 		mvc_create_column_(m, fits_col, "table_id","int",32);
 	}
-	
-}   
+
+}
 
 static int
 fits2mtype( int t )
@@ -141,7 +141,7 @@ fits2mtype( int t )
     case TUINT:
     case TINT:
         return TYPE_int;
-    case TLONG:	
+    case TLONG:
     case TULONG:
     case TLONGLONG:
         return TYPE_lng;
@@ -203,27 +203,27 @@ fits2subtype(sql_subtype *tpe, int t, long rep, long wid)
 str FITSdir(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
-	str dir = *(str*) getArgReference(stk, pci, 1); 
+	str dir = *(str*) getArgReference(stk, pci, 1);
 	DIR *dp;
-	struct dirent *ep; 
+	struct dirent *ep;
 	fitsfile *fptr;
 	char *s;
 	int status = 0;
 	(void) mb;
-     
+
 	dp = opendir(dir);
 	if (dp != NULL) {
-		char stmt[BUFSIZ]; 
+		char stmt[BUFSIZ];
 		char fname[BUFSIZ];
 
-		s = stmt;	
+		s = stmt;
 
 		while ((ep = readdir(dp)) != NULL) {
 			snprintf(fname,BUFSIZ,"%s%s",dir,ep->d_name);
-		
+
 			status = 0;
        		fits_open_file(&fptr, fname, READONLY, &status);
-			if (status == 0) {			
+			if (status == 0) {
 				snprintf(stmt, BUFSIZ, ATTACHDIR, fname);
 				msg = SQLstatementIntern(cntxt, &s,"fits.listofdir",TRUE, FALSE);
 
@@ -264,7 +264,7 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_schema *sch;
 	sql_table *fits_fl, *fits_tbl, *fits_col, *tbl = NULL;
 	sql_column *col;
-	str msg = MAL_SUCCEED; 
+	str msg = MAL_SUCCEED;
 	str fname = *(str*) getArgReference(stk, pci, 1);
 	fitsfile *fptr;  /* pointer to the FITS file */
 	int status = 0, i, j, hdutype, hdunum = 1, cnum = 0;
@@ -273,7 +273,7 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	long tbcol;
 	char cname[BUFSIZ], tform[BUFSIZ], tunit[BUFSIZ], tnull[BUFSIZ], tdisp[BUFSIZ];
 	double tscal, tzero;
-	
+
 	msg = getContext(cntxt, mb, &m, NULL);
 	if (msg)
 		return msg;
@@ -373,7 +373,7 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	fits_close_file(fptr, &status);
 
 	return MAL_SUCCEED;
-}   
+}
 
 str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -382,10 +382,10 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_table *fits_fl, *fits_tbl, *tbl = NULL;
 	sql_column *col;
 	sql_subtype tpe;
-	fitsfile *fptr; 
+	fitsfile *fptr;
 	str tname = *(str*) getArgReference(stk, pci, 1);
 	str fname;
-	str msg = MAL_SUCCEED; 
+	str msg = MAL_SUCCEED;
 	oid rid = oid_nil, frid = oid_nil;
 	int status = 0, cnum = 0, fid, hdu, hdutype, i, j, anynull, mtype;
 	int *tpcode = NULL;
@@ -393,7 +393,7 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char keywrd[80], **cname, **v = NULL, nm[FLEN_VALUE];
 	BAT *b, *tmp = NULL;
 	ptr nilptr;
-	
+
 
 	msg = getContext(cntxt, mb, &m, NULL);
 	if (msg)
@@ -463,7 +463,7 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		cname[j-1] = GDKstrdup(toLower(nm));
 		fits_get_coltype(fptr, j, &tpcode[j-1], &rep[j-1], &wid[j-1], &status);
 		fits2subtype(&tpe, tpcode[j-1], rep[j-1], wid[j-1]);
-	
+
 		/*		mnstr_printf(cntxt->fdout,"%d %ld %ld - M: %s\n", tpcode[j-1], rep[j-1], wid[j-1], tpe.type->sqlname); */
 
 		mvc_create_column(m, tbl, cname[j-1], &tpe);
@@ -478,7 +478,7 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (mtype != TYPE_str ){
 			tmp = BATnew(TYPE_void, mtype, rows);
 			BATseqbase(tmp, 0);
-			fits_read_col(fptr, tpcode[j-1], j, 1, 1, rows, nilptr, (void *) BUNtloc(bat_iterator(tmp),BUNfirst(tmp)), &anynull, &status ); 
+			fits_read_col(fptr, tpcode[j-1], j, 1, 1, rows, nilptr, (void *) BUNtloc(bat_iterator(tmp),BUNfirst(tmp)), &anynull, &status );
 		}
 		else {
 			v = (char **) GDKzalloc(sizeof(char *) * rows);
@@ -499,7 +499,7 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (mtype != TYPE_str ){
 			BATsetcount(tmp, rows);
 			b = store_funcs.bind_col(m->session->tr, col, RDONLY);
-			BATappend(b,tmp,TRUE); 
+			BATappend(b,tmp,TRUE);
 			BBPunfix(b->batCacheid);
 			BBPreclaim(tmp);
 		}
@@ -508,7 +508,7 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				store_funcs.append_col(m->session->tr, col, v[i], mtype);
 			for(i = 0; i < rows; i++)
 				GDKfree(v[i]);
-			GDKfree(v); 
+			GDKfree(v);
 		}
 	}
 
