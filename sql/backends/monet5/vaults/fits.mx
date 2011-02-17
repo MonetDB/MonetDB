@@ -280,12 +280,12 @@ str FITSdirpat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		char stmt[BUFSIZ];
 		char fname[BUFSIZ];
 
-		s = stmt;        
-		snprintf(fname, BUFSIZ, "%s", globbuf.gl_pathv[j]);                
+		s = stmt;
+		snprintf(fname, BUFSIZ, "%s", globbuf.gl_pathv[j]);
 		status = 0;
 		fits_open_file(&fptr, fname, READONLY, &status);
 		if (status == 0) {
-			snprintf(stmt, BUFSIZ, ATTACHDIR, fname);        
+			snprintf(stmt, BUFSIZ, ATTACHDIR, fname);
 			msg = SQLstatementIntern(cntxt, &s,"fits.listofdirpat",TRUE, FALSE);
 			fits_close_file(fptr, &status);
 		}
@@ -404,8 +404,7 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				tname_low = toLower(tname);
 			}
 		}
-		
-		
+
 		fits_read_key(fptr, TSTRING, "BITPIX", bitpixnumber, NULL, &status);
 		if ( status ) {
 			status = 0;
@@ -417,7 +416,6 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		fits_read_key(fptr, TSTRING, "XTENSION", xtensionname, NULL, &status);
 		if ( status ) {
 			status = 0;
-			
 		}
 		fits_read_key(fptr, TSTRING, "STILVERS", stilversion, NULL, &status);
 		if ( status ) {
