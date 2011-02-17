@@ -28,18 +28,21 @@ pattern listdir(dirname:str):void
 address FITSdir
 comment "Attach all FITS files in the directory";
 
+pattern listdirpattern(dirname:str, pattern:str):void
+address FITSdirpat
+comment "Attach all FITS file in the directory, giving a pattern";
+
 command fitstest(filename:str):int
 address FITStest
 comment "Returns the type of first extension in the FITS file filename";
 
-pattern attach(fname :str):void
+pattern attach(fname:str):void
 address FITSattach
 comment "Open a FITS file and return catalog of the table HDUs";
 
-pattern load(tablename :str):void
+pattern load(tablename:str):void
 address FITSloadTable
 comment "Load a FITS table from an attached file";
-
 
 @h
 #ifndef _FITS_
@@ -57,6 +60,7 @@ comment "Load a FITS table from an attached file";
 #include "mal.h"
 #include "mal_client.h"
 #include "mal_exception.h"
+#include <glob.h>
 
 #ifdef WIN32
 #ifndef LIBFITS
@@ -69,7 +73,8 @@ comment "Load a FITS table from an attached file";
 #endif
 
 fits_export str FITStest(int *res, str *fname);
- fits_export str FITSdir(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+fits_export str FITSdir(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+fits_export str FITSdirpat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 fits_export str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 fits_export str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif
@@ -89,7 +94,7 @@ static void
 FITSinitCatalog(mvc *m)
 {
 	sql_schema *sch;
-	sql_table *fits_fl, *fits_tbl,  *fits_col;
+	sql_table *fits_tp, *fits_fl, *fits_tbl,  *fits_col;
 
 	sch = mvc_bind_schema(m,"sys");
 
@@ -102,12 +107,15 @@ FITSinitCatalog(mvc *m)
 
 	fits_tbl = mvc_bind_table(m, sch, "fits_tables");
 	if ( fits_tbl == NULL ){
-		fits_tbl = mvc_create_table(m, sch, "fits_tables", tt_table, 0, SQL_PERSIST, 0, 4);
+		fits_tbl = mvc_create_table(m, sch, "fits_tables", tt_table, 0, SQL_PERSIST, 0, 8);
 		mvc_create_column_(m, fits_tbl, "id","int",32);
 		mvc_create_column_(m, fits_tbl, "name","varchar",80);
 		mvc_create_column_(m, fits_tbl, "columns","int",32);
 		mvc_create_column_(m, fits_tbl, "file_id","int",32);
 		mvc_create_column_(m, fits_tbl, "hdu","int",32);
+		mvc_create_column_(m, fits_tbl, "date","varchar",80);
+		mvc_create_column_(m, fits_tbl, "origin","varchar",80);
+		mvc_create_column_(m, fits_tbl, "comment","varchar",80);
 	}
 
 	fits_col = mvc_bind_table(m, sch, "fits_columns");
@@ -121,6 +129,15 @@ FITSinitCatalog(mvc *m)
 		mvc_create_column_(m, fits_col, "table_id","int",32);
 	}
 
+	fits_tp = mvc_bind_table(m, sch, "fits_table_properties");
+	if (fits_tp == NULL) {
+		fits_tp = mvc_create_table(m, sch, "fits_table_properties", tt_table, 0, SQL_PERSIST, 0, 5);
+		mvc_create_column_(m, fits_tp, "table_id", "int", 32);
+		mvc_create_column_(m, fits_tp, "xtension", "varchar", 80);
+		mvc_create_column_(m, fits_tp, "bitpix", "varchar", 80);
+		mvc_create_column_(m, fits_tp, "stilvers", "varchar", 80);
+		mvc_create_column_(m, fits_tp, "stilclas", "varchar", 80);
+	}
 }
 
 static int
@@ -202,38 +219,77 @@ fits2subtype(sql_subtype *tpe, int t, long rep, long wid)
 
 str FITSdir(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+    str msg = MAL_SUCCEED;
+    str dir = *(str*) getArgReference(stk, pci, 1);
+    DIR *dp;
+    struct dirent *ep;
+    fitsfile *fptr;
+    char *s;
+    int status = 0;
+    (void) mb;
+
+    dp = opendir(dir);
+    if (dp != NULL) {
+        char stmt[BUFSIZ];
+        char fname[BUFSIZ];
+
+        s = stmt;
+
+        while ((ep = readdir(dp)) != NULL) {
+            snprintf(fname,BUFSIZ,"%s%s",dir,ep->d_name);
+            status = 0;
+            fits_open_file(&fptr, fname, READONLY, &status);
+            if (status == 0) {
+                snprintf(stmt, BUFSIZ, ATTACHDIR, fname);
+                msg = SQLstatementIntern(cntxt, &s,"fits.listofdir",TRUE,FALSE);
+                fits_close_file(fptr, &status);
+            }
+        }
+        (void) closedir (dp);
+    }
+    else
+        msg = createException(MAL, "listdir", "Couldn't open the directory");
+
+    return msg;
+}
+
+str FITSdirpat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	str msg = MAL_SUCCEED;
 	str dir = *(str*) getArgReference(stk, pci, 1);
-	DIR *dp;
-	struct dirent *ep;
+	str pat = *(str*) getArgReference(stk, pci, 2);
 	fitsfile *fptr;
 	char *s;
 	int status = 0;
-	(void) mb;
+	glob_t globbuf;
+	char fulldirectory[BUFSIZ];
+	size_t j = 0;
 
-	dp = opendir(dir);
-	if (dp != NULL) {
+	(void) mb;
+	globbuf.gl_offs = 0;
+	snprintf(fulldirectory, BUFSIZ, "%s%s", dir, pat);
+	glob(fulldirectory, GLOB_DOOFFS, NULL, &globbuf);
+
+	/*	mnstr_printf(GDKout,"fulldir: %s \nSize: %lu\n",fulldirectory, globbuf.gl_pathc);*/
+
+    if (globbuf.gl_pathc == 0)
+		msg = createException(MAL, "listdir", "Couldn't open the directory or there are no files that match the pattern");
+
+	for (j = 0; j < globbuf.gl_pathc; j++) {
+
 		char stmt[BUFSIZ];
 		char fname[BUFSIZ];
 
-		s = stmt;
-
-		while ((ep = readdir(dp)) != NULL) {
-			snprintf(fname,BUFSIZ,"%s%s",dir,ep->d_name);
-
-			status = 0;
-       		fits_open_file(&fptr, fname, READONLY, &status);
-			if (status == 0) {
-				snprintf(stmt, BUFSIZ, ATTACHDIR, fname);
-				msg = SQLstatementIntern(cntxt, &s,"fits.listofdir",TRUE, FALSE);
-
-				fits_close_file(fptr, &status);
-			}
+		s = stmt;        
+		snprintf(fname, BUFSIZ, "%s", globbuf.gl_pathv[j]);                
+		status = 0;
+		fits_open_file(&fptr, fname, READONLY, &status);
+		if (status == 0) {
+			snprintf(stmt, BUFSIZ, ATTACHDIR, fname);        
+			msg = SQLstatementIntern(cntxt, &s,"fits.listofdirpat",TRUE, FALSE);
+			fits_close_file(fptr, &status);
 		}
-		(void) closedir (dp);
 	}
-    else
-		msg = createException(MAL, "listdir", "Couldn't open the directory");
 
 	return msg;
 }
@@ -262,7 +318,7 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
 	sql_schema *sch;
-	sql_table *fits_fl, *fits_tbl, *fits_col, *tbl = NULL;
+	sql_table *fits_tp, *fits_fl, *fits_tbl, *fits_col, *tbl = NULL;
 	sql_column *col;
 	str msg = MAL_SUCCEED;
 	str fname = *(str*) getArgReference(stk, pci, 1);
@@ -273,6 +329,8 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	long tbcol;
 	char cname[BUFSIZ], tform[BUFSIZ], tunit[BUFSIZ], tnull[BUFSIZ], tdisp[BUFSIZ];
 	double tscal, tzero;
+	char bitpixnumber[BUFSIZ]="", xtensionname[BUFSIZ]="", stilversion[BUFSIZ]="";
+	char stilclass[BUFSIZ]="", tdate[BUFSIZ]="", orig[BUFSIZ]= "", comm[BUFSIZ]="";
 
 	msg = getContext(cntxt, mb, &m, NULL);
 	if (msg)
@@ -292,6 +350,7 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	fits_fl = mvc_bind_table(m, sch, "fits_files");
 	fits_tbl = mvc_bind_table(m, sch, "fits_tables");
 	fits_col = mvc_bind_table(m, sch, "fits_columns");
+	fits_tp = mvc_bind_table(m, sch, "fits_table_properties");
 
 	/* check if the file is already attached */
 	col = mvc_bind_column(m, fits_fl, "name");
@@ -345,6 +404,37 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				tname_low = toLower(tname);
 			}
 		}
+		
+		
+		fits_read_key(fptr, TSTRING, "BITPIX", bitpixnumber, NULL, &status);
+		if ( status ) {
+			status = 0;
+		}
+		fits_read_key(fptr, TSTRING, "DATE-HDU", tdate, NULL, &status);
+		if ( status ) {
+			status = 0;
+		}
+		fits_read_key(fptr, TSTRING, "XTENSION", xtensionname, NULL, &status);
+		if ( status ) {
+			status = 0;
+			
+		}
+		fits_read_key(fptr, TSTRING, "STILVERS", stilversion, NULL, &status);
+		if ( status ) {
+			status = 0;
+		}
+		fits_read_key(fptr, TSTRING, "STILCLAS", stilclass, NULL, &status);
+		if ( status ) {
+			status = 0;
+		}
+		fits_read_key(fptr, TSTRING, "ORIGIN", orig, NULL, &status);
+		if ( status ) {
+			status = 0;
+		}
+		fits_read_key(fptr, TSTRING, "COMMENT", comm, NULL, &status);
+		if ( status ) {
+			status = 0;
+		}
 
 		fits_get_num_cols(fptr, &cnum, &status);
 
@@ -358,6 +448,23 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			mvc_bind_column(m, fits_tbl, "file_id"), &fid, TYPE_int);
 		store_funcs.append_col(m->session->tr,
 			mvc_bind_column(m, fits_tbl, "hdu"), &i, TYPE_int);
+		store_funcs.append_col(m->session->tr,
+			mvc_bind_column(m, fits_tbl, "date"), tdate, TYPE_str);
+		store_funcs.append_col(m->session->tr,
+			mvc_bind_column(m, fits_tbl, "origin"), orig, TYPE_str);
+		store_funcs.append_col(m->session->tr,
+			mvc_bind_column(m, fits_tbl, "comment"), comm, TYPE_str);
+
+		store_funcs.append_col(m->session->tr,
+			mvc_bind_column(m, fits_tp, "table_id"), &tid, TYPE_int);
+		store_funcs.append_col(m->session->tr,
+			mvc_bind_column(m, fits_tp, "xtension"), xtensionname, TYPE_str);
+		store_funcs.append_col(m->session->tr,
+			mvc_bind_column(m, fits_tp, "bitpix"), bitpixnumber, TYPE_str);
+		store_funcs.append_col(m->session->tr,
+			mvc_bind_column(m, fits_tp, "stilvers"), stilversion, TYPE_str);
+		store_funcs.append_col(m->session->tr,
+			mvc_bind_column(m, fits_tp, "stilclas"), stilclass, TYPE_str);
 
 		/* read columns description */
 		s = stmt;
@@ -387,7 +494,7 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str fname;
 	str msg = MAL_SUCCEED;
 	oid rid = oid_nil, frid = oid_nil;
-	int status = 0, cnum = 0, fid, hdu, hdutype, i, j, anynull, mtype;
+	int status = 0, cnum = 0, fid, hdu, hdutype, i, j, anynull=0, mtype;
 	int *tpcode = NULL;
 	long *rep=NULL, *wid=NULL, rows;
 	char keywrd[80], **cname, **v = NULL, nm[FLEN_VALUE];
