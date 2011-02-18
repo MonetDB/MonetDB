@@ -5603,29 +5603,26 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mvc *m = NULL;
 	int id = 0;
 	oid rid = oid_nil;
+	str msg;
 
-	str msg = getContext(cntxt, mb, &m, NULL);
-	if (msg)
-		return msg;
+	rethrow("sql.rdfShred", msg, getContext(cntxt, mb, &m, NULL));
 
-	sch = mvc_bind_schema(m, *schema);
-	if ( sch == NULL)
-		throw(MAL,"sql.rdfSchred","Schema missing");
+	if ((sch = mvc_bind_schema(m, *schema)) == NULL)
+		throw(MAL, "sql.rdfShred", "schema missing");
+
 	g_tbl = mvc_bind_table(m, sch, "graph");
 	gname = mvc_bind_column(m, g_tbl, "gname");
 	gid = mvc_bind_column(m, g_tbl, "gid");
 
 	rid = table_funcs.column_find_row(m->session->tr, gname, *name, NULL);
-	if (rid != oid_nil) {
-		throw(SQL,"sql.rdfShred","graph name already exists in rdf.graph");
-	}
+	if (rid != oid_nil)
+		throw(SQL, "sql.rdfShred", "graph name already exists in rdf.graph");
+
 	id = (int) store_funcs.count_col(gname);
 	store_funcs.append_col(m->session->tr, gname, *name, TYPE_str);
 	store_funcs.append_col(m->session->tr, gid, &id, TYPE_int);
 
-	msg = RDFParser(&docbats, location, name, schema);
-	if (msg)
-		return msg;
+	rethrow("sql.rdfShred", msg, RDFParser(&docbats, location, name, schema));
 
 	if (sizeof(oid) == 8) {
 		sql_find_subtype(&tpe, "oid", 31, 0);
@@ -5652,13 +5649,12 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_find_subtype(&tpe, "varchar", 1024, 0);
 	mvc_create_column(m, map_tbl, "lexical", &tpe);
 
-	if ((graph = BATdescriptor(docbats)) == NULL) {
+	if ((graph = BATdescriptor(docbats)) == NULL)
 		throw(SQL, "sql.rdfShred", "docbat is missing");
-	}
+
 	g = (bat *) Tloc(graph, BUNfirst(graph));
 
-	s =  BATdescriptor(g[MAP_LEX]);
-	if ( s == NULL){
+	if ((s =  BATdescriptor(g[MAP_LEX])) == NULL) {
 		BBPreleaseref(graph->batCacheid);
 		throw(SQL, "sql.rdfShred", "map_lex is missing");
 	}
