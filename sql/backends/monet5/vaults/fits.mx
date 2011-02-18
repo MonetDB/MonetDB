@@ -603,6 +603,8 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		col = mvc_bind_column(m, tbl, cname[j-1]);
 		if (mtype != TYPE_str ){
 			BATsetcount(tmp, rows);
+			BATsetcapacity(tmp, rows);
+			tmp->tsorted = 0;
 			b = store_funcs.bind_col(m->session->tr, col, RDONLY);
 			BATappend(b,tmp,TRUE);
 			BBPunfix(b->batCacheid);
