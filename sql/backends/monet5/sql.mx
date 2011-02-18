@@ -1316,7 +1316,7 @@ First introduce the routines to be called by the front-end.
 #include <replication.h>
 #include <opt_dictionary.h>
 #ifdef HAVE_RAPTOR
-	#include <rdf.h>
+# include <rdf.h>
 #endif
 
 /* Windows doesn't have round or trunc, but it does have floor and ceil */
@@ -5541,10 +5541,9 @@ str SQLexpand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	@:gzcompression(CMDbbpexpand(&ret, &b->batCacheid,&sbuf),expand)@
 }
 @- Shredding RDF documents through SQL
-Wrapper around the RDF shredder of the rdf module of M5. The first time
-the database is going to be used for rdf run sql/src/sql/rdf.sql.
+Wrapper around the RDF shredder of the rdf module of M5.
 
-An rdf file can be now shreded with SQL command:
+An rdf file can be now shredded with SQL command:
 CALL rdf_shred('/path/to/location','graph name');
 
 The table rdf.graph will be updated with an entry of the form:
@@ -5618,7 +5617,7 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	rid = table_funcs.column_find_row(m->session->tr, gname, *name, NULL);
 	if (rid != oid_nil) {
-		throw(SQL,"sql.rdfShred","graph name allready exists in rdf.graph");
+		throw(SQL,"sql.rdfShred","graph name already exists in rdf.graph");
 	}
 	id = (int) store_funcs.count_col(gname);
 	store_funcs.append_col(m->session->tr, gname, *name, TYPE_str);
@@ -5684,18 +5683,13 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@:crt_col(spo_tbl,S_sort,P_sort,O_sort)@
 #endif /* STORE */
 
-
-
-
 	/* unfix graph */
 	BBPunfix(graph->batCacheid);
 
 	return MAL_SUCCEED;
-
-
 #else
 	(void) cntxt; (void) mb; (void) stk; (void) pci;
-	throw(SQL, "sql.rdfShred", "RDF support is missing from Monet5");
+	throw(SQL, "sql.rdfShred", "RDF support is missing from MonetDB5");
 #endif /* RDF */
 }
 
