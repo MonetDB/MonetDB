@@ -22,13 +22,6 @@ All Rights Reserved.
 
 @* The RDF module For MonetDB5 (aka. MonetDB/RDF)
 
-@mal
-module rdf;
-
-command shred(location:str, graphname:str, schema:str):bat[:void, :bat]
-address RDFParser
-comment "Shred the given document."
-
 @h
 #ifndef _RDF_H_
 #define _RDF_H_
@@ -75,5 +68,3 @@ RDFParser(int *retval, str *location, str *graphname, str *schemam);
 #define N_GRAPH_BAT (MAP_LEX+1)
 
 #endif /* _RDF_H_ */
-
-@c

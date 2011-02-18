@@ -55,11 +55,12 @@ lib__sql = {
 		   ../../storage/restrict/librestrictstore \
 		   ../../storage/bpm/libbpmstore \
 		   ../../common/libsqlcommon \
-		   HAVE_RAPTOR?../../../monetdb5/extras/rdf/lib_rdf \
+		   HAVE_RAPTOR?../../../monetdb5/extras/rdf/librdf \
 		   ../../../monetdb5/tools/libmonetdb5 \
 		   ../../../gdk/libbat \
 		   ../../../common/stream/libstream \
-		   $(READLINE_LIBS) $(PTHREAD_LIBS)
+		   $(READLINE_LIBS) $(PTHREAD_LIBS) \
+		   $(raptor_LIBS)
 }
 
 

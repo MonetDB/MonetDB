@@ -24,26 +24,8 @@ INCLUDES = ../../modules/atoms ../../modules/mal ../../mal \
 
 MTSAFE
 
-lib__rdf = {
-	MODULE
+lib_rdf = {
+	NOINST
 	DIR = libdir/monetdb5
 	SOURCES = rdf.mx rdf_shredder.mx
-	LIBS = ../../tools/libmonetdb5 \
-		../../../gdk/libbat \
-		$(MALLOC_LIBS) $(raptor_LIBS)
 }
-
-headers_mal = {
-	HEADERS = mal
-	DIR = libdir/monetdb5
-	SOURCES = rdf.mx
-}
-
-headers_autoload = {
-	HEADERS = mal
-	DIR = libdir/monetdb5/autoload
-	SOURCES = 10_rdf.mal
-}
-
-#EXTRA_DIST_DIR = Tests
-EXTRA_DIST = 10_rdf.mal
