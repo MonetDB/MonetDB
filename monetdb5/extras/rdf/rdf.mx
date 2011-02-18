@@ -27,7 +27,7 @@ module rdf;
 
 command shred(location:str, graphname:str, schema:str):bat[:void, :bat]
 address RDFParser
-comment "look behind you!"
+comment "Shred the fiven document."
 
 @h
 #ifndef _RDF_H_
