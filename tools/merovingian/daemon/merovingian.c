@@ -636,7 +636,7 @@ main(int argc, char *argv[])
 	}
 	port = (unsigned short)kv->ival;
 	kv = findConfKey(_mero_props, "discoveryport");
-	if (kv->ival <= 0 || kv->ival > 65535) {
+	if (kv->ival < 0 || kv->ival > 65535) {
 		Mfprintf(stderr, "invalid discovery port number: %s, defaulting to %s\n",
 				kv->val, MERO_PORT);
 		setConfVal(kv, MERO_PORT);
