@@ -212,9 +212,9 @@ remote_export str RMTresolve(int *ret, str *pat) {
 			"your platform, sorry"); /* please upgrade to Linux, etc. */
 #else
 	BAT *list;
-	char mero_running;
-	char path[8096];
-	int fd;
+	char *mero_uri;
+	char *p;
+	unsigned int port;
 	char **redirs;
 	char **or;
 
@@ -222,27 +222,23 @@ remote_export str RMTresolve(int *ret, str *pat) {
 		throw(ILLARG, "remote.resolve",
 				ILLEGAL_ARGUMENT ": pattern is NULL or nil");
 
-	mero_running = 1;
-	snprintf(path, 8096, "%s/.merovingian_lock", GDKgetenv("gdk_dbfarm"));
-	fd = MT_lockf(path, F_TLOCK, 4, 1);
-	if (fd >= 0 || fd <= -2) {
-		if (fd >= 0) {
-			/* oops, not running */
-			close(fd);
-		}
-		mero_running = 0;
-	}
-
-	if (mero_running == 0)
-		throw(MAL, "remote.resolve", "this function needs merovingian "
-				"to be running, please start it first");
+	mero_uri = GDKgetenv("merovingian_uri");
+	if (mero_uri == NULL)
+		throw(MAL, "remote.resolve", "this function needs the mserver "
+				"have been started by merovingian");
 
 	list = BATnew(TYPE_oid, TYPE_str, 20);
 	if (list == NULL)
 		throw(MAL, "remote.resolve", MAL_MALLOC_FAIL);
 
-	snprintf(path, 8096, "%s/mapi_socket", GDKgetenv("gdk_dbfarm"));
-	or = redirs = mapi_resolve(path, 0, *pat);
+	/* extract port from mero_uri, let mapi figure out the rest */
+	mero_uri+=strlen("mapi:monetdb://");
+	if ((p = strchr(mero_uri, ':')) == NULL)
+		throw(MAL, "remote.resolve", "illegal merovingian_uri setting: %s",
+				GDKgetenv("merovingian_uri"));
+	port = (unsigned int)atoi(p + 1);
+
+	or = redirs = mapi_resolve(NULL, port, *pat);
 
 	if (redirs == NULL)
 		throw(MAL, "remote.resolve", "unknown failure when resolving pattern");

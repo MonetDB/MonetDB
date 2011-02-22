@@ -2903,7 +2903,7 @@ mapi_resolve(const char *host, int port, const char *pattern)
 	Mapi mid;
 
 	/* if it doesn't make sense, don't try to crash */
-	if (host == NULL || (host[0] != '/' && port <= 0) || pattern == NULL)
+	if (pattern == NULL)
 		return NULL;
 
 	mid = mapi_mapi(host, port, "mero", "mero", "resolve", pattern);
