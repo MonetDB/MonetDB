@@ -11,7 +11,7 @@ monetdb \- control a MonetDB Database Server instance
 .B monetdb
 allows an administrator of the MonetDB Database Server to perform
 various operations on the databases in the server.  It relies on
-.BR merovingian (1)
+.BR monetdbd (1)
 running in the background for all operations.
 .SH OPTIONS
 .I monetdb_options
@@ -27,14 +27,14 @@ instead of attempting a connection over the local UNIX socket.  This
 allows
 .B monetdb
 to connect to a remote
-.BR merovingian (1).
+.BR monetdbd (1).
 The use of this option requires \-P (see below).
 .IP "\-p port"
 Connects to the given portnumber instead of the default (50001).
 Requires \-h to be given as option too.
 .IP "\-P passphrase"
 Specifies the passphrase necessary to login to a remote
-.BR merovingian (1).
+.BR monetdbd (1).
 This option requires \-h to be given as well.  A bad passphrase causes
 .B monetdb
 to fail to login, and hence fail to perform any remote action.
@@ -163,7 +163,7 @@ the return code of
 .BR monetdb (1)
 indicates failure if one of the databases had a failure, even though
 the operation on other databases was successful.
-.IP "get <all | property[,property]> [database ...]"
+.IP "get <all | property[,property[,..]]> [database ...]"
 Prints the requested properties, or all known properties, for the given
 database.  For each property its source and value are printed.  Source
 indicates where the current value comes from, e.g. the configuration
@@ -177,13 +177,13 @@ following properties have special values, or do not have an equivalent
 in
 .BR monetdb5.conf (5).
 .IP "  forward=<redirect|proxy>"
-When set to redirect, merovingian tells each connecting client to make a
+When set to redirect, monetdbd tells each connecting client to make a
 new connection directly to the database the client looks for.  This
 requires that the separate mserver5 processes are reachable by the ports
 they use.  Since this may not be the case due to a firewall, when set to
-proxy, merovingian tunnels the client to the right database.
+proxy, monetdbd tunnels the client to the right database.
 .IP "  share=<yes|no|tag>"
-Defines if and how the database is being announced to other merovingians
+Defines if and how the database is being announced to other monetdbds
 or not.  If not set to
 .I "yes"
 or
@@ -224,7 +224,7 @@ Defines if the database has to be started in readonly mode.
 Like set, but unsets the database-local value, and reverts to inherit
 from the default again.
 .IP "discover [expression]"
-Returns a list of remote merovingians and database URIs
+Returns a list of remote monetdbds and database URIs
 that were discovered by
 .BR monetdbd (1).
 All databases listed can be connected to via the local MonetDB Database
@@ -235,15 +235,15 @@ is given, only those discovered databases are returned for which their
 URI matches the expression.  The expression syntax is described in the
 section
 .IR EXPRESSIONS .
-Next to database URIs the hostnames and ports for merovingians that
+Next to database URIs the hostnames and ports for monetdbds that
 allow to be controlled remotely can be found in the discover list masked
 with an asterisk.  These entries can easily be filtered out using an
 expression (e.g. "mapi:monetdb:*") if desired.  The control entries come
-in handy when one wants to get an overview of available merovingians in
-e.g. a local cluster.  Note that for merovingian to announce its control
+in handy when one wants to get an overview of available monetdbds in
+e.g. a local cluster.  Note that for monetdbd to announce its control
 port, the
 .I mero_controlport
-setting for that merovingian must be enabled in the configuration file.
+setting for that monetdbd must be enabled in the configuration file.
 .IP \-h
 .IP "help [command]"
 Shows general help, or short help for a given command.
@@ -281,4 +281,4 @@ directory.  This file can be overridden by setting
 in the enviroment.
 .SH "SEE ALSO"
 .BR monetdbd (1)
-.\".BR mserver5 (1)
+.BR mserver5 (1)

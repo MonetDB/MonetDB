@@ -3210,7 +3210,7 @@ echo "    X_CFLAGS:   ${X_CFLAGS}"
 echo "    LDFLAGS:    ${LDFLAGS}"
 echo
 echo "* Enabled/disabled components:"
-for comp in common monetdb{4,5} sql geom unixodbc java testing; do
+for comp in common monetdb5 sql geom unixodbc java testing; do
 	echo $ECHO_N "    $comp is $ECHO_C"
 	eval "if test \"x\$enable_$comp\" = xno ; then echo \"${ECHO_T}disabled\"; else echo \"${ECHO_T}enabled\"; fi"
 done
