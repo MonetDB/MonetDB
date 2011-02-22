@@ -531,10 +531,10 @@ str OCTOPUSregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 OCTOPUSbidding(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-    bit *res = (bit*) getArgReference(stk,pci,0);
-    int j, start, k;
-    InstrPtr p;
-	lng *lbid;
+	bit *res = (bit*) getArgReference(stk,pci,0);
+	int j, start, k, i;
+	InstrPtr p;
+	lng bid;
 	str *wname;
 	str msg = MAL_SUCCEED;
 
@@ -550,11 +550,12 @@ OCTOPUSbidding(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( octopusLocal ) { /* skip bidding for local execution */
 		for (k = start + 1; k < j ; k++){
 	    	p = getInstrPtr(mb,k);
-			lbid = (lng*) getArgReference(stk,p,0);
-			wname = (str*) getArgReference(stk,p,1);
+			wname = (str*) getArgReference(stk,p,p->retc);
 			if ( strcmp(*wname, "NOTworker") == 0 )
-        		*lbid = -1;
-			else *lbid = 0;
+        		bid = -1;
+			else bid = 0;
+			for ( i = 0; i < p->retc; i++) 
+				*(lng*)getArgReference(stk,p,i) = bid;
 		}
 	}
     else { 	/* distributed execution */
