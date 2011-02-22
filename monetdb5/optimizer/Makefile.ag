@@ -61,6 +61,7 @@ lib_optimizer = {
 		opt_octopus.mx \
 		opt_partitions.mx \
 		opt_peephole.mx \
+		opt_pipes.mx \
 		opt_prejoin.mx \
 		opt_prelude.mx \
 		opt_pushranges.mx \
