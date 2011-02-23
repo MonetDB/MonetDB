@@ -2833,7 +2833,7 @@ BATcheckmodes(BAT *b, int existing)
 		m3 = HEAPcommitpersistence(b->T->vheap, wr || ta, existing);
 		dirty |= (b->T->vheap->newstorage != m3);
 	}
-	if (m1 < 0 || m1 < 0 || m2 < 0 || m3 < 0)
+	if (m0 < 0 || m1 < 0 || m2 < 0 || m3 < 0)
 		return -1;
 
 	if (dirty) {
