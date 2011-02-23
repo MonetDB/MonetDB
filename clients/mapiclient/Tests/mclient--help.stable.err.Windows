@@ -10,7 +10,7 @@ stderr of test 'mclient--help` in directory 'mapiclient` itself:
 # 13:46:19 >  Mtimeout -timeout 60 mclient --help
 # 13:46:19 >  
 
-Usage: mclient --language=(sql|xquery|mal|mil) [ options ]
+Usage: mclient [ options ]
 
 Options are:
  -h hostname | --host=hostname    host to connect to
@@ -19,10 +19,10 @@ Options are:
  -d database | --database=database  database to connect to
  -e          | --echo            echo the query
  -E charset  | --encoding=charset specify encoding (character set) of the terminal
- -f kind     | --format=kind      specify output format {xml,typed,dm} for XQuery, or {csv,tab,raw,sql,xml}
+ -f kind     | --format=kind      specify output format {csv,tab,raw,sql,xml}
  -H          | --history         load/save cmdline history (default off)
  -i          | --interactive     read stdin after command line args
- -l language | --language=lang   {sql,xquery,mal,mil}
+ -l language | --language=lang    {sql,mal}
  -L logfile  | --log=logfile     save client/server interaction
  -s stmt     | --statement=stmt  run single statement
  -X          | --Xdebug          trace mapi network interaction
@@ -34,14 +34,7 @@ SQL specific opions
  -w nr       | --width=nr         for pagination
  -D          | --dump             create an SQL dump
 
-XQuery specific options
- -C colname  | --collection=colname  collection name
- -I docname  | --input=docname    document name, XML document on standard input
- -G          | --algebra          use algebra frontend
- -g          | --no-algebra       use old frontend
- -t          | --time             time commands
-
-# 13:46:19 >  
-# 13:46:19 >  Done.
-# 13:46:19 >  
+# 18:57:57 >  
+# 18:57:57 >  Done.
+# 18:57:57 >  
 
