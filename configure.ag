@@ -276,6 +276,19 @@ AC_PROG_CPP()
 dnl check for compiler (also set GCC (yes/no)).
 AC_PROG_CC()
 
+dnl What do we need to get the msg_control and msg_controllen fields on
+dnl struct msg (filedescriptor passing)?  In the future this could be a
+dnl check to see if we can find it, such that we can disable it compile
+dnl time if absent.  It looks however, as if it's available everywhere
+dnl we try where UNIX domain sockets also exist.  So we go by the
+dnl following simple implementation for now.
+case $host in
+	*-solaris*)
+        dnl Solaris needs this to get msg_control and msg_controllen
+		AC_DEFINE(_XOPEN_SOURCE, 500, [for msg_control and msg_controllen])
+	;;
+esac
+
 gcc_ver=""
 icc_ver=""
 case $GCC-$CC in
