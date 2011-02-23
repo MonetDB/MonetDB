@@ -3044,11 +3044,9 @@ def main(argv) :
     if not par['M5'] and par['PACKAGE'] not in ('common', 'clients', 'gdk', 'java'):
         par['M5'] = True
 
-    config = opts.get('config')
+    config = opts.get('config', '')
     if config:
         config = ' "--config=%s"' % config
-    else:
-        config = ''
 
     par['ALGEBRA'] = opts.get('algebra', 0)
     par['NOALGEBRA'] = opts.get('no-algebra', 0)
