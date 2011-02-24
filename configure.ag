@@ -3085,20 +3085,18 @@ AH_BOTTOM([
 #define _SEEN_MONETDB_CONFIG_H 1
 
 /* AC_FUNC_ALLOCA autoconf documented code */
-/* AIX requires this to be the first thing in the file after
- * preprocessor statements */
-#ifndef __GNUC__
-# if HAVE_ALLOCA_H
-#  include <alloca.h>
-# else
-#  ifdef _AIX
- #pragma alloca
-#  else
-#   ifndef alloca /* predefined by HP cc +Olibcalls */
-char *alloca ();
-#   endif
-#  endif
-# endif
+#ifdef HAVE_ALLOCA_H
+# include <alloca.h>
+#elif defined __GNUC__
+# define alloca __builtin_alloca
+#elif defined _AIX
+# define alloca __alloca
+#elif defined _MSC_VER
+# include <malloc.h>
+# define alloca _alloca
+#else
+# include <stddef.h>
+void *alloca(size_t);
 #endif
 
 #ifdef HAVE_SYS_TYPES_H
