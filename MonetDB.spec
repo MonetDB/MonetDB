@@ -426,6 +426,7 @@ use SQL with MonetDB, you will need to install this package.
 %{_bindir}/monetdbd
 %dir %attr(775,monetdb,monetdb) %{_localstatedir}/log/monetdb
 %dir %attr(775,monetdb,monetdb) %{_localstatedir}/run/monetdb
+%config(noreplace) %{_localstatedir}/monetdb5/dbfarm/.merovingian_properties
 %{_libdir}/monetdb5/autoload/*_sql.mal
 %{_libdir}/monetdb5/lib_sql.so
 %{_libdir}/monetdb5/*.sql
