@@ -57,9 +57,9 @@ all with the property 'shared=octopus' (set by monetdb).
 The default is to use the local database as a target.
 @{
 @mal
-pattern scheduler.octopus(t:int)(:bit,version:int)
+pattern scheduler.octopus(t:int):bit
 address OCTOPUSrun
-comment "Run the program block in parallel, but don't wait longer then t seconds. Also fix a consistent database version.";
+comment "Run the program block in parallel, but don't wait longer than t seconds. Also fix a consistent database version.";
 
 pattern scheduler.register():bit
 address OCTOPUSdiscoverRegister
@@ -72,6 +72,10 @@ comment "Register mal function fname at server dbname.";
 command octopus.connect(dbname:str):str
 address OCTOPUSconnect
 comment "Returns the connection to the server dbname.";
+
+command octopus.getVersion():int
+address OCTOPUSgetVersion
+comment "Returns database version.";
 
 pattern scheduler.bidding():bit
 address OCTOPUSbidding
@@ -88,7 +92,7 @@ comment "Make schedule based on bids.";
 #include "mal_instruction.h"
 #include "mal_client.h"
 
-/*#define DEBUG_RUN_OCTOPUS 	to trace processing */
+	/*#define DEBUG_RUN_OCTOPUS 	to trace processing */
 
 #ifdef WIN32
 #if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
@@ -106,6 +110,7 @@ octopus_export str OCTOPUSregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, In
 octopus_export str OCTOPUSbidding(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 octopus_export str OCTOPUSmakeSchedule(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 octopus_export str OCTOPUSconnect(str *c, str *dbname);
+octopus_export str OCTOPUSgetVersion(int *res);
 #endif /* MAL_RUN_OCTOPUS */
 
 @+ Octopus scheduling implementation
@@ -235,6 +240,13 @@ OCTOPUSconnect(str *c, str *dburi)
 
 	*c = GDKstrdup(peers[i].conn);
 	return msg;
+}
+
+str
+OCTOPUSgetVersion(int *res)
+{
+	*res = 1;
+	return MAL_SUCCEED;
 }
 
 static str

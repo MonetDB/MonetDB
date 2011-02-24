@@ -631,9 +631,12 @@ OCTnewOctBlk(MalBlkPtr mb, InstrPtr *old, int v2)
 	}
 
 	/* barrier (go,version):= scheduler.octopus(timeout); */
+	q = newStmt(mb, octopusRef, putName("getVersion",10));
+	setDestVar(q,v2);
+
 	q = newStmt(mb, schedulerRef, octopusRef);
 	setArgType(mb, q, 0, TYPE_bit);
-	pushReturn(mb, q, v2);
+	/*	pushReturn(mb, q, v2);*/
 	q = pushInt(mb, q, 10);
 	q->barrier = BARRIERsymbol;
 	rexit = getArg(q,0);
@@ -657,8 +660,6 @@ OCTnewOctBlk(MalBlkPtr mb, InstrPtr *old, int v2)
 	q = newAssignment(mb);
 	q->barrier = EXITsymbol;
 	getArg(q, 0) = rexit;
-	getArg(q, 1) = v2;
-	q->retc = q->argc = 2;
 
 	GDKfree(wnm);
 	GDKfree(wvar);
@@ -835,18 +836,17 @@ OCTnewExec(Client cntxt, MalBlkPtr mb, MalBlkPtr t, int tno)
 	res[0] = l = getArg(q,0);
 	setVarType(sm,l,getArgType(t,tsig,0));
 	setVarUDFtype(sm,l);
-	if ( tsig->retc > 1 ) {
-		if ( sm->var[l]->name ) 
-			GDKfree(sm->var[l]->name);
-		sm->var[l]->name = GDKstrdup("res0");
-		for (i = 1; i < tsig->retc; i++ ){
-			snprintf(buf,BUFSIZ,"res%d", i);
-			tpe = getArgType(t, tsig,i); 
-			res[i]= newVariable(sm,GDKstrdup(buf),tpe);
-			setVarUDFtype(sm,res[i]);
-			q = pushReturn(sm,q,res[i]);
-		}
+	if ( sm->var[l]->name )
+		GDKfree(sm->var[l]->name);
+	sm->var[l]->name = GDKstrdup("res0");
+	for (i = 1; i < tsig->retc; i++ ){
+		snprintf(buf,BUFSIZ,"res%d", i);
+		tpe = getArgType(t, tsig,i);
+		res[i]= newVariable(sm,GDKstrdup(buf),tpe);
+		setVarUDFtype(sm,res[i]);
+		q = pushReturn(sm,q,res[i]);
 	}
+
 	dbvar= newVariable(sm,GDKstrdup("dbname"),TYPE_str);
 	qvar = newVariable(sm,GDKstrdup("query"),TYPE_str);
 	q= pushArgument(sm,q,dbvar);
@@ -872,15 +872,17 @@ OCTnewExec(Client cntxt, MalBlkPtr mb, MalBlkPtr t, int tno)
 		getArg(q, 0) = getArg(sig, i);
 	}
 		
+	conn = newVariable(sm,GDKstrdup("conn"),TYPE_str);
 	q = newStmt(sm, octopusRef,connectRef);
-	conn= getArg(q,0);
+	getArg(q,0) = conn;
 	setVarUDFtype(sm,conn);
 	q = pushArgument(sm, q, dbvar);
 
 	/* x:= remote.put(conn,...)  for each argument*/
 	assert(sig->argc <1024);
 	for (i= sig->retc+2; i< sig->argc; i++){
-		l= newTmpVariable(sm,TYPE_str);
+		snprintf(buf,BUFSIZ,"arg%d", i);
+		l= newVariable(sm,GDKstrdup(buf),TYPE_str);
 		q= newFcnCall(sm,remoteRef,putRef);
 		arg[i]= getArg(q,0)= l;
 		pushArgument(sm,q, conn);
@@ -889,9 +891,10 @@ OCTnewExec(Client cntxt, MalBlkPtr mb, MalBlkPtr t, int tno)
 
 	/* k:= remote.put(conn,kvar) for each result */
 	for (i = 0; i < sig->retc; i++ ){
+		snprintf(buf,BUFSIZ,"rres%d", i);
+		l= newVariable(sm,GDKstrdup(buf),TYPE_str);
 		q= newFcnCall(sm,remoteRef,putRef);
-		setArgType(sm,q,0,TYPE_str);
-		rres[i]= getArg(q,0);
+		rres[i]= getArg(q,0)= l;
 		q= pushArgument(sm,q,conn);
 		q= pushArgument(sm,q, getArg(sig,i));
 		setVarUDFtype(sm,getArg(q,q->argc-1));
@@ -913,8 +916,9 @@ OCTnewExec(Client cntxt, MalBlkPtr mb, MalBlkPtr t, int tno)
 		q= newFcnCall(sm,remoteRef,getRef);
 		q= pushArgument(sm,q,conn);
 		q= pushArgument(sm,q,rres[i]);
-		lres[i] = getArg(q,0);
-		setVarType(sm,lres[i], getArgType(sm,sig,i));
+		snprintf(buf,BUFSIZ,"lres%d", i);
+		l= newVariable(sm,GDKstrdup(buf),getArgType(sm,sig,i));
+		lres[i] = getArg(q,0)= l;
 		setVarUDFtype(sm,lres[i]);
 	}
 
@@ -937,7 +941,7 @@ OCTnewExec(Client cntxt, MalBlkPtr mb, MalBlkPtr t, int tno)
 	clrDeclarations(sm);
 	chkProgram(cntxt->nspace,sm);
 	OPTDEBUGoctopus{
-		/*		printFunction(cntxt->fdout, sm, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAL_PROPS ); */
+				printFunction(cntxt->fdout, sm, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAL_PROPS );
 	}
 }
 
