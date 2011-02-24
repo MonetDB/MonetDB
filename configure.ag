@@ -126,10 +126,10 @@ esac
 
 AC_DEFINE(MONETDB_RELEASE, "unreleased", [Release name or "unreleased"])
 
-dft_monetdb4=no
+dft_monetdb4=auto
 AC_ARG_ENABLE(monetdb4,
 	AS_HELP_STRING([--enable-monetdb4],
-		[enable support for MonetDB4 (default=no)]),
+		[enable support for MonetDB4 (default=auto)]),
 	enable_monetdb4=$enableval,
 	enable_monetdb4=$dft_monetdb4)
 
@@ -177,10 +177,10 @@ no-no-auto)
 	;;
 esac
 
-dft_pathfinder=no
+dft_pathfinder=auto
 AC_ARG_ENABLE(pathfinder,
 	AS_HELP_STRING([--enable-pathfinder],
-		[enable support for MonetDB/XQuery (default=no)]),
+		[enable support for MonetDB/XQuery (default=auto)]),
 	enable_pathfinder=$enableval,
 	enable_pathfinder=$dft_pathfinder)
 
