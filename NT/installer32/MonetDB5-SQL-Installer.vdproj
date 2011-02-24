@@ -483,12 +483,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_6C605D6DB31644C1B23703C74D5B6228"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_6CFF978DAFC84A13A71E567B2ADFDD47"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -508,12 +502,6 @@
         "Entry"
         {
         "MsmKey" = "8:_6F1157365CDF4066BF3E3E0C19162A30"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_6FA09793BDB642349D5BBEB312B3C9A1"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -754,12 +742,6 @@
         "Entry"
         {
         "MsmKey" = "8:_9B9604DE9F3440529B6474C8A3CD543D"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_A01C9992A9EB46F8A00066802B230545"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -2813,26 +2795,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_6C605D6DB31644C1B23703C74D5B6228"
-            {
-            "SourcePath" = "8:lib\\monetdb5\\autoload\\05_xml.mal"
-            "TargetName" = "8:05_xml.mal"
-            "Tag" = "8:"
-            "Folder" = "8:_A4A821D237B943CFACE8D54F3F3971E3"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_6CFF978DAFC84A13A71E567B2ADFDD47"
             {
             "SourcePath" = "8:lib\\monetdb5\\opt_mapreduce.mal"
@@ -2897,26 +2859,6 @@
             {
             "SourcePath" = "8:lib\\monetdb5\\blob.mal"
             "TargetName" = "8:blob.mal"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_6FA09793BDB642349D5BBEB312B3C9A1"
-            {
-            "SourcePath" = "8:lib\\monetdb5\\lib_xml.dll"
-            "TargetName" = "8:lib_xml.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -3697,26 +3639,6 @@
             {
             "SourcePath" = "8:lib\\monetdb5\\mkey.mal"
             "TargetName" = "8:mkey.mal"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_A01C9992A9EB46F8A00066802B230545"
-            {
-            "SourcePath" = "8:lib\\monetdb5\\lib_batxml.dll"
-            "TargetName" = "8:lib_batxml.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
