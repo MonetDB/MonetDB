@@ -1901,7 +1901,7 @@ mapi_mapiuri(const char *url, const char *user, const char *pass, const char *la
 	mid->password = strdup(pass);
 	free(mid->language);
 	mid->language = strdup(lang);
-	if (strcmp(lang, "mal") == 0)
+	if (strcmp(lang, "mal") == 0 || strcmp(lang, "msql") == 0)
 		mid->languageId = LANG_MAL;
 	else if (strstr(lang, "sql") == lang)
 		mid->languageId = LANG_SQL;
@@ -2105,7 +2105,7 @@ mapi_mapi(const char *host, int port, const char *username,
 	free(mid->language);
 	mid->language = strdup(lang);
 
-	if (strcmp(lang, "mal") == 0)
+	if (strcmp(lang, "mal") == 0 || strcmp(lang, "msql") == 0)
 		mid->languageId = LANG_MAL;
 	else if (strstr(lang, "sql") == lang)
 		mid->languageId = LANG_SQL;
@@ -2186,7 +2186,7 @@ parse_uri_query(Mapi mid, char *uri)
 			} else if (strcmp("language", uri) == 0) {
 				free(mid->language);
 				mid->language = strdup(val);
-				if (strcmp(val, "mal") == 0)
+				if (strcmp(val, "mal") == 0 || strcmp(val, "msql") == 0)
 					mid->languageId = LANG_MAL;
 				else if (strstr(val, "sql") == val)
 					mid->languageId = LANG_SQL;
