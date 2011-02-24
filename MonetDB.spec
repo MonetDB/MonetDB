@@ -526,7 +526,6 @@ developer, but if you do want to test, this is the package you need.
         --enable-bits=%{bits} \
 	--enable-java=no \
 	--enable-rdf=no \
-	--with-gc=no \
 	--with-valgrind=no \
 	--with-mseed=no \
         %{?oid32:--enable-oid32} \
