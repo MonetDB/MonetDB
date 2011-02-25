@@ -34,3 +34,17 @@ EXTRA_DIST_DIR = tests benchmarks
 
 TESTS = RunMtest
 TESTS_ENVIRONMENT = $(SHELL)
+
+scripts_sh = {
+	EXT = ""
+	COND = NOT_WIN32
+	NOINST
+	SOURCES = RunMapprove.in RunMserver.in RunMtest.in
+}
+
+scripts_bat = {
+	EXT = bat
+	COND = NATIVE_WIN32
+	NOINST
+	SOURCES = RunMapprove.bat.in RunMserver.bat.in RunMtest.bat.in
+}
