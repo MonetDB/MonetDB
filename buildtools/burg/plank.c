@@ -106,8 +106,8 @@ newException(index, value) int index; int value;
 	Exception e;
 
 	e = (Exception) zalloc(sizeof(struct except));
-	e->index = index;
-	e->value = value;
+	e->index = (short)index;
+	e->value = (short)value;
 	return e;
 }
 
