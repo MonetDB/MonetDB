@@ -293,10 +293,11 @@ gdk_export int *win_errno(void);
 
 #endif /* GDK_POSIX_H */
 @c
-#include "gdk.h"
+#include "gdk.h"        /* includes gdk_posix.h */
 #include "mutils.h"
 #include <stdio.h>
 #include <unistd.h>		/* sbrk on Solaris */
+#include <string.h>     /* strncpy */
 
 #if defined(__hpux)
 extern char *sbrk(int);
