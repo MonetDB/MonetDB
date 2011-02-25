@@ -1286,7 +1286,6 @@ if test "x$SWIG" != xno; then
 	esac
 fi
 AC_SUBST(SWIG)
-AM_CONDITIONAL(HAVE_SWIG, test x"$SWIG" != xno)
 
 have_perl=auto
 PERL=perl

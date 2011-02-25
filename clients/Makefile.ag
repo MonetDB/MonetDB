@@ -23,3 +23,17 @@ EXTRA_DIST = RunMtest.in RunMtest.bat.in \
 
 TESTS = RunMtest
 TESTS_ENVIRONMENT = $(SHELL)
+
+scripts_sh = {
+	EXT = ""
+	COND = NOT_WIN32
+	NOINST
+	SOURCES = RunMapprove.in RunMtest.in
+}
+
+scripts_bat = {
+	EXT = bat
+	COND = NATIVE_WIN32
+	NOINST
+	SOURCES = RunMapprove.bat.in Runmclient.bat.in RunMtest.bat.in
+}
