@@ -2609,7 +2609,7 @@ yes|auto)
 	if test "x$have_geos" != xno; then
 		save_LIBS="$LIBS"
 		LIBS="$LIBS $GEOS_LIBS"
-		AC_CHECK_LIB(geos_c, GEOSEnvelope, :, [AC_MSG_ERROR([-lgeos_c not found]); have_geos=no])
+		AC_CHECK_LIB(geos_c, GEOSEnvelope, :, have_geos=no])
 		LIBS="$save_LIBS"
 	fi
 	if test "x$have_geos" != xno; then
