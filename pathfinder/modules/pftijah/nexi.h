@@ -198,7 +198,7 @@
 #define CONTAINED_BY 5
 #define SELECT_NODE_VAGUE 9
 
-#define P_SELECT 51
+/* #define P_SELECT 51  not used, but conflicts with /usr/include/sys/proc.h on Darwin */
 #define P_CONTAINING 52
 #define P_CONTAINED_BY 53
 #define P_UNION 54
