@@ -213,7 +213,7 @@ yylex(void)
 						yyerror("ID too long");
 						return(brgERROR);
 					} else {
-						*ptr++ = ch;
+						*ptr++ = (char)ch;
 					}
 					ch = getchar();
 				} while (isalpha(ch) || isdigit(ch) || ch == '_');
@@ -235,7 +235,7 @@ yylex(void)
 						yyerror("ID too long");
 						return(brgERROR);
 					} else {
-						*ptr++ = ch;
+						*ptr++ = (char)ch;
 					}
 					ch = getchar();
 				} while (isalpha(ch) || isdigit(ch) || ch == '_');
