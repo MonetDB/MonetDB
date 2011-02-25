@@ -320,7 +320,7 @@ mapToPmap(d) Dimension d;
 	for (i = 0; i < globalMap->count-1; i++) {
 		int index = d->map->set[d->index_map.class[sortedStates[i]->num]->num]->num;
 		assert(index >= 0);
-		v[i+1] = index;
+		v[i+1] = (short)index;
 	}
 	v[0] = 0;
 	enterStateMap(im, v, width(d->map->count), &new);
@@ -354,7 +354,7 @@ doDimPmaps(op) Operator op;
 				int index = d->map->set[d->index_map.class[sortedStates[i]->num]->num]->num;
 				if (index) {
 					Item_Set *ts = transLval(op->table, index, 0);
-					v[i+1] = (*ts)->newNum - op->baseNum+1;
+					v[i+1] = (short)((*ts)->newNum - op->baseNum+1);
 					assert(v[i+1] >= 0);
 				}
 			}
@@ -377,7 +377,7 @@ doDimPmaps(op) Operator op;
 				int index = d->map->set[d->index_map.class[sortedStates[i]->num]->num]->num;
 				if (index) {
 					Item_Set *ts = transLval(op->table, 1, index);
-					v[i+1] = (*ts)->newNum - op->baseNum+1;
+					v[i+1] = (short)((*ts)->newNum - op->baseNum+1);
 					assert(v[i+1] >= 0);
 				}
 			}
@@ -394,7 +394,7 @@ doDimPmaps(op) Operator op;
 				int index = d->map->set[d->index_map.class[sortedStates[i]->num]->num]->num;
 				if (index) {
 					Item_Set *ts = transLval(op->table, index, 1);
-					v[i +1] = (*ts)->newNum - op->baseNum +1;
+					v[i +1] = (short)((*ts)->newNum - op->baseNum +1);
 					assert(v[i +1] >= 0);
 				}
 			}
@@ -431,7 +431,7 @@ doDimPmaps(op) Operator op;
 						}
 					}
 					if ((*ts)->num > 0) {
-						diff = (*ts)->newNum - op->baseNum +1;
+						diff = (short)((*ts)->newNum - op->baseNum +1);
 					} else {
 						diff = 0;
 					}
@@ -470,7 +470,7 @@ doNonTermPmaps(n) NonTerminal n;
 		Rule r = globalMap->set[sortedStates[i]->num]->closed[n->num].rule;
 		if (r) {
 			r->used = 1;
-			v[i+1] = r->newNum - n->baseNum /*safely*/;
+			v[i+1] = (short)(r->newNum - n->baseNum /*safely*/);
 			assert(v[i+1] >= 0);
 		}
 	}
