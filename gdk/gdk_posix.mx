@@ -287,6 +287,10 @@ gdk_export int ftruncate(int fd, off_t size);
 
 #endif
 
+#define _errno		win_errno
+
+gdk_export int *win_errno(void);
+
 #endif /* GDK_POSIX_H */
 @c
 #include "gdk.h"
@@ -1858,12 +1862,6 @@ win_errmap_t win_errmap[] = {
 
 #define GDK_WIN_ERRNO_TLS 13
 
-@h
-#define _errno		win_errno
-
-gdk_export int *win_errno(void);
-
-@c
 int *
 win_errno(void)
 {
