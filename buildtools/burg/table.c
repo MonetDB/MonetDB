@@ -49,7 +49,7 @@ addRelevant(r, nt) Relevant r; NonTerminalNum nt;
 		}
 	}
 	if (!r[i]) {
-		r[i] = nt;
+		r[i] = (short)nt;
 	}
 }
 
