@@ -329,7 +329,7 @@ trim(t) Item_Set t;
 	}
 	for (m = 1; m < max_nonterminal; m++) {
 		if (t->virgin[m].rule) {
-			vec[last++] = m;
+			vec[last++] = (short)m;
 		}
 	}
 	for (m = 0; m < last; m++) {
