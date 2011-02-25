@@ -39,6 +39,8 @@ the latest iteration of this layer.
 #ifndef _GDK_SYSTEM_H_
 #define _GDK_SYSTEM_H_
 
+#include "monetdb_config.h"
+
 #ifdef NATIVE_WIN32
 #ifndef LIBGDK
 #define gdk_export extern __declspec(dllimport)
