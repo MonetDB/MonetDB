@@ -278,7 +278,6 @@ void
 FormBlk(Def * d)
 {
 	Tok *t;
-	int i;
 
 	for (t = FstTok(d->d_blk); t; t = NxtTok(t)) {
 		switch (t->t_dir) {
@@ -292,7 +291,6 @@ FormBlk(Def * d)
 			PrModeStr(t->t_str, t->t_dir);
 			break;
 		case T_INDEX:
-			i = t->t_ext - '0';
 			PrStr(t->t_str);
 			break;
 		case T_SGML:

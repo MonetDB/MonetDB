@@ -32,6 +32,7 @@ the WIN32 native platform.
 #ifndef GDK_POSIX_H
 #define GDK_POSIX_H
 
+#include "monetdb_config.h"
 #include <sys/types.h>
 
 #ifdef HAVE_MALLOC_H
@@ -286,13 +287,17 @@ gdk_export int ftruncate(int fd, off_t size);
 
 #endif
 
+#define _errno		win_errno
+
+gdk_export int *win_errno(void);
+
 #endif /* GDK_POSIX_H */
 @c
-#include "monetdb_config.h"
-#include "gdk.h"
+#include "gdk.h"        /* includes gdk_posix.h */
 #include "mutils.h"
 #include <stdio.h>
 #include <unistd.h>		/* sbrk on Solaris */
+#include <string.h>     /* strncpy */
 
 #if defined(__hpux)
 extern char *sbrk(int);
@@ -1858,12 +1863,6 @@ win_errmap_t win_errmap[] = {
 
 #define GDK_WIN_ERRNO_TLS 13
 
-@h
-#define _errno		win_errno
-
-gdk_export int *win_errno(void);
-
-@c
 int *
 win_errno(void)
 {
