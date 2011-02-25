@@ -718,6 +718,8 @@ yes-*-*)
 	dnl  ... however, some things aren't solved, yet:
 	dnl  (for the time being,) we need to disable some warnings (making them remarks doesn't seem to work with -Werror):
 	X_CFLAGS="$X_CFLAGS -wd1418,1419,981,810,193,111,1357"
+	dnl burg uses old-style parameter lists (anachronisms)
+	X_CFLAGS="$X_CFLAGS -wd310"
 	case $icc_ver in
 	8.[[1-9]]*)	X_CFLAGS="$X_CFLAGS,1572" ;;
 	9.[[1-9]]*)	X_CFLAGS="$X_CFLAGS,1572,1599" ;;
