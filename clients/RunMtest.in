@@ -36,7 +36,7 @@ done
 PATH="${builddir}/mapiclient:${builddir}/examples/C:${buildbase}/testing:$PATH"
 export PATH
 
-PYTHONPATH="${srcdir}/python:${buildbase}/testing:${srcdir}/../testing:${PYTHONPATH}"
+PYTHONPATH="${builddir}/python/build/lib:${buildbase}/testing:${srcdir}/../testing:${PYTHONPATH}"
 export PYTHONPATH
 
 CLASSPATH="${buildbase}/java:${buildbase}/java/tests:${CLASSPATH}"

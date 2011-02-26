@@ -41,7 +41,7 @@ libpath="${MOD_PATH}:${builddir}/mal/.libs"
 PATH="${binpath}:$PATH"
 export PATH
 
-PYTHONPATH="${buildbase}/testing:${srcdir}/../testing:${PYTHONPATH}"
+PYTHONPATH="${buildbase}/clients/python/build/lib:${buildbase}/testing:${srcdir}/../testing:${PYTHONPATH}"
 export PYTHONPATH
 
 CLASSPATH="${buildbase}/java:${buildbase}/java/tests:${CLASSPATH}"

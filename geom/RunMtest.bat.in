@@ -101,7 +101,7 @@ set PATH=%MOD_PATH%;%PATH%
 rem to find geos_c.dll
 set PATH=%GEOS%\bin;%PATH%
 
-set PYTHONPATH=%buildbase%\testing;%srcdir%\..\testing;%PYTHONPATH%
+set PYTHONPATH=%buildbase%\clients\python\build\lib;%buildbase%\testing;%srcdir%\..\testing;%PYTHONPATH%
 
 set CLASSPATH=%buildbase%\java;%buildbase%\java\tests;%CLASSPATH%
 

@@ -42,7 +42,7 @@ set PATH=%MOD_PATH%;%PATH%
 set PATH=%builddir%\mal;%PATH%
 set PATH=%buildbase%\tools\mserver;%PATH%
 
-set PYTHONPATH=%buildbase%\testing;%srcdir%\..\testing;%PYTHONPATH%
+set PYTHONPATH=%buildbase%\clients\python\build\lib;%buildbase%\testing;%srcdir%\..\testing;%PYTHONPATH%
 
 set CLASSPATH=%buildbase%\java;%buildbase%\java\tests;%CLASSPATH%
 

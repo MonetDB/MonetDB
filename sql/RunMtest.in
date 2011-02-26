@@ -56,7 +56,7 @@ libpath="${MOD_PATH}:${builddir}/server/.libs"
 PATH="${binpath}:$PATH"
 export PATH
 
-PYTHONPATH="${builddir}/backends/python/monet5/.libs:${builddir}/backends/python/monet5:${buildbase}/testing:${srcdir}/../testing:$PYTHONPATH"
+PYTHONPATH="${builddir}/backends/python/monet5/.libs:${builddir}/backends/python/monet5:${buildbase}/clients/python/build/lib:${buildbase}/testing:${srcdir}/../testing:$PYTHONPATH"
 export PYTHONPATH
 
 CLASSPATH="${buildbase}/java:${buildbase}/java/tests:${CLASSPATH}"
