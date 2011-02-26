@@ -1,5 +1,8 @@
 import os, time, sys
-from MonetDBtesting import process
+try:
+    from MonetDBtesting import process
+except ImportError:
+    import process
 
 def server_start(dbname):
     if os.name == 'nt':

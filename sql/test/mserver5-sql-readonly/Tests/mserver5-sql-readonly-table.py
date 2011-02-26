@@ -1,6 +1,9 @@
 import sys
 import os
-from MonetDBtesting import process
+try:
+    from MonetDBtesting import process
+except ImportError:
+    import process
 
 def server_stop(s):
     out, err = s.communicate()

@@ -1,6 +1,9 @@
 import os
 import sys
-from MonetDBtesting import process
+try:
+    from MonetDBtesting import process
+except ImportError:
+    import process
 
 query = os.path.join(os.environ['TSTSRCDIR'],'serialization-query.xq')
 query_no_attr = os.path.join(os.environ['TSTSRCDIR'],'serialization-query_no_attr.xq')

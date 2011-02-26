@@ -1,5 +1,8 @@
 import os, sys
-from MonetDBtesting import process
+try:
+    from MonetDBtesting import process
+except ImportError:
+    import process
 
 fn = os.path.join(os.getenv('TSTSRCDIR'), 'test1377006.xml')
 p = process.client('xquery', stdin = process.PIPE, stdout = process.PIPE,

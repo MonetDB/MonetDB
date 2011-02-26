@@ -1,5 +1,8 @@
 import os, sys
-from MonetDBtesting import process
+try:
+    from MonetDBtesting import process
+except ImportError:
+    import process
 
 # create a temporary document
 fn = os.path.join(os.getenv('TSTTRGBASE'), 'testdoc.xml')

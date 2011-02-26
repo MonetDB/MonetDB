@@ -1,5 +1,8 @@
 import os, sys
-from MonetDBtesting import process
+try:
+    from MonetDBtesting import process
+except ImportError:
+    import process
 
 srv = process.server('sql', stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 

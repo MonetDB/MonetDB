@@ -1,5 +1,8 @@
 import os, sys
-from MonetDBtesting import process
+try:
+    from MonetDBtesting import process
+except ImportError:
+    import process
 
 srv = process.server('mil',
                      dbinit = 'module(pathfinder);module(sql_server);mil_start();',

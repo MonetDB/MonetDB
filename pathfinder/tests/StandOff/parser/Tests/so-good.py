@@ -1,5 +1,8 @@
 import os, sys
-from MonetDBtesting import process
+try:
+    from MonetDBtesting import process
+except ImportError:
+    import process
 
 c = process.pf(args = ['-b', '-s1',
                        '%s.xq' % os.path.join(os.environ['TSTSRCDIR'],

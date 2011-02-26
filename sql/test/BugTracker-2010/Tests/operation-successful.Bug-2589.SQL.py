@@ -1,5 +1,8 @@
 import sys
-from MonetDBtesting import process
+try:
+    from MonetDBtesting import process
+except ImportError:
+    import process
 
 c = process.client(lang = 'sql',
                    args = ['-fsql',

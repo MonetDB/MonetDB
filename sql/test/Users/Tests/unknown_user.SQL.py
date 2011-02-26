@@ -1,5 +1,8 @@
 import sys
-from MonetDBtesting import process
+try:
+    from MonetDBtesting import process
+except ImportError:
+    import process
 
 clt = process.client('sql',
                      user = 'this_user_does_not_exist',

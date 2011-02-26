@@ -1,5 +1,8 @@
 import os, sys
-from MonetDBtesting import process
+try:
+    from MonetDBtesting import process
+except ImportError:
+    import process
 
 f = os.path.join(os.environ['TSTSRCDIR'], 'update-stress.SF-1896755.xml')
 c = process.client(lang = 'xquery', args = ['-s', 'pf:add-doc("%s","update-stress.SF-1896755.xml",10)' % f], stdout = process.PIPE, stderr = process.PIPE)

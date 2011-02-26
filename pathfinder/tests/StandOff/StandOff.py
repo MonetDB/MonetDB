@@ -22,7 +22,10 @@
 # Rights Reserved.
 
 import os, sys
-from MonetDBtesting import process
+try:
+    from MonetDBtesting import process
+except ImportError:
+    import process
 
 pf = process.pf(args = ['-b', '%s.xq' % os.path.join(os.environ['TSTSRCDIR'],
                                                      os.environ['TST'])],

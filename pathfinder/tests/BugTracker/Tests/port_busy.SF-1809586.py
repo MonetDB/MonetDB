@@ -1,5 +1,8 @@
 import os, sys, socket
-from MonetDBtesting import process
+try:
+    from MonetDBtesting import process
+except ImportError:
+    import process
 
 def prog(dbinit, input):
     sys.stdout.write("%s\n" % dbinit)

@@ -1,5 +1,8 @@
 import os, sys
-from MonetDBtesting import process
+try:
+    from MonetDBtesting import process
+except ImportError:
+    import process
 
 pf = process.pf(args = ['-M', '%s.xq' % os.environ['TST']],
                 stdout = process.PIPE, stderr = process.PIPE, log = True)
