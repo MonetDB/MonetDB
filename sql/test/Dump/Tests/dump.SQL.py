@@ -1,5 +1,8 @@
 import os, sys
-from MonetDBtesting import process
+try:
+    from MonetDBtesting import process
+except ImportError:
+    import process
 
 p = process.client('sqldump', stdout = process.PIPE, stderr = process.PIPE)
 dump, err = p.communicate()

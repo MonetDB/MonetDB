@@ -1,5 +1,8 @@
 import os, sys
-from MonetDBtesting import process
+try:
+    from MonetDBtesting import process
+except ImportError:
+    import process
 
 def client(args):
     clt = process.client('sql', args = args,

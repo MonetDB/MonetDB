@@ -1,5 +1,8 @@
 import os, sys
-from MonetDBtesting import process
+try:
+    from MonetDBtesting import process
+except ImportError:
+    import process
 
 c = process.client('sql',
                    args = [os.path.join(os.getenv('TSTSRCBASE'),

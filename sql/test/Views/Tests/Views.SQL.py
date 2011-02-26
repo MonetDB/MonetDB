@@ -1,5 +1,8 @@
 import os, sys
-from MonetDBtesting import process
+try:
+    from MonetDBtesting import process
+except ImportError:
+    import process
 
 def client(lang, infile):
     clt = process.client(lang, stdin=open(infile), stdout=process.PIPE, stderr=process.PIPE)
