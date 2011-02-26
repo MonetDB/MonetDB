@@ -52,14 +52,20 @@ copy /y %srcdir%\..\monetdb5\extras\rdf\??_*.mal %buildbase%\monetdb5\extras\rdf
 if not exist %buildbase%\monetdb5\extras\xml\autoload mkdir %buildbase%\monetdb5\extras\xml\autoload
 copy /y %srcdir%\..\monetdb5\extras\xml\??_*.mal %buildbase%\monetdb5\extras\xml\autoload
 
-set PATH=%buildbase%\tools\mserver;%buildbase%\clients\mapiclient;%buildbase%\testing;%PATH%
+set PATH=%buildbase%\tools\mserver;%buildbase%\clients\mapiclient;%buildbase%\clients\examples\C;%buildbase%\clients\perl\Tests;%buildbase%\testing;%PATH%
 
 set PATH=%MOD_PATH%;%PATH%
 set PATH=%builddir%\server;%PATH%
 set PATH=%builddir%\storage\bat;%PATH%
 set PATH=%builddir%\common;%PATH%
 
-set PYTHONPATH=%builddir%\backends\python\monet5;%buildbase%\testing;%srcdir%\..\testing;%PYTHONPATH%
+set PYTHONPATH=%builddir%\backends\python\monet5;%buildbase%\clients\python\build\lib;%buildbase%\testing;%srcdir%\..\testing;%PYTHONPATH%
+
+set CLASSPATH=%buildbase%\java;%buildbase%\java\tests;%CLASSPATH%
+
+set perlib=%buildbase%\clients\perl;%srcdir%\..\clients\perl
+set PERLLIB=%perlib%;%PERLLIB%
+set PERL5LIB=%perlib%;%PERL5LIB%
 
 REM execute Mtest.py in the source directory
 pushd %srcdir%

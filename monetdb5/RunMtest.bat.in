@@ -36,13 +36,19 @@ copy /y %srcdir%\extras\rdf\??_*.mal %builddir%\extras\rdf\autoload
 if not exist %builddir%\extras\xml\autoload mkdir %builddir%\extras\xml\autoload
 copy /y %srcdir%\extras\xml\??_*.mal %builddir%\extras\xml\autoload
 
-set PATH=%buildbase%\clients\mapiclient;%buildbase%\testing;%PATH%
+set PATH=%buildbase%\clients\mapiclient;%buildbase%\clients\examples\C;%buildbase%\clients\perl\Tests;%buildbase%\testing;%PATH%
 
 set PATH=%MOD_PATH%;%PATH%
 set PATH=%builddir%\mal;%PATH%
 set PATH=%buildbase%\tools\mserver;%PATH%
 
-set PYTHONPATH=%buildbase%\testing;%srcdir%\..\testing;%PYTHONPATH%
+set PYTHONPATH=%buildbase%\clients\python\build\lib;%buildbase%\testing;%srcdir%\..\testing;%PYTHONPATH%
+
+set CLASSPATH=%buildbase%\java;%buildbase%\java\tests;%CLASSPATH%
+
+set perlib=%buildbase%\clients\perl;%srcdir%\..\clients\perl
+set PERLLIB=%perlib%;%PERLLIB%
+set PERL5LIB=%perlib%;%PERL5LIB%
 
 REM execute Mtest.py in the source directory
 pushd %srcdir%

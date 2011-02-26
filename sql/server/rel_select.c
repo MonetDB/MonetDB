@@ -837,6 +837,9 @@ static char * rel_get_name( sql_rel *rel )
 {
 	switch(rel->op) {
 	case op_table:
+		if (rel->r) 
+			return exp_name(rel->r);
+		return NULL;
 	case op_basetable:
 		return rel->r;
 	default:

@@ -41,6 +41,13 @@ fi
 AM_CONDITIONAL(NOT_WIN32, test x"$target_os" != xcygwin)
 AM_CONDITIONAL(NATIVE_WIN32, false)
 
+m4_ifndef([PKG_PROG_PKG_CONFIG],
+  [m4_fatal([Could not locate the pkg-config autoconf
+    macros. These are usually located in /usr/share/aclocal/pkg.m4.
+    If your macros are in a different location, try setting the
+    environment variable M4DIRS="-I/other/macro/dir" before running
+    ./bootstrap or autoreconf again.])])
+
 PKG_PROG_PKG_CONFIG
 
 dnl VERSION_TO_NUMBER macro (copied from libxslt)
@@ -954,8 +961,9 @@ if test "x$enable_optim" = xyes; then
   else
 	origCFLAGS="$CFLAGS"
     dnl  remove "-g" as some compilers don't like "-g -Ox" combinations
+    dnl  remove "-O2" as we add "-Ox" and some compilers don't like "-Oy -Ox" combinations
     CFLAGS=" $CFLAGS "
-    CFLAGS="`echo "$CFLAGS" | sed -e 's| -g | |g' -e 's|^ ||' -e 's| $||'`"
+    CFLAGS="`echo "$CFLAGS" | sed -e 's| -g | |g' -e 's| -O2 | |g' -e 's|^ ||' -e 's| $||'`"
     JAVACFLAGS=" $JAVACFLAGS "
     JAVACFLAGS="`echo "$JAVACFLAGS" | sed -e 's| -g | |g' -e 's| -g:[[a-z]]* | |g' -e 's|^ ||' -e 's| $||'`"
     dnl  Optimization flags
@@ -990,7 +998,7 @@ if test "x$enable_optim" = xyes; then
                       esac
                       ;;
       x86_64-*-*|i*86-*-*)
-                      CFLAGS="$CFLAGS -O6 -fomie-frame-pointer -finline-functions -malign-loops=4 -malign-jumps=4 -malign-functions=4 -fexpensive-optimizations -funroll-all-loops  -funroll-loops -frerun-cse-after-loop -frerun-loop-opt"
+                      CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions -malign-loops=4 -malign-jumps=4 -malign-functions=4 -fexpensive-optimizations -funroll-all-loops  -funroll-loops -frerun-cse-after-loop -frerun-loop-opt"
                       case "$gcc_ver" in
                       4.*) CFLAGS="$CFLAGS -ftree-vectorize";;
                            dnl  "-ftree-vectorize" is only available with newer versions of gcc, only;
@@ -2085,6 +2093,14 @@ else
 fi
 AC_SUBST(READLINE_LIBS)
 AC_SUBST(READLINE_INCS)
+
+m4_ifndef([AM_ICONV],
+  [m4_fatal([Could not locate the iconv autoconf
+	macros. These are usually located in /usr/share/aclocal/iconv.m4 and
+	provided by the gettext package.  If your macros are in a different
+	location, try setting the environment variable
+	M4DIRS="-I/other/macro/dir" before running ./bootstrap or autoreconf
+	again.])])
 
 AM_ICONV
 

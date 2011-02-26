@@ -73,14 +73,20 @@ copy /y %srcdir%\..\monetdb5\extras\xml\??_*.mal %buildbase%\monetdb5\extras\xml
 set PATH=%buildbase%\tools\mserver;%PATH%
 :skip_5
 
-set PATH=%buildbase%\clients\mapiclient;%buildbase%\testing;%PATH%
+set PATH=%buildbase%\clients\mapiclient;%buildbase%\clients\examples\C;%buildbase%\clients\perl\Tests;%buildbase%\testing;%PATH%
 
 set PATH=%MOD_PATH%;%PATH%
 
 rem to find geos_c.dll
 set PATH=%GEOS%\bin;%PATH%
 
-set PYTHONPATH=%buildbase%\testing;%srcdir%\..\testing;%PYTHONPATH%
+set PYTHONPATH=%buildbase%\clients\python\build\lib;%buildbase%\testing;%srcdir%\..\testing;%PYTHONPATH%
+
+set CLASSPATH=%buildbase%\java;%buildbase%\java\tests;%CLASSPATH%
+
+set perlib=%buildbase%\clients\perl;%srcdir%\..\clients\perl
+set PERLLIB=%perlib%;%PERLLIB%
+set PERL5LIB=%perlib%;%PERL5LIB%
 
 REM execute Mtest.py in the source directory
 pushd %srcdir%

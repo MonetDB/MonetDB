@@ -15,10 +15,17 @@ set srcdir=@XSOURCE@\clients
 
 set PATH=%buildbase%\testing;%PATH%
 
+set PATH=%builddir%\examples\C;%PATH%
 set PATH=%builddir%\mapiclient;%PATH%
 set PATH=%builddir%\mapilib;%PATH%
 
-set PYTHONPATH=%srcdir%\python;%buildbase%\testing;%srcdir%\..\testing;%PYTHONPATH%
+set PYTHONPATH=%builddir%\python\build\lib;%buildbase%\testing;%srcdir%\..\testing;%PYTHONPATH%
+
+set CLASSPATH=%buildbase%\java;%buildbase%\java\tests;%CLASSPATH%
+
+set perlib=%builddir%\perl;%srcdir%\perl
+set PERLLIB=%perlib%;%PERLLIB%
+set PERL5LIB=%perlib%;%PERL5LIB%
 
 REM execute Mtest.py in the source directory
 pushd %srcdir%

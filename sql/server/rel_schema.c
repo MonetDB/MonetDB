@@ -84,7 +84,11 @@ view_rename_columns( mvc *sql, char *name, sql_rel *sq, dlist *column_spec)
 	for (; n && m; n = n->next, m = m->next) {
 		char *cname = n->data.sval;
 		sql_exp *e = m->data;
-		sql_exp *n = exp_is_atom(e)?e:exp_column(sql->sa, exp_relname(e), e->name, exp_subtype(e), sq->card, has_nil(e), is_intern(e));
+		sql_exp *n;
+	       
+		if (!exp_is_atom(e) && !e->name)
+			exp_setname(sql->sa, e, NULL, cname);
+		n = exp_is_atom(e)?e:exp_column(sql->sa, exp_relname(e), e->name, exp_subtype(e), sq->card, has_nil(e), is_intern(e));
 
 		exp_setname(sql->sa, n, NULL, cname);
 		list_append(l, n);

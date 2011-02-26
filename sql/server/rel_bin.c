@@ -841,7 +841,19 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 				idx = 1;
 			if (!join) {
 				join = s;
-			} else if (s->type != st_join && s->type != st_join2 && s->type != st_joinN) {
+			} else if (s->type != st_join && 
+				   s->type != st_join2 && 
+				   s->type != st_joinN) {
+				if (s->type == st_reverse) {
+					stmt *rs = s->op1;
+
+					if (rs->type == st_join || 
+				   	    rs->type == st_join2 || 
+				   	    rs->type == st_joinN) {
+						list_append(jns, s);
+						continue;
+					}
+				}
 				/* handle select expressions */
 				/*assert(0);*/
 				if (s->h == join->h) {
@@ -1681,7 +1693,7 @@ rel2bin_select( mvc *sql, sql_rel *rel, list *refs)
 	} else if (sub && predicate) {
 		stmt *h = NULL;
 		n = sub->op4.lval->h;
-		h = stmt_join(sql->sa,  n->data, predicate, cmp_all);
+		h = stmt_join(sql->sa,  column(sql->sa, n->data), predicate, cmp_all);
 		h = stmt_reverse(sql->sa, stmt_mark_tail(sql->sa, h, 0)); 
 		for( n = sub->op4.lval->h; n; n = n->next ) {
 			stmt *col = n->data;
@@ -3090,6 +3102,7 @@ sql_update_triggers(mvc *sql, sql_table *t, list *l, int time )
 		int *trigger_id = NEW(int);
 		*trigger_id = trigger->base.id;
 
+		stack_push_frame(sql, "OLD-NEW");
 		if (trigger->event == 2 && trigger->time == time) {
 			stmt *s = NULL;
 	
@@ -3106,6 +3119,7 @@ sql_update_triggers(mvc *sql, sql_table *t, list *l, int time )
 				return 0;
 			list_append(l, s);
 		}
+		stack_pop_frame(sql);
 	}
 	return res;
 }
@@ -3259,6 +3273,7 @@ sql_delete_triggers(mvc *sql, sql_table *t, list *l)
 		int *trigger_id = NEW(int);
 		*trigger_id = trigger->base.id;
 
+		stack_push_frame(sql, "OLD-NEW");
 		if (trigger->event == 1) {
 			stmt *s = NULL;
 	
@@ -3277,6 +3292,7 @@ sql_delete_triggers(mvc *sql, sql_table *t, list *l)
 			else
 				list_prepend(l, s);
 		}
+		stack_pop_frame(sql);
 	}
 	return res;
 }
