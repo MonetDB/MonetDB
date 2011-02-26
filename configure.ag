@@ -41,6 +41,13 @@ fi
 AM_CONDITIONAL(NOT_WIN32, test x"$target_os" != xcygwin)
 AM_CONDITIONAL(NATIVE_WIN32, false)
 
+m4_ifndef([PKG_PROG_PKG_CONFIG],
+  [m4_fatal([Could not locate the pkg-config autoconf
+    macros. These are usually located in /usr/share/aclocal/pkg.m4.
+    If your macros are in a different location, try setting the
+    environment variable M4DIRS="-I/other/macro/dir" before running
+    ./bootstrap or autoreconf again.])])
+
 PKG_PROG_PKG_CONFIG
 
 dnl VERSION_TO_NUMBER macro (copied from libxslt)
@@ -2278,6 +2285,14 @@ else
 fi
 AC_SUBST(READLINE_LIBS)
 AC_SUBST(READLINE_INCS)
+
+m4_ifndef([AM_ICONV],
+  [m4_fatal([Could not locate the iconv autoconf
+	macros. These are usually located in /usr/share/aclocal/iconv.m4 and
+	provided by the gettext package.  If your macros are in a different
+	location, try setting the environment variable
+	M4DIRS="-I/other/macro/dir" before running ./bootstrap or autoreconf
+	again.])])
 
 AM_ICONV
 
