@@ -70,6 +70,8 @@ include url;
 include mtime;
 include inet;
 include identifier;
+include xml;
+include batxml;
 
 @-
 The hardwired multiplex extensions
