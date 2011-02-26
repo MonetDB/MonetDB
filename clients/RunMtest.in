@@ -33,11 +33,14 @@ do
 done
 
 # enhance various paths to find our stuff
-PATH="${builddir}/mapiclient:${buildbase}/testing:$PATH"
+PATH="${builddir}/mapiclient:${builddir}/examples/C:${buildbase}/testing:$PATH"
 export PATH
 
 PYTHONPATH="${srcdir}/python:${buildbase}/testing:${srcdir}/../testing:${PYTHONPATH}"
 export PYTHONPATH
+
+CLASSPATH="${buildbase}/java:${buildbase}/java/tests:${CLASSPATH}"
+export CLASSPATH
 
 # execute Mtest.py in the source directory
 cd "$srcdir"

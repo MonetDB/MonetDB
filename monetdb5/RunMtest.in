@@ -35,7 +35,7 @@ done
 
 # enhance various paths to find our stuff
 MOD_PATH="${MOD_PATH#:}"
-binpath="${buildbase}/tools/mserver:${buildbase}/clients/mapiclient:${buildbase}/testing"
+binpath="${buildbase}/tools/mserver:${buildbase}/clients/mapiclient:${buildbase}/clients/examples/C:${buildbase}/testing"
 libpath="${MOD_PATH}:${builddir}/mal/.libs"
 
 PATH="${binpath}:$PATH"
@@ -43,6 +43,9 @@ export PATH
 
 PYTHONPATH="${buildbase}/testing:${srcdir}/../testing:${PYTHONPATH}"
 export PYTHONPATH
+
+CLASSPATH="${buildbase}/java:${buildbase}/java/tests:${CLASSPATH}"
+export CLASSPATH
 
 if [ "${LD_LIBRARY_PATH}" ] ; then
 	LD_LIBRARY_PATH=":${LD_LIBRARY_PATH}"

@@ -1088,8 +1088,9 @@ if test "x$enable_optim" = xyes; then
   else
 	origCFLAGS="$CFLAGS"
     dnl  remove "-g" as some compilers don't like "-g -Ox" combinations
+    dnl  remove "-O2" as we add "-Ox" and some compilers don't like "-Oy -Ox" combinations
     CFLAGS=" $CFLAGS "
-    CFLAGS="`echo "$CFLAGS" | sed -e 's| -g | |g' -e 's|^ ||' -e 's| $||'`"
+    CFLAGS="`echo "$CFLAGS" | sed -e 's| -g | |g' -e 's| -O2 | |g' -e 's|^ ||' -e 's| $||'`"
     JAVACFLAGS=" $JAVACFLAGS "
     JAVACFLAGS="`echo "$JAVACFLAGS" | sed -e 's| -g | |g' -e 's| -g:[[a-z]]* | |g' -e 's|^ ||' -e 's| $||'`"
     dnl  Optimization flags
@@ -1124,7 +1125,7 @@ if test "x$enable_optim" = xyes; then
                       esac
                       ;;
       x86_64-*-*|i*86-*-*)
-                      CFLAGS="$CFLAGS -O6 -fomie-frame-pointer -finline-functions -malign-loops=4 -malign-jumps=4 -malign-functions=4 -fexpensive-optimizations -funroll-all-loops  -funroll-loops -frerun-cse-after-loop -frerun-loop-opt"
+                      CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions -malign-loops=4 -malign-jumps=4 -malign-functions=4 -fexpensive-optimizations -funroll-all-loops  -funroll-loops -frerun-cse-after-loop -frerun-loop-opt"
                       case "$gcc_ver" in
                       4.*) CFLAGS="$CFLAGS -ftree-vectorize";;
                            dnl  "-ftree-vectorize" is only available with newer versions of gcc, only;
