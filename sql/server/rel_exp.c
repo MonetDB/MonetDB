@@ -114,6 +114,10 @@ exp_convert(sql_allocator *sa, sql_exp *exp, sql_subtype *fromtype, sql_subtype 
 	totype = dup_subtype(sa, totype);
 	e->r = append(append(list_new(sa), dup_subtype(sa, fromtype)),totype);
 	e->tpe = *totype; 
+	if (exp->name)
+		e->name = sa_strdup(sa, exp->name);
+	if (exp->rname)
+		e->rname = sa_strdup(sa, exp->rname);
 	return e;
 }
 

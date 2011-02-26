@@ -22,6 +22,7 @@
 #include "sql_rel2bin.h"
 #include "sql_env.h"
 #include <stdio.h>
+#include "rel_semantic.h"
 
 static stmt * head_column(stmt *st);
 
@@ -731,13 +732,23 @@ reljoin( mvc *sql, stmt *rj, list *l2 )
 	}
 	/* TODO also handle joinN */
 	for (; n; n = n->next) {
-		stmt *j = n->data;
-		stmt *ld = j->op1;
-		stmt *o2 = j->op2;
-		stmt *rd = (j->type == st_join)?stmt_reverse(sql->sa, o2):o2;
+		stmt *j = n->data, *ld, *o2, *rd, *cmp;
+		if (j->type == st_reverse) {
+			stmt *sw;
+			j = j->op1;
+			ld = j->op1;
+			o2 = j->op2;
+			rd = (j->type == st_join)?stmt_reverse(sql->sa, o2):o2;
+			sw = l;
+			l = r;
+			r = sw;
+		} else {
+			ld = j->op1;
+			o2 = j->op2;
+			rd = (j->type == st_join)?stmt_reverse(sql->sa, o2):o2;
+		}
 
 		if (j->type == st_joinN) {
-			stmt *cmp;
 			list *ol,*nl = list_new(sql->sa);
 			node *m;
 
@@ -749,38 +760,29 @@ reljoin( mvc *sql, stmt *rj, list *l2 )
 				list_append(nl, _project(sql, r, m->data));
 			/* find function */
 			cmp = stmt_uselect(sql->sa, stmt_Nop(sql->sa, stmt_list(sql->sa, nl), j->op4.funcval), stmt_bool(sql->sa, 1), cmp_equal);
-			/* TODO semijoin may break order */
-			l = stmt_semijoin(sql->sa, l, cmp);
-			r = stmt_semijoin(sql->sa, r, cmp);
 		} else if (j->type == st_join2) {
 			stmt *le = stmt_project(sql->sa, l, ld );
 			stmt *re = stmt_project(sql->sa, r, rd );
-			comp_type c1 = j->flag&2 ? cmp_gte : cmp_gt;
-			comp_type c2 = j->flag&1 ? cmp_lte : cmp_lt;
+			comp_type c1 = range2lcompare(j->flag);
+			comp_type c2 = range2rcompare(j->flag);
 			stmt *r2 = stmt_project(sql->sa, r, j->op3);
 			stmt *cmp1 = stmt_uselect(sql->sa, le, re, c1);
 			stmt *cmp2 = stmt_uselect(sql->sa, le, r2, c2);
-		
 
-			stmt *cmp = stmt_semijoin(sql->sa, cmp1, cmp2);
-			/* use a single uselect2 ? */
-		/*
-			stmt *cmp = stmt_uselect2(sql->sa, le, re, r2, (comp_type)j->flag);
-		*/
-
-			/* TODO semijoin may break order */
-			l = stmt_semijoin(sql->sa, l, cmp);
-			r = stmt_semijoin(sql->sa, r, cmp);
+			cmp = stmt_semijoin(sql->sa, cmp1, cmp2);
 		} else {
 			stmt *le = stmt_project(sql->sa, l, ld );
 			stmt *re = stmt_project(sql->sa, r, rd );
 			/* TODO force scan select ? */
-			stmt *cmp = stmt_uselect(sql->sa, le, re, (comp_type)j->flag);
-
-			/* TODO semijoin may break order, 
-				ie maybe do a mirror + project */
-			l = stmt_semijoin(sql->sa, l, cmp);
-			r = stmt_semijoin(sql->sa, r, cmp);
+			cmp = stmt_uselect(sql->sa, le, re, (comp_type)j->flag);
+		}
+		cmp = stmt_mark(sql->sa, stmt_reverse(sql->sa, cmp), 50);
+		l = stmt_project(sql->sa, cmp, l);
+		r = stmt_project(sql->sa, cmp, r);
+		if (j != n->data) { /* reversed */
+			stmt *sw = l;
+			l = r;
+			r = sw;
 		}
 	}
 	res = stmt_join(sql->sa, stmt_reverse(sql->sa, l), r, cmp_equal);
