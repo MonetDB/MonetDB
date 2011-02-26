@@ -25,7 +25,7 @@ srcdir=`cd '@srcdir@'; pwd`
 uname=`uname`
 
 # where compiled monetdb4 modules are to be found
-for d in modules/plain modules/contrib modules/calibrator mapi @HAVE_NETCDF_TRUE@ modules/mnetcdf
+for d in modules/plain modules/contrib modules/calibrator modules/mapi @HAVE_NETCDF_TRUE@ modules/mnetcdf
 do
 	MOD_PATH="${MOD_PATH}:${builddir}/$d/.libs:${builddir}/$d"
 done
