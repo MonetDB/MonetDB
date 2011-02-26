@@ -9,7 +9,6 @@ stdout of test 'builtin` in directory 'modules/plain` itself:
 # Copyright (c) 1993-2005, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
-module(radix);
 var x:=new(str,bat);
 var y:=new(int,int).insert(0,1).insert(0,2).reverse().mark(0@0).reverse();
 var z:=new(int,int).insert(0,1).insert(0,2).reverse().mark(0@0).reverse();

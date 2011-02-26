@@ -1,4 +1,3 @@
-module(radix);
 var x:=new(str,bat);
 var y:=new(int,int).insert(0,1).insert(0,2).reverse().mark(0@0).reverse();
 var z:=new(int,int).insert(0,1).insert(0,2).reverse().mark(0@0).reverse();
