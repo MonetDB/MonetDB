@@ -36,7 +36,7 @@ copy /y %srcdir%\extras\rdf\??_*.mal %builddir%\extras\rdf\autoload
 if not exist %builddir%\extras\xml\autoload mkdir %builddir%\extras\xml\autoload
 copy /y %srcdir%\extras\xml\??_*.mal %builddir%\extras\xml\autoload
 
-set PATH=%buildbase%\clients\mapiclient;%buildbase%\testing;%PATH%
+set PATH=%buildbase%\clients\mapiclient;%buildbase%\clients\examples\C;%buildbase%\testing;%PATH%
 
 set PATH=%MOD_PATH%;%PATH%
 set PATH=%builddir%\mal;%PATH%

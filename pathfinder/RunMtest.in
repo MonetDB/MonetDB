@@ -72,7 +72,7 @@ esac
 
 # enhance various paths to find our stuff
 MOD_PATH="${MOD_PATH#:}"
-binpath="${builddir}/compiler:${builddir}/tools:${buildbase}/clients/mapiclient:${buildbase}/testing"
+binpath="${builddir}/compiler:${builddir}/tools:${buildbase}/clients/mapiclient:${buildbase}/clients/examples/C:${buildbase}/testing"
 libpath="${MOD_PATH}"
 
 PATH="${binpath}:$PATH"

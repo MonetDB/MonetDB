@@ -94,7 +94,7 @@ set PATH=%buildbase%\tools\mserver;%PATH%
 set cfg=%buildbase%\monetdb5\misc\monetdb5.conf
 :skip_5
 
-set PATH=%buildbase%\clients\mapiclient;%buildbase%\testing;%PATH%
+set PATH=%buildbase%\clients\mapiclient;%buildbase%\clients\examples\C;%buildbase%\testing;%PATH%
 
 set PATH=%MOD_PATH%;%PATH%
 

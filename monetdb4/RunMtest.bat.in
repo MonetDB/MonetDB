@@ -25,7 +25,7 @@ set MOD_PATH=%MOD_PATH%;%builddir%\modules\mnetcdf\.libs
 set MOD_PATH=%MOD_PATH%;%builddir%\modules\mnetcdf
 set MOD_PATH=%MOD_PATH%;%srcdir%\scripts\tools
 
-set PATH=%buildbase%\clients\mapiclient;%buildbase%\testing;%PATH%
+set PATH=%buildbase%\clients\mapiclient;%buildbase%\clients\examples\C;%buildbase%\testing;%PATH%
 
 set PATH=%MOD_PATH%;%PATH%
 set PATH=%builddir%\monet;%PATH%

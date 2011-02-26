@@ -15,6 +15,7 @@ set srcdir=@XSOURCE@\clients
 
 set PATH=%buildbase%\testing;%PATH%
 
+set PATH=%builddir%\examples\C;%PATH%
 set PATH=%builddir%\mapiclient;%PATH%
 set PATH=%builddir%\mapilib;%PATH%
 

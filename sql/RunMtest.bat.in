@@ -54,7 +54,7 @@ copy /y %srcdir%\..\monetdb5\extras\xml\??_*.mal %buildbase%\monetdb5\extras\xml
 
 set cfg=%buildbase%\monetdb5\misc\monetdb5.conf
 
-set PATH=%buildbase%\tools\mserver;%buildbase%\clients\mapiclient;%buildbase%\testing;%PATH%
+set PATH=%buildbase%\tools\mserver;%buildbase%\clients\mapiclient;%buildbase%\clients\examples\C;%buildbase%\testing;%PATH%
 
 set PATH=%MOD_PATH%;%PATH%
 set PATH=%builddir%\server;%PATH%

@@ -33,7 +33,7 @@ do
 done
 
 # enhance various paths to find our stuff
-PATH="${builddir}/mapiclient:${buildbase}/testing:$PATH"
+PATH="${builddir}/mapiclient:${builddir}/examples/C:${buildbase}/testing:$PATH"
 export PATH
 
 PYTHONPATH="${srcdir}/python:${buildbase}/testing:${srcdir}/../testing:${PYTHONPATH}"

@@ -35,7 +35,7 @@ done
 
 # enhance various paths to find our stuff
 MOD_PATH="${MOD_PATH#:}"
-binpath="${buildbase}/tools/mserver:${buildbase}/clients/mapiclient:${buildbase}/testing"
+binpath="${buildbase}/tools/mserver:${buildbase}/clients/mapiclient:${buildbase}/clients/examples/C:${buildbase}/testing"
 libpath="${MOD_PATH}:${builddir}/mal/.libs"
 
 PATH="${binpath}:$PATH"

@@ -71,7 +71,7 @@ esac
 # enhance various paths to find our stuff
 MOD_PATH="${MOD_PATH#:}"
 libpath="${MOD_PATH}"
-PATH="${buildbase}/clients/mapiclient:${buildbase}/testing:$PATH"
+PATH="${buildbase}/clients/mapiclient:${buildbase}/clients/examples/C:${buildbase}/testing:$PATH"
 export PATH
 
 PYTHONPATH="${buildbase}/testing:${srcdir}/../testing:${PYTHONPATH}"
