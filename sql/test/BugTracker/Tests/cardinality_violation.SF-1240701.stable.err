@@ -85,7 +85,7 @@ QUERY = select * from env() as env where name = ( select 'prefix' from env() as 
 ERROR = !SQLException:zero_or_one:cardinality violation (53>1)
 MAPI  = monetdb@alf:38517
 QUERY = select * from columns where name = (select columns.name from _tables, columns where _tables.id = columns.table_id);
-ERROR = !SQLException:zero_or_one:cardinality violation (297>1)
+ERROR = !SQLException:zero_or_one:cardinality violation (299>1)
 
 
 # 21:00:43 >  
