@@ -103,6 +103,8 @@ set PATH=%GEOS%\bin;%PATH%
 
 set PYTHONPATH=%buildbase%\testing;%srcdir%\..\testing;%PYTHONPATH%
 
+set CLASSPATH=%buildbase%\java;%buildbase%\java\tests;%CLASSPATH%
+
 REM execute Mtest.py in the source directory
 pushd %srcdir%
 

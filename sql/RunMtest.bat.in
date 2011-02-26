@@ -63,6 +63,8 @@ set PATH=%builddir%\common;%PATH%
 
 set PYTHONPATH=%builddir%\backends\python\monet5;%buildbase%\testing;%srcdir%\..\testing;%PYTHONPATH%
 
+set CLASSPATH=%buildbase%\java;%buildbase%\java\tests;%CLASSPATH%
+
 REM execute Mtest.py in the source directory
 pushd %srcdir%
 

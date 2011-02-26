@@ -39,6 +39,9 @@ export PATH
 PYTHONPATH="${srcdir}/python:${buildbase}/testing:${srcdir}/../testing:${PYTHONPATH}"
 export PYTHONPATH
 
+CLASSPATH="${buildbase}/java:${buildbase}/java/tests:${CLASSPATH}"
+export CLASSPATH
+
 # execute Mtest.py in the source directory
 cd "$srcdir"
 
