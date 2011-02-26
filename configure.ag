@@ -1124,7 +1124,7 @@ if test "x$enable_optim" = xyes; then
                       esac
                       ;;
       x86_64-*-*|i*86-*-*)
-                      CFLAGS="$CFLAGS -O6 -fomie-frame-pointer -finline-functions -malign-loops=4 -malign-jumps=4 -malign-functions=4 -fexpensive-optimizations -funroll-all-loops  -funroll-loops -frerun-cse-after-loop -frerun-loop-opt"
+                      CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions -malign-loops=4 -malign-jumps=4 -malign-functions=4 -fexpensive-optimizations -funroll-all-loops  -funroll-loops -frerun-cse-after-loop -frerun-loop-opt"
                       case "$gcc_ver" in
                       4.*) CFLAGS="$CFLAGS -ftree-vectorize";;
                            dnl  "-ftree-vectorize" is only available with newer versions of gcc, only;
