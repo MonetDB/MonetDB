@@ -25,7 +25,7 @@ set MOD_PATH=%MOD_PATH%;%builddir%\modules\mnetcdf\.libs
 set MOD_PATH=%MOD_PATH%;%builddir%\modules\mnetcdf
 set MOD_PATH=%MOD_PATH%;%srcdir%\scripts\tools
 
-set PATH=%buildbase%\clients\mapiclient;%buildbase%\clients\examples\C;%buildbase%\testing;%PATH%
+set PATH=%buildbase%\clients\mapiclient;%buildbase%\clients\examples\C;%buildbase%\clients\perl\Tests;%buildbase%\testing;%PATH%
 
 set PATH=%MOD_PATH%;%PATH%
 set PATH=%builddir%\monet;%PATH%
@@ -34,6 +34,10 @@ set PATH=%builddir%\tools;%PATH%
 set PYTHONPATH=%buildbase%\clients\python\build\lib;%buildbase%\testing;%srcdir%\..\testing;%PYTHONPATH%
 
 set CLASSPATH=%buildbase%\java;%buildbase%\java\tests;%CLASSPATH%
+
+set perlib=%buildbase%\clients\perl;%srcdir%\..\clients\perl
+set PERLLIB=%perlib%;%PERLLIB%
+set PERL5LIB=%perlib%;%PERL5LIB%
 
 REM execute Mtest.py in the source directory
 pushd %srcdir%

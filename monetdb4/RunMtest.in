@@ -33,7 +33,7 @@ MOD_PATH="${MOD_PATH}:${srcdir}/scripts/tools"
 
 # enhance various paths to find our stuff
 MOD_PATH="${MOD_PATH#:}"
-binpath="${builddir}/tools:${buildbase}/clients/mapiclient:${buildbase}/clients/examples/C:${buildbase}/testing"
+binpath="${builddir}/tools:${buildbase}/clients/mapiclient:${buildbase}/clients/examples/C:${buildbase}/clients/perl/Tests:${buildbase}/testing"
 libpath="${MOD_PATH}:${builddir}/monet/.libs"
 
 PATH="${binpath}:$PATH"
@@ -44,6 +44,11 @@ export PYTHONPATH
 
 CLASSPATH="${buildbase}/java:${buildbase}/java/tests:${CLASSPATH}"
 export CLASSPATH
+
+perlib="${buildbase}/clients/perl:${srcdir}/../clients/perl"
+PERLLIB="${perlib}:${PERLLIB}"
+PERL5LIB="${perlib}:${PERL5LIB}"
+export PERLLIB PERL5LIB
 
 if [ "${LD_LIBRARY_PATH}" ] ; then
 	LD_LIBRARY_PATH=":${LD_LIBRARY_PATH}"

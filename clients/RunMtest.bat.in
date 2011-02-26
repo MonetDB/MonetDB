@@ -23,6 +23,10 @@ set PYTHONPATH=%builddir%\python\build\lib;%buildbase%\testing;%srcdir%\..\testi
 
 set CLASSPATH=%buildbase%\java;%buildbase%\java\tests;%CLASSPATH%
 
+set perlib=%builddir%\perl;%srcdir%\perl
+set PERLLIB=%perlib%;%PERLLIB%
+set PERL5LIB=%perlib%;%PERL5LIB%
+
 REM execute Mtest.py in the source directory
 pushd %srcdir%
 

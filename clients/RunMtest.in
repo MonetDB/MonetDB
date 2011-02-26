@@ -33,7 +33,7 @@ do
 done
 
 # enhance various paths to find our stuff
-PATH="${builddir}/mapiclient:${builddir}/examples/C:${buildbase}/testing:$PATH"
+PATH="${builddir}/mapiclient:${builddir}/examples/C:${builddir}/perl/Tests:${buildbase}/testing:$PATH"
 export PATH
 
 PYTHONPATH="${builddir}/python/build/lib:${buildbase}/testing:${srcdir}/../testing:${PYTHONPATH}"
@@ -41,6 +41,11 @@ export PYTHONPATH
 
 CLASSPATH="${buildbase}/java:${buildbase}/java/tests:${CLASSPATH}"
 export CLASSPATH
+
+perlib="${builddir}/perl:${srcdir}/perl"
+PERLLIB="${perlib}:${PERLLIB}"
+PERL5LIB="${perlib}:${PERL5LIB}"
+export PERLLIB PERL5LIB
 
 # execute Mtest.py in the source directory
 cd "$srcdir"
