@@ -1,7 +1,7 @@
 bitset
 malalgebra
 salgebra
-NOT_WIN32?mprof
-NOT_WIN32?mprof2
+#NOT_WIN32?mprof
+#NOT_WIN32?mprof2
 color
 array

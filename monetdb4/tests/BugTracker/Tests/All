@@ -4,10 +4,10 @@
 empty_enum.SF-1401528
 leak_of_backup_names.SF-1423568
 leak_of_view_gdk_bbp.SF-1430968
-bat_destroy.SF-1428446
-bat_destroy-2.SF-1428446
-mmap_bats.SF-1428389
-mmap_bats-2.SF-1428389
+#bat_destroy.SF-1428446
+#bat_destroy-2.SF-1428446
+#mmap_bats.SF-1428389
+#mmap_bats-2.SF-1428389
 multiplex_void_oid.SF-1437319
 append_spoils_seqbase.SF-1449572
 sintersect_on_void_bats.SF-1494263

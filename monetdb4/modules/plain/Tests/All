@@ -17,11 +17,11 @@ date
 decimal
 decimal_debug
 monettime
-tcpip1
-tcpip2
+#tcpip1
+#tcpip2
 slice
 enum
-radix
+#radix
 HAVE_PCRE?pcre
 builtin
 TriBool

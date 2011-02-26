@@ -16,7 +16,7 @@ error.998332
 large_string.SF-1120061
 character_string_constants.SF-1120297
 operator_-_vs_sign_-.SF-1120397
-radix_normal_segfault.SF-1120748
+#radix_normal_segfault.SF-1120748
 rename_bat_hyphen.SF-1152369
 multiplex_nil.SF-1153664
 crash_destroy_commit.SF-1154552

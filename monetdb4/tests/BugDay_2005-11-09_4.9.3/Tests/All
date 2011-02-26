@@ -3,8 +3,8 @@ mark_nil_oid.SF-1025062
 operator_precedence.SF-1025069
 variable_nesting.SF-1027421
 empty_bats_readonly.SF-1032273
-tcpip_close_crash.SF-1042370
-tcpip_rpc_hang.SF-1042381
-tcpip_rpc_crash_bat.SF-1049942
+#tcpip_close_crash.SF-1042370
+#tcpip_rpc_hang.SF-1042381
+#tcpip_rpc_crash_bat.SF-1049942
 append_bat_bat.SF-1054499
-tcpip_hangs_on_close.SF-1070569
+#tcpip_hangs_on_close.SF-1070569
