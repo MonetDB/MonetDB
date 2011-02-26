@@ -1088,8 +1088,9 @@ if test "x$enable_optim" = xyes; then
   else
 	origCFLAGS="$CFLAGS"
     dnl  remove "-g" as some compilers don't like "-g -Ox" combinations
+    dnl  remove "-O2" as we add "-Ox" and some compilers don't like "-Oy -Ox" combinations
     CFLAGS=" $CFLAGS "
-    CFLAGS="`echo "$CFLAGS" | sed -e 's| -g | |g' -e 's|^ ||' -e 's| $||'`"
+    CFLAGS="`echo "$CFLAGS" | sed -e 's| -g | |g' -e 's| -O2 | |g' -e 's|^ ||' -e 's| $||'`"
     JAVACFLAGS=" $JAVACFLAGS "
     JAVACFLAGS="`echo "$JAVACFLAGS" | sed -e 's| -g | |g' -e 's| -g:[[a-z]]* | |g' -e 's|^ ||' -e 's| $||'`"
     dnl  Optimization flags
