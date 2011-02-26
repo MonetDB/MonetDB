@@ -1,1 +1,1 @@
-mnetcdf
+HAVE_NETCDF?mnetcdf
