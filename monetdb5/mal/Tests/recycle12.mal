@@ -43,6 +43,6 @@ qry(2,8);
 qry1(10);
 qry1(10);
 
-recycle.dumpQPat();
+recycle.dump();
 #recycle.dump();
 

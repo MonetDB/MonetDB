@@ -83,7 +83,7 @@ end qry1;
 #qry1(10);
 #qry1(10);
 #
-#recycle.dumpQPat();
+#recycle.dump();
 ##recycle.dump();
 #
 #
@@ -98,7 +98,7 @@ function user.main():void;
     user.qry(2,8);
     user.qry1(10);
     user.qry1(10);
-    recycle.dumpQPat();
+    recycle.dump();
 #recycle.dump(); 
 end main;
 #Query patterns 2
