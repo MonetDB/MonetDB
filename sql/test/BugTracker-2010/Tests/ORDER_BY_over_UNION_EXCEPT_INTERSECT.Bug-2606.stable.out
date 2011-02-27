@@ -62,7 +62,7 @@ Over..
 % .plan # table_name
 % rel # name
 % clob # type
-% 58 # length
+% 59 # length
 project (
 | distinct union (
 | | distinct project (
@@ -91,7 +91,7 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 58 # length
+% 59 # length
 project (
 | distinct union (
 | | distinct project (
@@ -120,7 +120,7 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 58 # length
+% 59 # length
 project (
 | distinct union (
 | | distinct project (
@@ -149,7 +149,7 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 58 # length
+% 59 # length
 project (
 | except (
 | | distinct project (
@@ -172,7 +172,7 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 58 # length
+% 59 # length
 project (
 | except (
 | | distinct project (
@@ -195,7 +195,7 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 58 # length
+% 59 # length
 project (
 | except (
 | | distinct project (
@@ -218,7 +218,7 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 58 # length
+% 59 # length
 project (
 | intersect (
 | | distinct project (
@@ -241,7 +241,7 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 58 # length
+% 59 # length
 project (
 | intersect (
 | | distinct project (
@@ -264,7 +264,7 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 58 # length
+% 59 # length
 project (
 | intersect (
 | | distinct project (
@@ -287,7 +287,7 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 58 # length
+% 59 # length
 project (
 | distinct union (
 | | distinct project (
@@ -316,7 +316,7 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 58 # length
+% 59 # length
 project (
 | except (
 | | distinct project (
@@ -339,7 +339,7 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 58 # length
+% 59 # length
 project (
 | intersect (
 | | distinct project (
