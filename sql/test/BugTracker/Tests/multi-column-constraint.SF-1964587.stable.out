@@ -27,12 +27,6 @@ Over..
 # 16:17:36 >  
 
 START TRANSACTION;
-CREATE SCHEMA "rdf" AUTHORIZATION "monetdb";
-SET SCHEMA "rdf";
-CREATE TABLE "rdf"."graph" (
-	"gname" CHARACTER LARGE OBJECT,
-	"gid"   INTEGER
-);
 SET SCHEMA "sys";
 CREATE TABLE "sys"."test_property" (
 	"subject" INTEGER,

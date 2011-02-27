@@ -21,10 +21,42 @@ Ready.
 
 Over..
 
-# 19:46:08 >  
-# 19:46:08 >  mclient -lsql -ftest -i -e --host=alf --port=35135 
-# 19:46:08 >  
+# 09:39:08 >  
+# 09:39:08 >  mclient -lsql -ftest -i -e --host=alf --port=35848 
+# 09:39:08 >  
 
+#select htype, ttype, count from bbp() as bbp 
+#where kind like 'pers%'
+#order by htype, ttype, count;
+% .bbp,	.bbp,	.bbp # table_name
+% htype,	ttype,	count # name
+% clob,	clob,	bigint # type
+% 3,	3,	4 # length
+[ "int",	"int",	16	]
+[ "int",	"lng",	2	]
+[ "int",	"str",	143	]
+[ "oid",	"bit",	1147	]
+[ "oid",	"bit",	1147	]
+[ "oid",	"bit",	1147	]
+[ "oid",	"int",	18	]
+[ "oid",	"int",	18	]
+[ "oid",	"int",	1147	]
+[ "oid",	"int",	1147	]
+[ "oid",	"int",	3153	]
+[ "oid",	"int",	3153	]
+[ "oid",	"int",	3153	]
+[ "oid",	"int",	3153	]
+[ "oid",	"int",	3153	]
+[ "oid",	"lng",	18	]
+[ "oid",	"str",	0	]
+[ "oid",	"str",	1	]
+[ "oid",	"str",	1	]
+[ "oid",	"str",	18	]
+[ "oid",	"str",	1147	]
+[ "oid",	"str",	1147	]
+[ "oid",	"str",	1147	]
+[ "oid",	"str",	3153	]
+[ "oid",	"str",	3153	]
 #select 'transient', count(*) from bbp() as bbp where kind like 'tran%';
 % .L1,	.bbp # table_name
 % L1,	L2 # name

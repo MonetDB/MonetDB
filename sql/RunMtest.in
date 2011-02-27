@@ -32,10 +32,15 @@ do
 	mkdir -p ${builddir}/$d/autoload
 	cp -f ${srcdir}/$d/[0-9][0-9]_*.mal ${builddir}/$d/autoload/ 2>/dev/null
 done
+# disable auto-loading of non-available modules
+@HAVE_MSEED_FALSE@	rm -f ${builddir}/backends/monet5/vaults/autoload/71_mseed.mal
+@HAVE_CFITSIO_FALSE@	rm -f ${builddir}/backends/monet5/vaults/autoload/72_fits.mal
 
 # enable auto-loading of SQL createdb scripts before `make install`
 mkdir -p ${builddir}/sql/createdb
 cp -f ${srcdir}/sql/[0-9][0-9]_*.sql ${builddir}/sql/createdb/ 2>/dev/null
+# disable auto-loading of non-available SQL createdb scripts
+@HAVE_RAPTOR_FALSE@	rm -f ${builddir}/sql/createdb/30_rdf.sql
 
 # where compiled monetdb5 modules are to be found
 for d in optimizer scheduler modules/atoms modules/kernel modules/mal extras/crackers extras/rdf extras/xml
@@ -48,7 +53,7 @@ done
 
 # enhance various paths to find our stuff
 MOD_PATH="${MOD_PATH#:}"
-binpath="${builddir}/backends/monet5:${buildbase}/tools/mserver:${buildbase}/clients/mapiclient:${buildbase}/clients/examples/C:${buildbase}/clients/perl/Tests:${buildbase}/testing"
+binpath="${builddir}/backends/monet5:${buildbase}/tools/mserver:${buildbase}/clients/mapiclient:${buildbase}/clients/examples/C:${buildbase}/clients/examples/php:${buildbase}/clients/examples/python:${buildbase}/clients/perl/Tests:${buildbase}/testing"
 libpath="${MOD_PATH}:${builddir}/server/.libs"
 
 PATH="${binpath}:$PATH"

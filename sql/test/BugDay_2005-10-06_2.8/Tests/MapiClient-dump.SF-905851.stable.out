@@ -114,12 +114,6 @@ Over..
 # 14:58:14 >  
 
 START TRANSACTION;
-CREATE SCHEMA "rdf" AUTHORIZATION "monetdb";
-SET SCHEMA "rdf";
-CREATE TABLE "rdf"."graph" (
-	"gname" CHARACTER LARGE OBJECT,
-	"gid"   INTEGER
-);
 SET SCHEMA "sys";
 CREATE TABLE "sys"."allnewtriples" (
 	"id" INTEGER NOT NULL,

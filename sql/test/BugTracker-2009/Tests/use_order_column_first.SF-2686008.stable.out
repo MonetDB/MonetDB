@@ -50,7 +50,7 @@ Over..
 % .plan # table_name
 % rel # name
 % clob # type
-% 66 # length
+% 67 # length
 project (
 | group by (
 | | table(sys.sorted) [ sorted.a, sorted.b, sorted.%TID% NOT NULL ]
@@ -59,7 +59,7 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 66 # length
+% 67 # length
 project (
 | group by (
 | | table(sys.sorted) [ sorted.a, sorted.b, sorted.%TID% NOT NULL ]

@@ -29,7 +29,7 @@ Over..
 % L1,	L2 # name
 % char,	wrd # type
 % 9,	3 # length
-[ "transient",	185	]
+[ "transient",	189	]
 #select 'persistent', count(*) from bbp() as bbp where kind like 'pers%';
 % .L3,	.bbp # table_name
 % L3,	L4 # name
