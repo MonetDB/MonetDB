@@ -52,7 +52,7 @@ SQLBindCol(SQLHSTMT hStmt,
 	ODBCDesc *desc;		/* Application Row Descriptor */
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLBindCol " PTRFMT " %d %d " LENFMT "\n", PTRFMTCAST hStmt, nCol, nTargetType, nTargetValueMax);
+	ODBCLOG("SQLBindCol " PTRFMT " %d %d " LENFMT "\n", PTRFMTCAST hStmt, nCol, nTargetType, LENCAST nTargetValueMax);
 #endif
 
 	if (!isValidStmt(stmt))

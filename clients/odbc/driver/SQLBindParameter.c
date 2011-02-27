@@ -256,7 +256,7 @@ SQLBindParameter(SQLHSTMT hStmt,
 		 SQLLEN BufferLength, SQLLEN *StrLen_or_IndPtr)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLBindParameter " PTRFMT " %hd %hd %hd %hd " ULENFMT " %hd\n", PTRFMTCAST hStmt, ParameterNumber, InputOutputType, ValueType, ParameterType, ColumnSize, DecimalDigits);
+	ODBCLOG("SQLBindParameter " PTRFMT " %hd %hd %hd %hd " ULENFMT " %hd\n", PTRFMTCAST hStmt, ParameterNumber, InputOutputType, ValueType, ParameterType, ULENCAST ColumnSize, DecimalDigits);
 #endif
 
 	return SQLBindParameter_((ODBCStmt *) hStmt, ParameterNumber, InputOutputType, ValueType, ParameterType, ColumnSize, DecimalDigits, ParameterValuePtr, BufferLength, StrLen_or_IndPtr);

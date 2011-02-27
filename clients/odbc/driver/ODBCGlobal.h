@@ -101,6 +101,8 @@
 #ifdef SQLLEN			/* it's a define for 32, a typedef for 64 */
 #define LENFMT		"%d"
 #define ULENFMT		"%u"
+#define LENCAST     (int)
+#define ULENCAST    (unsigned int)
 #else
 #ifdef _MSC_VER
 #define LENFMT		"%I64d"
@@ -109,6 +111,8 @@
 #define LENFMT		"%ld"
 #define ULENFMT		"%lu"
 #endif
+#define LENCAST     (long)
+#define ULENCAST    (unsigned long)
 #endif
 
 /* these functions are called from within the library */
