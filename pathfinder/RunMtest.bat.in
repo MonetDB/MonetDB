@@ -68,7 +68,7 @@ set PATH=%buildbase%\tools\mserver;%PATH%
 set cfg=%buildbase%\monetdb5\misc\monetdb5.conf
 :skip_5
 
-set PATH=%buildbase%\clients\mapiclient;%buildbase%\clients\examples\C;%buildbase%\clients\perl\Tests;%buildbase%\testing;%PATH%
+set PATH=%buildbase%\clients\mapiclient;%buildbase%\clients\examples\C;%buildbase%\clients\examples\php;%buildbase%\clients\examples\python;%buildbase%\clients\perl\Tests;%buildbase%\testing;%PATH%
 
 set PATH=%MOD_PATH%;%PATH%
 set PATH=%builddir%\extras\compiler;%PATH%

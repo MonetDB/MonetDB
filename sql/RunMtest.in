@@ -55,7 +55,7 @@ cfg="${buildbase}/monetdb5/misc/monetdb5.conf"
 
 # enhance various paths to find our stuff
 MOD_PATH="${MOD_PATH#:}"
-binpath="${builddir}/backends/monet5:${buildbase}/tools/mserver:${buildbase}/clients/mapiclient:${buildbase}/clients/examples/C:${buildbase}/clients/perl/Tests:${buildbase}/testing"
+binpath="${builddir}/backends/monet5:${buildbase}/tools/mserver:${buildbase}/clients/mapiclient:${buildbase}/clients/examples/C:${buildbase}/clients/examples/php:${buildbase}/clients/examples/python:${buildbase}/clients/perl/Tests:${buildbase}/testing"
 libpath="${MOD_PATH}:${builddir}/server/.libs"
 
 PATH="${binpath}:$PATH"
