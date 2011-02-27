@@ -62,10 +62,13 @@ if not exist %buildbase%\sql\backends\monet5\autoload mkdir %buildbase%\sql\back
 copy /y %srcdir%\..\sql\backends\monet5\??_*.mal %buildbase%\sql\backends\monet5\autoload
 if not exist %buildbase%\sql\backends\monet5\vaults\autoload mkdir %buildbase%\sql\backends\monet5\vaults\autoload
 copy /y %srcdir%\..\sql\backends\monet5\vaults\??_*.mal %buildbase%\sql\backends\monet5\vaults\autoload
+if "@HAVE_MSEED_FALSE@"==""	del /y %buildbase%\sql\backends\monet5\vaults\autoload\71_mseed.mal
+if "@HAVE_CFITSIO_FALSE@"==""	del /y %buildbase%\sql\backends\monet5\vaults\autoload\72_fits.mal
 
 REM enable auto-loading of SQL createdb scripts before `make install`
 if not exist %buildbase%\sql\sql\createdb mkdir %buildbase%\sql\sql\createdb
 copy /y %srcdir%\..\sql\sql\??_*.sql %buildbase%\sql\sql\createdb
+if "@HAVE_RAPTOR_FALSE@"=""	del /y %buildbase%\sql\sql\createdb\30_rdf.sql
 
 set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\optimizer\.libs
 set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\optimizer
