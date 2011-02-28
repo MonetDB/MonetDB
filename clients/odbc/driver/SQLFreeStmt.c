@@ -87,7 +87,8 @@ SQLFreeStmt(SQLHSTMT handle,
 	    SQLUSMALLINT option)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLFreeStmt " PTRFMT " %d\n", PTRFMTCAST handle, option);
+	ODBCLOG("SQLFreeStmt " PTRFMT " %u\n",
+		PTRFMTCAST handle, (unsigned int) option);
 #endif
 
 	if (!isValidStmt((ODBCStmt *) handle))

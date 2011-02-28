@@ -48,7 +48,8 @@ SQLGetStmtOption(SQLHSTMT hStmt,
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetStmtOption " PTRFMT " %d\n", PTRFMTCAST hStmt, fOption);
+	ODBCLOG("SQLGetStmtOption " PTRFMT " %u\n",
+		PTRFMTCAST hStmt, (unsigned int) fOption);
 #endif
 
 	if (!isValidStmt(stmt))

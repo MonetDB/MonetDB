@@ -48,7 +48,9 @@ SQLSetStmtOption(SQLHSTMT hStmt,
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetStmtOption " PTRFMT " %d %lx\n", PTRFMTCAST hStmt, fOption, (unsigned long) vParam);
+	ODBCLOG("SQLSetStmtOption " PTRFMT " %u %lx\n",
+		PTRFMTCAST hStmt, (unsigned int) fOption,
+		(unsigned long) vParam);
 #endif
 
 	if (!isValidStmt(stmt))

@@ -168,7 +168,9 @@ SQLGetDiagRec(SQLSMALLINT handleType,
 	      SQLSMALLINT *textLengthPtr)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetDiagRec %s " PTRFMT " %d %d\n", handleType == SQL_HANDLE_ENV ? "Env" : handleType == SQL_HANDLE_DBC ? "Dbc" : handleType == SQL_HANDLE_STMT ? "Stmt" : "Desc", PTRFMTCAST handle, recNumber, bufferLength);
+	ODBCLOG("SQLGetDiagRec %s " PTRFMT " %d %d\n",
+		handleType == SQL_HANDLE_ENV ? "Env" : handleType == SQL_HANDLE_DBC ? "Dbc" : handleType == SQL_HANDLE_STMT ? "Stmt" : "Desc",
+		PTRFMTCAST handle, (int) recNumber, (int) bufferLength);
 #endif
 
 	return SQLGetDiagRec_(handleType, handle, recNumber, sqlState, nativeErrorPtr, messageText, bufferLength, textLengthPtr);
@@ -203,7 +205,9 @@ SQLGetDiagRecW(SQLSMALLINT handleType,
 	SQLSMALLINT n;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetDiagRecW %s " PTRFMT " %d %d\n", handleType == SQL_HANDLE_ENV ? "Env" : handleType == SQL_HANDLE_DBC ? "Dbc" : handleType == SQL_HANDLE_STMT ? "Stmt" : "Desc", PTRFMTCAST handle, recNumber, bufferLength);
+	ODBCLOG("SQLGetDiagRecW %s " PTRFMT " %d %d\n",
+		handleType == SQL_HANDLE_ENV ? "Env" : handleType == SQL_HANDLE_DBC ? "Dbc" : handleType == SQL_HANDLE_STMT ? "Stmt" : "Desc",
+		PTRFMTCAST handle, (int) recNumber, (int) bufferLength);
 #endif
 
 	/* figure out how much space we need */

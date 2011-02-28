@@ -50,7 +50,10 @@ SQLSetDescRec(SQLHDESC hDescriptorHandle,
 	ODBCDesc *desc = (ODBCDesc *) hDescriptorHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetDescRec " PTRFMT " %d %d %d " LENFMT " %d %d\n", PTRFMTCAST hDescriptorHandle, (int) nRecordNumber, (int) nType, (int) nSubType, LENCAST nLength, (int) nPrecision, (int) nScale);
+	ODBCLOG("SQLSetDescRec " PTRFMT " %d %d %d " LENFMT " %d %d\n",
+		PTRFMTCAST hDescriptorHandle, (int) nRecordNumber,
+		(int) nType, (int) nSubType, LENCAST nLength,
+		(int) nPrecision, (int) nScale);
 #endif
 
 	if (!isValidDesc(desc))

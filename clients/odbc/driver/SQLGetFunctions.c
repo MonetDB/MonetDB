@@ -185,7 +185,8 @@ SQLGetFunctions(SQLHDBC hDbc,
 	ODBCDbc *dbc = (ODBCDbc *) hDbc;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetFunctions " PTRFMT " %d\n", PTRFMTCAST hDbc, FunctionId);
+	ODBCLOG("SQLGetFunctions " PTRFMT " %u\n",
+		PTRFMTCAST hDbc, (unsigned int) FunctionId);
 #endif
 
 	if (!isValidDbc(dbc))
