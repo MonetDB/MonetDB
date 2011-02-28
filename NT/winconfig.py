@@ -50,33 +50,15 @@ subs = [("@exec_prefix@", r'%prefix%'),
         ("@NOT_WIN32_FALSE@", ''),
         ("@PATHSEP@", ';')]
 
-packages = {
-    'MONETDB':  'monetdb',
-    'TESTING':  'monetdb-testing',
-    'CLIENTS':  'monetdb-clients',
-    'MONETDB4': 'monetdb4',
-    'MONETDB5': 'monetdb5',
-    'MONETDB_JAVA':  'monetdb-java',
-}
-
 while len(sys.argv) > 2 and '=' in sys.argv[1]:
     arg = sys.argv[1]
     i = arg.find('=')
     subs.append(('@'+arg[:i]+'@', arg[i+1:]))
     del sys.argv[1]
-    if arg[i-7:i] == '_PREFIX' and packages.has_key(arg[:i-7]):
-        config = os.path.join(arg[i+1:], 'bin', packages[arg[:i-7]])
-        try:
-            p = subprocess.Popen(['%s-config.bat' % config, '--version'],
-                                 universal_newlines = True,
-                                 stdout = subprocess.PIPE)
-            out, err = p.communicate()
-            val = out.strip()
-            if val:
-                key = '@%s_VERSION@' % arg[:i-7]
-                subs.append((key, val))
-        except:
-            pass
+    if arg[:i] == 'TOPDIR':
+        subs.append(('@BUILD@', os.path.abspath(arg[i+1:])))
+
+subs.append(('@SOURCE@', os.path.abspath(os.path.dirname(os.path.dirname(sys.argv[0])))))
 
 for key, val in subs[:]:
     subs.insert(0, ('@X'+key[1:], val))
