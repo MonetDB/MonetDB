@@ -2,94 +2,54 @@
 
 if not "%1"=="" goto skip
 call %0 -rq
-goto end
+goto :EOF
 
 :skip
 
 setlocal
 
-rem default back end is monetdb4
-set V=4
-if "%1" == "-4" set V=4& shift
-if "%1" == "-5" set V=5& shift
-
 set pkg=pathfinder
 set buildbase=@XBUILD@
-set builddir=%buildbase%\pathfinder
-set srcdir=@XSOURCE@\pathfinder
+set srcdir=@XSOURCE@
 
-set MOD_PATH=%builddir%\runtime\.libs
-set MOD_PATH=%MOD_PATH%;%builddir%\runtime
-set MOD_PATH=%MOD_PATH%;%builddir%\modules\pftijah\.libs
-set MOD_PATH=%MOD_PATH%;%builddir%\modules\pftijah
-set MOD_PATH=%MOD_PATH%;%builddir%\modules\probxml\.libs
-set MOD_PATH=%MOD_PATH%;%builddir%\modules\probxml
-
-if not %V% == 4 goto skip_4
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\plain\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\plain
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\contrib\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\contrib
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\calibrator\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\calibrator
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\mapi\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\mapi
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\mnetcdf\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\mnetcdf
-set MOD_PATH=%MOD_PATH%;%srcdir%\..\monetdb4\scripts\tools
-
+rem binaries (.exe)
+set PATH=%buildbase%\clients\examples\C;%PATH%
+set PATH=%buildbase%\clients\mapiclient;%PATH%
+set PATH=%buildbase%\clients\odbc\samples;%PATH%
+set PATH=%buildbase%\testing;%PATH%
 set PATH=%buildbase%\monetdb4\tools;%PATH%
+
+rem libraries (.dll)
+set PATH=%buildbase%\clients\mapilib;%PATH%
+set PATH=%buildbase%\clients\perl\Cimpl;%PATH%
+set PATH=%buildbase%\common\stream;%PATH%
+set PATH=%buildbase%\gdk;%PATH%
+set PATH=%buildbase%\monetdb4\monet;%PATH%
+
+rem modules (lib_*.dll and *.mal)
+set MOD_PATH=%buildbase%\geom\monetdb4
+set MOD_PATH=%buildbase%\monetdb4\modules\contrib;%MOD_PATH%
+set MOD_PATH=%buildbase%\monetdb4\modules\mapi;%MOD_PATH%
+set MOD_PATH=%buildbase%\monetdb4\modules\plain;%MOD_PATH%
+set MOD_PATH=%buildbase%\monetdb4\scripts\tools;%MOD_PATH%
+set MOD_PATH=%buildbase%\pathfinder\modules\pftijah;%MOD_PATH%
+set MOD_PATH=%buildbase%\pathfinder\modules\probxml;%MOD_PATH%
+set MOD_PATH=%buildbase%\pathfinder\runtime;%MOD_PATH%
+
 set cfg=%buildbase%\monetdb4\conf\MonetDB.conf
-:skip_4
 
-if not %V% == 5 goto skip_5
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\optimizer\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\optimizer
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\scheduler\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\scheduler
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\modules\atoms\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\modules\atoms
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\modules\kernel\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\modules\kernel
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\modules\mal\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\modules\mal
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\extras\crackers\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\extras\crackers
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\extras\rdf\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\extras\rdf
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\extras\xml\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\extras\xml
-
-REM enable auto-loading of modules before `make install`
-if not exist %buildbase%\monetdb5\extras\rdf\autoload mkdir %buildbase%\monetdb5\extras\rdf\autoload
-copy /y %srcdir%\..\monetdb5\extras\rdf\??_*.mal %buildbase%\monetdb5\extras\rdf\autoload
-if not exist %buildbase%\monetdb5\extras\xml\autoload mkdir %buildbase%\monetdb5\extras\xml\autoload
-copy /y %srcdir%\..\monetdb5\extras\xml\??_*.mal %buildbase%\monetdb5\extras\xml\autoload
-
-set PATH=%buildbase%\tools\mserver;%PATH%
-set cfg=%buildbase%\monetdb5\misc\monetdb5.conf
-:skip_5
-
-set PATH=%buildbase%\clients\mapiclient;%buildbase%\clients\examples\C;%buildbase%\clients\examples\php;%buildbase%\clients\examples\python;%buildbase%\clients\perl\Tests;%buildbase%\testing;%PATH%
-
-set PATH=%MOD_PATH%;%PATH%
-set PATH=%builddir%\extras\compiler;%PATH%
-set PATH=%builddir%\tools;%PATH%
-
-set PYTHONPATH=%buildbase%\clients\python\build\lib;%buildbase%\testing;%srcdir%\..\testing;%PYTHONPATH%
+set PYTHONPATH=%buildbase%\clients\python\build\lib;%buildbase%\testing;%srcdir%\testing;%PYTHONPATH%
 
 set CLASSPATH=%buildbase%\java;%buildbase%\java\tests;%CLASSPATH%
 
-set perlib=%buildbase%\clients\perl;%srcdir%\..\clients\perl
+set perlib=%buildbase%\clients\perl;%srcdir%\clients\perl
 set PERLLIB=%perlib%;%PERLLIB%
 set PERL5LIB=%perlib%;%PERL5LIB%
 
-REM execute Mtest.py in the source directory
-pushd %srcdir%
+rem execute Mtest.py in the source directory
+pushd "%srcdir%"
 
-call "%buildbase%\testing\Mtest.py" "--config=%cfg%" -%V% --package=%pkg% "--monet_mod_path=%MOD_PATH%" "--dbfarm=%builddir%\dbfarm" "--xrpc_docroot=%srcdir%\runtime\xrpc" "--TSTTRGBASE=%builddir%" %1 %2 %3 %4 %5 %6 %7 %8 %9
+call "%buildbase%\testing\Mtest.py" "--config=%cfg%" "--package=%pkg%" "--monet_mod_path=%MOD_PATH%" "--dbfarm=%buildbase%\%pkg%\dbfarm" "--TSTTRGBASE=%buildbase%\%pkg%" %1 %2 %3 %4 %5 %6 %7 %8 %9
 
 popd
 endlocal
-
-:end

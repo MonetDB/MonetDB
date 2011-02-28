@@ -2,7 +2,7 @@
 
 if not "%1"=="" goto skip
 call %0 -rq
-goto end
+goto :EOF
 
 :skip
 
@@ -10,77 +10,64 @@ setlocal
 
 set pkg=sql
 set buildbase=@XBUILD@
-set builddir=%buildbase%\sql
-set srcdir=@XSOURCE@\sql
-
-set MOD_PATH=%builddir%\backends\monet5\.libs
-set MOD_PATH=%MOD_PATH%;%builddir%\backends\monet5
-set MOD_PATH=%MOD_PATH%;%builddir%\backends\monet5\vaults\.libs
-set MOD_PATH=%MOD_PATH%;%builddir%\backends\monet5\vaults
-set MOD_PATH=%MOD_PATH%;%builddir%\sql
+set srcdir=@XSOURCE@
 
 REM enable auto-loading of modules before `make install`
-if not exist %builddir%\backends\monet5\autoload mkdir %builddir%\backends\monet5\autoload
-copy /y %srcdir%\backends\monet5\??_*.mal %builddir%\backends\monet5\autoload
-if not exist %builddir%\backends\monet5\vaults\autoload mkdir %builddir%\backends\monet5\vaults\autoload
-copy /y %srcdir%\backends\monet5\vaults\??_*.mal %builddir%\backends\monet5\vaults\autoload
-if "@HAVE_MSEED_FALSE@"==""	del /y %builddir%\backends\monet5\vaults\autoload\71_mseed.mal
-if "@HAVE_CFITSIO_FALSE@"==""	del /y %builddir%\backends\monet5\vaults\autoload\72_fits.mal
+if not exist "%buildbase%\sql\backends\monet5\autoload" mkdir "%buildbase%\sql\backends\monet5\autoload"
+copy /y "%srcdir%"\sql\backends\monet5\??_*.mal "%buildbase%\sql\backends\monet5\autoload"
+rem vaults is not (yet?) built on Windows
+rem if not exist "%buildbase%\sql\backends\monet5\vaults\autoload" mkdir "%buildbase%\sql\backends\monet5\vaults\autoload"
+rem copy /y "%srcdir%"\sql\backends\monet5\vaults\??_*.mal "%buildbase%\sql\backends\monet5\vaults\autoload"
+rem if "@HAVE_MSEED_FALSE@"==""	del /y "%buildbase%\sql\backends\monet5\vaults\autoload\71_mseed.mal"
+rem if "@HAVE_CFITSIO_FALSE@"==""	del /y "%buildbase%\sql\backends\monet5\vaults\autoload\72_fits.mal"
 
 REM enable auto-loading of SQL createdb scripts before `make install`
-if not exist %builddir%\sql\createdb mkdir %builddir%\sql\createdb
-copy /y %srcdir%\sql\??_*.sql %builddir%\sql\createdb
-if "@HAVE_RAPTOR_FALSE@"=""	del /y %builddir%\sql\createdb\30_rdf.sql
+if not exist "%buildbase%\sql\sql\createdb" mkdir "%buildbase%\sql\sql\createdb"
+copy /y "%srcdir%"\sql\sql\??_*.sql "%buildbase%\sql\sql\createdb"
+if "@HAVE_RAPTOR_FALSE@"==""	del /y "%buildbase%\sql\sql\createdb\30_rdf.sql"
 
-set MOD_PATH=%MOD_PATH%;%buildbase%\geom\monetdb5\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\geom\monetdb5
+rem binaries (.exe)
+set PATH=%buildbase%\clients\examples\C;%PATH%
+set PATH=%buildbase%\clients\mapiclient;%PATH%
+set PATH=%buildbase%\clients\odbc\samples;%PATH%
+set PATH=%buildbase%\testing;%PATH%
+set PATH=%buildbase%\tools\mserver;%PATH%
 
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\optimizer\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\optimizer
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\scheduler\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\scheduler
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\modules\atoms\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\modules\atoms
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\modules\kernel\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\modules\kernel
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\modules\mal\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\modules\mal
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\extras\crackers\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\extras\crackers
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\extras\rdf\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\extras\rdf
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\extras\xml\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\extras\xml
+rem libraries (.dll)
+set PATH=%buildbase%\clients\mapilib;%PATH%
+set PATH=%buildbase%\clients\perl\Cimpl;%PATH%
+set PATH=%buildbase%\common\stream;%PATH%
+set PATH=%buildbase%\gdk;%PATH%
+set PATH=%buildbase%\monetdb5\tools;%PATH%
 
-REM enable auto-loading of modules before `make install`
-if not exist %buildbase%\monetdb5\extras\rdf\autoload mkdir %buildbase%\monetdb5\extras\rdf\autoload
-copy /y %srcdir%\..\monetdb5\extras\rdf\??_*.mal %buildbase%\monetdb5\extras\rdf\autoload
-if not exist %buildbase%\monetdb5\extras\xml\autoload mkdir %buildbase%\monetdb5\extras\xml\autoload
-copy /y %srcdir%\..\monetdb5\extras\xml\??_*.mal %buildbase%\monetdb5\extras\xml\autoload
+rem modules (lib_*.dll and *.mal)
+set MOD_PATH=%buildbase%\geom\monetdb5
+set MOD_PATH=%buildbase%\monetdb5\extras\compiler;%MOD_PATH%
+set MOD_PATH=%buildbase%\monetdb5\extras\crackers;%MOD_PATH%
+set MOD_PATH=%buildbase%\monetdb5\modules\atoms;%MOD_PATH%
+set MOD_PATH=%buildbase%\monetdb5\modules\kernel;%MOD_PATH%
+set MOD_PATH=%buildbase%\monetdb5\modules\mal;%MOD_PATH%
+set MOD_PATH=%buildbase%\monetdb5\optimizer;%MOD_PATH%
+set MOD_PATH=%buildbase%\monetdb5\scheduler;%MOD_PATH%
+rem vaults is not (yet?) built on Windows
+rem set MOD_PATH=%buildbase%\sql\backends\monet5\vaults;%MOD_PATH%
+set MOD_PATH=%buildbase%\sql\backends\monet5;%MOD_PATH%
+set MOD_PATH=%buildbase%\sql\sql;%MOD_PATH%
 
 set cfg=%buildbase%\monetdb5\misc\monetdb5.conf
 
-set PATH=%buildbase%\tools\mserver;%buildbase%\clients\mapiclient;%buildbase%\clients\examples\C;%buildbase%\clients\examples\php;%buildbase%\clients\examples\python;%buildbase%\clients\perl\Tests;%buildbase%\testing;%PATH%
-
-set PATH=%MOD_PATH%;%PATH%
-set PATH=%builddir%\server;%PATH%
-set PATH=%builddir%\storage\bat;%PATH%
-set PATH=%builddir%\common;%PATH%
-
-set PYTHONPATH=%builddir%\backends\python\monet5;%buildbase%\clients\python\build\lib;%buildbase%\testing;%srcdir%\..\testing;%PYTHONPATH%
+set PYTHONPATH=%buildbase%\clients\python\build\lib;%buildbase%\testing;%srcdir%\testing;%PYTHONPATH%
 
 set CLASSPATH=%buildbase%\java;%buildbase%\java\tests;%CLASSPATH%
 
-set perlib=%buildbase%\clients\perl;%srcdir%\..\clients\perl
+set perlib=%buildbase%\clients\perl;%srcdir%\clients\perl
 set PERLLIB=%perlib%;%PERLLIB%
 set PERL5LIB=%perlib%;%PERL5LIB%
 
-REM execute Mtest.py in the source directory
-pushd %srcdir%
+rem execute Mtest.py in the source directory
+pushd "%srcdir%"
 
-call "%buildbase%\testing\Mtest.py" "--config=%cfg%" "--package=%pkg%" "--monet_mod_path=%MOD_PATH%" "--dbfarm=%builddir%\dbfarm" "--TSTTRGBASE=%builddir%" %1 %2 %3 %4 %5 %6 %7 %8 %9
+call "%buildbase%\testing\Mtest.py" "--config=%cfg%" "--package=%pkg%" "--monet_mod_path=%MOD_PATH%" "--dbfarm=%buildbase%\%pkg%\dbfarm" "--TSTTRGBASE=%buildbase%\%pkg%" %1 %2 %3 %4 %5 %6 %7 %8 %9
 
 popd
 endlocal
-
-:end
