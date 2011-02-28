@@ -130,6 +130,7 @@ gdk_export int MT_alloc_table(void);
 #ifdef __linux__
 /* on Linux, posix_madvise does not seem to work, fall back to classic madvise */
 #undef HAVE_POSIX_MADVISE
+#undef HAVE_POSIX_FADVISE
 #undef POSIX_MADV_NORMAL
 #undef POSIX_MADV_RANDOM
 #undef POSIX_MADV_SEQUENTIAL
