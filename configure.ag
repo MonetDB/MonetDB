@@ -377,6 +377,10 @@ AC_LANG([C])
 
 # autoconf-2.60: enable extensions on systems that normally disable them
 AC_USE_SYSTEM_EXTENSIONS()
+# enable 64-bits file offsets, check this early, since it breaks other
+# stuff (in particular on Solaris), which we do not want to detect as
+# usable below in that case
+AC_SYS_LARGEFILE
 
 AC_PROG_CPP()
 dnl check for compiler (also set GCC (yes/no)).
@@ -2979,7 +2983,6 @@ int x = (m.usmblks < 0);], AC_DEFINE(HAVE_SIGNED_MALLINFO, 1, [Define if your ma
 
 dnl     checks for structures
 dnl     checks for compiler characteristics
-AC_SYS_LARGEFILE
 AC_C_CONST
 AC_C_INLINE
 AC_COMPILE_IFELSE([AC_LANG_SOURCE([int foo(int * restrict p) { return *p; }])],
