@@ -67,6 +67,7 @@ view_modules().reverse().mark(oid(nil)).kunique().sort().print();
 [ "counters",	  nil	  ]
 [ "decimal",	  nil	  ]
 [ "enum",	  nil	  ]
+[ "geom",	  nil	  ]
 [ "image",	  nil	  ]
 [ "lock",	  nil	  ]
 [ "logger",	  nil	  ]
@@ -76,9 +77,14 @@ view_modules().reverse().mark(oid(nil)).kunique().sort().print();
 [ "mkey",	  nil	  ]
 [ "mmath",	  nil	  ]
 [ "monettime",	  nil	  ]
+[ "pathfinder",	  nil	  ]
 [ "pcl",	  nil	  ]
 [ "pcre",	  nil	  ]
+[ "pf_standoff",  nil	  ]
+[ "pf_support",	  nil	  ]
+[ "pftijah",	  nil	  ]
 [ "pqueue",	  nil	  ]
+[ "probxml",	  nil	  ]
 [ "profiler",	  nil	  ]
 [ "restore",	  nil	  ]
 [ "salgebra",	  nil	  ]
@@ -93,6 +99,8 @@ view_modules().reverse().mark(oid(nil)).kunique().sort().print();
 [ "url",	  nil	  ]
 [ "vector",	  nil	  ]
 [ "wisc",	  nil	  ]
+[ "xrpc_client",  nil	  ]
+[ "xrpc_server",  nil	  ]
 [ "xtables",	  nil	  ]
 
 loaded();
@@ -143,13 +151,15 @@ fix.mark(oid(nil)).print();
 [ "sys",	  nil	  ]
 [ "trans",	  nil	  ]
 
-var others:=kdiff(view_modules().reverse().kunique(),mmn().reverse()).sort().access(BAT_WRITE).revert();
+# skip pftijah & xrpc_server as they require pathfinder to be loaded first
+var others:=kdiff(view_modules().reverse().kunique(),mmn().reverse()).access(BAT_WRITE).delete("pftijah").delete("xrpc_server").sort().access(BAT_WRITE).revert();
 others.mark(oid(nil)).print();
 #-------------------------#
 # BAT:		  tmp_26  #
 # (str)		  (void)  #
 #-------------------------#
 [ "xtables",	  nil	  ]
+[ "xrpc_client",  nil	  ]
 [ "wisc",	  nil	  ]
 [ "vector",	  nil	  ]
 [ "url",	  nil	  ]
@@ -161,9 +171,13 @@ others.mark(oid(nil)).print();
 [ "salgebra",	  nil	  ]
 [ "restore",	  nil	  ]
 [ "profiler",	  nil	  ]
+[ "probxml",	  nil	  ]
 [ "pqueue",	  nil	  ]
+[ "pf_support",	  nil	  ]
+[ "pf_standoff",  nil	  ]
 [ "pcre",	  nil	  ]
 [ "pcl",	  nil	  ]
+[ "pathfinder",	  nil	  ]
 [ "monettime",	  nil	  ]
 [ "mmath",	  nil	  ]
 [ "mkey",	  nil	  ]
@@ -173,6 +187,7 @@ others.mark(oid(nil)).print();
 [ "logger",	  nil	  ]
 [ "lock",	  nil	  ]
 [ "image",	  nil	  ]
+[ "geom",	  nil	  ]
 [ "enum",	  nil	  ]
 [ "decimal",	  nil	  ]
 [ "counters",	  nil	  ]
@@ -227,7 +242,51 @@ others@batloop(){
 	dropping xtables
 
 #---------------------------------#
-# module	| usage_count	  #
+# module		usage_count	  # name
+# str		int		  # type
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading xrpc_client
+
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  1		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xrpc_client",  1		  ]
+#-------------------------#
+# h		t	  # name
+# str		void	  # type
+#-------------------------#
+[ "xrpc_client",  nil	  ]
+[ "lock",	  nil	  ]
+
+	dropping xrpc_client
+
+
+	dropping lock
+
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
 #---------------------------------#
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
@@ -665,7 +724,7 @@ others@batloop(){
 [ "sys",	  1	  ]
 [ "trans",	  1	  ]
 
-	loading pqueue
+	loading probxml
 
 #-------------------------#
 # tmp_33		tmp_41	  # name
@@ -677,7 +736,7 @@ others@batloop(){
 [ "builtin",	  1	  ]
 [ "constant",	  1		  ]
 [ "main",	  1	  ]
-[ "pqueue",	  1	  ]
+[ "probxml",	  1		  ]
 [ "str",	  1	  ]
 [ "sys",	  1	  ]
 [ "trans",	  1	  ]
@@ -685,9 +744,9 @@ others@batloop(){
 # h		t	  # name
 # str		void	  # type
 #-------------------------#
-[ "pqueue",	  nil	  ]
+[ "probxml",	  nil	  ]
 
-	dropping pqueue
+	dropping probxml
 
 #-------------------------#
 # tmp_33		tmp_43	  # name
@@ -703,7 +762,7 @@ others@batloop(){
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 
-	loading pcre
+	loading pqueue
 
 #---------------------------------#
 # module		usage_count	  # name
@@ -715,17 +774,17 @@ others@batloop(){
 [ "builtin",	  1		  ]
 [ "constant",	  1		  ]
 [ "main",	  1		  ]
-[ "pcre",	  1		  ]
+[ "pqueue",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
 # h	tmp_37	  # name
 # str	void	  # type
-#-----------------#
-[ "pcre", nil	  ]
+#-------------------------#
+[ "pqueue",	  nil	  ]
 
-	dropping pcre
+	dropping pqueue
 
 #---------------------------------#
 # module		usage_count	  # name
@@ -741,875 +800,27 @@ others@batloop(){
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 
-	loading pcl
+	loading pf_support
 
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "pcl",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-#-----------------#
-# BAT:	  tmp_33  #
-# (str)	  (void)  #
-#-----------------#
-[ "pcl",  nil	  ]
-
-	dropping pcl
-
-#---------------------------------#
-# module		usage_count	  # name
-# str		int		  # type
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading monettime
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "alarm",	  1		  ]
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "monettime",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-#-------------------------#
-# BAT:		  tmp_46  #
-# (str)		  (void)  #
-#-------------------------#
-[ "monettime",	  nil	  ]
-[ "alarm",	  nil	  ]
-
-	dropping monettime
-
-
-	dropping alarm
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading mmath
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "mmath",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-#-------------------------#
-# BAT:		  tmp_50  #
-# (str)		  (void)  #
-#-------------------------#
-[ "mmath",	  nil	  ]
-
-	dropping mmath
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading mkey
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "mkey",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-#-----------------#
-# BAT:	  tmp_49  #
-# (str)	  (void)  #
-#-----------------#
-[ "mkey", nil	  ]
-
-	dropping mkey
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading mel
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "mel",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-#-----------------#
-# BAT:	  tmp_49  #
-# (str)	  (void)  #
-#-----------------#
-[ "mel",  nil	  ]
-
-	dropping mel
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading mapi
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "mapi",	  1		  ]
-[ "str",	  1		  ]
-[ "streams",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-#-------------------------#
-# BAT:		  tmp_46  #
-# (str)		  (void)  #
-#-------------------------#
-[ "mapi",	  nil	  ]
-[ "streams",	  nil	  ]
-
-	dropping mapi
-
-
-	dropping streams
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading malalgebra
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "malalgebra",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-#-------------------------#
-# BAT:		  tmp_45  #
-# (str)		  (void)  #
-#-------------------------#
-[ "mapi",	  nil	  ]
-[ "streams",	  nil	  ]
-[ "malalgebra",	  nil	  ]
-
-	dropping mapi
-
-
-	dropping streams
-
-
-	dropping malalgebra
-
-#---------------------------------#
-# module		usage_count	  # name
-# str		int		  # type
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading logger
-
-#---------------------------------#
-# module		usage_count	  # name
-# str		int		  # type
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "logger",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-#-------------------------#
-# h		t	  # name
-# str		void	  # type
-#-------------------------#
-[ "mapi",	  nil	  ]
-[ "streams",	  nil	  ]
-[ "logger",	  nil	  ]
-
-	dropping mapi
-
-
-	dropping streams
-
-
-	dropping logger
-
-#---------------------------------#
-# module		usage_count	  # name
-# str		int		  # type
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading lock
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "lock",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-#-------------------------#
-# h		t	  # name
-# str		void	  # type
-#-------------------------#
-[ "mapi",	  nil	  ]
-[ "streams",	  nil	  ]
-[ "lock", nil	  ]
-
-	dropping mapi
-
-
-	dropping streams
-
-
-	dropping lock
-
-#---------------------------------#
-# module		usage_count	  # name
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading image
-
-#---------------------------------#
-# module		usage_count	  # name
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "image",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-[ "url",	  1		  ]
-#-------------------------#
-# h		tmp_44	  # name
-# str		void	  # type
-#-------------------------#
-[ "mapi",	  nil	  ]
-[ "streams",	  nil	  ]
-[ "image",	  nil	  ]
-[ "url",	  nil	  ]
-
-	dropping mapi
-
-
-	dropping streams
-
-
-	dropping image
-
-
-	dropping url
-
-#---------------------------------#
-# module		usage_count	  # name
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading enum
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "enum",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "streams",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-#-------------------------#
-# BAT:		  tmp_47  #
-# (str)		  (void)  #
-#-------------------------#
-[ "mapi",	  nil	  ]
-[ "streams",	  nil	  ]
-[ "enum",	  nil	  ]
-
-	dropping mapi
-
-
-	dropping streams
-
-
-	dropping enum
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading decimal
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "decimal",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-#-------------------------#
-# BAT:		  tmp_52  #
-# (str)		  (void)  #
-#-------------------------#
-[ "mapi",	  nil	  ]
-[ "streams",	  nil	  ]
-[ "decimal",	  nil	  ]
-
-	dropping mapi
-
-
-	dropping streams
-
-
-	dropping decimal
-
-#---------------------------------#
-# module		usage_count	  # name
-# str		int		  # type
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading counters
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "counters",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-#-------------------------#
-# BAT:		  tmp_49  #
-# (str)		  (void)  #
-#-------------------------#
-[ "mapi",	  nil	  ]
-[ "streams",	  nil	  ]
-[ "counters",	  nil	  ]
-
-	dropping mapi
-
-
-	dropping streams
-
-
-	dropping counters
-
-#---------------------------------#
-# module		usage_count	  # name
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading color
-
-#---------------------------------#
-# module		usage_count	  # name
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "color",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-#-------------------------#
-# h		tmp_45	  # name
-# str		void	  # type
-#-------------------------#
-[ "mapi",	  nil	  ]
-[ "streams",	  nil	  ]
-[ "color",	  nil	  ]
-
-	dropping mapi
-
-
-	dropping streams
-
-
-	dropping color
-
-#---------------------------------#
-# module		usage_count	  # name
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading calib
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "calib",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-#-------------------------#
-# BAT:		  tmp_46  #
-# (str)		  (void)  #
-#-------------------------#
-[ "mapi",	  nil	  ]
-[ "streams",	  nil	  ]
-[ "calib",	  nil	  ]
-
-	dropping mapi
-
-
-	dropping streams
-
-
-	dropping calib
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading blob
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "blob",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-#-------------------------#
-# h		t	  # name
-# str		void	  # type
-#-------------------------#
-[ "mapi",	  nil	  ]
-[ "streams",	  nil	  ]
-[ "blob", nil	  ]
-
-	dropping mapi
-
-
-	dropping streams
-
-
-	dropping blob
-
-#---------------------------------#
-# module		usage_count	  # name
-# str		int		  # type
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading bitset
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "bitset",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-#-------------------------#
-# BAT:		  tmp_54  #
-# (str)		  (void)  #
-#-------------------------#
-[ "mapi",	  nil	  ]
-[ "streams",	  nil	  ]
-[ "bitset",	  nil	  ]
-
-	dropping mapi
-
-
-	dropping streams
-
-
-	dropping bitset
-
-#---------------------------------#
-# module		usage_count	  # name
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading bat_mmath
-
-#---------------------------------#
-# module		usage_count	  # name
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "bat_mmath",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-#-------------------------#
-# h		tmp_45	  # name
-# str		void	  # type
-#-------------------------#
-[ "mapi",	  nil	  ]
-[ "streams",	  nil	  ]
-[ "bat_mmath",	  nil	  ]
-
-	dropping mapi
-
-
-	dropping streams
-
-
-	dropping bat_mmath
-
-#---------------------------------#
-# module		usage_count	  # name
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading bat_cast
-
-#---------------------------------#
-# module		usage_count	  # name
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "bat_cast",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-#-------------------------#
-# h		tmp_48	  # name
-# str		void	  # type
-#-------------------------#
-[ "mapi",	  nil	  ]
-[ "streams",	  nil	  ]
-[ "bat_cast",	  nil	  ]
-
-	dropping mapi
-
-
-	dropping streams
-
-
-	dropping bat_cast
-
-#---------------------------------#
-# module		usage_count	  # name
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading bat_arith
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  2		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
 [ "bat_arith",	  1		  ]
 [ "builtin",	  1		  ]
 [ "constant",	  1		  ]
+[ "lock",	  2		  ]
+[ "logger",	  1		  ]
 [ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-#-------------------------#
-# BAT:		  tmp_49  #
-# (str)		  (void)  #
-#-------------------------#
-[ "mapi",	  nil	  ]
-[ "streams",	  nil	  ]
-[ "bat_arith",	  nil	  ]
-
-	dropping mapi
-
-
-	dropping streams
-
-
-	dropping bat_arith
-
-#---------------------------------#
-# module		usage_count	  # name
-# str		int		  # type
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading backup
-
-#---------------------------------#
-# module		usage_count	  # name
-# str		int		  # type
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "ascii_io",	  1		  ]
-[ "backup",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
+[ "malalgebra",	  2		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  2		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
 [ "str",	  1		  ]
 [ "streams",	  1		  ]
 [ "sys",	  1		  ]
@@ -1619,130 +830,129 @@ others@batloop(){
 # h		t	  # name
 # str		void	  # type
 #-------------------------#
-[ "mapi",	  nil	  ]
+[ "pf_support",	  nil	  ]
+[ "malalgebra",	  nil	  ]
+[ "lock",	  nil	  ]
+[ "monettime",	  nil	  ]
+[ "alarm",	  nil	  ]
 [ "streams",	  nil	  ]
-[ "backup",	  nil	  ]
 [ "xtables",	  nil	  ]
-[ "ascii_io",	  nil	  ]
+[ "aggrX3",	  nil	  ]
+[ "bat_arith",	  nil	  ]
+[ "mmath",	  nil	  ]
+[ "pcre",	  nil	  ]
+[ "logger",	  nil	  ]
 
-	dropping mapi
+	dropping pf_support
+
+
+	dropping malalgebra
+
+
+	dropping lock
+
+
+	dropping monettime
+
+
+	dropping alarm
 
 
 	dropping streams
-
-
-	dropping backup
 
 
 	dropping xtables
 
 
-	dropping ascii_io
+	dropping aggrX3
+
+
+	dropping bat_arith
+
+
+	dropping mmath
+
+
+	dropping pcre
+
+
+	dropping logger
 
 #---------------------------------#
 # module		usage_count	  # name
 # str		int		  # type
 #---------------------------------#
+[ "alarm",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
 [ "builtin",	  1		  ]
 [ "constant",	  1		  ]
+[ "lock",	  1		  ]
 [ "main",	  1		  ]
+[ "malalgebra",	  1		  ]
+[ "monettime",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 
-	loading ascii_io
+	loading pf_standoff
 
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  2		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
-[ "ascii_io",	  1		  ]
 [ "bat",	  1		  ]
 [ "builtin",	  1		  ]
 [ "constant",	  1		  ]
+[ "lock",	  1		  ]
 [ "main",	  1		  ]
+[ "malalgebra",	  2		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  1		  ]
+[ "pf_standoff",  1		  ]
 [ "str",	  1		  ]
-[ "streams",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "xtables",	  1		  ]
 #-------------------------#
 # BAT:		  tmp_46  #
 # (str)		  (void)  #
 #-------------------------#
-[ "mapi",	  nil	  ]
-[ "streams",	  nil	  ]
-[ "ascii_io",	  nil	  ]
+[ "malalgebra",	  nil	  ]
+[ "lock",	  nil	  ]
+[ "monettime",	  nil	  ]
+[ "alarm",	  nil	  ]
+[ "pf_standoff",  nil	  ]
+[ "aggrX3",	  nil	  ]
+[ "mmath",	  nil	  ]
+[ "xtables",	  nil	  ]
 
-	dropping mapi
-
-
-	dropping streams
-
-
-	dropping ascii_io
-
-#---------------------------------#
-# module		usage_count	  # name
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading array
-
-#---------------------------------#
-# module		usage_count	  # name
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "array",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-#-------------------------#
-# h		tmp_43	  # name
-# str		void	  # type
-#-------------------------#
-[ "mapi",	  nil	  ]
-[ "streams",	  nil	  ]
-[ "array",	  nil	  ]
-
-	dropping mapi
+	dropping malalgebra
 
 
-	dropping streams
+	dropping lock
 
 
-	dropping array
+	dropping monettime
 
-#---------------------------------#
-# module		usage_count	  # name
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
 
-	loading alarm
+	dropping alarm
+
+
+	dropping pf_standoff
+
+
+	dropping aggrX3
+
+
+	dropping mmath
+
+
+	dropping xtables
 
 #---------------------------------#
 # module	| usage_count	  #
@@ -1753,95 +963,90 @@ others@batloop(){
 [ "bat",	  1		  ]
 [ "builtin",	  1		  ]
 [ "constant",	  1		  ]
+[ "lock",	  1		  ]
 [ "main",	  1		  ]
+[ "malalgebra",	  1		  ]
+[ "monettime",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading pcre
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "alarm",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  1		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  1		  ]
+[ "monettime",	  1		  ]
+[ "pcre",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_45  #
+# BAT:		  tmp_50  #
 # (str)		  (void)  #
 #-------------------------#
-[ "mapi",	  nil	  ]
-[ "streams",	  nil	  ]
+[ "malalgebra",	  nil	  ]
+[ "lock",	  nil	  ]
+[ "monettime",	  nil	  ]
 [ "alarm",	  nil	  ]
+[ "pcre",	  nil	  ]
 
-	dropping mapi
+	dropping malalgebra
 
 
-	dropping streams
+	dropping lock
+
+
+	dropping monettime
 
 
 	dropping alarm
 
+
+	dropping pcre
+
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
+[ "alarm",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
 [ "builtin",	  1		  ]
 [ "constant",	  1		  ]
+[ "lock",	  1		  ]
 [ "main",	  1		  ]
+[ "malalgebra",	  1		  ]
+[ "monettime",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 
-	loading aggrX3
+	loading pcl
 
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "aggrX3",	  1		  ]
+[ "alarm",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
 [ "builtin",	  1		  ]
 [ "constant",	  1		  ]
+[ "lock",	  1		  ]
 [ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-#-------------------------#
-# BAT:		  tmp_47  #
-# (str)		  (void)  #
-#-------------------------#
-[ "mapi",	  nil	  ]
-[ "streams",	  nil	  ]
-[ "aggrX3",	  nil	  ]
-
-	dropping mapi
-
-
-	dropping streams
-
-
-	dropping aggrX3
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading aggr
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "aggr",	  1		  ]
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "builtin",	  1		  ]
-[ "constant",	  1		  ]
-[ "main",	  1		  ]
+[ "malalgebra",	  1		  ]
+[ "monettime",	  1		  ]
+[ "pcl",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -1849,14 +1054,3676 @@ others@batloop(){
 # h		t	  # name
 # str		void	  # type
 #-------------------------#
-[ "mapi",	  nil	  ]
+[ "malalgebra",	  nil	  ]
+[ "lock",	  nil	  ]
+[ "monettime",	  nil	  ]
+[ "alarm",	  nil	  ]
+[ "pcl",	  nil	  ]
+
+	dropping malalgebra
+
+
+	dropping lock
+
+
+	dropping monettime
+
+
+	dropping alarm
+
+
+	dropping pcl
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "alarm",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  1		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  1		  ]
+[ "monettime",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading pathfinder
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "aggrX3",	  3		  ]
+[ "alarm",	  5		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  2		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  5		  ]
+[ "logger",	  4		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  5		  ]
+[ "mapi",	  1		  ]
+[ "mkey",	  1		  ]
+[ "mmath",	  3		  ]
+[ "monettime",	  4		  ]
+[ "pathfinder",	  1		  ]
+[ "pcre",	  2		  ]
+[ "pf_standoff",  1		  ]
+[ "pf_support",	  2		  ]
+[ "pftijah",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  3		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xrpc_client",  1		  ]
+[ "xrpc_server",  1		  ]
+[ "xtables",	  3		  ]
+#-------------------------#
+# BAT:		  tmp_46  #
+# (str)		  (void)  #
+#-------------------------#
+[ "malalgebra",	  nil	  ]
+[ "lock",	  nil	  ]
+[ "monettime",	  nil	  ]
+[ "alarm",	  nil	  ]
+[ "pathfinder",	  nil	  ]
+[ "logger",	  nil	  ]
+[ "pf_support",	  nil	  ]
 [ "streams",	  nil	  ]
-[ "aggr", nil	  ]
+[ "xtables",	  nil	  ]
+[ "aggrX3",	  nil	  ]
+[ "bat_arith",	  nil	  ]
+[ "mmath",	  nil	  ]
+[ "pcre",	  nil	  ]
+[ "mapi",	  nil	  ]
+[ "mkey",	  nil	  ]
+[ "xrpc_server",  nil	  ]
+[ "xrpc_client",  nil	  ]
+[ "pf_standoff",  nil	  ]
+[ "pftijah",	  nil	  ]
+
+	dropping malalgebra
+
+
+	dropping lock
+
+
+	dropping monettime
+
+
+	dropping alarm
+
+
+	dropping pathfinder
+
+
+	dropping logger
+
+
+	dropping pf_support
+
+
+	dropping streams
+
+
+	dropping xtables
+
+
+	dropping aggrX3
+
+
+	dropping bat_arith
+
+
+	dropping mmath
+
+
+	dropping pcre
+
 
 	dropping mapi
 
 
+	dropping mkey
+
+
+	dropping xrpc_server
+
+
+	dropping xrpc_client
+
+
+	dropping pf_standoff
+
+
+	dropping pftijah
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+
+	loading monettime
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  4		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  4		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_45  #
+# (str)		  (void)  #
+#-------------------------#
+[ "malalgebra",	  nil	  ]
+[ "lock",	  nil	  ]
+[ "monettime",	  nil	  ]
+[ "alarm",	  nil	  ]
+[ "pathfinder",	  nil	  ]
+[ "logger",	  nil	  ]
+[ "pf_support",	  nil	  ]
+[ "streams",	  nil	  ]
+[ "xtables",	  nil	  ]
+[ "aggrX3",	  nil	  ]
+[ "bat_arith",	  nil	  ]
+[ "mmath",	  nil	  ]
+[ "pcre",	  nil	  ]
+[ "mapi",	  nil	  ]
+[ "mkey",	  nil	  ]
+[ "xrpc_server",  nil	  ]
+[ "xrpc_client",  nil	  ]
+[ "pf_standoff",  nil	  ]
+[ "pftijah",	  nil	  ]
+
+	dropping malalgebra
+
+
+	dropping lock
+
+
+	dropping monettime
+
+
+	dropping alarm
+
+
+	dropping pathfinder
+
+
+	dropping logger
+
+
+	dropping pf_support
+
+
 	dropping streams
+
+
+	dropping xtables
+
+
+	dropping aggrX3
+
+
+	dropping bat_arith
+
+
+	dropping mmath
+
+
+	dropping pcre
+
+
+	dropping mapi
+
+
+	dropping mkey
+
+
+	dropping xrpc_server
+
+
+	dropping xrpc_client
+
+
+	dropping pf_standoff
+
+
+	dropping pftijah
+
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+
+	loading mmath
+
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  2		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+#-------------------------#
+# h		t	  # name
+# str		void	  # type
+#-------------------------#
+[ "malalgebra",	  nil	  ]
+[ "lock",	  nil	  ]
+[ "monettime",	  nil	  ]
+[ "alarm",	  nil	  ]
+[ "pathfinder",	  nil	  ]
+[ "logger",	  nil	  ]
+[ "pf_support",	  nil	  ]
+[ "streams",	  nil	  ]
+[ "xtables",	  nil	  ]
+[ "aggrX3",	  nil	  ]
+[ "bat_arith",	  nil	  ]
+[ "mmath",	  nil	  ]
+[ "pcre",	  nil	  ]
+[ "mapi",	  nil	  ]
+[ "mkey",	  nil	  ]
+[ "xrpc_server",  nil	  ]
+[ "xrpc_client",  nil	  ]
+[ "pf_standoff",  nil	  ]
+[ "pftijah",	  nil	  ]
+
+	dropping malalgebra
+
+
+	dropping lock
+
+
+	dropping monettime
+
+
+	dropping alarm
+
+
+	dropping pathfinder
+
+
+	dropping logger
+
+
+	dropping pf_support
+
+
+	dropping streams
+
+
+	dropping xtables
+
+
+	dropping aggrX3
+
+
+	dropping bat_arith
+
+
+	dropping mmath
+
+
+	dropping pcre
+
+
+	dropping mapi
+
+
+	dropping mkey
+
+
+	dropping xrpc_server
+
+
+	dropping xrpc_client
+
+
+	dropping pf_standoff
+
+
+	dropping pftijah
+
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+
+	loading mkey
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mkey",	  1		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+#-------------------------#
+# h		t	  # name
+# str		void	  # type
+#-------------------------#
+[ "malalgebra",	  nil	  ]
+[ "lock", nil	  ]
+[ "monettime",	  nil	  ]
+[ "alarm",	  nil	  ]
+[ "pathfinder",	  nil	  ]
+[ "logger",	  nil	  ]
+[ "pf_support",	  nil	  ]
+[ "streams",	  nil	  ]
+[ "xtables",	  nil	  ]
+[ "aggrX3",	  nil	  ]
+[ "bat_arith",	  nil	  ]
+[ "mmath",	  nil	  ]
+[ "pcre",	  nil	  ]
+[ "mapi",	  nil	  ]
+[ "mkey",	  nil	  ]
+[ "xrpc_server",  nil	  ]
+[ "xrpc_client",  nil	  ]
+[ "pf_standoff",  nil	  ]
+[ "pftijah",	  nil	  ]
+
+	dropping malalgebra
+
+
+	dropping lock
+
+
+	dropping monettime
+
+
+	dropping alarm
+
+
+	dropping pathfinder
+
+
+	dropping logger
+
+
+	dropping pf_support
+
+
+	dropping streams
+
+
+	dropping xtables
+
+
+	dropping aggrX3
+
+
+	dropping bat_arith
+
+
+	dropping mmath
+
+
+	dropping pcre
+
+
+	dropping mapi
+
+
+	dropping mkey
+
+
+	dropping xrpc_server
+
+
+	dropping xrpc_client
+
+
+	dropping pf_standoff
+
+
+	dropping pftijah
+
+#---------------------------------#
+# module		usage_count	  # name
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+
+	loading mel
+
+#---------------------------------#
+# module		usage_count	  # name
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mel",	  1		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+#-------------------------#
+# h		tmp_44	  # name
+# str		void	  # type
+#-------------------------#
+[ "malalgebra",	  nil	  ]
+[ "lock",	  nil	  ]
+[ "monettime",	  nil	  ]
+[ "alarm",	  nil	  ]
+[ "pathfinder",	  nil	  ]
+[ "logger",	  nil	  ]
+[ "pf_support",	  nil	  ]
+[ "streams",	  nil	  ]
+[ "xtables",	  nil	  ]
+[ "aggrX3",	  nil	  ]
+[ "bat_arith",	  nil	  ]
+[ "mmath",	  nil	  ]
+[ "pcre",	  nil	  ]
+[ "mapi",	  nil	  ]
+[ "mkey",	  nil	  ]
+[ "xrpc_server",  nil	  ]
+[ "xrpc_client",  nil	  ]
+[ "pf_standoff",  nil	  ]
+[ "pftijah",	  nil	  ]
+[ "mel",	  nil	  ]
+
+	dropping malalgebra
+
+
+	dropping lock
+
+
+	dropping monettime
+
+
+	dropping alarm
+
+
+	dropping pathfinder
+
+
+	dropping logger
+
+
+	dropping pf_support
+
+
+	dropping streams
+
+
+	dropping xtables
+
+
+	dropping aggrX3
+
+
+	dropping bat_arith
+
+
+	dropping mmath
+
+
+	dropping pcre
+
+
+	dropping mapi
+
+
+	dropping mkey
+
+
+	dropping xrpc_server
+
+
+	dropping xrpc_client
+
+
+	dropping pf_standoff
+
+
+	dropping pftijah
+
+
+	dropping mel
+
+#---------------------------------#
+# module		usage_count	  # name
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+
+	loading mapi
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mapi",	  1		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  2		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_47  #
+# (str)		  (void)  #
+#-------------------------#
+[ "malalgebra",	  nil	  ]
+[ "lock",	  nil	  ]
+[ "monettime",	  nil	  ]
+[ "alarm",	  nil	  ]
+[ "pathfinder",	  nil	  ]
+[ "logger",	  nil	  ]
+[ "pf_support",	  nil	  ]
+[ "streams",	  nil	  ]
+[ "xtables",	  nil	  ]
+[ "aggrX3",	  nil	  ]
+[ "bat_arith",	  nil	  ]
+[ "mmath",	  nil	  ]
+[ "pcre",	  nil	  ]
+[ "mapi",	  nil	  ]
+[ "mkey",	  nil	  ]
+[ "xrpc_server",  nil	  ]
+[ "xrpc_client",  nil	  ]
+[ "pf_standoff",  nil	  ]
+[ "pftijah",	  nil	  ]
+
+	dropping malalgebra
+
+
+	dropping lock
+
+
+	dropping monettime
+
+
+	dropping alarm
+
+
+	dropping pathfinder
+
+
+	dropping logger
+
+
+	dropping pf_support
+
+
+	dropping streams
+
+
+	dropping xtables
+
+
+	dropping aggrX3
+
+
+	dropping bat_arith
+
+
+	dropping mmath
+
+
+	dropping pcre
+
+
+	dropping mapi
+
+
+	dropping mkey
+
+
+	dropping xrpc_server
+
+
+	dropping xrpc_client
+
+
+	dropping pf_standoff
+
+
+	dropping pftijah
+
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+
+	loading malalgebra
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  4		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_49  #
+# (str)		  (void)  #
+#-------------------------#
+[ "malalgebra",	  nil	  ]
+[ "lock",	  nil	  ]
+[ "monettime",	  nil	  ]
+[ "alarm",	  nil	  ]
+[ "pathfinder",	  nil	  ]
+[ "logger",	  nil	  ]
+[ "pf_support",	  nil	  ]
+[ "streams",	  nil	  ]
+[ "xtables",	  nil	  ]
+[ "aggrX3",	  nil	  ]
+[ "bat_arith",	  nil	  ]
+[ "mmath",	  nil	  ]
+[ "pcre",	  nil	  ]
+[ "mapi",	  nil	  ]
+[ "mkey",	  nil	  ]
+[ "xrpc_server",  nil	  ]
+[ "xrpc_client",  nil	  ]
+[ "pf_standoff",  nil	  ]
+[ "pftijah",	  nil	  ]
+
+	dropping malalgebra
+
+
+	dropping lock
+
+
+	dropping monettime
+
+
+	dropping alarm
+
+
+	dropping pathfinder
+
+
+	dropping logger
+
+
+	dropping pf_support
+
+
+	dropping streams
+
+
+	dropping xtables
+
+
+	dropping aggrX3
+
+
+	dropping bat_arith
+
+
+	dropping mmath
+
+
+	dropping pcre
+
+
+	dropping mapi
+
+
+	dropping mkey
+
+
+	dropping xrpc_server
+
+
+	dropping xrpc_client
+
+
+	dropping pf_standoff
+
+
+	dropping pftijah
+
+#---------------------------------#
+# module		usage_count	  # name
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+
+	loading logger
+
+#---------------------------------#
+# module		usage_count	  # name
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  3		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+#-------------------------#
+# h		tmp_45	  # name
+# str		void	  # type
+#-------------------------#
+[ "malalgebra",	  nil	  ]
+[ "lock",	  nil	  ]
+[ "monettime",	  nil	  ]
+[ "alarm",	  nil	  ]
+[ "pathfinder",	  nil	  ]
+[ "logger",	  nil	  ]
+[ "pf_support",	  nil	  ]
+[ "streams",	  nil	  ]
+[ "xtables",	  nil	  ]
+[ "aggrX3",	  nil	  ]
+[ "bat_arith",	  nil	  ]
+[ "mmath",	  nil	  ]
+[ "pcre",	  nil	  ]
+[ "mapi",	  nil	  ]
+[ "mkey",	  nil	  ]
+[ "xrpc_server",  nil	  ]
+[ "xrpc_client",  nil	  ]
+[ "pf_standoff",  nil	  ]
+[ "pftijah",	  nil	  ]
+
+	dropping malalgebra
+
+
+	dropping lock
+
+
+	dropping monettime
+
+
+	dropping alarm
+
+
+	dropping pathfinder
+
+
+	dropping logger
+
+
+	dropping pf_support
+
+
+	dropping streams
+
+
+	dropping xtables
+
+
+	dropping aggrX3
+
+
+	dropping bat_arith
+
+
+	dropping mmath
+
+
+	dropping pcre
+
+
+	dropping mapi
+
+
+	dropping mkey
+
+
+	dropping xrpc_server
+
+
+	dropping xrpc_client
+
+
+	dropping pf_standoff
+
+
+	dropping pftijah
+
+#---------------------------------#
+# module		usage_count	  # name
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+
+	loading lock
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  4		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_46  #
+# (str)		  (void)  #
+#-------------------------#
+[ "malalgebra",	  nil	  ]
+[ "lock",	  nil	  ]
+[ "monettime",	  nil	  ]
+[ "alarm",	  nil	  ]
+[ "pathfinder",	  nil	  ]
+[ "logger",	  nil	  ]
+[ "pf_support",	  nil	  ]
+[ "streams",	  nil	  ]
+[ "xtables",	  nil	  ]
+[ "aggrX3",	  nil	  ]
+[ "bat_arith",	  nil	  ]
+[ "mmath",	  nil	  ]
+[ "pcre",	  nil	  ]
+[ "mapi",	  nil	  ]
+[ "mkey",	  nil	  ]
+[ "xrpc_server",  nil	  ]
+[ "xrpc_client",  nil	  ]
+[ "pf_standoff",  nil	  ]
+[ "pftijah",	  nil	  ]
+
+	dropping malalgebra
+
+
+	dropping lock
+
+
+	dropping monettime
+
+
+	dropping alarm
+
+
+	dropping pathfinder
+
+
+	dropping logger
+
+
+	dropping pf_support
+
+
+	dropping streams
+
+
+	dropping xtables
+
+
+	dropping aggrX3
+
+
+	dropping bat_arith
+
+
+	dropping mmath
+
+
+	dropping pcre
+
+
+	dropping mapi
+
+
+	dropping mkey
+
+
+	dropping xrpc_server
+
+
+	dropping xrpc_client
+
+
+	dropping pf_standoff
+
+
+	dropping pftijah
+
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+
+	loading image
+
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "image",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "url",	  1		  ]
+[ "xtables",	  1		  ]
+#-------------------------#
+# h		t	  # name
+# str		void	  # type
+#-------------------------#
+[ "malalgebra",	  nil	  ]
+[ "lock",	  nil	  ]
+[ "monettime",	  nil	  ]
+[ "alarm",	  nil	  ]
+[ "pathfinder",	  nil	  ]
+[ "logger",	  nil	  ]
+[ "pf_support",	  nil	  ]
+[ "streams",	  nil	  ]
+[ "xtables",	  nil	  ]
+[ "aggrX3",	  nil	  ]
+[ "bat_arith",	  nil	  ]
+[ "mmath",	  nil	  ]
+[ "pcre",	  nil	  ]
+[ "mapi",	  nil	  ]
+[ "mkey",	  nil	  ]
+[ "xrpc_server",  nil	  ]
+[ "xrpc_client",  nil	  ]
+[ "pf_standoff",  nil	  ]
+[ "pftijah",	  nil	  ]
+[ "image",	  nil	  ]
+[ "url",	  nil	  ]
+
+	dropping malalgebra
+
+
+	dropping lock
+
+
+	dropping monettime
+
+
+	dropping alarm
+
+
+	dropping pathfinder
+
+
+	dropping logger
+
+
+	dropping pf_support
+
+
+	dropping streams
+
+
+	dropping xtables
+
+
+	dropping aggrX3
+
+
+	dropping bat_arith
+
+
+	dropping mmath
+
+
+	dropping pcre
+
+
+	dropping mapi
+
+
+	dropping mkey
+
+
+	dropping xrpc_server
+
+
+	dropping xrpc_client
+
+
+	dropping pf_standoff
+
+
+	dropping pftijah
+
+
+	dropping image
+
+
+	dropping url
+
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+
+	loading geom
+
+# MonetDB/GIS module v11.1.0 loaded
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "geom",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+#-------------------------#
+# h		t	  # name
+# str		void	  # type
+#-------------------------#
+[ "malalgebra",	  nil	  ]
+[ "lock",	  nil	  ]
+[ "monettime",	  nil	  ]
+[ "alarm",	  nil	  ]
+[ "pathfinder",	  nil	  ]
+[ "logger",	  nil	  ]
+[ "pf_support",	  nil	  ]
+[ "streams",	  nil	  ]
+[ "xtables",	  nil	  ]
+[ "aggrX3",	  nil	  ]
+[ "bat_arith",	  nil	  ]
+[ "mmath",	  nil	  ]
+[ "pcre",	  nil	  ]
+[ "mapi",	  nil	  ]
+[ "mkey",	  nil	  ]
+[ "xrpc_server",  nil	  ]
+[ "xrpc_client",  nil	  ]
+[ "pf_standoff",  nil	  ]
+[ "pftijah",	  nil	  ]
+[ "geom",	  nil	  ]
+
+	dropping malalgebra
+
+
+	dropping lock
+
+
+	dropping monettime
+
+
+	dropping alarm
+
+
+	dropping pathfinder
+
+
+	dropping logger
+
+
+	dropping pf_support
+
+
+	dropping streams
+
+
+	dropping xtables
+
+
+	dropping aggrX3
+
+
+	dropping bat_arith
+
+
+	dropping mmath
+
+
+	dropping pcre
+
+
+	dropping mapi
+
+
+	dropping mkey
+
+
+	dropping xrpc_server
+
+
+	dropping xrpc_client
+
+
+	dropping pf_standoff
+
+
+	dropping pftijah
+
+
+	dropping geom
+
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+
+	loading enum
+
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "enum",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  2		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+#-------------------------#
+# h		t	  # name
+# str		void	  # type
+#-------------------------#
+[ "malalgebra",	  nil	  ]
+[ "lock",	  nil	  ]
+[ "monettime",	  nil	  ]
+[ "alarm",	  nil	  ]
+[ "pathfinder",	  nil	  ]
+[ "logger",	  nil	  ]
+[ "pf_support",	  nil	  ]
+[ "streams",	  nil	  ]
+[ "xtables",	  nil	  ]
+[ "aggrX3",	  nil	  ]
+[ "bat_arith",	  nil	  ]
+[ "mmath",	  nil	  ]
+[ "pcre",	  nil	  ]
+[ "mapi",	  nil	  ]
+[ "mkey",	  nil	  ]
+[ "xrpc_server",  nil	  ]
+[ "xrpc_client",  nil	  ]
+[ "pf_standoff",  nil	  ]
+[ "pftijah",	  nil	  ]
+[ "enum",	  nil	  ]
+
+	dropping malalgebra
+
+
+	dropping lock
+
+
+	dropping monettime
+
+
+	dropping alarm
+
+
+	dropping pathfinder
+
+
+	dropping logger
+
+
+	dropping pf_support
+
+
+	dropping streams
+
+
+	dropping xtables
+
+
+	dropping aggrX3
+
+
+	dropping bat_arith
+
+
+	dropping mmath
+
+
+	dropping pcre
+
+
+	dropping mapi
+
+
+	dropping mkey
+
+
+	dropping xrpc_server
+
+
+	dropping xrpc_client
+
+
+	dropping pf_standoff
+
+
+	dropping pftijah
+
+
+	dropping enum
+
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+
+	loading decimal
+
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "decimal",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+#-------------------------#
+# h		t	  # name
+# str		void	  # type
+#-------------------------#
+[ "malalgebra",	  nil	  ]
+[ "lock",	  nil	  ]
+[ "monettime",	  nil	  ]
+[ "alarm",	  nil	  ]
+[ "pathfinder",	  nil	  ]
+[ "logger",	  nil	  ]
+[ "pf_support",	  nil	  ]
+[ "streams",	  nil	  ]
+[ "xtables",	  nil	  ]
+[ "aggrX3",	  nil	  ]
+[ "bat_arith",	  nil	  ]
+[ "mmath",	  nil	  ]
+[ "pcre",	  nil	  ]
+[ "mapi",	  nil	  ]
+[ "mkey",	  nil	  ]
+[ "xrpc_server",  nil	  ]
+[ "xrpc_client",  nil	  ]
+[ "pf_standoff",  nil	  ]
+[ "pftijah",	  nil	  ]
+[ "decimal",	  nil	  ]
+
+	dropping malalgebra
+
+
+	dropping lock
+
+
+	dropping monettime
+
+
+	dropping alarm
+
+
+	dropping pathfinder
+
+
+	dropping logger
+
+
+	dropping pf_support
+
+
+	dropping streams
+
+
+	dropping xtables
+
+
+	dropping aggrX3
+
+
+	dropping bat_arith
+
+
+	dropping mmath
+
+
+	dropping pcre
+
+
+	dropping mapi
+
+
+	dropping mkey
+
+
+	dropping xrpc_server
+
+
+	dropping xrpc_client
+
+
+	dropping pf_standoff
+
+
+	dropping pftijah
+
+
+	dropping decimal
+
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+
+	loading counters
+
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "counters",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+#-------------------------#
+# h		t	  # name
+# str		void	  # type
+#-------------------------#
+[ "malalgebra",	  nil	  ]
+[ "lock",	  nil	  ]
+[ "monettime",	  nil	  ]
+[ "alarm",	  nil	  ]
+[ "pathfinder",	  nil	  ]
+[ "logger",	  nil	  ]
+[ "pf_support",	  nil	  ]
+[ "streams",	  nil	  ]
+[ "xtables",	  nil	  ]
+[ "aggrX3",	  nil	  ]
+[ "bat_arith",	  nil	  ]
+[ "mmath",	  nil	  ]
+[ "pcre",	  nil	  ]
+[ "mapi",	  nil	  ]
+[ "mkey",	  nil	  ]
+[ "xrpc_server",  nil	  ]
+[ "xrpc_client",  nil	  ]
+[ "pf_standoff",  nil	  ]
+[ "pftijah",	  nil	  ]
+[ "counters",	  nil	  ]
+
+	dropping malalgebra
+
+
+	dropping lock
+
+
+	dropping monettime
+
+
+	dropping alarm
+
+
+	dropping pathfinder
+
+
+	dropping logger
+
+
+	dropping pf_support
+
+
+	dropping streams
+
+
+	dropping xtables
+
+
+	dropping aggrX3
+
+
+	dropping bat_arith
+
+
+	dropping mmath
+
+
+	dropping pcre
+
+
+	dropping mapi
+
+
+	dropping mkey
+
+
+	dropping xrpc_server
+
+
+	dropping xrpc_client
+
+
+	dropping pf_standoff
+
+
+	dropping pftijah
+
+
+	dropping counters
+
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+
+	loading color
+
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "color",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+#-------------------------#
+# h		t	  # name
+# str		void	  # type
+#-------------------------#
+[ "malalgebra",	  nil	  ]
+[ "lock",	  nil	  ]
+[ "monettime",	  nil	  ]
+[ "alarm",	  nil	  ]
+[ "pathfinder",	  nil	  ]
+[ "logger",	  nil	  ]
+[ "pf_support",	  nil	  ]
+[ "streams",	  nil	  ]
+[ "xtables",	  nil	  ]
+[ "aggrX3",	  nil	  ]
+[ "bat_arith",	  nil	  ]
+[ "mmath",	  nil	  ]
+[ "pcre",	  nil	  ]
+[ "mapi",	  nil	  ]
+[ "mkey",	  nil	  ]
+[ "xrpc_server",  nil	  ]
+[ "xrpc_client",  nil	  ]
+[ "pf_standoff",  nil	  ]
+[ "pftijah",	  nil	  ]
+[ "color",	  nil	  ]
+
+	dropping malalgebra
+
+
+	dropping lock
+
+
+	dropping monettime
+
+
+	dropping alarm
+
+
+	dropping pathfinder
+
+
+	dropping logger
+
+
+	dropping pf_support
+
+
+	dropping streams
+
+
+	dropping xtables
+
+
+	dropping aggrX3
+
+
+	dropping bat_arith
+
+
+	dropping mmath
+
+
+	dropping pcre
+
+
+	dropping mapi
+
+
+	dropping mkey
+
+
+	dropping xrpc_server
+
+
+	dropping xrpc_client
+
+
+	dropping pf_standoff
+
+
+	dropping pftijah
+
+
+	dropping color
+
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+
+	loading calib
+
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "calib",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+#-------------------------#
+# h		t	  # name
+# str		void	  # type
+#-------------------------#
+[ "malalgebra",	  nil	  ]
+[ "lock",	  nil	  ]
+[ "monettime",	  nil	  ]
+[ "alarm",	  nil	  ]
+[ "pathfinder",	  nil	  ]
+[ "logger",	  nil	  ]
+[ "pf_support",	  nil	  ]
+[ "streams",	  nil	  ]
+[ "xtables",	  nil	  ]
+[ "aggrX3",	  nil	  ]
+[ "bat_arith",	  nil	  ]
+[ "mmath",	  nil	  ]
+[ "pcre",	  nil	  ]
+[ "mapi",	  nil	  ]
+[ "mkey",	  nil	  ]
+[ "xrpc_server",  nil	  ]
+[ "xrpc_client",  nil	  ]
+[ "pf_standoff",  nil	  ]
+[ "pftijah",	  nil	  ]
+[ "calib",	  nil	  ]
+
+	dropping malalgebra
+
+
+	dropping lock
+
+
+	dropping monettime
+
+
+	dropping alarm
+
+
+	dropping pathfinder
+
+
+	dropping logger
+
+
+	dropping pf_support
+
+
+	dropping streams
+
+
+	dropping xtables
+
+
+	dropping aggrX3
+
+
+	dropping bat_arith
+
+
+	dropping mmath
+
+
+	dropping pcre
+
+
+	dropping mapi
+
+
+	dropping mkey
+
+
+	dropping xrpc_server
+
+
+	dropping xrpc_client
+
+
+	dropping pf_standoff
+
+
+	dropping pftijah
+
+
+	dropping calib
+
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+
+	loading blob
+
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "blob",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+#-------------------------#
+# h		t	  # name
+# str		void	  # type
+#-------------------------#
+[ "malalgebra",	  nil	  ]
+[ "lock",	  nil	  ]
+[ "monettime",	  nil	  ]
+[ "alarm",	  nil	  ]
+[ "pathfinder",	  nil	  ]
+[ "logger",	  nil	  ]
+[ "pf_support",	  nil	  ]
+[ "streams",	  nil	  ]
+[ "xtables",	  nil	  ]
+[ "aggrX3",	  nil	  ]
+[ "bat_arith",	  nil	  ]
+[ "mmath",	  nil	  ]
+[ "pcre",	  nil	  ]
+[ "mapi",	  nil	  ]
+[ "mkey",	  nil	  ]
+[ "xrpc_server",  nil	  ]
+[ "xrpc_client",  nil	  ]
+[ "pf_standoff",  nil	  ]
+[ "pftijah",	  nil	  ]
+[ "blob",	  nil	  ]
+
+	dropping malalgebra
+
+
+	dropping lock
+
+
+	dropping monettime
+
+
+	dropping alarm
+
+
+	dropping pathfinder
+
+
+	dropping logger
+
+
+	dropping pf_support
+
+
+	dropping streams
+
+
+	dropping xtables
+
+
+	dropping aggrX3
+
+
+	dropping bat_arith
+
+
+	dropping mmath
+
+
+	dropping pcre
+
+
+	dropping mapi
+
+
+	dropping mkey
+
+
+	dropping xrpc_server
+
+
+	dropping xrpc_client
+
+
+	dropping pf_standoff
+
+
+	dropping pftijah
+
+
+	dropping blob
+
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+
+	loading bitset
+
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "bitset",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+#-------------------------#
+# h		t	  # name
+# str		void	  # type
+#-------------------------#
+[ "malalgebra",	  nil	  ]
+[ "lock",	  nil	  ]
+[ "monettime",	  nil	  ]
+[ "alarm",	  nil	  ]
+[ "pathfinder",	  nil	  ]
+[ "logger",	  nil	  ]
+[ "pf_support",	  nil	  ]
+[ "streams",	  nil	  ]
+[ "xtables",	  nil	  ]
+[ "aggrX3",	  nil	  ]
+[ "bat_arith",	  nil	  ]
+[ "mmath",	  nil	  ]
+[ "pcre",	  nil	  ]
+[ "mapi",	  nil	  ]
+[ "mkey",	  nil	  ]
+[ "xrpc_server",  nil	  ]
+[ "xrpc_client",  nil	  ]
+[ "pf_standoff",  nil	  ]
+[ "pftijah",	  nil	  ]
+[ "bitset",	  nil	  ]
+
+	dropping malalgebra
+
+
+	dropping lock
+
+
+	dropping monettime
+
+
+	dropping alarm
+
+
+	dropping pathfinder
+
+
+	dropping logger
+
+
+	dropping pf_support
+
+
+	dropping streams
+
+
+	dropping xtables
+
+
+	dropping aggrX3
+
+
+	dropping bat_arith
+
+
+	dropping mmath
+
+
+	dropping pcre
+
+
+	dropping mapi
+
+
+	dropping mkey
+
+
+	dropping xrpc_server
+
+
+	dropping xrpc_client
+
+
+	dropping pf_standoff
+
+
+	dropping pftijah
+
+
+	dropping bitset
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+
+	loading bat_mmath
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "bat_mmath",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+#-------------------------#
+# h		t	  # name
+# str		void	  # type
+#-------------------------#
+[ "malalgebra",	  nil	  ]
+[ "lock",	  nil	  ]
+[ "monettime",	  nil	  ]
+[ "alarm",	  nil	  ]
+[ "pathfinder",	  nil	  ]
+[ "logger",	  nil	  ]
+[ "pf_support",	  nil	  ]
+[ "streams",	  nil	  ]
+[ "xtables",	  nil	  ]
+[ "aggrX3",	  nil	  ]
+[ "bat_arith",	  nil	  ]
+[ "mmath",	  nil	  ]
+[ "pcre",	  nil	  ]
+[ "mapi",	  nil	  ]
+[ "mkey",	  nil	  ]
+[ "xrpc_server",  nil	  ]
+[ "xrpc_client",  nil	  ]
+[ "pf_standoff",  nil	  ]
+[ "pftijah",	  nil	  ]
+[ "bat_mmath",	  nil	  ]
+
+	dropping malalgebra
+
+
+	dropping lock
+
+
+	dropping monettime
+
+
+	dropping alarm
+
+
+	dropping pathfinder
+
+
+	dropping logger
+
+
+	dropping pf_support
+
+
+	dropping streams
+
+
+	dropping xtables
+
+
+	dropping aggrX3
+
+
+	dropping bat_arith
+
+
+	dropping mmath
+
+
+	dropping pcre
+
+
+	dropping mapi
+
+
+	dropping mkey
+
+
+	dropping xrpc_server
+
+
+	dropping xrpc_client
+
+
+	dropping pf_standoff
+
+
+	dropping pftijah
+
+
+	dropping bat_mmath
+
+#---------------------------------#
+# module		usage_count	  # name
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+
+	loading bat_cast
+
+#---------------------------------#
+# module		usage_count	  # name
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "bat_cast",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+#-------------------------#
+# h		tmp_45	  # name
+# str		void	  # type
+#-------------------------#
+[ "malalgebra",	  nil	  ]
+[ "lock",	  nil	  ]
+[ "monettime",	  nil	  ]
+[ "alarm",	  nil	  ]
+[ "pathfinder",	  nil	  ]
+[ "logger",	  nil	  ]
+[ "pf_support",	  nil	  ]
+[ "streams",	  nil	  ]
+[ "xtables",	  nil	  ]
+[ "aggrX3",	  nil	  ]
+[ "bat_arith",	  nil	  ]
+[ "mmath",	  nil	  ]
+[ "pcre",	  nil	  ]
+[ "mapi",	  nil	  ]
+[ "mkey",	  nil	  ]
+[ "xrpc_server",  nil	  ]
+[ "xrpc_client",  nil	  ]
+[ "pf_standoff",  nil	  ]
+[ "pftijah",	  nil	  ]
+[ "bat_cast",	  nil	  ]
+
+	dropping malalgebra
+
+
+	dropping lock
+
+
+	dropping monettime
+
+
+	dropping alarm
+
+
+	dropping pathfinder
+
+
+	dropping logger
+
+
+	dropping pf_support
+
+
+	dropping streams
+
+
+	dropping xtables
+
+
+	dropping aggrX3
+
+
+	dropping bat_arith
+
+
+	dropping mmath
+
+
+	dropping pcre
+
+
+	dropping mapi
+
+
+	dropping mkey
+
+
+	dropping xrpc_server
+
+
+	dropping xrpc_client
+
+
+	dropping pf_standoff
+
+
+	dropping pftijah
+
+
+	dropping bat_cast
+
+#---------------------------------#
+# module		usage_count	  # name
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+
+	loading bat_arith
+
+#---------------------------------#
+# module		usage_count	  # name
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  2		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+#-------------------------#
+# h		tmp_48	  # name
+# str		void	  # type
+#-------------------------#
+[ "malalgebra",	  nil	  ]
+[ "lock",	  nil	  ]
+[ "monettime",	  nil	  ]
+[ "alarm",	  nil	  ]
+[ "pathfinder",	  nil	  ]
+[ "logger",	  nil	  ]
+[ "pf_support",	  nil	  ]
+[ "streams",	  nil	  ]
+[ "xtables",	  nil	  ]
+[ "aggrX3",	  nil	  ]
+[ "bat_arith",	  nil	  ]
+[ "mmath",	  nil	  ]
+[ "pcre",	  nil	  ]
+[ "mapi",	  nil	  ]
+[ "mkey",	  nil	  ]
+[ "xrpc_server",  nil	  ]
+[ "xrpc_client",  nil	  ]
+[ "pf_standoff",  nil	  ]
+[ "pftijah",	  nil	  ]
+
+	dropping malalgebra
+
+
+	dropping lock
+
+
+	dropping monettime
+
+
+	dropping alarm
+
+
+	dropping pathfinder
+
+
+	dropping logger
+
+
+	dropping pf_support
+
+
+	dropping streams
+
+
+	dropping xtables
+
+
+	dropping aggrX3
+
+
+	dropping bat_arith
+
+
+	dropping mmath
+
+
+	dropping pcre
+
+
+	dropping mapi
+
+
+	dropping mkey
+
+
+	dropping xrpc_server
+
+
+	dropping xrpc_client
+
+
+	dropping pf_standoff
+
+
+	dropping pftijah
+
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+
+	loading backup
+
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "ascii_io",	  1		  ]
+[ "backup",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  2		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  2		  ]
+#-------------------------#
+# h		t	  # name
+# str		void	  # type
+#-------------------------#
+[ "malalgebra",	  nil	  ]
+[ "lock",	  nil	  ]
+[ "monettime",	  nil	  ]
+[ "alarm",	  nil	  ]
+[ "pathfinder",	  nil	  ]
+[ "logger",	  nil	  ]
+[ "pf_support",	  nil	  ]
+[ "streams",	  nil	  ]
+[ "xtables",	  nil	  ]
+[ "aggrX3",	  nil	  ]
+[ "bat_arith",	  nil	  ]
+[ "mmath",	  nil	  ]
+[ "pcre",	  nil	  ]
+[ "mapi",	  nil	  ]
+[ "mkey",	  nil	  ]
+[ "xrpc_server",  nil	  ]
+[ "xrpc_client",  nil	  ]
+[ "pf_standoff",  nil	  ]
+[ "pftijah",	  nil	  ]
+[ "backup",	  nil	  ]
+[ "ascii_io",	  nil	  ]
+
+	dropping malalgebra
+
+
+	dropping lock
+
+
+	dropping monettime
+
+
+	dropping alarm
+
+
+	dropping pathfinder
+
+
+	dropping logger
+
+
+	dropping pf_support
+
+
+	dropping streams
+
+
+	dropping xtables
+
+
+	dropping aggrX3
+
+
+	dropping bat_arith
+
+
+	dropping mmath
+
+
+	dropping pcre
+
+
+	dropping mapi
+
+
+	dropping mkey
+
+
+	dropping xrpc_server
+
+
+	dropping xrpc_client
+
+
+	dropping pf_standoff
+
+
+	dropping pftijah
+
+
+	dropping backup
+
+
+	dropping ascii_io
+
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+
+	loading ascii_io
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "ascii_io",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  2		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_46  #
+# (str)		  (void)  #
+#-------------------------#
+[ "malalgebra",	  nil	  ]
+[ "lock",	  nil	  ]
+[ "monettime",	  nil	  ]
+[ "alarm",	  nil	  ]
+[ "pathfinder",	  nil	  ]
+[ "logger",	  nil	  ]
+[ "pf_support",	  nil	  ]
+[ "streams",	  nil	  ]
+[ "xtables",	  nil	  ]
+[ "aggrX3",	  nil	  ]
+[ "bat_arith",	  nil	  ]
+[ "mmath",	  nil	  ]
+[ "pcre",	  nil	  ]
+[ "mapi",	  nil	  ]
+[ "mkey",	  nil	  ]
+[ "xrpc_server",  nil	  ]
+[ "xrpc_client",  nil	  ]
+[ "pf_standoff",  nil	  ]
+[ "pftijah",	  nil	  ]
+[ "ascii_io",	  nil	  ]
+
+	dropping malalgebra
+
+
+	dropping lock
+
+
+	dropping monettime
+
+
+	dropping alarm
+
+
+	dropping pathfinder
+
+
+	dropping logger
+
+
+	dropping pf_support
+
+
+	dropping streams
+
+
+	dropping xtables
+
+
+	dropping aggrX3
+
+
+	dropping bat_arith
+
+
+	dropping mmath
+
+
+	dropping pcre
+
+
+	dropping mapi
+
+
+	dropping mkey
+
+
+	dropping xrpc_server
+
+
+	dropping xrpc_client
+
+
+	dropping pf_standoff
+
+
+	dropping pftijah
+
+
+	dropping ascii_io
+
+#---------------------------------#
+# module		usage_count	  # name
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+
+	loading array
+
+#---------------------------------#
+# module		usage_count	  # name
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "array",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+#-------------------------#
+# h		tmp_43	  # name
+# str		void	  # type
+#-------------------------#
+[ "malalgebra",	  nil	  ]
+[ "lock",	  nil	  ]
+[ "monettime",	  nil	  ]
+[ "alarm",	  nil	  ]
+[ "pathfinder",	  nil	  ]
+[ "logger",	  nil	  ]
+[ "pf_support",	  nil	  ]
+[ "streams",	  nil	  ]
+[ "xtables",	  nil	  ]
+[ "aggrX3",	  nil	  ]
+[ "bat_arith",	  nil	  ]
+[ "mmath",	  nil	  ]
+[ "pcre",	  nil	  ]
+[ "mapi",	  nil	  ]
+[ "mkey",	  nil	  ]
+[ "xrpc_server",  nil	  ]
+[ "xrpc_client",  nil	  ]
+[ "pf_standoff",  nil	  ]
+[ "pftijah",	  nil	  ]
+[ "array",	  nil	  ]
+
+	dropping malalgebra
+
+
+	dropping lock
+
+
+	dropping monettime
+
+
+	dropping alarm
+
+
+	dropping pathfinder
+
+
+	dropping logger
+
+
+	dropping pf_support
+
+
+	dropping streams
+
+
+	dropping xtables
+
+
+	dropping aggrX3
+
+
+	dropping bat_arith
+
+
+	dropping mmath
+
+
+	dropping pcre
+
+
+	dropping mapi
+
+
+	dropping mkey
+
+
+	dropping xrpc_server
+
+
+	dropping xrpc_client
+
+
+	dropping pf_standoff
+
+
+	dropping pftijah
+
+
+	dropping array
+
+#---------------------------------#
+# module		usage_count	  # name
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+
+	loading alarm
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  4		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_45  #
+# (str)		  (void)  #
+#-------------------------#
+[ "malalgebra",	  nil	  ]
+[ "lock",	  nil	  ]
+[ "monettime",	  nil	  ]
+[ "alarm",	  nil	  ]
+[ "pathfinder",	  nil	  ]
+[ "logger",	  nil	  ]
+[ "pf_support",	  nil	  ]
+[ "streams",	  nil	  ]
+[ "xtables",	  nil	  ]
+[ "aggrX3",	  nil	  ]
+[ "bat_arith",	  nil	  ]
+[ "mmath",	  nil	  ]
+[ "pcre",	  nil	  ]
+[ "mapi",	  nil	  ]
+[ "mkey",	  nil	  ]
+[ "xrpc_server",  nil	  ]
+[ "xrpc_client",  nil	  ]
+[ "pf_standoff",  nil	  ]
+[ "pftijah",	  nil	  ]
+
+	dropping malalgebra
+
+
+	dropping lock
+
+
+	dropping monettime
+
+
+	dropping alarm
+
+
+	dropping pathfinder
+
+
+	dropping logger
+
+
+	dropping pf_support
+
+
+	dropping streams
+
+
+	dropping xtables
+
+
+	dropping aggrX3
+
+
+	dropping bat_arith
+
+
+	dropping mmath
+
+
+	dropping pcre
+
+
+	dropping mapi
+
+
+	dropping mkey
+
+
+	dropping xrpc_server
+
+
+	dropping xrpc_client
+
+
+	dropping pf_standoff
+
+
+	dropping pftijah
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+
+	loading aggrX3
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "aggrX3",	  2		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_47  #
+# (str)		  (void)  #
+#-------------------------#
+[ "malalgebra",	  nil	  ]
+[ "lock",	  nil	  ]
+[ "monettime",	  nil	  ]
+[ "alarm",	  nil	  ]
+[ "pathfinder",	  nil	  ]
+[ "logger",	  nil	  ]
+[ "pf_support",	  nil	  ]
+[ "streams",	  nil	  ]
+[ "xtables",	  nil	  ]
+[ "aggrX3",	  nil	  ]
+[ "bat_arith",	  nil	  ]
+[ "mmath",	  nil	  ]
+[ "pcre",	  nil	  ]
+[ "mapi",	  nil	  ]
+[ "mkey",	  nil	  ]
+[ "xrpc_server",  nil	  ]
+[ "xrpc_client",  nil	  ]
+[ "pf_standoff",  nil	  ]
+[ "pftijah",	  nil	  ]
+
+	dropping malalgebra
+
+
+	dropping lock
+
+
+	dropping monettime
+
+
+	dropping alarm
+
+
+	dropping pathfinder
+
+
+	dropping logger
+
+
+	dropping pf_support
+
+
+	dropping streams
+
+
+	dropping xtables
+
+
+	dropping aggrX3
+
+
+	dropping bat_arith
+
+
+	dropping mmath
+
+
+	dropping pcre
+
+
+	dropping mapi
+
+
+	dropping mkey
+
+
+	dropping xrpc_server
+
+
+	dropping xrpc_client
+
+
+	dropping pf_standoff
+
+
+	dropping pftijah
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+
+	loading aggr
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "aggr",	  1		  ]
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "builtin",	  1		  ]
+[ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
+[ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "xtables",	  1		  ]
+#-------------------------#
+# h		t	  # name
+# str		void	  # type
+#-------------------------#
+[ "malalgebra",	  nil	  ]
+[ "lock",	  nil	  ]
+[ "monettime",	  nil	  ]
+[ "alarm",	  nil	  ]
+[ "pathfinder",	  nil	  ]
+[ "logger",	  nil	  ]
+[ "pf_support",	  nil	  ]
+[ "streams",	  nil	  ]
+[ "xtables",	  nil	  ]
+[ "aggrX3",	  nil	  ]
+[ "bat_arith",	  nil	  ]
+[ "mmath",	  nil	  ]
+[ "pcre",	  nil	  ]
+[ "mapi",	  nil	  ]
+[ "mkey",	  nil	  ]
+[ "xrpc_server",  nil	  ]
+[ "xrpc_client",  nil	  ]
+[ "pf_standoff",  nil	  ]
+[ "pftijah",	  nil	  ]
+[ "aggr", nil	  ]
+
+	dropping malalgebra
+
+
+	dropping lock
+
+
+	dropping monettime
+
+
+	dropping alarm
+
+
+	dropping pathfinder
+
+
+	dropping logger
+
+
+	dropping pf_support
+
+
+	dropping streams
+
+
+	dropping xtables
+
+
+	dropping aggrX3
+
+
+	dropping bat_arith
+
+
+	dropping mmath
+
+
+	dropping pcre
+
+
+	dropping mapi
+
+
+	dropping mkey
+
+
+	dropping xrpc_server
+
+
+	dropping xrpc_client
+
+
+	dropping pf_standoff
+
+
+	dropping pftijah
 
 
 	dropping aggr
@@ -1864,15 +4731,27 @@ others@batloop(){
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  3		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
 [ "builtin",	  1		  ]
 [ "constant",	  1		  ]
+[ "lock",	  3		  ]
+[ "logger",	  2		  ]
 [ "main",	  1		  ]
+[ "malalgebra",	  3		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  3		  ]
+[ "pcre",	  1		  ]
+[ "pf_support",	  1		  ]
 [ "str",	  1		  ]
+[ "streams",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "xtables",	  1		  ]
 quit();
 
 # 16:53:25 >  

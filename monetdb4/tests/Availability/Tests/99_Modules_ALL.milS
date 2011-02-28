@@ -1,6 +1,6 @@
 setoid(oid(20000000));
 
-var MODULES:=bat("MODULES");
+var MODULES:=bat("MODULES").copy();
 
 PROC mmn() : BAT[oid,str] {
 	 return(monet_mod_nme.kdiff(monet_mod_nme.[startsWith]("_").uselect(true)));
@@ -8,7 +8,8 @@ PROC mmn() : BAT[oid,str] {
 
 #All_mods:=MODULES.sort().copy();
 # # module(Meta);
-var All_mods:=MODULES.sort().copy().access(BAT_WRITE).revert();
+# skip pftijah & xrpc_server as they require pathfinder to be loaded first
+var All_mods:=MODULES.access(BAT_WRITE).delete("pftijah").delete("xrpc_server").sort().access(BAT_WRITE).revert();
 All_mods@batloop() {
 	printf("%9s: ",$h);
 	if (not(monet_mod_nme.reverse().exist($h))) {

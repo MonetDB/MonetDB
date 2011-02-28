@@ -10,7 +10,7 @@ stdout of test '99_Modules_ALL` in directory 'tests/Availability` itself:
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 setoid(oid(20000000));
 
-var MODULES:=bat("MODULES");
+var MODULES:=bat("MODULES").copy();
 
 PROC mmn() : BAT[oid,str] {
 	 return(monet_mod_nme.kdiff(monet_mod_nme.[startsWith]("_").uselect(true)));
@@ -18,7 +18,8 @@ PROC mmn() : BAT[oid,str] {
 
 #All_mods:=MODULES.sort.copy;
 # # module(Meta);
-var All_mods:=MODULES.sort().copy().access(BAT_WRITE).revert();
+# skip pftijah & xrpc_server as they require pathfinder to be loaded first
+var All_mods:=MODULES.access(BAT_WRITE).delete("pftijah").delete("xrpc_server").sort().access(BAT_WRITE).revert();
 All_mods@batloop() {
 	printf("%9s: ",$h);
 	if (not(monet_mod_nme.reverse().exist($h))) {
@@ -30,6 +31,7 @@ All_mods@batloop() {
 	}
 }
   xtables: loading... done.
+xrpc_client: loading... done.
      wisc: loading... done.
    vector: loading... done.
       url: loading... done.
@@ -44,18 +46,27 @@ All_mods@batloop() {
  salgebra: loading... done.
   restore: loading... done.
  profiler: loading... done.
+  probxml: loading... done.
    pqueue: loading... done.
-     pcre: loading... done.
+pf_support: loading... done.
+pf_standoff: loading... done.
+     pcre: loaded.
       pcl: loading... done.
-monettime: loading... done.
+pathfinder: loading... # PF/Tijah module v0.13.0 loaded. http://dbappl.cs.utwente.nl/pftijah
+# MonetDB/XQuery module v11.1.0 loaded (default back-end is 'algebra')
+# XRPC administrative console at http://127.0.0.1:41391/admin
+done.
+monettime: loaded.
     mmath: loaded.
-     mkey: loading... done.
+     mkey: loaded.
       mel: loading... done.
-     mapi: loading... done.
-malalgebra: loading... done.
-   logger: loading... done.
-     lock: loading... done.
+     mapi: loaded.
+malalgebra: loaded.
+   logger: loaded.
+     lock: loaded.
     image: loading... done.
+     geom: loading... # MonetDB/GIS module v11.1.0 loaded
+done.
      enum: loading... done.
   decimal: loading... done.
  counters: loading... done.
@@ -66,7 +77,7 @@ malalgebra: loading... done.
    bitset: loading... done.
 bat_mmath: loading... done.
  bat_cast: loading... done.
-bat_arith: loading... done.
+bat_arith: loaded.
       bat: loaded.
    backup: loading... done.
  ascii_io: loaded.
@@ -74,7 +85,7 @@ bat_arith: loading... done.
     arith: loaded.
   algebra: loaded.
     alarm: loaded.
-   aggrX3: loading... done.
+   aggrX3: loaded.
      aggr: loading... done.
 
 table(mmn().reverse().sort().reverse().col_name(sprintf("%i modules",mmn().count())));
@@ -101,6 +112,7 @@ table(mmn().reverse().sort().reverse().col_name(sprintf("%i modules",mmn().count
 [ "counters"	  ]
 [ "decimal"	  ]
 [ "enum"	  ]
+[ "geom"	  ]
 [ "image"	  ]
 [ "lock"	  ]
 [ "logger"	  ]
@@ -111,9 +123,14 @@ table(mmn().reverse().sort().reverse().col_name(sprintf("%i modules",mmn().count
 [ "mkey"	  ]
 [ "mmath"	  ]
 [ "monettime"	  ]
+[ "pathfinder"	  ]
 [ "pcl"		  ]
 [ "pcre"	  ]
+[ "pf_standoff"	  ]
+[ "pf_support"	  ]
+[ "pftijah"	  ]
 [ "pqueue"	  ]
+[ "probxml"	  ]
 [ "profiler"	  ]
 [ "restore"	  ]
 [ "salgebra"	  ]
@@ -128,6 +145,8 @@ table(mmn().reverse().sort().reverse().col_name(sprintf("%i modules",mmn().count
 [ "url"		  ]
 [ "vector"	  ]
 [ "wisc"	  ]
+[ "xrpc_client"	  ]
+[ "xrpc_server"	  ]
 [ "xtables"	  ]
 
 ##Fname:=new(oid,str);Fname.col_name("function");

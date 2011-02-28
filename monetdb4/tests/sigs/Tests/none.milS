@@ -18,7 +18,8 @@ mmn().reverse().mark(oid(nil)).sort().print();
 var fix:=mmn().reverse().copy();
 fix.mark(oid(nil)).print();
 
-var others:=kdiff(view_modules().reverse().kunique(),mmn().reverse()).sort().access(BAT_WRITE).revert();
+# skip pftijah & xrpc_server as they require pathfinder to be loaded first
+var others:=kdiff(view_modules().reverse().kunique(),mmn().reverse()).access(BAT_WRITE).delete("pftijah").delete("xrpc_server").sort().access(BAT_WRITE).revert();
 others.mark(oid(nil)).print();
 
 others@batloop(){

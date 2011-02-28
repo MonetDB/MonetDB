@@ -39,6 +39,7 @@ stdout of test '00_Mserver` in directory 'tests/Availability` itself:
 [ "counters",	  "plain"	  ]
 [ "decimal",	  "plain"	  ]
 [ "enum",	  "plain"	  ]
+[ "geom",	  "UNKNOWN"	  ]
 [ "image",	  "contrib"	  ]
 [ "lock",	  "plain"	  ]
 [ "logger",	  "plain"	  ]
@@ -48,9 +49,14 @@ stdout of test '00_Mserver` in directory 'tests/Availability` itself:
 [ "mkey",	  "plain"	  ]
 [ "mmath",	  "plain"	  ]
 [ "monettime",	  "plain"	  ]
+[ "pathfinder",	  "UNKNOWN"	  ]
 [ "pcl",	  "plain"	  ]
 [ "pcre",	  "plain"	  ]
+[ "pf_standoff",  "UNKNOWN"	  ]
+[ "pf_support",	  "UNKNOWN"	  ]
+[ "pftijah",	  "UNKNOWN"	  ]
 [ "pqueue",	  "plain"	  ]
+[ "probxml",	  "UNKNOWN"	  ]
 [ "profiler",	  "plain"	  ]
 [ "restore",	  "UNKNOWN"	  ]
 [ "salgebra",	  "contrib"	  ]
@@ -65,6 +71,8 @@ stdout of test '00_Mserver` in directory 'tests/Availability` itself:
 [ "url",	  "plain"	  ]
 [ "vector",	  "contrib"	  ]
 [ "wisc",	  "contrib"	  ]
+[ "xrpc_client",  "UNKNOWN"	  ]
+[ "xrpc_server",  "UNKNOWN"	  ]
 [ "xtables",	  "plain"	  ]
 setoid(oid(20000000));
 
@@ -72,13 +80,13 @@ ls();
 #---------------------------------------------------------------------------------------------------------#
 # name		| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #---------------------------------------------------------------------------------------------------------#
-[ "MODULES",	  "str",  "str",  48,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
+[ "MODULES",	  "str",  "str",  56,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
 
 dir();
 #-----------------------------------------------------------------------------------------------------------------#
 # name			| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #-----------------------------------------------------------------------------------------------------------------#
-[ "MODULES",		  "str",  "str",  48,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
+[ "MODULES",		  "str",  "str",  56,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
 [ "adm_atomtbl",	  "str",  "int",  15,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "adm_fcntbl",		  "str",  "oid",  1036,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_environment",	  "str",  "str",  45,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
@@ -139,6 +147,7 @@ table(kdiff(view_modules().reverse().kunique(),monet_mod_nme.reverse()).sort().r
 [ "counters"		  ]
 [ "decimal"		  ]
 [ "enum"		  ]
+[ "geom"		  ]
 [ "image"		  ]
 [ "lock"		  ]
 [ "logger"		  ]
@@ -148,9 +157,14 @@ table(kdiff(view_modules().reverse().kunique(),monet_mod_nme.reverse()).sort().r
 [ "mkey"		  ]
 [ "mmath"		  ]
 [ "monettime"		  ]
+[ "pathfinder"		  ]
 [ "pcl"			  ]
 [ "pcre"		  ]
+[ "pf_standoff"		  ]
+[ "pf_support"		  ]
+[ "pftijah"		  ]
 [ "pqueue"	  ]
+[ "probxml"		  ]
 [ "profiler"		  ]
 [ "restore"		  ]
 [ "salgebra"		  ]
@@ -162,6 +176,8 @@ table(kdiff(view_modules().reverse().kunique(),monet_mod_nme.reverse()).sort().r
 [ "url"			  ]
 [ "vector"		  ]
 [ "wisc"		  ]
+[ "xrpc_client"		  ]
+[ "xrpc_server"		  ]
 [ "xtables"		  ]
 
 commit();
