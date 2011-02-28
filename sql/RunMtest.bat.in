@@ -32,6 +32,9 @@ if not exist %builddir%\sql\createdb mkdir %builddir%\sql\createdb
 copy /y %srcdir%\sql\??_*.sql %builddir%\sql\createdb
 if "@HAVE_RAPTOR_FALSE@"=""	del /y %builddir%\sql\createdb\30_rdf.sql
 
+set MOD_PATH=%MOD_PATH%;%buildbase%\geom\monetdb5\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\geom\monetdb5
+
 set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\optimizer\.libs
 set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\optimizer
 set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb5\scheduler\.libs

@@ -55,7 +55,7 @@ SQLExtendedFetch(SQLHSTMT hStmt,
 	SQLRETURN rc;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLExtendedFetch " PTRFMT " %d " LENFMT "\n", PTRFMTCAST hStmt, nOrientation, (SQLLEN) nOffset);
+	ODBCLOG("SQLExtendedFetch " PTRFMT " %d " LENFMT "\n", PTRFMTCAST hStmt, nOrientation, LENCAST nOffset);
 #endif
 
 	if (!isValidStmt(stmt))

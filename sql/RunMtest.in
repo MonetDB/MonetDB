@@ -42,6 +42,15 @@ cp -f ${srcdir}/sql/[0-9][0-9]_*.sql ${builddir}/sql/createdb/ 2>/dev/null
 # disable auto-loading of non-available SQL createdb scripts
 @HAVE_RAPTOR_FALSE@	rm -f ${builddir}/sql/createdb/30_rdf.sql
 
+# where compiled Geom modules are to be found
+for d in monetdb5
+do
+	MOD_PATH="${MOD_PATH}:${buildbase}/geom/$d/.libs:${buildbase}/geom/$d"
+	# enable auto-loading of modules before `make install`
+	mkdir -p ${buildbase}/geom/$d/autoload
+	cp -f ${srcdir}/$d/[0-9][0-9]_*.mal ${buildbase}/geom/$d/autoload/ 2>/dev/null
+done
+
 # where compiled monetdb5 modules are to be found
 for d in optimizer scheduler modules/atoms modules/kernel modules/mal extras/crackers extras/rdf extras/xml
 do

@@ -48,7 +48,7 @@ SQLSetPos(SQLHSTMT hStmt,
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetPos " PTRFMT " " ULENFMT " %d %d\n", PTRFMTCAST hStmt, (SQLULEN) nRow, nOperation, nLockType);
+	ODBCLOG("SQLSetPos " PTRFMT " " ULENFMT " %d %d\n", PTRFMTCAST hStmt, ULENCAST nRow, (int) nOperation, (int) nLockType);
 #endif
 
 	if (!isValidStmt(stmt))

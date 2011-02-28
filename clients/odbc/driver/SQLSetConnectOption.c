@@ -87,7 +87,7 @@ SQLSetConnectOption(SQLHDBC hDbc,
 	ODBCDbc *dbc = (ODBCDbc *) hDbc;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetConnectOption " PTRFMT " %d " ULENFMT "\n", PTRFMTCAST hDbc, nOption, vParam);
+	ODBCLOG("SQLSetConnectOption " PTRFMT " %d " ULENFMT "\n", PTRFMTCAST hDbc, nOption, ULENCAST vParam);
 #endif
 
 	if (!isValidDbc(dbc))
@@ -118,7 +118,7 @@ SQLSetConnectOptionW(SQLHDBC hDbc,
 	SQLRETURN rc;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetConnectOptionW " PTRFMT " %d " ULENFMT "\n", PTRFMTCAST hDbc, nOption, vParam);
+	ODBCLOG("SQLSetConnectOptionW " PTRFMT " %d " ULENFMT "\n", PTRFMTCAST hDbc, nOption, ULENCAST vParam);
 #endif
 
 	if (!isValidDbc(dbc))

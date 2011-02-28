@@ -33,6 +33,27 @@ do
 	cp -f ${srcdir}/$d/[0-9][0-9]_*.mal ${builddir}/$d/autoload/ 2>/dev/null
 done
 
+# where compiled SQL modules are to be found
+for d in backends/monet5 backends/monet5/vaults sql
+do
+	MOD_PATH="${MOD_PATH}:${buildbase}/sql/$d/.libs:${buildbase}/sql/$d"
+	# enable auto-loading of modules before `make install`
+	mkdir -p ${buildbase}/sql/$d/autoload
+	cp -f ${srcdir}/$d/[0-9][0-9]_*.mal ${buildbase}/sql/$d/autoload/ 2>/dev/null
+done
+# disable auto-loading of non-available modules
+@HAVE_MSEED_FALSE@	rm -f ${buildbase}/sql/backends/monet5/vaults/autoload/71_mseed.mal
+@HAVE_CFITSIO_FALSE@	rm -f ${buildbase}/sql/backends/monet5/vaults/autoload/72_fits.mal
+
+# where compiled Geom modules are to be found
+for d in monetdb5
+do
+	MOD_PATH="${MOD_PATH}:${buildbase}/geom/$d/.libs:${buildbase}/geom/$d"
+	# enable auto-loading of modules before `make install`
+	mkdir -p ${buildbase}/geom/$d/autoload
+	cp -f ${srcdir}/$d/[0-9][0-9]_*.mal ${buildbase}/geom/$d/autoload/ 2>/dev/null
+done
+
 # enhance various paths to find our stuff
 MOD_PATH="${MOD_PATH#:}"
 binpath="${buildbase}/tools/mserver:${buildbase}/clients/mapiclient:${buildbase}/clients/examples/C:${buildbase}/clients/examples/php:${buildbase}/clients/examples/python:${buildbase}/clients/perl/Tests:${buildbase}/testing"

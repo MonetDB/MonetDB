@@ -136,18 +136,18 @@ barrier always := true;                 #  9 always:bit := _26:bit {J72}
     V64{rows=1} := algebra.kdifference(V60{rows=1000:lng},V12{rows=1000});# 32 V64:bat[:oid,:flt] := ALGkdiff(V60:bat[:oid,:flt], V12:bat[:oid,:oid]) {G}
     V65{rows=1} := algebra.join(V21{rows=1},V64{rows=1});# 33 V65:bat[:oid,:flt] := ALGjoin(V21:bat[:oid,:oid], V64:bat[:oid,:flt]) {G}
     V66{rows=1} := aggr.sum(V65{rows=1},V35,V37);# 34 V66:bat[:oid,:dbl] := AX3aggrX3_sum3_flt_dbl(V65:bat[:oid,:flt], V35:bat[:oid,:oid], V37:bat[:oid,:oid]) {G}
-    V72 := calc.lng(A0);                # 35 V72:lng := CALCsht2lng(A0:sht) 
+    V72 := calc.lng(A0);                # 35 V72:lng := sht_2_lng(A0:sht) 
     V74 := calc.*(V72,100);             # 36 V74:lng := CALCbinaryMULlngint(V72:lng, _58:int) 
     V82{rows=1} := algebra.kdifference(V75{rows=1000:lng},V12{rows=1000});# 37 V82:bat[:oid,:flt] := ALGkdiff(V75:bat[:oid,:flt], V12:bat[:oid,:oid]) {G}
     V83{rows=1} := algebra.join(V21{rows=1},V82{rows=1});# 38 V83:bat[:oid,:flt] := ALGjoin(V21:bat[:oid,:oid], V82:bat[:oid,:flt]) {G}
     V84:bat[:oid,:flt]  := mal.multiplex("calc.-",V74,V83{rows=1});# 39 V84:bat[:oid,:flt] := OPTremapMultiplex(_62:str, V74:lng, V83:bat[:oid,:flt]) {G}
     V86{rows=1} := batcalc.*(V65{rows=1},V84);# 40 V86:bat[:oid,:flt] := CMDbatMUL_flt_flt_flt(V65:bat[:oid,:flt], V84:bat[:oid,:flt]) {G}
     V88{rows=1} := aggr.sum(V86{rows=1},V35,V37);# 41 V88:bat[:oid,:dbl] := AX3aggrX3_sum3_flt_dbl(V86:bat[:oid,:flt], V35:bat[:oid,:oid], V37:bat[:oid,:oid]) {G}
-    V94 := calc.lng(A1);                # 42 V94:lng := CALCsht2lng(A1:sht) 
+    V94 := calc.lng(A1);                # 42 V94:lng := sht_2_lng(A1:sht) 
     V95 := calc.*(V94,100);             # 43 V95:lng := CALCbinaryMULlngint(V94:lng, _58:int) 
     V100:bat[:oid,:flt]  := mal.multiplex("calc.-",V95,V83{rows=1});# 44 V100:bat[:oid,:flt] := OPTremapMultiplex(_62:str, V95:lng, V83:bat[:oid,:flt]) {G}
     V101{rows=1} := batcalc.*(V65{rows=1},V100);# 45 V101:bat[:oid,:flt] := CMDbatMUL_flt_flt_flt(V65:bat[:oid,:flt], V100:bat[:oid,:flt]) {G}
-    V103 := calc.lng(A2);               # 46 V103:lng := CALCsht2lng(A2:sht) 
+    V103 := calc.lng(A2);               # 46 V103:lng := sht_2_lng(A2:sht) 
     V104 := calc.*(V103,100);           # 47 V104:lng := CALCbinaryMULlngint(V103:lng, _58:int) 
     V109{rows=1} := algebra.kdifference(V105{rows=1000:lng},V12{rows=1000});# 48 V109:bat[:oid,:flt] := ALGkdiff(V105:bat[:oid,:flt], V12:bat[:oid,:oid]) {G}
     V110{rows=1} := algebra.join(V21{rows=1},V109{rows=1});# 49 V110:bat[:oid,:flt] := ALGjoin(V21:bat[:oid,:oid], V109:bat[:oid,:flt]) {G}
