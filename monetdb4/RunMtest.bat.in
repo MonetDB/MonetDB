@@ -25,6 +25,16 @@ set MOD_PATH=%MOD_PATH%;%builddir%\modules\mnetcdf\.libs
 set MOD_PATH=%MOD_PATH%;%builddir%\modules\mnetcdf
 set MOD_PATH=%MOD_PATH%;%srcdir%\scripts\tools
 
+set MOD_PATH=%MOD_PATH%;%buildbase%\geom\monetdb4\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\geom\monetdb4
+
+set MOD_PATH=%MOD_PATH%;%buildbase%\pathfinder\runtime\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\pathfinder\runtime
+set MOD_PATH=%MOD_PATH%;%buildbase%\pathfinder\modules\pftijah\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\pathfinder\modules\pftijah
+set MOD_PATH=%MOD_PATH%;%buildbase%\pathfinder\modules\probxml\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\pathfinder\modules\probxml
+
 set PATH=%buildbase%\clients\mapiclient;%buildbase%\clients\examples\C;%buildbase%\clients\examples\php;%buildbase%\clients\examples\python;%buildbase%\clients\perl\Tests;%buildbase%\testing;%PATH%
 
 set PATH=%MOD_PATH%;%PATH%

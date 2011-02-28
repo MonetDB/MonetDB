@@ -31,6 +31,18 @@ do
 done
 MOD_PATH="${MOD_PATH}:${srcdir}/scripts/tools"
 
+# where compiled Geom modules are to be found
+for d in monetdb4
+do
+	MOD_PATH="${MOD_PATH}:${buildbase}/geom/$d/.libs:${buildbase}/geom/$d"
+done
+
+# where compiled Pathfinder modules are to be found
+for d in runtime modules/pftijah modules/probxml
+do
+	MOD_PATH="${MOD_PATH}:${buildbase}/pathfinder/$d/.libs:${buildbase}/pathfinder/$d"
+done
+
 # enhance various paths to find our stuff
 MOD_PATH="${MOD_PATH#:}"
 binpath="${builddir}/tools:${buildbase}/clients/mapiclient:${buildbase}/clients/examples/C:${buildbase}/clients/examples/php:${buildbase}/clients/examples/python:${buildbase}/clients/perl/Tests:${buildbase}/testing"

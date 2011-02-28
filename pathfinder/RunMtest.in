@@ -41,7 +41,7 @@ do
 done
 
 # where compiled modules are to be found
-for d in runtime modules/pftijah
+for d in runtime modules/pftijah modules/probxml
 do
 	MOD_PATH="${MOD_PATH}:${builddir}/$d/.libs:${builddir}/$d"
 done

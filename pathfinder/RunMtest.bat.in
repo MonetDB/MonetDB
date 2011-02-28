@@ -22,6 +22,8 @@ set MOD_PATH=%builddir%\runtime\.libs
 set MOD_PATH=%MOD_PATH%;%builddir%\runtime
 set MOD_PATH=%MOD_PATH%;%builddir%\modules\pftijah\.libs
 set MOD_PATH=%MOD_PATH%;%builddir%\modules\pftijah
+set MOD_PATH=%MOD_PATH%;%builddir%\modules\probxml\.libs
+set MOD_PATH=%MOD_PATH%;%builddir%\modules\probxml
 
 if not %V% == 4 goto skip_4
 set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\plain\.libs

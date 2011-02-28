@@ -36,6 +36,23 @@ copy /y %srcdir%\extras\rdf\??_*.mal %builddir%\extras\rdf\autoload
 if not exist %builddir%\extras\xml\autoload mkdir %builddir%\extras\xml\autoload
 copy /y %srcdir%\extras\xml\??_*.mal %builddir%\extras\xml\autoload
 
+set MOD_PATH=%MOD_PATH%;%buildbase%\sql\backends\monet5\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\sql\backends\monet5
+set MOD_PATH=%MOD_PATH%;%buildbase%\sql\backends\monet5\vaults\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\sql\backends\monet5\vaults
+set MOD_PATH=%MOD_PATH%;%buildbase%\sql\sql
+
+REM enable auto-loading of modules before `make install`
+if not exist %buildbase%\sql\backends\monet5\autoload mkdir %buildbase%\sql\backends\monet5\autoload
+copy /y %srcdir%\backends\monet5\??_*.mal %buildbase%\sql\backends\monet5\autoload
+if not exist %buildbase%\sql\backends\monet5\vaults\autoload mkdir %buildbase%\sql\backends\monet5\vaults\autoload
+copy /y %srcdir%\backends\monet5\vaults\??_*.mal %buildbase%\sql\backends\monet5\vaults\autoload
+if "@HAVE_MSEED_FALSE@"==""	del /y %buildbase%\sql\backends\monet5\vaults\autoload\71_mseed.mal
+if "@HAVE_CFITSIO_FALSE@"==""	del /y %buildbase%\sql\backends\monet5\vaults\autoload\72_fits.mal
+
+set MOD_PATH=%MOD_PATH%;%buildbase%\geom\monetdb5\.libs
+set MOD_PATH=%MOD_PATH%;%buildbase%\geom\monetdb5
+
 set PATH=%buildbase%\clients\mapiclient;%buildbase%\clients\examples\C;%buildbase%\clients\examples\php;%buildbase%\clients\examples\python;%buildbase%\clients\perl\Tests;%buildbase%\testing;%PATH%
 
 set PATH=%MOD_PATH%;%PATH%
