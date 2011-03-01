@@ -294,6 +294,7 @@ gdk_export int *win_errno(void);
 
 #endif /* GDK_POSIX_H */
 @c
+#include "monetdb_config.h"
 #include "gdk.h"        /* includes gdk_posix.h */
 #include "mutils.h"
 #include <stdio.h>
