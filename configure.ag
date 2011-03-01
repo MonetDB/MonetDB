@@ -3510,14 +3510,27 @@ echo
 echo
 echo "MonetDB is configured as follows:"
 echo "* Compilation specifics:"
-echo "    Host:       ${ac_cv_host}"
-echo "    Compiler:   ${CC}/${CXX}"
-echo "    CFLAGS:     ${CFLAGS}"
-echo "    X_CFLAGS:   ${X_CFLAGS}"
-echo "    LDFLAGS:    ${LDFLAGS}"
+echo "    Host:       " ${ac_cv_host}
+echo "    Compiler:   " ${CC}/${CXX}
+echo "    CFLAGS:     " ${CFLAGS}
+echo "    X_CFLAGS:   " ${X_CFLAGS}
+echo "    LDFLAGS:    " ${LDFLAGS}
 echo
 echo "* Enabled/disabled components:"
-for comp in common monetdb{4,5} sql geom unixodbc java pathfinder testing; do
+for comp in \
+	common \
+	monetdb5 \
+	sql \
+	geom \
+	monetdb4 \
+	pathfinder \
+	unixodbc \
+	java \
+	jdbc \
+	xrpc \
+	control \
+	testing \
+; do
 	echo $ECHO_N "    $comp is $ECHO_C"
 	eval "if test \"x\$enable_$comp\" = xno ; then echo \"${ECHO_T}disabled\"; else echo \"${ECHO_T}enabled\"; fi"
 done
