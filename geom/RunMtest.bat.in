@@ -26,6 +26,9 @@ if not exist "%buildbase%\sql\sql\createdb" mkdir "%buildbase%\sql\sql\createdb"
 copy /y "%srcdir%"\sql\sql\??_*.sql "%buildbase%\sql\sql\createdb"
 if "@HAVE_RAPTOR_FALSE@"==""	del /y "%buildbase%\sql\sql\createdb\30_rdf.sql"
 
+copy /y "%srcdir%"\geom\monetdb5\??_*.mal "%buildbase%\sql\backends\monet5\autoload"
+copy /y "%srcdir%"\geom\sql\??_*.sql "%buildbase%\sql\sql\createdb"
+
 rem binaries (.exe)
 set PATH=%buildbase%\clients\examples\C;%PATH%
 set PATH=%buildbase%\clients\mapiclient;%PATH%
