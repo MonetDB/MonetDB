@@ -63,9 +63,9 @@ SQLProcedures_(ODBCStmt *stmt,
 
 #ifdef ODBCDEBUG
 	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\"\n",
-		nCatalogNameLength, (char*)szCatalogName,
-		nSchemaNameLength, (char*)szSchemaName,
-		nProcNameLength, (char*)szProcName);
+		(int) nCatalogNameLength, (char *) szCatalogName,
+		(int) nSchemaNameLength, (char *) szSchemaName,
+		(int) nProcNameLength, (char *) szProcName);
 #endif
 
 	/* SQLProcedures returns a table with the following columns:

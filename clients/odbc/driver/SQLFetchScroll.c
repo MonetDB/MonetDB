@@ -174,7 +174,8 @@ SQLFetchScroll(SQLHSTMT hStmt,
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLFetchScroll " PTRFMT " %d " LENFMT "\n", PTRFMTCAST hStmt, FetchOrientation, LENCAST FetchOffset);
+	ODBCLOG("SQLFetchScroll " PTRFMT " %d " LENFMT "\n",
+		PTRFMTCAST hStmt, FetchOrientation, LENCAST FetchOffset);
 #endif
 
 	if (!isValidStmt(stmt))

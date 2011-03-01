@@ -51,7 +51,10 @@ SQLSetParam(SQLHSTMT hStmt,
 	    SQLLEN *StrLen_or_Ind)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetParam " PTRFMT " %u %d %d " ULENFMT " %d\n", PTRFMTCAST hStmt, (unsigned int) ParameterNumber, (int) ValueType, (int) ParameterType, ULENCAST LengthPrecision, (int) ParameterScale);
+	ODBCLOG("SQLSetParam " PTRFMT " %u %d %d " ULENFMT " %d\n",
+		PTRFMTCAST hStmt, (unsigned int) ParameterNumber,
+		(int) ValueType, (int) ParameterType,
+		ULENCAST LengthPrecision, (int) ParameterScale);
 #endif
 
 	/* map this call to SQLBindParameter as described in ODBC 3.0 SDK help */

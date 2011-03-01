@@ -750,7 +750,8 @@ SQLGetInfo(SQLHDBC hDbc,
 	ODBCDbc *dbc = (ODBCDbc *) hDbc;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetInfo " PTRFMT " %d\n", PTRFMTCAST hDbc, nInfoType);
+	ODBCLOG("SQLGetInfo " PTRFMT " %u\n",
+		PTRFMTCAST hDbc, (unsigned int) nInfoType);
 #endif
 
 	if (!isValidDbc(dbc))
@@ -785,7 +786,8 @@ SQLGetInfoW(SQLHDBC hDbc,
 	SQLSMALLINT n;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetInfoW " PTRFMT " %d\n", PTRFMTCAST hDbc, nInfoType);
+	ODBCLOG("SQLGetInfoW " PTRFMT " %u\n",
+		PTRFMTCAST hDbc, (unsigned int) nInfoType);
 #endif
 
 	if (!isValidDbc(dbc))

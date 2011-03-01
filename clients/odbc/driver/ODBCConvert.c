@@ -1323,7 +1323,10 @@ ODBCFetch(ODBCStmt *stmt,
 			}
 			data = (char *) ptr;
 
-			sz = snprintf(data, buflen, "%04hu-%02hu-%02hu", dval.year, dval.month, dval.day);
+			sz = snprintf(data, buflen, "%04u-%02u-%02u",
+				      (unsigned int) dval.year,
+				      (unsigned int) dval.month,
+				      (unsigned int) dval.day);
 			if (sz < 0 || sz >= buflen) {
 				data[buflen - 1] = 0;
 				/* String data, right-truncated */
@@ -1345,7 +1348,10 @@ ODBCFetch(ODBCStmt *stmt,
 			}
 			data = (char *) ptr;
 
-			sz = snprintf(data, buflen, "%02hu:%02hu:%02hu", tval.hour, tval.minute, tval.second);
+			sz = snprintf(data, buflen, "%02u:%02u:%02u",
+				      (unsigned int) tval.hour,
+				      (unsigned int) tval.minute,
+				      (unsigned int) tval.second);
 			if (sz < 0 || sz >= buflen) {
 				data[buflen - 1] = 0;
 				/* String data, right-truncated */
@@ -1357,7 +1363,14 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_TYPE_TIMESTAMP:
 			data = (char *) ptr;
 
-			sz = snprintf(data, buflen, "%04hu-%02hu-%02hu %02hu:%02hu:%02hu", tsval.year, tsval.month, tsval.day, tsval.hour, tsval.minute, tsval.second);
+			sz = snprintf(data, buflen,
+				      "%04u-%02u-%02u %02u:%02u:%02u",
+				      (unsigned int) tsval.year,
+				      (unsigned int) tsval.month,
+				      (unsigned int) tsval.day,
+				      (unsigned int) tsval.hour,
+				      (unsigned int) tsval.minute,
+				      (unsigned int) tsval.second);
 			if (sz < 0 || sz >= buflen) {
 				/* Numeric value out of range */
 				addStmtError(stmt, "22003", NULL, 0);
@@ -1382,7 +1395,8 @@ ODBCFetch(ODBCStmt *stmt,
 				if (lenp)
 					*lenp += fscale + 1;
 				if (buflen > 2)
-					sz = snprintf(data, buflen, ".%0*u", fscale, (unsigned int) tsval.fraction);
+					sz = snprintf(data, buflen, ".%0*u",
+						      fscale, (unsigned int) tsval.fraction);
 				if (buflen <= 2 || sz < 0 || sz >= buflen) {
 					data[buflen - 1] = 0;
 					/* String data, right-truncated */
@@ -2687,15 +2701,28 @@ ODBCStore(ODBCStmt *stmt,
 			break;
 		}
 		case SQL_C_TYPE_DATE:
-			snprintf(data, sizeof(data), "%04hd-%02hu-%02hu", dval.year, dval.month, dval.day);
+			snprintf(data, sizeof(data), "%04d-%02u-%02u",
+				 (int) dval.year,
+				 (unsigned int) dval.month,
+				 (unsigned int) dval.day);
 			assigns(buf, bufpos, buflen, data, stmt);
 			break;
 		case SQL_C_TYPE_TIME:
-			snprintf(data, sizeof(data), "%02hu:%02hu:%02hu", tval.hour, tval.minute, tval.second);
+			snprintf(data, sizeof(data), "%02u:%02u:%02u",
+				 (unsigned int) tval.hour,
+				 (unsigned int) tval.minute,
+				 (unsigned int) tval.second);
 			assigns(buf, bufpos, buflen, data, stmt);
 			break;
 		case SQL_C_TYPE_TIMESTAMP:
-			snprintf(data, sizeof(data), "%04hd-%02hu-%02hu %02hu:%02hu:%02hu", tsval.year, tsval.month, tsval.day, tsval.hour, tsval.minute, tsval.second);
+			snprintf(data, sizeof(data),
+				 "%04d-%02u-%02u %02u:%02u:%02u",
+				 (int) tsval.year,
+				 (unsigned int) tsval.month,
+				 (unsigned int) tsval.day,
+				 (unsigned int) tsval.hour,
+				 (unsigned int) tsval.minute,
+				 (unsigned int) tsval.second);
 			assigns(buf, bufpos, buflen, data, stmt);
 			if (tsval.fraction) {
 				snprintf(data, sizeof(data), ".%09u", (unsigned int) tsval.fraction);
@@ -2826,7 +2853,7 @@ ODBCStore(ODBCStmt *stmt,
 			}
 			/* fall through */
 		case SQL_C_TYPE_DATE:
-			snprintf(data, sizeof(data), "DATE '%hu-%02hu-%02hu'", dval.year, dval.month, dval.day);
+			snprintf(data, sizeof(data), "DATE '%u-%02u-%02u'", dval.year, dval.month, dval.day);
 			assigns(buf, bufpos, buflen, data, stmt);
 			break;
 		default:
@@ -2862,7 +2889,10 @@ ODBCStore(ODBCStmt *stmt,
 			}
 			/* fall through */
 		case SQL_C_TYPE_TIME:
-			snprintf(data, sizeof(data), "TIME '%hu:%02hu:%02hu'", tval.hour, tval.minute, tval.second);
+			snprintf(data, sizeof(data), "TIME '%u:%02u:%02u'",
+				 (unsigned int) tval.hour,
+				 (unsigned int) tval.minute,
+				 (unsigned int) tval.second);
 			assigns(buf, bufpos, buflen, data, stmt);
 			break;
 		default:
@@ -2921,7 +2951,14 @@ ODBCStore(ODBCStmt *stmt,
 			}
 			/* fall through */
 		case SQL_C_TYPE_TIMESTAMP:
-			snprintf(data, sizeof(data), "TIMESTAMP '%hu-%02hd-%02hd %02hu:%02hu:%02hu", tsval.year, tsval.month, tsval.day, tsval.hour, tsval.minute, tsval.second);
+			snprintf(data, sizeof(data),
+				 "TIMESTAMP '%u-%02d-%02d %02u:%02u:%02u",
+				 (unsigned int) tsval.year,
+				 (unsigned int) tsval.month,
+				 (unsigned int) tsval.day,
+				 (unsigned int) tsval.hour,
+				 (unsigned int) tsval.minute,
+				 (unsigned int) tsval.second);
 			assigns(buf, bufpos, buflen, data, stmt);
 			if (tsval.fraction) {
 				snprintf(data, sizeof(data), ".%09u", (unsigned int) tsval.fraction);

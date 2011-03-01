@@ -45,7 +45,8 @@ SQLTransact(SQLHENV hEnv,
 	    UWORD fType)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLTransact " PTRFMT " " PTRFMT " %d\n", PTRFMTCAST hEnv, PTRFMTCAST hDbc, fType);
+	ODBCLOG("SQLTransact " PTRFMT " " PTRFMT " %u\n", PTRFMTCAST hEnv,
+		PTRFMTCAST hDbc, (unsigned int) fType);
 #endif
 
 	/* use mapping as described in ODBC 3 SDK Help */

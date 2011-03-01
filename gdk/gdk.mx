@@ -317,6 +317,7 @@ An error at this stage normally lead to an abort.
 #ifndef _GDK_H_
 #define _GDK_H_
 
+#include "monetdb_config.h"
 /* standard includes upon which all configure tests depend */
 #include <stdio.h>
 #ifdef HAVE_SYS_TYPES_H

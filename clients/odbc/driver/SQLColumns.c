@@ -109,7 +109,11 @@ SQLColumns_(ODBCStmt *stmt,
 	fixODBCstring(szColumnName, nColumnNameLength, SQLSMALLINT, addStmtError, stmt, return SQL_ERROR);
 
 #ifdef ODBCDEBUG
-	ODBCLOG(" \"%.*s\" \"%.*s\" \"%.*s\" \"%.*s\"\n", nCatalogNameLength, (char*)szCatalogName, nSchemaNameLength, (char*)szSchemaName, nTableNameLength, (char*)szTableName, nColumnNameLength, (char*)szColumnName);
+	ODBCLOG(" \"%.*s\" \"%.*s\" \"%.*s\" \"%.*s\"\n",
+		(int) nCatalogNameLength, (char *) szCatalogName,
+		(int) nSchemaNameLength, (char *) szSchemaName,
+		(int) nTableNameLength, (char *) szTableName,
+		(int) nColumnNameLength, (char *) szColumnName);
 #endif
 
 	/* construct the query now */

@@ -80,10 +80,12 @@ SQLForeignKeys_(ODBCStmt *stmt,
 
 #ifdef ODCBDEBUG
 	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\" \"%.*s\" \"%.*s\" \"%.*s\"\n",
-		nPKCatalogNameLength, szPKCatalogName, nPKSchemaNameLength,
-		szPKSchemaName, nPKTableNameLength, szPKTableName,
-		nFKCatalogNameLength, szFKCatalogName, nFKSchemaNameLength,
-		szFKSchemaName, nFKTableNameLength, szFKTableName);
+		(int) nPKCatalogNameLength, szPKCatalogName,
+		(int) nPKSchemaNameLength, szPKSchemaName,
+		(int) nPKTableNameLength, szPKTableName,
+		(int) nFKCatalogNameLength, szFKCatalogName,
+		(int) nFKSchemaNameLength, szFKSchemaName,
+		(int) nFKTableNameLength, szFKTableName);
 #endif
 	/* dependent on the input parameter values we must add a
 	   variable selection condition dynamically */

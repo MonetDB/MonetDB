@@ -70,7 +70,10 @@ SQLPrimaryKeys_(ODBCStmt *stmt,
 		return SQL_ERROR;
 	}
 #ifdef ODBCDEBUG
-	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\"\n", nCatalogNameLength, (char*)szCatalogName, nSchemaNameLength, (char*)szSchemaName, nTableNameLength, (char*)szTableName);
+	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\"\n",
+		(int) nCatalogNameLength, (char *) szCatalogName,
+		(int) nSchemaNameLength, (char *) szSchemaName,
+		(int) nTableNameLength, (char *) szTableName);
 #endif
 
 	/* construct the query */

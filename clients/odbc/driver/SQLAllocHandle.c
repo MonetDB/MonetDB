@@ -55,7 +55,7 @@ SQLAllocEnv_(SQLHANDLE *pnOutputHandle)
 	}
 	*pnOutputHandle = (SQLHANDLE *) newODBCEnv();
 #ifdef ODBCDEBUG
-	ODBCLOG("new env " PTRFMT "\n", PTRFMTCAST * pnOutputHandle);
+	ODBCLOG("new env " PTRFMT "\n", PTRFMTCAST *pnOutputHandle);
 #endif
 	return *pnOutputHandle == NULL ? SQL_ERROR : SQL_SUCCESS;
 }
@@ -76,7 +76,7 @@ SQLAllocDbc_(ODBCEnv *env,
 	}
 	*pnOutputHandle = (SQLHANDLE *) newODBCDbc(env);
 #ifdef ODBCDEBUG
-	ODBCLOG("new dbc " PTRFMT "\n", PTRFMTCAST * pnOutputHandle);
+	ODBCLOG("new dbc " PTRFMT "\n", PTRFMTCAST *pnOutputHandle);
 #endif
 	return *pnOutputHandle == NULL ? SQL_ERROR : SQL_SUCCESS;
 }
@@ -97,7 +97,7 @@ SQLAllocStmt_(ODBCDbc *dbc,
 	}
 	*pnOutputHandle = (SQLHANDLE *) newODBCStmt(dbc);
 #ifdef ODBCDEBUG
-	ODBCLOG("new stmt " PTRFMT "\n", PTRFMTCAST * pnOutputHandle);
+	ODBCLOG("new stmt " PTRFMT "\n", PTRFMTCAST *pnOutputHandle);
 #endif
 	return *pnOutputHandle == NULL ? SQL_ERROR : SQL_SUCCESS;
 }
@@ -118,7 +118,7 @@ SQLAllocDesc_(ODBCDbc *dbc,
 	}
 	*pnOutputHandle = (SQLHANDLE *) newODBCDesc(dbc);
 #ifdef ODBCDEBUG
-	ODBCLOG("new desc " PTRFMT "\n", PTRFMTCAST * pnOutputHandle);
+	ODBCLOG("new desc " PTRFMT "\n", PTRFMTCAST *pnOutputHandle);
 #endif
 	return *pnOutputHandle == NULL ? SQL_ERROR : SQL_SUCCESS;
 }

@@ -113,7 +113,8 @@ SQLGetDescRec(SQLHDESC DescriptorHandle,
 	ODBCDesc *desc = (ODBCDesc *) DescriptorHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetDescRec " PTRFMT " %d\n", PTRFMTCAST DescriptorHandle, RecordNumber);
+	ODBCLOG("SQLGetDescRec " PTRFMT " %d\n",
+		PTRFMTCAST DescriptorHandle, (int) RecordNumber);
 #endif
 
 	if (!isValidDesc(desc))
@@ -158,7 +159,8 @@ SQLGetDescRecW(SQLHDESC DescriptorHandle,
 	SQLSMALLINT n;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetDescRecW " PTRFMT " %d\n", PTRFMTCAST DescriptorHandle, RecordNumber);
+	ODBCLOG("SQLGetDescRecW " PTRFMT " %d\n",
+		PTRFMTCAST DescriptorHandle, (int) RecordNumber);
 #endif
 
 	if (!isValidDesc(desc))

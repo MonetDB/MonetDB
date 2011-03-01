@@ -66,7 +66,11 @@ SQLStatistics_(ODBCStmt *stmt,
 	fixODBCstring(szCatalogName, nCatalogNameLength, SQLSMALLINT, addStmtError, stmt, return SQL_ERROR);
 
 #ifdef ODBCDEBUG
-	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\" %hu %hu\n", nCatalogNameLength, (char*)szCatalogName, nSchemaNameLength, (char*)szSchemaName, nTableNameLength, (char*)szTableName, nUnique, nReserved);
+	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\" %u %u\n",
+		(int) nCatalogNameLength, (char *) szCatalogName,
+		(int) nSchemaNameLength, (char *) szSchemaName,
+		(int) nTableNameLength, (char *) szTableName,
+		(unsigned int) nUnique, (unsigned int) nReserved);
 #endif
 
 	/* check for valid Unique argument */

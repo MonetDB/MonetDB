@@ -56,7 +56,8 @@ SQLSetConnectAttr_(ODBCDbc *dbc,
 		case SQL_AUTOCOMMIT_OFF:
 			dbc->sql_attr_autocommit = (SQLUINTEGER) (size_t) ValuePtr;
 #ifdef ODBCDEBUG
-			ODBCLOG("SQLSetConnectAttr set autocommit %s\n", dbc->sql_attr_autocommit == SQL_AUTOCOMMIT_ON ? "on" : "off");
+			ODBCLOG("SQLSetConnectAttr set autocommit %s\n",
+				dbc->sql_attr_autocommit == SQL_AUTOCOMMIT_ON ? "on" : "off");
 #endif
 			if (dbc->mid)
 				mapi_setAutocommit(dbc->mid, dbc->sql_attr_autocommit == SQL_AUTOCOMMIT_ON);
@@ -104,7 +105,8 @@ SQLSetConnectAttr(SQLHDBC ConnectionHandle,
 		  SQLINTEGER StringLength)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetConnectAttr " PTRFMT " %d\n", PTRFMTCAST ConnectionHandle, (int) Attribute);
+	ODBCLOG("SQLSetConnectAttr " PTRFMT " %d\n",
+		PTRFMTCAST ConnectionHandle, (int) Attribute);
 #endif
 
 	if (!isValidDbc((ODBCDbc *) ConnectionHandle))
@@ -137,7 +139,8 @@ SQLSetConnectAttrW(SQLHDBC ConnectionHandle,
 	SQLRETURN rc;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetConnectAttrW " PTRFMT " %d\n", PTRFMTCAST ConnectionHandle, (int) Attribute);
+	ODBCLOG("SQLSetConnectAttrW " PTRFMT " %d\n",
+		PTRFMTCAST ConnectionHandle, (int) Attribute);
 #endif
 
 	if (!isValidDbc(dbc))
