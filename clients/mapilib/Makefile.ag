@@ -17,7 +17,8 @@
 
 MTSAFE
 
-INCLUDES = ../../common/options ../../common/stream $(openssl_CFLAGS)
+INCLUDES = ../../common/options ../../common/stream \
+		   $(openssl_CFLAGS) $(MSGCONTROL_FLAGS)
 
 lib_mapi = {
 	VERSION = $(MAPI_VERSION)
