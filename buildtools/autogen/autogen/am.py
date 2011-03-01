@@ -389,9 +389,10 @@ def am_scripts(fd, var, scripts, am):
             fd.write("uninstall-local-%s: \n" % script)
             fd.write("\t$(RM) $(DESTDIR)%s/%s\n\n" % (sd, script))
 
-        am['INSTALL'].append(s)
-        am['UNINSTALL'].append(s)
-        am['InstallList'].append("\t"+sd+"/"+script+cond+"\n")
+        if not scripts.has_key('NOINST'):
+            am['INSTALL'].append(s)
+            am['UNINSTALL'].append(s)
+            am['InstallList'].append("\t"+sd+"/"+script+cond+"\n")
 
     am_find_ins(am, scripts)
     am_deps(fd, scripts['DEPS'], am)
