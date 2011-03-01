@@ -36,6 +36,8 @@ set MOD_PATH=%buildbase%\pathfinder\modules\pftijah;%MOD_PATH%
 set MOD_PATH=%buildbase%\pathfinder\modules\probxml;%MOD_PATH%
 set MOD_PATH=%buildbase%\pathfinder\runtime;%MOD_PATH%
 
+set PATH=%MOD_PATH%;%PATH%
+
 set cfg=%buildbase%\monetdb4\conf\MonetDB.conf
 
 set PYTHONPATH=%buildbase%\clients\python\build\lib;%buildbase%\testing;%srcdir%\testing;%PYTHONPATH%
