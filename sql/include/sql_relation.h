@@ -66,6 +66,9 @@ typedef struct expression {
 #define ANTISEL	32
 #define HAS_NO_NIL	64
 #define EXP_INTERN	128
+
+#define UPD_COMP	1
+#define UPD_LOCKED	2
  
 // todo make enum
 #define DDL_OUTPUT	1
@@ -146,6 +149,8 @@ typedef enum operator_type {
 	(e->type == e_func && e->r)
 #define is_base(op) \
 	(op == op_basetable || op == op_table)
+#define is_basetable(op) \
+	(op == op_basetable)
 #define is_ddl(op) \
 	(op == op_ddl)
 #define is_output(rel) \

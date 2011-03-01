@@ -597,9 +597,7 @@ exps_are_joins( list *l )
 int
 exp_is_join_exp(sql_exp *e)
 {
-	sql_exp *l = e->l;
-	sql_exp *r = e->r;
-	if (e->type == e_cmp && !is_complex_exp(e->flag) && l && r && r->card >= CARD_AGGR)
+	if (exp_is_join(e) == 0)
 		return 0;
 	if (e->type == e_cmp && e->flag == cmp_or && e->card >= CARD_AGGR)
 		if (exps_are_joins(e->l) == 0 && exps_are_joins(e->r) == 0)
@@ -608,23 +606,23 @@ exp_is_join_exp(sql_exp *e)
 }
 
 static int
-exp_is_complex( sql_exp *e )
+exp_is_complex_select( sql_exp *e )
 {
 	switch (e->type) {
 	case e_atom:
 		return 0;
 	case e_convert:
-		return exp_is_complex(e->l);
+		return exp_is_complex_select(e->l);
 	case e_func:
 	case e_aggr:
 	{	
-		int r = (e->card != CARD_ATOM);
+		int r = (e->card == CARD_ATOM);
 		node *n;
 		list *l = e->l;
 
 		if (r && l)
 			for (n = l->h; n; n = n->next) 
-				r |= exp_is_complex(n->data);
+				r |= exp_is_complex_select(n->data);
 		return r;
 	}
 	case e_column:
@@ -641,9 +639,62 @@ complex_select(sql_exp *e)
 
 	if (l->card == CARD_ATOM || r->card == CARD_ATOM) 
 		return 1;
-	if (exp_is_complex(l) || exp_is_complex(r))
+	if (exp_is_complex_select(l) || exp_is_complex_select(r))
 		return 1;
 	return 0;
+}
+
+static int
+distinct_rel(sql_exp *e, char **rname)
+{
+	char *e_rname = NULL;
+
+	switch(e->type) {
+	case e_column:
+		e_rname = exp_relname(e);
+
+		if (*rname && e_rname && strcmp(*rname, e_rname) == 0)
+			return 1;
+		if (!*rname) {
+			*rname = e_rname;
+			return 1;
+		}
+		break;
+	case e_aggr:
+	case e_func: 
+		if (e->l) {
+			int m = 1;
+			list *l = e->l;
+			node *n;
+	
+			for(n=l->h; n && m; n = n->next) {
+				sql_exp *ae = n->data; 
+
+				m = distinct_rel(ae, rname);
+			}
+			return m;
+		}
+		return 0;
+	case e_atom:
+		return 1;
+	case e_convert:
+		return distinct_rel(e->l, rname);
+	default:
+		return 0;
+	}
+	return 0;
+}
+int 
+exp_is_rangejoin(sql_exp *e)
+{
+	/* assume e is a e_cmp with 3 args 
+	 * Need to check e->r and e->f only touch one table.
+	 */
+	char *rname = 0;
+
+	if (distinct_rel(e->r, &rname) && distinct_rel(e->f, &rname))
+		return 0;
+	return -1;
 }
 
 int
@@ -654,6 +705,9 @@ exp_is_join(sql_exp *e)
 	 */ 
 	if (e->type == e_cmp && !is_complex_exp(e->flag) && e->l && e->r && !e->f && e->card >= CARD_AGGR && !complex_select(e))
 		return 0;
+	/* range expression */
+	if (e->type == e_cmp && !is_complex_exp(e->flag) && e->l && e->r && e->f && e->card >= CARD_AGGR && !complex_select(e)) 
+		return exp_is_rangejoin(e);
 	return -1;
 }
 

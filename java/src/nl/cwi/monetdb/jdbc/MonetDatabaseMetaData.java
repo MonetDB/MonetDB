@@ -1936,13 +1936,13 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 			"\"columns\".\"type_digits\" AS \"COLUMN_SIZE\", 0 AS \"BUFFER_LENGTH\", " +
 			"\"columns\".\"type_scale\" AS \"DECIMAL_DIGITS\", \"keys\".\"type\" AS \"keytype\" " +
 				"FROM \"sys\".\"keys\" AS \"keys\", " +
-					"\"sys\".\"keycolumns\" AS \"keycolumns\", " +
+					"\"sys\".\"objects\" AS \"objects\", " +
 					"\"sys\".\"columns\" AS \"columns\", " +
 					"\"sys\".\"tables\" AS \"tables\", " +
 					"\"sys\".\"schemas\" AS \"schemas\" " +
-				"WHERE \"keys\".\"id\" = \"keycolumns\".\"id\" AND \"keys\".\"table_id\" = \"tables\".\"id\" " +
+				"WHERE \"keys\".\"id\" = \"objects\".\"id\" AND \"keys\".\"table_id\" = \"tables\".\"id\" " +
 					"AND \"keys\".\"table_id\" = \"columns\".\"table_id\" " +
-					"AND \"keycolumns\".\"column\" = \"columns\".\"name\" " +
+					"AND \"objects\".\"name\" = \"columns\".\"name\" " +
 					"AND \"tables\".\"schema_id\" = \"schemas\".\"id\" " +
 					"AND \"keys\".\"type\" IN (0, 1) ";
 
@@ -2085,13 +2085,13 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		"SELECT cast(null AS varchar(1)) AS \"TABLE_CAT\", " +
 			"\"schemas\".\"name\" AS \"TABLE_SCHEM\", " +
 			"\"tables\".\"name\" AS \"TABLE_NAME\", " +
-			"\"keycolumns\".\"column\" AS \"COLUMN_NAME\", " +
-			"\"keycolumns\".\"nr\" AS \"KEY_SEQ\", \"keys\".\"name\" AS \"PK_NAME\" " +
+			"\"objects\".\"name\" AS \"COLUMN_NAME\", " +
+			"\"objects\".\"nr\" AS \"KEY_SEQ\", \"keys\".\"name\" AS \"PK_NAME\" " +
 		"FROM \"sys\".\"keys\" AS \"keys\", " +
-			"\"sys\".\"keycolumns\" AS \"keycolumns\", " +
+			"\"sys\".\"objects\" AS \"objects\", " +
 			"\"sys\".\"tables\" AS \"tables\", " +
 			"\"sys\".\"schemas\" AS \"schemas\" " +
-		"WHERE \"keys\".\"id\" = \"keycolumns\".\"id\" " +
+		"WHERE \"keys\".\"id\" = \"objects\".\"id\" " +
 			"AND \"keys\".\"table_id\" = \"tables\".\"id\" " +
 			"AND \"tables\".\"schema_id\" = \"schemas\".\"id\" " +
 			"AND \"keys\".\"type\" = 0 ";
@@ -2110,16 +2110,16 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 
 	final static String keyQuery =
 		", \"pkschema\".\"name\" AS \"PKTABLE_SCHEM\", " +
-		"\"pktable\".\"name\" AS \"PKTABLE_NAME\", \"pkkeycol\".\"column\" AS \"PKCOLUMN_NAME\", " +
+		"\"pktable\".\"name\" AS \"PKTABLE_NAME\", \"pkkeycol\".\"name\" AS \"PKCOLUMN_NAME\", " +
 		"\"fkschema\".\"name\" AS \"FKTABLE_SCHEM\", " +
-		"\"fktable\".\"name\" AS \"FKTABLE_NAME\", \"fkkeycol\".\"column\" AS \"FKCOLUMN_NAME\", " +
+		"\"fktable\".\"name\" AS \"FKTABLE_NAME\", \"fkkeycol\".\"name\" AS \"FKCOLUMN_NAME\", " +
 		"\"pkkeycol\".\"nr\" AS \"KEY_SEQ\", " +
 		DatabaseMetaData.importedKeyNoAction + " AS \"UPDATE_RULE\", " +
 		"" + DatabaseMetaData.importedKeyNoAction + " AS \"DELETE_RULE\", " +
 		"\"fkkey\".\"name\" AS \"FK_NAME\", \"pkkey\".\"name\" AS \"PK_NAME\", " +
 		"" + DatabaseMetaData.importedKeyNotDeferrable + " AS \"DEFERRABILITY\" " +
-			"FROM \"sys\".\"keys\" AS \"fkkey\", \"sys\".\"keys\" AS \"pkkey\", \"sys\".\"keycolumns\" AS \"fkkeycol\", " +
-			"\"sys\".\"keycolumns\" AS \"pkkeycol\", \"sys\".\"tables\" AS \"fktable\", \"sys\".\"tables\" AS \"pktable\", " +
+			"FROM \"sys\".\"keys\" AS \"fkkey\", \"sys\".\"keys\" AS \"pkkey\", \"sys\".\"objects\" AS \"fkkeycol\", " +
+			"\"sys\".\"objects\" AS \"pkkeycol\", \"sys\".\"tables\" AS \"fktable\", \"sys\".\"tables\" AS \"pktable\", " +
 			"\"sys\".\"schemas\" AS \"fkschema\", \"sys\".\"schemas\" AS \"pkschema\" " +
 			"WHERE \"fktable\".\"id\" = \"fkkey\".\"table_id\" AND \"pktable\".\"id\" = \"pkkey\".\"table_id\" AND " +
 			"\"fkkey\".\"id\" = \"fkkeycol\".\"id\" AND \"pkkey\".\"id\" = \"pkkeycol\".\"id\" AND " +
@@ -2522,7 +2522,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 				"\"schemas\".\"name\" AS \"TABLE_SCHEM\", " +
 				"CASE WHEN \"keys\".\"name\" IS NULL THEN true ELSE false END AS \"NON_UNIQUE\", " +
 				"CASE \"idxs\".\"type\" WHEN 0 THEN " + DatabaseMetaData.tableIndexHashed + " ELSE " + DatabaseMetaData.tableIndexOther + " END AS \"TYPE\", " +
-				"\"keycolumns\".\"nr\" AS \"ORDINAL_POSITION\", " +
+				"\"objects\".\"nr\" AS \"ORDINAL_POSITION\", " +
 				"\"columns\".\"name\" as \"COLUMN_NAME\", " +
 				"cast(null AS varchar(1)) AS \"INDEX_QUALIFIER\", " +
 				"cast(null AS varchar(1)) AS \"ASC_OR_DESC\", " +
@@ -2530,14 +2530,14 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 				"cast(null AS varchar(1)) AS \"FILTER_CONDITION\" " +
 			"FROM \"sys\".\"idxs\" AS \"idxs\" LEFT JOIN \"sys\".\"keys\" AS \"keys\" ON \"idxs\".\"name\" = \"keys\".\"name\", " +
 				"\"sys\".\"schemas\" AS \"schemas\", " +
-				"\"sys\".\"keycolumns\" AS \"keycolumns\", " +
+				"\"sys\".\"objects\" AS \"objects\", " +
 				"\"sys\".\"columns\" AS \"columns\", " +
 				"\"sys\".\"tables\" AS \"tables\" " +
 			"WHERE \"idxs\".\"table_id\" = \"tables\".\"id\" " +
 				"AND \"tables\".\"schema_id\" = \"schemas\".\"id\" " +
-				"AND \"idxs\".\"id\" = \"keycolumns\".\"id\" " +
+				"AND \"idxs\".\"id\" = \"objects\".\"id\" " +
 				"AND \"tables\".\"id\" = \"columns\".\"table_id\" " +
-				"AND \"keycolumns\".\"column\" = \"columns\".\"name\" " +
+				"AND \"objects\".\"name\" = \"columns\".\"name\" " +
 				"AND (\"keys\".\"type\" IS NULL OR \"keys\".\"type\" = 1) " +
 			") AS jdbcquery " +
 				"WHERE 1 = 1 ";

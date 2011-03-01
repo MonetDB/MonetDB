@@ -155,7 +155,8 @@ sql_table *
 mvc_create_table_as_subquery( mvc *sql, sql_rel *sq, sql_schema *s, char *tname, dlist *column_spec, int temp, int commit_action )
 {
 	char *n;
-	int tt = (temp != SQL_STREAM)?tt_table:tt_stream;
+	int tt = (temp == SQL_STREAM)?tt_stream:
+	         ((temp == SQL_MERGE_TABLE)?tt_merge_table:tt_table);
 
 	sql_table *t = mvc_create_table(sql, s, tname, tt, 0, SQL_DECLARED_TABLE, commit_action, -1);
 	if ((n = as_subquery( sql, t, sq, column_spec)) != NULL) {
@@ -570,10 +571,13 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 {
 	int res = SQL_OK;
 
-	if (alter && !isTable(t)) {
+	if (alter && (isView(t) || (isMergeTable(t) && s->token != SQL_TABLE && s->token != SQL_DROP_TABLE) || (isTable(t) && (s->token == SQL_TABLE || s->token == SQL_DROP_TABLE)) )){
 		char *msg = "";
 
 		switch (s->token) {
+		case SQL_TABLE: 	
+			msg = "add table to"; 
+			break;
 		case SQL_COLUMN: 	
 			msg = "add column to"; 
 			break;
@@ -589,6 +593,9 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		case SQL_DROP_DEFAULT:
 			msg = "drop default column option from"; 
 			break;
+		case SQL_DROP_TABLE:
+			msg = "drop table from"; 
+			break;
 		case SQL_DROP_COLUMN:
 			msg = "drop column from"; 
 			break;
@@ -596,8 +603,10 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 			msg = "drop constraint from"; 
 			break;
 		}
-		sql_error(sql, 02, "ALTER TABLE: cannot %s VIEW '%s'\n",
-				msg, t->base.name);
+		sql_error(sql, 02, "ALTER TABLE: cannot %s %s '%s'\n",
+				msg, 
+				isMergeTable(t)?"MERGE TABLE":"VIEW",
+				t->base.name);
 		return SQL_ERR;
 	}
 
@@ -744,16 +753,19 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 	int instantiate = (sql->emode == m_instantiate);
 	int deps = (sql->emode == m_deps);
 	int create = (!instantiate && !deps);
+	int tt = (temp == SQL_STREAM)?tt_stream:
+	         ((temp == SQL_MERGE_TABLE)?tt_merge_table:tt_table);
 
 	(void)create;
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, "CREATE TABLE: no such schema '%s'", sname);
 
-	if (temp != SQL_PERSIST && temp != SQL_STREAM && commit_action == CA_COMMIT)
+	if (temp != SQL_PERSIST && tt == tt_table && 
+			commit_action == CA_COMMIT)
 		commit_action = CA_DELETE;
 	
 	if (temp != SQL_DECLARED_TABLE) {
-		if (temp != SQL_PERSIST) {
+		if (temp != SQL_PERSIST && tt == tt_table) {
 			s = mvc_bind_schema(sql, "tmp");
 		} else if (s == NULL) {
 			s = ss;
@@ -770,7 +782,6 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 		return sql_error(sql, 02, "CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	} else if (table_elements_or_subquery->token == SQL_CREATE_TABLE) { 
 		/* table element list */
-		int tt = (temp != SQL_STREAM)?tt_table:tt_stream;
 		sql_table *t = mvc_create_table(sql, s, name, tt, 0, SQL_DECLARED_TABLE, commit_action, -1);
 		dnode *n;
 		dlist *columns = table_elements_or_subquery->data.lval;
@@ -782,7 +793,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 			if (res == SQL_ERR) 
 				return NULL;
 		}
-		temp = (temp == SQL_STREAM)?SQL_PERSIST:temp;
+		temp = (tt == tt_table)?temp:SQL_PERSIST;
 		return rel_table(sql->sa, DDL_CREATE_TABLE, sname, t, temp);
 	} else { /* [col name list] as subquery with or without data */
 		sql_rel *sq = NULL, *res = NULL;
@@ -804,10 +815,10 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 		}
 
 		/* insert query result into this table */
-		temp = (temp == SQL_STREAM)?SQL_PERSIST:temp;
+		temp = (tt == tt_table)?temp:SQL_PERSIST;
 		res = rel_table(sql->sa, DDL_CREATE_TABLE, sname, t, temp);
 		if (with_data) {
-			res = rel_insert(sql->sa, res, sq);
+			res = rel_insert(sql, res, sq);
 		} else {
 			rel_destroy(sq);
 		}
@@ -1023,8 +1034,9 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 		return sql_error(sql, 02, "ALTER TABLE: no such table '%s'", tname);
 	} else {
 		node *n;
-		sql_rel *res = NULL;
+		sql_rel *res = NULL, *r;
 		sql_table *nt = dup_sql_table(sql->sa, t);
+		sql_exp ** updates, *e;
 
 		if (nt && te->token == SQL_DROP_CONSTRAINT) {
 			dlist *l = te->data.lval;
@@ -1049,12 +1061,34 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 		res = rel_table(sql->sa, DDL_ALTER_TABLE, sname, nt, 0);
 		if (!te) /* Set Read only */
 			return res;
+		/* table add table */
+		if (te->token == SQL_TABLE) {
+			char *ntname = te->data.lval->h->data.sval;
+			sql_table *nnt = mvc_bind_table(sql, s, ntname);
+
+			if (nnt)
+				cs_add(&nt->tables, nnt, TR_NEW); 
+		}
+		/* table drop table */
+		if (te->token == SQL_DROP_TABLE) {
+			char *ntname = te->data.lval->h->data.sval;
+			int drop_action = te->data.lval->h->next->data.i_val;
+			node *n = cs_find_name(&nt->tables, ntname);
+
+			if (n) {
+				sql_table *ntt = n->data;
+
+				ntt->drop_action = drop_action;
+				cs_del(&nt->tables, n, ntt->base.flag); 
+			}
+		}
 
 		/* new columns need update with default values */
+		updates = table_update_array(sql, nt);
+		e = exp_column(sql->sa, nt->base.name, "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+		r = rel_project(sql->sa, res, append(new_exp_list(sql->sa),e));
 		if (nt->columns.nelm) {
 			list *cols = new_exp_list(sql->sa);
-			sql_exp *e = exp_column(sql->sa, rel_name(res), "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
-			sql_rel *r = rel_project(sql->sa, res, append(new_exp_list(sql->sa),e));
 			for (n = nt->columns.nelm; n; n = n->next) {
 				sql_column *c = n->data;
 				if (c->def) {
@@ -1069,15 +1103,14 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 					return NULL;
 				}
 				list_append(cols, exp_column(sql->sa, nt->base.name, c->base.name, &c->type, CARD_MULTI, 0, 0));
-				rel_project_add_exp(sql, r, e);
-			}
-			res = rel_update(sql->sa, res, r /* all */, cols); 
-		} else {
-			//sql_exp *e = exp_column(sql->sa, rel_name(res), "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
-			//sql_rel *r = rel_project(sql->sa, res, append(new_exp_list(sql->sa),e));
 
-			/* new indices or keys */
-			res = rel_update(sql->sa, res, NULL/* r*/ /* all */, NULL); 
+				assert(!updates[c->colnr]);
+				exp_setname(sql->sa, e, c->t->base.name, c->base.name);
+				updates[c->colnr] = e;
+			}
+			res = rel_update(sql, res, r, updates, cols); 
+		} else { /* new indices or keys */
+			res = rel_update(sql, res, r, updates, NULL); 
 		}
 		return res;
 	}

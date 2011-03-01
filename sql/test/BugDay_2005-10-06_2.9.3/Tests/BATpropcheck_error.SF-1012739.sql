@@ -2,12 +2,12 @@ SELECT
     null AS "TABLE_CAT", 
     "schemas"."name" AS "TABLE_SCHEM",
     "tables"."name" AS "TABLE_NAME", 
-    "keycolumns"."column" AS "COLUMN_NAME",
+    "objects"."name" AS "COLUMN_NAME",
     "keys"."type" AS "KEY_SEQ", 
     "keys"."name" AS "PK_NAME"
-FROM "keys", "keycolumns", "tables", "schemas" 
+FROM "keys", "objects", "tables", "schemas" 
 WHERE 
-    "keys"."id" = "keycolumns"."id" 
+    "keys"."id" = "objects"."id" 
 AND
     "keys"."table_id" = "tables"."id" 
 AND 

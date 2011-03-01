@@ -949,6 +949,16 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = newStmt2(mb, batRef, reverseRef );
 				q = pushArgument(mb, q, k);
 				s->nr = getDestVar(q);
+/*
+				assert(s->type != st_select);
+				q = multiplex2(mb,mod,convertOperator(op),l,r,TYPE_bit);
+				k = getDestVar(q);
+
+				q = newStmt2(mb, algebraRef, uselectRef);
+				q = pushArgument(mb, q, k);
+				q = pushBit(mb, q, !need_not);
+				s->nr = getDestVar(q);
+*/
 			} else {
 				char *cmd = s->type == st_select ? 
 						"select" : "uselect";

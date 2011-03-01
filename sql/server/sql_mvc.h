@@ -175,7 +175,6 @@ extern sql_schema *mvc_create_schema(mvc *m, char *name, int auth_id, int owner)
 extern BUN mvc_clear_table(mvc *m, sql_table *t);
 extern void mvc_drop_table(mvc *c, sql_schema *s, sql_table * t, int drop_action);
 extern sql_table *mvc_create_table(mvc *c, sql_schema *s, char *name, int tt, bit system, int persistence, int commit_action, int sz);
-extern sql_table *mvc_create_cluster(mvc *c, sql_schema *s, char *name, bit system, int persistence, int commit_action, int sz);
 extern sql_table *mvc_create_view(mvc *c, sql_schema *s, char *name, int persistence, char *sql, bit system);
 extern sql_table *mvc_create_generated(mvc *c, sql_schema *s, char *name, char *sql, bit system);
 
@@ -217,7 +216,6 @@ extern list *mvc_get_connection(mvc *m, int id, char *server, char *db, char *db
 extern void stack_push_var(mvc *sql, char *name, sql_subtype *type);
 extern void stack_push_rel_var(mvc *sql, char *name, sql_rel *var, sql_subtype *type);
 extern void stack_push_rel_view(mvc *sql, char *name, sql_rel *view);
-extern void stack_set_rel_view(mvc *sql, char *name, sql_rel *rel);
 
 extern void stack_push_frame(mvc *sql, char *name);
 extern void stack_pop_frame(mvc *sql);

@@ -24,11 +24,27 @@
 #include "rel_prop.h"
 /* needed for recursion (ie triggers) */
 #include "rel_select.h"
+#include "rel_updates.h"
 #include "rel_subquery.h"
 
 static stmt * subrel_bin(mvc *sql, sql_rel *rel, list *refs);
 
 static char *TID = "%TID%";
+
+static stmt *
+refs_find_rel(list *refs, sql_rel *rel)
+{
+	node *n;
+
+	for(n=refs->h; n; n = n->next->next) {
+		sql_rel *ref = n->data;
+		stmt *s = n->next->data;
+		
+		if (rel == ref) 
+			return s;
+	}
+	return NULL;
+}
 
 static void 
 print_stmtlist(sql_allocator *sa, stmt *l )
@@ -723,6 +739,16 @@ rel2bin_basetable( mvc *sql, sql_rel *rel, list *refs)
 		sc = stmt_alias(sql->sa, sc, rnme, sa_strdup(sql->sa, TID));
 		list_append(l, sc);
 	}
+	if (t->idxs.set) {
+		for (n = t->idxs.set->h; n; n = n->next) {
+			sql_idx *i = n->data;
+			stmt *sc = stmt_idxbat(sql->sa, i, RDONLY);
+			char *rnme = sa_strdup(sql->sa, t->base.name);
+
+			sc = stmt_alias(sql->sa, sc, rnme, sa_strdup(sql->sa, i->base.name));
+			list_append(l, sc);
+		}
+	}
 
 	sub = stmt_list(sql->sa, l);
 	/* add aliases */
@@ -744,16 +770,6 @@ rel2bin_basetable( mvc *sql, sql_rel *rel, list *refs)
 			list_append(l, s);
 		}
 		sub = stmt_list(sql->sa, l);
-	}
-	if (t->idxs.set) {
-		for (n = t->idxs.set->h; n; n = n->next) {
-			sql_idx *i = n->data;
-			stmt *sc = stmt_idxbat(sql->sa, i, RDONLY);
-			char *rnme = sa_strdup(sql->sa, tname);
-
-			sc = stmt_alias(sql->sa, sc, rnme, sa_strdup(sql->sa, i->base.name));
-			list_append(l, sc);
-		}
 	}
 	return sub;
 }
@@ -1086,6 +1102,8 @@ rel2bin_union( mvc *sql, sql_rel *rel, list *refs)
 			(also not save loses unique head oids) 
 
 		   so we create append on copies.
+			TODO: mark columns non base columns, ie were no
+			copy is needed
 		*/
 		s = stmt_append(sql->sa, Column(sql->sa, c1), c2);
 		s = stmt_alias(sql->sa, s, rnme, nme);
@@ -1404,18 +1422,6 @@ topn_offset( sql_rel *rel )
 	return NULL;
 }
 
-static sql_table *
-rel_alter_table_get(sql_rel *r)
-{
-	if (r->flag == DDL_ALTER_TABLE) {
-		sql_exp *e = r->exps->t->data;
-		atom *a = e->l;
-
-		return a->data.val.pval;
-	}
-	return NULL;
-}
-
 static stmt *
 rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 {
@@ -1448,7 +1454,7 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 	if (rel->l) { /* first construct the sub relation */
 		sql_rel *l = rel->l;
 		if (l->op == op_ddl) {
-			sql_table *t = rel_alter_table_get(l);
+			sql_table *t = rel_ddl_table_get(l);
 
 			if (t)
 				sub = rel2bin_sql_table(sql, t);
@@ -2031,7 +2037,7 @@ insert_check_ukey(mvc *sql, list *inserts, sql_key *k, stmt *idx_inserts)
 }
 
 static stmt *
-insert_check_fkey(mvc *sql, list *inserts, sql_key *k, stmt *idx_inserts)
+insert_check_fkey(mvc *sql, list *inserts, sql_key *k, stmt *idx_inserts, stmt *pin)
 {
 	char *msg = NULL;
 	stmt *s = nth(inserts, 0)->op1;
@@ -2042,13 +2048,13 @@ insert_check_fkey(mvc *sql, list *inserts, sql_key *k, stmt *idx_inserts)
 
 	(void) sql;		/* unused! */
 
+	if (pin && list_length(pin->op4.lval)) 
+		s = pin->op4.lval->h->data;
 	if (s->key && s->nrcols == 0) {
 		s = stmt_binop(sql->sa, stmt_aggr(sql->sa, idx_inserts, NULL, cnt, 1), stmt_atom_wrd(sql->sa, 1), ne);
 	} else {
 		/* releqjoin.count <> inserts[col1].count */
-		stmt *ins = nth(inserts, 0)->op1;
-
-		s = stmt_binop(sql->sa, stmt_aggr(sql->sa, idx_inserts, NULL, cnt, 1), stmt_aggr(sql->sa, ins, NULL, cnt, 1), ne);
+		s = stmt_binop(sql->sa, stmt_aggr(sql->sa, idx_inserts, NULL, cnt, 1), stmt_aggr(sql->sa, s, NULL, cnt, 1), ne);
 	}
 
 	/* s should be empty */
@@ -2057,7 +2063,7 @@ insert_check_fkey(mvc *sql, list *inserts, sql_key *k, stmt *idx_inserts)
 }
 
 static stmt *
-sql_insert_key(mvc *sql, list *inserts, sql_key *k, stmt *idx_inserts)
+sql_insert_key(mvc *sql, list *inserts, sql_key *k, stmt *idx_inserts, stmt *pin)
 {
 	/* int insert = 1;
 	 * while insert and has u/pkey and not defered then
@@ -2074,187 +2080,14 @@ sql_insert_key(mvc *sql, list *inserts, sql_key *k, stmt *idx_inserts)
 	if (k->type == pkey || k->type == ukey) {
 		return insert_check_ukey(sql, inserts, k, idx_inserts );
 	} else {		/* foreign keys */
-		return insert_check_fkey(sql, inserts, k, idx_inserts );
+		return insert_check_fkey(sql, inserts, k, idx_inserts, pin );
 	}
-}
-
-static stmt *
-hash_insert(mvc *sql, sql_idx * i, list *inserts)
-{
-	node *m;
-	sql_subtype *it, *wrd;
-	int bits = 1 + ((sizeof(wrd)*8)-1)/(list_length(i->columns)+1);
-	stmt *h = NULL, *o = NULL;
-
-	if (list_length(i->columns) <= 1)
-		return NULL;
-
-	it = sql_bind_localtype("int");
-	wrd = sql_bind_localtype("wrd");
-	for (m = i->columns->h; m; m = m->next) {
-		sql_kc *c = m->data;
-		stmt *is = nth(inserts, c->c->colnr)->op1;
-
-		if (h && i->type == hash_idx)  { 
-			sql_subfunc *xor = sql_bind_func_result3(sql->sa, sql->session->schema, "rotate_xor_hash", wrd, it, &c->c->type, wrd);
-
-			h = stmt_Nop(sql->sa, stmt_list( sql->sa, list_append( list_append(
-				list_append(list_new(sql->sa), h), 
-				stmt_atom_int(sql->sa, bits)), 
-				(o)?stmt_join(sql->sa, o, is, cmp_equal):is)), 
-				xor);
-		} else if (h)  { 
-			stmt *h2;
-			sql_subfunc *lsh = sql_bind_func_result(sql->sa, sql->session->schema, "left_shift", wrd, it, wrd);
-			sql_subfunc *lor = sql_bind_func_result(sql->sa, sql->session->schema, "bit_or", wrd, wrd, wrd);
-			sql_subfunc *hf = sql_bind_func_result(sql->sa, sql->session->schema, "hash", &c->c->type, NULL, wrd);
-
-			h = stmt_binop(sql->sa, h, stmt_atom_int(sql->sa, bits), lsh); 
-			h2 = stmt_unop(sql->sa,
-			    (o)?stmt_join(sql->sa,o, is, cmp_equal):is, hf);
-			h = stmt_binop(sql->sa,h, h2, lor);
-		} else {
-			sql_subfunc *hf = sql_bind_func_result(sql->sa, sql->session->schema, "hash", &c->c->type, NULL, wrd);
-			if (is->nrcols == 0 && is->key) {
-				h = stmt_unop(sql->sa, is, hf);
-			} else {
-				o = stmt_mark(sql->sa, stmt_reverse(sql->sa, is), 40); 
-				h = stmt_unop(sql->sa, stmt_mark(sql->sa, is, 40), hf);
-			}
-			if (i->type == oph_idx)
-				break;
-		}
-	}
-	if (o)
-		return stmt_join(sql->sa, stmt_reverse(sql->sa, o), h, cmp_equal);
-	return h;
-}
-
-static stmt *
-join_idx_insert(mvc *sql, sql_idx * i, list *inserts)
-{
-	node *m, *o;
-	sql_key *rk = &((sql_fkey *) i->key)->rkey->k;
-	stmt *rts = stmt_basetable(sql->sa, rk->t, rk->t->base.name);
-	stmt *s = nth(inserts, 0)->op1;
-
-	if (s->key && s->nrcols == 0) {
-		sql_subtype *bt = sql_bind_localtype("bit");
-		sql_subfunc *or = sql_bind_func_result(sql->sa, sql->session->schema, "or", bt, bt, bt);
-		stmt *cond = NULL;
-
-		s = stmt_relselect_init(sql->sa);
-		for (m = i->columns->h, o = rk->columns->h; m && o; m = m->next, o = o->next) {
-			sql_kc *c = m->data;
-			sql_kc *rc = o->data;
-
-			stmt_relselect_fill(s, stmt_uselect(sql->sa, stmt_bat(sql->sa, rc->c, rts, RDONLY), check_types(sql, &rc->c->type, nth(inserts, c->c->colnr)->op1, type_equal), cmp_equal));
-
-			if (c->c->null) {
-				sql_subfunc *isnil = sql_bind_func(sql->sa, sql->session->schema, "isnull", &c->c->type, NULL);
-				stmt *ins = nth(inserts, c->c->colnr)->op1;
-
-				ins = stmt_unop(sql->sa, ins, isnil);
-				if (!cond) {
-					cond = ins;
-				} else {
-					cond = stmt_binop(sql->sa, cond, ins, or);
-				}
-			}
-		}
-
-		/* add missing nulls (and NULLs only (SIMPLE MATCH)) */
-		s = stmt_mark(sql->sa, stmt_reverse(sql->sa, s), 0);
-		if (cond) {
-			stmt *notnull = s;
-			stmt *isnull = const_column(sql->sa, stmt_atom(sql->sa, atom_general(sql->sa, tail_type(s), NULL)));
-			stmt *t = const_column(sql->sa, cond);
-			isnull = stmt_join(sql->sa, t, stmt_reverse(sql->sa, stmt_const(sql->sa, stmt_reverse(sql->sa, isnull), stmt_bool(sql->sa, 1))), cmp_equal);
-			notnull = stmt_join(sql->sa, t, stmt_reverse(sql->sa, stmt_const(sql->sa, stmt_reverse(sql->sa, notnull), stmt_bool(sql->sa, 0))), cmp_equal);
-			s = stmt_union(sql->sa, isnull, notnull);
-		}
-	} else {
-		int nulls = 0;
-
-		s = stmt_releqjoin_init(sql->sa);
-		for (m = i->columns->h, o = rk->columns->h; m && o; m = m->next, o = o->next) {
-			sql_kc *c = m->data;
-			sql_kc *rc = o->data;
-
-			stmt_releqjoin_fill(s, check_types(sql, &rc->c->type, nth(inserts, c->c->colnr)->op1, type_equal), stmt_bat(sql->sa, rc->c, rts, RDONLY));
-			if (c->c->null)
-				nulls = 1;
-		}
-		/* add missing nulls (and NULLs only (SIMPLE MATCH)) */
-		if (nulls) {
-			stmt *cur = NULL, *missing = stmt_diff(sql->sa, nth(inserts, 0)->op1, s);
-
-			for (m = i->columns->h; m; m = m->next) {
-
-				sql_kc *c = m->data;
-				sql_subfunc *isnil = sql_bind_func(sql->sa, sql->session->schema, "isnull",
-								   &c->c->type, NULL);
-
-				stmt *n;
-
-				n = nth(inserts, c->c->colnr)->op1;
-				n = stmt_semijoin(sql->sa, n, missing);
-				n = stmt_unop(sql->sa, n, isnil);
-				n = stmt_uselect(sql->sa, n, stmt_bool(sql->sa, 1), cmp_equal);
-				if (cur)
-					cur = stmt_union(sql->sa, stmt_diff(sql->sa, cur, n), n);
-				else
-					cur = n;
-			}
-			/* There is no merge union, so we need the expensive sort ! */
-			s = stmt_union(sql->sa, s, stmt_const(sql->sa, cur, stmt_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("oid"), NULL))));
-		}
-		s = stmt_reverse(sql->sa, stmt_order(sql->sa, stmt_reverse(sql->sa, s), 1));
-	}
-	return s;
-}
-
-static void
-sql_insert_idx(mvc *sql, list *inserts, sql_idx * i, list *l )
-{
-	stmt *is = NULL;
-
-	if (hash_index(i->type)) {
-		is = hash_insert(sql, i, inserts);
-	} else if (i->type == join_idx) {
-		is = join_idx_insert(sql, i, inserts);
-	}
-	if (i->key) {
-		stmt *ckeys = sql_insert_key(sql, inserts, i->key, is);
-
-		list_prepend(l, ckeys);
-	}
-	/* append to the pre-computed join-index */
-	if (is)
-		list_append(l, stmt_append_idx(sql->sa, i, is));
-}
-
-static int
-sql_insert_idxs(mvc *sql, sql_table *t, list *inserts, list *l)
-{
-	node *n;
-	int res = 1;
-
-	if (!t->idxs.set)
-		return res;
-
-	for (n = t->idxs.set->h; n; n = n->next) {
-		sql_idx *i = n->data;
-
-		sql_insert_idx(sql, inserts, i, l);
-	}
-	return res;
 }
 
 static void
 sql_stack_add_inserted( mvc *sql, char *name, sql_table *t) 
 {
-	sql_rel *r = rel_basetable(sql->sa, t, name );
+	sql_rel *r = rel_basetable(sql, t, name );
 		
 	stack_push_rel_view(sql, name, r);
 }
@@ -2328,36 +2161,29 @@ sql_insert_check_null(mvc *sql, sql_table *t, list *inserts, list *l)
 	}
 }
 
-static sql_table *
-rel_create_table_get(sql_rel *r)
-{
-	if (r->flag == DDL_CREATE_TABLE || r->flag == DDL_CREATE_VIEW) {
-		sql_exp *e = r->exps->t->data;
-		atom *a = e->l;
-
-		return a->data.val.pval;
-	}
-	return NULL;
-}
-
 static stmt *
 rel2bin_insert( mvc *sql, sql_rel *rel, list *refs)
 {
 	list *newl, *l;
-	stmt *inserts = NULL, *insert = NULL, *s, *ddl = NULL;
+	stmt *inserts = NULL, *insert = NULL, *s, *ddl = NULL, *pin = NULL;
+	int idx_ins = 0;
 	node *n, *m;
-	sql_rel *tr = rel->l;
+	sql_rel *tr = rel->l, *prel = rel->r;
 	sql_table *t = NULL;
 
+	if ((rel->flag&UPD_COMP)) {  /* special case ! */
+		idx_ins = 1;
+		prel = rel->l;
+		rel = rel->r;
+		tr = rel->l;
+	}
 	if (tr->op == op_basetable) {
 		t = tr->l;
 	} else {
-		assert(tr->flag == DDL_CREATE_TABLE || tr->flag == DDL_CREATE_VIEW);
-
-		ddl = subrel_bin(sql, rel->l, refs);
+		ddl = subrel_bin(sql, tr, refs);
 		if (!ddl)
 			return NULL;
-		t = rel_create_table_get(tr);
+		t = rel_ddl_table_get(tr);
 	}
 
 	if (rel->r) /* first construct the inserts relation */
@@ -2371,24 +2197,48 @@ rel2bin_insert( mvc *sql, sql_rel *rel, list *refs)
 		inserts = n;
 	}
 
+	if (idx_ins)
+		pin = refs_find_rel(refs, prel);
+
 	newl = list_new(sql->sa);
 	for (n = t->columns.set->h, m = inserts->op4.lval->h; 
 		n && m; n = n->next, m = m->next) {
 
-		stmt *i = m->data;
+		stmt *ins = m->data;
 		sql_column *c = n->data;
 
-		insert = i = stmt_append_col(sql->sa, c, i);
-		if (rel->flag) /* fake append (done in the copy into) */
-			i->flag = 1;
-		list_append(newl, i);
+		insert = ins = stmt_append_col(sql->sa, c, ins);
+		if (rel->flag&UPD_LOCKED) /* fake append (done in the copy into) */
+			ins->flag = 1;
+		list_append(newl, ins);
+	}
+	l = list_new(sql->sa);
+
+	if (t->idxs.set)
+	for (n = t->idxs.set->h; n && m; n = n->next, m = m->next) {
+		stmt *is = m->data;
+		sql_idx *i = n->data;
+
+		if ((hash_index(i->type) && list_length(i->columns) <= 1) ||
+		    i->type == no_idx)
+			is = NULL;
+		if (i->key) {
+			stmt *ckeys = sql_insert_key(sql, newl, i->key, is, pin);
+
+			list_prepend(l, ckeys);
+		}
+		if (!insert)
+			insert = is;
+		if (is)
+			is = stmt_append_idx(sql->sa, i, is);
+		if ((rel->flag&UPD_LOCKED) && is) /* fake append (done in the copy into) */
+			is->flag = 1;
+		if (is)
+			list_append(newl, is);
 	}
 	if (!insert)
 		return NULL;
-	l = list_new(sql->sa);
 
-	if (!sql_insert_idxs(sql, t, newl, l)) 
-		return sql_error(sql, 02, "INSERT INTO: failed to update indexes for table '%s'", t->base.name);
 	l = list_append(l, stmt_list(sql->sa, newl));
 	sql_insert_check_null(sql, t, newl, l);
 	if (!sql_insert_triggers(sql, t, l)) 
@@ -2435,7 +2285,7 @@ first_updated_col(stmt **updates, int cnt)
 }
 
 static stmt ** 
-table_update_array(sql_table *t, int *Len)
+table_update_stmts(sql_table *t, int *Len)
 {
 	stmt **updates;
 	int i, len = list_length(t->columns.set);
@@ -2452,8 +2302,6 @@ table_update_array(sql_table *t, int *Len)
 	}
 	return updates;
 }
-
-static list * sql_update(mvc *sql, sql_table *t, stmt **updates);
 
 static stmt *
 update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int updcol)
@@ -2623,7 +2471,7 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int u
 }
 
 static stmt *
-update_check_fkey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int updcol)
+update_check_fkey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int updcol, stmt *pup)
 {
 	char *msg = NULL;
 	stmt *s;
@@ -2636,7 +2484,9 @@ update_check_fkey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int u
 	if (!idx_updates)
 		return NULL;
 	/* releqjoin.count <> updates[updcol].count */
-	if (updates) {
+	if (pup && list_length(pup->op4.lval)) {
+		cur = pup->op4.lval->h->data;
+	} else if (updates) {
 		cur = updates[updcol]->op1;
 	} else {
 		sql_kc *c = k->columns->h->data;
@@ -2706,6 +2556,8 @@ join_updated_pkey(mvc *sql, sql_key * k, stmt **updates, int updcol)
 	return stmt_exception(sql->sa, s, msg, 00001);
 }
 
+static list * sql_update(mvc *sql, sql_table *t, stmt **updates);
+
 static stmt*
 sql_delete_set_Fkeys(mvc *sql, sql_key *k, stmt *rows, int action)
 {
@@ -2716,7 +2568,7 @@ sql_delete_set_Fkeys(mvc *sql, sql_key *k, stmt *rows, int action)
 	stmt **new_updates;
 	sql_table *t = mvc_bind_table(sql, k->t->s, k->t->base.name);
 
-	new_updates = table_update_array(t, &len);
+	new_updates = table_update_stmts(t, &len);
 	for (m = k->idx->columns->h, o = rk->columns->h; m && o; m = m->next, o = o->next) {
 		sql_kc *fc = m->data;
 		stmt *upd = NULL;
@@ -2766,7 +2618,7 @@ sql_update_cascade_Fkeys(mvc *sql, sql_key *k, int updcol, stmt **updates, int a
 	rows = stmt_semijoin(sql->sa, stmt_reverse(sql->sa, rows), updates[updcol]->op1);
 	rows = stmt_reverse(sql->sa, rows);
 		
-	new_updates = table_update_array(t, &len);
+	new_updates = table_update_stmts(t, &len);
 	for (m = k->idx->columns->h, o = rk->columns->h; m && o; m = m->next, o = o->next) {
 		sql_kc *fc = m->data;
 		sql_kc *c = o->data;
@@ -2842,7 +2694,7 @@ cascade_ukey(mvc *sql, stmt **updates, sql_key *k, int updcol, list *cascade)
 }
 
 static void
-sql_update_check_key(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int updcol, list *l, list *cascade)
+sql_update_check_key(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int updcol, list *l, list *cascade, stmt *pup)
 {
 	stmt *ckeys;
 
@@ -2851,7 +2703,7 @@ sql_update_check_key(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, in
 		if (cascade)
 			cascade_ukey(sql, updates, k, updcol, cascade);
 	} else { /* foreign keys */
-		ckeys = update_check_fkey(sql, updates, k, idx_updates, updcol);
+		ckeys = update_check_fkey(sql, updates, k, idx_updates, updcol, pup);
 	}
 	list_append(l, ckeys);
 }
@@ -2948,7 +2800,7 @@ join_idx_update(mvc *sql, sql_idx * i, stmt **updates, int updcol)
 	sql_key *rk = &((sql_fkey *) i->key)->rkey->k;
 	stmt *s = NULL, *rts = stmt_basetable(sql->sa, rk->t, rk->t->base.name), *ts;
 	stmt *null = NULL, *nnull = NULL;
-	stmt **new_updates = table_update_array(i->t, &len);
+	stmt **new_updates = table_update_stmts(i->t, &len);
 	sql_column *updcolumn = NULL; 
 
 	ts = stmt_basetable(sql->sa, i->t, i->t->base.name);
@@ -3009,42 +2861,16 @@ join_idx_update(mvc *sql, sql_idx * i, stmt **updates, int updcol)
 }
 
 static list *
-create_idxs_and_check_keys(mvc *sql, sql_table *t, list *l)
-{
-	node *n;
-	list *idx_updates = list_new(sql->sa);
-
-	if (!t->idxs.nelm)
-		return idx_updates;
-
-	for (n = t->idxs.nelm; n; n = n->next) {
-		sql_idx *i = n->data;
-		stmt *is = NULL;
-
-		if (hash_index(i->type)) {
-			is = hash_update(sql, i, NULL, -1);
-		} else if (i->type == join_idx) {
-			is = join_idx_update(sql, i, NULL, -1);
-		}
-		if (i->key) 
-			sql_update_check_key(sql, NULL, i->key, is, -1, l, NULL);
-		if (is) 
-			list_append(idx_updates, stmt_update_idx(sql->sa, i, is));
-	}
-	return idx_updates;
-}
-
-static list *
 update_idxs_and_check_keys(mvc *sql, sql_table *t, stmt **updates, list *l, list **cascades)
 {
 	node *n;
 	int updcol;
 	list *idx_updates = list_new(sql->sa);
 
-	*cascades = list_new(sql->sa);
 	if (!t->idxs.set)
 		return idx_updates;
 
+	*cascades = list_new(sql->sa);
 	updcol = first_updated_col(updates, list_length(t->columns.set));
 	for (n = t->idxs.set->h; n; n = n->next) {
 		sql_idx *i = n->data;
@@ -3069,7 +2895,7 @@ update_idxs_and_check_keys(mvc *sql, sql_table *t, stmt **updates, list *l, list
 				
 				*local_id = i->key->base.id;
 				list_append(sql->cascade_action, local_id);
-				sql_update_check_key(sql, updates, i->key, is, updcol, l, *cascades);
+				sql_update_check_key(sql, updates, i->key, is, updcol, l, *cascades, NULL);
 			}
 		}
 		if (is) 
@@ -3081,8 +2907,8 @@ update_idxs_and_check_keys(mvc *sql, sql_table *t, stmt **updates, list *l, list
 static void
 sql_stack_add_updated(mvc *sql, char *on, char *nn, sql_table *t)
 {
-	sql_rel *or = rel_basetable(sql->sa, t, on );
-	sql_rel *nr = rel_basetable(sql->sa, t, nn );
+	sql_rel *or = rel_basetable(sql, t, on );
+	sql_rel *nr = rel_basetable(sql, t, nn );
 		
 	stack_push_rel_view(sql, on, or);
 	stack_push_rel_view(sql, nn, nr);
@@ -3125,16 +2951,12 @@ sql_update_triggers(mvc *sql, sql_table *t, list *l, int time )
 }
 
 
-static list *
-sql_update(mvc *sql, sql_table *t, stmt **updates)
+static void
+sql_update_check_null(mvc *sql, sql_table *t, stmt **updates, list *l)
 {
 	node *n;
-	sql_subaggr *cnt;
-	list *l = list_new(sql->sa);
-	list *idx_updates = NULL, *cascades = NULL;
-	int i, nr_cols = list_length(t->columns.set);
+	sql_subaggr *cnt = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
 
- 	cnt = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
 
@@ -3157,6 +2979,16 @@ sql_update(mvc *sql, sql_table *t, stmt **updates)
 			list_append(l, s);
 		}
 	}
+}
+
+static list *
+sql_update(mvc *sql, sql_table *t, stmt **updates)
+{
+	list *idx_updates = NULL, *cascades = NULL;
+	int i, nr_cols = list_length(t->columns.set);
+	list *l = list_new(sql->sa);
+
+	sql_update_check_null(sql, t, updates, l);
 
 	/* check keys + get idx */
 	idx_updates = update_idxs_and_check_keys(sql, t, updates, l, &cascades);
@@ -3188,55 +3020,101 @@ sql_update(mvc *sql, sql_table *t, stmt **updates)
 static stmt *
 rel2bin_update( mvc *sql, sql_rel *rel, list *refs)
 {
-	stmt *update = NULL, **updates = NULL, *tid, *s, *ddl = NULL;
-	list *l;
-	int len;
-	node *n, *m;
-	sql_rel *tr = rel->l;
+	stmt *update = NULL, **updates = NULL, *tid, *s, *ddl = NULL, *pup = NULL;
+	list *l = list_new(sql->sa), *idx_updates = NULL, *cascades = NULL;
+	int nr_cols, updcol, i, idx_ups = 0;
+	node *m;
+	sql_rel *tr = rel->l, *prel = rel->r;
 	sql_table *t = NULL;
 
+	if ((rel->flag&UPD_COMP)) {  /* special case ! */
+		idx_ups = 1;
+		prel = rel->l;
+		rel = rel->r;
+		tr = rel->l;
+	}
 	if (tr->op == op_basetable) {
 		t = tr->l;
 	} else {
-		list *idx_updates;
-		assert(tr->flag == DDL_ALTER_TABLE);
-
-		ddl = subrel_bin(sql, rel->l, refs);
+		ddl = subrel_bin(sql, tr, refs);
 		if (!ddl)
 			return NULL;
+		t = rel_ddl_table_get(tr);
 
-		t = rel_alter_table_get(tr);
-		if (!rel->r) {
- 			l = list_new(sql->sa);
-			list_append(l, ddl);
-
-			/* check keys + get idx */
-			idx_updates = create_idxs_and_check_keys(sql, t, l);
-			if (!idx_updates) {
-				list_destroy(l);
-				return sql_error(sql, 02, "UPDATE: failed to update indexes for table '%s'", t->base.name);
-			}
-			list_append(l, stmt_list(sql->sa, idx_updates));
-			return stmt_list(sql->sa, l);
-		}
+		/* no columns to update (probably an new pkey!) */
+		if (!rel->exps) 
+			return ddl;
 	}
 
 	if (rel->r) /* first construct the update relation */
 		update = subrel_bin(sql, rel->r, refs);
+
 	if (!update)
-		return NULL;	
-	updates = table_update_array(t, &len);
+		return NULL;
+
+	if (idx_ups)
+		pup = refs_find_rel(refs, prel);
+
+	updates = table_update_stmts(t, &nr_cols);
 	tid = update->op4.lval->h->data;
-	for (n = update->op4.lval->h->next, m = rel->exps->h; 
-		n && m; n = n->next, m = m->next) {
-		stmt *s = n->data;
+
+	for (m = rel->exps->h; m; m = m->next) {
 		sql_exp *ce = m->data;
 		sql_column *c = find_sql_column(t, ce->name);
-		
-		s = stmt_join(sql->sa, stmt_reverse(sql->sa, tid), s, cmp_equal);
-		updates[c->colnr] = stmt_update_col(sql->sa,  c, s);
+
+		if (c) {
+			stmt *s = bin_find_column(sql->sa, update, ce->l, ce->r);
+			s = stmt_join(sql->sa, stmt_reverse(sql->sa, tid), s, cmp_equal);
+			updates[c->colnr] = stmt_update_col(sql->sa,  c, s);
+		}
 	}
-	l = sql_update(sql, t, updates);
+	sql_update_check_null(sql, t, updates, l);
+
+	/* check keys + get idx */
+	cascades = list_new(sql->sa);
+	updcol = first_updated_col(updates, list_length(t->columns.set));
+	for (m = rel->exps->h; m; m = m->next) {
+		sql_exp *ce = m->data;
+		sql_idx *i = find_sql_idx(t, ce->name);
+
+		if (i) {
+			stmt *is = bin_find_column(sql->sa, update, ce->l, ce->r);
+
+			is = stmt_join(sql->sa, stmt_reverse(sql->sa, tid), is, cmp_equal);
+			if ((hash_index(i->type) && list_length(i->columns) <= 1) || i->type == no_idx)
+				is = NULL;
+			if (i->key) {
+				if (!(sql->cascade_action && list_find_id(sql->cascade_action, i->key->base.id))) {
+					int *local_id = GDKmalloc(sizeof(int));
+					if (!sql->cascade_action) 
+						sql->cascade_action = list_create((fdestroy) GDKfree);
+				
+					*local_id = i->key->base.id;
+					list_append(sql->cascade_action, local_id);
+					sql_update_check_key(sql, (updcol>=0)?updates:NULL, i->key, is, updcol, l, cascades, pup);
+				}
+			}
+			if (is) 
+				list_append(l, stmt_update_idx(sql->sa,  i, is));
+		}
+	}
+
+/* before */
+	if (!sql_update_triggers(sql, t, l, 0)) 
+		return sql_error(sql, 02, "UPDATE: triggers failed for table '%s'", t->base.name);
+
+/* apply updates */
+	list_merge(l, idx_updates, NULL);
+	for (i = 0; i < nr_cols; i++) 
+		if (updates[i])
+			list_append(l, updates[i]);
+
+/* after */
+	if (!sql_update_triggers(sql, t, l, 1)) 
+		return sql_error(sql, 02, "UPDATE: triggers failed for table '%s'", t->base.name);
+
+/* cascade */
+	list_merge(l, cascades, NULL);
 	if (ddl) {
 		list_prepend(l, ddl);
 	} else {
@@ -3254,7 +3132,7 @@ rel2bin_update( mvc *sql, sql_rel *rel, list *refs)
 static void
 sql_stack_add_deleted(mvc *sql, char *name, sql_table *t)
 {
-	sql_rel *r = rel_basetable(sql->sa, t, name );
+	sql_rel *r = rel_basetable(sql, t, name );
 		
 	stack_push_rel_view(sql, name, r);
 }
@@ -3431,21 +3309,6 @@ rel2bin_delete( mvc *sql, sql_rel *rel, list *refs)
 		sql->cascade_action = NULL;
 	}
 	return delete;
-}
-
-static stmt *
-refs_find_rel(list *refs, sql_rel *rel)
-{
-	node *n;
-
-	for(n=refs->h; n; n = n->next->next) {
-		sql_rel *ref = n->data;
-		stmt *s = n->next->data;
-		
-		if (rel == ref) 
-			return s;
-	}
-	return NULL;
 }
 
 #define E_ATOM_INT(e) ((atom*)((sql_exp*)e)->l)->data.val.lval

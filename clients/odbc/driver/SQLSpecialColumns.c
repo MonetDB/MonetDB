@@ -147,11 +147,11 @@ SQLSpecialColumns_(ODBCStmt *stmt,
 		       "cast(1 as smallint) as pseudo_column "
 		       "from sys.\"schemas\" s, sys.\"tables\" t, "
 		       "sys.\"columns\" c, sys.\"keys\" k, "
-		       "sys.\"keycolumns\" kc "
+		       "sys.\"objects\" kc "
 		       "where s.\"id\" = t.\"schema_id\" and "
 		       "t.\"id\" = c.\"table_id\" and "
 		       "t.\"id\" = k.\"table_id\" and "
-		       "c.\"name\" = kc.\"column\" and "
+		       "c.\"name\" = kc.\"name\" and "
 		       "kc.\"id\" = k.\"id\" and "
 		       "k.\"type\" in (0, 1)");
 		query_end += strlen(query_end);

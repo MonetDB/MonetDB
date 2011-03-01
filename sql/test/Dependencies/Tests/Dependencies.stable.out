@@ -110,8 +110,9 @@ Dependencies between database objects
 % varchar,	varchar,	char # type
 % 2,	8,	9 # length
 [ "t1",	"id_index",	"DEP_INDEX"	]
-% .t,	.tri,	.L10 # table_name
-% name,	trigname,	L10 # name
+#(SELECT t.name as name, tri.name as trigname, 'DEP_TRIGGER' from tables as t, triggers as tri where tri.table_id = t.id) UNION (SELECT t.name as name, tri.name as trigname, 'DEP_TRIGGER' from triggers tri, tables t, dependencies dep where dep.id = t.id AND dep.depend_id =tri.id AND dep.depend_type = 8);
+% .t,	.tri,	.L11 # table_name
+% name,	trigname,	L11 # name
 % varchar,	varchar,	char # type
 % 2,	14,	11 # length
 [ "t1",	"trigger_test",	"DEP_TRIGGER"	]
@@ -146,13 +147,13 @@ Dependencies between database objects
 [ "functions",	"dependencies_views_on_functions",	"DEP_FUNC"	]
 [ "idxs",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
 [ "idxs",	"dependencies_tables_on_indexes",	"DEP_FUNC"	]
-[ "keycolumns",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
-[ "keycolumns",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "keys",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
 [ "keys",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "keys",	"dependencies_keys_on_foreignkeys",	"DEP_FUNC"	]
 [ "keys",	"dependencies_tables_on_foreignkeys",	"DEP_FUNC"	]
 [ "keys",	"dependencies_tables_on_indexes",	"DEP_FUNC"	]
+[ "objects",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
+[ "objects",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "schemas",	"dependencies_owners_on_schemas",	"DEP_FUNC"	]
 [ "schemas",	"dependencies_schemas_on_users",	"DEP_FUNC"	]
 [ "t1",	"f2",	"DEP_FUNC"	]
@@ -274,8 +275,8 @@ Dependencies between database objects
 [ "table_id",	"dependencies_tables_on_triggers",	"DEP_FUNC"	]
 [ "id",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
 [ "id",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
-[ "column",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
-[ "column",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
+[ "name",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
+[ "name",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "id",	"dependencies_owners_on_schemas",	"DEP_FUNC"	]
 [ "name",	"dependencies_owners_on_schemas",	"DEP_FUNC"	]
 [ "id",	"f2",	"DEP_FUNC"	]
@@ -351,8 +352,9 @@ Dependencies between database objects
 % sys.f,	sys.tri,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
-% 5,	12,	11 # length
+% 6,	12,	11 # length
 [ "<>",	"trigger_test",	"DEP_TRIGGER"	]
+[ "isnull",	"trigger_test",	"DEP_TRIGGER"	]
 [ "count",	"trigger_test",	"DEP_TRIGGER"	]
 % sys.k,	sys.fk,	. # table_name
 % name,	name,	single_value # name
@@ -478,13 +480,13 @@ Cleanup
 [ "functions",	"dependencies_views_on_functions",	"DEP_FUNC"	]
 [ "idxs",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
 [ "idxs",	"dependencies_tables_on_indexes",	"DEP_FUNC"	]
-[ "keycolumns",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
-[ "keycolumns",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "keys",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
 [ "keys",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "keys",	"dependencies_keys_on_foreignkeys",	"DEP_FUNC"	]
 [ "keys",	"dependencies_tables_on_foreignkeys",	"DEP_FUNC"	]
 [ "keys",	"dependencies_tables_on_indexes",	"DEP_FUNC"	]
+[ "objects",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
+[ "objects",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "schemas",	"dependencies_owners_on_schemas",	"DEP_FUNC"	]
 [ "schemas",	"dependencies_schemas_on_users",	"DEP_FUNC"	]
 [ "triggers",	"dependencies_columns_on_triggers",	"DEP_FUNC"	]
@@ -602,8 +604,8 @@ Cleanup
 [ "table_id",	"dependencies_tables_on_triggers",	"DEP_FUNC"	]
 [ "id",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
 [ "id",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
-[ "column",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
-[ "column",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
+[ "name",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
+[ "name",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "id",	"dependencies_owners_on_schemas",	"DEP_FUNC"	]
 [ "name",	"dependencies_owners_on_schemas",	"DEP_FUNC"	]
 #SELECT c.name, tri.name, 'DEP_TRIGGER' from columns as c, triggers as tri, dependencies as dep where dep.id = c.id AND dep.depend_id =tri.id AND dep.depend_type = 8;

@@ -39,8 +39,6 @@ echo views
 $SQL1 < Skyserver_views_v6.sql
 
 echo functions
-$SQL1 < ../../sql/math.sql
-$SQL1 < ../../sql/skyserver.sql
 $SQL1 < Skyserver_functions_v6.sql
 
 exit

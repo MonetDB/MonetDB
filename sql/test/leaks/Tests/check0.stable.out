@@ -21,9 +21,9 @@ Ready.
 
 Over..
 
-# 09:39:08 >  
-# 09:39:08 >  mclient -lsql -ftest -i -e --host=alf --port=35848 
-# 09:39:08 >  
+# 15:06:32 >  
+# 15:06:32 >  mclient -lsql -ftest -i -e --host=alf --port=39294 
+# 15:06:32 >  
 
 #select htype, ttype, count from bbp() as bbp 
 #where kind like 'pers%'
@@ -34,7 +34,7 @@ Over..
 % 3,	3,	4 # length
 [ "int",	"int",	16	]
 [ "int",	"lng",	2	]
-[ "int",	"str",	143	]
+[ "int",	"str",	142	]
 [ "oid",	"bit",	1147	]
 [ "oid",	"bit",	1147	]
 [ "oid",	"bit",	1147	]
@@ -62,7 +62,7 @@ Over..
 % L1,	L2 # name
 % char,	wrd # type
 % 9,	3 # length
-[ "transient",	492	]
+[ "transient",	488	]
 #select 'persistent', count(*) from bbp() as bbp where kind like 'pers%';
 % .L3,	.bbp # table_name
 % L3,	L4 # name

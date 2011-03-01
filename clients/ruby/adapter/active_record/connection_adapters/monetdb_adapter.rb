@@ -341,9 +341,9 @@ module ActiveRecord
 
     # Returns an array of indexes for the given table.
     def indexes(table_name, name = nil)
-      sql_query =  "	SELECT distinct i.name as index_name, k.\"column\", k.nr
+      sql_query =  "	SELECT distinct i.name as index_name, k.\"name\", k.nr
 	 		FROM
-				idxs i, _tables t, keycolumns k 
+				idxs i, _tables t, objects k 
 	 		WHERE
 				i.type = 0 AND i.name not like '%pkey' 
 				AND i.id = k.id AND t.id = i.table_id 
@@ -360,7 +360,7 @@ module ActiveRecord
           cur_index = row['index_name']
         end 	
   
-        indexes.last.columns << row['column']
+        indexes.last.columns << row['name']
       end
 
       indexes 

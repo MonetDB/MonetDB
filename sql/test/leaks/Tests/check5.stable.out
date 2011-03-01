@@ -31,11 +31,11 @@ Over..
 % 3,	9,	4 # length
 [ "int",	"int",	0	]
 [ "int",	"lng",	2	]
-[ "int",	"str",	143	]
+[ "int",	"str",	142	]
 [ "oid",	"bit",	0	]
 [ "oid",	"bit",	60	]
 [ "oid",	"bit",	60	]
-[ "oid",	"bit",	301	]
+[ "oid",	"bit",	299	]
 [ "oid",	"bit",	1147	]
 [ "oid",	"bit",	1147	]
 [ "oid",	"bit",	1147	]
@@ -63,7 +63,6 @@ Over..
 [ "oid",	"int",	3	]
 [ "oid",	"int",	4	]
 [ "oid",	"int",	4	]
-[ "oid",	"int",	4	]
 [ "oid",	"int",	18	]
 [ "oid",	"int",	18	]
 [ "oid",	"int",	19	]
@@ -79,13 +78,13 @@ Over..
 [ "oid",	"int",	42	]
 [ "oid",	"int",	60	]
 [ "oid",	"int",	60	]
-[ "oid",	"int",	195	]
-[ "oid",	"int",	195	]
-[ "oid",	"int",	301	]
-[ "oid",	"int",	301	]
-[ "oid",	"int",	301	]
-[ "oid",	"int",	301	]
-[ "oid",	"int",	301	]
+[ "oid",	"int",	196	]
+[ "oid",	"int",	196	]
+[ "oid",	"int",	299	]
+[ "oid",	"int",	299	]
+[ "oid",	"int",	299	]
+[ "oid",	"int",	299	]
+[ "oid",	"int",	299	]
 [ "oid",	"int",	1147	]
 [ "oid",	"int",	1147	]
 [ "oid",	"int",	1147	]
@@ -134,7 +133,7 @@ Over..
 [ "oid",	"sht",	0	]
 [ "oid",	"sht",	60	]
 [ "oid",	"sht",	60	]
-[ "oid",	"sht",	195	]
+[ "oid",	"sht",	196	]
 [ "oid",	"str",	0	]
 [ "oid",	"str",	0	]
 [ "oid",	"str",	0	]
@@ -165,10 +164,10 @@ Over..
 [ "oid",	"str",	42	]
 [ "oid",	"str",	60	]
 [ "oid",	"str",	60	]
-[ "oid",	"str",	301	]
-[ "oid",	"str",	301	]
-[ "oid",	"str",	301	]
-[ "oid",	"str",	301	]
+[ "oid",	"str",	299	]
+[ "oid",	"str",	299	]
+[ "oid",	"str",	299	]
+[ "oid",	"str",	299	]
 [ "oid",	"str",	1147	]
 [ "oid",	"str",	1147	]
 [ "oid",	"str",	1147	]
@@ -185,13 +184,13 @@ Over..
 % L1,	L2 # name
 % char,	wrd # type
 % 9,	3 # length
-[ "transient",	181	]
+[ "transient",	179	]
 #select 'persistent', count(*) from bbp() as bbp where kind like 'pers%';
 % .L3,	.bbp # table_name
 % L3,	L4 # name
 % char,	wrd # type
 % 10,	3 # length
-[ "persistent",	151	]
+[ "persistent",	150	]
 
 # 22:02:17 >  
 # 22:02:17 >  Done.

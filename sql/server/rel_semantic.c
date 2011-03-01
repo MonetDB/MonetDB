@@ -236,11 +236,11 @@ rel_semantic(mvc *sql, symbol *s)
 				return sql_error(sql, 01, "Variable '%s' allready declared", name);
 			}
 			nrel = rel_semantic(sql, sym);
-			stack_push_rel_view(sql, name, nrel);
 			if (!nrel) {  
 				stack_pop_frame(sql);
 				return NULL;
 			}
+			stack_push_rel_view(sql, name, nrel);
 			assert(is_project(nrel->op));
 			if (is_project(nrel->op) && nrel->exps) {
 				node *ne = nrel->exps->h;

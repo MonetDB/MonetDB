@@ -138,7 +138,7 @@ rel_name( sql_rel *r )
 	return NULL;
 }
 
-static sql_rel *
+sql_rel *
 rel_label( mvc *sql, sql_rel *r)
 {
 	int nr = ++sql->label;
@@ -349,6 +349,7 @@ rel_projections(mvc *sql, sql_rel *rel, char *tname, int settname, int intern )
 	case op_project:
 	case op_table:
 	case op_basetable:
+	case op_ddl:
 
 	case op_union:
 	case op_except:
@@ -427,7 +428,7 @@ rel_copy( sql_allocator *sa, sql_rel *i )
 }
 
 sql_rel *
-rel_basetable(sql_allocator *sa, sql_table *t, char *atname)
+_rel_basetable(sql_allocator *sa, sql_table *t, char *atname)
 {
 	node *cn;
 	sql_rel *rel = rel_create(sa);
@@ -445,10 +446,52 @@ rel_basetable(sql_allocator *sa, sql_table *t, char *atname)
 		append(rel->exps, exp_alias(sa, atname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0));
 	}
 	append(rel->exps, exp_alias(sa, atname, "%TID%", tname, "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
+	if (t->idxs.set) {
+		for (cn = t->idxs.set->h; cn; cn = cn->next) {
+			sql_idx *i = cn->data;
+			sql_subtype *t = sql_bind_localtype("int"); /* hash "int", TODO other types */
+
+			append(rel->exps, exp_alias(sa, atname, i->base.name, tname, i->base.name, t, CARD_MULTI, 0, 1));
+		}
+	}
 
 	rel->card = CARD_MULTI;
 	rel->nrcols = list_length(t->columns.set);
 	return rel;
+}
+
+sql_rel *
+rel_basetable(mvc *sql, sql_table *t, char *tname)
+{
+#if 0
+	if (isMergeTable(t)) {
+		/* instantiate merge tabel */
+		sql_rel *rel = NULL;
+
+		if (sql->emode == m_deps) {
+			rel = _rel_basetable(sql->sa, t, tname);
+		} else {
+			node *n;
+
+			if (list_empty(t->tables.set)) 
+				rel = _rel_basetable(sql->sa, t, tname);
+			if (t->tables.set) {
+				for (n = t->tables.set->h; n; n = n->next) {
+					sql_table *pt = n->data;
+					sql_rel *prel = rel_basetable(sql, pt, tname);
+					if (rel) { 
+						rel = rel_setop(sql->sa, rel, prel, op_union);
+						rel->exps = rel_projections(sql, rel, NULL, 1, 1);
+					} else {
+						rel = prel;
+					}
+				}
+			}
+		}
+		return rel;
+	}
+#endif
+	return _rel_basetable(sql->sa, t, tname);
 }
 
 sql_rel *
@@ -1431,6 +1474,8 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 			} else {
 				temp_table = stack_find_rel_view(sql, tname);
 			}
+			if (temp_table)
+				rel_dup(temp_table);
 		}
 		if (!t && !temp_table) {
 			return sql_error(sql, 02, "SELECT: no such table '%s'", tname);
@@ -1456,7 +1501,7 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 
 
 			if (sql->emode == m_deps)
-				rel = rel_basetable(sql->sa, t, tname);
+				rel = rel_basetable(sql, t, tname);
 			else
 				rel = rel_parse(sql, t->query, m_instantiate);
 
@@ -1479,7 +1524,7 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 			}
 			return rel;
 		}
-		return rel_basetable(sql->sa, t, tname);
+		return rel_basetable(sql, t, tname);
 	} else if (tableref->token == SQL_VALUES) {
 		return rel_values(sql, tableref);
 	} else if (tableref->token == SQL_TABLE) {
@@ -1571,6 +1616,7 @@ rel_column_ref(mvc *sql, sql_rel **rel, symbol *column_r, int f)
 			sql_rel *v = stack_find_rel_view(sql, tname);
 
 			if (v) {
+				rel_dup(v);
 				if (*rel)
 					*rel = rel_crossproduct(sql->sa, *rel, v, op_join);
 				else
@@ -1819,7 +1865,7 @@ exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_exp *l, sql_exp *r)
 	return l;
 }
 
-static int
+int
 rel_convert_types(mvc *sql, sql_exp **L, sql_exp **R, int scale_fixing, int tpe)
 {
 	sql_exp *ls = *L;

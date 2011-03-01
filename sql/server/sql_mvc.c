@@ -971,19 +971,6 @@ mvc_create_table(mvc *m, sql_schema *s, char *name, int tt, bit system, int pers
 }
 
 sql_table *
-mvc_create_cluster(mvc *m, sql_schema *s, char *name, bit system, int persistence, int commit_action, int sz)
-{
-	sql_table *t = NULL;
-
-	if (mvc_debug)
-		fprintf(stderr, "mvc_create_cluster %s %s %d %d %d\n", s->base.name, name, system, persistence, commit_action);
-
-	t = sql_trans_create_table(m->session->tr, s, name, NULL, tt_cluster, system, persistence, commit_action, sz);
-	return t;
-}
-
-
-sql_table *
 mvc_create_view(mvc *m, sql_schema *s, char *name, int persistence, char *sql, bit system)
 {
 	sql_table *t = NULL;
@@ -1335,10 +1322,6 @@ stack_pop_until(mvc *sql, int top)
 		_DELETE(v->name);
 		VALclear(&v->value);
 		v->value.vtype = 0;
-		if (v->type.comp_type && v->view) 
-			table_destroy(v->type.comp_type);
-		//else if (v->s && v->view)
-			//rel_destroy(v->s);
 	}
 }
 
@@ -1353,8 +1336,8 @@ stack_pop_frame(mvc *sql)
 		v->value.vtype = 0;
 		if (v->type.comp_type && v->view) 
 			table_destroy(v->type.comp_type);
-		//else if (v->s && v->view)
-			//rel_destroy(v->s);
+		else if (v->s && v->view)
+			rel_destroy(v->s);
 	}
 	if (sql->topvars && sql->vars[sql->topvars].name)  
 		_DELETE(sql->vars[sql->topvars].name);
@@ -1382,27 +1365,10 @@ stack_find_rel_view(mvc *sql, char *name)
 	for (i = sql->topvars-1; i >= 0; i--) {
 		if (sql->vars[i].s && sql->vars[i].view &&
 			strcmp(sql->vars[i].name, name)==0)
-			return rel_dup(sql->vars[i].s);
+			return sql->vars[i].s;
 	}
 	return NULL;
 }
-
-void 
-stack_set_rel_view(mvc *sql, char *name, sql_rel *rel)
-{
-	int i;
-
-	for (i = sql->topvars-1; i >= 0; i--) {
-		if (sql->vars[i].s && sql->vars[i].view &&
-			strcmp(sql->vars[i].name, name)==0) {
-			//if (sql->vars[i].s)
-				//rel_destroy(sql->vars[i].s);
-			sql->vars[i].s = rel_dup(rel);
-			break;
-		}
-	}
-}
-
 
 int 
 stack_find_var(mvc *sql, char *name)
@@ -1425,7 +1391,7 @@ stack_find_rel_var(mvc *sql, char *name)
 	for (i = sql->topvars-1; i >= 0; i--) {
 		if (sql->vars[i].s && !sql->vars[i].view &&
 			strcmp(sql->vars[i].name, name)==0)
-			return rel_dup(sql->vars[i].s);
+			return sql->vars[i].s;
 	}
 	return NULL;
 }
