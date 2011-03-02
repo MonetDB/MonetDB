@@ -1687,6 +1687,8 @@ GDKinit(opt *set, int setlen)
 	GDKremovedir(DELDIR);
 	BBPinit();
 
+	HEAPcacheInit();
+
 	GDKenv = BATnew(TYPE_str, TYPE_str, 100);
 	if (GDKenv == NULL)
 		GDKfatal("GDKinit: Could not create environment BAT");
@@ -1767,7 +1769,6 @@ GDKinit(opt *set, int setlen)
 		MT_create_thread(&GDKvmtrim_id, GDKvmtrim, &GDK_mem_maxsize, MT_THR_JOINABLE);
 #endif
 
-	HEAPcacheInit();
 	return 1;
 }
 
