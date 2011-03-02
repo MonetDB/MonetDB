@@ -21,7 +21,7 @@ INCLUDES = ../../misc ../../mal ../atoms ../kernel \
 	../../../common/stream \
 	../../../common/utils \
 	../../../gdk \
-	$(pcre_CFLAGS) $(zlib_CFLAGS) $(BZIP_INCS)
+	$(pcre_CFLAGS) $(zlib_CFLAGS) $(BZIP_INCS) $(MSGCONTROL_FLAGS)
 
 MTSAFE
 

@@ -29,7 +29,8 @@ INCLUDES = .. \
 		   ../../../monetdb5/misc \
 		   ../../../common/stream \
 		   ../../../common/utils \
-		   ../../../clients/mapilib
+		   ../../../clients/mapilib \
+		   $(MSGCONTROL_FLAGS)
 
 EXTRA_DIST = $(man_MANS) .merovingian_properties \
 	merovingian.h \

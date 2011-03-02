@@ -296,7 +296,11 @@ dnl following simple implementation for now.
 case $host in
 	*-solaris*)
         dnl Solaris needs this to get msg_control and msg_controllen
-		AC_DEFINE(_XOPEN_SOURCE, 500, [for msg_control and msg_controllen])
+		dnl it disables, however, the availability of madvise, which is
+		dnl in use use by GDK, so we cannot just AC_DEFINE this, but
+		dnl rather have to enable it where it is necessary
+		MSGCONTROL_FLAGS="-D_XOPEN_SOURCE=500"
+		AC_SUBST(MSGCONTROL_FLAGS)
 	;;
 esac
 
@@ -3238,14 +3242,25 @@ echo
 echo
 echo "MonetDB is configured as follows:"
 echo "* Compilation specifics:"
-echo "    Host:       ${ac_cv_host}"
-echo "    Compiler:   ${CC}/${CXX}"
-echo "    CFLAGS:     ${CFLAGS}"
-echo "    X_CFLAGS:   ${X_CFLAGS}"
-echo "    LDFLAGS:    ${LDFLAGS}"
+echo "    Host:       " ${ac_cv_host}
+echo "    Compiler:   " ${CC}/${CXX}
+echo "    CFLAGS:     " ${CFLAGS}
+echo "    X_CFLAGS:   " ${X_CFLAGS}
+echo "    LDFLAGS:    " ${LDFLAGS}
 echo
 echo "* Enabled/disabled components:"
-for comp in common monetdb5 sql geom unixodbc java testing; do
+for comp in \
+	common \
+	monetdb5 \
+	sql \
+	geom \
+	unixodbc \
+	java \
+	jdbc \
+	xrpc \
+	control \
+	testing \
+; do
 	echo $ECHO_N "    $comp is $ECHO_C"
 	eval "if test \"x\$enable_$comp\" = xno ; then echo \"${ECHO_T}disabled\"; else echo \"${ECHO_T}enabled\"; fi"
 done

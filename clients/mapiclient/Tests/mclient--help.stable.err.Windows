@@ -33,6 +33,7 @@ SQL specific opions
  -r nr       | --rows=nr          for pagination
  -w nr       | --width=nr         for pagination
  -D          | --dump             create an SQL dump
+ -N          | --inserts          use INSERT INTO statements when dumping
 
 # 18:57:57 >  
 # 18:57:57 >  Done.
