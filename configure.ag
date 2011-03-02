@@ -398,7 +398,7 @@ case $host in
 		dnl it disables, however, the availability of madvise, which is
 		dnl in use use by GDK, so we cannot just AC_DEFINE this, but
 		dnl rather have to enable it where it is necessary
-		MSGCONTROL_FLAGS="_XOPEN_SOURCE=500"
+		MSGCONTROL_FLAGS="-D_XOPEN_SOURCE=500"
 		AC_SUBST(MSGCONTROL_FLAGS)
 	;;
 esac
