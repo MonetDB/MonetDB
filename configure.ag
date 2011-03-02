@@ -879,7 +879,13 @@ AC_SUBST(THREAD_SAVE_FLAGS)
 AC_SUBST(NO_OPTIMIZE_FILES)
 
 if test "x$enable_pathfinder" != xno; then
+	saveCC="${CC}"
 	AC_PROG_CC_C99
+	C99="${CC}"
+	AC_SUBST(C99)
+	# Do not compile everything with C99, because in particular on
+	# Solaris this yields in standards conflicts in the header files
+	CC="${saveCC}"
 	if test "x$ac_cv_prog_cc_c99" = xno; then
 		if test "x$enable_pathfinder" = xyes; then
 			AC_MSG_ERROR([Pathfinder requires a C99 compliant C compiler, but your C compiler does not seem to be C99 compliant.])

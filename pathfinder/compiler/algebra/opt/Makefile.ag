@@ -30,6 +30,7 @@
 
 SUBDIRS = 
 
+CC = $(C99)
 INCLUDES = \
 	../../include \
 	../../../../common/options \

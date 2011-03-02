@@ -15,6 +15,7 @@
 # All Rights Reserved.
 
 MTSAFE
+CC = $(C99)
 INCLUDES = ./include \
 	../../../compiler/include \
 	../../../compiler \

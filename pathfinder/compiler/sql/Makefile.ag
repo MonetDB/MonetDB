@@ -27,6 +27,7 @@
 #
 # Fri Oct 27 10:05:33 CEST 2006, Manuel Mayr
 
+CC = $(C99)
 INCLUDES = ../include ../../../common/options ../../../gdk
 
 # locally disable "-Werror"

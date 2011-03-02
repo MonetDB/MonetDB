@@ -41,6 +41,7 @@ LFLAGS = -P$(PARSERNAME)
 #  buildtools/conf/monet.m4).
 CFLAGS = $(GCC_BISON_CFLAGS)
 
+CC = $(C99)
 INCLUDES = \
 	../include \
 	../../../common/options \

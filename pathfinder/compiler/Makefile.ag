@@ -25,6 +25,7 @@ SUBDIRS = utils schema debug mem parser semantics core algebra mil include sql x
 
 EXTRA_DIST_DIR = Tests
 
+CC = $(C99)
 INCLUDES = \
 	include \
 	../../common/options \

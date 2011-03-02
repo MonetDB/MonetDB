@@ -30,6 +30,7 @@
 
 #SUBDIRS = utils lalgebra
 
+CC = $(C99)
 INCLUDES = \
 	../include \
 	../../../common/options \

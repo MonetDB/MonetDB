@@ -28,6 +28,7 @@
 
 SUBDIRS = tjc
 
+CC = $(C99)
 INCLUDES = \
 	../../runtime \
 	../../compiler/include \

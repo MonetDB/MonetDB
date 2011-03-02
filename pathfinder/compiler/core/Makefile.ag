@@ -27,6 +27,7 @@
 # Rights Reserved.
 #
 
+CC = $(C99)
 INCLUDES = ../include ../../../common/options ../../../gdk
 
 lib_core = {

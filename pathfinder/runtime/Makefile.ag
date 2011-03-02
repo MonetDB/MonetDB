@@ -30,6 +30,7 @@ SUBDIRS = xrpc
 
 EXTRA_DIST_DIR = Tests
 
+CC = $(C99)
 INCLUDES = \
 	.. \
 	../../monetdb4/monet \

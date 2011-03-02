@@ -29,6 +29,7 @@ PARSERNAME = tjc
 YFLAGS = -d -p $(PARSERNAME)
 LFLAGS = -P$(PARSERNAME)
 
+CC = $(C99)
 INCLUDES = \
 	../../../../monetdb4/monet \
 	../../../../monetdb4/modules/plain \
