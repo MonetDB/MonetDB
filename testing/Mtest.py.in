@@ -3940,12 +3940,12 @@ VALUES (%s, '%s', '%s', '%s',
         what = ""
         for x, y, z in [(F_SKIP, "could not be executed", ""),
                         (F_WARN, "produced slightly different output", "slightly"),
-                        (F_SOCK, "tests did not properly release socket(s)", "SIGNIFICANTLY"),
-                        (F_TIME, "tests ran into timeout", "SIGNIFICANTLY"),
-                        (F_KILL, "tests had orphan processes killed", "SIGNIFICANTLY"),
-                        (F_SEGV, "tests resulted in a crash", "SIGNIFICANTLY"),
-                        (F_RECU, "tests ran into too deep recursion", "SIGNIFICANTLY"),
-                        (F_ERROR, "tests produced SIGNIFICANTLY different output", "SIGNIFICANTLY")]:
+                        (F_SOCK, "did not properly release socket(s)", "SIGNIFICANTLY"),
+                        (F_TIME, "ran into timeout", "SIGNIFICANTLY"),
+                        (F_KILL, "had orphan processes killed", "SIGNIFICANTLY"),
+                        (F_SEGV, "resulted in a crash", "SIGNIFICANTLY"),
+                        (F_RECU, "ran into too deep recursion", "SIGNIFICANTLY"),
+                        (F_ERROR, "produced SIGNIFICANTLY different output", "SIGNIFICANTLY")]:
             if Failure[x]:
                 how = z
                 what += "  %3d out of %3d tests %s\n" % (len(Failure[x]),num_tests, y)
