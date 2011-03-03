@@ -496,7 +496,7 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *tpcode = NULL;
 	long *rep=NULL, *wid=NULL, rows;
 	char keywrd[80], **cname, **v = NULL, nm[FLEN_VALUE];
-	BAT *b;
+	BAT *b = NULL;
 	ptr nilptr;
 
 
