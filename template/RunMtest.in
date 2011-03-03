@@ -28,7 +28,7 @@ uname=`uname`
 # otherwise, the available one is default
 @HAVE_MONETDB4_TRUE@V=4
 @HAVE_MONETDB5_TRUE@V=5
-# commandline option overrules default  
+# commandline option overrules default
 for arg
 do
     case "$arg" in
@@ -52,7 +52,7 @@ do
 done
 MOD_PATH="${MOD_PATH}:${srcdir}/../monetdb4/scripts/tools"
 PATH="${buildbase}/monetdb4/tools:$PATH"
-cfg="${buildbase}/monetdb4/conf/MonetDB.conf"   
+cfg="${buildbase}/monetdb4/conf/MonetDB.conf"
 ;;
 5)
 # where compiled monetdb5 modules are to be found

@@ -18,20 +18,18 @@
 # All Rights Reserved.
 
 pkg=monetdb4
-buildbase=@QBUILD@
-builddir="${buildbase}/monetdb4"
-# make sure srcdir contains absolute path name
-srcdir=`cd '@srcdir@'; pwd`
+buildbase="@QBUILD@"
+srcdir="@QSOURCE@"
 uname=`uname`
 
 # where compiled monetdb4 modules are to be found
 for d in modules/plain modules/contrib modules/calibrator modules/mapi @HAVE_NETCDF_TRUE@ modules/mnetcdf
 do
-	MOD_PATH="${MOD_PATH}:${builddir}/$d/.libs:${builddir}/$d"
+	MOD_PATH="${MOD_PATH}:${buildbase}/monetdb4/$d/.libs:${buildbase}/monetdb4/$d"
 done
-MOD_PATH="${MOD_PATH}:${srcdir}/scripts/tools"
+MOD_PATH="${MOD_PATH}:${srcdir}/monetdb4/scripts/tools"
 
-# where compiled Geom modules are to be found
+# where compiled geom modules are to be found
 for d in monetdb4
 do
 	MOD_PATH="${MOD_PATH}:${buildbase}/geom/$d/.libs:${buildbase}/geom/$d"
@@ -43,21 +41,23 @@ do
 	MOD_PATH="${MOD_PATH}:${buildbase}/pathfinder/$d/.libs:${buildbase}/pathfinder/$d"
 done
 
+cfg="${buildbase}/monetdb4/conf/MonetDB.conf"
+
 # enhance various paths to find our stuff
 MOD_PATH="`echo ${MOD_PATH} | sed 's/^://'`"
-binpath="${builddir}/tools:${buildbase}/clients/mapiclient:${buildbase}/clients/examples/C:${buildbase}/clients/examples/php:${buildbase}/clients/examples/python:${buildbase}/clients/perl/Tests:${buildbase}/testing"
-libpath="${MOD_PATH}:${builddir}/monet/.libs"
+binpath="${buildbase}/monetdb4/tools:${buildbase}/clients/mapiclient:${buildbase}/clients/examples/C:${buildbase}/clients/examples/php:${buildbase}/clients/examples/python:${buildbase}/clients/perl/Tests:${buildbase}/testing"
+libpath="${MOD_PATH}:${buildbase}/monetdb4/monet/.libs"
 
 PATH="${binpath}:$PATH"
 export PATH
 
-PYTHONPATH="${buildbase}/clients/python/build/lib:${buildbase}/testing:${srcdir}/../testing:${PYTHONPATH}"
+PYTHONPATH="${buildbase}/clients/python/build/lib:${buildbase}/testing:${srcdir}/testing:${PYTHONPATH}"
 export PYTHONPATH
 
 CLASSPATH="${buildbase}/java:${buildbase}/java/tests:${CLASSPATH}"
 export CLASSPATH
 
-perlib="${buildbase}/clients/perl:${srcdir}/../clients/perl"
+perlib="${buildbase}/clients/perl:${srcdir}/clients/perl"
 PERLLIB="${perlib}:${PERLLIB}"
 PERL5LIB="${perlib}:${PERL5LIB}"
 export PERLLIB PERL5LIB
@@ -84,11 +84,11 @@ if [ "${uname}" = "AIX" ] ; then
 fi
 
 # execute Mtest.py in the source directory
-cd "$srcdir"
+cd "${srcdir}/${pkg}"
 
 # execute the script.
 # if no arguments, do a recursive test (Mtest.py -r), else pass on the
 # arguments.
 # if the environment variable MTEST_AT is set (value does not matter), pass
 # the --at flag to Mtest.py so that it uses the at command as a watchdog.
-exec python "${buildbase}/testing/Mtest.py" --config="${builddir}/conf/MonetDB.conf" --package=${pkg} --monet_mod_path="${MOD_PATH}" --dbfarm="${builddir}/dbfarm" --TSTTRGBASE="${builddir}" ${MTEST_AT+--at} "${@--rq}"
+exec python "${buildbase}/testing/Mtest.py" --config="${cfg}" --package=${pkg} --monet_mod_path="${MOD_PATH}" --dbfarm="${buildbase}/${pkg}/dbfarm" --TSTTRGBASE="${buildbase}/${pkg}" ${MTEST_AT+--at} "${@--rq}"

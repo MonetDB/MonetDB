@@ -18,93 +18,73 @@
 # All Rights Reserved.
 
 pkg=geom
-buildbase=@QBUILD@
-builddir="${buildbase}/geom"
-# make sure srcdir contains absolute path name
-srcdir=`cd '@srcdir@'; pwd`
+buildbase="@QBUILD@"
+srcdir="@QSOURCE@"
 uname=`uname`
 
-# if both M4 & M5 are available, M5 is default;
-# otherwise, the available one is default
-@HAVE_MONETDB4_TRUE@V=4
-@HAVE_MONETDB5_TRUE@V=5
-# commandline option overrules default
-for arg
-do
-    case "$arg" in
-    -4) V=4;;
-    -5) V=5;;
-    esac
-done
-
-# where compiled Geom modules are to be found
-for d in monetdb$V
-do
-	MOD_PATH="${MOD_PATH}:${builddir}/$d/.libs:${builddir}/$d"
-	# enable auto-loading of modules before `make install`
-	mkdir -p ${builddir}/$d/autoload
-	cp -f ${srcdir}/$d/[0-9][0-9]_*.mal ${builddir}/$d/autoload/ 2>/dev/null
-done
-
-# enable auto-loading of SQL createdb scripts before `make install`
-MOD_PATH="${MOD_PATH}:${builddir}/sql"
-mkdir -p ${builddir}/sql/createdb
-cp -f ${srcdir}/sql/[0-9][0-9]_*.sql ${builddir}/sql/createdb/ 2>/dev/null
-
-case "$V" in
-4)
-# where compiled monetdb4 modules are to be found
-for d in modules/plain modules/contrib modules/calibrator modules/mapi @HAVE_NETCDF_TRUE@ modules/mnetcdf
-do
-	MOD_PATH="${MOD_PATH}:${buildbase}/monetdb4/$d/.libs:${buildbase}/monetdb4/$d"
-done
-MOD_PATH="${MOD_PATH}:${srcdir}/../monetdb4/scripts/tools"
-PATH="${buildbase}/monetdb4/tools:$PATH"
-cfg="${buildbase}/monetdb4/conf/MonetDB.conf"   
-;;
-5)
 # where compiled SQL modules are to be found
 for d in backends/monet5 backends/monet5/vaults sql
 do
-	MOD_PATH="${MOD_PATH}:${buildbase}/sql/$d/.libs:${buildbase}/sql/$d"
+	[ -d "${buildbase}/sql/$d/.libs" ] &&
+		MOD_PATH="${MOD_PATH}:${buildbase}/sql/$d/.libs"
+	MOD_PATH="${MOD_PATH}:${buildbase}/sql/$d"
 	# enable auto-loading of modules before `make install`
 	mkdir -p ${buildbase}/sql/$d/autoload
-	cp -f ${srcdir}/../sql/$d/[0-9][0-9]_*.mal ${buildbase}/sql/$d/autoload/ 2>/dev/null
+	cp ${srcdir}/sql/$d/[0-9][0-9]_*.mal ${buildbase}/sql/$d/autoload/ 2>/dev/null
 done
 # disable auto-loading of non-available modules
 @HAVE_MSEED_FALSE@	rm -f ${buildbase}/sql/backends/monet5/vaults/autoload/71_mseed.mal
 @HAVE_CFITSIO_FALSE@	rm -f ${buildbase}/sql/backends/monet5/vaults/autoload/72_fits.mal
+
 # enable auto-loading of SQL createdb scripts before `make install`
 mkdir -p ${buildbase}/sql/sql/createdb
-cp -f ${srcdir}/../sql/sql/[0-9][0-9]_*.sql ${buildbase}/sql/sql/createdb/ 2>/dev/null
+cp ${srcdir}/sql/sql/[0-9][0-9]_*.sql ${buildbase}/sql/sql/createdb/ 2>/dev/null
 # disable auto-loading of non-available SQL createdb scripts
 @HAVE_RAPTOR_FALSE@	rm -f ${buildbase}/sql/sql/createdb/30_rdf.sql
-# where compiled monetdb5 modules are to be found
-for d in optimizer scheduler modules/atoms modules/kernel modules/mal extras/crackers extras/rdf extras/xml
+
+# where compiled Geom modules are to be found
+for d in monetdb5
 do
-	MOD_PATH="${MOD_PATH}:${buildbase}/monetdb5/$d/.libs:${buildbase}/monetdb5/$d"
+	[ -d "${buildbase}/geom/$d/.libs" ] &&
+		MOD_PATH="${MOD_PATH}:${buildbase}/geom/$d/.libs"
+	MOD_PATH="${MOD_PATH}:${buildbase}/geom/$d"
+	# enable auto-loading of modules before `make install`
+	mkdir -p ${buildbase}/geom/$d/autoload
+	cp ${srcdir}/geom/$d/[0-9][0-9]_*.mal ${buildbase}/geom/$d/autoload/ 2>/dev/null
+done
+
+# enable auto-loading of SQL createdb scripts before `make install`
+mkdir -p ${buildbase}/geom/monetdb5/createdb
+cp ${srcdir}/geom/sql/[0-9][0-9]_*.sql ${buildbase}/geom/monetdb5/createdb 2>/dev/null
+
+# where compiled monetdb5 modules are to be found
+for d in optimizer scheduler modules/atoms modules/kernel modules/mal extras/crackers extras/compiler
+do
+	[ -d "${buildbase}/monetdb5/$d/.libs" ] &&
+		MOD_PATH="${MOD_PATH}:${buildbase}/monetdb5/$d"
+	MOD_PATH="${MOD_PATH}:${buildbase}/monetdb5/$d"
 	# enable auto-loading of modules before `make install`
 	mkdir -p ${buildbase}/monetdb5/$d/autoload
-	cp -f ${srcdir}/../monetdb5/$d/[0-9][0-9]_*.mal ${buildbase}/monetdb5/$d/autoload/ 2>/dev/null
+	cp ${srcdir}/monetdb5/$d/[0-9][0-9]_*.mal ${buildbase}/monetdb5/$d/autoload/ 2>/dev/null
 done
-PATH="${buildbase}/tools/mserver:$PATH"
+
 cfg="${buildbase}/monetdb5/misc/monetdb5.conf"
-;;
-esac
 
 # enhance various paths to find our stuff
 MOD_PATH="`echo ${MOD_PATH} | sed 's/^://'`"
-libpath="${MOD_PATH}"
-PATH="${buildbase}/clients/mapiclient:${buildbase}/clients/examples/C:${buildbase}/clients/examples/php:${buildbase}/clients/examples/python:${buildbase}/clients/perl/Tests:${buildbase}/testing:$PATH"
+binpath="${buildbase}/sql/backends/monet5:${buildbase}/tools/mserver:${buildbase}/clients/mapiclient:${buildbase}/clients/examples/C:${buildbase}/clients/examples/php:${buildbase}/clients/examples/python:${buildbase}/clients/perl/Tests:${buildbase}/testing"
+libpath="${MOD_PATH}:${buildbase}/sql/server/.libs"
+
+PATH="${binpath}:$PATH"
 export PATH
 
-PYTHONPATH="${buildbase}/clients/python/build/lib:${buildbase}/testing:${srcdir}/../testing:${PYTHONPATH}"
+PYTHONPATH="${buildbase}/clients/python/build/lib:${buildbase}/testing:${srcdir}/testing:$PYTHONPATH"
 export PYTHONPATH
 
 CLASSPATH="${buildbase}/java:${buildbase}/java/tests:${CLASSPATH}"
 export CLASSPATH
 
-perlib="${buildbase}/clients/perl:${srcdir}/../clients/perl"
+perlib="${buildbase}/clients/perl:${srcdir}/clients/perl"
 PERLLIB="${perlib}:${PERLLIB}"
 PERL5LIB="${perlib}:${PERL5LIB}"
 export PERLLIB PERL5LIB
@@ -131,11 +111,11 @@ if [ "${uname}" = "AIX" ] ; then
 fi
 
 # execute Mtest.py in the source directory
-cd "$srcdir"
+cd "${srcdir}/${pkg}"
 
 # execute the script.
 # if no arguments, do a recursive test (Mtest.py -r), else pass on the
 # arguments.
 # if the environment variable MTEST_AT is set (value does not matter), pass
 # the --at flag to Mtest.py so that it uses the at command as a watchdog.
-exec python "${buildbase}/testing/Mtest.py" --config="${cfg}" -$V --package=${pkg} --monet_mod_path="${MOD_PATH}" --dbfarm="${builddir}/dbfarm" --TSTTRGBASE="${builddir}" ${MTEST_AT+--at} "${@--rq}"
+exec python "${buildbase}/testing/Mtest.py" --config="${cfg}" --package=${pkg} --monet_mod_path="${MOD_PATH}" --dbfarm="${buildbase}/${pkg}/dbfarm" --TSTTRGBASE="${buildbase}/${pkg}" ${MTEST_AT+--at} "${@--rq}"
