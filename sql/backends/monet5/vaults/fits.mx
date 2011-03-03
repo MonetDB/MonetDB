@@ -134,7 +134,7 @@ FITSinitCatalog(mvc *m)
 		fits_tp = mvc_create_table(m, sch, "fits_table_properties", tt_table, 0, SQL_PERSIST, 0, 5);
 		mvc_create_column_(m, fits_tp, "table_id", "int", 32);
 		mvc_create_column_(m, fits_tp, "xtension", "varchar", 80);
-		mvc_create_column_(m, fits_tp, "bitpix", "varchar", 80);
+		mvc_create_column_(m, fits_tp, "bitpix", "int", 32);
 		mvc_create_column_(m, fits_tp, "stilvers", "varchar", 80);
 		mvc_create_column_(m, fits_tp, "stilclas", "varchar", 80);
 	}
@@ -323,13 +323,13 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 	str fname = *(str*) getArgReference(stk, pci, 1);
 	fitsfile *fptr;  /* pointer to the FITS file */
-	int status = 0, i, j, hdutype, hdunum = 1, cnum = 0;
+	int status = 0, i, j, hdutype, hdunum = 1, cnum = 0, bitpixnumber= 0;
 	oid  fid, tid, cid, rid = oid_nil;
 	char tname[BUFSIZ], *tname_low = NULL, *s, bname[BUFSIZ], stmt[BUFSIZ];
 	long tbcol;
 	char cname[BUFSIZ], tform[BUFSIZ], tunit[BUFSIZ], tnull[BUFSIZ], tdisp[BUFSIZ];
 	double tscal, tzero;
-	char bitpixnumber[BUFSIZ]="", xtensionname[BUFSIZ]="", stilversion[BUFSIZ]="";
+	char xtensionname[BUFSIZ]="", stilversion[BUFSIZ]="";
 	char stilclass[BUFSIZ]="", tdate[BUFSIZ]="", orig[BUFSIZ]= "", comm[BUFSIZ]="";
 
 	msg = getContext(cntxt, mb, &m, NULL);
@@ -405,7 +405,7 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 
-		fits_read_key(fptr, TSTRING, "BITPIX", bitpixnumber, NULL, &status);
+		fits_read_key(fptr, TSTRING, "BITPIX", &bitpixnumber, NULL, &status);
 		if ( status ) {
 			status = 0;
 		}
@@ -441,7 +441,7 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		store_funcs.append_col(m->session->tr,
 			mvc_bind_column(m, fits_tbl, "name"), tname_low, TYPE_str);
 		store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, fits_tbl, "columns"), &cnum, TYPE_str);
+			mvc_bind_column(m, fits_tbl, "columns"), &cnum, TYPE_int);
 		store_funcs.append_col(m->session->tr,
 			mvc_bind_column(m, fits_tbl, "file_id"), &fid, TYPE_int);
 		store_funcs.append_col(m->session->tr,
@@ -458,7 +458,7 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		store_funcs.append_col(m->session->tr,
 			mvc_bind_column(m, fits_tp, "xtension"), xtensionname, TYPE_str);
 		store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, fits_tp, "bitpix"), bitpixnumber, TYPE_str);
+			mvc_bind_column(m, fits_tp, "bitpix"), &bitpixnumber, TYPE_int);
 		store_funcs.append_col(m->session->tr,
 			mvc_bind_column(m, fits_tp, "stilvers"), stilversion, TYPE_str);
 		store_funcs.append_col(m->session->tr,
@@ -496,7 +496,7 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *tpcode = NULL;
 	long *rep=NULL, *wid=NULL, rows;
 	char keywrd[80], **cname, **v = NULL, nm[FLEN_VALUE];
-	BAT *b, *tmp = NULL;
+	BAT *b;
 	ptr nilptr;
 
 
@@ -548,8 +548,9 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	/* create a SQL table to hold the FITS table */
-	col = mvc_bind_column(m, fits_tbl, "columns");
-	cnum = *(int*) table_funcs.column_find_value(m->session->tr, col, rid);
+	/*	col = mvc_bind_column(m, fits_tbl, "columns");
+	  cnum = *(int*) table_funcs.column_find_value(m->session->tr, col, rid); */
+	fits_get_num_cols(fptr, &cnum, &status);
 	tbl = mvc_create_table(m, sch, tname, tt_table, 0, SQL_PERSIST, 0, cnum);
 
 	tpcode = (int *)GDKzalloc(sizeof(int) * cnum);
@@ -579,11 +580,13 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for ( j = 1; j <= cnum; j++ ){
 		mtype = fits2mtype(tpcode[j-1]);
 		nilptr = ATOMnil(mtype);
+		col = mvc_bind_column(m, tbl, cname[j-1]);
 
 		if (mtype != TYPE_str ){
-			tmp = BATnew(TYPE_void, mtype, rows);
-			BATseqbase(tmp, 0);
-			fits_read_col(fptr, tpcode[j-1], j, 1, 1, rows, nilptr, (void *) BUNtloc(bat_iterator(tmp),BUNfirst(tmp)), &anynull, &status );
+			b = store_funcs.bind_col(m->session->tr, col, RDONLY);
+			BATextend(b, rows);
+			BATmadvise(b, BUF_SEQUENTIAL,BUF_SEQUENTIAL,0,0);
+			fits_read_col(fptr, tpcode[j-1], j, 1, 1, rows, nilptr, (void *) BUNtloc(bat_iterator(b),BUNfirst(b)), &anynull, &status );
 		}
 		else {
 			v = (char **) GDKzalloc(sizeof(char *) * rows);
@@ -596,19 +599,13 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			char buf[FLEN_ERRMSG+1];
 			fits_read_errmsg(buf);
 			msg = createException(MAL, "fits.loadtable", "Cannot load column %s of %s table: %s.\n", cname[j-1], tname, buf);
-			/*	GDKfree(v); */
 			goto finish;
 		}
 
-		col = mvc_bind_column(m, tbl, cname[j-1]);
 		if (mtype != TYPE_str ){
-			BATsetcount(tmp, rows);
-			BATsetcapacity(tmp, rows);
-			tmp->tsorted = 0;
-			b = store_funcs.bind_col(m->session->tr, col, RDONLY);
-			BATappend(b,tmp,TRUE);
+			BATsetcount(b, rows);
+			b->tsorted = 0;
 			BBPunfix(b->batCacheid);
-			BBPreclaim(tmp);
 		}
 		else {
 			for (i = 0; i<rows; i++)
