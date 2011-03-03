@@ -37,7 +37,6 @@
 
 #define STACK_MAX 100
 
-#include "fmt.h"
 
 /* boolean type `bool' and constants `true', `false' */
 #ifdef HAVE_STDBOOL_H

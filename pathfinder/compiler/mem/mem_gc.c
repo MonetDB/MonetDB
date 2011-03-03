@@ -54,7 +54,6 @@
 #include "gc.h"
 #include "mem.h"
 #include "oops.h"
-#include "fmt.h"
 
 void
 PFmem_init(void)

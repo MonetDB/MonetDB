@@ -48,8 +48,6 @@
 
 #include "oops.h"
 
-#include "fmt.h"
-
 typedef struct PFmem_allocator {
     size_t size;
     size_t nr;
