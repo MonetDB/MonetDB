@@ -44,7 +44,7 @@ do
 done
 
 # enhance various paths to find our stuff
-MOD_PATH="${MOD_PATH#:}"
+MOD_PATH="`echo ${MOD_PATH} | sed 's/^://'`"
 binpath="${builddir}/tools:${buildbase}/clients/mapiclient:${buildbase}/clients/examples/C:${buildbase}/clients/examples/php:${buildbase}/clients/examples/python:${buildbase}/clients/perl/Tests:${buildbase}/testing"
 libpath="${MOD_PATH}:${builddir}/monet/.libs"
 
