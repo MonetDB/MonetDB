@@ -48,7 +48,6 @@ EXTRA_DIST = \
 	coreprint.h \
 	env.h \
 	fs.h \
-	fmt.h \
 	func_chk.h \
 	functions.h \
 	heuristic.h \
