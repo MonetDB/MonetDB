@@ -26,7 +26,7 @@ uname=`uname`
 
 # M5 is default
 @HAVE_MONETDB5_TRUE@V=5
-# commandline option overrules default  
+# commandline option overrules default
 for arg
 do
     case "$arg" in
@@ -55,7 +55,7 @@ PATH="${buildbase}/tools/mserver:$PATH"
 esac
 
 # enhance various paths to find our stuff
-MOD_PATH="${MOD_PATH#:}"
+MOD_PATH="`echo ${MOD_PATH} | sed 's/^://'`"
 libpath="${MOD_PATH}"
 PATH="${buildbase}/clients/mapiclient:${buildbase}/clients/examples/C:${buildbase}/clients/examples/php:${buildbase}/clients/examples/python:${buildbase}/clients/perl/Tests:${buildbase}/testing:$PATH"
 export PATH

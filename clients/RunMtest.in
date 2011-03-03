@@ -18,14 +18,12 @@
 # All Rights Reserved.
 
 pkg=clients
-buildbase=@QBUILD@
-builddir="${buildbase}/clients"
-# make sure srcdir contains absolute path name
-srcdir=`cd '@srcdir@'; pwd`
+buildbase="@QBUILD@"
+srcdir="@QSOURCE@"
 uname=`uname`
 
 # make sure scripts are executable
-for x in "${builddir}/python/monetdb/mclient.py"
+for x in "${buildbase}/clients/python/monetdb/mclient.py"
 do
 	if [ -s $x ] ; then
 		chmod +x $x
@@ -33,26 +31,26 @@ do
 done
 
 # enhance various paths to find our stuff
-PATH="${builddir}/mapiclient:${builddir}/examples/C:${builddir}/examples/php:${builddir}/examples/python:${builddir}/perl/Tests:${buildbase}/testing:$PATH"
+PATH="${buildbase}/clients/mapiclient:${buildbase}/clients/examples/C:${buildbase}/clients/examples/php:${buildbase}/clients/examples/python:${buildbase}/clients/perl/Tests:${buildbase}/testing:$PATH"
 export PATH
 
-PYTHONPATH="${builddir}/python/build/lib:${buildbase}/testing:${srcdir}/../testing:${PYTHONPATH}"
+PYTHONPATH="${buildbase}/clients/python/build/lib:${buildbase}/testing:${srcdir}/testing:${PYTHONPATH}"
 export PYTHONPATH
 
 CLASSPATH="${buildbase}/java:${buildbase}/java/tests:${CLASSPATH}"
 export CLASSPATH
 
-perlib="${builddir}/perl:${srcdir}/perl"
+perlib="${buildbase}/clients/perl:${srcdir}/clients/perl"
 PERLLIB="${perlib}:${PERLLIB}"
 PERL5LIB="${perlib}:${PERL5LIB}"
 export PERLLIB PERL5LIB
 
 # execute Mtest.py in the source directory
-cd "$srcdir"
+cd "${srcdir}/${pkg}"
 
 # execute the script.
 # if no arguments, do a recursive test (Mtest.py -r), else pass on the
 # arguments.
 # if the environment variable MTEST_AT is set (value does not matter), pass
 # the --at flag to Mtest.py so that it uses the at command as a watchdog.
-exec python "${buildbase}/testing/Mtest.py" --package=${pkg} --dbfarm="${builddir}/dbfarm" --TSTTRGBASE="${builddir}" ${MTEST_AT+--at} "${@--rq}"
+exec python "${buildbase}/testing/Mtest.py" --package=${pkg} --dbfarm="${buildbase}/${pkg}/dbfarm" --TSTTRGBASE="${buildbase}/${pkg}" ${MTEST_AT+--at} "${@--rq}"
