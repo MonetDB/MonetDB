@@ -261,7 +261,9 @@ parsedate(const char *data, DATE_STRUCT *dval)
 	if (sscanf(data, "{d '%hd-%hu-%hu'}%n", &dval->year, &dval->month, &dval->day, &n) < 3 &&
 	    sscanf(data, "%hd-%hu-%hu%n", &dval->year, &dval->month, &dval->day, &n) < 3)
 		return 0;
-	if (dval->month == 0 || dval->month > 12 || dval->day == 0 || dval->day > monthlengths[dval->month] || (dval->month == 2 && !isLeap(dval->year) && dval->day == 29))
+	if (dval->month == 0 || dval->month > 12 ||
+	    dval->day == 0 || dval->day > monthlengths[dval->month] ||
+	    (dval->month == 2 && !isLeap(dval->year) && dval->day == 29))
 		return 0;
 	data += n;
 	while (space(*data))
@@ -313,7 +315,10 @@ parsetimestamp(const char *data, TIMESTAMP_STRUCT *tsval)
 	if (sscanf(data, "{TS '%hd-%hu-%hu %hu:%hu:%hu%n", &tsval->year, &tsval->month, &tsval->day, &tsval->hour, &tsval->minute, &tsval->second, &n) < 6 &&
 	    sscanf(data, "%hd-%hu-%hu %hu:%hu:%hu%n", &tsval->year, &tsval->month, &tsval->day, &tsval->hour, &tsval->minute, &tsval->second, &n) < 6)
 		return 0;
-	if (tsval->month == 0 || tsval->month > 12 || tsval->day == 0 || tsval->day > monthlengths[tsval->month] || (tsval->month == 2 && !isLeap(tsval->year) && tsval->day == 29) || tsval->hour > 23 || tsval->minute > 59 || tsval->second > 61)
+	if (tsval->month == 0 || tsval->month > 12 ||
+	    tsval->day == 0 || tsval->day > monthlengths[tsval->month] ||
+	    (tsval->month == 2 && !isLeap(tsval->year) && tsval->day == 29) ||
+	    tsval->hour > 23 || tsval->minute > 59 || tsval->second > 61)
 		return 0;
 	braces = *data == '{';
 	tsval->fraction = 0;
