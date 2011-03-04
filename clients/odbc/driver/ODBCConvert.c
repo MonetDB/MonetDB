@@ -29,15 +29,19 @@
 #if SIZEOF_INT==8
 # define ULL_CONSTANT(val)	(val)
 # define O_ULLFMT		"u"
+# define O_ULLCAST	(unsigned int)
 #elif SIZEOF_LONG==8
 # define ULL_CONSTANT(val)	(val##UL)
 # define O_ULLFMT		"lu"
+# define O_ULLCAST	(unsigned long)
 #elif defined(HAVE_LONG_LONG)
 # define ULL_CONSTANT(val)	(val##ULL)
 # define O_ULLFMT		"llu"
+# define O_ULLCAST	(unsigned long long)
 #elif defined(HAVE___INT64)
 # define ULL_CONSTANT(val)	(val##ui64)
 # define O_ULLFMT		"I64u"
+# define O_ULLCAST	(unsigned __int64)
 #endif
 
 #define MAXBIGNUM10	ULL_CONSTANT(1844674407370955161)	/* (2**64-1)/10 */
@@ -1246,7 +1250,7 @@ ODBCFetch(ODBCStmt *stmt,
 
 			for (n = 0, f = 1; n < nval.scale; n++)
 				f *= 10;
-			sz = snprintf(data, buflen, "%s%" O_ULLFMT, nval.sign ? "" : "-", nval.val / f);
+			sz = snprintf(data, buflen, "%s%" O_ULLFMT, nval.sign ? "" : "-", O_ULLCAST (nval.val / f));
 			if (sz < 0 || sz >= buflen) {
 				/* Numeric value out of range */
 				addStmtError(stmt, "22003", NULL, 0);
@@ -1265,7 +1269,7 @@ ODBCFetch(ODBCStmt *stmt,
 				if (lenp)
 					*lenp += nval.scale + 1;
 				if (buflen > 2)
-					sz = (SQLLEN) snprintf(data, buflen, ".%0*" O_ULLFMT, nval.scale, nval.val % f);
+					sz = (SQLLEN) snprintf(data, buflen, ".%0*" O_ULLFMT, nval.scale, O_ULLCAST (nval.val % f));
 				if (buflen <= 2 || sz < 0 || sz >= buflen) {
 					data[buflen - 1] = 0;
 					/* String data, right-truncated */
@@ -2682,10 +2686,10 @@ ODBCStore(ODBCStmt *stmt,
 
 			for (n = 0, f = 1; n < nval.scale; n++)
 				f *= 10;
-			snprintf(data, sizeof(data), "%s%" O_ULLFMT, nval.sign ? "" : "-", nval.val / f);
+			snprintf(data, sizeof(data), "%s%" O_ULLFMT, nval.sign ? "" : "-", O_ULLCAST (nval.val / f));
 			assigns(buf, bufpos, buflen, data, stmt);
 			if (nval.scale > 0) {
-				snprintf(data, sizeof(data), ".%0*" O_ULLFMT, nval.scale, nval.val % f);
+				snprintf(data, sizeof(data), ".%0*" O_ULLFMT, nval.scale, O_ULLCAST (nval.val % f));
 				assigns(buf, bufpos, buflen, data, stmt);
 			}
 			break;
@@ -3197,11 +3201,11 @@ ODBCStore(ODBCStmt *stmt,
 					addStmtError(stmt, "22001", NULL, 0);
 				}
 			} else {
-				snprintf(data, sizeof(data), "%s%" O_ULLFMT, nval.sign ? "" : "-", nval.val / f);
+				snprintf(data, sizeof(data), "%s%" O_ULLFMT, nval.sign ? "" : "-", O_ULLCAST (nval.val / f));
 				assigns(buf, bufpos, buflen, data, stmt);
 				if (nval.scale > 0) {
 					if (sqltype == SQL_DECIMAL) {
-						snprintf(data, sizeof(data), ".%0*" O_ULLFMT, nval.scale, nval.val % f);
+						snprintf(data, sizeof(data), ".%0*" O_ULLFMT, nval.scale, O_ULLCAST (nval.val % f));
 						assigns(buf, bufpos, buflen, data, stmt);
 					} else {
 						/* Fractional truncation */
