@@ -477,10 +477,6 @@ pattern dump_trace() :bat[:str,:bat]
 address dump_trace
 comment "dump the trace statistics";
 
-pattern dump_slave() :bat[:str,:bat]
-address dump_slave
-comment "Dump the status of the slave synchronization";
-
 pattern storage():bat[:str,:bat]
 address sql_storage
 comment "return a table with storage information ";
@@ -1148,7 +1144,6 @@ sql5_export str second_interval_str( lng *res, str *s, int *ek, int *sk );
 sql5_export str dump_cache(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str dump_opt_stats(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str dump_slave(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str sql_rowid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str sql_rank_grp(bat *rid, bat *bid, bat *gid, bat *gpe);
 sql5_export str sql_rank(bat *rid, bat *bid);
@@ -1312,7 +1307,6 @@ First introduce the routines to be called by the front-end.
 #include <math.h>
 #include <bbp.h>
 #include <cluster.h>
-#include <replication.h>
 #include <opt_dictionary.h>
 #ifdef HAVE_RAPTOR
 # include <rdf.h>
@@ -4903,25 +4897,6 @@ dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-/* str slave(int *r); */
-str
-dump_slave(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	mvc *m = NULL;
-	str msg = getContext(cntxt,mb, &m, NULL);
-	BAT *t;
-	int *r = (int *) getArgReference(stk, pci, 0);
-
-	if (msg)
-		return msg;
-	t= SLAVEtable();
-	if ( t == NULL || BATcount(t) == 0)
-		throw(ILLARG, "sql.slavelog","tables not initialized");
-
-	*r = t->batCacheid;
-	BBPkeepref(*r);
-	return MAL_SUCCEED;
-}
 
 /* str sql_rowid(oid *rid, ptr v, str *sname, str *tname); */
 str 
