@@ -30,9 +30,9 @@ Over..
 # 13:30:19 >  Mtimeout -timeout 60  java nl.cwi.monetdb.client.JdbcClient -h rig -p 39462 -d mTests_src_test_BugTracker -f "../../../../../source/sql/src/test/BugTracker/Tests/jdbc_no_debug.SF-1739356-data.sql"
 # 13:30:19 >  
 
-+-----------------------------------------------------------------------------------------------------------------+
++------------------------------------------------------------------------------------------------------------------+
 | rel                                                                                                                                                                                                                                                                       |
-+=================================================================================================================+
++==================================================================================================================+
 | project (                                                                                                                                                                                                                                                                 |
 | | group by (                                                                                                                                                                                                                                                              |
 | | | project (                                                                                                                                                                                                                                                             |
@@ -51,7 +51,7 @@ Over..
 | | | ) [ tables.id ]                                                                                                                                                                                                                                                       |
 | | ) [  ] [ count NOT NULL as L1 ]                                                                                                                                                                                                                                         |
 | ) [ L1 NOT NULL ]                                                                                                                                                                                                                                                         |
-+-----------------------------------------------------------------------------------------------------------------+
++------------------------------------------------------------------------------------------------------------------+
 18 rows
 
 +--------+
@@ -59,41 +59,41 @@ Over..
 +========+
 | function user.s3_1{autoCommit=true}():void; |
 |     _2 := sql.mvc(); |
-|     _19:bat[:oid,:sht]  := sql.bind(_2,"sys","_tables","type",0); |
-|     _21 := algebra.thetauselect(_19,2:sht,"<"); |
-|     _22:bat[:oid,:sht]  := sql.bind(_2,"sys","_tables","type",2); |
-|     _24 := algebra.kdifference(_21,_22); |
-|     _25 := algebra.thetauselect(_22,2:sht,"<"); |
-|     _26 := algebra.kunion(_24,_25); |
-|     _27:bat[:oid,:sht]  := sql.bind(_2,"sys","_tables","type",1); |
-|     _28 := algebra.thetauselect(_27,2:sht,"<"); |
-|     _29 := algebra.kunion(_26,_28); |
-|     _30:bat[:oid,:oid]  := sql.bind_dbat(_2,"sys","_tables",1); |
-|     _32 := bat.reverse(_30); |
-|     _33 := algebra.kdifference(_29,_32); |
-|     _34 := algebra.markT(_33,0@0:oid); |
-|     _35 := bat.reverse(_34); |
-|     _36:bat[:oid,:int]  := sql.bind(_2,"sys","_tables","id",0); |
-|     _38:bat[:oid,:int]  := sql.bind(_2,"sys","_tables","id",2); |
-|     _39 := algebra.kdifference(_36,_38); |
-|     _40 := algebra.kunion(_39,_38); |
-|     _41:bat[:oid,:int]  := sql.bind(_2,"sys","_tables","id",1); |
-|     _43 := algebra.kunion(_40,_41); |
-|     _44 := algebra.leftjoin(_35,_43); |
-|     _3:bat[:oid,:sht]  := sql.bind(_2,"tmp","_tables","type",0); |
-|     _8 := algebra.thetauselect(_3,2:sht,"<"); |
-|     _10:bat[:oid,:oid]  := sql.bind_dbat(_2,"tmp","_tables",1); |
-|     _12 := bat.reverse(_10); |
-|     _13 := algebra.kdifference(_8,_12); |
-|     _14 := algebra.markT(_13,0@0:oid); |
-|     _15 := bat.reverse(_14); |
-|     _16:bat[:oid,:int]  := sql.bind(_2,"tmp","_tables","id",0); |
-|     _18 := algebra.leftjoin(_15,_16); |
-|     _45:bat[:oid,:int]  := bat.new(nil:oid,nil:int); |
-|     _48 := bat.append(_45,_44,true); |
-|     _50 := bat.append(_48,_18,true); |
-|     _51 := aggr.count(_50); |
-|     sql.exportValue(1,".tables","L2","wrd",64,0,6,_51,""); |
+|     _37:bat[:oid,:sht]  := sql.bind(_2,"sys","_tables","type",0); |
+|     _39 := algebra.thetauselect(_37,2:sht,"<"); |
+|     _35:bat[:oid,:sht]  := sql.bind(_2,"sys","_tables","type",2); |
+|     _41 := algebra.kdifference(_39,_35); |
+|     _36 := algebra.thetauselect(_35,2:sht,"<"); |
+|     _42 := algebra.kunion(_41,_36); |
+|     _31:bat[:oid,:sht]  := sql.bind(_2,"sys","_tables","type",1); |
+|     _34 := algebra.thetauselect(_31,2:sht,"<"); |
+|     _43 := algebra.kunion(_42,_34); |
+|     _28:bat[:oid,:oid]  := sql.bind_dbat(_2,"sys","_tables",1); |
+|     _30 := bat.reverse(_28); |
+|     _44 := algebra.kdifference(_43,_30); |
+|     _45 := algebra.markT(_44,0@0:oid); |
+|     _46 := bat.reverse(_45); |
+|     _24:bat[:oid,:int]  := sql.bind(_2,"sys","_tables","id",0); |
+|     _22:bat[:oid,:int]  := sql.bind(_2,"sys","_tables","id",2); |
+|     _25 := algebra.kdifference(_24,_22); |
+|     _26 := algebra.kunion(_25,_22); |
+|     _20:bat[:oid,:int]  := sql.bind(_2,"sys","_tables","id",1); |
+|     _27 := algebra.kunion(_26,_20); |
+|     _47 := algebra.leftjoin(_46,_27); |
+|     _12:bat[:oid,:sht]  := sql.bind(_2,"tmp","_tables","type",0); |
+|     _13 := algebra.thetauselect(_12,2:sht,"<"); |
+|     _9:bat[:oid,:oid]  := sql.bind_dbat(_2,"tmp","_tables",1); |
+|     _11 := bat.reverse(_9); |
+|     _15 := algebra.kdifference(_13,_11); |
+|     _16 := algebra.markT(_15,0@0:oid); |
+|     _17 := bat.reverse(_16); |
+|     _4:bat[:oid,:int]  := sql.bind(_2,"tmp","_tables","id",0); |
+|     _18 := algebra.leftjoin(_17,_4); |
+|     _48:bat[:oid,:int]  := bat.new(nil:oid,nil:int); |
+|     _51 := bat.append(_48,_47,true); |
+|     _53 := bat.append(_51,_18,true); |
+|     _54 := aggr.count(_53); |
+|     sql.exportValue(1,".tables","L2":str,"wrd",64,0,6,_54,""); |
 | end s3_1; |
 +--------+
 38 rows
