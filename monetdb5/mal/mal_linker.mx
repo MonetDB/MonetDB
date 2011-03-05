@@ -121,7 +121,6 @@ static FileRecord filesLoaded[MAXMODULES];
 static int maxfiles = MAXMODULES;
 static int lastfile = 0;
 
-static char *MSP_locate_file(const char *filename);
 @-
 Search for occurrence of the function in the library identified by the filename.
 @c
@@ -217,39 +216,84 @@ loadLibrary(str filename, int flag)
 	int mode = RTLD_NOW | RTLD_GLOBAL;
 	char nme[MAXPATHLEN];
 	void *handle = NULL;
-	str fullname, s;
+	str s;
 	int idx;
 	const char *errmsg;
+	char *mod_path = GDKgetenv("monet_mod_path");
+
+	/* AIX requires RTLD_MEMBER to load a module that is a member of an
+	 * archive.  */
+#ifdef RTLD_MEMBER
+	mode |= RTLD_MEMBER;
+#endif
 
 	for (idx = 0; filesLoaded[idx].filename && idx < lastfile; idx++)
 		if (strcmp(filesLoaded[idx].filename, filename) == 0)
 			/* already loaded */
 			return MAL_SUCCEED;
-@-
-Use the search path provided in the configuration file
-@c
-	s = strrchr(filename, DIR_SEP);
-	snprintf(nme, MAXPATHLEN, "_%s", s ? s + 1 : filename);
-	fullname = MSP_locate_file(nme);
 
-	if (fullname == NULL) {
-		if( flag)
-			throw(LOADER, "loadLibrary", RUNTIME_FILE_NOT_FOUND ":%s", filename);
+	/* ignore any path given */
+	if ((s = strrchr(filename, DIR_SEP)) == NULL)
+		s = filename;
+
+	if (mod_path != NULL) {
+		while (*mod_path == PATH_SEP)
+			mod_path++;
+		if (*mod_path == 0)
+			mod_path = NULL;
+	}
+	if (mod_path == NULL) {
+		if (flag)
+			throw(LOADER, "loadLibrary", RUNTIME_FILE_NOT_FOUND ":%s", s);
 		return MAL_SUCCEED;
 	}
 
-/* AIX requires RTLD_MEMBER to load a module that is a member of an archive.  */
-#ifdef RTLD_MEMBER
-	mode |= RTLD_MEMBER;
-#endif
+	while (*mod_path) {
+		char *p;
 
-	handle = dlopen(fullname, mode);
+		if ((p = strchr(mod_path, PATH_SEP)) != NULL)
+			*p = '\0';
+		/* try hardcoded SO_EXT if that is the same for modules */
+#ifdef _AIX
+		snprintf(nme, MAXPATHLEN, "%s%c%s_%s%s(%s_%s.0)",
+				mod_path, DIR_SEP, SO_PREFIX, s, SO_EXT, SO_PREFIX, s);
+#else
+		snprintf(nme, MAXPATHLEN, "%s%c%s_%s%s",
+				mod_path, DIR_SEP, SO_PREFIX, s, SO_EXT);
+#endif
+		handle = dlopen(nme, mode);
+		/* try .so */
+		if (handle == NULL && strcmp(SO_EXT, ".so") != 0) {
+			snprintf(nme, MAXPATHLEN, "%s%c%s_%s.so",
+					mod_path, DIR_SEP, SO_PREFIX, s);
+			handle = dlopen(nme, mode);
+		}
+#ifdef __APPLE__
+		/* try .bundle */
+		if (handle == NULL && strcmp(SO_EXT, ".bundle") != 0) {
+			snprintf(nme, MAXPATHLEN, "%s%c%s_%s.bundle",
+					mod_path, DIR_SEP, SO_PREFIX, s);
+			handle = dlopen(nme, mode);
+		}
+#endif
+		if (handle != NULL) {
+			if (p != NULL)
+				*p = PATH_SEP;
+			break;
+		}
+
+		if (p == NULL)
+			break;
+		*p = PATH_SEP;
+		mod_path = p + 1;
+	}
+
 	if (handle == NULL) {
 		errmsg = dlerror();
 		if (!errmsg) 
-			errmsg = "(no error from dlerror())";
-		GDKfree(fullname);
-		throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR " '%s' from within file '%s'", errmsg, filename);
+			errmsg = "could not locate or open library";
+		if (flag)
+			throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR " '%s' from within file '%s'", errmsg, filename);
 	}
 
 	mal_set_lock(mal_contextLock, "loadModule");
@@ -257,7 +301,7 @@ Use the search path provided in the configuration file
 		showException(MAL,"loadModule", "internal error, too many modules loaded");
 	} else {
 		filesLoaded[lastfile].filename = GDKstrdup(filename);
-		filesLoaded[lastfile].fullname = fullname;
+		filesLoaded[lastfile].fullname = GDKstrdup(nme);
 		filesLoaded[lastfile].handle = handle;
 		lastfile ++;
 	}
@@ -460,25 +504,5 @@ MSP_locate_sqlscript(const char *filename, bit recurse)
 {
 	/* no directory semantics (yet) */
 	return locate_file(filename, SQL_EXT, recurse);
-}
-
-static char *
-MSP_locate_file(const char *filename)
-{
-	char *lib_name = GDKmalloc(strlen(filename) + strlen(SO_PREFIX) + 1);
-	char *fullname;
-
-	strcpy(lib_name, SO_PREFIX);
-	strcpy(lib_name + strlen(SO_PREFIX), filename);
-
-	fullname = locate_file(lib_name, SO_EXT, 0);
-#ifdef _AIX
-	fullname = GDKrealloc(fullname, strlen(fullname) + strlen(lib_name) + 5);
-	strcat(fullname, "(");
-	strcat(fullname, lib_name);
-	strcat(fullname, ".0)");
-#endif
-	GDKfree(lib_name);
-	return fullname;
 }
 @}
