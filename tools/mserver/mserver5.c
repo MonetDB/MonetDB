@@ -224,7 +224,7 @@ get_mserver_bin_path(void)
 	if (sysctl(mib, 4, _mserver_bin_path, &cb, NULL, 0) == 0)
 		return _mserver_bin_path;
 #elif defined(HAVE_GETEXECNAME)  /* Solaris */
-	char execn = getexecname();
+	char *execn = getexecname();
 	/* copy, such that the caller can actually modify this string */
 	snprintf(_mserver_bin_path, sizeof(_mserver_bin_path), "%s", execn);
 #else  /* try Linux approach */
