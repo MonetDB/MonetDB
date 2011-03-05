@@ -141,6 +141,7 @@ int malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 	tpe = getTypeIndex(getModuleId(pci), (int)strlen(getModuleId(pci)), TYPE_any);
 	if (tpe < 0 || tpe >= GDKatomcnt)
 		return 0;
+	assert(pci->fcn != NULL);
 	switch (name[0]) {
 	case 'd':
 		if (idcmp("del", name) == 0 && pci->argc == 1) {
