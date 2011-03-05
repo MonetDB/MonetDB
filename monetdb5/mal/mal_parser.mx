@@ -1330,6 +1330,8 @@ This scheme is intended for just-in-time compilation.
 		setModuleScope(curInstr, 
 			findModule(cntxt->nspace, putName(modnme,strlen(modnme))) );
 		curInstr->fcn = getAddress(cntxt->srcFile, modnme, nme,TRUE);
+		if (curInstr->fcn == NULL)
+			return (MalBlkPtr) parseError(cntxt, "<address> not found\n");
 		curBlk->binding = nme;
 		if( cntxt->nspace->isAtomModule) 
 			malAtomProperty(curBlk, curInstr);

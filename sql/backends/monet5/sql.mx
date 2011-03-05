@@ -725,7 +725,6 @@ comment "cast @1 to a second_interval and check for overflow";
 @:mal_interval(int)@
 @:mal_interval(wrd)@
 @:mal_interval(lng)@
-@:mal_interval(daytime)@
 
 command calc.rowid(v:any_1, schema:str, table:str) :oid
 address sql_rowid
@@ -4799,6 +4798,13 @@ second_interval_@1( lng *res, @1 *s, int *d, int *sk ){
 @:c_interval(wrd)@
 @:c_interval(lng)@
 
+@mal
+command calc.second_interval( v:daytime, ek:int, sk:int ) :lng
+address second_interval_daytime
+comment "cast daytime to a second_interval and check for overflow";
+@h
+sql5_export str second_interval_daytime( lng *res, daytime *s, int *ek, int *sk );
+@c
 str
 second_interval_daytime( lng *res, daytime *s, int *d, int *sk )
 {
