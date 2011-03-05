@@ -89,7 +89,6 @@ we update its context descriptor to denote an SQL scenario.
 #include "optimizer.h"
 #include "opt_statistics.h"
 #include "opt_prelude.h"
-#include "replication.h"
 #include <unistd.h>
 
 static int SQLinitialized = 0;
@@ -208,10 +207,6 @@ SQLprelude(void)
 		return(tmp);
 	ms->name = "msql";
 	tmp = SABAOTHmarchScenario(&res, &ms->name);
-	/* if we are a slave, then inform the master to forward
-	   any pending updates. */
-	if (tmp == MAL_SUCCEED && GDKgetenv("replication_slave"))
-		return SLAVEsyncDefault(&res);
 	return tmp;
 }
 

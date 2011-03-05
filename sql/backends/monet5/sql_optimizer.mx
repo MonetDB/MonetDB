@@ -164,7 +164,6 @@ factory structures.
 #include "sql_scenario.h"
 #include "sql_gencode.h"
 #include "bpm/bpm_storage.h"
-#include "replication.h"
 #include "opt_pipes.h"
 
 #define TOSMALL 10
@@ -539,15 +538,6 @@ SQLvalidatePipeline(void){
 		mal_unset_lock(sql_contextLock,"SQL optimizer");
 		throw(SQL,"optimizer"," 'garbageCollector' should be used as the last one\n");
 	}
-@-
-For replicated databases we need to ensure that the corresponding optimizer
-is enabled.
-@c
-	if ( MASTERroleEnabled() && replication == FALSE){
-		mal_unset_lock(sql_contextLock,"SQL optimizer");
-		throw(SQL,"optimizer"," 'replication' should be part of the pipeline\n");
-	}
-
 	mal_unset_lock(sql_contextLock,"SQL optimizer");
 	return MAL_SUCCEED;
 }
