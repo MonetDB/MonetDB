@@ -66,7 +66,6 @@ For the time being we assume that all commands are statically linked.
 mal_export MALfcn getAddress(str filename, str modnme, str fcnname,int silent);
 mal_export char *MSP_locate_script(const char *mod_name);
 mal_export char *MSP_locate_sqlscript(const char *mod_name, bit recurse);
-mal_export char *MSP_locate_file(const char *mod_name);
 mal_export str loadLibrary(str modulename, int flag);
 mal_export void unloadLibraries(void);
 mal_export void initLibraries(void);
@@ -122,6 +121,7 @@ static FileRecord filesLoaded[MAXMODULES];
 static int maxfiles = MAXMODULES;
 static int lastfile = 0;
 
+static char *MSP_locate_file(const char *filename);
 @-
 Search for occurrence of the function in the library identified by the filename.
 @c
@@ -462,7 +462,7 @@ MSP_locate_sqlscript(const char *filename, bit recurse)
 	return locate_file(filename, SQL_EXT, recurse);
 }
 
-char *
+static char *
 MSP_locate_file(const char *filename)
 {
 	char *lib_name = GDKmalloc(strlen(filename) + strlen(SO_PREFIX) + 1);
