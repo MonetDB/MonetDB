@@ -188,7 +188,9 @@ and are terminated by a null to speedup comparison
 inline int
 idcmp(str n, str m)
 {
-	if (* n == * m)
+	assert(n != NULL);
+	assert(m != NULL);
+	if (*n == *m)
 		return strcmp(n, m);
 	return -1;
 }
