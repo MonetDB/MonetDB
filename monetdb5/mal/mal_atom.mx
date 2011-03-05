@@ -99,21 +99,21 @@ as ordinary mal operators.
 A few fields are set only once, at creation time.
 They should be implemented with parameter-less functions.
 @= setItem
-if( idcmp(@1,name) || pci->argc != 1)
+if (idcmp(@1, name) || pci->argc != 1)
 	return 0;
-else{
-	BATatoms[tpe].@2= (* (@4 (*)(void)) pci->fcn)();
+else {
+	BATatoms[tpe].@2 = (*(@4 (*)(void))pci->fcn)();
 	setAtomName(pci);
 	return 1;
 }
 @-
 
 @= setItemInt
-if( idcmp(@1,name) || pci->argc != 1)
+if (idcmp(@1, name) || pci->argc != 1)
 	return 0;
-	BATatoms[tpe].@2= (*pci->fcn)();
-	setAtomName(pci);
-	return 1;
+BATatoms[tpe].@2 = (*pci->fcn)();
+setAtomName(pci);
+return 1;
 @c
 #include "monetdb_config.h"
 #include "mal_atom.h"
@@ -124,141 +124,143 @@ if( idcmp(@1,name) || pci->argc != 1)
 #define MAXPATHLEN 1024
 #endif
 
-void setAtomName(InstrPtr pci){
+void setAtomName(InstrPtr pci)
+{
 	char buf[MAXPATHLEN];
-	snprintf(buf,MAXPATHLEN,"#%s", getFunctionId(pci));
-	setFunctionId(pci, putName(buf,strlen(buf)));
+	snprintf(buf, MAXPATHLEN, "#%s", getFunctionId(pci));
+	setFunctionId(pci, putName(buf, strlen(buf)));
 }
 
-int malAtomProperty(MalBlkPtr mb, InstrPtr pci){
+int malAtomProperty(MalBlkPtr mb, InstrPtr pci)
+{
 	str name;
 	int tpe;
-	(void) mb; /* fool compilers */
+	(void)mb;  /* fool compilers */
 	assert(pci != 0);
 	name = getFunctionId(pci);
-	tpe = getTypeIndex(getModuleId(pci), (int) strlen(getModuleId(pci)), TYPE_any);
-	if( tpe<0 || tpe>= GDKatomcnt)
+	tpe = getTypeIndex(getModuleId(pci), (int)strlen(getModuleId(pci)), TYPE_any);
+	if (tpe < 0 || tpe >= GDKatomcnt)
 		return 0;
-	switch(name[0]){
-	case 'd': 
-		if( idcmp("del",name)==0 && pci->argc==1){
-			BATatoms[tpe].atomDel= (void (*)(Heap *, var_t *)) pci->fcn;
+	switch (name[0]) {
+	case 'd':
+		if (idcmp("del", name) == 0 && pci->argc == 1) {
+			BATatoms[tpe].atomDel = (void (*)(Heap *, var_t *))pci->fcn;
 			setAtomName(pci);
 			return 1;
 		}
 		break;
-	case 'c': 
-		if( idcmp("cmp",name)==0 && pci->argc==1){
-			BATatoms[tpe].atomCmp= (int (*)(ptr, ptr)) pci->fcn;
+	case 'c':
+		if (idcmp("cmp", name) == 0 && pci->argc == 1) {
+			BATatoms[tpe].atomCmp = (int (*)(ptr, ptr))pci->fcn;
 			setAtomName(pci);
 			return 1;
-		} 
-		if( idcmp("convert",name)==0 && pci->argc==1){
-			BATatoms[tpe].atomConvert= (void (*)(ptr, int)) pci->fcn;
+		}
+		if (idcmp("convert", name) == 0 && pci->argc == 1) {
+			BATatoms[tpe].atomConvert = (void (*)(ptr, int))pci->fcn;
 			setAtomName(pci);
 			return 1;
-		} 
+		}
 		break;
-	case 'f': 
-		if( idcmp("fromstr",name)==0 && pci->argc==1){
-			BATatoms[tpe].atomFromStr= (int (*)(str, int *, ptr *)) pci->fcn;
+	case 'f':
+		if (idcmp("fromstr", name) == 0 && pci->argc == 1) {
+			BATatoms[tpe].atomFromStr = (int (*)(str, int *, ptr *))pci->fcn;
 			setAtomName(pci);
 			return 1;
-		} 
-		if( idcmp("fix",name)==0 && pci->argc==1){
-			BATatoms[tpe].atomFix= (int (*)(ptr)) pci->fcn;
+		}
+		if (idcmp("fix", name) == 0 && pci->argc == 1) {
+			BATatoms[tpe].atomFix = (int (*)(ptr))pci->fcn;
 			setAtomName(pci);
 			return 1;
-		} 
+		}
 		break;
 	case 'h':
-		if( idcmp("heap",name)==0 && pci->argc==1){
+		if (idcmp("heap", name) == 0 && pci->argc == 1) {
 			/* heap function makes an atom varsized */
 			BATatoms[tpe].size = sizeof(var_t);
-			assert_shift_width(ATOMelmshift(BATatoms[tpe].size),BATatoms[tpe].size);
+			assert_shift_width(ATOMelmshift(BATatoms[tpe].size), BATatoms[tpe].size);
 			BATatoms[tpe].varsized = 1;
 			BATatoms[tpe].align = sizeof(var_t);
-			BATatoms[tpe].atomHeap= (void (*)(Heap *, size_t)) pci->fcn;
+			BATatoms[tpe].atomHeap = (void (*)(Heap *, size_t))pci->fcn;
 			setAtomName(pci);
 			return 1;
-		} 
-		if( idcmp("heapconvert",name)==0 && pci->argc==1){
-			BATatoms[tpe].atomHeapConvert= (void (*)(Heap *, int)) pci->fcn;
+		}
+		if (idcmp("heapconvert", name) == 0 && pci->argc == 1) {
+			BATatoms[tpe].atomHeapConvert = (void (*)(Heap *, int))pci->fcn;
 			setAtomName(pci);
 			return 1;
-		} 
-		if( idcmp("hash",name)==0 && pci->argc==1){
-			BATatoms[tpe].atomHash= (BUN (*)(ptr)) pci->fcn;
+		}
+		if (idcmp("hash", name) == 0 && pci->argc == 1) {
+			BATatoms[tpe].atomHash = (BUN (*)(ptr))pci->fcn;
 			setAtomName(pci);
 			return 1;
-		} 
-		if( idcmp("heapcheck",name)==0 && pci->argc==1){
-			BATatoms[tpe].atomHeapCheck= (int (*)(Heap *, HeapRepair *)) pci->fcn;
+		}
+		if (idcmp("heapcheck", name) == 0 && pci->argc == 1) {
+			BATatoms[tpe].atomHeapCheck = (int (*)(Heap *, HeapRepair *))pci->fcn;
 			setAtomName(pci);
 			return 1;
-		} 
+		}
 		break;
-	case 'l': 
-		if( idcmp("length",name)==0 && pci->argc==1){
-			BATatoms[tpe].atomLen= (int (*)(ptr)) pci->fcn;
+	case 'l':
+		if (idcmp("length", name) == 0 && pci->argc == 1) {
+			BATatoms[tpe].atomLen = (int (*)(ptr))pci->fcn;
 			setAtomName(pci);
 			return 1;
-		} 
+		}
 		break;
 	case 'n':
-		if( idcmp("null",name)==0 && pci->argc==1){
-                        ptr atmnull = ((ptr (*)(void)) pci->fcn) ();
-			
-			BATatoms[tpe].atomNull= atmnull;
+		if (idcmp("null", name) == 0 && pci->argc == 1) {
+			ptr atmnull = ((ptr (*)(void))pci->fcn)();
+
+			BATatoms[tpe].atomNull = atmnull;
 			setAtomName(pci);
 			return 1;
 		}
-		if( idcmp("nequal",name)==0 && pci->argc==1){
-			BATatoms[tpe].atomCmp= (int (*)(ptr, ptr)) pci->fcn;
+		if (idcmp("nequal", name) == 0 && pci->argc == 1) {
+			BATatoms[tpe].atomCmp = (int (*)(ptr, ptr))pci->fcn;
 			setAtomName(pci);
 			return 1;
 		}
-		break; 
-	case 'p': 
-		if( idcmp("put",name)==0 && pci->argc==1){
-			BATatoms[tpe].atomPut= (var_t (*)(Heap *, var_t *, ptr)) pci->fcn;
+		break;
+	case 'p':
+		if (idcmp("put", name) == 0 && pci->argc == 1) {
+			BATatoms[tpe].atomPut = (var_t (*)(Heap *, var_t *, ptr))pci->fcn;
 			setAtomName(pci);
 			return 1;
-		} 
+		}
 		break;
-	case 's': 
-		@:setItem("storage",storage,TYPE_int,long)@; 
+	case 's':
+		@ : setItem("storage", storage, TYPE_int, long) @;
 		break;
-	case 't': 
-		if( idcmp("tostr",name)==0 && pci->argc==1){
-			BATatoms[tpe].atomToStr= (int (*)(str *, int *, ptr)) pci->fcn;
+	case 't':
+		if (idcmp("tostr", name) == 0 && pci->argc == 1) {
+			BATatoms[tpe].atomToStr = (int (*)(str *, int *, ptr))pci->fcn;
 			setAtomName(pci);
 			return 1;
-		} 
+		}
 		break;
-	case 'u': 
-		if( idcmp("unfix",name)==0 && pci->argc==1){
-			BATatoms[tpe].atomUnfix= (int (*)(ptr)) pci->fcn;
+	case 'u':
+		if (idcmp("unfix", name) == 0 && pci->argc == 1) {
+			BATatoms[tpe].atomUnfix = (int (*)(ptr))pci->fcn;
 			setAtomName(pci);
 			return 1;
-		} 
+		}
 		break;
-	case 'v': 
-		@:setItem("varsized",varsized,TYPE_int,long)@  
+	case 'v':
+		@ : setItem("varsized", varsized, TYPE_int, long) @
 		break;
-	case 'r': 
-		if( idcmp("read",name)==0 && pci->argc==1){
-			BATatoms[tpe].atomRead= (void *(*)(void *, stream *, size_t)) pci->fcn;
+	case 'r':
+		if (idcmp("read", name) == 0 && pci->argc == 1) {
+			BATatoms[tpe].atomRead = (void *(*)(void *, stream *, size_t))pci->fcn;
 			setAtomName(pci);
 			return 1;
-		} 
+		}
 		break;
-	case 'w': 
-		if( idcmp("write",name)==0 && pci->argc==1){
-			BATatoms[tpe].atomWrite= (int (*)(void *, stream *, size_t)) pci->fcn;
+	case 'w':
+		if (idcmp("write", name) == 0 && pci->argc == 1) {
+			BATatoms[tpe].atomWrite = (int (*)(void *, stream *, size_t))pci->fcn;
 			setAtomName(pci);
 			return 1;
-		} 
+		}
 		break;
 	}
 	return 0;
@@ -271,32 +273,33 @@ The most tedisous work is to check the signature types of the functions
 acceptable for the kernel.
 @c
 
-void malAtomDefinition(str name, int tpe){
+void malAtomDefinition(str name, int tpe)
+{
 	int i;
 
-	if(strlen(name) >= IDLENGTH){
-		showException(SYNTAX,"atomDefinition", "Atom name '%s' too long", name);
+	if (strlen(name) >= IDLENGTH) {
+		showException(SYNTAX, "atomDefinition", "Atom name '%s' too long", name);
 		return;
 	}
-	if( ATOMindex(name)>=0){
-		showException(TYPE,"atomDefinition", "Redefinition of atom '%s'", name);
+	if (ATOMindex(name) >= 0) {
+		showException(TYPE, "atomDefinition", "Redefinition of atom '%s'", name);
 		return;
 	}
-	if( tpe<0 || tpe >=GDKatomcnt){
-		showException(TYPE,"atomDefinition", "Undefined atom inheritance '%s'", name);
+	if (tpe < 0 || tpe >= GDKatomcnt) {
+		showException(TYPE, "atomDefinition", "Undefined atom inheritance '%s'", name);
 		return;
 	}
-	
-	ATOMproperty(name,"",  (int (*)()) 0, 0);
-	if( strlen(name) >= sizeof(BATatoms[0].name))
-		return ;
-	i= ATOMindex(name);
+
+	ATOMproperty(name, "", (int (*)()) 0, 0);
+	if (strlen(name) >= sizeof(BATatoms[0].name))
+		return;
+	i = ATOMindex(name);
 	/* overload atom ? */
-	if (tpe) { 
+	if (tpe) {
 		BATatoms[i] = BATatoms[tpe];
 		strncpy(BATatoms[i].name, name, sizeof(BATatoms[i].name));
-		BATatoms[i].storage= BATatoms[tpe].storage;
-	} else { /* cannot overload void atoms */ 
+		BATatoms[i].storage = BATatoms[tpe].storage;
+	} else { /* cannot overload void atoms */
 		BATatoms[i].storage = i;
 	}
 }
@@ -308,15 +311,15 @@ int malAtomFixed(int size, int align, char *name)
 {
 	int i = 0;
 
-	ATOMproperty(name,"",  (int (*)()) 0, 0);
-	if( strlen(name) >= sizeof(BATatoms[0].name))
+	ATOMproperty(name, "", (int (*)()) 0, 0);
+	if (strlen(name) >= sizeof(BATatoms[0].name))
 		return -1;
-	i= ATOMindex(name);
+	i = ATOMindex(name);
 	BATatoms[i] = BATatoms[TYPE_chr];
 	strncpy(BATatoms[i].name, name, sizeof(BATatoms[i].name));
-	BATatoms[i].storage= i;
+	BATatoms[i].storage = i;
 	BATatoms[i].size = size;
-	assert_shift_width(ATOMelmshift(BATatoms[i].size),BATatoms[i].size);
+	assert_shift_width(ATOMelmshift(BATatoms[i].size), BATatoms[i].size);
 	BATatoms[i].align = align;
 	BATatoms[i].linear = FALSE;
 	return i;
@@ -325,46 +328,48 @@ int malAtomSize(int size, int align, char *name)
 {
 	int i = 0;
 
-	i= ATOMindex(name);
-	BATatoms[i].storage= i;
+	i = ATOMindex(name);
+	BATatoms[i].storage = i;
 	BATatoms[i].size = size;
-	assert_shift_width(ATOMelmshift(BATatoms[i].size),BATatoms[i].size);
+	assert_shift_width(ATOMelmshift(BATatoms[i].size), BATatoms[i].size);
 	BATatoms[i].align = align;
 	return i;
 }
-int malAtomArray(int tpe, int size){
+int malAtomArray(int tpe, int size)
+{
 	int i;
 	char name[IDLENGTH];
 	str nme;
 
 	nme = getTypeName(tpe);
-	snprintf(name,IDLENGTH,"%s_", nme);
-	i= (int) strlen(name);
-	snprintf(name+i,IDLENGTH-i,"%d", size);
+	snprintf(name, IDLENGTH, "%s_", nme);
+	i = (int)strlen(name);
+	snprintf(name + i, IDLENGTH - i, "%d", size);
 	GDKfree(nme);
-	if(strlen(name) >= IDLENGTH){
-		showException(SYNTAX,"atomArray", "Atom name '%s' too long", name);
+	if (strlen(name) >= IDLENGTH) {
+		showException(SYNTAX, "atomArray", "Atom name '%s' too long", name);
 		return -1;  /* ERROR! */
 	}
-	ATOMproperty(name,"",  (int (*)()) 0, 0);
-	if( strlen(name) >= sizeof(BATatoms[0].name))
+	ATOMproperty(name, "", (int (*)()) 0, 0);
+	if (strlen(name) >= sizeof(BATatoms[0].name))
 		return -1;
-	i= ATOMindex(name);
+	i = ATOMindex(name);
 	BATatoms[i] = BATatoms[tpe];
 	strncpy(BATatoms[i].name, name, sizeof(BATatoms[i].name));
-	BATatoms[i].storage= tpe;
+	BATatoms[i].storage = tpe;
 	BATatoms[i].size *= size;
-	assert_shift_width(ATOMelmshift(BATatoms[i].size),BATatoms[i].size);
+	assert_shift_width(ATOMelmshift(BATatoms[i].size), BATatoms[i].size);
 	BATatoms[i].linear = FALSE;
 	return i;
 }
 
-void showAtoms(stream *fd){
+void showAtoms(stream *fd)
+{
 	int i;
-	for(i=0;BATatoms[i].name[0] && i<TYPE_any; i++){
-		mnstr_printf(fd,"%s", BATatoms[i].name);
-		if( BATatoms[i+1].name[0]) mnstr_printf(fd,",");
+	for (i = 0; BATatoms[i].name[0] && i < TYPE_any; i++) {
+		mnstr_printf(fd, "%s", BATatoms[i].name);
+		if (BATatoms[i + 1].name[0]) mnstr_printf(fd, ",");
 	}
-	mnstr_printf(fd,"\n");
+	mnstr_printf(fd, "\n");
 }
 @}
