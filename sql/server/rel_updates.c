@@ -458,21 +458,6 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 }
 
 static int
-find_update_column(list *exps, char *name)
-{
-	node *n;
-	int nr = 0;
-
-	for (n = exps->h; n; n = n->next, nr++) {
-		sql_exp *ce = n->data;
-
-		if (strcmp(ce->name, name) == 0) 
-			return nr;
-	}
-	return -1;
-}
-
-static int
 is_idx_updated(sql_idx * i, list *exps)
 {
 	int update = 0;
