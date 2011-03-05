@@ -1,2 +1,6 @@
-HAVE_ODBC?odbcsample1
-HAVE_ODBC?testgetinfo
+# disabled as currently not available;
+# cf., clients/odbc/samples/Makefile.ag
+# and  http://dev.monetdb.org/hg/MonetDB/rev/168f15887717
+#
+#HAVE_ODBC?odbcsample1
+#HAVE_ODBC?testgetinfo
