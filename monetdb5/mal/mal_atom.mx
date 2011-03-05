@@ -229,7 +229,7 @@ int malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 		}
 		break;
 	case 's':
-		@ : setItem("storage", storage, TYPE_int, long) @;
+		@:setItem("storage", storage, TYPE_int, long)@;
 		break;
 	case 't':
 		if (idcmp("tostr", name) == 0 && pci->argc == 1) {
@@ -246,7 +246,7 @@ int malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 		}
 		break;
 	case 'v':
-		@ : setItem("varsized", varsized, TYPE_int, long) @
+		@:setItem("varsized", varsized, TYPE_int, long)@
 		break;
 	case 'r':
 		if (idcmp("read", name) == 0 && pci->argc == 1) {
