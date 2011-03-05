@@ -12,5 +12,5 @@ def client(args):
     sys.stderr.write(err)
 
 sys.stderr.write('#~BeginVariableOutput~#\n')
-client(['-t', '-s', 'io.print(123);'])
+client(['-s', 'io.print(123);'])
 sys.stderr.write('#~EndVariableOutput~#\n')
