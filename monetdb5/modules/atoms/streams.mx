@@ -163,7 +163,7 @@ str mnstr_open_@1wrap(Stream *S, str *filename)
 		if (s)
 			mnstr_destroy(s);
 		throw(IO, "streams.open", "could not open file '%s': %s",
-				filename, strerror(errnr));
+				*filename, strerror(errnr));
 	} else {
 		*(stream**)S = s;
 	}
