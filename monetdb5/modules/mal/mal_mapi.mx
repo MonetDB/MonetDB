@@ -706,7 +706,10 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 	maxusers = (maxusers ? maxusers : SERVERMAXUSERS);
 
 	if (port <= 0 && usockfile == NULL)
-		throw(IO, "mal_mapi.listen", OPERATION_FAILED ": no port or socket file specified");
+		throw(ILLARG, "mal_mapi.listen", OPERATION_FAILED ": no port or socket file specified");
+	
+	if (port > 65535)
+		throw(ILLARG, "mal_mapi.listen", OPERATION_FAILED ": port number should be between 1 and 65535");
 
 	if (port > 0) {
 		sock = socket(AF_INET, SOCK_STREAM, 0);
