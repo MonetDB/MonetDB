@@ -1372,6 +1372,10 @@ MalBlkPtr parseFunction(Client cntxt, int kind){
 		nme = idCopy(cntxt,i);
 		curInstr->fcn = getAddress(cntxt->srcFile, cntxt->nspace->name, nme,TRUE);
 		GDKfree(nme);
+		if (curInstr->fcn == NULL) {
+			parseError(cntxt, "<address> not found\n");
+			return 0;
+		}
 		skipSpace(cntxt);
 	}
 	/* block is terminated at the END statement */
