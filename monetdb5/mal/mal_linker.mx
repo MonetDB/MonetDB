@@ -265,19 +265,19 @@ loadLibrary(str filename, int flag)
 		snprintf(nme, MAXPATHLEN, "%s%c%s_%s%s",
 				mod_path, DIR_SEP, SO_PREFIX, s, SO_EXT);
 #endif
-		handle = dlopen(nme, mode);
+		handle = mdlopen(nme, mode);
 		/* try .so */
 		if (handle == NULL && strcmp(SO_EXT, ".so") != 0) {
 			snprintf(nme, MAXPATHLEN, "%s%c%s_%s.so",
 					mod_path, DIR_SEP, SO_PREFIX, s);
-			handle = dlopen(nme, mode);
+			handle = mdlopen(nme, mode);
 		}
 #ifdef __APPLE__
 		/* try .bundle */
 		if (handle == NULL && strcmp(SO_EXT, ".bundle") != 0) {
 			snprintf(nme, MAXPATHLEN, "%s%c%s_%s.bundle",
 					mod_path, DIR_SEP, SO_PREFIX, s);
-			handle = dlopen(nme, mode);
+			handle = mdlopen(nme, mode);
 		}
 #endif
 		if (handle != NULL) {
