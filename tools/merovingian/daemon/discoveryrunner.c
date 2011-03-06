@@ -345,7 +345,7 @@ discoveryRunner(void *d)
 					/* craft ANNC message for this db */
 					if (strcmp(val, "yes") == 0)
 						val = "";
-					snprintf(buf, 512, "ANNC %s%s%s mapi:monetdb://%s:%hu/ %d",
+					snprintf(buf, 512, "ANNC %s%s%s mapi:monetdb://%s:%hd/ %d",
 							stats->dbname, val[0] == '\0' ? "" : "/", val,
 							_mero_hostname, getConfNum(_mero_props, "port"),
 							discttl->ival + 60);
@@ -360,7 +360,7 @@ discoveryRunner(void *d)
 			controlport = (unsigned int)getConfNum(_mero_props, "controlport");
 			if (controlport != 0) {
 				/* announce control port */
-				snprintf(buf, 512, "ANNC * %s:%hu %d",
+				snprintf(buf, 512, "ANNC * %s:%hd %d",
 						_mero_hostname, controlport,
 						discttl->ival + 60);
 				broadcast(buf);
@@ -514,7 +514,7 @@ discoveryRunner(void *d)
 		readProps(ckv, stats->path);
 		kv = findConfKey(ckv, "shared");
 		if (kv->val != NULL && strcmp(kv->val, "no") != 0) {
-			snprintf(buf, 512, "LEAV %s mapi:monetdb://%s:%hu/",
+			snprintf(buf, 512, "LEAV %s mapi:monetdb://%s:%hd/",
 					stats->dbname, _mero_hostname,
 					(unsigned int)getConfNum(_mero_props, "port"));
 			broadcast(buf);
@@ -530,7 +530,7 @@ discoveryRunner(void *d)
 	/* deregister this merovingian, so it doesn't remain a stale entry */
 	controlport = (unsigned int)getConfNum(_mero_props, "controlport");
 	if (controlport != 0) {
-		snprintf(buf, 512, "LEAV * %s:%hu",
+		snprintf(buf, 512, "LEAV * %s:%hd",
 				_mero_hostname, controlport);
 		broadcast(buf);
 	}

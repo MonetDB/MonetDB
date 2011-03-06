@@ -70,7 +70,7 @@ peeringServerThread(void *d)
 		/* tunnel mode */
 		masquerade = strdup(data + 7);
 		snprintf(data, sizeof(data),
-				"tunnel %s:%hu\n", _mero_hostname,
+				"tunnel %s:%hd\n", _mero_hostname,
 				(unsigned int)getConfNum(_mero_props, "port"));
 		if (write(s, data, strlen(data)) == -1) {
 			close(s);
@@ -79,7 +79,7 @@ peeringServerThread(void *d)
 	} else if (len > 0 && strcmp(data, "proxy") == 0) {
 		/* proxy mode */
 		snprintf(data, sizeof(data),
-				"proxy %s:%hu\n", _mero_hostname,
+				"proxy %s:%hd\n", _mero_hostname,
 				(unsigned int)getConfNum(_mero_props, "port"));
 		if (write(s, data, strlen(data)) == -1) {
 			close(s);

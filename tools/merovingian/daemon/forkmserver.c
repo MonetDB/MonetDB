@@ -243,7 +243,7 @@ forkMserver(char *database, sabdb** stats, int force)
 		snprintf(dbfarm, 1024, "gdk_dbfarm=%s", sabdbfarm);
 		snprintf(dbname, 512, "--dbname=%s", database);
 		snprintf(vaultkey, 512, "monet_vault_key=%s/.vaultkey", (*stats)->path);
-		snprintf(muri, 512, "merovingian_uri=mapi:monetdb://%s:%hu/%s",
+		snprintf(muri, 512, "merovingian_uri=mapi:monetdb://%s:%hd/%s",
 				_mero_hostname, mport, database);
 		argv[c++] = _mero_mserver;
 		argv[c++] = "--set"; argv[c++] = dbfarm;
@@ -262,7 +262,7 @@ forkMserver(char *database, sabdb** stats, int force)
 			} else {
 				argv[c++] = "--set"; argv[c++] = "mapi_autosense=true";
 				/* for logic here, see comment below */
-				snprintf(port, 24, "mapi_port=%hu", mport + 1);
+				snprintf(port, 24, "mapi_port=%hd", mport + 1);
 				snprintf(usock, 512, "mapi_usock=");
 			}
 		} else {
@@ -272,7 +272,7 @@ forkMserver(char *database, sabdb** stats, int force)
 			 * but on another interface, (INADDR_ANY ... sigh) causing
 			 * endless redirects since 0.0.0.0 is not a valid address to
 			 * connect to, and hence the hostname is advertised instead */
-			snprintf(port, 24, "mapi_port=%hu", mport + 1);
+			snprintf(port, 24, "mapi_port=%hd", mport + 1);
 			snprintf(usock, 512, "mapi_usock=");
 		}
 		argv[c++] = "--set"; argv[c++] = port;
