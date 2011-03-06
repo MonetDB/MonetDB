@@ -2001,6 +2001,7 @@ are identified. In the post-execution phase they are removed.
 {
 	@:safeTarget(@1)@
 	/* improve performance with 20 ms/1M calls*/
+	assert(pci->fcn != NULL);
 	switch(pci->argc){
 	case 0 : ret = (str) (*pci->fcn)(); break;
 	case 1 : ret = (str) (*pci->fcn)(
