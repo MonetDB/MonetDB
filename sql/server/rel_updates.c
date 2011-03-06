@@ -483,7 +483,7 @@ static sql_rel *
 rel_update_hash_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 {
 	node *m;
-	sql_subtype *it, *wrd;
+	sql_subtype *it, *wrd = 0; /* is not set in first if below */
 	int bits = 1 + ((sizeof(wrd)*8)-1)/(list_length(i->columns)+1);
 	sql_exp *h = NULL;
 
@@ -570,7 +570,7 @@ rel_update_join_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 	sql_subtype *bt = sql_bind_localtype("bit");
 	sql_subfunc *or = sql_bind_func_result(sql->sa, sql->session->schema, "or", bt, bt, bt);
 
-	sql_rel *_nlls, *nnlls, *ups = updates->r;
+	sql_rel *_nlls = NULL, *nnlls, *ups = updates->r;
 	sql_exp *nll_exps = NULL, *e;
 	list *join_exps = new_exp_list(sql->sa);
 
