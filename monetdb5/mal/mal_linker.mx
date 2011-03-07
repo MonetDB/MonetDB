@@ -155,9 +155,10 @@ This deals with the case that files are linked together to reduce
 the loading time, while the signatures of the functions are still
 obtained from the source-file MAL script.
 @c
-	for(idx =0; idx < lastfile && filesLoaded[idx].handle; idx++){
+	for (idx =0; idx < lastfile; idx++)
+		if (filesLoaded[idx].handle) {
 			adr = (MALfcn) dlsym(filesLoaded[idx].handle, fcnname);
-			if( adr != NULL)  {
+			if (adr != NULL)  {
 				prev = idx;
 				return adr; /* found it */
 			}
@@ -204,8 +205,9 @@ isLoaded(str modulename)
 {
 	int idx;
 
-	for (idx = 0; filesLoaded[idx].filename && idx < lastfile; idx++)
-		if (strcmp(filesLoaded[idx].filename, modulename) == 0) {
+	for (idx = 0; idx < lastfile; idx++)
+		if (filesLoaded[idx].filename &&
+		    strcmp(filesLoaded[idx].filename, modulename) == 0) {
 			return 1;
 		}
 	return 0;
@@ -231,8 +233,9 @@ loadLibrary(str filename, int flag)
 	mode |= RTLD_MEMBER;
 #endif
 
-	for (idx = 0; filesLoaded[idx].filename && idx < lastfile; idx++)
-		if (strcmp(filesLoaded[idx].filename, filename) == 0)
+	for (idx = 0; idx < lastfile; idx++)
+		if (filesLoaded[idx].filename &&
+		    strcmp(filesLoaded[idx].filename, filename) == 0)
 			/* already loaded */
 			return MAL_SUCCEED;
 

@@ -192,7 +192,7 @@ AC_ARG_ENABLE(testing,
 
 AC_ARG_ENABLE(developer,
 	AS_HELP_STRING([--enable-developer],
-		[enable support for MonetDB development (default=auto)]),
+		[enable support for MonetDB development (default=yes for development sources)]),
 	enable_developer=$enableval,
 	enable_developer=$dft_develop)
 
@@ -451,7 +451,7 @@ AC_SUBST(LINUX_DIST)
 dnl --enable-strict
 AC_ARG_ENABLE(strict,
 	AS_HELP_STRING([--enable-strict],
-		[enable strict compiler flags (default=$dft_strict)]),
+		[enable strict compiler flags (default=yes for development sources)]),
 	enable_strict=$enableval,
 	enable_strict=$dft_strict)
 dnl  Set compiler switches.
@@ -889,7 +889,7 @@ fi
 dnl --enable-debug
 AC_ARG_ENABLE(debug,
 	AS_HELP_STRING([--enable-debug],
-		[enable full debugging (default=$dft_debug)]),
+		[enable full debugging (default=yes for development sources)]),
 	enable_debug=$enableval,
 	enable_debug=$dft_debug)
 
@@ -940,7 +940,7 @@ AC_SUBST(SUN_NOOPT_CFLAGS)
 dnl --enable-assert
 AC_ARG_ENABLE(assert,
 	AS_HELP_STRING([--enable-assert],
-		[enable assertions in the code (default=$dft_assert)]),
+		[enable assertions in the code (default=yes for development sources)]),
 	enable_assert=$enableval,
 	enable_assert=$dft_assert)
 
@@ -955,7 +955,7 @@ fi
 dnl --enable-optimize
 AC_ARG_ENABLE(optimize,
 	AS_HELP_STRING([--enable-optimize],
-		[enable extra optimization (default=$dft_optimi)]),
+		[enable extra optimization (default=no)]),
 	enable_optim=$enableval, enable_optim=$dft_optimi)
 
 AC_MSG_CHECKING([for --enable-optimize])
@@ -2956,6 +2956,15 @@ AC_SUBST(HWCOUNTERS_INCS)
 
 dnl     miscellany
 AC_DEFINE(MX_CXX_SUFFIX, "cc", [Suffix for C++ files])
+
+dnl check dependencies (might need more than just SQL)
+if test x"$enable_sql" = xyes && test x"$enable_monetdb5" != x"yes" ;
+then
+	AC_MGS_ERROR([sql needs monetdb5]);
+fi
+if test x"$enable_sql" = xauto && test x"$enable_monetdb5" = x"no" ;
+	enable_sql = no
+fi
 
 dnl     output
 AM_CONDITIONAL(HAVE_MONETDB5, test "x$enable_monetdb5" = xyes -o "x$enable_monetdb5" = xauto)
