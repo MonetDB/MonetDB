@@ -3210,6 +3210,15 @@ dnl Add a dummy define for HAVE_EXTRA_MK (that is used in am.py).
 dnl It has to be overwritten by any project that uses an extra.mk file.
 AM_CONDITIONAL(HAVE_EXTRA_MK, false)
 
+dnl check dependencies (might need more than just SQL)
+if test x"$enable_sql" = xyes && test x"$enable_monetdb5" != x"yes" ;
+then
+	AC_MGS_ERROR([sql needs monetdb5]);
+fi
+if test x"$enable_sql" = xauto && test x"$enable_monetdb5" = x"no" ;
+	enable_sql = no
+fi
+
 dnl     output
 AM_CONDITIONAL(HAVE_MONETDB4, test "x$enable_monetdb4" = xyes -o "x$enable_monetdb4" = xauto)
 AM_CONDITIONAL(HAVE_MONETDB5, test "x$enable_monetdb5" = xyes -o "x$enable_monetdb5" = xauto)
