@@ -511,7 +511,7 @@ main(int argc, char *argv[])
 		if (write(retfd, &s, 1) != 1 || close(retfd) != 0) { \
 			Mfprintf(stderr, "could not write to parent\n"); \
 		} \
-		exit(status); \
+		exit(s); \
 	}
 #else
 #define MERO_EXIT(status) \
