@@ -1738,7 +1738,7 @@ showCommands(void)
 	mnstr_printf(toConsole, "\\t      - toggle timer\n");
 	if (mode == SQL) {
 		mnstr_printf(toConsole, "\\D table- dumps the table, or the complete database if none given.\n");
-		mnstr_printf(toConsole, "\\d table- describe the table, or the complete database if none given.\n");
+		mnstr_printf(toConsole, "\\d[Stvsfn]+ [obj] - list database objects, or describe if obj given\n");
 		mnstr_printf(toConsole, "\\A      - enable auto commit\n");
 		mnstr_printf(toConsole, "\\a      - disable auto commit\n");
 	}
