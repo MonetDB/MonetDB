@@ -28,7 +28,7 @@ headers_moresql = {
 	DIR = libdir/monetdb5
 	SOURCES = \
 		cache.sql octopus.sql parts.sql \
-		replication.sql temporal.sql
+		temporal.sql
 }
 
 headers_rdf = {
