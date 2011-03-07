@@ -785,7 +785,8 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 
 	if (view) {
 		/* the table is actually a view */
-		mnstr_printf(toConsole, "%s\n", view);
+		mnstr_printf(toConsole, "CREATE VIEW \"%s\".\"%s\" AS %s\n",
+				schema, tname, view);
 		goto doreturn;
 	}
 
