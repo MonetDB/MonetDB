@@ -2958,11 +2958,10 @@ dnl     miscellany
 AC_DEFINE(MX_CXX_SUFFIX, "cc", [Suffix for C++ files])
 
 dnl check dependencies (might need more than just SQL)
-if test x"$enable_sql" = xyes && test x"$enable_monetdb5" != x"yes" ;
-then
-	AC_MGS_ERROR([sql needs monetdb5]);
+if test x"$enable_sql" = xyes && test x"$enable_monetdb5" != x"yes" ; then
+	AC_MSG_ERROR([sql needs monetdb5]);
 fi
-if test x"$enable_sql" = xauto && test x"$enable_monetdb5" = x"no" ;
+if test x"$enable_sql" = xauto && test x"$enable_monetdb5" = x"no" ; then
 	enable_sql = no
 fi
 
