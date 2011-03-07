@@ -599,7 +599,7 @@ main(int argc, char *argv[])
 	}
 
 	/* read the merovingian properties from the dbfarm */
-	readProps(ckv, dbfarm);
+	readProps(ckv, ".");
 	_mero_props = ckv;
 
 	kv = findConfKey(_mero_props, "pidfile");
@@ -612,7 +612,7 @@ main(int argc, char *argv[])
 		Mfprintf(stderr, "invalid forwarding mode: %s, defaulting to proxy\n",
 				kv->val);
 		setConfVal(kv, "proxy");
-		writeProps(_mero_props, dbfarm);
+		writeProps(_mero_props, ".");
 	}
 
 	kv = findConfKey(_mero_props, "passphrase");
@@ -624,7 +624,7 @@ main(int argc, char *argv[])
 			generateSalt(phrase, sizeof(phrase));
 			setConfVal(kv, phrase);
 		}
-		writeProps(_mero_props, dbfarm);
+		writeProps(_mero_props, ".");
 	}
 
 	kv = findConfKey(_mero_props, "port");
@@ -632,7 +632,7 @@ main(int argc, char *argv[])
 		Mfprintf(stderr, "invalid port number: %s, defaulting to %s\n",
 				kv->val, MERO_PORT);
 		setConfVal(kv, MERO_PORT);
-		writeProps(_mero_props, dbfarm);
+		writeProps(_mero_props, ".");
 	}
 	port = (unsigned short)kv->ival;
 	kv = findConfKey(_mero_props, "discoveryport");
@@ -640,7 +640,7 @@ main(int argc, char *argv[])
 		Mfprintf(stderr, "invalid discovery port number: %s, defaulting to %s\n",
 				kv->val, MERO_PORT);
 		setConfVal(kv, MERO_PORT);
-		writeProps(_mero_props, dbfarm);
+		writeProps(_mero_props, ".");
 	}
 	discoveryport = (unsigned int)kv->ival;
 	kv = findConfKey(_mero_props, "controlport");
@@ -648,7 +648,7 @@ main(int argc, char *argv[])
 		Mfprintf(stderr, "invalid control port number: %s, defaulting to %s\n",
 				kv->val, CONTROL_PORT);
 		setConfVal(kv, CONTROL_SOCK);
-		writeProps(_mero_props, dbfarm);
+		writeProps(_mero_props, ".");
 	}
 	controlport = (unsigned short)kv->ival;
 
@@ -824,7 +824,7 @@ main(int argc, char *argv[])
 			MERO_VERSION, MONETDB_RELEASE);
 	Mfprintf(stdout, "monitoring dbfarm %s\n", dbfarm);
 
-	msab_init(dbfarm, NULL);
+	msab_init(".", NULL);
 	unlink(control_usock);
 	unlink(mapi_usock);
 
