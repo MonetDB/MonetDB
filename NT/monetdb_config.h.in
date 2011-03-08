@@ -6,6 +6,7 @@
  * _MSC_VER = 1310: Visual Studio .NET 2003 (a.k.a. Visual Studio 7)
  * _MSC_VER = 1400: Visual Studio 8
  * _MSC_VER = 1500: Visual Studio 9.0
+ * _MSC_VER = 1600: Visual Studio 10.0
  */
 
 /* Prevent pollution through excessive inclusion of include files by
