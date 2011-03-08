@@ -303,7 +303,7 @@ stable version (1.0.0a).  Follow the instructions in the file
    nmake /f ms\ntdll.mak
    nmake /f ms\ntdll.mak install
    and::
-   perl Configure VC-WIN64 --prefix=C:\Libraries\openssl-1.0.0a.win64
+   perl Configure VC-WIN64A --prefix=C:\Libraries\openssl-1.0.0a.win64
    ms\do_win64a
    nmake /f ms\ntdll.mak
    nmake /f ms\ntdll.mak install
@@ -343,6 +343,11 @@ the correct locations for the iconv and zlib libraries::
   lib=C:\iconv-1.11.win64\lib;C:\zlib-1.2.5.win64\lib iconv=yes zlib=yes
  nmake /f Makefile.msvc
  nmake /f Makefile.msvc install
+
+.. Before the install, run the commands::
+   cd bin.msvc
+   mt -nologo -manifest libxml2.dll.manifest -outputresource:libxml2.dll;2
+   cd ..
 
 After this, you may want to move the file ``libxml2.dll`` from the
 ``lib`` folder to the ``bin`` folder.
@@ -421,6 +426,13 @@ Build using the commands::
 
  nmake -f Makefile.msvc NO_NLS=1 DLL=1 MFLAGS=-MD PREFIX=C:\iconv-1.11.win64
  nmake -f Makefile.msvc NO_NLS=1 DLL=1 MFLAGS=-MD PREFIX=C:\iconv-1.11.win64 install
+
+.. Before the install, run the commands::
+   cd lib
+   mt -nologo -manifest iconv.dll.manifest -outputresource:iconv.dll;2
+   cd ..\libcharset\lib
+   mt -nologo -manifest charset.dll.manifest -outputresource:charset.dll;2
+   cd ..\..
 
 Fix the ``ICONV`` definitions in ``buildtools\conf\winrules.msc`` so
 that they refer to the location where you installed the library and
@@ -530,6 +542,9 @@ After this, compile using ``nmake -f makefile.msc`` and copy the files
 ``bzlib.h``, ``libbz2.dll``, and ``libbz2.lib`` to a location where
 the MonetDB build process can find them,
 e.g. ``C:\bzip2-1.0.5.win32``.
+
+.. Before copying the files, run the command::
+   mt -nologo -manifest libbz2.dll.manifest -outputresource:libbz2.dll;2
 
 Fix the ``LIBBZ2`` definitions in ``buildtools\conf\winrules.msc`` so
 that they refer to the location where you installed the library and
