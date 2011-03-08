@@ -346,7 +346,7 @@ command_stop(confkeyval *ckv, int argc, char *argv[])
 
 	if (kill(daemon, SIGTERM) == -1) {
 		fprintf(stderr, "unable to shut down monetdbd[%d]: %s\n",
-				daemon, strerror(errno));
+				(int)daemon, strerror(errno));
 		return(1);
 	}
 
