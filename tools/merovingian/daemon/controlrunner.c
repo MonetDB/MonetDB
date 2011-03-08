@@ -50,7 +50,7 @@ leavedb(char *name)
 {
 	char buf[128];
 	snprintf(buf, sizeof(buf),
-			"LEAV %s mapi:monetdb://%s:%hd/",
+			"LEAV %s mapi:monetdb://%s:%u/",
 			name, _mero_hostname,
 			(unsigned int)getConfNum(_mero_props, "port"));
 	broadcast(buf);
@@ -79,7 +79,7 @@ anncdbS(sabdb *stats)
 	shared = getConfVal(props, "shared");
 	if (stats->locked != 1 && (shared == NULL || strcmp(shared, "no") != 0)) {
 		snprintf(buf, sizeof(buf),
-				"ANNC %s%s%s mapi:monetdb://%s:%hd/ %d",
+				"ANNC %s%s%s mapi:monetdb://%s:%u/ %d",
 				stats->dbname,
 				shared == NULL ? "" : "/",
 				shared == NULL ? "" : shared,
