@@ -175,7 +175,7 @@ rel_insert_join_idx(mvc *sql, sql_idx *i, sql_rel *inserts)
 	sql_subtype *bt = sql_bind_localtype("bit");
 	sql_subfunc *or = sql_bind_func_result(sql->sa, sql->session->schema, "or", bt, bt, bt);
 
-	sql_rel *_nlls, *nnlls, *ins = inserts->r;
+	sql_rel *_nlls = NULL, *nnlls, *ins = inserts->r;
 	sql_exp *nll_exps = NULL, *e;
 	list *join_exps = new_exp_list(sql->sa), *pexps;
 
