@@ -3447,6 +3447,11 @@ mapi_param_store(MapiHdl hdl)
 			continue;
 		}
 
+		if (k + (q - p) >= lim) {
+			lim += MAPIBLKSIZE;
+			REALLOC(hdl->query, lim);
+			assert(hdl->query);
+		}
 		strncpy(hdl->query + k, p, q - p);
 		k += q - p;
 		hdl->query[k] = 0;
@@ -3503,7 +3508,7 @@ mapi_param_store(MapiHdl hdl)
 				sprintf(hdl->query + k, "%.9g", *(float *) src);
 				break;
 			case MAPI_DOUBLE:
-				checkSpace(20);
+				checkSpace(30);
 				sprintf(hdl->query + k, "%.17g", *(double *) src);
 				break;
 			case MAPI_DATE:
