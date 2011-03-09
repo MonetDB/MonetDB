@@ -62,6 +62,14 @@ pattern catalog(type:int,sname:str,t:ptr,restart:lng):void
 address SQLcatalog
 comment "a catalog statement";
 
+pattern catalog(type:int,grantee:str,role:str):void
+address SQLcatalog
+comment "a grant/revoke role statement";
+
+pattern catalog(type:int,tname:str,grantee:str,privs:int,cname:str,grant:int,grantor:int):void
+address SQLcatalog
+comment "a grant/revoke privileges statement";
+
 pattern eval(cmd:str):void 
 address SQLstatement
 comment "Compile and execute a single sql statement";
@@ -1989,6 +1997,16 @@ drop_seq(mvc *sql, char *sname, char *name)
 }
 
 
+static char *
+SaveArgReference(MalStkPtr stk, InstrPtr pci, int arg)
+{
+	char *val = *(str*)getArgReference(stk, pci, arg);
+
+	if (val && strcmp(val, str_nil) == 0)
+		val = NULL;
+	return val;
+}
+
 str
 SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -2026,11 +2044,8 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = drop_seq( sql, sname, name);
 	} 	break;
 	case DDL_CREATE_SCHEMA: {
-		str name = *(str*) getArgReference(stk, pci, 3);
+		str name = SaveArgReference(stk, pci, 3);
 		int auth_id = sql->role_id;
-
-		if (name && strcmp(name, str_nil) == 0)
-			name = NULL;
 
 		if (name && (auth_id = sql_find_auth(sql, name)) < 0) {
 			msg = sql_message("CREATE SCHEMA: no such authorization '%s'", name);
@@ -2092,6 +2107,32 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		str name = *(str*) getArgReference(stk, pci, 3);
 
 		msg = drop_key( sql, sname, name, action);
+	} 	break;
+	case DDL_GRANT_ROLES: {
+		char *auth = SaveArgReference(stk, pci, 3);
+
+		msg = sql_grant_role( sql, sname /*grantee */, auth);
+	} 	break;
+	case DDL_REVOKE_ROLES: {
+		char *auth = SaveArgReference(stk, pci, 3);
+
+		msg = sql_revoke_role( sql, sname /*grantee */, auth);
+	} 	break;
+	case DDL_GRANT: {
+		char *grantee = *(str*)getArgReference(stk, pci, 3);
+		int privs = *(int*)getArgReference(stk, pci, 4);
+		char *cname = SaveArgReference(stk, pci, 5);
+		int grant = *(int*)getArgReference(stk, pci, 6);
+		int grantor = *(int*)getArgReference(stk, pci, 7);
+		msg = sql_grant_table_privs( sql, grantee, privs, sname, cname, grant, grantor);
+	} 	break;
+	case DDL_REVOKE: {
+		char *grantee = *(str*)getArgReference(stk, pci, 3);
+		int privs = *(int*)getArgReference(stk, pci, 4);
+		char *cname = SaveArgReference(stk, pci, 5);
+		int grant = *(int*)getArgReference(stk, pci, 6);
+		int grantor = *(int*)getArgReference(stk, pci, 7);
+		msg = sql_revoke_table_privs( sql, grantee, privs, sname, cname, grant, grantor);
 	} 	break;
 	default:
 		throw(SQL, "sql.catalog", "catalog unknown type");

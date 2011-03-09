@@ -67,6 +67,8 @@ rel_list(sql_allocator *sa, sql_rel *l, sql_rel *r)
 {
 	sql_rel *rel = rel_create(sa);
 
+	if (!l)
+		return r;
 	rel->l = l;
 	rel->r = r;
 	rel->op = op_ddl;
@@ -959,6 +961,7 @@ rel_create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
 		sql_error(sql, 02, "CREATE SCHEMA: name '%s' already in use", name);
 		return NULL;
 	} else {
+		sql_schema *os = sql->session->schema;
 		dnode *n;
 		sql_schema *ss = ZNEW(sql_schema);
 		sql_rel *ret;
@@ -971,10 +974,12 @@ rel_create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
 		ss->auth_id = auth_id;
 		ss->owner = sql->user_id;
 
+		sql->session->schema = ss;
 		n = schema_elements->h;
 		while (n) {
 			sql_rel *res = NULL;
 
+			/*
 			if (n->data.sym->token == SQL_CREATE_TABLE) {
 				dlist *l = n->data.sym->data.lval;
 				dlist *qname = l->h->next->data.lval;
@@ -991,6 +996,8 @@ rel_create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
 				assert(l->h->next->next->next->next->type == type_int);
 				res = rel_create_view(sql, ss, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.i_val, l->h->next->next->next->next->data.i_val);
 			}
+			*/
+			res = rel_semantic(sql, n->data.sym);
 			if (!res) {
 				rel_destroy(ret);
 				return NULL;
@@ -998,6 +1005,7 @@ rel_create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
 			ret = rel_list(sql->sa, ret, res);
 			n = n->next;
 		}
+		sql->session->schema = os;
 		return ret;
 	}
 }
@@ -1116,6 +1124,299 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 	}
 }
 
+static sql_rel *
+rel_role(sql_allocator *sa, char *grantee, char *auth, int type)
+{
+	sql_rel *rel = rel_create(sa);
+	list *exps = new_exp_list(sa);
+
+	assert(type == DDL_GRANT_ROLES || type == DDL_REVOKE_ROLES);
+	append(exps, exp_atom_clob(sa, grantee));
+	append(exps, exp_atom_clob(sa, auth));
+	rel->l = NULL;
+	rel->r = NULL;
+	rel->op = op_ddl;
+	rel->flag = type;
+	rel->exps = exps;
+	rel->card = 0;
+	rel->nrcols = 0;
+	return rel;
+}
+
+static sql_rel *
+rel_grant_roles(mvc *sql, sql_schema *schema, dlist *roles, dlist *grantees, int grant, int grantor)
+{
+	sql_rel *res = NULL;
+	/* grant roles to the grantees */
+	dnode *r, *g;
+
+	(void) schema;
+	(void) grant;
+	(void) grantor;		/* Stefan: unused!? */
+
+	for (r = roles->h; r; r = r->next) {
+		char *role = r->data.sval;
+
+		for (g = grantees->h; g; g = g->next) {
+			char *grantee = g->data.sval;
+
+			if ((res = rel_list(sql->sa, res, rel_role(sql->sa, grantee, role, DDL_GRANT_ROLES))) == NULL) {
+				rel_destroy(res);
+				return NULL;
+			}
+		}
+	}
+	return res;
+}
+
+static sql_rel *
+rel_revoke_roles(mvc *sql, sql_schema *schema, dlist *roles, dlist *grantees, int admin, int grantor)
+{
+	sql_rel *res = NULL;
+	/* revoke roles from the grantees */
+	dnode *r, *g;
+
+	(void) schema;
+	(void) admin;
+	(void) grantor;		/* Stefan: unused!? */
+
+	for (r = roles->h; r; r = r->next) {
+		char *role = r->data.sval;
+
+		for (g = grantees->h; g; g = g->next) {
+			char *grantee = g->data.sval;
+
+			if ((res = rel_list(sql->sa, res, rel_role(sql->sa, grantee, role, DDL_REVOKE_ROLES))) == NULL) {
+				rel_destroy(res);
+				return NULL;
+			}
+		}
+	}
+	return res;
+}
+
+static sql_rel *
+rel_priv(sql_allocator *sa, char *name, char *grantee, int privs, char *cname, int grant, int grantor, int type)
+{
+	sql_rel *rel = rel_create(sa);
+	list *exps = new_exp_list(sa);
+
+	assert(type == DDL_GRANT || type == DDL_REVOKE);
+	append(exps, exp_atom_clob(sa, name));
+	append(exps, exp_atom_clob(sa, grantee));
+	append(exps, exp_atom_int(sa, privs));
+	append(exps, cname?(void*)exp_atom_clob(sa, cname):(void*)cname);
+	append(exps, exp_atom_int(sa, grant));
+	append(exps, exp_atom_int(sa, grantor));
+	rel->l = NULL;
+	rel->r = NULL;
+	rel->op = op_ddl;
+	rel->flag = type;
+	rel->exps = exps;
+	rel->card = 0;
+	rel->nrcols = 0;
+	return rel;
+}
+
+static sql_rel *
+rel_grant_table(mvc *sql, sql_schema *cur, dlist *privs, char *tname, dlist *grantees, int grant, int grantor)
+{
+	sql_rel *res = NULL;
+	dnode *gn;
+	int all = PRIV_SELECT | PRIV_UPDATE | PRIV_INSERT | PRIV_DELETE;
+
+	(void)cur;
+	for (gn = grantees->h; gn; gn = gn->next) {
+		dnode *opn;
+		char *grantee = gn->data.sval;
+
+		if (!grantee)
+			grantee = "public";
+
+		if (!privs) {
+			if ((res = rel_list(sql->sa, res, rel_priv(sql->sa, tname, grantee, all, NULL, grant, grantor, DDL_GRANT))) == NULL) {
+				rel_destroy(res);
+				return NULL;
+			}
+			continue;
+		}
+		for (opn = privs->h; opn; opn = opn->next) {
+			symbol *op = opn->data.sym;
+			int priv = PRIV_SELECT;
+	
+			switch (op->token) {
+			case SQL_SELECT:
+				priv = PRIV_SELECT;
+				break;
+			case SQL_UPDATE:
+				priv = PRIV_UPDATE;
+				break;
+			case SQL_INSERT:
+				priv = PRIV_INSERT;
+				break;
+			case SQL_DELETE:
+				priv = PRIV_DELETE;
+				break;
+			case SQL_EXECUTE:
+			default:
+				return sql_error(sql, 02, "Cannot GRANT EXECUTE on table name %s", tname);
+			}
+
+			if ((op->token == SQL_SELECT || op->token == SQL_UPDATE) && op->data.lval) {
+				dnode *cn;
+
+				for (cn = op->data.lval->h; cn; cn = cn->next) {
+					char *cname = cn->data.sval;
+					if ((res = rel_list(sql->sa, res, rel_priv(sql->sa, tname, grantee, priv, cname, grant, grantor, DDL_GRANT))) == NULL) {
+						rel_destroy(res);
+						return NULL;
+					}
+				}
+			} else if ((res = rel_list(sql->sa, res, rel_priv(sql->sa, tname, grantee, priv, NULL, grant, grantor, DDL_GRANT))) == NULL) {
+				rel_destroy(res);
+				return NULL;
+			}
+		}
+	}
+	return res;
+}
+
+static sql_rel *
+rel_grant_func(mvc *sql, sql_schema *cur, dlist *privs, char *fname, dlist *grantees, int grant, int grantor)
+{
+/* todo */
+	(void) sql;
+	(void) cur;
+	(void) privs;
+	(void) fname;
+	(void) grantees;
+	(void) grant;
+	(void) grantor;
+	return sql_error(sql, 02, "GRANT Table/Function name %s doesn't exist", fname);
+}
+
+
+static sql_rel *
+rel_grant_privs(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int grant, int grantor)
+{
+	dlist *obj_privs = privs->h->data.lval;
+	symbol *obj = privs->h->next->data.sym;
+	int token = obj->token;
+
+	if (token == SQL_NAME)
+		if (mvc_bind_table(sql, cur, obj->data.sval) != NULL)
+			token = SQL_TABLE;
+
+	switch (token) {
+	case SQL_TABLE:
+		return rel_grant_table(sql, cur, obj_privs, obj->data.sval, grantees, grant, grantor);
+	case SQL_NAME:
+		return rel_grant_func(sql, cur, obj_privs, obj->data.sval, grantees, grant, grantor);
+	default:
+		return sql_error(sql, 02, "Grant: unknown token %d", token);
+	}
+}
+
+static sql_rel *
+rel_revoke_table(mvc *sql, sql_schema *cur, dlist *privs, char *tname, dlist *grantees, int grant, int grantor)
+{
+	dnode *gn;
+	sql_rel *res = NULL;
+	int all = PRIV_SELECT | PRIV_UPDATE | PRIV_INSERT | PRIV_DELETE;
+
+	(void)cur;
+	for (gn = grantees->h; gn; gn = gn->next) {
+		dnode *opn;
+		char *grantee = gn->data.sval;
+
+		if (!grantee)
+			grantee = "public";
+
+		if (!privs) {
+			if ((res = rel_list(sql->sa, res, rel_priv(sql->sa, tname, grantee, all, NULL, grant, grantor, DDL_REVOKE))) == NULL) {
+				rel_destroy(res);
+				return NULL;
+			}
+			continue;
+		}
+		for (opn = privs->h; opn; opn = opn->next) {
+			symbol *op = opn->data.sym;
+			int priv = PRIV_SELECT;
+
+			switch (op->token) {
+			case SQL_SELECT:
+				priv = PRIV_SELECT;
+				break;
+			case SQL_UPDATE:
+				priv = PRIV_UPDATE;
+				break;
+
+			case SQL_INSERT:
+				priv = PRIV_INSERT;
+				break;
+			case SQL_DELETE:
+				priv = PRIV_DELETE;
+				break;
+
+			case SQL_EXECUTE:
+			default:
+				return sql_error(sql, 02, "Cannot GRANT EXECUTE on table name %s", tname);
+			}
+
+			if ((op->token == SQL_SELECT || op->token == SQL_UPDATE) && op->data.lval) {
+				dnode *cn;
+
+				for (cn = op->data.lval->h; cn; cn = cn->next) {
+					char *cname = cn->data.sval;
+					if ((res = rel_list(sql->sa, res, rel_priv(sql->sa, tname, grantee, priv, cname, grant, grantor, DDL_REVOKE))) == NULL) {
+						rel_destroy(res);
+						return NULL;
+					}
+				}
+			} else if ((res = rel_list(sql->sa, res, rel_priv(sql->sa, tname, grantee, priv, NULL, grant, grantor, DDL_REVOKE))) == NULL) {
+				rel_destroy(res);
+				return NULL;
+			}
+		}
+	}
+	return res;
+}
+
+static sql_rel *
+rel_revoke_func(mvc *sql, sql_schema *cur, dlist *privs, char *fname, dlist *grantees, int grant, int grantor)
+{
+/* todo */
+	(void) sql;
+	(void) cur;
+	(void) privs;
+	(void) fname;
+	(void) grantees;
+	(void) grant;
+	(void) grantor;
+	return NULL;
+}
+
+static sql_rel *
+rel_revoke_privs(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int grant, int grantor)
+{
+	dlist *obj_privs = privs->h->data.lval;
+	symbol *obj = privs->h->next->data.sym;
+	int token = obj->token;
+
+	if (token == SQL_NAME)
+		if (mvc_bind_table(sql, cur, obj->data.sval) != NULL)
+			token = SQL_TABLE;
+
+	switch (token) {
+	case SQL_TABLE:
+		return rel_revoke_table(sql, cur, obj_privs, obj->data.sval, grantees, grant, grantor);
+	case SQL_NAME:
+		return rel_revoke_func(sql, cur, obj_privs, obj->data.sval, grantees, grant, grantor);
+	default:
+		return sql_error(sql, 02, "Grant: unknown token %d", token);
+	}
+}
+
 sql_rel *
 rel_schemas(mvc *sql, symbol *s)
 {
@@ -1191,6 +1492,59 @@ rel_schemas(mvc *sql, symbol *s)
 			l->h->data.lval,	/* table name */
 		  	l->h->next->data.sym);/* table element */
 	} 	break;
+	case SQL_GRANT_ROLES:
+	{
+		dlist *l = s->data.lval;
+
+		assert(l->h->next->next->type == type_int);
+		assert(l->h->next->next->next->type == type_int);
+		ret = rel_grant_roles(sql, cur_schema(sql), l->h->data.lval,	/* authids */
+				  l->h->next->data.lval,	/* grantees */
+				  l->h->next->next->data.i_val,	/* admin? */
+				  l->h->next->next->next->data.i_val ? sql->user_id : sql->role_id);
+		/* grantor ? */
+		sql->type = Q_SCHEMA;
+	} break;
+	case SQL_REVOKE_ROLES:
+	{
+		dlist *l = s->data.lval;
+
+		assert(l->h->next->next->type == type_int);
+		assert(l->h->next->next->next->type == type_int);
+		ret = rel_revoke_roles(sql, cur_schema(sql), l->h->data.lval,	/* authids */
+				  l->h->next->data.lval,	/* grantees */
+				  l->h->next->next->data.i_val,	/* admin? */
+				  l->h->next->next->next->data.i_val ? sql->user_id : sql->role_id);
+		/* grantor ? */
+		sql->type = Q_SCHEMA;
+	} break;
+	case SQL_GRANT:
+	{
+		dlist *l = s->data.lval;
+
+		assert(l->h->next->next->type == type_int);
+		assert(l->h->next->next->next->type == type_int);
+		ret = rel_grant_privs(sql, cur_schema(sql), l->h->data.lval,	/* privileges */
+				  l->h->next->data.lval,	/* grantees */
+				  l->h->next->next->data.i_val,	/* grant ? */
+				  l->h->next->next->next->data.i_val ? sql->user_id : sql->role_id);
+		/* grantor ? */
+		sql->type = Q_SCHEMA;
+	} break;
+	case SQL_REVOKE:
+	{
+		dlist *l = s->data.lval;
+
+		assert(l->h->next->next->type == type_int);
+		assert(l->h->next->next->next->type == type_int);
+		ret = rel_revoke_privs(sql, cur_schema(sql), l->h->data.lval,	/* privileges */
+				   l->h->next->data.lval,	/* grantees */
+				   l->h->next->next->data.i_val,	/* grant ? */
+				   l->h->next->next->next->data.i_val ? sql->user_id : sql->role_id);
+		/* grantor ? */
+		sql->type = Q_SCHEMA;
+	} break;
+
 	default:
 		return sql_error(sql, 01, "schema statement unknown symbol(" PTRFMT ")->token = %s", PTRFMTCAST s, token2string(s->token));
 	}

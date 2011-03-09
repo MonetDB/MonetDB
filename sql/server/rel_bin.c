@@ -3367,17 +3367,21 @@ static stmt *
 rel2bin_seq(mvc *sql, sql_rel *rel, list *refs) 
 {
 	node *en = rel->exps->h;
-	stmt *restart, *sname, *seq, *l = NULL;
+	stmt *restart, *sname, *seq, *sl = NULL;
+	list *l = list_new(sql->sa);
 
 	if (rel->l)  /* first construct the sub relation */
-		l = subrel_bin(sql, rel->l, refs);
+		sl = subrel_bin(sql, rel->l, refs);
 
-	restart = exp_bin(sql, en->data, l, NULL, NULL, NULL);
-	sname = exp_bin(sql, en->next->data, l, NULL, NULL, NULL);
-	seq = exp_bin(sql, en->next->next->data, l, NULL, NULL, NULL);
+	restart = exp_bin(sql, en->data, sl, NULL, NULL, NULL);
+	sname = exp_bin(sql, en->next->data, sl, NULL, NULL, NULL);
+	seq = exp_bin(sql, en->next->next->data, sl, NULL, NULL, NULL);
 
 	(void)refs;
-	return stmt_catalog(sql->sa, rel->flag, sname, seq, restart);
+	append(l, sname);
+	append(l, seq);
+	append(l, restart);
+	return stmt_catalog(sql->sa, rel->flag, stmt_list(sql->sa, l));
 }
 
 static stmt *
@@ -3387,9 +3391,13 @@ rel2bin_drop_seq(mvc *sql, sql_rel *rel, list *refs)
 	stmt *action = exp_bin(sql, en->data, NULL, NULL, NULL, NULL);
 	stmt *sname = exp_bin(sql, en->next->data, NULL, NULL, NULL, NULL);
 	stmt *name = exp_bin(sql, en->next->next->data, NULL, NULL, NULL, NULL);
+	list *l = list_new(sql->sa);
 
 	(void)refs;
-	return stmt_catalog(sql->sa, rel->flag, sname, name, action);
+	append(l, sname);
+	append(l, name);
+	append(l, action);
+	return stmt_catalog(sql->sa, rel->flag, stmt_list(sql->sa, l));
 }
 
 static stmt *
@@ -3411,13 +3419,20 @@ rel2bin_catalog(mvc *sql, sql_rel *rel, list *refs)
 	node *en = rel->exps->h;
 	stmt *action = exp_bin(sql, en->data, NULL, NULL, NULL, NULL);
 	stmt *sname = NULL, *name = NULL;
+	list *l = list_new(sql->sa);
 
 	(void)refs;
 	en = en->next;
 	sname = exp_bin(sql, en->data, NULL, NULL, NULL, NULL);
-	if (en->next) 
+	if (en->next) {
 		name = exp_bin(sql, en->next->data, NULL, NULL, NULL, NULL);
-	return stmt_catalog(sql->sa, rel->flag, sname, name, action);
+	} else {
+		name = stmt_atom_string_nil(sql->sa);
+	}
+	append(l, sname);
+	append(l, name);
+	append(l, action);
+	return stmt_catalog(sql->sa, rel->flag, stmt_list(sql->sa, l));
 }
 
 static stmt *
@@ -3426,6 +3441,7 @@ rel2bin_catalog_table(mvc *sql, sql_rel *rel, list *refs)
 	node *en = rel->exps->h;
 	stmt *action = exp_bin(sql, en->data, NULL, NULL, NULL, NULL);
 	stmt *table = NULL, *sname;
+	list *l = list_new(sql->sa);
 
 	(void)refs;
 	en = en->next;
@@ -3433,7 +3449,32 @@ rel2bin_catalog_table(mvc *sql, sql_rel *rel, list *refs)
 	en = en->next;
 	if (en) 
 		table = exp_bin(sql, en->data, NULL, NULL, NULL, NULL);
-	return stmt_catalog(sql->sa, rel->flag, sname, table, action);
+	append(l, sname);
+	append(l, table);
+	append(l, action);
+	return stmt_catalog(sql->sa, rel->flag, stmt_list(sql->sa, l));
+}
+
+static stmt *
+rel2bin_privs(mvc *sql, sql_rel *rel, list *refs) 
+{
+	node *en;
+	list *l = list_new(sql->sa);
+
+	(void)refs;
+	for (en = rel->exps->h; en; en = en->next) {
+		stmt *es = NULL;
+
+		if (en->data) {
+			es = exp_bin(sql, en->data, NULL, NULL, NULL, NULL);
+			if (!es) 
+				return NULL;
+		} else {
+			es = stmt_atom_string_nil(sql->sa);
+		}
+		append(l,es);
+	}
+	return stmt_catalog(sql->sa, rel->flag, stmt_list(sql->sa, l));
 }
 
 static stmt *
@@ -3460,6 +3501,9 @@ rel2bin_ddl(mvc *sql, sql_rel *rel, list *refs)
 		sql->type = Q_SCHEMA;
 	} else if (rel->flag <= DDL_ALTER_TABLE) {
 		s = rel2bin_catalog_table(sql, rel, refs);
+		sql->type = Q_SCHEMA;
+	} else if (rel->flag <= DDL_REVOKE) {
+		s = rel2bin_privs(sql, rel, refs);
 		sql->type = Q_SCHEMA;
 	}
 	return s;

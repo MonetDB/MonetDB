@@ -10,10 +10,10 @@ stderr of test 'grant_public.SF-1114580` in directory 'test/BugDay_2005-11-09_2.
 # 19:58:17 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=46797  < grant_public.SF-1114580.sql
 # 19:58:17 >  
 
-MAPI  = monetdb@alf:33806
+MAPI  = monetdb@alf:35318
 QUERY = GRANT UPDATE(dumdum) ON test1114580 TO PUBLIC;
-ERROR = !GRANT: table test1114580 has no column dumdum
-MAPI  = monetdb@alf:33806
+ERROR = !SQLException:sql.catalog:GRANT: table test1114580 has no column dumdum
+MAPI  = monetdb@alf:35318
 QUERY = REVOKE SELECT ON test1114580 TO PUBLIC;
 ERROR = !syntax error, unexpected TO, expecting FROM in: "revoke select on test1114580 to"
 

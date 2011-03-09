@@ -10,9 +10,9 @@ stderr of test 'schema` in directory 'test/Users` itself:
 # 14:00:57 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35107  < schema.sql
 # 14:00:57 >  
 
-MAPI  = monetdb@localhost:37763
+MAPI  = monetdb@alf:35318
 QUERY = GRANT my_owner to my_user; -- error wrong non existing role
-ERROR = !GRANT: cannot grant ROLE 'my_user' to ROLE 'my_owner'
+ERROR = !SQLException:sql.catalog:GRANT: cannot grant ROLE 'my_user' to ROLE 'my_owner'
 
 # 14:00:57 >  
 # 14:00:57 >  Done.
