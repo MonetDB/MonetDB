@@ -977,27 +977,7 @@ rel_create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
 		sql->session->schema = ss;
 		n = schema_elements->h;
 		while (n) {
-			sql_rel *res = NULL;
-
-			/*
-			if (n->data.sym->token == SQL_CREATE_TABLE) {
-				dlist *l = n->data.sym->data.lval;
-				dlist *qname = l->h->next->data.lval;
-				char *sname = qname_schema(qname);
-				char *name = qname_table(qname);
-
-				assert(l->h->type == type_int);
-				assert(l->h->next->next->next->type == type_int);
-				res = rel_create_table(sql, ss, l->h->data.i_val, sname, name, l->h->next->next->data.sym, l->h->next->next->next->data.i_val);
-			} else if (n->data.sym->token == SQL_CREATE_VIEW) {
-				dlist *l = n->data.sym->data.lval;
-
-				assert(l->h->next->next->next->type == type_int);
-				assert(l->h->next->next->next->next->type == type_int);
-				res = rel_create_view(sql, ss, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.i_val, l->h->next->next->next->next->data.i_val);
-			}
-			*/
-			res = rel_semantic(sql, n->data.sym);
+			sql_rel *res = rel_semantic(sql, n->data.sym);
 			if (!res) {
 				rel_destroy(ret);
 				return NULL;
