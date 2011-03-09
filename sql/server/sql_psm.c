@@ -616,6 +616,8 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 					sql_func *f = mvc_create_func(sql, sql->session->schema, fname, l, restype, is_aggr, fmod, fnme, q, is_func);
 					if (!backend_resolve_function(sql, f)) 
 						return sql_error(sql, 01, "CREATE %s: external name %s.%s not bound", F, fmod, fnme);
+				} else if (!sf) {
+					return sql_error(sql, 01, "CREATE %s: external name %s.%s not bound (%s,%s)", F, fmod, fnme, s->base.name, fname );
 				} else {
 					sql_func *f = sf->func;
 					f->mod = _strdup(fmod);

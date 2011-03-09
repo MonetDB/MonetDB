@@ -2360,6 +2360,7 @@ static void
 backend_create_func(backend *be, sql_func *f)
 {
 	mvc *m = be->mvc;
+	sql_schema *schema = m->session->schema;
 	MalBlkPtr curBlk = 0;
 	InstrPtr curInstr = 0;
 	Client c = be->client;
@@ -2373,7 +2374,9 @@ backend_create_func(backend *be, sql_func *f)
 		return;
 	f->sql++;
  	sa = sa_create();
+	m->session->schema = f->s;
 	s = sql_parse(m, sa, f->query, m_instantiate);
+	m->session->schema = schema;
 	if (s && !f->sql) /* native function */
 		return;
 

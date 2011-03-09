@@ -938,7 +938,7 @@ command_startstop(int argc, char *argv[], startstop mode)
 		 * databases.  In this mode we should omit starting already
 		 * started databases, so we need to check first. */
 
-		if (doall != 1 && (
+		if (doall == 1 && (
 				((mode == STOP || mode == KILL) && stats->state != SABdbRunning)
 				|| (mode == START && stats->state == SABdbRunning)))
 		{
@@ -959,7 +959,6 @@ command_startstop(int argc, char *argv[], startstop mode)
 		prev = stats;
 		stats = stats->next;
 	}
-	
 
 	if (orig != NULL) {
 		simple_argv_cmd(argv[0], orig, type, NULL, action);

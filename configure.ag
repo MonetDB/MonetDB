@@ -2124,11 +2124,9 @@ AC_SUBST(UUID_LIBS)
 
 dnl OpenSSL library
 dnl required for MonetDB5 (and SQL), optional otherwise
-PKG_CHECK_EXISTS([openssl >= 0.9.8f], [have_openssl=yes], [have_openssl=no])
-if test "x$have_openssl" = xyes; then
-	PKG_CHECK_MODULES([openssl], [openssl >= 0.9.8f])
-	AC_DEFINE(HAVE_OPENSSL, 1, [Define if you have the OpenSSL library])
-fi
+PKG_CHECK_MODULES([openssl], [openssl >= 0.9.8f],
+	[have_openssl=yes; AC_DEFINE(HAVE_OPENSSL, 1, [Define if you have the OpenSSL library])],
+	[have_openssl=no])
 case "$enable_monetdb5-$have_openssl" in
 yes-no)
 	AC_MSG_ERROR([OpenSSL library not found but required for MonetDB5])
@@ -2141,9 +2139,9 @@ esac
 dnl PCRE library
 dnl required for MonetDB5 (and SQL), optional otherwise
 req_pcre_ver='4.5'
-PKG_CHECK_EXISTS([libpcre >= $req_pcre_ver], [have_pcre=yes], [have_pcre=no])
+PKG_CHECK_MODULES([pcre], [libpcre >= $req_pcre_ver],
+	[have_pcre=yes], [have_pcre=no])
 if test "x$have_pcre" = xyes; then
-	PKG_CHECK_MODULES([pcre], [libpcre >= $req_pcre_ver])
 	AC_PATH_PROG(PCRETEST,pcretest)
 	if test "x$PCRETEST" = x; then
 		AC_MSG_ERROR([could not find pcretest])
@@ -2168,7 +2166,7 @@ auto-no)
 esac
 
 
-PKG_CHECK_EXISTS([libxml-2.0], [have_libxml2="yes"], [have_libxml2="no"])
+PKG_CHECK_MODULES([libxml2], [libxml-2.0], [have_libxml2="yes"], [have_libxml2="no"])
 case "$enable_monetdb5-$have_libxml2" in
 yes-no)
 	AC_MSG_ERROR([libxml2 library not found but required for MonetDB5])
@@ -2176,34 +2174,27 @@ yes-no)
 auto-no)
 	enable_monetdb5=no
 	;;
-*-yes)
-	PKG_CHECK_MODULES([libxml2], [libxml-2.0])
-	;;
 esac
 
 
 have_raptor=no
 if test "x$enable_rdf" != xno; then
 	req_raptor_ver='1.4.16'
-	PKG_CHECK_EXISTS([raptor >= $req_raptor_ver], [have_raptor="yes"], [have_raptor="no"])
 	# if RDF is explicitly enabled, raptor library is required
-	if test x"$have_raptor" = x"yes" -o "x$enable_rdf" = xyes; then
-		PKG_CHECK_MODULES([raptor], [raptor >= $req_raptor_ver])
-		AC_DEFINE(HAVE_RAPTOR, 1, [Define if you have the raptor library])
-	fi
+	PKG_CHECK_MODULES([raptor], [raptor >= $req_raptor_ver],
+		[have_raptor="yes"],
+		[have_raptor="no"; if test "x$enable_rdf" = xyes; then AC_MSG_ERROR([raptor library required for RDF support]); fi])
 fi
 AM_CONDITIONAL(HAVE_RAPTOR, test x"$have_raptor" != xno)
 
-PKG_CHECK_EXISTS([libcurl], [have_curl="yes"], [have_curl="no"])
+PKG_CHECK_MODULES([curl], [libcurl], [have_curl="yes"], [have_curl="no"])
 if test x"$have_curl" = x"yes" ; then
-	PKG_CHECK_MODULES([curl], [libcurl])
 	AC_DEFINE(HAVE_CURL, 1, [Define if you have the cURL library])
 	AC_SUBST(PKG_CURL, libcurl)
 fi
 
-PKG_CHECK_EXISTS([zlib], [have_zlib="yes"], [have_zlib="no"])
+PKG_CHECK_MODULES([zlib], [zlib], [have_zlib="yes"], [have_zlib="no"])
 if test x"$have_zlib" = x"yes" ; then
-	PKG_CHECK_MODULES([zlib], [zlib])
 	AC_DEFINE(HAVE_LIBZ, 1, [Define if you have the z library])
 	AC_SUBST(PKG_ZLIB, zlib)
 fi
@@ -2216,10 +2207,8 @@ AC_ARG_WITH(valgrind,
 	have_valgrind=$withval)
 if test "x$have_valgrind" != xno; then
 	PKG_CHECK_MODULES([valgrind], [valgrind],
-		[have_valgrind=yes], [if test "x$have_valgrind" = xyes; then AC_MSG_ERROR([no valgrind support found]); else have_valgrind=no; fi])
-	if test "x$have_valgrind" = xyes; then
-		AC_DEFINE(HAVE_VALGRIND, 1, [Define if you have valgrind installed])
-	fi
+		[AC_DEFINE(HAVE_VALGRIND, 1, [Define if you have valgrind installed])],
+		[if test "x$have_valgrind" = xyes; then AC_MSG_ERROR([no valgrind support found]); fi])
 fi
 
 # check for sphinxclient
@@ -2500,11 +2489,9 @@ fi
 AC_SUBST(PCL_CFLAGS)
 AC_SUBST(PCL_LIBS)
 
-PKG_CHECK_EXISTS([cfitsio], [have_cfitsio=yes], [have_cfitsio=no])
-if test "x$have_cfitsio" = xyes; then
-	PKG_CHECK_MODULES([cfitsio], [cfitsio])
-	AC_DEFINE(HAVE_CFITSIO, 1, [Define if you have the cfitsio library])
-fi
+PKG_CHECK_MODULES([cfitsio], [cfitsio],
+	[have_cfitsio=yes; AC_DEFINE(HAVE_CFITSIO, 1, [Define if you have the cfitsio library])],
+	[have_cfitsio=no])
 AM_CONDITIONAL(HAVE_CFITSIO, test x"$have_cfitsio" != xno)
 
 LIBGC_CFLAGS=
