@@ -495,8 +495,7 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int status = 0, cnum = 0, fid, hdu, hdutype, i, j, anynull=0, mtype;
 	int *tpcode = NULL;
 	long *rep=NULL, *wid=NULL, rows;
-	char keywrd[80], **cname, **v = NULL, nm[FLEN_VALUE];
-	BAT *tmp = NULL;
+	char keywrd[80], **cname, nm[FLEN_VALUE];
 	ptr nilptr;
 
 
@@ -578,46 +577,38 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* data load */
 	fits_get_num_rows(fptr, &rows, &status);
 	for ( j = 1; j <= cnum; j++ ){
+		BAT *tmp = NULL;
 		mtype = fits2mtype(tpcode[j-1]);
 		nilptr = ATOMnil(mtype);
 		col = mvc_bind_column(m, tbl, cname[j-1]);
 
+            	tmp = BATnew(TYPE_void, mtype, rows);
+            	BATseqbase(tmp, 0);
+   		if ( rows > (long) REMAP_PAGE_MAXSIZE )
+			BATmmap(tmp, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP, 0);
 		if (mtype != TYPE_str ){
-            tmp = BATnew(TYPE_void, mtype, rows);
-            BATseqbase(tmp, 0);
-   			if ( rows > (long) REMAP_PAGE_MAXSIZE )
-				BATmmap(tmp, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP, 0);
-            fits_read_col(fptr, tpcode[j-1], j, 1, 1, rows, nilptr, (void *)    BUNtloc(bat_iterator(tmp),BUNfirst(tmp)), &anynull, &status );
- 		}
-		else {
-			v = (char **) GDKzalloc(sizeof(char *) * rows);
-			for(i = 0; i < rows; i++)
-				v[i] = GDKzalloc(wid[j-1]);
-			fits_read_col(fptr, tpcode[j-1], j, 1, 1, rows, nilptr, (void *)v, &anynull, &status );
+            		fits_read_col(fptr, tpcode[j-1], j, 1, 1, rows, nilptr, (void *)    BUNtloc(bat_iterator(tmp),BUNfirst(tmp)), &anynull, &status );
+            		BATsetcount(tmp, rows);
+            		tmp->tsorted = 0;
+ 		} else {
+			char *v = GDKzalloc(100 /* TODO needs proper size*/);
+			for(i = 0; i < rows; i++) {
+				fits_read_col(fptr, tpcode[j-1], j, 1+i, 1, 1, nilptr, &v, &anynull, &status );
+				BUNappend(tmp, v, TRUE);
+			}
+			GDKfree(v);
 		}
 
 		if ( status ){
 			char buf[FLEN_ERRMSG+1];
 			fits_read_errmsg(buf);
 			msg = createException(MAL, "fits.loadtable", "Cannot load column %s of %s table: %s.\n", cname[j-1], tname, buf);
-			goto finish;
+			break;
 		}
-
-		if (mtype != TYPE_str ){
-            BATsetcount(tmp, rows);
-            tmp->tsorted = 0;
-            store_funcs.append_col(m->session->tr, col, tmp, TYPE_bat);
-		}
-		else {
-			for (i = 0; i<rows; i++)
-				store_funcs.append_col(m->session->tr, col, v[i], mtype);
-			for(i = 0; i < rows; i++)
-				GDKfree(v[i]);
-			GDKfree(v);
-		}
+            	store_funcs.append_col(m->session->tr, col, tmp, TYPE_bat);
+		BBPunfix(tmp->batCacheid);
 	}
 
- finish:
 	GDKfree(tpcode);
 	GDKfree(rep);
 	GDKfree(wid);
