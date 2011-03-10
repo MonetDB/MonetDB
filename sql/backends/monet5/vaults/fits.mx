@@ -496,7 +496,7 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *tpcode = NULL;
 	long *rep=NULL, *wid=NULL, rows;
 	char keywrd[80], **cname, **v = NULL, nm[FLEN_VALUE];
-	BAT *b = NULL;
+	BAT *tmp = NULL;
 	ptr nilptr;
 
 
@@ -583,11 +583,12 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		col = mvc_bind_column(m, tbl, cname[j-1]);
 
 		if (mtype != TYPE_str ){
-			b = store_funcs.bind_col(m->session->tr, col, RDONLY);
-			BATextend(b, rows);
-			BATmadvise(b, BUF_SEQUENTIAL,BUF_SEQUENTIAL,0,0);
-			fits_read_col(fptr, tpcode[j-1], j, 1, 1, rows, nilptr, (void *) BUNtloc(bat_iterator(b),BUNfirst(b)), &anynull, &status );
-		}
+            tmp = BATnew(TYPE_void, mtype, rows);
+            BATseqbase(tmp, 0);
+   			if ( rows > (long) REMAP_PAGE_MAXSIZE )
+				BATmmap(tmp, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP, 0);
+            fits_read_col(fptr, tpcode[j-1], j, 1, 1, rows, nilptr, (void *)    BUNtloc(bat_iterator(tmp),BUNfirst(tmp)), &anynull, &status );
+ 		}
 		else {
 			v = (char **) GDKzalloc(sizeof(char *) * rows);
 			for(i = 0; i < rows; i++)
@@ -603,9 +604,9 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 
 		if (mtype != TYPE_str ){
-			BATsetcount(b, rows);
-			b->tsorted = 0;
-			BBPunfix(b->batCacheid);
+            BATsetcount(tmp, rows);
+            tmp->tsorted = 0;
+            store_funcs.append_col(m->session->tr, col, tmp, TYPE_bat);
 		}
 		else {
 			for (i = 0; i<rows; i++)
