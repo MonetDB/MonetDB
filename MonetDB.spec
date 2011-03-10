@@ -28,7 +28,7 @@ Source: http://dev.monetdb.org/downloads/sources/Oct2010/%{name}-%{version}.tar.
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
-BuildRequires: cfitsio-devel
+# BuildRequires: cfitsio-devel
 BuildRequires: flex
 BuildRequires: geos-devel >= 2.2.0
 BuildRequires: libcurl-devel
@@ -492,7 +492,7 @@ fi
 %exclude %{_libdir}/monetdb5/sql.mal
 %exclude %{_libdir}/monetdb5/sql_bpm.mal
 %{_libdir}/monetdb5/*.mal
-%{_libdir}/monetdb5/autoload/*_fits.mal
+# %{_libdir}/monetdb5/autoload/*_fits.mal
 %{_libdir}/monetdb5/autoload/*_vault.mal
 %exclude %{_libdir}/monetdb5/lib/lib_geom.so
 # %exclude %{_libdir}/monetdb5/lib/lib_rdf.so
@@ -717,6 +717,7 @@ developer, but if you do want to test, this is the package you need.
         --enable-bits=%{bits} \
 	--enable-java=no \
 	--enable-rdf=no \
+	--enable-fits=no \
 	--enable-monetdb4=yes \
 	--enable-pathfinder=yes \
 	--with-gc=no \
