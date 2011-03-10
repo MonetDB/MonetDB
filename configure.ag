@@ -2594,29 +2594,28 @@ yes|auto)
 			;;
 		*)
 			XPATH="$have_geos/bin"
+			have_geos=yes
 			;;
 		esac
 		AC_PATH_PROG(GEOS_CONFIG,geos-config,,$XPATH)
 		if test "x$GEOS_CONFIG" = x; then
-			AC_MSG_ERROR([geos-config not found in $XPATH])
-			have_geos=no
+			if test "x$have_geos" = "xyes" ; then
+				AC_MSG_ERROR([geos-config not found in $XPATH])
+			else
+				have_geos=no
+			fi
 		fi
 	fi
 	if test "x$have_geos" != xno; then
-	dnl	AC_MSG_CHECKING([for Geos >= $GEOS_VERSION_REQUIRED_MIN, but < $GEOS_VERSION_REQUIRED_MAX])
-		AC_MSG_CHECKING([for Geos >= $GEOS_VERSION_REQUIRED_MIN])
+		AC_MSG_CHECKING([for geos >= $GEOS_VERSION_REQUIRED_MIN])
 		GEOS_VERSION="`$GEOS_CONFIG --version`"
 		AC_MSG_RESULT(found $GEOS_VERSION)
-		wrong=''
 		if test MONETDB_VERSION_TO_NUMBER(echo $GEOS_VERSION) -lt MONETDB_VERSION_TO_NUMBER(echo $GEOS_VERSION_REQUIRED_MIN); then
-			wrong="too old"
-		fi
-	dnl	if test MONETDB_VERSION_TO_NUMBER(echo $GEOS_VERSION) -ge MONETDB_VERSION_TO_NUMBER(echo $GEOS_VERSION_REQUIRED_MAX); then
-	dnl		wrong="not yet supported"
-	dnl	fi
-		if test "x$wrong" != x; then
-			AC_MSG_ERROR([Geos version $GEOS_VERSION is $wrong])
-			have_geos=no
+			if test "x$have_geos" = "xyes" ; then
+				AC_MSG_ERROR([geos version $GEOS_VERSION is too old])
+			else
+				have_geos=no
+			fi
 		fi
 	fi
 	if test "x$have_geos" != xno; then
@@ -2655,7 +2654,7 @@ yes|auto)
 	AC_SUBST(GEOS_LIBS)
 	if test "x$have_geos" = xno; then
 		if test "x$enable_geom" = xyes; then
-			AC_MSG_ERROR([No geos library found for geom module])
+			AC_MSG_ERROR([geos library required for geom module])
 		fi
 		# no geos, so don't compile geom
 		enable_geom=no
