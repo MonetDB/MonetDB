@@ -2134,6 +2134,15 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		int grantor = *(int*)getArgReference(stk, pci, 7);
 		msg = sql_revoke_table_privs( sql, grantee, privs, sname, cname, grant, grantor);
 	} 	break;
+	case DDL_CREATE_ROLE: {
+		char *role = sname;
+		int grantor = *(int*)getArgReference(stk, pci, 4);
+		msg = sql_create_role( sql, role, grantor);
+	} 	break;
+	case DDL_DROP_ROLE: {
+		char *role = sname;
+		msg = sql_drop_role( sql, role);
+	} 	break;
 	default:
 		throw(SQL, "sql.catalog", "catalog unknown type");
 	}

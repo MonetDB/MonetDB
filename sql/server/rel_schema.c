@@ -1483,8 +1483,7 @@ rel_schemas(mvc *sql, symbol *s)
 				  l->h->next->next->data.i_val,	/* admin? */
 				  l->h->next->next->next->data.i_val ? sql->user_id : sql->role_id);
 		/* grantor ? */
-		sql->type = Q_SCHEMA;
-	} break;
+	} 	break;
 	case SQL_REVOKE_ROLES:
 	{
 		dlist *l = s->data.lval;
@@ -1496,8 +1495,7 @@ rel_schemas(mvc *sql, symbol *s)
 				  l->h->next->next->data.i_val,	/* admin? */
 				  l->h->next->next->next->data.i_val ? sql->user_id : sql->role_id);
 		/* grantor ? */
-		sql->type = Q_SCHEMA;
-	} break;
+	} 	break;
 	case SQL_GRANT:
 	{
 		dlist *l = s->data.lval;
@@ -1509,8 +1507,7 @@ rel_schemas(mvc *sql, symbol *s)
 				  l->h->next->next->data.i_val,	/* grant ? */
 				  l->h->next->next->next->data.i_val ? sql->user_id : sql->role_id);
 		/* grantor ? */
-		sql->type = Q_SCHEMA;
-	} break;
+	} 	break;
 	case SQL_REVOKE:
 	{
 		dlist *l = s->data.lval;
@@ -1522,9 +1519,19 @@ rel_schemas(mvc *sql, symbol *s)
 				   l->h->next->next->data.i_val,	/* grant ? */
 				   l->h->next->next->next->data.i_val ? sql->user_id : sql->role_id);
 		/* grantor ? */
-		sql->type = Q_SCHEMA;
-	} break;
-
+	} 	break;
+	case SQL_CREATE_ROLE:
+	{
+		dlist *l = s->data.lval;
+		char *rname = l->h->data.sval;
+		ret = rel_schema(sql->sa, DDL_CREATE_ROLE, rname, NULL,
+				 l->h->next->data.i_val);
+	} 	break;
+	case SQL_DROP_ROLE:
+	{
+		char *rname = s->data.sval;
+		ret = rel_schema(sql->sa, DDL_DROP_ROLE, rname, NULL, 0);
+	} 	break;
 	default:
 		return sql_error(sql, 01, "schema statement unknown symbol(" PTRFMT ")->token = %s", PTRFMTCAST s, token2string(s->token));
 	}

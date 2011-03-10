@@ -3505,6 +3505,9 @@ rel2bin_ddl(mvc *sql, sql_rel *rel, list *refs)
 	} else if (rel->flag <= DDL_REVOKE) {
 		s = rel2bin_privs(sql, rel, refs);
 		sql->type = Q_SCHEMA;
+	} else if (rel->flag <= DDL_DROP_ROLE) {
+		s = rel2bin_catalog(sql, rel, refs);
+		sql->type = Q_SCHEMA;
 	}
 	return s;
 }

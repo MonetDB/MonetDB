@@ -38,13 +38,13 @@ extern int sql_grantable(mvc *m, int grantorid, int obj_id, int privs, int sub);
 extern int sql_find_auth(mvc *m, str auth);
 extern int sql_find_schema(mvc *m, str schema);
 
-extern int sql_create_role(mvc *m, str auth, int grantor);
-extern int sql_drop_role(mvc *m, str auth);
-extern char * sql_grant_role(mvc *m, str grantee, str auth);
-extern char * sql_revoke_role(mvc *m, str grantee, str auth);
+extern char *sql_create_role(mvc *m, str auth, int grantor);
+extern char *sql_drop_role(mvc *m, str auth);
+extern char *sql_grant_role(mvc *m, str grantee, str auth);
+extern char *sql_revoke_role(mvc *m, str grantee, str auth);
 extern int sql_alter_user(mvc *m, str user, str passwd, char enc, sqlid schema_id, str oldpasswd);
 extern int sql_rename_user(mvc *m, str olduser, str newuser);
-extern int sql_drop_user(mvc *m, str user);
+extern str sql_drop_user(mvc *m, str user);
 extern int sql_create_privileges(mvc *m, sql_schema *s);
 extern int sql_schema_has_user(mvc *m, sql_schema *s);
 

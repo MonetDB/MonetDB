@@ -198,7 +198,7 @@ sql_create_role_id(mvc *m, unsigned int id, str auth, int grantor)
 	return TRUE;
 }
 
-int
+str
 sql_create_role(mvc *m, str auth, int grantor)
 {
 	oid id;
@@ -207,15 +207,14 @@ sql_create_role(mvc *m, str auth, int grantor)
 	sql_column *auth_name = find_sql_column(auths, "name");
 
 	if (table_funcs.column_find_row(m->session->tr, auth_name, auth, NULL) != oid_nil)
-		return FALSE;
+		return sql_message("CREATE ROLE: Role '%s' allready exists\n", auth);
 
 	id = store_next_oid();
 	table_funcs.table_insert(m->session->tr, auths, &id, auth, &grantor);
-
-	return TRUE;
+	return NULL;
 }
 
-int
+str
 sql_drop_role(mvc *m, str auth)
 {
 	oid rid;
@@ -224,9 +223,10 @@ sql_drop_role(mvc *m, str auth)
 	sql_column *auth_name = find_sql_column(auths, "name");
 
 	rid = table_funcs.column_find_row(m->session->tr, auth_name, auth, NULL);
-	if (rid != oid_nil)
-		table_funcs.table_delete(m->session->tr, auths, rid);
-	return TRUE;
+	if (rid == oid_nil)
+		return sql_message("DROP ROLE: Role '%s' does not exist\n", auth);
+	table_funcs.table_delete(m->session->tr, auths, rid);
+	return NULL;
 }
 
 char *
@@ -358,7 +358,7 @@ sql_rename_user(mvc *m, str olduser, str newuser)
 	return(backend_rename_user(m, olduser, newuser));
 }
 
-int
+str
 sql_drop_user(mvc *m, str user)
 {
 	if (backend_drop_user(m,user) == FALSE)

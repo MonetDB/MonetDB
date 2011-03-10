@@ -322,7 +322,7 @@ drop_user(mvc *sql, char *user)
 	if (mvc_check_dependency(sql, user_id, OWNER_DEPENDENCY, NULL))
 		return sql_error(sql, 02, "DROP USER: '%s' owns a schema", user);
 
-	if(sql_drop_user(sql, user) == FALSE)
+	if(sql_drop_user(sql, user) != NULL)
 		return sql_error(sql, 02, "DROP USER: no such user '%s'", user);
 
 	return stmt_none(sql->sa);
@@ -365,30 +365,6 @@ rename_user(mvc *sql, char *olduser, char *newuser)
 	return stmt_none(sql->sa);
 }
 
-
-static stmt *
-create_role(mvc *sql, dlist *qname, int grantor)
-{
-	char *role_name = qname->t->data.sval;
-
-	if (dlist_length(qname) > 2) {
-		return sql_error(sql, 02, "CREATE ROLE: qualified role can only have a schema and a role\n");
-	}
-	sql_create_role(sql, role_name, grantor);
-	return stmt_none(sql->sa);
-}
-
-static stmt *
-drop_role(mvc *sql, dlist *qname)
-{
-	char *role_name = qname->t->data.sval;
-
-	if (dlist_length(qname) > 2) {
-		return sql_error(sql, 02, "DROP ROLE: qualified role can only have a schema and a role\n");
-	}
-	sql_drop_role(sql, role_name);
-	return stmt_none(sql->sa);
-}
 
 #if 0
 static stmt *
@@ -478,24 +454,6 @@ schemas(mvc *sql, symbol *s)
 		dlist *l = s->data.lval;
 
 		ret = rename_user(sql, l->h->data.sval, l->h->next->data.sval);
-		sql->type = Q_SCHEMA;
-	}
-		break;
-	case SQL_CREATE_ROLE:
-	{
-		dlist *l = s->data.lval;
-
-		assert(l->h->next->type == type_int);
-		ret = create_role(sql, l->h->data.lval,	/* role name */
-				  l->h->next->data.i_val);	/* role grantor */
-		sql->type = Q_SCHEMA;
-	}
-		break;
-	case SQL_DROP_ROLE:
-	{
-		dlist *l = s->data.lval;
-
-		ret = drop_role(sql, l);	/* role name */
 		sql->type = Q_SCHEMA;
 	}
 		break;

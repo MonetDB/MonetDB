@@ -894,8 +894,6 @@ semantic(mvc *sql, symbol *s)
 	case SQL_DROP_USER:
 	case SQL_ALTER_USER:
 	case SQL_RENAME_USER:
-	case SQL_CREATE_ROLE:
-	case SQL_DROP_ROLE:
 	case SQL_CREATE_TYPE:
 	case SQL_CREATE_TRIGGER:
 	case SQL_DROP_TRIGGER:

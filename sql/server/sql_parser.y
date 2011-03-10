@@ -1253,9 +1253,9 @@ CREATE [ UNIQUE ] INDEX index_name
 */
 
 role_def:
-    create ROLE qname opt_grantor
+    create ROLE ident opt_grantor
 	{ dlist *l = L();
-	  append_list(l, $3);
+	  append_string(l, $3);
 	  append_int(l, $4);
 	  $$ = _symbol_create_list( SQL_CREATE_ROLE, l ); }
  |  create USER ident WITH opt_encrypted PASSWORD string sqlNAME string SCHEMA ident
@@ -2185,7 +2185,7 @@ drop_statement:
 	  append_list(l, $3 );
 	  append_int(l, $4 );
 	  $$ = _symbol_create_list( SQL_DROP_VIEW, l ); }
- |  DROP ROLE qname	  { $$ = _symbol_create_list( SQL_DROP_ROLE, $3 ); }
+ |  DROP ROLE ident	  { $$ = _symbol_create( SQL_DROP_ROLE, $3 ); }
  |  DROP USER ident	  { $$ = _symbol_create( SQL_DROP_USER, $3 ); }
  |  DROP INDEX qname	  { $$ = _symbol_create_list( SQL_DROP_INDEX, $3 ); }
  |  DROP TRIGGER qname	  { $$ = _symbol_create_list( SQL_DROP_TRIGGER, $3 ); }
