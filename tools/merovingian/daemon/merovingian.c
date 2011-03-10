@@ -816,6 +816,19 @@ main(int argc, char *argv[])
 		MERO_EXIT(1);
 	}
 
+	{
+		char cwd[1024];
+		if (getcwd(cwd, sizeof(cwd)) == NULL) {
+			Mfprintf(stderr, "could not get current working directory: %s\n",
+					strerror(errno));
+			MERO_EXIT(1);
+		}
+		msab_init(cwd, NULL);
+	}
+
+	unlink(control_usock);
+	unlink(mapi_usock);
+
 	/* write out the pid */
 	Mfprintf(pidfile, "%d\n", (int)d->pid);
 	fclose(pidfile);
@@ -823,10 +836,6 @@ main(int argc, char *argv[])
 	Mfprintf(stdout, "Merovingian %s (%s) starting\n",
 			MERO_VERSION, MONETDB_RELEASE);
 	Mfprintf(stdout, "monitoring dbfarm %s\n", dbfarm);
-
-	msab_init(".", NULL);
-	unlink(control_usock);
-	unlink(mapi_usock);
 
 	/* open up connections */
 	if (
