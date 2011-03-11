@@ -1,9 +1,7 @@
 debian/tmp/usr/bin/mserver5 usr/bin
 debian/tmp/usr/lib/libmonetdb5.so.* usr/lib
 debian/tmp/usr/lib/monetdb5/autoload/70_vault.mal usr/lib/monetdb5/autoload
-debian/tmp/usr/lib/monetdb5/autoload/72_fits.mal usr/lib/monetdb5/autoload
 debian/tmp/usr/lib/monetdb5/lib_crackers.so usr/lib/monetdb5
-debian/tmp/usr/lib/monetdb5/lib_fits.so usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/lib_mal_compiler.so usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/lib_vault.so usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/aggr.mal usr/lib/monetdb5
@@ -36,7 +34,6 @@ debian/tmp/usr/lib/monetdb5/constraints.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/counters.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/crackers.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/factories.mal usr/lib/monetdb5
-debian/tmp/usr/lib/monetdb5/fits.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/group.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/groupby.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/histogram.mal usr/lib/monetdb5
