@@ -60,7 +60,6 @@ debian/tmp/usr/lib/monetdb5/pqueue.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/profiler.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/recycle.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/remote.mal usr/lib/monetdb5
-debian/tmp/usr/lib/monetdb5/replication.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/run_*.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/sabaoth.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/sema.mal usr/lib/monetdb5
