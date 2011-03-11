@@ -2575,18 +2575,18 @@ AC_SUBST(MSEED_LIBS, $MSEED_LIBS)
 AM_CONDITIONAL(HAVE_MSEED, test x"$have_mseed" != xno)
 
 # geos, only used in geom module
+have_geos=auto
+GEOS_INCS=''
+GEOS_LIBS=''
+AC_ARG_WITH(geos,
+	AS_HELP_STRING([--with-geos=DIR],
+		[geos library is installed in DIR]),
+	have_geos="$withval")
 case "$enable_geom" in
 yes|auto)
 	GEOS_VERSION_REQUIRED_MIN=2.2.0
 	dnl GEOS_VERSION_REQUIRED_MAX=3.0.0
-	have_geos=auto
 	GEOS_CONFIG=''
-	GEOS_INCS=''
-	GEOS_LIBS=''
-	AC_ARG_WITH(geos,
-		AS_HELP_STRING([--with-geos=DIR],
-			[geos library is installed in DIR]),
-		have_geos="$withval")
 	if test "x$have_geos" != xno; then
 		case "$have_geos" in
 		yes|auto)
@@ -2619,39 +2619,9 @@ yes|auto)
 		fi
 	fi
 	if test "x$have_geos" != xno; then
-		case "$GCC-$CC-`$GEOS_CONFIG --prefix`-`$GEOS_CONFIG --includes`" in
-		-*icc*-/usr-/usr/include)
-			dnl  icc complains about Geos' header file, at
-			dnl  least if Geos is found in the default
-			dnl  place and we set GEOS_INCS & GEOS_LIBS.
-			dnl  Since setting GEOS_INCS & GEOS_LIBS is
-			dnl  not strictly required in this case, we
-			dnl  omit setting them in this case.
-			;;
-		*)
-			dnl GEOS_INCS="-I`$GEOS_CONFIG --includes`"
-			dnl GEOS_LIBS="`$GEOS_CONFIG --libs`"
-			GEOS_INCS="`$GEOS_CONFIG --cflags`"
-			GEOS_LIBS="`$GEOS_CONFIG --ldflags`"
-			;;
-		esac
-		save_CPPFLAGS="$CPPFLAGS"
-		CPPFLAGS="$CPPFLAGS $GEOS_INCS"
-		AC_CHECK_HEADER(geos_c.h, AC_DEFINE(HAVE_GEOS_C_H, 1, [Define to 1 if you have the <geos_c.h> header file.]), [AC_MSG_ERROR([geos_c.h not found]); have_geos=no])
-		CPPFLAGS="$save_CPPFLAGS"
+		GEOS_INCS="`$GEOS_CONFIG --cflags`"
+		GEOS_LIBS="`$GEOS_CONFIG --ldflags`"
 	fi
-	if test "x$have_geos" != xno; then
-		save_LIBS="$LIBS"
-		LIBS="$LIBS $GEOS_LIBS"
-		AC_CHECK_LIB(geos_c, GEOSEnvelope, :, have_geos=no)
-		LIBS="$save_LIBS"
-	fi
-	if test "x$have_geos" != xno; then
-		GEOS_LIBS="$GEOS_LIBS -lgeos_c"
-		AC_DEFINE(HAVE_SQLGETPRIVATEPROFILESTRING, 1, [Define if you have the SQLGetPrivateProfileString function])
-	fi
-	AC_SUBST(GEOS_INCS)
-	AC_SUBST(GEOS_LIBS)
 	if test "x$have_geos" = xno; then
 		if test "x$enable_geom" = xyes; then
 			AC_MSG_ERROR([geos library required for geom module])
@@ -2661,6 +2631,8 @@ yes|auto)
 	fi
 	;;
 esac
+AC_SUBST(GEOS_INCS)
+AC_SUBST(GEOS_LIBS)
 
 # NetCDF, only used in MonetDB4 mnetcdf module
 have_netcdf=$dft_netcdf
