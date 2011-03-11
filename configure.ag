@@ -1728,19 +1728,37 @@ dnl not only with Pathfider & MEL.
 AM_PROG_LEX()
 
 dnl flex found on the system?
-if test "x$LEX" != "x"; then
-
+if test "x$LEX" = "x"; then
+	if test "x$enable_monetdb4" = xyes; then
+		AC_MSG_ERROR([MonetDB4 requires LEX or FLEX.])
+	fi
+	if test "x$enable_pathfinder" = xyes; then
+		AC_MSG_ERROR([Pathfinder requires LEX or FLEX.])
+	fi
+	enable_monetdb4=no
+	enable_pathfinder=no
+else
+	flex_ver=
 	AC_MSG_CHECKING([for flex version])
 	flex_ver="`$LEX -V | head -n1`"
 	AC_MSG_RESULT($flex_ver)
 
 	case "$flex_ver" in
-		*2.5.31*)
+	*2.5.31*)
+		case "$enable_monetdb4-$enable_pathfinder" in
+		*yes*)
 			AC_MSG_ERROR([MonetDB's lexer code does not work properly with flex 2.5.31;
-					please install/use flex 2.5.4 or flex >=2.5.33 instead.])
+				please install/use flex 2.5.4 or flex >=2.5.33 instead.])
 			;;
+		*auto*)
+			AC_MSG_WARN([MonetDB's lexer code does not work properly with flex 2.5.31;
+				please install/use flex 2.5.4 or flex >=2.5.33 instead.])
+			;;
+		esac
+		enable_monetdb4=no
+		enable_pathfinder=no
+		;;
 	esac
-
 fi
 
 AC_PROG_YACC
@@ -1781,6 +1799,20 @@ EOF
 fi
 AC_DEFINE(YYENABLE_NLS, 0, [Needed to compile bison-generated code.])
 AC_DEFINE(YYLTYPE_IS_TRIVIAL, 0, [Needed to compile bison-generated code.])
+if test "x$YACC" = x; then
+	if test "x$enable_sql" = xyes; then
+		AC_MSG_ERROR([MonetDB/SQL requires YACC or BISON.])
+	fi
+	if test "x$enable_monetdb4" = xyes; then
+		AC_MSG_ERROR([MonetDB4 requires YACC or BISON.])
+	fi
+	if test "x$enable_pathfinder" = xyes; then
+		AC_MSG_ERROR([Pathfinder requires YACC or BISON.])
+	fi
+	enable_sql=no
+	enable_monetdb4=no
+	enable_pathfinder=no
+fi
 
 AC_CHECK_PROG(TEXI2HTML,texi2html,texi2html)
 AC_CHECK_PROG(LATEX2HTML,latex2html,latex2html)
