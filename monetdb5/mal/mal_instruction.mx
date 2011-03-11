@@ -2344,13 +2344,13 @@ The protection against overflow is not tight.
 str
 instructionCall(MalBlkPtr mb, InstrPtr p, str s, str base, size_t len)
 {
-	int i, closing=0, margin = 2 * PATHLENGTH;
+	int i, closing=0;
 	str tpe;
 	if (p->retc > 1){
 		*s++ = '(';
 		*s=0;
 	}
-	for (i = 0; i <= p->argc && s< base + len - margin; i++) {
+	for (i = 0; i <= p->argc; i++) {
 		if (i== p->retc){
 			if (i>1 && p->retc > 1){
 				*s++ = ')';
@@ -2378,7 +2378,7 @@ instructionCall(MalBlkPtr mb, InstrPtr p, str s, str base, size_t len)
 				nme = nmebuf;
 			} else
 				nme = getArgName(mb, p, i);
-			snprintf(s, (len- margin-(s-base)), "%s:%s", (nme ? nme : "nil"), tpe);
+			snprintf(s, (len-(s-base)), "%s:%s", (nme ? nme : "nil"), tpe);
 			advance(s,base,len);
 			if (i != p->retc-1 && i< p->argc-1)
 				sprintf(s, ", ");
