@@ -1583,6 +1583,12 @@ AM_CONDITIONAL(HAVE_RUBYGEM, test x"$have_rubygem" != xno -a x"$have_rubygem_dir
 AC_PROG_YACC
 AC_DEFINE(YYENABLE_NLS, 0, [Needed to compile bison-generated code.])
 AC_DEFINE(YYLTYPE_IS_TRIVIAL, 0, [Needed to compile bison-generated code.])
+if test "x$YACC" = x; then
+	if test "x$enable_sql" = xyes; then
+		AC_MSG_ERROR([MonetDB/SQL requires YACC or BISON.])
+	fi
+	enable_sql=no
+fi
 
 AC_CHECK_PROG(TEXI2HTML,texi2html,texi2html)
 AC_CHECK_PROG(LATEX2HTML,latex2html,latex2html)
