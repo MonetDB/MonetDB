@@ -18,6 +18,8 @@ set PATH=%buildbase%\clients\mapiclient;%PATH%
 set PATH=%buildbase%\clients\odbc\samples;%PATH%
 set PATH=%buildbase%\testing;%PATH%
 set PATH=%buildbase%\monetdb4\tools;%PATH%
+set PATH=%buildbase%\pathfinder\compiler;%PATH%
+set PATH=%buildbase%\pathfinder\src\sqlhelpers\xmlshred;%PATH%
 
 rem libraries (.dll)
 set PATH=%buildbase%\clients\mapilib;%PATH%
