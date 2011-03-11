@@ -146,7 +146,7 @@ AC_ARG_ENABLE(rdf,
 	enable_rdf=$enableval,
 	enable_rdf=$dft_rdf)
 
-dft_fits=no
+dft_fits=auto
 AC_ARG_ENABLE(fits,
 	AS_HELP_STRING([--enable-fits],
 		[enable support for FITS (default=no)]),
