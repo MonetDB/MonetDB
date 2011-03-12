@@ -293,7 +293,7 @@ loadLibrary(str filename, int flag)
 				break;
 			} else {
 				throw(LOADER, "loadLibrary",
-						"failed to load library '%s': %s", nme, dlerror());
+						"failed to load library: %s", dlerror());
 			}
 		}
 
