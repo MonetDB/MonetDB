@@ -220,7 +220,6 @@ loadLibrary(str filename, int flag)
 	void *handle = NULL;
 	str s;
 	int idx;
-	const char *errmsg;
 	char *mod_path = GDKgetenv("monet_mod_path");
 
 	/* AIX requires RTLD_MEMBER to load a module that is a member of an
@@ -253,6 +252,7 @@ loadLibrary(str filename, int flag)
 
 	while (*mod_path) {
 		char *p;
+		struct stat stbuf;
 
 		if ((p = strchr(mod_path, PATH_SEP)) != NULL)
 			*p = '\0';
@@ -264,39 +264,47 @@ loadLibrary(str filename, int flag)
 		snprintf(nme, MAXPATHLEN, "%s%c%s_%s%s",
 				mod_path, DIR_SEP, SO_PREFIX, s, SO_EXT);
 #endif
-		handle = dlopen(nme, mode);
-		/* try .so */
-		if (handle == NULL && strcmp(SO_EXT, ".so") != 0) {
+		if (stat(nme, &stbuf) != 0 || !S_ISREG(stbuf.st_mode))
+			*nme = '\0';
+		if (*nme == '\0' && strcmp(SO_EXT, ".so") != 0) {
+			/* try .so */
 			snprintf(nme, MAXPATHLEN, "%s%c%s_%s.so",
 					mod_path, DIR_SEP, SO_PREFIX, s);
-			handle = dlopen(nme, mode);
+			if (stat(nme, &stbuf) != 0 || !S_ISREG(stbuf.st_mode))
+				*nme = '\0';
 		}
 #ifdef __APPLE__
-		/* try .bundle */
-		if (handle == NULL && strcmp(SO_EXT, ".bundle") != 0) {
+		if (*nme == '\0' && strcmp(SO_EXT, ".bundle") != 0) {
+			/* try .bundle */
 			snprintf(nme, MAXPATHLEN, "%s%c%s_%s.bundle",
 					mod_path, DIR_SEP, SO_PREFIX, s);
-			handle = dlopen(nme, mode);
+			if (stat(nme, &stbuf) != 0 || !S_ISREG(stbuf.st_mode))
+				*nme = '\0';
 		}
 #endif
-		if (handle != NULL) {
-			if (p != NULL)
-				*p = PATH_SEP;
-			break;
+
+		/* restore path */
+		if (p != NULL)
+			*p = PATH_SEP;
+
+		if (*nme != '\0') {
+			handle = dlopen(nme, mode);
+			if (handle != NULL) {
+				break;
+			} else {
+				throw(LOADER, "loadLibrary",
+						"failed to load library '%s': %s", nme, dlerror());
+			}
 		}
 
 		if (p == NULL)
 			break;
-		*p = PATH_SEP;
 		mod_path = p + 1;
 	}
 
 	if (handle == NULL) {
-		errmsg = dlerror();
-		if (!errmsg) 
-			errmsg = "could not locate or open library";
 		if (flag)
-			throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR " '%s' from within file '%s'", errmsg, filename);
+			throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR " could not locate library %s (from within file '%s')", s, filename);
 	}
 
 	mal_set_lock(mal_contextLock, "loadModule");
