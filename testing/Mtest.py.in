@@ -2610,9 +2610,6 @@ def CheckClassPath(quiet) :
         'HAVE_MONETDBJDBC_JAR' : re.compile('^monetdb-[0-9]\.[0-9]+-jdbc\.jar$'),
         'HAVE_JDBCCLIENT_JAR'  : re.compile('^jdbcclient\.jar$'),
         'HAVE_JDBCTESTS_JAR'   : re.compile('^jdbctests\.jar$'),
-        'HAVE_XRPCAPI_JAR'     : re.compile('^xrpcapi\.jar$'),
-        'HAVE_XRPCCLIENT_JAR'  : re.compile('^xrpcclient\.jar$'),
-        'HAVE_XRPCWRAPPER_JAR' : re.compile('^xrpcwrapper\.jar$'),
     }
     # check for known JARs in CLASSPATH files
     for p in cp.split(os.pathsep):
@@ -2647,7 +2644,7 @@ def CheckClassPath(quiet) :
     if cp:
         os.environ['CLASSPATH'] = cp
     miss = ''
-    for j in ['monetdbjdbc.jar', 'jdbcclient.jar', 'jdbctests.jar', 'xrpcapi.jar', 'xrpcclient.jar', 'xrpcwrapper.jar']:
+    for j in ['monetdbjdbc.jar', 'jdbcclient.jar', 'jdbctests.jar']:
         C = 'HAVE_%s' % j.upper().replace('.','_')
         if not ( CONDITIONALS.has_key(C) and CONDITIONALS[C] ):
             miss += ' "%s"' % j
