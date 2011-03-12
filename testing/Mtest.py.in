@@ -2921,7 +2921,6 @@ def main(argv) :
         dft['MONETDB_MOD_PATH'] = "''"
         dft['setMONETDB_MOD_PATH'] = "'--set \"monet_mod_path='+env['MONETDB_MOD_PATH']+'\"'"
         dft['setGDK_DBFARM']     = "'--set \"gdk_dbfarm='+env['GDK_DBFARM']+'\"'"
-        dft['setXRPC_DOCROOT']   = "'--set \"xrpc_docroot='+env['XRPC_DOCROOT']+'\"'"
         dft['MAPIPORT']       = "str(randomPort(30000,39999))"
         dft['XRPCPORT']       = "str(randomPort(40000,49999))"
         dft['MALCLIENT']      = "'mclient -lmal -ftest'"
@@ -2976,8 +2975,6 @@ def main(argv) :
              "override Mserver's/mserver5's default module search path"),
             ('dbfarm', None, 'gdk_dbfarm', '<directory>',
              "override default location of database directory"),
-            ('xrpc_docroot', None, 'xrpc_docroot', '<directory>',
-             "override default root directory from which the XRPC HTTP server will serve files"),
             ('MALCLIENT', None, 'MALCLIENT', '<mal-client program>',
              'default: %s' % dft['MALCLIENT']),
             ('SQLCLIENT', None, 'SQLCLIENT', '<sql-client program>',
@@ -3072,9 +3069,6 @@ def main(argv) :
         a = opts.get('gdk_dbfarm')
         if a is not None:
             env['GDK_DBFARM'] = a
-        a = opts.get('xrpc_docroot')
-        if a is not None:
-            env['XRPC_DOCROOT'] = a
         a = opts.get('use_at')
         if a is not None:
             env['USE_AT'] = a
