@@ -15,10 +15,4 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-MTSAFE
-
-headers_perl = {
-	HEADERS = pm
-	DIR = $(prefix)/$(PERL_LIBDIR)/MonetDB/CLI
-	SOURCES = MapiPP.pm
-}
+SUBDIRS = MonetDB

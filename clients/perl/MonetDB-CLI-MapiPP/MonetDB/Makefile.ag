@@ -15,4 +15,4 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = MonetDB
+SUBDIRS = CLI
