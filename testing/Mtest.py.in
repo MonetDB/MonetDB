@@ -211,7 +211,6 @@ CONDITIONALS = {
     'HAVE_JAVA'            : "@HAVE_JAVA_FALSE@",
     'HAVE_JAVAJDBC'        : "@HAVE_JAVAJDBC_FALSE@",
     'HAVE_JAVAMEROCONTROL' : "@HAVE_JAVAMEROCONTROL_FALSE@",
-    'HAVE_JAVAXRPC'        : "@HAVE_JAVAXRPC_FALSE@",
     'HAVE_LIBBZ2'          : "@HAVE_LIBBZ2_FALSE@",
     'HAVE_LIBZ'            : "@HAVE_LIBZ_FALSE@",
     'HAVE_MONETDB5'        : "@HAVE_MONETDB5_FALSE@",
@@ -239,9 +238,6 @@ CONDITIONALS = {
     'HAVE_JDBCTESTS_JAR'   : "",
     'HAVE_JDBCTESTS_DIR'   : "",
     'HAVE_JDBCTESTS'       : "",
-    'HAVE_XRPCAPI_JAR'     : "",
-    'HAVE_XRPCCLIENT_JAR'  : "",
-    'HAVE_XRPCWRAPPER_JAR' : "",
     'WITH_ALGEBRA'         : "",
     'NOT_ALGEBRA'          : "",
 }
@@ -1626,10 +1622,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
 
         # Check for available sockets and block them until we're ready to run the actual test
         MAPIsockets, reason = CheckSocket2(env, "MAPI")   #, SrvrErr)
-        XRPCsockets = None
-        if MAPIsockets is not None:
-            XRPCsockets, reason = CheckSocket2(env, "XRPC")   #, SrvrErr)
-        if None in (MAPIsockets, XRPCsockets):
+        if MAPIsockets is None:
             elem = SkipTest(env, TST, EXT, "as "+reason)
             return TX,Failed,Failed,elem
 
@@ -1648,8 +1641,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
                 # Release reserved sockets before bailing out
                 MAPIsockets[0].close()
                 MAPIsockets[1].close()
-                XRPCsockets[0].close()
-                XRPCsockets[1].close()
                 return TX,Failed,Failed,elem
         test = re.compile("^"+TST+"((_[sp][0-9][0-9])?\..*)?\.src$", re.MULTILINE)
         for ff in os.listdir(TSTTRGDIR):
@@ -1769,7 +1760,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
         TestErr.close()
 
         t0 = time.time()
-        tres = DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsersAT, ME, MAPIsockets, XRPCsockets)
+        tres = DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsersAT, ME, MAPIsockets)
 
         t1 = time.time()
         TX = t1 - t0
@@ -1817,7 +1808,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
 
         sockerr = F_OK
         sockerr = max(sockerr, CheckSocket3(env, "MAPI", TestErrFile))
-        sockerr = max(sockerr, CheckSocket3(env, "XRPC", TestErrFile))
 
         #TODO:
         ##if [ ! -f $TSTTRGBASE/Tests/.old.left-over.tmp.bats. ] ; then  touch $TSTTRGBASE/Tests/.old.left-over.tmp.bats. ; fi
@@ -2249,7 +2239,7 @@ def mapi_ping(port,lang) :
     return False
 ### mapi_ping() #
 
-def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsersAT, ME, MAPIsockets, XRPCsockets) :
+def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsersAT, ME, MAPIsockets) :
     quiet = env['QUIET']
     ATJOB2 = ""
     LogLine = os.path.join(env['TSTDIR'],TST+EXT)+' '+PRELUDE+' (<=%d,%d,%d) ...' % (TIMEOUT,CTIMEOUT,STIMEOUT)
@@ -2278,8 +2268,6 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
     # Release reserved sockets and run the actual test
     MAPIsockets[0].close()
     MAPIsockets[1].close()
-    XRPCsockets[0].close()
-    XRPCsockets[1].close()
 
     timedout = False
     ServerReady = True
@@ -2547,7 +2535,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
 
     return None
 
-### DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsersAT, ME, MAPIsockets, XRPCsockets) #
+### DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsersAT, ME, MAPIsockets) #
 
 def Check(command, input) :
     if verbose:
@@ -2922,7 +2910,6 @@ def main(argv) :
         dft['setMONETDB_MOD_PATH'] = "'--set \"monet_mod_path='+env['MONETDB_MOD_PATH']+'\"'"
         dft['setGDK_DBFARM']     = "'--set \"gdk_dbfarm='+env['GDK_DBFARM']+'\"'"
         dft['MAPIPORT']       = "str(randomPort(30000,39999))"
-        dft['XRPCPORT']       = "str(randomPort(40000,49999))"
         dft['MALCLIENT']      = "'mclient -lmal -ftest'"
         dft['SQLCLIENT']      = "'mclient -lsql -ftest'"
         dft['SQLDUMP']        = "'msqldump -q'"
@@ -3152,7 +3139,7 @@ def main(argv) :
 
     # tidy-up and fall-back to defaults where necessary
     if THISFILE == "Mtest.py":
-        vars_ = vars + ['MAPIPORT', 'XRPCPORT', 'GDK_DEBUG', 'GDK_NR_THREADS', 'MONETDB_MOD_PATH']
+        vars_ = vars + ['MAPIPORT', 'GDK_DEBUG', 'GDK_NR_THREADS', 'MONETDB_MOD_PATH']
     else: # THISFILE == "Mapprove.py"
         vars_ = vars
     for v in vars_:
@@ -3169,10 +3156,6 @@ def main(argv) :
             env['setGDK_DBFARM'] = eval(dft['setGDK_DBFARM'])
         else:
             env['setGDK_DBFARM'] = ''
-        if env.has_key('XRPC_DOCROOT'):
-            env['setXRPC_DOCROOT'] = eval(dft['setXRPC_DOCROOT'])
-        else:
-            env['setXRPC_DOCROOT'] = ''
         if env.has_key('DBG'):
             env['setDBG'] = env['DBG']
         else:
@@ -3277,8 +3260,8 @@ def main(argv) :
     # export and display env
     STDERR.flush()
     if THISFILE == "Mtest.py":
-        vars_ = vars_ + ['XRPC_DOCROOT','GDK_DBFARM']
-        vars_ = vars_ + ['setXRPC_DOCROOT','setGDK_DBFARM','setMONETDB_MOD_PATH']
+        vars_ = vars_ + ['GDK_DBFARM']
+        vars_ = vars_ + ['setGDK_DBFARM','setMONETDB_MOD_PATH']
     else: # THISFILE == "Mapprove.py"
         vars_ = vars_
     for v in vars_:
@@ -3334,8 +3317,8 @@ def main(argv) :
         exe = {}
         exe['Mtimeout']      = CheckExec('Mtimeout')     , 'Mtimeout -timeout %d ' % par['TIMEOUT']
         if par['M5']:
-            exe['Mserver']       = CheckExec('mserver5')     , '%s mserver5 %s --debug=%s --set gdk_nr_threads=%s %s %s %s --set mapi_open=true --set xrpc_open=true --set mapi_port=%s --set xrpc_port=%s --set monet_prompt= --trace --forcemito --set mal_listing=2 %s' % \
-                                                               (env['setDBG'], config, env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setXRPC_DOCROOT'], env['MAPIPORT'], env['XRPCPORT'], env['MSERVER_SET'])
+            exe['Mserver']       = CheckExec('mserver5')     , '%s mserver5 %s --debug=%s --set gdk_nr_threads=%s %s %s --set mapi_open=true --set mapi_port=%s --set monet_prompt= --trace --forcemito --set mal_listing=2 %s' % \
+                                                               (env['setDBG'], config, env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['MAPIPORT'], env['MSERVER_SET'])
         exe['Mdiff']         = CheckExec('Mdiff')        , 'Mdiff'
         exe['python']        = CheckExec(sys.executable) , sys.executable
         exe['MAL_Client']    = CheckExec(env['MALCLIENT'].split(None, 1)[0])  , '%s -i -e --host=%s --port=%s' % (env['MALCLIENT'], HOST, env['MAPIPORT'])
@@ -3449,10 +3432,6 @@ def main(argv) :
         if not os.path.exists(env['GDK_DBFARM']):
             #TODO: set mode to umask
             os.makedirs(env['GDK_DBFARM'])
-        if env.has_key('XRPC_DOCROOT'):
-            if not os.path.exists(env['XRPC_DOCROOT']):
-                #TODO: set mode to umask
-                os.makedirs(env['XRPC_DOCROOT'])
 
         if not env.get('NOCLEAN') and os.path.exists(os.path.join(env['GDK_DBFARM'],TSTPREF)):
             try:
@@ -3527,14 +3506,13 @@ def main(argv) :
             if not env['exe']['SQL_Client'][0]:
                 ErrXit('Stopping %s testing as "%s" is not available!' % (par['PACKAGE'], env['SQLCLIENT'].split(None, 1)[0]))
 
-        for SRVR in 'MAPI', 'XRPC':
-            port = int(env[SRVR+'PORT'])
-            busy, host, Serrno, Serrstr, S = CheckPort(port)
-            S[0].close()
-            S[1].close()
-            if busy:
-                Warn("Skipping %s tests as %sPORT=%s is not available on %s (Error #%d: '%s')!" % (SRVR,SRVR,env[SRVR+'PORT'],host,Serrno,Serrstr))
-                BusyPorts.append(SRVR)
+        port = int(env['MAPIPORT'])
+        busy, host, Serrno, Serrstr, S = CheckPort(port)
+        S[0].close()
+        S[1].close()
+        if busy:
+            Warn("Skipping MAPI tests as MAPIPORT=%s is not available on %s (Error #%d: '%s')!" % (env['MAPIPORT'],host,Serrno,Serrstr))
+            BusyPorts.append('MAPI')
 
         # create '.Mapprove.rc'
         env['SYST'] = os.environ['SYST']
