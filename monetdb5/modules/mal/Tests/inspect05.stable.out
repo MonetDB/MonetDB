@@ -28,10 +28,6 @@ end main;
 # str				str		str		str																	str							  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "main",			  "function",	  "user",	  "():void;",																  "nil"							  ]
-[ "attach",		  "pattern",	  "fits",		  "(fname:str):void ",									  "FITSattach;"				  ]
-[ "fitstest",		  "command",	  "fits",		  "(filename:str):int ",								  "FITStest;"				  ]
-[ "load",		  "pattern",	  "fits",		  "(tablename:str):void ",								  "FITSloadTable;"			  ]
-[ "listdir",		  "pattern",	  "fits",		  "(dirname:str):void ",								  "FITSdir;"				  ]
 [ "Area",		  "command",	  "geom",		  "(g:wkb):dbl ",									  "wkbArea;"				  ]
 [ "AsText",		  "command",	  "geom",		  "(w:wkb):str ",									  "wkbAsText;"				  ]
 [ "Buffer",		  "command",	  "geom",		  "(a:wkb,distance:dbl):wkb ",								  "wkbBuffer;"				  ]
