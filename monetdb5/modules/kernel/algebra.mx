@@ -609,7 +609,7 @@ address ALGmark_grp_1
 comment "\"grouped mark\": Produces a new BAT with per group a locally unique dense
  ascending sequence of OIDs in the tail. The tail of the first BAT (b)
  identifies the group that each BUN of b belongs to. The second BAT (g)
- represents the group extend, i.e., the head is the unique list of group IDs
+ represents the group extent, i.e., the head is the unique list of group IDs
  from b's tail. The tail of g gives for each group the base value for the new
  OID sequence.";
 
@@ -618,7 +618,7 @@ address ALGmark_grp_2
 comment "\"grouped mark\": Produces a new BAT with per group a locally unique dense
  ascending sequense of OIDs in the tail. The tail of the first BAT (b)
  identifies the group that each BUN of b belongs to. The second BAT (g)
- represents the group extend, i.e., the head is the unique list of group IDs
+ represents the group extent, i.e., the head is the unique list of group IDs
  from b's tail. The third argument (s) gives the base value for the new
  OID sequence of each group.";
 
