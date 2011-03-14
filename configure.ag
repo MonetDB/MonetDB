@@ -764,7 +764,6 @@ AC_SUBST(thread_safe_flag_spec)
 AC_SUBST(THREAD_SAVE_FLAGS)
 AC_SUBST(NO_OPTIMIZE_FILES)
 
-AC_PROG_CXX
 AC_PROG_INSTALL
 AC_LIBTOOL_DLOPEN
 AC_LIBTOOL_WIN32_DLL
@@ -2930,9 +2929,6 @@ fi
 AC_SUBST(HWCOUNTERS_LIBS)
 AC_SUBST(HWCOUNTERS_INCS)
 
-dnl     miscellany
-AC_DEFINE(MX_CXX_SUFFIX, "cc", [Suffix for C++ files])
-
 dnl check dependencies (might need more than just SQL)
 if test x"$enable_sql" = xyes && test x"$enable_monetdb5" = x"no" ; then
 	AC_MSG_ERROR([sql needs monetdb5]);
@@ -3227,7 +3223,7 @@ echo
 echo "MonetDB is configured as follows:"
 echo "* Compilation specifics:"
 echo "    Host:       " ${ac_cv_host}
-echo "    Compiler:   " ${CC}/${CXX}
+echo "    Compiler:   " ${CC}
 echo "    CFLAGS:     " ${CFLAGS}
 echo "    X_CFLAGS:   " ${X_CFLAGS}
 echo "    LDFLAGS:    " ${LDFLAGS}
