@@ -2543,15 +2543,6 @@ AC_CHECK_HEADERS([crypt.h \
 	xmmintrin.h \
 	])
 
-AC_LANG_PUSH([C++])
-AC_CHECK_HEADER(iostream,
-	AC_DEFINE(HAVE_IOSTREAM, 1,
-		[Define to 1 if you have the <iostream> header file.]),,[ ])
-AC_CHECK_HEADER(cstdio,
-	AC_DEFINE(HAVE_CSTDIO, 1,
-		[Define to 1 if you have the <cstdio> header file.]),,[ ])
-AC_LANG_POP([C++])
-
 SOCKET_LIBS=""
 have_setsockopt=no
 
