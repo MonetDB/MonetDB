@@ -21,8 +21,6 @@
 #define _MEM_H_
 
 #include <gdk.h>
-#include <stdio.h>
-#include <assert.h>
 
 #define SQL_OK 	GDK_SUCCEED
 #define SQL_ERR GDK_FAIL

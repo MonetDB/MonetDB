@@ -92,7 +92,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
-#include <assert.h>
 
 #ifdef NATIVE_WIN32
 # define strdup _strdup

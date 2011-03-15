@@ -2220,16 +2220,6 @@ It can be implemented quickly, because the system ensures a dense
 BUN list.
 @{
 @c
-#ifdef BATcount			/* may be defined in gdh.mx */
-#undef BATcount
-#endif
-BUN
-BATcount(BAT *b)
-{
-	BATcheck(b, "BATcount");
-	return b->batCount;
-}
-
 void
 BATsetcapacity(BAT *b, BUN cnt)
 {
