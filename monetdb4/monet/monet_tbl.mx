@@ -35,8 +35,6 @@ vice versa.
 #ifndef _MONET_TBL_H
 #define _MONET_TBL_H
 
-#include <assert.h>
-
 inline static void *
 BUNtailfnd( BAT *b, ptr v) 
 {

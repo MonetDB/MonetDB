@@ -39,14 +39,11 @@
 #ifndef STRING_UTILS_H
 #define STRING_UTILS_H
 
-#include <stdio.h>
 #ifdef HAVE_STDBOOL_H
     #include <stdbool.h>
 #endif
 
 #include <string.h>
-#include <assert.h>
-#include <stdlib.h>
 
 char * 
 PFstrUtils_substring (const char *start, const char *end);

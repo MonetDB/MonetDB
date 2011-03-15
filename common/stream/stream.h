@@ -35,7 +35,6 @@
 
 #include <unistd.h>
 #include <ctype.h>
-#include <assert.h>
 #include <stdio.h>
 
 #include <stdlib.h>
