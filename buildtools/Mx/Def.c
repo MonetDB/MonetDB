@@ -295,7 +295,6 @@ MakeDefs(char *name)
 		case Pimpl:
 		case Cdef:
 		case Csrc:
-		case CCsrc:
 		case Cyacc:
 		case Clex:
 		case Prolog:

@@ -164,9 +164,6 @@ GenForm(void)
 				case Pspec:
 					PrCodeDisplay(d, "spec");
 					break;
-				case CCsrc:
-					PrCodeDisplay(d, "cc");
-					break;
 				case Csrc:
 					PrCodeDisplay(d, "c");
 					break;

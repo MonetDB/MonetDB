@@ -67,7 +67,7 @@ typedef enum {
 	Bfile, Efile, Ofile, Mxmacro, Ifdef, Ifndef, Endif,
 	Title, Author, Version, Date, InHide, OutHide, Comment,
 	Module, Section, Subsection, Paragraph, Qcode, Continue,
-	Pspec, Pimpl, Cdef, Csrc, CCsrc, ODLspec, SQL,
+	Pspec, Pimpl, Cdef, Csrc, ODLspec, SQL,
 	OQLspec, Cyacc, Clex, Prolog, Haskell, MALcode,
 	Qnap, HTML, Java,
 	ProC, Shell, fGrammar, Macro, XML, DTD, XSL, Config, Swig,

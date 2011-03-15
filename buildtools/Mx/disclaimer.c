@@ -133,15 +133,13 @@ static struct suffixes {
 	const char *comment_prefix;
 	const char *comment_end;
 } suffixes[] = {
-	{
-	"c", "/*", " * ", " */",}, {
-	"h", "/*", " * ", " */",}, {
-	MX_CXX_SUFFIX, "/*", " * ", " */",}, {
-	"html", "<!--", "", " -->",}, {
-	"tex", "", "% ", "",}, {
-	"mal", "", "# ", "",}, {
-	"mx", "", "@' ", ""}, {
-	0, 0, 0, 0},		/* sentinel */
+	{"c", "/*", " * ", " */",},
+	{"h", "/*", " * ", " */",},
+	{"html", "<!--", "", " -->",},
+	{"tex", "", "% ", "",},
+	{"mal", "", "# ", "",},
+	{"mx", "", "@' ", ""},
+	{0, 0, 0, 0},		/* sentinel */
 };
 
 #define DISC_SUFFIXES  (sizeof(suffixes)/sizeof(siffixes[0]))

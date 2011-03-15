@@ -70,7 +70,6 @@ GenCode(void)
 			break;
 		case Cdef:
 		case Csrc:
-		case CCsrc:
 		case Clex:
 		case Cyacc:
 		case Prolog:
