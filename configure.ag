@@ -464,7 +464,7 @@ AC_ARG_ENABLE(strict,
 	enable_strict=$enableval,
 	enable_strict=$dft_strict)
 dnl  Set compiler switches.
-dnl  The idea/goal is to be as strict as possible, i.e., enable preferable
+dnl  The idea/goal is to be as strict as possible, i.e., enable preferably
 dnl  *all* warnings and make them errors. This should help keeping the code
 dnl  as clean and portable as possible.
 dnl  It turned out, though, that this, especially turning all warnings into 

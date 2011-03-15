@@ -58,10 +58,13 @@ as defined by OpenGIS.
 @h
 
 /* 'WKB'
+
+   http://edndoc.esri.com/arcsde/9.0/general_topics/wkb_representation.htm
+
 ==Geometry Type byte==
 
 
-All serialiezd geometries start with a single byte
+All serialized geometries start with a single byte
 encoding geometry type (lower nibble) and flags
 (higher nibble).
 
@@ -146,6 +149,7 @@ void
 libgeom_init(void) 
 {
 	initGEOS((GEOSMessageHandler)GDKerror, (GEOSMessageHandler)GDKerror);
+	GEOS_setWKBByteOrder(1);  /* NDR (little endian) */
 	printf("# MonetDB/GIS module v" VERSION " loaded\n");
 	fflush(stdout); /* make merovingian see this *now* */
 }
@@ -241,9 +245,9 @@ getMbrGeom( mbr *res,  wkb* geom )
 const char *
 geom_type2str(int t)
 {
-	switch(t) {
+	switch (t) {
 	case wkbPoint: return "Point";
-      	case wkbLineString: return "Line";
+	case wkbLineString: return "Line";
 	case wkbPolygon: return "Polygon";
 	case wkbMultiPoint: return "MultiPoint";
 	case wkbMultiLineString: return "MultiLine";
