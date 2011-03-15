@@ -3384,10 +3384,11 @@ esac
 dnl add some includes that we want to be there always (by default)
 dnl this is kind of bad practice, but consider it legacy that would be
 dnl good to clean up some day
-AH_BOTTOM([
+AH_TOP([
 #ifndef _SEEN_MONETDB_CONFIG_H
 #define _SEEN_MONETDB_CONFIG_H 1
-
+])
+AH_BOTTOM([
 /* AC_FUNC_ALLOCA autoconf documented code */
 #ifdef HAVE_ALLOCA_H
 # include <alloca.h>
