@@ -209,7 +209,7 @@ exp_atom_clob(sql_allocator *sa, str s)
 	sql_subtype clob;
 
 	sql_find_subtype(&clob, "clob", 0, 0);
-	return exp_atom(sa, atom_string(sa, &clob, sa_strdup(sa, s)));
+	return exp_atom(sa, atom_string(sa, &clob, s?sa_strdup(sa, s):NULL));
 }
 
 sql_exp *

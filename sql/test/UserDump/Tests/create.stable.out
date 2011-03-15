@@ -38,7 +38,7 @@ CREATE TABLE "voc"."foo" (
 	"v"  INTEGER,
 	CONSTRAINT "foo_id_pkey" PRIMARY KEY ("id")
 );
-CREATE VIEW "voc"."bar" AS create view bar as select * from foo;
+create view bar as select * from foo;
 create function b(i int) returns int begin return select v from bar where id = i; end;
 CREATE TABLE "voc"."a" (
 	"id" INTEGER
@@ -50,7 +50,7 @@ CREATE TABLE "test"."foo" (
 	"v"  INTEGER,
 	CONSTRAINT "foo_id_pkey" PRIMARY KEY ("id")
 );
-CREATE VIEW "test"."bar" AS create view bar as select * from foo;
+create view bar as select * from foo;
 create function b(i int) returns int begin return select v from bar where id = i; end;
 CREATE TABLE "test"."a" (
 	"id" INTEGER
@@ -67,7 +67,7 @@ CREATE TABLE "voc"."foo" (
 	"v"  INTEGER,
 	CONSTRAINT "foo_id_pkey" PRIMARY KEY ("id")
 );
-CREATE VIEW "voc"."bar" AS create view bar as select * from foo;
+create view bar as select * from foo;
 create function b(i int) returns int begin return select v from bar where id = i; end;
 CREATE TABLE "voc"."a" (
 	"id" INTEGER
@@ -81,7 +81,7 @@ CREATE TABLE "test"."foo" (
 	"v"  INTEGER,
 	CONSTRAINT "foo_id_pkey" PRIMARY KEY ("id")
 );
-CREATE VIEW "test"."bar" AS create view bar as select * from foo;
+create view bar as select * from foo;
 create function b(i int) returns int begin return select v from bar where id = i; end;
 CREATE TABLE "test"."a" (
 	"id" INTEGER

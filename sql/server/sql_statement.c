@@ -1398,7 +1398,6 @@ stmt_connection(sql_allocator *sa, int *id, char *server, int *port, char *db, c
 		list_append(s->op4.lval, passwd);
 	if (lang)
 		list_append(s->op4.lval, lang);
-
 	return s;
 }
 

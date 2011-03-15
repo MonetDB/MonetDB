@@ -41,9 +41,9 @@ rel_drop_seq(sql_allocator *sa, char *sname, char *seqname)
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
 
-	append(exps, exp_atom_int(sa, 0));
 	append(exps, exp_atom_clob(sa, sname));
 	append(exps, exp_atom_clob(sa, seqname));
+	append(exps, exp_atom_int(sa, 0));
 	rel->l = NULL;
 	rel->r = NULL;
 	rel->op = op_ddl;

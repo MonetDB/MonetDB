@@ -28,6 +28,8 @@
 #include "sql_parser.h"
 #include "sql_privileges.h"
 
+#define qname_index(qname) qname_table(qname)
+
 static sql_table *
 _bind_table(sql_table *t, sql_schema *ss, sql_schema *s, char *name)
 {
@@ -943,6 +945,26 @@ rel_schema(sql_allocator *sa, int cat_type, char *sname, char *auth, int nr)
 }
 
 static sql_rel *
+rel_schema2(sql_allocator *sa, int cat_type, char *sname, char *auth, int nr)
+{
+	sql_rel *rel = rel_create(sa);
+	list *exps = new_exp_list(sa);
+
+	append(exps, exp_atom_clob(sa, sname));
+	append(exps, exp_atom_clob(sa, auth));
+	append(exps, exp_atom_int(sa, nr));
+	rel->l = NULL;
+	rel->r = NULL;
+	rel->op = op_ddl;
+	rel->flag = cat_type;
+	rel->exps = exps;
+	rel->card = 0;
+	rel->nrcols = 0;
+	return rel;
+}
+
+
+static sql_rel *
 rel_create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
 {
 	char *name = dlist_get_schema_name(auth_name);
@@ -1397,6 +1419,82 @@ rel_revoke_privs(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int g
 	}
 }
 
+/* iname, itype, sname.tname (col1 .. coln) */
+static sql_rel *
+rel_create_index(mvc *sql, sql_schema *ss, char *iname, int itype, dlist *qname, dlist *column_list)
+{
+	sql_allocator *sa = sql->sa;
+	sql_rel *rel = rel_create(sa);
+	list *exps = new_exp_list(sa);
+	char *tname = qname_table(qname);
+	char *sname = qname_schema(qname);
+	dnode *n = column_list->h;
+
+	if (!sname && ss)
+		sname = ss->base.name;
+
+	append(exps, exp_atom_clob(sa, iname));
+	append(exps, exp_atom_int(sa, itype));
+	append(exps, exp_atom_clob(sa, sname));
+	append(exps, exp_atom_clob(sa, tname));
+
+	for (; n; n = n->next) {
+		char *cname = n->data.sval;
+
+		append(exps, exp_atom_clob(sa, cname));
+	}
+	rel->l = NULL;
+	rel->r = NULL;
+	rel->op = op_ddl;
+	rel->flag = DDL_CREATE_INDEX;
+	rel->exps = exps;
+	rel->card = 0;
+	rel->nrcols = 0;
+	return rel;
+}
+
+static sql_rel *
+rel_create_user(sql_allocator *sa, char *user, char *passwd, int enc, char *fullname, char *schema)
+{
+	sql_rel *rel = rel_create(sa);
+	list *exps = new_exp_list(sa);
+
+	append(exps, exp_atom_clob(sa, user));
+	append(exps, exp_atom_clob(sa, passwd));
+	append(exps, exp_atom_int(sa, enc));
+	append(exps, exp_atom_clob(sa, schema));
+	append(exps, exp_atom_clob(sa, fullname));
+	rel->l = NULL;
+	rel->r = NULL;
+	rel->op = op_ddl;
+	rel->flag = DDL_CREATE_USER;
+	rel->exps = exps;
+	rel->card = 0;
+	rel->nrcols = 0;
+	return rel;
+}
+
+static sql_rel *
+rel_alter_user(sql_allocator *sa, char *user, char *passwd, int enc, char *schema, char *oldpasswd)
+{
+	sql_rel *rel = rel_create(sa);
+	list *exps = new_exp_list(sa);
+
+	append(exps, exp_atom_clob(sa, user));
+	append(exps, exp_atom_clob(sa, passwd));
+	append(exps, exp_atom_int(sa, enc));
+	append(exps, exp_atom_clob(sa, schema));
+	append(exps, exp_atom_clob(sa, oldpasswd));
+	rel->l = NULL;
+	rel->r = NULL;
+	rel->op = op_ddl;
+	rel->flag = DDL_ALTER_USER;
+	rel->exps = exps;
+	rel->card = 0;
+	rel->nrcols = 0;
+	return rel;
+}
+
 sql_rel *
 rel_schemas(mvc *sql, symbol *s)
 {
@@ -1524,17 +1622,69 @@ rel_schemas(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 		char *rname = l->h->data.sval;
-		ret = rel_schema(sql->sa, DDL_CREATE_ROLE, rname, NULL,
+		ret = rel_schema2(sql->sa, DDL_CREATE_ROLE, rname, NULL,
 				 l->h->next->data.i_val);
 	} 	break;
 	case SQL_DROP_ROLE:
 	{
 		char *rname = s->data.sval;
-		ret = rel_schema(sql->sa, DDL_DROP_ROLE, rname, NULL, 0);
+		ret = rel_schema2(sql->sa, DDL_DROP_ROLE, rname, NULL, 0);
+	} 	break;
+	case SQL_CREATE_INDEX: {
+		dlist *l = s->data.lval;
+
+		assert(l->h->next->type == type_int);
+		ret = rel_create_index(sql, cur_schema(sql), l->h->data.sval, l->h->next->data.i_val, l->h->next->next->data.lval, l->h->next->next->next->data.lval);
+	} 	break;
+	case SQL_DROP_INDEX: {
+		dlist *l = s->data.lval;
+		char *sname = qname_schema(l);
+
+		if (!sname)
+			sname = cur_schema(sql)->base.name;
+		ret = rel_schema2(sql->sa, DDL_DROP_INDEX, sname, qname_index(l), 0);
+	} 	break;
+	case SQL_CREATE_USER: {
+		dlist *l = s->data.lval;
+
+		ret = rel_create_user(sql->sa, l->h->data.sval,	/* user name */
+				  l->h->next->data.sval,	/* password */
+				  l->h->next->next->next->next->data.i_val == SQL_PW_ENCRYPTED, /* encrypted */
+				  l->h->next->next->data.sval,	/* fullname */
+				  l->h->next->next->next->data.sval);	/* dschema */
+	} 	break;
+	case SQL_DROP_USER:
+		ret = rel_schema2(sql->sa, DDL_DROP_USER, s->data.sval, NULL, 0);
+		break;
+	case SQL_ALTER_USER: {
+		dlist *l = s->data.lval;
+		dnode *a = l->h->next->data.lval->h;
+
+		ret = rel_alter_user(sql->sa, l->h->data.sval,	/* user */
+				     a->data.sval,	/* passwd */
+				     a->next->next->data.i_val == SQL_PW_ENCRYPTED, /* encrypted */
+				     a->next->data.sval,	/* schema */
+				     a->next->next->next->data.sval /* old passwd */
+		    );
+	} 	break;
+	case SQL_RENAME_USER: {
+		dlist *l = s->data.lval;
+
+		ret = rel_schema2(sql->sa, DDL_RENAME_USER, l->h->data.sval, l->h->next->data.sval, 0);
+	} 	break;
+	case SQL_CREATE_TYPE: {
+		dlist *l = s->data.lval;
+
+		ret = rel_schema2(sql->sa, DDL_CREATE_TYPE, 
+				l->h->data.sval, l->h->next->data.sval, 0);
+	} 	break;
+	case SQL_DROP_TYPE: {
+		ret = rel_schema2(sql->sa, DDL_DROP_TYPE, s->data.sval, NULL, 0);
 	} 	break;
 	default:
 		return sql_error(sql, 01, "schema statement unknown symbol(" PTRFMT ")->token = %s", PTRFMTCAST s, token2string(s->token));
 	}
+
 
 	sql->last = NULL;
 	sql->type = Q_SCHEMA;

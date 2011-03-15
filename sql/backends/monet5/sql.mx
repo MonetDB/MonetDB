@@ -66,9 +66,17 @@ pattern catalog(type:int,grantee:str,role:str):void
 address SQLcatalog
 comment "a grant/revoke role statement";
 
+pattern catalog(type:int,user:str,passwd:str,enc:int,schema:str,fullname:str):void
+address SQLcatalog
+comment "a user catalog statement";
+
 pattern catalog(type:int,tname:str,grantee:str,privs:int,cname:str,grant:int,grantor:int):void
 address SQLcatalog
 comment "a grant/revoke privileges statement";
+
+pattern catalog(type:int,iname:str,itype:int,sname:str,tname:str...):void
+address SQLcatalog
+comment "a create index catalog statement";
 
 pattern eval(cmd:str):void 
 address SQLstatement
@@ -1931,6 +1939,65 @@ drop_key( mvc *sql, char *sname, char *kname, int drop_action )
 }
 
 static str
+create_index( mvc *sql, char *iname, int itype, char *sname, char *tname, MalStkPtr stk, InstrPtr pci) 
+{
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
+	sql_idx *i = NULL;
+
+	if (!(s = mvc_bind_schema(sql, sname)))
+		return sql_message("CREATE INDEX: no such schema '%s'", sname);
+
+	i = mvc_bind_idx(sql, s, iname);
+	t = mvc_bind_table(sql, s, tname);
+	if (i) {
+		return sql_message("CREATE INDEX: name '%s' already in use", iname);
+	} else if (!t) {
+		return sql_message("CREATE INDEX: no such table '%s'", tname);
+	} else if (isView(t)) {
+		return sql_message("CREATE INDEX: cannot create index on view '%s'", tname);
+	} else {
+		int n;
+		sql_idx *i = mvc_create_idx(sql, t, iname, (idx_type) itype);
+
+		if (!i) 
+			return sql_message("CREATE INDEX: failed to create index '%s'", iname);
+
+		for (n=6; n<pci->argc; n++) {
+			char *cname = *(str*)getArgReference(stk, pci, n);
+			sql_column *c = mvc_bind_column(sql, t, cname);
+
+			if (!c) {
+				return sql_message("CREATE INDEX: no such column '%s'", cname);
+			} else {
+				mvc_create_ic(sql, i, c);
+				mvc_create_dependency(sql, c->base.id, i->base.id, INDEX_DEPENDENCY);
+			}
+		}
+	}
+	return NULL;
+}
+
+static str
+drop_index( mvc *sql, char *sname, char *iname)
+{
+	sql_schema *s = NULL;
+	sql_idx *i = NULL;
+
+	if (!(s=mvc_bind_schema(sql, sname))) 
+		return sql_message("DROP INDEX: no such schema '%s'", sname);
+ 	i = mvc_bind_idx(sql, s, iname);
+	if (!i) {
+		return sql_message("DROP INDEX: no such index '%s'", iname);
+	} else if (!schema_privs(sql->role_id, s)) {
+		return sql_message("DROP INDEX: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
+	} else {
+		mvc_drop_idx(sql, s, i);
+	}
+	return NULL;
+}
+
+static str
 create_seq( mvc *sql, char *sname, sql_sequence *seq)
 {
 	sql_schema *s = NULL;
@@ -2097,16 +2164,23 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		msg = drop_view( sql, sname, name, action);
 	} 	break;
-	case DDL_ALTER_TABLE: 
-	{
-		sql_table *t = *(sql_table**) getArgReference(stk, pci, 3);
-		msg = alter_table(sql, sname, t);
-	} 	break;
 	case DDL_DROP_CONSTRAINT: {
 		int action = *(int*) getArgReference(stk, pci, 4);
 		str name = *(str*) getArgReference(stk, pci, 3);
 
 		msg = drop_key( sql, sname, name, action);
+	} 	break;
+	case DDL_ALTER_TABLE: {
+		sql_table *t = *(sql_table**) getArgReference(stk, pci, 3);
+		msg = alter_table(sql, sname, t);
+	} 	break;
+	case DDL_CREATE_TYPE: {
+		char *impl = *(str*) getArgReference(stk, pci, 3);
+		if (!mvc_create_type(sql, sql->session->schema, sname, 0, 0, 0, impl)) 
+			msg = sql_message("CREATE TYPE: unknown external type '%s'", impl);
+	} 	break;
+	case DDL_DROP_TYPE: {
+		msg = sql_message("DROP TYPE: not implemented ('%s')", sname);
 	} 	break;
 	case DDL_GRANT_ROLES: {
 		char *auth = SaveArgReference(stk, pci, 3);
@@ -2134,6 +2208,27 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		int grantor = *(int*)getArgReference(stk, pci, 7);
 		msg = sql_revoke_table_privs( sql, grantee, privs, sname, cname, grant, grantor);
 	} 	break;
+	case DDL_CREATE_USER: {
+		char *passwd = *(str*)getArgReference(stk, pci, 3);
+		int enc = *(int*)getArgReference(stk, pci, 4);
+		char *schema = SaveArgReference(stk, pci, 5);
+		char *fullname = SaveArgReference(stk, pci, 6);
+		msg = sql_create_user( sql, sname, passwd, enc, fullname, schema);
+	}	break;
+	case DDL_DROP_USER: {
+		msg = sql_drop_user( sql, sname);
+	}	break;
+	case DDL_ALTER_USER: {
+		char *passwd = SaveArgReference(stk, pci, 3);
+		int enc = *(int*)getArgReference(stk, pci, 4);
+		char *schema = SaveArgReference(stk, pci, 5);
+		char *oldpasswd = SaveArgReference(stk, pci, 6);
+		msg = sql_alter_user( sql, sname, passwd, enc, schema, oldpasswd);
+	}	break;
+	case DDL_RENAME_USER: {
+		char *newuser = *(str*)getArgReference(stk, pci, 3);
+		msg = sql_rename_user( sql, sname, newuser);
+	}	break;
 	case DDL_CREATE_ROLE: {
 		char *role = sname;
 		int grantor = *(int*)getArgReference(stk, pci, 4);
@@ -2142,6 +2237,16 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case DDL_DROP_ROLE: {
 		char *role = sname;
 		msg = sql_drop_role( sql, role);
+	} 	break;
+	case DDL_CREATE_INDEX: {
+		int itype = *(int*)getArgReference(stk, pci, 3);
+		char *ssname = *(str*)getArgReference(stk, pci, 4);
+		char *tname = *(str*)getArgReference(stk, pci, 5);
+		msg = create_index( sql, sname, itype, ssname, tname, stk, pci);
+	} 	break;
+	case DDL_DROP_INDEX: {
+		char *iname = *(str*)getArgReference(stk, pci, 3);
+		msg = drop_index( sql, sname, iname );
 	} 	break;
 	default:
 		throw(SQL, "sql.catalog", "catalog unknown type");

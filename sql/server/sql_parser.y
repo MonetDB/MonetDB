@@ -1682,9 +1682,9 @@ column_commalist_parens:
  ;
 
 type_def:
-    create TYPE qname EXTERNAL sqlNAME ident
+    create TYPE ident EXTERNAL sqlNAME ident
 			{ dlist *l = L();
-				append_list(l, $3);
+				append_string(l, $3);
 				append_string(l, $6);
 			  $$ = _symbol_create_list( SQL_CREATE_TYPE, l ); }
  ;

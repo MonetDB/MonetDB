@@ -346,27 +346,6 @@ sql_schema_has_user(mvc *m, sql_schema *s)
 }
 
 int
-sql_alter_user(mvc *m, str user, str passwd, char enc,
-		sqlid schema_id, str oldpasswd)
-{
-	return(backend_alter_user(m, user, passwd, enc, schema_id, oldpasswd));
-}
-
-int
-sql_rename_user(mvc *m, str olduser, str newuser)
-{
-	return(backend_rename_user(m, olduser, newuser));
-}
-
-str
-sql_drop_user(mvc *m, str user)
-{
-	if (backend_drop_user(m,user) == FALSE)
-		return FALSE;
-	return sql_drop_role(m, user);
-}
-
-int
 sql_privilege(mvc *m, int auth_id, int obj_id, int priv, int sub)
 {
 	oid rid;
@@ -496,6 +475,76 @@ mvc_set_schema(mvc *m, char *schema)
 		ret = 1;
 	}
 	return ret;
+}
+
+char *
+sql_create_user(mvc *sql, char *user, char *passwd, char enc, char *fullname, char *schema)
+{
+	char *err; 
+	int schema_id = 0;
+
+	if (backend_find_user(sql, user) >= 0) {
+		return sql_message("CREATE USER: user '%s' already exists", user);
+	}
+	if ((schema_id = sql_find_schema(sql, schema)) < 0) {
+		return sql_message("CREATE USER: no such schema '%s'", schema);
+	}
+	if ((err = backend_create_user(sql, user, passwd, enc, fullname,
+					schema_id, sql->user_id)) != NULL)
+	{
+		char *r = sql_message("CREATE USER: %s", err);
+		GDKfree(err);
+		return r;
+	}
+	return NULL;
+}
+
+char *
+sql_drop_user(mvc *sql, char *user)
+{
+	int user_id = sql_find_auth(sql, user);
+
+	if (mvc_check_dependency(sql, user_id, OWNER_DEPENDENCY, NULL))
+		return sql_message("DROP USER: '%s' owns a schema", user);
+	if (backend_drop_user(sql,user) == FALSE)
+		return sql_message("%s", sql->errstr);
+	return sql_drop_role(sql, user);
+}
+
+char *
+sql_alter_user(mvc *sql, char *user, char *passwd, char enc,
+		char *schema, char *oldpasswd)
+{
+	sqlid schema_id = 0;
+	/* USER == NULL -> current_user */
+	if (user != NULL && backend_find_user(sql, user) < 0)
+		return sql_message("ALTER USER: no such user '%s'", user);
+
+	if (sql->user_id != USER_MONETDB && sql->role_id != ROLE_SYSADMIN && user != NULL && strcmp(user, stack_get_string(sql, "current_user")) != 0)
+		return sql_message("ALTER USER: insufficient privileges to change user '%s'", user);
+	if (schema && (schema_id = sql_find_schema(sql, schema)) < 0) {
+		return sql_message("ALTER USER: no such schema '%s'", schema);
+	}
+	if (backend_alter_user(sql, user, passwd, enc, schema_id, oldpasswd) == FALSE)
+		return sql_message("%s", sql->errstr);
+	return NULL;
+}
+
+char *
+sql_rename_user(mvc *sql, char *olduser, char *newuser)
+{
+	if (backend_find_user(sql, olduser) < 0)
+		return sql_message("ALTER USER: no such user '%s'", olduser);
+	if (backend_find_user(sql, newuser) >= 0)
+		return sql_message("ALTER USER: user '%s' already exists", newuser);
+	if (sql->user_id != USER_MONETDB && sql->role_id != ROLE_SYSADMIN)
+		return sql_message("ALTER USER: insufficient privileges to "
+				"rename user '%s'", olduser);
+
+	if (backend_rename_user(sql, olduser, newuser) == FALSE)
+		return sql_message("%s", sql->errstr);
+	return NULL;
+
 }
 
 int

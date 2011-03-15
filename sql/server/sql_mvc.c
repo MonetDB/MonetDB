@@ -1147,16 +1147,6 @@ mvc_disconnect_catalog_ALL(mvc *m)
 		
 }
 
-list *
-mvc_get_connection(mvc *m, int id, char *server, char *db, char *db_alias, char * user)
-{
-	if (mvc_debug)
-		fprintf(stderr, "mvc_get_connection details for connection of database %s on server %s by the user %s\n",db, server, user);
-
-	return sql_trans_get_connection(m->session->tr, id, server, db, db_alias, user);
-			
-}
-
 sql_column *
 mvc_null(mvc *m, sql_column *col, int isnull)
 {

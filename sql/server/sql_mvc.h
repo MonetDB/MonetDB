@@ -210,7 +210,6 @@ extern int mvc_check_dependency(mvc * m, int id, int type, list *ignore_ids);
 extern int mvc_connect_catalog(mvc *m, char *server, int port, char *db, char *db_alias, char *user, char *passwd, char *lng);
 extern int mvc_disconnect_catalog(mvc *m, char *db_alias);
 extern int mvc_disconnect_catalog_ALL(mvc *m);
-extern list *mvc_get_connection(mvc *m, int id, char *server, char *db, char *db_alias, char * user);
 
 /* variable management */
 extern void stack_push_var(mvc *sql, char *name, sql_subtype *type);

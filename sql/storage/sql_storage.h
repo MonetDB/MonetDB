@@ -368,7 +368,6 @@ extern list* sql_trans_owner_schema_dependencies(sql_trans *tr, int id);
 extern int sql_trans_connect_catalog(sql_trans *tr, char *server, int port, char *db, char *db_alias, char *user, char *passwd, char *lng);
 extern int sql_trans_disconnect_catalog(sql_trans *tr, char *db_alias);
 extern int sql_trans_disconnect_catalog_ALL(sql_trans *tr);
-extern list *sql_trans_get_connection(sql_trans *tr,int id, char *server, char *db, char *db_alias, char *user);
 
 extern sql_table *create_sql_table(sql_allocator *sa, char *name, sht type, bit system, int persistence, int commit_action);
 extern sql_column *create_sql_column(sql_allocator *sa, sql_table *t, char *name, sql_subtype *tpe);

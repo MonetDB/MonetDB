@@ -3385,22 +3385,6 @@ rel2bin_seq(mvc *sql, sql_rel *rel, list *refs)
 }
 
 static stmt *
-rel2bin_drop_seq(mvc *sql, sql_rel *rel, list *refs) 
-{
-	node *en = rel->exps->h;
-	stmt *action = exp_bin(sql, en->data, NULL, NULL, NULL, NULL);
-	stmt *sname = exp_bin(sql, en->next->data, NULL, NULL, NULL, NULL);
-	stmt *name = exp_bin(sql, en->next->next->data, NULL, NULL, NULL, NULL);
-	list *l = list_new(sql->sa);
-
-	(void)refs;
-	append(l, sname);
-	append(l, name);
-	append(l, action);
-	return stmt_catalog(sql->sa, rel->flag, stmt_list(sql->sa, l));
-}
-
-static stmt *
 rel2bin_trans(mvc *sql, sql_rel *rel, list *refs) 
 {
 	node *en = rel->exps->h;
@@ -3456,7 +3440,7 @@ rel2bin_catalog_table(mvc *sql, sql_rel *rel, list *refs)
 }
 
 static stmt *
-rel2bin_privs(mvc *sql, sql_rel *rel, list *refs) 
+rel2bin_catalog2(mvc *sql, sql_rel *rel, list *refs) 
 {
 	node *en;
 	list *l = list_new(sql->sa);
@@ -3491,7 +3475,7 @@ rel2bin_ddl(mvc *sql, sql_rel *rel, list *refs)
 		s = rel2bin_seq(sql, rel, refs);
 		sql->type = Q_SCHEMA;
 	} else if (rel->flag <= DDL_DROP_SEQ) {
-		s = rel2bin_drop_seq(sql, rel, refs);
+		s = rel2bin_catalog2(sql, rel, refs);
 		sql->type = Q_SCHEMA;
 	} else if (rel->flag <= DDL_TRANS) {
 		s = rel2bin_trans(sql, rel, refs);
@@ -3502,11 +3486,8 @@ rel2bin_ddl(mvc *sql, sql_rel *rel, list *refs)
 	} else if (rel->flag <= DDL_ALTER_TABLE) {
 		s = rel2bin_catalog_table(sql, rel, refs);
 		sql->type = Q_SCHEMA;
-	} else if (rel->flag <= DDL_REVOKE) {
-		s = rel2bin_privs(sql, rel, refs);
-		sql->type = Q_SCHEMA;
 	} else if (rel->flag <= DDL_DROP_ROLE) {
-		s = rel2bin_catalog(sql, rel, refs);
+		s = rel2bin_catalog2(sql, rel, refs);
 		sql->type = Q_SCHEMA;
 	}
 	return s;
