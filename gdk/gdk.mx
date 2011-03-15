@@ -1580,26 +1580,13 @@ bat_iterator(BAT *b)
 	return bi;
 }
 
-#define BUNfirst(b)	((b)->batFirst)
-#ifdef NDEBUG
-#define BUNlast(b)	((b)->batFirst + (b)->batCount)
-#else
-static inline BUN
-BUNlast(BAT *b)
-{
-	BUN last;
+#define BUNfirst(b)	(assert((b)->batFirst <= BUN_MAX), (b)->batFirst)
+#define BUNlast(b)	(assert((b)->batFirst <= BUN_MAX),		\
+			 assert((b)->batCount <= BUN_MAX),		\
+			 assert((b)->batCount <= BUN_MAX - (b)->batFirst), \
+			 (b)->batFirst + (b)->batCount)
 
-	assert(b->batFirst <= BUN_MAX);
-	assert(b->batCount <= BUN_MAX);
-	last = b->batFirst + b->batCount;
-	assert(last <= BUN_MAX);
-	return (BUN) last;
-}
-#endif
-
-#ifdef NDEBUG
 #define BATcount(b)	((b)->batCount)
-#endif
 
 /*
 @
