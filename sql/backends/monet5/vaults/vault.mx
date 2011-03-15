@@ -188,7 +188,6 @@ end;
 @h
 #ifndef _VAULT_H
 #define _VAULT_H
-#include "monetdb_config.h"
 #include "clients.h"
 #include "mal.h"
 #include "mal_client.h"
@@ -225,6 +224,7 @@ vault_export char vaultpath[BUFSIZ];
 #endif /* _VAULT_H */
 @- Module initializaton
 @c
+#include "monetdb_config.h"
 #include "vault.h"
 
 char vaultpath[BUFSIZ];
