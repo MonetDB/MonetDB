@@ -574,8 +574,10 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* data load */
 	fits_get_num_rows(fptr, &rows, &status);
+	mnstr_printf(cntxt->fdout,"Loading %ld rows in table %s\n", rows, tname); 
 	for (j = 1; j <= cnum; j++) {
 		BAT *tmp = NULL;
+		int time0 = GDKms();
 		mtype = fits2mtype(tpcode[j - 1]);
 		nilptr = ATOMnil(mtype);
 		col = mvc_bind_column(m, tbl, cname[j - 1]);
@@ -589,12 +591,27 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BATsetcount(tmp, rows);
 			tmp->tsorted = 0;
 		} else {
-			char *v = GDKzalloc(100 /* TODO needs proper size*/);
-			for (i = 0; i < rows; i++) {
-				fits_read_col(fptr, tpcode[j - 1], j, 1 + i, 1, 1, nilptr, &v, &anynull, &status);
-				BUNappend(tmp, v, TRUE);
+/*			char *v = GDKzalloc(wid[j-1]);*/
+			int bsize = 50;
+			int tm0, tloadtm = 0, tattachtm = 0;
+			int batch = bsize, k;
+			char **v = (char **) GDKzalloc(sizeof(char *) * bsize);
+			for(i = 0; i < bsize; i++)
+				v[i] = GDKzalloc(wid[j-1]);
+			for(i = 0; i < rows; i += batch) {
+				batch = rows - i < bsize ? rows - i: bsize;
+				tm0 = GDKms();
+				fits_read_col(fptr, tpcode[j - 1], j, 1 + i, 1, batch, nilptr, (void *)v, &anynull, &status);
+				tloadtm += GDKms() - tm0;
+				tm0 = GDKms();
+				for(k = 0; k < batch ; k++)
+					BUNappend(tmp, v[k], TRUE);
+				tattachtm += GDKms() - tm0;
 			}
+			for(i = 0; i < bsize ; i++)
+				GDKfree(v[i]);
 			GDKfree(v);
+			mnstr_printf(cntxt->fdout,"String column load %d ms, BUNappend %d ms\n", tloadtm, tattachtm);
 		}
 
 		if (status) {
@@ -603,7 +620,9 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			msg = createException(MAL, "fits.loadtable", "Cannot load column %s of %s table: %s.\n", cname[j - 1], tname, buf);
 			break;
 		}
+		mnstr_printf(cntxt->fdout,"Column %s loaded for %d ms\t", cname[j-1], GDKms() - time0);
 		store_funcs.append_col(m->session->tr, col, tmp, TYPE_bat);
+		mnstr_printf(cntxt->fdout,"Total %d ms\n", GDKms() - time0);
 		BBPunfix(tmp->batCacheid);
 	}
 
