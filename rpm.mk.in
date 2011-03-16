@@ -21,7 +21,7 @@
 
 rpmtopdir = $(shell cd $(top_builddir) && pwd)/rpmbuild
 
-RPMBUILDARGS = --define="_tmppath /tmp" --define="_topdir $(rpmtopdir)" --define="tmpdir %{_tmppath}" --define="rpmcflags -O2 " --define="dist _@LINUX_DIST@" --define="packager MonetDB Database System <info@monetdb.org>" --define="oid@oids@ 1"
+RPMBUILDARGS = --define="_tmppath /tmp" --define="_topdir $(rpmtopdir)" --define="tmpdir %{_tmppath}" --define="rpmcflags -O2 " --define="packager MonetDB Database System <info@monetdb.org>" --define="oid@oids@ 1"
 
 $(top_builddir)/$(distdir).tar.gz:
 	$(MAKE) $(AM_MAKEFLAGS) dist
@@ -34,7 +34,7 @@ $(rpmtopdir)/rpmmacros:
 	mkdir -p $(rpmtopdir)/INSTALL
 
 rpm: MonetDB.spec $(top_builddir)/$(distdir).tar.gz $(rpmtopdir)/rpmmacros
-	$(RPMBUILD) $(RPMBUILDARGS) -ta --target `uname -m` --define="comp_cc @CC@" $(top_builddir)/$(distdir).tar.gz
+	$(RPMBUILD) $(RPMBUILDARGS) --define="dist _@LINUX_DIST@" -ta --target `uname -m` --define="comp_cc @CC@" $(top_builddir)/$(distdir).tar.gz
 
 srpm: MonetDB.spec $(top_builddir)/$(distdir).tar.gz $(rpmtopdir)/rpmmacros
-	$(RPMBUILD) $(RPMBUILDARGS) -ts $(top_builddir)/$(distdir).tar.gz
+	$(RPMBUILD) $(RPMBUILDARGS) --define="dist %{?undefined}" -ts $(top_builddir)/$(distdir).tar.gz

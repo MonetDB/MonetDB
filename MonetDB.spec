@@ -1,7 +1,6 @@
 %define name MonetDB
 %define version 11.2.0
 %{!?buildno: %define buildno %(date +%Y%m%d)}
-%define release %{buildno}%{?dist}%{?oid32:.oid32}%{!?oid32:.oid%{bits}}
 
 # groups of related archs
 %define all_x86 i386 i586 i686
@@ -11,6 +10,13 @@
 %else
 %define bits 64
 %endif
+
+# only add .oidXX suffix if oid size differs from bit size
+%if %{bits} == 64 && %{?oid32:1}%{!?oid32:0}
+%define oidsuf .oid32
+%endif
+
+%define release %{buildno}%{?dist}%{?oidsuf:.oidsuf}
 
 Name: %{name}
 Version: %{version}
