@@ -55,6 +55,7 @@ lib_gdk = {
 
 lib_gdk4 = {
 	COND = HAVE_MONETDB4
+	VERSION = $(GDK_VERSION)
 	NAME = bat4
 	SOURCES = \
 		gdk_scanselect_defs_chr.mx \
