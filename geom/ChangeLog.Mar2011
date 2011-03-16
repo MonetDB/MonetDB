@@ -1,3 +1,6 @@
 # ChangeLog file for geom
 # This file is updated with Maddlog
 
+* Tue Mar 15 2011 Fabian Groffen <fabian@cwi.nl>
+- Set endianness for wkb en/decoding.
+
