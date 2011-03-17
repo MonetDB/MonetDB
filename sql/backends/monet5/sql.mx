@@ -119,11 +119,11 @@ The original code is retained, because it makes it
 easier to later re-use part of the catalog code in a separately.
 @mal
 
-pattern setVariable( varname:str, value:any_1 ):void
+pattern setVariable(mvc:ptr, varname:str, value:any_1 ):ptr
 address setVariable
 comment "Set the value of a session variable";
 
-pattern getVariable( varname:str ):any_1
+pattern getVariable(mvc:ptr, varname:str ):any_1
 address getVariable
 comment "Get the value of a session variable";
 
@@ -354,6 +354,7 @@ comment "check if the tail sorted bat b doesn't have unique tail values" ;
 command not_uniques( b:bat[:oid,:oid]) :bat[:oid,:oid] 
 address not_unique_oids 
 comment "return not unique oids" ;
+
 command not_uniques( b:bat[:oid,:wrd]) :bat[:oid,:oid] 
 address not_unique_oids ;
 
@@ -2260,21 +2261,20 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	char buf[BUFSIZ];
-	mvc *m = NULL;
-	int mtype = getArgType(mb, pci, 2);
-	str varname   = *(str *) getArgReference(stk, pci, 1);
-	str msg = getContext(cntxt,mb, &m, NULL);
+	ptr *res = (ptr*)getArgReference(stk, pci, 0);
+	mvc *m = *(mvc**)getArgReference(stk, pci, 1);
+	str varname   = *(str *) getArgReference(stk, pci, 2);
+	int mtype = getArgType(mb, pci, 3);
 	ValRecord *src;
+	char *msg = NULL;
+	char buf[BUFSIZ];
 
 	(void) cntxt;
-	if (msg)
-		return msg;
-
+	*res = (ptr)m;
 	if (mtype < 0 || mtype >= 255)
 		throw(SQL, "sql.setVariable", "failed");
 	if ( strcmp("optimizer",  varname)== 0) {
-		msg = setOptimizers(*(str *) getArgReference(stk,pci,2));
+		msg = setOptimizers(*(str *) getArgReference(stk,pci,3));
 		if ( msg != NULL && strcmp(msg,"default_pipe") == 0 )
 			return MAL_SUCCEED;
 		msg = SQLvalidatePipeline();
@@ -2283,7 +2283,7 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			return msg;
 		}
 	}
-	src = &stk->stk[getArg(pci, 2)];
+	src = &stk->stk[getArg(pci, 3)];
 	if (stack_find_var(m, varname)) {
 		stack_set_var(m, varname, src);
 	} else {
@@ -2302,16 +2302,12 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 getVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	mvc *m = NULL;
 	int mtype = getArgType(mb, pci, 0);
-	str varname   = *(str *) getArgReference(stk, pci, 1);
-	str msg = getContext(cntxt,mb, &m, NULL);
+	mvc *m = *(mvc**)getArgReference(stk, pci, 1);
+	str varname   = *(str *) getArgReference(stk, pci, 2);
 	ValRecord *dst, *src;
 
 	(void) cntxt;
-	if (msg)
-		return msg;
-
 	if (mtype < 0 || mtype >= 255)
 		throw(SQL, "sql.getVariable", "failed");
 	src = stack_get_var(m, varname);
