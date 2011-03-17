@@ -51,5 +51,3 @@ headers_html = {
 }
 
 EXTRA_DIST = rules.mk
-
-EXTRA_DIST_DIR = mock

@@ -17,10 +17,10 @@
 
 MTSAFE
 
-# FIXME: libMonetODBC is actually a module, once cannot link against
+# FIXME: libMonetODBC is actually a module, one cannot link against
 # that on Darwin.  We need to properly link against (unix)ODBC and use
 # it's drivermanager which correctly dlopens the MonetODBC module.  This
-# requires a odbc.ini file, and testing to be aware of it as well.
+# requires an odbc.ini file, and testing to be aware of it as well.
 #BINS = {
 #	CONDINST = HAVE_TESTING
 #	DIR = libdir/monetdb/tests
