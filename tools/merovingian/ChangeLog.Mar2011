@@ -1,13 +1,3 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
-* Mon Dec 20 2010 Fabian Groffen <fabian@cwi.nl>
-- Allow use of globs with all commands that accept database names as
-  their parameters
-
-* Mon Sep 20 2010 Fabian Groffen <fabian@cwi.nl>
-- merovingian has been renamed into monetdbd.  Internally, monetdbd keeps
-  referring to merovingian for e.g. settings and logfiles.  Merovingian
-  has been renamed to make the process more recognisable as part of the
-  MonetDB suite.
-
