@@ -1,10 +1,3 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
-* Sat Mar 05 2011 Stefan de Konink <stefan@konink.de>
-- sphinx module: update, adding limit/max_results support
-
-* Fri Sep 10 2010 Fabian Groffen <fabian@cwi.nl>
-- Improve the performance of remote.put for BAT arguments.  The put
-  speed is now roughly equal to the speed of get on a BAT.
-

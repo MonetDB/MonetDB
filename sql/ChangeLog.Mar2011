@@ -1,10 +1,3 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
-* Mon Jan 24 2011 Fabian Groffen <fabian@cwi.nl>
-- Fix bug #2648, do not allow restarting a sequence with NULL via the
-  result of a sub-query.
-
-* Wed Dec 15 2010 Niels Nes <niels@cwi.nl>
-- Allow clients to release prepared handles using Xrelease commands
-

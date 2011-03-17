@@ -1,36 +1,3 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
-* Mon Feb 14 2011 Sjoerd Mullender <sjoerd@acm.org>
-- Fixed bug 2677: SQL_DESC_OCTET_LENGTH should give the size in bytes
-  required to copy the data.
-
-* Mon Jan 24 2011 Fabian Groffen <fabian@cwi.nl>
-- Disable timer functionality for non-XQuery languages since it is
-  incorrect, bug #2705
-
-* Tue Jan  4 2011 Fabian Groffen <fabian@cwi.nl>
-- Added mapi_get_uri function to retrieve mapi URI for the connection
-
-* Fri Dec 10 2010 Fabian Groffen <fabian@cwi.nl>
-- Allow to dump table data using INSERT INTO statements, rather than COPY
-  INTO + CSV data using the -N/--inserts flag of mclient and msqldump.
-  Bug #2727
-
-* Wed Dec  8 2010 Fabian Groffen <fabian@cwi.nl>
-- Added support for \dn to list schemas or describe a specific one
-
-* Thu Nov 25 2010 Fabian Groffen <fabian@cwi.nl>
-- Added support for \df to list functions or describe a specific one
-- Added support for \ds to list sequences or describe a specific one
-
-* Mon Nov 22 2010 Fabian Groffen <fabian@cwi.nl>
-- Added support for wildcards * and ? in object names given to \d
-  commands, such that pattern matching is possible, e.g. \d my*
-- Added support for \dS that lists also system tables
-
-* Fri Nov 19 2010 Fabian Groffen <fabian@cwi.nl>
-- object names given to \d are now lowercased, unless quoted by either
-  single or double quotes
-- Strip any trailing whitespace with the \d command
-

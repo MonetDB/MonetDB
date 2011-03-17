@@ -27,7 +27,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 URL: http://monetdb.cwi.nl/
-Source: http://dev.monetdb.org/downloads/sources/Oct2010/%{name}-%{version}.tar.gz
+Source: http://dev.monetdb.org/downloads/sources/Mar2011/%{name}-%{version}.tar.gz
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -574,6 +574,76 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Thu Mar 17 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.1.1-20110317
+- Rebuilt.
+
+* Tue Mar 15 2011 Fabian Groffen <fabian@cwi.nl> - 11.1.1-20110317
+- geom: Set endianness for wkb en/decoding.
+
+* Sat Mar 05 2011 Stefan de Konink <stefan@konink.de> - 11.1.1-20110317
+- monetdb5: sphinx module: update, adding limit/max_results support
+
+* Mon Feb 14 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.1.1-20110317
+- clients: Fixed bug 2677: SQL_DESC_OCTET_LENGTH should give the size in bytes
+  required to copy the data.
+
+* Mon Jan 24 2011 Fabian Groffen <fabian@cwi.nl> - 11.1.1-20110317
+- clients: Disable timer functionality for non-XQuery languages since it is
+  incorrect, bug #2705
+
+* Mon Jan 24 2011 Fabian Groffen <fabian@cwi.nl> - 11.1.1-20110317
+- sql: Fix bug #2648, do not allow restarting a sequence with NULL via the
+  result of a sub-query.
+
+* Fri Jan 14 2011 Fabian Groffen <fabian@cwi.nl> - 11.1.1-20110317
+- gdk: MonetDB/src/gdk was moved to gdk
+
+* Tue Jan  4 2011 Fabian Groffen <fabian@cwi.nl> - 11.1.1-20110317
+- clients: Added mapi_get_uri function to retrieve mapi URI for the connection
+
+* Tue Jan  4 2011 Fabian Groffen <fabian@cwi.nl> - 11.1.1-20110317
+- merovingian: Allow use of globs with all commands that accept database names as
+  their parameters
+
+* Tue Jan  4 2011 Fabian Groffen <fabian@cwi.nl> - 11.1.1-20110317
+- java: PreparedStatements now free the server-side resources attached to them
+  when closed.  This implements bug #2720
+
+* Tue Jan  4 2011 Niels Nes <niels@cwi.nl> - 11.1.1-20110317
+- sql: Allow clients to release prepared handles using Xrelease commands
+
+* Tue Jan  4 2011 Fabian Groffen <fabian@cwi.nl> - 11.1.1-20110317
+- clients: Allow to dump table data using INSERT INTO statements, rather than COPY
+  INTO + CSV data using the -N/--inserts flag of mclient and msqldump.
+  Bug #2727
+
+* Tue Jan  4 2011 Fabian Groffen <fabian@cwi.nl> - 11.1.1-20110317
+- clients: Added support for \dn to list schemas or describe a specific one
+
+* Tue Jan  4 2011 Fabian Groffen <fabian@cwi.nl> - 11.1.1-20110317
+- clients: Added support for \df to list functions or describe a specific one
+- clients: Added support for \ds to list sequences or describe a specific one
+
+* Tue Jan  4 2011 Fabian Groffen <fabian@cwi.nl> - 11.1.1-20110317
+- clients: Added support for wildcards * and ? in object names given to \d
+  commands, such that pattern matching is possible, e.g. \d my*
+- clients: Added support for \dS that lists also system tables
+
+* Tue Jan  4 2011 Fabian Groffen <fabian@cwi.nl> - 11.1.1-20110317
+- clients: object names given to \d are now lowercased, unless quoted by either
+  single or double quotes
+- clients: Strip any trailing whitespace with the \d command
+
+* Tue Jan  4 2011 Fabian Groffen <fabian@cwi.nl> - 11.1.1-20110317
+- merovingian: merovingian has been renamed into monetdbd.  Internally, monetdbd keeps
+  referring to merovingian for e.g. settings and logfiles.  Merovingian
+  has been renamed to make the process more recognisable as part of the
+  MonetDB suite.
+
+* Tue Jan  4 2011 Fabian Groffen <fabian@cwi.nl> - 11.1.1-20110317
+- monetdb5: Improve the performance of remote.put for BAT arguments.  The put
+  speed is now roughly equal to the speed of get on a BAT.
+
 * Tue Jan  4 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.0.0-0
 - Created top-level bootstrap/configure/make with new version numbers.
 
