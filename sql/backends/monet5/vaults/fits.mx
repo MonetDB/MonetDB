@@ -47,20 +47,8 @@ comment "Load a FITS table from an attached file";
 @h
 #ifndef _FITS_
 #define _FITS_
-#undef htype
-#undef ttype
-#include "fitsio.h"
-#include "fitsio2.h"
-#include "longnam.h"
-#include "monetdb_config.h"
-#include <sql_mvc.h>
-#include <sql_scenario.h>
-#include <sql.h>
-#include "clients.h"
 #include "mal.h"
 #include "mal_client.h"
-#include "mal_exception.h"
-#include <glob.h>
 
 #ifdef WIN32
 #ifndef LIBFITS
@@ -82,8 +70,24 @@ fits_export str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 @-
 
 @c
+#include "monetdb_config.h"
+#include <glob.h>
+
+/* clash with GDK? */
+#undef htype
+#undef ttype
+#include <fitsio.h>
+#include <fitsio2.h>
+#include <longnam.h>
+
 #include "fits.h"
 #include "mutils.h"
+#include "sql_mvc.h"
+#include "sql_scenario.h"
+#include "sql.h"
+#include "clients.h"
+#include "mal_exception.h"
+
 #define FITS_INS_COL "INSERT INTO fits_columns(id, name, type, units, number, table_id) \
 	 VALUES(%d,'%s','%s','%s',%d,%d);"
 #define FILE_INS "INSERT INTO fits_files(id, name) VALUES (%d, '%s');"
@@ -495,7 +499,6 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char keywrd[80], **cname, nm[FLEN_VALUE];
 	ptr nilptr;
 
-
 	msg = getContext(cntxt, mb, &m, NULL);
 	if (msg)
 		return msg;
@@ -512,7 +515,6 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(MAL, "fits.loadtable", "Table %d is already created.\n", tname);
 		return msg;
 	}
-	;
 
 	col = mvc_bind_column(m, fits_tbl, "name");
 	rid = table_funcs.column_find_row(m->session->tr, col, tname, NULL);
