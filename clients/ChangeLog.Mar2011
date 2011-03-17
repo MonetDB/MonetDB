@@ -1,6 +1,10 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Mon Feb 14 2011 Sjoerd Mullender <sjoerd@acm.org>
+- Fixed bug 2677: SQL_DESC_OCTET_LENGTH should give the size in bytes
+  required to copy the data.
+
 * Mon Jan 24 2011 Fabian Groffen <fabian@cwi.nl>
 - Disable timer functionality for non-XQuery languages since it is
   incorrect, bug #2705
