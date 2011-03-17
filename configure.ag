@@ -2439,10 +2439,9 @@ esac
 have_raptor=no
 if test "x$enable_rdf" != xno; then
 	req_raptor_ver='1.4.16'
-	# if RDF is explicitly enabled, raptor library is required
-	PKG_CHECK_MODULES([raptor], [raptor >= $req_raptor_ver],
-		[have_raptor="yes"],
-		[have_raptor="no"; if test "x$enable_rdf" = xyes; then AC_MSG_ERROR([raptor library required for RDF support]); fi])
+	PKG_CHECK_MODULES([raptor], [raptor],
+		[AC_DEFINE(HAVE_RAPTOR, 1, [Define if you have raptor installed]); have_raptor="yes"],
+		[if test "x$enable_rdf" = xyes; then AC_MSG_ERROR([raptor library required for RDF support]); fi; have_raptor="no"])
 fi
 AM_CONDITIONAL(HAVE_RAPTOR, test x"$have_raptor" != xno)
 
