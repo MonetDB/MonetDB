@@ -61,10 +61,14 @@ SQLTables_(ODBCStmt *stmt,
 
 #ifdef ODBCDEBUG
 	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\" \"%.*s\"\n",
-		nCatalogNameLength, szCatalogName ? (char *) szCatalogName : "",
-		nSchemaNameLength, szSchemaName ? (char *) szSchemaName : "",
-		nTableNameLength, szTableName ? (char *) szTableName : "",
-		nTableTypeLength, szTableType ? (char *) szTableType : "");
+		(int) nCatalogNameLength,
+		szCatalogName ? (char *) szCatalogName : "",
+		(int) nSchemaNameLength,
+		szSchemaName ? (char *) szSchemaName : "",
+		(int) nTableNameLength,
+		szTableName ? (char *) szTableName : "",
+		(int) nTableTypeLength,
+		szTableType ? (char *) szTableType : "");
 #endif
 
 	/* SQLTables returns a table with the following columns:

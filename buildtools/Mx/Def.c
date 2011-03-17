@@ -274,7 +274,6 @@ MakeDefs(char *name)
 			 * Code directives, 
 			 * Pool: spec, impl
 			 * C:    .h, .c, .cc, .y, .l
-			 * Monet:    .mil, .m
 			 * Basename
 			 * Syntax:@[sihcylfp]\n<blk>\n@...
 			 */
@@ -296,20 +295,16 @@ MakeDefs(char *name)
 		case Pimpl:
 		case Cdef:
 		case Csrc:
-		case CCsrc:
 		case Cyacc:
 		case Clex:
 		case Prolog:
 		case Haskell:
-		case Monet:
 		case MALcode:
-		case MILcode:
 		case HTML:
 		case ODLspec:
 		case OQLspec:
 		case SQL:
 		case Java:
-		case Tcl:
 		case Qnap:
 		case ProC:
 		case Shell:

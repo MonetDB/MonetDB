@@ -1,3 +1,0 @@
-import module namespace xf = "bar" at "$TSTTRGDIR/xrpcConvert2.xrpcfun2.xq";
-
-execute at {"$HOST:$XRPCPORT"} {xf:xrpcConvert(100)}

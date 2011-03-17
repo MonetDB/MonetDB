@@ -20,12 +20,10 @@ All Rights Reserved.
 @f streams
 @a Niels Nes
 @* A simple interface to IO streams
-All file IO is funneled through the stream library, which
-guarantees cross-platform capabilities.
-Several protocols are provided, e.g. it can be used to 
-open 'non compressed, gzipped, bzipped' data files. 
-It encapsulates the corresponding library managed in
-.../stream.
+All file IO is tunneled through the stream library, which guarantees
+cross-platform capabilities.  Several protocols are provided, e.g. it
+can be used to open 'non compressed, gzipped, bzip2ed' data files.  It
+encapsulates the corresponding library managed in common/stream.
 
 @mal
 module streams;
@@ -106,13 +104,9 @@ comment "read at least size bytes into the buffer of s";
 
 @-
 @{
-The implementation follows and should be self-documenting
 @h
 #ifndef _STREAMS_H_
 #define _STREAMS_H_
-
-#include <gdk.h>
-#include <blob.h>
 
 typedef ptr Stream;
 typedef ptr Bstream;
@@ -158,172 +152,23 @@ streams_export str bstream_read_wrapwrap(int *res, Bstream *BS, int *size);
 streams_export str mnstr_readIntwrap(int *ret, Stream *S);
 streams_export str mnstr_read_stringwrap(str *res, Stream *s);
 
-@= open_stream
-streams_export int mnstr_open_@1(Stream *S, str filename);
-int
-mnstr_open_@1(Stream *S, str filename)
-{
-	stream *s;
-
-	if ((s = open_@1( filename )) == NULL || mnstr_errnr(s)) {
-		if (s)
-			mnstr_destroy(s);
-		GDKerror("mnstr_open: could not open file '%s'\n", filename);
-		return GDK_FAIL;
-	} else {
-		*(stream**)S = s;
-		return GDK_SUCCEED;
-	}
-}
-@c
-@:open_stream(rstream)@
-@:open_stream(wstream)@
-@:open_stream(rastream)@
-@:open_stream(wastream)@
-
-@= mnstr_stream
-streams_export int mnstr_stream_@1(Stream *Sout, Stream *Sin);
-int
-mnstr_stream_@1(Stream *Sout, Stream *Sin)
-{
-	*(stream**)Sout = mnstr_@1(*(stream**)Sin);
-	return GDK_SUCCEED;
-}
-@c
-@:mnstr_stream(rstream)@
-@:mnstr_stream(wstream)@
-
-@= open_socket
-streams_export int mnstr_socket_@1(Stream *S, int *socket, str name);
-int
-mnstr_socket_@1(Stream *S, int *socket, str name)
-{
-	stream *s;
-
-	if ((s = socket_@1( *socket, name )) == NULL || mnstr_errnr(s)) {
-		if (s)
-			mnstr_destroy(s);
-		GDKerror("Could not open socket %s\n", name );
-		return GDK_FAIL;
-	} else {
-		*(stream**)S = s;
-		return GDK_SUCCEED;
-	}
-}
-@c
-@:open_socket(rstream)@
-@:open_socket(wstream)@
-@:open_socket(rastream)@
-@:open_socket(wastream)@
-
-@c
-int
-mnstr_write_string(Stream *S, str data)
-{
-	stream *s = *(stream **) S;
-
-	return mnstr_write(s, data, 1, strlen(data)) < 0 ? GDK_FAIL : GDK_SUCCEED;
-}
-
-int
-mnstr_writeInt_wrap(Stream *S, int *data)
-{
-	stream *s = *(stream **) S;
-
-	return mnstr_writeInt(s, *data) ? GDK_SUCCEED : GDK_FAIL;
-}
-
-int
-mnstr_readInt_wrap(int *data, Stream *S)
-{
-	stream *s = *(stream **) S;
-
-	return mnstr_readInt(s, data) ? GDK_SUCCEED : GDK_FAIL;
-}
-
-#define CHUNK (64*1024)
-int
-mnstr_read_string(str *res, Stream *S)
-{
-	stream *s = *(stream **) S;
-	ssize_t len = 0;
-	size_t size = CHUNK +1;
-	char *buf = GDKmalloc(size), *start = buf;
-
-	while ((len = mnstr_read(s, start, 1, CHUNK)) > 0) {
-		size += len;
-		buf = GDKrealloc(buf, size);
-		start = buf + size - CHUNK -1;
-
-		*start = '\0';
-	}
-	if (len < 0)
-		return GDK_FAIL;
-	start += len;
-	*start = '\0';
-	*res = buf;
-	return GDK_SUCCEED;
-}
-
-int
-mnstr_flush_stream(Stream *S)
-{
-	stream *s = *(stream **) S;
-
-	if (mnstr_flush(s))
-		return GDK_FAIL;
-	return GDK_SUCCEED;
-}
-
-int
-mnstr_close_stream(Stream *S)
-{
-	close_stream(*(stream **) S);
-	return GDK_SUCCEED;
-}
-
-int
-open_block_stream(Stream *S, Stream *is)
-{
-	if ((*(stream **) S = block_stream(*(stream **) is)) == NULL) {
-		return GDK_FAIL;
-	} else {
-		return GDK_SUCCEED;
-	}
-}
-
-int
-bstream_create_wrap(Bstream *BS, Stream *S, int *bufsize)
-{
-	if ((*(bstream **) BS = bstream_create(*(stream **) S, (size_t) * bufsize)) == NULL) {
-		return GDK_FAIL;
-	} else {
-		return GDK_SUCCEED;
-	}
-}
-
-int
-bstream_destroy_wrap(Bstream *BS)
-{
-	bstream_destroy(*(bstream **) BS);
-	return GDK_SUCCEED;
-}
-
-int
-bstream_read_wrap(int *res, Bstream *BS, int *size)
-{
-	*res = (int) bstream_read(*(bstream **) BS, (size_t) * size);
-	return GDK_SUCCEED;
-}
-
-@- Wrapper
-The remainder is the version 5 wrapper
 @= open_streamwrap
-streams_export str mnstr_open_@1wrap( Stream *S, str *filename );
-str mnstr_open_@1wrap( Stream *S, str *filename ){
-	if( mnstr_open_@1(S, *filename)== GDK_SUCCEED)
-		return MAL_SUCCEED;
-	throw(IO, "streams.open", "Could not open file");
+streams_export str mnstr_open_@1wrap(Stream *S, str *filename);
+str mnstr_open_@1wrap(Stream *S, str *filename)
+{
+	stream *s;
+
+	if ((s = open_@1(*filename)) == NULL || mnstr_errnr(s)) {
+		int errnr = mnstr_errnr(s);
+		if (s)
+			mnstr_destroy(s);
+		throw(IO, "streams.open", "could not open file '%s': %s",
+				*filename, strerror(errnr));
+	} else {
+		*(stream**)S = s;
+	}
+
+	return MAL_SUCCEED;
 }
 @}
 @c
@@ -337,7 +182,9 @@ str mnstr_open_@1wrap( Stream *S, str *filename ){
 @-
 @= mnstr_streamwrap
 streams_export str mnstr_stream_@1wrap(Stream *sout, Stream *sin);
-str mnstr_stream_@1wrap(Stream *sout, Stream *sin){
+str
+mnstr_stream_@1wrap(Stream *sout, Stream *sin)
+{
 	*(stream**)sout = mnstr_@1(*(stream**)sin);
 	return MAL_SUCCEED;
 }
@@ -346,11 +193,23 @@ str mnstr_stream_@1wrap(Stream *sout, Stream *sin){
 @:mnstr_streamwrap(wstream)@
 @-
 @= open_socketwrap
-streams_export str mnstr_socket_@1wrap( Stream *S, int *socket, str *name );
-str mnstr_socket_@1wrap( Stream *S, int *socket, str *name ){
-	if( mnstr_socket_@1(S,socket,*name) == GDK_SUCCEED)
-		return MAL_SUCCEED;
-	throw(IO, "streams.socket","Could not open socket");
+streams_export str mnstr_socket_@1wrap(Stream *S, int *socket, str *name);
+str
+mnstr_socket_@1wrap(Stream *S, int *socket, str *name)
+{
+	stream *s;
+
+	if ((s = socket_@1(*socket, *name)) == NULL || mnstr_errnr(s)) {
+		int errnr = mnstr_errnr(s);
+		if (s)
+			mnstr_destroy(s);
+		throw(IO, "streams.open", "could not open socket: %s",
+				strerror(errnr));
+	} else {
+		*(stream**)S = s;
+	}
+
+	return MAL_SUCCEED;
 }
 @c
 @:open_socketwrap(rstream)@
@@ -361,82 +220,117 @@ str mnstr_socket_@1wrap( Stream *S, int *socket, str *name ){
 str
 mnstr_write_stringwrap(int *ret, Stream *S, str *data)
 {
-	(void) ret;
-	if (mnstr_write_string(S, *data) == GDK_SUCCEED)
-		return MAL_SUCCEED;
-	throw(IO, "streams.writeStr", "Failed to write string");
+	stream *s = *(stream **)S;
+	(void)ret;
+
+	if (mnstr_write(s, *data, 1, strlen(*data)) < 0)
+		throw(IO, "streams.writeStr", "failed to write string");
+
+	return MAL_SUCCEED;
 }
 
 str
 mnstr_writeIntwrap(int *ret, Stream *S, int *data)
 {
-	(void) ret;
-	if (mnstr_writeInt_wrap(S, data) == GDK_SUCCEED)
-		return MAL_SUCCEED;
-	throw(IO, "streams.writeInt", "Failed to write int");
+	stream *s = *(stream **)S;
+	(void)ret;
+
+	if (!mnstr_writeInt(s, *data))
+		throw(IO, "streams.writeInt", "failed to write int");
+
+	return MAL_SUCCEED;
 }
 
 str
 mnstr_readIntwrap(int *ret, Stream *S)
 {
-	if (mnstr_readInt_wrap(ret, S) == GDK_SUCCEED)
-		return MAL_SUCCEED;
-	throw(IO, "streams.readInt", "Failed to read int");
+	stream *s = *(stream **)S;
+
+	if (!mnstr_readInt(s, ret))
+		throw(IO, "streams.readInt", "failed to read int");
+
+	return MAL_SUCCEED;
+}
+
+#define CHUNK (64 * 1024)
+str
+mnstr_read_stringwrap(str *res, Stream *S)
+{
+	stream *s = *(stream **)S;
+	ssize_t len = 0;
+	size_t size = CHUNK + 1;
+	char *buf = GDKmalloc(size), *start = buf;
+
+	while ((len = mnstr_read(s, start, 1, CHUNK)) > 0) {
+		size += len;
+		buf = GDKrealloc(buf, size);
+		start = buf + size - CHUNK - 1;
+
+		*start = '\0';
+	}
+	if (len < 0)
+		throw(IO, "streams.readStr", "failed to read string");
+	start += len;
+	*start = '\0';
+	*res = buf;
+
+	return MAL_SUCCEED;
 }
 
 str
-mnstr_read_stringwrap(str *res, Stream *s)
+mnstr_flush_streamwrap(int *ret, Stream *S)
 {
-	if (mnstr_read_string(res, s) == GDK_SUCCEED)
-		return MAL_SUCCEED;
-	throw(IO, "streams.readStr", "Failed to read string");
+	stream *s = *(stream **)S;
+	(void)ret;
+
+	if (mnstr_flush(s))
+		throw(IO, "streams.flush", "failed to flush stream");
+
+	return MAL_SUCCEED;
 }
 
 str
-mnstr_flush_streamwrap(int *ret, Stream *s)
+mnstr_close_streamwrap(int *ret, Stream *S)
 {
-	(void) ret;
-	if (mnstr_flush_stream(s) == GDK_SUCCEED)
-		return MAL_SUCCEED;
-	throw(IO, "streams.flush", "Failed to flush a stream");
-}
+	(void)ret;
 
-str
-mnstr_close_streamwrap(int *ret, Stream *s)
-{
-	(void) ret;
-	if (mnstr_close_stream(s) == GDK_SUCCEED)
-		return MAL_SUCCEED;
-	throw(IO, "streams.close", "Failed to close a stream");
+	close_stream(*(stream **)S);
+
+	return MAL_SUCCEED;
 }
 
 str
 open_block_streamwrap(Stream *S, Stream *is)
 {
-	if (open_block_stream(S, is) == GDK_SUCCEED)
-		return MAL_SUCCEED;
-	throw(IO, "bstreams.open", "Failed to open a blocked stream");
+	if ((*(stream **)S = block_stream(*(stream **)is)) == NULL)
+		throw(IO, "bstreams.open", "failed to open block stream");
+
+	return MAL_SUCCEED;
 }
 
 str
 bstream_create_wrapwrap(Bstream *Bs, Stream *S, int *bufsize)
 {
-	if (bstream_create_wrap(Bs, S, bufsize) == GDK_SUCCEED)
-		return MAL_SUCCEED;
-	throw(IO, "bstreams.create", "Failed to create a blocked stream");
+	if ((*(bstream **)Bs = bstream_create(*(stream **)S, (size_t)*bufsize)) == NULL)
+		throw(IO, "bstreams.create", "failed to create block stream");
+
+	return MAL_SUCCEED;
 }
 
 str
 bstream_destroy_wrapwrap(int *ret, Bstream *BS)
 {
-	(void) ret;
-	bstream_destroy_wrap(BS);
+	(void)ret;
+
+	bstream_destroy(*(bstream **)BS);
+
 	return MAL_SUCCEED;
 }
 
 str
 bstream_read_wrapwrap(int *res, Bstream *BS, int *size)
 {
-	bstream_read_wrap(res, BS, size);
+	*res = (int)bstream_read(*(bstream **)BS, (size_t)*size);
+
 	return MAL_SUCCEED;
 }

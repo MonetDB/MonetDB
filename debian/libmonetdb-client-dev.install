@@ -1,3 +1,4 @@
-debian/tmp/usr/include/MonetDB/mapilib/Mapi.h usr/include/MonetDB/mapilib
-debian/tmp/usr/lib/libMapi.so usr/lib
+debian/tmp/usr/lib/libmapi.so usr/lib
+debian/tmp/usr/lib/libmapi.la usr/lib
+debian/tmp/usr/include/monetdb/mapi.h usr/include/monetdb
 debian/tmp/usr/lib/pkgconfig/monetdb-mapi.pc usr/lib/pkgconfig

@@ -218,31 +218,6 @@ command size(b:bat[:any_2,:bit], e:bat[:any_2,:any_1]) :bat[:any_2,:wrd]
 address GRPsize
 comment "Grouped count of true values";
 
-@-
-We need a few routines to support MonetDB/XQ implementation.
-They are focussed on edge BATs [:oid,:oid] where the tail is
-assumed a sequence and the head denotes a group.
-Finding the first and last element maps into finding
-the min/max oid within a group.
-@= xqMinMaxDef
-command min(b:bat[:oid,:@1]):bat[:oid,:@1]
-address GRPmin_oid_@1
-comment "Select the minimum element of each group";
-
-command max(b:bat[:oid,:@1]):bat[:oid,:@1]
-address GRPmax_oid_@1
-comment "Select the minimum element of each group";
-
-@mal
- @:xqMinMaxDef(oid)@
- @:xqMinMaxDef(bte)@
- @:xqMinMaxDef(sht)@
- @:xqMinMaxDef(int)@
- @:xqMinMaxDef(lng)@
- @:xqMinMaxDef(wrd)@
- @:xqMinMaxDef(flt)@
- @:xqMinMaxDef(dbl)@
-
 command prelude()
 address GRPprelude;
 
@@ -2851,80 +2826,6 @@ GRP@1(int *retval, int *bid, int *eid)
 @c
 @:extreme_(min,<,max)@
 @:extreme_(max,>,min)@
-
-@-
-The simple extreme operations exploit the grouping and order
-properties to speed up the process.
-@= xqMinMaxImpl
-group_export str GRP@1_oid_@2(int *retval, int *bid);
-str GRP@1_oid_@2(int *retval, int *bid)
-{
-	BATiter bi, bni;
-	BAT *b;
-	BAT *bn;
-	oid grp= oid_nil;
-	@2 *val= 0;
-	BUN p, q;
-
-	if( (b= BATdescriptor(*bid)) == NULL ){
-		throw(MAL, "group.@1", RUNTIME_OBJECT_MISSING);
-	}
-	/* use expensive operation when the BAT is not ordered on the head */
-	if( !(b->hsorted&1) ){
-		/* determine groups first */
-		BBPreleaseref(b->batCacheid);
-		throw(MAL, "group", PROGRAM_NYI);
-	}
-
-	@:chkHeader(b,GRP@1_oid_@2)@
-
-	bn = BATnew(BAThtype(b), BATttype(b), BATcount(b));
-	if ( bn == NULL){
-		BBPreleaseref(b->batCacheid);
-		throw(MAL, "group", PROGRAM_NYI);
-	}
-
-	bi = bat_iterator(b);
-	bni = bat_iterator(bn);
-	BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
-	BATloop(b, p, q) {
-		oid h = *(oid*) BUNhead(bi,p);
-		@2 t =  *(@2*) BUNtail(bi,p);
-
-		if( h != grp){
-			/* switch to a new group */
-			BUNins(bn, &h, &t, FALSE);
-			grp= h;
-			val = (@2*) BUNtail(bni,BUNlast(bn)-1);
-		} else if( val ){
-			if ( t @3 *val )
-				*val = t;
-		}
-	}
-	BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
-	bn->hsorted = b->hsorted ;
-	bn->tsorted = b->tsorted ;
-	BBPkeepref(*retval= bn->batCacheid);
-	BBPreleaseref(b->batCacheid);
-	return MAL_SUCCEED;
-}
-@c
- @:xqMinMaxImpl(min,oid,<)@
- @:xqMinMaxImpl(min,bte,<)@
- @:xqMinMaxImpl(min,sht,<)@
- @:xqMinMaxImpl(min,int,<)@
- @:xqMinMaxImpl(min,lng,<)@
- @:xqMinMaxImpl(min,wrd,<)@
- @:xqMinMaxImpl(min,flt,<)@
- @:xqMinMaxImpl(min,dbl,<)@
- @:xqMinMaxImpl(max,oid,>)@
- @:xqMinMaxImpl(max,bte,>)@
- @:xqMinMaxImpl(max,sht,>)@
- @:xqMinMaxImpl(max,int,>)@
- @:xqMinMaxImpl(max,lng,>)@
- @:xqMinMaxImpl(max,wrd,>)@
- @:xqMinMaxImpl(max,flt,>)@
- @:xqMinMaxImpl(max,dbl,>)@
 
 @c
 @= large_aggr_count

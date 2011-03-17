@@ -1262,7 +1262,7 @@ BATleftfetchjoin(BAT *l, BAT *r, BUN estimate)
 }
 
 @-
-This routine does the join optimization. TODO: it should be expressed in MIL.
+This routine does the join optimization. 
 @c
 static BAT *
 batjoin(BAT *l, BAT *r, BUN estimate, bit swap)
@@ -1497,8 +1497,7 @@ BATjoin(BAT *l, BAT *r, BUN estimate)
 
 	/* invest in property check, since we cannot easily derive the result properties,
 	 * but later operations might benefit from / depend on them
-	 * Disable at runtime via `Mserver --debug=16777216` or
-	 * `debugmask(or(debugmask(),16777216));` in MIL.
+	 * Disable via command line option  --debug=16777216
 	 */
 	JOINPROPCHK {
 		if (b) {
@@ -1519,8 +1518,7 @@ BATleftjoin(BAT *l, BAT *r, BUN estimate)
 
 	/* invest in property check, since we cannot easily derive the result properties,
 	 * but later operations might benefit from / depend on them
-	 * Disable at runtime via `Mserver --debug=16777216` or
-	 * `debugmask(or(debugmask(),16777216));` in MIL.
+	 * Disable via command line option  --debug=16777216
 	 */
 	JOINPROPCHK {
 		if (b)
@@ -1598,8 +1596,7 @@ BATouterjoin(BAT *l, BAT *r, BUN estimate)
 
 		/* invest in property check, since we cannot easily derive the result properties,
 		 * but later operations might benefit from / depend on them
-		 * Disable at runtime via `Mserver --debug=16777216` or
-		 * `debugmask(or(debugmask(),16777216));` in MIL.
+		 * Disable via command line option  --debug=16777216
 		 */
 		JOINPROPCHK {
 			if (bn)
@@ -1710,8 +1707,7 @@ BATouterjoin(BAT *l, BAT *r, BUN estimate)
 
 	/* invest in property check, since we cannot easily derive the result properties,
 	 * but later operations might benefit from / depend on them
-	 * Disable at runtime via `Mserver --debug=16777216` or
-	 * `debugmask(or(debugmask(),16777216));` in MIL.
+	 * Disable via command line option  --debug=16777216
 	 */
 	JOINPROPCHK {
 		if (bn)
@@ -2428,7 +2424,6 @@ BATfetch(BAT *l, BAT *r)
 
 @-
 The BATsemijoin chooses between various alternatives.
-TODO: this should be moved to MIL.
 @c
 
 BAT *
@@ -2508,8 +2503,7 @@ To do that r should be unique. To that end, doubles may sometimes be eliminated 
 	}
 	/* invest in property check, since we cannot easily derive the result properties,
 	 * but later operations might benefit from / depend on them
-	 * Disable at runtime via `Mserver --debug=16777216` or
-	 * `debugmask(or(debugmask(),16777216));` in MIL.
+	 * Disable via command line option  --debug=16777216
 	 */
 	JOINPROPCHK {
 		if (bn)
@@ -2968,8 +2962,6 @@ USE THIS FUNCTION ONLY WHEN YOU REALLY REALLY HAVE TO:
 @table @code
 @item  -
 printing a multicolumn table to a watching end-user is one such example
-@item -
-the unoptimized [X](bat,bat,..) MIL multiplex construct is another example
 @end table
 @+ multijoin entry routine
 The multijoin will cause a cascade of value_fcn() calls putting
@@ -3186,7 +3178,7 @@ Cleanup & exit.
 
 @}
 @+ The Matching Algorithm
-In multi-column join, all Monet accelerators are put to use when
+In multi-column join, all MonetDB accelerators are put to use when
 equi-lookup is done on a number of head columns.  In order of
 preference, it:
 

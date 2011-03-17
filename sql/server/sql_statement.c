@@ -127,6 +127,15 @@ stmt_atom_string(sql_allocator *sa, char *S)
 }
 
 stmt *
+stmt_atom_string_nil(sql_allocator *sa)
+{
+	sql_subtype t; 
+
+	sql_find_subtype(&t, "clob", 0, 0);
+	return stmt_atom(sa, atom_string(sa, &t, NULL));
+}
+
+stmt *
 stmt_atom_clob(sql_allocator *sa, char *S)
 {
 	char *s = sql2str(S);
@@ -1293,13 +1302,11 @@ stmt_trans(sql_allocator *sa, int type, stmt *chain, stmt *name)
 }
 
 stmt *
-stmt_catalog(sql_allocator *sa, int type, stmt *sname, stmt *auth, stmt *action)
+stmt_catalog(sql_allocator *sa, int type, stmt *args)
 {
 	stmt *s = stmt_create(sa, st_catalog);
 
-	s->op1 = sname;
-	s->op2 = auth;
-	s->op3 = action;
+	s->op1 = args;
 	s->flag = type;
 	return s;
 }
@@ -1316,6 +1323,8 @@ stmt_set_nrcols(stmt *s)
 	for (n = l->h; n; n = n->next) {
 		stmt *f = n->data;
 
+		if (!f)
+			continue;
 		if (f->nrcols > nrcols)
 			nrcols = f->nrcols;
 		key &= f->key;
@@ -1389,7 +1398,6 @@ stmt_connection(sql_allocator *sa, int *id, char *server, int *port, char *db, c
 		list_append(s->op4.lval, passwd);
 	if (lang)
 		list_append(s->op4.lval, lang);
-
 	return s;
 }
 
@@ -2187,10 +2195,9 @@ print_stmt( sql_allocator *sa, stmt *s )
 		printf(");\n");
 	}	break;
 	case st_basetable:
-	case st_relselect:
 	case st_reljoin:
 	case st_releqjoin:
-		assert(0);
+		//assert(0);
 	default:
 		printf("s%d := %s(", s->nr, st_type2string(s->type));
 		switch(s->type) {

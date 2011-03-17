@@ -433,14 +433,15 @@ extern "C" {
 #define BAKDIR		"bat/BACKUP"
 #define SUBDIR		"bat/BACKUP/SUBCOMMIT"
 #define LEFTDIR		"bat/LEFTOVERS"
+#define HCDIR		"bat/HC"
 #else
 #define BATDIR		"bat"
 #define DELDIR		"bat\\DELETE_ME"
 #define BAKDIR		"bat\\BACKUP"
 #define SUBDIR		"bat\\BACKUP\\SUBCOMMIT"
 #define LEFTDIR		"bat\\LEFTOVERS"
+#define HCDIR		"bat\\HC"
 #endif
-#define DBLOGFILE	"MonetLog"
 
 #ifdef MAXPATHLEN
 #define PATHLENGTH 	MAXPATHLEN
@@ -483,7 +484,6 @@ below.  The global variables should not be modified directly.
 #define BOUND2BTRUE	2	/* TRUE, and bound to be so */
 
 #define IDLENGTH	64	/* maximum BAT id length */
-#define OLDLENGTH	32	/* old max  BAT id length */
 #define BATMARGIN	1.2	/* extra free margin for new heaps */
 #define BATTINY_BITS 	8
 #define BATTINY		((BUN)1<<BATTINY_BITS)	/* minimum allocation buncnt for a BAT */
@@ -546,65 +546,7 @@ typedef char *str;
 #	define LL_CONSTANT(val)	(val##i64)
 #endif
 
-/* Base types for all architectures.  These types work on IRIX (64 & 32)
-   and for gcc on Linux. */
-typedef unsigned char gdk_uint8;
-typedef char gdk_int8;
-
-typedef unsigned short gdk_uint16;
-typedef short gdk_int16;
-
-typedef unsigned int gdk_uint32;
-typedef int gdk_int32;
-
-#ifdef HAVE_LONG_LONG
-typedef unsigned long long gdk_uint64;
-typedef long long gdk_int64;
-#else
-#ifdef HAVE___INT64
-typedef unsigned __int64 gdk_uint64;
-typedef __int64 gdk_int64;
-#endif
-#endif
-
-/* define printf formats for printing ptrdiff_t variables */
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901 && !defined(__svr4__) && !defined(WIN32) && !defined(__sgi) || defined(__hpux)
-#define PDFMT "%td"
-#elif SIZEOF_PTRDIFF_T == SIZEOF_INT
-#define PDFMT "%d"
-#elif SIZEOF_PTRDIFF_T == SIZEOF_LONG
-#define PDFMT "%ld"
-#elif SIZEOF_PTRDIFF_T == SIZEOF_LONG_LONG || SIZEOF_PTRDIFF_T == SIZEOF___INT64
-#define PDFMT LLFMT
-#else
-#error no definition for PDFMT
-#endif
-
-/* define printf format for printing pointer values */
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901
-#define PTRFMT		"%p"
-#define PTRFMTCAST		/* no cast needed */
-#elif defined(_MSC_VER)
-/* On Windows, always use 64 bit integers (even on 32-bit architectures)
- * to not get the warning C4311: 'type cast' : pointer truncation from
- * 'void *' to 'unsigned int' */
-#define PTRFMT		"%I64x"
-#define PTRFMTCAST	(unsigned __int64)
-#elif SIZEOF_VOID_P == SIZEOF_INT
-#define PTRFMT		"%x"
-#define PTRFMTCAST	(unsigned int)
-#elif SIZEOF_VOID_P == SIZEOF_LONG
-#define PTRFMT		"%lx"
-#define PTRFMTCAST	(unsigned long)
-#elif SIZEOF_VOID_P == SIZEOF_LONG_LONG
-#define PTRFMT		"%llx"
-#define PTRFMTCAST	(unsigned long long)
-#else
-#error no definition for PTRFMT
-#endif
-
 typedef char long_str[IDLENGTH];	/* standard GDK static string */
-typedef char short_str[OLDLENGTH];	/* old GDK small static string */
 
 typedef oid var_t;		/* type used for heap index of var-sized BAT */
 #define SIZEOF_VAR_T	SIZEOF_OID
@@ -653,7 +595,6 @@ gdk_export int GDKsilent;	/* should GDK shut up? */
 		return 0;					\
 	}
 
-/* needed for mel */
 #define ATOMextern(t)	(ATOMstorage(t) >= TYPE_str)
 
 #define TYPEcastable(t1,t2)	(ATOMtype(t1)==ATOMtype(t2))
@@ -1087,6 +1028,7 @@ gdk_export size_t HEAPsubcopy(Heap *dst, Heap *src, size_t size, size_t offset);
 gdk_export int HEAPdelete(Heap *h, const char *o, const char *ext);
 gdk_export size_t HEAPvmsize(Heap *h);
 gdk_export size_t HEAPmemsize(Heap *h);
+gdk_export void HEAPcacheInit(void);
 
 /*
 @}
@@ -1613,26 +1555,13 @@ bat_iterator(BAT *b)
 	return bi;
 }
 
-#define BUNfirst(b)	((b)->batFirst)
-#ifdef NDEBUG
-#define BUNlast(b)	((b)->batFirst + (b)->batCount)
-#else
-static inline BUN
-BUNlast(BAT *b)
-{
-	BUN last;
+#define BUNfirst(b)	(assert((b)->batFirst <= BUN_MAX), (b)->batFirst)
+#define BUNlast(b)	(assert((b)->batFirst <= BUN_MAX),		\
+			 assert((b)->batCount <= BUN_MAX),		\
+			 assert((b)->batCount <= BUN_MAX - (b)->batFirst), \
+			 (b)->batFirst + (b)->batCount)
 
-	assert(b->batFirst <= BUN_MAX);
-	assert(b->batCount <= BUN_MAX);
-	last = b->batFirst + b->batCount;
-	assert(last <= BUN_MAX);
-	return (BUN) last;
-}
-#endif
-
-#ifdef NDEBUG
 #define BATcount(b)	((b)->batCount)
-#endif
 
 /*
 @
@@ -2608,18 +2537,6 @@ gdk_export void GDKclrerr(void);
 #define strdup _strdup
 #endif
 
-#ifndef S_IRUSR
-/* if one doesn't exist, presumably they all don't exist */
-#define S_IRUSR 0000400		/* read permission, owner */
-#define S_IWUSR 0000200		/* write permission, owner */
-#define S_IRGRP 0000040		/* read permission, group */
-#define S_IWGRP 0000020		/* write permission, grougroup */
-#define S_IROTH 0000004		/* read permission, other */
-#define S_IWOTH 0000002		/* write permission, other */
-#endif
-
-#define MONETDB_MODE (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)
-
 #define BBP_BATMASK	511
 #define BBP_THREADMASK	63
 
@@ -2649,7 +2566,7 @@ gdk_export MT_Cond GDKunloadCond;
 gdk_export MT_Lock GDKtmLock;
 
 /*
-   See `man monetdb5.conf` or MonetDB5/conf/monetdb5.conf.5
+   See `man mserver5` or tools/mserver/mserver5.1
    for a documentation of the following debug options.
 */
 
@@ -2745,12 +2662,12 @@ active.
 @{
 @h
 */
-#define gdk_set_lock(X,Y)	if (GDKprotected) MT_set_lock(X,Y)
-#define gdk_unset_lock(X,Y)	if (GDKprotected) MT_unset_lock(X,Y)
-#define gdk_up_sema(X,Y)	if (GDKprotected) MT_up_sema(X,Y)
-#define gdk_down_sema(X,Y)	if (GDKprotected) MT_down_sema(X,Y)
-#define gdk_signal_cond(X,Y)	if (GDKprotected) MT_signal_cond(X,Y)
-#define gdk_wait_cond(X,Y,Z)	if (GDKprotected) MT_wait_cond(X,Y,Z)
+#define gdk_set_lock(X,Y)	if (GDKprotected) MT_lock_set(&X,Y)
+#define gdk_unset_lock(X,Y)	if (GDKprotected) MT_lock_unset(&X,Y)
+#define gdk_up_sema(X,Y)	if (GDKprotected) MT_sema_up(&X,Y)
+#define gdk_down_sema(X,Y)	if (GDKprotected) MT_sema_down(&X,Y)
+#define gdk_signal_cond(X,Y)	if (GDKprotected) MT_cond_signal(&X,Y)
+#define gdk_wait_cond(X,Y,Z)	if (GDKprotected) MT_cond_wait(&X,&Y,Z)
 /*
 @}
 @-

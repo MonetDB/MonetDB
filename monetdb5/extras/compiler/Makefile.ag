@@ -24,12 +24,12 @@ INCLUDES = ../../modules/atoms ../../mal \
 MTSAFE
 
 LIBS = {
+	MODULE
 	DIR = libdir/monetdb5
 	SEP = _
 	SOURCES = mal_compiler.mx 
 
 	LIBS = ../../tools/libmonetdb5 \
-		../../../common/options/libmoptions \
 		../../../gdk/libbat \
 		../../../common/stream/libstream \
 		$(MALLOC_LIBS) 

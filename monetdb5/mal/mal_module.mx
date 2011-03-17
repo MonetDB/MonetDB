@@ -244,6 +244,7 @@ void freeModule(Module m){
 		if (pci && pci->token == COMMANDsymbol && pci->argc == 1) {
 			int ret = 0;
 
+			assert(pci->fcn != NULL);
 			(*pci->fcn)(&ret);
 			(void)ret;
 		}

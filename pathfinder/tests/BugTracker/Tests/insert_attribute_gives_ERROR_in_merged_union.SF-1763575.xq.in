@@ -1,7 +1,0 @@
-pf:add-doc("$TSTSRCDIR/insert_attribute_gives_ERROR_in_merged_union.SF-1763575.xml","1763575.xml","1763575.xml",10)
-<>
-for $i in doc("1763575.xml")//file return do insert attribute { "nid" } { pf:nid($i) } into $i
-<>
-for $i in doc("1763575.xml")//*[not(self::file)] return do insert attribute { "nid" } { pf:nid($i) } into $i
-<>
-doc("1763575.xml")

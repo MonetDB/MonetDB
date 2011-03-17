@@ -1,5 +1,0 @@
-module(example);
-print(hello("world"));
-var x:=hello("workd");
-print(type(x));
-print(x);

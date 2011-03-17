@@ -80,10 +80,12 @@ SQLForeignKeys_(ODBCStmt *stmt,
 
 #ifdef ODCBDEBUG
 	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\" \"%.*s\" \"%.*s\" \"%.*s\"\n",
-		nPKCatalogNameLength, szPKCatalogName, nPKSchemaNameLength,
-		szPKSchemaName, nPKTableNameLength, szPKTableName,
-		nFKCatalogNameLength, szFKCatalogName, nFKSchemaNameLength,
-		szFKSchemaName, nFKTableNameLength, szFKTableName);
+		(int) nPKCatalogNameLength, szPKCatalogName,
+		(int) nPKSchemaNameLength, szPKSchemaName,
+		(int) nPKTableNameLength, szPKTableName,
+		(int) nFKCatalogNameLength, szFKCatalogName,
+		(int) nFKSchemaNameLength, szFKSchemaName,
+		(int) nFKTableNameLength, szFKTableName);
 #endif
 	/* dependent on the input parameter values we must add a
 	   variable selection condition dynamically */
@@ -116,11 +118,11 @@ SQLForeignKeys_(ODBCStmt *stmt,
 		"cast(null as varchar(1)) as pktable_cat, "
 		"pks.\"name\" as pktable_schem, "
 		"pkt.\"name\" as pktable_name, "
-		"pkkc.\"column\" as pkcolumn_name, "
+		"pkkc.\"name\" as pkcolumn_name, "
 		"cast(null as varchar(1)) as fktable_cat, "
 		"fks.\"name\" as fktable_schem, "
 		"fkt.\"name\" as fktable_name, "
-		"fkkc.\"column\" as fkcolumn_name, "
+		"fkkc.\"name\" as fkcolumn_name, "
 		"cast(fkkc.\"nr\" + 1 as smallint) as key_seq, "
 		"cast(%d as smallint) as update_rule, "
 		"cast(%d as smallint) as delete_rule, "
@@ -128,9 +130,9 @@ SQLForeignKeys_(ODBCStmt *stmt,
 		"pkk.\"name\" as pk_name, "
 		"cast(%d as smallint) as deferrability "
 		"from sys.\"schemas\" fks, sys.\"tables\" fkt, "
-		"sys.\"keycolumns\" fkkc, sys.\"keys\" as fkk, "
+		"sys.\"objects\" fkkc, sys.\"keys\" as fkk, "
 		"sys.\"schemas\" pks, sys.\"tables\" pkt, "
-		"sys.\"keycolumns\" pkkc, sys.\"keys\" as pkk "
+		"sys.\"objects\" pkkc, sys.\"keys\" as pkk "
 		"where fkt.\"id\" = fkk.\"table_id\" and "
 		"pkt.\"id\" = pkk.\"table_id\" and "
 		"fkk.\"id\" = fkkc.\"id\" and "

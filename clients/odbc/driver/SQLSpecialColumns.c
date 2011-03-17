@@ -67,7 +67,11 @@ SQLSpecialColumns_(ODBCStmt *stmt,
 	fixODBCstring(szTableName, nTableNameLength, SQLSMALLINT, addStmtError, stmt, return SQL_ERROR);
 
 #ifdef ODBCDEBUG
-	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\" %hd %hu\n", nCatalogNameLength, (char*)szCatalogName, nSchemaNameLength, (char*)szSchemaName, nTableNameLength, (char*)szTableName, nScope, nNullable);
+	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\" %u %u\n",
+		(int) nCatalogNameLength, (char *) szCatalogName,
+		(int) nSchemaNameLength, (char *) szSchemaName,
+		(int) nTableNameLength, (char *) szTableName,
+		(unsigned int) nScope, (unsigned int) nNullable);
 #endif
 
 	/* check for valid IdentifierType argument */
@@ -147,11 +151,11 @@ SQLSpecialColumns_(ODBCStmt *stmt,
 		       "cast(1 as smallint) as pseudo_column "
 		       "from sys.\"schemas\" s, sys.\"tables\" t, "
 		       "sys.\"columns\" c, sys.\"keys\" k, "
-		       "sys.\"keycolumns\" kc "
+		       "sys.\"objects\" kc "
 		       "where s.\"id\" = t.\"schema_id\" and "
 		       "t.\"id\" = c.\"table_id\" and "
 		       "t.\"id\" = k.\"table_id\" and "
-		       "c.\"name\" = kc.\"column\" and "
+		       "c.\"name\" = kc.\"name\" and "
 		       "kc.\"id\" = k.\"id\" and "
 		       "k.\"type\" in (0, 1)");
 		query_end += strlen(query_end);
@@ -228,7 +232,8 @@ SQLSpecialColumns(SQLHSTMT hStmt,
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSpecialColumns " PTRFMT " %d ", PTRFMTCAST hStmt, nIdentifierType);
+	ODBCLOG("SQLSpecialColumns " PTRFMT " %u ",
+		PTRFMTCAST hStmt, (unsigned int) nIdentifierType);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -272,7 +277,8 @@ SQLSpecialColumnsW(SQLHSTMT hStmt,
 	SQLCHAR *catalog = NULL, *schema = NULL, *table = NULL;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSpecialColumnsW " PTRFMT " %d ", PTRFMTCAST hStmt, nIdentifierType);
+	ODBCLOG("SQLSpecialColumnsW " PTRFMT " %u ",
+		PTRFMTCAST hStmt, (unsigned int) nIdentifierType);
 #endif
 
 	if (!isValidStmt(stmt))

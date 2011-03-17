@@ -67,7 +67,7 @@ select-distinct-limit.Bug-2676
 cast-varchar.Bug-2682
 substring_display_width.Bug-2683
 new-readonly-db.Bug-2695
-Mbedded-crash.Bug-2701
+#Mbedded-crash.Bug-2701  no longer under maintenance
 distinct-order-by-limit.Bug-2691
 join_problem.Bug-2694
 TypeException_with_missing_function.Bug-2674
@@ -84,3 +84,5 @@ COPY_INTO_with_backslashes.Bug-2748
 wrong_error_message_dropping_view.Bug-2713
 call_function_without_warning.Bug-2752
 vacuum
+with-between.Bug-2732
+sequence-restart-with-null.Bug-2648

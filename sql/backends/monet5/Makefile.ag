@@ -15,12 +15,13 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = NOT_WIN32?merovingian NOT_WIN32?vaults
+SUBDIRS = NOT_WIN32?vaults
 
 # force sql.o to not depend on .../rdf/rdf.h since it only optionally created
 RDF_INC = -I../../../monetdb5/extras/rdf
 
 INCLUDES = ../../include ../../common ../../storage ../../server \
+		   ../../../monetdb5/misc \
 		   ../../../monetdb5/modules/atoms \
 		   ../../../monetdb5/compiler \
 		   ../../../monetdb5/modules/kernel \
@@ -36,6 +37,7 @@ INCLUDES = ../../include ../../common ../../storage ../../server \
 		   $(READLINE_INCS)
 
 lib__sql = {
+	MODULE
 	DIR = libdir/monetdb5
 	SOURCES = \
 		sql.mx \
@@ -54,58 +56,48 @@ lib__sql = {
 		   ../../storage/restrict/librestrictstore \
 		   ../../storage/bpm/libbpmstore \
 		   ../../common/libsqlcommon \
+		   HAVE_RAPTOR?../../../monetdb5/extras/rdf/librdf \
 		   ../../../monetdb5/tools/libmonetdb5 \
 		   ../../../gdk/libbat \
 		   ../../../common/stream/libstream \
-		   $(READLINE_LIBS) $(PTHREAD_LIBS)
+		   $(READLINE_LIBS) $(PTHREAD_LIBS) \
+		   $(raptor_LIBS)
 }
 
 
-lib_embeddedsql5 = {
-	SOURCES = embeddedclient.c.in
-	LIBS = ../../server/libsqlserver \
-		   ../../storage/libstore \
-		   ../../storage/bat/libbatstore \
-		   ../../storage/restrict/librestrictstore \
-		   ../../storage/bpm/libbpmstore \
-		   ../../common/libsqlcommon \
-		   ../../../monetdb5/tools/libmonetdb5 \
-		   ../../../gdk/libbat \
-		   ../../../clients/mapilib/libmapi \
-		   ../../../common/options/libmoptions \
-		   ../../../common/stream/libstream \
-		   $(READLINE_LIBS) $(PTHREAD_LIBS)
-}
-
-bin_mbeddedsql5 = {
-	SOURCES = prog.c
-	LIBS = libembeddedsql5 \
-		   ../../server/libsqlserver \
-		   ../../storage/libstore \
-		   ../../storage/bat/libbatstore \
-		   ../../storage/restrict/librestrictstore \
-		   ../../storage/bpm/libbpmstore \
-		   ../../common/libsqlcommon \
-		   ../../../monetdb5/tools/libmonetdb5 \
-		   ../../../gdk/libbat \
-		   ../../../clients/mapilib/libmapi \
-		   ../../../common/options/libmoptions \
-		   ../../../common/stream/libstream \
-		   $(READLINE_LIBS) $(PTHREAD_LIBS) $(curl_LIBS)
-}
-
-headers_h = {
-	HEADERS = h
-	DIR = includedir/monetdb/sql
-	SOURCES = embeddedclient.h
-}
-
-headers_pc = {
-	COND = NOT_WIN32
-	HEADERS = pc
-	DIR = libdir/pkgconfig
-	SOURCES = monetdb-embeddedsql.pc.in
-}
+# embedded is disabled, but keep building instructions for the moment we
+# like to revive this or someone whould like to build this for some reason
+#
+#lib_embeddedsql5 = {
+#	SOURCES = embeddedclient.c.in
+#	LIBS = ../../server/libsqlserver \
+#		   ../../storage/libstore \
+#		   ../../storage/bat/libbatstore \
+#		   ../../storage/restrict/librestrictstore \
+#		   ../../storage/bpm/libbpmstore \
+#		   ../../common/libsqlcommon \
+#		   ../../../monetdb5/tools/libmonetdb5 \
+#		   ../../../gdk/libbat \
+#		   ../../../clients/mapilib/libmapi \
+#		   ../../../common/stream/libstream \
+#		   $(READLINE_LIBS) $(PTHREAD_LIBS)
+#}
+#
+#bin_mbeddedsql5 = {
+#	SOURCES = prog.c
+#	LIBS = libembeddedsql5 \
+#		   ../../server/libsqlserver \
+#		   ../../storage/libstore \
+#		   ../../storage/bat/libbatstore \
+#		   ../../storage/restrict/librestrictstore \
+#		   ../../storage/bpm/libbpmstore \
+#		   ../../common/libsqlcommon \
+#		   ../../../monetdb5/tools/libmonetdb5 \
+#		   ../../../gdk/libbat \
+#		   ../../../clients/mapilib/libmapi \
+#		   ../../../common/stream/libstream \
+#		   $(READLINE_LIBS) $(PTHREAD_LIBS) $(curl_LIBS)
+#}
 
 headers_mal = {
 	HEADERS = mal

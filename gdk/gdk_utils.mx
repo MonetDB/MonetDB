@@ -36,15 +36,13 @@ gdk_export void GDKlockHome(void);
 gdk_export void GDKunlockHome(void);
 gdk_export int GDKgetHome(void);
 
-gdk_export lng GDKusec(void);
-gdk_export int GDKms(void);
-
 gdk_export BAT *GDKenv;
 
 @c
 #include "monetdb_config.h"
 
 #include "gdk.h"
+#include "mutils.h"
 
 static int gdk_alloc_map = 0;
 static char GDKdbfarmStr[PATHLENGTH] = { "dbfarm" };
@@ -56,23 +54,12 @@ BAT *GDKenv = NULL;
 #include <fcntl.h>
 #endif
 
-#ifdef HAVE_FTIME
-#include <sys/timeb.h>
-#endif
-
-#ifdef TIME_WITH_SYS_TIME
-# include <sys/time.h>
-# include <time.h>
-#else
-# ifdef HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# else
-#  include <time.h>
-# endif
-#endif
-
 #ifdef HAVE_PWD_H
 # include <pwd.h>
+#endif
+
+#ifdef HAVE_SYS_SYSCTL_H
+# include <sys/sysctl.h>
 #endif
 
 #ifdef NATIVE_WIN32
@@ -96,9 +83,8 @@ static int GDKstopped = 1;
 
 @}
 @+ Monet configuration file
-Parse a possible MonetDB.conf file (either in the default location
-<prefix>/etc/MonetDB.conf, or as specified by either an environment variable
-$MONETDB_CONFIG, or by command line option -c/--config)
+Parse a possible MonetDB config file
+(if specified by command line option -c/--config)
 to extract pre-settings of system variables.
 Un-recognized parameters are simply skipped, because they  may be
 picked up by other components of the system.
@@ -107,7 +93,7 @@ may be unnoticed for a long time.
 Syntax errors are immediately flagged, though.
 
 Since the GDK kernel moves into the database directory, we need
-to keep the absolute path to the MonetDB.conf file for top-levels
+to keep the absolute path to the MonetDB config file for top-levels
 to access its information.
 @{
 @c
@@ -246,7 +232,7 @@ GDKlog(const char *format, ...)
 	int mustopen = GDKgetHome();
 	time_t tm = time(0);
 
-	if (!MT_initialized())
+	if (MT_pagesize() == 0)
 		return;
 
 	va_start(ap, format);
@@ -397,7 +383,7 @@ the memory consumption.
 size_t GDK_mmap_minsize = GDK_VM_MAXSIZE;
 size_t GDK_mem_maxsize_max = GDK_VM_MAXSIZE;
 size_t GDK_mem_maxsize = GDK_VM_MAXSIZE;
-size_t GDK_mem_bigsize = 1 << 20; /* please keep in sync with MonetDB.conf.in & monetdb5.conf.in */
+size_t GDK_mem_bigsize = 1 << 20;
 size_t GDK_vm_maxsize = GDK_VM_MAXSIZE;
 
 int GDK_vm_allocs = 0;
@@ -446,12 +432,99 @@ static int mtrace = 0;
 static MT_Lock mbyteslock;
 #define malloc_lock() gdk_set_lock(mbyteslock, "malloc")
 #define	malloc_unlock()	gdk_unset_lock(mbyteslock, "malloc");
-#define malloc_lock_init() MT_init_lock(mbyteslock, "mbyteslock")
+#define malloc_lock_init() MT_lock_init(&mbyteslock, "mbyteslock")
 #else
 #define malloc_lock()
 #define	malloc_unlock()
 #define malloc_lock_init()
 #endif
+
+@h
+/* virtual memory defines */
+gdk_export size_t _MT_npages;
+gdk_export size_t _MT_pagesize;
+
+#define MT_pagesize()	_MT_pagesize
+#define MT_npages()	_MT_npages
+
+gdk_export void MT_init(void);	/*  init the package. */
+@c
+size_t _MT_pagesize = 0;	/* variable holding memory size */
+size_t _MT_npages = 0;		/* variable holding page size */
+
+void
+MT_init(void)
+{
+#ifdef HAVE_GETSYSTEMINFO
+	{
+		SYSTEM_INFO sysInfo;
+
+		GetSystemInfo(&sysInfo);
+		_MT_pagesize = sysInfo.dwPageSize;
+	}
+#else
+# if defined(HAVE_SYSCONF) && defined(_SC_PAGESIZE)
+	_MT_pagesize = sysconf(_SC_PAGESIZE);
+# endif
+#endif
+	if (_MT_pagesize <= 0)
+		_MT_pagesize = 4096;	/* default */
+
+#ifdef HAVE_GLOBALMEMORYSTATUSEX
+	{
+		MEMORYSTATUSEX memStatEx;
+
+		memStatEx.dwLength = sizeof(memStatEx);
+		if (GlobalMemoryStatusEx(&memStatEx))
+			_MT_npages = (size_t) (memStatEx.ullTotalPhys / _MT_pagesize);
+	}
+#else
+# ifdef HAVE_GLOBALMEMORYSTATUS
+	if (_MT_npages <= 0) {
+		MEMORYSTATUS memStat;
+
+		GlobalMemoryStatus(&memStat);
+		_MT_npages = memStat.dwTotalPhys / _MT_pagesize;
+	}
+# else
+#  if defined(HAVE_SYSCONF) && defined(_SC_PHYS_PAGES)
+	_MT_npages = sysconf(_SC_PHYS_PAGES);
+#  else
+#   if defined(HAVE_SYS_SYSCTL_H) && defined(HW_USERMEM)
+	{
+		uint64_t size;
+		size_t len = sizeof(size);
+
+		/* This is the 'non-kernel memory', e.g. what's left to a user
+		 * process to allocate. */
+		sysctlbyname("hw.usermem", &size, &len, NULL, 0);
+		_MT_npages = size / _MT_pagesize;
+	}
+#   else
+#    error "don't know how to get the amount of physical memory for your OS"
+#   endif /* sysctl */
+#  endif /* sysconf */
+# endif	/* GlobalMemoryStatus */
+#endif /* GlobalMemoryStatusEx */
+#ifdef HAVE_GETRLIMIT
+	{
+		struct rlimit rl;
+		size_t memlim;
+
+		/* The environment can be limited memory wise.  In such case the
+		 * physically available memory, is not necessarily what we can
+		 * also use. */
+		getrlimit(RLIMIT_DATA, &rl);
+		if (rl.rlim_cur != (rlim_t) RLIM_INFINITY) {
+			/* rlimit returns in bytes, recalculate */
+			memlim = rl.rlim_cur / _MT_pagesize;
+			/* if it's more restrictive, take that as value */
+			if (memlim < _MT_npages)
+				_MT_npages = memlim;
+		}
+	}
+#endif
+}
 
 size_t
 GDKvm_heapsize(void)
@@ -1182,8 +1255,7 @@ GDKfree_(void *blk)
 		 * To avoid performance penalty in the "production version",
 		 * we only do this in debugging/development mode (i.e.,
 		 * when configured with --enable-assert).
-		 * Disable at runtime via `Mserver --debug=33554432` or
-		 * `debugmask(or(debugmask(),33554432));` in MIL.
+		 * Disable at command line using --debug=33554432
 		 */
 		DEADBEEFCHK memset(s, 0xDB, size - (8 + (size & 1)));	/* 0xDeadBeef */
 #endif
@@ -1470,19 +1542,19 @@ GDKprotect(void)
 		TMDEBUG printf("# GDKlocks created\n");
 
 		for (i = 0; i <= BBP_BATMASK; i++) {
-			MT_init_lock(GDKbatLock[i].swap, "GDKswapLock");
-			MT_init_lock(GDKbatLock[i].hash, "GDKhashLock");
+			MT_lock_init(&GDKbatLock[i].swap, "GDKswapLock");
+			MT_lock_init(&GDKbatLock[i].hash, "GDKhashLock");
 		}
 		for (i = 0; i <= BBP_THREADMASK; i++) {
-			MT_init_lock(GDKbbpLock[i].alloc, "GDKcacheLock");
-			MT_init_lock(GDKbbpLock[i].trim, "GDKtrimLock");
+			MT_lock_init(&GDKbbpLock[i].alloc, "GDKcacheLock");
+			MT_lock_init(&GDKbbpLock[i].trim, "GDKtrimLock");
 			GDKbbpLock[i].free = 0;
 		}
-		MT_init_lock(GDKnameLock, "GDKnameLock");
-		MT_init_lock(GDKthreadLock, "GDKthreadLock");
-		MT_init_lock(GDKunloadLock, "GDKunloadLock");
-		MT_init_cond(GDKunloadCond, "GDKunloadCond");
-		MT_init_lock(GDKtmLock, "GDKtmLock");
+		MT_lock_init(&GDKnameLock, "GDKnameLock");
+		MT_lock_init(&GDKthreadLock, "GDKthreadLock");
+		MT_lock_init(&GDKunloadLock, "GDKunloadLock");
+		MT_cond_init(&GDKunloadCond, "GDKunloadCond");
+		MT_lock_init(&GDKtmLock, "GDKtmLock");
 		malloc_lock_init();
 		GDKprotected = 1;
 	}
@@ -1578,12 +1650,8 @@ GDKinit(opt *set, int setlen)
 #endif
 	gdk_alloc_map = strcasecmp(alloc_map, "yes") == 0;
 	errno = 0;
-	dbfarm = mo_substitute(set, setlen, dbfarm);
-	if (!GDKenvironment(dbname, dbfarm)) {
-		free(dbfarm);
+	if (!GDKenvironment(dbname, dbfarm))
 		return 0;
-	}
-	free(dbfarm);
 
 	if ((p = mo_find_option(set, setlen, "gdk_debug")))
 		GDKdebug = strtol(p, NULL, 10);
@@ -1613,6 +1681,8 @@ GDKinit(opt *set, int setlen)
 	GDKremovedir(DELDIR);
 	BBPinit();
 
+	HEAPcacheInit();
+
 	GDKenv = BATnew(TYPE_str, TYPE_str, 100);
 	if (GDKenv == NULL)
 		GDKfatal("GDKinit: Could not create environment BAT");
@@ -1638,13 +1708,8 @@ GDKinit(opt *set, int setlen)
 			nlen++;
 		}
 	}
-	for (i = 0; i < nlen; i++) {
-		char *value;
-
-		value = mo_substitute(n, nlen, n[i].value);
-		GDKsetenv(n[i].name, value);
-		free(value);
-	}
+	for (i = 0; i < nlen; i++)
+		GDKsetenv(n[i].name, n[i].value);
 	free(n);
 
 	if ((p = GDKgetenv("gdk_mem_maxsize"))) {
@@ -1854,7 +1919,7 @@ Really really get the lock. Now!!
 int
 GDKgetHome(void)
 {
-	if (MT_initialized() == 0 || GDKlockFile)
+	if (MT_pagesize() == 0 || GDKlockFile)
 		return 0;
 	while ((GDKlockFile = fopen(GDKLOCK, "r+")) == NULL) {
 		GDKerror("GDKgetHome: PANIC on open %s. sleep(1)\n", GDKLOCK);
@@ -2162,64 +2227,6 @@ int
 GDKerrorCount(void)
 {
 	return THRerrorcount[THRgettid()];
-}
-
-
-@- Timers
-The following relative timers are available for inspection.
-Note that they may consume recognizable overhead.
-@c
-
-lng
-GDKusec(void)
-{
-	/* Return the time in milliseconds since an epoch.  The epoch
-	   is roughly the time this program started. */
-#ifdef HAVE_QUERYPERFORMANCECOUNTER
-	static LARGE_INTEGER freq, start;	/* automatically initialized to 0 */
-	LARGE_INTEGER ctr;
-
-	if (start.QuadPart == 0 &&
-	    (!QueryPerformanceFrequency(&freq) ||
-	     !QueryPerformanceCounter(&start)))
-		start.QuadPart = -1;
-	if (start.QuadPart > 0) {
-		QueryPerformanceCounter(&ctr);
-		return (lng) (((ctr.QuadPart - start.QuadPart) * 1000000) / freq.QuadPart);
-	}
-#endif
-#ifdef HAVE_GETTIMEOFDAY
-	{
-		static struct timeval tpbase;	/* automatically initialized to 0 */
-		struct timeval tp;
-
-		if (tpbase.tv_sec == 0)
-			gettimeofday(&tpbase, NULL);
-		gettimeofday(&tp, NULL);
-		tp.tv_sec -= tpbase.tv_sec;
-		return (lng) tp.tv_sec * 1000000 + (lng) tp.tv_usec;
-	}
-#else
-#ifdef HAVE_FTIME
-	{
-		static struct timeb tbbase;	/* automatically initialized to 0 */
-		struct timeb tb;
-
-		if (tbbase.time == 0)
-			ftime(&tbbase);
-		ftime(&tb);
-		tb.time -= tbbase.time;
-		return (lng) tb.time * 1000000 + (lng) tb.millitm * 1000;
-	}
-#endif
-#endif
-}
-
-
-int
-GDKms(void)
-{
-	return (int) (GDKusec() / 1000);
 }
 
 @}

@@ -410,12 +410,12 @@ SQLworker(void *arg)
 	mnstr_printf(GDKout,"SQLworker started\n");
 #endif
 	while(task->next >= 0 ){
-		MT_down_sema(task->sema,"SQLworker");
+		MT_sema_down(&task->sema,"SQLworker");
 		if ( task->next < 0 ){
 #ifdef _DEBUG_TABLET_
 			mnstr_printf(GDKout,"SQLworker terminated\n");
 #endif
-			MT_up_sema(task->reply,"SQLworker");
+			MT_sema_up(&task->reply,"SQLworker");
 			return;
 		}
 
@@ -429,9 +429,9 @@ SQLworker(void *arg)
 			}
 		cnt += task->next;
 
-		MT_up_sema(task->reply,"SQLworker");
+		MT_sema_up(&task->reply,"SQLworker");
 	}
-	MT_up_sema(task->reply,"SQLworker");
+	MT_sema_up(&task->reply,"SQLworker");
 #ifdef _DEBUG_TABLET_
 	mnstr_printf(GDKout,"SQLworker exits\n");
 #endif
@@ -625,8 +625,8 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 	for( j= 0; j < threads ; j++){
 		ptask[j]= *task;
 		ptask[j].cols =  (int*) GDKzalloc(as->nr_attrs * sizeof(int));
-		MT_init_sema(ptask[j].sema,0,"sqlworker");
-		MT_init_sema(ptask[j].reply,0,"sqlworker");
+		MT_sema_init(&ptask[j].sema,0,"sqlworker");
+		MT_sema_init(&ptask[j].reply,0,"sqlworker");
 		MT_create_thread(&ptask[j].tid, SQLworker, (void*) &ptask[j], MT_THR_DETACHED);
 	}
 
@@ -746,11 +746,11 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 				ptask[j].next= task->next;
 				ptask[j].fields= task->fields;
 				ptask[j].limit = task->limit;
-				MT_up_sema(ptask[j].sema,"SQLworker");
+				MT_sema_up(&ptask[j].sema,"SQLworker");
 			}
 			/* await their completion */
 			for ( j=0; j< threads; j++)
-				MT_down_sema(ptask[j].reply,"sqlreader");
+				MT_sema_down(&ptask[j].reply,"sqlreader");
 		}
 	}
 
@@ -760,7 +760,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 #endif
 	for( j= 0; j < threads ; j++){
 		ptask[j].next = -1;
-		MT_up_sema(ptask[j].sema,"SQLworker");
+		MT_sema_up(&ptask[j].sema,"SQLworker");
 	}
 	if (GDKdebug & GRPalgorithms) {
 		if (cnt < (BUN) maxrow   && maxrow > 0) 
@@ -776,7 +776,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 
 	/* wait for their death */
 	for ( j=0; j< threads; j++)
-		MT_down_sema(ptask[j].reply,"sqlreader");
+		MT_sema_down(&ptask[j].reply,"sqlreader");
 #ifdef _DEBUG_TABLET_
 		mnstr_printf(GDKout,"Found " BUNFMT" tuples\n",cnt);
 #endif

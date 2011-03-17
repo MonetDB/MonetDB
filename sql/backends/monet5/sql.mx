@@ -62,6 +62,22 @@ pattern catalog(type:int,sname:str,t:ptr,restart:lng):void
 address SQLcatalog
 comment "a catalog statement";
 
+pattern catalog(type:int,grantee:str,role:str):void
+address SQLcatalog
+comment "a grant/revoke role statement";
+
+pattern catalog(type:int,user:str,passwd:str,enc:int,schema:str,fullname:str):void
+address SQLcatalog
+comment "a user catalog statement";
+
+pattern catalog(type:int,tname:str,grantee:str,privs:int,cname:str,grant:int,grantor:int):void
+address SQLcatalog
+comment "a grant/revoke privileges statement";
+
+pattern catalog(type:int,iname:str,itype:int,sname:str,tname:str...):void
+address SQLcatalog
+comment "a create index catalog statement";
+
 pattern eval(cmd:str):void 
 address SQLstatement
 comment "Compile and execute a single sql statement";
@@ -477,10 +493,6 @@ pattern dump_trace() :bat[:str,:bat]
 address dump_trace
 comment "dump the trace statistics";
 
-pattern dump_slave() :bat[:str,:bat]
-address dump_slave
-comment "Dump the status of the slave synchronization";
-
 pattern storage():bat[:str,:bat]
 address sql_storage
 comment "return a table with storage information ";
@@ -725,7 +737,6 @@ comment "cast @1 to a second_interval and check for overflow";
 @:mal_interval(int)@
 @:mal_interval(wrd)@
 @:mal_interval(lng)@
-@:mal_interval(daytime)@
 
 command calc.rowid(v:any_1, schema:str, table:str) :oid
 address sql_rowid
@@ -1149,7 +1160,6 @@ sql5_export str second_interval_str( lng *res, str *s, int *ek, int *sk );
 sql5_export str dump_cache(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str dump_opt_stats(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str dump_slave(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str sql_rowid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str sql_rank_grp(bat *rid, bat *bid, bat *gid, bat *gpe);
 sql5_export str sql_rank(bat *rid, bat *bid);
@@ -1313,10 +1323,9 @@ First introduce the routines to be called by the front-end.
 #include <math.h>
 #include <bbp.h>
 #include <cluster.h>
-#include <replication.h>
 #include <opt_dictionary.h>
 #ifdef HAVE_RAPTOR
-	#include <rdf.h>
+# include <rdf.h>
 #endif
 
 /* Windows doesn't have round or trunc, but it does have floor and ceil */
@@ -1740,6 +1749,22 @@ alter_table( mvc *sql, char *sname, sql_table *t)
 		mvc_readonly( sql, nt, t->readonly);
 
 	/* check for changes */
+	if (t->tables.dset) for (n = t->tables.dset->h; n; n = n->next) {
+		/* propagate alter table .. drop table */
+		sql_table *at = n->data;
+		sql_table *pt = mvc_bind_table(sql, nt->s, at->base.name);
+
+		sql_trans_del_table(sql->session->tr, nt, pt, at->drop_action);
+	}
+	for (n = t->tables.nelm; n; n = n->next) {
+		/* propagate alter table .. add table */
+		sql_table *at = n->data;
+ 		sql_table *pt = mvc_bind_table(sql, nt->s, at->base.name);
+
+		sql_trans_add_table(sql->session->tr, nt, pt);
+	}
+
+	/* check for changes */
 	if (t->columns.dset) for (n = t->columns.dset->h; n; n = n->next) {
 		/* propagate alter table .. drop column */
 		sql_column *c = n->data;
@@ -1914,6 +1939,65 @@ drop_key( mvc *sql, char *sname, char *kname, int drop_action )
 }
 
 static str
+create_index( mvc *sql, char *iname, int itype, char *sname, char *tname, MalStkPtr stk, InstrPtr pci) 
+{
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
+	sql_idx *i = NULL;
+
+	if (!(s = mvc_bind_schema(sql, sname)))
+		return sql_message("CREATE INDEX: no such schema '%s'", sname);
+
+	i = mvc_bind_idx(sql, s, iname);
+	t = mvc_bind_table(sql, s, tname);
+	if (i) {
+		return sql_message("CREATE INDEX: name '%s' already in use", iname);
+	} else if (!t) {
+		return sql_message("CREATE INDEX: no such table '%s'", tname);
+	} else if (isView(t)) {
+		return sql_message("CREATE INDEX: cannot create index on view '%s'", tname);
+	} else {
+		int n;
+		sql_idx *i = mvc_create_idx(sql, t, iname, (idx_type) itype);
+
+		if (!i) 
+			return sql_message("CREATE INDEX: failed to create index '%s'", iname);
+
+		for (n=6; n<pci->argc; n++) {
+			char *cname = *(str*)getArgReference(stk, pci, n);
+			sql_column *c = mvc_bind_column(sql, t, cname);
+
+			if (!c) {
+				return sql_message("CREATE INDEX: no such column '%s'", cname);
+			} else {
+				mvc_create_ic(sql, i, c);
+				mvc_create_dependency(sql, c->base.id, i->base.id, INDEX_DEPENDENCY);
+			}
+		}
+	}
+	return NULL;
+}
+
+static str
+drop_index( mvc *sql, char *sname, char *iname)
+{
+	sql_schema *s = NULL;
+	sql_idx *i = NULL;
+
+	if (!(s=mvc_bind_schema(sql, sname))) 
+		return sql_message("DROP INDEX: no such schema '%s'", sname);
+ 	i = mvc_bind_idx(sql, s, iname);
+	if (!i) {
+		return sql_message("DROP INDEX: no such index '%s'", iname);
+	} else if (!schema_privs(sql->role_id, s)) {
+		return sql_message("DROP INDEX: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
+	} else {
+		mvc_drop_idx(sql, s, i);
+	}
+	return NULL;
+}
+
+static str
 create_seq( mvc *sql, char *sname, sql_sequence *seq)
 {
 	sql_schema *s = NULL;
@@ -1980,6 +2064,16 @@ drop_seq(mvc *sql, char *sname, char *name)
 }
 
 
+static char *
+SaveArgReference(MalStkPtr stk, InstrPtr pci, int arg)
+{
+	char *val = *(str*)getArgReference(stk, pci, arg);
+
+	if (val && strcmp(val, str_nil) == 0)
+		val = NULL;
+	return val;
+}
+
 str
 SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -1992,7 +2086,7 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 
 	if (STORE_READONLY(active_store_type)) 
-		return sql_message("schema statements cannot be executed on a readonly database.");
+		return sql_message("SQLException:sql.catalog: schema statements cannot be executed on a readonly database.");
 
 	switch (type) {
 	case DDL_CREATE_SEQ:
@@ -2006,7 +2100,10 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		sql_sequence *s = *(sql_sequence**) getArgReference(stk, pci, 3);
 		if (getArgType(mb, pci, 4) == TYPE_lng) 
 			val = getArgReference(stk, pci, 4);
-		msg = alter_seq(sql, sname, s, val);
+		if (val == NULL || *val == lng_nil)
+			msg = sql_message("ALTER SEQUENCE: cannot (re)start with NULL");
+		else
+			msg = alter_seq(sql, sname, s, val);
 	} 	break;
 	case DDL_DROP_SEQ: {
 		str name = *(str*) getArgReference(stk, pci, 3);
@@ -2014,11 +2111,8 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = drop_seq( sql, sname, name);
 	} 	break;
 	case DDL_CREATE_SCHEMA: {
-		str name = *(str*) getArgReference(stk, pci, 3);
+		str name = SaveArgReference(stk, pci, 3);
 		int auth_id = sql->role_id;
-
-		if (name && strcmp(name, str_nil) == 0)
-			name = NULL;
 
 		if (name && (auth_id = sql_find_auth(sql, name)) < 0) {
 			msg = sql_message("CREATE SCHEMA: no such authorization '%s'", name);
@@ -2070,16 +2164,89 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		msg = drop_view( sql, sname, name, action);
 	} 	break;
-	case DDL_ALTER_TABLE: 
-	{
-		sql_table *t = *(sql_table**) getArgReference(stk, pci, 3);
-		msg = alter_table(sql, sname, t);
-	} 	break;
 	case DDL_DROP_CONSTRAINT: {
 		int action = *(int*) getArgReference(stk, pci, 4);
 		str name = *(str*) getArgReference(stk, pci, 3);
 
 		msg = drop_key( sql, sname, name, action);
+	} 	break;
+	case DDL_ALTER_TABLE: {
+		sql_table *t = *(sql_table**) getArgReference(stk, pci, 3);
+		msg = alter_table(sql, sname, t);
+	} 	break;
+	case DDL_CREATE_TYPE: {
+		char *impl = *(str*) getArgReference(stk, pci, 3);
+		if (!mvc_create_type(sql, sql->session->schema, sname, 0, 0, 0, impl)) 
+			msg = sql_message("CREATE TYPE: unknown external type '%s'", impl);
+	} 	break;
+	case DDL_DROP_TYPE: {
+		msg = sql_message("DROP TYPE: not implemented ('%s')", sname);
+	} 	break;
+	case DDL_GRANT_ROLES: {
+		char *auth = SaveArgReference(stk, pci, 3);
+
+		msg = sql_grant_role( sql, sname /*grantee */, auth);
+	} 	break;
+	case DDL_REVOKE_ROLES: {
+		char *auth = SaveArgReference(stk, pci, 3);
+
+		msg = sql_revoke_role( sql, sname /*grantee */, auth);
+	} 	break;
+	case DDL_GRANT: {
+		char *grantee = *(str*)getArgReference(stk, pci, 3);
+		int privs = *(int*)getArgReference(stk, pci, 4);
+		char *cname = SaveArgReference(stk, pci, 5);
+		int grant = *(int*)getArgReference(stk, pci, 6);
+		int grantor = *(int*)getArgReference(stk, pci, 7);
+		msg = sql_grant_table_privs( sql, grantee, privs, sname, cname, grant, grantor);
+	} 	break;
+	case DDL_REVOKE: {
+		char *grantee = *(str*)getArgReference(stk, pci, 3);
+		int privs = *(int*)getArgReference(stk, pci, 4);
+		char *cname = SaveArgReference(stk, pci, 5);
+		int grant = *(int*)getArgReference(stk, pci, 6);
+		int grantor = *(int*)getArgReference(stk, pci, 7);
+		msg = sql_revoke_table_privs( sql, grantee, privs, sname, cname, grant, grantor);
+	} 	break;
+	case DDL_CREATE_USER: {
+		char *passwd = *(str*)getArgReference(stk, pci, 3);
+		int enc = *(int*)getArgReference(stk, pci, 4);
+		char *schema = SaveArgReference(stk, pci, 5);
+		char *fullname = SaveArgReference(stk, pci, 6);
+		msg = sql_create_user( sql, sname, passwd, enc, fullname, schema);
+	}	break;
+	case DDL_DROP_USER: {
+		msg = sql_drop_user( sql, sname);
+	}	break;
+	case DDL_ALTER_USER: {
+		char *passwd = SaveArgReference(stk, pci, 3);
+		int enc = *(int*)getArgReference(stk, pci, 4);
+		char *schema = SaveArgReference(stk, pci, 5);
+		char *oldpasswd = SaveArgReference(stk, pci, 6);
+		msg = sql_alter_user( sql, sname, passwd, enc, schema, oldpasswd);
+	}	break;
+	case DDL_RENAME_USER: {
+		char *newuser = *(str*)getArgReference(stk, pci, 3);
+		msg = sql_rename_user( sql, sname, newuser);
+	}	break;
+	case DDL_CREATE_ROLE: {
+		char *role = sname;
+		int grantor = *(int*)getArgReference(stk, pci, 4);
+		msg = sql_create_role( sql, role, grantor);
+	} 	break;
+	case DDL_DROP_ROLE: {
+		char *role = sname;
+		msg = sql_drop_role( sql, role);
+	} 	break;
+	case DDL_CREATE_INDEX: {
+		int itype = *(int*)getArgReference(stk, pci, 3);
+		char *ssname = *(str*)getArgReference(stk, pci, 4);
+		char *tname = *(str*)getArgReference(stk, pci, 5);
+		msg = create_index( sql, sname, itype, ssname, tname, stk, pci);
+	} 	break;
+	case DDL_DROP_INDEX: {
+		char *iname = *(str*)getArgReference(stk, pci, 3);
+		msg = drop_index( sql, sname, iname );
 	} 	break;
 	default:
 		throw(SQL, "sql.catalog", "catalog unknown type");
@@ -2358,6 +2525,8 @@ mvc_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	if (msg)
 		return msg;
+	if (*start == lng_nil)
+		throw(SQL, "sql.restart", "cannot (re)start with NULL");
  	s = mvc_bind_schema(m, *sname);
 	if (s) {
 		sql_sequence *seq = find_sql_sequence(s, *seqname);
@@ -2367,7 +2536,7 @@ mvc_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			return MAL_SUCCEED;
 		}
 	}
-	throw(SQL, "sql.restart", "error");
+	throw(SQL, "sql.restart", "sequence %s not found", *sname);
 }
 
 
@@ -3904,6 +4073,7 @@ str bat@2_2_@1( int *res, int *bid )
 	p = (@2*) Tloc(b, BUNfirst(b));
 	q = (@2*) Tloc(b, BUNlast(b));
 	bn->T->nonil = 1;
+	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	if ( b->T->nonil){
 		for (; p<q; p++, o++)
 			*o = (@1)*p;
@@ -3915,6 +4085,7 @@ str bat@2_2_@1( int *res, int *bid )
 		} else
 			*o = (@1)*p;
 	}
+	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
@@ -3975,6 +4146,7 @@ str bat@2_2_@1( int *res, int *bid )
 	o = (@1*) Tloc(bn,BUNfirst(bn));
 	p = (@2*) Tloc(b, BUNfirst(b));
 	q = (@2*) Tloc(b, BUNlast(b));
+	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	if ( b->T->nonil){
 		for (; p<q; p++, o++){
 			val = *p;
@@ -4003,6 +4175,7 @@ str bat@2_2_@1( int *res, int *bid )
 			}
 		}
 	}
+	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
@@ -4108,6 +4281,7 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 	p = (@2*) Tloc(b, BUNfirst(b));
 	q = (@2*) Tloc(b, BUNlast(b));
 	bn->T->nonil = 1;
+	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	if ( b->T->nonil){
 		if (scale)
 			for (; p<q; p++, o++)
@@ -4127,6 +4301,7 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 			}
 		}
 	}
+	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
@@ -4159,6 +4334,7 @@ str bat@2_dec2dec_@1( int *res, int *S1, int *bid, int *d2, int *S2 )
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
 	BATseqbase(dst, b->hseqbase);
+	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
 		@2 *v = (@2*)BUNtail(bi,p);
 		@1 r;
@@ -4167,6 +4343,7 @@ str bat@2_dec2dec_@1( int *res, int *S1, int *bid, int *d2, int *S2 )
 			break;
 		BUNins(dst, BUNhead(bi,p), &r, FALSE);
 	}
+	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BBPkeepref( *res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
@@ -4184,6 +4361,7 @@ str bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
 	BATseqbase(dst, b->hseqbase);
+	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
 		@2 *v = (@2*)BUNtail(bi,p);
 		@1 r;
@@ -4192,6 +4370,7 @@ str bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 			break;
 		BUNins(dst, BUNhead(bi,p), &r, FALSE);
 	}
+	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BBPkeepref( *res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
@@ -4265,6 +4444,7 @@ bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
 	BATseqbase(dst, b->hseqbase);
+	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
 		@2 *v = (@2*)BUNtail(bi,p);
 		@1 r;
@@ -4273,6 +4453,7 @@ bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 			break;
 		BUNins(dst, BUNhead(bi,p), &r, FALSE);
 	}
+	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BBPkeepref( *res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
@@ -4374,6 +4555,7 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 	p = (@2*) Tloc(b, BUNfirst(b));
 	q = (@2*) Tloc(b, BUNlast(b));
 	bn->T->nonil = 1;
+	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	if ( b->T->nonil){
 		for (; p<q; p++, o++) 
 			*o = (((@1)*p)/scales[scale]);
@@ -4386,6 +4568,7 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 				*o = (((@1)*p)/scales[scale]);
 		}
 	}
+	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
@@ -4418,6 +4601,7 @@ str bat@2_dec2dec_@1( int *res, int *S1, int *bid, int *d2, int *S2 )
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
 	BATseqbase(dst, b->hseqbase);
+	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
 		@2 *v = (@2*)BUNtail(bi,p);
 		@1 r;
@@ -4426,6 +4610,7 @@ str bat@2_dec2dec_@1( int *res, int *S1, int *bid, int *d2, int *S2 )
 			break;
 		BUNins(dst, BUNhead(bi,p), &r, FALSE);
 	}
+	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BBPkeepref( *res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
@@ -4444,6 +4629,7 @@ str bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
 	BATseqbase(dst, b->hseqbase);
+	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
 		@2 *v = (@2*)BUNtail(bi,p);
 		@1 r;
@@ -4452,6 +4638,7 @@ str bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 			break;
 		BUNins(dst, BUNhead(bi,p), &r, FALSE);
 	}
+	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BBPkeepref( *res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
@@ -4562,6 +4749,7 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 	p = (@2*) Tloc(b, BUNfirst(b));
 	q = (@2*) Tloc(b, BUNlast(b));
 	bn->T->nonil = 1;
+	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	if ( b->T->nonil){
 		for (; p<q; p++, o++) {
 			if (scale) 
@@ -4572,6 +4760,7 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 			if (val > GDK_@1_min && val <= GDK_@1_max)
 				*o = (@1)val;
 			else {
+				BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 				BBPreleaseref(b->batCacheid);
 				BBPreleaseref(bn->batCacheid);
 				throw(SQL, "convert", "value (" LLFMT ") exceeds limits of type @1", val);
@@ -4591,6 +4780,7 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 				if (val > GDK_@1_min && val <= GDK_@1_max)
 					*o = (@1)val;
 				else {
+					BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 					BBPreleaseref(b->batCacheid);
 					BBPreleaseref(bn->batCacheid);
 					throw(SQL, "convert", "value (" LLFMT ") exceeds limits of type @1", val);
@@ -4598,6 +4788,7 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 			}
 		}
 	}
+	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
@@ -4630,6 +4821,7 @@ str bat@2_dec2dec_@1( int *res, int *S1, int *bid, int *d2, int *S2 )
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
 	BATseqbase(dst, b->hseqbase);
+	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
 		@2 *v = (@2*)BUNtail(bi,p);
 		@1 r;
@@ -4638,6 +4830,7 @@ str bat@2_dec2dec_@1( int *res, int *S1, int *bid, int *d2, int *S2 )
 			break;
 		BUNins(dst, BUNhead(bi,p), &r, FALSE);
 	}
+	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BBPkeepref( *res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
@@ -4656,6 +4849,7 @@ str bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
 	BATseqbase(dst, b->hseqbase);
+	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
 		@2 *v = (@2*)BUNtail(bi,p);
 		@1 r;
@@ -4664,6 +4858,7 @@ str bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 			break;
 		BUNins(dst, BUNhead(bi,p), &r, FALSE);
 	}
+	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BBPkeepref( *res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
@@ -4752,6 +4947,13 @@ second_interval_@1( lng *res, @1 *s, int *d, int *sk ){
 @:c_interval(wrd)@
 @:c_interval(lng)@
 
+@mal
+command calc.second_interval( v:daytime, ek:int, sk:int ) :lng
+address second_interval_daytime
+comment "cast daytime to a second_interval and check for overflow";
+@h
+sql5_export str second_interval_daytime( lng *res, daytime *s, int *ek, int *sk );
+@c
 str
 second_interval_daytime( lng *res, daytime *s, int *d, int *sk )
 {
@@ -4866,25 +5068,6 @@ dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-/* str slave(int *r); */
-str
-dump_slave(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	mvc *m = NULL;
-	str msg = getContext(cntxt,mb, &m, NULL);
-	BAT *t;
-	int *r = (int *) getArgReference(stk, pci, 0);
-
-	if (msg)
-		return msg;
-	t= SLAVEtable();
-	if ( t == NULL || BATcount(t) == 0)
-		throw(ILLARG, "sql.slavelog","tables not initialized");
-
-	*r = t->batCacheid;
-	BBPkeepref(*r);
-	return MAL_SUCCEED;
-}
 
 /* str sql_rowid(oid *rid, ptr v, str *sname, str *tname); */
 str 
@@ -5510,10 +5693,9 @@ str SQLexpand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	@:gzcompression(CMDbbpexpand(&ret, &b->batCacheid,&sbuf),expand)@
 }
 @- Shredding RDF documents through SQL
-Wrapper around the RDF shredder of the rdf module of M5. The first time
-the database is going to be used for rdf run sql/src/sql/rdf.sql.
+Wrapper around the RDF shredder of the rdf module of M5.
 
-An rdf file can be now shreded with SQL command:
+An rdf file can be now shredded with SQL command:
 CALL rdf_shred('/path/to/location','graph name');
 
 The table rdf.graph will be updated with an entry of the form:
@@ -5573,29 +5755,26 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mvc *m = NULL;
 	int id = 0;
 	oid rid = oid_nil;
+	str msg;
 
-	str msg = getContext(cntxt, mb, &m, NULL);
-	if (msg)
-		return msg;
+	rethrow("sql.rdfShred", msg, getContext(cntxt, mb, &m, NULL));
 
-	sch = mvc_bind_schema(m, *schema);
-	if ( sch == NULL)
-		throw(MAL,"sql.rdfSchred","Schema missing");
+	if ((sch = mvc_bind_schema(m, *schema)) == NULL)
+		throw(MAL, "sql.rdfShred", "schema missing");
+
 	g_tbl = mvc_bind_table(m, sch, "graph");
 	gname = mvc_bind_column(m, g_tbl, "gname");
 	gid = mvc_bind_column(m, g_tbl, "gid");
 
 	rid = table_funcs.column_find_row(m->session->tr, gname, *name, NULL);
-	if (rid != oid_nil) {
-		throw(SQL,"sql.rdfShred","graph name allready exists in rdf.graph");
-	}
+	if (rid != oid_nil)
+		throw(SQL, "sql.rdfShred", "graph name already exists in rdf.graph");
+
 	id = (int) store_funcs.count_col(gname);
 	store_funcs.append_col(m->session->tr, gname, *name, TYPE_str);
 	store_funcs.append_col(m->session->tr, gid, &id, TYPE_int);
 
-	msg = RDFParser(&docbats, location, name, schema);
-	if (msg)
-		return msg;
+	rethrow("sql.rdfShred", msg, RDFParser(&docbats, location, name, schema));
 
 	if (sizeof(oid) == 8) {
 		sql_find_subtype(&tpe, "oid", 31, 0);
@@ -5622,13 +5801,12 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_find_subtype(&tpe, "varchar", 1024, 0);
 	mvc_create_column(m, map_tbl, "lexical", &tpe);
 
-	if ((graph = BATdescriptor(docbats)) == NULL) {
+	if ((graph = BATdescriptor(docbats)) == NULL)
 		throw(SQL, "sql.rdfShred", "docbat is missing");
-	}
+
 	g = (bat *) Tloc(graph, BUNfirst(graph));
 
-	s =  BATdescriptor(g[MAP_LEX]);
-	if ( s == NULL){
+	if ((s =  BATdescriptor(g[MAP_LEX])) == NULL) {
 		BBPreleaseref(graph->batCacheid);
 		throw(SQL, "sql.rdfShred", "map_lex is missing");
 	}
@@ -5653,18 +5831,13 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@:crt_col(spo_tbl,S_sort,P_sort,O_sort)@
 #endif /* STORE */
 
-
-
-
 	/* unfix graph */
 	BBPunfix(graph->batCacheid);
 
 	return MAL_SUCCEED;
-
-
 #else
 	(void) cntxt; (void) mb; (void) stk; (void) pci;
-	throw(SQL, "sql.rdfShred", "RDF support is missing from Monet5");
+	throw(SQL, "sql.rdfShred", "RDF support is missing from MonetDB5");
 #endif /* RDF */
 }
 
@@ -5680,9 +5853,6 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *res = (int*) getArgReference(stk,pci,0);
 	BAT *sch, *tab, *col, *loc, *cnt, *cap, *atom, *size, *aux, *r;
-	sql_schema	*s;
-	sql_table 	*t;
-	sql_column 	*c;
 	mvc *m = NULL;
 	str msg = getContext(cntxt,mb, &m, NULL);
 	sql_trans *tr = m->session->tr;
@@ -5691,9 +5861,6 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (msg)
 		return msg;
-	(void) s;
-	(void) t;
-	(void) c;
 
 	sch = BATnew(TYPE_void,TYPE_str, 0);
 	BATseqbase(sch, 0);
@@ -5728,11 +5895,11 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	for( nsch= tr->schemas.set->h; nsch; nsch= nsch->next){
 		sql_base *b= nsch->data;
-		s= (sql_schema*) nsch->data;
+		sql_schema *s= (sql_schema*) nsch->data;
 		if ( isalpha((int)b->name[0]) )
 		for(ntab= (s)->tables.set->h ;ntab; ntab= ntab->next){
 			sql_base *bt= ntab->data;
-			t= (sql_table*) bt;
+			sql_table *t= (sql_table*) bt;
 			if (isTable(t))
 			for (ncol= (t)->columns.set->h; ncol; ncol= ncol->next){
 				sql_base *bc = ncol->data;

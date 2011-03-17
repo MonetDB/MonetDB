@@ -24,15 +24,12 @@ builddir="${buildbase}/template"
 srcdir=`cd '@srcdir@'; pwd`
 uname=`uname`
 
-# if both M4 & M5 are available, M5 is default;
-# otherwise, the available one is default
-@HAVE_MONETDB4_TRUE@V=4
+# M5 is default
 @HAVE_MONETDB5_TRUE@V=5
-# commandline option overrules default  
+# commandline option overrules default
 for arg
 do
     case "$arg" in
-    -4) V=4;;
     -5) V=5;;
     esac
 done
@@ -40,37 +37,39 @@ done
 # where compiled Pathfinder modules are to be found
 for d in src/monetdb$V
 do
-	MOD_PATH="${MOD_PATH}${builddir}/$d/.libs:${builddir}/$d:"
+	MOD_PATH="${MOD_PATH}:${builddir}/$d/.libs:${builddir}/$d"
 done
 
 case "$V" in
-4)
-# where compiled monetdb4 modules are to be found
-for d in modules/plain modules/contrib modules/calibrator modules/mapi @HAVE_NETCDF_TRUE@ modules/mnetcdf
-do
-	MOD_PATH="${MOD_PATH}${buildbase}/monetdb4/$d/.libs:${builddir}/$d:"
-done
-MOD_PATH="${MOD_PATH}${srcdir}/../monetdb4/scripts/tools"
-;;
 5)
 # where compiled monetdb5 modules are to be found
-for d in compiler optimizer scheduler modules/atoms modules/kernel modules/mal extras/crackers extras/rdf
+for d in optimizer scheduler modules/atoms modules/kernel modules/mal extras/crackers extras/rdf extras/xml
 do
-	MOD_PATH="${MOD_PATH}${buildbase}/monetdb5/$d/.libs:${builddir}/$d:"
+	MOD_PATH="${MOD_PATH}:${buildbase}/monetdb5/$d/.libs:${buildbase}/monetdb5/$d"
 	# enable auto-loading of modules before `make install`
 	mkdir -p ${buildbase}/monetdb5/$d/autoload
 	cp -f ${srcdir}/../monetdb5/$d/[0-9][0-9]_*.mal ${buildbase}/monetdb5/$d/autoload/ 2>/dev/null
 done
+PATH="${buildbase}/tools/mserver:$PATH"
 ;;
 esac
 
 # enhance various paths to find our stuff
+MOD_PATH="`echo ${MOD_PATH} | sed 's/^://'`"
 libpath="${MOD_PATH}"
-PATH="${buildbase}/monetdb$V/tools:${buildbase}/testing/src:$PATH"
+PATH="${buildbase}/clients/mapiclient:${buildbase}/clients/examples/C:${buildbase}/clients/examples/php:${buildbase}/clients/examples/python:${buildbase}/clients/perl/Tests:${buildbase}/testing:$PATH"
 export PATH
 
-PYTHONPATH="${buildbase}/testing/src:${srcdir}/../testing/src:${PYTHONPATH}"
+PYTHONPATH="${buildbase}/clients/python/build/lib:${buildbase}/testing:${srcdir}/../testing:${PYTHONPATH}"
 export PYTHONPATH
+
+CLASSPATH="${buildbase}/java:${buildbase}/java/tests:${CLASSPATH}"
+export CLASSPATH
+
+perlib="${buildbase}/clients/perl:${srcdir}/../clients/perl"
+PERLLIB="${perlib}:${PERLLIB}"
+PERL5LIB="${perlib}:${PERL5LIB}"
+export PERLLIB PERL5LIB
 
 if [ "${LD_LIBRARY_PATH}" ] ; then
 	LD_LIBRARY_PATH=":${LD_LIBRARY_PATH}"
@@ -101,4 +100,4 @@ cd "$srcdir"
 # arguments.
 # if the environment variable MTEST_AT is set (value does not matter), pass
 # the --at flag to Mtest.py so that it uses the at command as a watchdog.
-exec python "${buildbase}/testing/src/Mtest.py" -$V --package=${pkg} --monet_mod_path="${MOD_PATH}" --dbfarm="${builddir}/dbfarm" --TSTTRGBASE="${builddir}" ${MTEST_AT+--at} "${@--rq}"
+exec python "${buildbase}/testing/Mtest.py" -$V --package=${pkg} --monet_mod_path="${MOD_PATH}" --dbfarm="${builddir}/dbfarm" --TSTTRGBASE="${builddir}" ${MTEST_AT+--at} "${@--rq}"

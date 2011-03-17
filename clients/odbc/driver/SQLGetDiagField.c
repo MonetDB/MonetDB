@@ -238,7 +238,10 @@ SQLGetDiagField(SQLSMALLINT HandleType,
 		SQLSMALLINT *StringLength)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetDiagField %s " PTRFMT " %d %d %d\n", HandleType == SQL_HANDLE_ENV ? "Env" : HandleType == SQL_HANDLE_DBC ? "Dbc" : HandleType == SQL_HANDLE_STMT ? "Stmt" : "Desc", PTRFMTCAST Handle, RecNumber, DiagIdentifier, BufferLength);
+	ODBCLOG("SQLGetDiagField %s " PTRFMT " %d %d %d\n",
+		HandleType == SQL_HANDLE_ENV ? "Env" : HandleType == SQL_HANDLE_DBC ? "Dbc" : HandleType == SQL_HANDLE_STMT ? "Stmt" : "Desc",
+		PTRFMTCAST Handle, (int) RecNumber, (int) DiagIdentifier,
+		(int) BufferLength);
 #endif
 
 	return SQLGetDiagField_(HandleType, Handle, RecNumber, DiagIdentifier, DiagInfo, BufferLength, StringLength);
@@ -273,7 +276,8 @@ SQLGetDiagFieldW(SQLSMALLINT HandleType,
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLGetDiagFieldW %s " PTRFMT " %d %d %d\n",
 		HandleType == SQL_HANDLE_ENV ? "Env" : HandleType == SQL_HANDLE_DBC ? "Dbc" : HandleType == SQL_HANDLE_STMT ? "Stmt" : "Desc",
-		PTRFMTCAST Handle, RecNumber, DiagIdentifier, BufferLength);
+		PTRFMTCAST Handle, (int) RecNumber, (int) DiagIdentifier,
+		(int) BufferLength);
 #endif
 
 	switch (DiagIdentifier) {

@@ -194,14 +194,13 @@ scanner_init_keywords(void)
 	keywords_insert("TEMPORARY", TEMPORARY);
 	keywords_insert("TEMP", TEMPORARY);
 	keywords_insert("STREAM", STREAM);
+	keywords_insert("MERGE", MERGE);
 	keywords_insert("TO", TO);
 	keywords_insert("UNION", UNION);
 	keywords_insert("EXCEPT", EXCEPT);
 	keywords_insert("INTERSECT", INTERSECT);
 	keywords_insert("CORRESPONDING", CORRESPONDING);
 	keywords_insert("UNIQUE", UNIQUE);
-	keywords_insert("CLUSTERED", CLUSTERED);
-	keywords_insert("CLUSTER", CLUSTER);
 	keywords_insert("USING", USING);
 	keywords_insert("VALUES", VALUES);
 	keywords_insert("VIEW", VIEW);

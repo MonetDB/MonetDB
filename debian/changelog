@@ -1,3 +1,127 @@
+monetdb (11.1.1-20110317) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 17 Mar 2011 11:30:33 +0100
+
+monetdb (11.1.1-20110317) unstable; urgency=low
+
+  * geom: Set endianness for wkb en/decoding.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Tue, 15 Mar 2011 11:30:32 +0100
+
+monetdb (11.1.1-20110317) unstable; urgency=low
+
+  * monetdb5: sphinx module: update, adding limit/max_results support
+
+ -- Stefan de Konink <stefan@konink.de>  Sat, 05 Mar 2011 11:30:32 +0100
+
+monetdb (11.1.1-20110317) unstable; urgency=low
+
+  * clients: Fixed bug 2677: SQL_DESC_OCTET_LENGTH should give the size in bytes
+    required to copy the data.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 14 Feb 2011 11:30:32 +0100
+
+monetdb (11.1.1-20110317) unstable; urgency=low
+
+  * clients: Disable timer functionality for non-XQuery languages since it is
+    incorrect, bug #2705
+
+ -- Fabian Groffen <fabian@cwi.nl>  Mon, 24 Jan 2011 11:30:32 +0100
+
+monetdb (11.1.1-20110317) unstable; urgency=low
+
+  * sql: Fix bug #2648, do not allow restarting a sequence with NULL via the
+    result of a sub-query.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Mon, 24 Jan 2011 11:30:32 +0100
+
+monetdb (11.1.1-20110317) unstable; urgency=low
+
+  * gdk: MonetDB/src/gdk was moved to gdk
+
+ -- Fabian Groffen <fabian@cwi.nl>  Fri, 14 Jan 2011 11:30:32 +0100
+
+monetdb (11.1.1-20110317) unstable; urgency=low
+
+  * clients: Added mapi_get_uri function to retrieve mapi URI for the connection
+
+ -- Fabian Groffen <fabian@cwi.nl>  Tue, 4 Jan 2011 11:30:32 +0100
+
+monetdb (11.1.1-20110317) unstable; urgency=low
+
+  * merovingian: Allow use of globs with all commands that accept database names as
+    their parameters
+
+ -- Fabian Groffen <fabian@cwi.nl>  Tue, 4 Jan 2011 11:30:32 +0100
+
+monetdb (11.1.1-20110317) unstable; urgency=low
+
+  * java: PreparedStatements now free the server-side resources attached to them
+    when closed.  This implements bug #2720
+
+ -- Fabian Groffen <fabian@cwi.nl>  Tue, 4 Jan 2011 11:30:32 +0100
+
+monetdb (11.1.1-20110317) unstable; urgency=low
+
+  * sql: Allow clients to release prepared handles using Xrelease commands
+
+ -- Niels Nes <niels@cwi.nl>  Tue, 4 Jan 2011 11:30:32 +0100
+
+monetdb (11.1.1-20110317) unstable; urgency=low
+
+  * clients: Allow to dump table data using INSERT INTO statements, rather than COPY
+    INTO + CSV data using the -N/--inserts flag of mclient and msqldump.
+    Bug #2727
+
+ -- Fabian Groffen <fabian@cwi.nl>  Tue, 4 Jan 2011 11:30:32 +0100
+
+monetdb (11.1.1-20110317) unstable; urgency=low
+
+  * clients: Added support for \dn to list schemas or describe a specific one
+
+ -- Fabian Groffen <fabian@cwi.nl>  Tue, 4 Jan 2011 11:30:32 +0100
+
+monetdb (11.1.1-20110317) unstable; urgency=low
+
+  * clients: Added support for \df to list functions or describe a specific one
+  * clients: Added support for \ds to list sequences or describe a specific one
+
+ -- Fabian Groffen <fabian@cwi.nl>  Tue, 4 Jan 2011 11:30:32 +0100
+
+monetdb (11.1.1-20110317) unstable; urgency=low
+
+  * clients: Added support for wildcards * and ? in object names given to \d
+    commands, such that pattern matching is possible, e.g. \d my*
+  * clients: Added support for \dS that lists also system tables
+
+ -- Fabian Groffen <fabian@cwi.nl>  Tue, 4 Jan 2011 11:30:32 +0100
+
+monetdb (11.1.1-20110317) unstable; urgency=low
+
+  * clients: object names given to \d are now lowercased, unless quoted by either
+    single or double quotes
+  * clients: Strip any trailing whitespace with the \d command
+
+ -- Fabian Groffen <fabian@cwi.nl>  Tue, 4 Jan 2011 11:30:32 +0100
+
+monetdb (11.1.1-20110317) unstable; urgency=low
+
+  * merovingian: merovingian has been renamed into monetdbd.  Internally, monetdbd keeps
+    referring to merovingian for e.g. settings and logfiles.  Merovingian
+    has been renamed to make the process more recognisable as part of the
+    MonetDB suite.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Tue, 4 Jan 2011 11:30:32 +0100
+
+monetdb (11.1.1-20110317) unstable; urgency=low
+
+  * monetdb5: Improve the performance of remote.put for BAT arguments.  The put
+    speed is now roughly equal to the speed of get on a BAT.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Tue, 4 Jan 2011 11:30:32 +0100
+
 monetdb (11.0.0-0) unstable; urgency=low
 
   * Created top-level bootstrap/configure/make with new version numbers.

@@ -70,7 +70,10 @@ SQLPrimaryKeys_(ODBCStmt *stmt,
 		return SQL_ERROR;
 	}
 #ifdef ODBCDEBUG
-	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\"\n", nCatalogNameLength, (char*)szCatalogName, nSchemaNameLength, (char*)szSchemaName, nTableNameLength, (char*)szTableName);
+	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\"\n",
+		(int) nCatalogNameLength, (char *) szCatalogName,
+		(int) nSchemaNameLength, (char *) szSchemaName,
+		(int) nTableNameLength, (char *) szTableName);
 #endif
 
 	/* construct the query */
@@ -91,11 +94,11 @@ SQLPrimaryKeys_(ODBCStmt *stmt,
 	       "cast(null as varchar(1)) as table_cat, "
 	       "s.\"name\" as table_schem, "
 	       "t.\"name\" as table_name, "
-	       "kc.\"column\" as column_name, "
+	       "kc.\"name\" as column_name, "
 	       "cast(kc.\"nr\" + 1 as smallint) as key_seq, "
 	       "k.\"name\" as pk_name "
 	       "from sys.\"schemas\" s, sys.\"tables\" t, "
-	       "sys.\"keys\" k, sys.\"keycolumns\" kc "
+	       "sys.\"keys\" k, sys.\"objects\" kc "
 	       "where k.\"id\" = kc.\"id\" and "
 	       "k.\"table_id\" = t.\"id\" and "
 	       "t.\"schema_id\" = s.\"id\" and "

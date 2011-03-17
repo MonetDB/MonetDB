@@ -19,6 +19,6 @@ MTSAFE
 
 scripts_py = {
 	COND = HAVE_TESTING
-	DIR = libdir/monetdb/tests
+	DIR = bindir
 	SOURCES = sqlsample.py.in
 }

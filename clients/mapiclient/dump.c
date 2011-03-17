@@ -165,18 +165,18 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 		snprintf(query, maxquerylen,
 			 "SELECT \"ps\".\"name\","		/* 0 */
 			        "\"pkt\".\"name\","		/* 1 */
-				"\"pkkc\".\"column\","		/* 2 */
-				"\"fkkc\".\"column\","		/* 3 */
+				"\"pkkc\".\"name\","		/* 2 */
+				"\"fkkc\".\"name\","		/* 3 */
 				"\"fkkc\".\"nr\","		/* 4 */
 				"\"fkk\".\"name\","		/* 5 */
 				"\"fkk\".\"action\","		/* 6 */
 				"\"fs\".\"name\","		/* 7 */
 				"\"fkt\".\"name\" "		/* 8 */
 			 "FROM \"sys\".\"_tables\" \"fkt\","
-			      "\"sys\".\"keycolumns\" \"fkkc\","
+			      "\"sys\".\"objects\" \"fkkc\","
 			      "\"sys\".\"keys\" \"fkk\","
 			      "\"sys\".\"_tables\" \"pkt\","
-			      "\"sys\".\"keycolumns\" \"pkkc\","
+			      "\"sys\".\"objects\" \"pkkc\","
 			      "\"sys\".\"keys\" \"pkk\","
 			      "\"sys\".\"schemas\" \"ps\","
 			      "\"sys\".\"schemas\" \"fs\" "
@@ -197,18 +197,18 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 		snprintf(query, maxquerylen,
 			 "SELECT \"ps\".\"name\","		/* 0 */
 			        "\"pkt\".\"name\","		/* 1 */
-				"\"pkkc\".\"column\","		/* 2 */
-				"\"fkkc\".\"column\","		/* 3 */
+				"\"pkkc\".\"name\","		/* 2 */
+				"\"fkkc\".\"name\","		/* 3 */
 				"\"fkkc\".\"nr\","		/* 4 */
 				"\"fkk\".\"name\","		/* 5 */
 				"\"fkk\".\"action\","		/* 6 */
 				"0,"				/* 7 */
 				"\"fkt\".\"name\" "		/* 8 */
 			 "FROM \"sys\".\"_tables\" \"fkt\","
-			      "\"sys\".\"keycolumns\" \"fkkc\","
+			      "\"sys\".\"objects\" \"fkkc\","
 			      "\"sys\".\"keys\" \"fkk\","
 			      "\"sys\".\"_tables\" \"pkt\","
-			      "\"sys\".\"keycolumns\" \"pkkc\","
+			      "\"sys\".\"objects\" \"pkkc\","
 			      "\"sys\".\"keys\" \"pkk\","
 			      "\"sys\".\"schemas\" \"ps\""
 			 "WHERE \"fkt\".\"id\" = \"fkk\".\"table_id\" AND "
@@ -223,18 +223,18 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 	} else {
 		query = "SELECT \"ps\".\"name\","		/* 0 */
 			       "\"pkt\".\"name\","		/* 1 */
-			       "\"pkkc\".\"column\","		/* 2 */
-			       "\"fkkc\".\"column\","		/* 3 */
+			       "\"pkkc\".\"name\","		/* 2 */
+			       "\"fkkc\".\"name\","		/* 3 */
 			       "\"fkkc\".\"nr\","		/* 4 */
 			       "\"fkk\".\"name\","		/* 5 */
 			       "\"fkk\".\"action\","		/* 6 */
 			       "\"fs\".\"name\","		/* 7 */
 			       "\"fkt\".\"name\" "		/* 8 */
 			"FROM \"sys\".\"_tables\" \"fkt\","
-			     "\"sys\".\"keycolumns\" \"fkkc\","
+			     "\"sys\".\"objects\" \"fkkc\","
 			     "\"sys\".\"keys\" \"fkk\","
 			     "\"sys\".\"_tables\" \"pkt\","
-			     "\"sys\".\"keycolumns\" \"pkkc\","
+			     "\"sys\".\"objects\" \"pkkc\","
 			     "\"sys\".\"keys\" \"pkk\","
 			     "\"sys\".\"schemas\" \"ps\","
 			     "\"sys\".\"schemas\" \"fs\" "
@@ -579,11 +579,11 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const ch
 	   constraint */
 	if (tid)
 		snprintf(query, maxquerylen,
-			 "SELECT \"kc\".\"column\","		/* 0 */
+			 "SELECT \"kc\".\"name\","		/* 0 */
 				"\"kc\".\"nr\", "		/* 1 */
 				"\"k\".\"name\", "		/* 2 */
 				"\"k\".\"id\" "			/* 3 */
-			 "FROM \"sys\".\"keycolumns\" \"kc\", "
+			 "FROM \"sys\".\"objects\" \"kc\", "
 			      "\"sys\".\"keys\" \"k\" "
 			 "WHERE \"kc\".\"id\" = \"k\".\"id\" AND "
 			       "\"k\".\"table_id\" = %s AND "
@@ -591,11 +591,11 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const ch
 			 "ORDER BY \"id\", \"nr\"", tid);
 	else
 		snprintf(query, maxquerylen,
-			 "SELECT \"kc\".\"column\","		/* 0 */
+			 "SELECT \"kc\".\"name\","		/* 0 */
 				"\"kc\".\"nr\", "		/* 1 */
 				"\"k\".\"name\", "		/* 2 */
 				"\"k\".\"id\" "			/* 3 */
-			 "FROM \"sys\".\"keycolumns\" \"kc\", "
+			 "FROM \"sys\".\"objects\" \"kc\", "
 			      "\"sys\".\"keys\" \"k\", "
 			      "\"sys\".\"schemas\" \"s\", "
 			      "\"sys\".\"_tables\" \"t\" "
@@ -638,11 +638,11 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const ch
 
 	if (tid)
 		snprintf(query, maxquerylen,
-			 "SELECT \"kc\".\"column\","		/* 0 */
+			 "SELECT \"kc\".\"name\","		/* 0 */
 				"\"kc\".\"nr\", "		/* 1 */
 				"\"k\".\"name\", "		/* 2 */
 				"\"k\".\"id\" "			/* 3 */
-			 "FROM \"sys\".\"keycolumns\" \"kc\", "
+			 "FROM \"sys\".\"objects\" \"kc\", "
 			      "\"sys\".\"keys\" \"k\" "
 			 "WHERE \"kc\".\"id\" = \"k\".\"id\" AND "
 			       "\"k\".\"table_id\" = %s AND "
@@ -650,11 +650,11 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const ch
 			 "ORDER BY \"id\", \"nr\"", tid);
 	else
 		snprintf(query, maxquerylen,
-			 "SELECT \"kc\".\"column\","		/* 0 */
+			 "SELECT \"kc\".\"name\","		/* 0 */
 				"\"kc\".\"nr\", "		/* 1 */
 				"\"k\".\"name\", "		/* 2 */
 				"\"k\".\"id\" "			/* 3 */
-			 "FROM \"sys\".\"keycolumns\" \"kc\", "
+			 "FROM \"sys\".\"objects\" \"kc\", "
 			      "\"sys\".\"keys\" \"k\", "
 			      "\"sys\".\"schemas\" \"s\", "
 			      "\"sys\".\"_tables\" \"t\" "
@@ -802,14 +802,14 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 			"\"c\".\"name\" "		/* 3 */
 		 "FROM \"sys\".\"idxs\" AS \"i\" LEFT JOIN \"sys\".\"keys\" AS \"k\" "
 				"ON \"i\".\"name\" = \"k\".\"name\", "
-		      "\"sys\".\"keycolumns\" AS \"kc\", "
+		      "\"sys\".\"objects\" AS \"kc\", "
 		      "\"sys\".\"_columns\" AS \"c\", "
 		      "\"sys\".\"schemas\" \"s\", "
 		      "\"sys\".\"_tables\" AS \"t\" "
 		 "WHERE \"i\".\"table_id\" = \"t\".\"id\" AND "
 		       "\"i\".\"id\" = \"kc\".\"id\" AND "
 		       "\"t\".\"id\" = \"c\".\"table_id\" AND "
-		       "\"kc\".\"column\" = \"c\".\"name\" AND "
+		       "\"kc\".\"name\" = \"c\".\"name\" AND "
 		       "(\"k\".\"type\" IS NULL OR \"k\".\"type\" = 1) AND "
 		       "\"t\".\"schema_id\" = \"s\".\"id\" AND "
 		       "\"s\".\"name\" = '%s' AND "

@@ -16,14 +16,14 @@ from 	sys.idxs i,
 	sys.schemas s, 
 	sys.tables t, 
 	sys.columns c, 
-	sys.keycolumns kc, 
+	sys.objects kc, 
 	sys.keys k 
 
 where 	i.table_id = t.id
 and 	t.schema_id = s.id 
 and 	i.id = kc.id 
 and 	t.id = c.table_id 
-and 	kc."column" = c.name 
+and 	kc."name" = c.name 
 and 	t.name = 'c1006309' 
 and 	(k.type is null or k.type = 1) 
 and 	s.name = 'sys'

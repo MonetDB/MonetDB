@@ -44,10 +44,9 @@ branch this document is part of.
 buildtools
 ----------
 
-The buildtools component is required in order to build the sources
-from the Mercurial repository.  If you get the pre-packaged sources
-(i.e. the one in tar balls), you don't need the buildtools component
-(although this has not been tested on Windows).
+The buildtools component contains tools that are used to build the
+other components.  This component is required, but not all parts of
+this component are required for all configurations.
 
 common
 ------
@@ -67,9 +66,13 @@ clients
 Also known as the MonetDB Client component contains a library which
 forms the basis for communicating with the MonetDB server components,
 and some interface programs that use this library to communicate with
-the server.  This component is required.
+the server.  Additionally, this component contains modules for some
+other languages (Python, Perl, PHP, Ruby) to enable communication with
+the server from programs written in those languages.  The Python and
+Ruby modules can be built separately; the PHP module does not need to
+be built.  This component is required.
 
-MonetDB4
+monetdb4
 --------
 
 The deprecated (but still used) database server MonetDB4 Server.  This
@@ -78,7 +81,7 @@ component.  This is the old server which uses MIL (the MonetDB
 Interface Language) as programming interface.  This component is only
 required if you need MIL or if you need the MonetDB XQuery component.
 
-MonetDB5
+monetdb5
 --------
 
 The MonetDB5 Server component is the new database server.  It uses MAL
@@ -117,15 +120,6 @@ testing
 
 The testing component contains some files and programs we use for
 testing the MonetDB suite.  This component is optional.
-
-python
-------
-
-This component provides a Python module that can be used to
-communicate with the server.  The module is compatible with Python
-DBAPI 2.0 and has support for Python version 2.5 and up (including
-3.X).  This component is optional and independent from all other
-modules.
 
 Prerequisites
 =============
@@ -303,6 +297,19 @@ stable version (1.0.0a).  Follow the instructions in the file
 ``INSTALL.W32`` or ``INSTALL.W64``.  We used the option
 ``enable-static-engine`` as described in the instructions.
 
+.. The actual commands used were::
+   perl Configure VC-WIN32 no-asm --prefix=C:\Libraries\openssl-1.0.0a.win32
+   ms\do_ms.bat
+   nmake /f ms\ntdll.mak
+   nmake /f ms\ntdll.mak install
+   and::
+   perl Configure VC-WIN64A --prefix=C:\Libraries\openssl-1.0.0a.win64
+   ms\do_win64a
+   nmake /f ms\ntdll.mak
+   nmake /f ms\ntdll.mak install
+   For the debug versions, use debug-VC-WIN32 and VC-WIN64A and edit
+   the file ``ms/ntdll.mak`` before building.
+
 Fix the ``OPENSSL`` definitions in ``buildtools\conf\winrules.msc`` so
 that they refer to the location where you installed the library and
 call ``nmake`` with the extra parameter ``HAVE_OPENSSL=1``.
@@ -337,6 +344,11 @@ the correct locations for the iconv and zlib libraries::
  nmake /f Makefile.msvc
  nmake /f Makefile.msvc install
 
+.. Before the install, run the commands::
+   cd bin.msvc
+   mt -nologo -manifest libxml2.dll.manifest -outputresource:libxml2.dll;2
+   cd ..
+
 After this, you may want to move the file ``libxml2.dll`` from the
 ``lib`` folder to the ``bin`` folder.
 
@@ -359,6 +371,14 @@ on Windows with NMake`__.  I did find one problem with this procedure:
 you will need to remove the file ``source/headers/geos/platform.h``
 before starting the build so that it gets created from the correct
 (Windows) source.
+
+.. The actual commands were::
+   autogen.bat
+   nmake /f makefile.vc MSCV_VER=1600
+   The logic having to do with finding out which compiler is being
+   used in ``nmake.opt`` uses an older version number for ``nmake``
+   for Visual Studio 10.  I fixed the last conditional checking
+   ``_NMAKE_VER`` to also include ``|| "$(_NMAKE_VER)" == "10.00.30319.01"``.
 
 After this, install the library somewhere, e.g. in
 ``C:\geos-3.2.2.win32``::
@@ -407,6 +427,13 @@ Build using the commands::
  nmake -f Makefile.msvc NO_NLS=1 DLL=1 MFLAGS=-MD PREFIX=C:\iconv-1.11.win64
  nmake -f Makefile.msvc NO_NLS=1 DLL=1 MFLAGS=-MD PREFIX=C:\iconv-1.11.win64 install
 
+.. Before the install, run the commands::
+   cd lib
+   mt -nologo -manifest iconv.dll.manifest -outputresource:iconv.dll;2
+   cd ..\libcharset\lib
+   mt -nologo -manifest charset.dll.manifest -outputresource:charset.dll;2
+   cd ..\..
+
 Fix the ``ICONV`` definitions in ``buildtools\conf\winrules.msc`` so
 that they refer to the location where you installed the library and
 call ``nmake`` with the extra parameter ``HAVE_ICONV=1``.
@@ -435,7 +462,7 @@ environment for Visual Studio)
 ::
 
  call "C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\bin\amd64\vcvarsamd64.bat"
- nmake /f win32\Makefile.msc
+ nmake /f win32\Makefile.msc OBJA=inffast.obj
 
 Create the folder where you want to install the binaries,
 e.g. ``C:\zlib-1.2.5.win64``, and the subfolders ``bin``, ``include``,
@@ -516,6 +543,9 @@ After this, compile using ``nmake -f makefile.msc`` and copy the files
 the MonetDB build process can find them,
 e.g. ``C:\bzip2-1.0.5.win32``.
 
+.. Before copying the files, run the command::
+   mt -nologo -manifest libbz2.dll.manifest -outputresource:libbz2.dll;2
+
 Fix the ``LIBBZ2`` definitions in ``buildtools\conf\winrules.msc`` so
 that they refer to the location where you installed the library and
 call ``nmake`` with the extra parameter ``HAVE_LIBBZ2=1``.
@@ -541,30 +571,15 @@ __ http://www.activestate.com/Products/activeperl/
 PHP
 ---
 
-PHP__ is only needed to create an interface that can be used from a
-PHP program to communicate with a MonetDB server.
+There is a PHP__ interface that can be used from a PHP program to
+communicate with a MonetDB server.  This interface is written
+completely in PHP, so there is no compilation involved.  This means
+that no installation of PHP is required for building, but only for
+testing.
 
-Download the Windows installer and source
-package of PHP 5 from http://www.php.net/.
-Install the binary package and extract the sources somewhere (e.g. as
-a subfolder of the binary installation).
-
-In order to get MonetDB to compile with these sources a few changes
-had to be made to the sources:
-
-- In the file ``Zend\zend.h``, move the line
-  ::
-
-   #include <stdio.h>
-
-  down until just *after* the block where ``zend_config.h`` is
-  included.
-- In the file ``main\php_network.h``, delete the line
-  ::
-
-   #include "arpa/inet.h"
-
-We have no support yet for Windows64.
+Download the Windows installer and source package of PHP 5 from
+http://www.php.net/.  Install the binary package and extract the
+sources somewhere (e.g. as a subfolder of the binary installation).
 
 __ http://www.php.net/
 
@@ -793,8 +808,6 @@ The contents of the file referred to with the ``MAKE_INCLUDEFILE``
 parameter may contain something like::
 
  bits=32
- PHP_SRCDIR=C:\Program Files\PHP\php-5.3.3
- PHP_INSTDIR=C:\Program Files\PHP
  LIBPERL=C:\Perl
  LIBPCRE=C:\Program Files\PCRE
  LIBICONV=C:\iconv-1.11.win32

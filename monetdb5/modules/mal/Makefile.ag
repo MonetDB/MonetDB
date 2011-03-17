@@ -15,12 +15,13 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-INCLUDES = ../../mal ../atoms ../kernel \
+INCLUDES = ../../misc ../../mal ../atoms ../kernel \
 	../../../clients/mapilib \
 	../../../common/options \
 	../../../common/stream \
+	../../../common/utils \
 	../../../gdk \
-	$(pcre_CFLAGS) $(zlib_CFLAGS) $(BZIP_INCS)
+	$(pcre_CFLAGS) $(zlib_CFLAGS) $(BZIP_INCS) $(MSGCONTROL_FLAGS)
 
 MTSAFE
 
@@ -55,7 +56,6 @@ lib_mal = {
 		profiler.mx \
 		recycle.mx \
 		remote.mx \
-		replication.mx \
 		sabaoth.mx \
 		statistics.mx \
 		tablet.mx \
@@ -79,7 +79,7 @@ headers_mal = {
 		urlbox.mx statistics.mx transaction.mx \
 		mal_mapi.mx sabaoth.mx remote.mx  \
 		bpm.mx txtsim.mx recycle.mx \
-		cluster.mx trader.mx replication.mx pma.mx \
+		cluster.mx trader.mx pma.mx \
 		tokenizer.mx zorder.mx
 }
 

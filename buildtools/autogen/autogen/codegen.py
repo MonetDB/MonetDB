@@ -27,19 +27,11 @@ import sys
 
 
 mx2mal = re.compile("^@mal[ \t\r\n]+", re.MULTILINE)
-mx2mil = re.compile("^@mil[ \t\r\n]+", re.MULTILINE)
-mx2mel = re.compile("^@m[ \t\r\n]+", re.MULTILINE)
 mx2h = re.compile("^@h[ \t\r\n]+", re.MULTILINE)
 mx2c = re.compile("^@c[ \t\r\n]+", re.MULTILINE)
 mx2y = re.compile("^@y[ \t\r\n]+", re.MULTILINE)
 mx2l = re.compile("^@l[ \t\r\n]+", re.MULTILINE)
-mx2cc = re.compile("^@C[ \t\r\n]+", re.MULTILINE)  # C++
-mx2yy = re.compile("^@Y[ \t\r\n]+", re.MULTILINE)  # C++
-mx2ll = re.compile("^@L[ \t\r\n]+", re.MULTILINE)  # C++
-mx2odl = re.compile("^@odl[ \t\r\n]+", re.MULTILINE)
-mx2fgr = re.compile("^@fgr[ \t\r\n]+", re.MULTILINE)
 mx2cfg = re.compile("^@cfg[ \t\r\n]+", re.MULTILINE)
-mx2tcl = re.compile("^@tcl[ \t\r\n]+", re.MULTILINE)
 mx2swig = re.compile("^@swig[ \t\r\n]+", re.MULTILINE)
 mx2sql = re.compile("^@sql[ \t\r\n]+", re.MULTILINE)
 mx2java = re.compile("^@java[ \t\r\n]+", re.MULTILINE)
@@ -50,20 +42,13 @@ mx2sh = re.compile("^@sh[ \t\r\n]+", re.MULTILINE)
 
 e_mx = re.compile('^@[^{}]', re.MULTILINE)
 
-code_extract = { 'mx': [ (mx2mil, '.tmpmil'),
+code_extract = { 'mx': [
                   (mx2mal, '.mal'),
-                  (mx2mel, '.m'),
                   (mx2c, '.c'),
-                  (mx2cc, '.cc'),       # C++
                   (mx2h, '.h'),
                   (mx2y, '.y'),
-                  (mx2yy, '.yy'),       # C++
                   (mx2l, '.l'),
-                  (mx2ll, '.ll'),       # C++
-                  (mx2odl, '.odl'),
                   (mx2cfg, '.cfg'),
-                  (mx2fgr, '.fgr'),
-                  (mx2tcl, '.tcl'),
                   (mx2sql, '.sql'),
                   (mx2swig, '.i'),
                   (mx2java, '.java'),
@@ -73,20 +58,13 @@ code_extract = { 'mx': [ (mx2mil, '.tmpmil'),
                   #(mx2tex, '.bdy.tex'),
                   #(mx2html, '.html'),
                   #(mx2tex, '.bdy.html'), ],
-                'mx.in': [ (mx2mil, '.mil'),
+                'mx.in': [
                   (mx2mal, '.mal'),
-                  (mx2mel, '.m'),
                   (mx2c, '.c'),
-                  (mx2cc, '.cc'),       # C++
                   (mx2h, '.h'),
                   (mx2y, '.y'),
-                  (mx2yy, '.yy'),       # C++
                   (mx2l, '.l'),
-                  (mx2ll, '.ll'),       # C++
-                  (mx2odl, '.odl'),
-                  (mx2fgr, '.fgr'),
                   (mx2cfg, '.cfg'),
-                  (mx2tcl, '.tcl'),
                   (mx2sql, '.sql'),
                   (mx2swig, '.i'),
                   (mx2java, '.java'),
@@ -100,30 +78,17 @@ code_extract = { 'mx': [ (mx2mil, '.tmpmil'),
 end_code_extract = { 'mx': e_mx, 'mx.in': e_mx }
 
 # direct rules
-code_gen = {'m':        [ '.proto.h', '.glue.c', '.mil' ],
-            'odl':      [ '_odl.h', '_odl.cc', '_mil.cc', '_odl.m' ],
-            'y':        [ '.tab.c', '.tab.h' ],
-            'yy':       [ '.cc', '.h' ], # C++
+code_gen = {'y':        [ '.tab.c', '.tab.h' ],
             'tab.c':    [ '.tab.o' ],
             'l':        [ '.yy.c' ],
-            'll':       [ '.cc' ],      # C++
             'yy.c':     [ '.yy.o' ],
             'mt':       [ '.symbols.h', '.c' ],
             'brg':      [ '.c' ],
             't':        [ '.c' ],
             'c':        [ '.o' ],
-            'cc':       [ '.o' ],       # C++
-            'ruby.i':   [ '.ruby.c' ],
-            'ruby.c':   [ '.ruby.o' ],
-            'tcl.i':    [ '.tcl.c', '.tcl' ],
-            'php.i':    [ '.php.c', '.php' ],
-            'py.i':     [ '.py.c', '.py' ],
-            'py.c':     [ '.py.o' ],
             'pm.i':     [ '.pm.c', '.pm' ],
             'pm.c':     [ '.pm.o' ],
-            'glue.c':   [ '.glue.o' ],
 #            'java':     [ '.class' ],
-            'tmpmil':   [ '.mil' ],
             'mx.in':    [ '.mx' ],
             #'tex':      [ '.html', '.dvi', '.pdf' ],
             #'dvi':      [ '.ps' ],
@@ -133,7 +98,6 @@ code_gen = {'m':        [ '.proto.h', '.glue.c', '.mil' ],
             '1.in':     [ '.1' ],  # TODO: add more manpage sections as needed
             'cfg.in':   [ '.cfg' ],
             'java.in':  [ '.java' ],
-            'mil.in':   [ '.mil' ],
             'mal.in':   [ '.mal' ],
             'py.in':    [ '.py' ],
             'pl.in':    [ '.pl' ],
@@ -150,21 +114,17 @@ code_gen = {'m':        [ '.proto.h', '.glue.c', '.mil' ],
 }
 
 
-lib_code_gen = { 'fgr': [ '_glue.c' ], }
+lib_code_gen = { }
 
 bin_code_gen = { }
 
 c_inc = '^[ \t]*#[ \t]*include[ \t]*[<"](?P<fnd>[-a-zA-Z0-9._/]+)[>"]'
-m_use = "^[ \t]*\.[Uu][Ss][Ee][ \t]+(?P<fnd>[a-zA-Z0-9._, ]*);"
-m_sep = "[ \t]*,[ \t]*"
 xsl_inc = "^[ \t]*<xsl:(include|import)[ \t]+href=['\"](?P<fnd>[a-zA-Z0-9._]+)['\"]"
 tex_inc = r"\\epsf(file|box){(?P<fnd>[a-zA-Z0-9._]+)"
 t_inc = '^[ \t]*\%[ \t]*include[ \t]*{[ \t](?P<fnd>[-a-zA-Z0-9._/]+)[ \t]*}'
 mx_inc = '^[ \t]*@include[ \t]*(?P<fnd>[-a-zA-Z0-9._/]+)'
 
 c_inc = re.compile(c_inc, re.MULTILINE)
-m_use = re.compile(m_use, re.MULTILINE)
-m_sep = re.compile(m_sep)
 xsl_inc = re.compile(xsl_inc, re.MULTILINE)
 tex_inc = re.compile(tex_inc)
 t_inc = re.compile(t_inc, re.MULTILINE)
@@ -172,26 +132,16 @@ mx_inc = re.compile(mx_inc, re.MULTILINE)
 
 scan_map = {
     'c': [ c_inc, None, '' ],
-    'cc': [ c_inc, None, '' ],          # C++
     'h': [ c_inc, None, '' ],
     'y': [ c_inc, None, '' ],
-    'yy': [ c_inc, None, '' ],          # C++
     'l': [ c_inc, None, '' ],
-    'll': [ c_inc, None, '' ],          # C++
     'mt': [ c_inc, None, '' ],
     'brg': [ c_inc, None, '' ],
     't': [ t_inc, None, '' ],
-    'm': [ m_use, m_sep, '.m' ],
     'xsl': [ xsl_inc, None, '' ],
     'tex': [ tex_inc, None, '' ],
     'mx': [ mx_inc, None, '' ],
 }
-
-dep_rules = { 'glue.c': [ 'm', '.proto.h' ] ,
-              'proto.h': [ 'm', '.proto.h']
-}
-
-lib_map = [ 'glue.c', 'm' ]
 
 def split_filename(f):
     base = f
@@ -292,25 +242,21 @@ def find_org(deps,f):
 # in a .incs.ag file. And after translating to the install include dirs
 # also in .incs.in
 
+buildincsfiles = {}
+installincsfiles = {}
+
 def do_deps(targets,deps,includes,incmap,cwd,incdirsmap):
     basename = os.path.basename(cwd)
     incs = {}
     do_scan(targets,deps,incmap,cwd,incs)
-    do_dep_rules(deps,cwd,incs)
     do_dep_combine(deps,includes,cwd,incs)
 
-    buildincsfile = os.path.join(cwd, '.incs.ag')
-    if os.path.exists( buildincsfile ):
-        os.unlink(buildincsfile)
-    buildincs = shelve.open( buildincsfile, "c")
+    normcwd = os.path.normpath(cwd)
+    buildincs = buildincsfiles[normcwd] = {}
     for k,vals in incs.items():
         buildincs[k] = vals
-    buildincs.close()
 
-    installincsfile = os.path.join(cwd, '.incs.in')
-    if os.path.exists( installincsfile ):
-        os.unlink(installincsfile)
-    installincs = shelve.open( installincsfile, "c")
+    installincs = installincsfiles[normcwd] = {}
     for k,vals in incs.items():
         nvals = []
         for i in vals:
@@ -332,7 +278,6 @@ def do_deps(targets,deps,includes,incmap,cwd,incdirsmap):
                     inc.replace(subsrc, subins.replace('includedir', '..'))
                 nvals.append(inc)
         installincs[k] = nvals
-    installincs.close()
 
 def do_recursive_combine(deplist,includes,incs,depfiles):
     for d in deplist:
@@ -358,26 +303,6 @@ def do_dep_combine(deps,includes,cwd,incs):
         # remove recursive dependencies (target depends somehow on itself)
         if target in depfiles:
             depfiles.remove(target)
-
-# dependency rules describe two forms of dependencies, first
-# are implicit rules, glue.c depends on proto.h and
-# second dependency between generated targets based on
-# dependencies between the input files for the target generation process
-# ie. io.m, generates io_glue.c which and depends on io_proto.h)
-def do_dep_rules(deps,cwd,incs):
-    for target in deps.keys():
-        tf,te = split_filename(target)
-        if dep_rules.has_key(te):
-            dep,new = dep_rules[te]
-            if incs.has_key(tf+"."+dep):
-                if tf+new not in incs[target]:
-                    incs[target].append(tf+new)
-                for d in incs[tf+"."+dep]:
-                    df,de = split_filename(d)
-                    if de == dep and df+new not in incs[target]:
-                        incs[target].append(df+new)
-            else:
-                incs[target].append(tf+new)
 
 # scan for includes and match against the known deps and include map.
 def do_scan_target(target,targets,deps,incmap,cwd,incs):
@@ -432,45 +357,6 @@ def do_scan(targets,deps,incmap,cwd,incs):
             do_scan_target(target,targets,deps,incmap,cwd,incs)
     #for i in incs.keys():
         #print(i,incs[i])
-
-def do_lib(lib,deps):
-    true_deps = []
-    base,ext = split_filename(lib)
-    if ext in lib_map:
-        if deps.has_key(lib):
-            lib_deps = deps[lib]
-            for d in lib_deps:
-                dirname = os.path.dirname(d)
-                b,ext = split_filename(os.path.basename(d))
-                if base != b:
-                    if ext in lib_map:
-                        if b not in true_deps:
-                            if len(dirname) > 0 and \
-                                (dirname[0] == '$' or os.path.isabs(dirname)):
-                                true_deps.append("-l_"+b)
-                                # user should add -L$dirname to the Makefile.ag
-                            else:
-                                true_deps.append(os.path.join(dirname,"lib_"+b))
-                        n_libs = do_lib(d,deps)
-                        for l in n_libs:
-                            if l not in true_deps:
-                                true_deps.append(l)
-    return true_deps
-
-def do_libs(deps):
-    libs = {}
-    for target,depfiles in deps.items():
-        lib = target
-        while 1:
-            true_deps = do_lib(lib,deps)
-            if len(true_deps) > 0:
-                base,ext = split_filename(lib)
-                libs[base+"_LIBS"] = true_deps
-            if deps.has_key(lib):
-                lib = deps[lib][0]
-            else:
-                break
-    return libs
 
 def expand_env(i):
     if i[0] == '$' and i[1] in ('(','{'):
@@ -535,13 +421,15 @@ def collect_includes(incdirs, cwd, topdir):
     for dir,org in dirs:
         if dir.startswith('$'):
             continue
-        dir = os.path.join(cwd, dir)
-        f = os.path.join(dir, ".incs.ag")
-        if not os.path.exists(f):
-            f = os.path.join(dir, ".incs.in")
+        dir = os.path.normpath(os.path.join(cwd, dir))
+        if buildincsfiles.has_key(dir):
+            incs = buildincsfiles[dir]
+        elif installincsfiles.has_key(dir):
+            incs = installincsfiles[dir]
+        else:
+            incs = None
 
-        if os.path.exists(f):
-            incs = shelve.open(f)
+        if incs is not None:
             for file in incs.keys():
                 incfiles = []
                 for inc in incs[file]:
@@ -550,7 +438,6 @@ def collect_includes(incdirs, cwd, topdir):
                     incfiles.append(inc)
                 includes[os.path.join(org,file)] = incfiles
                 incmap[file] = org
-            incs.close()
         else:
             if os.path.exists(dir):
                 for inc in os.listdir(dir):
@@ -593,22 +480,7 @@ def codegen(tree, cwd, topdir, incdirsmap):
 
     for i,v in tree.items():
         if type(v) is type({}) and v.has_key("SOURCES"):
-            libs = do_libs(deps)
-
             if i[0:4] == "lib_":
                 lib = i[4:] + "_LIBS"
                 if lib[0] == "_":
                     lib = lib[1:]
-                if libs.has_key(lib):
-                    d = libs[lib]
-                    if not v.has_key('LIBS'):
-                        v['LIBS'] = []
-                    if (d not in v['LIBS']):
-                        v['LIBS'].extend(d)
-            elif i == "LIBS":
-                for l,d in libs.items():
-                    n,dummy = string.split(l,"_",1)
-                    v[n+'_DLIBS'] = d
-            else:
-                for l,d in libs.items():
-                    v[l] = d

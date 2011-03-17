@@ -694,25 +694,21 @@ VIEW may do (in this case, the user may be after just an independent BAT
 header and id). This is indicated by the parameter (writable = FALSE).  
 
 In other cases, we really want an independent physical copy (writable = TRUE).
-Note that in the MIL interpreter (as opposed to the C/C++ GDK API), the result 
-of MIL-copy() will by default be BAT_READ, the default mode for all new BATs. 
-However, changing the mode to BAT_WRITE will be a zero-cost operation if the 
-BAT was copied with (writable = TRUE), such as done by MIL-copy().
+Changing the mode to BAT_WRITE will be a zero-cost operation if the 
+BAT was copied with (writable = TRUE).
 @end itemize
 In GDK, the result is a BAT that is BAT_WRITE iff (writable == TRUE).
 
-NEW: there is now a special parameter setting (writable == 2), which does create
+There is a special parameter setting (writable == 2), which does create
 an independent BAT (not a view that shares the same heaps), however tries 
 to share VM heap resources using copy-on-write maps. Note that the result of
 this is a read-only BAT (BAT_READ). The copy-on-write VM tricks can be used, 
-however, to isolate these copies from changes in the parent.
+ to isolate these copies from changes in the parent.
 
 In these cases the copy becomes a logical view on the original, which ensures
 that the original cannot be modified or destroyed (which could affect the shared 
 heaps).
 
-This new mode is used by the XQuery isolation mechanism and is available in MIL 
-as rcopy(). 
 @{
 @c
 int
@@ -2224,16 +2220,6 @@ It can be implemented quickly, because the system ensures a dense
 BUN list.
 @{
 @c
-#ifdef BATcount			/* may be defined in gdh.mx */
-#undef BATcount
-#endif
-BUN
-BATcount(BAT *b)
-{
-	BATcheck(b, "BATcount");
-	return b->batCount;
-}
-
 void
 BATsetcapacity(BAT *b, BUN cnt)
 {
@@ -2719,7 +2705,7 @@ is too heavy for BATsetaccess().
 
 Note that this code is not about making heaps mmap-ed in the first place. 
 It is just about determining which flavor of mmap should be used. The 
-MIL/MAL user is oblivious of such details.
+MAL user is oblivious of such details.
 
 The route for making heaps mmapped in the first place (or make them no
 longer so) is to request a mode change with BATmmap. The requested modes
@@ -2837,7 +2823,7 @@ BATcheckmodes(BAT *b, int existing)
 		m3 = HEAPcommitpersistence(b->T->vheap, wr || ta, existing);
 		dirty |= (b->T->vheap->newstorage != m3);
 	}
-	if (m1 < 0 || m1 < 0 || m2 < 0 || m3 < 0)
+	if (m0 < 0 || m1 < 0 || m2 < 0 || m3 < 0)
 		return -1;
 
 	if (dirty) {
@@ -3392,7 +3378,7 @@ we also do full key derivation (with whatever it takes).
 
 We also insert a debug statement triggered with BATDEBUG (mask 32) 
 that displays the size of the hash table used.  We chose BATDEBUG because 
-that also gives the best overview of MIL execution - necessary
+that also gives the best overview of program execution - necessary
 for determining which algebra commands set properties sub-optimally.
 @{
 @c

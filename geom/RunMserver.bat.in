@@ -2,12 +2,9 @@
 
 setlocal
 
-rem if both M4 & M5 are available, M5 is default;
-rem otherwise, the available one is default
-if "@HAVE_MONETDB4_FALSE@" == "#" set V=4
+rem M5 is default
 if "@HAVE_MONETDB5_FALSE@" == "#" set V=5
 rem commandline option overrules default
-if "%1" == "-4" set V=4& shift
 if "%1" == "-5" set V=5& shift
 
 set buildbase=@BUILD@
@@ -16,21 +13,6 @@ set builddir=%buildbase%\geom
 set MOD_PATH=%builddir%\monetdb%V%\.libs
 set MOD_PATH=%MOD_PATH%;%builddir%\monetdb%V%
 set MOD_PATH=%MOD_PATH%;%builddir%\sql
-
-if not %V% == 4 goto skip_4
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\plain\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\plain
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\contrib\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\contrib
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\calibrator\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\calibrator
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\mapi\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\mapi
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\mnetcdf\.libs
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\modules\mnetcdf
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\scripts
-set MOD_PATH=%MOD_PATH%;%buildbase%\monetdb4\scripts\tools
-:skip_4
 
 if not %V == 5 goto skip_5
 set MOD_PATH=%MOD_PATH%;%buildbase%\sql\backends\monet5\.libs
@@ -55,7 +37,6 @@ set PATH=%MOD_PATH%;%PATH%
 rem to find geos_c.dll
 set PATH=%GEOS%\bin;%PATH%
 
-if %V% == 4 set mserver=Mserver.exe
 if %V% == 5 set mserver=mserver5.exe
 
 %mserver% --set "monet_mod_path=%MOD_PATH%" %1 %2 %3 %4 %5 %6 %7 %8 %9

@@ -17,6 +17,6 @@
 
 MTSAFE
 
-SUBDIRS = native
+SUBDIRS = lib
 
-EXTRA_DIST_DIR = phpdoc
+EXTRA_DIST_DIR = doc examples

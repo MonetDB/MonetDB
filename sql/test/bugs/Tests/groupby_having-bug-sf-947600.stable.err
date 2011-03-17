@@ -9,7 +9,7 @@ stderr of test 'groupby_having-bug-sf-947600` in directory 'test/bugs` itself:
 
 MAPI  = monetdb@volund:35971
 QUERY = select name from tables where "type" = 0 and "system" = true
-        and name IN ('args', 'columns', 'functions', 'idxs', 'keycolumns',
+        and name IN ('args', 'columns', 'functions', 'idxs', 'objects',
         'keys', 'modules', 'sequences') having 1=1;
 ERROR = !SELECT: cannot use non GROUP BY column 'name' in query results without an aggregate function
 MAPI  = monetdb@volund:35971

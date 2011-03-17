@@ -1,5 +1,8 @@
 import os, sys
-from MonetDBtesting import process
+try:
+    from MonetDBtesting import process
+except ImportError:
+    import process
 
 def client(args):
     clt = process.client('mal', args = args,
@@ -9,5 +12,5 @@ def client(args):
     sys.stderr.write(err)
 
 sys.stderr.write('#~BeginVariableOutput~#\n')
-client(['-t', '-s', 'io.print(123);'])
+client(['-s', 'io.print(123);'])
 sys.stderr.write('#~EndVariableOutput~#\n')

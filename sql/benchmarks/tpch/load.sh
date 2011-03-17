@@ -36,7 +36,7 @@ SF='sf-0.01'
 
 dir=`echo $SF | tr '[a-z]' '[A-Z]'`
 $SQL < c.sql-dec-primary-foreign
-#$SQL -t < c.sql-dec
-cat load-$SF.sql$T | sed -e s+PWD+$PWD/$dir+ | $SQL -t
+#$SQL < c.sql-dec
+cat load-$SF.sql$T | sed -e s+PWD+$PWD/$dir+ | $SQL 
 #cat load-$SF.sql$T | sed -e s+PWD+$PWD/$dir+ 
-#$SQL -t < alter.sql
+#$SQL < alter.sql

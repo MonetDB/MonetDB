@@ -1,7 +1,0 @@
-let $doc := doc("$TSTTRGDIR/load_docs.xml")//doc/text()
-
-for $b in doc(exactly-one($doc[1]))/ComplexAssembly/ComplexAssembly/ComplexAssembly/ComplexAssembly/BaseAssembly,
-    $d in $b/CompositePart/Document
-let $a := $b/CompositePart/Connection/AtomicPart
-where  $d/@MyID = $a/@docId
-return $a

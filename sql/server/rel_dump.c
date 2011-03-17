@@ -97,7 +97,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, int comma, int alias)
 			if (atom_type(a)->type->localtype == TYPE_ptr) {
 				sql_table *t = a->data.val.pval;
 				mnstr_printf(fout, "%s(%s)", 
-					isStream(t)?"stream":"table",
+					isStream(t)?"stream":isMergeTable(t)?"merge table":"table",
 					t->base.name);
 			} else {
 				char *s = atom2string(sql->sa, a);
@@ -534,7 +534,7 @@ rel_print(mvc *sql, sql_rel *rel, int depth)
 	mnstr_printf(fd, "%% .plan # table_name\n");
 	mnstr_printf(fd, "%% rel # name\n");
 	mnstr_printf(fd, "%% clob # type\n");
-	mnstr_printf(fd, "%% " SZFMT " # length\n", len - 2 /* remove = and \n */);
+	mnstr_printf(fd, "%% " SZFMT " # length\n", len - 1 /* remove = */);
 
 	/* output the data */
 	mnstr_printf(fd, "%s\n", b->buf + 1 /* omit starting \n */);

@@ -86,7 +86,7 @@ Over..
 % single_value # name
 % int # type
 % 1 # length
-[ 3	]
+[ 4	]
 #select * from quser;
 % sys.quser,	sys.quser,	sys.quser,	sys.quser,	sys.quser,	sys.quser # table_name
 % quser_id,	user_name,	uid,	emailaddress,	password,	enabled # name
@@ -101,7 +101,7 @@ Over..
 % 1,	1,	21,	1,	5,	5,	0,	1,	0,	0 # length
 [ 1,	NULL,	"select * from example",	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ 2,	1,	"select * from example",	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ 3,	NULL,	"select * from example",	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ 4,	NULL,	"select * from example",	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 #select * from queue;
 % sys.queue,	sys.queue,	sys.queue,	sys.queue,	sys.queue,	sys.queue,	sys.queue,	sys.queue # table_name
 % queue_id,	query_id,	queue_add,	queue_number,	os_version,	monetdb_version,	start_query,	query_ready # name

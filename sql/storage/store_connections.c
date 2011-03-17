@@ -22,7 +22,6 @@
 #include "store_connections.h"
 
 
-
 /*Function to create a connection*/
 int
 sql_trans_connect_catalog(sql_trans* tr, char *server, int port, char *db, char *db_alias, char *user, char *passwd, char *lang)
@@ -72,47 +71,4 @@ sql_trans_disconnect_catalog_ALL(sql_trans* tr)
 
 	sql_trans_clear_table(tr, t);
 	return 1;
-}
-
-list*
-sql_trans_get_connection(sql_trans* tr, int id, char *server, char *db, char *db_alias, char *user)
-{
-	oid rid = oid_nil;
-	sql_schema *s = find_sql_schema(tr, "sys");	
-	sql_table *con = find_sql_table(s, "connections");
-	list *con_arg_list = list_create((fdestroy) NULL); 
-	sql_column *col_id, *col_server, *col_db, *col_db_alias, *col_user, *col_port, *col_passwd, *col_lang;
-	char dbalias[BUFSIZ];
-
-	col_id = find_sql_column(con, "id");
-	col_db_alias = find_sql_column(con, "db_alias");
-	col_server = find_sql_column(con, "server");
-	col_db = find_sql_column(con, "db");
-	col_user = find_sql_column(con, "user");
-	col_port = find_sql_column(con, "port");
-	col_passwd = find_sql_column(con, "password");
-	col_lang = find_sql_column(con, "language");
-	
-	if (db_alias == NULL){
-		snprintf(dbalias, BUFSIZ, "%s_%s_%s", server, db, user);
-		db_alias = dbalias;
-	}
-
-	if (id != -1)
-		rid = table_funcs.column_find_row(tr, col_id, &id, NULL);
-	else 	
-		rid = table_funcs.column_find_row(tr, col_db_alias, db_alias, NULL);
-
-	if (rid != oid_nil) {
-		list_append(con_arg_list, (int *) table_funcs.column_find_value(tr, col_id, rid));
-		list_append(con_arg_list, (char *) table_funcs.column_find_value(tr, col_server, rid));
-		list_append(con_arg_list, (int *) table_funcs.column_find_value(tr, col_port, rid));
-		list_append(con_arg_list, (char *) table_funcs.column_find_value(tr, col_db, rid));
-		list_append(con_arg_list, (char *) table_funcs.column_find_value(tr, col_db_alias, rid));
-		list_append(con_arg_list, (char *) table_funcs.column_find_value(tr, col_user, rid));
-		list_append(con_arg_list, (char *) table_funcs.column_find_value(tr, col_passwd, rid));
-		list_append(con_arg_list, (char *) table_funcs.column_find_value(tr, col_lang, rid));
-	}
-
-	return con_arg_list;
 }

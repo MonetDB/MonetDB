@@ -22,8 +22,8 @@ INCLUDES = ../../mal \
 		   $(SPHINXCLIENT_CFLAGS)
 
 lib__sphinx = {
+	MODULE
 	DIR = libdir/monetdb5
-	SEP = _
 	SOURCES = sphinx.mx
 
 	LIBS = ../../tools/libmonetdb5 $(SPHINXCLIENT_LIBS)

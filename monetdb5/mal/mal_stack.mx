@@ -58,7 +58,6 @@ ensure we are still within safe bounds.
 #define _MAL_STACK_H_
 #include "mal.h"
 #include "gdk.h"
-#include "gdk_system.h"
 
 #ifdef HAVE_SYS_TIMES_H
 #include <sys/times.h>

@@ -1,1 +1,0 @@
-xmlcache_add_rule("http", 1000000);

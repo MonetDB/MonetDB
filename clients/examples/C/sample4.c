@@ -90,20 +90,8 @@ main(int argc, char **argv)
 		if ((hdl = mapi_query(dbh, "io.print(emp);")) == NULL || mapi_error(dbh))
 			die(dbh, hdl);
 	} else {
-		if ((hdl = mapi_query(dbh, "var emp:= new(str,int);")) == NULL || mapi_error(dbh))
-			die(dbh, hdl);
-		if (mapi_close_handle(hdl) != MOK)
-			die(dbh, hdl);
-		if ((hdl = mapi_query(dbh, "emp.insert(\"John\",23);")) == NULL)
-			die(dbh, hdl);
-		if (mapi_close_handle(hdl) != MOK)
-			die(dbh, hdl);
-		if ((hdl = mapi_query(dbh, "emp.insert(\"Mary\",22);")) == NULL || mapi_error(dbh))
-			die(dbh, hdl);
-		if (mapi_close_handle(hdl) != MOK)
-			die(dbh, hdl);
-		if ((hdl = mapi_query(dbh, "print(emp);")) == NULL || mapi_error(dbh))
-			die(dbh, hdl);
+		fprintf(stderr, "%s: unknown language, only mal and sql supported\n", argv[0]);
+		exit(1);
 	}
 
 	rows = mapi_fetch_all_rows(hdl);

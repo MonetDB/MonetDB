@@ -54,15 +54,6 @@ mapi06
 mapi07
 mapi01
 
-
-HAVE_LIBXML2?xml00
-HAVE_LIBXML2?xml01
-HAVE_LIBXML2?xml02
-HAVE_LIBXML2?xml03
-HAVE_LIBXML2?xml04
-HAVE_LIBXML2?xml05
-HAVE_LIBXML2?xml10
-
 cluster00
 tokenizer00
 zorder

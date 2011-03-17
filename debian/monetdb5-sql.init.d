@@ -18,8 +18,8 @@ test -x $DAEMON || exit 0
 
 umask 022
 
-LOGDIR=/var/log/MonetDB
-PIDFILE=/var/run/MonetDB/$NAME.pid
+LOGDIR=/var/log/monetdb
+PIDFILE=/var/run/monetdb/$NAME.pid
 
 # Include monetdb5-sql defaults if available
 if [ -f /etc/default/monetdb5-sql ] ; then
@@ -29,12 +29,12 @@ fi
 set -e
 
 init() {
-    if [ ! -d /var/run/MonetDB ]; then
-        mkdir /var/run/MonetDB
+    if [ ! -d /var/run/monetdb ]; then
+        mkdir /var/run/monetdb
     fi
-    chown -R monetdb.monetdb /var/run/MonetDB
-    chmod 775 /var/run/MonetDB
-    rm -f /var/run/MonetDB/*
+    chown -R monetdb.monetdb /var/run/monetdb
+    chmod 775 /var/run/monetdb
+    rm -f /var/run/monetdb/*
 }
 
 running_pid() {
@@ -81,8 +81,8 @@ case "$1" in
 
         # TODO: this can be removed when fabian fixes the socket permission bug
         sleep 3
-        chmod g+rw /var/MonetDB5/dbfarm/.merovingian_*
-        chmod g+rx /var/MonetDB5/dbfarm
+        chmod g+rw /var/monetdb5/dbfarm/.merovingian_*
+        chmod g+rx /var/monetdb5/dbfarm
 
         if [ "$START_ALL_DBS" = "yes" ]; then
              /bin/su -c "/usr/bin/monetdb start -a" -s /bin/bash monetdb

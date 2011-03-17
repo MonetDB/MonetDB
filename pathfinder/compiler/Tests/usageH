@@ -1,4 +1,0 @@
-#!/bin/sh
-
-Mlog -x $MTIMEOUT pf -H | sed 's|^ \( \-[a-zA-Z][^:]*: \)|=\1|'
-

@@ -4,9 +4,10 @@ set -e
 
 case "$1" in
     configure)
-	mkdir -p /var/log/MonetDB /var/run/MonetDB
-	chown monetdb:monetdb /var/log/MonetDB /var/run/MonetDB
-	chmod ug=rwx,o= /var/log/MonetDB /var/run/MonetDB
+	mkdir -p /var/log/monetdb /var/run/monetdb
+	chown monetdb:monetdb /var/log/monetdb /var/run/monetdb
+	chmod ug=rwx,o= /var/log/monetdb
+	chmod ug=rwx,o=rx /var/run/monetdb
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)

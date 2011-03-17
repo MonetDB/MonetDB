@@ -212,11 +212,12 @@ extern stmt *stmt_append(sql_allocator *sa, stmt *c, stmt *values);
 extern stmt *stmt_table_clear(sql_allocator *sa, sql_table *t);
 extern stmt *stmt_export(sql_allocator *sa, stmt *t, char *sep, char *rsep, char *ssep, char *null_string, stmt *file);
 extern stmt *stmt_trans(sql_allocator *sa, int type, stmt *chain, stmt *name);
-extern stmt *stmt_catalog(sql_allocator *sa, int type, stmt *name, stmt *auth, stmt *action);
+extern stmt *stmt_catalog(sql_allocator *sa, int type, stmt *args);
 
 extern stmt *stmt_temp(sql_allocator *sa, sql_subtype *t);
 extern stmt *stmt_atom(sql_allocator *sa, atom *op1);
 extern stmt *stmt_atom_string(sql_allocator *sa, char *s);
+extern stmt *stmt_atom_string_nil(sql_allocator *sa);
 extern stmt *stmt_atom_clob(sql_allocator *sa, char *S);
 extern stmt *stmt_atom_int(sql_allocator *sa, int i);
 extern stmt *stmt_atom_wrd(sql_allocator *sa, wrd i);

@@ -164,9 +164,6 @@ GenForm(void)
 				case Pspec:
 					PrCodeDisplay(d, "spec");
 					break;
-				case CCsrc:
-					PrCodeDisplay(d, "cc");
-					break;
 				case Csrc:
 					PrCodeDisplay(d, "c");
 					break;
@@ -178,12 +175,6 @@ GenForm(void)
 					break;
 				case MALcode:
 					PrCodeDisplay(d, "mal");
-					break;
-				case MILcode:
-					PrCodeDisplay(d, "mil");
-					break;
-				case Monet:
-					PrCodeDisplay(d, "m");
 					break;
 				case OQLspec:
 					PrCodeDisplay(d, "oql");
@@ -202,9 +193,6 @@ GenForm(void)
 					break;
 				case Qnap:
 					PrCodeDisplay(d, "qnp");
-					break;
-				case Tcl:
-					PrCodeDisplay(d, "tcl");
 					break;
 				case Java:
 					PrCodeDisplay(d, "java");
@@ -287,7 +275,6 @@ void
 FormBlk(Def * d)
 {
 	Tok *t;
-	int i;
 
 	for (t = FstTok(d->d_blk); t; t = NxtTok(t)) {
 		switch (t->t_dir) {
@@ -301,7 +288,6 @@ FormBlk(Def * d)
 			PrModeStr(t->t_str, t->t_dir);
 			break;
 		case T_INDEX:
-			i = t->t_ext - '0';
 			PrStr(t->t_str);
 			break;
 		case T_SGML:

@@ -15,7 +15,7 @@
     {
         "Entry"
         {
-        "MsmKey" = "8:_0729672A47604EE69F8B5461528D646F"
+        "MsmKey" = "8:_0F19ACCC44674803BA72C7FE1408CD70"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -27,31 +27,31 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_5BE7FE00E4D843E8BC2DBCFC75D469B4"
+        "MsmKey" = "8:_491E5654F3564DA2AE65516A1D652A81"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_5DEBE6C23B3A458B87EC4985681948E7"
+        "MsmKey" = "8:_4FC22BC37061413FA8B8F80F91330E61"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_775DC302D73844D4A90F71060A64C85C"
+        "MsmKey" = "8:_6C07D912740F414490DD35D5A179D268"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_819BD8650A494CC68BD064E23EF621BB"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
         "MsmKey" = "8:_B44E4DBF28214C5F8E146367ED28914D"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_C5249117205D42C183A8CFBF50D2C692"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -149,19 +149,19 @@
         }
         "File"
         {
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_0729672A47604EE69F8B5461528D646F"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_0F19ACCC44674803BA72C7FE1408CD70"
             {
-            "SourcePath" = "8:C:\\Libraries\\geos-3.2.2.win64\\bin\\geos_c.dll"
-            "TargetName" = "8:geos_c.dll"
+            "SourcePath" = "8:monetdb.ico"
+            "TargetName" = "8:monetdb.ico"
             "Tag" = "8:"
-            "Folder" = "8:_4D9CE65EDD774551869CFD46B59B4F9E"
+            "Folder" = "8:_43F633204BF7468685D229A7194CCD26"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
             "ReadOnly" = "11:FALSE"
             "Hidden" = "11:FALSE"
             "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
+            "Permanent" = "11:TRUE"
             "SharedLegacy" = "11:FALSE"
             "PackageAs" = "3:1"
             "Register" = "3:1"
@@ -189,12 +189,12 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_5BE7FE00E4D843E8BC2DBCFC75D469B4"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_491E5654F3564DA2AE65516A1D652A81"
             {
-            "SourcePath" = "8:share\\MonetDB\\sql\\geom.sql"
-            "TargetName" = "8:geom.sql"
+            "SourcePath" = "8:lib\\monetdb5\\createdb\\40_geom.sql"
+            "TargetName" = "8:40_geom.sql"
             "Tag" = "8:"
-            "Folder" = "8:_25A421B0D66B48068FB65F6C5BB97556"
+            "Folder" = "8:_D750A5D32EAD46558AC7EE1BFCB3E1E0"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -209,12 +209,12 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_5DEBE6C23B3A458B87EC4985681948E7"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_4FC22BC37061413FA8B8F80F91330E61"
             {
-            "SourcePath" = "8:Lib\\MonetDB5\\autoload\\50_geom.mal"
+            "SourcePath" = "8:lib\\monetdb5\\autoload\\50_geom.mal"
             "TargetName" = "8:50_geom.mal"
             "Tag" = "8:"
-            "Folder" = "8:_3FDE786F6A84477DA5B49E3A028A425D"
+            "Folder" = "8:_8FBEE32B5DFA4DCEA7CA122FC483D244"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -229,12 +229,12 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_775DC302D73844D4A90F71060A64C85C"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_6C07D912740F414490DD35D5A179D268"
             {
-            "SourcePath" = "8:monetdb.ico"
-            "TargetName" = "8:monetdb.ico"
+            "SourcePath" = "8:C:\\Libraries\\geos-3.2.2.win64\\bin\\geos_c.dll"
+            "TargetName" = "8:geos_c.dll"
             "Tag" = "8:"
-            "Folder" = "8:_43F633204BF7468685D229A7194CCD26"
+            "Folder" = "8:_4D9CE65EDD774551869CFD46B59B4F9E"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -271,7 +271,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_D147424A3FAE4B65A5E6354CD1874429"
             {
-            "SourcePath" = "8:Lib\\MonetDB5\\geom.mal"
+            "SourcePath" = "8:lib\\monetdb5\\geom.mal"
             "TargetName" = "8:geom.mal"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -291,7 +291,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_F73D102F3CF04E928A754F374EE52EA5"
             {
-            "SourcePath" = "8:Lib\\MonetDB5\\lib_geom.dll"
+            "SourcePath" = "8:lib\\monetdb5\\lib_geom.dll"
             "TargetName" = "8:lib_geom.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
@@ -347,53 +347,31 @@
                         {
                             "{9EF0B969-E518-4E46-987F-47570745A589}:_B593DAA0787744D6A44D17884E0C3951"
                             {
-                            "Name" = "8:MonetDB5"
+                            "Name" = "8:monetdb5"
                             "AlwaysCreate" = "11:FALSE"
                             "Condition" = "8:"
                             "Transitive" = "11:FALSE"
                             "Property" = "8:_E9DAA77BC0534BDAADC8952902DD6DDB"
                                 "Folders"
                                 {
-                                    "{9EF0B969-E518-4E46-987F-47570745A589}:_3FDE786F6A84477DA5B49E3A028A425D"
+                                    "{9EF0B969-E518-4E46-987F-47570745A589}:_8FBEE32B5DFA4DCEA7CA122FC483D244"
                                     {
                                     "Name" = "8:autoload"
                                     "AlwaysCreate" = "11:FALSE"
                                     "Condition" = "8:"
                                     "Transitive" = "11:FALSE"
-                                    "Property" = "8:_C2814B971B754DEA9BA7EED96BE2CBB8"
+                                    "Property" = "8:_22D3C6EBD46E4AE5A4080D955E209655"
                                         "Folders"
                                         {
                                         }
                                     }
-                                }
-                            }
-                        }
-                    }
-                    "{9EF0B969-E518-4E46-987F-47570745A589}:_D32725D6DFA64301BDD999A0846B9D3B"
-                    {
-                    "Name" = "8:share"
-                    "AlwaysCreate" = "11:FALSE"
-                    "Condition" = "8:"
-                    "Transitive" = "11:FALSE"
-                    "Property" = "8:_43ED3174086746B9B5D7799434738856"
-                        "Folders"
-                        {
-                            "{9EF0B969-E518-4E46-987F-47570745A589}:_562B007DB0FC4C0D8EBC256D71FF091B"
-                            {
-                            "Name" = "8:MonetDB"
-                            "AlwaysCreate" = "11:FALSE"
-                            "Condition" = "8:"
-                            "Transitive" = "11:FALSE"
-                            "Property" = "8:_4A03AE416B024750BE72FE07625A57DE"
-                                "Folders"
-                                {
-                                    "{9EF0B969-E518-4E46-987F-47570745A589}:_25A421B0D66B48068FB65F6C5BB97556"
+                                    "{9EF0B969-E518-4E46-987F-47570745A589}:_D750A5D32EAD46558AC7EE1BFCB3E1E0"
                                     {
-                                    "Name" = "8:sql"
+                                    "Name" = "8:createdb"
                                     "AlwaysCreate" = "11:FALSE"
                                     "Condition" = "8:"
                                     "Transitive" = "11:FALSE"
-                                    "Property" = "8:_712B8212F12A47CA8C27E2C1B63E4C64"
+                                    "Property" = "8:_BA2AC4ED8A9246D0B97289186ECCD461"
                                         "Folders"
                                         {
                                         }
@@ -447,14 +425,14 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB5 SQL GIS Module"
-        "ProductCode" = "8:{48BA4013-D587-425E-AC25-42F7F296B3B5}"
-        "PackageCode" = "8:{8C150465-6617-475E-A9CE-8E155A8D51A7}"
+        "ProductCode" = "8:{ED180113-0260-405D-BE84-051345482E57}"
+        "PackageCode" = "8:{7B8FF815-E532-4549-A621-10E9481DEED9}"
         "UpgradeCode" = "8:{8E6CDFDE-39B9-43D9-97B3-2440C012845C}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:TRUE"
-        "ProductVersion" = "8:10.6.30"
+        "ProductVersion" = "8:11.2.0"
         "Manufacturer" = "8:MonetDB"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:http://monetdb.cwi.nl/"
@@ -464,7 +442,7 @@
         "Keywords" = "8:MonetDB5 MonetDB SQL GIS Database"
         "ARPCOMMENTS" = "8:MonetDB5/SQL/GIS Module"
         "ARPURLINFOABOUT" = "8:http://monetdb.cwi.nl"
-        "ARPPRODUCTICON" = "8:_775DC302D73844D4A90F71060A64C85C"
+        "ARPPRODUCTICON" = "8:_0F19ACCC44674803BA72C7FE1408CD70"
         "ARPIconIndex" = "3:0"
         "SearchPath" = "8:"
         "UseSystemSearchPath" = "11:TRUE"
@@ -1010,7 +988,7 @@
         }
         "MergeModule"
         {
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_C5249117205D42C183A8CFBF50D2C692"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_819BD8650A494CC68BD064E23EF621BB"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:FALSE"

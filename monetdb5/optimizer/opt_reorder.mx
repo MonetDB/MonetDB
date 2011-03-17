@@ -103,12 +103,9 @@ OPTdependencies(Client cntxt, MalBlkPtr mb){
 	}
 
 	for ( i=0; i< mb->stop; i++){
-		int cnt;
-		int slots;
 		p= getInstrPtr(mb,i);
-		slots = 2 * p->argc;
 		block |= p->barrier != 0;
-		list[i]= (Node) GDKzalloc(sizeof(NodeRecord) + sizeof(int) * slots);
+		list[i]= (Node) GDKzalloc(sizeof(NodeRecord) + sizeof(int) * p->argc);
 		if (list[i] == NULL){
 			for (i--; i>=0; i--)
 				GDKfree(list[i]);
@@ -116,21 +113,7 @@ OPTdependencies(Client cntxt, MalBlkPtr mb){
 			GDKfree(var);
 			return 0;
 		}
-		cnt = p->argc;
-		if ( sqlRef == getModuleId(p) && isUpdateInstruction(p)) {
-			int storage_read;
-			for ( storage_read = 0; i > storage_read; storage_read++) {
-				InstrPtr reading = getInstrPtr(mb,storage_read);
-				if ( sqlRef == getModuleId(reading) && bindRef == getFunctionId(reading)) {
-					if ( cnt == slots){
-						list[i]= GDKrealloc(list[i],sizeof(NodeRecord) + sizeof(int) * (slots + 8));
-						slots += 8;
-					}
-					list[i]->stmt[cnt++] = storage_read;
-				}
-			}
-		}
-		list[i]->cnt= cnt;
+		list[i]->cnt= p->argc;
 		for( j=p->retc; j<p->argc; j++)
 			list[i]->stmt[j]= var[getArg(p,j)];
 		/* keep the assignment order */
@@ -147,13 +130,6 @@ OPTdependencies(Client cntxt, MalBlkPtr mb){
 			var[getArg(p,j)]= i;
 		*/
 	}
-	if ( block ){
-		for (i--; i>=0; i--)
-			GDKfree(list[i]);
-		//GDKfree(list);
-		//GDKfree(var);
-		return NULL;
-	}
 @-
 	mnstr_printf(cntxt->fdout,"DEPENDENCY TABLE\n");
 	for(i=0;i<mb->stop; i++)
@@ -164,6 +140,13 @@ OPTdependencies(Client cntxt, MalBlkPtr mb){
 		mnstr_printf(cntxt->fdout,"\n");
 	}
 @c
+	if ( block ){
+		for (i--; i>=0; i--)
+			GDKfree(list[i]);
+		GDKfree(list);
+		GDKfree(var);
+		return NULL;
+	}
 	GDKfree(var);
 	return list;
 }

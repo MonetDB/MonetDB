@@ -1,4 +1,7 @@
-from MonetDBtesting import process
+try:
+    from MonetDBtesting import process
+except ImportError:
+    import process
 import os
 
 s = process.server(lang = 'sql', args = ['--readonly'],

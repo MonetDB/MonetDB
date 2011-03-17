@@ -28,29 +28,40 @@ Over..
 % .ttables,	.ttables,	.ttables,	.ttables,	.ttables,	.ttables,	.ttables,	.ttables,	.ttables,	.ttables # table_name
 % TABLE_CAT,	TABLE_SCHEM,	TABLE_NAME,	TABLE_TYPE,	REMARKS,	TYPE_CAT,	TYPE_SCHEM,	TYPE_NAME,	SELF_REFERENCING_COL_NAME,	REF_GENERATION # name
 % char,	varchar,	varchar,	char,	char,	char,	char,	char,	char,	char # type
-% 0,	3,	10,	12,	0,	0,	0,	0,	2,	6 # length
+% 0,	3,	9,	12,	0,	0,	0,	0,	2,	6 # length
 [ NULL,	"sys",	"args",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"functions",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"idxs",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
-[ NULL,	"sys",	"keycolumns",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"keys",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
+[ NULL,	"sys",	"objects",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"sequences",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"tmp",	"idxs",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
-[ NULL,	"tmp",	"keycolumns",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"tmp",	"keys",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
+[ NULL,	"tmp",	"objects",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
+#SELECT * FROM (
+#SELECT null AS "TABLE_CAT", "schemas"."name" AS
+#"TABLE_SCHEM", "ptables"."name" AS "TABLE_NAME",
+#'SYSTEM TABLE' AS "TABLE_TYPE", '' AS "REMARKS", null
+#AS "TYPE_CAT", null AS "TYPE_SCHEM",
+#null AS "TYPE_NAME", 'id' AS
+#"SELF_REFERENCING_COL_NAME", 'SYSTEM' AS "REF_GENERATION"
+#FROM "_tables" as ptables, "schemas" WHERE "ptables"."schema_id" =
+#"schemas"."id" AND "ptables"."type" = 0 AND "ptables"."system" = true
+#AND "ptables"."name" IN ('args', 'columns', 'functions', 'idxs',
+#    'objects', 'key
 % .ttables,	.ttables,	.ttables,	.ttables,	.ttables,	.ttables,	.ttables,	.ttables,	.ttables,	.ttables # table_name
 % TABLE_CAT,	TABLE_SCHEM,	TABLE_NAME,	TABLE_TYPE,	REMARKS,	TYPE_CAT,	TYPE_SCHEM,	TYPE_NAME,	SELF_REFERENCING_COL_NAME,	REF_GENERATION # name
 % char,	varchar,	varchar,	char,	char,	char,	char,	char,	char,	char # type
-% 0,	3,	10,	23,	0,	0,	0,	0,	2,	6 # length
+% 0,	3,	9,	23,	0,	0,	0,	0,	2,	6 # length
 [ NULL,	"sys",	"args",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"functions",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"idxs",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
-[ NULL,	"sys",	"keycolumns",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"keys",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
+[ NULL,	"sys",	"objects",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"sequences",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"tmp",	"idxs",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
-[ NULL,	"tmp",	"keycolumns",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"tmp",	"keys",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
+[ NULL,	"tmp",	"objects",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 
 # 21:19:26 >  
 # 21:19:26 >  Done.

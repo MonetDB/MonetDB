@@ -65,8 +65,7 @@ For the time being we assume that all commands are statically linked.
 #define MONET64 1
 mal_export MALfcn getAddress(str filename, str modnme, str fcnname,int silent);
 mal_export char *MSP_locate_script(const char *mod_name);
-mal_export char *MSP_locate_sqlscript(const char *mod_name);
-mal_export char *MSP_locate_file(const char *mod_name);
+mal_export char *MSP_locate_sqlscript(const char *mod_name, bit recurse);
 mal_export str loadLibrary(str modulename, int flag);
 mal_export void unloadLibraries(void);
 mal_export void initLibraries(void);
@@ -95,10 +94,18 @@ the consistency of this counter.
 #include "mal_function.h"	/* for throw() */
 #include "mal_import.h"		/* for slash_2_dir_sep() */
 
+#include "mutils.h"
 #include <sys/types.h> /* opendir */
 #ifdef HAVE_DIRENT_H
 #include <dirent.h>
 #endif
+#ifdef HAVE_FCNTL_H
+#include <fcntl.h>
+#endif
+#ifdef HAVE_SYS_STAT_H
+#include <sys/stat.h>
+#endif
+#include <unistd.h>
 
 #if defined(_MSC_VER) && _MSC_VER >= 1400
 #define open _open
@@ -148,9 +155,10 @@ This deals with the case that files are linked together to reduce
 the loading time, while the signatures of the functions are still
 obtained from the source-file MAL script.
 @c
-	for(idx =0; idx < lastfile && filesLoaded[idx].handle; idx++){
+	for (idx =0; idx < lastfile; idx++)
+		if (filesLoaded[idx].handle) {
 			adr = (MALfcn) dlsym(filesLoaded[idx].handle, fcnname);
-			if( adr != NULL)  {
+			if (adr != NULL)  {
 				prev = idx;
 				return adr; /* found it */
 			}
@@ -197,8 +205,9 @@ isLoaded(str modulename)
 {
 	int idx;
 
-	for (idx = 0; filesLoaded[idx].filename && idx < lastfile; idx++)
-		if (strcmp(filesLoaded[idx].filename, modulename) == 0) {
+	for (idx = 0; idx < lastfile; idx++)
+		if (filesLoaded[idx].filename &&
+		    strcmp(filesLoaded[idx].filename, modulename) == 0) {
 			return 1;
 		}
 	return 0;
@@ -213,39 +222,93 @@ loadLibrary(str filename, int flag)
 	int mode = RTLD_NOW | RTLD_GLOBAL;
 	char nme[MAXPATHLEN];
 	void *handle = NULL;
-	str fullname, s;
+	str s;
 	int idx;
-	const char *errmsg;
+	char *mod_path = GDKgetenv("monet_mod_path");
 
-	for (idx = 0; filesLoaded[idx].filename && idx < lastfile; idx++)
-		if (strcmp(filesLoaded[idx].filename, filename) == 0)
-			/* already loaded */
-			return MAL_SUCCEED;
-@-
-Use the search path provided in the configuration file
-@c
-	s = strrchr(filename, DIR_SEP);
-	snprintf(nme, MAXPATHLEN, "_%s", s ? s + 1 : filename);
-	fullname = MSP_locate_file(nme);
-
-	if (fullname == NULL) {
-		if( flag)
-			throw(LOADER, "loadLibrary", RUNTIME_FILE_NOT_FOUND ":%s", filename);
-		return MAL_SUCCEED;
-	}
-
-/* AIX requires RTLD_MEMBER to load a module that is a member of an archive.  */
+	/* AIX requires RTLD_MEMBER to load a module that is a member of an
+	 * archive.  */
 #ifdef RTLD_MEMBER
 	mode |= RTLD_MEMBER;
 #endif
 
-	handle = dlopen(fullname, mode);
+	for (idx = 0; idx < lastfile; idx++)
+		if (filesLoaded[idx].filename &&
+		    strcmp(filesLoaded[idx].filename, filename) == 0)
+			/* already loaded */
+			return MAL_SUCCEED;
+
+	/* ignore any path given */
+	if ((s = strrchr(filename, DIR_SEP)) == NULL)
+		s = filename;
+
+	if (mod_path != NULL) {
+		while (*mod_path == PATH_SEP)
+			mod_path++;
+		if (*mod_path == 0)
+			mod_path = NULL;
+	}
+	if (mod_path == NULL) {
+		if (flag)
+			throw(LOADER, "loadLibrary", RUNTIME_FILE_NOT_FOUND ":%s", s);
+		return MAL_SUCCEED;
+	}
+
+	while (*mod_path) {
+		char *p;
+		struct stat stbuf;
+
+		if ((p = strchr(mod_path, PATH_SEP)) != NULL)
+			*p = '\0';
+		/* try hardcoded SO_EXT if that is the same for modules */
+#ifdef _AIX
+		snprintf(nme, MAXPATHLEN, "%s%c%s_%s%s(%s_%s.0)",
+				mod_path, DIR_SEP, SO_PREFIX, s, SO_EXT, SO_PREFIX, s);
+#else
+		snprintf(nme, MAXPATHLEN, "%s%c%s_%s%s",
+				mod_path, DIR_SEP, SO_PREFIX, s, SO_EXT);
+#endif
+		if (stat(nme, &stbuf) != 0 || !S_ISREG(stbuf.st_mode))
+			*nme = '\0';
+		if (*nme == '\0' && strcmp(SO_EXT, ".so") != 0) {
+			/* try .so */
+			snprintf(nme, MAXPATHLEN, "%s%c%s_%s.so",
+					mod_path, DIR_SEP, SO_PREFIX, s);
+			if (stat(nme, &stbuf) != 0 || !S_ISREG(stbuf.st_mode))
+				*nme = '\0';
+		}
+#ifdef __APPLE__
+		if (*nme == '\0' && strcmp(SO_EXT, ".bundle") != 0) {
+			/* try .bundle */
+			snprintf(nme, MAXPATHLEN, "%s%c%s_%s.bundle",
+					mod_path, DIR_SEP, SO_PREFIX, s);
+			if (stat(nme, &stbuf) != 0 || !S_ISREG(stbuf.st_mode))
+				*nme = '\0';
+		}
+#endif
+
+		/* restore path */
+		if (p != NULL)
+			*p = PATH_SEP;
+
+		if (*nme != '\0') {
+			handle = dlopen(nme, mode);
+			if (handle != NULL) {
+				break;
+			} else {
+				throw(LOADER, "loadLibrary",
+						"failed to load library: %s", dlerror());
+			}
+		}
+
+		if (p == NULL)
+			break;
+		mod_path = p + 1;
+	}
+
 	if (handle == NULL) {
-		errmsg = dlerror();
-		if (!errmsg) 
-			errmsg = "(no error from dlerror())";
-		GDKfree(fullname);
-		throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR " '%s' from within file '%s'", errmsg, filename);
+		if (flag)
+			throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR " could not locate library %s (from within file '%s')", s, filename);
 	}
 
 	mal_set_lock(mal_contextLock, "loadModule");
@@ -253,7 +316,7 @@ Use the search path provided in the configuration file
 		showException(MAL,"loadModule", "internal error, too many modules loaded");
 	} else {
 		filesLoaded[lastfile].filename = GDKstrdup(filename);
-		filesLoaded[lastfile].fullname = fullname;
+		filesLoaded[lastfile].fullname = GDKstrdup(nme);
 		filesLoaded[lastfile].handle = handle;
 		lastfile ++;
 	}
@@ -341,9 +404,10 @@ cmpstr(const void *_p1, const void *_p2)
 	return strcmp(f1?f1:p1, f2?f2:p2);
 }
 
+
 #define MAXMULTISCRIPT 48
 static char *
-locate_file(const char *basename, const char *ext, const bit recurse)
+locate_file(const char *basename, const char *ext, bit recurse)
 {
 	char *mod_path = GDKgetenv("monet_mod_path");
 	char *fullname;
@@ -354,6 +418,7 @@ locate_file(const char *basename, const char *ext, const bit recurse)
 
 	if (mod_path == NULL)
 		return NULL;
+
 	while (*mod_path == PATH_SEP)
 		mod_path++;
 	if (*mod_path == 0)
@@ -452,29 +517,9 @@ MSP_locate_script(const char *filename)
 }
 
 char *
-MSP_locate_sqlscript(const char *filename)
+MSP_locate_sqlscript(const char *filename, bit recurse)
 {
 	/* no directory semantics (yet) */
-	return locate_file(filename, SQL_EXT, 0);
-}
-
-char *
-MSP_locate_file(const char *filename)
-{
-	char *lib_name = GDKmalloc(strlen(filename) + strlen(SO_PREFIX) + 1);
-	char *fullname;
-
-	strcpy(lib_name, SO_PREFIX);
-	strcpy(lib_name + strlen(SO_PREFIX), filename);
-
-	fullname = locate_file(lib_name, SO_EXT, 0);
-#ifdef _AIX
-	fullname = GDKrealloc(fullname, strlen(fullname) + strlen(lib_name) + 5);
-	strcat(fullname, "(");
-	strcat(fullname, lib_name);
-	strcat(fullname, ".0)");
-#endif
-	GDKfree(lib_name);
-	return fullname;
+	return locate_file(filename, SQL_EXT, recurse);
 }
 @}

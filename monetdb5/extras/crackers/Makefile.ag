@@ -23,6 +23,7 @@ INCLUDES = ../../modules/atoms ../../modules/kernel ../../mal \
 MTSAFE
 
 lib_crackers = {
+	MODULE
 	DIR = libdir/monetdb5
 	SEP = _
 	SOURCES = crackers.mx \
@@ -31,7 +32,6 @@ lib_crackers = {
 		crackers_joinselect_ops.mx crackers_select_ops.mx crackers_sideways.mx crackers_partial_sideways.mx crackers_updates.mx crackers_joins.mx crackers_sortmerge.mx crackers_crackmerge.mx crackers_pq.mx \
 		crackers_populate.mx
 	LIBS = ../../tools/libmonetdb5 \
-		   ../../../common/options/libmoptions \
 		   ../../../gdk/libbat \
 		   ../../../common/stream/libstream \
 		   $(MALLOC_LIBS)

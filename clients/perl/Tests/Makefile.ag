@@ -19,8 +19,8 @@ MTSAFE
 
 scripts_pl = {
 	COND = HAVE_TESTING
-	DIR = libdir/monetdb/tests
-	SOURCES = sqlsample.pl.in milsample.pl.in malsample.pl.in
+	DIR = bindir
+	SOURCES = sqlsample.pl.in malsample.pl.in
 }
 
 EXTRA_DIST = client.pl smack00.pl smack01.pl

@@ -66,6 +66,9 @@ typedef struct expression {
 #define ANTISEL	32
 #define HAS_NO_NIL	64
 #define EXP_INTERN	128
+
+#define UPD_COMP	1
+#define UPD_LOCKED	2
  
 // todo make enum
 #define DDL_OUTPUT	1
@@ -90,15 +93,16 @@ typedef struct expression {
 #define DDL_DROP_CONSTRAINT    28
 #define DDL_ALTER_TABLE  29
 
-#define DDL_CREATE_INDEX  30
-#define DDL_DROP_INDEX    31
+#define DDL_CREATE_TYPE 30 
+#define DDL_DROP_TYPE   31 
+
+#define DDL_CREATE_INDEX  32
+#define DDL_DROP_INDEX    33
 
 #define DDL_CREATE_FUNCTION 41 
 #define DDL_DROP_FUNCTION   42 
-#define DDL_CREATE_TYPE 43 
-#define DDL_DROP_TYPE   44 
-#define DDL_CREATE_TRIGGER 45 
-#define DDL_DROP_TRIGGER   46 
+#define DDL_CREATE_TRIGGER 43 
+#define DDL_DROP_TRIGGER   44 
 
 #define DDL_GRANT_ROLES 51
 #define DDL_REVOKE_ROLES 52
@@ -146,6 +150,8 @@ typedef enum operator_type {
 	(e->type == e_func && e->r)
 #define is_base(op) \
 	(op == op_basetable || op == op_table)
+#define is_basetable(op) \
+	(op == op_basetable)
 #define is_ddl(op) \
 	(op == op_ddl)
 #define is_output(rel) \

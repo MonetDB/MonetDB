@@ -29,15 +29,19 @@
 #if SIZEOF_INT==8
 # define ULL_CONSTANT(val)	(val)
 # define O_ULLFMT		"u"
+# define O_ULLCAST	(unsigned int)
 #elif SIZEOF_LONG==8
 # define ULL_CONSTANT(val)	(val##UL)
 # define O_ULLFMT		"lu"
+# define O_ULLCAST	(unsigned long)
 #elif defined(HAVE_LONG_LONG)
 # define ULL_CONSTANT(val)	(val##ULL)
 # define O_ULLFMT		"llu"
+# define O_ULLCAST	(unsigned long long)
 #elif defined(HAVE___INT64)
 # define ULL_CONSTANT(val)	(val##ui64)
 # define O_ULLFMT		"I64u"
+# define O_ULLCAST	(unsigned __int64)
 #endif
 
 #define MAXBIGNUM10	ULL_CONSTANT(1844674407370955161)	/* (2**64-1)/10 */
@@ -257,7 +261,9 @@ parsedate(const char *data, DATE_STRUCT *dval)
 	if (sscanf(data, "{d '%hd-%hu-%hu'}%n", &dval->year, &dval->month, &dval->day, &n) < 3 &&
 	    sscanf(data, "%hd-%hu-%hu%n", &dval->year, &dval->month, &dval->day, &n) < 3)
 		return 0;
-	if (dval->month == 0 || dval->month > 12 || dval->day == 0 || dval->day > monthlengths[dval->month] || (dval->month == 2 && !isLeap(dval->year) && dval->day == 29))
+	if (dval->month == 0 || dval->month > 12 ||
+	    dval->day == 0 || dval->day > monthlengths[dval->month] ||
+	    (dval->month == 2 && !isLeap(dval->year) && dval->day == 29))
 		return 0;
 	data += n;
 	while (space(*data))
@@ -309,7 +315,10 @@ parsetimestamp(const char *data, TIMESTAMP_STRUCT *tsval)
 	if (sscanf(data, "{TS '%hd-%hu-%hu %hu:%hu:%hu%n", &tsval->year, &tsval->month, &tsval->day, &tsval->hour, &tsval->minute, &tsval->second, &n) < 6 &&
 	    sscanf(data, "%hd-%hu-%hu %hu:%hu:%hu%n", &tsval->year, &tsval->month, &tsval->day, &tsval->hour, &tsval->minute, &tsval->second, &n) < 6)
 		return 0;
-	if (tsval->month == 0 || tsval->month > 12 || tsval->day == 0 || tsval->day > monthlengths[tsval->month] || (tsval->month == 2 && !isLeap(tsval->year) && tsval->day == 29) || tsval->hour > 23 || tsval->minute > 59 || tsval->second > 61)
+	if (tsval->month == 0 || tsval->month > 12 ||
+	    tsval->day == 0 || tsval->day > monthlengths[tsval->month] ||
+	    (tsval->month == 2 && !isLeap(tsval->year) && tsval->day == 29) ||
+	    tsval->hour > 23 || tsval->minute > 59 || tsval->second > 61)
 		return 0;
 	braces = *data == '{';
 	tsval->fraction = 0;
@@ -1246,7 +1255,7 @@ ODBCFetch(ODBCStmt *stmt,
 
 			for (n = 0, f = 1; n < nval.scale; n++)
 				f *= 10;
-			sz = snprintf(data, buflen, "%s%" O_ULLFMT, nval.sign ? "" : "-", nval.val / f);
+			sz = snprintf(data, buflen, "%s%" O_ULLFMT, nval.sign ? "" : "-", O_ULLCAST (nval.val / f));
 			if (sz < 0 || sz >= buflen) {
 				/* Numeric value out of range */
 				addStmtError(stmt, "22003", NULL, 0);
@@ -1265,7 +1274,7 @@ ODBCFetch(ODBCStmt *stmt,
 				if (lenp)
 					*lenp += nval.scale + 1;
 				if (buflen > 2)
-					sz = (SQLLEN) snprintf(data, buflen, ".%0*" O_ULLFMT, nval.scale, nval.val % f);
+					sz = (SQLLEN) snprintf(data, buflen, ".%0*" O_ULLFMT, nval.scale, O_ULLCAST (nval.val % f));
 				if (buflen <= 2 || sz < 0 || sz >= buflen) {
 					data[buflen - 1] = 0;
 					/* String data, right-truncated */
@@ -1323,7 +1332,10 @@ ODBCFetch(ODBCStmt *stmt,
 			}
 			data = (char *) ptr;
 
-			sz = snprintf(data, buflen, "%04hu-%02hu-%02hu", dval.year, dval.month, dval.day);
+			sz = snprintf(data, buflen, "%04u-%02u-%02u",
+				      (unsigned int) dval.year,
+				      (unsigned int) dval.month,
+				      (unsigned int) dval.day);
 			if (sz < 0 || sz >= buflen) {
 				data[buflen - 1] = 0;
 				/* String data, right-truncated */
@@ -1345,7 +1357,10 @@ ODBCFetch(ODBCStmt *stmt,
 			}
 			data = (char *) ptr;
 
-			sz = snprintf(data, buflen, "%02hu:%02hu:%02hu", tval.hour, tval.minute, tval.second);
+			sz = snprintf(data, buflen, "%02u:%02u:%02u",
+				      (unsigned int) tval.hour,
+				      (unsigned int) tval.minute,
+				      (unsigned int) tval.second);
 			if (sz < 0 || sz >= buflen) {
 				data[buflen - 1] = 0;
 				/* String data, right-truncated */
@@ -1357,7 +1372,14 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_TYPE_TIMESTAMP:
 			data = (char *) ptr;
 
-			sz = snprintf(data, buflen, "%04hu-%02hu-%02hu %02hu:%02hu:%02hu", tsval.year, tsval.month, tsval.day, tsval.hour, tsval.minute, tsval.second);
+			sz = snprintf(data, buflen,
+				      "%04u-%02u-%02u %02u:%02u:%02u",
+				      (unsigned int) tsval.year,
+				      (unsigned int) tsval.month,
+				      (unsigned int) tsval.day,
+				      (unsigned int) tsval.hour,
+				      (unsigned int) tsval.minute,
+				      (unsigned int) tsval.second);
 			if (sz < 0 || sz >= buflen) {
 				/* Numeric value out of range */
 				addStmtError(stmt, "22003", NULL, 0);
@@ -1382,7 +1404,8 @@ ODBCFetch(ODBCStmt *stmt,
 				if (lenp)
 					*lenp += fscale + 1;
 				if (buflen > 2)
-					sz = snprintf(data, buflen, ".%0*u", fscale, (unsigned int) tsval.fraction);
+					sz = snprintf(data, buflen, ".%0*u",
+						      fscale, (unsigned int) tsval.fraction);
 				if (buflen <= 2 || sz < 0 || sz >= buflen) {
 					data[buflen - 1] = 0;
 					/* String data, right-truncated */
@@ -2668,10 +2691,10 @@ ODBCStore(ODBCStmt *stmt,
 
 			for (n = 0, f = 1; n < nval.scale; n++)
 				f *= 10;
-			snprintf(data, sizeof(data), "%s%" O_ULLFMT, nval.sign ? "" : "-", nval.val / f);
+			snprintf(data, sizeof(data), "%s%" O_ULLFMT, nval.sign ? "" : "-", O_ULLCAST (nval.val / f));
 			assigns(buf, bufpos, buflen, data, stmt);
 			if (nval.scale > 0) {
-				snprintf(data, sizeof(data), ".%0*" O_ULLFMT, nval.scale, nval.val % f);
+				snprintf(data, sizeof(data), ".%0*" O_ULLFMT, nval.scale, O_ULLCAST (nval.val % f));
 				assigns(buf, bufpos, buflen, data, stmt);
 			}
 			break;
@@ -2687,15 +2710,28 @@ ODBCStore(ODBCStmt *stmt,
 			break;
 		}
 		case SQL_C_TYPE_DATE:
-			snprintf(data, sizeof(data), "%04hd-%02hu-%02hu", dval.year, dval.month, dval.day);
+			snprintf(data, sizeof(data), "%04d-%02u-%02u",
+				 (int) dval.year,
+				 (unsigned int) dval.month,
+				 (unsigned int) dval.day);
 			assigns(buf, bufpos, buflen, data, stmt);
 			break;
 		case SQL_C_TYPE_TIME:
-			snprintf(data, sizeof(data), "%02hu:%02hu:%02hu", tval.hour, tval.minute, tval.second);
+			snprintf(data, sizeof(data), "%02u:%02u:%02u",
+				 (unsigned int) tval.hour,
+				 (unsigned int) tval.minute,
+				 (unsigned int) tval.second);
 			assigns(buf, bufpos, buflen, data, stmt);
 			break;
 		case SQL_C_TYPE_TIMESTAMP:
-			snprintf(data, sizeof(data), "%04hd-%02hu-%02hu %02hu:%02hu:%02hu", tsval.year, tsval.month, tsval.day, tsval.hour, tsval.minute, tsval.second);
+			snprintf(data, sizeof(data),
+				 "%04d-%02u-%02u %02u:%02u:%02u",
+				 (int) tsval.year,
+				 (unsigned int) tsval.month,
+				 (unsigned int) tsval.day,
+				 (unsigned int) tsval.hour,
+				 (unsigned int) tsval.minute,
+				 (unsigned int) tsval.second);
 			assigns(buf, bufpos, buflen, data, stmt);
 			if (tsval.fraction) {
 				snprintf(data, sizeof(data), ".%09u", (unsigned int) tsval.fraction);
@@ -2826,7 +2862,7 @@ ODBCStore(ODBCStmt *stmt,
 			}
 			/* fall through */
 		case SQL_C_TYPE_DATE:
-			snprintf(data, sizeof(data), "DATE '%hu-%02hu-%02hu'", dval.year, dval.month, dval.day);
+			snprintf(data, sizeof(data), "DATE '%u-%02u-%02u'", dval.year, dval.month, dval.day);
 			assigns(buf, bufpos, buflen, data, stmt);
 			break;
 		default:
@@ -2862,7 +2898,10 @@ ODBCStore(ODBCStmt *stmt,
 			}
 			/* fall through */
 		case SQL_C_TYPE_TIME:
-			snprintf(data, sizeof(data), "TIME '%hu:%02hu:%02hu'", tval.hour, tval.minute, tval.second);
+			snprintf(data, sizeof(data), "TIME '%u:%02u:%02u'",
+				 (unsigned int) tval.hour,
+				 (unsigned int) tval.minute,
+				 (unsigned int) tval.second);
 			assigns(buf, bufpos, buflen, data, stmt);
 			break;
 		default:
@@ -2921,7 +2960,14 @@ ODBCStore(ODBCStmt *stmt,
 			}
 			/* fall through */
 		case SQL_C_TYPE_TIMESTAMP:
-			snprintf(data, sizeof(data), "TIMESTAMP '%hu-%02hd-%02hd %02hu:%02hu:%02hu", tsval.year, tsval.month, tsval.day, tsval.hour, tsval.minute, tsval.second);
+			snprintf(data, sizeof(data),
+				 "TIMESTAMP '%u-%02d-%02d %02u:%02u:%02u",
+				 (unsigned int) tsval.year,
+				 (unsigned int) tsval.month,
+				 (unsigned int) tsval.day,
+				 (unsigned int) tsval.hour,
+				 (unsigned int) tsval.minute,
+				 (unsigned int) tsval.second);
 			assigns(buf, bufpos, buflen, data, stmt);
 			if (tsval.fraction) {
 				snprintf(data, sizeof(data), ".%09u", (unsigned int) tsval.fraction);
@@ -3160,11 +3206,11 @@ ODBCStore(ODBCStmt *stmt,
 					addStmtError(stmt, "22001", NULL, 0);
 				}
 			} else {
-				snprintf(data, sizeof(data), "%s%" O_ULLFMT, nval.sign ? "" : "-", nval.val / f);
+				snprintf(data, sizeof(data), "%s%" O_ULLFMT, nval.sign ? "" : "-", O_ULLCAST (nval.val / f));
 				assigns(buf, bufpos, buflen, data, stmt);
 				if (nval.scale > 0) {
 					if (sqltype == SQL_DECIMAL) {
-						snprintf(data, sizeof(data), ".%0*" O_ULLFMT, nval.scale, nval.val % f);
+						snprintf(data, sizeof(data), ".%0*" O_ULLFMT, nval.scale, O_ULLCAST (nval.val % f));
 						assigns(buf, bufpos, buflen, data, stmt);
 					} else {
 						/* Fractional truncation */

@@ -28,7 +28,6 @@ module ActiveRecord
   class Base
     # Establishes a connection to the database that's used by all Active Record objects
     def self.monetdb_connection(config) 
-    	puts "ACTIVERECORD\n"
       require_library_or_gem('MonetDB')
       
       # extract connection parameters
@@ -44,9 +43,7 @@ module ActiveRecord
       
       # use empty string as database name if none is specified
       database = config[:database] || ""
-      
-      p "DB:" + database
-      
+            
       dbh = MonetDB.new
       ConnectionAdapters::MonetDBAdapter.new(dbh, logger, [host, port, username, password, database, lang], config)
     end
@@ -344,9 +341,9 @@ module ActiveRecord
 
     # Returns an array of indexes for the given table.
     def indexes(table_name, name = nil)
-      sql_query =  "	SELECT distinct i.name as index_name, k.\"column\", k.nr
+      sql_query =  "	SELECT distinct i.name as index_name, k.\"name\", k.nr
 	 		FROM
-				idxs i, _tables t, keycolumns k 
+				idxs i, _tables t, objects k 
 	 		WHERE
 				i.type = 0 AND i.name not like '%pkey' 
 				AND i.id = k.id AND t.id = i.table_id 
@@ -363,7 +360,7 @@ module ActiveRecord
           cur_index = row['index_name']
         end 	
   
-        indexes.last.columns << row['column']
+        indexes.last.columns << row['name']
       end
 
       indexes 

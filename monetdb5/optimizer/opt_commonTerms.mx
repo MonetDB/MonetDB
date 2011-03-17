@@ -88,11 +88,11 @@ The current implementation is rather expensive nested-loop algorithm,
 which does not perform well for large MAL blocks.
 The search is improved significantly by prefiltering on the
 function name and not searching beyond the last assignment to
-the arguments.
+its arguments. Variables can be assigned a variable
+multiple times, which complicates the code a little.
 
 The common term removal creates opportunities for alias removal,
 which in turn could lead to common terms to be detected.
-This is encoded as a call to the respective optimizers.
 
 Note, we skip the first instruction because it always signifies the signature.
 The last instruction signifies the end.
@@ -104,6 +104,10 @@ b:= e();
 c:= f(a);
 d:= f(b);
 @end verbatim
+
+Caveat. A lot of time was lost due to constants that are indistinguisable 
+at the surface level. It may miss common expressions if their constants
+are introduced too far apart in the MAL program.
 @c
 static int
 OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -150,14 +154,9 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 				lastassigned[getArg(p,k)] = i;
 @-
 We have to also look for first 'assignments' of constant arguments.
-@c
-			for ( k = p->retc; k < p->argc; k++)
-				if ( isVarConstant(mb,getArg(p,k)) && lastassigned[getArg(p,k)] == 0 )
-					lastassigned[getArg(p,k)]=i;
+Constants should be ignored when it comes to building a barrier for
+searching common terms.
 
-		for ( k = 0; k < p->retc; k++)
-			lastassigned[getArg(p,k)]=i;
-@-
 We look back in the code base to determine a candidate for
 replacement. We don't have to look further back then the last
 relevant assignment.
@@ -166,6 +165,13 @@ relevant assignment.
 		for (j = p->retc; j<p->argc; j++)
 			if (lastassigned[getArg(p,j)]> last)
 				last= lastassigned[getArg(p,j)];
+
+		for ( k = p->retc; k < p->argc; k++)
+			if ( isVarConstant(mb,getArg(p,k)) && lastassigned[getArg(p,k)] == 0 )
+				lastassigned[getArg(p,k)]= last ? last : i;
+
+		for ( k = 0; k < p->retc; k++)
+			lastassigned[getArg(p,k)]=i;
 
 		pushInstruction(mb,p);
 @-
@@ -189,17 +195,23 @@ Like all optimizer decisions, it is safe to stop.
 			break;
 		}
 		if (p->token == NOOPsymbol || p->token == ASSIGNsymbol || barrier || p->retc == p->argc) {
+#ifdef DEBUG_OPT_COMMONTERMS_MORE
+				mnstr_printf(cntxt->fdout, "COMMON SKIPPED[%d] %d %d\n",i, barrier, p->retc == p->argc);
+#endif
 			continue;
 		}
 
+#ifdef DEBUG_OPT_COMMONTERMS_MORE
+		mnstr_printf(cntxt->fdout,"#CANDIDATE[%d] last= %d ",i,last);
+		printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
+#endif
 		for (j = i - 1; j >= last; j--) 
 			if ( (q=getInstrPtr(mb,j))->fcn == p->fcn && !hasSideEffects(q, TRUE) && !isUpdateInstruction(p)){
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
-				mnstr_printf(cntxt->fdout,"#CANDIDATE %d, %d  %d %d lookback %d ", i, j, 
-					hasSameSignature(mb, p, q), 
-					hasSameArguments(mb, p, q), last);
+			mnstr_printf(cntxt->fdout,"#CANDIDATE %d, %d  %d %d lookback %d ", i, j, 
+				hasSameSignature(mb, p, q), 
+				hasSameArguments(mb, p, q), last);
 				printInstruction(cntxt->fdout, mb, 0, q, LIST_MAL_ALL);
-				printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
 				mnstr_printf(cntxt->fdout," :%d %d %d=%d %d %d %d %d %d\n", 
 					q->token != ASSIGNsymbol ,
 					lastassigned[getArg(q,0)],i,
@@ -226,25 +238,31 @@ be assigned their value before instruction p.
 					isLinearFlow(p) &&
 					isLinearFlow(q)  
 				   ) {
-					OPTDEBUGcommonTerms{
+#ifdef DEBUG_OPT_COMMONTERMS_MORE
 						mnstr_printf(cntxt->fdout, "Found a common expression " "%d <-> %d\n", j, i);
 						printInstruction(cntxt->fdout, mb, 0, q, LIST_MAL_ALL);
-					}
+#endif
 					clrFunction(p);
 					p->argc = p->retc;
 					for (k = 0; k < q->retc; k++){
 						lastassigned[getArg(p,k)] = lastassigned[getArg(q,k)];
-						alias[getArg(p,k)] = alias[getArg(q,k)];
-						p= pushArgument(mb,p, alias[getArg(q,k)]);
+						alias[getArg(p,k)] = getArg(q,k);
+						p= pushArgument(mb,p, getArg(q,k));
 					}
-					OPTDEBUGcommonTerms{
-						mnstr_printf(cntxt->fdout, "COMMON MODIFIED EXPRESSION\n");
+#ifdef DEBUG_OPT_COMMONTERMS_MORE
+						mnstr_printf(cntxt->fdout, "COMMON MODIFIED EXPRESSION %d -> %d last %d\n",getArg(p,k) , alias[getArg(p,k)], lastassigned[getArg(p,k)]);
 						printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
-					}
+#endif
 					actions++;
 					break; /* end of search */
 				}
 			}
+#ifdef DEBUG_OPT_COMMONTERMS_MORE
+			else if ( hasSideEffects(q, TRUE) || isUpdateInstruction(p)){
+				mnstr_printf(cntxt->fdout, "COMMON SKIPPED %d %d\n", hasSideEffects(q, TRUE) , isUpdateInstruction(p));
+				printInstruction(cntxt->fdout, mb, 0, q, LIST_MAL_ALL);
+			}
+#endif
 	}
 	for(; i<slimit; i++)
 		if( old[i])
@@ -254,6 +272,9 @@ be assigned their value before instruction p.
 	GDKfree(lastassigned);
 	DEBUGoptimizers
 		mnstr_printf(cntxt->fdout,"#opt_commonTerms: %d statements catched\n",actions);
+#ifdef DEBUG_OPT_COMMONTERMS_MORE
+		mnstr_printf(cntxt->fdout,"#opt_commonTerms: %d statements catched\n",actions);
+#endif
 	return actions;
 }
 

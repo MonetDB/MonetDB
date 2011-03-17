@@ -21,6 +21,7 @@
 #define _REL_EXP_H_
 
 #define new_exp_list(sa) list_new(sa)
+#define exp2list(sa,e)   append(list_new(sa),e)
 
 extern sql_exp *exp_compare(sql_allocator *sa, sql_exp *l, sql_exp *r, int cmptype);
 extern sql_exp *exp_compare2(sql_allocator *sa, sql_exp *l, sql_exp *r, sql_exp *h, int cmptype);

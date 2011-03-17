@@ -21,3 +21,10 @@ EXTRA_DIST = RunMtest.in RunMapprove.in rpm.mk.in
 
 TESTS = RunMtest
 TESTS_ENVIRONMENT = $(SHELL)
+
+scripts_sh = {
+	EXT = ""
+	COND = NOT_WIN32
+	NOINST
+	SOURCES = RunMapprove.in RunMtest.in
+}

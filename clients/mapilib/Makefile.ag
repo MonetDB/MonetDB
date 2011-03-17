@@ -17,10 +17,12 @@
 
 MTSAFE
 
-INCLUDES = ../../common/options ../../common/stream $(openssl_CFLAGS)
+INCLUDES = ../../common/options ../../common/stream \
+		   $(openssl_CFLAGS) $(MSGCONTROL_FLAGS)
 
 lib_mapi = {
-	SOURCES = mapi.mx mapi.rc
+	VERSION = $(MAPI_VERSION)
+	SOURCES = mapi.c mapi.rc
 	LIBS = $(SOCKET_LIBS) ../../common/stream/libstream \
 		../../common/options/libmoptions $(openssl_LIBS)
 }
@@ -28,7 +30,7 @@ lib_mapi = {
 headers_mapi = {
 	DIR = includedir/monetdb
 	HEADERS = h
-	SOURCES = mapi.mx
+	SOURCES = mapi.h
 }
 
 headers_pc = {

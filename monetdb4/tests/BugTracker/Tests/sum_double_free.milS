@@ -1,8 +1,0 @@
-module(ascii_io);
-module(unix);
-
-var TSTSRCDIR := getenv("TSTSRCDIR");
-
-var b:=bat(str,int).import(TSTSRCDIR+"/sumpre.txt");
-var x:={sum}(b);
-print(x);

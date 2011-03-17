@@ -1,3 +1,0 @@
-module(pathfinder);
-
-xquery("xml-typed-root-PrintTypedMode", "(<a><b/></a>, \"hello\", \"hi\", 1, 2.3, <bla><d/><e/></bla>, 34, <foo><bar>\"hello\"</bar></foo>)", 0).printf();

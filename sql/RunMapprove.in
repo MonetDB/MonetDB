@@ -23,7 +23,7 @@ builddir="${buildbase}/sql"
 # make sure srcdir contains absolute path name
 srcdir=`cd '@srcdir@'; pwd`
 
-PYTHONPATH="${buildbase}/testing/src:${srcdir}/../testing/src:${PYTHONPATH}"
+PYTHONPATH="${buildbase}/testing:${srcdir}/../testing:${PYTHONPATH}"
 export PYTHONPATH
 
 # execute Mapprove.py in the source directory
@@ -32,4 +32,4 @@ cd "$srcdir"
 # execute the script.
 # if no arguments, do a recursive approve (Mapprove.py -r), else pass
 # on the arguments
-exec python "${buildbase}/testing/src/Mapprove.py" --package=${pkg} --TSTTRGBASE="${builddir}" "${@--r}"
+exec python "${buildbase}/testing/Mapprove.py" --package=${pkg} --TSTTRGBASE="${builddir}" "${@--r}"

@@ -19,7 +19,7 @@ All Rights Reserved.
 
 @f sphinx
 @a S.A.M.M. de Konink
-@v 0.1
+@v 0.2
 @* The Sphinx module
 The Sphinx module implements an external full text search engine returning a
 list of identifiers based on a query string and an index to search upon.
@@ -27,17 +27,35 @@ list of identifiers based on a query string and an index to search upon.
 @mal
 module sphinx;
 
-command search(q:str) :bat[:int,:lng]
-address SPHINXsearch
-comment "Searches the query on all indices";
+command searchIndexLimit(q:str, i:str, l:int) :bat[:oid,:lng]
+address SPHINXsearchIndexLimit
+comment "Search the query on the specified index, with limit";
 
-command searchIndex(q:str, i:str) :bat[:oid,:lng]
-address SPHINXsearchIndex
-comment "Search the query on the specified indices";
+function search(q:str) :bat[:oid,:lng];
+	ret := searchIndexLimit(q, "*", 20);
+	return ret;
+end search;
 
-pattern sphinx_searchIndex(q:str, i:str) :bat[:str,:bat]
-address SPHINXsearchIndexWrap
-comment "Searches the query on all indices";
+function searchIndex(q:str, i:str) :bat[:oid,:lng];
+	ret := searchIndexLimit(q, i, 20);
+	return ret;
+end searchIndex;
+
+
+pattern sphinx_searchIndexLimit(q:str, i:str, l:int) :bat[:str,:bat]
+address SPHINXsearchIndexLimitWrap
+comment "Search the query on the specified index, with limit";
+
+function sphinx_search(q:str) :bat[:str,:bat];
+	ret := sphinx_searchIndexLimit(q, "*", 20);
+	return ret;
+end sphinx_search;
+
+function sphinx_searchIndex(q:str, i:str) :bat[:str,:bat];
+	ret := sphinx_searchIndexLimit(q, i, 20);
+	return ret;
+end sphinx_searchIndex;
+
 
 @h
 #ifndef SPHINX_H
@@ -59,9 +77,7 @@ comment "Searches the query on all indices";
 #define sphinx_export extern
 #endif
 
-sphinx_export str SPHINXsearch(int *ret, str *query);
-sphinx_export str SPHINXsearchIndex(int *ret, str *query, str *index);
-sphinx_export str SPHINXsearchIndexWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sphinx_export str SPHINXsearchIndexLimitWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* SPHINX_H */
 
@@ -73,11 +89,11 @@ sphinx_export str SPHINXsearchIndexWrap(Client cntxt, MalBlkPtr mb, MalStkPtr st
 #include "mal_exception.h"
 #include <sphinxclient.h>
 
-/* COMMAND "SPHINXsearchIndex": Search the query on the specified indices
- * SIGNATURE: SPHINXsearchIndex(str, str) : bat[oid,lng]; */
+/* COMMAND "SPHINXsearchIndexLimit": Search the query on the specified indices, with limit
+ * SIGNATURE: SPHINXsearchIndexLimit(str, str, int) : bat[oid,lng]; */
 str
-sphinx_searchIndex(BAT **ret, /* put pointer to BAT[oid,int] record here. */
-                   str query, str index)
+sphinx_searchIndexLimit(BAT **ret, /* put pointer to BAT[oid,int] record here. */
+                        str query, str index, int limit)
 {
 	int i;
 	BAT *bn;
@@ -87,7 +103,9 @@ sphinx_searchIndex(BAT **ret, /* put pointer to BAT[oid,int] record here. */
 
 	client = sphinx_create ( SPH_TRUE );
 	if (client == NULL)
-		throw(MAL, "sphinx.searchIndex", "Cannot create Sphinx object");
+		throw(MAL, "sphinx.searchIndexLimit", "Cannot create Sphinx object");
+
+	sphinx_set_limits ( client, 0, limit, limit, 0 );
 
 	res = sphinx_query ( client, query, index, NULL );
 	if (!res || (res && res->num_matches == 0)) {
@@ -113,10 +131,10 @@ sphinx_searchIndex(BAT **ret, /* put pointer to BAT[oid,int] record here. */
 }
 
 str
-SPHINXsearchIndex(int *ret, str *query, str *index)
+SPHINXsearchIndexLimit(int *ret, str *query, str *index, int *limit)
 {
 	BAT *b = NULL;
-	str msg = sphinx_searchIndex(&b, *query, *index);
+	str msg = sphinx_searchIndexLimit(&b, *query, *index, *limit);
 
 	if (!b)
 		throw(MAL, "sphinx.searchIndex", "Cannot create Sphinx object");
@@ -125,26 +143,20 @@ SPHINXsearchIndex(int *ret, str *query, str *index)
 	return msg;
 }
 
+/* str sphinx_searchIndexLimit(int *ret, str *query, str *index, int *limit); */
 str
-SPHINXsearch(int *ret, str *query)
-{
-	str index = "*";
-	return SPHINXsearchIndex(ret, query, &index);
-}
-
-/* str sphinx_searchIndex(int *ret, str *query, str *index); */
-str
-SPHINXsearchIndexWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+SPHINXsearchIndexLimitWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat ret;
 	BAT *t;
 	int *r = (int *) getArgReference(stk, pci, 0);
 	str *query = (str *) getArgReference(stk, pci, 1);
 	str *index = (str *) getArgReference(stk, pci, 2);
+	int *limit = (int *) getArgReference(stk, pci, 3);
 
 	(void) cntxt;
 	(void) mb;
-	SPHINXsearchIndex(&ret, query, index);
+	SPHINXsearchIndexLimit(&ret, query, index, limit);
 
 	t = BATnew(TYPE_str, TYPE_bat, 1);
 	BUNins(t, "id", &ret, FALSE);

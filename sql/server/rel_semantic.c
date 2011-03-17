@@ -177,6 +177,24 @@ rel_semantic(mvc *sql, symbol *s)
 	case SQL_DROP_ARRAY:
 	case SQL_DROP_VIEW:
 	case SQL_ALTER_TABLE:
+
+	case SQL_GRANT:
+	case SQL_REVOKE:
+	case SQL_GRANT_ROLES:
+	case SQL_REVOKE_ROLES:
+
+	case SQL_CREATE_ROLE:
+	case SQL_DROP_ROLE:
+
+	case SQL_CREATE_INDEX:
+	case SQL_DROP_INDEX:
+
+	case SQL_CREATE_USER:
+	case SQL_DROP_USER:
+	case SQL_ALTER_USER:
+	case SQL_RENAME_USER:
+
+	case SQL_CREATE_TYPE:
 		return rel_schemas(sql, s);
 
 	case SQL_CREATE_SEQ:
@@ -184,19 +202,6 @@ rel_semantic(mvc *sql, symbol *s)
 	case SQL_DROP_SEQ:
 		return rel_sequences(sql, s);
 
-	case SQL_CREATE_INDEX:
-	case SQL_DROP_INDEX:
-	case SQL_CREATE_USER:
-	case SQL_DROP_USER:
-	case SQL_ALTER_USER:
-	case SQL_RENAME_USER:
-	case SQL_CREATE_ROLE:
-	case SQL_DROP_ROLE:
-	case SQL_GRANT:
-	case SQL_REVOKE:
-	case SQL_GRANT_ROLES:
-	case SQL_REVOKE_ROLES:
-	case SQL_CREATE_TYPE:
 	case SQL_CREATE_TRIGGER:
 	case SQL_DROP_TRIGGER:
 	case SQL_CONNECT:
@@ -238,11 +243,11 @@ rel_semantic(mvc *sql, symbol *s)
 				return sql_error(sql, 01, "Variable '%s' allready declared", name);
 			}
 			nrel = rel_semantic(sql, sym);
-			stack_push_rel_view(sql, name, nrel);
 			if (!nrel) {  
 				stack_pop_frame(sql);
 				return NULL;
 			}
+			stack_push_rel_view(sql, name, nrel);
 			assert(is_project(nrel->op));
 			if (is_project(nrel->op) && nrel->exps) {
 				node *ne = nrel->exps->h;

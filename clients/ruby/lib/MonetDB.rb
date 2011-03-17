@@ -186,20 +186,29 @@
     # demo.rb contains usage example of the above mentioned methods.
 
   class MonetDB
+    DEFAULT_USERNAME = "monetdb"
+    DEFAULT_PASSWORD = "monetdb"
+    DEFAULT_LANG     = LANG_SQL
+    DEFAULT_HOST     = "127.0.0.1"
+    DEFAULT_PORT     = 50000
+    DEFAULT_DATABASE = "test"
+    DEFAULT_AUTHTYPE = "SHA1"
+    
     def initalize()
       @connection = nil 
     end
   
     # Establish a new connection.
-    #                * user: username (default is monetdb)
-    #                * passwd: password (default is monetdb)
+    #                * username: username (default is monetdb)
+    #                * password: password (default is monetdb)
     #                * lang: language (default is sql) 
     #                * host: server hostanme or ip  (default is localhost)
     #                * port: server port (default is 50000)
     #                * db_name: name of the database to connect to
     #                * auth_type: hashing function to use during authentication (default is SHA1)
-    def connect(username = "monetdb", password = "monetdb", lang = "sql", host="127.0.0.1", port = "50000", db_name = "test", auth_type = "SHA1")
+    def connect(username=DEFAULT_USERNAME, password=DEFAULT_PASSWORD, lang=DEFAULT_LANG, host=DEFAULT_HOST, port=DEFAULT_PORT, db_name=DEFAULT_DATABASE, auth_type=DEFAULT_AUTHTYPE)
       # TODO: handle pools of connections
+      
       @username = username
       @password = password
       @lang = lang
@@ -207,13 +216,42 @@
       @port = port
       @db_name = db_name
       @auth_type = auth_type
+      
       @connection = MonetDBConnection.new(user = @username, passwd = @password, lang = @lang, host = @host, port = @port)
       @connection.connect(@db_name, @auth_type)
     end
   
+    # Establish a new connection using named parameters.
+    #                * user: username (default is monetdb)
+    #                * passwd: password (default is monetdb)
+    #                * language: lang (default is sql) 
+    #                * host: host to connect to  (default is localhost)
+    #                * port: port to connect to (default is 50000)
+    #                * database: name of the database to connect to
+    #                * auth_type: hashing function to use during authentication (default is SHA1)
+    #
+    # Conventionally named parameters are passed as an hash.
+    #
+    # Ruby 1.8:
+    # MonetDB::conn({ :user => "username", :passwd => "password", :database => "database"})
+    #
+    # Ruby 1.9:
+    # MonetDB::conn(user: "username", passwd: "password", database: "database")
+    def conn(options)      
+      user        = options[:user] || DEFAULT_USERNAME
+      passwd      = options[:passwd] || DEFAULT_PASSWORD
+      language    = options[:language] || DEFAULT_LANG
+      host        = options[:host] || DEFAULT_HOST
+      port        = options[:port] || DEFAULT_PORT
+      database    = options[:database] || DEFAULT_DATABASE
+      auth_type   = options[:auth_type] || DEFAULT_AUTHTYPE
+      
+      connect(user, passwd, language, host, port, database, auth_type)
+    end
+  
     # Send a <b> user submitted </b> query to the server and store the response.
     # Returns and instance of MonetDBData.
-    def query(q = "")
+    def query(q="")
       if  @connection != nil 
         @data = MonetDBData.new(@connection)
         @data.execute(q)    

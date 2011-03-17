@@ -18,12 +18,14 @@
 INCLUDES = ../../mal \
 		   ../../../common/options \
 		   ../../../common/stream \
-		   ../../../gdk
+		   ../../../gdk \
+		   $(libxml2_CFLAGS)
 MTSAFE
 
 lib_atoms = {
 	NOINST
 	SOURCES = \
+		batxml.mx \
 		blob.mx \
 		color.mx \
 		identifier.mx \
@@ -31,14 +33,24 @@ lib_atoms = {
 		mtime.mx \
 		streams.mx \
 		str.mx \
-		url.mx
+		url.mx \
+		xml.mx
 }
 
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
-	SOURCES = str.mx blob.mx url.mx mtime.mx streams.mx inet.mx color.mx \
-			  identifier.mx
+	SOURCES = \
+		batxml.mx \
+		blob.mx \
+		color.mx \
+		identifier.mx \
+		inet.mx \
+		mtime.mx \
+		streams.mx \
+		str.mx \
+		url.mx \
+		xml.mx
 }
 
 EXTRA_DIST_DIR = Tests

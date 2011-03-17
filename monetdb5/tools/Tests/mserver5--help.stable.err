@@ -14,7 +14,7 @@ Usage: mserver5 [options] [scripts]
     --dbname=<database_name>  Specify database name
     --dbfarm=<directory>      Specify database location
     --dbinit=<stmt>           Execute statement at startup
-    --config=<config_file>    Specify location of configuration file
+    --config=<config_file>    Use config_file to read options from
     --daemon=yes|no           Do not read commands from standard input [no]
     --single-user             Allow only one user at a time
     --readonly                Safeguard database
@@ -34,7 +34,7 @@ The debug, testing & trace options:
      --optimizers
      --forcemito
      --debug=<bitmask>
-(See `man monetdb5.conf` for the documentation.)
+(See `man mserver5.conf` for the documentation.)
 
 # 10:03:11 >  
 # 10:03:11 >  Done.

@@ -60,9 +60,19 @@ TOPN	(card ATOM, AGGR, or MULTI (same card as lower relation))
 INSERT|DELETE|UPDATE 	(card MULTI)
 	-> l 		is relation to modify
 	-> r		to be inserted/deleted/updated relation
-	-> flag		( if set don't insert (is done allready))
+			For update the ->r projection joins in current
+			values for 'none' updated columns.
+
+	-> flag		(if set don't insert (is done allready))
 only (UPDATE)
-	-> exps		list of columns to update (ugh) !
+	-> exps		
+			Named columns to update
+
+INSERT/UPDATE have a special case 	
+
+			for inserts/updates with indices a double
+			relation is used as we need to keep access to
+			the bottom value relation
 
 Expressions
 

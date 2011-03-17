@@ -214,6 +214,7 @@ comment "Returns a string representation of the current function
 @c
 #include "monetdb_config.h"
 #include "gdk.h"
+#include "mutils.h"
 #include <stdarg.h>
 #include <time.h>
 #include <sys/types.h>

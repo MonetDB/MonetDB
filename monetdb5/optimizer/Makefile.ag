@@ -15,7 +15,7 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-INCLUDES = ../mal ../modules/atoms ../modules/mal ../modules/kernel \
+INCLUDES = ../misc ../mal ../modules/atoms ../modules/mal ../modules/kernel \
 	../../clients/mapilib \
 	../../common/options \
 	../../common/stream \
@@ -61,6 +61,7 @@ lib_optimizer = {
 		opt_octopus.mx \
 		opt_partitions.mx \
 		opt_peephole.mx \
+		opt_pipes.mx \
 		opt_prejoin.mx \
 		opt_prelude.mx \
 		opt_pushranges.mx \
@@ -70,7 +71,6 @@ lib_optimizer = {
 		opt_remap.mx \
 		opt_remoteQueries.mx \
 		opt_reorder.mx \
-		opt_replication.mx \
 		opt_selcrack.mx \
 		opt_sidcrack.mx \
 		opt_singleton.mx \
@@ -96,7 +96,7 @@ headers_mal = {
 		opt_evaluate.mx opt_inline.mx opt_pushranges.mx opt_derivepath.mx \
 		opt_accessmode.mx opt_joinpath.mx opt_heuristics.mx opt_remap.mx \
 		opt_statistics.mx opt_trace.mx  opt_recycler.mx opt_dataflow.mx \
-		opt_cluster.mx  opt_replication.mx opt_dictionary.mx opt_mapreduce.mx \
+		opt_cluster.mx opt_dictionary.mx opt_mapreduce.mx \
 		opt_mitosis.mx opt_octopus.mx opt_tarantula.mx  opt_history.mx opt_selcrack.mx opt_sidcrack.mx
 }
 

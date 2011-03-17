@@ -1,8 +1,0 @@
-let $doc :=
-for $d in doc("$TSTTRGDIR/load_docs.xml")//doc/text()
-return doc($d)
-for $ord in $doc/order
-where some $item in $ord/order_lines/order_line
-    satisfies $item/discount_rate > 0.02
-return
-    $ord

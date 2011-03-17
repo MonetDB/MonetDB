@@ -888,19 +888,6 @@ semantic(mvc *sql, symbol *s)
 		return NULL;
 
 	switch (s->token) {
-	case SQL_CREATE_INDEX:
-	case SQL_DROP_INDEX:
-	case SQL_CREATE_USER:
-	case SQL_DROP_USER:
-	case SQL_ALTER_USER:
-	case SQL_RENAME_USER:
-	case SQL_CREATE_ROLE:
-	case SQL_DROP_ROLE:
-	case SQL_GRANT:
-	case SQL_REVOKE:
-	case SQL_GRANT_ROLES:
-	case SQL_REVOKE_ROLES:
-	case SQL_CREATE_TYPE:
 	case SQL_CREATE_TRIGGER:
 	case SQL_DROP_TRIGGER:
 	case SQL_CONNECT:

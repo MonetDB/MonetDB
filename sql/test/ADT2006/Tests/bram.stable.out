@@ -205,8 +205,16 @@ Over..
 [ "Sergeant",	3	]
 [ "Inspector",	8	]
 [ "Major",	1	]
-% .L61,	. # table_name
-% L61,	average_height # name
+#(select 'blonde', (cast(cast(floor(avg(h.height)/12) as integer) as char) || '\''
+#|| cast(cast(avg(h.height) as integer) % 12 as char) || '"') AS average_height from
+#((select name, 12*cast(substring(length from 0 for (position('\'' in length) - 1)) as integer) as height from victim v
+#where
+#    length is not NULL and length like '%\'' and hair like '%blonde%')
+#UNION ALL
+#(select name, (12*cast(substring(length from 0 for (position('\'' in length) - 1)) AS integer)
+#    + cast(substring(length from (position('\
+% .L100,	. # table_name
+% L100,	average_height # name
 % char,	char # type
 % 6,	4 # length
 [ "blonde",	"5'7\""	]

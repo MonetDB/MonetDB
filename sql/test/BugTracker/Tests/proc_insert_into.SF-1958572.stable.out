@@ -48,7 +48,7 @@ Over..
 [ 5,	1,	1,	1,	1,	1,	"first row",	"first row",	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ 6,	1,	1,	1,	1,	1,	"first row",	"first row",	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 % sys.proc_insert_into_t1 # table_name
-% L23 # name
+% L31 # name
 % wrd # type
 % 1 # length
 [ 6	]

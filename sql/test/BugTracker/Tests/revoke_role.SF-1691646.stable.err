@@ -10,9 +10,9 @@ stderr of test 'revoke_role.SF-1691646` in directory 'test/BugTracker` itself:
 # 09:58:20 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=31889 
 # 09:58:20 >  
 
-MAPI  = monetdb@localhost:31889
+MAPI  = monetdb@alf:35318
 QUERY = REVOKE auth1 from user1;
-ERROR = !REVOKE no such role 'auth1' or grantee 'user1'
+ERROR = !SQLException:sql.catalog:REVOKE no such role 'auth1' or grantee 'user1'
 
 # 09:58:20 >  
 # 09:58:20 >  Done.

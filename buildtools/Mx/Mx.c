@@ -66,15 +66,12 @@ usage(void)
 	Message("\t-T <string>\tDefine default hide text <string>");
 	Message("\t-l\t\tNo #line and alike statements");
 	Message("\t-n\t\tNon changed files won't be touched");
-	Message("\t-+\t\tTreat @c (C code) as @C (C++ code)");
 }
 
 int
-main(argc, argv)
-int argc;
-char **argv;
+main(int argc, char **argv)
 {
-	int i, k;
+	int i;
 
 	if (argc == 1) {
 		usage();
@@ -85,7 +82,7 @@ char **argv;
 
 /* Preprocess the arguments.
  */
-	while ((i = getopt(argc, argv, "icC:x:Bdg:D:R:H:T:ln+")) != EOF) {
+	while ((i = getopt(argc, argv, "icC:x:Bdg:D:R:H:T:ln")) != EOF) {
 		switch (i) {
 		case 'i':
 			textmode = M_TEXI;
@@ -133,13 +130,6 @@ char **argv;
 		case 'n':
 			notouch = 1;
 			break;
-		case '+':
-			k = 0;
-			do {
-				if (str2dir[k].code == Csrc)
-					str2dir[k].ext = MX_CXX_SUFFIX;
-			} while (str2dir[k++].code != Nop);
-			break;
 		default:
 			Error("Unknown flag:%c", i);
 			usage();
@@ -185,7 +175,6 @@ Directive str2dir[] = {
 	{"+", Section, "",},
 	{"-", Subsection, "",},
 	{".", Paragraph, "",},
-	{"C", CCsrc, MX_CXX_SUFFIX,},
 	{"i", Pimpl, "impl",},
 	{"s", Pspec, "spec",},
 	{"h", Cdef, "h",},
@@ -197,12 +186,9 @@ Directive str2dir[] = {
 	{"sql", SQL, "sql",},
 	{"p", Prolog, "pl",},
 	{"hs", Haskell, "hs",},
-	{"m", Monet, "m",},
 	{"mal", MALcode, "mal",},
-	{"mil", MILcode, "mil",},
 	{"w", HTML, "www",},
 	{"java", Java, "java",},
-	{"tcl", Tcl, "tcl",},
 	{"Qnap", Qnap, "qnp",},
 	{"pc", ProC, "pc",},
 	{"sh", Shell, "",},
@@ -256,17 +242,14 @@ struct comments {
 };
 
 static struct comments comments[] = {
-	{ CCsrc, NULL, "//", NULL},
 	{ Cdef, "/*", " *", " */"},
 	{ Csrc, "/*", " *", " */"},
 	{ Cyacc, "/*", " *", " */"},
 	{ Clex, "/*", " *", " */"},
 	{ SQL, NULL, "--", NULL},
 	{ MALcode, NULL, "#", NULL},
-	{ MILcode, NULL, "#", NULL},
 	{ HTML, "<!--", NULL, "-->"},
 	{ Java, NULL, "//", NULL},
-	{ Tcl, NULL, "#", NULL},
 	{ Shell, NULL, "#", NULL},
 	{ CCyacc, "/*", " *", " */"},
 	{ CClex, "/*", " *", " */"},

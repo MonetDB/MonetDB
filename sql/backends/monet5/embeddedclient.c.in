@@ -154,11 +154,6 @@ monetdb_sql(char *dbfarm, char *dbname)
 	int len = mo_builtin_settings(&embedded_set);
 
 	/* needed, to prevent the MonetDB config file to be used */  
-	len = mo_add_option(&embedded_set, len, opt_config, "prefix", PREFIX);
-	len = mo_add_option(&embedded_set, len, opt_config, "config", MONETDB5_CONFFILE);
-	len = mo_add_option(&embedded_set, len, opt_config, "monet_mod_path",
-			    "@QXlibdir@@QDIRSEP@MonetDB5@PATHSEP@@QXlibdir@@QDIRSEP@MonetDB5@QDIRSEP@lib@PATHSEP@@QXlibdir@@QDIRSEP@MonetDB5@QDIRSEP@bin");
-
 	embedded_len = mo_system_config(&embedded_set, len);
 	embedded_len = mo_add_option(&embedded_set, embedded_len, opt_cmdline, "gdk_dbfarm", dbfarm);
 	embedded_len = mo_add_option(&embedded_set, embedded_len, opt_cmdline, "gdk_dbname", dbname);

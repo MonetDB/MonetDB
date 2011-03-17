@@ -17,34 +17,23 @@
 
 SUBDIRS = HAVE_JAVAJDBC?tests
 
-EXTRA_DIST = RunMtest.in RunMtest.bat.in \
-		RunMapprove.in \
-		build.xml build.properties release.txt
+EXTRA_DIST = build.xml build.properties release.txt
 
 EXTRA_DIST_DIR = src \
-		 lib \
 		 example
+
+JAVA_HOME = @JAVA_HOME@
 
 ant_distjdbc = {
 	COND = HAVE_JAVAJDBC
-	DIR = datadir/MonetDB/lib
-	FILES = monetdb-1.6-mcl.jar monetdb-1.17-jdbc.jar jdbcclient.jar
-}
-
-ant_distxrpc = {
-	COND = HAVE_JAVAXRPC
-	DIR = datadir/MonetDB/lib
-	FILES = xrpcapi.jar xrpcwrapper.jar xrpcclient.jar
+	DIR = datadir/monetdb/lib
+	FILES = monetdb-1.6-mcl.jar monetdb-1.18-jdbc.jar jdbcclient.jar
 }
 
 ant_distmerocontrol = {
 	COND = HAVE_JAVAMEROCONTROL
-	DIR = datadir/MonetDB/lib
+	DIR = datadir/monetdb/lib
 	FILES = merocontrol.jar
 }
-
-TESTS = RunMtest
-TESTS_ENVIRONMENT = $(SHELL)
-JAVA_HOME = @JAVA_HOME@
 
 # vim: ft=automake :

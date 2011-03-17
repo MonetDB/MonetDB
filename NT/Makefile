@@ -18,26 +18,27 @@
 # All Rights Reserved.
 
 TOPDIR = .
-SRCDIR = $(TOPDIR)\..
+srcdir = $(TOPDIR)\..
 
 prefix = $(MAKEDIR)
 
 !INCLUDE "$(TOPDIR)\..\NT\rules.msc"
 
-all: "$(SRCDIR)\Makefile.msc" monetdb_config.h unistd.h inttypes.h
-	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" all
+all: "$(srcdir)\Makefile.msc" monetdb_config.h unistd.h inttypes.h .monetdb
+	$(MAKE) /nologo /f "$(srcdir)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" all
 
 install: targetdirs all
-	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" install
+	$(MAKE) /nologo /f "$(srcdir)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" install
+	$(INSTALL) .monetdb "$(sysconfdir)"
 	$(INSTALL) ..\NT\installer$(bits)\*.sln "$(prefix)"
 	$(INSTALL) ..\NT\installer$(bits)\*.vdproj "$(prefix)"
-	-if exist "C:\Program Files (x86)" if $(bits)==32 C:\cygwin\bin\sed.exe -i "s/Program Files/Program Files (x86)/" "$(prefix)"\*.vdproj
+	-if exist "C:\Program Files (x86)" if $(bits)==32 cd "$(prefix)"&&C:\cygwin\bin\sed.exe -i "s/Program Files/Program Files (x86)/" *.vdproj
 
-$(SRCDIR)\Makefile.msc: "$(SRCDIR)\Makefile.ag"
-        cd "$(SRCDIR)"&&set PYTHONPATH=buildtools\autogen&&python buildtools\autogen\autogen.py
+$(srcdir)\Makefile.msc: "$(srcdir)\Makefile.ag"
+        cd "$(srcdir)"&&set PYTHONPATH=buildtools\autogen&&python buildtools\autogen\autogen.py
 
-monetdb_config.h: "$(SRCDIR)\NT\monetdb_config.h.in"
-	$(CONFIGURE) "$(SRCDIR)\NT\monetdb_config.h.in" > monetdb_config.h
+monetdb_config.h: "$(srcdir)\NT\monetdb_config.h.in"
+	$(CONFIGURE) "$(srcdir)\NT\monetdb_config.h.in" > monetdb_config.h
 
 unistd.h:
 	$(ECHO) #ifndef UNISTD_H > unistd.h
@@ -60,6 +61,10 @@ inttypes.h:
 	$(ECHO) typedef unsigned short uint16_t; >> inttypes.h
 	$(ECHO) typedef int int32_t; >> inttypes.h
 	$(ECHO) typedef unsigned int uint32_t; >> inttypes.h
+
+.monetdb:
+	$(ECHO) user=monetdb> .monetdb
+	$(ECHO) password=monetdb>> .monetdb
 
 targetdirs:
 	if not exist "$(bindir)"		$(MKDIR) "$(bindir)"

@@ -1,6 +1,0 @@
-for $size in doc("$TSTTRGDIR/small.catalog.xml")/catalog/item/attributes/size_of_book
-where zero-or-one($size/length)*zero-or-one($size/width)*zero-or-one($size/height) > 500000
-return
-    <Output>
-        {$size/../../title}
-    </Output>

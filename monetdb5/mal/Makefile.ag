@@ -15,8 +15,10 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-INCLUDES = ../../common/options \
+INCLUDES = ../misc \
+		   ../../common/options \
 		   ../../common/stream \
+		   ../../common/utils \
 		   ../../clients/mapilib \
 		   ../../gdk \
 		   $(READLINE_INCS) $(openssl_CFLAGS)

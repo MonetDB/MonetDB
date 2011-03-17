@@ -50,6 +50,4 @@ headers_html = {
 	SOURCES = website.html
 }
 
-EXTRA_DIST = rules.mk MonetDB.m4 Mdebootstrap
-
-EXTRA_DIST_DIR = mock
+EXTRA_DIST = rules.mk

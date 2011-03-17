@@ -48,13 +48,16 @@ MONET_ERROR           = -1
 
 LANG_SQL = "sql"
 
-# Xquery support
-LANG_XQUERY = "xquery"
-XQUERY_OUTPUT_SEQ = true # use monetdb xquery's output seq
+# Protocols
+MAPIv8 = 8
+MAPIv9 = 9
+
+MONETDB_MEROVINGIAN = "merovingian"
+MONETDB_MSERVER     = "monetdb"
+
+MEROVINGIAN_MAX_ITERATIONS = 10
 
 class MonetDBConnection
- 
-  
   # enable debug output
   @@DEBUG               = false
 
@@ -68,7 +71,7 @@ class MonetDBConnection
   @@CLIENT_ENDIANNESS   = "BIG"
   
   # MAPI protocols supported by the driver
-  @@SUPPORTED_PROTOCOLS = [ 8, 9 ]
+  @@SUPPORTED_PROTOCOLS = [ MAPIv8, MAPIv9 ]
   
   attr_reader :socket, :auto_commit, :transactions, :lang
   
@@ -96,7 +99,11 @@ class MonetDBConnection
     if @@DEBUG == true
       require 'logger'
     end
-    
+
+    if @lang[0, 3] == 'sql'
+      @lang = "sql"
+    end
+
   end
   
   # Connect to the database, creates a new socket
@@ -109,9 +116,6 @@ class MonetDBConnection
       if @lang == LANG_SQL
         set_timezone 
         set_reply_size
-      elsif (@lang == LANG_XQUERY) and XQUERY_OUTPUT_SEQ
-        # require xquery output to be in seq format
-        send(format_command("output seq"))
       end
       true
     end
@@ -123,14 +127,13 @@ class MonetDBConnection
   def real_connect
     
     server_challenge = retrieve_server_challenge()
-    print "CHALLENGE: " + server_challenge.to_s
     if server_challenge != nil
       salt = server_challenge.split(':')[0]
       @server_name = server_challenge.split(':')[1]
       @protocol = server_challenge.split(':')[2].to_i
       @supported_auth_types = server_challenge.split(':')[3].split(',')
       @server_endianness = server_challenge.split(':')[4]
-      if @protocol == 9
+      if @protocol == MAPIv9
         @pwhash = server_challenge.split(':')[5]
       end
     else
@@ -208,14 +211,14 @@ class MonetDBConnection
             end
           end
           
-          if server_name == "merovingian"
-            if @auth_iteration <= 10
+          if server_name == MONETDB_MEROVINGIAN
+            if @auth_iteration <= MEROVINGIAN_MAX_ITERATIONS
               @auth_iteration += 1
               real_connect
             else
               raise MonetDBConnectionError, "Merovingian: too many iterations while proxying."
             end
-          elsif server_name == "monetdb"
+          elsif server_name == MONETDB_MSERVER
             begin
               @socket.close
             rescue
@@ -486,7 +489,7 @@ class MonetDBConnection
   
   # Check if monetdb is running behind the merovingian proxy and forward the connection in case
   def merovingian?
-    if @server_name.downcase == 'merovingian'
+    if @server_name.downcase == MONETDB_MEROVINGIAN
       true
     else
       false
@@ -494,7 +497,7 @@ class MonetDBConnection
   end
   
   def mserver?
-    if @server_name.downcase == 'monetdb'
+    if @server_name.downcase == MONETDB_MSERVER
       true
     else
       false
@@ -503,7 +506,7 @@ class MonetDBConnection
   
   # Check which protocol is spoken by the server
   def mapi_proto_v8?
-    if @protocol == 8
+    if @protocol == MAPIv8
       true
     else
       false
@@ -511,7 +514,7 @@ class MonetDBConnection
   end
   
   def mapi_proto_v9?
-    if @protocol == 9
+    if @protocol == MAPIv9
       true
     else
       false
@@ -521,13 +524,15 @@ end
 
 # handles transactions and savepoints. Can be used to simulate nested transactions.
 class MonetDBTransaction  
+  SAVEPOINT_STRING = "monetdbsp"
+  
   def initialize
     @id = 0
     @savepoint = ""
   end
   
   def savepoint
-    @savepoint = "monetdbsp" + @id.to_s
+    @savepoint = SAVEPOINT_STRING + @id.to_s
   end
   
   def release

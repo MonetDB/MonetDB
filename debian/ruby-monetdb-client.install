@@ -1,1 +1,1 @@
-debian/tmp/usr/var/lib/gems/* /usr/lib/ruby
+debian/tmp/usr/lib/ruby/* /usr/lib/ruby

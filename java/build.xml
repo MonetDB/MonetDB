@@ -36,13 +36,9 @@ All Rights Reserved.
   <property name="builddir"             value="build" />
   <property name="docdir"               value="doc" />
   <property name="jdbc-package"         value="nl/cwi/monetdb/jdbc" />
-  <property name="xmldb-package"        value="nl/cwi/monetdb/xmldb" />
   <property name="mcl-package"          value="nl/cwi/monetdb/mcl" />
   <property name="client-package"       value="nl/cwi/monetdb/client" />
   <property name="util-package"         value="nl/cwi/monetdb/util" />
-  <property name="xrpc-api-package"     value="nl/cwi/monetdb/xquery/xrpc/api" />
-  <property name="xrpc-wrapper-package" value="nl/cwi/monetdb/xquery/xrpc/wrapper" />
-  <property name="xrpc-client-package"  value="nl/cwi/monetdb/xquery/xrpc/client" />
   <property name="mero-control-package" value="nl/cwi/monetdb/merovingian" />
 
   <property file="build.local.properties" />
@@ -54,15 +50,6 @@ All Rights Reserved.
     value="${jardir}/jdbcclient.jar" />
   <property name="mcl-jar"
     value="${jardir}/monetdb-${MCL_MAJOR}.${MCL_MINOR}-mcl.jar" />
-  <property name="xmldb-jar"
-    value="${jardir}/monetdb-${JDBC_MAJOR}.${JDBC_MINOR}-xmldb.jar" />
-
-  <property name="xrpc-api-jar"
-    value="${jardir}/xrpcapi.jar" />
-  <property name="xrpc-wrapper-jar"
-    value="${jardir}/xrpcwrapper.jar" />
-  <property name="xrpc-client-jar"
-    value="${jardir}/xrpcclient.jar" />
 
   <property name="mero-control-jar"
     value="${jardir}/merocontrol.jar" />
@@ -71,12 +58,6 @@ All Rights Reserved.
   <target name="all">
     <antcall target="distjdbc" />
 
-    <!-- xmldb is not in distjdbc because it needs a library which needs
-         to be fetched first -->
-    <antcall target="jar_xmldb" />
-
-    <antcall target="distxrpc" />
-
     <antcall target="distmerocontrol" />
 
     <antcall target="doc" />
@@ -84,7 +65,6 @@ All Rights Reserved.
 
   <target name="distall">
     <antcall target="distjdbc" />
-    <antcall target="distxrpc" />
     <antcall target="distmerocontrol" />
   </target>
 
@@ -99,12 +79,6 @@ All Rights Reserved.
     <antcall target="jar_jdbcclient" />
   </target>
 
-  <target name="distxrpc">
-    <antcall target="jar_xrpc_api" />
-    <antcall target="jar_xrpc_wrapper" />
-    <antcall target="jar_xrpc_client" />
-  </target>
-
   <target name="distmerocontrol">
     <antcall target="jar_mero_control" />
   </target>
@@ -116,14 +90,6 @@ All Rights Reserved.
       <fileset dir="${builddir}">
         <include name="${jdbc-package}/**/*.class" />
         <include name="${mcl-package}/**/*.class" />
-      </fileset>
-    </jar>
-  </target>
-
-  <target name="jar_xmldb" depends="compile_xmldb">
-    <jar jarfile="${xmldb-jar}">
-      <fileset dir="${builddir}">
-        <include name="${xmldb-package}/**/*.class" />
       </fileset>
     </jar>
   </target>
@@ -164,53 +130,6 @@ All Rights Reserved.
     </jar>
   </target>
 
-  <target name="jar_xrpc_api" depends="compile_xrpc_api">
-    <jar jarfile="${xrpc-api-jar}">
-      <fileset dir="${builddir}">
-        <include name="${xrpc-api-package}/**/*.class" />
-      </fileset>
-    </jar>
-  </target>
-  
-  <target name="jar_xrpc_wrapper"
-    depends="compile_util,compile_xrpc_api,compile_xrpc_wrapper">
-    <jar jarfile="${xrpc-wrapper-jar}">
-      <fileset dir="${builddir}">
-        <include name="${util-package}/**/*.class" />
-        <include name="${xrpc-api-package}/**/*.class" />
-        <include name="${xrpc-wrapper-package}/**/*.class" />
-      </fileset>
-      <fileset dir="${srcdir}">
-        <include name="${xrpc-wrapper-package}/wrapper_functions.xq" />
-      </fileset>
-      <manifest>
-        <attribute name="Built-By" value="${user.name}" />
-        <attribute name="Main-Class"
-          value="nl.cwi.monetdb.xquery.xrpc.wrapper.XRPCWrapper" />
-      </manifest>
-    </jar>
-  </target>
-  
-  <target name="jar_xrpc_client"
-    depends="compile_util,compile_xrpc_api,compile_xrpc_client">
-    <jar jarfile="${xrpc-client-jar}">
-      <fileset dir="${builddir}">
-        <include name="${util-package}/**/*.class" />
-        <include name="${xrpc-api-package}/**/*.class" />
-        <include name="${xrpc-client-package}/**/*.class" />
-      </fileset>
-      <fileset dir="${srcdir}">
-        <include name="${xrpc-client-package}/*.xml" />
-        <include name="${xrpc-client-package}/*.xq" />
-      </fileset>
-      <manifest>
-        <attribute name="Built-By" value="${user.name}" />
-        <attribute name="Main-Class"
-          value="nl.cwi.monetdb.xquery.xrpc.client.XRPCTestClient" />
-      </manifest>
-    </jar>
-  </target>
-
   <target name="jar_mero_control"
     depends="compile_mero_control">
     <jar jarfile="${mero-control-jar}">
@@ -237,22 +156,6 @@ All Rights Reserved.
       <src path="${srcdir}" />
       <src path="${builddir}/src" />
       <include name="${jdbc-package}/**/*.java" />
-    </javac>
-  </target>
-
-  <target name="compile_xmldb" depends="prepare,driver">
-    <echo message="Compiling XML:DB driver" />
-    <javac
-      classpath="${srcdir}:${libdir}/xmldb.jar"
-      destdir="${builddir}"
-      debug="${debug}"
-      optimize="${optimize}"
-      target="${javac_version}"
-      source="${javac_version}"
-      >
-      <src path="${srcdir}" />
-      <src path="${builddir}/src" />
-      <include name="${xmldb-package}/**/*.java" />
     </javac>
   </target>
 
@@ -301,51 +204,6 @@ All Rights Reserved.
     </javac>
   </target>
 
-  <target name="compile_xrpc_api" depends="prepare">
-    <echo message="Compiling XRPC Java API" />
-    <javac
-      classpath="${srcdir}"
-      srcdir="${srcdir}"
-      destdir="${builddir}"
-      debug="${debug}"
-      optimize="${optimize}"
-      target="${javac_version}"
-      source="${javac_version}"
-      >
-      <include name="${xrpc-api-package}/*.java" />
-    </javac>
-  </target>
-
-  <target name="compile_xrpc_wrapper" depends="prepare">
-    <echo message="Compiling XRPC Wrapper" />
-    <javac
-      classpath="${srcdir}"
-      srcdir="${srcdir}"
-      destdir="${builddir}"
-      debug="${debug}"
-      optimize="${optimize}"
-      target="${javac_version}"
-      source="${javac_version}"
-      >
-      <include name="${xrpc-wrapper-package}/*.java" />
-    </javac>
-  </target>
-
-  <target name="compile_xrpc_client" depends="prepare">
-    <echo message="Compiling XRPC (test) client" />
-    <javac
-      classpath="${srcdir}"
-      srcdir="${srcdir}"
-      destdir="${builddir}"
-      debug="${debug}"
-      optimize="${optimize}"
-      target="${javac_version}"
-      source="${javac_version}"
-      >
-      <include name="${xrpc-client-package}/**/*.java" />
-    </javac>
-  </target>
-
   <target name="compile_mero_control" depends="prepare">
     <echo message="Compiling Merovingian Control library" />
     <javac
@@ -377,24 +235,17 @@ All Rights Reserved.
     <filter token="MCL_MAJOR" value="${MCL_MAJOR}" />
     <filter token="MCL_MINOR" value="${MCL_MINOR}" />
     <filter token="JDBC_DEF_PORT" value="${JDBC_DEF_PORT}" />
-    <filter token="JDBC_DEF_PORT_XQUERY" value="${JDBC_DEF_PORT_XQUERY}" />
     <filter token="JDBC_VER_SUFFIX" value="${JDBC_VER_SUFFIX} ${TODAY}" />
 
     <fail unless="JDBC_MAJOR" message="'JDBC_MAJOR' undefined. Please follow the directions in build.properties."/>
     <fail unless="JDBC_MINOR" message="'JDBC_MINOR' undefined. Please follow the directions in build.properties."/>
     <fail unless="JDBC_DEF_PORT" message="'JDBC_DEF_PORT' undefined. Please follow the directions in build.properties."/>
-    <fail unless="JDBC_DEF_PORT_XQUERY" message="'JDBC_DEF_PORT_XQUERY' undefined. Please follow the directions in build.properties."/>
     <fail unless="JDBC_VER_SUFFIX" message="'JDBC_VER_SUFFIX' undefined. Please follow the directions in build.properties."/>
 
     <!-- now copy and filter the file -->
     <copy file="${srcdir}/${jdbc-package}/MonetDriver.java.in"
       overwrite="true"
       tofile="${builddir}/src/${jdbc-package}/MonetDriver.java"
-      filtering="yes" />
-
-    <copy file="${srcdir}/${xmldb-package}/base/MonetDBDatabase.java.in"
-      overwrite="true"
-      tofile="${builddir}/src/${xmldb-package}/base/MonetDBDatabase.java"
       filtering="yes" />
 
     <echo message="Configured build for the ${JDBC_MAJOR}.${JDBC_MINOR} (${JDBC_VER_SUFFIX}) edition driver" />
@@ -443,14 +294,6 @@ All Rights Reserved.
             <include name="${jdbc-package}/**/*.java" />
           </srcfiles>
         </uptodate>
-        <uptodate
-          targetfile="${builddir}/src/${xmldb-package}/base/MonetDBDatabase.java">
-          <srcfiles dir="${srcdir}">
-            <include name="build.properties" />
-            <include name="build.local.properties" />
-            <include name="${xmldb-package}/base/MonetDBDatabase.java.in" />
-          </srcfiles>
-        </uptodate>
       </and>
     </condition>
 
@@ -469,7 +312,7 @@ All Rights Reserved.
 
   <!-- documentation target -->
   <target name="doc"
-    depends="compile_mcl,compile_jdbc,compile_util,compile_client,compile_xrpc_api,compile_xrpc_wrapper,compile_xrpc_client,compile_mero_control">
+    depends="compile_mcl,compile_jdbc,compile_util,compile_client,compile_mero_control">
     <javadoc
       destdir="${docdir}"
       author="true"
@@ -482,7 +325,6 @@ All Rights Reserved.
         <include name="${mcl-package}/**/*.java" />
         <include name="${client-package}/**/*.java" />
         <include name="${util-package}/**/*.java" />
-        <include name="${xrpc-api-package}/**/*.java" />
         <include name="${mero-control-package}/**/*.java" />
       </fileset>
 
@@ -491,7 +333,6 @@ All Rights Reserved.
         <include name="${mcl-package}/**/*.java" />
         <include name="${client-package}/**/*.java" />
         <include name="${util-package}/**/*.java" />
-        <include name="${xrpc-api-package}/**/*.java" />
         <include name="${mero-control-package}/**/*.java" />
       </fileset>
     </javadoc>

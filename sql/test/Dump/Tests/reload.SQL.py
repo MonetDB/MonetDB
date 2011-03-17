@@ -1,5 +1,8 @@
 import os, sys
-from MonetDBtesting import process
+try:
+    from MonetDBtesting import process
+except ImportError:
+    import process
 
 clt = process.client('sql', user = 'monetdb', passwd = 'monetdb',
                      stdin = open(os.path.join(os.environ['TSTTRGDIR'],

@@ -89,7 +89,8 @@ SQLColAttributes(SQLHSTMT hStmt,
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLColAttributes " PTRFMT " %d %d\n", PTRFMTCAST hStmt, nCol, nDescType);
+	ODBCLOG("SQLColAttributes " PTRFMT " %u %u\n", PTRFMTCAST hStmt,
+		(unsigned int) nCol, (unsigned int) nDescType);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -128,7 +129,8 @@ SQLColAttributesW(SQLHSTMT hStmt,
 	SQLSMALLINT n;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLColAttributesW " PTRFMT " %d %d\n", PTRFMTCAST hStmt, nCol, nDescType);
+	ODBCLOG("SQLColAttributesW " PTRFMT " %u %u\n", PTRFMTCAST hStmt,
+		(unsigned int) nCol, (unsigned int) nDescType);
 #endif
 
 	if (!isValidStmt(stmt))

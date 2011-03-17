@@ -119,6 +119,8 @@ like_bug.SF-2878994
 use_order_column_first.SF-2686008
 copy_multiple_files.SF-2902320
 not_invalidtable_crash.SF-2927174
+drop-sequence-crash.SF-2854195
+arithmetic-small-values-null.SF-2921310
 #
 # The following test currently crashes and this fact (or its remains) might
 # harm sub-sequent tests; hence, this test should be last in this directory.

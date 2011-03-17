@@ -5,13 +5,13 @@ stderr of test 'mserver5-sql-readonly-view` in directory 'test/mserver5-sql-read
 # 09:35:13 >  /usr/bin/python mserver5-sql-readonly-view.py mserver5-sql-readonly-view 
 # 09:35:13 >  
 
-MAPI  = monetdb@yngling:35422
+MAPI  = monetdb@volund:38754
 QUERY = insert into v1 (a) values ( 2 );
 ERROR = !INSERT INTO: cannot insert into view 'v1'
-MAPI  = monetdb@yngling:35422
+MAPI  = monetdb@volund:38754
 QUERY = update v1 set a = 3 where a = 2;
 ERROR = !UPDATE: cannot update view 'v1'
-MAPI  = monetdb@yngling:35422
+MAPI  = monetdb@volund:38754
 QUERY = delete from v1 where a = 3;
 ERROR = !DELETE FROM: cannot delete from view 'v1'
 # builtin opt 	gdk_arch = 64bitx86_64-unknown-linux-gnu
@@ -76,20 +76,20 @@ ERROR = !DELETE FROM: cannot delete from view 'v1'
 # cmdline opt 	mal_listing = 2
 # cmdline opt 	gdk_dbname = mTests_src_test_mserver5-sql-readonly
 #warning: please don't forget to set your vault key!
-#(see /export/scratch0/rijke/monetdbdefault20100802/etc/monetdb5.conf)
-MAPI  = monetdb@yngling:35422
+#(see /ufs/fabian/scratch/monetdb/current/program-x86_64/etc/monetdb5.conf)
+MAPI  = monetdb@volund:38754
 QUERY = create view v2 as select * from t1;
-ERROR = !MALException:(unknown):schema statements cannot be executed on a readonly database.
-MAPI  = monetdb@yngling:35422
+ERROR = !SQLException:sql.catalog: schema statements cannot be executed on a readonly database.
+MAPI  = monetdb@volund:38754
 QUERY = drop view v1;
 ERROR = !schema statements cannot be executed on a readonly database.
-MAPI  = monetdb@yngling:35422
+MAPI  = monetdb@volund:38754
 QUERY = insert into v1 (a) values ( 1 );
 ERROR = !INSERT INTO: cannot insert into view 'v1'
-MAPI  = monetdb@yngling:35422
+MAPI  = monetdb@volund:38754
 QUERY = update v1 set a = 2 where a = 1;
 ERROR = !UPDATE: cannot update view 'v1'
-MAPI  = monetdb@yngling:35422
+MAPI  = monetdb@volund:38754
 QUERY = delete from v1 where a = 1;
 ERROR = !DELETE FROM: cannot delete from view 'v1'
 # builtin opt 	gdk_arch = 64bitx86_64-unknown-linux-gnu

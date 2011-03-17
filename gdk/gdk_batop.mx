@@ -228,7 +228,7 @@ insert_string_bat(BAT *b, BAT *n, int append)
 	}
 	if (toff != ~(size_t) 0) {
 		b->T->varsized = 1;
-		n->H->varsized = 1;
+		n->T->varsized = 1;
 		b->T->type = TYPE_str;
 	}
 	return NULL;

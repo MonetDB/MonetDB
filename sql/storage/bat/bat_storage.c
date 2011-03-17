@@ -1269,7 +1269,7 @@ gtr_minmax( sql_trans *tr )
 }
 
 int 
-tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int cluster, BUN snapshot_minsize)
+tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, BUN snapshot_minsize)
 {
 	int ok = LOG_OK;
 	BAT *ups, *ins, *cur;
@@ -1289,7 +1289,7 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int cluster, B
 	ins = temp_descriptor(cbat->ibid);
 	/* any inserts */
 	if (BUNlast(ins) > BUNfirst(ins) || cleared) {
-		if (BUNlast(ins) > ins->batInserted && (store_nr_active > 1 || cluster)) { 
+		if (BUNlast(ins) > ins->batInserted && (store_nr_active > 1)) { 
 			BAT *ci = temp_descriptor(obat->ibid);
 
 			if (isEbat(ci)) {
@@ -1304,7 +1304,7 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int cluster, B
 			bat_destroy(ci);
 		}
 		obat->cnt = cbat->cnt;
-		if (store_nr_active == 1 && !cluster) { /* flush all */
+		if (store_nr_active == 1) { /* flush all */
 			BAT *pi = temp_descriptor(obat->ibid);
 			if (!BATcount(cur) && BATcount(ins) > snapshot_minsize){
 				/* swap cur and ins */
@@ -1341,7 +1341,7 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int cluster, B
 	ups = temp_descriptor(cbat->ubid);
 	/* any updates */
 	if (BUNlast(ups) > BUNfirst(ups) || cleared ) {
-		if ((BUNlast(ups) > ups->batInserted || BATdirty(ups)) && (store_nr_active > 1 || cluster)) { 
+		if ((BUNlast(ups) > ups->batInserted || BATdirty(ups)) && (store_nr_active > 1)) { 
 			BAT *cu = temp_descriptor(obat->ubid);
 
 			if (isEUbat(cu)) {
@@ -1357,7 +1357,7 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int cluster, B
 			BATcleanProps(cu);
 			bat_destroy(cu);
 		}
-		if (store_nr_active == 1 && !cluster) { /* flush all */
+		if (store_nr_active == 1) { /* flush all */
 			void_replace_bat(cur, ups, TRUE);
 			/* cleanup the old deltas */
 			temp_destroy(obat->ubid);
@@ -1421,7 +1421,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 
 		if (!cc->base.wtime) 
 			continue;
-		tr_update_delta(tr, oc->data, cc->data, isCluster(ft), SNAPSHOT_MINSIZE);
+		tr_update_delta(tr, oc->data, cc->data, SNAPSHOT_MINSIZE);
 
 		if (cc->base.rtime)
 			oc->base.rtime = tr->stime;
@@ -1437,7 +1437,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			if (!oi->data || !ci->base.wtime)
 				continue;
 
-			tr_update_delta(tr, oi->data, ci->data, isCluster(ft), SNAPSHOT_MINSIZE);
+			tr_update_delta(tr, oi->data, ci->data, SNAPSHOT_MINSIZE);
 
 			if (ci->base.rtime)
 				oi->base.rtime = tr->stime;
@@ -1571,8 +1571,6 @@ snapshot_table(sql_trans *tr, sql_table *ft)
 
 	assert(tr->parent == gtrans);
 
-	if (isCluster(ft))
-		return ok;
 	for (n = ft->columns.set->h; ok == LOG_OK && n; n = n->next) {
 		sql_column *cc = n->data;
 

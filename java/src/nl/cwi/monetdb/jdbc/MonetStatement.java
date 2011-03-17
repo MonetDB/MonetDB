@@ -191,19 +191,6 @@ public class MonetStatement implements Statement {
 		// don't think long if there isn't much to do
 		if (batch == null) return(new int[0]);
 
-		// go into special Xcopy mode with XQuery
-		if (((MonetConnection)connection).lang == MonetConnection.LANG_XQUERY) {
-			// concatenate all strings into one, and send them over
-			StringBuffer buf = new StringBuffer(8192);
-			for (int i = 0; i < batch.size(); i++) {
-				buf.append(batch.get(i)).append('\n');
-			}
-
-			((MonetConnection)connection).copyToServer(buf.toString(), null);
-			// ignore the resonse for now, it's empty
-			return(new int[0]);
-		}
-
 		int[] counts = new int[batch.size()];
 		int offset = 0;
 		boolean first = true;

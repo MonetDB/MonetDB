@@ -15,6 +15,24 @@
     {
         "Entry"
         {
+        "MsmKey" = "8:_14F4BC1A7F54458D91CFA4A0BD174604"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_17D7FB69076E415C8973295D502161C5"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_2E74F1B1BDE548A7922BAD968E690A3A"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_2FB9A57E3DD7443F97A7C8B0DBF82DB5"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -27,31 +45,7 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_384504E5D4D445A293780227B8A5F5A9"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_3E644A6D208A478BA418B7C7A75E1306"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_3FE349BC355F467887AC63E16F3818BC"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_42425D9BCD9641D3ABC839D5A29358DE"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_53E87680864A4C9DB17A3856539DC3C5"
+        "MsmKey" = "8:_4F0D2367141846EFA634DA35B05CDA4D"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -63,13 +57,19 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_84999A6BF369454381F5ACB44DAAD420"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_8ADC98E4D05143999FFC87CAB78E68C9"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_931FDCC4685C438DB61DFA8D32DF80D1"
+        "MsmKey" = "8:_B4FE8AF57D0147A5926576F3D73B9B3B"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -81,19 +81,13 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_BF6F263569B341B697780CB5B68BE7EF"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_CB89303C19364CECA36BDC911637BE9C"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_DABB0525FFE244EBAA33222279A6056C"
+        "MsmKey" = "8:_D98E545D77674640AD32C43168E2F93D"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -214,6 +208,66 @@
         }
         "File"
         {
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_14F4BC1A7F54458D91CFA4A0BD174604"
+            {
+            "SourcePath" = "8:monetdb.ico"
+            "TargetName" = "8:monetdb.ico"
+            "Tag" = "8:"
+            "Folder" = "8:_E71AEF246CD8428C98B2ECCFE2014056"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_17D7FB69076E415C8973295D502161C5"
+            {
+            "SourcePath" = "8:C:\\Libraries\\iconv-1.11.1.win64\\bin\\iconv.dll"
+            "TargetName" = "8:iconv.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_376EC0506E4F452CA2C78ACE11515435"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_2E74F1B1BDE548A7922BAD968E690A3A"
+            {
+            "SourcePath" = "8:C:\\Libraries\\bzip2-1.0.5.win64\\bin\\libbz2.dll"
+            "TargetName" = "8:libbz2.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_376EC0506E4F452CA2C78ACE11515435"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_2FB9A57E3DD7443F97A7C8B0DBF82DB5"
             {
             "SourcePath" = "8:banner.bmp"
@@ -234,87 +288,7 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_384504E5D4D445A293780227B8A5F5A9"
-            {
-            "SourcePath" = "8:C:\\Libraries\\bzip2-1.0.5.win64\\bin\\libbz2.dll"
-            "TargetName" = "8:libbz2.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_376EC0506E4F452CA2C78ACE11515435"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_3E644A6D208A478BA418B7C7A75E1306"
-            {
-            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.0a.win64\\bin\\ssleay32.dll"
-            "TargetName" = "8:ssleay32.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_376EC0506E4F452CA2C78ACE11515435"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_3FE349BC355F467887AC63E16F3818BC"
-            {
-            "SourcePath" = "8:C:\\Libraries\\iconv-1.11.1.win64\\bin\\iconv.dll"
-            "TargetName" = "8:iconv.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_376EC0506E4F452CA2C78ACE11515435"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_42425D9BCD9641D3ABC839D5A29358DE"
-            {
-            "SourcePath" = "8:lib\\libMapi.dll"
-            "TargetName" = "8:libMapi.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_376EC0506E4F452CA2C78ACE11515435"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_53E87680864A4C9DB17A3856539DC3C5"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_4F0D2367141846EFA634DA35B05CDA4D"
             {
             "SourcePath" = "8:C:\\Libraries\\zlib-1.2.5.win64\\bin\\zlib1.dll"
             "TargetName" = "8:zlib1.dll"
@@ -354,6 +328,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_84999A6BF369454381F5ACB44DAAD420"
+            {
+            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.0a.win64\\bin\\libeay32.dll"
+            "TargetName" = "8:libeay32.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_376EC0506E4F452CA2C78ACE11515435"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_8ADC98E4D05143999FFC87CAB78E68C9"
             {
             "SourcePath" = "8:bin\\odbcinstall.exe"
@@ -374,10 +368,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_931FDCC4685C438DB61DFA8D32DF80D1"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_B4FE8AF57D0147A5926576F3D73B9B3B"
             {
-            "SourcePath" = "8:lib\\libmutils.dll"
-            "TargetName" = "8:libmutils.dll"
+            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.0a.win64\\bin\\ssleay32.dll"
+            "TargetName" = "8:ssleay32.dll"
             "Tag" = "8:"
             "Folder" = "8:_376EC0506E4F452CA2C78ACE11515435"
             "Condition" = "8:"
@@ -414,26 +408,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_BF6F263569B341B697780CB5B68BE7EF"
-            {
-            "SourcePath" = "8:monetdb.ico"
-            "TargetName" = "8:monetdb.ico"
-            "Tag" = "8:"
-            "Folder" = "8:_E71AEF246CD8428C98B2ECCFE2014056"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_CB89303C19364CECA36BDC911637BE9C"
             {
             "SourcePath" = "8:website.html"
@@ -454,10 +428,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_DABB0525FFE244EBAA33222279A6056C"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_D98E545D77674640AD32C43168E2F93D"
             {
-            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.0a.win64\\bin\\libeay32.dll"
-            "TargetName" = "8:libeay32.dll"
+            "SourcePath" = "8:lib\\libmapi.dll"
+            "TargetName" = "8:libmapi.dll"
             "Tag" = "8:"
             "Folder" = "8:_376EC0506E4F452CA2C78ACE11515435"
             "Condition" = "8:"
@@ -592,14 +566,14 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB ODBC Driver"
-        "ProductCode" = "8:{20538730-659F-47B6-BA7D-FD8102EA1D54}"
-        "PackageCode" = "8:{C4F24F66-3C34-4D5C-A2AA-C662448BEE9D}"
+        "ProductCode" = "8:{BCA28DEE-33C4-4897-85D5-98DA9747054A}"
+        "PackageCode" = "8:{D107C833-4867-4471-B5E7-36C3A5C26F2E}"
         "UpgradeCode" = "8:{95ACBC8C-BC4B-4901-AF70-48B54A5C20F7}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:TRUE"
-        "ProductVersion" = "8:10.6.30"
+        "ProductVersion" = "8:11.2.0"
         "Manufacturer" = "8:MonetDB"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:http://monetdb.cwi.nl/"
@@ -609,7 +583,7 @@
         "Keywords" = "8:MonetDB SQL ODBC"
         "ARPCOMMENTS" = "8:MonetDB ODBC Driver"
         "ARPURLINFOABOUT" = "8:http://monetdb.cwi.nl"
-        "ARPPRODUCTICON" = "8:_BF6F263569B341B697780CB5B68BE7EF"
+        "ARPPRODUCTICON" = "8:_14F4BC1A7F54458D91CFA4A0BD174604"
         "ARPIconIndex" = "3:0"
         "SearchPath" = "8:"
         "UseSystemSearchPath" = "11:TRUE"
@@ -723,7 +697,7 @@
             "Target" = "8:_CB89303C19364CECA36BDC911637BE9C"
             "Folder" = "8:_1CAF389F5D9043A1AEDFA7B5978DF66F"
             "WorkingFolder" = "8:_E71AEF246CD8428C98B2ECCFE2014056"
-            "Icon" = "8:_BF6F263569B341B697780CB5B68BE7EF"
+            "Icon" = "8:_14F4BC1A7F54458D91CFA4A0BD174604"
             "Feature" = "8:"
             }
         }

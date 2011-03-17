@@ -1,7 +1,10 @@
 import sys
 import os
 import time
-from MonetDBtesting import process
+try:
+    from MonetDBtesting import process
+except ImportError:
+    import process
 
 def server():
     return process.server('sql',

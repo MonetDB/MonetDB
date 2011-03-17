@@ -1,5 +1,8 @@
 import os, sys
-from MonetDBtesting import process
+try:
+    from MonetDBtesting import process
+except ImportError:
+    import process
 
 def remote_server_start(x,s):
     sys.stdout.write('\nserver %d%d\n' % (x,s))

@@ -15,16 +15,15 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = buildtools common gdk clients \
-	HAVE_MONETDB4?monetdb4 \
+SUBDIRS = buildtools common clients gdk \
 	HAVE_MONETDB5?monetdb5 \
 	HAVE_SQL?sql \
 	HAVE_GEOM?geom \
-	HAVE_PATHFINDER?pathfinder \
+	tools \
 	HAVE_JAVA?java \
 	HAVE_TESTING?testing \
 
-EXTRA_DIST = bootstrap configure configure.ac configure.ag \
+EXTRA_DIST = bootstrap configure configure.ac configure.ag libversions \
 			 MonetDB.spec rpm.mk.in COPYING README license.txt HowToStart.rst
 
 EXTRA_DIST_DIR = NT debian template

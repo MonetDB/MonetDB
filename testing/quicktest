@@ -1,0 +1,728 @@
+#!/usr/bin/env bash
+
+# QuickTest is a quick variant of Mtest.py.  It's not even near to the
+# level of completeness as Mtest.py, but it's geared towards speed.
+# QuickTest emerged out of a frustration that I couldn't seem to
+# understand the gory internals of Mtest.py, and that I constantly ran
+# into Python related problems.  So after numerous efforts, I decided to
+# just start from scratch to work out the ideas to get to a quick
+# testing sequence.
+
+# BEWARE: this is still a work in progress, so the stuff below is most
+# likely nonsense at this stage!
+
+# The idea of QuickTest is simple:
+# - if a server of type X is not yet running, start one
+# - if a client to server of type X is not yet running, start one
+# - if all tests in a directory are run, stop all servers and clients
+# We deliberately don't stop servers in the run of a directory of tests,
+# because of the ideology that a server should be able to cope with
+# running many tests in sequence.  If it gets messed up, we want to
+# know, be informed about that until the issue gets resolved.  We need
+# to stop the server after all tests in a directory have been performed
+# due to the semantics that Mtest.py defines, upon which tests rely.
+#
+# QuickTest tries to exploit parallelism where possible.  Unfortunately,
+# the tests inside a directory cannot be run in parallel, since Mtest.py
+# defines that tests in a directory are run in sequence, and some tests
+# rely on this both in their output as well as their input.
+# This means that directories /can/ be run in parallel without problems.
+# Next, the post-processing of results, generating annotated diffs, etc.
+# can be done in the background after the test has run.  The idea here
+# is to look at the test output in the background after a test has been
+# run.  Since we won't restart the server and client inbetween tests
+# after test failures, this allows us to completely defer the test
+# evaluation until a later point as e.g. when the post processing queue
+# is being handled.
+# TODO: the .required files recently added to Mtest.py allow to
+# parallelise execution inside a directory
+
+get_number_processors() {
+	if [[ -f /proc/cpuinfo ]] ; then
+		# Linux
+		grep processor /proc/cpuinfo | wc -l
+	elif [[ -x /usr/sbin/psrinfo ]] ; then
+		# (Open)Solaris
+		/usr/sbin/psrinfo | wc -l
+	elif [[ /usr/sbin/sysctl ]] ; then
+		# Darwin and FreeBSD
+		/usr/sbin/sysctl hw.ncpu | awk '{print $2}'
+	else
+		# generic fallback case
+		echo 1
+	fi
+}
+
+find_tests_in_dir() {
+	# traverses the given directory, optionally first entering the Tests
+	# subdirectory, looking for an All file, and returning all tests
+	# listed therein
+	# TODO: we must respect the conditionals in there
+	local dir=$1
+	[[ -d ${dir}/Tests ]] && dir=${dir}/Tests
+	# warn?
+	[[ -f ${dir}/All ]] || return
+
+	while read test ; do
+		# skip commented and empty lines
+		[[ ${test} == "#"* || -z ${test} ]] && continue
+		if [[ ${test} == *"?"* ]] ; then
+			# a conditional
+			# FIXME: match against list of know met conditionals
+			echo ${test#*"?"}
+		else
+			echo ${test}
+		fi
+	done < ${dir}/All
+}
+
+recursively_find_testdirs() {
+	# recursively traverses the given directory and returns all
+	# directories that contain a Tests/All file (in a Tests directory)
+	for f in $1/* ; do
+		[[ -d ${f} ]] && recursively_find_testdirs "${f}"
+	done
+	[[ -f $1/All && ${1##*/} == "Tests" ]] && echo "${1%/Tests}"
+}
+
+get_test_type() {
+	# returns the type for a given test name that start_server and
+	# start_client understand to start a required server or client
+	local tst=${1##*/}
+	local dir=${1%/*}/Tests
+
+	# FIXME: add more to support
+	if [[ -f ${dir}/${tst}.mal ]] ; then
+		echo mal:${dir}/${tst}.mal
+	elif [[ -f ${dir}/${tst}.sql ]] ; then
+		echo sql:${dir}/${tst}.sql
+	elif [[ -f ${dir}/${tst}.sql.src ]] ; then
+		local t=$(< "${dir}"/${tst}.sql.src)
+		# this is too optimistic, I'm affraid
+		echo sql:${dir}/${t#\$RELSRCDIR/}
+	else
+		printf "${CLEARLINE}unsupported type for test ${tst}\n" > /dev/stderr
+		return 1
+	fi
+}
+
+find_module_root() {
+	# tries to find the root of the module for the given path by
+	# applying some heuristics
+	local path=$1
+
+	if [[ -f ${path}/CVS/Repository ]] ; then
+		local rmpath=
+		local repo=$(< ${path}/CVS/Repository)
+		case ${repo} in
+			MonetDB/*)   rmpath=${repo#MonetDB}   ;;
+			clients/*)   rmpath=${repo#clients}   ;;
+			MonetDB5/*)  rmpath=${repo#MonetDB5}  ;;
+			sql/*)       rmpath=${repo#sql}       ;;
+			geom/*)      rmpath=${repo#geom}      ;;
+			*)
+				echo "unknown module ${repo%%/*}" > /dev/stderr
+				return 1
+			;;
+		esac
+		if [[ ${path} != *${rmpath} ]] ; then
+			echo "CVS module mismatch, can't get root ${rmpath} from ${path}" > /dev/stderr
+			return 1
+		fi
+		echo "${path%${rmpath}}"
+		return 0
+	else
+		# this is expensive, but a best effort approach
+		local spath=
+		if type -P monetdb-config > /dev/null ; then
+			spath=$(monetdb-config --source)
+			if [[ ${path} == ${spath}/* ]] ; then
+				echo "${spath}"
+				return 0
+			fi
+		fi
+		if type -P monetdb-clients-config > /dev/null ; then
+			spath=$(monetdb-clients-config --source)
+			if [[ ${path} == ${spath}/* ]] ; then
+				echo "${spath}"
+				return 0
+			fi
+		fi
+		if type -p monetdb5-config > /dev/null ; then
+			spath=$(monetdb5-config --source)
+			if [[ ${path} == ${spath}/* ]] ; then
+				echo "${spath}"
+				return 0
+			fi
+		fi
+		if type -p monetdb-sql-config > /dev/null ; then
+			spath=$(monetdb-sql-config --source)
+			if [[ ${path} == ${spath}/* ]] ; then
+				echo "${spath}"
+				return 0
+			fi
+		fi
+		if type -p monetdb-geom-config > /dev/null ; then
+			spath=$(monetdb-geom-config --source)
+			if [[ ${path} == ${spath}/* ]] ; then
+				echo "${spath}"
+				return 0
+			fi
+		fi
+
+		echo "unable to determine module for ${path}" > /dev/stderr
+		return 1
+	fi
+}
+
+find_free_port() {
+	# returns an unused port for an mserver to bind to in the range of
+	# 54000-65000
+	local p
+	for p in $(seq 54000 65000) ; do
+		if ! nc -z -n 127.0.0.1 ${p} ; then
+			echo ${p}
+			return
+		fi
+	done
+}
+
+start_server() {
+	# starts a server if another one for the given dir and language is
+	# not yet running
+	local lang=$1
+	local dir=${2//\//_}
+	local p=${MDIR}/server/${lang}/${dir}
+
+	if [[ -d ${p} ]] ; then
+		# this is expensive, and the server shouldn't crash, period
+		## check if the server is still running
+		#if [[ -z $(ps -p ${f} | sed -e1d) ]] ; then
+		#	stop_server ${mserver}/${f}
+		#	continue
+		#fi
+		:
+	else
+		# FIXME: assume only M5 here for now
+		local mserver=mserver5
+		local l
+		# because this is per directory, there should be no race conditions
+		mkdir -p "${p}"
+		local port=$(find_free_port)
+		local args=(
+			${mserver}
+			--dbfarm="${p}"/dbfarm
+			--dbname="mTests_${dir}"
+			--set mapi_port=${port}
+			--set monet_daemon=yes
+		)
+		echo "#" "${args[@]}" > "${p}"/stdout
+		echo "#" "${args[@]}" > "${p}"/stderr
+		"${args[@]}" \
+			1>> "${p}"/stdout \
+			2>> "${p}"/stderr \
+			0<&- &
+		echo $! > "${p}"/pid
+		echo ${port} > "${p}"/port
+		# we're going to kill this thing the hard way eventually, so no
+		# need to keep an eye on it (and print messages like "Killed ...")
+		disown $(< "${p}"/pid)
+		# wait until connections are available
+		while true ; do
+			sleep 0.5
+			if [[ -f ${p}/dbfarm/mTests_${dir}/.conn && ${p}/dbfarm/mTests_${dir}/.scen ]] ; then
+				l=
+				for l in $(< ${p}/dbfarm/mTests_${dir}/.scen) ; do
+					[[ ${l} == ${lang} ]] && break
+				done
+				[[ -n ${l} ]] && break
+			fi
+			if [[ -z $(ps -p $(< "${p}"/pid) | sed -e1d) ]] ; then
+				echo "failed to start ${mserver}" > /dev/stderr
+				cat "${p}"/stdout "${p}"/stderr > /dev/stderr
+				rm -Rf "${p}"
+				return
+			fi
+			# FIXME: indefinite wait
+		done
+
+		# save for repetition in test output
+		cat "${p}"/stdout > "${p}"/init.stdout
+		cat "${p}"/stderr > "${p}"/init.stderr
+
+		cat > "${p}"/mclient.creds <<- _EOF
+			user=monetdb
+			password=monetdb
+		_EOF
+	fi
+}
+
+stop_servers() {
+	# stops all running servers for the given directory and releases all
+	# associated resources
+	local dir=${1//\//_}
+
+	for d in "${MDIR}"/server/*/"${dir}" ; do
+		# bash returns the literal value if no match exists
+		[[ -d ${d} ]] || continue
+		# no need to be nice, we're going to destroy the dbfarm anyway
+		kill -KILL $(< "${d}"/pid) &> /dev/null
+		rm -Rf "${d}"
+	done
+}
+
+submit_result_test() {
+	# enqueues the given test with its stdout and stderr for evaluation
+	# to see if its output is correct
+	# upon return of this function the stdout and stderr files are moved
+	# to another location
+	local tst=$1
+	local ntst=$2
+	local stdout=$3
+	local stderr=$4
+
+	if [[ ! -d ${MDIR}/resultqueue ]] ; then
+		echo "resultqueue not yet initialised" > /dev/stderr
+		return 1
+	fi
+
+	mv "${stdout}" "${MDIR}"/resultqueue/${ntst}.stdout
+	mv "${stderr}" "${MDIR}"/resultqueue/${ntst}.stderr
+
+	echo "${tst}" >> "${MDIR}"/resultqueue/${ntst}.todo
+}
+
+run_client() {
+	# starts a client connecting to the responsible server for the
+	# requested language, running the given test
+	local tstn=$1
+	local lang=$2
+	local odir=$3
+	local dir=${3//\//_}
+	local tst=$4
+	local p=${MDIR}/server/${lang}/${dir}
+
+	if [[ ! -f ${p}/mclient.creds ]] ; then
+		echo "server for ${lang} in ${dir} doesn't exist" > /dev/stderr
+		return 1
+	fi
+
+	# clean server output
+	echo -n "" > "${p}"/stdout
+	echo -n "" > "${p}"/stderr
+
+	local c=${MDIR}/client/${lang}/${dir}
+	mkdir -p "${c}"
+
+	local args=(
+		mclient
+		-i
+		-l${lang}
+		-p$(< "${MDIR}"/server/${lang}/${dir}/port)
+	)
+
+	{
+		# Mtest.py output header emulation
+		echo "stdout of test '${tstn}"'`'" in directory '${odir}"'`'" itself:"
+		echo
+		cat "${p}"/init.stdout
+		echo
+		echo "# ${args[@]} < ${tst}"
+	} > "${c}"/stdout
+	{
+		# Mtest.py output header emulation
+		echo "stderr of test '${tstn}"'`'" in directory '${odir}"'`'" itself:"
+		echo
+		cat "${p}"/init.stderr
+		echo
+		echo "# ${args[@]} < ${tst}"
+	} > "${c}"/stderr
+
+	touch "${c}"/start
+	DOTMONETDBFILE="${p}"/mclient.creds "${args[@]}" \
+		< "${tst}" \
+		1>> "${c}"/stdout \
+		2>> "${c}"/stderr &
+	# do this just to get a pid which we can kill
+	echo $! > "${c}"/pid
+	wait $(< "${c}"/pid)
+	
+	# Append server output (if any) to the output, Mtest.py has this on
+	# top actually, but we can't do that easily.  Since the server
+	# should say nothing actually, this is just to ensure we see
+	# something when it barfs about something.
+	{
+		echo
+		echo "# additional server output (if any) follows"
+		cat "${p}"/stdout
+		echo
+		echo "# EOT ${tst}"
+	} >> "${c}"/stdout
+	{
+		echo
+		echo "# additional server output (if any) follows"
+		echo
+		cat "${p}"/stderr
+		echo
+		echo "# EOT ${tst}"
+	} >> "${c}"/stderr
+
+	submit_result_test "${odir}/${tstn}" "${dir}_${tstn}" \
+		"${c}"/stdout "${c}"/stderr
+
+	rm -Rf "${c}"
+}
+
+diff_result_test() {
+	# evaluates the stdout and stderr of the test regarding the recorded
+	# stable versions, and returns 0 no differences encountered, or 1 if
+	# differences existed in stdout, 2 if differences existed in stderr,
+	# and 3 if differences existed in both stdout and stderr
+	local tstn=${1##*/}
+	local tstspath=${1%/*}/Tests/${tstn}
+	local tstrpath=$2
+	local ret=0
+
+	diff -u -a -b -B -I '^#' -I '^\(Ready\.\|Over\.\.\)$' \
+		"${tstspath}".stable.out "${tstrpath}".stdout \
+		> "${tstrpath}".stdout.diff
+	if [[ $? != 0 ]] ; then
+		# purely estethic
+		sed -i \
+			-e "/^--- /s:${tstspath}\.stable\.out:${tstn}.stable.out:" \
+			-e "/^+++ /s:${tstrpath}\.stdout:${tstn}.test.out:" \
+			"${tstrpath}".stdout.diff
+		ret=$((ret + 1))
+	fi
+	diff -u -a -b -B -I '^#' -I '^MAPI  =' \
+		"${tstspath}".stable.err "${tstrpath}".stderr \
+		> "${tstrpath}".stderr.diff
+	if [[ $? != 0 ]] ; then
+		# purely estethic
+		sed -i \
+			-e "/^--- /s:${tstspath}\.stable\.err:${tstn}.stable.err:" \
+			-e "/^+++ /s:${tstrpath}\.stderr:${tstn}.test.err:" \
+			"${tstrpath}".stderr.diff
+		ret=$((ret + 2))
+	fi
+
+	return ${ret}
+}
+
+result_queue_runner() {
+	# keeps on running in the resultqueue to see if there are tests to
+	# be compared, and runs diff_result_test and output generation for
+	# them if necessary
+	local tst
+	local rtst
+	local ds
+	local t
+	while true ; do
+		for t in "${MDIR}"/resultqueue/*.todo ; do
+			# if there is nothing to do, bash will return the literal
+			# string with the asterisk (which does not exist), if
+			# another thread has already taken this job, it doesn't
+			# exist either
+			[[ -f ${t} ]] || continue
+			mv "${t}" "${t%.todo}."
+			rtst=${t%.todo}
+			tst="$(< "${rtst}.")"
+			diff_result_test "${tst}" "${rtst}"
+			ds=$?
+			if [[ ${ds} != 0 ]] ; then
+				mv "${rtst}." "${rtst}.fail"
+				case ${ds} in
+					1)
+						mv "${rtst}".stdout.diff "${OUTDIR}"/
+						printf "%s\n\t%s\n" \
+							"${CLEARLINE}${tst} has differences in stdout" \
+							"see ${OUTDIR}/${rtst##*/}.stdout.diff"
+					;;
+					2)
+						mv "${rtst}".stderr.diff "${OUTDIR}"/
+						printf "%s\n\t%s\n" \
+							"${CLEARLINE}${tst} has differences in stderr" \
+							"see ${OUTDIR}/${rtst##*/}.stderr.diff"
+					;;
+					3)
+						mv "${rtst}".std*.diff "${OUTDIR}"/
+						printf "%s\n\t%s\n\t%s\n" \
+							"${CLEARLINE}${tst} has differences in stdout and stderr" \
+							"see ${OUTDIR}/${rtst##*/}.stdout.diff" \
+							"see ${OUTDIR}/${rtst##*/}.stderr.diff"
+					;;
+				esac
+			else
+				mv "${rtst}." "${rtst}.ok"
+			fi
+
+			# basically, we don't have to save the logs (nothing
+			# wrong here, right?) but let's just do it for
+			# post-inspection
+			mv "${rtst}".std{out,err} "${OUTDIR}"/
+		done
+		# don't spinlock
+		sleep 1
+	done
+}
+
+start_result_queue() {
+	# initialises the result queue, and starts the listener
+	mkdir -p "${MDIR}"/resultqueue
+
+	# FIXME: do for NCPUS?
+	result_queue_runner &
+	echo $! > "${MDIR}"/resultqueue/pid
+	disown $(< "${MDIR}"/resultqueue/pid)
+}
+
+shutdown_result_queue() {
+	# gracefully shuts down the result queue listener waiting for
+	# pending jobs to complete (until the queue is empty)
+	local t
+	local s
+
+	[[ -f "${MDIR}"/resultqueue/pid ]] || return
+
+	# check if there is still work to do
+	while true ; do
+		for t in "${MDIR}"/resultqueue/*.todo ; do
+			s=1
+			[[ -f "${t}" ]] && break
+			s=0
+		done
+		[[ ${s} == 0 ]] && break
+		sleep 0.5
+	done
+
+	# shut down the process
+	kill $(< "${MDIR}"/resultqueue/pid)
+	wait $(< "${MDIR}"/resultqueue/pid)
+	rm -f "${MDIR}"/resultqueue/pid
+}
+
+get_load_avg() {
+	local avg=$(uptime)
+	avg=${avg##*:}
+	avg=${avg%%,*}
+	# no quotes to get whitespace removal for free!
+	echo ${avg}
+}
+
+get_active_servers() {
+	local ret=
+	local s
+	for s in "${MDIR}"/server/*/*/pid ; do
+		[[ -f "${s}" ]] && ret="${ret},$(< "${s}")"
+	done
+	[[ -n ${ret} ]] && echo " servers: {${ret#,}},"
+}
+
+get_active_clients() {
+	local ret=
+	local start now
+	local s
+	for s in "${MDIR}"/client/*/*/pid ; do
+		now=$(date +%s)
+		[[ -f "${s%/pid}"/start ]] || continue
+		start=$(date -r "${s%/pid}"/start +%s)
+		[[ -f "${s}" ]] && ret="${ret},$(< "${s}"):$((now - start))s"
+	done
+	[[ -n ${ret} ]] && echo " clients: {${ret#,}},"
+}
+
+get_result_queue_len() {
+	local cnt=0
+	local s
+	for s in "${MDIR}"/resultqueue/*.todo ; do
+		[[ -f "${s}" ]] && cnt=$((cnt + 1))
+	done
+	echo ${cnt}
+}
+
+get_test_ok() {
+	local cnt=0
+	local s
+	for s in "${MDIR}"/resultqueue/*.ok ; do
+		[[ -f ${s} ]] && cnt=$((cnt + 1))
+	done
+	echo ${cnt}
+}
+
+get_test_fail() {
+	local cnt=0
+	local s
+	for s in "${MDIR}"/resultqueue/*.fail ; do
+		[[ -f ${s} ]] && cnt=$((cnt + 1))
+	done
+	echo ${cnt}
+}
+
+statusbar() {
+	# plots a single line with status info every second
+
+	while true ; do
+		local testok=$(get_test_ok)
+		local testfail=$(get_test_fail)
+		printf "%sload: %1.2f,%s%s diffq: %d, compl(suc/fail): %d(%d/%d)" \
+			"${CLEARLINE}" \
+			"$(get_load_avg)" \
+			"$(get_active_servers)" \
+			"$(get_active_clients)" \
+			"$(get_result_queue_len)" \
+			"$((testok + testfail))" \
+			"${testok}" \
+			"${testfail}"
+		sleep 1
+	done
+}
+
+start_statusbar() {
+	# start the self updating statusbar in the background
+	statusbar &
+	echo "$!" > "${MDIR}"/statusbar.pid
+	disown $(< "${MDIR}"/statusbar.pid)
+}
+
+shutdown_statusbar() {
+	# stop statusbar from updating and print final status overview
+	kill $(< "${MDIR}"/statusbar.pid)
+	printf "\ntesting finished with %d successful and %d failing tests\n" \
+		"$(get_test_ok)" \
+		"$(get_test_fail)"
+	echo "the results can be found at: ${OUTDIR}/index.html"
+}
+
+generate_html() {
+	# generates the view that eases browser use with a left column to
+	# address tests, and a viewer pane on the right to examine the files
+	# that are plain and have no HTML markup
+	local dir
+	local test
+	local p
+
+	{
+		echo "<html>"
+		echo "<head>"
+		echo "<style type='text/css'>"
+		echo "  ul { margin-left: 0px; padding-left: 15px; }"
+		echo "  li { font-size: small; }"
+		echo "</style>"
+		echo "</head>"
+		echo "<ul>"
+		while read dir ; do
+			echo "<li>${dir}"
+			echo "<ul>"
+			find_tests_in_dir ${dir} | while read test ; do
+				local t
+				local style=
+				local msg=
+				t=${dir//\//_}_${test}
+				for p in "${OUTDIR}"/${t}.std{out,err}.diff ; do
+					[[ -f ${p} ]] || continue
+					[[ -z ${style} ]] \
+						&& style="style='color: red;'" \
+						|| style="${style%\'} font-weight: bold;'"
+					[[ ${p} == *".stdout.diff" ]] \
+						&& msg="${msg}<br /><a href='${p##*/}' target='viewer'>diff stdout</a>" \
+						|| msg="${msg}<br /><a href='${p##*/}' target='viewer'>diff stderr</a>"
+				done
+				echo -n "<li ${style}>${test} ("
+				echo -n "<a href='${t}.stdout' target='viewer'>stdout</a>, "
+				echo -n "<a href='${t}.stderr' target='viewer'>stderr</a>)"
+				echo -n "${msg}"
+				echo "</li>"
+			done
+			echo "</ul>"
+			echo "</li>"
+		done < "${MDIR}"/testdirs
+		echo "</ul>"
+		echo "</html>"
+	} > "${OUTDIR}"/tests.html
+
+	# finally make it available in the grand picture
+	cat > "${OUTDIR}"/index.html <<- _EOF
+		<html>
+		<head>
+			<title>Testing results for ${TROOT}</title>
+		</head>
+		<frameset cols="25%,*">
+			<frame name="index" src="tests.html" />
+			<frame name="viewer" />
+		</frameset>
+		</html>
+	_EOF
+}
+
+usage() {
+	echo "usage: ${0##*/} obj"
+	echo "  where obj is either a directory or a test name"
+	echo "the mserver5 and mclient binaries must exist in your path for"
+	echo "this script to run"
+}
+
+# "global" stuff we use
+CLEARLINE='[2K[1`'
+
+# tmpdir that we store our temp stuff in for the running of this script,
+# needed in misc functions around here
+MDIR=$(mktemp -d)
+
+# we can use this to automagically parallelise our work to the most
+# efficient amount
+NCPUS=$(get_number_processors)
+echo "found ${NCPUS} processors"
+
+# stuff that actually becomes useful should get into a persistent place
+OUTDIR=${PWD}/quicktestrun-$(date +%s)
+mkdir -p "${OUTDIR}"
+echo "storing output in ${OUTDIR}"
+
+# we need the absolute path, so just chdir there
+# FIXME: need to support individual tests and multiple args in the
+# future
+if [[ ! -d $1 ]] ; then
+	echo "no such directory: $1" > /dev/stderr
+	exit 1
+fi
+cd "$1"
+MROOT=$(find_module_root "$PWD")
+[[ -z ${MROOT} ]] && exit 1
+
+TROOT=${PWD#${MROOT}/}
+echo "moving into module root: ${MROOT}"
+cd "${MROOT}"
+
+echo -n "searching for test directories "
+recursively_find_testdirs ${TROOT} | while read dir ; do
+	echo -n "."
+	echo "${dir}" >> ${MDIR}/testdirs
+done
+echo
+
+# start the result queue, which becomes a separate process
+start_result_queue
+# get a statusbar which tells what's going on
+start_statusbar
+
+terminator() {
+	shutdown_result_queue
+	shutdown_statusbar
+	rm -Rf "${MDIR}"
+}
+
+trap terminator EXIT
+
+while read testdir ; do
+	find_tests_in_dir ${testdir} | while read test ; do
+		ttpe=$(get_test_type ${testdir}/${test})
+		[[ -z ${ttpe} ]] && continue
+		start_server ${ttpe%%:*} ${testdir}
+		run_client ${test} ${ttpe%%:*} ${testdir} ${ttpe#*:}
+	done
+	stop_servers ${testdir}
+done < ${MDIR}/testdirs
+
+# make sure everything is diffed, and then produce HTML
+shutdown_result_queue
+generate_html

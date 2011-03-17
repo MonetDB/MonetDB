@@ -1,1 +1,0 @@
-shlibs:Depends=libgeos2c2a (>= 2.2.3), libgeos-c1 (>= 2.2.3), libmonetdb1, libmonetdb5-server0, libc6 (>= 2.1.3)

@@ -379,6 +379,7 @@ replication_export BAT *SLAVEtable(void);
 @c
 #include "monetdb_config.h"
 #include "replication.h"
+#include "mutils.h"
 #include <sys/types.h>
 #ifdef HAVE_DIRENT_H
 #include <dirent.h>

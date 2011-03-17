@@ -19,6 +19,6 @@ MTSAFE
 
 scripts_php = {
 	COND = HAVE_TESTING
-	DIR = libdir/monetdb/tests
-	SOURCES = sqlsample.php xquerysample.php
+	DIR = bindir
+	SOURCES = sqlsample.php
 }

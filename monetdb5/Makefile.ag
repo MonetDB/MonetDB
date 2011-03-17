@@ -15,13 +15,31 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = mal modules optimizer scheduler tools extras conf
+# misc: stuff that can be built without deps, but others may depend on
+# mal, modules, optimizer, scheduler: the main libmonetdb5 body, needs misc
+# tools: builds libmonetdb5 from mal, modules, optimizer, scheduler
+# extras: builds optional/separate libraries that require libmonetdb5
+SUBDIRS = misc mal modules optimizer scheduler tools extras NATIVE_WIN32?NT
 
 EXTRA_DIST = RunMtest.in \
 		RunMtest.bat.in RunMapprove.in RunMapprove.bat.in \
 		RunMserver.in RunMserver.bat.in
 
-EXTRA_DIST_DIR = NT tests
+EXTRA_DIST_DIR = tests
 
 TESTS = RunMtest
 TESTS_ENVIRONMENT = $(SHELL)
+
+scripts_sh = {
+	EXT = ""
+	COND = NOT_WIN32
+	NOINST
+	SOURCES = RunMapprove.in RunMserver.in RunMtest.in
+}
+
+scripts_bat = {
+	EXT = bat
+	COND = NATIVE_WIN32
+	NOINST
+	SOURCES = RunMapprove.bat.in RunMserver.bat.in RunMtest.bat.in
+}

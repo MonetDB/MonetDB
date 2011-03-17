@@ -152,13 +152,6 @@ def main(cwd, topdir, automake, incdirsmap, conditional = ()):
                 #os.system (cmd)
     return InstallList, DocList, OutList
 
-def cleanup(dummy, dirname, names):
-    for name in names:
-        if name[:5] == '.incs':
-            os.unlink(os.path.join(dirname, name))
-
-os.path.walk(topdir, cleanup, None)
-
 InstallListFd = open("install.lst", "w")
 DocListFd = open("doc.lst", "w")
 (InstallList, DocList, OutList) = main(topdir, topdir, automake, [])
@@ -195,5 +188,3 @@ OutList = map(filter, OutList)
 OutListFd = open("acout.in", "w")
 OutListFd.writelines(OutList)
 OutListFd.close()
-
-os.path.walk(topdir, cleanup, None)

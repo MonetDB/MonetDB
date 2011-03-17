@@ -1,5 +1,8 @@
 import os, sys
-from MonetDBtesting import process
+try:
+    from MonetDBtesting import process
+except ImportError:
+    import process
 
 def main():
     user = 'skyserver'
@@ -13,7 +16,7 @@ def main():
     sys.stderr.write(err)
     sys.stdout.write('tables\n')
     sys.stderr.write('tables\n')
-    clt1 = process.client('sql', user = user, passwd = passwd, args = [os.path.join(dir, os.pardir,os.pardir,os.pardir,'sql','math.sql')], stdout = process.PIPE, stderr = process.PIPE)
+    clt1 = process.client('sql', user = user, passwd = passwd, args = [os.path.join(dir, os.pardir,os.pardir,os.pardir,'sql','10_math.sql')], stdout = process.PIPE, stderr = process.PIPE)
     out,err = clt1.communicate()
     sys.stdout.write(out)
     sys.stderr.write(err)
@@ -21,7 +24,7 @@ def main():
     out,err = clt1.communicate()
     sys.stdout.write(out)
     sys.stderr.write(err)
-    clt1 = process.client('sql', user = user, passwd = passwd, args = [os.path.join(dir, os.pardir,os.pardir,os.pardir,'sql','skyserver.sql')], stdout = process.PIPE, stderr = process.PIPE)
+    clt1 = process.client('sql', user = user, passwd = passwd, args = [os.path.join(dir, os.pardir,os.pardir,os.pardir,'sql','23_skyserver.sql')], stdout = process.PIPE, stderr = process.PIPE)
     out,err = clt1.communicate()
     sys.stdout.write(out)
     sys.stderr.write(err)

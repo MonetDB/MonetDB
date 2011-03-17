@@ -1,7 +1,0 @@
-module(pathfinder);
-module("unix");
-
-var TSTSRCDIR := getenv("TSTSRCBASE") + "/tests/BugDay_2005-10-06_0.9.3/Tests";
-
-shred_doc(TSTSRCDIR + "/" + "entities.xml", "entities.xml");
-shred_doc(TSTSRCDIR + "/" + "entities-invalid.xml", "entities-invalid.xml");

@@ -37,6 +37,6 @@ EXTRA_DIST = \
 		build.xml build.properties
 
 ant_jar_jdbctests = {
-	DIR = datadir/MonetDB/lib
+	DIR = datadir/monetdb/lib
 	FILES = jdbctests.jar
 }

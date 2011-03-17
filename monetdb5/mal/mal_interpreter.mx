@@ -683,6 +683,20 @@ if (stk->stk[getArg(pci,i)].vtype == TYPE_bat){
 	BBPunfix( h = b->batCacheid);
 }
 @c
+static lng
+getHotClaim()
+{
+	lng total = 0;
+	int i;
+	for ( i = 0; i < hottop; i++)
+		total += hotpotatoes[i].claim;
+	return total;
+}
+
+@-
+Calculate the memory need of a single instruction and also determine how much of the
+hot potatoes it will eat.
+@c
 void
 getMemoryClaim(MalStkPtr stk, InstrPtr pci, lng *argclaim, lng *retclaim, lng *hotclaim)
 {
@@ -823,16 +837,28 @@ updMemoryUsed(MalStkPtr stk, InstrPtr pci, lng argclaim)
 int
 DFLOWadmission(lng argclaim, lng retclaim, lng hotclaim)
 {
+	lng hot;
 	/* optimistically set memory */
 	if ( argclaim + retclaim == 0)
 		return 0;
 
 	mal_set_lock(mal_contextLock, "DFLOWdelay");
-	if (memorypool <= 0 && memoryclaims == 0)
+	if (memorypool <= 0 && memoryclaims == 0) {
 			memorypool = (lng) (MEMORY_THRESHOLD * monet_memory);
+			hottop = 0;
+	}
 
 	if ( argclaim + retclaim > 0 ) {
 		if (memoryclaims == 0 || memorypool - memoryused > argclaim + retclaim -hotclaim){
+			hot = getHotClaim();
+			if ( memoryclaims && hotclaim == 0  && argclaim + retclaim > memorypool - memoryused - hot) {
+				/* don't start unless you can eat the hot potatoes first */
+#ifdef DEBUG_MEMORY_CLAIM
+				mnstr_printf(GDKerr,"#Delayed due to hot potatoes pool " LLFMT " used " LLFMT " hot " LLFMT "\n", memorypool, memoryused,hot);
+#endif
+				mal_unset_lock(mal_contextLock, "DFLOWdelay");
+				return -1;
+			}
 			memorypool -= (argclaim + retclaim);
 			memoryclaims ++;
 #ifdef DEBUG_MEMORY_CLAIM
@@ -879,8 +905,8 @@ q_create( int sz )
 		return NULL;
 	}
 
-	MT_init_lock(q->l, "q_create");
-	MT_init_sema(q->s, 0, "q_create");
+	MT_lock_init(&q->l, "q_create");
+	MT_sema_init(&q->s, 0, "q_create");
 	return q;
 }
 
@@ -897,22 +923,22 @@ q_destroy( queue *q )
 static void
 q_enqueue(queue *q, void *d)
 {
-	MT_set_lock(q->l, "q_enqueue");
+	MT_lock_set(&q->l, "q_enqueue");
 	if (q->last == q->size) {
 		/* enlarge buffer */
 		q->size <<= 1;
 		q->data = GDKrealloc(q->data, sizeof(void*)*q->size);
 	}
 	q->data[q->last++] = d;
-	MT_unset_lock(q->l, "q_enqueue");
-	MT_up_sema(q->s, "q_enqueue");
+	MT_lock_unset(&q->l, "q_enqueue");
+	MT_sema_up(&q->s, "q_enqueue");
 }
 
 static void
 q_requeue(queue *q, void *d)
 {
 	int i;
-	MT_set_lock(q->l, "q_requeue");
+	MT_lock_set(&q->l, "q_requeue");
 	if (q->last == q->size) {
 		/* enlarge buffer */
 		q->size <<= 1;
@@ -922,8 +948,8 @@ q_requeue(queue *q, void *d)
 		q->data[i]= q->data[i-1];
 	q->data[0] = d;
 	q->last++;
-	MT_unset_lock(q->l, "q_requeue");
-	MT_up_sema(q->s, "q_requeue");
+	MT_lock_unset(&q->l, "q_requeue");
+	MT_sema_up(&q->s, "q_requeue");
 }
 
 static void *
@@ -931,13 +957,13 @@ q_dequeue(queue *q)
 {
 	void *r = NULL;
 
-	MT_down_sema(q->s, "q_dequeue");
-	MT_set_lock(q->l, "q_dequeue");
+	MT_sema_down(&q->s, "q_dequeue");
+	MT_lock_set(&q->l, "q_dequeue");
 	assert(q->last > 0);
 	/* LIFO favors garbage collection*/
 	r = q->data[--q->last];
 
-	MT_unset_lock(q->l, "q_dequeue");
+	MT_lock_unset(&q->l, "q_dequeue");
 	return r;
 }
 
@@ -1419,7 +1445,7 @@ DFLOWscheduler( DataFlow flow )
 			@:DFLOWscheduler_body( DFLOWeligible(flow,fs,i,p,pc) && (*flow->stk->admit)(flow->cntxt, flow->mb, flow->stk, p) )@
 		}
 @= DFLOWscheduler_body
-		/* first try to find all instructions that use the released target */
+		/* first try to find an instructions that use the released target */
 		candidates = 0;
 		for(i = pc; i < limit ; i++)
 			if (fs[i].status == DFLOWpending ) {
@@ -1437,7 +1463,7 @@ DFLOWscheduler( DataFlow flow )
 					}
 			}
 		/* if all work done then inspect rest */
-		if (candidates == 0)
+		if (candidates < flow->nway)
 			for(i = pc ; i < limit && queued < flow->nway ; i++)
 				if (fs[i].status == DFLOWpending ) {
 					p = getInstrPtr(flow->mb, fs[i].pc);
@@ -2001,6 +2027,7 @@ are identified. In the post-execution phase they are removed.
 {
 	@:safeTarget(@1)@
 	/* improve performance with 20 ms/1M calls*/
+	assert(pci->fcn != NULL);
 	switch(pci->argc){
 	case 0 : ret = (str) (*pci->fcn)(); break;
 	case 1 : ret = (str) (*pci->fcn)(
@@ -2593,7 +2620,7 @@ It simply skips the barrier block upon return.
 @= timingHndlr
 if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
 	if (lock)
-		MT_set_lock(*lock, "timing");
+		MT_lock_set(&*lock, "timing");
 	mnstr_printf(cntxt->fdout,"= ");	/* single column rendering */
 	if( cntxt->flags & timerFlag){
 		char buf[32];
@@ -2647,7 +2674,7 @@ if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
 	if( cntxt->flags & timerFlag)
 		cntxt->timer = GDKusec();
 	if (lock)
-		MT_unset_lock(*lock, "timing");
+		MT_lock_unset(&*lock, "timing");
 }
 @-
 #endif

@@ -1,3 +1,73 @@
 # -*-shell-script-*-
 
-./buildtools/conf/Mdebootstrap
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2011 MonetDB B.V.
+# All Rights Reserved.
+
+if [ "$1" ] ; then
+	echo '
+This script ("./de-bootstrap") can be used to clean up the source tree, 
+i.e., to remove all files that were created by "./bootstrap".
+
+"./de-bootstrap" first lists all files that are to be removed and 
+asks the user for confirmation before actually removing the files.
+'
+	exit
+fi
+
+function RM () {
+	if [ "x$1" = 'x-f' ]; then
+		shift
+	fi
+
+	L=-d
+	R=''
+	G=''
+	if [ "x$1" = 'x-r' -o "x$1" = 'x-rf' -o "x$1" = 'x-fr' ]; then
+		shift
+		L=-R
+		R=-r
+		G='/$|'
+	fi
+
+	if [ $# -eq 0 ]; then
+		# nothing to do
+		return
+	fi
+
+	x=N
+	n=`ls -Ad $L $* 2>/dev/null | egrep -v "^total [0-9]*$|^$|^[^ ]*:$" | wc -l | sed 's|^ *||'` 
+	if [ $n != '0' ]; then
+		ls -lAFd $L $* 2>/dev/null | egrep -v "$G^total [0-9]*$|^$" 
+		echo -e "Delete these $n files/directories? (y/N) \c"
+		read x 
+		if [ "x$x" = 'xy' ]; then
+			( /bin/rm -f $R $*  &&  echo "$n files deleted." )  ||  echo "rm failed."
+		else
+			echo "rm cancelled, no files/directories deleted."
+		fi
+	fi
+}
+
+if [ ! -d .hg ] ; then
+	echo '
+This script ("./de-bootstrap") must be called in top-level directory of
+MonetDB'\''s Mercurial (HG) source clone.
+'
+	exit 1
+fi
+
+RM -rf `hg purge --all -p -I{\*\*Makefile.\*,\*\*.pyc,aclocal.m4,acout.in,autom4te.cache,buildtools/conf/{config.{guess,sub},install-sh,ltmain.sh,l[ti]\*.m4,missing,ylwrap},configure{,.ac},{doc,install}.lst,monetdb_config.h.in}`

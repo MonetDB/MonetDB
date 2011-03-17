@@ -50,4 +50,4 @@ if [ "${uname}" = "AIX" ] ; then
 fi
 export PATH LD_LIBRARY_PATH
 
-exec mserver5 --config="${builddir}/conf/monetdb5.conf" --set monet_mod_path="${MOD_PATH}" --dbfarm="${builddir}/dbfarm" ${1+"$@"}
+exec mserver5 --set monet_mod_path="${MOD_PATH}" --dbfarm="${builddir}/dbfarm" ${1+"$@"}

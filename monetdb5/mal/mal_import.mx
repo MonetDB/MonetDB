@@ -205,8 +205,10 @@ malInclude(Client c, str name, int listing)
 
 	if ((filename = malResolveFile(name)) != NULL) {
 		name = filename;
-		while ((p = strchr(filename, PATH_SEP)) != NULL) {
-			*p = '\0';
+		do {
+			p = strchr(filename, PATH_SEP);
+			if (p)
+				*p = '\0';
 			c->srcFile = filename;
 			c->yycur = 0;
 			c->bak = NULL;
@@ -215,16 +217,9 @@ malInclude(Client c, str name, int listing)
 				parseMAL(c, c->curprg);
 				bstream_destroy(c->fdin);
 			}
-			filename = p + 1;
-		}
-		c->srcFile = filename;
-		c->yycur = 0;
-		c->bak = NULL;
-		if ((s = malLoadScript(c, filename, &c->fdin)) == 0) {
-			cfdin = c->fdin;
-			parseMAL(c, c->curprg);
-			bstream_destroy(cfdin);
-		}
+			if (p)
+				filename = p + 1;
+		} while (p);
 		GDKfree(name);
 		c->fdin = NULL;
 	}

@@ -154,7 +154,9 @@ SQLConnect_(ODBCDbc *dbc,
 	}
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLConnect: DSN=%s UID=%s PWD=%s host=%s port=%d database=%s\n", dsn ? dsn : "(null)", uid, pwd, host, port, schema ? schema : "(null)");
+	ODBCLOG("SQLConnect: DSN=%s UID=%s PWD=%s host=%s port=%d database=%s\n",
+		dsn ? dsn : "(null)", uid, pwd, host, port,
+		schema ? schema : "(null)");
 #endif
 
 	/* connect to a server on host via port */

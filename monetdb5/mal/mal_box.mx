@@ -372,7 +372,7 @@ closeBox(str name, int flag)
 
 	if ((box = findBox(name))) {
 		saveBox(box, flag);
-		MT_destroy_lock(box->lock);
+		MT_lock_destroy(&box->lock);
 		return 0;
 	}
 	return -1;
@@ -394,7 +394,7 @@ destroyBox(str name)
 			boxfile = boxFileName(malbox[i], 0);
 			unlink(boxfile);
 			GDKfree(boxfile);
-			MT_destroy_lock(malbox[i]->lock);
+			MT_lock_destroy(&malbox[i]->lock);
 		} else
 			malbox[i] = malbox[j++];
 	}

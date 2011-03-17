@@ -1,3 +1,0 @@
-module("bitset");
-test_bitset();
-quit();

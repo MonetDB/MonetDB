@@ -1,5 +1,8 @@
 import os, sys
-from MonetDBtesting import process
+try:
+    from MonetDBtesting import process
+except ImportError:
+    import process
 
 def client(infile, user = 'monetdb', passwd = 'monetdb'):
     clt = process.client('sql', user=user, passwd=passwd, stdin=open(infile),

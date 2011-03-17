@@ -1278,6 +1278,12 @@ sqltypeinit(void)
 		sql_create_aggr("prod", "aggr", "product", *t, *t);
 		sql_create_func("mod", "calc", "fmod", *t, *t, *t, SCALE_FIX);
 	}
+	/*
+	sql_create_aggr("avg", "aggr", "avg", BTE, DBL);
+	sql_create_aggr("avg", "aggr", "avg", SHT, DBL);
+	sql_create_aggr("avg", "aggr", "avg", INT, DBL);
+	sql_create_aggr("avg", "aggr", "avg", LNG, DBL);
+	*/
 	sql_create_aggr("avg", "aggr", "avg", DBL, DBL);
 
 	sql_create_aggr("count_no_nil", "aggr", "count_no_nil", NULL, WRD);

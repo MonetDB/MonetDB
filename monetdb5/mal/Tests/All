@@ -33,7 +33,7 @@ tst033
 tst034
 tst035
 tst036
-HAVE_PCRE?tst037
+tst037
 tst038
 tst039
 tst040
@@ -45,7 +45,7 @@ tst045
 tst046
 tst047
 tst048
-HAVE_PCRE?tst049
+tst049
 tst050
 tst051
 tst052
@@ -147,7 +147,7 @@ tst274
 tst277
 tst280
 tst292
-HAVE_PCRE?tst285
+tst285
 tst300
 tst3000
 tst301
@@ -161,7 +161,7 @@ tst3050
 tst3060
 tst307
 tst308
-#HAVE_PCRE?tst350
+#tst350
 #tst380
 tst400
 tst401
@@ -220,7 +220,7 @@ tst908
 tst911
 tst912
 tst913
-HAVE_PCRE?tst960
+tst960
 
 #tests for garbage collection of strings
 tst920

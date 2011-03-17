@@ -113,10 +113,6 @@ main(int argc, char **av)
 	if (!(setlen = mo_builtin_settings(&set)))
 		usage(prog);
 
-	/* needed to prevent the MonetDB config file from being used */
-	setlen = mo_add_option(&set, setlen, opt_config, "prefix", PREFIX);
-	setlen = mo_add_option(&set, setlen, opt_config, "config", MONETDB5_CONFFILE);
-
 	for (;;) {
 		int option_index = 0;
 

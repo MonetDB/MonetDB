@@ -59,6 +59,13 @@ function constants.release(v:any_1):void;
     BoxException := "releasing a constant is forbidden";
     raise BoxException;
 end release;
+!SyntaxException:parseError:address space_deposit;
+!SyntaxException:parseError:                    ^<address> not found
+!SyntaxException:parseError:
+!<identifier> expected
+function constants.deposit(v:any_1,name:str):void;
+    ;
+end deposit;
 
 # 08:01:25 >  
 # 08:01:25 >  Done.

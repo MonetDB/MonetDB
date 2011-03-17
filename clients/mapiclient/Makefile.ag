@@ -25,9 +25,9 @@ lib_mcutil = {
 
 bin_mclient = {
 	SOURCES = mclient.c ReadlineTools.c
-	LIBS = libmcutil ../mapilib/libmapi $(READLINE_LIBS) \
+	LIBS = libmcutil ../mapilib/libmapi \
 		../../common/stream/libstream \
-		../../common/options/libmoptions \
+		$(READLINE_LIBS) \
 		$(curl_LIBS) $(LTLIBICONV)
 }
 
@@ -35,7 +35,6 @@ bin_msqldump = {
 	SOURCES = msqldump.c
 	LIBS = libmcutil ../mapilib/libmapi \
 		../../common/stream/libstream \
-		../../common/options/libmoptions \
 		$(curl_LIBS)
 }
 
@@ -43,7 +42,6 @@ bin_stethoscope = {
 	SOURCES = stethoscope.c
 	LIBS = libmcutil ../mapilib/libmapi \
 		../../common/stream/libstream \
-		../../common/options/libmoptions \
 		$(curl_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS)
 }
 

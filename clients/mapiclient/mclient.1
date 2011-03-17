@@ -3,7 +3,6 @@
 mclient \- the MonetDB command-line tool
 .SH SYNOPSIS
 .B mclient
-.BI \-\-language= language
 [
 .I options
 ] [
@@ -18,7 +17,7 @@ main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
 accelerators, SQL- and XML- frontends.
 .PP
-.I Mclient
+.I mclient
 is the command-line interface to the MonetDB server.
 .PP
 If the
@@ -86,33 +85,21 @@ To disable reading the
 file, set the variable
 .B DOTMONETDBFILE
 to the empty string in the environment.
-.PP
-When the query language is XQuery, multiple queries are separated by
-the sequence
-.B <>
-(less than and greater than characters)
-on a line by itself.
-This works both in interactive mode and when reading queries from a
-file.  When in interactive mode, queries can also be separated by an
-end-of-file.  Use a second end-of-file to exit
-.IR mclient .
 .SH OPTIONS
 .SS
 General Options
 .TP
 \fB\-\-language=\fP\fIlanguage\fP (\fB\-l\fP \fIlanguage\fP)
 Specify the query language.  The following languages are recognized:
-.BR mil ,
-.BR mal ,
-.BR sql ,
+.B mal
 and
-.BR xquery .
+.BR sql .
 A unique prefix suffices.
-The
+When the
 .B \-\-language
-option is required unless the
-.B \-\-help
-option is given.
+option is omitted, the default of
+.B sql
+is assumed.
 .TP
 \fB\-\-help\fP (\fB\-?\fP)
 Print usage information and exit.  If preceded by the
@@ -142,11 +129,8 @@ ask for a user name.  Note that
 must follow immediately after the option.
 .TP
 \fB\-\-format=\fP\fIformat\fP (\fB\-f\fP \fIformat\fP)
-Specify the output format.  For XQuery, the possible values include
-.BR dm ,
-.BR xml ,
-and a number of variations.
-For the other (table-oriented) languages, the possible values are
+Specify the output format.
+The possible values are
 .BR sql ,
 .BR csv ,
 .BR tab ,
@@ -179,9 +163,6 @@ Execute the specified query.  The query is run before any queries from
 files specified on the command line are run, and before the
 interactive session is started (if the \fB\-\-interactive\fP option is
 given).
-.TP
-\fB\-\-time\fP (\fB\-t\fP)
-Print timing information to standard error.
 .TP
 \fB\-\-Xdebug\fP (\fB\-X\fP)
 Trace network interaction between
@@ -224,24 +205,6 @@ Use INSERT INTO statements instead of COPY INTO + CSV values when
 dumping the data of a table.  This option can be used when trying to
 load data from MonetDB into another database, or when e.g. JDBC
 applications are used to reload the dump.
-.SS
-XQuery Options
-.TP
-\fB\-\-collection=\fP\fIcolname\fP (\fB\-C\fP \fIcolname\fP)
-Specify the collection name for the XML document shredded with the
-.B \-\-input
-option.
-.TP
-\fB\-\-input=\fP\fIdocname\fP (\fB\-I\fP \fIdocname\fP)
-The standard input is an XML document which is shredded (added to the
-database).  The name of the document is specified using this option.
-The collection name for the document defaults to the name of the
-document but can be specified explicitly with the
-.B \-\-collection
-option.
-Shredding is done before any queries specified with the
-.B \-\-statement
-option or in files specified on the command line are executed.
 .SH BACKSLASH COMMANDS
 .SS
 General Commands
@@ -278,9 +241,6 @@ Show the
 .IR readline (3)
 history.
 .TP
-\fB\et\fP
-Toggle the timer.
-.TP
 \fB\eL\fP \fIfile\fP
 Log client/server interaction in the given
 .IR file .
@@ -293,8 +253,6 @@ Trace what
 .I mclient
 is doing.
 This is mostly for debugging purposes.
-.SS
-SQL, MIL, and MAL Commands
 .TP
 \fB\ee\fP
 Echo the query in SQL formatting mode.
@@ -382,21 +340,5 @@ Enable auto commit mode.
 .TP
 \fB\ea\fP
 Disable auto commit mode.
-.SS
-XQuery Commands
-.TP
-\fB\eG\fP
-Switch to the Algebra front-end.
-.TP
-\fB\eg\fP
-Switch to the old front-end.
-.TP
-\fB\ef\fP \fIformat\fP
-Use the specified
-.I format
-mode to format the output.
-Possible modes are
-.B dm
-and \fBxml\fP[\fB\-noheader\fP][\fB\-typed\fP|\fB\-noroot\fP|\fB\-root\-FOOBAR\fP].
 .SH SEE ALSO
 .IR msqldump (1)

@@ -92,57 +92,16 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
-#include <assert.h>
 
 #ifdef NATIVE_WIN32
 # define strdup _strdup
 #endif
 
-#ifndef HAVE_SSIZE_T
-# if SIZEOF_SIZE_T == SIZEOF_INT
-typedef int ssize_t;
-
-#  define HAVE_SSIZE_T 1
-# else
-#  if SIZEOF_SIZE_T == SIZEOF_LONG
-typedef long ssize_t;
-
-#   define HAVE_SSIZE_T 1
-#  else
-#   ifdef _WIN64
-typedef __int64 ssize_t;
-
-#    define HAVE_SSIZE_T 1
-#   endif
-#  endif
-# endif
-#endif
-
-/* define printf format for printing pointer values */
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901
-#define PTRFMT		"%p"
-#define PTRFMTCAST		/* no cast needed */
-#elif defined(_MSC_VER)
-/* On Windows, always use 64 bit integers (even on 32-bit architectures)
- * to not get the warning C4311: 'type cast' : pointer truncation from
- * 'void *' to 'unsigned int' */
-#define PTRFMT		"%I64x"
-#define PTRFMTCAST	(unsigned __int64)
-#elif SIZEOF_VOID_P == SIZEOF_INT
-#define PTRFMT		"%x"
-#define PTRFMTCAST	(unsigned int)
-#elif SIZEOF_VOID_P == SIZEOF_LONG
-#define PTRFMT		"%lx"
-#define PTRFMTCAST	(unsigned long)
-#elif SIZEOF_VOID_P == SIZEOF_LONG_LONG
-#define PTRFMT		"%llx"
-#define PTRFMTCAST	(unsigned long long)
-#else
-#error no definition for PTRFMT
-#endif
 #ifdef SQLLEN			/* it's a define for 32, a typedef for 64 */
 #define LENFMT		"%d"
 #define ULENFMT		"%u"
+#define LENCAST     (int)
+#define ULENCAST    (unsigned int)
 #else
 #ifdef _MSC_VER
 #define LENFMT		"%I64d"
@@ -151,6 +110,8 @@ typedef __int64 ssize_t;
 #define LENFMT		"%ld"
 #define ULENFMT		"%lu"
 #endif
+#define LENCAST     (long)
+#define ULENCAST    (unsigned long)
 #endif
 
 /* these functions are called from within the library */

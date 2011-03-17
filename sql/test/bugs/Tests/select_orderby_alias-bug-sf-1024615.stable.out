@@ -21,22 +21,44 @@ Ready.
 
 Over..
 
-# 19:43:02 >  
-# 19:43:02 >  mclient -lsql -ftest -i -e --host=alf --port=32764 
-# 19:43:02 >  
+# 15:06:10 >  
+# 15:06:10 >  mclient -lsql -ftest -i -e --host=alf --port=39294 
+# 15:06:10 >  
 
-#SELECT * FROM "sys"."keys" AS "keys", "sys"."keycolumns" AS
-% sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keycolumns,	sys.keycolumns,	sys.keycolumns,	sys.keycolumns,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas # table_name
-% id,	table_id,	type,	name,	rkey,	action,	id,	column,	trunc,	nr,	id,	name,	schema_id,	query,	type,	system,	commit_action,	readonly,	temporary,	id,	name,	authorization,	owner # name
-% int,	int,	int,	varchar,	int,	int,	int,	varchar,	int,	int,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	boolean,	tinyint,	int,	varchar,	int,	int # type
-% 1,	1,	1,	0,	1,	1,	1,	0,	1,	1,	1,	0,	1,	0,	1,	5,	1,	5,	1,	1,	0,	1,	1 # length
-#SELECT * FROM "sys"."keys" AS "keys", "sys"."keycolumns" AS
-% sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keycolumns,	sys.keycolumns,	sys.keycolumns,	sys.keycolumns,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas # table_name
-% id,	table_id,	type,	name,	rkey,	action,	id,	column,	trunc,	nr,	id,	name,	schema_id,	query,	type,	system,	commit_action,	readonly,	temporary,	id,	name,	authorization,	owner # name
-% int,	int,	int,	varchar,	int,	int,	int,	varchar,	int,	int,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	boolean,	tinyint,	int,	varchar,	int,	int # type
-% 1,	1,	1,	0,	1,	1,	1,	0,	1,	1,	1,	0,	1,	0,	1,	5,	1,	5,	1,	1,	0,	1,	1 # length
+#SELECT * FROM "sys"."keys" AS "keys", "sys"."objects" AS
+#"objects", "sys"."tables" AS "tables",
+#"sys"."schemas" AS "schemas" WHERE "keys"."id" =
+#"objects"."id" AND "keys"."table_id" = "tables"."id"
+#AND "tables"."schema_id" = "schemas"."id" AND
+#"keys"."type" = 0 AND "schemas"."name" LIKE 'sys' AND
+#"tables"."name" LIKE 'x';
+% sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.objects,	sys.objects,	sys.objects,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas # table_name
+% id,	table_id,	type,	name,	rkey,	action,	id,	name,	nr,	id,	name,	schema_id,	query,	type,	system,	commit_action,	readonly,	temporary,	id,	name,	authorization,	owner # name
+% int,	int,	int,	varchar,	int,	int,	int,	varchar,	int,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	boolean,	tinyint,	int,	varchar,	int,	int # type
+% 1,	1,	1,	0,	1,	1,	1,	0,	1,	1,	0,	1,	0,	1,	5,	1,	5,	1,	1,	0,	1,	1 # length
+#SELECT * FROM "sys"."keys" AS "keys", "sys"."objects" AS
+#"objects", "sys"."tables" AS "tables",
+#"sys"."schemas" AS "schemas" WHERE "keys"."id" =
+#"objects"."id" AND "keys"."table_id" = "tables"."id"
+#AND "tables"."schema_id" = "schemas"."id" AND
+#"keys"."type" = 0 AND "schemas"."name" LIKE 'sys' AND
+#"tables"."name" LIKE 'x' ORDER BY "objects"."name";
+% sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.objects,	sys.objects,	sys.objects,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas # table_name
+% id,	table_id,	type,	name,	rkey,	action,	id,	name,	nr,	id,	name,	schema_id,	query,	type,	system,	commit_action,	readonly,	temporary,	id,	name,	authorization,	owner # name
+% int,	int,	int,	varchar,	int,	int,	int,	varchar,	int,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	boolean,	tinyint,	int,	varchar,	int,	int # type
+% 1,	1,	1,	0,	1,	1,	1,	0,	1,	1,	0,	1,	0,	1,	5,	1,	5,	1,	1,	0,	1,	1 # length
 #SELECT cast(null AS varchar(1)) AS "TABLE_CAT",
-% .,	sys.schemas,	.tables,	sys.keycolumns,	sys.keys,	sys.keys # table_name
+#"schemas"."name" AS "TABLE_SCHEM", "tables"."name" AS
+#"TABLE_NAME", "objects"."name" AS "COLUMN_NAME",
+#"keys"."type" AS "KEY_SEQ", "keys"."name" AS "PK_NAME"
+#FROM "sys"."keys" AS "keys", "sys"."objects" AS
+#"objects", "sys"."tables" AS "tables",
+#"sys"."schemas" AS "schemas" WHERE "keys"."id" =
+#"objects"."id" AND "keys"."table_id" = "tables"."id"
+#AND "tables"."schema_id" = "schemas"."id" AND
+#"keys"."type" = 0 AND "schemas"."name" LIKE 'sys' AND
+#"tables"."name" L
+% .,	sys.schemas,	.tables,	sys.objects,	sys.keys,	sys.keys # table_name
 % TABLE_CAT,	TABLE_SCHEM,	TABLE_NAME,	COLUMN_NAME,	KEY_SEQ,	PK_NAME # name
 % varchar,	varchar,	varchar,	varchar,	int,	varchar # type
 % 0,	0,	0,	0,	1,	0 # length
