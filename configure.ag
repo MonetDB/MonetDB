@@ -1007,7 +1007,7 @@ if test "x$enable_optim" = xyes; then
                       dnl  (Mserver produces tons of incorrect BATpropcheck warnings);
                       dnl  hence, we omit -funroll-all-loops, here.
                       case "$gcc_ver" in
-                      4.*) CFLAGS="$CFLAGS -ftree-vectorize -march=atom";;
+                      4.*) CFLAGS="$CFLAGS -ftree-vectorize";;
                            dnl  "-ftree-vectorize" is only available with newer versions of gcc, only;
                            dnl  did not check the exact version, but 4.1 has it, while 3.4.5 does not.
                       esac
@@ -1015,7 +1015,7 @@ if test "x$enable_optim" = xyes; then
       x86_64-*-*|i*86-*-*)
                       CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions -malign-loops=4 -malign-jumps=4 -malign-functions=4 -fexpensive-optimizations -funroll-all-loops  -funroll-loops -frerun-cse-after-loop -frerun-loop-opt"
                       case "$gcc_ver" in
-                      4.*) CFLAGS="$CFLAGS -ftree-vectorize -march=atom";;
+                      4.*) CFLAGS="$CFLAGS -ftree-vectorize";;
                            dnl  "-ftree-vectorize" is only available with newer versions of gcc, only;
                            dnl  did not check the exact version, but 4.1 has it, while 3.4.5 does not.
                       esac
