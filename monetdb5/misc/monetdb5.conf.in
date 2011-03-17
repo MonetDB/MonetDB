@@ -26,11 +26,6 @@
 # but such client side configurations are better packed in their own
 # structure.
 
-# FIXME:  remove this notice for the installed monetdb5.conf  #
-# ----------------------------------------------------------- #
-# Please keep the comments below aligned with the defaults in #
-# common/options/monet_options.mx                             #
-# ----------------------------------------------------------- #
 
 # Absolute path where MonetDB is installed
 prefix=@Xprefix@

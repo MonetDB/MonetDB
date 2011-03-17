@@ -22,10 +22,6 @@
 # parameters.  It can reside in either the local directory where
 # Mserver is called, or the home directory of the MonetDB user.
 
-# ----------------------------------------------------------- #
-# Please keep the comments below aligned with the defaults in #
-# common/options/monet_options.mx                             #
-# ----------------------------------------------------------- #
 
 # Where MonetDB is installed
 prefix=@Xprefix@
