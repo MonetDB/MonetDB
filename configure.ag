@@ -3226,6 +3226,8 @@ for comp in \
 	monetdb5 \
 	sql \
 	geom \
+	fits \
+	rdf \
 	unixodbc \
 	java \
 	jdbc \
