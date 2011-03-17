@@ -194,7 +194,7 @@ SQLprelude(void)
 	ms->optimizer = "MALoptimizer";
 	/* ms->tactics = .. */
 	ms->engine = "MALengine";
-	fprintf(stdout, "# MonetDB/SQL module v" VERSION " loaded\n");
+	fprintf(stdout, "# MonetDB/SQL module loaded\n");
 	fflush(stdout); /* make merovingian see this *now* */
 	tmp = SQLinit();
 	if (tmp != MAL_SUCCEED)
