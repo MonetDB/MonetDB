@@ -27,7 +27,7 @@ Rights Reserved.
     <body>
 <a href="http://monetdb.cwi.nl" title="MonetDB is a high-performance open-source SQL and XQuery database system, developed by CWI" target="_blank"><img style="float:left" src="monetdb_med_abstract.png" border="0"/></a>
 <a href="http://www.cwi.nl" title="CWI is the national center for Computer Science and Mathematics Research" target="_blank"><img style="float:right" src="cwi_logo.png" border="0" height="50"/></a>
-<p style="float:right">MonetDB/XQuery 11.1.0, based on the <a href="http://www.pathfinder-xquery.org" title="Pathfinder is a compiler that translates and optimizes XQuery to Relational Algebra, making it possible to efficiently execute XML queries on top of a relational DBMS" target="_blank">pathfinder</a> compiler
+<p style="float:right">MonetDB/XQuery 11.1.1, based on the <a href="http://www.pathfinder-xquery.org" title="Pathfinder is a compiler that translates and optimizes XQuery to Relational Algebra, making it possible to efficiently execute XML queries on top of a relational DBMS" target="_blank">pathfinder</a> compiler
 <!--                                  ^^^^^^                                         -->
 <!-- Maintained via vertoo. Please don't modify by hand!                             -->
 <!-- Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance. -->
