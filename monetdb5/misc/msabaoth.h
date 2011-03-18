@@ -56,20 +56,30 @@ typedef struct Ssabuplog {
 	double crashavg30; /* average of crashes in the last 30 start attempts */
 } sabuplog;
 
-void msab_init(char *dbfarm, char *dbname);
-char *msab_getDBfarm(char **ret);
-char *msab_getDBname(char **ret);
-char *msab_marchScenario(const char *lang);
-char *msab_retreatScenario(const char *lang);
-char *msab_marchConnection(const char *host, const int port);
-char *msab_wildRetreat(void);
-char *msab_registerStart(void);
-char *msab_registerStop(void);
-char *msab_getMyStatus(sabdb** ret);
-char *msab_getStatus(sabdb** ret, char *dbname);
-char *msab_freeStatus(sabdb** ret);
-char *msab_getUplogInfo(sabuplog *ret, const sabdb *db);
-char *msab_serialise(char **ret, const sabdb *db);
-char *msab_deserialise(sabdb **ret, char *sabdb);
+#ifdef WIN32
+#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5) && !defined(LIBMSABAOTH)
+#define msab_export extern __declspec(dllimport)
+#else
+#define msab_export extern __declspec(dllexport)
+#endif
+#else
+#define msab_export extern
+#endif
+
+msab_export void msab_init(char *dbfarm, char *dbname);
+msab_export char *msab_getDBfarm(char **ret);
+msab_export char *msab_getDBname(char **ret);
+msab_export char *msab_marchScenario(const char *lang);
+msab_export char *msab_retreatScenario(const char *lang);
+msab_export char *msab_marchConnection(const char *host, const int port);
+msab_export char *msab_wildRetreat(void);
+msab_export char *msab_registerStart(void);
+msab_export char *msab_registerStop(void);
+msab_export char *msab_getMyStatus(sabdb** ret);
+msab_export char *msab_getStatus(sabdb** ret, char *dbname);
+msab_export char *msab_freeStatus(sabdb** ret);
+msab_export char *msab_getUplogInfo(sabuplog *ret, const sabdb *db);
+msab_export char *msab_serialise(char **ret, const sabdb *db);
+msab_export char *msab_deserialise(sabdb **ret, char *sabdb);
 
 #endif
