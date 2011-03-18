@@ -27,7 +27,7 @@ AC_CONFIG_MACRO_DIR([buildtools/conf])
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
 dnl use tar-ustar since we have long (longer than 99 characters) file names
-AM_INIT_AUTOMAKE([tar-ustar])
+AM_INIT_AUTOMAKE([tar-ustar no-dist-gzip dist-bzip2])
 AC_CONFIG_SRCDIR([gdk/gdk.mx])
 AM_CONFIG_HEADER([monetdb_config.h])
 AC_SUBST([CONFIG_H], [monetdb_config.h])
