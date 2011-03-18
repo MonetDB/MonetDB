@@ -318,7 +318,7 @@ extern char *sbrk(int);
 #ifdef WIN32
 int GDK_mem_pagebits = 16;	/* on windows, the mmap addresses can be set by the 64KB */
 #else
-int GDK_mem_pagebits = 14;	/* on linux, 4KB pages can be addressed */
+int GDK_mem_pagebits = 14;	/* on linux, 4KB pages can be addressed (but we use 16KB) */
 #endif
 
 #ifndef MAP_NORESERVE
