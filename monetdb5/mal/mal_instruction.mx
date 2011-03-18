@@ -20,274 +20,7 @@ All Rights Reserved.
 @a M. Kersten
 @v 1.0
 @* MonetDB Assembly Language (MAL)
-The primary textual interface to the Monetdb kernel
-is a simple, assembly-like language, called MAL. 
-The language reflects the virtual machine architecture around the
-kernel libraries and has been designed for speed of parsing,
-ease of analysis, and ease of target compilation by query compilers.
-The language is not meant as a primary programming language,
-or scripting language. Such use is even discouraged.
 
-Furthermore, a MAL program is considered a specification
-of intended computation and data flow behavior. It should be
-understood that its actual evaluation depends on the execution
-paradigm choosen in a scenario. The program blocks can both
-be interpreted as ordered sequences of assembler instructions,
-or as a representation of a data-flow graph that should be resolved
-in a dataflow driven manner.
-The language syntax uses a functional style definition of actions and
-mark those that affect the flow explicitly.
-Flow of control keywords identify a point to chance
-the interpretation paradigm and denote a synchronization point.
-
-MAL is the target language for query compilers, such as the
-SQL and XQuery front-ends. 
-Even simple SQL queries generate a long sequence of MAL instructions.
-They represent both the administrative actions to ensure binding and transaction
-control, the flow dependencies to produce the query result,
-and the steps needed to prepare the result set for delivery to
-the front-end.
-
-Only when the algebraic structure is too limited (e.g. updates),
-or the database back-end lacks feasible builtin bulk operators,
-one has to rely on more detailed flow of control primitives.
-But even in that case, the basic blocks to be processed
-by a MAL back-end are considered large, e.g. tens of simple
-bulk assignment instructions.
-
-The remainder of this chapter provide a concise overview of the
-language features and illustrative examples.
-@menu
-* MAL Literals::
-* MAL Variables::
-* MAL Instructions::
-* MAL Flow-of-control::
-* MAL Functions::
-* MAL Factories::
-* MAL Type System::
-* Boxed variables::
-* Property Management::
-@end menu
-
-
-@node MAL Literals, MAL Variables, MAL Reference,MAL Reference
-@+ MAL Literals 
-Literals in MAL follow the lexical conventions of the programming
-language C.
-A default type is attached, e.g. the literal 1 is typed
-as an @sc{int} value.
-Likewise, the literal 3.14 is typed @sc{flt} rather than @sc{dbl}.
-
-A literal can be coerced to another type by tagging it with a type
-classifier, provided a coercion operation is defined.
-For example, @sc{1:lng} marks the literal as of type @sc{lng}.
-and @sc{"1999-12-10":date} creates a @sc{date} literal.
-
-MonetDB comes with the hardwired types @sc{bit, bte, chr, wrd, sht, int, lng, oid, flt, 
-dbl, str} and @sc{bat}, the bat identifier.
-The kernel code has been optimized to deal with these types efficiently,
-i.e. without unnecessary function call overheads.
-In addition,  the system supports
-temporal types @sc{date, daytime, time, timestamp, timezone},
-extensions to deal with IPv4 addresses and URLs using @sc{inet, url},
-and several types to interact more closely with the 
-kernel @sc{lock, semphore}.
-This list can be extended with user defined types.
-
-@node MAL Variables, MAL Instructions, MAL Literals, MAL Reference
-@+ MAL Variables
-Variables are denoted by identifers and
-implicitly defined upon first use. They take
-on a type through a type classifier or inherit it from
-the context in which they are first used, see @ref{MAL Type System}. 
-
-Variables are organized into two classes, starting with and without
-an underscore. The latter are reserved as MAL parser tempoaries, 
-whose name aligns with an entry in the symbol table.
-In general they can not be used in MAL programs, but they may become
-visible in MAL program listings or during debugging.
-
-@node MAL Instructions, MAL Flow-of-control, MAL Variables, MAL Reference
-@+ Instructions
-A MAL instruction has purposely a simple format. 
-It is syntactically represented by an assignment, where
-an expression (function call) delivers results to multiple target variables. 
-The assignment patterns recognized are illustrated below.
-@example
-(t1,..,t32) := module.fcn(a1,..,a32);
-t1 := module.fcn(a1,..,a32);
-t1 := v1 operator v2;
-t1 := literal;
-(t1,..,tn) := (a1,..,an);
-@end example
-
-Operators are grouped into user defined modules.
-Ommission of the module name is interpreter as the @sc{user} module.
-
-Simple binary arithmetic operations are merely provided as a short-hand,
-e.g. the expression @sc{t:=2+2} is converted directly 
-into @sc{t:= calc.+(2,2)}.
-
-Target variables are optional. The compiler introduces temporary 
-variables to hold the result of the expression upon need. 
-They won't show up when you list the MAL program unless it
-is used elsewhere.
-
-For parsing simplicity, each instruction fits on a single line.
-Comments start with a sharp '#' and continues to the end of the line.
-They are retained in the internal code representation to ease
-debugging of compiler generated MAL programs.
-
-The data structure to represent a MAL block is kept simple.
-It contains a sequence of MAL statements and a symbol table.
-The MAL instruction record is a code byte string overlaid with the
-instruction pattern, which contains references into the symbol tables
-and administrative data for the interpreter. 
-
-This method leads to a large allocated block, which can be easily freed.
-Variable- and statement- block together describe the
-static part of a MAL procedure. It carries enough 
-information to produce a listing and to aid symbolic debugging.
-
-@node MAL Flow-of-control, MAL Functions, MAL Instructions, MAL Reference
-@+ MAL Flow-of-control
-The flow of control within a MAL program block can be changed by
-tagging a statement with either @sc{return}, @sc{yield},
-@sc{barrier}, @sc{catch}, @sc{leave}, @sc{redo}, or @sc{exit}.
-
-The flow modifiers @sc{return} and @sc{yield} mark the end
-of a call and return one or more results to the calling environment.
-The @sc{return} and @sc{yield} are followed by a target list
-or an assignment, which is executed first.
-
-The @sc{barrier} (@sc{catch}) and @sc{exit} pair mark a
-guarded statement block. They may be nested to form a proper
-hierarchy identified by their primary target variable,
-also called the control variable.
-
-The @sc{leave} and @sc{redo} are conditional flow modifiers.
-The control variable is used after the assignment statement has
-been evaluated to decide on the flow-of-control action to be taken.
-Built-in controls exists for booleans and numeric values.
-The barrier block is opened when the control variable holds
-true, when its numeric value >= 0, or when it is a non-empty
-string. The @sc{nil} value blocks entry in all cases.
-
-Once inside the barrier you have an option to prematurely
-@sc{leave} it at the exit statement
-or to @sc{redo} interpretation just after the corresponding
-barrier statement. Much like 'break' and 'continue' statements
-in the programming language C.
-The action is taken when the condition is met.
-
-The @sc{exit} marks the exit for a block. Its optional assignment
-can be used to re-initialize the barrier control variables
-or wrap-up any related administration.
-
-The barrier blocks can be properly nested to form
-a hierarchy of basic blocks.
-The control flow within and between blocks is
-simple enough to deal with during an optimizer stage.
-The @sc{redo} and @sc{leave} statements mark
-the partial end of a block. Statements within these
-blocks can be re-arranged according to the data-flow
-dependencies. The order of partial blocks can not
-be changed that easily. It depends on the mutual
-exclusion of the data flows within each partial block.
-
-Common guarded blocks in imperative languages are
-the for-loop and if-then-else constructs.
-They can be simulated as follows.
-
-Consider the statement @sc{for(i=1;i<10;i++) print(i)}.
-The (optimized) MAL block to implement this becomes:
-@example
-     i:= 1;
-barrier B:= i<10;
-     io.print(i);
-     i:= i+1;
-redo B:= i<10;
-exit B;
-@end example
-
-Translation of the statement @sc{if(i<1) print("ok"); else print("wrong");}
-becomes:
-@example
-    i:=1;
-barrier ifpart:= i<1;
-    io.print("ok");
-exit ifpart;
-barrier elsepart:= i>=1;
-    io.print("wrong");
-exit elsepart;
-@end example
-
-Note that both guarded blocks can be interchanged without
-affecting the outcome. Moreover, neither block would
-have been entered if the variable happens to be assigned @sc{nil}.
-
-The primitives are sufficient to model a wide variety of iterators,
-whose pattern look like:
-@example
-barrier i:= M.newIterator(T);
-    elm:= M.getElement(T,i);
-    ...
-    leave i:= M.noMoreElements(T);
-    ...
-    redo i:= M.hasMoreElements(T);
-exit i:= M.exitIterator(T);
-@end example
-The semantics obeyed by the iterator implementations is as follows.
-The redo expression updates the target variable @emph{ i} and control
-proceeds at the first statement after the barrier when the
-barrier is opened by @emph{ i}. If the barrier could not be
-re-opened, execution proceeds with the first statement after
-the redo.
-Likewise, the leave control statement skips to the exit
-when the control variable @emph{ i} shows a closed barrier block.
-Otherwise, it continues with the next instruction.
-Note, in both failed cases the control variable is
-possibly changed.
-
-A recurring situation is to iterate over the elements in
-a BAT. This is supported by an iterator implementation for BATs
-as follows:
-@example
-barrier (idx,hd,tl):= bat.newIterator(B);
-    ...
-    redo (idx,hd,tl):= bat.hasMoreElements(B);
-exit (ids,hd,tl);
-@end example
-Where idx is an integer to denote the row in the BAT,
-hd and tl denote values of the current element.
-@{
-@+ The MAL instruction records
-The data structure to represent a MAL block is kept simple.
-It carries a sequence of MAL statements and a variable table.
-Each instruction contains references to elements in the
-symbol table.
-
-The MAL instruction is a code byte string overlaid with the
-instruction pattern. This method leads to a large
-allocated block, which can be easily freed, and
-pattern makes it possible to accommodate a variable argument list.
-
-Variable- and stmt- block together describe the
-static part of a MAL procedure. It carries carry enough
-information to produce
-a listing and to aid symbolic debugging.
-
-Ideally, the listing of a MAL program is identical to the source.
-This costs some space, but will improve readability and permits
-instruction sequences generated internally also to be kept
-around as ASCII text for later inclusion.
-
-WARNING. The way we lay out the instructions means that
-you can prepare only one instruction at a time, because you don't
-know how many arguments may be needed upfront.
-[TODO, rather then breaking the original input into pieces,
-it would be worthwhile to keep track of location of the
-instruction in the source.]
 @h
 #ifndef _MAL_INSTR_H
 #define _MAL_INSTR_H
@@ -363,23 +96,19 @@ typedef struct {
 	int jump;		/* controlflow program counter */
 	MALfcn fcn;		/* resolved function address */
 	struct MALBLK *blk;	/* resolved MAL function address */
-@-
-The MAL instruction representation. The strings should not be garbage collected
-upon destruction of the definition. They are part of the global namespace.
-@h
 	str modname;		/* module context */
 	str fcnname;		/* function name */
 	int argc, retc, maxarg;	/* total and result argument count */
 	int argv[];		/* at least a few entries */
 } *InstrPtr, InstrRecord;
 
-@-
+/*
 For performance analysis we keep track of the number of calls
 and the total time spent while executing the instruction.
 (See mal_profiler.mx)
 The performance structures are separately administered, because
 they are only used in limited curcumstances.
-@h
+*/
 typedef struct PERF {
 #ifdef HAVE_TIMES
 	struct tms timer;	/* timing information */
@@ -421,11 +150,11 @@ typedef struct MALBLK {
 	sht trap;			/* call debugger when called */
 } *MalBlkPtr, MalBlkRecord;
 
-@-
+/*
 Allocation of space assumes a rather exotic number of arguments.
 Access to module and function name are cast in macros to prepare
 for separate name space management.
-@h
+*/
 #define getModuleId(P)     (P)->modname
 #define setModuleId(P,S)    (P)->modname= S
 #define setModuleScope(P,S) {(P)->modname= (S)==NULL?NULL: (S)->name;}
@@ -698,20 +427,20 @@ newMalBlk(int maxvars, int maxstmts)
 	return mb;
 }
 
-@-
+/*
 The resetMalBlk code removes instructions, but without freeing
 the space. This way the structure is prepared for re-use
-@c
+*/
 void
 resetMalBlk(MalBlkPtr mb, int stop)
 {
 	mb->stop = stop;
 }
 
-@-
+/*
 The freeMalBlk code is quite defensive. It is used to localize an
 illegal re-use of a MAL blk.
-@c
+*/
 void
 freeMalBlk(MalBlkPtr mb)
 {
@@ -752,10 +481,10 @@ freeMalBlk(MalBlkPtr mb)
 	GDKfree(mb);
 }
 
-@-
+/*
 The routine below should assure that all referenced structures
 are private. The copying is memory conservative.
-@c
+*/
 MalBlkPtr
 copyMalBlk(MalBlkPtr old)
 {
@@ -852,9 +581,9 @@ getMalBlkHistory(MalBlkPtr mb, int idx){
 		h= h->history;
 	return h?h:mb;
 }
-@-
+/*
 You can retrieve the history by its marker as well.
-@c
+*/
 MalBlkPtr
 getMalBlkMarker(MalBlkPtr mb, str marker){
 	MalBlkPtr h=mb;
@@ -862,10 +591,10 @@ getMalBlkMarker(MalBlkPtr mb, str marker){
 		h= h->history;
 	return h?h:mb;
 }
-@-
+/*
 You can roll back the history to a specific marker.
 A NULL is returned when the marker can not be found.
-@c
+*/
 MalBlkPtr
 gotoMalBlkMarker(MalBlkPtr mb, str marker){
 	MalBlkPtr h=mb,g;
@@ -881,7 +610,7 @@ gotoMalBlkMarker(MalBlkPtr mb, str marker){
 	}
 	return h;
 }
-@-
+/*
 The MalBlk structures potentially consume a lot a of space, because it
 is not possible to precisely estimate the default sizes of the var and stmt
 components. The routines below provide a mechanism to handle the issue.
@@ -890,7 +619,7 @@ and guesses the size of variable and statement table.
 
 Experience shows that trimming leads to memory fragmentation (140K lost
 after server init) and is therefore turned off.
-@c
+*/
 void
 trimexpand(MalBlkPtr mb, int varsize, int stmtsize)
 {
@@ -949,7 +678,7 @@ trimMalBlk(MalBlkPtr mb)
 	   trimexpand(mb, mb->vsize, mb->ssize); */
 }
 
-@-
+/*
 Before compiling a large string, it makes sense to allocate approximately
 enough space to keep the intermediate code. Otherwise, we end up with a
 repeated extend on the MAL block, which really consumes a lot of memcpy
@@ -960,7 +689,7 @@ just counting the lines.
 
 The MAL blocks act as instruction pools.
 Using a resetMALblock makes the instructions available.
-@c
+*/
 
 void
 prepareMalBlk(MalBlkPtr mb, str s)
@@ -1005,10 +734,10 @@ newInstruction(MalBlkPtr mb, int kind)
 	p->argc = 1;
 	p->retc = 1;
 	p->argv[0] = -1;	/* watch out for direct use in variable table */
-@-
+/*
 Flow of control instructions are always marked as an assignment
 with modifier
-@c
+*/
 	switch (kind) {
 	case BARRIERsymbol:
 	case REDOsymbol:
@@ -1030,9 +759,9 @@ with modifier
 	return p;
 }
 
-@- 
+/*
 Copying an instruction is space conservative.
-@c
+*/
 
 InstrPtr
 copyInstruction(InstrPtr p)
@@ -1070,10 +799,10 @@ freeInstruction(InstrPtr p)
 	GDKfree(p);
 }
 
-@-
+/*
 Moving instructions around calls for care, because all dependent
 information should also be updated.
-@c
+*/
 void
 oldmoveInstruction(InstrPtr new, InstrPtr p)
 {
@@ -1085,13 +814,13 @@ oldmoveInstruction(InstrPtr new, InstrPtr p)
 	setModuleId(new, getModuleId(p));
 }
 
-@-
+/*
 Query optimizers walk their way through a MAL program block.
 They require some primitives to move instructions around and
 to remove superflous instructions.
 The removal is based on the assumption that indeed the instruction
 belonged to the block.
-@c
+*/
 void
 removeInstruction(MalBlkPtr mb, InstrPtr p)
 {
@@ -1159,13 +888,13 @@ insertInstruction(MalBlkPtr mb, InstrPtr p, int pc)
 	moveInstruction(mb, mb->stop - 1, pc);
 }
 
-@-
+/*
 Beware that the first argument of a signature is reserved for the function
 return type , which should be equal to the destination variable type.
 
 VarRecords are allocated on the variable stack.
 Their index is returned for future reference.
-@-
+
 Use the information that a variable is at least one character
 wide and terminated by a null-byte.
 This means that we can speed up search when the variables
@@ -1177,6 +906,7 @@ under the assumption that the code base is not modified on the
 fly. Then the expensive search is started anyway.
 It also means that input which does not comply with the intended
 location of a temporary variable should be flagged as an error.
+*/
 @= chkTemporary
     if( isTmpName(name)){
 		int j;
@@ -1188,9 +918,10 @@ location of a temporary variable should be flagged as an error.
 			if( getVarTmp(mb,j)== i && isTmpVar(mb,j)) return j;
         return -1;
     }
-@-
-Temporary names are not materialized as strings unless necessary.
 @c
+/*
+Temporary names are not materialized as strings unless necessary.
+*/
 inline str
 getVarName(MalBlkPtr mb, int i)
 {
@@ -1264,12 +995,12 @@ findTmpVariable(MalBlkPtr mb, int type)
 	return -1;
 }
 
-@-
+/*
 The second version of findVariable assumes you have not
 yet allocated a private structure. This is particularly
 usefull during parsing, because most variables are already
 defined. This way we safe GDKmalloc/GDKfree.
-@c
+*/
 int
 findVariableLength(MalBlkPtr mb, str name, int len)
 {
@@ -1293,10 +1024,10 @@ findVariableLength(MalBlkPtr mb, str name, int len)
 	return -1;
 }
 
-@-
+/*
 Note that getType also checks for type names directly.
 They have preference over variable names.
-@c
+*/
 malType
 getType(MalBlkPtr mb, str nme)
 {
@@ -1318,18 +1049,19 @@ getArgDefault(MalBlkPtr mb, InstrPtr p, int idx)
 	return NULL;
 }
 
-@-
+/*
 All variables are implicitly declared upon their first assignment.
 
 Lexical constants require some care. They typically appear as arguments
 in operator/function calls. To simplify program analysis later on,
 we stick to the situation that function/operator arguments are always
 references to by variables.
-@- Reserved words
+
+Reserved words
 Although MAL has been designed as a minimal language, several
 identifiers are not eligible as variables. The encoding below
 is geared at simple and speed.
-@c
+*/
 int
 isReserved(str nme)
 {
@@ -1398,9 +1130,10 @@ isReserved(str nme)
 	return 0;
 }
 
-@-
+/*
 Beware, the symbol table structure assumes that it is relatively
 cheap to perform a linear search to a variable or constant.
+*/
 
 @= makeVarSpace
 	if (mb->vtop >= mb->vsize){
@@ -1460,9 +1193,9 @@ newVariable(MalBlkPtr mb, str name, malType type)
 	mb->vtop++;
 	return n;
 }
-@-
+/*
 Simplified cloning without property propagation.
-@c
+*/
 int
 cloneVariable(MalBlkPtr tm, MalBlkPtr mb, int x)
 {
@@ -1502,19 +1235,6 @@ renameVariable(MalBlkPtr mb, int id, str name)
 	v->tmpindex = 0;
 }
 
-@+ MAL variables
-Temporary target variable act as sinks in the data flow graph.
-In this case, an optimizer can group them by underlying type and this way
-reduce the symbol table size significantly.
-
-MAL variables are internally represented by their index into
-the variable stack. Their default textual representation is '_'<digits>.
-Temporary names  are recognized by the parser and an error is
-produced if it does not satisfy this condition.
-
-Sharing of the temporary is only permitted if the type
-is a priory known and not TYPE_any.
-@c
 int
 newTmpVariable(MalBlkPtr mb, malType type)
 {
@@ -1587,12 +1307,12 @@ copyVariable(MalBlkPtr dst, MalBlkPtr src, VarPtr v)
 	dst->var[dst->vtop] = w;
 }
 
-@-
+/*
 Beware, removing a variable
 calls for a re-numbering of the variable indices used in the
 program block. Assuming all new variables are appended only, we
 merely have to take care of variable deletions.
-@c
+*/
 void
 removeVariable(MalBlkPtr mb, int varid)
 {
@@ -1643,13 +1363,13 @@ freeVariable(MalBlkPtr mb, int varid)
 	getVar(mb, varid) = NULL;
 }
 
-@-
+/*
 A special action is to reduce the variable space by removing
 all that do not contribute.
 Beware that properties are represented as variables as well.
 They must be retained and the references must be corrected
 after the stack has been reduced.
-@c
+*/
 void
 trimMalVariables_(MalBlkPtr mb, bit *used, MalStkPtr glb)
 {
@@ -1737,7 +1457,7 @@ trimMalVariables(MalBlkPtr mb){
 	GDKfree(used);
 }
 
-@+ MAL constants
+/* MAL constants
 Constants are stored in the symbol table and referenced
 by a variable identifier.
 This means that per MAL instruction, we may end up with
@@ -1770,7 +1490,7 @@ This start of the constant list is kept in the MalBlk.
 Conversion of a constant to another type is limited to
 well-known coercion rules. Errors are reported and the
 nil value is set.
-@c
+*/
 /**
  * Converts the constant in vr to the MAL type type.  Conversion is done
  * in the vr struct.
@@ -1888,13 +1608,13 @@ convertConstant(int type, ValPtr vr)
 		if ( vr->vtype != type)
 			throw(SYNTAX, "convertConstant", "pointer conversion error");
 		return MAL_SUCCEED;
-@-
+/*
 Extended types are always represented as string literals
 and converted to the internal storage structure.
 Beware that the typeFromStr routines generate storage space
 for the new value. This should be garbage collected at the
 end.
-@c
+*/
 	default:{
 		int ll = 0;
 		ptr d = NULL;
@@ -2029,12 +1749,12 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst )
 	return k;
 }
 
-@- Argument handling
+/* Argument handling
 The number of arguments for procedures is currently limited.
 Furthermore, we should assure that no variable is referenced
 before being assigned.
 Failure to obey should mark the instruction as type-error.
-@c
+*/
 InstrPtr
 pushArgument(MalBlkPtr mb, InstrPtr p, int varid)
 {
@@ -2106,12 +1826,12 @@ pushReturn(MalBlkPtr mb, InstrPtr p, int varid)
 	return p;
 }
 
-@-
+/*
 Store the information of a destination variable in the signature structure of
 each instruction. This code is largely equivalent to pushArgument,
 but it is more efficient in searching and collecting the information.
-[todo]
-@c
+TODO
+*/
 InstrPtr
 pushArgumentId(MalBlkPtr mb, InstrPtr p, str name)
 {
@@ -2125,10 +1845,10 @@ pushArgumentId(MalBlkPtr mb, InstrPtr p, str name)
 	return pushArgument(mb, p, v);
 }
 
-@-
+/*
 The alternative is to remove arguments from an instruction record.
 This is typically part of instruction constructions.
-@c
+*/
 void
 delArgument(InstrPtr p, int idx)
 {
@@ -2155,11 +1875,11 @@ setVarType(MalBlkPtr mb, int i, int tpe)
 	v->type = tpe;
 }
 
-@-
+/*
 Cleaning a variable type by setting it to TYPE_any
 possibly invalidates all other type derivations in the program.
 Beware of the exception variables. They are globally known.
-@c
+*/
 void
 clrAllTypes(MalBlkPtr mb)
 {
@@ -2222,14 +1942,14 @@ destinationType(MalBlkPtr mb, InstrPtr p)
 	return TYPE_any;
 }
 
-@-
+/*
 For polymorphic instructions we should keep around the
 maximal index to later allocate sufficient space
 for type resolutions maps.
 Beware, that we only consider the instruction polymorphic
 if it has an index or belongs to the signature.
 In other cases it merely has to be filled.
-@c
+*/
 inline void
 setPolymorphic(InstrPtr p, int tpe, int force)
 {
@@ -2253,10 +1973,10 @@ setPolymorphic(InstrPtr p, int tpe, int force)
 
 }
 
-@-
+/*
 Instructions are simply appended to a MAL block.
 It is also the place to collect information to speed-up use later on.
-@c
+*/
 void
 pushInstruction(MalBlkPtr mb, InstrPtr p)
 {
@@ -2288,10 +2008,10 @@ pushInstruction(MalBlkPtr mb, InstrPtr p)
 		GDKfree(mb->stmt);
 		mb->stmt = newblk;
 	}
-@-
+/*
 If the destination variable has not been set, introduce a temporary
 variable to hold the result instead.
-@c
+*/
 /*
 	if (p->argv[0] < 0)
 		p->argv[0] = newTmpVariable(mb, TYPE_any);
@@ -2308,10 +2028,10 @@ variable to hold the result instead.
 	mb->stop++;
 }
 
-@-
+/*
 The END instruction has an optional name, which is only checked
 during parsing;
-@c
+*/
 void
 pushEndInstruction(MalBlkPtr mb)
 {
@@ -2324,7 +2044,7 @@ pushEndInstruction(MalBlkPtr mb)
 	pushInstruction(mb, p);
 }
 
-@+ Reverse programming
+/* Reverse programming
 Since MAL programs can be created on the fly by linked-in query
 compilers, or transformed by optimizers, it becomes
 mandatory to be able to produce textual correct MAL programs
@@ -2338,7 +2058,7 @@ The hiddenInstruction operator assumes a sufficiently large block
 to leave information on the signature behind.
 
 The protection against overflow is not tight.
-@c
+*/
 #define advance(X,B,L)  assert(X< B+L); while(*(X) && B+L>X)(X)++;
 
 str
@@ -2404,7 +2124,7 @@ hiddenInstructionArgs(MalBlkPtr mb, InstrPtr p, str s, str start, int flg, str b
 	if (p->token == REMsymbol )
 		return s;
 	s = instructionCall(mb,p,s, base, len);
-@-
+/*
 The instruction is complemented with simple flags to ease debugging.
 To limit the impact on test output, we only display them when they
 are set.
@@ -2415,7 +2135,7 @@ P = polymorphic instruction
 G = subject to garbage control
 R = subject to recycler control
 J = jump towards other statement
-@c
+*/
 	if (flg & LIST_MAL_STMT){
 		*s++ =' ';
 		*s++ ='{';
@@ -2446,10 +2166,11 @@ J = jump towards other statement
 	return s;
 }
 
-@-
+/*
 It receives the space to store the definition
 The MAL profiler dumps some performance data at the
 beginning of each line.
+*/
 
 @= performanceData
     if( mb->profiler ){
@@ -2458,7 +2179,7 @@ beginning of each line.
         snprintf(t,(len-(t-base)),"[%7d, %5.2f] ",mb->profiler[pc].counter,avg);
     }
     advance(t,base,len);
-@-
+@c
 
 @= showParam
         tpe= getTypeName(getArgType(mb,p,i));
@@ -2921,11 +2642,11 @@ printSignature(stream *fd, Symbol s, int flg)
 	GDKfree(txt);
 }
 
-@-
+/*
 For clarity we show the last optimizer applied
 also as the last of the list, although it is
 linked with mb.
-@c
+*/
 void showMalBlkHistory(MalBlkPtr mb)
 {
 	MalBlkPtr m=mb;
