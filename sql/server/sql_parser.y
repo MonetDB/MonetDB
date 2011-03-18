@@ -3827,8 +3827,19 @@ literal:
 		}
  |  APPROXNUM
 		{ sql_subtype t;
-		  double val = strtod($1,NULL);
+  		  char *p = $1;
+		  double val;
 
+		  errno = 0;
+ 		  val = strtod($1,&p);
+		  if (p == $1 || (errno == ERANGE && val != 0)) {
+			char *msg = sql_message("Double value too large or not a number (%s)", $1);
+
+			yyerror(msg);
+			_DELETE(msg);
+			$$ = NULL;
+			YYABORT;
+		  }
 		  sql_find_subtype(&t, "double", 51, 0 );
 		  $$ = _newAtomNode(atom_float(SA, &t, val)); }
  |  sqlDATE string

@@ -44,7 +44,7 @@ mvc_init(char *dbname, int debug, store_type store, backend_stack stk)
 
 	mvc_debug = debug;
 	if (mvc_debug)
-		fprintf(stderr, "mvc_init logdir %s%c%s\n", logdir, DIR_SEP, dbname);
+		fprintf(stderr, "#mvc_init logdir %s%c%s\n", logdir, DIR_SEP, dbname);
 	keyword_init();
 	scanner_init_keywords();
 
@@ -117,7 +117,7 @@ void
 mvc_exit()
 {
 	if (mvc_debug)
-		fprintf(stderr, "mvc_exit\n");
+		fprintf(stderr, "#mvc_exit\n");
 
 	store_exit();
 	keyword_exit();
@@ -184,7 +184,7 @@ mvc_commit(mvc *m, int chain, char *name)
 	assert(m->session->active);	/* only commit an active transaction */
 	
 	if (mvc_debug)
-		fprintf(stderr, "mvc_commit %s\n", (name) ? name : "");
+		fprintf(stderr, "#mvc_commit %s\n", (name) ? name : "");
 
 	if (m->session->status < 0) {
 		(void)sql_error(m, 010, "COMMIT: transaction is aborted, will ROLLBACK instead");
@@ -196,7 +196,7 @@ mvc_commit(mvc *m, int chain, char *name)
 	if (name && name[0] != '\0') {
 		sql_trans *tr = m->session->tr;
 		if (mvc_debug)
-			fprintf(stderr, "mvc_savepoint\n");
+			fprintf(stderr, "#mvc_savepoint\n");
 		store_lock();
 		m->session->tr = sql_trans_create(m->session->stk, tr, name);
 		store_unlock();
@@ -204,7 +204,7 @@ mvc_commit(mvc *m, int chain, char *name)
 		m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name);
 		m->last = NULL;
 		if (mvc_debug)
-			fprintf(stderr, "mvc_commit %s done\n", (name) ? name : "");
+			fprintf(stderr, "#mvc_commit %s done\n", (name) ? name : "");
 		return 0;
 	}
 
@@ -233,7 +233,7 @@ mvc_commit(mvc *m, int chain, char *name)
 			sql_trans_end(m->session);
 		m->type = Q_TRANS;
 		if (mvc_debug)
-			fprintf(stderr, "mvc_commit %s done\n", (name) ? name : "");
+			fprintf(stderr, "#mvc_commit %s done\n", (name) ? name : "");
 		m->last = NULL;
 		store_unlock();
 		return 0;
@@ -259,7 +259,7 @@ mvc_commit(mvc *m, int chain, char *name)
 	m->type = Q_TRANS;
 	m->last = NULL;
 	if (mvc_debug)
-		fprintf(stderr, "mvc_commit %s done\n", (name) ? name : "");
+		fprintf(stderr, "#mvc_commit %s done\n", (name) ? name : "");
 	return ok;
 }
 
@@ -270,7 +270,7 @@ mvc_rollback(mvc *m, int chain, char *name)
 	sql_trans *tr = m->session->tr;
 
 	if (mvc_debug)
-		fprintf(stderr, "mvc_rollback %s\n", (name) ? name : "");
+		fprintf(stderr, "#mvc_rollback %s\n", (name) ? name : "");
 
 	assert(tr);
 	assert(m->session->active);	/* only abort an active transaction */
@@ -318,7 +318,7 @@ mvc_rollback(mvc *m, int chain, char *name)
 	m->type = Q_TRANS;
 	m->last = NULL;
 	if (mvc_debug)
-		fprintf(stderr, "mvc_rollback %s done\n", (name) ? name : "");
+		fprintf(stderr, "#mvc_rollback %s done\n", (name) ? name : "");
 	return res;
 }
 
@@ -337,7 +337,7 @@ mvc_release(mvc *m, char *name)
 	assert(m->session->active);	/* only release active transactions */
 
 	if (mvc_debug)
-		fprintf(stderr, "mvc_release %s\n", (name) ? name : "");
+		fprintf(stderr, "#mvc_release %s\n", (name) ? name : "");
 
 	while (tr && (!tr->name || strcmp(tr->name, name) != 0))
 		tr = tr->parent;
@@ -371,7 +371,7 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 
  	m = ZNEW(mvc);
 	if (mvc_debug)
-		fprintf(stderr, "mvc_create\n");
+		fprintf(stderr, "#mvc_create\n");
 
 	m->errstr[0] = '\0';
 	/* if an error exceeds the buffer we don't want garbage at the end */
@@ -428,7 +428,7 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars)
 	sql_trans *tr;
 
 	if (mvc_debug)
-		fprintf(stderr, "mvc_reset\n");
+		fprintf(stderr, "#mvc_reset\n");
 	tr = m->session->tr;
 	if (tr && tr->parent) {
 		assert(m->session->active == 0);
@@ -494,7 +494,7 @@ mvc_destroy(mvc *m)
 	sql_trans *tr;
 
 	if (mvc_debug)
-		fprintf(stderr, "mvc_destroy\n");
+		fprintf(stderr, "#mvc_destroy\n");
 	tr = m->session->tr;
 	if (tr) {
 		store_lock();
@@ -531,7 +531,7 @@ mvc_bind_type(mvc *sql, char *name)
 	sql_type *t = sql_trans_bind_type(sql->session->tr, NULL, name);
 
 	if (mvc_debug)
-		fprintf(stderr, "mvc_bind_type %s\n", name);
+		fprintf(stderr, "#mvc_bind_type %s\n", name);
 	return t;
 }
 
@@ -544,7 +544,7 @@ schema_bind_type(mvc *sql, sql_schema *s, char *name)
 	if (!t)
 		return NULL;
 	if (mvc_debug)
-		fprintf(stderr, "schema_bind_type %s\n", name);
+		fprintf(stderr, "#schema_bind_type %s\n", name);
 	return t;
 }
 
@@ -554,7 +554,7 @@ mvc_bind_func(mvc *sql, char *name)
 	sql_func *t = sql_trans_bind_func(sql->session->tr, name);
 
 	if (mvc_debug)
-		fprintf(stderr, "mvc_bind_func %s\n", name);
+		fprintf(stderr, "#mvc_bind_func %s\n", name);
 	return t;
 }
 
@@ -567,7 +567,7 @@ schema_bind_func(mvc *sql, sql_schema * s, char *name, int is_func)
 	if (!func_list)
 		return NULL;
 	if (mvc_debug)
-		fprintf(stderr, "schema_bind_func %s\n", name);
+		fprintf(stderr, "#schema_bind_func %s\n", name);
 	return func_list;
 }
 
@@ -593,7 +593,7 @@ mvc_bind_schema(mvc *m, char *sname)
 		return NULL;
 
 	if (mvc_debug)
-		fprintf(stderr, "mvc_bind_schema %s\n", sname);
+		fprintf(stderr, "#mvc_bind_schema %s\n", sname);
 	return s;
 }
 
@@ -620,7 +620,7 @@ mvc_bind_table(mvc *m, sql_schema *s, char *tname)
 	if (!t)
 		return NULL;
 	if (mvc_debug)
-		fprintf(stderr, "mvc_bind_table %s.%s\n", s->base.name, tname);
+		fprintf(stderr, "#mvc_bind_table %s.%s\n", s->base.name, tname);
 
 	return t;
 }
@@ -638,7 +638,7 @@ mvc_bind_column(mvc *m, sql_table *t, char *cname)
 	if (!c)
 		return NULL;
 	if (mvc_debug)
-		fprintf(stderr, "mvc_bind_column %s.%s\n", t->base.name, cname);
+		fprintf(stderr, "#mvc_bind_column %s.%s\n", t->base.name, cname);
 
 	if (c->t->s && !isTempSchema(c->t->s) && !isDeclaredSchema(c->t->s))
 		m->last = c;
@@ -665,7 +665,7 @@ mvc_first_column(mvc *m, sql_table *t)
 	if (!c)
 		return NULL;
 	if (mvc_debug)
-		fprintf(stderr, "mvc_first_column %s.%s\n", t->base.name, c->base.name);
+		fprintf(stderr, "#mvc_first_column %s.%s\n", t->base.name, c->base.name);
 
 	return c;
 }
@@ -682,7 +682,7 @@ mvc_bind_key(mvc *m, sql_schema *s, char *kname)
 	k = n->data;
 
 	if (mvc_debug)
-		fprintf(stderr, "mvc_bind_key %s.%s\n", s->base.name, kname);
+		fprintf(stderr, "#mvc_bind_key %s.%s\n", s->base.name, kname);
 
 	return k;
 }
@@ -699,7 +699,7 @@ mvc_bind_idx(mvc *m, sql_schema *s, char *iname)
 	i = n->data;
 
 	if (mvc_debug)
-		fprintf(stderr, "mvc_bind_idx %s.%s\n", s->base.name, iname);
+		fprintf(stderr, "#mvc_bind_idx %s.%s\n", s->base.name, iname);
 
 	return i;
 }
@@ -753,7 +753,7 @@ mvc_bind_trigger(mvc *m, sql_schema *s, char *tname)
 	trigger = n->data;
 
 	if (mvc_debug)
-		fprintf(stderr, "mvc_bind_trigger %s.%s\n", s->base.name, tname);
+		fprintf(stderr, "#mvc_bind_trigger %s.%s\n", s->base.name, tname);
 
 	return trigger;
 }
@@ -764,7 +764,7 @@ mvc_create_type(mvc *sql, sql_schema * s, char *name, int digits, int scale, int
 	sql_type *t = NULL;
 
 	if (mvc_debug)
-		fprintf(stderr, "mvc_create_type %s\n", name);
+		fprintf(stderr, "#mvc_create_type %s\n", name);
 
 	t = sql_trans_create_type(sql->session->tr, s, name, digits, scale, radix, impl);
 	return t;
@@ -776,7 +776,7 @@ mvc_create_func(mvc *sql, sql_schema * s, char *name, list *args, sql_subtype *r
 	sql_func *f = NULL;
 
 	if (mvc_debug)
-		fprintf(stderr, "mvc_create_func %s\n", name);
+		fprintf(stderr, "#mvc_create_func %s\n", name);
 
 	f = sql_trans_create_func(sql->session->tr, s, name, args, res, aggr, mod, impl, query, is_func);
 	return f;
@@ -786,7 +786,7 @@ void
 mvc_drop_func(mvc *m, sql_schema *s, sql_func *f, int drop_action)
 {
 	if (mvc_debug)
-		fprintf(stderr, "mvc_drop_func %s %s\n", s->base.name, f->base.name);
+		fprintf(stderr, "#mvc_drop_func %s %s\n", s->base.name, f->base.name);
 
 	sql_trans_drop_func(m->session->tr, s, f->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
 }
@@ -795,7 +795,7 @@ void
 mvc_drop_all_func(mvc *m, sql_schema *s, list *list_func, int drop_action)
 {
 	if (mvc_debug)
-		fprintf(stderr, "mvc_drop_all_func %s %s\n", s->base.name, ((sql_func *) list_func->h->data)->base.name);
+		fprintf(stderr, "#mvc_drop_all_func %s %s\n", s->base.name, ((sql_func *) list_func->h->data)->base.name);
 
 	sql_trans_drop_all_func(m->session->tr, s, list_func, drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
 }
@@ -806,7 +806,7 @@ mvc_create_schema(mvc *m, char *name, int auth_id, int owner)
 	sql_schema *s = NULL;
 
 	if (mvc_debug)
-		fprintf(stderr, "mvc_create_schema %s %d %d\n", name, auth_id, owner);
+		fprintf(stderr, "#mvc_create_schema %s %d %d\n", name, auth_id, owner);
 
 	s = sql_trans_create_schema(m->session->tr, name, auth_id, owner);
 	return s;
@@ -816,7 +816,7 @@ void
 mvc_drop_schema(mvc *m, sql_schema * s, int drop_action)
 {
 	if (mvc_debug)
-		fprintf(stderr, "mvc_drop_schema %s\n", s->base.name);
+		fprintf(stderr, "#mvc_drop_schema %s\n", s->base.name);
 	sql_trans_drop_schema(m->session->tr, s->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
 	m->last = NULL;
 }
@@ -825,7 +825,7 @@ sql_ukey *
 mvc_create_ukey(mvc *m, sql_table *t, char *name, key_type kt)
 {
 	if (mvc_debug)
-		fprintf(stderr, "mvc_create_ukey %s %u\n", t->base.name, kt);
+		fprintf(stderr, "#mvc_create_ukey %s %u\n", t->base.name, kt);
 	if (t->persistence == SQL_DECLARED_TABLE)
 		return create_sql_ukey(m->sa, t, name, kt);	
 	else
@@ -845,7 +845,7 @@ sql_fkey *
 mvc_create_fkey(mvc *m, sql_table *t, char *name, key_type kt, sql_key *rkey, int on_delete, int on_update)
 {
 	if (mvc_debug)
-		fprintf(stderr, "mvc_create_fkey %s %u " PTRFMT "\n", t->base.name, kt, PTRFMTCAST rkey);
+		fprintf(stderr, "#mvc_create_fkey %s %u " PTRFMT "\n", t->base.name, kt, PTRFMTCAST rkey);
 	if (t->persistence == SQL_DECLARED_TABLE)
 		return create_sql_fkey(m->sa, t, name, kt, rkey, on_delete, on_update);	
 	else
@@ -876,7 +876,7 @@ void
 mvc_drop_key(mvc *m, sql_schema *s, sql_key *k, int drop_action)
 {
 	if (mvc_debug)
-		fprintf(stderr, "mvc_drop_key %s %s\n", s->base.name, k->base.name);
+		fprintf(stderr, "#mvc_drop_key %s %s\n", s->base.name, k->base.name);
 	if (k->t->persistence == SQL_DECLARED_TABLE)
 		drop_sql_key(k->t, k->base.id, drop_action);
 	else
@@ -889,7 +889,7 @@ mvc_create_idx(mvc *m, sql_table *t, char *name, idx_type it)
 	sql_idx *i;
 
 	if (mvc_debug)
-		fprintf(stderr, "mvc_create_idx %s %u\n", t->base.name, it);
+		fprintf(stderr, "#mvc_create_idx %s %u\n", t->base.name, it);
 
 	if (t->persistence == SQL_DECLARED_TABLE)
 		/* declared tables should not end up in the catalog */
@@ -913,7 +913,7 @@ void
 mvc_drop_idx(mvc *m, sql_schema *s, sql_idx *i)
 {
 	if (mvc_debug)
-		fprintf(stderr, "mvc_drop_idx %s %s\n", s->base.name, i->base.name);
+		fprintf(stderr, "#mvc_drop_idx %s %s\n", s->base.name, i->base.name);
 
 	if (i->t->persistence == SQL_DECLARED_TABLE)
 		/* declared tables should not end up in the catalog */
@@ -928,7 +928,7 @@ mvc_create_trigger(mvc *m, sql_table *t, char *name, sht time, sht orientation, 
 	sql_trigger *i;
 
 	if (mvc_debug)
-		fprintf(stderr, "mvc_create_trigger %s %d %d %d\n", t->base.name, time, orientation, event);
+		fprintf(stderr, "#mvc_create_trigger %s %d %d %d\n", t->base.name, time, orientation, event);
 
 	i = sql_trans_create_trigger(m->session->tr, t, name, time, orientation, 
 			event, old_name, new_name, condition, statement);
@@ -946,7 +946,7 @@ void
 mvc_drop_trigger(mvc *m, sql_schema *s, sql_trigger *tri)
 {
 	if (mvc_debug)
-		fprintf(stderr, "mvc_drop_trigger %s %s\n", s->base.name, tri->base.name);
+		fprintf(stderr, "#mvc_drop_trigger %s %s\n", s->base.name, tri->base.name);
 
 	sql_trans_drop_trigger(m->session->tr, s, tri->base.id, DROP_RESTRICT);
 }
@@ -958,7 +958,7 @@ mvc_create_table(mvc *m, sql_schema *s, char *name, int tt, bit system, int pers
 	sql_table *t = NULL;
 
 	if (mvc_debug)
-		fprintf(stderr, "mvc_create_table %s %s %d %d %d %d\n", s->base.name, name, tt, system, persistence, commit_action);
+		fprintf(stderr, "#mvc_create_table %s %s %d %d %d %d\n", s->base.name, name, tt, system, persistence, commit_action);
 
 	if (persistence == SQL_DECLARED_TABLE) {
 		/* declared tables should not end up in the catalog */
@@ -976,7 +976,7 @@ mvc_create_view(mvc *m, sql_schema *s, char *name, int persistence, char *sql, b
 	sql_table *t = NULL;
 
 	if (mvc_debug)
-		fprintf(stderr, "mvc_create_view %s %s %s\n", s->base.name, name, sql);
+		fprintf(stderr, "#mvc_create_view %s %s %s\n", s->base.name, name, sql);
 
 	if (persistence == SQL_DECLARED_TABLE) {
 		t = create_sql_table(m->sa, name, tt_view, system, persistence, 0);
@@ -994,7 +994,7 @@ mvc_create_generated(mvc *m, sql_schema *s, char *name, char *sql, bit system)
 	sql_table *t = NULL;
 
 	if (mvc_debug)
-		fprintf(stderr, "mvc_create_generated %s %s %s\n", s->base.name, name, sql);
+		fprintf(stderr, "#mvc_create_generated %s %s %s\n", s->base.name, name, sql);
 
 	t = sql_trans_create_table(m->session->tr, s, name, sql, tt_generated, system, SQL_PERSIST, 0, 0);
 	return t;
@@ -1004,7 +1004,7 @@ void
 mvc_drop_table(mvc *m, sql_schema *s, sql_table *t, int drop_action)
 {
 	if (mvc_debug)
-		fprintf(stderr, "mvc_drop_table %s %s\n", s->base.name, t->base.name);
+		fprintf(stderr, "#mvc_drop_table %s %s\n", s->base.name, t->base.name);
 
 	sql_trans_drop_table(m->session->tr, s, t->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
 	m->last = NULL;
@@ -1031,7 +1031,7 @@ sql_column *
 mvc_create_column(mvc *m, sql_table *t, char *name, sql_subtype *tpe)
 {
 	if (mvc_debug)
-		fprintf(stderr, "mvc_create_column %s %s %s\n", t->base.name, name, tpe->type->sqlname);
+		fprintf(stderr, "#mvc_create_column %s %s %s\n", t->base.name, name, tpe->type->sqlname);
 	if (t->persistence == SQL_DECLARED_TABLE)
 		/* declared tables should not end up in the catalog */
 		return create_sql_column(m->sa, t, name, tpe);
@@ -1043,7 +1043,7 @@ void
 mvc_drop_column(mvc *m, sql_table *t, sql_column *col, int drop_action)
 {
 	if (mvc_debug)
-		fprintf(stderr, "mvc_drop_column %s %s\n", t->base.name, col->base.name);
+		fprintf(stderr, "#mvc_drop_column %s %s\n", t->base.name, col->base.name);
 	if (col->t->persistence == SQL_DECLARED_TABLE)
 		drop_sql_column(t, col->base.id, drop_action);
 	else
@@ -1055,7 +1055,7 @@ void
 mvc_create_dependency(mvc *m, int id, int depend_id, int depend_type)
 {
 	if (mvc_debug)
-		fprintf(stderr, "mvc_create_dependency %d %d %d\n", id, depend_id, depend_type);
+		fprintf(stderr, "#mvc_create_dependency %d %d %d\n", id, depend_id, depend_type);
 	if ( (id != depend_id) || (depend_type == BEDROPPED_DEPENDENCY) )
 		sql_trans_create_dependency(m->session->tr, id, depend_id, depend_type);
 	
@@ -1068,7 +1068,7 @@ mvc_create_dependencies(mvc *m, list *id_l, sqlid depend_id, int dep_type)
 	int i;
 	
 	if (mvc_debug)
-		fprintf(stderr, "mvc_create_dependencies on %d of type %d\n", depend_id, dep_type);
+		fprintf(stderr, "#mvc_create_dependencies on %d of type %d\n", depend_id, dep_type);
 
 	for (i = 0; i < list_length(id_l); i++)
 	{
@@ -1084,7 +1084,7 @@ mvc_check_dependency(mvc * m, int id, int type, list *ignore_ids)
 	list *dep_list = NULL;
 	
 	if (mvc_debug)
-		fprintf(stderr, "mvc_check_dependency on %d\n", id);
+		fprintf(stderr, "#mvc_check_dependency on %d\n", id);
 
 
 	switch(type) {
@@ -1121,7 +1121,7 @@ int
 mvc_connect_catalog(mvc *m, char *server, int port, char *db, char *db_alias, char *user, char *passwd, char *lng)
 {
 	if (mvc_debug)
-		fprintf(stderr, "mvc_connect_catalog of database %s on server %s\n",db, server);
+		fprintf(stderr, "#mvc_connect_catalog of database %s on server %s\n",db, server);
 
 	return sql_trans_connect_catalog(m->session->tr, server, port, db, db_alias, user, passwd, lng);
 		
@@ -1131,7 +1131,7 @@ int
 mvc_disconnect_catalog(mvc *m, char *db_alias)
 {
 	if (mvc_debug)
-		fprintf(stderr, "mvc_disconnect_catalog for db_alias %s\n",db_alias);
+		fprintf(stderr, "#mvc_disconnect_catalog for db_alias %s\n",db_alias);
 
 	return sql_trans_disconnect_catalog(m->session->tr, db_alias);
 		
@@ -1141,7 +1141,7 @@ int
 mvc_disconnect_catalog_ALL(mvc *m)
 {
 	if (mvc_debug)
-		fprintf(stderr, "mvc_disconnect_catalog_ALL \n");
+		fprintf(stderr, "#mvc_disconnect_catalog_ALL \n");
 
 	return sql_trans_disconnect_catalog_ALL(m->session->tr);
 		
@@ -1151,7 +1151,7 @@ sql_column *
 mvc_null(mvc *m, sql_column *col, int isnull)
 {
 	if (mvc_debug)
-		fprintf(stderr, "mvc_null %s %d\n", col->base.name, isnull);
+		fprintf(stderr, "#mvc_null %s %d\n", col->base.name, isnull);
 
 	if (col->t->persistence == SQL_DECLARED_TABLE) {
 		col->null = isnull;
@@ -1164,7 +1164,7 @@ sql_column *
 mvc_default(mvc *m, sql_column *col, char *val)
 {
 	if (mvc_debug)
-		fprintf(stderr, "mvc_default %s %s\n", col->base.name, val);
+		fprintf(stderr, "#mvc_default %s %s\n", col->base.name, val);
 
 	if (col->t->persistence == SQL_DECLARED_TABLE) {
 		col->def = val?sa_strdup(m->sa, val):NULL;
@@ -1178,7 +1178,7 @@ sql_column *
 mvc_drop_default(mvc *m, sql_column *col)
 {
 	if (mvc_debug)
-		fprintf(stderr, "mvc_drop_default %s\n", col->base.name);
+		fprintf(stderr, "#mvc_drop_default %s\n", col->base.name);
 
 	if (col->t->persistence == SQL_DECLARED_TABLE) {
 		col->def = NULL;
@@ -1192,7 +1192,7 @@ sql_table *
 mvc_readonly(mvc *m, sql_table *t, int readonly)
 {
 	if (mvc_debug)
-		fprintf(stderr, "mvc_readonly %s %d\n", t->base.name, readonly);
+		fprintf(stderr, "#mvc_readonly %s %d\n", t->base.name, readonly);
 
 	if (t->persistence == SQL_DECLARED_TABLE) {
 		t->readonly = readonly;
@@ -1205,7 +1205,7 @@ int
 mvc_is_sorted(mvc *m, sql_column *col)
 {
 	if (mvc_debug)
-		fprintf(stderr, "mvc_is_sorted %s\n", col->base.name);
+		fprintf(stderr, "#mvc_is_sorted %s\n", col->base.name);
 
 	return sql_trans_is_sorted(m->session->tr, col);
 }
