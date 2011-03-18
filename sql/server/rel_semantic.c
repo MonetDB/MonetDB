@@ -146,7 +146,9 @@ rel_parse(mvc *m, char *query, char emode)
 		m->session->status = status;
 		strcpy(m->errstr, errstr);
 	} else {
+		int label = m->label;
 		*m = o;
+		m->label = label;
 	}
 	return rel;
 }
