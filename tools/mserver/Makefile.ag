@@ -33,7 +33,6 @@ bin_mserver5 = {
 	SOURCES = mserver5.c monet_version.h monet_version.c.in
 	LIBS = ../../monetdb5/tools/libmonetdb5 @SHARED_LIBS@ \
 		../../gdk/libbat \
-		../../monetdb5/misc/libsabaoth \
 		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) \
 		$(curl_LIBS) $(pcre_LIBS) $(openssl_LIBS) $(PSAPILIB)
 }
