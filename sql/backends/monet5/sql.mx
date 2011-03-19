@@ -2626,10 +2626,14 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			/* partitioned access */
 			lval = *(oid *)getArgReference(stk, pci, 6);
 			hval = *(oid *)getArgReference(stk, pci, 7);
-			bn =  BATslice(b, lval,hval);
-			BATseqbase(bn, lval);
+			if (*access == 0) {
+				bn =  BATslice(b, lval,hval);
+				BATseqbase(bn, lval);
+				BBPreleaseref(b->batCacheid);
+			} else {
+				bn = b;
+			}
 			BBPkeepref( *bid = bn->batCacheid);
-			BBPreleaseref(b->batCacheid);
 			return MAL_SUCCEED;
 		} else if ( pci->argc == 8 && getArgType(mb,pci,6) == TYPE_int){
 			BUN cnt = BATcount(b), psz;
@@ -2637,9 +2641,22 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			int part_nr = *(int *)getArgReference(stk, pci, 6);
 			int nr_parts = *(int *)getArgReference(stk, pci, 7);
 
-			psz = cnt?(cnt/nr_parts):0;
-			bn =  BATslice(b, part_nr*psz, (part_nr+1==nr_parts)?BATcount(b):((part_nr+1)*psz));
-			BATseqbase(bn, part_nr*psz);
+			if (*access == 0) {
+				psz = cnt?(cnt/nr_parts):0;
+				bn =  BATslice(b, part_nr*psz, (part_nr+1==nr_parts)?cnt:((part_nr+1)*psz));
+				BATseqbase(bn, part_nr*psz);
+			} else {
+				oid l, h;
+				BAT *c = mvc_bind(m, *sname, *tname, *cname, 0);
+				cnt = BATcount(c);
+				psz = cnt?(cnt/nr_parts):0;
+				l = part_nr*psz;
+				h = (part_nr+1==nr_parts)?cnt:((part_nr+1)*psz);
+				h--;
+				bn = BATmirror(BATselect(BATmirror(b), &l, &h));
+			
+				BBPreleaseref(c->batCacheid);
+			}
 			BBPkeepref( *bid = bn->batCacheid);
 			BBPreleaseref(b->batCacheid);
 			return MAL_SUCCEED;
@@ -2669,13 +2686,17 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	b = mvc_bind_idxbat(m, *sname, *tname, *iname, *access);
 	if (b) {
 		if ( pci->argc == 8 && getArgType(mb,pci,6) == TYPE_oid){
-			/* partitioned access */
+			/* partitioned access, TODO fix update bats */
 			lval = *(oid *)getArgReference(stk, pci, 6);
 			hval = *(oid *)getArgReference(stk, pci, 7);
-			bn =  BATslice(b, lval,hval);
-			BATseqbase(bn, lval);
+			if (*access == 0) {
+				bn =  BATslice(b, lval,hval);
+				BATseqbase(bn, lval);
+				BBPreleaseref(b->batCacheid);
+			} else {
+				bn = b;
+			}
 			BBPkeepref( *bid = bn->batCacheid);
-			BBPreleaseref(b->batCacheid);
 			return MAL_SUCCEED;
 		} else if ( pci->argc == 8 && getArgType(mb,pci,6) == TYPE_int){
 			BUN cnt = BATcount(b), psz;
@@ -2683,9 +2704,22 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			int part_nr = *(int *)getArgReference(stk, pci, 6);
 			int nr_parts = *(int *)getArgReference(stk, pci, 7);
 
-			psz = cnt?(cnt/nr_parts):0;
-			bn =  BATslice(b, part_nr*psz, (part_nr+1==nr_parts)?BATcount(b):((part_nr+1)*psz));
-			BATseqbase(bn, part_nr*psz);
+			if (*access == 0) {
+				psz = cnt?(cnt/nr_parts):0;
+				bn =  BATslice(b, part_nr*psz, (part_nr+1==nr_parts)?cnt:((part_nr+1)*psz));
+				BATseqbase(bn, part_nr*psz);
+			} else {
+				oid l, h;
+				BAT *c = mvc_bind_idxbat(m, *sname, *tname, *iname, 0);
+				cnt = BATcount(c);
+				psz = cnt?(cnt/nr_parts):0;
+				l = part_nr*psz;
+				h = (part_nr+1==nr_parts)?cnt:((part_nr+1)*psz);
+				h--;
+				bn = BATmirror(BATselect(BATmirror(b), &l, &h));
+			
+				BBPreleaseref(c->batCacheid);
+			}
 			BBPkeepref( *bid = bn->batCacheid);
 			BBPreleaseref(b->batCacheid);
 			return MAL_SUCCEED;
