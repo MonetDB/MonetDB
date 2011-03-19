@@ -1260,6 +1260,9 @@ AC_CHECK_PROG(RM,rm,rm -f)
 AC_CHECK_PROG(MV,mv,mv -f)
 AC_PROG_LN_S
 AC_CHECK_PROG(LOCKFILE,lockfile,lockfile -r 2,echo)
+if test x"$LOCKFILE" = x"echo" ; then
+	AC_MSG_WARN([no lockfile found, please do NOT parallelise the build process!])
+fi
 
 AC_CHECK_PROGS(RPMBUILD,rpmbuild rpm)
 
