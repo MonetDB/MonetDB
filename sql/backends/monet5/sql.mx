@@ -169,6 +169,13 @@ comment "Bind the 'schema.table.index' BAT with access kind:
 	1 - inserts
 	2 - updates";
 
+pattern bind_idxbat(mvc:ptr, schema:str, table:str, index:str, access:int, part_nr:int, nr_parts:int):bat[:oid,:any_1]
+address mvc_bind_idxbat_wrap
+comment "Bind the 'schema.table.index' BAT with access kind:
+	0 - base table
+	1 - inserts
+	2 - updates";
+
 pattern bind(mvc:ptr, schema:str, table:str, column:str, access:int ):bat[:oid,:any_1]
 address mvc_bind_wrap
 comment "Bind the 'schema.table.column' BAT with access kind:
@@ -177,6 +184,13 @@ comment "Bind the 'schema.table.column' BAT with access kind:
 	2 - updates";
 
 pattern bind(mvc:ptr, schema:str, table:str, column:str, access:int, low:oid, hgh:oid ):bat[:oid,:any_1]
+address mvc_bind_wrap
+comment "Bind the 'schema.table.column' BAT partition with access kind:
+	0 - base table
+	1 - inserts
+	2 - updates";
+
+pattern bind(mvc:ptr, schema:str, table:str, column:str, access:int, part_nr:int, nr_parts:int ):bat[:oid,:any_1]
 address mvc_bind_wrap
 comment "Bind the 'schema.table.column' BAT partition with access kind:
 	0 - base table
@@ -2608,12 +2622,24 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	b = mvc_bind(m, *sname, *tname, *cname, *access);
 	if (b) {
-		if ( pci->argc == 8){
+		if ( pci->argc == 8 && getArgType(mb,pci,6) == TYPE_oid){
 			/* partitioned access */
 			lval = *(oid *)getArgReference(stk, pci, 6);
 			hval = *(oid *)getArgReference(stk, pci, 7);
 			bn =  BATslice(b, lval,hval);
 			BATseqbase(bn, lval);
+			BBPkeepref( *bid = bn->batCacheid);
+			BBPreleaseref(b->batCacheid);
+			return MAL_SUCCEED;
+		} else if ( pci->argc == 8 && getArgType(mb,pci,6) == TYPE_int){
+			BUN cnt = BATcount(b), psz;
+			/* partitioned access */
+			int part_nr = *(int *)getArgReference(stk, pci, 6);
+			int nr_parts = *(int *)getArgReference(stk, pci, 7);
+
+			psz = cnt?(cnt/nr_parts):0;
+			bn =  BATslice(b, part_nr*psz, (part_nr+1==nr_parts)?BATcount(b):((part_nr+1)*psz));
+			BATseqbase(bn, part_nr*psz);
 			BBPkeepref( *bid = bn->batCacheid);
 			BBPreleaseref(b->batCacheid);
 			return MAL_SUCCEED;
@@ -2642,12 +2668,24 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	b = mvc_bind_idxbat(m, *sname, *tname, *iname, *access);
 	if (b) {
-		if ( pci->argc == 8){
+		if ( pci->argc == 8 && getArgType(mb,pci,6) == TYPE_oid){
 			/* partitioned access */
 			lval = *(oid *)getArgReference(stk, pci, 6);
 			hval = *(oid *)getArgReference(stk, pci, 7);
 			bn =  BATslice(b, lval,hval);
 			BATseqbase(bn, lval);
+			BBPkeepref( *bid = bn->batCacheid);
+			BBPreleaseref(b->batCacheid);
+			return MAL_SUCCEED;
+		} else if ( pci->argc == 8 && getArgType(mb,pci,6) == TYPE_int){
+			BUN cnt = BATcount(b), psz;
+			/* partitioned access */
+			int part_nr = *(int *)getArgReference(stk, pci, 6);
+			int nr_parts = *(int *)getArgReference(stk, pci, 7);
+
+			psz = cnt?(cnt/nr_parts):0;
+			bn =  BATslice(b, part_nr*psz, (part_nr+1==nr_parts)?BATcount(b):((part_nr+1)*psz));
+			BATseqbase(bn, part_nr*psz);
 			BBPkeepref( *bid = bn->batCacheid);
 			BBPreleaseref(b->batCacheid);
 			return MAL_SUCCEED;

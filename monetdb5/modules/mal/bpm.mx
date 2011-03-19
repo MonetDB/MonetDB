@@ -19,7 +19,7 @@ All Rights Reserved.
 
 @f bpm
 @v 0.5
-@a M.L.Kersten, M. Ivanova
+@a M.L.Kersten, M. Ivanova, N.J. Nes
 @+ BAT Partition Manager
 In real-life database applications the BATs tend to grow beyond
 the memory size. This leads to a heavy IO dominated behavior,
