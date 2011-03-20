@@ -1510,6 +1510,12 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 	printFunction(GDKstdout, mb, 0, LIST_MAL_STMT | LIST_MAPI);
 #endif
 
+	/* 
+  	 * TODO improve cost of DFLOWeligible 
+ 	 */
+	if (stoppc && stoppc-startpc > 10000)
+		return runMALsequence( cntxt, mb, startpc+1, stoppc, stk, env, pcicaller);
+
 	(void)env;
 	(void)pcicaller;
 
