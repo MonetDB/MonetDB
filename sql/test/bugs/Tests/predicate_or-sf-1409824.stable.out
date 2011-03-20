@@ -41,15 +41,17 @@ Over..
 % .env,	.env # table_name
 % name,	value # name
 % varchar,	varchar # type
-% 4,	9 # length
-[ "host",	"localhost"	]
+% 9,	1 # length
+[ "sql_debug",	"0"	]
+#select * from env() as env where name = 'sql_debug' or 0 = 1;
 % .env,	.env # table_name
 % name,	value # name
 % varchar,	varchar # type
-% 4,	9 # length
-[ "host",	"localhost"	]
+% 9,	1 # length
+[ "sql_debug",	"0"	]
+#drop table p1409824;
 
-# 22:21:36 >  
-# 22:21:36 >  Done.
-# 22:21:36 >  
+# 11:02:58 >  
+# 11:02:58 >  Done.
+# 11:02:58 >  
 

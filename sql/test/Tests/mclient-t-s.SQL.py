@@ -11,6 +11,4 @@ def client(args):
     sys.stdout.write(out)
     sys.stderr.write(err)
 
-sys.stderr.write('#~BeginVariableOutput~#\n')
 client(['-t', '-s', 'select 123;'])
-sys.stderr.write('#~EndVariableOutput~#\n')
