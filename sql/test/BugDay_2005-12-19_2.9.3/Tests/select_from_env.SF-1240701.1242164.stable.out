@@ -44,8 +44,6 @@ Over..
 [ "sql_optimizer"	]
 [ "sql_debug"	]
 [ "gdk_nr_threads"	]
-[ "xrpc_open"	]
-[ "xrpc_port"	]
 [ "mal_listing"	]
 [ "gdk_mem_pagebits"	]
 [ "gdk_mem_bigsize"	]
