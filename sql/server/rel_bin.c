@@ -288,7 +288,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 		sql_subtype *to = tps->h->next->data;
 		if (!l) 
 			return NULL;
-		s = stmt_convert(sql->sa, l, from, to);
+		s = stmt_convert(sql->sa, l, from, to, 0);
 	} 	break;
 	case e_func: {
 		node *en;

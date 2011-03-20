@@ -1438,13 +1438,25 @@ stmt_exception(sql_allocator *sa, stmt *cond, char *errstr, int errcode)
 	return s;
 }
 
+static sql_subtype*
+dup_subtype(sql_allocator *sa, sql_subtype *st)
+{
+	sql_subtype *res = SA_NEW(sa, sql_subtype);
+
+	*res = *st;
+	return res;
+}
 
 stmt *
-stmt_convert(sql_allocator *sa, stmt *v, sql_subtype *from, sql_subtype *to)
+stmt_convert(sql_allocator *sa, stmt *v, sql_subtype *from, sql_subtype *to, int dup)
 {
 	stmt *s = stmt_create(sa, st_convert);
 	list *l = list_new(sa);
 
+	if (dup) {
+		from = dup_subtype(sa, from);
+		to = dup_subtype(sa, to);
+	}
 	list_append(l, from);
 	list_append(l, to);
 	s->op1 = v;

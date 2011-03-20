@@ -15,8 +15,9 @@ stdout of test 'mdb_starts_with_sql_debug_64.SF-1999354` in directory 'test/BugT
 % . # table_name
 % f2_single_value # name
 % varchar # type
-% 7 # length
-[ "0004044"	]
+% 12 # length
+[ "00:04:00.004"	]
+#SELECT f2(p.ra,8,p."dec") FROM t1999354a as p;
 % sys. # table_name
 % f2_ra # name
 % varchar # type

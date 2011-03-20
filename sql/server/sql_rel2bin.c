@@ -829,7 +829,7 @@ push_semijoin( mvc *sql, stmt *select, stmt *s )
 		stmt *op1 = select->op1;
 
 		op1 = push_semijoin(sql, op1, s);
-		return stmt_convert(sql->sa, op1, f, t);
+		return stmt_convert(sql->sa, op1, f, t, 0);
 	}
 	if (select->type == st_unop){ 
 		stmt *op1 = select->op1;
