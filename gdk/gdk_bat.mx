@@ -3067,7 +3067,7 @@ BAT is sorted, key or dense.
 BAT *
 BATpropcheck(BAT *b, int mode)
 {
-	BATiter bvi, bi = bat_iterator(b);
+	BATiter bvi, bi = bat_iterator(b), bi2 = bat_iterator(b);
 	int disprove_dense, disprove_sorted, disprove_key = TRUE, disprove_nonil = b->H->nonil;
 	int dense_bak = 0, key_bak = 0, sorted_bak = 0, nonil_bak = 0;
 	oid seq_bak = 0;
@@ -3231,7 +3231,7 @@ check whether whatever we want need to prove was already disproven
 		     (b->H->nokey[0] < xx) &&
 		     (b->H->nokey[1] >= yy) &&
 		     (b->H->nokey[1] < xx) &&
-		     ATOMcmp(tpe, BUNhead(bi, b->H->nokey[0]), BUNhead(bi, b->H->nokey[1])) == 0)) {
+		     ATOMcmp(tpe, BUNhead(bi, b->H->nokey[0]), BUNhead(bi2, b->H->nokey[1])) == 0)) {
 			disprove_key = FALSE;
 		} else {
 			b->H->nokey[0] = b->H->nokey[1] = 0;
@@ -3249,7 +3249,7 @@ check whether whatever we want need to prove was already disproven
 		    ATOMlinear(tpe) == 0 ||
 		    (b->H->nosorted > yy &&
 		     b->H->nosorted < xx &&
-		     ATOMcmp(tpe, BUNhead(bi, b->H->nosorted - 1), BUNhead(bi, b->H->nosorted)) > 0)) {
+		     ATOMcmp(tpe, BUNhead(bi, b->H->nosorted - 1), BUNhead(bi2, b->H->nosorted)) > 0)) {
 			disprove_sorted = FALSE;
 		} else {
 			b->H->nosorted = 0;	/* StM: nosorted_rev ? */
@@ -3259,7 +3259,7 @@ check whether whatever we want need to prove was already disproven
 		if (((b->hsorted & 1) == FALSE && disprove_sorted == FALSE) ||
 		    (b->H->nodense > yy &&
 		     b->H->nodense < xx &&
-		     *(oid *) BUNhloc(bi, b->H->nodense - 1) + 1 != *(oid *) BUNhloc(bi, b->H->nodense))) {
+		     *(oid *) BUNhloc(bi, b->H->nodense - 1) + 1 != *(oid *) BUNhloc(bi2, b->H->nodense))) {
 			disprove_dense = FALSE;
 		} else {
 			b->H->nodense = 0;
