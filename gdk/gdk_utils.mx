@@ -466,6 +466,16 @@ MT_init(void)
 #else
 # if defined(HAVE_SYSCONF) && defined(_SC_PAGESIZE)
 	_MT_pagesize = sysconf(_SC_PAGESIZE);
+# else
+#  if defined(HAVE_SYS_SYSCTL_H) && defined(HW_PAGESIZE)
+	{
+		int size;
+		size_t len = sizeof(size);
+
+		sysctlbyname("hw.pagesize", &size, &len, NULL, 0);
+		_MT_pagesize = size;
+	}
+#  endif
 # endif
 #endif
 	if (_MT_pagesize <= 0)
@@ -491,14 +501,12 @@ MT_init(void)
 #  if defined(HAVE_SYSCONF) && defined(_SC_PHYS_PAGES)
 	_MT_npages = sysconf(_SC_PHYS_PAGES);
 #  else
-#   if defined(HAVE_SYS_SYSCTL_H) && defined(HW_USERMEM)
+#   if defined(HAVE_SYS_SYSCTL_H) && defined(HW_MEMSIZE)
 	{
 		uint64_t size;
 		size_t len = sizeof(size);
 
-		/* This is the 'non-kernel memory', e.g. what's left to a user
-		 * process to allocate. */
-		sysctlbyname("hw.usermem", &size, &len, NULL, 0);
+		sysctlbyname("hw.memsize", &size, &len, NULL, 0);
 		_MT_npages = size / _MT_pagesize;
 	}
 #   else
