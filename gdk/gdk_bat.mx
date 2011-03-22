@@ -1644,6 +1644,7 @@ last inserted bun (if present) is copied over it.
 		idx2 = last;
 		if (p != last) {
 			unsigned short hs = Hsize(b), ts = Tsize(b);
+			BATiter bi2 = bat_iterator(b);
 
 			@:acc_move(last,p,idx2,idx1)@
 			/* If a column was sorted before the BUN was
@@ -1655,7 +1656,7 @@ last inserted bun (if present) is copied over it.
 			   if p+1==last, the new value is now the
 			   last, so no comparison is needed. */
 			if (b->hsorted & 1) {
-				if (p + 1 < last && ATOMcmp(b->htype, BUNhead(bi, p), BUNhead(bi, p + 1)) > 0) {
+				if (p + 1 < last && ATOMcmp(b->htype, BUNhead(bi, p), BUNhead(bi2, p + 1)) > 0) {
 					b->hsorted = FALSE;
 					b->H->nosorted = idx1;
 				}
@@ -1664,13 +1665,13 @@ last inserted bun (if present) is copied over it.
 					b->H->nodense = idx1;
 				}
 			} else if (b->hsorted == (bit) GDK_SORTED_REV) {
-				if (p + 1 < last && ATOMcmp(b->htype, BUNhead(bi, p), BUNhead(bi, p + 1)) < 0) {
+				if (p + 1 < last && ATOMcmp(b->htype, BUNhead(bi, p), BUNhead(bi2, p + 1)) < 0) {
 					b->hsorted = FALSE;
 					b->H->nosorted_rev = idx1;
 				}
 			}
 			if (b->tsorted & 1) {
-				if (p + 1 < last && ATOMcmp(b->ttype, BUNtail(bi, p), BUNtail(bi, p + 1)) > 0) {
+				if (p + 1 < last && ATOMcmp(b->ttype, BUNtail(bi, p), BUNtail(bi2, p + 1)) > 0) {
 					b->tsorted = FALSE;
 					b->H->nosorted = idx1;
 				}
@@ -1679,7 +1680,7 @@ last inserted bun (if present) is copied over it.
 					b->T->nodense = idx1;
 				}
 			} else if (b->tsorted == (bit) GDK_SORTED_REV) {
-				if (p + 1 < last && ATOMcmp(b->ttype, BUNtail(bi, p), BUNtail(bi, p + 1)) < 0) {
+				if (p + 1 < last && ATOMcmp(b->ttype, BUNtail(bi, p), BUNtail(bi2, p + 1)) < 0) {
 					b->tsorted = FALSE;
 					b->H->nosorted_rev = idx1;
 				}
