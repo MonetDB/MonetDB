@@ -65,7 +65,7 @@ malalgebra: loaded.
    logger: loaded.
      lock: loaded.
     image: loading... done.
-     geom: loading... # MonetDB/GIS module v11.1.0 loaded
+     geom: loading... # MonetDB/GIS module v11.1.1 loaded
 done.
      enum: loading... done.
   decimal: loading... done.
