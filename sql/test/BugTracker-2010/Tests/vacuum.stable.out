@@ -104,12 +104,12 @@ Over..
 % sys.vac1,	sys.vac1 # table_name
 % i,	s # name
 % int,	clob # type
-% 1,	4 # length
+% 1,	5 # length
 [ 1,	"the"	]
-[ 3,	"runs"	]
-[ 5,	"fox"	]
-[ 4,	"over"	]
-[ 6,	"dog"	]
+[ 3,	"brown"	]
+[ 5,	"runs"	]
+[ 4,	"fox"	]
+[ 6,	"over"	]
 #drop table vac1;
 
 # 21:53:59 >  

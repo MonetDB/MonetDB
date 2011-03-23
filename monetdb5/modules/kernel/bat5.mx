@@ -3881,13 +3881,29 @@ BKCshrinkBAT(int *ret, int *bid, int *did)
 	case TYPE_dbl: @:shrinkloop(dbl)@ break;
 	case TYPE_oid: @:shrinkloop(oid)@ break;
 	default:
-		switch( b->T->width){
-		case 1:@:shrinkloop(bte)@ break;
-		case 2:@:shrinkloop(sht)@ break;
-		case 4:@:shrinkloop(int)@ break;
-		case 8:@:shrinkloop(lng)@ break;
-		default:
-			throw(MAL, "bat.shrink", "Illegal argument type");
+		if (ATOMvarsized(bn->ttype)) {
+			BUN p = BUNfirst(b);
+			BUN q = BUNlast(b);
+			BATiter bi = bat_iterator(b);
+
+			cnt=0;
+			for (;p<q; oidx++, p++) {
+				if ( o < ol && *o == oidx ){
+					o++;
+				} else {
+					BUNappend(bn, BUNtail(bi, p), FALSE);
+					cnt++;
+				}
+			}
+		} else {
+			switch( b->T->width){
+			case 1:@:shrinkloop(bte)@ break;
+			case 2:@:shrinkloop(sht)@ break;
+			case 4:@:shrinkloop(int)@ break;
+			case 8:@:shrinkloop(lng)@ break;
+			default:
+				throw(MAL, "bat.shrink", "Illegal argument type");
+			}
 		}
 	}
 	BATaccessEnd(d, USE_TAIL, MMAP_SEQUENTIAL);
@@ -4044,13 +4060,32 @@ BKCreuseBAT(int *ret, int *bid, int *did)
 	case TYPE_oid: @:reuseloop(oid)@ break;
 	case TYPE_str: /* to be done based on its index width */
 	default:
-		switch( b->T->width){
-		case 1:@:reuseloop(bte)@ break;
-		case 2:@:reuseloop(sht)@ break;
-		case 4:@:reuseloop(int)@ break;
-		case 8:@:reuseloop(lng)@ break;
-		default:
-			throw(MAL, "bat.shrink", "Illegal argument type");
+		if (ATOMvarsized(bn->ttype)) {
+			BUN p = BUNfirst(b);
+			BUN q = BUNlast(b);
+			BATiter bi = bat_iterator(b);
+		
+			for (;p<q; oidx++, p++) {
+				if ( *o == oidx ){
+					while ( *ol == bidx && ol>o) {
+						bidx--;
+						ol--;q--;
+					}
+					BUNappend(bn, BUNtail(bi, --q), FALSE);
+					o += (o < ol);
+					bidx--;
+				} else
+					BUNappend(bn, BUNtail(bi, p), FALSE);
+			}
+		} else {
+			switch( b->T->width){
+			case 1:@:reuseloop(bte)@ break;
+			case 2:@:reuseloop(sht)@ break;
+			case 4:@:reuseloop(int)@ break;
+			case 8:@:reuseloop(lng)@ break;
+			default:
+				throw(MAL, "bat.shrink", "Illegal argument type");
+			}
 		}
 	}
     BATaccessEnd(d, USE_TAIL, MMAP_SEQUENTIAL);
