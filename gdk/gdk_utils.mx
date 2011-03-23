@@ -465,7 +465,7 @@ MT_init(void)
 #else
 # if defined(HAVE_SYS_SYSCTL_H) && defined(HW_PAGESIZE)
 	{
-		int size;
+		int size 0;
 		size_t len = sizeof(size);
 
 		sysctlbyname("hw.pagesize", &size, &len, NULL, 0);
@@ -499,7 +499,7 @@ MT_init(void)
 # else
 #  if defined(HAVE_SYS_SYSCTL_H) && defined(HW_MEMSIZE)
 	{
-		uint64_t size;
+		uint64_t size = 0;
 		size_t len = sizeof(size);
 
 		sysctlbyname("hw.memsize", &size, &len, NULL, 0);
