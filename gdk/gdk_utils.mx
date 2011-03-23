@@ -463,10 +463,7 @@ MT_init(void)
 		_MT_pagesize = sysInfo.dwPageSize;
 	}
 #else
-# if defined(HAVE_SYSCONF) && defined(_SC_PAGESIZE)
-	_MT_pagesize = sysconf(_SC_PAGESIZE);
-# else
-#  if defined(HAVE_SYS_SYSCTL_H) && defined(HW_PAGESIZE)
+# if defined(HAVE_SYS_SYSCTL_H) && defined(HW_PAGESIZE)
 	{
 		int size;
 		size_t len = sizeof(size);
@@ -474,6 +471,9 @@ MT_init(void)
 		sysctlbyname("hw.pagesize", &size, &len, NULL, 0);
 		_MT_pagesize = size;
 	}
+# else
+#  if defined(HAVE_SYSCONF) && defined(_SC_PAGESIZE)
+	_MT_pagesize = sysconf(_SC_PAGESIZE);
 #  endif
 # endif
 #endif
