@@ -497,10 +497,7 @@ MT_init(void)
 		_MT_npages = memStat.dwTotalPhys / _MT_pagesize;
 	}
 # else
-#  if defined(HAVE_SYSCONF) && defined(_SC_PHYS_PAGES)
-	_MT_npages = sysconf(_SC_PHYS_PAGES);
-#  else
-#   if defined(HAVE_SYS_SYSCTL_H) && defined(HW_MEMSIZE)
+#  if defined(HAVE_SYS_SYSCTL_H) && defined(HW_MEMSIZE)
 	{
 		uint64_t size;
 		size_t len = sizeof(size);
@@ -508,6 +505,9 @@ MT_init(void)
 		sysctlbyname("hw.memsize", &size, &len, NULL, 0);
 		_MT_npages = size / _MT_pagesize;
 	}
+#  else
+#   if defined(HAVE_SYSCONF) && defined(_SC_PHYS_PAGES)
+	_MT_npages = sysconf(_SC_PHYS_PAGES);
 #   else
 #    error "don't know how to get the amount of physical memory for your OS"
 #   endif /* sysctl */
