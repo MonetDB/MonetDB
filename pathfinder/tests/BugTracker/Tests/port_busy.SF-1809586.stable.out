@@ -29,8 +29,7 @@ module(pathfinder);
 # Visit http://monetdb.cwi.nl/ for further information.
 # PF/Tijah module v0.13.0 loaded. http://dbappl.cs.utwente.nl/pftijah
 !ERROR: MAPIlisten:binding to stream socket (39041) failed
-!OS: Address already in use
-XRPCPORT
+!OS: Address already in useXRPCPORT
 module(mapi);
 # MonetDB Server v4.34.0
 # based on GDK   v1.34.0
