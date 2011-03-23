@@ -1,1 +1,1 @@
-HAVE_PHP?php_monetdb
+#HAVE_PHP?php_monetdb
