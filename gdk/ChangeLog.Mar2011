@@ -1,3 +1,7 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Tue Mar 22 2011 Fabian Groffen <fabian@cwi.nl>
+- Fixed memory detection on Darwin (Mac OS X) systems not to return
+  bogus values
+

@@ -1640,6 +1640,7 @@ last inserted bun (if present) is copied over it.
 		idx2 = last;
 		if (p != last) {
 			unsigned short hs = Hsize(b), ts = Tsize(b);
+			BATiter bi2 = bat_iterator(b);
 
 			@:acc_move(last,p,idx2,idx1)@
 			/* If a column was sorted before the BUN was
@@ -1651,7 +1652,7 @@ last inserted bun (if present) is copied over it.
 			   if p+1==last, the new value is now the
 			   last, so no comparison is needed. */
 			if (b->hsorted & 1) {
-				if (p + 1 < last && ATOMcmp(b->htype, BUNhead(bi, p), BUNhead(bi, p + 1)) > 0) {
+				if (p + 1 < last && ATOMcmp(b->htype, BUNhead(bi, p), BUNhead(bi2, p + 1)) > 0) {
 					b->hsorted = FALSE;
 					b->H->nosorted = idx1;
 				}
@@ -1660,13 +1661,13 @@ last inserted bun (if present) is copied over it.
 					b->H->nodense = idx1;
 				}
 			} else if (b->hsorted == (bit) GDK_SORTED_REV) {
-				if (p + 1 < last && ATOMcmp(b->htype, BUNhead(bi, p), BUNhead(bi, p + 1)) < 0) {
+				if (p + 1 < last && ATOMcmp(b->htype, BUNhead(bi, p), BUNhead(bi2, p + 1)) < 0) {
 					b->hsorted = FALSE;
 					b->H->nosorted_rev = idx1;
 				}
 			}
 			if (b->tsorted & 1) {
-				if (p + 1 < last && ATOMcmp(b->ttype, BUNtail(bi, p), BUNtail(bi, p + 1)) > 0) {
+				if (p + 1 < last && ATOMcmp(b->ttype, BUNtail(bi, p), BUNtail(bi2, p + 1)) > 0) {
 					b->tsorted = FALSE;
 					b->H->nosorted = idx1;
 				}
@@ -1675,7 +1676,7 @@ last inserted bun (if present) is copied over it.
 					b->T->nodense = idx1;
 				}
 			} else if (b->tsorted == (bit) GDK_SORTED_REV) {
-				if (p + 1 < last && ATOMcmp(b->ttype, BUNtail(bi, p), BUNtail(bi, p + 1)) < 0) {
+				if (p + 1 < last && ATOMcmp(b->ttype, BUNtail(bi, p), BUNtail(bi2, p + 1)) < 0) {
 					b->tsorted = FALSE;
 					b->H->nosorted_rev = idx1;
 				}
@@ -3066,7 +3067,7 @@ BAT is sorted, key or dense.
 BAT *
 BATpropcheck(BAT *b, int mode)
 {
-	BATiter bvi, bi = bat_iterator(b);
+	BATiter bvi, bi = bat_iterator(b), bi2 = bat_iterator(b);
 	int disprove_dense, disprove_sorted, disprove_key = TRUE, disprove_nonil = b->H->nonil;
 	int dense_bak = 0, key_bak = 0, sorted_bak = 0, nonil_bak = 0;
 	oid seq_bak = 0;
@@ -3230,7 +3231,7 @@ check whether whatever we want need to prove was already disproven
 		     (b->H->nokey[0] < xx) &&
 		     (b->H->nokey[1] >= yy) &&
 		     (b->H->nokey[1] < xx) &&
-		     ATOMcmp(tpe, BUNhead(bi, b->H->nokey[0]), BUNhead(bi, b->H->nokey[1])) == 0)) {
+		     ATOMcmp(tpe, BUNhead(bi, b->H->nokey[0]), BUNhead(bi2, b->H->nokey[1])) == 0)) {
 			disprove_key = FALSE;
 		} else {
 			b->H->nokey[0] = b->H->nokey[1] = 0;
@@ -3248,7 +3249,7 @@ check whether whatever we want need to prove was already disproven
 		    ATOMlinear(tpe) == 0 ||
 		    (b->H->nosorted > yy &&
 		     b->H->nosorted < xx &&
-		     ATOMcmp(tpe, BUNhead(bi, b->H->nosorted - 1), BUNhead(bi, b->H->nosorted)) > 0)) {
+		     ATOMcmp(tpe, BUNhead(bi, b->H->nosorted - 1), BUNhead(bi2, b->H->nosorted)) > 0)) {
 			disprove_sorted = FALSE;
 		} else {
 			b->H->nosorted = 0;	/* StM: nosorted_rev ? */
@@ -3258,7 +3259,7 @@ check whether whatever we want need to prove was already disproven
 		if (((b->hsorted & 1) == FALSE && disprove_sorted == FALSE) ||
 		    (b->H->nodense > yy &&
 		     b->H->nodense < xx &&
-		     *(oid *) BUNhloc(bi, b->H->nodense - 1) + 1 != *(oid *) BUNhloc(bi, b->H->nodense))) {
+		     *(oid *) BUNhloc(bi, b->H->nodense - 1) + 1 != *(oid *) BUNhloc(bi2, b->H->nodense))) {
 			disprove_dense = FALSE;
 		} else {
 			b->H->nodense = 0;

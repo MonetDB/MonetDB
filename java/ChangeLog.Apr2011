@@ -1,0 +1,7 @@
+# ChangeLog file for java
+# This file is updated with Maddlog
+
+* Mon Feb  7 2011 Fabian Groffen <fabian@cwi.nl>
+- Removed XQuery related XRPC wrapper and XML:DB code, removed support
+  for language=xquery and language=mil from JDBC.
+
