@@ -1337,11 +1337,11 @@ DFLOWscheduler( DataFlow flow )
 {
 	int queued = 0, candidates;
 	int todo = 0, done = 0;
-	int pc = 0, i, j, oa =0, ia,k;
-	int limit = flow->stop - flow->start, lookahead =0;
+	int pc = 0, i, j, oa =0, ia;
+	int limit = flow->stop - flow->start;
 	str ret = MAL_SUCCEED;
 	FlowStep fs = (FlowStep)alloca(sizeof(FlowStepRec) * limit), f = 0;
-	InstrPtr p, last=0;
+	InstrPtr p;
 
 	if ( limit == 0)
 		throw(MAL,"dataflow","Empty dataflow block");
@@ -1401,43 +1401,31 @@ DFLOWscheduler( DataFlow flow )
 			/* deblock the output args */
 			for(j=0; j<p->retc; j++) {
 				oa = getArg(p,j);
-				/* find the last instruction that should be inspected for eligibility */
-				if ( getEndOfLife(flow->mb,oa) > lookahead)
-					lookahead = getEndOfLife(flow->mb,oa);
 
 				flow->blocked[oa] = 0;
 				flow->inuse[oa] = 0;
 			}
-			last = p;
 		}
 		firststep:
 		PARDEBUG if (queued)
 			mnstr_printf(GDKstdout,"#schedule new instructions, start from %d\n", pc);
 
-		/* avoid the head of the flow that has already been handled */
 		for( ; pc < limit; pc++)
 			if ( fs[pc].status != DFLOWwrapup)
 				break;
-		if (lookahead <= pc)
-			lookahead = pc+1;
-		if ( lookahead > limit)
-			lookahead = limit;
-
 		if (flow->stk->admit == 0) {
 			@:DFLOWscheduler_body( DFLOWeligible(flow,fs,i,p,pc) )@
 		} else {
 			@:DFLOWscheduler_body( DFLOWeligible(flow,fs,i,p,pc) && (*flow->stk->admit)(flow->cntxt, flow->mb, flow->stk, p) )@
 		}
 @= DFLOWscheduler_body
-		/* first try to find all instructions that use any of the released targets */
+		/* first try to find all instructions that use the released target */
 		candidates = 0;
-		if ( last)
-		for(i = pc; i < lookahead ; i++)
+		for(i = pc; i < limit ; i++)
 			if (fs[i].status == DFLOWpending ) {
 				p = getInstrPtr(flow->mb, fs[i].pc);
 				for ( j= p->retc; j < p->argc; j++)
-				for ( k= 0; k < last->retc; k++)
-					if ( getArg(p,j)== getArg(last,k) ) {
+					if ( getArg(p,j)== oa ) {
 						if ( @1 ) {
 							queued++;
 							todo++;
@@ -1465,7 +1453,7 @@ DFLOWscheduler( DataFlow flow )
 	PARDEBUG {
 		int candidates = 0;
 		mnstr_printf(GDKstdout,"#end of data flow %d %d todo %d  done %d\n",pc,limit,todo,done);
-		for ( i =0 ; i<lookahead; i++)
+		for ( i =0 ; i<limit; i++)
 			if (fs[i].status != DFLOWwrapup  && fs[i].pc >=0) {
 				mnstr_printf(GDKstdout,"#missed %d %d %d ",  i, fs[i].status, fs[i].pc);
 				printInstruction(GDKstdout, flow->mb, 0, getInstrPtr(flow->mb,fs[i].pc), LIST_MAL_STMT | LIST_MAPI);
