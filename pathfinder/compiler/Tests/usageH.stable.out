@@ -18,7 +18,6 @@ Usage: pf [OPTION] [FILE]
   Reads from standard input if FILE is omitted.
 
 = -A, --mil: generate MIL code (default)
-  -5, --m5-sql: generate MIL code
 = -M, --mil_2004: generate MIL code (directly from XQuery Core)
 = -S, --sql: generate SQL code
 
