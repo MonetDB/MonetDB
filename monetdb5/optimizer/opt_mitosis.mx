@@ -228,14 +228,16 @@ tarantula optimizer.
 
 		for(j=0; j < pieces; j++){
 			q= copyInstruction(p);
-			q= pushOid(mb,q,low.value.val.oval);
+			q= pushInt(mb,q,j);
+			q= pushInt(mb,q,pieces);
+			//q= pushOid(mb,q,low.value.val.oval);
 			if (j+1 < pieces) {
 				hgh.value.val.oval= low.value.val.oval+slice;
 			} else {
 				assert(rowcnt <= (wrd) BUN_MAX);
 				hgh.value.val.oval= (BUN) rowcnt;
 			}
-			q = pushOid(mb,q,hgh.value.val.oval);
+			//q = pushOid(mb,q,hgh.value.val.oval);
 
 			k= getArg(q,0)= newTmpVariable(mb,tpe);
 			setVarUDFtype(mb,k);

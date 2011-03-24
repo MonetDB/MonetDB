@@ -190,7 +190,7 @@ schema_destroy(sql_schema *s)
 	_DELETE(s);
 }
 
-/*#define STORE_DEBUG 1 */
+/*#define STORE_DEBUG 1*/ 
 
 sql_trans *
 sql_trans_destroy(sql_trans *t)
@@ -199,12 +199,12 @@ sql_trans_destroy(sql_trans *t)
 
 	transactions--;
 #ifdef STORE_DEBUG
-	fprintf(stderr, "destroy trans (%p)\n", t);
+	fprintf(stderr, "#destroy trans (%p)\n", t);
 #endif
 
 	if (res == gtrans && spares < MAX_SPARES && !t->name) {
 #ifdef STORE_DEBUG
-		fprintf(stderr, "spared (%d) trans (%p)\n", spares, t);
+		fprintf(stderr, "#spared (%d) trans (%p)\n", spares, t);
 #endif
 		spare_trans[spares++] = t;
 		return res;
@@ -516,7 +516,7 @@ load_column(sql_trans *tr, sql_table *t, oid rid)
 	if (isTable(c->t))
 		store_funcs.create_col(tr, c);
 	if (bs_debug)
-		fprintf(stderr, "\t\tload column %s\n", c->base.name);
+		fprintf(stderr, "#\t\tload column %s\n", c->base.name);
 	return c;
 }
 
@@ -614,7 +614,7 @@ load_table(sql_trans *tr, sql_schema *s, oid rid)
 		store_funcs.create_del(tr, t);
 
 	if (bs_debug)
-		fprintf(stderr, "\tload table %s\n", t->base.name);
+		fprintf(stderr, "#\tload table %s\n", t->base.name);
 
 	column_table_id = find_sql_column(columns, "table_id");
 	column_number = find_sql_column(columns, "number");
@@ -771,7 +771,7 @@ load_func(sql_trans *tr, sql_schema *s, oid rid)
 	rs = table_funcs.rids_orderby(tr, rs, arg_number); 
 
 	if (bs_debug)
-		fprintf(stderr, "\tload func %s\n", t->base.name);
+		fprintf(stderr, "#\tload func %s\n", t->base.name);
 
 	t->ops = list_create((fdestroy)&arg_destroy);
 	for(rid = table_funcs.rids_next(rs); rid != oid_nil; rid = table_funcs.rids_next(rs)) {
@@ -891,7 +891,7 @@ load_schema(sql_trans *tr, sqlid id, oid rid)
 	}
 
 	if (bs_debug)
-		fprintf(stderr, "load schema %s %d\n", s->base.name, s->base.id);
+		fprintf(stderr, "#load schema %s %d\n", s->base.name, s->base.id);
 
 	/* first load simple types */
 	type_schema = find_sql_column(types, "schema_id");
@@ -956,7 +956,7 @@ load_trans(sql_trans* tr, sqlid id)
 	oid rid;
 	
 	if (bs_debug)
-		fprintf(stderr, "load trans\n");
+		fprintf(stderr, "#load trans\n");
 
 	for(rid = table_funcs.rids_next(schemas); rid != oid_nil; rid = table_funcs.rids_next(schemas)) {
 		sql_schema *ns = load_schema(tr, id, rid);
@@ -1123,7 +1123,7 @@ bootstrap_create_column(sql_trans *tr, sql_table *t, char *name, char *sqltype, 
 	sql_column *col = ZNEW(sql_column);
 
 	if (bs_debug)
-		fprintf(stderr, "bootstrap_create_column %s\n", name );
+		fprintf(stderr, "#bootstrap_create_column %s\n", name );
 
 	base_init(NULL, &col->base, next_oid(), t->base.flag, name);
 	sql_find_subtype(&col->type, sqltype, digits, 0);
@@ -1229,7 +1229,7 @@ bootstrap_create_table(sql_trans *tr, sql_schema *s, char *name)
 	sql_table *t = create_sql_table(NULL, name, tt_table, 1, persistence, commit_action);
 
 	if (bs_debug)
-		fprintf(stderr, "bootstrap_create_table %s\n", name );
+		fprintf(stderr, "#bootstrap_create_table %s\n", name );
 
 	t->base.flag = s->base.flag;
 	t->query = NULL;
@@ -1249,7 +1249,7 @@ bootstrap_create_schema(sql_trans *tr, char *name, int auth_id, int owner)
 	sql_schema *s = ZNEW(sql_schema);
 
 	if (bs_debug)
-		fprintf(stderr, "bootstrap_create_schema %s %d %d\n", name, auth_id, owner);
+		fprintf(stderr, "#bootstrap_create_schema %s %d %d\n", name, auth_id, owner);
 
 	base_init(NULL, &s->base, next_oid(), TR_NEW, name);
 	s->auth_id = auth_id;
@@ -1498,7 +1498,7 @@ store_exit(void)
 	MT_lock_set(&bs_lock, "store_exit");
 
 #ifdef STORE_DEBUG
-	fprintf(stderr, "store exit locked\n");
+	fprintf(stderr, "#store exit locked\n");
 #endif
 	active = 0;
 
@@ -1529,7 +1529,7 @@ store_exit(void)
 		gtrans = NULL;
 	}
 #ifdef STORE_DEBUG
-	fprintf(stderr, "store exit unlocked\n");
+	fprintf(stderr, "#store exit unlocked\n");
 #endif
 	MT_lock_unset(&bs_lock, "store_exit");
 	types_exit();
@@ -1600,7 +1600,7 @@ store_lock(void)
 {
 	MT_lock_set(&bs_lock, "trans_lock");
 #ifdef STORE_DEBUG
-	fprintf(stderr, "locked\n");
+	fprintf(stderr, "#locked\n");
 #endif
 }
 
@@ -1608,7 +1608,7 @@ void
 store_unlock(void)
 {
 #ifdef STORE_DEBUG
-	fprintf(stderr, "unlocked\n");
+	fprintf(stderr, "#unlocked\n");
 #endif
 	MT_lock_unset(&bs_lock, "trans_unlock");
 }
@@ -2177,7 +2177,7 @@ trans_init(sql_trans *t, backend_stack stk, sql_trans *ot)
 
 	t->name = NULL;
 	if (bs_debug) 
-		fprintf(stderr, "trans (%p) init (%d,%d)\n", 
+		fprintf(stderr, "#trans (%p) init (%d,%d)\n", 
 			t, t->stime, t->schema_number ); 
 	return t;
 }
@@ -2461,7 +2461,7 @@ rollforward_create_table(sql_trans *tr, sql_table *t, int mode)
 	int ok = LOG_OK;
 
 	if (bs_debug) 
-		fprintf(stderr, "create table %s\n", t->base.name);
+		fprintf(stderr, "#create table %s\n", t->base.name);
 
 	if (isTable(t) && isGlobal(t)) {
 		int p = (tr->parent == gtrans && !isTempTable(t));
@@ -2649,7 +2649,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt, int mode)
 			tt->base.rtime = tr->stime;
 		tt->base.wtime = tr->stime;
 		if (bs_debug) 
-			fprintf(stderr, "update table %s\n", tt->base.name);
+			fprintf(stderr, "#update table %s\n", tt->base.name);
 		ok = store_funcs.update_table(tr, ft, tt);
 		ft->cleared = 0;
 		ft->base.rtime = ft->base.wtime = 0;
@@ -2839,13 +2839,13 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 				n = n->next;
 				m = m->next;
 				if (bs_debug) 
-					fprintf(stderr, "reset_cs %s\n",
+					fprintf(stderr, "#reset_cs %s\n",
 						(fb->name)?fb->name:"help");
 			} else if (fb->id < pfb->id) {  
 				node *t = n->next;
 				if (bs_debug) {
 					sql_base *b = n->data;
-					fprintf(stderr, "reset_cs free %s\n",
+					fprintf(stderr, "#reset_cs free %s\n",
 						(b->name)?b->name:"help");
 				}
 				list_remove_node(fs->set, n);
@@ -2857,7 +2857,7 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 				r->rtime = r->wtime = 0;
 				m = m->next;
 				if (bs_debug) {
-					fprintf(stderr, "reset_cs new %s\n",
+					fprintf(stderr, "#reset_cs new %s\n",
 						(r->name)?r->name:"help");
 				}
 			}
@@ -2869,7 +2869,7 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 			cs_add(fs, r, TR_OLD);
 			r->rtime = r->wtime = 0;
 			if (bs_debug) {
-				fprintf(stderr, "reset_cs new %s\n",
+				fprintf(stderr, "#reset_cs new %s\n",
 					(r->name)?r->name:"help");
 			}
 		}
@@ -2877,7 +2877,7 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 			node *t = n->next;
 			if (bs_debug) {
 				sql_base *b = n->data;
-				fprintf(stderr, "reset_cs free %s\n",
+				fprintf(stderr, "#reset_cs free %s\n",
 					(b->name)?b->name:"help");
 			}
 			list_remove_node(fs->set, n);
@@ -3020,6 +3020,9 @@ static int
 reset_trans(sql_trans *tr, sql_trans *ptr)
 {
 	int res = reset_changeset(tr, &tr->schemas, &ptr->schemas, (sql_base *)tr->parent, (resetf) &reset_schema, (dupfunc) &schema_dup);
+#ifdef STORE_DEBUG
+	fprintf(stderr,"#reset trans %d\n", tr->wtime);
+#endif
 	tr->wtime = tr->rtime = 0;
 	return res;
 }
@@ -3034,12 +3037,12 @@ sql_trans_create(backend_stack stk, sql_trans *parent, char *name)
 		if (!parent && spares > 0 && !name) {
 			tr = spare_trans[--spares];
 #ifdef STORE_DEBUG
-			fprintf(stderr, "reuse trans (%p) %d\n", tr, spares);
+			fprintf(stderr, "#reuse trans (%p) %d\n", tr, spares);
 #endif
 		} else {
 			tr = trans_dup(stk, (parent) ? parent : gtrans, name);
 #ifdef STORE_DEBUG
-			fprintf(stderr, "new trans (%p)\n", tr);
+			fprintf(stderr, "#new trans (%p)\n", tr);
 #endif
 		}
 	}
@@ -3110,7 +3113,7 @@ sql_trans_commit(sql_trans *tr)
 
 	/* write phase */
 	if (bs_debug)
-		fprintf(stderr, "forwarding changes %d,%d\n", gtrans->stime, tr->stime);
+		fprintf(stderr, "#forwarding changes %d,%d\n", gtrans->stime, tr->stime);
 	/* snap shots should be saved first */
 	if (tr->parent == gtrans) {
 		tr->stime = timestamp ();
@@ -3133,7 +3136,7 @@ sql_trans_commit(sql_trans *tr)
 		ok = rollforward_trans(tr, R_APPLY);
 	}
 	if (bs_debug)
-		fprintf(stderr, "done forwarding changes %d\n", gtrans->stime);
+		fprintf(stderr, "#done forwarding changes %d\n", gtrans->stime);
 	return (ok==LOG_OK)?SQL_OK:SQL_ERR;
 }
 
@@ -4486,7 +4489,7 @@ sql_trans_create_ic(sql_trans *tr, sql_idx * i, sql_column *c)
 	}
 
 	/* should we switch to oph_idx ? */
-	if (i->type == hash_idx && list_length(i->columns) == 1 &&
+	if (0 && i->type == hash_idx && list_length(i->columns) == 1 &&
 	    store_funcs.count_col(ic->c) && store_funcs.sorted_col(tr, ic->c)) {
 		sql_table *sysidx = find_sql_table(syss, "idxs");
 		sql_column *sysidxid = find_sql_column(sysidx, "id");
@@ -4797,6 +4800,9 @@ sql_trans_begin(sql_session *s)
 	sql_trans *tr = s->tr;
 	int snr = tr->schema_number;
 
+#ifdef STORE_DEBUG
+	fprintf(stderr,"#sql trans begin %d\n", snr);
+#endif
 	if (tr->stime < gtrans->stime || tr->wtime || 
 			store_schema_number() != snr) 
 		reset_trans(tr, gtrans);
@@ -4806,12 +4812,18 @@ sql_trans_begin(sql_session *s)
 	s->tr = tr;
 	store_nr_active ++;
 	s->status = 0;
+#ifdef STORE_DEBUG
+	fprintf(stderr,"#sql trans begin (%d)\n", tr->schema_number);
+#endif
 	return snr != tr->schema_number;
 }
 
 void
 sql_trans_end(sql_session *s)
 {
+#ifdef STORE_DEBUG
+	fprintf(stderr,"#sql trans end (%d)\n", s->tr->schema_number);
+#endif
 	s->active = 0;
 	s->auto_commit = s->ac_on_commit;
 	store_nr_active --;

@@ -124,11 +124,11 @@ str
 getPipeDefinition(str name)
 {
 	int i;
-	for( i=0; *pipes[i].name; i++)
-	if ( strcmp(name, pipes[i].name) == 0)
-		return GDKstrdup(pipes[i].def);
 
-	return GDKstrdup(pipes[0].def);
+	for( i=0; *pipes[i].name; i++)
+		if ( strcmp(name, pipes[i].name) == 0)
+			return GDKstrdup(pipes[i].def);
+	return NULL;
 }
 
 str

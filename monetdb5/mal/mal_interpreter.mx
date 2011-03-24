@@ -1363,11 +1363,11 @@ DFLOWscheduler( DataFlow flow )
 {
 	int queued = 0, candidates;
 	int todo = 0, done = 0;
-	int pc = 0, i, j, oa =0, ia;
-	int limit = flow->stop - flow->start;
+	int pc = 0, i, j, oa =0, ia,k;
+	int limit = flow->stop - flow->start, lookahead =0;
 	str ret = MAL_SUCCEED;
 	FlowStep fs = (FlowStep)alloca(sizeof(FlowStepRec) * limit), f = 0;
-	InstrPtr p;
+	InstrPtr p, last=0;
 
 	if ( limit == 0)
 		throw(MAL,"dataflow","Empty dataflow block");
@@ -1427,31 +1427,43 @@ DFLOWscheduler( DataFlow flow )
 			/* deblock the output args */
 			for(j=0; j<p->retc; j++) {
 				oa = getArg(p,j);
+				/* find the last instruction that should be inspected for eligibility */
+				if ( getEndOfLife(flow->mb,oa) > lookahead)
+					lookahead = getEndOfLife(flow->mb,oa) +1;
 
 				flow->blocked[oa] = 0;
 				flow->inuse[oa] = 0;
 			}
+			last = p;
 		}
 		firststep:
 		PARDEBUG if (queued)
 			mnstr_printf(GDKstdout,"#schedule new instructions, start from %d\n", pc);
 
+		/* avoid the head of the flow that has already been handled */
 		for( ; pc < limit; pc++)
 			if ( fs[pc].status != DFLOWwrapup)
 				break;
+		if (lookahead <= pc)
+			lookahead = pc+1;
+		if ( lookahead > limit)
+			lookahead = limit;
+
 		if (flow->stk->admit == 0) {
-			@:DFLOWscheduler_body( DFLOWeligible(flow,fs,i,p,pc) )@
+			@:DFLOWscheduler_body( DFLOWeligible(flow,fs,i,p,pc), foundit1 )@
 		} else {
-			@:DFLOWscheduler_body( DFLOWeligible(flow,fs,i,p,pc) && (*flow->stk->admit)(flow->cntxt, flow->mb, flow->stk, p) )@
+			@:DFLOWscheduler_body( DFLOWeligible(flow,fs,i,p,pc) && (*flow->stk->admit)(flow->cntxt, flow->mb, flow->stk, p), foundit2 )@
 		}
 @= DFLOWscheduler_body
 		/* first try to find an instructions that use the released target */
 		candidates = 0;
-		for(i = pc; i < limit ; i++)
+		if ( last)
+		for(i = pc; i < lookahead ; i++)
 			if (fs[i].status == DFLOWpending ) {
 				p = getInstrPtr(flow->mb, fs[i].pc);
 				for ( j= p->retc; j < p->argc; j++)
-					if ( getArg(p,j)== oa ) {
+				for ( k= 0; k < last->retc; k++)
+					if ( getArg(p,j)== getArg(last,k) ) {
 						if ( @1 ) {
 							queued++;
 							todo++;
@@ -1459,8 +1471,9 @@ DFLOWscheduler( DataFlow flow )
 							DFLOWactivate(flow,fs,i,p);
 							q_enqueue(flow->todo, fs+i);
 						}
-						break;
+						goto @2;
 					}
+				@2: /* it can only be activated once */;
 			}
 		/* if all work done then inspect rest */
 		if (candidates < flow->nway)
@@ -1479,7 +1492,7 @@ DFLOWscheduler( DataFlow flow )
 	PARDEBUG {
 		int candidates = 0;
 		mnstr_printf(GDKstdout,"#end of data flow %d %d todo %d  done %d\n",pc,limit,todo,done);
-		for ( i =0 ; i<limit; i++)
+		for ( i =0 ; i<lookahead; i++)
 			if (fs[i].status != DFLOWwrapup  && fs[i].pc >=0) {
 				mnstr_printf(GDKstdout,"#missed %d %d %d ",  i, fs[i].status, fs[i].pc);
 				printInstruction(GDKstdout, flow->mb, 0, getInstrPtr(flow->mb,fs[i].pc), LIST_MAL_STMT | LIST_MAPI);
@@ -1509,6 +1522,12 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 	mnstr_printf(GDKstdout, "runMALdataflow for block %d - %d\n", startpc,stoppc);
 	printFunction(GDKstdout, mb, 0, LIST_MAL_STMT | LIST_MAPI);
 #endif
+
+	/* 
+  	 * TODO improve cost of DFLOWeligible 
+ 	 */
+	if (stoppc && stoppc-startpc > 10000)
+		return runMALsequence( cntxt, mb, startpc+1, stoppc, stk, env, pcicaller);
 
 	(void)env;
 	(void)pcicaller;

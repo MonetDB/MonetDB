@@ -599,7 +599,7 @@ check_types(mvc *sql, sql_subtype *ct, stmt *s, check_type tpe)
                    (c == 3 && tpe != type_cast)) { 
 			s = NULL;
 		} else {
-			s = stmt_convert(sql->sa, s, st, ct);
+			s = stmt_convert(sql->sa, s, st, ct, 1);
 		}
 	} 
 	if (!s) {

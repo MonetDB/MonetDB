@@ -1,0 +1,50 @@
+stdout of test 'view_avg_incorrect_result.Bug-2790` in directory 'test/BugTracker-2011` itself:
+
+
+# 16:41:00 >  
+# 16:41:00 >   mserver5  --debug=10 --set gdk_nr_threads=4  --set "gdk_dbfarm=/ufs/niels/scratch/MonetDB/Linux-x86_64/var/MonetDB" --set mapi_open=true --set mapi_port=31900 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_test_BugTracker-2011" --set mal_listing=0 ; echo ; echo Over..
+# 16:41:00 >  
+
+# MonetDB 5 server v11.2.0
+# This is an unreleased version
+# Serving database 'mTests_test_BugTracker-2011', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.752 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:31900/
+# MonetDB/SQL module loaded
+# MonetDB/GIS module loaded
+
+Ready.
+
+Over..
+
+# 16:41:01 >  
+# 16:41:01 >  mclient -lsql -ftest -i -e --host=alf --port=31900 
+# 16:41:01 >  
+
+#create table t2790 (d double);
+#insert into t2790 values (2),(3);
+[ 2	]
+#select avg(d) as avg_d, avg(d*d) as avg_d2, avg(d)*avg(d) as avg2_d_mult from t2790;
+% sys.,	sys.,	sys. # table_name
+% avg_d,	avg_d2,	avg2_d_mult # name
+% double,	double,	double # type
+% 22,	22,	22 # length
+[ 2.5,	6.5,	6.25	]
+#create view tv2790 as select avg(d) as avg_d, avg(d*d) as avg_d2, avg(d)*avg(d) as avg2_d_mult from t2790;
+#select * from tv2790;
+% sys.tv2790,	sys.tv2790,	sys.tv2790 # table_name
+% avg_d,	avg_d2,	avg2_d_mult # name
+% double,	double,	double # type
+% 22,	22,	22 # length
+[ 2.5,	6.5,	6.25	]
+#drop view tv2790;
+#drop table t2790;
+
+# 16:41:01 >  
+# 16:41:01 >  Done.
+# 16:41:01 >  
+

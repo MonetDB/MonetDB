@@ -1499,7 +1499,6 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 			node *n,*m;
 			sql_rel *rel;
 
-
 			if (sql->emode == m_deps)
 				rel = rel_basetable(sql, t, tname);
 			else
@@ -1516,10 +1515,6 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 					sql_exp *e = m->data;
 	
 					exp_setname(sql->sa, e, tname, c->base.name);
-/*
-					if (e->card == CARD_AGGR)
-						e->card = CARD_MULTI;
-*/
 				}
 			}
 			return rel;
