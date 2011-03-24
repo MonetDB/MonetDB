@@ -1,3 +1,16 @@
+monetdb (11.1.1-20110324) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 24 Mar 2011 09:12:25 +0100
+
+monetdb (11.1.1-20110324) unstable; urgency=low
+
+  * gdk: Fixed memory detection on Darwin (Mac OS X) systems not to return
+    bogus values
+
+ -- Fabian Groffen <fabian@cwi.nl>  Tue, 22 Mar 2011 09:12:24 +0100
+
 monetdb (11.1.1-20110317) unstable; urgency=low
 
   * Rebuilt.

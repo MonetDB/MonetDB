@@ -1429,7 +1429,7 @@ DFLOWscheduler( DataFlow flow )
 				oa = getArg(p,j);
 				/* find the last instruction that should be inspected for eligibility */
 				if ( getEndOfLife(flow->mb,oa) > lookahead)
-					lookahead = getEndOfLife(flow->mb,oa);
+					lookahead = getEndOfLife(flow->mb,oa) +1;
 
 				flow->blocked[oa] = 0;
 				flow->inuse[oa] = 0;
@@ -1450,9 +1450,9 @@ DFLOWscheduler( DataFlow flow )
 			lookahead = limit;
 
 		if (flow->stk->admit == 0) {
-			@:DFLOWscheduler_body( DFLOWeligible(flow,fs,i,p,pc) )@
+			@:DFLOWscheduler_body( DFLOWeligible(flow,fs,i,p,pc), foundit1 )@
 		} else {
-			@:DFLOWscheduler_body( DFLOWeligible(flow,fs,i,p,pc) && (*flow->stk->admit)(flow->cntxt, flow->mb, flow->stk, p) )@
+			@:DFLOWscheduler_body( DFLOWeligible(flow,fs,i,p,pc) && (*flow->stk->admit)(flow->cntxt, flow->mb, flow->stk, p), foundit2 )@
 		}
 @= DFLOWscheduler_body
 		/* first try to find an instructions that use the released target */
@@ -1471,8 +1471,9 @@ DFLOWscheduler( DataFlow flow )
 							DFLOWactivate(flow,fs,i,p);
 							q_enqueue(flow->todo, fs+i);
 						}
-						break;
+						goto @2;
 					}
+				@2: /* it can only be activated once */;
 			}
 		/* if all work done then inspect rest */
 		if (candidates < flow->nway)
