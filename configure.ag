@@ -1032,10 +1032,16 @@ if test "x$enable_optim" = xyes; then
                            dnl  did not check the exact version, but 4.1 has it, while 3.4.5 does not.
                       esac
                       ;;
-      *-sun-solaris*) CFLAGS="$CFLAGS -O2 -fomit-frame-pointer -finline-functions"
+      *-sun-solaris*)
                       if test "$bits" = "64" ; then
                         NO_INLINE_CFLAGS="$NO_INLINE_CFLAGS -O1"
                       fi
+                      case "$gcc_ver" in
+                      4.*)
+						  CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions -malign-loops=4 -malign-jumps=4 -malign-functions=4 -fexpensive-optimizations -funroll-all-loops  -funroll-loops -frerun-cse-after-loop -frerun-loop-opt -ftree-vectorize";;
+					  *)
+						  CFLAGS="$CFLAGS -O2 -fomit-frame-pointer -finline-functions";;
+                      esac
                       ;;
       *irix*)         CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions"
                       ;;
