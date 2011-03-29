@@ -873,7 +873,7 @@ def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT, SockTime) :
         o = F_ERROR
     else:
         Warn("Unexpected last line in %s:\n%s" % (TST+".out.diff.html",l))
-        ff = open(TST+WHAT+".out.diff.html","a")
+        ff = open(TST+".out.diff.html","a")
         ff.write("\n<!--MajorDiffs-->\n")
         ff.close()
         o = F_ERROR
@@ -887,7 +887,7 @@ def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT, SockTime) :
         e = F_ERROR
     else:
         Warn("Unexpected last line in %s:\n%s" % (TST+".err.diff.html",l))
-        ff = open(TST+WHAT+".err.diff.html","a")
+        ff = open(TST+".err.diff.html","a")
         ff.write("\n<!--MajorDiffs-->\n")
         ff.close()
         e = F_ERROR
