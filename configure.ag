@@ -1038,7 +1038,7 @@ if test "x$enable_optim" = xyes; then
                       fi
                       case "$gcc_ver" in
                       4.*)
-						  CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions -malign-loops=4 -malign-jumps=4 -malign-functions=4 -fexpensive-optimizations -funroll-all-loops  -funroll-loops -frerun-cse-after-loop -frerun-loop-opt -ftree-vectorize";;
+						  CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions -fexpensive-optimizations -funroll-all-loops -funroll-loops -frerun-cse-after-loop -frerun-loop-opt -ftree-vectorize";;
 					  *)
 						  CFLAGS="$CFLAGS -O2 -fomit-frame-pointer -finline-functions";;
                       esac
