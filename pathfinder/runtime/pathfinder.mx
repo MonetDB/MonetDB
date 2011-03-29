@@ -4313,7 +4313,7 @@ collection_cleanup(_collection_cleanup()); # silently clean up the repository
 
 mapi_register(xquery_frontend()); # open up mapi client access
 if (monet_environment.find("monet_welcome") = "yes") {
-    printf("%c MonetDB/XQuery module v11.1.1 loaded (default back-end is '%s')\n", int(35), monet_environment.find("xquery_backend"));
+    printf("%c MonetDB/XQuery module v11.1.2 loaded (default back-end is '%s')\n", int(35), monet_environment.find("xquery_backend"));
     #                                 ^^^^^^
     # Maintained via vertoo. Please don't modify by hand!
     # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
