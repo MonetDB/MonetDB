@@ -49,6 +49,7 @@ import select
 #import signal
 #import getpass
 import Mfilter
+import fnmatch
 
 verbose = False
 
@@ -873,7 +874,7 @@ def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT, SockTime) :
         o = F_ERROR
     else:
         Warn("Unexpected last line in %s:\n%s" % (TST+".out.diff.html",l))
-        ff = open(TST+WHAT+".out.diff.html","a")
+        ff = open(TST+".out.diff.html","a")
         ff.write("\n<!--MajorDiffs-->\n")
         ff.close()
         o = F_ERROR
@@ -887,7 +888,7 @@ def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT, SockTime) :
         e = F_ERROR
     else:
         Warn("Unexpected last line in %s:\n%s" % (TST+".err.diff.html",l))
-        ff = open(TST+WHAT+".err.diff.html","a")
+        ff = open(TST+".err.diff.html","a")
         ff.write("\n<!--MajorDiffs-->\n")
         ff.close()
         e = F_ERROR
@@ -1091,11 +1092,27 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
             CreateHtmlIndex(env, *body)
             elem = AddSubToHtmlIndex(env, TSTDIR, max(FdOut,FdErr))
 
-        # HACK: remove large data-/input- files to save disk space
-        for f in 'tcpip2.init.bat', 'ascii_io.4MBload', 'test100k', 'no.145.k100_unique1', 'test_00.k100_unique1', 'VOCrightpages.xml', 'VOCleftpages.xml':
-            p = os.path.join(TSTTRGDIR,f)
-            if os.path.isfile(p):
-                os.remove(p)
+        # remove extra files created by tests
+        for f in os.listdir(TSTTRGDIR):
+            ff = os.path.join(TSTTRGDIR, f)
+            if os.path.islink(ff):
+                continue
+            for pat in ['.Mapprove.rc', '.index.head.html', '.index.html',
+                        'index.head.html', 'index.html',
+                        'times.lst', 'times.sql',
+                        '.*.nosrc.index.html',
+                        '.*.src.index.head.html', '.*.src.index.html',
+                        '*.FILTERED', '.*.SKIPPED',
+                        '*.client.err', '*.client.out',
+                        '*.err.diff.html', '*.err.head.html', '*.err.html',
+                        '*.out.diff.html', '*.out.head.html', '*.out.html',
+                        '*.server.err', '*.server.out',
+                        '*.stable.err*', '*.stable.out*',
+                        '*.test.err', '*.test.out']:
+                if fnmatch.fnmatch(f, pat):
+                    break
+            else:
+                os.unlink(ff)
 
     else: # THISFILE == "Mapprove.py"
         if not os.path.exists(TSTTRGDIR):
