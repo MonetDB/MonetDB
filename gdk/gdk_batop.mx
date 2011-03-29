@@ -1355,8 +1355,7 @@ BATsample(BAT *b, BUN size)
 	BUN cnt, i, r = 0, n, j;
 	BUN *choice = NULL, *dst;
 	BAT *bn;
-	BATiter bi1 = bat_iterator(b);
-	BATiter bi2 = bat_iterator(b);
+	BATiter bi = bat_iterator(b);
 	BUN bun;
 
 	BATcheck(b, "BATsample: source BAT required");
@@ -1446,7 +1445,7 @@ BATsample(BAT *b, BUN size)
 	for (j = 0; j < n; j++) {
 		BUN p = bun + choice[j];
 
-		bunfastins(bn, BUNhead(bi1, p), BUNtail(bi2, p));
+		bunfastins(bn, BUNhead(bi, p), BUNtail(bi, p));
 	}
 	GDKfree(choice);	/* clean up choice array of BUN positions */
 
