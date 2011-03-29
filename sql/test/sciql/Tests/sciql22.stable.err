@@ -1,4 +1,4 @@
-stderr of test 'sciql22` in directory 'src/test/sciql` itself:
+stderr of test 'sciql22` in directory 'test/sciql` itself:
 
 
 # 10:00:57 >  
@@ -74,12 +74,6 @@ stderr of test 'sciql22` in directory 'src/test/sciql` itself:
 # 10:00:57 >  mclient -lsql -ftest -i -e --host=eir --port=35351 
 # 10:00:57 >  
 
-MAPI  = monetdb@eir:32790
-QUERY = CREATE ARRAY landsat ( channel integer DIMENSION[7], x integer DIMENSION[1024], y integer DIMENSION[1024], v integer);
-ERROR = !Array not type checked yet
-MAPI  = monetdb@eir:32790
-QUERY = UPDATE landsat SET v = noise(v,delta) WHERE channel = 6 and mod(x,6) = 1;
-ERROR = !UPDATE: no such table 'landsat'
 
 # 10:00:57 >  
 # 10:00:57 >  Done.

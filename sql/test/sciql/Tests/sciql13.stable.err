@@ -1,4 +1,4 @@
-stderr of test 'sciql13` in directory 'src/test/sciql` itself:
+stderr of test 'sciql13` in directory 'test/sciql` itself:
 
 
 # 10:57:15 >  
@@ -74,9 +74,6 @@ stderr of test 'sciql13` in directory 'src/test/sciql` itself:
 # 10:57:16 >  mclient -lsql -ftest -i -e --host=eir --port=31774 
 # 10:57:16 >  
 
-MAPI  = monetdb@eir:31774
-QUERY = SELECT [x],sum(val) FROM matrix GROUP BY DISTINCT matrix[x][y: *];
-ERROR = !SELECT: no such table 'matrix'
 
 # 10:57:16 >  
 # 10:57:16 >  Done.

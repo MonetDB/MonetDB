@@ -1,4 +1,4 @@
-stderr of test 'sciql01` in directory 'src/test/sciql` itself:
+stderr of test 'sciql01` in directory 'test/sciql` itself:
 
 
 # 15:51:48 >  
@@ -74,18 +74,6 @@ stderr of test 'sciql01` in directory 'src/test/sciql` itself:
 # 15:51:48 >  mclient -lsql -ftest -i -e --host=eir --port=36638 
 # 15:51:48 >  
 
-MAPI  = monetdb@eir:32790
-QUERY = CREATE ARRAY matrix ( x integer DIMENSION[4], y integer DIMENSION[4], val float DEFAULT 0.0 );
-ERROR = !Array not type checked yet
-MAPI  = monetdb@eir:32790
-QUERY = CREATE ARRAY grid( x integer DIMENSION[4] CHECK(mod(x,2) = 0), y integer DIMENSION[4], val float DEFAULT 0.0);
-ERROR = !Array not type checked yet
-MAPI  = monetdb@eir:32790
-QUERY = CREATE ARRAY diagonal( x integer DIMENSION[4], y integer DIMENSION[4] CHECK(x = y), val float );
-ERROR = !Array not type checked yet
-MAPI  = monetdb@eir:32790
-QUERY = CREATE ARRAY sparse( x integer DIMENSION[4], y integer DIMENSION[4], val float DEFAULT 0.0 CHECK(val>0));
-ERROR = !Array not type checked yet
 
 # 15:51:48 >  
 # 15:51:48 >  Done.

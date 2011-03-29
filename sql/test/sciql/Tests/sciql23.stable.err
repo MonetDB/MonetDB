@@ -1,4 +1,4 @@
-stderr of test 'sciql23` in directory 'src/test/sciql` itself:
+stderr of test 'sciql23` in directory 'test/sciql` itself:
 
 
 # 10:00:57 >  
@@ -74,22 +74,6 @@ stderr of test 'sciql23` in directory 'src/test/sciql` itself:
 # 10:00:58 >  mclient -lsql -ftest -i -e --host=eir --port=35351 
 # 10:00:58 >  
 
-MAPI  = monetdb@eir:32790
-QUERY = CREATE FUNCTION intens2radiance(b int, lmin real, lmax real) RETURNS real RETURN (lmax-lmin) * b /255.0 + lmin;
-ERROR = !Predicate ARRAY 146: time to implement some more
-MAPI  = monetdb@eir:32790
-QUERY = CREATE ARRAY ndvi ( x int DIMENSION[1024], y int DIMENSION[1024], b1 real, b2 real, v real);
-ERROR = !Array not type checked yet
-MAPI  = monetdb@eir:32790
-QUERY = UPDATE ndvi 
-        	SET b1 = (SELECT intens2radiance(v, lmin, lmax)
-        		FROM landsat WHERE channel = 1
-        		AND landsat.x = ndvi.x AND landsat.y = ndvi.y), 
-        	b2 = (SELECT intens2radiance(v, lmin, lmax)
-        		FROM landsat WHERE channel =2
-        		AND landsat.x = ndvi.x AND	landsat.y = ndvi.y), 
-        	v=(b2-b1)/(b2+b1);
-ERROR = !UPDATE: no such table 'ndvi'
 
 # 10:00:58 >  
 # 10:00:58 >  Done.

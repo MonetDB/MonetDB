@@ -1,4 +1,4 @@
-stdout of test 'sciql19` in directory 'src/test/sciql` itself:
+stdout of test 'sciql19` in directory 'test/sciql` itself:
 
 
 # 09:39:13 >  
@@ -21,13 +21,30 @@ Ready.
 
 Over..
 
-# 09:39:13 >  
-# 09:39:13 >  mclient -lsql -ftest -i -e --host=eir --port=38056 
-# 09:39:13 >  
+# 00:24:53 >  
+# 00:24:53 >  mclient -lsql -ftest -i -e --host=jarl --port=39569 
+# 00:24:53 >  
 
-#CREATE SEQUENCE rng AS integer START WITH 0 INCREMENT BY 1 MAXVALUE 7;
+#CREATE SEQUENCE whiterange AS integer START WITH 0 INCREMENT BY 2 MAXVALUE 62;
+#CREATE SEQUENCE blackrange AS integer START WITH 1 INCREMENT BY 2 MAXVALUE 63;
+#CREATE ARRAY white (
+#   i integer DIMENSION[whiterange],
+#   color char(5) DEFAULT 'white'
+#);
+#CREATE ARRAY black (
+#   i integer DIMENSION[blackrange],
+#   color char(5) DEFAULT 'black'
+#);
+#CREATE ARRAY zipper(
+#   i integer DIMENSION[64],
+#   color char(5));
+#INSERT INTO zipper
+#  SELECT i, color FROM white
+#  UNION
+#  SELECT i, color FROM black;
+[ 0	]
 
-# 09:39:13 >  
-# 09:39:13 >  Done.
-# 09:39:13 >  
+# 00:24:53 >  
+# 00:24:53 >  Done.
+# 00:24:53 >  
 

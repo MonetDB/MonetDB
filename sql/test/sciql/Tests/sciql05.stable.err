@@ -1,4 +1,4 @@
-stderr of test 'sciql05` in directory 'src/test/sciql` itself:
+stderr of test 'sciql05` in directory 'test/sciql` itself:
 
 
 # 15:51:49 >  
@@ -74,9 +74,6 @@ stderr of test 'sciql05` in directory 'src/test/sciql` itself:
 # 15:51:49 >  mclient -lsql -ftest -i -e --host=eir --port=36638 
 # 15:51:49 >  
 
-MAPI  = monetdb@eir:36638
-QUERY = UPDATE experiment SET payload= NULL WHERE payload[x][y].val < 0;
-ERROR = !UPDATE: no such table 'experiment'
 
 # 15:51:49 >  
 # 15:51:49 >  Done.

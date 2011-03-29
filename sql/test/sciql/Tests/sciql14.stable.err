@@ -1,4 +1,4 @@
-stderr of test 'sciql14` in directory 'src/test/sciql` itself:
+stderr of test 'sciql14` in directory 'test/sciql` itself:
 
 
 # 16:39:39 >  
@@ -74,11 +74,6 @@ stderr of test 'sciql14` in directory 'src/test/sciql` itself:
 # 16:39:39 >  mclient -lsql -ftest -i -e --host=eir --port=36317 
 # 16:39:39 >  
 
-MAPI  = monetdb@eir:35116
-QUERY = SELECT x, y, (matrix[x-1][y].v + matrix[x+1][y].v + matrix[x][y-1].v + matrix[x][y+1].v + matrix[x][y].v)/5
-        FROM matrix[0:5][0:5] 
-        GROUP BY matrix[x][y], matrix[x-1][y], matrix[x+1][y], matrix[x][y-1], matrix[x][y+1];
-ERROR = !case 147 ARRAY
 
 # 16:39:39 >  
 # 16:39:39 >  Done.

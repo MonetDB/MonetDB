@@ -1,4 +1,4 @@
-stderr of test 'sciql10` in directory 'src/test/sciql` itself:
+stderr of test 'sciql10` in directory 'test/sciql` itself:
 
 
 # 08:36:41 >  
@@ -74,18 +74,6 @@ stderr of test 'sciql10` in directory 'src/test/sciql` itself:
 # 08:36:41 >  mclient -lsql -ftest -i -e --host=eir --port=33800 
 # 08:36:41 >  
 
-MAPI  = monetdb@eir:32790
-QUERY = CREATE ARRAY vmatrix (
-            x integer DIMENSION[-1:5],
-            y integer DIMENSION[-1:5],
-            w float DEFAULT 0);
-ERROR = !Array not type checked yet
-MAPI  = monetdb@eir:32790
-QUERY = INSERT INTO vmatrix SELECT [i], [j], val  FROM matrix;
-ERROR = !INSERT INTO: no such table 'vmatrix'
-MAPI  = monetdb@eir:32790
-QUERY = INSERT INTO vmatrix SELECT [j], [i], val  FROM matrix;
-ERROR = !INSERT INTO: no such table 'vmatrix'
 
 # 08:36:41 >  
 # 08:36:41 >  Done.

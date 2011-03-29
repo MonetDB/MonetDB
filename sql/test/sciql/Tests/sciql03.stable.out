@@ -1,4 +1,4 @@
-stdout of test 'sciql03` in directory 'src/test/sciql` itself:
+stdout of test 'sciql03` in directory 'test/sciql` itself:
 
 
 # 22:23:57 >  
@@ -25,6 +25,13 @@ Over..
 # 22:23:57 >  mclient -lsql -ftest -i -e --host=eir --port=37193 
 # 22:23:57 >  
 
+#UPDATE matrix SET v = CASE
+# WHEN x>y THEN x + y
+# WHEN x<y THEN x - y
+# ELSE 0 END;
+[ 0     ]
+#UPDATE diagonal SET v = x +y;
+[ 0     ]
 
 # 22:23:57 >  
 # 22:23:57 >  Done.

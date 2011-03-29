@@ -1,4 +1,4 @@
-stdout of test 'texture` in directory 'src/test/sciql` itself:
+stdout of test 'texture` in directory 'test/sciql` itself:
 
 
 # 10:24:30 >  
@@ -21,12 +21,22 @@ Ready.
 
 Over..
 
-# 10:24:30 >  
-# 10:24:30 >  mclient -lsql -ftest -i -e --host=eir --port=30415 
-# 10:24:30 >  
+# 00:27:49 >  
+# 00:27:49 >  mclient -lsql -ftest -i -e --host=jarl --port=35256 
+# 00:27:49 >  
 
+#create array img(
+#	x int dimension[0:4],
+#	y int dimension[0:4],
+#	v int default 0  );
+#insert into img values (0,1,1),(0,1,1),(0,2,2),(2,3,3);
+[ 4	]
+#create array corrCnt(
+#	x int dimension[0:4],
+#	y int dimension[0:4],
+#	cnt int default 0);
 
-# 10:24:30 >  
-# 10:24:30 >  Done.
-# 10:24:30 >  
+# 00:27:49 >  
+# 00:27:49 >  Done.
+# 00:27:49 >  
 

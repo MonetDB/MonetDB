@@ -1,4 +1,4 @@
-stdout of test 'sciql06` in directory 'src/test/sciql` itself:
+stdout of test 'sciql06` in directory 'test/sciql` itself:
 
 
 # 16:08:22 >  
@@ -21,12 +21,24 @@ Ready.
 
 Over..
 
-# 16:08:22 >  
-# 16:08:22 >  mclient -lsql -ftest -i -e --host=eir --port=33593 
-# 16:08:22 >  
+# 00:24:50 >  
+# 00:24:50 >  mclient -lsql -ftest -i -e --host=jarl --port=39569 
+# 00:24:50 >  
 
+#SELECT x, y, v FROM matrix WHERE v >2; 
+% sys.matrix,	sys.matrix,	sys.matrix # table_name
+% x,	y,	v # name
+% int,	int,	double # type
+% 1,	1,	22 # length
+#SELECT x, y, v FROM stripes WHERE v >2; 
+% sys.stripes,	sys.stripes,	sys.stripes # table_name
+% x,	y,	v # name
+% int,	int,	double # type
+% 1,	1,	22 # length
+[ 1,	1,	25	]
+#CREATE TABLE T (i int, k int);
 
-# 16:08:22 >  
-# 16:08:22 >  Done.
-# 16:08:22 >  
+# 00:24:51 >  
+# 00:24:51 >  Done.
+# 00:24:51 >  
 

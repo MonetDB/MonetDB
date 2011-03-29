@@ -1,4 +1,4 @@
-stderr of test 'sciql08` in directory 'src/test/sciql` itself:
+stderr of test 'sciql08` in directory 'test/sciql` itself:
 
 
 # 15:51:49 >  
@@ -74,12 +74,6 @@ stderr of test 'sciql08` in directory 'src/test/sciql` itself:
 # 15:51:50 >  mclient -lsql -ftest -i -e --host=eir --port=36638 
 # 15:51:50 >  
 
-MAPI  = monetdb@eir:35116
-QUERY = SELECT matrix[1][1].v; 
-ERROR = !Predicate unknown 148: time to implement some more
-MAPI  = monetdb@eir:35116
-QUERY = SELECT sparse[0:2][0:2].v;
-ERROR = !Predicate unknown 148: time to implement some more
 
 # 15:51:50 >  
 # 15:51:50 >  Done.

@@ -1,4 +1,4 @@
-stderr of test 'sciql27` in directory 'src/test/sciql` itself:
+stderr of test 'sciql27` in directory 'test/sciql` itself:
 
 
 # 10:00:58 >  
@@ -74,13 +74,6 @@ stderr of test 'sciql27` in directory 'src/test/sciql` itself:
 # 10:00:59 >  mclient -lsql -ftest -i -e --host=eir --port=35351 
 # 10:00:59 >  
 
-MAPI  = monetdb@eir:32790
-QUERY = CREATE ARRAY m ( x int DIMENSION[1024], v int );
-ERROR = !Array not type checked yet
-MAPI  = monetdb@eir:32790
-QUERY = UPDATE m 
-        	SET v = (SELECT sum(a.v * b.v) FROM a,b WHERE m.x = a.x and a.y = b.k);
-ERROR = !UPDATE: no such table 'm'
 
 # 10:00:59 >  
 # 10:00:59 >  Done.

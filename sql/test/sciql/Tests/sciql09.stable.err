@@ -1,4 +1,4 @@
-stderr of test 'sciql09` in directory 'src/test/sciql` itself:
+stderr of test 'sciql09` in directory 'test/sciql` itself:
 
 
 # 23:28:15 >  
@@ -74,13 +74,6 @@ stderr of test 'sciql09` in directory 'src/test/sciql` itself:
 # 23:28:15 >  mclient -lsql -ftest -i -e --host=eir --port=35985 
 # 23:28:15 >  
 
-MAPI  = monetdb@eir:31132
-QUERY = SET vector[0:2].v = (expr1,expr2); 
-ERROR = !Variable ” unknown
-MAPI  = monetdb@eir:31132
-QUERY = SET vector[x].val = CASE  WHEN vector[x].val < 0  THEN 0 
-        	WHEN vector[x].val >10 THEN 10 * x END ;
-ERROR = !Variable ” unknown
 
 # 23:28:15 >  
 # 23:28:15 >  Done.

@@ -1,4 +1,4 @@
-stderr of test 'sciql20` in directory 'src/test/sciql` itself:
+stderr of test 'sciql20` in directory 'test/sciql` itself:
 
 
 # 10:36:20 >  
@@ -74,16 +74,6 @@ stderr of test 'sciql20` in directory 'src/test/sciql` itself:
 # 10:36:20 >  mclient -lsql -ftest -i -e --host=eir --port=37973 
 # 10:36:20 >  
 
-MAPI  = monetdb@eir:37973
-QUERY = CREATE FUNCTION random(n integer) 
-        RETURNS ARRAY( i integer DIMENSION[seq], val float)
-        	RETURN SELECT seq, rand() FROM SEQUENCES seq;
-ERROR = !SELECT: identifier 'seq' unknown
-MAPI  = monetdb@eir:37973
-QUERY = CREATE FUNCTION transpose ( a ARRAY( i integer DIMENSION, j integer DIMENSION, v float))
-        RETURNS ARRAY( i integer DIMENSION, j integer DIMENSION, v float) 
-        BEGIN	RETURN SELECT [i],[j], a[j][i].v FROM a; END;
-ERROR = !SELECT: no such table 'a'
 
 # 10:36:20 >  
 # 10:36:20 >  Done.

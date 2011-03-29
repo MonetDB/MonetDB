@@ -1,4 +1,4 @@
-stdout of test 'sciql04` in directory 'src/test/sciql` itself:
+stdout of test 'sciql04` in directory 'test/sciql` itself:
 
 
 # 15:51:49 >  
@@ -21,12 +21,22 @@ Ready.
 
 Over..
 
-# 15:51:49 >  
-# 15:51:49 >  mclient -lsql -ftest -i -e --host=eir --port=36638 
-# 15:51:49 >  
+# 00:24:50 >  
+# 00:24:50 >  mclient -lsql -ftest -i -e --host=jarl --port=39569 
+# 00:24:50 >  
 
+#DELETE FROM matrix WHERE x = 2;
+[ 0	]
+#INSERT INTO matrix SELECT x-1, y, v FROM matrix WHERE x > 2;
+[ 0	]
+#INSERT INTO matrix SELECT x, y, 0 FROM matrix WHERE x = 3;
+[ 0	]
+#INSERT INTO matrix(v) SELECT v FROM stripes;
+[ 0	]
+#INSERT INTO stripes VALUES(1,1,25);
+[ 1	]
 
-# 15:51:49 >  
-# 15:51:49 >  Done.
-# 15:51:49 >  
+# 00:24:50 >  
+# 00:24:50 >  Done.
+# 00:24:50 >  
 

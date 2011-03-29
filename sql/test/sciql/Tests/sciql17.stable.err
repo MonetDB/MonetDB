@@ -1,4 +1,4 @@
-stderr of test 'sciql17` in directory 'src/test/sciql` itself:
+stderr of test 'sciql17` in directory 'test/sciql` itself:
 
 
 # 10:16:36 >  
@@ -74,15 +74,6 @@ stderr of test 'sciql17` in directory 'src/test/sciql` itself:
 # 10:16:36 >  mclient -lsql -ftest -i -e --host=eir --port=31119 
 # 10:16:36 >  
 
-MAPI  = monetdb@eir:31119
-QUERY = ALTER ARRAY matrix ADD r float DEFAULT sqrt( power(x,2) + power(y,2));
-ERROR = !ALTER TABLE: no such table 'matrix'
-MAPI  = monetdb@eir:31119
-QUERY = ALTER ARRAY matrix ADD theta float 
-        	DEFAULT (CASE WHEN x=0 AND y=0 THEN 0
-        	WHEN x> 0 THEN arcsin( CAST( x AS float) / r) 
-        	WHEN  x< 0 THEN -arcsin( CAST( x AS float) / r) + PI() END);
-ERROR = !ALTER TABLE: no such table 'matrix'
 
 # 10:16:36 >  
 # 10:16:36 >  Done.

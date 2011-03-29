@@ -1,4 +1,4 @@
-stderr of test 'sciql25` in directory 'src/test/sciql` itself:
+stderr of test 'sciql25` in directory 'test/sciql` itself:
 
 
 # 15:51:54 >  
@@ -74,10 +74,6 @@ stderr of test 'sciql25` in directory 'src/test/sciql` itself:
 # 15:51:54 >  mclient -lsql -ftest -i -e --host=eir --port=36638 
 # 15:51:54 >  
 
-MAPI  = monetdb@eir:36638
-QUERY = UPDATE img SET v = (SELECT d.v + e.v * power(-1,x) FROM d, e
-        WHERE img.y = d.y and img.y = e.y AND d.x = img.x/2 AND e.x = img.x/2);
-ERROR = !UPDATE: no such table 'img'
 
 # 15:51:54 >  
 # 15:51:54 >  Done.

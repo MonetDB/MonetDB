@@ -1,4 +1,4 @@
-stderr of test 'sciql04` in directory 'src/test/sciql` itself:
+stderr of test 'sciql04` in directory 'test/sciql` itself:
 
 
 # 15:51:49 >  
@@ -74,9 +74,6 @@ stderr of test 'sciql04` in directory 'src/test/sciql` itself:
 # 15:51:49 >  mclient -lsql -ftest -i -e --host=eir --port=36638 
 # 15:51:49 >  
 
-MAPI  = monetdb@eir:36638
-QUERY = INSERT INTO grid VALUES(1,1,25);
-ERROR = !INSERT INTO: no such table 'grid'
 
 # 15:51:49 >  
 # 15:51:49 >  Done.

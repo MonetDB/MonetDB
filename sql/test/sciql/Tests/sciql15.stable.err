@@ -1,4 +1,4 @@
-stderr of test 'sciql15` in directory 'src/test/sciql` itself:
+stderr of test 'sciql15` in directory 'test/sciql` itself:
 
 
 # 22:24:00 >  
@@ -74,9 +74,6 @@ stderr of test 'sciql15` in directory 'src/test/sciql` itself:
 # 22:24:00 >  mclient -lsql -ftest -i -e --host=eir --port=37193 
 # 22:24:00 >  
 
-MAPI  = monetdb@eir:37193
-QUERY = SELECT distance(A, A), A.* FROM matrix AS A GROUP BY matrix[x][*];
-ERROR = !SELECT: no such table 'matrix'
 
 # 22:24:00 >  
 # 22:24:00 >  Done.

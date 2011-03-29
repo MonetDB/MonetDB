@@ -1,4 +1,4 @@
-stderr of test 'sciql00` in directory 'src/test/sciql` itself:
+stderr of test 'sciql00` in directory 'test/sciql` itself:
 
 
 # 15:51:48 >  
@@ -74,15 +74,6 @@ stderr of test 'sciql00` in directory 'src/test/sciql` itself:
 # 15:51:48 >  mclient -lsql -ftest -i -e --host=eir --port=36638 
 # 15:51:48 >  
 
-MAPI  = monetdb@eir:32790
-QUERY = CREATE ARRAY A1( x integer DIMENSION[4], val float DEFAULT 0.0);
-ERROR = !Array not type checked yet
-MAPI  = monetdb@eir:32790
-QUERY = CREATE ARRAY A2 ( x integer DIMENSION[0:4:1], val float DEFAULT 0.0);
-ERROR = !Array not type checked yet
-MAPI  = monetdb@eir:32790
-QUERY = CREATE ARRAY A3 ( x integer DIMENSION range, val float DEFAULT 0.0);
-ERROR = !syntax error, unexpected IDENT, expecting ')' or ',' in: "create array a3 ( x integer dimension range"
 
 # 15:51:48 >  
 # 15:51:48 >  Done.

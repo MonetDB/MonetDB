@@ -1,4 +1,4 @@
-stderr of test 'sciql19` in directory 'src/test/sciql` itself:
+stderr of test 'sciql19` in directory 'test/sciql` itself:
 
 
 # 09:39:13 >  
@@ -74,30 +74,6 @@ stderr of test 'sciql19` in directory 'src/test/sciql` itself:
 # 09:39:13 >  mclient -lsql -ftest -i -e --host=eir --port=38056 
 # 09:39:13 >  
 
-MAPI  = monetdb@eir:32790
-QUERY = CREATE ARRAY white (
-           i integer DIMENSION[rng],
-           j integer DIMENSION[rng],
-           color char(5) DEFAULT 'white'
-        );
-ERROR = !Array not type checked yet
-MAPI  = monetdb@eir:32790
-QUERY = CREATE ARRAY black (LIKE white);
-ERROR = !Array not type checked yet
-MAPI  = monetdb@eir:32790
-QUERY = CREATE ARRAY chessboard(
-           i integer DIMENSION[rng],
-           j integer DIMENSION[rng],
-           white char(5));
-ERROR = !Array not type checked yet
-MAPI  = monetdb@eir:32790
-QUERY = INSERT INTO chessboard
-        SELECT [i], [j], color FROM white
-           WHERE ( i * 8 + j) / 2 = 0
-        UNION
-        SELECT [i], [j], color FROM black
-           WHERE ( i * 8 + j) / 2 ;
-ERROR = !INSERT INTO: no such table 'chessboard'
 
 # 09:39:13 >  
 # 09:39:13 >  Done.

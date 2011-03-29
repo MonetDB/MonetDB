@@ -7,7 +7,7 @@ create array img(
 	y int dimension[0:4],
 	v int default 0  );
 
-set img = ((0,0,1,1),(0,0,1,1),(0,2,2,2),(2,2,3,3));
+insert into img values (0,1,1),(0,1,1),(0,2,2),(2,3,3);
 
 -- the count matrix
 create array corrCnt(

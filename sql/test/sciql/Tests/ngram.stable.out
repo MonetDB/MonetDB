@@ -1,0 +1,33 @@
+stdout of test 'ngram` in directory 'test/sciql` itself:
+
+
+# 00:04:46 >  
+# 00:04:46 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/export/scratch0/zhang/monet-install/sciql/debug/var/MonetDB" --set mapi_open=true --set mapi_port=32992 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_test_sciql" --set mal_listing=0 ; echo ; echo Over..
+# 00:04:46 >  
+
+# MonetDB 5 server v11.4.0
+# This is an unreleased version
+# Serving database 'mTests_test_sciql', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://jarl.ins.cwi.nl:32992/
+# MonetDB/SQL module loaded
+# MonetDB/GIS module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+
+Over..
+
+# 00:04:46 >  
+# 00:04:46 >  mclient -lsql -ftest -i -e --host=jarl --port=32992 
+# 00:04:46 >  
+
+
+# 00:04:46 >  
+# 00:04:46 >  Done.
+# 00:04:46 >  
+

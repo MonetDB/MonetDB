@@ -1,4 +1,4 @@
-stderr of test 'sciql12` in directory 'src/test/sciql` itself:
+stderr of test 'sciql12` in directory 'test/sciql` itself:
 
 
 # 22:23:59 >  
@@ -74,15 +74,6 @@ stderr of test 'sciql12` in directory 'src/test/sciql` itself:
 # 22:23:59 >  mclient -lsql -ftest -i -e --host=eir --port=37193 
 # 22:23:59 >  
 
-MAPI  = monetdb@eir:37193
-QUERY = SELECT [x], [y], avg(v) FROM matrix GROUP BY matrix[x:x+2][y:y+2];
-ERROR = !SELECT: no such table 'matrix'
-MAPI  = monetdb@eir:37193
-QUERY = SELECT [x], [y], avg(v) FROM matrix GROUP BY DISTINCT matrix[x:x+2][y:y+2];
-ERROR = !SELECT: no such table 'matrix'
-MAPI  = monetdb@eir:37193
-QUERY = SELECT [x], [y], avg(v) FROM vmatrix GROUP BY matrix[x-1:x+1][y-1:y+1];
-ERROR = !SELECT: no such table 'vmatrix'
 
 # 22:23:59 >  
 # 22:23:59 >  Done.

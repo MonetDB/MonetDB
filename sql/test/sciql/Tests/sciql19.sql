@@ -10,11 +10,11 @@ CREATE ARRAY black (
    color char(5) DEFAULT 'black'
 );
 
-CREATE ARRAY zippe r(
+CREATE ARRAY zipper(
    i integer DIMENSION[64],
    color char(5));
 INSERT INTO zipper
   SELECT i, color FROM white
   UNION
-  SELECT i, color FROM black
+  SELECT i, color FROM black;
 

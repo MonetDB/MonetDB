@@ -1,4 +1,4 @@
-stderr of test 'sciql18` in directory 'src/test/sciql` itself:
+stderr of test 'sciql18` in directory 'test/sciql` itself:
 
 
 # 08:36:43 >  
@@ -74,14 +74,6 @@ stderr of test 'sciql18` in directory 'src/test/sciql` itself:
 # 08:36:43 >  mclient -lsql -ftest -i -e --host=eir --port=33800 
 # 08:36:43 >  
 
-MAPI  = monetdb@eir:32790
-QUERY = CREATE ARRAY tmp(x integer DIMENSION, y integer DIMENSION, val float);
-ERROR = !Array not type checked yet
-MAPI  = monetdb@eir:32790
-QUERY = INSERT INTO tmp SELECT x, y, avg(v) 
-        FROM matrix 
-        GROUP BY DISTINCT matrix[x:x+2][y:y+2];
-ERROR = !INSERT INTO: no such table 'tmp'
 
 # 08:36:43 >  
 # 08:36:43 >  Done.

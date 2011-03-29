@@ -1,4 +1,4 @@
-stderr of test 'sciql29` in directory 'src/test/sciql` itself:
+stderr of test 'sciql29` in directory 'test/sciql` itself:
 
 
 # 16:39:43 >  
@@ -74,12 +74,6 @@ stderr of test 'sciql29` in directory 'src/test/sciql` itself:
 # 16:39:43 >  mclient -lsql -ftest -i -e --host=eir --port=36317 
 # 16:39:43 >  
 
-MAPI  = monetdb@eir:36317
-QUERY = ALTER ARRAY img ADD wcs_x float; 
-ERROR = !ALTER TABLE: no such table 'img'
-MAPI  = monetdb@eir:36317
-QUERY = ALTER ARRAY img ADD wcs_y float;
-ERROR = !ALTER TABLE: no such table 'img'
 
 # 16:39:43 >  
 # 16:39:43 >  Done.

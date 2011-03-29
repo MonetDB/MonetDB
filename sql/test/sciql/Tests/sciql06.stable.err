@@ -1,4 +1,4 @@
-stderr of test 'sciql06` in directory 'src/test/sciql` itself:
+stderr of test 'sciql06` in directory 'test/sciql` itself:
 
 
 # 16:08:22 >  
@@ -74,21 +74,6 @@ stderr of test 'sciql06` in directory 'src/test/sciql` itself:
 # 16:08:22 >  mclient -lsql -ftest -i -e --host=eir --port=33593 
 # 16:08:22 >  
 
-MAPI  = monetdb@eir:35116
-QUERY = SELECT ARRAY (1,2,3,4); 
-ERROR = !Predicate ARRAY 147: time to implement some more
-MAPI  = monetdb@eir:35116
-QUERY = SELECT ARRAY((1,2),(3,4)); 
-ERROR = !Predicate ARRAY 147: time to implement some more
-MAPI  = monetdb@eir:35116
-QUERY = SELECT x, y, val FROM matrix WHERE val >2; 
-ERROR = !SELECT: no such table 'matrix'
-MAPI  = monetdb@eir:35116
-QUERY = SELECT [x], [y], val FROM matrix WHERE val >2; 
-ERROR = !SELECT: no such table 'matrix'
-MAPI  = monetdb@eir:35116
-QUERY = SELECT [T.k], [y], val FROM matrix JOIN T ON matrix.x = T.i;
-ERROR = !SELECT: no such table 'matrix'
 
 # 16:08:22 >  
 # 16:08:22 >  Done.

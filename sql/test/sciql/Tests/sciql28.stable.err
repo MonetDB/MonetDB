@@ -1,4 +1,4 @@
-stderr of test 'sciql28` in directory 'src/test/sciql` itself:
+stderr of test 'sciql28` in directory 'test/sciql` itself:
 
 
 # 10:00:59 >  
@@ -74,17 +74,6 @@ stderr of test 'sciql28` in directory 'src/test/sciql` itself:
 # 10:00:59 >  mclient -lsql -ftest -i -e --host=eir --port=35351 
 # 10:00:59 >  
 
-MAPI  = monetdb@eir:32790
-QUERY = CREATE ARRAY ximage ( x integer DIMENSION, y integer DIMENSION, v integer DEFAULT 0);
-ERROR = !Array not type checked yet
-MAPI  = monetdb@eir:32790
-QUERY = INSERT INTO ximage  SELECT [x], [y], count(*) FROM events GROUP BY x,y;
-ERROR = !INSERT INTO: no such table 'ximage'
-MAPI  = monetdb@eir:32790
-QUERY = SELECT [x/16], [y/16], sum(v) 
-        FROM ximage 
-        GROUP BY DISTINCT ximage[x:x+16][y:y+16];
-ERROR = !SELECT: no such table 'ximage'
 
 # 10:00:59 >  
 # 10:00:59 >  Done.
