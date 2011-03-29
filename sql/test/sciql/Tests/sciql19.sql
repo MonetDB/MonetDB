@@ -1,18 +1,20 @@
-CREATE SEQUENCE rng AS integer START WITH 0 INCREMENT BY 1 MAXVALUE 7;
+CREATE SEQUENCE whiterange AS integer START WITH 0 INCREMENT BY 2 MAXVALUE 62;
+CREATE SEQUENCE blackrange AS integer START WITH 1 INCREMENT BY 2 MAXVALUE 63;
 
 CREATE ARRAY white (
-   i integer DIMENSION[rng],
-   j integer DIMENSION[rng],
+   i integer DIMENSION[whiterange],
    color char(5) DEFAULT 'white'
 );
-CREATE ARRAY black (LIKE white);
-CREATE ARRAY chessboard(
-   i integer DIMENSION[rng],
-   j integer DIMENSION[rng],
-   white char(5));
-INSERT INTO chessboard
-SELECT [i], [j], color FROM white
-   WHERE ( i * 8 + j) / 2 = 0
-UNION
-SELECT [i], [j], color FROM black
-   WHERE ( i * 8 + j) / 2 ;
+CREATE ARRAY black (
+   i integer DIMENSION[blackrange],
+   color char(5) DEFAULT 'black'
+);
+
+CREATE ARRAY zippe r(
+   i integer DIMENSION[64],
+   color char(5));
+INSERT INTO zipper
+  SELECT i, color FROM white
+  UNION
+  SELECT i, color FROM black
+

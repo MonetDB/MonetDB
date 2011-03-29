@@ -1,2 +1,5 @@
--- SELECT distance(A, ?V), A.* FROM matrix AS A GROUP BY matrix[x][*] AS A;
-SELECT distance(A, A), A.* FROM matrix AS A GROUP BY matrix[x][*];
+SELECT x, distance(matrix, ?V) AS dist
+FROM matrix
+GROUP BY matrix[x][*];
+ORDER BY dist
+LIMIT 10;

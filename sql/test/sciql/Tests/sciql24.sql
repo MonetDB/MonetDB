@@ -1,1 +1,4 @@
-SELECT [x], [y], avg(v) FROM vmatrix GROUP BY vmatrix[x-1:x+1][y-1:y+1] HAVING avg(v) BETWEEN 10 AND 100;
+SELECT [x], [y], avg(v) FROM landsat
+GROUP BY landsat[x-1:x+2][y-1:y+2]
+HAVING avg(v) BETWEEN 10 AND 100;
+

@@ -1,1 +1,1 @@
-SELECT [x],sum(v) FROM matrix GROUP BY DISTINCT matrix[x][y: *];
+SELECT [x], sum(v) FROM matrix GROUP BY matrix[x][*];

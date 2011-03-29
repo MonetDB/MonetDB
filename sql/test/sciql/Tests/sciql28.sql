@@ -1,5 +1,5 @@
 CREATE ARRAY ximage ( x integer DIMENSION, y integer DIMENSION, v integer DEFAULT 0);
-INSERT INTO ximage  SELECT [x], [y], count(*) FROM events GROUP BY x,y;
+INSERT INTO ximage  SELECT [x], [y], count(*) FROM events GROUP BY x, y;
 
 SELECT [x/16], [y/16], sum(v) 
 FROM ximage 
