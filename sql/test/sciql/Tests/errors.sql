@@ -1,7 +1,7 @@
--- arrays should have at least one dimension
+-- arrays must have at least one dimension
 create array err1( payload float);
 
--- arrays need to have one non-dmension attribute
+-- arrays must have one non-dimensional attribute
 create array err2( x integer dimension[1:10:1]);
 
 -- array dimension types should comply with attribute type
