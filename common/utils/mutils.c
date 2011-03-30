@@ -22,6 +22,10 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#ifdef HAVE_EXECINFO_H
+#include <execinfo.h>
+#endif
+
 #include "mutils.h"
 
 #ifdef NATIVE_WIN32
@@ -279,11 +283,9 @@ MT_lockf(char *filename, int mode, off_t off, off_t len)
 
 #endif
 
+#ifdef HAVE_EXECINFO_H
+
 /* Obtain a backtrace and print it to stdout. */
-//#ifdef HAVE_EXECINFO_H
-
-#include <execinfo.h>
-
 void
 print_trace (void)
 {
@@ -302,7 +304,6 @@ print_trace (void)
 
 	free (strings);
 }
-/*
 #else
 void
 print_trace(void)
@@ -310,4 +311,3 @@ print_trace(void)
 	printf("back traces are not supported on this platform\n");
 }
 #endif
-*/
