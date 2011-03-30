@@ -27,13 +27,28 @@ static int
 bl_preversion( int oldversion, int newversion)
 {
 #define CATALOG_FEB2010 50000
+#define CATALOG_OCT2010 51000
 
 	(void)newversion;
 	if (oldversion == CATALOG_FEB2010) {
 		catalog_version = oldversion;
 		return 0;
 	}
+	if (oldversion == CATALOG_OCT2010) {
+		catalog_version = oldversion;
+		return 0;
+	}
 	return -1;
+}
+
+static char *
+N( char *buf, char *pre, char *schema, char *post)
+{
+	if (pre)
+		snprintf(buf, 64, "%s_%s_%s", pre, schema, post);
+	else
+		snprintf(buf, 64, "%s_%s", schema, post);
+	return buf;
 }
 
 static void 
@@ -93,6 +108,50 @@ bl_postversion( void *lg)
 		bat_destroy(b);
 	
 		/* mark that the rest is fixed on sql level */
+	}
+	if (catalog_version == CATALOG_OCT2010) {
+		BAT *b;
+		char *s = "sys", n[64];
+
+		fprintf(stdout, "# upgrading catalog from Oct2010\n");
+		fflush(stdout);
+
+		/* rename table 'keycolumns' into 'objects' 
+		 * and remove trunc column */
+		while(s) {
+		b = temp_descriptor(logger_find_bat(lg, N(n, "D", s, "keycolumns")));
+		if (!b) return ;
+		logger_del_bat(lg, b->batCacheid);
+		logger_add_bat(lg, b, N(n, "D", s, "objects"));
+		bat_destroy(b);
+
+		b = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "keycolumns_id")));
+		if (!b) return ;
+		logger_del_bat(lg, b->batCacheid);
+		logger_add_bat(lg, b, N(n, NULL, s, "objects_id"));
+		bat_destroy(b);
+
+		b = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "keycolumns_column")));
+		if (!b) return ;
+		logger_del_bat(lg, b->batCacheid);
+		logger_add_bat(lg, b, N(n, NULL, s, "objects_name"));
+		bat_destroy(b);
+
+		b = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "keycolumns_nr")));
+		if (!b) return ;
+		logger_del_bat(lg, b->batCacheid);
+		logger_add_bat(lg, b, N(n, NULL, s, "objects_nr"));
+		bat_destroy(b);
+
+		b = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "keycolumns_trunc")));
+		if (!b) return ;
+		logger_del_bat(lg, b->batCacheid);
+		bat_destroy(b);
+		if (strcmp(s,"sys") == 0)
+			s = "tmp";
+		else
+			s = NULL;
+		}
 	}
 }
 
