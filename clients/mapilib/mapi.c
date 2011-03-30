@@ -4223,8 +4223,7 @@ mapi_query_part(MapiHdl hdl, const char *query, size_t size)
 	if (hdl->query == NULL) {
 		size_t sz = size;
 
-		if (sz > 512)
-			sz = 512;
+		sz = 512;
 		hdl->query = malloc(sz + 1);
 		assert(hdl->query);
 		hdl->query[0] = '\0';
@@ -4235,7 +4234,6 @@ mapi_query_part(MapiHdl hdl, const char *query, size_t size)
 		if (sz > 0) {
 			if (size < sz)
 				sz = size;
-			hdl->query = realloc(hdl->query, ln + sz + 1);
 			assert(hdl->query);
 			strncat(hdl->query, query, sz);
 		}

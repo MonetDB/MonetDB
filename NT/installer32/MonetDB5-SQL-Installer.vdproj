@@ -573,12 +573,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_7F9C47C139394604A78AD5B95A87B3E8"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_7FDA7780804D42D693497FADFFBE6ABD"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -3069,26 +3063,6 @@
             "TargetName" = "8:opt_octopus.mal"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_7F9C47C139394604A78AD5B95A87B3E8"
-            {
-            "SourcePath" = "8:etc\\monetdb5.conf"
-            "TargetName" = "8:monetdb5.conf"
-            "Tag" = "8:"
-            "Folder" = "8:_B5DFB5D13EE441F8B42616036AACB603"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"

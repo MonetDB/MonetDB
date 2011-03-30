@@ -60,7 +60,7 @@
 #define DIR_SEP_STR "\\"
 
 /* architecture-dependent files */
-#define EXEC_PREFIX "${prefix}"
+#define EXEC_PREFIX PREFIX
 
 /* Define to 1 if you have `alloca', as a function or macro. */
 #define HAVE_ALLOCA 1
@@ -641,10 +641,10 @@
 #endif
 
 /* object code libraries */
-#define LIBDIR "${exec_prefix}\\lib"
+#define LIBDIR EXEC_PREFIX "\\lib"
 
 /* modifiable single-machine data */
-#define LOCALSTATEDIR "${prefix}\\var"
+#define LOCALSTATEDIR PREFIX "\\var"
 
 #define lstat stat
 #define S_ISREG(mode)	(((mode) & _S_IFMT) == _S_IFREG)
@@ -813,7 +813,7 @@
 #define STDC_HEADERS 1
 
 /* read-only single-machine data */
-#define SYSCONFDIR "${prefix}\\etc"
+#define SYSCONFDIR PREFIX "\\etc"
 
 /* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
 /* #undef TIME_WITH_SYS_TIME */
