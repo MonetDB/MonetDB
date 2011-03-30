@@ -2507,6 +2507,7 @@ AC_HEADER_DIRENT
 # NOTE: these header files are in alphabetical order to ease maintenance
 AC_CHECK_HEADERS([crypt.h \
 	dlfcn.h \
+	execinfo.h \
 	fcntl.h \
 	getopt.h \
 	iconv.h \
