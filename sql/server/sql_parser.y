@@ -1476,7 +1476,7 @@ column_option_list:
 			{ $$ = append_symbol($1, $3 ); }
  ;
 
-column_option: default | column_constraint | generated_column ;
+column_option: default | column_constraint | generated_column;
 
 default:
     DEFAULT default_value { $$ = _symbol_create_symbol(SQL_DEFAULT, $2); }
@@ -1604,12 +1604,7 @@ dim_range :
 		dlist *l = L();
 		$$= l;
 	}
-	| '[' ']'
-	{
-		dlist *l = L();
-		$$= l;
-	}
-	| '[' dim_exp ']'
+	| '[' dim_exp ']' /* size of INT dim or '*' */
 	{
 		dlist *l = L();
 		$$= l;
@@ -3057,11 +3052,12 @@ table_name:
 
 opt_group_by_clause:
     /* empty */ 		  { $$ = NULL; }
+ |  sqlGROUP BY column_ref_commalist { $$ = _symbol_create_list( SQL_GROUPBY, $3 );}
  |  sqlGROUP BY group_ref_commalist { 
 	dlist *l = L();
 	l= append_list(l,$3);
 	l= append_int(l,0);
-	$$ = _symbol_create_list( SQL_GROUPBY, $3 );}
+	$$ = _symbol_create_list( SQL_GROUPBY, l );}
  |  sqlGROUP BY DISTINCT group_ref_commalist {
 	dlist *l = L();
 	l= append_list(l,$4);
@@ -3440,7 +3436,7 @@ value_exp:
  |  XML_value_function
  |  param
  |  array_element 
- | ARRAY '(' scalar_exp_list ')' {
+ |  ARRAY '(' scalar_exp_list ')' {
 	dlist *l = L();
 	l = append_list(l,$3);
 	$$ = _symbol_create_list( SQL_ARRAY, l);
