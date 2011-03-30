@@ -1423,7 +1423,7 @@ sqltypeinit(void)
 	sql_create_func("day", "mtime", "day", DTE, NULL, INT, SCALE_FIX);
 	sql_create_func("hour", "mtime", "hours", TME, NULL, INT, SCALE_FIX);
 	sql_create_func("minute", "mtime", "minutes", TME, NULL, INT, SCALE_FIX);
-	f = sql_create_func("second", "mtime", "milliseconds", TME, NULL, DEC, SCALE_NONE);
+	f = sql_create_func("second", "mtime", "sql_seconds", TME, NULL, DEC, SCALE_NONE);
 	/* fix result type */
 	f->res.scale = 3;
 
@@ -1432,7 +1432,7 @@ sqltypeinit(void)
 	sql_create_func("day", "mtime", "day", TMESTAMP, NULL, INT, SCALE_FIX);
 	sql_create_func("hour", "mtime", "hours", TMESTAMP, NULL, INT, SCALE_FIX);
 	sql_create_func("minute", "mtime", "minutes", TMESTAMP, NULL, INT, SCALE_FIX);
-	f = sql_create_func("second", "mtime", "milliseconds", TMESTAMP, NULL, DEC, SCALE_NONE);
+	f = sql_create_func("second", "mtime", "sql_seconds", TMESTAMP, NULL, DEC, SCALE_NONE);
 	/* fix result type */
 	f->res.scale = 3;
 

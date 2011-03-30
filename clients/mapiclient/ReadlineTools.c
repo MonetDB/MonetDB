@@ -73,7 +73,7 @@ sql_tablename_generator(const char *text, int state)
 	if (!state) {
 		seekpos = 0;
 		len = strlen(text);
-		if ((table_hdl = mapi_query(_mid, "SELECT \"name\" FROM \"sys\".\"tables\"")) == NULL || mapi_error(_mid)) {
+		if ((table_hdl = mapi_query(_mid, "SELECT t.\"name\", s.\"name\" FROM \"sys\".\"tables\" t, \"sys\".\"schemas\" s where t.schema_id = s.id")) == NULL || mapi_error(_mid)) {
 			if (table_hdl) {
 				mapi_explain_query(table_hdl, stderr);
 				mapi_close_handle(table_hdl);
@@ -89,8 +89,17 @@ sql_tablename_generator(const char *text, int state)
 		mapi_seek_row(table_hdl, seekpos++, MAPI_SEEK_SET);
 		mapi_fetch_row(table_hdl);
 		name = mapi_fetch_field(table_hdl, 0);
-		if (strncmp(name, text, len) == 0)
-			return strdup(name);
+		if (strncmp(name, text, len) == 0) {
+			char *s, *schema = mapi_fetch_field(table_hdl, 1);
+			int l1 = strlen(name), l2 = strlen(schema);
+
+			s = malloc(l1 + l2 + 2);
+			s[0] = 0;
+			strcat(s, schema); 
+			strcat(s, ".");
+			strcat(s, name);
+			return s;
+		}
 	}
 
 	return NULL;

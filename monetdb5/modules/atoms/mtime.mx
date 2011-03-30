@@ -581,6 +581,12 @@ comment "extracts seconds from daytime";
 command batmtime.seconds(d:bat[:any_1,:daytime]):bat[:any_1,:int]
 address MTIMEdaytime_extract_seconds_bulk;
 
+command sql_seconds(d:daytime) :int 
+address MTIMEdaytime_extract_sql_seconds 
+comment "extracts seconds (with fractional milliseconds) from daytime";
+command batmtime.sql_seconds(d:bat[:any_1,:daytime]):bat[:any_1,:int]
+address MTIMEdaytime_extract_sql_seconds_bulk;
+
 command milliseconds(d:daytime) :int 
 address MTIMEdaytime_extract_milliseconds 
 comment "extracts milliseconds from daytime";
@@ -771,6 +777,8 @@ command minutes(t:timestamp):int
 address MTIMEtimestamp_minutes;
 command seconds(t:timestamp):int
 address MTIMEtimestamp_seconds;
+command sql_seconds(t:timestamp):int
+address MTIMEtimestamp_sql_seconds;
 command milliseconds(t:timestamp):int
 address MTIMEtimestamp_milliseconds;
 
@@ -986,6 +994,7 @@ mtime_export str MTIMEdate_extract_dayofweek(int *ret, date *v);
 mtime_export str MTIMEdaytime_extract_hours(int *ret, daytime *v);
 mtime_export str MTIMEdaytime_extract_minutes(int *ret, daytime *v);
 mtime_export str MTIMEdaytime_extract_seconds(int *ret, daytime *v);
+mtime_export str MTIMEdaytime_extract_sql_seconds(int *ret, daytime *v);
 mtime_export str MTIMEdaytime_extract_milliseconds(int *ret, daytime *v);
 mtime_export str MTIMEtimestamp_extract_daytime(daytime *ret, timestamp *t, tzone *z);
 mtime_export str MTIMEtimestamp_extract_daytime_default(daytime *ret, timestamp *t);
@@ -1012,6 +1021,7 @@ mtime_export str MTIMEtimestamp_day(int *ret, timestamp *t);
 mtime_export str MTIMEtimestamp_hours(int *ret, timestamp *t);
 mtime_export str MTIMEtimestamp_minutes(int *ret, timestamp *t);
 mtime_export str MTIMEtimestamp_seconds(int *ret, timestamp *t);
+mtime_export str MTIMEtimestamp_sql_seconds(int *ret, timestamp *t);
 mtime_export str MTIMEtimestamp_milliseconds(int *ret, timestamp *t);
 mtime_export str MTIMEsql_year(int *ret, int *t);
 mtime_export str MTIMEsql_month(int *ret, int *t);
@@ -1093,6 +1103,7 @@ mtime_export str MTIME@1_extract_@2_bulk(int *ret, int *bid);
 @:ExtractExport(daytime,hours)@
 @:ExtractExport(daytime,minutes)@
 @:ExtractExport(daytime,seconds)@
+@:ExtractExport(daytime,sql_seconds)@
 @:ExtractExport(daytime,milliseconds)@
 
 
@@ -2302,6 +2313,20 @@ daytime_extract_seconds(int *ret, daytime *v)
 	return GDK_SUCCEED;
 }
 
+/* extracts (milli) seconds from daytime (value between 0 and 59000) */
+static inline int
+daytime_extract_sql_seconds(int *ret, daytime *v)
+{
+	int sec, milli;
+	if (*v == daytime_nil) {
+		*ret = int_nil;
+	} else {
+		fromtime((int) *v, &dummy, &dummy, &sec, &milli);
+		*ret = sec* 1000 + milli;
+	}
+	return GDK_SUCCEED;
+}
+
 /* extracts milliseconds from daytime (value between 0 and 999) */
 static inline int
 daytime_extract_milliseconds(int *ret, daytime *v)
@@ -3303,6 +3328,13 @@ MTIMEdaytime_extract_seconds(int *ret, daytime *v)
 }
 
 str
+MTIMEdaytime_extract_sql_seconds(int *ret, daytime *v)
+{
+	daytime_extract_sql_seconds(ret, v);
+	return MAL_SUCCEED;
+}
+
+str
 MTIMEdaytime_extract_milliseconds(int *ret, daytime *v)
 {
 	daytime_extract_milliseconds(ret, v);
@@ -3955,6 +3987,14 @@ MTIMEtimestamp_seconds(int *ret, timestamp *t)
 	return MAL_SUCCEED;
 }
 str
+MTIMEtimestamp_sql_seconds(int *ret, timestamp *t)
+{
+	daytime d;
+	timestamp_extract_daytime(&d, t, &tzone_local);
+	daytime_extract_sql_seconds(ret, &d);
+	return MAL_SUCCEED;
+}
+str
 MTIMEtimestamp_milliseconds(int *ret, timestamp *t)
 {
 	daytime d;
@@ -4052,6 +4092,7 @@ MTIMEmsec(lng *r)
 @:Extract(daytime,hours,int)@
 @:Extract(daytime,minutes,int)@
 @:Extract(daytime,seconds,int)@
+@:Extract(daytime,sql_seconds,int)@
 @:Extract(daytime,milliseconds,int)@
 
 str 
