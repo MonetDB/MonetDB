@@ -326,7 +326,7 @@ BATkunique(BAT *b)
 			BAT *tmp2 = NULL, *tmp1, *tmp0 = VIEWhead_(b, BAT_WRITE);
 
 			if (tmp0) {
-				tmp1 = BATsample(b, 1000);
+				tmp1 = BATsample(tmp0, 1000);
 				if (tmp1) {
 					tmp2 = BATkunique(tmp1);
 					if (tmp2) {

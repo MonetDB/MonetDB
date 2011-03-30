@@ -1430,6 +1430,13 @@ BUNappend(BAT *b, ptr t, bit force)
 						}
 					}
 				}
+				if (b->tkey == TRUE && cmp <= 0) {
+					/* cmp==0: definitely not key,
+					 * cmd<0: we don't know */
+					b->T->nokey[0] = i - 1;
+					b->T->nokey[1] = i;
+					b->tkey = bm->hkey = b->tdense = FALSE;
+				}
 			} else if (b->tsorted == (bit) GDK_SORTED_REV) {
 				ptr prv = BUNtail(bi, p - 1);
 
@@ -1438,8 +1445,15 @@ BUNappend(BAT *b, ptr t, bit force)
 					b->T->nosorted_rev = i;
 					b->tsorted = FALSE;
 				}
-			}
-			if (b->tkey == TRUE && cmp <= 0) {
+				if (b->tkey == TRUE && cmp >= 0) {
+					/* cmp==0: definitely not key,
+					 * cmd>0: we don't know */
+					b->T->nokey[0] = i - 1;
+					b->T->nokey[1] = i;
+					b->tkey = bm->hkey = b->tdense = FALSE;
+				}
+			} else if (b->tkey == TRUE) {
+				/* we don't know anything, so unset key */
 				b->T->nokey[0] = i - 1;
 				b->T->nokey[1] = i;
 				b->tkey = bm->hkey = b->tdense = FALSE;
