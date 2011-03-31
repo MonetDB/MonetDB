@@ -50,9 +50,15 @@ function user.main():void;
     na_a := bat.info(b);
     oa_a := io.print(na_a);
     pa_a := io.printf("#~EndVariableOutput~#\n");
-    g := group.min(b);
+    bt := algebra.markH(b);
+    hb := algebra.markT(b);
+    bh := bat.reverse(hb);
+    (e,m) := group.new(bh);
+    i := aggr.min(bt,m,e);
+    g := algebra.join(hb,i);
     io.print(g);
-    h := group.max(b);
+    a := aggr.max(bt,m,e);
+    h := algebra.join(hb,a);
     io.print(h);
 end main;
 #-----------------#
@@ -73,8 +79,8 @@ end main;
 # h			t		  # name
 # str			str		  # type
 #-----------------------------------------#
-[ "batId",		  "tmp_10"	  ]
-[ "batCacheid",		  "8"		  ]
+[ "batId",		  "tmp_364"	  ]
+[ "batCacheid",		  "244"		  ]
 [ "hparentid",		  "0"		  ]
 [ "tparentid",		  "0"		  ]
 [ "batSharecnt",	  "0"		  ]
@@ -121,9 +127,9 @@ end main;
 [ "batFirst",		  "0"		  ]
 [ "htop",		  "72"		  ]
 [ "ttop",		  "72"		  ]
-[ "batStamp",		  "5"		  ]
-[ "lastUsed",		  "160"		  ]
-[ "curStamp",		  "6"		  ]
+[ "batStamp",		  "510"		  ]
+[ "lastUsed",		  "32838"	  ]
+[ "curStamp",		  "511"		  ]
 [ "batCopiedtodisk",	  "0"		  ]
 [ "batDirtydesc",	  "dirty"	  ]
 [ "H->heap.dirty",	  "dirty"	  ]
@@ -139,7 +145,7 @@ end main;
 [ "tail.maxsize",	  "2048"	  ]
 [ "tail.storage",	  "malloced"	  ]
 [ "tail.newstorage",	  "malloced"	  ]
-[ "tail.filename",	  "10.tail"	  ]
+[ "tail.filename",	  "03/364.tail"	  ]
 [ "H->vheap->dirty",	  "clean"	  ]
 [ "T->vheap->dirty",	  "clean"	  ]
 #~EndVariableOutput~#
@@ -150,7 +156,7 @@ end main;
 [ 0@0,	  0@0	  ]
 [ 1@0,	  1@0	  ]
 [ 2@0,	  0@0	  ]
-[ 3@0,	  1@0	  ]
+[ 3@0,	  nil	  ]
 #-----------------#
 # h	t	  # name
 # oid	oid	  # type
