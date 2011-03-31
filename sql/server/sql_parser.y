@@ -3441,11 +3441,13 @@ value_exp:
 	l = append_list(l,$3);
 	$$ = _symbol_create_list( SQL_ARRAY, l);
 	}
+/*
  | '(' scalar_exp_list ')' {
 	dlist *l = L();
 	l = append_list(l,$2);
 	$$ = _symbol_create_list( SQL_ARRAY, l);
 	}
+*/
  | '[' scalar_exp ']'
 	{
 		$$ = NULL;
