@@ -4572,7 +4572,9 @@ data_type:
 
 array_element_list:
 	column_def
+		{ $$ = append_symbol(L(), $1); }
  | array_element_list ',' column_def
+		{ $$ = append_symbol($1, $3); }
 ;
 
 type_alias:
