@@ -1,4 +1,4 @@
-CREATE ARRAY wcs_img (
+CREATE VIEW ARRAY wcs_img (
     wcs_x FLOAT DIMENSION,
     wcs_y FLOAT DIMENSION,
     v INTEGER DEFAULT 0) AS

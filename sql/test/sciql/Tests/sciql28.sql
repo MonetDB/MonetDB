@@ -1,3 +1,5 @@
+CREATE TABLE events ( x int, y int);
+
 CREATE ARRAY ximage ( x integer DIMENSION, y integer DIMENSION, v integer DEFAULT 0);
 INSERT INTO ximage  SELECT [x], [y], count(*) FROM events GROUP BY x, y;
 

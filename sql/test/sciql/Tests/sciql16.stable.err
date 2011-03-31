@@ -74,9 +74,6 @@ stderr of test 'sciql16` in directory 'test/sciql` itself:
 # 22:24:00 >  mclient -lsql -ftest -i -e --host=eir --port=37193 
 # 22:24:00 >  
 
-MAPI  = monetdb@eir:37193
-QUERY = ALTER ARRAY img ALTER x DIMENSION[-5:*];
-ERROR = !ALTER TABLE: no such table 'img'
 
 # 22:24:00 >  
 # 22:24:00 >  Done.
