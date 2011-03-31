@@ -33,8 +33,8 @@ Over..
 insert(
 | table(sys.cm_tmp) [ cm_tmp.i, cm_tmp.%TID% NOT NULL ]
 | union (
-| | table copyfrom('sys', 'cm_tmp', '|', '\n', 'NULL', 'null', '\file1', -1, 0),  [ cm_tmp.i ],
-| | table copyfrom('sys', 'cm_tmp', '|', '\n', 'NULL', 'null', '\file2', -1, 0),  [ cm_tmp.i ]
+| | table copyfrom('sys', 'cm_tmp', '|', '\n', 'NULL', 'null', '\file1', -1, 0, 0),  [ cm_tmp.i ],
+| | table copyfrom('sys', 'cm_tmp', '|', '\n', 'NULL', 'null', '\file2', -1, 0, 0),  [ cm_tmp.i ]
 | )
 )
 
