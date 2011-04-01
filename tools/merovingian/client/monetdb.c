@@ -1506,6 +1506,8 @@ main(int argc, char *argv[])
 			fprintf(stderr, "monetdb: cannot find a control socket, use -h and/or -p\n");
 			exit(1);
 		}
+		/* don't confuse control_send lateron */
+		mero_port = -1;
 	}
 	/* for TCP connections */
 	if (mero_host != NULL && *mero_host != '/' && mero_port == -1)
