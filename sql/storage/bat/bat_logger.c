@@ -110,7 +110,7 @@ bl_postversion( void *lg)
 		/* mark that the rest is fixed on sql level */
 	}
 	if (catalog_version == CATALOG_OCT2010) {
-		BAT *b;
+		BAT *b, *b1;
 		char *s = "sys", n[64];
 
 		fprintf(stdout, "# upgrading catalog from Oct2010\n");
@@ -118,39 +118,64 @@ bl_postversion( void *lg)
 
 		/* rename table 'keycolumns' into 'objects' 
 		 * and remove trunc column */
-		while(s) {
-		b = temp_descriptor(logger_find_bat(lg, N(n, "D", s, "keycolumns")));
-		if (!b) return ;
-		logger_del_bat(lg, b->batCacheid);
-		logger_add_bat(lg, b, N(n, "D", s, "objects"));
-		bat_destroy(b);
+		while (s) {
+			b = temp_descriptor(logger_find_bat(lg, N(n, "D", s, "keycolumns")));
+			if (!b)
+				return;
+			b1 = BATcopy(b, b->htype, b->ttype, 1);
+			if (!b1)
+				return;
+			b1 = BATsetaccess(b1, BAT_READ);
+			logger_del_bat(lg, b->batCacheid);
+			logger_add_bat(lg, b1, N(n, "D", s, "objects"));
+			bat_destroy(b);
+			bat_destroy(b1);
 
-		b = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "keycolumns_id")));
-		if (!b) return ;
-		logger_del_bat(lg, b->batCacheid);
-		logger_add_bat(lg, b, N(n, NULL, s, "objects_id"));
-		bat_destroy(b);
+			b = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "keycolumns_id")));
+			if (!b)
+				return;
+			b1 = BATcopy(b, b->htype, b->ttype, 1);
+			if (!b1)
+				return;
+			b1 = BATsetaccess(b1, BAT_READ);
+			logger_del_bat(lg, b->batCacheid);
+			logger_add_bat(lg, b1, N(n, NULL, s, "objects_id"));
+			bat_destroy(b);
+			bat_destroy(b1);
 
-		b = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "keycolumns_column")));
-		if (!b) return ;
-		logger_del_bat(lg, b->batCacheid);
-		logger_add_bat(lg, b, N(n, NULL, s, "objects_name"));
-		bat_destroy(b);
+			b = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "keycolumns_column")));
+			if (!b)
+				return;
+			b1 = BATcopy(b, b->htype, b->ttype, 1);
+			if (!b1)
+				return;
+			b1 = BATsetaccess(b1, BAT_READ);
+			logger_del_bat(lg, b->batCacheid);
+			logger_add_bat(lg, b1, N(n, NULL, s, "objects_name"));
+			bat_destroy(b);
+			bat_destroy(b1);
 
-		b = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "keycolumns_nr")));
-		if (!b) return ;
-		logger_del_bat(lg, b->batCacheid);
-		logger_add_bat(lg, b, N(n, NULL, s, "objects_nr"));
-		bat_destroy(b);
+			b = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "keycolumns_nr")));
+			if (!b)
+				return;
+			b1 = BATcopy(b, b->htype, b->ttype, 1);
+			if (!b1)
+				return;
+			b1 = BATsetaccess(b1, BAT_READ);
+			logger_del_bat(lg, b->batCacheid);
+			logger_add_bat(lg, b1, N(n, NULL, s, "objects_nr"));
+			bat_destroy(b);
+			bat_destroy(b1);
 
-		b = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "keycolumns_trunc")));
-		if (!b) return ;
-		logger_del_bat(lg, b->batCacheid);
-		bat_destroy(b);
-		if (strcmp(s,"sys") == 0)
-			s = "tmp";
-		else
-			s = NULL;
+			b = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "keycolumns_trunc")));
+			if (!b)
+				return;
+			logger_del_bat(lg, b->batCacheid);
+			bat_destroy(b);
+			if (strcmp(s, "sys") == 0)
+				s = "tmp";
+			else
+				s = NULL;
 		}
 	}
 }
