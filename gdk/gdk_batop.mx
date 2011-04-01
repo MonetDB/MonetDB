@@ -1058,12 +1058,9 @@ Examine type, and values for lower- and higher-bound.
 	} else {
 		hval = ATOMcmp(t, th, nil);
 	}
-	if (equi && nequi) {
+	if (nequi) {
 		equi = 0;
-		li = !li;
-		hi = !hi;
-	} else if (nequi) {	/* swap sub-ranges */
-		if (!lval || !hval) {
+		if (!lval || !hval) {	/* swap sub-ranges */
 			ptr tv;
 			bit ti;
 			ti = li;
