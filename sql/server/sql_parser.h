@@ -179,9 +179,8 @@ typedef enum tokens {
 	SQL_CREATE_ARRAY,
 	SQL_DROP_ARRAY,
 	SQL_ARRAY,
-	SQL_INDEX,
-	SQL_DIMENSION,
-	SQL_DIMENSION_SPEC
+	SQL_ARRAY_INDEX,
+	SQL_DIMENSION
 } tokens;
 
 typedef enum jt {

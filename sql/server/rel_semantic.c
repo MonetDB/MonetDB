@@ -302,7 +302,7 @@ rel_semantic(mvc *sql, symbol *s)
 		return rel_selects(sql, s);
 
 	case SQL_ARRAY:
-	case SQL_INDEX:
+	case SQL_ARRAY_INDEX:
 	case SQL_DIMENSION:
 		return sql_error(sql, 02, "Array not type checked yet");
 	default:

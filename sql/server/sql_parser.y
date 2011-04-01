@@ -261,9 +261,10 @@ int yydebug=1;
 	XML_primary
 	opt_comma_string_value_expression
 
-	group_item
+	group_item /* sciql structural grouping */
 	dimension
-	array_element
+	array_dim_ref
+	array_cell_ref
 
 %type <type>
 	data_type
@@ -384,11 +385,11 @@ int yydebug=1;
 	dim_range
 	dim_range_list
 	dim_exp
-	index_exp
+	index_exp /* position indices of array cells */
 	index_exp_list
 	index_term
 
-	array_element_list
+	array_element_def_list
 
 %type <i_val>
 	any_all_some
@@ -748,11 +749,6 @@ set_statement:
   |	set TIME ZONE interval_expression
 		{ dlist *l = L();
 		append_string(l, sa_strdup(SA, "current_timezone"));
-		append_symbol(l, $4 );
-		$$ = _symbol_create_list( SQL_SET, l); }
-  |	set array_element '=' simple_atom
-		{ dlist *l = L();
-		append_symbol(l, $2 );
 		append_symbol(l, $4 );
 		$$ = _symbol_create_list( SQL_SET, l); }
   ;
@@ -1597,37 +1593,41 @@ dim_range :
 	'[' dim_exp ':' dim_exp ':' dim_exp ']'
 	{
 		dlist *l = L();
-		$$= l;
+		append_list(l, $2);
+		append_list(l, $4);
+		$$ = append_list(l, $6);
 	}
 	| '[' dim_exp ':' dim_exp ']'
 	{
 		dlist *l = L();
-		$$= l;
+		append_list(l, $2);
+		$$ = append_list(l, $4);
 	}
 	| '[' dim_exp ']' /* size of INT dim or '*' */
 	{
-		dlist *l = L();
-		$$= l;
+		$$= append_list(L(), $2);
 	}
 	| '[' ident ']'  /* sequence name */
 	{
-		dlist *l = L();
-		$$= l;
+		$$= append_string(L(), $2);
 	}
 ;
 
 dim_exp :
 	literal
 	{
-		$$= L();
+		$$= append_symbol(L(), $1);
 	}
  |	'-' literal
 	{
-		$$= L();
+		dlist *l = L();
+		append_list(l, 
+			append_string(l, sa_strdup(SA, "sql_neg")));
+		$$= append_symbol(l, $2);
 	}
   | '*'
 	{
-		$$= NULL;
+		$$= append_symbol(L(), NULL);
 	}
 
 serial_opt_params:
@@ -1757,6 +1757,15 @@ view_def:
 	  append_list(l, $4);
 	  append_symbol(l, $6);
 	  append_int(l, $7);
+	  append_int(l, TRUE);	/* persistent view */
+	  $$ = _symbol_create_list( SQL_CREATE_VIEW, l ); 
+	}
+ | create VIEW ARRAY qname '(' array_element_def_list ')' AS query_expression opt_with_check_option
+	{  dlist *l = L();
+	  append_list(l, $4);
+	  append_list(l, $6);
+	  append_symbol(l, $9);
+	  append_int(l, $10);
 	  append_int(l, TRUE);	/* persistent view */
 	  $$ = _symbol_create_list( SQL_CREATE_VIEW, l ); 
 	}
@@ -2697,6 +2706,13 @@ assignment:
 	  append_string(l, $1);
 	  $$ = _symbol_create_list( SQL_ASSIGN, l); }
 
+ | array_cell_ref '=' search_condition
+
+	{ dlist *l = L();
+	  append_symbol(l, $3 );
+	  append_string(l, $1);
+	  $$ = _symbol_create_list( SQL_ASSIGN, l); }
+
  | column '=' sqlNULL
 
 	{ dlist *l = L();
@@ -3003,9 +3019,12 @@ table_ref:
 				{ $$ = $2;
 				  append_symbol($2->data.lval, $4); }
 */
- |  ident index_exp_list { 
+ |  array_dim_ref { /* allow "s1.a1[x][1:2]" */
+	$$ = _symbol_create_symbol( SQL_ARRAY, $1);
+	}
+ |  array_dim_ref table_name { /* allow "s1.a1[x][1:2] AS <ident>" */
 	dlist *l = L();
-	l = append_string(l, $1);
+	l = append_symbol(l, $1);
 	l = append_list(l, $2);
 	$$ = _symbol_create_list( SQL_ARRAY, l);
 	}
@@ -3052,7 +3071,6 @@ table_name:
 
 opt_group_by_clause:
     /* empty */ 		  { $$ = NULL; }
- |  sqlGROUP BY column_ref_commalist { $$ = _symbol_create_list( SQL_GROUPBY, $3 );}
  |  sqlGROUP BY group_ref_commalist { 
 	dlist *l = L();
 	l= append_list(l,$3);
@@ -3072,13 +3090,9 @@ group_ref_commalist:
  ;
 
 group_item:
-  ident index_exp_list { 
-	dlist *l = L();
-	l = append_string(l, $1);
-	l = append_list(l, $2);
-	$$ = _symbol_create_list( SQL_INDEX, l);
-	}
-  | scalar_exp { $$= $1; }
+    column_ref { $$ = _symbol_create_list(SQL_COLUMN, $1); }
+ |  array_dim_ref { $$ = _symbol_create_symbol( SQL_ARRAY_INDEX, $1); }
+ |  array_cell_ref { $$ = _symbol_create_symbol(SQL_COLUMN, $1); }
 ;
 
 column_ref_commalist:
@@ -3435,34 +3449,32 @@ value_exp:
  |  cast_exp
  |  XML_value_function
  |  param
- |  array_element 
+ |  array_dim_ref
+ |  array_cell_ref
  |  ARRAY '(' scalar_exp_list ')' {
 	dlist *l = L();
 	l = append_list(l,$3);
 	$$ = _symbol_create_list( SQL_ARRAY, l);
 	}
-/*
- | '(' scalar_exp_list ')' {
-	dlist *l = L();
-	l = append_list(l,$2);
-	$$ = _symbol_create_list( SQL_ARRAY, l);
-	}
-*/
- | '[' scalar_exp ']'
-	{
-		$$ = NULL;
-	}
 ;
 
-array_element:
-  ident index_exp_list '.' ident		{ 
-			dlist *l = L();
-			l = append_string(l, $1);
-			l = append_string(l, $4);
-			l = append_list(l, $2);
-			$$ = _symbol_create_list( SQL_INDEX, l);
-			}
- ;
+array_dim_ref:
+	qname index_exp_list { 
+		dlist *l = L();
+		l = append_string(l, $1);
+		l = append_list(l, $2);
+		$$ = _symbol_create_list( SQL_ARRAY_INDEX, l);
+		}
+;
+
+array_cell_ref:
+	array_dim_ref '.' ident { 
+		dlist *l = L();
+		l = append_symbol(l, $1);
+		l = append_list(l, $3);
+		$$ = _symbol_create_list( SQL_ARRAY_INDEX, l);
+		}
+;
 
 param:  
    '?'			
@@ -3692,6 +3704,8 @@ column_exp:
   		  append_symbol(l, $1);
   		  append_string(l, $2);
   		  $$ = _symbol_create_list( SQL_COLUMN, l ); }
+ | '[' scalar_exp ']'
+ 		{ $$ = _symbol_create_symbol( SQL_COLUMN, $2 ); }
  ;
 
 opt_alias_name:
@@ -4225,28 +4239,30 @@ index_exp :
 	'[' index_term ':' index_term ':' index_term ']'
 	{
 		dlist *l = L();
-		$$= l;
+		append_list(l, $2);
+		append_list(l, $4);
+		$$ = append_list(l, $6);
 	}
 	| '[' index_term ':' index_term ']'
 	{
 		dlist *l = L();
-		$$= l;
+		append_list(l, $2);
+		$$ = append_list(l, $4);
 	}
 	| '[' index_term ']'
 	{
-		dlist *l = L();
-		$$= l;
+		$$= append_string(L(), $2);
 	}
 ;
 
 index_term :
 	scalar_exp
 	{
-		$$= L();
+		$$= append_symbol(L(), $1);
 	}
   | '*'
-	{
-		$$= NULL;
+	{ 
+		$$= append_symbol(L(), NULL);
 	}
 
 cast_exp:
@@ -4566,16 +4582,16 @@ data_type:
 				sql_init_subtype(&$$, t, $3, 0);
 			  }
 			}
- | ARRAY '(' array_element_list ')' {
+ | ARRAY '(' array_element_def_list ')' { 
 	/* use a fake type  for now */
 	sql_find_subtype(&$$, "int", 0, 0);
 	}
  ;
 
-array_element_list:
+array_element_def_list:
 	column_def
 		{ $$ = append_symbol(L(), $1); }
- | array_element_list ',' column_def
+ | array_element_def_list ',' column_def
 		{ $$ = append_symbol($1, $3); }
 ;
 
