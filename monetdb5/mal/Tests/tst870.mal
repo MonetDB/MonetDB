@@ -17,9 +17,15 @@ na_a := bat.info(b);
 oa_a := io.print(na_a);
 pa_a := io.printf("#~EndVariableOutput~#\n");
 
+bt:=algebra.markH(b);
+hb:=algebra.markT(b);
+bh:=bat.reverse(hb);
+(e,m):=group.new(bh);
 
-g:= group.min(b);
+i:=aggr.min(bt,m,e);
+g:=algebra.join(hb,i);
 io.print(g);
 
-h:= group.max(b);
+a:=aggr.max(bt,m,e);
+h:=algebra.join(hb,a);
 io.print(h);

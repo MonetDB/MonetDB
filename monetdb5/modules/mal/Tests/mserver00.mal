@@ -3,7 +3,8 @@
 z:= inspect.getEnvironment();
 ps:= algebra.find(z,"mapi_port");
 port:= calc.int(ps);
-hs:= algebra.find(z,"host");
+#hs:= algebra.find(z,"host");
+hs:= "localhost";
 
 # hardcoded, as access control currently works, and client.getInfo # doesn't
 #u:= clients.getInfo();
