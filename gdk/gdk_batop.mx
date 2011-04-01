@@ -1045,6 +1045,10 @@ BAT_select_(BAT *b, ptr tl, ptr th, bit li, bit hi, bit tail, bit anti, bit pres
 Examine type, and values for lower- and higher-bound.
 @c
 	batcnt = BATcount(b);
+	/* preliminarily determine result types */
+	ht = BAThtype(b);
+	tt = tail ? BATttype(b) : TYPE_void;
+
 	t = b->ttype;
 	nil = ATOMnilptr(t);
 	lnil = ATOMcmp(t, tl, nil) == 0;
@@ -1056,11 +1060,12 @@ Examine type, and values for lower- and higher-bound.
 		th = tl;
 		hval = 1;	/* equi-select */
 	} else {
-		hval = ATOMcmp(t, th, nil);
+		hval = ATOMcmp(t, th, nil) != 0;
 	}
 	if (nequi) {
-		equi = 0;
-		if (!lval || !hval) {	/* swap sub-ranges */
+		if (!lval != !hval) {
+			/* one of the end points is nil and the other
+			 * isn't: swap sub-ranges */
 			ptr tv;
 			bit ti;
 			ti = li;
@@ -1070,12 +1075,24 @@ Examine type, and values for lower- and higher-bound.
 			tl = th;
 			th = tv;
 			nequi = 0;
-		}
+			equi = 0;
+		} else if (!lval && !hval) {
+			/* antiselect for nil-nil range: all non-nil
+			 * values are in range, so we need to return
+			 * all but, but we also don't want to return
+			 * nils, so instead we return nothing. */
+			return BATnew(ht, tt, 10);
+		} else if (equi && lnil) {
+			/* antiselect for nil value: turn into range
+			 * select for nil-nil range (i.e. everything
+			 * but nil) */
+			equi = 0;
+			nequi = 0;
+			lval = 0;
+			hval = 0;
+		} else
+			equi = 0;
 	}
-
-	/* preliminarily determine result types */
-	ht = BAThtype(b);
-	tt = tail ? BATttype(b) : TYPE_void;
 
 	if (hval && ((ATOMcmp(t, tl, th) > 0) || (equi && !(li && hi)))) {
 		/* empty range */
