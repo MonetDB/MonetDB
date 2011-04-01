@@ -2,12 +2,12 @@
 -- see http://www.fp.ucalgary.ca/mhallbey for a tutorial on its definition
 -- the examples below are taken from it
 
-create array img(
+create array img2(
 	x int dimension[0:4],
 	y int dimension[0:4],
 	v int default 0  );
 
-insert into img values (0,1,1),(0,1,1),(0,2,2),(2,3,3);
+insert into img2 values (0,1,1),(0,1,1),(0,2,2),(2,3,3);
 
 -- the count matrix
 create array corrCnt(
@@ -15,7 +15,7 @@ create array corrCnt(
 	y int dimension[0:4],
 	cnt int default 0);
 insert into corrCnt select A[x][y].v, A[x+1][y].v, count(*)
-from img as A
+from img2 as A
 group by A[x][y].v, A[x+1][y].v;
 
 -- the probability distribution 
