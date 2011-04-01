@@ -1434,10 +1434,10 @@ main(int argc, char *argv[])
 	}
 
 	/* check consistency of -h -p and -P args */
-	if (mero_pass != NULL && mero_host == NULL) {
-		fprintf(stderr, "monetdb: -P requires -h to be used\n");
+	if (mero_pass != NULL && (mero_host == NULL || *mero_host == '/')) {
+		fprintf(stderr, "monetdb: -P requires -h to be used with a TCP hostname\n");
 		exit(1);
-	} else if (mero_host != NULL && mero_pass == NULL) {
+	} else if (mero_host != NULL && *mero_host != '/' && mero_pass == NULL) {
 		fprintf(stderr, "monetdb: -h requires -P to be used\n");
 		exit(1);
 	}
@@ -1506,6 +1506,8 @@ main(int argc, char *argv[])
 			fprintf(stderr, "monetdb: cannot find a control socket, use -h and/or -p\n");
 			exit(1);
 		}
+		/* don't confuse control_send lateron */
+		mero_port = -1;
 	}
 	/* for TCP connections */
 	if (mero_host != NULL && *mero_host != '/' && mero_port == -1)
