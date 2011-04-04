@@ -566,8 +566,7 @@ yes-*-*)
 	dnl  "warning: missing initializer".
 	dnl  Hence, we use GCC_SWIG_CFLAGS to disable the respective warning
 	dnl  as locally as possbile via "-Wno-strict-aliasing -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter -Wno-undef -Wno-missing-field-initializers"
-	dnl  (see also sql/src/backends/monet[45]/Makefile.ag,
-	dnl   clients/src/{python,perl,php,ruby}/Cimpl/Makefile.ag).
+	dnl  (see also sql/backends/monet5/Makefile.ag, clients/perl/Cimpl/Makefile.ag).
 	GCC_SWIG_CFLAGS="$GCC_SWIG_CFLAGS -Wno-strict-aliasing -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter -Wno-undef"
 	case "$gcc_ver-$host_os" in
 	[[4-9]].*-*)
@@ -655,10 +654,10 @@ yes-*-*)
 
 	dnl  (At least on Fedora Core 4,) bison 2.0 seems to generate code
 	dnl  that icc does not like; since the problem only occurs with
-	dnl  sql/src/server/sql_parser.mx, 
+	dnl  sql/server/sql_parser.mx, 
 	dnl  we use ICC_BISON_CFLAGS 
 	dnl  to disable the respective warning as locally as possible
-	dnl  (see also sql/src/server/Makefile.ag).
+	dnl  (see also sql/server/Makefile.ag).
 	case "`bison -V | head -n1`" in
 	*2.0*)
 		ICC_BISON_CFLAGS="$ICC_BISON_CFLAGS -wd592"
@@ -680,8 +679,7 @@ yes-*-*)
 	dnl  'error #310: old-style parameter list (anachronism)'.
 	dnl  Hence, we use ICC_SWIG_CFLAGS to disable the respective warning
 	dnl  as locally as possbile via "-wd869 -wd177 -wd310"
-	dnl  (see also sql/src/backends/monet[45]/Makefile.ag,
-	dnl   clients/src/{python,perl,php,ruby}/Cimpl/Makefile.ag).
+	dnl  (see also sql/backends/monet5/Makefile.ag, clients/perl/Cimpl/Makefile.ag).
 	ICC_SWIG_CFLAGS="$ICC_SWIG_CFLAGS -wd869 -wd177 -wd310"
 
 	NO_INLINE_CFLAGS="-fno-inline -fno-inline-functions"
