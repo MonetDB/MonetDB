@@ -3071,6 +3071,7 @@ table_name:
 
 opt_group_by_clause:
     /* empty */ 		  { $$ = NULL; }
+ |  sqlGROUP BY column_ref_commalist { $$ = _symbol_create_list( SQL_GROUPBY, $3 );}
  |  sqlGROUP BY group_ref_commalist { 
 	dlist *l = L();
 	l= append_list(l,$3);
@@ -3090,9 +3091,9 @@ group_ref_commalist:
  ;
 
 group_item:
-    column_ref { $$ = _symbol_create_list(SQL_COLUMN, $1); }
- |  array_dim_ref { $$ = _symbol_create_symbol( SQL_ARRAY_INDEX, $1); }
+	array_dim_ref { $$ = _symbol_create_symbol( SQL_ARRAY_INDEX, $1); }
  |  array_cell_ref { $$ = _symbol_create_symbol(SQL_COLUMN, $1); }
+/* |  column_ref { $$ = _symbol_create_list(SQL_COLUMN, $1); } */
 ;
 
 column_ref_commalist:
