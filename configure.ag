@@ -991,15 +991,16 @@ if test "x$enable_optim" = xyes; then
       dnl -fomit-frame-pointer crashes memprof
       case "$host-$gcc_ver" in
 		powerpc*-apple-darwin*)
-		  # -fast switch includes -mdynamic-no-pic, unless -fPIC is
-		  # given, which we need for dynamic libraries, flags:
+		  # -fast switch causes arithmetic differences, and slower
+		  # running code for SQL, some faster for M5, so we don't use
+		  # it.  Instead we try a subset of -fast flags:
 		  #  -O3 -falign-loops-max-skip=15 -falign-jumps-max-skip=15
 		  #  -falign-loops=16 -falign-jumps=16 -falign-functions=16
 		  #  -malign-natural -ffast-math -fstrict-aliasing
 		  #  -funroll-loops -ftree-loop-linear -ftree-loop-memset
 		  #  -mcpu=G5 -mpowerpc-gpopt -mtune=G5 -fsched-interblock
 		  #  -fgcse-sm -mpowerpc64
-		  CFLAGS="-fast -fPIC -pipe ${CFLAGS}"
+		  CFLAGS="-O3 -falign-loops-max-skip=15 -falign-jumps-max-skip=15 -falign-loops=16 -falign-jumps=16 -falign-functions=16 -fstrict-aliasing -funroll-loops -ftree-loop-linear -ftree-loop-memset -pipe ${CFLAGS}"
 		;;
 		i?86-apple-darwin*|x86_64-apple-darwin*)
 		  # -fast switch on Intel is a lot less tuned:
