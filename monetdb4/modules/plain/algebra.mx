@@ -1659,7 +1659,7 @@ CMDantiuselect1(BAT **result, BAT *b, ptr value)
 {
 	ptr v = (b->ttype == TYPE_bat) ? (ptr) &((BAT *) value)->batCacheid : value;
 
-	return (*result = BATantiuselect_(b, v, NULL, FALSE, FALSE)) ? GDK_SUCCEED : GDK_FAIL;
+	return (*result = BATantiuselect_(b, v, NULL, TRUE, TRUE)) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 int
