@@ -2449,14 +2449,6 @@ if test "x$enable_fits" != xno; then
 fi
 AM_CONDITIONAL(HAVE_CFITSIO, test x"$have_cfitsio" != xno)
 
-LIBGC_CFLAGS=
-LIBGC_LIBS=
-LIBGC_LDADD=
-dnl Propagate the variable to the Makefiles
-AC_SUBST(LIBGC_CFLAGS, $LIBGC_CFLAGS)
-AC_SUBST(LIBGC_LIBS, $LIBGC_LIBS)
-AC_SUBST(LIBGC_LDADD, $LIBGC_LDADD)
-
 dnl     checks for header files
 AC_HEADER_STDBOOL
 AC_HEADER_STDC
