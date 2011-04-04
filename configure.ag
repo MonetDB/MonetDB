@@ -466,7 +466,6 @@ dnl  CFLAGS once configure/autoconf are done with their job,
 dnl  i.e., at the end of this configure[.ag] script.
 dnl  Only GNU (gcc) and Intel ([ie]cc/[ie]cpc on Linux) are done so far.
 : ${X_CFLAGS=} # initialize to empty if not set
-NO_X_CFLAGS='_NO_X_CFLAGS_'
 NO_INLINE_CFLAGS=""
 GCC_BISON_CFLAGS=""
 ICC_BISON_CFLAGS=""
@@ -535,17 +534,6 @@ yes-*-*)
 	dnl X_CFLAGS="$X_CFLAGS -Wunreachable-code"
 	dnl  ... however, some things are beyond our control:
 	case $gcc_ver-$host_os in
-	2.9*-aix*)
-		dnl  In some cases, there is a (possibly) uninitialized
-		dnl  variable in bison.simple ... |-(
-		dnl  However, gcc-2.9-aix51-020209 on SARA's solo
-		dnl  seems to ignore "-Wno-uninitialized";
-		dnl  hence, we switch-off "-Werror" by disabling
-		dnl  X_CFLAGS locally in src/monet/Makefile.ag:
-		dnl  @NO_X_CFLAGS@ with NO_X_CFLAGS='X_CFLAGS'
-		dnl  generates "X_CFLAGS =" in the generated Makefile.
-		NO_X_CFLAGS='X_CFLAGS'
-		;;
 	*-solaris*|*-aix*)
 		dnl  In some cases, there is a (possibly) uninitialized
 		dnl  variable in bison.simple ... |-(
@@ -701,7 +689,6 @@ esac
 fi
 AC_SUBST(CFLAGS)
 AC_SUBST(X_CFLAGS)
-AC_SUBST(NO_X_CFLAGS)
 
 dnl icc needs -fPIC (but the current autoconf still uses -KPIC)
 case "$GCC-$CC-$host_os" in
