@@ -70,7 +70,7 @@ typedef struct expression {
 #define UPD_COMP	1
 #define UPD_LOCKED	2
  
-// todo make enum
+/* todo make enum */
 #define DDL_OUTPUT	1
 #define DDL_LIST	2	
 

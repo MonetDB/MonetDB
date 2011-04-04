@@ -1045,7 +1045,7 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 					hghResultNode=nexNode;
 					BBPunfix(slice->batCacheid);
 				}else{
-					@:FullMerge(@1,@2,@3,@4)@  //TODO this might need to be a mergemid
+					@:FullMerge(@1,@2,@3,@4)@  /* TODO this might need to be a mergemid */
 				}
 				goto done;
 			}
