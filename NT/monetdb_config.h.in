@@ -653,9 +653,6 @@
 /* where Merovingian will store its logs by default */
 /* #undef MERO_LOG */
 
-/* MonetDB5 config file location */
-#define MONETDB5_CONFFILE "@QXsysconfdir@@QDIRSEP@monetdb5.conf"
-
 /* The used password hash algorithm */
 #define MONETDB5_PASSWDHASH "SHA512"
 

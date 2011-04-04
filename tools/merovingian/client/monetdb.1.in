@@ -272,13 +272,6 @@ user input or database state is indicated by exit code
 If an internal error in the utility occurs, exit code
 .B 2
 is returned.
-.SH FILES
-.I @MONETDB5_CONFFILE@
-.RS
-The configuration file for MonetDB, located in the system configuration
-directory.  This file can be overridden by setting
-.I MONETDB5CONF
-in the enviroment.
 .SH "SEE ALSO"
 .BR monetdbd (1)
 .BR mserver5 (1)
