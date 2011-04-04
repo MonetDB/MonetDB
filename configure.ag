@@ -463,7 +463,7 @@ dnl  (basically everything except "-Werror"). For "-Werror" and some
 dnl  switches that disable selected warnings that haven't been sorted out,
 dnl  yet, we set X_CFLAGS, which are added to the standard
 dnl  CFLAGS once configure/autoconf are done with their job,
-dnl  i.e., at the end of the configure.m4 file that includes this monet.m4.
+dnl  i.e., at the end of this configure[.ag] script.
 dnl  Only GNU (gcc) and Intel ([ie]cc/[ie]cpc on Linux) are done so far.
 : ${X_CFLAGS=} # initialize to empty if not set
 NO_X_CFLAGS='_NO_X_CFLAGS_'
@@ -670,7 +670,7 @@ yes-*-*)
 	dnl  we use ICC_BISON_CFLAGS to disable the respective warning as
 	dnl  locally as possible via "-wd177"
 	dnl  (#177: label "." was declared but never referenced)
-	dnl  (see also pathfinder/modules/pftijah/Makefile.ag).
+	dnl  (see also sql/server/Makefile.ag).
 	ICC_BISON_CFLAGS="$ICC_BISON_CFLAGS -wd177"
 
 	dnl  Intel's icc does not like to compile swig-generated code
