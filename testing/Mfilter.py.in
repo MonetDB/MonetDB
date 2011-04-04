@@ -47,7 +47,7 @@ def wlen(str) :
 test = (
         # potential differences, which we want to ignore
         re.compile('(?:'+')|(?:'.join([
-                # MAPI & XRPC port numbers
+                # MAPI port numbers
                     r"^MAPI  = .*@.*:[0-9]*$",
                     r'^QUERY = execute at { ".*:[0-9]*" }$',
                 # Tokens depend on flex/bison
@@ -129,7 +129,6 @@ norm_in  = re.compile('(?:'+')|(?:'.join([
 #   r"^(illegal reference to context node: at )(.*)(: )(``.'' is unbound|position information not available)(.*)\n",                            # 17: 5
 #   r'^(variable\(s\) out of scope or unknown: at )(?:.*)\n',                                                                                   # 18: 1
 #   r'^(bad usage of XML namespaces: at )(?:.*)\n',                                                                                             # 19: 1
-#   r'^(QUERY = import rpc-module namespace xrpc = "http://www.monetdb.nl/basicfunctions" at ")(/.*)(/tests/XRpc/basic_queries/Tests/basicfunctions.xq";)\n', # 20: 3
     r"^(QUERY|ERROR)( =.* connect)( to|)( ')(localhost)(' port )([0-9]+)( .*)\n",                                                               # 21: 8
     r"^([Uu]sage: )(/.*/|)(lt-|)([A-Za-z0-9_]+)([ \t].*)\n",                                                                                    # 22: 5
 #   r'^(.*: )(illegal|invalid)( option -- .*)\n',                                                                                               # 23: 3
@@ -164,7 +163,6 @@ norm_out = (
 #   None, '...', None, '...', None,                                                                     # 17: 5
 #   None,                                                                                               # 18: 1
 #   None,                                                                                               # 19: 1
-#   None, '$TSTSRCBASE', None,                                                                          # 20: 3
     None, None, None, None, '<HOST>', None, '<MAPIPORT>', None,                                         # 21: 8
     None, '', '', None, None,                                                                           # 22: 5
 #   None, 'invalid', None,                                                                              # 23: 3

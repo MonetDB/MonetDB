@@ -112,8 +112,8 @@ component is required if you need XML/XQuery support.
 java
 ----
 
-Also known as MonetDB Java, this component provides both the MonetDB
-JDBC driver and the XRPC wrapper.  This component is optional.
+Also known as MonetDB Java, this component provides the MonetDB JDBC
+driver.  This component is optional.
 
 testing
 -------
@@ -601,8 +601,7 @@ Java
 If you want to build the java component of the MonetDB suite, you need
 Java__.  Get Java from http://java.sun.com/, but make sure you do
 *not* get the latest version.  Get the Java Development Kit 1.5.  Our
-current JDBC driver is not compatible with Java 1.6 yet, and the XRPC
-wrapper is not compatible with Java 1.4 or older.
+current JDBC driver is not compatible with Java 1.6 yet.
 
 In addition to the Java Development Kit, you will also need `Apache Ant`_
 which is responsible for the actual building of the driver.

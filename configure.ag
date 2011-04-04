@@ -233,15 +233,6 @@ if test "x$enable_java" != xno; then
 		*) enable_jdbc=no;;
 	esac
 
-	AC_ARG_ENABLE(xrpcwrapper,
-		AS_HELP_STRING([--enable-xrpcwrapper], [build the MonetDB XRPC wrapper]),
-		enable_xrpc="$enableval",
-		enable_xrpc=auto)
-	case $enable_xrpc in
-		yes|auto) enable_xrpc=$enable_xrpc;;
-		*) enable_xrpc=no;;
-	esac
-
 	AC_ARG_ENABLE(merocontrol,
 		AS_HELP_STRING([--enable-merocontrol], [build the Merovingian control driver]),
 		enable_control="$enableval",
@@ -252,7 +243,6 @@ if test "x$enable_java" != xno; then
 	esac
 else
 	enable_jdbc=no
-	enable_xrpc=no
 	enable_control=no
 fi
 
@@ -1813,30 +1803,6 @@ no-*)
 esac
 AM_CONDITIONAL(HAVE_JAVAJDBC,test x$have_java_jdbc != xno)
 
-have_java_xrpc=no
-case $have_java-$enable_xrpc in
-*-no)
-	;;
-no-yes)
-	AC_MSG_ERROR([MonetDB XRPC requires ant and Java])
-	;;
-no-*)
-	;;
-*)
-	req_java_ver_min=1.5 # >= $req_java_ver_min required
-	if test MONETDB_VERSION_TO_NUMBER(echo $JAVA_VERSION) -ge MONETDB_VERSION_TO_NUMBER(echo "$req_java_ver_min"); then
-		have_java_xrpc=yes
-	else
-		if test "x$enable_xrpc" = xyes; then
-			AC_MSG_ERROR([MonetDB XRPC requires ant and Java >= $req_java_ver_min.])
-		else
-			AC_MSG_WARN([Cannot build MonetDB XRPC as it requires ant and Java >= $req_java_ver_min.])
-		fi
-	fi
-	;;
-esac
-AM_CONDITIONAL(HAVE_JAVAXRPC,test x$have_java_xrpc != xno)
-
 have_java_control=no
 case $have_java-$enable_control in
 *-no)
@@ -1861,7 +1827,7 @@ no-*)
 esac
 AM_CONDITIONAL(HAVE_JAVAMEROCONTROL,test x$have_java_control != xno)
 
-if test x$have_java_jdbc = xno -a x$have_java_xrpc = xno -a x$have_java_control = xno; then
+if test x$have_java_jdbc = xno -a x$have_java_control = xno; then
 	# no point doing anything with Java if all Java packages are disabled
 	have_java=no
 fi
@@ -3234,7 +3200,6 @@ for comp in \
 	unixodbc \
 	java \
 	jdbc \
-	xrpc \
 	control \
 	testing \
 ; do

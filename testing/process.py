@@ -294,16 +294,14 @@ def client(lang, args = [], stdin = None, stdout = None, stderr = None,
     return p
 
 def server(lang, args = [], stdin = None, stdout = None, stderr = None,
-           mapiport = None, xrpcport = None, dbname = os.getenv('TSTDB'),
-           dbfarm = None, dbinit = None, bufsize = 0, log = False,
-           notrace = False):
+           mapiport = None, dbname = os.getenv('TSTDB'), dbfarm = None,
+           dbinit = None, bufsize = 0, log = False, notrace = False):
     '''Start a server process.'''
     cmd = _server[:]
     if not cmd:
         cmd = ['mserver5',
                '--set', 'mapi_open=true',
                '--set', 'gdk_nr_threads=1',
-               '--set', 'xrpc_open=true',
                '--set', 'monet_prompt=',
                '--trace']
     if notrace and '--trace' in cmd:
@@ -319,14 +317,6 @@ def server(lang, args = [], stdin = None, stdout = None, stderr = None,
                 break
         cmd.append('--set')
         cmd.append('mapi_port=%d' % int(mapiport))
-    if xrpcport is not None:
-        for i in range(len(cmd)):
-            if cmd[i][:10] == 'xrpc_port=':
-                del cmd[i]
-                del cmd[i - 1]
-                break
-        cmd.append('--set')
-        cmd.append('xrpc_port=%d' % int(xrpcport))
     if dbname is not None:
         cmd.append('--set')
         cmd.append('gdk_dbname=%s' % dbname)
