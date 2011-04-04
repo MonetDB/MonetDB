@@ -1039,8 +1039,8 @@ if test "x$enable_optim" = xyes; then
 		  #  -finline-functions, -funswitch-loops,
 		  #  -fpredictive-commoning, -fgcse-after-reload,
 		  #  -ftree-vectorize and -fipa-cp-clone 
-		  CFLAGS="-O3 -pipe ${CFLAGS}"
-		  # the following flag used to be applied, but is discouraged by
+		  CFLAGS="-O3 -funroll-all-loops -pipe ${CFLAGS}"
+		  # the following flag is applied, but is discouraged by
 		  # GCC manpage: -funroll-all-loops
 		;;
       esac
