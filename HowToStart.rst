@@ -46,8 +46,7 @@ monetdb5
 	recommended for SQL.
 
 sql
-	The SQL server built on top of (targeted on) either MonetDB4
-	or MonetDB5.
+	The SQL front-end built on top of MonetDB5.
 
 
 Prerequisites

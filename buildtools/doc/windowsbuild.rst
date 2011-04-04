@@ -72,15 +72,6 @@ the server from programs written in those languages.  The Python and
 Ruby modules can be built separately; the PHP module does not need to
 be built.  This component is required.
 
-monetdb4
---------
-
-The deprecated (but still used) database server MonetDB4 Server.  This
-component is still required for the MonetDB XQuery (pathfinder)
-component.  This is the old server which uses MIL (the MonetDB
-Interface Language) as programming interface.  This component is only
-required if you need MIL or if you need the MonetDB XQuery component.
-
 monetdb5
 --------
 
@@ -100,14 +91,6 @@ geom
 
 The geom component provides a module for the MonetDB SQL frontend.
 This component is optional.
-
-pathfinder
-----------
-
-Also known as MonetDB XQuery, this component provides an XQuery query
-engine on top of a relational database.  You can store XML documents
-in the database and query these documents using XQuery.  This
-component is required if you need XML/XQuery support.
 
 java
 ----
@@ -169,10 +152,6 @@ The suite can be compiled using one of the following compilers:
 - Intel(R) C++ Compiler 9.1 (which actually needs one of the above);
 - Intel(R) C++ Compiler 10.1 (which also needs one of the Microsoft compilers);
 - Intel(R) C++ Compiler 11.1 (which also needs one of the Microsoft compilers).
-
-Note that the pathfinder component can currently not be compiled with
-any of the Microsoft compilers.  It can be compiled with the Intel
-compiler.
 
 Not supported anymore (but probably still possible) are the GNU C
 Compiler gcc under Cygwin__.  Using that, it (probably still) is
@@ -320,9 +299,6 @@ libxml2
 -------
 
 Libxml2__ is the XML C parser and toolkit of Gnome.
-
-This library is only a prerequisite for the pathfinder component,
-although the MonetDB5 component can also make use of it.
 
 The home of the library is http://xmlsoft.org/.  But Windows binaries
 can be gotten from http://www.zlatkovic.com/libxml.en.html.  Click on
@@ -742,7 +718,7 @@ the Python interpreter::
  set Path=C:\Program Files\PCRE\bin;%Path%
  rem PHP binary
  set Path=C:\Program Files\PHP;%Path%
- rem assuming we're testing MonetDB5 or SQL, else used MonetDB4:
+ rem assuming we're testing MonetDB5 or SQL:
  set Path=%PREFIX%\lib\MonetDB5;%Path%
  set Path=%PREFIX%\bin;%PREFIX%\lib;%Path%
  rem Python module search path
@@ -769,11 +745,9 @@ possible:
 - ``DEBUG=1`` - compile with extra debugging information
 - ``NDEBUG=1`` - compile without extra debugging information (this is
   used for creating a binary release);
-- ``HAVE_MONETDB4=1`` - include the MonetDB4 component;
 - ``HAVE_MONETDB5=1`` - include the MonetDB5 component;
 - ``HAVE_SQL=1`` - include the sql component;
 - ``HAVE_GEOM=1`` - include the geom component;
-- ``HAVE_PATHFINDER=1`` - include the pathfinder component;
 - ``HAVE_JAVA=1`` - include the java component (only use if Java and
   Apache Ant are both available);
 - ``HAVE_TESTING=1`` - include the testing component;
@@ -788,9 +762,7 @@ possible:
   and libraries are available--also need ``HAVE_PERL=1``);
 - ``HAVE_PERL_SWIG=1`` - Perl development is possible and SWIG is
   available (also need ``HAVE_PERL=1``);
-- ``HAVE_PHP=1`` - PHP is available;
-- ``HAVE_PROBXML=1`` - compile in support for probabilistic XML (an
-  experimental extension to the pathfinder component).
+- ``HAVE_PHP=1`` - PHP is available.
 
 In addition, you can add a parameter which points to a file with extra
 definitions for ``nmake``.  This is very convenient to define where
@@ -818,13 +790,12 @@ Building Installers
 
 Installers can be built either using the full-blown Visual Studio user
 interface or on the command line.  To use the user interface, open one
-or more of the files ``MonetDB4-XQuery-Installer.sln``,
-``MonetDB5-SQL-Installer.sln``, ``MonetDB-ODBC-Driver.sln``, and
-``MonetDB5-Geom-Module.sln`` in the installation folder and select
-``Build`` -> ``Build Solution``.  To use the command line, execute one
-or more of the commands in the installation folder::
+or more of the files ``MonetDB5-SQL-Installer.sln``,
+``MonetDB-ODBC-Driver.sln``, and ``MonetDB5-Geom-Module.sln`` in the
+installation folder and select ``Build`` -> ``Build Solution``.  To use
+the command line, execute one or more of the commands in the
+installation folder::
 
- devenv MonetDB4-XQuery-Installer.sln /build
  devenv MonetDB5-SQL-Installer.sln /build
  devenv MonetDB-ODBC-Driver.sln /build
  devenv MonetDB5-Geom-Module.sln /build
