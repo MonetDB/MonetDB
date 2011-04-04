@@ -2102,7 +2102,7 @@ table_function_column_list:
   ;
 
 func_data_type:
-    table_or_array '(' table_function_column_list ')'	
+    TABLE '(' table_function_column_list ')'	
 		{ $$ = _symbol_create_list(SQL_TABLE, $3); }
  |  data_type
 		{ $$ = _symbol_create_list(SQL_TYPE, append_type(L(),&$1)); }
