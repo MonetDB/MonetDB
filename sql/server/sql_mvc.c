@@ -242,7 +242,7 @@ mvc_commit(mvc *m, int chain, char *name)
 	/* validation phase */
 	if (sql_trans_validate(tr)) {
 		if ((ok = sql_trans_commit(tr)) != SQL_OK) {
-			char *msg = sql_message("Your disk seems to be full, exiting (%s)", GDKerrbuf);
+			char *msg = sql_message("COMMIT: transation commit failed (perhaps your disk is full?) exiting (kernel error: %s)", GDKerrbuf);
 			GDKfatal(msg);
 			_DELETE(msg);
 		}
