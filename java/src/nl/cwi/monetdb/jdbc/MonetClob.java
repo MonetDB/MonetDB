@@ -43,11 +43,11 @@ public class MonetClob implements Clob {
 	//== begin interface Clob
 	
 	public InputStream getAsciiStream() throws SQLException {
-		throw new SQLException("Operation currently not supported");
+		throw new SQLException("Operation getAsciiStream() currently not supported");
 	}
 
 	public Reader getCharacterStream() throws SQLException {
-		throw new SQLException("Operation currently not supported");
+		throw new SQLException("Operation getCharacterStream() currently not supported");
 	}
 
 	/**
@@ -118,11 +118,11 @@ public class MonetClob implements Clob {
 	}
 
 	public OutputStream setAsciiStream(long pos) throws SQLException {
-		throw new SQLException("Operation currently not supported");
+		throw new SQLException("Operation setAsciiStream(long pos) currently not supported");
 	}
 
 	public Writer setCharacterStream(long pos) throws SQLException {
-		throw new SQLException("Operation currently not supported");
+		throw new SQLException("Operation setCharacterStream(long pos) currently not supported");
 	}
 
 	/**

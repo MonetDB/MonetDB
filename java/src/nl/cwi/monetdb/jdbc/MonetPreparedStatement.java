@@ -475,7 +475,7 @@ public class MonetPreparedStatement
 	 * @throws SQLException if a database access error occurs
 	 */
 	public void setArray(int i, Array x) throws SQLException {
-		throw new SQLException("Operation currently not supported!");
+		throw new SQLException("Operation setArray(int i, Array x) currently not supported!");
 	}
 
 	/**
@@ -497,7 +497,7 @@ public class MonetPreparedStatement
 	public void setAsciiStream(int parameterIndex, InputStream x, int length)
 		throws SQLException
 	{
-		throw new SQLException("Operation currently not supported!");
+		throw new SQLException("Operation setAsciiStream(int parameterIndex, InputStream x, int length) currently not supported!");
 	}
 
 	/**
@@ -533,7 +533,7 @@ public class MonetPreparedStatement
 	public void setBinaryStream(int parameterIndex, InputStream x, int length)
 		throws SQLException
 	{
-		throw new SQLException("Operation currently not supported!");
+		throw new SQLException("Operation setBinaryStream(int parameterIndex, InputStream x, int length) currently not supported!");
 	}
 
 	/**
@@ -545,7 +545,7 @@ public class MonetPreparedStatement
 	 * @throws SQLException if a database access error occurs
 	 */
 	public void setBlob(int i, Blob x) throws SQLException {
-		throw new SQLException("Operation currently not supported!");
+		throw new SQLException("Operation setBlob(int i, Blob x) currently not supported!");
 	}
 
 	/**
@@ -622,7 +622,7 @@ public class MonetPreparedStatement
 		int length)
 		throws SQLException
 	{
-		throw new SQLException("Operation currently not supported!");
+		throw new SQLException("Operation setCharacterStream(int parameterIndex, Reader reader, int length) currently not supported!");
 	}
 
 	/**
@@ -1141,7 +1141,7 @@ public class MonetPreparedStatement
 			setClob(parameterIndex, (Clob)x);
 		} else if (x instanceof Struct) {
 			// I have no idea how to do this...
-			throw new SQLException("Operation currently not supported!");
+			throw new SQLException("Operation setObject() with object of type Struct currently not supported!");
 		} else if (x instanceof Ref) {
 			setRef(parameterIndex, (Ref)x);
 		} else if (x instanceof java.net.URL) {
@@ -1150,9 +1150,9 @@ public class MonetPreparedStatement
 			// do something with:
 			// ((SQLData)x).writeSQL( [java.sql.SQLOutput] );
 			// needs an SQLOutput stream... bit too far away from reality
-			throw new SQLException("Operation currently not supported!");
+			throw new SQLException("Operation setObject() with object of type SQLData currently not supported!");
 		} else {	// java Class
-			throw new SQLException("Operation currently not supported!");
+			throw new SQLException("Operation setObject() with object of type Class currently not supported!");
 		}
 	}
 
@@ -1166,7 +1166,7 @@ public class MonetPreparedStatement
 	 * @throws SQLException if a database access error occurs
 	 */
 	public void setRef(int i, Ref x) throws SQLException {
-		throw new SQLException("Operation currently not supported!");
+		throw new SQLException("Operation setRef(int i, Ref x) currently not supported!");
 	}
 
 	/**
@@ -1312,7 +1312,7 @@ public class MonetPreparedStatement
 	public void setUnicodeStream(int parameterIndex, InputStream x, int length)
 		throws SQLException
 	{
-		throw new SQLException("Operation currently not supported!");
+		throw new SQLException("Operation setUnicodeStream(int parameterIndex, InputStream x, int length) currently not supported!");
 	}
 
 	/**
@@ -1325,7 +1325,7 @@ public class MonetPreparedStatement
 	 * @throws SQLException if a database access error occurs
 	 */
 	public void setURL(int parameterIndex, URL x) throws SQLException {
-		throw new SQLException("Operation currently not supported!");
+		throw new SQLException("Operation setURL(int parameterIndex, URL x) currently not supported!");
 	}
 
 	/**

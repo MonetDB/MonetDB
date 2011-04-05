@@ -29,8 +29,7 @@ YFLAGS = -d -p sql
 #  that does not compile with `gcc -Wundef`;
 #  we use GCC_BISON_CFLAGS to disable the respective warning as
 #  locally as possible via "-Wno-undef"
-#  (see also monetdb4/monet/Makefile.ag, buildtools/conf/monet.m4,
-#  pathfinder/modules/pftijah/Makefile.ag).
+#  (see also configure.ag).
 #
 #  (At least on Fedora Core 4,) bison 2.0 seems to generate code
 #  that icc does not like; since the problem only occurs with
@@ -38,7 +37,7 @@ YFLAGS = -d -p sql
 #  we use ICC_BISON_CFLAGS
 #  to disable the respective warning as locally as possible
 #  via "-wd592" (#592: variable "." is used before its value is set)
-#  (see also MonetDB/conf/monet.m4).
+#  (see also configure.ag).
 CFLAGS = $(ICC_BISON_CFLAGS) $(GCC_BISON_CFLAGS)
 
 lib_sqlserver = {
