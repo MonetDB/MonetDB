@@ -993,8 +993,9 @@ if test "x$enable_optim" = xyes; then
 		powerpc*-apple-darwin*)
 		  # -fast switch causes arithmetic differences, and slower
 		  # running code for SQL, some faster for M5, so we don't use
-		  # it.  Instead we just run with modest -O3.
-		  CFLAGS="-O3 -pipe ${CFLAGS}"
+		  # it.  Instead we just run with modest -O3 and
+		  # -fomit-frame-pointer (we don't intend to debug the binary).
+		  CFLAGS="-O3 -fomit-frame-pointer -pipe ${CFLAGS}"
 		;;
 		i?86-apple-darwin*|x86_64-apple-darwin*)
 		  # -fast switch on Intel is a lot less tuned, and hence safer:
