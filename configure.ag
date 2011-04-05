@@ -993,17 +993,12 @@ if test "x$enable_optim" = xyes; then
 		powerpc*-apple-darwin*)
 		  # -fast switch causes arithmetic differences, and slower
 		  # running code for SQL, some faster for M5, so we don't use
-		  # it.  Instead we try a subset of -fast flags:
-		  #  -O3 -falign-loops-max-skip=15 -falign-jumps-max-skip=15
-		  #  -falign-loops=16 -falign-jumps=16 -falign-functions=16
-		  #  -malign-natural -ffast-math -fstrict-aliasing
-		  #  -funroll-loops -ftree-loop-linear -ftree-loop-memset
-		  #  -mcpu=G5 -mpowerpc-gpopt -mtune=G5 -fsched-interblock
-		  #  -fgcse-sm -mpowerpc64
-		  CFLAGS="-O3 -falign-loops-max-skip=15 -falign-jumps-max-skip=15 -falign-loops=16 -falign-jumps=16 -falign-functions=16 -fstrict-aliasing -funroll-loops -ftree-loop-linear -ftree-loop-memset -pipe ${CFLAGS}"
+		  # it.  Instead we just run with modest -O3 and
+		  # -fomit-frame-pointer (we don't intend to debug the binary).
+		  CFLAGS="-O3 -fomit-frame-pointer -pipe ${CFLAGS}"
 		;;
 		i?86-apple-darwin*|x86_64-apple-darwin*)
-		  # -fast switch on Intel is a lot less tuned:
+		  # -fast switch on Intel is a lot less tuned, and hence safer:
 		  #  -O3 -fomit-frame-pointer -fstrict-aliasing
 		  #  -momit-leaf-frame-pointer -fno-tree-pre -falign-loops
 		  CFLAGS="-fast -pipe ${CFLAGS}"
@@ -1039,9 +1034,14 @@ if test "x$enable_optim" = xyes; then
 		  #  -finline-functions, -funswitch-loops,
 		  #  -fpredictive-commoning, -fgcse-after-reload,
 		  #  -ftree-vectorize and -fipa-cp-clone 
-		  CFLAGS="-O3 -pipe ${CFLAGS}"
-		  # the following flag used to be applied, but is discouraged by
-		  # GCC manpage: -funroll-all-loops
+		  CFLAGS="-O3 -fomit-frame-pointer -pipe ${CFLAGS}"
+		  # because we explicitly disable debugging, we can explicitly
+		  # enable -fomit-frame-pointer here
+		  # notes on -funroll-all-loops:
+		  # - does nothing on i?86-linux and x86_64-linux
+		  # - speeds up and causes crashes on powerpc-linux
+		  # - slows down and makes output incorrect on sparc-solaris
+		  # - speeds up and fixes some outputs on sparcv9-solaris
 		;;
       esac
       ;;
