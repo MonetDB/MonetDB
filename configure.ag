@@ -1036,6 +1036,11 @@ if test "x$enable_optim" = xyes; then
 		  CFLAGS="-O3 -fomit-frame-pointer -pipe ${CFLAGS}"
 		  # because we explicitly disable debugging, we can explicitly
 		  # enable -fomit-frame-pointer here
+		  # notes on -funroll-all-loops:
+		  # - does nothing on i?86-linux and x86_64-linux
+		  # - speeds up and causes crashes on powerpc-linux
+		  # - slows down and makes output incorrect on sparc-solaris
+		  # - speeds up and fixes some outputs on sparcv9-solaris
 		;;
       esac
       ;;
