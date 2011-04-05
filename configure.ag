@@ -1033,9 +1033,9 @@ if test "x$enable_optim" = xyes; then
 		  #  -finline-functions, -funswitch-loops,
 		  #  -fpredictive-commoning, -fgcse-after-reload,
 		  #  -ftree-vectorize and -fipa-cp-clone 
-		  CFLAGS="-O3 -funroll-all-loops -pipe ${CFLAGS}"
-		  # the following flag is applied, but is discouraged by
-		  # GCC manpage: -funroll-all-loops
+		  CFLAGS="-O3 -fomit-frame-pointer -pipe ${CFLAGS}"
+		  # because we explicitly disable debugging, we can explicitly
+		  # enable -fomit-frame-pointer here
 		;;
       esac
       ;;
