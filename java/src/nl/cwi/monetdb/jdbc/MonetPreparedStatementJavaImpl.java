@@ -241,7 +241,7 @@ public class MonetPreparedStatementJavaImpl
 			// do something with:
 			// ((SQLData)x).writeSQL( [java.sql.SQLOutput] );
 			// needs an SQLOutput stream... bit too far away from reality
-			throw new SQLException("Operation currently not supported!");
+			throw new SQLException("Operation setObject() with object of type SQLData currently not supported!");
 		} else if (x instanceof Blob) {
 			setBlob(parameterIndex, (Blob)x);
 		} else if (x instanceof java.sql.Date) {
