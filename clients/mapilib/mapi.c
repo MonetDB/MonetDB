@@ -2839,7 +2839,6 @@ mapi_start_talking(Mapi mid)
 				mapi_close_handle(hdl);
 				/* free all redirects */
 				fr = mid->redirects;
-				mid->redirects[0] = NULL;
 				while (*fr != NULL) {
 					free(*fr);
 					*fr = NULL;
@@ -2855,7 +2854,6 @@ mapi_start_talking(Mapi mid)
 				mid->redircnt++;
 				/* free all redirects */
 				fr = mid->redirects;
-				mid->redirects[0] = NULL;
 				while (*fr != NULL) {
 					free(*fr);
 					*fr = NULL;
