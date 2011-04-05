@@ -396,10 +396,10 @@ rel_parse_val(mvc *m, char *query, char emode)
 	/* via views we give access to protected objects */
 	m->user_id = USER_MONETDB;
 
-	(void) sqlparse(m);	/* blindly ignore errors */
+	(void) sqlparse(m);	
 	
 	/* get out the single value as we don't want an enclosing projection! */
-	if (m->sym->token == SQL_SELECT) {
+	if (m->sym && m->sym->token == SQL_SELECT) {
 		SelectNode *sn = (SelectNode *)m->sym;
 		if (sn->selection->h->data.sym->token == SQL_COLUMN) {
 			int is_last = 0;

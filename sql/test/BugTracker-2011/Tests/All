@@ -2,3 +2,4 @@ correlated-update.Bug-2771
 double_erange.Bug-2774
 view_avg_incorrect_result.Bug-2790
 extract_seconds.Bug-2793
+alter_incorrect_syntax_crash.Bug-2795
