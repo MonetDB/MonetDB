@@ -132,7 +132,7 @@ public class MonetBlob implements Blob {
 	}
 
 	public OutputStream setBinaryStream(long pos) throws SQLException {
-		throw new SQLException("Operation currently not supported");
+		throw new SQLException("Operation setBinaryStream(long pos) currently not supported");
 	}
 
 	/**
