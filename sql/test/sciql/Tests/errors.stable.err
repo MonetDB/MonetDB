@@ -1,0 +1,111 @@
+stderr of test 'errors` in directory 'test/sciql` itself:
+
+
+# 15:08:59 >  
+# 15:08:59 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/export/scratch0/zhang/monet-install/sciql/debug/var/MonetDB" --set mapi_open=true --set mapi_port=32321 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_test_sciql" --set mal_listing=0 ; echo ; echo Over..
+# 15:08:59 >  
+
+# builtin opt 	gdk_dbname = demo
+# builtin opt 	gdk_dbfarm = /export/scratch0/zhang/monet-install/sciql/debug/var/monetdb5/dbfarm
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_alloc_map = no
+# builtin opt 	gdk_vmtrim = yes
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	default_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector
+# builtin opt 	minimal_pipe = inline,remap,deadcode,multiplex,garbageCollector
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	gdk_dbfarm = /export/scratch0/zhang/monet-install/sciql/debug/var/MonetDB
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 32321
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbname = mTests_test_sciql
+# cmdline opt 	mal_listing = 0
+
+# 15:11:52 >  
+# 15:11:52 >  mclient -lsql -ftest -i -e --host=jarl --port=31052 
+# 15:11:52 >  
+
+MAPI  = monetdb@jarl:31052
+QUERY = create array err1( payload float);
+ERROR = !arrays must have at least one dimension attribute
+
+MAPI  = monetdb@jarl:31052
+QUERY = create array err2( x integer dimension[1:10:1]);
+ERROR = !arrays must have at least one non-dimensional attribute
+
+MAPI  = monetdb@jarl:31052
+QUERY = create array err2( x integer dimension[1:10:1]);
+ERROR = !arrays must have at least one non-dimensional attribute
+
+MAPI  = monetdb@jarl:31052
+QUERY = create array err3( x char dimension[1:128:1], v float);
+ERROR = !data type of dimension range (int) does not match data type of dimension (char)
+
+MAPI  = monetdb@jarl:31052
+QUERY = create array err4( s varchar(25) dimension['a':'z':1], v float);
+ERROR = !data type of dimension range (char) does not match data type of dimension (varchar)
+
+MAPI  = monetdb@jarl:31052
+QUERY = create array err5( s varchar(25) dimension[1:3:1], v float);
+ERROR = !data type of dimension range (int) does not match data type of dimension (varchar)
+
+MAPI  = monetdb@jarl:31052
+QUERY = create array err6( x integer dimension[1:128:1],
+	        v float default 'unknown');
+ERROR = !data type of default value (varchar) does not match data type of attribute (float)
+
+MAPI  = monetdb@jarl:31052
+QUERY = create array err7( x integer dimension[1:128:1],
+        	v float default v > 0);
+ERROR = !syntax/parse error,
+# the original non-normalized output was: ERROR = !syntax error, unexpected COMPARISON, expecting ')' or ',' in: "create array array16( x integer dimension[1:128:1],
+        !	v float default v >"
+MAPI  = monetdb@jarl:31052
+QUERY = create array err8( x integer dimension[1:128:1],
+        	v float default true);
+ERROR = !SQLException:sql.catalog:SQLException:sql.catalog:types boolean(1,0) and double(53,0) are not equal
+
+MAPI  = monetdb@jarl:31052
+QUERY = drop array err1;
+ERROR = !SQLException:sql.catalog:DROP ARRAY: no such array 'err1'
+
+MAPI  = monetdb@jarl:31052
+QUERY = drop array err2;
+ERROR = !SQLException:sql.catalog:DROP ARRAY: no such array 'err2'
+
+MAPI  = monetdb@jarl:31052
+QUERY = drop array err3;
+ERROR = !SQLException:sql.catalog:DROP ARRAY: no such array 'err3'
+
+MAPI  = monetdb@jarl:31052
+QUERY = drop array err4;
+ERROR = !SQLException:sql.catalog:DROP ARRAY: no such array 'err4'
+
+MAPI  = monetdb@jarl:31052
+QUERY = drop array err5;
+ERROR = !SQLException:sql.catalog:DROP ARRAY: no such array 'err5'
+
+MAPI  = monetdb@jarl:31052
+QUERY = drop array err6;
+ERROR = !SQLException:sql.catalog:DROP ARRAY: no such array 'err6'
+
+MAPI  = monetdb@jarl:31052
+QUERY = drop array err7;
+ERROR = !SQLException:sql.catalog:DROP ARRAY: no such array 'err7'
+
+MAPI  = monetdb@jarl:31052
+QUERY = drop array err8;
+ERROR = !SQLException:sql.catalog:DROP ARRAY: no such array 'err8'
+
+
+# 15:08:59 >  
+# 15:08:59 >  Done.
+# 15:08:59 >  
+

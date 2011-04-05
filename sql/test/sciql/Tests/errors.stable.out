@@ -1,0 +1,41 @@
+stdout of test 'errors` in directory 'test/sciql` itself:
+
+
+# 15:08:59 >  
+# 15:08:59 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/export/scratch0/zhang/monet-install/sciql/debug/var/MonetDB" --set mapi_open=true --set mapi_port=32321 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_test_sciql" --set mal_listing=0 ; echo ; echo Over..
+# 15:08:59 >  
+
+# MonetDB 5 server v11.4.0
+# This is an unreleased version
+# Serving database 'mTests_test_sciql', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://jarl.ins.cwi.nl:32321/
+# MonetDB/SQL module loaded
+# MonetDB/GIS module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+
+Over..
+
+# 15:08:59 >  
+# 15:08:59 >  mclient -lsql -ftest -i -e --host=jarl --port=32321 
+# 15:08:59 >  
+
+#create array err1( payload float);
+#create array err2( x integer dimension[1:10:1]);
+#create array err3( x char dimension[1:128:1], v float);
+#create array err4( s varchar(25) dimension['a':'z':1], v float);
+#create array err5( s varchar(25) dimension[1:3:1], v float);
+#create array array10(x integer dimension[1:128:*], v float);
+#create array array15( x integer dimension[1:128:1],
+#	v float default 'unknown');
+
+# 15:08:59 >  
+# 15:08:59 >  Done.
+# 15:08:59 >  
+
