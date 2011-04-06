@@ -352,9 +352,9 @@ HEAPextend(Heap *h, size_t size)
 		int exceeds_swap = size > (tot + tot - MIN(tot + tot, cur));
 		int can_mmap = h->filename && (size >= GDK_mem_bigsize || h->newstorage != STORE_MEM);
 		int small_cpy = (h->size * 4 < size) && (size >= GDK_mmap_minsize);
-		/* the commented condition is to use explicit MMAP
-		   instead of anonymous MMAP in GDKmalloc */
-		int must_mmap = can_mmap && (small_cpy || exceeds_swap || h->newstorage != STORE_MEM /* || size >= GDK_mem_bigsize */ );
+		/* the last condition is to use explicit MMAP instead
+		   of anonymous MMAP in GDKmalloc */
+		int must_mmap = can_mmap && (small_cpy || exceeds_swap || h->newstorage != STORE_MEM || size >= GDK_mem_bigsize);
 
 		h->size = size;
 
