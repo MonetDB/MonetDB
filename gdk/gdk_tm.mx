@@ -29,7 +29,6 @@ Access to the transaction table is regulated by a semaphore.
 @h
 #ifndef _GDK_TM_H_
 #define _GDK_TM_H_
-#include "gdk.h"
 
 #define SYSTRANSACTION	"tmp"
 #define MAXTM		10

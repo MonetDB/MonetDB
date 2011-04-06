@@ -33,7 +33,6 @@ BUNs upon deletion. Initialization of the BAT is extended as follows:
 @h
 #ifndef _GDK_DELTA_H_
 #define _GDK_DELTA_H_
-#include "gdk.h"
 
 @-
 We make sure here that the BUNs section of a BAT at least starts 

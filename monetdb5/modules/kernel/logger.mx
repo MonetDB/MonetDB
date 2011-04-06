@@ -80,6 +80,7 @@ comment "Free the resources used by the logger.";
 @+ Implementation Code 
 @c
 #include "monetdb_config.h"
+#include "gdk.h"
 #include "gdk_logger.h"
 #include "mal.h"
 #include "mal_exception.h"

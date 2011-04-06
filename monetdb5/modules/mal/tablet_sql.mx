@@ -51,7 +51,6 @@ observed time spending so far.
 
 #include <string.h>
 #include <ctype.h>
-#include <gdk_posix.h>
 
 /* #define _DEBUG_TABLET_*/
 /* #define MLOCK_TST did not make a difference on sf10 */
