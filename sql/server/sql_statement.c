@@ -712,7 +712,7 @@ push_project(sql_allocator *sa, stmt *rows, stmt *val)
 			}
 		} else {
 			/* push through arguments of Nop */
-			node *n;;
+			node *n;
 			stmt *l = val->op1;
 
 			for(n = l->op4.lval->h; n; n = n->next) 
