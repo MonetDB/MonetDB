@@ -1,8 +1,8 @@
 # Query:
 # CREATE ARRAY matrix (
-# 	 integer DIMENSION[4],
-# 	 integer DIMENSION[4],
-# 	 float DEFAULT 0.0 );
+# 	 x integer DIMENSION[4],
+# 	 y integer DIMENSION[4],
+# 	 v float DEFAULT 0.0 );
 
 #(x:bat[:oid,:int],y:bat[:oid,:int]) := sciql.newDimension("sys","matrix","x",0,0,4,1,"y",0,4,1);
 
@@ -14,9 +14,9 @@ end s0_1;
 
 # Query:
 # CREATE ARRAY stripes(
-# 	 integer DIMENSION[4],
-# 	 integer DIMENSION[4] CHECK(mod(y,2) = 1),
-# 	 float DEFAULT 0.0);
+# 	 x integer DIMENSION[4],
+# 	 y integer DIMENSION[4] CHECK(mod(y,2) = 1),
+# 	 v float DEFAULT 0.0);
 
 function user.s1_1{autoCommit=true}():void;
 	sql.mvc();
@@ -26,9 +26,9 @@ end s1_1;
 
 # Query:
 # CREATE ARRAY diagonal(
-# 	 integer DIMENSION[4],
-# 	 integer DIMENSION[4] CHECK(x = y),
-# 	 float DEFAULT 0.0);
+# 	 x integer DIMENSION[4],
+# 	 y integer DIMENSION[4] CHECK(x = y),
+# 	 v float DEFAULT 0.0);
 
 function user.s2_1{autoCommit=true}():void;
 	sql.mvc();
@@ -38,9 +38,9 @@ end s2_1;
 
 # Query:
 # CREATE ARRAY sparse(
-# 	 integer DIMENSION[4],
-# 	 integer DIMENSION[4],
-# 	 float DEFAULT 0.0 CHECK(v>=0));
+# 	 x integer DIMENSION[4],
+# 	 y integer DIMENSION[4],
+# 	 v float DEFAULT 0.0 CHECK(v>=0));
 
 function user.s3_1{autoCommit=true}():void;
 	sql.mvc();
@@ -50,9 +50,9 @@ end s3_1;
 
 # Query:
 # CREATE ARRAY stripes2(
-# 	 integer DIMENSION,
-# 	 integer DIMENSION,
-# 	 float DEFAULT 0.0);
+# 	 x integer DIMENSION,
+# 	 y integer DIMENSION,
+# 	 v float DEFAULT 0.0);
 
 function user.s1_1{autoCommit=true}():void;
 	sql.mvc();
