@@ -96,6 +96,7 @@ The @emph{kintersect(l,r)} is used also as implementation for the @emph{semijoin
 @c
 #include "monetdb_config.h"
 #include "gdk.h"
+#include "gdk_private.h"
 #include "gdk_setop.h"
 #include "gdk_search.h"
 
@@ -220,7 +221,7 @@ Implementation is either merge- or hash-based.
 		}
 	}
 @c
-BAT *
+static BAT *
 BATins_kunique(BAT *bn, BAT *b)
 {
 	bit unique = FALSE;
@@ -357,17 +358,6 @@ BATkunique(BAT *b)
 	if (BATcount(bn) == BATcount(b)) {
 		ALIGNset(bn, b);
 	}
-	return bn;
-}
-
-BAT *
-BATukunique(BAT *b)
-{
-	BAT *v, *bn;
-
-	BATcheck(b, "BATukunique");
-	bn = BATkunique(v = VIEWhead(b));
-	BBPreclaim(v);
 	return bn;
 }
 

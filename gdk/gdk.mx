@@ -745,10 +745,7 @@ typedef struct {
 #define VALnil(v,t) VALset(v,t,ATOMextern(t)?ATOMnil(t):ATOMnilptr(t))
 
 /* interface definitions */
-gdk_export ValPtr VALnew(void);
 gdk_export ptr VALconvert(int typ, ValPtr t);
-gdk_export ptr VALconvert1(int typ, ValPtr src, ValPtr dst);
-gdk_export ptr VALconvert2(int typ, ValPtr src, ValPtr dst);
 gdk_export int VALformat(char **buf, ValPtr res);
 gdk_export int VALprint(stream *fd, ValPtr res);
 gdk_export ValPtr VALcopy(ValPtr dst, ValPtr src);
@@ -1019,16 +1016,9 @@ they isolate you from the different ways heaps can be accessed.
 gdk_export int HEAPalloc(Heap *h, size_t nitems, size_t itemsize);
 gdk_export int HEAPfree(Heap *h);
 gdk_export int HEAPextend(Heap *h, size_t size);
-gdk_export int HEAPload(Heap *h, const char *nme, const char *ext, int trunc);
-gdk_export int HEAPsave(Heap *h, const char *nme, const char *ext);
-gdk_export int HEAPshare(Heap *dst, Heap *src, int copy_on_write);
 gdk_export int HEAPcopy(Heap *dst, Heap *src);
-gdk_export int HEAPwarm(Heap *h);
-gdk_export size_t HEAPsubcopy(Heap *dst, Heap *src, size_t size, size_t offset);
-gdk_export int HEAPdelete(Heap *h, const char *o, const char *ext);
 gdk_export size_t HEAPvmsize(Heap *h);
 gdk_export size_t HEAPmemsize(Heap *h);
-gdk_export void HEAPcacheInit(void);
 
 /*
 @}
@@ -1081,21 +1071,8 @@ gdk_export void HEAP_initialize(
 	int alignment		/* alignment restriction for allocated chunks */
 	);
 
-gdk_export void HEAP_initialize_compact(
-	Heap *heap,		/* nbytes -- Initial size of the heap. */
-	size_t nbytes,		/* alignment -- for objects on the heap. */
-	size_t nprivate,	/* nprivate -- Size of private space */
-	int alignment,		/* alignment restriction for allocated chunks */
-	int (*sizefcn) (ptr)	/* BATatoms[].atomLen function */
-	);
-
 gdk_export var_t HEAP_malloc(Heap *heap, size_t nbytes);
 gdk_export void HEAP_free(Heap *heap, var_t block);
-gdk_export var_t HEAP_private(Heap *h);
-gdk_export void HEAP_checkformat(Heap *h);
-gdk_export int HEAP_check(Heap *h, HeapRepair *hr);
-gdk_export void HEAP_init(Heap *heap, int tpe);
-gdk_export int HEAP_mmappable(Heap *heap);
 
 #define HEAP_index(HEAP,INDEX,TYPE)	((TYPE *)((char *) (HEAP)->base + (INDEX)))
 
@@ -1125,15 +1102,11 @@ inherited from its argument.
 #define BATDELETE	(-9999)
 
 gdk_export BAT *BATnew(int hdtype, int tltype, BUN capacity);
-gdk_export BAT *BATclone(BAT *b, BUN capacity);
 gdk_export BAT *BATextend(BAT *b, BUN newcap);
 
 /* internal */
 gdk_export BATstore *BATcreatedesc(int ht, int tt, int heapnames);
-gdk_export int BATfree(BAT *b);
-gdk_export void BATdestroy(BATstore *bs);
 gdk_export chr 	ATOMelmshift(int sz);
-gdk_export void BATsetdims(BAT *b);
 
 /*
 @
@@ -1642,8 +1615,6 @@ gdk_export BUN BATcount(BAT *b);
 gdk_export BUN BATcount_no_nil(BAT *b);
 gdk_export void BATsetcapacity(BAT *b, BUN cnt);
 gdk_export void BATsetcount(BAT *b, BUN cnt);
-gdk_export BUN BATbuncount(BAT *b);
-gdk_export BUN BATguess(BAT *b);
 gdk_export BUN BATgrows(BAT *b);
 gdk_export BAT *BATkey(BAT *b, int onoff);
 gdk_export BAT *BATset(BAT *b, int onoff);
@@ -1654,7 +1625,6 @@ gdk_export int BATname(BAT *b, const char *nme);
 gdk_export BAT *BATseqbase(BAT *b, oid o);
 gdk_export BAT *BATsetaccess(BAT *b, int mode);
 gdk_export int BATgetaccess(BAT *b);
-gdk_export int BATcheckmodes(BAT *b, int persistent);
 
 
 #define BATdirty(b)	((b)->batCopiedtodisk == 0 || (b)->batDirty ||	\
@@ -1788,8 +1758,6 @@ gdk_export int GDK_mem_pagebits;	/* page size for non-linear mmaps */
 #define USE_THASH	8	/* hash index */
 #define USE_ALL	(USE_HEAD|USE_TAIL|USE_HHASH|USE_THASH)
 
-gdk_export BAT *BATload(const char *nme);
-gdk_export BAT *BATload_intern(bat bid, int lock);
 #define BATaccessBegin(b,what,advice) BATaccess(b,what,advice,1)
 #define BATaccessEnd(b,what,advice) BATaccess(b,what,advice,-1)
 gdk_export size_t BATaccess(BAT *b, int what, int advice, int load);
@@ -1797,18 +1765,12 @@ gdk_export BAT *BATsave(BAT *b);
 gdk_export int BATmmap(BAT *b, int hb, int tb, int hh, int th, int force);
 gdk_export int BATmadvise(BAT *b, int hb, int tb, int hh, int th);
 gdk_export int BATdelete(BAT *b);
-gdk_export size_t BATvmsize(BAT *b, int dirty);
 gdk_export size_t BATmemsize(BAT *b, int dirty);
 
-gdk_export int GDKfdlocate(const char *nme, const char *mode, const char *ext);
-gdk_export FILE *GDKfilelocate(const char *nme, const char *mode, const char *ext);
 gdk_export void GDKfilepath(str path, const char *nme, const char *mode, const char *ext);
 gdk_export int GDKcreatedir(const char *nme);
 gdk_export int GDKremovedir(const char *nme);
 
-gdk_export char *GDKload(const char *nme, const char *ext, size_t size, size_t chunk, int mode);
-gdk_export int GDKsave(const char *nme, const char *ext, void *buf, size_t size, int mode);
-gdk_export int GDKunlink(const char *dir, const char *nme, const char *extension);
 gdk_export int GDKmove(const char *dir1, const char *nme1, const char *ext1, const char *dir2, const char *nme2, const char *ext2);
 /*
 @
@@ -1900,9 +1862,6 @@ gdk_export BAT *BATsorder_rev(BAT *b);
 
 gdk_export void GDKqsort(void *h, void *t, void *base, size_t n, int hs, int ts, int tpe); 
 gdk_export void GDKqsort_rev(void *h, void *t, void *base, size_t n, int hs, int ts, int tpe); 
-
-gdk_export int GDKssort(void *h, void *t, void *base, size_t n, int hs, int ts, int tpe); 
-gdk_export int GDKssort_rev(void *h, void *t, void *base, size_t n, int hs, int ts, int tpe); 
 
 #define BAThordered(b)	(((b)->htype == TYPE_void)?GDK_SORTED:(b)->hsorted)
 #define BATtordered(b)	(((b)->ttype == TYPE_void)?GDK_SORTED:(b)->tsorted)
@@ -2070,7 +2029,6 @@ gdk_export void BBPlock(const char *s);
 
 gdk_export void BBPhot(bat b);
 gdk_export void BBPcold(bat b);
-gdk_export void BBPtrim(size_t memdelta, size_t vmdelta);
 gdk_export void BBPunlock(const char *s);
 
 gdk_export str BBPlogical(bat b, str buf);
@@ -2273,13 +2231,9 @@ typedef struct {
 gdk_export atomDesc BATatoms[];
 gdk_export int GDKatomcnt;
 
-gdk_export void ATOMdelete(int id);
 gdk_export void ATOMproperty(char *nme, char *property, GDKfcn fcn, int val);
 gdk_export int ATOMindex(char *nme);
-gdk_export int ATOMisdescendant(int id, int parentid);
-gdk_export int ATOMdump(void);
 
-gdk_export int ATOMheap(int id, Heap *hp, size_t cap);
 gdk_export str ATOMname(int id);
 gdk_export int ATOMlen(int id, ptr v);
 gdk_export ptr ATOMnil(int id);
@@ -2314,14 +2268,8 @@ The highest OIDBITS designate site. [ DEPRECATED]
 @{
 @h
 */
-gdk_export int OIDinit(void);
-gdk_export oid OIDrand(void);
 gdk_export oid OIDbase(oid base);
-gdk_export oid OIDseed(oid seed);
 gdk_export oid OIDnew(oid inc);
-gdk_export oid OIDread(str buf);
-gdk_export int OIDwrite(stream *fp);
-gdk_export int OIDdirty(void);
 
 /*
 @
@@ -2362,8 +2310,6 @@ gdk_export BAT *BAThashjoin(BAT *l, BAT *r, BUN estimate);
 
 /* low level functions */
 gdk_export BUN SORTfnd(BAT *b, ptr v);
-gdk_export BUN SORTfndfirst(BAT *b, ptr v);
-gdk_export BUN SORTfndlast(BAT *b, ptr v);
 
 #define BATprepareHash(X) (((X)->H->hash == NULL) && !BAThash(X, 0))
 /*
@@ -2418,7 +2364,6 @@ and are checked on inconsistent frees and memory leaks.
 /* we prefer to use vm_alloc routines on size > GDKmmap */
 gdk_export void GDKvminc(size_t len);
 gdk_export void *GDKmmap(char *path, int mode, off_t off, size_t len);
-gdk_export int GDKmunmap(void *addr, size_t len);
 
 gdk_export ptr GDK_mem_start;		/* sbrk(0) at start of the program */
 gdk_export size_t GDK_mem_bigsize;	/* size after which we use anonymous VM rather than malloc */
@@ -2436,15 +2381,11 @@ gdk_export size_t GDKmem_heapinuse(void);
 
 gdk_export void *GDKmalloc(size_t size);
 gdk_export void *GDKzalloc(size_t size);
-gdk_export void *GDKmallocmax(size_t size, size_t * maxsize, int emergency);
 gdk_export void *GDKrealloc(void *pold, size_t size);
-gdk_export void *GDKreallocmax(void *pold, size_t size, size_t * maxsize, int emergency);
 gdk_export void GDKfree(void *blk);
 gdk_export str GDKstrdup(const char *s);
 
 gdk_export void *GDKvmalloc(size_t size, size_t * maxsize, int emergency);
-gdk_export void *GDKvmrealloc(void *pold, size_t oldsize, size_t newsize, size_t oldmax, size_t * maxsize, int emergency);
-gdk_export void GDKvmfree(void *blk, size_t size, size_t maxsize);
 
 /*
 @
@@ -2505,19 +2446,10 @@ by the user. A pointer to this buffer is kept in the pseudo-variable
 #define GDKFATAL	"!FATAL: "
 
 /* Data Distilleries uses ICU for internationalization of some MonetDB error messages */
-#ifdef MONET_ICU_I18N
-gdk_export void GDKvsnprintf(char *buf, int maxlen, const char *format, va_list ap);
-#else
-#define GDKvsnprintf(buf, maxlen, format, ap) vsnprintf(buf, maxlen, format, ap)
-#endif
 
-gdk_export void GDKaddbuf(const char *msg);
-gdk_export int GDKwarning(const char *format, ...);
 gdk_export int GDKerror(const char *format, ...);
 gdk_export int GDKsyserror(const char *format, ...);
 gdk_export int GDKfatal(const char *format, ...);
-gdk_export int GDKerrorCount(void);
-gdk_export void GDKclrerr(void);
 
 @
 @h
@@ -2701,9 +2633,6 @@ gdk_export int THRgettid(void);
 gdk_export Thread THRget(int tid);
 gdk_export Thread THRnew(MT_Id pid, str name);
 gdk_export void THRdel(Thread t);
-gdk_export int THRinit(void);
-gdk_export int THRexit(const char *nme);
-gdk_export int THRcnt(void);
 gdk_export void THRsetdata(int, ptr);
 gdk_export void *THRgetdata(int);
 gdk_export int THRhighwater(void);
@@ -2995,7 +2924,6 @@ This is useful as materialization is usually needed for updates.
 @h
 */
 gdk_export int ALIGNsynced(BAT *b1, BAT *b2);
-gdk_export int ALIGNrelated(BAT *b1, BAT *b2);
 
 gdk_export BAT *BATpropcheck(BAT *b, int mode);
 
@@ -3008,17 +2936,11 @@ gdk_export BAT *VIEWcreate_(BAT *h, BAT *t, int stable);
 gdk_export BAT *VIEWhead(BAT *b);
 gdk_export BAT *VIEWhead_(BAT *b, int mode);
 gdk_export BAT *VIEWcombine(BAT *b);
-gdk_export BAT *VIEWreset(BAT *b);
 gdk_export BAT *BATmaterialize(BAT *b);
 gdk_export BAT *BATmaterializeh(BAT *b);
-gdk_export BAT *BATmaterializet(BAT *b);
-gdk_export void VIEWdestroy(BAT *b);
 gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
-gdk_export void VIEWunlink(BAT *b);
 
 /* low level functions */
-gdk_export int ALIGNundo(BAT *b);
-gdk_export int ALIGNcommit(BAT *b);
 gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 
 #define ALIGNset(x,y)	{ALIGNsetH(x,y);ALIGNsetT(x,y);}
@@ -3379,15 +3301,6 @@ properties. They can be used to improve query processing at higher levels.
 gdk_export void PROPdestroy(PROPrec *p);
 gdk_export PROPrec * BATgetprop(BAT *b, int idx);
 gdk_export void BATsetprop(BAT *b, int idx, int type, void *v);
-gdk_export bit BATgetprop_bit(BAT *b, int idx);
-gdk_export int BATgetprop_int(BAT *b, int idx);
-gdk_export wrd BATgetprop_wrd(BAT *b, int idx);
-gdk_export const char *BATgetprop_str(BAT *b, int idx);
-gdk_export void BATsetprop_bit(BAT *b, int idx, bit val);
-gdk_export void BATsetprop_int(BAT *b, int idx, int val);
-gdk_export void BATsetprop_wrd(BAT *b, int idx, wrd val);
-gdk_export void BATsetprop_str(BAT *b, int idx, str val);
-gdk_export void BATpropagate(BAT *dst, BAT *src, int idx);
 gdk_export BAT *BATsample(BAT *b, BUN n);
 gdk_export BAT *BAThistogram(BAT *b);
 gdk_export int BATtopN(BAT *b, BUN topN);	/* used in monet5/src/modules/kernel/algebra.mx */
@@ -3498,9 +3411,7 @@ look at the head column:@%BATkunion@, @%BATkdiff@, and
 #define JOIN_GE		2
 #define JOIN_BAND	3
 
-gdk_export BAT *BATfragment(BAT *b, ptr hl, ptr hh, ptr tl, ptr th);
 gdk_export BAT *BAT_select_(BAT *b, ptr tl, ptr th, bit li, bit hi, bit tail, bit anti, bit preserve_order);
-gdk_export BAT *BAT_select(BAT *b, ptr tl, ptr th, bit tail);
 gdk_export BAT *BATselect_(BAT *b, ptr tl, ptr th, bit li, bit hi);
 gdk_export BAT *BATuselect_(BAT *b, ptr tl, ptr th, bit li, bit hi);
 gdk_export BAT *BATantiuselect_(BAT *b, ptr tl, ptr th, bit li, bit hi);
@@ -3515,7 +3426,6 @@ gdk_export BAT *BATnlthetajoin(BAT *l, BAT *r, int mode, BUN estimate);
 gdk_export BAT *BATsemijoin(BAT *l, BAT *r);
 gdk_export BAT *BATmergejoin(BAT *l, BAT *r, BUN estimate);
 gdk_export BAT *BATleftmergejoin(BAT *l, BAT *r, BUN estimate);
-gdk_export BAT *BATleftmergejoin_limit(BAT *l, BAT *r, BUN estimate, BUN *limit);
 gdk_export BAT *BATjoin(BAT *l, BAT *r, BUN estimate);
 gdk_export BAT *BATantijoin(BAT *l, BAT *r);
 gdk_export BAT *BATleftjoin(BAT *l, BAT *r, BUN estimate);
@@ -3527,10 +3437,8 @@ gdk_export BAT *BATfetch(BAT *b, BAT *s);
 gdk_export BAT *BATfetchjoin(BAT *b, BAT *s, BUN estimate);
 gdk_export BAT *BATleftfetchjoin(BAT *b, BAT *s, BUN estimate);
 
-gdk_export BAT *BATins_kunique(BAT *bn, BAT *b);
 gdk_export BAT *BATsunique(BAT *b);
 gdk_export BAT *BATkunique(BAT *b);
-gdk_export BAT *BATukunique(BAT *b);
 gdk_export BAT *BATsintersect(BAT *b, BAT *c);
 gdk_export BAT *BATkintersect(BAT *b, BAT *c);
 gdk_export BAT *BATsunion(BAT *b, BAT *c);
@@ -3546,8 +3454,6 @@ gdk_export BAT *BATkdiff(BAT *b, BAT *c);
 
 typedef void (*ColFcn) (ptr, ptr);
 typedef void (*RowFcn) (ptr, ptr *);
-
-gdk_export int BATmultijoin(int argc, BAT *argv[], RowFcn tuple_fcn, ptr tuple_data, ColFcn value_fcn[], ptr value_data[], int orderspec);
 
 #ifdef __cplusplus
 }

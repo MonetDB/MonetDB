@@ -46,6 +46,7 @@ of the srcbat, but testing only once where they reside.
 @c
 #include "monetdb_config.h"
 #include "gdk.h"
+#include "gdk_private.h"
 #include "gdk_scanselect.h"
 
 @= updateloop
@@ -1030,6 +1031,12 @@ through the definition of MIL we do not want the nils to appear in
 the result (as (nil @{<,=,>@} ANY) = bit(nil) != true).
 @{
 @c
+static void
+BATsetprop_wrd(BAT *b, int idx, wrd val)
+{
+	BATsetprop(b, idx, TYPE_wrd, &val);
+}
+
 BAT *
 BAT_select_(BAT *b, ptr tl, ptr th, bit li, bit hi, bit tail, bit anti, bit preserve_order)
 {
@@ -1299,12 +1306,6 @@ Hash changes the order; IDX yields ordered tail; scan respects original order.
 }
 
 BAT *
-BAT_select(BAT *b, ptr h, ptr t, bit tail)
-{
-	return BAT_select_(b, h, t, TRUE, TRUE, tail, FALSE, FALSE);
-}
-
-BAT *
 BATselect_(BAT *b, ptr h, ptr t, bit li, bit hi)
 {
 	return BAT_select_(b, h, t, li, hi, TRUE, FALSE, FALSE);
@@ -1476,21 +1477,6 @@ BATsample(BAT *b, BUN size)
 		GDKfree(choice);
 	BBPreclaim(bn);
 	return NULL;
-}
-
-@- Horizontal Fragmentation
-@c
-BAT *
-BATfragment(BAT *b, ptr hl, ptr hh, ptr tl, ptr th)
-{
-	BATcheck(b, "BATfragment");
-	if ((hl == NULL) && (hh == NULL)) {
-		return BATselect(b, tl, th);
-	}
-	if ((BAThordered(b) & 1) == FALSE && (BATtordered(b) & 1)) {
-		return BATmirror(BATrestrict(BATmirror(b), tl, th, hl, hh));
-	}
-	return BATrestrict(b, hl, hh, tl, th);
 }
 
 @
@@ -2889,38 +2875,6 @@ BATgetprop(BAT *b, int idx)
 	return NULL;
 }
 
-bit
-BATgetprop_bit(BAT *b, int idx)
-{
-	PROPrec *p = BATgetprop(b, idx);
-
-	return (p) ? p->v.val.cval[0] : bit_nil;
-}
-
-int
-BATgetprop_int(BAT *b, int idx)
-{
-	PROPrec *p = BATgetprop(b, idx);
-
-	return (p) ? p->v.val.ival : int_nil;
-}
-
-wrd
-BATgetprop_wrd(BAT *b, int idx)
-{
-	PROPrec *p = BATgetprop(b, idx);
-
-	return (p) ? p->v.val.wval : wrd_nil;
-}
-
-const char *
-BATgetprop_str(BAT *b, int idx)
-{
-	PROPrec *p = BATgetprop(b, idx);
-
-	return (p) ? p->v.val.pval : str_nil;
-}
-
 void
 BATsetprop(BAT *b, int idx, int type, void *v)
 {
@@ -2938,30 +2892,6 @@ BATsetprop(BAT *b, int idx, int type, void *v)
 		VALcopy(&p->v, &vr);
 		b->batDirtydesc = TRUE;
 	}
-}
-
-void
-BATsetprop_bit(BAT *b, int idx, bit val)
-{
-	BATsetprop(b, idx, TYPE_bit, &val);
-}
-
-void
-BATsetprop_int(BAT *b, int idx, int val)
-{
-	BATsetprop(b, idx, TYPE_int, &val);
-}
-
-void
-BATsetprop_wrd(BAT *b, int idx, wrd val)
-{
-	BATsetprop(b, idx, TYPE_wrd, &val);
-}
-
-void
-BATsetprop_str(BAT *b, int idx, str val)
-{
-	BATsetprop(b, idx, TYPE_str, val);
 }
 
 void

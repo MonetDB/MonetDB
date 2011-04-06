@@ -92,96 +92,36 @@ This leads to the following type descriptor table.
 #ifdef __cplusplus
 extern "C" {
 #endif
-gdk_export int voidFromStr(str src, int *len, void **dst);
-gdk_export int voidToStr(str *dst, int *len, void *src);
-gdk_export void *voidRead(void *a, stream *s, size_t cnt);
-gdk_export int voidWrite(void *a, stream *s, size_t cnt);
-
 gdk_export int lngFromStr(str src, int *len, lng **dst);
 gdk_export int lngToStr(str *dst, int *len, lng *src);
-gdk_export lng *lngRead(lng *a, stream *s, size_t cnt);
-gdk_export int lngWrite(lng *a, stream *s, size_t cnt);
-gdk_export int lngCmp(lng *r, lng *l);
-BUN lngHash(lng *l);
-
 gdk_export int intFromStr(str src, int *len, int **dst);
 gdk_export int intToStr(str *dst, int *len, int *src);
-gdk_export int *intRead(int *a, stream *s, size_t cnt);
-gdk_export int intWrite(int *a, stream *s, size_t cnt);
-gdk_export int intCmp(int *r, int *l);
-BUN intHash(int *i);
-
 gdk_export int batFromStr(str src, int *len, bat **dst);
 gdk_export int batToStr(str *dst, int *len, bat *src);
-gdk_export bat *batRead(bat *a, stream *s, size_t cnt);
-gdk_export int batWrite(bat *a, stream *s, size_t cnt);
-
 gdk_export int ptrFromStr(str src, int *len, ptr **dst);
 gdk_export int ptrToStr(str *dst, int *len, ptr *src);
-gdk_export ptr *ptrRead(ptr *a, stream *s, size_t cnt);
-gdk_export int ptrWrite(ptr *a, stream *s, size_t cnt);
-
 gdk_export int bitFromStr(str src, int *len, bit **dst);
 gdk_export int bitToStr(str *dst, int *len, bit *src);
-gdk_export bit *bitRead(bit *a, stream *s, size_t cnt);
-gdk_export int bitWrite(bit *a, stream *s, size_t cnt);
-
 gdk_export int OIDfromStr(str src, int *len, oid **dst);
 gdk_export int OIDtoStr(str *dst, int *len, oid *src);
-gdk_export oid *oidRead(oid *a, stream *s, size_t cnt);
-gdk_export int oidWrite(oid *a, stream *s, size_t cnt);
-
 gdk_export int shtFromStr(str src, int *len, sht **dst);
 gdk_export int shtToStr(str *dst, int *len, sht *src);
-gdk_export sht *shtRead(sht *a, stream *s, size_t cnt);
-gdk_export int shtWrite(sht *a, stream *s, size_t cnt);
-int shtCmp(sht *r, sht *l);
-BUN shtHash(sht *s);
-
 gdk_export int bteFromStr(str src, int *len, bte **dst);
 gdk_export int bteToStr(str *dst, int *len, bte *src);
-gdk_export bte *bteRead(bte *a, stream *s, size_t cnt);
-gdk_export int bteWrite(bte *a, stream *s, size_t cnt);
-int bteCmp(bte *r, bte *l);
-BUN bteHash(bte *c);
-
 gdk_export int chrFromStr(str src, int *len, chr **dst);
 gdk_export int chrToStr(str *dst, int *len, chr *src);
-gdk_export chr *chrRead(chr *a, stream *s, size_t cnt);
-gdk_export int chrWrite(chr *a, stream *s, size_t cnt);
-int chrCmp(chr *r, chr *l);
-BUN chrHash(chr *c);
-
 gdk_export int fltFromStr(str src, int *len, flt **dst);
 gdk_export int fltToStr(str *dst, int *len, flt *src);
-gdk_export flt *fltRead(flt *a, stream *s, size_t cnt);
-gdk_export int fltWrite(flt *a, stream *s, size_t cnt);
-int fltCmp(flt *r, flt *l);
-
 gdk_export int dblFromStr(str src, int *len, dbl **dst);
 gdk_export int dblToStr(str *dst, int *len, dbl *src);
-gdk_export dbl *dblRead(dbl *a, stream *s, size_t cnt);
-gdk_export int dblWrite(dbl *a, stream *s, size_t cnt);
-int dblCmp(dbl *r, dbl *l);
-
 gdk_export ssize_t GDKstrFromStr(unsigned char *src, unsigned char *dst, ssize_t len);
 gdk_export int strFromStr(str src, int *len, str *dst);
 gdk_export int strToStr(str *dst, int *len, str src);
-gdk_export str strRead(str a, stream *s, size_t cnt);
-gdk_export int strWrite(str a, stream *s, size_t cnt);
 gdk_export BUN strHash(const char *s);
-gdk_export void strCleanHash(Heap *hp, int rebuild);
-gdk_export var_t strPut(Heap *b, var_t *off, const char *src);
-gdk_export void strHeap(Heap *d, size_t cap);
 gdk_export int strLen(const char *s);
-gdk_export int strCmp(const char *l, const char *r);
 gdk_export int strNil(const char *s);
-gdk_export int strElimDoubles(Heap *h);
-gdk_export var_t strLocate(Heap *h, const char *v);
-gdk_export int strCmpNoNil(const unsigned char *l, const unsigned char *r);
 gdk_export int escapedStrlen(const char *src);
 gdk_export int escapedStr(char *dst, const char *src, int dstlen);
-
 #ifdef __cplusplus
 }
 #endif
@@ -190,6 +130,7 @@ Return 0 on l==r, < 0 iff l < r, >0 iff l > r
 @c
 #include "monetdb_config.h"
 #include "gdk.h"
+#include "gdk_private.h"
 #include <math.h>		/* for INFINITY and NAN */
 
 int
@@ -507,15 +448,6 @@ This should be improved later on.
 
 @{
 @c
-void
-ATOMdelete(int id)
-{
-	memset(BATatoms + id, 0, sizeof(atomDesc));
-
-	if (id == GDKatomcnt - 1)
-		GDKatomcnt--;
-}
-
 static int
 align(int n)
 {
@@ -671,48 +603,6 @@ ATOMisdescendant(int tpe, int parent)
 		tpe = BATatoms[tpe].storage;
 	}
 	return FALSE;
-}
-
-int
-ATOMdump(void)
-{
-	int t;
-
-	for (t = 0; t < GDKatomcnt; t++) {
-		mnstr_printf(GDKout, "%2d '%9s' (%3d) ", t, BATatoms[t].name, BATatoms[t].size);
-		if (BATatoms[t].atomFromStr) {
-			mnstr_printf(GDKout, "\"FromStr\" ");
-		}
-		if (BATatoms[t].atomToStr) {
-			mnstr_printf(GDKout, "\"ToStr\" ");
-		}
-		if (BATatoms[t].atomCmp) {
-			mnstr_printf(GDKout, "\"Cmp\" ");
-		}
-		if (BATatoms[t].atomNull) {
-			mnstr_printf(GDKout, "\"Null\" ");
-		}
-		if (BATatoms[t].atomHash) {
-			mnstr_printf(GDKout, "\"Hash\" ");
-		}
-		if (BATatoms[t].atomPut) {
-			mnstr_printf(GDKout, "\"Put\" ");
-		}
-		if (BATatoms[t].atomDel) {
-			mnstr_printf(GDKout, "\"Del\" ");
-		}
-		if (BATatoms[t].atomLen) {
-			mnstr_printf(GDKout, "\"Len\" ");
-		}
-		if (BATatoms[t].atomConvert) {
-			mnstr_printf(GDKout, "\"Convert\" ");
-		}
-		if (BATatoms[t].atomHeap) {
-			mnstr_printf(GDKout, "\"NewHeap\" ");
-		}
-		mnstr_printf(GDKout, "\n");
-	}
-	return 0;
 }
 
 @}
@@ -2588,12 +2478,6 @@ the unknown set. The index van be used to find the name of an unknown
 ATOM via ATOMunknown_name. Once an atom becomes known, ie the module 
 defining it is loaded, it should be removed from the unknown set using
 ATOMunknown_del. 
-
-@h
-extern int ATOMunknown_add(str nme);
-extern int ATOMunknown_del(int a);
-gdk_export int ATOMunknown_find(str nme);
-extern str ATOMunknown_name(int a);
 
 @c
 static str unknown[MAXATOMS] = { NULL };

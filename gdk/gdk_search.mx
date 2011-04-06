@@ -76,12 +76,8 @@ This was shown to be inferior to direct hashing with integer anding. The new imp
 reflects this.
 @{
 @h
-gdk_export Hash *HASHnew(Heap *hp, int tpe, BUN size, BUN mask);
-gdk_export BUN HASHmask(BUN cnt);
-gdk_export BAT *HASHprint(BAT *b);
 gdk_export void HASHremove(BAT *b);
 gdk_export void HASHdestroy(BAT *b);
-gdk_export int HASHgonebad(BAT *b, ptr v);
 gdk_export BUN HASHprobe(Hash *h, ptr v);
 gdk_export BUN HASHlist(Hash *h, BUN i);
 
@@ -289,6 +285,7 @@ larger. This converges after three cycles to direct hashing.
 @c
 #include "monetdb_config.h"
 #include "gdk.h"
+#include "gdk_private.h"
 
 BUN
 HASHmask(BUN cnt)

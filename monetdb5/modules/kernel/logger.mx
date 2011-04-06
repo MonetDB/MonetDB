@@ -101,7 +101,7 @@ logger_export str logger_create_wrap( logger *L, int *debug, str *fn, str *dirna
 str
 logger_create_wrap( logger *L, int *debug, str *fn, str *dirname, str *dbname, int *version) 
 {
-	logger *l = logger_create(*debug, *fn, *dirname, *dbname, *version, NULL, NULL, NULL); 
+	logger *l = logger_create(*debug, *fn, *dirname, *dbname, *version, NULL, NULL); 
 	
 	if (l) {
 		*(logger**)L = l;

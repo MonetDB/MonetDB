@@ -27,6 +27,7 @@ heavily modified to fit into the MonetDB environment.
 @c
 #include "monetdb_config.h"
 #include "gdk.h"
+#include "gdk_private.h"
 
 /* The maximum number of entries in a MergeState's pending-runs stack.
    This is enough to sort arrays of size up to about

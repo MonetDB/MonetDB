@@ -28,6 +28,7 @@ are not being harmed too much.
 @c
 #include "monetdb_config.h"
 #include "gdk.h"
+#include "gdk_private.h"
 
 #define SAMPLE_TRESHOLD_LOG 17
 #define SAMPLE_SLICE_SIZE 1000
@@ -443,12 +444,6 @@ BATleftmergejoin(BAT *l, BAT *r, BUN estimate)
 	/* do not swap left and right input,
 	   and hence maintain order of left head in result */
 	return batmergejoin(l, r, estimate, FALSE, NULL);
-}
-
-BAT *
-BATleftmergejoin_limit(BAT *l, BAT *r, BUN estimate, BUN *limit)
-{
-	return batmergejoin(l, r, estimate, FALSE, limit);
 }
 
 @- hash join

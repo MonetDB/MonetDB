@@ -45,8 +45,6 @@ gdk_export BAT *BATbandjoin(BAT *l, BAT *r, ptr mnus, ptr plus, bit li, bit hi);
 Join all BUNs of the BATs that have tail values: {r-mnus <= l <= r+plus}. 
 
 @h
-gdk_export BAT *BATbandmergejoin(BAT *l, BAT *r, ptr mnus, ptr plus, bit li, bit hi);
-gdk_export BAT *BATbandmergejoin_limit(BAT *l, BAT *r, ptr mnus, ptr plus, bit li, bit hi, BUN *limit);
 @
 Versions of bandjoin fixed on the merge implementation (possibly with a cut-off limit);
 
@@ -56,6 +54,7 @@ Versions of bandjoin fixed on the merge implementation (possibly with a cut-off 
 
 #include "monetdb_config.h"
 #include "gdk.h"
+#include "gdk_private.h"
 #include "gdk_rangejoin.h"
 
 @{
@@ -433,7 +432,7 @@ BATbandjoin_mj(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi, BUN *limit)
 	return NULL;
 }
 
-BAT *
+static BAT *
 BATbandmergejoin_limit(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi, BUN *limit)
 {
 	BAT *ol = l, *or = r, *bn = NULL;
@@ -453,7 +452,7 @@ BATbandmergejoin_limit(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi, BUN *limi
 	return bn;
 }
 
-BAT *
+static BAT *
 BATbandmergejoin(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi)
 {
 	return BATbandmergejoin_limit(l, r, c1, c2, li, hi, NULL);

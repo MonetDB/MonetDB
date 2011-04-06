@@ -46,6 +46,7 @@ extern int DESCsetmodes(BAT *b);
 @c
 #include "monetdb_config.h"
 #include "gdk.h"
+#include "gdk_private.h"
 #include <stdlib.h>
 #include "gdk_storage.h"
 #include "mutils.h"
@@ -692,19 +693,6 @@ BATload_intern(bat i, int lock)
 		--b->batSharecnt;
 	}
 	return (i < 0) ? BATmirror(b) : b;
-}
-
-BAT *
-BATload(const char *nme)
-{
-	const char *s = strrchr(nme, DIR_SEP);
-	bat i = BBPindex(s ? s + 1 : nme);
-	BAT *b = BBP_cache(i);
-
-	if (i == 0 || b != NULL) {
-		return b;	/* nonexistent bat or already loaded */
-	}
-	return BATload_intern(i, 1);
 }
 
 @- BAT preload

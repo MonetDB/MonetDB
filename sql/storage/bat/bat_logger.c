@@ -127,7 +127,7 @@ bl_create(char *logdir, char *dbname, int cat_version)
 {
 	if (bat_logger)
 		return LOG_ERR;
-	bat_logger = logger_create(0, "sql", logdir, dbname, cat_version, NULL, bl_preversion, bl_postversion);
+	bat_logger = logger_create(0, "sql", logdir, dbname, cat_version, bl_preversion, bl_postversion);
 	if (bat_logger)
 		return LOG_OK;
 	return LOG_ERR;

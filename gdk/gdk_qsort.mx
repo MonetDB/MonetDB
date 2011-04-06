@@ -45,6 +45,7 @@ qsort() ever can).
 @c
 #include "monetdb_config.h"
 #include "gdk.h"
+#include "gdk_private.h"
 
 /*-
  * Copyright (c) 1992, 1993

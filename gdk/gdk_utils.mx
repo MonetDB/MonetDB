@@ -31,10 +31,7 @@ system, memory allocation details, and a basic system logging scheme.
 
 #include <monet_options.h>
 
-gdk_export void GDKlog(const char *format, ...);
 gdk_export void GDKlockHome(void);
-gdk_export void GDKunlockHome(void);
-gdk_export int GDKgetHome(void);
 
 gdk_export BAT *GDKenv;
 
@@ -42,6 +39,7 @@ gdk_export BAT *GDKenv;
 #include "monetdb_config.h"
 
 #include "gdk.h"
+#include "gdk_private.h"
 #include "mutils.h"
 
 static int gdk_alloc_map = 0;
@@ -168,11 +166,7 @@ GDKgetenv_istrue(const char *name)
 	return 0;
 }
 
-@h
-gdk_export int GDKgetenv_int(const char *name, int def);
-
-@c
-int
+static int
 GDKgetenv_int(const char *name, int def)
 {
 	char *val = GDKgetenv(name);
@@ -1629,6 +1623,8 @@ GDKvmtrim(void *limit)
 }
 #endif
 
+static int THRinit(void);
+
 int
 GDKinit(opt *set, int setlen)
 {
@@ -2077,28 +2073,6 @@ GDKaddbuf(const char *message)
 #define GDKERRLEN	(1024+512)
 
  /*VARARGS*/ int
-GDKwarning(const char *format, ...)
-{
-	char message[GDKERRLEN];
-	size_t len = strlen(GDKWARNING);
-	va_list ap;
-
-	if (!strncmp(format, GDKWARNING, len)) {
-		len = 0;
-	} else {
-		strcpy(message, GDKWARNING);
-	}
-	va_start(ap, format);
-	vsnprintf(message + len, sizeof(message) - (len + 2), format, ap);
-	va_end(ap);
-
-	GDKaddbuf(message);
-
-	return 0;
-}
-
-
- /*VARARGS*/ int
 GDKerror(const char *format, ...)
 {
 	char message[GDKERRLEN];
@@ -2231,12 +2205,6 @@ Real errors should be saved in the lock file for post-crash inspection.
 	return -1;
 }
 
-int
-GDKerrorCount(void)
-{
-	return THRerrorcount[THRgettid()];
-}
-
 @}
 
 @+ Logical Thread management
@@ -2354,34 +2322,6 @@ THRdel(Thread t)
 	gdk_unset_lock(GDKthreadLock, "THRdel");
 }
 
-@-
-The easiest way to terminate a thread is to identify its name
-A zero is returned when the thread could not be found
-@c
-int
-THRexit(const char *nme)
-{
-	Thread t;
-	Thread s;
-
-	for (t = GDKthreads, s = t + THREADS; t < s; t++) {
-		if (t->pid && t->name && strcmp(t->name, nme) == 0) {
-			MT_Id victim = t->pid;
-
-			THRdel(t);
-			MT_kill_thread(victim);
-			return 1;
-		}
-	}
-	return 0;
-}
-
-int
-THRcnt(void)
-{
-	return GDKnrofthreads;
-}
-
 int
 THRhighwater(void)
 {
@@ -2406,7 +2346,7 @@ the network.
 The code below should be improved to gain speed.
 @c
 
-int
+static int
 THRinit(void)
 {
 	int i = 0;

@@ -52,17 +52,7 @@ free space.
 @c
 #include "monetdb_config.h"
 #include "gdk.h"
-
-ValPtr
-VALnew(void)
-{
-	ValPtr v = (ValPtr) GDKmalloc(sizeof(ValRecord));
-
-	if (v == NULL)
-		return NULL;
-	VALempty(v);
-	return v;
-}
+#include "gdk_private.h"
 
 ValPtr
 VALset(ValPtr v, int t, ptr p)
@@ -284,7 +274,7 @@ up with an ILLEGALVALUE.
 /* convert value in src and store in dst
    does not destroy src, but src and dst are allowed to point to the
    same location if the caller knows that that won't do any harm */
-ptr
+static ptr
 VALconvert1(int typ, ValPtr src, ValPtr dst)
 {
 	int orig_src_tpe = src->vtype, src_tpe = src->vtype, dst_tpe = typ;
@@ -669,21 +659,6 @@ VALconvert1(int typ, ValPtr src, ValPtr dst)
 				break;
 			}
 		}
-	}
-	return p;
-}
-
-/* VALconvert1, but returns a BAT* instead of a bat* and (thus) adds a
-   physical fix to the bat */
-ptr
-VALconvert2(int typ, ValPtr src, ValPtr dst)
-{
-	ptr p = VALconvert1(typ, src, dst);
-
-	if (typ == TYPE_bat && p != ILLEGALVALUE) {
-		p = BATdescriptor(dst->val.bval);	/* fixes the bat */
-		if (p == NULL)
-			p = ILLEGALVALUE;
 	}
 	return p;
 }

@@ -22,7 +22,7 @@ INCLUDES = ../common/options ../common/stream ../common/utils $(valgrind_CFLAGS)
 gdk_scanselect_CFLAGS = $(NO_INLINE_CFLAGS)
 # gdk_relop.mx
 
-EXTRA_DIST = gdk_scanselect_defs.mx
+EXTRA_DIST = gdk_scanselect_defs.mx gdk_private.h
 
 lib_gdk = { 
 	VERSION = $(GDK_VERSION)

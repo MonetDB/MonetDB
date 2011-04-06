@@ -55,6 +55,7 @@ Todo: check DESCsetmodes/HEAPcheckmode (gdk_storage.mx).
 @c
 #include "monetdb_config.h"
 #include "gdk.h"
+#include "gdk_private.h"
 
 /* The heap cache should reduce mmap/munmap calls which are very expensive.
  * Instead we try to reuse mmap's. This however requires file renames.
@@ -852,13 +853,6 @@ roundup_num(size_t number, int alignment)
 	return rval;
 }
 
-var_t
-HEAP_private(Heap *h)
-{
-	(void) h;
-	return (var_t) (roundup_8(sizeof(HEADER)) >> GDK_VARSHIFT);
-}
-
 #ifdef TRACE
 static void
 HEAP_printstatus(Heap *heap)
@@ -1277,55 +1271,12 @@ HEAP_check(Heap *heap, HeapRepair *hr)
 	return FALSE;
 }
 
-void
-HEAP_checkformat(Heap *heap)
-{
-#if 0
-	HEADER_OTHER image = *HEAP_index(heap, 0, HEADER_OTHER);
-
-	if (image.alignment == 4 || image.alignment == 8) {
-		/* it is the other format => correct to the desired format */
-		HEADER *hheader = HEAP_index(heap, 0, HEADER);
-
-#if SIZEOF_SIZE_T==8
-		size_t hasfcn = *(size_t *) &image.sizefcn;
-#else
-		size_t hasfcn = (size_t) (image.sizefcn || image.dummy);
-
-		hheader->dummy = 0;
-#endif
-		hheader->head = image.head;
-		hheader->firstblock = image.firstblock;
-		hheader->alignment = image.alignment;
-		hheader->sizefcn = (int (*)(ptr)) hasfcn;
-	}
-#else
-	(void) heap;
-#endif
-}
-
 @}
 @-
-If the elements in the heap tend to be small, it is a waste to allocate extra space
-for a size field. especially so if we know that we are going to store only one kind
-of atoms in the heap. from the content of the atom we can then derive its length. 
-Such a heap can now be created with the HEAP_initialize_compact() function.
 The HEAP_init() function is called in the BAT load sequence, if Monet sees that a 
 standard heap is being loaded (it looks for a directly registered HEAP_check ADT function). 
 @{
 @c
-/* save space in the heap by registering a size function */
-void
-HEAP_initialize_compact(Heap *heap, size_t nbytes, size_t nprivate, int alignment, int (*sizefcn) (ptr val))
-{
-	HEAP_initialize(heap, nbytes, nprivate, alignment);
-	if (heap->base) {
-		HEADER *hheader = HEAP_index(heap, 0, HEADER);
-
-		hheader->sizefcn = sizefcn;
-	}
-}
-
 /* reinitialize the size function after a load */
 void
 HEAP_init(Heap *heap, int tpe)

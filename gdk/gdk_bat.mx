@@ -66,6 +66,7 @@ extern oid MAXoid(BAT *i);
 @c
 #include "monetdb_config.h"
 #include "gdk.h"
+#include "gdk_private.h"
 
 #ifdef ALIGN
 #undef ALIGN
@@ -709,7 +710,7 @@ heaps).
 
 @{
 @c
-int
+static int
 HEAPshare(Heap *dst, Heap *src, int copy_on_write)
 {
 	/* use copy-on-write mmap for isolatable copy */

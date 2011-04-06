@@ -37,6 +37,7 @@ Access to the transaction table is regulated by a semaphore.
 @c
 #include "monetdb_config.h"
 #include "gdk.h"
+#include "gdk_private.h"
 #include "gdk_tm.h"
 
 @- 
