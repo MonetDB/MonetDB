@@ -19,13 +19,7 @@ stdout of test 'Test_PSlargeamount` in directory 'jdbc/tests` itself:
 Ready.
 # SQL catalog created, loading sql scripts once
 
-# 10:47:24 >  
-# 10:47:24 >  ./Test_PSlargeamount.SQL.sh Test_PSlargeamount 
-# 10:47:24 >  
-
-# 10:38:37 >  
-# 10:38:37 >  ./Test_PSlargeamount.SQL.sh Test_PSlargeamount 
-# 10:38:37 >  
+Over..
 
 
 # 10:38:37 >  
