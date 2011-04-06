@@ -504,7 +504,6 @@ extern char *tablet_skip_string(char *s, char quote);
 
 #include <string.h>
 #include <ctype.h>
-#include <gdk_posix.h>
 
 #define CLEAR(X) if(X) {GDKfree(X);X = NULL;}
 #define isScalar(C)  C->adt != TYPE_bat

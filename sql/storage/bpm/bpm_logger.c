@@ -27,7 +27,7 @@ bl_create(char *logdir, char *dbname, int catalog_version)
 {
 	if (bpm_logger)
 		return LOG_ERR;
-	bpm_logger = logger_create(0, "sql", logdir, dbname, catalog_version, NULL, NULL, NULL);
+	bpm_logger = logger_create(0, "sql", logdir, dbname, catalog_version, NULL, NULL);
 	if (bpm_logger)
 		return LOG_OK;
 	return LOG_ERR;

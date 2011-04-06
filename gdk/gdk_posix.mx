@@ -114,10 +114,6 @@ gdk_export void MT_sleep_ms(unsigned int ms);
 #define MT_VMUNITLOG 	16
 #define MT_VMUNITSIZE 	(1 << MT_VMUNITLOG)
 
-gdk_export int MT_alloc_register(void *p, size_t size, char mode);
-gdk_export int MT_alloc_print(void);
-gdk_export int MT_alloc_table(void);
-
 /* make sure POSIX_MADV_* and posix_madvise() are defined somehow */
 #ifdef HAVE_SYS_MMAN_H
 # ifndef __USE_BSD
@@ -203,13 +199,11 @@ gdk_export int MT_alloc_table(void);
 gdk_export char *MT_heapbase;
 gdk_export char *MT_heapcur(void);
 
-gdk_export void MT_init_posix(int alloc_map);
 gdk_export size_t MT_getrss(void);
 
 gdk_export void *MT_mmap(char *path, int mode, off_t off, size_t len);
 gdk_export int MT_munmap(void *p, size_t len);
 gdk_export int MT_msync(void *p, size_t off, size_t len, int mode);
-gdk_export int MT_madvise(void *p, size_t len, int advice);
 
 typedef struct MT_mmap_hdl_t {
 	void *hdl;
@@ -225,12 +219,6 @@ gdk_export void *MT_mmap_open(MT_mmap_hdl *hdl, char *path, int mode, off_t off,
 gdk_export void *MT_mmap_remap(MT_mmap_hdl *hdl, off_t off, size_t len);
 gdk_export void MT_mmap_close(MT_mmap_hdl *hdl);
 
-gdk_export int MT_mmap_trim(size_t lim, void *err);
-gdk_export void MT_mmap_inform(void *p, size_t len, int preload, int pattern, int writable);
-
-gdk_export void *MT_vmalloc(size_t size, size_t *maxsize);
-gdk_export void MT_vmfree(void *p, size_t size);
-gdk_export void *MT_vmrealloc(void *voidptr, size_t oldsize, size_t newsize, size_t oldmaxsize, size_t *newmaxsize);
 gdk_export int MT_path_absolute(const char *path);
 
 @}
@@ -295,6 +283,7 @@ gdk_export int *win_errno(void);
 @c
 #include "monetdb_config.h"
 #include "gdk.h"        /* includes gdk_posix.h */
+#include "gdk_private.h"
 #include "mutils.h"
 #include <stdio.h>
 #include <unistd.h>		/* sbrk on Solaris */

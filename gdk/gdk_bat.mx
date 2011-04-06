@@ -54,8 +54,6 @@ called atomHeap.
 #ifndef _GDK_BAT_H_
 #define _GDK_BAT_H_
 
-#include "gdk.h"
-
 gdk_export void BATinit_idents(BAT *bn);
 gdk_export BUN void_replace_bat(BAT *b, BAT *u, bit force);
 gdk_export int void_inplace(BAT *b, oid id, ptr val, bit force);
@@ -68,6 +66,7 @@ extern oid MAXoid(BAT *i);
 @c
 #include "monetdb_config.h"
 #include "gdk.h"
+#include "gdk_private.h"
 
 #ifdef ALIGN
 #undef ALIGN
@@ -711,7 +710,7 @@ heaps).
 
 @{
 @c
-int
+static int
 HEAPshare(Heap *dst, Heap *src, int copy_on_write)
 {
 	/* use copy-on-write mmap for isolatable copy */

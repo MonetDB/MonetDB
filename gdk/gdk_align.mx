@@ -81,6 +81,7 @@ the same head-sequence as the other BATs in the sync group.
 @c
 #include "monetdb_config.h"
 #include "gdk.h"
+#include "gdk_private.h"
 
 int
 ALIGNcommit(BAT *b)
@@ -178,19 +179,6 @@ ALIGNsynced(BAT *b1, BAT *b2)
 
 	return 0;		/* we simply don't know */
 }
-
-@-
-BATs are related if one pair of columns match. This means that
-there is some 1-1 correspondence in their BUNs.
-@c
-int
-ALIGNrelated(BAT *b1, BAT *b2)
-{
-	BATcheck(b1, "ALIGNrelated: bat 1 required");
-	BATcheck(b2, "ALIGNrelated: bat 2 required");
-	return (ALIGNsynced(b1, b2) || ALIGNsynced(BATmirror(b1), b2) || ALIGNsynced(b1, BATmirror(b2)) || ALIGNsynced(BATmirror(b1), BATmirror(b2)));
-}
-
 
 @+ View BATS
 The general routine for getting a 'view' BAT upon another 

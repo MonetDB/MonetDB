@@ -114,7 +114,6 @@ gdk_export unsigned long long MT_clock();
 #define MT_log(_impl, _object, _action, _caller, _fp) do { if (GDKdebug & 1024) { fprintf(_fp, "%s: " _action "(" PTRFMT ")\n", _caller, PTRFMTCAST(void*) _object); fflush(_fp); } _impl; } while (0)
 
 /* API */
-gdk_export int MT_alive(int pid);	/* OS independent way to check if some process is still alive. */
 
 @- MT Thread Api
 @h
@@ -128,10 +127,6 @@ gdk_export void MT_global_exit(int status);
 gdk_export MT_Id MT_getpid(void);
 gdk_export int MT_join_thread(MT_Id t);
 gdk_export int MT_kill_thread(MT_Id t);
-
-#ifdef HAVE_PTHREAD_SIGMASK
-gdk_export void MT_thread_sigmask(sigset_t * new_mask, sigset_t * orig_mask);
-#endif
 
 #if SIZEOF_VOID_P == 4
 /* "limited" stack size on 32-bit systems */

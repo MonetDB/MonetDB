@@ -33,7 +33,6 @@ BUNs upon deletion. Initialization of the BAT is extended as follows:
 @h
 #ifndef _GDK_DELTA_H_
 #define _GDK_DELTA_H_
-#include "gdk.h"
 
 @-
 We make sure here that the BUNs section of a BAT at least starts 
@@ -89,6 +88,7 @@ The hash structure is maintained for all elements to be deleted ?.
 @c
 #include "monetdb_config.h"
 #include "gdk.h"
+#include "gdk_private.h"
 
 @- 
 batcommit really forgets the atoms guarded for an undo; we just need to free their heap space (only if necessary).

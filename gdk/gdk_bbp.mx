@@ -108,9 +108,7 @@ gdk_export int BBPout;		/* BATs swapped out of BBP */
 gdk_export int BBPsize;		/* current occupied size of BBP array */
 
 /* global calls */
-gdk_export void BBPinit(void);
 gdk_export bat BBPimportEntry(char *nme);
-gdk_export void BBPexit(void);
 gdk_export int BBPdir(int cnt, bat *subcommit);
 
 /* update interface */
@@ -119,19 +117,15 @@ gdk_export void BBPclear(bat bid);
 extern bat BBPinsert(BATstore *bs);
 #endif
 gdk_export void BBPcacheit(BATstore *bs, int lock);
-gdk_export void BBPuncacheit(bat bid);
 gdk_export int BBPreclaim(BAT *b);
 gdk_export int BBPsave(BAT *b);
 gdk_export int BBPrename(bat bid, const char *nme);
-gdk_export BATstore *BBPrecycle(int ht, int tt, size_t cap);
-gdk_export wrd BBPrecycle_minsize(wrd);
 
 /* query interface */
 gdk_export bat BBPindex(const char *nme);
 gdk_export BAT *BBPdescriptor(bat b);
 
 /* swapping interface */
-gdk_export int BBPrecover(void);
 gdk_export int BBPsync(int cnt, bat *subcommit);
 gdk_export int BBPincref(bat b, int logical);
 gdk_export void BBPkeepref(bat i);
@@ -139,18 +133,12 @@ gdk_export void BBPreleaseref(bat i);
 gdk_export void BBPreleaselref(bat i);
 gdk_export int BBPdecref(bat b, int logical);
 gdk_export void BBPshare(bat b);
-gdk_export void BBPunshare(bat b);
-gdk_export void BBPextend(dbl factor, int buildhash);
-
-gdk_export void BBPatom_drop(int atom);
-gdk_export void BBPatom_load(int atom);
-
-gdk_export int BBPbackup(BAT *b, bit subcommit);
 
 @
 @c
 #include "monetdb_config.h"
 #include "gdk.h"
+#include "gdk_private.h"
 #include "gdk_storage.h"
 #include "mutils.h"
 /*

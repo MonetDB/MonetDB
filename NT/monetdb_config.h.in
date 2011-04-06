@@ -337,9 +337,6 @@
 /* Define to 1 if you have the <perfmon/pfmlib.h> header file. */
 /* #undef HAVE_PERFMON_PFMLIB_H */
 
-/* Define if you want TIJAH */
-#define HAVE_PFTIJAH 1
-
 /* Define to 1 if you have the `pipe' function. */
 #define HAVE_PIPE 1
 #ifdef pipe
@@ -655,12 +652,6 @@
 
 /* where Merovingian will store its logs by default */
 /* #undef MERO_LOG */
-
-/* MonetDB4 config file location */
-#define MONETDB4_CONFFILE "@QXsysconfdir@@QDIRSEP@MonetDB.conf"
-
-/* MonetDB5 config file location */
-#define MONETDB5_CONFFILE "@QXsysconfdir@@QDIRSEP@monetdb5.conf"
 
 /* The used password hash algorithm */
 #define MONETDB5_PASSWDHASH "SHA512"
