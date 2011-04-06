@@ -1,44 +1,62 @@
-# CREATE ARRAY stripes( x int dimension[4], y int dimension[4], val float DEFAULT 0.0);
-#create table stripes (x int, y int, val float);
-#insert into stripes values(0,0,0.0), (0,1,1.0), (1,0,2.0), (1,1,3.0);
+# Query: UPDATE matrix SET v = CASE WHEN x>y THEN x + y WHEN x<y THEN x - y ELSE 0 END;
+function user.s0_1{autoCommit=true}():void;
+	_2 := sql.mvc();
+	# if we have a dimension with fixed bounds then there can not be updates
+	# pattern sciql.bind_dim(mvc:ptr, schema:str, table:str, column:str,
+	#                        access:int, low:any_1, hgh:any_1, stp:any_1):bat[:oid,:any_1]
+	_12:bat[:oid,:int]  := sciql.bind_dim(_2,"sys","matrix","x",0,0,4,1);
+	_21:bat[:oid,:int]  := sciql.bind_dim(_2,"sys","matrix","y",0,0,4,1);
+	_39 := bat.mirror(_12);
+	_44 := aggr.count(_39);
+	_40 := bat.reverse(_39);
+	_26:bat[:oid,:bit]  := batcalc.>(_12,_21);
+	_27:bat[:oid,:bit]  := batcalc.isnil(_26);
+	_28:bat[:oid,:bit]  := batcalc.ifthenelse(_27,false:bit,_26);
+	_29:bat[:oid,:int]  := batcalc.+(_12,_21);
+	_30:bat[:oid,:bit]  := batcalc.<(_12,_21);
+	_31:bat[:oid,:bit]  := batcalc.isnil(_30);
+	_32:bat[:oid,:bit]  := batcalc.ifthenelse(_31,false:bit,_30);
+	_33:bat[:oid,:int]  := batcalc.-(_12,_21);
+	_34:bat[:oid,:int]  := batcalc.ifthenelse(_32,_33,0:int);
+	_35:bat[:oid,:int]  := batcalc.ifthenelse(_28,_29,_34);
+	_36 := batcalc.dbl(_35);
+	_41 := algebra.join(_40,_36);
+	sql.update(_2,"sys","matrix","v":str,_41);
+	sql.affectedRows(_44,"");
+end s0_1;
 
-# base arrays are initialized once in most situations considered! (appends are allowed)
-
-#UPDATE stripes SET val = x + y; 
-# What is the storage model ? explicit dimensions? or implicit?
-
-# explicit model, after definition we have to instanciate the array
-	# create the x- and y- bats, initialize with their value
-
+# Query: UPDATE diagonal SET v = x + y; 
 function user.s1_1{autoCommit=true}():void;
-    _2 := sql.mvc();
-#if we have a dimension with fixed bounds then there can not be updates
-   (_3:bat[:oid,:int],_23:bat[:oid,:int])  := sciql.dimension(_2,"sys","stripes","x",0,0,4,1,"y",0,4,1);
-   _4:bat[:int,:oid]  := bat.reverse(_3);
-   _5:bat[:oid,:oid]  := bat.mirror(_4);
-   _32:bat[:oid,:int]  := batcalc.+(_3,_23);
-    _33 := batcalc.dbl(_32);
-    _34 := algebra.join(_5,_33);
-    _37:= aggr.count(_34);
-    sql.update(_2,"sys","stripes","val",_34);
-    sql.affectedRows(_37,"");
+	_2 := sql.mvc();
+	# if we have a dimension with fixed bounds then there can not be updates
+	_3:bat[:oid,:int]  := sciql.bind_dim(_2,"sys","diagonal","x",0,0,4,1);
+	_23:bat[:oid,:int]  := sciql.bind_dim(_2,"sys","diagonal","y",0,0,4,1);
+	_4:bat[:int,:oid]  := bat.reverse(_3);
+	_5:bat[:oid,:oid]  := bat.mirror(_4);
+	_32:bat[:oid,:int]  := batcalc.+(_3,_23);
+	_33 := batcalc.dbl(_32);
+	_34 := algebra.join(_5,_33);
+	_37:= aggr.count(_34);
+	sql.update(_2,"sys","stripes","val",_34);
+	sql.affectedRows(_37,"");
 end s1_1;
+
+# Query: UPDATE stripes SET v = MOD(RAND(),16);
 
 #-- for stripes2 it becomes
 function user.s1_1{autoCommit=true}():void;
-    _2 := sql.mvc();
+	_2 := sql.mvc();
 #if we have a dimension with free bounds then we need an explicit representation of x
-   (_3:bat[:oid,:int],_23:bat[:oid,:int])  := sciql.dimension(_2,"sys","stripes","x",null:int,null:int,null:int,"y",null:int,null:int,null:int);
-   _4:bat[:int,:oid]  := bat.reverse(_3);
-   _5:bat[:oid,:oid]  := bat.mirror(_4);
-   _32:bat[:oid,:int]  := batcalc.+(_3,_23);
-    _33 := batcalc.dbl(_32);
-    _34 := algebra.join(_5,_33);
-    _37:= aggr.count(_34);
-    sql.update(_2,"sys","stripes","val",_34);
-    sql.affectedRows(_37,"");
+	(_3:bat[:oid,:int],_23:bat[:oid,:int])  := sciql.dimension(_2,"sys","stripes","x",null:int,null:int,null:int,"y",null:int,null:int,null:int);
+	_4:bat[:int,:oid]  := bat.reverse(_3);
+	_5:bat[:oid,:oid]  := bat.mirror(_4);
+	_32:bat[:oid,:int]  := batcalc.+(_3,_23);
+	_33 := batcalc.dbl(_32);
+	_34 := algebra.join(_5,_33);
+	_37:= aggr.count(_34);
+	sql.update(_2,"sys","stripes","val",_34);
+	sql.affectedRows(_37,"");
 end s1_1; 
 
-#UPDATE grid
-#SET val = CASE WHEN x > y THEN x + y  WHEN X<y THEN x - y ELSE 0 END;
-#UPDATE diagonal SET val = x +y; UPDATE sparse SET val = mod(rand(),16);
+# Query: UPDATE stripes2 SET x = x+1;  -- what does it mean
+# Note: if we have a dimension with fixed bounds then there can not be updates

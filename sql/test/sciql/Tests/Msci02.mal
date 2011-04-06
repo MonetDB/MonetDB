@@ -1,10 +1,34 @@
-#CREATE TABLE experiment( 
-#	run timestamp DIMENSION[  TIMESTAMP '2010-01-01':*: INTERVAL'1' day], 
-#	payload float ARRAY[4][4] DEFAULT 0.0 );
+# Query: CREATE TABLE experiment( 
+#            run timestamp DIMENSION[TIMESTAMP '2010-01-01':*: INTERVAL'1' day], 
+#            payload float DEFAULT 0.0 );
 #additional operations required for explicit indices
-run:bat[:oid,:timestamp]:= array.newDimension("sys","experiment","run",0,"2010-01-01":timestamp,null:timestamp,"1:0:0":timestamp);
+#run:bat[:oid,:timestamp]:= array.newDimension("sys","experiment","run",0,"2010-01-01":timestamp,null:timestamp,"1:0:0":timestamp);
+function user.s0_1{autoCommit=true}():void;
+    sql.mvc();
+    sql.catalog(63,"sys":str,140473280789176:ptr,0:int); # DDL_CREATE_ARRAY==63
+    sql.exportOperation("");
+end s0_1;
 
-#CREATE TABLE timeseries( 
-#	run timestamp DIMENSION,
-#	payload float DEFAULT 0.0 );
-run:bat[:oid,:timestamp]:= array.newDimension("sys","timeseries","run",0,null:timestamp,null:timestamp,null:timestamp);
+# Query: CREATE ARRAY timeseries( 
+#            run timestamp DIMENSION,
+#            payload float DEFAULT 0.0 );
+#run:bat[:oid,:timestamp]:= array.newDimension("sys","timeseries","run",0,null:timestamp,null:timestamp,null:timestamp);
+function user.s1_1{autoCommit=true}():void;
+    sql.mvc();
+    sql.catalog(63,"sys":str,140473280789176:ptr,0:int); # DDL_CREATE_ARRAY==63
+    sql.exportOperation("");
+end s1_1;
+
+# Query: CREATE ARRAY experiment2(
+#            run date DIMENSION[TIMESTAMP '2010-01-01':*: INTERVAL'1' day],
+#            payload ARRAY (
+#                x integer DIMENSION[4],
+#                y integer DIMENSION[4],
+#                val float DEFAULT 0.0)
+#);
+function user.s2_1{autoCommit=true}():void;
+    sql.mvc();
+    sql.catalog(63,"sys":str,140473281784632:ptr,0:int); # DDL_CREATE_ARRAY==63
+    sql.exportOperation("");
+end s0_1;
+
