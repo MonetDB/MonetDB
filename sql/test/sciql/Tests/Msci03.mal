@@ -2,10 +2,15 @@
 function user.s0_1{autoCommit=true}():void;
 	_2 := sql.mvc();
 	# if we have a dimension with fixed bounds then there can not be updates
-	# pattern sciql.bind_dim(mvc:ptr, schema:str, table:str, column:str,
-	#                        access:int, low:any_1, hgh:any_1, stp:any_1):bat[:oid,:any_1]
 	_12:bat[:oid,:int]  := sciql.bind_dim(_2,"sys","matrix","x",0,0,4,1);
 	_21:bat[:oid,:int]  := sciql.bind_dim(_2,"sys","matrix","y",0,0,4,1);
+	# => new MAL primitive:
+	# pattern sciql.bind_dim(mvc:ptr, schema:str, array:str, column:str,
+	#                        access:int):bat[:oid,:any_1]
+	# comment "bind to the dimension denoted by schema.array.column";
+	# pattern sciql.bind_dim(mvc:ptr, schema:str, array:str, column:str,
+	#                        access:int, low:any_1, hgh:any_1, stp:any_1):bat[:oid,:any_1]
+	# comment "array slicing: bind to the dimension denoted by schema.array.column[low:hgh:stp]";
 	_39 := bat.mirror(_12);
 	_44 := aggr.count(_39);
 	_40 := bat.reverse(_39);
@@ -21,6 +26,7 @@ function user.s0_1{autoCommit=true}():void;
 	_35:bat[:oid,:int]  := batcalc.ifthenelse(_28,_29,_34);
 	_36 := batcalc.dbl(_35);
 	_41 := algebra.join(_40,_36);
+ 	# NB: must ensure values of 'v' are aligned with 'x','y'
 	sql.update(_2,"sys","matrix","v":str,_41);
 	sql.affectedRows(_44,"");
 end s0_1;
@@ -37,26 +43,81 @@ function user.s1_1{autoCommit=true}():void;
 	_33 := batcalc.dbl(_32);
 	_34 := algebra.join(_5,_33);
 	_37:= aggr.count(_34);
-	sql.update(_2,"sys","stripes","val",_34);
+ 	# NB: must ensure values of 'v' are aligned with 'x','y'
+	sql.update(_2,"sys","stripes","v",_34);
 	sql.affectedRows(_37,"");
 end s1_1;
 
 # Query: UPDATE stripes SET v = MOD(RAND(),16);
+function user.s2_1{autoCommit=true}():void;
+	_2 := sql.mvc();
+	# can't we directly bind to 'v' and then overwrite its values?
+	_17:bat[:oid,:int]  := sciql.bind_dim(_2,"sys","stripes","x",0,0,4,1);
+	_18 := algebra.project(_17,0:int);
+	_56 := bat.new(nil:oid,nil:int);
+barrier (_60,_61,_62) := bat.newIterator(_18);
+	_64 := mmath.rand(_62);
+	bat.insert(_56,_61,_64);
+	redo (_60,_61,_62) := bat.hasMoreElements(_18);
+exit (_60,_61,_62);
+	_18 := nil:BAT;
+	_19:bat[:oid,:int]  := _56;
+	_28 := bat.mirror(_17);
+	_33 := aggr.count(_28);
+	_29 := bat.reverse(_28);
+	_22 := algebra.project(_17,16:bte);
+	_23 := batcalc.int(_22);
+	_24:bat[:oid,:int]  := batcalc.%(_19,_23);
+	_25 := batcalc.dbl(_24);
+	_30 := algebra.join(_29,_25);
+ 	# NB: must ensure values of 'v' are aligned with 'x','y'
+	sql.update(_2,"sys","stripes","v":str,_30);
+	sql.affectedRows(_33,"");
+end s2_1;
 
 #-- for stripes2 it becomes
 function user.s1_1{autoCommit=true}():void;
 	_2 := sql.mvc();
-#if we have a dimension with free bounds then we need an explicit representation of x
-	(_3:bat[:oid,:int],_23:bat[:oid,:int])  := sciql.dimension(_2,"sys","stripes","x",null:int,null:int,null:int,"y",null:int,null:int,null:int);
+	# if we have a dimension with free bounds then we need an explicit representation of x
+	# (_3:bat[:oid,:int],_23:bat[:oid,:int])  := sciql.dimension(_2,"sys","stripes","x",null:int,null:int,null:int,"y",null:int,null:int,null:int);
+	
+	# we don't need to care for this query how 'v' is stored. we just overwrite
+	# all its values.
+	_3:bat[:oid,:float]  := sciql.bind_cval(_2, "sys", "stripes2", "v", 0);
+	# => new MAL primitive:
+	# pattern sciql.bind_cval(mvc:ptr, schema:str, array:str, column:str,
+	#                        access:int):bat[:oid,:any_0]
+	# comment "bind to all values of schema.array.column";
+	# pattern sciql.bind_cval(mvc:ptr, schema:str, array:str, column:str,
+	#                        access:int, 
+	#                        dim1_low:any_1, dim1_hgh:any_1, dim1_stp:any_1,
+	#                        dim2_low:any_2, dim2_hgh:any_2, dim2_stp:any_2,
+	#                        ...):bat[:oid,:any_0]
+	# comment "array slicing: bind to portions of values of schema.array.column";
 	_4:bat[:int,:oid]  := bat.reverse(_3);
 	_5:bat[:oid,:oid]  := bat.mirror(_4);
 	_32:bat[:oid,:int]  := batcalc.+(_3,_23);
 	_33 := batcalc.dbl(_32);
 	_34 := algebra.join(_5,_33);
 	_37:= aggr.count(_34);
-	sql.update(_2,"sys","stripes","val",_34);
+	sql.update(_2,"sys","stripes","v",_34);
 	sql.affectedRows(_37,"");
-end s1_1; 
+end s1_1;
 
-# Query: UPDATE stripes2 SET x = x+1;  -- what does it mean
-# Note: if we have a dimension with fixed bounds then there can not be updates
+# Query: UPDATE stripes2 SET x = x-1;  -- what does it mean
+function user.s14_1{autoCommit=true}():void;                                    |
+    _2 := sql.mvc();
+    _12:bat[:oid,:int]  := sciql.bind_dim(_2,"sys","stripes","x",0);
+    _21 := bat.mirror(_12);
+    _26 := aggr.count(_21);
+    _22 := bat.reverse(_21);
+    _18:bat[:oid,:int]  := sciql.dim_shift(_12,-1:int);
+	# => new MAL primitive:
+	# pattern sciql.dim_shift(bat[:oid:any_1], sft:any_2):bat[:oid,:any_1]
+	# comment "shift a dimension by sft:any_2 and update meta-info accordingly.  This call will fail if the dimension is fixed???";
+    _23 := algebra.join(_22,_18);
+	# FIXME: do we overwrite the original dimension bat afterwards or directly in dim_shift???
+    sql.update(_2,"sys","stripes","x",_23);
+    sql.affectedRows(_26,"");
+end s14_1;
+

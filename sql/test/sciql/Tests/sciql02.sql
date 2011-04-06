@@ -11,5 +11,5 @@ CREATE ARRAY experiment2(
     payload ARRAY (
         x integer DIMENSION[4],
         y integer DIMENSION[4],
-        val float DEFAULT 0.0)
+        v float DEFAULT 0.0)
 );

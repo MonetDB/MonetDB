@@ -1,4 +1,4 @@
-SELECT x, y, val FROM matrix WHERE val >2; 
-SELECT x, y, val FROM stripes WHERE val >2; 
-SELECT [x], [y], val FROM matrix WHERE val >2; 
-SELECT [T.k], [y], val FROM matrix JOIN T ON matrix.x = T.i;
+SELECT x, y, v FROM matrix WHERE v >2; 
+SELECT x, y, v FROM stripes WHERE v >2; 
+SELECT [x], [y], v FROM matrix WHERE v >2; 
+SELECT [T.k], [y], v FROM matrix JOIN T ON matrix.x = T.i;
