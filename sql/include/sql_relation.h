@@ -118,6 +118,10 @@ typedef struct expression {
 #define DDL_CONNECT 	61
 #define DDL_DISCONNECT 	62
 
+#define DDL_CREATE_ARRAY 63
+#define DDL_DROP_ARRAY 64
+#define DDL_CREATE_VIEW_ARRAY 65
+
 #define MAXOPS 20
 
 typedef enum operator_type {
