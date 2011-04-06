@@ -61,7 +61,6 @@ The @emph{kintersect(l,r)} is used also as implementation for the @emph{semijoin
 @h
 #ifndef _GDK_SETOP_H
 #define _GDK_SETOP_H
-#include "gdk.h"
 
 #define HITk(t1,t2)             TRUE
 #define HITs(t1,t2)             ((*cmp)(t1,t2) == 0)

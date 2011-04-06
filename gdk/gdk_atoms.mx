@@ -31,7 +31,6 @@ collection.
 @h
 #ifndef _GDK_ATOMS_H_
 #define _GDK_ATOMS_H_
-#include "gdk.h"
 
 #define MAXATOMS	128
 

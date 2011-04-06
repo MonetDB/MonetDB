@@ -94,7 +94,6 @@ comment "test the function of deletion"
 #endif
 
 #include <gdk.h>
-#include <gdk_atoms.h>
 pma_export str PMAnew_wrd(bat *res, int *tpe, wrd *sz);
 @= pma_decl
 pma_export str PMAins_@1(oid *pos_res, bat *b, oid *pos, @1 *val);
@@ -119,7 +118,6 @@ pma_export str PMAtestdel_@1(void *dummy, bat *b);
 @c
 #include "monetdb_config.h"
 #include "mal_exception.h"
-#include <gdk_utils.h>
 #include "pma.h"
 #include <math.h>
 

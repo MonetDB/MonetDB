@@ -38,7 +38,6 @@ system start.
 @h
 #ifndef _GDK_STORAGE_H_
 #define _GDK_STORAGE_H_
-#include "gdk.h"
 
 extern void DESCclean(BAT *);
 extern int DESCsetmodes(BAT *b);
