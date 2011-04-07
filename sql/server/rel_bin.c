@@ -1119,7 +1119,7 @@ rel2bin_union( mvc *sql, sql_rel *rel, list *refs)
 		for( en = rel->exps->h, n = sub->op4.lval->h; en && n; en = en->next, n = n->next ) {
 			sql_exp *exp = en->data;
 			stmt *s = n->data;
-			//stmt *s = exp_bin(sql, exp, sub, NULL, NULL, NULL);
+			/*stmt *s = exp_bin(sql, exp, sub, NULL, NULL, NULL);*/
 
 			if (!s) {
 				assert(0);
@@ -1567,7 +1567,7 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 				orderby = stmt_order(sql->sa, orderbycolstmt, is_ascending(orderbycole));
 		}
 		if (orderby)
-			//psub = stmt_ordered(sql->sa, orderby, psub);
+			/*psub = stmt_ordered(sql->sa, orderby, psub);*/
 			psub = sql_reorder(sql, orderby, psub);
 	}
 	return psub;
@@ -1820,8 +1820,10 @@ rel2bin_topn( mvc *sql, sql_rel *rel, list *refs)
 
 	if (n) {
 		stmt *limit = NULL;
-		//sql_rel *rl = rel->l;
-		//int including = (rl && need_distinct(rl)) || need_including(rel);
+		/*
+		sql_rel *rl = rel->l;
+		int including = (rl && need_distinct(rl)) || need_including(rel);
+		*/
 		int including = need_including(rel);
 
 		if (le)

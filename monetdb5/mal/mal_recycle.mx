@@ -1673,7 +1673,7 @@ computeMultiSubsume(rngPtr qry, piece  *base, int cnt, lng comp)
 
 	/* check for max-sized contained piece x */
 	for( j = 0;	j < scnt; j++)
-		if ( sol[j]->ovhd == 0 ) // contained in query
+		if ( sol[j]->ovhd == 0 ) /* contained in query */
 			if ( sol[j]->cnt > max_x ) {
 				max_x = sol[j]->cnt;
 				x = j;
@@ -2442,7 +2442,7 @@ RECYCLEexitImpl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, lng ticks
 		}
 		break;
 /*	case ADM_ADAPT:
-//		 ADM_ADAPT: searching the cache may take too long? 
+		 ADM_ADAPT: searching the cache may take too long? 
 		if ( RECYCLEfind(cntxt,mb,stk,p)< 0){
 			if (recycleSearchTime > recycleTime)
 				RECYCLEcleanCache(cntxt, wr);

@@ -1082,7 +1082,7 @@ rel2bin(mvc *c, stmt *s)
 				l = shrink_select_ranges(c, l);
 			}
 			/* check if we have a unique index */
-			//l = use_ukey(c, l);
+			/*l = use_ukey(c, l);*/
 			n = list_find(l, (void*)1, (fcmp) &find_unique);
 			if (!n) {
 				/* TODO reorder select list 

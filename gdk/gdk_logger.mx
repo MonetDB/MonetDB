@@ -1896,7 +1896,7 @@ logger_del_bat(logger *lg, log_bid bid)
 	}
 	BUNdelHead(lg->catalog, &bid, FALSE);
 
-//assert( BBP[bid].lrefs == 0 );
+/*assert( BBP[bid].lrefs == 0 );*/
 }
 
 log_bid

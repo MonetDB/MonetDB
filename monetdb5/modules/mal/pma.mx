@@ -564,11 +564,11 @@ PMAbulkdel_@1(void *dummy, bat *bid, oid *lo, oid *hi) {
 		(dens > dent) ? (fgw = TRUE) : (dent += step);
 	}
 	lv--;
-	if (!fgw) {	// the whole PMA is required to be rebalanced
-		if (cnt == 0) {	// an empty PMA
+	if (!fgw) {	/* the whole PMA is required to be rebalanced */
+		if (cnt == 0) {	/* an empty PMA */
 			BATdelete(b);
 			bid = NULL;
-		} else if (psz != PMA_SEG){	// shrink this PMA into half size
+		} else if (psz != PMA_SEG){	/* shrink this PMA into half size */
 			tpe = TYPE_@1;
 			psz >>= 1;
 			nsz = psz;
@@ -585,10 +585,10 @@ PMAbulkdel_@1(void *dummy, bat *bid, oid *lo, oid *hi) {
 				}
 			}
 			BATdelete(b);
-		} // else: only 1 segment, simply delete the element
-	} else {	// a window is required to be rebalanced
+		} /* else: only 1 segment, simply delete the element */
+	} else {	/* a window is required to be rebalanced */
 		fg = FALSE;
-		if (*lo >= wbeg + (wsz >> 1)) {	// rebalance from the beginning of the window
+		if (*lo >= wbeg + (wsz >> 1)) {	/* rebalance from the beginning of the window */
 			k = wbeg + wsz;
 			for (i = j = wbeg; i < k; i++) {
 				if (base[i] == @1_nil) {
@@ -602,7 +602,7 @@ PMAbulkdel_@1(void *dummy, bat *bid, oid *lo, oid *hi) {
 					j = i;
 				}
 			}
-		} else {	// rebalance from the end of the window
+		} else {	/* rebalance from the end of the window */
 			for (i = j = wbeg + wsz - 1; i >= wbeg; i--) {
 				if (base[i] == @1_nil) {
 					fg = TRUE;

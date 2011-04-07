@@ -3983,7 +3983,7 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 	}
 	case SQL_TABLE: {
 		/* turn a subquery into a tabular result */
-		*rel = rel_selects(sql, se->data.sym);// *rel, se->data.sym, ek);
+		*rel = rel_selects(sql, se->data.sym /*, *rel, se->data.sym, ek*/);
 		if (*rel)
 			return rel_find_lastexp(*rel);
 		return NULL;
@@ -4525,7 +4525,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 
 			l = exp_aggr1(sql->sa, l, zero_or_one, 0, 0, CARD_ATOM, 0);
 		}
-	//	return sql_error(sql, 01, "SELECT: LIMIT only allowed on outermost SELECT");
+	/*	return sql_error(sql, 01, "SELECT: LIMIT only allowed on outermost SELECT"); */
 			append(exps, l);
 		} else
 			append(exps, NULL);

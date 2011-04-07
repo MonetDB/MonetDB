@@ -2044,7 +2044,7 @@ static void backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s)
 	q = newStmt1(mb, sqlRef, "mvc");
 	be->mvc_var = getDestVar(q);
 
-	//print_stmts(c->sa, stmts);
+	/*print_stmts(c->sa, stmts);*/
 	clear_stmts(stmts);
 	while(stmts[nr]) {
 		stmt *s = stmts[nr++];
@@ -2320,25 +2320,27 @@ monet5_resolve_function(ptr M, sql_func *f)
 	Client c = MCgetClient(sql->clientid);
 	Module m;
 
-// fails to search outer modules!
-//	if (!findSymbol(c->nspace, f->mod, f->imp)) 
-//		return 0;
+	/*
+ fails to search outer modules!
+	if (!findSymbol(c->nspace, f->mod, f->imp)) 
+		return 0;
+	*/
 
-        for (m = findModule(c->nspace, f->mod); m; m= m->outer) {
-        	if (strcmp(m->name, f->mod) == 0) {
+	for (m = findModule(c->nspace, f->mod); m; m= m->outer) {
+		if (strcmp(m->name, f->mod) == 0) {
 			Symbol s = m->subscope[(int)(getSubScope(f->imp))];
-                	for(; s; s = s->peer) {
+			for(; s; s = s->peer) {
 				InstrPtr sig = getSignature(s);
 				int argc = sig->argc - sig->retc;
 
-                		if (strcmp(s->name, f->imp) == 0 &&
-				    ((!f->ops && argc == 0) ||
-                            	     list_length(f->ops) == argc ||
-				     (sig->varargs & VARARGS) == VARARGS))
+				if (strcmp(s->name, f->imp) == 0 &&
+						((!f->ops && argc == 0) ||
+						 list_length(f->ops) == argc ||
+						 (sig->varargs & VARARGS) == VARARGS))
 					return 1;
-				
-               		}
-        	}
+
+			}
+		}
 	}
 	return 0;
 /*
