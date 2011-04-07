@@ -4252,7 +4252,7 @@ index_exp :
 	}
 	| '[' index_term ']'
 	{
-		$$= append_string(L(), $2);
+		$$= append_list(L(), $2);
 	}
 ;
 
