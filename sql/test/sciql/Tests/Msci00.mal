@@ -2,15 +2,21 @@
 # CREATE ARRAY A1( x integer DIMENSION[4], v float DEFAULT 0.0);
 #
 # Note: additional operations required for explicit indices (what does this mean?)
-# Note: fixed arrays are created once...
-# Note: What is the storage model ? explicit dimensions? or implicit?
-#       explicit model, after definition we have to instanciate the array
-#       create the x- and y- bats, initialize with their value
-
-# x:bat[:oid,:int]:= sciql.newDimension("sys","A1","x",0,0,4,1);
-
 function user.s0_1{autoCommit=true}():void;
 	sql.mvc();
+	# TODO: What is the storage model for fixed|unbounded dimensions,
+	#       store the dimensions explicitly or implicitly?
+	#       Fixed dimensions can be stored explicitly when the array is being
+	#       created, or materialised after their first use, or stored
+	#       implicitly.
+	#       Unbounded dimensions can not be stored explicitly when the array is
+	#       being created.
+	#       They can only possibly be stored explicitly after some values have
+	#       been explicitly inserted into the array, and in this case,
+	#       unbounded dimensions with irregular step size _must_ be stored
+	#       explicitly.
+
+	# x:bat[:oid,:int]:= sciql.newDimension("sys","A1","x",0:int,4:int,1:int);
 	sql.catalog(63,"sys":str,140473280789176:ptr,0:int); # DDL_CREATE_ARRAY==63
 	sql.exportOperation("");
 end s0_1;
