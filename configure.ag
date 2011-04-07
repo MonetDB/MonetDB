@@ -110,7 +110,7 @@ else
 	dft_optimi=no
 	dft_develop=no
 fi
-dft_warning=yes
+dft_warning=no
 
 dnl small hack to get icc -no-gcc, done here because AC_PROG_CC shouldn't
 dnl set GCC=yes if we use icc.
