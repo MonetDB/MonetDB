@@ -1,9 +1,8 @@
 # Query:
 # CREATE ARRAY A1( x integer DIMENSION[4], v float DEFAULT 0.0);
 #
-# Note: additional operations required for explicit indices
-# Note: base arrays are initialized once in most situations considered!
-#       (appends are allowed)
+# Note: additional operations required for explicit indices (what does this mean?)
+# Note: fixed arrays are created once...
 # Note: What is the storage model ? explicit dimensions? or implicit?
 #       explicit model, after definition we have to instanciate the array
 #       create the x- and y- bats, initialize with their value
