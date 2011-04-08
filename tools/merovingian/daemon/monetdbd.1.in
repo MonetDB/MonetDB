@@ -1,7 +1,7 @@
 .\" Process this file with
 .\" groff -man -Tascii foo.1
 .\"
-.TH MONETDBD 1 "FEB 2011" MonetDB "MonetDB 5"
+.TH MONETDBD 1 "APR 2011" MonetDB "MonetDB 5"
 .SH NAME
 monetdbd \- the MonetDB Database Server daemon
 .SH SYNOPSIS
@@ -153,7 +153,10 @@ setting should not be changed.
 This property specifies which TCP port
 .B monetdbd
 should listen to for regular database connection requests.  Defaults to
-50000.
+50000.  When this value is changed, discoveryport and controlport are
+changed also, when their values are port and port + 1 for discoveryport
+and controlport respectively.  This allows to easily make monetdbd run
+on another port with a single command.
 .IP controlport
 For remote management of
 .BR monetdbd,

@@ -200,42 +200,6 @@ handler(int sig)
 	mal_exit();
 }
 
-static char _mserver_bin_path[1024];
-static char *
-get_mserver_bin_path(void)
-{
-	/* getting the path to the executable's binary, isn't all that
-	 * simple, unfortunately */
-#if defined(_MSC_VER)		/* Windows */
-	if (GetModuleFileName(NULL, _mserver_bin_path,
-			      (DWORD) sizeof(_mserver_bin_path)) != 0)
-		return _mserver_bin_path;
-#elif defined(HAVE__NSGETEXECUTABLEPATH)  /* Darwin/OSX */
-	uint32_t size = sizeof(_mserver_bin_path);
-	if (_NSGetExecutablePath(_mserver_bin_path, &size) == 0)
-		return _mserver_bin_path;
-#elif defined(HAVE_SYS_SYSCTL_H) && defined(KERN_PROC_PATHNAME)  /* BSD */
-	int mib[4];
-	size_t cb = sizeof(_mserver_bin_path);
-	mib[0] = CTL_KERN;
-	mib[1] = KERN_PROC;
-	mib[2] = KERN_PROC_PATHNAME;
-	mib[3] = -1;
-	if (sysctl(mib, 4, _mserver_bin_path, &cb, NULL, 0) == 0)
-		return _mserver_bin_path;
-#elif defined(HAVE_GETEXECNAME)  /* Solaris */
-	const char *execn = getexecname();
-	/* copy, such that the caller can actually modify this string */
-	snprintf(_mserver_bin_path, sizeof(_mserver_bin_path), "%s", execn);
-#else  /* try Linux approach */
-	if (readlink("/proc/self/exe",
-				_mserver_bin_path, sizeof(_mserver_bin_path)) != -1)
-			return _mserver_bin_path;
-#endif
-	/* could use argv[0] (passed) to deduce location based on PATH */
-	return NULL;
-}
-
 int
 main(int argc, char **av)
 {
@@ -474,7 +438,7 @@ main(int argc, char **av)
 		char *libdirs[] = { "lib", "lib64", "lib/64", "lib32", NULL };
 		size_t i;
 		struct stat sb;
-		char *binpath = get_mserver_bin_path();
+		char *binpath = get_bin_path();
 		if (binpath != NULL) {
 			binpath = dirname(binpath);
 			binpath = dirname(binpath);
