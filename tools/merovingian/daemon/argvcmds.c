@@ -232,6 +232,9 @@ command_set(confkeyval *ckv, int argc, char *argv[])
 	char *property;
 	char *dbfarm = LOCALSTATEDIR "/monetdb5/dbfarm";
 	confkeyval *kv;
+	FILE *pfile = NULL;
+	char buf[8];
+	pid_t meropid;
 
 	if (argc < 2 || argc > 3) {
 		command_help(2, &argv[-1]);
@@ -277,6 +280,30 @@ command_set(confkeyval *ckv, int argc, char *argv[])
 		fprintf(stderr, "set: no such property: %s\n", property);
 		return(1);
 	}
+	/* special trick to make it easy to use a different port with one
+	 * command */
+	if (strcmp(property, "port") == 0) {
+		int oport = kv->ival;
+		char *e;
+		if ((e = setConfVal(kv, p)) != NULL) {
+			fprintf(stderr, "set: failed to set property port: %s\n", e);
+			free(e);
+			return(1);
+		}
+		kv = findConfKey(ckv, "discoveryport");
+		if (kv != NULL && kv->ival == oport && (e = setConfVal(kv, p)) != NULL) {
+			fprintf(stderr, "set: failed to set property discoveryport: %s\n", e);
+			free(e);
+			return(1);
+		}
+		kv = findConfKey(ckv, "controlport");
+		if (kv != NULL && kv->ival == oport + 1) {
+			oport = atoi(p);
+			snprintf(buf, sizeof(buf), "%d", oport + 1);
+			property = "controlport";
+			p = buf;
+		}
+	}
 	if ((p = setConfVal(kv, p)) != NULL) {
 		fprintf(stderr, "set: failed to set property %s: %s\n", property, p);
 		free(p);
@@ -287,6 +314,30 @@ command_set(confkeyval *ckv, int argc, char *argv[])
 				strerror(errno));
 		return(1);
 	}
+
+	property = getConfVal(ckv, "pidfile");
+
+	/* chdir to dbfarm so we can open relative files (like pidfile) */
+	if (chdir(dbfarm) < 0) {
+		fprintf(stderr, "could not move to dbfarm '%s': %s\n",
+				dbfarm, strerror(errno));
+		return(1);
+	}
+
+	if ((pfile = fopen(property, "r")) != NULL &&
+			fgets(buf, sizeof(buf), pfile) != NULL)
+	{
+		meropid = atoi(buf);
+		if (meropid != 0) {
+			if (kill(meropid, SIGHUP) == -1) {
+				fprintf(stderr, "sending SIGHUP to monetdbd[%d] failed: %s\n",
+						(int)meropid, strerror(errno));
+				return(1);
+			}
+		}
+	}
+	if (pfile != NULL)
+		fclose(pfile);
 
 	return(0);
 }

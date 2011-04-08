@@ -73,5 +73,6 @@ mutils_export char *dirname(char *path);
 mutils_export int MT_lockf(char *filename, int mode, off_t off, off_t len);
 
 mutils_export void print_trace(void);
+mutils_export char *get_bin_path(void);
 
 #endif	/* _MUTILS_H_ */

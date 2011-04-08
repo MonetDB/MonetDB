@@ -311,3 +311,39 @@ print_trace(void)
 	printf("back traces are not supported on this platform\n");
 }
 #endif
+
+static char _bin_path[1024];
+char *
+get_bin_path(void)
+{
+	/* getting the path to the executable's binary, isn't all that
+	 * simple, unfortunately */
+#if defined(_MSC_VER)		/* Windows */
+	if (GetModuleFileName(NULL, _bin_path,
+			      (DWORD) sizeof(_bin_path)) != 0)
+		return _bin_path;
+#elif defined(HAVE__NSGETEXECUTABLEPATH)  /* Darwin/OSX */
+	uint32_t size = sizeof(_bin_path);
+	if (_NSGetExecutablePath(_bin_path, &size) == 0)
+		return _bin_path;
+#elif defined(HAVE_SYS_SYSCTL_H) && defined(KERN_PROC_PATHNAME)  /* BSD */
+	int mib[4];
+	size_t cb = sizeof(_bin_path);
+	mib[0] = CTL_KERN;
+	mib[1] = KERN_PROC;
+	mib[2] = KERN_PROC_PATHNAME;
+	mib[3] = -1;
+	if (sysctl(mib, 4, _bin_path, &cb, NULL, 0) == 0)
+		return _bin_path;
+#elif defined(HAVE_GETEXECNAME)  /* Solaris */
+	const char *execn = getexecname();
+	/* copy, such that the caller can actually modify this string */
+	snprintf(_bin_path, sizeof(_bin_path), "%s", execn);
+#else  /* try Linux approach */
+	if (readlink("/proc/self/exe",
+				_bin_path, sizeof(_bin_path)) != -1)
+			return _bin_path;
+#endif
+	/* could use argv[0] (passed) to deduce location based on PATH */
+	return NULL;
+}
