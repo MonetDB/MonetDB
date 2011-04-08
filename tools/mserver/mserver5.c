@@ -49,10 +49,6 @@
 #include <Psapi.h>		/* for GetModuleFileName */
 #endif
 
-#ifdef HAVE_MACH_O_DYLD_H
-# include <mach-o/dyld.h>  /* _NSGetExecutablePath on OSX >=10.5 */
-#endif
-
 #ifdef _CRTDBG_MAP_ALLOC
 /* Windows only:
    our definition of new and delete clashes with the one if

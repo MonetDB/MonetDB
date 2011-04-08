@@ -24,6 +24,10 @@
 #include <unistd.h>
 #include "mutils.h"
 
+#ifdef HAVE_MACH_O_DYLD_H
+# include <mach-o/dyld.h>  /* _NSGetExecutablePath on OSX >=10.5 */
+#endif
+
 #ifdef NATIVE_WIN32
 
 #include <stdio.h>
