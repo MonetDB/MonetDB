@@ -277,6 +277,30 @@ command_set(confkeyval *ckv, int argc, char *argv[])
 		fprintf(stderr, "set: no such property: %s\n", property);
 		return(1);
 	}
+	/* special trick to make it easy to use a different port with one
+	 * command */
+	if (strcmp(property, "port") == 0) {
+		int oport = kv->ival;
+		char *e;
+		if ((e = setConfVal(kv, p)) != NULL) {
+			fprintf(stderr, "set: failed to set property port: %s\n", e);
+			free(e);
+			return(1);
+		}
+		kv = findConfKey(ckv, "discoveryport");
+		if (kv != NULL && kv->ival == oport && (e = setConfVal(kv, p)) != NULL) {
+			fprintf(stderr, "set: failed to set property discoveryport: %s\n", e);
+			free(e);
+			return(1);
+		}
+		kv = findConfKey(ckv, "controlport");
+		if (kv != NULL && kv->ival == oport + 1) {
+			oport = atoi(p);
+			p = alloca(8);
+			snprintf(p, 8, "%d", oport + 1);
+			property = "controlport";
+		}
+	}
 	if ((p = setConfVal(kv, p)) != NULL) {
 		fprintf(stderr, "set: failed to set property %s: %s\n", property, p);
 		free(p);
