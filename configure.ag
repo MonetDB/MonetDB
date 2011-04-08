@@ -958,6 +958,9 @@ case "x$enable_debug.$enable_optim.$enable_prof.$enable_instrument" in
 		AC_MSG_WARN([unhandled configuration $enable_debug.$enable_optim.$enable_prof.$enable_instrument, please file a bug on bugs.monetdb.org])
 		;;
 esac
+# make defaults real for flags which don't conflict with anything
+enable_assert="`echo $enable_assert | sed 's:^def_::'`"
+enable_warning="`echo $enable_warning | sed 's:^def_::'`"
 
 AC_MSG_CHECKING([for --enable-debug])
 if test "x$enable_debug" = xyes; then
