@@ -413,7 +413,7 @@ main(int argc, char *argv[])
 	err e;
 	int argp;
 	char *dbfarm = LOCALSTATEDIR "/monetdb5/dbfarm";
-	char *pidfilename;
+	char *pidfilename = NULL;
 	char *p;
 	FILE *pidfile = NULL;
 	char control_usock[1024];
@@ -603,6 +603,15 @@ main(int argc, char *argv[])
 		Mfprintf(stderr, "could not move to dbfarm '%s': %s\n",
 				dbfarm, strerror(errno));
 		MERO_EXIT_CLEAN(1);
+	}
+	/* absolutise dbfarm if it isn't yet (we're in it now) */
+	if (*dbfarm != '/') {
+		dbfarm = alloca(1024);
+		if (getcwd(dbfarm, sizeof(1024)) == NULL) {
+			Mfprintf(stderr, "could not get dbfarm working directory: %s\n",
+					strerror(errno));
+			MERO_EXIT(1);
+		}
 	}
 
 	if (_mero_mserver == NULL) {
@@ -833,15 +842,7 @@ main(int argc, char *argv[])
 		MERO_EXIT(1);
 	}
 
-	{
-		char cwd[1024];
-		if (getcwd(cwd, sizeof(cwd)) == NULL) {
-			Mfprintf(stderr, "could not get current working directory: %s\n",
-					strerror(errno));
-			MERO_EXIT(1);
-		}
-		msab_init(cwd, NULL);
-	}
+	msab_init(dbfarm, NULL);
 
 	unlink(control_usock);
 	unlink(mapi_usock);
