@@ -529,8 +529,22 @@ main(int argc, char *argv[])
 	srand(time(NULL));
 	/* figure out our hostname */
 	gethostname(_mero_hostname, 128);
-	/* where is the mserver5 binary we fork on demand? */
-	_mero_mserver = BINDIR "/mserver5";
+	/* where is the mserver5 binary we fork on demand?
+	 * first try to locate it based on our binary location, fall-back to
+	 * hardcoded bin-dir */
+	_mero_mserver = get_bin_path();
+	if (_mero_mserver != NULL) {
+		/* replace the trailing monetdbd by mserver5, fits nicely since
+		 * they happen to be of same length */
+		char *s = strrchr(_mero_mserver, '/');
+		if (s != NULL && strcmp(s + 1, "monetdbd") == 0) {
+			s++;
+			*s++ = 'm'; *s++ = 's'; *s++ = 'e'; *s++ = 'r';
+			*s++ = 'v'; *s++ = 'e'; *s++ = 'r'; *s++ = '5';
+			if (stat(_mero_mserver, &sb) == -1)
+				_mero_mserver = NULL;
+		}
+	}
 	/* setup default database properties, constants: unlike previous
 	 * versions, we do not want changing defaults any more */
 	_mero_db_props = getDefaultProps();
@@ -591,11 +605,14 @@ main(int argc, char *argv[])
 		MERO_EXIT_CLEAN(1);
 	}
 
-	/* exit early if this is not going to work well */
-	if (stat(_mero_mserver, &sb) == -1) {
-		Mfprintf(stderr, "cannot stat %s executable: %s\n",
-				_mero_mserver, strerror(errno));
-		MERO_EXIT_CLEAN(1);
+	if (_mero_mserver == NULL) {
+		_mero_mserver = BINDIR "/mserver5";
+		if (stat(_mero_mserver, &sb) == -1) {
+			/* exit early if this is not going to work well */
+			Mfprintf(stderr, "cannot stat %s executable: %s\n",
+					_mero_mserver, strerror(errno));
+			MERO_EXIT_CLEAN(1);
+		}
 	}
 
 	/* read the merovingian properties from the dbfarm */
