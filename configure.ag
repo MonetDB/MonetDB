@@ -1153,6 +1153,10 @@ if test "x$enable_optim" = xyes; then
       esac   
       ;;
     esac
+	# for stack-traces with assert, we DO want a frame-pointer
+	if test "x$enable_assert" = xyes ; then
+		CFLAGS="`echo $CFLAGS | sed 's:-fomit-frame-pointer::'`"
+	fi
 	changedCFLAGS=
 	for flag in $origCFLAGS ; do
 		case " $CFLAGS " in
