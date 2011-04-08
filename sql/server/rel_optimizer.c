@@ -2103,26 +2103,6 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 	    r && r->op == op_project && !(rel_is_ref(r))) 
 		return rel_merge_projects(changes, sql, rel);
 
-	/* merge select and cross product ? */
-	if (rel->op == op_select && r && r->op == op_join && !(rel_is_ref(r))) {
-		list *exps = rel->exps;
-
-		if (!r->exps)
-			r->exps = new_exp_list(sql->sa); 
-		rel->exps = new_exp_list(sql->sa); 
-		for (n = exps->h; n; n = n->next) { 
-			sql_exp *e = n->data;
-
-			if (exp_is_join_exp(e) == 0) {
-				append(r->exps, e);
-				*changes += 1;
-			} else {
-				append(rel->exps, e);
-			}
-		}
-		return rel;
-	}
-
 	/* push select through join */
 	if (rel->op == op_select && r && is_join(r->op) && !(rel_is_ref(r))) {
 		sql_rel *jl = r->l;
@@ -2159,6 +2139,26 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 			if (!done)
 				append(rel->exps, e);
 			*changes += done;
+		}
+		return rel;
+	}
+
+	/* merge select and cross product ? */
+	if (rel->op == op_select && r && r->op == op_join && !(rel_is_ref(r))) {
+		list *exps = rel->exps;
+
+		if (!r->exps)
+			r->exps = new_exp_list(sql->sa); 
+		rel->exps = new_exp_list(sql->sa); 
+		for (n = exps->h; n; n = n->next) { 
+			sql_exp *e = n->data;
+
+			if (exp_is_join_exp(e) == 0) {
+				append(r->exps, e);
+				*changes += 1;
+			} else {
+				append(rel->exps, e);
+			}
 		}
 		return rel;
 	}
