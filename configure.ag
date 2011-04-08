@@ -865,33 +865,116 @@ else
 	AC_MSG_RESULT([$noexpand])
 fi
 
-dnl --enable-debug
 AC_ARG_ENABLE(debug,
 	AS_HELP_STRING([--enable-debug],
 		[enable full debugging (default=yes for development sources)]),
 	enable_debug=$enableval,
-	enable_debug=$dft_debug)
+	enable_debug=def_$dft_debug)
+
+AC_ARG_ENABLE(assert,
+	AS_HELP_STRING([--enable-assert],
+		[enable assertions in the code (default=yes for development sources)]),
+	enable_assert=$enableval,
+	enable_assert=def_$dft_assert)
+
+AC_ARG_ENABLE(optimize,
+	AS_HELP_STRING([--enable-optimize],
+		[enable extra optimization (default=no)]),
+	enable_optim=$enableval,
+	enable_optim=def_$dft_optimi)
+
+AC_ARG_ENABLE(warning,
+	AS_HELP_STRING([--enable-warning],
+		[enable extended compiler warnings (default=$dft_warning)]),
+	enable_warning=$enableval,
+	enable_warning=def_$dft_warning)
+
+need_profiling=no
+AC_ARG_ENABLE(profile,
+	AS_HELP_STRING([--enable-profile], [enable profiling (default=no)]),
+	enable_prof=$enableval,
+	enable_prof=no)
+
+need_instrument=no
+AC_ARG_ENABLE(instrument,
+	AS_HELP_STRING([--enable-instrument],
+		[enable instrument (default=no)]),
+	enable_instrument=$enableval,
+	enable_instrument=no)
+
+dnl check whether no (explictly chosen) mutual exclusive combinations
+dnl were made, compatability matrix:
+dnl                 deb  ass  opt  war  pro  ins
+dnl   debug          \    C    X    C    C    C
+dnl   assert         C    \    C    C    C    C
+dnl   optimize       X    C    \    C    X    X
+dnl   warnings       C    C    C    \    C    C
+dnl   profile        C    C    X    C    \    C
+dnl   instrument     C    C    X    C    C    \
+
+case "x$enable_debug.$enable_optim.$enable_prof.$enable_instrument" in
+	# find conflicts
+	xyes.yes.*.*)
+		AC_MSG_ERROR([combining --enable-optimize and --enable-debug is not possible])
+		;;
+	x*.yes.yes.*)
+		AC_MSG_ERROR([combining --enable-optimize and --enable-profile is not possible])
+		;;
+	x*.yes.*.yes)
+		AC_MSG_ERROR([combining --enable-optimize and --enable-instrument is not possible])
+		;;
+	# handle defaults after user requests
+	xyes.*.*.*)
+		enable_debug=yes
+		enable_optim=no
+		enable_prof="`echo $enable_prof | sed 's:^def_::'`"
+		enable_instrument="`echo $enable_instrument | sed 's:^def_::'`"
+		;;
+	x*.*.yes.*)
+		enable_debug="`echo $enable_debug | sed 's:^def_::'`"
+		enable_optim=no
+		enable_prof=yes
+		enable_instrument="`echo $enable_instrument | sed 's:^def_::'`"
+		;;
+	x*.*.*.yes)
+		enable_debug="`echo $enable_debug | sed 's:^def_::'`"
+		enable_optim=no
+		enable_prof="`echo $enable_prof | sed 's:^def_::'`"
+		enable_instrument=yes
+		;;
+	x*.*no.*.*)
+		enable_debug="`echo $enable_debug | sed 's:^def_::'`"
+		enable_optim=no
+		enable_prof="`echo $enable_prof | sed 's:^def_::'`"
+		enable_instrument="`echo $enable_instrument | sed 's:^def_::'`"
+		;;
+	x*.*yes.*.*) # enable-optimize overrules other defaults
+		enable_optim=yes
+		enable_debug=no
+		enable_prof=no
+		enable_instrument=no
+		;;
+	x*)
+		AC_MSG_WARN([unhandled configuration $enable_debug.$enable_optim.$enable_prof.$enable_instrument, please file a bug on bugs.monetdb.org])
+		;;
+esac
 
 AC_MSG_CHECKING([for --enable-debug])
-origCFLAGS=$CFLAGS
 if test "x$enable_debug" = xyes; then
-	if test "x$enable_optim" = xyes; then
-		AC_MSG_ERROR([combining --enable-optimize and --enable-debug is not possible.])
-	else
-		dnl  remove "-Ox" as some compilers don't like "-g -Ox" combinations
-		CFLAGS=" $CFLAGS "
-		CFLAGS="`echo "$CFLAGS" | sed -e 's| -O[[0-9]] | |g' -e 's| -g | |g' -e 's|^ ||' -e 's| $||'`"
-		JAVACFLAGS=" $JAVACFLAGS "
-		JAVACFLAGS="`echo "$JAVACFLAGS" | sed -e 's| -O | |g' -e 's| -g | |g' -e 's| -g:[[a-z]]* | |g' -e 's|^ ||' -e 's| $||'`"
-		dnl  add "-g"
-		CFLAGS="$CFLAGS -g"
-		JAVACFLAGS="$JAVACFLAGS -g"
-		case "$GCC-$host_os" in
-		  yes-aix*)
-			CFLAGS="$CFLAGS -gxcoff"
-			;;
-		esac
-	fi
+	origCFLAGS=$CFLAGS
+	dnl  remove "-Ox" as some compilers don't like "-g -Ox" combinations
+	CFLAGS=" $CFLAGS "
+	CFLAGS="`echo "$CFLAGS" | sed -e 's| -O[[0-9]] | |g' -e 's| -g | |g' -e 's|^ ||' -e 's| $||'`"
+	JAVACFLAGS=" $JAVACFLAGS "
+	JAVACFLAGS="`echo "$JAVACFLAGS" | sed -e 's| -O | |g' -e 's| -g | |g' -e 's| -g:[[a-z]]* | |g' -e 's|^ ||' -e 's| $||'`"
+	dnl  add "-g"
+	CFLAGS="$CFLAGS -g"
+	JAVACFLAGS="$JAVACFLAGS -g"
+	case "$GCC-$host_os" in
+	  yes-aix*)
+		CFLAGS="$CFLAGS -gxcoff"
+		;;
+	esac
 
 	changedCFLAGS=
 	for flag in $origCFLAGS ; do
@@ -912,13 +995,6 @@ else
 	AC_MSG_RESULT([no])
 fi
 
-dnl --enable-assert
-AC_ARG_ENABLE(assert,
-	AS_HELP_STRING([--enable-assert],
-		[enable assertions in the code (default=yes for development sources)]),
-	enable_assert=$enableval,
-	enable_assert=$dft_assert)
-
 AC_MSG_CHECKING([for --enable-assert])
 if test "x$enable_assert" = xno; then
 	AC_DEFINE(NDEBUG, 1, [Define if you do not want assertions])
@@ -927,31 +1003,19 @@ else
 	AC_MSG_RESULT([yes])
 fi
 
-dnl --enable-optimize
-AC_ARG_ENABLE(optimize,
-	AS_HELP_STRING([--enable-optimize],
-		[enable extra optimization (default=no)]),
-	enable_optim=$enableval, enable_optim=$dft_optimi)
 
 AC_MSG_CHECKING([for --enable-optimize])
 if test "x$enable_optim" = xyes; then
-  if test "x$enable_debug" = xyes; then
-    AC_MSG_ERROR([combining --enable-optimize and --enable-debug is not possible.])
-  elif test "x$enable_prof" = xyes; then
-    AC_MSG_ERROR([combining --enable-optimize and --enable-profile is not (yet?) possible.])
-  elif test "x$enable_instrument" = xyes; then
-    AC_MSG_ERROR([combining --enable-optimize and --enable-instrument is not (yet?) possible.])
-  else
 	origCFLAGS="$CFLAGS"
-    dnl  remove "-g" as some compilers don't like "-g -Ox" combinations
-    dnl  remove "-O2" as we add "-Ox" and some compilers don't like "-Oy -Ox" combinations
-    CFLAGS=" $CFLAGS "
-    CFLAGS="`echo "$CFLAGS" | sed -e 's| -g | |g' -e 's| -O2 | |g' -e 's|^ ||' -e 's| $||'`"
-    JAVACFLAGS=" $JAVACFLAGS "
-    JAVACFLAGS="`echo "$JAVACFLAGS" | sed -e 's| -g | |g' -e 's| -g:[[a-z]]* | |g' -e 's|^ ||' -e 's| $||'`"
-    dnl  Optimization flags
-    JAVACFLAGS="$JAVACFLAGS -g:none -O"
-    case "$GCC-$CC" in
+	dnl  remove "-g" as some compilers don't like "-g -Ox" combinations
+	dnl  remove "-O2" as we add "-Ox" and some compilers don't like "-Oy -Ox" combinations
+	CFLAGS=" $CFLAGS "
+	CFLAGS="`echo "$CFLAGS" | sed -e 's| -g | |g' -e 's| -O2 | |g' -e 's|^ ||' -e 's| $||'`"
+	JAVACFLAGS=" $JAVACFLAGS "
+	JAVACFLAGS="`echo "$JAVACFLAGS" | sed -e 's| -g | |g' -e 's| -g:[[a-z]]* | |g' -e 's|^ ||' -e 's| $||'`"
+	dnl  Optimization flags
+	JAVACFLAGS="$JAVACFLAGS -g:none -O"
+	case "$GCC-$CC" in
     yes-*clang*)
                       CFLAGS="$CFLAGS -O3 -fomit-frame-pointer -finline-functions"
       ;;
@@ -1101,7 +1165,6 @@ if test "x$enable_optim" = xyes; then
 	done
 	changedCFLAGS="`echo $changedCFLAGS | sed -e 's|^, ||'`"
 	AC_MSG_RESULT([yes: $changedCFLAGS])
-  fi
 else
 	AC_MSG_RESULT([no])
 fi
@@ -1112,82 +1175,52 @@ AC_SUBST(ICC_BISON_CFLAGS)
 AC_SUBST(GCC_SWIG_CFLAGS)
 AC_SUBST(ICC_SWIG_CFLAGS)
 
-dnl --enable-warning (only gcc & icc/ecc)
-AC_ARG_ENABLE(warning,
-	AS_HELP_STRING([--enable-warning],
-		[enable extended compiler warnings (default=$dft_warning)]),
-	enable_warning=$enableval,
-	enable_warning=$dft_warning)
-
 AC_MSG_CHECKING([for --enable-warning])
 if test "x$enable_warning" = xyes; then
-  dnl  Basically, we disable/overule X_CFLAGS, i.e., "-Werror" and some "-Wno-*".
-  dnl  All warnings should be on by default (see above).
-  case $GCC-$host_os in
-  yes-*)
-	dnl  GNU (gcc/g++)
-	X_CFLAGS="-pedantic -Wno-long-long"
-	;;
-  -linux*)
-	dnl  Intel ([ie]cc/[ie]cpc on Linux)
-	X_CFLAGS=""
-	;;
-  esac
-  AC_MSG_RESULT([yes: ${X_CFLAGS}])
+	dnl  Basically, we disable/overule X_CFLAGS, i.e., "-Werror" and some "-Wno-*".
+	dnl  All warnings should be on by default (see above).
+	case $GCC-$host_os in
+		yes-*)
+		dnl  GNU (gcc/g++)
+		X_CFLAGS="-pedantic -Wno-long-long"
+		;;
+		-linux*)
+		dnl  Intel ([ie]cc/[ie]cpc on Linux)
+		X_CFLAGS=""
+		;;
+	esac
+	AC_MSG_RESULT([yes: ${X_CFLAGS}])
 else
-  AC_MSG_RESULT([no])
+	AC_MSG_RESULT([no])
 fi
-
-dnl --enable-profile
-need_profiling=no
-AC_ARG_ENABLE(profile,
-	AS_HELP_STRING([--enable-profile], [enable profiling (default=no)]),
-	enable_prof=$enableval,
-	enable_prof=no)
 
 AC_MSG_CHECKING([for --enable-profile])
 if test "x$enable_prof" = xyes; then
-  if test "x$enable_optim" = xyes; then
-    AC_MSG_ERROR([combining --enable-optimize and --enable-profile is not (yet?) possible.])
-  else
-    AC_DEFINE(PROFILE, 1, [Compiler flag])
-    need_profiling=yes
-    if test "x$GCC" = xyes; then
-      CFLAGS="$CFLAGS -pg"
-	  AC_MSG_RESULT([yes: -pg])
-    else
-	  AC_MSG_RESULT([no])
-    fi
-  fi
+	AC_DEFINE(PROFILE, 1, [Compiler flag])
+	need_profiling=yes
+	if test "x$GCC" = xyes; then
+		CFLAGS="$CFLAGS -pg"
+		AC_MSG_RESULT([yes: -pg])
+	else
+		AC_MSG_RESULT([no])
+	fi
 else
-  AC_MSG_RESULT([no])
+	AC_MSG_RESULT([no])
 fi
 AM_CONDITIONAL(PROFILING,test "x$need_profiling" = xyes)
 
-dnl --enable-instrument
-need_instrument=no
-AC_ARG_ENABLE(instrument,
-	AS_HELP_STRING([--enable-instrument],
-		[enable instrument (default=no)]),
-	enable_instrument=$enableval,
-	enable_instrument=no)
-
 AC_MSG_CHECKING([for --enable-instrument])
 if test "x$enable_instrument" = xyes; then
-  if test "x$enable_optim" = xyes; then
-    AC_MSG_ERROR([combining --enable-optimize and --enable-instrument is not (yet?) possible.])
-  else
-    AC_DEFINE(PROFILE, 1, [Compiler flag])
-    need_instrument=yes
-    if test "x$GCC" = xyes; then
-      CFLAGS="$CFLAGS -finstrument-functions -g"
-	  AC_MSG_RESULT([yes: -finstrument-functions -g])
-    else
-	  AC_MSG_RESULT([no])
-    fi
-  fi
+	AC_DEFINE(PROFILE, 1, [Compiler flag])
+	need_instrument=yes
+	if test "x$GCC" = xyes; then
+		CFLAGS="$CFLAGS -finstrument-functions -g"
+		AC_MSG_RESULT([yes: -finstrument-functions -g])
+	else
+		AC_MSG_RESULT([no])
+	fi
 else
-  AC_MSG_RESULT([no])
+	AC_MSG_RESULT([no])
 fi
 
 dnl static or shared linking

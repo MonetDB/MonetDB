@@ -149,9 +149,11 @@ cluster_groupby(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			continue;
 		grp[j++] = i;
 	}
-	//if (lcnt && rcnt) {
+#if 0
+	if (lcnt && rcnt) {
 		/* lets cluster */
-	//}
+	}
+#endif
 	return 1;
 }
 #endif

@@ -127,7 +127,7 @@ OPTprejoinImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	/* we may have uncovered new use-less operations */
 	DEBUGoptimizers
 		mnstr_printf(cntxt->fdout,"#opt_prejoin: %d statements removed\n", actions);
-	//chkProgram(cntxt->nspace,mb);
+	/*chkProgram(cntxt->nspace,mb);*/
 	GDKfree(old);
 	return actions;
 }

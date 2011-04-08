@@ -550,7 +550,7 @@ MATproject_( BAT *map, BAT **bats, int len )
 	BAT *res = NULL;
 
 	if (ATOMstorage(bats[0]->ttype) <= TYPE_void) {
-		//error
+		/*error*/
 	} else if (ATOMvarsized(bats[0]->ttype)) {
 		res = MATproject_any(map, bats, len);
 	} else if (ATOMsize(bats[0]->ttype) == sizeof(bte)) {
@@ -836,7 +836,7 @@ MATsort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int rev)
 	}
 
 	if (ATOMstorage(bats[0]->ttype) <= TYPE_void) {
-		//error
+		/*error*/
 	} else if (ATOMvarsized(bats[0]->ttype)) {
 		res = MATsort_any(&map, bats, len, pcnt, rev);
 	} else if (ATOMsize(bats[0]->ttype) == sizeof(bte)) {

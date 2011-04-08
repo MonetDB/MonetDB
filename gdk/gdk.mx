@@ -639,7 +639,7 @@ typedef struct {
 	str filename;		/* file containing image of the heap */
 
 	char storage;		/* storage mode (mmap/malloc). */
-	unsigned char copied:1,	/* a copy of an existing map. */
+	unsigned int copied:1,	/* a copy of an existing map. */
 		      hashash:1,/* the string heap contains hash values */
 		      forcemap:1;  /* force STORE_MMAP even if heap exists */
 	chr newstorage;		/* new desired storage mode at re-allocation. */
@@ -871,7 +871,7 @@ typedef struct {
 	chr type;		/* type id. */
 	chr shift;		/* log2 of bunwidth */
 	bit sorted;		/* 0=false, 1=true; */
-	unsigned char 
+	unsigned int 
 	 varsized:1,		/* varsized(>0) or fixedsized(0). */
 	 key:2,			/* duplicates allowed? */
 	 dense:1,		
