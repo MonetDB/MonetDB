@@ -1228,35 +1228,6 @@ else
 	AC_MSG_RESULT([no])
 fi
 
-dnl static or shared linking
-SHARED_LIBS=''
-AC_MSG_CHECKING([for --enable-static])
-if test "$enable_static" = "yes" ; then
-	CFLAGS="$CFLAGS -DMONETDB_STATIC"
-	SHARED_LIBS='$(STATIC_LIBS) $(smallTOC_SHARED_LIBS) $(largeTOC_SHARED_LIBS)'
-	case "$host_os" in
-		aix*)	
-			if test "x$GCC" = xyes; then
-				LDFLAGS="$LDFLAGS -Xlinker"
-			fi
-			LDFLAGS="$LDFLAGS -bbigtoc"
-			;;
-		irix*)
-			if test "x$GCC" != xyes; then
-				SHARED_LIBS="$SHARED_LIBS -lm"
-			fi
-			;;
-	esac
-	AC_MSG_RESULT([yes])
-else
-	case "$host_os" in
-		aix*)	LDFLAGS="$LDFLAGS -Wl,-brtl";;
-	esac
-	AC_MSG_RESULT([no])
-fi
-AC_SUBST(SHARED_LIBS)
-AM_CONDITIONAL(LINK_STATIC,test "x$enable_static" = xyes)
-
 AC_PATH_PROG(BASH,bash, /usr/bin/bash, $PATH)
 AC_CHECK_PROG(RM,rm,rm -f)
 AC_CHECK_PROG(MV,mv,mv -f)
