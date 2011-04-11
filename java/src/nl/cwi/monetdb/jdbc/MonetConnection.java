@@ -115,9 +115,6 @@ public class MonetConnection implements Connection {
 	/** Embedded properties */
 	private static Properties embeddedProps = null;
 
-	/** Whether or not to use a Java based PreparedStatement
-	 * implementation */
-	private final boolean javaPreparedStatements;
 	/** Whether or not BLOB is mapped to BINARY within the driver */
 	private final boolean blobIsBinary;
 
@@ -148,7 +145,6 @@ public class MonetConnection implements Connection {
 		this.database = props.getProperty("database");
 		this.username = props.getProperty("user");
 		this.password = props.getProperty("password");
-		this.javaPreparedStatements = Boolean.valueOf(props.getProperty("java_prepared_statements")).booleanValue();
 		String language = props.getProperty("language");
 		boolean debug = Boolean.valueOf(props.getProperty("debug")).booleanValue();
 		String hash = props.getProperty("hash");
@@ -683,22 +679,13 @@ public class MonetConnection implements Connection {
 		throws SQLException
 	{
 		try {
-			PreparedStatement ret;
-			if (!javaPreparedStatements) {
-				// use a server-side PreparedStatement
-				ret = new MonetPreparedStatement(
-					this,
-					resultSetType,
-					resultSetConcurrency,
-					resultSetHoldability,
-					sql
-				);
-			} else {
-				// use a Java implementation of a PreparedStatement
-				ret = new MonetPreparedStatementJavaImpl(
-					this, resultSetType, resultSetConcurrency, sql
-				);
-			}
+			PreparedStatement ret = new MonetPreparedStatement(
+				this,
+				resultSetType,
+				resultSetConcurrency,
+				resultSetHoldability,
+				sql
+			);
 			// store it in the map for when we close...
 			statements.put(ret, null);
 			return(ret);

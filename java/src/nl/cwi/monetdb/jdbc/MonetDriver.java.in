@@ -117,7 +117,6 @@ final public class MonetDriver implements Driver {
 		props.put("port", PORT);
 		props.put("debug", "false");
 		props.put("language", "sql");	// mal, sql, <future>
-		props.put("java_prepared_statements", "false");
 
 		props.putAll(info);
 		info = props;
