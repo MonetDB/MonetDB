@@ -343,6 +343,7 @@ get_bin_path(void)
 	const char *execn = getexecname();
 	/* copy, such that the caller can actually modify this string */
 	snprintf(_bin_path, sizeof(_bin_path), "%s", execn);
+	return _bin_path;
 #else  /* try Linux approach */
 	if (readlink("/proc/self/exe",
 				_bin_path, sizeof(_bin_path)) != -1)
