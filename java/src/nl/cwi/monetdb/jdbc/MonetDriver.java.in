@@ -229,11 +229,6 @@ final public class MonetDriver implements Driver {
 		prop.description = "Force the use of the given hash algorithm during challenge response (one of SHA1, MD5, plain)";
 		props.add(prop);
 
-		prop = new DriverPropertyInfo("java_prepared_statements", "false");
-		prop.required = false;
-		prop.description = "Whether Java emulated prepared statements (true) or a server side prepated statements (false) should be used";
-		props.add(prop);
-
 		prop = new DriverPropertyInfo("follow_redirects", "true");
 		prop.required = false;
 		prop.description = "Whether redirects issued by the server should be followed";
