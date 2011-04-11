@@ -4,3 +4,4 @@ view_avg_incorrect_result.Bug-2790
 extract_seconds.Bug-2793
 alter_incorrect_syntax_crash.Bug-2795
 crash_in_modulo_rand.Bug-2766
+nested_select.Bug-2801

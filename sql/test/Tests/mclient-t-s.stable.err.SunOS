@@ -76,7 +76,7 @@ stderr of test 'mclient-t-s` in directory 'test` itself:
 # 11:08:32 >  /usr/bin/python mclient-t-s.SQL.py mclient-t-s 
 # 11:08:32 >  
 
-mclient: invalid option -- t
+mclient: illegal option -- t
 Usage: mclient [ options ]
 
 Options are:

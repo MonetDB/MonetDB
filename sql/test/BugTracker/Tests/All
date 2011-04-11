@@ -1,6 +1,9 @@
 # tests related to bug reports:
 # <descriptive-name>.SF-<bug-report-id>[.<ext>]
 
+cardinality_violation.SF-1240701
+rank_over.SF-1691098
+with_only_once.SF-1720293
 multi-column-constraint.SF-1964587
 inserting_invalid_timestamp.SF-1363557
 large_prepare.SF-1363729
@@ -11,7 +14,6 @@ string2int_conversion.SF-1356068
 update_with_correlated_subselect.SF-1284791
 select_extract.SF-1263796
 intersect_in_subquery.SF-1339411
-cardinality_violation.SF-1240701
 rows_affected.SF-1377180
 broken_join.SF-1373391
 insert_not_exists.SF-1380287
@@ -46,7 +48,6 @@ create_column.SF-1643542
 caching.SF-1651599
 decimal_prepare.SF-1655818
 union_order
-rank_over.SF-1691098
 revoke_role.SF-1691646
 subquery_orderby.SF-1688915
 limits_of_decimal.SF-1685357
@@ -67,7 +68,6 @@ like_for_time_values.SF-1715659
 local_global_temporary_table.SF-1715672
 decimal.SF-1718253
 alter-default.SF-1695290
-with_only_once.SF-1720293
 bind_with_cast.SF-1720934
 groupby_orderby_nonselected.SF-1723863
 rand_not_executed_for_every_row.SF-1723791

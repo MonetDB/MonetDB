@@ -821,7 +821,7 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 					symbol *s = n->data.sym;
 					sql->errstr[0] = 0;
 					sql->session->status = status;
-					//v = rel_value_exp(sql, &r, a, sql_sel, ek);
+					/*v = rel_value_exp(sql, &r, a, sql_sel, ek);*/
 					s->token = SQL_COLUMN;
 					v = rel_column_exp(sql, &r, s, sql_sel);
 

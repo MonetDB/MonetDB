@@ -577,7 +577,7 @@ bin_optimizer(mvc *c, stmt *s)
 
 	int nr = 0;
 
-	//print_stmts(c->sa, stmts);
+	/*print_stmts(c->sa, stmts);*/
 	clear_stmts(stmts);
 	while (stmts[nr] ) {
 		stmt *s = stmts[nr++];

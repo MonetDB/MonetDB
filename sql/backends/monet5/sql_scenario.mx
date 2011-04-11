@@ -527,8 +527,10 @@ SQLexitClient(Client c)
 		res_tables_destroy(m->results);
 		m->results= NULL;
 
-	//	if (m->session->tr)
-	//		reset_functions(m->session->tr);
+		/*
+		if (m->session->tr)
+			reset_functions(m->session->tr);
+		*/
 		{
 			backend *be = c->state[MAL_SCENARIO_PARSER];
 
@@ -744,9 +746,9 @@ We don;t search the cache for a previous incarnation yet.
 				if (!output)
 					sql->out = NULL; /* no output */
 				msg = (str) runMAL(c, c->curprg->def, 1, 0, 0, 0);
-				//MSresetInstructions(c->curprg->def, 1);
+				/*MSresetInstructions(c->curprg->def, 1);*/
 				resetMalBlk(c->curprg->def, oldstop);
-				//freeVariables(c,c->curprg->def, 0, 0);
+				/*freeVariables(c,c->curprg->def, 0, 0);*/
 				freeVariables(c,c->curprg->def, c->glb, oldvtop);
 			}
 			sqlcleanup(m, 0);

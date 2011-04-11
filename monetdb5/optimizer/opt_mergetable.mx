@@ -1260,7 +1260,7 @@ sort_find_mirror(MalBlkPtr mb, int var, int topstmt)
 
 	if (s && p->argc == 2 && 
 	    getModuleId(p) == batRef && getFunctionId(p) == reverseRef) {
-		//return getArg(p, 1);
+		/* return getArg(p, 1); */
 		var = getArg(p, 1);
 		s = resultof(mb, var, s);
 		p = mb->stmt[s];
@@ -1359,7 +1359,7 @@ mat_pack_sort(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int mirror_mid, in
 		int tpe = getTailType(getVarType(mb, getArg(s, var)));
 		int stpe = TYPE_oid;
 
-		if (s->argc == 2) // sort
+		if (s->argc == 2) /* sort */
 			stpe = tpe;
 		/* mat sortTail/sortTailReverse and refine/refine_rev */
 		setModuleId(pck,matRef);
@@ -2007,7 +2007,7 @@ UNION(mirror().join()).
 			if ((m = mat_join(mb, p, mat, mtop, m, n)) < 0) {
 				error++;
 				goto fail;
-				//mtop = pack_all_mats(mat, mtop, mb);
+				/*mtop = pack_all_mats(mat, mtop, mb);*/
 			} else
 				mtop = m;
 			/* after topn projection we should merge */
@@ -2158,14 +2158,14 @@ And the min/max is as easy
 		if (match == 1 && p->argc == 2 && isOrderby(p) &&
 		   (m=isMATalias(getArg(p,1), mat, mtop)) >=0 &&
 		   mat[m].type == mat_grp) {
-			assert(mat[m].mm); // should be packed 
+			assert(mat[m].mm); /* should be packed */
 			error++;
 			goto fail;
 		}
 		if (match == 2 && p->argc == 3 && isOrderby(p) &&
 		   (m=isMATalias(getArg(p,1), mat, mtop)) >= 0 &&
 		   (n=isMATalias(getArg(p,2), mat, mtop)) >= 0 &&
-		    //mat_is_orderby(mat[n].type) &&
+		    /*mat_is_orderby(mat[n].type) &&*/
 		    mat_is_orderby(mat[m].type) && !mat[m].mm) {
 			mtop = mat_sort2(mb, p, mat, mtop, m, n);
 			actions++;

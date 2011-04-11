@@ -1,3 +1,7 @@
 # ChangeLog file for java
 # This file is updated with Maddlog
 
+* Mon Apr 11 2011 Fabian Groffen <fabian@cwi.nl>
+- The obsolete Java-based implementation for PreparedStatements (formerly
+  activated using the java_prepared_statements property) has been dropped
+

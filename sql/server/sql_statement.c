@@ -2211,7 +2211,7 @@ print_stmt( sql_allocator *sa, stmt *s )
 	case st_basetable:
 	case st_reljoin:
 	case st_releqjoin:
-		//assert(0);
+		/*assert(0);*/
 	default:
 		printf("s%d := %s(", s->nr, st_type2string(s->type));
 		switch(s->type) {
