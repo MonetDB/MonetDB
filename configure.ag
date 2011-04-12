@@ -3134,6 +3134,7 @@ echo
 echo "* Enabled/disabled components:"
 for comp in \
 	common \
+	gdk \
 	monetdb5 \
 	sql \
 	geom \
