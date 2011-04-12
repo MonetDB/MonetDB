@@ -178,7 +178,7 @@ case "$enable_monetdb5-$enable_geom" in
 no-yes)
 	AC_MSG_ERROR([geom module requires MonetDB5])
 	;;
-no-no-auto)
+no-auto)
 	enable_geom=no
 	;;
 esac
