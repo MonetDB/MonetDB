@@ -132,12 +132,27 @@ esac
 
 AC_DEFINE(MONETDB_RELEASE, "unreleased", [Release name or "unreleased"])
 
+dft_gdk=auto
+AC_ARG_ENABLE(gdk,
+	AS_HELP_STRING([--enable-gdk],
+		[enable support for GDK (default=auto)]),
+	enable_gdk=$enableval,
+	enable_gdk=$dft_gdk)
+
 dft_monetdb5=auto
 AC_ARG_ENABLE(monetdb5,
 	AS_HELP_STRING([--enable-monetdb5],
 		[enable support for MonetDB5 (default=auto)]),
 	enable_monetdb5=$enableval,
 	enable_monetdb5=$dft_monetdb5)
+case "$enable_gdk-$enable_monetdb5" in
+no-yes)
+	AC_MSG_ERROR([MonetDB5 requires GDK.])
+	;;
+no-auto)
+	enable_monetdb5=no
+	;;
+esac
 
 dft_rdf=no
 AC_ARG_ENABLE(rdf,
@@ -2824,6 +2839,7 @@ if test x"$enable_sql" = xauto && test x"$enable_monetdb5" = x"no" ; then
 fi
 
 dnl     output
+AM_CONDITIONAL(HAVE_GDK, test "x$enable_gdk" = xyes -o "x$enable_gdk" = xauto)
 AM_CONDITIONAL(HAVE_MONETDB5, test "x$enable_monetdb5" = xyes -o "x$enable_monetdb5" = xauto)
 AM_CONDITIONAL(HAVE_SQL, test "x$enable_sql" = xyes -o "x$enable_sql" = xauto)
 AM_CONDITIONAL(HAVE_GEOM, test "x$enable_geom" = xyes -o "x$enable_geom" = xauto)
