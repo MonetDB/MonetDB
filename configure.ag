@@ -165,6 +165,7 @@ no-yes)
 	;;
 no-auto)
 	enable_sql=no
+	disable_sql="(MonetDB/SQL requires MonetDB5.)"
 	;;
 esac
 
@@ -178,8 +179,9 @@ case "$enable_monetdb5-$enable_geom" in
 no-yes)
 	AC_MSG_ERROR([geom module requires MonetDB5])
 	;;
-no-no-auto)
+no-auto)
 	enable_geom=no
+	disable_geom="(geom module requires MonetDB5)"
 	;;
 esac
 
@@ -233,15 +235,6 @@ if test "x$enable_java" != xno; then
 		*) enable_jdbc=no;;
 	esac
 
-	AC_ARG_ENABLE(xrpcwrapper,
-		AS_HELP_STRING([--enable-xrpcwrapper], [build the MonetDB XRPC wrapper]),
-		enable_xrpc="$enableval",
-		enable_xrpc=auto)
-	case $enable_xrpc in
-		yes|auto) enable_xrpc=$enable_xrpc;;
-		*) enable_xrpc=no;;
-	esac
-
 	AC_ARG_ENABLE(merocontrol,
 		AS_HELP_STRING([--enable-merocontrol], [build the Merovingian control driver]),
 		enable_control="$enableval",
@@ -252,8 +245,9 @@ if test "x$enable_java" != xno; then
 	esac
 else
 	enable_jdbc=no
-	enable_xrpc=no
 	enable_control=no
+	disable_jdbc="(as java is disabled)"
+	disable_control="(as java is disabled)"
 fi
 
 dnl RIPEMD160 is patent free, academic and European, but unfortunately
@@ -473,18 +467,14 @@ dnl  (basically everything except "-Werror"). For "-Werror" and some
 dnl  switches that disable selected warnings that haven't been sorted out,
 dnl  yet, we set X_CFLAGS, which are added to the standard
 dnl  CFLAGS once configure/autoconf are done with their job,
-dnl  i.e., at the end of the configure.m4 file that includes this monet.m4.
+dnl  i.e., at the end of this configure[.ag] script.
 dnl  Only GNU (gcc) and Intel ([ie]cc/[ie]cpc on Linux) are done so far.
 : ${X_CFLAGS=} # initialize to empty if not set
-NO_X_CFLAGS='_NO_X_CFLAGS_'
 NO_INLINE_CFLAGS=""
 GCC_BISON_CFLAGS=""
 ICC_BISON_CFLAGS=""
-ICC_BISONFLAGS=""
 GCC_SWIG_CFLAGS=""
 ICC_SWIG_CFLAGS=""
-SUN_NOERR_CFLAGS=""
-SUN_NOOPT_CFLAGS=""
 CFLAGS_NO_OPT="-O0"
 if test "x$enable_strict" = xyes; then
 case "$GCC-$CC-$host_os" in
@@ -548,17 +538,6 @@ yes-*-*)
 	dnl X_CFLAGS="$X_CFLAGS -Wunreachable-code"
 	dnl  ... however, some things are beyond our control:
 	case $gcc_ver-$host_os in
-	2.9*-aix*)
-		dnl  In some cases, there is a (possibly) uninitialized
-		dnl  variable in bison.simple ... |-(
-		dnl  However, gcc-2.9-aix51-020209 on SARA's solo
-		dnl  seems to ignore "-Wno-uninitialized";
-		dnl  hence, we switch-off "-Werror" by disabling
-		dnl  X_CFLAGS locally in src/monet/Makefile.ag:
-		dnl  @NO_X_CFLAGS@ with NO_X_CFLAGS='X_CFLAGS'
-		dnl  generates "X_CFLAGS =" in the generated Makefile.
-		NO_X_CFLAGS='X_CFLAGS'
-		;;
 	*-solaris*|*-aix*)
 		dnl  In some cases, there is a (possibly) uninitialized
 		dnl  variable in bison.simple ... |-(
@@ -576,8 +555,7 @@ yes-*-*)
 	dnl  "warning: missing initializer".
 	dnl  Hence, we use GCC_SWIG_CFLAGS to disable the respective warning
 	dnl  as locally as possbile via "-Wno-strict-aliasing -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter -Wno-undef -Wno-missing-field-initializers"
-	dnl  (see also sql/src/backends/monet[45]/Makefile.ag,
-	dnl   clients/src/{python,perl,php,ruby}/Cimpl/Makefile.ag).
+	dnl  (see also sql/backends/monet5/Makefile.ag, clients/perl/Cimpl/Makefile.ag).
 	GCC_SWIG_CFLAGS="$GCC_SWIG_CFLAGS -Wno-strict-aliasing -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter -Wno-undef"
 	case "$gcc_ver-$host_os" in
 	[[4-9]].*-*)
@@ -629,7 +607,7 @@ yes-*-*)
 	8.*)	;;
 	9.*)	;;
 	10.*)	;;
-	11.*)	ICC_BISONFLAGS="--no-lines" ;;
+	11.*)	;;
 	*)	CFLAGS="$CFLAGS -ansi";;
 	esac
 	dnl  Be picky; "-Werror" seems to be too rigid for autoconf...
@@ -665,10 +643,10 @@ yes-*-*)
 
 	dnl  (At least on Fedora Core 4,) bison 2.0 seems to generate code
 	dnl  that icc does not like; since the problem only occurs with
-	dnl  sql/src/server/sql_parser.mx, 
+	dnl  sql/server/sql_parser.mx, 
 	dnl  we use ICC_BISON_CFLAGS 
 	dnl  to disable the respective warning as locally as possible
-	dnl  (see also sql/src/server/Makefile.ag).
+	dnl  (see also sql/server/Makefile.ag).
 	case "`bison -V | head -n1`" in
 	*2.0*)
 		ICC_BISON_CFLAGS="$ICC_BISON_CFLAGS -wd592"
@@ -680,7 +658,7 @@ yes-*-*)
 	dnl  we use ICC_BISON_CFLAGS to disable the respective warning as
 	dnl  locally as possible via "-wd177"
 	dnl  (#177: label "." was declared but never referenced)
-	dnl  (see also pathfinder/modules/pftijah/Makefile.ag).
+	dnl  (see also sql/server/Makefile.ag).
 	ICC_BISON_CFLAGS="$ICC_BISON_CFLAGS -wd177"
 
 	dnl  Intel's icc does not like to compile swig-generated code
@@ -690,8 +668,7 @@ yes-*-*)
 	dnl  'error #310: old-style parameter list (anachronism)'.
 	dnl  Hence, we use ICC_SWIG_CFLAGS to disable the respective warning
 	dnl  as locally as possbile via "-wd869 -wd177 -wd310"
-	dnl  (see also sql/src/backends/monet[45]/Makefile.ag,
-	dnl   clients/src/{python,perl,php,ruby}/Cimpl/Makefile.ag).
+	dnl  (see also sql/backends/monet5/Makefile.ag, clients/perl/Cimpl/Makefile.ag).
 	ICC_SWIG_CFLAGS="$ICC_SWIG_CFLAGS -wd869 -wd177 -wd310"
 
 	NO_INLINE_CFLAGS="-fno-inline -fno-inline-functions"
@@ -716,7 +693,6 @@ esac
 fi
 AC_SUBST(CFLAGS)
 AC_SUBST(X_CFLAGS)
-AC_SUBST(NO_X_CFLAGS)
 
 dnl icc needs -fPIC (but the current autoconf still uses -KPIC)
 case "$GCC-$CC-$host_os" in
@@ -893,36 +869,119 @@ else
 	AC_MSG_RESULT([$noexpand])
 fi
 
-dnl --enable-debug
 AC_ARG_ENABLE(debug,
 	AS_HELP_STRING([--enable-debug],
 		[enable full debugging (default=yes for development sources)]),
 	enable_debug=$enableval,
-	enable_debug=$dft_debug)
+	enable_debug=def_$dft_debug)
+
+AC_ARG_ENABLE(assert,
+	AS_HELP_STRING([--enable-assert],
+		[enable assertions in the code (default=yes for development sources)]),
+	enable_assert=$enableval,
+	enable_assert=def_$dft_assert)
+
+AC_ARG_ENABLE(optimize,
+	AS_HELP_STRING([--enable-optimize],
+		[enable extra optimization (default=no)]),
+	enable_optim=$enableval,
+	enable_optim=def_$dft_optimi)
+
+AC_ARG_ENABLE(warning,
+	AS_HELP_STRING([--enable-warning],
+		[enable extended compiler warnings (default=$dft_warning)]),
+	enable_warning=$enableval,
+	enable_warning=def_$dft_warning)
+
+need_profiling=no
+AC_ARG_ENABLE(profile,
+	AS_HELP_STRING([--enable-profile], [enable profiling (default=no)]),
+	enable_prof=$enableval,
+	enable_prof=no)
+
+need_instrument=no
+AC_ARG_ENABLE(instrument,
+	AS_HELP_STRING([--enable-instrument],
+		[enable instrument (default=no)]),
+	enable_instrument=$enableval,
+	enable_instrument=no)
+
+dnl check whether no (explictly chosen) mutual exclusive combinations
+dnl were made, compatability matrix:
+dnl                 deb  ass  opt  war  pro  ins
+dnl   debug          \    C    X    C    C    C
+dnl   assert         C    \    C    C    C    C
+dnl   optimize       X    C    \    C    X    X
+dnl   warnings       C    C    C    \    C    C
+dnl   profile        C    C    X    C    \    C
+dnl   instrument     C    C    X    C    C    \
+
+case "x$enable_debug.$enable_optim.$enable_prof.$enable_instrument" in
+	# find conflicts
+	xyes.yes.*.*)
+		AC_MSG_ERROR([combining --enable-optimize and --enable-debug is not possible])
+		;;
+	x*.yes.yes.*)
+		AC_MSG_ERROR([combining --enable-optimize and --enable-profile is not possible])
+		;;
+	x*.yes.*.yes)
+		AC_MSG_ERROR([combining --enable-optimize and --enable-instrument is not possible])
+		;;
+	# handle defaults after user requests
+	xyes.*.*.*)
+		enable_debug=yes
+		enable_optim=no
+		enable_prof="`echo $enable_prof | sed 's:^def_::'`"
+		enable_instrument="`echo $enable_instrument | sed 's:^def_::'`"
+		;;
+	x*.*.yes.*)
+		enable_debug="`echo $enable_debug | sed 's:^def_::'`"
+		enable_optim=no
+		enable_prof=yes
+		enable_instrument="`echo $enable_instrument | sed 's:^def_::'`"
+		;;
+	x*.*.*.yes)
+		enable_debug="`echo $enable_debug | sed 's:^def_::'`"
+		enable_optim=no
+		enable_prof="`echo $enable_prof | sed 's:^def_::'`"
+		enable_instrument=yes
+		;;
+	x*.*no.*.*)
+		enable_debug="`echo $enable_debug | sed 's:^def_::'`"
+		enable_optim=no
+		enable_prof="`echo $enable_prof | sed 's:^def_::'`"
+		enable_instrument="`echo $enable_instrument | sed 's:^def_::'`"
+		;;
+	x*.*yes.*.*) # enable-optimize overrules other defaults
+		enable_optim=yes
+		enable_debug=no
+		enable_prof=no
+		enable_instrument=no
+		;;
+	x*)
+		AC_MSG_WARN([unhandled configuration $enable_debug.$enable_optim.$enable_prof.$enable_instrument, please file a bug on bugs.monetdb.org])
+		;;
+esac
+# make defaults real for flags which don't conflict with anything
+enable_assert="`echo $enable_assert | sed 's:^def_::'`"
+enable_warning="`echo $enable_warning | sed 's:^def_::'`"
 
 AC_MSG_CHECKING([for --enable-debug])
-origCFLAGS=$CFLAGS
 if test "x$enable_debug" = xyes; then
-	if test "x$enable_optim" = xyes; then
-		AC_MSG_ERROR([combining --enable-optimize and --enable-debug is not possible.])
-	else
-		dnl  remove "-Ox" as some compilers don't like "-g -Ox" combinations
-		CFLAGS=" $CFLAGS "
-		CFLAGS="`echo "$CFLAGS" | sed -e 's| -O[[0-9]] | |g' -e 's| -g | |g' -e 's|^ ||' -e 's| $||'`"
-		JAVACFLAGS=" $JAVACFLAGS "
-		JAVACFLAGS="`echo "$JAVACFLAGS" | sed -e 's| -O | |g' -e 's| -g | |g' -e 's| -g:[[a-z]]* | |g' -e 's|^ ||' -e 's| $||'`"
-		dnl  add "-g"
-		CFLAGS="$CFLAGS -g"
-		JAVACFLAGS="$JAVACFLAGS -g"
-		case "$GCC-$host_os" in
-		  yes-aix*)
-			CFLAGS="$CFLAGS -gxcoff"
-			;;
-		  -solaris*)
-			SUN_NOOPT_CFLAGS="-xO0"
-			;;
-		esac
-	fi
+	origCFLAGS=$CFLAGS
+	dnl  remove "-Ox" as some compilers don't like "-g -Ox" combinations
+	CFLAGS=" $CFLAGS "
+	CFLAGS="`echo "$CFLAGS" | sed -e 's| -O[[0-9]] | |g' -e 's| -g | |g' -e 's|^ ||' -e 's| $||'`"
+	JAVACFLAGS=" $JAVACFLAGS "
+	JAVACFLAGS="`echo "$JAVACFLAGS" | sed -e 's| -O | |g' -e 's| -g | |g' -e 's| -g:[[a-z]]* | |g' -e 's|^ ||' -e 's| $||'`"
+	dnl  add "-g"
+	CFLAGS="$CFLAGS -g"
+	JAVACFLAGS="$JAVACFLAGS -g"
+	case "$GCC-$host_os" in
+	  yes-aix*)
+		CFLAGS="$CFLAGS -gxcoff"
+		;;
+	esac
 
 	changedCFLAGS=
 	for flag in $origCFLAGS ; do
@@ -931,7 +990,7 @@ if test "x$enable_debug" = xyes; then
 			*) changedCFLAGS="$changedCFLAGS, removed $flag";;
 		esac
 	done
-	for flag in $CFLAGS $SUN_NOOPT_CFLAGS ; do
+	for flag in $CFLAGS ; do
 		case " $origCFLAGS " in
 			*" $flag "*) ;;
 			*) changedCFLAGS="$changedCFLAGS, added $flag";;
@@ -942,14 +1001,6 @@ if test "x$enable_debug" = xyes; then
 else
 	AC_MSG_RESULT([no])
 fi
-AC_SUBST(SUN_NOOPT_CFLAGS)
-
-dnl --enable-assert
-AC_ARG_ENABLE(assert,
-	AS_HELP_STRING([--enable-assert],
-		[enable assertions in the code (default=yes for development sources)]),
-	enable_assert=$enableval,
-	enable_assert=$dft_assert)
 
 AC_MSG_CHECKING([for --enable-assert])
 if test "x$enable_assert" = xno; then
@@ -959,31 +1010,19 @@ else
 	AC_MSG_RESULT([yes])
 fi
 
-dnl --enable-optimize
-AC_ARG_ENABLE(optimize,
-	AS_HELP_STRING([--enable-optimize],
-		[enable extra optimization (default=no)]),
-	enable_optim=$enableval, enable_optim=$dft_optimi)
 
 AC_MSG_CHECKING([for --enable-optimize])
 if test "x$enable_optim" = xyes; then
-  if test "x$enable_debug" = xyes; then
-    AC_MSG_ERROR([combining --enable-optimize and --enable-debug is not possible.])
-  elif test "x$enable_prof" = xyes; then
-    AC_MSG_ERROR([combining --enable-optimize and --enable-profile is not (yet?) possible.])
-  elif test "x$enable_instrument" = xyes; then
-    AC_MSG_ERROR([combining --enable-optimize and --enable-instrument is not (yet?) possible.])
-  else
 	origCFLAGS="$CFLAGS"
-    dnl  remove "-g" as some compilers don't like "-g -Ox" combinations
-    dnl  remove "-O2" as we add "-Ox" and some compilers don't like "-Oy -Ox" combinations
-    CFLAGS=" $CFLAGS "
-    CFLAGS="`echo "$CFLAGS" | sed -e 's| -g | |g' -e 's| -O2 | |g' -e 's|^ ||' -e 's| $||'`"
-    JAVACFLAGS=" $JAVACFLAGS "
-    JAVACFLAGS="`echo "$JAVACFLAGS" | sed -e 's| -g | |g' -e 's| -g:[[a-z]]* | |g' -e 's|^ ||' -e 's| $||'`"
-    dnl  Optimization flags
-    JAVACFLAGS="$JAVACFLAGS -g:none -O"
-    case "$GCC-$CC" in
+	dnl  remove "-g" as some compilers don't like "-g -Ox" combinations
+	dnl  remove "-O2" as we add "-Ox" and some compilers don't like "-Oy -Ox" combinations
+	CFLAGS=" $CFLAGS "
+	CFLAGS="`echo "$CFLAGS" | sed -e 's| -g | |g' -e 's| -O2 | |g' -e 's|^ ||' -e 's| $||'`"
+	JAVACFLAGS=" $JAVACFLAGS "
+	JAVACFLAGS="`echo "$JAVACFLAGS" | sed -e 's| -g | |g' -e 's| -g:[[a-z]]* | |g' -e 's|^ ||' -e 's| $||'`"
+	dnl  Optimization flags
+	JAVACFLAGS="$JAVACFLAGS -g:none -O"
+	case "$GCC-$CC" in
     yes-*clang*)
                       CFLAGS="$CFLAGS -O3 -fomit-frame-pointer -finline-functions"
       ;;
@@ -1135,7 +1174,6 @@ if test "x$enable_optim" = xyes; then
 	done
 	changedCFLAGS="`echo $changedCFLAGS | sed -e 's|^, ||'`"
 	AC_MSG_RESULT([yes: $changedCFLAGS])
-  fi
 else
 	AC_MSG_RESULT([no])
 fi
@@ -1143,117 +1181,56 @@ AC_SUBST(CFLAGS_NO_OPT)
 AC_SUBST(NO_INLINE_CFLAGS)
 AC_SUBST(GCC_BISON_CFLAGS)
 AC_SUBST(ICC_BISON_CFLAGS)
-AC_SUBST(ICC_BISONFLAGS)
 AC_SUBST(GCC_SWIG_CFLAGS)
 AC_SUBST(ICC_SWIG_CFLAGS)
-AC_SUBST(SUN_NOERR_CFLAGS)
-
-dnl --enable-warning (only gcc & icc/ecc)
-AC_ARG_ENABLE(warning,
-	AS_HELP_STRING([--enable-warning],
-		[enable extended compiler warnings (default=$dft_warning)]),
-	enable_warning=$enableval,
-	enable_warning=$dft_warning)
 
 AC_MSG_CHECKING([for --enable-warning])
 if test "x$enable_warning" = xyes; then
-  dnl  Basically, we disable/overule X_CFLAGS, i.e., "-Werror" and some "-Wno-*".
-  dnl  All warnings should be on by default (see above).
-  case $GCC-$host_os in
-  yes-*)
-	dnl  GNU (gcc/g++)
-	X_CFLAGS="-pedantic -Wno-long-long"
-	;;
-  -linux*)
-	dnl  Intel ([ie]cc/[ie]cpc on Linux)
-	X_CFLAGS=""
-	;;
-  esac
-  AC_MSG_RESULT([yes: ${X_CFLAGS}])
+	dnl  Basically, we disable/overule X_CFLAGS, i.e., "-Werror" and some "-Wno-*".
+	dnl  All warnings should be on by default (see above).
+	case $GCC-$host_os in
+		yes-*)
+		dnl  GNU (gcc/g++)
+		X_CFLAGS="-pedantic -Wno-long-long"
+		;;
+		-linux*)
+		dnl  Intel ([ie]cc/[ie]cpc on Linux)
+		X_CFLAGS=""
+		;;
+	esac
+	AC_MSG_RESULT([yes: ${X_CFLAGS}])
 else
-  AC_MSG_RESULT([no])
+	AC_MSG_RESULT([no])
 fi
-
-dnl --enable-profile
-need_profiling=no
-AC_ARG_ENABLE(profile,
-	AS_HELP_STRING([--enable-profile], [enable profiling (default=no)]),
-	enable_prof=$enableval,
-	enable_prof=no)
 
 AC_MSG_CHECKING([for --enable-profile])
 if test "x$enable_prof" = xyes; then
-  if test "x$enable_optim" = xyes; then
-    AC_MSG_ERROR([combining --enable-optimize and --enable-profile is not (yet?) possible.])
-  else
-    AC_DEFINE(PROFILE, 1, [Compiler flag])
-    need_profiling=yes
-    if test "x$GCC" = xyes; then
-      CFLAGS="$CFLAGS -pg"
-	  AC_MSG_RESULT([yes: -pg])
-    else
-	  AC_MSG_RESULT([no])
-    fi
-  fi
+	AC_DEFINE(PROFILE, 1, [Compiler flag])
+	need_profiling=yes
+	if test "x$GCC" = xyes; then
+		CFLAGS="$CFLAGS -pg"
+		AC_MSG_RESULT([yes: -pg])
+	else
+		AC_MSG_RESULT([no])
+	fi
 else
-  AC_MSG_RESULT([no])
+	AC_MSG_RESULT([no])
 fi
 AM_CONDITIONAL(PROFILING,test "x$need_profiling" = xyes)
 
-dnl --enable-instrument
-need_instrument=no
-AC_ARG_ENABLE(instrument,
-	AS_HELP_STRING([--enable-instrument],
-		[enable instrument (default=no)]),
-	enable_instrument=$enableval,
-	enable_instrument=no)
-
 AC_MSG_CHECKING([for --enable-instrument])
 if test "x$enable_instrument" = xyes; then
-  if test "x$enable_optim" = xyes; then
-    AC_MSG_ERROR([combining --enable-optimize and --enable-instrument is not (yet?) possible.])
-  else
-    AC_DEFINE(PROFILE, 1, [Compiler flag])
-    need_instrument=yes
-    if test "x$GCC" = xyes; then
-      CFLAGS="$CFLAGS -finstrument-functions -g"
-	  AC_MSG_RESULT([yes: -finstrument-functions -g])
-    else
-	  AC_MSG_RESULT([no])
-    fi
-  fi
+	AC_DEFINE(PROFILE, 1, [Compiler flag])
+	need_instrument=yes
+	if test "x$GCC" = xyes; then
+		CFLAGS="$CFLAGS -finstrument-functions -g"
+		AC_MSG_RESULT([yes: -finstrument-functions -g])
+	else
+		AC_MSG_RESULT([no])
+	fi
 else
-  AC_MSG_RESULT([no])
-fi
-
-dnl static or shared linking
-SHARED_LIBS=''
-AC_MSG_CHECKING([for --enable-static])
-if test "$enable_static" = "yes" ; then
-	CFLAGS="$CFLAGS -DMONETDB_STATIC"
-	SHARED_LIBS='$(STATIC_LIBS) $(smallTOC_SHARED_LIBS) $(largeTOC_SHARED_LIBS)'
-	case "$host_os" in
-		aix*)	
-			if test "x$GCC" = xyes; then
-				LDFLAGS="$LDFLAGS -Xlinker"
-			fi
-			LDFLAGS="$LDFLAGS -bbigtoc"
-			;;
-		irix*)
-			if test "x$GCC" != xyes; then
-				SHARED_LIBS="$SHARED_LIBS -lm"
-			fi
-			;;
-	esac
-	AC_MSG_RESULT([yes])
-else
-	case "$host_os" in
-		aix*)	LDFLAGS="$LDFLAGS -Wl,-brtl";;
-	esac
 	AC_MSG_RESULT([no])
 fi
-AC_SUBST(SHARED_LIBS)
-AM_CONDITIONAL(LINK_STATIC,test "x$enable_static" = xyes)
 
 AC_PATH_PROG(BASH,bash, /usr/bin/bash, $PATH)
 AC_CHECK_PROG(RM,rm,rm -f)
@@ -1591,6 +1568,9 @@ if test "x$YACC" = x; then
 		AC_MSG_ERROR([MonetDB/SQL requires YACC or BISON.])
 	fi
 	enable_sql=no
+	if test "x$disable_sql" = x; then
+		disable_sql="(MonetDB/SQL requires YACC or BISON.)"
+	fi
 fi
 
 AC_CHECK_PROG(TEXI2HTML,texi2html,texi2html)
@@ -1813,30 +1793,6 @@ no-*)
 esac
 AM_CONDITIONAL(HAVE_JAVAJDBC,test x$have_java_jdbc != xno)
 
-have_java_xrpc=no
-case $have_java-$enable_xrpc in
-*-no)
-	;;
-no-yes)
-	AC_MSG_ERROR([MonetDB XRPC requires ant and Java])
-	;;
-no-*)
-	;;
-*)
-	req_java_ver_min=1.5 # >= $req_java_ver_min required
-	if test MONETDB_VERSION_TO_NUMBER(echo $JAVA_VERSION) -ge MONETDB_VERSION_TO_NUMBER(echo "$req_java_ver_min"); then
-		have_java_xrpc=yes
-	else
-		if test "x$enable_xrpc" = xyes; then
-			AC_MSG_ERROR([MonetDB XRPC requires ant and Java >= $req_java_ver_min.])
-		else
-			AC_MSG_WARN([Cannot build MonetDB XRPC as it requires ant and Java >= $req_java_ver_min.])
-		fi
-	fi
-	;;
-esac
-AM_CONDITIONAL(HAVE_JAVAXRPC,test x$have_java_xrpc != xno)
-
 have_java_control=no
 case $have_java-$enable_control in
 *-no)
@@ -1861,7 +1817,7 @@ no-*)
 esac
 AM_CONDITIONAL(HAVE_JAVAMEROCONTROL,test x$have_java_control != xno)
 
-if test x$have_java_jdbc = xno -a x$have_java_xrpc = xno -a x$have_java_control = xno; then
+if test x$have_java_jdbc = xno -a x$have_java_control = xno; then
 	# no point doing anything with Java if all Java packages are disabled
 	have_java=no
 fi
@@ -2149,6 +2105,9 @@ yes-no)
 	;;
 auto-no)
 	enable_monetdb5=no
+	if test "x$disable_monetdb5" = x; then
+		disable_monetdb5="(OpenSSL library not found but required for MonetDB5)"
+	fi
 	;;
 esac
 
@@ -2178,6 +2137,9 @@ yes-no)
 	;;
 auto-no)
 	enable_monetdb5=no
+	if test "x$disable_monetdb5" = x; then
+		disable_monetdb5="(PCRE library not found but required for MonetDB5)"
+	fi
 	;;
 esac
 
@@ -2189,6 +2151,9 @@ yes-no)
 	;;
 auto-no)
 	enable_monetdb5=no
+	if test "x$disable_monetdb5" = x; then
+		disable_monetdb5="(libxml2 library not found but required for MonetDB5)"
+	fi
 	;;
 esac
 
@@ -2419,63 +2384,14 @@ yes|auto)
 		fi
 		# no geos, so don't compile geom
 		enable_geom=no
+		if test "x$disable_geom" = x; then
+			disable_geom="(geos library required for geom module)"
+		fi
 	fi
 	;;
 esac
 AC_SUBST(GEOS_INCS)
 AC_SUBST(GEOS_LIBS)
-
-dnl check for the performance counters library
-have_pcl=auto
-PCL_CFLAGS=""
-PCL_LIBS=""
-AC_ARG_WITH(pcl,
-	AS_HELP_STRING([--with-pcl=DIR],
-		[pcl library is installed in DIR]),
-	have_pcl="$withval")
-AC_MSG_CHECKING(for libpcl)
-case "$have_pcl" in
-yes|no|auto)
-	;;
-*)
-	PCL_CFLAGS="-I$withval/include"
-	PCL_LIBS="-L$withval/lib"
-        AC_MSG_CHECKING(in $withval)
-	;;
-esac
-if test "x$have_pcl" != xno; then
-	save_CPPFLAGS="$CPPFLAGS"
-	CPPFLAGS="$CPPFLAGS $PCL_CFLAGS"
-	AC_CHECK_HEADER(pcl.h, have_pcl_h=yes,
-		[ if test "x$have_pcl" != xauto; then AC_MSG_ERROR([pcl.h not found]); fi; have_pcl_h=no ])
-	CPPFLAGS="$save_CPPFLAGS"
-
-	if test "x$have_pcl_h" = xyes; then
-		save_LIBS="$LIBS"
-		LIBS="$LIBS $PCL_LIBS"
-		AC_CHECK_LIB(pcl, PCLinit, PCL_LIBS="$PCL_LIBS -lpcl"
-			AC_DEFINE(HAVE_LIBPCL, 1, [Define if you have the pcl library]) have_pcl=yes,
-		 	if test "x$have_pcl" = xyes; then
-				save_LIBS="$LIBS"
-				LIBS="$LIBS $PCL_LIBS"
-				AC_CHECK_LIB(pcl, PCLexit, PCL_LIBS="$PCL_LIBS -lpcl -lperfctr"
-					AC_DEFINE(HAVE_LIBPCL, 1, [Define if you have the pcl library]) have_pcl=yes,
-					[ if test "x$have_pcl" != xauto; then AC_MSG_ERROR([libpcl not found]); fi; have_pcl=no ],
-					"-lperfctr")
-			fi
-		)
-		LIBS="$save_LIBS"
-	else
-		have_pcl=no
-	fi
-
-	if test "x$have_pcl" != xyes; then
-		PCL_CFLAGS=""
-		PCL_LIBS=""
-	fi
-fi
-AC_SUBST(PCL_CFLAGS)
-AC_SUBST(PCL_LIBS)
 
 have_cfitsio=no
 if test "x$enable_fits" != xno; then
@@ -2484,14 +2400,6 @@ if test "x$enable_fits" != xno; then
 		[have_cfitsio=no; if test "x$enable_fits" = xyes; then AC_MSG_ERROR([cfitsio library required for FITS support]); fi])
 fi
 AM_CONDITIONAL(HAVE_CFITSIO, test x"$have_cfitsio" != xno)
-
-LIBGC_CFLAGS=
-LIBGC_LIBS=
-LIBGC_LDADD=
-dnl Propagate the variable to the Makefiles
-AC_SUBST(LIBGC_CFLAGS, $LIBGC_CFLAGS)
-AC_SUBST(LIBGC_LIBS, $LIBGC_LIBS)
-AC_SUBST(LIBGC_LDADD, $LIBGC_LDADD)
 
 dnl     checks for header files
 AC_HEADER_STDBOOL
@@ -2929,6 +2837,9 @@ if test x"$enable_sql" = xyes && test x"$enable_monetdb5" = x"no" ; then
 fi
 if test x"$enable_sql" = xauto && test x"$enable_monetdb5" = x"no" ; then
 	enable_sql=no
+	if test "x$disable_sql" = x; then
+		disable_sql="(MonetDB/SQL requires MonetDB5)"
+	fi
 fi
 
 dnl     output
@@ -3234,12 +3145,18 @@ for comp in \
 	unixodbc \
 	java \
 	jdbc \
-	xrpc \
 	control \
 	testing \
 ; do
+	eval "dft=\$dft_$comp"
+	eval "enable=\$enable_$comp"
+	eval "disable=\$disable_$comp"
+	case "$disable-$enable-$dft" in
+		-no-no)	disable="(by default)";;
+		-no-*)	disable="(by command line option)";;
+	esac
 	echo $ECHO_N "    $comp is $ECHO_C"
-	eval "if test \"x\$enable_$comp\" = xno ; then echo \"${ECHO_T}disabled\"; else echo \"${ECHO_T}enabled\"; fi"
+	if test "x$enable" = xno ; then echo "${ECHO_T}disabled $disable"; else echo "${ECHO_T}enabled"; fi
 done
 echo
 echo "* Important options:"

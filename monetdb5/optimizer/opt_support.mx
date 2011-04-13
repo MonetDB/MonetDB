@@ -1449,7 +1449,7 @@ int isProjection(InstrPtr p){
 int isMatJoinOp(InstrPtr p){
 	return (getModuleId(p) == algebraRef && 
                 (getFunctionId(p) == joinRef || 
-//               getFunctionId(p) == antijoinRef || is not mat save
+/*               getFunctionId(p) == antijoinRef || is not mat save */
                  getFunctionId(p) == leftjoinRef ||
                  getFunctionId(p) == thetajoinRef ||
                  getFunctionId(p) == bandjoinRef)
@@ -1483,9 +1483,9 @@ int isFragmentGroup(InstrPtr p){
 			)	)  ||
 			(getModuleId(p)== batRef && (
 				getFunctionId(p)== reverseRef ||
-				getFunctionId(p)== mirrorRef //||
-//				getFunctionId(p)== setAccessRef ||
-//				getFunctionId(p)== setWriteModeRef 
+				getFunctionId(p)== mirrorRef /*||
+				getFunctionId(p)== setAccessRef ||
+				getFunctionId(p)== setWriteModeRef */
 			) );
 }
 

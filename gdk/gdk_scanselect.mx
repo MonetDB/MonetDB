@@ -102,7 +102,6 @@ in an overall improvement of about factor 4.5.
 @h
 #ifndef _GDK_SCANSELECT_H
 #define _GDK_SCANSELECT_H
-#include "gdk.h"
 
 @- "Tools"
 First, we need some tools. These are the type-expanded replacements

@@ -228,7 +228,6 @@ CONDITIONALS = {
     'HAVE_SPHINXCLIENT'    : "@HAVE_SPHINXCLIENT_FALSE@",
     'HAVE_SQL'             : "@HAVE_SQL_FALSE@",
     'HAVE_TESTING'         : "@HAVE_TESTING_FALSE@",
-    'LINK_STATIC'          : "@LINK_STATIC_FALSE@",
     'NATIVE_WIN32'         : "@NATIVE_WIN32_FALSE@",
     'NOT_WIN32'            : "@NOT_WIN32_FALSE@",
     'PROFILING'            : "@PROFILING_FALSE@",
@@ -2745,7 +2744,7 @@ if os.name == "nt":
     r = re.compile('^Microsoft Windows (.*)\[Version ([0-9]+\.[0-9]+)([^\[0-9].*)\]$')
     if verbose:
         print 'starting process "cmd" "/c" "ver" (inpipe,outpipe)\n'
-    proc = subprocess.Popen('cmd /c ver', stdin = subprocess.PIPE, stdout = subprocess.PIPE, universal_newlines = True)
+    proc = subprocess.Popen('cmd /c ver', stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True)
     qOut, qErr = proc.communicate()
     if verbose:
         print 'process exited "cmd" "/c" "ver" (%s)\n' % proc.returncode
@@ -2880,7 +2879,7 @@ repo = ''
 try:
     if verbose:
         print 'starting process "hg" "root" (inpipe,outpipe)\n'
-    proc = subprocess.Popen(['hg','root'], stdin = subprocess.PIPE, stdout = subprocess.PIPE, universal_newlines = True)
+    proc = subprocess.Popen(['hg','root'], stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True)
     out,err = proc.communicate()
     if verbose:
         print 'process exited "hg" "root" (%s)\n' % proc.returncode
@@ -3491,8 +3490,6 @@ def main(argv) :
                 env['TST_BITS'] = "32bit"
             elif CONDITIONALS.has_key('BITS64') and CONDITIONALS['BITS64']:
                 env['TST_BITS'] = "64bit"
-            if   CONDITIONALS.has_key('LINK_STATIC') and CONDITIONALS['LINK_STATIC']:
-                env['TST_STATIC'] = "STATIC"
         else:
             if Check('%s --dbname=%s' % (env['exe']['Mserver'][1], TSTPREF), QUIT):
                 sys.exit(1)

@@ -413,7 +413,7 @@ main(int argc, char *argv[])
 	err e;
 	int argp;
 	char *dbfarm = LOCALSTATEDIR "/monetdb5/dbfarm";
-	char *pidfilename;
+	char *pidfilename = NULL;
 	char *p;
 	FILE *pidfile = NULL;
 	char control_usock[1024];
@@ -529,8 +529,22 @@ main(int argc, char *argv[])
 	srand(time(NULL));
 	/* figure out our hostname */
 	gethostname(_mero_hostname, 128);
-	/* where is the mserver5 binary we fork on demand? */
-	_mero_mserver = BINDIR "/mserver5";
+	/* where is the mserver5 binary we fork on demand?
+	 * first try to locate it based on our binary location, fall-back to
+	 * hardcoded bin-dir */
+	_mero_mserver = get_bin_path();
+	if (_mero_mserver != NULL) {
+		/* replace the trailing monetdbd by mserver5, fits nicely since
+		 * they happen to be of same length */
+		char *s = strrchr(_mero_mserver, '/');
+		if (s != NULL && strcmp(s + 1, "monetdbd") == 0) {
+			s++;
+			*s++ = 'm'; *s++ = 's'; *s++ = 'e'; *s++ = 'r';
+			*s++ = 'v'; *s++ = 'e'; *s++ = 'r'; *s++ = '5';
+			if (stat(_mero_mserver, &sb) == -1)
+				_mero_mserver = NULL;
+		}
+	}
 	/* setup default database properties, constants: unlike previous
 	 * versions, we do not want changing defaults any more */
 	_mero_db_props = getDefaultProps();
@@ -590,12 +604,24 @@ main(int argc, char *argv[])
 				dbfarm, strerror(errno));
 		MERO_EXIT_CLEAN(1);
 	}
+	/* absolutise dbfarm if it isn't yet (we're in it now) */
+	if (*dbfarm != '/') {
+		dbfarm = alloca(1024);
+		if (getcwd(dbfarm, sizeof(1024)) == NULL) {
+			Mfprintf(stderr, "could not get dbfarm working directory: %s\n",
+					strerror(errno));
+			MERO_EXIT(1);
+		}
+	}
 
-	/* exit early if this is not going to work well */
-	if (stat(_mero_mserver, &sb) == -1) {
-		Mfprintf(stderr, "cannot stat %s executable: %s\n",
-				_mero_mserver, strerror(errno));
-		MERO_EXIT_CLEAN(1);
+	if (_mero_mserver == NULL) {
+		_mero_mserver = BINDIR "/mserver5";
+		if (stat(_mero_mserver, &sb) == -1) {
+			/* exit early if this is not going to work well */
+			Mfprintf(stderr, "cannot stat %s executable: %s\n",
+					_mero_mserver, strerror(errno));
+			MERO_EXIT_CLEAN(1);
+		}
 	}
 
 	/* read the merovingian properties from the dbfarm */
@@ -816,15 +842,7 @@ main(int argc, char *argv[])
 		MERO_EXIT(1);
 	}
 
-	{
-		char cwd[1024];
-		if (getcwd(cwd, sizeof(cwd)) == NULL) {
-			Mfprintf(stderr, "could not get current working directory: %s\n",
-					strerror(errno));
-			MERO_EXIT(1);
-		}
-		msab_init(cwd, NULL);
-	}
+	msab_init(dbfarm, NULL);
 
 	unlink(control_usock);
 	unlink(mapi_usock);

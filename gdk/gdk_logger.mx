@@ -73,8 +73,6 @@ the bats are made persistent, i.e. a bbp sub-commit is done.
 #define LOG_OK 0
 #define LOG_ERR (-1)
 
-#include <gdk.h>
-
 typedef struct logaction {
 	int type;		/* type of change */
 	int nr;
@@ -173,6 +171,7 @@ gdk_export log_bid logger_find_bat(logger *lg, char *name);
 #endif /*_LOGGER_H_*/
 @c
 #include "monetdb_config.h"
+#include "gdk.h"
 #include "gdk_logger.h"
 #include <string.h>
 
@@ -1897,7 +1896,7 @@ logger_del_bat(logger *lg, log_bid bid)
 	}
 	BUNdelHead(lg->catalog, &bid, FALSE);
 
-//assert( BBP[bid].lrefs == 0 );
+/*assert( BBP[bid].lrefs == 0 );*/
 }
 
 log_bid

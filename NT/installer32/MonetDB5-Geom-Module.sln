@@ -1,5 +1,5 @@
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual Studio 2008
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
 Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "MonetDB5-Geom-Module", "MonetDB5-Geom-Module.vdproj", "{E5EBAB1B-6991-4ACC-8DBD-36E77E3D7F45}"
 EndProject
 Global

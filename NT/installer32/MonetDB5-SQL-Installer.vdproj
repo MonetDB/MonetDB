@@ -1219,7 +1219,7 @@
         {
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_03431EDC85094776AD217020CB3E26D4"
             {
-            "SourcePath" = "8:C:\\Libraries\\zlib-1.2.5.win32\\lib\\zdll.lib"
+            "SourcePath" = "8:C:\\Libraries\\zlib-1.2.5.win32-vs10\\lib\\zdll.lib"
             "TargetName" = "8:zdll.lib"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -1259,7 +1259,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_0607DD25BFA34B92B0BF84584D3D8BCA"
             {
-            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.0a.win32\\lib\\libeay32.lib"
+            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.0a.win32-vs10\\lib\\libeay32.lib"
             "TargetName" = "8:libeay32.lib"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -1379,7 +1379,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_0D84516ED4054FEA84A5E2C60F42AFE3"
             {
-            "SourcePath" = "8:C:\\Libraries\\bzip2-1.0.5.win32\\bin\\libbz2.dll"
+            "SourcePath" = "8:C:\\Libraries\\bzip2-1.0.5.win32-vs10\\bin\\libbz2.dll"
             "TargetName" = "8:libbz2.dll"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -1439,7 +1439,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_13440C2EDE6842BF8D9F24F554EEB87F"
             {
-            "SourcePath" = "8:C:\\Libraries\\libxml2-2.7.7.win32\\lib\\libxml2.dll"
+            "SourcePath" = "8:C:\\Libraries\\libxml2-2.7.7.win32-vs10\\lib\\libxml2.dll"
             "TargetName" = "8:libxml2.dll"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -1599,7 +1599,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_1AF238588D2D4EA5A416D48291406811"
             {
-            "SourcePath" = "8:C:\\Libraries\\iconv-1.11.1.win32\\lib\\iconv.lib"
+            "SourcePath" = "8:C:\\Libraries\\iconv-1.11.1.win32-vs10\\lib\\iconv.lib"
             "TargetName" = "8:iconv.lib"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -1799,7 +1799,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_2C7B5DF9CBE642149692C67FC052ECA4"
             {
-            "SourcePath" = "8:C:\\Libraries\\iconv-1.11.1.win32\\bin\\iconv.dll"
+            "SourcePath" = "8:C:\\Libraries\\iconv-1.11.1.win32-vs10\\bin\\iconv.dll"
             "TargetName" = "8:iconv.dll"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -1839,7 +1839,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_2CC8B012C0CB4DFC8F2223F62310125F"
             {
-            "SourcePath" = "8:C:\\Libraries\\libxml2-2.7.7.win32\\lib\\libxml2.lib"
+            "SourcePath" = "8:C:\\Libraries\\libxml2-2.7.7.win32-vs10\\lib\\libxml2.lib"
             "TargetName" = "8:libxml2.lib"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -2399,7 +2399,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_52DCEC5806254D3F9246489B9C5DFC27"
             {
-            "SourcePath" = "8:C:\\Program Files\\PCRE\\bin\\pcre.dll"
+            "SourcePath" = "8:C:\\Program Files\\PCRE-vs10\\bin\\pcre.dll"
             "TargetName" = "8:pcre.dll"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -3239,7 +3239,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_88661B3BC7724CF992AC6079E040DE3A"
             {
-            "SourcePath" = "8:C:\\Libraries\\zlib-1.2.5.win32\\bin\\zlib1.dll"
+            "SourcePath" = "8:C:\\Libraries\\zlib-1.2.5.win32-vs10\\bin\\zlib1.dll"
             "TargetName" = "8:zlib1.dll"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -3359,7 +3359,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_929EE4AE7E524A1CBC69C7718D412876"
             {
-            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.0a.win32\\bin\\libeay32.dll"
+            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.0a.win32-vs10\\bin\\libeay32.dll"
             "TargetName" = "8:libeay32.dll"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -3599,7 +3599,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_A3D31DA50E0F4AE1873E390D5B7F1F33"
             {
-            "SourcePath" = "8:C:\\Program Files\\PCRE\\lib\\pcre.lib"
+            "SourcePath" = "8:C:\\Program Files\\PCRE-vs10\\lib\\pcre.lib"
             "TargetName" = "8:pcre.lib"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -3979,7 +3979,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_BA22F04D137D421199EB04EE1D228A8F"
             {
-            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.0a.win32\\lib\\ssleay32.lib"
+            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.0a.win32-vs10\\lib\\ssleay32.lib"
             "TargetName" = "8:ssleay32.lib"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -4119,7 +4119,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_C3D9984F15D64164AECDEFF66981A97E"
             {
-            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.0a.win32\\bin\\ssleay32.dll"
+            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.0a.win32-vs10\\bin\\ssleay32.dll"
             "TargetName" = "8:ssleay32.dll"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -4199,7 +4199,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_CA3CFDD1291E474EAE85329E4C5E5D45"
             {
-            "SourcePath" = "8:C:\\Libraries\\bzip2-1.0.5.win32\\lib\\libbz2.lib"
+            "SourcePath" = "8:C:\\Libraries\\bzip2-1.0.5.win32-vs10\\lib\\libbz2.lib"
             "TargetName" = "8:libbz2.lib"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -5815,7 +5815,7 @@
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:FALSE"
-            "SourcePath" = "8:C:\\Program Files\\Common Files\\Merge Modules\\Microsoft_VC90_CRT_x86.msm"
+            "SourcePath" = "8:C:\\Program Files\\Common Files\\Merge Modules\\Microsoft_VC100_CRT_x86.msm"
                 "Properties"
                 {
                 }

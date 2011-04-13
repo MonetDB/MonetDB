@@ -67,7 +67,6 @@ This operation check for indexing on the header.
 @h
 #ifndef _GDK_SEARCH_H_
 #define _GDK_SEARCH_H_
-#include "gdk.h"
 @}
 @+ Hash indexing
 This is a highly efficient implementation of simple bucket-chained hashing.

@@ -29,8 +29,6 @@ But that results in very large intermediates.
 #ifndef GDK_RANGEJOIN_H
 #define GDK_RANGEJOIN_H
 
-#include "gdk.h"
-
 @- BAT range and band join operators
 The @%BATbandjoin@ produces the associations [A, D] such that S.C-c1 <=
 R.b <= S.C + c2.  The special case c1 = 0 and c2 = infinite leads to a
@@ -57,6 +55,7 @@ Versions of bandjoin fixed on the merge implementation (possibly with a cut-off 
 @c
 
 #include "monetdb_config.h"
+#include "gdk.h"
 #include "gdk_rangejoin.h"
 
 @{

@@ -47,6 +47,7 @@ stderr of test 'connectto.Bug-2548` in directory 'test/BugTracker-2010` itself:
 # config opt 	sidcrack_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,sidcrack,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,multiplex,garbageCollector
 # config opt 	datacell_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,deadcode,constants,commonTerms,joinPath,datacell,deadcode,reduce,dataflow,history,multiplex,garbageCollector
 # config opt 	octopus_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,constants,commonTerms,joinPath,octopus,deadcode,reduce,dataflow,history,multiplex,garbageCollector
+# config opt 	mapreduce_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,mapreduce,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector
 # config opt 	datacyclotron_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,datacyclotron,mergetable,deadcode,constants,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,replication,multiplex,garbageCollector
 # config opt 	derive_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,derivePath,joinPath,deadcode,reduce,dataflow,history,multiplex,garbageCollector
 # config opt 	dictionary_pipe = inline,remap,dictionary,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,multiplex,garbageCollector
@@ -70,13 +71,13 @@ stderr of test 'connectto.Bug-2548` in directory 'test/BugTracker-2010` itself:
 # 13:12:55 >  mclient -lsql -ftest -i -e --host=rig --port=39884 
 # 13:12:55 >  
 
-MAPI  = monetdb@LAB03:39710
+MAPI  = monetdb@alf:34263
 QUERY = connect to default;
 ERROR = !CONNECT TO: DEFAULT is not supported!
-MAPI  = monetdb@LAB03:39710
+MAPI  = monetdb@alf:34263
 QUERY = connect to 'whatever' port 50001 database 'nonexisting' USER 'monetdb' PASSWORD 'monetdb' LANGUAGE 'mal';
 ERROR = !IOException:mapi.connect:Could not connect: getaddrinfo failed: The requested name is valid, but no data of the requested type was found. 
-MAPI  = monetdb@LAB03:39710
+MAPI  = monetdb@alf:34263
 QUERY = disconnect 'whatever';
 ERROR = !DISCONNECT CATALOG: no such db_alias 'whatever'
 

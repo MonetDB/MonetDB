@@ -22,7 +22,23 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <stdlib.h>
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
 #include "mutils.h"
+
+#ifdef HAVE_MACH_O_DYLD_H
+# include <mach-o/dyld.h>  /* _NSGetExecutablePath on OSX >=10.5 */
+#endif
+
+#ifdef HAVE_SYS_PARAM_H
+# include <sys/param.h>  /* realpath on OSX */
+#endif
+
+#ifdef HAVE_LIMITS_H
+# include <limits.h>  /* PATH_MAX on Solaris */
+#endif
 
 #ifdef NATIVE_WIN32
 
@@ -278,3 +294,57 @@ MT_lockf(char *filename, int mode, off_t off, off_t len)
 }
 
 #endif
+
+#ifndef PATH_MAX
+# define PATH_MAX 1024
+#endif
+static char _bin_path[PATH_MAX];
+char *
+get_bin_path(void)
+{
+	/* getting the path to the executable's binary, isn't all that
+	 * simple, unfortunately */
+#if defined(_MSC_VER)		/* Windows */
+	if (GetModuleFileName(NULL, _bin_path,
+			      (DWORD) sizeof(_bin_path)) != 0)
+		return _bin_path;
+#elif defined(HAVE__NSGETEXECUTABLEPATH)  /* Darwin/OSX */
+	char buf[PATH_MAX];
+	uint32_t size = PATH_MAX;
+	if (_NSGetExecutablePath(buf, &size) == 0 &&
+			realpath(buf, _bin_path) != NULL)
+	return _bin_path;
+#elif defined(HAVE_SYS_SYSCTL_H) && defined(KERN_PROC_PATHNAME)  /* BSD */
+	int mib[4];
+	size_t cb = sizeof(_bin_path);
+	mib[0] = CTL_KERN;
+	mib[1] = KERN_PROC;
+	mib[2] = KERN_PROC_PATHNAME;
+	mib[3] = -1;
+	if (sysctl(mib, 4, _bin_path, &cb, NULL, 0) == 0)
+		return _bin_path;
+#elif defined(HAVE_GETEXECNAME)  /* Solaris */
+	char buf[PATH_MAX];
+	const char *execn = getexecname();
+	/* getexecname doesn't always return an absolute path, the only
+	 * thing it seems to do is strip leading ./ from the invocation
+	 * string. */
+	if (*execn != '/') {
+		if (getcwd(buf, PATH_MAX) != NULL) {
+			snprintf(buf + strlen(buf), PATH_MAX, "/%s", execn);
+			if (realpath(buf, _bin_path) != NULL)
+				return(_bin_path);
+		}
+	} else {
+		if (realpath(execn, _bin_path) != NULL)
+			return(_bin_path);
+	}
+#else  /* try Linux approach */
+	if (readlink("/proc/self/exe",
+				_bin_path, sizeof(_bin_path)) != -1)
+			return _bin_path;
+#endif
+	/* could use argv[0] (passed) to deduce location based on PATH, but
+	 * that's a lot of work and unreliable */
+	return NULL;
+}

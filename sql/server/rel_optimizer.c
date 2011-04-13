@@ -745,12 +745,13 @@ order_joins(mvc *sql, list *rels, list *exps)
 			/* find the involved relations */
 
 			/* complex expressions may touch multiple base tables 
-		 	 * Should be push up to extra selection.
-		 	 * */
-			//l = find_one_rel(rels, e->l);
-			//r = find_one_rel(rels, e->r);
+		 	 * Should be push up to extra selection. */
+			/*
+			l = find_one_rel(rels, e->l);
+			r = find_one_rel(rels, e->r);
 
-			//if (l && r) 
+			if (l && r) 
+			*/
 			if (exp_is_join_exp(e) == 0)
 				rel_join_add_exp(sql->sa, top->l, e);
 			else
@@ -2102,26 +2103,6 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 	    r && r->op == op_project && !(rel_is_ref(r))) 
 		return rel_merge_projects(changes, sql, rel);
 
-	/* merge select and cross product ? */
-	if (rel->op == op_select && r && r->op == op_join && !(rel_is_ref(r))) {
-		list *exps = rel->exps;
-
-		if (!r->exps)
-			r->exps = new_exp_list(sql->sa); 
-		rel->exps = new_exp_list(sql->sa); 
-		for (n = exps->h; n; n = n->next) { 
-			sql_exp *e = n->data;
-
-			if (exp_is_join_exp(e) == 0) {
-				append(r->exps, e);
-				*changes += 1;
-			} else {
-				append(rel->exps, e);
-			}
-		}
-		return rel;
-	}
-
 	/* push select through join */
 	if (rel->op == op_select && r && is_join(r->op) && !(rel_is_ref(r))) {
 		sql_rel *jl = r->l;
@@ -2158,6 +2139,26 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 			if (!done)
 				append(rel->exps, e);
 			*changes += done;
+		}
+		return rel;
+	}
+
+	/* merge select and cross product ? */
+	if (rel->op == op_select && r && r->op == op_join && !(rel_is_ref(r))) {
+		list *exps = rel->exps;
+
+		if (!r->exps)
+			r->exps = new_exp_list(sql->sa); 
+		rel->exps = new_exp_list(sql->sa); 
+		for (n = exps->h; n; n = n->next) { 
+			sql_exp *e = n->data;
+
+			if (exp_is_join_exp(e) == 0) {
+				append(r->exps, e);
+				*changes += 1;
+			} else {
+				append(rel->exps, e);
+			}
 		}
 		return rel;
 	}
@@ -2412,8 +2413,10 @@ rel_push_join_down_union(int *changes, mvc *sql, sql_rel *rel)
 			 * 	1 find fk and check if its split over
 			 * 	parts (both sides) */
 
-			//join(union(a,b), union(c,d))
-			//union(join(a,c), join(b,d))
+			/*
+			join(union(a,b), union(c,d))
+			union(join(a,c), join(b,d))
+			*/
 			nl = rel_crossproduct(sql->sa, rel_dup(l->l), rel_dup(r->l), rel->op);
 			nr = rel_crossproduct(sql->sa, rel_dup(l->r), rel_dup(r->r), rel->op);
 			nl->exps = exps;
@@ -3444,7 +3447,7 @@ rel_select_order(int *changes, mvc *sql, sql_rel *rel)
 		list *exps = NULL;
 			
 		exps = list_sort(rel->exps, (fkeyvalue)&exp_keyvalue, (fdup)NULL);
-		//rel->exps = exp_merge(exps);
+		/*rel->exps = exp_merge(exps);*/
 		rel->exps = exps;
 	}
 	return rel;
@@ -3897,8 +3900,10 @@ rel_optimizer(mvc *sql, sql_rel *rel)
 
 	if (gp.cnt[op_join] || gp.cnt[op_left]) {
 		rel = rewrite(sql, rel, &rel_join_order, &changes); 
-		//rel = rewrite(sql, rel, &rel_push_join_down_union, &changes); 
-		// sometime rel_join_order introduces empty selects
+		/*
+		rel = rewrite(sql, rel, &rel_push_join_down_union, &changes); 
+		sometime rel_join_order introduces empty selects
+		*/
 		rel = rewrite(sql, rel, &rel_remove_empty_select, &e_changes); 
 	}
 

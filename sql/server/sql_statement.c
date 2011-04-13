@@ -713,7 +713,9 @@ push_project(sql_allocator *sa, stmt *rows, stmt *val)
 		} else {
 			/* push through arguments of Nop */
 			node *n;
-			for(n=val->op4.lval->h; n; n = n->next) 
+			stmt *l = val->op1;
+
+			for(n = l->op4.lval->h; n; n = n->next) 
 				n->data = push_project(sa, rows, n->data);
 		}
 		break;
@@ -2209,7 +2211,7 @@ print_stmt( sql_allocator *sa, stmt *s )
 	case st_basetable:
 	case st_reljoin:
 	case st_releqjoin:
-		//assert(0);
+		/*assert(0);*/
 	default:
 		printf("s%d := %s(", s->nr, st_type2string(s->type));
 		switch(s->type) {

@@ -72,4 +72,11 @@ mutils_export char *dirname(char *path);
 
 mutils_export int MT_lockf(char *filename, int mode, off_t off, off_t len);
 
+/* Retrieves the absolute path to the executable being run, with no
+ * extra /, /./, or /../ sequences.  On Darwin and Solaris this function
+ * needs to be called before any chdirs are performed.  Returns a
+ * pointer to a static buffer that is overwritten by subsequent calls to
+ * this function. */
+mutils_export char *get_bin_path(void);
+
 #endif	/* _MUTILS_H_ */

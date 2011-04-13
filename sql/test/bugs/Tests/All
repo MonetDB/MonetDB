@@ -1,5 +1,4 @@
 drop_foreignkey_selfreferencing
-create_insert_select_aggr-bug-00001
 foreignkey_leftjoin-bug-sf-854312
 create_insert_select-bug-sf-900198
 insert_update_arith-bug-sf-900206
@@ -100,3 +99,4 @@ select_from_values
 or_in_crash
 crash_order_by
 in_or_bug
+create_insert_select_aggr-bug-00001

@@ -30,10 +30,6 @@ bl_preversion( int oldversion, int newversion)
 #define CATALOG_OCT2010 51000
 
 	(void)newversion;
-	if (oldversion == CATALOG_FEB2010) {
-		catalog_version = oldversion;
-		return 0;
-	}
 	if (oldversion == CATALOG_OCT2010) {
 		catalog_version = oldversion;
 		return 0;
@@ -55,60 +51,6 @@ static void
 bl_postversion( void *lg) 
 {
 	(void)lg;
-	if (catalog_version == CATALOG_FEB2010) {
-		size_t i;
-		BAT *o, *b;
-		char *s_nil = ATOMnilptr(TYPE_str);
-		fprintf(stdout, "# upgrading catalog from Feb2010\n");
-		fflush(stdout);
-
-		o = temp_descriptor(logger_find_bat(lg, "sys__tables_id"));
-		/* no sys tables, easy upgrade */
-		if (!o)
-			return ;
-		b = bat_new( TYPE_void, TYPE_bit, BATcount(o));
-		memset(Tloc(b,BUNfirst(b)), 0, sizeof(bit)*BATcount(o));
-		BATsetcount(b, BATcount(o));
-		BATsetaccess(b, BAT_READ);
-		logger_add_bat(lg, b, "sys__tables_readonly");
-		bat_destroy(o);
-		bat_destroy(b);
-
-		o = temp_descriptor(logger_find_bat(lg, "sys__columns_id"));
-		if (!o)
-			return ;
-		b = bat_new( TYPE_void, TYPE_str, BATcount(o));
-		for(i=0; i< BATcount(o); i++) 
-			BUNappend(b, s_nil, TRUE);
-		BATsetaccess(b, BAT_READ);
-		logger_add_bat(lg, b, "sys__columns_storage");
-		bat_destroy(o);
-		bat_destroy(b);
-
-		o = temp_descriptor(logger_find_bat(lg, "tmp__tables_id"));
-		if (!o)
-			return ;
-		b = bat_new( TYPE_void, TYPE_bit, BATcount(o));
-		memset(Tloc(b,BUNfirst(b)), 0, sizeof(bit)*BATcount(o));
-		BATsetcount(b, BATcount(o));
-		BATsetaccess(b, BAT_READ);
-		logger_add_bat(lg, b, "tmp__tables_readonly");
-		bat_destroy(o);
-		bat_destroy(b);
-
-		o = temp_descriptor(logger_find_bat(lg, "tmp__columns_id"));
-		if (!o)
-			return ;
-		b = bat_new( TYPE_void, TYPE_str, BATcount(o));
-		for(i=0; i< BATcount(o); i++) 
-			BUNappend(b, s_nil, TRUE);
-		BATsetaccess(b, BAT_READ);
-		logger_add_bat(lg, b, "tmp__columns_storage");
-		bat_destroy(o);
-		bat_destroy(b);
-	
-		/* mark that the rest is fixed on sql level */
-	}
 	if (catalog_version == CATALOG_OCT2010) {
 		BAT *b, *b1;
 		char *s = "sys", n[64];
