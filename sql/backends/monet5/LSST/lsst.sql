@@ -17,18 +17,17 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 */
 
-create function qserv_angSep(ra1 dbl, dec1 dbl, ra2 dbl, dec2 dbl)
-returns dbl external name 'mal.qserv_angSep';
+create function angSep(ra1 double, dec1 double, ra2 double, dec2 double)
+returns double external name lsst.angsep;
 
+create function ptInSphBox(ra1 double, dec1 double, ra_min double,  dec_min double, ra_max double, dec_max double)
+returns int external name lsst.ptinsphbox;
 
-create function qserv_ptInSphBox(ra, dbl dec dbl, ra_ dblmin, dec dbl_min, ra_ dblmax, dec dbl_max)
-returns int external name 'mal.qserv_InSphBox;
+create function ptInSphEllipse(ra1 double, dec1 double , ra_cen double, dec_cen double, smaa double, smia double, ang double) 
+returns int external name lsst.ptinsphellipse;
 
-create function qserv_ptInSphEllipse(ra, dbl dec dbl, ra_ dblcen, dec dbl_cen, sma dbla, smi dbla, ang dbl) 
-returns int external name 'mal.qserv_InSphEllipse;
+create function ptInSphCircle(ra1 double, dec1 double, ra_cen double, dec_cen double, radius double) 
+returns int external name lsst.ptinsphcircle;
 
-create function qserv_ptInSphCircle(ra, dbl dec dbl, ra_ dblcen, dec dbl_cen, rad dblius) 
-returns int external name 'mal.qserv_InSphZ;
-
-create function qserv_ptInSphPoly(ra dbl, dec dbl, list dbl)
-returns int external name 'mal.qserv_InSphPoly;
+create function ptInSphPoly(ra1 double, dec1 double, list double)
+returns int external name lsst.ptinsphpoly;

@@ -41,7 +41,7 @@ lib__lsst = {
 		   ../../../../gdk/libbat $(curl_LIBS)
 }
 
-headers_mal = {
+headers_lsstmal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
 	SOURCES = lsst.mal
@@ -53,7 +53,7 @@ headers_sql = {
 	SOURCES = lsst.sql
 }
 
-headers_autoload = {
+headers_lsstautoload = {
 	HEADERS = mal
 	DIR = libdir/monetdb5/autoload
 	SOURCES = 80_lsst.mal
