@@ -15,7 +15,7 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = NOT_WIN32?vaults
+SUBDIRS = NOT_WIN32?vaults UDF  LSST
 
 # force sql.o to not depend on .../rdf/rdf.h since it only optionally created
 RDF_INC = -I../../../monetdb5/extras/rdf
@@ -48,7 +48,7 @@ lib__sql = {
 		sql_result.mx \
 		sql_readline.mx \
 		sql_emptyset.mx \
-		sql_bpm.mx
+		sql_bpm.mx 
 	LIBS = ../../server/libsqlserver \
 		   ../../storage/libstore \
 		   ../../storage/bat/libbatstore \

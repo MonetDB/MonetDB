@@ -6,8 +6,6 @@ debian/tmp/usr/bin/sample4 usr/bin
 debian/tmp/usr/bin/smack00 usr/bin
 debian/tmp/usr/bin/smack01 usr/bin
 debian/tmp/usr/bin/malsample.pl usr/bin
-debian/tmp/usr/bin/milsample.pl usr/bin
 debian/tmp/usr/bin/sqlsample.php usr/bin
 debian/tmp/usr/bin/sqlsample.pl usr/bin
 debian/tmp/usr/bin/sqlsample.py usr/bin
-debian/tmp/usr/bin/xquerysample.php usr/bin

@@ -1,0 +1,63 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2011 MonetDB B.V.
+# All Rights Reserved.
+
+INCLUDES = ../../../include \
+		   ../../../common \
+		   ../../../storage \
+		   ../../../server .. \
+		   ../../../../monetdb5/modules/atoms \
+		   ../../../../monetdb5/compiler \
+		   ../../../../monetdb5/modules/kernel \
+		   ../../../../monetdb5/mal \
+		   ../../../../monetdb5/modules/mal \
+		   ../../../../monetdb5/optimizer \
+		   ../../../../monetdb5/scheduler \
+		   ../../../../clients/mapilib \
+		   ../../../../common/options \
+		   ../../../../common/stream \
+		   ../../../../common/utils \
+		   ../../../../gdk \
+		   $(READLINE_INCS) $(MSEED_CFLAGS) $(cfitsio_CFLAGS) $(curl_CFLAGS)
+
+lib__lsst = {
+	MODULE
+	DIR = libdir/monetdb5
+	SOURCES = lsst.c
+	LIBS = ../../../../monetdb5/tools/libmonetdb5 \
+		   ../../../../gdk/libbat $(curl_LIBS)
+}
+
+headers_lsstmal = {
+	HEADERS = mal
+	DIR = libdir/monetdb5
+	SOURCES = lsst.mal
+}
+
+headers_sql = {
+	HEADERS = sql
+	DIR = libdir/monetdb5
+	SOURCES = lsst.sql
+}
+
+headers_lsstautoload = {
+	HEADERS = mal
+	DIR = libdir/monetdb5/autoload
+	SOURCES = 80_lsst.mal
+}
+
+EXTRA_DIST_DIR = Tests
+EXTRA_DIST = 80_lsst.mal 

@@ -23,6 +23,9 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdlib.h>
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
 #include "mutils.h"
 
 #ifdef HAVE_EXECINFO_H
