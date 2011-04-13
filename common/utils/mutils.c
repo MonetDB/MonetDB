@@ -23,6 +23,9 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdlib.h>
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
 #include "mutils.h"
 
 #ifdef HAVE_MACH_O_DYLD_H
