@@ -581,8 +581,6 @@ typedef size_t BUN;
 */
 typedef enum { GDK_FAIL, GDK_SUCCEED } gdk_return;
 
-gdk_export int GDKsilent;	/* should GDK shut up? */
-
 #define FATALcheck(tst,	msg) if (tst) GDKfatal(msg);
 #define ERRORcheck(tst,	msg) if (tst) { GDKerror(msg); return 0; }
 #define WARNcheck(tst,	msg) if (tst) GDKwarning(msg)
@@ -1992,7 +1990,6 @@ typedef struct {
 
 gdk_export bat BBPmaxsize;
 gdk_export bat BBPlimit;
-gdk_export int BBP_dirty;	/* BBP table dirty? */
 gdk_export BBPrec *BBP;
 
 /* fast defines without checks; internal use only  */
@@ -2009,7 +2006,6 @@ gdk_export BBPrec *BBP;
 #define BBP_pid(i)	BBP[ABS(i)].pid
 
 /* macros that nicely check parameters */
-#define BBPdirty(x)	(BBP_dirty=(x))
 #define BBPcacheid(b)	((b)->batCacheid)
 #define BBPstatus(i)	(BBPcheck((i),"BBPstatus")?BBP_status(i):-1)
 #define BBPcurstamp()	BBP_curstamp
@@ -2365,9 +2361,7 @@ and are checked on inconsistent frees and memory leaks.
 gdk_export void GDKvminc(size_t len);
 gdk_export void *GDKmmap(char *path, int mode, off_t off, size_t len);
 
-gdk_export ptr GDK_mem_start;		/* sbrk(0) at start of the program */
 gdk_export size_t GDK_mem_bigsize;	/* size after which we use anonymous VM rather than malloc */
-gdk_export size_t GDK_mmap_minsize;	/* size after which we use tempfile VM rather than malloc/anonymous VM */
 gdk_export size_t GDK_mem_maxsize;	/* max allowed size of committed memory */
 gdk_export size_t GDK_vm_maxsize;	/* max allowed size of reserved vm */
 gdk_export int	GDK_vm_trim;		/* run vmtrim thread */
@@ -2469,34 +2463,6 @@ gdk_export int GDKfatal(const char *format, ...);
 #define strdup _strdup
 #endif
 
-#define BBP_BATMASK	511
-#define BBP_THREADMASK	63
-
-typedef struct {
-	MT_Lock swap;
-	MT_Lock hash;
-} batlock_t;
-
-typedef struct {
-	MT_Lock alloc;
-	MT_Lock trim;
-	bat free;
-} bbplock_t;
-
-#define GDKswapLock(x)  GDKbatLock[(x&BBP_BATMASK)].swap
-#define GDKhashLock(x)  GDKbatLock[(x&BBP_BATMASK)].hash
-#define GDKtrimLock(y)  GDKbbpLock[(y&BBP_THREADMASK)].trim
-#define GDKcacheLock(y) GDKbbpLock[(y&BBP_THREADMASK)].alloc
-#define BBP_free(y)	GDKbbpLock[(y&BBP_THREADMASK)].free
-
-gdk_export batlock_t GDKbatLock[BBP_BATMASK + 1];
-gdk_export bbplock_t GDKbbpLock[BBP_THREADMASK + 1];
-gdk_export MT_Lock GDKnameLock;
-gdk_export MT_Lock GDKthreadLock;
-gdk_export MT_Lock GDKunloadLock;
-gdk_export MT_Cond GDKunloadCond;
-gdk_export MT_Lock GDKtmLock;
-
 /*
    See `man mserver5` or tools/mserver/mserver5.1
    for a documentation of the following debug options.
@@ -2577,7 +2543,6 @@ gdk_export MT_Lock GDKtmLock;
 		((((lng)normal_int_SWAP(l))<<32) |\
 		 (0xffffffff&normal_int_SWAP(l>>32)))
 
-gdk_export int GDKnrofthreads;
 gdk_export int GDKembedded;
 gdk_export int GDKprotected;
 gdk_export void GDKprotect(void);
