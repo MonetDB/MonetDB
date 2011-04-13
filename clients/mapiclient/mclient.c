@@ -1413,9 +1413,13 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 			continue;
 		case Q_SCHEMA:
 			SQLqueryEcho(hdl);
+			timerHumanStop();
 			if (formatter == TABLEformatter)
 				mnstr_printf(toConsole,
-					      "operation successful\n");
+					      "operation successful%s%s%s\n",
+					      singleinstr ? " (" : "",
+					      singleinstr ? timerHuman() : "",
+					      singleinstr ? ")" : "");
 			continue;
 		case Q_TRANS:
 			SQLqueryEcho(hdl);
