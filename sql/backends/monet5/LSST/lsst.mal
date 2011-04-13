@@ -1,0 +1,38 @@
+#
+#The contents of this file are subject to the MonetDB Public License
+#Version 1.1 (the "License"); you may not use this file except in
+#compliance with the License. You may obtain a copy of the License at
+#http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+#
+#Software distributed under the License is distributed on an "AS IS"
+#basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+#License for the specific language governing rights and limitations
+#under the License.
+#
+#The Original Code is the MonetDB Database System.
+#
+#The Initial Developer of the Original Code is CWI.
+#Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+#Copyright August 2008-2011 MonetDB B.V.
+#All Rights Reserved.
+
+command mal.qserv_angSep(ra1:dbl, dec1:dbl, ra2:dbl, dec2:dbl)(ra3:dbl, dec3:dbl)
+address qserv_angSep
+comment "Returns the angular separation in degrees between two spherical
+coordinate pairs (ra1,dec1) and (ra2,dec2)";
+
+command mal.qserv_ptInSphBox(ra:dbl, dec:dbl, ra_min:dbl, dec_min:dbl, ra_max:dbl, dec_max:dbl) :int
+address qserv_ptInSphBox
+comment "Returns 1 if the given spherical longitude/latitude box contains the given position";
+
+command mal.qserv_ptInSphCircle(ra:dbl, dec:dbl, ra_min:dbl, dec_min:dbl, ra_max:dbl, dec_max:dbl) :int
+address qserv_ptInSphCircle
+comment "Returns 1 if the given spherical longitude/latitude circle contains the given position";
+
+command mal.qserv_ptInSphEllipse(ra:dbl, dec:dbl, ra_min:dbl, dec_min:dbl, ra_max:dbl, dec_max:dbl) :int
+address qserv_ptInSphEllipse
+comment "Returns 1 if the given spherical longitude/latitude ellipse contains the given position";
+
+pattern mal.qserv_ptInSphPoly(ra:dbl, dec:dbl, list:dbl...) :int
+address qserv_ptInSphPoly
+comment "Returns 1 if the given spherical longitude/latitude polyline contains the given position";
