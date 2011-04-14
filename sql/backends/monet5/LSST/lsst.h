@@ -21,13 +21,24 @@
 #define _SQL_UDF_H_
 #include "monetdb_config.h"
 #include "sql.h"
+#define _USE_MATH_DEFINES	/* needed for WIN32 to define M_PI */
 #include <math.h>
 #include <string.h>
 
-sql5_export str qserv_angSep(dbl *sep, dbl *ra1, dbl *dec1, dbl *ra2, dbl *dec2);
-sql5_export str qserv_ptInSphBox(int *ret, dbl *ra, dbl *dec, dbl *ra_min, dbl *dec_min, dbl *ra_max, dbl *dec_max);
-sql5_export str qserv_ptInSphEllipse(int *ret, dbl *ra, dbl *dec, dbl *ra_cen, dbl *dec_cen, dbl *smaa, dbl *smia, dbl *ang);
-sql5_export str qserv_ptInSphCircle(int *ret, dbl *ra, dbl *dec, dbl *ra_cen, dbl *dec_cen, dbl *radius);
-sql5_export str qserv_ptInSphPoly(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+#ifdef WIN32
+#ifndef LIBLSST
+#define lsst_export extern __declspec(dllimport)
+#else
+#define lsst_export extern __declspec(dllexport)
+#endif
+#else
+#define lsst_export extern
+#endif
+
+lsst_export str qserv_angSep(dbl *sep, dbl *ra1, dbl *dec1, dbl *ra2, dbl *dec2);
+lsst_export str qserv_ptInSphBox(int *ret, dbl *ra, dbl *dec, dbl *ra_min, dbl *dec_min, dbl *ra_max, dbl *dec_max);
+lsst_export str qserv_ptInSphEllipse(int *ret, dbl *ra, dbl *dec, dbl *ra_cen, dbl *dec_cen, dbl *smaa, dbl *smia, dbl *ang);
+lsst_export str qserv_ptInSphCircle(int *ret, dbl *ra, dbl *dec, dbl *ra_cen, dbl *dec_cen, dbl *radius);
+lsst_export str qserv_ptInSphPoly(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* _SQL_UDF_H_ */
