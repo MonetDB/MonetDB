@@ -19,22 +19,22 @@
 module lsst;
 
 command lsst.angsep(ra1:dbl, dec1:dbl, ra2:dbl, dec2:dbl) :dbl
-address angSep
+address qserv_angSep
 comment "Returns the angular separation in degrees between two spherical
 coordinate pairs (ra1,dec1) and (ra2,dec2)";
 
 command lsst.ptinsphbox(ra:dbl, dec:dbl, ra_min:dbl, dec_min:dbl, ra_max:dbl, dec_max:dbl) :int
-address ptinsphBox
+address qserv_ptInSphBox
 comment "Returns 1 if the given spherical longitude/latitude box contains the given position";
 
 command lsst.ptinsphcircle(ra:dbl, dec:dbl, ra_cen:dbl, dec_cen:dbl, radius:dbl) :int
-address ptinsphCircle
+address qserv_ptInSphCircle
 comment "Returns 1 if the given spherical longitude/latitude circle contains the given position";
 
 command lsst.ptinsphellipse(ra:dbl, dec:dbl, ra_cen:dbl, dec_cen:dbl, smaa:dbl, smia:dbl, ang:dbl) :int
-address ptinsphEllipse
+address qserv_ptInSphEllipse
 comment "Returns 1 if the given spherical longitude/latitude ellipse contains the given position";
 
 pattern lsst.ptinsphpoly(ra:dbl, dec:dbl, list:dbl...) :int
-address ptinsphPoly
+address qserv_ptInSphPoly
 comment "Returns 1 if the given spherical longitude/latitude polyline contains the given position";
