@@ -27,7 +27,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 URL: http://monetdb.cwi.nl/
-Source: http://dev.monetdb.org/downloads/sources/Mar2011/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Apr2011/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -574,6 +574,62 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Thu Apr 14 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.3.1-20110414
+- Rebuilt.
+
+* Thu Apr 14 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.3.1-20110414
+- gdk: Fixed bugs in antiselect which gave the incorrect result when upper
+  and lower bount were equal.  This bug could be triggered by the SQL
+  query SELECT * FROM t WHERE x NOT BETWEEN y AND y.
+
+* Thu Apr 14 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.3.1-20110414
+- sql: Some names in the SQL catalog were changed.  This means that the
+  database in the Apr2011 release is not compatible with pre-Apr2011
+  databases.  The database is converted automatically when opened the
+  first time.  This database can then no longer be read by an older
+  release.
+
+* Tue Apr  5 2011 Fabian Groffen <fabian@cwi.nl> - 11.3.1-20110414
+- clients: Plugged a small memory leak occurring upon redirects by the server
+  (e.g. via monetdbd)
+
+* Tue Apr  5 2011 Fabian Groffen <fabian@cwi.nl> - 11.3.1-20110414
+- java: clarify exception messages for unsupported methods
+
+* Thu Mar 24 2011 Fabian Groffen <fabian@cwi.nl> - 11.3.1-20110414
+- merovingian: The forward property for databases has been removed.  Instead, only
+  a global proxy or redirect mode can be set using monetdbd.
+
+* Thu Mar 24 2011 Fabian Groffen <fabian@cwi.nl> - 11.3.1-20110414
+- merovingian: monetdbd can no longer log error and normal messages to separate
+  logfiles, logging to stdout and stderr is no longer possible either.
+- merovingian: The .merovingian_pass file is no longer in use, and replaced by the
+  .merovingian_properties file.  Use monetdbd (get|set) passphrase to
+  view/edit the control passphrase.  Existing .merovingian_pass files
+  will automatically be migrated upon startup of monetdbd.
+- merovingian: monetdbd now understands commands that allow to create, start, stop,
+  get and set properties on a given dbfarm.  This behaviour is intended
+  as primary way to start a MonetDB Database Server, on a given location
+  of choice.  monetdbd get and set are the replacement of editing the
+  monetdb5.conf file (which is no longer in use as of the Apr2011
+  release).  See monetdbd(1).
+
+* Thu Mar 24 2011 Fabian Groffen <fabian@cwi.nl> - 11.3.1-20110414
+- clients: Remove XQuery related code from Ruby adapter, PHP driver and Perl Mapi
+  library
+
+* Thu Mar 24 2011 Fabian Groffen <fabian@cwi.nl> - 11.3.1-20110414
+- java: Removed XQuery related XRPC wrapper and XML:DB code, removed support
+  for language=xquery and language=mil from JDBC.
+
+* Thu Mar 24 2011 Fabian Groffen <fabian@cwi.nl> - 11.3.1-20110414
+- clients: Make SQL the default language for mclient, e.g. to use when --language=
+  or -l is omitted
+
+* Thu Mar 24 2011 Fabian Groffen <fabian@cwi.nl> - 11.3.1-20110414
+- monetdb5: mserver5 no longer reads monetdb5.conf upon startup by default.
+  Use --config=file to have mserver5 read a configuration on startup
+
 * Thu Mar 24 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.1.1-20110324
 - Rebuilt.
 
