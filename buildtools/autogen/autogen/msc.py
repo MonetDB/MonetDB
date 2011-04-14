@@ -325,6 +325,8 @@ def msc_dep(fd, tar, deplist, msc):
             if dep != t:
                 fd.write('%s"%s"' % (sep, dep))
                 sep = " "
+                if dep.endswith('.mx') and tar not in msc['BUILT_SOURCES']:
+                    msc['BUILT_SOURCES'].append(tar)
         else:
             print "!WARNING: dropped absolute dependency " + d
     if sep == " ":
@@ -493,6 +495,8 @@ def msc_headers(fd, var, headers, msc):
                 condname = ''
             msc['INSTALL'][header] = header, '', sd, '', condname
             msc['SCRIPTS'].append(header)
+            if header not in headers['SOURCES']:
+                msc['BUILT_SOURCES'].append(cheader)
 
 ##    msc_find_ins(msc, headers)
 ##    msc_deps(fd, headers['DEPS'], "\.o", msc)
@@ -1159,7 +1163,7 @@ def output(tree, cwd, topdir):
     fd.write("srcdir = $(TOPDIR)\\..%s\n" % string.replace(srcdir, '/', '\\'))
     fd.write("!INCLUDE $(TOPDIR)\\..\\NT\\rules.msc\n")
     if tree.has_key("SUBDIRS"):
-        fd.write("all: all-recursive all-msc\n")
+        fd.write("all: build-all\n")
         fd.write("check: check-recursive check-msc\n")
         fd.write("install: install-recursive install-msc\n")
     else:
@@ -1198,6 +1202,9 @@ def output(tree, cwd, topdir):
         for v in msc['BUILT_SOURCES']:
             fd.write(" %s" % v)
         fd.write("\n")
+
+    if tree.has_key('SUBDIRS'):
+        fd.write('build-all: $(BUILT_SOURCES) all-recursive all-msc\n')
 
 ##    fd.write("EXTRA_DIST = Makefile.ag Makefile.msc")
 ##    for v in msc['EXTRA_DIST']:
