@@ -16,4 +16,5 @@
 # All Rights Reserved.
 
 # This loads the MonetDB/SQL module
+library lsst;
 include lsst;
