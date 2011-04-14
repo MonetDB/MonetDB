@@ -35,6 +35,6 @@ program.
       author_email='info@monetdb.org',
       url='http://monetdb.cwi.nl/',
       packages=['monetdb', 'monetdb.sql'],
-      download_url='http://dev.monetdb.org/downloads/sources/Apr2011/python-monetdb-1.0.tar.gz',
+      download_url='<will be filled in before a release>/python-monetdb-1.0.tar.gz',
      )
 
