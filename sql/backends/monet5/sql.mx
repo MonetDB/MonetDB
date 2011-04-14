@@ -6004,6 +6004,47 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				/*printf("\n");*/
 				BBPunfix(bn->batCacheid);
 			}
+
+			if (isTable(t))
+				if(t->idxs.set)
+					for (ncol= (t)->idxs.set->h; ncol; ncol= ncol->next){
+						sql_base *bc = ncol->data;
+						sql_idx *c= (sql_idx *) ncol->data;
+						if(c->type != no_idx){
+							BAT *bn = store_funcs.bind_idx(tr, c, 0);
+							BUN sz;
+			
+							/*printf("schema %s.%s.%s" , b->name, bt->name, bc->name);*/
+							sch = BUNappend(sch, b->name, FALSE);
+							tab = BUNappend(tab, bt->name, FALSE);
+							col = BUNappend(col, bc->name, FALSE);
+			
+							/*printf(" cnt "BUNFMT, BATcount(bn));*/
+							sz= BATcount(bn);
+							cnt = BUNappend(cnt, &sz, FALSE);
+							/*printf(" cap "BUNFMT, BATcapacity(bn));*/
+							sz= BATcapacity(bn);
+							cap = BUNappend(cap, &sz, FALSE);
+			
+							/*printf(" loc %s", BBP_physical(bn->batCacheid));*/
+							loc = BUNappend(loc, BBP_physical(bn->batCacheid), FALSE);
+							/*printf(" width %d", bn->T->width);*/
+							w= bn->T->width;
+							atom = BUNappend(atom, &w, FALSE);
+							/*printf(" size "BUNFMT, tailsize(bn,BATcount(bn)) + (bn->T->vheap? bn->T->vheap->size:0));*/
+							sz = tailsize(bn,BATcapacity(bn)) + (bn->T->vheap? bn->T->vheap->size:0);
+							sz += headsize(bn,BATcapacity(bn)) + (bn->H->vheap? bn->H->vheap->size:0);
+							size = BUNappend(size, &sz, FALSE);
+							
+							sz =  bn->T->hash?bn->T->hash->heap->size:0;
+							sz += bn->H->hash?bn->H->hash->heap->size:0;
+							aux = BUNappend(aux, &sz, FALSE);
+							/*printf(" auxsize "BUNFMT, bn->T->hash?bn->T->hash->heap->size:0);*/
+							/*printf("\n");*/
+							BBPunfix(bn->batCacheid);
+						}
+					}
+		
 		}
 	}
 
