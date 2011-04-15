@@ -75,7 +75,7 @@ qserv_angSep(dbl *sep, dbl *ra1, dbl *dec1, dbl *ra2, dbl *dec2)
 	if (*dec1 < -90.0 || *dec1 > 90.0 || *dec2 < -90.0 || *dec2 > 90.0)
 		throw(MAL,"lsst.qserv_angSep", "Illegal angulars");
 
-	*sep = _qserv_dist(*ra1, *dec1, *ra2, *dec2);
+	*sep = _qserv_angSep(*ra1, *dec1, *ra2, *dec2);
 	return MAL_SUCCEED;
 }
 
@@ -137,7 +137,7 @@ str qserv_ptInSphBox(int *ret, dbl *ra, dbl *dec, dbl *ra_min, dbl *dec_min, dbl
 		return MAL_SUCCEED;
 	}
 	if ( *dec_min >  *dec_max ||  *dec <  *dec_min ||  *dec >  *dec_max) {
-		*ret = int_nil;
+		*ret = 0;
 		return MAL_SUCCEED;
 	}
 	/* Range-reduce longitude angles */
@@ -149,10 +149,10 @@ str qserv_ptInSphBox(int *ret, dbl *ra, dbl *dec, dbl *ra_min, dbl *dec_min, dbl
 		lra_min = _qserv_reduceRa(*ra_min);
 		lra_max = _qserv_reduceRa(*ra_max);
 	}
-	if (lra_min == lra_max) 
-		*ret = lra >= lra_min && lra == lra_max;
+	if (lra_min <= lra_max)
+		*ret = lra >= lra_min && lra <= lra_max;
 	else 
-		*ret = lra >= lra_min || lra == lra_max;
+		*ret = lra >= lra_min || lra <= lra_max;
 	return MAL_SUCCEED;
 }
 
@@ -252,7 +252,7 @@ qserv_ptInSphEllipse(int *ret, dbl *ra, dbl *dec, dbl *ra_cen, dbl *dec_cen, dbl
 		*ret = int_nil;
 		return MAL_SUCCEED;
 	}
-	/* Semi-minor axis length m and semi-major axis length M must satisfy 0 = m <= M <= 10 deg */
+	/* Semi-minor axis length m and semi-major axis length M must satisfy 0 <= m <= M <= 10 deg */
 	m = *smia;
 	M = *smaa;
 	if (m < 0.0 || m > M || M > 10.0 * QSERV_ARCSEC_PER_DEG) {
@@ -370,7 +370,7 @@ str qserv_ptInSphPoly(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *ret = (int*) getArgReference(stk,pci,0);
 	dbl ra = *(dbl*) getArgReference(stk,pci,1);
-	dbl dec = *(dbl*) getArgReference(stk,pci,1);
+	dbl dec = *(dbl*) getArgReference(stk,pci,2);
 
 	double x, y, z, w;
 	dbl *edges, *nv;
@@ -378,7 +378,7 @@ str qserv_ptInSphPoly(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) mb;
 	/* If any input is null, the result is 0. */
-	for (i = 3; i <pci->argc; ++i) {
+	for (i = 1; i <pci->argc; ++i) {
 		if ( *(dbl*) getArgReference(stk,pci,i) == dbl_nil){
 			*ret = int_nil;
 			return MAL_SUCCEED;

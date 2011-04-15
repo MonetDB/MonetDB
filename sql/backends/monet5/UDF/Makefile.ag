@@ -59,5 +59,4 @@ headers_autoload = {
 	SOURCES = 80_udf.mal
 }
 
-EXTRA_DIST_DIR = Tests
 EXTRA_DIST = 80_udf.mal 
