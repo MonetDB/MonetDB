@@ -59,4 +59,4 @@ headers_lsstautoload = {
 	SOURCES = 80_lsst.mal
 }
 
-EXTRA_DIST = 80_lsst.mal lsst.h
+EXTRA_DIST = lsst.h
