@@ -1011,7 +1011,7 @@ AddToTapeIncrementalSideways_@1(struct Node *node, @1 value, bit inclusive){
                 oid sizeB;
                 @1  *ctail, *ntail;
 		oid *nhead;
-		oid ccj;
+		oid j;
                 if ((bo = BATdescriptor(*bid)) == NULL)
                         throw(MAL, "crackers.crackRange", "Cannot access descriptor");
 
@@ -1021,8 +1021,8 @@ AddToTapeIncrementalSideways_@1(struct Node *node, @1 value, bit inclusive){
                 nhead = (oid*)Hloc(b,  BUNfirst(b));
                 ntail = (@1*)Tloc(b,  BUNfirst(b));
                 ctail = (@1*)Tloc(bo, BUNfirst(bo));
-                for(ccj=0;ccj<sizeB;ccj++){
-                        *nhead = (oid)ccj;
+                for(j=0;j<sizeB;j++){
+                        *nhead = (oid)j;
                         *ntail = *ctail;
                         nhead++;
                         ntail++;

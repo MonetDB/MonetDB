@@ -125,11 +125,11 @@ AUTHrequireAdmin(Client *c) {
 
 	if (id != 0) {
 		char u[BUFSIZ] = "";
-		str usr = u;
+		str user = u;
 		str tmp;
 		
-		rethrow("requireAdmin", tmp, AUTHresolveUser(&usr, &id));
-		throw(INVCRED, "requireAdmin", INVCRED_ACCESS_DENIED " '%s'", usr);
+		rethrow("requireAdmin", tmp, AUTHresolveUser(&user, &id));
+		throw(INVCRED, "requireAdmin", INVCRED_ACCESS_DENIED " '%s'", user);
 	}
 
 	return(MAL_SUCCEED);
@@ -144,16 +144,16 @@ str
 AUTHrequireAdminOrUser(Client *c, str *username) {
 	oid id = (*c)->user;
 	char u[BUFSIZ] = "";
-	str usr = u;
+	str user = u;
 	str tmp = MAL_SUCCEED;
 
 	/* root?  then all is well */
 	if (id == 0)
 		return(MAL_SUCCEED);
 
-	rethrow("requireAdminOrUser", tmp, AUTHresolveUser(&usr, &id));
-	if (username == NULL || *username == NULL || strcmp(*username, usr) != 0) {
-		throw(INVCRED, "requireAdminOrUser", INVCRED_ACCESS_DENIED " '%s'", usr);
+	rethrow("requireAdminOrUser", tmp, AUTHresolveUser(&user, &id));
+	if (username == NULL || *username == NULL || strcmp(*username, user) != 0) {
+		throw(INVCRED, "requireAdminOrUser", INVCRED_ACCESS_DENIED " '%s'", user);
 	}
 
 	return(MAL_SUCCEED);
@@ -314,16 +314,16 @@ AUTHinitTables() {
 	if (isNew == 1) {
 		/* insert the monetdb/monetdb administrator account on a
 		 * complete fresh and new auth tables system */
-		str usr = "monetdb";
+		str user = "monetdb";
 		str pw; /* will become the right hash for "monetdb" */
-		int len = (int) strlen(usr);
-		bat bt = 0;
+		int len = (int) strlen(user);
+		bat b = 0;
 		str tmp;
 		oid uid;
 		Client c = &mal_clients[0];
 
-		rethrow("initTables", tmp, AUTHBackendSum(&pw, &usr /* because usr == pass */, &len));
-		msg = AUTHaddUser(&uid, &c, &usr, &pw, &bt);
+		rethrow("initTables", tmp, AUTHBackendSum(&pw, &user /* because user == pass */, &len));
+		msg= AUTHaddUser(&uid, &c, &user, &pw, &b);
 		GDKfree(pw);
 		if (msg)
 			return msg;

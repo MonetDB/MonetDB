@@ -480,90 +480,90 @@ two primary command structures are dealt with in the CMD* alternatives.
 The similar code base is produced for dealing with a constant argument. 
 @= loopImpl
 {	
-	@5 *lio = (@5*)Tloc(bn, BUNfirst(bn));
-	@3 *lip = (@3*)Tloc(b, BUNfirst(b));
-	@3 *liq = (@3*)Tloc(b, BUNlast(b));
-	@4 *lir = (@4*)Tloc(right, BUNfirst(right));
+	@5 *o = (@5*)Tloc(bn, BUNfirst(bn));
+	@3 *p = (@3*)Tloc(b, BUNfirst(b));
+	@3 *q = (@3*)Tloc(b, BUNlast(b));
+	@4 *r = (@4*)Tloc(right, BUNfirst(right));
 
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATaccessBegin(right, USE_TAIL, MMAP_SEQUENTIAL);
 #if CMD_@2 == CMD_DIV
 	if (b->T->nonil && right->T->nonil) {
 		bn->T->nonil = 1;
-		for(; lip<liq; lio++, lip++, lir++)
-			if (*lir == 0)
+		for(; p<q; o++, p++, r++)
+			if (*r == 0)
 				res = createException(ARITH, "batcalc.@1", "Division by zero");
 			else
-				*lio = (@5)(*lip / *lir);
+				*o = (@5)(*p / *r);
 	} else if (b->T->nonil ) {
 		bn->T->nonil = 1;
-		for(; lip<liq; lio++, lip++, lir++) {
+		for(; p<q; o++, p++, r++) {
 			/* this code is better as x?nil:y  */
-			if (*lir == @4_nil) {
-				*lio = @5_nil;
+			if (*r == @4_nil) {
+				*o = @5_nil;
 				bn->T->nonil = 0;
-			} else if (*lir == 0)
+			} else if (*r == 0)
 				res = createException(ARITH, "batcalc.@1", "Division by zero");
 			else 
-				*lio = (@5)(*lip / *lir);
+				*o = (@5)(*p / *r);
 		}
 	} else if (right->T->nonil ) {
 		bn->T->nonil = 1;
-		for(; lip<liq; lio++, lip++, lir++) 
+		for(; p<q; o++, p++, r++) 
 			/* this code is better as x?nil:y  */
-			if (*lip == @3_nil) {
-				*lio = @5_nil;
+			if (*p == @3_nil) {
+				*o = @5_nil;
 				bn->T->nonil = 0;
-			} else if (*lir == 0)
+			} else if (*r == 0)
 				res = createException(ARITH, "batcalc.@1", "Division by zero");
 			else
-				*lio = (@5)(*lip / *lir);
+				*o = (@5)(*p / *r);
 	} else {
 		bn->T->nonil = 1;
-		for(; lip<liq; lio++, lip++, lir++) 
+		for(; p<q; o++, p++, r++) 
 			/* this code is better as x?nil:y  */
-			if (*lip == @3_nil || *lir == @4_nil) {
-				*lio = @5_nil;
+			if (*p == @3_nil || *r == @4_nil) {
+				*o = @5_nil;
 				bn->T->nonil = 0;
-			} else if (*lir == 0) {
+			} else if (*r == 0) {
 				res = createException(ARITH, "batcalc.@1", "Division by zero");
 			} else
-				*lio = (@5)(*lip / *lir);
+				*o = (@5)(*p / *r);
 	}
 #else
 	if (b->T->nonil && right->T->nonil) {
 		bn->T->nonil = 1;
-		for(; lip<liq; lio++, lip++, lir++)
-			*lio = (@5) (*lip @1 *lir);
+		for(; p<q; o++, p++, r++)
+			*o = (@5) (*p @1 *r);
 	} else if (b->T->nonil ) {
 		bn->T->nonil = 1;
-		for(; lip<liq; lio++, lip++, lir++) {
+		for(; p<q; o++, p++, r++) {
 			/* this code is better as x?nil:y  */
-			if (*lir == @4_nil) {
-				*lio = @5_nil;
+			if (*r == @4_nil) {
+				*o = @5_nil;
 				bn->T->nonil = 0;
 			} else
-				*lio = (@5) (*lip @1 *lir);
+				*o = (@5) (*p @1 *r);
 		}
 	} else if (right->T->nonil) {
 		bn->T->nonil = 1;
-		for(; lip<liq; lio++, lip++, lir++) {
+		for(; p<q; o++, p++, r++) {
 			/* this code is better as x?nil:y  */
-			if (*lip == @3_nil) {
-				*lio = @5_nil;
+			if (*p == @3_nil) {
+				*o = @5_nil;
 				bn->T->nonil = 0;
 			} else
-				*lio = (@5) (*lip @1 *lir);
+				*o = (@5) (*p @1 *r);
 		}
 	} else {
 		bn->T->nonil = 1;
-		for(; lip<liq; lio++, lip++, lir++) {
+		for(; p<q; o++, p++, r++) {
 			/* this code is better as x?nil:y  */
-			if (*lip == @3_nil || *lir == @4_nil) {
-				*lio = @5_nil;
+			if (*p == @3_nil || *r == @4_nil) {
+				*o = @5_nil;
 				bn->T->nonil = 0;
 			} else 
-				*lio = (@5) (*lip @1 *lir);
+				*o = (@5) (*p @1 *r);
 		}
 	}
 #endif
@@ -591,10 +591,10 @@ str CMDbat@2_@3_@4_@5(int *ret, int *l, int *r)
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
 
 	if (b->htype != bn->htype) {
-		BAT *br = VIEWcreate(b,bn);
+		BAT *r = VIEWcreate(b,bn);
 
 		BBPreleaseref(bn->batCacheid);
-		bn = br;
+		bn = r;
 	}
 	BBPkeepref(*ret = bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
@@ -976,10 +976,10 @@ str CMDbat@2_@3_@4_@5(int *ret, int *l, int *r)
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
 
 	if (b->htype != bn->htype) {
-		BAT *br = VIEWcreate(b,bn);
+		BAT *r = VIEWcreate(b,bn);
 
 		BBPreleaseref(bn->batCacheid);
-		bn = br;
+		bn = r;
 	}
 	BBPkeepref(*ret = bn->batCacheid);
 	BBPreleaseref(b->batCacheid);

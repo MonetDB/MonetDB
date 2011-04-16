@@ -229,6 +229,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	getInstrPtr(mb,0)->gc |= GARBAGECONTROL;
 	GDKfree(old);
 	OPTDEBUGgarbageCollector{ 
+		int k;
 		mnstr_printf(cntxt->fdout, "#Garbage collected BAT variables \n");
 		for ( k =0; k < vlimit; k++)
 		mnstr_printf(cntxt->fdout,"%10s eolife %3d  begin %3d lastupd %3d end %3d\n",

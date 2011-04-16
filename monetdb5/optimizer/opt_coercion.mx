@@ -85,6 +85,7 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	int i, k;
 	InstrPtr p;
 	int actions = 0;
+	str calcRef= putName("calc",4);
 
 	(void) cntxt;
 	(void) pci;

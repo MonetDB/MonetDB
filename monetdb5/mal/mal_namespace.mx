@@ -83,46 +83,46 @@ static Namespace backup;
 static void expandNamespace(int incr){
 	str *nme;
 	size_t *length;
-	int *lnk, *hit, newsize;
+	int *link, *hit, newsize;
 
 	assert( incr > 0 );
 
 	newsize= namespace.size+incr;
 	nme= (str *) GDKmalloc(sizeof(str *) * newsize);
 	assert(nme != NULL); /* we cannot continue */
-	lnk= (int *) GDKmalloc(sizeof(int) * newsize);
-	assert(lnk != NULL); /* we cannot continue */
+	link= (int *) GDKmalloc(sizeof(int) * newsize);
+	assert(link != NULL); /* we cannot continue */
 	hit = (int *) GDKmalloc(sizeof(int) * newsize);
 	assert(hit != NULL); /* we cannot continue */
 	length = (size_t *) GDKmalloc(sizeof(size_t) * newsize);
 	assert(length != NULL); /* we cannot continue */
 
 	memcpy(nme, namespace.nme, sizeof(str *) * namespace.nmetop);
-	memcpy(lnk, namespace.link, sizeof(int) * namespace.nmetop);
+	memcpy(link, namespace.link, sizeof(int) * namespace.nmetop);
 	memcpy(hit, namespace.hit, sizeof(int) * namespace.nmetop);
 	memcpy(length, namespace.length, sizeof(size_t) * namespace.nmetop);
 
 	namespace.size += incr;
 	namespace.totalhit= 0;
 	GDKfree(namespace.nme); namespace.nme= nme;
-	GDKfree(namespace.link); namespace.link= lnk;
+	GDKfree(namespace.link); namespace.link= link;
 	GDKfree(namespace.hit); namespace.hit= hit;
 	GDKfree(namespace.length); namespace.length= length;
 
 #ifdef _BACKUP_
 	nme= (str *) GDKmalloc(sizeof(str *) * (backup.nmetop+incr));
-	lnk= (int *) GDKmalloc(sizeof(int) * (backup.nmetop+incr));
+	link= (int *) GDKmalloc(sizeof(int) * (backup.nmetop+incr));
 	hit = (int *) GDKmalloc(sizeof(int) * (backup.nmetop+incr));
-	length = (size_t *) GDKmalloc(sizeof(size_t) * (backup.nmetop+incr));
+	length = (size)t *) GDKmalloc(sizeof(size_t) * (backup.nmetop+incr));
 	memcpy(nme, backup.nme, sizeof(str *) * backup.nmetop);
-	memcpy(lnk, backup.link, sizeof(int) * backup.nmetop);
+	memcpy(link, backup.link, sizeof(int) * backup.nmetop);
 	memcpy(hit, backup.hit, sizeof(int) * backup.nmetop);
 	memcpy(length, backup.hit, sizeof(size_t) * backup.nmetop);
 
 	backup.size += incr;
 	backup.totalhit= 0;
 	GDKfree(backup.nme); backup.nme= nme;
-	GDKfree(backup.link); backup.link= lnk;
+	GDKfree(backup.link); backup.link= link;
 	GDKfree(backup.hit); backup.hit= hit;
 	GDKfree(backup.length); backup.length= length;
 #endif

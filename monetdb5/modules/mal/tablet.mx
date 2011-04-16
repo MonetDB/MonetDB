@@ -2530,6 +2530,7 @@ TABshowHeader(Tablet * t)
 		for (i = 0; i < t->nr_attrs; i++) {
 			Column *c = t->columns + i;
 			unsigned int len;
+			str prop = 0;
 			int u = 0, v = 0;
 
 			if (strcmp(p, "name") == 0)
@@ -2667,10 +2668,9 @@ TABshowRow(Tablet * t)
 				switch (c->adt) {
 				case TYPE_int:
 				{
-					int vi = *(int *) c->data, vj = vi;
+					int vi = *(int *) c->data, vj = vi, m = 1;
 					int k;
 
-					m = 1;
 					for (k = c->precision; k > 0; k--) {
 						vi /= 10;
 						m *= 10;

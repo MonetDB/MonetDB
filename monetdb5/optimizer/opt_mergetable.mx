@@ -817,7 +817,7 @@ mat_join(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m, int n)
 			getArg(pck,0) = newTmpVariable(mb, tpe);
 
 			for (j=1; j<mat[n].mi->argc; j++) {
-				q = copyInstruction(p);
+				InstrPtr q = copyInstruction(p);
 
 				getArg(q,0) = newTmpVariable(mb, tpe);
 				getArg(q,1) = getArg(mat[m].mi,0);
@@ -2341,7 +2341,7 @@ fail:
 		mb->ssize = slimit;
 		mb->stop = oldtop;
 		for(i=0; i<mb->stop; i++) {
-			p = mb->stmt[i];
+			InstrPtr p = mb->stmt[i];
 			if (p && getModuleId(p) == matRef && getFunctionId(p) == newRef){
 				/* simply drop this function, for the base binding is available */
 				p->token = NOOPsymbol;

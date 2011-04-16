@@ -93,7 +93,7 @@ sphinx_export str SPHINXsearchIndexLimitWrap(Client cntxt, MalBlkPtr mb, MalStkP
  * SIGNATURE: SPHINXsearchIndexLimit(str, str, int) : bat[oid,lng]; */
 str
 sphinx_searchIndexLimit(BAT **ret, /* put pointer to BAT[oid,int] record here. */
-                        str query, str idx, int limit)
+                        str query, str index, int limit)
 {
 	int i;
 	BAT *bn;
@@ -107,7 +107,7 @@ sphinx_searchIndexLimit(BAT **ret, /* put pointer to BAT[oid,int] record here. *
 
 	sphinx_set_limits ( client, 0, limit, limit, 0 );
 
-	res = sphinx_query ( client, query, idx, NULL );
+	res = sphinx_query ( client, query, index, NULL );
 	if (!res || (res && res->num_matches == 0)) {
 		bn = BATnew(TYPE_void, TYPE_lng, 0);
 	} else {
@@ -131,10 +131,10 @@ sphinx_searchIndexLimit(BAT **ret, /* put pointer to BAT[oid,int] record here. *
 }
 
 str
-SPHINXsearchIndexLimit(int *ret, str *query, str *idx, int *limit)
+SPHINXsearchIndexLimit(int *ret, str *query, str *index, int *limit)
 {
 	BAT *b = NULL;
-	str msg = sphinx_searchIndexLimit(&b, *query, *idx, *limit);
+	str msg = sphinx_searchIndexLimit(&b, *query, *index, *limit);
 
 	if (!b)
 		throw(MAL, "sphinx.searchIndex", "Cannot create Sphinx object");
@@ -143,7 +143,7 @@ SPHINXsearchIndexLimit(int *ret, str *query, str *idx, int *limit)
 	return msg;
 }
 
-/* str sphinx_searchIndexLimit(int *ret, str *query, str *idx, int *limit); */
+/* str sphinx_searchIndexLimit(int *ret, str *query, str *index, int *limit); */
 str
 SPHINXsearchIndexLimitWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -151,12 +151,12 @@ SPHINXsearchIndexLimitWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	BAT *t;
 	int *r = (int *) getArgReference(stk, pci, 0);
 	str *query = (str *) getArgReference(stk, pci, 1);
-	str *idx = (str *) getArgReference(stk, pci, 2);
+	str *index = (str *) getArgReference(stk, pci, 2);
 	int *limit = (int *) getArgReference(stk, pci, 3);
 
 	(void) cntxt;
 	(void) mb;
-	SPHINXsearchIndexLimit(&ret, query, idx, limit);
+	SPHINXsearchIndexLimit(&ret, query, index, limit);
 
 	t = BATnew(TYPE_str, TYPE_bat, 1);
 	BUNins(t, "id", &ret, FALSE);

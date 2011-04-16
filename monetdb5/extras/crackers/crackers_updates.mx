@@ -423,7 +423,7 @@ mergeInsertionsBRipple_@1_@4(BAT *b, BAT *u, oid startPosition, oid endPosition,
 	struct Node *rippleNode = NULL;
 
         BAT *c;
-	BUN idxFirst, cur, crkFirst, insFirst, next, writ;
+	BUN idxFirst, cur, crkFirst, insFirst, next, write;
 	@4 *insh, *crkh;
 	@1 *inst, *crkt, *crkLast, *curVal;
 	oid *curPos;
@@ -657,16 +657,16 @@ mergeInsertionsBRipple_@1_@4(BAT *b, BAT *u, oid startPosition, oid endPosition,
 		}
 		
 		if (rt < crkLast && inst == insLast){
-			BUN bi;
-			for(bi = 0; bi<BATcount(ripple)-(BUN)consumedRipple; bi++){
+			BUN i;
+			for(i = 0; i<BATcount(ripple)-(BUN)consumedRipple; i++){
 				*crkh = *rh;
                                 *crkt = *rt;
 				 rh++; rt++;crkh++; crkt++;
 			}
 		} else	
 		if (rt == crkLast && inst < insLast){
-			BUN bi;
-			for(bi = 0; bi<BATcount(u)-(BUN)endPosition -(BUN)consumedInsertions; bi++){
+			BUN i;
+			for(i = 0; i<BATcount(u)-(BUN)endPosition -(BUN)consumedInsertions; i++){
                                 *crkh = *insh;
                                 *crkt = *inst;
                                  insh++; inst++;crkh++; crkt++;
@@ -1132,7 +1132,7 @@ appendDeletions(int *del, int position){
 
 @= mergeInsertionsFromTheEndBodyI
         BAT *c, *u, *b;
-	BUN idxFirst, cur, crkFirst, insFirst, next, writ;
+	BUN idxFirst, cur, crkFirst, insFirst, next, write;
 	oid *curPos;
 	@4 *insh, *crkh;
 	@1  *inst, *crkt, *curVal;
@@ -1207,7 +1207,7 @@ appendDeletions(int *del, int position){
 @= mergeInsertionsFromTheEndBodyIb
 /*same as above only diffrence is -> endPosition = BATcount(u) - 1*/
         BAT *c, *u, *b;
-	BUN idxFirst, cur, crkFirst, insFirst, next, writ;
+	BUN idxFirst, cur, crkFirst, insFirst, next, write;
 	oid *curPos;
 	@4 *insh, *crkh;
 	@1  *inst, *crkt, *curVal;
@@ -1289,7 +1289,7 @@ appendDeletions(int *del, int position){
            Here we will start moving values we shift from the begginning of the piece */
 		
 	prevholes = prevNode==NULL?0:prevNode->hols;
-	writ  = next + 1 - prevholes;
+	write  = next + 1 - prevholes;
 
 	cur    = idxFirst + (IndexNode->position);
         curPos = (oid*)Hloc(c, cur);
@@ -1304,8 +1304,8 @@ appendDeletions(int *del, int position){
 	next   = crkFirst + (*curPos);
 	
 	/* First insert any pending insertions that belong to this piece */
-	crkh = (@4*)Hloc(b,writ+(remainingIns-1));
-	crkt = (@1*)Tloc(b,writ+(remainingIns-1));
+	crkh = (@4*)Hloc(b,write+(remainingIns-1));
+	crkt = (@1*)Tloc(b,write+(remainingIns-1));
 	while(  remainingIns > 0 &&
 		(@2_GT(inst,curVal,@3@1) || (@2_EQ(inst,curVal,@3@1) && IndexNode->inclusive == TRUE)) ){
 		*crkh = *insh;
@@ -1318,8 +1318,8 @@ appendDeletions(int *del, int position){
 
 	/* Then we shift values from the beggining of the piece */
 	if (buns > remainingIns){
-		startH = (@4*)Hloc(b,writ);
-		startT = (@1*)Tloc(b,writ);
+		startH = (@4*)Hloc(b,write);
+		startT = (@1*)Tloc(b,write);
 		endH   = (@4*)Hloc(b,next+1);
 		endT   = (@1*)Tloc(b,next+1);
 	
@@ -1328,8 +1328,8 @@ appendDeletions(int *del, int position){
 	
 	}
 	else{
-		startH = (@4*)Hloc(b,writ+remainingIns-buns);
-		startT = (@1*)Tloc(b,writ+remainingIns-buns);
+		startH = (@4*)Hloc(b,write+remainingIns-buns);
+		startT = (@1*)Tloc(b,write+remainingIns-buns);
 		endH   = (@4*)Hloc(b,next+1);
 		endT   = (@1*)Tloc(b,next+1);
 	
@@ -1427,12 +1427,12 @@ appendDeletions(int *del, int position){
         } else  if ((BUN)endPosition == BATcount(u)){
                 BATsetcount(u,insFirst + startPosition);
         } else {
-		@2 *sstartH = (@2*)Hloc(u,insFirst+startPosition);
-		@1 *sstartT = (@1*)Tloc(u,insFirst+startPosition);
-		@2 *sendH   = (@2*)Hloc(u,insFirst+endPosition);
-		@1 *sendT   = (@1*)Tloc(u,insFirst+endPosition);
-		memmove(sstartH, sendH, (BATcount(u)-endPosition)*sizeof(@2));
-		memmove(sstartT, sendT, (BATcount(u)-endPosition)*sizeof(@1));
+		@2 *startH = (@2*)Hloc(u,insFirst+startPosition);
+		@1 *startT = (@1*)Tloc(u,insFirst+startPosition);
+		@2 *endH   = (@2*)Hloc(u,insFirst+endPosition);
+		@1 *endT   = (@1*)Tloc(u,insFirst+endPosition);
+		memmove(startH, endH, (BATcount(u)-endPosition)*sizeof(@2));
+		memmove(startT, endT, (BATcount(u)-endPosition)*sizeof(@1));
 
    		BATsetcount(u, insFirst + (startPosition + (BATcount(u) - endPosition)));
 	}

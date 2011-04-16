@@ -130,6 +130,8 @@ OPTsidcrackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				varSetProp(mb, getArg(p, 0), canBeJoinselectProp, op_eq, vp);
 
 				if (varGetProp(mb, getArg(p, 2), sidewaysSelectProp) != NULL){
+					ValRecord v, *vp;
+
 					vp = VALset(&v, TYPE_int,&varGetProp(mb, getArg(p,2), sidewaysSelectProp)->value.val.ival);
 					varSetProp(mb, getArg(p, 0), sidewaysSelectProp, op_eq, vp);
 				}

@@ -923,7 +923,7 @@ describe_sequence(Mapi mid, char *schema, char *tname, stream *toConsole)
 		goto bailout;
 
 	while (mapi_fetch_row(hdl) != 0) {
-		char *sschema = mapi_fetch_field(hdl, 0);
+		char *schema = mapi_fetch_field(hdl, 0);
 		char *name = mapi_fetch_field(hdl, 1);
 		char *start = mapi_fetch_field(hdl, 2);
 		char *minvalue = mapi_fetch_field(hdl, 3);
@@ -933,7 +933,7 @@ describe_sequence(Mapi mid, char *schema, char *tname, stream *toConsole)
 
 		mnstr_printf(toConsole,
 				 "CREATE SEQUENCE \"%s\".\"%s\" START WITH %s",
-				 sschema, name, start);
+				 schema, name, start);
 		if (strcmp(increment, "1") != 0)
 			mnstr_printf(toConsole, " INCREMENT BY %s", increment);
 		if (strcmp(minvalue, "0") != 0)
@@ -998,10 +998,10 @@ describe_schema(Mapi mid, char *sname, stream *toConsole)
 	}
 
 	while (mapi_fetch_row(hdl) != 0) {
-		char *schem = mapi_fetch_field(hdl, 0);
+		char *sname = mapi_fetch_field(hdl, 0);
 		char *aname = mapi_fetch_field(hdl, 1);
 
-		mnstr_printf(toConsole, "CREATE SCHEMA \"%s\"", schem);
+		mnstr_printf(toConsole, "CREATE SCHEMA \"%s\"", sname);
 		if (strcmp(aname, "sysadmin") != 0) {
 			mnstr_printf(toConsole,
 					 " AUTHORIZATION \"%s\"", aname);
@@ -1598,14 +1598,14 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 			char *uname = mapi_fetch_field(hdl, 0);
 			char *fullname = mapi_fetch_field(hdl, 1);
 			char *pwhash = mapi_fetch_field(hdl, 2);
-			char *schem = mapi_fetch_field(hdl, 3);
+			char *sname = mapi_fetch_field(hdl, 3);
 
 			mnstr_printf(toConsole, "CREATE USER \"%s\"", uname);
 			if (describe)
 				mnstr_printf(toConsole,
 					     " WITH ENCRYPTED PASSWORD '%s'"
 					     " NAME '%s' SCHEMA \"%s\";\n",
-					     pwhash, fullname, schem);
+					     pwhash, fullname, sname);
 			else
 				mnstr_printf(toConsole,
 					     " WITH ENCRYPTED PASSWORD '%s'"
@@ -1622,10 +1622,10 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 			goto bailout;
 
 		while (mapi_fetch_row(hdl) != 0) {
-			char *schem = mapi_fetch_field(hdl, 0);
+			char *sname = mapi_fetch_field(hdl, 0);
 			char *aname = mapi_fetch_field(hdl, 1);
 
-			mnstr_printf(toConsole, "CREATE SCHEMA \"%s\"", schem);
+			mnstr_printf(toConsole, "CREATE SCHEMA \"%s\"", sname);
 			if (strcmp(aname, "sysadmin") != 0) {
 				mnstr_printf(toConsole,
 					     " AUTHORIZATION \"%s\"", aname);
@@ -1644,14 +1644,14 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 
 			while (mapi_fetch_row(hdl) != 0) {
 				char *uname = mapi_fetch_field(hdl, 0);
-				char *schem = mapi_fetch_field(hdl, 3);
+				char *sname = mapi_fetch_field(hdl, 3);
 
-				if (strcmp(schem, "sys") == 0)
+				if (strcmp(sname, "sys") == 0)
 					continue;
 				mnstr_printf(toConsole,
 					     "ALTER USER \"%s\" "
 					     "SET SCHEMA \"%s\";\n",
-					     uname, schem);
+					     uname, sname);
 			}
 			if (mapi_error(mid))
 				goto bailout;

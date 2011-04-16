@@ -526,7 +526,7 @@ yes-*-*)
 	    GCC_BISON_CFLAGS="$GCC_BISON_CFLAGS -Wno-unused-function";;
 	esac
 	dnl  Our code it not (yet?) up to these:
-	X_CFLAGS="$X_CFLAGS -Wshadow"
+	dnl X_CFLAGS="$X_CFLAGS -Wshadow"
 	dnl X_CFLAGS="$X_CFLAGS -Wconversion"
 	dnl X_CFLAGS="$X_CFLAGS -Wstrict-prototypes"
 	dnl X_CFLAGS="$X_CFLAGS -Wold-style-definition"

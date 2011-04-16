@@ -210,10 +210,10 @@ str MTIMEbat_@1_@2(int *ret, int *l, int *r)
 
 
     if (b->htype != bn->htype) {
-        BAT *blcr = VIEWcreate(b,bn);
+        BAT *r = VIEWcreate(b,bn);
 
         BBPreleaseref(bn->batCacheid);
-        bn = blcr;
+        bn = r;
     }
 
 	BATsetcount(bn, BATcount(b));

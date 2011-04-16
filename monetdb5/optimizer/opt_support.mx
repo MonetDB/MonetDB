@@ -1512,7 +1512,7 @@ Some optimizers are interdependent (e.g. mitosis and octopus), which
 requires inspection of the pipeline attached to a MAL block.
 @c
 int
-isOptimizerEnabled(MalBlkPtr mb, str opti)
+isOptimizerEnabled(MalBlkPtr mb, str opt)
 {
 	int i;
 	InstrPtr q;
@@ -1522,7 +1522,7 @@ isOptimizerEnabled(MalBlkPtr mb, str opti)
 		if ( q->token == ENDsymbol)
 			break;
 		if ( getModuleId(q) == optimizerRef &&
-			 getFunctionId(q) == opti)
+			 getFunctionId(q) == opt)
 			return 1;
 	}
 	return 0;

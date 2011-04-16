@@ -279,7 +279,7 @@ list_match(list *l1, list *l2, fcmp cmp)
 }
 
 list *
-list_keysort(list *l, int *keys, fdup sdup)
+list_keysort(list *l, int *keys, fdup dup)
 {
 	list *res = list_new_(l);
 	node *n = NULL;
@@ -294,13 +294,13 @@ list_keysort(list *l, int *keys, fdup sdup)
 	for(j=0; j<cnt; j++) {
 		for(n = l->h, i = 0; i != pos[j]; n = n->next, i++) 
 			assert(n);
-		list_append(res, sdup?sdup(n->data):n->data);
+		list_append(res, dup?dup(n->data):n->data);
 	}
 	return res;
 }
 
 list *
-list_sort(list *l, fkeyvalue key, fdup sdup)
+list_sort(list *l, fkeyvalue key, fdup dup)
 {
 	list *res = list_new_(l);
 	node *n = NULL;
@@ -317,13 +317,13 @@ list_sort(list *l, fkeyvalue key, fdup sdup)
 	for(j=0; j<cnt; j++) {
 		for(n = l->h, i = 0; i != pos[j]; n = n->next, i++) 
 			assert(n);
-		list_append(res, sdup?sdup(n->data):n->data);
+		list_append(res, dup?dup(n->data):n->data);
 	}
 	return res;
 }
 
 list *
-list_select(list *l, void *key, fcmp cmp, fdup sdup)
+list_select(list *l, void *key, fcmp cmp, fdup dup)
 {
 	list *res = NULL;
 	node *n = NULL;
@@ -332,14 +332,14 @@ list_select(list *l, void *key, fcmp cmp, fdup sdup)
 		res = list_new_(l);
 		for (n = l->h; n; n = n->next) 
 			if (cmp(n->data, key) == 0) 
-				list_append(res, sdup?sdup(n->data):n->data);
+				list_append(res, dup?dup(n->data):n->data);
 	}
 	return res;
 }
 
 /* order the list based on the compare function cmp */
 list * 
-list_order(list *l, fcmp cmp, fdup sdup)
+list_order(list *l, fcmp cmp, fdup dup)
 {
 	list *res = list_new_(l);
 	node *m, *n = NULL;
@@ -349,25 +349,25 @@ list_order(list *l, fcmp cmp, fdup sdup)
 		int append = 1;
 		for (m = res->h; m && append; m = m->next) {
 			if (cmp(n->data, m->data) > 0) {
-				list_append_before(res, m, sdup?sdup(n->data):n->data);
+				list_append_before(res, m, dup?dup(n->data):n->data);
 				append = 0;
 			}
 		}
 		if (append)
-			list_append(res, sdup?sdup(n->data):n->data);
+			list_append(res, dup?dup(n->data):n->data);
 	}
 	return res;
 }
 
 list *
-list_distinct(list *l, fcmp cmp, fdup sdup)
+list_distinct(list *l, fcmp cmp, fdup dup)
 {
 	list *res = list_new_(l);
 	node *n = NULL;
 
 	for (n = l->h; n; n = n->next) {
 		if (!list_find(res, n->data, cmp)) {
-			list_append(res, sdup?sdup(n->data):n->data);
+			list_append(res, dup?dup(n->data):n->data);
 		}
 	}
 	return res;
@@ -413,29 +413,29 @@ list_fetch(list *l, int pos)
 }
 
 list *
-list_distinct2(list *l, void *data, fcmp2 cmp, fdup sdup)
+list_distinct2(list *l, void *data, fcmp2 cmp, fdup dup)
 {
 	list *res = list_new_(l);
 	node *n = NULL;
 
 	for (n = l->h; n; n = n->next) {
 		if (!list_find2(res, data, n->data, cmp)) {
-			list_append(res, sdup?sdup(n->data):n->data);
+			list_append(res, dup?dup(n->data):n->data);
 		}
 	}
 	return res;
 }
 
 void *
-list_reduce(list *l, freduce red, fdup sdup)
+list_reduce(list *l, freduce red, fdup dup)
 {
 	void *res = NULL;
 	node *n = l->h;
 
 	if (n) {
-		res = sdup?sdup(n->data):n->data;
+		res = dup?dup(n->data):n->data;
 		for (n = n->next; n; n = n->next) {
-			res = red(res, sdup?sdup(n->data):n->data);
+			res = red(res, dup?dup(n->data):n->data);
 		}
 	}
 	return res;
@@ -474,14 +474,14 @@ list_map(list *l, void *data, fmap map)
 }
 
 list *
-list_merge(list *l, list *data, fdup sdup)
+list_merge(list *l, list *data, fdup dup)
 {
 	if (data) {
 		node *n = data->h;
 
 		while (n) {
-			if (sdup && n->data)
-				list_append(l, sdup(n->data));
+			if (dup && n->data)
+				list_append(l, dup(n->data));
 			else
 				list_append(l, n->data);
 			n = n->next;
@@ -491,14 +491,14 @@ list_merge(list *l, list *data, fdup sdup)
 }
 
 list *
-list_merge_destroy(list *l, list *data, fdup sdup)
+list_merge_destroy(list *l, list *data, fdup dup)
 {
 	if (data) {
 		node *n = data->h;
 
 		while (n) {
-			if (sdup)
-				list_append(l, sdup(n->data));
+			if (dup)
+				list_append(l, dup(n->data));
 			else
 				list_append(l, n->data);
 			n = n->next;
@@ -511,10 +511,10 @@ list_merge_destroy(list *l, list *data, fdup sdup)
 }
 
 list *
-list_dup(list *l, fdup sdup)
+list_dup(list *l, fdup dup)
 {
 	list *res = list_new_(l);
-	return list_merge(res, l, sdup);
+	return list_merge(res, l, dup);
 }
 
 

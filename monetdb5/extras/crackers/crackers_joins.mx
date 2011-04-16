@@ -502,7 +502,7 @@ str CRKmaterializeH(int *res, int *bid){
 		TJtotal+=CRKjoin(BATmirror(res), BATmirror(markedViewRight), markedViewLeft);
 	}
 /*
-printf("Join %lld, Cost %lld, Left "OIDFMT" Right "OIDFMT"\n",joinsDone, TJtotal-tmp, curPosLeft - prevPosLeft +1, curPosRight - prevPosRight +1);
+printf("Join %lld, Cost %lld, Left "OIDFMT" Right "OIDFMT"\n",joinsDone, TJtotal-temp, curPosLeft - prevPosLeft +1, curPosRight - prevPosRight +1);
 */
 	BBPunfix(markedViewRight->batCacheid);
 	BBPunfix(markedViewLeft->batCacheid);
@@ -607,16 +607,16 @@ printf("Join %lld, Cost %lld, Left "OIDFMT" Right "OIDFMT"\n",joinsDone, TJtotal
 	invalidateHash=FALSE;
 	if (prevNodeLeft != NULL){
 		if (prevNodeLeft->slice != -1){
-			tmp = prevNodeLeft;
+			temp = prevNodeLeft;
 			existsHashTableLeft = TRUE;
-			while (tmp->indexPosition < curPosLeft){
-				if (tmp->slice != prevNodeLeft->slice){
+			while (temp->indexPosition < curPosLeft){
+				if (temp->slice != prevNodeLeft->slice){
 					invalidateHash=TRUE;
 					break;
 				}
-				if (tmp->nextValue==NULL)
+				if (temp->nextValue==NULL)
 					break;
-				tmp=tmp->nextValue;
+				temp=temp->nextValue;
 			}
 		}else
 			invalidateHash=TRUE;
@@ -626,22 +626,22 @@ printf("Join %lld, Cost %lld, Left "OIDFMT" Right "OIDFMT"\n",joinsDone, TJtotal
 	if (invalidateHash == TRUE){
 		int lastHash=-1;
 		existsHashTableLeft = FALSE;
-		tmp = prevNodeLeft;
-		while (tmp->indexPosition < curPosLeft){
-			if (tmp->slice!=-1){
-				lastHash=tmp->slice;
-				BBPdecref(tmp->slice,TRUE);
-				while (tmp->slice==lastHash){
-					tmp->slice=-1;
-					if (tmp->nextValue==NULL)
+		temp = prevNodeLeft;
+		while (temp->indexPosition < curPosLeft){
+			if (temp->slice!=-1){
+				lastHash=temp->slice;
+				BBPdecref(temp->slice,TRUE);
+				while (temp->slice==lastHash){
+					temp->slice=-1;
+					if (temp->nextValue==NULL)
 						break;
-					tmp=tmp->nextValue;
+					temp=temp->nextValue;
 				}
 				continue;
 			}
-			if (tmp->nextValue==NULL)
+			if (temp->nextValue==NULL)
 				break;
-			tmp=tmp->nextValue;
+			temp=temp->nextValue;
 		}
 	}
 	if (existsHashTableLeft == FALSE){
@@ -659,16 +659,16 @@ printf("Join %lld, Cost %lld, Left "OIDFMT" Right "OIDFMT"\n",joinsDone, TJtotal
 	invalidateHash=FALSE;
 	if (prevNodeRight != NULL){
                 if (prevNodeRight->slice != -1){
-			tmp = prevNodeRight;
+			temp = prevNodeRight;
 			existsHashTableRight = TRUE;
-			while (tmp->indexPosition < curPosRight){
-				if (tmp->slice != prevNodeRight->slice){
+			while (temp->indexPosition < curPosRight){
+				if (temp->slice != prevNodeRight->slice){
 					invalidateHash=TRUE;
 					break;
 				}
-				if (tmp->nextValue==NULL)
+				if (temp->nextValue==NULL)
 					break;
-				tmp=tmp->nextValue;
+				temp=temp->nextValue;
 			}
 		}else
 			invalidateHash=TRUE;
@@ -678,22 +678,22 @@ printf("Join %lld, Cost %lld, Left "OIDFMT" Right "OIDFMT"\n",joinsDone, TJtotal
 	if (invalidateHash == TRUE){
 		int lastHash=-1;
 		existsHashTableRight = FALSE;
-		tmp = prevNodeRight;
-		while (tmp->indexPosition < curPosRight){
-			if (tmp->slice!=-1){
-				lastHash=tmp->slice;
-				BBPdecref(tmp->slice,TRUE);
-				while (tmp->slice==lastHash){
-					tmp->slice=-1;
-					if (tmp->nextValue==NULL)
+		temp = prevNodeRight;
+		while (temp->indexPosition < curPosRight){
+			if (temp->slice!=-1){
+				lastHash=temp->slice;
+				BBPdecref(temp->slice,TRUE);
+				while (temp->slice==lastHash){
+					temp->slice=-1;
+					if (temp->nextValue==NULL)
 						break;
-					tmp=tmp->nextValue;
+					temp=temp->nextValue;
 				}
 				continue;
 			}
-			if (tmp->nextValue==NULL)
+			if (temp->nextValue==NULL)
 				break;
-			tmp=tmp->nextValue;
+			temp=temp->nextValue;
 		}
 	}
 	if (existsHashTableRight == FALSE){
@@ -746,25 +746,25 @@ printf("Join %lld, Cost %lld, Left "OIDFMT" Right "OIDFMT"\n",joinsDone, TJtotal
 			if  (sizeLeft < sizeRight){ 
 				TJtotal+=CRKjoin(BATmirror(res), BATmirror(markedViewRight), markedViewLeft);
 				if (prevNodeLeft != NULL && existsHashTableLeft == FALSE){
-					tmp = prevNodeLeft;
-					while (tmp->indexPosition < curPosLeft){
+					temp = prevNodeLeft;
+					while (temp->indexPosition < curPosLeft){
 
-						tmp->slice = markedViewLeft->batCacheid;
-						if (tmp->nextValue==NULL)
+						temp->slice = markedViewLeft->batCacheid;
+						if (temp->nextValue==NULL)
 							break;
-						tmp=tmp->nextValue;
+						temp=temp->nextValue;
 					}
 					BBPincref(markedViewLeft->batCacheid,TRUE);
 				}				
 			}else{ 
 				TJtotal+=CRKjoin(res, BATmirror(markedViewLeft), markedViewRight);
 				if (prevNodeRight != NULL && existsHashTableRight == FALSE){
-					tmp = prevNodeRight;
-					while (tmp->indexPosition < curPosRight){
-						tmp->slice = markedViewRight->batCacheid;
-						if (tmp->nextValue==NULL)
+					temp = prevNodeRight;
+					while (temp->indexPosition < curPosRight){
+						temp->slice = markedViewRight->batCacheid;
+						if (temp->nextValue==NULL)
 							break;
-						tmp=tmp->nextValue;
+						temp=temp->nextValue;
 					}
 					BBPincref(markedViewRight->batCacheid,TRUE);
 				}
@@ -851,7 +851,7 @@ printf("Join %lld, Cost %lld, Left "OIDFMT" Right "OIDFMT"\n",joinsDone, TJtotal
 		BBPunfix(markedViewLeft->batCacheid);
 	}
 #ifdef DEBUG_CRACKERS_JOIN
-	printf("Join %lld, Cost %lld, Left "OIDFMT" Right "OIDFMT" ReuseHash: %d \n",joinsDone, TJtotal-tmp, curPosLeft - prevPosLeft +1, curPosRight - prevPosRight +1, (existsHashTableLeft == FALSE && existsHashTableRight == TRUE)?1:0);
+	printf("Join %lld, Cost %lld, Left "OIDFMT" Right "OIDFMT" ReuseHash: %d \n",joinsDone, TJtotal-temp, curPosLeft - prevPosLeft +1, curPosRight - prevPosRight +1, (existsHashTableLeft == FALSE && existsHashTableRight == TRUE)?1:0);
 	printf("\n Res \n");
 	BATprint(res);
 	@:dumpIndex(Index Left)@
@@ -863,14 +863,14 @@ printf("Join %lld, Cost %lld, Left "OIDFMT" Right "OIDFMT"\n",joinsDone, TJtotal
 
 	if (prevNodeRight != NULL){
                 if (prevNodeRight->slice != -1){
-			tmp = prevNodeRight;
+			temp = prevNodeRight;
 			existsHashTableRight = TRUE;
-			while (tmp->indexPosition != curPosRight){
-				if (tmp->slice != prevNodeRight->slice)
+			while (temp->indexPosition != curPosRight){
+				if (temp->slice != prevNodeRight->slice)
 					existsHashTableRight = FALSE;
-				if (tmp->nextValue==NULL)
+				if (temp->nextValue==NULL)
 					break;
-				tmp=tmp->nextValue;
+				temp=temp->nextValue;
 			}
 		
 		}
@@ -902,12 +902,12 @@ printf("Join %lld, Cost %lld, Left "OIDFMT" Right "OIDFMT"\n",joinsDone, TJtotal
 			if (prevNodeRight != NULL){
 				BBPincref(markedViewRight->batCacheid,TRUE);
 			
-				tmp = prevNodeRight;
-				while (tmp->indexPosition != curPosRight){
-					tmp->slice = markedViewRight->batCacheid;
-					if (tmp->nextValue==NULL)
+				temp = prevNodeRight;
+				while (temp->indexPosition != curPosRight){
+					temp->slice = markedViewRight->batCacheid;
+					if (temp->nextValue==NULL)
 						break;
-					tmp=tmp->nextValue;
+					temp=temp->nextValue;
 				}
 			}
 		}
@@ -930,14 +930,14 @@ printf("Join %lld, Cost %lld, Left "OIDFMT" Right "OIDFMT"\n",joinsDone, TJtotal
 
 	if (prevNodeRight != NULL){
                 if (prevNodeRight->slice != -1){
-			tmp = prevNodeRight;
+			temp = prevNodeRight;
 			existsHashTableRight = TRUE;
-			while (tmp->indexPosition != curPosRight){
-				if (tmp->slice != prevNodeRight->slice)
+			while (temp->indexPosition != curPosRight){
+				if (temp->slice != prevNodeRight->slice)
 					existsHashTableRight = FALSE;
-				if (tmp->nextValue==NULL)
+				if (temp->nextValue==NULL)
 					break;
-				tmp=tmp->nextValue;
+				temp=temp->nextValue;
 			}
 		
 		}
@@ -970,12 +970,12 @@ printf("Join %lld, Cost %lld, Left "OIDFMT" Right "OIDFMT"\n",joinsDone, TJtotal
 				if (prevNodeRight != NULL){
 					BBPincref(markedViewRight->batCacheid,TRUE);
 				
-					tmp = prevNodeRight;
-					while (tmp->indexPosition != curPosRight){
-						tmp->slice = markedViewRight->batCacheid;
-						if (tmp->nextValue==NULL)
+					temp = prevNodeRight;
+					while (temp->indexPosition != curPosRight){
+						temp->slice = markedViewRight->batCacheid;
+						if (temp->nextValue==NULL)
 							break;
-						tmp=tmp->nextValue;
+						temp=temp->nextValue;
 					}
 				}
 			}
@@ -1014,12 +1014,12 @@ printf("Join %lld, Cost %lld, Left "OIDFMT" Right "OIDFMT"\n",joinsDone, TJtotal
 			if (prevNodeRight != NULL){
 				BBPincref(markedViewRight->batCacheid,TRUE);
 			
-				tmp = prevNodeRight;
-				while (tmp->indexPosition != curPosRight){
-					tmp->slice = markedViewRight->batCacheid;
-					if (tmp->nextValue==NULL)
+				temp = prevNodeRight;
+				while (temp->indexPosition != curPosRight){
+					temp->slice = markedViewRight->batCacheid;
+					if (temp->nextValue==NULL)
 						break;
-					tmp=tmp->nextValue;
+					temp=temp->nextValue;
 				}
 			}
 		}
@@ -1044,14 +1044,14 @@ printf("Join %lld, Cost %lld, Left "OIDFMT" Right "OIDFMT"\n",joinsDone, TJtotal
 
 	if (prevNodeRight != NULL){
                 if (prevNodeRight->slice != -1){
-			tmp = prevNodeRight;
+			temp = prevNodeRight;
 			existsHashTableRight = TRUE;
-			while (tmp->indexPosition != curPosRight){
-				if (tmp->slice != prevNodeRight->slice)
+			while (temp->indexPosition != curPosRight){
+				if (temp->slice != prevNodeRight->slice)
 					existsHashTableRight = FALSE;
-				if (tmp->nextValue==NULL)
+				if (temp->nextValue==NULL)
 					break;
-				tmp=tmp->nextValue;
+				temp=temp->nextValue;
 			}
 		
 		}
@@ -1084,12 +1084,12 @@ printf("Join %lld, Cost %lld, Left "OIDFMT" Right "OIDFMT"\n",joinsDone, TJtotal
 			if (prevNodeRight != NULL){
 				BBPincref(markedViewRight->batCacheid,TRUE);
 			
-				tmp = prevNodeRight;
-				while (tmp->indexPosition != curPosRight){
-					tmp->slice = markedViewRight->batCacheid;
-					if (tmp->nextValue==NULL)
+				temp = prevNodeRight;
+				while (temp->indexPosition != curPosRight){
+					temp->slice = markedViewRight->batCacheid;
+					if (temp->nextValue==NULL)
 						break;
-					tmp=tmp->nextValue;
+					temp=temp->nextValue;
 				}
 			}
 		}
@@ -1405,18 +1405,18 @@ printf("Join %lld, Cost %lld, Left "OIDFMT" Right "OIDFMT"\n",joinsDone, TJtotal
 
 @= activeCrackInitialize
 	if (*mode==4){
-		struct Node * actmp = curNode@1;
+		struct Node * temp = curNode@1;
 		oid maxPieceSize = 0, prevPos = 0, curSize;
 		
 		while (1){
-			curSize = actmp==NULL ? BATcount(map@1) - prevPos + 1 : actmp->indexPosition - prevPos + 1;
+			curSize = temp==NULL ? BATcount(map@1) - prevPos + 1 : temp->indexPosition - prevPos + 1;
 			if (maxPieceSize < curSize){
 				maxPieceSize = curSize;
 				positionOfPieceToCrack@1 = prevPos;
 			}
-			if (actmp == NULL) break;
-			prevPos = actmp->indexPosition;
-			actmp = actmp->nextValue;
+			if (temp == NULL) break;
+			prevPos = temp->indexPosition;
+			temp = temp->nextValue;
 		}
 
 		if (positionOfPieceToCrack@1 >0 ) positionOfPieceToCrack@1 ++;
@@ -1606,9 +1606,9 @@ printf("Join %lld, Cost %lld, Left "OIDFMT" Right "OIDFMT"\n",joinsDone, TJtotal
 			activeCrack = FALSE;
 		}
 		if (mid1>mid2){
-			@1 mtmp = mid1;
+			@1 temp = mid1;
 			mid1=mid2;
-			mid2=mtmp;
+			mid2=temp;
 		}
 
 		while (activeCrack){
@@ -1642,9 +1642,9 @@ printf("Join %lld, Cost %lld, Left "OIDFMT" Right "OIDFMT"\n",joinsDone, TJtotal
                         }
 
 			if (mid1>mid2){
-				@1 mtmp = mid1;
+				@1 temp = mid1;
 				mid1=mid2;
-				mid2=mtmp;
+				mid2=temp;
 			}
 			if (oldmid == mid1 || mid1 == *min@3 || mid1 == *max@3){
 				activeCrack = FALSE;
@@ -2905,7 +2905,7 @@ str CRKcacheConsciousCrackHashJoin_@1_@5(int *resid, int *bidL1, int *bidL2, int
 	lng joinsDone = 0;
 	lng reversingJoinOrder = 0;
 
-	struct Node *tmp;
+	struct Node *temp;
 	
 
 	/* Get the cracker tape for the set of the left map or create one if it does not exist */
@@ -3402,7 +3402,7 @@ str CRKactiveCacheConsciousCrackHashJoin_@1_@5(int *resid, int *bidL1, int *bidL
 	lng joinsDone = 0;
 	lng reversingJoinOrder = 0;
 
-	struct Node *tmp;
+	struct Node *temp;
 	
 	@1 mid, low, hgh;
 	@1 step, mid1, mid2;
@@ -4099,7 +4099,7 @@ str SinglePassJoinPutTuple_@1(@1 *value, oid *id, struct Node *current, BUN base
 
 str cacheConsciousAlignJoinStep_@1(BAT *mapLeft, BAT *mapRight, struct Node *curNodeRight, oid startPos, oid endPos, BAT *indexRight, BUN baseRight, BAT * indexLeft, int mapLpos, oid cacheThreshold, struct Node *firstNodeRight, struct Node *lastNodeRight, BAT *res){
 	oid newPosition=0;
-	struct Node *tmp, *prevNodeRight;
+	struct Node *temp, *prevNodeRight;
 	BAT * viewHeadRight=NULL, *viewRight=NULL, *viewLeft=NULL, *markedViewRight=NULL;
 	bit existsHashTableRight;
 

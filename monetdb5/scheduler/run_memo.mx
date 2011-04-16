@@ -216,7 +216,7 @@ RUNchoice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		for(j=2;j<p->argc; j++){
 			if(	!isVarDisabled(mb,getArg(p,j)) )
 			for(i= pc+1; i<mb->stop; i++){
-				q= getInstrPtr(mb,i);
+				InstrPtr q= getInstrPtr(mb,i);
 				if(p->token >=0 && getArg(q,0)== getArg(p,j)){
 					cost= getVolume(stk,q,1);
 					if( cost>0 && (cost<mincost || mincost== -1)){

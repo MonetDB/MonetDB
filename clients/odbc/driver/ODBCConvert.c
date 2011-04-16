@@ -1199,7 +1199,7 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_BINARY:
 		case SQL_VARBINARY:
 		case SQL_LONGVARBINARY: {
-			size_t l;
+			size_t i;
 			int n;
 			unsigned char c = 0;
 			SQLLEN j = 0;
@@ -1214,13 +1214,13 @@ ODBCFetch(ODBCStmt *stmt,
 #endif
 				return SQL_ERROR;
 			}
-			for (l = 0; l < datalen; l++) {
-				if ('0' <= data[l] && data[l] <= '9')
-					n = data[l] - '0';
-				else if ('A' <= data[l] && data[l] <= 'F')
-					n = data[l] - 'A' + 10;
-				else if ('a' <= data[l] && data[l] <= 'f')
-					n = data[l] - 'a' + 10;
+			for (i = 0; i < datalen; i++) {
+				if ('0' <= data[i] && data[i] <= '9')
+					n = data[i] - '0';
+				else if ('A' <= data[i] && data[i] <= 'F')
+					n = data[i] - 'A' + 10;
+				else if ('a' <= data[i] && data[i] <= 'f')
+					n = data[i] - 'a' + 10;
 				else {
 					/* should not happen */
 					/* General error */
@@ -1231,7 +1231,7 @@ ODBCFetch(ODBCStmt *stmt,
 #endif
 					return SQL_ERROR;
 				}
-				if (l & 1) {
+				if (i & 1) {
 					c |= n;
 					if (j < buflen)
 						p[j] = c;

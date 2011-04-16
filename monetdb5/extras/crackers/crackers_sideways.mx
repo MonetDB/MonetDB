@@ -1812,7 +1812,7 @@ createView:
                 oid sizeM;
                 @2 *ptail, *ntail;
 		@1 *nhead, *ctail;
-		oid ccj;
+		oid j;
 
                 if ((bo = BATdescriptor(*bid)) == NULL)
                         throw(MAL, "crackers.create new map", "Cannot access descriptor of map head BAT");
@@ -1823,7 +1823,7 @@ createView:
 		b = BATnew(bo->ttype, bp->ttype, sizeM);
 		nhead = (@1*)Hloc(b,  BUNfirst(b));
 		ctail = (@1*)Tloc(bo, BUNfirst(bo));
-		for(ccj=0;ccj<sizeM;ccj++){
+		for(j=0;j<sizeM;j++){
 			*nhead = *ctail;
 			nhead++;
 			ctail++;
@@ -1878,7 +1878,7 @@ createView:
 		}else{
                 	ntail = (@2*)Tloc(b,  BUNfirst(b));
                 	ptail = (@2*)Tloc(bp, BUNfirst(bp));
-			for(ccj=0;ccj<sizeM;ccj++){
+			for(j=0;j<sizeM;j++){
 				*ntail = *ptail;
 				ntail++;
 				ptail++;

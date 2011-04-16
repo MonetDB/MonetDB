@@ -85,11 +85,11 @@ NwDef(CmdCode dir, int mod, int sec, int lino, char *file)
 void
 InitDef(void)
 {
-	time_t myclock;
+	time_t clock;
 
 	mx_title = 0;
-	time(&myclock);
-	mx_date = ctime(&myclock);
+	time(&clock);
+	mx_date = ctime(&clock);
 	mx_author = "";
 	mx_version = "";
 	pushCond(1, "");

@@ -57,19 +57,19 @@ static int
 OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i,k=1, n=0, fnd=0, actions=0;
-	int *alias, *idx;
+	int *alias, *index;
 	VarPtr x,y, *cst;
 
 	OPTDEBUGconstants mnstr_printf(cntxt->fdout,"#OPT_CONSTANTS: MATCHING CONSTANTS ELEMENTS\n");
 
 	alias= (int*) GDKmalloc(sizeof(int) * mb->vtop);
 	cst= (VarPtr*) GDKmalloc(sizeof(VarPtr) * mb->vtop);
-	idx= (int*) GDKmalloc(sizeof(int) * mb->vtop);
+	index= (int*) GDKmalloc(sizeof(int) * mb->vtop);
 
-	if ( alias == NULL || cst == NULL || idx == NULL){
+	if ( alias == NULL || cst == NULL || index == NULL){
 		if( alias) GDKfree(alias);
 		if( cst) GDKfree(cst);
-		if( idx) GDKfree(idx);
+		if( index) GDKfree(index);
 		return 0;
 	}
 
@@ -92,7 +92,7 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 						mnstr_printf(cntxt->fdout,"\n");
 					}
 					/* re-use a constant */
-					alias[i]= idx[k];
+					alias[i]= index[k];
 					fnd=1;
 					actions++;
 					break;
@@ -101,8 +101,8 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			if ( fnd == 0){
 				OPTDEBUGconstants mnstr_printf(cntxt->fdout,"swith elements %d %d\n", i,n);
 				cst[n]= x;
-				idx[n]= i;
-				alias[i]= idx[n];
+				index[n]= i;
+				alias[i]= index[n];
 				n++;
 			} 
 		} else
@@ -117,7 +117,7 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		mnstr_printf(cntxt->fdout,"#opt_constants: %d constant duplicates removed\n", actions);
 	GDKfree(alias);
 	GDKfree(cst);
-	GDKfree(idx);
+	GDKfree(index);
 	return actions;
 }
 @include optimizerWrapper.mx
