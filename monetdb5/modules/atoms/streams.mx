@@ -195,11 +195,11 @@ mnstr_stream_@1wrap(Stream *sout, Stream *sin)
 @= open_socketwrap
 streams_export str mnstr_socket_@1wrap(Stream *S, int *socket, str *name);
 str
-mnstr_socket_@1wrap(Stream *S, int *socket, str *name)
+mnstr_socket_@1wrap(Stream *S, int *sock, str *name)
 {
 	stream *s;
 
-	if ((s = socket_@1(*socket, *name)) == NULL || mnstr_errnr(s)) {
+	if ((s = socket_@1(*sock, *name)) == NULL || mnstr_errnr(s)) {
 		int errnr = mnstr_errnr(s);
 		if (s)
 			mnstr_destroy(s);

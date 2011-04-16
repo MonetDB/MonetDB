@@ -1490,7 +1490,7 @@ DFLOWscheduler( DataFlow flow )
 @c
 	}
 	PARDEBUG {
-		int candidates = 0;
+		candidates = 0;
 		mnstr_printf(GDKstdout,"#end of data flow %d %d todo %d  done %d\n",pc,limit,todo,done);
 		for ( i =0 ; i<lookahead; i++)
 			if (fs[i].status != DFLOWwrapup  && fs[i].pc >=0) {

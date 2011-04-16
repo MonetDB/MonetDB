@@ -1691,16 +1691,16 @@ timestamp_fromstr(str buf, int *len, timestamp **ret)
 }
 
 int
-timestamp_tz_tostr(str *buf, int *len, timestamp *val, tzone *timezone)
+timestamp_tz_tostr(str *buf, int *len, timestamp *val, tzone *tz)
 {
     int len1, len2, big = 128;
     char buf1[128], buf2[128], *s= *buf, *s1 = buf1, *s2 = buf2;
-    if (timezone!=NULL)
+    if (tz!=NULL)
     {
-        int off = get_offset(timezone);
+        int off = get_offset(tz);
         timestamp tmp = *val;
     
-        if (!ts_isnil(tmp) && timestamp_inside(&tmp, val, timezone, (lng) 0)) {
+        if (!ts_isnil(tmp) && timestamp_inside(&tmp, val, tz, (lng) 0)) {
             lng add = (lng) 3600000;
     
             timestamp_add(&tmp, &tmp, &add);

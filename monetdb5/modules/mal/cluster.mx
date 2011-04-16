@@ -604,10 +604,10 @@ CLS_create_@1( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int 
 	/* convert histogram into prefix sum */
 	pos = (wrd*)alloca(sizeof(wrd) * (mask+1)); 
 	for (sum = 0, i=0 ; i <= mask; i++) {
-		wrd psum = sum;
+		wrd pfsum = sum;
 
 		sum += cnt[i];
-		pos[i] = cnt[i] = psum;
+		pos[i] = cnt[i] = pfsum;
 	}
 	
 	/* time to create the cluster map */
@@ -699,9 +699,9 @@ CLS_create2_@1( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int
 		if (!*order) {
 			cmap->tsorted = FALSE;
 			for ( ; bt < be; bt++) {
-				int h = (((int)(*bt)) >> off) & mask;
-			   	*m++ = h;
-				cnt[h]++;
+				int y = (((int)(*bt)) >> off) & mask;
+			   	*m++ = y;
+				cnt[y]++;
 			}
 		} else { /* try an optimized distribution, 1/Nth in each part */
 			oid *o, base;
@@ -751,10 +751,10 @@ CLS_create2_@1( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int
 
 	/* convert histogram into prefix sum */
 	for (sum = 0, i=0 ; i <= mask; i++) {
-		wrd psum = sum;
+		wrd pfsum = sum;
 
 		sum += cnt[i];
-		cnt[i] = psum;
+		cnt[i] = pfsum;
 	}
 	
 	BBPunfix(*B);

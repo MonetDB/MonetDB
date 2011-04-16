@@ -111,7 +111,7 @@ Prepare the call to the history manager.
 	q = push@2(mb,q,0);
 	@1= getArg(q,0)= newVariable(mb,GDKstrdup("@1"),TYPE_@3);
 @= initCounters
-	@:initCounter(ctime,mtime,current_timestamp,any)@
+	@:initCounter(ictime,mtime,current_timestamp,any)@
 	@:arguments@
 	@:zeroCounter(memory,Lng,lng)@
 	@:zeroCounter(tuples,Wrd,wrd)@
@@ -145,7 +145,7 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 {
 	int i, limit, slimit, actions = 1;
 	InstrPtr p = 0, *old= mb->stmt, q,r;
-	int argc, inblock, oublock, arg, ctime;
+	int argc, inblock, oublock, arg, ictime;
 	int xtime=0, rtime = 0, foot=0, memory, tuples=0;
 	int returnseen = 0;
 	InstrPtr keepQuery = NULL;
@@ -222,7 +222,7 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 
 			q = newStmt(mb, "user", "keepcall");
 			q = pushArgument(mb, q, getArg(keepQuery,1)); /* query identifier */
-			q = pushArgument(mb, q, ctime); /* arguments */
+			q = pushArgument(mb, q, ictime); /* arguments */
 			q = pushArgument(mb, q, arg);   /* arguments */
 			q = pushArgument(mb, q, xtime); 
 			q = pushArgument(mb, q, rtime); 

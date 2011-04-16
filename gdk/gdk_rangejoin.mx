@@ -131,18 +131,18 @@ break;
 @
 @= rangejoin_
 {
-	BATiter li = bat_iterator(l);
+	BATiter bli = bat_iterator(l);
 	BATiter rli = bat_iterator(rl);
 	BATiter rhi = bat_iterator(rh);
 	BUN p, q;
 	BUN v, w;
 
 	BATloop(l, p, q) {
-		@1 x1 = *(@1 *) BUNtloc(li, p);
+		@1 x1 = *(@1 *) BUNtloc(bli, p);
 		BATloop(rl, v, w) {
 			if ((x1 @2 *(@1 *) BUNtloc(rli, v))  &&
 			    (x1 @3 *(@1 *) BUNtloc(rhi, v))) { 
-				if (BUNfastins(bn, BUNhead(li, p), BUNhead(rli, v)) == NULL) {
+				if (BUNfastins(bn, BUNhead(bli, p), BUNhead(rli, v)) == NULL) {
 					BBPreclaim(bn);
 					return NULL;
 				}
@@ -152,7 +152,7 @@ break;
 }
 @= rangejoin_any
 {
-	BATiter li = bat_iterator(l);
+	BATiter bli = bat_iterator(l);
 	BATiter rli = bat_iterator(rl);
 	BATiter rhi = bat_iterator(rh);
 	BUN p, q;
@@ -164,11 +164,11 @@ break;
 		return NULL;
 	}
 	BATloop(l, p, q) {
-		ptr x1 = (ptr)BUNtail(li, p);
+		ptr x1 = (ptr)BUNtail(bli, p);
 		BATloop(rl, v, w) {
 			if (cmp(x1, (ptr)BUNtail(rli, v)) @2 0  &&
 			    cmp(x1, (ptr)BUNtail(rhi, v)) @3 0) { 
-				if (BUNfastins(bn, BUNhead(li, p), BUNhead(rli, v)) == NULL) {
+				if (BUNfastins(bn, BUNhead(bli, p), BUNhead(rli, v)) == NULL) {
 					BBPreclaim(bn);
 					return NULL;
 				}
@@ -268,17 +268,17 @@ result.
 @{
 @= bandjoin_nl_
 {
-	BATiter li = bat_iterator(l), ri = bat_iterator(r);
+	BATiter bli = bat_iterator(l), bri = bat_iterator(r);
 	@1 *x1, *x2, cc1 = *(@1*)c1, cc2 = *(@1*)c2;
 	BUN p, q, v, w;
 
 	BATloop(l, p, q) {
-		x1 = (@1 *) BUNtloc(li, p);
+		x1 = (@1 *) BUNtloc(bli, p);
 		BATloop(r, v, w) {
-			x2 = (@1 *) BUNhloc(ri, v);
+			x2 = (@1 *) BUNhloc(bri, v);
 			if ((*x1 @2 *x2 - cc1) &&
 			    (*x1 @3 *x2 + cc2)) {
-				if (BUNfastins(bn, BUNhead(li, p), BUNtail(ri, v)) == NULL) {
+				if (BUNfastins(bn, BUNhead(bli, p), BUNtail(bri, v)) == NULL) {
 					BBPreclaim(bn);
 					return NULL;
 				}

@@ -1355,7 +1355,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 		case 'P':
 		case 'p':
 		{
-			BUN size = 0, first = 0;
+			BUN size = 0, bfirst = 0;
 			int i;
 			char *t;
 			char upper= *b;
@@ -1371,23 +1371,23 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 				size = (BUN) atol(t);
 				skipWord(cntxt, t);
 				if (isdigit((int) *t))
-					first = (BUN) atol(t);
+					bfirst = (BUN) atol(t);
 			}
 			/* search the symbol */
 			i = findVariable(mb, b);
 			if (i < 0) {
 				i = BBPindex(b);
 				if (i != 0){
-					printBATelm(out, i, size, first);
+					printBATelm(out, i, size, bfirst);
 				} else
 					mnstr_printf(out, "%s Symbol not found\n", "#mdb ");
 				continue;
 			}
 			if (isaBatType(getVarType(mb,i)) && upper =='p'){
 				printStackHdr(out,  mb, stk->stk + i, i);
-				printBATelm(out, stk->stk[i].val.bval, size, first);
+				printBATelm(out, stk->stk[i].val.bval, size, bfirst);
 			} else
-				printStackElm(out, mb, stk->stk + i, i, size, first);
+				printStackElm(out, mb, stk->stk + i, i, size, bfirst);
 			continue;
 		}
 		case 'S':
@@ -1438,13 +1438,13 @@ signatures satisfying the pattern.
 			if ( *b=='L') lstng |= LIST_MAL_PROPS | LIST_MAL_DETAIL;
 			skipWord(cntxt, b);
 			if (*b != 0) {
-				MalBlkPtr m= mdbLocateMalBlk(cntxt,mb,b,out);
-				if ( m && strchr(b,'*') ){
+				MalBlkPtr mbp = mdbLocateMalBlk(cntxt,mb,b,out);
+				if ( mbp && strchr(b,'*') ){
 					/* detect l user.fcn[*] */
-					for (m=mb; m != NULL; m = m->history)
-						printFunction(out, m, 0, lstng);
+					for (mbp=mb; mbp != NULL; mbp = mbp->history)
+						printFunction(out, mbp, 0, lstng);
 				} else
-				if( m == NULL && !strchr(b,'.') && !strchr(b,'[') && !isdigit((int)*b) && *b != '-' && *b !='+'){
+				if( mbp == NULL && !strchr(b,'.') && !strchr(b,'[') && !isdigit((int)*b) && *b != '-' && *b !='+'){
 					/* is this a variable ? */
 					varid= findVariable(mb,b);
 					if (varid >= 0){
@@ -1477,8 +1477,8 @@ signatures satisfying the pattern.
 				} else
 				if ( isdigit((int) *b)  || *b == '-' || *b == '+')
 					goto partial;
-				if( m) 
-					printFunction(out, m, 0, lstng);
+				if( mbp) 
+					printFunction(out, mbp, 0, lstng);
 			} else  {
 @-
 Listing the program starts at the pc last given.
@@ -1576,11 +1576,11 @@ mdbSanityCheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		n= getVar(mb,i);
 		v= stk->stk+i;
 		if (isaBatType(n->type) && v->val.ival) {
-			int i = v->val.ival;
+			int j = v->val.ival;
 			BAT *b;
 
-			b = BBPquickdesc(ABS(i), TRUE);
-			if (i < 0)
+			b = BBPquickdesc(ABS(j), TRUE);
+			if (j < 0)
 				b = BATmirror(b);
 			if (b) {
 				nme = getTypeName(n->type);
@@ -1835,30 +1835,30 @@ printBATelm(stream *f, int i, BUN cnt, BUN first)
 
 
 void
-printStackHdr(stream *f, MalBlkPtr mb, ValPtr v, int index){
+printStackHdr(stream *f, MalBlkPtr mb, ValPtr v, int idx){
 	str nme;
 	char nmebuf[PATHLENGTH];
-	VarPtr n = getVar(mb, index);
+	VarPtr n = getVar(mb, idx);
 
-	if( v == 0 && isVarConstant(mb,index))
-		v= &getVarConstant(mb,index);
+	if( v == 0 && isVarConstant(mb,idx))
+		v= &getVarConstant(mb,idx);
 	if (n->tmpindex) {
 		snprintf(nmebuf, PATHLENGTH, "%c%d", TMPMARKER, n->tmpindex);
 		nme = nmebuf;
 	} else
 		nme = n->name;
-	mnstr_printf(f, "#[%d] %5s = ", index, nme);
+	mnstr_printf(f, "#[%d] %5s = ", idx, nme);
 	if (v)
 		ATOMprint(v->vtype, VALptr(v), f);
 }
 
 void
-printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
+printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int idx, BUN cnt, BUN first)
 {
 	str nme, nmeOnStk;
-	VarPtr n = getVar(mb, index);
+	VarPtr n = getVar(mb, idx);
 
-	printStackHdr(f,mb,v,index);
+	printStackHdr(f,mb,v,idx);
 
 	if (v && v->vtype == TYPE_bat){
 		int i = v->val.ival;
@@ -1882,14 +1882,14 @@ printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
 	/* check for type errors */
 	if (strcmp(nmeOnStk, nme) && strncmp(nmeOnStk,"BAT",3))
 		mnstr_printf(f,"!%s ",nmeOnStk);
-	mnstr_printf(f, " %s", (isVarConstant(mb,index)? " constant" : ""));
-	mnstr_printf(f, " %s", (isVarUsed(mb,index) ? "": " not used" ));
-	mnstr_printf(f, " %s", (isVarTypedef(mb,index) ? " type variable" : ""));
-	if ( getEndOfLife(mb,index))
-		mnstr_printf(f," eolife=%d ", getEndOfLife(mb,index));
+	mnstr_printf(f, " %s", (isVarConstant(mb,idx)? " constant" : ""));
+	mnstr_printf(f, " %s", (isVarUsed(mb,idx) ? "": " not used" ));
+	mnstr_printf(f, " %s", (isVarTypedef(mb,idx) ? " type variable" : ""));
+	if ( getEndOfLife(mb,idx))
+		mnstr_printf(f," eolife=%d ", getEndOfLife(mb,idx));
 	GDKfree(nme);
 	if (n->propc){
-		nme = varGetPropStr(mb, index);
+		nme = varGetPropStr(mb, idx);
 		if (nme) {
 			mnstr_printf(f,"%s",nme);
 			GDKfree(nme);

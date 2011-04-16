@@ -335,10 +335,10 @@ la_bat_clear(logger *lg, logaction *la)
 
 	b = BATdescriptor(bid);
 	if (b) {
-		int access = b->P->restricted;
+		int bataccess = b->P->restricted;
 		b->P->restricted = BAT_WRITE;
 		BATclear(b);
-		b->P->restricted = access;
+		b->P->restricted = bataccess;
 		logbat_destroy(b);
 	}
 }

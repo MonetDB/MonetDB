@@ -270,9 +270,9 @@ ZORDbatencode_int_oid(int *zbid, int *xbid, int *ybid)
 	bz->T->nonil = bx->T->nonil && by->T->nonil;
 
 	if (bx->htype != bz->htype) {
-        BAT *r = VIEWcreate(bx,bz);
+        BAT *br = VIEWcreate(bx,bz);
         BBPreleaseref(bz->batCacheid);
-        bz = r;
+        bz = br;
     }
 
 	BBPkeepref(*zbid = bz->batCacheid);

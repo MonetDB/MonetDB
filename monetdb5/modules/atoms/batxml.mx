@@ -301,9 +301,9 @@ BATXMLxmltext(int *ret, int *bid)
 			t++;
 			while (*t) {
 				if (*t == '"' || *t == '\'') {
-					char q = *t++;
+					char x = *t++;
 
-					s += XMLunquotestring(&t, q, s);
+					s += XMLunquotestring(&t, x, s);
 				}
 				t++;
 			}
@@ -483,7 +483,7 @@ BATXMLcontent(int *ret, int *bid)
 		str t = (str) BUNtail(bi, p);
 		size_t len;
 		xmlNodePtr elem;
-		xmlParserErrors err;
+		xmlParserErrors e;
 		const xmlChar *s;
 
 		if (strNil(t)) {
@@ -492,8 +492,8 @@ BATXMLcontent(int *ret, int *bid)
 			continue;
 		}
 		len = strlen(t);
-		err = xmlParseInNodeContext(root, t, (int) len, 0, &elem);
-		if (err != XML_ERR_OK) {
+		e = xmlParseInNodeContext(root, t, (int) len, 0, &elem);
+		if (e != XML_ERR_OK) {
 			xmlBufferFree(xbuf);
 			xmlFreeDoc(doc);
 			BBPreleaseref(b->batCacheid);

@@ -32,15 +32,15 @@ char *disclaimerfile;
 static const char defaultfile[] = "license.txt";
 
 static FILE *
-openDisclaimerFile(const char *filename)
+openDisclaimerFile(const char *fname)
 {
 	FILE *fp = NULL;
 
-	if (!filename || strlen(filename) < 1)
-		filename = defaultfile;
+	if (!fname || strlen(fname) < 1)
+		fname = defaultfile;
 
-	if (*filename == DIR_SEP) {
-		fp = fopen(filename, "r");
+	if (*fname == DIR_SEP) {
+		fp = fopen(fname, "r");
 	} else {
 		char buf[8096];
 		size_t len;
@@ -57,7 +57,7 @@ openDisclaimerFile(const char *filename)
 		}
 		/* search backwards, such that we can find the license.txt
 		 * file in the root of each module */
-		strncat(buf, filename, 8095 - len);
+		strncat(buf, fname, 8095 - len);
 		while (len > 0 && (fp = fopen(buf, "r")) == 0) {
 			/* remove last path */
 			len--; /* the trailing slash */
@@ -67,7 +67,7 @@ openDisclaimerFile(const char *filename)
 					break;
 				}
 			}
-			strncat(buf, filename, 8096 - len - 1);
+			strncat(buf, fname, 8096 - len - 1);
 		}
 	}
 
@@ -77,14 +77,14 @@ openDisclaimerFile(const char *filename)
 }
 
 static void
-writeDisclaimer(FILE *fp, const char *comment_start, const char *prefix, const char *comment_end, const char *filename)
+writeDisclaimer(FILE *fp, const char *comment_start, const char *prefix, const char *comment_end, const char *fname)
 {
 
 	FILE *dfile;
 	char line[DISC_WIDTH + 2];
 	size_t prefixLength = strlen(prefix), i, ret;
 
-	dfile = openDisclaimerFile(filename);
+	dfile = openDisclaimerFile(fname);
 
 	if (!dfile)
 		return;

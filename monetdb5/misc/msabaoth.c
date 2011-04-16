@@ -245,7 +245,7 @@ msab_retreatScenario(const char *lang)
 	if ((f = fopen(path, "a+")) != NULL) {
 		if ((len = fread(buf, 1, 255, f)) > 0) {
 			char *p;
-			FILE *tmp = tmpfile();
+			FILE *tmpf = tmpfile();
 			int written = 0;
 
 			buf[len] = '\0';
@@ -253,7 +253,7 @@ msab_retreatScenario(const char *lang)
 			while ((p = strchr(buf, '\n')) != NULL) {
 				*p = '\0';
 				if (strcmp(buf, lang) != 0) {
-					fprintf(tmp, "%s\n", buf);
+					fprintf(tmpf, "%s\n", buf);
 					written = 1;
 				}
 				buf = p;
@@ -263,11 +263,11 @@ msab_retreatScenario(const char *lang)
 				 * impossible anyway) and tmpnam is so much "DO NOT USE"
 				 * that I decided to just copy over the file again... */
 				rewind(f);
-				fflush(tmp);
-				rewind(tmp);
-				len = fread(buf, 1, 256, tmp);
+				fflush(tmpf);
+				rewind(tmpf);
+				len = fread(buf, 1, 256, tmpf);
 				if (fwrite(buf, 1, len, f) < len) {
-					(void)fclose(tmp);
+					(void)fclose(tmpf);
 					(void)fclose(f);
 					snprintf(buf, sizeof(buf), "failed to write: %s (%s)",
 							strerror(errno), path);
@@ -275,7 +275,7 @@ msab_retreatScenario(const char *lang)
 				}
 				fflush(f);
 				fclose(f);
-				fclose(tmp); /* this should remove it automagically */
+				fclose(tmpf); /* this should remove it automagically */
 				return(NULL);
 			} else {
 				(void)fclose(f);

@@ -143,63 +143,63 @@ HSTnew(int bins, ValPtr minval, ValPtr maxval)
 /*get the bin we would increment if we would add this value*/
 int
 HSTgetIndex(Histogram h, ValPtr val){
-	int index =0;
+	int idx =0;
 	switch( val->vtype){
 		case TYPE_bte:	 
 			if (val->val.btval > h->hgh.val.btval) 
-				index= (h->hgh.val.btval - h->low.val.btval) / h->inc.val.btval;
+				idx = (h->hgh.val.btval - h->low.val.btval) / h->inc.val.btval;
 			else	
-				index= (val->val.btval - h->low.val.btval) / h->inc.val.btval;
+				idx = (val->val.btval - h->low.val.btval) / h->inc.val.btval;
 			break;
 		case TYPE_sht:	 
 			if (val->val.shval > h->hgh.val.shval) 
-				index= (h->hgh.val.shval - h->low.val.shval) / h->inc.val.shval; 
+				idx = (h->hgh.val.shval - h->low.val.shval) / h->inc.val.shval; 
 			else
-				index= (val->val.shval - h->low.val.shval) / h->inc.val.shval; 
+				idx = (val->val.shval - h->low.val.shval) / h->inc.val.shval; 
 			break;
 		case TYPE_int:	
 			if (val->val.ival > h->hgh.val.ival) 
-				index= (h->hgh.val.ival - h->low.val.ival) / h->inc.val.ival; 
+				idx = (h->hgh.val.ival - h->low.val.ival) / h->inc.val.ival; 
 			else
-				index= (val->val.ival - h->low.val.ival) / h->inc.val.ival; 
+				idx = (val->val.ival - h->low.val.ival) / h->inc.val.ival; 
 			break;
 		case TYPE_lng: 	
 			if (val->val.lval > h->hgh.val.lval) 
-				index= (int) ((h->hgh.val.lval - h->low.val.lval) / h->inc.val.lval);
+				idx = (int) ((h->hgh.val.lval - h->low.val.lval) / h->inc.val.lval);
 			else
-				index= (int) ((val->val.lval - h->low.val.lval) / h->inc.val.lval);
+				idx = (int) ((val->val.lval - h->low.val.lval) / h->inc.val.lval);
 			break;
 		case TYPE_dbl: 	
 			if (val->val.dval > h->hgh.val.dval) 
-				index= (int) ((h->hgh.val.dval - h->low.val.dval) / h->inc.val.dval);
+				idx = (int) ((h->hgh.val.dval - h->low.val.dval) / h->inc.val.dval);
 			else
-				index= (int) ((val->val.dval - h->low.val.dval) / h->inc.val.dval);
+				idx = (int) ((val->val.dval - h->low.val.dval) / h->inc.val.dval);
 			break;
 		case TYPE_flt: 	
 			if (val->val.fval > h->hgh.val.fval) 
-				index= (int) ((h->hgh.val.fval - h->low.val.fval) / h->inc.val.fval);
+				idx = (int) ((h->hgh.val.fval - h->low.val.fval) / h->inc.val.fval);
 			else
-				index= (int) ((val->val.fval - h->low.val.fval) / h->inc.val.fval);
+				idx = (int) ((val->val.fval - h->low.val.fval) / h->inc.val.fval);
 			break;
 	}	
-	return index;
+	return idx;
 }
 
 int 
 HSTincrement(Histogram h, ValPtr val){
-	int index = HSTgetIndex(h,val);
-	h->cnt[index]++;
+	int idx = HSTgetIndex(h,val);
+	h->cnt[idx]++;
 	h->total++;
-	h->cnt[h->bins+index]=h->cnt[index]/h->total;
-	return index;
+	h->cnt[h->bins+idx]=h->cnt[idx]/h->total;
+	return idx;
 }
 
 void 
 HSTdecrement(Histogram h, ValPtr val){
-	int index = HSTgetIndex(h,val);
-	h->cnt[index]--;
+	int idx = HSTgetIndex(h,val);
+	h->cnt[idx]--;
 	h->total--;
-	h->cnt[h->bins+index]=h->cnt[index]/h->total;
+	h->cnt[h->bins+idx]=h->cnt[idx]/h->total;
 }
 
 dbl

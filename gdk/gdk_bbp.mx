@@ -694,22 +694,21 @@ BBPreadEntries(FILE *fp, char *src, int *min_stamp, int *max_stamp)
 			char type[11];
 			unsigned short width;
 			unsigned short var;
-			unsigned short properties;
 			lng nokey0;
 			lng nokey1;
 			lng nosorted;
 			lng base;
 			lng align;
-			lng free;
+			lng hfree;
 			lng size;
 			unsigned short storage;
 			int n;
 
 			if (sscanf(buf + nread,
-				   " %10s %hu %hu %hu %lld %lld %lld %lld %lld %lld %lld %hu"
+				   " %10s %hu %hu %u %lld %lld %lld %lld %lld %lld %lld %hu"
 				   "%n",
 				   type, &width, &var, &properties, &nokey0,
-				   &nokey1, &nosorted, &base, &align, &free,
+				   &nokey1, &nosorted, &base, &align, &hfree,
 				   &size, &storage,
 				   &n) < 12)
 				GDKfatal("BBPinit: invalid format for BBP.dir\n%s", buf);
@@ -745,7 +744,7 @@ BBPreadEntries(FILE *fp, char *src, int *min_stamp, int *max_stamp)
 			bs->@1.seq = base < 0 ? oid_nil : (oid) base;
 			bs->@1.align = (oid) align;
 			bs->@1.heap.maxsize = (size_t) size;
-			bs->@1.heap.free = (size_t) free;
+			bs->@1.heap.free = (size_t) hfree;
 			bs->@1.heap.size = (size_t) size;
 			bs->@1.heap.base = NULL;
 			bs->@1.heap.filename = NULL;
@@ -761,7 +760,7 @@ BBPreadEntries(FILE *fp, char *src, int *min_stamp, int *max_stamp)
 
 @= vheapinit
 		if (bs->@1.varsized && bs->@1.type != TYPE_void) {
-			lng free, size;
+			lng hfree, size;
 			unsigned short storage;
 			int n;
 
@@ -771,10 +770,10 @@ BBPreadEntries(FILE *fp, char *src, int *min_stamp, int *max_stamp)
 			if (sscanf(buf + nread,
 				   " %lld %lld %hu"
 				   "%n",
-				   &free, &size, &storage, &n) < 3)
+				   &hfree, &size, &storage, &n) < 3)
 				GDKfatal("BBPinit: invalid format for BBP.dir\n%s", buf);
 			bs->@1.vheap->maxsize = (size_t) size;
-			bs->@1.vheap->free = (size_t) free;
+			bs->@1.vheap->free = (size_t) hfree;
 			bs->@1.vheap->size = (size_t) size;
 			bs->@1.vheap->base = NULL;
 			bs->@1.vheap->filename = NULL;
@@ -828,7 +827,7 @@ BBPreadEntries(FILE *fp, char *src, int *min_stamp, int *max_stamp)
 }
 
 static int
-BBPheader(FILE *fp, int *BBPlimit, oid *BBPoid, int silent)
+BBPheader(FILE *fp, int *BBPhlimit, oid *BBPoid, int silent)
 {
 	char buf[BUFSIZ];
 	int sz, bbpversion, ptrsize, oidsize;
@@ -894,8 +893,8 @@ BBPheader(FILE *fp, int *BBPlimit, oid *BBPoid, int silent)
 	if ((s = strstr(buf, "BBPsize")) != NULL) {
 		sscanf(s, "BBPsize=%d", &sz);
 		sz = (int) (sz * BATMARGIN);
-		if (sz > *BBPlimit)
-			*BBPlimit = sz;
+		if (sz > *BBPhlimit)
+			*BBPhlimit = sz;
 	}
 	return bbpversion;
 }
@@ -965,7 +964,7 @@ BBPimportEntry(char *nme)
 	char path[BUFSIZ];
 	struct stat st;
 	oid BBPoid;
-	int BBPlimit;
+	int BBPhlimit;
 
 	IODEBUG mnstr_printf(GDKerr,"#importEntry %s\n",nme);
 	strcpy(bbpdir,nme);
@@ -987,7 +986,7 @@ BBPimportEntry(char *nme)
 		}
 	}
 
-	if (BBPheader(fd, &BBPlimit, &BBPoid, TRUE) < 0)
+	if (BBPheader(fd, &BBPhlimit, &BBPoid, TRUE) < 0)
 		return 0;
 	bs = BBPreadEntries(fd, nme, &min_stamp, &max_stamp);
 	fclose(fd);

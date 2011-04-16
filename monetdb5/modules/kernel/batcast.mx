@@ -169,10 +169,10 @@ str CMDconvert_@1(int *ret, int *bid)
 	bn->tsorted = 0;
 
 	if (b->htype != bn->htype) {
-		BAT *r = VIEWcreate(b,bn);
+		BAT *wur = VIEWcreate(b,bn);
 
 		BBPreleaseref(bn->batCacheid);
-		bn = r;
+		bn = wur;
 	}
 	BBPkeepref(*ret = bn->batCacheid);
 	BBPreleaseref(b->batCacheid);

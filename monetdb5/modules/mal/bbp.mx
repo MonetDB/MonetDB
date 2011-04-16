@@ -420,8 +420,6 @@ CMDbbpbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		rhs = &box->val->stk[i];
 		VALcopy(lhs, rhs);
 		if (lhs->vtype == TYPE_bat) {
-			BAT *b;
-
 			b = (BAT *) BBPgetdesc(lhs->val.bval);
 			if (b == NULL)
 				throw(MAL, "bbp.bind", INTERNAL_BAT_ACCESS);

@@ -142,6 +142,7 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 	oid *sh;
 	@1 *st;
 	oid mergeTuples;
+	unsigned int i;
 
 	rh = (oid*)Hloc(br,BUNfirst(br));
 	rt = (@1 *)Tloc(br,BUNfirst(br));
@@ -240,12 +241,12 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 		/* Take the slices */
 		current=CrackerIndex[m].smNode;
 		while(current!=NULL){
-			BAT *slice=BATdescriptor(current->batId);
-			if (BATmadvise(slice, BUF_SEQUENTIAL, BUF_SEQUENTIAL, BUF_SEQUENTIAL, BUF_SEQUENTIAL) != 0)  
+			BAT *nmslice=BATdescriptor(current->batId);
+			if (BATmadvise(nmslice, BUF_SEQUENTIAL, BUF_SEQUENTIAL, BUF_SEQUENTIAL, BUF_SEQUENTIAL) != 0)  
 				throw(MAL, "crackers.sortmerge", "Madvice failed");
-			if (slice==NULL)
+			if (nmslice==NULL)
 				throw(MAL, "crackers.sortmerge", "Cannot access slice");
-			current->slice=slice;
+			current->slice=nmslice;
 			current=current->next;
 		}
 		gotSlices=TRUE;
@@ -318,8 +319,9 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 	char * space = malloc (size);
 	int resIndex;
 	int deferred;
-	@1 *st;
+	@1 *pqst;
 	oid QNodesSizeTemp=QNodesSize;
+	int pqj;
 	
 
 	/* We use the value "as is" as PQ_Key for PQ_push();
@@ -348,35 +350,35 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 	that contains info on the slices with qualifying values*/
 
 	/*put all first values in the queue*/
-	for(j=0;j<QNodesSize;j++){
-		st=(@1  *)Tloc(QNodes[j]->slice,BUNfirst(QNodes[j]->slice)+QNodes[j]->start); 
-		PQ_push (& pq, j, (PQ_Key)*st, 0, NULL);
-		QNodes[j]->tuples=QNodes[j]->start;
+	for(pqj=0;pqj<QNodesSize;pqj++){
+		pqst=(@1  *)Tloc(QNodes[pqj]->slice,BUNfirst(QNodes[pqj]->slice)+QNodes[pqj]->start); 
+		PQ_push (& pq, pqj, (PQ_Key)*pqst, 0, NULL);
+		QNodes[pqj]->tuples=QNodes[pqj]->start;
 	}
 
 	/*pop the smallest and push the next one from the same slice*/
 	while(QNodesSizeTemp>0){
 		resIndex = PQ_pop (& pq, & deferred, NULL);
 
-		st=(@1  *)Tloc(QNodes[resIndex]->slice,BUNfirst(QNodes[resIndex]->slice)+QNodes[resIndex]->tuples);
+		pqst=(@1  *)Tloc(QNodes[resIndex]->slice,BUNfirst(QNodes[resIndex]->slice)+QNodes[resIndex]->tuples);
 		*rh=*(oid *)Hloc(QNodes[resIndex]->slice,BUNfirst(QNodes[resIndex]->slice)+QNodes[resIndex]->tuples);
-		*rt=*st;
+		*rt=*pqst;
 
 		rh++;rt++;
 
 		QNodes[resIndex]->tuples++;
 		
-		st++;	
+		pqst++;	
 		lastValue = (@1*)Tloc(QNodes[resIndex]->slice, BUNlast(QNodes[resIndex]->slice));
-		if(st < lastValue && (@2_LT(st,@6,@3@1) || (@2_EQ(st,@6,@3@1) && @8==TRUE))){
-			PQ_push (& pq, resIndex, (PQ_Key)*st, 0, NULL);
+		if(pqst < lastValue && (@2_LT(pqst,@6,@3@1) || (@2_EQ(pqst,@6,@3@1) && @8==TRUE))){
+			PQ_push (& pq, resIndex, (PQ_Key)*pqst, 0, NULL);
 		}
 		else 
 			QNodesSizeTemp--;
 	}
-	for(j=0;j<QNodesSize;j++){
-		QNodes[j]->merged+=QNodes[j]->tuples-QNodes[j]->start;
-		totalTuples+=QNodes[j]->tuples-QNodes[j]->start;
+	for(pqj=0;pqj<QNodesSize;pqj++){
+		QNodes[pqj]->merged+=QNodes[pqj]->tuples-QNodes[pqj]->start;
+		totalTuples+=QNodes[pqj]->tuples-QNodes[pqj]->start;
 	}
 	free(space);
 }
@@ -392,7 +394,7 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 	int resIndex;
 	int deferred;
 	oid *sh;
-	@1 *st;
+	@1 *pqst;
 	oid mergeTuples;
 
 	/* We use the value "as is" as PQ_Key for PQ_push();
@@ -422,8 +424,8 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 
 	/*put all first values in the queue*/
 	for(j=0;j<QNodesSize;j++){
-		st=(@1  *)Tloc(QNodes[j]->slice,BUNfirst(QNodes[j]->slice)+QNodes[j]->start); 
-		PQ_push (& pq, j, (PQ_Key)*st, 0, NULL);
+		pqst=(@1  *)Tloc(QNodes[j]->slice,BUNfirst(QNodes[j]->slice)+QNodes[j]->start); 
+		PQ_push (& pq, j, (PQ_Key)*pqst, 0, NULL);
 	}
 
 	/*pop the smallest and push the next one from the same slice*/
@@ -431,17 +433,17 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 	for(i=0;i<mergeTuples;i++){
 		resIndex = PQ_pop (& pq, & deferred, NULL);
 		sh=(oid *)Hloc(QNodes[resIndex]->slice,BUNfirst(QNodes[resIndex]->slice)+QNodes[resIndex]->start);
-		st=(@1  *)Tloc(QNodes[resIndex]->slice,BUNfirst(QNodes[resIndex]->slice)+QNodes[resIndex]->start);
+		pqst=(@1  *)Tloc(QNodes[resIndex]->slice,BUNfirst(QNodes[resIndex]->slice)+QNodes[resIndex]->start);
 		
 		*rh=*sh;
-		*rt=*st;
+		*rt=*pqst;
 		rh++;rt++;
 		QNodes[resIndex]->start++;
 		QNodes[resIndex]->tuples--;
 		
 		if (QNodes[resIndex]->tuples>0){
-			st++;	
-			PQ_push (& pq, resIndex, (PQ_Key)*st, 0, NULL);
+			pqst++;	
+			PQ_push (& pq, resIndex, (PQ_Key)*pqst, 0, NULL);
 		}else {
 			i--;
 			QNodesSize--;
@@ -452,10 +454,10 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 	for(j=0;j<QNodesSize;j++){
 		resIndex = PQ_pop (& pq, & deferred, NULL);
 		sh=(oid *)Hloc(QNodes[resIndex]->slice,BUNfirst(QNodes[resIndex]->slice)+QNodes[resIndex]->start);
-		st=(@1  *)Tloc(QNodes[resIndex]->slice,BUNfirst(QNodes[resIndex]->slice)+QNodes[resIndex]->start);
+		pqst=(@1  *)Tloc(QNodes[resIndex]->slice,BUNfirst(QNodes[resIndex]->slice)+QNodes[resIndex]->start);
 		
 		*rh=*sh;
-		*rt=*st;
+		*rt=*pqst;
 		rh++;rt++;
 		QNodes[resIndex]->start++;
 		QNodes[resIndex]->tuples--;
@@ -464,9 +466,10 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 @
 
 @= CopyMerge
-	for(j=0;j<QNodesSize;j++){
+	int cmj;
+	for(cmj=0;cmj<QNodesSize;cmj++){
 		oid tup=0,k=0;
-		current=QNodes[j];
+		current=QNodes[cmj];
 		sh=(oid *)Hloc(current->slice,BUNfirst(current->slice)+current->start);
 		st=(@1  *)Tloc(current->slice,BUNfirst(current->slice)+current->start); 
 		lastValue = (@1*)Tloc(current->slice, BUNlast(current->slice));
@@ -791,7 +794,7 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 	/*MODE: 1=Nway merge.2=copy+inplace sort.3=priority queue*/
 	BAT *b,*bo,*br,*c,*view,*slice;
 	int  m;
-	oid sliceSize,i;
+	oid sliceSize;
 	struct sortMergeNode *current,*previous,*tmp;
 	bit HBound;
 	oid vl=0, vh=0,_vl=0;
@@ -811,7 +814,7 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 	oid start,end, resStart,resEnd;
 	@1 *curValue, *nexValue;
 	oid totalmergedTuples=0;
-	int j;
+	unsigned int i,j;
 	
 	lng MergeTime=0,tempTime, pqTime=0;
 
@@ -856,7 +859,6 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 		*/
 
 		/*Round the range of the requested width*/
-		unsigned int i,j;
 		int width=*phgh-*plow;
 		j=(sizeof(@1) * 8 - 1);
 		i = 1<<(sizeof(@1) * 8 - 1);
@@ -1350,7 +1352,7 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 
 @= ExtSortBody
 	BAT *b,*bo,*br;
-	oid sliceSize,i;
+	oid sliceSize;
 	struct sortMergeNode *current,*head=NULL;
 	@1  *rt;
 	oid *rh;

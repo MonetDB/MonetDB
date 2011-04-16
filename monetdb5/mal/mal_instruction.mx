@@ -909,13 +909,13 @@ location of a temporary variable should be flagged as an error.
 */
 @= chkTemporary
     if( isTmpName(name)){
-		int j;
+		int chkTmpj;
         i= atol(name+1);
         /* quick test validity*/
         if( i< mb->vtop && isTmpVar(mb,i) && getVarTmp(mb,i) == i)
             return i;
-		for(j=0; j< mb->vtop; j++)
-			if( getVarTmp(mb,j)== i && isTmpVar(mb,j)) return j;
+		for(chkTmpj=0; chkTmpj< mb->vtop; chkTmpj++)
+			if( getVarTmp(mb,chkTmpj)== i && isTmpVar(mb,chkTmpj)) return chkTmpj;
         return -1;
     }
 @c
@@ -1711,7 +1711,7 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst )
 	str msg;
 
 	if (cst->vtype != type && !isaBatType(type) && !isPolyType(type)){
-		ValRecord vr = *cst;
+		ValRecord ocst = *cst;
 		int otype = cst->vtype;
 		assert(type != TYPE_any);  /* help Coverity */
 		msg= convertConstant(type, cst);
@@ -1729,7 +1729,7 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst )
 		} else {
 			assert(cst->vtype== type);
 		}
-		VALclear(&vr);
+		VALclear(&ocst);
 	}
 	k= fndConstant(mb,cst,MAL_VAR_WINDOW);
 	if( k >= 0 ) {
@@ -2758,11 +2758,11 @@ varGetPropStr( MalBlkPtr mb, int var )
 		if (!first)
 			*s++ = ',';
 		if (p->var) {
-			VarPtr v = getVar(mb, p->var);
+			VarPtr v2 = getVar(mb, p->var);
 			char *op = PropertyOperatorString((prop_op_t)p->op); 
 	
-			ATOMformat(v->type, VALget(&v->value), &t);
-			switch(v->type) {
+			ATOMformat(v2->type, VALget(&v2->value), &t);
+			switch(v2->type) {
 			case TYPE_oid:
 				sprintf(s, "%s%s%s:oid", nme, op, t);
 				break;

@@ -373,7 +373,7 @@ static char seedChars[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
 
 static void generateChallenge(str buf, int min, int max) {
 	size_t size;
-	size_t chr;
+	size_t cr;
 	size_t i;
 
 	/* don't seed the randomiser here, or you get the same challenge
@@ -381,9 +381,9 @@ static void generateChallenge(str buf, int min, int max) {
 	size = rand();
 	size = (size % (max - min)) + min;
 	for (i = 0; i < size; i++) {
-		chr = rand();
-		chr %= 62;
-		buf[i] = seedChars[chr];
+		cr = rand();
+		cr %= 62;
+		buf[i] = seedChars[cr];
 	}
 	buf[i] = '\0';
 }
@@ -943,25 +943,25 @@ then a starting !. They are all stripped here.
 @= catchErrors
 {int rn = mapi_error(mid);
 	if ( ( rn == -4 && hdl && mapi_result_error(hdl))  || rn){
-		str err,newerr;
+		str ceerr,cenewerr;
 		size_t l;
 		char *e,*f;
 
 		if( hdl && mapi_result_error(hdl))
-			err= mapi_result_error(hdl);
-		else err= mapi_result_error(SERVERsessions[i].hdl);
+			ceerr= mapi_result_error(hdl);
+		else ceerr= mapi_result_error(SERVERsessions[i].hdl);
 
-		if (err == NULL)
-			err = "(no additional error message)";
+		if (ceerr == NULL)
+			ceerr = "(no additional error message)";
 		
-		l= 2*strlen(err)+8192;
-		newerr= (str) alloca(l);
+		l= 2*strlen(ceerr)+8192;
+		cenewerr= (str) alloca(l);
 		
-		f= newerr; 
+		f= cenewerr; 
 		/* I think this code tries to deal with multiple errors, this
 		 * will fail this way if it does, since no ! is in the error
 		 * string, only newlines to separate them */
-		for( e=err; *e && l>1; e++)
+		for( e=ceerr; *e && l>1; e++)
 			if( *e== '!' && *(e-1)=='\n'){
 				snprintf(f,l,"MALException:@1:remote error:");
 				l-= strlen(f);
@@ -971,7 +971,7 @@ then a starting !. They are all stripped here.
 				l--;
 			}
 		*f=0;
-		throw(MAL, "@1", OPERATION_FAILED ": remote error: %s", newerr);
+		throw(MAL, "@1", OPERATION_FAILED ": remote error: %s", cenewerr);
 	}
 }
 @c

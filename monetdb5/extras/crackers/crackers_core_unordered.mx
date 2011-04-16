@@ -112,7 +112,7 @@ crackers_export str CRKcrackUnorderedThree_@1 (int *res, int *bid, @1 *low, @1 *
 
 @= crackInTwoUnorderedPieces_decl
 str CRKcrackUnorderedZero_@2_@1( BAT *b, @1 mval, oid first, oid last, oid *pos);
-str CRKcrackUnorderedZero2_@2_@1( BAT *b, @1 mval, oid first, oid last, oid *pos, int indexPosition, BAT * index);
+str CRKcrackUnorderedZero2_@2_@1( BAT *b, @1 mval, oid first, oid last, oid *pos, int indexPosition, BAT * idx);
 @
 
 @= crackInThreeUnorderedPieces_decl
@@ -289,7 +289,7 @@ CRKcrackUnorderedZero_@2_@1( BAT *b, @1 mval, BUN first, BUN last, oid *pos){
 }
 
 str
-CRKcrackUnorderedZero2_@2_@1( BAT *b, @1 mval, BUN first, BUN last, oid *pos, int indexPosition, BAT *index){
+CRKcrackUnorderedZero2_@2_@1( BAT *b, @1 mval, BUN first, BUN last, oid *pos, int indexPosition, BAT *idx){
         @1  *ft, *lt, *t0, *sample, *leftBoundt, *rightBoundt;
 	oid *fh, *lh, *leftBoundh, *rightBoundh;
         oid hdummy;
@@ -370,10 +370,10 @@ CRKcrackUnorderedZero2_@2_@1( BAT *b, @1 mval, BUN first, BUN last, oid *pos, in
 
 
 	if (ft > leftBoundt){
-		addCrackerIndex_@1(indexPosition, &mid,  TRUE, (oid) (leftBoundt-t0), index);
+		addCrackerIndex_@1(indexPosition, &mid,  TRUE, (oid) (leftBoundt-t0), idx);
 	}
 	if (lt < rightBoundt){
-		addCrackerIndex_@1(indexPosition, &mid, TRUE,  (oid) (rightBoundt-t0)-1, index);
+		addCrackerIndex_@1(indexPosition, &mid, TRUE,  (oid) (rightBoundt-t0)-1, idx);
 	}
 	if (lt == ft) {
 		if (@5_@4(lt, &mval,@6@1)){

@@ -910,13 +910,13 @@ x2c(char *what)
 }
 
 void
-plustospace(char *str)
+plustospace(char *s)
 {
 	int x;
 
-	for (x = 0; str[x]; x++)
-		if (str[x] == '+')
-			str[x] = ' ';
+	for (x = 0; s[x]; x++)
+		if (s[x] == '+')
+			s[x] = ' ';
 }
 
 @}
@@ -927,14 +927,14 @@ Here you find the wrappers around the V4 url library included above.
 @c
 
 int
-URLfromString(str src, int *len, str *url)
+URLfromString(str src, int *len, str *u)
 {
 	/* actually parse the message for valid url */
-	if (*url !=0)
-		GDKfree(url);
+	if (*u !=0)
+		GDKfree(u);
 
 	*len = (int) strlen(src);
-	*url = GDKstrdup(src);
+	*u = GDKstrdup(src);
 
 	return *len;
 }
@@ -1067,35 +1067,34 @@ URLisaURL(bit *retval, str *tv)
 }
 
 str
-URLnew(str *url, str *val)
+URLnew(str *u, str *val)
 {
-	(void) url; /* fool compiler */
-	*url = GDKstrdup(*val);
+	*u = GDKstrdup(*val);
 
 	return MAL_SUCCEED;
 }
 
 str
-URLnew3(str *url, str *protocol, str *server, str *file)
+URLnew3(str *u, str *protocol, str *server, str *file)
 {
 	int l, i;
 
 	l = (int) (GDK_STRLEN(*file) + GDK_STRLEN(*server) +
 			GDK_STRLEN(*protocol) + 10);
-	*url = (str) GDKmalloc(l);
-	if (*url == NULL)
+	*u = (str) GDKmalloc(l);
+	if (*u == NULL)
 		throw(MAL, "url.newurl", "Allocation failed");
-	snprintf(*url, l, "%s://", *protocol);
-	i = (int) strlen(*url);
-	snprintf(*url +i, l - i, "%s", *server);
-	i = (int) strlen(*url);
-	snprintf(*url +i, l - i, "/%s", *file);
+	snprintf(*u, l, "%s://", *protocol);
+	i = (int) strlen(*u);
+	snprintf(*u +i, l - i, "%s", *server);
+	i = (int) strlen(*u);
+	snprintf(*u +i, l - i, "/%s", *file);
 
 	return MAL_SUCCEED;
 }
 
 str
-URLnew4(str *url, str *protocol, str *server, int *port, str *file)
+URLnew4(str *u, str *protocol, str *server, int *port, str *file)
 {
 	str Protocol = *protocol;
 	str Server = *server;
@@ -1109,22 +1108,22 @@ URLnew4(str *url, str *protocol, str *server, int *port, str *file)
 	if (GDK_STRNIL(protocol))
 		Protocol = "";
 	l = (int) (strlen(File) + strlen(Server) + strlen(Protocol) + 20);
-	*url = (str) GDKmalloc(l);
-	if (*url == NULL)
+	*u = (str) GDKmalloc(l);
+	if (*u == NULL)
 		throw(MAL, "url.newurl", "Allocation failed");
-	snprintf(*url, l, "%s://", Protocol);
-	i = (int) strlen(*url);
-	snprintf(*url +i, l - i, "%s", Server);
-	i = (int) strlen(*url);
-	snprintf(*url +i, l - i, ":%d", *port);
-	i = (int) strlen(*url);
-	snprintf(*url +i, l - i, "/%s", File);
+	snprintf(*u, l, "%s://", Protocol);
+	i = (int) strlen(*u);
+	snprintf(*u +i, l - i, "%s", Server);
+	i = (int) strlen(*u);
+	snprintf(*u +i, l - i, ":%d", *port);
+	i = (int) strlen(*u);
+	snprintf(*u +i, l - i, "/%s", File);
 	return MAL_SUCCEED;
 }
 
-str URLnoop(str *url, str *val)
+str URLnoop(str *u, str *val)
 {
-	*url = GDKstrdup(*val);
+	*u = GDKstrdup(*val);
 	return MAL_SUCCEED;
 }
 @}

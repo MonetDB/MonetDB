@@ -146,8 +146,6 @@ static int
 OPTjoinSubPath(Client cntxt, MalBlkPtr mb)
 {
 	int i,j,k,top=0, actions =0;
-	str joinPathRef = putName("joinPath",8);
-	str leftjoinPathRef = putName("leftjoinPath",12);
 	str semijoinPathRef = putName("semijoinPath",12);
 	InstrPtr q = NULL, p, *old;
 	int limit, slimit;
@@ -246,8 +244,6 @@ OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i,j,k, actions=0;
 	int *pc;
-	str joinPathRef = putName("joinPath",8);
-	str leftjoinPathRef = putName("leftjoinPath",12);
 	str semijoinPathRef = putName("semijoinPath",12);
 	InstrPtr q,r;
 	InstrPtr *old;
@@ -622,8 +618,6 @@ ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i,*bid,top=0;
 	int *r = (int*) getArgReference(stk, pci, 0);
 	BAT *b, **joins = (BAT**)GDKmalloc(pci->argc*sizeof(BAT*)); 
-	str joinPathRef = putName("joinPath",8);
-	str leftjoinPathRef = putName("leftjoinPath",12);
 
 	if ( joins == NULL)
 		throw(MAL, "algebra.joinPath", MAL_MALLOC_FAIL);

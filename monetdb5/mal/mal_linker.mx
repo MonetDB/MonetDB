@@ -407,12 +407,12 @@ cmpstr(const void *_p1, const void *_p2)
 
 #define MAXMULTISCRIPT 48
 static char *
-locate_file(const char *basename, const char *ext, bit recurse)
+locate_file(const char *basenme, const char *ext, bit recurse)
 {
 	char *mod_path = GDKgetenv("monet_mod_path");
 	char *fullname;
 	size_t fullnamelen;
-	size_t filelen = strlen(basename) + strlen(ext);
+	size_t filelen = strlen(basenme) + strlen(ext);
 	str strs[MAXMULTISCRIPT]; /* hardwired limit */
 	int lasts = 0;
 
@@ -450,7 +450,7 @@ locate_file(const char *basename, const char *ext, bit recurse)
 		   extra checks */
 		strncpy(fullname, mod_path, i);
 		fullname[i] = DIR_SEP;
-		strcpy(fullname + i + 1, basename);
+		strcpy(fullname + i + 1, basenme);
 		/* see if this is a directory, if so, recurse */
 		if (recurse == 1 && (rdir = opendir(fullname)) != NULL) {
 			struct dirent *e;

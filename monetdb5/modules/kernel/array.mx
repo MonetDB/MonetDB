@@ -124,7 +124,7 @@ array_export str ARRAYgridBATshift_@1(@1 *ret, @1 *bid, @1 *groups, @1 *groupsiz
 int
 fillgrid_@1(BAT **out, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset, @1 *shift)
 {
-	register @1 *ptr;
+	register @1 *p;
 	@1 i = *groups;
 	@1 n = *groupsize + *offset;
 	@1 r = *clustersize;
@@ -135,7 +135,7 @@ fillgrid_@1(BAT **out, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset, @
 	fprintf(stderr, "[grid] (%d,%d,%d,%d)", i, n, r, o);
 #endif
 
-	ptr = get_@1_ptr(*out);
+	p = get_@1_ptr(*out);
 
 	while (i--) {
 		register @1 ni = o;
@@ -144,7 +144,7 @@ fillgrid_@1(BAT **out, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset, @
 			register @1 ri = r;
 
 			while (ri--)
-				(*(ptr ++)) = ni * s;
+				(*(p++)) = ni * s;
 			ni++;
 		}
 	}
@@ -359,7 +359,7 @@ str
 ARRAYproject(int *ret, int *bid, int *cst)
 {
 	BAT *bn, *b;
-	int *ptr;
+	int *p;
 	BUN i;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -370,10 +370,10 @@ ARRAYproject(int *ret, int *bid, int *cst)
 		throw(MAL, "array.project", MAL_MALLOC_FAIL);
 	i = BATcount(b);
 	add_ints(bn, i); 
-	ptr = get_int_ptr(bn);
+	p = get_int_ptr(bn);
 
 	while (i-- > 0)
-		(*(ptr ++)) = *cst;
+		(*(p++)) = *cst;
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);

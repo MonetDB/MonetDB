@@ -1100,8 +1100,8 @@ during the final phase reshuffle the return values to the beginning (?)
 		/* skipSpace(cntxt);*/
 		ch= currChar(cntxt);
 		while( ch !=')' && ch && !NL(ch)){
-			int varid=0;
-			int type= TYPE_any;
+			varid=0;
+			type= TYPE_any;
 			@:binding(0)@
 			/* we may be confronted by a variable target type list */
 			if( MALkeyword(cntxt,"...",3) ){
@@ -1213,8 +1213,8 @@ optimizers to make decisions. (See the section on properties).
 	if( keyphrase1(cntxt,"{")) {
 		do {
 			str pname,opname;
-			int i,lo;
-			ValRecord cst;
+			int pli, lo;
+			ValRecord plcst;
 
 			l = idLength(cntxt);
 			if(l==0) 
@@ -1226,17 +1226,17 @@ optimizers to make decisions. (See the section on properties).
 				opname= operatorCopy(cntxt,lo);
 			else 
 				opname= GDKstrdup("");
-			if ((i= cstToken(cntxt,&cst))){
+			if ((pli= cstToken(cntxt,&plcst))){
 				int csttpe;
-				advance(cntxt,i);
+				advance(cntxt,pli);
 				if( currChar(cntxt)==':') {
 					csttpe = simpleTypeId(cntxt);
 					if ( csttpe >= 0)
-						convertConstant(csttpe,&cst);
+						convertConstant(csttpe,&plcst);
 					else
 						parseError(cntxt,"simple type expected\n");
 				} 
-				varSetProperty(curBlk,@1, pname, opname, &cst);
+				varSetProperty(curBlk,@1, pname, opname, &plcst);
 			} else {
 				varSetProperty(curBlk,@1, pname, NULL, NULL);
 			}
@@ -1608,7 +1608,7 @@ This code is used in both positions of the expression
 
 		cstidx = fndConstant(curBlk,&cst,MAL_VAR_WINDOW);
 		if( cstidx >= 0){
-			int free = 1;
+			int fr = 1;
 			advance(cntxt,i);
 			if( currChar(cntxt)==':') {
 				csttpe = typeElm(cntxt,getVarType(curBlk,cstidx));
@@ -1620,15 +1620,15 @@ This code is used in both positions of the expression
 					cstidx = defConstant(curBlk,csttpe,&cst);
 					setPolymorphic(curInstr,csttpe, FALSE);
 					setVarUDFtype(curBlk,cstidx);
-					free = 0;
+					fr = 0;
 				}
 			} else if( cst.vtype != getVarType(curBlk,cstidx)){
 				cstidx = defConstant(curBlk,cst.vtype,&cst);
 				setPolymorphic(curInstr,cst.vtype, FALSE);
-				free = 0;
+				fr = 0;
 			} 
 			/* protect against leaks coming from constant reuse */
-			if (free && ATOMextern(cst.vtype) && cst.val.pval)
+			if (fr && ATOMextern(cst.vtype) && cst.val.pval)
 				VALclear(&cst);
 			curInstr = pushArgument(curBlk,curInstr,cstidx);
 			@1;
@@ -1845,7 +1845,7 @@ int parseMAL(Client cntxt, Symbol curPrg){
 			break;
 		case '#': 
 		{ /* keep the full line comments unless it is a MX #line */
-			char start[256], *e=start, c; 
+			char start[256], *e=start; 
 			MalBlkPtr curBlk= cntxt->curprg->def;
 			InstrPtr curInstr;
 

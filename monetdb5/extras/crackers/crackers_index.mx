@@ -254,12 +254,12 @@ int existsCrackerIndex(int bid);
 @= IndexSharedFunctions_decl_1
 /* CreateNewIndex */
 int newCrackerIndex_@1(int bid, int cbid);
-int newCrackerIndexSlice_@1(int bid, int cbid,int IndexSize);
+int newCrackerIndexSlice_@1(int bid, int cbid,int IdxSize);
 void reCreateMap_@1(int position);
 
 /* InsertIndexElements */
-struct Node * addCrackerIndex_@1(int m, @1 *value, bit inclusive, oid index, BAT * b);
-struct Node * addCrackerIndexIncrementalSideways_@1(int m, @1 value, bit inclusive, oid indexLocal, oid index, BAT * b, bit localBound, bit first, int pieceBAT);
+struct Node * addCrackerIndex_@1(int m, @1 *value, bit inclusive, oid idx, BAT * b);
+struct Node * addCrackerIndexIncrementalSideways_@1(int m, @1 value, bit inclusive, oid indexLocal, oid idx, BAT * b, bit localBound, bit first, int pieceBAT);
 @
 
 
@@ -424,7 +424,7 @@ newCrackerIndex_@1(int bid, int cbid){
 
 /*for sliced cracking*/
 int
-newCrackerIndexSlice_@1(int bid, int cbid, int IndexSize){
+newCrackerIndexSlice_@1(int bid, int cbid, int IdxSize){
 	int i, j, freemap = -1, units = 500000;
         BAT *b;
 
@@ -463,7 +463,7 @@ newCrackerIndexSlice_@1(int bid, int cbid, int IndexSize){
 	CrackerIndex[i].pbid = -1;
 	CrackerIndex[i].bid = bid;
 	CrackerIndex[i].cbid = cbid;
-	b = BATnew(TYPE_oid, TYPE_@1, IndexSize);
+	b = BATnew(TYPE_oid, TYPE_@1, IdxSize);
 	BBPkeepref(b->batCacheid);
 	CrackerIndex[i].cid = b->batCacheid;
 	CrackerIndex[i].iid = -1;
@@ -493,7 +493,7 @@ reCreateMap_@1(int position){
 
 /* InsertIndexElements */
 struct Node *
-addCrackerIndex_@1(int m, @1 *value, bit inclusive, oid index, BAT * b){
+addCrackerIndex_@1(int m, @1 *value, bit inclusive, oid idx, BAT * b){
 	BUN base;
 	oid *ph;
 	@1  *pt;
@@ -506,7 +506,7 @@ addCrackerIndex_@1(int m, @1 *value, bit inclusive, oid index, BAT * b){
 
 	count = BATcount(b);
         if (count == (oid)0){
-                @:insertIndexElement(@1, (oid*)Hloc(b, BUNfirst(b)), (@1*)Tloc(b, BUNfirst(b)), index, *value)@
+                @:insertIndexElement(@1, (oid*)Hloc(b, BUNfirst(b)), (@1*)Tloc(b, BUNfirst(b)), idx, *value)@
 		CrackerIndex[m].Tree = (struct Node *)GDKmalloc(sizeof(struct Node));
                 CrackerIndex[m].Tree->position = (oid)0;
                 CrackerIndex[m].Tree->inclusive = inclusive;
@@ -520,14 +520,14 @@ addCrackerIndex_@1(int m, @1 *value, bit inclusive, oid index, BAT * b){
                 CrackerIndex[m].Tree->slice = -1;	
 
                 CrackerIndex[m].Tree->nextValue = NULL;	
-		CrackerIndex[m].Tree->indexPosition = index; 
+		CrackerIndex[m].Tree->indexPosition = idx; 
 			
 		CrackerIndex[m].pieces++;
                 return CrackerIndex[m].Tree;
         }
 
 	base = BUNfirst(b);
-	res = InsertTree_@1(m, count, *value, inclusive, index, CrackerIndex[m].Tree, b, base, &newNode);
+	res = InsertTree_@1(m, count, *value, inclusive, idx, CrackerIndex[m].Tree, b, base, &newNode);
 	if (newNode==NULL){
 		mnstr_printf(GDKout,"\n Inserting into the Tree failed: possibly node existed already or a malloc failed \n");
 		return NULL;
@@ -536,10 +536,10 @@ addCrackerIndex_@1(int m, @1 *value, bit inclusive, oid index, BAT * b){
 	prev = findPreviousPieceWalkingBack(newNode);
 	if (prev!= NULL) prev->nextValue = newNode;
 	newNode->nextValue = findNextPiece(newNode);
-	newNode->indexPosition = index;
+	newNode->indexPosition = idx;
         if ( res != NULL ) {
 		/* use a new BUN only if we cannot reuse a previously deleted one */
-		@:insertIndexElement(@1, ph, pt, index, *value)@
+		@:insertIndexElement(@1, ph, pt, idx, *value)@
 		/* remove hash table since cracking has destroyed tuple positioning */
 		if (prev != NULL){
 			if (prev->slice != -1){
@@ -574,7 +574,7 @@ addCrackerIndex_@1(int m, @1 *value, bit inclusive, oid index, BAT * b){
 }
 
 struct Node *
-addCrackerIndexIncrementalSideways_@1(int m, @1 value, bit inclusive, oid indexLocal, oid index, BAT * b, bit localBound, bit first, int pieceBAT){
+addCrackerIndexIncrementalSideways_@1(int m, @1 value, bit inclusive, oid indexLocal, oid idx, BAT * b, bit localBound, bit first, int pieceBAT){
 	BUN base;
 	oid *ph;
 	@1  *pt;
@@ -586,7 +586,7 @@ addCrackerIndexIncrementalSideways_@1(int m, @1 value, bit inclusive, oid indexL
 
 	count = BATcount(b);
         if (count == 0){
-                @:insertIndexElement(@1, (oid*)Hloc(b, BUNfirst(b)), (@1*)Tloc(b, BUNfirst(b)), index, value)@
+                @:insertIndexElement(@1, (oid*)Hloc(b, BUNfirst(b)), (@1*)Tloc(b, BUNfirst(b)), idx, value)@
 		CrackerIndex[m].Tree = (struct Node *)GDKmalloc(sizeof(struct Node));
                 CrackerIndex[m].Tree->position = 0;
                 CrackerIndex[m].Tree->inclusive = inclusive;
@@ -606,21 +606,21 @@ addCrackerIndexIncrementalSideways_@1(int m, @1 value, bit inclusive, oid indexL
                 CrackerIndex[m].Tree->references = NULL;	
                 CrackerIndex[m].Tree->nextPiece = NULL;	
                 CrackerIndex[m].Tree->nextValue = NULL;	
-		CrackerIndex[m].Tree->indexPosition = index; 
+		CrackerIndex[m].Tree->indexPosition = idx; 
 
                 return CrackerIndex[m].Tree;
         }
 
 	base = BUNfirst(b);
-	InsertTreeIncrementalSideways_@1(m, count, value, inclusive, index, indexLocal, CrackerIndex[m].Tree, b, base, &newNode,localBound, first, pieceBAT);
+	InsertTreeIncrementalSideways_@1(m, count, value, inclusive, idx, indexLocal, CrackerIndex[m].Tree, b, base, &newNode,localBound, first, pieceBAT);
         if ( newNode != NULL ) {
 		/* use a new BUN only if we cannot reuse a previously deleted one */
-		@:insertIndexElement(@1, ph, pt, index, value)@
+		@:insertIndexElement(@1, ph, pt, idx, value)@
 		/* remove hash table since cracking has destroyed tuple posititioning */
 		prev = findPreviousPieceWalkingBack(newNode);
 		if (prev!= NULL) prev->nextValue = newNode;
 		newNode->nextValue = findNextPiece(newNode);
-		newNode->indexPosition = index;
+		newNode->indexPosition = idx;
 		if (prev != NULL){
 			if (prev->slice != -1){
 				BBPdecref(prev->slice,TRUE);

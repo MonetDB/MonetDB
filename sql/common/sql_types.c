@@ -461,8 +461,6 @@ sql_bind_aggr(sql_allocator *sa, sql_schema *s, char *sqlaname, sql_subtype *typ
 		n = n->next;
 	}
 	if (s) {
-		node *n;
-
 		if (s->funcs.set) for (n=s->funcs.set->h; n; n = n->next) {
 			sql_func *a = n->data;
 			sql_arg *arg = NULL;
@@ -523,8 +521,6 @@ sql_find_aggr(sql_allocator *sa, sql_schema *s, char *sqlaname)
 		n = n->next;
 	}
 	if (s) {
-		node *n;
-
 		if (s->funcs.set) for (n=s->funcs.set->h; n; n = n->next) {
 			sql_func *a = n->data;
 
@@ -603,8 +599,6 @@ sql_find_func(sql_allocator *sa, sql_schema *s, char *sqlfname, int nrargs)
 		}
 	}
 	if (s) {
-		node *n;
-
 		if (s->funcs.set) for (n=s->funcs.set->h; n; n = n->next) {
 			sql_func *f = n->data;
 
@@ -731,8 +725,8 @@ sql_bind_func_(sql_allocator *sa, sql_schema *s, char *sqlfname, list *ops)
 					node *m;
 					sql_subtype *a = NULL;
 					for (n = ops->h, m = f->ops->h; n; n = n->next, m = m->next) {
-						sql_arg *s = m->data;
-						if (s->type.type->eclass == EC_ANY) {
+						sql_arg *sa = m->data;
+						if (sa->type.type->eclass == EC_ANY) {
 							a = n->data;
 						}
 					}

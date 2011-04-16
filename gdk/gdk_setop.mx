@@ -426,17 +426,21 @@ TODO synced/key case..
 @{
 
 @= mergecheck
-	BUN p1 = BUNfirst(l), p2 = BUNfirst(r);
-	BUN q1 = BUNlast(l),  q2 = BUNlast(r);
-	BATiter li = bat_iterator(l);
-	BATiter ri = bat_iterator(r);
+	BUN p2, q2;
+
+	p1 = BUNfirst(l);
+	p2 = BUNfirst(r);
+	q1 = BUNlast(l);
+	q2 = BUNlast(r);
+	li = bat_iterator(l);
+	ri = bat_iterator(r);
 
 	ALGODEBUG THRprintf(GDKout, "#BATins_@1@2: mergecheck[@1, @2, @3, @4, @5];\n");
 	if (p2 < q2)
 		BATloop(l, p1, q1) {
-			ptr  h = BUNh@2(li, p1);
 			ptr  t = BUNtail(li, p1);
-			ptr h2 = BUNh@2(ri, p2);
+			h = BUNh@2(li, p1);
+			h2 = BUNh@2(ri, p2);
 			int c;
 			while ((c = @4) > 0) {
 				if ((++p2) >= q2)
@@ -471,13 +475,13 @@ TODO synced/key case..
   end@2@3:;
 	END@1(BUNh@2(li, p1), BUNtail(li, p1));
 @= hashcheck
-	BUN p1, q1;
 	int ins;
 	BUN s2;
-	ptr h, t, h2 = hnil;
-	BATiter li = bat_iterator(l);
-	BATiter ri = bat_iterator(r);
+	ptr t;
 
+	h2 = hnil;
+	li = bat_iterator(l);
+	ri = bat_iterator(r);
 	ALGODEBUG THRprintf(GDKout, "#BATins_@1@2: hashcheck[@1, @2, @3, @4, @5];\n");
 	BATaccessBegin(r, USE_HEAD, MMAP_SEQUENTIAL);
 	if (BATprepareHash(r)) {
@@ -526,17 +530,16 @@ TODO synced/key case..
 
 /* later add version for l void tail, remove general tail values then */
 @= directcheck
-	BUN p1, q1;
 	int i;
-	ptr h, h2 = hnil;
-	BATiter li = bat_iterator(l);
-	BATiter ri = bat_iterator(r);
 	sht d[DIRECT_MAX];
 	Hash hs, *H = &hs;
 	int collision = 0;
 
 	H -> mask = DIRECT_MAX-1;
 	H -> type = BAThtype(l);
+	h2 = hnil;
+	li = bat_iterator(l);
+	ri = bat_iterator(r);
 
 	ALGODEBUG THRprintf(GDKout, "#BATins_@1@2: directcheck[@1, @2, @3, @4, @5];\n");
 
@@ -558,7 +561,7 @@ TODO synced/key case..
 	} else {
 		if (!l->ttype && l->tseqbase != oid_nil) {
 			oid b = l->tseqbase, *t = &b;
-			@4 *h = (@4*)BUNhloc(li, BUNfirst(l));
+			@4 *ch = (@4*)BUNhloc(li, BUNfirst(l));
 			@4 *rh = (@4*)BUNhloc(ri, 0);
 			@4 *bnh;
 			oid *bnt;
@@ -579,19 +582,19 @@ TODO synced/key case..
 				bnh = (@4*)Hloc(bn,0);
 				bnt = (oid*)Tloc(bn,0);
 				for (; p1<r1; p1++, b++){ 
-					i = (int) hash_@4(H, h+p1);
-					if (d[i] != 0 && @7(h+p1, rh+d[i]-1) &&
+					i = (int) hash_@4(H, ch+p1);
+					if (d[i] != 0 && @7(ch+p1, rh+d[i]-1) &&
 					    EQUAL@5(t, BUNtail(ri, d[i]-1))) {
-						DHIT@1(h+p1, b);
+						DHIT@1(ch+p1, b);
 					} else {
-						DMISS@1(h+p1, b);
+						DMISS@1(ch+p1, b);
 					}
 				}
 			}
 			BATsetcount(bn, o);
 			(void)t;
 		} else { 
-			@4 *h = (@4*)BUNhloc(li, 0);
+			@4 *ch = (@4*)BUNhloc(li, 0);
 			@4 *rh = (@4*)BUNhloc(ri, 0);
 
 			ALGODEBUG THRprintf(GDKout, "#BATins_@1@2: directcheck[@1, @2, @3, _@4, @5]; " BUNFMT " " BUNFMT "\n", BATcount(l), BATcount(r));
@@ -606,12 +609,12 @@ TODO synced/key case..
 				r1 = p1 + BATcapacity(bn) - BUNlast(bn);
 				if (r1 > q1) r1 = q1;
 				for (; p1<r1; p1++) { 
-					i = (int) hash_@4(H, h+p1);
-					if (d[i] != 0 && @7(h+p1, rh+d[i]-1) &&
+					i = (int) hash_@4(H, ch+p1);
+					if (d[i] != 0 && @7(ch+p1, rh+d[i]-1) &&
 				    	    EQUAL@5(BUNtail(li,p1), BUNtail(ri, d[i]-1))) {
-						HIT@1_nocheck(h+p1, BUNtail(li, p1));
+						HIT@1_nocheck(ch+p1, BUNtail(li, p1));
 					} else {
-						MISS@1_nocheck(h+p1, BUNtail(li, p1));
+						MISS@1_nocheck(ch+p1, BUNtail(li, p1));
 					}
 				}
 			}
@@ -621,14 +624,16 @@ TODO synced/key case..
 
 @= voidcheck
 	{
-		BATiter li = bat_iterator(l);
-		BATiter ri = bat_iterator(r);
-		BUN p1 = BUNfirst(r), q1 = BUNlast(r);
-		oid rl = * (oid *) BUNhead(ri, p1);
-		oid rh = rl + BATcount(r);
-		ptr h, t = NULL, t2 = NULL;
+		oid rl, rh;
+		ptr t = NULL, t2 = NULL;
 
 		(void) t2;
+		p1 = BUNfirst(r);
+		q1 = BUNlast(r);
+		rl = *(oid *) BUNhead(ri, p1);
+		rh = rl + BATcount(r);
+		li = bat_iterator(l);
+		ri = bat_iterator(r);
 
 		ALGODEBUG THRprintf(GDKout, "#BATins_@1@2: voidcheck[@1, @2];\n");
 		if (BAThdense(l)) {
@@ -728,7 +733,9 @@ static BAT*
 BATins_@1@2(BAT *bn, BAT *l, BAT *r)
 {
 	int hash = TRUE, (*cmp)(ptr, ptr), (*merge)(ptr, ptr) = NULL;
-	ptr hnil, tnil;
+	ptr hnil, tnil, h, h2;
+	BUN p1, q1;
+	BATiter li, ri;
 
 	/* determine how to do the intersect */
 	if (BAThordered(l) & BAThordered(r) & 1) {

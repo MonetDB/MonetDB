@@ -1761,7 +1761,7 @@ static Mapi
 mapi_new(void)
 {
 	Mapi mid;
-	static int index = 0;
+	static int mapi_next_index = 0;
 
 	mid = malloc(sizeof(*mid));
 	if (mid == NULL)
@@ -1772,7 +1772,7 @@ mapi_new(void)
 	memset(mid, 0, sizeof(*mid));
 
 	/* then fill in some details */
-	mid->index = index++;	/* for distinctions in log records */
+	mid->index = mapi_next_index++;	/* for distinctions in log records */
 	mid->auto_commit = 1;
 	mid->error = MOK;
 	mid->hostname = strdup("localhost");
@@ -2485,7 +2485,6 @@ mapi_start_talking(Mapi mid)
 				unsigned char md[64];	/* should be SHA512_DIGEST_LENGTH */
 				size_t n = strlen(mid->password);
 				char *key = alloca(n);
-				int len;
 
 				strncpy(key, mid->password, n);
 
@@ -3397,8 +3396,6 @@ read_line(Mapi mid)
 		ssize_t len;
 
 		if (mid->blk.lim - mid->blk.end < BLOCK) {
-			int len;
-
 			len = mid->blk.lim;
 			if (mid->blk.nxt <= BLOCK) {
 				/* extend space */

@@ -188,7 +188,7 @@ TempName(char *name)
 }
 
 FILE *
-fmustopen(char *fname, char *mode)
+fmustopen(char *fname, char *fmode)
 {
 	char *p;
 	struct stat buf;
@@ -210,7 +210,7 @@ fmustopen(char *fname, char *mode)
 			*p = DIR_SEP;
 		}
 	}
-	return fopen(fname, mode);
+	return fopen(fname, fmode);
 
 }
 

@@ -176,7 +176,7 @@ MRdistributework(
 {
 	InstrPtr o, p = NULL, *packs;
 	int i, n, j, q, v, retc;
-	int *gets, *w;
+	int *gts, *w;
 	mapcol *lcol;
 	(void)cntxt;
 
@@ -192,7 +192,7 @@ MRdistributework(
 	assert(retc);
 
 	packs = (InstrPtr *)alloca(retc * sizeof(InstrPtr));
-	gets = (int *)alloca(n * retc * sizeof(int));
+	gts = (int *)alloca(n * retc * sizeof(int));
 	w = (int *)alloca(retc * sizeof(int));
 
 	for (lcol = col, j = 0; lcol != NULL; lcol = lcol->next, j++) {
@@ -222,7 +222,7 @@ MRdistributework(
 				p = pushNil(reduce, p, lcol->type);
 			}
 			setArgType(reduce, p, 0, lcol->type);
-			gets[(i * retc) + j] = getArg(p, 0);
+			gts[(i * retc) + j] = getArg(p, 0);
 		}
 	}
 
@@ -252,7 +252,7 @@ MRdistributework(
 			/* x1 := remote.put(q, :type) */
 			o = newFcnCall(reduce, remoteRef, putRef);
 			o = pushArgument(reduce, o, q);
-			o = pushArgument(reduce, o, gets[(i * retc) + j]);
+			o = pushArgument(reduce, o, gts[(i * retc) + j]);
 			v = getArg(o, 0);
 			p = pushReturn(reduce, p, v);
 			w[j] = v;
@@ -271,7 +271,7 @@ MRdistributework(
 			p = newFcnCall(reduce, remoteRef, getRef);
 			p = pushArgument(reduce, p, q);
 			p = pushArgument(reduce, p, w[j]);
-			getArg(p, 0) = gets[(i * retc) + j];
+			getArg(p, 0) = gts[(i * retc) + j];
 		}
 
 		/* remote.disconnect(q); */
@@ -288,7 +288,7 @@ MRdistributework(
 			p = pushArgument(reduce, p, q);
 			if (!isaBatType(lcol->type))
 				p = pushNil(reduce, p, TYPE_void);
-			p = pushArgument(reduce, p, gets[(i * retc) + j]);
+			p = pushArgument(reduce, p, gts[(i * retc) + j]);
 			q = getArg(p, 0);
 		}
 

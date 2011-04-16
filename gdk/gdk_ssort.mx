@@ -175,29 +175,29 @@ merge_getmem@1(MergeState *ms, ssize_t need)
 	} while (0)
 
 #define COPY_anyN(d,s,w,N) do {					\
-		int i;						\
+		int COPY_anyN_i;						\
 		switch (w) {					\
 		case 0:						\
 			break;					\
 		case sizeof(bte):				\
-			for(i=0; i<N; i++)			\
-				((bte*)(d))[i] = ((bte*)(s))[i];\
+			for(COPY_anyN_i=0; COPY_anyN_i<N; COPY_anyN_i++)			\
+				((bte*)(d))[COPY_anyN_i] = ((bte*)(s))[COPY_anyN_i];\
 			break;					\
 		case sizeof(sht):				\
-			for(i=0; i<N; i++)			\
-				((sht*)(d))[i] = ((sht*)(s))[i];\
+			for(COPY_anyN_i=0; COPY_anyN_i<N; COPY_anyN_i++)			\
+				((sht*)(d))[COPY_anyN_i] = ((sht*)(s))[COPY_anyN_i];\
 			break;					\
 		case sizeof(int):				\
-			for(i=0; i<N; i++)			\
-				((int*)(d))[i] = ((int*)(s))[i];\
+			for(COPY_anyN_i=0; COPY_anyN_i<N; COPY_anyN_i++)			\
+				((int*)(d))[COPY_anyN_i] = ((int*)(s))[COPY_anyN_i];\
 			break;					\
 		case sizeof(lng):				\
-			for(i=0; i<N; i++)			\
-				((lng*)(d))[i] = ((lng*)(s))[i];\
+			for(COPY_anyN_i=0; COPY_anyN_i<N; COPY_anyN_i++)			\
+				((lng*)(d))[COPY_anyN_i] = ((lng*)(s))[COPY_anyN_i];\
 			break;					\
 		case 2 * sizeof(lng):				\
-			for(i=0; i<(N<2); i++)			\
-				((lng*)(d))[i] = ((lng*)(s))[i];\
+			for(COPY_anyN_i=0; COPY_anyN_i<(N<2); COPY_anyN_i++)			\
+				((lng*)(d))[COPY_anyN_i] = ((lng*)(s))[COPY_anyN_i];\
 			break;					\
 		default:					\
 			memcpy((d), (s), (size_t) (w)*N);	\

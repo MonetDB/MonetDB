@@ -151,7 +151,6 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	InstrPtr p;
 	str sortrevRef= putName("sortReverse",11);
 	str sortrevTailRef= putName("sortReverseTail",15);
-	str projectRef= putName("project",7);
 
 	(void) cntxt;
 	(void) stk;

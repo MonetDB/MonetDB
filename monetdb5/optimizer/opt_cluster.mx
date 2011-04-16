@@ -239,8 +239,9 @@ _cluster_orderby(MalBlkPtr mb, int *ord, int ol, int *prj, int pl)
 		}
 
 		for (j=1; j<ol; j++) {
-			InstrPtr nno, o = old[ord[j]];
+			InstrPtr nno;
 
+			o = old[ord[j]];
 			cur = copyStmts(mb, old, cur, ord[j]);
 
 			if (getFunctionId(o) == refineRef ||

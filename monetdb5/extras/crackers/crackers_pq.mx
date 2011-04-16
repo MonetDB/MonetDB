@@ -114,7 +114,7 @@ void PQ_xPriorityQueue (PQ_state * const m);
 int PQ_empty (PQ_state * const m);
 int /* deferred */ PQ_push (
 		PQ_state * const m,
-		PQ_Index const index,
+		PQ_Index const idx,
 		PQ_Key const normkey,
 		int const defer,
 		PQ_Data const data);
@@ -129,11 +129,11 @@ PQ_Index PQ_pop (
 
 void PQ_erase (
 		PQ_state * const m,
-		PQ_Index const index,
+		PQ_Index const idx,
 		PQ_Data * const data);
 int /* deferred */ PQ_replace (
 		PQ_state * const m,
-		PQ_Index const index,
+		PQ_Index const idx,
 		PQ_Key const normkey,
 		int const defer,
 		PQ_Data * const data);
@@ -210,14 +210,14 @@ static void PQ_reduce_keys (PQ_state * const m);
 
 static PQ_Shift PQ_bitsRunNo () { return 3; }
 
-static PQ_Key PQ_early_sentinel (PQ_Index const index)
+static PQ_Key PQ_early_sentinel (PQ_Index const idx)
 {
-	return (PQ_Key) index;
+	return (PQ_Key) idx;
 }
 
-static PQ_Key PQ_late_sentinel (PQ_Index const index)
+static PQ_Key PQ_late_sentinel (PQ_Index const idx)
 {
-	return PQ_maxKey () - (PQ_Key) index;
+	return PQ_maxKey () - (PQ_Key) idx;
 }
 
 static int PQ_is_sentinel (
@@ -234,9 +234,9 @@ static inline void PQ_parent (PQ_Index * entry)
 
 static inline PQ_Index PQ_leaf (
 		PQ_state const * const m,
-		PQ_Index const index)
+		PQ_Index const idx)
 {
-	PQ_Index entry = index;
+	PQ_Index entry = idx;
 	if (entry < m->zero_sibling)
 		entry += m->zero_sibling;
 	if (entry >= m->nodes)
@@ -432,7 +432,7 @@ int PQ_empty (PQ_state * const m)
 
 int /* deferred */ PQ_push (
 		PQ_state * const m,
-		PQ_Index const index,
+		PQ_Index const idx,
 		PQ_Key const normkey,
 		int const defer,
 		PQ_Data const data)
@@ -447,11 +447,11 @@ int /* deferred */ PQ_push (
 	++ m->count.push;
 #endif
 
-	candidate.index = index;
+	candidate.index = idx;
 	candidate.normkey = normkey;
 	deferred = PQ_adjust_normkey (m, & candidate, defer);
 	if (m->data != NULL)
-		m->data [index] = data;
+		m->data [idx] = data;
 
 	PQ_pass (m, & candidate);
 
@@ -467,7 +467,7 @@ PQ_Index PQ_top (
 		int * const deferred,
 		PQ_Data * const data)
 {
-	PQ_Index index;
+	PQ_Index idx;
 #ifdef PriQue_STATS
 	++ m->count.top;
 #endif
@@ -475,17 +475,17 @@ PQ_Index PQ_top (
 		return PQ_badIndex ();
 	{
 	PQ_Entry const * const root_entry = & m->heap [PQ_root ()];
-	index = root_entry->index;
+	idx = root_entry->index;
 	if (deferred != NULL)
 		*deferred = (m->runs != 0  &&  root_entry->normkey >= m->nextrun);
 	if (data != NULL)
-		*data = m->data [index];
+		*data = m->data [idx];
 
 #ifdef PriQue_DEBUG
 	PQ_AssertConsistency (m, 1, 0);
 #endif
 	}
-	return index;
+	return idx;
 }
 
 PQ_Index PQ_pop (
@@ -494,13 +494,13 @@ PQ_Index PQ_pop (
 		PQ_Data * const data)
 {
 	int l_deferred;
-	PQ_Index index;
+	PQ_Index idx;
 #ifdef PriQue_STATS
 	++ m->count.pop;
 #endif
 
-	index = PQ_top (m, & l_deferred, data);
-	if (index == PQ_badIndex ())
+	idx = PQ_top (m, & l_deferred, data);
+	if (idx == PQ_badIndex ())
 		return PQ_badIndex ();
 
 	m->prevkey = m->heap [PQ_root ()].normkey;
@@ -518,22 +518,22 @@ PQ_Index PQ_pop (
 			PQ_reduce_keys (m);
 	}
 
-	m->heap [PQ_root ()].normkey = PQ_early_sentinel (index);
+	m->heap [PQ_root ()].normkey = PQ_early_sentinel (idx);
 #ifdef PriQue_DEBUG
 	if (m->data != NULL)
-		m->data [index] = NULL;
+		m->data [idx] = NULL;
 #endif
 
 #ifdef PriQue_DEBUG
 	PQ_AssertConsistency (m, 1, 0);
 #endif
 
-	return index;
+	return idx;
 }
 
 void PQ_erase (
 		PQ_state * const m,
-		PQ_Index const index, PQ_Data * const data)
+		PQ_Index const idx, PQ_Data * const data)
 {
 #ifdef PriQue_DEBUG
 	PQ_AssertConsistency (m, 1, 0);
@@ -544,22 +544,22 @@ void PQ_erase (
 #endif
 
 	if (data != NULL)
-		*data = m->data [index];
+		*data = m->data [idx];
 #ifdef PriQue_DEBUG
 	if (m->data != NULL)
-		m->data [index] = NULL;
+		m->data [idx] = NULL;
 #endif
 
-	if (m->heap [PQ_root ()].index == index)
+	if (m->heap [PQ_root ()].index == idx)
 	{
-		m->heap [PQ_root ()].normkey = PQ_early_sentinel (index);
+		m->heap [PQ_root ()].normkey = PQ_early_sentinel (idx);
 	}
 
 	else
 	{
 		PQ_Entry candidate;
-		candidate.index = index;
-		candidate.normkey = PQ_late_sentinel (index);
+		candidate.index = idx;
+		candidate.normkey = PQ_late_sentinel (idx);
 		PQ_pass (m, & candidate);
 	}
 
@@ -570,7 +570,7 @@ void PQ_erase (
 
 int /* deferred */ PQ_replace (
 		PQ_state * const m,
-		PQ_Index const index,
+		PQ_Index const idx,
 		PQ_Key const normkey,
 		int const defer,
 		PQ_Data * const data)
@@ -585,7 +585,7 @@ int /* deferred */ PQ_replace (
 	++ m->count.replace;
 #endif
 
-	candidate.index = index;
+	candidate.index = idx;
 	candidate.normkey = normkey;
 	deferred = PQ_adjust_normkey (m, & candidate, defer);
 	if (m->data != NULL  &&  data != NULL)
@@ -595,8 +595,8 @@ int /* deferred */ PQ_replace (
 
 	if (m->data != NULL  &&  data != NULL)
 	{
-		* data = m->data [index];
-		m->data [index] = m->data [m->capacity];
+		* data = m->data [idx];
+		m->data [idx] = m->data [m->capacity];
 	}
 
 #ifdef PriQue_DEBUG
@@ -622,10 +622,10 @@ void PQ_reset (
 
 	if (heap)
 	{
-		PQ_Index index, entry;
+		PQ_Index idx, entry;
 
-		for (index = m->nodes;  index -- > 0;  )
-			m->heap [index].index = PQ_badIndex ();
+		for (idx = m->nodes;  idx -- > 0;  )
+			m->heap [idx].index = PQ_badIndex ();
 
 		if (m->nodes > m->capacity)
 		{
@@ -633,24 +633,24 @@ void PQ_reset (
 			m->heap [m->capacity].normkey = PQ_late_sentinel (m->capacity);
 		}
 
-		for (index = 0;  index < m->capacity;  ++ index)
+		for (idx = 0;  idx < m->capacity;  ++ idx)
 		{
-			for (entry = PQ_leaf (m, index);
+			for (entry = PQ_leaf (m, idx);
 					m->heap [entry].index != PQ_badIndex ();
 					PQ_parent (& entry))
 			{
 				;
 			}
 
-			m->heap [entry].index = index;
-			m->heap [entry].normkey = PQ_late_sentinel (index);
+			m->heap [entry].index = idx;
+			m->heap [entry].normkey = PQ_late_sentinel (idx);
 		}
 
 #ifdef PriQue_DEBUG
 		if (m->data != NULL)
 		{
-			for (index = m->capacity;  index -- > 0;  )
-				m->data [index] = NULL;
+			for (idx = m->capacity;  idx -- > 0;  )
+				m->data [idx] = NULL;
 		}
 #endif
 	}
@@ -709,13 +709,13 @@ void PQ_reduce_keys (PQ_state * const m)
 {
 	PQ_Key new_nextrun = m->nodes + m->run_incr;
 	PQ_Key delta = m->nextrun - new_nextrun;
-	PQ_Entry * ptr;
+	PQ_Entry * pqptr;
 	m->nextrun = new_nextrun;
 	m->prevkey -= delta;
-	for (ptr = & m->heap [m->nodes];  ptr -- > m->heap;  )
+	for (pqptr = & m->heap [m->nodes];  pqptr -- > m->heap;  )
 	{
-		if ( ! PQ_is_sentinel (m, ptr->normkey))
-			ptr->normkey -= delta;
+		if ( ! PQ_is_sentinel (m, pqptr->normkey))
+			pqptr->normkey -= delta;
 	}
 
 #ifdef PriQue_DEBUG
@@ -756,14 +756,14 @@ void PQ_pass (PQ_state * const m, PQ_Entry * candidate)
 
 		else
 		{
-			PQ_Index free = entry;
+			PQ_Index pqfree = entry;
 			PQ_Index free_mask = mask;
 			do
 			{
 				PQ_parent (& entry); PQ_parent_mask (& mask);
 
 				if ( ! PQ_siblings (m->heap [entry].index,
-						m->heap [free].index, free_mask))
+						m->heap [pqfree].index, free_mask))
 					continue;
 
 				if (PQ_compare (m, & m->heap [entry], candidate) < 0)
@@ -772,13 +772,13 @@ void PQ_pass (PQ_state * const m, PQ_Entry * candidate)
 #ifdef PriQue_STATS
 				++ m->count.move;
 #endif
-				m->heap [free] = m->heap [entry];
+				m->heap [pqfree] = m->heap [entry];
 
-				free = entry;
+				pqfree = entry;
 				free_mask = mask;
 			} while (entry != PQ_root ());
 
-			m->heap [free] = *candidate;
+			m->heap [pqfree] = *candidate;
 		}
 
 #ifdef PriQue_STATS
@@ -876,7 +876,7 @@ void PQ_AssertConsistency (
 		int const heap_check,
 		int const map_check)
 {
-	PQ_Index index, entry;
+	PQ_Index idx, entry;
 	PQ_Index * map = NULL;
 
 	int const param_check = map_check;
@@ -902,14 +902,14 @@ void PQ_AssertConsistency (
 	if (defn_check)
 	{
 		DebugAssert (PQ_early_sentinel (0) < PQ_late_sentinel (0));
-		for (index = 0;  ++ index < m->nodes;  )
+		for (idx = 0;  ++ idx < m->nodes;  )
 		{
-			DebugAssert (PQ_early_sentinel (index) <
-					PQ_late_sentinel (index));
-			DebugAssert (PQ_early_sentinel (index-1) <
-					PQ_early_sentinel (index));
-			DebugAssert (PQ_late_sentinel (index-1) >
-					PQ_late_sentinel (index));
+			DebugAssert (PQ_early_sentinel (idx) <
+					PQ_late_sentinel (idx));
+			DebugAssert (PQ_early_sentinel (idx-1) <
+					PQ_early_sentinel (idx));
+			DebugAssert (PQ_late_sentinel (idx-1) >
+					PQ_late_sentinel (idx));
 		}
 	}
 
@@ -943,21 +943,21 @@ void PQ_AssertConsistency (
 					(int) (m->zero_entrynode), (int) (m->zero_sibling));
 			printf ("  %5s %5s -- %s\n",
 					"index", "norm", "entry point + parents ...");
-			for (index = 0;  index < m->nodes;  ++ index)
+			for (idx = 0;  idx < m->nodes;  ++ idx)
 			{
 				PQ_Index  up;
 
-				printf ("  %5d --", (int) (index));
-				for (up = PQ_leaf (m, index);
+				printf ("  %5d --", (int) (idx));
+				for (up = PQ_leaf (m, idx);
 						up != PQ_root ();  PQ_parent (& up))
 					printf (" %d", (int) (up));
 				printf (" %d\n", (int) (PQ_root ()));
 			}
 		}
 
-		for (index = 0;  index < m->nodes;  ++ index)
+		for (idx = 0;  idx < m->nodes;  ++ idx)
 		{
-			entry = PQ_leaf (m, index);
+			entry = PQ_leaf (m, idx);
 			DebugAssert (entry > 0);
 			DebugAssert (entry >= m->nodes / 2);
 			DebugAssert (entry < m->nodes);
@@ -965,39 +965,39 @@ void PQ_AssertConsistency (
 
 		map = (PQ_Index *) malloc (m->nodes * sizeof (PQ_Index));
 
-		for (index = 0;  index < m->nodes;  ++ index)
-			map [index] = 0;
-		for (index = 0;  index < m->nodes;  ++ index)
-			++ map [PQ_leaf (m, index)];
+		for (idx = 0;  idx < m->nodes;  ++ idx)
+			map [idx] = 0;
+		for (idx = 0;  idx < m->nodes;  ++ idx)
+			++ map [PQ_leaf (m, idx)];
 
 		if (0)
-			for (index = 0;  index < m->nodes;  ++ index)
+			for (idx = 0;  idx < m->nodes;  ++ idx)
 				printf ("  index = %3d, count = %3d\n",
-						(int) (index), (int) (map [index]));
-		for (index = 0;  index < m->nodes;  ++ index)
-			DebugAssert (map [index] <= 2);
+						(int) (idx), (int) (map [idx]));
+		for (idx = 0;  idx < m->nodes;  ++ idx)
+			DebugAssert (map [idx] <= 2);
 		{
 			PQ_Index up = 1;
 			PQ_parent (& up);
 			DebugAssert (up == PQ_root ());
 			map [PQ_root ()] = 2;
 		}
-		for (index = 1;  ++ index < m->nodes;  )
+		for (idx = 1;  ++ idx < m->nodes;  )
 		{
-			PQ_Index up = index;
+			PQ_Index up = idx;
 			PQ_parent (& up);
-			DebugAssert (up < index);
+			DebugAssert (up < idx);
 			DebugAssert (up > PQ_root ());
 			++ map [up];
 		}
 
 		if (0)
-			for (index = 0;  index < m->nodes;  ++ index)
+			for (idx = 0;  idx < m->nodes;  ++ idx)
 				tagprintf ("  index = %3d, count = %3d\n",
-						(int) (index), (int) (map [index]));
-		for (index = 0;  index < m->nodes;  ++ index)
+						(int) (idx), (int) (map [idx]));
+		for (idx = 0;  idx < m->nodes;  ++ idx)
 		{
-			DebugAssert (map [index] == 2);
+			DebugAssert (map [idx] == 2);
 		}
 
 		free (map);
@@ -1010,9 +1010,9 @@ void PQ_AssertConsistency (
 		++ m->count.heap_check;
 #endif
 
-		for (index = m->nodes;  index -- > 0;  )
-			for (entry = PQ_leaf (m, index);
-					m->heap [entry].index != index;
+		for (idx = m->nodes;  idx -- > 0;  )
+			for (entry = PQ_leaf (m, idx);
+					m->heap [entry].index != idx;
 					PQ_parent (& entry))
 			{
 				DebugAssert (entry != PQ_root ());
@@ -1024,16 +1024,16 @@ void PQ_AssertConsistency (
 
 		for (entry = m->nodes;  entry -- > 0;  )
 		{
-			index = m->heap [entry].index;
+			idx = m->heap [entry].index;
 
-			DebugAssert (index < m->nodes);
+			DebugAssert (idx < m->nodes);
 
 			if (PQ_is_sentinel (m, m->heap [entry].normkey))
 			{
 				DebugAssert ( m->heap [entry].normkey ==
-							PQ_early_sentinel (index)  ||
+							PQ_early_sentinel (idx)  ||
 						m->heap [entry].normkey ==
-							PQ_late_sentinel (index) );
+							PQ_late_sentinel (idx) );
 			}
 
 			else
@@ -1057,9 +1057,9 @@ void PQ_AssertConsistency (
 				}
 			}
 
-			DebugAssert (map [index] == PQ_badIndex ());
+			DebugAssert (map [idx] == PQ_badIndex ());
 
-			map [index] = entry;
+			map [idx] = entry;
 		}
 
 		for (entry = m->nodes;  entry -- > 0;  )
@@ -1069,17 +1069,17 @@ void PQ_AssertConsistency (
 		free (map);
 		map = NULL;
 
-		for (index = m->nodes;  index -- > 0;  )
+		for (idx = m->nodes;  idx -- > 0;  )
 		{
 			PQ_Index mask;
 			 PQ_Entry * candidate;
-			entry = PQ_leaf (m, index);
+			entry = PQ_leaf (m, idx);
 			mask = PQ_leaf_mask (m, entry);
 			if (0)
 				tagprintf ("index %ld, entry %ld, mask %ld\n",
-						(long) (index), (long) (entry), (long) (mask));
+						(long) (idx), (long) (entry), (long) (mask));
 
-			for (  ;  m->heap [entry].index != index;
+			for (  ;  m->heap [entry].index != idx;
 					PQ_parent (& entry), PQ_parent_mask (& mask))
 			{
 				;
@@ -1091,7 +1091,7 @@ void PQ_AssertConsistency (
 			candidate = & m->heap [entry];
 
 			while (PQ_parent (& entry), entry != PQ_root ())
-				if (PQ_siblings (index, m->heap [entry].index, mask))
+				if (PQ_siblings (idx, m->heap [entry].index, mask))
 					break;
 
 			DebugAssert ( ! (PQ_compare (m, candidate, & m->heap [entry]) < 0));
@@ -1103,9 +1103,9 @@ void PQ_AssertConsistency (
 
 #ifdef PriQue_STATS
 
-static size_t aligned (void const * const ptr)
+static size_t aligned (void const * const pqptr)
 {
-	size_t const a = (size_t) ptr;
+	size_t const a = (size_t) pqptr;
 	size_t const b = a & (a - 1);
 	size_t const c = (a ^ b);
 	return c;

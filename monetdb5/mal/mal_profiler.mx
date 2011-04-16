@@ -542,13 +542,13 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 		log("%d,\t", eventcounter);
 	}
 	if (profileCounter[PROFtime].status) {
-		char *tbuf, *c;
+		char *tbuf;
 
 		/* without this cast, compilation on Windows fails with
 		 * argument of type "long *" is incompatible with parameter of type "const time_t={__time64_t={__int64}} *"
 		 */
-		time_t clock = (time_t) mb->profiler[pc].clock.tv_sec;
-		tbuf = ctime(&clock);
+		time_t clck = (time_t) mb->profiler[pc].clock.tv_sec;
+		tbuf = ctime(&clck);
 		if (tbuf) {
 			c = strchr(tbuf, '\n');
 			if (c) {
@@ -1258,13 +1258,13 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 	TRACE_event++;
 
 	{
-		char *tbuf, *c;
+		char *tbuf;
 
 		/* without this cast, compilation on Windows fails with
 		 * argument of type "long *" is incompatible with parameter of type "const time_t={__time64_t={__int64}} *"
 		 */
-		time_t clock = (time_t) mb->profiler[pc].clock.tv_sec;
-		tbuf = ctime(&clock);
+		time_t clck = (time_t) mb->profiler[pc].clock.tv_sec;
+		tbuf = ctime(&clck);
 		c = strchr(tbuf, '\n');
 		if (c)
 			snprintf(c-5, 6, ".%03d", (int)mb->profiler[pc].clock.tv_usec / 1000);

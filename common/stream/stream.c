@@ -1138,7 +1138,7 @@ static struct curl_data *curl_handles;
 
 /* this function is called by libcurl when there is data for us */
 static size_t
-write_callback(char *buffer, size_t size, size_t nitems, void *userp)
+write_callback(char *cbuffer, size_t size, size_t nitems, void *userp)
 {
 	stream *s = (stream *) userp;
 	struct curl_data *c = (struct curl_data *) s->stream_data.p;
@@ -1167,7 +1167,7 @@ write_callback(char *buffer, size_t size, size_t nitems, void *userp)
 		c->buffer = realloc(c->buffer, c->usesize + size);
 	}
 	/* finally, store the data we received */
-	memcpy(c->buffer + c->usesize, buffer, size);
+	memcpy(c->buffer + c->usesize, cbuffer, size);
 	c->usesize += size;
 	return size;
 }
@@ -1666,7 +1666,7 @@ udp_create(const char *name)
 }
 
 int
-udp_socket(udp_stream * udp, char *hostname, int port, int write)
+udp_socket(udp_stream * udp, char *hostname, int port, int swrite)
 {
 	struct sockaddr *serv;
 	socklen_t servsize;
@@ -1677,7 +1677,7 @@ udp_socket(udp_stream * udp, char *hostname, int port, int write)
 		return 0;
 
 	memset(&udp->addr, 0, sizeof(udp->addr));
-	if (write)
+	if (swrite)
 		memcpy(&udp->addr.sin_addr, hp->h_addr_list[0], hp->h_length);
 	else
 		udp->addr.sin_addr.s_addr = INADDR_ANY;
@@ -1688,7 +1688,7 @@ udp_socket(udp_stream * udp, char *hostname, int port, int write)
 	udp->s = socket(serv->sa_family, SOCK_DGRAM, IPPROTO_UDP);
 	if (udp->s == INVALID_SOCKET)
 		return 0;
-	if (!write && bind(udp->s, serv, servsize) < 0)
+	if (!swrite && bind(udp->s, serv, servsize) < 0)
 		return 0;
 	return 1;
 }

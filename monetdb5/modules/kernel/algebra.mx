@@ -1949,8 +1949,8 @@ fetch(ptr ret, BAT *b, lng i)
 			if (b->tseqbase != oid_nil)
 				*(oid*)ret += @1 - BUNfirst(b);
 		} else if (b->ttype == TYPE_bat) {
-			bat bid = *(bat*) Tloc(b, @1);
-			*(BAT**) ret = BATdescriptor(bid);
+			bat ptbid = *(bat*) Tloc(b, @1);
+			*(BAT**) ret = BATdescriptor(ptbid);
 		} else if (_s == 4) {
 			*(int*) ret = *(int*) Tloc(b, @1);
 		} else if (_s == 1) {

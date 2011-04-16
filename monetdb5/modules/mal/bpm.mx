@@ -2140,13 +2140,13 @@ str
 BPMtakePartition(bat *ret, str *nme, ptr *hl, ptr *hh, ptr *tl, ptr *th)
 {
 	Partition p;
-	int index=0;
+	int idx=0;
 
 	BPMopen();
 	p= getByName(*nme);
 	if( p== 0)
 		throw(MAL,"bpm.take", RUNTIME_OBJECT_MISSING);
-	return BPMtakePartitionIndexed(ret,&p->alias, &index,hl,hh,tl,th);
+	return BPMtakePartitionIndexed(ret,&p->alias, &idx,hl,hh,tl,th);
 }
 
 str
