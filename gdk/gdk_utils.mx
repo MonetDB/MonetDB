@@ -48,6 +48,8 @@ static char GDKdbnameStr[PATHLENGTH] = { 0 };
 
 BAT *GDKenv = NULL;
 
+#include <signal.h>
+
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
@@ -58,6 +60,17 @@ BAT *GDKenv = NULL;
 
 #ifdef HAVE_SYS_SYSCTL_H
 # include <sys/sysctl.h>
+#endif
+
+/* getrlimit on FreeBSD */
+#ifdef HAVE_SYS_TYPES_H
+# include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_TIME_H
+# include <sys/time.h>
+#endif
+#ifdef HAVE_SYS_RESOURCE_H
+# include <sys/resource.h>
 #endif
 
 #ifdef NATIVE_WIN32
@@ -257,7 +270,6 @@ It should be extended to cope with the specifics of the interrupt
 received.
 @{
 @c
-#include <signal.h>
 #if 0				/* these are unused */
 static void
 BATSIGignore(int nr)
