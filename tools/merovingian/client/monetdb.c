@@ -543,6 +543,9 @@ simple_argv_cmd(char *cmd, sabdb *dbs, char *merocmd,
 		command_help(2, argv);
 		exit(1);
 	}
+
+	if (state != 0)
+		exit(state);
 }
 
 /**
