@@ -4,5 +4,5 @@
 * Mon Apr 18 2011 Fabian Groffen <fabian@cwi.nl>
 - When the first non-option argument of mclient does not refer to an
   exising file, it now is taken as database name.  This allows to simply
-  do .
+  do `mclient mydb`.
 
