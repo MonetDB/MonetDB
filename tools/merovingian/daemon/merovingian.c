@@ -607,7 +607,7 @@ main(int argc, char *argv[])
 	/* absolutise dbfarm if it isn't yet (we're in it now) */
 	if (*dbfarm != '/') {
 		dbfarm = alloca(1024);
-		if (getcwd(dbfarm, sizeof(1024)) == NULL) {
+		if (getcwd(dbfarm, 1024) == NULL) {
 			Mfprintf(stderr, "could not get dbfarm working directory: %s\n",
 					strerror(errno));
 			MERO_EXIT(1);
