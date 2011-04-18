@@ -44,6 +44,10 @@
 # include <limits.h>  /* PATH_MAX on Solaris */
 #endif
 
+#ifdef HAVE_SYS_SYSCTL_H
+# include <sys/sysctl.h>  /* KERN_PROC_PATHNAME on BSD */
+#endif
+
 #ifdef NATIVE_WIN32
 
 #include <stdio.h>
