@@ -152,7 +152,7 @@ HEAPcacheFind( size_t *maxsz, char *fn, int mode )
 			}
 			if (!e) 
 				e = hc->hc;
-			i = e - hc->hc;
+			i = (int) (e - hc->hc);
 			if (e->maxsz < *maxsz) {
 				/* resize file ? */
 				FILE *fp;
