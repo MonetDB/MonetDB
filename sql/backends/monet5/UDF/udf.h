@@ -23,7 +23,17 @@
 #include "sql.h"
 #include <string.h>
 
-sql5_export str UDFreverse(str *ret, str *src);
-sql5_export str UDFBATreverse(int *ret, int *bid);
+#ifdef WIN32
+#ifndef LIBUDF
+#define udf_export extern __declspec(dllimport)
+#else
+#define udf_export extern __declspec(dllexport)
+#endif
+#else
+#define udf_export extern
+#endif
+
+udf_export str UDFreverse(str *ret, str *src);
+udf_export str UDFBATreverse(int *ret, int *bid);
 
 #endif /* _SQL_UDF_H_ */
