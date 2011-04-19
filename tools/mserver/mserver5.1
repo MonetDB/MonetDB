@@ -1,7 +1,7 @@
 .\" Process this file with
 .\" groff -man -Tascii foo.1
 .\"
-.TH MSERVER5 1 "FEB 2011" MonetDB "MonetDB 5"
+.TH MSERVER5 1 "APRIL 2011" MonetDB "MonetDB Applications"
 .SH NAME
 mserver5 \- the MonetDB server version 5
 .SH DESCRIPTION
@@ -242,41 +242,6 @@ sequential_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,merge
 The default pipeline used in the November 2009 release.
 nov2009_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,multiplex,garbageCollector
 .P
-Experimental pipelines stressing various components under
-development. Do not use any of these pipelines (in production
-settings)!
-.IP "replication_pipe"
-replication_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,replication,multiplex,garbageCollector
-.IP "accumulator_pipe"
-accumulator_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,accumulators,dataflow,history,multiplex,garbageCollector
-.IP "recycler_pipe"
-The Recycle pipeline for Skyserver.
-recycler_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,deadcode,constants,commonTerms,joinPath,deadcode,recycle,reduce,dataflow,history,multiplex,garbageCollector
-.IP "cracker_pipe"
-cracker_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,selcrack,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector
-.IP "sidcrack_pipe"
-sidcrack_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,sidcrack,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector
-.IP "datacell_pipe"
-datacell_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,deadcode,constants,commonTerms,joinPath,datacell,deadcode,reduce,dataflow,history,multiplex,garbageCollector
-.IP "octopus_pipe"
-The Octopus pipeline for distributed processing (Merovingian enabled
-platforms only).
-octopus_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,octopus,reduce,dataflow,history,multiplex,garbageCollector
-.IP "tarantula_pipe"
-tarantula_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,constants,commonTerms,joinPath,tarantula,deadcode,reduce,dataflow,history,multiplex,garbageCollector
-.IP "mapreduce_pipe"
-The MapReduce pipeline for a different flavour of distributed
-processing on Merovingian enabled platforms.
-mapreduce_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mapreduce,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector
-.IP "datacyclotron_pipe"
-datacyclotron_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,datacyclotron,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,replication,multiplex,garbageCollector
-.IP "derive_pipe"
-derive_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,derivePath,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector
-.IP "dictionary_pipe"
-dictionary_pipe=inline,remap,dictionary,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,multiplex,garbageCollector
-.IP "compression_pipe"
-compression_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,compression,dataflow,history,multiplex,garbageCollector
-.P
 Debugging the optimizer pipeline The best way is to use mdb and inspect
 the information gathered during the optimization phase.  Several
 optimizers produce more intermediate information, which may shed light
@@ -286,7 +251,7 @@ like to trace. It is a server wide property and can not be set
 dynamically, as it is intended for internal use.
 
 .SH "CONFIG FILE FORMAT"
-The monetdb5.conf file consists of parameters of the form
+The conf-file readable by mserver5 consists of parameters of the form
 \(dq\&name=value\(dq\&.
 .P
 The file is line-based, each newline-terminated line represents either a
