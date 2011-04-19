@@ -15,23 +15,21 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-INCLUDES = ../../../include \
-		   ../../../common \
-		   ../../../storage \
-		   ../../../server .. \
-		   ../../../../monetdb5/modules/atoms \
-		   ../../../../monetdb5/compiler \
-		   ../../../../monetdb5/modules/kernel \
-		   ../../../../monetdb5/mal \
-		   ../../../../monetdb5/modules/mal \
-		   ../../../../monetdb5/optimizer \
-		   ../../../../monetdb5/scheduler \
-		   ../../../../clients/mapilib \
-		   ../../../../common/options \
-		   ../../../../common/stream \
-		   ../../../../common/utils \
-		   ../../../../gdk \
-		   $(READLINE_INCS) $(MSEED_CFLAGS) $(cfitsio_CFLAGS) $(curl_CFLAGS)
+INCLUDES = .. \
+	 ../../../include \
+	../../../common \
+	../../../storage \
+	../../../server \
+	../../../../monetdb5/modules/atoms \
+	../../../../monetdb5/modules/kernel \
+	../../../../monetdb5/mal \
+	../../../../monetdb5/modules/mal \
+	../../../../monetdb5/optimizer \
+	../../../../clients/mapilib \
+	../../../../common/options \
+	../../../../common/stream \
+	../../../../gdk \
+	$(READLINE_INCS) $(MSEED_CFLAGS) $(cfitsio_CFLAGS) $(curl_CFLAGS)
 
 lib__udf = {
 	MODULE
