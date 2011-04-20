@@ -157,3 +157,17 @@ char *sa_strdup( sql_allocator *sa, const char *s )
 { 
 	return sa_strndup( sa, s, strlen(s));
 }
+
+char *sa_strconcat( sql_allocator *sa, const char *s1, const char *s2 )
+{
+	size_t l1 = strlen(s1);
+	size_t l2 = strlen(s2);
+	char *r = sa_alloc(sa, l1+l2+1);
+
+	if (l1) 
+		memcpy(r, s1, l1);
+	if (l2)
+		memcpy(r+l1, s2, l2);
+	r[l1+l2] = 0;
+	return r;
+}
