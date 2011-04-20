@@ -10,7 +10,7 @@ stderr of test 'mclient--help` in directory 'mapiclient` itself:
 # 13:46:19 >  Mtimeout -timeout 60 mclient --help
 # 13:46:19 >  
 
-Usage: mclient [ options ]
+Usage: mclient [ options ] [ file or database [ file ... ] ]
 
 Options are:
  -h hostname | --host=hostname    host or UNIX domain socket to connect to
