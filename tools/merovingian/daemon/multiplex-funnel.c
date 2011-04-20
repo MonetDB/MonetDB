@@ -544,7 +544,7 @@ multiplexThread(void *d)
 		}
 
 		/* nothing interesting has happened */
-		if (r == 0)
+		if (r <= 0)
 			continue;
 		for (c = m->clients; c != NULL; c = c->next) {
 			if (!FD_ISSET(c->sock, &fds))

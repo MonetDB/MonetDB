@@ -106,7 +106,7 @@ recvWithTimeout(int msgsock, char *buf, size_t buflen)
 	tv.tv_sec = 1;
 	tv.tv_usec = 0;
 	retval = select(msgsock + 1, &fds, NULL, NULL, &tv);
-	if (retval == 0) {
+	if (retval <= 0) {
 		/* nothing interesting has happened */
 		return(-2);
 	}
