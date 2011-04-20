@@ -15,6 +15,7 @@ stdout of test 'copy_into_crash.SF-1975402` in directory 'BugTracker` itself:
 
 
 Ready.
+!ERROR: ParseException: Unknown type: ''POINT'
 
 Over..
 

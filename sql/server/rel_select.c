@@ -446,12 +446,17 @@ _rel_basetable(sql_allocator *sa, sql_table *t, char *atname)
 		append(rel->exps, exp_alias(sa, atname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0));
 	}
 	append(rel->exps, exp_alias(sa, atname, "%TID%", tname, "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
+
 	if (t->idxs.set) {
 		for (cn = t->idxs.set->h; cn; cn = cn->next) {
 			sql_idx *i = cn->data;
-			sql_subtype *t = sql_bind_localtype("int"); /* hash "int", TODO other types */
+			sql_subtype *t = sql_bind_localtype("wrd"); /* hash "wrd" */
+			char *iname = sa_strconcat( sa, "%", i->base.name);
 
-			append(rel->exps, exp_alias(sa, atname, i->base.name, tname, i->base.name, t, CARD_MULTI, 0, 1));
+			if (i->type == join_idx)
+				t = sql_bind_localtype("oid"); 
+			/* index names are prefixed, to make them independent */
+			append(rel->exps, exp_alias(sa, atname, iname, tname, iname, t, CARD_MULTI, 0, 1));
 		}
 	}
 

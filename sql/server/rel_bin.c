@@ -483,12 +483,13 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 			sql_idx *i = p->value;
 			sql_exp *el = e->l;
 			sql_exp *er = e->r;
+			char *iname = sa_strconcat(sql->sa, "%", i->base.name);
 
 			/* find out left and right */
-			l = bin_find_column(sql->sa, left, el->l, i->base.name);
+			l = bin_find_column(sql->sa, left, el->l, iname);
 			if (!l) {
 				swapped = 1;
-				l = bin_find_column(sql->sa, right, el->l, i->base.name);
+				l = bin_find_column(sql->sa, right, el->l, iname);
 				r = bin_find_column(sql->sa, left, er->l, TID);
 			} else {
 				r = bin_find_column(sql->sa, right, er->l, TID);
@@ -698,7 +699,8 @@ rel2bin_sql_table(mvc *sql, sql_table *t)
 			sql_idx *i = n->data;
 			stmt *sc = stmt_idxbat(sql->sa, i, RDONLY);
 
-			sc = stmt_alias(sql->sa, sc, rnme, sa_strdup(sql->sa, i->base.name));
+			/* index names are prefixed, to make them independent */
+			sc = stmt_alias(sql->sa, sc, rnme, sa_strconcat(sql->sa, "%", i->base.name));
 			list_append(l, sc);
 		}
 	}
@@ -745,7 +747,8 @@ rel2bin_basetable( mvc *sql, sql_rel *rel, list *refs)
 			stmt *sc = stmt_idxbat(sql->sa, i, RDONLY);
 			char *rnme = sa_strdup(sql->sa, t->base.name);
 
-			sc = stmt_alias(sql->sa, sc, rnme, sa_strdup(sql->sa, i->base.name));
+			/* index names are prefixed, to make them independent */
+			sc = stmt_alias(sql->sa, sc, rnme, sa_strconcat(sql->sa, "%", i->base.name));
 			list_append(l, sc);
 		}
 	}
@@ -1588,7 +1591,7 @@ rel2bin_hash_lookup( mvc *sql, sql_rel *rel, stmt *sub, sql_idx *i, node *en )
 	stmt *bits = stmt_atom_int(sql->sa, 1 + ((sizeof(wrd)*8)-1)/(list_length(i->columns)+1));
 	sql_exp *e = en->data;
 	sql_exp *l = e->l;
-	stmt *idx = bin_find_column(sql->sa, sub, l->l, i->base.name);
+	stmt *idx = bin_find_column(sql->sa, sub, l->l, sa_strconcat(sql->sa, "%", i->base.name));
 
 	/* TODO should be in key order! */
 	for( en = rel->exps->h; en; en = en->next ) {

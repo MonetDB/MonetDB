@@ -10,34 +10,38 @@ stderr of test 'relation` in directory 'sql` itself:
 # 22:42:46 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=koala --port=32262 
 # 22:42:46 >  
 
-MAPI  = monetdb@koolmees:30183
+MAPI  = monetdb@alf:33463
 QUERY = INSERT INTO geoms values ('LINESTRING(10 10)');
 ERROR = !MALException:wkb.FromText:IllegalArgumentException: point array must contain 0 or >1 elements
-MAPI  = monetdb@koolmees:30183
+MAPI  = monetdb@alf:33463
 QUERY = INSERT INTO geoms values ('LINESTRING(10)');
 ERROR = !MALException:wkb.FromText:ParseException: Expected number but encountered ')'
-MAPI  = monetdb@koolmees:30183
+MAPI  = monetdb@alf:33463
 QUERY = INSERT INTO geoms values ('LINESTRING()');
 ERROR = !MALException:wkb.FromText:ParseException: Expected number but encountered ')'
-MAPI  = monetdb@koolmees:30183
+MAPI  = monetdb@alf:33463
 QUERY = INSERT INTO geoms values ('LINESTRING');
 ERROR = !MALException:wkb.FromText:ParseException: Expected word but encountered end of stream
-MAPI  = monetdb@koolmees:30183
+MAPI  = monetdb@alf:33463
 QUERY = INSERT INTO geoms values ('');
 ERROR = !MALException:wkb.FromText:ParseException: Expected word but encountered end of stream
-MAPI  = monetdb@koolmees:30183
+MAPI  = monetdb@alf:33463
 QUERY = INSERT INTO geoms values ('POINT(10)');
 ERROR = !MALException:wkb.FromText:ParseException: Expected number but encountered ')'
-MAPI  = monetdb@koolmees:30183
+MAPI  = monetdb@alf:33463
 QUERY = INSERT INTO geoms values ('POINT()');
 ERROR = !MALException:wkb.FromText:ParseException: Expected number but encountered ')'
-MAPI  = monetdb@koolmees:30183
+MAPI  = monetdb@alf:33463
 QUERY = INSERT INTO geoms values ('POINT');
 ERROR = !MALException:wkb.FromText:ParseException: Expected word but encountered end of stream
-MAPI  = monetdb@koolmees:30183
+MAPI  = monetdb@alf:33463
 QUERY = INSERT INTO geoms values ('');
 ERROR = !MALException:wkb.FromText:ParseException: Expected word but encountered end of stream
-# 20:50:35 >  
-# 20:50:35 >  Done.
-# 20:50:35 >  
+MAPI  = monetdb@alf:33463
+QUERY = SELECT a.g, b.g, Relate(a.g,b.g,'Touches') FROM geoms a, geoms b where a.g is not NULL and b.g is not NULL;
+ERROR = !MALException:!ERROR: IllegalArgumentException: IllegalArgumentException: Should be length 9, is [Touches] instead
+
+# 14:48:45 >  
+# 14:48:45 >  Done.
+# 14:48:45 >  
 
