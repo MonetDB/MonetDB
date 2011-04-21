@@ -1,6 +1,3 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
-* Mon Apr 18 2011 Fabian Groffen <fabian@cwi.nl>
-- Fix monetdb return code upon failure to start/stop a database
-
