@@ -130,7 +130,7 @@ case "$CC" in
 	;;
 esac
 
-AC_DEFINE(MONETDB_RELEASE, "Apr2011", [Release name or "unreleased"])
+AC_DEFINE(MONETDB_RELEASE, "unreleased", [Release name or "unreleased"])
 
 dft_monetdb5=auto
 AC_ARG_ENABLE(monetdb5,
