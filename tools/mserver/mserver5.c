@@ -446,6 +446,11 @@ main(int argc, char **av)
 					break;
 				}
 			}
+		} else {
+			printf("#warning: unable to determine binary location, "
+					"please use --set monet_mod_path=/path/to/... to "
+					"allow finding modules\n");
+			fflush(NULL);
 		}
 		if (modpath != NULL)
 			GDKsetenv("monet_mod_path", modpath);

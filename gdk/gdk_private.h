@@ -55,9 +55,9 @@ int OIDdirty(void);
 BUN SORTfndfirst(BAT *b, ptr v);
 BUN SORTfndlast(BAT *b, ptr v);
 int GDKmunmap(void *addr, size_t len);
-void *GDKmallocmax(size_t size, size_t * maxsize, int emergency);
-void *GDKreallocmax(void *pold, size_t size, size_t * maxsize, int emergency);
-void *GDKvmrealloc(void *pold, size_t oldsize, size_t newsize, size_t oldmax, size_t * maxsize, int emergency);
+void *GDKmallocmax(size_t size, size_t *maxsize, int emergency);
+void *GDKreallocmax(void *pold, size_t size, size_t *maxsize, int emergency);
+void *GDKvmrealloc(void *pold, size_t oldsize, size_t newsize, size_t oldmax, size_t *maxsize, int emergency);
 void GDKvmfree(void *blk, size_t size, size_t maxsize);
 void GDKaddbuf(const char *msg);
 void GDKclrerr(void);
@@ -147,8 +147,43 @@ BAT *HASHprint(BAT *b);
 int HASHgonebad(BAT *b, ptr v);
 int MT_alive(int pid);	/* OS independent way to check if some process is still alive. */
 #ifdef HAVE_PTHREAD_SIGMASK
-void MT_thread_sigmask(sigset_t * new_mask, sigset_t * orig_mask);
+void MT_thread_sigmask(sigset_t *new_mask, sigset_t *orig_mask);
 #endif
 void GDKlog(const char *format, ...);
 void GDKunlockHome(void);
 int GDKgetHome(void);
+
+#define BBP_BATMASK	511
+#define BBP_THREADMASK	63
+
+typedef struct {
+	MT_Lock swap;
+	MT_Lock hash;
+} batlock_t;
+
+typedef struct {
+	MT_Lock alloc;
+	MT_Lock trim;
+	bat free;
+} bbplock_t;
+
+extern int GDKsilent;	/* should GDK shut up? */
+extern int BBP_dirty;	/* BBP table dirty? */
+extern ptr GDK_mem_start;		/* sbrk(0) at start of the program */
+extern size_t GDK_mmap_minsize;	/* size after which we use tempfile VM rather than malloc/anonymous VM */
+extern batlock_t GDKbatLock[BBP_BATMASK + 1];
+extern bbplock_t GDKbbpLock[BBP_THREADMASK + 1];
+extern MT_Lock GDKnameLock;
+extern MT_Lock GDKthreadLock;
+extern MT_Lock GDKunloadLock;
+extern MT_Cond GDKunloadCond;
+extern MT_Lock GDKtmLock;
+extern int GDKnrofthreads;
+
+#define BBPdirty(x)	(BBP_dirty=(x))
+
+#define GDKswapLock(x)  GDKbatLock[(x&BBP_BATMASK)].swap
+#define GDKhashLock(x)  GDKbatLock[(x&BBP_BATMASK)].hash
+#define GDKtrimLock(y)  GDKbbpLock[(y&BBP_THREADMASK)].trim
+#define GDKcacheLock(y) GDKbbpLock[(y&BBP_THREADMASK)].alloc
+#define BBP_free(y)	GDKbbpLock[(y&BBP_THREADMASK)].free

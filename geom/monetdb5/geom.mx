@@ -1197,7 +1197,7 @@ wkb@1( bit *out, wkb **a, wkb **b, @3 @4)
 		throw(MAL, "geom.@1", "wkb2geos(*a) and wkb2geos(*b) both failed");
 	}
 
-	*out = @2(ga, gb, @4);
+	*out = @2(ga, gb, * @4);
 
 	GEOSGeom_destroy(ga);
 	GEOSGeom_destroy(gb);
@@ -1213,7 +1213,7 @@ wkb@1( bit *out, wkb **a, wkb **b, @3 @4)
 @:spatial(Within,GEOSWithin)@
 @:spatial(Contains,GEOSContains)@
 @:spatial(Overlaps,GEOSOverlaps)@
-@:spatial2(Relate,GEOSRelatePattern,char*,pattern)@
+@:spatial2(Relate,GEOSRelatePattern,str*,pattern)@
 
 @= analysis
 geom_export str

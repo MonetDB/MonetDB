@@ -24,4 +24,6 @@ SELECT a.g, b.g, Crosses(a.g,b.g), Within(a.g,b.g), Contains(a.g,b.g), Overlaps(
 
 SELECT a.g, b.g, Relate(a.g,b.g,'Touches') FROM geoms a, geoms b where a.g is not NULL and b.g is not NULL;
 
+SELECT a.g, b.g, Relate(a.g,b.g,'*F**T**F*') FROM geoms a, geoms b where a.g is not NULL and b.g is not NULL;
+
 DROP TABLE geoms;

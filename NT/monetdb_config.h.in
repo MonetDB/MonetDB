@@ -644,7 +644,9 @@
 #define LOCALSTATEDIR PREFIX "\\var"
 
 #define lstat stat
+#ifndef S_ISREG	/* swig-generated source file doesn't include us first */
 #define S_ISREG(mode)	(((mode) & _S_IFMT) == _S_IFREG)
+#endif
 
 /* Define to the sub-directory in which libtool stores uninstalled libraries.
    */

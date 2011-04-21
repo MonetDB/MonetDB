@@ -2354,6 +2354,7 @@ monet5_resolve_function(ptr M, sql_func *f)
 */
 }
 
+/* TODO handle aggr */
 static void
 backend_create_func(backend *be, sql_func *f)
 {

@@ -409,6 +409,7 @@ acceptConnections(int sock, int usock)
 	fd_set fds;
 	int msgsock;
 	err e;
+	struct timeval tv;
 
 	do {
 		/* handle socket connections */
@@ -416,8 +417,11 @@ acceptConnections(int sock, int usock)
 		FD_SET(sock, &fds);
 		FD_SET(usock, &fds);
 
+		/* Wait up to 5 seconds */
+		tv.tv_sec = 5;
+		tv.tv_usec = 0;
 		retval = select((sock > usock ? sock : usock) + 1,
-				&fds, NULL, NULL, NULL);
+				&fds, NULL, NULL, &tv);
 		if (retval == 0) {
 			/* nothing interesting has happened */
 			continue;

@@ -1,15 +1,3 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
-* Tue Apr  5 2011 Fabian Groffen <fabian@cwi.nl>
-- Plugged a small memory leak occurring upon redirects by the server
-  (e.g. via monetdbd)
-
-* Mon Feb  7 2011 Fabian Groffen <fabian@cwi.nl>
-- Remove XQuery related code from Ruby adapter, PHP driver and Perl Mapi
-  library
-
-* Thu Feb  3 2011 Fabian Groffen <fabian@cwi.nl>
-- Make SQL the default language for mclient, e.g. to use when --language=
-  or -l is omitted
-

@@ -26,7 +26,7 @@ setup(name='python-monetdb',
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accelerators, SQL- and XML- frontends.
+accelerators and SQL frontend.
 
 This package contains the files needed to use MonetDB from a Python
 program.

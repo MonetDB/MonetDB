@@ -10,31 +10,31 @@ stderr of test 'spatial` in directory 'sql` itself:
 # 22:58:03 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=koala --port=35790 
 # 22:58:03 >  
 
-MAPI  = monetdb@koolmees:38689
+MAPI  = monetdb@alf:33463
 QUERY = INSERT INTO geoms values ('LINESTRING(10 10)');
 ERROR = !MALException:wkb.FromText:IllegalArgumentException: point array must contain 0 or >1 elements
-MAPI  = monetdb@koolmees:38689
+MAPI  = monetdb@alf:33463
 QUERY = INSERT INTO geoms values ('LINESTRING(10)');
 ERROR = !MALException:wkb.FromText:ParseException: Expected number but encountered ')'
-MAPI  = monetdb@koolmees:38689
+MAPI  = monetdb@alf:33463
 QUERY = INSERT INTO geoms values ('LINESTRING()');
 ERROR = !MALException:wkb.FromText:ParseException: Expected number but encountered ')'
-MAPI  = monetdb@koolmees:38689
+MAPI  = monetdb@alf:33463
 QUERY = INSERT INTO geoms values ('LINESTRING');
 ERROR = !MALException:wkb.FromText:ParseException: Expected word but encountered end of stream
-MAPI  = monetdb@koolmees:38689
+MAPI  = monetdb@alf:33463
 QUERY = INSERT INTO geoms values ('');
 ERROR = !MALException:wkb.FromText:ParseException: Expected word but encountered end of stream
-MAPI  = monetdb@koolmees:38689
+MAPI  = monetdb@alf:33463
 QUERY = INSERT INTO geoms values ('POINT(10)');
 ERROR = !MALException:wkb.FromText:ParseException: Expected number but encountered ')'
-MAPI  = monetdb@koolmees:38689
+MAPI  = monetdb@alf:33463
 QUERY = INSERT INTO geoms values ('POINT()');
 ERROR = !MALException:wkb.FromText:ParseException: Expected number but encountered ')'
-MAPI  = monetdb@koolmees:38689
+MAPI  = monetdb@alf:33463
 QUERY = INSERT INTO geoms values ('POINT');
 ERROR = !MALException:wkb.FromText:ParseException: Expected word but encountered end of stream
-MAPI  = monetdb@koolmees:38689
+MAPI  = monetdb@alf:33463
 QUERY = INSERT INTO geoms values ('');
 ERROR = !MALException:wkb.FromText:ParseException: Expected word but encountered end of stream
 

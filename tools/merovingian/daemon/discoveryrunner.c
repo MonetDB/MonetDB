@@ -402,7 +402,7 @@ discoveryRunner(void *d)
 		tv.tv_sec = 5;
 		tv.tv_usec = 0;
 		nread = select(sock + 1, &fds, NULL, NULL, &tv);
-		if (nread == 0) {
+		if (nread <= 0) {  /* assume only failure is EINTR */
 			/* nothing interesting has happened */
 			buf[0] = '\0';
 			continue;

@@ -122,7 +122,7 @@ peeringServerThread(void *d)
 		tv.tv_usec = 0;
 		len = select(msock + 1, &fds, NULL, NULL, &tv);
 		/* nothing interesting has happened */
-		if (len == 0)
+		if (len <= 0)
 			continue;
 		if (FD_ISSET(s, &fds)) {
 			/* from client, forward to our network */

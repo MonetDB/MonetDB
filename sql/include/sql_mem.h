@@ -79,6 +79,7 @@ extern char *sa_realloc( sql_allocator *sa,  void *ptr, size_t sz, size_t osz );
 extern void sa_destroy( sql_allocator *sa );
 extern char *sa_strndup( sql_allocator *sa, const char *s, size_t l);
 extern char *sa_strdup( sql_allocator *sa, const char *s);
+extern char *sa_strconcat( sql_allocator *sa, const char *s1, const char *s2);
 
 #define SA_NEW( sa, type ) ((type*)sa_alloc( sa, sizeof(type)) )
 #define SA_ZNEW( sa, type ) ((type*)sa_zalloc( sa, sizeof(type)) )

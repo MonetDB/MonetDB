@@ -1413,9 +1413,13 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 			continue;
 		case Q_SCHEMA:
 			SQLqueryEcho(hdl);
+			timerHumanStop();
 			if (formatter == TABLEformatter)
 				mnstr_printf(toConsole,
-					      "operation successful\n");
+					      "operation successful%s%s%s\n",
+					      singleinstr ? " (" : "",
+					      singleinstr ? timerHuman() : "",
+					      singleinstr ? ")" : "");
 			continue;
 		case Q_TRANS:
 			SQLqueryEcho(hdl);
@@ -2355,7 +2359,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 static void
 usage(const char *prog, int xit)
 {
-	fprintf(stderr, "Usage: %s [ options ]\n", prog);
+	fprintf(stderr, "Usage: %s [ options ] [ file or database [ file ... ] ]\n", prog);
 	fprintf(stderr, "\nOptions are:\n");
 #ifdef HAVE_SYS_UN_H
 	fprintf(stderr, " -h hostname | --host=hostname    host or UNIX domain socket to connect to\n");
@@ -2721,6 +2725,15 @@ main(int argc, char **argv)
 	if (passwd == NULL)
 		passwd = simple_prompt("password", BUFSIZ, 0, NULL);
 
+	c = 0;
+	has_fileargs = optind != argc;
+
+	if (dbname == NULL && has_fileargs && stat(argv[optind], &statb) != 0) {
+		dbname = argv[optind];
+		optind++;
+		has_fileargs = optind != argc;
+	}
+
 	mid = mapi_connect(host, port, user, passwd, language, dbname);
 
 	if (mid == NULL) {
@@ -2758,9 +2771,6 @@ main(int argc, char **argv)
 			setFormatter("raw");
 		}
 	}
-
-	c = 0;
-	has_fileargs = optind != argc;
 
 	/* give the user a welcome message with some general info */
 	if ((interactive || (!has_fileargs && command == NULL)) && interactive_stdin) {

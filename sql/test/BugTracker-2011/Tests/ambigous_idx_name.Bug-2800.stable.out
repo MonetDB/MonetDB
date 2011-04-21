@@ -1,0 +1,53 @@
+stdout of test 'ambigous_idx_name.Bug-2800` in directory 'test/BugTracker-2011` itself:
+
+
+# 13:01:42 >  
+# 13:01:42 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/ufs/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB" --set mapi_open=true --set mapi_port=37221 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_test_BugTracker-2011" --set mal_listing=0 ; echo ; echo Over..
+# 13:01:42 >  
+
+# MonetDB 5 server v11.3.0
+# This is an unreleased version
+# Serving database 'mTests_test_BugTracker-2011', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.752 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:37221/
+# MonetDB/SQL module loaded
+# MonetDB/GIS module loaded
+
+Ready.
+
+Over..
+
+# 13:01:42 >  
+# 13:01:42 >  mclient -lsql -ftest -i -e --host=alf --port=37221 
+# 13:01:42 >  
+
+#CREATE TABLE htmtest (
+#	       htmid    bigint       NOT NULL,
+#	       ra       double ,
+#	       decl     double ,
+#	       dra      double ,
+#	       ddecl    double ,
+#	       flux     double ,
+#	       dflux    double ,
+#	       freq     double ,
+#	       bw       double ,
+#	       type     decimal(1,0),
+#	       imageurl varchar(100),
+#	       comment  varchar(100),
+#	       CONSTRAINT htmtest_htmid_pkey PRIMARY KEY (htmid)
+#);
+#CREATE INDEX htmid ON htmtest (htmid);
+#INSERT INTO HTMTEST (HTMID,RA,DECL,FLUX,COMMENT) VALUES (1, 1.2, 2.4, 3.2, 'vlabla');
+[ 1	]
+#UPDATE HTMTEST set COMMENT='some update' WHERE HTMID=1;
+[ 1	]
+#drop table HTMTEST;
+
+# 13:01:42 >  
+# 13:01:42 >  Done.
+# 13:01:42 >  
+

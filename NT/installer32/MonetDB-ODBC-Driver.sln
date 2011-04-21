@@ -1,5 +1,5 @@
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual Studio 2008
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
 Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "MonetDB-ODBC-Installer", "MonetDB-ODBC-Installer.vdproj", "{33AE0CC1-169E-4168-978A-0CDDD1E6A51A}"
 EndProject
 Global

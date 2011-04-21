@@ -10,13 +10,14 @@ stderr of test 'copy_into_crash.SF-1975402` in directory 'BugTracker` itself:
 # 11:37:42 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=30423 
 # 11:37:42 >  
 
-MAPI  = monetdb@rig:30424
+MAPI  = monetdb@alf:35630
 QUERY = COPY 1 RECORDS INTO nodes from STDIN USING DELIMITERS ',', '\n';
-ERROR = !SQLException:sql:value ''POINT(52.0697 4.3723)'' while parsing ''POINT(52.0697 4.3723)'' from line 0 field 1 not inserted, expecting type wkb
-        !SQLException:importTable:failed to import table
-        !ERROR: ParseException: Unknown type: ''POINT'
+        45111956, 'POINT(52.0697 4.3723)'
+        
+ERROR = !SQLException:importTable:value ' 'POINT(52.0697 4.3723)'' from line 1 field 2 not inserted, expecting type point
+        !failed to import table
 
-# 11:37:42 >  
-# 11:37:42 >  Done.
-# 11:37:42 >  
+# 13:33:18 >  
+# 13:33:18 >  Done.
+# 13:33:18 >  
 
