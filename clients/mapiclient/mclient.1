@@ -6,8 +6,10 @@ mclient \- the MonetDB command-line tool
 [
 .I options
 ] [
+.I file or database
+[
 .I file
-\&... ]
+\&... ] ]
 .br
 .B mclient
 .B \-\-help
@@ -24,7 +26,7 @@ If the
 .BI \-\-statement= query
 .RB ( \-s
 .IR query)
-option is given, the query is executed.
+option is given, the query is executed as if it were given in a file.
 If any files are listed after the options, queries are read from the
 files and executed.
 In either case,
@@ -66,20 +68,20 @@ starts parsing command line options, it reads a
 .I .monetdb
 file.  If the environment variable
 .B DOTMONETDBFILE
-is set, it reads the file pointed to by that variable.  When unset,
+is set, it reads the file pointed to by that variable instead.  When unset,
 .I mclient
 searches for a
 .I .monetdb
 file in the current working directory, and if that doesn't exist, in the
 current user's home directory.  This file can contain defaults for the
 flags
-.BR user ", " password " and " language .
+.BR user ", " password ", " language ", " save_history ", " format " and " width .
 For example, an entry in a
 .I .monetdb
 file that sets the default language for 
 .I mclient
-to sql looks like this: 
-.IR "language=sql" .
+to mal looks like this: 
+.IR "language=mal" .
 To disable reading the
 .I .monetdb
 file, set the variable
@@ -107,11 +109,16 @@ Print usage information and exit.  If preceded by the
 option, give language-specific help and continue.
 .TP
 \fB\-\-database=\fP\fIdatabase\fP (\fB\-d\fP \fIdatabase\fP)
-Specify the name of the database to connect to.
+Specify the name of the database to connect to.  The \fB-d\fP can be
+omitted if an equally named file does not exist in the current
+directory.  As such, the first non-option argument will be interpreted
+as database to connect to if the argument does not exist as file.
 .TP
 \fB\-\-host=\fP\fIhostname\fP (\fB\-h\fP \fIhostname\fP)
 Specify the name of the host on which the server runs (default:
-localhost).
+localhost).  When the argument starts with a forward slash (/), host is
+assumed to be the directory where the UNIX sockets are stored for
+platforms where these are supported.
 .TP
 \fB\-\-port=\fP\fIportnr\fP (\fB\-p\fP \fIportnr\fP)
 Specify the portnumber of the server (default: 50000).
@@ -120,11 +127,13 @@ Specify the portnumber of the server (default: 50000).
 After executing the queries from the
 .B \-\-statement
 option and any file specified on the command
-line, read queries from standard input.
+line, read queries from standard input.  When this option is set, all
+files are read line by line, like if it were entered on mclient's
+console.
 .TP
 \fB\-\-user\fP\fB=\fP\fIuser\fP (\fB\-u\fP \fIuser\fP)
 Specify the user to connect as.  If this flag is absent, the client will
-ask for a user name.  Note that
+ask for a user name, unless a default was found in .monetdb file.  Note that
 .I user
 must follow immediately after the option.
 .TP
