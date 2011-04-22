@@ -2288,6 +2288,15 @@ if test "x$enable_odbc" != xno; then
 	fi
 	AC_SUBST(ODBC_INCS)
 	AC_SUBST(ODBC_LIBS)
+	case "x${enable_odbc}x${have_unixodbc}" in
+		xautoxno)
+			enable_odbc=no
+			disable_odbc="(unixODBC library required for ODBC driver)"
+			;;
+		xyesxno)
+			AC_MSG_ERROR([unixODBC required for building ODBC driver])
+			;;
+	esac
 else
 	have_unixodbc=no
 fi
@@ -3142,7 +3151,7 @@ for comp in \
 	geom \
 	fits \
 	rdf \
-	unixodbc \
+	odbc \
 	java \
 	jdbc \
 	control \
