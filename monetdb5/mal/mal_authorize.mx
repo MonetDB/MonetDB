@@ -120,7 +120,7 @@ AUTHrequireAdmin(Client *c) {
 	Client cntxt = *c;
 
 	if (cntxt == NULL)
-			return(MAL_SUCCEED);
+		return(MAL_SUCCEED);
 	id = cntxt->user;
 
 	if (id != 0) {
@@ -216,68 +216,6 @@ AUTHinitTables() {
 	assert(b);
 	user = b;
 
-	/* load old password BAT, upgrade to hash, <monetdb-5.11 */
-	bid = BBPindex("M5system_auth_passwd");
-	if (bid) {
-		BAT *n;
-		bat s[3];
-
-		b = BATdescriptor(bid);
-		if (b == NULL)
-			throw(MAL, "initTables.passwd", INTERNAL_BAT_ACCESS);
-		fprintf(stderr,
-				"#warning: converting old password store to new format\n");
-		fflush(stderr);
-
-		/* create new bat */
-		n = BATnew(TYPE_oid, TYPE_str, 256);
-		if (n == NULL)
-			throw(MAL, "initTables.passwd", MAL_MALLOC_FAIL " password table");
-
-		BBPrename(BBPcacheid(n), "M5system_auth_passwd_v2");
-		BATmode(n, PERSISTENT);
-
-		/* convert data */
-		if (BATcount(b) > 0) {
-			BATiter bi = bat_iterator(b);
-			BUN p, q;
-			str tmp;
-			str pwd;
-			str sha1pwd;
-			int len;
-
-			BATloop(b, p, q) {
-				tmp = (str)BUNtail(bi, p);
-				rethrow("initTables", tmp, AUTHdecypherValue(&pwd, &tmp));
-				len = (int) strlen(pwd);
-				msg= AUTHBackendSum(&sha1pwd, &pwd, &len);
-				GDKfree(pwd);
-				if (msg)
-					return msg;
-				pwd = NULL;
-				msg = AUTHcypherValue(&pwd, &sha1pwd);
-				if (msg){
-					if (pwd)
-						GDKfree(pwd);
-					return msg;
-				}
-				BUNins(n, BUNhead(bi, p), pwd, FALSE);
-				GDKfree(sha1pwd);
-				GDKfree(pwd);
-			}
-		}
-
-		/* destroy old bat */
-		BATmode(b, TRANSIENT);
-		BBPreleaseref(b->batCacheid);
-
-		/* commit the new situation */
-		s[0] = 0;
-		s[1] = ABS(n->batCacheid);
-		s[2] = ABS(b->batCacheid);
-		TMsubcommit_list(s, 3);
-	}
-
 	/* load/create password BAT */
 	bid = BBPindex("M5system_auth_passwd_v2");
 	if (!bid) {
@@ -323,7 +261,7 @@ AUTHinitTables() {
 		Client c = &mal_clients[0];
 
 		rethrow("initTables", tmp, AUTHBackendSum(&pw, &user /* because user == pass */, &len));
-		msg= AUTHaddUser(&uid, &c, &user, &pw, &b);
+		msg = AUTHaddUser(&uid, &c, &user, &pw, &b);
 		GDKfree(pw);
 		if (msg)
 			return msg;
