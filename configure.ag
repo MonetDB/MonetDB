@@ -236,35 +236,23 @@ if test x$use_console = xyes ; then
 	AC_DEFINE([HAVE_CONSOLE], 1, [If the console should be used])
 fi
 
-AC_ARG_ENABLE(java,
-	AS_HELP_STRING([--enable-java], [(try to) build Java components]),
-	enable_java="$enableval",
-	enable_java=auto)
+AC_ARG_ENABLE(jdbc,
+	AS_HELP_STRING([--enable-jdbc], [build the MonetDB JDBC driver]),
+	enable_jdbc="$enableval",
+	enable_jdbc=auto)
+case $enable_jdbc in
+	yes|auto) enable_jdbc=$enable_jdbc;;
+	*) enable_jdbc=no;;
+esac
 
-if test "x$enable_java" != xno; then
-	AC_ARG_ENABLE(jdbc,
-		AS_HELP_STRING([--enable-jdbc], [build the MonetDB JDBC driver]),
-		enable_jdbc="$enableval",
-		enable_jdbc=auto)
-	case $enable_jdbc in
-		yes|auto) enable_jdbc=$enable_jdbc;;
-		*) enable_jdbc=no;;
-	esac
-
-	AC_ARG_ENABLE(merocontrol,
-		AS_HELP_STRING([--enable-merocontrol], [build the Merovingian control driver]),
-		enable_control="$enableval",
-		enable_control=auto)
-	case $enable_control in
-		yes|auto) enable_control=$enable_control;;
-		*) enable_control=no;;
-	esac
-else
-	enable_jdbc=no
-	enable_control=no
-	disable_jdbc="(as java is disabled)"
-	disable_control="(as java is disabled)"
-fi
+AC_ARG_ENABLE(merocontrol,
+	AS_HELP_STRING([--enable-merocontrol], [build the Merovingian control driver]),
+	enable_control="$enableval",
+	enable_control=auto)
+case $enable_control in
+	yes|auto) enable_control=$enable_control;;
+	*) enable_control=no;;
+esac
 
 dnl RIPEMD160 is patent free, academic and European, but unfortunately
 dnl can't use it by default, as that would exclude JDBC usage (Java
@@ -1722,15 +1710,11 @@ JAVA="java"
 JAVAC="javac"
 JAR="jar"
 JAVADOC="javadoc"
-if test "x$enable_java" != xno; then
-	AC_ARG_WITH(java,
-		AS_HELP_STRING([--with-java=DIR],
-			[java, javac, jar and javadoc are installed in DIR/bin]),
-		have_java="$withval",
-		have_java="$enable_java")
-else
-	have_java=no
-fi
+AC_ARG_WITH(java,
+	AS_HELP_STRING([--with-java=DIR],
+		[java, javac, jar and javadoc are installed in DIR/bin]),
+	have_java="$withval",
+	have_java=auto)
 JPATH=$PATH
 case $have_java in
 yes|no|auto)
@@ -1794,6 +1778,12 @@ no-yes)
 	AC_MSG_ERROR([MonetDB JDBC requires ant and Java])
 	;;
 no-*)
+	enable_jdbc=no
+	if test x$ANT = xno ; then
+		disable_jdbc="(ant is required to build MonetDB JDBC)"
+	else
+		disable_jdbc="(Java is required to build MonetDB JDBC)"
+	fi
 	;;
 *)
 	req_java_ver_min=1.5 # >= $req_java_ver_min required
@@ -1804,7 +1794,8 @@ no-*)
 		if test "x$enable_jdbc" = xyes; then
 			AC_MSG_ERROR([MonetDB JDBC requires ant and Java >= $req_java_ver_min, but < $req_java_ver_max.])
 		else
-			AC_MSG_WARN([Cannot build MonetDB JDBC as it requires ant and Java >= $req_java_ver_min, but < $req_java_ver_max.])
+			enable_jdbc=no
+			disable_jdbc="(MonetDB JDBC currently requires Java >= $req_java_ver_min, but < $req_java_ver_max to build)"
 		fi
 	fi
 	;;
@@ -1819,6 +1810,12 @@ no-yes)
 	AC_MSG_ERROR([Merovingian control requires ant and Java])
 	;;
 no-*)
+	enable_control=no
+	if test x$ANT = xno ; then
+		disable_control="(ant is required to build merovingian Java control library)"
+	else
+		disable_control="(Java is required to build merovingian Java control library)"
+	fi
 	;;
 *)
 	req_java_ver_min=1.5 # >= $req_java_ver_min required
@@ -1828,7 +1825,8 @@ no-*)
 		if test "x$enable_control" = xyes; then
 			AC_MSG_ERROR([Merovingian control requires ant and Java >= $req_java_ver_min.])
 		else
-			AC_MSG_WARN([Cannot build Merovingian control as it requires ant and Java >= $req_java_ver_min.])
+			enable_control=no
+			disable_control="(merovingian Java control library requires Java >= $req_java_ver_min)"
 		fi
 	fi
 	;;
@@ -2306,6 +2304,15 @@ if test "x$enable_odbc" != xno; then
 	fi
 	AC_SUBST(ODBC_INCS)
 	AC_SUBST(ODBC_LIBS)
+	case "x${enable_odbc}x${have_unixodbc}" in
+		xautoxno)
+			enable_odbc=no
+			disable_odbc="(unixODBC library required for ODBC driver)"
+			;;
+		xyesxno)
+			AC_MSG_ERROR([unixODBC required for building ODBC driver])
+			;;
+	esac
 else
 	have_unixodbc=no
 fi
@@ -3163,8 +3170,7 @@ for comp in \
 	geom \
 	fits \
 	rdf \
-	unixodbc \
-	java \
+	odbc \
 	jdbc \
 	control \
 	testing \
