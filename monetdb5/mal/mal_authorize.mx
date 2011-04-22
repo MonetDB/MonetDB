@@ -108,7 +108,6 @@ static str AUTHverifyPassword(int *ret, str *passwd);
 
 static BAT *user = NULL;
 static BAT *pass = NULL;
-static BAT *scen = NULL;
 
 /**
  * Requires the current client to be the admin user thread.  If not the case,
@@ -162,7 +161,7 @@ AUTHrequireAdminOrUser(Client *c, str *username) {
 void
 AUTHcommit()
 {
-	bat blist[4];
+	bat blist[3];
 
 	blist[0] = 0;
 
@@ -170,9 +169,7 @@ AUTHcommit()
 	blist[1] = ABS(user->batCacheid);
 	assert(pass);
 	blist[2] = ABS(pass->batCacheid);
-	assert(pass);
-	blist[3] = ABS(scen->batCacheid);
-	TMsubcommit_list(blist, 4);
+	TMsubcommit_list(blist, 3);
 }
 
 @-
@@ -191,13 +188,12 @@ AUTHinitTables() {
 	str msg = MAL_SUCCEED;
 
 	/* skip loading if already loaded */
-	if (user != NULL && pass != NULL && scen != NULL)
+	if (user != NULL && pass != NULL)
 		return(MAL_SUCCEED);
 
 	/* if one is not NULL here, something is seriously screwed up */
 	assert (user == NULL);
 	assert (pass == NULL);
-	assert (scen == NULL);
 
 	/* load/create users BAT */
 	bid = BBPindex("M5system_auth_user");
@@ -232,23 +228,6 @@ AUTHinitTables() {
 	assert(b);
 	pass = b;
 
-	/* load/create scenario BAT */
-	bid = BBPindex("M5system_auth_scen");
-	if (!bid) {
-		b = BATnew(TYPE_oid, TYPE_str, 256);
-		if (b == NULL)
-			throw(MAL, "initTables.scen", MAL_MALLOC_FAIL " scenario table");
-
-		BATkey(b, TRUE);
-		BBPrename(BBPcacheid(b), "M5system_auth_scen");
-		BATmode(b, PERSISTENT);
-	} else {
-		b = BATdescriptor(bid);
-		isNew = 0;
-	}
-	assert(b);
-	scen = b;
-
 	if (isNew == 1) {
 		/* insert the monetdb/monetdb administrator account on a
 		 * complete fresh and new auth tables system */
@@ -276,6 +255,8 @@ AUTHinitTables() {
 /**
  * Checks the credentials supplied and throws an exception if invalid.
  * The user id of the authenticated user is returned upon success.
+ * The scenario argument is ignored and should be removed on the next
+ * ABI bump.
  */
 str
 AUTHcheckCredentials(
@@ -290,7 +271,6 @@ AUTHcheckCredentials(
 	str tmp, msg= MAL_SUCCEED;
 	str pwd = NULL;
 	str hash = NULL;
-	BAT *b;
 	BUN p, q;
 	oid *id;
 	BATiter useri, passi;
@@ -298,7 +278,6 @@ AUTHcheckCredentials(
 	rethrow("checkCredentials", tmp, AUTHrequireAdminOrUser(c, username));
 	assert(user);
 	assert(pass);
-	assert(scen);
 
 	if (*username == NULL || strNil(*username))
 		throw(INVCRED, "checkCredentials", "invalid credentials for unknown user");
@@ -342,53 +321,21 @@ AUTHcheckCredentials(
 	}
 	GDKfree(hash);
 
-	/* now see if the scenario is permitted (if restrictions for that
-	 * apply)
-	 */
-	b = BATselect(scen, id, id);
-	if (b && BATcount(b) > 0) {
-		BATiter bi = bat_iterator(b);
-
-		if (*scenario == NULL || strNil(*scenario)) {
-			BBPunfix(b->batCacheid);
-			/* of course we DO NOT tell the exact reason here again */
-			throw(INVCRED, "checkCredentials", INVCRED_INVALID_USER " '%s'",*username);
-		}
-
-		/* ok, there are some tuples that we have to consider */
-		BATloop(b, p, q) {
-			tmp = (str)BUNtail(bi, p);
-			assert (tmp != NULL);
-			if (strcmp(*scenario, tmp) == 0) {
-				/* YAY!  fun!  party!  We are granted access! */
-				*uid = *id;
-				BBPunfix(b->batCacheid);
-				return(MAL_SUCCEED);
-			}
-		}
-
-		BBPunfix(b->batCacheid);
-		/* uh oh... that we made it till here means it's wrong */
-		throw(INVCRED, "checkCredentials", INVCRED_INVALID_USER " '%s'",  *username);
-	} else {
-		/* no scenario restriction applies, so everything is good */
-		if (b) 
-			BBPunfix(b->batCacheid);
-		*uid = *id;
-		return(MAL_SUCCEED);
-	}
+	/* scenario restrictions are legacy from the past, we don't check
+	 * this any more, so all is good */
+	(void)scenario;
+	*uid = *id;
+	return(MAL_SUCCEED);
 }
 
 /**
  * Adds the given user with password to the administration.  The scens
- * BAT contains all scenarios allowed for the user.  If NULL or empty,
- * no restrictions for a scenario applies.  The return value of this
- * function is the user id of the added user.
+ * BAT is ignored, and should be removed on the next ABI bump.  The
+ * return value of this function is the user id of the added user.
  */
 str
 AUTHaddUser(oid *uid, Client *c, str *username, str *passwd, bat *scenarios) {
-	BUN p, q;
-	BAT *b;
+	BUN p;
 	oid *id;
 	str tmp;
 	str hash;
@@ -397,7 +344,6 @@ AUTHaddUser(oid *uid, Client *c, str *username, str *passwd, bat *scenarios) {
 	rethrow("addUser", tmp, AUTHrequireAdmin(c));
 	assert(user);
 	assert(pass);
-	assert(scen);
 	
 	/* some pre-condition checks */
 	if (*username == NULL || strNil(*username))
@@ -423,30 +369,8 @@ AUTHaddUser(oid *uid, Client *c, str *username, str *passwd, bat *scenarios) {
 	useri = bat_iterator(user);
 	id = (oid*)(BUNhead(useri, p));
 
-	if (*scenarios != 0) {
-		b = BATdescriptor(*scenarios);
-		if (b == NULL) {
-			BATundo(user);
-			BATundo(pass);
-			throw(ILLARG, "addUser", INTERNAL_BAT_ACCESS);
-		}
-		if (b->htype != TYPE_str) {
-			BATundo(user);
-			BATundo(pass);
-			BBPreleaseref(b->batCacheid);
-			throw(ILLARG, "addUser", INTERNAL_BAT_HEAD);
-		}
-
-		/* associate scenarios given in the BAT with the user */
-		if (BATcount(b) > 0){
-			BATiter bi = bat_iterator(b);
-			BATloop(b, p, q) {
-				/* needs force, as sql makes a view over it */
-				BUNins(scen, id, BUNhead(bi, p), TRUE);
-			}
-		}
-		BBPreleaseref(b->batCacheid);
-	}
+	/* scenarios are no longer checked */
+	(void)scenarios;
 
 	/* make the stuff persistent */
 	AUTHcommit();
@@ -456,8 +380,7 @@ AUTHaddUser(oid *uid, Client *c, str *username, str *passwd, bat *scenarios) {
 }
 
 /**
- * Removes the given user from the administration.  All scenarios (if
- * any) and the password are removed as well.
+ * Removes the given user from the administration.
  */
 str
 AUTHremoveUser(Client *c, str *username) {
@@ -470,7 +393,6 @@ AUTHremoveUser(Client *c, str *username) {
 	rethrow("removeUser", tmp, AUTHrequireAdmin(c));
 	assert(user);
 	assert(pass);
-	assert(scen);
 
 	/* pre-condition check */
 	if (*username == NULL || strNil(*username))
@@ -494,8 +416,6 @@ AUTHremoveUser(Client *c, str *username) {
 	b = BATmirror(BATselect(BATmirror(pass), &id, &id));
 	assert(BATcount(b) != 0);
 	BATdel(pass, b, FALSE);
-	b = BATmirror(BATselect(BATmirror(scen), &id, &id));
-	BATdel(scen, b, TRUE);
 
 	/* make the stuff persistent */
 	AUTHcommit();
@@ -649,93 +569,29 @@ AUTHsetPassword(Client *c, str *username, str *passwd) {
 }
 
 /**
- * Adds the given scenario to the list of allowed scenarios for the
- * given user.  Note that this can result in unexpected behaviour when
- * there where previously no scenarios defined for the user (which means
- * all scenarios are permitted).
+ * Obsolete function.  Retained for ABI compatibility.  Should be
+ * removed with next ABI bump.
  */
 str
 AUTHaddScenario(Client *c, str *username, str *scenario) {
-	BUN p;
-	str tmp;
-	oid *id;
-	BAT *b;
-	BATiter useri;
+	(void)c;
+	(void)username;
+	(void)scenario;
 
-	rethrow("addScenario", tmp, AUTHrequireAdmin(c));
-
-	/* precondition checks */
-	if (*username == NULL || strNil(*username))
-		throw(ILLARG, "addScenario", "username should not be nil");
-	if (*scenario == NULL || strNil(*scenario))
-		throw(ILLARG, "addScenario", "scenario should not be nil");
-
-	/* see if the user is valid */
-	p = BUNfnd(BATmirror(user), *username);
-	if (p == BUN_NONE)
-		throw(MAL, "addScenario", "user '%s' does not exist", *username);
-	useri = bat_iterator(user);
-	id = (oid*)BUNhead(useri, p);
-
-	/* see if this scenario is not already there */
-	b = BATselect(BATmirror(scen), id, id);
-	b = BATselect(BATmirror(b), *scenario, *scenario);
-	if (BATcount(b) == 1)
-		throw(MAL, "addScenario", "scenario '%s' already exists for user '%s'", *scenario, *username);
-	if (BATcount(b) > 1)
-		throw(MAL, "addScenario", "inconsistent authorisation administration, scenario '%s' multiple times defined", *scenario);
-
-	/* add the scenario for this user, use force as sql makes view over it */
-	BUNins(scen, BUNhead(useri, p), *scenario, TRUE);
-	AUTHcommit();
-
-	return(MAL_SUCCEED);
+	throw(MAL, "addScenario", "scenario-based authorisation is no longer supported");
 }
 
 /**
- * Removes the given scenario from the list of allowed scenarios for the
- * given user.  Note that removing the last allowed scenario results in
- * the opposite effect: it will allow any scenario to be used.
+ * Obsolete function.  Retained for ABI compatibility.  Should be
+ * removed with next ABI bump.
  */
 str
 AUTHremoveScenario(Client *c, str *username, str *scenario) {
-	BUN p;
-	BAT *b;
-	oid *id;
-	str tmp;
-	BATiter useri;
+	(void)c;
+	(void)username;
+	(void)scenario;
 
-	rethrow("removeScenario", tmp, AUTHrequireAdmin(c));
-
-	/* precondition checks */
-	if (*username == NULL || strNil(*username))
-		throw(ILLARG, "removeScenario", "username should not be nil");
-	if (*scenario == NULL || strNil(*scenario))
-		throw(ILLARG, "removeScenario", "scenario should not be nil");
-
-	/* see if the user is valid */
-	p = BUNfnd(BATmirror(user), *username);
-	if (p == BUN_NONE)
-		throw(MAL, "removeScenario", "user '%s' does not exist", *username);
-	useri = bat_iterator(user);
-	id = (oid*)BUNhead(useri, p);
-
-	/* see if the scenario is valid for this user */
-	b = BATselect(BATmirror(scen), id, id);
-	if (BATcount(b) != 1)
-		throw(MAL, "removeScenario", "scenario '%s' not found for user '%s'", *scenario, *username);
-	b = BATselect(BATmirror(b), *scenario, *scenario);
-	if (BATcount(b) == 0)
-		throw(MAL, "removeScenario", "scenario '%s' not found for user '%s'", *scenario, *username);
-	if (BATcount(b) > 1)
-		throw(MAL, "removeScenario", "inconsistent authorisation administration, scenario '%s' multiple times defined", *scenario);
-
-	/* ok, remove it */
-	if (scen)
-		BATdel(scen, (b), TRUE);
-	AUTHcommit();
-
-	return(MAL_SUCCEED);
+	throw(MAL, "removeScenario", "scenario-based authorisation is no longer supported");
 }
 
 /**
@@ -797,61 +653,18 @@ AUTHgetUsername(str *username, Client *c) {
 
 /**
  * Returns a BAT with user names in the tail, and user ids in the head.
- * Only those users are returned that have access to all of the given
- * scenarios.
+ * The scenarios argument is ignored.  It should be removed upon the
+ * next ABI change.
  */
 str
 AUTHgetUsers(BAT **ret, Client *c, bat *scenarios) {
-	BAT *b, *r;
 	str tmp;
 
 	rethrow("getUsers", tmp, AUTHrequireAdmin(c));
 
-	if (*scenarios != 0) {
-		b = BATdescriptor(*scenarios);
-		if (b == NULL)
-			throw(ILLARG, "getUsers", "invalid BAT!");
-		if (b->htype != TYPE_str)
-			throw(ILLARG, "getUsers", "BAT should have str head");
-
-		if (BATcount(b) == 0) {
-			/* we can simply copy the whole users table, as there is no
-			 * selection */
-			r = BATcopy(user, user->htype, user->ttype, FALSE);
-		} else {
-			BAT *t1, *t2, *t3;
-			
-			/* we have to do some work in order to return the requested
-			 * rows; only those that have the given scenario(s) (all of
-			 * them) */
-
-			/* all users with no scenarios are always in the return
-			 * list, we find them by "inversing" the list of users
-			 * *with* a scenario */
-			t1 = BATkdiff(user, t2=BATkunique(scen));
-			BBPunfix(t2->batCacheid);
-			
-			/* find users with one or more scenarios in the given BAT */
-			t2 = BATjoin(scen, b, BATcount(scen));
-			t3 = BATkunique(t2);
-			BBPunfix(t2->batCacheid);
-			t2 = VIEWcombine(t3);
-			BBPunfix(t3->batCacheid);
-			t3 = BATjoin(t2, user, BATcount(user));
-			BBPunfix(t2->batCacheid);
-
-			/* the final result is the union of both (we can discard the
-			 * tail, as they *should* be equal when the heads are equal
-			 * too... */
-			r = BATkunion(t1, t3);
-			BBPunfix(t1->batCacheid);
-			BBPunfix(t3->batCacheid);
-		}
-		BBPunfix(*scenarios);
-	} else {
-		r = BATcopy(user, user->htype, user->ttype, FALSE);
-	}
-	*ret = r;
+	/* scenarios are no longer checked */
+	(void)scenarios;
+	*ret = BATcopy(user, user->htype, user->ttype, FALSE);
 	return(NULL);
 }
 
