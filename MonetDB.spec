@@ -526,18 +526,19 @@ developer, but if you do want to test, this is the package you need.
 %build
 
 %{configure} \
-        --enable-strict=no \
-        --enable-assert=no \
-        --enable-debug=no \
-        --enable-optimize=yes \
-        --enable-bits=%{bits} \
-	--enable-java=no \
+	--enable-strict=no \
+	--enable-assert=no \
+	--enable-debug=no \
+	--enable-optimize=yes \
+	--enable-bits=%{bits} \
+	--enable-jdbc=no \
+	--enable-merocontrol=no \
 	--enable-rdf=no \
 	--enable-fits=no \
 	--with-valgrind=no \
 	--with-mseed=no \
-        %{?oid32:--enable-oid32} \
-        %{?comp_cc:CC="%{comp_cc}"} \
+	%{?oid32:--enable-oid32} \
+	%{?comp_cc:CC="%{comp_cc}"} \
 	%{?_with_netcdf} %{?_without_netcdf}
 
 make
