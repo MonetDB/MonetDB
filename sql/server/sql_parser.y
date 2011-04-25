@@ -2710,7 +2710,7 @@ assignment:
 
 	{ dlist *l = L();
 	  append_symbol(l, $3 );
-	  append_string(l, $1);
+	  append_symbol(l, $1);
 	  $$ = _symbol_create_list( SQL_ASSIGN, l); }
 
  | column '=' sqlNULL
@@ -3025,7 +3025,7 @@ table_ref:
  |  array_dim_ref table_name { /* allow "s1.a1[x][1:2] AS <ident>" */
 	dlist *l = L();
 	l = append_symbol(l, $1);
-	l = append_list(l, $2);
+	l = append_symbol(l, $2);
 	$$ = _symbol_create_list( SQL_ARRAY, l);
 	}
 
@@ -3462,7 +3462,7 @@ value_exp:
 array_dim_ref:
 	qname index_exp_list { 
 		dlist *l = L();
-		l = append_string(l, $1);
+		l = append_list(l, $1);
 		l = append_list(l, $2);
 		$$ = _symbol_create_list( SQL_ARRAY_INDEX, l);
 		}
@@ -3472,7 +3472,7 @@ array_cell_ref:
 	array_dim_ref '.' ident { 
 		dlist *l = L();
 		l = append_symbol(l, $1);
-		l = append_list(l, $3);
+		l = append_string(l, $3);
 		$$ = _symbol_create_list( SQL_ARRAY_INDEX, l);
 		}
 ;
