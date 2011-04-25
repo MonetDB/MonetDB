@@ -6,6 +6,7 @@ includedir=@includedir@
 Name: monetdb-mapi
 Description: MonetDB MAPI C-client libary
 Version: @PACKAGE_VERSION@
+Requires: monetdb-stream openssl
 
-Libs: -L${libdir} -lmapi 
+Libs: -L${libdir} -lmapi @SOCKET_LIBS@
 Cflags: -I${includedir}/monetdb
