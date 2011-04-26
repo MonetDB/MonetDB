@@ -3143,7 +3143,6 @@ echo "    LDFLAGS:    " ${LDFLAGS}
 echo
 echo "* Enabled/disabled components:"
 for comp in \
-	common \
 	monetdb5 \
 	sql \
 	geom \
