@@ -2163,7 +2163,7 @@ if test "x$enable_rdf" != xno; then
 		[AC_DEFINE(HAVE_RAPTOR, 1, [Define if you have raptor installed])
 		 have_raptor="yes"],
 		[if test "x$enable_rdf" = xyes; then AC_MSG_ERROR([raptor library required for RDF support]); fi
-		 have_raptor="no"])
+		 have_raptor="no"; enable_rdf=no; disable_rdf="(raptor library not found)"])
 fi
 AM_CONDITIONAL(HAVE_RAPTOR, test x"$have_raptor" != xno)
 
@@ -2404,7 +2404,8 @@ have_cfitsio=no
 if test "x$enable_fits" != xno; then
 	PKG_CHECK_MODULES([cfitsio], [cfitsio],
 		[have_cfitsio=yes; AC_DEFINE(HAVE_CFITSIO, 1, [Define if you have the cfitsio library])],
-		[have_cfitsio=no; if test "x$enable_fits" = xyes; then AC_MSG_ERROR([cfitsio library required for FITS support]); fi])
+		[have_cfitsio=no; if test "x$enable_fits" = xyes; then AC_MSG_ERROR([cfitsio library required for FITS support]); fi;
+		 enable_fits=no; disable_fits="(cfitsio library not found)"])
 fi
 AM_CONDITIONAL(HAVE_CFITSIO, test x"$have_cfitsio" != xno)
 
