@@ -18,17 +18,16 @@ All Rights Reserved.
 @
 
 @f array
-@a A.R. van Ballegooij
+@a M.L. Kersten, Y.Zhang, M. Ivanova, A.R. van Ballegooij
 @+ Basic array support
 
 The array support library constructs the index arrays essential
-for the Relational Algebra Model language.
-The grid filler operation assumes that there is enough space.
+for the original Relational Algebra Model language.
+The grid filler sets all elements to a vaule.It assumes that there is enough space.
 The shift variant multiplies all elements with a constant factor.
-It is a recurring operation for the RAM front-end and will save
+It is a recurring operation for the original RAM front-end and saves
 an additional copying.
 
-The optimization is captured in a contraction macro.
 @{
 
 @mal
@@ -43,26 +42,23 @@ address ARRAYgridShift_@1
 comment  "Generates an index BAT, (grpcount,grpsize,clustersize,offset)
 and shift all elements with a factor s";
 
-command grid(b:bat[:oid,:@1],i:@1,j:@1,k:@1,l:@1) :bat[:oid,:@1] 
-address ARRAYgridBAT_@1
-comment  "Fills an index BAT, (grpcount,grpsize,clustersize,offset)";
-
-command grid(b:bat[:oid,:@1],i:@1,j:@1,k:@1,l:@1,s:@1) :bat[:oid,:@1] 
-address ARRAYgridBATshift_@1
-comment  "Fills an index BAT, (grpcount,grpsize,clustersize,offset)
-and shift all elemenets with a factor s";
-
 @mal
+@:grid_mdefs(sht)@
 @:grid_mdefs(int)@
 @:grid_mdefs(lng)@
+@:grid_mdefs(flt)@
+@:grid_mdefs(dbl)@
+@:grid_mdefs(date)@
+@:grid_mdefs(daytime)@
+@:grid_mdefs(timestamp)@
+
+command filler(b:bat[:oid,:any_1],i:any_1):bat[:oid,:any_1]
+address ARRAYfiller
+comment "Fill an array representation with constants ";
 
 command product(b:bat[:any_3,:any_1],c:bat[:any_4,:any_2]):bat[:any_1,:any_2]
 address ARRAYproduct
 comment "Produce an array product";
-
-command project(b:bat[:oid,:any_1],i:int):bat[:oid,:int]
-address ARRAYproject
-comment "Fill an array representation with constants ";
 
 @- Implementation
 @include ../mal/prelude.mx
@@ -72,8 +68,9 @@ comment "Fill an array representation with constants ";
 #ifndef __array_h__
 #define __array_h__
 
-#include <gdk.h>
-#include <algebra.h>		/* to include BATmin and BATmax */
+#include "gdk.h"
+#include "algebra.h"		/* to include BATmin and BATmax */
+#include "mtime.h"
 
 @= grid_hdefs
 #define new_@1_bat(b,s) {(b)=BATnew(TYPE_void,TYPE_@1,(BUN) (s)); \
@@ -84,8 +81,14 @@ comment "Fill an array representation with constants ";
                          (b)->tsorted = 0;                  }
 #define get_@1_ptr(b)   ((@1*)(Tloc(b,BUNfirst((b)))))
 @h
+@:grid_hdefs(sht)@
 @:grid_hdefs(int)@
 @:grid_hdefs(lng)@
+@:grid_hdefs(flt)@
+@:grid_hdefs(dbl)@
+@:grid_hdefs(date)@
+@:grid_hdefs(daytime)@
+@:grid_hdefs(timestamp)@
 
 /* The maximum number of dimensions that the print-function can handle... */
 #define MAX_ARRAY_DIM 16
@@ -113,15 +116,13 @@ comment "Fill an array representation with constants ";
 #endif
 
 array_export str ARRAYproduct(int *ret, int *bid, int *rid);
-array_export str ARRAYproject(int *ret, int *bid, int *cst);
+array_export str ARRAYfiller(int *ret, int *bid, int *cst);
 
 @= grid_impl
 array_export str ARRAYgrid_@1(@1 *ret, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset);
 array_export str ARRAYgridShift_@1(@1 *ret, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset, @1 *shift);
-array_export str ARRAYgridBAT_@1(@1 *ret, @1 *bid, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset);
-array_export str ARRAYgridBATshift_@1(@1 *ret, @1 *bid, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset, @1 *shift);
 
-int
+static int
 fillgrid_@1(BAT **out, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset, @1 *shift)
 {
 	register @1 *ptr;
@@ -198,8 +199,17 @@ gridShift_@1(BAT **out, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset, 
 }
 
 @c
+@:grid_impl(sht,"%d")@
 @:grid_impl(int,"%d")@
 @:grid_impl(lng,LLFMT)@
+@:grid_impl(flt,"%f")@
+@:grid_impl(dbl,"%f")@
+@-
+To be dealt with differently
+@:grid_impl(date,"%s")@
+@:grid_impl(daytime,"%s")@
+@:grid_impl(timestamp,"%s")@
+@c
 
 @+
 The M5 wrapper code
@@ -232,42 +242,17 @@ ARRAYgridShift_@1(@1 *ret, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offse
 	return MAL_SUCCEED;
 }
 
-str
-ARRAYgridBAT_@1(@1 *ret, @1 *bid, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset)
-{
-	BAT *bn;
-	@1 shift = 1;
-
-	if ((bn = BATdescriptor((bat) *bid)) == NULL) {
-		throw(MAL, "array.grid", RUNTIME_OBJECT_MISSING);
-	}
-
-	if (fillgrid_@1(&bn, groups, groupsize, clustersize, offset, &shift) == GDK_FAIL)
-		throw(MAL, "array.grid", MAL_MALLOC_FAIL);
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
-	*ret = bn->batCacheid;
-	BBPkeepref((int)*ret);
-	return MAL_SUCCEED;
-}
-
-str
-ARRAYgridBATshift_@1(@1 *ret, @1 *bid, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset, @1 *shift)
-{
-	BAT *bn;
-
-	if ((bn = BATdescriptor((bat) *bid)) == NULL) {
-		throw(MAL, "array.grid", RUNTIME_OBJECT_MISSING);
-	}
-	if (fillgrid_@1(&bn, groups, groupsize, clustersize, offset, shift) == GDK_FAIL)
-		throw(MAL, "array.grid", MAL_MALLOC_FAIL);
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
-	*ret = bn->batCacheid;
-	BBPkeepref((int)*ret);
-	return MAL_SUCCEED;
-}
 @c
+@:grid_wrapper_impl(sht)@
 @:grid_wrapper_impl(int)@
 @:grid_wrapper_impl(lng)@
+@:grid_wrapper_impl(flt)@
+@:grid_wrapper_impl(dbl)@
+@-
+to be dealt with differently
+@:grid_wrapper_impl(date)@
+@:grid_wrapper_impl(daytime)@
+@:grid_wrapper_impl(timestamp)@
 
 @-
 @= arraymultiply
@@ -312,6 +297,8 @@ ARRAYmultiply_@1_@2(int *ret, int *bid, int *rid){
 @:arraymultiply(int,int)@
 @:arraymultiply(int,lng)@
 @:arraymultiply(lng,lng)@
+@:arraymultiply(flt,flt)@
+@:arraymultiply(dbl,dbl)@
 
 str
 ARRAYproduct(int *ret, int *bid, int *rid)
@@ -356,18 +343,18 @@ ARRAYproduct(int *ret, int *bid, int *rid)
 }
 
 str
-ARRAYproject(int *ret, int *bid, int *cst)
+ARRAYfiller(int *ret, int *bid, int *cst)
 {
 	BAT *bn, *b;
 	int *ptr;
 	BUN i;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "array.project", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "array.filler", RUNTIME_OBJECT_MISSING);
 	}
 	new_int_bat(bn, BATcount(b));
 	if (bn == 0)
-		throw(MAL, "array.project", MAL_MALLOC_FAIL);
+		throw(MAL, "array.filler", MAL_MALLOC_FAIL);
 	i = BATcount(b);
 	add_ints(bn, i); 
 	ptr = get_int_ptr(bn);
