@@ -278,6 +278,35 @@ AC_DISABLE_STATIC
 AC_ENABLE_SHARED
 AM_CONDITIONAL(CROSS_COMPILING, test x$cross_compiling = xyes)
 
+dnl logs usually end up in /var/log
+logdir='${localstatedir}/log/monetdb'
+AC_ARG_WITH(logdir,
+	[--with-logdir=DIR     Where to put log files (LOCALSTATEDIR/log/monetdb/)],
+	[case "$withval" in
+		yes|no|auto)
+			AC_MSG_WARN([--with-logdir called without argument - will use default])
+		;;
+		*)
+			logdir="$withval"
+		;;
+	esac]
+)
+
+dnl pidfiles usually end up in /var/run
+rundir='${localstatedir}/run/monetdb'
+AC_ARG_WITH(rundir,
+	[--with-rundir=DIR     Where to put pid files (LOCALSTATEDIR/run/monetdb/)],
+	[case "$withval" in
+		yes|no|auto)
+			AC_MSG_WARN([--with-rundir called without argument - will use default])
+		;;
+		*)
+			rundir="$withval"
+		;;
+	esac]
+)
+
+
 dnl     checks for programs
 AC_LANG([C])
 
@@ -2930,6 +2959,14 @@ AC_SUBST(Qlocalstatedir)
 AC_SUBST(Xlocalstatedir)
 AC_SUBST(Elocalstatedir)
 AC_SUBST(QXlocalstatedir)
+Xlogdir="`$translatepath "$logdir"`"
+eval "Elogdir=${Xlogdir}"
+AC_SUBST(logdir)
+AC_SUBST(Elogdir)
+Xrundir="`$translatepath "$rundir"`"
+eval "Erundir=${Xrundir}"
+AC_SUBST(rundir)
+AC_SUBST(Erundir)
 Qlibdir="$libdir"
 Xlibdir="`$translatepath "$libdir"`"
 QXlibdir="`echo "$Xlibdir" | sed 's/\\\\/\\\\\\\\/g'`"
