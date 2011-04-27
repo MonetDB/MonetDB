@@ -216,8 +216,13 @@ logListener(void *x)
 
 		pthread_mutex_unlock(&_mero_topdp_lock);
 		
-		if (select(nfds + 1, &readfds, NULL, NULL, &tv) <= 0)
-			continue;
+		if (select(nfds + 1, &readfds, NULL, NULL, &tv) <= 0) {
+			if (_mero_keep_logging != 0) {
+				continue;
+			} else {
+				break;
+			}
+		}
 
 		pthread_mutex_lock(&_mero_topdp_lock);
 
@@ -235,7 +240,7 @@ logListener(void *x)
 		pthread_mutex_unlock(&_mero_topdp_lock);
 
 		fflush(_mero_logfile);
-	} while (_mero_keep_logging != 0);
+	} while (1);
 }
 
 /**
