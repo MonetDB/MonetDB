@@ -1,0 +1,53 @@
+stdout of test 'crash_on_alias.Bug-2798` in directory 'test/BugTracker-2011` itself:
+
+
+# 14:09:56 >  
+# 14:09:56 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/net/volund.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-Apr2011-volund.ins.cwi.nl/sql/dbfarm" --set mapi_open=true --set mapi_port=31436 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_test_BugTracker-2011" --set mal_listing=0 ; echo ; echo Over..
+# 14:09:56 >  
+
+# MonetDB 5 server v11.3.1 "Apr2011-f9a21e4aaff7"
+# Serving database 'mTests_test_BugTracker-2011', using 4 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://volund.ins.cwi.nl:31436/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+could not find (null).e
+dbg.d
+dbg.L10
+L12.L12
+dbg.d
+
+Over..
+
+# 14:09:56 >  
+# 14:09:56 >  mclient -lsql -ftest -i -e --host=volund --port=31436 
+# 14:09:56 >  
+
+#START TRANSACTION;
+#CREATE TABLE dbg (a INT, b INT);
+#INSERT INTO dbg (a,b) VALUES (10,10);
+[ 1	]
+#SELECT a as d, SUM(b), (2 * (SUM(b) / (SELECT 2))) as f FROM dbg GROUP BY d;
+% sys.dbg,	sys.dbg,	. # table_name
+% d,	L3,	f # name
+% int,	bigint,	bigint # type
+% 2,	2,	2 # length
+[ 10,	10,	10	]
+#SELECT a as d, SUM(b) as e, (2 * (SUM(b) / (SELECT 2))) as f FROM dbg GROUP BY d;
+% sys.dbg,	sys.dbg,	. # table_name
+% d,	e,	f # name
+% int,	bigint,	bigint # type
+% 2,	2,	2 # length
+[ 10,	10,	10	]
+
+# 14:09:56 >  
+# 14:09:56 >  Done.
+# 14:09:56 >  
+
