@@ -2162,17 +2162,21 @@ req_pcre_ver='4.5'
 PKG_CHECK_MODULES([pcre], [libpcre >= $req_pcre_ver],
 	[have_pcre=yes], [have_pcre=no])
 if test "x$have_pcre" = xyes; then
-	AC_PATH_PROG(PCRETEST,pcretest)
-	if test "x$PCRETEST" = x; then
-		AC_MSG_ERROR([could not find pcretest])
-	else
-		AC_MSG_CHECKING(whether pcre comes with UTF-8 support)
-		pcre_utf8="`$PCRETEST -C 2>/dev/null | grep 'UTF-8 support' | sed -e 's|^ *||' -e 's| *$||'`"
-		if test "x$pcre_utf8" != "xUTF-8 support"; then
-			AC_MSG_ERROR([PCRE library compiled without UTF-8 support])
-		fi
-		AC_MSG_RESULT([yes])
-	fi
+	AC_MSG_CHECKING(whether pcre comes with UTF-8 support)
+	save_LIBS="$LIBS"
+	LIBS="$LIBS $pcre_LIBS"
+	save_CFLAGS="$CFLAGS"
+	CFLAGS="$CFLAGS $pcre_CFLAGS"
+	AC_RUN_IFELSE(AC_LANG_PROGRAM(
+		[#include <pcre.h>],
+		[int rc; pcre_config(PCRE_CONFIG_UTF8, &rc); exit(!rc);]),
+		AC_MSG_RESULT([yes]),
+		have_pcre=no; AC_MSG_RESULT([no]),
+		AC_MSG_RESULT([assuming yes]))
+	LIBS="$save_LIBS"
+	CFLAGS="$save_CFLAGS"
+fi
+if test "x$have_pcre" = xyes; then
 	AC_DEFINE(HAVE_LIBPCRE, 1, [Define if you have the pcre library])
 fi
 AM_CONDITIONAL(HAVE_PCRE, test x"$have_pcre" != xno)
