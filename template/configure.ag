@@ -17,7 +17,7 @@
 
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.60)
-AC_INIT([MonetDB template], [11.3.1], [info@monetdb.org], [MonetDB-template])
+AC_INIT([MonetDB template], [11.3.2], [info@monetdb.org], [MonetDB-template])
 #                            ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.

@@ -21,7 +21,7 @@ dnl All Rights Reserved.
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.60)
-AC_INIT([MonetDB], [11.3.1], [info@monetdb.org], [MonetDB])
+AC_INIT([MonetDB], [11.3.2], [info@monetdb.org], [MonetDB])
 AC_CONFIG_AUX_DIR([buildtools/conf])
 AC_CONFIG_MACRO_DIR([buildtools/conf])
 AC_CANONICAL_HOST
