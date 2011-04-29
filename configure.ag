@@ -2167,9 +2167,9 @@ if test "x$have_pcre" = xyes; then
 	LIBS="$LIBS $pcre_LIBS"
 	save_CFLAGS="$CFLAGS"
 	CFLAGS="$CFLAGS $pcre_CFLAGS"
-	AC_RUN_IFELSE(AC_LANG_PROGRAM(
-		[#include <pcre.h>],
-		[int rc; pcre_config(PCRE_CONFIG_UTF8, &rc); exit(!rc);]),
+	AC_RUN_IFELSE([AC_LANG_PROGRAM(
+		[[#include <pcre.h>]],
+		[[int rc; pcre_config(PCRE_CONFIG_UTF8, &rc); exit(!rc);]])],
 		AC_MSG_RESULT([yes]),
 		have_pcre=no; AC_MSG_RESULT([no]),
 		AC_MSG_RESULT([assuming yes]))
