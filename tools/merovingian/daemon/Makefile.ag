@@ -17,9 +17,9 @@
 
 man_MANS = monetdbd.1
 
-monetdb_var_logdir = $(localstatedir)/log/monetdb
+monetdb_var_logdir = $(logdir)
 monetdb_var_log_DATA = 
-monetdb_var_rundir = $(localstatedir)/run/monetdb
+monetdb_var_rundir = $(rundir)
 monetdb_var_run_DATA = 
 monetdb_var_dbfarmdir = $(localstatedir)/monetdb5/dbfarm
 monetdb_var_dbfarm_DATA = .merovingian_properties

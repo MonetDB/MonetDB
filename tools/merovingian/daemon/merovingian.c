@@ -59,7 +59,7 @@
 
 #include "monetdb_config.h"
 #include <msabaoth.h>
-#include <mutils.h>
+#include <mutils.h> /* MT_lockf */
 #include <utils/utils.h>
 #include <utils/properties.h>
 #include <utils/glob.h>

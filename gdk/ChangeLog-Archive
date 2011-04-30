@@ -3,7 +3,7 @@
 
 * Thu Apr 14 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.3.1-20110414
 - Fixed bugs in antiselect which gave the incorrect result when upper
-  and lower bount were equal.  This bug could be triggered by the SQL
+  and lower bound were equal.  This bug could be triggered by the SQL
   query SELECT * FROM t WHERE x NOT BETWEEN y AND y.
 
 * Tue Mar 22 2011 Fabian Groffen <fabian@cwi.nl> - 11.1.1-20110324
