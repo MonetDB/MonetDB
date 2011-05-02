@@ -24,5 +24,5 @@
 # is, however, crucial that the file locations in this file are present.
 
 
-logfile=@Elocalstatedir@@DIRSEP@log@DIRSEP@monetdb@DIRSEP@merovingian.log
-pidfile=@Elocalstatedir@@DIRSEP@run@DIRSEP@monetdb@DIRSEP@merovingian.pid
+logfile=@Elogdir@@DIRSEP@merovingian.log
+pidfile=@Erundir@@DIRSEP@merovingian.pid

@@ -588,7 +588,7 @@ rm -fr $RPM_BUILD_ROOT
 
 * Thu Apr 14 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.3.1-20110414
 - gdk: Fixed bugs in antiselect which gave the incorrect result when upper
-  and lower bount were equal.  This bug could be triggered by the SQL
+  and lower bound were equal.  This bug could be triggered by the SQL
   query SELECT * FROM t WHERE x NOT BETWEEN y AND y.
 
 * Thu Apr 14 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.3.1-20110414
