@@ -2953,10 +2953,14 @@ AC_SUBST(Elocalstatedir)
 AC_SUBST(QXlocalstatedir)
 Xlogdir="`$translatepath "$logdir"`"
 eval "Elogdir=${Xlogdir}"
+# need second eval because localstatedir defaults to being ${prefix}/var
+eval "Elogdir=${Elogdir}"
 AC_SUBST(logdir)
 AC_SUBST(Elogdir)
 Xrundir="`$translatepath "$rundir"`"
 eval "Erundir=${Xrundir}"
+# need second eval because localstatedir defaults to being ${prefix}/var
+eval "Erundir=${Erundir}"
 AC_SUBST(rundir)
 AC_SUBST(Erundir)
 Qlibdir="$libdir"
