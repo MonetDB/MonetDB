@@ -29,6 +29,7 @@ lib_mal = {
 	NOINST
 	SOURCES = \
 		algebraExtensions.mx \
+		array.mx \
 		attach.mx \
 		batExtensions.mx \
 		bbp.mx \
@@ -71,7 +72,7 @@ lib_mal = {
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
-	SOURCES = language.mx constraints.mx mal_init.mx box.mx bbp.mx \
+	SOURCES = array.mx language.mx constraints.mx mal_init.mx box.mx bbp.mx \
 		profiler.mx const.mx attach.mx batExtensions.mx algebraExtensions.mx \
 		inspect.mx manual.mx mal_io.mx pqueue.mx mkey.mx \
 		chopper.mx clients.mx \

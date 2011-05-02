@@ -21,13 +21,17 @@ All Rights Reserved.
 @a M.L. Kersten, Y.Zhang, M. Ivanova, A.R. van Ballegooij
 @+ Basic array support
 
-The array support library constructs the index arrays essential
-for the original Relational Algebra Model language.
-The grid filler sets all elements to a vaule.It assumes that there is enough space.
-The shift variant multiplies all elements with a constant factor.
-It is a recurring operation for the original RAM front-end and saves
-an additional copying.
+Arrays are represented by a series of BATs. One for each dimension
+and one for the value. The structure of the dimension is captured in
+a shape description, which is an ordered list of tripples
+(F,L,S) where for index variable i the constraint F<=i<L holds
+and where the step size is S.
 
+In the MAL instructions the shape descriptor should be the last
+of the arguments. Since every dimension can be of a different
+type, we have to rely on runtime type checking. Of course,
+the SciQL compiler already can ensure proper type equality
+for each shape tripple.
 @{
 
 @mal
@@ -35,11 +39,11 @@ module array;
 @= grid_mdefs
 command grid(i:@1,j:@1,k:@1,l:@1) :bat[:oid,:@1] 
 address ARRAYgrid_@1
-comment  "Generates an index BAT, (grpcount,grpsize,clustersize,offset)";
+comment  "Generates a dimension BAT, (grpcount,grpsize,clustersize,offset)";
 
 command grid(i:@1,j:@1,k:@1,l:@1,s:@1) :bat[:oid,:@1] 
 address ARRAYgridShift_@1
-comment  "Generates an index BAT, (grpcount,grpsize,clustersize,offset)
+comment  "Generates a dimension BAT, (grpcount,grpsize,clustersize,offset)
 and shift all elements with a factor s";
 
 @mal
@@ -52,9 +56,18 @@ and shift all elements with a factor s";
 @:grid_mdefs(daytime)@
 @:grid_mdefs(timestamp)@
 
-command filler(b:bat[:oid,:any_1],i:any_1):bat[:oid,:any_1]
+pattern filler(v:any_1, shape:any...):bat[:oid,:any_1]
 address ARRAYfiller
-comment "Fill an array representation with constants ";
+comment "Create an array representation described by the shape vector filled with V";
+
+pattern select(a:bat[:oid,:any_1], shape:any...):bat[:oid,:any_1]
+address ARRAYselect
+comment "Extract a value portion of an array representation described by two shapes,
+one with the structure of A and the other with the portion required.";
+
+pattern index(shape:any...):bat[:oid,:any]...
+address ARRAYselect
+comment "Extract a dimension portion of an array representation described by two shapes";
 
 command product(b:bat[:any_3,:any_1],c:bat[:any_4,:any_2]):bat[:any_1,:any_2]
 address ARRAYproduct
@@ -98,6 +111,7 @@ comment "Produce an array product";
 @c
 /*============================================================================*/
 #include "monetdb_config.h"
+#include "mal_client.h"
 #include "array.h"
 #include "gdk.h"
 #include <math.h>
@@ -116,7 +130,9 @@ comment "Produce an array product";
 #endif
 
 array_export str ARRAYproduct(int *ret, int *bid, int *rid);
-array_export str ARRAYfiller(int *ret, int *bid, int *cst);
+array_export str ARRAYfiller(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+array_export str ARRAYselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+array_export str ARRAYindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 @= grid_impl
 array_export str ARRAYgrid_@1(@1 *ret, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset);
@@ -209,10 +225,7 @@ To be dealt with differently
 @:grid_impl(date,"%s")@
 @:grid_impl(daytime,"%s")@
 @:grid_impl(timestamp,"%s")@
-@c
 
-@+
-The M5 wrapper code
 @c
 #include "mal.h"
 @= grid_wrapper_impl
@@ -343,28 +356,33 @@ ARRAYproduct(int *ret, int *bid, int *rid)
 }
 
 str
-ARRAYfiller(int *ret, int *bid, int *cst)
+ARRAYfiller(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	BAT *bn, *b;
-	int *ptr;
-	BUN i;
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) p;
+	throw(MAL,"array.filler", PROGRAM_NYI);
+}
 
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "array.filler", RUNTIME_OBJECT_MISSING);
-	}
-	new_int_bat(bn, BATcount(b));
-	if (bn == 0)
-		throw(MAL, "array.filler", MAL_MALLOC_FAIL);
-	i = BATcount(b);
-	add_ints(bn, i); 
-	ptr = get_int_ptr(bn);
+str
+ARRAYselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) p;
+	throw(MAL,"array.select", PROGRAM_NYI);
+}
 
-	while (i-- > 0)
-		(*(ptr ++)) = *cst;
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
-	*ret = bn->batCacheid;
-	BBPkeepref(*ret);
-	return MAL_SUCCEED;
+str
+ARRAYindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) p;
+	throw(MAL,"array.select", PROGRAM_NYI);
 }
 
 

@@ -40,7 +40,6 @@ lib_kernel = {
 		aggr.mx \
 		alarm.mx \
 		algebra.mx \
-		array.mx \
 		bat5.mx \
 		batcalc.mx \
 		batcast.mx \
@@ -67,7 +66,7 @@ headers_mal = {
 	SOURCES = calc.mx bat5.mx algebra.mx status.mx unix.mx \
 		mmath.mx lock.mx sema.mx alarm.mx batstr.mx batmtime.mx \
 		batcolor.mx batifthen.mx batcast.mx batcalc.mx batmmath.mx \
-		group.mx aggr.mx array.mx \
+		group.mx aggr.mx \
 		counters.mx logger.mx microbenchmark.mx
 }
 
