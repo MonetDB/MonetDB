@@ -41,10 +41,6 @@ QUERY = create array err2( x integer dimension[1:10:1]);
 ERROR = !arrays must have at least one non-dimensional attribute
 
 MAPI  = monetdb@jarl:31052
-QUERY = create array err2( x integer dimension[1:10:1]);
-ERROR = !arrays must have at least one non-dimensional attribute
-
-MAPI  = monetdb@jarl:31052
 QUERY = create array err3( x char dimension[1:128:1], v float);
 ERROR = !data type of dimension range (int) does not match data type of dimension (char)
 
@@ -75,10 +71,6 @@ ERROR = !SQLException:sql.catalog:SQLException:sql.catalog:types boolean(1,0) an
 MAPI  = monetdb@jarl:31052
 QUERY = drop array err1;
 ERROR = !SQLException:sql.catalog:DROP ARRAY: no such array 'err1'
-
-MAPI  = monetdb@jarl:31052
-QUERY = drop array err2;
-ERROR = !SQLException:sql.catalog:DROP ARRAY: no such array 'err2'
 
 MAPI  = monetdb@jarl:31052
 QUERY = drop array err3;
