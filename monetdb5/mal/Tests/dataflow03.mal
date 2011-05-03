@@ -1,0 +1,43 @@
+# simple test for graph admin
+
+function f(b:int):int;
+return f:= b;
+end f;
+function f(a:int,b:int):int;
+return f:= a+b;
+end f;
+
+function sequential();
+  A0:=1;
+  z:= -1;
+  x0:= f(A0);
+  x1:= f(x0);
+  y:= f(x1,x0);
+  w:= f(1,x0);
+  a:= f(x1,x1); #wakeup only once
+  z:= f(y,x0);
+  y:= f(z);
+  z:= f(y);
+  z:= f(z);
+  io.print(z);
+end sequential;
+
+function qry();
+  A0:=1;
+  z:= -1;
+barrier x:= language.dataflow();
+  x0:= f(A0);
+  x1:= f(x0);
+  y:= f(x1,x0);
+  w:= f(1,x0);
+  a:= f(x1,x1);
+  z:= f(y,x0);
+  y:= f(z);
+  z:= f(y);
+  z:= f(z);
+exit x;
+  io.print(z);
+end qry;
+
+sequential();
+qry();

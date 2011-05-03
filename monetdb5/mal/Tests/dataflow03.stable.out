@@ -1,0 +1,67 @@
+stdout of test 'dataflow03` in directory 'mal` itself:
+
+
+# 13:00:32 >  
+# 13:00:32 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/ufs/mk/current//Linux/var/MonetDB" --set mapi_open=true --set mapi_port=36857 --set monet_prompt= --trace --forcemito --set mal_listing=2  --dbname=mTests_mal  dataflow03.mal
+# 13:00:32 >  
+
+# MonetDB 5 server v11.4.0
+# This is an unreleased version
+# Serving database 'mTests_mal', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:36857/
+# MonetDB/SQL module loaded
+# MonetDB/GIS module loaded
+function user.f(b:int):int;
+    return f := b;
+end f;
+function user.f(a:int,b:int):int;
+    return f := calc.+(a,b);
+end f;
+function user.sequential():void;
+    A0 := 1;
+    z := -1;
+    x0 := user.f(A0);
+    x1 := user.f(x0);
+    y := user.f(x1,x0);
+    w := user.f(1,x0);
+    a := user.f(x1,x1);
+#wakeup only once 
+    z := user.f(y,x0);
+    y := user.f(z);
+    z := user.f(y);
+    z := user.f(z);
+    io.print(z);
+end sequential;
+function user.qry():void;
+    A0 := 1;
+    z := -1;
+barrier x := language.dataflow();
+    x0 := user.f(A0);
+    x1 := user.f(x0);
+    y := user.f(x1,x0);
+    w := user.f(1,x0);
+    a := user.f(x1,x1);
+    z := user.f(y,x0);
+    y := user.f(z);
+    z := user.f(y);
+    z := user.f(z);
+exit x;
+    io.print(z);
+end qry;
+function user.main():void;
+# simple test for graph admin 
+    user.sequential();
+    user.qry();
+end main;
+[ 3 ]
+[ 3 ]
+
+# 13:00:32 >  
+# 13:00:32 >  Done.
+# 13:00:32 >  
+
