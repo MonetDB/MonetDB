@@ -1,0 +1,33 @@
+stdout of test 'tst819` in directory 'mal` itself:
+
+
+# 21:21:41 >  
+# 21:21:41 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/ufs/mk/current//Linux/var/MonetDB" --set mapi_open=true --set mapi_port=39275 --set monet_prompt= --trace --forcemito --set mal_listing=2  --dbname=mTests_mal  tst819.mal
+# 21:21:41 >  
+
+# MonetDB 5 server v11.4.0
+# This is an unreleased version
+# Serving database 'mTests_mal', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:39275/
+# MonetDB/SQL module loaded
+# MonetDB/GIS module loaded
+function user.extralongfunctionsignature(p1:bat[:oid,:sht],p2:bat[:oid,:sht]):bat[:oid,:sht];
+    b := bat.new(:oid,:sht);
+    return extralongfunctionsignature := b;
+end extralongfunctionsignature;
+function user.main():void;
+#extra long signature 
+    p1 := bat.new(:oid,:sht);
+    p2 := bat.new(:oid,:sht);
+    z := user.extralongfunctionsignature(p1,p2);
+end main;
+
+# 21:21:41 >  
+# 21:21:41 >  Done.
+# 21:21:41 >  
+
