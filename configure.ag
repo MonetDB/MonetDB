@@ -2522,8 +2522,6 @@ if test "x$have_setsockopt" = xno; then
 	  AC_CHECK_LIB(socket, setsockopt, [ SOCKET_LIBS="-lsocket $SOCKET_LIBS"; have_setsockopt=yes; ]))
 fi
 
-AC_CHECK_HEADERS([sys/socket.h winsock.h])
-
 have_getaddrinfo=no
 save_LIBS="$LIBS"
 LIBS="$LIBS $SOCKET_LIBS"
