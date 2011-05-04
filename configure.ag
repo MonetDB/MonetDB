@@ -2483,6 +2483,7 @@ AC_CHECK_HEADERS([crypt.h \
 	sys/time.h \
 	sys/times.h \
 	sys/types.h \
+	sys/uio.h \
 	sys/un.h \
 	sys/utime.h \
 	sys/wait.h \
