@@ -2495,8 +2495,7 @@ AC_CHECK_HEADERS([crypt.h \
 	xmmintrin.h \
 	])
 
-dnl on OpenBSD, sys/sysctl.h needs requires sys/param.h to be included
-dnl beforehand
+dnl on OpenBSD, sys/sysctl.h requires sys/param.h to be included beforehand
 AC_CHECK_HEADERS([sys/sysctl.h], [], [],
 [
   #ifdef HAVE_SYS_PARAM_H
