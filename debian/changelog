@@ -19,7 +19,7 @@ monetdb (11.3.1-20110414) unstable; urgency=low
 monetdb (11.3.1-20110414) unstable; urgency=low
 
   * gdk: Fixed bugs in antiselect which gave the incorrect result when upper
-    and lower bount were equal.  This bug could be triggered by the SQL
+    and lower bound were equal.  This bug could be triggered by the SQL
     query SELECT * FROM t WHERE x NOT BETWEEN y AND y.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 14 Apr 2011 10:11:07 +0200

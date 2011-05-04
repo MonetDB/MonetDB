@@ -278,6 +278,35 @@ AC_DISABLE_STATIC
 AC_ENABLE_SHARED
 AM_CONDITIONAL(CROSS_COMPILING, test x$cross_compiling = xyes)
 
+dnl logs usually end up in /var/log
+logdir='${localstatedir}/log/monetdb'
+AC_ARG_WITH(logdir,
+	[--with-logdir=DIR     Where to put log files (LOCALSTATEDIR/log/monetdb/)],
+	[case "$withval" in
+		yes|no|auto)
+			AC_MSG_WARN([--with-logdir called without argument - will use default])
+		;;
+		*)
+			logdir="$withval"
+		;;
+	esac]
+)
+
+dnl pidfiles usually end up in /var/run
+rundir='${localstatedir}/run/monetdb'
+AC_ARG_WITH(rundir,
+	[--with-rundir=DIR     Where to put pid files (LOCALSTATEDIR/run/monetdb/)],
+	[case "$withval" in
+		yes|no|auto)
+			AC_MSG_WARN([--with-rundir called without argument - will use default])
+		;;
+		*)
+			rundir="$withval"
+		;;
+	esac]
+)
+
+
 dnl     checks for programs
 AC_LANG([C])
 
@@ -2133,17 +2162,21 @@ req_pcre_ver='4.5'
 PKG_CHECK_MODULES([pcre], [libpcre >= $req_pcre_ver],
 	[have_pcre=yes], [have_pcre=no])
 if test "x$have_pcre" = xyes; then
-	AC_PATH_PROG(PCRETEST,pcretest)
-	if test "x$PCRETEST" = x; then
-		AC_MSG_ERROR([could not find pcretest])
-	else
-		AC_MSG_CHECKING(whether pcre comes with UTF-8 support)
-		pcre_utf8="`$PCRETEST -C 2>/dev/null | grep 'UTF-8 support' | sed -e 's|^ *||' -e 's| *$||'`"
-		if test "x$pcre_utf8" != "xUTF-8 support"; then
-			AC_MSG_ERROR([PCRE library compiled without UTF-8 support])
-		fi
-		AC_MSG_RESULT([yes])
-	fi
+	AC_MSG_CHECKING(whether pcre comes with UTF-8 support)
+	save_LIBS="$LIBS"
+	LIBS="$LIBS $pcre_LIBS"
+	save_CFLAGS="$CFLAGS"
+	CFLAGS="$CFLAGS $pcre_CFLAGS"
+	AC_RUN_IFELSE([AC_LANG_PROGRAM(
+		[[#include <pcre.h>]],
+		[[int rc; pcre_config(PCRE_CONFIG_UTF8, &rc); exit(!rc);]])],
+		AC_MSG_RESULT([yes]),
+		have_pcre=no; AC_MSG_RESULT([no]),
+		AC_MSG_RESULT([assuming yes]))
+	LIBS="$save_LIBS"
+	CFLAGS="$save_CFLAGS"
+fi
+if test "x$have_pcre" = xyes; then
 	AC_DEFINE(HAVE_LIBPCRE, 1, [Define if you have the pcre library])
 fi
 AM_CONDITIONAL(HAVE_PCRE, test x"$have_pcre" != xno)
@@ -2181,7 +2214,7 @@ if test "x$enable_rdf" != xno; then
 		[AC_DEFINE(HAVE_RAPTOR, 1, [Define if you have raptor installed])
 		 have_raptor="yes"],
 		[if test "x$enable_rdf" = xyes; then AC_MSG_ERROR([raptor library required for RDF support]); fi
-		 have_raptor="no"])
+		 have_raptor="no"; enable_rdf=no; disable_rdf="(raptor library not found)"])
 fi
 AM_CONDITIONAL(HAVE_RAPTOR, test x"$have_raptor" != xno)
 
@@ -2422,7 +2455,8 @@ have_cfitsio=no
 if test "x$enable_fits" != xno; then
 	PKG_CHECK_MODULES([cfitsio], [cfitsio],
 		[have_cfitsio=yes; AC_DEFINE(HAVE_CFITSIO, 1, [Define if you have the cfitsio library])],
-		[have_cfitsio=no; if test "x$enable_fits" = xyes; then AC_MSG_ERROR([cfitsio library required for FITS support]); fi])
+		[have_cfitsio=no; if test "x$enable_fits" = xyes; then AC_MSG_ERROR([cfitsio library required for FITS support]); fi;
+		 enable_fits=no; disable_fits="(cfitsio library not found)"])
 fi
 AM_CONDITIONAL(HAVE_CFITSIO, test x"$have_cfitsio" != xno)
 
@@ -2929,6 +2963,18 @@ AC_SUBST(Qlocalstatedir)
 AC_SUBST(Xlocalstatedir)
 AC_SUBST(Elocalstatedir)
 AC_SUBST(QXlocalstatedir)
+Xlogdir="`$translatepath "$logdir"`"
+eval "Elogdir=${Xlogdir}"
+# need second eval because localstatedir defaults to being ${prefix}/var
+eval "Elogdir=${Elogdir}"
+AC_SUBST(logdir)
+AC_SUBST(Elogdir)
+Xrundir="`$translatepath "$rundir"`"
+eval "Erundir=${Xrundir}"
+# need second eval because localstatedir defaults to being ${prefix}/var
+eval "Erundir=${Erundir}"
+AC_SUBST(rundir)
+AC_SUBST(Erundir)
 Qlibdir="$libdir"
 Xlibdir="`$translatepath "$libdir"`"
 QXlibdir="`echo "$Xlibdir" | sed 's/\\\\/\\\\\\\\/g'`"
@@ -3163,7 +3209,6 @@ echo "    LDFLAGS:    " ${LDFLAGS}
 echo
 echo "* Enabled/disabled components:"
 for comp in \
-	common \
 	gdk \
 	monetdb5 \
 	sql \

@@ -8,5 +8,5 @@ Description: MonetDB streams libary
 Version: @PACKAGE_VERSION@
 Requires: @PKG_CURL@ @PKG_ZLIB@
 
-Libs: -L${libdir} -lstream
+Libs: -L${libdir} -lstream @SOCKET_LIBS@
 Cflags: -I${includedir}/monetdb

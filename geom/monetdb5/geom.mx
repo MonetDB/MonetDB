@@ -501,10 +501,10 @@ mbrREAD(mbr *a, stream *s, size_t cnt)
 	return a;
 }
 
-geom_export void
+geom_export int
 mbrWRITE(mbr *c, stream *s, size_t cnt);
 
-void
+int
 mbrWRITE(mbr *c, stream *s, size_t cnt)
 {
 	size_t i;
@@ -517,8 +517,9 @@ mbrWRITE(mbr *c, stream *s, size_t cnt)
 		    !mnstr_writeInt(s, (int) c->ymin) ||
 		    !mnstr_writeInt(s, (int) c->xmax) ||
 		    !mnstr_writeInt(s, (int) c->ymax))
-			break;
+			return GDK_FAIL;
 	}
+	return GDK_SUCCEED;
 }
 
 geom_export str
@@ -628,8 +629,8 @@ wkbFROMSTR(
 )
 {
 	GEOSGeom geosGeometry = NULL; /* The geometry object that is parsed from the src string. */
-	unsigned char* wkb = NULL; /* The "well known binary" serialization of the geometry object. */
-	size_t wkbLen = 0; /* The length of the wkb string. */
+	unsigned char* wkbSer = NULL; /* The "well known binary" serialization of the geometry object. */
+	size_t wkbLen = 0; /* The length of the wkbSer string. */
 	int nil = 0;
 
 	if (strcmp(src, str_nil) == 0) 
@@ -645,20 +646,20 @@ wkbFROMSTR(
 	}
 
 	if (!nil) {
-		wkb = GEOSGeomToWKB_buf(geosGeometry, &wkbLen);
+		wkbSer = GEOSGeomToWKB_buf(geosGeometry, &wkbLen);
 		GEOSGeom_destroy(geosGeometry);
 	}
 	if (*len < (int)wkb_size(wkbLen)) {
 		if (*atom) GDKfree(*atom);
 		*atom = GDKmalloc(*len = (int)wkb_size(wkbLen));
 	}
-	if (!wkb) {
+	if (!wkbSer) {
 		**atom = *wkbNULL();
 	} else {
 		assert(wkbLen <= GDK_int_max);
 		(*atom)->len = (int) wkbLen;
-		memcpy(&(*atom)->data, wkb, wkbLen);
-		free(wkb);
+		memcpy(&(*atom)->data, wkbSer, wkbLen);
+		free(wkbSer);
 	}
 	wkbLen = strlen(src);
 	assert(wkbLen <= GDK_int_max);
@@ -837,18 +838,21 @@ wkbREAD(wkb *a, stream *s, size_t cnt)
 	return a;
 }
 
-geom_export void
+geom_export int
 wkbWRITE(wkb *a, stream *s, size_t cnt);
 
-void
+int
 wkbWRITE(wkb *a, stream *s, size_t cnt)
 {
 	int len = a->len;
 
 	(void) cnt;
 	assert(cnt == 1);
-	if (mnstr_writeInt(s, len) && len > 0) /* 64bit: check for overflow */
+	if (!mnstr_writeInt(s, len)) /* 64bit: check for overflow */
+		return GDK_FAIL;
+	if (len > 0) /* 64bit: check for overflow */
 		mnstr_write(s, (char *) a->data, len, 1);
+	return GDK_SUCCEED;
 }
 
 geom_export void

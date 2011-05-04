@@ -26,6 +26,7 @@
 #include <sys/stat.h>
 #include <signal.h> /* kill */
 
+#include <mutils.h> /* MT_lockf */
 #include <utils/utils.h>
 #include <utils/properties.h>
 
@@ -172,7 +173,7 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 		kv = ckv;
 		property = alloca(sizeof(char) * 512);
 		/* hardwired read-only properties */
-		off += snprintf(property, 512, "hostname,dbfarm,mserver");
+		off += snprintf(property, 512, "hostname,dbfarm,status,mserver");
 		while (kv->key != NULL) {
 			off += snprintf(property + off, 512 - off, ",%s", kv->key);
 			kv++;
@@ -182,6 +183,13 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 				",mapisock,controlsock");
 	} else {
 		doall = 0;
+	}
+
+	/* chdir to dbfarm so we can open relative files (like pidfile) */
+	if (chdir(dbfarm) < 0) {
+		fprintf(stderr, "could not move to dbfarm '%s': %s\n",
+				dbfarm, strerror(errno));
+		return(1);
 	}
 
 	printf("   property            value\n");
@@ -207,6 +215,29 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 			snprintf(buf, sizeof(buf), "%s/" CONTROL_SOCK "%d",
 					value, kv->ival);
 			value = buf;
+		} else if (strcmp(p, "status") == 0) {
+			/* check if there is a merovingian serving this dbfarm */
+			int ret;
+			if ((ret = MT_lockf(".merovingian_lock", F_TLOCK, 4, 1)) == -1) {
+				/* locking failed, merovingian is running */
+				FILE *pf;
+				char *pfile = getConfVal(ckv, "pidfile");
+
+				if (pfile != NULL && (pf = fopen(pfile, "r")) != NULL &&
+						fgets(buf, sizeof(buf), pf) != NULL)
+				{
+					int meropid = atoi(buf);
+					snprintf(buf, sizeof(buf), "monetdbd[%d] is serving this dbfarm", meropid);
+					value = buf;
+				} else {
+					value = "a monetdbd is serving this dbfarm, "
+						"but a pidfile was not found/is corrupt";
+				}
+			} else {
+				if (ret >= 0)
+					close(ret); /* release a possible lock */
+				value = "no monetdbd is serving this dbfarm";
+			}
 		} else {
 			kv = findConfKey(ckv, p);
 			if (kv == NULL) {

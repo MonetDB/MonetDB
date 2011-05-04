@@ -6,3 +6,4 @@ alter_incorrect_syntax_crash.Bug-2795
 crash_in_modulo_rand.Bug-2766
 nested_select.Bug-2801
 ambigous_idx_name.Bug-2800
+crash_on_alias.Bug-2798
