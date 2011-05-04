@@ -54,6 +54,8 @@ All Rights Reserved.
     <javac
       srcdir="${srcdir}"
       destdir="${builddir}"
+      debug="true"
+      optimize="false"
       target="${javac_version}"
       source="${javac_version}"
       >
