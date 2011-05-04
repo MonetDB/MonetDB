@@ -1797,16 +1797,14 @@ no-*)
 	fi
 	;;
 *)
-	req_java_ver_min=1.5 # >= $req_java_ver_min required
-	req_java_ver_max=1.6 # <  $req_java_ver_max required
-	if test MONETDB_VERSION_TO_NUMBER(echo $JAVA_VERSION) -ge MONETDB_VERSION_TO_NUMBER(echo "$req_java_ver_min") -a MONETDB_VERSION_TO_NUMBER(echo $JAVA_VERSION) -lt MONETDB_VERSION_TO_NUMBER(echo "$req_java_ver_max"); then
+	if test MONETDB_VERSION_TO_NUMBER(echo $JAVA_VERSION) = MONETDB_VERSION_TO_NUMBER(echo "1.5") ; then
 		have_java_jdbc=yes
 	else
 		if test "x$enable_jdbc" = xyes; then
-			AC_MSG_ERROR([MonetDB JDBC requires ant and Java >= $req_java_ver_min, but < $req_java_ver_max.])
+			AC_MSG_ERROR([MonetDB JDBC requires ant and Java 1.5])
 		else
 			enable_jdbc=no
-			disable_jdbc="(MonetDB JDBC currently requires Java >= $req_java_ver_min, but < $req_java_ver_max to build)"
+			disable_jdbc="(MonetDB JDBC currently requires Java 1.5 to build)"
 		fi
 	fi
 	;;
