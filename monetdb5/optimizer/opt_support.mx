@@ -878,25 +878,18 @@ MALoptimizer(Client c)
 
 int hasSameSignature(MalBlkPtr mb, InstrPtr p, InstrPtr q){   
 	int i;
-	if( q->retc != p->retc || q->argc != p->argc) return FALSE;
-	/* actually also check their types */
-	for( i=0; i<p->argc; i++)
-		if (getArgType(mb,p,i) != getArgType(mb,q,i))
-			return FALSE;
+
 	if ( getFunctionId(q) == getFunctionId(p) &&
 		 getModuleId(q) == getModuleId(p) &&
 		getFunctionId(q) != 0 &&
-		getModuleId(q) != 0)
+		getModuleId(q) != 0) {
+		if( q->retc != p->retc || q->argc != p->argc) return FALSE;
+		for( i=0; i<p->argc; i++)
+			if (getArgType(mb,p,i) != getArgType(mb,q,i))
+				return FALSE;
 		return TRUE;
-	if( getFunctionId(q)==0 && getFunctionId(p)!=0 ) return FALSE;
-	if( getFunctionId(q)!=0 && getFunctionId(p)==0 ) return FALSE;
-	if( getFunctionId(q) && getFunctionId(p) && idcmp(getFunctionId(q),getFunctionId(p)) ) 
-		return FALSE;
-	if( getModuleId(q)==0 && getModuleId(p)!=0 ) return FALSE;
-	if( getModuleId(q)!=0 && getModuleId(p)==0 ) return FALSE;
-	if( getModuleId(q) && getModuleId(p) && idcmp(getModuleId(q),getModuleId(p)))
-		return FALSE;
-	return TRUE;
+	}
+	return FALSE;
 }
 
 int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q)
@@ -905,7 +898,7 @@ int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q)
 	VarPtr w,u;
 
 	(void) mb;
-	if( p== NULL || q== NULL || p->retc != q->retc || p->argc != q->argc)
+	if( p->retc != q->retc || p->argc != q->argc)
 		return FALSE;
 	for(k=p->retc; k<p->argc;k++)
 		if( q->argv[k]!= p->argv[k]){
