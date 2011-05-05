@@ -84,18 +84,8 @@ are not common, because they have side effects.
     l3 := calc.+(l,24);
 @end verbatim
 @{
-The current implementation is rather expensive nested-loop algorithm,
-which does not perform well for large MAL blocks.
-The search is improved significantly by prefiltering on the
-function name and not searching beyond the last assignment to
-its arguments. Variables can be assigned a variable
-multiple times, which complicates the code a little.
-
 The common term removal creates opportunities for alias removal,
 which in turn could lead to common terms to be detected.
-
-Note, we skip the first instruction because it always signifies the signature.
-The last instruction signifies the end.
 
 Pathological case require alias removal also to find dependents.
 @verbatim
@@ -105,32 +95,41 @@ c:= f(a);
 d:= f(b);
 @end verbatim
 
+A method is to keep a link to all instructions based on one (the first)
+of the arguments. This gives a good starting point for attempting a match.
+This walk backward analysis should be terminated when we hit a barrier.
+
 Caveat. A lot of time was lost due to constants that are indistinguisable 
 at the surface level. It may miss common expressions if their constants
 are introduced too far apart in the MAL program.
+It requires the constant optimizer to be ran first.
+
 @c
 static int
 OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, j, k, barrier= 0, last;
+	int i, j, k, prop, candidate, barrier= 0;
 	InstrPtr p, q;
 	int actions = 0;
 	int limit, slimit;
 	int *alias;
 	InstrPtr *old;
-	int *lastassigned;
+	int *list;	
+	int *vars;
 
 	(void) cntxt;
 	(void) stk;
 	(void) pci;
-	lastassigned = (int*) GDKzalloc(sizeof(int) * mb->vtop);
-	if ( lastassigned == NULL)
-		return 0;
 	alias = (int*) GDKmalloc(sizeof(int) * mb->vtop);
-	if ( alias == NULL){
-		GDKfree(lastassigned);
+	list = (int*) GDKzalloc(sizeof(int) * mb->stop);
+	vars = (int*) GDKzalloc(sizeof(int) * mb->vtop);
+	if ( alias == NULL || list == NULL || vars == NULL){
+		if(alias) GDKfree(alias);
+		if(list) GDKfree(list);
+		if(vars) GDKfree(vars);
 		return 0;
 	}
+
 	for ( k=0;k<mb->vtop; k++)
 		alias[k]=k;
 
@@ -139,7 +138,8 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	slimit = mb->ssize;
 	if ( newMalBlkStmt(mb, mb->ssize) < 0){
 		GDKfree(alias);
-		GDKfree(lastassigned);
+		GDKfree(list);
+		GDKfree(vars);
 		return 0; 
 	}
 
@@ -149,31 +149,21 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		for ( k = 0; k < p->argc; k++)
 			getArg(p,k) = alias[getArg(p,k)];
 
-		if ( hasSideEffects(p, TRUE)  || isUpdateInstruction(p))
-			for ( k = p->retc; k < p->argc; k++)
-				lastassigned[getArg(p,k)] = i;
-@-
-We have to also look for first 'assignments' of constant arguments.
-Constants should be ignored when it comes to building a barrier for
-searching common terms.
-
-We look back in the code base to determine a candidate for
-replacement. We don't have to look further back then the last
-relevant assignment.
-@c
-		last=  0;
-		for (j = p->retc; j<p->argc; j++)
-			if (lastassigned[getArg(p,j)]> last)
-				last= lastassigned[getArg(p,j)];
-
-		for ( k = p->retc; k < p->argc; k++)
-			if ( isVarConstant(mb,getArg(p,k)) && lastassigned[getArg(p,k)] == 0 )
-				lastassigned[getArg(p,k)]= last ? last : i;
-
-		for ( k = 0; k < p->retc; k++)
-			lastassigned[getArg(p,k)]=i;
+		/* Link the statement to the previous use, based on the first argument.*/
+		if ( p->retc < p->argc ) {
+			candidate = vars[getArg(p,p->retc)];
+			list[i]= vars[ getArg(p,p->retc) ];
+			vars[getArg(p,p->retc)] = i;
+		} else candidate = 0;
 
 		pushInstruction(mb,p);
+		if (p->token == ENDsymbol){
+			/* wrap up the remainder */
+			for(i++; i<limit; i++)
+				if( old[i])
+					pushInstruction(mb,old[i]);
+			break;
+		}
 @-
 Any non-empty barrier block signals the end of this optimizer,
 the impact of the block can affect the common code.
@@ -187,13 +177,6 @@ at least tells us that an update is planned.
 Like all optimizer decisions, it is safe to stop.
 @c
 		barrier |= getFunctionId(p) == assertRef;
-		if (p->token == ENDsymbol){
-			/* wrap up the remainder */
-			for(i++; i<limit; i++)
-				if( old[i])
-					pushInstruction(mb,old[i]);
-			break;
-		}
 		if (p->token == NOOPsymbol || p->token == ASSIGNsymbol || barrier || p->retc == p->argc) {
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
 				mnstr_printf(cntxt->fdout, "COMMON SKIPPED[%d] %d %d\n",i, barrier, p->retc == p->argc);
@@ -201,12 +184,15 @@ Like all optimizer decisions, it is safe to stop.
 			continue;
 		}
 
+		/* from here we have a candidate to look for a match */
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
 		mnstr_printf(cntxt->fdout,"#CANDIDATE[%d] last= %d ",i,last);
 		printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
 #endif
-		for (j = i - 1; j >= last; j--) 
-			if ( (q=getInstrPtr(mb,j))->fcn == p->fcn && !hasSideEffects(q, TRUE) && !isUpdateInstruction(p)){
+		prop = hasSideEffects(p,TRUE) || isUpdateInstruction(p);
+		if ( !prop)
+		for (j = candidate; j ; j = list[j]) 
+			if ( (q=getInstrPtr(mb,j))->fcn == p->fcn  && !isUnsafeFunction(q)){
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
 			mnstr_printf(cntxt->fdout,"#CANDIDATE %d, %d  %d %d lookback %d ", i, j, 
 				hasSameSignature(mb, p, q), 
@@ -214,19 +200,13 @@ Like all optimizer decisions, it is safe to stop.
 				printInstruction(cntxt->fdout, mb, 0, q, LIST_MAL_ALL);
 				mnstr_printf(cntxt->fdout," :%d %d %d=%d %d %d %d %d %d\n", 
 					q->token != ASSIGNsymbol ,
-					lastassigned[getArg(q,0)],i,
+					list[getArg(q,1)],i,
 					!hasCommonResults(p, q), 
 					!hasSideEffects(q, TRUE),
 					!isUpdateInstruction(q),
 					isLinearFlow(q),
 					isLinearFlow(p));
 #endif
-				if (safetyBarrier(p, q) ){
-#ifdef DEBUG_OPT_COMMONTERMS_MORE
-					mnstr_printf(cntxt->fdout,"#safetybarrier reached\n");
-#endif
-					break;
-				}
 @-
 Simple assignments are not replaced either. They should be
 handled by the alias removal part. All arguments should
@@ -238,6 +218,12 @@ be assigned their value before instruction p.
 					isLinearFlow(p) &&
 					isLinearFlow(q)  
 				   ) {
+						if (safetyBarrier(p, q) ){
+#ifdef DEBUG_OPT_COMMONTERMS_MORE
+						mnstr_printf(cntxt->fdout,"#safetybarrier reached\n");
+#endif
+						break;
+					}
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
 						mnstr_printf(cntxt->fdout, "Found a common expression " "%d <-> %d\n", j, i);
 						printInstruction(cntxt->fdout, mb, 0, q, LIST_MAL_ALL);
@@ -245,13 +231,12 @@ be assigned their value before instruction p.
 					clrFunction(p);
 					p->argc = p->retc;
 					for (k = 0; k < q->retc; k++){
-						lastassigned[getArg(p,k)] = lastassigned[getArg(q,k)];
 						alias[getArg(p,k)] = getArg(q,k);
 						p= pushArgument(mb,p, getArg(q,k));
 					}
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
-						mnstr_printf(cntxt->fdout, "COMMON MODIFIED EXPRESSION %d -> %d last %d\n",getArg(p,k) , alias[getArg(p,k)], lastassigned[getArg(p,k)]);
-						printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
+					mnstr_printf(cntxt->fdout, "COMMON MODIFIED EXPRESSION %d -> %d\n",getArg(p,k) , alias[getArg(p,k)]);
+					printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
 #endif
 					actions++;
 					break; /* end of search */
@@ -267,9 +252,10 @@ be assigned their value before instruction p.
 	for(; i<slimit; i++)
 		if( old[i])
 			freeInstruction(old[i]);
+	GDKfree(list);
+	GDKfree(vars);
 	GDKfree(old);
 	GDKfree(alias);
-	GDKfree(lastassigned);
 	DEBUGoptimizers
 		mnstr_printf(cntxt->fdout,"#opt_commonTerms: %d statements catched\n",actions);
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
