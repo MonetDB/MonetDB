@@ -69,5 +69,6 @@ bin_monetdbd = {
 		   $(curl_LIBS) \
 		   $(SOCKET_LIBS) \
 		   $(MALLOC_LIBS) \
-		   $(PTHREAD_LIBS)
+		   $(PTHREAD_LIBS) \
+		   $(C_LIBS)
 }

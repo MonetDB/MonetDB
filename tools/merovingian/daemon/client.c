@@ -27,6 +27,9 @@
 #include <sys/un.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#ifdef HAVE_SYS_UIO_H
+# include <sys/uio.h>
+#endif
 
 #include <msabaoth.h>
 #include <stream.h>

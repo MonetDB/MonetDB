@@ -81,6 +81,12 @@ public class Test_Rtimedate {
 			System.out.println("8. " + rs.getString("id") + ", " + rs.getString("vc") + ", " + rs.getTime("vc"));
 			// date -> date should be fine
 			System.out.println("9. " + rs.getString("id") + ", " + rs.getString("vc") + ", " + rs.getDate("vc"));
+
+			SQLWarning w = con.getWarnings();
+			while (w != null) {
+				System.out.println("warning: " + w.toString());
+				w = w.getNextWarning();
+			}
 		} catch (SQLException e) {
 			System.out.println("failed :( "+ e.getMessage());
 			System.out.println("ABORTING TEST!!!");

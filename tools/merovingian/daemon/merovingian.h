@@ -23,6 +23,7 @@
 #include "monetdb_config.h"
 #include <stdio.h>
 #include <netinet/in.h> /* struct sockaddr_in */
+#include <pthread.h> /* pthread_mutex_t */
 
 #include "utils/utils.h" /* confkeyval */
 
