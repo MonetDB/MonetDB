@@ -3235,5 +3235,6 @@ case "`make -v 2>&1`" in
 esac
 
 if test x"$LOCKFILE" = x"echo" ; then
-	AC_MSG_WARN([no lockfile found, please do NOT parallelise the build process!])
+	echo "'lockfile' not found (usually part of a package named procmail)"
+	echo "Please do NOT parallelise the build process! (use -j1 with make)"
 fi
