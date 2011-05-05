@@ -795,6 +795,9 @@
 # include <netdb.h>
 # include <netinet/in.h>
 #endif
+#ifdef HAVE_SYS_UIO_H
+# include <sys/uio.h>
+#endif
 
 #ifdef HAVE_MALLOC_H
 #include <malloc.h>

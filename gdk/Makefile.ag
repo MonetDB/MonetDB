@@ -50,5 +50,5 @@ lib_gdk = {
 		../common/stream/libstream \
 		../common/utils/libmutils \
 		$(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) \
-		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
+		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) $(C_LIBS)
 }

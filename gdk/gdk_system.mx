@@ -75,6 +75,9 @@ gdk_export int gprof_pthread_create(pthread_t * __restrict, __const pthread_attr
 # include <semaphore.h>
 #endif
 
+#ifdef HAVE_SYS_PARAM_H
+# include <sys/param.h>  /* prerequisite of sys/sysctl on OpenBSD */
+#endif
 #ifdef HAVE_SYS_SYSCTL_H
 # include <sys/sysctl.h>
 #endif

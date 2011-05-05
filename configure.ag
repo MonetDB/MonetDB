@@ -1815,16 +1815,14 @@ no-*)
 	fi
 	;;
 *)
-	req_java_ver_min=1.5 # >= $req_java_ver_min required
-	req_java_ver_max=1.6 # <  $req_java_ver_max required
-	if test MONETDB_VERSION_TO_NUMBER(echo $JAVA_VERSION) -ge MONETDB_VERSION_TO_NUMBER(echo "$req_java_ver_min") -a MONETDB_VERSION_TO_NUMBER(echo $JAVA_VERSION) -lt MONETDB_VERSION_TO_NUMBER(echo "$req_java_ver_max"); then
+	if test MONETDB_VERSION_TO_NUMBER(echo $JAVA_VERSION) = MONETDB_VERSION_TO_NUMBER(echo "1.5") ; then
 		have_java_jdbc=yes
 	else
 		if test "x$enable_jdbc" = xyes; then
-			AC_MSG_ERROR([MonetDB JDBC requires ant and Java >= $req_java_ver_min, but < $req_java_ver_max.])
+			AC_MSG_ERROR([MonetDB JDBC requires ant and Java 1.5])
 		else
 			enable_jdbc=no
-			disable_jdbc="(MonetDB JDBC currently requires Java >= $req_java_ver_min, but < $req_java_ver_max to build)"
+			disable_jdbc="(MonetDB JDBC currently requires Java 1.5 to build)"
 		fi
 	fi
 	;;
@@ -2050,6 +2048,10 @@ else
 fi
 AC_SUBST(PTHREAD_LIBS)
 AC_SUBST(PTHREAD_INCS)
+
+C_LIBS=""
+AC_CHECK_LIB(c, sysctlbyname, [ C_LIBS="-lc" ] )
+AC_SUBST(C_LIBS)
 
 dnl libreadline
 have_readline=auto
@@ -2498,10 +2500,10 @@ AC_CHECK_HEADERS([crypt.h \
 	sys/param.h \
 	sys/resource.h \
 	sys/socket.h \
-	sys/sysctl.h \
 	sys/time.h \
 	sys/times.h \
 	sys/types.h \
+	sys/uio.h \
 	sys/un.h \
 	sys/utime.h \
 	sys/wait.h \
@@ -2513,6 +2515,15 @@ AC_CHECK_HEADERS([crypt.h \
 	winsock.h \
 	xmmintrin.h \
 	])
+
+dnl on OpenBSD, sys/sysctl.h requires sys/param.h to be included beforehand
+AC_CHECK_HEADERS([sys/sysctl.h], [], [],
+[
+  #ifdef HAVE_SYS_PARAM_H
+  # include <sys/param.h>
+  #endif
+])
+
 
 SOCKET_LIBS=""
 have_setsockopt=no
@@ -2540,8 +2551,6 @@ if test "x$have_setsockopt" = xno; then
 	AC_CHECK_FUNC(setsockopt, [], 
 	  AC_CHECK_LIB(socket, setsockopt, [ SOCKET_LIBS="-lsocket $SOCKET_LIBS"; have_setsockopt=yes; ]))
 fi
-
-AC_CHECK_HEADERS([sys/socket.h winsock.h])
 
 have_getaddrinfo=no
 save_LIBS="$LIBS"
