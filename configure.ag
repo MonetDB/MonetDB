@@ -3217,3 +3217,22 @@ done
 echo
 echo "* Important options:"
 echo "    OID size:   " ${bits} bits
+echo
+
+case "`make -v 2>&1`" in
+'GNU Make '*)
+	;;
+*)
+	echo "'make' not found in PATH or not GNU Make."
+	case "`gmake -v 2>&1`" in
+	'GNU Make '*)
+		echo "Please use 'gmake' to build MonetDB."
+		;;
+	*)
+		echo "'gmake' not found in PATH or not GNU Make."
+		echo "Please make sure you have GNU Make installed and use it to build MonetDB."
+		;;
+	esac
+	echo
+	;;
+esac
