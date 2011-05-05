@@ -234,9 +234,11 @@ OPTjoinSubPath(Client cntxt, MalBlkPtr mb)
 	
 	GDKfree(old);
 	GDKfree(candidate);
-	/* there may be new opportunities to remove common expressions */
+	/* there may be new opportunities to remove common expressions 
+	   avoid the recursion
 	if ( actions )
 		return actions + OPTjoinSubPath(cntxt, mb);
+	*/
 	return actions;
 }
 @-
