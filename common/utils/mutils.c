@@ -32,12 +32,12 @@
 # include <mach-o/dyld.h>  /* _NSGetExecutablePath on OSX >=10.5 */
 #endif
 
-#ifdef HAVE_SYS_PARAM_H
-# include <sys/param.h>  /* realpath on OSX */
-#endif
-
 #ifdef HAVE_LIMITS_H
 # include <limits.h>  /* PATH_MAX on Solaris */
+#endif
+
+#ifdef HAVE_SYS_PARAM_H
+# include <sys/param.h>  /* realpath on OSX, prerequisite of sys/sysctl on OpenBSD */
 #endif
 
 #ifdef HAVE_SYS_SYSCTL_H
