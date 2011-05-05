@@ -2031,6 +2031,10 @@ fi
 AC_SUBST(PTHREAD_LIBS)
 AC_SUBST(PTHREAD_INCS)
 
+C_LIBS=""
+AC_CHECK_LIB(c, sysctlbyname, [ C_LIBS="-lc" ] )
+AC_SUBST(C_LIBS)
+
 dnl libreadline
 have_readline=auto
 READLINE_LIBS=""
