@@ -120,7 +120,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	(void) cntxt;
 	(void) stk;
 	(void) pci;
-	alias = (int*) GDKmalloc(sizeof(int) * mb->vtop);
+	alias = (int*) GDKzalloc(sizeof(int) * mb->vtop);
 	list = (int*) GDKzalloc(sizeof(int) * mb->stop);
 	vars = (int*) GDKzalloc(sizeof(int) * mb->vtop);
 	if ( alias == NULL || list == NULL || vars == NULL){
@@ -129,9 +129,6 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		if(vars) GDKfree(vars);
 		return 0;
 	}
-
-	for ( k=0;k<mb->vtop; k++)
-		alias[k]=k;
 
 	old = mb->stmt;
 	limit = mb->stop;
@@ -147,13 +144,14 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		p = old[i];
 
 		for ( k = 0; k < p->argc; k++)
+		if ( alias[getArg(p,k)] )
 			getArg(p,k) = alias[getArg(p,k)];
 
 		/* Link the statement to the previous use, based on the first argument.*/
 		if ( p->retc < p->argc ) {
-			candidate = vars[getArg(p,p->retc)];
-			list[i]= vars[ getArg(p,p->retc) ];
-			vars[getArg(p,p->retc)] = i;
+			candidate = vars[getArg(p,p->argc-1)];
+			list[i]= vars[ getArg(p,p->argc-1) ];
+			vars[getArg(p,p->argc-1)] = i;
 		} else candidate = 0;
 
 		pushInstruction(mb,p);
@@ -200,7 +198,7 @@ Like all optimizer decisions, it is safe to stop.
 				printInstruction(cntxt->fdout, mb, 0, q, LIST_MAL_ALL);
 				mnstr_printf(cntxt->fdout," :%d %d %d=%d %d %d %d %d %d\n", 
 					q->token != ASSIGNsymbol ,
-					list[getArg(q,1)],i,
+					list[getArg(q,q->argc-1)],i,
 					!hasCommonResults(p, q), 
 					!hasSideEffects(q, TRUE),
 					!isUpdateInstruction(q),
@@ -212,11 +210,10 @@ Simple assignments are not replaced either. They should be
 handled by the alias removal part. All arguments should
 be assigned their value before instruction p.
 @c
-				if (hasSameSignature(mb, p, q) && 
-					hasSameArguments(mb, p, q) && 
+				if ( hasSameArguments(mb, p, q) && 
+					hasSameSignature(mb, p, q) && 
 					!hasCommonResults(p, q) && 
-					isLinearFlow(p) &&
-					isLinearFlow(q)  
+					isLinearFlow(q) 
 				   ) {
 						if (safetyBarrier(p, q) ){
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
@@ -235,7 +232,7 @@ be assigned their value before instruction p.
 						p= pushArgument(mb,p, getArg(q,k));
 					}
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
-					mnstr_printf(cntxt->fdout, "COMMON MODIFIED EXPRESSION %d -> %d\n",getArg(p,k) , alias[getArg(p,k)]);
+					mnstr_printf(cntxt->fdout, "COMMON MODIFIED EXPRESSION %d -> %d\n",i,j);
 					printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
 #endif
 					actions++;
