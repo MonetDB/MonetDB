@@ -1272,9 +1272,6 @@ AC_CHECK_PROG(RM,rm,rm -f)
 AC_CHECK_PROG(MV,mv,mv -f)
 AC_PROG_LN_S
 AC_CHECK_PROG(LOCKFILE,lockfile,lockfile -r 2,echo)
-if test x"$LOCKFILE" = x"echo" ; then
-	AC_MSG_WARN([no lockfile found, please do NOT parallelise the build process!])
-fi
 
 AC_CHECK_PROGS(RPMBUILD,rpmbuild rpm)
 
@@ -1598,15 +1595,18 @@ AM_CONDITIONAL(HAVE_RUBYGEM, test x"$have_rubygem" != xno -a x"$have_rubygem_dir
 AC_PROG_YACC
 AC_DEFINE(YYENABLE_NLS, 0, [Needed to compile bison-generated code.])
 AC_DEFINE(YYLTYPE_IS_TRIVIAL, 0, [Needed to compile bison-generated code.])
-if test "x$YACC" = x; then
-	if test "x$enable_sql" = xyes; then
-		AC_MSG_ERROR([MonetDB/SQL requires YACC or BISON.])
-	fi
-	enable_sql=no
-	if test "x$disable_sql" = x; then
-		disable_sql="(MonetDB/SQL requires YACC or BISON.)"
-	fi
-fi
+case "$YACC" in
+	bison*)  YACC="$YACC"  ;;
+	*)
+		if test "x$enable_sql" = xyes; then
+			AC_MSG_ERROR([MonetDB/SQL requires bison])
+		fi
+		enable_sql=no
+		if test "x$disable_sql" = x; then
+			disable_sql="(MonetDB/SQL requires bison)"
+		fi
+	;;
+esac
 
 AC_CHECK_PROG(TEXI2HTML,texi2html,texi2html)
 AC_CHECK_PROG(LATEX2HTML,latex2html,latex2html)
@@ -2049,8 +2049,9 @@ fi
 AC_SUBST(PTHREAD_LIBS)
 AC_SUBST(PTHREAD_INCS)
 
+dnl sysctl is in libc on FreeBSD and NetBSD according to their manpages
 C_LIBS=""
-AC_CHECK_LIB(c, sysctlbyname, [ C_LIBS="-lc" ] )
+AC_CHECK_LIB(c, sysctl, [ C_LIBS="-lc" ] )
 AC_SUBST(C_LIBS)
 
 dnl libreadline
@@ -3242,3 +3243,28 @@ done
 echo
 echo "* Important options:"
 echo "    OID size:   " ${bits} bits
+echo
+
+dnl give some hints to the user
+case "`make -v 2>&1`" in
+'GNU Make '*)
+	;;
+*)
+	echo "'make' not found in PATH or not GNU Make."
+	case "`gmake -v 2>&1`" in
+	'GNU Make '*)
+		echo "Please use 'gmake' to build MonetDB."
+		;;
+	*)
+		echo "'gmake' not found in PATH or not GNU Make."
+		echo "Please make sure you have GNU Make installed and use it to build MonetDB."
+		;;
+	esac
+	echo
+	;;
+esac
+
+if test x"$LOCKFILE" = x"echo" ; then
+	echo "'lockfile' not found (usually part of a package named procmail)"
+	echo "Please do NOT parallelise the build process! (use -j1 with make)"
+fi
