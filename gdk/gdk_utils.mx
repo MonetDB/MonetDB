@@ -503,7 +503,7 @@ MT_init(void)
 		if (GlobalMemoryStatusEx(&memStatEx))
 			_MT_npages = (size_t) (memStatEx.ullTotalPhys / _MT_pagesize);
 	}
-#elif HAVE_GLOBALMEMORYSTATUS
+#elif defined(HAVE_GLOBALMEMORYSTATUS)
 	if (_MT_npages <= 0) {
 		MEMORYSTATUS memStat;
 
