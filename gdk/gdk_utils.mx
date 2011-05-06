@@ -477,20 +477,20 @@ MT_init(void)
 		GetSystemInfo(&sysInfo);
 		_MT_pagesize = sysInfo.dwPageSize;
 	}
-#else
-# if defined(HAVE_SYS_SYSCTL_H) && defined(HW_PAGESIZE)
+#elif defined(HAVE_SYS_SYSCTL_H) && defined(HW_PAGESIZE)
 	{
-		int size = 0;
-		size_t len = sizeof(size);
+		size_t len = sizeof(_MT_pagesize);
+		int mib[3];
 
-		sysctlbyname("hw.pagesize", &size, &len, NULL, 0);
-		_MT_pagesize = size;
+		/* Everyone should have permission to make this call, 
+		 * if we get a failure something is really wrong. */
+		mib[0] = CTL_HW;
+		mib[1] = HW_PAGESIZE;
+		mib[2] = -1;
+		sysctl(mib, 3, &_MT_pagesize, &len, NULL, 0);
 	}
-# else
-#  if defined(HAVE_SYSCONF) && defined(_SC_PAGESIZE)
+#elif defined(HAVE_SYSCONF) && defined(_SC_PAGESIZE)
 	_MT_pagesize = sysconf(_SC_PAGESIZE);
-#  endif
-# endif
 #endif
 	if (_MT_pagesize <= 0)
 		_MT_pagesize = 4096;	/* default */
@@ -503,32 +503,49 @@ MT_init(void)
 		if (GlobalMemoryStatusEx(&memStatEx))
 			_MT_npages = (size_t) (memStatEx.ullTotalPhys / _MT_pagesize);
 	}
-#else
-# ifdef HAVE_GLOBALMEMORYSTATUS
+#elif HAVE_GLOBALMEMORYSTATUS
 	if (_MT_npages <= 0) {
 		MEMORYSTATUS memStat;
 
 		GlobalMemoryStatus(&memStat);
 		_MT_npages = memStat.dwTotalPhys / _MT_pagesize;
 	}
-# else
-#  if defined(HAVE_SYS_SYSCTL_H) && defined(HW_MEMSIZE)
+#elif defined(HAVE_SYS_SYSCTL_H) && defined(HW_MEMSIZE)
+	/* FreeBSD, NetBSD, Darwin */
 	{
 		uint64_t size = 0;
 		size_t len = sizeof(size);
+		int mib[3];
 
-		sysctlbyname("hw.memsize", &size, &len, NULL, 0);
+		/* Everyone should have permission to make this call, 
+		 * if we get a failure something is really wrong. */
+		mib[0] = CTL_HW;
+		mib[1] = HW_MEMSIZE;
+		mib[2] = -1;
+		sysctl(mib, 3, &size, &len, NULL, 0);
 		_MT_npages = size / _MT_pagesize;
 	}
-#  else
-#   if defined(HAVE_SYSCONF) && defined(_SC_PHYS_PAGES)
+#elif defined(HAVE_SYS_SYSCTL_H) && defined (HW_PHYSMEM64)
+	/* OpenBSD */
+	{
+		int64_t size = 0;
+		size_t len = sizeof(size);
+		int mib[3];
+
+		/* Everyone should have permission to make this call, 
+		 * if we get a failure something is really wrong. */
+		mib[0] = CTL_HW;
+		mib[1] = HW_PHYSMEM64;
+		mib[2] = -1;
+		sysctl(mib, 3, &size, &len, NULL, 0);
+		_MT_npages = size / _MT_pagesize;
+	}
+#elif defined(HAVE_SYSCONF) && defined(_SC_PHYS_PAGES)
 	_MT_npages = sysconf(_SC_PHYS_PAGES);
-#   else
-#    error "don't know how to get the amount of physical memory for your OS"
-#   endif /* sysctl */
-#  endif /* sysconf */
-# endif	/* GlobalMemoryStatus */
-#endif /* GlobalMemoryStatusEx */
+#else
+# error "don't know how to get the amount of physical memory for your OS"
+#endif
+
 #ifdef HAVE_GETRLIMIT
 	{
 		struct rlimit rl;

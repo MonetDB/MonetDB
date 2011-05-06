@@ -863,18 +863,16 @@ MT_check_nr_cores(void)
 #if defined(HAVE_SYSCONF) && defined(_SC_NPROCESSORS_ONLN)
 	/* this works on Linux, Solaris and AIX */
 	ncpus = sysconf(_SC_NPROCESSORS_ONLN);
-#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__MACH__)
+#elif defined(HAVE_SYS_SYSCTL_H) && defined(HW_NCPU)   /* BSD */
 	size_t len = sizeof(int);
-
-	/* sysctl should work on most BSDs (includes Darwin) */
-	sysctlbyname("hw.ncpu", &ncpus, &len, NULL, 0);
-#elif defined(__OpenBSD__)
-	size_t len = sizeof(int);
-	int mib[2];
+	int mib[3];
 
 	/* Everyone should have permission to make this call, 
 	 * if we get a failure something is really wrong. */
-	sysctl(mib, 2, &ncpus, &len, NULL, 0);
+	mib[0] = CTL_HW;
+	mib[1] = HW_NCPU;
+	mib[2] = -1;
+	sysctl(mib, 3, &ncpus, &len, NULL, 0);
 #elif defined(WIN32)
 	SYSTEM_INFO sysinfo;
 
