@@ -87,11 +87,6 @@ static void displayVolume(Client cntxt, lng vol);
 static lng memorypool;		/* memory claimed by concurrent threads */
 static lng memoryused;		/* memory used for intermediates */
 static int memoryclaims = 0;	/* number of threads active with expensive operations */
-static struct{
-	lng claim;	/* actual claim on memory*/
-	int bid;
-} hotpotatoes[MAXHOT];
-static int hottop = 0;
 
 #define heapinfo(X) if((X) && (X)->base) vol = (X)->free; else vol = 0;
 #define hashinfo(X) if((X) && (X)->mask) vol = ((X)->mask+(X)->lim+1)*sizeof(int) + sizeof(*(X)); else vol = 0;
@@ -699,8 +694,12 @@ if (stk->stk[getArg(pci,i)].vtype == TYPE_bat){
 	BBPunfix( h = b->batCacheid);
 }
 @c
+/*
+ * The memory claim is the estimate for the amount of memory hold.
+ * Views are consider cheap and ignored
+*/
 static lng
-getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i){
+getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag){
 	lng total=0, vol = 0;
 	BAT *b;
 	BUN cnt = 0;
@@ -710,6 +709,10 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i){
 		b = BATdescriptor(stk->stk[getArg(pci,i)].val.bval);
 		if (b==NULL)
 			return 0;
+		if ( flag && isVIEW(b)){
+			BBPunfix( b->batCacheid);
+			return 0;
+		}
 		@:calcFootprint@
 		/* prepare for hashes */
 		if ( b->H->hash == NULL && b->hsorted == 0  &&
@@ -725,143 +728,19 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i){
 		}
 		BBPunfix( b->batCacheid);
 	}
-	PARDEBUG
-		mnstr_printf(GDKstdout,"#memory claim " LLFMT "\n",total);
 	return total;
 }
 
-static lng
-getHotClaim()
-{
-	lng total = 0;
-	int i;
-	for ( i = 0; i < hottop; i++)
-		total += hotpotatoes[i].claim;
-	return total;
-}
-
-@-
-Calculate the memory need of a single instruction and also determine how much of the
-hot potatoes it will eat.
-@c
-void
-getMemoryHotClaim(FlowStatus fs)
-{
-	int i, h, t;
-	InstrPtr pci = getInstrPtr(fs->mb, fs->pc);
-
-	fs->hotclaim = 0;
-	for(i=  pci->retc; i< pci->argc; i++) {
-		if (fs->stk->stk[getArg(pci,i)].vtype == TYPE_bat)
-			h = fs->stk->stk[getArg(pci,i)].val.bval;
-		for (t =0; t< hottop; t++)
-		if (hotpotatoes[t].bid == h)
-			fs->hotclaim += hotpotatoes[t].claim;
-	}
-}
-@-
-After we have executed the instruction, we should release any hotpotatoe claim (it is hot only once)
-and make more precise claims for the return arguments. Moreover, we should reduce the hot potatoe set,
-due to other arguments being loaded.
-@c
-void
-updMemoryUsedPart(MalStkPtr stk, InstrPtr pci, int start, int stop, lng argclaim)
-{
-	/* remove the result arguments from the hot set */
-	int i,j,h,bid;
-
-	if ( hottop >= MAXHOT || memoryused > (lng) (MEMORY_THRESHOLD * monet_memory) ){
-		/* forget everything returning memory to pool */
-		mal_set_lock(mal_contextLock, "DFLOWdelay");
-		for ( i =0; i< MAXHOT; i++){
-			hotpotatoes[i].claim=0;
-			hotpotatoes[i].bid=0;
-		}
-		memoryused = 0;
-		hottop = 0;
-		mal_unset_lock(mal_contextLock, "DFLOWdelay");
-#ifdef DEBUG_MEMORY_CLAIM
-		mnstr_printf(GDKout,"#DFLOWhotpotatoes reset\n");
-#endif
-	}
-
-	if (memorypool == 0 ){
-		/* not initialized */
-		return;
-	}
-	mal_set_lock(mal_contextLock, "DFLOWdelay");
-	for ( i = start; i< stop; i++)
-	if (stk->stk[getArg(pci,i)].vtype == TYPE_bat && (bid = stk->stk[getArg(pci,i)].val.bval) && bid)
-	{
-		for ( h = j= 0; j< hottop; j++)
-			if ( hotpotatoes[j].bid != ABS(bid))
-				hotpotatoes[h++]= hotpotatoes[j];
-			else{
-#ifdef DEBUG_MEMORY_CLAIM
-				if ( hotpotatoes[j].claim){
-					str cv = NULL;
-					ATOMformat(TYPE_bat, &hotpotatoes[hottop].bid, &cv);
-					mnstr_printf(GDKout,"#DFLOWhotpotatoes[%d] drops  [%s]" LLFMT "\n", j, cv, hotpotatoes[j].claim);
-					if (cv) GDKfree(cv);
-				}
-#endif
-			}
-		hottop = h;
-	}
-	/* input also invalidates part of the hot set */
-	argclaim = argclaim * (memorypool / (memorypool+memoryused));
-	for ( h = j= 0; j< hottop; j++)
-	if ( argclaim > 0)
-			argclaim -= hotpotatoes[j].claim;
-	else	hotpotatoes[h++]= hotpotatoes[j];
-	hottop = h;
-	mal_unset_lock(mal_contextLock, "DFLOWdelay");
-}
-
-void
-updMemoryUsed(MalStkPtr stk, InstrPtr pci, lng argclaim)
-{
-	lng action=0,total,t,vol;
-	int i,h,bid;
-	BUN cnt = 0;
-	BAT *b;
-
-
-	for ( i= 0; i< pci->retc && hottop < MAXHOT; i++)
-	if (stk->stk[getArg(pci,i)].vtype == TYPE_bat && (bid = stk->stk[getArg(pci,i)].val.bval) && bid)
-	{
-		total = 0;
-		@:calcclaim@
-		(void) t;
-		(void) h;
-		if ( total ) {
-			mal_set_lock(mal_contextLock, "DFLOWdelay");
-			hotpotatoes[hottop].bid = ABS(stk->stk[getArg(pci,i)].val.bval);
-			hotpotatoes[hottop].claim = total;
-#ifdef DEBUG_MEMORY_CLAIM
-			if ( total ) {
-				str cv = NULL;
-				ATOMformat(TYPE_bat, &hotpotatoes[hottop].bid, &cv);
-				mnstr_printf(GDKout,"#DFLOWhotpotatoes[%d] claims [%s]" LLFMT "\n", hottop, cv, total);
-				GDKfree(cv);
-			}
-#endif
-			hottop++;
-			action++;
-			mal_unset_lock(mal_contextLock, "DFLOWdelay");
-		}
-	}
-	updMemoryUsedPart(stk,pci, pci->retc,pci->argc,argclaim);
-#ifdef DEBUG_MEMORY_CLAIM
-	if ( total && action )
-		mnstr_printf(GDKout,"#DFLOWhotpotatoes pool " LLFMT " used " LLFMT "\n", memorypool, memoryused);
-#endif
-}
-
+/*
+ * The hotclaim indicates the amount of data recentely written.
+ * as a result of an operation. The argclaim is the sum over the hotclaims
+ * for all arguments.
+ * The argclaim provides a hint on how much we actually may need to execute
+ * The hotclaim is a hint how large the result would be.
+*/
 int
 DFLOWadmission(lng argclaim, lng hotclaim)
 {
-	lng hot;
 	/* optimistically set memory */
 	if ( argclaim == 0)
 		return 0;
@@ -870,32 +749,25 @@ DFLOWadmission(lng argclaim, lng hotclaim)
 	mal_set_lock(mal_contextLock, "DFLOWdelay");
 	if (memorypool <= 0 && memoryclaims == 0) {
 			memorypool = (lng) (MEMORY_THRESHOLD * monet_memory);
-			hottop = 0;
 	}
 
 	if ( argclaim > 0 ) {
-		if (memoryclaims == 0 || memorypool - memoryused > argclaim -hotclaim){
-			hot = getHotClaim();
-			if ( memoryclaims && hotclaim == 0  && argclaim > memorypool - memoryused - hot) {
-				/* don't start unless you can eat the hot potatoes first */
-				PARDEBUG
-					mnstr_printf(GDKstdout,"#Delayed due to hot potatoes pool " LLFMT " used " LLFMT " hot " LLFMT "\n", memorypool, memoryused,hot);
-				mal_unset_lock(mal_contextLock, "DFLOWdelay");
-				return -1;
-			}
-			memorypool -= argclaim;
+		if (memoryclaims == 0 || memorypool - memoryused > argclaim + hotclaim){
+			memorypool -= (argclaim + hotclaim);
 			memoryclaims ++;
 			PARDEBUG
 				mnstr_printf(GDKstdout,"#DFLOWadmit %3d thread %d pool " LLFMT","LLFMT " claims " LLFMT "," LLFMT"\n",
-				memoryclaims, THRgettid(), memorypool, memoryused, argclaim, hotclaim);
+					memoryclaims, THRgettid(), memorypool, memoryused, argclaim, hotclaim);
 			mal_unset_lock(mal_contextLock, "DFLOWdelay");
 			return 0;
 		}
+		PARDEBUG
+			mnstr_printf(GDKstdout,"#Delayed due to lack of memory " LLFMT " used " LLFMT " requestd " LLFMT "\n", memorypool, memoryused, argclaim+hotclaim);
 		mal_unset_lock(mal_contextLock, "DFLOWdelay");
 		return -1;
 	}
 	/* release memory claimed before */
-	memorypool += -argclaim ;
+	memorypool += -argclaim - hotclaim ;
 	memoryclaims --;
 	PARDEBUG
 		mnstr_printf(GDKstdout,"#DFLOWadmit %3d thread %d pool " LLFMT","LLFMT " claims " LLFMT "," LLFMT"\n",
@@ -961,11 +833,16 @@ q_enqueue(queue *q, FlowStatus d)
 	MT_sema_up(&q->s, "q_enqueue");
 }
 
+/*
+ * A priority queue over the hot claims of memory may
+ * be more effective. It priorizes those instructions
+ * that want to use a big recent result
+*/
+
 static void
-q_requeue(queue *q, void *d)
+q_requeue_(queue *q, void *d)
 {
 	int i;
-	MT_lock_set(&q->l, "q_requeue");
 	if (q->last == q->size) {
 		/* enlarge buffer */
 		q->size <<= 1;
@@ -975,6 +852,12 @@ q_requeue(queue *q, void *d)
 		q->data[i]= q->data[i-1];
 	q->data[0] =  (void*)  d;
 	q->last++;
+}
+static void
+q_requeue(queue *q, void *d)
+{
+	MT_lock_set(&q->l, "q_requeue");
+	q_requeue_(q,d);
 	MT_lock_unset(&q->l, "q_requeue");
 	MT_sema_up(&q->s, "q_requeue");
 }
@@ -1140,26 +1023,70 @@ just produced. THis way it need not be saved on disk for a long time.
 static void
 runDFLOWworker(void *t)
 {
-	FlowStatus fs;
+	FlowStatus fs, nxtfs =0;
 	FlowTask *task = (FlowTask*) t;
+	InstrPtr p;
 	Thread thr;
+	int i, local=0, last = 0;
 
 	thr = THRnew(MT_getpid(), "DFLOWworker");
 	while(task) {
-		fs = (FlowStatus) q_dequeue(task->todo);
+		local = nxtfs != 0;
+		if ( nxtfs == 0)
+			fs = (FlowStatus) q_dequeue(task->todo);
+		else fs = nxtfs;
 		if ( DFLOWadmission(fs->argclaim, fs->hotclaim) ){
 			PARDEBUG 
 				mnstr_printf(GDKout,"#delay pc=%d thr= %d pool  " LLFMT " claim "LLFMT"\n", fs->pc,THRgettid(),  memorypool, fs->argclaim);
 			MT_sleep_ms(1);
 			fs->hotclaim = 0;	/* don't assume priority anymore */
 			q_requeue(task->todo,fs);
+			nxtfs = 0;
 			continue;
 		}
 		assert(fs->pc > 0);
-		fs->error = DFLOWstep(task, fs);
 		PARDEBUG
-			mnstr_printf(GDKstdout,"#execute pc=%d thr= %d finished %s\n",fs->pc, task->id, fs->error?fs->error:"");
-		q_enqueue(task->flow->done, fs);
+			mnstr_printf(GDKstdout,"#execute pc= %d thr= %d %s\n",fs->pc, task->id, fs->error?fs->error:"");
+		fs->error = DFLOWstep(task, fs);
+
+		PARDEBUG
+			mnstr_printf(GDKstdout,"#execute pc= %d thr= %d finished %s\n",fs->pc, task->id, fs->error?fs->error:"");
+
+		/* release the memory claim */
+		DFLOWadmission(-fs->argclaim,-fs->hotclaim);
+
+		p = getInstrPtr(fs->mb, ABS(fs->pc));
+		fs->hotclaim = 0;
+		for( i=0; i< p->retc; i++)
+			fs->hotclaim += getMemoryClaim(fs->mb, fs->stk, p, i, TRUE);
+		
+		/* see if you can find an eligible instruction that uses the
+		 * result just produced. Then we can continue with it right away.
+		 * We are just looking for the last block, which means we are safe from concurrent actions
+		*/
+		nxtfs = 0;
+		if ( fs->pc >= 0 )
+		for ( last = fs->pc - task->flow->start; (i = task->flow->nodes[last]) > 0; last= task->flow->edges[last])
+		if (task->flow->status[i].state == DFLOWpending &&
+		    task->flow->status[i].blocks == 1) {
+			task->flow->status[i].state = DFLOWrunning;
+			task->flow->status[i].blocks = 0;
+			task->flow->status[i].hotclaim = fs->hotclaim/p->retc;
+			task->flow->status[i].argclaim += fs->hotclaim/p->retc;
+			task->flow->status[i].error = NULL;
+			nxtfs = task->flow->status + i;
+			PARDEBUG
+				mnstr_printf(GDKstdout,"#continue pc= %d thr= %d\n", nxtfs->pc, task->id);
+			break;
+		}
+
+		/* all non-local choices are handled by the main scheduler */
+		/* we always return the instruction handled */
+		/* be careful, the local continuation should be last in the queue */
+		if ( local)
+			q_requeue(task->flow->done, fs);
+		else
+			q_enqueue(task->flow->done, fs);
 	}
 	THRdel(thr);
 }
@@ -1221,7 +1148,7 @@ DFLOWinit(DataFlow flow, Client cntxt, MalBlkPtr mb, MalStkPtr stk, int size)
 			if ( k != pc && k< flow->stop && k > flow->start){
 				/* add edge to the target instruction for wakeup call */
 				PARDEBUG
-					mnstr_printf(GDKstdout,"forward %d -> %d\n",n,k);
+					mnstr_printf(GDKstdout,"forward %d -> %d\n",n + flow->start,k);
 				k -= flow->start;
 				if ( flow->nodes[n] ){
 					/* add wakeup to tail of list */
@@ -1247,7 +1174,7 @@ DFLOWinit(DataFlow flow, Client cntxt, MalBlkPtr mb, MalStkPtr stk, int size)
 	GDKfree(assign);
 	PARDEBUG
 		for (n=0; n< flow->stop - flow->start; n++) {
-			mnstr_printf(GDKstdout,"#[%d] ",flow->start+n);
+			mnstr_printf(GDKstdout,"#[%d] %d: ",flow->start+n,n);
 			printInstruction(GDKstdout, mb, 0, getInstrPtr(mb,n+ flow->start), LIST_MAL_STMT | LIST_MAPI);
 			mnstr_printf(GDKstdout,"#[%d]Dependents blocks %d:",flow->start+n, flow->status[n].blocks);
 			for (j= n; flow->edges[j]; j = flow->edges[j]){
@@ -1271,7 +1198,7 @@ execution hold.
 static str
 DFLOWscheduler( DataFlow flow )
 {
-	int queued = 0, last;
+	int queued = 0, oldq=0, last;
 	int pc = 0, i,j;
 	int todo = flow->stop - flow->start;
 	str ret = MAL_SUCCEED;
@@ -1283,47 +1210,56 @@ DFLOWscheduler( DataFlow flow )
 	/* initialize the eligible statements */
 	fs = flow->status;
 
+/* old code
+	assert(f->stk->wrapup == 0); 
+	assert(f->stk->admit == 0);
+*/
+
 	if (fs[0].cntxt->flags & timerFlag)
 		fs[0].cntxt->timer = GDKusec();
 
-	/* add all instructions that are not blocked */
+	/* enter all dependencies before releasing the queue  */
+	MT_lock_set(&flow->todo->l, "q_enqueue");
 	for ( i = 0; i < todo; i++ ) 
 	if ( flow->status[i].blocks == 0) {
 		p = getInstrPtr(fs[0].mb,i);
 		for( j= p->retc; j < p->argc; j++)
-			flow->status[i].argclaim += getMemoryClaim(flow->status[0].mb, flow->status[0].stk, p, j);
+			flow->status[i].argclaim += getMemoryClaim(flow->status[0].mb, flow->status[0].stk, p, j, FALSE);
 		queued++;
 		flow->status[i].state = DFLOWrunning;
 		PARDEBUG 
 			mnstr_printf(GDKstdout,"#enqueue pc=%d claim=%d queue %d\n", flow->status[i].pc, flow->status[i].argclaim,queued);
-		q_enqueue(flow->todo, flow->status + i);
+		q_enqueue_(flow->todo, flow->status + i);
 	}
+	MT_lock_unset(&flow->todo->l, "q_enqueue");
+	while ( oldq++ < queued )
+		MT_sema_up(&flow->todo->s, "q_enqueue");
 
 	/* consume the remainder */
 	PARDEBUG mnstr_printf(GDKstdout,"#run %d instructions in dataflow block\n",todo);
 	while(queued ){
 		PARDEBUG mnstr_printf(GDKstdout,"#waiting for results, queued %d\n", queued);
 		f = q_dequeue(flow->done);
-		if ( f->stk->wrapup ) /* clean up whatever is called for */
-			assert(0);
-		f->state = DFLOWwrapup;
 		queued--;
+
 		if (f->pc < 0) {
-			PARDEBUG
-				mnstr_printf(GDKstdout,"#errors encountered %s ", f->error);
 			/* we have to wait for all threads to report back */
-			/* dequeue the remainders in case of an error */
-			while(queued > 0)  {
-				if ( f->stk->wrapup ) /* clean up whatever is called for */
-					assert(0);
-				(void)q_dequeue(flow->done);
-				queued--;
+			PARDEBUG
+				mnstr_printf(GDKstdout,"#errors encountered %s ", f->error?f->error:"unknown");
+			if ( ret == MAL_SUCCEED )
+				ret= f->error;
+			else {
+				str z= (char*) GDKmalloc( strlen(ret)+strlen(f->error)+2);
+				if( z ){
+					strcpy(z,ret);
+					if (z[strlen(z)-1] != '\n') strcat(z,"\n");
+					strcat(z,f->error);
+					GDKfree(f->error);
+					GDKfree(ret);
+					ret = z;
+				}
 			}
-			return f->error;
 		} 
-		last =  f->pc - flow->start;
-		PARDEBUG 
-			mnstr_printf(GDKstdout,"#dequeue pc=%d\n", f->pc);
 
 /*
  * When an instruction is finished we have to reduce
@@ -1332,47 +1268,45 @@ DFLOWscheduler( DataFlow flow )
  * Moreover, we add the return variable claim size to the target instruction
  * and remember the last increment as hotclaim.
 */
-		/* add claim of all arguments to target, overshoot for multiple returns */
-		p= getInstrPtr(f->mb, f->pc);
-		fs->hotclaim = 0;
-		for( j=0; j< p->retc; j++)
-			fs->hotclaim += getMemoryClaim(fs->mb, fs->stk, p, j);
-		fs->hotclaim /= p->retc; /* normalize */
-		
-		/* updMemoryUsed(fs->stk, getInstrPtr(fs->mb,fs->pc),fs->argclaim); not safe, arguments may be gone already*/
-		DFLOWadmission(-fs->argclaim,-fs->hotclaim);
-		/* remove all result hotpotatoes now */
-		/* updMemoryUsedPart(fs->stk,getInstrPtr(fs->mb,fs->pc),0,getInstrPtr(fs->mb,fs->pc)->retc,-1);*/
+		f->state = DFLOWwrapup;
+		last =  ABS(f->pc) - flow->start;
+		PARDEBUG 
+			mnstr_printf(GDKstdout,"#finished pc=%d\n", f->pc);
 
-		/* enter all dependencies before releasing the queue 
+		/* enter all dependencies before releasing the queue  */
 		MT_lock_set(&flow->todo->l, "q_enqueue");
-		*/
+		
+		oldq= queued;
 		for( ; (i = flow->nodes[last]) > 0; last= flow->edges[last])
+		if (flow->status[i].state == DFLOWpending)
 		{
-			flow->status[i].argclaim += fs->hotclaim;
+			flow->status[i].argclaim += f->hotclaim/ p->retc;
 			flow->status[i].blocks--;
-			PARDEBUG
-				mnstr_printf(GDKstdout,"#release pc %d block %d\n", flow->start+ i, flow->status[i].blocks);
-			if ( flow->status[i].blocks == 0) {
+			if ( flow->status[i].blocks == 0 && ret == MAL_SUCCEED) {
 				queued++;
-/*
+				flow->status[i].hotclaim = f->hotclaim;
 				q_enqueue_(flow->todo, flow->status + i);
-*/
 				flow->status[i].state = DFLOWrunning;
 				PARDEBUG 
 					mnstr_printf(GDKstdout,"#enqueue pc=%d claim=%d\n", flow->status[i].pc, flow->status[i].argclaim);
-				q_enqueue(flow->todo, flow->status + i);
-			}
+			} else
+			if ( ret == MAL_SUCCEED )
+			PARDEBUG
+				mnstr_printf(GDKstdout,"#await   pc %d block %d\n", flow->start+ i, flow->status[i].blocks);
+		} else {	/* worker stole the candidate */
+			PARDEBUG
+				mnstr_printf(GDKstdout,"#woke up pc %d block %d\n", flow->start+ i, flow->status[i].blocks);
+			queued++;
+			oldq++;
 		} 
-/*
 		MT_lock_unset(&flow->todo->l, "q_enqueue");
-		MT_sema_up(&flow->todo->s, "q_enqueue");
-*/
-		if (f->stk->admit )
-			assert(0); /* obsolete */ 
+
+		if ( ret == MAL_SUCCEED)
+		while ( oldq++ < queued )
+			MT_sema_up(&flow->todo->s, "q_enqueue");
 	}
 	PARDEBUG {
-		mnstr_printf(GDKstdout,"#end of data flow %d %d todo %d \n",pc,flow->stop - flow->start, todo);
+		mnstr_printf(GDKstdout,"#end of data flow %d todo %d \n",pc,flow->stop - flow->start);
 		for ( i =0 ; i< flow->stop- flow->start; i++)
 			if (fs[i].state != DFLOWwrapup  && fs[i].pc >=0) {
 				mnstr_printf(GDKstdout,"#missed %d %d %d ",  i, fs[i].state, fs[i].pc);
