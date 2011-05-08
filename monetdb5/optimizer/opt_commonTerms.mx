@@ -193,7 +193,7 @@ Like all optimizer decisions, it is safe to stop.
 			if ( (q=getInstrPtr(mb,j))->fcn == p->fcn  && !isUnsafeFunction(q)){
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
 			mnstr_printf(cntxt->fdout,"#CANDIDATE %d, %d  %d %d lookback %d ", i, j, 
-				hasSameSignature(mb, p, q), 
+				hasSameSignature(mb, p, q, p->retc), 
 				hasSameArguments(mb, p, q), last);
 				printInstruction(cntxt->fdout, mb, 0, q, LIST_MAL_ALL);
 				mnstr_printf(cntxt->fdout," :%d %d %d=%d %d %d %d %d %d\n", 
@@ -211,7 +211,7 @@ handled by the alias removal part. All arguments should
 be assigned their value before instruction p.
 @c
 				if ( hasSameArguments(mb, p, q) && 
-					hasSameSignature(mb, p, q) && 
+					hasSameSignature(mb, p, q, p->retc) && 
 					!hasCommonResults(p, q) && 
 					isLinearFlow(q) 
 				   ) {
