@@ -2355,8 +2355,10 @@ sql_variables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (i=0; i<m->topvars && m->vars[i].s; i++) 
 		BUNappend(vars, m->vars[i].name, FALSE);
 	r = BATnew(TYPE_str,TYPE_bat,1);
-	if( r == NULL)
+	if( r == NULL){
+		BBPreleaseref(vars->batCacheid);
 		throw(SQL, "sql.variables", MAL_MALLOC_FAIL);
+	}
 	BUNins(r, "name", &vars->batCacheid, FALSE);
 	BBPunfix(vars->batCacheid);
 	*res = r->batCacheid;
@@ -2781,10 +2783,10 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		ins = *(ptr*)ins;
 	s = mvc_bind_schema(m, sname);
 	if ( s == NULL)
-		throw(MAL,"sql.append","Schema missing");
+		throw(SQL,"sql.append","Schema missing");
 	t = mvc_bind_table(m, s, tname);
 	if ( t == NULL)
-		throw(MAL,"sql.append","Table missing");
+		throw(SQL,"sql.append","Table missing");
 	if (tpe == TYPE_bat)
 		BATaccessBegin((BAT*)ins, USE_ALL, MMAP_SEQUENTIAL);	
 	c = mvc_bind_column(m, t, cname);
@@ -2827,10 +2829,10 @@ mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		ins = *(ptr*)ins;
 	s = mvc_bind_schema(m, sname);
 	if ( s == NULL)
-		throw(MAL,"sql.update","Schema missing");
+		throw(SQL,"sql.update","Schema missing");
 	t = mvc_bind_table(m, s, tname);
 	if ( t == NULL)
-		throw(MAL,"sql.update","Table missing");
+		throw(SQL,"sql.update","Table missing");
 	if (tpe == TYPE_bat)
 		BATaccessBegin((BAT*)ins, USE_ALL, MMAP_SEQUENTIAL);	
 	c = mvc_bind_column(m, t, cname);
@@ -2947,10 +2949,10 @@ mvc_clear_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	s = mvc_bind_schema(m, *sname);
 	if ( s == NULL)
-		throw(MAL,"sql.clear_table","Schema missing");
+		throw(SQL,"sql.clear_table","Schema missing");
 	t = mvc_bind_table(m, s, *tname);
 	if ( t == NULL)
-		throw(MAL,"sql.clear_table","Table missing");
+		throw(SQL,"sql.clear_table","Table missing");
 	*res = mvc_clear_table(m, t);
 	return MAL_SUCCEED;
 }
@@ -2981,10 +2983,10 @@ mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.delete","Cannot access descriptor");
 	s = mvc_bind_schema(m, sname);
 	if ( s == NULL)
-		throw(MAL,"sql.delete","Schema missing");
+		throw(SQL,"sql.delete","Schema missing");
 	t = mvc_bind_table(m, s, tname);
 	if ( t == NULL)
-		throw(MAL,"sql.delete","Table missing");
+		throw(SQL,"sql.delete","Table missing");
 	store_funcs.delete_tab(m->session->tr, t, b, tpe);
 	if (tpe == TYPE_bat)
 		BBPunfix(((BAT*)ins)->batCacheid);
@@ -3163,7 +3165,7 @@ mvc_declared_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	s = mvc_bind_schema(m, dt_schema);
 	if ( s == NULL)
-		throw(MAL,"sql.declared_table","Schema missing");
+		throw(SQL,"sql.declared_table","Schema missing");
 	(void)mvc_create_table(m, s, *name, tt_table, TRUE, SQL_DECLARED_TABLE, CA_DROP, 0);
 	*res_id = 0;
 	return MAL_SUCCEED;
@@ -3195,10 +3197,10 @@ mvc_declared_table_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 		throw(SQL, "sql.dtColumn", "Cannot find column type");
 	s = mvc_bind_schema(m, dt_schema);
 	if ( s == NULL)
-		throw(MAL,"sql.declared_table_column","Schema missing");
+		throw(SQL,"sql.declared_table_column","Schema missing");
 	t = mvc_bind_table(m, s, *tname);
 	if ( t == NULL)
-		throw(MAL,"sql.declared_table_column","Table missing");
+		throw(SQL,"sql.declared_table_column","Table missing");
 	(void)mvc_create_column(m, t, *name, &tpe); 
 	*ret = 0;
 	return MAL_SUCCEED;
@@ -3217,10 +3219,10 @@ mvc_drop_declared_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		return msg;
 	s = mvc_bind_schema(m, dt_schema);
 	if ( s == NULL)
-		throw(MAL,"sql.drop","Schema missing");
+		throw(SQL,"sql.drop","Schema missing");
 	t = mvc_bind_table(m, s, *name);
 	if ( t == NULL)
-		throw(MAL,"sql.drop","Table missing");
+		throw(SQL,"sql.drop","Table missing");
 	(void)mvc_drop_table(m, s, t, 0);
 	return MAL_SUCCEED;
 }
@@ -3238,7 +3240,7 @@ mvc_drop_declared_tables_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 		return msg;
 	s = mvc_bind_schema(m, dt_schema);
 	if ( s == NULL)
-		throw(MAL,"sql.drop","Schema missing");
+		throw(SQL,"sql.drop","Schema missing");
 	while(i && s->tables.set->t) {
 		t = s->tables.set->t->data;
 		(void)mvc_drop_table(m, s, t, 0);
@@ -3458,7 +3460,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		return msg;
 
 	if ( s == NULL)
-		throw(MAL,"sql.drop","Schema missing");
+		throw(SQL,"sql.drop","Schema missing");
 	t = mvc_bind_table(m, s, tname);
 	if (!t) 
 		throw(SQL,"sql", "table %s not found", tname);
@@ -3606,16 +3608,20 @@ not_unique_oids(bat *ret, bat* bid)
 	assert(b->htype == TYPE_oid);
 	if (BATtkey(b) || BATtdense(b) || BATcount(b) <= 1) {
 		bn = BATnew(TYPE_oid, TYPE_oid, 0);
-		if( bn == NULL)
+		if( bn == NULL) {
+			BBPreleaseref(b->batCacheid);
 			throw(SQL, "sql.not_uniques", MAL_MALLOC_FAIL);
+		}
 	} else if (b->tsorted&1) { /* ugh handle both wrd and oid types */
 		oid c = *(oid*)Tloc(b, BUNfirst(b)), *rf, *rh, *rt;
 		oid *h = (oid*)Hloc(b,0), *vp, *ve;
 		int first = 1;
 
 		bn = BATnew(TYPE_oid, TYPE_oid, BATcount(b));
-		if( bn == NULL)
+		if( bn == NULL){
+			BBPreleaseref(b->batCacheid);
 			throw(SQL, "sql.not_uniques", MAL_MALLOC_FAIL);
+		}
 		vp = (oid*)Tloc(b, BUNfirst(b));
 		ve = vp + BATcount(b);
 		rf = rh = (oid*)Hloc(bn, BUNfirst(bn));
@@ -3649,10 +3655,10 @@ not_unique_oids(bat *ret, bat* bid)
 		if (BATprepareHash(bm))
 			throw(SQL, "not_uniques", "hash creation failed");
 		bn = BATnew(TYPE_oid, TYPE_oid, BATcount(b));
-		if( bn == NULL)
-			throw(SQL, "sql.not_uniques", MAL_MALLOC_FAIL);
-		if( bn == NULL)
+		if( bn == NULL){
+			BBPreleaseref(b->batCacheid);
 			throw(SQL, "sql.unique_oids", MAL_MALLOC_FAIL);
+		}
 		vp = (oid*)Tloc(b, BUNfirst(b));
 		ve = vp + BATcount(b);
 		rf = rh = (oid*)Hloc(bn, BUNfirst(bn));
@@ -3821,8 +3827,10 @@ batstr_2dec_@1( int *res, int *bid, int *d, int *sc )
 	}
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
-	if( dst == NULL)
+	if( dst == NULL){
+		BBPreleaseref(b->batCacheid);
 		throw(SQL, "sql.dec_@1", MAL_MALLOC_FAIL);
+	}
 	BATseqbase(dst, b->hseqbase);
 	BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
@@ -3852,8 +3860,10 @@ batstr_2num_@1( int *res, int *bid, int *len )
 	}
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
-	if( dst == NULL)
+	if( dst == NULL){
+		BBPreleaseref(b->batCacheid);
 		throw(SQL, "sql.num_@1", MAL_MALLOC_FAIL);
+	}
 	BATseqbase(dst, b->hseqbase);
 	BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
@@ -3995,8 +4005,10 @@ batstr_2_@1( int *res, int *bid )
 	}
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
-	if( dst == NULL)
+	if( dst == NULL){
+		BBPreleaseref(b->batCacheid);
 		throw(SQL, "sql.2_@1", MAL_MALLOC_FAIL);
+	}
 	BATseqbase(dst, b->hseqbase);
 	BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
@@ -4113,8 +4125,10 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_str, BATcount(b));
-	if( dst == NULL)
+	if( dst == NULL){
+		BBPreleaseref(b->batCacheid);
 		throw(SQL, "sql.str_cast", MAL_MALLOC_FAIL);
+	}
 	BATseqbase(dst, b->hseqbase);
 	BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
@@ -4157,8 +4171,10 @@ str bat@2_2_@1( int *res, int *bid )
 		throw(SQL, "batcalc.@2_2_@1", "Cannot access descriptor");
 	}
 	bn = BATnew(TYPE_void, TYPE_@1, BATcount(b));
-	if( bn == NULL)
+	if( bn == NULL){
+		BBPreleaseref(b->batCacheid);
 		throw(SQL, "sql.@2_2_@1", MAL_MALLOC_FAIL);
+	}
 	bn->hsorted = b->hsorted;
 	BATseqbase(bn, b->hseqbase);
 	o = (@1*) Tloc(bn,BUNfirst(bn));
@@ -4232,8 +4248,10 @@ str bat@2_2_@1( int *res, int *bid )
 		throw(SQL, "batcalc.@2_2_@1", "Cannot access descriptor");
 	}
 	bn = BATnew(TYPE_void, TYPE_@1, BATcount(b));
-	if( bn == NULL)
+	if( bn == NULL){
+		BBPreleaseref(b->batCacheid);
 		throw(SQL, "sql.@2_2_@1", MAL_MALLOC_FAIL);
+	}
 	BATseqbase(bn, b->hseqbase);
 	bn->H->nonil = 1;
 	bn->T->nonil = 1;
@@ -4369,8 +4387,10 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 		throw(SQL, "batcalc.@2_dec2_@1", "Cannot access descriptor");
 	}
 	bn = BATnew(TYPE_void, TYPE_@1, BATcount(b));
-	if( bn == NULL)
+	if( bn == NULL){
+		BBPreleaseref(b->batCacheid);
 		throw(SQL, "sql.dec2_@1", MAL_MALLOC_FAIL);
+	}
 	bn->hsorted = b->hsorted;
 	BATseqbase(bn, b->hseqbase);
 	o = (@1*) Tloc(bn,BUNfirst(bn));
@@ -4429,8 +4449,10 @@ str bat@2_dec2dec_@1( int *res, int *S1, int *bid, int *d2, int *S2 )
 	}
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
-	if( dst == NULL)
+	if( dst == NULL){
+		BBPreleaseref(b->batCacheid);
 		throw(SQL, "sql.dec2dec_@1", MAL_MALLOC_FAIL);
+	}
 	BATseqbase(dst, b->hseqbase);
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
@@ -4458,8 +4480,10 @@ str bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 	}
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
-	if( dst == NULL)
+	if( dst == NULL){
+		BBPreleaseref(b->batCacheid);
 		throw(SQL, "sql.num2dec_@1", MAL_MALLOC_FAIL);
+	}
 	BATseqbase(dst, b->hseqbase);
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
@@ -4543,8 +4567,10 @@ bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 	}
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
-	if( dst == NULL)
+	if( dst == NULL){
+		BBPreleaseref(b->batCacheid);
 		throw(SQL, "sql.num2dec_@1", MAL_MALLOC_FAIL);
+	}
 	BATseqbase(dst, b->hseqbase);
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
@@ -4651,8 +4677,10 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 		throw(SQL, "batcalc.@2_dec2_@1", "Cannot access descriptor");
 	}
 	bn = BATnew(TYPE_void, TYPE_@1, BATcount(b));
-	if( bn == NULL)
+	if( bn == NULL){
+		BBPreleaseref(b->batCacheid);
 		throw(SQL, "sql.dec2_@1", MAL_MALLOC_FAIL);
+	}
 	bn->hsorted = b->hsorted;
 	BATseqbase(bn, b->hseqbase);
 	o = (@1*) Tloc(bn,BUNfirst(bn));
@@ -4704,8 +4732,10 @@ str bat@2_dec2dec_@1( int *res, int *S1, int *bid, int *d2, int *S2 )
 	}
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
-	if( dst == NULL)
+	if( dst == NULL){
+		BBPreleaseref(b->batCacheid);
 		throw(SQL, "sql.dec2dec_@1", MAL_MALLOC_FAIL);
+	}
 	BATseqbase(dst, b->hseqbase);
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
@@ -4734,8 +4764,10 @@ str bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 	}
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
-	if( dst == NULL)
+	if( dst == NULL){
+		BBPreleaseref(b->batCacheid);
 		throw(SQL, "sql.num2dec_@1", MAL_MALLOC_FAIL);
+	}
 	BATseqbase(dst, b->hseqbase);
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
@@ -4851,8 +4883,10 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 		throw(SQL, "batcalc.@2_dec2_@1", "Cannot access descriptor");
 	}
 	bn = BATnew(TYPE_void, TYPE_@1, BATcount(b));
-	if( bn == NULL)
+	if( bn == NULL){
+		BBPreleaseref(b->batCacheid);
 		throw(SQL, "sql.dec@2_2_@1", MAL_MALLOC_FAIL);
+	}
 	bn->hsorted = b->hsorted;
 	BATseqbase(bn, b->hseqbase);
 	o = (@1*) Tloc(bn,BUNfirst(bn));
@@ -4930,8 +4964,10 @@ str bat@2_dec2dec_@1( int *res, int *S1, int *bid, int *d2, int *S2 )
 	}
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
-	if( dst == NULL)
+	if( dst == NULL){
+		BBPreleaseref(b->batCacheid);
 		throw(SQL, "sql.dec2dec_@1", MAL_MALLOC_FAIL);
+	}
 	BATseqbase(dst, b->hseqbase);
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
@@ -4960,8 +4996,10 @@ str bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 	}
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
-	if( dst == NULL)
+	if( dst == NULL){
+		BBPreleaseref(b->batCacheid);
 		throw(SQL, "sql.num2dec_@1", MAL_MALLOC_FAIL);
+	}
 	BATseqbase(dst, b->hseqbase);
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
@@ -5114,10 +5152,17 @@ dump_cache(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( t == NULL)
 		throw(SQL, "sql.dumpcache", MAL_MALLOC_FAIL);
 	query = BATnew(TYPE_void, TYPE_str, cnt);
-	if( query == NULL)
+	if( query == NULL){
+		BBPreleaseref(t->batCacheid);
 		throw(SQL, "sql.dumpcache", MAL_MALLOC_FAIL);
+	}
 	BATseqbase(query, 0);
 	count = BATnew(TYPE_void, TYPE_int, cnt);
+	if( count == NULL){
+		BBPreleaseref(t->batCacheid);
+		BBPreleaseref(query->batCacheid);
+		throw(SQL, "sql.dumpcache", MAL_MALLOC_FAIL);
+	}
 	BATseqbase(count, 0);
 	BUNins(t, "query", &query->batCacheid, FALSE);
 	BUNins(t, "count", &count->batCacheid, FALSE);
@@ -5158,8 +5203,10 @@ dump_opt_stats(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.optstats", MAL_MALLOC_FAIL);
 	BATseqbase(rewrite, 0);
 	count = BATnew(TYPE_void, TYPE_int, cnt);
-	if( count == NULL)
+	if( count == NULL){
+		BBPreleaseref(t->batCacheid);
 		throw(SQL, "sql.optstats", MAL_MALLOC_FAIL);
+	}
 	BATseqbase(count, 0);
 	BUNins(t, "rewrite", &rewrite->batCacheid, FALSE);
 	BUNins(t, "count", &count->batCacheid, FALSE);
@@ -5213,10 +5260,10 @@ sql_rowid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	s = mvc_bind_schema(m, *sname);
 	if ( s == NULL)
-		throw(MAL,"sql.rowid","Schema missing");
+		throw(SQL,"sql.rowid","Schema missing");
 	t = mvc_bind_table(m, s, *tname);
 	if ( s == NULL)
-		throw(MAL,"sql.rowid","Table missing");
+		throw(SQL,"sql.rowid","Table missing");
 	if (!s || !t || !t->columns.set->h)
 		throw(SQL, "calc.rowid", "Cannot find column");
 	c = t->columns.set->h->data;
@@ -5242,8 +5289,10 @@ sql_@1rank_grp(bat *rid, bat *bid, bat *gid, bat *gpe)
 
 	if( (b = BATdescriptor(*bid)) == NULL )
 		throw(SQL, "sql.@1rank_grp", "Cannot access descriptor");
-	if( (g = BATdescriptor(*gid)) == NULL )
+	if( (g = BATdescriptor(*gid)) == NULL ){
+		BBPreleaseref(b->batCacheid);
 		throw(SQL, "sql.@1rank_grp", "Cannot access descriptor");
+	}
 	(void)gpe;
 	bi = bat_iterator(b);
 	gi = bat_iterator(g);
@@ -5256,8 +5305,11 @@ sql_@1rank_grp(bat *rid, bat *bid, bat *gid, bat *gpe)
 	if (BATtordered(b) != GDK_SORTED)
 		throw(SQL, "sql.@1rank_grp", "bat not sorted");
 	r = BATnew(TYPE_oid, TYPE_int, BATcount(b));
-	if (r == NULL)
+	if (r == NULL){
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(g->batCacheid);
 		throw(SQL, "sql.@1rank_grp", "cannot allocate result bat");
+	}
 	BATloop(b, p, q) {
 		ptr on = BUNtail(bi, p);
 		ptr gn = BUNtail(gi, p);
@@ -5297,8 +5349,10 @@ sql_@1rank(bat *rid, bat *bid)
 	cmp = BATatoms[b->ttype].atomCmp;
 	cur = BUNtail(bi, BUNfirst(b));
 	r = BATnew(TYPE_oid, TYPE_int, BATcount(b));
-	if (r == NULL)
+	if (r == NULL){
+		BBPreleaseref(b->batCacheid);
 		throw(SQL, "sql.@1rank", "cannot allocate result bat");
+	}
 	if (BATtdense(b)) {
 		BATloop(b, p, q) {
 			BUNins(r, BUNhead(bi,p), &rank, FALSE);
@@ -5360,10 +5414,10 @@ str SQLcluster1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		return msg;
    	s = mvc_bind_schema(m, *sch);
 	if ( s == NULL)
-		throw(MAL,"sql.cluster","Schema missing");
+		throw(SQL,"sql.cluster","Schema missing");
 	t = mvc_bind_table(m, s, *tbl);
 	if ( t == NULL)
-		throw(MAL,"sql.cluster","Table missing");
+		throw(SQL,"sql.cluster","Table missing");
 	tr = m->session->tr;
 	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
 	t->base.rtime = s->base.rtime = tr->rtime = tr->stime;
@@ -5386,12 +5440,12 @@ str SQLcluster1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 				return msg;
 			map = BATdescriptor(mid);
 			if (map== NULL)
-				throw(MAL,"sql.cluster","Can not access descriptor");
+				throw(SQL,"sql.cluster","Can not access descriptor");
 		}
 
 		b = store_funcs.bind_col(tr, c, 0);
 		if (b == NULL)
-			throw(MAL,"sql.cluster","Can not access descriptor");
+			throw(SQL,"sql.cluster","Can not access descriptor");
 		msg = CLUSTER_apply(&bid, b, map);
 		BBPreleaseref(b->batCacheid);
 		if (msg){
@@ -5434,10 +5488,10 @@ SQLcluster2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
    	s = mvc_bind_schema(m, *sch);
 	if ( s == NULL)
-		throw(MAL,"sql.cluster","Schema missing");
+		throw(SQL,"sql.cluster","Schema missing");
 	t = mvc_bind_table(m, s, *tbl);
 	if ( t == NULL)
-		throw(MAL,"sql.cluster","Table missing");
+		throw(SQL,"sql.cluster","Table missing");
 	tr = m->session->tr;
 
 	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
@@ -5463,7 +5517,7 @@ SQLcluster2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		b = store_funcs.bind_col(tr, c, 0);
 		if (b == NULL)
-			throw(MAL,"sql.cluster","Can not access descriptor");
+			throw(SQL,"sql.cluster","Can not access descriptor");
 		msg = CLS_map(&bid,&mid,&b->batCacheid);
 		BBPreleaseref(b->batCacheid);
 		if (msg){
@@ -5508,19 +5562,19 @@ SQL@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
    	s = mvc_bind_schema(m, *sch);
 	if ( s == NULL)
-		throw(MAL,"sql.@1","Schema missing");
+		throw(SQL,"sql.@1","Schema missing");
 	t = mvc_bind_table(m, s, *tbl);
 	if ( t == NULL)
-		throw(MAL,"sql.@1","Table missing");
+		throw(SQL,"sql.@1","Table missing");
 
 	if (m->user_id != USER_MONETDB)
-		throw(MAL,"sql.@1","insufficient privileges");
+		throw(SQL,"sql.@1","insufficient privileges");
 	if ((!list_empty(t->idxs.set) || !list_empty(t->keys.set)))
-		throw(MAL,"sql.@1","@1 not allowed on tables with indices");
+		throw(SQL,"sql.@1","@1 not allowed on tables with indices");
 	if (has_snapshots(m->session->tr)) 
-		throw(MAL,"sql.@1","@1 not allowed on snapshots");
+		throw(SQL,"sql.@1","@1 not allowed on snapshots");
 	if (!m->session->auto_commit) 
-		throw(MAL,"sql.@1","@1 only allowed in auto commit mode");
+		throw(SQL,"sql.@1","@1 only allowed in auto commit mode");
 
 	/* lock the store, for single user/transaction */
 	store_lock();
@@ -5557,7 +5611,7 @@ SQL@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BBPreleaseref(bids[i]);
 			store_unlock();
 			if (!msg)
-				throw(MAL,"sql.@1","Can not access descriptor");
+				throw(SQL,"sql.@1","Can not access descriptor");
 			return msg;
 		}
 		BBPreleaseref(b->batCacheid);
@@ -5570,7 +5624,7 @@ SQL@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for( i--; i>=0; i--)
 			BBPreleaseref(bids[i]);
 		store_unlock();
-		throw(MAL,"sql.@1","Too many columns to handle, use copy instead");
+		throw(SQL,"sql.@1","Too many columns to handle, use copy instead");
 	}
 
 	i=0;
@@ -5629,17 +5683,17 @@ SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
    	s = mvc_bind_schema(m, *sch);
 	if ( s == NULL)
-		throw(MAL,"sql.@1","Schema missing");
+		throw(SQL,"sql.@1","Schema missing");
 	t = mvc_bind_table(m, s, *tbl);
 	if ( t == NULL)
-		throw(MAL,"sql.@1","Table missing");
+		throw(SQL,"sql.@1","Table missing");
 
 	if (m->user_id != USER_MONETDB)
-		throw(MAL,"sql.@1","insufficient privileges");
+		throw(SQL,"sql.@1","insufficient privileges");
 	if ((!list_empty(t->idxs.set) || !list_empty(t->keys.set)))
-		throw(MAL,"sql.@1","vacuum not allowed on tables with indices");
+		throw(SQL,"sql.@1","vacuum not allowed on tables with indices");
 	if (has_snapshots(m->session->tr)) 
-		throw(MAL,"sql.@1","vacuum not allowed on snapshots");
+		throw(SQL,"sql.@1","vacuum not allowed on snapshots");
 
 	tr = m->session->tr;
 
@@ -5650,7 +5704,7 @@ SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		c = o->data;
 		b = store_funcs.bind_col(tr, c, 0);
 		if (b == NULL) 
-			throw(MAL,"sql.@1","Can not access descriptor");
+			throw(SQL,"sql.@1","Can not access descriptor");
 		ordered |= BATtordered(b);
 		cnt = BATcount(b);
 		BBPreleaseref(b->batCacheid);
@@ -5689,16 +5743,16 @@ SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
    	s = mvc_bind_schema(m, *sch);
 	if ( s == NULL)
-		throw(MAL,"sql.drop_hash","Schema missing");
+		throw(SQL,"sql.drop_hash","Schema missing");
 	t = mvc_bind_table(m, s, *tbl);
 	if ( t == NULL)
-		throw(MAL,"sql.drop_hash","Table missing");
+		throw(SQL,"sql.drop_hash","Table missing");
 
 	for (o = t->columns.set->h; o; o = o->next) {
 		c = o->data;
 		b = store_funcs.bind_col(m->session->tr, c, RDONLY);
 		if (b == NULL) 
-			throw(MAL,"sql.drop_hash","Can not access descriptor");
+			throw(SQL,"sql.drop_hash","Can not access descriptor");
 		HASHremove(b);
 		HASHremove(BATmirror(b));
 		BBPreleaseref(b->batCacheid);
@@ -5724,10 +5778,10 @@ Take a SQL table and compress its columns using the dictionary compression schem
 		return msg;
    	s = mvc_bind_schema(m, *sch);
 	if ( s == NULL)
-		throw(MAL,"sql.cluster","Schema missing");
+		throw(SQL,"sql.cluster","Schema missing");
 	t = mvc_bind_table(m, s, *tbl);
 	if ( t == NULL)
-		throw(MAL,"sql.cluster","Table missing");
+		throw(SQL,"sql.cluster","Table missing");
 
 	/* actually build the hash on the multi-column primary key */
 
@@ -5738,10 +5792,12 @@ Take a SQL table and compress its columns using the dictionary compression schem
 
 		b = store_funcs.bind_col(tr, c, 0);
 		if (b == NULL)
-			throw(MAL,"sql.compress","Can not access descriptor");
+			throw(SQL,"sql.compress","Can not access descriptor");
 		e = BATnew(b->htype, b->ttype, 0);
-		if( e == NULL)
+		if( e == NULL){
+			BBPreleaseref(b->batCacheid);
 			throw(SQL, "sql.compression", MAL_MALLOC_FAIL);
+		}
 		BATsetaccess(e, BAT_READ);
 		d = c->data;
 		d->bid = 0;
@@ -5784,10 +5840,10 @@ LZ compression is inherited from the underlying stream implementation.
 		return msg;
    	s = mvc_bind_schema(m, *sch);
 	if ( s == NULL)
-		throw(MAL,"sql.@2","Schema missing");
+		throw(SQL,"sql.@2","Schema missing");
 	t = mvc_bind_table(m, s, *tbl);
 	if ( t == NULL)
-		throw(MAL,"sql.@2","Table missing");
+		throw(SQL,"sql.@2","Table missing");
 
 	/* actually build the hash on the multi-column primary key */
 
@@ -5798,7 +5854,7 @@ LZ compression is inherited from the underlying stream implementation.
 		for ( i= 0; i<3; i++) {
 			b = store_funcs.bind_col(tr, c, i);
 			if (b == NULL)
-				throw(MAL,"sql.@2","Can not access descriptor");
+				throw(SQL,"sql.@2","Can not access descriptor");
 			snprintf(buf,PATHLENGTH,"%s_%s_%s_%d", *sch, *tbl, c->base.name,i);
 			msg = @1;
 			BBPreleaseref(b->batCacheid);
@@ -5886,7 +5942,7 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	rethrow("sql.rdfShred", msg, getContext(cntxt, mb, &m, NULL));
 
 	if ((sch = mvc_bind_schema(m, *schema)) == NULL)
-		throw(MAL, "sql.rdfShred", "schema missing");
+		throw(SQL, "sql.rdfShred", "schema missing");
 
 	g_tbl = mvc_bind_table(m, sch, "graph");
 	gname = mvc_bind_column(m, g_tbl, "gname");
@@ -6066,8 +6122,18 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	r = BATnew(TYPE_str,TYPE_bat,1);
-	if( r == NULL)
+	if( r == NULL){
+		BBPreleaseref(sch->batCacheid);
+		BBPreleaseref(tab->batCacheid);
+		BBPreleaseref(col->batCacheid);
+		BBPreleaseref(loc->batCacheid);
+		BBPreleaseref(cnt->batCacheid);
+		BBPreleaseref(cap->batCacheid);
+		BBPreleaseref(atom->batCacheid);
+		BBPreleaseref(size->batCacheid);
+		BBPreleaseref(aux->batCacheid);
 		throw(SQL, "sql.storage", MAL_MALLOC_FAIL);
+	}
 	BUNins(r, "schema", &sch->batCacheid, FALSE);
 	BUNins(r, "table", &tab->batCacheid, FALSE);
 	BUNins(r, "column", &col->batCacheid, FALSE);

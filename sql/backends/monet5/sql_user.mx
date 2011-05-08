@@ -117,6 +117,8 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 
 	/* prepare the scens BAT: it should contain the sql scenario */
 	scens = BATnew(TYPE_str, TYPE_void, 1);
+	if(scens == NULL)
+		throw(SQL,"sql.create_user", MAL_MALLOC_FAIL);
 	BUNins(scens, "sql", 0, FALSE);
 	bid = BBPcacheid(scens);
 	if (!enc) {
@@ -153,6 +155,8 @@ db_users(Client c)
 
 	/* prepare the scens BAT: it should contain the sql scenario */
 	BAT *scens = BATnew(TYPE_str, TYPE_void, 1);
+	if(scens == NULL)
+		throw(SQL,"sql.db_users", MAL_MALLOC_FAIL);
 
 	BUNins(scens, "sql", 0, FALSE);
 	if ((tmp = AUTHgetUsers(&b, &c, &scens->batCacheid)) != MAL_SUCCEED) {
@@ -188,6 +192,8 @@ db_users_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *r = (bat *)getArgReference(stk, pci, 0);
 	BAT *b = db_users(cntxt);
 	BAT *t = BATnew(TYPE_str, TYPE_bat, 1);
+	if(t == NULL)
+		throw(SQL,"sql.users_wrap", MAL_MALLOC_FAIL);
 	(void)mb;
 
 	BUNins(t, "name", &b->batCacheid, FALSE);
