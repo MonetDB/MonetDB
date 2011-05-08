@@ -584,7 +584,7 @@ opt_export int isUnsafeFunction(InstrPtr q);
 opt_export int isInvariant(MalBlkPtr mb, int pcf, int pcl, int varid);
 opt_export int isDependent(InstrPtr p, InstrPtr q);
 opt_export int safetyBarrier(InstrPtr p, InstrPtr q);
-opt_export int hasSameSignature(MalBlkPtr mb, InstrPtr p, InstrPtr q);
+opt_export int hasSameSignature(MalBlkPtr mb, InstrPtr p, InstrPtr q, int stop);
 opt_export int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q);
 opt_export int isUpdated(MalBlkPtr mb, int pc);
 opt_export int hasCommonResults(InstrPtr p, InstrPtr q);
@@ -876,7 +876,7 @@ MALoptimizer(Client c)
 	return msg;
 }
 
-int hasSameSignature(MalBlkPtr mb, InstrPtr p, InstrPtr q){   
+int hasSameSignature(MalBlkPtr mb, InstrPtr p, InstrPtr q, int stop){  
 	int i;
 
 	if ( getFunctionId(q) == getFunctionId(p) &&
@@ -884,7 +884,8 @@ int hasSameSignature(MalBlkPtr mb, InstrPtr p, InstrPtr q){
 		getFunctionId(q) != 0 &&
 		getModuleId(q) != 0) {
 		if( q->retc != p->retc || q->argc != p->argc) return FALSE;
-		for( i=0; i<p->argc; i++)
+		assert(stop <= p->argc);
+		for( i=0; i<stop; i++)
 			if (getArgType(mb,p,i) != getArgType(mb,q,i))
 				return FALSE;
 		return TRUE;
