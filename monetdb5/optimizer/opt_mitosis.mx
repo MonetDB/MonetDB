@@ -98,7 +98,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	oid slice;
 	wrd r = 0, rowcnt=0;	/* table should be sizeable to consider parallel execution*/
 	InstrPtr q,*old, target= 0, matq;
-	size_t typewidth= 3 *sizeof(lng); /* 2 arguments and a result */
+	size_t typewidth= sizeof(lng) + sizeof(oid); /* a common result size */
 	int threads = GDKnr_threads ? GDKnr_threads:1;
 	ValRecord vr;
 	VarPtr loc,rows;
@@ -152,10 +152,10 @@ tarantula optimizer.
 	if ( (i = OPTtarantulaAdviceInternal(mb,stk,p)) > 0 )
 		pieces = i;
 	else {
-		/* ensure that GDKnr_threads partitions fit into main memory */
+		/* ensure that GDKnr_threads result partition fit into main memory */
 		r = (BUN) (monet_memory / typewidth / threads);
 		if (rowcnt > r)
-			pieces = (int) MAX ( (rowcnt / r + 1) , (wrd) threads );
+			pieces = (int) MAX ( ((rowcnt / r )? rowcnt/r:1) , (wrd) threads );
 		else
 		/* exploit parallelism, but ensure minimal partition size to limit overhead */
 		if (rowcnt > MINPARTCNT)

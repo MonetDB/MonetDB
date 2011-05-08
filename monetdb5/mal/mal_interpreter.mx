@@ -672,27 +672,6 @@ suspended instructions.
 	heapinfo(&b->T->heap); total += vol;
 	heapinfo(b->T->vheap); total += vol;
 	hashinfo(b->T->hash); total += vol;
-@= calcclaim
-t = total;
-if (stk->stk[getArg(pci,i)].vtype == TYPE_bat){
-	b = BATdescriptor(stk->stk[getArg(pci,i)].val.bval);
-	if (b==NULL)
-		continue;
-	@:calcFootprint@
-	/* prepare for hashes */
-	if ( b->H->hash == NULL && b->hsorted == 0  &&
-		 b->T->hash == NULL && b->tsorted == 0 ){
-		if ( BATcount(b)  > cnt)
-			cnt = BATcount(b);
-	}
-	if ( (b->ttype == TYPE_oid && !BATtordered(b) && !BATtdense(b)) ||
-	   ( b->htype == TYPE_oid && !BAThordered(b) && !BAThdense(b)) ){
-		/* assume we may have to do random IO, punish it by increasing the claim  with hash elem size*/
-		total += 4 * cnt;
-		total = total >(lng) (MEMORY_THRESHOLD * monet_memory)? (lng) (MEMORY_THRESHOLD * monet_memory):total;
-	}
-	BBPunfix( h = b->batCacheid);
-}
 @c
 /*
  * The memory claim is the estimate for the amount of memory hold.
@@ -702,7 +681,6 @@ static lng
 getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag){
 	lng total=0, vol = 0;
 	BAT *b;
-	BUN cnt = 0;
 
 	(void) mb;
 	if (stk->stk[getArg(pci,i)].vtype == TYPE_bat){
@@ -714,18 +692,7 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag){
 			return 0;
 		}
 		@:calcFootprint@
-		/* prepare for hashes */
-		if ( b->H->hash == NULL && b->hsorted == 0  &&
-			 b->T->hash == NULL && b->tsorted == 0 ){
-			if ( BATcount(b)  > cnt)
-				cnt = BATcount(b);
-		}
-		if ( (b->ttype == TYPE_oid && !BATtordered(b) && !BATtdense(b)) ||
-		   ( b->htype == TYPE_oid && !BAThordered(b) && !BAThdense(b)) ){
-			/* assume we may have to do random IO, punish it by increasing the claim  with hash elem size*/
-			total += 4 * cnt;
-			total = total >(lng) (MEMORY_THRESHOLD * monet_memory)? (lng) (MEMORY_THRESHOLD * monet_memory):total;
-		}
+		total = total >(lng) (MEMORY_THRESHOLD * monet_memory)? (lng) (MEMORY_THRESHOLD * monet_memory):total;
 		BBPunfix( b->batCacheid);
 	}
 	return total;
@@ -744,7 +711,6 @@ DFLOWadmission(lng argclaim, lng hotclaim)
 	/* optimistically set memory */
 	if ( argclaim == 0)
 		return 0;
-	return 0;
 
 	mal_set_lock(mal_contextLock, "DFLOWdelay");
 	if (memorypool <= 0 && memoryclaims == 0) {
