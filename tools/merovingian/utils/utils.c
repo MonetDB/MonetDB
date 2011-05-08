@@ -174,7 +174,7 @@ setConfVal(confkeyval *ckv, char *val) {
 			}
 			ival = atoi(val);
 		}; break;
-		case BOOL: {
+		case BOOLEAN: {
 			if (strcasecmp(val, "true") == 0 ||
 					strcasecmp(val, "yes") == 0 ||
 					strcmp(val, "1") == 0)
