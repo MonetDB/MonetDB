@@ -2349,10 +2349,14 @@ sql_variables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 
 	vars = BATnew(TYPE_void,TYPE_str, m->topvars);
+	if ( vars == NULL)
+		throw(SQL, "sql.variables", MAL_MALLOC_FAIL);
 	BATseqbase(vars, 0);
 	for (i=0; i<m->topvars && m->vars[i].s; i++) 
 		BUNappend(vars, m->vars[i].name, FALSE);
 	r = BATnew(TYPE_str,TYPE_bat,1);
+	if( r == NULL)
+		throw(SQL, "sql.variables", MAL_MALLOC_FAIL);
 	BUNins(r, "name", &vars->batCacheid, FALSE);
 	BBPunfix(vars->batCacheid);
 	*res = r->batCacheid;
@@ -3461,6 +3465,8 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if (list_length(t->columns.set) != (pci->argc-3))
 		throw(SQL,"sql", "Not enough columns in found");
 	b = BATnew(TYPE_str, TYPE_bat, pci->argc-3);
+	if( b == NULL)
+		throw(SQL, "sql.import", MAL_MALLOC_FAIL);
 	for (i = 3, n = t->columns.set->h; i<pci->argc && n; i++, n = n->next) {
 		sql_column *col = n->data;
 		BAT *c;
@@ -3600,12 +3606,16 @@ not_unique_oids(bat *ret, bat* bid)
 	assert(b->htype == TYPE_oid);
 	if (BATtkey(b) || BATtdense(b) || BATcount(b) <= 1) {
 		bn = BATnew(TYPE_oid, TYPE_oid, 0);
+		if( bn == NULL)
+			throw(SQL, "sql.not_uniques", MAL_MALLOC_FAIL);
 	} else if (b->tsorted&1) { /* ugh handle both wrd and oid types */
 		oid c = *(oid*)Tloc(b, BUNfirst(b)), *rf, *rh, *rt;
 		oid *h = (oid*)Hloc(b,0), *vp, *ve;
 		int first = 1;
 
 		bn = BATnew(TYPE_oid, TYPE_oid, BATcount(b));
+		if( bn == NULL)
+			throw(SQL, "sql.not_uniques", MAL_MALLOC_FAIL);
 		vp = (oid*)Tloc(b, BUNfirst(b));
 		ve = vp + BATcount(b);
 		rf = rh = (oid*)Hloc(bn, BUNfirst(bn));
@@ -3639,6 +3649,10 @@ not_unique_oids(bat *ret, bat* bid)
 		if (BATprepareHash(bm))
 			throw(SQL, "not_uniques", "hash creation failed");
 		bn = BATnew(TYPE_oid, TYPE_oid, BATcount(b));
+		if( bn == NULL)
+			throw(SQL, "sql.not_uniques", MAL_MALLOC_FAIL);
+		if( bn == NULL)
+			throw(SQL, "sql.unique_oids", MAL_MALLOC_FAIL);
 		vp = (oid*)Tloc(b, BUNfirst(b));
 		ve = vp + BATcount(b);
 		rf = rh = (oid*)Hloc(bn, BUNfirst(bn));
@@ -3807,6 +3821,8 @@ batstr_2dec_@1( int *res, int *bid, int *d, int *sc )
 	}
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
+	if( dst == NULL)
+		throw(SQL, "sql.dec_@1", MAL_MALLOC_FAIL);
 	BATseqbase(dst, b->hseqbase);
 	BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
@@ -3836,6 +3852,8 @@ batstr_2num_@1( int *res, int *bid, int *len )
 	}
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
+	if( dst == NULL)
+		throw(SQL, "sql.num_@1", MAL_MALLOC_FAIL);
 	BATseqbase(dst, b->hseqbase);
 	BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
@@ -3977,6 +3995,8 @@ batstr_2_@1( int *res, int *bid )
 	}
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
+	if( dst == NULL)
+		throw(SQL, "sql.2_@1", MAL_MALLOC_FAIL);
 	BATseqbase(dst, b->hseqbase);
 	BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
@@ -4093,6 +4113,8 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_str, BATcount(b));
+	if( dst == NULL)
+		throw(SQL, "sql.str_cast", MAL_MALLOC_FAIL);
 	BATseqbase(dst, b->hseqbase);
 	BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
@@ -4135,6 +4157,8 @@ str bat@2_2_@1( int *res, int *bid )
 		throw(SQL, "batcalc.@2_2_@1", "Cannot access descriptor");
 	}
 	bn = BATnew(TYPE_void, TYPE_@1, BATcount(b));
+	if( bn == NULL)
+		throw(SQL, "sql.@2_2_@1", MAL_MALLOC_FAIL);
 	bn->hsorted = b->hsorted;
 	BATseqbase(bn, b->hseqbase);
 	o = (@1*) Tloc(bn,BUNfirst(bn));
@@ -4208,6 +4232,8 @@ str bat@2_2_@1( int *res, int *bid )
 		throw(SQL, "batcalc.@2_2_@1", "Cannot access descriptor");
 	}
 	bn = BATnew(TYPE_void, TYPE_@1, BATcount(b));
+	if( bn == NULL)
+		throw(SQL, "sql.@2_2_@1", MAL_MALLOC_FAIL);
 	BATseqbase(bn, b->hseqbase);
 	bn->H->nonil = 1;
 	bn->T->nonil = 1;
@@ -4343,6 +4369,8 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 		throw(SQL, "batcalc.@2_dec2_@1", "Cannot access descriptor");
 	}
 	bn = BATnew(TYPE_void, TYPE_@1, BATcount(b));
+	if( bn == NULL)
+		throw(SQL, "sql.dec2_@1", MAL_MALLOC_FAIL);
 	bn->hsorted = b->hsorted;
 	BATseqbase(bn, b->hseqbase);
 	o = (@1*) Tloc(bn,BUNfirst(bn));
@@ -4401,6 +4429,8 @@ str bat@2_dec2dec_@1( int *res, int *S1, int *bid, int *d2, int *S2 )
 	}
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
+	if( dst == NULL)
+		throw(SQL, "sql.dec2dec_@1", MAL_MALLOC_FAIL);
 	BATseqbase(dst, b->hseqbase);
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
@@ -4428,6 +4458,8 @@ str bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 	}
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
+	if( dst == NULL)
+		throw(SQL, "sql.num2dec_@1", MAL_MALLOC_FAIL);
 	BATseqbase(dst, b->hseqbase);
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
@@ -4511,6 +4543,8 @@ bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 	}
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
+	if( dst == NULL)
+		throw(SQL, "sql.num2dec_@1", MAL_MALLOC_FAIL);
 	BATseqbase(dst, b->hseqbase);
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
@@ -4617,6 +4651,8 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 		throw(SQL, "batcalc.@2_dec2_@1", "Cannot access descriptor");
 	}
 	bn = BATnew(TYPE_void, TYPE_@1, BATcount(b));
+	if( bn == NULL)
+		throw(SQL, "sql.dec2_@1", MAL_MALLOC_FAIL);
 	bn->hsorted = b->hsorted;
 	BATseqbase(bn, b->hseqbase);
 	o = (@1*) Tloc(bn,BUNfirst(bn));
@@ -4668,6 +4704,8 @@ str bat@2_dec2dec_@1( int *res, int *S1, int *bid, int *d2, int *S2 )
 	}
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
+	if( dst == NULL)
+		throw(SQL, "sql.dec2dec_@1", MAL_MALLOC_FAIL);
 	BATseqbase(dst, b->hseqbase);
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
@@ -4696,6 +4734,8 @@ str bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 	}
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
+	if( dst == NULL)
+		throw(SQL, "sql.num2dec_@1", MAL_MALLOC_FAIL);
 	BATseqbase(dst, b->hseqbase);
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
@@ -4811,6 +4851,8 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 		throw(SQL, "batcalc.@2_dec2_@1", "Cannot access descriptor");
 	}
 	bn = BATnew(TYPE_void, TYPE_@1, BATcount(b));
+	if( bn == NULL)
+		throw(SQL, "sql.dec@2_2_@1", MAL_MALLOC_FAIL);
 	bn->hsorted = b->hsorted;
 	BATseqbase(bn, b->hseqbase);
 	o = (@1*) Tloc(bn,BUNfirst(bn));
@@ -4888,6 +4930,8 @@ str bat@2_dec2dec_@1( int *res, int *S1, int *bid, int *d2, int *S2 )
 	}
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
+	if( dst == NULL)
+		throw(SQL, "sql.dec2dec_@1", MAL_MALLOC_FAIL);
 	BATseqbase(dst, b->hseqbase);
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
@@ -4916,6 +4960,8 @@ str bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 	}
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
+	if( dst == NULL)
+		throw(SQL, "sql.num2dec_@1", MAL_MALLOC_FAIL);
 	BATseqbase(dst, b->hseqbase);
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
@@ -5065,7 +5111,11 @@ dump_cache(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	cnt = m->qc->id; 
  	t = BATnew(TYPE_str, TYPE_bat, 1);
+	if( t == NULL)
+		throw(SQL, "sql.dumpcache", MAL_MALLOC_FAIL);
 	query = BATnew(TYPE_void, TYPE_str, cnt);
+	if( query == NULL)
+		throw(SQL, "sql.dumpcache", MAL_MALLOC_FAIL);
 	BATseqbase(query, 0);
 	count = BATnew(TYPE_void, TYPE_int, cnt);
 	BATseqbase(count, 0);
@@ -5101,9 +5151,15 @@ dump_opt_stats(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	cnt = m->qc->id; 
  	t = BATnew(TYPE_str, TYPE_bat, 1);
+	if( t == NULL)
+		throw(SQL, "sql.optstats", MAL_MALLOC_FAIL);
 	rewrite = BATnew(TYPE_void, TYPE_str, cnt);
+	if( rewrite == NULL)
+		throw(SQL, "sql.optstats", MAL_MALLOC_FAIL);
 	BATseqbase(rewrite, 0);
 	count = BATnew(TYPE_void, TYPE_int, cnt);
+	if( count == NULL)
+		throw(SQL, "sql.optstats", MAL_MALLOC_FAIL);
 	BATseqbase(count, 0);
 	BUNins(t, "rewrite", &rewrite->batCacheid, FALSE);
 	BUNins(t, "count", &count->batCacheid, FALSE);
@@ -5684,6 +5740,8 @@ Take a SQL table and compress its columns using the dictionary compression schem
 		if (b == NULL)
 			throw(MAL,"sql.compress","Can not access descriptor");
 		e = BATnew(b->htype, b->ttype, 0);
+		if( e == NULL)
+			throw(SQL, "sql.compression", MAL_MALLOC_FAIL);
 		BATsetaccess(e, BAT_READ);
 		d = c->data;
 		d->bid = 0;
@@ -6008,6 +6066,8 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	r = BATnew(TYPE_str,TYPE_bat,1);
+	if( r == NULL)
+		throw(SQL, "sql.storage", MAL_MALLOC_FAIL);
 	BUNins(r, "schema", &sch->batCacheid, FALSE);
 	BUNins(r, "table", &tab->batCacheid, FALSE);
 	BUNins(r, "column", &col->batCacheid, FALSE);
