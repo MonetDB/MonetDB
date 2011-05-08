@@ -164,11 +164,12 @@ OPTjoinSubPath(Client cntxt, MalBlkPtr mb)
 	for(i=0, p= getInstrPtr(mb, i); i< limit; i++, p= getInstrPtr(mb, i))
 		if ( getFunctionId(p)== joinPathRef || getFunctionId(p)== leftjoinPathRef || getFunctionId(p) == semijoinPathRef)
 			for ( j= p->retc; j< p->argc-1; j++){
-				for (k= 0; k < top; k++)
+				for (k= top-1; k >= 0 ; k--)
 					if ( candidate[k].lvar == getArg(p,j) && candidate[k].rvar == getArg(p,j+1) && candidate[k].fcn == getFunctionId(p)){
 						candidate[k].cnt++;
 						break;
 					}
+				if (k < 0) k = top;
 				if ( k == top && top < mb->stop ){
 					candidate[k].cnt =1;
 					candidate[k].lvar = getArg(p,j);
@@ -193,7 +194,7 @@ OPTjoinSubPath(Client cntxt, MalBlkPtr mb)
 	for(i=0, p= old[i]; i< limit; i++, p= old[i]) {
 		if( getFunctionId(p)== joinPathRef || getFunctionId(p)== leftjoinPathRef || getFunctionId(p) == semijoinPathRef)
 			for ( j= p->retc ; j< p->argc-1; j++){
-				for (k= 0; k < top; k++)
+				for (k= top-1; k >= 0 ; k--)
 					if ( candidate[k].lvar == getArg(p,j) && candidate[k].rvar == getArg(p,j+1) && candidate[k].fcn == getFunctionId(p) && candidate[k].cnt > 1){
 						if ( candidate[k].p == 0 ) {
 							if ( candidate[k].fcn == joinPathRef)
