@@ -156,7 +156,7 @@ db_users(Client c)
 	/* prepare the scens BAT: it should contain the sql scenario */
 	BAT *scens = BATnew(TYPE_str, TYPE_void, 1);
 	if(scens == NULL)
-		throw(SQL,"sql.db_users", MAL_MALLOC_FAIL);
+		return NULL;
 
 	BUNins(scens, "sql", 0, FALSE);
 	if ((tmp = AUTHgetUsers(&b, &c, &scens->batCacheid)) != MAL_SUCCEED) {
