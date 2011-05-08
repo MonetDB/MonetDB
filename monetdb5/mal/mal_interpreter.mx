@@ -64,7 +64,6 @@ mal_export void garbageElement(Client cntxt, ValPtr v);
 mal_export void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag);
 mal_export void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid);
 mal_export lng getVolume(MalStkPtr stk, InstrPtr pci, int rd);
-mal_export void getMemoryClaim(MalStkPtr stk, InstrPtr pci, lng *argclaim, lng *retclaim, lng *hotclaim);
 
 mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 
@@ -88,11 +87,6 @@ static void displayVolume(Client cntxt, lng vol);
 static lng memorypool;		/* memory claimed by concurrent threads */
 static lng memoryused;		/* memory used for intermediates */
 static int memoryclaims = 0;	/* number of threads active with expensive operations */
-static struct{
-	lng claim;	/* actual claim on memory*/
-	int bid;
-} hotpotatoes[MAXHOT];
-static int hottop = 0;
 
 #define heapinfo(X) if((X) && (X)->base) vol = (X)->free; else vol = 0;
 #define hashinfo(X) if((X) && (X)->mask) vol = ((X)->mask+(X)->lim+1)*sizeof(int) + sizeof(*(X)); else vol = 0;
@@ -572,9 +566,6 @@ mal_export str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 @-
 The flow graphs should be organized such that parallel threads can
 access it mostly without expensive locking.
-Furthermore, per flow block we keep an administration when
-variables are blocked or not. An instruction can fire if all
-its input variables are not blocked.
 @c
 #define DFLOWpending 0		/* runnable */
 #define DFLOWrunning 1		/* currently in progress */
@@ -590,22 +581,37 @@ typedef struct queue {
 } queue;
 
 
+@-
+The dataflow dependency is administered in a graph list structure. 
+For each instruction we keep the list of instructions that
+should be checked for eligibility once we are finished with it.
+@c 
 typedef struct {
 	MT_Id tid;
 	int id;
 	queue *todo;		/* pending actions for this client */
 	lng clk;
+	struct DataFlow *flow;
 } FlowTask;
 
-typedef struct DataFlow {
+typedef struct FLOWSTATUS {
 	Client cntxt;		/* for debugging and client resolution */
 	MalBlkPtr mb;		/* carry the context */
 	MalStkPtr stk;
+	int pc;			/* pc in underlying malblock */
+	int blocks; 	/* awaiting for variables */
+	sht state;		/* of execution */
+	sht cost;
+	lng hotclaim;	/* memory foot print of result variables */
+	lng argclaim;	/* memory foot print of arguments */
+	str error;
+} *FlowStatus, FlowStatusRec;
+
+typedef struct DataFlow {
 	int start, stop;	/* guarded block under consideration*/
-	char *status;		/* statements can be blocked on other statements */
-	char *blocked;		/* blocked, should be created first */
-	int *assign;		/* first assignment of variable */
-	int *inuse;		/* inuse in parallel threads reference count */
+	FlowStatus status;		/* status of each instruction */
+	int *nodes;			/* dependency graph nodes */
+	int *edges;			/* dependency graph */
 	queue *done;		/* work finished */
 	queue *todo;		/* pending actions for this client */
 	int    nway;		/* number of workers */
@@ -613,13 +619,18 @@ typedef struct DataFlow {
 	struct DataFlow *free;	/* free list */
 } *DataFlow, DataFlowRec;
 
-typedef struct {
-	int pc;	/* pc in underlying malblock */
-	sht status;
-	sht cost;
-	str error;
-	DataFlow flow;
-} *FlowStep, FlowStepRec;
+@-
+Calculate the size of the dataflow dependency graph.
+@c
+static int
+DFLOWgraphSize(MalBlkPtr mb, int start, int stop){
+	int cnt = 0;
+	int i;
+	
+	for(i= start; i < stop; i++)
+		cnt += getInstrPtr(mb,i)->argc;
+	return cnt;
+}
 
 @-
 Running all eligible instructions in parallel creates
@@ -628,7 +639,7 @@ an admission control scheme where threads are temporarily
 postponed if the claim for memory exceeds a threshold
 In general such contentions will be hard to predict,
 because they depend on the algorithm, the input sizes,
-and the output produced.
+concurrent use of the same variables, and the output produced.
 
 The heuristic is based on calculating the storage footprint
 of the operands and assuming it preferrably should fit in memory.
@@ -661,224 +672,72 @@ suspended instructions.
 	heapinfo(&b->T->heap); total += vol;
 	heapinfo(b->T->vheap); total += vol;
 	hashinfo(b->T->hash); total += vol;
-@= calcclaim
-t = total;
-if (stk->stk[getArg(pci,i)].vtype == TYPE_bat){
-	b = BATdescriptor(stk->stk[getArg(pci,i)].val.bval);
-	if (b==NULL)
-		continue;
-	@:calcFootprint@
-	/* prepare for hashes */
-	if ( b->H->hash == NULL && b->hsorted == 0  &&
-		 b->T->hash == NULL && b->tsorted == 0 ){
-		if ( BATcount(b)  > cnt)
-			cnt = BATcount(b);
-	}
-	if ( (b->ttype == TYPE_oid && !BATtordered(b) && !BATtdense(b)) ||
-	   ( b->htype == TYPE_oid && !BAThordered(b) && !BAThdense(b)) ){
-		/* assume we may have to do random IO, punish it by increasing the claim  with hash elem size*/
-		total += 4 * BATcount(b) ;
-		total = total >(lng) (MEMORY_THRESHOLD * monet_memory)? (lng) (MEMORY_THRESHOLD * monet_memory):total;
-	}
-	BBPunfix( h = b->batCacheid);
-}
 @c
+/*
+ * The memory claim is the estimate for the amount of memory hold.
+ * Views are consider cheap and ignored
+*/
 static lng
-getHotClaim()
-{
-	lng total = 0;
-	int i;
-	for ( i = 0; i < hottop; i++)
-		total += hotpotatoes[i].claim;
+getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag){
+	lng total=0, vol = 0;
+	BAT *b;
+
+	(void) mb;
+	if (stk->stk[getArg(pci,i)].vtype == TYPE_bat){
+		b = BATdescriptor(stk->stk[getArg(pci,i)].val.bval);
+		if (b==NULL)
+			return 0;
+		if ( flag && isVIEW(b)){
+			BBPunfix( b->batCacheid);
+			return 0;
+		}
+		@:calcFootprint@
+		total = total >(lng) (MEMORY_THRESHOLD * monet_memory)? (lng) (MEMORY_THRESHOLD * monet_memory):total;
+		BBPunfix( b->batCacheid);
+	}
 	return total;
 }
 
-@-
-Calculate the memory need of a single instruction and also determine how much of the
-hot potatoes it will eat.
-@c
-void
-getMemoryClaim(MalStkPtr stk, InstrPtr pci, lng *argclaim, lng *retclaim, lng *hotclaim)
-{
-	int i, h = int_nil;
-	lng guess=0, t=0, total = 0, vol=0;
-	BUN cnt = 0;
-	BAT *b;
-
-	total = 0;
-	if (retclaim)
-		*retclaim =0;
-	if (hotclaim)
-		*hotclaim =0;
-	if (argclaim){
-		for(i=  pci->retc; i< pci->argc; i++) {
-			h = int_nil;
-			@:calcclaim@
-			if ( guess == 0)
-				guess = total -t;
-			/* claims on hotpotatoes are not counted */
-			if (hotclaim)
-			for (t =0; t< hottop; t++)
-			if (hotpotatoes[t].bid == h)
-				*hotclaim += hotpotatoes[t].claim;
-		}
-		/* make sure you can afford one hash when you have propCheck enabled */
-		if ( GDKdebug & 10 ){
-			total += cnt * sizeof(BUN);
-		}
-		*argclaim = total;
-	}
-	if ( retclaim  && *retclaim == 0)
-		*retclaim = guess * pci->retc;
-#ifdef DEBUG_MEMORY_CLAIM
-	if ( total )
-		mnstr_printf(GDKout,"#DFLOWgetMemoryClaim   pool " LLFMT " claims " LLFMT "," LLFMT "," LLFMT"\n", memorypool,total,(retclaim?*retclaim:0),(hotclaim?*hotclaim:0));
-#endif
-}
-@-
-After we have executed the instruction, we should release any hotpotatoe claim (it is hot only once)
-and make more precise claims for the return arguments. Moreover, we should reduce the hot potatoe set,
-due to other arguments being loaded.
-@c
-void
-updMemoryUsedPart(MalStkPtr stk, InstrPtr pci, int start, int stop, lng argclaim)
-{
-	/* remove the result arguments from the hot set */
-	int i,j,h,bid;
-
-	if ( hottop >= MAXHOT || memoryused > (lng) (MEMORY_THRESHOLD * monet_memory) ){
-		/* forget everything returning memory to pool */
-		mal_set_lock(mal_contextLock, "DFLOWdelay");
-		for ( i =0; i< MAXHOT; i++){
-			hotpotatoes[i].claim=0;
-			hotpotatoes[i].bid=0;
-		}
-		memoryused = 0;
-		hottop = 0;
-		mal_unset_lock(mal_contextLock, "DFLOWdelay");
-#ifdef DEBUG_MEMORY_CLAIM
-		mnstr_printf(GDKout,"#DFLOWhotpotatoes reset\n");
-#endif
-	}
-
-	if (memorypool == 0 ){
-		/* not initialized */
-		return;
-	}
-	mal_set_lock(mal_contextLock, "DFLOWdelay");
-	for ( i = start; i< stop; i++)
-	if (stk->stk[getArg(pci,i)].vtype == TYPE_bat && (bid = stk->stk[getArg(pci,i)].val.bval) && bid)
-	{
-		for ( h = j= 0; j< hottop; j++)
-			if ( hotpotatoes[j].bid != ABS(bid))
-				hotpotatoes[h++]= hotpotatoes[j];
-			else{
-#ifdef DEBUG_MEMORY_CLAIM
-				if ( hotpotatoes[j].claim){
-					str cv = NULL;
-					ATOMformat(TYPE_bat, &hotpotatoes[hottop].bid, &cv);
-					mnstr_printf(GDKout,"#DFLOWhotpotatoes[%d] drops  [%s]" LLFMT "\n", j, cv, hotpotatoes[j].claim);
-					if (cv) GDKfree(cv);
-				}
-#endif
-			}
-		hottop = h;
-	}
-	/* input also invalidates part of the hot set */
-	argclaim = argclaim * (memorypool / (memorypool+memoryused));
-	for ( h = j= 0; j< hottop; j++)
-	if ( argclaim > 0)
-			argclaim -= hotpotatoes[j].claim;
-	else	hotpotatoes[h++]= hotpotatoes[j];
-	hottop = h;
-	mal_unset_lock(mal_contextLock, "DFLOWdelay");
-}
-
-void
-updMemoryUsed(MalStkPtr stk, InstrPtr pci, lng argclaim)
-{
-	lng action=0,total,t,vol;
-	int i,h,bid;
-	BUN cnt = 0;
-	BAT *b;
-
-
-	for ( i= 0; i< pci->retc && hottop < MAXHOT; i++)
-	if (stk->stk[getArg(pci,i)].vtype == TYPE_bat && (bid = stk->stk[getArg(pci,i)].val.bval) && bid)
-	{
-		total = 0;
-		@:calcclaim@
-		(void) t;
-		(void) h;
-		if ( total ) {
-			mal_set_lock(mal_contextLock, "DFLOWdelay");
-			hotpotatoes[hottop].bid = ABS(stk->stk[getArg(pci,i)].val.bval);
-			hotpotatoes[hottop].claim = total;
-#ifdef DEBUG_MEMORY_CLAIM
-			if ( total ) {
-				str cv = NULL;
-				ATOMformat(TYPE_bat, &hotpotatoes[hottop].bid, &cv);
-				mnstr_printf(GDKout,"#DFLOWhotpotatoes[%d] claims [%s]" LLFMT "\n", hottop, cv, total);
-				GDKfree(cv);
-			}
-#endif
-			hottop++;
-			action++;
-			mal_unset_lock(mal_contextLock, "DFLOWdelay");
-		}
-	}
-	updMemoryUsedPart(stk,pci, pci->retc,pci->argc,argclaim);
-#ifdef DEBUG_MEMORY_CLAIM
-	if ( total && action )
-		mnstr_printf(GDKout,"#DFLOWhotpotatoes pool " LLFMT " used " LLFMT "\n", memorypool, memoryused);
-#endif
-}
-
+/*
+ * The hotclaim indicates the amount of data recentely written.
+ * as a result of an operation. The argclaim is the sum over the hotclaims
+ * for all arguments.
+ * The argclaim provides a hint on how much we actually may need to execute
+ * The hotclaim is a hint how large the result would be.
+*/
 int
-DFLOWadmission(lng argclaim, lng retclaim, lng hotclaim)
+DFLOWadmission(lng argclaim, lng hotclaim)
 {
-	lng hot;
 	/* optimistically set memory */
-	if ( argclaim + retclaim == 0)
+	if ( argclaim == 0)
 		return 0;
 
 	mal_set_lock(mal_contextLock, "DFLOWdelay");
 	if (memorypool <= 0 && memoryclaims == 0) {
 			memorypool = (lng) (MEMORY_THRESHOLD * monet_memory);
-			hottop = 0;
 	}
 
-	if ( argclaim + retclaim > 0 ) {
-		if (memoryclaims == 0 || memorypool - memoryused > argclaim + retclaim -hotclaim){
-			hot = getHotClaim();
-			if ( memoryclaims && hotclaim == 0  && argclaim + retclaim > memorypool - memoryused - hot) {
-				/* don't start unless you can eat the hot potatoes first */
-#ifdef DEBUG_MEMORY_CLAIM
-				mnstr_printf(GDKerr,"#Delayed due to hot potatoes pool " LLFMT " used " LLFMT " hot " LLFMT "\n", memorypool, memoryused,hot);
-#endif
-				mal_unset_lock(mal_contextLock, "DFLOWdelay");
-				return -1;
-			}
-			memorypool -= (argclaim + retclaim);
+	if ( argclaim > 0 ) {
+		if (memoryclaims == 0 || memorypool - memoryused > argclaim + hotclaim){
+			memorypool -= (argclaim + hotclaim);
 			memoryclaims ++;
-#ifdef DEBUG_MEMORY_CLAIM
-			mnstr_printf(GDKout,"#DFLOWadmit %3d thread %d pool " LLFMT","LLFMT " claims " LLFMT "," LLFMT"," LLFMT"\n",
-				memoryclaims, THRgettid(), memorypool, memoryused, argclaim, retclaim,hotclaim);
-#endif
+			PARDEBUG
+				mnstr_printf(GDKstdout,"#DFLOWadmit %3d thread %d pool " LLFMT","LLFMT " claims " LLFMT "," LLFMT"\n",
+					memoryclaims, THRgettid(), memorypool, memoryused, argclaim, hotclaim);
 			mal_unset_lock(mal_contextLock, "DFLOWdelay");
 			return 0;
 		}
+		PARDEBUG
+			mnstr_printf(GDKstdout,"#Delayed due to lack of memory " LLFMT " used " LLFMT " requestd " LLFMT "\n", memorypool, memoryused, argclaim+hotclaim);
 		mal_unset_lock(mal_contextLock, "DFLOWdelay");
 		return -1;
 	}
 	/* release memory claimed before */
-	memorypool += -argclaim -retclaim ;
+	memorypool += -argclaim - hotclaim ;
 	memoryclaims --;
-#ifdef DEBUG_MEMORY_CLAIM
-		mnstr_printf(GDKout,"#DFLOWadmit %3d thread %d pool " LLFMT","LLFMT " claims " LLFMT "," LLFMT"," LLFMT"\n",
-			memoryclaims, THRgettid(), memorypool, memoryused, argclaim, retclaim,hotclaim);
-		mnstr_flush(GDKout);
-#endif
+	PARDEBUG
+		mnstr_printf(GDKstdout,"#DFLOWadmit %3d thread %d pool " LLFMT","LLFMT " claims " LLFMT "," LLFMT"\n",
+			memoryclaims, THRgettid(), memorypool, memoryused, argclaim, hotclaim);
 	assert(memoryclaims >= 0 );
 	mal_unset_lock(mal_contextLock, "DFLOWdelay");
 	return 0;
@@ -919,26 +778,37 @@ q_destroy( queue *q )
 }
 */
 
-/* keep a simple FIFO queue. It won't be a large one, so shuffles of requeue is possible */
+/* keep a simple LIFO queue. It won't be a large one, so shuffles of requeue is possible */
+/* we might actually sort it for better scheduling behavior */
 static void
-q_enqueue(queue *q, void *d)
+q_enqueue_(queue *q, FlowStatus d)
 {
-	MT_lock_set(&q->l, "q_enqueue");
 	if (q->last == q->size) {
 		/* enlarge buffer */
 		q->size <<= 1;
 		q->data = GDKrealloc(q->data, sizeof(void*)*q->size);
 	}
-	q->data[q->last++] = d;
+	q->data[q->last++] = (void*) d;
+}
+static void
+q_enqueue(queue *q, FlowStatus d)
+{
+	MT_lock_set(&q->l, "q_enqueue");
+	q_enqueue_(q, d);
 	MT_lock_unset(&q->l, "q_enqueue");
 	MT_sema_up(&q->s, "q_enqueue");
 }
 
+/*
+ * A priority queue over the hot claims of memory may
+ * be more effective. It priorizes those instructions
+ * that want to use a big recent result
+*/
+
 static void
-q_requeue(queue *q, void *d)
+q_requeue_(queue *q, void *d)
 {
 	int i;
-	MT_lock_set(&q->l, "q_requeue");
 	if (q->last == q->size) {
 		/* enlarge buffer */
 		q->size <<= 1;
@@ -946,8 +816,14 @@ q_requeue(queue *q, void *d)
 	}
 	for ( i=q->last; i > 0; i--)
 		q->data[i]= q->data[i-1];
-	q->data[0] = d;
+	q->data[0] =  (void*)  d;
 	q->last++;
+}
+static void
+q_requeue(queue *q, void *d)
+{
+	MT_lock_set(&q->l, "q_requeue");
+	q_requeue_(q,d);
 	MT_lock_unset(&q->l, "q_requeue");
 	MT_sema_up(&q->s, "q_requeue");
 }
@@ -972,11 +848,23 @@ We simply move an instruction into the front of the queue.
 Beware, we assume that variables are assigned a value once, otherwise
 the order may really create errors.
 The order of the instructions should be retained as long as possible.
+@-
+Delay processing when we run out of memory.  Push the instruction back
+on the end of queue, waiting for another attempt. Problem might become
+that all threads but one are cycling through the queue, each time
+finding an eligible instruction, but without enough space.
+Therefore, we wait for a few milliseconds as an initial punishment.
+
+The process could be refined by checking for cheap operations,
+i.e. those that would require no memory at all (aggr.count)
+This, however, would lead to a dependency to the upper layers,
+because in the kernel we don't know what routines are available
+with this property. Nor do we maintain such properties.
 @c
 static str
-DFLOWstep(FlowTask *t, FlowStep fs)
+DFLOWstep(FlowTask *t, FlowStatus fs)
 {
-	DataFlow flow = fs->flow;
+	DataFlow flow = t->flow;
 	int stkpc = fs->pc;
 
 	ValPtr lhs,rhs,v;
@@ -986,19 +874,18 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 #if FAST
 	int stamp = -1;
 #endif
-	bat *backup= (bat*) alloca(flow->mb->maxarg * sizeof(bat));
-	str *sbackup= (str*) alloca(flow->mb->maxarg * sizeof(str));
-	int *garbage= (int*) alloca(flow->mb->maxarg * sizeof(int));
-	Client cntxt = flow->cntxt;
-	MalBlkPtr mb = flow->mb;
-	MalStkPtr stk = flow->stk;
-	int startpc = flow->start;
+	bat *backup= (bat*) alloca(fs->mb->maxarg * sizeof(bat));
+	str *sbackup= (str*) alloca(fs->mb->maxarg * sizeof(str));
+	int *garbage= (int*) alloca(fs->mb->maxarg * sizeof(int));
+	Client cntxt = fs->cntxt;
+	MalBlkPtr mb = fs->mb;
+	MalStkPtr stk = fs->stk;
+	int startpc = fs->pc;
 	InstrPtr pci;
 	lng oldtimer=0;
 	struct Mallinfo oldMemory;
 	MT_Lock *lock = &flow->done->l;
 	int tid = t->id, prevpc= 0;
-	lng argclaim,retclaim,hotclaim;
 
 #ifdef HAVE_SYS_RESOURCE_H
 	int oldinblock=0;
@@ -1014,7 +901,7 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 	if (stk == NULL || stkpc < 0)
 		throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
 
-	pci = getInstrPtr(flow->mb, stkpc);
+	pci = getInstrPtr(fs->mb, stkpc);
 #ifdef DEBUG_FLOW
 	printf("#EXECUTE THREAD %d \n", tid);
 	printInstruction(GDKstdout, flow->mb, 0, pci, LIST_MAL_STMT | LIST_MAPI);
@@ -1031,7 +918,7 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 		if (stk->cmd == 'x' || cntxt->mode == FINISHING) {
 			/* need a way to skip */
 			stkpc = mb->stop;
-			fs->status = -1;
+			fs->state = -1;
 			return ret;
 		}
 		if (oldtimer ) {
@@ -1049,63 +936,17 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 	@:beginProfile(t,0)@
 	ret = MAL_SUCCEED;
 	@:MALrecycleStart(t)@ {
-@-
-Delay processing when we run out of memory.  Push the instruction back
-on the end of queue, waiting for another attempt. Problem might become
-that all threads but one are cycling through the queue, each time
-finding an eligible instruction, but without enough space.
-Therefore, we wait for a few milliseconds as an initial punishment.
-
-The process could be refined by checking for cheap operations,
-i.e. those that would require no memory at all (aggr.count)
-This, however, would lead to a dependency to the upper layers,
-because in the kernel we don't know what routines are available
-with this property. Nor do we maintain such properties.
-@c
-		getMemoryClaim(stk, pci, &argclaim, &retclaim,&hotclaim);
-		if ( DFLOWadmission(argclaim,retclaim,hotclaim) ){
-			PARDEBUG {
-				mnstr_printf(GDKout,"#DFLOWdelay instruction %d pool  " LLFMT " claim "LLFMT"\n#", THRgettid(),  memorypool, argclaim+retclaim);
-				printInstruction(GDKstdout, mb, 0, pci, LIST_MAL_STMT | LIST_MAPI);
-			}
-			for ( ; ; )
-			{
-				MT_sleep_ms(3); /* enough to pass some cheap instructions */
-				if ( DFLOWadmission(argclaim,retclaim,hotclaim) == 0) {
-					PARDEBUG {
-						mnstr_printf(GDKout,"#DFLOWcont  thread %d delay " LLFMT " pool  " LLFMT" delayed " LLFMT " ms\n#", THRgettid(),  memorypool, argclaim+retclaim, (GDKusec()-stk->clk)/1000);
-						printInstruction(GDKstdout, mb, 0, pci, LIST_MAL_STMT | LIST_MAPI);
-					}
-					break;
-				}
-				/* if we claim only part of memory, then let's wait */
-				if (argclaim + retclaim -hotclaim <  (lng) (monet_memory / (memoryclaims+1)))
-					continue;
-				/* re-schedule instructions that require a lot of memory for postponed execution */
-				PARDEBUG {
-					mnstr_printf(GDKout,"#DFLOWrequeue instr  %d pool  " LLFMT " claim "LLFMT"\n#", THRgettid(),  memorypool, argclaim+retclaim);
-					printInstruction(GDKstdout, mb, 0, pci, LIST_MAL_STMT | LIST_MAPI);
-				}
-				/* actually should use DFLOWretry status */
-				throw(MAL,"DFLOWadmission","failed");
-			}
-		}
-		/* remove all result hotpotatoes now */
-		updMemoryUsedPart(stk,pci,0,pci->retc,-1);
 		@:beginProfile(t,1)@
 @-
-To improve memory access behavior we could touch the pages of all BATs to enforce them to become memory resident.
-This won't work, because it is not selective enough. The advice should be selectively given in the kernel.
-
 The number of instructions allowed is severely limited.
-We don't allow sequential flow control here.
+We don't allow sequential flow control here, which is enforced by the dataflow optimizer;
 @c
 		switch (pci->token){
-		case ASSIGNsymbol: @:assignStmt(FAST,fs->pc = -fs->pc; updMemoryUsed(stk,pci,argclaim); DFLOWadmission(-argclaim,-retclaim,-hotclaim); return ret,t)@ break;
-		case PATcall: @:patterncall(FAST,fs->pc = -fs->pc; updMemoryUsed(stk,pci,argclaim); DFLOWadmission(-argclaim,-retclaim,-hotclaim); return ret,t)@ break;
-		case CMDcall: @:commandcall(FAST,fs->pc = -fs->pc; updMemoryUsed(stk,pci,argclaim); DFLOWadmission(-argclaim,-retclaim,-hotclaim); return ret,t)@ break;
-		case FACcall: @:factorycall(FAST,fs->pc = -fs->pc; updMemoryUsed(stk,pci,argclaim); DFLOWadmission(-argclaim,-retclaim,-hotclaim); return ret,t)@ break;
-		case FCNcall: @:functioncall(FAST,fs->pc = -fs->pc; updMemoryUsed(stk,pci,argclaim); DFLOWadmission(-argclaim,-retclaim,-hotclaim); return ret,t)@ break;
+		case ASSIGNsymbol: @:assignStmt(FAST,fs->pc = -fs->pc; return ret,t)@ break;
+		case PATcall: @:patterncall(FAST,fs->pc = -fs->pc; return ret,t)@ break;
+		case CMDcall: @:commandcall(FAST,fs->pc = -fs->pc; return ret,t)@ break;
+		case FACcall: @:factorycall(FAST,fs->pc = -fs->pc; return ret,t)@ break;
+		case FCNcall: @:functioncall(FAST,fs->pc = -fs->pc; return ret,t)@ break;
 		case NOOPsymbol:
 		case REMsymbol:
 			break;
@@ -1117,8 +958,6 @@ We don't allow sequential flow control here.
 			ret = createScriptException(mb, stkpc, MAL,
 					NULL, "unkown operation");
 		}
-		updMemoryUsed(stk,pci,argclaim);
-		DFLOWadmission(-argclaim,-retclaim,-hotclaim);
 	}
 	@:endProfile(t)@
 	if (ret)
@@ -1150,205 +989,169 @@ just produced. THis way it need not be saved on disk for a long time.
 static void
 runDFLOWworker(void *t)
 {
-	FlowStep fs,oldfs =0;
+	FlowStatus fs, nxtfs =0;
 	FlowTask *task = (FlowTask*) t;
-	str err;
+	InstrPtr p;
 	Thread thr;
+	int i, local=0, last = 0;
 
 	thr = THRnew(MT_getpid(), "DFLOWworker");
 	while(task) {
-		fs = (FlowStep)q_dequeue(task->todo);
+		local = nxtfs != 0;
+		if ( nxtfs == 0)
+			fs = (FlowStatus) q_dequeue(task->todo);
+		else fs = nxtfs;
+		if ( DFLOWadmission(fs->argclaim, fs->hotclaim) ){
+			PARDEBUG 
+				mnstr_printf(GDKout,"#delay pc=%d thr= %d pool  " LLFMT " claim "LLFMT"\n", fs->pc,THRgettid(),  memorypool, fs->argclaim);
+			MT_sleep_ms(1);
+			fs->hotclaim = 0;	/* don't assume priority anymore */
+			q_requeue(task->todo,fs);
+			nxtfs = 0;
+			continue;
+		}
+		assert(fs->pc > 0);
 		PARDEBUG
-			mnstr_printf(GDKstdout,"#execute pc=%d thread =%d \n",fs->pc, task->id);
-		if ( fs == oldfs){
-			q_requeue(task->todo,fs);
-			MT_sleep_ms(10);
-			oldfs = 0;	/* don't escape it always */
-			continue;
+			mnstr_printf(GDKstdout,"#execute pc= %d thr= %d %s\n",fs->pc, task->id, fs->error?fs->error:"");
+		fs->error = DFLOWstep(task, fs);
+
+		PARDEBUG
+			mnstr_printf(GDKstdout,"#execute pc= %d thr= %d finished %s\n",fs->pc, task->id, fs->error?fs->error:"");
+
+		/* release the memory claim */
+		DFLOWadmission(-fs->argclaim,-fs->hotclaim);
+
+		p = getInstrPtr(fs->mb, ABS(fs->pc));
+		fs->hotclaim = 0;
+		for( i=0; i< p->retc; i++)
+			fs->hotclaim += getMemoryClaim(fs->mb, fs->stk, p, i, TRUE);
+		
+		/* see if you can find an eligible instruction that uses the
+		 * result just produced. Then we can continue with it right away.
+		 * We are just looking for the last block, which means we are safe from concurrent actions
+		*/
+		nxtfs = 0;
+		if ( fs->pc >= 0 )
+		for ( last = fs->pc - task->flow->start; (i = task->flow->nodes[last]) > 0; last= task->flow->edges[last])
+		if (task->flow->status[i].state == DFLOWpending &&
+		    task->flow->status[i].blocks == 1) {
+			task->flow->status[i].state = DFLOWrunning;
+			task->flow->status[i].blocks = 0;
+			task->flow->status[i].hotclaim = fs->hotclaim/p->retc;
+			task->flow->status[i].argclaim += fs->hotclaim/p->retc;
+			task->flow->status[i].error = NULL;
+			nxtfs = task->flow->status + i;
+			PARDEBUG
+				mnstr_printf(GDKstdout,"#continue pc= %d thr= %d\n", nxtfs->pc, task->id);
+			break;
 		}
-		oldfs = fs;
-#ifdef DEBUG_FLOW
-		if ( fs->pc >= 0)
-			printInstruction(GDKstdout, fs->flow->mb, 0, getInstrPtr(fs->flow->mb,fs->pc), LIST_MAL_STMT | LIST_MAPI);
-#endif
-		err = fs->pc >0 ? DFLOWstep(task, fs): createException(MAL,"interpreter","flow step failed");
-		/* restore the instruction and wait in specific cases*/
-		if ( err != MAL_SUCCEED && strstr(err,"DFLOWadmission") != NULL && strstr(err,"failed") != NULL){
-			FREE_EXCEPTION(err);
-			fs->pc = ABS(fs->pc);
-			fs->status = DFLOWrunning;
-			q_requeue(task->todo,fs);
-			continue;
-		}
-		fs->error = err;
-		q_enqueue(fs->flow->done, fs);
+
+		/* all non-local choices are handled by the main scheduler */
+		/* we always return the instruction handled */
+		/* be careful, the local continuation should be last in the queue */
+		if ( local)
+			q_requeue(task->flow->done, fs);
+		else
+			q_enqueue(task->flow->done, fs);
 	}
 	THRdel(thr);
 }
 
 @-
-The dataflow block assumes a linear MAL program.
-The dataflow administration is based on three properties.
-For each variable we keep a flag telling if it is blocked,
-i.e. not available, because it has not been assigned a value yet.
-Blocked[a]== 0 means that the variable can be used.
-
-The property inus[a] tells how many instructions still
-want to use the variable before it reaches the next assignment.
-Each instruction is counted once, even if the same variable is used multiple times.
-
-The eoscope statement should be treated with care, because it
-can only be executed when the inuse[a] drops  to 1.
-The instruction is enqued last.
-
-Further complications are the definitions of variables outside
-the dataflow block. They appear as input variables without assignment.
-They are considered unblocked.
-
-After an instruction has been executed, we should decrease
-the inuse[a] property for all input arguments. Furthermore, all
-target variables become nonblocked and can be used to enqueue instructions.
-
+The dataflow administration is based on administration of
+how many variables are still missing before it can be executed.
+For each instruction we keep a list of instructions whose
+blocking counter should be decremented upon finishing it.
 @c
 static void
-DFLOWinit(DataFlow flow, FlowStep fs)
+DFLOWinit(DataFlow flow, Client cntxt, MalBlkPtr mb, MalStkPtr stk, int size)
 {
-	int i, n;
+	int pc, i, j, k, n, etop = 0;
+	int *assign;
+	InstrPtr p;
 
 	PARDEBUG
 		printf("Initialize dflow block\n");
-	for (n=0, i = flow->start; i<flow->stop; i++, n++) {
-		InstrPtr p = getInstrPtr(flow->mb, i);
-		int j, a;
-
-		PARDEBUG
-			printInstruction(GDKstdout, flow->mb, 0, p, LIST_MAL_STMT | LIST_MAPI);
+	assign = (int*) GDKzalloc(mb->vtop * sizeof(int));
+	etop = flow->stop - flow->start;
+	for (n=0, pc = flow->start; pc<flow->stop; pc++, n++) {
+		p = getInstrPtr(mb, pc);
 
 		/* initial state, ie everything can run */
-		fs[n].pc = i;
-		fs[n].status = DFLOWpending;
-		fs[n].flow = flow;
-		fs[n].cost = -1;
-		fs[n].error = NULL;
+		flow->status[n].cntxt = cntxt;
+		flow->status[n].mb = mb;
+		flow->status[n].stk = stk;
+		flow->status[n].pc = pc;
+		flow->status[n].state = DFLOWpending;
+		flow->status[n].cost = -1;
+		flow->status[n].error = NULL;
 
-		for (j=0; j<p->argc; j++){
-			a = getArg(p, j);
-
-			if (j<p->retc && flow->assign[a] != 0)
-				assert(0);
-
-			if (j<p->retc && flow->assign[a] == 0 && flow->inuse[a] == 0) {
-				flow->assign[a] = i;
-				flow->blocked[a] = isNotUsedIn(p,p->retc,a)?1:0;
-			}
-
-			if (j>=p->retc  && !isVarConstant(flow->mb, a)  )
-				flow->inuse[a] += isNotUsedIn(p,j+1,a);
-		}
-	}
-
-	memset(flow->inuse, 0, flow->mb->vtop * sizeof(flow->inuse[0]));
-
-	PARDEBUG
-	for (i=0; i < flow->mb->vtop; i++)
-	if ( flow->blocked[i] || flow->inuse[i] || flow->assign[i] ){
-		printf("%s %d %d [ %1d %2d ]\n", getVarName(flow->mb,i),
-			getEndOfLife(flow->mb,i), i,
-			flow->blocked[i],
-			flow->inuse[i]);
-	}
-}
-@-
-The liberal use of MAL to construct programs complicate proper dataflow
-dependency analysis. For example, consider the following fragment of
-a remote execution
-@verbatim
-barrier go:=language.dataflow()
-con:= remote.connect(...)
-res:= remote.put(con, v:int)
-inp:= remote.put(con, i:int)
-res:= remote.exe(con,m,f,inp);
-ans:= remote.get(con,res)
-exit go
-@end verbatim
-Naive interpretation could lead to execution of either 'res:=' operation in non-determined order.
-Moreover, the result 'ans:' should be obtained after the corresponding 'res:=' has been executed.
-@c
-static int
-DFLOWeligible(DataFlow flow, FlowStep fs, int i, InstrPtr p, int pc)
-{
-	int j, k, l, blocked = 0;
-	InstrPtr q;
-	(void) pc;
-
-	for(j=0; j<p->argc && !blocked; j++) {
-		int var = getArg(p,j);
-		if ( j >= p->retc && flow->blocked[var] ) {
-			blocked = 1;
-			break;
-		}
-		else
-		if ( j < p->retc && flow->inuse[var] ) {
-			blocked = 1;
-			break;
-		}
-		else
-		if ( getEndOfLife(flow->mb,var)  == fs[i].pc ) {
-			/* make sure all instructions interested have already been executed */
-			/* and the eoscope variables are not used anymore */
-
-			if (flow->inuse[var] != 0) {
-				blocked = 1;
-				break;
-			}
-			else
-				for ( k=0; k < i ; k++)
-					if ( fs[k].status != DFLOWwrapup && fs[k].pc >= 0/* pc = -1 could be the case before wrapup is set*/
-						 && !isNotUsedIn(getInstrPtr(flow->mb, fs[k].pc), 0, var) ) {
-						blocked = 1;
-						break;
-					}
-		} else {
-			/* handle the dependencies sketched above */
-			/* search the statement that assigns a value to the argument or target */
-			/* it should have been finished already */
-			for (l = flow->assign[var]; l < i && !blocked; l++)
-				if ( fs[l].status != DFLOWwrapup && fs[l].pc >= 0){
-					q= getInstrPtr(flow->mb, fs[l].pc);
-					for ( k=0; k < q->retc; k++)
-						if ( getArg(q,k) == var ) {
-							blocked = 1;
-							break;
-						}
+		/* administer flow dependencies */
+		for (j= p->retc; j<p->argc; j++)  {
+			if ( !isVarConstant(mb,getArg(p,j)) && ( k = assign[getArg(p,j)]) ) {
+				/* add edge to the target instruction for wakeup call */
+				k -= flow->start;
+				if ( flow->nodes[k] ){
+					/* add wakeup to tail of list */
+					for ( i= k; flow->edges[i] > 0; i = flow->edges[i])
+						;
+					flow->nodes[etop] = n;
+					flow->edges[etop] = -1;
+					flow->edges[i]  = etop;
+					etop++;
+					(void) size;
+					assert(etop < size);
+				} else {
+					flow->nodes[k] = n;
+					flow->edges[k] = -1;
 				}
+				
+				flow->status[n].blocks++;
+			}
+			/* be careful, watch out for garbage collection interference */
+			/* those should be scheduled after all its other uses */
+			k= getEndOfLife(mb,getArg(p,j));
+			if ( k != pc && k< flow->stop && k > flow->start){
+				/* add edge to the target instruction for wakeup call */
+				PARDEBUG
+					mnstr_printf(GDKstdout,"forward %d -> %d\n",n + flow->start,k);
+				k -= flow->start;
+				if ( flow->nodes[n] ){
+					/* add wakeup to tail of list */
+					for ( i= n; flow->edges[i] > 0; i = flow->edges[i])
+						;
+					flow->nodes[etop] = k;
+					flow->edges[etop] = -1;
+					flow->edges[i]  = etop;
+					etop++;
+					(void) size;
+					assert(etop < size);
+				} else {
+					flow->nodes[n] = k;
+					flow->edges[n] = -1;
+				}
+				flow->status[k].blocks++;
+			}
 		}
+
+		for (j= 0; j < p->retc; j++) 
+			assign[getArg(p,j)] = pc;	/* ensure recognition of dependency on first instruction and constant */
 	}
-	return blocked == 0;
+	GDKfree(assign);
+	PARDEBUG
+		for (n=0; n< flow->stop - flow->start; n++) {
+			mnstr_printf(GDKstdout,"#[%d] %d: ",flow->start+n,n);
+			printInstruction(GDKstdout, mb, 0, getInstrPtr(mb,n+ flow->start), LIST_MAL_STMT | LIST_MAPI);
+			mnstr_printf(GDKstdout,"#[%d]Dependents blocks %d:",flow->start+n, flow->status[n].blocks);
+			for (j= n; flow->edges[j]; j = flow->edges[j]){
+				mnstr_printf(GDKstdout,"%d ", flow->start + flow->nodes[j]);
+				if ( flow->edges[j] == -1)
+					break;
+			}
+			mnstr_printf(GDKstdout,"\n");
+		}
 }
 
-static void
-DFLOWactivate(DataFlow flow, FlowStep fs, int i,InstrPtr p)
-{
-	int j;
-	for(j=p->retc; j<p->argc; j++) {
-		if (!isVarConstant(flow->mb, getArg(p,j)))
-			flow->inuse[getArg(p,j)] += isNotUsedIn(p,j+1,getArg(p,j));
-	}
-
-	/* the target variables become blocked until this instruction is finished */
-	for ( j = 0; j< p->retc; j++)
-		flow->blocked[getArg(p,j)] = 1;
-
-	fs[i].status = DFLOWrunning;
-
-	PARDEBUG {
-		mnstr_printf(GDKstdout,"#enqueue pc=%d", fs[i].pc);
-		for(j=p->retc; j<p->argc; j++)
-			mnstr_printf(GDKstdout," %d ",flow->inuse[getArg(p,j)]);
-		printInstruction(GDKstdout, flow->mb, 0, p, LIST_MAL_STMT | LIST_MAPI);
-		mnstr_printf(GDKstdout,"\n");
-	}
-}
 @-
 Parallel processing is mostly driven by dataflow, but within this context
 there may be different schemes to take instructions into execution.
@@ -1361,151 +1164,121 @@ execution hold.
 static str
 DFLOWscheduler( DataFlow flow )
 {
-	int queued = 0, candidates;
-	int todo = 0, done = 0;
-	int pc = 0, i, j, oa =0, ia,k;
-	int limit = flow->stop - flow->start, lookahead =0;
+	int queued = 0, oldq=0, last;
+	int pc = 0, i,j;
+	int todo = flow->stop - flow->start;
 	str ret = MAL_SUCCEED;
-	FlowStep fs = (FlowStep)alloca(sizeof(FlowStepRec) * limit), f = 0;
-	InstrPtr p, last=0;
+	FlowStatus fs, f = 0;
+	InstrPtr p;
 
-	if ( limit == 0)
+	if ( todo == 0)
 		throw(MAL,"dataflow","Empty dataflow block");
 	/* initialize the eligible statements */
-	DFLOWinit(flow, fs);
+	fs = flow->status;
 
-	if (flow->cntxt->flags & timerFlag)
-		flow->cntxt->timer = GDKusec();
+/* old code
+	assert(f->stk->wrapup == 0); 
+	assert(f->stk->admit == 0);
+*/
 
-	if( limit)
-		goto firststep;	/* confuse static code analysers, i want a jump */
+	if (fs[0].cntxt->flags & timerFlag)
+		fs[0].cntxt->timer = GDKusec();
 
-	while(queued || todo != done){
-		PARDEBUG mnstr_printf(GDKstdout,"#waiting for results, queued %d todo %d done %d\n", queued,todo,done);
+	/* enter all dependencies before releasing the queue  */
+	MT_lock_set(&flow->todo->l, "q_enqueue");
+	for ( i = 0; i < todo; i++ ) 
+	if ( flow->status[i].blocks == 0) {
+		p = getInstrPtr(fs[0].mb,i);
+		for( j= p->retc; j < p->argc; j++)
+			flow->status[i].argclaim += getMemoryClaim(flow->status[0].mb, flow->status[0].stk, p, j, FALSE);
+		queued++;
+		flow->status[i].state = DFLOWrunning;
+		PARDEBUG 
+			mnstr_printf(GDKstdout,"#enqueue pc=%d claim=%d queue %d\n", flow->status[i].pc, flow->status[i].argclaim,queued);
+		q_enqueue_(flow->todo, flow->status + i);
+	}
+	MT_lock_unset(&flow->todo->l, "q_enqueue");
+	while ( oldq++ < queued )
+		MT_sema_up(&flow->todo->s, "q_enqueue");
+
+	/* consume the remainder */
+	PARDEBUG mnstr_printf(GDKstdout,"#run %d instructions in dataflow block\n",todo);
+	while(queued ){
+		PARDEBUG mnstr_printf(GDKstdout,"#waiting for results, queued %d\n", queued);
 		f = q_dequeue(flow->done);
-		if ( f->status == DFLOWretry ){
-			/* reschedule the instruction */
-			f->status = DFLOWrunning;
-			q_requeue(flow->todo, f);
-			continue;
-		}
-		if ( f->flow->stk->wrapup ) /* clean up whatever is called for */
-			(*f->flow->stk->wrapup)(f->flow->cntxt, f->flow->mb, f->flow->stk, getInstrPtr(flow->mb, abs(f->pc)));
-		f->status = DFLOWwrapup;
-		done++;
 		queued--;
+
 		if (f->pc < 0) {
-			PARDEBUG
-				mnstr_printf(GDKstdout,"#errors encountered %s ", f->error);
 			/* we have to wait for all threads to report back */
-			/* dequeue the remainders in case of an error */
-			while(todo != done)  {
-				if ( f->flow->stk->wrapup ) /* clean up whatever is called for */
-					(*f->flow->stk->wrapup)(f->flow->cntxt, f->flow->mb, f->flow->stk, getInstrPtr(flow->mb, abs(f->pc)));
-				(void)q_dequeue(flow->done);
-				done++;
-			}
-			return f->error;
-		} else {
-			p = getInstrPtr(flow->mb, f->pc);
-			PARDEBUG{
-				mnstr_printf(GDKstdout,"#dequeue pc=%d", f->pc);
-				for(j=p->retc; j<p->argc; j++)
-					mnstr_printf(GDKstdout," %d ",flow->inuse[getArg(p,j)]);
-				printInstruction(GDKstdout, flow->mb, 0, p, LIST_MAL_STMT | LIST_MAPI);
-			}
-
-			/* update the input args */
-			for(j=p->retc; j<p->argc; j++) {
-				ia = getArg(p,j);
-
-				if (isVarConstant(flow->mb, ia))
-					continue;
-
-				flow->inuse[ia] -= isNotUsedIn(p,j+1,ia);
-			}
-			/* deblock the output args */
-			for(j=0; j<p->retc; j++) {
-				oa = getArg(p,j);
-				/* find the last instruction that should be inspected for eligibility */
-				if ( getEndOfLife(flow->mb,oa) > lookahead)
-					lookahead = getEndOfLife(flow->mb,oa) +1;
-
-				flow->blocked[oa] = 0;
-				flow->inuse[oa] = 0;
-			}
-			last = p;
-		}
-		firststep:
-		PARDEBUG if (queued)
-			mnstr_printf(GDKstdout,"#schedule new instructions, start from %d\n", pc);
-
-		/* avoid the head of the flow that has already been handled */
-		for( ; pc < limit; pc++)
-			if ( fs[pc].status != DFLOWwrapup)
-				break;
-		if (lookahead <= pc)
-			lookahead = pc+1;
-		if ( lookahead > limit)
-			lookahead = limit;
-
-		if (flow->stk->admit == 0) {
-			@:DFLOWscheduler_body( DFLOWeligible(flow,fs,i,p,pc), foundit1 )@
-		} else {
-			@:DFLOWscheduler_body( DFLOWeligible(flow,fs,i,p,pc) && (*flow->stk->admit)(flow->cntxt, flow->mb, flow->stk, p), foundit2 )@
-		}
-@= DFLOWscheduler_body
-		/* first try to find an instructions that use the released target */
-		candidates = 0;
-		if ( last)
-		for(i = pc; i < lookahead ; i++)
-			if (fs[i].status == DFLOWpending ) {
-				p = getInstrPtr(flow->mb, fs[i].pc);
-				for ( j= p->retc; j < p->argc; j++)
-				for ( k= 0; k < last->retc; k++)
-					if ( getArg(p,j)== getArg(last,k) ) {
-						if ( @1 ) {
-							queued++;
-							todo++;
-							candidates = 1;
-							DFLOWactivate(flow,fs,i,p);
-							q_enqueue(flow->todo, fs+i);
-						}
-						goto @2;
-					}
-				@2: /* it can only be activated once */;
-			}
-		/* if all work done then inspect rest */
-		if (candidates < flow->nway)
-			for(i = pc ; i < limit && queued < flow->nway ; i++)
-				if (fs[i].status == DFLOWpending ) {
-					p = getInstrPtr(flow->mb, fs[i].pc);
-					if ( @1 ) {
-						queued++;
-						todo++;
-						DFLOWactivate(flow,fs,i,p);
-						q_enqueue(flow->todo, fs+i);
-					}
+			PARDEBUG
+				mnstr_printf(GDKstdout,"#errors encountered %s ", f->error?f->error:"unknown");
+			if ( ret == MAL_SUCCEED )
+				ret= f->error;
+			else {
+				str z= (char*) GDKmalloc( strlen(ret)+strlen(f->error)+2);
+				if( z ){
+					strcpy(z,ret);
+					if (z[strlen(z)-1] != '\n') strcat(z,"\n");
+					strcat(z,f->error);
+					GDKfree(f->error);
+					GDKfree(ret);
+					ret = z;
 				}
-@c
+			}
+		} 
+
+/*
+ * When an instruction is finished we have to reduce
+ * the blocked counter for all dependent instructions.
+ * for those where it drops to zero we can scheduler it
+ * Moreover, we add the return variable claim size to the target instruction
+ * and remember the last increment as hotclaim.
+*/
+		f->state = DFLOWwrapup;
+		last =  ABS(f->pc) - flow->start;
+		PARDEBUG 
+			mnstr_printf(GDKstdout,"#finished pc=%d\n", f->pc);
+
+		/* enter all dependencies before releasing the queue  */
+		MT_lock_set(&flow->todo->l, "q_enqueue");
+		
+		oldq= queued;
+		for( ; (i = flow->nodes[last]) > 0; last= flow->edges[last])
+		if (flow->status[i].state == DFLOWpending)
+		{
+			flow->status[i].argclaim += f->hotclaim/ p->retc;
+			flow->status[i].blocks--;
+			if ( flow->status[i].blocks == 0 && ret == MAL_SUCCEED) {
+				queued++;
+				flow->status[i].hotclaim = f->hotclaim;
+				q_enqueue_(flow->todo, flow->status + i);
+				flow->status[i].state = DFLOWrunning;
+				PARDEBUG 
+					mnstr_printf(GDKstdout,"#enqueue pc=%d claim=%d\n", flow->status[i].pc, flow->status[i].argclaim);
+			} else
+			if ( ret == MAL_SUCCEED )
+			PARDEBUG
+				mnstr_printf(GDKstdout,"#await   pc %d block %d\n", flow->start+ i, flow->status[i].blocks);
+		} else {	/* worker stole the candidate */
+			PARDEBUG
+				mnstr_printf(GDKstdout,"#woke up pc %d block %d\n", flow->start+ i, flow->status[i].blocks);
+			queued++;
+			oldq++;
+		} 
+		MT_lock_unset(&flow->todo->l, "q_enqueue");
+
+		if ( ret == MAL_SUCCEED)
+		while ( oldq++ < queued )
+			MT_sema_up(&flow->todo->s, "q_enqueue");
 	}
 	PARDEBUG {
-		int candidates = 0;
-		mnstr_printf(GDKstdout,"#end of data flow %d %d todo %d  done %d\n",pc,limit,todo,done);
-		for ( i =0 ; i<lookahead; i++)
-			if (fs[i].status != DFLOWwrapup  && fs[i].pc >=0) {
-				mnstr_printf(GDKstdout,"#missed %d %d %d ",  i, fs[i].status, fs[i].pc);
-				printInstruction(GDKstdout, flow->mb, 0, getInstrPtr(flow->mb,fs[i].pc), LIST_MAL_STMT | LIST_MAPI);
-				candidates++;
+		mnstr_printf(GDKstdout,"#end of data flow %d todo %d \n",pc,flow->stop - flow->start);
+		for ( i =0 ; i< flow->stop- flow->start; i++)
+			if (fs[i].state != DFLOWwrapup  && fs[i].pc >=0) {
+				mnstr_printf(GDKstdout,"#missed %d %d %d ",  i, fs[i].state, fs[i].pc);
+				printInstruction(GDKstdout, fs[i].mb, 0, getInstrPtr(fs[i].mb,fs[i].pc), LIST_MAL_STMT | LIST_MAPI);
 			}
-		if ( candidates)
-		for (i=0; i < flow->mb->vtop; i++)
-		if ( flow->blocked[i] || flow->inuse[i] )
-			printf("%s %d [ %1d %2d ]\n", getVarName(flow->mb,i),
-				getEndOfLife(flow->mb,i),
-				flow->blocked[i],
-				flow->inuse[i]);
-		}
+	}
 	return ret;
 }
 
@@ -1517,6 +1290,7 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 {
 	DataFlow flow = NULL;
 	str ret = MAL_SUCCEED;
+	int size;
 
 #ifdef DEBUG_FLOW
 	mnstr_printf(GDKstdout, "runMALdataflow for block %d - %d\n", startpc,stoppc);
@@ -1525,9 +1299,9 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 
 	/* 
   	 * TODO improve cost of DFLOWeligible 
- 	 */
 	if (stoppc && stoppc-startpc > 10000)
 		return runMALsequence( cntxt, mb, startpc+1, stoppc, stk, env, pcicaller);
+ 	 */
 
 	(void)env;
 	(void)pcicaller;
@@ -1564,27 +1338,29 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 		for(i=0; i<flow->nway; i++) {
 			flow->worker[i].id = workerid++;
 			flow->worker[i].todo = flow->todo;
+			flow->worker[i].flow = flow;
 			/* create the thread and let it wait */
 			MT_create_thread(&flow->worker[i].tid, runDFLOWworker, flow->worker+i, MT_THR_DETACHED);
 		}
 	}
-	flow->cntxt = cntxt;
+	/* keep real block count, exclude brackets */
 	flow->start = startpc+1;
 	flow->stop = stoppc;
-	flow->mb = mb;
-	flow->stk = stk;
 
-	flow->status = (char*) GDKzalloc((stoppc-startpc+1));
-	flow->blocked = (char*) GDKzalloc(sizeof(char)*mb->vtop);
-	flow->assign = (int*) GDKzalloc(sizeof(int)*mb->vtop);
-	flow->inuse = (int*) GDKzalloc(sizeof(int)*mb->vtop);
+	flow->status = (FlowStatus) GDKzalloc((flow->stop - flow->start +1) * sizeof(FlowStatusRec));
+	size = DFLOWgraphSize(mb,startpc,stoppc);
+	flow->nodes = (int*) GDKzalloc( sizeof(int) * size);
+	flow->edges = (int*) GDKzalloc( sizeof(int) * size);
+	DFLOWinit(flow, cntxt,mb,stk, size);
 	mal_unset_lock(mal_contextLock, "runMALdataflow");
 
 	ret = DFLOWscheduler(flow);
 	GDKfree(flow->status);
-	GDKfree(flow->blocked);
-	GDKfree(flow->assign);
-	GDKfree(flow->inuse);
+	flow->status = 0;
+	GDKfree(flow->edges);
+	flow->edges = 0;
+	GDKfree(flow->nodes);
+	flow->nodes = 0;
 	mal_set_lock(mal_contextLock, "runMALdataflow");
 	flow->free = flows;
 	flows = flow;

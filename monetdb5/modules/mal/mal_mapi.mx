@@ -356,6 +356,9 @@ mal_mapi_export str SERVERmapi_rpc_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk
 # include <netdb.h>
 # include <netinet/in.h>
 #endif
+#ifdef HAVE_SYS_UIO_H
+# include <sys/uio.h>
+#endif
 
 #define SOCKPTR struct sockaddr *
 #ifdef HAVE_SOCKLEN_T

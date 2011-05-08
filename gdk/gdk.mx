@@ -1381,7 +1381,7 @@ in advance that the head-atom resp. tail-atom of a BAT is variable sized.
 	do {								\
 		register BUN _p = BUNlast(b);				\
 		if (_p == BUN_MAX || BATcount(b) == BUN_MAX) {		\
-			GDKerror("bunfastins: bat too large\n");	\
+			GDKerror("bunfastins: too many elements to accomodate (INT_MAX)\n");	\
 			goto bunins_failed;				\
 		}							\
 		if (_p + 1 > BATcapacity(b)) {				\

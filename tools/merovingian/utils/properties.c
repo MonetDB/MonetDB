@@ -40,7 +40,7 @@ static confkeyval _internal_prop_keys[] = {
 	{"optpipe",  NULL, 0, STR},
 	{"master",   NULL, 0, STR},
 	{"slave",    NULL, 0, MURI},
-	{"readonly", NULL, 0, BOOL},
+	{"readonly", NULL, 0, BOOLEAN},
 	{ NULL,      NULL, 0, INVALID}
 };
 
@@ -223,7 +223,7 @@ setProp(char *path, char *key, char *val)
 			 * it is a freeform string, that sometimes happens to be a
 			 * UUID)
 			 * first perform a sneaky hack to do the boolean check */
-			kv->type = BOOL;
+			kv->type = BOOLEAN;
 			if ((err = setConfVal(kv, val)) != NULL) {
 				free(err);
 				/* restore */

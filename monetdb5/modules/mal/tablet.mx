@@ -2080,7 +2080,7 @@ TABLETload(Tablet *as, char *datafile)
 	BAT *res= NULL;
 	stream *s = open_rastream(datafile);
 	bstream *b = NULL;
-	BUN est = as->nr;
+	BUN est = as->nr + BATTINY;	/* take some reserve */
 
 	if (s == NULL ){
 		GDKerror("could not open file %s\n", datafile);

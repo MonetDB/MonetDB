@@ -29,6 +29,9 @@
 #include <fcntl.h>
 #include <string.h> /* strerror */
 #include <pthread.h>
+#ifdef HAVE_SYS_UIO_H
+# include <sys/uio.h>
+#endif
 
 #include <stream.h>
 #include <stream_socket.h>

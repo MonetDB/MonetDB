@@ -1272,9 +1272,6 @@ AC_CHECK_PROG(RM,rm,rm -f)
 AC_CHECK_PROG(MV,mv,mv -f)
 AC_PROG_LN_S
 AC_CHECK_PROG(LOCKFILE,lockfile,lockfile -r 2,echo)
-if test x"$LOCKFILE" = x"echo" ; then
-	AC_MSG_WARN([no lockfile found, please do NOT parallelise the build process!])
-fi
 
 AC_CHECK_PROGS(RPMBUILD,rpmbuild rpm)
 
@@ -1598,15 +1595,18 @@ AM_CONDITIONAL(HAVE_RUBYGEM, test x"$have_rubygem" != xno -a x"$have_rubygem_dir
 AC_PROG_YACC
 AC_DEFINE(YYENABLE_NLS, 0, [Needed to compile bison-generated code.])
 AC_DEFINE(YYLTYPE_IS_TRIVIAL, 0, [Needed to compile bison-generated code.])
-if test "x$YACC" = x; then
-	if test "x$enable_sql" = xyes; then
-		AC_MSG_ERROR([MonetDB/SQL requires YACC or BISON.])
-	fi
-	enable_sql=no
-	if test "x$disable_sql" = x; then
-		disable_sql="(MonetDB/SQL requires YACC or BISON.)"
-	fi
-fi
+case "$YACC" in
+	bison*)  YACC="$YACC"  ;;
+	*)
+		if test "x$enable_sql" = xyes; then
+			AC_MSG_ERROR([MonetDB/SQL requires bison])
+		fi
+		enable_sql=no
+		if test "x$disable_sql" = x; then
+			disable_sql="(MonetDB/SQL requires bison)"
+		fi
+	;;
+esac
 
 AC_CHECK_PROG(TEXI2HTML,texi2html,texi2html)
 AC_CHECK_PROG(LATEX2HTML,latex2html,latex2html)
@@ -1815,16 +1815,14 @@ no-*)
 	fi
 	;;
 *)
-	req_java_ver_min=1.5 # >= $req_java_ver_min required
-	req_java_ver_max=1.6 # <  $req_java_ver_max required
-	if test MONETDB_VERSION_TO_NUMBER(echo $JAVA_VERSION) -ge MONETDB_VERSION_TO_NUMBER(echo "$req_java_ver_min") -a MONETDB_VERSION_TO_NUMBER(echo $JAVA_VERSION) -lt MONETDB_VERSION_TO_NUMBER(echo "$req_java_ver_max"); then
+	if test MONETDB_VERSION_TO_NUMBER(echo $JAVA_VERSION) = MONETDB_VERSION_TO_NUMBER(echo "1.5") ; then
 		have_java_jdbc=yes
 	else
 		if test "x$enable_jdbc" = xyes; then
-			AC_MSG_ERROR([MonetDB JDBC requires ant and Java >= $req_java_ver_min, but < $req_java_ver_max.])
+			AC_MSG_ERROR([MonetDB JDBC requires ant and Java 1.5])
 		else
 			enable_jdbc=no
-			disable_jdbc="(MonetDB JDBC currently requires Java >= $req_java_ver_min, but < $req_java_ver_max to build)"
+			disable_jdbc="(MonetDB JDBC currently requires Java 1.5 to build)"
 		fi
 	fi
 	;;
@@ -2050,6 +2048,11 @@ else
 fi
 AC_SUBST(PTHREAD_LIBS)
 AC_SUBST(PTHREAD_INCS)
+
+dnl sysctl is in libc on FreeBSD and NetBSD according to their manpages
+C_LIBS=""
+AC_CHECK_LIB(c, sysctl, [ C_LIBS="-lc" ] )
+AC_SUBST(C_LIBS)
 
 dnl libreadline
 have_readline=auto
@@ -2498,10 +2501,10 @@ AC_CHECK_HEADERS([crypt.h \
 	sys/param.h \
 	sys/resource.h \
 	sys/socket.h \
-	sys/sysctl.h \
 	sys/time.h \
 	sys/times.h \
 	sys/types.h \
+	sys/uio.h \
 	sys/un.h \
 	sys/utime.h \
 	sys/wait.h \
@@ -2513,6 +2516,15 @@ AC_CHECK_HEADERS([crypt.h \
 	winsock.h \
 	xmmintrin.h \
 	])
+
+dnl on OpenBSD, sys/sysctl.h requires sys/param.h to be included beforehand
+AC_CHECK_HEADERS([sys/sysctl.h], [], [],
+[
+  #ifdef HAVE_SYS_PARAM_H
+  # include <sys/param.h>
+  #endif
+])
+
 
 SOCKET_LIBS=""
 have_setsockopt=no
@@ -2540,8 +2552,6 @@ if test "x$have_setsockopt" = xno; then
 	AC_CHECK_FUNC(setsockopt, [], 
 	  AC_CHECK_LIB(socket, setsockopt, [ SOCKET_LIBS="-lsocket $SOCKET_LIBS"; have_setsockopt=yes; ]))
 fi
-
-AC_CHECK_HEADERS([sys/socket.h winsock.h])
 
 have_getaddrinfo=no
 save_LIBS="$LIBS"
@@ -2965,10 +2975,14 @@ AC_SUBST(Elocalstatedir)
 AC_SUBST(QXlocalstatedir)
 Xlogdir="`$translatepath "$logdir"`"
 eval "Elogdir=${Xlogdir}"
+# need second eval because localstatedir defaults to being ${prefix}/var
+eval "Elogdir=${Elogdir}"
 AC_SUBST(logdir)
 AC_SUBST(Elogdir)
 Xrundir="`$translatepath "$rundir"`"
 eval "Erundir=${Xrundir}"
+# need second eval because localstatedir defaults to being ${prefix}/var
+eval "Erundir=${Erundir}"
 AC_SUBST(rundir)
 AC_SUBST(Erundir)
 Qlibdir="$libdir"
@@ -3229,3 +3243,28 @@ done
 echo
 echo "* Important options:"
 echo "    OID size:   " ${bits} bits
+echo
+
+dnl give some hints to the user
+case "`make -v 2>&1`" in
+'GNU Make '*)
+	;;
+*)
+	echo "'make' not found in PATH or not GNU Make."
+	case "`gmake -v 2>&1`" in
+	'GNU Make '*)
+		echo "Please use 'gmake' to build MonetDB."
+		;;
+	*)
+		echo "'gmake' not found in PATH or not GNU Make."
+		echo "Please make sure you have GNU Make installed and use it to build MonetDB."
+		;;
+	esac
+	echo
+	;;
+esac
+
+if test x"$LOCKFILE" = x"echo" ; then
+	echo "'lockfile' not found (usually part of a package named procmail)"
+	echo "Please do NOT parallelise the build process! (use -j1 with make)"
+fi

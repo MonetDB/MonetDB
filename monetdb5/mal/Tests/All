@@ -199,6 +199,7 @@ tst802
 tst803
 tst804
 tst805
+tst819
 tst820
 tst830
 tst840
@@ -254,6 +255,7 @@ saveload
 parseErrors
 
 dataflow01
+dataflow03
 flowchk
 
 dynamicload
