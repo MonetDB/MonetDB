@@ -273,7 +273,7 @@ str FITSdirpat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	snprintf(fulldirectory, BUFSIZ, "%s%s", dir, pat);
 	glob(fulldirectory, GLOB_DOOFFS, NULL, &globbuf);
 
-	/*	mnstr_printf(GDKout,"fulldir: %s \nSize: %lu\n",fulldirectory, globbuf.gl_pathc);*/
+	/*	mnstr_printf(GDKout,"#fulldir: %s \nSize: %lu\n",fulldirectory, globbuf.gl_pathc);*/
 
 	if (globbuf.gl_pathc == 0)
 		msg = createException(MAL, "listdir", "Couldn't open the directory or there are no files that match the pattern");
@@ -569,14 +569,14 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		fits_get_coltype(fptr, j, &tpcode[j - 1], &rep[j - 1], &wid[j - 1], &status);
 		fits2subtype(&tpe, tpcode[j - 1], rep[j - 1], wid[j - 1]);
 
-		/*		mnstr_printf(cntxt->fdout,"%d %ld %ld - M: %s\n", tpcode[j-1], rep[j-1], wid[j-1], tpe.type->sqlname); */
+		/*		mnstr_printf(cntxt->fdout,"#%d %ld %ld - M: %s\n", tpcode[j-1], rep[j-1], wid[j-1], tpe.type->sqlname); */
 
 		mvc_create_column(m, tbl, cname[j - 1], &tpe);
 	}
 
 	/* data load */
 	fits_get_num_rows(fptr, &rows, &status);
-	mnstr_printf(cntxt->fdout,"Loading %ld rows in table %s\n", rows, tname); 
+	mnstr_printf(cntxt->fdout,"#Loading %ld rows in table %s\n", rows, tname); 
 	for (j = 1; j <= cnum; j++) {
 		BAT *tmp = NULL;
 		int time0 = GDKms();
@@ -585,6 +585,13 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		col = mvc_bind_column(m, tbl, cname[j - 1]);
 
 		tmp = BATnew(TYPE_void, mtype, rows);
+		if ( tmp == NULL){
+			GDKfree(tpcode);
+			GDKfree(rep);
+			GDKfree(wid);
+			GDKfree(cname);
+			throw(MAL,"fits.load", MAL_MALLOC_FAIL);
+		}
 		BATseqbase(tmp, 0);
 		if (rows > (long)REMAP_PAGE_MAXSIZE)
 			BATmmap(tmp, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP, 0);
@@ -613,7 +620,7 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			for(i = 0; i < bsize ; i++)
 				GDKfree(v[i]);
 			GDKfree(v);
-			mnstr_printf(cntxt->fdout,"String column load %d ms, BUNappend %d ms\n", tloadtm, tattachtm);
+			mnstr_printf(cntxt->fdout,"#String column load %d ms, BUNappend %d ms\n", tloadtm, tattachtm);
 		}
 
 		if (status) {
@@ -622,9 +629,9 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			msg = createException(MAL, "fits.loadtable", "Cannot load column %s of %s table: %s.\n", cname[j - 1], tname, buf);
 			break;
 		}
-		mnstr_printf(cntxt->fdout,"Column %s loaded for %d ms\t", cname[j-1], GDKms() - time0);
+		mnstr_printf(cntxt->fdout,"#Column %s loaded for %d ms\t", cname[j-1], GDKms() - time0);
 		store_funcs.append_col(m->session->tr, col, tmp, TYPE_bat);
-		mnstr_printf(cntxt->fdout,"Total %d ms\n", GDKms() - time0);
+		mnstr_printf(cntxt->fdout,"#Total %d ms\n", GDKms() - time0);
 		BBPunfix(tmp->batCacheid);
 	}
 
