@@ -50,6 +50,10 @@ m4_ifndef([PKG_PROG_PKG_CONFIG],
 
 PKG_PROG_PKG_CONFIG
 
+if test x"$PKG_CONFIG" = x ; then
+	AC_MSG_ERROR([pkg-config is required to configure MonetDB])
+fi
+
 dnl VERSION_TO_NUMBER macro (copied from libxslt)
 AC_DEFUN([MONETDB_VERSION_TO_NUMBER],
 [`$1 | sed 's|[[_\-]][[a-zA-Z0-9]]*$||' | awk 'BEGIN { FS = "."; } { printf "%d", ([$]1 * 1000 + [$]2) * 1000 + [$]3;}'`])
