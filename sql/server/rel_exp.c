@@ -561,7 +561,8 @@ exp_match_exp( sql_exp *e1, sql_exp *e2)
 			break;
 		case e_aggr:
 			if (!subaggr_cmp(e1->f, e2->f) && /* equal aggregation*/
-			    exp_match_list(e1->l, e2->l))
+			    exp_match_list(e1->l, e2->l) && 
+			    e1->flag == e2->flag)
 				return 1;
 			break;
 		case e_func:
