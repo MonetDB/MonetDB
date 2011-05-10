@@ -950,7 +950,7 @@ sql_create_type(char *sqlname, unsigned int digits, unsigned int scale, unsigned
 	t->radix = radix;
 	t->eclass = eclass;
 	t->s = NULL;
-	if (!keyword_exists(t->sqlname) )
+	if (!keyword_exists(t->sqlname) && eclass != EC_INTERVAL) 
 		keywords_insert(t->sqlname, KW_TYPE);
 	list_append(types, t);
 
