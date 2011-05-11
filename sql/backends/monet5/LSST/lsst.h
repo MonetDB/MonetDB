@@ -41,4 +41,5 @@ lsst_export str qserv_ptInSphEllipse(int *ret, dbl *ra, dbl *dec, dbl *ra_cen, d
 lsst_export str qserv_ptInSphCircle(int *ret, dbl *ra, dbl *dec, dbl *ra_cen, dbl *dec_cen, dbl *radius);
 lsst_export str qserv_ptInSphPoly(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
+lsst_export str xmatch(int *ret, int *lid, int *rid, lng *delta);
 #endif /* _SQL_UDF_H_ */

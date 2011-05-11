@@ -31,3 +31,4 @@ returns int external name lsst.ptinsphcircle;
 
 create function ptInSphPoly(ra1 double, dec1 double, list double)
 returns int external name lsst.ptinsphpoly;
+

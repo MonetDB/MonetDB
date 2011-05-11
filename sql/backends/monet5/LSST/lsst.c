@@ -431,3 +431,50 @@ str qserv_ptInSphPoly(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	GDKfree(edges);
 	return MAL_SUCCEED;
 }
+/* 
+ * the remainder is an example of hooking up a fast cross match operation
+ * using two HtmID columns bounded by the delta distance.
+ * Ideally the two columns are sorted upfront.
+*/
+
+str
+xmatch(int *ret, int *lid, int *rid, lng *delta)
+{
+    BAT *bn, *bl, *br;
+	lng *l, *r;
+	lng *lend, *rend;
+
+    if( (bl= BATdescriptor(*lid)) == NULL )
+         throw(MAL, "algebra.xmatch", RUNTIME_OBJECT_MISSING);
+ 
+    if( (br= BATdescriptor(*rid)) == NULL )
+         throw(MAL, "algebra.xmatch", RUNTIME_OBJECT_MISSING);
+	l= (lng*) Tloc(bl, BUNfirst(bl));
+	lend= (lng*) Tloc(bl, BUNlast(bl));
+	r= (lng*) Tloc(br, BUNfirst(br));
+	rend= (lng*) Tloc(br, BUNlast(br));
+
+	bn = BATnew(TYPE_oid, TYPE_oid, MIN(BATcount(bl), BATcount(br)));
+	if ( bn == NULL)
+         throw(MAL, "algebra.xmatch", MAL_MALLOC_FAIL);
+    bn->hsorted = bn->tsorted = 0;
+	bn->T->nonil = 1;
+	bn->H->nonil = 1;
+
+
+    BATaccessBegin(bl, USE_TAIL, MMAP_SEQUENTIAL);
+    BATaccessBegin(br, USE_TAIL, MMAP_SEQUENTIAL);
+	for(; l < lend; l++) {
+        for(; r < rend; r++)
+			if ( *l != lng_nil && *r != lng_nil)
+			{
+				/* here comes the HtmID distance test */
+				(void) delta;
+			}
+	}
+    BATaccessEnd(bl, USE_TAIL, MMAP_SEQUENTIAL);
+    BATaccessEnd(br, USE_TAIL, MMAP_SEQUENTIAL);
+
+	BBPkeepref(*ret = bn->batCacheid);
+	return MAL_SUCCEED;
+}
