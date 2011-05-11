@@ -493,15 +493,264 @@ recover_dir(int direxists)
 static int BBPrecover_subdir(void);
 static int BBPdiskscan(const char *);
 
+#if SIZEOF_SIZE_T == 8 && SIZEOF_OID == 8
+/* Convert 32-bit OIDs to 64 bits.
+ * This function must be called at the end of BBPinit(), just before
+ * "normal processing" starts.  All errors that happen during the
+ * conversion are fatal.  This function is "safe" in the sense that
+ * when it is interrupted, recovery will just start over.  No
+ * permanent changes are made to the database until all string heaps
+ * have been converted, and then the changes are made atomically. */
+
+static void
+fixoidheapcolumn(BAT *b, const char *nme, const char *filename,
+		 const char *headtail, const char *htheap)
+{
+	bat bid = ABS(b->batCacheid);
+	Heap h1, h2;
+	int *old;
+	oid *new;
+	BUN i;
+	char *s;
+	unsigned short w;
+
+	if (b->H->type == TYPE_str) {
+		h1 = b->H->heap;
+		h1.filename = NULL;
+		h1.base = NULL;
+		h1.dirty = 0;
+		h1.parentid = 0;
+		h2 = *b->H->vheap;
+		h2.filename = NULL;
+		h2.base = NULL;
+		h2.dirty = 0;
+		h2.parentid = 0;
+
+		/* load old string heap */
+		if (HEAPload(&h1, filename, headtail, 0) < 0)
+			GDKfatal("fixoidheap: loading old %s heap "
+				 "for BAT %d failed\n", headtail, bid);
+		if (HEAPload(&h2, filename, htheap, 0) < 0)
+			GDKfatal("fixoidheap: loading old string heap "
+				 "for BAT %d failed\n", bid);
+
+		/* create new string heap */
+		if (HEAPdelete(&b->H->heap, nme, headtail))
+			GDKfatal("fixoidheap: deleting %s heap "
+				 "for BAT %d failed\n", headtail, bid);
+		b->H->heap.filename = GDKmalloc(strlen(nme) + 12);
+		if (b->H->heap.filename == NULL)
+			GDKfatal("fixoidheap: GDKmalloc failed\n");
+		GDKfilepath(b->H->heap.filename, NULL, nme, headtail);
+		w = b->H->width; /* remember old width */
+		b->H->width = 1;
+		b->H->shift = 0;
+		if (HEAPalloc(&b->H->heap, b->U->capacity, SIZEOF_OID) < 0)
+			GDKfatal("fixoidheap: allocating new %s heap "
+				 "for BAT %d failed\n", headtail, bid);
+
+		b->H->heap.dirty = TRUE;
+		if (HEAPdelete(b->H->vheap, nme, htheap))
+			GDKfatal("fixoidheap: deleting string heap "
+				 "for BAT %d failed\n", bid);
+		b->H->vheap->filename = GDKmalloc(strlen(nme) + 12);
+		if (b->H->vheap->filename == NULL)
+			GDKfatal("fixoidheap: GDKmalloc failed\n");
+		GDKfilepath(b->H->vheap->filename, NULL, nme, htheap);
+		if (ATOMheap(TYPE_str, b->H->vheap, b->U->capacity))
+			GDKfatal("fixoidheap: initializing new string "
+				 "heap for BAT %d failed\n", bid);
+		b->H->vheap->parentid = bid;
+
+		/* do the conversion */
+		b->H->heap.dirty = TRUE;
+		b->H->vheap->dirty = TRUE;
+		for (i = 0; i < b->U->count; i++) {
+			/* s = h2.base + VarHeapVal(h1.base, i, w); */
+			switch (w) {
+			case 1:
+				s = h2.base + (((var_t) ((unsigned char *) h1.base)[i] + ((GDK_STRHASHTABLE * sizeof(unsigned short)) >> 3)) << 3);
+				break;
+			case 2:
+				s = h2.base + (((var_t) ((unsigned short *) h1.base)[i] + ((GDK_STRHASHTABLE * sizeof(unsigned short)) >> 3)) << 3);
+				break;
+			case 4:
+				s = h2.base + ((var_t) ((unsigned int *) h1.base)[i] << 3);
+				break;
+			default:
+				assert(0);
+			}
+			b->H->heap.free += b->H->width;
+			Hputvalue(b, Hloc(b, i), s, 0);
+		}
+		HEAPfree(&h1);
+		HEAPfree(&h2);
+	} else if (b->H->type == TYPE_oid ||
+		   (b->H->type != TYPE_void && b->H->varsized)) {
+		h1 = b->H->heap;
+		h1.filename = NULL;
+		h1.base = NULL;
+		h1.dirty = 0;
+		h1.parentid = 0;
+
+		/* load old heap */
+		if (HEAPload(&h1, filename, headtail, 0) < 0)
+			GDKfatal("fixoidheap: loading old %s heap "
+				 "for BAT %d failed\n", headtail, bid);
+
+		/* create new heap */
+		if (HEAPdelete(&b->H->heap, nme, headtail))
+			GDKfatal("fixoidheap: deleting %s heap "
+				 "for BAT %d failed\n", headtail, bid);
+		b->H->heap.filename = GDKmalloc(strlen(nme) + 12);
+		if (b->H->heap.filename == NULL)
+			GDKfatal("fixoidheap: GDKmalloc failed\n");
+		GDKfilepath(b->H->heap.filename, NULL, nme, headtail);
+		b->H->width = SIZEOF_OID;
+		b->H->shift = 3;
+		assert(b->H->width == (1 << b->H->shift));
+		if (HEAPalloc(&b->H->heap, b->U->capacity, SIZEOF_OID) < 0)
+			GDKfatal("fixoidheap: allocating new %s heap "
+				 "for BAT %d failed\n", headtail, bid);
+
+		b->H->heap.dirty = TRUE;
+		old = (int *) h1.base + b->U->first;
+		new = (oid *) b->H->heap.base + b->U->first;
+		if (b->H->varsized)
+			for (i = 0; i < b->U->count; i++)
+				new[i] = (oid) old[i] << 3;
+		else
+			for (i = 0; i < b->U->count; i++)
+				new[i] = old[i] == int_nil ? oid_nil : (oid) old[i];
+		b->H->heap.free = h1.free << 1;
+		HEAPfree(&h1);
+	}
+	return;
+
+  bunins_failed:
+	GDKfatal("fixoidheap: memory allocation failed\n");
+}
+
+static void
+fixoidheap(void)
+{
+	bat bid;
+	BATstore *bs;
+	BAT *b;
+	str nme, bnme;
+	long_str filename;
+	int ht, tt;
+
+	fprintf(stderr,
+		"# upgrading database from 32 bit OIDs to 64 bit OIDs\n");
+	fflush(stderr);
+
+	for (bid = 1; bid < BBPsize; bid++) {
+		if ((bs = BBP[bid].cache) == NULL)
+			continue;	/* not a valid BAT */
+		/* OID and (non-void) varsized columns have to be rewritten */
+		if (bs->H.type != TYPE_oid &&
+		    (bs->H.type == TYPE_void || !bs->H.varsized) &&
+		    bs->T.type != TYPE_oid &&
+		    (bs->T.type == TYPE_void || !bs->T.varsized))
+			continue; /* nothing to do for this BAT */
+		if ((ht = bs->H.type) < 0) {
+			/* as yet unknown head column type */
+			nme = ATOMunknown_name(ht);
+			if (strcmp(nme, "url") == 0)
+				bs->H.type = TYPE_str;
+			else if (strcmp(nme, "sqlblob") == 0 ||
+				 strcmp(nme, "wkb") == 0)
+				bs->H.type = TYPE_int;
+			else if (bs->H.varsized)
+				GDKfatal("fixoidheap: unrecognized column "
+					 "type %s for BAT %d\n", nme, bid);
+			else if (bs->H.width == 1)
+				bs->H.type = TYPE_bte;
+			else if (bs->H.width == 2)
+				bs->H.type = TYPE_sht;
+			else if (bs->H.width == 4)
+				bs->H.type = TYPE_int;
+			else
+				bs->H.type = TYPE_lng;
+		}
+		if ((tt = bs->T.type) < 0) {
+			nme = ATOMunknown_name(tt);
+			if (strcmp(nme, "url") == 0)
+				bs->T.type = TYPE_str;
+			else if (strcmp(nme, "sqlblob") == 0 ||
+				 strcmp(nme, "wkb") == 0)
+				bs->T.type = TYPE_int;
+			else if (bs->H.varsized)
+				GDKfatal("fixoidheap: unrecognized column "
+					 "type %s for BAT %d\n", nme, bid);
+			else if (bs->H.width == 1)
+				bs->H.type = TYPE_bte;
+			else if (bs->H.width == 2)
+				bs->H.type = TYPE_sht;
+			else if (bs->H.width == 4)
+				bs->H.type = TYPE_int;
+			else
+				bs->H.type = TYPE_lng;
+		}
+		BBPfix(bid);
+		b = BBPdescriptor(bid);
+		if (b == NULL)
+			GDKfatal("fixoidheap: BBPdescriptor(%d) failed\n", bid);
+
+		nme = BBP_physical(bid);
+		if ((bnme = strrchr(nme, DIR_SEP)) == NULL)
+			bnme = nme;
+		else
+			bnme++;
+		sprintf(filename, "BACKUP%c%s", DIR_SEP, bnme);
+
+		/* make backup copy */
+		if (b->H->type == TYPE_oid ||
+		    (b->H->varsized && b->H->type != TYPE_void)) {
+			assert(b->H->type != TYPE_oid || b->H->width == 4);
+			b->H->heap.dirty = TRUE;
+			if (b->H->type == TYPE_str)
+				b->H->vheap->dirty = TRUE;
+		}
+		if (b->T->type == TYPE_oid ||
+		    (b->T->varsized && b->T->type != TYPE_void)) {
+			assert(b->T->type != TYPE_oid || b->T->width == 4);
+			b->T->heap.dirty = TRUE;
+			if (b->T->type == TYPE_str)
+				b->T->vheap->dirty = TRUE;
+		}
+		if (BBPsave(b))
+			GDKfatal("fixoidheap: creating backup for BAT %d failed\n", bid);
+		fixoidheapcolumn(b, nme, filename, "head", "hheap");
+		fixoidheapcolumn(BATmirror(b), nme, filename, "tail", "theap");
+
+		if (ht < 0)
+			bs->H.type = ht;
+		if (tt < 0)
+			bs->T.type = tt;
+
+		BBPunfix(bid);
+		BBP_unload_inc(bid, "fixoidheap");
+		if (BBPfree(b, "fixoidheap"))
+			GDKfatal("fixoidheap: BBPfree failed\n");
+		b = NULL;
+	}
+
+	/* make permanent */
+	if (TMcommit())
+		GDKfatal("fixoidheap: commit failed\n");
+}
+#endif
+
 #if GDK_VARSHIFT != 0
 /* Convert the old-style string heap to the new style.
-   This function must be called at the end of BBPinit(), just before
-   "normal processing" starts.  All errors that happen during the
-   conversion are fatal.  This function is "safe" in the sense that
-   when it is interrupted, recovery will just start over.  No
-   permanent changes are made to the database until all string heaps
-   have been converted, and then the changes are made atomically.
-*/
+ * This function must be called at the end of BBPinit(), just before
+ * "normal processing" starts.  All errors that happen during the
+ * conversion are fatal.  This function is "safe" in the sense that
+ * when it is interrupted, recovery will just start over.  No
+ * permanent changes are made to the database until all string heaps
+ * have been converted, and then the changes are made atomically. */
 
 static void
 fixstrheap(void)
@@ -516,6 +765,9 @@ fixstrheap(void)
 	BUN p, q;
 	str s;
 	var_t loc;
+
+	fprintf(stderr, "# upgrading string heaps to new storage scheme\n");
+	fflush(stderr);
 
 	for (bid = 1; bid < BBPsize; bid++) {
 		if ((bs = BBP[bid].cache) == NULL)
@@ -605,11 +857,13 @@ A read only BAT can be shared in a file system by reading its descriptor separat
 The default src=0 is to read the full BBPdir file.
 @c
 static BATstore *
-BBPreadEntries(FILE *fp, char *src, int *min_stamp, int *max_stamp)
+BBPreadEntries(FILE *fp, char *src, int *min_stamp, int *max_stamp, int oidsize)
 {
 	bat bid = 0;
 	char buf[4096];
 	BATstore *bs;
+
+	(void) oidsize;		/* only used when SIZEOF_OID==8 */
 
 	/* read the BBP.dir and insert the BATs into the BBP */
 	while (fgets(buf, sizeof(buf), fp) != NULL) {
@@ -715,7 +969,11 @@ BBPreadEntries(FILE *fp, char *src, int *min_stamp, int *max_stamp)
 				  && width != 8
 #endif
 				 ) :
-				 BATatoms[t].size != width)
+				 BATatoms[t].size != width
+#if SIZEOF_SIZE_T == 8 && SIZEOF_OID == 8
+				 && (t != TYPE_oid || oidsize == 0 || width != oidsize)
+#endif
+				)
 				GDKfatal("BBPinit: inconsistent entry in BBP.dir: @1.size mismatch for BAT " LLFMT "\n", batid);
 			bs->@1.type = t;
 			bs->@1.width = width;
@@ -816,7 +1074,7 @@ BBPreadEntries(FILE *fp, char *src, int *min_stamp, int *max_stamp)
 }
 
 static int
-BBPheader(FILE *fp, int *BBPlimit, oid *BBPoid, int silent)
+BBPheader(FILE *fp, int *BBPlimit, oid *BBPoid, int *OIDsize, int silent)
 {
 	char buf[BUFSIZ];
 	int sz, bbpversion, ptrsize, oidsize;
@@ -867,10 +1125,15 @@ BBPheader(FILE *fp, int *BBPlimit, oid *BBPoid, int silent)
 				 (int) SIZEOF_SIZE_T, ptrsize, (int) SIZEOF_OID, oidsize);
 			return -1;
 		}
+#if SIZEOF_SIZE_T == 8 && SIZEOF_OID == 8
+		if (ptrsize != SIZEOF_SIZE_T || oidsize != SIZEOF_INT)
+#endif
 		GDKfatal("BBPinit: database created with incompatible server:\n"
 			 "expected pointer size %d, got %d, expected OID size %d, got %d.",
 			 (int) SIZEOF_SIZE_T, ptrsize, (int) SIZEOF_OID, oidsize);
 	}
+	if (OIDsize)
+		*OIDsize = oidsize;
 	if (fgets(buf, sizeof(buf), fp) == NULL) {
 		if (silent) {
 			GDKerror("BBPinit: short BBP");
@@ -975,9 +1238,9 @@ BBPimportEntry(char *nme)
 		}
 	}
 
-	if (BBPheader(fd, &BBPlimit, &BBPoid, TRUE) < 0)
+	if (BBPheader(fd, &BBPlimit, &BBPoid, NULL, TRUE) < 0)
 		return 0;
-	bs = BBPreadEntries(fd, nme, &min_stamp, &max_stamp);
+	bs = BBPreadEntries(fd, nme, &min_stamp, &max_stamp, 0);
 	fclose(fd);
 	if (bs == 0)
 		return 0;
@@ -1029,6 +1292,7 @@ BBPinit(void)
 	int min_stamp = 0x7fffffff, max_stamp = 0;
 	bat bid;
 	int bbpversion;
+	int oidsize;
 	oid BBPoid;
 
 	/* first move everything from SUBDIR to BAKDIR (its parent) */
@@ -1065,7 +1329,7 @@ BBPinit(void)
 	BBPlimit = BBPINIT;
 	BBPsize = 1;
 
-	bbpversion = BBPheader(fp, &BBPlimit, &BBPoid,FALSE);
+	bbpversion = BBPheader(fp, &BBPlimit, &BBPoid, &oidsize, FALSE);
 
 	/* allocate structures: try to reserve as much space as
 	   possible */
@@ -1087,7 +1351,7 @@ BBPinit(void)
 	}
 	memset(BBP, 0, BBPlimit * sizeof(BBPrec));
 
-	(void) BBPreadEntries(fp, 0, &min_stamp, &max_stamp);
+	(void) BBPreadEntries(fp, 0, &min_stamp, &max_stamp, oidsize);
 	fclose(fp);
 
 	/* normalize saved LRU stamps */
@@ -1111,6 +1375,12 @@ BBPinit(void)
 	/* cleanup any leftovers (must be done after BBPrecover) */
 	BBPdiskscan(BATDIR);
 
+#if SIZEOF_SIZE_T == 8 && SIZEOF_OID == 8
+	if (oidsize == SIZEOF_INT)
+		fixoidheap();
+#else
+	(void) oidsize;
+#endif
 #if GDK_VARSHIFT != 0
 	if (bbpversion == GDKLIBRARY_PRE_VARSHIFT)
 		fixstrheap();
@@ -3785,27 +4055,32 @@ BBPbackup(BAT *b, bit subcommit)
 
 @= backup
 	if (@2 && @2->storage != STORE_MMAP) { /* direct mmap is unprotected (readonly usage, or has WAL protection)  */
-		/* STORE_PRIV saves into X.new files. Two cases could happen.
-		   The first is when a valid X.new exists because of
-		   an access change or a previous commit. This X.new
-		   should be backed up as usual. The second case is
-		   when X.new doesn't exist. In that case we could
-		   have half written X.new files (after a crash). To
-		   protect against these we write X.new.kill files in
-		   the backup directory (see heap_move).
-		*/
+		/* STORE_PRIV saves into X.new files. Two cases could
+		 * happen. The first is when a valid X.new exists
+		 * because of an access change or a previous
+		 * commit. This X.new should be backed up as
+		 * usual. The second case is when X.new doesn't
+		 * exist. In that case we could have half written
+		 * X.new files (after a crash). To protect against
+		 * these we write X.new.kill files in the backup
+		 * directory (see heap_move). */
 		str ext = (@2->filename && @2->newstorage == STORE_PRIV) ? "@1.new" : "@1";
    		int mvret = 0;
 		if (@3 && @4 && !file_exists(BAKDIR, nme, ext)) {
-                	/* file will be saved (is dirty), move the old image into backup */
+                	/* file will be saved (is dirty), move the old
+			 * image into backup */
 		        mvret = heap_move(@2, srcdir, subcommit ? SUBDIR : BAKDIR, nme, ext);
        		} else if (subcommit && @3 && (@4 || file_exists(BAKDIR, nme, ext))) {
-                	/* file is clean. move the backup into the subcommit dir (commit should eliminate backup) */
+                	/* file is clean. move the backup into the
+			 * subcommit dir (commit should eliminate
+			 * backup) */
 			mvret = file_move(BAKDIR, SUBDIR, nme, ext);
 		}
-		/* there is a situation where the move may fail, namely if this heap was not supposed
-                 * to be existing before, i.e. after a BATmaterialize on a persistent bat
-                 * as a workaround, do not complain about move failure if the source file is nonexistent
+		/* there is a situation where the move may fail,
+                 * namely if this heap was not supposed to be existing
+                 * before, i.e. after a BATmaterialize on a persistent
+                 * bat as a workaround, do not complain about move
+                 * failure if the source file is nonexistent
  		 */
 		if (mvret && file_exists(srcdir, nme, ext)) {
 			ret |= mvret;
