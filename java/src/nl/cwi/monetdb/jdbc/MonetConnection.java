@@ -252,7 +252,8 @@ public class MonetConnection implements Connection {
 			setAutoCommit(true);
 			// set our time zone on the server
 			Calendar cal = Calendar.getInstance();
-			int offset = (cal.get(Calendar.ZONE_OFFSET) + cal.get(Calendar.DST_OFFSET)) / (60 * 1000);
+			int offset = cal.get(Calendar.ZONE_OFFSET) + cal.get(Calendar.DST_OFFSET);
+			offset /= (60 * 1000); // milliseconds to minutes
 			String tz = offset < 0 ? "-" : "+";
 			tz += (Math.abs(offset) / 60 < 10 ? "0" : "") + (Math.abs(offset) / 60) + ":";
 			offset -= (offset / 60) * 60;

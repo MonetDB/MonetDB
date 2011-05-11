@@ -69,10 +69,16 @@ public class MonetPreparedStatement
 	/** Format of a timestamp with RFC822 time zone */
 	final SimpleDateFormat mTimestampZ =
 		new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSZ");
+	/** Format of a timestamp */
+	final SimpleDateFormat mTimestamp =
+		new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 	/** Format of a time with RFC822 time zone */
 	final SimpleDateFormat mTimeZ =
 		new SimpleDateFormat("HH:mm:ss.SSSZ");
-	/** Format of a date used by Mserver */
+	/** Format of a time */
+	final SimpleDateFormat mTime =
+		new SimpleDateFormat("HH:mm:ss.SSS");
+	/** Format of a date used by mserver */
 	final SimpleDateFormat mDate =
 		new SimpleDateFormat("yyyy-MM-dd");
 
@@ -652,7 +658,7 @@ public class MonetPreparedStatement
 	public void setDate(int parameterIndex, java.sql.Date x)
 		throws SQLException
 	{
-		setValue(parameterIndex, "date '" + x.toString() + "'");
+		setDate(parameterIndex, x, null);
 	}
 
 	/**
@@ -672,8 +678,12 @@ public class MonetPreparedStatement
 	public void setDate(int parameterIndex, java.sql.Date x, Calendar cal)
 		throws SQLException
 	{
-		mDate.setTimeZone(cal.getTimeZone());
-		setValue(parameterIndex, "date '" + mDate.format(x) + "'");
+		if (cal == null) {
+			setValue(parameterIndex, "date '" + x.toString() + "'");
+		} else {
+			mDate.setTimeZone(cal.getTimeZone());
+			setValue(parameterIndex, "date '" + mDate.format(x) + "'");
+		}
 	}
 
 	/**
@@ -1208,10 +1218,7 @@ public class MonetPreparedStatement
 	 * @throws SQLException if a database access error occurs
 	 */
 	public void setTime(int index, Time x) throws SQLException {
-		if (index < 1 || index > size)
-			throw new SQLException("No such parameter with index: " + index);
-
-		setValue(index, monetdbType[index - 1] + " '" + x.toString() + "'");
+		setTime(index, x, null);
 	}
 
 	/**
@@ -1235,11 +1242,25 @@ public class MonetPreparedStatement
 		if (index < 1 || index > size)
 			throw new SQLException("No such parameter with index: " + index);
 
-		mTimeZ.setTimeZone(cal.getTimeZone());
-
-		String RFC822 = mTimeZ.format(x);
-		setValue(index, monetdbType[index - 1] + " '" +
-				RFC822.substring(0, 15) + ":" + RFC822.substring(15) + "'");
+		boolean hasTimeZone = monetdbType[index - 1].endsWith("tz");
+		if (hasTimeZone) {
+			// timezone shouldn't matter, since the server is timezone
+			// aware in this case
+			String RFC822 = mTimeZ.format(x);
+			setValue(index, "timetz '" +
+					RFC822.substring(0, 15) + ":" + RFC822.substring(15) + "'");
+		} else {
+			// server is not timezone aware for this field, and no
+			// calendar given, since we told the server our timezone at
+			// connection creation, we can just write a plain timestamp
+			// here
+			if (cal == null) {
+				setValue(index, "time '" + x.toString() + "'");
+			} else {
+				mTime.setTimeZone(cal.getTimeZone());
+				setValue(index, "time '" + mTime.format(x) + "'");
+			}
+		}
 	}
 
 	/**
@@ -1254,10 +1275,7 @@ public class MonetPreparedStatement
 	public void setTimestamp(int index, Timestamp x)
 		throws SQLException
 	{
-		if (index < 1 || index > size)
-			throw new SQLException("No such parameter with index: " + index);
-
-		setValue(index, monetdbType[index - 1] + " '" + x.toString() + "'");
+		setTimestamp(index, x, null);
 	}
 
     /**
@@ -1282,11 +1300,25 @@ public class MonetPreparedStatement
 		if (index < 1 || index > size)
 			throw new SQLException("No such parameter with index: " + index);
 
-		if (cal == null) cal = Calendar.getInstance();
-		mTimestampZ.setTimeZone(cal.getTimeZone());
-		String RFC822 = mTimestampZ.format(x);
-		setValue(index, monetdbType[index - 1] + " '" +
-				RFC822.substring(0, 26) + ":" + RFC822.substring(26) + "'");
+		boolean hasTimeZone = monetdbType[index - 1].endsWith("tz");
+		if (hasTimeZone) {
+			// timezone shouldn't matter, since the server is timezone
+			// aware in this case
+			String RFC822 = mTimestampZ.format(x);
+			setValue(index, "timestamptz '" +
+					RFC822.substring(0, 26) + ":" + RFC822.substring(26) + "'");
+		} else {
+			// server is not timezone aware for this field, and no
+			// calendar given, since we told the server our timezone at
+			// connection creation, we can just write a plain timestamp
+			// here
+			if (cal == null) {
+				setValue(index, "timestamp '" + x.toString() + "'");
+			} else {
+				mTimestamp.setTimeZone(cal.getTimeZone());
+				setValue(index, "timestamp '" + mTimestamp.format(x) + "'");
+			}
+		}
 	}
 
 	/**
