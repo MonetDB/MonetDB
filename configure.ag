@@ -50,6 +50,10 @@ m4_ifndef([PKG_PROG_PKG_CONFIG],
 
 PKG_PROG_PKG_CONFIG
 
+if test x"$PKG_CONFIG" = x ; then
+	AC_MSG_ERROR([pkg-config is required to configure MonetDB])
+fi
+
 dnl VERSION_TO_NUMBER macro (copied from libxslt)
 AC_DEFUN([MONETDB_VERSION_TO_NUMBER],
 [`$1 | sed 's|[[_\-]][[a-zA-Z0-9]]*$||' | awk 'BEGIN { FS = "."; } { printf "%d", ([$]1 * 1000 + [$]2) * 1000 + [$]3;}'`])
@@ -2048,11 +2052,6 @@ else
 fi
 AC_SUBST(PTHREAD_LIBS)
 AC_SUBST(PTHREAD_INCS)
-
-dnl sysctl is in libc on FreeBSD and NetBSD according to their manpages
-C_LIBS=""
-AC_CHECK_LIB(c, sysctl, [ C_LIBS="-lc" ] )
-AC_SUBST(C_LIBS)
 
 dnl libreadline
 have_readline=auto
