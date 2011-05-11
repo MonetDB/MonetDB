@@ -1,3 +1,8 @@
 # ChangeLog file for java
 # This file is updated with Maddlog
 
+* Wed May 11 2011 Fabian Groffen <fabian@cwi.nl>
+- Insertion via PreparedStatement and retrieval via ResultSet of timestamp
+  and time fields with and without timezones was improved to better
+  respect timezones, as partly indicated in bug #2781.
+
