@@ -19,6 +19,7 @@
 
 import java.sql.*;
 import java.util.*;
+import java.text.*;
 
 public class Test_PStimezone {
 	public static void main(String[] args) throws Exception {
@@ -55,38 +56,57 @@ public class Test_PStimezone {
 				System.out.println(" failed :)");
 			}
 
-			System.out.print("2. inserting a records...");
-			
+			System.out.println("2. inserting records...");
+
+			// make sure this test is reproducable regardless timezone
+			// setting, by overriding the VM's default
+			TimeZone.setDefault(TimeZone.getTimeZone("Africa/Windhoek"));
+
+			SimpleDateFormat tsz =
+				new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSZ");
+			SimpleDateFormat tz =
+				new SimpleDateFormat("HH:mm:ss.SSSZ");
+
+			java.sql.Timestamp ts = new java.sql.Timestamp(0L);
+			java.sql.Time t = new java.sql.Time(0L);
+
 			Calendar c = Calendar.getInstance();
-			c.setTime(new java.util.Date(0L));
-			
-			pstmt.setTimestamp(1, new java.sql.Timestamp(c.getTime().getTime()));
-			pstmt.setTimestamp(2, new java.sql.Timestamp(c.getTime().getTime()));
-			pstmt.setTime(3, new java.sql.Time(c.getTime().getTime()));
-			pstmt.setTime(4, new java.sql.Time(c.getTime().getTime()));
+			tsz.setTimeZone(c.getTimeZone());
+			tz.setTimeZone(tsz.getTimeZone());
+			System.out.println("inserting (" + c.getTimeZone().getID() + ") " + tsz.format(ts) + ", " + tz.format(t));
+
+			pstmt.setTimestamp(1, ts);
+			pstmt.setTimestamp(2, ts);
+			pstmt.setTime(3, t);
+			pstmt.setTime(4, t);
 			pstmt.executeUpdate();
 			
-			pstmt.setTimestamp(1, new java.sql.Timestamp(c.getTime().getTime()), c);
-			pstmt.setTimestamp(2, new java.sql.Timestamp(c.getTime().getTime()), c);
-			pstmt.setTime(3, new java.sql.Time(c.getTime().getTime()), c);
-			pstmt.setTime(4, new java.sql.Time(c.getTime().getTime()), c);
+			c.setTimeZone(TimeZone.getTimeZone("UTC"));
+
+			System.out.println("inserting with calendar timezone " + c.getTimeZone().getID());
+			pstmt.setTimestamp(1, ts, c);
+			pstmt.setTimestamp(2, ts, c);
+			pstmt.setTime(3, t, c);
+			pstmt.setTime(4, t, c);
 			pstmt.executeUpdate();
 			
-			c.setTimeZone(TimeZone.getTimeZone("PST"));
-			pstmt.setTimestamp(1, new java.sql.Timestamp(c.getTime().getTime()));
-			pstmt.setTimestamp(2, new java.sql.Timestamp(c.getTime().getTime()), c);
-			pstmt.setTime(3, new java.sql.Time(c.getTime().getTime()));
-			pstmt.setTime(4, new java.sql.Time(c.getTime().getTime()), c);
+			c.setTimeZone(TimeZone.getTimeZone("America/Los_Angeles"));
+			System.out.println("inserting with calendar timezone " + c.getTimeZone().getID());
+			pstmt.setTimestamp(1, ts, c);
+			pstmt.setTimestamp(2, ts);
+			pstmt.setTime(3, t, c);
+			pstmt.setTime(4, t);
 			pstmt.executeUpdate();
 			
 			c.setTimeZone(TimeZone.getTimeZone("GMT+04:15"));
-			pstmt.setTimestamp(1, new java.sql.Timestamp(c.getTime().getTime()), c);
-			pstmt.setTimestamp(2, new java.sql.Timestamp(c.getTime().getTime()));
-			pstmt.setTime(3, new java.sql.Time(c.getTime().getTime()), c);
-			pstmt.setTime(4, new java.sql.Time(c.getTime().getTime()));
+			System.out.println("inserting with calendar timezone " + c.getTimeZone().getID());
+			pstmt.setTimestamp(1, ts);
+			pstmt.setTimestamp(2, ts, c);
+			pstmt.setTime(3, t);
+			pstmt.setTime(4, t, c);
 			pstmt.executeUpdate();
 			
-			System.out.println(" passed :)");
+			System.out.println("done");
 			System.out.print("3. closing PreparedStatement...");
 			pstmt.close();
 			System.out.println(" passed :)");
@@ -96,19 +116,43 @@ public class Test_PStimezone {
 			rs = pstmt.executeQuery();
 			System.out.println(" passed :)");
 
+			// The tz fields should basically always be the same
+			// (exactly 1st Jan 1970) since whatever timezone is used,
+			// the server retains it, and Java restores it.
+			// The zoneless fields will show differences since the time
+			// is inserted translated to the given timezones, and
+			// retrieved as in they were given in those timezones.  When
+			// the insert zone matches the retrieve zone, Java should
+			// eventually see 1st Jan 1970.
 			while (rs.next()) {
-//				System.out.println(rs.getString("ts") + "\t" + rs.getString("tsz"));
-				System.out.println(rs.getTimestamp("ts") + "\t" + rs.getTimestamp("tsz"));
-				c.setTimeZone(TimeZone.getTimeZone("PST"));
-				System.out.println(rs.getTimestamp("ts", c) + "\t" + rs.getTimestamp("tsz", c));
-				c.setTimeZone(TimeZone.getTimeZone("GMT+00:00"));
-				System.out.println(rs.getTimestamp("ts", c) + "\t" + rs.getTimestamp("tsz", c));
-//				System.out.println(rs.getString("t") + "\t" + rs.getString("tz"));
-				System.out.println(rs.getTime("t") + "\t" + rs.getTime("tz"));
-				c.setTimeZone(TimeZone.getTimeZone("PST"));
-				System.out.println(rs.getTime("t", c) + "\t" + rs.getTime("tz", c));
-				c.setTimeZone(TimeZone.getTimeZone("GMT+00:00"));
-				System.out.println(rs.getTime("t", c) + "\t" + rs.getTime("tz", c));
+				System.out.println("retrieved row (String):\n\t" +
+						rs.getString("ts") + "   \t" +
+						rs.getString("tsz") + "\t" +
+						rs.getString("t") + "         \t" +
+						rs.getString("tz"));
+
+				tsz.setTimeZone(TimeZone.getDefault());
+				tz.setTimeZone(tsz.getTimeZone());
+				System.out.println("default (" + tsz.getTimeZone().getID() + "):\n\t" +
+						tsz.format(rs.getTimestamp("ts")) + "\t" +
+						tsz.format(rs.getTimestamp("tsz")) + "    \t" +
+						tz.format(rs.getTime("t")) + "\t" +
+						tz.format(rs.getTime("tz")));
+
+				c.setTimeZone(TimeZone.getTimeZone("America/Los_Angeles"));
+				System.out.println(c.getTimeZone().getID() + ":\n\t" +
+						rs.getTimestamp("ts", c) + "      \t" +
+						rs.getTimestamp("tsz", c) + "           \t" +
+						rs.getTime("t", c) + "              \t" +
+						rs.getTime("tz", c) + "      ");
+
+				c.setTimeZone(TimeZone.getTimeZone("UTC"));
+				System.out.println(c.getTimeZone().getID() + ":\n\t" +
+						rs.getTimestamp("ts", c) + "      \t" +
+						rs.getTimestamp("tsz", c) + "           \t" +
+						rs.getTime("t", c) + "               \t" +
+						rs.getTime("tz", c) + "      ");
+
 				System.out.println();
 				SQLWarning w = rs.getWarnings();
 				while (w != null) {
