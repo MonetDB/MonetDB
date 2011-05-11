@@ -24,6 +24,7 @@ import java.io.*;
 import java.util.*;
 import java.math.*;
 import java.net.*;
+import java.text.*;
 import nl.cwi.monetdb.mcl.parser.*;
 
 /**
@@ -1587,6 +1588,12 @@ public class MonetResultSet implements ResultSet {
 	}
 
 	// This behaviour is according table B-6 of Sun JDBC Specification 3.0
+	private static SimpleDateFormat ts =
+		new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	private static SimpleDateFormat t =
+		new SimpleDateFormat("HH:mm:ss");
+	private static SimpleDateFormat d =
+		new SimpleDateFormat("yyyy-MM-dd");
 	/**
 	 * Helper method which parses the date/time value for columns of type
 	 * TIME, DATE and TIMESTAMP.  For the types CHAR, VARCHAR and
@@ -1612,12 +1619,12 @@ public class MonetResultSet implements ResultSet {
 		if (col <= 0) throw
 			new IllegalArgumentException("No valid column number given!");
 
-		String monetDate;
-		if ((monetDate = getString(col)) == null) return(-1);
-		char[] monDate = monetDate.toCharArray();
-		int pos = 0;
-		int tmp;
+		String monetDate = getString(col);
+		if (monetDate == null)
+			return(-1);
+
 		int nanos = 0;
+		TimeZone ptz = cal.getTimeZone();
 
 		// If we got a string type, set the datatype to the given
 		// type so we attempt to parse it as the caller thinks it is.
@@ -1629,118 +1636,90 @@ public class MonetResultSet implements ResultSet {
 			dataType = type;
 		}
 
-		// we want to start from scratch
-		cal.clear();
+		// we know whether we have a time with or without
+		// time zone if the monet type ends with "tz"
+		boolean hasTimeZone = types[col - 1].endsWith("tz");
 
-		try {
-			switch(dataType) {
-				default:
-					throw new MCLParseException("unsupported data type", 0);
+		// it is important to parse the time in the given timezone in
+		// order to get a correct (UTC) time value, hence we need to
+		// parse it first
+		if (hasTimeZone) {
+			// MonetDB/SQL99:  Sign TwoDigitHours : Minutes
+			ptz = TimeZone.getTimeZone("GMT" +
+					monetDate.substring(
+						monetDate.length() - 6,
+						monetDate.length()));
+		}
+		ts.setTimeZone(ptz);
+		t.setTimeZone(ptz);
+		d.setTimeZone(ptz);
 
-				case Types.DATE:
-				case Types.TIMESTAMP:
-					// parse the date YYYY-MM-DD if we have enough chars
-					if (monDate.length - pos < 10) break;
-					// year
-					tmp = 0;
-					tmp += getIntrinsicValue(monDate[pos], pos++) * 1000;
-					tmp += getIntrinsicValue(monDate[pos], pos++) * 100;
-					tmp += getIntrinsicValue(monDate[pos], pos++) * 10;
-					tmp += getIntrinsicValue(monDate[pos], pos++);
-					cal.set(Calendar.YEAR, tmp);
-					if (monDate[pos++] != '-') throw
-						new MCLParseException("expected '-'", pos - 1);
-					// month
-					tmp = 0;
-					tmp += getIntrinsicValue(monDate[pos], pos++) * 10;
-					tmp += getIntrinsicValue(monDate[pos], pos++);
-					cal.set(Calendar.MONTH, tmp - 1);
-					if (monDate[pos++] != '-') throw
-						new MCLParseException("expected '-'", pos - 1);
-					// day of month
-					tmp = 0;
-					tmp += getIntrinsicValue(monDate[pos], pos++) * 10;
-					tmp += getIntrinsicValue(monDate[pos], pos++);
-					cal.set(Calendar.DAY_OF_MONTH, tmp);
-
-					if (dataType == Types.DATE || pos++ == monDate.length)
-						break;
-				case Types.TIME:
-					// parse the time HH:mm:ss.SSSSSSSS if we have enough chars
-					if (monDate.length - pos < 8) break;
-					// hour of day
-					tmp = 0;
-					tmp += getIntrinsicValue(monDate[pos], pos++) * 10;
-					tmp += getIntrinsicValue(monDate[pos], pos++);
-					cal.set(Calendar.HOUR_OF_DAY, tmp);
-					if (monDate[pos++] != ':') throw
-						new MCLParseException("expected ':'", pos - 1);
-					// minute
-					tmp = 0;
-					tmp += getIntrinsicValue(monDate[pos], pos++) * 10;
-					tmp += getIntrinsicValue(monDate[pos], pos++);
-					cal.set(Calendar.MINUTE, tmp);
-					if (monDate[pos++] != ':') throw
-						new MCLParseException("expected ':'", pos - 1);
-					// second
-					tmp = 0;
-					tmp += getIntrinsicValue(monDate[pos], pos++) * 10;
-					tmp += getIntrinsicValue(monDate[pos], pos++);
-					cal.set(Calendar.SECOND, tmp);
-					if (pos < monDate.length && monDate[pos] == '.') {
-						int ctr;
-						pos++;
-						// nanos
-						nanos = getIntrinsicValue(monDate[pos], pos++);
-						for (ctr = 1;
-								pos < monDate.length && 
-								monDate[pos] >= '0' &&
-								monDate[pos] <= '9';
-								ctr++)
-						{
-							if (ctr < 9) {
-								nanos *= 10;
-								nanos += ((int)monDate[pos] - (int)'0');
-							}
-							if (ctr == 2)	// we have three at this point
-								cal.set(Calendar.MILLISECOND, nanos);
-							pos++;
-						}
-						while (ctr++ < 9) nanos *= 10;
-					}
-
-					// we know whether we have a time with or without
-					// time zone if the monet type ends with "tz"
-					if (types[col - 1].endsWith("tz")) {
-						int zone;
-						// MonetDB/SQL99:  Sign TwoDigitHours : Minutes
-						tmp = pos < monDate.length ? monDate[pos++] : 0;
-						if (tmp != '-' && tmp != '+') throw
-							new MCLParseException("expected '+' or '-'", pos - 1);
-						// hour
-						zone = 0;
-						zone += getIntrinsicValue(monDate[pos], pos++) * 10;
-						zone += getIntrinsicValue(monDate[pos], pos++);
-						zone *= 60; // translate into minutes
-						if (monDate[pos++] != ':') throw
-							new MCLParseException("expected ':'", pos - 1);
-						// minute
-						zone += getIntrinsicValue(monDate[pos], pos++) * 10;
-						zone += getIntrinsicValue(monDate[pos], pos++);
-						zone *= 60 * 1000;	// translate into milliseconds
-						if (tmp == '-') zone = -zone; // evaluate + or -
-						cal.set(Calendar.ZONE_OFFSET, zone);
-					}
-				//break; (not needed because of the else/return)
-			}
-		} catch(MCLParseException e) {
-			addWarning(e.getMessage() +
-					 " found: '" + monDate[e.getErrorOffset()] + "'" +
+		java.util.Date pdate = null;
+		ParsePosition ppos = new ParsePosition(0);
+		switch(dataType) {
+			default:
+				addWarning("unsupported data type");
+				cal.clear();
+				nanos = 0;
+				return(nanos);
+			case Types.DATE:
+				pdate = d.parse(monetDate, ppos);
+				break;
+			case Types.TIME:
+				pdate = t.parse(monetDate, ppos);
+				break;
+			case Types.TIMESTAMP:
+				pdate = ts.parse(monetDate, ppos);
+				break;
+		}
+		if (pdate == null) {
+			// parsing failed
+			addWarning("parsing failed," +
+					 " found: '" + monetDate.charAt(ppos.getErrorIndex()) + "'" +
 					 " in: \"" + monetDate + "\"" +
-					 " at pos: " + e.getErrorOffset());
+					 " at pos: " + ppos.getErrorIndex());
 			// default value
 			cal.clear();
 			nanos = 0;
+			return(nanos);
+		}
+		cal.setTime(pdate);
+
+		if (dataType == Types.TIME || dataType == Types.TIMESTAMP) {
+			// parse additional nanos (if any)
+			int pos = ppos.getIndex();
+			char[] monDate = monetDate.toCharArray();
+			if (pos < monDate.length && monDate[pos] == '.') {
+				pos++;
+				int ctr;
+				try {
+					nanos = getIntrinsicValue(monDate[pos], pos++);
+					for (ctr = 1;
+							pos < monDate.length && 
+							monDate[pos] >= '0' &&
+							monDate[pos] <= '9';
+							ctr++)
+					{
+						if (ctr < 9) {
+							nanos *= 10;
+							nanos += (getIntrinsicValue(monDate[pos], pos));
+						}
+						if (ctr == 2)	// we have three at this point
+							cal.set(Calendar.MILLISECOND, nanos);
+						pos++;
+					}
+					while (ctr++ < 9)
+						nanos *= 10;
+				} catch(MCLParseException e) {
+					addWarning(e.getMessage() +
+							" found: '" + monDate[e.getErrorOffset()] + "'" +
+							" in: \"" + monetDate + "\"" +
+							" at pos: " + e.getErrorOffset());
+					// default value
+					cal.clear();
+					nanos = 0;
+				}
+			}
 		}
 		return(nanos);
 	}
@@ -1799,7 +1778,7 @@ public class MonetResultSet implements ResultSet {
 		throws SQLException
 	{
 		int ret = getJavaDate(cal, columnIndex, Types.DATE);
-		return(ret == -1 ? null : new java.sql.Date(cal.getTime().getTime()));
+		return(ret == -1 ? null : new java.sql.Date(cal.getTimeInMillis()));
 	}
 
 	/**
@@ -1870,7 +1849,7 @@ public class MonetResultSet implements ResultSet {
 		throws SQLException
 	{
 		int ret = getJavaDate(cal, columnIndex, Types.TIME);
-		return(ret == -1 ? null : new Time(cal.getTime().getTime()));
+		return(ret == -1 ? null : new Time(cal.getTimeInMillis()));
 	}
 
 	/**
@@ -1942,7 +1921,7 @@ public class MonetResultSet implements ResultSet {
 	{
 		int nanos = getJavaDate(cal, columnIndex, Types.TIMESTAMP);
 		if (nanos == -1) return(null);
-		Timestamp ts = new Timestamp(cal.getTime().getTime());
+		Timestamp ts = new Timestamp(cal.getTimeInMillis());
 		ts.setNanos(nanos);
 
 		return(ts);
