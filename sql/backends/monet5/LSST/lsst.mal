@@ -39,6 +39,6 @@ pattern lsst.ptinsphpoly(ra:dbl, dec:dbl, list:dbl...) :int
 address qserv_ptInSphPoly
 comment "Returns 1 if the given spherical longitude/latitude polyline contains the given position";
 
-command lsst.xmatch(l:bat[:oid,:lng], r:bat[:oid,:lng], delta:lng):bat[:oid,:oid]
+command lsst.xmatch(l:bat[:oid,:lng], r:bat[:oid,:lng], depth:int):bat[:oid,:oid]
 address LSSTxmatch
-comment "Return the HtmID pairs whose distances is within a delta distance";
+comment "Return the HtmID pairs that lie within the same triangle at level depth";
