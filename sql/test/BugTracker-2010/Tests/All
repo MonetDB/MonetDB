@@ -86,3 +86,4 @@ call_function_without_warning.Bug-2752
 vacuum
 with-between.Bug-2732
 sequence-restart-with-null.Bug-2648
+constants-optimizer.Bug-2317.sql

@@ -931,7 +931,7 @@ URLfromString(str src, int *len, str *url)
 {
 	/* actually parse the message for valid url */
 	if (*url !=0)
-		GDKfree(url);
+		GDKfree(*url);
 
 	*len = (int) strlen(src);
 	*url = GDKstrdup(src);

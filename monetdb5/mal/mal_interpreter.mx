@@ -711,6 +711,7 @@ DFLOWadmission(lng argclaim, lng hotclaim)
 	/* optimistically set memory */
 	if ( argclaim == 0)
 		return 0;
+	return 0; 	/* invalidate */
 
 	mal_set_lock(mal_contextLock, "DFLOWdelay");
 	if (memorypool <= 0 && memoryclaims == 0) {
@@ -841,6 +842,28 @@ q_dequeue(queue *q)
 
 	MT_lock_unset(&q->l, "q_dequeue");
 	return r;
+}
+
+/* it makes sense to give priority to those
+ * instructions that carry a lot of temporary arguments
+ * It will reduce the footprint of the database.
+*/
+static void
+queue_sort(queue *q)
+{
+	int i, j;
+	void *f;
+
+	for( i =0;  i< q->last; i++)
+	for( j=i+1; j<q->last; j++)
+	if( ((FlowStatus)q->data[i])->argclaim > ((FlowStatus)q->data[j])->argclaim){
+		f= q->data[i];
+		q->data[i]= q->data[j];
+		q->data[j]= f;
+	}
+	/* decay, because it is likely flushed */
+	for( i =0;  i< q->last; i++)
+		((FlowStatus)q->data[i])->argclaim /= 2;
 }
 
 @-
@@ -1037,8 +1060,8 @@ runDFLOWworker(void *t)
 		    task->flow->status[i].blocks == 1) {
 			task->flow->status[i].state = DFLOWrunning;
 			task->flow->status[i].blocks = 0;
-			task->flow->status[i].hotclaim = fs->hotclaim/p->retc;
-			task->flow->status[i].argclaim += fs->hotclaim/p->retc;
+			task->flow->status[i].hotclaim = fs->hotclaim;
+			task->flow->status[i].argclaim += fs->hotclaim;
 			task->flow->status[i].error = NULL;
 			nxtfs = task->flow->status + i;
 			PARDEBUG
@@ -1246,11 +1269,9 @@ DFLOWscheduler( DataFlow flow )
 		for( ; (i = flow->nodes[last]) > 0; last= flow->edges[last])
 		if (flow->status[i].state == DFLOWpending)
 		{
-			flow->status[i].argclaim += f->hotclaim/ p->retc;
 			flow->status[i].blocks--;
 			if ( flow->status[i].blocks == 0 && ret == MAL_SUCCEED) {
 				queued++;
-				flow->status[i].hotclaim = f->hotclaim;
 				q_enqueue_(flow->todo, flow->status + i);
 				flow->status[i].state = DFLOWrunning;
 				PARDEBUG 
@@ -1265,6 +1286,8 @@ DFLOWscheduler( DataFlow flow )
 			queued++;
 			oldq++;
 		} 
+		if (0 && oldq !=queued)	/* invalidate */
+			queue_sort(flow->todo);
 		MT_lock_unset(&flow->todo->l, "q_enqueue");
 
 		if ( ret == MAL_SUCCEED)

@@ -62,9 +62,9 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 	OPTDEBUGconstants mnstr_printf(cntxt->fdout,"#OPT_CONSTANTS: MATCHING CONSTANTS ELEMENTS\n");
 
-	alias= (int*) GDKmalloc(sizeof(int) * mb->vtop);
-	cst= (VarPtr*) GDKmalloc(sizeof(VarPtr) * mb->vtop);
-	index= (int*) GDKmalloc(sizeof(int) * mb->vtop);
+	alias= (int*) GDKzalloc(sizeof(int) * mb->vtop);
+	cst= (VarPtr*) GDKzalloc(sizeof(VarPtr) * mb->vtop);
+	index= (int*) GDKzalloc(sizeof(int) * mb->vtop);
 
 	if ( alias == NULL || cst == NULL || index == NULL){
 		if( alias) GDKfree(alias);
@@ -76,15 +76,17 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	(void) stk;
 	(void) cntxt;
 
-	for (i=0; i< getInstrPtr(mb,0)->argc; i++)
-		alias[i]=i;
-	for (; i< mb->vtop; i++)
-		if ( isVarConstant(mb,i) ){
-			x= getVar(mb,i); fnd = 0;
+	for (i=0; i< mb->vtop; i++)
+		alias[ i]= i;
+	for (i=0; i< mb->vtop; i++)
+		if ( isVarConstant(mb,i)  && isVarFixed(mb,i) ){
+			x= getVar(mb,i); 
+			fnd = 0;
+			if ( x->type && x->value.vtype)
 			for( k= n-1; k>=0; k--){
 				y= cst[k];
-				if ( x->type &&  x->type == y->type &&
-					 x->value.vtype && x->value.vtype == y->value.vtype &&
+				if ( x->type == y->type &&
+					 x->value.vtype == y->value.vtype &&
 					ATOMcmp(x->value.vtype, VALget(&x->value), VALget(&y->value)) == 0){
 					OPTDEBUGconstants {
 						mnstr_printf(cntxt->fdout,"#opt_constants: matching elements %s %d %d ", getVarName(mb,i), i,k);
@@ -102,11 +104,9 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				OPTDEBUGconstants mnstr_printf(cntxt->fdout,"swith elements %d %d\n", i,n);
 				cst[n]= x;
 				index[n]= i;
-				alias[i]= index[n];
 				n++;
 			} 
-		} else
-			alias[i]=i;
+		} 
 
 	for (i = 0; i < mb->stop; i++){
 		p= getInstrPtr(mb,i);

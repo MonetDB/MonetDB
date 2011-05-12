@@ -36,6 +36,5 @@ bin_monetdb = {
 		   $(UUID_LIBS) \
 		   $(curl_LIBS) \
 		   $(SOCKET_LIBS) \
-		   $(MALLOC_LIBS) \
-		   $(C_LIBS)
+		   $(MALLOC_LIBS)
 }

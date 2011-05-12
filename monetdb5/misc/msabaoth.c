@@ -459,7 +459,7 @@ msab_getStatus(sabdb** ret, char *dbname)
 	sabdb *sdb, *top;
 	sdb = top = *ret = NULL;
 
-	buf[PATHLENGTH] = '\0';
+	buf[PATHLENGTH - 1] = '\0';
 	/* scan the parent for directories */
 	if ((p = getFarmPath(&path, PATHLENGTH, NULL)) != NULL)
 		return(p);
