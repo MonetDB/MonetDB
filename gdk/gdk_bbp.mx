@@ -579,6 +579,8 @@ fixoidheapcolumn(BAT *b, const char *nme, const char *filename,
 				break;
 			default:
 				assert(0);
+				/* cannot happen, but compiler doesn't know */
+				s = NULL;
 			}
 			b->H->heap.free += b->H->width;
 			Hputvalue(b, Hloc(b, i), s, 0);
