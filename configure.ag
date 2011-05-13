@@ -2706,7 +2706,6 @@ AC_CHECK_FUNCS([\
 				getlogin \
 				getopt \
 				getopt_long \
-				getrlimit \
 				GetSystemInfo \
 				gettimeofday \
 				getuid \
