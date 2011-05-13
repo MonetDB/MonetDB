@@ -58,6 +58,8 @@ name_find_column( sql_rel *rel, char *rname, char *name )
 		node *cn;
 		sql_table *t = rel->l;
 
+		if (rname && strcmp(t->base.name, rname) != 0)
+			return NULL;
 		if (rel->exps) {
 			sql_exp *rename = exps_bind_column(rel->exps, name, NULL);
 			if (!rename ||
