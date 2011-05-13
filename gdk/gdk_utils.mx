@@ -65,17 +65,6 @@ BAT *GDKenv = NULL;
 # include <sys/sysctl.h>
 #endif
 
-/* getrlimit on FreeBSD */
-#ifdef HAVE_SYS_TYPES_H
-# include <sys/types.h>
-#endif
-#ifdef HAVE_SYS_TIME_H
-# include <sys/time.h>
-#endif
-#ifdef HAVE_SYS_RESOURCE_H
-# include <sys/resource.h>
-#endif
-
 #ifdef NATIVE_WIN32
 #define chdir _chdir
 #endif
@@ -537,25 +526,6 @@ MT_init(void)
 	_MT_npages = sysconf(_SC_PHYS_PAGES);
 #else
 # error "don't know how to get the amount of physical memory for your OS"
-#endif
-
-#ifdef HAVE_GETRLIMIT
-	{
-		struct rlimit rl;
-		size_t memlim;
-
-		/* The environment can be limited memory wise.  In such case the
-		 * physically available memory, is not necessarily what we can
-		 * also use. */
-		getrlimit(RLIMIT_DATA, &rl);
-		if (rl.rlim_cur != (rlim_t) RLIM_INFINITY) {
-			/* rlimit returns in bytes, recalculate */
-			memlim = rl.rlim_cur / _MT_pagesize;
-			/* if it's more restrictive, take that as value */
-			if (memlim < _MT_npages)
-				_MT_npages = memlim;
-		}
-	}
 #endif
 }
 
