@@ -58,6 +58,8 @@ name_find_column( sql_rel *rel, char *rname, char *name )
 		node *cn;
 		sql_table *t = rel->l;
 
+		if (rname && strcmp(t->base.name, rname) != 0)
+			return NULL;
 		if (rel->exps) {
 			sql_exp *rename = exps_bind_column(rel->exps, name, NULL);
 			if (!rename ||
@@ -3535,14 +3537,14 @@ exp_merge_range(sql_allocator *sa, list *exps)
 			e->r = exp_merge_range(sa, e->r);
 		/* only look for gt, gte, lte, lt */
 		} else if (n->next &&
-		    e->type == e_cmp && e->flag < cmp_equal && 
+		    e->type == e_cmp && e->flag < cmp_equal && !e->f && 
 		    re->card == CARD_ATOM) {
 			for (m=n->next; m; m = m->next) {
 				sql_exp *f = m->data;
 				sql_exp *lf = f->l;
 				sql_exp *rf = f->r;
 
-				if (f->type == e_cmp && f->flag < cmp_equal && 
+				if (f->type == e_cmp && f->flag < cmp_equal && !f->f &&
 				    rf->card == CARD_ATOM && 
 				    exp_match_exp(le, lf)) {
 					sql_exp *ne;
@@ -3572,14 +3574,14 @@ exp_merge_range(sql_allocator *sa, list *exps)
 				}
 			}
 		} else if (n->next &&
-			   e->type == e_cmp && e->flag < cmp_equal && 
+			   e->type == e_cmp && e->flag < cmp_equal && !e->f && 
 		    	   re->card > CARD_ATOM) {
 			for (m=n->next; m; m = m->next) {
 				sql_exp *f = m->data;
 				sql_exp *lf = f->l;
 				sql_exp *rf = f->r;
 
-				if (f->type == e_cmp && f->flag < cmp_equal && 
+				if (f->type == e_cmp && f->flag < cmp_equal && !f->f  &&
 				    rf->card > CARD_ATOM) {
 					sql_exp *ne;
 					int swap = 0, lt = 0, gt = 0;

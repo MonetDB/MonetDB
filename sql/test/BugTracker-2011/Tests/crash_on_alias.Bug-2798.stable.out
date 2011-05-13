@@ -17,12 +17,6 @@ stdout of test 'crash_on_alias.Bug-2798` in directory 'test/BugTracker-2011` its
 # MonetDB/SQL module loaded
 
 Ready.
-# SQL catalog created, loading sql scripts once
-could not find (null).e
-dbg.d
-dbg.L10
-L12.L12
-dbg.d
 
 Over..
 

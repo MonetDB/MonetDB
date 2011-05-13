@@ -194,27 +194,20 @@ GDKfilelocate(const char *nme, const char *mode, const char *extension)
 @-
 Unlink the file.
 @c
-static int
-delete_file(const char *path)
-{
-	int err = unlink(path);
-
-	if (err)
-		GDKsyserror("GDKunlink(%s)\n", path);
-	IODEBUG THRprintf(GDKout, "#unlink %s = %d\n", path, err);
-
-	return err;
-}
-
 int
 GDKunlink(const char *dir, const char *nme, const char *ext)
 {
 	char path[PATHLENGTH];
-	struct stat st;
+
 	if (nme && *nme) {
 		GDKfilepath(path, dir, nme, ext);
-		if (lstat(path, &st) == 0)
-			return delete_file(path);
+		/* if file already doesn't exist, we don't care */
+		if (unlink(path) == -1 && errno != ENOENT) {
+			GDKsyserror("GDKunlink(%s)\n", path);
+			IODEBUG THRprintf(GDKout, "#unlink %s = -1\n", path);
+			return -1;
+		}
+		return 0;
 	}
 	return -1;
 }
