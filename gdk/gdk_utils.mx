@@ -515,8 +515,8 @@ MT_init(void)
 # ifdef SIZEOF_SIZE_T == SIZEOF_INT
 		/* we can have more memory than a size_t can handle on a 32-bits
 		 * platform, so trim it down, if that is the case */
-		if (size > (size_t)-1)
-			size = (size_t)-1;
+		if (size > 0xffffffff)
+			size = 0xffffffff;
 # endif
 		_MT_npages = size / _MT_pagesize;
 	}
@@ -535,8 +535,8 @@ MT_init(void)
 # ifdef SIZEOF_SIZE_T == SIZEOF_INT
 		/* we can have more memory than a size_t can handle on a 32-bits
 		 * platform, so trim it down, if that is the case */
-		if (size > (size_t)-1)
-			size = (size_t)-1;
+		if (size > 0xffffffff)
+			size = 0xffffffff;
 # endif
 		_MT_npages = size / _MT_pagesize;
 	}
