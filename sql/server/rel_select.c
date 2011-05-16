@@ -3936,11 +3936,15 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 			if (*rel) {
 				/* current projection list */
 				sql_rel *p = *rel;
-				list *pre_proj = rel_projections(sql, *rel, NULL, 1, 1);
+				list *pre_proj = (*rel)->exps;
+
 				if (is_project((*rel)->op) && (*rel)->l) {
+					(*rel)->exps = NULL;
 					p = rel_dup((*rel)->l);
 					rel_destroy(*rel);
 					*rel = NULL;
+				} else {
+					pre_proj = rel_projections(sql, *rel, NULL, 1, 1);
 				}
 				if (*rel && is_project((*rel)->op) && !(*rel)->l) {
 					list *l = (*rel)->exps;

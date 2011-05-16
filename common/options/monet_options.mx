@@ -291,7 +291,7 @@ mo_builtin_settings(opt **Set)
 	if (Set == NULL)
 		return 0;
 
-#define N_OPTIONS	14	/*MUST MATCH # OPTIONS BELOW */
+#define N_OPTIONS	12	/*MUST MATCH # OPTIONS BELOW */
 	set = malloc(sizeof(opt) * N_OPTIONS);
 	if (set == NULL)
 		return 0;
@@ -337,14 +337,6 @@ mo_builtin_settings(opt **Set)
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("mapi_autosense");
 	set[i].value = strdup("false");
-	i++;
-	set[i].kind = opt_builtin;
-	set[i].name = strdup("default_pipe");
-	set[i].value = strdup("inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector");
-	i++;
-	set[i].kind = opt_builtin;
-	set[i].name = strdup("minimal_pipe");
-	set[i].value = strdup("inline,remap,deadcode,multiplex,garbageCollector");
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("sql_optimizer");

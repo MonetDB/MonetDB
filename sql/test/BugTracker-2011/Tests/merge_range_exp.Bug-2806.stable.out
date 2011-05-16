@@ -1,0 +1,87 @@
+stdout of test 'merge_range_exp.Bug-2806` in directory 'test/BugTracker-2011` itself:
+
+
+# 15:52:06 >  
+# 15:52:06 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/ufs/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB" --set mapi_open=true --set mapi_port=31260 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_test_BugTracker-2011" --set mal_listing=0 ; echo ; echo Over..
+# 15:52:06 >  
+
+# MonetDB 5 server v11.3.2
+# This is an unreleased version
+# Serving database 'mTests_test_BugTracker-2011', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.752 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:31260/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+Over..
+
+# 15:52:06 >  
+# 15:52:06 >  mclient -lsql -ftest -i -e --host=alf --port=31260 
+# 15:52:06 >  
+
+#create table xx( id serial, ival int);
+#insert into xx(ival) values(1),(2),(3),(4),(5),(6);
+[ 6	]
+#select * from xx;
+% sys.xx,	sys.xx # table_name
+% id,	ival # name
+% int,	int # type
+% 1,	1 # length
+[ 1,	1	]
+[ 2,	2	]
+[ 3,	3	]
+[ 4,	4	]
+[ 5,	5	]
+[ 6,	6	]
+#create view iview as 
+#select id,ival from xx where ival >=2 and ival <5;
+#select * from iview;
+% sys.iview,	sys.iview # table_name
+% id,	ival # name
+% int,	int # type
+% 1,	1 # length
+[ 2,	2	]
+[ 3,	3	]
+[ 4,	4	]
+#select * from iview where ival between 2 and 5;
+% sys.iview,	sys.iview # table_name
+% id,	ival # name
+% int,	int # type
+% 1,	1 # length
+[ 2,	2	]
+[ 3,	3	]
+[ 4,	4	]
+#select * from iview where ival between 3 and 5;
+% sys.iview,	sys.iview # table_name
+% id,	ival # name
+% int,	int # type
+% 1,	1 # length
+[ 3,	3	]
+[ 4,	4	]
+#select * from iview where ival between 4 and 5;
+% sys.iview,	sys.iview # table_name
+% id,	ival # name
+% int,	int # type
+% 1,	1 # length
+[ 4,	4	]
+#select * from iview where ival between 2 and 4;
+% sys.iview,	sys.iview # table_name
+% id,	ival # name
+% int,	int # type
+% 1,	1 # length
+[ 2,	2	]
+[ 3,	3	]
+[ 4,	4	]
+#drop view iview;
+#drop table xx;
+
+# 15:52:06 >  
+# 15:52:06 >  Done.
+# 15:52:06 >  
+

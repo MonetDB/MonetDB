@@ -260,7 +260,7 @@ gdk_export int win_rename(const char *, const char *);
 gdk_export int win_unlink(const char *);
 gdk_export int win_mkdir(const char *, const int mode);
 
-#define stat(x,y)	win_stat(x,y)
+#define _stat64(x,y)	win_stat(x,y)
 #define mkdir		win_mkdir
 #define rmdir		win_rmdir
 #define rename		win_rename
@@ -1670,11 +1670,12 @@ reduce_dir_name(const char *src, char *dst, size_t cap)
 	return buf;
 }
 
+#undef _stat64
 int
-win_stat(const char *pathname, struct stat *st)
+win_stat(const char *pathname, struct _stat64 *st)
 {
 	char buf[128], *p = reduce_dir_name(pathname, buf, sizeof(buf));
-	int ret = stat(p, st);
+	int ret = _stat64(p, st);
 
 	if (p != buf)
 		free(p);
