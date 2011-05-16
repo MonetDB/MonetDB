@@ -18,11 +18,11 @@ All Rights Reserved.
 @
 
 @f array
-@a M.L. Kersten, Y.Zhang, M. Ivanova, A.R. van Ballegooij
+@a M.L. Kersten, Y.Zhang, M. Ivanova
 @+ Basic array support
 
 Arrays are represented by a series of BATs. One for each dimension
-and one for the value. The structure of the dimension is captured in
+and one for the non-dimension attributes. The structure of the dimension is captured in
 a shape description, which is an ordered list of tripples
 (F,L,S) where for index variable i the constraint F<=i<L holds
 and where the step size is S.
@@ -34,19 +34,18 @@ the SciQL compiler already can ensure proper type equality
 for each shape tripple.
 @{
 
+@= grid_mdefs
+command dimension(i:@1,j:@1,k:@1,l:@1) :bat[:oid,:@1] 
+address ARRAYdimension_@1
+comment  "Generates a single dimension BAT based on (grpcount,grpsize,clustersize,offset). Used to instantiate fixed arrays.";
+
+command dimension(i:@1,j:@1,k:@1,l:@1,s:@1) :bat[:oid,:@1] 
+address ARRAYdimensionShift_@1
+comment  "Generates a dimension BAT (grpcount,grpsize,clustersize,offset)
+and shift all elements with a factor s.";
+
 @mal
 module array;
-@= grid_mdefs
-command grid(i:@1,j:@1,k:@1,l:@1) :bat[:oid,:@1] 
-address ARRAYgrid_@1
-comment  "Generates a dimension BAT, (grpcount,grpsize,clustersize,offset)";
-
-command grid(i:@1,j:@1,k:@1,l:@1,s:@1) :bat[:oid,:@1] 
-address ARRAYgridShift_@1
-comment  "Generates a dimension BAT, (grpcount,grpsize,clustersize,offset)
-and shift all elements with a factor s";
-
-@mal
 @:grid_mdefs(sht)@
 @:grid_mdefs(int)@
 @:grid_mdefs(lng)@
@@ -56,9 +55,9 @@ and shift all elements with a factor s";
 @:grid_mdefs(daytime)@
 @:grid_mdefs(timestamp)@
 
-pattern filler(v:any_1, shape:any...):bat[:oid,:any_1]
+pattern filler(idx:bat[:oid,:any_1], v:any_2):bat[:oid,:any_2]
 address ARRAYfiller
-comment "Create an array representation described by the shape vector filled with V";
+comment "Create an array value representation described by a dimension column and fill it with V";
 
 pattern select(a:bat[:oid,:any_1], shape:any...):bat[:oid,:any_1]
 address ARRAYselect
@@ -150,8 +149,8 @@ array_export str ARRAYreplace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 array_export str ARRAYmap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 @= grid_impl
-array_export str ARRAYgrid_@1(@1 *ret, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset);
-array_export str ARRAYgridShift_@1(@1 *ret, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset, @1 *shift);
+array_export str ARRAYdimension_@1(@1 *ret, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset);
+array_export str ARRAYdimensionShift_@1(@1 *ret, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset, @1 *shift);
 
 static int
 fillgrid_@1(BAT **out, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset, @1 *shift)
@@ -243,9 +242,10 @@ To be dealt with differently
 
 @c
 #include "mal.h"
+#include "mal_interpreter.h"
 @= grid_wrapper_impl
 str
-ARRAYgrid_@1(@1 *ret, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset)
+ARRAYdimension_@1(@1 *ret, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset)
 {
 	BAT *bn;
 
@@ -258,7 +258,7 @@ ARRAYgrid_@1(@1 *ret, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset)
 }
 
 str
-ARRAYgridShift_@1(@1 *ret, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset, @1 *shift)
+ARRAYdimensionShift_@1(@1 *ret, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset, @1 *shift)
 {
 	BAT *bn;
 
@@ -335,9 +335,9 @@ ARRAYproduct(int *ret, int *bid, int *rid)
 	BUN p, q, s, t;
 	BATiter bi, ri;
 
-	if ((b = BATdescriptor(*bid)) == NULL) {
+	if ((b = BATdescriptor(*bid)) == NULL) 
 		throw(MAL, "array.product", RUNTIME_OBJECT_MISSING);
-	}
+	
 	if ((r = BATdescriptor(*rid)) == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "array.product", RUNTIME_OBJECT_MISSING);
@@ -371,13 +371,28 @@ ARRAYproduct(int *ret, int *bid, int *rid)
 }
 
 str
-ARRAYfiller(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+ARRAYfiller(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	BAT *bn, *b;
+	BUN p, q;
+	BATiter bi;
+	int *ret = (int*) getArgReference(stk,pci,0);
+	int bid = *(int*) getArgReference(stk,pci,1);
+	void *val = (void*) getArgReference(stk,pci,2);
+
+	if ((b = BATdescriptor(bid)) == NULL) 
+		throw(MAL, "array.filler", RUNTIME_OBJECT_MISSING);
+	
+	bn = BATnew(b->htype, getArgType(mb,pci,2), BATcount(b));
+	BATseqbase(bn,0);
+
+	bi = bat_iterator(b);
+	BATloop(b,p,q){
+		BUNfastins(bn, BUNhead(bi, p), val);
+	}
 	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) p;
-	throw(MAL,"array.filler", PROGRAM_NYI);
+	BBPkeepref(*ret = bn->batCacheid);
+	return MAL_SUCCEED;
 }
 
 str
