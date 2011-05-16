@@ -513,7 +513,6 @@ MT_init(void)
 	/* FreeBSD, NetBSD, Darwin, 64-bits */
 	{
 		uint64_t size = 0;
-		int memsize = HW_MEMSIZE;
 		size_t len = sizeof(size);
 		int mib[2];
 
