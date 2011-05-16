@@ -93,10 +93,6 @@
 #include <stdio.h>
 #include <ctype.h>
 
-#ifdef NATIVE_WIN32
-# define strdup _strdup
-#endif
-
 #ifdef SQLLEN			/* it's a define for 32, a typedef for 64 */
 #define LENFMT		"%d"
 #define ULENFMT		"%u"

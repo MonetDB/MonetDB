@@ -27,12 +27,6 @@
 #include <ctype.h>
 #include "msqldump.h"
 
-#ifdef NATIVE_WIN32
-/* The POSIX name for this item is deprecated. Instead, use the ISO
-   C++ conformant name: _strdup. See online help for details. */
-#define strdup _strdup
-#endif
-
 static void
 quoted_print(stream *f, const char *s, const char singleq)
 {

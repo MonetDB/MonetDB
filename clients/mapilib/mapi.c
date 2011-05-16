@@ -822,10 +822,6 @@
 # endif
 #endif
 
-#ifdef NATIVE_WIN32
-#define strdup _strdup
-#endif
-
 #ifdef HAVE_CRYPT_H
 # include <crypt.h>
 #else

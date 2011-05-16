@@ -47,7 +47,6 @@
 
 #if defined(_MSC_VER) && _MSC_VER >= 1400
 #define close _close
-#define strdup _strdup
 #define unlink _unlink
 #endif
 

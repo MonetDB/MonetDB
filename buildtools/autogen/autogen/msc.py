@@ -685,7 +685,7 @@ def msc_bins(fd, var, binsmap, msc):
             msc['BINS'].append((bin, '$(C_inst_%s_exe)' % bin2, condname))
             condname = '!defined(' + ') && !defined('.join(binsmap['CONDINST']) + ')'
             msc['NBINS'].append((bin, '$(C_noinst_%s_exe)' % bin2, condname))
-        if binsmap.has_key('NOINST'):
+        elif binsmap.has_key('NOINST'):
             msc['NBINS'].append((bin, bin, ''))
         else:
             msc['BINS'].append((bin, bin, ''))
