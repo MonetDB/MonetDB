@@ -211,8 +211,8 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_4FC22BC37061413FA8B8F80F91330E61"
             {
-            "SourcePath" = "8:lib\\monetdb5\\autoload\\50_geom.mal"
-            "TargetName" = "8:50_geom.mal"
+            "SourcePath" = "8:lib\\monetdb5\\autoload\\30_geom.mal"
+            "TargetName" = "8:30_geom.mal"
             "Tag" = "8:"
             "Folder" = "8:_8FBEE32B5DFA4DCEA7CA122FC483D244"
             "Condition" = "8:"
