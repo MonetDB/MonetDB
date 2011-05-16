@@ -38,12 +38,6 @@
 
 #ifdef HAVE_STRING_H
 #include	<string.h>
-
-#ifdef NATIVE_WIN32
-/* The POSIX name for this item is deprecated. Instead, use the ISO
-   C++ conformant name: _strdup. See online help for details. */
-#define strdup _strdup
-#endif
 #endif
 
 #define	DB_DEF	0x10

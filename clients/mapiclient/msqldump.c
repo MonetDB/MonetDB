@@ -50,10 +50,6 @@
 #include "msqldump.h"
 #include "mprompt.h"
 
-#ifdef NATIVE_WIN32
-#define strdup _strdup
-#endif
-
 static void
 usage(const char *prog, int xit)
 {

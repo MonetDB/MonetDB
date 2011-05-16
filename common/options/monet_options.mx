@@ -110,7 +110,6 @@ moptions_export void mo_free_options(opt *set, int setlen);
 #endif
 
 #ifdef NATIVE_WIN32
-#define strdup _strdup
 #define getpid _getpid
 #endif
 

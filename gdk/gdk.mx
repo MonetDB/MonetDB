@@ -2534,7 +2534,6 @@ gdk_export void GDKclrerr(void);
 #endif
 #define fdopen _fdopen
 #define putenv _putenv
-#define strdup _strdup
 #endif
 
 #define BBP_BATMASK	511
