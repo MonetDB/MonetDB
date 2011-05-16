@@ -506,6 +506,12 @@ MT_init(void)
 		mib[0] = CTL_HW;
 		mib[1] = HW_MEMSIZE;
 		sysctl(mib, 2, &size, &len, NULL, 0);
+# ifdef SIZEOF_SIZE_T == SIZEOF_INT
+		/* we can have more memory than a size_t can handle on a 32-bits
+		 * platform, so trim it down, if that is the case */
+		if (size > 0xffffffff)
+			size = 0xffffffff;
+# endif
 		_MT_npages = size / _MT_pagesize;
 	}
 #elif defined(HAVE_SYS_SYSCTL_H) && defined (HW_PHYSMEM64)
@@ -520,6 +526,12 @@ MT_init(void)
 		mib[0] = CTL_HW;
 		mib[1] = HW_PHYSMEM64;
 		sysctl(mib, 2, &size, &len, NULL, 0);
+# ifdef SIZEOF_SIZE_T == SIZEOF_INT
+		/* we can have more memory than a size_t can handle on a 32-bits
+		 * platform, so trim it down, if that is the case */
+		if (size > 0xffffffff)
+			size = 0xffffffff;
+# endif
 		_MT_npages = size / _MT_pagesize;
 	}
 #elif defined(HAVE_SYSCONF) && defined(_SC_PHYS_PAGES)
