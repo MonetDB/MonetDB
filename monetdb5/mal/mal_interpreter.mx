@@ -82,10 +82,8 @@ static str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc,
 static void displayVolume(Client cntxt, lng vol);
 
 #define MEMORY_THRESHOLD  0.8
-#define MAXHOT 16
 
 static lng memorypool;		/* memory claimed by concurrent threads */
-static lng memoryused;		/* memory used for intermediates */
 static int memoryclaims = 0;	/* number of threads active with expensive operations */
 
 #define heapinfo(X) if((X) && (X)->base) vol = (X)->free; else vol = 0;
@@ -711,25 +709,27 @@ DFLOWadmission(lng argclaim, lng hotclaim)
 	/* optimistically set memory */
 	if ( argclaim == 0)
 		return 0;
-	return 0; 	/* invalidate */
+	/* experiments on sf-100 on small machine showed no real improvement
+	   Q10 became even 3x slower.
+	*/
+	return 0;
 
 	mal_set_lock(mal_contextLock, "DFLOWdelay");
-	if (memorypool <= 0 && memoryclaims == 0) {
+	if (memorypool <= 0 && memoryclaims == 0) 
 			memorypool = (lng) (MEMORY_THRESHOLD * monet_memory);
-	}
 
 	if ( argclaim > 0 ) {
-		if (memoryclaims == 0 || memorypool - memoryused > argclaim + hotclaim){
+		if (memoryclaims == 0 || memorypool > argclaim+ hotclaim ){
 			memorypool -= (argclaim + hotclaim);
 			memoryclaims ++;
 			PARDEBUG
-				mnstr_printf(GDKstdout,"#DFLOWadmit %3d thread %d pool " LLFMT","LLFMT " claims " LLFMT "," LLFMT"\n",
-					memoryclaims, THRgettid(), memorypool, memoryused, argclaim, hotclaim);
+				mnstr_printf(GDKstdout,"#DFLOWadmit %3d thread %d pool " LLFMT"claims " LLFMT "," LLFMT"\n",
+					memoryclaims, THRgettid(), memorypool, argclaim, hotclaim);
 			mal_unset_lock(mal_contextLock, "DFLOWdelay");
 			return 0;
 		}
 		PARDEBUG
-			mnstr_printf(GDKstdout,"#Delayed due to lack of memory " LLFMT " used " LLFMT " requestd " LLFMT "\n", memorypool, memoryused, argclaim+hotclaim);
+			mnstr_printf(GDKstdout,"#Delayed due to lack of memory " LLFMT " requested " LLFMT "\n", memorypool, argclaim+hotclaim);
 		mal_unset_lock(mal_contextLock, "DFLOWdelay");
 		return -1;
 	}
@@ -737,8 +737,8 @@ DFLOWadmission(lng argclaim, lng hotclaim)
 	memorypool += -argclaim - hotclaim ;
 	memoryclaims --;
 	PARDEBUG
-		mnstr_printf(GDKstdout,"#DFLOWadmit %3d thread %d pool " LLFMT","LLFMT " claims " LLFMT "," LLFMT"\n",
-			memoryclaims, THRgettid(), memorypool, memoryused, argclaim, hotclaim);
+		mnstr_printf(GDKstdout,"#DFLOWadmit %3d thread %d pool " LLFMT" claims " LLFMT "," LLFMT"\n",
+			memoryclaims, THRgettid(), memorypool,  argclaim, hotclaim);
 	assert(memoryclaims >= 0 );
 	mal_unset_lock(mal_contextLock, "DFLOWdelay");
 	return 0;
@@ -837,8 +837,16 @@ q_dequeue(queue *q)
 	MT_sema_down(&q->s, "q_dequeue");
 	MT_lock_set(&q->l, "q_dequeue");
 	assert(q->last > 0);
-	/* LIFO favors garbage collection*/
+	/* LIFO favors garbage collection */
 	r = q->data[--q->last];
+	/* try out random draw *
+	{int i;
+	i = rand() % q->last;
+	r= q->data[i];
+	for( i++ ; i< q->last; i++)
+		q->data[i-1]= q->data[i];
+	q->last--;}
+	*/
 
 	MT_lock_unset(&q->l, "q_dequeue");
 	return r;
@@ -1025,17 +1033,15 @@ runDFLOWworker(void *t)
 			fs = (FlowStatus) q_dequeue(task->todo);
 		else fs = nxtfs;
 		if ( DFLOWadmission(fs->argclaim, fs->hotclaim) ){
-			PARDEBUG 
-				mnstr_printf(GDKout,"#delay pc=%d thr= %d pool  " LLFMT " claim "LLFMT"\n", fs->pc,THRgettid(),  memorypool, fs->argclaim);
-			MT_sleep_ms(1);
 			fs->hotclaim = 0;	/* don't assume priority anymore */
+			MT_sleep_ms(fs->argclaim/1000000);
 			q_requeue(task->todo,fs);
 			nxtfs = 0;
 			continue;
 		}
 		assert(fs->pc > 0);
 		PARDEBUG
-			mnstr_printf(GDKstdout,"#execute pc= %d thr= %d %s\n",fs->pc, task->id, fs->error?fs->error:"");
+			mnstr_printf(GDKstdout,"#execute pc= %d thr= %d claim= %d,%d %s\n",fs->pc, task->id, fs->argclaim,fs->hotclaim, fs->error?fs->error:"");
 		fs->error = DFLOWstep(task, fs);
 
 		PARDEBUG
@@ -1047,7 +1053,7 @@ runDFLOWworker(void *t)
 		p = getInstrPtr(fs->mb, ABS(fs->pc));
 		fs->hotclaim = 0;
 		for( i=0; i< p->retc; i++)
-			fs->hotclaim += getMemoryClaim(fs->mb, fs->stk, p, i, TRUE);
+			fs->hotclaim += getMemoryClaim(fs->mb, fs->stk, p, i, FALSE);
 		
 		/* see if you can find an eligible instruction that uses the
 		 * result just produced. Then we can continue with it right away.
@@ -1065,7 +1071,7 @@ runDFLOWworker(void *t)
 			task->flow->status[i].error = NULL;
 			nxtfs = task->flow->status + i;
 			PARDEBUG
-				mnstr_printf(GDKstdout,"#continue pc= %d thr= %d\n", nxtfs->pc, task->id);
+				mnstr_printf(GDKstdout,"#continue pc= %d thr= %d claim= %d\n", nxtfs->pc, task->id, task->flow->status[i].argclaim);
 			break;
 		}
 
@@ -1260,7 +1266,7 @@ DFLOWscheduler( DataFlow flow )
 		f->state = DFLOWwrapup;
 		last =  ABS(f->pc) - flow->start;
 		PARDEBUG 
-			mnstr_printf(GDKstdout,"#finished pc=%d\n", f->pc);
+			mnstr_printf(GDKstdout,"#finished pc=%d claim %d\n", f->pc, f->hotclaim);
 
 		/* enter all dependencies before releasing the queue  */
 		MT_lock_set(&flow->todo->l, "q_enqueue");
@@ -1270,19 +1276,20 @@ DFLOWscheduler( DataFlow flow )
 		if (flow->status[i].state == DFLOWpending)
 		{
 			flow->status[i].blocks--;
+			flow->status[i].argclaim += f->hotclaim;
 			if ( flow->status[i].blocks == 0 && ret == MAL_SUCCEED) {
 				queued++;
 				q_enqueue_(flow->todo, flow->status + i);
 				flow->status[i].state = DFLOWrunning;
 				PARDEBUG 
-					mnstr_printf(GDKstdout,"#enqueue pc=%d claim=%d\n", flow->status[i].pc, flow->status[i].argclaim);
+					mnstr_printf(GDKstdout,"#enqueue pc=%d claim=%d queued= %d\n", flow->status[i].pc, flow->status[i].argclaim, queued);
 			} else
 			if ( ret == MAL_SUCCEED )
 			PARDEBUG
-				mnstr_printf(GDKstdout,"#await   pc %d block %d\n", flow->start+ i, flow->status[i].blocks);
+				mnstr_printf(GDKstdout,"#await   pc %d block %d claim= %d\n", flow->start+ i, flow->status[i].blocks, flow->status[i].argclaim);
 		} else {	/* worker stole the candidate */
 			PARDEBUG
-				mnstr_printf(GDKstdout,"#woke up pc %d block %d\n", flow->start+ i, flow->status[i].blocks);
+				mnstr_printf(GDKstdout,"#woke up pc %d block %d claim %d\n", flow->start+ i, flow->status[i].blocks, flow->status[i].argclaim);
 			queued++;
 			oldq++;
 		} 
