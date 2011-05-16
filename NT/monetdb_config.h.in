@@ -645,7 +645,13 @@
 
 #include <sys/stat.h>
 #define lstat _stat64
+#ifdef stat
+#undef stat
+#endif
 #define stat _stat64
+#ifdef fstat
+#undef fstat
+#endif
 #define fstat _fstat64
 #ifndef S_ISREG	/* swig-generated source file doesn't include us first */
 #define S_ISREG(mode)	(((mode) & _S_IFMT) == _S_IFREG)
