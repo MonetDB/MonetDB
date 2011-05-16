@@ -1,0 +1,50 @@
+stdout of test 'count-count-distinct.Bug-2808` in directory 'test/BugTracker-2011` itself:
+
+
+# 10:05:42 >  
+# 10:05:42 >   mserver5  --debug=10 --set gdk_nr_threads=4  --set "gdk_dbfarm=/ufs/niels/scratch/MonetDB/Linux-x86_64/var/MonetDB" --set mapi_open=true --set mapi_port=30195 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_test_BugTracker-2011" --set mal_listing=0 ; echo ; echo Over..
+# 10:05:42 >  
+
+# MonetDB 5 server v11.4.0
+# This is an unreleased version
+# Serving database 'mTests_test_BugTracker-2011', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.752 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:30195/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+Over..
+
+# 10:05:42 >  
+# 10:05:42 >  mclient -lsql -ftest -i -e --host=alf --port=30195 
+# 10:05:42 >  
+
+#select count(name) from tables;
+% .tables # table_name
+% L1 # name
+% wrd # type
+% 2 # length
+[ 32	]
+#select count(distinct name) from tables;
+% .tables # table_name
+% L2 # name
+% wrd # type
+% 2 # length
+[ 26	]
+#select count(name) , count(distinct name) from tables;
+% .tables,	.tables # table_name
+% L3,	L4 # name
+% wrd,	wrd # type
+% 2,	2 # length
+[ 32,	26	]
+
+# 10:05:42 >  
+# 10:05:42 >  Done.
+# 10:05:42 >  
+
