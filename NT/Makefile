@@ -33,6 +33,7 @@ install: targetdirs all
 	$(INSTALL) ..\NT\installer$(bits)\*.sln "$(prefix)"
 	$(INSTALL) ..\NT\installer$(bits)\*.vdproj "$(prefix)"
 	-if exist "C:\Program Files (x86)" if $(bits)==32 cd "$(prefix)"&&C:\cygwin\bin\sed.exe -i "s/Program Files/Program Files (x86)/" *.vdproj
+	if not exist "C:\Program Files (x86)\Microsoft Visual Studio 10.0" if not exist "C:\Program Files\Microsoft Visual Studio 10.0" cd "$(prefix)"&&C:\cygwin\bin\sed.exe -i "s/Format Version 11.00/Format Version 10.00/;s/Visual Studio 2010/Visual Studio 2008/;s/-vs10//;s/_VC100_/_VC90_/" *.vdproj *.sln
 
 $(srcdir)\Makefile.msc: "$(srcdir)\Makefile.ag"
         cd "$(srcdir)"&&set PYTHONPATH=buildtools\autogen&&python buildtools\autogen\autogen.py

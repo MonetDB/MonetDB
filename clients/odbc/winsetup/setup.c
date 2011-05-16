@@ -38,10 +38,6 @@
 #include <odbcinst.h>
 #include "resource.h"
 
-#if defined(_MSC_VER) && _MSC_VER >= 1400
-#define strdup _strdup
-#endif
-
 static char *DriverName = "MonetDB ODBC Driver";
 static HINSTANCE instance;
 

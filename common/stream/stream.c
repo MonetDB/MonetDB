@@ -148,10 +148,6 @@ struct stream {
 	int (*fsetpos) (stream *s, lng p);
 };
 
-#ifdef NATIVE_WIN32
-#define strdup _strdup
-#endif
-
 int
 mnstr_init(void)
 {
