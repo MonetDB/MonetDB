@@ -494,10 +494,26 @@ MT_init(void)
 		GlobalMemoryStatus(&memStat);
 		_MT_npages = memStat.dwTotalPhys / _MT_pagesize;
 	}
-#elif defined(HAVE_SYS_SYSCTL_H) && defined(HW_MEMSIZE)
-	/* FreeBSD, NetBSD, Darwin */
+#elif defined(HAVE_SYS_SYSCTL_H) && (defined(HW_PHYSMEM64) || defined(HW_MEMSIZE) || defined(HW_PHYSMEM))
+# if SIZEOF_SIZE_T == SIZEOF_INT && defined(HW_PHYSMEM)
+	/* FreeBSD, NetBSD, OpenBSD, Darwin, 32-bits */
+	{
+		int size = 0;
+		size_t len = sizeof(size);
+		int mib[2];
+
+		/* Everyone should have permission to make this call, 
+		 * if we get a failure something is really wrong. */
+		mib[0] = CTL_HW;
+		mib[1] = HW_PHYSMEM;
+		sysctl(mib, 2, &size, &len, NULL, 0);
+		_MT_npages = size / _MT_pagesize;
+	}
+# elif defined(HW_MEMSIZE)
+	/* FreeBSD, NetBSD, Darwin, 64-bits */
 	{
 		uint64_t size = 0;
+		int memsize = HW_MEMSIZE;
 		size_t len = sizeof(size);
 		int mib[2];
 
@@ -506,16 +522,10 @@ MT_init(void)
 		mib[0] = CTL_HW;
 		mib[1] = HW_MEMSIZE;
 		sysctl(mib, 2, &size, &len, NULL, 0);
-# ifdef SIZEOF_SIZE_T == SIZEOF_INT
-		/* we can have more memory than a size_t can handle on a 32-bits
-		 * platform, so trim it down, if that is the case */
-		if (size > 0xffffffff)
-			size = 0xffffffff;
-# endif
 		_MT_npages = size / _MT_pagesize;
 	}
-#elif defined(HAVE_SYS_SYSCTL_H) && defined (HW_PHYSMEM64)
-	/* OpenBSD */
+# elif defined (HW_PHYSMEM64)
+	/* OpenBSD, 64-bits */
 	{
 		int64_t size = 0;
 		size_t len = sizeof(size);
@@ -526,14 +536,9 @@ MT_init(void)
 		mib[0] = CTL_HW;
 		mib[1] = HW_PHYSMEM64;
 		sysctl(mib, 2, &size, &len, NULL, 0);
-# ifdef SIZEOF_SIZE_T == SIZEOF_INT
-		/* we can have more memory than a size_t can handle on a 32-bits
-		 * platform, so trim it down, if that is the case */
-		if (size > 0xffffffff)
-			size = 0xffffffff;
-# endif
 		_MT_npages = size / _MT_pagesize;
 	}
+# endif
 #elif defined(HAVE_SYSCONF) && defined(_SC_PHYS_PAGES)
 	_MT_npages = sysconf(_SC_PHYS_PAGES);
 #else
