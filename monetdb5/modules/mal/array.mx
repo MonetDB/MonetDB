@@ -66,8 +66,20 @@ comment "Extract a value portion of an array representation described by two sha
 one with the structure of A and the other with the portion required.";
 
 pattern index(shape:any...):bat[:oid,:any]...
-address ARRAYselect
+address ARRAYindex
 comment "Extract a dimension portion of an array representation described by two shapes";
+
+pattern getoid(a:bat[:oid, :any_1], shape:any...):bat[:oid,:oid]
+address ARRAYgetoid
+comment "Extract indices of array cells in their BAT storage.";
+
+pattern replace(v1:bat[:oid, :any_1], idx:bat[:oid, :oid], v2:bat[:oid, :any_1]):bat[:oid,:any_1]
+address ARRAYreplace
+comment "Replace values in v1 at the positions determined by idx with values in v2, return the modified v1.";
+
+pattern map(v:bat[:oid, :any_1], pos:bat[:oid, :int], dft:any_1):bat[:oid,:any_1]
+address ARRAYmap
+comment "Map values in 'v' to the positions determined by 'pos', positions in the output BAT without a value from 'v' get the default value 'dft'.";
 
 command product(b:bat[:any_3,:any_1],c:bat[:any_4,:any_2]):bat[:any_1,:any_2]
 address ARRAYproduct
@@ -133,6 +145,9 @@ array_export str ARRAYproduct(int *ret, int *bid, int *rid);
 array_export str ARRAYfiller(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 array_export str ARRAYselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 array_export str ARRAYindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+array_export str ARRAYgetoid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+array_export str ARRAYreplace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+array_export str ARRAYmap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 @= grid_impl
 array_export str ARRAYgrid_@1(@1 *ret, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset);
@@ -382,9 +397,38 @@ ARRAYindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) mb;
 	(void) stk;
 	(void) p;
-	throw(MAL,"array.select", PROGRAM_NYI);
+	throw(MAL,"array.index", PROGRAM_NYI);
 }
 
+str
+ARRAYgetoid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) p;
+	throw(MAL,"array.getoid", PROGRAM_NYI);
+}
+
+str
+ARRAYreplace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) p;
+	throw(MAL,"array.replace", PROGRAM_NYI);
+}
+
+str
+ARRAYmap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) p;
+	throw(MAL,"array.map", PROGRAM_NYI);
+}
 
 @-
 The printing stuff is postponed to the future. Then it also needs
