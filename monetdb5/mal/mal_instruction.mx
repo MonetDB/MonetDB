@@ -2510,7 +2510,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 						snprintf(ct, 1024+strlen(cv), "\"%s\"", cv);
 					else
 						snprintf(ct, 1024+strlen(cv), "\"%s\":%s", cv, getTypeName(getTailType(getArgType(mb,p,i))));
-					GDKfree(cv);
+					if( cv) GDKfree(cv);
 					cv= ct;
 				} else
 					VALformat(&cv, &stk->stk[getArg(p, i)]);
@@ -2523,7 +2523,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 						snprintf(ct, 1024+strlen(cv), "\"%s\"", cv);
 					else
 						snprintf(ct, 1024+strlen(cv), "\"%s\":%s", cv, getTypeName(getTailType(getArgType(mb,p,i))));
-					GDKfree(cv);
+					if( cv) GDKfree(cv);
 					cv= ct;
 				} else
 					VALformat(&cv, &getVar(mb, getArg(p, i))->value);
