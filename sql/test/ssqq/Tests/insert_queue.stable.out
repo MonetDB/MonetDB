@@ -40,7 +40,7 @@ Over..
 % 1,	1,	21,	1,	5,	5,	0,	1,	0,	0 # length
 [ 1,	NULL,	"select * from example",	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ 2,	1,	"select * from example",	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ 4,	NULL,	"select * from example",	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ 3,	NULL,	"select * from example",	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 #select queue_id, query_id, queue_number, os_version, monetdb_version, start_query, query_ready from queue;
 % sys.queue,	sys.queue,	sys.queue,	sys.queue,	sys.queue,	sys.queue,	sys.queue # table_name
 % queue_id,	query_id,	queue_number,	os_version,	monetdb_version,	start_query,	query_ready # name
@@ -103,7 +103,7 @@ Over..
 % 1,	1,	21,	1,	5,	5,	0,	1,	0,	0 # length
 [ 1,	NULL,	"select * from example",	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ 2,	1,	"select * from example",	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ 4,	NULL,	"select * from example",	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ 3,	NULL,	"select * from example",	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 #select queue_id, query_id, queue_number, os_version, monetdb_version, start_query, query_ready from queue;
 % sys.queue,	sys.queue,	sys.queue,	sys.queue,	sys.queue,	sys.queue,	sys.queue # table_name
 % queue_id,	query_id,	queue_number,	os_version,	monetdb_version,	start_query,	query_ready # name
@@ -111,7 +111,7 @@ Over..
 % 1,	1,	1,	5,	5,	26,	26 # length
 [ 1,	1,	0,	"monet",	"linux",	NULL,	NULL	]
 [ 3,	2,	0,	"monet",	"linux",	NULL,	NULL	]
-[ 4,	4,	0,	"monet",	"linux",	NULL,	NULL	]
+[ 4,	3,	0,	"monet",	"linux",	NULL,	NULL	]
 
 # 13:39:03 >  
 # 13:39:03 >  Done.

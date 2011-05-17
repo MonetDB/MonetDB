@@ -638,8 +638,6 @@ complex_select(sql_exp *e)
 {
 	sql_exp *l = e->l, *r = e->r;
 
-	if (l->card == CARD_ATOM || r->card == CARD_ATOM) 
-		return 1;
 	if (exp_is_complex_select(l) || exp_is_complex_select(r))
 		return 1;
 	return 0;

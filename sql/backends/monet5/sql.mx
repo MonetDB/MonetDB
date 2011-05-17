@@ -3466,9 +3466,19 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		throw(SQL,"sql", "table %s not found", tname);
 	if (list_length(t->columns.set) != (pci->argc-3))
 		throw(SQL,"sql", "Not enough columns in found");
+
+	for (i = 3, n = t->columns.set->h; i<pci->argc && n; i++, n = n->next) {
+		sql_column *col = n->data;
+
+		if (ATOMvarsized(col->type.type->localtype )) 
+			throw(SQL, "sql", "failed to attach file %s",
+			      *(str*)getArgReference(stk, pci, i));
+	}
+
 	b = BATnew(TYPE_str, TYPE_bat, pci->argc-3);
 	if( b == NULL)
 		throw(SQL, "sql.import", MAL_MALLOC_FAIL);
+
 	for (i = 3, n = t->columns.set->h; i<pci->argc && n; i++, n = n->next) {
 		sql_column *col = n->data;
 		BAT *c;
