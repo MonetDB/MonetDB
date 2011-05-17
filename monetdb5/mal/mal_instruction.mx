@@ -2502,21 +2502,29 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 				if ( !isVarConstant(mb, getArg(p,i)) && flg & LIST_MAL_ARG)
 					snprintf(t,(len-(t-base)),"%s%s", (getVarTmp(mb,getArg(p,i))?"X":""), getArgName(mb, p, i));
 				advance(t,base,len);
-				if( getTailType(getArgType(mb,p,i)) > TYPE_str )
-				{ char *ct=cv;
-					*ct++= '"';
-					VALformat(&ct, &stk->stk[getArg(p, i)]);
-					while( *ct) cv++;
-					snprintf(cv,len -(ct-cv), "\":%s", getTypeName(getTailType(getArgType(mb,p,i))));
+				if( getTailType(getArgType(mb,p,i)) > TYPE_str && !isVarUDFtype(mb, getArg(p, i)) )
+				{ 	char *ct;
+					VALformat(&cv, &stk->stk[getArg(p, i)]);
+					ct= (char*) GDKmalloc(1024+strlen(cv));
+					if (isVarUDFtype(mb, getArg(p, i)) )
+						snprintf(ct, 1024+strlen(cv), "\"%s\"", cv);
+					else
+						snprintf(ct, 1024+strlen(cv), "\"%s\":%s", cv, getTypeName(getTailType(getArgType(mb,p,i))));
+					GDKfree(cv);
+					cv= ct;
 				} else
 					VALformat(&cv, &stk->stk[getArg(p, i)]);
 			} else {
 				if( getTailType(getArgType(mb,p,i)) > TYPE_str )
 				{ char *ct=cv;
-					*ct++= '"';
-					VALformat(&ct, &getVar(mb, getArg(p, i))->value);
-					while( *ct) cv++;
-					snprintf(cv,len -(ct-cv), "\":%s", getTypeName(getTailType(getArgType(mb,p,i))));
+					VALformat(&cv, &getVar(mb, getArg(p, i))->value);
+					ct= (char*) GDKmalloc(1024+strlen(cv));
+					if (isVarUDFtype(mb, getArg(p, i)) )
+						snprintf(ct, 1024+strlen(cv), "\"%s\"", cv);
+					else
+						snprintf(ct, 1024+strlen(cv), "\"%s\":%s", cv, getTypeName(getTailType(getArgType(mb,p,i))));
+					GDKfree(cv);
+					cv= ct;
 				} else
 					VALformat(&cv, &getVar(mb, getArg(p, i))->value);
 			}
