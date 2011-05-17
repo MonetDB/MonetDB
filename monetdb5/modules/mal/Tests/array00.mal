@@ -1,0 +1,16 @@
+#create the dimensions for a few arrays
+
+#create array v(i int dimension[0:4:1])
+vi:= array.dimension(1,4,1,0);
+io.print(vi);
+
+#create array m(x int dimension[0:3:1], y int dimension[0:3:1], int 333);
+mx:= array.dimension(1,3,3,0);
+my:= array.dimension(3,3,1,0);
+mv:= array.filler(mx,333);
+io.print(mx,my,mv);
+
+#create array u(x int dimension[0:*:1]);
+#any * implies this one
+ux:= array.dimension(0,0,0,0);
+io.print(ux);

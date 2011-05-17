@@ -81,10 +81,6 @@
 #define S_ISREG(m)	(((m) & S_IFMT) == S_IFREG)
 #endif
 
-#ifdef NATIVE_WIN32
-#define strdup _strdup
-#endif
-
 enum modes {
 	MAL,
 	SQL

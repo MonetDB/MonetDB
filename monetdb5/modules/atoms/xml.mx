@@ -121,7 +121,7 @@ on linking in a portable library, e.g. libxml2 ?
 typedef str xml;
 
 #ifdef WIN32
-#ifndef LIBXML
+#ifndef LIBATOMS
 #define xml_export extern __declspec(dllimport)
 #else
 #define xml_export extern __declspec(dllexport)

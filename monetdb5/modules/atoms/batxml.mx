@@ -144,7 +144,7 @@ command xml(src:bat[:oid,:str]):bat[:oid,:xml] address BATXMLstr2xml;
 
 
 #ifdef WIN32
-#ifndef LIBBATXML
+#ifndef LIBATOMS
 #define batxml_export extern __declspec(dllimport)
 #else
 #define batxml_export extern __declspec(dllexport)

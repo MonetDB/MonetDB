@@ -2460,7 +2460,6 @@ gdk_export int GDKfatal(const char *format, ...);
 #endif
 #define fdopen _fdopen
 #define putenv _putenv
-#define strdup _strdup
 #endif
 
 /*
