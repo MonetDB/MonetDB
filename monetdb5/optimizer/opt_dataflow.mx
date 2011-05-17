@@ -64,6 +64,15 @@ The statemens are all checked for being eligible for dataflow.
 	/* close old flow block */
 	if (flowblock){
 		if (entries > 1){
+			for( j=start ; j<i; j++)
+			if (old[j]) 
+				for( k=0; k<old[j]->retc; k++)
+				if( getBeginLifespan(span,getArg(old[j],k)) > start && getEndLifespan(span,getArg(old[j],k)) >= i && init[getArg(old[j],k)]==0){
+					InstrPtr r= newAssignment(mb);
+					getArg(r,0)= getArg(old[j],k);
+					pushNil(mb,r,getArgType(mb,old[j],k));
+					init[getArg(old[j],k)]=1;
+				}
 			q= newFcnCall(mb,languageRef,dataflowRef);
 			q->barrier= BARRIERsymbol;
 			getArg(q,0)= flowblock;
@@ -105,11 +114,12 @@ dflowAssignTest(Lifespan span, InstrPtr p, int i)
 static int
 OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i,j, cnt, start=1,entries=0, actions=0;
+	int i,j,k, cnt, start=1,entries=0, actions=0;
 	int flowblock= 0, dumbcopy=0;
 	InstrPtr *old, q;
 	int limit, slimit;
 	Lifespan span;
+	char *init;
 
 	/* don't use dataflow on single processor systems */
 	if (GDKnr_threads <= 1)
@@ -123,11 +133,17 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	span= setLifespan(mb);
 	if( span == NULL)
 		return 0;
+	init= (char*) GDKzalloc(mb->vtop);
+	if ( init == NULL){
+		GDKfree(span);
+		return 0;
+	}
 	limit= mb->stop;
 	slimit= mb->ssize;
 	old = mb->stmt;
 	if ( newMalBlkStmt(mb, mb->ssize+20) <0 ){
 		GDKfree(span);
+		GDKfree(init);
 		return 0;
 	}
 	pushInstruction(mb,old[0]);
@@ -213,6 +229,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			freeInstruction(old[i]);
 	GDKfree(old);
 	GDKfree(span);
+	GDKfree(init);
 	DEBUGoptimizers
 		mnstr_printf(cntxt->fdout,"#opt_dataflow: %d flow blocks created\n",actions);
 	return actions;
