@@ -33,8 +33,8 @@
 #include <restrict/restrict_table.h>
 #include <restrict/restrict_logger.h>
 
-/* version 05.11.00 of catalog */
-#define CATALOG_VERSION 51100
+/* version 05.12.00 of catalog */
+#define CATALOG_VERSION 51200
 int catalog_version = 0;
 
 static MT_Lock bs_lock;
@@ -1424,6 +1424,22 @@ store_init(int debug, store_type store, char *logdir, char *dbname, backend_stac
 		bootstrap_create_column(tr, t, "null", "boolean", 1);
 		bootstrap_create_column(tr, t, "number", "int", 32);
 		bootstrap_create_column(tr, t, "storage", "varchar", 2048);
+
+		t = bootstrap_create_table(tr, s, "_arrays");
+		bootstrap_create_column(tr, t, "table_id", "int", 32);
+		bootstrap_create_column(tr, t, "ndims", "int", 32);
+		bootstrap_create_column(tr, t, "fixed", "boolean", 1);
+
+		t = bootstrap_create_table(tr, s, "_dimensions");
+		bootstrap_create_column(tr, t, "column_id", "int", 32);
+		bootstrap_create_column(tr, t, "start", "varchar", 2048);
+		bootstrap_create_column(tr, t, "step", "varchar", 2048);
+		bootstrap_create_column(tr, t, "stop", "varchar", 2048);
+		/* mbb: minimal bounding box */
+		bootstrap_create_column(tr, t, "mbb_start", "varchar", 2048);
+		bootstrap_create_column(tr, t, "mbb_step", "varchar", 2048);
+		bootstrap_create_column(tr, t, "mbb_stop", "varchar", 2048);
+		bootstrap_create_column(tr, t, "fixed", "boolean", 1);
 
 		t = bootstrap_create_table(tr, s, "keys");
 		bootstrap_create_column(tr, t, "id", "int", 32);

@@ -95,6 +95,22 @@ mvc_init(char *dbname, int debug, store_type store, backend_stack stk)
 		mvc_create_column_(m, t, "number", "int", 32);
 		mvc_create_column_(m, t, "storage_type", "int", 32);
 
+		t = mvc_create_view(m, s, "arrays", SQL_PERSIST, "SELECT * FROM (SELECT p.*, 0 AS \"temporary\" FROM \"sys\".\"_arrays\" AS p UNION ALL SELECT t.*, 1 AS \"temporary\" FROM \"tmp\".\"_arrays\" AS t) AS arrays;", 1);
+		mvc_create_column_(m, t, "table_id", "int", 32);
+		mvc_create_column_(m, t, "ndims", "int", 32);
+		mvc_create_column_(m, t, "fixed", "boolean", 1);
+
+		t = mvc_create_view(m, s, "dimensions", SQL_PERSIST, "SELECT * FROM (SELECT p.* FROM \"sys\".\"_dimensions\" AS p UNION ALL SELECT t.* FROM \"tmp\".\"_dimensions\" AS t) AS dimensions;", 1);
+		mvc_create_column_(m, t, "column_id", "int", 32);
+		mvc_create_column_(m, t, "dim_nr", "int", 32);
+		mvc_create_column_(m, t, "start", "varchar", 2048);
+		mvc_create_column_(m, t, "step", "varchar", 2048);
+		mvc_create_column_(m, t, "stop", "varchar", 2048);
+		mvc_create_column_(m, t, "curr_start", "varchar", 2048);
+		mvc_create_column_(m, t, "curr_step", "varchar", 2048);
+		mvc_create_column_(m, t, "curr_stop", "varchar", 2048);
+		mvc_create_column_(m, t, "fixed", "boolean", 1);
+
 		if (!catalog_version) {
 			sql_create_env(m, s);
 			sql_create_privileges(m, s);

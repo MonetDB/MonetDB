@@ -356,7 +356,8 @@ typedef enum table_types {
 	tt_view = 1, 		/* view */
 	tt_generated = 2,	/* generated (functions can be sql or c-code) */
 	tt_merge_table = 3,	/* multiple tables form one table */
-	tt_stream = 4		/* stream */
+	tt_stream = 4,		/* stream */
+	tt_array = 5		/* arrays */
 } table_types;
 
 #define isTable(x) 	(x->type==tt_table)
@@ -364,6 +365,7 @@ typedef enum table_types {
 #define isGenerated(x)  (x->type==tt_generated)
 #define isMergeTable(x) (x->type==tt_merge_table)
 #define isStream(x)  	(x->type==tt_stream)
+#define isArray(x)  	(x->type==tt_array)
 
 typedef struct sql_table {
 	sql_base base;
