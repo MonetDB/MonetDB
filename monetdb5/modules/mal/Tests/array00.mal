@@ -11,5 +11,6 @@ mv:= array.filler(mx,333);
 io.print(mx,my,mv);
 
 #create array u(x int dimension[0:*:1]);
+#any * implies this one
 ux:= array.dimension(0,0,0,0);
 io.print(ux);

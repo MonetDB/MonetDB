@@ -59,9 +59,15 @@ pattern filler(idx:bat[:oid,:any_1], v:any_2):bat[:oid,:any_2]
 address ARRAYfiller
 comment "Create an array value representation described by a dimension column and fill it with V";
 
-pattern select(a:bat[:oid,:any_1], shape:any...):bat[:oid,:any_1]
+pattern map(dims:bat[:oid,:any]...):bat[:oid,:oid]
+address ARRAYmap
+comment "The argument is a double set of dimension columns. The first set describes the shape
+of the target array and the second one holds the index values of interest. The result is a column
+with the oid positions of the elements in target. ";
+
+pattern select(a:bat[:oid,:any_1], dim:any...):bat[:oid,:any_1]
 address ARRAYselect
-comment "Extract a value portion of an array representation described by two shapes,
+comment "Extract a value portion of an array representation described by dimension
 one with the structure of A and the other with the portion required.";
 
 pattern index(shape:any...):bat[:oid,:any]...
@@ -143,6 +149,7 @@ comment "Produce an array product";
 array_export str ARRAYproduct(int *ret, int *bid, int *rid);
 array_export str ARRAYfiller(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 array_export str ARRAYselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+array_export str ARRAYmap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 array_export str ARRAYindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 array_export str ARRAYgetoid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 array_export str ARRAYreplace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
@@ -396,6 +403,77 @@ ARRAYfiller(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
+ARRAYmap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT **b, *bn;
+	int i,n = 0, error = 0;
+	BATiter *bi;
+	BUN p,q,s;
+	void *val;
+
+	(void) cntxt;
+	(void) mb;
+	if ( (pci->argc-pci->retc-1) % 2 != 0)
+		throw(MAL, "array.map", "Unbalanced index arguments");
+
+	b= (BAT**) GDKzalloc(sizeof(BAT*) * pci->argc-pci->retc);
+	if( b == NULL)
+		throw(MAL, "array.map", MAL_MALLOC_FAIL);
+	bi= (BATiter*) GDKzalloc(sizeof(BATiter) * pci->argc-pci->retc);
+	if( bi == NULL){
+		GDKfree(b);
+		throw(MAL, "array.map", MAL_MALLOC_FAIL);
+	}
+
+	for ( i=pci->retc; i< pci->argc; i++){
+		if ((b[n++] = BATdescriptor(*(int*)getArgReference(stk,pci,i))) == NULL) {
+			GDKfree(b);
+			GDKfree(bi);
+			for ( n--; n>= 0; n--)
+				BBPreleaseref(b[n]->batCacheid);
+			throw(MAL, "array.map", MAL_MALLOC_FAIL);
+		}
+	}
+	/* type check the shapes and prepare iterators */
+	for ( i= 0; i< n/2; i++) {
+		error |= b[i]->ttype != b[i+n/2]->ttype;
+		bi[i] = bat_iterator(b[i]);
+		bi[i+n/2] = bat_iterator(b[i+n/2]);
+	}
+
+	if ( error ){
+		GDKfree(b);
+		GDKfree(bi);
+		for ( n--; n>= 0; n--)
+			BBPreleaseref(b[n]->batCacheid);
+		throw(MAL, "array.map", "Incompatible index types");
+	}
+
+	bn = BATnew(TYPE_void,TYPE_oid, BATcount(b[0]));
+	if (bn == NULL){
+		GDKfree(b);
+		GDKfree(bi);
+		for ( n--; n>= 0; n--)
+			BBPreleaseref(b[n]->batCacheid);
+			throw(MAL, "array.map", MAL_MALLOC_FAIL);
+	}
+
+	/* select the oids we need by searching all matching index vectors */
+	BATloop(b[n/2],p,q){
+		(void) val;
+		(void) s;
+	}
+
+	*(int*) getArgReference(stk,pci,0) = bn->batCacheid;
+	BBPkeepref(bn->batCacheid);
+	for ( n--; n>= 0; n--)
+		BBPreleaseref(b[n]->batCacheid);
+	GDKfree(b);
+	GDKfree(bi);
+	return MAL_SUCCEED;
+}
+
+str
 ARRAYselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) cntxt;
@@ -433,16 +511,6 @@ ARRAYreplace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) stk;
 	(void) p;
 	throw(MAL,"array.replace", PROGRAM_NYI);
-}
-
-str
-ARRAYmap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
-{
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) p;
-	throw(MAL,"array.map", PROGRAM_NYI);
 }
 
 @-

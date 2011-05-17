@@ -1,0 +1,32 @@
+#extraction of cell positions from arrays
+
+#create array v(i int dimension[1:3:1])
+vi:= array.dimension(1,2,1,1);
+io.print(vi);
+
+#create array m(x int dimension[0:4:1], y int dimension[0:4:1], int 333);
+mx:= array.dimension(1,4,4,0);
+my:= array.dimension(4,4,1,0);
+mv:= array.filler(mx,333);
+io.print(mx,my,mv);
+
+#extract the indices from both
+
+x1:= array.map(vi,vi);
+io.print(x1);
+
+x2:= array.map(mx,my,mx,my);
+io.print(x2);
+
+x3:= array.map(mx,my,vi,vi);
+io.print(x3);
+
+x4:= array.map(vi,mx);
+io.print(x4);
+
+x5:= array.map(vi,vi,mx,my);
+io.print(x5);
+
+# try out some errors
+
+e0:= array.map(vi,vi,vi);
