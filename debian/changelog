@@ -1,3 +1,38 @@
+monetdb (11.3.3-20110517) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 17 May 2011 16:45:39 +0200
+
+monetdb (11.3.3-20110517) unstable; urgency=low
+
+  * gdk: Fixed a bug where large files (> 2GB) didn't always get deleted on
+Windows.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 13 May 2011 16:45:38 +0200
+
+monetdb (11.3.3-20110517) unstable; urgency=low
+
+  * java: Insertion via PreparedStatement and retrieval via ResultSet of timestamp
+and time fields with and without timezones was improved to better
+respect timezones, as partly indicated in bug #2781.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Wed, 11 May 2011 16:45:38 +0200
+
+monetdb (11.3.3-20110517) unstable; urgency=low
+
+  * monetdb5: Fixed a bug in conversion from string to the URL type.  The bug was
+an incorrect call to free().
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 11 May 2011 16:45:38 +0200
+
+monetdb (11.3.3-20110517) unstable; urgency=low
+
+  * geom: Fixed various problems so that now all our tests work correctly on
+all our testing platforms.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 27 Apr 2011 16:45:38 +0200
+
 monetdb (11.3.1-20110421) unstable; urgency=low
 
   * Rebuilt.
