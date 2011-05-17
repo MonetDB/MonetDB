@@ -27,7 +27,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 URL: http://monetdb.cwi.nl/
-Source: http://dev.monetdb.org/downloads/sources/Apr2011/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Apr2011-SP1/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -577,6 +577,26 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Tue May 17 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.3.3-20110517
+- Rebuilt.
+
+* Fri May 13 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.3.3-20110517
+- gdk: Fixed a bug where large files (> 2GB) didn't always get deleted on
+Windows.
+
+* Wed May 11 2011 Fabian Groffen <fabian@cwi.nl> - 11.3.3-20110517
+- java: Insertion via PreparedStatement and retrieval via ResultSet of timestamp
+and time fields with and without timezones was improved to better
+respect timezones, as partly indicated in bug #2781.
+
+* Wed May 11 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.3.3-20110517
+- monetdb5: Fixed a bug in conversion from string to the URL type.  The bug was
+an incorrect call to free().
+
+* Wed Apr 27 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.3.3-20110517
+- geom: Fixed various problems so that now all our tests work correctly on
+all our testing platforms.
+
 * Thu Apr 21 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.3.1-20110421
 - Rebuilt.
 
