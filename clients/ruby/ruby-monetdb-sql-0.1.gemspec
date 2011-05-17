@@ -12,4 +12,6 @@ Gem::Specification.new do |s|
    s.files = ["README", "lib/MonetDB.rb", "lib/MonetDBConnection.rb", "lib/MonetDBData.rb", "lib/MonetDBExceptions.rb", "lib/hasher.rb"]
    s.has_rdoc = true
    s.require_path = './lib'
+   # placeholder project to avoid warning about not having a rubyforge_project
+   s.rubyforge_project = "nowarning"
 end

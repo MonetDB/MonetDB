@@ -13,4 +13,6 @@ Gem::Specification.new do |s|
    s.require_path = 'lib'
    s.add_dependency(%q<activerecord>, [">= 2.3.2"])
    s.add_dependency(%q<ruby-monetdb-sql>, [">= 0.1"])
+   # placeholder project to avoid warning about not having a rubyforge_project
+   s.rubyforge_project = "nowarning"
 end
