@@ -670,7 +670,7 @@
 #define MONETDB5_PASSWDHASH "SHA512"
 
 /* Release name or "unreleased" */
-#define MONETDB_RELEASE "Apr2011-SP1"
+#define MONETDB_RELEASE "unreleased"
 
 /* Define if the oid type should use 32 bits on a 64-bit architecture */
 /* 32-bit OIDs are used by default on 64-bit Windows;
