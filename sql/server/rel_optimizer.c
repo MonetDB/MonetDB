@@ -1706,7 +1706,7 @@ static sql_rel *
 rel_select_cse(int *changes, mvc *sql, sql_rel *rel) 
 {
 	(void)sql;
-	if (rel->op == op_select && !rel_is_ref(rel) && rel->exps) { 
+	if (is_select(rel->op) && !rel_is_ref(rel) && rel->exps) { 
 		list *nexps = new_exp_list(sql->sa);
 		node *n;
 
@@ -1856,7 +1856,7 @@ rel_merge_rse(int *changes, mvc *sql, sql_rel *rel)
 
 	(void)sql;
 	*changes = 0;
-	if (rel->op == op_select && !rel_is_ref(rel) && rel->exps) { 
+	if (is_select(rel->op) && !rel_is_ref(rel) && rel->exps) { 
 		node *n, *o;
 		list *nexps = NULL;
 
@@ -2062,7 +2062,7 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 	(void)sql;
 	/* merge 2 selects */
 	r = rel->l;
-	if (rel->op == op_select && r && !(rel_is_ref(r)) && (r->op == op_select || r->op == op_except)) {
+	if (is_select(rel->op) && r && is_select(r->op) && !(rel_is_ref(r))) {
 		(void)list_merge(r->exps, rel->exps, (fdup)NULL);
 		rel->l = NULL;
 		rel_destroy(rel);
@@ -2073,7 +2073,7 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 	 * Push select through semi/anti join 
 	 * 	select (semi(A,B)) == semi(select(A), B) 
 	 */
-	if (rel->op == op_select && r && is_semi(r->op) && !(rel_is_ref(r))) {
+	if (is_select(rel->op) && r && is_semi(r->op) && !(rel_is_ref(r))) {
 		rel->l = r->l;
 		r->l = rel;
 		(*changes)++;
@@ -2106,7 +2106,7 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 		return rel_merge_projects(changes, sql, rel);
 
 	/* push select through join */
-	if (rel->op == op_select && r && is_join(r->op) && !(rel_is_ref(r))) {
+	if (is_select(rel->op) && r && is_join(r->op) && !(rel_is_ref(r))) {
 		sql_rel *jl = r->l;
 		sql_rel *jr = r->r;
 		int left = r->op == op_join || r->op == op_left;
@@ -2146,7 +2146,7 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 	}
 
 	/* merge select and cross product ? */
-	if (rel->op == op_select && r && r->op == op_join && !(rel_is_ref(r))) {
+	if (is_select(rel->op) && r && r->op == op_join && !(rel_is_ref(r))) {
 		list *exps = rel->exps;
 
 		if (!r->exps)
@@ -2166,7 +2166,7 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 	}
 
 	/* push select through set */
-	if (rel->op == op_select && r && is_set(r->op) && !(rel_is_ref(r))) {
+	if (is_select(rel->op) && r && is_set(r->op) && !(rel_is_ref(r))) {
 		sql_rel *res = r;
 		sql_rel *sl = r->l;
 		sql_rel *sr = r->r;
@@ -2206,7 +2206,7 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 		return res;
 	}
 
-	if (rel->op == op_select && r && r->op == op_project && !(rel_is_ref(r))) {
+	if (is_select(rel->op) && r && r->op == op_project && !(rel_is_ref(r))) {
 		sql_rel *pl;
 		/* we cannot push through rank (row_number etc) functions or
 		   projects with distinct */
@@ -2255,7 +2255,7 @@ rel_push_select_down_join(int *changes, mvc *sql, sql_rel *rel)
 	r = rel->l;
 
 	/* push select through join */
-	if (rel->op == op_select && r && r->op == op_join && !(rel_is_ref(r))) {
+	if (is_select(rel->op) && r && r->op == op_join && !(rel_is_ref(r))) {
 		rel->exps = new_exp_list(sql->sa); 
 		for (n = exps->h; n; n = n->next) { 
 			sql_exp *e = n->data;
@@ -2296,7 +2296,7 @@ rel_remove_empty_select(int *changes, mvc *sql, sql_rel *rel)
 
 	if ((is_join(rel->op) || is_semi(rel->op) || is_select(rel->op) || is_project(rel->op) || rel->op == op_topn) && rel->l) {
 		sql_rel *l = rel->l;
-		if (l->op == op_select && !(rel_is_ref(l)) &&
+		if (is_select(l->op) && !(rel_is_ref(l)) &&
 		   (!l->exps || list_length(l->exps) == 0)) {
 			rel->l = l->l;
 			l->l = NULL;
@@ -2306,7 +2306,7 @@ rel_remove_empty_select(int *changes, mvc *sql, sql_rel *rel)
 	}
 	if ((is_join(rel->op) || is_semi(rel->op) || is_set(rel->op)) && rel->r) {
 		sql_rel *r = rel->r;
-		if (r->op == op_select && !(rel_is_ref(r)) &&
+		if (is_select(r->op) && !(rel_is_ref(r)) &&
 	   	   (!r->exps || list_length(r->exps) == 0)) {
 			rel->r = r->l;
 			r->l = NULL;
@@ -3380,7 +3380,7 @@ rel_select_use_index(int *changes, mvc *sql, sql_rel *rel)
 {
 	(void)sql;
 	*changes = 0; 
-	if (rel->op == op_select) {
+	if (is_select(rel->op)) {
 		list *exps = NULL;
 		sql_idx *i = find_index(sql->sa, rel, &exps);
 			
@@ -3445,7 +3445,7 @@ rel_select_order(int *changes, mvc *sql, sql_rel *rel)
 {
 	(void)sql;
 	*changes = 0; 
-	if (rel->op == op_select && rel->exps && list_length(rel->exps)>1) {
+	if (is_select(rel->op) && rel->exps && list_length(rel->exps)>1) {
 		list *exps = NULL;
 			
 		exps = list_sort(rel->exps, (fkeyvalue)&exp_keyvalue, (fdup)NULL);
@@ -3460,7 +3460,7 @@ rel_simplify_like_select(int *changes, mvc *sql, sql_rel *rel)
 {
 	(void)sql;
 	*changes = 0; 
-	if (rel->op == op_select && rel->exps) {
+	if (is_select(rel->op) && rel->exps) {
 		node *n;
 		list *exps = list_new(sql->sa);
 			
@@ -3635,7 +3635,7 @@ static sql_rel *
 rel_find_range(int *changes, mvc *sql, sql_rel *rel) 
 {
 	*changes = 0; 
-	if ((is_join(rel->op) || rel->op == op_select) && rel->exps && list_length(rel->exps)>1) 
+	if ((is_join(rel->op) || is_select(rel->op)) && rel->exps && list_length(rel->exps)>1) 
 		rel->exps = exp_merge_range(sql->sa, rel->exps);
 	return rel;
 }

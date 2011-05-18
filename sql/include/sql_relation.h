@@ -163,7 +163,7 @@ typedef enum operator_type {
 #define is_semi(op) \
 	(op == op_semi || op == op_anti)
 #define is_select(op) \
-	(op == op_select /*|| op == op_semi || op == op_anti*/)
+	(op == op_select)
 #define is_set(op) \
 	(op == op_union || op == op_inter || op == op_except)
 #define is_union(op) \
