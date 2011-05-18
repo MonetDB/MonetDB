@@ -83,8 +83,10 @@ static void displayVolume(Client cntxt, lng vol);
 
 #define MEMORY_THRESHOLD  0.8
 
+#ifdef USE_DFLOW_ADMISSION
 static lng memorypool;		/* memory claimed by concurrent threads */
 static int memoryclaims = 0;	/* number of threads active with expensive operations */
+#endif
 
 #define heapinfo(X) if((X) && (X)->base) vol = (X)->free; else vol = 0;
 #define hashinfo(X) if((X) && (X)->mask) vol = ((X)->mask+(X)->lim+1)*sizeof(int) + sizeof(*(X)); else vol = 0;
@@ -702,6 +704,10 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag){
  * for all arguments.
  * The argclaim provides a hint on how much we actually may need to execute
  * The hotclaim is a hint how large the result would be.
+ */
+#ifdef USE_DFLOW_ADMISSION
+/* experiments on sf-100 on small machine showed no real improvement
+   Q10 became even 3x slower.
 */
 int
 DFLOWadmission(lng argclaim, lng hotclaim)
@@ -709,10 +715,6 @@ DFLOWadmission(lng argclaim, lng hotclaim)
 	/* optimistically set memory */
 	if ( argclaim == 0)
 		return 0;
-	/* experiments on sf-100 on small machine showed no real improvement
-	   Q10 became even 3x slower.
-	*/
-	return 0;
 
 	mal_set_lock(mal_contextLock, "DFLOWdelay");
 	if (memorypool <= 0 && memoryclaims == 0) 
@@ -743,6 +745,7 @@ DFLOWadmission(lng argclaim, lng hotclaim)
 	mal_unset_lock(mal_contextLock, "DFLOWdelay");
 	return 0;
 }
+#endif
 
 @-
 The dataflow execution is confined to a barrier block.
@@ -1032,6 +1035,7 @@ runDFLOWworker(void *t)
 		if ( nxtfs == 0)
 			fs = (FlowStatus) q_dequeue(task->todo);
 		else fs = nxtfs;
+#ifdef USE_DFLOW_ADMISSION
 		if ( DFLOWadmission(fs->argclaim, fs->hotclaim) ){
 			fs->hotclaim = 0;	/* don't assume priority anymore */
 			MT_sleep_ms(fs->argclaim/1000000);
@@ -1039,6 +1043,7 @@ runDFLOWworker(void *t)
 			nxtfs = 0;
 			continue;
 		}
+#endif
 		assert(fs->pc > 0);
 		PARDEBUG
 			mnstr_printf(GDKstdout,"#execute pc= %d thr= %d claim= %d,%d %s\n",fs->pc, task->id, fs->argclaim,fs->hotclaim, fs->error?fs->error:"");
@@ -1047,8 +1052,10 @@ runDFLOWworker(void *t)
 		PARDEBUG
 			mnstr_printf(GDKstdout,"#execute pc= %d thr= %d finished %s\n",fs->pc, task->id, fs->error?fs->error:"");
 
+#ifdef USE_DFLOW_ADMISSION
 		/* release the memory claim */
 		DFLOWadmission(-fs->argclaim,-fs->hotclaim);
+#endif
 
 		p = getInstrPtr(fs->mb, ABS(fs->pc));
 		fs->hotclaim = 0;
