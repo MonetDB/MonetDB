@@ -88,11 +88,11 @@ id	name	schema_id	query	type	system	commit_action	readonly	temporary
 5082	auths	2000		0	true	0	false	0	
 5086	privileges	2000		0	true	0	false	0	
 5199	queryhistory	2000		0	true	0	false	0	
-5213	callhistory	2000		0	true	0	false	0	
-5230	querylog	2000	create view querylog asnselect qd.*, ql.ctime, ql.arguments, ql.exec, ql.result, ql.foot, ql.memory, ql.tuples, ql.inblock, ql.oublock from queryhistory qd, callhistory qlnwhere qd.id = ql.id;	1	true	0	false	0	
-5653	systemfunctions	2000		0	true	0	false	0	
+5213	callhistory	2000		0	false	0	false	0	
+5230	querylog	2000	create view querylog asnselect qd.*, ql.ctime, ql.arguments, ql.exec, ql.result, ql.foot, ql.memory, ql.tuples, ql.inblock, ql.oublock from queryhistory qd, callhistory qlnwhere qd.id = ql.id;	1	false	0	false	0	
+5653	systemfunctions	2000		0	false	0	false	0	
 
-# 15:06:44 >  
-# 15:06:44 >  Done.
-# 15:06:44 >  
+# 16:11:14 >  
+# 16:11:14 >  Done.
+# 16:11:14 >  
 

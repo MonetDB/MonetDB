@@ -48,7 +48,6 @@ Over..
 [ "oid",	"int",	3153	]
 [ "oid",	"int",	3153	]
 [ "oid",	"lng",	18	]
-[ "oid",	"str",	0	]
 [ "oid",	"str",	1	]
 [ "oid",	"str",	1	]
 [ "oid",	"str",	18	]
@@ -68,7 +67,7 @@ Over..
 % L3,	L4 # name
 % char,	wrd # type
 % 10,	2 # length
-[ "persistent",	25	]
+[ "persistent",	24	]
 
 # 22:02:15 >  
 # 22:02:15 >  Done.
