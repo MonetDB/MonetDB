@@ -73,7 +73,7 @@ stderr of test 'alter_table_describe-mclient.SF-1146092` in directory 'test/BugD
 
 
 # 15:55:29 >  
-# 15:55:29 >  Mtimeout -timeout 60  mclient -lsql -ftest -hvolund -p39554 -dmTests_src_test_BugDay_2005-10-06_2.9.3 -fsql -i -e < "/net/volund.ins.cwi.nl/export/scratch1/fabian/monetdb/Jun2010/hgrepo/sql/src/test/BugDay_2005-10-06_2.9.3/Tests/alter_table_describe.SF-1146092-src.sql"
+# 15:55:29 >  Mtimeout -timeout 60  mclient -lsql -ftest -hvolund -p39554 -dmTests_src_test_BugDay_2005-10-06_2.9.3 -ftest -i -e < "/net/volund.ins.cwi.nl/export/scratch1/fabian/monetdb/Jun2010/hgrepo/sql/src/test/BugDay_2005-10-06_2.9.3/Tests/alter_table_describe.SF-1146092-src.sql"
 # 15:55:29 >  
 
 
