@@ -1224,7 +1224,7 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 #endif
 	printf(LLFMT " tuple%s%s%s%s", rows, rows != 1 ? "s" : "",
 			singleinstr ? " (" : "",
-			singleinstr ? timerHuman() : "",
+			singleinstr && formatter != TESTformatter ? timerHuman() : "",
 			singleinstr ? ")" : "");
 
 	if (fields != printfields || croppedfields > 0)
@@ -1394,7 +1394,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 							(aff == 1 ? "" : "s"),
 							lid,
 							singleinstr ? " (" : "",
-							singleinstr ? timerHuman() : "",
+							singleinstr && formatter != TESTformatter ? timerHuman() : "",
 							singleinstr ? ")" : "");
 				} else {
 					mnstr_printf(toConsole,
@@ -1402,7 +1402,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 							aff,
 							(aff == 1 ? "" : "s"),
 							singleinstr ? " (" : "",
-							singleinstr ? timerHuman() : "",
+							singleinstr && formatter != TESTformatter ? timerHuman() : "",
 							singleinstr ? ")" : "");
 				}
 			}
@@ -1414,7 +1414,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 				mnstr_printf(toConsole,
 					      "operation successful%s%s%s\n",
 					      singleinstr ? " (" : "",
-					      singleinstr ? timerHuman() : "",
+					      singleinstr && formatter != TESTformatter ? timerHuman() : "",
 					      singleinstr ? ")" : "");
 			continue;
 		case Q_TRANS:
