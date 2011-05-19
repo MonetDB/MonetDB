@@ -68,9 +68,9 @@ stderr of test 'select_from_env.SF-1240701.1242164` in directory 'test/BugDay_20
 # 22:29:10 >  mclient -lsql -i -umonetdb -Pmonetdb --host=pegasus --port=30332 
 # 22:29:10 >  
 
-MAPI  = monetdb@alf:35734
+MAPI  = monetdb@alf:33179
 QUERY = select * from env() as env where name = ( select 'prefix' from env() as env );
-ERROR = !SQLException:zero_or_one:cardinality violation (21>1)
+ERROR = !SQLException:zero_or_one:cardinality violation (19>1)
 
 # 13:22:15 >  
 # 13:22:15 >  Done.

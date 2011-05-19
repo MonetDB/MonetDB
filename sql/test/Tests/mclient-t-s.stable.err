@@ -77,7 +77,7 @@ stderr of test 'mclient-t-s` in directory 'test` itself:
 # 11:08:32 >  
 
 mclient: invalid option -- 't'
-Usage: mclient [ options ]
+Usage: mclient [ options ] [ file or database [ file ... ] ]
 
 Options are:
  -h hostname | --host=hostname    host or UNIX domain socket to connect to

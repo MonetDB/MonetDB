@@ -40,6 +40,10 @@ pattern bat.new(ht:any_1, tt:any_2) :bat[:any_1,:any_2]
 address CMDBATnew
 comment "Creates a new empty transient BAT,
 	with head- and tail-types as indicated.";
+pattern bat.new(ht:any_1, tt:bat[:any_2,:any_3]) :bat[:any_1,:bat] 	
+address CMDBATnew
+comment "Creates a new empty transient BAT,
+	with head- and tail-types as indicated.";
 pattern bat.new(ht:any_1, tt:any_2, size:int) :bat[:any_1,:any_2] 	
 address CMDBATnewint
 comment "Creates a new BAT with sufficient space.";

@@ -149,7 +149,6 @@ Over..
 [ "oid",	"str",	0	]
 [ "oid",	"str",	0	]
 [ "oid",	"str",	0	]
-[ "oid",	"str",	0	]
 [ "oid",	"str",	1	]
 [ "oid",	"str",	1	]
 [ "oid",	"str",	1	]
@@ -190,7 +189,7 @@ Over..
 % L3,	L4 # name
 % char,	wrd # type
 % 10,	3 # length
-[ "persistent",	150	]
+[ "persistent",	149	]
 
 # 22:02:17 >  
 # 22:02:17 >  Done.

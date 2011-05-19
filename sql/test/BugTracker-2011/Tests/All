@@ -10,4 +10,5 @@ crash_on_alias.Bug-2798
 groupby_primary_key.Bug-2807
 merge_range_exp.Bug-2806
 count-count-distinct.Bug-2808
+crash_in_push_exp_down.Bug-2811
 subquery_in_from_clause.Bug-2812
