@@ -1953,10 +1953,12 @@ rel_push_aggr(int *changes, mvc *sql, sql_rel *rel)
 					sql_exp *e = n->data, *ne;
 					int p = list_position(u->exps, rel_find_exp(u, e));
 					ne = list_fetch(lexps, p);
-					append(lgbe, ne=exp_column(sql->sa, exp_find_rel_name(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne)));
+					ne = exp_column(sql->sa, exp_find_rel_name(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne));
+					append(lgbe, ne);
 					exp_setname(sql->sa, ne, e->rname?e->rname:exp_find_rel_name(e), exp_name(e));
 					ne = list_fetch(rexps, p);
-					append(rgbe, ne= exp_column(sql->sa, exp_find_rel_name(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne)));
+					ne = exp_column(sql->sa, exp_find_rel_name(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne));
+					append(rgbe, ne);
 					exp_setname(sql->sa, ne, e->rname?e->rname:exp_find_rel_name(e), exp_name(e));
 				}
 			}
@@ -1986,9 +1988,15 @@ rel_push_aggr(int *changes, mvc *sql, sql_rel *rel)
 					 * sometimes aggr's include projection expressions (such as converts), these need to be added again! */
 					int p = list_position(u->exps, rel_find_exp(u, oe));
 					ne = list_fetch(lexps, p);
-					append(nll, exp_column(sql->sa, exp_find_rel_name(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne)));
+					ne = exp_column(sql->sa, exp_find_rel_name(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne));
+					if (oe->type == e_convert)
+						ne = exp_convert(sql->sa, ne, exp_fromtype(oe), exp_totype(oe));
+					append(nll, ne);
 					ne = list_fetch(rexps, p);
-					append(nlr, exp_column(sql->sa, exp_find_rel_name(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne)));
+					ne = exp_column(sql->sa, exp_find_rel_name(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne));
+					if (oe->type == e_convert)
+						ne = exp_convert(sql->sa, ne, exp_fromtype(oe), exp_totype(oe));
+					append(nlr, ne);
 				    }
 				  }
 				  nle = exp_aggr(sql->sa, nll, e->f, need_distinct(e), need_no_nil(e), e->card, 0);
