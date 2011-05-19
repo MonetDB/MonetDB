@@ -1068,7 +1068,7 @@ runDFLOWworker(void *t)
 		*/
 		nxtfs = 0;
 		if ( fs->pc >= 0 )
-		for ( last = fs->pc - task->flow->start; (i = task->flow->nodes[last]) > 0; last= task->flow->edges[last])
+		for ( last = fs->pc - task->flow->start; last >= 0 && (i = task->flow->nodes[last]) > 0; last= task->flow->edges[last])
 		if (task->flow->status[i].state == DFLOWpending &&
 		    task->flow->status[i].blocks == 1) {
 			task->flow->status[i].state = DFLOWrunning;
@@ -1279,7 +1279,7 @@ DFLOWscheduler( DataFlow flow )
 		MT_lock_set(&flow->todo->l, "q_enqueue");
 		
 		oldq= queued;
-		for( ; (i = flow->nodes[last]) > 0; last= flow->edges[last])
+		for( ; last >= 0 && (i = flow->nodes[last]) > 0; last= flow->edges[last])
 		if (flow->status[i].state == DFLOWpending)
 		{
 			flow->status[i].blocks--;
