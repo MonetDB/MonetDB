@@ -423,12 +423,12 @@ all arguments and return values.
 		stk->cmd = debug;
 		ret = runMALsequence(cntxt, mb, 1, 0, stk, 0, 0);
 		break;
-	caseFACTORYsymbol:
-	caseFACcall:
+	case FACTORYsymbol:
+	case FACcall:
 		ret = callFactory(cntxt, mb, argv, debug);
 		break;
-	casePATcall:
-	caseCMDcall:
+	case PATcall:
+	case CMDcall:
 	default:
 		throw(MAL, "mal.interpreter", RUNTIME_UNKNOWN_INSTRUCTION);
 	}
@@ -1038,7 +1038,8 @@ runDFLOWworker(void *t)
 		local = nxtfs != 0;
 		if (nxtfs == 0)
 			fs = (FlowStatus)q_dequeue(task->todo);
-		else fs = nxtfs;
+		else 
+			fs = nxtfs;
 #ifdef USE_DFLOW_ADMISSION
 		if (DFLOWadmission(fs->argclaim, fs->hotclaim)) {
 			fs->hotclaim = 0;   /* don't assume priority anymore */
