@@ -52,14 +52,10 @@ to be passed by a handle.
 
 mal_export void showErrors(Client cntxt);
 mal_export MalStkPtr prepareMALstack(MalBlkPtr mb, int size);
-mal_export str runMAL(Client c, MalBlkPtr mb, int startpc,
-			MalBlkPtr mbcaller, MalStkPtr env, InstrPtr pcicaller);
-mal_export str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
-		int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
-mal_export str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc,
-	int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
-mal_export str callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *glb,
-	ValPtr argv[], char debug);
+mal_export str runMAL(Client c, MalBlkPtr mb, int startpc, MalBlkPtr mbcaller, MalStkPtr env, InstrPtr pcicaller);
+mal_export str runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
+mal_export str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
+mal_export str callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *glb, ValPtr argv[], char debug);
 mal_export void garbageElement(Client cntxt, ValPtr v);
 mal_export void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag);
 mal_export void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid);
@@ -77,15 +73,14 @@ mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 #define SLOW 1
 #define FAST 0
 
-static str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc,
-		int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
+static str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
 static void displayVolume(Client cntxt, lng vol);
 
 #define MEMORY_THRESHOLD  0.8
 
 #ifdef USE_DFLOW_ADMISSION
-static lng memorypool;		/* memory claimed by concurrent threads */
-static int memoryclaims = 0;	/* number of threads active with expensive operations */
+static lng memorypool;      /* memory claimed by concurrent threads */
+static int memoryclaims = 0;    /* number of threads active with expensive operations */
 #endif
 
 #define heapinfo(X) if((X) && (X)->base) vol = (X)->free; else vol = 0;
@@ -102,37 +97,38 @@ ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k)
 #ifdef STRUCT_ALIGNED
 	return (ptr) & stk->stk[pci->argv[k]].val.ival;
 #else
-	int j=0;
-	ValRecord *v=0;
+	int j = 0;
+	ValRecord *v = 0;
 	ptr ret = NULL;
 
 	j = pci->argv[k];
-	v= &stk->stk[j];
+	v = &stk->stk[j];
 
-	switch(ATOMstorage(v->vtype)){
-	case TYPE_void: ret= (ptr) & v->val.ival; break;
-	case TYPE_bit: ret= (ptr) & v->val.cval[0]; break;
-	case TYPE_chr: ret= (ptr) & v->val.cval[0]; break;
-	case TYPE_sht: ret= (ptr) & v->val.shval; break;
-	case TYPE_bat: ret= (ptr) & v->val.bval; break;
-	case TYPE_int: ret= (ptr) & v->val.ival; break;
-	case TYPE_wrd: ret= (ptr) & v->val.wval; break;
-	case TYPE_bte: ret= (ptr) & v->val.btval; break;
-	case TYPE_oid: ret= (ptr) & v->val.oval; break;
-	case TYPE_ptr: ret= (ptr) & v->val.pval; break;
-	case TYPE_flt: ret= (ptr) & v->val.fval; break;
-	case TYPE_dbl: ret= (ptr) & v->val.dval; break;
-	case TYPE_lng: ret= (ptr) & v->val.lval; break;
-	case TYPE_str: ret= (ptr) & v->val.sval; break;
+	switch (ATOMstorage(v->vtype)) {
+	case TYPE_void: ret = (ptr) & v->val.ival; break;
+	case TYPE_bit: ret = (ptr) & v->val.cval[0]; break;
+	case TYPE_chr: ret = (ptr) & v->val.cval[0]; break;
+	case TYPE_sht: ret = (ptr) & v->val.shval; break;
+	case TYPE_bat: ret = (ptr) & v->val.bval; break;
+	case TYPE_int: ret = (ptr) & v->val.ival; break;
+	case TYPE_wrd: ret = (ptr) & v->val.wval; break;
+	case TYPE_bte: ret = (ptr) & v->val.btval; break;
+	case TYPE_oid: ret = (ptr) & v->val.oval; break;
+	case TYPE_ptr: ret = (ptr) & v->val.pval; break;
+	case TYPE_flt: ret = (ptr) & v->val.fval; break;
+	case TYPE_dbl: ret = (ptr) & v->val.dval; break;
+	case TYPE_lng: ret = (ptr) & v->val.lval; break;
+	case TYPE_str: ret = (ptr) & v->val.sval; break;
 	default:
-		ret= (ptr) & v->val.pval;
+		ret = (ptr) & v->val.pval;
 	}
 	return ret;
 #endif
 }
 
 /* code is obsolete, because all should be handled as exceptions */
-void showErrors(Client cntxt) {
+void showErrors(Client cntxt)
+{
 	int i;
 	if (cntxt->errbuf && *cntxt->errbuf) {
 		i = (int)strlen(cntxt->errbuf);
@@ -154,22 +150,22 @@ static inline void
 updateBigFoot(Client cntxt, int bid, int add)
 {
 	BAT *b;
-	lng total = 0,vol = 0;
+	lng total = 0, vol = 0;
 
-	if (bid != bat_nil ){
+	if (bid != bat_nil) {
 		BUN cnt = 0;
-		b= BBPquickdesc(ABS(bid),TRUE);
+		b = BBPquickdesc(ABS(bid), TRUE);
 		if (b == NULL)
 			return;
-		if ( isVIEW(b) )
+		if (isVIEW(b))
 			return;
 		/* count it once ! */
 		cntxt->cnt = cnt = BATcount(b);
 		@:calcFootprint@
-		if ( b->H->hash )
-			total +=  cnt * sizeof(int);
-		if ( b->T->hash )
-			total +=  cnt * sizeof(int);
+		if (b->H->hash)
+			total += cnt * sizeof(int);
+		if (b->T->hash)
+			total += cnt * sizeof(int);
 
 		if (add) {
 			cntxt->vmfoot += total;
@@ -189,15 +185,15 @@ Also we cannot overwrite values on the stack as this maybe part of a
 sequence of factory calls.
 BEWARE WE ASSUME THAT FIRST VARIABLES ON THE STACK ALIGN WITH THE SIGNATURE.
 @= initStack
-	for(i= @1; i< mb->vtop; i++) {
+	for (i = @1; i < mb->vtop; i++) {
 		lhs = &stk->stk[i];
-		if( isVarConstant(mb,i) > 0 ){
-			if( !isVarDisabled(mb,i)){
-				rhs = &getVarConstant(mb,i);
-				VALcopy(lhs,rhs);
+		if (isVarConstant(mb, i) > 0) {
+			if (!isVarDisabled(mb, i)) {
+				rhs = &getVarConstant(mb, i);
+				VALcopy(lhs, rhs);
 			}
 		} else{
-			lhs->vtype = getVarGDKType(mb,i);
+			lhs->vtype = getVarGDKType(mb, i);
 			lhs->val.pval = 0;
 			lhs->len = 0;
 		}
@@ -207,35 +203,37 @@ static int
 isNotUsedIn(InstrPtr p, int start, int a)
 {
 	int k;
-	for (k=start; k<p->argc; k++)
-		if( getArg(p,k)== a)
+	for (k = start; k < p->argc; k++)
+		if (getArg(p, k) == a)
 			return 0;
 	return 1;
 }
 
 MalStkPtr
-prepareMALstack(MalBlkPtr mb, int size){
-	MalStkPtr stk= NULL;
+prepareMALstack(MalBlkPtr mb, int size)
+{
+	MalStkPtr stk = NULL;
 	int i;
-	ValPtr lhs,rhs;
+	ValPtr lhs, rhs;
 
 	assert(size >= mb->vsize);
-	stk= newGlobalStack(size);
-	memset((char *) stk, 0, stackSize(size));
-	stk->stktop= mb->vtop;
-	stk->stksize= size;
-	stk->blk= mb;
+	stk = newGlobalStack(size);
+	memset((char *)stk, 0, stackSize(size));
+	stk->stktop = mb->vtop;
+	stk->stksize = size;
+	stk->blk = mb;
 
 	@:initStack(1)@
 	return stk;
 }
 
 str runMAL(Client cntxt, MalBlkPtr mb, int startpc, MalBlkPtr mbcaller,
-	   MalStkPtr env, InstrPtr pcicaller){
-	MalStkPtr stk= NULL;
+		   MalStkPtr env, InstrPtr pcicaller)
+{
+	MalStkPtr stk = NULL;
 	int i;
-	ValPtr lhs,rhs;
-	InstrPtr pci=getInstrPtr(mb,0);
+	ValPtr lhs, rhs;
+	InstrPtr pci = getInstrPtr(mb, 0);
 	str ret;
 	@:performanceVariables@
 
@@ -258,32 +256,32 @@ being called.
 @c
 	/* allocate space for value stack */
 	/* the global stack should be large enough */
-	if( mbcaller== NULL && env != NULL){
+	if (mbcaller == NULL && env != NULL) {
 		stk = env;
-		if( mb != stk->blk)
-			showScriptException(mb,0,MAL,"runMAL:misalignment of symbols\n");
-		if( mb->vtop > stk->stksize)
-			showScriptException(mb,0,MAL,"stack too small\n");
-		pci= pcicaller;
+		if (mb != stk->blk)
+			showScriptException(mb, 0, MAL, "runMAL:misalignment of symbols\n");
+		if (mb->vtop > stk->stksize)
+			showScriptException(mb, 0, MAL, "stack too small\n");
+		pci = pcicaller;
 	} else {
-		newStack(stk,mb->vsize);
-		stk->stktop= mb->vtop;
-		stk->stksize= mb->vsize;
-		stk->blk= mb;
-		stk->cmd= cntxt->itrace; /* set debug mode */
-		if( env) {
+		newStack(stk, mb->vsize);
+		stk->stktop = mb->vtop;
+		stk->stksize = mb->vsize;
+		stk->blk = mb;
+		stk->cmd = cntxt->itrace;    /* set debug mode */
+		if (env) {
 			/*safeguardStack*/
-			stk->stkdepth= stk->stksize + env->stkdepth;
-			stk->calldepth= env->calldepth + 1;
-			if ( stk->calldepth > 256 )
+			stk->stkdepth = stk->stksize + env->stkdepth;
+			stk->calldepth = env->calldepth + 1;
+			if (stk->calldepth > 256)
 				throw(MAL, "mal.interpreter", MAL_CALLDEPTH_FAIL);
-			if ( (unsigned) stk->stkdepth > THREAD_STACK_SIZE/ sizeof(mb->var[0]) / 4 && THRhighwater())
+			if ((unsigned)stk->stkdepth > THREAD_STACK_SIZE / sizeof(mb->var[0]) / 4 && THRhighwater())
 				/* we are running low on stack space */
 				throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
 		}
 	}
 
-	if( env && mbcaller){
+	if (env && mbcaller) {
 		InstrPtr pp;
 		int k;
 @-
@@ -292,21 +290,21 @@ the symbol table and stackframe contains the sequence
 f,a1..an,b1..bn. This slightly complicates the implementation
 of the return statement.
 @c
-		pci= pcicaller;
+		pci = pcicaller;
 		pp = getInstrPtr(mb, 0);
 		/* set return types */
-		for(i=0; i< pci->retc; i++){
+		for (i = 0; i < pci->retc; i++) {
 			lhs = &stk->stk[i];
-			lhs->vtype =getVarGDKType(mb,i);
+			lhs->vtype = getVarGDKType(mb, i);
 		}
-		for(k=pp->retc; i<pci->argc; i++,k++){
+		for (k = pp->retc; i < pci->argc; i++, k++) {
 			lhs = &stk->stk[pp->argv[k]];
 			/* variable arguments ? */
-			if( k== pp->argc-1) k--;
+			if (k == pp->argc - 1) k--;
 
 			rhs = &env->stk[pci->argv[i]];
-			VALcopy(lhs,rhs);
-			if( lhs->vtype == TYPE_bat)
+			VALcopy(lhs, rhs);
+			if (lhs->vtype == TYPE_bat)
 				BBPincref(lhs->val.bval, TRUE);
 		}
 		stk->up = env;
@@ -325,20 +323,22 @@ we should first remove garbage.
 @c
 	if (env && mbcaller) {
 		@:initStack(pci->argc)@
-	} else if ( env && env->stkbot) {
+	} else if (env && env->stkbot) {
 		@:initStack(env->stkbot)@
 	} else {
-		@:initStack(mbcaller? pci->argc:1)@
+		@:initStack(mbcaller ? pci->argc:1)@
 	}
 
-	if(stk->cmd  && env && stk->cmd!='f') stk->cmd = env->cmd ;
-	ret = runMALsequence(cntxt, mb, startpc,  0, stk, env, pcicaller);
+	if (stk->cmd && env && stk->cmd != 'f')
+		stk->cmd = env->cmd;
+	ret = runMALsequence(cntxt, mb, startpc, 0, stk, env, pcicaller);
 
 	/* pass the new debug mode to the caller */
-	if (stk->cmd  && env && stk->cmd!='f') env->cmd = stk->cmd;
-	if ( !stk->keepAlive && garbageControl(getInstrPtr(mb,0)) )
-		garbageCollector(cntxt, mb,stk, env != stk);
-	@:endProfile(stk)@
+	if (stk->cmd && env && stk->cmd != 'f')
+		env->cmd = stk->cmd;
+	if (!stk->keepAlive && garbageControl(getInstrPtr(mb, 0)))
+		garbageCollector(cntxt, mb, stk, env != stk);
+	@:endProfile(stk) @
 	if (stk && stk != env)
 		GDKfree(stk);
 	return ret;
@@ -355,7 +355,7 @@ answer to direct their actions. Or, a dataflow scheduler could step in
 to enforce a completely different execution order.
 @c
 str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc,
-	MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller)
+			   MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller)
 {
 	str ret;
 	int keepAlive;
@@ -363,14 +363,14 @@ str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc,
 	if (stk == NULL)
 		throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
 	keepAlive = stk->keepAlive;
-	if(env && stk && stk->cmd!='f') stk->cmd = env->cmd ;
+	if (env && stk && stk->cmd != 'f') stk->cmd = env->cmd;
 
-	ret = runMALsequence(cntxt, mb, startpc,  stoppc, stk, env, pcicaller);
+	ret = runMALsequence(cntxt, mb, startpc, stoppc, stk, env, pcicaller);
 
 	/* pass the new debug mode to the caller */
-	if (env && stk->cmd!='f') env->cmd = stk->cmd;
-	if ( keepAlive == 0 && garbageControl(getInstrPtr(mb,0)) )
-		garbageCollector(cntxt, mb,stk,env!=stk);
+	if (env && stk->cmd != 'f') env->cmd = stk->cmd;
+	if (keepAlive == 0 && garbageControl(getInstrPtr(mb, 0)))
+		garbageCollector(cntxt, mb, stk, env != stk);
 	return ret;
 }
 @-
@@ -382,19 +382,20 @@ initialized.
 The call does not return values, they are ignored.
 @c
 str
-callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug){
-	MalStkPtr stk= NULL;
-	str ret= MAL_SUCCEED;
+callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
+{
+	MalStkPtr stk = NULL;
+	str ret = MAL_SUCCEED;
 	int i;
-	ValPtr lhs,rhs;
-	InstrPtr pci= getInstrPtr(mb,0);
+	ValPtr lhs, rhs;
+	InstrPtr pci = getInstrPtr(mb, 0);
 	@:performanceVariables@
 
 #ifdef DEBUG_CALLMAL
-	mnstr_printf(cntxt->fdout,"callMAL\n");
-	printInstruction(cntxt->fdout,mb,0,pci,LIST_MAL_ALL);
+	mnstr_printf(cntxt->fdout, "callMAL\n");
+	printInstruction(cntxt->fdout, mb, 0, pci, LIST_MAL_ALL);
 #endif
-	switch( pci->token){
+	switch (pci->token) {
 	case FUNCTIONsymbol:
 	case FCNcall:
 @-
@@ -402,32 +403,32 @@ Prepare the stack frame for this operation. Copy all the arguments
 in place. We assume that the caller has supplied pointers for
 all arguments and return values.
 @c
-		if( *env==NULL){
-			stk=newGlobalStack(mb->vsize);
-			memset((char *) stk, 0, stackSize(mb->vtop));
-			stk->stktop= mb->vtop;
-			stk->stksize= mb->vsize;
-			stk->blk= mb;
+		if (*env == NULL) {
+			stk = newGlobalStack(mb->vsize);
+			memset((char *)stk, 0, stackSize(mb->vtop));
+			stk->stktop = mb->vtop;
+			stk->stksize = mb->vsize;
+			stk->blk = mb;
 			stk->up = 0;
 			@:initStack(pci->argc)@
-			*env= stk;
+			*env = stk;
 		} else stk = *env;
 		assert(stk);
-		for(i=pci->retc; i<pci->argc; i++){
-			lhs= &stk->stk[pci->argv[i]];
+		for (i = pci->retc; i < pci->argc; i++) {
+			lhs = &stk->stk[pci->argv[i]];
 			VALcopy(lhs, argv[i]);
-			if( lhs->vtype == TYPE_bat)
-				BBPincref(lhs->val.bval,TRUE);
+			if (lhs->vtype == TYPE_bat)
+				BBPincref(lhs->val.bval, TRUE);
 		}
 		stk->cmd = debug;
-		ret = runMALsequence(cntxt, mb, 1,  0, stk, 0, 0);
+		ret = runMALsequence(cntxt, mb, 1, 0, stk, 0, 0);
 		break;
-	case FACTORYsymbol:
-	case FACcall:
-		ret= callFactory(cntxt, mb, argv,debug);
+	caseFACTORYsymbol:
+	caseFACcall:
+		ret = callFactory(cntxt, mb, argv, debug);
 		break;
-	case PATcall:
-	case CMDcall:
+	casePATcall:
+	caseCMDcall:
 	default:
 		throw(MAL, "mal.interpreter", RUNTIME_UNKNOWN_INSTRUCTION);
 	}
@@ -439,38 +440,38 @@ The core of the interpreter is presented next. It takes the context information
 and starts the interpretation at the designated instruction.
 Note that the stack frame is aligned and initialized in the enclosing routine.
 @c
-str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc,
-		int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller)
+str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
+				   int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller)
 {
-	ValPtr lhs,rhs,v;
-	int i,k;
-	InstrPtr pci=0;
-	int exceptionVar,prevpc=0;
-	str ret=0;
+	ValPtr lhs, rhs, v;
+	int i, k;
+	InstrPtr pci = 0;
+	int exceptionVar, prevpc = 0;
+	str ret = 0;
 #if FAST
-	int stamp= -1;
+	int stamp = -1;
 #endif
-	bat *backup= (bat*) alloca(mb->maxarg * sizeof(bat));
-	str *sbackup= (str*) alloca(mb->maxarg * sizeof(str));
-	int *garbage= (int*) alloca(mb->maxarg * sizeof(int));
-	lng oldtimer=0;
+	bat *backup = (bat*)alloca(mb->maxarg * sizeof(bat));
+	str *sbackup = (str*)alloca(mb->maxarg * sizeof(str));
+	int *garbage = (int*)alloca(mb->maxarg * sizeof(int));
+	lng oldtimer = 0;
 	struct Mallinfo oldMemory;
 	int stkpc = 0;
 	MT_Lock *lock = NULL;
 	int tid = 0;
 
 #ifdef HAVE_SYS_RESOURCE_H
-	int oldinblock=0;
-	int oldoublock=0;
+	int oldinblock = 0;
+	int oldoublock = 0;
 	struct rusage oldResource;
 #endif
 	@:performanceVariables@
 
 	if (stk == NULL)
 		throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
-	if( cntxt->flags & timerFlag)
-		oldtimer= cntxt->timer= GDKusec();
-	oldMemory.arena= 0;
+	if (cntxt->flags & timerFlag)
+		oldtimer = cntxt->timer = GDKusec();
+	oldMemory.arena = 0;
 
 	stkpc = startpc;
 	exceptionVar = -1;
@@ -483,10 +484,10 @@ The code currently does not statically checks the mode change.
 Preferrably we should introduce a itrace flag PROFILE
 We rely on optimizing compilers to remove the redundant code.
 @c
-	if (mb->recycle ==  TRUE && malProfileMode == 0 &&
-		cntxt->itrace==0 && cntxt->flags == 0 && GDKdebug == 0) {
-		while(stkpc < mb->stop && stkpc != stoppc ){
-			pci = getInstrPtr(mb,stkpc);
+	if (mb->recycle == TRUE && malProfileMode == 0 &&
+		cntxt->itrace == 0 && cntxt->flags == 0 && GDKdebug == 0) {
+		while (stkpc < mb->stop && stkpc != stoppc) {
+			pci = getInstrPtr(mb, stkpc);
 			if (malProfileMode + cntxt->itrace)
 				goto workslow;
 
@@ -495,54 +496,54 @@ We rely on optimizing compilers to remove the redundant code.
 			}
 			@:MALflowofcontrol(FAST,continue)@
 		}
-	} else
-	if (malProfileMode == 0 && cntxt->itrace==0 && cntxt->flags == 0 && GDKdebug == 0) {
-		while(stkpc < mb->stop && stkpc != stoppc ){
-			pci = getInstrPtr(mb,stkpc);
+	} else if (malProfileMode == 0 && cntxt->itrace == 0 && cntxt->flags == 0 && GDKdebug == 0) {
+		while (stkpc < mb->stop && stkpc != stoppc) {
+			pci = getInstrPtr(mb, stkpc);
 			if (malProfileMode + cntxt->itrace + mb->trap)
 				goto workslow;
 
-				@:MALinterpret(FAST)@
+			@:MALinterpret(FAST)@
 			@:MALflowofcontrol(FAST,continue)@
 		}
-	} else
-	while(stkpc < mb->stop && stkpc != stoppc ){
-		pci = getInstrPtr(mb,stkpc);
+	} else {
+		while (stkpc < mb->stop && stkpc != stoppc) {
+			pci = getInstrPtr(mb, stkpc);
 workslow:
-		if( cntxt->itrace || mb->trap  ) {
-			lng t=0;
+			if (cntxt->itrace || mb->trap) {
+				lng t = 0;
 
-			if( stk->cmd== 0)
-				stk->cmd= cntxt->itrace;
-			if( oldtimer)
-				t= GDKusec();
-			if( cntxt->flags & bbpFlag)
-				BBPTraceCall(cntxt,mb,stk,prevpc);
-			prevpc = stkpc;
-			mdbStep(cntxt,mb,stk,stkpc);
-			if( stk->cmd == 'x' || cntxt->mode == FINISHING) {
-				stk->cmd = 0;
-				stkpc = mb->stop;
-				continue;
-			}
-			if( oldtimer ) {
-				/* ignore debugger waiting time*/
-				t= GDKusec()-t;
-				oldtimer += t;
+				if (stk->cmd == 0)
+					stk->cmd = cntxt->itrace;
+				if (oldtimer)
+					t = GDKusec();
+				if (cntxt->flags & bbpFlag)
+					BBPTraceCall(cntxt, mb, stk, prevpc);
+				prevpc = stkpc;
+				mdbStep(cntxt, mb, stk, stkpc);
+				if (stk->cmd == 'x' || cntxt->mode == FINISHING) {
+					stk->cmd = 0;
+					stkpc = mb->stop;
+					continue;
+				}
+				if (oldtimer) {
+					/* ignore debugger waiting time*/
+					t = GDKusec() - t;
+					oldtimer += t;
 #ifdef HAVE_SYS_RESOURCE_H
-				getrusage(RUSAGE_SELF, &oldResource);
+					getrusage(RUSAGE_SELF, &oldResource);
 #endif
-				if (cntxt->flags & memoryFlag)
-					oldMemory= MT_mallinfo();
+					if (cntxt->flags & memoryFlag)
+						oldMemory = MT_mallinfo();
+				}
 			}
-		}
 
-		@:beginProfile(stk,1)@
-		@:MALrecycleStart(stk)@ {
-			@:MALinterpret(FAST)@
+			@:beginProfile(stk,1)@
+			@:MALrecycleStart(stk)@ {
+				@:MALinterpret(FAST)@
+			}
+			@:MALflowofcontrol(FAST,continue)@
+			@:endProfile(stk)@
 		}
-		@:MALflowofcontrol(FAST,continue)@
-		@:endProfile(stk)@
 	}
 	@:MALwrapup@
 	return ret;
@@ -561,8 +562,7 @@ whose entry is controlled by the function language.dataflow();
 This way the function can inform the caller to skip the block
 when dataflow execution was performed.
 @h
-mal_export str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
-		int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
+mal_export str runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
 @-
 The flow graphs should be organized such that parallel threads can
 access it mostly without expensive locking.
@@ -623,12 +623,13 @@ typedef struct DataFlow {
 Calculate the size of the dataflow dependency graph.
 @c
 static int
-DFLOWgraphSize(MalBlkPtr mb, int start, int stop){
+DFLOWgraphSize(MalBlkPtr mb, int start, int stop)
+{
 	int cnt = 0;
 	int i;
-	
-	for(i= start; i < stop; i++)
-		cnt += getInstrPtr(mb,i)->argc;
+
+	for (i = start; i < stop; i++)
+		cnt += getInstrPtr(mb, i)->argc;
 	return cnt;
 }
 
@@ -678,22 +679,23 @@ suspended instructions.
  * Views are consider cheap and ignored
 */
 static lng
-getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag){
-	lng total=0, vol = 0;
+getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag)
+{
+	lng total = 0, vol = 0;
 	BAT *b;
 
-	(void) mb;
-	if (stk->stk[getArg(pci,i)].vtype == TYPE_bat){
-		b = BATdescriptor(stk->stk[getArg(pci,i)].val.bval);
-		if (b==NULL)
+	(void)mb;
+	if (stk->stk[getArg(pci, i)].vtype == TYPE_bat) {
+		b = BATdescriptor(stk->stk[getArg(pci, i)].val.bval);
+		if (b == NULL)
 			return 0;
-		if ( flag && isVIEW(b)){
-			BBPunfix( b->batCacheid);
+		if (flag && isVIEW(b)) {
+			BBPunfix(b->batCacheid);
 			return 0;
 		}
 		@:calcFootprint@
-		total = total >(lng) (MEMORY_THRESHOLD * monet_memory)? (lng) (MEMORY_THRESHOLD * monet_memory):total;
-		BBPunfix( b->batCacheid);
+		total = total > (lng)(MEMORY_THRESHOLD * monet_memory) ? (lng)(MEMORY_THRESHOLD * monet_memory) : total;
+		BBPunfix(b->batCacheid);
 	}
 	return total;
 }
@@ -713,35 +715,35 @@ int
 DFLOWadmission(lng argclaim, lng hotclaim)
 {
 	/* optimistically set memory */
-	if ( argclaim == 0)
+	if (argclaim == 0)
 		return 0;
 
 	mal_set_lock(mal_contextLock, "DFLOWdelay");
-	if (memorypool <= 0 && memoryclaims == 0) 
-			memorypool = (lng) (MEMORY_THRESHOLD * monet_memory);
+	if (memorypool <= 0 && memoryclaims == 0)
+		memorypool = (lng)(MEMORY_THRESHOLD * monet_memory);
 
-	if ( argclaim > 0 ) {
-		if (memoryclaims == 0 || memorypool > argclaim+ hotclaim ){
+	if (argclaim > 0) {
+		if (memoryclaims == 0 || memorypool > argclaim + hotclaim) {
 			memorypool -= (argclaim + hotclaim);
-			memoryclaims ++;
+			memoryclaims++;
 			PARDEBUG
-				mnstr_printf(GDKstdout,"#DFLOWadmit %3d thread %d pool " LLFMT"claims " LLFMT "," LLFMT"\n",
-					memoryclaims, THRgettid(), memorypool, argclaim, hotclaim);
+			mnstr_printf(GDKstdout, "#DFLOWadmit %3d thread %d pool " LLFMT "claims " LLFMT "," LLFMT "\n",
+						 memoryclaims, THRgettid(), memorypool, argclaim, hotclaim);
 			mal_unset_lock(mal_contextLock, "DFLOWdelay");
 			return 0;
 		}
 		PARDEBUG
-			mnstr_printf(GDKstdout,"#Delayed due to lack of memory " LLFMT " requested " LLFMT "\n", memorypool, argclaim+hotclaim);
+		mnstr_printf(GDKstdout, "#Delayed due to lack of memory " LLFMT " requested " LLFMT "\n", memorypool, argclaim + hotclaim);
 		mal_unset_lock(mal_contextLock, "DFLOWdelay");
 		return -1;
 	}
 	/* release memory claimed before */
-	memorypool += -argclaim - hotclaim ;
-	memoryclaims --;
+	memorypool += -argclaim - hotclaim;
+	memoryclaims--;
 	PARDEBUG
-		mnstr_printf(GDKstdout,"#DFLOWadmit %3d thread %d pool " LLFMT" claims " LLFMT "," LLFMT"\n",
-			memoryclaims, THRgettid(), memorypool,  argclaim, hotclaim);
-	assert(memoryclaims >= 0 );
+	mnstr_printf(GDKstdout, "#DFLOWadmit %3d thread %d pool " LLFMT " claims " LLFMT "," LLFMT "\n",
+				 memoryclaims, THRgettid(), memorypool, argclaim, hotclaim);
+	assert(memoryclaims >= 0);
 	mal_unset_lock(mal_contextLock, "DFLOWdelay");
 	return 0;
 }
@@ -754,16 +756,16 @@ can be executed in parallel.
 @c
 
 static queue*
-q_create( int sz )
+q_create(int sz)
 {
 	queue *q = (queue*)GDKmalloc(sizeof(queue));
 
-	if ( q == NULL)
+	if (q == NULL)
 		return NULL;
-	q->size = ((sz<<1)>>1); /* we want a multiple of 2 */
+	q->size = ((sz << 1) >> 1); /* we want a multiple of 2 */
 	q->last = 0;
-	q->data = (void*)GDKmalloc(sizeof(void*)*q->size);
-	if ( q->data == NULL){
+	q->data = (void*)GDKmalloc(sizeof(void*) * q->size);
+	if (q->data == NULL) {
 		GDKfree(q);
 		return NULL;
 	}
@@ -775,7 +777,7 @@ q_create( int sz )
 
 /*
 static void
-q_destroy( queue *q )
+q_destroy(queue *q)
 {
 	GDKfree(q->data);
 	GDKfree(q);
@@ -790,9 +792,9 @@ q_enqueue_(queue *q, FlowStatus d)
 	if (q->last == q->size) {
 		/* enlarge buffer */
 		q->size <<= 1;
-		q->data = GDKrealloc(q->data, sizeof(void*)*q->size);
+		q->data = GDKrealloc(q->data, sizeof(void*) * q->size);
 	}
-	q->data[q->last++] = (void*) d;
+	q->data[q->last++] = (void*)d;
 }
 static void
 q_enqueue(queue *q, FlowStatus d)
@@ -807,7 +809,7 @@ q_enqueue(queue *q, FlowStatus d)
  * A priority queue over the hot claims of memory may
  * be more effective. It priorizes those instructions
  * that want to use a big recent result
-*/
+ */
 
 static void
 q_requeue_(queue *q, void *d)
@@ -816,18 +818,18 @@ q_requeue_(queue *q, void *d)
 	if (q->last == q->size) {
 		/* enlarge buffer */
 		q->size <<= 1;
-		q->data = GDKrealloc(q->data, sizeof(void*)*q->size);
+		q->data = GDKrealloc(q->data, sizeof(void*) * q->size);
 	}
-	for ( i=q->last; i > 0; i--)
-		q->data[i]= q->data[i-1];
-	q->data[0] =  (void*)  d;
+	for (i = q->last; i > 0; i--)
+		q->data[i] = q->data[i - 1];
+	q->data[0] = (void*)d;
 	q->last++;
 }
 static void
 q_requeue(queue *q, void *d)
 {
 	MT_lock_set(&q->l, "q_requeue");
-	q_requeue_(q,d);
+	q_requeue_(q, d);
 	MT_lock_unset(&q->l, "q_requeue");
 	MT_sema_up(&q->s, "q_requeue");
 }
@@ -843,13 +845,15 @@ q_dequeue(queue *q)
 	/* LIFO favors garbage collection */
 	r = q->data[--q->last];
 	/* try out random draw *
-	{int i;
-	i = rand() % q->last;
-	r= q->data[i];
-	for( i++ ; i< q->last; i++)
-		q->data[i-1]= q->data[i];
-	q->last--;}
-	*/
+	{
+		int i;
+		i = rand() % q->last;
+		r = q->data[i];
+		for (i++; i < q->last; i++)
+			q->data[i - 1] = q->data[i];
+		q->last--; i
+	}
+	 */
 
 	MT_lock_unset(&q->l, "q_dequeue");
 	return r;
@@ -858,22 +862,22 @@ q_dequeue(queue *q)
 /* it makes sense to give priority to those
  * instructions that carry a lot of temporary arguments
  * It will reduce the footprint of the database.
-*/
+ */
 static void
 queue_sort(queue *q)
 {
 	int i, j;
 	void *f;
 
-	for( i =0;  i< q->last; i++)
-	for( j=i+1; j<q->last; j++)
-	if( ((FlowStatus)q->data[i])->argclaim > ((FlowStatus)q->data[j])->argclaim){
-		f= q->data[i];
-		q->data[i]= q->data[j];
-		q->data[j]= f;
-	}
+	for (i = 0; i < q->last; i++)
+		for (j = i + 1; j < q->last; j++)
+			if (((FlowStatus)q->data[i])->argclaim > ((FlowStatus)q->data[j])->argclaim) {
+				f = q->data[i];
+				q->data[i] = q->data[j];
+				q->data[j] = f;
+			}
 	/* decay, because it is likely flushed */
-	for( i =0;  i< q->last; i++)
+	for (i = 0; i < q->last; i++)
 		((FlowStatus)q->data[i])->argclaim /= 2;
 }
 
@@ -901,29 +905,29 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 	DataFlow flow = t->flow;
 	int stkpc = fs->pc;
 
-	ValPtr lhs,rhs,v;
-	int i,k;
-	int exceptionVar= -1;
+	ValPtr lhs, rhs, v;
+	int i, k;
+	int exceptionVar = -1;
 	str ret = MAL_SUCCEED;
 #if FAST
 	int stamp = -1;
 #endif
-	bat *backup= (bat*) alloca(fs->mb->maxarg * sizeof(bat));
-	str *sbackup= (str*) alloca(fs->mb->maxarg * sizeof(str));
-	int *garbage= (int*) alloca(fs->mb->maxarg * sizeof(int));
+	bat *backup = (bat*)alloca(fs->mb->maxarg * sizeof(bat));
+	str *sbackup = (str*)alloca(fs->mb->maxarg * sizeof(str));
+	int *garbage = (int*)alloca(fs->mb->maxarg * sizeof(int));
 	Client cntxt = fs->cntxt;
 	MalBlkPtr mb = fs->mb;
 	MalStkPtr stk = fs->stk;
 	int startpc = fs->pc;
 	InstrPtr pci;
-	lng oldtimer=0;
+	lng oldtimer = 0;
 	struct Mallinfo oldMemory;
 	MT_Lock *lock = &flow->done->l;
-	int tid = t->id, prevpc= 0;
+	int tid = t->id, prevpc = 0;
 
 #ifdef HAVE_SYS_RESOURCE_H
-	int oldinblock=0;
-	int oldoublock=0;
+	int oldinblock = 0;
+	int oldoublock = 0;
 	struct rusage oldResource;
 #endif
 	@:performanceVariables@
@@ -940,24 +944,24 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 	printf("#EXECUTE THREAD %d \n", tid);
 	printInstruction(GDKstdout, flow->mb, 0, pci, LIST_MAL_STMT | LIST_MAPI);
 #endif
-	THRset_errbuf(THRget(THRgettid()), cntxt->errbuf);	/* where to leave errors */
+	THRset_errbuf(THRget(THRgettid()), cntxt->errbuf);  /* where to leave errors */
 	if (stk->cmd || mb->trap) {
 		lng tm = 0;
-		if( oldtimer)
+		if (oldtimer)
 			tm = GDKusec();
-		if( cntxt->flags & bbpFlag)
-			BBPTraceCall(cntxt,mb,stk,prevpc);
+		if (cntxt->flags & bbpFlag)
+			BBPTraceCall(cntxt, mb, stk, prevpc);
 		prevpc = stkpc;
-		mdbStep(cntxt,mb,stk, getPC(mb,pci));
+		mdbStep(cntxt, mb, stk, getPC(mb, pci));
 		if (stk->cmd == 'x' || cntxt->mode == FINISHING) {
 			/* need a way to skip */
 			stkpc = mb->stop;
 			fs->state = -1;
 			return ret;
 		}
-		if (oldtimer ) {
+		if (oldtimer) {
 			/* ignore debugger waiting time*/
-			tm = GDKusec()-tm;
+			tm = GDKusec() - tm;
 			oldtimer += tm;
 #ifdef HAVE_SYS_RESOURCE_H
 			getrusage(RUSAGE_SELF, &oldResource);
@@ -975,7 +979,7 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 The number of instructions allowed is severely limited.
 We don't allow sequential flow control here, which is enforced by the dataflow optimizer;
 @c
-		switch (pci->token){
+		switch (pci->token) {
 		case ASSIGNsymbol: @:assignStmt(FAST,fs->pc = -fs->pc; return ret,t)@ break;
 		case PATcall: @:patterncall(FAST,fs->pc = -fs->pc; return ret,t)@ break;
 		case CMDcall: @:commandcall(FAST,fs->pc = -fs->pc; return ret,t)@ break;
@@ -985,12 +989,12 @@ We don't allow sequential flow control here, which is enforced by the dataflow o
 		case REMsymbol:
 			break;
 		default:
-			if( pci->token < 0 ){
+			if (pci->token < 0) {
 				/* temporary NOOP instruction */
 				break;
 			}
 			ret = createScriptException(mb, stkpc, MAL,
-					NULL, "unkown operation");
+				NULL, "unkown operation");
 		}
 	}
 	@:endProfile(t)@
@@ -1023,69 +1027,66 @@ just produced. THis way it need not be saved on disk for a long time.
 static void
 runDFLOWworker(void *t)
 {
-	FlowStatus fs, nxtfs =0;
-	FlowTask *task = (FlowTask*) t;
+	FlowStatus fs, nxtfs = 0;
+	FlowTask *task = (FlowTask*)t;
 	InstrPtr p;
 	Thread thr;
-	int i, local=0, last = 0;
+	int i, local = 0, last = 0;
 
 	thr = THRnew(MT_getpid(), "DFLOWworker");
-	while(task) {
+	while (task) {
 		local = nxtfs != 0;
-		if ( nxtfs == 0)
-			fs = (FlowStatus) q_dequeue(task->todo);
+		if (nxtfs == 0)
+			fs = (FlowStatus)q_dequeue(task->todo);
 		else fs = nxtfs;
 #ifdef USE_DFLOW_ADMISSION
-		if ( DFLOWadmission(fs->argclaim, fs->hotclaim) ){
-			fs->hotclaim = 0;	/* don't assume priority anymore */
-			MT_sleep_ms(fs->argclaim/1000000);
-			q_requeue(task->todo,fs);
+		if (DFLOWadmission(fs->argclaim, fs->hotclaim)) {
+			fs->hotclaim = 0;   /* don't assume priority anymore */
+			MT_sleep_ms(fs->argclaim / 1000000);
+			q_requeue(task->todo, fs);
 			nxtfs = 0;
 			continue;
 		}
 #endif
 		assert(fs->pc > 0);
-		PARDEBUG
-			mnstr_printf(GDKstdout,"#execute pc= %d thr= %d claim= %d,%d %s\n",fs->pc, task->id, fs->argclaim,fs->hotclaim, fs->error?fs->error:"");
+		PARDEBUG mnstr_printf(GDKstdout, "#execute pc= %d thr= %d claim= %d,%d %s\n", fs->pc, task->id, fs->argclaim, fs->hotclaim, fs->error ? fs->error : "");
 		fs->error = DFLOWstep(task, fs);
 
-		PARDEBUG
-			mnstr_printf(GDKstdout,"#execute pc= %d thr= %d finished %s\n",fs->pc, task->id, fs->error?fs->error:"");
+		PARDEBUG mnstr_printf(GDKstdout, "#execute pc= %d thr= %d finished %s\n", fs->pc, task->id, fs->error ? fs->error : "");
 
 #ifdef USE_DFLOW_ADMISSION
 		/* release the memory claim */
-		DFLOWadmission(-fs->argclaim,-fs->hotclaim);
+		DFLOWadmission(-fs->argclaim, -fs->hotclaim);
 #endif
 
 		p = getInstrPtr(fs->mb, ABS(fs->pc));
 		fs->hotclaim = 0;
-		for( i=0; i< p->retc; i++)
+		for (i = 0; i < p->retc; i++)
 			fs->hotclaim += getMemoryClaim(fs->mb, fs->stk, p, i, FALSE);
-		
+
 		/* see if you can find an eligible instruction that uses the
 		 * result just produced. Then we can continue with it right away.
 		 * We are just looking for the last block, which means we are safe from concurrent actions
-		*/
+		 */
 		nxtfs = 0;
-		if ( fs->pc >= 0 )
-		for ( last = fs->pc - task->flow->start; last >= 0 && (i = task->flow->nodes[last]) > 0; last= task->flow->edges[last])
-		if (task->flow->status[i].state == DFLOWpending &&
-		    task->flow->status[i].blocks == 1) {
-			task->flow->status[i].state = DFLOWrunning;
-			task->flow->status[i].blocks = 0;
-			task->flow->status[i].hotclaim = fs->hotclaim;
-			task->flow->status[i].argclaim += fs->hotclaim;
-			task->flow->status[i].error = NULL;
-			nxtfs = task->flow->status + i;
-			PARDEBUG
-				mnstr_printf(GDKstdout,"#continue pc= %d thr= %d claim= %d\n", nxtfs->pc, task->id, task->flow->status[i].argclaim);
-			break;
-		}
+		if (fs->pc >= 0)
+			for (last = fs->pc - task->flow->start; last >= 0 && (i = task->flow->nodes[last]) > 0; last = task->flow->edges[last])
+				if (task->flow->status[i].state == DFLOWpending &&
+					task->flow->status[i].blocks == 1) {
+					task->flow->status[i].state = DFLOWrunning;
+					task->flow->status[i].blocks = 0;
+					task->flow->status[i].hotclaim = fs->hotclaim;
+					task->flow->status[i].argclaim += fs->hotclaim;
+					task->flow->status[i].error = NULL;
+					nxtfs = task->flow->status + i;
+					PARDEBUG mnstr_printf(GDKstdout, "#continue pc= %d thr= %d claim= %d\n", nxtfs->pc, task->id, task->flow->status[i].argclaim);
+					break;
+				}
 
 		/* all non-local choices are handled by the main scheduler */
 		/* we always return the instruction handled */
 		/* be careful, the local continuation should be last in the queue */
-		if ( local)
+		if (local)
 			q_requeue(task->flow->done, fs);
 		else
 			q_enqueue(task->flow->done, fs);
@@ -1106,11 +1107,10 @@ DFLOWinit(DataFlow flow, Client cntxt, MalBlkPtr mb, MalStkPtr stk, int size)
 	int *assign;
 	InstrPtr p;
 
-	PARDEBUG
-		printf("Initialize dflow block\n");
-	assign = (int*) GDKzalloc(mb->vtop * sizeof(int));
+	PARDEBUG printf("Initialize dflow block\n");
+	assign = (int*)GDKzalloc(mb->vtop * sizeof(int));
 	etop = flow->stop - flow->start;
-	for (n=0, pc = flow->start; pc<flow->stop; pc++, n++) {
+	for (n = 0, pc = flow->start; pc < flow->stop; pc++, n++) {
 		p = getInstrPtr(mb, pc);
 
 		/* initial state, ie everything can run */
@@ -1123,44 +1123,43 @@ DFLOWinit(DataFlow flow, Client cntxt, MalBlkPtr mb, MalStkPtr stk, int size)
 		flow->status[n].error = NULL;
 
 		/* administer flow dependencies */
-		for (j= p->retc; j<p->argc; j++)  {
-			if ( !isVarConstant(mb,getArg(p,j)) && ( k = assign[getArg(p,j)]) ) {
+		for (j = p->retc; j < p->argc; j++) {
+			if (!isVarConstant(mb, getArg(p, j)) && (k = assign[getArg(p, j)])) {
 				/* add edge to the target instruction for wakeup call */
 				k -= flow->start;
-				if ( flow->nodes[k] ){
+				if (flow->nodes[k]) {
 					/* add wakeup to tail of list */
-					for ( i= k; flow->edges[i] > 0; i = flow->edges[i])
+					for (i = k; flow->edges[i] > 0; i = flow->edges[i])
 						;
 					flow->nodes[etop] = n;
 					flow->edges[etop] = -1;
-					flow->edges[i]  = etop;
+					flow->edges[i] = etop;
 					etop++;
-					(void) size;
+					(void)size;
 					assert(etop < size);
 				} else {
 					flow->nodes[k] = n;
 					flow->edges[k] = -1;
 				}
-				
+
 				flow->status[n].blocks++;
 			}
 			/* be careful, watch out for garbage collection interference */
 			/* those should be scheduled after all its other uses */
-			k= getEndOfLife(mb,getArg(p,j));
-			if ( k != pc && k< flow->stop && k > flow->start){
+			k = getEndOfLife(mb, getArg(p, j));
+			if (k != pc && k < flow->stop && k > flow->start) {
 				/* add edge to the target instruction for wakeup call */
-				PARDEBUG
-					mnstr_printf(GDKstdout,"forward %d -> %d\n",n + flow->start,k);
+				PARDEBUG mnstr_printf(GDKstdout, "forward %d -> %d\n", n + flow->start, k);
 				k -= flow->start;
-				if ( flow->nodes[n] ){
+				if (flow->nodes[n]) {
 					/* add wakeup to tail of list */
-					for ( i= n; flow->edges[i] > 0; i = flow->edges[i])
+					for (i = n; flow->edges[i] > 0; i = flow->edges[i])
 						;
 					flow->nodes[etop] = k;
 					flow->edges[etop] = -1;
-					flow->edges[i]  = etop;
+					flow->edges[i] = etop;
 					etop++;
-					(void) size;
+					(void)size;
 					assert(etop < size);
 				} else {
 					flow->nodes[n] = k;
@@ -1170,22 +1169,21 @@ DFLOWinit(DataFlow flow, Client cntxt, MalBlkPtr mb, MalStkPtr stk, int size)
 			}
 		}
 
-		for (j= 0; j < p->retc; j++) 
-			assign[getArg(p,j)] = pc;	/* ensure recognition of dependency on first instruction and constant */
+		for (j = 0; j < p->retc; j++)
+			assign[getArg(p, j)] = pc;  /* ensure recognition of dependency on first instruction and constant */
 	}
 	GDKfree(assign);
-	PARDEBUG
-		for (n=0; n< flow->stop - flow->start; n++) {
-			mnstr_printf(GDKstdout,"#[%d] %d: ",flow->start+n,n);
-			printInstruction(GDKstdout, mb, 0, getInstrPtr(mb,n+ flow->start), LIST_MAL_STMT | LIST_MAPI);
-			mnstr_printf(GDKstdout,"#[%d]Dependents blocks %d:",flow->start+n, flow->status[n].blocks);
-			for (j= n; flow->edges[j]; j = flow->edges[j]){
-				mnstr_printf(GDKstdout,"%d ", flow->start + flow->nodes[j]);
-				if ( flow->edges[j] == -1)
-					break;
-			}
-			mnstr_printf(GDKstdout,"\n");
+	PARDEBUG for (n = 0; n < flow->stop - flow->start; n++) {
+		mnstr_printf(GDKstdout, "#[%d] %d: ", flow->start + n, n);
+		printInstruction(GDKstdout, mb, 0, getInstrPtr(mb, n + flow->start), LIST_MAL_STMT | LIST_MAPI);
+		mnstr_printf(GDKstdout, "#[%d]Dependents blocks %d:", flow->start + n, flow->status[n].blocks);
+		for (j = n; flow->edges[j]; j = flow->edges[j]) {
+			mnstr_printf(GDKstdout, "%d ", flow->start + flow->nodes[j]);
+			if (flow->edges[j] == -1)
+				break;
 		}
+		mnstr_printf(GDKstdout, "\n");
+	}
 }
 
 @-
@@ -1198,122 +1196,115 @@ They take effect after we have ensured that the basic properties for
 execution hold.
 @c
 static str
-DFLOWscheduler( DataFlow flow )
+DFLOWscheduler(DataFlow flow)
 {
-	int queued = 0, oldq=0, last;
-	int pc = 0, i,j;
+	int queued = 0, oldq = 0, last;
+	int pc = 0, i, j;
 	int todo = flow->stop - flow->start;
 	str ret = MAL_SUCCEED;
 	FlowStatus fs, f = 0;
 	InstrPtr p;
 
-	if ( todo == 0)
-		throw(MAL,"dataflow","Empty dataflow block");
+	if (todo == 0)
+		throw(MAL, "dataflow", "Empty dataflow block");
 	/* initialize the eligible statements */
 	fs = flow->status;
 
 /* old code
-	assert(f->stk->wrapup == 0); 
-	assert(f->stk->admit == 0);
-*/
+    assert(f->stk->wrapup == 0);
+    assert(f->stk->admit == 0);
+ */
 
 	if (fs[0].cntxt->flags & timerFlag)
 		fs[0].cntxt->timer = GDKusec();
 
 	/* enter all dependencies before releasing the queue  */
 	MT_lock_set(&flow->todo->l, "q_enqueue");
-	for ( i = 0; i < todo; i++ ) 
-	if ( flow->status[i].blocks == 0) {
-		p = getInstrPtr(fs[0].mb,i);
-		for( j= p->retc; j < p->argc; j++)
-			flow->status[i].argclaim += getMemoryClaim(flow->status[0].mb, flow->status[0].stk, p, j, FALSE);
-		queued++;
-		flow->status[i].state = DFLOWrunning;
-		PARDEBUG 
-			mnstr_printf(GDKstdout,"#enqueue pc=%d claim=%d queue %d\n", flow->status[i].pc, flow->status[i].argclaim,queued);
-		q_enqueue_(flow->todo, flow->status + i);
-	}
+	for (i = 0; i < todo; i++)
+		if (flow->status[i].blocks == 0) {
+			p = getInstrPtr(fs[0].mb, i);
+			for (j = p->retc; j < p->argc; j++)
+				flow->status[i].argclaim += getMemoryClaim(flow->status[0].mb, flow->status[0].stk, p, j, FALSE);
+			queued++;
+			flow->status[i].state = DFLOWrunning;
+			PARDEBUG mnstr_printf(GDKstdout, "#enqueue pc=%d claim=%d queue %d\n", flow->status[i].pc, flow->status[i].argclaim, queued);
+			q_enqueue_(flow->todo, flow->status + i);
+		}
 	MT_lock_unset(&flow->todo->l, "q_enqueue");
-	while ( oldq++ < queued )
+	while (oldq++ < queued)
 		MT_sema_up(&flow->todo->s, "q_enqueue");
 
 	/* consume the remainder */
-	PARDEBUG mnstr_printf(GDKstdout,"#run %d instructions in dataflow block\n",todo);
-	while(queued ){
-		PARDEBUG mnstr_printf(GDKstdout,"#waiting for results, queued %d\n", queued);
+	PARDEBUG mnstr_printf(GDKstdout, "#run %d instructions in dataflow block\n", todo);
+	while (queued) {
+		PARDEBUG mnstr_printf(GDKstdout, "#waiting for results, queued %d\n", queued);
 		f = q_dequeue(flow->done);
 		queued--;
 
 		if (f->pc < 0) {
 			/* we have to wait for all threads to report back */
-			PARDEBUG
-				mnstr_printf(GDKstdout,"#errors encountered %s ", f->error?f->error:"unknown");
-			if ( ret == MAL_SUCCEED )
-				ret= f->error;
+			PARDEBUG mnstr_printf(GDKstdout, "#errors encountered %s ", f->error ? f->error : "unknown");
+			if (ret == MAL_SUCCEED)
+				ret = f->error;
 			else {
-				str z= (char*) GDKmalloc( strlen(ret)+strlen(f->error)+2);
-				if( z ){
-					strcpy(z,ret);
-					if (z[strlen(z)-1] != '\n') strcat(z,"\n");
-					strcat(z,f->error);
+				str z = (char*)GDKmalloc(strlen(ret) + strlen(f->error) + 2);
+				if (z) {
+					strcpy(z, ret);
+					if (z[strlen(z) - 1] != '\n') strcat(z, "\n");
+					strcat(z, f->error);
 					GDKfree(f->error);
 					GDKfree(ret);
 					ret = z;
 				}
 			}
-		} 
+		}
 
-/*
- * When an instruction is finished we have to reduce
- * the blocked counter for all dependent instructions.
- * for those where it drops to zero we can scheduler it
- * Moreover, we add the return variable claim size to the target instruction
- * and remember the last increment as hotclaim.
-*/
+		/*
+		 * When an instruction is finished we have to reduce the blocked
+		 * counter for all dependent instructions.  for those where it
+		 * drops to zero we can scheduler it Moreover, we add the return
+		 * variable claim size to the target instruction and remember
+		 * the last increment as hotclaim.
+		 */
 		f->state = DFLOWwrapup;
-		last =  ABS(f->pc) - flow->start;
-		PARDEBUG 
-			mnstr_printf(GDKstdout,"#finished pc=%d claim %d\n", f->pc, f->hotclaim);
+		last = ABS(f->pc) - flow->start;
+		PARDEBUG mnstr_printf(GDKstdout, "#finished pc=%d claim %d\n", f->pc, f->hotclaim);
 
 		/* enter all dependencies before releasing the queue  */
 		MT_lock_set(&flow->todo->l, "q_enqueue");
-		
-		oldq= queued;
-		for( ; last >= 0 && (i = flow->nodes[last]) > 0; last= flow->edges[last])
-		if (flow->status[i].state == DFLOWpending)
-		{
-			flow->status[i].blocks--;
-			flow->status[i].argclaim += f->hotclaim;
-			if ( flow->status[i].blocks == 0 && ret == MAL_SUCCEED) {
+
+		oldq = queued;
+		for (; last >= 0 && (i = flow->nodes[last]) > 0; last = flow->edges[last])
+			if (flow->status[i].state == DFLOWpending) {
+				flow->status[i].blocks--;
+				flow->status[i].argclaim += f->hotclaim;
+				if (flow->status[i].blocks == 0 && ret == MAL_SUCCEED) {
+					queued++;
+					q_enqueue_(flow->todo, flow->status + i);
+					flow->status[i].state = DFLOWrunning;
+					PARDEBUG
+					mnstr_printf(GDKstdout, "#enqueue pc=%d claim=%d queued= %d\n", flow->status[i].pc, flow->status[i].argclaim, queued);
+				} else if (ret == MAL_SUCCEED)
+					PARDEBUG mnstr_printf(GDKstdout, "#await   pc %d block %d claim= %d\n", flow->start + i, flow->status[i].blocks, flow->status[i].argclaim);
+			} else { /* worker stole the candidate */
+				PARDEBUG mnstr_printf(GDKstdout, "#woke up pc %d block %d claim %d\n", flow->start + i, flow->status[i].blocks, flow->status[i].argclaim);
 				queued++;
-				q_enqueue_(flow->todo, flow->status + i);
-				flow->status[i].state = DFLOWrunning;
-				PARDEBUG 
-					mnstr_printf(GDKstdout,"#enqueue pc=%d claim=%d queued= %d\n", flow->status[i].pc, flow->status[i].argclaim, queued);
-			} else
-			if ( ret == MAL_SUCCEED )
-			PARDEBUG
-				mnstr_printf(GDKstdout,"#await   pc %d block %d claim= %d\n", flow->start+ i, flow->status[i].blocks, flow->status[i].argclaim);
-		} else {	/* worker stole the candidate */
-			PARDEBUG
-				mnstr_printf(GDKstdout,"#woke up pc %d block %d claim %d\n", flow->start+ i, flow->status[i].blocks, flow->status[i].argclaim);
-			queued++;
-			oldq++;
-		} 
-		if (0 && oldq !=queued)	/* invalidate */
+				oldq++;
+			}
+		if (0 && oldq != queued) /* invalidate */
 			queue_sort(flow->todo);
 		MT_lock_unset(&flow->todo->l, "q_enqueue");
 
-		if ( ret == MAL_SUCCEED)
-		while ( oldq++ < queued )
-			MT_sema_up(&flow->todo->s, "q_enqueue");
+		if (ret == MAL_SUCCEED)
+			while (oldq++ < queued)
+				MT_sema_up(&flow->todo->s, "q_enqueue");
 	}
 	PARDEBUG {
-		mnstr_printf(GDKstdout,"#end of data flow %d todo %d \n",pc,flow->stop - flow->start);
-		for ( i =0 ; i< flow->stop- flow->start; i++)
-			if (fs[i].state != DFLOWwrapup  && fs[i].pc >=0) {
-				mnstr_printf(GDKstdout,"#missed %d %d %d ",  i, fs[i].state, fs[i].pc);
-				printInstruction(GDKstdout, fs[i].mb, 0, getInstrPtr(fs[i].mb,fs[i].pc), LIST_MAL_STMT | LIST_MAPI);
+		mnstr_printf(GDKstdout, "#end of data flow %d todo %d \n", pc, flow->stop - flow->start);
+		for (i = 0; i < flow->stop - flow->start; i++)
+			if (fs[i].state != DFLOWwrapup && fs[i].pc >= 0) {
+				mnstr_printf(GDKstdout, "#missed %d %d %d ", i, fs[i].state, fs[i].pc);
+				printInstruction(GDKstdout, fs[i].mb, 0, getInstrPtr(fs[i].mb, fs[i].pc), LIST_MAL_STMT | LIST_MAPI);
 			}
 	}
 	return ret;
@@ -1322,38 +1313,37 @@ DFLOWscheduler( DataFlow flow )
 static DataFlow flows = NULL;
 static int workerid = 0;
 
-str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
-		int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller)
+str runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc,
+				   int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller)
 {
 	DataFlow flow = NULL;
 	str ret = MAL_SUCCEED;
 	int size;
 
 #ifdef DEBUG_FLOW
-	mnstr_printf(GDKstdout, "runMALdataflow for block %d - %d\n", startpc,stoppc);
+	mnstr_printf(GDKstdout, "runMALdataflow for block %d - %d\n", startpc, stoppc);
 	printFunction(GDKstdout, mb, 0, LIST_MAL_STMT | LIST_MAPI);
 #endif
 
-	/* 
-  	 * TODO improve cost of DFLOWeligible 
-	if (stoppc && stoppc-startpc > 10000)
-		return runMALsequence( cntxt, mb, startpc+1, stoppc, stk, env, pcicaller);
- 	 */
+	/*
+	 * TODO improve cost of DFLOWeligible
+	 if (stoppc && stoppc - startpc > 10000)
+		 return runMALsequence(cntxt, mb, startpc + 1, stoppc, stk, env, pcicaller);
+	 */
 
 	(void)env;
 	(void)pcicaller;
 
 	/* in debugging mode we should not start multiple threads */
-	if (stk->cmd) {
+	if (stk->cmd)
 		return MAL_SUCCEED;
-	}
 
 	assert(stoppc > startpc);
 	mal_set_lock(mal_contextLock, "runMALdataflow");
 	flow = flows;
 
 	if (flow) {
-	 	flows = flow->free;
+		flows = flow->free;
 	} else {
 		int i;
 
@@ -1364,31 +1354,31 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 		flow->todo = q_create(2048);
 
 		/* queues are available? */
-		if ( flow->done == NULL || flow->todo == NULL) {
+		if (flow->done == NULL || flow->todo == NULL) {
 			mal_unset_lock(mal_contextLock, "runMALdataflow");
 			return MAL_SUCCEED;
 		}
 
 		flow->worker = NULL;
-		flow->nway = GDKnr_threads ? GDKnr_threads:1;
-		flow->worker= (FlowTask *) GDKzalloc(sizeof(FlowTask)*flow->nway);
-		for(i=0; i<flow->nway; i++) {
+		flow->nway = GDKnr_threads ? GDKnr_threads : 1;
+		flow->worker = (FlowTask *)GDKzalloc(sizeof(FlowTask) * flow->nway);
+		for (i = 0; i < flow->nway; i++) {
 			flow->worker[i].id = workerid++;
 			flow->worker[i].todo = flow->todo;
 			flow->worker[i].flow = flow;
 			/* create the thread and let it wait */
-			MT_create_thread(&flow->worker[i].tid, runDFLOWworker, flow->worker+i, MT_THR_DETACHED);
+			MT_create_thread(&flow->worker[i].tid, runDFLOWworker, flow->worker + i, MT_THR_DETACHED);
 		}
 	}
 	/* keep real block count, exclude brackets */
-	flow->start = startpc+1;
+	flow->start = startpc + 1;
 	flow->stop = stoppc;
 
-	flow->status = (FlowStatus) GDKzalloc((flow->stop - flow->start +1) * sizeof(FlowStatusRec));
-	size = DFLOWgraphSize(mb,startpc,stoppc);
-	flow->nodes = (int*) GDKzalloc( sizeof(int) * size);
-	flow->edges = (int*) GDKzalloc( sizeof(int) * size);
-	DFLOWinit(flow, cntxt,mb,stk, size);
+	flow->status = (FlowStatus)GDKzalloc((flow->stop - flow->start + 1) * sizeof(FlowStatusRec));
+	size = DFLOWgraphSize(mb, startpc, stoppc);
+	flow->nodes = (int*)GDKzalloc(sizeof(int) * size);
+	flow->edges = (int*)GDKzalloc(sizeof(int) * size);
+	DFLOWinit(flow, cntxt, mb, stk, size);
 	mal_unset_lock(mal_contextLock, "runMALdataflow");
 
 	ret = DFLOWscheduler(flow);
@@ -1421,42 +1411,43 @@ typedef struct {
 	MalBlkPtr mb;
 	MalStkPtr stk;
 	int start,stop;
-}Ptask;
+} Ptask;
 
 /* runMALdetached is typically called as part of
  * starting a separate interpreter thread.
-*/
+ */
 static void
-runMALdetached(void *t){
-	Ptask *p = (Ptask *) t;
-	Client cntxt= p->cntxt;
+runMALdetached(void *t)
+{
+	Ptask *p = (Ptask *)t;
+	Client cntxt = p->cntxt;
 	MalBlkPtr mb = p->mb;
 	MalStkPtr stk = p->stk;
 	int sve;
-	str msg= MAL_SUCCEED;
+	str msg = MAL_SUCCEED;
 
 #ifdef DEBUG_DETACHED
-	mnstr_printf(cntxt->fdout,"start thread in background\n");
+	mnstr_printf(cntxt->fdout, "start thread in background\n");
 #endif
-	if (stk == NULL){
+	if (stk == NULL) {
 		GDKerror("mal.interpreter: " MAL_STACK_FAIL);
 		return;
 	}
-	sve= stk->keepAlive;
-	stk->keepAlive= TRUE;
-	msg= reenterMAL(cntxt, mb, p->start, p->stop, stk, 0, 0);
-	stk->keepAlive= sve;
-	if  ( msg != MAL_SUCCEED)
-		GDKerror(msg);		/* indirect way to pass an error */
+	sve = stk->keepAlive;
+	stk->keepAlive = TRUE;
+	msg = reenterMAL(cntxt, mb, p->start, p->stop, stk, 0, 0);
+	stk->keepAlive = sve;
+	if (msg != MAL_SUCCEED)
+		GDKerror(msg);      /* indirect way to pass an error */
 #ifdef DEBUG_DETACHED
-	mnstr_printf(cntxt->fdout,"finished thread in background\n");
+	mnstr_printf(cntxt->fdout, "finished thread in background\n");
 #endif
 }
 str runMALprocess(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int start, int stop)
 {
 	Ptask p;
 
-	p.cntxt= cntxt;
+	p.cntxt = cntxt;
 	p.mb = mb;
 	p.stk = stk;
 	p.start = start;
@@ -1467,21 +1458,21 @@ str runMALprocess(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int start, int stop
 }
 
 @= MALwrapup
-	if( exceptionVar >= 0) {
+	if (exceptionVar >= 0) {
 		if (ret) {
 			str oldret = ret;
-			ret = createScriptException(mb, mb->stop-1,
-					getExceptionType(getVarName(mb,exceptionVar)),
-					ret, "Exception not caught");
+			ret = createScriptException(mb, mb->stop - 1,
+				getExceptionType(getVarName(mb, exceptionVar)),
+				ret, "Exception not caught");
 			FREE_EXCEPTION(oldret);
 		} else {
 			if (stk->stk[exceptionVar].vtype == TYPE_str) {
-				ret = createScriptException(mb, mb->stop-1, MAL,
-						stk->stk[exceptionVar].val.sval,
-						"Exception not caught");
+				ret = createScriptException(mb, mb->stop - 1, MAL,
+					stk->stk[exceptionVar].val.sval,
+					"Exception not caught");
 			} else {
-				ret = createScriptException(mb, mb->stop-1, MAL,
-						NULL, "Exception not caught");
+				ret = createScriptException(mb, mb->stop - 1, MAL,
+					NULL, "Exception not caught");
 			}
 		}
 	}
@@ -1498,9 +1489,10 @@ Expensive? 70 msec for 1M calls. Use with care.
 mal_export str safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
 str
-safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	int depth = *(int*) getArgReference(stk,pci,1);
-	(void) cntxt;
+safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int depth = *(int*)getArgReference(stk, pci, 1);
+	(void)cntxt;
 	if (stk->stkdepth > depth * mb->vtop && THRhighwater()) {
 		throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
 	}
@@ -1524,7 +1516,7 @@ elements in the value stack.
 
 @= MALinterpret
 	ret = 0;
-	switch( pci->token){
+	switch (pci->token) {
 	case ASSIGNsymbol: @:assignStmt(@1,continue,stk)@ break;
 	case PATcall: @:patterncall(@1,continue,stk)@ break;
 	case CMDcall: @:commandcall(@1,continue,stk)@ break;
@@ -1534,26 +1526,26 @@ elements in the value stack.
 	case REMsymbol:
 		break;
 	case ENDsymbol:
-		if( getInstrPtr(mb,0)->token == FACTORYsymbol)
-			ret= shutdownFactory(cntxt,mb, 0);
+		if (getInstrPtr(mb, 0)->token == FACTORYsymbol)
+			ret = shutdownFactory(cntxt, mb, 0);
 #if @1
-		if( oldtimer)
-			cntxt->timer= oldtimer;
+		if (oldtimer)
+			cntxt->timer = oldtimer;
 #endif
-		if( pcicaller && garbageControl(getInstrPtr(mb,0)) )
+		if (pcicaller && garbageControl(getInstrPtr(mb, 0)))
 			garbageCollector(cntxt, mb, stk, TRUE);
 #if @1
 		@:endProfile(stk)@
 #endif
-		stkpc= mb->stop;
+		stkpc = mb->stop;
 		continue;
 	default:
-		if( pci->token < 0 ){
+		if (pci->token < 0) {
 			/* temporary NOOP instruction */
 			break;
 		}
-		ret = createScriptException(mb, stkpc,MAL,
-				NULL, "unkown operation");
+		ret = createScriptException(mb, stkpc, MAL,
+			NULL, "unkown operation");
 #if @1
 		@:endProfile(stk)@
 #endif
@@ -1564,75 +1556,75 @@ elements in the value stack.
 After the expression has been evaluated we should check for a
 possible change in the control flow.
 @= MALflowofcontrol
-switch(pci->barrier){
+	switch (pci->barrier) {
 	case BARRIERsymbol:
 		@:barrierControl@ stkpc++;
 		break;
 	case LEAVEsymbol:
 	case REDOsymbol:
-		v= &stk->stk[getDestVar(pci)];
+		v = &stk->stk[getDestVar(pci)];
 		/* skip to end of barrier, depending on the type */
-		switch(v->vtype){
-			case TYPE_bit:
-				if( v->val.cval[0] == TRUE && v->val.cval[0] != bit_nil)
-					stkpc= pci->jump;
-				else stkpc++;
-				break;
-			case TYPE_chr:
-				if( v->val.cval[0] )
-					stkpc= pci->jump;
-				else stkpc++;
-				break;
-			case TYPE_str:
-				if( v->len > 0 && v->val.sval!= str_nil )
-					stkpc= pci->jump;
-				else stkpc++;
-				break;
-			case TYPE_sht:
-				if( v->val.shval >= 0 && v->val.shval!= sht_nil )
-					stkpc= pci->jump;
-				else stkpc++;
-				break;
-			case TYPE_bat:
-				if( v->val.bval > 0 )
-					stkpc= pci->jump;
-				else stkpc++;
-				break;
-			case TYPE_int:
-				if( v->val.ival >= 0 && v->val.ival!= int_nil )
-					stkpc= pci->jump;
-				else stkpc++;
-				break;
-			case TYPE_wrd:
-				if( v->val.wval >= 0 && v->val.wval!= wrd_nil )
-					stkpc= pci->jump;
-				else stkpc++;
-				break;
-			case TYPE_bte:
-				if( v->val.btval >= 0 && v->val.btval!= bte_nil )
-					stkpc= pci->jump;
-				else stkpc++;
-				break;
-			case TYPE_lng:
-				if( v->val.lval >= 0 && v->val.lval!= lng_nil)
-					stkpc= pci->jump;
-				else
+		switch (v->vtype) {
+		case TYPE_bit:
+			if (v->val.cval[0] == TRUE && v->val.cval[0] != bit_nil)
+				stkpc = pci->jump;
+			else stkpc++;
+			break;
+		case TYPE_chr:
+			if (v->val.cval[0])
+				stkpc = pci->jump;
+			else stkpc++;
+			break;
+		case TYPE_str:
+			if (v->len > 0 && v->val.sval != str_nil)
+				stkpc = pci->jump;
+			else stkpc++;
+			break;
+		case TYPE_sht:
+			if (v->val.shval >= 0 && v->val.shval != sht_nil)
+				stkpc = pci->jump;
+			else stkpc++;
+			break;
+		case TYPE_bat:
+			if (v->val.bval > 0)
+				stkpc = pci->jump;
+			else stkpc++;
+			break;
+		case TYPE_int:
+			if (v->val.ival >= 0 && v->val.ival != int_nil)
+				stkpc = pci->jump;
+			else stkpc++;
+			break;
+		case TYPE_wrd:
+			if (v->val.wval >= 0 && v->val.wval != wrd_nil)
+				stkpc = pci->jump;
+			else stkpc++;
+			break;
+		case TYPE_bte:
+			if (v->val.btval >= 0 && v->val.btval != bte_nil)
+				stkpc = pci->jump;
+			else stkpc++;
+			break;
+		case TYPE_lng:
+			if (v->val.lval >= 0 && v->val.lval != lng_nil)
+				stkpc = pci->jump;
+			else
 			default:
-					stkpc++;
+				stkpc++;
 		}
 		break;
 	case CATCHsymbol:
 		/* catch blocks are skipped unless
 		   searched for explicitly*/
-		if(exceptionVar < 0) {
-			stkpc= pci->jump;
+		if (exceptionVar < 0) {
+			stkpc = pci->jump;
 			break;
 		}
 		exceptionVar = -1;
 		stkpc++;
 		break;
 	case EXITsymbol:
-		if( getDestVar(pci) == exceptionVar)
+		if (getDestVar(pci) == exceptionVar)
 			exceptionVar = -1;
 		stkpc++;
 		break;
@@ -1643,47 +1635,47 @@ switch(pci->barrier){
 			ret = createScriptException(mb, stkpc, MAL, NULL,
 				stk->stk[getDestVar(pci)].val.sval);
 		}
-		@:skipToCatch(exceptionVar,@2,stk)@
-		if ( stkpc == mb->stop)
+		@:skipToCatch(exceptionVar, @2, stk)@
+		if (stkpc == mb->stop)
 			ret = createScriptException(mb, stkpc, MAL, ret,
-					"Exception raised");
+				"Exception raised");
 		break;
-	case YIELDsymbol: /* to be defined */
-		if( oldtimer)
-			cntxt->timer= oldtimer;
-		return yieldFactory( mb, pci, stkpc);
+	case YIELDsymbol:     /* to be defined */
+		if (oldtimer)
+			cntxt->timer = oldtimer;
+		return yieldFactory(mb, pci, stkpc);
 	case RETURNsymbol:
 		/* Return from factory involves cleanup */
 
-		if( getInstrPtr(mb,0)->token == FACTORYsymbol){
-			yieldResult(mb,pci,stkpc);
-			shutdownFactory(cntxt,mb, TRUE);
+		if (getInstrPtr(mb, 0)->token == FACTORYsymbol) {
+			yieldResult(mb, pci, stkpc);
+			shutdownFactory(cntxt, mb, TRUE);
 		} else
-			/* a fake multi-assignment */
-			if( env != NULL && pcicaller != NULL){
-				InstrPtr pp=pci;
-				@:endProfile(stk)@
-				pci= pcicaller;
-				for(i=0;i < pci->retc; i++){
-					rhs = &stk->stk[pp->argv[i]];
-					lhs = &env->stk[pci->argv[i]];
-					VALcopy(lhs,rhs);
-					if( lhs->vtype == TYPE_bat )
-						BBPincref(lhs->val.bval, TRUE);
-				}
-				if( garbageControl(getInstrPtr(mb,0)) )
-					garbageCollector(cntxt, mb, stk, TRUE);
-				/* reset the clock */
-				if( oldtimer)
-					cntxt->timer= oldtimer;
-			} else {
-				@:endProfile(stk)@
+		/* a fake multi-assignment */
+		if (env != NULL && pcicaller != NULL) {
+			InstrPtr pp = pci;
+			@:endProfile(stk)@
+			pci = pcicaller;
+			for (i = 0; i < pci->retc; i++) {
+				rhs = &stk->stk[pp->argv[i]];
+				lhs = &env->stk[pci->argv[i]];
+				VALcopy(lhs, rhs);
+				if (lhs->vtype == TYPE_bat)
+					BBPincref(lhs->val.bval, TRUE);
 			}
-		stkpc= mb->stop;
+			if (garbageControl(getInstrPtr(mb, 0)))
+				garbageCollector(cntxt, mb, stk, TRUE);
+			/* reset the clock */
+			if (oldtimer)
+				cntxt->timer = oldtimer;
+		} else {
+			@:endProfile(stk)@
+		}
+		stkpc = mb->stop;
 		continue;
 	default:
 		stkpc++;
-}
+	}
 
 @+ Assignment command
 The assignment statement copies values around on the stack frame,
@@ -1701,16 +1693,16 @@ cause errors in multi-assignment statements.
 @= assignStmt
 {
 	@:safeTarget(@1)@
-	for(k=0, i=pci->retc; k<pci->retc && i<pci->argc; i++,k++){
+	for (k = 0, i = pci->retc; k < pci->retc && i < pci->argc; i++, k++) {
 		lhs = &stk->stk[pci->argv[k]];
 		rhs = &stk->stk[pci->argv[i]];
-		VALcopy(lhs,rhs);
-		if( lhs->vtype == TYPE_bat && lhs->val.bval)
+		VALcopy(lhs, rhs);
+		if (lhs->vtype == TYPE_bat && lhs->val.bval)
 			BBPincref(lhs->val.bval, TRUE);
 	}
-	@:restoreTarget(@1,@3)@
+	@:restoreTarget(@1, @3)@
 	ret = 0;
-	@:exceptionHndlr(@1,@2,@3)@
+	@:exceptionHndlr(@1, @2, @3)@
 	@:timingHndlr(@1)@
 }
 @}
@@ -1754,30 +1746,29 @@ are identified. In the post-execution phase they are removed.
 @= safeTarget
 #ifdef STACKTRACE
 	printf("safeTarget %d\n", garbageControl(pci));
-	printInstruction(cntxt->fdout,mb,pci, LIST_MAL_ALL);
+	printInstruction(cntxt->fdout, mb, pci, LIST_MAL_ALL);
 #endif
-	if( garbageControl(pci) ){
-		for(i=0; i < pci->argc; i++) {
-			sbackup[i]= 0;
-			backup[i]= 0;
-			garbage[i]= -1;
-			if (stk->stk[getArg(pci,i)].vtype == TYPE_bat && getEndOfLife(mb,getArg(pci,i)) == stkpc && isNotUsedIn(pci,i+1,getArg(pci,i)) ){
-				garbage[i]= getArg(pci,i);
+	if (garbageControl(pci)) {
+		for (i = 0; i < pci->argc; i++) {
+			sbackup[i] = 0;
+			backup[i] = 0;
+			garbage[i] = -1;
+			if (stk->stk[getArg(pci, i)].vtype == TYPE_bat && getEndOfLife(mb, getArg(pci, i)) == stkpc && isNotUsedIn(pci, i + 1, getArg(pci, i))) {
+				garbage[i] = getArg(pci, i);
 #ifdef DEBUG_GC
-				mnstr_printf(GDKstdout,"GC %d %s prep\n",getArg(pci,i), getArgName(mb,pci,i));
+				mnstr_printf(GDKstdout, "GC %d %s prep\n", getArg(pci, i), getArgName(mb, pci, i));
 #endif
 			}
 
-			if( i < pci->retc &&  stk->stk[getArg(pci,i)].vtype == TYPE_bat) {
-				backup[i]= stk->stk[getArg(pci,i)].val.bval;
+			if (i < pci->retc && stk->stk[getArg(pci, i)].vtype == TYPE_bat) {
+				backup[i] = stk->stk[getArg(pci, i)].val.bval;
 #if @1
-				stamp= BBPcurstamp();
+				stamp = BBPcurstamp();
 #endif
-			} else
-			if( i < pci->retc &&  stk->stk[getArg(pci,i)].vtype == TYPE_str) {
-				backup[i]= stk->stk[getArg(pci,i)].len;
-				sbackup[i]= stk->stk[getArg(pci,i)].val.sval;
-				backup[i] += (sbackup[i]!=NULL);
+			} else if (i < pci->retc && stk->stk[getArg(pci, i)].vtype == TYPE_str) {
+				backup[i] = stk->stk[getArg(pci, i)].len;
+				sbackup[i] = stk->stk[getArg(pci, i)].val.sval;
+				backup[i] += (sbackup[i] != NULL);
 			}
 		}
 	}
@@ -1787,70 +1778,71 @@ are identified. In the post-execution phase they are removed.
 #endif
 	/* Provide debugging support */
 #if @1
-	if( GDKdebug & 10 && exceptionVar < 0) {
+	if (GDKdebug & 10 && exceptionVar < 0) {
 		BAT *b;
 
-		for( i=0; i< pci->retc; i++)
-		if ( garbage[i] == -1 && stk->stk[getArg(pci,i)].vtype == TYPE_bat &&
-				stk->stk[getArg(pci,i)].val.bval ){
-			b= BATdescriptor(stk->stk[getArg(pci,i)].val.bval);
-			if( b == NULL){
-				ret = createException(MAL, "mal.propertyCheck", RUNTIME_OBJECT_MISSING);
-				continue;
+		for (i = 0; i < pci->retc; i++) {
+			if (garbage[i] == -1 && stk->stk[getArg(pci, i)].vtype == TYPE_bat &&
+				stk->stk[getArg(pci, i)].val.bval) {
+				b = BATdescriptor(stk->stk[getArg(pci, i)].val.bval);
+				if (b == NULL) {
+					ret = createException(MAL, "mal.propertyCheck", RUNTIME_OBJECT_MISSING);
+					continue;
+				}
+				if (b->batStamp <= stamp) {
+					if (GDKdebug & 8) {
+						if (b->H != b->T) {
+							BATpropcheck(BATmirror(b), BATPROPS_QUICK);
+						}
+						BATpropcheck(b, BATPROPS_QUICK);
+					}
+				} else if (GDKdebug & 2) {
+					if (b->H != b->T) {
+						BATpropcheck(BATmirror(b), BATPROPS_QUICK);
+					}
+					BATpropcheck(b, BATPROPS_QUICK);
+				}
+				BBPunfix(b->batCacheid);
 			}
-			if( b->batStamp <= stamp){
-				if( GDKdebug & 8){
-					if (b->H != b->T) {
-						BATpropcheck(BATmirror(b), BATPROPS_QUICK);
-					}
-					BATpropcheck(b, BATPROPS_QUICK);
-				}
-			} else
-				if( GDKdebug & 2) {
-					if (b->H != b->T) {
-						BATpropcheck(BATmirror(b), BATPROPS_QUICK);
-					}
-					BATpropcheck(b, BATPROPS_QUICK);
-				}
-			BBPunfix(b->batCacheid);
 		}
 	}
 #endif
 	@:MALrecycleExit(@2)@
-	if(ret==MAL_SUCCEED && garbageControl(pci) ){
-		for(i=0; i<pci->argc; i++)
-		if( isaBatType(getArgType(mb,pci,i)) ){
-			bat bid = stk->stk[getArg(pci,i)].val.bval;
+	if (ret == MAL_SUCCEED && garbageControl(pci)) {
+		for (i = 0; i < pci->argc; i++) {
+			if (isaBatType(getArgType(mb, pci, i))) {
+				bat bid = stk->stk[getArg(pci, i)].val.bval;
 
-			/* update the bigfoot information only if we need to gc */
-			if (cntxt->flags &  bigfootFlag)
-				updateBigFoot(cntxt, bid, TRUE);
-			if (i<pci->retc && backup[i]){
-				if (backup[i] != bid && i < pci->retc) {
-					/* possible garbage collect the variable */
-					if (cntxt->flags &  bigfootFlag)
+				/* update the bigfoot information only if we need to gc */
+				if (cntxt->flags & bigfootFlag)
+					updateBigFoot(cntxt, bid, TRUE);
+				if (i < pci->retc && backup[i]) {
+					if (backup[i] != bid && i < pci->retc) {
+						/* possible garbage collect the variable */
+						if (cntxt->flags & bigfootFlag)
 							updateBigFoot(cntxt, backup[i], FALSE);
+					}
+					BBPdecref(backup[i], TRUE);
+					backup[i] = 0;
 				}
-				BBPdecref(backup[i], TRUE);
-				backup[i]=0;
-			}
-			if ( garbage[i] >= 0){
-				bid = ABS(stk->stk[garbage[i]].val.bval);
-				BBPdecref( bid, TRUE);
-				PARDEBUG mnstr_printf(GDKstdout,"#GC pc=%d bid=%d %s done\n",stkpc,bid,getVarName(mb,garbage[i]));
-				stk->stk[garbage[i]].val.bval = 0;
-			}
-		} else if( i < pci->retc && stk->stk[getArg(pci,i)].vtype == TYPE_str){
-			int a= getArg(pci,i);
-			if( sbackup[i] && sbackup[i]!= stk->stk[a].val.sval){
-				if( backup[i] > 0)
-					GDKfree(sbackup[i]);
-				if (i >= pci->retc){
-					stk->stk[getArg(pci,i)].val.sval= 0;
-					stk->stk[getArg(pci,i)].len= 0;
+				if (garbage[i] >= 0) {
+					bid = ABS(stk->stk[garbage[i]].val.bval);
+					BBPdecref(bid, TRUE);
+					PARDEBUG mnstr_printf(GDKstdout, "#GC pc=%d bid=%d %s done\n", stkpc, bid, getVarName(mb, garbage[i]));
+					stk->stk[garbage[i]].val.bval = 0;
 				}
-				backup[i]=0;
-				sbackup[i]=0;
+			} else if (i < pci->retc && stk->stk[getArg(pci, i)].vtype == TYPE_str) {
+				int a = getArg(pci, i);
+				if (sbackup[i] && sbackup[i] != stk->stk[a].val.sval) {
+					if (backup[i] > 0)
+						GDKfree(sbackup[i]);
+					if (i >= pci->retc) {
+						stk->stk[getArg(pci, i)].val.sval = 0;
+						stk->stk[getArg(pci, i)].len = 0;
+					}
+					backup[i] = 0;
+					sbackup[i] = 0;
+				}
 			}
 		}
 	}
@@ -1860,112 +1852,112 @@ are identified. In the post-execution phase they are removed.
 	@:safeTarget(@1)@
 	/* improve performance with 20 ms/1M calls*/
 	assert(pci->fcn != NULL);
-	switch(pci->argc){
-	case 0 : ret = (str) (*pci->fcn)(); break;
-	case 1 : ret = (str) (*pci->fcn)(
-			(ptr) getArgReference(stk,pci,0)); break;
-	case 2 : ret = (str) (*pci->fcn)(
-			(ptr) getArgReference(stk,pci,0),
-			(ptr) getArgReference(stk,pci,1));
-			 break;
-	case 3 : ret = (str) (*pci->fcn)(
-			(ptr) getArgReference(stk,pci,0),
-			(ptr) getArgReference(stk,pci,1),
-			(ptr) getArgReference(stk,pci,2));
-			 break;
-	case 4 : ret = (str) (*pci->fcn)(
-			(ptr) getArgReference(stk,pci,0),
-			(ptr) getArgReference(stk,pci,1),
-			(ptr) getArgReference(stk,pci,2),
-			(ptr) getArgReference(stk,pci,3));
-			 break;
-	case 5 : ret = (str) (*pci->fcn)(
-			(ptr) getArgReference(stk,pci,0),
-			(ptr) getArgReference(stk,pci,1),
-			(ptr) getArgReference(stk,pci,2),
-			(ptr) getArgReference(stk,pci,3),
-			(ptr) getArgReference(stk,pci,4));
-			 break;
-	case 6 : ret = (str) (*pci->fcn)(
-			(ptr) getArgReference(stk,pci,0),
-			(ptr) getArgReference(stk,pci,1),
-			(ptr) getArgReference(stk,pci,2),
-			(ptr) getArgReference(stk,pci,3),
-			(ptr) getArgReference(stk,pci,4),
-			(ptr) getArgReference(stk,pci,5));
-			 break;
-	case 7 : ret = (str) (*pci->fcn)(
-			(ptr) getArgReference(stk,pci,0),
-			(ptr) getArgReference(stk,pci,1),
-			(ptr) getArgReference(stk,pci,2),
-			(ptr) getArgReference(stk,pci,3),
-			(ptr) getArgReference(stk,pci,4),
-			(ptr) getArgReference(stk,pci,5),
-			(ptr) getArgReference(stk,pci,6));
-			 break;
-	case 8 : ret = (str) (*pci->fcn)(
-			(ptr) getArgReference(stk,pci,0),
-			(ptr) getArgReference(stk,pci,1),
-			(ptr) getArgReference(stk,pci,2),
-			(ptr) getArgReference(stk,pci,3),
-			(ptr) getArgReference(stk,pci,4),
-			(ptr) getArgReference(stk,pci,5),
-			(ptr) getArgReference(stk,pci,6),
-			(ptr) getArgReference(stk,pci,7));
-			 break;
-	case 9 : ret = (str) (*pci->fcn)(
-			(ptr) getArgReference(stk,pci,0),
-			(ptr) getArgReference(stk,pci,1),
-			(ptr) getArgReference(stk,pci,2),
-			(ptr) getArgReference(stk,pci,3),
-			(ptr) getArgReference(stk,pci,4),
-			(ptr) getArgReference(stk,pci,5),
-			(ptr) getArgReference(stk,pci,6),
-			(ptr) getArgReference(stk,pci,7),
-			(ptr) getArgReference(stk,pci,8));
-			 break;
-	case 10 : ret = (str) (*pci->fcn)(
-			(ptr) getArgReference(stk,pci,0),
-			(ptr) getArgReference(stk,pci,1),
-			(ptr) getArgReference(stk,pci,2),
-			(ptr) getArgReference(stk,pci,3),
-			(ptr) getArgReference(stk,pci,4),
-			(ptr) getArgReference(stk,pci,5),
-			(ptr) getArgReference(stk,pci,6),
-			(ptr) getArgReference(stk,pci,7),
-			(ptr) getArgReference(stk,pci,8),
-			(ptr) getArgReference(stk,pci,9));
-			 break;
-	case 11 : ret = (str) (*pci->fcn)(
-			(ptr) getArgReference(stk,pci,0),
-			(ptr) getArgReference(stk,pci,1),
-			(ptr) getArgReference(stk,pci,2),
-			(ptr) getArgReference(stk,pci,3),
-			(ptr) getArgReference(stk,pci,4),
-			(ptr) getArgReference(stk,pci,5),
-			(ptr) getArgReference(stk,pci,6),
-			(ptr) getArgReference(stk,pci,7),
-			(ptr) getArgReference(stk,pci,8),
-			(ptr) getArgReference(stk,pci,9),
-			(ptr) getArgReference(stk,pci,10));
-			 break;
-	case 12 : ret = (str) (*pci->fcn)(
-			(ptr) getArgReference(stk,pci,0),
-			(ptr) getArgReference(stk,pci,1),
-			(ptr) getArgReference(stk,pci,2),
-			(ptr) getArgReference(stk,pci,3),
-			(ptr) getArgReference(stk,pci,4),
-			(ptr) getArgReference(stk,pci,5),
-			(ptr) getArgReference(stk,pci,6),
-			(ptr) getArgReference(stk,pci,7),
-			(ptr) getArgReference(stk,pci,8),
-			(ptr) getArgReference(stk,pci,9),
-			(ptr) getArgReference(stk,pci,10),
-			(ptr) getArgReference(stk,pci,11));
-			 break;
+	switch (pci->argc) {
+	case 0: ret = (str)(*pci->fcn)(); break;
+	case 1: ret = (str)(*pci->fcn)(
+			(ptr)getArgReference(stk, pci, 0)); break;
+	case 2: ret = (str)(*pci->fcn)(
+			(ptr)getArgReference(stk, pci, 0),
+			(ptr)getArgReference(stk, pci, 1));
+		break;
+	case 3: ret = (str)(*pci->fcn)(
+			(ptr)getArgReference(stk, pci, 0),
+			(ptr)getArgReference(stk, pci, 1),
+			(ptr)getArgReference(stk, pci, 2));
+		break;
+	case 4: ret = (str)(*pci->fcn)(
+			(ptr)getArgReference(stk, pci, 0),
+			(ptr)getArgReference(stk, pci, 1),
+			(ptr)getArgReference(stk, pci, 2),
+			(ptr)getArgReference(stk, pci, 3));
+		break;
+	case 5: ret = (str)(*pci->fcn)(
+			(ptr)getArgReference(stk, pci, 0),
+			(ptr)getArgReference(stk, pci, 1),
+			(ptr)getArgReference(stk, pci, 2),
+			(ptr)getArgReference(stk, pci, 3),
+			(ptr)getArgReference(stk, pci, 4));
+		break;
+	case 6: ret = (str)(*pci->fcn)(
+			(ptr)getArgReference(stk, pci, 0),
+			(ptr)getArgReference(stk, pci, 1),
+			(ptr)getArgReference(stk, pci, 2),
+			(ptr)getArgReference(stk, pci, 3),
+			(ptr)getArgReference(stk, pci, 4),
+			(ptr)getArgReference(stk, pci, 5));
+		break;
+	case 7: ret = (str)(*pci->fcn)(
+			(ptr)getArgReference(stk, pci, 0),
+			(ptr)getArgReference(stk, pci, 1),
+			(ptr)getArgReference(stk, pci, 2),
+			(ptr)getArgReference(stk, pci, 3),
+			(ptr)getArgReference(stk, pci, 4),
+			(ptr)getArgReference(stk, pci, 5),
+			(ptr)getArgReference(stk, pci, 6));
+		break;
+	case 8: ret = (str)(*pci->fcn)(
+			(ptr)getArgReference(stk, pci, 0),
+			(ptr)getArgReference(stk, pci, 1),
+			(ptr)getArgReference(stk, pci, 2),
+			(ptr)getArgReference(stk, pci, 3),
+			(ptr)getArgReference(stk, pci, 4),
+			(ptr)getArgReference(stk, pci, 5),
+			(ptr)getArgReference(stk, pci, 6),
+			(ptr)getArgReference(stk, pci, 7));
+		break;
+	case 9: ret = (str)(*pci->fcn)(
+			(ptr)getArgReference(stk, pci, 0),
+			(ptr)getArgReference(stk, pci, 1),
+			(ptr)getArgReference(stk, pci, 2),
+			(ptr)getArgReference(stk, pci, 3),
+			(ptr)getArgReference(stk, pci, 4),
+			(ptr)getArgReference(stk, pci, 5),
+			(ptr)getArgReference(stk, pci, 6),
+			(ptr)getArgReference(stk, pci, 7),
+			(ptr)getArgReference(stk, pci, 8));
+		break;
+	case 10: ret = (str)(*pci->fcn)(
+			(ptr)getArgReference(stk, pci, 0),
+			(ptr)getArgReference(stk, pci, 1),
+			(ptr)getArgReference(stk, pci, 2),
+			(ptr)getArgReference(stk, pci, 3),
+			(ptr)getArgReference(stk, pci, 4),
+			(ptr)getArgReference(stk, pci, 5),
+			(ptr)getArgReference(stk, pci, 6),
+			(ptr)getArgReference(stk, pci, 7),
+			(ptr)getArgReference(stk, pci, 8),
+			(ptr)getArgReference(stk, pci, 9));
+		break;
+	case 11: ret = (str)(*pci->fcn)(
+			(ptr)getArgReference(stk, pci, 0),
+			(ptr)getArgReference(stk, pci, 1),
+			(ptr)getArgReference(stk, pci, 2),
+			(ptr)getArgReference(stk, pci, 3),
+			(ptr)getArgReference(stk, pci, 4),
+			(ptr)getArgReference(stk, pci, 5),
+			(ptr)getArgReference(stk, pci, 6),
+			(ptr)getArgReference(stk, pci, 7),
+			(ptr)getArgReference(stk, pci, 8),
+			(ptr)getArgReference(stk, pci, 9),
+			(ptr)getArgReference(stk, pci, 10));
+		break;
+	case 12: ret = (str)(*pci->fcn)(
+			(ptr)getArgReference(stk, pci, 0),
+			(ptr)getArgReference(stk, pci, 1),
+			(ptr)getArgReference(stk, pci, 2),
+			(ptr)getArgReference(stk, pci, 3),
+			(ptr)getArgReference(stk, pci, 4),
+			(ptr)getArgReference(stk, pci, 5),
+			(ptr)getArgReference(stk, pci, 6),
+			(ptr)getArgReference(stk, pci, 7),
+			(ptr)getArgReference(stk, pci, 8),
+			(ptr)getArgReference(stk, pci, 9),
+			(ptr)getArgReference(stk, pci, 10),
+			(ptr)getArgReference(stk, pci, 11));
+		break;
 	default:
 		ret = createScriptException(mb, stkpc, MAL, NULL,
-				"too many arguments for command call");
+			"too many arguments for command call");
 	}
 	@:restoreTarget(@1,@3)@
 	@:exceptionHndlr(@1,@2,@3)@
@@ -1978,7 +1970,7 @@ are identified. In the post-execution phase they are removed.
 			"address of pattern %s.%s missing", pci->modname, pci->fcnname);
 	} else {
 		@:safeTarget(@1)@
-		ret = (str) (*pci->fcn)(cntxt,mb,stk,pci);
+		ret = (str)(*pci->fcn)(cntxt, mb, stk, pci);
 		@:restoreTarget(@1,@3)@
 	}
 	@:exceptionHndlr(@1,@2,@3)@
@@ -1993,7 +1985,7 @@ non-returned values.
 {
 	stk->pcup = stkpc;
 	@:safeTarget(@1)@
-	ret= runMAL(cntxt,pci->blk,1,mb,stk,pci);
+	ret = runMAL(cntxt, pci->blk, 1, mb, stk, pci);
 	@:restoreTarget(@1,@3)@
 	@:exceptionHndlr(@1,@2,@3)@
 	@:timingHndlr(@1)@
@@ -2003,11 +1995,11 @@ Factory calls are more involved. At this stage it is a synchrononous
 call to the factory manager.
 Factory calls should deal with the reference counting.
 @= factorycall
-	if( pci->blk== NULL)
+	if (pci->blk == NULL)
 		ret = createScriptException(mb, stkpc, MAL, NULL,
-				"reference to MAL function missing");
+			"reference to MAL function missing");
 	else
-		ret= runFactory(cntxt,pci->blk,mb,stk,pci);
+		ret = runFactory(cntxt, pci->blk, mb, stk, pci);
 	@:exceptionHndlr(@1,@2,@3)@
 	@:timingHndlr(SLOW)@
 @-
@@ -2024,46 +2016,47 @@ The latter is implemented as a linear scan for the corresponding
 labeled statemtent. This might be optimized later.
 
 @= barrierControl
-{   v= &stk->stk[getDestVar(pci)];
+{
+	v = &stk->stk[getDestVar(pci)];
 	/* skip to end of barrier, depends on the type */
-	switch(v->vtype){
-		case TYPE_bit:
-			if( v->val.cval[0] == FALSE || v->val.cval[0] == bit_nil)
-				stkpc= pci->jump;
-			break;
-		case TYPE_chr:
-			if( v->val.cval[0] == chr_nil )
-				stkpc= pci->jump;
-			break;
-		case TYPE_oid:
-			if( v->val.oval == oid_nil )
-				stkpc= pci->jump;
-			break;
-		case TYPE_sht:
-			if( v->val.shval < 0 || v->val.shval == sht_nil)
-				stkpc= pci->jump;
-			break;
-		case TYPE_int:
-			if( v->val.ival < 0 || v->val.ival == int_nil)
-				stkpc= pci->jump;
-			break;
-		case TYPE_lng:
-			if( v->val.lval < 0 || v->val.lval == lng_nil)
-				stkpc= pci->jump;
-			break;
-		case TYPE_flt:
-		case TYPE_dbl:
-			if( v->val.dval < 0 || v->val.dval == dbl_nil)
-				stkpc= pci->jump;
-			break;
-		case TYPE_str:
-			if( v->len == 0 || v->val.sval == str_nil)
-				stkpc= pci->jump;
-			break;
-		default:
-			ret = createScriptException(mb, stkpc, MAL, NULL,
-					"%s: Unknown barrier type",
-					getVarName(mb, getDestVar(pci)));
+	switch (v->vtype) {
+	case TYPE_bit:
+		if (v->val.cval[0] == FALSE || v->val.cval[0] == bit_nil)
+			stkpc = pci->jump;
+		break;
+	case TYPE_chr:
+		if (v->val.cval[0] == chr_nil)
+			stkpc = pci->jump;
+		break;
+	case TYPE_oid:
+		if (v->val.oval == oid_nil)
+			stkpc = pci->jump;
+		break;
+	case TYPE_sht:
+		if (v->val.shval < 0 || v->val.shval == sht_nil)
+			stkpc = pci->jump;
+		break;
+	case TYPE_int:
+		if (v->val.ival < 0 || v->val.ival == int_nil)
+			stkpc = pci->jump;
+		break;
+	case TYPE_lng:
+		if (v->val.lval < 0 || v->val.lval == lng_nil)
+			stkpc = pci->jump;
+		break;
+	case TYPE_flt:
+	case TYPE_dbl:
+		if (v->val.dval < 0 || v->val.dval == dbl_nil)
+			stkpc = pci->jump;
+		break;
+	case TYPE_str:
+		if (v->len == 0 || v->val.sval == str_nil)
+			stkpc = pci->jump;
+		break;
+	default:
+		ret = createScriptException(mb, stkpc, MAL, NULL,
+			"%s: Unknown barrier type",
+			getVarName(mb, getDestVar(pci)));
 	}
 }
 
@@ -2073,33 +2066,33 @@ The return value should be set to pass the error automatically upon
 reaching end of function block.
 @-
 @= skipToCatch
-	if( stk->cmd == 'C' || mb->trap) {
+	if (stk->cmd == 'C' || mb->trap) {
 		stk->cmd = 'n';
-		if( cntxt->flags & bbpFlag)
-			BBPTraceCall(cntxt,mb,stk,prevpc);
+		if (cntxt->flags & bbpFlag)
+			BBPTraceCall(cntxt, mb, stk, prevpc);
 		prevpc = stkpc;
-		mdbStep(cntxt,mb,stk,stkpc);
-		if( stk->cmd == 'x' || cntxt->mode == FINISHING) {
+		mdbStep(cntxt, mb, stk, stkpc);
+		if (stk->cmd == 'x' || cntxt->mode == FINISHING) {
 			stkpc = mb->stop;
 			@2;
 		}
 	}
 	/* skip to catch block or end */
-	for( ; stkpc<mb->stop; stkpc++){
-		InstrPtr l= getInstrPtr(mb,stkpc);
-		if( l->barrier == CATCHsymbol ){
+	for (; stkpc < mb->stop; stkpc++) {
+		InstrPtr l = getInstrPtr(mb, stkpc);
+		if (l->barrier == CATCHsymbol) {
 			int j;
-			for(j=0;j<l->retc; j++)
-				if( getArg(l,j) == @1) break;
-			else if ( getArgName(mb,l,j)  ||
-				strcmp(getArgName(mb,l,j), "ANYexception") == 0)
+			for (j = 0; j < l->retc; j++)
+				if (getArg(l, j) == @1) break;
+				else if (getArgName(mb, l, j) ||
+						 strcmp(getArgName(mb, l, j), "ANYexception") == 0)
 					break;
-			if(j < l->retc) break;
+			if (j < l->retc) break;
 		}
 	}
-	if( stkpc== mb->stop) {
+	if (stkpc == mb->stop) {
 		@:endProfile(@3)@
-			@2;
+		@2;
 	}
 @-
 Each time we enter a barrier block, we could keep its position in the
@@ -2154,48 +2147,50 @@ starts with the exception identifer, followed by contextual details.
 @h
 mal_export str catchKernelException(Client cntxt, str ret);
 @c
-str catchKernelException(Client cntxt, str ret){
+str catchKernelException(Client cntxt, str ret)
+{
 	str z;
-	if(cntxt->errbuf && cntxt->errbuf[0] ) {
-		if (ret != MAL_SUCCEED){
-			z= (char*) GDKmalloc( strlen(ret)+strlen(cntxt->errbuf)+2);
-			if( z ){
-				strcpy(z,ret);
-				if (z[strlen(z)-1] != '\n') strcat(z,"\n");
-				strcat(z,cntxt->errbuf);
+	if (cntxt->errbuf && cntxt->errbuf[0]) {
+		if (ret != MAL_SUCCEED) {
+			z = (char*)GDKmalloc(strlen(ret) + strlen(cntxt->errbuf) + 2);
+			if (z) {
+				strcpy(z, ret);
+				if (z[strlen(z) - 1] != '\n') strcat(z, "\n");
+				strcat(z, cntxt->errbuf);
 			}
 		} else {
 			/* trap hidden (GDK) exception */
-			z= (char*) GDKmalloc( strlen("GDKerror:")+strlen(cntxt->errbuf)+2);
-			if ( z )
-				sprintf(z,"GDKerror:%s\n",cntxt->errbuf);
+			z = (char*)GDKmalloc(strlen("GDKerror:") + strlen(cntxt->errbuf) + 2);
+			if (z)
+				sprintf(z, "GDKerror:%s\n", cntxt->errbuf);
 		}
 		/* did we eat the error away of not */
-		if (z )
+		if (z)
 			cntxt->errbuf[0] = '\0';
-	} else z = ret;
+	} else
+		z = ret;
 	return z;
 }
 @{
 @= exceptionHndlr
-if(cntxt->errbuf && cntxt->errbuf[0] ) {
+if (cntxt->errbuf && cntxt->errbuf[0]) {
 	str oldret = ret;
 	ret = catchKernelException(cntxt, ret);
 	FREE_EXCEPTION(oldret);
 }
 
-if( ret != MAL_SUCCEED ) {
+if (ret != MAL_SUCCEED) {
 	str msg = 0;
 
-	if( stk->cmd || mb->trap  ) {
-		mnstr_printf(cntxt->fdout,"!ERROR: %s\n",ret);
-		stk->cmd= '\n';	/* in debugging go to step mode */
-		mdbStep(cntxt,mb,stk,stkpc);
-		if( stk->cmd == 'x' || stk->cmd == 'q'  || cntxt->mode == FINISHING) {
-			stkpc= mb->stop;
+	if (stk->cmd || mb->trap) {
+		mnstr_printf(cntxt->fdout, "!ERROR: %s\n", ret);
+		stk->cmd = '\n'; /* in debugging go to step mode */
+		mdbStep(cntxt, mb, stk, stkpc);
+		if (stk->cmd == 'x' || stk->cmd == 'q' || cntxt->mode == FINISHING) {
+			stkpc = mb->stop;
 			@2;
 		}
-		if( stk->cmd == 'r') {
+		if (stk->cmd == 'r') {
 			stk->cmd = 'n';
 			stkpc = startpc;
 			exceptionVar = -1;
@@ -2204,49 +2199,48 @@ if( ret != MAL_SUCCEED ) {
 	}
 	/* Detect any exception received from the implementation. */
 	/* The first identifier is an optional exception name */
-	if( strstr(ret,"!skip-to-end") ){
-		GDKfree(ret);		/* no need to check for M5OutOfMemory */
-		ret= MAL_SUCCEED;
-		stkpc= mb->stop;
+	if (strstr(ret, "!skip-to-end")) {
+		GDKfree(ret);       /* no need to check for M5OutOfMemory */
+		ret = MAL_SUCCEED;
+		stkpc = mb->stop;
 		@2;
 	}
-/*
-Exceptions are catched based on their name, which is part of
-the exception message. The ANYexception variable catches
-all.
-*/
+	/*
+	 * Exceptions are catched based on their name, which is part of the
+	 * exception message. The ANYexception variable catches all.
+	 */
 	exceptionVar = -1;
-	msg = strchr(ret,':');
-	if(msg) {
-		*msg= 0;
-		exceptionVar = findVariableLength(mb,ret,(int)(msg-ret));
-		*msg=':';
+	msg = strchr(ret, ':');
+	if (msg) {
+		*msg = 0;
+		exceptionVar = findVariableLength(mb, ret, (int)(msg - ret));
+		*msg = ':';
 	}
 	if (exceptionVar == -1)
-		exceptionVar = findVariableLength(mb, (str) "ANYexception", 12);
+		exceptionVar = findVariableLength(mb, (str)"ANYexception", 12);
 
 	/* unknown exceptions lead to propagation */
-	if( exceptionVar == -1){
+	if (exceptionVar == -1) {
 		@:endProfile(@3)@
-		stkpc= mb->stop;
+		stkpc = mb->stop;
 		@2;
 	}
 	/* assure correct variable type */
-	if (getVarType(mb,exceptionVar) == TYPE_str){
-		v=  &stk->stk[exceptionVar];
-		if ( v->val.sval)
-			FREE_EXCEPTION(v->val.sval);	/* old exception*/
+	if (getVarType(mb, exceptionVar) == TYPE_str) {
+		v = &stk->stk[exceptionVar];
+		if (v->val.sval)
+			FREE_EXCEPTION(v->val.sval);    /* old exception*/
 		v->vtype = TYPE_str;
-		v->val.sval= ret;
-		v->len= (int)strlen(v->val.sval);
+		v->val.sval = ret;
+		v->len = (int)strlen(v->val.sval);
 		ret = 0;
 	} else {
-		mnstr_printf(cntxt->fdout,"%s",ret);
+		mnstr_printf(cntxt->fdout, "%s", ret);
 		FREE_EXCEPTION(ret);
 	}
 	/* position yourself at the catch instruction for further decisions */
 	@:skipToCatch(exceptionVar,@2,@3)@
-	pci= getInstrPtr(mb,stkpc);
+	pci = getInstrPtr(mb, stkpc);
 }
 @-
 @+ Result Recycler
@@ -2255,12 +2249,12 @@ as much as possible.
 The recycler works for any variable and relies on policy functions
 registered.
 @= MALrecycleStart
-	if ( pci->recycle > 0)
+	if (pci->recycle > 0)
 		@1->clk = GDKusec();
-	if( !RECYCLEentry(cntxt, mb,stk,pci) )
+	if (!RECYCLEentry(cntxt, mb, stk, pci))
 @= MALrecycleExit
-	if( pci->recycle > 0 ){
-		RECYCLEexit(cntxt, mb,stk,pci,@1->clk);
+	if (pci->recycle > 0) {
+		RECYCLEexit(cntxt, mb, stk, pci, @1->clk);
 	}
 @}
 @-
@@ -2286,15 +2280,15 @@ before a function call is made.
 @c
 void garbageElement(Client cntxt, ValPtr v)
 {
-	if( v->vtype == TYPE_str) {
-		if(v->val.sval) {
+	if (v->vtype == TYPE_str) {
+		if (v->val.sval) {
 			GDKfree(v->val.sval);
 			v->val.sval = NULL;
 		}
 		v->len = 0;
 		return;
 	}
-	if( v->vtype== TYPE_bat ) {
+	if (v->vtype == TYPE_bat) {
 @}
 @-
 All operations are responsible to properly set the
@@ -2310,13 +2304,13 @@ All references should be logical.
 		/* printf("garbage collecting: %d lrefs=%d refs=%d\n",
 		   bid, BBP_lrefs(bid),BBP_refs(bid));*/
 		v->val.bval = 0;
-		if (bid == 0 )
+		if (bid == 0)
 			return;
 		if (!BBP_lrefs(bid))
 			return;
-		if (cntxt && cntxt->flags &  bigfootFlag)
+		if (cntxt && cntxt->flags & bigfootFlag)
 			updateBigFoot(cntxt, bid, FALSE);
-		BBPdecref(bid,TRUE);
+		BBPdecref(bid, TRUE);
 	}
 }
 @-
@@ -2344,21 +2338,21 @@ void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag)
 	ValPtr v;
 
 #ifdef STACKTRACE
-	mnstr_printf(cntxt->fdout,"#--->stack before garbage collector\n");
-	printStack(cntxt->fdout,mb,stk,0);
+	mnstr_printf(cntxt->fdout, "#--->stack before garbage collector\n");
+	printStack(cntxt->fdout, mb, stk, 0);
 #endif
-	for(k=0;k<mb->vtop; k++) {
-		if(isVarCleanup(mb,k) && (flag || isTmpVar(mb,k) )){
-			garbageElement(cntxt, v= &stk->stk[k]);
-			v->vtype= TYPE_int;
-			v->val.ival= int_nil;
+	for (k = 0; k < mb->vtop; k++) {
+		if (isVarCleanup(mb, k) && (flag || isTmpVar(mb, k))) {
+			garbageElement(cntxt, v = &stk->stk[k]);
+			v->vtype = TYPE_int;
+			v->val.ival = int_nil;
 		}
 	}
 #ifdef STACKTRACE
-	mnstr_printf(cntxt->fdout,"#-->stack after garbage collector\n");
-	printStack(cntxt->fdout,mb,stk,0);
+	mnstr_printf(cntxt->fdout, "#-->stack after garbage collector\n");
+	printStack(cntxt->fdout, mb, stk, 0);
 #else
-	(void) cntxt;
+	(void)cntxt;
 #endif
 }
 @-
@@ -2372,17 +2366,17 @@ void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid)
 	int k;
 
 	do {
-		for(k=0;k<mb->vtop; k++)
-			if( stk->stk[k].vtype== TYPE_bat && abs(stk->stk[k].val.bval)==bid) {
-				BBPdecref(bid,TRUE);
-				stk->stk[k].val.ival= 0;
+		for (k = 0; k < mb->vtop; k++)
+			if (stk->stk[k].vtype == TYPE_bat && abs(stk->stk[k].val.bval) == bid) {
+				BBPdecref(bid, TRUE);
+				stk->stk[k].val.ival = 0;
 			}
-		if(stk->up){
-			stk= stk->up;
-			mb= stk->blk;
+		if (stk->up) {
+			stk = stk->up;
+			mb = stk->blk;
 		} else
 			break;
-	} while(stk);
+	} while (stk);
 }
 
 @-
@@ -2394,116 +2388,115 @@ because the performance data is the result of the 'failed' runMALdataflow().
 It simply skips the barrier block upon return.
 
 @= performanceVariables
-	lng newclk=0;
-	int ppc= -2;
+	lng newclk = 0;
+	int ppc = -2;
 	lng tcs = 0;
-	(void) tcs;
-	if (malProfileMode ) {
+	(void)tcs;
+	if (malProfileMode) {
 		setFilterOnBlock(mb, 0, 0);
 		ppc = -1;
 	}
 @= beginProfile
-	if ( stk) {
+	if (stk) {
 		gettimeofday(&stk->clock, NULL);
-		if( mb->profiler != NULL ){
-			@1->clk= GDKusec();
+		if (mb->profiler != NULL) {
+			@1->clk = GDKusec();
 			mal_set_lock(mal_contextLock, "DFLOWdelay");
-			if( mb->profiler[stkpc].trace)
-			{
-				ppc= stkpc;
-				mb->profiler[ppc].clk= 0;
-				mb->profiler[ppc].ticks= 0;
-				mb->profiler[ppc].clock= stk->clock;
+			if (mb->profiler[stkpc].trace) {
+				ppc = stkpc;
+				mb->profiler[ppc].clk = 0;
+				mb->profiler[ppc].ticks = 0;
+				mb->profiler[ppc].clock = stk->clock;
 				/* emit the instruction upon start as well */
-				if ( @2 )profilerEvent(cntxt->idx,mb,stk,stkpc);
+				if (@2)
+					profilerEvent(cntxt->idx, mb, stk, stkpc);
 #ifdef HAVE_TIMES
 				times(&stk->timer);
-				mb->profiler[ppc].timer= stk->timer;
+				mb->profiler[ppc].timer = stk->timer;
 #endif
-				mb->profiler[ppc].clk= @1->clk;
+				mb->profiler[ppc].clk = @1->clk;
 			}
 			mal_unset_lock(mal_contextLock, "DFLOWdelay");
 		}
 	}
 @= endProfile
-	if ( stk != NULL) {
-		if( malProfileMode == 0)
+	if (stk != NULL) {
+		if (malProfileMode == 0)
 			/* mostly true */;
-		else
-		if(@1 != NULL && ppc>= 0 && mb->profiler != NULL && mb->profiler[ppc].trace  && mb->profiler[ppc].clk)
-		{
-			newclk= GDKusec();
+		else if (@1 != NULL && ppc >= 0 && mb->profiler != NULL && mb->profiler[ppc].trace && mb->profiler[ppc].clk) {
+			newclk = GDKusec();
 			mb->profiler[ppc].counter++;
 			mb->profiler[ppc].ticks = newclk - @1->clk;
 			mb->profiler[ppc].clk += mb->profiler[ppc].clk;
-			if( pci){
-				mb->profiler[ppc].rbytes= getVolume(stk,pci,0);
-				mb->profiler[ppc].wbytes= getVolume(stk,pci,1);
+			if (pci) {
+				mb->profiler[ppc].rbytes = getVolume(stk, pci, 0);
+				mb->profiler[ppc].wbytes = getVolume(stk, pci, 1);
 			}
-			profilerEvent(cntxt->idx,mb,stk,ppc);
-			ppc= -1;
+			profilerEvent(cntxt->idx, mb, stk, ppc);
+			ppc = -1;
 		}
-		if ( cntxt->qtimeout &&  time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
+		if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
 			throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 	}
 
 @-
 #if @1
 @= timingHndlr
-if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
+if (cntxt->flags && stk->cmd != 't' && stk->cmd != 'C') {
 	if (lock)
 		MT_lock_set(&*lock, "timing");
-	mnstr_printf(cntxt->fdout,"= ");	/* single column rendering */
-	if( cntxt->flags & timerFlag){
+	mnstr_printf(cntxt->fdout, "= ");    /* single column rendering */
+	if (cntxt->flags & timerFlag) {
 		char buf[32];
-		snprintf(buf,sizeof(buf),LLFMT,GDKusec()-cntxt->timer);
-		mnstr_printf(cntxt->fdout, "%8s usec ",buf);
+		snprintf(buf, sizeof(buf), LLFMT, GDKusec() - cntxt->timer);
+		mnstr_printf(cntxt->fdout, "%8s usec ", buf);
 	}
-	if( cntxt->flags & threadFlag)
-		mnstr_printf(cntxt->fdout,"\@%d ",tid);
+	if (cntxt->flags & threadFlag)
+		mnstr_printf(cntxt->fdout, "\@%d ", tid);
 #ifdef HAVE_SYS_RESOURCE_H
-	if( cntxt-> flags & ioFlag){
+	if (cntxt->flags & ioFlag) {
 		struct  rusage resource;
 		getrusage(RUSAGE_SELF, &resource);
-		mnstr_printf(cntxt->fdout," %3d R",
-			resource.ru_inblock- oldinblock);
-		mnstr_printf(cntxt->fdout," %3d W ",
-			resource.ru_oublock- oldoublock);
+		mnstr_printf(cntxt->fdout, " %3d R",
+			resource.ru_inblock - oldinblock);
+		mnstr_printf(cntxt->fdout, " %3d W ",
+			resource.ru_oublock - oldoublock);
 	}
 #endif
-	if( cntxt->flags & memoryFlag){
+	if (cntxt->flags & memoryFlag) {
 		struct Mallinfo memory;
-		memory= MT_mallinfo();
-		if( memory.arena- oldMemory.arena > 0)
-			mnstr_printf(cntxt->fdout," " SZFMT " bytes ",
-				(size_t) (memory.arena-oldMemory.arena) );
+		memory = MT_mallinfo();
+		if (memory.arena - oldMemory.arena > 0)
+			mnstr_printf(cntxt->fdout, " " SZFMT " bytes ",
+				(size_t)(memory.arena - oldMemory.arena));
 	}
-	if( cntxt->flags & flowFlag){
+	if (cntxt->flags & flowFlag) {
 		/* calculate the read/write byte flow */
-		displayVolume(cntxt, getVolume(stk,pci,0));
-		mnstr_printf(cntxt->fdout,"/");
-		displayVolume(cntxt, getVolume(stk,pci,1));
-		mnstr_printf(cntxt->fdout," ");
+		displayVolume(cntxt, getVolume(stk, pci, 0));
+		mnstr_printf(cntxt->fdout, "/");
+		displayVolume(cntxt, getVolume(stk, pci, 1));
+		mnstr_printf(cntxt->fdout, " ");
 	}
-	if( cntxt->flags & bigfootFlag){
-		displayVolume(cntxt,cntxt->vmfoot);
-		mnstr_printf(cntxt->fdout,":");
-		displayVolume(cntxt,cntxt->bigfoot);
-		mnstr_printf(cntxt->fdout," ");
+	if (cntxt->flags & bigfootFlag) {
+		displayVolume(cntxt, cntxt->vmfoot);
+		mnstr_printf(cntxt->fdout, ":");
+		displayVolume(cntxt, cntxt->bigfoot);
+		mnstr_printf(cntxt->fdout, " ");
 	}
-	if (cntxt->flags & cntFlag){
+	if (cntxt->flags & cntFlag) {
 		char buf[32];
-		snprintf(buf, sizeof(buf), BUNFMT , cntxt->cnt);
-		mnstr_printf(cntxt->fdout,":%6s ", buf);
+		snprintf(buf, sizeof(buf), BUNFMT, cntxt->cnt);
+		mnstr_printf(cntxt->fdout, ":%6s ", buf);
 	}
-	{str line;
-	line= instruction2str(mb, stk, pci, LIST_MAL_DEBUG);
-	if ( line) {
-		mnstr_printf(cntxt->fdout, " %s\n", line);
-		GDKfree(line);
+	{
+		str line;
+		line = instruction2str(mb, stk, pci, LIST_MAL_DEBUG);
+		if (line) {
+			mnstr_printf(cntxt->fdout, " %s\n", line);
+			GDKfree(line);
+		}
 	}
-	}
-	if( cntxt->flags & timerFlag)
+	if (cntxt->flags & timerFlag)
 		cntxt->timer = GDKusec();
 	if (lock)
 		MT_lock_unset(&*lock, "timing");
@@ -2519,39 +2512,40 @@ depends on the operation.
 lng getVolume(MalStkPtr stk, InstrPtr pci, int rd)
 {
 	int i, limit;
-	lng vol=0;
+	lng vol = 0;
 	BAT *b;
 	int isview = 0;
 
-	limit = rd == 0?pci->retc:pci->argc;
-	i = rd?pci->retc:0;
+	limit = rd == 0 ? pci->retc : pci->argc;
+	i = rd ? pci->retc : 0;
 
-	if( stk->stk[getArg(pci,0)].vtype == TYPE_bat){
-		b = BBPquickdesc(ABS(stk->stk[getArg(pci,0)].val.bval), TRUE);
+	if (stk->stk[getArg(pci, 0)].vtype == TYPE_bat) {
+		b = BBPquickdesc(ABS(stk->stk[getArg(pci, 0)].val.bval), TRUE);
 		if (b)
 			isview = isVIEW(b);
 	}
-	for(; i<limit; i++) {
-		if (stk->stk[getArg(pci,i)].vtype == TYPE_bat){
+	for (; i < limit; i++) {
+		if (stk->stk[getArg(pci, i)].vtype == TYPE_bat) {
 			BUN cnt = 0;
 
-			b = BBPquickdesc(ABS(stk->stk[getArg(pci,i)].val.bval), TRUE);
-			if (b==NULL)
+			b = BBPquickdesc(ABS(stk->stk[getArg(pci, i)].val.bval), TRUE);
+			if (b == NULL)
 				continue;
 			cnt = BATcount(b);
 			/* Usually reading views cost as much as full bats.
 			   But when we output a slice that is not the case. */
-			vol += ((rd && !isview) || !VIEWhparent(b))?headsize(b,cnt):0;
-			vol += ((rd && !isview) || !VIEWtparent(b))?tailsize(b,cnt):0;
+			vol += ((rd && !isview) || !VIEWhparent(b)) ? headsize(b, cnt) : 0;
+			vol += ((rd && !isview) || !VIEWtparent(b)) ? tailsize(b, cnt) : 0;
 		}
 	}
 	return vol;
 }
 
-void displayVolume(Client cntxt, lng vol){
+void displayVolume(Client cntxt, lng vol)
+{
 	char buf[32];
-	formatVolume(buf,(int)sizeof(buf),vol);
-	mnstr_printf(cntxt->fdout,"%s",buf);
+	formatVolume(buf, (int)sizeof(buf), vol);
+	mnstr_printf(cntxt->fdout, "%s", buf);
 }
 @h
 #endif /*  _MAL_INTERPRET_H*/
