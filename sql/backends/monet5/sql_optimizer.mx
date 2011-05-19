@@ -556,7 +556,7 @@ setOptimizers(str optimizer)
 	char *base=0, *nxt, *nme, *pipe="notdefined";
 	
 	/* do nothing if the pipe line is already set */
-	if ( optimizerpipe && optimizer && strcmp(optimizerpipe,optimizer) == 0 )
+	if ( optimizerpipe && optimizer && strcmp(optimizerpipe,optimizer) == 0  && strcmp(optimizer,"off") )
 		return optimizerpipe;
 
 	/* catch  minimal pipes */
@@ -568,20 +568,19 @@ setOptimizers(str optimizer)
 			optimizer = pipe;
 	} else
 	/* optimizers can be temporarily turned on/off */
-	if(strcmp(optimizer,"off")==0){
-		if( previouspipe )
+	if(strcmp(optimizer,"off")==0 ) {
+		if ( previouspipe )
 			return optimizerpipe;
 		previouspipe = optimizerpipe;  /* give reference away */
 		optimizerpipe = NULL;
-		pipe = GDKgetenv(minimalPipe);
+		pipe= getPipeDefinition(minimalPipe);
 		if ( pipe )
 			optimizer = pipe;
 	} else
 	if (strcmp(optimizer,"on")==0){
-		if (previouspipe == NULL)
+		if ( previouspipe == NULL)
 			return optimizerpipe;
 		optimizer= previouspipe;
-		base = previouspipe;  /* free this later */
 		previouspipe = 0;
 	} else {
 		/* the optimizer may be an environment alias */
