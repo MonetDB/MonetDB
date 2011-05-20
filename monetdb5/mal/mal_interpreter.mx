@@ -1243,11 +1243,11 @@ DFLOWscheduler(DataFlow flow)
 		queued--;
 
 		if (f->pc < 0) {
-			/* we have to wait for all threads to report back */
 			PARDEBUG mnstr_printf(GDKstdout, "#errors encountered %s ", f->error ? f->error : "unknown");
 			if (ret == MAL_SUCCEED)
 				ret = f->error;
 			else {
+				/* collect all errors encountered */
 				str z = (char*)GDKmalloc(strlen(ret) + strlen(f->error) + 2);
 				if (z) {
 					strcpy(z, ret);
@@ -1277,16 +1277,19 @@ DFLOWscheduler(DataFlow flow)
 		oldq = queued;
 		for (; last >= 0 && (i = flow->nodes[last]) > 0; last = flow->edges[last])
 			if (flow->status[i].state == DFLOWpending) {
-				flow->status[i].blocks--;
 				flow->status[i].argclaim += f->hotclaim;
-				if (flow->status[i].blocks == 0 && ret == MAL_SUCCEED) {
+				if (flow->status[i].blocks == 1 && ret == MAL_SUCCEED) {
 					queued++;
 					q_enqueue_(flow->todo, flow->status + i);
 					flow->status[i].state = DFLOWrunning;
+					flow->status[i].blocks--;
 					PARDEBUG
 					mnstr_printf(GDKstdout, "#enqueue pc=%d claim=%d queued= %d\n", flow->status[i].pc, flow->status[i].argclaim, queued);
-				} else if (ret == MAL_SUCCEED)
-					PARDEBUG mnstr_printf(GDKstdout, "#await   pc %d block %d claim= %d\n", flow->start + i, flow->status[i].blocks, flow->status[i].argclaim);
+				} else {
+					 if (ret == MAL_SUCCEED)
+						PARDEBUG mnstr_printf(GDKstdout, "#await   pc %d block %d claim= %d\n", flow->start + i, flow->status[i].blocks, flow->status[i].argclaim);
+					flow->status[i].blocks--;
+				}
 			} else { /* worker stole the candidate */
 				PARDEBUG mnstr_printf(GDKstdout, "#woke up pc %d block %d claim %d\n", flow->start + i, flow->status[i].blocks, flow->status[i].argclaim);
 				queued++;
