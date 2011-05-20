@@ -48,7 +48,6 @@
 
 #define getpid _getpid
 #define unlink _unlink
-#define strdup _strdup
 #else
 #define DIFF	"diff"
 
