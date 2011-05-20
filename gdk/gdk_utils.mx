@@ -500,23 +500,8 @@ MT_init(void)
 		GlobalMemoryStatus(&memStat);
 		_MT_npages = memStat.dwTotalPhys / _MT_pagesize;
 	}
-#elif defined(HAVE_SYS_SYSCTL_H) && (defined(HW_PHYSMEM64) || defined(HW_MEMSIZE) || defined(HW_PHYSMEM))
-# if SIZEOF_SIZE_T == SIZEOF_INT && defined(HW_PHYSMEM)
-	/* FreeBSD, NetBSD, OpenBSD, Darwin, 32-bits */
-	{
-		int size = 0;
-		size_t len = sizeof(size);
-		int mib[2];
-
-		/* Everyone should have permission to make this call, 
-		 * if we get a failure something is really wrong. */
-		mib[0] = CTL_HW;
-		mib[1] = HW_PHYSMEM;
-		sysctl(mib, 2, &size, &len, NULL, 0);
-		_MT_npages = size / _MT_pagesize;
-	}
-# elif defined(HW_MEMSIZE)
-	/* FreeBSD, NetBSD, Darwin, 64-bits */
+#elif defined(HAVE_SYS_SYSCTL_H) && defined(HW_MEMSIZE)
+	/* Darwin, 64-bits */
 	{
 		uint64_t size = 0;
 		size_t len = sizeof(size);
@@ -529,7 +514,7 @@ MT_init(void)
 		sysctl(mib, 2, &size, &len, NULL, 0);
 		_MT_npages = size / _MT_pagesize;
 	}
-# elif defined (HW_PHYSMEM64)
+#elif defined(HAVE_SYS_SYSCTL_H) && defined (HW_PHYSMEM64)
 	/* OpenBSD, 64-bits */
 	{
 		int64_t size = 0;
@@ -543,7 +528,20 @@ MT_init(void)
 		sysctl(mib, 2, &size, &len, NULL, 0);
 		_MT_npages = size / _MT_pagesize;
 	}
-# endif
+#elif defined(HAVE_SYS_SYSCTL_H) && defined(HW_PHYSMEM)
+	/* FreeBSD, NetBSD, OpenBSD, Darwin, 32-bits */
+	{
+		int size = 0;
+		size_t len = sizeof(size);
+		int mib[2];
+
+		/* Everyone should have permission to make this call, 
+		 * if we get a failure something is really wrong. */
+		mib[0] = CTL_HW;
+		mib[1] = HW_PHYSMEM;
+		sysctl(mib, 2, &size, &len, NULL, 0);
+		_MT_npages = size / _MT_pagesize;
+	}
 #elif defined(HAVE_SYSCONF) && defined(_SC_PHYS_PAGES)
 	_MT_npages = sysconf(_SC_PHYS_PAGES);
 #else
