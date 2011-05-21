@@ -21,11 +21,12 @@ All Rights Reserved.
 @a M.L. Kersten, Y.Zhang, M. Ivanova
 @+ Basic array support
 
-Arrays are represented by a series of BATs. One for each dimension
-and one for the non-dimension attributes. The structure of the dimension is captured in
+Arrays are represented by a collection of BATs.
+One for each dimension and one for the non-dimension attributes. 
+The structure of the dimension is captured in
 a shape description, which is an ordered list of tripples
-(F,L,S) where for index variable i the constraint F<=i<L holds
-and where the step size is S.
+(Start,Step,Stop) where for index variable i the constraint Start<=i<Stop holds
+and where the step size is Step.
 
 In the MAL instructions the shape descriptor should be the last
 of the arguments. Since every dimension can be of a different
@@ -34,36 +35,47 @@ the SciQL compiler already can ensure proper type equality
 for each shape tripple.
 @{
 
-@= grid_mdefs
-command dimension(i:@1,j:@1,k:@1,l:@1) :bat[:oid,:@1] 
-address ARRAYdimension_@1
-comment  "Generates a single dimension BAT based on (grpcount,grpsize,clustersize,offset). Used to instantiate fixed arrays.";
-
-command dimension(i:@1,j:@1,k:@1,l:@1,s:@1) :bat[:oid,:@1] 
-address ARRAYdimensionShift_@1
-comment  "Generates a dimension BAT (grpcount,grpsize,clustersize,offset)
-and shift all elements with a factor s.";
+@= array_mdefs
+command series(start:@1, step:@1, stop:@1, N:int, M:int) :bat[:oid,:@1] 
+address ARRAYseries_@1
+comment  "Generates a single series BAT based on range condition, repeating each value N times and repeat the process M times.";
 
 @mal
 module array;
-@:grid_mdefs(sht)@
-@:grid_mdefs(int)@
-@:grid_mdefs(lng)@
-@:grid_mdefs(flt)@
-@:grid_mdefs(dbl)@
-@:grid_mdefs(date)@
-@:grid_mdefs(daytime)@
-@:grid_mdefs(timestamp)@
+@:array_mdefs(sht)@
+@:array_mdefs(int)@
+@:array_mdefs(lng)@
+@:array_mdefs(flt)@
+@:array_mdefs(dbl)@
+@:array_mdefs(date)@
+@:array_mdefs(daytime)@
+@:array_mdefs(timestamp)@
 
 pattern filler(idx:bat[:oid,:any_1], v:any_2):bat[:oid,:any_2]
 address ARRAYfiller
-comment "Create an array value representation described by a dimension column and fill it with V";
+comment "Create an array value representation described by a series column and fill it with V";
 
 pattern map(dims:bat[:oid,:any]...):bat[:oid,:oid]
 address ARRAYmap
 comment "The argument is a double set of dimension columns. The first set describes the shape
 of the target array and the second one holds the index values of interest. The result is a column
 with the oid positions of the elements in target. ";
+
+pattern map(cells:bat[:oid,:oid], dims:bat[:oid,:any]...):bat[:oid,:any]...
+address ARRAYmapReverse
+comment "Extract the cell ids from a shape based on the index lists";
+
+pattern isFixed(dims:bat[:oid,:any]...):bit
+address ARRAYisFixed
+comment "Determine fixed size property of an array";
+
+pattern isUnbounded(dims:bat[:oid,:any]...):bit
+address ARRAYisUnbounded
+comment "Determine unboundedness property of an array";
+
+pattern getDimensions(dims:bat[:oid,:any]...):int...
+address ARRAYgetDimensions
+comment "Extract the series sizes";
 
 pattern select(a:bat[:oid,:any_1], dim:any...):bat[:oid,:any_1]
 address ARRAYselect
@@ -82,9 +94,9 @@ pattern replace(v1:bat[:oid, :any_1], idx:bat[:oid, :oid], v2:bat[:oid, :any_1])
 address ARRAYreplace
 comment "Replace values in v1 at the positions determined by idx with values in v2, return the modified v1.";
 
-pattern map(v:bat[:oid, :any_1], pos:bat[:oid, :int], dft:any_1):bat[:oid,:any_1]
-address ARRAYmap
-comment "Map values in 'v' to the positions determined by 'pos', positions in the output BAT without a value from 'v' get the default value 'dft'.";
+pattern replace(v1:bat[:oid, :any_1], idx:bat[:oid, :oid], v2:any_1):bat[:oid,:any_1]
+address ARRAYreplaceDefault
+comment "Replace values in v1 at the positions determined by idx with v2, return the modified v1.";
 
 command product(b:bat[:any_3,:any_1],c:bat[:any_4,:any_2]):bat[:any_1,:any_2]
 address ARRAYproduct
@@ -101,40 +113,8 @@ comment "Produce an array product";
 #include "gdk.h"
 #include "algebra.h"		/* to include BATmin and BATmax */
 #include "mtime.h"
-
-@= grid_hdefs
-#define new_@1_bat(b,s) {(b)=BATnew(TYPE_void,TYPE_@1,(BUN) (s)); \
-                         if (b) BATseqbase((b),0);                 }
-#define add_@1s(b,n)    {(b)->T->heap.free+=(size_t)(n)*sizeof(@1);\
-			                   (b)->batCount+=(BUN)n;\
-                         BATkey(BATmirror((b)),0);          \
-                         (b)->tsorted = 0;                  }
-#define get_@1_ptr(b)   ((@1*)(Tloc(b,BUNfirst((b)))))
-@h
-@:grid_hdefs(sht)@
-@:grid_hdefs(int)@
-@:grid_hdefs(lng)@
-@:grid_hdefs(flt)@
-@:grid_hdefs(dbl)@
-@:grid_hdefs(date)@
-@:grid_hdefs(daytime)@
-@:grid_hdefs(timestamp)@
-
-/* The maximum number of dimensions that the print-function can handle... */
-#define MAX_ARRAY_DIM 16
-
-#endif
-/*============================================================================*/
-@c
-/*============================================================================*/
-#include "monetdb_config.h"
-#include "mal_client.h"
-#include "array.h"
-#include "gdk.h"
 #include <math.h>
 #include <time.h>
-
-/*----------------------------------------------------------------------------*/
 
 #ifdef WIN32
 #if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
@@ -146,131 +126,88 @@ comment "Produce an array product";
 #define array_export extern
 #endif
 
+array_export str ARRAYisFixed(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+array_export str ARRAYgetDimensions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 array_export str ARRAYproduct(int *ret, int *bid, int *rid);
 array_export str ARRAYfiller(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 array_export str ARRAYselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 array_export str ARRAYmap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+array_export str ARRAYmapReverse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 array_export str ARRAYindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 array_export str ARRAYgetoid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 array_export str ARRAYreplace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-array_export str ARRAYmap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
-@= grid_impl
-array_export str ARRAYdimension_@1(@1 *ret, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset);
-array_export str ARRAYdimensionShift_@1(@1 *ret, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset, @1 *shift);
+@= array_defs
+array_export str ARRAYseries_@1(int *ret, @1 *start, @1 *step, @1 *stop, int *grp, int *series);
+@h
+@:array_defs(sht)@
+@:array_defs(int)@
+@:array_defs(lng)@
+@:array_defs(flt)@
+@:array_defs(dbl)@
+@:array_defs(date)@
+@:array_defs(daytime)@
+@:array_defs(timestamp)@
 
-static int
-fillgrid_@1(BAT **out, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset, @1 *shift)
-{
-	register @1 *ptr;
-	@1 i = *groups;
-	@1 n = *groupsize + *offset;
-	@1 r = *clustersize;
-	@1 o = *offset;
-	@1 s = *shift;
+/* The maximum number of series_ that the print-function can handle... */
+#define MAX_ARRAY_DIM 16
 
-#ifdef EXCESSIVE_DEBUGGING
-	fprintf(stderr, "[grid] (%d,%d,%d,%d)", i, n, r, o);
 #endif
+/*============================================================================*/
+@c
+/*============================================================================*/
+#include "monetdb_config.h"
+#include "mal_client.h"
+#include "array.h"
 
-	ptr = get_@1_ptr(*out);
+/*----------------------------------------------------------------------------*/
 
-	while (i--) {
-		register @1 ni = o;
 
-		while (ni < n) {
-			register @1 ri = r;
-
-			while (ri--)
-				(*(ptr ++)) = ni * s;
-			ni++;
-		}
-	}
-
-#ifdef EXCESSIVE_DEBUGGING
-	fprintf(stderr, "- done\n");
-#endif
-
-	return GDK_SUCCEED;
-}
-
-int
-grid_@1(BAT **out, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset)
-{
-	@1 i = *groups;
-	@1 n = *groupsize + *offset;
-	@1 r = *clustersize;
-	@1 o = *offset;
-	@1 s = 1;
-
-#ifdef EXCESSIVE_DEBUGGING
-	fprintf(stderr, "[grid] (%d,%d,%d,%d)", i, n, r, o);
-#endif
-
-	new_@1_bat(*out, (i * (n - o) * r));
-	if (out == NULL) {
-		GDKerror("grid: cannot create the bat (" @2 " BUNs)\n", (i * (n - o) * r));
-		return GDK_FAIL;
-	}
-	add_@1s(*out, (i * (n - o) * r));
-	return fillgrid_@1(out, groups, groupsize, clustersize, offset, &s);
-}
-
-int
-gridShift_@1(BAT **out, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset, @1 *shift)
-{
-	@1 i = *groups;
-	@1 n = *groupsize + *offset;
-	@1 r = *clustersize;
-	@1 o = *offset;
-
-#ifdef EXCESSIVE_DEBUGGING
-	fprintf(stderr, "[grid] (%d,%d,%d,%d)", i, n, r, o);
-#endif
-
-	new_@1_bat(*out, (i * (n - o) * r));
-	if (*out == 0)
-		return GDK_FAIL;
-	add_@1s(*out, (i * (n - o) * r));
-	return fillgrid_@1(out, groups, groupsize, clustersize, offset, shift);
-}
+@= array_impl
+array_export str ARRAYseries_@1(int *ret, @1 *start, @1 *step, @1 *stop, int *grp, int *series);
 
 @c
-@:grid_impl(sht,"%d")@
-@:grid_impl(int,"%d")@
-@:grid_impl(lng,LLFMT)@
-@:grid_impl(flt,"%f")@
-@:grid_impl(dbl,"%f")@
+@:array_impl(sht,"%d")@
+@:array_impl(int,"%d")@
+@:array_impl(lng,LLFMT)@
+@:array_impl(flt,"%f")@
+@:array_impl(dbl,"%f")@
 @-
 To be dealt with differently
-@:grid_impl(date,"%s")@
-@:grid_impl(daytime,"%s")@
-@:grid_impl(timestamp,"%s")@
+@:array_impl(date,"%s")@
+@:array_impl(daytime,"%s")@
+@:array_impl(timestamp,"%s")@
 
 @c
 #include "mal.h"
 #include "mal_interpreter.h"
-@= grid_wrapper_impl
+@= dim_wrapper_impl
 str
-ARRAYdimension_@1(@1 *ret, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset)
+ARRAYseries_@1(int *ret, @1 *start, @1 *step, @1 *stop, int *group, int *series)
 {
 	BAT *bn;
+	@1 i, *o;
+	BUN cnt= 0;
+	int s,g;
 
-	if (grid_@1(&bn, groups, groupsize, clustersize, offset) == GDK_FAIL)
-		throw(MAL, "array.grid", MAL_MALLOC_FAIL);
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
-	*ret = bn->batCacheid;
-	BBPkeepref((int)*ret);
-	return MAL_SUCCEED;
-}
+	cnt =  (BUN) ((*stop - *start) / (*step == 0 ? 1: *step)) * *group * *series ;
+	bn = BATnew(TYPE_void, TYPE_@1, cnt);
+	if ( bn == NULL)
+		throw(MAL, "array.newDimension", MAL_MALLOC_FAIL);
 
-str
-ARRAYdimensionShift_@1(@1 *ret, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset, @1 *shift)
-{
-	BAT *bn;
+	BATseqbase(bn,0);
+	o = (@1*)Tloc(bn, BUNfirst(bn));
 
-	if (gridShift_@1(&bn, groups, groupsize, clustersize, offset, shift) == GDK_FAIL)
-		throw(MAL, "array.grid", MAL_MALLOC_FAIL);
+	for ( s = 0; s < *series; s++)
+		for ( i = *start; i < *stop; i += *step)
+			for( g = 0; g < *group; g++){
+				*o = i;
+				o++;
+			}
+	BATsetcount(bn, cnt);
+	bn->tsorted = *series == 1;
+	bn->T->nonil = TRUE;
+
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret = bn->batCacheid;
 	BBPkeepref((int)*ret);
@@ -278,16 +215,16 @@ ARRAYdimensionShift_@1(@1 *ret, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *
 }
 
 @c
-@:grid_wrapper_impl(sht)@
-@:grid_wrapper_impl(int)@
-@:grid_wrapper_impl(lng)@
-@:grid_wrapper_impl(flt)@
-@:grid_wrapper_impl(dbl)@
+@:dim_wrapper_impl(sht)@
+@:dim_wrapper_impl(int)@
+@:dim_wrapper_impl(lng)@
+@:dim_wrapper_impl(flt)@
+@:dim_wrapper_impl(dbl)@
 @-
 to be dealt with differently
-@:grid_wrapper_impl(date)@
-@:grid_wrapper_impl(daytime)@
-@:grid_wrapper_impl(timestamp)@
+@:dim_wrapper_impl(date)@
+@:dim_wrapper_impl(daytime)@
+@:dim_wrapper_impl(timestamp)@
 
 @-
 @= arraymultiply
@@ -405,72 +342,113 @@ ARRAYfiller(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 ARRAYmap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT **b, *bn;
+	BAT **b, *bn = NULL, *bo;
 	int i,n = 0, error = 0;
-	BATiter *bi;
-	BUN p,q,s;
-	void *val;
 
 	(void) cntxt;
 	(void) mb;
-	if ( (pci->argc-pci->retc-1) % 2 != 0)
+	if ( (pci->argc - pci->retc) % 2 != 0)
 		throw(MAL, "array.map", "Unbalanced index arguments");
 
 	b= (BAT**) GDKzalloc(sizeof(BAT*) * pci->argc-pci->retc);
 	if( b == NULL)
 		throw(MAL, "array.map", MAL_MALLOC_FAIL);
-	bi= (BATiter*) GDKzalloc(sizeof(BATiter) * pci->argc-pci->retc);
-	if( bi == NULL){
-		GDKfree(b);
-		throw(MAL, "array.map", MAL_MALLOC_FAIL);
-	}
 
 	for ( i=pci->retc; i< pci->argc; i++){
 		if ((b[n++] = BATdescriptor(*(int*)getArgReference(stk,pci,i))) == NULL) {
-			GDKfree(b);
-			GDKfree(bi);
 			for ( n--; n>= 0; n--)
 				BBPreleaseref(b[n]->batCacheid);
-			throw(MAL, "array.map", MAL_MALLOC_FAIL);
+			GDKfree(b);
+			throw(MAL, "array.map", RUNTIME_OBJECT_MISSING);
 		}
 	}
 	/* type check the shapes and prepare iterators */
-	for ( i= 0; i< n/2; i++) {
+	for ( i= 0; i< n/2; i++) 
 		error |= b[i]->ttype != b[i+n/2]->ttype;
-		bi[i] = bat_iterator(b[i]);
-		bi[i+n/2] = bat_iterator(b[i+n/2]);
-	}
 
 	if ( error ){
-		GDKfree(b);
-		GDKfree(bi);
 		for ( n--; n>= 0; n--)
 			BBPreleaseref(b[n]->batCacheid);
+		GDKfree(b);
 		throw(MAL, "array.map", "Incompatible index types");
 	}
 
-	bn = BATnew(TYPE_void,TYPE_oid, BATcount(b[0]));
-	if (bn == NULL){
-		GDKfree(b);
-		GDKfree(bi);
-		for ( n--; n>= 0; n--)
-			BBPreleaseref(b[n]->batCacheid);
-			throw(MAL, "array.map", MAL_MALLOC_FAIL);
-	}
-
 	/* select the oids we need by searching all matching index vectors */
-	BATloop(b[n/2],p,q){
-		(void) val;
-		(void) s;
+	bn = b[0];
+	for ( i=0; i<n/2; i++){
+		bo = BATsemijoin(b[i],bn);
+		bn= BATmirror(BATsemijoin(BATmirror(bo), BATmirror(b[i+n/2])));
+		BBPreleaseref(bo->batCacheid);
 	}
+	bo = BATmark(bn,0);
+	BBPreleaseref(bn->batCacheid);
+	bn = BATmirror(bo);
 
 	*(int*) getArgReference(stk,pci,0) = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
 	for ( n--; n>= 0; n--)
 		BBPreleaseref(b[n]->batCacheid);
 	GDKfree(b);
-	GDKfree(bi);
 	return MAL_SUCCEED;
+}
+
+str
+ARRAYmapReverse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *b, *bn, *bo;
+	int i;
+
+	(void) cntxt;
+	(void) mb;
+	if ( (pci->argc -1) != pci->retc)
+		throw(MAL, "array.map", "Unbalanced index arguments and return list");
+	if ((b = BATdescriptor(*(int*)getArgReference(stk,pci,pci->retc))) == NULL) 
+		throw(MAL, "array.map", RUNTIME_OBJECT_MISSING);
+	
+	for ( i=pci->retc+1; i<pci->argc; i++){
+		bo = BATdescriptor(*(int*)getArgReference(stk,pci,i));
+		if ( bo == NULL){
+			BBPreleaseref(b->batCacheid);
+			throw(MAL, "array.map", RUNTIME_OBJECT_MISSING);
+		}
+		bn = BATmirror(BATsemijoin( BATmirror(bo),b));
+		if ( bn ) {
+			*(int*) getArgReference(stk,pci,i-pci->retc -1 ) = bn->batCacheid;
+			BBPkeepref(bn->batCacheid);
+		}
+	}
+	BBPreleaseref(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+ARRAYisFixed(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) p;
+	throw(MAL,"array.isFixed", PROGRAM_NYI);
+}
+
+str
+ARRAYisUnbounded(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) p;
+	throw(MAL,"array.isUnbounded", PROGRAM_NYI);
+}
+
+str
+ARRAYgetDimensions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) p;
+	throw(MAL,"array.getDimensions", PROGRAM_NYI);
 }
 
 str
