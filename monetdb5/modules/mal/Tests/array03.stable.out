@@ -1,0 +1,103 @@
+stdout of test 'array03` in directory 'modules/mal` itself:
+
+
+# 22:31:10 >  
+# 22:31:10 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/ufs/mk/sciql//Linux/var/MonetDB" --set mapi_open=true --set mapi_port=33451 --set monet_prompt= --trace --forcemito --set mal_listing=2  --dbname=mTests_modules_mal  array03.mal
+# 22:31:10 >  
+
+# MonetDB 5 server v11.4.0
+# This is an unreleased version
+# Serving database 'mTests_modules_mal', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:33451/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+function user.main():void;
+#modification of an array 
+#create array v(i int dimension[0:1:4], payload:int) 
+    v := array.series(0,1,4,1,1);
+    vv := array.series(0,3,12,1,1);
+    io.print(v,vv);
+#create array M(x int dimension[0:2:6], y int dimension[0:1:4], int default 333); 
+    mx := array.series(0,2,6,4,1);
+    my := array.series(0,1,4,1,3);
+    mv := array.series(0,1,12,1,1);
+    io.print(mx,my,mv);
+#create a cell identifier vector 
+#do a point select 
+    x := bat.new(:oid,:oid);
+    bat.insert(x,2@0,1@0);
+    bat.insert(x,1@0,0@0);
+    io.print(x);
+    xv := bat.new(:oid,:int);
+    bat.insert(xv,0@0,999);
+    io.print(xv);
+    y := bat.new(:oid,:oid);
+    bat.insert(y,2@0,0@0);
+    bat.insert(y,3@0,1@0);
+    bat.insert(y,7@0,2@0);
+    yv := bat.new(:oid,:int);
+    bat.insert(yv,0@0,123);
+    bat.insert(yv,3@0,234);
+    bat.insert(yv,4@0,345);
+    io.print(yv);
+#fetch the index column 
+    xz := array.replace(vv,x,xv);
+    io.print(v,xz);
+    yz := array.replace(mv,y,yv);
+    io.print(x);
+    yz := array.replace(yz,x,-1);
+    io.print(mx,my,yz);
+end main;
+#-------------------------#
+# h	t	t	  # name
+# void	int	int	  # type
+#-------------------------#
+[ 0@0,	  0,	  0	  ]
+[ 1@0,	  1,	  3	  ]
+[ 2@0,	  2,	  6	  ]
+[ 3@0,	  3,	  9	  ]
+#---------------------------------#
+# h	t	t	t	  # name
+# void	int	int	int	  # type
+#---------------------------------#
+[ 0@0,	  0,	  0,	  0	  ]
+[ 1@0,	  0,	  1,	  1	  ]
+[ 2@0,	  0,	  2,	  2	  ]
+[ 3@0,	  0,	  3,	  3	  ]
+[ 4@0,	  2,	  0,	  4	  ]
+[ 5@0,	  2,	  1,	  5	  ]
+[ 6@0,	  2,	  2,	  6	  ]
+[ 7@0,	  2,	  3,	  7	  ]
+[ 8@0,	  4,	  0,	  8	  ]
+[ 9@0,	  4,	  1,	  9	  ]
+[ 10@0,	  4,	  2,	  10	  ]
+[ 11@0,	  4,	  3,	  11	  ]
+#-----------------#
+# h	t	  # name
+# oid	oid	  # type
+#-----------------#
+[ 2@0,	  1@0	  ]
+[ 1@0,	  0@0	  ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  999	  ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  123	  ]
+[ 3@0,	  234	  ]
+[ 4@0,	  345	  ]
+!MALException:array.replace:unbalanced array arguments
+
+# 22:31:10 >  
+# 22:31:10 >  Done.
+# 22:31:10 >  
+

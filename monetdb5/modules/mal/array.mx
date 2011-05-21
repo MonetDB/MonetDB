@@ -77,26 +77,13 @@ pattern getDimensions(dims:bat[:oid,:any]...):int...
 address ARRAYgetDimensions
 comment "Extract the series sizes";
 
-pattern select(a:bat[:oid,:any_1], dim:any...):bat[:oid,:any_1]
-address ARRAYselect
-comment "Extract a value portion of an array representation described by dimension
-one with the structure of A and the other with the portion required.";
-
-pattern index(shape:any...):bat[:oid,:any]...
-address ARRAYindex
-comment "Extract a dimension portion of an array representation described by two shapes";
-
-pattern getoid(a:bat[:oid, :any_1], shape:any...):bat[:oid,:oid]
-address ARRAYgetoid
-comment "Extract indices of array cells in their BAT storage.";
+pattern replace(v1:bat[:oid, :any_1], idx:bat[:oid, :oid], v2:any_1):bat[:oid,:any_1]
+address ARRAYreplaceScalar
+comment "Replace values in v1 at the positions determined by idx with v2, return the modified v1.";
 
 pattern replace(v1:bat[:oid, :any_1], idx:bat[:oid, :oid], v2:bat[:oid, :any_1]):bat[:oid,:any_1]
 address ARRAYreplace
 comment "Replace values in v1 at the positions determined by idx with values in v2, return the modified v1.";
-
-pattern replace(v1:bat[:oid, :any_1], idx:bat[:oid, :oid], v2:any_1):bat[:oid,:any_1]
-address ARRAYreplaceDefault
-comment "Replace values in v1 at the positions determined by idx with v2, return the modified v1.";
 
 command product(b:bat[:any_3,:any_1],c:bat[:any_4,:any_2]):bat[:any_1,:any_2]
 address ARRAYproduct
@@ -130,12 +117,10 @@ array_export str ARRAYisFixed(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 array_export str ARRAYgetDimensions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 array_export str ARRAYproduct(int *ret, int *bid, int *rid);
 array_export str ARRAYfiller(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-array_export str ARRAYselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 array_export str ARRAYmap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 array_export str ARRAYmapReverse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-array_export str ARRAYindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-array_export str ARRAYgetoid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 array_export str ARRAYreplace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+array_export str ARRAYreplaceScalar(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 @= array_defs
 array_export str ARRAYseries_@1(int *ret, @1 *start, @1 *step, @1 *stop, int *grp, int *series);
@@ -467,43 +452,82 @@ ARRAYgetDimensions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 }
 
 str
-ARRAYselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+ARRAYreplace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	BAT *b, *bo, *bc, *bv,*bn;
+	int *ret = (int*) getArgReference(stk,pci,0);
+
 	(void) cntxt;
 	(void) mb;
-	(void) stk;
-	(void) p;
-	throw(MAL,"array.select", PROGRAM_NYI);
+	if ((b = BATdescriptor(*(int*)getArgReference(stk,pci,1))) == NULL) 
+		throw(MAL, "array.replace", RUNTIME_OBJECT_MISSING);
+	if ((bc = BATdescriptor(*(int*)getArgReference(stk,pci,2))) == NULL) {
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "array.replace", RUNTIME_OBJECT_MISSING);
+	}
+	if ((bv = BATdescriptor(*(int*)getArgReference(stk,pci,3))) == NULL) {
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(bc->batCacheid);
+		throw(MAL, "array.replace", RUNTIME_OBJECT_MISSING);
+	}
+	if ( BATcount(bc) != BATcount(bv)){
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(bc->batCacheid);
+		BBPreleaseref(bv->batCacheid);
+		throw(MAL, "array.replace", "unbalanced array arguments");
+	}
+	bn = BATcopy(b, b->htype, b->ttype, TRUE);
+	bo = BATjoin(bc,bv,0);
+	if ( bo )
+		bn = BATreplace(bn,bo, TRUE);
+	if ( bn == NULL || bo == NULL){
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(bc->batCacheid);
+		BBPreleaseref(bv->batCacheid);
+		if ( bo == NULL) BBPreleaseref(bo->batCacheid);
+		throw(MAL, "array.replace", RUNTIME_OBJECT_MISSING);
+	}
+	BBPkeepref(*ret = bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
+	BBPreleaseref(bc->batCacheid);
+	BBPreleaseref(bv->batCacheid);
+	BBPreleaseref(bo->batCacheid);
+	return MAL_SUCCEED;
 }
 
 str
-ARRAYindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+ARRAYreplaceScalar(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) p;
-	throw(MAL,"array.index", PROGRAM_NYI);
-}
+	BAT *b, *bc, *bn, *bo;
+	int *ret = (int*) getArgReference(stk,pci,0);
+	void *val = (void*) getArgReference(stk,pci,3);
+	BATiter bi;
+	BUN p,q;
 
-str
-ARRAYgetoid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
-{
 	(void) cntxt;
 	(void) mb;
-	(void) stk;
-	(void) p;
-	throw(MAL,"array.getoid", PROGRAM_NYI);
-}
-
-str
-ARRAYreplace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
-{
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) p;
-	throw(MAL,"array.replace", PROGRAM_NYI);
+	if ((b = BATdescriptor(*(int*)getArgReference(stk,pci,1))) == NULL) 
+		throw(MAL, "array.replace", RUNTIME_OBJECT_MISSING);
+	if ((bc = BATdescriptor(*(int*)getArgReference(stk,pci,2))) == NULL) {
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "array.replace", RUNTIME_OBJECT_MISSING);
+	}
+	bo = BATnew(bc->ttype, b->ttype, TRUE);
+	bi = bat_iterator(bc);
+	BATloop(bc,p,q){
+		oid o = *(oid*) BUNhloc(bi,p);
+		BUNins(bo, &o, val, TRUE);
+	}
+	bn=  BATreplace(b,bo,TRUE);
+	BBPreleaseref(bo->batCacheid);
+	if ( bn == NULL ){
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(bc->batCacheid);
+		throw(MAL, "array.replace", RUNTIME_OBJECT_MISSING);
+	}
+	BBPkeepref(*ret = bn->batCacheid);
+	BBPreleaseref(bc->batCacheid);
+	return MAL_SUCCEED;
 }
 
 @-
