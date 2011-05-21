@@ -1,0 +1,16 @@
+# tiling operations
+
+#create array v(i int dimension[0:1:4], payload:int)
+v:= array.series(0,1,6,1,1);
+vv:= array.series(0,3,18,1,1);
+io.print(v,vv);
+
+#construct the tiles [0:1:2]
+template:= bat.new(:oid,:oid);
+template:= array.series(0@0,1@0,2@0,1,1);
+io.print(template);
+
+g:= array.tiling(vv,template);
+io.print(g);
+io.print(g,vv);
+

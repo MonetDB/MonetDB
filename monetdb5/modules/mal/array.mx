@@ -42,6 +42,7 @@ comment  "Generates a single series BAT based on range condition, repeating each
 
 @mal
 module array;
+@:array_mdefs(oid)@
 @:array_mdefs(sht)@
 @:array_mdefs(int)@
 @:array_mdefs(lng)@
@@ -85,6 +86,10 @@ pattern replace(v1:bat[:oid, :any_1], idx:bat[:oid, :oid], v2:bat[:oid, :any_1])
 address ARRAYreplace
 comment "Replace values in v1 at the positions determined by idx with values in v2, return the modified v1.";
 
+pattern tiling(cells:bat[:oid,:any_1], template:bat[:oid,:oid]):bat[:oid,:oid]
+address ARRAYtiling
+comment "Construct the tiled cell id list using a template with relative offsets";
+
 command product(b:bat[:any_3,:any_1],c:bat[:any_4,:any_2]):bat[:any_1,:any_2]
 address ARRAYproduct
 comment "Produce an array product";
@@ -121,10 +126,12 @@ array_export str ARRAYmap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 array_export str ARRAYmapReverse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 array_export str ARRAYreplace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 array_export str ARRAYreplaceScalar(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+array_export str ARRAYtiling(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 @= array_defs
 array_export str ARRAYseries_@1(int *ret, @1 *start, @1 *step, @1 *stop, int *grp, int *series);
 @h
+@:array_defs(oid)@
 @:array_defs(sht)@
 @:array_defs(int)@
 @:array_defs(lng)@
@@ -178,7 +185,7 @@ ARRAYseries_@1(int *ret, @1 *start, @1 *step, @1 *stop, int *group, int *series)
 	if ( *start < *stop && *step > 0) {
 		cnt =  (BUN) ((*stop - *start) / *step) * *group * *series ;
 	} else
-	if ( *start > *stop && *step < 0) {
+	if ( abs(*start) < abs(*stop) && abs(*step) > 0) {
 		cnt =  (BUN) ((-*stop + *start) / *step ) * *group * *series ;
 	} else
 		throw(MAL, "array.series", "illegal range");
@@ -196,8 +203,7 @@ ARRAYseries_@1(int *ret, @1 *start, @1 *step, @1 *stop, int *group, int *series)
 					*o = i;
 					o++;
 				}
-	}
-	if ( *start > *stop && *step < 0) {
+	} else {
 		for ( s = 0; s < *series; s++)
 			for ( i = *start; i > *stop; i += *step)
 				for( g = 0; g < *group; g++){
@@ -216,6 +222,7 @@ ARRAYseries_@1(int *ret, @1 *start, @1 *step, @1 *stop, int *group, int *series)
 }
 
 @c
+@:dim_wrapper_impl(oid)@
 @:dim_wrapper_impl(sht)@
 @:dim_wrapper_impl(int)@
 @:dim_wrapper_impl(lng)@
@@ -515,7 +522,7 @@ ARRAYreplaceScalar(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bo = BATnew(bc->ttype, b->ttype, TRUE);
 	bi = bat_iterator(bc);
 	BATloop(bc,p,q){
-		oid o = *(oid*) BUNhloc(bi,p);
+		oid o = *(oid*) BUNhead(bi,p);
 		BUNins(bo, &o, val, TRUE);
 	}
 	bn=  BATreplace(b,bo,TRUE);
@@ -527,6 +534,41 @@ ARRAYreplaceScalar(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	BBPkeepref(*ret = bn->batCacheid);
 	BBPreleaseref(bc->batCacheid);
+	return MAL_SUCCEED;
+}
+
+
+str
+ARRAYtiling(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *b, *bt, *bn;
+	int *ret = (int*) getArgReference(stk,pci,0);
+	BATiter bi, br;
+	BUN p,q;
+	BUN r,s;
+	oid g = 0;
+
+	(void) cntxt;
+	(void) mb;
+	if ((b = BATdescriptor(*(int*)getArgReference(stk,pci,1))) == NULL) 
+		throw(MAL, "array.tiling", RUNTIME_OBJECT_MISSING);
+	if ((bt = BATdescriptor(*(int*)getArgReference(stk,pci,2))) == NULL) {
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "array.tiling", RUNTIME_OBJECT_MISSING);
+	}
+	bn = BATnew(TYPE_oid, TYPE_oid, TRUE);
+	bi = bat_iterator(b);
+	br = bat_iterator(bt);
+	BATloop(b,p,q){
+		g = *(oid*) BUNhead(bi,p);
+		BATloop(bt,r,s){
+			oid o = g + *(oid*) BUNtloc(br,r);
+			BUNins(bn, &g, &o, TRUE);
+		}
+	}
+	BBPkeepref(*ret = bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
+	BBPreleaseref(bt->batCacheid);
 	return MAL_SUCCEED;
 }
 
