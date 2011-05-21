@@ -1,13 +1,14 @@
 #extraction of cell positions from arrays
 
-#create array v(i int dimension[0:1:4])
+#create array v(i int dimension[0:1:4], payload:int)
 v:= array.series(0,1,4,1,1);
-io.print(v);
+vv:= array.series(0,3,12,1,1);
+io.print(v,vv);
 
 #create array M(x int dimension[0:2:6], y int dimension[0:1:4], int default 333);
 mx:= array.series(0,2,6,4,1);
 my:= array.series(0,1,4,1,3);
-mv:= array.filler(mx,333);
+mv:= array.series(0,1,12,1,1);
 io.print(mx,my,mv);
 
 #extract the indices from both
@@ -21,9 +22,9 @@ io.print(y);
 
 #fetch the position of an element in a vector
 z1:= array.map(v,x);
-io.print(z1);
+io.print(z1,vv);
 z1:= array.map(v,y);
-io.print(z1);
+io.print(z1,vv);
 
 #get the original cell oids
 x1:= array.map(v,v);

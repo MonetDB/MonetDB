@@ -63,7 +63,7 @@ with the oid positions of the elements in target. ";
 
 pattern map(cells:bat[:oid,:oid], dims:bat[:oid,:any]...):bat[:oid,:any]...
 address ARRAYmapReverse
-comment "Extract the cell ids from a shape based on the index lists";
+comment "Extract the index columns from a shape based on the cell identifier list";
 
 pattern isFixed(dims:bat[:oid,:any]...):bit
 address ARRAYisFixed
@@ -190,20 +190,36 @@ ARRAYseries_@1(int *ret, @1 *start, @1 *step, @1 *stop, int *group, int *series)
 	BUN cnt= 0;
 	int s,g;
 
-	cnt =  (BUN) ((*stop - *start) / (*step == 0 ? 1: *step)) * *group * *series ;
+	if ( *start < *stop && *step > 0) {
+		cnt =  (BUN) ((*stop - *start) / *step) * *group * *series ;
+	} else
+	if ( *start > *stop && *step < 0) {
+		cnt =  (BUN) ((-*stop + *start) / *step ) * *group * *series ;
+	} else
+		throw(MAL, "array.series", "illegal range");
 	bn = BATnew(TYPE_void, TYPE_@1, cnt);
 	if ( bn == NULL)
-		throw(MAL, "array.newDimension", MAL_MALLOC_FAIL);
+		throw(MAL, "array.series", MAL_MALLOC_FAIL);
 
 	BATseqbase(bn,0);
 	o = (@1*)Tloc(bn, BUNfirst(bn));
 
-	for ( s = 0; s < *series; s++)
-		for ( i = *start; i < *stop; i += *step)
-			for( g = 0; g < *group; g++){
-				*o = i;
-				o++;
-			}
+	if ( *start < *stop && *step > 0) {
+		for ( s = 0; s < *series; s++)
+			for ( i = *start; i < *stop; i += *step)
+				for( g = 0; g < *group; g++){
+					*o = i;
+					o++;
+				}
+	}
+	if ( *start > *stop && *step < 0) {
+		for ( s = 0; s < *series; s++)
+			for ( i = *start; i > *stop; i += *step)
+				for( g = 0; g < *group; g++){
+					*o = i;
+					o++;
+				}
+	}
 	BATsetcount(bn, cnt);
 	bn->tsorted = *series == 1;
 	bn->T->nonil = TRUE;
@@ -380,9 +396,7 @@ ARRAYmap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		bn= BATmirror(BATsemijoin(BATmirror(bo), BATmirror(b[i+n/2])));
 		BBPreleaseref(bo->batCacheid);
 	}
-	bo = BATmark(bn,0);
-	BBPreleaseref(bn->batCacheid);
-	bn = BATmirror(bo);
+	bn = BATmark(bn,0);
 
 	*(int*) getArgReference(stk,pci,0) = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
@@ -400,7 +414,7 @@ ARRAYmapReverse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	(void) mb;
-	if ( (pci->argc -1) != pci->retc)
+	if ( (pci->argc -1 - pci->retc) != pci->retc)
 		throw(MAL, "array.map", "Unbalanced index arguments and return list");
 	if ((b = BATdescriptor(*(int*)getArgReference(stk,pci,pci->retc))) == NULL) 
 		throw(MAL, "array.map", RUNTIME_OBJECT_MISSING);
@@ -411,11 +425,12 @@ ARRAYmapReverse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPreleaseref(b->batCacheid);
 			throw(MAL, "array.map", RUNTIME_OBJECT_MISSING);
 		}
-		bn = BATmirror(BATsemijoin( BATmirror(bo),b));
+		bn = BATsemijoin( bo,b);
 		if ( bn ) {
 			*(int*) getArgReference(stk,pci,i-pci->retc -1 ) = bn->batCacheid;
 			BBPkeepref(bn->batCacheid);
 		}
+			BBPkeepref(bo->batCacheid);
 	}
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
