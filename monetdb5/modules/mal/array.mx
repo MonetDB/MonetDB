@@ -98,6 +98,15 @@ pattern sum(cells:bat[:oid,:any_1], template:bat[:oid,:oid]):bat[:oid,:any_2]
 address ARRAYtilesSum
 comment "Construct the sum over all tiles";
 
+pattern sum(cells:bat[:oid,:any_1], template:bat[:oid,:oid]):bat[:oid,:any_1]
+address ARRAYtilesSum
+comment "Construct the sum over all tiles, but take also care of the boundaries in each dimension,
+which is expressed in the number of eligible cells.";
+
+pattern embed(shapes:bat[:oid,:any]...):bat[:oid,:oid]
+address ARRAYembed
+comment "Take two shapes N and M and derive a mapping between the elements based on the index values.
+It can be used to create an embedding of values from one array into another.";
 @- Implementation
 @include ../mal/prelude.mx
 @h
@@ -132,6 +141,7 @@ array_export str ARRAYreplace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 array_export str ARRAYreplaceScalar(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 array_export str ARRAYtiles(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 array_export str ARRAYtilesSum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+array_export str ARRAYembed(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 @= array_defs
 array_export str ARRAYseries_@1(int *ret, @1 *start, @1 *step, @1 *stop, int *grp, int *series);
@@ -583,6 +593,7 @@ ARRAYtilesSum_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "array.tiles", RUNTIME_OBJECT_MISSING);
 	}
+
 	bn = BATnew(TYPE_oid, TYPE_@1, TRUE);
 	bi = bat_iterator(b);
 	br = bat_iterator(bt);
@@ -608,6 +619,10 @@ ARRAYtilesSum_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPreleaseref(bt->batCacheid);
 	return MAL_SUCCEED;
 }
+@-
+The compilating factor is that in general the tile enumeration is dense, while
+the tile structure can go over its boundaries. For this to control, we first
+embed the array into a slightly larger array, filled with nulls.
 
 @c
 @:tilesAggr(sht)@
@@ -632,6 +647,66 @@ ARRAYtilesSum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	default:
 		throw(MAL, "array.sum", "illegal type");
 	}
+	return MAL_SUCCEED;
+}
+
+str
+ARRAYembed(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT **b, *bn = NULL, *bo;
+	int i,n = 0, error = FALSE;
+
+	(void) cntxt;
+	(void) mb;
+	if ( (pci->argc - pci->retc) % 2 != 0)
+		throw(MAL, "array.map", "Unbalanced index arguments");
+
+	b= (BAT**) GDKzalloc(sizeof(BAT*) * pci->argc-pci->retc);
+	if( b == NULL)
+		throw(MAL, "array.embed", MAL_MALLOC_FAIL);
+
+	for ( i=pci->retc; i< pci->argc; i++){
+		if ((b[n++] = BATdescriptor(*(int*)getArgReference(stk,pci,i))) == NULL) {
+			for ( n--; n>= 0; n--)
+				BBPreleaseref(b[n]->batCacheid);
+			GDKfree(b);
+			throw(MAL, "array.embed", RUNTIME_OBJECT_MISSING);
+		}
+	}
+	/* type check the shapes and prepare iterators */
+	for ( i= 0; i< n/2; i++) 
+		error |= b[i]->ttype != b[i+n/2]->ttype;
+
+	if ( error ){
+		for ( n--; n>= 0; n--)
+			BBPreleaseref(b[n]->batCacheid);
+		GDKfree(b);
+		throw(MAL, "array.embed", "Incompatible index types");
+	}
+
+	/* select the oids we need by searching all matching index vectors */
+	bn = b[0];
+	for ( i=0; i<n/2; i++){
+		bo = BATsemijoin(b[i],bn);
+		bn= BATmirror(BATsemijoin(BATmirror(bo), BATmirror(b[i+n/2])));
+		BBPreleaseref(bo->batCacheid);
+		bo = b[i+n/2];
+	}
+
+	if ( BATcount(bn) == BATcount(b[n/2]) ) {
+		bn = BATmark(bn,0);
+		BBPkeepref(bn->batCacheid);
+		*(int*) getArgReference(stk,pci,0) = bn->batCacheid;
+	} else {
+		error = TRUE;
+		BBPreleaseref(bn->batCacheid);
+	}
+
+	for ( n--; n>= 0; n--)
+		BBPreleaseref(b[n]->batCacheid);
+	GDKfree(b);
+	if( error)
+		throw(MAL,"map.embed","incomplete embedding");
 	return MAL_SUCCEED;
 }
 @-
