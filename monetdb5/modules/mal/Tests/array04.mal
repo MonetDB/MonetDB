@@ -2,15 +2,36 @@
 
 #create array v(i int dimension[0:1:4], payload:int)
 v:= array.series(0,1,6,1,1);
-vv:= array.series(0,3,18,1,1);
+vv:= array.series(0,1,6,1,1);
 io.print(v,vv);
 
-#construct the tiles [0:1:2]
-template:= bat.new(:oid,:oid);
+#select sum(V) from V group by V[0:1:2]
 template:= array.series(0@0,1@0,2@0,1,1);
 io.print(template);
 
-g:= array.tiling(vv,template);
+g:= array.tiles(vv,template);
 io.print(g);
-io.print(g,vv);
 
+gs:= array.sum(vv,template);
+io.print(gs);
+
+
+#create array M(x int dimension[0:1:4], y int dimension[0:1:4], int default 1);
+mx:= array.series(0,1,4,4,1);
+my:= array.series(0,1,4,1,4);
+mv:= array.series(0,1,16,1,1);
+io.print(mx,my,mv);
+
+#select sum(M) from M group by M[0:1:2][0:1:2]
+t0:= array.series(0,1,2,2,1);
+t1:= array.series(0,1,2,1,2);
+io.print(t0,t1);
+
+template:= array.map(mx,my,t0,t1);
+io.print(template);
+
+g:= array.tiles(mv,template);
+io.print(g);
+
+gs:= array.sum(mv,template);
+io.print(gs);

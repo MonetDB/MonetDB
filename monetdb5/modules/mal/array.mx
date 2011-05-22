@@ -86,13 +86,17 @@ pattern replace(v1:bat[:oid, :any_1], idx:bat[:oid, :oid], v2:bat[:oid, :any_1])
 address ARRAYreplace
 comment "Replace values in v1 at the positions determined by idx with values in v2, return the modified v1.";
 
-pattern tiling(cells:bat[:oid,:any_1], template:bat[:oid,:oid]):bat[:oid,:oid]
-address ARRAYtiling
+pattern tiles(cells:bat[:oid,:any_1], template:bat[:oid,:oid]):bat[:oid,:oid]
+address ARRAYtiles
 comment "Construct the tiled cell id list using a template with relative offsets";
 
 command product(b:bat[:any_3,:any_1],c:bat[:any_4,:any_2]):bat[:any_1,:any_2]
 address ARRAYproduct
 comment "Produce an array product";
+
+pattern sum(cells:bat[:oid,:any_1], template:bat[:oid,:oid]):bat[:oid,:any_2]
+address ARRAYtilesSum
+comment "Construct the sum over all tiles";
 
 @- Implementation
 @include ../mal/prelude.mx
@@ -126,10 +130,12 @@ array_export str ARRAYmap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 array_export str ARRAYmapReverse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 array_export str ARRAYreplace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 array_export str ARRAYreplaceScalar(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-array_export str ARRAYtiling(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+array_export str ARRAYtiles(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+array_export str ARRAYtilesSum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 @= array_defs
 array_export str ARRAYseries_@1(int *ret, @1 *start, @1 *step, @1 *stop, int *grp, int *series);
+array_export str ARRAYtilesSum_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @h
 @:array_defs(oid)@
 @:array_defs(sht)@
@@ -153,22 +159,6 @@ array_export str ARRAYseries_@1(int *ret, @1 *start, @1 *step, @1 *stop, int *gr
 #include "array.h"
 
 /*----------------------------------------------------------------------------*/
-
-
-@= array_impl
-array_export str ARRAYseries_@1(int *ret, @1 *start, @1 *step, @1 *stop, int *grp, int *series);
-
-@c
-@:array_impl(sht,"%d")@
-@:array_impl(int,"%d")@
-@:array_impl(lng,LLFMT)@
-@:array_impl(flt,"%f")@
-@:array_impl(dbl,"%f")@
-@-
-To be dealt with differently
-@:array_impl(date,"%s")@
-@:array_impl(daytime,"%s")@
-@:array_impl(timestamp,"%s")@
 
 @c
 #include "mal.h"
@@ -537,33 +527,34 @@ ARRAYreplaceScalar(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-
 str
-ARRAYtiling(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+ARRAYtiles(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b, *bt, *bn;
 	int *ret = (int*) getArgReference(stk,pci,0);
 	BATiter bi, br;
 	BUN p,q;
 	BUN r,s;
-	oid g = 0;
+	oid g = 0, limit;
 
 	(void) cntxt;
 	(void) mb;
 	if ((b = BATdescriptor(*(int*)getArgReference(stk,pci,1))) == NULL) 
-		throw(MAL, "array.tiling", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "array.tiles", RUNTIME_OBJECT_MISSING);
 	if ((bt = BATdescriptor(*(int*)getArgReference(stk,pci,2))) == NULL) {
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "array.tiling", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "array.tiles", RUNTIME_OBJECT_MISSING);
 	}
 	bn = BATnew(TYPE_oid, TYPE_oid, TRUE);
 	bi = bat_iterator(b);
 	br = bat_iterator(bt);
+	limit= BATcount(b);
 	BATloop(b,p,q){
 		g = *(oid*) BUNhead(bi,p);
 		BATloop(bt,r,s){
-			oid o = g + *(oid*) BUNtloc(br,r);
-			BUNins(bn, &g, &o, TRUE);
+			oid o = g + *(oid*) BUNhead(br,r);
+			if ( o < limit)
+				BUNins(bn, &g, &o, TRUE);
 		}
 	}
 	BBPkeepref(*ret = bn->batCacheid);
@@ -572,6 +563,77 @@ ARRAYtiling(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+@= tilesAggr
+str
+ARRAYtilesSum_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *b, *bt, *bn;
+	int *ret = (int*) getArgReference(stk,pci,0);
+	BATiter bi, br;
+	BUN p,q;
+	BUN r,s,z;
+	oid g = 0, limit;
+	@1 sum, elm;
+
+	(void) cntxt;
+	(void) mb;
+	if ((b = BATdescriptor(*(int*)getArgReference(stk,pci,1))) == NULL) 
+		throw(MAL, "array.tiles", RUNTIME_OBJECT_MISSING);
+	if ((bt = BATdescriptor(*(int*)getArgReference(stk,pci,2))) == NULL) {
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "array.tiles", RUNTIME_OBJECT_MISSING);
+	}
+	bn = BATnew(TYPE_oid, TYPE_@1, TRUE);
+	bi = bat_iterator(b);
+	br = bat_iterator(bt);
+	limit= BATcount(b);
+	BATloop(b,p,q){
+		sum = 0;
+		g = *(oid*) BUNhead(bi,p);
+		BATloop(bt,r,s){
+			oid o = g + *(oid*) BUNhead(br,r);
+			if ( o < limit) {
+				BUNfndOID(z,bi, &o);
+				if ( z != oid_nil){
+					elm= *(@1*) BUNtail(bi, z);
+					if ( elm != @1_nil)
+						sum += elm;
+				}
+			}
+		}
+		BUNins(bn, &g, &sum, TRUE);
+	}
+	BBPkeepref(*ret = bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
+	BBPreleaseref(bt->batCacheid);
+	return MAL_SUCCEED;
+}
+
+@c
+@:tilesAggr(sht)@
+@:tilesAggr(int)@
+@:tilesAggr(lng)@
+@:tilesAggr(flt)@
+@:tilesAggr(dbl)@
+str
+ARRAYtilesSum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+	int type = getTailType(getArgType(mb,pci,1));
+	switch(type){
+	case TYPE_sht:
+		return ARRAYtilesSum_sht(cntxt,mb,stk,pci);
+	case TYPE_int:
+		return ARRAYtilesSum_int(cntxt,mb,stk,pci);
+	case TYPE_lng:
+		return ARRAYtilesSum_lng(cntxt,mb,stk,pci);
+	case TYPE_flt:
+		return ARRAYtilesSum_flt(cntxt,mb,stk,pci);
+	case TYPE_dbl:
+		return ARRAYtilesSum_dbl(cntxt,mb,stk,pci);
+	default:
+		throw(MAL, "array.sum", "illegal type");
+	}
+	return MAL_SUCCEED;
+}
 @-
 The printing stuff is postponed to the future. Then it also needs
 a solution to the GDKout issues.
