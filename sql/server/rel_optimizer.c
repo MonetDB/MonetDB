@@ -1022,7 +1022,7 @@ exps_push_down(mvc *sql, list *exps, sql_rel *f, sql_rel *t)
 	node *n;
 	list *nl = new_exp_list(sql->sa);
 
-	for(n = exps->h; n; n=n->next) {
+	for(n = exps->h; n; n = n->next) {
 		sql_exp *arg = n->data;
 
 		arg = _exp_push_down(sql, arg, f, t);
@@ -1041,6 +1041,11 @@ _exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 
 	switch(e->type) {
 	case e_column:
+		if (is_union(f->op)) {
+			int p = list_position(f->exps, rel_find_exp(f, e));
+
+			return list_fetch(t->exps, p);
+		}
 		if (e->l) { 
 			ne = rel_bind_column2(sql, f, e->l, e->r, 0);
 			/* if relation name matches expressions relation name, find column based on column name alone */
@@ -1052,6 +1057,8 @@ _exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		e = NULL;
 		if (ne->name && ne->rname)
 			e = rel_bind_column2(sql, t, ne->rname, ne->name, 0);
+		if (!e && ne->name && !ne->rname)
+			e = rel_bind_column(sql, t, ne->name, 0);
 		if (!e && ne->name && ne->r && ne->l) 
 			e = rel_bind_column2(sql, t, ne->l, ne->r, 0);
 		if (!e && ne->r && !ne->l)
@@ -1905,12 +1912,12 @@ rel_merge_rse(int *changes, mvc *sql, sql_rel *rel)
  * 	groupby ( [ union all( groupby( a, [gbe], [ count, sum] ), [ groupby( b, [gbe], [ count, sum] )) , [gbe], [sum, sum] ) 
  */
 static sql_rel *
-rel_push_aggr(int *changes, mvc *sql, sql_rel *rel) 
+rel_push_aggr_down(int *changes, mvc *sql, sql_rel *rel) 
 {
 	sql_rel *u = rel->l;
 
 	/* TODO disjoint partitions don't need the last group by */
-	if (rel->op == op_groupby && /*(!rel->r || list_length(rel->r) == 0) &&*/
+	if (rel->op == op_groupby && 
 	    u && is_union(u->op) && !need_distinct(u) && u->exps) {
 		sql_rel *g = rel;
 		sql_rel *l = u->l;
@@ -3948,8 +3955,8 @@ rel_optimizer(mvc *sql, sql_rel *rel)
 	}
 
 	if (gp.cnt[op_groupby]) {
-		rel = rewrite(sql, rel, &rel_avg2sum_count, &changes); 
-		rel = rewrite(sql, rel, &rel_push_aggr, &changes);
+		rel = rewrite_topdown(sql, rel, &rel_avg2sum_count, &changes); 
+		rel = rewrite_topdown(sql, rel, &rel_push_aggr_down, &changes);
 		rel = rewrite(sql, rel, &rel_groupby_order, &changes); 
 		rel = rewrite(sql, rel, &rel_reduce_groupby_exps, &changes); 
 	}

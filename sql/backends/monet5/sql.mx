@@ -291,7 +291,7 @@ pattern exportOperation{unsafe}(w:str) :void
 address mvc_export_operation_wrap
 comment "Export result of schema/transaction queries"; 
 
-pattern affectedRows{unsafe}(nr:wrd, w:str) :void
+pattern affectedRows{unsafe}(mvc:ptr, nr:wrd, w:str) :ptr
 address mvc_affected_rows_wrap
 comment "export the number of affected rows by the current query";
 
@@ -1573,8 +1573,9 @@ getContext(Client cntxt, MalBlkPtr mb, mvc **c, backend **b )
 		throw(SQL, "mvc","No client record");
 	if (cntxt->state[MAL_SCENARIO_PARSER] == NULL || cntxt->state[MAL_SCENARIO_OPTIMIZE] == NULL)
 		throw(SQL, "mvc","SQL module not initialized");
-	*c = ((mvc *) cntxt ->state[MAL_SCENARIO_OPTIMIZE]); 
-	if (*c == 0)
+	if (c)
+		*c = ((mvc *) cntxt ->state[MAL_SCENARIO_OPTIMIZE]); 
+	if (c && *c == 0)
 		throw(SQL, "mvc","SQL module not initialized, mvc struct missing");
 	if (b)
 		*b = ((backend*) cntxt->state[MAL_SCENARIO_PARSER]);
@@ -3249,30 +3250,28 @@ mvc_drop_declared_tables_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	return MAL_SUCCEED;
 }
 
-/* str mvc_affected_rows_wrap(int *r, wrd *nr, str *w); */
+/* str mvc_affected_rows_wrap(ptr *m, ptr m, wrd *nr, str *w); */
 str
 mvc_affected_rows_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	backend *b = NULL;
-	mvc *c = NULL;
-	str msg = getContext(cntxt,mb, &c, &b);
-	int *r  = (int *) getArgReference(stk, pci, 0);
+	str msg = getContext(cntxt, mb, NULL, &b);
+	ptr *res = (ptr*)getArgReference(stk, pci, 0);
+	mvc *m = *(mvc**)getArgReference(stk, pci, 1);
 #ifndef NDEBUG
-	int mtype = getArgType(mb, pci, 1);
+	int mtype = getArgType(mb, pci, 2);
 #endif
 	wrd nr;
-	str *w = (str *) getArgReference(stk, pci, 2);
+	str *w = (str *) getArgReference(stk, pci, 3);
 
-	(void) cntxt;
 	if (msg)
 		return msg;
+	*res = (ptr)m;
 	assert (mtype == TYPE_wrd);
-	nr = *(wrd *) getArgReference(stk, pci, 1);
-	if (mvc_export_affrows(c, b->out, nr, *w)) {
+	nr = *(wrd *) getArgReference(stk, pci, 2);
+	if (mvc_export_affrows(m, b->out, nr, *w)) 
 		throw(SQL, "sql.affectedRows", "failed");
-	}
-	(void)r;
-	return NULL;
+	return MAL_SUCCEED;
 }
 
 /* str mvc_export_head_wrap(int *ret, stream **s, int *res_id); */

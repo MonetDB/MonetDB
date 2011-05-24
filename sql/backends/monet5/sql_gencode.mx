@@ -1751,6 +1751,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int o1 = _dumpstmt(sql, mb, s->op1);
 
 			q = newStmt1(mb, sqlRef, "affectedRows");
+			q = pushArgument(mb, q, sql->mvc_var); 
+			getArg(q, 0) = sql->mvc_var= newTmpVariable(mb,TYPE_ptr);
 			q = pushArgument(mb, q, o1);
 			q = pushStr(mb, q, ""); /* warning */
 			s->nr = getDestVar(q);
