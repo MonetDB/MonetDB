@@ -62,8 +62,8 @@ comment "The argument is a double set of dimension columns. The first set descri
 of the target array and the second one holds the index values of interest. The result is a column
 with the oid positions of the elements in target. ";
 
-pattern map(cells:bat[:oid,:oid], dims:bat[:oid,:any]...):bat[:oid,:any]...
-address ARRAYmapReverse
+pattern unmap(cells:bat[:oid,:oid], dims:bat[:oid,:any]...):bat[:oid,:any]...
+address ARRAYumap
 comment "Extract the index columns from a shape based on the cell identifier list";
 
 pattern isFixed(dims:bat[:oid,:any]...):bit
@@ -136,7 +136,7 @@ array_export str ARRAYgetDimensions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, I
 array_export str ARRAYproduct(int *ret, int *bid, int *rid);
 array_export str ARRAYfiller(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 array_export str ARRAYmap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-array_export str ARRAYmapReverse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+array_export str ARRAYumap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 array_export str ARRAYreplace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 array_export str ARRAYreplaceScalar(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 array_export str ARRAYtiles(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -399,7 +399,7 @@ ARRAYmap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-ARRAYmapReverse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+ARRAYumap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b, *bn, *bo;
 	int i;
@@ -407,15 +407,15 @@ ARRAYmapReverse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 	if ( (pci->argc -1 - pci->retc) != pci->retc)
-		throw(MAL, "array.map", "Unbalanced index arguments and return list");
+		throw(MAL, "array.unmap", "Unbalanced index arguments and return list");
 	if ((b = BATdescriptor(*(int*)getArgReference(stk,pci,pci->retc))) == NULL) 
-		throw(MAL, "array.map", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "array.unmap", RUNTIME_OBJECT_MISSING);
 	
 	for ( i=pci->retc+1; i<pci->argc; i++){
 		bo = BATdescriptor(*(int*)getArgReference(stk,pci,i));
 		if ( bo == NULL){
 			BBPreleaseref(b->batCacheid);
-			throw(MAL, "array.map", RUNTIME_OBJECT_MISSING);
+			throw(MAL, "array.unmap", RUNTIME_OBJECT_MISSING);
 		}
 		bn = BATsemijoin( bo,b);
 		if ( bn ) {

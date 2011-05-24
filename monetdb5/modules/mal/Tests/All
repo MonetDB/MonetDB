@@ -58,6 +58,12 @@ cluster00
 tokenizer00
 zorder
 
+array00
+array01
+array02
+array03
+array04
+
 #HAVE_RAPTOR?rdf
 
 # might show different output if openssl is compiled without full sha2

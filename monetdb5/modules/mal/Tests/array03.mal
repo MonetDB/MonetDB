@@ -19,6 +19,7 @@ bat.insert(x, 1@0,0@0);
 io.print(x);
 xv:= bat.new(:oid,:int);
 bat.insert(xv,0@0,999);
+bat.insert(xv,0@0,998);
 io.print(xv);
 y:= bat.new(:oid,:oid);
 bat.insert(y, 2@0,0@0);

@@ -38,9 +38,9 @@ function user.main():void;
     bat.insert(y,7@0,2@0);
     io.print(y);
 #fetch the index column 
-    z1 := array.map(x,v);
+    z1 := array.unmap(x,v);
     io.print(z1);
-    (zx:bat[:oid,:int] ,zy:bat[:oid,:int] ) := array.map(y,mx,my);
+    (zx:bat[:oid,:int] ,zy:bat[:oid,:int] ) := array.unmap(y,mx,my);
     io.print(zx);
     io.print(zy);
     io.print(zx,zy);
