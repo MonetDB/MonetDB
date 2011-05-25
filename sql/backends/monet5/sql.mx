@@ -42,7 +42,7 @@ pattern init():void
 address SQLinitEnvironment
 comment "Initialize the environment for MAL";
 
-pattern mvc():ptr
+pattern mvc():int
 address SQLmvc
 comment "get the multiversion catalog context, needed for correct statement dependencies (ie sql.update, should be after sql.bind in concurrent execution)";
 
@@ -119,11 +119,11 @@ The original code is retained, because it makes it
 easier to later re-use part of the catalog code in a separately.
 @mal
 
-pattern setVariable(mvc:ptr, varname:str, value:any_1 ):ptr
+pattern setVariable(mvc:int, varname:str, value:any_1 ):int
 address setVariable
 comment "Set the value of a session variable";
 
-pattern getVariable(mvc:ptr, varname:str ):any_1
+pattern getVariable(mvc:int, varname:str ):any_1
 address getVariable
 comment "Get the value of a session variable";
 
@@ -147,7 +147,7 @@ pattern restart{unsafe}( sname:str, sequence:str, start:lng ):lng
 address mvc_restart_seq
 comment "restart the sequence with value start";
 
-pattern bind_dbat(mvc:ptr, schema:str, table:str, access:int):bat[:oid,:oid]
+pattern bind_dbat(mvc:int, schema:str, table:str, access:int):bat[:oid,:oid]
 address mvc_bind_dbat_wrap
 comment "Bind to 'schema.table' BAT with deleted objecs
 and with specific access kind:
@@ -155,42 +155,42 @@ and with specific access kind:
 	1 - inserts
 	2 - updates";
 
-pattern bind_idxbat(mvc:ptr, schema:str, table:str, index:str, access:int):bat[:oid,:any_1]
+pattern bind_idxbat(mvc:int, schema:str, table:str, index:str, access:int):bat[:oid,:any_1]
 address mvc_bind_idxbat_wrap
 comment "Bind the 'schema.table.index' BAT with access kind:
 	0 - base table
 	1 - inserts
 	2 - updates";
 
-pattern bind_idxbat(mvc:ptr, schema:str, table:str, index:str, access:int, low:oid, hgh:oid):bat[:oid,:any_1]
+pattern bind_idxbat(mvc:int, schema:str, table:str, index:str, access:int, low:oid, hgh:oid):bat[:oid,:any_1]
 address mvc_bind_idxbat_wrap
 comment "Bind the 'schema.table.index' BAT with access kind:
 	0 - base table
 	1 - inserts
 	2 - updates";
 
-pattern bind_idxbat(mvc:ptr, schema:str, table:str, index:str, access:int, part_nr:int, nr_parts:int):bat[:oid,:any_1]
+pattern bind_idxbat(mvc:int, schema:str, table:str, index:str, access:int, part_nr:int, nr_parts:int):bat[:oid,:any_1]
 address mvc_bind_idxbat_wrap
 comment "Bind the 'schema.table.index' BAT with access kind:
 	0 - base table
 	1 - inserts
 	2 - updates";
 
-pattern bind(mvc:ptr, schema:str, table:str, column:str, access:int ):bat[:oid,:any_1]
+pattern bind(mvc:int, schema:str, table:str, column:str, access:int ):bat[:oid,:any_1]
 address mvc_bind_wrap
 comment "Bind the 'schema.table.column' BAT with access kind:
 	0 - base table
 	1 - inserts
 	2 - updates";
 
-pattern bind(mvc:ptr, schema:str, table:str, column:str, access:int, low:oid, hgh:oid ):bat[:oid,:any_1]
+pattern bind(mvc:int, schema:str, table:str, column:str, access:int, low:oid, hgh:oid ):bat[:oid,:any_1]
 address mvc_bind_wrap
 comment "Bind the 'schema.table.column' BAT partition with access kind:
 	0 - base table
 	1 - inserts
 	2 - updates";
 
-pattern bind(mvc:ptr, schema:str, table:str, column:str, access:int, part_nr:int, nr_parts:int ):bat[:oid,:any_1]
+pattern bind(mvc:int, schema:str, table:str, column:str, access:int, part_nr:int, nr_parts:int ):bat[:oid,:any_1]
 address mvc_bind_wrap
 comment "Bind the 'schema.table.column' BAT partition with access kind:
 	0 - base table
@@ -209,11 +209,11 @@ command getVersion(clientid:int):lng
 address mvc_getVersion
 comment "Return the database version identifier for a client";
 
-pattern append(mvc:ptr, sname:str, tname:str, cname:str, ins:any):ptr
+pattern append(mvc:int, sname:str, tname:str, cname:str, ins:any):int
 address mvc_append_wrap
 comment "Append b to the column tname.cname (possibly optimized to replace the insert bat of tname.cname (returns sequence number for order dependence)";
 
-pattern update(mvc:ptr, sname:str, tname:str, cname:str, ins:any):ptr
+pattern update(mvc:int, sname:str, tname:str, cname:str, ins:any):int
 address mvc_update_wrap
 comment "Append b to the column tname.cname (possibly optimized to replace the insert bat of tname.cname (returns sequence number for order dependence)";
 
@@ -221,7 +221,7 @@ pattern clear_table{unsafe}(sname:str, tname:str) :wrd
 address mvc_clear_table_wrap
 comment "Clear table";
 
-pattern delete(mvc:ptr, sname:str, tname:str, b:any):ptr 
+pattern delete(mvc:int, sname:str, tname:str, b:any):int 
 address mvc_delete_wrap
 comment "delete from table";
 
@@ -291,7 +291,7 @@ pattern exportOperation{unsafe}(w:str) :void
 address mvc_export_operation_wrap
 comment "Export result of schema/transaction queries"; 
 
-pattern affectedRows{unsafe}(mvc:ptr, nr:wrd, w:str) :ptr
+pattern affectedRows{unsafe}(mvc:int, nr:wrd, w:str) :int
 address mvc_affected_rows_wrap
 comment "export the number of affected rows by the current query";
 
@@ -886,13 +886,13 @@ way.
 It should be cast into a more efficient C procedure, which also
 takes care of NAS opportunities.
 @mal
-function octopus.bind(mvc:ptr, sch:str, tab:str,col:str,kind:int, 
+function octopus.bind(mvc:int, sch:str, tab:str,col:str,kind:int, 
 low:oid, hgh:oid, version:int):bat[:oid,:any_1];
 	b:bat[:oid,:any_1]:= sql.bind(mvc,sch,tab,col,kind,low,hgh);
 	return bind:= b;
 end bind;
 
-function octopus.bind(mvc:ptr, sch:str, tab:str,col:str,kind:int, version:int):bat[:oid,:any_1];
+function octopus.bind(mvc:int, sch:str, tab:str,col:str,kind:int, version:int):bat[:oid,:any_1];
 	b:bat[:oid,:any_1]:= sql.bind(mvc,sch,tab,col,kind);
 	return bind:= b;
 end bind;
@@ -900,7 +900,7 @@ end bind;
 function octopus.bind(conn:str, sch:str, tab:str,col:str,kind:int, 
 low:oid, hgh:oid, version:int):bat[:oid,:any_1];
 	b:bat[:oid,:any_1] := nil:bat[:oid,:any_1];
-	m := nil:ptr;
+	m := nil:int;
 	rm := remote.put(conn,m);
 	rm := remote.exec(conn,"sql","mvc");
 	s := remote.put(conn,sch);
@@ -919,7 +919,7 @@ end octopus.bind;
 function octopus.bind(conn:str, sch:str, tab:str,col:str,kind:int, 
 version:int):bat[:oid,:any_1];
 	b:bat[:oid,:any_1] := nil:bat[:oid,:any_1];
-	m := nil:ptr;
+	m := nil:int;
 	rm := remote.put(conn,m);
 	rm := remote.exec(conn,"sql","mvc");
 	s := remote.put(conn,sch);
@@ -932,14 +932,14 @@ version:int):bat[:oid,:any_1];
 	return bind:= b;
 end octopus.bind;
 
-function octopus.bind_dbat(mvc:ptr, sch:str, tab:str,access:int, version:int):bat[:oid,:oid];
+function octopus.bind_dbat(mvc:int, sch:str, tab:str,access:int, version:int):bat[:oid,:oid];
 	b := sql.bind_dbat(mvc,sch,tab,access);
 	return bind_dbat:= b;
 end octopus.bind_dbat;
 
 function octopus.bind_dbat(conn:str, sch:str, tab:str, access:int, version:int):bat[:oid,:oid];
 	b:bat[:oid,:any_1] := nil:bat[:oid,:any_1];
-	m := nil:ptr;
+	m := nil:int;
 	rm := remote.put(conn,m);
 	rm := remote.exec(conn,"sql","mvc");
 	s := remote.put(conn,sch);
@@ -951,14 +951,14 @@ function octopus.bind_dbat(conn:str, sch:str, tab:str, access:int, version:int):
 	return bind_dbat:= b;
 end octopus.bind_dbat;
 
-function octopus.bind_idxbat(mvc:ptr, sch:str, tab:str, index:str, access:int, version:int):bat[:oid,:oid];
+function octopus.bind_idxbat(mvc:int, sch:str, tab:str, index:str, access:int, version:int):bat[:oid,:oid];
 	b := sql.bind_idxbat(mvc,sch,tab,index,access);
 	return bind_idxbat:= b;
 end octopus.bind_idxbat;
 
 function octopus.bind_idxbat(conn:str, sch:str, tab:str, index:str, access:int, version:int):bat[:oid,:oid];
 	b:bat[:oid,:oid] := nil:bat[:oid,:oid];
-	m := nil:ptr;
+	m := nil:int;
 	rm := remote.put(conn,m);
 	rm := remote.exec(conn,"sql","mvc");
 	s := remote.put(conn,sch);
@@ -973,7 +973,7 @@ end octopus.bind_idxbat;
 
 function octopus.bind_idxbat(conn:str, sch:str, tab:str, index:str, access:int, low:oid, hgh:oid, version:int):bat[:oid,:oid];
 	b:bat[:oid,:oid] := nil:bat[:oid,:oid];
-	m := nil:ptr;
+	m := nil:int;
 	rm := remote.put(conn,m);
 	rm := remote.exec(conn,"sql","mvc");
 	s := remote.put(conn,sch);
@@ -1589,11 +1589,11 @@ SQLmvc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *sql = NULL;
 	str msg = getContext(cntxt, mb, &sql, NULL);
-	ptr *res = (ptr*) getArgReference(stk, pci, 0);
+	int *res = (int*) getArgReference(stk, pci, 0);
 
 	if (msg)
 		return msg;
-	*res = (ptr)sql;
+	*res = 0;
 	return MAL_SUCCEED;
 }
 
@@ -2276,16 +2276,15 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	ptr *res = (ptr*)getArgReference(stk, pci, 0);
-	mvc *m = *(mvc**)getArgReference(stk, pci, 1);
+	int *res = (int*)getArgReference(stk, pci, 0);
+	mvc *m;
+	str msg = getContext(cntxt, mb, &m, NULL);
 	str varname   = *(str *) getArgReference(stk, pci, 2);
 	int mtype = getArgType(mb, pci, 3);
 	ValRecord *src;
-	char *msg = NULL;
 	char buf[BUFSIZ];
 
-	(void) cntxt;
-	*res = (ptr)m;
+	*res = 0;
 	if (mtype < 0 || mtype >= 255)
 		throw(SQL, "sql.setVariable", "failed");
 	if ( strcmp("optimizer",  varname)== 0) {
@@ -2318,11 +2317,13 @@ str
 getVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int mtype = getArgType(mb, pci, 0);
-	mvc *m = *(mvc**)getArgReference(stk, pci, 1);
+	mvc *m;
+	str msg = getContext(cntxt, mb, &m, NULL);
 	str varname   = *(str *) getArgReference(stk, pci, 2);
 	ValRecord *dst, *src;
 
-	(void) cntxt;
+	if (msg)
+		return msg;
 	if (mtype < 0 || mtype >= 255)
 		throw(SQL, "sql.getVariable", "failed");
 	src = stack_get_var(m, varname);
@@ -2345,7 +2346,6 @@ sql_variables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = getContext(cntxt,mb, &m, NULL);
 	int *res = (int *) getArgReference(stk, pci, 0);
 
-	(void) cntxt;
 	if (msg)
 		return msg;
 
@@ -2376,7 +2376,6 @@ mvc_logfile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *res = (int *) getArgReference(stk, pci, 0);
 	str filename = *(str *)getArgReference(stk, pci, 1);
 
-	(void) cntxt;
 	if (msg)
 		return msg;
 	if (m->scanner.log) {
@@ -2618,15 +2617,16 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b = NULL, *bn;
 	int *bid = (int *)getArgReference(stk, pci, 0);
-	mvc *m = *(mvc**)getArgReference(stk, pci, 1);
+	mvc *m = NULL;
+	str msg = getContext(cntxt,mb, &m, NULL);
 	str *sname = (str *)getArgReference(stk, pci, 2);
 	str *tname = (str *)getArgReference(stk, pci, 3);
 	str *cname = (str *)getArgReference(stk, pci, 4);
 	int *access = (int *)getArgReference(stk, pci, 5);
 	oid lval,hval=0;
 
-	(void) mb;
-	(void) cntxt;
+	if (msg)
+		return msg;
 	b = mvc_bind(m, *sname, *tname, *cname, *access);
 	if (b) {
 		if ( pci->argc == 8 && getArgType(mb,pci,6) == TYPE_oid){
@@ -2681,15 +2681,16 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b = NULL,*bn;
 	int *bid = (int *)getArgReference(stk, pci, 0);
-	mvc *m = *(mvc**)getArgReference(stk, pci, 1);
+	mvc *m = NULL;
+	str msg = getContext(cntxt,mb, &m, NULL);
 	str *sname = (str *)getArgReference(stk, pci, 2);
 	str *tname = (str *)getArgReference(stk, pci, 3);
 	str *iname = (str *)getArgReference(stk, pci, 4);
 	int *access = (int *)getArgReference(stk, pci, 5);
 	oid lval,hval=0;
 
-	(void) mb;
-	(void) cntxt;
+	if (msg)
+		return msg;
 	b = mvc_bind_idxbat(m, *sname, *tname, *iname, *access);
 	if (b) {
 		if ( pci->argc == 8 && getArgType(mb,pci,6) == TYPE_oid){
@@ -2762,8 +2763,9 @@ mvc_diff_idxbat_wrap(bat *bid, int *clientid, str *s, str *t, str *i, int *acces
 str
 mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	ptr *res = (ptr*)getArgReference(stk, pci, 0);
-	mvc *m = *(mvc**)getArgReference(stk, pci, 1);
+	int *res = (int*)getArgReference(stk, pci, 0);
+	mvc *m = NULL;
+	str msg = getContext(cntxt,mb, &m, NULL);
 	str sname = *(str *)getArgReference(stk, pci, 2);
 	str tname = *(str *)getArgReference(stk, pci, 3);
 	str cname = *(str *)getArgReference(stk, pci, 4);
@@ -2773,9 +2775,9 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_table *t;
 	sql_column *c;
 
-	(void) mb;
-	(void) cntxt;
-	*res = (ptr)m;
+	*res = 0;
+	if (msg)
+		return msg;
 	if (tpe > TYPE_any)
 		tpe = TYPE_bat;
 	if (tpe == TYPE_bat && (ins = BATdescriptor(*(int*)ins)) == NULL) 
@@ -2809,8 +2811,9 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	ptr *res = (ptr*)getArgReference(stk, pci, 0);
-	mvc *m = *(mvc**)getArgReference(stk, pci, 1);
+	int *res = (int*)getArgReference(stk, pci, 0);
+	mvc *m = NULL;
+	str msg = getContext(cntxt,mb, &m, NULL);
 	str sname = *(str *)getArgReference(stk, pci, 2);
 	str tname = *(str *)getArgReference(stk, pci, 3);
 	str cname = *(str *)getArgReference(stk, pci, 4);
@@ -2820,8 +2823,9 @@ mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_table *t;
 	sql_column *c;
 
-	(void) cntxt;
-	*res = (ptr)m;
+	*res = 0;
+	if (msg)
+		return msg;
 	if (tpe > TYPE_any)
 		tpe = TYPE_bat;
 	if( tpe == TYPE_bat && (ins = BATdescriptor(*(int*)ins)) == NULL) 
@@ -2898,13 +2902,14 @@ mvc_bind_dbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b;
 	int *ret = (int *)getArgReference(stk, pci, 0);
-	mvc *m = *(mvc**)getArgReference(stk, pci, 1);
+	mvc *m = NULL;
+	str msg = getContext(cntxt,mb, &m, NULL);
 	str *sname = (str *)getArgReference(stk, pci, 2);
 	str *tname = (str *)getArgReference(stk, pci, 3);
 	int *access = (int*)getArgReference(stk, pci, 4);
 
-	(void) mb;
-	(void) cntxt;
+	if (msg)
+		return msg;
 	b = mvc_bind_dbat(m, *sname, *tname, *access);
 	if (b) {
 		BBPkeepref( *ret = b->batCacheid);
@@ -2962,8 +2967,9 @@ mvc_clear_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	ptr *res = (ptr*)getArgReference(stk, pci, 0);
-	mvc *m = *(mvc**)getArgReference(stk, pci, 1);
+	int *res = (int*)getArgReference(stk, pci, 0);
+	mvc *m = NULL;
+	str msg = getContext(cntxt,mb, &m, NULL);
 	str sname = *(str *)getArgReference(stk, pci, 2);
 	str tname = *(str *)getArgReference(stk, pci, 3);
 	ptr ins = (ptr)getArgReference(stk, pci, 4);
@@ -2973,9 +2979,9 @@ mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_schema *s;
 	sql_table *t;
 
-	(void) mb;
-	(void) cntxt;
-	*res = (ptr)m;
+	*res = 0;
+	if (msg)
+		return msg;
 	if (tpe > TYPE_any)
 		tpe = TYPE_bat;
 	if (tpe == TYPE_bat && (b = BATdescriptor(*(int*)ins)) == NULL) 
@@ -3250,14 +3256,14 @@ mvc_drop_declared_tables_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	return MAL_SUCCEED;
 }
 
-/* str mvc_affected_rows_wrap(ptr *m, ptr m, wrd *nr, str *w); */
+/* str mvc_affected_rows_wrap(int *m, int m, wrd *nr, str *w); */
 str
 mvc_affected_rows_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	backend *b = NULL;
-	str msg = getContext(cntxt, mb, NULL, &b);
-	ptr *res = (ptr*)getArgReference(stk, pci, 0);
-	mvc *m = *(mvc**)getArgReference(stk, pci, 1);
+	mvc *m = NULL;
+	str msg = getContext(cntxt, mb, &m, &b);
+	int *res = (int*)getArgReference(stk, pci, 0);
 #ifndef NDEBUG
 	int mtype = getArgType(mb, pci, 2);
 #endif
@@ -3266,7 +3272,7 @@ mvc_affected_rows_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (msg)
 		return msg;
-	*res = (ptr)m;
+	*res = 0;
 	assert (mtype == TYPE_wrd);
 	nr = *(wrd *) getArgReference(stk, pci, 2);
 	if (mvc_export_affrows(m, b->out, nr, *w)) 
