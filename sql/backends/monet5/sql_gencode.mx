@@ -1629,7 +1629,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			char *n = (s->type==st_append_col)?appendRef:updateRef;
 
 			if (s->type == st_append_col && s->flag) { /* fake append */
-				sql->mvc_var = s->nr = r;
+				s->nr = r;
 			} else {
 				q = newStmt2(mb, sqlRef, n);
 				q = pushArgument(mb, q, sql->mvc_var); 
@@ -1755,7 +1755,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			getArg(q, 0) = sql->mvc_var= newTmpVariable(mb,TYPE_int);
 			q = pushArgument(mb, q, o1);
 			q = pushStr(mb, q, ""); /* warning */
-			s->nr = getDestVar(q);
+			sql->mvc_var = s->nr = getDestVar(q);
 		} break;
 		case st_output:
 		case st_export:{
@@ -2106,9 +2106,9 @@ backend_callinline(backend *be, Client c, stmt *s )
 	backend_dumpstmt(be, curBlk, s);
 
 	p = newFcnCall(curBlk, "optimizer", "remap");
-	typeChecker(c->nspace, curBlk, p, TRUE);
+	typeChecker(c->nspace, curBlk, p, FALSE);
 	p = newFcnCall(curBlk, "optimizer", "multiplex");
-	typeChecker(c->nspace, curBlk, p, TRUE);
+	typeChecker(c->nspace, curBlk, p, FALSE);
 	optimizeMALBlock(c, curBlk);
 	c->curprg->def = curBlk;
 }

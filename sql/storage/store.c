@@ -625,7 +625,7 @@ load_table(sql_trans *tr, sql_schema *s, oid rid)
 		cs_add(&t->columns, load_column(tr, t, rid), TR_OLD);
 	table_funcs.rids_destroy(rs);
 
-	if (!isTable(t)) 
+	if (!isTable(t) && !isMergeTable(t)) 
 		return t;
 
 	/* load idx's first as the may be needed by the keys */
@@ -2467,20 +2467,28 @@ rollforward_create_table(sql_trans *tr, sql_table *t, int mode)
 		int p = (tr->parent == gtrans && !isTempTable(t));
 
 		/* only register columns without commit action tables */
-		rollforward_changeset_creates(tr, &t->columns, (rfcfunc) &rollforward_create_column, mode);
+		ok = rollforward_changeset_creates(tr, &t->columns, (rfcfunc) &rollforward_create_column, mode);
+
 		if (p && mode == R_SNAPSHOT)
 			store_funcs.snapshot_create_del(tr, t);
 		else if (p && mode == R_LOG)
 			store_funcs.log_create_del(tr, t);
 		else if (mode == R_APPLY)
 			store_funcs.create_del(tr, t);
-		rollforward_changeset_creates(tr, &t->tables, (rfcfunc) &rollforward_add_table, mode);
-		rollforward_changeset_creates(tr, &t->keys, (rfcfunc) &rollforward_create_key, mode);
-		rollforward_changeset_creates(tr, &t->idxs, (rfcfunc) &rollforward_create_idx, mode);
-		rollforward_changeset_creates(tr, &t->triggers, (rfcfunc) &rollforward_create_trigger, mode);
+	
+		if (ok == LOG_OK)
+			ok = rollforward_changeset_creates(tr, &t->tables, (rfcfunc) &rollforward_add_table, mode);
+		if (ok == LOG_OK)
+			ok = rollforward_changeset_creates(tr, &t->keys, (rfcfunc) &rollforward_create_key, mode);
+		if (ok == LOG_OK)
+			ok = rollforward_changeset_creates(tr, &t->idxs, (rfcfunc) &rollforward_create_idx, mode);
+		if (ok == LOG_OK)
+			ok = rollforward_changeset_creates(tr, &t->triggers, (rfcfunc) &rollforward_create_trigger, mode);
 	}
-	if (ok != LOG_OK)
+	if (ok != LOG_OK) {
+		assert(0);
 		return NULL;
+	}
 	return t;
 }
 

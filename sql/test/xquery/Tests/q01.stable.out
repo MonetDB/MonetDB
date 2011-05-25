@@ -21,11 +21,24 @@ Ready.
 
 Over..
 
-# 14:17:17 >  
-# 14:17:17 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=36845 
-# 14:17:17 >  
+# 20:22:37 >  
+# 20:22:37 >  mclient -lsql -ftest -i -e --host=alf --port=38886 
+# 20:22:37 >  
 
-% .result,	.result # table_name
+#WITH
+#-- Rel: ScjRel
+#-- Binding due to: dirty node
+#a0000(item1_pre, iter_nat) AS
+#  (SELECT DISTINCT c0004.pre, 1 AS iter_nat
+#     FROM xmldoc AS c0004,
+#          xmldoc AS c0003,
+#          xmldoc AS c0002,
+#          xmldoc AS c0001
+#    WHERE ((c0004.level = (c0003.level + 1)) AND (((c0003.pre + c0003.size) >=
+#          c0004.pre) AND ((c0004.pre > c0003.pre) AND ((c0004.kind = 1) AND
+#          ((c0004.name = 'person') AND ((c0003.level = (c0002.level + 1)) AND
+#          (((c0002.pre + c0002.size) >= c0003.pr
+% .,	.c0021 # table_name
 % pos_nat,	item_pre # name
 % int,	int # type
 % 1,	5 # length

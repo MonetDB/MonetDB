@@ -22,6 +22,7 @@
 #define TABSTOP 2
 
 #include "rel_dump.h"
+#include "rel_prop.h"
 
 static void
 print_indent(mvc *sql, stream *fout, int depth)
@@ -185,6 +186,12 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, int comma, int alias)
 		if (e->rname)
 			mnstr_printf(fout, "%s.", e->rname);
 		mnstr_printf(fout, "%s", e->name);
+	}
+	if (e->p) {
+		prop *p = e->p;
+
+		for (; p; p = p->p)
+			mnstr_printf(fout, " %s", propkind2string(p));
 	}
 	if (comma)
 		mnstr_printf(fout, ", ");

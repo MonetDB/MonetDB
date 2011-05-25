@@ -59,7 +59,7 @@ Over..
 % rewrite,	count # name
 % clob,	int # type
 % 7,	1 # length
-[ "joinidx",	7	]
+[ "joinidx",	6	]
 
 # 11:48:05 >  
 # 11:48:05 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
@@ -102,7 +102,7 @@ Over..
 % rewrite,	count # name
 % clob,	int # type
 % 7,	1 # length
-[ "joinidx",	0	]
+[ "joinidx",	1	]
 
 # 11:48:05 >  
 # 11:48:05 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
@@ -855,7 +855,7 @@ Over..
 % rewrite,	count # name
 % clob,	int # type
 % 7,	1 # length
-[ "joinidx",	1	]
+[ "joinidx",	0	]
 
 # 11:48:06 >  
 # 11:48:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781

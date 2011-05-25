@@ -645,7 +645,7 @@ addOptimizers(Client c,MalBlkPtr mb, mvc *m)
 		if (m->point_query && (strcmp(optimizers[i], "mitosis")==0 || strcmp(optimizers[i], "dataflow")==0))
 			continue;
 		p = newFcnCall(mb, "optimizer", optimizers[i]);
-		typeChecker(c->nspace, mb, p, TRUE);
+		typeChecker(c->nspace, mb, p, FALSE);
 	}
 }
 
