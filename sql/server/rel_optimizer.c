@@ -2270,12 +2270,12 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 			sql_exp *e = n->data, *ne = NULL;
 			if (e->type == e_cmp) {
 				int err = 0;
-				ne = exp_push_down(sql, e, r, sl);
+				ne = exp_push_down(sql, e, r, sl->l);
 				if (ne && ne != e) {
 					rel_select_add_exp(sl, ne);
 				} else 
 					err = 1;
-				ne = exp_push_down(sql, e, r, sr);
+				ne = exp_push_down(sql, e, r, sr->l);
 				if (ne && ne != e) {
 					rel_select_add_exp(sr, ne);
 				} else 
