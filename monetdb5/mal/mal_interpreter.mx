@@ -980,11 +980,21 @@ The number of instructions allowed is severely limited.
 We don't allow sequential flow control here, which is enforced by the dataflow optimizer;
 @c
 		switch (pci->token) {
-		case ASSIGNsymbol: @:assignStmt(FAST,fs->pc = -fs->pc; return ret,t)@ break;
-		case PATcall: @:patterncall(FAST,fs->pc = -fs->pc; return ret,t)@ break;
-		case CMDcall: @:commandcall(FAST,fs->pc = -fs->pc; return ret,t)@ break;
-		case FACcall: @:factorycall(FAST,fs->pc = -fs->pc; return ret,t)@ break;
-		case FCNcall: @:functioncall(FAST,fs->pc = -fs->pc; return ret,t)@ break;
+		case ASSIGNsymbol: 
+			@:assignStmt(FAST,fs->pc = -fs->pc; return ret,t)@ 
+			break;
+		case PATcall: 
+			@:patterncall(FAST,fs->pc = -fs->pc; return ret,t)@ 
+			break;
+		case CMDcall: 
+			@:commandcall(FAST,fs->pc = -fs->pc; return ret,t)@ 
+			break;
+		case FACcall: 
+			@:factorycall(FAST,fs->pc = -fs->pc; return ret,t)@ 
+			break;
+		case FCNcall: 
+			@:functioncall(FAST,fs->pc = -fs->pc; return ret,t)@ 
+			break;
 		case NOOPsymbol:
 		case REMsymbol:
 			break;
@@ -1521,11 +1531,21 @@ elements in the value stack.
 @= MALinterpret
 	ret = 0;
 	switch (pci->token) {
-	case ASSIGNsymbol: @:assignStmt(@1,continue,stk)@ break;
-	case PATcall: @:patterncall(@1,continue,stk)@ break;
-	case CMDcall: @:commandcall(@1,continue,stk)@ break;
-	case FACcall: @:factorycall(@1,continue,stk)@ break;
-	case FCNcall: @:functioncall(@1,continue,stk)@ break;
+	case ASSIGNsymbol: 
+		@:assignStmt(@1,continue,stk)@ 
+		break;
+	case PATcall: 
+		@:patterncall(@1,continue,stk)@ 
+		break;
+	case CMDcall: 
+		@:commandcall(@1,continue,stk)@ 
+		break;
+	case FACcall: 
+		@:factorycall(@1,continue,stk)@ 
+		break;
+	case FCNcall: 
+		@:functioncall(@1,continue,stk)@ 
+		break;
 	case NOOPsymbol:
 	case REMsymbol:
 		break;
@@ -1562,7 +1582,8 @@ possible change in the control flow.
 @= MALflowofcontrol
 	switch (pci->barrier) {
 	case BARRIERsymbol:
-		@:barrierControl@ stkpc++;
+		@:barrierControl@ 
+		stkpc++;
 		break;
 	case LEAVEsymbol:
 	case REDOsymbol:
@@ -1572,49 +1593,59 @@ possible change in the control flow.
 		case TYPE_bit:
 			if (v->val.cval[0] == TRUE && v->val.cval[0] != bit_nil)
 				stkpc = pci->jump;
-			else stkpc++;
+			else 
+				stkpc++;
 			break;
 		case TYPE_chr:
 			if (v->val.cval[0])
 				stkpc = pci->jump;
-			else stkpc++;
+			else 
+				stkpc++;
 			break;
 		case TYPE_str:
 			if (v->len > 0 && v->val.sval != str_nil)
 				stkpc = pci->jump;
-			else stkpc++;
+			else 
+				stkpc++;
 			break;
 		case TYPE_sht:
 			if (v->val.shval >= 0 && v->val.shval != sht_nil)
 				stkpc = pci->jump;
-			else stkpc++;
+			else 
+				stkpc++;
 			break;
 		case TYPE_bat:
 			if (v->val.bval > 0)
 				stkpc = pci->jump;
-			else stkpc++;
+			else 
+				stkpc++;
 			break;
 		case TYPE_int:
 			if (v->val.ival >= 0 && v->val.ival != int_nil)
 				stkpc = pci->jump;
-			else stkpc++;
+			else 
+				stkpc++;
 			break;
 		case TYPE_wrd:
 			if (v->val.wval >= 0 && v->val.wval != wrd_nil)
 				stkpc = pci->jump;
-			else stkpc++;
+			else 
+				stkpc++;
 			break;
 		case TYPE_bte:
 			if (v->val.btval >= 0 && v->val.btval != bte_nil)
 				stkpc = pci->jump;
-			else stkpc++;
+			else 
+				stkpc++;
 			break;
 		case TYPE_lng:
 			if (v->val.lval >= 0 && v->val.lval != lng_nil)
 				stkpc = pci->jump;
 			else
-			default:
 				stkpc++;
+			break;
+		default:
+			break;
 		}
 		break;
 	case CATCHsymbol:
@@ -1857,9 +1888,11 @@ are identified. In the post-execution phase they are removed.
 	/* improve performance with 20 ms/1M calls*/
 	assert(pci->fcn != NULL);
 	switch (pci->argc) {
-	case 0: ret = (str)(*pci->fcn)(); break;
+	case 0: ret = (str)(*pci->fcn)(); 
+		break;
 	case 1: ret = (str)(*pci->fcn)(
-			(ptr)getArgReference(stk, pci, 0)); break;
+			(ptr)getArgReference(stk, pci, 0)); 
+		break;
 	case 2: ret = (str)(*pci->fcn)(
 			(ptr)getArgReference(stk, pci, 0),
 			(ptr)getArgReference(stk, pci, 1));
@@ -2087,11 +2120,13 @@ reaching end of function block.
 		if (l->barrier == CATCHsymbol) {
 			int j;
 			for (j = 0; j < l->retc; j++)
-				if (getArg(l, j) == @1) break;
+				if (getArg(l, j) == @1) 
+					break;
 				else if (getArgName(mb, l, j) ||
 						 strcmp(getArgName(mb, l, j), "ANYexception") == 0)
 					break;
-			if (j < l->retc) break;
+			if (j < l->retc) 
+				break;
 		}
 	}
 	if (stkpc == mb->stop) {
