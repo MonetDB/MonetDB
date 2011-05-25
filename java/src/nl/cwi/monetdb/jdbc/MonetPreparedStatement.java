@@ -628,7 +628,9 @@ public class MonetPreparedStatement
 		int length)
 		throws SQLException
 	{
-		throw new SQLException("Operation setCharacterStream(int parameterIndex, Reader reader, int length) currently not supported!");
+		CharBuffer tmp = new CharBuffer(length);
+		reader.read(tmp);
+		setString(i, tmp.toString());
 	}
 
 	/**

@@ -53,9 +53,8 @@ Currently implemented:
     The next features are not implemented:
     - getMetaData
     - setArray
-    - setAsciiStream, setBinaryStream, setCharacterStream, setUnicodeStream
+    - setAsciiStream, setBinaryStream, setUnicodeStream
     - setBlob
-    - setBytes
     - setRef, setURI
   * java.sql.ResultSet interface
     The next features are not implemented:
