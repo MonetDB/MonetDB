@@ -2527,8 +2527,6 @@ rel_push_join_down_union(int *changes, mvc *sql, sql_rel *rel)
 			sql_rel *ll = rel_dup(l->l), *lr = rel_dup(l->r);
 			sql_rel *rl = rel_dup(r->l), *rr = rel_dup(r->r);
 
-			/* check if fk is split over both sides */
-
 			/* join(union(a,b), union(c,d)) -> union(join(a,c), join(b,d)) */
 			if (l != ol) {
 				ll = rel_project(sql->sa, ll, NULL);
@@ -2544,6 +2542,27 @@ rel_push_join_down_union(int *changes, mvc *sql, sql_rel *rel)
 			}	
 			nl = rel_crossproduct(sql->sa, ll, rl, rel->op);
 			nr = rel_crossproduct(sql->sa, lr, rr, rel->op);
+			nl->exps = exps_copy(sql->sa, exps);
+			nr->exps = exps_copy(sql->sa, exps);
+
+			u = rel_setop(sql->sa, nl, nr, op_union);
+			u->exps = rel_projections(sql, rel, NULL, 1, 1);
+			rel_destroy(rel);
+			*changes = 1;
+			return u;
+		} else if (l->op != op_union && r->op == op_union) {
+			sql_rel *nl, *nr, *u;
+			sql_rel *rl = rel_dup(r->l), *rr = rel_dup(r->r);
+
+			/* join(a, union(b,c)) -> union(join(a,b), join(a,c)) */
+			if (r != or) {
+				rl = rel_project(sql->sa, rl, NULL);
+				rl->exps = rel_projections(sql, or, NULL, 1, 1);
+				rr = rel_project(sql->sa, rr, NULL);
+				rr->exps = rel_projections(sql, or, NULL, 1, 1);
+			}	
+			nl = rel_crossproduct(sql->sa, rel_dup(ol), rl, rel->op);
+			nr = rel_crossproduct(sql->sa, rel_dup(ol), rr, rel->op);
 			nl->exps = exps_copy(sql->sa, exps);
 			nr->exps = exps_copy(sql->sa, exps);
 
