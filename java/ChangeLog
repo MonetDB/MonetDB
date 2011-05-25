@@ -1,6 +1,9 @@
 # ChangeLog file for java
 # This file is updated with Maddlog
 
+* Wed May 25 2011 Fabian Groffen <fabian@cwi.nl>
+- Added a naive implementation for PreparedStatement.setCharacterStream
+
 * Mon Apr 11 2011 Fabian Groffen <fabian@cwi.nl>
 - The obsolete Java-based implementation for PreparedStatements (formerly
   activated using the java_prepared_statements property) has been dropped
