@@ -20,11 +20,15 @@ Ready.
 
 Over..
 
-# 10:09:34 >  
-# 10:09:34 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=30026 
-# 10:09:34 >  
+# 08:55:54 >  
+# 08:55:54 >  mclient -lsql -ftest -i -e --host=alf --port=31123 
+# 08:55:54 >  
 
-% sys.v21993765,	sys.v21993765 # table_name
+#create table t11993765(id int, age int);
+#create view v11993765 as select * from t11993765 where id = 0;
+#create view v21993765 as select * from v11993765 where age =1;
+#select * from v21993765 LIMIT 10;
+% sys.t11993765,	sys.t11993765 # table_name
 % id,	age # name
 % int,	int # type
 % 1,	1 # length

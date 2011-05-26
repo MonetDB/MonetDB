@@ -35,8 +35,8 @@ typedef struct prop {
 
 #define prop_list() 	list_create((fdestroy)&prop_destroy)
 
-extern prop * prop_create( int kind, prop *pre );
-extern void prop_destroy( prop *p );
+extern prop * prop_create( sql_allocator *sa, int kind, prop *pre );
+extern prop * prop_copy( sql_allocator *sa, prop *p);
 extern prop * find_prop( prop *p, int kind);
 
 #endif /* _REL_PROP_H_ */

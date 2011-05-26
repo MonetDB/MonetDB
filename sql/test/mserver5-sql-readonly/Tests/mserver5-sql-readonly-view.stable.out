@@ -42,7 +42,7 @@ stdout of test 'mserver5-sql-readonly-view` in directory 'test/mserver5-sql-read
 % 1 # length
 [ 1	]
 #select * from v1;
-% sys.v1 # table_name
+% sys.t1 # table_name
 % a # name
 % int # type
 % 1 # length

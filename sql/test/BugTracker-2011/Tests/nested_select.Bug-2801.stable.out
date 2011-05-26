@@ -32,7 +32,7 @@ Over..
 #INSERT INTO t2 VALUES (1, 4);
 [ 1	]
 #SELECT * FROM (SELECT * FROM t1 INNER JOIN t2 ON a = c) abc WHERE abc.a > abc.b;
-% sys.abc,	sys.abc,	sys.abc,	sys.abc # table_name
+% sys.t1,	sys.t1,	sys.t2,	sys.t2 # table_name
 % a,	b,	c,	d # name
 % int,	int,	int,	int # type
 % 1,	1,	1,	1 # length

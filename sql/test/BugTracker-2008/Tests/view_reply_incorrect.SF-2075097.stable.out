@@ -36,7 +36,11 @@ Over..
 % 1,	5,	2 # length
 [ 1,	"MARY",	20	]
 [ 0,	"KERI",	10	]
-% sys.namgrp1 # table_name
+#SELECT EMPNUM
+#FROM NAMGRP1
+#WHERE NAME = 'KERI'
+#AND GRP = 10;
+% sys.L10 # table_name
 % empnum # name
 % int # type
 % 1 # length

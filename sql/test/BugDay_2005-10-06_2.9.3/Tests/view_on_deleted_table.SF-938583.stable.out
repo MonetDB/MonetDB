@@ -17,11 +17,14 @@ Ready.
 
 Over..
 
-# 15:38:06 >  
-# 15:38:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30820  < view_on_deleted_table.SF-938583.sql
-# 15:38:06 >  
+# 08:54:58 >  
+# 08:54:58 >  mclient -lsql -ftest -i -e --host=alf --port=31123 
+# 08:54:58 >  
 
-% sys.v_vdt # table_name
+#create table t_vdt (i int);
+#create view v_vdt as select * from t_vdt;
+#select * from v_vdt;
+% sys.t_vdt # table_name
 % i # name
 % int # type
 % 1 # length

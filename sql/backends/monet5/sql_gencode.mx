@@ -1629,7 +1629,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			char *n = (s->type==st_append_col)?appendRef:updateRef;
 
 			if (s->type == st_append_col && s->flag) { /* fake append */
-				sql->mvc_var = s->nr = r;
+				s->nr = r;
 			} else {
 				q = newStmt2(mb, sqlRef, n);
 				q = pushArgument(mb, q, sql->mvc_var); 
