@@ -247,11 +247,17 @@ delta_append_bat( sql_delta *bat, BAT *i )
 		bat->cached = NULL;
 	}
 	bat->cnt += BATcount(i);
+	/* We simply use the to be inserted bat directly.
+	 * Disabled this optimization: sometimes the bat is used later in the
+	 * mal plan. 
+	 * This should be solved by changing the input into a view (somehow)
 	if (BATcount(b) == 0 && !isVIEW(i) && BBP_lrefs(i->batCacheid) <= 1 && i->htype == TYPE_void && i->ttype != TYPE_void && bat->ibase == i->H->seq){
 		temp_destroy(bat->ibid);
 		bat->ibid = temp_create(i);
 		BATseqbase(i, bat->ibase);
-	} else if (!isEbat(b)){
+	} else 
+	 */
+	if (!isEbat(b)){
 		/* try to use mmap() */
 		if (BATcount(b)+BATcount(i) > (BUN) REMAP_PAGE_MAXSIZE) { 
        			BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP, 1);

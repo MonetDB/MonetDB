@@ -659,6 +659,8 @@ stmt_rename(mvc *sql, sql_rel *rel, sql_exp *exp, stmt *s )
 		name = column_name(sql->sa, s);
 	else
 		name = sa_strdup(sql->sa, name);
+	if (!rname && exp->type == e_column && exp->l)
+		rname = exp->l;
 	if (!rname)
 		rname = table_name(sql->sa, s);
 	else
@@ -1122,7 +1124,6 @@ rel2bin_union( mvc *sql, sql_rel *rel, list *refs)
 		for( en = rel->exps->h, n = sub->op4.lval->h; en && n; en = en->next, n = n->next ) {
 			sql_exp *exp = en->data;
 			stmt *s = n->data;
-			/*stmt *s = exp_bin(sql, exp, sub, NULL, NULL, NULL);*/
 
 			if (!s) {
 				assert(0);

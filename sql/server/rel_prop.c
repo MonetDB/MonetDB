@@ -21,27 +21,27 @@
 #include "rel_semantic.h"
 #include "rel_prop.h"
 
-void
-prop_destroy( prop *p )
-{
-	prop *q;
-
-	while (p) {
-		q = p->p;
-		_DELETE(p);
-		p = q;
-	}
-}
-
 prop *
-prop_create( int kind, prop *pre )
+prop_create( sql_allocator *sa, int kind, prop *pre )
 {
-	prop *p = NEW(prop);
+	prop *p = SA_NEW(sa, prop);
 	
 	p->kind = kind;
 	p->value = 0;
 	p->p = pre;
 	return p;
+}
+
+prop *
+prop_copy( sql_allocator *sa, prop *p )
+{
+	prop *np = NULL;
+
+	for(; p; p = p->p) {
+		np = prop_create(sa, p->kind, np);
+		np->value = p->value;
+	}
+	return np;
 }
 
 prop *
@@ -53,4 +53,18 @@ find_prop( prop *p, int kind)
 		p = p->p;
 	}
 	return p;
+}
+
+char *
+propkind2string( prop *p)
+{
+	switch(p->kind) {
+#define PT(TYPE) case PROP_##TYPE : return #TYPE
+		PT(COUNT);
+		PT(JOINIDX);
+		PT(HASHIDX);
+		PT(SORTIDX);
+		PT(USED);
+	}
+	return "UNKNOWN";
 }

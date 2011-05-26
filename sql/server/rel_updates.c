@@ -650,6 +650,20 @@ rel_update_idxs(mvc *sql, sql_table *t, sql_rel *relup)
 
 	if (!t->idxs.set)
 		return relup;
+
+	for (n = t->idxs.set->h; n; n = n->next) {
+		sql_idx *i = n->data;
+		sql_subtype *tpe = sql_bind_localtype("wrd"); /* hash "wrd" */
+		char *iname = sa_strconcat( sql->sa, "%", i->base.name);
+		sql_exp *v;
+
+		if (i->type == join_idx)
+			tpe = sql_bind_localtype("oid"); 
+		/* index names are prefixed, to make them independent */
+		v = exp_column(sql->sa, t->base.name, iname, tpe, CARD_MULTI, 0, 1);
+		rel_project_add_exp(sql, p, v);
+	}
+
 	for (n = t->idxs.set->h; n; n = n->next) {
 		sql_idx *i = n->data;
 

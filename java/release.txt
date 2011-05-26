@@ -1,8 +1,8 @@
 RELEASE NOTES
-MonetDB JDBC driver version 1.20 (Magnistipula/MCL-1.6)
+MonetDB JDBC driver version 1.21 (Magnistipula/MCL-1.6)
 Fabian Groffen <Fabian.Groffen@cwi.nl>
 
-Release date: 2011-05-11
+Release date: 2011-05-25
 
 
 This JDBC driver is designed for use with MonetDB, a main-memory
@@ -53,9 +53,8 @@ Currently implemented:
     The next features are not implemented:
     - getMetaData
     - setArray
-    - setAsciiStream, setBinaryStream, setCharacterStream, setUnicodeStream
+    - setAsciiStream, setBinaryStream, setUnicodeStream
     - setBlob
-    - setBytes
     - setRef, setURI
   * java.sql.ResultSet interface
     The next features are not implemented:

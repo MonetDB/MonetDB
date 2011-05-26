@@ -21,11 +21,14 @@ Ready.
 
 Over..
 
-# 13:47:17 >  
-# 13:47:17 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=34888 
-# 13:47:17 >  
+# 20:21:38 >  
+# 20:21:38 >  mclient -lsql -ftest -i -e --host=alf --port=38886 
+# 20:21:38 >  
 
-% sys.a,	sys.a,	.a # table_name
+#CREATE TABLE relation_members_relation (relation integer, idx integer, to_relation integer, role varchar(255), primary key(relation, idx));
+#WITH a(relation, to_relation, indent) AS (SELECT relation, to_relation,
+#        0 FROM relation_members_relation) SELECT * FROM a;
+% sys.relation_members_relation,	sys.relation_members_relation,	.a # table_name
 % relation,	to_relation,	indent # name
 % int,	int,	tinyint # type
 % 1,	1,	1 # length

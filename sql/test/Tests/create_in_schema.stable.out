@@ -66,23 +66,33 @@ Over..
 % id # name
 % int # type
 % 1 # length
-% sys.v_bla1 # table_name
+#create view v_bla1 as select * from bla1;
+#select * from v_bla1;
+% sys.bla1 # table_name
 % id # name
 % int # type
 % 1 # length
-% tmp.v_bla2 # table_name
+#create view v_bla2 as select * from bla2;
+#select * from v_bla2;
+% tmp.bla2 # table_name
 % id # name
 % int # type
 % 1 # length
-% bla.v_bla3 # table_name
+#create view v_bla3 as select * from bla.bla3;
+#select * from v_bla3;
+% bla.bla3 # table_name
 % id # name
 % int # type
 % 1 # length
-% tmp.v_bla4 # table_name
+#create view bla.v_bla4 as select * from bla4;
+#select * from bla.v_bla4;
+% tmp.bla4 # table_name
 % id # name
 % int # type
 % 1 # length
-% tmp.v_bla5 # table_name
+#create view tmp.v_bla5 as select * from bla5;
+#select * from v_bla5;
+% tmp.bla5 # table_name
 % id # name
 % int # type
 % 1 # length

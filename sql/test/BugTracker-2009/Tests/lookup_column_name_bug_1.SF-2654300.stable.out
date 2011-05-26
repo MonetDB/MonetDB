@@ -28,13 +28,21 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-% sys.x2,	sys.x2 # table_name
+#create view x1 as
+#select s as a1, n as a2 from x;
+#create view x2 as
+#select a2 as a1, a1 as a2 from x1;
+#select * from x2 where a2='two';
+% sys.x1,	sys.x1 # table_name
 % a1,	a2 # name
-% int,	varchar # type
-% 1,	3 # length
-[ 2,	"two"	]
+% varchar,	int # type
+% 3,	1 # length
+[ "two",	2	]
+#drop view x2;
+#drop view x1;
+#drop table x;
 
-# 14:20:17 >  
-# 14:20:17 >  Done.
-# 14:20:17 >  
+# 20:11:19 >  
+# 20:11:19 >  Done.
+# 20:11:19 >  
 

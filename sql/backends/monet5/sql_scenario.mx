@@ -407,6 +407,7 @@ SQLinitClient(Client c)
 {
 	mvc *m;
 	str schema;
+	str msg = MAL_SUCCEED;
 	backend *be;
 	bstream *bfd = NULL;
 	stream *fd = NULL;
@@ -480,7 +481,6 @@ to initialize the catalog based on the mandatory scripts to be executed.
 					filename = p + 1;
 
 				if (fd) {
-					str msg = MAL_SUCCEED;
 					bfd = bstream_create(fd, 128 * BLOCK);
 					if (bfd && bstream_next(bfd) >= 0)
 						msg = SQLstatementIntern(c, &bfd->buf, "sql.init", TRUE, FALSE);
@@ -488,10 +488,8 @@ to initialize the catalog based on the mandatory scripts to be executed.
 					if (m->sa)
 						sa_destroy(m->sa);
 					m->sa = NULL;
-					if (msg) {
-						GDKfree(fullname);
-						return msg;
-					}
+					if (msg) 
+						p = NULL;
 				}
 			} while (p);
 			GDKfree(fullname);
@@ -500,7 +498,14 @@ to initialize the catalog based on the mandatory scripts to be executed.
 	}
 	fflush(stdout);
 	fflush(stderr);
-	return MAL_SUCCEED;
+
+	/* send error from create scripts back to the first client */
+	if (msg) {
+		error(c->fdout, msg);
+		handle_error(m, c->fdout, 0);
+		sqlcleanup(m, mvc_status(m));
+	}
+	return msg;
 }
 
 str

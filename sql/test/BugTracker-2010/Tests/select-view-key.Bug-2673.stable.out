@@ -40,7 +40,7 @@ Over..
 #        v2673.name <> 'UNKNOWN'
 #        and v2673.name = 'Hb_4863'
 #;
-% sys.v2673 # table_name
+% sys.t2673 # table_name
 % name # name
 % varchar # type
 % 0 # length

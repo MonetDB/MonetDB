@@ -58,12 +58,6 @@ rel_destroy_(sql_rel *rel)
 	} else if (is_project(rel->op)) {
 		if (rel->l)
 			rel_destroy(rel->l);
-	} else if (rel->op == op_table) {
-		if (rel->p)
-			prop_destroy(rel->p);
-	} else if (rel->op == op_basetable) {
-		if (rel->p)
-			prop_destroy(rel->p);
 	} else if (is_modify(rel->op)) {
 		if (rel->r)
 			rel_destroy(rel->r);

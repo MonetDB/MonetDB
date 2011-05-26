@@ -3572,6 +3572,16 @@ func_ref:
 	  	$$ = _symbol_create_list( SQL_NOP, l ); 
 	  }
 	}
+/*
+|   '(' '(' scalar_exp_list ')' qfunc '(' scalar_exp_list ')' ')'
+	{ dlist *l = L();
+  	  append_list(l, $5);
+  	  append_list(l, $3);
+  	  append_list(l, $7);
+  	  append_int(l, 0);	
+	  $$ = _symbol_create_list( SQL_JOIN, l ); 
+	}
+*/
  ;
 
 qfunc:

@@ -880,7 +880,13 @@ Open the file. Memory map it to minimize buffering problems.
 			BBPunfix(b->batCacheid);
 			throw(MAL, "io.imports", OPERATION_FAILED "Empty file or fstat broken");
 		}
-		base = cur = (char *) MT_mmap(*fnme, MMAP_SEQUENTIAL, 0, st.st_size);
+#if SIZEOF_SIZE_T == SIZEOF_INT
+		if (st.st_size > ~ (size_t) 0) {
+			BBPunfix(b->batCacheid);
+			throw(MAL, "io.imports", OPERATION_FAILED "File too large");
+		}
+#endif
+		base = cur = (char *) MT_mmap(*fnme, MMAP_SEQUENTIAL, 0, (size_t) st.st_size);
 		end = cur + st.st_size;
 		if (cur == (char *) -1) {
 			BBPunfix(b->batCacheid);

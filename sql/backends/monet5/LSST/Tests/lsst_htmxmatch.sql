@@ -9,3 +9,5 @@ select  * from htm a, htm b where a.id xmatch(0) b.id;
 
 -- select pairs at distance one
 select  * from htm a, htm b where a.id xmatch(1) b.id;
+
+drop table htm;

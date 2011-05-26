@@ -61,8 +61,8 @@ Over..
 % .,	. # table_name
 % single_value,	single_value # name
 % char,	varchar # type
-% 23,	48 # length
-[ "optimizer <empty> test:",	"inline,remap,deadcode,multiplex,garbageCollector"	]
+% 23,	175 # length
+[ "optimizer <empty> test:",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector"	]
 #select 'done';
 % . # table_name
 % single_value # name

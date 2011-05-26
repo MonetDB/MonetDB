@@ -23,6 +23,7 @@ import java.sql.*;
 import java.util.*;
 import java.net.URL;
 import java.io.*;
+import java.nio.*;
 import java.math.*;	// BigDecimal, etc.
 import java.text.SimpleDateFormat;
 
@@ -628,7 +629,13 @@ public class MonetPreparedStatement
 		int length)
 		throws SQLException
 	{
-		throw new SQLException("Operation setCharacterStream(int parameterIndex, Reader reader, int length) currently not supported!");
+		CharBuffer tmp = CharBuffer.allocate(length);
+		try {
+			reader.read(tmp);
+		} catch (IOException e) {
+			throw new SQLException(e.getMessage());
+		}
+		setString(parameterIndex, tmp.toString());
 	}
 
 	/**

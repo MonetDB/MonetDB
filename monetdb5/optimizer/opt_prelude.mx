@@ -203,6 +203,7 @@ opt_export  str uselectRef;
 opt_export  str userRef;
 opt_export  str antiuselectRef;
 opt_export  str antijoinRef;
+opt_export  str zero_or_oneRef;
 
 opt_export int canBeCrackedProp;	/* binary */
 opt_export int canBeJoinselectProp;	/* binary */
@@ -414,6 +415,7 @@ str uselectRef;
 str userRef;
 str antiuselectRef;
 str antijoinRef;
+str zero_or_oneRef;
 
 int canBeCrackedProp;
 int canBeJoinselectProp;
@@ -620,6 +622,7 @@ void optimizerInit(){
 		uselectRef = putName("uselect",7);
 		antiuselectRef = putName("antiuselect",11);
 		antijoinRef = putName("antijoin",8);
+		zero_or_oneRef = putName("zero_or_one",11);
 		userRef = putName("user",4);
 
 		canBeCrackedProp = PropertyIndex("canBeCracked");

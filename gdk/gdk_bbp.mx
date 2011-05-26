@@ -2597,7 +2597,7 @@ BBPreleaselref(bat i)
 		return;
 	if (i < 0)
 		i = -i;
-	assert(BBP_refs(i) > 0);
+	assert(BBP_lrefs(i) > 0);
 	decref(i, TRUE, FALSE, lock);
 }
 

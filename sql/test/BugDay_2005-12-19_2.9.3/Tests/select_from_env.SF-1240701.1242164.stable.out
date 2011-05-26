@@ -29,7 +29,6 @@ Over..
 % name # name
 % varchar # type
 % 16 # length
-[ "default_pipe"	]
 [ "gdk_alloc_map"	]
 [ "gdk_dbfarm"	]
 [ "gdk_dbname"	]
@@ -42,7 +41,6 @@ Over..
 [ "mapi_autosense"	]
 [ "mapi_open"	]
 [ "mapi_port"	]
-[ "minimal_pipe"	]
 [ "monet_daemon"	]
 [ "monet_mod_path"	]
 [ "monet_pid"	]

@@ -1,0 +1,82 @@
+stdout of test 'crash_in_push_exp_down.Bug-2811` in directory 'test/BugTracker-2011` itself:
+
+
+# 14:31:52 >  
+# 14:31:52 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/ufs/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB" --set mapi_open=true --set mapi_port=34980 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_test_BugTracker-2011" --set mal_listing=0 ; echo ; echo Over..
+# 14:31:52 >  
+
+# MonetDB 5 server v11.3.2
+# This is an unreleased version
+# Serving database 'mTests_test_BugTracker-2011', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.752 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:34980/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+Over..
+
+# 14:31:53 >  
+# 14:31:53 >  mclient -lsql -ftest -i -e --host=alf --port=34980 
+# 14:31:53 >  
+
+#start transaction;
+#CREATE TABLE geo_values (
+#	    id integer NOT NULL,
+#	    strdfgeo geometry
+#);
+#CREATE TABLE label_values (
+#	    id integer NOT NULL,
+#	    value character varying(255) NOT NULL
+#);
+#CREATE TABLE long_label_values (
+#	    id integer NOT NULL,
+#	    value text NOT NULL
+#);
+#CREATE TABLE long_uri_values (
+#	    id integer NOT NULL,
+#	    value text NOT NULL
+#);
+#CREATE TABLE triples (
+#	    ctx integer NOT NULL,
+#	    subj integer NOT NULL,
+#	    pred integer NOT NULL,
+#	    obj integer NOT NULL,
+#	    expl boolean NOT NULL,
+#	    interval_start timestamp,
+#	    interval_end timestamp
+#);
+#CREATE TABLE uri_values (
+#	    id integer NOT NULL,
+#	    value character varying(255) NOT NULL
+#);
+#SELECT DISTINCT 
+#h3.obj, 
+#CASE 
+#WHEN u_ENDPOINT.value IS NOT NULL THEN u_ENDPOINT.value 
+#WHEN l_ENDPOINT.value IS NOT NULL THEN l_ENDPOINT.value 
+#WHEN ll_ENDPOINT.value IS NOT NULL THEN ll_ENDPOINT.value 
+#WHEN lu_ENDPOINT.value IS NOT NULL THEN lu_ENDPOINT.value 
+#END
+#FROM 
+#triples t0 
+#INNER JOIN triples h1 ON (h1.pred = 21 AND h1.obj = 42 AND h1.subj =
+#t0.subj) 
+#INNER JOIN triples h2 ON (h2.pred = 5 AND h2.subj = t0.subj) 
+#INNER JOIN triples h3 ON (h3.pred = 20 AND h3.subj = t0.subj)     
+#INNER JOIN triples
+% .h3,	. # table_name
+% obj,	isnull_not_isnull_value # name
+% int,	clob # type
+% 1,	0 # length
+#rollback;
+
+# 14:31:54 >  
+# 14:31:54 >  Done.
+# 14:31:54 >  
+

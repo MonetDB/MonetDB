@@ -155,7 +155,7 @@ tarantula optimizer.
 		/* ensure that GDKnr_threads partitions fit into main memory */
 		r = (BUN) (monet_memory / typewidth / threads);
 		if (rowcnt > r)
-			pieces = (int) MAX ( (rowcnt / r  ? rowcnt/r :1) , (wrd) threads );
+			pieces = (int) MAX ( (r  ? rowcnt/r :1) , (wrd) threads );
 		else
 		/* exploit parallelism, but ensure minimal partition size to limit overhead */
 		if (rowcnt > MINPARTCNT)
