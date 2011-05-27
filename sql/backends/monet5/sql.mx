@@ -2277,7 +2277,7 @@ str
 setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *res = (int*)getArgReference(stk, pci, 0);
-	mvc *m;
+	mvc *m = NULL;
 	str msg = getContext(cntxt, mb, &m, NULL);
 	str varname   = *(str *) getArgReference(stk, pci, 2);
 	int mtype = getArgType(mb, pci, 3);
@@ -2317,7 +2317,7 @@ str
 getVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int mtype = getArgType(mb, pci, 0);
-	mvc *m;
+	mvc *m = NULL;
 	str msg = getContext(cntxt, mb, &m, NULL);
 	str varname   = *(str *) getArgReference(stk, pci, 2);
 	ValRecord *dst, *src;
