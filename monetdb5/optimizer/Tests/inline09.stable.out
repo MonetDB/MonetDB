@@ -46,18 +46,18 @@ function user.qry():void;               #  0 qry:void := user.qry() {G}
     b := batstr.replace(b,"O","");      #  6 b:bat[:oid,:str] := STRbatreplace(b:bat[:oid,:str], _25:str, _22:str) {G}
     b := batstr.replace(b,"U","");      #  7 b:bat[:oid,:str] := STRbatreplace(b:bat[:oid,:str], _26:str, _22:str) {G}
     b := batstr.replace(b," ","");      #  8 b:bat[:oid,:str] := STRbatreplace(b:bat[:oid,:str], _27:str, _22:str) {G}
-    _13 := b;                           #  9 _13:bat[:oid,:str] := b:bat[:oid,:str] {G}
-    _13 := batstr.substring(_13,1,5);   # 10 _13:bat[:oid,:str] := STRbatsubstringcst(_13:bat[:oid,:str], _14:int, _15:int) {G}
+    X_13 := b;                          #  9 _13:bat[:oid,:str] := b:bat[:oid,:str] {G}
+    X_13 := batstr.substring(X_13,1,5); # 10 _13:bat[:oid,:str] := STRbatsubstringcst(_13:bat[:oid,:str], _14:int, _15:int) {G}
     b := batstr.replace(b,"A","");      # 11 b:bat[:oid,:str] := STRbatreplace(b:bat[:oid,:str], _21:str, _22:str) {G}
     b := batstr.replace(b,"E","");      # 12 b:bat[:oid,:str] := STRbatreplace(b:bat[:oid,:str], _23:str, _22:str) {G}
     b := batstr.replace(b,"I","");      # 13 b:bat[:oid,:str] := STRbatreplace(b:bat[:oid,:str], _24:str, _22:str) {G}
     b := batstr.replace(b,"O","");      # 14 b:bat[:oid,:str] := STRbatreplace(b:bat[:oid,:str], _25:str, _22:str) {G}
     b := batstr.replace(b,"U","");      # 15 b:bat[:oid,:str] := STRbatreplace(b:bat[:oid,:str], _26:str, _22:str) {G}
     b := batstr.replace(b," ","");      # 16 b:bat[:oid,:str] := STRbatreplace(b:bat[:oid,:str], _27:str, _22:str) {G}
-    _16 := b;                           # 17 _16:bat[:oid,:str] := b:bat[:oid,:str] {G}
-    _16 := batstr.substring(_16,1,3);   # 18 _16:bat[:oid,:str] := STRbatsubstringcst(_16:bat[:oid,:str], _14:int, _17:int) {G}
-    _18 := batcalc.+(_13,_16);          # 19 _18:bat[:oid,:str] := STRbatConcat(_13:bat[:oid,:str], _16:bat[:oid,:str]) {G}
-    z:bat[:oid,:str] {inline} := _18;   # 20 z:bat[:oid,:str] := _18:bat[:oid,:str] {G}
+    X_16 := b;                          # 17 _16:bat[:oid,:str] := b:bat[:oid,:str] {G}
+    X_16 := batstr.substring(X_16,1,3); # 18 _16:bat[:oid,:str] := STRbatsubstringcst(_16:bat[:oid,:str], _14:int, _17:int) {G}
+    X_18 := batcalc.+(X_13,X_16);       # 19 _18:bat[:oid,:str] := STRbatConcat(_13:bat[:oid,:str], _16:bat[:oid,:str]) {G}
+    z:bat[:oid,:str] {inline} := X_18;  # 20 z:bat[:oid,:str] := _18:bat[:oid,:str] {G}
 end qry;                                # 21  
 
 # 11:53:00 >  

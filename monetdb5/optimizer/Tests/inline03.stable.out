@@ -31,14 +31,14 @@ end main;
 function user.qry():void;               #  0 qry:void := user.qry() {G}
     b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
     bat.insert(b,0@0,1);                #  2 _4:bat[:oid,:int] := BKCinsert_bun(b:bat[:oid,:int], _5:oid, _6:int) {G}
-    _14 := 1;                           #  3 _14:int := _6:int 
-    _15 := batcalc.+(b,b);              #  4 _15:bat[:oid,:int] := CMDbatADD_int_int_int(b:bat[:oid,:int], b:bat[:oid,:int]) {G}
-    _15 := batcalc.*(_15,_14);          #  5 _15:bat[:oid,:int] := CMDbatMULcst_int_int_int(_15:bat[:oid,:int], _14:int) {G}
-    z:bat[:oid,:int] {inline} := _15;   #  6 z:bat[:oid,:int] := _15:bat[:oid,:int] {G}
-    _19 := 1;                           #  7 _19:int := _6:int 
-    _20 := batcalc.+(b,2);              #  8 _20:bat[:oid,:int] := CMDbatADDcst_int_int_int(b:bat[:oid,:int], _10:int) {G}
-    _20 := batcalc.*(_20,_19);          #  9 _20:bat[:oid,:int] := CMDbatMULcst_int_int_int(_20:bat[:oid,:int], _19:int) {G}
-    z:bat[:oid,:int] {inline} := _20;   # 10 z:bat[:oid,:int] := _20:bat[:oid,:int] {G}
+    X_14 := 1;                          #  3 _14:int := _6:int 
+    X_15 := batcalc.+(b,b);             #  4 _15:bat[:oid,:int] := CMDbatADD_int_int_int(b:bat[:oid,:int], b:bat[:oid,:int]) {G}
+    X_15 := batcalc.*(X_15,X_14);       #  5 _15:bat[:oid,:int] := CMDbatMULcst_int_int_int(_15:bat[:oid,:int], _14:int) {G}
+    z:bat[:oid,:int] {inline} := X_15;  #  6 z:bat[:oid,:int] := _15:bat[:oid,:int] {G}
+    X_19 := 1;                          #  7 _19:int := _6:int 
+    X_20 := batcalc.+(b,2);             #  8 _20:bat[:oid,:int] := CMDbatADDcst_int_int_int(b:bat[:oid,:int], _10:int) {G}
+    X_20 := batcalc.*(X_20,X_19);       #  9 _20:bat[:oid,:int] := CMDbatMULcst_int_int_int(_20:bat[:oid,:int], _19:int) {G}
+    z:bat[:oid,:int] {inline} := X_20;  # 10 z:bat[:oid,:int] := _20:bat[:oid,:int] {G}
 end qry;                                # 11  
 
 # 18:00:43 >  

@@ -14,7 +14,7 @@ stdout of test 'compress` in directory 'modules/mal` itself:
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:34464/
 function sql.bind(s:str,t:str,c:str,i:int):bat[:any_1,:any_2];
-    return _5 := bat.new(:any_1,:any_2);
+    return X_5 := bat.new(:any_1,:any_2);
 end bind;
 function sql.qry():void;
     b:bat[:oid,:int]  := sql.bind("sys","tab","col",0);
@@ -53,8 +53,8 @@ end main;
 [ 100000 ]
 Checksum difference should be zero 0.000000
 function sql.qry():void;
-    _6:bat[:oid,:int]  := sql.bind("sys","tab","col",0);
-    b:bat[:oid,:int]  := bbp.decompress(_6,"sys_tab_col_0");
+    X_6:bat[:oid,:int]  := sql.bind("sys","tab","col",0);
+    b:bat[:oid,:int]  := bbp.decompress(X_6,"sys_tab_col_0");
 end qry;
 
 # 10:34:07 >  

@@ -55,14 +55,14 @@ function sql.query(A0:sht):void;        #  0 query:void := sql.query(A0:sht) {G}
     x14{rows=1:lng} := algebra.markT(x7{rows=1:lng},0@0);# 11 x14:bat[:oid,:oid] := ALGtmark(x7:bat[:oid,:void], _26:oid) {G}
     x15{rows=1:lng} := bat.reverse(x14{rows=1:lng});# 12 x15:bat[:oid,:oid] := BKCreverse(x14:bat[:oid,:oid]) {G}
     x16{rows=1:lng} := algebra.join(x15{rows=1:lng},x1{notnil=true,rows=1:lng,bid=769});# 13 x16:bat[:oid,:int] := ALGjoin(x15:bat[:oid,:oid], x1:bat[:oid,:int]) {G}
-    _45 := bpm.new(:oid,:int);          # 14 _45:bat[:oid,:int] := BPMnew(_46:oid, _47:int) {G}
+    X_45 := bpm.new(:oid,:int);         # 14 _45:bat[:oid,:int] := BPMnew(_46:oid, _47:int) {G}
     x19{rows=1:lng} := nil:bat[:oid,:int];# 15 x19:bat[:oid,:int] := _49:bat[:oid,:int] {G}
 barrier x17:bat[:oid,:int] {notnil=true,rows=1:lng,bid=772} := bpm.newIterator(bpm19);# 16 x17:bat[:oid,:int] := BPMnewIterator(bpm19:bat[:oid,:int]) {GJ20}
     x19{rows=1:lng} := algebra.join(x15{rows=1:lng},x17{notnil=true,rows=1:lng,bid=772});# 17 x19:bat[:oid,:int] := ALGjoin(x15:bat[:oid,:oid], x17:bat[:oid,:int]) {G}
-    bpm.addPartition(_45,x19{rows=1:lng});# 18 _51:void := BPMaddPartition(_45:bat[:oid,:int], x19:bat[:oid,:int]) {G}
+    bpm.addPartition(X_45,x19{rows=1:lng});# 18 _51:void := BPMaddPartition(_45:bat[:oid,:int], x19:bat[:oid,:int]) {G}
     redo x17:bat[:oid,:int] {notnil=true,rows=1:lng,bid=772} := bpm.hasMoreElements(bpm19);# 19 x17:bat[:oid,:int] := BPMhasMoreElements(bpm19:bat[:oid,:int]) {GJ17}
 exit x17:bat[:oid,:int] {notnil=true,rows=1:lng,bid=772};# 20 x17:bat[:oid,:int] 
-    x19{rows=1:lng} := bpm.fold(_45);   # 21 x19:bat[:oid,:int] := BPMfold(_45:bat[:oid,:int]) {G}
+    x19{rows=1:lng} := bpm.fold(X_45);  # 21 x19:bat[:oid,:int] := BPMfold(_45:bat[:oid,:int]) {G}
     x20:bat[:oid,:int] {rows=1:lng} := batcalc.+(x16{rows=1:lng},x19{rows=1:lng});# 22 x20:bat[:oid,:int] := CMDbatADD_int_int_int(x16:bat[:oid,:int], x19:bat[:oid,:int]) {G}
     x20:bat[:oid,:int] {rows=1:lng} := batcalc.+(x20{rows=1:lng},x16{rows=1:lng});# 23 x20:bat[:oid,:int] := CMDbatADD_int_int_int(x20:bat[:oid,:int], x16:bat[:oid,:int]) {G}
     x21 := sql.resultSet(1,1,x20{rows=1:lng});# 24 x21:void := MDBdummy(_13:int, _13:int, x20:bat[:oid,:int]) {G}

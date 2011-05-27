@@ -31,13 +31,13 @@ end main;
 function user.qry():void;               #  0 qry:void := user.qry() {G}
     b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
     bat.insert(b,0@0,1);                #  2 _4:bat[:oid,:int] := BKCinsert_bun(b:bat[:oid,:int], _5:oid, _6:int) {G}
-    _16 := calc.+(1,2);                 #  3 _16:int := CALCbinaryADDintint(_6:int, _8:int) 
-    zz := _16;                          #  4 zz:int := _16:int 
+    X_16 := calc.+(1,2);                #  3 _16:int := CALCbinaryADDintint(_6:int, _8:int) 
+    zz := X_16;                         #  4 zz:int := _16:int 
 # base line test for inlining 
-    _20 := batcalc.+(b,b);              #  6 _20:bat[:oid,:int] := CMDbatADD_int_int_int(b:bat[:oid,:int], b:bat[:oid,:int]) {G}
-    z:bat[:oid,:int] {inline} := _20;   #  7 z:bat[:oid,:int] := _20:bat[:oid,:int] {G}
-    _24 := batcalc.+(b,2);              #  8 _24:bat[:oid,:int] := CMDbatADDcst_int_int_int(b:bat[:oid,:int], _8:int) {G}
-    z:bat[:oid,:int] {inline} := _24;   #  9 z:bat[:oid,:int] := _24:bat[:oid,:int] {G}
+    X_20 := batcalc.+(b,b);             #  6 _20:bat[:oid,:int] := CMDbatADD_int_int_int(b:bat[:oid,:int], b:bat[:oid,:int]) {G}
+    z:bat[:oid,:int] {inline} := X_20;  #  7 z:bat[:oid,:int] := _20:bat[:oid,:int] {G}
+    X_24 := batcalc.+(b,2);             #  8 _24:bat[:oid,:int] := CMDbatADDcst_int_int_int(b:bat[:oid,:int], _8:int) {G}
+    z:bat[:oid,:int] {inline} := X_24;  #  9 z:bat[:oid,:int] := _24:bat[:oid,:int] {G}
 end qry;                                # 10  
 
 # 18:00:43 >  

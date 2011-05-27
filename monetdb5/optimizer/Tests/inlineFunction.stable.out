@@ -44,13 +44,13 @@ function user.main():void;
 end main;
 #result of inline
 function user.tst():void;
-barrier _1 := true:bit;
-exit _1;
+barrier X_1 := true:bit;
+exit X_1;
 end tst;
 #result of all optimizers
 function user.tst():void;
-barrier _1 := true:bit;
-exit _1;
+barrier X_1 := true:bit;
+exit X_1;
 end tst;
 
 # 01:05:28 >  

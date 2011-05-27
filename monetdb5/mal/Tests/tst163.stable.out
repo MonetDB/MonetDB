@@ -22,7 +22,7 @@ stdout of test 'tst163` in directory 'mal` itself:
 !TypeException:user.main[3]:'calc.+' undefined in: j:any := calc.+(i:myint, _5:int)
 function user.main():void;
 #multiple atomary types 
-    i := 1:myint;
+    i := "1":myint;
     j := calc.+(i,3);
     io.print(i);
     io.print(j);

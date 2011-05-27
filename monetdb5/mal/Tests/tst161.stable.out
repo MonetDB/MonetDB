@@ -14,7 +14,7 @@ stdout of test 'tst161` in directory 'mal` itself:
 !SyntaxException:defConstant:constant coercion error from int to mytype
 #end l;
 function mytype.l():mytype;
-    return l := 0:mytype;
+    return l := "0":mytype;
 end l;
 #
 #z:= mytype.l();
