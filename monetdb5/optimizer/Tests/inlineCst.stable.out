@@ -39,8 +39,8 @@ function user.qry():void;               #  0 qry:void := user.qry() {G}
     bat.append(b,1);                    #  2 _4:bat[:oid,:int] := BKCappend_val_wrap(b:bat[:oid,:int], _5:int) {G}
     bat.append(b,10);                   #  3 _6:bat[:oid,:int] := BKCappend_val_wrap(b:bat[:oid,:int], _7:int) {G}
     bat.append(b,20);                   #  4 _8:bat[:oid,:int] := BKCappend_val_wrap(b:bat[:oid,:int], _9:int) {G}
-    _16 := 213;                         #  5 _16:int := _17:int 
-    r:bat[:oid,:int] {inline} := algebra.project(b,_16);#  6 r:bat[:oid,:int] := ALGprojectCst(b:bat[:oid,:int], _16:int) {G}
+    X_16 := 213;                        #  5 _16:int := _17:int 
+    r:bat[:oid,:int] {inline} := algebra.project(b,X_16);#  6 r:bat[:oid,:int] := ALGprojectCst(b:bat[:oid,:int], _16:int) {G}
     io.print(r{inline});                #  7 _13:void := IOprint_val(r:bat[:oid,:int]) {G}
 end qry;                                #  8  
 

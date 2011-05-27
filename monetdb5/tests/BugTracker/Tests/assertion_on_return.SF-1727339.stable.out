@@ -14,7 +14,7 @@ stdout of test 'assertion_on_return.SF-1727339` in directory 'tests/BugTracker` 
 #
 !TypeException:user.main[1]:'_1' may not be used before being initialized
 function user.main():void;
-    return main := _1;
+    return main := X_1;
 end main;
 
 # 20:24:32 >  

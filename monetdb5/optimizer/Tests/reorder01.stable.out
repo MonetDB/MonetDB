@@ -13,10 +13,10 @@ stdout of test 'reorder01` in directory 'optimizer` itself:
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:30576/
 function sql.bind(s:str,t:str,c:str,i:int):bat[:any_1,:any_2];
-    return _5 := bat.new(:any_1,:any_2);
+    return X_5 := bat.new(:any_1,:any_2);
 end bind;
 function sql.bind_dbat(s:str,t:str,i:int):bat[:any_1,:any_2];
-    return _4 := bat.new(:any_1,:any_2);
+    return X_4 := bat.new(:any_1,:any_2);
 end bind_dbat;
 function user.s0_0():void;
     X1:bat[:oid,:int]  := sql.bind("tmp","_tables","id",0);

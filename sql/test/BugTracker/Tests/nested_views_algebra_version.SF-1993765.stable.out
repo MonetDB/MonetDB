@@ -28,7 +28,7 @@ Over..
 #create view v11993765 as select * from t11993765 where id = 0;
 #create view v21993765 as select * from v11993765 where age =1;
 #select * from v21993765 LIMIT 10;
-% sys.t11993765,	sys.t11993765 # table_name
+% sys.v21993765,	sys.v21993765 # table_name
 % id,	age # name
 % int,	int # type
 % 1,	1 # length

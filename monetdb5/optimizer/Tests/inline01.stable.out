@@ -38,21 +38,21 @@ function user.main():void;
     mdb.List("user","qry");
 end main;
 function user.qry():void;               #  0 qry:void := user.qry() {G}
-    _5 := bat.new(:int,:int);           #  1 _5:bat[:int,:int] := CMDBATnew(_6:int, _6:int) {G}
-    _7 := bat.new(:int,:int);           #  2 _7:bat[:int,:int] := CMDBATnew(_6:int, _6:int) {G}
-    _8:int  := 1;                       #  3 _8:int := _9:int 
-    bat.insert(_5,1,1);                 #  4 _10:bat[:int,:int] := BKCinsert_bun(_5:bat[:int,:int], _9:int, _9:int) {G}
-barrier (_11,_12,_8:int ) := bat.newIterator(_5);#  5 (_11:lng, _12:int, _8:int) := CHPbunIterator(_5:bat[:int,:int]) {GJ9}
-    io.print(_11);                      #  6 _13:void := IOprint_val(_11:lng) 
+    X_5 := bat.new(:int,:int);          #  1 _5:bat[:int,:int] := CMDBATnew(_6:int, _6:int) {G}
+    X_7 := bat.new(:int,:int);          #  2 _7:bat[:int,:int] := CMDBATnew(_6:int, _6:int) {G}
+    X_8:int  := 1;                      #  3 _8:int := _9:int 
+    bat.insert(X_5,1,1);                #  4 _10:bat[:int,:int] := BKCinsert_bun(_5:bat[:int,:int], _9:int, _9:int) {G}
+barrier (X_11,X_12,X_8:int ) := bat.newIterator(X_5);#  5 (_11:lng, _12:int, _8:int) := CHPbunIterator(_5:bat[:int,:int]) {GJ9}
+    io.print(X_11);                     #  6 _13:void := IOprint_val(_11:lng) 
 catch MALException:str ;                #  7 MALException:str {J8}
 exit MALException:str ;                 #  8 MALException:str 
-exit (_11,_12,_8:int );                 #  9 (_11:lng, _12:int, _8:int) 
-barrier (_11,_12,_8:int ) := bat.newIterator(_7);# 10 (_11:lng, _12:int, _8:int) := CHPbunIterator(_7:bat[:int,:int]) {GJ15}
-    io.print(_11);                      # 11 _15:void := IOprint_val(_11:lng) 
-    redo (_11,_12,_8:int ) := bat.hasMoreElements(_7);# 12 (_11:lng, _12:int, _8:int) := CHPbunHasMoreElements(_7:bat[:int,:int]) {GJ11}
+exit (X_11,X_12,X_8:int );              #  9 (_11:lng, _12:int, _8:int) 
+barrier (X_11,X_12,X_8:int ) := bat.newIterator(X_7);# 10 (_11:lng, _12:int, _8:int) := CHPbunIterator(_7:bat[:int,:int]) {GJ15}
+    io.print(X_11);                     # 11 _15:void := IOprint_val(_11:lng) 
+    redo (X_11,X_12,X_8:int ) := bat.hasMoreElements(X_7);# 12 (_11:lng, _12:int, _8:int) := CHPbunHasMoreElements(_7:bat[:int,:int]) {GJ11}
 catch MALException:str ;                # 13 MALException:str {J14}
 exit MALException:str ;                 # 14 MALException:str 
-exit (_11,_12,_8:int );                 # 15 (_11:lng, _12:int, _8:int) 
+exit (X_11,X_12,X_8:int );              # 15 (_11:lng, _12:int, _8:int) 
 end qry;                                # 16  
 
 # 00:18:07 >  

@@ -15,7 +15,7 @@ stdout of test 'tst162` in directory 'mal` itself:
 #    return l:= nil:strtype;
 #end l;
 function strtype.l():strtype;
-    l := 1:strtype;
+    l := "1":strtype;
     return l := nil:strtype;
 end l;
 #

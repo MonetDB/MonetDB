@@ -44,12 +44,12 @@ function user.tst():void;               #  0 tst:void := user.tst() {G}
     V16 := algebra.markT(V12);          #  6 V16:bat[:oid,:oid] := ALGtmark_default(V12:bat[:oid,:int]) {G}
     V17 := algebra.join(V16,V7);        #  7 V17:bat[:oid,:int] := ALGjoin(V16:bat[:oid,:oid], V7:bat[:oid,:int]) {G}
     bat.append(V1,V17);                 #  8 _11:bat[:oid,:int] := BKCappend_wrap(V1:bat[:oid,:int], V17:bat[:oid,:int]) {G}
-barrier (_17,_18,_19) := bat.newIterator(V1);#  9 (_17:lng, _18:oid, _19:int) := CHPbunIterator(V1:bat[:oid,:int]) {GJ14}
+barrier (X_17,X_18,X_19) := bat.newIterator(V1);#  9 (_17:lng, _18:oid, _19:int) := CHPbunIterator(V1:bat[:oid,:int]) {GJ14}
     io.print("loop");                   # 10 _20:void := IOprint_val(_21:str) {G}
 catch MALException:str ;                # 11 MALException:str {J13}
     io.print(MALException);             # 12 _23:void := IOprint_val(MALException:str) {G}
 exit MALException:str ;                 # 13 MALException:str 
-exit (_17,_18,_19);                     # 14 (_17:lng, _18:oid, _19:int) 
+exit (X_17,X_18,X_19);                  # 14 (_17:lng, _18:oid, _19:int) 
     io.print("done");                   # 15 _13:void := IOprint_val(_14:str) {G}
 end tst;	# 16  
 

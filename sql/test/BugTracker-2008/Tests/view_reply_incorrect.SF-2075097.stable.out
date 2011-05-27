@@ -40,7 +40,7 @@ Over..
 #FROM NAMGRP1
 #WHERE NAME = 'KERI'
 #AND GRP = 10;
-% sys.L10 # table_name
+% sys.namgrp1 # table_name
 % empnum # name
 % int # type
 % 1 # length

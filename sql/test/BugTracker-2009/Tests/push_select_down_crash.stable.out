@@ -21,11 +21,31 @@ Ready.
 
 Over..
 
-# 18:36:15 >  
-# 18:36:15 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=32790 
-# 18:36:15 >  
+# 08:31:32 >  
+# 08:31:32 >  mclient -lsql -ftest -i -e --host=alf --port=34631 
+# 08:31:32 >  
 
-% .,	sys.schemas,	.tables,	.columns,	.,	.columns,	.columns,	.columns,	.,	.,	.,	.,	.columns,	.,	.,	.,	.,	.,	.,	.,	.,	. # table_name
+#SELECT 
+#	'demo' AS "TABLE_CAT", 
+#	"schemas"."name" AS "TABLE_SCHEM", 
+#	"tables"."name" AS "TABLE_NAME", 
+#	"columns"."name" AS "COLUMN_NAME", 
+#	cast(CASE "columns"."type" 
+#	WHEN 'sec_interval' THEN -5 
+#	WHEN 'bigint' THEN -5 
+#	WHEN 'timetz' THEN 92 
+#	WHEN 'char' THEN 1 
+#	WHEN 'int' THEN 4 
+#	WHEN 'clob' THEN 2005 
+#	WHEN 'month_interval' THEN 4 
+#	WHEN 'table' THEN 2003 
+#	WHEN 'tinyint' THEN -6 
+#	WHEN 'date' THEN 91 
+#	WHEN 'double' THEN 8 
+#	WHEN 'decimal' THEN 3 
+#	WHEN 'timestamptz' THEN 93 
+#	WHEN 'blob' THEN 2
+% .,	.schemas,	.tables,	.columns,	.,	.columns,	.columns,	.columns,	.,	.,	.,	.,	.columns,	.,	.,	.,	.,	.,	.,	.,	.,	. # table_name
 % TABLE_CAT,	TABLE_SCHEM,	TABLE_NAME,	COLUMN_NAME,	DATA_TYPE,	TYPE_NAME,	COLUMN_SIZE,	DECIMAL_DIGITS,	BUFFER_LENGTH,	NUM_PREC_RADIX,	NULLABLE,	REMARKS,	COLUMN_DEF,	SQL_DATA_TYPE,	SQL_DATETIME_SUB,	CHAR_OCTET_LENGTH,	ORDINAL_POSITION,	SCOPE_CATALOG,	SCOPE_SCHEMA,	SCOPE_TABLE,	SOURCE_DATA_TYPE,	IS_NULLABLE # name
 % char,	varchar,	varchar,	varchar,	smallint,	varchar,	int,	int,	tinyint,	tinyint,	int,	varchar,	varchar,	tinyint,	tinyint,	tinyint,	int,	varchar,	varchar,	varchar,	smallint,	varchar # type
 % 4,	0,	0,	0,	1,	0,	1,	1,	1,	1,	1,	0,	0,	1,	1,	1,	1,	0,	0,	0,	1,	0 # length

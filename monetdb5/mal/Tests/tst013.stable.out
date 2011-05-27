@@ -34,7 +34,7 @@ stdout of test 'tst013` in directory 'mal` itself:
 function user.main():void;
 # incomplete barrier blocks. Resolve them when unambigous 
 barrier z := true;
-    leave _4;
+    leave X_4;
 exit z;
 barrier i := 1;
     i := calc.+(i,1);

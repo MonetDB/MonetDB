@@ -21,10 +21,36 @@ Ready.
 
 Over..
 
-# 11:50:52 >  
-# 11:50:52 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < alias_union_join.SF-1063089.sql
-# 11:50:52 >  
+# 20:44:59 >  
+# 20:44:59 >  mclient -lsql -ftest -i -e --host=alf --port=36753 
+# 20:44:59 >  
 
+#CREATE TABLE tempEntries (
+#	url varchar(255),
+#	psize int
+#);
+#CREATE TABLE entries (
+#	id int,
+#	url varchar(255) not null unique,
+#	doc date,
+#	dom date,
+#	psize int,
+#	ranking int,
+#	primary key (id)
+#);
+#CREATE TABLE links (
+#	entryid int,
+#	url varchar(255) not null,
+#	primary key (entryid, url)
+#);
+#select locallinks.url, allentries.psize
+#from links locallinks inner join (
+#	select url, psize
+#		from entries union
+#			select url, psize
+#				from tempEntries
+#	) as allentries
+#	on locallinks.url=allentries.url;
 % sys.locallinks,	.allentries # table_name
 % url,	psize # name
 % varchar,	int # type

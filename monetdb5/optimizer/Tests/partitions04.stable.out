@@ -52,14 +52,14 @@ function sql.query(A0:sht):void;        #  0 query:void := sql.query(A0:sht) {G}
     bpm17:bat[:oid,:int]  := bpm.unfold(x13{notnil=true,rows=1,bid=2201});#  9 bpm17:bat[:oid,:int] := BPMunfold(x13:bat[:oid,:int]) {G}
     x11{rows=1} := algebra.markT(x1{notnil=true,rows=1,bid=2199},0@0);# 10 x11:bat[:oid,:oid] := ALGtmark(x1:bat[:oid,:int], _21:oid) {G}
     x12{rows=1} := bat.reverse(x11{rows=1});# 11 x12:bat[:oid,:oid] := BKCreverse(x11:bat[:oid,:oid]) {G}
-    _40 := bpm.new(:oid,:int);          # 12 _40:bat[:oid,:int] := BPMnew(_41:oid, _42:int) {G}
+    X_40 := bpm.new(:oid,:int);         # 12 _40:bat[:oid,:int] := BPMnew(_41:oid, _42:int) {G}
     x15{rows=1} := nil:bat[:oid,:int];  # 13 x15:bat[:oid,:int] := _44:bat[:oid,:int] {G}
 barrier x13:bat[:oid,:int] {notnil=true,rows=1,bid=2201} := bpm.newIterator(bpm17);# 14 x13:bat[:oid,:int] := BPMnewIterator(bpm17:bat[:oid,:int]) {GJ18}
     x15{rows=1} := algebra.join(x12{rows=1},x13{notnil=true,rows=1,bid=2201});# 15 x15:bat[:oid,:int] := ALGjoin(x12:bat[:oid,:oid], x13:bat[:oid,:int]) {G}
-    bpm.addPartition(_40,x15{rows=1});  # 16 _46:void := BPMaddPartition(_40:bat[:oid,:int], x15:bat[:oid,:int]) {G}
+    bpm.addPartition(X_40,x15{rows=1}); # 16 _46:void := BPMaddPartition(_40:bat[:oid,:int], x15:bat[:oid,:int]) {G}
     redo x13:bat[:oid,:int] {notnil=true,rows=1,bid=2201} := bpm.hasMoreElements(bpm17);# 17 x13:bat[:oid,:int] := BPMhasMoreElements(bpm17:bat[:oid,:int]) {GJ15}
 exit x13:bat[:oid,:int] {notnil=true,rows=1,bid=2201};# 18 x13:bat[:oid,:int] 
-    x15{rows=1} := bpm.fold(_40);       # 19 x15:bat[:oid,:int] := BPMfold(_40:bat[:oid,:int]) {G}
+    x15{rows=1} := bpm.fold(X_40);      # 19 x15:bat[:oid,:int] := BPMfold(_40:bat[:oid,:int]) {G}
     x16{rows=1} := algebra.sortTail(x15{rows=1});# 20 x16:bat[:oid,:int] := ALGtsort(x15:bat[:oid,:int]) {G}
     x17{rows=1} := algebra.join(x12{rows=1},x1{notnil=true,rows=1,bid=2199});# 21 x17:bat[:oid,:int] := ALGjoin(x12:bat[:oid,:oid], x1:bat[:oid,:int]) {G}
     x18 := sql.resultSet(2,1,x16{rows=1});# 22 x18:void := MDBdummy(_15:int, _4:int, x16:bat[:oid,:int]) {G}

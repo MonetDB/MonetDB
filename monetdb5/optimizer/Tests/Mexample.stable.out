@@ -15,25 +15,25 @@ stdout of test 'Mexample` in directory 'optimizer` itself:
 function user.main():void;
     b := bat.new(:int,:int);
     bat.insert(b,1,1);
-    _10 := bat.new(nil:int,nil:int);
-barrier (_13,_14,_15) := bat.newIterator(b);
-    _17 := calc.+(_15,1);
-    bat.insert(_10,_14,_17);
-    redo (_13,_14,_15) := bat.hasMoreElements(b);
-exit (_13,_14,_15);
-    c:bat[:int,:int]  := _10;
+    X_10 := bat.new(nil:int,nil:int);
+barrier (X_13,X_14,X_15) := bat.newIterator(b);
+    X_17 := calc.+(X_15,1);
+    bat.insert(X_10,X_14,X_17);
+    redo (X_13,X_14,X_15) := bat.hasMoreElements(b);
+exit (X_13,X_14,X_15);
+    c:bat[:int,:int]  := X_10;
     mdb.List();
 end main;
 function user.main():void;              #  0 main:void := user.main() {G}
     b := bat.new(:int,:int);            #  1 b:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
     bat.insert(b,1,1);                  #  2 _3:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _4:int, _4:int) {G}
-    _10 := bat.new(nil:int,nil:int);    #  3 _10:bat[:int,:int] := CMDBATnew(_11:int, _11:int) {G}
-barrier (_13,_14,_15) := bat.newIterator(b);#  4 (_13:lng, _14:int, _15:int) := CHPbunIterator(b:bat[:int,:int]) {GJ8}
-    _17 := calc.+(_15,1);               #  5 _17:int := CALCbinaryADDintint(_15:int, _4:int) 
-    bat.insert(_10,_14,_17);            #  6 _18:bat[:int,:int] := BKCinsert_bun(_10:bat[:int,:int], _14:int, _17:int) {G}
-    redo (_13,_14,_15) := bat.hasMoreElements(b);#  7 (_13:lng, _14:int, _15:int) := CHPbunHasMoreElements(b:bat[:int,:int]) {GJ5}
-exit (_13,_14,_15);                     #  8 (_13:lng, _14:int, _15:int) 
-    c:bat[:int,:int]  := _10;           #  9 c:bat[:int,:int] := _10:bat[:int,:int] {G}
+    X_10 := bat.new(nil:int,nil:int);   #  3 _10:bat[:int,:int] := CMDBATnew(_11:int, _11:int) {G}
+barrier (X_13,X_14,X_15) := bat.newIterator(b);#  4 (_13:lng, _14:int, _15:int) := CHPbunIterator(b:bat[:int,:int]) {GJ8}
+    X_17 := calc.+(X_15,1);             #  5 _17:int := CALCbinaryADDintint(_15:int, _4:int) 
+    bat.insert(X_10,X_14,X_17);         #  6 _18:bat[:int,:int] := BKCinsert_bun(_10:bat[:int,:int], _14:int, _17:int) {G}
+    redo (X_13,X_14,X_15) := bat.hasMoreElements(b);#  7 (_13:lng, _14:int, _15:int) := CHPbunHasMoreElements(b:bat[:int,:int]) {GJ5}
+exit (X_13,X_14,X_15);                  #  8 (_13:lng, _14:int, _15:int) 
+    c:bat[:int,:int]  := X_10;          #  9 c:bat[:int,:int] := _10:bat[:int,:int] {G}
     mdb.List();                         # 10 _9:void := MDBlistDetail() 
 end main;                               # 11  
 

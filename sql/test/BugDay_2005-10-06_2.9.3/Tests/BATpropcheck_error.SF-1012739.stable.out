@@ -46,7 +46,7 @@ Over..
 #AND 
 #    "tables"."name" LIKE 'voyages'
 #ORDER BY "COLUMN_N
-% .,	sys.schemas,	.tables,	sys.objects,	sys.keys,	sys.keys # table_name
+% .,	.schemas,	.tables,	.objects,	.keys,	.keys # table_name
 % TABLE_CAT,	TABLE_SCHEM,	TABLE_NAME,	COLUMN_NAME,	KEY_SEQ,	PK_NAME # name
 % char,	varchar,	varchar,	varchar,	int,	varchar # type
 % 0,	0,	0,	0,	1,	0 # length

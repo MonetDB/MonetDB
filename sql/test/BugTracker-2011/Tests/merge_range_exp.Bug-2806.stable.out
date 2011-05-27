@@ -42,7 +42,7 @@ Over..
 #create view iview as 
 #select id,ival from xx where ival >=2 and ival <5;
 #select * from iview;
-% sys.xx,	sys.xx # table_name
+% sys.iview,	sys.iview # table_name
 % id,	ival # name
 % int,	int # type
 % 1,	1 # length
@@ -50,7 +50,7 @@ Over..
 [ 3,	3	]
 [ 4,	4	]
 #select * from iview where ival between 2 and 5;
-% sys.xx,	sys.xx # table_name
+% sys.iview,	sys.iview # table_name
 % id,	ival # name
 % int,	int # type
 % 1,	1 # length
@@ -58,20 +58,20 @@ Over..
 [ 3,	3	]
 [ 4,	4	]
 #select * from iview where ival between 3 and 5;
-% sys.xx,	sys.xx # table_name
+% sys.iview,	sys.iview # table_name
 % id,	ival # name
 % int,	int # type
 % 1,	1 # length
 [ 3,	3	]
 [ 4,	4	]
 #select * from iview where ival between 4 and 5;
-% sys.xx,	sys.xx # table_name
+% sys.iview,	sys.iview # table_name
 % id,	ival # name
 % int,	int # type
 % 1,	1 # length
 [ 4,	4	]
 #select * from iview where ival between 2 and 4;
-% sys.xx,	sys.xx # table_name
+% sys.iview,	sys.iview # table_name
 % id,	ival # name
 % int,	int # type
 % 1,	1 # length

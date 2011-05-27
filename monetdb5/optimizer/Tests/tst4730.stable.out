@@ -13,10 +13,10 @@ stdout of test 'tst4730` in directory 'optimizer` itself:
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32348/
 function user.bind(s:str,t:str,c:str,i:int):bat[:any_1,:any_2];
-    return _5 := bat.new(:any_1,:any_2);
+    return X_5 := bat.new(:any_1,:any_2);
 end bind;
 function user.bind_dbat(s:str,t:str,i:int):bat[:any_1,:any_2];
-    return _4 := bat.new(:any_1,:any_2);
+    return X_4 := bat.new(:any_1,:any_2);
 end bind_dbat;
 function user.column(b:bat[:oid,:any_1],s:str,t:str,i:int,j:int):void;
 end column;

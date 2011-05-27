@@ -54,14 +54,14 @@ function sql.query(A0:sht):void;        #  0 query:void := sql.query(A0:sht) {G}
     x14{rows=1} := algebra.markT(x7{rows=1},0@0);# 11 x14:bat[:oid,:oid] := ALGtmark(x7:bat[:oid,:void], _24:oid) {G}
     x15{rows=1} := bat.reverse(x14{rows=1});# 12 x15:bat[:oid,:oid] := BKCreverse(x14:bat[:oid,:oid]) {G}
     x16{rows=1} := algebra.join(x15{rows=1},x1{notnil=true,rows=1,bid=2199});# 13 x16:bat[:oid,:int] := ALGjoin(x15:bat[:oid,:oid], x1:bat[:oid,:int]) {G}
-    _43 := bpm.new(:oid,:int);          # 14 _43:bat[:oid,:int] := BPMnew(_44:oid, _45:int) {G}
+    X_43 := bpm.new(:oid,:int);         # 14 _43:bat[:oid,:int] := BPMnew(_44:oid, _45:int) {G}
     x19{rows=1} := nil:bat[:oid,:int];  # 15 x19:bat[:oid,:int] := _47:bat[:oid,:int] {G}
 barrier x17:bat[:oid,:int] {notnil=true,rows=1,bid=2201} := bpm.newIterator(bpm17);# 16 x17:bat[:oid,:int] := BPMnewIterator(bpm17:bat[:oid,:int]) {GJ20}
     x19{rows=1} := algebra.join(x15{rows=1},x17{notnil=true,rows=1,bid=2201});# 17 x19:bat[:oid,:int] := ALGjoin(x15:bat[:oid,:oid], x17:bat[:oid,:int]) {G}
-    bpm.addPartition(_43,x19{rows=1});  # 18 _49:void := BPMaddPartition(_43:bat[:oid,:int], x19:bat[:oid,:int]) {G}
+    bpm.addPartition(X_43,x19{rows=1}); # 18 _49:void := BPMaddPartition(_43:bat[:oid,:int], x19:bat[:oid,:int]) {G}
     redo x17:bat[:oid,:int] {notnil=true,rows=1,bid=2201} := bpm.hasMoreElements(bpm17);# 19 x17:bat[:oid,:int] := BPMhasMoreElements(bpm17:bat[:oid,:int]) {GJ17}
 exit x17:bat[:oid,:int] {notnil=true,rows=1,bid=2201};# 20 x17:bat[:oid,:int] 
-    x19{rows=1} := bpm.fold(_43);       # 21 x19:bat[:oid,:int] := BPMfold(_43:bat[:oid,:int]) {G}
+    x19{rows=1} := bpm.fold(X_43);      # 21 x19:bat[:oid,:int] := BPMfold(_43:bat[:oid,:int]) {G}
     x20:bat[:oid,:int] {rows=1} := batcalc.+(x16{rows=1},x19{rows=1});# 22 x20:bat[:oid,:int] := CMDbatADD_int_int_int(x16:bat[:oid,:int], x19:bat[:oid,:int]) {G}
     x21 := sql.resultSet(1,1,x20{rows=1});# 23 x21:void := MDBdummy(_4:int, _4:int, x20:bat[:oid,:int]) {G}
     sql.rsColumn(x21,"sys.","sqlxaddxi","int",32,0,x20{rows=1});# 24 _30:void := MDBdummy(x21:void, _31:str, _32:str, _33:str, _34:int, _9:int, x20:bat[:oid,:int]) {G}

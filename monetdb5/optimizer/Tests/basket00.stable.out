@@ -71,7 +71,7 @@ factory datacell.bqs0_0(X7:int):void;
     bat.delete(X2,X21);
     basket.unlock(X3);
     basket.unlock(X2);
-barrier _36 := true;
+barrier X_36 := true;
     basket.lock(X2);
     basket.lock(X3);
 # the marker of the [ 
@@ -94,8 +94,8 @@ barrier _36 := true;
     bat.delete(X2,X21);
     basket.unlock(X3);
     basket.unlock(X2);
-    redo _36 := true;
-exit _36;
+    redo X_36 := true;
+exit X_36;
 end bqs0_0;
 
 # 14:09:12 >  

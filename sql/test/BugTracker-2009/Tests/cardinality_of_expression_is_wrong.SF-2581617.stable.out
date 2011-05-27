@@ -32,7 +32,7 @@ Over..
 [ 1	]
 #create view v2_2581617 as (select id, age from t1_2581617 group by id, age);
 #select id from v2_2581617 where id = 2;
-% sys.t1_2581617 # table_name
+% sys.v2_2581617 # table_name
 % id # name
 % int # type
 % 1 # length

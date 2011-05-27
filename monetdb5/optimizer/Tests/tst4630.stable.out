@@ -34,9 +34,9 @@ function user.qry(a:bat[:any_1,:any_2],b:bat[:any_2,:any_3],c:bat[:any_3,:any_4]
     z := algebra.join(a,b);             #  4 z:bat[:any,:any] := ALGjoin(a:bat[:any_1,:any_2], b:bat[:any_2,:any_3]) {G}
     zz := algebra.join(z,c);            #  5 zz:bat[:any,:any] := ALGjoin(z:bat[:any,:any], c:bat[:any_3,:any_4]) {G}
     ww := algebra.join(z,a1);           #  6 ww:bat[:any,:any] := ALGjoin(z:bat[:any,:any], a1:bat[:any_1,:any_2]) {G}
-    _12 := algebra.join(z,a1);          #  7 _12:bat[:any,:any] := ALGjoin(z:bat[:any,:any], a1:bat[:any_1,:any_2]) {G}
-    yy := algebra.join(_12,b1);         #  8 yy:bat[:any,:any] := ALGjoin(_12:bat[:any,:any], b1:bat[:any_2,:any_3]) {G}
-    xx := algebra.joinPath(_12,b1,c1);  #  9 xx:bat[:any,:any] := ALGjoinPath(_12:bat[:any,:any], b1:bat[:any_2,:any_3], c1:bat[:any_3,:any_4]) {G}
+    X_12 := algebra.join(z,a1);         #  7 _12:bat[:any,:any] := ALGjoin(z:bat[:any,:any], a1:bat[:any_1,:any_2]) {G}
+    yy := algebra.join(X_12,b1);        #  8 yy:bat[:any,:any] := ALGjoin(_12:bat[:any,:any], b1:bat[:any_2,:any_3]) {G}
+    xx := algebra.joinPath(X_12,b1,c1); #  9 xx:bat[:any,:any] := ALGjoinPath(_12:bat[:any,:any], b1:bat[:any_2,:any_3], c1:bat[:any_3,:any_4]) {G}
     return qry := xx;                   # 10 qry:bat[:any_1,:any_4] := xx:bat[:any,:any] {G}
 end qry;                                # 11  
 

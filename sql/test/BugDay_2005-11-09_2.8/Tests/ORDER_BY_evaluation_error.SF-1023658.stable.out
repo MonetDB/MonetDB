@@ -32,7 +32,7 @@ Over..
 #  AND "tables"."schema_id" = "schemas"."id"
 #  AND "tables"."system" = FALSE
 #  AND "keys"."type" = 0;
-% sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.objects,	sys.objects,	sys.objects,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas # table_name
+% .keys,	.keys,	.keys,	.keys,	.keys,	.keys,	.objects,	.objects,	.objects,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.schemas,	.schemas,	.schemas,	.schemas # table_name
 % id,	table_id,	type,	name,	rkey,	action,	id,	name,	nr,	id,	name,	schema_id,	query,	type,	system,	commit_action,	readonly,	temporary,	id,	name,	authorization,	owner # name
 % int,	int,	int,	varchar,	int,	int,	int,	varchar,	int,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	boolean,	tinyint,	int,	varchar,	int,	int # type
 % 1,	1,	1,	0,	1,	1,	1,	0,	1,	1,	0,	1,	0,	1,	5,	1,	5,	1,	1,	0,	1,	1 # length
@@ -44,7 +44,7 @@ Over..
 #  AND "tables"."system" = FALSE
 #  AND "keys"."type" = 0
 #ORDER BY "objects"."name";
-% sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.objects,	sys.objects,	sys.objects,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas # table_name
+% .keys,	.keys,	.keys,	.keys,	.keys,	.keys,	.objects,	.objects,	.objects,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.schemas,	.schemas,	.schemas,	.schemas # table_name
 % id,	table_id,	type,	name,	rkey,	action,	id,	name,	nr,	id,	name,	schema_id,	query,	type,	system,	commit_action,	readonly,	temporary,	id,	name,	authorization,	owner # name
 % int,	int,	int,	varchar,	int,	int,	int,	varchar,	int,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	boolean,	tinyint,	int,	varchar,	int,	int # type
 % 1,	1,	1,	0,	1,	1,	1,	0,	1,	1,	0,	1,	0,	1,	5,	1,	5,	1,	1,	0,	1,	1 # length
