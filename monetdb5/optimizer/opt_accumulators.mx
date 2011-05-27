@@ -33,7 +33,7 @@ For example, consider the program snippet
 If variable t2 is a temporary variable and not used any further in
 the program block, we can re-use its storage space.
 @example
-	t3:= batcalc.*(t2,64,t2);
+	t3:= batcalc.*(t2,64,true,false);
 	t4:= batcalc.+(t1,t3);
 @end example
 The implementation is straight forward. It only deals with the
@@ -45,8 +45,13 @@ time, e.g. the argument may be the result of a binding operation
 or represent a view over a persistent BAT.
 
 [NOTE the accumulator optimizer is known to produce
-problems due to concurrent access to BATs.
-It has been disabled]
+problems due to concurrent access to the BATs.
+However, the last instruction for a BAT is now scheduled only
+when all other uses have finished.
+
+The accumulator can be installed just before garbage collector,
+because the other modules do not recognize batcalc operations with
+more arguments.]
 @{
 @mal
 pattern optimizer.accumulators():str
