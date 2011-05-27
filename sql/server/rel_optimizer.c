@@ -2001,143 +2001,141 @@ rel_merge_rse(int *changes, mvc *sql, sql_rel *rel)
  * into
  * 	groupby ( [ union all( groupby( a, [gbe], [ count, sum] ), [ groupby( b, [gbe], [ count, sum] )) , [gbe], [sum, sum] ) 
  */
+static void
+rel_rename_exps( mvc *sql, list *exps1, list *exps2)
+{
+	node *n, *m;
+
+	assert(list_length(exps1) == list_length(exps2)); 
+	for (n = exps1->h, m = exps2->h; n && m; n = n->next, m = m->next) {
+		sql_exp *e1 = n->data;
+		sql_exp *e2 = m->data;
+
+		exp_setname(sql->sa, e2, e1->rname, e1->name );
+	}
+}
+
 static sql_rel *
 rel_push_aggr_down(int *changes, mvc *sql, sql_rel *rel) 
 {
-	sql_rel *u = rel->l;
 
 	/* TODO disjoint partitions don't need the last group by */
-	if (rel->op == op_groupby && 
-	    u && is_union(u->op) && !need_distinct(u) && u->exps) {
+	if (rel->op == op_groupby && rel->l) {
+		sql_rel *u = rel->l, *ou = u;
 		sql_rel *g = rel;
-		sql_rel *l = u->l;
-		sql_rel *r = u->r;
-		list *lexps, *rexps;
+		sql_rel *ul = u->l;
+		sql_rel *ur = u->r;
+		node *n, *m;
+		list *lgbe = NULL, *rgbe = NULL;
 
-		if (!is_project(l->op)) 
-			u->l = l = rel_project(sql->sa, l, rel_projections(sql, l, NULL, 1, 0));
-		if (!is_project(r->op)) 
-			u->r = r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 0));
-	       	lexps = l->exps;
-		rexps = r->exps;
+		if (u->op == op_project)
+			u = u->l;
+
+		if (!u || !is_union(u->op) || need_distinct(u) || !u->exps) 
+			return rel;
+
+		ul = u->l;
+		ur = u->r;
+
 		/* make sure we don't create group by on group by's */
-		if (l->op != op_groupby && r->op != op_groupby) {
-			node *n, *m;
-			list *lgbe = NULL, *rgbe = NULL;
+		if (ul->op == op_groupby || ur->op == op_groupby) 
+			return rel;
 
-			/* distinct should be done over the full result */
-			for (n = g->exps->h; n; n = n->next) {
-				sql_exp *e = n->data;
-				sql_subaggr *af = e->f;
+		rel->subquery = 0;
+		/* distinct should be done over the full result */
+		for (n = g->exps->h; n; n = n->next) {
+			sql_exp *e = n->data;
+			sql_subaggr *af = e->f;
 
-				/* TODO: constants should stay on top groupby */
-				if (e->type == e_atom || 
-				   (e->type == e_aggr && 
-				   ((strcmp(af->aggr->base.name, "sum") && 
-				     strcmp(af->aggr->base.name, "count") &&
-				     strcmp(af->aggr->base.name, "min") &&
-				     strcmp(af->aggr->base.name, "max")) ||
-				   need_distinct(e))))
-					return rel; 
-			}
-
-			if (g->r && list_length(g->r) > 0) {
-				list *gbe = g->r;
-				lgbe = new_exp_list(sql->sa);
-				rgbe = new_exp_list(sql->sa);
-
-				for (n = gbe->h; n; n = n->next) {
-					sql_exp *e = n->data, *ne;
-
-				  	ne = exp_copy(sql->sa, e);
-					append(lgbe, ne);
-					exp_setname(sql->sa, ne, e->rname?e->rname:exp_find_rel_name(e), exp_name(e));
-				  	ne = exp_copy(sql->sa, e);
-					append(rgbe, ne);
-					exp_setname(sql->sa, ne, e->rname?e->rname:exp_find_rel_name(e), exp_name(e));
-				}
-			}
-			l = rel_groupby(sql->sa, rel_dup(l), NULL);
-			r = rel_groupby(sql->sa, rel_dup(r), NULL);
-			l->r = lgbe;
-			l->nrcols = g->nrcols;
-			l->card = g->card;
-			r->r = rgbe;
-			r->nrcols = g->nrcols;
-			r->card = g->card;
-			for (n = g->exps->h; n; n = n->next) {
-				sql_exp *e = n->data, *nle, *nre, *ne;
-				list *ol, *nll = NULL, *nlr = NULL; 
-				node *m;
-
-				/* recreate aggr expression, find base expressions on lower relation */
-				if (e->type == e_aggr) {
-				  ol = e->l;
-				  if (ol) {
-				    nll = new_exp_list(sql->sa); 
-				    nlr = new_exp_list(sql->sa);
-				    for(m = ol->h; m; m = m->next){
-					sql_exp *oe = m->data;
-
-				  	ne = exp_push_down(sql, oe, u, l->l );
-					assert(ne);
-					append(nll, ne);
-				  	ne = exp_push_down(sql, oe, u, r->l );
-					assert(ne);
-					append(nlr, ne);
-				    }
-				  }
-				  nle = exp_aggr(sql->sa, nll, e->f, need_distinct(e), need_no_nil(e), e->card, 0);
-				  nre = exp_aggr(sql->sa, nlr, e->f, need_distinct(e), need_no_nil(e), e->card, 0);
-				} else {
-				  nle = exp_copy(sql->sa, e);
-				  nre = exp_copy(sql->sa, e);
-				}
-				rel_groupby_add_aggr(sql, l, nle);
-				exp_setname(sql->sa, nle, e->rname?e->rname:exp_find_rel_name(e), exp_name(e));
-				rel_groupby_add_aggr(sql, r, nre);
-				exp_setname(sql->sa, nre, e->rname?e->rname:exp_find_rel_name(e), exp_name(e));
-			}
-			u = rel_setop(sql->sa, l, r, op_union);
-			u->exps = rel_projections(sql, r, NULL, 0, 1);
-			g = rel_groupby(sql->sa, u, NULL);
-			if (rel->r) {
-				list *gbe = new_exp_list(sql->sa), *ogbe = rel->r;
-				
-				for (n = ogbe->h; n; n = n->next) {
-					sql_exp *e = n->data, *ne;
-
-					ne = exp_column(sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
-					exp_setname(sql->sa, ne, e->rname?e->rname:exp_find_rel_name(e), exp_name(e));
-					append(gbe, ne);
-				}
-				g->r = gbe;
-			}
-			g->nrcols = rel->nrcols;
-			g->card = rel->card;
-			for (n = u->exps->h, m = rel->exps->h; n && m; n = n->next, m = m->next) {
-				sql_exp *ne, *e = n->data, *oa = m->data;
-				if (oa->type == e_aggr) {
-					sql_subaggr *f = oa->f;
-					int cnt = strcmp(f->aggr->base.name,"count")==0;
-					sql_subaggr *a = sql_bind_aggr(sql->sa, sql->session->schema, (cnt)?"sum":f->aggr->base.name, exp_subtype(e));
-
-					assert(a);
-					/* union of aggr result may have nils 
-				   	because sum/count of empty set */
-					set_has_nil(e);
-					e = exp_column(sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
-					ne = exp_aggr1(sql->sa, e, a, need_distinct(e), 1, e->card, 1);
-				} else {
-					ne = exp_column(sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
-				}
-				exp_setname(sql->sa, ne, oa->rname?oa->rname:exp_find_rel_name(oa), exp_name(oa));
-				rel_groupby_add_aggr(sql, g, ne);
-			}
-			rel_destroy(rel);
-			(*changes)++;
-			return g;
+			/* TODO: constants should stay on top groupby */
+			if (e->type == e_atom || 
+			   (e->type == e_aggr && 
+			   ((strcmp(af->aggr->base.name, "sum") && 
+			     strcmp(af->aggr->base.name, "count") &&
+			     strcmp(af->aggr->base.name, "min") &&
+			     strcmp(af->aggr->base.name, "max")) ||
+			   need_distinct(e))))
+				return rel; 
 		}
+
+		ul = rel_dup(ul);
+		ur = rel_dup(ur);
+		if (!is_project(ul->op)) 
+			ul = rel_project(sql->sa, ul, 
+					rel_projections(sql, ul, NULL, 1, 1));
+		if (!is_project(ur->op)) 
+			ur = rel_project(sql->sa, ur, 
+					rel_projections(sql, ur, NULL, 1, 1));
+		rel_rename_exps(sql, u->exps, ul->exps);
+		rel_rename_exps(sql, u->exps, ur->exps);
+		if (u != ou) {
+			ul = rel_project(sql->sa, ul, NULL);
+			ul->exps = exps_copy(sql->sa, ou->exps);
+			rel_rename_exps(sql, ou->exps, ul->exps);
+			ur = rel_project(sql->sa, ur, NULL);
+			ur->exps = exps_copy(sql->sa, ou->exps);
+			rel_rename_exps(sql, ou->exps, ur->exps);
+		}	
+
+		if (g->r && list_length(g->r) > 0) {
+			list *gbe = g->r;
+
+			lgbe = exps_copy(sql->sa, gbe);
+			rgbe = exps_copy(sql->sa, gbe);
+		}
+		ul = rel_groupby(sql->sa, ul, NULL);
+		ul->r = lgbe;
+		ul->nrcols = g->nrcols;
+		ul->card = g->card;
+		ul->exps = exps_copy(sql->sa, g->exps);
+
+		ur = rel_groupby(sql->sa, ur, NULL);
+		ur->r = rgbe;
+		ur->nrcols = g->nrcols;
+		ur->card = g->card;
+		ur->exps = exps_copy(sql->sa, g->exps);
+
+		u = rel_setop(sql->sa, ul, ur, op_union);
+		u->exps = rel_projections(sql, rel, NULL, 1, 1);
+
+		g = rel_groupby(sql->sa, u, NULL);
+		if (rel->r) {
+			list *gbe = new_exp_list(sql->sa), *ogbe = rel->r;
+			
+			for (n = ogbe->h; n; n = n->next) {
+				sql_exp *e = n->data, *ne;
+
+				ne = exp_column(sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
+				exp_setname(sql->sa, ne, e->rname?e->rname:exp_find_rel_name(e), exp_name(e));
+				append(gbe, ne);
+			}
+			g->r = gbe;
+		}
+		g->nrcols = rel->nrcols;
+		g->card = rel->card;
+		for (n = u->exps->h, m = rel->exps->h; n && m; n = n->next, m = m->next) {
+			sql_exp *ne, *e = n->data, *oa = m->data;
+
+			if (oa->type == e_aggr) {
+				sql_subaggr *f = oa->f;
+				int cnt = strcmp(f->aggr->base.name,"count")==0;
+				sql_subaggr *a = sql_bind_aggr(sql->sa, sql->session->schema, (cnt)?"sum":f->aggr->base.name, exp_subtype(e));
+
+				assert(a);
+				/* union of aggr result may have nils 
+			   	because sum/count of empty set */
+				set_has_nil(e);
+				e = exp_column(sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
+				ne = exp_aggr1(sql->sa, e, a, need_distinct(e), 1, e->card, 1);
+			} else {
+				ne = exp_column(sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
+			}
+			exp_setname(sql->sa, ne, oa->rname?oa->rname:exp_find_rel_name(oa), exp_name(oa));
+			rel_groupby_add_aggr(sql, g, ne);
+		}
+		rel_destroy(rel);
+		(*changes)++;
+		return g;
 	}
 	return rel;
 }
@@ -2491,20 +2489,6 @@ rel_push_join_down(int *changes, mvc *sql, sql_rel *rel)
  *
  * TODO: There are possibly projections around the unions !
  */
-static void
-rel_rename_exps( mvc *sql, list *exps1, list *exps2)
-{
-	node *n, *m;
-
-	assert(list_length(exps1) == list_length(exps2)); 
-	for (n = exps1->h, m = exps2->h; n && m; n = n->next, m = m->next) {
-		sql_exp *e1 = n->data;
-		sql_exp *e2 = m->data;
-
-		exp_setname(sql->sa, e2, e1->rname, e1->name );
-	}
-}
-
 static sql_rel *
 rel_push_join_down_union(int *changes, mvc *sql, sql_rel *rel) 
 {

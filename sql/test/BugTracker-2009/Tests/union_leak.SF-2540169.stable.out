@@ -46,7 +46,8 @@ Over..
 # 00:27:23 >  Mtimeout -timeout 60 mclient -lsql -umonetdb -Pmonetdb --host=rig --port=31321  /net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/mTests/src/test/BugTracker-2009/union_leak.SF-2540169.3.sql
 # 00:27:23 >  
 
-% .databasetest1 # table_name
+#SELECT sum(float1) AS currencyfloat FROM databasetest;
+% .databasetest # table_name
 % currencyfloat # name
 % double # type
 % 22 # length
@@ -65,7 +66,8 @@ Over..
 # 00:27:23 >  Mtimeout -timeout 60 mclient -lsql -umonetdb -Pmonetdb --host=rig --port=31321  /net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/mTests/src/test/BugTracker-2009/union_leak.SF-2540169.3.sql
 # 00:27:23 >  
 
-% .databasetest1 # table_name
+#SELECT sum(float1) AS currencyfloat FROM databasetest;
+% .databasetest # table_name
 % currencyfloat # name
 % double # type
 % 22 # length
