@@ -21,11 +21,22 @@ Ready.
 
 Over..
 
-# 11:55:41 >  
-# 11:55:41 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < case_cast-bug-sf-1019506.sql
-# 11:55:41 >  
+# 08:38:12 >  
+# 08:38:12 >  mclient -lsql -ftest -i -e --host=alf --port=34631 
+# 08:38:12 >  
 
-% .,	sys.,	.,	sys.,	.,	sys.,	sys.,	sys.,	.,	.,	.,	.,	. # table_name
+#select 	cast(null as clob) as table_cat, 
+#	cast(s.name as clob) as table_schem, 
+#	cast(t.name as clob) as table_name, 
+#	case when k.name is null then cast(1 as smallint) else cast(0 as smallint) end as non_unique,
+#	cast(null as clob) as index_qualifier, 
+#	cast(i.name as clob) as index_name, 
+#	case i.type when 0 then cast(2 as smallint) else cast(3 as smallint) end as type, 
+#	cast(kc.nr as smallint) as ordinal_position,
+#	cast(c.name as clob) as column_name, 
+#	cast(null as char(1)) as asc_or_desc, 
+#	cast(null
+% .,	.,	.,	sys.,	.,	.,	.,	sys.,	.,	.,	.,	.,	. # table_name
 % table_cat,	table_schem,	table_name,	non_unique,	index_qualifier,	index_name,	type,	ordinal_position,	column_name,	asc_or_desc,	cardinality,	pages,	filter_condition # name
 % clob,	clob,	clob,	smallint,	clob,	clob,	smallint,	smallint,	clob,	char,	int,	int,	clob # type
 % 0,	0,	0,	1,	0,	0,	1,	1,	0,	1,	1,	1,	0 # length

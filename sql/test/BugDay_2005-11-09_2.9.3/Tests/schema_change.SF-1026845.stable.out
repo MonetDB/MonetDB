@@ -24,11 +24,15 @@ Ready.
 
 Over..
 
-# 11:50:50 >  
-# 11:50:50 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < schema_change.SF-1026845.sql
-# 11:50:50 >  
+# 20:44:58 >  
+# 20:44:58 >  mclient -lsql -ftest -i -e --host=alf --port=36753 
+# 20:44:58 >  
 
-% .t,	sys.s # table_name
+#START TRANSACTION;
+#create schema voc
+#create table voctest (id int);
+#select t.name, s.name from sys.tables as t, sys.schemas as s where t.schema_id = s.id and s.name = 'voc';
+% .t,	.s # table_name
 % name,	name # name
 % varchar,	varchar # type
 % 7,	3 # length

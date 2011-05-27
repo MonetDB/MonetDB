@@ -33,7 +33,7 @@ Over..
 #create view x2 as
 #select a2 as a1, a1 as a2 from x1;
 #select * from x2 where a2='two';
-% sys.x1,	sys.x1 # table_name
+% sys.x2,	sys.x2 # table_name
 % a1,	a2 # name
 % varchar,	int # type
 % 3,	1 # length

@@ -34,7 +34,7 @@ Over..
 #create view yv as select s as a1, n as a2 from y;
 #create view j as select yv.a2 as a1, yv.a1 as a2 from x,yv where x.id = yv.a2;
 #select * from j where a2='y-three';
-% sys.yv,	sys.yv # table_name
+% sys.j,	sys.j # table_name
 % a1,	a2 # name
 % varchar,	int # type
 % 0,	1 # length

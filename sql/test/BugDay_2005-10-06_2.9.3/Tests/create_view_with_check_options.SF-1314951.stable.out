@@ -22,7 +22,7 @@ Over..
 [ 4	]
 #create view m as select * from t1314951 with check option;
 #select * from m;
-% sys.t1314951 # table_name
+% sys.m # table_name
 % v # name
 % int # type
 % 1 # length

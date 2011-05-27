@@ -45,7 +45,7 @@ Over..
 #
 #-- Rel: attach(Rel)
 #-- Bi
-% .a0005,	.c0010 # table_name
+% .result,	.result # table_name
 % pos_nat,	item_int # name
 % tinyint,	wrd # type
 % 1,	1 # length
