@@ -26,7 +26,7 @@ Over..
 
 #select (select count(*) from _tables) > 5;
 % sys. # table_name
-% >_L3 # name
+% >_L1 # name
 % boolean # type
 % 5 # length
 [ true	]
