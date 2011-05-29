@@ -44,11 +44,6 @@ lib__datacell = {
 
     LIBS = ../../../../monetdb5/tools/libmonetdb5 \
 		../../../../gdk/libbat 
-# @SHARED_LIBS@ -lbat -lmutils -lstream \
-#            $(MONETDB_LIBS) $(MONETDB5_LIBS) -lmonetdb5 $(CLIENTS_LIBS) -lMapi \
-#                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-#                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
-
 }
 
 lib__actuator = {
