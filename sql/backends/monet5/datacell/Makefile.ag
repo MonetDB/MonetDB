@@ -29,8 +29,7 @@ INCLUDES = .. \
 	../../../../clients/mapilib \
 	../../../../common/options \
 	../../../../common/stream \
-	../../../../gdk \
-	$(READLINE_INCS)
+	../../../../gdk
 
 lib__datacell = {
 	DIR = libdir/monetdb5
