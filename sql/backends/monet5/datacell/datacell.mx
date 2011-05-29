@@ -1,0 +1,205 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-2008 CWI.
+# All Rights Reserved.
+
+@f datacell
+@- Event baskets
+Continuous query processing relies on event baskets 
+passed through a processing pipeline. The baskets
+are derived from ordinary SQL tables where the delta
+processing is ignored.
+
+@mal
+module datacell;
+
+pattern register_basket(tab:str):void
+address DCELLregister_basket
+comment "Initialize a new basket based on a specific table definition in the datacell schema");
+
+pattern register_basket():void
+address DCELLregister_all
+comment "Create basket definitions for all tables in the datacell schema";
+@{
+@h
+#ifndef _DATACELLS_
+#define _DATACELLS_
+
+/* #define _DEBUG_DATACELL     debug this module */
+#define DCELLout GDKout
+#define MAXCOL 128
+#define MAXBSK 64
+
+#include "monetdb_config.h"
+#include "sql.h"
+#include "mal.h"
+#include "mal_interpreter.h"
+
+typedef struct{
+	MT_Lock lock;
+	str name;
+	str *cols;
+	BAT **primary;
+	/* statistics */
+} *DCbasket, DCbasketRec;
+
+
+#ifdef WIN32
+#ifndef LIBCONTAINERS
+#define datacell_export extern __declspec(dllimport)
+#else
+#define datacell_export extern __declspec(dllexport)
+#endif
+#else
+#define datacell_export extern
+#endif
+
+datacell_export str DCELLregister_all( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+datacell_export str DCELLregister_basket(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+datacell_export DCbasketRec *baskets;
+datacell_export int bsktTop, bsktLimit;
+#endif
+@c
+#include "datacell.h"
+#ifdef WIN32
+#include "winsock2.h"
+#endif
+
+DCbasketRec *baskets;	/* the datacell catalog */
+int bsktTop, bsktLimit;
+static MT_Lock bsktLock;
+
+#define lockDCbasketCatalog() mal_set_lock(bsktLock,"basket");
+#define unlockDCbasketCatalog() mal_unset_lock(bsktLock,"basket");
+
+static int DCELLnewEntry(){
+	if(bsktLimit == 0){
+		bsktLimit = MAXBSK;
+		baskets= (DCbasketRec *) GDKzalloc(bsktLimit * sizeof(DCbasketRec));
+		MT_lock_init(&bsktLock,"basket");
+		bsktTop=1; /* entry 0 is used as non-initialized */
+	} else
+		if( bsktTop == bsktLimit){
+			bsktLimit +=MAXBSK;
+			baskets= (DCbasketRec *) GDKrealloc(baskets, bsktLimit * sizeof(DCbasketRec));
+		}
+	return bsktTop++;
+}
+
+int
+DCELLlocate(str tbl){
+	int i;
+	for(i=1; i< bsktTop; i++)
+	if( tbl && baskets[i].name && strcmp(tbl, baskets[i].name)==0 )
+		return i;
+	return 0;
+}
+
+str 
+DCELLregister_basket(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+    str *tbl = (str *) getArgReference(stk,pci,1);
+    sql_schema  *s;
+    sql_table   *t;
+    mvc *m = NULL;
+    str msg = getContext(cntxt, mb, &m, NULL);
+    sql_trans *tr = m->session->tr;
+	int i,j =0;
+	node *o;
+
+   	s = mvc_bind_schema(m, "datacell");
+	if ( s == NULL)
+		throw(SQL,"datacell.register_basket","Schema missing");
+	t = mvc_bind_table(m, s, *tbl);
+	if ( t == NULL)
+		throw(SQL,"datacell.register_basket","Table missing");
+
+	/* check double registration */
+
+	mal_set_lock(mal_contextLock, "register_basket");
+	i= DCELLnewEntry();
+	MT_lock_init(&baskets[i].lock,"register_basket");
+	baskets[i].name= GDKstrdup(*tbl);
+
+	for (o = t->columns.set->h; o; o = o->next, j++) {
+		BAT *b;
+		sql_column	*c = o->data;
+
+		if ( baskets[i].cols == 0){
+			baskets[i].cols = GDKzalloc(MAXCOL * sizeof (str));
+			baskets[i].primary = GDKzalloc(MAXCOL * sizeof (BAT *));
+		}
+		if ( j == MAXCOL)
+			throw(SQL,"datacell.register_basket","too many columns");
+			
+		b = store_funcs.bind_col(tr, c, 0);
+		if (b == NULL)
+			throw(SQL,"sql.register_basket","Can not access descriptor");
+		baskets[i].cols[j] = GDKstrdup(c->base.name);
+		baskets[i].primary[j] = BATnew(TYPE_void,getTailType(b->ttype),0);
+		BATseqbase(baskets[i].primary[j], 0);
+        baskets[i].primary[i]->tsorted = FALSE;
+		BBPreleaseref(b->batCacheid);
+	}
+	mal_unset_lock(mal_contextLock, "register_basket");
+	return msg;
+}
+
+str
+DCELLregister_all( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+    str *tbl = (str *) getArgReference(stk,pci,1);
+    sql_schema  *s;
+    sql_table   *t;
+    mvc *m = NULL;
+    str msg = getContext(cntxt,mb, &m, NULL);
+    sql_trans *tr = m->session->tr;
+	node *z,*o;
+	int i, j=0;
+
+   	s = mvc_bind_schema(m, "datacell");
+	if ( s == NULL)
+		throw(SQL,"datacell.register_basket","Schema missing");
+	for (z = s->tables.set->h; msg == MAL_SUCCEED && z; z = z->next) {
+		t = z->data;
+
+	i= DCELLnewEntry();
+	MT_lock_init(&baskets[i].lock,"register_basket");
+	baskets[i].name= GDKstrdup(*tbl);
+
+	for (o = t->columns.set->h; o; o = o->next, j++) {
+		BAT *b;
+		sql_column	*c = o->data;
+
+		if ( baskets[i].cols == 0){
+			baskets[i].cols = GDKzalloc(MAXCOL * sizeof (str));
+			baskets[i].primary = GDKzalloc(MAXCOL * sizeof (BAT *));
+		}
+		if ( j == MAXCOL)
+			throw(SQL,"datacell.register_basket","too many columns");
+			
+		b = store_funcs.bind_col(tr, c, 0);
+		if (b == NULL)
+			throw(SQL,"sql.register_basket","Can not access descriptor");
+		baskets[i].cols[j] = GDKstrdup(c->base.name);
+		baskets[i].primary[j] = BATnew(TYPE_void,getTailType(b->ttype),0);
+		BATseqbase(baskets[i].primary[j], 0);
+        baskets[i].primary[i]->tsorted = FALSE;
+		BBPreleaseref(b->batCacheid);
+	}
+	}
+	return msg;
+}
+@}
