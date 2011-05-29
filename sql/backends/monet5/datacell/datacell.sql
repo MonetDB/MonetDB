@@ -19,10 +19,6 @@ create procedure receptor (url string, act string)
     external name datacell.receptor_action;
 
 -- MonetDB tuple formatted message field extractors
-create function receptor_int(col int) 
-returns int
-external name datacell.receptor_int;
+create procedure datacell.register_basket(s string)
+external name datacell.register_basket;
 
-create function receptor_str(col int) 
-returns str
-external name datacell.receptor_str;
