@@ -30,11 +30,7 @@ INCLUDES = .. \
 	../../../../common/options \
 	../../../../common/stream \
 	../../../../gdk \
-	$(READLINE_INCS) \
-	$(MONETDB_LIBS) $(MONETDB5_LIBS) -lmonetdb5 $(CLIENTS_LIBS) -lMapi \
-	$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-	$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
-
+	$(READLINE_INCS)
 
 lib__datacell = {
 	DIR = libdir/monetdb5
