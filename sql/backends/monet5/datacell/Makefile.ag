@@ -1,0 +1,90 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-2008 CWI.
+# All Rights Reserved.
+
+## Process this file with automake to produce Makefile.in
+
+INCLUDES = .. \
+	../../../include \
+	../../../common \
+	../../../storage \
+	../../../server \
+	../../../../monetdb5/modules/atoms \
+	../../../../monetdb5/modules/kernel \
+	../../../../monetdb5/mal \
+	../../../../monetdb5/modules/mal \
+	../../../../monetdb5/optimizer \
+	../../../../clients/mapilib \
+	../../../../common/options \
+	../../../../common/stream \
+	../../../../gdk \
+	$(READLINE_INCS) \
+	$(MONETDB_LIBS) $(MONETDB5_LIBS) -lmonetdb5 $(CLIENTS_LIBS) -lMapi \
+	$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+	$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
+
+
+lib__datacell = {
+	DIR = libdir/monetdb5
+	SEP = _
+	SOURCES = basket.mx \
+	dcsocket.mx \
+	receptor.mx \
+	petrinet.mx \
+	dcoperator.mx \
+	emitter.mx 
+
+    LIBS = ../../../../monetdb5/tools/libmonetdb5 \
+		../../../../gdk/libbat 
+# @SHARED_LIBS@ -lbat -lmutils -lstream \
+#            $(MONETDB_LIBS) $(MONETDB5_LIBS) -lmonetdb5 $(CLIENTS_LIBS) -lMapi \
+#                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+#                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
+
+}
+
+lib__actuator = {
+	DIR = libdir/monetdb5
+	SEP = _
+	SOURCES = actuator.mx 
+    LIBS = ../../../../monetdb5/tools/libmonetdb5 \
+		../../../../gdk/libbat 
+}
+
+lib__sensor = {
+	DIR = libdir/monetdb5
+	SEP = _
+	SOURCES = sensor.mx
+    LIBS = ../../../../monetdb5/tools/libmonetdb5 \
+		../../../../gdk/libbat 
+}
+
+scripts_mal = {
+	HEADERS = mal
+	DIR = libdir/monetdb5
+	SOURCES = basket.mal receptor.mal emitter.mal petrinet.mal dcoperator.mal
+}
+
+scripts_sql = {
+	HEADERS = sql
+	DIR = libdir/monetdb5
+	SOURCES = 50_datacell.sql 
+}
+
+headers_datacellautoload = {
+	HEADERS = mal
+	DIR = libdir/monetdb5/autoload
+	SOURCES = 50_datacell.mal
+}

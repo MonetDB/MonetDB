@@ -1,0 +1,22 @@
+#A test for the emitter
+library datacell;
+include basket;
+include receptor;
+include emitter;
+
+p1:= basket.new("X_p1",:bat[:lng,:lng]);
+p2:= basket.new("X_p2",:bat[:lng,:int]);
+basket.group("X","X_p1","X_p2");
+receptor.new("X");
+receptor.setType("X","server");
+receptor.start("X","localhost",50000);
+io.print("receptors working");
+alarm.sleep(3);
+
+emitter.new("X");
+emitter.start("X","localhost",50001);
+io.print("emitter started");
+
+alarm.sleep(5);
+emitter.drop("X");
+receptor.drop("X");

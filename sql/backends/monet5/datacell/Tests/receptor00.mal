@@ -1,0 +1,17 @@
+#A single thread for a simple stream
+#The receptor uses the prefix to lock the streams
+libary datacell;
+include basket;
+include receptor;
+
+p1:= basket.new("X_p1",:bat[:lng,:lng]);
+p2:= basket.new("X_p2",:bat[:lng,:int]);
+basket.group("X","X_p1");
+basket.group("X","X_p2");
+receptor.new("X");
+receptor.setType("X","server");
+receptor.start("X","localhost",50001);
+io.print("receptors working");
+io.print(p1,p2);
+alarm.sleep(5);
+receptor.drop("X");

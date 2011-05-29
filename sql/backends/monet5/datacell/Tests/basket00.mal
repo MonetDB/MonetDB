@@ -1,0 +1,18 @@
+#Testing the basket functionality
+libary datacell;
+include basket;
+
+p1:= basket.new("sys_x_p1",:bat[:lng,:int]);
+p2:= basket.new("sys_x_p2",:bat[:lng,:int]);
+
+basket.group("X","sys_x_p1","sys_x_p2");
+
+basket.lock("X");
+io.print("sys_x_p1 locked");
+basket.unlock("X");
+
+basket.lock("X");
+io.print("sys_x_p2 locked");
+basket.unlock("X");
+
+basket.drop("X");
