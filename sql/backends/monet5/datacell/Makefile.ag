@@ -32,28 +32,31 @@ INCLUDES = .. \
 	../../../../gdk
 
 lib__datacell = {
+	MODULE
 	DIR = libdir/monetdb5
 	SEP = _
 	SOURCES = basket.mx \
-	dcsocket.mx \
-	receptor.mx \
-	petrinet.mx \
-	dcoperator.mx \
-	emitter.mx 
+			  dcsocket.mx \
+			  receptor.mx \
+			  petrinet.mx \
+			  dcoperator.mx \
+			  emitter.mx 
 
     LIBS = ../../../../monetdb5/tools/libmonetdb5 \
 		../../../../gdk/libbat 
 }
 
 lib__actuator = {
+	MODULE
 	DIR = libdir/monetdb5
 	SEP = _
-	SOURCES = actuator.mx 
+	sources = actuator.mx 
     LIBS = ../../../../monetdb5/tools/libmonetdb5 \
 		../../../../gdk/libbat 
 }
 
 lib__sensor = {
+	MODULE
 	DIR = libdir/monetdb5
 	SEP = _
 	SOURCES = sensor.mx
@@ -64,7 +67,11 @@ lib__sensor = {
 scripts_mal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
-	SOURCES = basket.mal receptor.mal emitter.mal petrinet.mal dcoperator.mal
+	SOURCES = basket.mal \
+			  receptor.mal \
+			  emitter.mal \
+			  petrinet.mal \
+			  dcoperator.mal
 }
 
 scripts_sql = {
