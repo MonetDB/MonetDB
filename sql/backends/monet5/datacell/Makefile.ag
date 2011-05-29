@@ -77,7 +77,7 @@ scripts_mal = {
 scripts_sql = {
 	HEADERS = sql
 	DIR = libdir/monetdb5
-	SOURCES = 50_datacell.sql 
+	SOURCES = datacell.sql 
 }
 
 headers_datacellautoload = {
@@ -85,3 +85,5 @@ headers_datacellautoload = {
 	DIR = libdir/monetdb5/autoload
 	SOURCES = 50_datacell.mal
 }
+
+EXTRA_DIST = 50_datacell.mal datacell.sql
