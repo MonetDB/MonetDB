@@ -361,6 +361,8 @@ exp_count(int *cnt, int seqnr, sql_exp *e)
 		if (!is_complex_exp(e->flag)) {
 			exp_count(cnt, seqnr, e->l); 
 			exp_count(cnt, seqnr, e->r);
+			if (e->f)
+				exp_count(cnt, seqnr, e->f);
 		}
 		switch (e->flag) {
 		case cmp_equal:
@@ -386,9 +388,12 @@ exp_count(int *cnt, int seqnr, sql_exp *e)
 			*cnt += 2;
 			return 2;
 		case cmp_in: 
-		case cmp_notin: 
-			*cnt += 9;
-			return 9;
+		case cmp_notin: {
+			list *l = e->r;
+			int c = 9 - 10*list_length(l);
+			*cnt += c;
+			return c;
+		}
 		case cmp_or: /* prefer union over like */
 			*cnt += 3;
 			return 3;
@@ -1942,29 +1947,29 @@ rel_project_cse(int *changes, mvc *sql, sql_rel *rel)
 }
 
 static list *
-exps_merge_rse( sql_allocator *sa, list *l, list *r )
+exps_merge_rse( mvc *sql, list *l, list *r )
 {
 	node *n, *m, *o;
 	list *nexps = NULL, *lexps, *rexps;
 
- 	lexps = new_exp_list(sa);
+ 	lexps = new_exp_list(sql->sa);
 	for (n = l->h; n; n = n->next) {
 		sql_exp *e = n->data;
 	
 		if (e->type == e_cmp && e->flag == cmp_or) {
-			list *nexps = exps_merge_rse(sa, e->l, e->r);
+			list *nexps = exps_merge_rse(sql, e->l, e->r);
 			for (o = nexps->h; o; o = o->next) 
 				append(lexps, o->data);
 		} else {
 			append(lexps, e);
 		}
 	}
- 	rexps = new_exp_list(sa);
+ 	rexps = new_exp_list(sql->sa);
 	for (n = r->h; n; n = n->next) {
 		sql_exp *e = n->data;
 	
 		if (e->type == e_cmp && e->flag == cmp_or) {
-			list *nexps = exps_merge_rse(sa, e->l, e->r);
+			list *nexps = exps_merge_rse(sql, e->l, e->r);
 			for (o = nexps->h; o; o = o->next) 
 				append(rexps, o->data);
 		} else {
@@ -1972,7 +1977,7 @@ exps_merge_rse( sql_allocator *sa, list *l, list *r )
 		}
 	}
 
- 	nexps = new_exp_list(sa);
+ 	nexps = new_exp_list(sql->sa);
 
 	/* merge merged lists first ? */
 	for (n = lexps->h; n; n = n->next) {
@@ -1990,38 +1995,46 @@ exps_merge_rse( sql_allocator *sa, list *l, list *r )
 		 * 2) 1 value (cmp_equal), and cmp_in 
 		 * 	(also cmp_in, cmp_equal)
 		 * 3) 2 cmp_in
-		 * TODO case (4,5,6)
-		 * 4) 2 values with cmp_lt(e) / cmp_gt(e)
-		 * 5) 1 value with cmp_lt(e) and range ()
-		 * 6) 2 ranges ()
+		 * 4) ranges 
 		 */
 		if (fnd) {
 			re = fnd;
 			fnd = NULL;
 			if (le->flag == cmp_equal && re->flag == cmp_equal) {
-				list *exps = new_exp_list(sa);
+				list *exps = new_exp_list(sql->sa);
 
 				append(exps, le->r);
 				append(exps, re->r);
-				fnd = exp_in(sa, le->l, exps, cmp_in);
+				fnd = exp_in(sql->sa, le->l, exps, cmp_in);
 			} else if (le->flag == cmp_equal && re->flag == cmp_in){
-				list *exps = new_exp_list(sa);
+				list *exps = new_exp_list(sql->sa);
 				
 				append(exps, le->r);
 				list_merge(exps, re->r, NULL);
-				fnd = exp_in(sa, le->l, exps, cmp_in);
+				fnd = exp_in(sql->sa, le->l, exps, cmp_in);
 			} else if (le->flag == cmp_in && re->flag == cmp_equal){
-				list *exps = new_exp_list(sa);
+				list *exps = new_exp_list(sql->sa);
 				
 				append(exps, re->r);
 				list_merge(exps, le->r, NULL);
-				fnd = exp_in(sa, le->l, exps, cmp_in);
+				fnd = exp_in(sql->sa, le->l, exps, cmp_in);
 			} else if (le->flag == cmp_in && re->flag == cmp_in){
-				list *exps = new_exp_list(sa);
+				list *exps = new_exp_list(sql->sa);
 
 				list_merge(exps, le->r, NULL);
 				list_merge(exps, re->r, NULL);
-				fnd = exp_in(sa, le->l, exps, cmp_in);
+				fnd = exp_in(sql->sa, le->l, exps, cmp_in);
+			} else if (le->f && re->f && 
+				   le->flag == re->flag) {
+				sql_subfunc *min = sql_bind_func(sql->sa, sql->session->schema, "sql_min", exp_subtype(le->r), exp_subtype(re->r));
+				sql_subfunc *max = sql_bind_func(sql->sa, sql->session->schema, "sql_max", exp_subtype(le->f), exp_subtype(re->f));
+				sql_exp *mine, *maxe;
+
+				if (!min || !max)
+					continue;
+				mine = exp_binop(sql->sa, le->r, re->r, min);
+				maxe = exp_binop(sql->sa, le->f, re->f, max);
+				fnd = exp_compare2(sql->sa, le->l, mine, maxe, le->flag);
 			}
 			if (fnd)
 				append(nexps, fnd);
@@ -2058,7 +2071,7 @@ rel_merge_rse(int *changes, mvc *sql, sql_rel *rel)
 
 			if (e->type == e_cmp && e->flag == cmp_or) {
 				/* possibly merge related expressions */
-				list *ps = exps_merge_rse(sql->sa, e->l, e->r);
+				list *ps = exps_merge_rse(sql, e->l, e->r);
 				for (o = ps->h; o; o = o->next) 
 					append(nexps, o->data);
 			}
