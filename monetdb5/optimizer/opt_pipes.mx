@@ -38,16 +38,19 @@ only.
 
 opt_export str getPipeDefinition(str name);
 opt_export str getPipeCatalog(int *ret);
+opt_export str addPipeDefinition(str name, str pipe);
 
 #endif
 @c
 #include "monetdb_config.h"
 #include "opt_pipes.h"
 
+#define MAXOPTPIPES 64
+
 struct PIPELINES{
 	char name[50];
 	char def[256];
-} pipes[] ={
+} pipes[MAXOPTPIPES] ={
 /* The minimal pipeline necessary by the server to operate correctly*/
 { "minimal_pipe",	"inline,remap,deadcode,multiplex,garbageCollector"},
 
@@ -119,6 +122,22 @@ trace. It is a server wide property and can not be set dynamically,",
 as it is intended for internal use.",
 @c
 #include "opt_pipes.h"
+
+str
+addPipeDefinition(str name, str pipe)
+{
+	int i;
+	for( i =0; i< MAXOPTPIPES; i++)
+	if ( pipes[i].name && strcmp(name,pipes[i].name)==0)
+		return NULL;
+	else
+	if ( pipes[i].name == 0){
+		snprintf(pipes[i].name,50,"%s",name);
+		snprintf(pipes[i].def,256,"%s",pipe);
+		return NULL;
+	}
+	return NULL;
+}
 
 str
 getPipeDefinition(str name)
