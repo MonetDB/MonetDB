@@ -177,14 +177,18 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				@:newRows2(c1+c2)@
 			} else if (getFunctionId(p)== kdifferenceRef) {
 				@:newRows2(c1==0?0:c2==0?c1: c1 - c2 < 0 ? 1 : c1 - c2+1)@
-			} else if (getFunctionId(p) == joinRef ) {
+			} else if (getFunctionId(p) == joinRef ||
+				getFunctionId(p) == leftjoinRef ||
+				getFunctionId(p) == leftjoinPathRef ) {
 				/* assume 1-1 joins */
 				@:newRows2(c1 < c2 ? c1 : c2)@
 			} else if (getFunctionId(p) == semijoinRef ) {
 				/* assume 1-1 semijoins */
 				@:newRows2(c1 < c2? c1 : c2)@
 			} else if (getFunctionId(p) == selectRef ||
-				   getFunctionId(p) == uselectRef) {
+				getFunctionId(p) == uselectRef ||
+				getFunctionId(p) == thetaselectRef ||
+				getFunctionId(p) == thetauselectRef) {
 				@:newRows1(1, c1 > 100 ? c1 / 2 +1: c1)@
 			} else if (getFunctionId(p) == crossRef) {
 				@:newRows2((log((double) c1) + log((double) c2) > log(INT_MAX) ? INT_MAX : c1 * c2 +1))@
@@ -192,10 +196,17 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				@:newRows1(1, c1 < 50 ? c1 : c1 / 10+1)@
 			}
 		} else if (getModuleId(p) == batcalcRef) {
-			if( isaBatType(getArgType(mb,p,1)) )
+			if( getFunctionId(p) == ifthenelseRef) {
+				if( isaBatType(getArgType(mb,p,2) ) )
+					@:newRows1(2, c1)@
+				else
+					@:newRows1(3, c1)@
+			} else if( isaBatType(getArgType(mb,p,1)) )
+					@:newRows1(1, c1)@
+				else
+					@:newRows1(2, c2)@
+		} else if (getModuleId(p) == batstrRef) {
 				@:newRows1(1, c1)@
-			else
-				@:newRows1(2, c2)@
 		} else if (getModuleId(p) == batRef) {
 			if (getFunctionId(p) == reverseRef ||
 			    getFunctionId(p) == setWriteModeRef  ||
