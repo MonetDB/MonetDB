@@ -995,6 +995,50 @@ function octopus.bind_idxbat(conn:str, sch:str, tab:str, index:str, access:int, 
 	b:bat[:oid,:oid]:= remote.get(conn,bh);
 	return bind_idxbat:= b;
 end octopus.bind_idxbat;
+@-
+Octopus.bind signatures adjusted to new mitosis sql.bind (part_nr, nr_parts)
+@mal
+function octopus.bind(mvc:int, sch:str, tab:str,col:str,kind:int,
+		part_nr:int, nr_parts:int, version:int) :bat[:oid,:any_1];
+	b:bat[:oid,:any_1]:= sql.bind(mvc,sch,tab,col,kind,part_nr,nr_parts);
+	return bind:= b;
+end bind;
+
+function octopus.bind(conn:str, sch:str, tab:str,col:str,kind:int,
+part_nr:int, nr_parts:int, version:int):bat[:oid,:any_1];
+	b:bat[:oid,:any_1] := nil:bat[:oid,:any_1];
+	m := nil:int;
+	rm := remote.put(conn,m);
+	rm := remote.exec(conn,"sql","mvc");
+	s := remote.put(conn,sch);
+	t := remote.put(conn,tab);
+	c := remote.put(conn,col);
+	k := remote.put(conn,kind);
+	v := remote.put(conn,version);
+	l := remote.put(conn,part_nr);
+	h := remote.put(conn,nr_parts);
+	rb:= remote.put(conn,b);
+	rb:= remote.exec(conn,"sql","bind",rm,s,t,c,k,l,h);
+	b:bat[:oid,:any_1]:= remote.get(conn,rb);
+	return bind:= b;
+end octopus.bind;
+
+function octopus.bind_idxbat(conn:str, sch:str, tab:str, index:str, access:int, part_nr:int, nr_parts:int, version:int):bat[:oid,:oid];
+	b:bat[:oid,:oid] := nil:bat[:oid,:oid];
+	m := nil:int;
+	rm := remote.put(conn,m);
+	rm := remote.exec(conn,"sql","mvc");
+	s := remote.put(conn,sch);
+	t := remote.put(conn,tab);
+	i := remote.put(conn,index);
+	a := remote.put(conn,access);
+	l := remote.put(conn,part_nr);
+	h := remote.put(conn,nr_parts);
+	bh:= remote.put(conn,b);
+	bh:= remote.exec(conn,"sql","bind_idxbat",rm,s,t,i,a,l,h);
+	b:bat[:oid,:oid]:= remote.get(conn,bh);
+	return bind_idxbat:= b;
+end octopus.bind_idxbat;
 
 function octopus.getVariable(conn:str,name:str):any_1;
 	s := remote.put(conn,name);

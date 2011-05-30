@@ -183,8 +183,10 @@ opt_export int OPTlegAdviceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 typedef struct MALPART {
 	str sch;
 	str tab;
-	oid low;
-	oid hgh;
+	/*	oid low;
+	oid hgh;*/
+	int part_nr;
+	int nr_parts;
 	int *ret;
 	int retcnt;
 	wrd rows;
@@ -232,20 +234,20 @@ OCTinitMalPart()
 }
 
 static int
-OCTgetMalPart(str sch, str tab, oid low, oid hgh)
+OCTgetMalPart(str sch, str tab, int pn, int np)
 {
 	int i;
 
 	for (i = 0; i < octClCnt; i++)
 		if ( strcmp(tab, octCluster[i].tab) == 0  &&
-			low == octCluster[i].low &&	hgh == octCluster[i].hgh )
+			pn == octCluster[i].part_nr &&	np == octCluster[i].nr_parts )
 			break;
 	if ( i < octClCnt )
 		return i;
 	octCluster[i].sch = GDKstrdup(sch);
 	octCluster[i].tab = GDKstrdup(tab);
-	octCluster[i].low = low;
-	octCluster[i].hgh = hgh;
+	octCluster[i].part_nr = pn;
+	octCluster[i].nr_parts = np;
 	octCluster[i].ret = (int*) GDKzalloc( sizeof(int) * octClResSize);
 	octCluster[i].retcnt = 0;
 	octClCnt++;
@@ -960,7 +962,7 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	InstrPtr p, *old, sig, q, *pref = NULL;
 	bte *set = NULL, *bnd = NULL;
 	int *malPart = NULL, *alias = NULL, *src = NULL;
-	oid l,h;
+	int pn, np;
 	str tnm, tblname = NULL;
 	char rname[BUFSIZ];
 	MalBlkPtr *tentacle = NULL;
@@ -1037,7 +1039,7 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 
 	/* create cluster 0 for instructions to be executed at the head */
 	OCTinitMalPart();
-	OCTgetMalPart("","",(oid) 0, (oid) 0);
+	OCTgetMalPart("","",1, 1);
 
 	malPart = (int*) GDKzalloc(mb->vtop * sizeof(int)); /* mask for cluster inclusion */
 	memset((char *) malPart,~(char)0,mb->vtop * sizeof(int));
@@ -1055,9 +1057,9 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			bnd[getArg(p,0)] = 1;
 			if ( p->argc >= 7 ){
 				tnm = (str) getVarValue(mb,getArg(p,3));
-				l = *(oid*) getVarValue(mb,getArg(p,6));
-				h = *(oid*) getVarValue(mb,getArg(p,7));
-				malPart[getArg(p,0)] = (int)1 << OCTgetMalPart("",tnm,l,h);
+				pn = *(int*) getVarValue(mb,getArg(p,6));
+				np = *(int*) getVarValue(mb,getArg(p,7));
+				malPart[getArg(p,0)] = (int)1 << OCTgetMalPart("",tnm,pn,np);
 				continue;
 			}
 		}
