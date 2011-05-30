@@ -187,6 +187,8 @@ typedef struct MALPART {
 	oid hgh;
 	int *ret;
 	int retcnt;
+	wrd rows;
+	int top;
 } MalPart, *MalPartPtr;
 
 #define memb(x,i) ( x & ((int)1 << i) )
@@ -251,7 +253,7 @@ OCTgetMalPart(str sch, str tab, oid low, oid hgh)
 }
 
 static void
-OCTaddResult(int cl, int residx)
+OCTaddResult(int cl, int residx, int iidx)
 {
 	MalPartPtr c;
 	int i, found = 0;
@@ -266,7 +268,9 @@ OCTaddResult(int cl, int residx)
 			found = 1;
 	if (!found){
 		if ( c->retcnt < octClResSize ){
-			c->ret[c->retcnt++] = residx;	
+			c->ret[c->retcnt++] = residx;
+			if ( c->top < iidx )
+				c->top = iidx;
 		}
 		else 
 			mnstr_printf(GDKout, "No room for more results \n");
@@ -393,12 +397,14 @@ OCTnewTentacle(Client cntxt, MalBlkPtr mb, bte tidx, int v2, int *cl)
 	if ( !octFullRepl )
 		conn = OCTinitcode(cntxt, tmb);
 
-	for ( i = 1; i < mb->stop; i++ ){	/* copy all instr of cluster tidx and 0 */	
+	for ( i = 1; i < mb->stop; i++ ){	/* copy all instr of cluster tidx or -1 */
 		p = mb->stmt[i];
 		if (p->token == ENDsymbol){
 			last = i;
 			break;
 		}
+		if ( i > ocl->top )
+			continue;
 		if ( ! memb(cl[getArg(p,0)], tidx) )
 			continue;
 		if (getModuleId(p) == sqlRef && getFunctionId(p) == mvcRef 
@@ -490,7 +496,8 @@ The tentacle code should be optimized by the remaining optimizers too.
 	clrDeclarations(tmb);
 	chkProgram(cntxt->nspace,tmb);
 	OPTDEBUGoctopus{
-		printFunction(cntxt->fdout, tmb, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAL_PROPS); 
+	printFunction(cntxt->fdout, tmb, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAL_PROPS);
+	/*		printFunction(cntxt->fdout, tmb, 0, LIST_MAL_ALL); */
 	}
 	GDKfree(alias);
 
@@ -948,23 +955,23 @@ OCTnewExec(Client cntxt, MalBlkPtr mb, MalBlkPtr t, int tno)
 static int
 OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, j, k, limit, cl, last, v2, z, v;
+	int i, j, k, m, limit, cl, last, v2, z, v;
 	int update=0, autocommit=0, actions=0, target = -1, varadd = 0;
 	InstrPtr p, *old, sig, q, *pref = NULL;
 	bte *set = NULL, *bnd = NULL;
 	int *malPart = NULL, *alias = NULL, *src = NULL;
 	oid l,h;
-	str tnm;
+	str tnm, tblname = NULL;
 	char rname[BUFSIZ];
 	MalBlkPtr *tentacle = NULL;
 
 	(void) stk;
 
-	/*	optDebug |= 1 << DEBUG_OPT_OCTOPUS; */
-	OPTDEBUGoctopus{
+	optDebug |= 1 << DEBUG_OPT_OCTOPUS;
+	OPTDEBUGoctopus{ 
 		mnstr_printf(cntxt->fdout, "#Octopus optimizer called\n");
 		chkProgram(cntxt->nspace,mb);  
-		printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT | LIST_MAL_TYPE | LIST_MAPI);
+		/*		printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT | LIST_MAL_TYPE | LIST_MAPI);*/
 	}
 
 	(void) fixModule(cntxt->nspace,octopusRef);
@@ -984,11 +991,18 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	if ( update || autocommit==0 ) 
 		return 0;
 
-	mb->legid = octopusSeq++;
+	/* find table leading the split */
+	for (i = 1; i < limit; i++) {
+		p = old[i];
+		if ( isBindInstr(p) && p->argc>=7 ){
+			tblname = GDKstrdup((str) getVarValue(mb,getArg(p,3)));
+			break;
+		}
+	}
+	if ( !tblname )
+		return 0;
 
-	/* create partition 0 for instructions to be copied to all tentacles */
-	OCTinitMalPart();
-	OCTgetMalPart("","",(oid) 0, (oid) 0);
+	mb->legid = octopusSeq++;
 
 	/* exclude variable reuse */
 	alias = (int*) GDKzalloc(mb->vtop * sizeof(int));
@@ -1021,23 +1035,39 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	GDKfree(alias);
 	GDKfree(set);
 
+	/* create cluster 0 for instructions to be executed at the head */
+	OCTinitMalPart();
+	OCTgetMalPart("","",(oid) 0, (oid) 0);
+
 	malPart = (int*) GDKzalloc(mb->vtop * sizeof(int)); /* mask for cluster inclusion */
 	memset((char *) malPart,~(char)0,mb->vtop * sizeof(int));
 	bnd = (bte*) GDKzalloc(mb->vtop);
 	src = (int*) GDKzalloc(mb->vtop * sizeof(int));
 	pref = (InstrPtr*) GDKzalloc(mb->stop * sizeof(InstrPtr));
 
-	/* analysis */
+
+	/* analysis and clustering of instructions */
 	for (i = 1; i < limit; i++) {
 		p = old[i];
 		src[getArg(p,0)] = i;
-		/* bind instructions over the largest table determine the partitions */
-		if ( isBindInstr(p) && p->argc>=7 ){
-			tnm = (str) getVarValue(mb,getArg(p,3));
-			l = *(oid*) getVarValue(mb,getArg(p,6));
-			h = *(oid*) getVarValue(mb,getArg(p,7));
-			malPart[getArg(p,0)] = (int)1 << OCTgetMalPart("",tnm,l,h);
+		/* bind instructions over pieces of the largest table become cluster cores */
+		if ( isBindInstr(p) ){
 			bnd[getArg(p,0)] = 1;
+			if ( p->argc >= 7 ){
+				tnm = (str) getVarValue(mb,getArg(p,3));
+				l = *(oid*) getVarValue(mb,getArg(p,6));
+				h = *(oid*) getVarValue(mb,getArg(p,7));
+				malPart[getArg(p,0)] = (int)1 << OCTgetMalPart("",tnm,l,h);
+				continue;
+			}
+		}
+		if ( isBindInstr(p) && p->argc == 6 ){
+			/*	tnm = (str) getVarValue(mb,getArg(p,3));*/
+			malPart[getArg(p,0)] = ~(int)0;
+			/*			if ( strcmp(tnm,tblname) )
+				malPart[getArg(p,0)] = ~(int)0;
+			else
+			malPart[getArg(p,0)] = 1;*/
 			continue;
 		}
 
@@ -1049,17 +1079,33 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			else cl = cl &  malPart[getArg(p,j)];
 		}
 
-		if ( cl )			/* go to the arguments partition */
+		if ( cl )			/* assign to the arguments cluster */
 			malPart[getArg(p,0)] = cl;	
 
-		else {				/* combines partitions - remain in head  */
-			malPart[getArg(p,0)] = 1;
+		else {		/* combines arguments from different clusters */
+			malPart[getArg(p,0)] = 1;	/* assign to cluster 1 */
 			for ( j = p->retc; j < p->argc; j++) 
 				if ( !(malPart[getArg(p,j)] & malPart[getArg(p,0)]) ){
+				/* arguments coming from another cluster should be either added as cluster result or added to cluster 1 */
 					v = getArg(p,j);
 					q = getInstrPtr(mb, src[v]);
+
+					/* special case of projection join */
+					if ( getModuleId(q) == algebraRef &&
+						getFunctionId(q) == leftjoinRef &&
+						bnd[getArg(q,2)]){
+						malPart[v] =  malPart[v] | (int)1; /* add join to cluster 1*/
+						if ( target < 0 || src[v] < target )
+							target = src[v];
+						v = getArg(q,2);	/* add bind to cluster 1 */
+						malPart[v] = malPart[v] | (int) 1;
+						v = getArg(q,1); /* 1 arg. should be added as cluster res. */
+						q = getInstrPtr(mb, src[v]);
+					}
+
+					/* don't materialize reverse, mark, mirror */
 					k = 0;
-					while ( isAView(q) ) {
+					while ( isAView(q) ){
 						pref[k++] = q;
 						v = getArg(q,1);
 						q = getInstrPtr(mb, src[v]);
@@ -1072,10 +1118,13 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 							malPart[v] = malPart[v] | (int) 1;
 						}
 					}
-					else {					/* extend partition results */
-						cl = OCTgetCluster(malPart[v]);
-						if ( cl > 0 )
-							OCTaddResult(cl, v);
+					else {			/* extend cluster results */
+						for ( m = 0; m < q->retc; m++){
+							v = getArg(q,m);
+							cl = OCTgetCluster(malPart[v]);
+							if ( cl > 0 )
+								OCTaddResult(cl, v, src[v]);
+						}
 						for ( ; k >= 0; k--){
 							v = getArg(pref[k],0);
 							malPart[v] = malPart[v] | (int) 1;
@@ -1102,11 +1151,20 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			printInstruction(cntxt->fdout,mb,0,p, LIST_MAL_STMT);
 		}
 		for (i = 0; i < octClCnt; i++){
-			mnstr_printf(cntxt->fdout, "Cluster %3d\t", i);
+			mnstr_printf(cntxt->fdout, "Cluster %3d\n", i);
+			k = 0;
 			if (octCluster[i].retcnt > 0 )
-				for ( j = 0; j< octCluster[i].retcnt; j++ )
-					mnstr_printf(cntxt->fdout, "%3d\t", octCluster[i].ret[j]); 
-			mnstr_printf(cntxt->fdout, "\n");
+				for ( j = 0; j< octCluster[i].retcnt; j++ ){
+					int v = octCluster[i].ret[j];
+					wrd vrows = getVarRows(mb,v);
+					if ( vrows > 0 )
+						octCluster[i].rows += vrows;
+					else k++;
+					mnstr_printf(cntxt->fdout, "%3d\t", v);
+				}
+			mnstr_printf(cntxt->fdout, "\nIntermediate size "LLFMT" tuples\n\n", octCluster[i].rows);
+			if ( k )
+				mnstr_printf(cntxt->fdout, "No estimate for %d results\n", k);
 		}
 	}
 
@@ -1186,6 +1244,7 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		if ( old[i] == pci){
 			freeInstruction(pci);
 			old[i]= 0;
+			/*			p = newStmt(mb, optimizerRef, putName("deadcode", 8));*/
 			continue;
 		}
 		pushInstruction(mb, old[i]);
@@ -1194,15 +1253,25 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	clrDeclarations(mb);
 	OPTDEBUGoctopus{
 		chkProgram(cntxt->nspace,mb); 
-		printFunction(cntxt->fdout, mb, 0,  LIST_MAL_STMT | LIST_MAL_TYPE | LIST_MAPI); 
+		/*		printFunction(cntxt->fdout, mb, 0,  LIST_MAL_STMT | LIST_MAL_TYPE | LIST_MAPI);*/
 	}
 
 	GDKfree(old);
 
- cleanup:
+cleanup:
 	GDKfree(malPart);
 	if (tentacle)
 		GDKfree(tentacle);
+	if ( octClCnt ){
+		for (i = 0; i < octClCnt; i++){
+			GDKfree(octCluster[i].sch);
+			GDKfree(octCluster[i].tab);
+			GDKfree(octCluster[i].ret);
+		}
+		GDKfree(octCluster);
+		octCluster = NULL;
+		octClCnt = 0;
+	}
 	return actions;
 }
 
