@@ -33,11 +33,11 @@ pattern transformation(mod:str,fcn:str):void
 address PNtransformation
 comment "Add a factory to the Petri net";
 
-command source(mod:str,fcn:str,bskt:str):void
+command source(mod:str,fcn:str, schema:str,tbl:str):void
 address PNsource
 comment "Define an input basket group for a transformation";
 
-command target(mod:str,fcn:str,bskt:str):void
+command target(mod:str,fcn:str, schema:str,tbl:str):void
 address PNtarget
 comment "Define an output basket group for a transformation";
 
@@ -97,8 +97,8 @@ datacell_export str PNstartThread(int *ret);
 datacell_export str PNsetCycleDelay(int *ret,int *delay);
 datacell_export str PNresume(int *ret);
 datacell_export str PNdump(int *ret);
-datacell_export str PNsource(int *ret, str *grp, str *nme, str *bgrp);
-datacell_export str PNtarget(int *ret, str *grp, str *nme, str *bgrp);
+datacell_export str PNsource(int *ret, str *grp, str *nme, str *schema, str *tbl);
+datacell_export str PNtarget(int *ret, str *grp, str *nme, str *schema, str *tbl);
 #endif
 
 @c
@@ -226,15 +226,15 @@ Make the basket group accessible to the transition function
 The code currently relies on a physical adjacent ordering of all member
 in the group.
 @c
-str PNsource(int *ret, str *mod, str *fcn, str *bgrp){
-	str msg;
+str PNsource(int *ret, str *mod, str *fcn, str *schema, str *bgrp){
+	/* str msg;*/
 	int i,j,k,z;
 	int len=64;
 
-	z = BSKTlocateGroup(*bgrp);
+	z = DClocate(*schema, *bgrp);
 	for(i=0;i<pnettop; i++){
 		if( strcmp(*mod, pnet[i].mod)==0 && strcmp(*fcn, pnet[i].fcn)== 0){
-			len= BSKTmemberCount(*bgrp);
+			len= DCmemberCount(*schema,*bgrp);
 			for(j=0; j<len; j++){
 				k=pnet[i].srctop;
 				if(k >= MAXPN){
@@ -247,9 +247,12 @@ str PNsource(int *ret, str *mod, str *fcn, str *bgrp){
 				}
 				pnet[i].source[k].grp= GDKstrdup(*bgrp);
 				pnet[i].source[k].name= GDKstrdup(baskets[j+z].name);
+				assert(0); /* to be redone */
+	/*
 				if( (msg=BSKTfind(& pnet[i].source[k].bid,
 								bgrp,&baskets[j+z].name)) != MAL_SUCCEED)
 					return msg;
+*/
 				pnet[i].source[k].lastcount=0;
 				pnet[i].source[k].consumed=0;
 				pnet[i].source[k].available=0;
@@ -263,15 +266,15 @@ str PNsource(int *ret, str *mod, str *fcn, str *bgrp){
 	return MAL_SUCCEED;
 }
 
-str PNtarget(int *ret, str *mod, str *fcn, str *bgrp){
-	str msg;
+str PNtarget(int *ret, str *mod, str *fcn, str *schema, str *bgrp){
+	str msg= MAL_SUCCEED;
 	int i,j,k,z;
 	int len=64;
 
-	z = BSKTlocateGroup(*bgrp);
+	z = DClocate(*schema,*bgrp);
 	for(i=0;i<pnettop; i++){
 		if( strcmp(*mod, pnet[i].mod)==0 && strcmp(*fcn, pnet[i].fcn)== 0){
-			len= BSKTmemberCount(*bgrp);
+			len= DCmemberCount(*schema,*bgrp);
 			for(j=0; j<len; j++){
 				k=pnet[i].trgttop;
 				if(k >= MAXPN){
@@ -285,8 +288,10 @@ str PNtarget(int *ret, str *mod, str *fcn, str *bgrp){
 
 				pnet[i].target[k].grp= GDKstrdup(*bgrp);
 				pnet[i].target[k].name= GDKstrdup(baskets[j+z].name);
+/*
 				if( (msg=BSKTfind(& pnet[i].target[k].bid,
 								bgrp,&baskets[j+z].name)) != MAL_SUCCEED)
+*/
 					return msg;
 				pnet[i].target[k].lastcount=0;
 				pnet[i].target[k].consumed=0;

@@ -17,125 +17,89 @@
 @f basket
 @- Event baskets
 Continuous query processing relies on event baskets 
-passed through a processing pipeline. Each stream is
-represented with a BAT whose header contains a usec tag.
-All event components received at the same receptor will
-be tagged with the same key. 
+passed through a processing pipeline. The baskets
+are derived from ordinary SQL tables where the delta
+processing is ignored.
 
-Query processing follows the following steps:
-1) gain access to a series of baskets,locking them for exclusive use
-2) take a snapshot of its content and release the locks
-3) process the query using the snapshots
-4) lock the baskets again
-5) drop elements from the basket you have seen/used.
-6) unlock the baskets
-
-The baskets form a simple synchronization point. They
-are controlled by a group based locking scheme.
-Steps 2) and 5) can be taken as a single action, i.e.
-remove the previous snapshot and collect the new ones.
-
-The baskets are organized into groups, i.e. they represent
-a relational table.
 @mal
-module basket;
+module datacell;
 
-pattern new(nme:str,b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
-address BSKTnew
-comment "Create a new event basket";
+pattern register_basket(schema:str,tab:str):void
+address DCregister_basket
+comment "Initialize a new basket based on a specific table definition in the datacell schema");
 
-pattern group(nme:str,components:str...):void
-address BSKTgroup
-comment "Create a basket group";
+pattern register_basket(tab:str):void
+address DCregister_basket
+comment "Initialize a new basket based on a specific table definition in the datacell schema");
 
-command drop(grp:str,nme:str):void
-address BSKTdrop
-comment "Remove a basket from a group";
-command drop(grp:str):void
-address BSKTdropGroup
-comment "Remove a basket group";
+pattern register_basket():void
+address DCregister_all
+comment "Create basket definitions for all tables in the datacell schema";
 
-pattern bind(grp:str,nme:str) :bat[:any_1,:any_2]
-address BSKTbind
-comment "Locate the designated stream and provide access
-to its base and private snapshot.";
+command inventory():bat[:str,:bat]
+address DCinventory
+comment "Produce a tabular view of the baskets identified";
 
-command delete(nme:str,piv:bat[:any_1,:any_3]):void
-address BSKTdelete
-comment "Remove the events identified by their tag from their basket";
-
-command update(nme:str,del:bat[:any_1,:any_3]):bat[:any_1,:any_3]
-address BSKTupdate
-comment "Remove the events identified from a basket and return a snapshot
-of the newly arrived events";
-
-command lock(grp:str,delay:int):void
-address BSKTlock
+command lock(schema:str, tbl:str,delay:int):void
+address DClock
 comment "Lock a basket group and spinlock upon need";
-command lock(grp:str):void
-address BSKTlock2
+command lock(schema:str, tbl:str):void
+address DClock2
 comment "Lock a basket group ";
 
-command unlock(grp:str):void
-address BSKTunlock
+command unlock(schema:str, tbl:str):void
+address DCunlock
 comment "Unlock the basket";
+
 @{
 @h
-#ifndef _BASKETS_
-#define _BASKETS_
-
-/* #define _DEBUG_BASKET     debug this module */
-#define BSKTout GDKout
+#ifndef _DATACELLS_
+#define _DATACELLS_
 
 #include "monetdb_config.h"
 #include "sql.h"
-#include "mal.h"
 #include "mal_interpreter.h"
-
-@-
-Each group has a single lock structure and possibly shared
-properties.
-@h
-typedef struct GROUPLOCK{
-	MT_Lock lock;
-} *GroupLock;
-
-typedef struct{
-	GroupLock lock;
-	str name;
-	str grp;
-	BAT *primary;
-} *Basket, BasketRec;
 
 
 #ifdef WIN32
 #ifndef LIBCONTAINERS
-#define containers_export extern __declspec(dllimport)
+#define datacell_export extern __declspec(dllimport)
 #else
-#define containers_export extern __declspec(dllexport)
+#define datacell_export extern __declspec(dllexport)
 #endif
 #else
-#define containers_export extern
+#define datacell_export extern
 #endif
 
-containers_export str BSKTlock(int *ret, str *nme, int *delay);
-containers_export str BSKTlock2(int *ret, str *grp);
-containers_export str BSKTunlock(int *ret, str *nme);
-containers_export str BSKTnew(Client cntxt, MalBlkPtr mk, MalStkPtr stk, InstrPtr pc);
-containers_export str BSKTbind(Client cntxt, MalBlkPtr mk, MalStkPtr stk, InstrPtr pc);
-containers_export str BSKTgroup(Client cntxt, MalBlkPtr mk, MalStkPtr stk, InstrPtr pc);
-containers_export str BSKTdrop(int *ret, str *grp, str *nme);
-containers_export str BSKTdropGroup(int *ret, str *grp);
-containers_export str BSKTdelete(int *ret, str *grp, str *nme, int *del);
-containers_export str BSKTfind(int *ret, str *grp, str *nme);
-containers_export int BSKTlocateGroup(str grp);
-containers_export int BSKTmembers(str grp, str *member, int limit);
-containers_export int BSKTmemberCount(str grp);
-containers_export str BSKTmemberName(str grp,int idx);
-containers_export str BSKTupdate(int *ret, int *bsk, int *upd);
-containers_export BasketRec *baskets;
-containers_export int bsktTop, bsktLimit;
-containers_export lng usec(void);
+/* #define _DEBUG_DATACELL     debug this module */
+#define DCout GDKout
+#define MAXCOL 128
+#define MAXBSK 64
+
+typedef struct{
+	MT_Lock lock;
+	str schema;	/* lives in the datacell schema by default */
+	str name;	/* table that represents the basket */
+	int colcount;
+	str *cols;
+	BAT **primary;	
+	/* statistics */
+} *DCbasket, DCbasketRec;
+
+datacell_export str schema_default;
+datacell_export str DCregister_all( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+datacell_export str DCregister_basket( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+datacell_export str DCinventory(int *ret);
+datacell_export int DCmemberCount(str schema, str tbl);
+datacell_export int DClocate(str schema, str tbl);
+
+datacell_export str DClock(int *ret, str *schema, str *tbl, int *delay);
+datacell_export str DCunlock(int *ret, str *schema, str *tbl);
+datacell_export str DClock2(int *ret, str *schema, str *tbl);
+
+datacell_export DCbasketRec *baskets;
+datacell_export int bsktTop, bsktLimit;
+datacell_export lng usec(void);
 #endif
 @c
 #include "basket.h"
@@ -143,12 +107,14 @@ containers_export lng usec(void);
 #include "winsock2.h"
 #endif
 
-BasketRec *baskets;
+str schema_default= "datacell";
+
+DCbasketRec *baskets;	/* the datacell catalog */
 int bsktTop, bsktLimit;
 static MT_Lock bsktLock;
 
-#define lockBasketCatalog() mal_set_lock(bsktLock,"basket");
-#define unlockBasketCatalog() mal_unset_lock(bsktLock,"basket");
+#define lockDCbasketCatalog() mal_set_lock(bsktLock,"basket");
+#define unlockDCbasketCatalog() mal_unset_lock(bsktLock,"basket");
 
 @-
 We have to obtain the precise wall-clock time
@@ -163,278 +129,194 @@ lng usec(void){
     return ((lng) tp.tv_sec ) * LL_CONSTANT(1000000) + (lng) tp.tv_usec;
 }
 
-
-static int BSKTnewEntry(){
+static int DCnewEntry(){
 	if(bsktLimit == 0){
-		bsktLimit = 128;
-		baskets= (BasketRec *) GDKzalloc(bsktLimit * sizeof(BasketRec));
+		bsktLimit = MAXBSK;
+		baskets= (DCbasketRec *) GDKzalloc(bsktLimit * sizeof(DCbasketRec));
 		MT_lock_init(&bsktLock,"basket");
 		bsktTop=1; /* entry 0 is used as non-initialized */
 	} else
 		if( bsktTop == bsktLimit){
-			bsktLimit +=128;
-			baskets= (BasketRec *) GDKrealloc(baskets, bsktLimit * sizeof(BasketRec));
+			bsktLimit +=MAXBSK;
+			baskets= (DCbasketRec *) GDKrealloc(baskets, bsktLimit * sizeof(DCbasketRec));
 		}
 	return bsktTop++;
 }
 
-static int
-BSKTlocate(str grp, str nme){
-	int i;
-	for(i=1; i< bsktTop; i++)
-	if(grp && nme &&
-		baskets[i].name && strcmp(nme, baskets[i].name)==0 &&
-		baskets[i].grp && strcmp(grp, baskets[i].grp)==0 )
-		return i;
-	return 0;
-}
-
 int
-BSKTlocateGroup(str grp){
+DClocate(str schema, str tbl){
 	int i;
 	for(i=1; i< bsktTop; i++)
-	if( grp && baskets[i].grp && strcmp(grp, baskets[i].grp)==0 )
+	if( tbl && baskets[i].name && strcmp(tbl, baskets[i].name)==0  &&
+		(schema == 0 || (baskets[i].schema && strcmp(schema, baskets[i].schema) ==0) ) )
 		return i;
 	return 0;
 }
 
-str BSKTfind(int *bid, str *grp, str *nme){
-	int i;
-	i= BSKTlocate(*grp,*nme);
-	if( i==0) 
-		throw(MAL,"basket.find","Could not find basket");
-	assert(i>0 && i<bsktTop);
-	if(baskets[i].primary == 0)
-		throw(MAL,"basket.find","Basket not initialized");
-	*bid= baskets[i].primary->batCacheid;
-	BBPincref(*bid,TRUE);
+static str
+DCnewbasket(sql_schema *s, sql_table *t, sql_trans *tr)
+{
+	int idx, i;
+	node *o;
+	str msg= MAL_SUCCEED;;
+	BAT *b;
+	sql_column  *c;
+
+	mal_set_lock(mal_contextLock, "register_basket");
+	idx= DCnewEntry();
+	MT_lock_init(&baskets[idx].lock,"register_basket");
+	baskets[idx].schema= GDKstrdup(s->base.name);
+	baskets[idx].name= GDKstrdup(t->base.name);
+
+	baskets[idx].colcount = 0;
+    for (o = t->columns.set->h; o; o = o->next)  baskets[idx].colcount++;
+	baskets[idx].cols= GDKzalloc((baskets[idx].colcount + 1) * sizeof (str));
+	baskets[idx].primary= GDKzalloc((baskets[idx].colcount + 1) * sizeof (BAT *));
+
+	i = 0;
+    for (o = t->columns.set->h; msg == MAL_SUCCEED && o; o = o->next) {
+		c = o->data;
+		b = store_funcs.bind_col(tr, c, 0);
+		if (b == NULL) {
+			mal_unset_lock(mal_contextLock, "register_basket");
+			throw(SQL,"sql.basket","Can not access descriptor");
+		}
+		if( b->htype == TYPE_oid){
+			baskets[idx].primary[i] = BATnew(TYPE_void,b->ttype,0);
+			BATseqbase(baskets[idx].primary[i], 0);
+		} else
+			baskets[idx].primary[i] = BATnew(b->htype,b->ttype,0);
+
+		BBPreleaseref(b->batCacheid);
+		baskets[idx].cols[i++] = GDKstrdup(c->base.name);
+	}
+	mal_unset_lock(mal_contextLock, "register_basket");
 	return MAL_SUCCEED;
 }
 
 str 
-BSKTnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc){
-	int *ret= (int*) getArgReference(stk,pc,0);
-	str *nme= (str*) getArgReference(stk,pc,1);
-	int tpe= getArgType(mb,pc,2);
+DCregister_basket(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+    sql_schema  *s;
+    sql_table   *t;
+    mvc *m = NULL;
+    str schema, tbl, msg = getContext(cntxt, mb, &m, NULL);
+    sql_trans *tr = m->session->tr;
+
+	if ( msg != MAL_SUCCEED)
+		return msg;
+	if ( pci->argc == 3 ) {
+		s = mvc_bind_schema(m, schema = * (str*) getArgReference(stk,pci,1));
+		tbl = *(str*) getArgReference(stk,pci,2);
+	} else {
+		s = mvc_bind_schema(m, schema= schema_default);
+		tbl = *(str*) getArgReference(stk,pci,1);
+	}
+	if ( s == NULL)
+		throw(SQL,"datacell.register_basket","Schema missing");
+	t = mvc_bind_table(m, s, tbl);
+	if ( t == NULL)
+		throw(SQL,"datacell.register_basket","Table missing");
+
+	/* check double registration */
+	if ( DClocate(schema, tbl) )
+		throw(SQL,"datacell.register_basket","Basket defined twice.");
+
+	return DCnewbasket(s,t,tr);
+}
+
+str
+DCregister_all( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+    sql_schema  *s;
+    sql_table   *t;
+    mvc *m = NULL;
+    str msg = getContext(cntxt,mb, &m, NULL);
+    sql_trans *tr = m->session->tr;
+	node *o;
+
+	(void) stk;
+	(void) pci;
+   	s = mvc_bind_schema(m, schema_default);
+	if ( s == NULL)
+		throw(SQL,"datacell.register_basket","Schema missing");
+	for (o = s->tables.set->h; msg == MAL_SUCCEED && o; o = o->next) {
+		t = o->data;
+
+		/* check double registration */
+		if ( DClocate(schema_default, t->base.name) )
+			throw(SQL,"datacell.register_basket","Basket defined twice.");
+		msg= DCnewbasket(s,t,tr);
+	}
+	return msg;
+}
+
+str
+DCinventory(int *ret)
+{
+	BAT *b, *bn;
 	int i;
-        int void_head_type= TYPE_void;
-        oid o= 0;
+	str msg= MAL_SUCCEED;
 
-	(void) cntxt;
-	mal_set_lock(mal_contextLock, "newBasket");
-	i= BSKTnewEntry();
-	baskets[i].lock= 0;
-	baskets[i].name= GDKstrdup(*nme);
-	baskets[i].grp= GDKstrdup(*nme);
-        if( getHeadType(tpe) == TYPE_oid){
-		baskets[i].primary = BATnew(void_head_type,getTailType(tpe),0);
-                BATseqbase(baskets[i].primary, o);
-                
-        }
-	else  
-		baskets[i].primary = BATnew(getHeadType(tpe),getTailType(tpe),0);
-
-        baskets[i].primary->tsorted = FALSE;
-
-	*ret= baskets[i].primary->batCacheid;
-	BBPincref(*ret,TRUE);
-	mal_unset_lock(mal_contextLock, "newBasket");
-	return MAL_SUCCEED;
-}
-
-str BSKTbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc){
-	int *ret= (int*) getArgReference(stk,pc,0);
-	str grp= *(str*) getArgReference(stk,pc,1);
-	str nme= *(str*) getArgReference(stk,pc,2);
-
-	int bskt= BSKTlocate(grp,nme);
-	if( bskt== 0)
-		throw(MAL,"baskets.bind","Could not find basket %s",nme);
-	BBPincref( *ret = baskets[bskt].primary->batCacheid,TRUE);
-	(void) cntxt;
-	(void)mb;
-	return MAL_SUCCEED;
-}
-@-
-For now, we use disjoint basket groups focussed to support
-interaction between receptor and kernel.
-@c
-str BSKTgroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc){
-	int i,bskt;
-	GroupLock bl;
-	str grp;
-	(void) cntxt;
-	
-	bl= (GroupLock) GDKzalloc(sizeof(struct GROUPLOCK));
-	lockBasketCatalog();
-	MT_lock_init(bl,"basket");
-	for(i= pc->retc+1; i<pc->argc; i++){
-		bskt= BSKTlocate(*(str*)getArgReference(stk,pc,i),
-						*(str*)getArgReference(stk,pc,i));
-		if( bskt==0){
-			unlockBasketCatalog();
-			throw(MAL,"basket.group","Unknown basket %s",
-					*(str*) getArgReference(stk,pc,i));
+	b= BATnew(TYPE_str, TYPE_bat, 0);
+	if ( b == NULL)
+			throw(SQL,"datacell.inventory",MAL_MALLOC_FAIL);
+	for ( i = 0; msg == MAL_SUCCEED && i < bsktTop; i++) {
+		bn =  BATdescriptor(BBPindex(baskets[i].name));
+		if ( bn == NULL )
+			msg = createException(SQL,"datacell.inventory",MAL_MALLOC_FAIL);
+		else {
+			BUNins(b, baskets[i].name, &bn->batCacheid, FALSE);
+			BBPreleaseref(bn->batCacheid);
 		}
 	}
-	grp= *(str*) getArgReference(stk,pc,1);
-	/* you may use basket.group("x") */
-	i= (pc->retc+1 == pc->argc)? pc->retc: pc->retc+1;
-	for(; i<pc->argc; i++){
-		bskt= BSKTlocate(*(str*)getArgReference(stk,pc,i),
-				*(str*)getArgReference(stk,pc,i));
-		baskets[bskt].lock= bl;
-		baskets[bskt].grp= GDKstrdup(grp);
-	}
-	unlockBasketCatalog();
-	(void)mb;
+	*ret = b->batCacheid;
+	BBPkeepref(b->batCacheid);
+	return msg;
+}
 
-	return MAL_SUCCEED;
+int DCmemberCount(str schema, str tbl){
+	int idx = DClocate(schema, tbl);
+	return baskets[idx].colcount;
 }
 
 @-
 The locks are designated towards groups
 If you can not grab the lock then we have to wait.
 @c
-str BSKTlock(int *ret, str *grp, int *delay){
-	int bskt;
+str DClock(int *ret, str *schema, str *tbl, int *delay){
+    int bskt;
 
-	bskt= BSKTlocateGroup(*grp);
-	if( bskt==0) 
-		throw(MAL,"basket.lock","Could not find the basket group");
+    bskt= DClocate(*schema, *tbl);
+    if( bskt==0)
+        throw(MAL,"basket.lock","Could not find the basket group");
 #ifdef _DEBUG_BASKET
-	stream_printf(BSKTout, "lock group %s\n",*grp);
+    stream_printf(DCout, "lock group %s\n",*tbl);
 #endif
-    	mal_set_lock(baskets[bskt].lock->lock, "lock basket");
+        mal_set_lock(baskets[bskt].lock, "lock basket");
 #ifdef _DEBUG_BASKET
-	stream_printf(BSKTout, "got  group locked %s\n",*grp);
+    stream_printf(DCout, "got  group locked %s\n",*tbl);
 #endif
-	(void) delay; /* control spinlock */
-	(void) ret;
-	return MAL_SUCCEED;
-}
-str BSKTlock2(int *ret, str *grp){
-	int delay=0;
-	return BSKTlock(ret,grp,&delay);
-}
-str BSKTunlock(int *ret, str *grp){
-	int bskt;
-
-	bskt= BSKTlocateGroup(*grp);
-	if( bskt==0) 
-		throw(MAL,"basket.lock","Could not find the basket group");
-    	mal_unset_lock(baskets[bskt].lock->lock, "lock basket");
-	(void) ret;
-	return MAL_SUCCEED;
+    (void) delay; /* control spinlock */
+    (void) ret;
+    return MAL_SUCCEED;
 }
 
-@-
-Drop a specific basket from the group.
-@c
-static void
-BSKTdropInternal(int bskt){
-	GroupLock l;
-	int i,cnt=0;
 
-	lockBasketCatalog();
-	l= baskets[bskt].lock;
-	baskets[bskt].lock= 0;
-	GDKfree(baskets[bskt].name);
-	GDKfree(baskets[bskt].grp);
-	baskets[bskt].name= 0;
-	baskets[bskt].primary= 0;
-	if( baskets[bskt].primary)
-		BBPdecref(baskets[bskt].primary->batCacheid,TRUE);
-
-	/* remove the lock structure if this was the last one */
-	for( i=0; i<bsktTop; i++)
-		if( baskets[i].lock== l) 
-			cnt++;
-	if( cnt==0)
-		GDKfree(l);
-	unlockBasketCatalog();
+str DClock2(int *ret, str *schema, str *tbl){
+    int delay=0;
+    return DClock(ret, schema,tbl,&delay);
 }
 
-str BSKTdrop(int *ret, str *grp, str *nme){
-	int bskt;
+str DCunlock(int *ret, str *schema, str *tbl){
+    int bskt;
 
-	bskt= BSKTlocate(*grp,*nme);
-	if( bskt==0) 
-		throw(MAL,"basket.drop","Could not find the basket group");
-	BSKTdropInternal(bskt);
-	(void) ret;
-	return MAL_SUCCEED;
-}
-
-@-
-And remove all the elements from a group
-@c
-str BSKTdropGroup(int *ret, str *grp){
-	int i;
-	if( baskets==0)
-		return MAL_SUCCEED;
-	
-	for(i=1; i<bsktTop; i++)
-	if(baskets[i].grp && strcmp(*grp, baskets[i].grp)==0)
-		BSKTdropInternal(i);
-	(void) ret;
-	return MAL_SUCCEED;
+    bskt= DClocate(*schema,*tbl);
+    if( bskt==0)
+        throw(MAL,"basket.lock","Could not find the basket group");
+        mal_unset_lock(baskets[bskt].lock, "lock basket");
+    (void) ret;
+    return MAL_SUCCEED;
 }
 
-str BSKTdelete(int *ret, str *grp,str *nme, int *del){
-	int bskt;
-	BAT *b;
-
-	if( *nme==0) return MAL_SUCCEED;
-	bskt= BSKTlocate(*grp,*nme);
-	if( bskt==0) return MAL_SUCCEED;
-	lockBasketCatalog();
-	b= BATdescriptor(*del);
-	if( b== NULL)
-		throw(MAL,"basket.delete","Can not access descriptor");
-	BATdel(baskets[bskt].primary,b,FALSE);
-	BBPunfix(b->batCacheid);
-	(void) ret;
-	unlockBasketCatalog();
-	return MAL_SUCCEED;
-}
-
-@-
-Remove events from the basket and return a snapshot
-of the remaining ones.
-@c
-str BSKTupdate(int *ret, int *bsk, int *upd){
-	(void) ret;
-	(void) bsk;
-	(void) upd;
-	return MAL_SUCCEED;
-}
-int BSKTmembers(str grp, str *member, int limit)
-{
-	int i, k=0;
-	if( baskets==0)
-		return 0;
-	
-	for(i=1; i<bsktTop; i++)
-	if(k<limit && baskets[i].grp && strcmp(grp, baskets[i].grp)==0)
-		member[k++]= baskets[i].name;
-	return k;
-}
-
-int BSKTmemberCount(str grp){
-	int i, cnt=0;
-	for(i=1; i<bsktTop; i++)
-	if( grp && baskets[i].grp && strcmp(grp, baskets[i].grp)==0)
-		cnt++;
-	return cnt;
-}
-str BSKTmemberName(str grp, int idx){
-	int i;
-	for(i=1;idx && i<bsktTop; i++)
-	if( grp && baskets[i].grp && strcmp(grp, baskets[i].grp)==0)
-		idx--;
-	if( idx == 0)
-		return baskets[i].name;
-	return GDKstrdup("Unknown member");
-}
 @}

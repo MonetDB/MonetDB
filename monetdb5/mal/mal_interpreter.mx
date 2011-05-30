@@ -1233,7 +1233,7 @@ DFLOWscheduler(DataFlow flow)
 	MT_lock_set(&flow->todo->l, "q_enqueue");
 	for (i = 0; i < todo; i++)
 		if (flow->status[i].blocks == 0) {
-			p = getInstrPtr(fs[0].mb, i);
+			p = getInstrPtr(fs[0].mb, flow->start + i );
 			for (j = p->retc; j < p->argc; j++)
 				flow->status[i].argclaim += getMemoryClaim(flow->status[0].mb, flow->status[0].stk, p, j, FALSE);
 			queued++;

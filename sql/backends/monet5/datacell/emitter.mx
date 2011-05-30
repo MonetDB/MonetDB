@@ -41,29 +41,29 @@ baskets.
 
 @mal
 module emitter;
-command new(nme:str):void
+command new(schema:str,tbl:str):void
 address DCemitterNew
 comment "Define a new emitter.";
 
-command setType(nme:str, type:str):void
+command setType(schema:str,tbl:str, type:str):void
 address DCemitterSetType
 comment "Set the emitter as a server or a client.";
 
-command start(nme:str)
+command start(schema:str,tbl:str)
 address DCemitterStart
 comment "Start an emitter thread";
-command start(nme:str, host:str, port:int)
+command start(schema:str,tbl:str, host:str, port:int)
 address DCemitterStartFull
 comment "Start an emitter thread";
 
-command pause(nme:str)
+command pause(schema:str,tbl:str)
 address DCemitterPause
 comment "Pause sending";
-command stop(nme:str)
+command stop(schema:str,tbl:str)
 address DCemitterStop
 comment "Stop an emitter thread";
 
-command drop(nme:str)
+command drop(schema:str,tbl:str)
 address DCemitterDrop
 comment "Drop the emitter";
 @-
@@ -92,13 +92,13 @@ The implementation is derived from the emitter module.
 #define adapters_export extern
 #endif
 
-adapters_export str DCemitterNew(int *ret, str *grp);
-adapters_export str DCemitterSetType(int *ret, str *grp, str *type);
-adapters_export str DCemitterStart(int *ret, str *nme);
-adapters_export str DCemitterStartFull(int *ret, str *nme, str *host, int *port);
-adapters_export str DCemitterStop(int *ret, str *nme);
-adapters_export str DCemitterPause(int *ret, str *nme);
-adapters_export str DCemitterDrop(int *ret, str *nme);
+adapters_export str DCemitterNew(int *ret, str *schema, str *grp);
+adapters_export str DCemitterSetType(int *ret, str *schema, str *grp, str *type);
+adapters_export str DCemitterStart(int *ret, str *schema,  str *nme);
+adapters_export str DCemitterStartFull(int *ret, str *schema, str *nme, str *host, int *port);
+adapters_export str DCemitterStop(int *ret, str *schema, str *nme);
+adapters_export str DCemitterPause(int *ret, str *schema, str *nme);
+adapters_export str DCemitterDrop(int *ret, str *schema, str *nme);
 #endif
 
 @c
@@ -120,7 +120,8 @@ static int protocol= TCP;
 #define PAUSEDEFAULT 1000
 
 typedef struct EMITTER{
-	str name;	/* the external name used for reference */
+	str schema;
+	str name;	
 	str host;
 	int port;
 	int status;
@@ -142,9 +143,10 @@ static Emitter emAnchor= NULL;
 static str EMstartThread(Emitter em);
 
 static Emitter
-EMnew(str nme){
+EMnew(str schema, str nme){
 	Emitter em;
 	em= (Emitter) GDKzalloc(sizeof(EMrecord));
+	em->schema= GDKstrdup(schema);
 	em->name= GDKstrdup(nme);
 	if (emAnchor)
 		emAnchor->prv = em;
@@ -154,10 +156,10 @@ EMnew(str nme){
 }
 
 static Emitter
-EMfind(str nme){
+EMfind(str schema, str nme){
 	Emitter r;
 	for( r= emAnchor; r; r= r->nxt)
-		if(strcmp(nme,r->name)==0) 
+		if(strcmp(schema,r->schema)== 0 && strcmp(nme,r->name)==0) 
 			break;
 	return r;
 }
@@ -166,15 +168,15 @@ The MAL interface for managing the emitter pool
 The baskets should already be defined. There order
 is used to interpret the messages sent.
 @c
-str DCemitterNew(int *ret, str *grp)
+str DCemitterNew(int *ret, str *schema, str *grp)
 {
 	Emitter em;
-	int i,j,len;
+	int idx, i,j,len;
 	BAT *b;
 
-	if( EMfind(*grp))
+	if( EMfind(*schema,*grp))
 		throw(MAL,"emitter.new","Duplicate emitter");
-	em= EMnew(*grp);
+	em= EMnew(*schema,*grp);
 	em->host= GDKstrdup("localhost");
 	em->port= 50001;
 	em->delay= PAUSEDEFAULT;
@@ -185,7 +187,7 @@ str DCemitterNew(int *ret, str *grp)
 All tables are prepended with a default tick bat.
 It becomes the synchronization handle.
 @c
-	len= BSKTmemberCount(*grp);
+	len= DCmemberCount(*schema,*grp);
 	if( len == 0)
 		throw(MAL,"receptor.new","Group has no members");
 
@@ -196,9 +198,13 @@ It becomes the synchronization handle.
 	em->table.format[0].seplen = (int) strlen(em->table.format[0].sep);
 	em->status= EMSTOP;
 
-	for(j=1,i=1; i<bsktTop; i++)
-	if( baskets[i].grp && strcmp(baskets[i].grp,*grp)==0){
-		b = baskets[i].primary;
+	idx = DClocate(*schema, *grp);
+	if ( idx == 0)
+		throw(MAL,"receptor.new","basket not found");
+
+	for(j=0, i=0; i < baskets[idx].colcount; i++)
+	{
+		b = baskets[idx].primary[j];
 		if( b== NULL){
 			em->table.nr_attrs=j;   /* ensure a consistent structure*/
 			throw(MAL,"receptor.new","Could not access descriptor");
@@ -230,11 +236,11 @@ It becomes the synchronization handle.
 	return MAL_SUCCEED;
 }
 
-str DCemitterSetType(int *ret, str *nme, str *type) {
+str DCemitterSetType(int *ret, str *schema, str *nme, str *type) {
 	Emitter em;
 
 	(void) ret; 
-	em= EMfind(*nme);
+	em= EMfind(*schema, *nme);
 	if( em == NULL)
 		throw(MAL,"emitter.setType","Emitter not defined");
 	if (strcmp(*type,"server") == 0){
@@ -248,10 +254,10 @@ str DCemitterSetType(int *ret, str *nme, str *type) {
 	throw(MAL,"emitter.setType","The type should be <server> or <client>.");
 }
 
-str DCemitterStop(int *ret, str *nme){
+str DCemitterStop(int *ret, str *schema, str *nme){
 	Emitter em;
 
-	em= EMfind(*nme);
+	em= EMfind(*schema,*nme);
 	if( em == NULL)
 		throw(MAL,"emitter.stop","Emitter not defined");
 	em->status= EMSTOP;
@@ -263,10 +269,10 @@ str DCemitterStop(int *ret, str *nme){
 	return MAL_SUCCEED;
 }
 
-str DCemitterPause(int *ret, str *nme){
+str DCemitterPause(int *ret, str *schema, str *nme){
 	Emitter em;
 
-	em= EMfind(*nme);
+	em= EMfind(*schema,*nme);
 	if( em == NULL)
 		throw(MAL,"emitter.pause","Emitter not defined");
 	if( em->status == EMLISTEN)
@@ -281,11 +287,11 @@ str DCemitterPause(int *ret, str *nme){
 	return MAL_SUCCEED;
 }
 
-str DCemitterStart(int *ret, str *nme){
+str DCemitterStart(int *ret, str *schema, str *nme){
 	Emitter em;
 	MT_Id pid;
 
-	em= EMfind(*nme);
+	em= EMfind(*schema,*nme);
 	if( em == NULL)
 		throw(MAL,"emitter.start","Emitter not defined");
 	if( em->status  == EMLISTEN)
@@ -305,11 +311,11 @@ str DCemitterStart(int *ret, str *nme){
 	return MAL_SUCCEED;
 }
 
-str DCemitterStartFull(int *ret, str *nme, str *host, int *port){
+str DCemitterStartFull(int *ret, str *schema, str *nme, str *host, int *port){
 	Emitter em;
 	MT_Id pid;
 
-	em= EMfind(*nme);
+	em= EMfind(*schema,*nme);
 	if( em == NULL)
 		throw(MAL,"emitter.start","Emitter not defined");
 	if( em->status  == EMLISTEN)
@@ -331,10 +337,10 @@ str DCemitterStartFull(int *ret, str *nme, str *host, int *port){
 	return MAL_SUCCEED;
 }
 
-str DCemitterDrop(int *ret, str *nme){
+str DCemitterDrop(int *ret, str *schema, str *nme){
 	Emitter em,rb;
 	
-	em= EMfind(*nme);
+	em= EMfind(*schema,*nme);
 	if( em == NULL)
 		throw(MAL,"emitter.drop","Emitter not defined");
 #ifdef _DEBUG_EMITTER_
@@ -350,7 +356,7 @@ str DCemitterDrop(int *ret, str *nme){
 		rb->nxt= em->nxt;
 	em->status = EMDROP;
 	if (em->lck)
-		BSKTunlock(&em->lck,&em->name);
+		DCunlock(&em->lck, &em->schema, &em->name);
 	MT_join_thread(em->pid);
 	return MAL_SUCCEED;
 }
@@ -424,7 +430,7 @@ If the thread is suspended, we sleep for at least one second.
 			return;
 		}
 		if( (cnt= BATcount(em->table.format[1].c[0])) ){
-			BSKTlock(&em->lck,&em->name,&em->delay);
+			DClock(&em->lck,&em->schema,&em->name,&em->delay);
 			if ( em->status != EMLISTEN )
 				break;
 			
@@ -441,14 +447,14 @@ If the thread is suspended, we sleep for at least one second.
 #endif
 			if( ret<0){
 				/* keep the events and try to setup a new connection */
-				BSKTunlock(&em->lck,&em->name);
+				DCunlock(&em->lck, &em->schema, &em->name);
 				break;
 			}
 			/* clean the baskets */
 			for(i=1; i< em->table.nr_attrs; i++)
 				BATclear(em->table.format[i].c[0]);
 			
-			BSKTunlock(&em->lck,&em->name);
+			DCunlock(&em->lck, &em->schema, &em->name);
 			if( em->table.error){
 				mnstr_printf(GDKerr,em->table.error);
 				em->table.error=0;
