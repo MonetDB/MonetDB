@@ -566,6 +566,14 @@ comment "truncate the floating point v to r digits behind the dot (if r < 0, bef
 @:mal_fround(flt)@
 @:mal_fround(dbl)@
 
+command sql.alpha(dec:dbl, theta:dbl) :dbl
+address SQLdbl_alpha
+comment "Implementation of astronomy alpha function: expands the radius theta depending on the declination";
+
+command batsql.alpha(dec:bat[:oid,:dbl], theta:dbl) :bat[:oid,:dbl]
+address SQLbat_alpha
+comment "BAT implementation of astronomy alpha function";
+
 @= mal_cast
 command calc.@1( v:str ) :@1 
 address str_2_@1
@@ -1057,6 +1065,7 @@ include sql_bpm;
 #include <tablet.h>
 #include <streams.h>
 #include <mtime.h>
+#include <math.h>
 #include <blob.h>
 #include <mkey.h>
 #include <str.h>
@@ -1220,6 +1229,10 @@ sql5_export str @1_trunc_wrap( @1 *res, @1 *v, int *r );
 @h
 @:fround_export(flt)@
 @:fround_export(dbl)@
+#define radians(x)       ((x) * 3.14159265358979323846 /180.0 )
+#define degrees(x)       ((x) * 180.0/3.14159265358979323846 )
+sql5_export str SQLdbl_alpha(dbl *res, dbl *decl, dbl *theta);
+sql5_export str SQLbat_alpha(bat *res, bat *decl, dbl *theta);
 @= c_interval_export
 sql5_export str month_interval_@1( int *ret, @1 *s, int *ek, int *sk );
 sql5_export str second_interval_@1( lng *res, @1 *s, int *ek, int *sk );
@@ -3963,6 +3976,67 @@ str
 @c
 @:fround(flt)@
 @:fround(dbl)@
+
+str
+SQLdbl_alpha(dbl *res, dbl *decl, dbl *theta)
+{
+	dbl s, c1, c2;
+    char *msg = MAL_SUCCEED;
+    if (*decl == dbl_nil || *theta == dbl_nil) {
+        *res = dbl_nil;
+    } else if ( fabs(*decl) + *theta > 89.9 ) {
+        *res = (dbl) 180.0;
+    } else {
+		s = sin(radians(*theta));
+		c1 = cos(radians(*decl - *theta));
+		c2 = cos(radians(*decl + *theta));
+	    *res = degrees(fabs(atan(s / sqrt(fabs(c1 * c2)))));
+		/*		mnstr_printf(GDKout,"%f\n", *res); */
+	}
+    return msg;
+}
+str
+SQLbat_alpha(bat *res, bat *decl, dbl *theta)
+{
+    BAT *b, *bn;
+    BATiter bi;
+    BUN p,q;
+	dbl s, c1, c2, r;
+    char *msg = NULL;
+
+	if ( *theta == dbl_nil ){
+        throw(SQL, "SQLbat_alpha", "Parameter theta should not be nil");
+    }
+    if( (b = BATdescriptor(*decl)) == NULL ){
+        throw(SQL, "alpha", "Cannot access descriptor");
+    }
+    bi = bat_iterator(b);
+    bn = BATnew(b->htype, TYPE_dbl, BATcount(b));
+    if( bn == NULL){
+        BBPreleaseref(b->batCacheid);
+        throw(SQL, "sql.alpha", MAL_MALLOC_FAIL);
+    }
+    BATseqbase(bn, b->hseqbase);
+    BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
+	s = sin(radians(*theta));
+    BATloop(b,p,q) {
+        dbl d = *(dbl*)BUNtail(bi,p);
+	    if (d == dbl_nil)
+			r = dbl_nil;
+	    else if ( fabs(d) + *theta > 89.9 )
+			r = (dbl) 180.0;
+		else {
+			c1 = cos(radians(d - *theta));
+			c2 = cos(radians(d + *theta));
+		    r = degrees(fabs(atan(s / sqrt(fabs(c1 * c2)))));
+        }
+        BUNins(bn, BUNhead(bi,p), &r, FALSE);
+    }
+    BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
+    BBPkeepref( *res = bn->batCacheid);
+    BBPunfix(b->batCacheid);
+    return msg;
+}
 
 #if SIZEOF_WRD == SIZEOF_INT
 #define wrdToStr(sptr, lptr, p) intToStr(sptr, lptr, (int*)p)
