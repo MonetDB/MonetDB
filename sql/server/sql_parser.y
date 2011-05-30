@@ -5239,7 +5239,7 @@ void *sql_error( mvc * sql, int error_code, char *format, ... )
 	return NULL;
 }
 
-int parse_error(mvc * c, char *err)
+int parse_error(mvc * c, const char *err)
 {
 	(void)sql_error( c, 4,
 		 "!%s in: \"%s\"\n",

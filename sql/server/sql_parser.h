@@ -187,7 +187,7 @@ typedef enum jt {
 
 extern char *token2string(int token);
 extern void *sql_error(mvc *sql, int error_code, char *format, ...);
-extern int parse_error(mvc *sql, char *s);
+extern int parse_error(mvc *sql, const char *s);
 extern int sqlparse(void *);
 
 #endif /*_SQL_PARSER_H_*/
