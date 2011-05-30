@@ -40,6 +40,7 @@ lib__datacell = {
 		  receptor.mx \
 		  petrinet.mx \
 		  dcoperator.mx \
+		  opt_dataflow.mx \
 		  emitter.mx 
 
     LIBS = ../../../../monetdb5/tools/libmonetdb5 \
@@ -71,6 +72,7 @@ scripts_mal = {
 		  receptor.mal \
 		  emitter.mal \
 		  petrinet.mal \
+		  opt_dataflow.mx \
 		  dcoperator.mal
 }
 
