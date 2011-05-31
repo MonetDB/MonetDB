@@ -90,8 +90,6 @@ struct PIPELINES{
 {"cracker_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,selcrack,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector"},
 {"sidcrack_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,sidcrack,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector"},
 
-{"datacell_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,deadcode,constants,commonTerms,joinPath,datacell,deadcode,reduce,dataflow,history,multiplex,garbageCollector"},
-
 /*
  * The Octopus pipeline for distributed processing (Merovingian enabled platforms only)
 */
