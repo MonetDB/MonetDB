@@ -38,11 +38,11 @@ Over..
 % .plan # table_name
 % rel # name
 % clob # type
-% 105 # length
+% 109 # length
 project (
 | group by (
 | | table(sys.test02) [ test02.col1 NOT NULL, test02.%TID% NOT NULL ]
-| ) [ test02.col1 NOT NULL ] [ test02.col1 NOT NULL, count no nil (test02.col1 NOT NULL) NOT NULL as L4 ]
+| ) [ test02.col1 NOT NULL ] [ test02.col1 NOT NULL, sys.count no nil (test02.col1 NOT NULL) NOT NULL as L4 ]
 ) [ L4 ASC NOT NULL ] [ test02.col1 NOT NULL ]
 % sys.test02 # table_name
 % col1 # name
