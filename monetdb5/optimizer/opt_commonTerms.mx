@@ -175,7 +175,7 @@ at least tells us that an update is planned.
 Like all optimizer decisions, it is safe to stop.
 @c
 		barrier |= getFunctionId(p) == assertRef;
-		if (p->token == NOOPsymbol || p->token == ASSIGNsymbol || barrier || p->retc == p->argc) {
+		if (p->token == NOOPsymbol || p->token == ASSIGNsymbol || barrier /* || p->retc == p->argc */) {
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
 				mnstr_printf(cntxt->fdout, "COMMON SKIPPED[%d] %d %d\n",i, barrier, p->retc == p->argc);
 #endif
@@ -184,7 +184,7 @@ Like all optimizer decisions, it is safe to stop.
 
 		/* from here we have a candidate to look for a match */
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
-		mnstr_printf(cntxt->fdout,"#CANDIDATE[%d] last= %d ",i,last);
+		mnstr_printf(cntxt->fdout,"#CANDIDATE[%d] ",i);
 		printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
 #endif
 		prop = hasSideEffects(p,TRUE) || isUpdateInstruction(p);
@@ -192,9 +192,9 @@ Like all optimizer decisions, it is safe to stop.
 		for (j = candidate; j ; j = list[j]) 
 			if ( (q=getInstrPtr(mb,j))->fcn == p->fcn  && !isUnsafeFunction(q)){
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
-			mnstr_printf(cntxt->fdout,"#CANDIDATE %d, %d  %d %d lookback %d ", i, j, 
+			mnstr_printf(cntxt->fdout,"#CANDIDATE %d, %d  %d %d ", i, j, 
 				hasSameSignature(mb, p, q, p->retc), 
-				hasSameArguments(mb, p, q), last);
+				hasSameArguments(mb, p, q));
 				printInstruction(cntxt->fdout, mb, 0, q, LIST_MAL_ALL);
 				mnstr_printf(cntxt->fdout," :%d %d %d=%d %d %d %d %d %d\n", 
 					q->token != ASSIGNsymbol ,
