@@ -173,7 +173,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 		if (p->token == ENDsymbol)
 			break;
-		if (hasSideEffects(p,TRUE) || isUnsafeFunction(p) || blockCntrl(p) || (!dumbcopy && blockExit(p)) || dflowAssignTest(span,p,i) ){
+		if (hasSideEffects(p,TRUE) || isUnsafeFunction(p) || blockCntrl(p) || (!dumbcopy && blockExit(p)) || (getModuleId(p) == sqlRef && isUpdateInstruction(p)) || dflowAssignTest(span,p,i) ){
 			@:flowblock@
 			pushInstruction(mb,p);
 			continue;
