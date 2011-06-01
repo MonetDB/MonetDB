@@ -580,34 +580,6 @@ user query, following the same optimization paths and
 caching.
 @c
 
-static void
-freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start)
-{
-	int i, j;
-
-	for (i = start; i < mb->vtop;) {
-		if (glb) {
-			if (isVarCleanup(mb,i))
-				garbageElement(c,&glb->stk[i]);
-			/* clean stack entry */
-			glb->stk[i].vtype = TYPE_int;
-			glb->stk[i].val.ival = 0;
-			glb->stk[i].len = 0;
-		}
-		clearVariable(mb, i);
-		i++;
-	}
-	mb->vtop = start;
-	for (i = j = 0; i < mb->ptop; i++) {
-		if (mb->prps[i].var < start) {
-			if (i > j)
-				mb->prps[j] = mb->prps[i];
-			j++;
-		}
-	}
-	mb->ptop = j;
-}
-
 /* #define _SQL_COMPILE */
 
 /*
@@ -1331,8 +1303,20 @@ produce code.
 		if (m->emod & mod_debug)
 			SQLsetDebugger(c, m, TRUE); 
 		if ((m->emode != m_inplace && m->emode != m_prepare && !m->caching && m->emode != m_explain) || s->type == st_none || m->type == Q_TRANS) {
+			InstrPtr p;
+			MalBlkPtr curBlk;
+			
 			scanner_query_processed(&(m->scanner));
 			backend_callinline(be, c, s );
+
+			curBlk = c->curprg->def;
+			p = newFcnCall(curBlk, "optimizer", "remap");
+			typeChecker(c->nspace, curBlk, p, FALSE);
+			p = newFcnCall(curBlk, "optimizer", "multiplex");
+			typeChecker(c->nspace, curBlk, p, FALSE);
+			optimizeMALBlock(c, curBlk);
+			c->curprg->def = curBlk;
+
 			if( m->emode == m_inplace)
 				m->emode = m_normal; 
 		} else {

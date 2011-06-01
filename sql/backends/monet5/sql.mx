@@ -1377,6 +1377,8 @@ sql5_export str bat@2_num2dec_@1( int *res, int *v, int *d2, int *s2 );
 
 sql5_export str getContext(Client cntxt, MalBlkPtr mb, mvc **c, backend **b );
 
+sql5_export void freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start);
+
 #endif /* _SQL_H */
 
 @-
@@ -6346,19 +6348,20 @@ RAstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = getContext(cntxt, mb, &m, &b);
 	sql_rel *rel;
 
-	printf("execute relational algebra %s\n", *expr);
 	m->sa = sa_create();
-	//SQLtrans(m);
  	rel = rel_read(m, *expr, &pos);
 	if (rel) {
+		int oldvtop = cntxt->curprg->def->vtop;
 		int oldstop = cntxt->curprg->def->stop;
 		stmt *s;
 		char *msg;
 
 		rel_print(m, rel, 0);
-		if (*opt) 
-			printf(" optimize it \n");
 		s = output_rel_bin(m, rel);
+		if (*opt) { 
+			rel = rel_optimizer(m, rel);
+			rel_print(m, rel, 0);
+		}
 		rel_destroy(rel);
 		s = rel2bin(m, s); 	
 		s = bin_optimizer(m, s);
@@ -6370,8 +6373,39 @@ RAstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		addQueryToCache(cntxt); 
 
 		msg = (str) runMAL(cntxt, cntxt->curprg->def, 1, 0, 0, 0);
-		if (!msg) 
+		if (!msg) { 
 			resetMalBlk(cntxt->curprg->def, oldstop);
+			freeVariables(cntxt,cntxt->curprg->def, cntxt->glb, oldvtop);
+		}
 	}
 	return msg;
 }
+
+void
+freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start)
+{
+	int i, j;
+
+	for (i = start; i < mb->vtop;) {
+		if (glb) {
+			if (isVarCleanup(mb,i))
+				garbageElement(c,&glb->stk[i]);
+			/* clean stack entry */
+			glb->stk[i].vtype = TYPE_int;
+			glb->stk[i].val.ival = 0;
+			glb->stk[i].len = 0;
+		}
+		clearVariable(mb, i);
+		i++;
+	}
+	mb->vtop = start;
+	for (i = j = 0; i < mb->ptop; i++) {
+		if (mb->prps[i].var < start) {
+			if (i > j)
+				mb->prps[j] = mb->prps[i];
+			j++;
+		}
+	}
+	mb->ptop = j;
+}
+

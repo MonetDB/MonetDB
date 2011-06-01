@@ -72,7 +72,7 @@ project (
 | | | table(sys.t2606b) [ t2606b.a, t2606b.%TID% NOT NULL ]
 | | ) [ t2606b.a ]
 | ) [ a ]
-) [ a ASC ] [ a ]
+) [ a ] [ a ASC ]
 #select * from t2606a   union   select * from t2606b   order by a;
 % .t2606a # table_name
 % a # name
@@ -101,7 +101,7 @@ project (
 | | | table(sys.t2606b) [ t2606b.a, t2606b.%TID% NOT NULL ]
 | | ) [ t2606b.a ]
 | ) [ a ]
-) [ a ASC ] [ a ]
+) [ a ] [ a ASC ]
 #( select * from t2606a   union   select * from t2606b ) order by a;
 % .t2606a # table_name
 % a # name
@@ -130,7 +130,7 @@ project (
 | | | table(sys.t2606b) [ t2606b.a, t2606b.%TID% NOT NULL ]
 | | ) [ t2606b.a ]
 | ) [ a ]
-) [ a ASC ] [ a ]
+) [ a ] [ a ASC ]
 #( select * from t2606a ) union ( select * from t2606b ) order by a;
 % .t2606a # table_name
 % a # name
@@ -159,7 +159,7 @@ project (
 | | | table(sys.t2606b) [ t2606b.a, t2606b.%TID% NOT NULL ]
 | | ) [ t2606b.a ]
 | ) [ a ]
-) [ a ASC ] [ a ]
+) [ a ] [ a ASC ]
 #select * from t2606a   except   select * from t2606b   order by a;
 % sys.t2606a # table_name
 % a # name
@@ -182,7 +182,7 @@ project (
 | | | table(sys.t2606b) [ t2606b.a, t2606b.%TID% NOT NULL ]
 | | ) [ t2606b.a ]
 | ) [ a ]
-) [ a ASC ] [ a ]
+) [ a ] [ a ASC ]
 #( select * from t2606a   except   select * from t2606b ) order by a;
 % sys.t2606a # table_name
 % a # name
@@ -205,7 +205,7 @@ project (
 | | | table(sys.t2606b) [ t2606b.a, t2606b.%TID% NOT NULL ]
 | | ) [ t2606b.a ]
 | ) [ a ]
-) [ a ASC ] [ a ]
+) [ a ] [ a ASC ]
 #( select * from t2606a ) except ( select * from t2606b ) order by a;
 % sys.t2606a # table_name
 % a # name
@@ -228,7 +228,7 @@ project (
 | | | table(sys.t2606b) [ t2606b.a, t2606b.%TID% NOT NULL ]
 | | ) [ t2606b.a ]
 | ) [ a ]
-) [ a ASC ] [ a ]
+) [ a ] [ a ASC ]
 #select * from t2606a   intersect   select * from t2606b   order by a;
 % sys.t2606a # table_name
 % a # name
@@ -251,7 +251,7 @@ project (
 | | | table(sys.t2606b) [ t2606b.a, t2606b.%TID% NOT NULL ]
 | | ) [ t2606b.a ]
 | ) [ a ]
-) [ a ASC ] [ a ]
+) [ a ] [ a ASC ]
 #( select * from t2606a   intersect   select * from t2606b ) order by a;
 % sys.t2606a # table_name
 % a # name
@@ -274,7 +274,7 @@ project (
 | | | table(sys.t2606b) [ t2606b.a, t2606b.%TID% NOT NULL ]
 | | ) [ t2606b.a ]
 | ) [ a ]
-) [ a ASC ] [ a ]
+) [ a ] [ a ASC ]
 #( select * from t2606a ) intersect ( select * from t2606b ) order by a;
 % sys.t2606a # table_name
 % a # name
@@ -297,7 +297,7 @@ project (
 | | | table(sys.t2606b) [ t2606b.a, t2606b.%TID% NOT NULL ]
 | | ) [ t2606b.a ]
 | ) [ a as t.a ]
-) [ t.a ASC ] [ t.a ]
+) [ t.a ] [ t.a ASC ]
 #select * from (select * from t2606a union select * from t2606b) as t order by a;
 % .t # table_name
 % a # name
@@ -326,7 +326,7 @@ project (
 | | | table(sys.t2606b) [ t2606b.a, t2606b.%TID% NOT NULL ]
 | | ) [ t2606b.a ]
 | ) [ a as t.a ]
-) [ t.a ASC ] [ t.a ]
+) [ t.a ] [ t.a ASC ]
 #select * from (select * from t2606a except select * from t2606b) as t order by a;
 % sys.t # table_name
 % a # name
@@ -349,7 +349,7 @@ project (
 | | | table(sys.t2606b) [ t2606b.a, t2606b.%TID% NOT NULL ]
 | | ) [ t2606b.a ]
 | ) [ a as t.a ]
-) [ t.a ASC ] [ t.a ]
+) [ t.a ] [ t.a ASC ]
 #select * from (select * from t2606a intersect select * from t2606b) as t order by a;
 % sys.t # table_name
 % a # name

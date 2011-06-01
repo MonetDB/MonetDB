@@ -43,7 +43,11 @@ project (
 | group by (
 | | table(sys.test02) [ test02.col1 NOT NULL, test02.%TID% NOT NULL ]
 | ) [ test02.col1 NOT NULL ] [ test02.col1 NOT NULL, sys.count no nil (test02.col1 NOT NULL) NOT NULL as L4 ]
-) [ L4 ASC NOT NULL ] [ test02.col1 NOT NULL ]
+) [ test02.col1 NOT NULL ] [ L4 ASC NOT NULL ]
+#select col1
+#from test02
+#group by col1
+#order by count(col1);
 % sys.test02 # table_name
 % col1 # name
 % varchar # type
