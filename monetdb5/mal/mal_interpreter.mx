@@ -1210,11 +1210,14 @@ static str
 DFLOWscheduler(DataFlow flow)
 {
 	int queued = 0, oldq = 0, last;
-	int pc = 0, i, j;
+	int i,pc = 0;
+#ifdef USE_DFLOW_ADMISSION
+	int j;
+	InstrPtr p;
+#endif
 	int todo = flow->stop - flow->start;
 	str ret = MAL_SUCCEED;
 	FlowStatus fs, f = 0;
-	InstrPtr p;
 
 	if (todo == 0)
 		throw(MAL, "dataflow", "Empty dataflow block");
@@ -1233,9 +1236,11 @@ DFLOWscheduler(DataFlow flow)
 	MT_lock_set(&flow->todo->l, "q_enqueue");
 	for (i = 0; i < todo; i++)
 		if (flow->status[i].blocks == 0) {
+#ifdef USE_DFLOW_ADMISSION
 			p = getInstrPtr(fs[0].mb, flow->start + i );
 			for (j = p->retc; j < p->argc; j++)
 				flow->status[i].argclaim += getMemoryClaim(flow->status[0].mb, flow->status[0].stk, p, j, FALSE);
+#endif
 			queued++;
 			flow->status[i].state = DFLOWrunning;
 			PARDEBUG mnstr_printf(GDKstdout, "#enqueue pc=%d claim=%d queue %d\n", flow->status[i].pc, flow->status[i].argclaim, queued);
