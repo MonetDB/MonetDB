@@ -90,6 +90,10 @@ pattern include(fname:str):void
 address SQLinclude
 comment "Compile and execute a sql statements on the file";
 
+pattern ra(cmd:str, optimize:bit):void
+address RAstatement
+comment "Compile and execute a single 'relational algebra' statement";
+
 pattern assert(b:bit,msg:str):void
 address SQLassert
 comment "Generate an exception when b==true";
@@ -1399,6 +1403,7 @@ First introduce the routines to be called by the front-end.
 #ifdef HAVE_RAPTOR
 # include <rdf.h>
 #endif
+#include "mal_instruction.h"
 
 /* Windows doesn't have round or trunc, but it does have floor and ceil */
 #ifndef HAVE_ROUND
@@ -6328,4 +6333,45 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPunfix(aux->batCacheid);
 	BBPkeepref(*res = r->batCacheid);
 	return MAL_SUCCEED;
+}
+
+str 
+RAstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int pos = 0;
+	str *expr = (str*) getArgReference(stk, pci, 1);
+	bit *opt = (bit*) getArgReference(stk, pci, 2);
+	backend *b = NULL;
+	mvc *m = NULL;
+	str msg = getContext(cntxt, mb, &m, &b);
+	sql_rel *rel;
+
+	printf("execute relational algebra %s\n", *expr);
+	m->sa = sa_create();
+	//SQLtrans(m);
+ 	rel = rel_read(m, *expr, &pos);
+	if (rel) {
+		int oldstop = cntxt->curprg->def->stop;
+		stmt *s;
+		char *msg;
+
+		rel_print(m, rel, 0);
+		if (*opt) 
+			printf(" optimize it \n");
+		s = output_rel_bin(m, rel);
+		rel_destroy(rel);
+		s = rel2bin(m, s); 	
+		s = bin_optimizer(m, s);
+
+		MSinitClientPrg(cntxt, "user", "test"); 
+
+		/* generate MAL code */
+		backend_callinline(b, cntxt, s );
+		addQueryToCache(cntxt); 
+
+		msg = (str) runMAL(cntxt, cntxt->curprg->def, 1, 0, 0, 0);
+		if (!msg) 
+			resetMalBlk(cntxt->curprg->def, oldstop);
+	}
+	return msg;
 }

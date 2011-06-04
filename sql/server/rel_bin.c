@@ -364,7 +364,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 		group *g = grp;
 
 		assert(sel == NULL);
-		if (attr) { 
+		if (attr && attr->h) { 
 			at = attr->h->data;
 			as = exp_bin(sql, at, left, right, NULL, sel);
 			if (list_length(attr) == 2)

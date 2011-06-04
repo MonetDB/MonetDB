@@ -33,8 +33,8 @@ Over..
 % . # table_name
 % single_value # name
 % varchar # type
-% 175 # length
-[ "inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector"	]
+% 188 # length
+[ "inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,accumulators,garbageCollector"	]
 #select optimizer;
 % . # table_name
 % single_value # name
@@ -51,14 +51,14 @@ Over..
 % . # table_name
 % single_value # name
 % varchar # type
-% 175 # length
-[ "inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector"	]
+% 188 # length
+[ "inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,accumulators,garbageCollector"	]
 #select optimizer;
 % . # table_name
 % single_value # name
 % varchar # type
-% 175 # length
-[ "inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector"	]
+% 188 # length
+[ "inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,accumulators,garbageCollector"	]
 #select optimizer;
 % . # table_name
 % single_value # name
