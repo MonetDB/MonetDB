@@ -41,29 +41,29 @@ baskets.
 
 @mal
 module emitter;
-command new(schema:str,tbl:str):void
+command new(sch:str,tbl:str):void
 address DCemitterNew
 comment "Define a new emitter.";
 
-command setType(schema:str,tbl:str, type:str):void
+command setType(sch:str,tbl:str, type:str):void
 address DCemitterSetType
 comment "Set the emitter as a server or a client.";
 
-command start(schema:str,tbl:str)
+command start(sch:str,tbl:str)
 address DCemitterStart
 comment "Start an emitter thread";
-command start(schema:str,tbl:str, host:str, port:int)
+command start(sch:str,tbl:str, host:str, port:int)
 address DCemitterStartFull
 comment "Start an emitter thread";
 
-command pause(schema:str,tbl:str)
+command pause(sch:str,tbl:str)
 address DCemitterPause
 comment "Pause sending";
-command stop(schema:str,tbl:str)
+command stop(sch:str,tbl:str)
 address DCemitterStop
 comment "Stop an emitter thread";
 
-command drop(schema:str,tbl:str)
+command drop(sch:str,tbl:str)
 address DCemitterDrop
 comment "Drop the emitter";
 @-

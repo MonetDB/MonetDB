@@ -1114,7 +1114,7 @@ blocking counter should be decremented upon finishing it.
 static void
 DFLOWinit(DataFlow flow, Client cntxt, MalBlkPtr mb, MalStkPtr stk, int size)
 {
-	int pc, i, j, k, n, etop = 0;
+	int pc, i, j, k, l, n, etop = 0;
 	int *assign;
 	InstrPtr p;
 
@@ -1135,6 +1135,7 @@ DFLOWinit(DataFlow flow, Client cntxt, MalBlkPtr mb, MalStkPtr stk, int size)
 
 		/* administer flow dependencies */
 		for (j = p->retc; j < p->argc; j++) {
+			/* list of instructions that wake n-th instruction up */
 			if (!isVarConstant(mb, getArg(p, j)) && (k = assign[getArg(p, j)])) {
 				/* add edge to the target instruction for wakeup call */
 				k -= flow->start;
@@ -1155,28 +1156,31 @@ DFLOWinit(DataFlow flow, Client cntxt, MalBlkPtr mb, MalStkPtr stk, int size)
 
 				flow->status[n].blocks++;
 			}
-			/* be careful, watch out for garbage collection interference */
-			/* those should be scheduled after all its other uses */
-			k = getEndOfLife(mb, getArg(p, j));
-			if (k != pc && k < flow->stop && k > flow->start) {
-				/* add edge to the target instruction for wakeup call */
-				PARDEBUG mnstr_printf(GDKstdout, "forward %d -> %d\n", n + flow->start, k);
-				k -= flow->start;
-				if (flow->nodes[n]) {
-					/* add wakeup to tail of list */
-					for (i = n; flow->edges[i] > 0; i = flow->edges[i])
-						;
-					flow->nodes[etop] = k;
-					flow->edges[etop] = -1;
-					flow->edges[i] = etop;
-					etop++;
-					(void)size;
-					assert(etop < size);
-				} else {
-					flow->nodes[n] = k;
-					flow->edges[n] = -1;
+			
+			/* list of instructions to be woken up explicitly */
+			if ( !isVarConstant(mb, getArg(p, j)) ) {
+				/* be careful, watch out for garbage collection interference */
+				/* those should be scheduled after all its other uses */
+				l = getEndOfLife(mb, getArg(p, j));
+				if (l != pc && l < flow->stop && l > flow->start) {
+					/* add edge to the target instruction for wakeup call */
+					PARDEBUG mnstr_printf(GDKstdout, "endoflife for %s is %d -> %d\n", getVarName(mb, getArg(p,j)), n + flow->start, l);
+					l -= flow->start;
+					if (flow->nodes[n]) {
+						/* add wakeup to tail of list */
+						for (i = n; flow->edges[i] > 0; i = flow->edges[i])
+							;
+						flow->nodes[etop] = l;
+						flow->edges[etop] = -1;
+						flow->edges[i] = etop;
+						etop++;
+						assert(etop < size);
+					} else {
+						flow->nodes[n] = l;
+						flow->edges[n] = -1;
+					}
+					flow->status[l].blocks++;
 				}
-				flow->status[k].blocks++;
 			}
 		}
 
@@ -1184,10 +1188,11 @@ DFLOWinit(DataFlow flow, Client cntxt, MalBlkPtr mb, MalStkPtr stk, int size)
 			assign[getArg(p, j)] = pc;  /* ensure recognition of dependency on first instruction and constant */
 	}
 	GDKfree(assign);
-	PARDEBUG for (n = 0; n < flow->stop - flow->start; n++) {
+	PARDEBUG 
+	 for (n = 0; n < flow->stop - flow->start; n++) {
 		mnstr_printf(GDKstdout, "#[%d] %d: ", flow->start + n, n);
 		printInstruction(GDKstdout, mb, 0, getInstrPtr(mb, n + flow->start), LIST_MAL_STMT | LIST_MAPI);
-		mnstr_printf(GDKstdout, "#[%d]Dependents blocks %d:", flow->start + n, flow->status[n].blocks);
+		mnstr_printf(GDKstdout, "#[%d]Dependents block count %d wakeup", flow->start + n, flow->status[n].blocks);
 		for (j = n; flow->edges[j]; j = flow->edges[j]) {
 			mnstr_printf(GDKstdout, "%d ", flow->start + flow->nodes[j]);
 			if (flow->edges[j] == -1)
@@ -1206,15 +1211,31 @@ at the end of the parallel block.
 They take effect after we have ensured that the basic properties for
 execution hold.
 @c
+static void showFlowStatus(DataFlow flow, int pc)
+{
+	int i;
+	FlowStatus fs= flow->status;
+
+		mnstr_printf(GDKstdout, "#end of data flow %d done %d \n", pc, flow->stop - flow->start);
+		for (i = 0; i < flow->stop - flow->start; i++)
+			if (fs[i].state != DFLOWwrapup && fs[i].pc >= 0) {
+				mnstr_printf(GDKstdout, "#missed pc %d status %d %d  blocks %d", fs[i].state, i, fs[i].pc, fs[i].blocks);
+				printInstruction(GDKstdout, fs[i].mb, 0, getInstrPtr(fs[i].mb, fs[i].pc), LIST_MAL_STMT | LIST_MAPI);
+			}
+}
+
 static str
 DFLOWscheduler(DataFlow flow)
 {
 	int queued = 0, oldq = 0, last;
-	int pc = 0, i, j;
+	int i,pc = 0;
+#ifdef USE_DFLOW_ADMISSION
+	int j;
+	InstrPtr p;
+#endif
 	int todo = flow->stop - flow->start;
 	str ret = MAL_SUCCEED;
 	FlowStatus fs, f = 0;
-	InstrPtr p;
 
 	if (todo == 0)
 		throw(MAL, "dataflow", "Empty dataflow block");
@@ -1233,9 +1254,11 @@ DFLOWscheduler(DataFlow flow)
 	MT_lock_set(&flow->todo->l, "q_enqueue");
 	for (i = 0; i < todo; i++)
 		if (flow->status[i].blocks == 0) {
+#ifdef USE_DFLOW_ADMISSION
 			p = getInstrPtr(fs[0].mb, flow->start + i );
 			for (j = p->retc; j < p->argc; j++)
 				flow->status[i].argclaim += getMemoryClaim(flow->status[0].mb, flow->status[0].stk, p, j, FALSE);
+#endif
 			queued++;
 			flow->status[i].state = DFLOWrunning;
 			PARDEBUG mnstr_printf(GDKstdout, "#enqueue pc=%d claim=%d queue %d\n", flow->status[i].pc, flow->status[i].argclaim, queued);
@@ -1247,10 +1270,11 @@ DFLOWscheduler(DataFlow flow)
 
 	/* consume the remainder */
 	PARDEBUG mnstr_printf(GDKstdout, "#run %d instructions in dataflow block\n", todo);
-	while (queued) {
-		PARDEBUG mnstr_printf(GDKstdout, "#waiting for results, queued %d\n", queued);
+	while (queued || todo > 0 ) {
+		PARDEBUG mnstr_printf(GDKstdout, "#waiting for results, queued %d todo %d\n", queued, todo);
 		f = q_dequeue(flow->done);
 		queued--;
+		todo = todo > 0 ? todo -1: 0;
 
 		if (f->pc < 0) {
 			PARDEBUG mnstr_printf(GDKstdout, "#errors encountered %s ", f->error ? f->error : "unknown");
@@ -1268,6 +1292,8 @@ DFLOWscheduler(DataFlow flow)
 					ret = z;
 				}
 			}
+			/* first error terminates the batch a.s.a.p. */
+			todo = 0;
 		}
 
 		/*
@@ -1285,6 +1311,7 @@ DFLOWscheduler(DataFlow flow)
 		MT_lock_set(&flow->todo->l, "q_enqueue");
 
 		oldq = queued;
+		if ( f->pc > 0 )
 		for (; last >= 0 && (i = flow->nodes[last]) > 0; last = flow->edges[last])
 			if (flow->status[i].state == DFLOWpending) {
 				flow->status[i].argclaim += f->hotclaim;
@@ -1313,14 +1340,7 @@ DFLOWscheduler(DataFlow flow)
 			while (oldq++ < queued)
 				MT_sema_up(&flow->todo->s, "q_enqueue");
 	}
-	PARDEBUG {
-		mnstr_printf(GDKstdout, "#end of data flow %d todo %d \n", pc, flow->stop - flow->start);
-		for (i = 0; i < flow->stop - flow->start; i++)
-			if (fs[i].state != DFLOWwrapup && fs[i].pc >= 0) {
-				mnstr_printf(GDKstdout, "#missed %d %d %d ", i, fs[i].state, fs[i].pc);
-				printInstruction(GDKstdout, fs[i].mb, 0, getInstrPtr(fs[i].mb, fs[i].pc), LIST_MAL_STMT | LIST_MAPI);
-			}
-	}
+	PARDEBUG showFlowStatus(flow,pc);
 	return ret;
 }
 

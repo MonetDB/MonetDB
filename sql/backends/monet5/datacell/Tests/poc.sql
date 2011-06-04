@@ -12,6 +12,7 @@ create table datacell.basket_X(
 );
 
 -- to be used by continous queries
+-- could be generated from the table definition.
 create function datacell.basket_X()
 returns table (id integer, tag timestamp, payload integer)
 begin

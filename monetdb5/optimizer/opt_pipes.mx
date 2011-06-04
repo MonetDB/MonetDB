@@ -38,16 +38,19 @@ only.
 
 opt_export str getPipeDefinition(str name);
 opt_export str getPipeCatalog(int *ret);
+opt_export str addPipeDefinition(str name, str pipe);
 
 #endif
 @c
 #include "monetdb_config.h"
 #include "opt_pipes.h"
 
+#define MAXOPTPIPES 64
+
 struct PIPELINES{
 	char name[50];
 	char def[256];
-} pipes[] ={
+} pipes[MAXOPTPIPES] ={
 /* The minimal pipeline necessary by the server to operate correctly*/
 { "minimal_pipe",	"inline,remap,deadcode,multiplex,garbageCollector"},
 
@@ -87,8 +90,6 @@ struct PIPELINES{
 {"cracker_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,selcrack,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector"},
 {"sidcrack_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,sidcrack,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector"},
 
-{"datacell_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,deadcode,constants,commonTerms,joinPath,datacell,deadcode,reduce,dataflow,history,multiplex,garbageCollector"},
-
 /*
  * The Octopus pipeline for distributed processing (Merovingian enabled platforms only)
 */
@@ -104,9 +105,8 @@ struct PIPELINES{
 {"dictionary_pipe",	"inline,remap,dictionary,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,multiplex,garbageCollector"},
 
 /* The default + compression */
-{"compression_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,compression,dataflow,history,multiplex,garbageCollector"},
+{"compression_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,compression,dataflow,history,multiplex,garbageCollector"}
 
-{"",""}
 };
 @-
 Debugging the optimizer pipeline",
@@ -121,11 +121,27 @@ as it is intended for internal use.",
 #include "opt_pipes.h"
 
 str
+addPipeDefinition(str name, str pipe)
+{
+	int i;
+	for( i =0; i< MAXOPTPIPES; i++)
+	if ( pipes[i].name && strcmp(name,pipes[i].name)==0)
+		return NULL;
+	else
+	if ( pipes[i].name == 0){
+		snprintf(pipes[i].name,50,"%s",name);
+		snprintf(pipes[i].def,256,"%s",pipe);
+		return NULL;
+	}
+	return NULL;
+}
+
+str
 getPipeDefinition(str name)
 {
 	int i;
 
-	for( i=0; *pipes[i].name; i++)
+	for( i=0; i < MAXOPTPIPES && *pipes[i].name; i++)
 		if ( strcmp(name, pipes[i].name) == 0)
 			return GDKstrdup(pipes[i].def);
 	return NULL;
@@ -146,7 +162,7 @@ getpipeCatalog(int *nme, int *def)
 	}
 	BATseqbase(b,0);
 	BATseqbase(bn,0);
-	for( i=0; *pipes[i].name; i++){
+	for( i=0; i < MAXOPTPIPES && *pipes[i].name; i++){
 		BUNappend(b,pipes[i].name, FALSE);
 		BUNappend(bn,pipes[i].def, FALSE);
 	}
