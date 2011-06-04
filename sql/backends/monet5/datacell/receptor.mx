@@ -78,7 +78,7 @@ command generator(schema:str, tbl:str,modnme:str, fnme:str)
 address DCgenerator
 comment "Use a function/factory to generate the events";
 
-command drop(schema:str, tb;:str)
+command drop(schema:str, tb:str)
 address DCreceptorDrop
 comment "Drop a receptor";
 @-
