@@ -4,6 +4,7 @@
 -- The specific runtime issues are handled by an optimizer
 
 create schema datacell;
+set optimizer='datacell_pipe';
 
 create table datacell.basket_X(
     id integer auto_increment,
@@ -16,42 +17,44 @@ create table datacell.basket_X(
 create function datacell.basket_X()
 returns table (id integer, tag timestamp, payload integer)
 begin
-	return select * from basket_X;
+	return select * from datacell.basket_X;
 end;
+
+select * from datacell.basket_X();
 
 -- to be used by receptor thread
 create function datacell.receptor_X()
 returns boolean
 begin
-	insert into basket_X(payload) values ( 1);
+	insert into datacell.basket_X(payload) values ( 1);
 	return true;
 end;
 
-call register_basket('basket_x');
-call register_receptor('receptor_x','localhost:50100');
-call start_receptor('receptor_x');
+call register_basket('datacell.basket_x');
+call register_receptor('datacell.receptor_x','localhost:50100');
+call start_receptor('datacell.receptor_x');
 
-create table basket_Y( etag timestamp, like basket_X);
+create table datacell.basket_Y( etag timestamp, like datacell.basket_X);
 
 -- the continues query is registered and started
-create procedure query_X_Y()
+create procedure datacell.query_X_Y()
 begin
-	insert into basket_Y select now(), *  from basket_X() ;
+	insert into datacell.basket_Y select now(), *  from datacell.basket_X() ;
 end;
-call register_query('query_X_Y');
-call start_query('query_X_Y');
+call register_query('datacell.query_X_Y');
+call start_query('datacell.query_X_Y');
 
-create function basket_Y()
+create function datacell.basket_Y()
 returns table (id integer)
 begin
-	return select * from basket_Y;
+	return select * from datacell.basket_Y;
 end;
 
 -- sent it over the wire.
-create function emitter_Y()
+create function datacell.emitter_Y()
 returns boolean;
 begin
-	select * from basket_Y();
+	select * from datacell.basket_Y();
 	return true;
 end;
 call register_basket('basket_y');
