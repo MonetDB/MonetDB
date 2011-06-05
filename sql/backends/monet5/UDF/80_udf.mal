@@ -15,5 +15,15 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-# This loads the MonetDB/SQL module
-#include udf;
+# This announces the UDF module to the MAL interpreter
+
+module udf;
+
+command reverse(ra1:str):str
+address UDFreverse
+comment "Reverse a string";
+
+command reverse(b:bat[:oid,:str]):bat[:oid,:str]
+address UDFBATreverse
+comment "Reverse a BAT of strings");
+
