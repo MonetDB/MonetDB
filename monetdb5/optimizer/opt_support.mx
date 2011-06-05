@@ -1324,6 +1324,9 @@ hasSideEffects(InstrPtr p, int strict)
 		/* assertions are the end-point of a flow path */
 		if (getFunctionId(p) == not_uniqueRef) return FALSE;
 		if (getFunctionId(p) == zero_or_oneRef) return FALSE;
+		/* the update instructions for SQL has side effects.
+		   whether this is relevant should be explicitly checked
+		   in the environment of the call */
 		if (isUpdateInstruction(p)) return FALSE;
 		return TRUE;
 	}

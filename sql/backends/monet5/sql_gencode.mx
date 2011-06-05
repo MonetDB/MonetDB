@@ -2073,7 +2073,7 @@ void
 backend_callinline(backend *be, Client c, stmt *s )
 {
 	mvc *m = be->mvc;
-	InstrPtr curInstr = 0, p;
+	InstrPtr curInstr = 0;
 	MalBlkPtr curBlk = c->curprg->def;
 
 	curInstr = getInstrPtr(curBlk, 0);
@@ -2104,12 +2104,6 @@ backend_callinline(backend *be, Client c, stmt *s )
 		}
 	}
 	backend_dumpstmt(be, curBlk, s);
-
-	p = newFcnCall(curBlk, "optimizer", "remap");
-	typeChecker(c->nspace, curBlk, p, FALSE);
-	p = newFcnCall(curBlk, "optimizer", "multiplex");
-	typeChecker(c->nspace, curBlk, p, FALSE);
-	optimizeMALBlock(c, curBlk);
 	c->curprg->def = curBlk;
 }
 
@@ -2123,7 +2117,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 	int argc = 0;
 	char arg[SMALLBUFSIZ];
 	node *n;
-	lng Toptimize = 0;
+	lng Toptimize = 0, Tparse = 0;
 
 	backup = c->curprg;
 
@@ -2182,7 +2176,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 
 	backend_dumpstmt(be, mb, s);
 	Toptimize = GDKusec();
-	m->Tparse = Toptimize - m->Tparse;
+	Tparse = Toptimize - m->Tparse;
 
 	if (m->history) {
 		char *t;
@@ -2200,7 +2194,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 		q->token = REMsymbol;
 		q = pushWrd(mb, q, queryid);
 		q = pushStr(mb, q, t);
-		q = pushLng(mb, q, m->Tparse );
+		q = pushLng(mb, q, Tparse );
 		(void) pushLng(mb, q, Toptimize);
 		m->Tparse = 0;
 	}

@@ -32,7 +32,7 @@ Over..
 #             'objects', 'keys', 'modules', 'sequences') AND
 #         b.name IN ('args', 'columns', 'functions', 'idxs',
 #             'objects', 'keys', 'modules', 'sequences'
-% .a,	.b,	.b # table_name
+% .a,	.b,	.a # table_name
 % name,	name,	L23 # name
 % varchar,	varchar,	wrd # type
 % 9,	9,	2 # length

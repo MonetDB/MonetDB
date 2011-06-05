@@ -90,6 +90,10 @@ pattern include(fname:str):void
 address SQLinclude
 comment "Compile and execute a sql statements on the file";
 
+pattern ra(cmd:str, optimize:bit):void
+address RAstatement
+comment "Compile and execute a single 'relational algebra' statement";
+
 pattern assert(b:bit,msg:str):void
 address SQLassert
 comment "Generate an exception when b==true";
@@ -566,6 +570,14 @@ comment "truncate the floating point v to r digits behind the dot (if r < 0, bef
 @:mal_fround(flt)@
 @:mal_fround(dbl)@
 
+command sql.alpha(dec:dbl, theta:dbl) :dbl
+address SQLdbl_alpha
+comment "Implementation of astronomy alpha function: expands the radius theta depending on the declination";
+
+command batsql.alpha(dec:bat[:oid,:dbl], theta:dbl) :bat[:oid,:dbl]
+address SQLbat_alpha
+comment "BAT implementation of astronomy alpha function";
+
 @= mal_cast
 command calc.@1( v:str ) :@1 
 address str_2_@1
@@ -987,6 +999,50 @@ function octopus.bind_idxbat(conn:str, sch:str, tab:str, index:str, access:int, 
 	b:bat[:oid,:oid]:= remote.get(conn,bh);
 	return bind_idxbat:= b;
 end octopus.bind_idxbat;
+@-
+Octopus.bind signatures adjusted to new mitosis sql.bind (part_nr, nr_parts)
+@mal
+function octopus.bind(mvc:int, sch:str, tab:str,col:str,kind:int,
+		part_nr:int, nr_parts:int, version:int) :bat[:oid,:any_1];
+	b:bat[:oid,:any_1]:= sql.bind(mvc,sch,tab,col,kind,part_nr,nr_parts);
+	return bind:= b;
+end bind;
+
+function octopus.bind(conn:str, sch:str, tab:str,col:str,kind:int,
+part_nr:int, nr_parts:int, version:int):bat[:oid,:any_1];
+	b:bat[:oid,:any_1] := nil:bat[:oid,:any_1];
+	m := nil:int;
+	rm := remote.put(conn,m);
+	rm := remote.exec(conn,"sql","mvc");
+	s := remote.put(conn,sch);
+	t := remote.put(conn,tab);
+	c := remote.put(conn,col);
+	k := remote.put(conn,kind);
+	v := remote.put(conn,version);
+	l := remote.put(conn,part_nr);
+	h := remote.put(conn,nr_parts);
+	rb:= remote.put(conn,b);
+	rb:= remote.exec(conn,"sql","bind",rm,s,t,c,k,l,h);
+	b:bat[:oid,:any_1]:= remote.get(conn,rb);
+	return bind:= b;
+end octopus.bind;
+
+function octopus.bind_idxbat(conn:str, sch:str, tab:str, index:str, access:int, part_nr:int, nr_parts:int, version:int):bat[:oid,:oid];
+	b:bat[:oid,:oid] := nil:bat[:oid,:oid];
+	m := nil:int;
+	rm := remote.put(conn,m);
+	rm := remote.exec(conn,"sql","mvc");
+	s := remote.put(conn,sch);
+	t := remote.put(conn,tab);
+	i := remote.put(conn,index);
+	a := remote.put(conn,access);
+	l := remote.put(conn,part_nr);
+	h := remote.put(conn,nr_parts);
+	bh:= remote.put(conn,b);
+	bh:= remote.exec(conn,"sql","bind_idxbat",rm,s,t,i,a,l,h);
+	b:bat[:oid,:oid]:= remote.get(conn,bh);
+	return bind_idxbat:= b;
+end octopus.bind_idxbat;
 
 function octopus.getVariable(conn:str,name:str):any_1;
 	s := remote.put(conn,name);
@@ -1057,6 +1113,7 @@ include sql_bpm;
 #include <tablet.h>
 #include <streams.h>
 #include <mtime.h>
+#include <math.h>
 #include <blob.h>
 #include <mkey.h>
 #include <str.h>
@@ -1220,6 +1277,10 @@ sql5_export str @1_trunc_wrap( @1 *res, @1 *v, int *r );
 @h
 @:fround_export(flt)@
 @:fround_export(dbl)@
+#define radians(x)       ((x) * 3.14159265358979323846 /180.0 )
+#define degrees(x)       ((x) * 180.0/3.14159265358979323846 )
+sql5_export str SQLdbl_alpha(dbl *res, dbl *decl, dbl *theta);
+sql5_export str SQLbat_alpha(bat *res, bat *decl, dbl *theta);
 @= c_interval_export
 sql5_export str month_interval_@1( int *ret, @1 *s, int *ek, int *sk );
 sql5_export str second_interval_@1( lng *res, @1 *s, int *ek, int *sk );
@@ -1316,6 +1377,8 @@ sql5_export str bat@2_num2dec_@1( int *res, int *v, int *d2, int *s2 );
 
 sql5_export str getContext(Client cntxt, MalBlkPtr mb, mvc **c, backend **b );
 
+sql5_export void freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start);
+
 #endif /* _SQL_H */
 
 @-
@@ -1342,6 +1405,7 @@ First introduce the routines to be called by the front-end.
 #ifdef HAVE_RAPTOR
 # include <rdf.h>
 #endif
+#include "mal_instruction.h"
 
 /* Windows doesn't have round or trunc, but it does have floor and ceil */
 #ifndef HAVE_ROUND
@@ -3964,6 +4028,67 @@ str
 @:fround(flt)@
 @:fround(dbl)@
 
+str
+SQLdbl_alpha(dbl *res, dbl *decl, dbl *theta)
+{
+	dbl s, c1, c2;
+    char *msg = MAL_SUCCEED;
+    if (*decl == dbl_nil || *theta == dbl_nil) {
+        *res = dbl_nil;
+    } else if ( fabs(*decl) + *theta > 89.9 ) {
+        *res = (dbl) 180.0;
+    } else {
+		s = sin(radians(*theta));
+		c1 = cos(radians(*decl - *theta));
+		c2 = cos(radians(*decl + *theta));
+	    *res = degrees(fabs(atan(s / sqrt(fabs(c1 * c2)))));
+		/*		mnstr_printf(GDKout,"%f\n", *res); */
+	}
+    return msg;
+}
+str
+SQLbat_alpha(bat *res, bat *decl, dbl *theta)
+{
+    BAT *b, *bn;
+    BATiter bi;
+    BUN p,q;
+	dbl s, c1, c2, r;
+    char *msg = NULL;
+
+	if ( *theta == dbl_nil ){
+        throw(SQL, "SQLbat_alpha", "Parameter theta should not be nil");
+    }
+    if( (b = BATdescriptor(*decl)) == NULL ){
+        throw(SQL, "alpha", "Cannot access descriptor");
+    }
+    bi = bat_iterator(b);
+    bn = BATnew(b->htype, TYPE_dbl, BATcount(b));
+    if( bn == NULL){
+        BBPreleaseref(b->batCacheid);
+        throw(SQL, "sql.alpha", MAL_MALLOC_FAIL);
+    }
+    BATseqbase(bn, b->hseqbase);
+    BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
+	s = sin(radians(*theta));
+    BATloop(b,p,q) {
+        dbl d = *(dbl*)BUNtail(bi,p);
+	    if (d == dbl_nil)
+			r = dbl_nil;
+	    else if ( fabs(d) + *theta > 89.9 )
+			r = (dbl) 180.0;
+		else {
+			c1 = cos(radians(d - *theta));
+			c2 = cos(radians(d + *theta));
+		    r = degrees(fabs(atan(s / sqrt(fabs(c1 * c2)))));
+        }
+        BUNins(bn, BUNhead(bi,p), &r, FALSE);
+    }
+    BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
+    BBPkeepref( *res = bn->batCacheid);
+    BBPunfix(b->batCacheid);
+    return msg;
+}
+
 #if SIZEOF_WRD == SIZEOF_INT
 #define wrdToStr(sptr, lptr, p) intToStr(sptr, lptr, (int*)p)
 #else
@@ -6211,3 +6336,76 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(*res = r->batCacheid);
 	return MAL_SUCCEED;
 }
+
+str 
+RAstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int pos = 0;
+	str *expr = (str*) getArgReference(stk, pci, 1);
+	bit *opt = (bit*) getArgReference(stk, pci, 2);
+	backend *b = NULL;
+	mvc *m = NULL;
+	str msg = getContext(cntxt, mb, &m, &b);
+	sql_rel *rel;
+
+	m->sa = sa_create();
+ 	rel = rel_read(m, *expr, &pos);
+	if (rel) {
+		int oldvtop = cntxt->curprg->def->vtop;
+		int oldstop = cntxt->curprg->def->stop;
+		stmt *s;
+		char *msg;
+
+		rel_print(m, rel, 0);
+		s = output_rel_bin(m, rel);
+		if (*opt) { 
+			rel = rel_optimizer(m, rel);
+			rel_print(m, rel, 0);
+		}
+		rel_destroy(rel);
+		s = rel2bin(m, s); 	
+		s = bin_optimizer(m, s);
+
+		MSinitClientPrg(cntxt, "user", "test"); 
+
+		/* generate MAL code */
+		backend_callinline(b, cntxt, s );
+		addQueryToCache(cntxt); 
+
+		msg = (str) runMAL(cntxt, cntxt->curprg->def, 1, 0, 0, 0);
+		if (!msg) { 
+			resetMalBlk(cntxt->curprg->def, oldstop);
+			freeVariables(cntxt,cntxt->curprg->def, cntxt->glb, oldvtop);
+		}
+	}
+	return msg;
+}
+
+void
+freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start)
+{
+	int i, j;
+
+	for (i = start; i < mb->vtop;) {
+		if (glb) {
+			if (isVarCleanup(mb,i))
+				garbageElement(c,&glb->stk[i]);
+			/* clean stack entry */
+			glb->stk[i].vtype = TYPE_int;
+			glb->stk[i].val.ival = 0;
+			glb->stk[i].len = 0;
+		}
+		clearVariable(mb, i);
+		i++;
+	}
+	mb->vtop = start;
+	for (i = j = 0; i < mb->ptop; i++) {
+		if (mb->prps[i].var < start) {
+			if (i > j)
+				mb->prps[j] = mb->prps[i];
+			j++;
+		}
+	}
+	mb->ptop = j;
+}
+

@@ -50,3 +50,6 @@ create function bbp ()
 		location string, heat int, dirty string, 
 		status string, kind string) 
 	external name sql.bbp;
+
+create procedure ra( ra_stmt string, opt bool)
+	external name sql.ra;

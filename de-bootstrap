@@ -28,7 +28,7 @@ asks the user for confirmation before actually removing the files.
 	exit
 fi
 
-function RM () {
+RM() {
 	if [ "x$1" = 'x-f' ]; then
 		shift
 	fi

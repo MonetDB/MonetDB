@@ -1,0 +1,21 @@
+#A test for the emitter
+#The emitter uses the prefix to lock the streams
+libary datacell;
+include basket;
+include emitter;
+
+p1:= basket.new("X_p1",:bat[:lng,:int]);
+p2:= basket.new("X_p2",:bat[:lng,:int]);
+basket.group("X","X_p1","X_p2");
+t:= alarm.usec();
+bat.insert(p1,t,1);
+bat.insert(p2,t,1);
+t:= alarm.usec();
+bat.insert(p1,t,1);
+bat.insert(p2,t,1);
+
+emitter.new("X");
+emitter.start("X","localhost",50001);
+io.print("emitter done");
+alarm.sleep(5);
+emitter.drop("X");

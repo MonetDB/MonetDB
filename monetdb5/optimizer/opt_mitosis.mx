@@ -252,8 +252,9 @@ The target variable should inherit file location and row count for the tarantula
 			}
 			rows = varGetProp(mb, getArg(p,0), rowsProp);
 			if ( rows){
+				wrd prows = rows->value.val.wval / pieces + 1;
 				memset((char*) &vr, 0, sizeof(vr));
-				varSetProp(mb, k, rowsProp, op_eq, VALset(&vr, TYPE_wrd, &rows->value.val.wval));
+				varSetProp(mb, k, rowsProp, op_eq, VALset(&vr, TYPE_wrd, &prows));
 			}
 
 			if (getFunctionId(p) == binddbatRef) {

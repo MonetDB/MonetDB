@@ -472,17 +472,25 @@ exps_match_col_exps( sql_exp *e1, sql_exp *e2)
 	if (e1->type != e_cmp || e2->type != e_cmp)
 		return 0;
 
-	if (!is_complex_exp(e1->flag) && e1_r && e1_r->card == 1 &&
-	    !is_complex_exp(e2->flag) && e2_r && e2_r->card == 1)
+	if (!is_complex_exp(e1->flag) && e1_r && e1_r->card == CARD_ATOM &&
+	    !is_complex_exp(e2->flag) && e2_r && e2_r->card == CARD_ATOM)
 		return exp_match_exp(e1->l, e2->l);
 
-	if (!is_complex_exp(e1->flag) && e1_r && e1_r->card == 1 &&
+	if (!is_complex_exp(e1->flag) && e1_r && e1_r->card == CARD_ATOM &&
+	    (e2->flag == cmp_in || e2->flag == cmp_notin))
+ 		return exp_match_exp(e1->l, e2->l); 
+
+	if ((e1->flag == cmp_in || e1->flag == cmp_notin) &&
+	    (e2->flag == cmp_in || e2->flag == cmp_notin))
+ 		return exp_match_exp(e1->l, e2->l); 
+
+	if (!is_complex_exp(e1->flag) && e1_r && e1_r->card == CARD_ATOM &&
 	    e2->flag == cmp_or)
  		return exp_match_col_exps(e1->l, e2->l) &&
  		       exp_match_col_exps(e1->l, e2->r); 
 
 	if (e1->flag == cmp_or &&
-	    !is_complex_exp(e2->flag) && e2_r && e2_r->card == 1)
+	    !is_complex_exp(e2->flag) && e2_r && e2_r->card == CARD_ATOM)
  		return exp_match_col_exps(e2->l, e1->l) &&
  		       exp_match_col_exps(e2->l, e1->r); 
 
@@ -550,6 +558,11 @@ exp_match_exp( sql_exp *e1, sql_exp *e2)
 				return 1;
 			else if (e1->flag == e2->flag && e1->flag == cmp_or &&
 		            exp_match_list(e1->l, e2->l) && 
+			    exp_match_list(e1->r, e2->r))
+				return 1;
+			else if (e1->flag == e2->flag && 
+				(e1->flag == cmp_in || e1->flag == cmp_notin) &&
+		            exp_match_exp(e1->l, e2->l) && 
 			    exp_match_list(e1->r, e2->r))
 				return 1;
 			break;
