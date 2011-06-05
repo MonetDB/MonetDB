@@ -18,111 +18,29 @@ All Rights Reserved.
 @
 
 @f opt_datacell
-@a M. Kersten, E. Liarou
-@- Datacell factory constructions
-For the DataCell project we need a scheme to transform a SQL basket expression
-into a factory. The adjustment made to the SQL compiler are minimal.
-We assume it places a barrier marker block around the basket expressions and
-within the SQL optimizer keeps the all decisions local.
-Furthermore, the bind operations refer to baskets known in the catalog.
-They are qualified as input or output baskets. [we  have
-to differentiate between persistent/temporary as well]
-
-Consider the basket expression plan 
-"[select sum(i) from r where r.i>0]" which is expected to be
-translated by the SQL front-end in the following plan:
-[derived from "insert into s select sum(i) from r where r.i>0]
-@verbatim
-function user.s0_0(A0:int):void;
-    X7 := A0;
-barrier go:=datacell.basket(); # the marker of the [
-	#generate binds for all columns
-    X2:bat[:oid,:int]  := datacell.bind("sys","r","i",0);
-    X8 := algebra.thetauselect(X2,X7,">");
-    X10 := calc.oid(0@0);
-    X12 := algebra.markT(X8,X10);
-    X13 := bat.reverse(X12);
-    X14 := algebra.join(X13,X2);
-    X17 := algebra.selectNotNil(X14);
-    X18:lng  := aggr.sum(X17);
-    X19 := calc.int(X18);
-	#generate binds for all columns
-    X3:bat[:oid,:int]  := datacell.bind("sys","s","j",1);
-	#generate updates for all columns
-	X20:= bat.append(X3,X19);
-	#generate deletion based on pivot
-	X21:=  algebra.semijoin(X2,X17modified);
-	bat.delete(X2,X21);
-exit go; # the marker of the ]
-end s0_0;
-@end verbatim
-The plan is turned into an basket factory as follows.
-It forms a reference basis for incremental processing
-where the first block initializes the state and
-the factory loop performs incrementals.
-@verbatim
-factory user.bqs0_0(A0:int);
-    X7 := A0;
-	# lock all baskets
-    X2:bat[:oid,:int]  := basket.lock("sys","r","i"); 
-    X8 := algebra.thetauselect(X2,X7,">");
-    X12 := algebra.markT(X8,0@0);
-    X13 := bat.reverse(X12);
-    X14 := algebra.join(X13,X2);
-    X17 := algebra.selectNotNil(X14);
-    X18:lng  := aggr.sum(X17);
-    Y19 := calc.int(Y18);
-	# lock all baskets
-    X3:bat[:oid,:int]  := datacell.bind("sys","s","j",1);
-	#generate updates for all columns
-	X20:= bat.append(X3,X19);
-	#generate deletion based on pivot
-	X21:=  algebra.semijoin(X2,X17);
-	bat.delete(X2,X21);
-    basket.unlock("sys","s","j"); 
-    basket.unlock("sys","r","i"); 
-	yield bqs0_0;
-barrier go:=true;
-    X2:bat[:oid,:int]  := basket.lock("sys","r","i");
-    X8 := algebra.thetauselect(X2,X7,">");
-    X12 := algebra.markT(X8,X10);
-    X13 := bat.reverse(X12);
-    X14 := algebra.join(X13,X2);
-    X17 := algebra.selectNotNil(X14);
-	# do the differential processing
- 	X18a := aggr.sum(X17);
-    X18 := X18 + X18a;
-    X19 := calc.int(X18);
-	# lock all baskets
-    X3:bat[:oid,:int]  := datacell.lock("sys","s","j",1);
-	#generate updates for all columns
-	X20:= bat.append(X3,X19);
-	#generate deletion based on pivot
-	X21:=  algebra.semijoin(X2,X17);
-	bat.delete(X2,X21);
-    basket.unlock("sys","s","j"); 
-    basket.unlock("sys","r","i"); 
-	yield bqs0_0;
-	redo go:=true;
-exit go;
-end bqs0_0;
-@end verbatim
+@a M. Kersten
+@- Datacell optimizer
+Assume simple queries . Clear out all non-datacell schema related sql statements, except
+for the bare minimum.
 @{
 @mal
 pattern optimizer.datacell():str
 address OPTdatacell;
 pattern optimizer.datacell(mod:str, fcn:str):str
 address OPTdatacell
-comment "Basket expression optimizer";
+comment "Datacell expression optimizer";
 
 @h
 #ifndef _OPT_DATACELL_
 #define _OPT_DATACELL_
 #include "opt_prelude.h"
 #include "opt_support.h"
+#include "opt_pipes.h"
 
 #define OPTDEBUGdatacell  if ( optDebug & (1 <<DEBUG_OPT_DATACELL) )
+opt_export str OPTdatacell(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
+#endif
 @-
 We keep a flow dependency table to detect.
 @c
@@ -131,195 +49,112 @@ We keep a flow dependency table to detect.
 #include "opt_deadcode.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_builder.h"
-
-@-
-Basket expressions can be nested in a SQL query.
-This means we have to take them out one-by-one.
-@c
-static int
-BASKETblock(Client cntxt, MalBlkPtr mb, int *start, int *last)
-{
-	int i, var= 0, baskets=0;
-	InstrPtr p;
-
-	(void) cntxt;
-
-	for( i=1; i< mb->stop; i++){
-		p= getInstrPtr(mb,i);
-		if ( p->barrier== BARRIERsymbol &&
-			 getModuleId(p) == datacellRef &&
-			 getFunctionId(p) == basketRef){
-			*start = i+1;
-			var= getArg(p,0);
-			baskets++;
-		}
-		/* check for closing stuff */
-		if ( p->barrier == EXITsymbol &&
-			getArg(p,0) == var){
-			*last = i;
-			return 1;
-		}
-	}
-	return baskets;
-}
+#include "opt_statistics.h"
 
 static int
 OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	InstrPtr p, q, sig, *old, *locks;
-	int i, j, k, first= 0, last= 0, limit, actions=0, ltop;
-	char buf[256];
-	int *declared;
-	Symbol factory;
-	MalBlkPtr mf;
+	int actions = 0;
+    int i, j,limit, vlimit, slimit;
+    InstrPtr p, *old;
+
+	(void) pci;
 
 	OPTDEBUGdatacell {
 		mnstr_printf(cntxt->fdout, "#Datacell optimizer started\n");
-		printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
-	}
-	(void) stk;
-	(void) pci;
+		printFunction(cntxt->fdout, mb, stk, LIST_MAL_STMT);
+	} else (void) stk;
 
-	while ( BASKETblock(cntxt, mb, &first, &last) ) {
-		actions++;
-		OPTDEBUGdatacell 
-			mnstr_printf(cntxt->fdout, "#Basket expression %d - %d\n", first,last);
+    old= mb->stmt;
+    limit = mb->stop;
+    slimit = mb->ssize;
+    vlimit = mb->vtop;
+    if ( newMalBlkStmt(mb, slimit) < 0) 
+        return 0;
 
-		/* bake a factory */
-		snprintf(buf,256,"bq%s", getArgName(mb,getInstrPtr(mb,0),0));
-		factory= newFunction(putName("datacell",8), putName(buf,strlen(buf)), FACTORYsymbol);
-		insertSymbol(cntxt->nspace,factory);
-		/* copy symbol table from source */
-		mf= factory->def;
-		mf->var = (VarPtr *) GDKrealloc(mf->var, sizeof(VarPtr) * mb->vsize);
-		mf->vsize = mb->vsize;
-		mf->vtop = 0;
-		for (i = 0; i < mb->vtop; i++) {
-			copyVariable(mf, mb, getVar(mb, i));
-			mf->vtop++;
-		}
-		sig= getInstrPtr(mf,0);
-/*
-		setFunctionId(sig,putName(buf,strlen(buf)));
-		sig->token = FACTORYsymbol;
-*/
-
-		limit = mb->stop;
-		old = mb->stmt;
-		if ( newMalBlkStmt(mb,mb->ssize) < 0)
-			return 0;
-		/* copy the first part without modification */
-		for (i = 0; i < first-1; i++) 
-			pushInstruction(mb,old[i]);
-		q= newStmt(mb,putName("datacell",8),sig->fcnname);
-@-
-Copying the statements should be done with care. In particular,
-all variables not declared within the basket expression should
-be passed as arguments to the factory.
-Furthermore, we need to keep track of the aliases as they 
-denote variables in the factory.
-[NEED more defensive work]
-@c
-		declared = (int*) GDKzalloc(sizeof(int) * mb->vtop);
-		if ( declared == NULL)
-			return 0;
-		locks = (InstrPtr*) GDKzalloc(sizeof(InstrPtr) * mb->stop);
-		if ( locks == NULL){
-			GDKfree(declared);
-			return 0;
-		}
-		ltop = 0;
-@-
-Keep a list of bind operations, because they trigger unlocks.
-@c
-		for (i = first; i < last; i++) {
-			p = old[i];
-			if( getModuleId(p) == basketRef &&
-				getFunctionId(p) == bindRef){
-				locks[ltop++] = p;
-				p= newStmt(mf,basketRef,putName("lock",4));
-				p= pushArgument(mf,p, getArg(old[i],0));
-			}
-		}
-
-		for (i = first; i < last; i++) {
-			p = old[i];
-			for (k=p->retc; k<p->argc; k++)
-			if( declared[getArg(p,k)]== 0){
-				if ( !isVarConstant(mb,getArg(p,k))){
-					q= pushArgument(mb,q,getArg(p,k));
-					sig= pushArgument(mf,sig,getArg(p,k));
-				}
-				declared[getArg(p,k)]= TRUE;
+    for (i = 0; i < limit; i++) {
+        p = old[i];
+		if ( getModuleId(p) == sqlRef ){
+			if( getFunctionId(p ) == bindRef  && getVarConstant(mb, getArg(p, p->argc-1)).val.ival == 0) {
+				/* only the primary BAT is used */
+				pushInstruction(mb, p);
+				continue;
 			} 
-
-			for (k=0; k<p->retc; k++)
-				declared[getArg(p,k)]= TRUE;
-			pushInstruction(mf,p);
-		}
-@-
-Time to unlock all baskets in reverse order
-@c
-		for ( ltop--; ltop>=0; ltop--){
-			p= newStmt(mf,basketRef,putName("unlock",6));
-			p= pushArgument(mf,p, getArg(locks[ltop],0));
-		}
-@-
-Once we have copied the first block to the factory
-we can create the incremental part.
-It is a straightforward duplicate until we reach
-the incremental statements.
-@c
-		j= mf->stop;
-		/* barrier go:=true; */
-		q= newAssignment(mf);
-		setArgType(mf,q,0,TYPE_bit);
-		k= getArg(q,0);
-		setVarUsed(mf,k);
-		q->barrier= BARRIERsymbol;
-		pushBit(mf,q,TRUE);
-
-		for (i=1; i<j; i++) {
-			if ( getModuleId(p) == batcalcRef &&
-				 getFunctionId(p) == sumRef){
-				/* do something */
-			}
-			pushInstruction(mf, copyInstruction(getInstrPtr(mf,i)));
-		}
-
-		/* redo go:=true; */
-		q= copyInstruction(q);
-		q->barrier = REDOsymbol;
-		pushInstruction(mf,q);
-
-		/* exit go; */
-		q= newAssignment(mf);
-		getArg(q,0)= k;
-		q->barrier = EXITsymbol;
-
-		GDKfree(locks);
-		GDKfree(declared);
-		pushEndInstruction(mf);
-
-		/* copy the tail part without modification */
-		for (i = last+1; i < limit; i++) 
-			pushInstruction(mb,old[i]);
-
-		OPTDEBUGdatacell {
-			mnstr_printf(cntxt->fdout, "#Modified plan\n");
-			printFunction(cntxt->fdout,mb,0,0);
-			mnstr_printf(cntxt->fdout, "#Factory created\n");
-			printFunction(cntxt->fdout,mf,0,0);
-		}
-		GDKfree(old);
+			/* zap all expression arguments */
+			clrFunction(p);
+			p->argc= p->retc;
+			for ( j=0; j< p->retc; j++ )
+			if ( isaBatType(getArgType(mb,p,j) ) )
+				p = pushEmptyBAT(mb, p, getArgType(mb,p,j));
+			else
+				p = pushNil(mb, p, getArgType(mb,p,j));
+		} 
+		pushInstruction(mb, p);
 	}
+	
+    for (; i < slimit; i++)
+        if (old[i])
+            freeInstruction(old[i]);
+
 	return actions;
 }
-@include optimizerWrapper.mx
-@h
-@:exportOptimizer(datacell)@
-#endif
-@c
-#include "opt_statistics.h"
-@:wrapOptimizer(datacell,OPT_CHECK_ALL)@
+
+/* #define _DEBUG_OPTIMIZER_*/
+
+/* The remainder is the optimizer harnass */
+
+str OPTdatacell(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+    str modnme;
+    str fcnnme;
+    str msg= MAL_SUCCEED;
+    Symbol s= NULL;
+    lng t,clk= GDKusec();
+    int actions = 0;
+
+    optimizerInit();
+    if( p )
+        removeInstruction(mb, p);
+    OPTDEBUGdatacell mnstr_printf(cntxt->fdout,"=APPLY OPTIMIZER datacell\n");
+    if( p && p->argc > 1 ){
+        if( getArgType(mb,p,1) != TYPE_str ||
+            getArgType(mb,p,2) != TYPE_str ||
+            !isVarConstant(mb,getArg(p,1)) ||
+            !isVarConstant(mb,getArg(p,2))
+        ) {
+            throw(MAL, "optimizer.datacell", ILLARG_CONSTANTS);
+        }
+        if( stk != 0){
+            modnme= *(str*)getArgReference(stk,p,1);
+            fcnnme= *(str*)getArgReference(stk,p,2);
+        } else {
+            modnme= getArgDefault(mb,p,1);
+            fcnnme= getArgDefault(mb,p,2);
+        }
+        s= findSymbol(cntxt->nspace, putName(modnme,strlen(modnme)),putName(fcnnme,strlen(fcnnme)));
+
+        if( s == NULL) {
+            char buf[1024];
+            snprintf(buf,1024, "%s.%s",modnme,fcnnme);
+            throw(MAL, "optimizer.datacell", RUNTIME_OBJECT_UNDEFINED ":%s", buf);
+        }
+        mb = s->def;
+        stk= 0;
+    }
+    if( mb->errors ){
+        /* when we have errors, we still want to see them */
+        addtoMalBlkHistory(mb,"datacell");
+        return MAL_SUCCEED;
+    }
+    actions= OPTdatacellImplementation(cntxt, mb,stk,p);
+    msg= optimizerCheck(cntxt, mb, "optimizer.datacell", actions, t=(GDKusec() - clk),OPT_CHECK_ALL);
+        mnstr_printf(cntxt->fdout,"=FINISHED datacell %d\n",actions);
+        printFunction(cntxt->fdout,mb,0,LIST_MAL_STMT | LIST_MAPI);
+    OPTDEBUGdatacell {
+    }
+    DEBUGoptimizers
+        mnstr_printf(cntxt->fdout,"#opt_reduce: %d ms\n",t);
+    QOTupdateStatistics("datacell",actions,t);
+    addtoMalBlkHistory(mb,"datacell");
+    return msg;
+}
 @}
