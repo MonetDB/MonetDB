@@ -31,3 +31,18 @@ create procedure receptor.resume (sch string, tbl string)
 create procedure receptor.drop (sch string, tbl string)
     external name receptor.drop;
 
+-- Datacell emitter wrappers
+
+create schema emitter;
+create procedure emitter.start (sch string, tbl string, host string, port int, protocol string)
+    external name emitter.start;
+
+create procedure emitter.pause (sch string, tbl string)
+    external name emitter.pause;
+
+create procedure emitter.resume (sch string, tbl string)
+    external name emitter.resume;
+
+create procedure emitter.drop (sch string, tbl string)
+    external name emitter.drop;
+

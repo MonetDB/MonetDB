@@ -5,7 +5,7 @@
 
 sql.init();
 
-receptor.start("datacell","X","localhost",5001,"passive");
+receptor.start("datacell","X","localhost",50501,"passive");
 io.print("receptor working");
 alarm.sleep(5);
 receptor.pause("datacell","X");

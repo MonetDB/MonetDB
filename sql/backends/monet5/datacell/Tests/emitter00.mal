@@ -1,21 +1,25 @@
-#A test for the emitter
-#The emitter uses the prefix to lock the streams
-libary datacell;
-include basket;
-include emitter;
+#A single thread for a simple stream
+#The test is based on the definition the datacell baskets X 
+# it starts a receptor in debug mode to see arrivals coming
+# from a (client) sensor.
 
-p1:= basket.new("X_p1",:bat[:lng,:int]);
-p2:= basket.new("X_p2",:bat[:lng,:int]);
-basket.group("X","X_p1","X_p2");
-t:= alarm.usec();
-bat.insert(p1,t,1);
-bat.insert(p2,t,1);
-t:= alarm.usec();
-bat.insert(p1,t,1);
-bat.insert(p2,t,1);
+sql.init();
 
-emitter.new("X");
-emitter.start("X","localhost",50001);
-io.print("emitter done");
+emitter.start("datacell","X","localhost",50502,"passive");
+io.print("emitter working");
 alarm.sleep(5);
-emitter.drop("X");
+emitter.pause("datacell","X");
+io.print("emitter paused");
+alarm.sleep(5);
+emitter.resume("datacell","X");
+io.print("emitter restarted");
+alarm.sleep(5);
+emitter.pause("datacell","X");
+io.print("emitter stopped");
+emitter.drop("datacell","X");
+
+# The SQL equivalents
+# call emitter.start('datacell','X','localhost',50502,'passive');
+# call emitter.pause('datacell','X');
+# call emitter.resume('datacell','X');
+# call emitter.drop('datacell','X');

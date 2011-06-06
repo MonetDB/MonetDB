@@ -48,6 +48,7 @@ The receptor protocol is either active or passive. Return its handle";
 command pause(schema:str, tbl:str)
 address DCreceptorPause
 comment "Pause listening";
+
 command resume(schema:str, tbl:str)
 address DCreceptorResume
 comment "Resume a receptor thread";
