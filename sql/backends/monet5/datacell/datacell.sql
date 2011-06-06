@@ -14,11 +14,20 @@
 -- Copyright August 2008-2011 MonetDB B.V.
 -- All Rights Reserved.
 
--- Datacell wrappers
-create procedure receptor (url string, act string)
-    external name datacell.receptor_action;
+-- Datacell basket  wrappers
 
--- MonetDB tuple formatted message field extractors
-create procedure datacell.register_basket(s string)
-external name datacell.register_basket;
+-- Datacell receptor wrappers
+
+create schema receptor;
+create procedure receptor.start (sch string, tbl string, host string, port int, protocol string)
+    external name receptor.start;
+
+create procedure receptor.pause (sch string, tbl string)
+    external name receptor.pause;
+
+create procedure receptor.resume (sch string, tbl string)
+    external name receptor.resume;
+
+create procedure receptor.drop (sch string, tbl string)
+    external name receptor.drop;
 

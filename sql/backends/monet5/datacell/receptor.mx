@@ -20,13 +20,10 @@
 @+ DataCell Receptor 
 This module is a prototype for the implementation of a DataCell receptor.  It can be used as follows.
 @example
-(id:bat[:oid,:int, ts:bat[:oid,:timestamp], pl:bat[:oid,:int]):= basket.new("X");
-receptor.start("X");
 @end example
 After this call sensors can sent tuples to the
-the stream X at the DataCell default connection.
-They are appended to the event basket 
-with the usec clock tick.
+the stream X at the DataCell connection.
+They are appended to the event basket with the usec clock tick included.
 
 Each receptor is supported by an independent thread
 that reads the input and stores the data in a container
@@ -43,36 +40,24 @@ module to parse them.
 @mal
 module receptor;
 
-command new(schema:str, grp:str):void
+command start{unsafe}(schema:str, tbl:str, host:str, port:int, prot:str)
 address DCreceptorNew
-comment "Define a receptor based on a basketgroup.";
-
-command setType(schema:str, tbl:str, type:str):void
-address DCreceptorSetType
-comment "Set the receptor as active or passive.
-Clients take initiatives for event submission. 
-Servers are awaiting delivery of events.";
-
-command start(schema:str, tbl:str)
-address DCreceptorStart
-comment "Start a receptor thread or resume listening";
-command start(schema:str, tbl:str, host:str, port:int)
-address DCreceptorStartHostPort
-comment "Start a receptor thread or resume listening
-at a specific connection.";
+comment "Define a receptor based on a basket table. 
+The receptor protocol is either active or passive. Return its handle";
 
 command pause(schema:str, tbl:str)
 address DCreceptorPause
 comment "Pause listening";
-command stop(schema:str, tbl:str)
-address DCreceptorStop
-comment "Stop a receptor thread";
+command resume(schema:str, tbl:str)
+address DCreceptorResume
+comment "Resume a receptor thread";
 
 command scenario(schema:str, tbl:str, fnme:str, sequence:int)
 address DCscenario
-comment "Use a file scenario to be run a number of times";
+comment "Use a file scenario to be run a number of times.
+The receptor should be paused to make this change to take effect";
 
-command generator(schema:str, tbl:str,modnme:str, fnme:str)
+command generator(schema:str, tbl:str, modnme:str, fnme:str)
 address DCgenerator
 comment "Use a function/factory to generate the events";
 
@@ -92,7 +77,7 @@ The implementation is inspired by the tablet module.
 #include "mtime.h"
 #include "basket.h"
 
-/*#define _DEBUG_RECEPTOR_*/
+#define _DEBUG_RECEPTOR_
 #define RCout GDKout  
 
 @-
@@ -119,13 +104,10 @@ static int protocol = TCP;
 #define adapters_export extern
 #endif
 
-adapters_export str DCreceptorNew(int *ret, str *schema, str *grp);
-adapters_export str DCreceptorStart(int *ret, str *schema, str *nme);
-adapters_export str DCreceptorStartHostPort(int *ret, str *schema, str *nme, str *host, int *port);
-adapters_export str DCreceptorStop(int *ret, str *schema, str *nme);
-adapters_export str DCreceptorDrop(int *ret, str *schema, str *nme);
-adapters_export str DCreceptorSetType(int *ret, str *schema, str *nme, str *type);
+adapters_export str DCreceptorNew(int *ret, str *schema, str *tbl, str *host, int *port, str *proto);
 adapters_export str DCreceptorPause(int *ret, str *schema, str *nme);
+adapters_export str DCreceptorResume(int *ret, str *schema, str *nme);
+adapters_export str DCreceptorDrop(int *ret, str *schema, str *nme);
 adapters_export str DCscenario(int *ret, str *schema, str *nme, str *fnme, int *seq);
 adapters_export str DCgenerator(int *ret, str *schema, str *nme, str *modnme, str *fcnnme);
 #endif
@@ -143,6 +125,8 @@ adapters_export str DCgenerator(int *ret, str *schema, str *nme, str *modnme, st
 #define RCDROP 5        /* stop reading the channel */
 #define RCERROR 8       /* failed to establish the stream */
 
+#define RCACTIVE 1		/* ask for events */
+#define RCPASSIVE 2		/* wait for events */
 /* default settings */
 #define RCHOST "localhost"
 #define RCPORT 55000
@@ -152,7 +136,7 @@ typedef struct RECEPTOR {
 	str name;
 	str host;
 	int port;
-	int server;
+	int protocol;
 	int status;
 	int delay;  /* control the delay between attempts to connect */
 	int lck;
@@ -206,19 +190,32 @@ is used to interpret the messages received.
 The standard tuple layout for MonetDB interaction is used.
 @c
 str
-DCreceptorNew(int *ret, str *schema, str *tbl)
+DCreceptorNew(int *ret, str *schema, str *tbl, str *host, int *port, str *proto)
 {
 	Receptor rc;
-	int idx, i, j, len;
+	int idx, i, j, len, protocol;
 	Column *fmt;
 	BAT *b;
 
 	if (RCfind(*schema, *tbl))
 		throw(MAL, "receptor.new", "Duplicate receptor");
+	idx = DClocate(*schema, *tbl);
+	if (idx == 0)
+		throw(MAL, "receptor.new", "Basket not found");
+	len = DCmemberCount(*schema, *tbl);
+	if (len == 0)
+		throw(MAL, "receptor.new", "Group has no members");
+	if ( strcmp(*proto, "active") == 0) 
+		protocol = RCACTIVE;
+	else
+	if (strcmp(*proto, "passive") == 0) 
+		protocol = RCPASSIVE;
+	else
+		throw(MAL, "receptor.new", "Illegal protocol");
+
 	rc = RCnew(*schema, *tbl);
-	rc->host = 0;
-	rc->port = 0;
-	rc->server = 0;
+	rc->host = GDKstrdup(*host);
+	rc->port = *port;
 	rc->error = NULL;
 	rc->delay = PAUSEDEFAULT;
 	rc->lck = 0;
@@ -227,15 +224,9 @@ DCreceptorNew(int *ret, str *schema, str *tbl)
 	rc->sequence = 0;
 	rc->modnme = 0;
 	rc->fcnnme = 0;
-	len = DCmemberCount(*schema, *tbl);
-	if (len == 0)
-		throw(MAL, "receptor.new", "Group has no members");
+	rc->protocol = protocol;
 
 	fmt = rc->table.format = GDKzalloc(sizeof(Column) * len);
-
-	idx = DClocate(*schema, *tbl);
-	if (idx == 0)
-		throw(MAL, "receptor.new", "basket not found");
 
 	for (j = 0, i = 0; i < baskets[idx].colcount; i++) {
 		b = baskets[idx].primary[j];
@@ -265,40 +256,10 @@ DCreceptorNew(int *ret, str *schema, str *tbl)
 	mnstr_printf(RCout, "Instantiate a new receptor %d fields\n", j);
 #endif
 	(void)ret;
-	return MAL_SUCCEED;
-}
-
-str DCreceptorSetType(int *ret, str *schema, str *nme, str *type)
-{
-	Receptor rc;
-	rc = RCfind(*schema, *nme);
-	if (rc == NULL)
-		throw(MAL, "receptor.setType", "Receptor not defined");
-	if (*type && strcmp(*type, "server") == 0) {
-		rc->server = 1;
-		return MAL_SUCCEED;
+	rc->status = RCLISTEN;
+	if (MT_create_thread(&rc->pid, (void (*)(void *))RCstartThread, rc, MT_THR_DETACHED) != 0) {
+		throw(MAL, "receptor.start", "Receptor initiation failed");
 	}
-	if (*type && strcmp(*type, "client") == 0) {
-		rc->server = 0;
-		return MAL_SUCCEED;
-	}
-	(void)ret;
-	throw(MAL, "receptor.setType", "'server' or 'client' expected.");
-}
-
-str DCreceptorStop(int *ret, str *schema, str *nme)
-{
-	Receptor rc;
-
-	rc = RCfind(*schema, *nme);
-	if (rc == NULL)
-		throw(MAL, "receptor.stop", "Receptor not defined");
-	rc->status = RCSTOP;
-
-#ifdef _DEBUG_RECEPTOR_
-	mnstr_printf(RCout, "Stop a receptor\n");
-#endif
-	(void)ret;
 	return MAL_SUCCEED;
 }
 
@@ -320,46 +281,22 @@ str DCreceptorPause(int *ret, str *schema, str *nme)
 	return MAL_SUCCEED;
 }
 
-static str
-DCreceptorInit(Receptor rc, str host, int port)
-{
-	MT_Id pid;
-	if (rc->host)
-		throw(MAL, "receptor.start", "Receptor already assigned");
-	rc->host = GDKstrdup(host);
-	rc->port = port;
-	rc->status = RCLISTEN;
-	if (MT_create_thread(&pid, (void (*)(void *))RCstartThread, rc, MT_THR_DETACHED) != 0) {
-		throw(MAL, "receptor.start", "Receptor initiation failed");
-	}
-	return MAL_SUCCEED;
-}
-
-str DCreceptorStartHostPort(int *ret, str *schema, str *nme, str *host, int *port)
+str DCreceptorResume(int *ret, str *schema, str *nme)
 {
 	Receptor rc;
 
 	rc = RCfind(*schema, *nme);
 	if (rc == NULL)
-		throw(MAL, "receptor.start", "Receptor not defined");
+		throw(MAL, "receptor.resume", "Receptor not defined");
+	if (rc->status != RCPAUSE)
+		throw(MAL, "receptor.resume", "Receptor not paused");
+	rc->status = RCLISTEN;
+
 #ifdef _DEBUG_RECEPTOR_
-	mnstr_printf(RCout, "Start a new receptor\n");
+	mnstr_printf(RCout, "Pause a receptor\n");
 #endif
 	(void)ret;
-	if (rc->status == RCLISTEN)
-		throw(MAL, "receptor.start", "Receptor was already started");
-
-	if (rc->status == RCPAUSE) {
-		rc->status = RCLISTEN;
-		return MAL_SUCCEED;
-	}
-	return DCreceptorInit(rc, *host, *port);
-}
-str DCreceptorStart(int *ret, str *schema, str *nme)
-{
-	str host = RCHOST;
-	int port = RCPORT;
-	return DCreceptorStartHostPort(ret, schema, nme, &host, &port);
+	return MAL_SUCCEED;
 }
 
 str DCreceptorDrop(int *ret, str *schema, str *nme)
@@ -583,7 +520,7 @@ In case of a locked basket we sleep for a millisecond.
 	}
 	/* only when reading fails we attempt to reconnect */
 	mnstr_close(rc->receptor);
-	if (!rc->server) {
+	if (rc->protocol == RCACTIVE) {
 		/* try to reconnect */
 		RCreconnect(rc);
 		goto bodyRestart;
@@ -721,8 +658,8 @@ RCgenerator(Receptor rc)
 
 
 @-
-The receptor thread manages the connections. Both as a server and
-in client mode.  The UDP channel part is not our focus right now.
+The receptor thread manages the connections. Both as a active and
+in passive mode.  The UDP channel part is not our focus right now.
 @c
 str
 RCstartThread(Receptor rc)
@@ -748,9 +685,9 @@ RCstartThread(Receptor rc)
 
 	/* Handle the TCP protocol */
 #ifdef _DEBUG_RECEPTOR_
-	mnstr_printf(RCout, "Start the receptor thread, servermode=%d\n", rc->server);
+	mnstr_printf(RCout, "Start the receptor thread, protocol=%d\n", rc->protocol);
 #endif
-	if (rc->server &&
+	if (rc->protocol == RCPASSIVE &&
 		(rc->error = socket_server_connect(&rc->sockfd, rc->port))) {
 		rc->status = RCERROR;
 		mnstr_printf(RCout, "Failed to start receptor server:%s\n", rc->error);
@@ -761,7 +698,7 @@ RCstartThread(Receptor rc)
 	   remote site for new events or listing for the next request */
 	do {
 		if (rc->status == RCSTOP) return NULL;
-		if (rc->server) {
+		if (rc->protocol == RCPASSIVE) {
 #ifdef _DEBUG_RECEPTOR_
 			mnstr_printf(RCout, "Receptor listens\n");
 #endif
@@ -772,7 +709,7 @@ RCstartThread(Receptor rc)
 			}
 		}
 		/* in server mode you should expect new connections */
-		if (rc->server) {
+		if (rc->protocol == RCPASSIVE) {
 			if (MT_create_thread(&rc->pid, (void (*)(void *))RCbody, rc, MT_THR_DETACHED) != 0) {
 				mnstr_close(rc->receptor);
 				throw(MAL, "receptor.start", "Process creation failed");
@@ -781,7 +718,7 @@ RCstartThread(Receptor rc)
 			RCreconnect(rc);
 			RCbody(rc);
 		}
-	} while (rc->server && rc->status != RCSTOP);
+	} while (rc->protocol == RCACTIVE && rc->status != RCSTOP);
 	shutdown(rc->newsockfd, SHUT_RDWR);
 	return MAL_SUCCEED;
 }
