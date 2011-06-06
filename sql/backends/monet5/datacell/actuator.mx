@@ -54,13 +54,6 @@ actuator [options]
 
 #include "dcsocket.h"
 
-#define MYBUFSIZ 64*1024
-#ifndef SHUT_RD
-#define SHUT_RD		0
-#define SHUT_WR		1
-#define SHUT_RDWR	2
-#endif
-
 
 /*#define _DEBUG_ACTUATOR_ */
 #define ACout GDKout

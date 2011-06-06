@@ -59,6 +59,7 @@ a number of milliseconds.
 
 #endif
 
+#include "dcsocket.h"
 /*#define DEBUG*/
 #define SEout GDKout
 

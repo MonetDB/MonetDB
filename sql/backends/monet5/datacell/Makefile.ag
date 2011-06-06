@@ -47,17 +47,15 @@ lib__datacell = {
 }
 
 bin_actuator = {
-	# FIXME: usec comes from basket.mx, use GDKusec instead?
-	#        socket_* comes from dcsocket.mx
 	SOURCES = actuator.mx dcsocket.mx
 	LIBS = ../../../../common/stream/libstream \
 		   ../../../../common/options/libmoptions \
-		   ../../../../gdk/libbat 
+		   ../../../../gdk/libbat \
+		   ../../../../monetdb5/tools/libmonetdb5
 		
 }
 
 bin_sensor = {
-	# FIXME: usec comes from basket.mx, use GDKusec instead?
 	SOURCES = sensor.mx dcsocket.mx
 	LIBS = ../../../../common/stream/libstream \
 		   ../../../../common/options/libmoptions \

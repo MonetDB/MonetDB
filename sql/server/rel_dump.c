@@ -912,7 +912,8 @@ rel_read(mvc *sql, char *r, int *pos)
 {
 	sql_rel *rel = NULL, *nrel, *lrel, *rrel;
 	list *exps, *gexps;
-	int distinct = 0, j=0;
+	int distinct = 0;
+	operator_type j = 0;
 
 	skipWS(r,pos);
 	if (r[*pos] == 'd') {
