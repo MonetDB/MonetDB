@@ -2,5 +2,8 @@
 # This file is updated with Maddlog
 
 * Mon Jun  6 2011 Fabian Groffen <fabian@cwi.nl>
+- Fixed read-only interpretation.  Connection.isReadOnly now always
+  returns false, setReadOnly now generates a warning when called with
+  true.  Partly from bug #2818
 - Allow readonly to be set when autocommit is disabled as well.  Bug #2818
 
