@@ -559,12 +559,14 @@ public class MonetConnection implements Connection {
 
 	/**
 	 * Retrieves whether this Connection object is in read-only mode.
-	 * MonetDB currently doesn't support updateable result sets.
+	 * MonetDB currently doesn't support updateable result sets, but
+	 * updates are possible.  Hence the Connection object is never in
+	 * read-only mode.
 	 *
 	 * @return true if this Connection object is read-only; false otherwise
 	 */
 	public boolean isReadOnly() {
-		return(true);
+		return(false);
 	}
 
 	public String nativeSQL(String sql) {return(sql);}
@@ -905,10 +907,8 @@ public class MonetConnection implements Connection {
 	 *         method is called during a transaction.
 	 */
 	public void setReadOnly(boolean readOnly) throws SQLException {
-		if (autoCommit == false) throw
-			new SQLException("changing read-only setting not allowed during transactions");
-		if (readOnly == false)
-			addWarning("cannot setReadOnly(false): writable mode not supported");
+		if (readOnly == true)
+			addWarning("cannot setReadOnly(true): read-only Connection mode not supported");
 	}
 
 	/**
