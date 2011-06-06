@@ -918,8 +918,6 @@ public class MonetConnection implements Connection {
 	 *         method is called during a transaction.
 	 */
 	public void setReadOnly(boolean readOnly) throws SQLException {
-		if (autoCommit == false) throw
-			new SQLException("changing read-only setting not allowed during transactions");
 		if (readOnly == false)
 			addWarning("cannot setReadOnly(false): writable mode not supported");
 	}

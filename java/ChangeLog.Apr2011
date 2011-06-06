@@ -1,3 +1,6 @@
 # ChangeLog file for java
 # This file is updated with Maddlog
 
+* Mon Jun  6 2011 Fabian Groffen <fabian@cwi.nl>
+- Allow readonly to be set when autocommit is disabled as well.  Bug #2818
+
