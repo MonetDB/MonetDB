@@ -25,6 +25,7 @@
 #include "rel_exp.h"
 #include "rel_prop.h"
 #include "rel_select.h"
+#include "rel_semantic.h"
 
 static void
 print_indent(mvc *sql, stream *fout, int depth)
@@ -199,8 +200,8 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, int comma, int alias)
 	if (e->p) {
 		prop *p = e->p;
 
-		for (; p; p = p->p)
-			mnstr_printf(fout, " %s", propkind2string(p));
+		for (; p; p = p->p) 
+			mnstr_printf(fout, " %s %s", propkind2string(p), propvalue2string(p));
 	}
 	if (comma)
 		mnstr_printf(fout, ", ");
@@ -400,14 +401,11 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs)
 			print_indent(sql, fout, depth);
 			mnstr_printf(fout, ")");
 		}
-		if (rel->r && 
-	           (rel->op == op_groupby || rel->op == op_project)) { 
-		   /* group by and order by columns */
-			if (rel->op == op_project)
-				r = " order by ";
+		if (rel->r && rel->op == op_groupby)  /* group by columns */
 			exps_print(sql, fout, rel->r, depth, 1, 0);
-		}
 		exps_print(sql, fout, rel->exps, depth, 1, 0);
+		if (rel->r && rel->op == op_project) /* order by columns */
+			exps_print(sql, fout, rel->r, depth, 1, 0);
 		break;
 	case op_insert:
 	case op_update:
@@ -607,6 +605,46 @@ readString( char *r, int *pos)
 
 static sql_exp* exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, char *r, int *pos, int grp) ;
 
+
+static void *
+read_prop( mvc *sql, sql_exp *exp, char *r, int *pos) 
+{
+	/* PROPs */
+	if (strncmp(r+*pos, "JOINIDX",  strlen("JOINIDX")) == 0) {
+		int old;
+		char *sname,*tname,*iname;
+		sql_schema *s = NULL;
+		prop *p;
+
+		(*pos)+= strlen("JOINIDX");
+		skipWS(r, pos);
+		/* schema.table.index */
+		sname = r+*pos;
+		skipIdent(r,pos);
+		if (r[*pos] != '.') 
+			return sql_error(sql, -1, "JOINIDX: missing '.'\n");
+		r[*pos] = 0;
+		(*pos)++;
+		tname = r+*pos;
+		skipIdent(r,pos);
+		if (r[*pos] != '.') 
+			return sql_error(sql, -1, "JOINIDX: missing '.'\n");
+		r[*pos] = 0;
+		(*pos)++;
+		iname = r+*pos;
+		skipIdent(r,pos);
+		old = r[*pos];
+		r[*pos] = 0;
+		
+		s = mvc_bind_schema(sql, sname);
+		p = exp->p = prop_create(sql->sa, PROP_JOINIDX, exp->p);
+		p->value = mvc_bind_idx(sql, s, iname);
+		r[*pos] = old;
+		skipWS(r,pos);
+	}
+	return exp->p;
+}
+
 static list*
 read_exps(mvc *sql, sql_rel *lrel, sql_rel *rrel, char *r, int *pos, char bracket, int grp) 
 {
@@ -629,6 +667,7 @@ read_exps(mvc *sql, sql_rel *lrel, sql_rel *rrel, char *r, int *pos, char bracke
 		}
 		append(exps, e);
 		skipWS( r, pos);
+		read_prop( sql, e, r, pos);
 		while (r[*pos] == ',') {
 			(*pos)++;
 			skipWS( r, pos);
@@ -637,6 +676,7 @@ read_exps(mvc *sql, sql_rel *lrel, sql_rel *rrel, char *r, int *pos, char bracke
 				return NULL;
 			append(exps, e);
 			skipWS( r, pos);
+			read_prop( sql, e, r, pos);
 		}
 		if (r[*pos] != ebracket) 
 			return sql_error(sql, -1, "missing closing %c\n", ebracket);
@@ -650,7 +690,7 @@ static sql_exp*
 exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, char *r, int *pos, int grp) 
 {
 	int not = 1, f = 0, old, d=0, s=0, unique = 0, no_nils = 0;
-	char *tname, *cname, *e, *b = r + *pos, *st;
+	char *tname, *cname = NULL, *e, *b = r + *pos, *st;
 	sql_exp *exp = NULL;
 	list *exps = NULL;
 	sql_subtype *tpe;
@@ -714,6 +754,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, char *r, int *pos, int grp)
 		} else {
 			st = readString(r,pos);
 			exp = exp_atom(sql->sa, atom_general(sql->sa, tpe, st));
+			skipWS(r, pos);
 		}
 		break;
 	case '\"': 
@@ -721,7 +762,9 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, char *r, int *pos, int grp)
 		tname = b;
 		tpe = sql_bind_subtype(tname, 0, 0);
 		st = readString(r,pos);
-		return exp_atom(sql->sa, atom_general(sql->sa, tpe, st));
+		exp = exp_atom(sql->sa, atom_general(sql->sa, tpe, st));
+		skipWS(r, pos);
+		break;
 	default:
 		(void)sql;
 	}
@@ -773,6 +816,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, char *r, int *pos, int grp)
 			if (!exp && rrel)
 				exp = rel_bind_column(sql, rrel, b, 0);
 			*e = old;
+			skipWS(r,pos);
 		}
 	}
 	/* [ ASC ] */
@@ -794,6 +838,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, char *r, int *pos, int grp)
 		if (not)
 			set_has_no_nil(exp);
 	}
+
 	/* as alias */
 	if (strncmp(r+*pos, "as", 2) == 0) {
 		int old;
@@ -846,17 +891,17 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, char *r, int *pos, int grp)
 	case ',': 
 	case ']': 
 	case ')': 
-		return exp;
 	default:
-		return NULL;
+		return exp;
 	}
 	if (f) {
 		sql_exp *e;
 
 		skipWS(r,pos);
 	        e = exp_read(sql, lrel, rrel, r, pos, 0);
-		/* TODO case for compare 2 */
-		if (e)
+		if (e && e->type == e_cmp) 
+			return exp_compare2(sql->sa, e->l, exp, e->r, compare2range(swap_compare(f),e->flag));
+		else if (e)
 			return exp_compare(sql->sa, exp, e, f);
 	}
 	return exp;
@@ -870,49 +915,72 @@ rel_read(mvc *sql, char *r, int *pos)
 	int distinct = 0, j=0;
 
 	skipWS(r,pos);
+	if (r[*pos] == 'd') {
+		*pos += strlen("distinct");
+		skipWS(r, pos);
+		distinct = 1;
+	}
 	switch(r[*pos]) {
-	case 't': { 
-		sql_schema *s = NULL;
-		sql_table *t = NULL;
-		char *sname, *tname, *e;
-		*pos += strlen("table");
-		skipWS(r, pos);
-		if (r[*pos] != '(') 
-			return sql_error(sql, -1, "table: missing '('\n");
-		(*pos)++;
-		skipWS(r, pos);
-		sname = r+*pos;
-		skipIdent(r, pos);
-		e = r+*pos;
-		if (r[*pos] != '.') 
-			return sql_error(sql, -1, "table: missing '.' in table name\n");
-		*e = 0;
-		(*pos)++;
-		tname = r+*pos;
-		skipIdent(r, pos);
-		e = r+*pos;
-		skipWS(r, pos);
-		if (r[*pos] != ')') 
-			sql_error(sql, -1, "table: missing ')'\n");
-		*e = 0;
-		(*pos)++;
-		skipWS(r, pos);
-		s = mvc_bind_schema(sql, sname);
-		if (s)
-			t = mvc_bind_table(sql, s, tname);
-		if (!s || !t)
-			return sql_error(sql, -1, "table: missing '%s.%s'\n", sname, tname);
-		rel = rel_basetable(sql, t, tname);
+	case 't': 
+		if (r[*pos+1] == 'a') {
+			sql_schema *s = NULL;
+			sql_table *t = NULL;
+			char *sname, *tname, *e;
+			*pos += strlen("table");
+			skipWS(r, pos);
+			if (r[*pos] != '(') 
+				return sql_error(sql, -1, "table: missing '('\n");
+			(*pos)++;
+			skipWS(r, pos);
+			sname = r+*pos;
+			skipIdent(r, pos);
+			e = r+*pos;
+			if (r[*pos] != '.') 
+				return sql_error(sql, -1, "table: missing '.' in table name\n");
+			*e = 0;
+			(*pos)++;
+			tname = r+*pos;
+			skipIdent(r, pos);
+			e = r+*pos;
+			skipWS(r, pos);
+			if (r[*pos] != ')') 
+				sql_error(sql, -1, "table: missing ')'\n");
+			*e = 0;
+			(*pos)++;
+			skipWS(r, pos);
+			s = mvc_bind_schema(sql, sname);
+			if (s)
+				t = mvc_bind_table(sql, s, tname);
+			if (!s || !t)
+				return sql_error(sql, -1, "table: missing '%s.%s'\n", sname, tname);
+			rel = rel_basetable(sql, t, tname);
+		
+			if (!r[*pos])
+				return rel;
 	
-		if (!r[*pos])
+			/* scan aliases */
+			exps = read_exps(sql, rel, NULL, r, pos, '[', 0);
+			if (exps && list_length(exps))
+				//rel = rel_project(sql->sa, rel, exps);
+				rel->exps = exps;
 			return rel;
-
-		/* scan aliases */
-		exps = read_exps(sql, rel, NULL, r, pos, '[', 0);
-		if (exps && list_length(exps))
-			rel = rel_project(sql->sa, rel, exps);
-		return rel;
-	} break;
+		} else { /* top N */
+			*pos += strlen("top N");
+			skipWS(r, pos);
+			if (r[*pos] != '(') 
+				return sql_error(sql, -1, "top N: missing '('\n");
+			(*pos)++;
+			skipWS(r, pos);
+			nrel = rel_read(sql, r, pos);
+			if (r[*pos] != ')') 
+				return sql_error(sql, -1, "project: missing ')'\n");
+			(*pos)++;
+			skipWS(r, pos);
+			exps = read_exps(sql, nrel, NULL, r, pos, '[', 0);
+			rel = rel_topn(sql->sa, nrel, exps);
+			return rel;
+		}
+		break;
 	case 'p':
 		*pos += strlen("project");
 		skipWS(r, pos);
@@ -931,10 +999,8 @@ rel_read(mvc *sql, char *r, int *pos)
 		exps = read_exps(sql, nrel, NULL, r, pos, '[', 0);
 		rel = rel_project(sql->sa, nrel, exps);
 		/* order by ? */
-		if (r[*pos] == '[') {
-			rel->r = rel->exps;
-			rel->exps = read_exps(sql, nrel, NULL, r, pos, '[', 0);
-		}
+		if (r[*pos] == '[') 
+			rel->r = read_exps(sql, nrel, rel, r, pos, '[', 0);
 		if (distinct)
 			set_distinct(rel);
 		distinct = 0;
@@ -1107,16 +1173,10 @@ rel_read(mvc *sql, char *r, int *pos)
 		rel->exps = exps;
 		return rel;
 	case 'd':
-		if (r[*pos+1] == 'i') {
-			*pos += strlen("distinct");
-			skipWS(r, pos);
-			distinct = 1;
-			break;
-		}
 		/* 'ddl' not supported */
 	default:
 		return NULL;
 	}
-	return NULL;
+	return rel;
 }
 

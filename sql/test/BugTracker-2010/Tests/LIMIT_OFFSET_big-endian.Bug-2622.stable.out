@@ -84,7 +84,7 @@ top N (
 % 49 # length
 project (
 | table(sys.oblo) [ oblo.a, oblo.%TID% NOT NULL ]
-) [ oblo.a ASC ] [ oblo.a ]
+) [ oblo.a ] [ oblo.a ASC ]
 #PLAN select * from oblo ORDER BY a OFFSET 2;
 % .plan # table_name
 % rel # name
@@ -93,7 +93,7 @@ project (
 top N (
 | project (
 | | table(sys.oblo) [ oblo.a, oblo.%TID% NOT NULL ]
-| ) [ oblo.a ASC ] [ oblo.a ]
+| ) [ oblo.a ] [ oblo.a ASC ]
 ) [ wrd "2" ]
 #PLAN select * from oblo ORDER BY a LIMIT 2;
 % .plan # table_name
@@ -103,7 +103,7 @@ top N (
 top N (
 | project (
 | | table(sys.oblo) [ oblo.a, oblo.%TID% NOT NULL ]
-| ) [ oblo.a ASC ] [ oblo.a ]
+| ) [ oblo.a ] [ oblo.a ASC ]
 ) [ wrd "2" ]
 #PLAN select * from oblo ORDER BY a LIMIT 2 OFFSET 1;
 % .plan # table_name
@@ -113,7 +113,7 @@ top N (
 top N (
 | project (
 | | table(sys.oblo) [ oblo.a, oblo.%TID% NOT NULL ]
-| ) [ oblo.a ASC ] [ oblo.a ]
+| ) [ oblo.a ] [ oblo.a ASC ]
 ) [ wrd "2", wrd "1" ]
 #PLAN select * from oblo ORDER BY a LIMIT 1 OFFSET 2;
 % .plan # table_name
@@ -123,7 +123,7 @@ top N (
 top N (
 | project (
 | | table(sys.oblo) [ oblo.a, oblo.%TID% NOT NULL ]
-| ) [ oblo.a ASC ] [ oblo.a ]
+| ) [ oblo.a ] [ oblo.a ASC ]
 ) [ wrd "1", wrd "2" ]
 #EXPLAIN select * from oblo;
 % .explain # table_name

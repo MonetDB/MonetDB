@@ -37,7 +37,7 @@ comment "Datacell expression optimizer";
 #include "opt_support.h"
 #include "opt_pipes.h"
 
-#define OPTDEBUGdatacell  if ( optDebug & (1 <<DEBUG_OPT_DATACELL) )
+#define OPTDEBUGdatacell  if (optDebug & (1 << DEBUG_OPT_DATACELL))
 opt_export str OPTdatacell(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 #endif
@@ -88,70 +88,72 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		} 
 		pushInstruction(mb, p);
 	}
-	
-    for (; i < slimit; i++)
-        if (old[i])
-            freeInstruction(old[i]);
+	(void)stk;
+	(void)pci;
 
-	return actions;
+	if (actions)
+		addPipeDefinition("datacell_pipe",
+			"inline,remap,datacell,evaluate,costModel,coercions,emptySet,aliases,mitosis,"
+			"mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,"
+			"history,multiplex,accumulators,garbageCollector");
+	return 0;
 }
 
 /* #define _DEBUG_OPTIMIZER_*/
 
-/* The remainder is the optimizer harnass */
+str OPTdatacell(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	str modnme;
+	str fcnnme;
+	str msg = MAL_SUCCEED;
+	Symbol s = NULL;
+	lng t, clk = GDKusec();
+	int actions = 0;
 
-str OPTdatacell(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-    str modnme;
-    str fcnnme;
-    str msg= MAL_SUCCEED;
-    Symbol s= NULL;
-    lng t,clk= GDKusec();
-    int actions = 0;
+	optimizerInit();
+	if (p)
+		removeInstruction(mb, p);
+	OPTDEBUGdatacell mnstr_printf(cntxt->fdout, "=APPLY OPTIMIZER datacell\n");
+	if (p && p->argc > 1) {
+		if (getArgType(mb, p, 1) != TYPE_str ||
+			getArgType(mb, p, 2) != TYPE_str ||
+			!isVarConstant(mb, getArg(p, 1)) ||
+			!isVarConstant(mb, getArg(p, 2))
+			) {
+			throw(MAL, "optimizer.datacell", ILLARG_CONSTANTS);
+		}
+		if (stk != 0) {
+			modnme = *(str*)getArgReference(stk, p, 1);
+			fcnnme = *(str*)getArgReference(stk, p, 2);
+		} else {
+			modnme = getArgDefault(mb, p, 1);
+			fcnnme = getArgDefault(mb, p, 2);
+		}
+		s = findSymbol(cntxt->nspace, putName(modnme, strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
 
-    optimizerInit();
-    if( p )
-        removeInstruction(mb, p);
-    OPTDEBUGdatacell mnstr_printf(cntxt->fdout,"=APPLY OPTIMIZER datacell\n");
-    if( p && p->argc > 1 ){
-        if( getArgType(mb,p,1) != TYPE_str ||
-            getArgType(mb,p,2) != TYPE_str ||
-            !isVarConstant(mb,getArg(p,1)) ||
-            !isVarConstant(mb,getArg(p,2))
-        ) {
-            throw(MAL, "optimizer.datacell", ILLARG_CONSTANTS);
-        }
-        if( stk != 0){
-            modnme= *(str*)getArgReference(stk,p,1);
-            fcnnme= *(str*)getArgReference(stk,p,2);
-        } else {
-            modnme= getArgDefault(mb,p,1);
-            fcnnme= getArgDefault(mb,p,2);
-        }
-        s= findSymbol(cntxt->nspace, putName(modnme,strlen(modnme)),putName(fcnnme,strlen(fcnnme)));
-
-        if( s == NULL) {
-            char buf[1024];
-            snprintf(buf,1024, "%s.%s",modnme,fcnnme);
-            throw(MAL, "optimizer.datacell", RUNTIME_OBJECT_UNDEFINED ":%s", buf);
-        }
-        mb = s->def;
-        stk= 0;
-    }
-    if( mb->errors ){
-        /* when we have errors, we still want to see them */
-        addtoMalBlkHistory(mb,"datacell");
-        return MAL_SUCCEED;
-    }
-    actions= OPTdatacellImplementation(cntxt, mb,stk,p);
-    msg= optimizerCheck(cntxt, mb, "optimizer.datacell", actions, t=(GDKusec() - clk),OPT_CHECK_ALL);
-    OPTDEBUGdatacell {
-        mnstr_printf(cntxt->fdout,"=FINISHED datacell %d\n",actions);
-        printFunction(cntxt->fdout,mb,0,LIST_MAL_STMT | LIST_MAPI);
-    }
-    DEBUGoptimizers
-        mnstr_printf(cntxt->fdout,"#opt_reduce: %d ms\n",t);
-    QOTupdateStatistics("datacell",actions,t);
-    addtoMalBlkHistory(mb,"datacell");
-    return msg;
+		if (s == NULL) {
+			char buf[1024];
+			snprintf(buf, 1024, "%s.%s", modnme, fcnnme);
+			throw(MAL, "optimizer.datacell", RUNTIME_OBJECT_UNDEFINED ":%s", buf);
+		}
+		mb = s->def;
+		stk = 0;
+	}
+	if (mb->errors) {
+		/* when we have errors, we still want to see them */
+		addtoMalBlkHistory(mb, "datacell");
+		return MAL_SUCCEED;
+	}
+	actions = OPTdatacellImplementation(cntxt, mb, stk, p);
+	msg = optimizerCheck(cntxt, mb, "optimizer.datacell", actions, t = (GDKusec() - clk), OPT_CHECK_ALL);
+	OPTDEBUGdatacell {
+		mnstr_printf(cntxt->fdout, "=FINISHED datacell %d\n", actions);
+		printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT | LIST_MAPI);
+	}
+	DEBUGoptimizers
+	mnstr_printf(cntxt->fdout, "#opt_reduce: %d ms\n", t);
+	QOTupdateStatistics("datacell", actions, t);
+	addtoMalBlkHistory(mb, "datacell");
+	return msg;
 }
 @}

@@ -42,26 +42,27 @@ lib__datacell = {
 		  dcoperator.mx \
 		  emitter.mx 
 
-    LIBS = ../../../../monetdb5/tools/libmonetdb5 \
+	LIBS = ../../../../monetdb5/tools/libmonetdb5 \
 		../../../../gdk/libbat 
 }
 
-lib__actuator = {
-	MODULE
-	DIR = libdir/monetdb5
-	SEP = _
-	SOURCES = actuator.mx 
-    LIBS = ../../../../monetdb5/tools/libmonetdb5 \
-		../../../../gdk/libbat 
+bin_actuator = {
+	# FIXME: usec comes from basket.mx, use GDKusec instead?
+	#        socket_* comes from dcsocket.mx
+	SOURCES = actuator.mx dcsocket.mx
+	LIBS = ../../../../common/stream/libstream \
+		   ../../../../common/options/libmoptions \
+		   ../../../../gdk/libbat 
+		
 }
 
-lib__sensor = {
-	MODULE
-	DIR = libdir/monetdb5
-	SEP = _
-	SOURCES = sensor.mx
-    LIBS = ../../../../monetdb5/tools/libmonetdb5 \
-		../../../../gdk/libbat 
+bin_sensor = {
+	# FIXME: usec comes from basket.mx, use GDKusec instead?
+	SOURCES = sensor.mx dcsocket.mx
+	LIBS = ../../../../common/stream/libstream \
+		   ../../../../common/options/libmoptions \
+		   ../../../../gdk/libbat \
+		   ../../../../monetdb5/tools/libmonetdb5
 }
 
 scripts_mal = {
