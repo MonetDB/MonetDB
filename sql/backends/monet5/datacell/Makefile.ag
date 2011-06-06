@@ -47,17 +47,20 @@ lib__datacell = {
 		../../../../gdk/libbat 
 }
 
-bin_actuator = {
+lib_actuator = {
+	MODULE
 	# FIXME: usec comes from basket.mx, use GDKusec instead?
 	#        socket_* comes from dcsocket.mx
 	SOURCES = actuator.mx basket.mx dcsocket.mx
 	LIBS = ../../../../common/stream/libstream \
 		   ../../../../common/options/libmoptions \
-		   ../../../../gdk/libbat 
+		   ../../../../gdk/libbat \
+		   ../../../../monetdb5/tools/libmonetdb5
 		
 }
 
-bin_sensor = {
+lib_sensor = {
+	MODULE
 	# FIXME: usec comes from basket.mx, use GDKusec instead?
 	SOURCES = sensor.mx basket.mx
 	LIBS = ../../../../common/stream/libstream \
