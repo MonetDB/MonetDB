@@ -16,7 +16,7 @@
 # All Rights Reserved.
 
 # This loads the MonetDB/SQL module
-library datacell;
+include datacell;
 include basket;
 include receptor;
 include emitter;

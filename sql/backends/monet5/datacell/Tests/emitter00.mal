@@ -5,21 +5,21 @@
 
 sql.init();
 
-emitter.start("datacell","X","localhost",50502,"passive");
+emitter.start("datacell","y","localhost",50502,"active");
 io.print("emitter working");
 alarm.sleep(5);
-emitter.pause("datacell","X");
+emitter.pause("datacell","y");
 io.print("emitter paused");
 alarm.sleep(5);
-emitter.resume("datacell","X");
+emitter.resume("datacell","y");
 io.print("emitter restarted");
 alarm.sleep(5);
-emitter.pause("datacell","X");
+emitter.pause("datacell","y");
 io.print("emitter stopped");
-emitter.drop("datacell","X");
+emitter.drop("datacell","y");
 
 # The SQL equivalents
-# call emitter.start('datacell','X','localhost',50502,'passive');
-# call emitter.pause('datacell','X');
-# call emitter.resume('datacell','X');
-# call emitter.drop('datacell','X');
+# call datacell.emitter('datacell','y','localhost',50502,'active');
+# call datacell.pause('datacell','y');
+# call datacell.resume('datacell','y');
+# call datacell.drop('datacell','y');

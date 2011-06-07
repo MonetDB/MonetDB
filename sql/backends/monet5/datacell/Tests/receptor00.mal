@@ -1,25 +1,25 @@
 #A single thread for a simple stream
-#The test is based on the definition the datacell baskets X 
+#The test is based on the definition the datacell baskets x 
 # it starts a receptor in debug mode to see arrivals coming
 # from a (client) sensor.
 
 sql.init();
 
-receptor.start("datacell","X","localhost",50501,"passive");
+receptor.start("datacell","x","localhost",50501,"passive");
 io.print("receptor working");
 alarm.sleep(5);
-receptor.pause("datacell","X");
+receptor.pause("datacell","x");
 io.print("receptor paused");
 alarm.sleep(5);
-receptor.resume("datacell","X");
+receptor.resume("datacell","x");
 io.print("receptor restarted");
 alarm.sleep(5);
-receptor.pause("datacell","X");
+receptor.pause("datacell","x");
 io.print("receptor stopped");
-receptor.drop("datacell","X");
+receptor.drop("datacell","x");
 
 # The SQL equivalents
-# call receptor.start('datacell','X','localhost',50501,'passive');
-# call receptor.pause('datacell','X');
-# call receptor.resume('datacell','X');
-# call receptor.drop('datacell','X');
+# call datacell.receptor('datacell','x','localhost',50501,'passive');
+# call datacell.pause('datacell','x');
+# call datacell.resume('datacell','x');
+# call datacell.drop('datacell','x');

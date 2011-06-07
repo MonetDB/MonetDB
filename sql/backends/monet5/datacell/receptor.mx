@@ -165,6 +165,8 @@ RCnew(str schema, str nme)
 {
 	Receptor rc;
 	rc = (Receptor)GDKzalloc(sizeof(RCrecord));
+	if ( rc == 0)
+		return rc;
 	rc->schema = GDKstrdup(schema);
 	rc->name = GDKstrdup(nme);
 	if (rcAnchor)
@@ -200,12 +202,6 @@ DCreceptorNew(int *ret, str *schema, str *tbl, str *host, int *port, str *proto)
 
 	if (RCfind(*schema, *tbl))
 		throw(MAL, "receptor.new", "Duplicate receptor");
-	idx = DClocate(*schema, *tbl);
-	if (idx == 0)
-		throw(MAL, "receptor.new", "Basket not found");
-	len = DCmemberCount(*schema, *tbl);
-	if (len == 0)
-		throw(MAL, "receptor.new", "Group has no members");
 	if ( strcmp(*proto, "active") == 0) 
 		protocol = RCACTIVE;
 	else
@@ -215,6 +211,8 @@ DCreceptorNew(int *ret, str *schema, str *tbl, str *host, int *port, str *proto)
 		throw(MAL, "receptor.new", "Illegal protocol");
 
 	rc = RCnew(*schema, *tbl);
+	if ( rc == 0)
+		throw(MAL, "receptor.new", MAL_MALLOC_FAIL);
 	rc->host = GDKstrdup(*host);
 	rc->port = *port;
 	rc->error = NULL;
@@ -227,6 +225,10 @@ DCreceptorNew(int *ret, str *schema, str *tbl, str *host, int *port, str *proto)
 	rc->fcnnme = 0;
 	rc->protocol = protocol;
 
+	idx = BSKTlocate(*schema, *tbl);
+	if (idx == 0) /* should not happen */
+		throw(MAL, "receptor.new", "Basket not found");
+	len = BSKTmemberCount(*schema, *tbl);
 	fmt = rc->table.format = GDKzalloc(sizeof(Column) * len);
 
 	for (j = 0, i = 0; i < baskets[idx].colcount; i++) {
@@ -237,7 +239,7 @@ DCreceptorNew(int *ret, str *schema, str *tbl, str *host, int *port, str *proto)
 		}
 		BBPincref(b->batCacheid, TRUE);
 		fmt[j].c[0] = b;
-		fmt[j].name = GDKstrdup(baskets[i].name);
+		fmt[j].name = GDKstrdup(baskets[idx].cols[i]);
 		fmt[j].sep = GDKstrdup(",");
 		fmt[j].seplen = 1;
 		fmt[j].type = ATOMname(b->ttype);
@@ -320,7 +322,7 @@ str DCreceptorDrop(int *ret, str *schema, str *nme)
 		rb->nxt = rc->nxt;
 	rc->status = RCDROP;
 	if (rc->lck)
-		DCunlock(&rc->lck, &rc->schema, &rc->name);
+		BSKTunlock(&rc->lck, &rc->schema, &rc->name);
 	MT_join_thread(rc->pid);
 	return MAL_SUCCEED;
 }
@@ -461,7 +463,7 @@ In case of a locked basket we sleep for a millisecond.
    When the receptor reads all the tuples UNLOCKS the bats, and then the Factories/Queries that are waiting for these data are able to read it*/
 
 		if ((n = (int)mnstr_readline(rc->receptor, buf, MYBUFSIZ)) > 0) {
-			DClock(&rc->lck, &rc->schema, &rc->name, &rc->delay);
+			BSKTlock(&rc->lck, &rc->schema, &rc->name, &rc->delay);
 			buf[n + 1] = 0;
 #ifdef _DEBUG_RECEPTOR_
 			mnstr_printf(RCout, "\nLOCK\n");
@@ -509,7 +511,7 @@ In case of a locked basket we sleep for a millisecond.
 				}
 				cnt++;
 			}
-			DCunlock(&rc->lck, &rc->schema, &rc->name);
+			BSKTunlock(&rc->lck, &rc->schema, &rc->name);
 #ifdef _DEBUG_RECEPTOR_
 			mnstr_printf(RCout, "\nUNLOCK\n");
 #endif
@@ -586,17 +588,17 @@ RCscenario(Receptor rc)
 
 			previoustsmp = tick;
 
-			DClock(&rc->lck, &rc->schema, &rc->name, &rc->delay);
+			BSKTlock(&rc->lck, &rc->schema, &rc->name, &rc->delay);
 			if (rc->status != RCLISTEN) {
 				snr = rc->sequence;
 				break;
 			}
 			if (insert_line(&rc->table, tuple + 1 /*ignore '[' */, (ptr) & tick, 0, rc->table.nr_attrs) < 0) {
 				mnstr_printf(RCout, "failed insert_line %s\n", tuple);
-				DCunlock(&rc->lck, &rc->schema, &rc->name);
+				BSKTunlock(&rc->lck, &rc->schema, &rc->name);
 				break;
 			}
-			DCunlock(&rc->lck, &rc->schema, &rc->name);
+			BSKTunlock(&rc->lck, &rc->schema, &rc->name);
 		}
 		fclose(fd);
 		snr++;
@@ -715,7 +717,8 @@ RCstartThread(Receptor rc)
 				mnstr_close(rc->receptor);
 				throw(MAL, "receptor.start", "Process creation failed");
 			}
-		} else {
+		} else
+		if ( rc->protocol == RCACTIVE) {
 			RCreconnect(rc);
 			RCbody(rc);
 		}

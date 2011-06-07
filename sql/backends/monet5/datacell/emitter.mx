@@ -138,6 +138,8 @@ EMnew(str schema, str nme)
 {
 	Emitter em;
 	em = (Emitter)GDKzalloc(sizeof(EMrecord));
+	if ( em == NULL)
+		return em;
 	em->schema = GDKstrdup(schema);
 	em->name = GDKstrdup(nme);
 	if (emAnchor)
@@ -169,18 +171,6 @@ str DCemitterNew(int *ret, str *schema, str *tbl, str *host, int *port, str *pro
 
 	if (EMfind(*schema, *tbl))
 		throw(MAL, "emitter.new", "Duplicate emitter");
-@-
-All tables are prepended with a default tick bat.
-It becomes the synchronization handle.
-@c
-	len = DCmemberCount(*schema, *tbl);
-	if (len == 0)
-		throw(MAL, "emitter.new", "Group has no members");
-
-	idx = DClocate(*schema, *tbl);
-	if (idx == 0)
-		throw(MAL, "emitter.new", "basket not found");
-
 	if ( strcmp(*proto, "active") == 0)
 		protocol = EMACTIVE;
 	else
@@ -190,12 +180,25 @@ It becomes the synchronization handle.
 		throw(MAL, "emitter.new", "Illegal protocol");
 
 	em = EMnew(*schema, *tbl);
+	if( em == NULL)
+		throw(MAL, "emitter.new", MAL_MALLOC_FAIL);
 	em->host = GDKstrdup(*host);
 	em->port = *port;
 	em->delay = PAUSEDEFAULT;
 	em->lck = 0;
 	em->error = NULL;
 	em->protocol = protocol;
+
+	idx = BSKTlocate(*schema, *tbl);
+	if (idx == 0) /* should not happen */
+		throw(MAL, "emitter.new", "basket not found");
+@-
+All tables are prepended with a default tick bat.
+It becomes the synchronization handle.
+@c
+	len = BSKTmemberCount(*schema, *tbl);
+	if (len == 0)
+		throw(MAL, "emitter.new", "Group has no members");
 
 	em->table.format = GDKzalloc(sizeof(Column) * (len + 1));
 	em->table.format[0].c[0] = NULL;
@@ -214,7 +217,7 @@ It becomes the synchronization handle.
 
 		em->table.format[j].c[0] = b;
 		em->table.format[j].ci[0] = bat_iterator(b);
-		em->table.format[j].name = GDKstrdup(baskets[i].name);
+		em->table.format[j].name = GDKstrdup(baskets[idx].cols[i]);
 		em->table.format[j].sep =
 			j <= len - 1 ? GDKstrdup(",") : GDKstrdup("]\n");
 		em->table.format[j].seplen = (int)strlen(em->table.format[j].sep);
@@ -297,7 +300,7 @@ str DCemitterDrop(int *ret, str *schema, str *nme)
 		rb->nxt = em->nxt;
 	em->status = EMDROP;
 	if (em->lck)
-		DCunlock(&em->lck, &em->schema, &em->name);
+		BSKTunlock(&em->lck, &em->schema, &em->name);
 	MT_join_thread(em->pid);
 	return MAL_SUCCEED;
 }
@@ -374,7 +377,7 @@ If the thread is suspended, we sleep for at least one second.
 			return;
 		}
 		if ((cnt = BATcount(em->table.format[1].c[0]))) {
-			DClock(&em->lck, &em->schema, &em->name, &em->delay);
+			BSKTlock(&em->lck, &em->schema, &em->name, &em->delay);
 			if (em->status != EMLISTEN)
 				break;
 
@@ -391,14 +394,14 @@ If the thread is suspended, we sleep for at least one second.
 #endif
 			if (ret < 0) {
 				/* keep the events and try to setup a new connection */
-				DCunlock(&em->lck, &em->schema, &em->name);
+				BSKTunlock(&em->lck, &em->schema, &em->name);
 				break;
 			}
 			/* clean the baskets */
 			for (i = 1; i < em->table.nr_attrs; i++)
 				BATclear(em->table.format[i].c[0]);
 
-			DCunlock(&em->lck, &em->schema, &em->name);
+			BSKTunlock(&em->lck, &em->schema, &em->name);
 			if (em->table.error) {
 				mnstr_printf(GDKerr, em->table.error);
 				em->table.error = 0;

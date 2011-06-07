@@ -234,10 +234,10 @@ str PNsource(int *ret, str *mod, str *fcn, str *schema, str *bgrp)
 	int i, j, k, z;
 	int len = 64;
 
-	z = DClocate(*schema, *bgrp);
+	z = BSKTlocate(*schema, *bgrp);
 	for (i = 0; i < pnettop; i++) {
 		if (strcmp(*mod, pnet[i].mod) == 0 && strcmp(*fcn, pnet[i].fcn) == 0) {
-			len = DCmemberCount(*schema, *bgrp);
+			len = BSKTmemberCount(*schema, *bgrp);
 			for (j = 0; j < len; j++) {
 				k = pnet[i].srctop;
 				if (k >= MAXPN) {
@@ -274,10 +274,10 @@ str PNtarget(int *ret, str *mod, str *fcn, str *schema, str *bgrp)
 	int i, j, k, z;
 	int len = 64;
 
-	z = DClocate(*schema, *bgrp);
+	z = BSKTlocate(*schema, *bgrp);
 	for (i = 0; i < pnettop; i++) {
 		if (strcmp(*mod, pnet[i].mod) == 0 && strcmp(*fcn, pnet[i].fcn) == 0) {
-			len = DCmemberCount(*schema, *bgrp);
+			len = BSKTmemberCount(*schema, *bgrp);
 			for (j = 0; j < len; j++) {
 				k = pnet[i].trgttop;
 				if (k >= MAXPN) {
