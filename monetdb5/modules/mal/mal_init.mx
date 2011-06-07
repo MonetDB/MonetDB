@@ -119,7 +119,6 @@ include opt_accumulators;
 include opt_aliases;
 include opt_coercion;
 include opt_constants;
-include opt_datacell;
 include opt_dataflow;
 include opt_dictionary;
 include opt_deadcode;
