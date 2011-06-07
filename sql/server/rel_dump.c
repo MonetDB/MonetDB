@@ -913,7 +913,7 @@ rel_read(mvc *sql, char *r, int *pos)
 	sql_rel *rel = NULL, *nrel, *lrel, *rrel;
 	list *exps, *gexps;
 	int distinct = 0;
-	operator_type j = 0;
+	operator_type j = op_basetable;
 
 	skipWS(r,pos);
 	if (r[*pos] == 'd') {
@@ -1086,25 +1086,25 @@ rel_read(mvc *sql, char *r, int *pos)
 		j = op_left;
 		/* fall through */
 	case 'r': 
-		if (!j) {
+		if (j != op_basetable) {
 			*pos += strlen("right outer join");
 			j = op_right;
 		}
 		/* fall through */
 	case 'f':
-		if (!j) {
+		if (j != op_basetable) {
 			*pos += strlen("full outer join");
 			j = op_full;
 		}
 		/* fall through */
 	case 'c':
-		if (!j) {
+		if (j != op_basetable) {
 			*pos += strlen("crossproduct");
 			j = op_join;
 		}
 		/* fall through */
 	case 'j':
-		if (!j) {
+		if (j != op_basetable) {
 			*pos += strlen("join");
 			j = op_join;
 		}
@@ -1134,17 +1134,17 @@ rel_read(mvc *sql, char *r, int *pos)
 		rel->exps = exps;
 		return rel;
 	case 'u':
-		if (!j) {
+		if (j != op_basetable) {
 			*pos += strlen("union");
 			j = op_union;
 		}
 	case 'i':
-		if (!j) {
+		if (j != op_basetable) {
 			*pos += strlen("intersect");
 			j = op_inter;
 		}
 	case 'e':
-		if (!j) {
+		if (j != op_basetable) {
 			*pos += strlen("except");
 			j = op_except;
 		}
