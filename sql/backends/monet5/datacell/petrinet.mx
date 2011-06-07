@@ -29,30 +29,22 @@ Both query and emitter attached are scheduled.
 @end example
 @mal
 module petrinet;
-pattern transformation(mod:str,fcn:str):void
-address PNtransformation
-comment "Add a factory to the Petri net";
+pattern registration(mod:str,fcn:str, delay:int):void
+address PNregistration
+comment "Add a continous query to the Petri net. It will analyse
+the MAL block to determine the input/output dependencies.";
 
 command source(mod:str,fcn:str, schema:str,tbl:str):void
 address PNsource
-comment "Define an input basket group for a transformation";
+comment "Manually define an input basket for a transformation";
 
 command target(mod:str,fcn:str, schema:str,tbl:str):void
 address PNtarget
-comment "Define an output basket group for a transformation";
+comment "Manually define an output basket for a transformation";
 
-command start()
-address PNstart
-comment "Start the Petri net controller";
-
-
-command startThread()
-address PNstartThread
-comment "Start the Petri net controller as a thread";
-
-command setCycleDelay(delay:int)
-address PNsetCycleDelay
-comment "Set the Petri net controller cycle delay ";
+command pause()
+address PNpause
+comment "Pause the Petri net controller";
 
 command resume()
 address PNresume
@@ -90,15 +82,13 @@ comment "Show the status of the Petri net";
 #define datacell_export extern
 #endif
 
-datacell_export str PNtransformation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-datacell_export str PNstop(int *ret);
-datacell_export str PNstart(int *ret);
-datacell_export str PNstartThread(int *ret);
-datacell_export str PNsetCycleDelay(int *ret, int *delay);
+datacell_export str PNregistration(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+datacell_export str PNpause(int *ret);
 datacell_export str PNresume(int *ret);
+datacell_export str PNstop(int *ret);
 datacell_export str PNdump(int *ret);
-datacell_export str PNsource(int *ret, str *grp, str *nme, str *schema, str *tbl);
-datacell_export str PNtarget(int *ret, str *grp, str *nme, str *schema, str *tbl);
+datacell_export str PNsource(int *ret, str *mod, str *fcn, str *schema, str *tbl);
+datacell_export str PNtarget(int *ret, str *mod, str *fcn, str *schema, str *tbl);
 #endif
 
 @c
@@ -114,7 +104,7 @@ static int controlRounds = PNcontrolInfinit;
 
 typedef struct {
 	int bid;
-	str grp, name;
+	str schema, table;
 	BAT *b;
 	int available;      /* approximate number of events available */
 	size_t lastcount;   /* statistics gathering */
@@ -147,13 +137,14 @@ int *enabled_Factories;     /*array that contains the id's of all facroties
 static int status = 0;
 static int cycleDelay = 1000; /* be careful, it affects response/throughput timings */
 
-str PNtransformation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+str PNregistration(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Module scope;
 	Symbol s = 0;
 	int *ret = (int *)getArgReference(stk, pci, 0);
 	str *modnme = (str *)getArgReference(stk, pci, 1);
 	str *fcnnme = (str *)getArgReference(stk, pci, 2);
+	int *delay = (int*) getArgReference(stk,pci,3);
 	(void)mb;
 
 	scope = findModule(cntxt->nspace, putName(*modnme, (int)strlen(*modnme)));
@@ -184,9 +175,17 @@ str PNtransformation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	pnettop++;
 	/*assert(pnettop<MAXPN);*/
 
+	if( pci->argc >3 ){
+		delay = (int*) getArgReference(stk,pci,3);
+		if (*delay < 0)
+			throw(MAL, "datacell.setDelay", "Negative value not allowed");
+		cycleDelay = *delay;
+	}
+
 	(void)ret;
 	return MAL_SUCCEED;
 }
+
 str PNstop(int *ret)
 {
 	status = PNstopped;
@@ -209,14 +208,14 @@ str PNdump(int *ret)
 			i, pnet[i].mod, pnet[i].fcn, pnet[i].cycles);
 		for (k = 0; k < pnet[i].srctop; k++)
 			mnstr_printf(PNout, "<--\t%s.%s %d %d\n",
-				pnet[i].source[k].grp,
-				pnet[i].source[k].name,
+				pnet[i].source[k].schema,
+				pnet[i].source[k].table,
 				pnet[i].source[k].lastcount,
 				pnet[i].source[k].consumed);
 		for (k = 0; k < pnet[i].trgttop; k++)
 			mnstr_printf(PNout, "-->\t%s.%s %d %d\n",
-				pnet[i].target[k].grp,
-				pnet[i].target[k].name,
+				pnet[i].target[k].schema,
+				pnet[i].target[k].table,
 				pnet[i].target[k].lastcount,
 				pnet[i].target[k].consumed);
 	}
@@ -228,78 +227,57 @@ Make the basket group accessible to the transition function
 The code currently relies on a physical adjacent ordering of all member
 in the group.
 @c
-str PNsource(int *ret, str *mod, str *fcn, str *schema, str *bgrp)
+str PNsource(int *ret, str *mod, str *fcn, str *schema, str *tbl)
 {
-	/* str msg;*/
-	int i, j, k, z;
-	int len = 64;
+	int i, k, z;
 
-	z = BSKTlocate(*schema, *bgrp);
+	z = BSKTlocate(*schema, *tbl);
 	for (i = 0; i < pnettop; i++) {
 		if (strcmp(*mod, pnet[i].mod) == 0 && strcmp(*fcn, pnet[i].fcn) == 0) {
-			len = BSKTmemberCount(*schema, *bgrp);
-			for (j = 0; j < len; j++) {
-				k = pnet[i].srctop;
-				if (k >= MAXPN) {
-					if ((pnet[i].source = (PoolRec*)GDKrealloc(pnet[i].source, sizeof(PoolRec) * (k + 1))) == NULL)
-						throw(MAL, "petrinet.source", "GDKrealloc failed");
-				}           else if (k == 0) {
-					if ((pnet[i].source = (PoolRec *)GDKmalloc(MAXPN * sizeof(PoolRec))) == NULL)
-						throw(MAL, "petrinet.source", "GDKmalloc failed");
-				}
-				pnet[i].source[k].grp = GDKstrdup(*bgrp);
-				pnet[i].source[k].name = GDKstrdup(baskets[j + z].name);
-				assert(0); /* to be redone */
-				/*
-				            if( (msg=BSKTfind(& pnet[i].source[k].bid,
-				                            bgrp,&baskets[j+z].name)) != MAL_SUCCEED)
-				                return msg;
-				 */
-				pnet[i].source[k].lastcount = 0;
-				pnet[i].source[k].consumed = 0;
-				pnet[i].source[k].available = 0;
-				pnet[i].srctop++;
-
-				/*assert(pnet[i].srctop< MAXPN);*/
+			k = pnet[i].srctop;
+			if (k >= MAXPN) {
+				if ((pnet[i].source = (PoolRec*)GDKrealloc(pnet[i].source, sizeof(PoolRec) * (k + 1))) == NULL)
+					throw(MAL, "petrinet.source", "GDKrealloc failed");
+			}           else if (k == 0) {
+			if ((pnet[i].source = (PoolRec *)GDKmalloc(MAXPN * sizeof(PoolRec))) == NULL)
+				throw(MAL, "petrinet.source", "GDKmalloc failed");
 			}
+			pnet[i].source[k].schema = GDKstrdup(*schema);
+			pnet[i].source[k].table = GDKstrdup(*tbl);
+			pnet[i].source[k].lastcount = 0;
+			pnet[i].source[k].consumed = 0;
+			pnet[i].source[k].available = 0;
+			pnet[i].srctop++;
+
+			/*assert(pnet[i].srctop< MAXPN);*/
 		}
 	}
 	(void)ret;
 	return MAL_SUCCEED;
 }
 
-str PNtarget(int *ret, str *mod, str *fcn, str *schema, str *bgrp)
+str PNtarget(int *ret, str *mod, str *fcn, str *schema, str *tbl)
 {
-	str msg = MAL_SUCCEED;
-	int i, j, k, z;
-	int len = 64;
+	int i, k, z;
 
-	z = BSKTlocate(*schema, *bgrp);
+	z = BSKTlocate(*schema, *tbl);
 	for (i = 0; i < pnettop; i++) {
 		if (strcmp(*mod, pnet[i].mod) == 0 && strcmp(*fcn, pnet[i].fcn) == 0) {
-			len = BSKTmemberCount(*schema, *bgrp);
-			for (j = 0; j < len; j++) {
-				k = pnet[i].trgttop;
-				if (k >= MAXPN) {
-					if ((pnet[i].target = (PoolRec*)GDKrealloc(pnet[i].target, sizeof(PoolRec) * (k + 1))) == NULL)
-						throw(MAL, "petrinet.target", "GDKrealloc failed");
-				}           else if (k == 0) {
-					if ((pnet[i].target = (PoolRec *)GDKmalloc(MAXPN * sizeof(PoolRec))) == NULL)
-						throw(MAL, "petrinet.target", "GDKmalloc failed");
-				}
-
-				pnet[i].target[k].grp = GDKstrdup(*bgrp);
-				pnet[i].target[k].name = GDKstrdup(baskets[j + z].name);
-/*
-                if( (msg=BSKTfind(& pnet[i].target[k].bid,
-                                bgrp,&baskets[j+z].name)) != MAL_SUCCEED)
- */
-				return msg;
-				pnet[i].target[k].lastcount = 0;
-				pnet[i].target[k].consumed = 0;
-				pnet[i].trgttop++;
-				/*assert(pnet[i].trgttop< MAXPN);*/
+			k = pnet[i].trgttop;
+			if (k >= MAXPN) {
+				if ((pnet[i].target = (PoolRec*)GDKrealloc(pnet[i].target, sizeof(PoolRec) * (k + 1))) == NULL)
+					throw(MAL, "petrinet.target", "GDKrealloc failed");
+			}           else if (k == 0) {
+			if ((pnet[i].target = (PoolRec *)GDKmalloc(MAXPN * sizeof(PoolRec))) == NULL)
+				throw(MAL, "petrinet.target", "GDKmalloc failed");
 			}
+
+			pnet[i].target[k].schema = GDKstrdup(*schema);
+			pnet[i].target[k].table = GDKstrdup( *tbl);
+			pnet[i].target[k].lastcount = 0;
+			pnet[i].target[k].consumed = 0;
+			pnet[i].trgttop++;
+			/*assert(pnet[i].trgttop< MAXPN);*/
 		}
 	}
 	(void)ret;
@@ -453,14 +431,6 @@ PNcontroller(void *dummy)
 	(void)dummy;
 }
 
-str PNsetCycleDelay(int *ret, int *delay)
-{
-	if (*delay < 0)
-		throw(MAL, "datacell.setDelay", "Negative value not allowed");
-	cycleDelay = *delay;
-	(void)ret;
-	return MAL_SUCCEED;
-}
 
 
 str PNstartThread(int *ret)

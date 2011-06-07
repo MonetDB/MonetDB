@@ -5,6 +5,7 @@
 
 sql.init();
 
+basket.register("datacell","x");
 receptor.start("datacell","x","localhost",50501,"passive");
 io.print("receptor working");
 alarm.sleep(5);
@@ -19,6 +20,7 @@ io.print("receptor stopped");
 receptor.drop("datacell","x");
 
 # The SQL equivalents
+# call datacell.basket('datacell','x);
 # call datacell.receptor('datacell','x','localhost',50501,'passive');
 # call datacell.pause('datacell','x');
 # call datacell.resume('datacell','x');

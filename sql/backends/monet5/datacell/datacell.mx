@@ -1,0 +1,208 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-2008 CWI.
+# All Rights Reserved.
+
+@f datacell
+The interface from SQL passes through here.
+
+@mal
+module datacell;
+
+pattern basket(schema:str,tab:str):void
+address DCregister
+comment "Initialize a new basket based on a specific table definition in the datacell schema");
+
+command inventory():bat[:str,:bat]
+address DCinventory
+comment "Produce a tabular view of the datacell streaming components";
+
+command emitter(sch:str, tbl:str, host:str, port:int, protocol:str)
+address DCemitter
+comment "define a emitter based on a basket table. The emitter protocol is either active or passive.";
+
+command receptor(sch:str, tbl:str, host:str, port:int, protocol:str)
+address DCreceptor
+comment "Define a receptor based on a basket table. The receptor protocol is either active or passive.";
+
+pattern drop(schema:str,obj:str):void
+address DCdrop
+comment "Remove a basket, receptor or emitter";
+
+pattern pause(schema:str,obj:str):void
+address DCpause
+comment "Pause a receptor or emitter";
+
+pattern resume(schema:str,obj:str):void
+address DCresume
+comment "Pause a receptor or emitter";
+
+pattern query(schema:str,obj:str):void
+address DCquery
+comment "Add a new continuous query.";
+
+pattern run()
+address DCrun
+comment "(Re)start the petrinet scheduler.";
+
+pattern stop()
+address DCrun
+comment "Stop the petrinet scheduler.";
+@{
+@h
+#ifndef _DATACELLS_
+#define _DATACELLS_
+
+#include "monetdb_config.h"
+#include "mal.h"
+#include "mal_interpreter.h"
+#include "sql.h"
+#include "basket.h"
+
+#ifdef WIN32
+#ifndef LIBCONTAINERS
+#define datacell_export extern __declspec(dllimport)
+#else
+#define datacell_export extern __declspec(dllexport)
+#endif
+#else
+#define datacell_export extern
+#endif
+
+/* #define _DEBUG_DATACELL     debug this module */
+
+datacell_export str DCregister_all(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+datacell_export str DCregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+datacell_export str DCdrop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+datacell_export str DCpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+datacell_export str DCresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+datacell_export str DCquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+datacell_export str DCrun(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+datacell_export str DCstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+datacell_export str DCinventory(int *ret);
+
+#endif
+@c
+#include "basket.h"
+#ifdef WIN32
+#include "winsock2.h"
+#endif
+
+str
+DCregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return BSKTregister(cntxt,mb,stk,pci);
+}
+
+str
+DCpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	return MAL_SUCCEED;
+}
+
+str
+DCresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	return MAL_SUCCEED;
+}
+
+/* initialize all components of the datacell schema */
+str
+DCregister_all(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	sql_schema  *s;
+	sql_table   *t;
+	mvc *m = NULL;
+	str msg = getContext(cntxt, mb, &m, NULL);
+	sql_trans *tr = m->session->tr;
+	node *o;
+
+	(void)stk;
+	(void)pci;
+	s = mvc_bind_schema(m, schema_default);
+	if (s == NULL)
+		throw(SQL, "datacell.register", "Schema missing");
+	for (o = s->tables.set->h; msg == MAL_SUCCEED && o; o = o->next) {
+		t = o->data;
+
+		/* check double registration */
+		if (BSKTlocate(schema_default, t->base.name))
+			throw(SQL, "datacell.register", "Basket defined twice.");
+		msg = BSKTnewbasket(s, t, tr);
+	}
+	return msg;
+}
+
+str
+DCinventory(int *ret)
+{
+	BAT *b, *bn;
+	int i;
+	str msg = MAL_SUCCEED;
+
+	b = BATnew(TYPE_str, TYPE_bat, 0);
+	if (b == NULL)
+		throw(SQL, "datacell.inventory", MAL_MALLOC_FAIL);
+	for (i = 0; msg == MAL_SUCCEED && i < bsktTop; i++) {
+		bn = BATdescriptor(BBPindex(baskets[i].name));
+		if (bn == NULL)
+			msg = createException(SQL, "datacell.inventory", MAL_MALLOC_FAIL);
+		else {
+			BUNins(b, baskets[i].name, &bn->batCacheid, FALSE);
+			BBPreleaseref(bn->batCacheid);
+		}
+	}
+	*ret = b->batCacheid;
+	BBPkeepref(b->batCacheid);
+	return msg;
+}
+
+str
+DCquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	return MAL_SUCCEED;
+}
+
+str
+DCrun(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	return MAL_SUCCEED;
+}
+
+str
+DCstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	return MAL_SUCCEED;
+}
+@}

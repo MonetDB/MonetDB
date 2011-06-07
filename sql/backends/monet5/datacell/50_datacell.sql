@@ -38,3 +38,12 @@ create procedure datacell.resume (sch string, tbl string)
 
 create procedure datacell.drop (sch string, tbl string)
     external name datacell.drop;
+
+create procedure datacell.query(sch string, proc string)
+	extern name datacell.query;
+
+create procedure datacell.run()
+	extern name datacell.run;
+
+create procedure datacell.stop()
+	extern name datacell.stop;

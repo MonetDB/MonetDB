@@ -5,6 +5,7 @@
 
 sql.init();
 
+basket.register("datacell","y");
 emitter.start("datacell","y","localhost",50502,"active");
 io.print("emitter working");
 alarm.sleep(5);
@@ -19,6 +20,7 @@ io.print("emitter stopped");
 emitter.drop("datacell","y");
 
 # The SQL equivalents
+# call datacell.basket('datacell','y);
 # call datacell.emitter('datacell','y','localhost',50502,'active');
 # call datacell.pause('datacell','y');
 # call datacell.resume('datacell','y');
