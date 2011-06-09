@@ -3,13 +3,9 @@
 
 basket.register("datacell","x");
 
-basket.lock("x");
+basket.lock("datacell","x");
 io.print("x locked");
-basket.unlock("x");
+basket.unlock("datacell","x");
 
-basket.drop("x");
+basket.drop("datacell","x");
 
-# The SQL equivalent
-#call datacell.basket('datacell','x');
-#call datacell.lock('x');
-#call datacell.unlock('x');

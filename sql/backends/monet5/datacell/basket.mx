@@ -40,6 +40,13 @@ command unlock(schema:str, tbl:str):void
 address BSKTunlock
 comment "Unlock the basket";
 
+command drop(schema:str, tbl:str):void
+address BSKTdrop
+comment "Remove the basket";
+
+command dump()
+address BSKTdump
+comment "Dump the status of the basket table";
 @{
 @h
 #ifndef _BASKETS_
@@ -78,10 +85,11 @@ typedef struct{
 datacell_export str schema_default;
 datacell_export str BSKTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str BSKTnewbasket(sql_schema *s, sql_table *t, sql_trans *tr);
-datacell_export str BSKTderegister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+datacell_export str BSKTdrop(int *ret, str *sch, str *tbl);
 datacell_export str BSKTinventory(int *ret);
 datacell_export int BSKTmemberCount(str schema, str tbl);
 datacell_export int BSKTlocate(str schema, str tbl);
+datacell_export str BSKTdump(int *ret);
 
 datacell_export str BSKTlock(int *ret, str *schema, str *tbl, int *delay);
 datacell_export str BSKTunlock(int *ret, str *schema, str *tbl);
@@ -111,7 +119,6 @@ We have to obtain the precise wall-clock time
 This is not produced by GDKusec, which returns microseconds
 since the start of the program.
 Notice that this routine consumes noticable time.
-@c
 lng usec(void)
 {
 	struct timeval tp;
@@ -119,9 +126,16 @@ lng usec(void)
 	gettimeofday(&tp, NULL);
 	return ((lng)tp.tv_sec) * LL_CONSTANT(1000000) + (lng)tp.tv_usec;
 }
+@c
 
 static int BSKTnewEntry()
 {
+	int i;
+	for ( i=0; i< bsktLimit; i++)
+	if (baskets[i].schema == NULL)
+		break;
+	if ( i < bsktLimit)
+		return i;
 	if (bsktLimit == 0) {
 		bsktLimit = MAXBSK;
 		baskets = (BSKTbasketRec *)GDKzalloc(bsktLimit * sizeof(BSKTbasketRec));
@@ -193,10 +207,11 @@ BSKTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_table   *t;
 	mvc *m = NULL;
 	str schema, tbl, msg = getContext(cntxt, mb, &m, NULL);
-	sql_trans *tr = m->session->tr;
+	sql_trans *tr;
 
 	if (msg != MAL_SUCCEED)
 		return msg;
+	tr = m->session->tr;
 	s = mvc_bind_schema(m, schema = *(str*)getArgReference(stk, pci, 1));
 	tbl = *(str*)getArgReference(stk, pci, 2);
 	if (s == NULL)
@@ -254,8 +269,47 @@ str BSKTunlock(int *ret, str *schema, str *tbl)
 
 	bskt = BSKTlocate(*schema, *tbl);
 	if (bskt == 0)
-		throw(MAL, "basket.lock", "Could not find the basket group");
+		throw(MAL, "basket.lock", "Could not find the basket");
 	mal_unset_lock(baskets[bskt].lock, "lock basket");
+	(void)ret;
+	return MAL_SUCCEED;
+}
+
+
+str
+BSKTdrop(int *ret, str *schema, str *tbl)
+{
+	int bskt;
+
+	bskt = BSKTlocate(*schema, *tbl);
+	if (bskt == 0)
+		throw(MAL, "basket.drop", "Could not find the basket");
+	baskets[bskt].colcount = 0;
+	GDKfree(baskets[bskt].schema);
+	GDKfree(baskets[bskt].name);
+	GDKfree(baskets[bskt].cols);
+	GDKfree(baskets[bskt].primary);
+	baskets[bskt].schema = 0;
+	baskets[bskt].name = 0;
+	baskets[bskt].cols = 0;
+	baskets[bskt].primary = 0;
+
+	(void)ret;
+	return MAL_SUCCEED;
+}
+
+str
+BSKTdump(int *ret)
+{
+	int bskt;
+
+	for ( bskt = 0; bskt < bsktLimit; bskt++) 
+	if ( baskets[bskt].schema){
+		mnstr_printf(GDKout, "#baskets[%2d] %s.%s count %d\n", bskt,
+			baskets[bskt].schema,
+			baskets[bskt].name,
+			baskets[bskt].colcount);
+	}
 	(void)ret;
 	return MAL_SUCCEED;
 }

@@ -56,6 +56,9 @@ command drop(schema:str, tb:str)
 address DCemitterDrop
 comment "Drop a emitter";
 
+command dump()
+address EMdump
+comment "Dump a emitter status";
 @-
 @{
 @+ Implementation
@@ -86,6 +89,7 @@ adapters_export str DCemitterNew(int *ret, str *schema, str *tbl, str *host, int
 adapters_export str DCemitterPause(int *ret, str *schema, str *nme);
 adapters_export str DCemitterResume(int *ret, str *schema, str *nme);
 adapters_export str DCemitterDrop(int *ret, str *schema, str *nme);
+adapters_export str EMdump();
 
 #endif
 
@@ -149,7 +153,7 @@ EMnew(str schema, str nme)
 	return em;
 }
 
-static Emitter
+Emitter
 EMfind(str schema, str nme)
 {
 	Emitter r;
@@ -477,6 +481,21 @@ EMstartThread(Emitter em)
 		}
 	} while (em->protocol == EMPASSIVE);
 	shutdown(em->newsockfd, SHUT_RDWR);
+	return MAL_SUCCEED;
+} 
+static void
+dumpEmitter(Emitter rc)
+{
+	mnstr_printf(GDKout,"#receptor %s.%s at %s:%d protocol=%d status=%d delay=%d\n",
+		rc->schema, rc->name, rc->host, rc->port, rc->protocol, rc->status, rc->delay);
+}
+
+str
+EMdump() 
+{
+	Emitter rc = emAnchor;
+	for ( ; rc; rc= rc->nxt)
+		dumpEmitter(rc);
 	return MAL_SUCCEED;
 }
 @}

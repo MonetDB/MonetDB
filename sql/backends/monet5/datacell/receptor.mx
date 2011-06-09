@@ -65,6 +65,10 @@ comment "Use a function/factory to generate the events";
 command drop(schema:str, tb:str)
 address DCreceptorDrop
 comment "Drop a receptor";
+
+command dump()
+address RCdump
+comment "Dump receptor status";
 @-
 @{
 @+ Implementation
@@ -78,8 +82,19 @@ The implementation is inspired by the tablet module.
 #include "mtime.h"
 #include "basket.h"
 
+#ifdef WIN32
+#ifndef LIBCONTAINERS
+#define datacell_export extern __declspec(dllimport)
+#else
+#define datacell_export extern __declspec(dllexport)
+#endif
+#else
+#define datacell_export extern
+#endif
+
 #define _DEBUG_RECEPTOR_
 #define RCout GDKout  
+datacell_export str RCdump();
 
 @-
 Multiple protocols for event handling are foreseen. 
@@ -91,7 +106,6 @@ event stream at the same speed as it arrives.
 @h
 #define TCP 1
 #define UDP 2
-static int protocol = TCP;
 
 #define PAUSEDEFAULT 1000
 
@@ -111,6 +125,7 @@ adapters_export str DCreceptorResume(int *ret, str *schema, str *nme);
 adapters_export str DCreceptorDrop(int *ret, str *schema, str *nme);
 adapters_export str DCscenario(int *ret, str *schema, str *nme, str *fnme, int *seq);
 adapters_export str DCgenerator(int *ret, str *schema, str *nme, str *modnme, str *fcnnme);
+adapters_export str RCdump() ;
 #endif
 
 @c
@@ -155,6 +170,7 @@ typedef struct RECEPTOR {
 } RCrecord, *Receptor;
 
 static Receptor rcAnchor = NULL;
+static int protocol = TCP;
 
 static str RCstartThread(Receptor rc);
 static void RCscenario(Receptor rc);
@@ -164,6 +180,7 @@ static Receptor
 RCnew(str schema, str nme)
 {
 	Receptor rc;
+
 	rc = (Receptor)GDKzalloc(sizeof(RCrecord));
 	if ( rc == 0)
 		return rc;
@@ -724,6 +741,22 @@ RCstartThread(Receptor rc)
 		}
 	} while (rc->protocol == RCACTIVE && rc->status != RCSTOP);
 	shutdown(rc->newsockfd, SHUT_RDWR);
+	return MAL_SUCCEED;
+}
+
+static void
+dumpReceptor(Receptor rc)
+{
+	mnstr_printf(GDKout,"#receptor %s.%s at %s:%d protocol=%d status=%d delay=%d\n",
+		rc->schema, rc->name, rc->host, rc->port, rc->protocol, rc->status, rc->delay);
+}
+
+str
+RCdump() 
+{
+	Receptor rc = rcAnchor;
+	for ( ; rc; rc= rc->nxt)
+		dumpReceptor(rc);
 	return MAL_SUCCEED;
 }
 @}

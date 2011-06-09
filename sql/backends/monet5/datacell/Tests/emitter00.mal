@@ -17,6 +17,7 @@ io.print("emitter restarted");
 alarm.sleep(5);
 emitter.pause("datacell","y");
 io.print("emitter stopped");
+emitter.dump();
 emitter.drop("datacell","y");
 
 # The SQL equivalents

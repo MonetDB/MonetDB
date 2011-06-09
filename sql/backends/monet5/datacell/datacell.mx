@@ -24,10 +24,6 @@ pattern basket(schema:str,tab:str):void
 address DCregister
 comment "Initialize a new basket based on a specific table definition in the datacell schema");
 
-command inventory():bat[:str,:bat]
-address DCinventory
-comment "Produce a tabular view of the datacell streaming components";
-
 command emitter(sch:str, tbl:str, host:str, port:int, protocol:str)
 address DCemitter
 comment "define a emitter based on a basket table. The emitter protocol is either active or passive.";
@@ -52,13 +48,29 @@ pattern query(schema:str,obj:str):void
 address DCquery
 comment "Add a new continuous query.";
 
-pattern run()
-address DCrun
+pattern start()
+address DCstartScheduler
+comment "Convert the datacell schema to a stream processing infrastructure";
+
+pattern pause()
+address DCrunScheduler
 comment "(Re)start the petrinet scheduler.";
 
+pattern resume()
+address DCresumeScheduler
+comment "Resume the petrinet scheduler.";
+
 pattern stop()
-address DCrun
+address DCstopScheduler
 comment "Stop the petrinet scheduler.";
+
+command status():bat[:str,:bat]
+address DCstatus
+comment "Produce a tabular view of the datacell streaming components";
+
+command dump()
+address DCdump
+comment "Dump receptor/emitter status";
 @{
 @h
 #ifndef _DATACELLS_
@@ -69,6 +81,9 @@ comment "Stop the petrinet scheduler.";
 #include "mal_interpreter.h"
 #include "sql.h"
 #include "basket.h"
+#include "receptor.h"
+#include "emitter.h"
+#include "petrinet.h"
 
 #ifdef WIN32
 #ifndef LIBCONTAINERS
@@ -82,19 +97,23 @@ comment "Stop the petrinet scheduler.";
 
 /* #define _DEBUG_DATACELL     debug this module */
 
-datacell_export str DCregister_all(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str DCregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str DCdrop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str DCpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str DCresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str DCquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-datacell_export str DCrun(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-datacell_export str DCstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-datacell_export str DCinventory(int *ret);
+datacell_export str DCdump(int *ret);
+
+datacell_export str DCstartScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+datacell_export str DCpauseScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+datacell_export str DCresumeScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+datacell_export str DCstopScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+datacell_export str DCstatus(int *ret);
 
 #endif
 @c
-#include "basket.h"
+#include "datacell.h"
 #ifdef WIN32
 #include "winsock2.h"
 #endif
@@ -108,52 +127,41 @@ DCregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 DCpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	int idx, ret=0;
+	str schema= *(str*) getArgReference(stk, pci,1);
+	str tbl= *(str*) getArgReference(stk, pci,2);
+
+	idx = BSKTlocate(schema,tbl);
+	if ( idx == 0)
+		throw(SQL, "datacell.pause", "Basket not found");
+
+	DCreceptorPause(&ret, &schema, &tbl);
+	DCemitterPause(&ret, &schema, &tbl);
 	(void) cntxt;
 	(void) mb;
-	(void) stk;
-	(void) pci;
 	return MAL_SUCCEED;
 }
 
 str
 DCresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	int idx, ret= 0;
+	str schema= *(str*) getArgReference(stk, pci,1);
+	str tbl= *(str*) getArgReference(stk, pci,2);
+
+	idx = BSKTlocate(schema,tbl);
+	if ( idx == 0)
+		throw(SQL, "datacell.pause", "Basket not found");
+
+	DCreceptorPause(&ret, &schema, &tbl);
+	DCemitterPause(&ret, &schema, &tbl);
 	(void) cntxt;
 	(void) mb;
-	(void) stk;
-	(void) pci;
 	return MAL_SUCCEED;
 }
 
-/* initialize all components of the datacell schema */
 str
-DCregister_all(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	sql_schema  *s;
-	sql_table   *t;
-	mvc *m = NULL;
-	str msg = getContext(cntxt, mb, &m, NULL);
-	sql_trans *tr = m->session->tr;
-	node *o;
-
-	(void)stk;
-	(void)pci;
-	s = mvc_bind_schema(m, schema_default);
-	if (s == NULL)
-		throw(SQL, "datacell.register", "Schema missing");
-	for (o = s->tables.set->h; msg == MAL_SUCCEED && o; o = o->next) {
-		t = o->data;
-
-		/* check double registration */
-		if (BSKTlocate(schema_default, t->base.name))
-			throw(SQL, "datacell.register", "Basket defined twice.");
-		msg = BSKTnewbasket(s, t, tr);
-	}
-	return msg;
-}
-
-str
-DCinventory(int *ret)
+DCstatus(int *ret)
 {
 	BAT *b, *bn;
 	int i;
@@ -186,9 +194,62 @@ DCquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+/*
+ * The scheduler works against a converted datacell schema.
+ * It should be stopped before additions to the scheme will take effect
+*/
+
+#define DCNONINITIALIZED 1
+#define DCINITIALIZED 2
+#define DCPAUSED 3
+
+static int DCinitialized;
+
 str
-DCrun(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+DCstartScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	sql_schema  *s;
+	sql_table   *t;
+	mvc *m = NULL;
+	str msg = getContext(cntxt, mb, &m, NULL);
+	sql_trans *tr;
+	node *o;
+
+	if ( DCinitialized != DCNONINITIALIZED)
+		throw(MAL,"datacell.start","Datacell already initialized");
+	if( msg != MAL_SUCCEED)
+		return msg;
+	tr = m->session->tr;
+
+	/* we first have to identify all continuous queries and build up
+	   the dataflow dependencies. Then for all open sources and sinks
+	   we should generate the default receptor/emittor
+	*/
+	(void)stk;
+	(void)pci;
+	s = mvc_bind_schema(m, schema_default);
+	if (s == NULL)
+		throw(SQL, "datacell.register", "Schema missing");
+	for (o = s->tables.set->h; msg == MAL_SUCCEED && o; o = o->next) {
+		t = o->data;
+
+		/* check double registration */
+		if (BSKTlocate(schema_default, t->base.name))
+			throw(SQL, "datacell.register", "Basket defined twice.");
+		msg = BSKTnewbasket(s, t, tr);
+	}
+	mnstr_printf(cntxt->fdout,"# use datacell.pause(), datacell.resume(), and datacell.stop() to control scheduler.\n");
+	DCinitialized = DCINITIALIZED;
+	return msg;
+}
+
+str
+DCresumeScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int ret=0;
+	if ( DCinitialized != DCPAUSED)
+		throw(MAL,"datacell.pause","Datacell already running");
+	PNresumeScheduler(&ret);
 	(void) cntxt;
 	(void) mb;
 	(void) stk;
@@ -197,12 +258,40 @@ DCrun(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-DCstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+DCpauseScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	int ret=0;
+	if ( DCinitialized != DCPAUSED)
+		throw(MAL,"datacell.pause","Datacell already paused");
+	PNpauseScheduler(&ret);
 	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;
+	return MAL_SUCCEED;
+}
+
+str
+DCstopScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int ret=0;
+	if ( DCinitialized != DCINITIALIZED && DCinitialized != DCPAUSED)
+		throw(MAL,"datacell.pause","Datacell already stopped");
+	PNstopScheduler(&ret);
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	DCinitialized = DCNONINITIALIZED;
+	return MAL_SUCCEED;
+}
+
+str
+DCdump(int *ret)
+{
+	(void) ret;
+	RCdump();
+	EMdump();
 	return MAL_SUCCEED;
 }
 @}

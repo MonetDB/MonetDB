@@ -43,15 +43,15 @@ address PNtarget
 comment "Manually define an output basket for a transformation";
 
 command pause()
-address PNpause
+address PNpauseScheduler
 comment "Pause the Petri net controller";
 
 command resume()
-address PNresume
+address PNresumeScheduler
 comment "Resume the interpretation";
 
 command stop()
-address PNstop
+address PNstopScheduler
 comment "Stop the Petri net controller";
 
 command dump()
@@ -83,9 +83,9 @@ comment "Show the status of the Petri net";
 #endif
 
 datacell_export str PNregistration(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-datacell_export str PNpause(int *ret);
-datacell_export str PNresume(int *ret);
-datacell_export str PNstop(int *ret);
+datacell_export str PNpauseScheduler(int *ret);
+datacell_export str PNresumeScheduler(int *ret);
+datacell_export str PNstopScheduler(int *ret);
 datacell_export str PNdump(int *ret);
 datacell_export str PNsource(int *ret, str *mod, str *fcn, str *schema, str *tbl);
 datacell_export str PNtarget(int *ret, str *mod, str *fcn, str *schema, str *tbl);
@@ -105,7 +105,7 @@ static int controlRounds = PNcontrolInfinit;
 typedef struct {
 	int bid;
 	str schema, table;
-	BAT *b;
+	BAT *b;				/* reference BAT for checking content */
 	int available;      /* approximate number of events available */
 	size_t lastcount;   /* statistics gathering */
 	size_t consumed;
@@ -186,16 +186,22 @@ str PNregistration(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str PNstop(int *ret)
+str PNstopScheduler(int *ret)
 {
 	status = PNstopped;
 	(void)ret;
 	return MAL_SUCCEED;
 }
 
-str PNresume(int *ret)
+str PNresumeScheduler(int *ret)
 {
 	status = PNrunning;
+	(void)ret;
+	return MAL_SUCCEED;
+}
+str PNpauseScheduler(int *ret)
+{
+	status = PNstopped;
 	(void)ret;
 	return MAL_SUCCEED;
 }
