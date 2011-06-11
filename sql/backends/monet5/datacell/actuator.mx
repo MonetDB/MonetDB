@@ -21,9 +21,10 @@ It collects statistics on the events.
 @verbatim
 actuator [options]
 	--host=<host name> default localhost
-	--port=<portnr> 
+	--port=<portnr>  default 50600
 	--actuator=<actuator name> 
-	--server=<0 1> 
+	--server 
+	--client 
 	--latency=<0 or 1>
 	--timestamp=<0 or 1>
 @end verbatim
@@ -91,18 +92,19 @@ usage()
 	mnstr_printf(ACout, "Several options are provided to control this process.\n");
 	mnstr_printf(ACout, "\nactuator [options]\n");
 	mnstr_printf(ACout, "--host=<host name>, default localhost\n");
-	mnstr_printf(ACout, "--port=<portnr> \n");
+	mnstr_printf(ACout, "--port=<portnr>, default 50600 \n");
 	mnstr_printf(ACout, "--actuator=<actuator name> \n");
 	mnstr_printf(ACout, "--timestamp=<0 or 1>  default=1\n");
-	mnstr_printf(ACout, "--server=<0 or 1>  default=0\n");
+	mnstr_printf(ACout, "--server  default\n");
+	mnstr_printf(ACout, "--client  default\n");
 	mnstr_printf(ACout, "--statistics=<0 or 1>  default=1\n");
 	exit(-1);
 }
 
 static char *host = "localhost";
-static int port = 50000;
+static int port = 50600;
 static char *actuator = "X";
-static int server = 0;
+static int server = 1;
 static int trace = 0;
 static int stamp = 1; /* first column is a timestamp*/
 
@@ -183,14 +185,16 @@ main(int argc, char **argv)
 	int i, j = 0;
 	char *err = NULL;
 	char name[MYBUFSIZ + 1];
+	char hostname[1024];
 	static SOCKET sockfd;
 	Actuator ac = NULL;
 	int option_index = 0;
 
-	static struct option long_options[11] = {
+	static struct option long_options[12] = {
 		{ "port", 1, 0, 'p' },
 		{ "actuator", 1, 0, 'a' },
-		{ "server", 1, 0, 's' },
+		{ "client", 0, 0, 'c' },
+		{ "server", 0, 0, 's' },
 		{ "statistics", 1, 0, 'S' },
 		{ "sequence", 1, 0, 's' },
 		{ "batch", 1, 0, 'b' },
@@ -208,7 +212,7 @@ main(int argc, char **argv)
 
 	for (;; ) {
 		/*	int option_index=0;*/
-		int c = getopt_long(argc, argv, "a:p:s:S:b:h:?:t:0", long_options, &option_index);
+		int c = getopt_long(argc, argv, "a:c:p:s:S:b:h:?:t:0", long_options, &option_index);
 
 		if (c == -1)
 			break;
@@ -230,6 +234,12 @@ main(int argc, char **argv)
 		case 'b':
 			batchsize = atol(optarg);
 			break;
+		case 'c':
+			if (strcmp(long_options[option_index].name, "client") == 0) {
+				server = 0;
+				break;
+			}
+			break;
 		case 'a':
 			actuator = optarg;
 			break;
@@ -239,7 +249,7 @@ main(int argc, char **argv)
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "server") == 0) {
-				server = atol(optarg);
+				server = 1;
 				break;
 			} else {
 				usage();
@@ -284,6 +294,10 @@ main(int argc, char **argv)
 		mnstr_printf(ACout, "--sequence=%d\n", sequence);
 		mnstr_printf(ACout, "--batch=%d\n", batchsize);
 	}
+    strncpy(hostname,host,1024);
+    if ( strcmp(host,"localhost")== 0 )
+        gethostname(hostname,1024);
+    host= hostname;
 
 	if (protocol == UDP) {
 		ac = ACnew(actuator);

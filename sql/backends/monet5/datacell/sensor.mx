@@ -20,7 +20,7 @@ This program generates an event stream on a particular port.
 @verbatim
 sensor [options]
 	--host=<host name> default localhost
-	--port=<portnr> 
+	--port=<portnr> default 50500
 	--protocol=<name> udp or tcp(default)
 	--sensor=<name> 
 	--columns=<number> default 1
@@ -60,7 +60,7 @@ a number of milliseconds.
 #endif
 
 #include "dcsocket.h"
-/*#define DEBUG*/
+#define DEBUG
 #define SEout GDKout
 
 FILE *fd;
@@ -91,11 +91,11 @@ static int sequence = -1;
 static int columns = 1;
 static int stamp = 1; /*if (timestamp!=0) sensor sends also the tsmp */
 static char *host = "localhost";
-static int port = 50000;
+static int port = 50500;
 static int trace = 0;
 static char *sensor = "X";
 static char *datafile;
-static int server = 1;
+static int server = 0;
 
 
 void
@@ -106,7 +106,7 @@ usage()
 	mnstr_printf(SEout, "Several options are provided to control this process.\n");
 	mnstr_printf(SEout, "\nsensor [options]\n");
 	mnstr_printf(SEout, "--host=<host name>, default=localhost\n");
-	mnstr_printf(SEout, "--port=<portnr> \n");
+	mnstr_printf(SEout, "--port=<portnr>, default=50500 \n");
 	mnstr_printf(SEout, "--sensor=<name> \n");
 	mnstr_printf(SEout, "--protocol=<name> udp or tcp(default) \n");
 	mnstr_printf(SEout, "--timestamp, default=off\n");
@@ -116,7 +116,8 @@ usage()
 	mnstr_printf(SEout, "--batch=<batchsize> , default=1\n");
 	mnstr_printf(SEout, "--delay=<ticks> delay in milliseconds, default=0\n");
 	mnstr_printf(SEout, "--trace=<trace> interaction\n");
-	mnstr_printf(SEout, "--server=<0 1> run as a server\n");
+	mnstr_printf(SEout, "--server run as a server\n");
+	mnstr_printf(SEout, "--client run as a client\n");
 }
 
 
@@ -154,20 +155,22 @@ int main(int argc, char **argv)
 	int i, j = 0;
 	char *err = NULL;
 	char name[MYBUFSIZ + 1];
+	char hostname[1024];
 	Sensor se = NULL;
 	static SOCKET sockfd;
-	static struct option long_options[14] = {
+	static struct option long_options[15] = {
 		{ "batch", 1, 0, 'b' },
 		{ "columns", 1, 0, 'c' },
+		{ "client", 0, 0, 'c' },
 		{ "port", 1, 0, 'p' },
 		{ "timestamp", 1, 0, 't' },
 		{ "sequence", 1, 0, 's' },
 		{ "sensor", 1, 0, 's' },
-		{ "server", 1, 0, 's' },
+		{ "server", 0, 0, 's' },
 		{ "delay", 1, 0, 'd' },
 		{ "file", 1, 0, 'f' },
 		{ "host", 1, 0, 'h' },
-		{ "trace", 1, 0, 't' },
+		{ "trace", 0, 0, 't' },
 		{ "protocol", 1, 0, 'p' },
 		{ "help", 1, 0, '?' },
 		{ 0, 0, 0, 0 }
@@ -186,21 +189,25 @@ int main(int argc, char **argv)
 
 		switch (c) {
 		case 'b':
-			batchsize = atol(optarg);
+			batchsize = optarg? atol(optarg): -1;
 			if (batchsize <= 0) {
 				mnstr_printf(SEout, "Illegal batch %d\n", batchsize);
 				exit(0);
 			}
 			break;
 		case 'c':
-			columns = atol(optarg);
+			if (strcmp(long_options[option_index].name, "client") == 0) {
+				server = 0;
+				break;
+			}
+			columns = optarg? atol(optarg): -1;
 			if (columns <= 0) {
 				mnstr_printf(SEout, "Illegal columns %d\n", columns);
 				exit(0);
 			}
 			break;
 		case 'd':
-			delay = atol(optarg);
+			delay = optarg? atol(optarg): -1;
 			if (delay < 0) {
 				mnstr_printf(SEout, "Illegal delay %d\n", delay);
 				exit(0);
@@ -208,11 +215,11 @@ int main(int argc, char **argv)
 			break;
 		case 't':
 			if (strcmp(long_options[option_index].name, "timestamp") == 0) {
-				stamp = atol(optarg);
+				stamp = optarg? atol(optarg): 0;
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "trace") == 0) {
-				trace = atol(optarg);
+				trace = optarg? atol(optarg): 1;
 			} else {
 				usage();
 				exit(0);
@@ -227,11 +234,11 @@ int main(int argc, char **argv)
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "server") == 0) {
-				server = atol(optarg);
+				server = 1;
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "sequence") == 0) {
-				sequence = atol(optarg);
+				sequence = optarg? atol(optarg): -1;
 				if (sequence < -1) {
 					mnstr_printf(SEout, "illegal sequence value, reset to -1\n");
 					sequence = -1;
@@ -257,9 +264,9 @@ int main(int argc, char **argv)
 				}
 			}
 			if (strcmp(long_options[option_index].name, "port") == 0) {
-				port = atol(optarg);
+				port = optarg? atol(optarg): -1;
 #ifdef DEBUG
-				mnstr_printf(SEout, "PORT : %d", port);
+				mnstr_printf(SEout, "#PORT : %d\n", port);
 #endif
 				break;
 			} else {
@@ -301,10 +308,15 @@ int main(int argc, char **argv)
 		mnstr_printf(SEout, "--protocol %s\n", protocol == TCP ? "tcp" : "udp");
 		mnstr_printf(SEout, "--trace=%d\n", trace);
 		mnstr_printf(SEout, "--server=%d\n", server);
+		mnstr_printf(SEout, "--client=%d\n", server);
 		if (datafile)
 			mnstr_printf(SEout, "--input=%s\n", datafile);
 	}
 	estimateOverhead();
+	strncpy(hostname,host,1024);
+	if ( strcmp(host,"localhost")== 0 )
+		gethostname(hostname,1024);
+	host= hostname;
 
 @-
 We limit the protocols for the time being to what can be
@@ -315,14 +327,14 @@ considered a safe method.
 		se->toServer = udp_wastream(host, port, sensor);
 		if (se->toServer == NULL) {
 			perror("Sensor: Could not open stream");
-			mnstr_printf(SEout, "stream %s.%d.%s\n", host, port, sensor);
+			mnstr_printf(SEout, "#stream %s.%d.%s\n", host, port, sensor);
 			return 0;
 		}
 		produceStream(se);
 	}
 	if (protocol == TCP) {
 		if (server && (err = socket_server_connect(&sockfd, port))) {
-			mnstr_printf(SEout, "SENSOR:start server:%s\n", err);
+			mnstr_printf(SEout, "#SENSOR:start server:%s\n", err);
 			return 0;
 		}
 		do {
@@ -332,32 +344,29 @@ considered a safe method.
 			se = SEnew(name);
 			name[0] = 0;
 			err = NULL;
-#ifdef DEBUG
-			mnstr_printf(SEout, "\n IN THE FIRST DO loop! server is %d \n", server);
-#endif
 			if (server) {
+#ifdef DEBUG
+				mnstr_printf(SEout, "#listen %s as server is %d \n",se->name, server);
+#endif
 				err = socket_server_listen(sockfd, &(se->newsockfd));
 				if (err) {
-					mnstr_printf(SEout, "SENSOR:server listen:%s\n", err);
+					mnstr_printf(SEout, "#SENSOR:server listen:%s\n", err);
 					break;
 				}
-#ifdef DEBUG
-				mnstr_printf(SEout, "\nI have started listening! because I'm server!! \n");
-#endif
 			} else {
+#ifdef DEBUG
+				mnstr_printf(SEout, "#%s is client \n",se->name);
+#endif
 				err = socket_client_connect(&(se->newsockfd), host, port);
 				if (err) {
-					mnstr_printf(SEout, "SENSOR:client start:%s\n", err);
+					mnstr_printf(SEout, "#SENSOR:client start:%s\n", err);
 					break;
 				}
-#ifdef DEBUG
-				mnstr_printf(SEout, "\nI am connected to a listener! because I'm client... \n");
-#endif
 			}
 			se->toServer = socket_wastream(se->newsockfd, se->name);
 			if (se->toServer == NULL) {
 				perror("Sensor: Could not open stream");
-				mnstr_printf(SEout, "stream %s.%d.%s\n", host, port, sensor);
+				mnstr_printf(SEout, "#stream %s.%d.%s\n", host, port, sensor);
 				socket_close(se->newsockfd);
 				return 0;
 			}
@@ -365,7 +374,7 @@ considered a safe method.
 				createThread = MT_create_thread(&pid, (void (*)(void *))produceServerStream, se, MT_THR_DETACHED);
 #ifdef DEBUG
 				if (createThread)
-					mnstr_printf(SEout, "\n Create thread is : %d \n", createThread);
+					mnstr_printf(SEout, "#Create thread is : %d \n", createThread);
 #else
 				(void)createThread;
 #endif
@@ -392,9 +401,9 @@ estimateOverhead()
 	lng t0 = GDKusec();
 	for (i = 0; i < 10000; i++)
 		l = GDKusec();
-	t0 = GDKusec() - t0;
+	t0 = (GDKusec() - t0)/10000;
 #ifdef DEBUG
-	mnstr_printf(SEout, "Timing overhead " LLFMT " GDKusec/10000\n", t0);
+	mnstr_printf(SEout, "#Timing overhead " LLFMT " GDKusec\n", t0);
 #endif
 	return l;
 }
@@ -411,14 +420,14 @@ produceStream(Sensor se)
 	int numberOFtuples = 0;
 
 #ifdef DEBUG
-	mnstr_printf(SEout, "Start producing the stream\n");
-	mnstr_printf(SEout, "sequence is %d, batchsize is %d, columns are %d\n", sequence, batchsize, columns);
+	mnstr_printf(SEout, "#Start producing the stream\n");
+	mnstr_printf(SEout, "#sequence is %d, batchsize is %d, columns are %d\n", sequence, batchsize, columns);
 #endif
 
 	/* create scratch space for a single tuple, this should be enough for integer fields */
 	tuple = (char*)malloc(maxtuple = 32 * columns);
 	buflen = 0;
-	while (numberOFtuples < (sequence * batchsize)) {
+	while (numberOFtuples < (sequence * batchsize) || sequence == -1) {
 		int i;
 		lng currenttsmp = 0;
 
@@ -428,7 +437,7 @@ produceStream(Sensor se)
 		}
 
 		if (delay < 0) {
-			mnstr_printf(SEout, "\nsend next?");
+			mnstr_printf(SEout, "#send next?");
 			getchar();
 		}
 

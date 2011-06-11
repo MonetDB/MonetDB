@@ -273,7 +273,7 @@ DCreceptorNew(int *ret, str *schema, str *tbl, str *host, int *port, str *proto)
 	rc->table.nr_attrs = j;
 
 #ifdef _DEBUG_RECEPTOR_
-	mnstr_printf(RCout, "Instantiate a new receptor %d fields\n", j);
+	mnstr_printf(RCout, "#Instantiate a new receptor %d fields\n", j);
 #endif
 	(void)ret;
 	rc->status = RCLISTEN;
@@ -295,7 +295,7 @@ str DCreceptorPause(int *ret, str *schema, str *nme)
 	rc->status = RCPAUSE;
 
 #ifdef _DEBUG_RECEPTOR_
-	mnstr_printf(RCout, "Pause a receptor\n");
+	mnstr_printf(RCout, "#Pause a receptor\n");
 #endif
 	(void)ret;
 	return MAL_SUCCEED;
@@ -313,7 +313,7 @@ str DCreceptorResume(int *ret, str *schema, str *nme)
 	rc->status = RCLISTEN;
 
 #ifdef _DEBUG_RECEPTOR_
-	mnstr_printf(RCout, "Pause a receptor\n");
+	mnstr_printf(RCout, "#Resume a receptor\n");
 #endif
 	(void)ret;
 	return MAL_SUCCEED;
@@ -327,7 +327,7 @@ str DCreceptorDrop(int *ret, str *schema, str *nme)
 	if (rc == NULL)
 		throw(MAL, "receptor.drop", "Receptor not defined");
 #ifdef _DEBUG_RECEPTOR_
-	mnstr_printf(RCout, "Drop a receptor\n");
+	mnstr_printf(RCout, "#Drop a receptor\n");
 #endif
 	(void)ret;
 	if (rcAnchor == rc)
@@ -351,7 +351,7 @@ str DCscenario(int *ret, str *schema, str *nme, str *fname, int *seq)
 	if (rc == NULL)
 		throw(MAL, "receptor.scenario", "Receptor not defined");
 #ifdef _DEBUG_RECEPTOR_
-	mnstr_printf(RCout, "Define receptor scenario\n");
+	mnstr_printf(RCout, "#Define receptor scenario\n");
 #endif
 	(void)ret;
 	rc->scenario = GDKstrdup(*fname);
@@ -366,7 +366,7 @@ str DCgenerator(int *ret, str *schema, str *nme, str *modnme, str *fcnnme)
 	if (rc == NULL)
 		throw(MAL, "receptor.generator", "Receptor not defined");
 #ifdef _DEBUG_RECEPTOR_
-	mnstr_printf(RCout, "Define receptor generator\n");
+	mnstr_printf(RCout, "#Define receptor generator\n");
 #endif
 	(void)ret;
 	rc->modnme = GDKstrdup(*modnme);
@@ -394,7 +394,7 @@ RCreconnect(Receptor rc)
 		if (protocol == TCP)
 			rc->error = socket_client_connect(&rc->newsockfd, rc->host, rc->port);
 		if (rc->error) {
-			mnstr_printf(RCout, "Receptor connect fails: %s\n", rc->error);
+			mnstr_printf(RCout, "#Receptor connect fails: %s\n", rc->error);
 			MT_sleep_ms(rc->delay);
 		}
 	} while (rc->error);
@@ -427,10 +427,10 @@ bodyRestart:
 	rc->receptor = socket_rastream(rc->newsockfd, rc->name);
 	if (rc->receptor == NULL) {
 		perror("Receptor: Could not open stream");
-		mnstr_printf(RCout, "stream %s.%d.%s\n", rc->host, rc->port, rc->name);
+		mnstr_printf(RCout, "#stream %s.%d.%s\n", rc->host, rc->port, rc->name);
 		socket_close(rc->newsockfd);
 #ifdef _DEBUG_RECEPTOR_
-		mnstr_printf(RCout, "Terminate RCbody loop\n");
+		mnstr_printf(RCout, "#Terminate RCbody loop\n");
 #endif
 		return;
 	}
@@ -445,7 +445,7 @@ In case of a locked basket we sleep for a millisecond.
 	{
 		while (rc->status == RCPAUSE) {
 #ifdef _DEBUG_RECEPTOR_
-			mnstr_printf(RCout, "pause receptor\n");
+			mnstr_printf(RCout, "#pause receptor\n");
 #endif
 			MT_sleep_ms(rc->delay);
 		}
@@ -466,8 +466,7 @@ In case of a locked basket we sleep for a millisecond.
 		}
 
 #ifdef _DEBUG_RECEPTOR_
-		mnstr_printf(RCout, "wait for data\n");
-		mnstr_printf(RCout, "\nI will read m: %d\n", m);
+		mnstr_printf(RCout, "#wait for data read m: %d\n", m);
 #endif
 
 /*Batch Processing
@@ -483,9 +482,7 @@ In case of a locked basket we sleep for a millisecond.
 			BSKTlock(&rc->lck, &rc->schema, &rc->name, &rc->delay);
 			buf[n + 1] = 0;
 #ifdef _DEBUG_RECEPTOR_
-			mnstr_printf(RCout, "\nLOCK\n");
-			mnstr_printf(RCout, "Receptor buf [%d]:%s \n", n, buf);
-			mnstr_printf(RCout, "\nEND of buf!\n");
+			mnstr_printf(RCout, "#Receptor buf [%d]:%s \n", n, buf);
 #endif
 			m = 0;
 			/* use trivial concurrency measure */
@@ -502,7 +499,7 @@ In case of a locked basket we sleep for a millisecond.
 				if ((n = (int)mnstr_readline(rc->receptor, buf, MYBUFSIZ)) > 0) {
 					buf[n + 1] = 0;
 #ifdef _DEBUG_RECEPTOR_
-					mnstr_printf(RCout, "Receptor buf [%d]:%s \n", n, buf);
+					mnstr_printf(RCout, "#Receptor buf [%d]:%s \n", n, buf);
 #endif
 					if (rc->status != RCLISTEN)
 						break;
@@ -510,15 +507,15 @@ In case of a locked basket we sleep for a millisecond.
 						line = buf;
 						e = strchr(line, '\n');
 						if (e == 0) {
-							mnstr_printf(RCout, "unfinished line %d %d :%s \n", m, n, line);
+							mnstr_printf(RCout, "#unfinished line %d %d :%s \n", m, n, line);
 							break;
 						}
 						*e = 0;
 #ifdef _DEBUG_RECEPTOR_
-						mnstr_printf(RCout, "insert line :%s \n", line);
+						mnstr_printf(RCout, "#insert line :%s \n", line);
 #endif
 						if (insert_line(&rc->table, line, NULL, 0, rc->table.nr_attrs) < 0) {
-							mnstr_printf(RCout, "\nfailed insert_line %s\n", line);
+							mnstr_printf(RCout, "#failed insert_line %s\n", line);
 							break;
 						}
 						rc->received++;
@@ -529,9 +526,6 @@ In case of a locked basket we sleep for a millisecond.
 				cnt++;
 			}
 			BSKTunlock(&rc->lck, &rc->schema, &rc->name);
-#ifdef _DEBUG_RECEPTOR_
-			mnstr_printf(RCout, "\nUNLOCK\n");
-#endif
 			if (rc->table.error) {
 				mnstr_printf(GDKerr, rc->table.error);
 				rc->table.error = 0;
@@ -546,7 +540,7 @@ In case of a locked basket we sleep for a millisecond.
 		goto bodyRestart;
 	}
 #ifdef _DEBUG_RECEPTOR_
-	mnstr_printf(RCout, "Terminate RCbody loop\n");
+	mnstr_printf(RCout, "#Terminate RCbody loop\n");
 #endif
 }
 @-
@@ -570,7 +564,7 @@ RCscenario(Receptor rc)
 		return;
 	}
 #ifdef _DEBUG_RECEPTOR_
-	mnstr_printf(RCout, "Execute the scenario '%s'\n", rc->scenario);
+	mnstr_printf(RCout, "#Execute the scenario '%s'\n", rc->scenario);
 #endif
 
 	snr = 0;
@@ -597,7 +591,7 @@ RCscenario(Receptor rc)
 				MT_sleep_ms(rc->delay);
 			}
 #ifdef _DEBUG_RECEPTOR_
-			mnstr_printf(RCout, "%s", tuple);
+			mnstr_printf(RCout, "#%s", tuple);
 #endif
 			do {
 				tick = usec();
@@ -687,7 +681,7 @@ RCstartThread(Receptor rc)
 	GDKprotect();
 
 #ifdef _DEBUG_RECEPTOR_
-	mnstr_printf(RCout, "Receptor body %s starts at %s:%d\n", rc->name, rc->host, rc->port);
+	mnstr_printf(RCout, "#Receptor body %s starts at %s:%d\n", rc->name, rc->host, rc->port);
 #endif
 	if (protocol == UDP) {
 		rc->receptor = udp_rastream(rc->host, rc->port, rc->name);
@@ -698,14 +692,14 @@ RCstartThread(Receptor rc)
 		}
 		RCbody(rc);
 #ifdef _DEBUG_RECEPTOR_
-		mnstr_printf(RCout, "End of receptor thread\n");
+		mnstr_printf(RCout, "#End of receptor thread\n");
 #endif
 		return NULL;
 	}
 
 	/* Handle the TCP protocol */
 #ifdef _DEBUG_RECEPTOR_
-	mnstr_printf(RCout, "Start the receptor thread, protocol=%d\n", rc->protocol);
+	mnstr_printf(RCout, "#Start the receptor thread, protocol=%d\n", rc->protocol);
 #endif
 	if (rc->protocol == RCPASSIVE &&
 		(rc->error = socket_server_connect(&rc->sockfd, rc->port))) {
@@ -720,7 +714,7 @@ RCstartThread(Receptor rc)
 		if (rc->status == RCSTOP) return NULL;
 		if (rc->protocol == RCPASSIVE) {
 #ifdef _DEBUG_RECEPTOR_
-			mnstr_printf(RCout, "Receptor listens\n");
+			mnstr_printf(RCout, "#Receptor listens\n");
 #endif
 			rc->error = socket_server_listen(rc->sockfd, &rc->newsockfd);
 			if (rc->error) {
@@ -728,6 +722,9 @@ RCstartThread(Receptor rc)
 				rc->status = RCERROR;
 			}
 		}
+#ifdef _DEBUG_RECEPTOR_
+			mnstr_printf(RCout, "#Receptor connection request received \n");
+#endif
 		/* in server mode you should expect new connections */
 		if (rc->protocol == RCPASSIVE) {
 			if (MT_create_thread(&rc->pid, (void (*)(void *))RCbody, rc, MT_THR_DETACHED) != 0) {
