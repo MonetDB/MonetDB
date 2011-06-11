@@ -6,7 +6,7 @@
 create schema datacell;
 set optimizer='datacell_pipe';
 
-create table datacell.basket_X(
+create table datacell.sysIn(
     id integer auto_increment,
     tag timestamp default now(),
     payload integer
@@ -14,49 +14,49 @@ create table datacell.basket_X(
 
 -- to be used by continous queries
 -- could be generated from the table definition.
-create function datacell.basket_X()
+create function datacell.sysIn()
 returns table (id integer, tag timestamp, payload integer)
 begin
-	return select * from datacell.basket_X;
+	return select * from datacell.sysIn;
 end;
 
-select * from datacell.basket_X();
+select * from datacell.sysIn();
 
 -- to be used by receptor thread
-create function datacell.receptor_X()
+create function datacell.receptor_sysIn()
 returns boolean
 begin
-	insert into datacell.basket_X(payload) values ( 1);
+	insert into datacell.sysIn(payload) values ( 1);
 	return true;
 end;
 
-call register_basket('datacell.basket_x');
-call register_receptor('datacell.receptor_x','localhost:50100');
-call start_receptor('datacell.receptor_x');
+call datacell.basket('datacell','sysIn');
+call datacell.receptor('datacell','sysIn','localhost','50500');
+call datacell.start('datacell','sysIn');
 
-create table datacell.basket_Y( etag timestamp, like datacell.basket_X);
+create table datacell.sysOut( etag timestamp, like datacell.sysIn);
 
 -- the continues query is registered and started
-create procedure datacell.query_X_Y()
+create procedure datacell.query_sysIn_sysOut()
 begin
-	insert into datacell.basket_Y select now(), *  from datacell.basket_X() ;
+	insert into datacell.sysOut select now(), *  from datacell.sysIn() ;
 end;
-call register_query('datacell.query_X_Y');
-call start_query('datacell.query_X_Y');
+call register_query('datacell.query_sysIn_sysOut');
+call start_query('datacell.query_sysIn_sysOut');
 
-create function datacell.basket_Y()
+create function datacell.sysOut()
 returns table (id integer)
 begin
-	return select * from datacell.basket_Y;
+	return select * from datacell.sysOut;
 end;
 
 -- sent it over the wire.
-create function datacell.emitter_Y()
+create function datacell.emitter_sysOut()
 returns boolean;
 begin
-	select * from datacell.basket_Y();
+	select * from datacell.sysOut();
 	return true;
 end;
-call register_basket('basket_y');
-call register_emitter('emitter_y','localhost:50101');
-call start_emitter('emitter_y');
+call datacell.basket('datacell','sysOut');
+call datacell.emitter('datacell','sysOut','localhost:50101');
+call datacell.start('datacell','sysOut');

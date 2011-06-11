@@ -184,14 +184,22 @@ DCstatus(int *ret)
 	return msg;
 }
 
+/* locate the MAL representation of this operation and extract the flow */
+/* If the operation is not available yet, it should be compiled from its
+   definition retained in the SQL catalog */
 str
 DCquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) cntxt;
+	str modnme = *(str*) getArgReference(stk,pci,1);
+	str fcnnme = *(str*) getArgReference(stk,pci,2);
+	Symbol s;
+
 	(void) mb;
-	(void) stk;
-	(void) pci;
-	return MAL_SUCCEED;
+	s = findSymbol(cntxt->nspace, putName(modnme, strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
+	if ( s == NULL) {
+		/* fetch and compile its definition */
+	}
+	throw(SQL,"datacell.query","Procedure code does not exist");
 }
 
 /*
