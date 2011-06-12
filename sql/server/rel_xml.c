@@ -66,7 +66,7 @@ rel_xmlelement(mvc *sql, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 				
 				/* lets glue the xml content together */
 				if (res) {
-					res = rel_binop_(sql, res, c_st, NULL, "concat", 0); 
+					res = rel_binop_(sql, res, c_st, NULL, "concat", card_value); 
 				} else {
 					res = c_st;
 				}
@@ -93,7 +93,7 @@ rel_xmlelement(mvc *sql, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 
 	if (!ns_st || !attr_st || !res) 
 		return NULL;
-	return rel_nop_(sql, exp_atom_clob(sql->sa, tag), ns_st, attr_st, res, NULL, "element", 0);
+	return rel_nop_(sql, exp_atom_clob(sql->sa, tag), ns_st, attr_st, res, NULL, "element", card_value);
 }
 
 static sql_exp *
@@ -140,10 +140,10 @@ rel_xmlforest(mvc *sql, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 				if (!tag)
 					tag = "single_value";
 			}
-			c_st = rel_nop_(sql, exp_atom_clob(sql->sa, tag), ns_st, attr_st, c_st, NULL, "element", 0);
+			c_st = rel_nop_(sql, exp_atom_clob(sql->sa, tag), ns_st, attr_st, c_st, NULL, "element", card_value);
 			/* lets glue the xml content together */
 			if (res) {
-				res = rel_binop_(sql, res, c_st, NULL, "concat", 0); 
+				res = rel_binop_(sql, res, c_st, NULL, "concat", card_value); 
 			} else {
 				res = c_st;
 			}
@@ -162,7 +162,7 @@ rel_xmlcomment(mvc *sql, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 	comment_st = rel_value_exp(sql, rel, comment, f, knd); 
 	if (!comment_st)
 		return NULL;
-	return rel_unop_(sql, comment_st, NULL, "comment", 0); 
+	return rel_unop_(sql, comment_st, NULL, "comment", card_value); 
 }
 
 static sql_exp *
@@ -183,7 +183,7 @@ rel_xmlattribute(mvc *sql, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 			attr_name = "single_value";
 	}
 	attr_name_st = exp_atom_str(sql->sa, attr_name, &str_type);
-	return rel_binop_(sql, attr_name_st, attr_st, NULL, "attribute", 0); 
+	return rel_binop_(sql, attr_name_st, attr_st, NULL, "attribute", card_value); 
 }
 
 
@@ -200,7 +200,7 @@ rel_xmlconcat(mvc *sql, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 		if (!concat_st) 
 			return NULL;
 		if (res) 
-			res = rel_binop_(sql, res, concat_st, NULL, "concat", 0); 
+			res = rel_binop_(sql, res, concat_st, NULL, "concat", card_value); 
 		else
 			res = concat_st;
 	}	
@@ -217,7 +217,7 @@ rel_xmldocument(mvc *sql, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 	val_st = rel_value_exp(sql, rel, val, f, knd); 
 	if (!val_st)
 		return NULL;
-	return rel_unop_(sql, val_st, NULL, "document", 0); 
+	return rel_unop_(sql, val_st, NULL, "document", card_value); 
 }
 
 static sql_exp *
@@ -235,7 +235,7 @@ rel_xmlpi(mvc *sql, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 		val_st = exp_atom(sql->sa, atom_general(sql->sa, &str_type, NULL));
 	if (!val_st) 
 		return NULL;
-	return rel_binop_(sql, target_st, val_st, NULL, "pi", 0); 
+	return rel_binop_(sql, target_st, val_st, NULL, "pi", card_value); 
 }
 
 /* cast string too xml */
