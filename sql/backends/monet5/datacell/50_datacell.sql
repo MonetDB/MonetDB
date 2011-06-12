@@ -36,14 +36,14 @@ create procedure datacell.pause (sch string, tbl string)
 create procedure datacell.resume (sch string, tbl string)
     external name datacell.resume;
 
-create procedure datacell.drop (sch string, tbl string)
-    external name datacell.drop;
+create procedure datacell.remove (sch string, tbl string)
+    external name datacell.remove;
 
 create procedure datacell.query(sch string, proc string)
-	extern name datacell.query;
+	external name datacell.query;
 
 create procedure datacell.run()
-	extern name datacell.run;
+	external name datacell.run;
 
 create procedure datacell.stop()
-	extern name datacell.stop;
+	external name datacell.stop;

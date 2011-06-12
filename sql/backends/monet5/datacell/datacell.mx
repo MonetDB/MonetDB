@@ -32,7 +32,7 @@ command receptor(sch:str, tbl:str, host:str, port:int, protocol:str)
 address DCreceptor
 comment "Define a receptor based on a basket table. The receptor protocol is either active or passive.";
 
-pattern drop(schema:str,obj:str):void
+pattern remove(schema:str,obj:str):void
 address DCdrop
 comment "Remove a basket, receptor or emitter";
 
@@ -44,7 +44,7 @@ pattern resume(schema:str,obj:str):void
 address DCresume
 comment "Pause a receptor or emitter";
 
-pattern query(schema:str,obj:str):void
+pattern query(name:str,def:str):void
 address DCquery
 comment "Add a new continuous query.";
 
@@ -80,6 +80,7 @@ comment "Dump receptor/emitter status";
 #include "mal.h"
 #include "mal_interpreter.h"
 #include "sql.h"
+#include "sql_scenario.h"
 #include "basket.h"
 #include "receptor.h"
 #include "emitter.h"
@@ -184,14 +185,35 @@ DCstatus(int *ret)
 	return msg;
 }
 
+/* locate the MAL representation of this operation and extract the flow */
+/* If the operation is not available yet, it should be compiled from its
+   definition retained in the SQL catalog */
 str
 DCquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) cntxt;
+	str nme = *(str*) getArgReference(stk,pci,1);
+	str *def = (str*) getArgReference(stk,pci,2);
+	Symbol s;
+	str msg;
+	InstrPtr p;
+	Module scope;
+
 	(void) mb;
-	(void) stk;
-	(void) pci;
-	return MAL_SUCCEED;
+	msg = SQLstatementIntern(cntxt, def, nme, 0, 0);
+	/* if ( msg )
+		return msg; */
+	scope = findModule(cntxt->nspace,putName("datacell",8));
+	s = newFunction(putName("datacell",8), putName(nme, strlen(nme)),FUNCTIONsymbol);
+	if ( s == NULL) 
+		throw(SQL,"datacell.query","Procedure code does not exist");
+    freeMalBlk(s->def);
+    s->def = copyMalBlk(cntxt->curprg->def);
+	p= getInstrPtr(s->def,0);
+	setModuleId(p, putName("datacell",8));
+	setFunctionId(p, putName(nme,strlen(nme)));
+    insertSymbol(scope,s);
+	PNanalysis(cntxt,s->def);
+	return msg;
 }
 
 /*

@@ -89,7 +89,8 @@ static int delay = 0;
 static int batchsize = 1;
 static int sequence = -1;
 static int columns = 1;
-static int stamp = 1; /*if (timestamp!=0) sensor sends also the tsmp */
+static int autoincrement = 1;	/* if id != 0 then we increment and sent it along */
+static int timestamp = 1; /*if (timestamp!=0) sensor sends also the tsmp */
 static char *host = "localhost";
 static int port = 50500;
 static int trace = 0;
@@ -109,6 +110,7 @@ usage()
 	mnstr_printf(SEout, "--port=<portnr>, default=50500 \n");
 	mnstr_printf(SEout, "--sensor=<name> \n");
 	mnstr_printf(SEout, "--protocol=<name> udp or tcp(default) \n");
+	mnstr_printf(SEout, "--autoincrement=<number>, default=0 \n");
 	mnstr_printf(SEout, "--timestamp, default=off\n");
 	mnstr_printf(SEout, "--columns=<number>, default=1\n");
 	mnstr_printf(SEout, "--sequence=<sequence length>, (-1=forever,>0), default=1\n");
@@ -158,12 +160,13 @@ int main(int argc, char **argv)
 	char hostname[1024];
 	Sensor se = NULL;
 	static SOCKET sockfd;
-	static struct option long_options[15] = {
+	static struct option long_options[16] = {
+		{ "autoincrement", 0, 0, 'a' },
 		{ "batch", 1, 0, 'b' },
 		{ "columns", 1, 0, 'c' },
 		{ "client", 0, 0, 'c' },
 		{ "port", 1, 0, 'p' },
-		{ "timestamp", 1, 0, 't' },
+		{ "timestamp", 0, 0, 't' },
 		{ "sequence", 1, 0, 's' },
 		{ "sensor", 1, 0, 's' },
 		{ "server", 0, 0, 's' },
@@ -182,7 +185,7 @@ int main(int argc, char **argv)
 	}
 	for (;; ) {
 		int option_index = 0;
-		int c = getopt_long(argc, argv, "b:c:p:s:d:f:h:t:?:0",
+		int c = getopt_long(argc, argv, "b:i:c:p:s:d:f:h:t:?:0",
 			long_options, &option_index);
 		if (c == -1)
 			break;
@@ -213,9 +216,16 @@ int main(int argc, char **argv)
 				exit(0);
 			}
 			break;
+		case 'a':
+			autoincrement = optarg? atol(optarg): 0;
+			if (autoincrement < 0) {
+				mnstr_printf(SEout, "Illegal autoincrement %d\n", autoincrement);
+				exit(0);
+			}
+			break;
 		case 't':
 			if (strcmp(long_options[option_index].name, "timestamp") == 0) {
-				stamp = optarg? atol(optarg): 0;
+				timestamp = 1;
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "trace") == 0) {
@@ -301,7 +311,8 @@ int main(int argc, char **argv)
 		mnstr_printf(SEout, "--port=%d\n", port);
 		mnstr_printf(SEout, "--sensor=%s\n", sensor);
 		mnstr_printf(SEout, "--columns=%d\n", columns);
-		mnstr_printf(SEout, "--timestamp=%d\n", stamp);
+		mnstr_printf(SEout, "--autoincrement=%d\n", autoincrement);
+		mnstr_printf(SEout, "--timestamp=%d\n", timestamp);
 		mnstr_printf(SEout, "--sequence=%d\n", sequence);
 		mnstr_printf(SEout, "--batch=%d\n", batchsize);
 		mnstr_printf(SEout, "--delay=%d\n", delay);
@@ -454,7 +465,12 @@ produceStream(Sensor se)
 			   the wall-clock microstamp. This reduces the number of
 			   additional columns to be produced by 1 */
 			tlen = 0;
-			if (stamp) {
+			if (autoincrement) {
+				snprintf(tuple + tlen, maxtuple - tlen, "%d", autoincrement);
+				tlen += (int)strlen(tuple + tlen);
+				autoincrement++;
+			}
+			if (timestamp) {
 				currenttsmp = GDKusec();
 
 				snprintf(tuple + tlen, maxtuple - tlen, "%lld", currenttsmp);
@@ -466,7 +482,7 @@ produceStream(Sensor se)
 				}
 			}
 
-			for (i = stamp ? 1 : 0; i < columns; i++) {
+			for (i = (timestamp ? 1 : 0) + (autoincrement?1:0); i < columns; i++) {
 				if (i)
 					snprintf(tuple + tlen, maxtuple - tlen, ",%d", rand());
 				else

@@ -54,6 +54,9 @@ command stop()
 address PNstopScheduler
 comment "Stop the Petri net controller";
 
+pattern analyse(mod:str, fcn:str)
+address PNanalyseWrapper
+comment "Check the input/output relationship";
 command dump()
 address PNdump
 comment "Show the status of the Petri net";
@@ -89,6 +92,8 @@ datacell_export str PNstopScheduler(int *ret);
 datacell_export str PNdump(int *ret);
 datacell_export str PNsource(int *ret, str *mod, str *fcn, str *schema, str *tbl);
 datacell_export str PNtarget(int *ret, str *mod, str *fcn, str *schema, str *tbl);
+datacell_export void PNanalysis(Client cntxt, MalBlkPtr mb);
+datacell_export str PNanalyseWrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif
 
 @c
@@ -137,6 +142,49 @@ int *enabled_Factories;     /*array that contains the id's of all facroties
 static int status = 0;
 static int cycleDelay = 1000; /* be careful, it affects response/throughput timings */
 
+/* check the routine for input/output relationships */
+void
+PNanalysis(Client cntxt, MalBlkPtr mb)
+{
+	int i, bskt;
+	InstrPtr p;
+	str schema, tbl;
+
+	for( i = 0; i < mb->stop; i++){
+		p= getInstrPtr(mb,i);
+		if ( getModuleId(p) == sqlRef){
+			if ( getFunctionId(p) == bindRef && getVarConstant(mb, getArg(p, p->argc-1)).val.ival == 0){
+				bskt = BSKTlocate( schema = getVarConstant(mb,getArg(p,2)).val.sval, tbl = getVarConstant(mb,getArg(p,3)).val.sval);
+				if ( bskt == 0 )
+					mnstr_printf(cntxt->fdout,"#input basket %s.%s missing\n", schema,tbl);
+			}
+			if ( getFunctionId(p) == appendRef){
+				bskt = BSKTlocate( schema = getVarConstant(mb,getArg(p,2)).val.sval, tbl = getVarConstant(mb,getArg(p,3)).val.sval);
+				if ( bskt == 0 )
+					mnstr_printf(cntxt->fdout,"#output basket %s.%s missing\n", schema,tbl);
+			}
+		}
+	}
+}
+str PNanalyseWrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	Module scope;
+	Symbol s = 0;
+	str *modnme = (str *)getArgReference(stk, pci, 1);
+	str *fcnnme = (str *)getArgReference(stk, pci, 2);
+
+	(void) mb;
+	scope = findModule(cntxt->nspace, putName(*modnme, (int)strlen(*modnme)));
+	if (scope)
+		s = findSymbolInModule(scope, putName(*fcnnme, (int)strlen(*fcnnme)));
+	if (s == NULL)
+		throw(MAL, "petrinet.analysis", "Could not find function");
+
+	PNanalysis(cntxt,s->def);
+
+	return MAL_SUCCEED;
+}
+
 str PNregistration(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Module scope;
@@ -148,7 +196,6 @@ str PNregistration(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)mb;
 
 	scope = findModule(cntxt->nspace, putName(*modnme, (int)strlen(*modnme)));
-
 	if (scope)
 		s = findSymbolInModule(scope, putName(*fcnnme, (int)strlen(*fcnnme)));
 
