@@ -485,7 +485,7 @@ static str previouspipe = 0;	/* fall back position */
 	
 str
 SQLvalidatePipeline(void){
-	int mitosis= FALSE, deadcode= FALSE, mergetable= FALSE, replication= FALSE, multiplex=FALSE, garbage=FALSE;
+	int mitosis= FALSE, deadcode= FALSE, mergetable= FALSE, multiplex=FALSE, garbage=FALSE;
 	int i;
 
 	mal_set_lock(sql_contextLock,"SQL optimizer");
@@ -504,9 +504,6 @@ SQLvalidatePipeline(void){
 		else
 		if (strcmp(optimizers[i],"mergetable") == 0)
 			mergetable= TRUE;
-		else
-		if (strcmp(optimizers[i],"replication") == 0)
-			replication= TRUE;
 		else
 		if (strcmp(optimizers[i],"multiplex") == 0)
 			multiplex= TRUE;
