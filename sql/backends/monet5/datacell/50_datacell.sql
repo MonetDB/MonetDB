@@ -24,11 +24,17 @@ create function datacell.inventory()
 returns table (kind string, nme string)
    external name datacell.inventory;
 
-create procedure datacell.receptor(sch string, tbl string, host string, port int, protocol string)
-    external name receptor.start;
+create procedure datacell.receptor(sch string, tbl string, host string, portid integer)
+    external name receptor."start";
 
-create procedure datacell.emitter(sch string, tbl string, host string, port int, protocol string)
-    external name emitter.start;
+create procedure datacell.emitter(sch string, tbl string, host string, portid integer)
+    external name emitter."start";
+
+create procedure datacell.mode(sch string, tbl string, mode string)
+	external name datacell.mode;
+
+create procedure datacell.protocol(sch string, tbl string, protocol string)
+	external name datacell.protocol;
 
 create procedure datacell.pause (sch string, tbl string)
     external name datacell.pause;
@@ -42,8 +48,11 @@ create procedure datacell.remove (sch string, tbl string)
 create procedure datacell.query(sch string, proc string)
 	external name datacell.query;
 
-create procedure datacell.run()
-	external name datacell.run;
+create procedure datacell.prepare()
+	external name datacell.prepare;
 
-create procedure datacell.stop()
-	external name datacell.stop;
+create procedure datacell.finish()
+	external name datacell.finish;
+
+create procedure datacell.dump()
+	external name datacell.dump;

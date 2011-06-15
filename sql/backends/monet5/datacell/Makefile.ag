@@ -75,10 +75,10 @@ scripts_mal = {
 		  dcoperator.mal
 }
 
-scripts_sql = {
-	HEADERS = sql
-	DIR = libdir/monetdb5
-	SOURCES = datacell.sql 
+headers_sql = {
+    HEADERS = sql
+    DIR = libdir/monetdb5/createdb
+    SOURCES = 50_datacell.sql
 }
 
 headers_datacellautoload = {
@@ -87,4 +87,4 @@ headers_datacellautoload = {
 	SOURCES = 50_datacell.mal
 }
 
-EXTRA_DIST = 50_datacell.mal datacell.sql
+EXTRA_DIST = 50_datacell.mal 50_datacell.sql

@@ -6,43 +6,35 @@
 create schema datacell;
 set optimizer='datacell_pipe';
 
-create table datacell.sysIn(
-    id integer auto_increment,
-    tag timestamp default now(),
+create table datacell.sys_in(
+    id integer,
+    tag timestamp,
     payload integer
 );
 
 -- to be used by continous queries
 -- could be generated from the table definition.
-create function datacell.sysIn()
+create function datacell.sys_in()
 returns table (id integer, tag timestamp, payload integer)
 begin
-	return select * from datacell.sysIn;
+	return select * from datacell.sys_in;
 end;
 
-select * from datacell.sysIn();
+select * from datacell.sys_in();
 
--- to be used by receptor thread
-create function datacell.receptor_sysIn()
-returns boolean
-begin
-	insert into datacell.sysIn(payload) values ( 1);
-	return true;
-end;
+call datacell.basket('datacell','sys_in');
+call datacell.receptor('datacell','sys_in','localhost',50500,'passive');
+call datacell.start('datacell','sys_in');
 
-call datacell.basket('datacell','sysIn');
-call datacell.receptor('datacell','sysIn','localhost','50500');
-call datacell.start('datacell','sysIn');
-
-create table datacell.sysOut( etag timestamp, like datacell.sysIn);
+create table datacell.sysOut( etag timestamp, like datacell.sys_in);
 
 -- the continues query is registered and started
-create procedure datacell.query_sysIn_sysOut()
+create procedure datacell.query_sys_in_sysOut()
 begin
-	insert into datacell.sysOut select now(), *  from datacell.sysIn() ;
+	insert into datacell.sysOut select now(), *  from datacell.sys_in() ;
 end;
-call register_query('datacell.query_sysIn_sysOut');
-call start_query('datacell.query_sysIn_sysOut');
+call register_query('datacell.query_sys_in_sysOut');
+call start_query('datacell.query_sys_in_sysOut');
 
 create function datacell.sysOut()
 returns table (id integer)

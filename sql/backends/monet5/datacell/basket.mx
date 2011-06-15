@@ -148,13 +148,26 @@ static int BSKTnewEntry()
 	return bsktTop++;
 }
 
+static void
+BSKTtolower(char *dst, const char *src)
+{
+	int i;
+	for( i=0; i < BUFSIZ-1 && src[i]; i++)
+		dst[i] = (char) tolower((int)src[i]);
+	dst[i] = 0;
+}
 int
 BSKTlocate(str schema, str tbl)
 {
 	int i;
+	char lsch[BUFSIZ], ltbl[BUFSIZ];
+
+	BSKTtolower(lsch,schema);
+	BSKTtolower(ltbl,tbl);
+
 	for (i = 1; i < bsktTop; i++)
-		if (tbl && baskets[i].name && strcmp(tbl, baskets[i].name) == 0 &&
-			(schema == 0 || (baskets[i].schema && strcmp(schema, baskets[i].schema) == 0)))
+		if (tbl && baskets[i].name && strcmp(ltbl, baskets[i].name) == 0 &&
+			(schema == 0 || (baskets[i].schema && strcmp(lsch, baskets[i].schema) == 0)))
 			return i;
 	return 0;
 }
@@ -171,6 +184,7 @@ BSKTnewbasket(sql_schema *s, sql_table *t, sql_trans *tr)
 	mal_set_lock(mal_contextLock, "register");
 	idx = BSKTnewEntry();
 	MT_lock_init(&baskets[idx].lock, "register");
+
 	baskets[idx].schema = GDKstrdup(s->base.name);
 	baskets[idx].name = GDKstrdup(t->base.name);
 
@@ -206,22 +220,26 @@ BSKTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_schema  *s;
 	sql_table   *t;
 	mvc *m = NULL;
-	str schema, tbl, msg = getContext(cntxt, mb, &m, NULL);
+	str msg = getContext(cntxt, mb, &m, NULL);
 	sql_trans *tr;
+	char lsch[BUFSIZ];
+	char ltbl[BUFSIZ];
 
 	if (msg != MAL_SUCCEED)
 		return msg;
+	BSKTtolower(lsch,*(str*)getArgReference(stk, pci, 1));
 	tr = m->session->tr;
-	s = mvc_bind_schema(m, schema = *(str*)getArgReference(stk, pci, 1));
-	tbl = *(str*)getArgReference(stk, pci, 2);
+	s = mvc_bind_schema(m, lsch);
+	BSKTtolower(ltbl, *(str*)getArgReference(stk, pci, 2));
 	if (s == NULL)
 		throw(SQL, "datacell.register", "Schema missing");
-	t = mvc_bind_table(m, s, tbl);
+
+	t = mvc_bind_table(m, s, ltbl);
 	if (t == NULL)
 		throw(SQL, "datacell.register", "Table missing");
 
 	/* check double registration */
-	if (BSKTlocate(schema, tbl))
+	if (BSKTlocate(lsch, ltbl))
 		throw(SQL, "datacell.register", "Basket defined twice.");
 
 	return BSKTnewbasket(s, t, tr);
@@ -305,10 +323,11 @@ BSKTdump(int *ret)
 
 	for ( bskt = 0; bskt < bsktLimit; bskt++) 
 	if ( baskets[bskt].schema){
-		mnstr_printf(GDKout, "#baskets[%2d] %s.%s count %d\n", bskt,
+		mnstr_printf(GDKout, "#baskets[%2d] %s.%s columns %d events " BUNFMT "\n", bskt,
 			baskets[bskt].schema,
 			baskets[bskt].name,
-			baskets[bskt].colcount);
+			baskets[bskt].colcount,
+			(baskets[bskt].primary[0]? BATcount(baskets[bskt].primary[0]): 0));
 	}
 	(void)ret;
 	return MAL_SUCCEED;

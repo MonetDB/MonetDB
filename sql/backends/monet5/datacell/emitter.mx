@@ -39,10 +39,10 @@ baskets.
 @mal
 module emitter;
 
-command start{unsafe}(schema:str, tbl:str, host:str, port:int, prot:str)
+command start{unsafe}(schema:str, tbl:str, host:str, port:int)
 address DCemitterNew
 comment "Define a emitter based on a basket table. 
-The emitter protocol is either active or passive. Return its handle";
+The emitter protocol is active. Return its handle";
 
 command pause(schema:str, tbl:str)
 address DCemitterPause
@@ -51,6 +51,14 @@ comment "Pause listening";
 command resume(schema:str, tbl:str)
 address DCemitterResume
 comment "Resume a emitter thread";
+
+command mode(schema:str, tbl:str, arg:str)
+address EMmode
+comment "Set the mode of the emitter to either active/passive");
+
+command protocol(schema:str, tbl:str, arg:str)
+address EMprotocol
+comment "Set the protocol of the emitter to udp/tcp/csv");
 
 command drop(schema:str, tb:str)
 address DCemitterDrop
@@ -85,11 +93,13 @@ The implementation is derived from the emitter module.
 #define adapters_export extern
 #endif
 
-adapters_export str DCemitterNew(int *ret, str *schema, str *tbl, str *host, int *port, str *proto);
+adapters_export str DCemitterNew(int *ret, str *schema, str *tbl, str *host, int *port);
 adapters_export str DCemitterPause(int *ret, str *schema, str *nme);
 adapters_export str DCemitterResume(int *ret, str *schema, str *nme);
 adapters_export str DCemitterDrop(int *ret, str *schema, str *nme);
 adapters_export str EMdump();
+adapters_export str EMmode(int *ret, str *schema, str *nme, str *arg);
+adapters_export str EMprotocol(int *ret, str *schema, str *nme, str *arg);
 
 #endif
 
@@ -104,13 +114,19 @@ adapters_export str EMdump();
 #define EMRESHUFFLE 4	/* reorganization of the BATs */
 #define EMDROP 5		
 #define EMERROR 8               /* failed to establish the stream */
+static str statusname[6]= {"<unknown>", "pause", "listen", "stop", "drop","error"};
 
 #define EMPASSIVE 1
 #define EMACTIVE 2
+static str modename[3]= {"<unknown>","active","passive"};
 
 #define TCP 1
 #define UDP 2
+
+static str protocolname[3] = {"TCP","UDF","CSV"}; 
+
 static int protocol= TCP;
+
 
 #define PAUSEDEFAULT 1000
 
@@ -120,6 +136,7 @@ typedef struct EMITTER{
 	str host;
 	int port;
 	int status;
+	int mode;
 	int protocol;/* control the delay between attempts to connect */
 	int delay;
 	int lck;
@@ -167,21 +184,14 @@ The MAL interface for managing the emitter pool
 The baskets should already be defined. There order
 is used to interpret the messages sent.
 @c
-str DCemitterNew(int *ret, str *schema, str *tbl, str *host, int *port, str *proto)
+str DCemitterNew(int *ret, str *schema, str *tbl, str *host, int *port)
 {
 	Emitter em;
-	int protocol, idx, i, j, len;
+	int idx, i, j, len;
 	BAT *b;
 
 	if (EMfind(*schema, *tbl))
 		throw(MAL, "emitter.new", "Duplicate emitter");
-	if ( strcmp(*proto, "active") == 0)
-		protocol = EMACTIVE;
-	else
-	if ( strcmp(*proto, "passive") == 0)
-		protocol = EMPASSIVE;
-	else
-		throw(MAL, "emitter.new", "Illegal protocol");
 
 	em = EMnew(*schema, *tbl);
 	if( em == NULL)
@@ -191,7 +201,7 @@ str DCemitterNew(int *ret, str *schema, str *tbl, str *host, int *port, str *pro
 	em->delay = PAUSEDEFAULT;
 	em->lck = 0;
 	em->error = NULL;
-	em->protocol = protocol;
+	em->mode = EMACTIVE;
 
 	idx = BSKTlocate(*schema, *tbl);
 	if (idx == 0) /* should not happen */
@@ -309,6 +319,49 @@ str DCemitterDrop(int *ret, str *schema, str *nme)
 	return MAL_SUCCEED;
 }
 
+
+str EMmode(int *ret, str *schema, str *nme, str *arg)
+{
+	Emitter em;
+	em = EMfind(*schema, *nme);
+	if (em == NULL)
+		throw(MAL, "emitter.mode", "Emitter not defined");
+#ifdef _DEBUG_EMITTER_
+	mnstr_printf(EMout, "#Define emitter mode\n");
+#endif
+	(void)ret;
+	if ( strcmp(*arg,"passive") == 0 )
+		em->mode = EMPASSIVE;
+	else
+	if ( strcmp(*arg,"active") == 0 )
+		em->mode = EMACTIVE;
+	else
+		throw(MAL,"emitter.mode","Must be either passive/active");
+	return MAL_SUCCEED;
+}
+
+str EMprotocol(int *ret, str *schema, str *nme, str *mode)
+{
+	Emitter em;
+	em = EMfind(*schema, *nme);
+	if (em == NULL)
+		throw(MAL, "emitter.protocol", "Emitter not defined");
+#ifdef _DEBUG_EMITTER_
+	mnstr_printf(EMout, "#Define emitter protocol\n");
+#endif
+	(void)ret;
+	if ( strcmp(*mode,"udp") == 0 )
+		em->protocol = UDP;
+	else
+	if ( strcmp(*mode,"tcp") == 0)
+		em->protocol = UDP;
+	else
+	if ( strcmp(*mode,"csv") == 0)
+		em->protocol = UDP;
+	else
+		throw(MAL,"emitter.protocol","Must be either udp/tcp/csv");
+	return MAL_SUCCEED;
+}
 
 
 /*open a stream socket to a certain server:port*/
@@ -459,7 +512,7 @@ EMstartThread(Emitter em)
 	do {
 		if (em->status == EMSTOP) return MAL_SUCCEED;
 		if (em->protocol == EMPASSIVE) {
-#ifdef _DEBUG_RECEPTOR_
+#ifdef _DEBUG_EMITTER_
 			mnstr_printf(EMout, "Emitter listens\n");
 #endif
 			em->error = socket_server_listen(em->sockfd, &em->newsockfd);
@@ -484,10 +537,10 @@ EMstartThread(Emitter em)
 	return MAL_SUCCEED;
 } 
 static void
-dumpEmitter(Emitter rc)
+dumpEmitter(Emitter em)
 {
-	mnstr_printf(GDKout,"#receptor %s.%s at %s:%d protocol=%d status=%d delay=%d\n",
-		rc->schema, rc->name, rc->host, rc->port, rc->protocol, rc->status, rc->delay);
+	mnstr_printf(GDKout,"#emittor %s.%s at %s:%d protocol=%s mode=%s status=%s delay=%d\n",
+		em->schema, em->name, em->host, em->port, protocolname[em->protocol], modename[em->mode], statusname[em->status], em->delay);
 }
 
 str

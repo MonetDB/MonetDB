@@ -20,17 +20,29 @@ The interface from SQL passes through here.
 @mal
 module datacell;
 
+pattern prepare()
+address DCinitialize
+comment "Initialize the datacell infrastructure";
+
 pattern basket(schema:str,tab:str):void
 address DCregister
 comment "Initialize a new basket based on a specific table definition in the datacell schema");
 
-command emitter(sch:str, tbl:str, host:str, port:int, protocol:str)
+pattern emitter(sch:str, tbl:str, host:str, port:int)
 address DCemitter
 comment "define a emitter based on a basket table. The emitter protocol is either active or passive.";
 
-command receptor(sch:str, tbl:str, host:str, port:int, protocol:str)
+pattern receptor(sch:str, tbl:str, host:str, port:int)
 address DCreceptor
 comment "Define a receptor based on a basket table. The receptor protocol is either active or passive.";
+
+pattern mode(sch:str, tbl:str, arg:str)
+address DCmode
+comment "Change the mode of the adaptor";
+
+pattern protocol(sch:str, tbl:str, arg:str)
+address DCprotocol
+comment "Change the protocol of the adaptor";
 
 pattern remove(schema:str,obj:str):void
 address DCdrop
@@ -60,12 +72,12 @@ pattern resume()
 address DCresumeScheduler
 comment "Resume the petrinet scheduler.";
 
-pattern stop()
-address DCstopScheduler
+pattern finish()
+address DCfinishScheduler
 comment "Stop the petrinet scheduler.";
 
-command status():bat[:str,:bat]
-address DCstatus
+command inventory():bat[:str,:bat]
+address DCinventory
 comment "Produce a tabular view of the datacell streaming components";
 
 command dump()
@@ -98,19 +110,22 @@ comment "Dump receptor/emitter status";
 
 /* #define _DEBUG_DATACELL     debug this module */
 
+datacell_export str DCinitialize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str DCregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str DCdrop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str DCpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str DCresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+datacell_export str DCmode(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+datacell_export str DCprotocol(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str DCquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str DCdump(int *ret);
 
 datacell_export str DCstartScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str DCpauseScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str DCresumeScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-datacell_export str DCstopScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+datacell_export str DCfinishScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-datacell_export str DCstatus(int *ret);
+datacell_export str DCinventory(int *ret);
 
 #endif
 @c
@@ -118,6 +133,16 @@ datacell_export str DCstatus(int *ret);
 #ifdef WIN32
 #include "winsock2.h"
 #endif
+
+str
+DCinitialize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	return MAL_SUCCEED;
+}
 
 str
 DCregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -154,21 +179,59 @@ DCresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( idx == 0)
 		throw(SQL, "datacell.pause", "Basket not found");
 
-	DCreceptorPause(&ret, &schema, &tbl);
-	DCemitterPause(&ret, &schema, &tbl);
+	DCreceptorResume(&ret, &schema, &tbl);
+	DCemitterResume(&ret, &schema, &tbl);
 	(void) cntxt;
 	(void) mb;
 	return MAL_SUCCEED;
 }
 
 str
-DCstatus(int *ret)
+DCmode(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int idx, ret=0;
+	str *schema= (str*) getArgReference(stk, pci,1);
+	str *tbl= (str*) getArgReference(stk, pci,2);
+	str *arg= (str*) getArgReference(stk, pci,3);
+
+	idx = BSKTlocate(*schema, *tbl);
+	if ( idx == 0)
+		throw(SQL, "datacell.mode", "Basket not found");
+
+	RCmode(&ret, schema, tbl,arg);
+	EMmode(&ret, schema, tbl,arg);
+	(void) cntxt;
+	(void) mb;
+	return MAL_SUCCEED;
+}
+
+str
+DCprotocol(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int idx, ret=0;
+	str *schema= (str*) getArgReference(stk, pci,1);
+	str *tbl= (str*) getArgReference(stk, pci,2);
+	str *arg= (str*) getArgReference(stk, pci,3);
+
+	idx = BSKTlocate(*schema, *tbl);
+	if ( idx == 0)
+		throw(SQL, "datacell.protocol", "Basket not found");
+
+	RCprotocol(&ret, schema, tbl,arg);
+	EMprotocol(&ret, schema, tbl,arg);
+	(void) cntxt;
+	(void) mb;
+	return MAL_SUCCEED;
+}
+
+str
+DCinventory(int *ret)
 {
 	BAT *b, *bn;
 	int i;
 	str msg = MAL_SUCCEED;
 
-	b = BATnew(TYPE_str, TYPE_bat, 0);
+	b = BATnew(TYPE_str, TYPE_bat, BATTINY);
 	if (b == NULL)
 		throw(SQL, "datacell.inventory", MAL_MALLOC_FAIL);
 	for (i = 0; msg == MAL_SUCCEED && i < bsktTop; i++) {
@@ -294,7 +357,7 @@ DCpauseScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-DCstopScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+DCdropcheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int ret=0;
 	if ( DCinitialized != DCINITIALIZED && DCinitialized != DCPAUSED)
@@ -311,7 +374,7 @@ DCstopScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 DCdump(int *ret)
 {
-	(void) ret;
+	BSKTdump(ret);
 	RCdump();
 	EMdump();
 	return MAL_SUCCEED;

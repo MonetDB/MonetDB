@@ -17,17 +17,6 @@
 @a M. Kersten, E. Liarou, R. Goncalves
 @* The Sensor Simulation program
 This program generates an event stream on a particular port.
-@verbatim
-sensor [options]
-	--host=<host name> default localhost
-	--port=<portnr> default 50500
-	--protocol=<name> udp or tcp(default)
-	--sensor=<name> 
-	--columns=<number> default 1
-	--sequence=<sequence length>, default -1
-	--batch=<batch size> , default 1
-	--delay=<ticks> delay in milliseconds, default 0
-@end verbatim
 The controlling parameters are the host (-h), the port id (-p).
 The events either come from a pre-cooked ascii file (-f)
 or they are generated internally (-l). In the latter case
@@ -87,7 +76,7 @@ SEnew(str nme)
 
 static int delay = 0;
 static int batchsize = 1;
-static int sequence = -1;
+static int events = -1;
 static int columns = 1;
 static int autoincrement = 1;	/* if id != 0 then we increment and sent it along */
 static int timestamp = 1; /*if (timestamp!=0) sensor sends also the tsmp */
@@ -109,11 +98,11 @@ usage()
 	mnstr_printf(SEout, "--host=<host name>, default=localhost\n");
 	mnstr_printf(SEout, "--port=<portnr>, default=50500 \n");
 	mnstr_printf(SEout, "--sensor=<name> \n");
-	mnstr_printf(SEout, "--protocol=<name> udp or tcp(default) \n");
-	mnstr_printf(SEout, "--autoincrement=<number>, default=0 \n");
-	mnstr_printf(SEout, "--timestamp, default=off\n");
+	mnstr_printf(SEout, "--protocol=<name> udp or tcp(default) or csv \n");
+	mnstr_printf(SEout, "--autoincrement=<number>, default=1 \n");
+	mnstr_printf(SEout, "--timestamp, default=on\n");
 	mnstr_printf(SEout, "--columns=<number>, default=1\n");
-	mnstr_printf(SEout, "--sequence=<sequence length>, (-1=forever,>0), default=1\n");
+	mnstr_printf(SEout, "--events=<events length>, (-1=forever,>0), default=1\n");
 	mnstr_printf(SEout, "--file=<data file>\n");
 	mnstr_printf(SEout, "--batch=<batchsize> , default=1\n");
 	mnstr_printf(SEout, "--delay=<ticks> delay in milliseconds, default=0\n");
@@ -125,7 +114,11 @@ usage()
 
 #define TCP 1
 #define UDP 2
+#define CSV 3	
+#define TSV 4
 static int protocol= TCP;
+static char *protocolname[5] = {"<unknown>","tcp","udp","csv","tsv"};
+static char *separator[5] = {"",",",",",",","\t"};
 
 /*static Mapi dbh;
 static MapiHdl hdl = NULL;*/
@@ -167,7 +160,7 @@ int main(int argc, char **argv)
 		{ "client", 0, 0, 'c' },
 		{ "port", 1, 0, 'p' },
 		{ "timestamp", 0, 0, 't' },
-		{ "sequence", 1, 0, 's' },
+		{ "events", 1, 0, 'e' },
 		{ "sensor", 1, 0, 's' },
 		{ "server", 0, 0, 's' },
 		{ "delay", 1, 0, 'd' },
@@ -185,7 +178,7 @@ int main(int argc, char **argv)
 	}
 	for (;; ) {
 		int option_index = 0;
-		int c = getopt_long(argc, argv, "b:i:c:p:s:d:f:h:t:?:0",
+		int c = getopt_long(argc, argv, "b:i:e:c:p:s:d:f:h:t:?:0",
 			long_options, &option_index);
 		if (c == -1)
 			break;
@@ -238,6 +231,22 @@ int main(int argc, char **argv)
 		case 'f':
 			datafile = optarg;
 			break;
+		case 'e':
+			if (strcmp(long_options[option_index].name, "events") == 0) {
+				events = optarg? atol(optarg): -1;
+				if (events < -1) {
+					mnstr_printf(SEout, "illegal events value, reset to -1\n");
+					events = -1;
+				}else if (events == 0) {
+					mnstr_printf(SEout, "Illegal events value %d\n", events);
+					exit(0);
+				}
+				break;
+			} else {
+				usage();
+				exit(0);
+			}
+			break;
 		case 's':
 			if (strcmp(long_options[option_index].name, "sensor") == 0) {
 				sensor = optarg;
@@ -245,17 +254,6 @@ int main(int argc, char **argv)
 			}
 			if (strcmp(long_options[option_index].name, "server") == 0) {
 				server = 1;
-				break;
-			}
-			if (strcmp(long_options[option_index].name, "sequence") == 0) {
-				sequence = optarg? atol(optarg): -1;
-				if (sequence < -1) {
-					mnstr_printf(SEout, "illegal sequence value, reset to -1\n");
-					sequence = -1;
-				}else if (sequence == 0) {
-					mnstr_printf(SEout, "Illegal sequence value %d\n", sequence);
-					exit(0);
-				}
 				break;
 			} else {
 				usage();
@@ -270,6 +268,10 @@ int main(int argc, char **argv)
 				}
 				if (strcmp(optarg, "UDP") == 0 || strcmp(optarg, "udp") == 0) {
 					protocol = UDP;
+					break;
+				}
+				if (strcmp(optarg, "CSV") == 0 || strcmp(optarg, "csv") == 0) {
+					protocol = CSV;
 					break;
 				}
 			}
@@ -313,10 +315,10 @@ int main(int argc, char **argv)
 		mnstr_printf(SEout, "--columns=%d\n", columns);
 		mnstr_printf(SEout, "--autoincrement=%d\n", autoincrement);
 		mnstr_printf(SEout, "--timestamp=%d\n", timestamp);
-		mnstr_printf(SEout, "--sequence=%d\n", sequence);
+		mnstr_printf(SEout, "--events=%d\n", events);
 		mnstr_printf(SEout, "--batch=%d\n", batchsize);
 		mnstr_printf(SEout, "--delay=%d\n", delay);
-		mnstr_printf(SEout, "--protocol %s\n", protocol == TCP ? "tcp" : "udp");
+		mnstr_printf(SEout, "--protocol %s\n", protocolname[protocol]);
 		mnstr_printf(SEout, "--trace=%d\n", trace);
 		mnstr_printf(SEout, "--server=%d\n", server);
 		mnstr_printf(SEout, "--client=%d\n", server);
@@ -333,6 +335,15 @@ int main(int argc, char **argv)
 We limit the protocols for the time being to what can be
 considered a safe method.
 @c
+	if (protocol == CSV) {
+		Sensor se = SEnew(sensor);
+		if ( events == -1  || batchsize != 1){
+			printf("Provide an event limit using --events=<nr> and --batch=1\n");
+			return 0;
+		}
+		se->toServer = open_wastream(datafile);
+		produceStream(se);
+	}
 	if (protocol == UDP) {
 		Sensor se = SEnew(sensor);
 		se->toServer = udp_wastream(host, port, sensor);
@@ -432,13 +443,13 @@ produceStream(Sensor se)
 
 #ifdef DEBUG
 	mnstr_printf(SEout, "#Start producing the stream\n");
-	mnstr_printf(SEout, "#sequence is %d, batchsize is %d, columns are %d\n", sequence, batchsize, columns);
+	mnstr_printf(SEout, "#%d events, batchsize is %d, columns are %d\n", events, batchsize, columns);
 #endif
 
 	/* create scratch space for a single tuple, this should be enough for integer fields */
 	tuple = (char*)malloc(maxtuple = 32 * columns);
 	buflen = 0;
-	while (numberOFtuples < (sequence * batchsize) || sequence == -1) {
+	while (numberOFtuples < (events * batchsize) || events == -1) {
 		int i;
 		lng currenttsmp = 0;
 
@@ -455,25 +466,28 @@ produceStream(Sensor se)
 		buf[0] = 0;
 		slen = 0;
 		tlen = 0;
-		snprintf(tuple, maxtuple, "#%d\n", batchsize);
-		tlen += (int)strlen(tuple + tlen);
-		strncpy(buf, tuple, tlen);
-		slen += tlen;
+		if ( batchsize > 1 ) {
+			snprintf(tuple, maxtuple, "#%d\n", batchsize);
+			tlen += (int)strlen(tuple + tlen);
+			strncpy(buf, tuple, tlen);
+			slen += tlen;
+		}
 		/* construct a single event record batch */
 		for (b = batchsize; b > 0; b--) {
-			/* if timestamp is set then the first colum will contain
-			   the wall-clock microstamp. This reduces the number of
-			   additional columns to be produced by 1 */
+			/* the first column is used for event identifier tagging */
 			tlen = 0;
 			if (autoincrement) {
 				snprintf(tuple + tlen, maxtuple - tlen, "%d", autoincrement);
 				tlen += (int)strlen(tuple + tlen);
 				autoincrement++;
 			}
+			/* if timestamp is set then the next colum will contain
+			   the wall-clock microstamp. This reduces the number of
+			   additional columns to be produced by 1 */
 			if (timestamp) {
 				currenttsmp = GDKusec();
 
-				snprintf(tuple + tlen, maxtuple - tlen, "%lld", currenttsmp);
+				snprintf(tuple + tlen, maxtuple - tlen, "%s%lld", (autoincrement?separator[protocol]:""), currenttsmp);
 				tlen += (int)strlen(tuple + tlen);
 				if (tlen >= maxtuple) {
 					mnstr_printf(SEout, "Buffer not large enough to handle request.\n");
@@ -482,9 +496,10 @@ produceStream(Sensor se)
 				}
 			}
 
+			/* we only generate integer based events for now */
 			for (i = (timestamp ? 1 : 0) + (autoincrement?1:0); i < columns; i++) {
 				if (i)
-					snprintf(tuple + tlen, maxtuple - tlen, ",%d", rand());
+					snprintf(tuple + tlen, maxtuple - tlen, "%s%d", separator[protocol],rand());
 				else
 					snprintf(tuple + tlen, maxtuple - tlen, "%d", rand());
 				tlen += (int)strlen(tuple + tlen);
@@ -521,7 +536,7 @@ produceStream(Sensor se)
 
 	mnstr_printf(SEout, "Columns: %d\n", columns);
 	mnstr_printf(SEout, "Batch size: %d\n", batchsize);
-	mnstr_printf(SEout, "total Number of batches: %d\n", sequence);
+	mnstr_printf(SEout, "total Number of batches: %d\n", events);
 	mnstr_printf(SEout, "Delay: %d\n", delay);
 }
 
@@ -532,7 +547,7 @@ produceDataStream(Sensor se)
 	FILE *fd;
 	int snr;
 
-	/* read a sequence of messages from a file.
+	/* read a events of messages from a file.
 	   It is processed multiple times.
 	   The header is the delay imposed */
 
@@ -576,7 +591,7 @@ produceDataStream(Sensor se)
 		}
 		fclose(fd);
 		snr++;
-	} while (snr != sequence);
+	} while (snr != events);
 }
 
 static void
