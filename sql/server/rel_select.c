@@ -1988,10 +1988,6 @@ rel_compare_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2,
 		else
 			return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
 	}
-	if (is_semi(rel->op)) {
-		rel_join_add_exp(sql->sa, rel, e);
-		return rel;
-	}
 	if (rs->card <= CARD_ATOM && exp_is_atom(rs) && 
 	   (!rs2 || (rs2->card <= CARD_ATOM && exp_is_atom(rs2)))) {
 		if (ls->card == rs->card && !rs2)  /* bin compare op */
@@ -2000,6 +1996,10 @@ rel_compare_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2,
 		/* push select into the given relation */
 		return rel_push_select(sql->sa, rel, L, e);
 	} else { /* join */
+		if (is_semi(rel->op)) {
+			rel_join_add_exp(sql->sa, rel, e);
+			return rel;
+		}
 		return rel_push_join(sql->sa, rel, L, R, e);
 	}
 }

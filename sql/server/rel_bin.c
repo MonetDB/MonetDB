@@ -974,6 +974,7 @@ rel2bin_semijoin( mvc *sql, sql_rel *rel, list *refs)
 	if (!left || !right) 
 		return NULL;	
 	left = row2cols(sql, left);
+	right = row2cols(sql, right);
 	if (rel->exps) {
 		for( en = rel->exps->h; en; en = en->next ) {
 			stmt *s = exp_bin(sql, en->data, left, right, NULL, NULL);

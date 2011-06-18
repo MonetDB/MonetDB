@@ -132,6 +132,20 @@ pattern batload(ht:any_1, tt:any_2, size:int):bat[:any_1,:any_2]
 address RMTbatload
 comment "create a BAT of the given type and size, and load values from the input stream";
 
+pattern batbincopy(b:bat):void
+address RMTbincopyto
+comment "dump BAT b in binary form to the stream";
+pattern batbincopy():bat[:void,:any]
+address RMTbincopyfrom
+comment "store the binary BAT data in the BBP and return as BAT";
+
+pattern bintype():void
+address RMTbintype
+comment "print the binary type of this mserver5";
+
+
+# initialise our localtype
+remote.prelude();
 @{
 @h
 
@@ -183,10 +197,19 @@ can be used to issue a safe, but blocking get/put/exec/register request.
 */
 @- Implementation
 @c
+
+#define RMTT_L_ENDIAN   0<<1
+#define RMTT_B_ENDIAN   1<<1
+#define RMTT_32_BITS    0<<2
+#define RMTT_64_BITS    1<<2
+#define RMTT_32_OIDS    0<<3
+#define RMTT_64_OIDS    1<<3
+
 typedef struct _connection {
 	MT_Lock            lock;      /* lock to avoid interference */
 	str                name;      /* the handle for this connection */
 	Mapi               mconn;     /* the Mapi handle for the connection */
+	unsigned char      type;      /* binary profile of the connection target */
 	size_t             nextid;    /* id counter */
 	struct _connection *next;     /* the next connection in the list */
 } *connection;
@@ -196,8 +219,10 @@ remote_export str RMTprelude(int *ret);
 remote_export str RMTepilogue(int *ret);
 @c
 static connection conns = NULL;
+static unsigned char localtype = 0;
 
 static inline str RMTquery(MapiHdl *ret, str func, Mapi conn, str query);
+static inline str RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in);
 
 @h
 remote_export str RMTresolve(int *ret, str *pat);
@@ -282,6 +307,7 @@ str RMTconnectScen(
 	char conn[BUFSIZ];
 	char *s;
 	Mapi m;
+	MapiHdl hdl;
 
 	/* just make sure the return isn't garbage */
 	*ret = 0;
@@ -298,6 +324,9 @@ str RMTconnectScen(
 	if (scen == NULL || *scen == NULL || strcmp(*scen, (str)str_nil) == 0)
 		throw(ILLARG, "remote.connect", ILLEGAL_ARGUMENT ": scenario is "
 				"NULL or nil");
+	if (strcmp(*scen, "mal") != 0 && strcmp(*scen, "msql") != 0)
+		throw(ILLARG, "remote.connect", ILLEGAL_ARGUMENT ": scenation '%s' "
+				"is not supported", *scen);
 
 	m = mapi_mapiuri(*ouri, *user, *passwd, *scen);
 	if (mapi_error(m))
@@ -330,6 +359,15 @@ str RMTconnectScen(
 	c->nextid = 0;
 	c->next = conns;
 	conns = c;
+
+	RMTquery(&hdl, "remote.connect", m, "remote.bintype();");
+	if (hdl != NULL && mapi_fetch_row(hdl)) {
+		char *val = mapi_fetch_field(hdl, 0);
+		c->type = (unsigned char)atoi(val);
+		mapi_close_handle(hdl);
+	} else {
+		c->type = 0;
+	}
 
 	MT_lock_init(&c->lock, "remote connection lock");
 
@@ -521,6 +559,24 @@ RMTquery(MapiHdl *ret, str func, Mapi conn, str query) {
 
 str RMTprelude(int *ret) {
 	(void)ret;
+	int type = 0;
+	
+#ifdef WORDS_BIGENDIAN
+	type |= RMTT_B_ENDIAN;
+#else
+	type |= RMTT_L_ENDIAN;
+#endif
+#if SIZEOF_SIZE_T == SIZEOF_LONG_LONG
+	type |= RMTT_64_BITS;
+#else
+	type |= RMTT_32_BITS;
+#endif
+#if SIZEOF_SIZE_T == SIZEOF_INT || defined(MONET_OID32)
+	type |= RMTT_32_OIDS;
+#else
+	type |= RMTT_64_OIDS;
+#endif
+	localtype = (unsigned char)type;
 
 	return(MAL_SUCCEED);
 }
@@ -560,7 +616,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str conn, ident, tmp, rt;
 	connection c;
 	char qbuf[BUFSIZ + 1];
-	MapiHdl mhdl;
+	MapiHdl mhdl = NULL;
 	int rtype;
 	ValPtr v;
 
@@ -593,7 +649,8 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			rt, ident);
 	GDKfree(rt);
 
-	if (isaBatType(rtype)) {
+	if (isaBatType(rtype) && (localtype == 0 || localtype != c->type || getHeadType(rtype) != TYPE_void))
+	{
 		int h, t, s;
 		ptr l, r;
 		str val, var;
@@ -608,9 +665,6 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		/* this call should be a single transaction over the channel*/
 		mal_set_lock(c->lock, "remote.get"); 
 
-#ifdef _DEBUG_REMOTE
-		mnstr_printf(cntxt->fdout, "#remote:%s:%s\n", c->name, qbuf);
-#endif
 		if ((tmp = RMTquery(&mhdl, "remote.get", c->mconn, qbuf))
 				!= MAL_SUCCEED)
 		{
@@ -656,6 +710,43 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		v->val.bval = b->batCacheid;
 		v->vtype = TYPE_bat;
 		BBPkeepref(b->batCacheid);
+	} else if (isaBatType(rtype)) {
+		/* binary compatible remote host, transfer BAT in binary form */
+		stream *sout;
+		stream *sin;
+		char buf[256];
+		ssize_t sz = 0, rd;
+		str err;
+		BAT *b = NULL;
+
+		/* this call should be a single transaction over the channel*/
+		mal_set_lock(c->lock, "remote.get"); 
+
+		/* bypass Mapi from this point to efficiently write all data to
+		 * the server */
+		sout = mapi_get_to(c->mconn);
+		sin = mapi_get_from(c->mconn);
+
+		/* call our remote helper to do this more efficiently */
+		mnstr_printf(sout, "remote.batbincopy(%s);\n", ident);
+		mnstr_flush(sout);
+
+		/* read the JSON header */
+		while ((rd = mnstr_read(sin, &buf[sz], 1, 1)) == 1 && buf[sz] != '\n') {
+			sz += rd;
+		}
+		if (rd < 0)
+			throw(MAL, "remote.get", "could not read BAT JSON header");
+		if (buf[0] == '!')
+			return(GDKstrdup(buf));
+
+		buf[sz] = '\0';
+		if ((err = RMTinternalcopyfrom(&b, buf, sin)) != NULL)
+			return(err);
+
+		v->val.bval = b->batCacheid;
+		v->vtype = TYPE_bat;
+		BBPkeepref(b->batCacheid);
 	} else {
 		ptr p = NULL;
 		str val;
@@ -692,7 +783,8 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		}
 	}
 
-	mapi_close_handle(mhdl);
+	if (mhdl != NULL)
+		mapi_close_handle(mhdl);
 	mal_unset_lock(c->lock, "remote.get"); 
 
 	return(MAL_SUCCEED);
@@ -1095,6 +1187,217 @@ str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	v->val.bval = b->batCacheid;
 	v->vtype = TYPE_bat;
 	BBPkeepref(b->batCacheid);
+
+	return(MAL_SUCCEED);
+}
+
+@h
+remote_export str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+@c
+/**
+ * dump given BAT to stream
+ */
+str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int bid = *(int *)getArgReference(stk, pci, 1);
+	BAT *b = BBPquickdesc(bid, FALSE);
+
+	(void)mb;
+	(void)stk;
+	(void)pci;
+
+	if (b == NULL)
+		throw(MAL, "remote.bincopyto", RUNTIME_OBJECT_UNDEFINED);
+	if (b->htype != TYPE_void)
+		throw(ILLARG, "remote.bincopyto", "only void-headed BATs are supported");
+
+	mnstr_printf(cntxt->fdout, /*JSON*/"{"
+			"\"version\":1,"
+			"\"htype\":%d,"
+			"\"ttype\":%d,"
+			"\"seqbase\":" OIDFMT ","
+			"\"size\":" SZFMT ","
+			"\"tailsize\":" SZFMT ","
+			"\"theapsize\":" SZFMT
+			"}\n",
+			TYPE_void,
+			b->ttype,
+			b->hseqbase == oid_nil ? 0 : b->hseqbase,
+			BATcount(b),
+			BATcount(b) * b->T->width,
+			b->T->varsized ? b->T->vheap->free : 0
+			);
+	mnstr_write(cntxt->fdout, /* tail */
+			b->T->heap.base + (b->U->first * b->T->width),
+			BATcount(b) * b->T->width, 1);
+	if (b->T->varsized)
+		mnstr_write(cntxt->fdout, /* theap */
+				b->T->vheap->base,
+				b->T->vheap->free, 1);
+	mnstr_flush(cntxt->fdout);
+
+	return(MAL_SUCCEED);
+}
+
+@h
+remote_export str RMTbincopyfrom(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+@c
+typedef struct _binbat_v1 {
+	int Htype;
+	int Ttype;
+	oid seqbase;
+	size_t size;
+	size_t tailsize;
+	size_t theapsize;
+} binbat;
+
+static inline str
+RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
+{
+	binbat bb = { 0, 0, 0, 0, 0, 0 };
+	char *nme = NULL;
+	char *val = NULL;
+
+	BAT *b;
+
+	/* hdr is a JSON structure that looks like
+	 * {"version":1,"htype":0,"ttype":6,"seqbase":0,"tailsize":4,"theapsize":0}
+	 * we take the binary data directly from the stream */
+
+	/* could skip whitespace, but we just don't allow that */
+	if (*hdr++ != '{')
+		throw(MAL, "remote.bincopyfrom", "illegal input, not a JSON header");
+	while (*hdr != '\0') {
+		switch (*hdr) {
+			case '"':
+				/* we assume only numeric values, so all strings are
+				 * elems */
+				if (nme != NULL) {
+					*hdr = '\0';
+				} else {
+					nme = hdr + 1;
+				}
+				break;
+			case ':':
+				val = hdr + 1;
+				break;
+			case ',':
+			case '}':
+				if (val == NULL)
+					throw(MAL, "remote.bincopyfrom",
+							"illegal input, JSON value missing");
+				*hdr = '\0';
+
+				/* deal with nme and val */
+				if (strcmp(nme, "version") == 0) {
+					if (strcmp(val, "1") != 0)
+						throw(MAL, "remote.bincopyfrom",
+								"unsupported version: %s", val);
+				} else if (strcmp(nme, "htype") == 0) {
+					bb.Htype = atoi(val);
+				} else if (strcmp(nme, "ttype") == 0) {
+					bb.Ttype = atoi(val);
+				} else if (strcmp(nme, "seqbase") == 0) {
+					bb.seqbase = (oid)atol(val);
+				} else if (strcmp(nme, "size") == 0) {
+					bb.size = atol(val);
+				} else if (strcmp(nme, "tailsize") == 0) {
+					bb.tailsize = atol(val);
+				} else if (strcmp(nme, "theapsize") == 0) {
+					bb.theapsize = atol(val);
+				} else {
+					throw(MAL, "remote.bincopyfrom", "unknown element: %s", nme);
+				}
+				nme = val = NULL;
+				break;
+		}
+		hdr++;
+	}
+
+	/* the BAT we will return */
+	b = BATnew(bb.Htype, bb.Ttype, bb.size);
+	b->hseqbase = bb.seqbase;
+
+	mnstr_read(in, b->T->heap.base, bb.tailsize, 1);
+	b->U->count = bb.size;
+	if (bb.theapsize > 0) {
+		if (b->T->vheap->size < bb.theapsize) {
+			GDKfree(b->T->vheap->base);
+			b->T->vheap->base = GDKmalloc(bb.theapsize);
+			b->T->vheap->size = b->T->vheap->maxsize = bb.theapsize;
+		}
+		mnstr_read(in, b->T->vheap->base, bb.theapsize, 1);
+		b->T->vheap->free = bb.theapsize;
+	}
+
+	*ret = b;
+	return(MAL_SUCCEED);
+}
+
+/**
+ * read from the input stream and give the BAT handle back to the caller
+ */
+str RMTbincopyfrom(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+	BAT *b = NULL;
+	ValPtr v;
+	str err;
+
+	(void)mb;
+
+	/* We receive a normal line, which contains the JSON header, the
+	 * rest is binary data directly on the stream.  We get the first
+	 * line from the buffered stream we have here, and pass it on
+	 * together with the raw stream we have. */
+	cntxt->fdin->eof = 0; /* in case it was before */
+	if (bstream_next(cntxt->fdin) <= 0)
+		throw(MAL, "remote.bincopyfrom", "expected JSON header");
+
+	cntxt->fdin->buf[cntxt->fdin->len] = '\0';
+	err = RMTinternalcopyfrom(&b,
+			&cntxt->fdin->buf[cntxt->fdin->pos], cntxt->fdin->s);
+	/* skip the JSON line */
+	cntxt->fdin->pos = ++cntxt->fdin->len;
+	if (err != MAL_SUCCEED)
+		return(err);
+
+	v = getArgReference(stk, pci, 0);
+	v->val.bval = b->batCacheid;
+	v->vtype = TYPE_bat;
+	BBPkeepref(b->batCacheid);
+
+	return(MAL_SUCCEED);
+}
+
+@h
+remote_export str RMTbintype(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+@c
+/**
+ * bintype identifies the system on its binary profile.  This is mainly
+ * used to determine if BATs can be sent binary across.
+ */
+str RMTbintype(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+	int type = 0;
+	(void)mb;
+	(void)stk;
+	(void)pci;
+
+#ifdef WORDS_BIGENDIAN
+	type |= RMTT_B_ENDIAN;
+#else
+	type |= RMTT_L_ENDIAN;
+#endif
+#if SIZEOF_SIZE_T == SIZEOF_LONG_LONG
+	type |= RMTT_64_BITS;
+#else
+	type |= RMTT_32_BITS;
+#endif
+#if SIZEOF_SIZE_T == SIZEOF_INT || defined(MONET_OID32)
+	type |= RMTT_32_OIDS;
+#else
+	type |= RMTT_64_OIDS;
+#endif
+
+	mnstr_printf(cntxt->fdout, "[ %d ]\n", type);
 
 	return(MAL_SUCCEED);
 }
