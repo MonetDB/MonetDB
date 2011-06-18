@@ -142,6 +142,7 @@ sql5_export str SQLvalidatePipeline(void);
 sql5_export str setOptimizers(str optimizer);
 
 sql5_export str optimizerpipe;		/* the active pipeline */
+sql5_export void addOptimizers(Client c,MalBlkPtr mb, int flag);
 #endif /* _SQL_OPTIMIZER_H_ */
 
 @-
@@ -633,8 +634,8 @@ setOptimizers(str optimizer)
 	return optimizerpipe;
 }
 
-static void
-addOptimizers(Client c,MalBlkPtr mb, mvc *m)
+void
+addOptimizers(Client c,MalBlkPtr mb, int flag)
 {
 	int i;
 
@@ -642,7 +643,7 @@ addOptimizers(Client c,MalBlkPtr mb, mvc *m)
 	for (i = 0; optimizers[i]; i++) {
 		InstrPtr p;
 
-		if (m->point_query && (strcmp(optimizers[i], "mitosis")==0 || strcmp(optimizers[i], "dataflow")==0))
+		if (flag && (strcmp(optimizers[i], "mitosis")==0 || strcmp(optimizers[i], "dataflow")==0))
 			continue;
 		p = newFcnCall(mb, "optimizer", optimizers[i]);
 		typeChecker(c->nspace, mb, p, FALSE);
@@ -686,7 +687,7 @@ to allow inspection.
 	}
 	optimizer = stack_get_string(be->mvc, "optimizer");
 	stack_set_var(be->mvc, "optimizer", VALset(&src, TYPE_str, setOptimizers(optimizer)));
-	addOptimizers(c,mb, be->mvc);
+	addOptimizers(c,mb, be->mvc->point_query);
 	SQLgetStatistics(c,(mvc *) c->state[MAL_SCENARIO_OPTIMIZE],mb);
 	if ( m->emod & mod_debug )
 		addtoMalBlkHistory(mb,"getStatistics");
