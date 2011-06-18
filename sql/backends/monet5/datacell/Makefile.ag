@@ -40,6 +40,7 @@ lib__datacell = {
 		  receptor.mx \
 		  petrinet.mx \
 		  dcoperator.mx \
+		  opt_datacell.mx \
 		  datacell.mx \
 		  emitter.mx 
 
@@ -72,6 +73,7 @@ scripts_mal = {
 		  emitter.mal \
 		  petrinet.mal \
 		  datacell.mal \
+		  opt_datacell.mal \
 		  dcoperator.mal
 }
 

@@ -60,6 +60,15 @@ pattern query(name:str,def:str):void
 address DCquery
 comment "Add a new continuous query.";
 
+pattern register(name:str,def:str, delay:int):void
+address PNregistration
+comment "Add a new continuous query to the scheduler with an
+indicative maximum delady of scheduling.";
+
+pattern register(name:str,def:str):void
+address PNregistration
+comment "Add a new continuous query to the scheduler.";
+
 pattern start()
 address DCstartScheduler
 comment "Convert the datacell schema to a stream processing infrastructure";
@@ -130,6 +139,9 @@ datacell_export str DCinventory(int *ret);
 #endif
 @c
 #include "datacell.h"
+#include "opt_datacell.h"
+#include "sql_optimizer.h"
+
 #ifdef WIN32
 #include "winsock2.h"
 #endif
@@ -260,8 +272,12 @@ DCquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg;
 	InstrPtr p;
 	Module scope;
+	lng clk = GDKusec();
 
 	(void) mb;
+	/* check if the argument denotes a procedure name */
+	/* if so, get its definition to be compiled */
+
 	msg = SQLstatementIntern(cntxt, def, nme, 0, 0);
 	/* if ( msg )
 		return msg; */
@@ -275,7 +291,18 @@ DCquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	setModuleId(p, putName("datacell",8));
 	setFunctionId(p, putName(nme,strlen(nme)));
     insertSymbol(scope,s);
-	PNanalysis(cntxt,s->def);
+	/* printFunction(cntxt->fdout, s->def, 0, LIST_MAL_STMT);*/
+	/* optimize the code and register at scheduler */
+	if ( msg == MAL_SUCCEED) {
+		OPTdatacellImplementation(cntxt,s->def,0,0);
+		addOptimizers(cntxt,s->def,0);
+		if ( msg == MAL_SUCCEED)
+			msg = optimizeMALBlock(cntxt,s->def);
+		if ( msg == MAL_SUCCEED)
+			msg = optimizerCheck(cntxt, s->def, "optimizer.datacell", 1, GDKusec() - clk, OPT_CHECK_ALL);
+		addtoMalBlkHistory(mb, "datacell");
+	}
+	printFunction(cntxt->fdout, s->def, 0, LIST_MAL_STMT);
 	return msg;
 }
 
@@ -332,8 +359,6 @@ str
 DCresumeScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int ret=0;
-	if ( DCinitialized != DCPAUSED)
-		throw(MAL,"datacell.pause","Datacell already running");
 	PNresumeScheduler(&ret);
 	(void) cntxt;
 	(void) mb;
@@ -377,6 +402,7 @@ DCdump(int *ret)
 	BSKTdump(ret);
 	RCdump();
 	EMdump();
+	PNdump(ret);
 	return MAL_SUCCEED;
 }
 @}

@@ -100,7 +100,7 @@ The implementation is inspired by the tablet module.
 #define datacell_export extern
 #endif
 
-#define _DEBUG_RECEPTOR_
+/* #define _DEBUG_RECEPTOR_*/
 #define RCout GDKout  
 datacell_export str RCdump();
 
@@ -568,7 +568,8 @@ parse:
 						line = buf;
 						e = strchr(line, '\n');
 						if (e == 0) {
-							mnstr_printf(RCout, "#unfinished line %d %d :%s \n", m, n, line);
+							mnstr_printf(RCout, "#gobbled event %d %d :%s \n", m, n, line);
+							cnt--;
 							break;
 						}
 						*e = 0;
@@ -797,7 +798,7 @@ RCstartThread(Receptor rc)
 			RCreconnect(rc);
 			RCbody(rc);
 		}
-	} while (rc->mode == RCACTIVE && rc->status != RCSTOP);
+	} while (rc->mode == RCPASSIVE && rc->status != RCSTOP);
 	shutdown(rc->newsockfd, SHUT_RDWR);
 	return MAL_SUCCEED;
 }

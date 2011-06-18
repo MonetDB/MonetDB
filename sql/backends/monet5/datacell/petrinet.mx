@@ -32,7 +32,8 @@ module petrinet;
 pattern registration(mod:str,fcn:str, delay:int):void
 address PNregistration
 comment "Add a continous query to the Petri net. It will analyse
-the MAL block to determine the input/output dependencies.";
+the MAL block to determine the input/output dependencies. 
+The delay provides an indicative upperbound on how fast to react";
 
 command source(mod:str,fcn:str, schema:str,tbl:str):void
 address PNsource
@@ -68,9 +69,10 @@ comment "Show the status of the Petri net";
 #define _PETRINET_
 #include "monetdb_config.h"
 #include "mal_interpreter.h"
+#include "sql_scenario.h"
 #include "basket.h"
 
-/* #define _DEBUG_PETRINET_*/
+/* #define _DEBUG_PETRINET_ */
 
 #define PNout GDKout 
 /*#define  _BASKET_SIZE_*/
@@ -100,7 +102,7 @@ datacell_export str PNanalyseWrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, 
 #include "petrinet.h"
 #include "mal_builder.h"
 
-#define MAXPN 2000			/* it is the minimum, if we need more space GDKrealloc */
+#define MAXPN 200			/* it is the minimum, if we need more space GDKrealloc */
 #define PNcontrolInfinit 1	/* infinit loop of PNController  */
 #define PNcontrolEnd 2		/* when all factories are disable PNController exits */
 
@@ -108,8 +110,8 @@ static int controlRounds = PNcontrolInfinit;
 
 
 typedef struct {
-	int bid;
 	str schema, table;
+	int bskt;		/* basket used */
 	BAT *b;				/* reference BAT for checking content */
 	int available;      /* approximate number of events available */
 	size_t lastcount;   /* statistics gathering */
@@ -122,6 +124,7 @@ typedef struct {
 	MalStkPtr stk;      /* Factory stack */
 	InstrPtr pci;       /* Factory re-entry point */
 	int pc;
+	int delay;		/* maximum delay between calls */
 	int cycles;     /* number of invocations of the factory */
 	size_t cycletime;   /* total cycle time for all invocations */
 	int enabled, available;
@@ -133,39 +136,19 @@ PNnode *pnet;
 
 int pnettop = 0;
 
-int *enabled_Factories;     /*array that contains the id's of all facroties
-                               that are enable to fire*/
+int *enabled;     /*array that contains the id's of all queries that are enable to fire*/
 
-#define PNrunning 1
+#define PNinitialize 3
+#define PNrunning 2
+#define PNpause 1
 #define PNstopped 0
 
-static int status = 0;
-static int cycleDelay = 1000; /* be careful, it affects response/throughput timings */
+static int status = PNinitialize;
+static int cycleDelay = 10; /* be careful, it affects response/throughput timings */
 
-/* check the routine for input/output relationships */
-void
-PNanalysis(Client cntxt, MalBlkPtr mb)
-{
-	int i, bskt;
-	InstrPtr p;
-	str schema, tbl;
+void PNanalysis(Client cntxt, MalBlkPtr mb);
+str PNstartThread(int *ret);
 
-	for( i = 0; i < mb->stop; i++){
-		p= getInstrPtr(mb,i);
-		if ( getModuleId(p) == sqlRef){
-			if ( getFunctionId(p) == bindRef && getVarConstant(mb, getArg(p, p->argc-1)).val.ival == 0){
-				bskt = BSKTlocate( schema = getVarConstant(mb,getArg(p,2)).val.sval, tbl = getVarConstant(mb,getArg(p,3)).val.sval);
-				if ( bskt == 0 )
-					mnstr_printf(cntxt->fdout,"#input basket %s.%s missing\n", schema,tbl);
-			}
-			if ( getFunctionId(p) == appendRef){
-				bskt = BSKTlocate( schema = getVarConstant(mb,getArg(p,2)).val.sval, tbl = getVarConstant(mb,getArg(p,3)).val.sval);
-				if ( bskt == 0 )
-					mnstr_printf(cntxt->fdout,"#output basket %s.%s missing\n", schema,tbl);
-			}
-		}
-	}
-}
 str PNanalyseWrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Module scope;
@@ -204,31 +187,26 @@ str PNregistration(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (pnettop >= MAXPN) {
 		if ((pnet = (PNnode*)GDKrealloc(pnet, sizeof(PNnode) * (pnettop + 1))) == NULL)
-			throw(MAL, "petrinet.transformation", "GDKrealloc failed");
-	}else if (pnettop == 0) {
-		if ((pnet = (PNnode *)GDKmalloc(MAXPN * sizeof(PNnode))) == NULL)
-			throw(MAL, "petrinet.transformation", "GDKmalloc failed");
-	}
+			throw(MAL, "petrinet.transformation", MAL_MALLOC_FAIL);
+	}else if (pnettop == 0 && (pnet = (PNnode *)GDKzalloc(MAXPN * sizeof(PNnode))) == NULL)
+			throw(MAL, "petrinet.transformation", MAL_MALLOC_FAIL);
 
 	pnet[pnettop].mod = GDKstrdup(*modnme);
 	pnet[pnettop].fcn = GDKstrdup(*fcnnme);
 	pnet[pnettop].mb = s->def;
-	pnet[pnettop].srctop = 0;
-	pnet[pnettop].trgttop = 0;
 	pnet[pnettop].cycles = 0;
-	pnet[pnettop].cycletime = 0;
-	pnet[pnettop].available = 0;     /* total tuples available in all source pool */
-	pnet[pnettop].enabled = 0;   /* nr of non-empty baskets */
-	pnettop++;
+	/* all the rest is zero */
 	/*assert(pnettop<MAXPN);*/
 
 	if( pci->argc >3 ){
 		delay = (int*) getArgReference(stk,pci,3);
 		if (*delay < 0)
 			throw(MAL, "datacell.setDelay", "Negative value not allowed");
-		cycleDelay = *delay;
+		pnet[pnettop].delay = *delay;
 	}
+	pnettop++;
 
+	PNanalysis(cntxt,s->def);
 	(void)ret;
 	return MAL_SUCCEED;
 }
@@ -242,10 +220,15 @@ str PNstopScheduler(int *ret)
 
 str PNresumeScheduler(int *ret)
 {
-	status = PNrunning;
-	(void)ret;
+	if ( status == PNrunning)
+		return MAL_SUCCEED;
+	if ( status == PNstopped)
+		status = PNrunning;
+	if ( status == PNinitialize)
+		return PNstartThread(ret);
 	return MAL_SUCCEED;
 }
+
 str PNpauseScheduler(int *ret)
 {
 	status = PNstopped;
@@ -256,19 +239,22 @@ str PNpauseScheduler(int *ret)
 str PNdump(int *ret)
 {
 	int i, k;
+	mnstr_printf(PNout,"#scheduler status\n");
 	for (i = 0; i < pnettop; i++) {
-		mnstr_printf(PNout, "[%d]\t%s.%s cycles %d\n",
-			i, pnet[i].mod, pnet[i].fcn, pnet[i].cycles);
+		mnstr_printf(PNout, "#[%d]\t%s.%s delay %d cycles %d\n",
+			i, pnet[i].mod, pnet[i].fcn, pnet[i].delay, pnet[i].cycles);
 		for (k = 0; k < pnet[i].srctop; k++)
-			mnstr_printf(PNout, "<--\t%s.%s %d %d\n",
+			mnstr_printf(PNout, "#<--\t%s.%s %d %d\n",
 				pnet[i].source[k].schema,
 				pnet[i].source[k].table,
+				pnet[i].source[k].bskt,
 				pnet[i].source[k].lastcount,
 				pnet[i].source[k].consumed);
 		for (k = 0; k < pnet[i].trgttop; k++)
-			mnstr_printf(PNout, "-->\t%s.%s %d %d\n",
+			mnstr_printf(PNout, "#-->\t%s.%s basket[%d] %d %d\n",
 				pnet[i].target[k].schema,
 				pnet[i].target[k].table,
+				pnet[i].source[k].bskt,
 				pnet[i].target[k].lastcount,
 				pnet[i].target[k].consumed);
 	}
@@ -290,16 +276,14 @@ str PNsource(int *ret, str *mod, str *fcn, str *schema, str *tbl)
 			k = pnet[i].srctop;
 			if (k >= MAXPN) {
 				if ((pnet[i].source = (PoolRec*)GDKrealloc(pnet[i].source, sizeof(PoolRec) * (k + 1))) == NULL)
-					throw(MAL, "petrinet.source", "GDKrealloc failed");
-			}           else if (k == 0) {
-			if ((pnet[i].source = (PoolRec *)GDKmalloc(MAXPN * sizeof(PoolRec))) == NULL)
-				throw(MAL, "petrinet.source", "GDKmalloc failed");
+					throw(MAL, "petrinet.source", MAL_MALLOC_FAIL);
 			}
+			else if (k == 0 && (pnet[i].source = (PoolRec *)GDKzalloc(MAXPN * sizeof(PoolRec))) == NULL)
+					throw(MAL, "petrinet.source", MAL_MALLOC_FAIL);
+			
 			pnet[i].source[k].schema = GDKstrdup(*schema);
 			pnet[i].source[k].table = GDKstrdup(*tbl);
-			pnet[i].source[k].lastcount = 0;
-			pnet[i].source[k].consumed = 0;
-			pnet[i].source[k].available = 0;
+			pnet[i].source[k].bskt = z;
 			pnet[i].srctop++;
 
 			/*assert(pnet[i].srctop< MAXPN);*/
@@ -319,22 +303,40 @@ str PNtarget(int *ret, str *mod, str *fcn, str *schema, str *tbl)
 			k = pnet[i].trgttop;
 			if (k >= MAXPN) {
 				if ((pnet[i].target = (PoolRec*)GDKrealloc(pnet[i].target, sizeof(PoolRec) * (k + 1))) == NULL)
-					throw(MAL, "petrinet.target", "GDKrealloc failed");
-			}           else if (k == 0) {
-			if ((pnet[i].target = (PoolRec *)GDKmalloc(MAXPN * sizeof(PoolRec))) == NULL)
-				throw(MAL, "petrinet.target", "GDKmalloc failed");
-			}
+					throw(MAL, "petrinet.target", MAL_MALLOC_FAIL);
+			} else 
+			if ( k == 0 && (pnet[i].target = (PoolRec *)GDKzalloc(MAXPN * sizeof(PoolRec))) == NULL)
+				throw(MAL, "petrinet.target", MAL_MALLOC_FAIL);
 
 			pnet[i].target[k].schema = GDKstrdup(*schema);
-			pnet[i].target[k].table = GDKstrdup( *tbl);
-			pnet[i].target[k].lastcount = 0;
-			pnet[i].target[k].consumed = 0;
+			pnet[i].target[k].table = GDKstrdup(*tbl);
+			pnet[i].target[k].bskt = z;
 			pnet[i].trgttop++;
 			/*assert(pnet[i].trgttop< MAXPN);*/
 		}
 	}
 	(void)ret;
 	return MAL_SUCCEED;
+}
+/* check the routine for input/output relationships */
+void
+PNanalysis(Client cntxt, MalBlkPtr mb)
+{
+	int i,ret;
+	InstrPtr p, sig = getInstrPtr(mb,0);
+	str schema, tbl;
+
+	for( i = 0; i < mb->stop; i++){
+		p= getInstrPtr(mb,i);
+		if ( getModuleId(p) == basketRef){
+			if ( getFunctionId(p) == grabRef ){
+				schema = getVarConstant(mb,getArg(p,p->argc-2)).val.sval;
+				 tbl = getVarConstant(mb,getArg(p,p->argc-1)).val.sval;
+				mnstr_printf(cntxt->fdout,"#input basket %s.%s \n", schema,tbl);
+				PNsource(&ret, &getModuleId(sig), &getFunctionId(sig), &schema, &tbl);
+			}
+		}
+	}
 }
 @-
 The PetriNet controller lives in an separate thread.
@@ -357,19 +359,23 @@ PNcontroller(void *dummy)
 	InstrPtr p;
 	MalStkPtr glb;
 	MalBlkPtr mb;
-	Client cntxt = &mal_clients[0];  /* FIXME: use real client context */
+	Client cntxt;
 	int k = -1;
 	int m = 0;
+	str msg;
 
+	cntxt = MCinitClient(0,0,GDKout);
+	SQLinitEnvironment(cntxt);
 	/* At this point we know what is the total number of factories.
 	 * The most extremely case is when ALL factories are enable to fire
 	 * so the maximum space we could ever need is = #factories (=pnettop)*/
 
-	if ((enabled_Factories = (int *)GDKmalloc(pnettop * sizeof(int))) == NULL) {
-		mnstr_printf(PNout, "Petrinet Controller is aneble to allocate more memory!\n");
+	if ((enabled = (int *)GDKzalloc(MAXPN * sizeof(int))) == NULL) {
+		mnstr_printf(cntxt->fdout, "#Petrinet Controller is unable to allocate more memory!\n");
 		return;
 	}
 
+	/* create a fake procedure to highlight the continuous queries */
 	s = newFunction("user", "pnController", FACTORYsymbol);
 	p = getSignature(s);
 	getArg(p, 0) = newTmpVariable(mb = s->def, TYPE_void);
@@ -382,7 +388,7 @@ PNcontroller(void *dummy)
 	/*printf("\n1 mb->vtop:%d\n",mb->vtop);*/
 	chkProgram(cntxt->nspace, mb);
 	if (mb->errors) {
-		mnstr_printf(PNout, "Petrinet Controller found errors\n");
+		mnstr_printf(cntxt->fdout, "#Petrinet Controller found errors\n");
 		return;
 	}
 	newStack(glb, mb->vtop);
@@ -390,13 +396,12 @@ PNcontroller(void *dummy)
 	glb->stktop = mb->vtop;
 	glb->blk = mb;
 #ifdef _DEBUG_PETRINET_
-	printFunction(PNout, mb, LIST_MAL_ALL);
+	printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
 #endif
 	do {
 		if (cycleDelay)
-			do
+			while (status != PNrunning)
 				MT_sleep_ms(cycleDelay);  /* delay to make it more tractable */
-			while (status != PNrunning);
 		/* collect latest statistics, note that we don't need a lock here,
 		           because the count need not be accurate to the usec. It will simply
 		   come back. We also only have to check the sources that are marked
@@ -405,75 +410,59 @@ PNcontroller(void *dummy)
 		k = -1;
 		for (i = 0; i < pnettop; i++) {
 			pnet[i].available = 0;
+			if ( pnet[i].enabled >= 0)
 			for (j = 0; j < pnet[i].srctop; j++) {
-				pnet[i].source[j].b = BATdescriptor(pnet[i].source[j].bid);
-				/*if( pnet[i].source[j].b == 0){
-				    pnet[i].source[j].b = BATdescriptor(pnet[i].source[j].bid);
-				   }*/
+				pnet[i].source[j].b = baskets[pnet[i].source[j].bskt].primary[0];
 				if (pnet[i].source[j].b == 0) { /* we lost the BAT */
 					pnet[i].enabled = 0;
 					break;
 				}
-				if (pnet[i].source[j].available == 0) { /* save some counts */
-					pnet[i].source[j].available = cnt = (int)BATcount(pnet[i].source[j].b);
-					if (cnt) {
+				pnet[i].source[j].available = cnt = (int)BATcount(pnet[i].source[j].b);
+				if (cnt) {
 #ifdef _DEBUG_PETRINET_
-						mnstr_printf(PNout, "PETRINET:It has %d tuples factory %d, source %d\n", cnt, i, j);
+					mnstr_printf(cntxt->fdout, "#PETRINET:%d tuples for %s.%s, source %d\n", cnt, pnet[i].mod, pnet[i].fcn, j);
 #endif
-						pnet[i].available += cnt;
-						pnet[i].enabled++;
-						cnt = 0;
-						BBPunfix(pnet[i].source[j].b->batCacheid);
-					}else {
+					pnet[i].available += cnt;
+					pnet[i].enabled++;
+					cnt = 0;
+				}else {
 #ifdef _DEBUG_PETRINET_
-						mnstr_printf(PNout, "PETRINET:It has no tuples factory %d, source %d\n", i, j);
+					mnstr_printf(cntxt->fdout, "#PETRINET:no tuples for %s.%s, source %d\n",  pnet[i].mod, pnet[i].fcn, j);
 #endif
-						/*stop checking if the rest input BATs of a factory contain tuples,
-						 * because we already find one empty BAT
-						 * so we cannot fire the factory */
-						BBPunfix(pnet[i].source[j].b->batCacheid);
-						j = pnet[i].srctop;
-						stopController++;
-					}
+					/*stop checking if the rest input BATs of a factory contain tuples,
+					 * because we already find one empty BAT
+					 * so we cannot fire the factory */
+					j = pnet[i].srctop;
+					stopController++;
 				}
 			}
 			if (pnet[i].enabled == pnet[i].srctop) {
 				k++;
-				/*write in the array enabled_Factories, the id's of all factories that are able to be executed*/
-				enabled_Factories[k] = i;
+				/*save the ids of all continuous queries that can be executed */
+				enabled[k] = i;
 			}
 		}
 
-
-		/* For our experiments
-		 * when all factories are disable to run, stop the infinit loop of checking-executing
-		 * In real-world it should not stop
-		 */
-
-		if ((stopController == pnettop) && (controlRounds == PNcontrolEnd)) {
-			status = PNstopped;
-#ifdef _DEBUG_PETRINET_
-			mnstr_printf(PNout, "\nSet status = PNstopped;\n");
-#endif
-			k = -1;
-			break;
-		}
 		/* execute each enabled transformation */
 		/* We don't need to access again all the factories and check again which are available to execute them
-		 * we have already kept the enable ones in the enabled_Factories list (created in the previous loop)
+		 * we have already kept the enable ones in the enabled list (created in the previous loop)
 		 * and now it is enough to access that list*/
 		for (m = 0; m <= k; m++) {
-			i = enabled_Factories[m];
+			i = enabled[m];
 			if (pnet[i].srctop == pnet[i].enabled && pnet[i].available > 0) {
 #ifdef _DEBUG_PETRINET_
-				mnstr_printf(PNout, "Run transition %s pc %d\n", pnet[i].fcn, i);
+				mnstr_printf(cntxt->fdout, "#Run transition %s pc %d\n", pnet[i].fcn, pnet[i].pc);
 #endif
 #ifdef _BASKET_SIZE_
-				mnstr_printf(PNout, "\npnet[%d].srctop:%d\n", i, pnet[i].srctop);
-				mnstr_printf(PNout, "Function: %s basket size %d\n", pnet[i].fcn, pnet[i].source[0].available);
+				mnstr_printf(cntxt->fdout, "\npnet[%d].srctop:%d\n", i, pnet[i].srctop);
+				mnstr_printf(cntxt->fdout, "Function: %s basket size %d\n", pnet[i].fcn, pnet[i].source[0].available);
 #endif
 
-				reenterMAL(cntxt, mb, pnet[i].pc, pnet[i].pc + 1, glb, 0, 0);
+				msg = reenterMAL(cntxt, mb, pnet[i].pc, pnet[i].pc + 1, glb, 0, 0);
+				if ( msg != MAL_SUCCEED){
+					mnstr_printf(cntxt->fdout, "Function: %s failed\n", pnet[i].fcn);
+					pnet[i].enabled = -1;
+				}
 				pnet[i].cycles++;
 				for (j = 0; j < pnet[i].srctop; j++)
 					pnet[i].source[j].available = 0;  /* force recount */
@@ -483,8 +472,6 @@ PNcontroller(void *dummy)
 	} while (status != PNstopped);
 	(void)dummy;
 }
-
-
 
 str PNstartThread(int *ret)
 {

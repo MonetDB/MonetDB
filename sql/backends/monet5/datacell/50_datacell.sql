@@ -48,11 +48,21 @@ create procedure datacell.remove (sch string, tbl string)
 create procedure datacell.query(sch string, proc string)
 	external name datacell.query;
 
+create procedure datacell.register(sch string, proc string)
+	external name datacell.register;
+
+-- scheduler activation
 create procedure datacell.prepare()
 	external name datacell.prepare;
 
 create procedure datacell.finish()
 	external name datacell.finish;
+
+create procedure datacell.pause()
+	external name datacell.pause;
+
+create procedure datacell.resume()
+	external name datacell.resume;
 
 create procedure datacell.dump()
 	external name datacell.dump;

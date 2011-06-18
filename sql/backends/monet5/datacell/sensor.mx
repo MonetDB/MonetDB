@@ -49,7 +49,7 @@ a number of milliseconds.
 #endif
 
 #include "dcsocket.h"
-#define DEBUG
+/* #define SENSOR_DEBUG*/
 #define SEout GDKout
 
 FILE *fd;
@@ -116,9 +116,10 @@ usage()
 #define UDP 2
 #define CSV 3	
 #define TSV 4
+#define DEB 5
 static int protocol= TCP;
-static char *protocolname[5] = {"<unknown>","tcp","udp","csv","tsv"};
-static char *separator[5] = {"",",",",",",","\t"};
+static char *protocolname[6] = {"<unknown>","tcp","udp","csv","tsv","debug"};
+static char *separator[6] = {"",",",",",",","\t",","};
 
 /*static Mapi dbh;
 static MapiHdl hdl = NULL;*/
@@ -274,10 +275,14 @@ int main(int argc, char **argv)
 					protocol = CSV;
 					break;
 				}
+				if (strcmp(optarg, "debug") == 0) {
+					protocol = DEB;
+					break;
+				}
 			}
 			if (strcmp(long_options[option_index].name, "port") == 0) {
 				port = optarg? atol(optarg): -1;
-#ifdef DEBUG
+#ifdef SENSOR_DEBUG
 				mnstr_printf(SEout, "#PORT : %d\n", port);
 #endif
 				break;
@@ -335,13 +340,17 @@ int main(int argc, char **argv)
 We limit the protocols for the time being to what can be
 considered a safe method.
 @c
-	if (protocol == CSV) {
+	if (protocol == DEB ) {
+		/* save event stream in a file */
 		Sensor se = SEnew(sensor);
 		if ( events == -1  || batchsize != 1){
 			printf("Provide an event limit using --events=<nr> and --batch=1\n");
 			return 0;
 		}
-		se->toServer = open_wastream(datafile);
+		if ( datafile)
+			se->toServer = open_wastream(datafile);
+		else
+			se->toServer = file_wastream(stdout, "stdout");
 		produceStream(se);
 	}
 	if (protocol == UDP) {
@@ -367,7 +376,7 @@ considered a safe method.
 			name[0] = 0;
 			err = NULL;
 			if (server) {
-#ifdef DEBUG
+#ifdef SENSOR_DEBUG
 				mnstr_printf(SEout, "#listen %s as server is %d \n",se->name, server);
 #endif
 				err = socket_server_listen(sockfd, &(se->newsockfd));
@@ -376,7 +385,7 @@ considered a safe method.
 					break;
 				}
 			} else {
-#ifdef DEBUG
+#ifdef SENSOR_DEBUG
 				mnstr_printf(SEout, "#%s is client \n",se->name);
 #endif
 				err = socket_client_connect(&(se->newsockfd), host, port);
@@ -394,7 +403,7 @@ considered a safe method.
 			}
 			if (server) {
 				createThread = MT_create_thread(&pid, (void (*)(void *))produceServerStream, se, MT_THR_DETACHED);
-#ifdef DEBUG
+#ifdef SENSOR_DEBUG
 				if (createThread)
 					mnstr_printf(SEout, "#Create thread is : %d \n", createThread);
 #else
@@ -424,7 +433,7 @@ estimateOverhead()
 	for (i = 0; i < 10000; i++)
 		l = GDKusec();
 	t0 = (GDKusec() - t0)/10000;
-#ifdef DEBUG
+#ifdef SENSOR_DEBUG
 	mnstr_printf(SEout, "#Timing overhead " LLFMT " GDKusec\n", t0);
 #endif
 	return l;
@@ -436,18 +445,17 @@ produceStream(Sensor se)
 	int b;
 	int slen;
 	char buf[MYBUFSIZ + 1]; /* compose an event message locally first */
-	char *tuple;        /* scratch area for a single tuple element */
-	int tlen, maxtuple;
+	char tuple[MYBUFSIZ + 1];  /* scratch area for a single tuple element */
+	int tlen, maxtuple = MYBUFSIZ;
 	int buflen;
 	int numberOFtuples = 0;
 
-#ifdef DEBUG
+#ifdef SENSOR_DEBUG
 	mnstr_printf(SEout, "#Start producing the stream\n");
 	mnstr_printf(SEout, "#%d events, batchsize is %d, columns are %d\n", events, batchsize, columns);
 #endif
 
 	/* create scratch space for a single tuple, this should be enough for integer fields */
-	tuple = (char*)malloc(maxtuple = 32 * columns);
 	buflen = 0;
 	while (numberOFtuples < (events * batchsize) || events == -1) {
 		int i;
@@ -531,13 +539,19 @@ produceStream(Sensor se)
 			/*mnstr_flush(SEout);*/
 		}
 	}
+	/* you should not close the stream to quickly
+	   because then you may loose part of the input */
+
+	if ( protocol != DEB) {
+		mnstr_printf(SEout, "Columns: %d\n", columns);
+		mnstr_printf(SEout, "Batch size: %d\n", batchsize);
+		mnstr_printf(SEout, "total Number of batches: %d\n", events);
+		mnstr_printf(SEout, "Delay: %d\n", delay);
+	}
+	mnstr_printf(SEout,"ready to close connection?");
+	(void) getchar();
 	close_stream(se->toServer);
 	se->toServer = NULL;
-
-	mnstr_printf(SEout, "Columns: %d\n", columns);
-	mnstr_printf(SEout, "Batch size: %d\n", batchsize);
-	mnstr_printf(SEout, "total Number of batches: %d\n", events);
-	mnstr_printf(SEout, "Delay: %d\n", delay);
 }
 
 static void
