@@ -39,7 +39,6 @@ lib_optimizer = {
 		opt_costModel.mx \
 		opt_crack.mx \
 		opt_datacyclotron.mx \
-		opt_datacell.mx \
 		opt_dataflow.mx \
 		opt_deadcode.mx \
 		opt_derivepath.mx \
@@ -95,7 +94,7 @@ headers_mal = {
 		opt_reorder.mx opt_prejoin.mx opt_compression.mx \
 		opt_evaluate.mx opt_inline.mx opt_pushranges.mx opt_derivepath.mx \
 		opt_accessmode.mx opt_joinpath.mx opt_heuristics.mx opt_remap.mx \
-		opt_statistics.mx opt_trace.mx  opt_recycler.mx opt_dataflow.mx opt_datacell.mx \
+		opt_statistics.mx opt_trace.mx  opt_recycler.mx opt_dataflow.mx \
 		opt_cluster.mx opt_dictionary.mx opt_mapreduce.mx \
 		opt_mitosis.mx opt_octopus.mx opt_tarantula.mx  opt_history.mx opt_selcrack.mx opt_sidcrack.mx
 }
