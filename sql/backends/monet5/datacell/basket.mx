@@ -28,17 +28,21 @@ pattern register(schema:str,tab:str):void
 address BSKTregister
 comment "Initialize a new basket based on a specific table definition in the datacell schema");
 
-command lock(schema:str, tbl:str,delay:int):void
+command lock{unsafe}(schema:str, tbl:str,delay:int):void
 address BSKTlock
 comment "Lock a basket group and spinlock upon need";
 
-command lock(schema:str, tbl:str):void
+command lock{unsafe}(schema:str, tbl:str):void
 address BSKTlock2
 comment "Lock a basket group ";
 
-command unlock(schema:str, tbl:str):void
+command unlock{unsafe}(schema:str, tbl:str):void
 address BSKTunlock
 comment "Unlock the basket";
+
+pattern grab(schema:str, tbl:str):bat[:oid,:any]...
+address BSKTgrab
+comment "Take a snapshot of the basket, destroying the origin";
 
 command drop(schema:str, tbl:str):void
 address BSKTdrop
@@ -90,6 +94,7 @@ datacell_export str BSKTinventory(int *ret);
 datacell_export int BSKTmemberCount(str schema, str tbl);
 datacell_export int BSKTlocate(str schema, str tbl);
 datacell_export str BSKTdump(int *ret);
+datacell_export str BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 datacell_export str BSKTlock(int *ret, str *schema, str *tbl, int *delay);
 datacell_export str BSKTunlock(int *ret, str *schema, str *tbl);
@@ -98,6 +103,7 @@ datacell_export str BSKTlock2(int *ret, str *schema, str *tbl);
 datacell_export BSKTbasketRec *baskets;
 datacell_export int bsktTop, bsktLimit;
 datacell_export lng usec(void);
+datacell_export InstrPtr BSKTgrabInstruction(MalBlkPtr mb, str shema, str tbl);
 #endif
 @c
 #include "basket.h"
@@ -333,4 +339,60 @@ BSKTdump(int *ret)
 	return MAL_SUCCEED;
 }
 
+str
+BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str schema, tbl;
+	int bskt,i, *ret;
+	BAT *b;
+
+	(void) cntxt;
+	(void) mb;
+	schema = *(str*) getArgReference(stk,pci, pci->argc-2);
+	tbl = *(str*) getArgReference(stk,pci, pci->argc-1);
+
+	bskt = BSKTlocate(schema, tbl);
+	if (bskt == 0 )
+		throw(MAL,"basket.grab","Basket not found");
+	if ( baskets[bskt].colcount != pci->retc)
+		throw(MAL,"basket.grab","Incompatible arguments");
+	mal_set_lock(baskets[bskt].lock, "lock basket");
+	for ( i=0; i < baskets[bskt].colcount; i++) {
+		ret= (int*) getArgReference(stk,pci,i);
+		b = baskets[bskt].primary[i];
+		*ret = b->batCacheid;
+		if (  b->htype == TYPE_oid) {
+			baskets[bskt].primary[i] = BATnew(TYPE_void, b->ttype, 0);
+			BATseqbase(baskets[bskt].primary[i], 0);
+		} else
+			baskets[bskt].primary[i] = BATnew(b->htype, b->ttype, 0);
+	}
+	mal_unset_lock(baskets[bskt].lock, "unlock basket");
+	return MAL_SUCCEED;
+}
+
+InstrPtr
+BSKTgrabInstruction(MalBlkPtr mb, str schema, str tbl)
+{
+	int i, j, bskt;
+	InstrPtr p;
+	BAT *b;
+
+	bskt = BSKTlocate(schema, tbl);
+	if (bskt == 0 )
+		return 0;
+	p = newFcnCall(mb,basketRef,grabRef);
+	p->argc= 0;
+	for ( i=0; i < baskets[bskt].colcount; i++) {
+		b = baskets[bskt].primary[i];
+		j= newTmpVariable(mb,newBatType(TYPE_oid,b->ttype));
+		setVarUDFtype(mb,j);
+		setVarFixed(mb,j);
+		p= pushArgument(mb,p, j);
+	}
+	p->retc= p->argc;
+	p= pushStr(mb,p,schema);
+	p= pushStr(mb,p,tbl);
+	return p;
+}
 @}
