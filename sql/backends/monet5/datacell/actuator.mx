@@ -18,16 +18,6 @@
 @* The Actuator Simulation program
 This program listens to an event stream on a particular port.
 It collects statistics on the events.
-@verbatim
-actuator [options]
-	--host=<host name> default localhost
-	--port=<portnr>  default 50600
-	--actuator=<actuator name> 
-	--server 
-	--client 
-	--latency=<0 or 1>
-	--timestamp=<0 or 1>
-@end verbatim
 @f actuator
 @c
 #ifndef ACTUATOR
@@ -56,7 +46,7 @@ actuator [options]
 #include "dcsocket.h"
 
 
-/*#define _DEBUG_ACTUATOR_ */
+#define _DEBUG_ACTUATOR_ 
 #define ACout GDKout
 
 FILE *fd;
@@ -88,16 +78,17 @@ void
 usage()
 {
 	mnstr_printf(ACout, "The actuator tool can be used to catch an event sequence \n");
-	mnstr_printf(ACout, "from the emitter port of a DataCell.\n");
+	mnstr_printf(ACout, "from the emitter port. Data is in ascii .\n");
 	mnstr_printf(ACout, "Several options are provided to control this process.\n");
 	mnstr_printf(ACout, "\nactuator [options]\n");
 	mnstr_printf(ACout, "--host=<host name>, default localhost\n");
 	mnstr_printf(ACout, "--port=<portnr>, default 50600 \n");
-	mnstr_printf(ACout, "--actuator=<actuator name> \n");
-	mnstr_printf(ACout, "--timestamp=<0 or 1>  default=1\n");
-	mnstr_printf(ACout, "--server  default\n");
-	mnstr_printf(ACout, "--client  default\n");
-	mnstr_printf(ACout, "--statistics=<0 or 1>  default=1\n");
+	mnstr_printf(ACout, "--protocol=<name>  either tpc/udp\n");
+	mnstr_printf(ACout, "--actuator=<actuator name> to identify the event received \n");
+    mnstr_printf(ACout, "--server run as a server (default)\n");
+    mnstr_printf(ACout, "--client run as a client\n");
+	mnstr_printf(ACout, "--events=<number>  number of events to receive \n");
+	mnstr_printf(ACout, "--statistics=<number>  show statistics after a series of events\n");
 	exit(-1);
 }
 
@@ -105,10 +96,10 @@ static char *host = "localhost";
 static int port = 50600;
 static char *actuator = "X";
 static int server = 1;
-static int trace = 0;
-static int stamp = 1; /* first column is a timestamp*/
+static int trace = 1;
+static int timestamp = 1; /* first column is a timestamp*/
 
-static int statistics = 1;
+static int statistics = 0;	/* dump statistics after a certain number events */
 /*if(statistics!=0)
     print statistics;
    else don't
@@ -123,8 +114,7 @@ static lng receivedFirst = 0;
 static int characters = 0;
 
 /* control the display and auto terminate the actuator */
-static int batchsize = 1;
-static int sequence = -1;
+static int events = 1;
 static int tuples = 0;
 
 @-
@@ -154,9 +144,11 @@ void showStatistics()
 
 
 	/* sent a short tuple to stderr for gnuplot datafile*/
-	if (trace)
-		fprintf(stderr, "events %d throughput %6.2f\n",
-			received, 1000000.0 / elaps * tuplesIntheBuffer);
+	fprintf(stderr, "events %d throughput %6.2f\n", received, 1000000.0 / elaps * tuplesIntheBuffer);
+	received=0;
+	totallatency=0;
+	receivedFirst= receivedLast=0;
+	characters=0;
 }
 
 void terminate(Actuator ac)
@@ -190,18 +182,18 @@ main(int argc, char **argv)
 	Actuator ac = NULL;
 	int option_index = 0;
 
-	static struct option long_options[12] = {
+	static struct option long_options[13] = {
 		{ "port", 1, 0, 'p' },
 		{ "actuator", 1, 0, 'a' },
 		{ "client", 0, 0, 'c' },
 		{ "server", 0, 0, 's' },
-		{ "statistics", 1, 0, 'S' },
-		{ "sequence", 1, 0, 's' },
-		{ "batch", 1, 0, 'b' },
+		{ "statistics", 0, 0, 's' },
+		{ "protocol", 1, 0, 'o' },
+		{ "events", 1, 0, 'e' },
 		{ "host", 1, 0, 'h' },
 		{ "help", 1, 0, '?' },
-		{ "trace", 1, 0, 't' },
-		{ "timestamp", 1, 0, 't' },
+		{ "timestamp", 0, 0, 't' },
+		{ "trace", 0, 0, 't' },
 		{ 0, 0, 0, 0 }
 	};
 	THRdata[0] = (void *)file_wastream(stdout, "stdout");
@@ -219,20 +211,23 @@ main(int argc, char **argv)
 
 		switch (c) {
 		case 't':
-			if (strcmp(long_options[option_index].name, "timestamp") == 0) {
-				stamp = atol(optarg);
-				break;
-			}
 			if (strcmp(long_options[option_index].name, "trace") == 0) {
-				trace = atol(optarg);
-				break;
+				trace = optarg? atol(optarg): 1;
+			} else
+			if (strcmp(long_options[option_index].name, "timestamp") == 0) {
+				timestamp = optarg? atol(optarg): 1;
 			} else {
 				usage();
 				exit(0);
 			}
 			break;
-		case 'b':
-			batchsize = atol(optarg);
+		case 'e':
+			if (strcmp(long_options[option_index].name, "events") == 0) {
+				events = optarg? atol(optarg): 1;
+			} else {
+				usage();
+				exit(0);
+			} 
 			break;
 		case 'c':
 			if (strcmp(long_options[option_index].name, "client") == 0) {
@@ -241,13 +236,29 @@ main(int argc, char **argv)
 			}
 			break;
 		case 'a':
-			actuator = optarg;
+			actuator = optarg? optarg: "dummy";
 			break;
-		case 's':
-			if (strcmp(long_options[option_index].name, "sequence") == 0) {
-				sequence = atol(optarg);
+		case 'p':
+			if (strcmp(long_options[option_index].name, "port") == 0) {
+				port = optarg? atol(optarg): -1;
 				break;
 			}
+			if (strcmp(long_options[option_index].name, "protocol") == 0) {
+                if (strcmp(optarg, "TCP") == 0 || strcmp(optarg, "tcp") == 0) {
+                    protocol = TCP;
+                    break;
+                }
+                if (strcmp(optarg, "UDP") == 0 || strcmp(optarg, "udp") == 0) {
+                    protocol = UDP;
+                    break;
+                }
+			}
+			break;
+		case 's':
+			if (strcmp(long_options[option_index].name, "statistics") == 0) {
+				statistics = optarg? atol(optarg): 100;
+				break;
+			} else
 			if (strcmp(long_options[option_index].name, "server") == 0) {
 				server = 1;
 				break;
@@ -255,12 +266,6 @@ main(int argc, char **argv)
 				usage();
 				exit(0);
 			}
-			break;
-		case 'S':
-			statistics = atol(optarg);
-			break;
-		case 'p':
-			port = atol(optarg);
 			break;
 		case 'h':
 			host = optarg;
@@ -287,12 +292,10 @@ main(int argc, char **argv)
 		mnstr_printf(ACout, "--host=%s\n", host);
 		mnstr_printf(ACout, "--port=%d\n", port);
 		mnstr_printf(ACout, "--actuator=%s\n", actuator);
-		mnstr_printf(ACout, "--trace=%d\n", trace);
-		mnstr_printf(ACout, "--timestamp=%d\n", stamp);
+		mnstr_printf(ACout, "--events=%d\n", events);
+		mnstr_printf(ACout, "--timestamp=%d\n", timestamp);
 		mnstr_printf(ACout, "--statistics=%d\n", statistics);
-		mnstr_printf(ACout, "--server=%d\n", server);
-		mnstr_printf(ACout, "--sequence=%d\n", sequence);
-		mnstr_printf(ACout, "--batch=%d\n", batchsize);
+		mnstr_printf(ACout, "--%s\n", server?"server":"client");
 	}
     strncpy(hostname,host,1024);
     if ( strcmp(host,"localhost")== 0 )
@@ -387,8 +390,7 @@ consumeStream(Actuator ac)
 	mnstr_printf(ACout, "Consume stream\n");
 #endif
 	buf[0] = 0;
-	while (tuples != batchsize * sequence &&
-		   (m = (int)mnstr_readline(ac->fromServer, buf, MYBUFSIZ))) {
+	while (tuples != events  && (m = (int)mnstr_readline(ac->fromServer, buf, MYBUFSIZ))) {
 		buf[m] = 0;
 		characters += m;
 		received++;
@@ -404,7 +406,7 @@ consumeStream(Actuator ac)
 		receivedLast = GDKusec();
 		if (receivedFirst == 0)
 			receivedFirst = receivedLast;
-		if (stamp) {
+		if (timestamp) {
 			l = receivedLast - clk;
 #ifdef _DEBUG_ACTUATOR_
 			if (trace)
@@ -415,13 +417,9 @@ consumeStream(Actuator ac)
 		}
 
 		m = 0;
-		/*if( statistics && (received % batchsize )==0){
+		if( statistics && (received % statistics ) == 0) {
 		    showStatistics();
-		    received=0;
-		    totallatency=0;
-		    receivedFirst= receivedLast=0;
-		    characters=0;
-		   }*/
+		}
 	}
 	if (errno == EPIPE || errno == ECONNRESET) {
 		mnstr_printf(ACout, "errno:%s\n", strerror(errno));
@@ -430,11 +428,11 @@ consumeStream(Actuator ac)
 	if (statistics)
 		showStatistics();
 #ifdef _DEBUG_ACTUATOR_
-	mnstr_printf(ACout, "tuples %d batchsize %d sequence %d\n",
-		tuples, batchsize, sequence);
+	mnstr_printf(ACout, "tuples %d events %d \n",
+		tuples, events);
 #endif
 
-	if (tuples >= batchsize * sequence)
+	if (tuples >= events )
 		terminate(ac);
 
 	return 0;
