@@ -74,7 +74,7 @@ SEnew(str nme)
 	return se;
 }
 
-static int delay = 0;
+static int delay = 1;	/* intra batch delay in ms, use 1 to avoid loosing too many */
 static int batchsize = 1;
 static int events = -1;
 static int columns = 1;
@@ -105,7 +105,7 @@ usage()
 	mnstr_printf(SEout, "--events=<events length>, (-1=forever,>0), default=1\n");
 	mnstr_printf(SEout, "--file=<data file>\n");
 	mnstr_printf(SEout, "--batch=<batchsize> , default=1\n");
-	mnstr_printf(SEout, "--delay=<ticks> delay in milliseconds, default=0\n");
+	mnstr_printf(SEout, "--delay=<ticks> interbatch delay in ms, default=1\n");
 	mnstr_printf(SEout, "--trace=<trace> interaction\n");
 	mnstr_printf(SEout, "--server run as a server\n");
 	mnstr_printf(SEout, "--client run as a client\n");
