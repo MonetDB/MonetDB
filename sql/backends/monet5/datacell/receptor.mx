@@ -145,7 +145,7 @@ adapters_export str RCdump() ;
 #include "stream_socket.h"
 #include "mal_builder.h"
 
-str protocolname[3] = {"TCP","UDF","CSV"}; 
+static str protocolname[4] = {"<unknown>","TCP","UDF","CSV"}; 
 
 #define RCPAUSE 1       /* not active now */
 #define RCLISTEN 2      /* reading the channel */
