@@ -116,17 +116,17 @@ adapters_export str EMprotocol(int *ret, str *schema, str *nme, str *arg);
 #define EMERROR 8               /* failed to establish the stream */
 static str statusname[6]= {"<unknown>", "pause", "listen", "stop", "drop","error"};
 
-#define EMPASSIVE 1
-#define EMACTIVE 2
+#define EMPASSIVE 2
+#define EMACTIVE 1
 static str modename[3]= {"<unknown>","active","passive"};
 
 #define TCP 1
 #define UDP 2
+#define CSV 3
 
-static str protocolname[3] = {"TCP","UDF","CSV"}; 
+static str protocolname[4] = {"<unknown>","TCP","UDP","CSV"}; 
 
 static int protocol= TCP;
-
 
 #define PAUSEDEFAULT 1000
 
@@ -135,10 +135,11 @@ typedef struct EMITTER{
 	str name;	
 	str host;
 	int port;
+    int mode;   /* active/passive */
+    int protocol;   /* event protocol UDP,TCP,CSV */
+    int bskt;   /* connected to a basket */
 	int status;
-	int mode;
-	int protocol;/* control the delay between attempts to connect */
-	int delay;
+	int delay;/* control the delay between attempts to connect */
 	int lck;
 	SOCKET sockfd;
 	SOCKET newsockfd;
@@ -193,6 +194,10 @@ str DCemitterNew(int *ret, str *schema, str *tbl, str *host, int *port)
 	if (EMfind(*schema, *tbl))
 		throw(MAL, "emitter.new", "Duplicate emitter");
 
+	idx = BSKTlocate(*schema, *tbl);
+	if (idx == 0) /* should not happen */
+		throw(MAL, "emitter.new", "Basket not found");
+
 	em = EMnew(*schema, *tbl);
 	if( em == NULL)
 		throw(MAL, "emitter.new", MAL_MALLOC_FAIL);
@@ -202,10 +207,7 @@ str DCemitterNew(int *ret, str *schema, str *tbl, str *host, int *port)
 	em->lck = 0;
 	em->error = NULL;
 	em->mode = EMACTIVE;
-
-	idx = BSKTlocate(*schema, *tbl);
-	if (idx == 0) /* should not happen */
-		throw(MAL, "emitter.new", "basket not found");
+	em->bskt = idx;
 @-
 All tables are prepended with a default tick bat.
 It becomes the synchronization handle.
@@ -354,10 +356,10 @@ str EMprotocol(int *ret, str *schema, str *nme, str *mode)
 		em->protocol = UDP;
 	else
 	if ( strcmp(*mode,"tcp") == 0)
-		em->protocol = UDP;
+		em->protocol = TCP;
 	else
 	if ( strcmp(*mode,"csv") == 0)
-		em->protocol = UDP;
+		em->protocol = CSV;
 	else
 		throw(MAL,"emitter.protocol","Must be either udp/tcp/csv");
 	return MAL_SUCCEED;
@@ -539,7 +541,7 @@ EMstartThread(Emitter em)
 static void
 dumpEmitter(Emitter em)
 {
-	mnstr_printf(GDKout,"#emittor %s.%s at %s:%d protocol=%s mode=%s status=%s delay=%d\n",
+	mnstr_printf(GDKout,"#emitter %s.%s at %s:%d protocol=%s mode=%s status=%s delay=%d\n",
 		em->schema, em->name, em->host, em->port, protocolname[em->protocol], modename[em->mode], statusname[em->status], em->delay);
 }
 
