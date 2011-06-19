@@ -361,6 +361,7 @@ BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		ret= (int*) getArgReference(stk,pci,i);
 		b = baskets[bskt].primary[i];
 		*ret = b->batCacheid;
+		BBPkeepref(*ret);
 		if (  b->htype == TYPE_oid) {
 			baskets[bskt].primary[i] = BATnew(TYPE_void, b->ttype, 0);
 			BATseqbase(baskets[bskt].primary[i], 0);
