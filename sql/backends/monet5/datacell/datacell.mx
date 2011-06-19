@@ -29,23 +29,23 @@ address DCregister
 comment "Initialize a new basket based on a specific table definition in the datacell schema");
 
 pattern emitter(sch:str, tbl:str, host:str, port:int)
-address DCemitter
-comment "define a emitter based on a basket table. The emitter protocol is either active or passive.";
+address DCemitterNew
+comment "Define a emitter based on a basket table.";
 
 pattern receptor(sch:str, tbl:str, host:str, port:int)
-address DCreceptor
-comment "Define a receptor based on a basket table. The receptor protocol is either active or passive.";
+address DCreceptorNew
+comment "Define a receptor based on a basket table..";
 
 pattern mode(sch:str, tbl:str, arg:str)
 address DCmode
-comment "Change the mode of the adaptor";
+comment "Change the mode of the adaptor to active/passive";
 
 pattern protocol(sch:str, tbl:str, arg:str)
 address DCprotocol
-comment "Change the protocol of the adaptor";
+comment "Change the protocol of the adaptor UDP/TCP/CSV";
 
 pattern remove(schema:str,obj:str):void
-address DCdrop
+address DCremove
 comment "Remove a basket, receptor or emitter";
 
 pattern pause(schema:str,obj:str):void
@@ -69,12 +69,16 @@ pattern register(name:str,def:str):void
 address PNregistration
 comment "Add a new continuous query to the scheduler.";
 
+pattern unregister(name:str,def:str):void
+address PNunregistration
+comment "Remove a new continuous query from the scheduler.";
+
 pattern start()
 address DCstartScheduler
 comment "Convert the datacell schema to a stream processing infrastructure";
 
 pattern pause()
-address DCrunScheduler
+address DCpauseScheduler
 comment "(Re)start the petrinet scheduler.";
 
 pattern resume()
@@ -121,7 +125,7 @@ comment "Dump receptor/emitter status";
 
 datacell_export str DCinitialize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str DCregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-datacell_export str DCdrop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+datacell_export str DCremove(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str DCpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str DCresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str DCmode(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -195,6 +199,22 @@ DCresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	DCemitterResume(&ret, &schema, &tbl);
 	(void) cntxt;
 	(void) mb;
+	return MAL_SUCCEED;
+}
+
+str
+DCremove(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int idx;
+	str schema= *(str*) getArgReference(stk, pci,1);
+	str tbl= *(str*) getArgReference(stk, pci,2);
+
+	(void) cntxt;
+	(void) mb;
+	idx = BSKTlocate(schema,tbl);
+	if ( idx == 0) 
+		throw(MAL,"datacell.remove","Basket not found");
+	/* remove basket  and corresponding receptor/emitters depending on it*/
 	return MAL_SUCCEED;
 }
 
@@ -371,8 +391,6 @@ str
 DCpauseScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int ret=0;
-	if ( DCinitialized != DCPAUSED)
-		throw(MAL,"datacell.pause","Datacell already paused");
 	PNpauseScheduler(&ret);
 	(void) cntxt;
 	(void) mb;
@@ -382,7 +400,7 @@ DCpauseScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-DCdropcheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+DCdropscheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int ret=0;
 	if ( DCinitialized != DCINITIALIZED && DCinitialized != DCPAUSED)
