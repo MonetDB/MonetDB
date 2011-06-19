@@ -90,6 +90,10 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
     for (i = 0; i < limit; i++) 
 	if( old[i]) {
         p = old[i];
+		if ( getModuleId(p) == sqlRef  && getFunctionId(p) == putName("affectedRows",12)) {
+			freeInstruction(p);
+			continue;
+		}
 		if ( getModuleId(p) == sqlRef  && (getFunctionId(p) == bindRef ||getFunctionId(p) == binddbatRef)){
 			schema = getVarConstant(mb, getArg(p,2)).val.sval;
 			table = getVarConstant(mb, getArg(p,3)).val.sval;
