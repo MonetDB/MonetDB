@@ -169,6 +169,7 @@ typedef struct RECEPTOR {
 	int port;
 	int mode;	/* active/passive */
 	int protocol;	/* event protocol UDP,TCP,CSV */
+	int bskt;	/* connected to a basket */
 	int status;
 	int delay;  /* control the delay between attempts to connect */
 	int lck;
@@ -251,7 +252,7 @@ DCreceptorNew(int *ret, str *schema, str *tbl, str *host, int *port )
 	rc->fcnnme = 0;
 	rc->mode = RCPASSIVE;
 
-	idx = BSKTlocate(*schema, *tbl);
+	rc->bskt = idx = BSKTlocate(*schema, *tbl);
 	if (idx == 0) /* should not happen */
 		throw(MAL, "receptor.new", "Basket not found");
 	len = BSKTmemberCount(*schema, *tbl);
@@ -464,7 +465,7 @@ RCbody(Receptor rc)
 	size_t j;
 	str e, he;
 	str line = "\0";
-	int n, m = 0;
+	int i, n, m = 0;
 	buf[MYBUFSIZ] = 0; /* ensure null terminated string */
 
 	if (rc->scenario) {
@@ -536,7 +537,6 @@ In case of a locked basket we sleep for a millisecond.
    When the receptor reads all the tuples UNLOCKS the bats, and then the Factories/Queries that are waiting for these data are able to read it*/
 
 		if ((n = (int)mnstr_readline(rc->receptor, buf, MYBUFSIZ)) > 0) {
-			BSKTlock(&rc->lck, &rc->schema, &rc->name, &rc->delay);
 			buf[n + 1] = 0;
 #ifdef _DEBUG_RECEPTOR_
 			mnstr_printf(RCout, "#Receptor buf [%d]:%s \n", n, buf);
@@ -544,6 +544,11 @@ In case of a locked basket we sleep for a millisecond.
 			m = 0;
 			/* use trivial concurrency measure */
 			line = buf;
+
+			BSKTlock(&rc->lck, &rc->schema, &rc->name, &rc->delay);
+			/* BATs may be replaced in the meantime */
+			for (i = 0; i < baskets[rc->bskt].colcount; i++) 
+				rc->table.format[i].c[0] = baskets[rc->bskt].primary[i];
 
 			cnt = 0;
 			he = strchr(line, '#');
@@ -555,6 +560,7 @@ In case of a locked basket we sleep for a millisecond.
 				/* we got the line already */
 				goto parse;
 			}
+			
 			while (cnt < counter) {
 				if ((n = (int)mnstr_readline(rc->receptor, buf, MYBUFSIZ)) > 0) {
 					buf[n + 1] = 0;
