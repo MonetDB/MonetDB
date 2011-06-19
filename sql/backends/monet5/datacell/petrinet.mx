@@ -43,6 +43,10 @@ command target(mod:str,fcn:str, schema:str,tbl:str):void
 address PNtarget
 comment "Manually define an output basket for a transformation";
 
+pattern unregister(mod:str,fcn:str):void
+address PNunregistration
+comment "Manually define an continous query from the scheduler. ";
+
 command pause()
 address PNpauseScheduler
 comment "Pause the Petri net controller";
@@ -91,6 +95,7 @@ datacell_export str PNregistration(Client cntxt, MalBlkPtr mb, MalStkPtr stk, In
 datacell_export str PNpauseScheduler(int *ret);
 datacell_export str PNresumeScheduler(int *ret);
 datacell_export str PNstopScheduler(int *ret);
+datacell_export str PNunregister( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str PNdump(int *ret);
 datacell_export str PNsource(int *ret, str *mod, str *fcn, str *schema, str *tbl);
 datacell_export str PNtarget(int *ret, str *mod, str *fcn, str *schema, str *tbl);
@@ -124,6 +129,7 @@ typedef struct {
 	MalStkPtr stk;      /* Factory stack */
 	InstrPtr pci;       /* Factory re-entry point */
 	int pc;
+	int status;		/* query status waiting/running/ready */
 	int delay;		/* maximum delay between calls */
 	int cycles;     /* number of invocations of the factory */
 	int events;		/* number of events consumed */
@@ -143,6 +149,11 @@ int *enabled;     /*array that contains the id's of all queries that are enable 
 #define PNrunning 2
 #define PNpause 1
 #define PNstopped 0
+
+#define PNwaiting 4
+#define PNscheduled 5
+#define PNexecute 6
+static char *statusnames[7]={"stopped","pause","running","initialize","waiting","scheduled","execute"};
 
 static int status = PNinitialize;
 static int cycleDelay = 10; /* be careful, it affects response/throughput timings */
@@ -195,6 +206,7 @@ str PNregistration(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	pnet[pnettop].mod = GDKstrdup(*modnme);
 	pnet[pnettop].fcn = GDKstrdup(*fcnnme);
 	pnet[pnettop].mb = s->def;
+	pnet[pnettop].status = PNwaiting;
 	pnet[pnettop].cycles = 0;
 	/* all the rest is zero */
 	/*assert(pnettop<MAXPN);*/
@@ -212,6 +224,35 @@ str PNregistration(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+str
+PNunregistration(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str mod = *(str*) getArgReference(stk,pci,1);
+	str fcn = *(str*) getArgReference(stk,pci,2);
+    Module scope;
+    Symbol s;
+	int ret;
+	int i,j;
+
+	if ( status != PNpause)
+		throw(MAL,"datacell.unregister","Scheduler should be paused first");
+	(void) mb;
+	/* check for a continous query */
+	scope = findModule(cntxt->nspace, putName(mod, (int)strlen(mod)));
+	if (scope)
+		s = findSymbolInModule(scope, putName(fcn, (int)strlen(fcn)));
+	if (s == NULL)
+		throw(SQL, "datacell.remove", "Continuous query found");
+	PNpauseScheduler(&ret);
+	for( i = j = 0; i< pnettop; i++)
+		if (strcmp(mod, pnet[i].mod) == 0 && strcmp(fcn, pnet[i].fcn) == 0) {
+		} else
+			pnet[j++] = pnet[i];
+	pnettop = j;
+	PNresumeScheduler(&ret);
+	return MAL_SUCCEED;
+}
+
 str PNstopScheduler(int *ret)
 {
 	status = PNstopped;
@@ -223,7 +264,7 @@ str PNresumeScheduler(int *ret)
 {
 	if ( status == PNrunning)
 		return MAL_SUCCEED;
-	if ( status == PNstopped)
+	if ( status == PNstopped || status == PNpause)
 		status = PNrunning;
 	if ( status == PNinitialize)
 		return PNstartThread(ret);
@@ -232,7 +273,12 @@ str PNresumeScheduler(int *ret)
 
 str PNpauseScheduler(int *ret)
 {
-	status = PNstopped;
+	if ( status == PNpause)
+		return MAL_SUCCEED;
+	status = PNpause;
+	do
+		MT_sleep_ms(cycleDelay);  /* delay to make it more tractable */
+	while ( status == PNrunning);
 	(void)ret;
 	return MAL_SUCCEED;
 }
@@ -240,10 +286,10 @@ str PNpauseScheduler(int *ret)
 str PNdump(int *ret)
 {
 	int i, k;
-	mnstr_printf(PNout,"#scheduler status\n");
+	mnstr_printf(PNout,"#scheduler status %s\n", statusnames[status]);
 	for (i = 0; i < pnettop; i++) {
-		mnstr_printf(PNout, "#[%d]\t%s.%s delay %d cycles %d events %d time %d ms\n",
-			i, pnet[i].mod, pnet[i].fcn, pnet[i].delay, pnet[i].cycles, pnet[i].events, pnet[i].cycletime/1000);
+		mnstr_printf(PNout, "#[%d]\t%s.%s %s delay %d cycles %d events %d time %d ms\n",
+			i, pnet[i].mod, pnet[i].fcn, statusnames[pnet[i].status], pnet[i].delay, pnet[i].cycles, pnet[i].events, pnet[i].cycletime/1000);
 		for (k = 0; k < pnet[i].srctop; k++)
 			mnstr_printf(PNout, "#<--\t%s.%s %d %d\n",
 				pnet[i].source[k].schema,
@@ -323,7 +369,7 @@ str PNtarget(int *ret, str *mod, str *fcn, str *schema, str *tbl)
 void
 PNanalysis(Client cntxt, MalBlkPtr mb)
 {
-	int i,ret;
+	int i, flg, ret;
 	InstrPtr p, sig = getInstrPtr(mb,0);
 	str schema, tbl;
 
@@ -331,10 +377,17 @@ PNanalysis(Client cntxt, MalBlkPtr mb)
 		p= getInstrPtr(mb,i);
 		if ( getModuleId(p) == basketRef){
 			if ( getFunctionId(p) == grabRef ){
-				schema = getVarConstant(mb,getArg(p,p->argc-2)).val.sval;
-				 tbl = getVarConstant(mb,getArg(p,p->argc-1)).val.sval;
-				mnstr_printf(cntxt->fdout,"#input basket %s.%s \n", schema,tbl);
-				PNsource(&ret, &getModuleId(sig), &getFunctionId(sig), &schema, &tbl);
+				schema = getVarConstant(mb,getArg(p,p->argc-3)).val.sval;
+				tbl = getVarConstant(mb,getArg(p,p->argc-2)).val.sval;
+				flg = getVarConstant(mb,getArg(p,p->argc-1)).val.ival;
+			
+				if ( flg) {
+					mnstr_printf(cntxt->fdout,"#input basket %s.%s \n", schema,tbl);
+					PNsource(&ret, &getModuleId(sig), &getFunctionId(sig), &schema, &tbl);
+				} else {
+					mnstr_printf(cntxt->fdout,"#output basket %s.%s \n", schema,tbl);
+					PNtarget(&ret, &getModuleId(sig), &getFunctionId(sig), &schema, &tbl);
+				}
 			}
 		}
 	}
@@ -355,7 +408,6 @@ static void
 PNcontroller(void *dummy)
 {
 	int i, j, cnt = 0;
-	int stopController = 0;
 	Symbol s;
 	InstrPtr p;
 	MalStkPtr glb;
@@ -400,19 +452,20 @@ PNcontroller(void *dummy)
 #ifdef _DEBUG_PETRINET_
 	printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
 #endif
+	status = PNrunning;
 	do {
-		if (cycleDelay)
-			while (status != PNrunning)
-				MT_sleep_ms(cycleDelay);  /* delay to make it more tractable */
+		if ( cycleDelay)
+			MT_sleep_ms(cycleDelay);  /* delay to make it more tractable */
+		while (status == PNpause  ) 
+			MT_sleep_ms(status== PNstopped? (cycleDelay?cycleDelay:5) :cycleDelay);  
 		/* collect latest statistics, note that we don't need a lock here,
-		           because the count need not be accurate to the usec. It will simply
+		   because the count need not be accurate to the usec. It will simply
 		   come back. We also only have to check the sources that are marked
 		   empty. */
-		stopController = 0;
-		k = -1;
-		for (i = 0; i < pnettop; i++) {
+		status = PNrunning;
+		for (k = i = 0; i < pnettop; i++) {
 			pnet[i].available = 0;
-			if ( pnet[i].enabled >= 0)
+			pnet[i].enabled = 0;
 			for (j = 0; j < pnet[i].srctop; j++) {
 				pnet[i].source[j].b = baskets[pnet[i].source[j].bskt].primary[0];
 				if (pnet[i].source[j].b == 0) { /* we lost the BAT */
@@ -426,30 +479,25 @@ PNcontroller(void *dummy)
 #endif
 					pnet[i].available += cnt;
 					pnet[i].enabled++;
-					cnt = 0;
-				}else {
+				} else {
 #ifdef _DEBUG_PETRINET_
 					mnstr_printf(cntxt->fdout, "#PETRINET:no tuples for %s.%s, source %d\n",  pnet[i].mod, pnet[i].fcn, j);
 #endif
-					/*stop checking if the rest input BATs of a factory contain tuples,
-					 * because we already find one empty BAT
-					 * so we cannot fire the factory */
-					j = pnet[i].srctop;
-					stopController++;
+					/*stop checking if the rest input BATs does not contain elements */
+					pnet[i].enabled = 0;
+					break;
 				}
 			}
-			if (pnet[i].enabled == pnet[i].srctop) {
-				k++;
+			if (pnet[i].enabled == pnet[i].srctop) 
 				/*save the ids of all continuous queries that can be executed */
-				enabled[k] = i;
-			}
+				enabled[k++] = i;
 		}
 
 		/* execute each enabled transformation */
 		/* We don't need to access again all the factories and check again which are available to execute them
 		 * we have already kept the enable ones in the enabled list (created in the previous loop)
 		 * and now it is enough to access that list*/
-		for (m = 0; m <= k; m++) {
+		for (m = 0; m < k; m++) {
 			i = enabled[m];
 			if (pnet[i].srctop == pnet[i].enabled && pnet[i].available > 0) {
 #ifdef _DEBUG_PETRINET_
@@ -468,11 +516,12 @@ PNcontroller(void *dummy)
 					pnet[i].enabled = -1;
 				}
 				pnet[i].cycles++;
+				pnet[i].enabled = 0;
+				pnet[i].available = 0;
 				for (j = 0; j < pnet[i].srctop; j++) {
 					pnet[i].events += pnet[i].source[j].available;
 					pnet[i].source[j].available = 0;  /* force recount */
 				}
-				pnet[i].enabled = 0;
 			}
 		}
 	} while (status != PNstopped);
@@ -487,7 +536,6 @@ str PNstartThread(int *ret)
 	PNdump(&s);
 #endif
 
-	status = PNrunning;
 	if (MT_create_thread(&pid, PNcontroller, &s, MT_THR_DETACHED) != 0)
 		throw(MAL, "petrinet.startThread", "Process creation failed");
 
