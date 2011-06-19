@@ -126,6 +126,7 @@ typedef struct {
 	int pc;
 	int delay;		/* maximum delay between calls */
 	int cycles;     /* number of invocations of the factory */
+	int events;		/* number of events consumed */
 	size_t cycletime;   /* total cycle time for all invocations */
 	int enabled, available;
 	int srctop, trgttop;
@@ -241,8 +242,8 @@ str PNdump(int *ret)
 	int i, k;
 	mnstr_printf(PNout,"#scheduler status\n");
 	for (i = 0; i < pnettop; i++) {
-		mnstr_printf(PNout, "#[%d]\t%s.%s delay %d cycles %d\n",
-			i, pnet[i].mod, pnet[i].fcn, pnet[i].delay, pnet[i].cycles);
+		mnstr_printf(PNout, "#[%d]\t%s.%s delay %d cycles %d events %d time %d ms\n",
+			i, pnet[i].mod, pnet[i].fcn, pnet[i].delay, pnet[i].cycles, pnet[i].events, pnet[i].cycletime/1000);
 		for (k = 0; k < pnet[i].srctop; k++)
 			mnstr_printf(PNout, "#<--\t%s.%s %d %d\n",
 				pnet[i].source[k].schema,
@@ -363,6 +364,7 @@ PNcontroller(void *dummy)
 	int k = -1;
 	int m = 0;
 	str msg;
+	lng t;
 
 	cntxt = MCinitClient(0,0,GDKout);
 	SQLinitEnvironment(cntxt);
@@ -458,14 +460,18 @@ PNcontroller(void *dummy)
 				mnstr_printf(cntxt->fdout, "Function: %s basket size %d\n", pnet[i].fcn, pnet[i].source[0].available);
 #endif
 
+				t= GDKusec();
 				msg = reenterMAL(cntxt, mb, pnet[i].pc, pnet[i].pc + 1, glb, 0, 0);
+				pnet[i].cycletime += GDKusec() - t;
 				if ( msg != MAL_SUCCEED){
 					mnstr_printf(cntxt->fdout, "Function: %s failed\n", pnet[i].fcn);
 					pnet[i].enabled = -1;
 				}
 				pnet[i].cycles++;
-				for (j = 0; j < pnet[i].srctop; j++)
+				for (j = 0; j < pnet[i].srctop; j++) {
+					pnet[i].events += pnet[i].source[j].available;
 					pnet[i].source[j].available = 0;  /* force recount */
+				}
 				pnet[i].enabled = 0;
 			}
 		}
