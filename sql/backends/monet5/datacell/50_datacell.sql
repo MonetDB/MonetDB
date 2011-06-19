@@ -51,6 +51,8 @@ create procedure datacell.query(sch string, proc string)
 create procedure datacell.register(sch string, proc string)
 	external name datacell.register;
 
+create procedure datacell.unregister(sch string, proc string)
+	external name datacell.unregister;
 -- scheduler activation
 create procedure datacell.prepare()
 	external name datacell.prepare;
