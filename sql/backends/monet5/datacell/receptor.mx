@@ -112,9 +112,6 @@ UDP is not-reliable and its behavior in the context
 of the DataCell depends on the ability to handle the
 event stream at the same speed as it arrives.
 @h
-#define TCP 1
-#define UDP 2
-
 #define PAUSEDEFAULT 1000
 
 #ifdef WIN32
@@ -145,7 +142,11 @@ adapters_export str RCdump() ;
 #include "stream_socket.h"
 #include "mal_builder.h"
 
-static str protocolname[4] = {"<unknown>","TCP","UDF","CSV"}; 
+#define TCP 1
+#define UDP 2
+#define CSV 3
+
+static str protocolname[4] = {"<unknown>","TCP","UDP","CSV"}; 
 
 #define RCPAUSE 1       /* not active now */
 #define RCLISTEN 2      /* reading the channel */
@@ -404,10 +405,10 @@ str RCprotocol(int *ret, str *schema, str *nme, str *mode)
 		rc->protocol = UDP;
 	else
 	if ( strcmp(*mode,"tcp") == 0)
-		rc->protocol = UDP;
+		rc->protocol = TCP;
 	else
 	if ( strcmp(*mode,"csv") == 0)
-		rc->protocol = UDP;
+		rc->protocol = CSV;
 	else
 		throw(MAL,"receptor.protocol","Must be either udp/tcp/csv");
 	return MAL_SUCCEED;
@@ -476,6 +477,7 @@ RCbody(Receptor rc)
 		RCgenerator(rc);
 		return;
 	}
+	/* ADD YOUR FAVORITE RECEPTOR CODE HERE */
 
 bodyRestart:
 	/* create the channel the first time or when connection was lost. */
