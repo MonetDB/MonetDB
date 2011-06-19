@@ -114,7 +114,7 @@ datacell_export InstrPtr BSKTgrabInstruction(MalBlkPtr mb, str shema, str tbl);
 str schema_default = "datacell";
 
 BSKTbasketRec *baskets;   /* the datacell catalog */
-int bsktTop, bsktLimit;
+int bsktTop, bsktLimit = 0;
 static MT_Lock bsktLock;
 
 #define lockBSKTbasketCatalog() mal_set_lock(bsktLock, "basket");
@@ -137,11 +137,14 @@ lng usec(void)
 static int BSKTnewEntry()
 {
 	int i;
-	for ( i=0; i< bsktLimit; i++)
+	for ( i=1; i< bsktLimit; i++)
 	if (baskets[i].schema == NULL)
 		break;
-	if ( i < bsktLimit)
+	if ( i < bsktLimit) {
+		if ( i == bsktTop)
+			bsktTop++;
 		return i;
+	}
 	if (bsktLimit == 0) {
 		bsktLimit = MAXBSK;
 		baskets = (BSKTbasketRec *)GDKzalloc(bsktLimit * sizeof(BSKTbasketRec));
