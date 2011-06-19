@@ -40,9 +40,9 @@ command unlock{unsafe}(schema:str, tbl:str):void
 address BSKTunlock
 comment "Unlock the basket";
 
-pattern grab(schema:str, tbl:str):bat[:oid,:any]...
+pattern grab(schema:str, tbl:str, flg:int):bat[:oid,:any]...
 address BSKTgrab
-comment "Take a snapshot of the basket, destroying the origin";
+comment "Take a snapshot of the basket, destroying the origin when flg is set";
 
 command drop(schema:str, tbl:str):void
 address BSKTdrop
@@ -346,13 +346,13 @@ str
 BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str schema, tbl;
-	int bskt,i, *ret;
+	int bskt, i, *ret;
 	BAT *b;
 
 	(void) cntxt;
 	(void) mb;
-	schema = *(str*) getArgReference(stk,pci, pci->argc-2);
-	tbl = *(str*) getArgReference(stk,pci, pci->argc-1);
+	schema = *(str*) getArgReference(stk,pci, pci->argc-3);
+	tbl = *(str*) getArgReference(stk,pci, pci->argc-2);
 
 	bskt = BSKTlocate(schema, tbl);
 	if (bskt == 0 )
