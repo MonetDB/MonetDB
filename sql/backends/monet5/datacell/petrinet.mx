@@ -29,8 +29,8 @@ Both query and emitter attached are scheduled.
 @end example
 @mal
 module petrinet;
-pattern registration(mod:str,fcn:str, delay:int):void
-address PNregistration
+pattern register(mod:str,fcn:str, delay:int):void
+address PNregister
 comment "Add a continous query to the Petri net. It will analyse
 the MAL block to determine the input/output dependencies. 
 The delay provides an indicative upperbound on how fast to react";
@@ -44,7 +44,7 @@ address PNtarget
 comment "Manually define an output basket for a transformation";
 
 pattern unregister(mod:str,fcn:str):void
-address PNunregistration
+address PNunregister
 comment "Manually define an continous query from the scheduler. ";
 
 command pause()
@@ -91,7 +91,7 @@ comment "Show the status of the Petri net";
 #define datacell_export extern
 #endif
 
-datacell_export str PNregistration(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+datacell_export str PNregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str PNpauseScheduler(int *ret);
 datacell_export str PNresumeScheduler(int *ret);
 datacell_export str PNstopScheduler(int *ret);
@@ -99,7 +99,7 @@ datacell_export str PNunregister( Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 datacell_export str PNdump(int *ret);
 datacell_export str PNsource(int *ret, str *mod, str *fcn, str *schema, str *tbl);
 datacell_export str PNtarget(int *ret, str *mod, str *fcn, str *schema, str *tbl);
-datacell_export void PNanalysis(Client cntxt, MalBlkPtr mb);
+datacell_export str PNanalysis(Client cntxt, MalBlkPtr mb);
 datacell_export str PNanalyseWrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif
 
@@ -158,7 +158,6 @@ static char *statusnames[7]={"stopped","pause","running","initialize","waiting",
 static int status = PNinitialize;
 static int cycleDelay = 10; /* be careful, it affects response/throughput timings */
 
-void PNanalysis(Client cntxt, MalBlkPtr mb);
 str PNstartThread(int *ret);
 
 str PNanalyseWrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -175,12 +174,11 @@ str PNanalyseWrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (s == NULL)
 		throw(MAL, "petrinet.analysis", "Could not find function");
 
-	PNanalysis(cntxt,s->def);
-
-	return MAL_SUCCEED;
+	return PNanalysis(cntxt,s->def);
 }
 
-str PNregistration(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+/* A transition is only allowed when all inputs are privately used */
+str PNregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Module scope;
 	Symbol s = 0;
@@ -219,13 +217,12 @@ str PNregistration(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	pnettop++;
 
-	PNanalysis(cntxt,s->def);
 	(void)ret;
-	return MAL_SUCCEED;
+	return PNanalysis(cntxt,s->def);
 }
 
 str
-PNunregistration(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+PNunregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str mod = *(str*) getArgReference(stk,pci,1);
 	str fcn = *(str*) getArgReference(stk,pci,2);
@@ -365,32 +362,46 @@ str PNtarget(int *ret, str *mod, str *fcn, str *schema, str *tbl)
 	(void)ret;
 	return MAL_SUCCEED;
 }
+
 /* check the routine for input/output relationships */
-void
+/* Make sure we do not re-use the same source more then once */
+str
 PNanalysis(Client cntxt, MalBlkPtr mb)
 {
-	int i, flg, ret;
+	int i, j, k, flg, ret;
 	InstrPtr p, sig = getInstrPtr(mb,0);
 	str schema, tbl;
 
+	/* first check for errors */
 	for( i = 0; i < mb->stop; i++){
 		p= getInstrPtr(mb,i);
-		if ( getModuleId(p) == basketRef){
-			if ( getFunctionId(p) == grabRef ){
-				schema = getVarConstant(mb,getArg(p,p->argc-3)).val.sval;
-				tbl = getVarConstant(mb,getArg(p,p->argc-2)).val.sval;
-				flg = getVarConstant(mb,getArg(p,p->argc-1)).val.ival;
+		if ( getModuleId(p) == basketRef && getFunctionId(p) == grabRef ){
+			schema = getVarConstant(mb,getArg(p,p->argc-3)).val.sval;
+			tbl = getVarConstant(mb,getArg(p,p->argc-2)).val.sval;
+			flg = getVarConstant(mb,getArg(p,p->argc-1)).val.ival;
 			
-				if ( flg) {
-					mnstr_printf(cntxt->fdout,"#input basket %s.%s \n", schema,tbl);
-					PNsource(&ret, &getModuleId(sig), &getFunctionId(sig), &schema, &tbl);
-				} else {
-					mnstr_printf(cntxt->fdout,"#output basket %s.%s \n", schema,tbl);
-					PNtarget(&ret, &getModuleId(sig), &getFunctionId(sig), &schema, &tbl);
-				}
+			for (j = 0; j < pnettop; j++) 
+			for ( k = 0; k < pnet[j].srctop; k++)
+			if ( strcmp(schema, pnet[j].source[k].schema) == 0 && strcmp(tbl, pnet[j].source[k].table) == 0 )
+				throw(MAL, "datacell.register","Duplicate use of continuous query input");
+		}
+	}
+	for( i = 0; i < mb->stop; i++){
+		p= getInstrPtr(mb,i);
+		if ( getModuleId(p) == basketRef &&  getFunctionId(p) == grabRef ){
+			schema = getVarConstant(mb,getArg(p,p->argc-3)).val.sval;
+			tbl = getVarConstant(mb,getArg(p,p->argc-2)).val.sval;
+			flg = getVarConstant(mb,getArg(p,p->argc-1)).val.ival;
+			if ( flg) {
+				mnstr_printf(cntxt->fdout,"#input basket %s.%s \n", schema,tbl);
+				PNsource(&ret, &getModuleId(sig), &getFunctionId(sig), &schema, &tbl);
+			} else {
+				mnstr_printf(cntxt->fdout,"#output basket %s.%s \n", schema,tbl);
+				PNtarget(&ret, &getModuleId(sig), &getFunctionId(sig), &schema, &tbl);
 			}
 		}
 	}
+	return MAL_SUCCEED;
 }
 @-
 The PetriNet controller lives in an separate thread.
