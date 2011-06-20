@@ -61,16 +61,16 @@ address DCquery
 comment "Add a new continuous query.";
 
 pattern register(name:str,def:str, delay:int):void
-address PNregistration
+address PNregister
 comment "Add a new continuous query to the scheduler with an
 indicative maximum delady of scheduling.";
 
 pattern register(name:str,def:str):void
-address PNregistration
+address PNregister
 comment "Add a new continuous query to the scheduler.";
 
 pattern unregister(name:str,def:str):void
-address PNunregistration
+address PNunregister
 comment "Remove a new continuous query from the scheduler.";
 
 pattern start()

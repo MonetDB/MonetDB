@@ -99,7 +99,7 @@ usage()
 	mnstr_printf(SEout, "--port=<portnr>, default=50500 \n");
 	mnstr_printf(SEout, "--sensor=<name> \n");
 	mnstr_printf(SEout, "--protocol=<name> udp or tcp(default) or csv \n");
-	mnstr_printf(SEout, "--autoincrement=<number>, default=1 \n");
+	mnstr_printf(SEout, "--increment=<number>, default=1 \n");
 	mnstr_printf(SEout, "--timestamp, default=on\n");
 	mnstr_printf(SEout, "--columns=<number>, default=1\n");
 	mnstr_printf(SEout, "--events=<events length>, (-1=forever,>0), default=1\n");
@@ -155,7 +155,7 @@ int main(int argc, char **argv)
 	Sensor se = NULL;
 	static SOCKET sockfd;
 	static struct option long_options[16] = {
-		{ "autoincrement", 0, 0, 'a' },
+		{ "increment", 0, 0, 'i' },
 		{ "batch", 1, 0, 'b' },
 		{ "columns", 1, 0, 'c' },
 		{ "client", 0, 0, 'c' },
@@ -210,10 +210,10 @@ int main(int argc, char **argv)
 				exit(0);
 			}
 			break;
-		case 'a':
+		case 'i':
 			autoincrement = optarg? atol(optarg): 0;
 			if (autoincrement < 0) {
-				mnstr_printf(SEout, "Illegal autoincrement %d\n", autoincrement);
+				mnstr_printf(SEout, "Illegal increment %d\n", autoincrement);
 				exit(0);
 			}
 			break;
