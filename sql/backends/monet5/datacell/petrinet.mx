@@ -430,6 +430,7 @@ PNcontroller(void *dummy)
 	lng t;
 
 	cntxt = MCinitClient(0,0,GDKout);
+	cntxt->nspace = newModule(NULL, putName("user", 4));
 	SQLinitEnvironment(cntxt);
 	/* At this point we know what is the total number of factories.
 	 * The most extremely case is when ALL factories are enable to fire
