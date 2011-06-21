@@ -39,6 +39,7 @@ comment "Datacell expression optimizer";
 
 #define OPTDEBUGdatacell  if ( optDebug & (1 <<DEBUG_OPT_DATACELL) )
 opt_export str OPTdatacell(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+opt_export int OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif
 @-
@@ -51,7 +52,7 @@ We keep a flow dependency table to detect.
 #include "mal_builder.h"
 #include "opt_statistics.h"
 
-static int
+int
 OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int actions = 0;
