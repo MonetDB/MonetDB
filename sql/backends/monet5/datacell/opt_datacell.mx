@@ -91,8 +91,10 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if( old[i]) {
         p = old[i];
 		if ( getModuleId(p) == sqlRef  && getFunctionId(p) == putName("affectedRows",12)) {
-			freeInstruction(p);
-			continue;
+			/* a good place to commit the SQL transaction */
+			setFunctionId(p, commitRef);
+			getArg(p,0)= newTmpVariable(mb, TYPE_any);
+			p->argc= p->retc= 1;
 		}
 		if ( getModuleId(p) == sqlRef  && (getFunctionId(p) == bindRef ||getFunctionId(p) == binddbatRef)){
 			schema = getVarConstant(mb, getArg(p,2)).val.sval;
@@ -186,6 +188,7 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	(void)stk;
 	(void)pci;
 
+		printFunction(cntxt->fdout, mb, stk, LIST_MAL_STMT);
 	if (actions)
 	{
 		addPipeDefinition("datacell_pipe",
