@@ -1712,7 +1712,6 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 	size_t length;
 	MapiHdl hdl = mapi_get_active(mid);
 	MapiMsg rc = MOK;
-	int sent = 0;		/* whether we sent any data to the server */
 	int lineno = 1;
 	enum hmyesno hassysfuncs = UNKNOWN;
 
@@ -2313,7 +2312,6 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 		assert(hdl != NULL);
 
 		if (length > 0) {
-			sent = 1;
 			SQLsetSpecial(line);
 			mapi_query_part(hdl, line, length);
 			CHECK_RESULT(mid, hdl, buf, continue);

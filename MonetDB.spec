@@ -265,9 +265,8 @@ program.
 %{gemdir}/cache/*.gem
 %dir %{gemdir}/gems/activerecord-monetdb-adapter-0.1
 %dir %{gemdir}/gems/ruby-monetdb-sql-0.1
-%{gemdir}/gems/activerecord-monetdb-adapter-0.1/*
-%{gemdir}/gems/ruby-monetdb-sql-0.1/*
-%{gemdir}/gems/ruby-monetdb-sql-0.1/.require_paths
+%{gemdir}/gems/activerecord-monetdb-adapter-0.1
+%{gemdir}/gems/ruby-monetdb-sql-0.1
 %{gemdir}/specifications/*.gemspec
 
 %package client-tests

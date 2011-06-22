@@ -144,7 +144,6 @@ command_create(int argc, char *argv[])
 int
 command_get(confkeyval *ckv, int argc, char *argv[])
 {
-	char doall = 1;
 	char *p;
 	char *dbfarm = LOCALSTATEDIR "/monetdb5/dbfarm";
 	char *property = NULL;
@@ -181,8 +180,6 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 		/* deduced read-only properties */
 		off += snprintf(property + off, 512 - off,
 				",mapisock,controlsock");
-	} else {
-		doall = 0;
 	}
 
 	/* chdir to dbfarm so we can open relative files (like pidfile) */

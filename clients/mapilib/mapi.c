@@ -1255,7 +1255,7 @@ mapi_get_to(Mapi mid)
 stream *
 mapi_get_from(Mapi mid)
 {
-	mapi_check0(mid, "mapi_get_to");
+	mapi_check0(mid, "mapi_get_from");
 	return mid->from;
 }
 
