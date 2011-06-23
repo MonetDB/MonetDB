@@ -1208,7 +1208,7 @@ str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (b == NULL)
 		throw(MAL, "remote.bincopyto", RUNTIME_OBJECT_UNDEFINED);
-	if (!(b->htype == TYPE_void || (b->htype == TYPE_oid && b->T->dense)))
+	if (!(b->htype == TYPE_void || (b->htype == TYPE_oid && b->H->dense)))
 		throw(ILLARG, "remote.bincopyto", "only void-headed BATs are supported");
 
 	mnstr_printf(cntxt->fdout, /*JSON*/"{"
