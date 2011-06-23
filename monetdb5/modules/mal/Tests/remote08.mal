@@ -1,0 +1,20 @@
+# let connect figure out itself how to connect to the running db
+uri := sabaoth.getLocalConnectionURI();
+
+# create a persistent connecton to ourself
+conn1:str := remote.connect(uri, "monetdb", "monetdb");
+
+b := bat.new(:oid, :int);
+
+b := bat.insert(b, nil:oid, 2);
+b := bat.insert(b, nil:oid, 4);
+b := algebra.markH(b);
+rb2 := remote.put(conn1, b);
+
+lb2:bat[:oid,:int] := remote.get(conn1, rb2);
+
+io.print(lb2);
+
+# help testweb a bit, since currently no cleanup is done on server
+# shutdown
+remote.disconnect(conn1);
