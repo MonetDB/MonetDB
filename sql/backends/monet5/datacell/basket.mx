@@ -24,27 +24,27 @@ processing is ignored.
 @mal
 module basket;
 
-pattern register(schema:str,tab:str):void
+pattern register(tab:str):void
 address BSKTregister
 comment "Initialize a new basket based on a specific table definition in the datacell schema");
 
-command lock{unsafe}(schema:str, tbl:str,delay:int):void
+command lock{unsafe}(tbl:str,delay:int):void
 address BSKTlock
 comment "Lock a basket group and spinlock upon need";
 
-command lock{unsafe}(schema:str, tbl:str):void
+command lock{unsafe}(tbl:str):void
 address BSKTlock2
 comment "Lock a basket group ";
 
-command unlock{unsafe}(schema:str, tbl:str):void
+command unlock{unsafe}(tbl:str):void
 address BSKTunlock
 comment "Unlock the basket";
 
-pattern grab(schema:str, tbl:str, flg:int):bat[:oid,:any]...
+pattern grab(tbl:str, flg:int):bat[:oid,:any]...
 address BSKTgrab
 comment "Take a snapshot of the basket, destroying the origin when flg is set";
 
-command drop(schema:str, tbl:str):void
+command drop(tbl:str):void
 address BSKTdrop
 comment "Remove the basket";
 
@@ -78,7 +78,6 @@ comment "Dump the status of the basket table";
 
 typedef struct{
 	MT_Lock lock;
-	str schema;	/* lives in the datacell schema by default */
 	str name;	/* table that represents the basket */
 	int colcount;
 	str *cols;
@@ -88,22 +87,25 @@ typedef struct{
 
 datacell_export str schema_default;
 datacell_export str BSKTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-datacell_export str BSKTnewbasket(sql_schema *s, sql_table *t, sql_trans *tr);
-datacell_export str BSKTdrop(int *ret, str *sch, str *tbl);
+datacell_export str BSKTdrop(int *ret, str *tbl);
 datacell_export str BSKTinventory(int *ret);
-datacell_export int BSKTmemberCount(str schema, str tbl);
-datacell_export int BSKTlocate(str schema, str tbl);
+datacell_export int BSKTmemberCount(str tbl);
+datacell_export int BSKTlocate(str tbl);
 datacell_export str BSKTdump(int *ret);
 datacell_export str BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-datacell_export str BSKTlock(int *ret, str *schema, str *tbl, int *delay);
-datacell_export str BSKTunlock(int *ret, str *schema, str *tbl);
-datacell_export str BSKTlock2(int *ret, str *schema, str *tbl);
+datacell_export str BSKTlock(int *ret, str *tbl, int *delay);
+datacell_export str BSKTunlock(int *ret, str *tbl);
+datacell_export str BSKTlock2(int *ret, str *tbl);
+
+datacell_export str BSKTnewbasket(sql_schema *s, sql_table *t, sql_trans *tr);
+datacell_export void BSKTelements(str nme, str buf, str *schema, str *tbl);
+datacell_export InstrPtr BSKTgrabInstruction(MalBlkPtr mb, str tbl);
+datacell_export void BSKTtolower(char *src);
 
 datacell_export BSKTbasketRec *baskets;
 datacell_export int bsktTop, bsktLimit;
 datacell_export lng usec(void);
-datacell_export InstrPtr BSKTgrabInstruction(MalBlkPtr mb, str shema, str tbl);
 #endif
 @c
 #include "basket.h"
@@ -134,11 +136,27 @@ lng usec(void)
 }
 @c
 
+/* assume BUFSIZ buffer space */
+void
+BSKTelements(str nme, str buf, str *schema, str *tbl)
+{
+	char *c;
+	strncpy(buf,nme, BUFSIZ);
+	buf[BUFSIZ-1]= 0;
+	c = strchr(buf,(int) '.');
+	if ( c == 0) 
+		snprintf(buf,BUFSIZ,"datacell.%s",nme);
+	c = strchr(buf,(int) '.');
+	*schema = buf;
+	*c++ = 0;
+	*tbl = c;
+}
+
 static int BSKTnewEntry()
 {
 	int i;
 	for ( i=1; i< bsktLimit; i++)
-	if (baskets[i].schema == NULL)
+	if (baskets[i].name == NULL)
 		break;
 	if ( i < bsktLimit) {
 		if ( i == bsktTop)
@@ -157,26 +175,25 @@ static int BSKTnewEntry()
 	return bsktTop++;
 }
 
-static void
-BSKTtolower(char *dst, const char *src)
+void
+BSKTtolower(char *src)
 {
 	int i;
 	for( i=0; i < BUFSIZ-1 && src[i]; i++)
-		dst[i] = (char) tolower((int)src[i]);
-	dst[i] = 0;
+		src[i] = (char) tolower((int)src[i]);
 }
+
 int
-BSKTlocate(str schema, str tbl)
+BSKTlocate(str tbl)
 {
 	int i;
-	char lsch[BUFSIZ], ltbl[BUFSIZ];
+	char buf[BUFSIZ];
 
-	BSKTtolower(lsch,schema);
-	BSKTtolower(ltbl,tbl);
+	strncpy(buf,tbl,BUFSIZ);
+	BSKTtolower(buf);
 
 	for (i = 1; i < bsktTop; i++)
-		if (tbl && baskets[i].name && strcmp(ltbl, baskets[i].name) == 0 &&
-			(schema == 0 || (baskets[i].schema && strcmp(lsch, baskets[i].schema) == 0)))
+		if (tbl && baskets[i].name && strcmp(tbl, baskets[i].name) == 0 )
 			return i;
 	return 0;
 }
@@ -189,13 +206,14 @@ BSKTnewbasket(sql_schema *s, sql_table *t, sql_trans *tr)
 	str msg = MAL_SUCCEED;;
 	BAT *b;
 	sql_column  *c;
+	char buf[BUFSIZ];
 
 	mal_set_lock(mal_contextLock, "register");
 	idx = BSKTnewEntry();
 	MT_lock_init(&baskets[idx].lock, "register");
 
-	baskets[idx].schema = GDKstrdup(s->base.name);
-	baskets[idx].name = GDKstrdup(t->base.name);
+	snprintf(buf,BUFSIZ,"%s.%s",s->base.name, t->base.name);
+	baskets[idx].name = GDKstrdup(buf);
 
 	baskets[idx].colcount = 0;
 	for (o = t->columns.set->h; o; o = o->next) baskets[idx].colcount++;
@@ -231,15 +249,19 @@ BSKTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mvc *m = NULL;
 	str msg = getContext(cntxt, mb, &m, NULL);
 	sql_trans *tr;
-	char lsch[BUFSIZ];
-	char ltbl[BUFSIZ];
+	char buf[BUFSIZ], *lsch, *ltbl;
+	str tbl;
+
+	BSKTelements( tbl = *(str*) getArgReference(stk,pci,1), buf, &lsch, &ltbl);
+	BSKTtolower(lsch);
+	BSKTtolower(ltbl);
+	
 
 	if (msg != MAL_SUCCEED)
 		return msg;
-	BSKTtolower(lsch,*(str*)getArgReference(stk, pci, 1));
+
 	tr = m->session->tr;
 	s = mvc_bind_schema(m, lsch);
-	BSKTtolower(ltbl, *(str*)getArgReference(stk, pci, 2));
 	if (s == NULL)
 		throw(SQL, "datacell.register", "Schema missing");
 
@@ -248,15 +270,15 @@ BSKTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "datacell.register", "Table missing");
 
 	/* check double registration */
-	if (BSKTlocate(lsch, ltbl))
+	if (BSKTlocate(tbl))
 		throw(SQL, "datacell.register", "Basket defined twice.");
 
 	return BSKTnewbasket(s, t, tr);
 }
 
-int BSKTmemberCount(str schema, str tbl)
+int BSKTmemberCount(str tbl)
 {
-	int idx = BSKTlocate(schema, tbl);
+	int idx = BSKTlocate(tbl);
 	return baskets[idx].colcount;
 }
 
@@ -264,11 +286,11 @@ int BSKTmemberCount(str schema, str tbl)
 The locks are designated towards the baskets.
 If you can not grab the lock then we have to wait.
 @c
-str BSKTlock(int *ret, str *schema, str *tbl, int *delay)
+str BSKTlock(int *ret, str *tbl, int *delay)
 {
 	int bskt;
 
-	bskt = BSKTlocate(*schema, *tbl);
+	bskt = BSKTlocate(*tbl);
 	if (bskt == 0)
 		throw(MAL, "basket.lock", "Could not find the basket");
 #ifdef _DEBUG_BASKET
@@ -284,17 +306,17 @@ str BSKTlock(int *ret, str *schema, str *tbl, int *delay)
 }
 
 
-str BSKTlock2(int *ret, str *schema, str *tbl)
+str BSKTlock2(int *ret, str *tbl)
 {
 	int delay = 0;
-	return BSKTlock(ret, schema, tbl, &delay);
+	return BSKTlock(ret, tbl, &delay);
 }
 
-str BSKTunlock(int *ret, str *schema, str *tbl)
+str BSKTunlock(int *ret, str *tbl)
 {
 	int bskt;
 
-	bskt = BSKTlocate(*schema, *tbl);
+	bskt = BSKTlocate(*tbl);
 	if (bskt == 0)
 		throw(MAL, "basket.lock", "Could not find the basket");
 	mal_unset_lock(baskets[bskt].lock, "lock basket");
@@ -304,19 +326,17 @@ str BSKTunlock(int *ret, str *schema, str *tbl)
 
 
 str
-BSKTdrop(int *ret, str *schema, str *tbl)
+BSKTdrop(int *ret, str *tbl)
 {
 	int bskt;
 
-	bskt = BSKTlocate(*schema, *tbl);
+	bskt = BSKTlocate(*tbl);
 	if (bskt == 0)
 		throw(MAL, "basket.drop", "Could not find the basket");
 	baskets[bskt].colcount = 0;
-	GDKfree(baskets[bskt].schema);
 	GDKfree(baskets[bskt].name);
 	GDKfree(baskets[bskt].cols);
 	GDKfree(baskets[bskt].primary);
-	baskets[bskt].schema = 0;
 	baskets[bskt].name = 0;
 	baskets[bskt].cols = 0;
 	baskets[bskt].primary = 0;
@@ -331,9 +351,8 @@ BSKTdump(int *ret)
 	int bskt;
 
 	for ( bskt = 0; bskt < bsktLimit; bskt++) 
-	if ( baskets[bskt].schema){
-		mnstr_printf(GDKout, "#baskets[%2d] %s.%s columns %d events " BUNFMT "\n", bskt,
-			baskets[bskt].schema,
+	if ( baskets[bskt].name){
+		mnstr_printf(GDKout, "#baskets[%2d] %s columns %d events " BUNFMT "\n", bskt,
 			baskets[bskt].name,
 			baskets[bskt].colcount,
 			(baskets[bskt].primary[0]? BATcount(baskets[bskt].primary[0]): 0));
@@ -345,16 +364,16 @@ BSKTdump(int *ret)
 str
 BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str schema, tbl;
-	int bskt, i, *ret;
+	str tbl;
+	int bskt, i, *ret, flg;
 	BAT *b;
 
 	(void) cntxt;
 	(void) mb;
-	schema = *(str*) getArgReference(stk,pci, pci->argc-3);
 	tbl = *(str*) getArgReference(stk,pci, pci->argc-2);
+	flg = *(int*) getArgReference(stk,pci, pci->argc-1);
 
-	bskt = BSKTlocate(schema, tbl);
+	bskt = BSKTlocate(tbl);
 	if (bskt == 0 )
 		throw(MAL,"basket.grab","Basket not found");
 	if ( baskets[bskt].colcount != pci->retc)
@@ -364,25 +383,28 @@ BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		ret= (int*) getArgReference(stk,pci,i);
 		b = baskets[bskt].primary[i];
 		*ret = b->batCacheid;
+		BBPfix(*ret);
 		BBPkeepref(*ret);
-		if (  b->htype == TYPE_oid) {
-			baskets[bskt].primary[i] = BATnew(TYPE_void, b->ttype, 0);
-			BATseqbase(baskets[bskt].primary[i], 0);
-		} else
-			baskets[bskt].primary[i] = BATnew(b->htype, b->ttype, 0);
+		if ( flg) {
+			if (  b->htype == TYPE_oid) {
+				baskets[bskt].primary[i] = BATnew(TYPE_void, b->ttype, 0);
+				BATseqbase(baskets[bskt].primary[i], 0);
+			} else
+				baskets[bskt].primary[i] = BATnew(b->htype, b->ttype, 0);
+		}
 	}
 	mal_unset_lock(baskets[bskt].lock, "unlock basket");
 	return MAL_SUCCEED;
 }
 
 InstrPtr
-BSKTgrabInstruction(MalBlkPtr mb, str schema, str tbl)
+BSKTgrabInstruction(MalBlkPtr mb, str tbl)
 {
 	int i, j, bskt;
 	InstrPtr p;
 	BAT *b;
 
-	bskt = BSKTlocate(schema, tbl);
+	bskt = BSKTlocate(tbl);
 	if (bskt == 0 )
 		return 0;
 	p = newFcnCall(mb,basketRef,grabRef);
@@ -395,7 +417,6 @@ BSKTgrabInstruction(MalBlkPtr mb, str schema, str tbl)
 		p= pushArgument(mb,p, j);
 	}
 	p->retc= p->argc;
-	p= pushStr(mb,p,schema);
 	p= pushStr(mb,p,tbl);
 	return p;
 }

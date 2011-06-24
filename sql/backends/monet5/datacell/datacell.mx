@@ -20,39 +20,39 @@ The interface from SQL passes through here.
 @mal
 module datacell;
 
-pattern prepare()
-address DCinitialize
-comment "Initialize the datacell infrastructure";
+pattern prelude()
+address DCprelude
+comment "Convert the datacell schema to a stream processing infrastructure";
 
-pattern basket(schema:str,tab:str):void
+pattern basket(tab:str):void
 address DCregister
 comment "Initialize a new basket based on a specific table definition in the datacell schema");
 
-pattern emitter(sch:str, tbl:str, host:str, port:int)
+pattern emitter(tbl:str, host:str, port:int)
 address DCemitterNew
 comment "Define a emitter based on a basket table.";
 
-pattern receptor(sch:str, tbl:str, host:str, port:int)
+pattern receptor(tbl:str, host:str, port:int)
 address DCreceptorNew
 comment "Define a receptor based on a basket table..";
 
-pattern mode(sch:str, tbl:str, arg:str)
+pattern mode(tbl:str, arg:str)
 address DCmode
 comment "Change the mode of the adaptor to active/passive";
 
-pattern protocol(sch:str, tbl:str, arg:str)
+pattern protocol(tbl:str, arg:str)
 address DCprotocol
 comment "Change the protocol of the adaptor UDP/TCP/CSV";
 
-pattern remove(schema:str,obj:str):void
+pattern remove(obj:str):void
 address DCremove
 comment "Remove a basket, receptor or emitter";
 
-pattern pause(schema:str,obj:str):void
+pattern pause(obj:str):void
 address DCpause
 comment "Pause a receptor or emitter";
 
-pattern resume(schema:str,obj:str):void
+pattern resume(obj:str):void
 address DCresume
 comment "Pause a receptor or emitter";
 
@@ -60,22 +60,19 @@ pattern query(name:str,def:str):void
 address DCquery
 comment "Add a new continuous query.";
 
-pattern register(name:str,def:str, delay:int):void
+pattern register(def:str, delay:int):void
 address PNregister
 comment "Add a new continuous query to the scheduler with an
 indicative maximum delady of scheduling.";
 
-pattern register(name:str,def:str):void
+pattern register(def:str):void
 address PNregister
 comment "Add a new continuous query to the scheduler.";
 
-pattern unregister(name:str,def:str):void
+pattern unregister(def:str):void
 address PNunregister
 comment "Remove a new continuous query from the scheduler.";
 
-pattern start()
-address DCstartScheduler
-comment "Convert the datacell schema to a stream processing infrastructure";
 
 pattern pause()
 address DCpauseScheduler
@@ -85,8 +82,8 @@ pattern resume()
 address DCresumeScheduler
 comment "Resume the petrinet scheduler.";
 
-pattern finish()
-address DCfinishScheduler
+pattern postlude()
+address DCpostlude
 comment "Stop the petrinet scheduler.";
 
 command inventory():bat[:str,:bat]
@@ -123,7 +120,7 @@ comment "Dump receptor/emitter status";
 
 /* #define _DEBUG_DATACELL     debug this module */
 
-datacell_export str DCinitialize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+datacell_export str DCprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str DCregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str DCremove(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str DCpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -133,10 +130,9 @@ datacell_export str DCprotocol(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 datacell_export str DCquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str DCdump(int *ret);
 
-datacell_export str DCstartScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str DCpauseScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str DCresumeScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-datacell_export str DCfinishScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+datacell_export str DCpostlude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 datacell_export str DCinventory(int *ret);
 
@@ -150,14 +146,51 @@ datacell_export str DCinventory(int *ret);
 #include "winsock2.h"
 #endif
 
+/*
+ * The scheduler works against a converted datacell schema.
+ * It should be stopped before additions to the scheme will take effect
+*/
+
+#define DCNONINITIALIZED 1
+#define DCINITIALIZED 2
+#define DCPAUSED 3
+
+static int DCprepared;
+
+/* 
+ * grab all tables in the datacell schema and turn them into baskets.
+ * The same for all procedures, turn them into continuous queries.
+*/
+
 str
-DCinitialize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+DCprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) cntxt;
-	(void) mb;
+	mvc *m = NULL;
+	str msg = getContext(cntxt, mb, &m, NULL);
+	sql_schema  *s;
+	node *o;
+	sql_table *t;
+	sql_func *f;
+	sql_trans *tr;
+
+	s = mvc_bind_schema(m, schema_default);
+	if (s == NULL)
+		throw(SQL, "datacell.prelude", "Schema missing");
+	tr = m->session->tr;
+	for (o = s->tables.set->h; msg == MAL_SUCCEED && o; o = o->next) {
+		t = o->data;
+		if (BSKTlocate(t->base.name))
+			throw(SQL, "datacell.register", "Basket defined twice.");
+		msg = BSKTnewbasket(s, t, tr);
+	}
+	for (o = s->funcs.set->h; msg == MAL_SUCCEED && o; o = o->next) {
+		f = o->data;
+		printf("function %s\n", f->base.name);
+	}
+	DCprepared = DCINITIALIZED;
 	(void) stk;
 	(void) pci;
-	return MAL_SUCCEED;
+	return msg;
 }
 
 str
@@ -170,15 +203,14 @@ str
 DCpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int idx, ret=0;
-	str schema= *(str*) getArgReference(stk, pci,1);
-	str tbl= *(str*) getArgReference(stk, pci,2);
+	str tbl= *(str*) getArgReference(stk, pci,1);
 
-	idx = BSKTlocate(schema,tbl);
+	idx = BSKTlocate(tbl);
 	if ( idx == 0)
 		throw(SQL, "datacell.pause", "Basket not found");
 
-	DCreceptorPause(&ret, &schema, &tbl);
-	DCemitterPause(&ret, &schema, &tbl);
+	DCreceptorPause(&ret, &tbl);
+	DCemitterPause(&ret, &tbl);
 	(void) cntxt;
 	(void) mb;
 	return MAL_SUCCEED;
@@ -188,15 +220,14 @@ str
 DCresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int idx, ret= 0;
-	str schema= *(str*) getArgReference(stk, pci,1);
-	str tbl= *(str*) getArgReference(stk, pci,2);
+	str tbl= *(str*) getArgReference(stk, pci,1);
 
-	idx = BSKTlocate(schema,tbl);
+	idx = BSKTlocate(tbl);
 	if ( idx == 0)
 		throw(SQL, "datacell.pause", "Basket not found");
 
-	DCreceptorResume(&ret, &schema, &tbl);
-	DCemitterResume(&ret, &schema, &tbl);
+	DCreceptorResume(&ret, &tbl);
+	DCemitterResume(&ret, &tbl);
 	(void) cntxt;
 	(void) mb;
 	return MAL_SUCCEED;
@@ -206,12 +237,11 @@ str
 DCremove(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int idx;
-	str schema= *(str*) getArgReference(stk, pci,1);
-	str tbl= *(str*) getArgReference(stk, pci,2);
+	str tbl= *(str*) getArgReference(stk, pci,1);
 
 	(void) cntxt;
 	(void) mb;
-	idx = BSKTlocate(schema,tbl);
+	idx = BSKTlocate(tbl);
 	if ( idx == 0) 
 		throw(MAL,"datacell.remove","Basket not found");
 	/* remove basket  and corresponding receptor/emitters depending on it*/
@@ -222,16 +252,15 @@ str
 DCmode(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int idx, ret=0;
-	str *schema= (str*) getArgReference(stk, pci,1);
-	str *tbl= (str*) getArgReference(stk, pci,2);
-	str *arg= (str*) getArgReference(stk, pci,3);
+	str *tbl= (str*) getArgReference(stk, pci,1);
+	str *arg= (str*) getArgReference(stk, pci,2);
 
-	idx = BSKTlocate(*schema, *tbl);
+	idx = BSKTlocate(*tbl);
 	if ( idx == 0)
 		throw(SQL, "datacell.mode", "Basket not found");
 
-	RCmode(&ret, schema, tbl,arg);
-	EMmode(&ret, schema, tbl,arg);
+	RCmode(&ret, tbl,arg);
+	EMmode(&ret, tbl,arg);
 	(void) cntxt;
 	(void) mb;
 	return MAL_SUCCEED;
@@ -241,16 +270,15 @@ str
 DCprotocol(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int idx, ret=0;
-	str *schema= (str*) getArgReference(stk, pci,1);
-	str *tbl= (str*) getArgReference(stk, pci,2);
-	str *arg= (str*) getArgReference(stk, pci,3);
+	str *tbl= (str*) getArgReference(stk, pci,1);
+	str *arg= (str*) getArgReference(stk, pci,2);
 
-	idx = BSKTlocate(*schema, *tbl);
+	idx = BSKTlocate(*tbl);
 	if ( idx == 0)
 		throw(SQL, "datacell.protocol", "Basket not found");
 
-	RCprotocol(&ret, schema, tbl,arg);
-	EMprotocol(&ret, schema, tbl,arg);
+	RCprotocol(&ret, tbl,arg);
+	EMprotocol(&ret, tbl,arg);
 	(void) cntxt;
 	(void) mb;
 	return MAL_SUCCEED;
@@ -293,23 +321,28 @@ DCquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	InstrPtr p;
 	Module scope;
 	lng clk = GDKusec();
+	char buf[BUFSIZ], *lsch, *ltbl;
+
+	BSKTelements( nme, buf, &lsch, &ltbl);
+	BSKTtolower(lsch);
+	BSKTtolower(ltbl);
 
 	(void) mb;
 	/* check if the argument denotes a procedure name */
 	/* if so, get its definition to be compiled */
 
-	msg = SQLstatementIntern(cntxt, def, nme, 0, 0);
+	msg = SQLstatementIntern(cntxt, def, ltbl, 0, 0);
 	/* if ( msg )
 		return msg; */
-	scope = findModule(cntxt->nspace,putName("datacell",8));
-	s = newFunction(putName("datacell",8), putName(nme, strlen(nme)),FUNCTIONsymbol);
+	scope = findModule(cntxt->nspace,putName(lsch,strlen(lsch)));
+	s = newFunction(putName(lsch,strlen(lsch)), putName(ltbl, strlen(ltbl)),FUNCTIONsymbol);
 	if ( s == NULL) 
 		throw(SQL,"datacell.query","Procedure code does not exist");
     freeMalBlk(s->def);
     s->def = copyMalBlk(cntxt->curprg->def);
 	p= getInstrPtr(s->def,0);
-	setModuleId(p, putName("datacell",8));
-	setFunctionId(p, putName(nme,strlen(nme)));
+	setModuleId(p, putName(lsch,strlen(lsch)));
+	setFunctionId(p, putName(ltbl,strlen(ltbl)));
     insertSymbol(scope,s);
 	/* printFunction(cntxt->fdout, s->def, 0, LIST_MAL_STMT);*/
 	/* optimize the code and register at scheduler */
@@ -322,56 +355,6 @@ DCquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			msg = optimizerCheck(cntxt, s->def, "optimizer.datacell", 1, GDKusec() - clk, OPT_CHECK_ALL);
 		addtoMalBlkHistory(mb, "datacell");
 	}
-	printFunction(cntxt->fdout, s->def, 0, LIST_MAL_STMT);
-	return msg;
-}
-
-/*
- * The scheduler works against a converted datacell schema.
- * It should be stopped before additions to the scheme will take effect
-*/
-
-#define DCNONINITIALIZED 1
-#define DCINITIALIZED 2
-#define DCPAUSED 3
-
-static int DCinitialized;
-
-str
-DCstartScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	sql_schema  *s;
-	sql_table   *t;
-	mvc *m = NULL;
-	str msg = getContext(cntxt, mb, &m, NULL);
-	sql_trans *tr;
-	node *o;
-
-	if ( DCinitialized != DCNONINITIALIZED)
-		throw(MAL,"datacell.start","Datacell already initialized");
-	if( msg != MAL_SUCCEED)
-		return msg;
-	tr = m->session->tr;
-
-	/* we first have to identify all continuous queries and build up
-	   the dataflow dependencies. Then for all open sources and sinks
-	   we should generate the default receptor/emittor
-	*/
-	(void)stk;
-	(void)pci;
-	s = mvc_bind_schema(m, schema_default);
-	if (s == NULL)
-		throw(SQL, "datacell.register", "Schema missing");
-	for (o = s->tables.set->h; msg == MAL_SUCCEED && o; o = o->next) {
-		t = o->data;
-
-		/* check double registration */
-		if (BSKTlocate(schema_default, t->base.name))
-			throw(SQL, "datacell.register", "Basket defined twice.");
-		msg = BSKTnewbasket(s, t, tr);
-	}
-	mnstr_printf(cntxt->fdout,"# use datacell.pause(), datacell.resume(), and datacell.stop() to control scheduler.\n");
-	DCinitialized = DCINITIALIZED;
 	return msg;
 }
 
@@ -400,17 +383,17 @@ DCpauseScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-DCdropscheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+DCpostlude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int ret=0;
-	if ( DCinitialized != DCINITIALIZED && DCinitialized != DCPAUSED)
+	if ( DCprepared != DCINITIALIZED && DCprepared != DCPAUSED)
 		throw(MAL,"datacell.pause","Datacell already stopped");
 	PNstopScheduler(&ret);
 	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	DCinitialized = DCNONINITIALIZED;
+	DCprepared = DCNONINITIALIZED;
 	return MAL_SUCCEED;
 }
 

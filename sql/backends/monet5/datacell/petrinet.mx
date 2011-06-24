@@ -35,15 +35,15 @@ comment "Add a continous query to the Petri net. It will analyse
 the MAL block to determine the input/output dependencies. 
 The delay provides an indicative upperbound on how fast to react";
 
-command source(mod:str,fcn:str, schema:str,tbl:str):void
+command source(fcn:str, tbl:str):void
 address PNsource
 comment "Manually define an input basket for a transformation";
 
-command target(mod:str,fcn:str, schema:str,tbl:str):void
+command target(fcn:str, tbl:str):void
 address PNtarget
 comment "Manually define an output basket for a transformation";
 
-pattern unregister(mod:str,fcn:str):void
+pattern unregister(fcn:str):void
 address PNunregister
 comment "Manually define an continous query from the scheduler. ";
 
@@ -97,8 +97,8 @@ datacell_export str PNresumeScheduler(int *ret);
 datacell_export str PNstopScheduler(int *ret);
 datacell_export str PNunregister( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str PNdump(int *ret);
-datacell_export str PNsource(int *ret, str *mod, str *fcn, str *schema, str *tbl);
-datacell_export str PNtarget(int *ret, str *mod, str *fcn, str *schema, str *tbl);
+datacell_export str PNsource(int *ret, str *fcn, str *tbl);
+datacell_export str PNtarget(int *ret, str *fcn, str *tbl);
 datacell_export str PNanalysis(Client cntxt, MalBlkPtr mb);
 datacell_export str PNanalyseWrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif
@@ -115,7 +115,7 @@ static int controlRounds = PNcontrolInfinit;
 
 
 typedef struct {
-	str schema, table;
+	char *table;
 	int bskt;		/* basket used */
 	BAT *b;				/* reference BAT for checking content */
 	int available;      /* approximate number of events available */
@@ -124,7 +124,7 @@ typedef struct {
 } PoolRec;
 
 typedef struct {
-	str mod, fcn;
+	str fcn;
 	MalBlkPtr mb;       /* Factory MAL block */
 	MalStkPtr stk;      /* Factory stack */
 	InstrPtr pci;       /* Factory re-entry point */
@@ -164,13 +164,17 @@ str PNanalyseWrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Module scope;
 	Symbol s = 0;
-	str *modnme = (str *)getArgReference(stk, pci, 1);
-	str *fcnnme = (str *)getArgReference(stk, pci, 2);
+	str nme = *(str *)getArgReference(stk, pci, 1);
+	char buf[BUFSIZ], *modnme, *fcnnme;
+
+	BSKTelements( nme, buf, &modnme, &fcnnme);
+	BSKTtolower(modnme);
+	BSKTtolower(fcnnme);
 
 	(void) mb;
-	scope = findModule(cntxt->nspace, putName(*modnme, (int)strlen(*modnme)));
+	scope = findModule(cntxt->nspace, putName(modnme, (int)strlen(modnme)));
 	if (scope)
-		s = findSymbolInModule(scope, putName(*fcnnme, (int)strlen(*fcnnme)));
+		s = findSymbolInModule(scope, putName(fcnnme, (int)strlen(fcnnme)));
 	if (s == NULL)
 		throw(MAL, "petrinet.analysis", "Could not find function");
 
@@ -183,36 +187,45 @@ str PNregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	Module scope;
 	Symbol s = 0;
 	int *ret = (int *)getArgReference(stk, pci, 0);
-	str *modnme = (str *)getArgReference(stk, pci, 1);
-	str *fcnnme = (str *)getArgReference(stk, pci, 2);
-	int *delay = (int*) getArgReference(stk,pci,3);
+	str nme = *(str *)getArgReference(stk, pci, 1);
+	int *delay = (int*) getArgReference(stk,pci,2);
+	int i;
+	char buf[BUFSIZ], *modnme, *fcnnme;
+
+	BSKTelements( nme, buf, &modnme, &fcnnme);
+	BSKTtolower(modnme);
+	BSKTtolower(fcnnme);
 	(void)mb;
 
-	scope = findModule(cntxt->nspace, putName(*modnme, (int)strlen(*modnme)));
+	scope = findModule(cntxt->nspace, putName(modnme, (int)strlen(modnme)));
 	if (scope)
-		s = findSymbolInModule(scope, putName(*fcnnme, (int)strlen(*fcnnme)));
+		s = findSymbolInModule(scope, putName(fcnnme, (int)strlen(fcnnme)));
 
 	if (s == NULL)
-		throw(MAL, "petrinet.transformation", "Could not find function");
+		throw(MAL, "petrinet.register", "Could not find function");
 
 	if (pnettop >= MAXPN) {
 		if ((pnet = (PNnode*)GDKrealloc(pnet, sizeof(PNnode) * (pnettop + 1))) == NULL)
-			throw(MAL, "petrinet.transformation", MAL_MALLOC_FAIL);
+			throw(MAL, "petrinet.register", MAL_MALLOC_FAIL);
 	}else if (pnettop == 0 && (pnet = (PNnode *)GDKzalloc(MAXPN * sizeof(PNnode))) == NULL)
-			throw(MAL, "petrinet.transformation", MAL_MALLOC_FAIL);
+			throw(MAL, "petrinet.register", MAL_MALLOC_FAIL);
 
-	pnet[pnettop].mod = GDKstrdup(*modnme);
-	pnet[pnettop].fcn = GDKstrdup(*fcnnme);
+	for ( i = 0; i< pnettop; i++)
+		if ( strcmp(pnet[i].fcn, nme) == 0)
+			break;
+	if ( i != pnettop)
+			throw(MAL, "petrinet.register", "Duplicate definition of transition");
+	pnet[pnettop].fcn = GDKstrdup(nme);
 	pnet[pnettop].mb = s->def;
 	pnet[pnettop].status = PNwaiting;
 	pnet[pnettop].cycles = 0;
 	/* all the rest is zero */
 	/*assert(pnettop<MAXPN);*/
 
-	if( pci->argc >3 ){
+	if( pci->argc >2 ){
 		delay = (int*) getArgReference(stk,pci,3);
 		if (*delay < 0)
-			throw(MAL, "datacell.setDelay", "Negative value not allowed");
+			throw(MAL, "datacell.register", "Negative delay value not allowed");
 		pnet[pnettop].delay = *delay;
 	}
 	pnettop++;
@@ -224,25 +237,29 @@ str PNregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 PNunregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str mod = *(str*) getArgReference(stk,pci,1);
-	str fcn = *(str*) getArgReference(stk,pci,2);
+	str nme = *(str*) getArgReference(stk,pci,1);
     Module scope;
     Symbol s;
 	int ret;
 	int i,j;
+	char buf[BUFSIZ], *modnme, *fcnnme;
+
+	BSKTelements( nme, buf, &modnme, &fcnnme);
+	BSKTtolower(modnme);
+	BSKTtolower(fcnnme);
 
 	if ( status != PNpause)
 		throw(MAL,"datacell.unregister","Scheduler should be paused first");
 	(void) mb;
 	/* check for a continous query */
-	scope = findModule(cntxt->nspace, putName(mod, (int)strlen(mod)));
+	scope = findModule(cntxt->nspace, putName(modnme, (int)strlen(modnme)));
 	if (scope)
-		s = findSymbolInModule(scope, putName(fcn, (int)strlen(fcn)));
+		s = findSymbolInModule(scope, putName(fcnnme, (int)strlen(fcnnme)));
 	if (s == NULL)
 		throw(SQL, "datacell.remove", "Continuous query found");
 	PNpauseScheduler(&ret);
 	for( i = j = 0; i< pnettop; i++)
-		if (strcmp(mod, pnet[i].mod) == 0 && strcmp(fcn, pnet[i].fcn) == 0) {
+		if (strcmp(nme, pnet[i].fcn) == 0) {
 		} else
 			pnet[j++] = pnet[i];
 	pnettop = j;
@@ -285,18 +302,16 @@ str PNdump(int *ret)
 	int i, k;
 	mnstr_printf(PNout,"#scheduler status %s\n", statusnames[status]);
 	for (i = 0; i < pnettop; i++) {
-		mnstr_printf(PNout, "#[%d]\t%s.%s %s delay %d cycles %d events %d time %d ms\n",
-			i, pnet[i].mod, pnet[i].fcn, statusnames[pnet[i].status], pnet[i].delay, pnet[i].cycles, pnet[i].events, pnet[i].cycletime/1000);
+		mnstr_printf(PNout, "#[%d]\t%s %s delay %d cycles %d events %d time %d ms\n",
+			i, pnet[i].fcn, statusnames[pnet[i].status], pnet[i].delay, pnet[i].cycles, pnet[i].events, pnet[i].cycletime/1000);
 		for (k = 0; k < pnet[i].srctop; k++)
-			mnstr_printf(PNout, "#<--\t%s.%s %d %d\n",
-				pnet[i].source[k].schema,
+			mnstr_printf(PNout, "#<--\t%s basket[%d] %d\n",
 				pnet[i].source[k].table,
 				pnet[i].source[k].bskt,
 				pnet[i].source[k].lastcount,
 				pnet[i].source[k].consumed);
 		for (k = 0; k < pnet[i].trgttop; k++)
-			mnstr_printf(PNout, "#-->\t%s.%s basket[%d] %d %d\n",
-				pnet[i].target[k].schema,
+			mnstr_printf(PNout, "#-->\t%s basket[%d] %d %d\n",
 				pnet[i].target[k].table,
 				pnet[i].source[k].bskt,
 				pnet[i].target[k].lastcount,
@@ -310,13 +325,13 @@ Make the basket group accessible to the transition function
 The code currently relies on a physical adjacent ordering of all member
 in the group.
 @c
-str PNsource(int *ret, str *mod, str *fcn, str *schema, str *tbl)
+str PNsource(int *ret, str *fcn, str *tbl)
 {
 	int i, k, z;
 
-	z = BSKTlocate(*schema, *tbl);
+	z = BSKTlocate(*tbl);
 	for (i = 0; i < pnettop; i++) {
-		if (strcmp(*mod, pnet[i].mod) == 0 && strcmp(*fcn, pnet[i].fcn) == 0) {
+		if (strcmp(*fcn, pnet[i].fcn) == 0) {
 			k = pnet[i].srctop;
 			if (k >= MAXPN) {
 				if ((pnet[i].source = (PoolRec*)GDKrealloc(pnet[i].source, sizeof(PoolRec) * (k + 1))) == NULL)
@@ -325,7 +340,6 @@ str PNsource(int *ret, str *mod, str *fcn, str *schema, str *tbl)
 			else if (k == 0 && (pnet[i].source = (PoolRec *)GDKzalloc(MAXPN * sizeof(PoolRec))) == NULL)
 					throw(MAL, "petrinet.source", MAL_MALLOC_FAIL);
 			
-			pnet[i].source[k].schema = GDKstrdup(*schema);
 			pnet[i].source[k].table = GDKstrdup(*tbl);
 			pnet[i].source[k].bskt = z;
 			pnet[i].srctop++;
@@ -337,13 +351,13 @@ str PNsource(int *ret, str *mod, str *fcn, str *schema, str *tbl)
 	return MAL_SUCCEED;
 }
 
-str PNtarget(int *ret, str *mod, str *fcn, str *schema, str *tbl)
+str PNtarget(int *ret, str *fcn, str *tbl)
 {
 	int i, k, z;
 
-	z = BSKTlocate(*schema, *tbl);
+	z = BSKTlocate(*tbl);
 	for (i = 0; i < pnettop; i++) {
-		if (strcmp(*mod, pnet[i].mod) == 0 && strcmp(*fcn, pnet[i].fcn) == 0) {
+		if (strcmp(*fcn, pnet[i].fcn) == 0) {
 			k = pnet[i].trgttop;
 			if (k >= MAXPN) {
 				if ((pnet[i].target = (PoolRec*)GDKrealloc(pnet[i].target, sizeof(PoolRec) * (k + 1))) == NULL)
@@ -352,7 +366,6 @@ str PNtarget(int *ret, str *mod, str *fcn, str *schema, str *tbl)
 			if ( k == 0 && (pnet[i].target = (PoolRec *)GDKzalloc(MAXPN * sizeof(PoolRec))) == NULL)
 				throw(MAL, "petrinet.target", MAL_MALLOC_FAIL);
 
-			pnet[i].target[k].schema = GDKstrdup(*schema);
 			pnet[i].target[k].table = GDKstrdup(*tbl);
 			pnet[i].target[k].bskt = z;
 			pnet[i].trgttop++;
@@ -370,34 +383,34 @@ PNanalysis(Client cntxt, MalBlkPtr mb)
 {
 	int i, j, k, flg, ret;
 	InstrPtr p, sig = getInstrPtr(mb,0);
-	str schema, tbl;
+	str tbl;
+	char buf[BUFSIZ], *nme= buf;
 
+	snprintf(buf,BUFSIZ,"%s.%s", getModuleId(sig), getFunctionId(sig));
 	/* first check for errors */
 	for( i = 0; i < mb->stop; i++){
 		p= getInstrPtr(mb,i);
 		if ( getModuleId(p) == basketRef && getFunctionId(p) == grabRef ){
-			schema = getVarConstant(mb,getArg(p,p->argc-3)).val.sval;
 			tbl = getVarConstant(mb,getArg(p,p->argc-2)).val.sval;
 			flg = getVarConstant(mb,getArg(p,p->argc-1)).val.ival;
 			
 			for (j = 0; j < pnettop; j++) 
 			for ( k = 0; k < pnet[j].srctop; k++)
-			if ( strcmp(schema, pnet[j].source[k].schema) == 0 && strcmp(tbl, pnet[j].source[k].table) == 0 )
+			if ( strcmp(tbl, pnet[j].source[k].table) == 0 )
 				throw(MAL, "datacell.register","Duplicate use of continuous query input");
 		}
 	}
 	for( i = 0; i < mb->stop; i++){
 		p= getInstrPtr(mb,i);
 		if ( getModuleId(p) == basketRef &&  getFunctionId(p) == grabRef ){
-			schema = getVarConstant(mb,getArg(p,p->argc-3)).val.sval;
 			tbl = getVarConstant(mb,getArg(p,p->argc-2)).val.sval;
 			flg = getVarConstant(mb,getArg(p,p->argc-1)).val.ival;
 			if ( flg) {
-				mnstr_printf(cntxt->fdout,"#input basket %s.%s \n", schema,tbl);
-				PNsource(&ret, &getModuleId(sig), &getFunctionId(sig), &schema, &tbl);
+				mnstr_printf(cntxt->fdout,"#input basket %s \n", tbl);
+				PNsource(&ret, &nme , &tbl);
 			} else {
-				mnstr_printf(cntxt->fdout,"#output basket %s.%s \n", schema,tbl);
-				PNtarget(&ret, &getModuleId(sig), &getFunctionId(sig), &schema, &tbl);
+				mnstr_printf(cntxt->fdout,"#output basket %s \n", tbl);
+				PNtarget(&ret, &nme, &tbl);
 			}
 		}
 	}
@@ -446,7 +459,12 @@ PNcontroller(void *dummy)
 	getArg(p, 0) = newTmpVariable(mb = s->def, TYPE_void);
 	/* create an execution environment for all transitions */
 	for (i = 0; i < pnettop; i++) {
-		p = newFcnCall(mb, pnet[i].mod, pnet[i].fcn);
+		char buf[BUFSIZ], *modnme, *fcnnme;
+
+		BSKTelements( pnet[i].fcn, buf, &modnme, &fcnnme);
+		BSKTtolower(modnme);
+		BSKTtolower(fcnnme);
+		p = newFcnCall(mb, modnme,fcnnme);
 		pnet[i].pc = getPC(mb, p);
 	}
 	pushEndInstruction(mb);
@@ -486,13 +504,13 @@ PNcontroller(void *dummy)
 				pnet[i].source[j].available = cnt = (int)BATcount(pnet[i].source[j].b);
 				if (cnt) {
 #ifdef _DEBUG_PETRINET_
-					mnstr_printf(cntxt->fdout, "#PETRINET:%d tuples for %s.%s, source %d\n", cnt, pnet[i].mod, pnet[i].fcn, j);
+					mnstr_printf(cntxt->fdout, "#PETRINET:%d tuples for %s, source %d\n", cnt, pnet[i].fcn, j);
 #endif
 					pnet[i].available += cnt;
 					pnet[i].enabled++;
 				} else {
 #ifdef _DEBUG_PETRINET_
-					mnstr_printf(cntxt->fdout, "#PETRINET:no tuples for %s.%s, source %d\n",  pnet[i].mod, pnet[i].fcn, j);
+					mnstr_printf(cntxt->fdout, "#PETRINET:no tuples for %s, source %d\n",  pnet[i].fcn, j);
 #endif
 					/*stop checking if the rest input BATs does not contain elements */
 					pnet[i].enabled = 0;
@@ -527,8 +545,6 @@ PNcontroller(void *dummy)
 					pnet[i].enabled = -1;
 				}
 				pnet[i].cycles++;
-				pnet[i].enabled = 0;
-				pnet[i].available = 0;
 				for (j = 0; j < pnet[i].srctop; j++) {
 					pnet[i].events += pnet[i].source[j].available;
 					pnet[i].source[j].available = 0;  /* force recount */
