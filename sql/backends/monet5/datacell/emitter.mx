@@ -39,28 +39,28 @@ baskets.
 @mal
 module emitter;
 
-command start{unsafe}(schema:str, tbl:str, host:str, port:int)
+command start{unsafe}(tbl:str, host:str, port:int)
 address DCemitterNew
 comment "Define a emitter based on a basket table. 
 The emitter protocol is active. Return its handle";
 
-command pause(schema:str, tbl:str)
+command pause(tbl:str)
 address DCemitterPause
 comment "Pause listening";
 
-command resume(schema:str, tbl:str)
+command resume(tbl:str)
 address DCemitterResume
 comment "Resume a emitter thread";
 
-command mode(schema:str, tbl:str, arg:str)
+command mode(tbl:str, arg:str)
 address EMmode
 comment "Set the mode of the emitter to either active/passive");
 
-command protocol(schema:str, tbl:str, arg:str)
+command protocol(tbl:str, arg:str)
 address EMprotocol
 comment "Set the protocol of the emitter to udp/tcp/csv");
 
-command drop(schema:str, tb:str)
+command drop(tb:str)
 address DCemitterDrop
 comment "Drop a emitter";
 
@@ -93,13 +93,13 @@ The implementation is derived from the emitter module.
 #define adapters_export extern
 #endif
 
-adapters_export str DCemitterNew(int *ret, str *schema, str *tbl, str *host, int *port);
-adapters_export str DCemitterPause(int *ret, str *schema, str *nme);
-adapters_export str DCemitterResume(int *ret, str *schema, str *nme);
-adapters_export str DCemitterDrop(int *ret, str *schema, str *nme);
+adapters_export str DCemitterNew(int *ret, str *tbl, str *host, int *port);
+adapters_export str DCemitterPause(int *ret, str *nme);
+adapters_export str DCemitterResume(int *ret, str *nme);
+adapters_export str DCemitterDrop(int *ret, str *nme);
 adapters_export str EMdump();
-adapters_export str EMmode(int *ret, str *schema, str *nme, str *arg);
-adapters_export str EMprotocol(int *ret, str *schema, str *nme, str *arg);
+adapters_export str EMmode(int *ret, str *nme, str *arg);
+adapters_export str EMprotocol(int *ret, str *nme, str *arg);
 
 #endif
 
@@ -131,7 +131,6 @@ static int protocol= TCP;
 #define PAUSEDEFAULT 1000
 
 typedef struct EMITTER{
-	str schema;
 	str name;	
 	str host;
 	int port;
@@ -156,13 +155,12 @@ static Emitter emAnchor = NULL;
 static str EMstartThread(Emitter em);
 
 static Emitter
-EMnew(str schema, str nme)
+EMnew(str nme)
 {
 	Emitter em;
 	em = (Emitter)GDKzalloc(sizeof(EMrecord));
 	if ( em == NULL)
 		return em;
-	em->schema = GDKstrdup(schema);
 	em->name = GDKstrdup(nme);
 	if (emAnchor)
 		emAnchor->prv = em;
@@ -172,11 +170,11 @@ EMnew(str schema, str nme)
 }
 
 Emitter
-EMfind(str schema, str nme)
+EMfind(str nme)
 {
 	Emitter r;
 	for (r = emAnchor; r; r = r->nxt)
-		if (strcmp(schema, r->schema) == 0 && strcmp(nme, r->name) == 0)
+		if (strcmp(nme, r->name) == 0)
 			break;
 	return r;
 }
@@ -185,20 +183,20 @@ The MAL interface for managing the emitter pool
 The baskets should already be defined. There order
 is used to interpret the messages sent.
 @c
-str DCemitterNew(int *ret, str *schema, str *tbl, str *host, int *port)
+str DCemitterNew(int *ret, str *tbl, str *host, int *port)
 {
 	Emitter em;
 	int idx, i, j, len;
 	BAT *b;
 
-	if (EMfind(*schema, *tbl))
+	if (EMfind(*tbl))
 		throw(MAL, "emitter.new", "Duplicate emitter");
 
-	idx = BSKTlocate(*schema, *tbl);
+	idx = BSKTlocate(*tbl);
 	if (idx == 0) /* should not happen */
 		throw(MAL, "emitter.new", "Basket not found");
 
-	em = EMnew(*schema, *tbl);
+	em = EMnew(*tbl);
 	if( em == NULL)
 		throw(MAL, "emitter.new", MAL_MALLOC_FAIL);
 	em->host = GDKstrdup(*host);
@@ -212,7 +210,7 @@ str DCemitterNew(int *ret, str *schema, str *tbl, str *host, int *port)
 All tables are prepended with a default tick bat.
 It becomes the synchronization handle.
 @c
-	len = BSKTmemberCount(*schema, *tbl);
+	len = BSKTmemberCount(*tbl);
 	if (len == 0)
 		throw(MAL, "emitter.new", "Group has no members");
 
@@ -261,11 +259,11 @@ It becomes the synchronization handle.
 	return MAL_SUCCEED;
 }
 
-str DCemitterPause(int *ret, str *schema, str *nme)
+str DCemitterPause(int *ret, str *nme)
 {
 	Emitter em;
 
-	em = EMfind(*schema, *nme);
+	em = EMfind(*nme);
 	if (em == NULL)
 		throw(MAL, "emitter.pause", "Emitter not defined");
 	if (em->status == EMLISTEN)
@@ -280,12 +278,12 @@ str DCemitterPause(int *ret, str *schema, str *nme)
 	return MAL_SUCCEED;
 }
 
-str DCemitterResume(int *ret, str *schema, str *nme)
+str DCemitterResume(int *ret, str *nme)
 {
 	Emitter em;
 
 	(void) ret;
-	em = EMfind(*schema, *nme);
+	em = EMfind(*nme);
 	if (em == NULL)
 		throw(MAL, "emitter.resume", "Emitter not defined");
 	if (em->status == EMLISTEN)
@@ -296,11 +294,11 @@ str DCemitterResume(int *ret, str *schema, str *nme)
 	return MAL_SUCCEED;
 }
 
-str DCemitterDrop(int *ret, str *schema, str *nme)
+str DCemitterDrop(int *ret, str *nme)
 {
 	Emitter em, rb;
 
-	em = EMfind(*schema, *nme);
+	em = EMfind(*nme);
 	if (em == NULL)
 		throw(MAL, "emitter.drop", "Emitter not defined");
 #ifdef _DEBUG_EMITTER_
@@ -316,16 +314,16 @@ str DCemitterDrop(int *ret, str *schema, str *nme)
 		rb->nxt = em->nxt;
 	em->status = EMDROP;
 	if (em->lck)
-		BSKTunlock(&em->lck, &em->schema, &em->name);
+		BSKTunlock(&em->lck, &em->name);
 	MT_join_thread(em->pid);
 	return MAL_SUCCEED;
 }
 
 
-str EMmode(int *ret, str *schema, str *nme, str *arg)
+str EMmode(int *ret, str *nme, str *arg)
 {
 	Emitter em;
-	em = EMfind(*schema, *nme);
+	em = EMfind(*nme);
 	if (em == NULL)
 		throw(MAL, "emitter.mode", "Emitter not defined");
 #ifdef _DEBUG_EMITTER_
@@ -342,10 +340,10 @@ str EMmode(int *ret, str *schema, str *nme, str *arg)
 	return MAL_SUCCEED;
 }
 
-str EMprotocol(int *ret, str *schema, str *nme, str *mode)
+str EMprotocol(int *ret, str *nme, str *mode)
 {
 	Emitter em;
-	em = EMfind(*schema, *nme);
+	em = EMfind(*nme);
 	if (em == NULL)
 		throw(MAL, "emitter.protocol", "Emitter not defined");
 #ifdef _DEBUG_EMITTER_
@@ -436,7 +434,7 @@ If the thread is suspended, we sleep for at least one second.
 			return;
 		}
 		if ((cnt = BATcount(em->table.format[1].c[0]))) {
-			BSKTlock(&em->lck, &em->schema, &em->name, &em->delay);
+			BSKTlock(&em->lck, &em->name, &em->delay);
 			if (em->status != EMLISTEN)
 				break;
 
@@ -453,14 +451,14 @@ If the thread is suspended, we sleep for at least one second.
 #endif
 			if (ret < 0) {
 				/* keep the events and try to setup a new connection */
-				BSKTunlock(&em->lck, &em->schema, &em->name);
+				BSKTunlock(&em->lck, &em->name);
 				break;
 			}
 			/* clean the baskets */
 			for (i = 1; i < em->table.nr_attrs; i++)
 				BATclear(em->table.format[i].c[0]);
 
-			BSKTunlock(&em->lck, &em->schema, &em->name);
+			BSKTunlock(&em->lck, &em->name);
 			if (em->table.error) {
 				mnstr_printf(GDKerr, em->table.error);
 				em->table.error = 0;
@@ -541,8 +539,8 @@ EMstartThread(Emitter em)
 static void
 dumpEmitter(Emitter em)
 {
-	mnstr_printf(GDKout,"#emitter %s.%s at %s:%d protocol=%s mode=%s status=%s delay=%d\n",
-		em->schema, em->name, em->host, em->port, protocolname[em->protocol], modename[em->mode], statusname[em->status], em->delay);
+	mnstr_printf(GDKout,"#emitter %s at %s:%d protocol=%s mode=%s status=%s delay=%d\n",
+		em->name, em->host, em->port, protocolname[em->protocol], modename[em->mode], statusname[em->status], em->delay);
 }
 
 str

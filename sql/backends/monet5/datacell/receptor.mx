@@ -40,37 +40,37 @@ module to parse them.
 @mal
 module receptor;
 
-command start{unsafe}(schema:str, tbl:str, host:str, port:int)
+command start{unsafe}(tbl:str, host:str, port:int)
 address DCreceptorNew
 comment "Define a receptor based on a basket table. 
 The receptor protocol is either active or passive. Return its handle";
 
-command pause(schema:str, tbl:str)
+command pause(tbl:str)
 address DCreceptorPause
 comment "Pause listening";
 
-command resume(schema:str, tbl:str)
+command resume(tbl:str)
 address DCreceptorResume
 comment "Resume a receptor thread";
 
-command scenario(schema:str, tbl:str, fnme:str, sequence:int)
+command scenario(tbl:str, fnme:str, sequence:int)
 address DCscenario
 comment "Use a file scenario to be run a number of times.
 The receptor should be paused to make this change to take effect";
 
-command generator(schema:str, tbl:str, modnme:str, fnme:str)
+command generator(tbl:str, modnme:str, fnme:str)
 address DCgenerator
 comment "Use a function/factory to generate the events";
 
-command mode(schema:str, tbl:str, arg:str)
+command mode(tbl:str, arg:str)
 address RCmode
 comment "Set the mode of the receptor to either active/passive");
 
-command protocol(schema:str, tbl:str, arg:str)
+command protocol(tbl:str, arg:str)
 address RCprotocol
 comment "Set the protocol of the receptor to udp/tcp/csv");
 
-command drop(schema:str, tb:str)
+command drop(tbl:str)
 address DCreceptorDrop
 comment "Drop a receptor";
 
@@ -124,14 +124,14 @@ event stream at the same speed as it arrives.
 #define adapters_export extern
 #endif
 
-adapters_export str DCreceptorNew(int *ret, str *schema, str *tbl, str *host, int *port);
-adapters_export str DCreceptorPause(int *ret, str *schema, str *nme);
-adapters_export str DCreceptorResume(int *ret, str *schema, str *nme);
-adapters_export str DCreceptorDrop(int *ret, str *schema, str *nme);
-adapters_export str RCmode(int *ret, str *schema, str *nme, str *arg);
-adapters_export str RCprotocol(int *ret, str *schema, str *nme, str *arg);
-adapters_export str DCscenario(int *ret, str *schema, str *nme, str *fnme, int *seq);
-adapters_export str DCgenerator(int *ret, str *schema, str *nme, str *modnme, str *fcnnme);
+adapters_export str DCreceptorNew(int *ret, str *tbl, str *host, int *port);
+adapters_export str DCreceptorPause(int *ret, str *nme);
+adapters_export str DCreceptorResume(int *ret, str *nme);
+adapters_export str DCreceptorDrop(int *ret, str *nme);
+adapters_export str RCmode(int *ret, str *nme, str *arg);
+adapters_export str RCprotocol(int *ret, str *nme, str *arg);
+adapters_export str DCscenario(int *ret, str *nme, str *fnme, int *seq);
+adapters_export str DCgenerator(int *ret, str *nme, str *modnme, str *fcnnme);
 adapters_export str RCdump() ;
 #endif
 
@@ -164,7 +164,6 @@ static str modename[3]= {"<unknown>","active","passive"};
 #define RCPORT 55000
 
 typedef struct RECEPTOR {
-	str schema;
 	str name;
 	str host;
 	int port;
@@ -195,14 +194,13 @@ static void RCscenario(Receptor rc);
 static void RCgenerator(Receptor rc);
 
 static Receptor
-RCnew(str schema, str nme)
+RCnew(str nme)
 {
 	Receptor rc;
 
 	rc = (Receptor)GDKzalloc(sizeof(RCrecord));
 	if ( rc == 0)
 		return rc;
-	rc->schema = GDKstrdup(schema);
 	rc->name = GDKstrdup(nme);
 	if (rcAnchor)
 		rcAnchor->prv = rc;
@@ -213,11 +211,11 @@ RCnew(str schema, str nme)
 }
 
 static Receptor
-RCfind(str schema, str nme)
+RCfind(str nme)
 {
 	Receptor r;
 	for (r = rcAnchor; r; r = r->nxt)
-		if (strcmp(schema, r->schema) == 0 && strcmp(nme, r->name) == 0)
+		if (strcmp(nme, r->name) == 0)
 			break;
 	return r;
 }
@@ -228,17 +226,17 @@ is used to interpret the messages received.
 The standard tuple layout for MonetDB interaction is used.
 @c
 str
-DCreceptorNew(int *ret, str *schema, str *tbl, str *host, int *port )
+DCreceptorNew(int *ret, str *tbl, str *host, int *port )
 {
 	Receptor rc;
 	int idx, i, j, len;
 	Column *fmt;
 	BAT *b;
 
-	if (RCfind(*schema, *tbl))
+	if (RCfind(*tbl))
 		throw(MAL, "receptor.new", "Duplicate receptor");
 
-	rc = RCnew(*schema, *tbl);
+	rc = RCnew(*tbl);
 	if ( rc == 0)
 		throw(MAL, "receptor.new", MAL_MALLOC_FAIL);
 	rc->host = GDKstrdup(*host);
@@ -253,10 +251,10 @@ DCreceptorNew(int *ret, str *schema, str *tbl, str *host, int *port )
 	rc->fcnnme = 0;
 	rc->mode = RCPASSIVE;
 
-	rc->bskt = idx = BSKTlocate(*schema, *tbl);
+	rc->bskt = idx = BSKTlocate(*tbl);
 	if (idx == 0) /* should not happen */
 		throw(MAL, "receptor.new", "Basket not found");
-	len = BSKTmemberCount(*schema, *tbl);
+	len = BSKTmemberCount(*tbl);
 	fmt = rc->table.format = GDKzalloc(sizeof(Column) * len);
 
 	for (j = 0, i = 0; i < baskets[idx].colcount; i++) {
@@ -290,11 +288,11 @@ DCreceptorNew(int *ret, str *schema, str *tbl, str *host, int *port )
 	return MAL_SUCCEED;
 }
 
-str DCreceptorPause(int *ret, str *schema, str *nme)
+str DCreceptorPause(int *ret, str *nme)
 {
 	Receptor rc;
 
-	rc = RCfind(*schema, *nme);
+	rc = RCfind(*nme);
 	if (rc == NULL)
 		throw(MAL, "receptor.resume", "Receptor not defined");
 	if (rc->status != RCLISTEN)
@@ -308,11 +306,11 @@ str DCreceptorPause(int *ret, str *schema, str *nme)
 	return MAL_SUCCEED;
 }
 
-str DCreceptorResume(int *ret, str *schema, str *nme)
+str DCreceptorResume(int *ret, str *nme)
 {
 	Receptor rc;
 
-	rc = RCfind(*schema, *nme);
+	rc = RCfind(*nme);
 	if (rc == NULL)
 		throw(MAL, "receptor.resume", "Receptor not defined");
 	if ( rc->status == RCSTOP) {
@@ -331,11 +329,11 @@ str DCreceptorResume(int *ret, str *schema, str *nme)
 	return MAL_SUCCEED;
 }
 
-str DCreceptorDrop(int *ret, str *schema, str *nme)
+str DCreceptorDrop(int *ret, str *nme)
 {
 	Receptor rc, rb;
 
-	rc = RCfind(*schema, *nme);
+	rc = RCfind(*nme);
 	if (rc == NULL)
 		throw(MAL, "receptor.drop", "Receptor not defined");
 #ifdef _DEBUG_RECEPTOR_
@@ -351,15 +349,15 @@ str DCreceptorDrop(int *ret, str *schema, str *nme)
 		rb->nxt = rc->nxt;
 	rc->status = RCDROP;
 	if (rc->lck)
-		BSKTunlock(&rc->lck, &rc->schema, &rc->name);
+		BSKTunlock(&rc->lck, &rc->name);
 	MT_join_thread(rc->pid);
 	return MAL_SUCCEED;
 }
 
-str DCscenario(int *ret, str *schema, str *nme, str *fname, int *seq)
+str DCscenario(int *ret, str *nme, str *fname, int *seq)
 {
 	Receptor rc;
-	rc = RCfind(*schema, *nme);
+	rc = RCfind(*nme);
 	if (rc == NULL)
 		throw(MAL, "receptor.scenario", "Receptor not defined");
 #ifdef _DEBUG_RECEPTOR_
@@ -371,10 +369,10 @@ str DCscenario(int *ret, str *schema, str *nme, str *fname, int *seq)
 	return MAL_SUCCEED;
 }
 
-str RCmode(int *ret, str *schema, str *nme, str *arg)
+str RCmode(int *ret, str *nme, str *arg)
 {
 	Receptor rc;
-	rc = RCfind(*schema, *nme);
+	rc = RCfind(*nme);
 	if (rc == NULL)
 		throw(MAL, "receptor.mode", "Receptor not defined");
 #ifdef _DEBUG_RECEPTOR_
@@ -391,10 +389,10 @@ str RCmode(int *ret, str *schema, str *nme, str *arg)
 	return MAL_SUCCEED;
 }
 
-str RCprotocol(int *ret, str *schema, str *nme, str *mode)
+str RCprotocol(int *ret, str *nme, str *mode)
 {
 	Receptor rc;
-	rc = RCfind(*schema, *nme);
+	rc = RCfind(*nme);
 	if (rc == NULL)
 		throw(MAL, "receptor.protocol", "Receptor not defined");
 #ifdef _DEBUG_RECEPTOR_
@@ -414,10 +412,10 @@ str RCprotocol(int *ret, str *schema, str *nme, str *mode)
 	return MAL_SUCCEED;
 }
 
-str DCgenerator(int *ret, str *schema, str *nme, str *modnme, str *fcnnme)
+str DCgenerator(int *ret, str *nme, str *modnme, str *fcnnme)
 {
 	Receptor rc;
-	rc = RCfind(*schema, *nme);
+	rc = RCfind(*nme);
 	if (rc == NULL)
 		throw(MAL, "receptor.generator", "Receptor not defined");
 #ifdef _DEBUG_RECEPTOR_
@@ -547,7 +545,7 @@ In case of a locked basket we sleep for a millisecond.
 			/* use trivial concurrency measure */
 			line = buf;
 
-			BSKTlock(&rc->lck, &rc->schema, &rc->name, &rc->delay);
+			BSKTlock(&rc->lck, &rc->name, &rc->delay);
 			/* BATs may be replaced in the meantime */
 			for (i = 0; i < baskets[rc->bskt].colcount; i++) 
 				rc->table.format[i].c[0] = baskets[rc->bskt].primary[i];
@@ -595,7 +593,7 @@ parse:
 				}
 				cnt++;
 			}
-			BSKTunlock(&rc->lck, &rc->schema, &rc->name);
+			BSKTunlock(&rc->lck, &rc->name);
 			if (rc->table.error) {
 				mnstr_printf(GDKerr, rc->table.error);
 				rc->table.error = 0;
@@ -669,17 +667,17 @@ RCscenario(Receptor rc)
 
 			previoustsmp = tick;
 
-			BSKTlock(&rc->lck, &rc->schema, &rc->name, &rc->delay);
+			BSKTlock(&rc->lck, &rc->name, &rc->delay);
 			if (rc->status != RCLISTEN) {
 				snr = rc->sequence;
 				break;
 			}
 			if (insert_line(&rc->table, tuple + 1 /*ignore '[' */, (ptr) & tick, 0, rc->table.nr_attrs) < 0) {
 				mnstr_printf(RCout, "failed insert_line %s\n", tuple);
-				BSKTunlock(&rc->lck, &rc->schema, &rc->name);
+				BSKTunlock(&rc->lck, &rc->name);
 				break;
 			}
-			BSKTunlock(&rc->lck, &rc->schema, &rc->name);
+			BSKTunlock(&rc->lck, &rc->name);
 		}
 		fclose(fd);
 		snr++;
@@ -814,8 +812,8 @@ RCstartThread(Receptor rc)
 static void
 dumpReceptor(Receptor rc)
 {
-	mnstr_printf(GDKout,"#receptor %s.%s at %s:%d protocol=%s mode=%s status=%s delay=%d \n",
-		rc->schema, rc->name, rc->host, rc->port, protocolname[rc->protocol], modename[rc->mode], statusname[rc->status], rc->delay);
+	mnstr_printf(GDKout,"#receptor %s at %s:%d protocol=%s mode=%s status=%s delay=%d \n",
+		rc->name, rc->host, rc->port, protocolname[rc->protocol], modename[rc->mode], statusname[rc->status], rc->delay);
 }
 
 str
