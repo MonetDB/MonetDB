@@ -1,0 +1,43 @@
+stdout of test 'inlineFunction2` in directory 'optimizer` itself:
+
+
+# 23:12:12 >  
+# 23:12:12 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/ufs/mk/current//Linux/var/MonetDB" --set mapi_open=true --set mapi_port=35482 --set monet_prompt= --trace --forcemito --set mal_listing=2  --dbname=mTests_optimizer  inlineFunction2.mal
+# 23:12:12 >  
+
+# MonetDB 5 server v11.4.0
+# This is an unreleased version
+# Serving database 'mTests_optimizer', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:35482/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+function user.my{inline}(Av:int):int;
+    X3 := calc.+(Av,1);
+    return my := X3;
+end my;
+function user.tst():void;
+    z:bat[:oid,:int]  := mal.multiplex("user","my",1);
+end tst;
+function user.main():void;
+    io.printf("#result of inline\n");
+    mdb.list("user","tst");
+    mdb.list("user","my");
+end main;
+#result of inline
+function user.tst():void;
+    z:bat[:oid,:int]  := mal.multiplex("user","my",1);
+end tst;
+function user.my{inline}(Av:int):int;
+    X3 := calc.+(Av,1);
+    return my := X3;
+end my;
+
+# 23:12:13 >  
+# 23:12:13 >  Done.
+# 23:12:13 >  
+

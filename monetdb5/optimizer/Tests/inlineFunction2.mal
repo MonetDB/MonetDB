@@ -1,0 +1,13 @@
+function my{inline}(Av:int):int;
+    X3 := Av+1;
+	return my:= X3;
+end my;
+
+function tst();
+	z:bat[:oid,:int]:= mal.multiplex("user","my",1);
+end tst;
+optimizer.inline("user","tst");
+io.printf("#result of inline\n");
+mdb.list("user","tst");
+mdb.list("user","my");
+
