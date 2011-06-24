@@ -420,6 +420,7 @@ consumeStream(Actuator ac)
 		if( statistics && (received % statistics ) == 0) {
 		    showStatistics();
 		}
+		mnstr_flush(ac->fromServer);
 	}
 	if (errno == EPIPE || errno == ECONNRESET) {
 		mnstr_printf(ACout, "errno:%s\n", strerror(errno));

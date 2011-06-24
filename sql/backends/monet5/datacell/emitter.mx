@@ -237,6 +237,7 @@ It becomes the synchronization handle.
 		em->table.format[j].seplen = (int)strlen(em->table.format[j].sep);
 		em->table.format[j].type = ATOMname(b->ttype);
 		em->table.format[j].adt = (b)->ttype;
+		em->table.format[j].nullstr = GDKstrdup("");
 		em->table.format[j].tostr = &TABLETadt_toStr;
 		em->table.format[j].frstr = &TABLETadt_frStr;
 		em->table.format[j].extra = em->table.format + j;

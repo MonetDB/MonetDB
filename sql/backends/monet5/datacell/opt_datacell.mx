@@ -202,7 +202,6 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		optimizerCheck(cntxt, mb, "optimizer.datacell", 1, t = (GDKusec() - clk), OPT_CHECK_ALL);
 		addtoMalBlkHistory(mb, "datacell");
 	}
-	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT | LIST_MAPI);
 	GDKfree(alias);
 	for( j =0; j< m; j++)
 		GDKfree(tables[j]);
