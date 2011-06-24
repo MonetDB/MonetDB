@@ -158,13 +158,15 @@ compileScalarExpression(Client cntxt, MalBlkPtr mb, InstrPtr pci){
 		varSetProp(new, getArg(getInstrPtr(new,0),0), inlineProp, op_eq, &cst);
 
 		p = copyInstruction(getInstrPtr(new,0));
-		if ( findInstruction(cntxt->nspace, mb, p )  == 0) 
+		/* if ( findInstruction(cntxt->nspace, mb, p )  == 0) to be fixed */
 			insertSymbol(findModule(cntxt->nspace, userRef), ns);
+		/*
 		else {
 			freeMalBlk(new);
 			freeInstruction(p);
 			return 0;
 		}
+		*/
 		/* rephrase the multiplex */
 		getModuleId(pci) = getModuleId(getInstrPtr(new,0));
 		getFunctionId(pci) =getFunctionId( getInstrPtr(new,0));
