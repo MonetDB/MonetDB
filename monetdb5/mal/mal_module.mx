@@ -81,6 +81,7 @@ mal_export Module   findModule(Module scope, str name);
 mal_export Symbol   findSymbol(Module nspace, str mod, str fcn);
 mal_export int 		isModuleDefined(Module scope, str name);
 mal_export Symbol   findSymbolInModule(Module v, str fcn);
+mal_export int		findInstruction(Module scope, MalBlkPtr mb, InstrPtr pci);
 mal_export int      displayModule(stream *f, Module v, str fcn,int listing);
 mal_export void     showModules(stream *f, Module v);
 mal_export void     debugModule(stream *f, Module v, str nme);
@@ -445,6 +446,29 @@ Symbol findSymbolInModule(Module v, str fcn){
 Symbol findSymbol(Module nspace, str mod, str fcn){
 	Module m= findModule(nspace,mod);
 	return findSymbolInModule(m,fcn);
+}
+
+int
+findInstruction(Module scope, MalBlkPtr mb, InstrPtr pci){
+	Module m;
+	Symbol s;
+	int i,fnd;
+
+	for(m= findModule(scope,getModuleId(pci)); m; m= m->outer)
+	if( m->name == getModuleId(pci) ) {
+		s= m->subscope[(int)(getSubScope(getFunctionId(pci)))];
+		for(; s; s= s->peer)
+		if( getFunctionId(pci)==s->name && pci->argc == getSignature(s)->argc ){
+			/* found it check argtypes */
+			for( fnd=1, i = 0; i < pci->argc; i++)
+				if ( getArgType(mb,pci,i) != getArgType(s->def,getSignature(s),i))
+					fnd = 0;
+			if( fnd) 
+				return 1;
+		}
+	}
+	
+	return 0;
 }
 
 int displayModule(stream *f, Module v, str fcn, int listing){
