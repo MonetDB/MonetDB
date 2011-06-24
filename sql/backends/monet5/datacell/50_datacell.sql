@@ -17,48 +17,49 @@
 
 -- Datacell basket  wrappers
 create schema datacell;
-create procedure datacell.basket(sch string, tbl string)
+create procedure datacell.basket(tbl string)
    external name datacell.basket;
 
 create function datacell.inventory()
 returns table (kind string, nme string)
    external name datacell.inventory;
 
-create procedure datacell.receptor(sch string, tbl string, host string, portid integer)
+create procedure datacell.receptor(tbl string, host string, portid integer)
     external name receptor."start";
 
-create procedure datacell.emitter(sch string, tbl string, host string, portid integer)
+create procedure datacell.emitter(tbl string, host string, portid integer)
     external name emitter."start";
 
-create procedure datacell.mode(sch string, tbl string, mode string)
+create procedure datacell.mode(tbl string, mode string)
 	external name datacell.mode;
 
-create procedure datacell.protocol(sch string, tbl string, protocol string)
+create procedure datacell.protocol(tbl string, protocol string)
 	external name datacell.protocol;
 
-create procedure datacell.pause (sch string, tbl string)
+create procedure datacell.pause (tbl string)
     external name datacell.pause;
 
-create procedure datacell.resume (sch string, tbl string)
+create procedure datacell.resume (tbl string)
     external name datacell.resume;
 
-create procedure datacell.remove (sch string, tbl string)
+create procedure datacell.remove (tbl string)
     external name datacell.remove;
 
-create procedure datacell.query(sch string, proc string)
+create procedure datacell.query(proc string, def string)
 	external name datacell.query;
 
-create procedure datacell.register(sch string, proc string)
+create procedure datacell.register(proc string)
 	external name datacell.register;
 
-create procedure datacell.unregister(sch string, proc string)
+create procedure datacell.unregister(proc string)
 	external name datacell.unregister;
--- scheduler activation
-create procedure datacell.prepare()
-	external name datacell.prepare;
 
-create procedure datacell.finish()
-	external name datacell.finish;
+-- scheduler activation
+create procedure datacell.prelude()
+	external name datacell.prelude;
+
+create procedure datacell.postlude()
+	external name datacell.postlude;
 
 create procedure datacell.pause()
 	external name datacell.pause;
