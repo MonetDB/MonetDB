@@ -239,7 +239,7 @@ PNunregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str nme = *(str*) getArgReference(stk,pci,1);
     Module scope;
-    Symbol s;
+    Symbol s = NULL;
 	int ret;
 	int i,j;
 	char buf[BUFSIZ], *modnme, *fcnnme;

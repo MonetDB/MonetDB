@@ -217,7 +217,7 @@ str OPTdatacell(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	str fcnnme;
 	str msg = MAL_SUCCEED;
 	Symbol s = NULL;
-	lng t, clk = GDKusec();
+	lng t = 0, clk = GDKusec();
 	int actions = 0;
 
 	optimizerInit();

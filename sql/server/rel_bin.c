@@ -716,15 +716,8 @@ rel2bin_basetable( mvc *sql, sql_rel *rel, list *refs)
 	stmt *ts, *sub = NULL;
 	sql_table *t = rel->l;
 	node *n;
-	char *tname = t->base.name;
 			
 	(void)refs;
-	if (rel->exps) {
-		sql_exp *e = rel->exps->h->data;
-
-		if (e->rname)
-			tname = e->rname;
-	}
 	ts = stmt_basetable(sql->sa, t, t->base.name);
 	assert(rel->exps);
 	for (n = t->columns.set->h; n; n = n->next) {

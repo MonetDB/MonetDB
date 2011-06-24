@@ -1,0 +1,44 @@
+stdout of test 'remote08` in directory 'modules/mal` itself:
+
+
+# 13:26:30 >  
+# 13:26:30 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/net/volund.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-volund.ins.cwi.nl/five/dbfarm" --set mapi_open=true --set mapi_port=38415 --set monet_prompt= --trace --forcemito --set mal_listing=2  --dbname=mTests_modules_mal  remote08.mal
+# 13:26:30 >  
+
+# MonetDB 5 server v11.4.0 "current-ac82e696762a"
+# Serving database 'mTests_modules_mal', using 4 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://volund.ins.cwi.nl:38415/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+function user.main():void;
+# let connect figure out itself how to connect to the running db 
+    uri := sabaoth.getLocalConnectionURI();
+# create a persistent connecton to ourself 
+    conn1:str  := remote.connect(uri,"monetdb","monetdb");
+    b := bat.new(:oid,:int);
+    b := bat.insert(b,nil:oid,2);
+    b := bat.insert(b,nil:oid,4);
+    b := algebra.markH(b);
+    rb2 := remote.put(conn1,b);
+    lb2:bat[:oid,:int]  := remote.get(conn1,rb2);
+    io.print(lb2);
+# help testweb a bit, since currently no cleanup is done on server 
+# shutdown 
+    remote.disconnect(conn1);
+end main;
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  2	  ]
+[ 1@0,	  4	  ]
+
+# 13:26:30 >  
+# 13:26:30 >  Done.
+# 13:26:30 >  
+
