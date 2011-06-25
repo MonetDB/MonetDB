@@ -34,11 +34,11 @@ function user.qry():void;               #  0 qry:void := user.qry() {G}
     X_14 := 1;                          #  3 _14:int := _6:int 
     X_15 := batcalc.+(b,b);             #  4 _15:bat[:oid,:int] := CMDbatADD_int_int_int(b:bat[:oid,:int], b:bat[:oid,:int]) {G}
     X_15 := batcalc.*(X_15,X_14);       #  5 _15:bat[:oid,:int] := CMDbatMULcst_int_int_int(_15:bat[:oid,:int], _14:int) {G}
-    z:bat[:oid,:int] {inline} := X_15;  #  6 z:bat[:oid,:int] := _15:bat[:oid,:int] {G}
+    z:bat[:oid,:int]  := X_15;          #  6 z:bat[:oid,:int] := _15:bat[:oid,:int] {G}
     X_19 := 1;                          #  7 _19:int := _6:int 
     X_20 := batcalc.+(b,2);             #  8 _20:bat[:oid,:int] := CMDbatADDcst_int_int_int(b:bat[:oid,:int], _10:int) {G}
     X_20 := batcalc.*(X_20,X_19);       #  9 _20:bat[:oid,:int] := CMDbatMULcst_int_int_int(_20:bat[:oid,:int], _19:int) {G}
-    z:bat[:oid,:int] {inline} := X_20;  # 10 z:bat[:oid,:int] := _20:bat[:oid,:int] {G}
+    z:bat[:oid,:int]  := X_20;          # 10 z:bat[:oid,:int] := _20:bat[:oid,:int] {G}
 end qry;                                # 11  
 
 # 18:00:43 >  

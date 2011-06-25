@@ -1,10 +1,11 @@
-function my{inline}(Av:int):int;
-    X3 := Av+1;
+function my{inline}(A:int,B:int):int;
+    X3 := A+B;
 	return my:= X3;
 end my;
 
 function tst();
-	z:bat[:oid,:int]:= mal.multiplex("user","my",1);
+	b:= bat.new(:oid,:int);
+	z:bat[:oid,:int]:= mal.multiplex("user","my",b,1);
 end tst;
 optimizer.inline("user","tst");
 io.printf("#result of inline\n");
