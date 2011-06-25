@@ -89,13 +89,12 @@ isCorrectInline(MalBlkPtr mb){
 	return retseen <= 1;
 }
 
-static InstrPtr
-compileScalarExpression(Client cntxt, MalBlkPtr mb, InstrPtr pci){
+static int
+compileScalarExpression(Client cntxt, MalBlkPtr mb, MalBlkPtr mq, int pc){
 	/* make sure we have a simple inline function with a singe return */
-	InstrPtr p;
+	InstrPtr p,pci;
 	MalBlkPtr new;
 	int i,j,fnd;
-	Symbol ns;
 	char *mapped;
 
 	new = copyMalBlk(mb);
@@ -103,13 +102,15 @@ compileScalarExpression(Client cntxt, MalBlkPtr mb, InstrPtr pci){
 		return 0;
 	/* check existence of alternatives */
 
-	ns = newSymbol(getFunctionId(getInstrPtr(new,0)),FUNCTIONsymbol);
-	freeMalBlk(ns->def);
-	ns->def = new;
-
 	mapped = (char*) GDKzalloc(mb->vtop);
 	for( i= 0; i < new->stop; i++){
 		p= getInstrPtr(new,i);
+
+		if ( getModuleId(p) == sqlRef && getFunctionId(p) == mvcRef) {
+			/* we don't need that for inlining */
+			clrFunction(p);
+			p->token = REMsymbol;
+		}
 		fnd = 0;
 		for ( j = 0; j< p->argc; j++) 
 		if ( !isVarConstant(new, getArg(p,j))  ){
@@ -149,32 +150,22 @@ compileScalarExpression(Client cntxt, MalBlkPtr mb, InstrPtr pci){
 	}
 	chkTypes(cntxt->nspace, new, TRUE);
 
-	if( new->errors)
-		freeMalBlk(new);
-	else {
-		ValRecord cst;
-		cst.vtype= TYPE_int;
-		cst.val.ival =1;
-		varSetProp(new, getArg(getInstrPtr(new,0),0), inlineProp, op_eq, &cst);
-
-		p = copyInstruction(getInstrPtr(new,0));
-		/* if ( findInstruction(cntxt->nspace, mb, p )  == 0) to be fixed */
-			insertSymbol(findModule(cntxt->nspace, userRef), ns);
-		/*
-		else {
-			freeMalBlk(new);
-			freeInstruction(p);
-			return 0;
-		}
-		*/
+	/* printFunction(cntxt->fdout,new,0,LIST_MAL_ALL); */
+	fnd = new->errors;
+	if ( new->errors == 0 && isCorrectInline(new) )  {
 		/* rephrase the multiplex */
+		pci = getInstrPtr(mq,pc);
 		getModuleId(pci) = getModuleId(getInstrPtr(new,0));
 		getFunctionId(pci) =getFunctionId( getInstrPtr(new,0));
-		delArgument(pci, 1);
-		delArgument(pci, 1);
-		return pci;
+		for ( j = pci->retc; j < pci->argc -2; j++)
+			pci->argv[j] = pci->argv[j+2];
+		pci->argc = j;
+		(void) inlineMALblock(mq,pc,new);
 	}
-	return 0;
+
+	freeMalBlk(new);
+	GDKfree(mapped);
+	return fnd == 0;
 }
 
 int
@@ -207,12 +198,10 @@ They are produced by SQL compiler.
 			) {
 				/* precompile scalar functions */
 				s = findSymbol(cntxt->nspace, userRef, getVarConstant(mb,getArg(q,2)).val.sval);
-				if ( s && canbecompiled(s->def) ) {
-					sig = compileScalarExpression(cntxt, s->def, q);
-					if ( sig ) {
-						actions ++;
-						continue;
-					}
+				if ( s && canbecompiled(s->def) && compileScalarExpression(cntxt, s->def, mb, i) ) {
+					i--;
+					actions ++;
+					continue;
 				}
 			}
 
