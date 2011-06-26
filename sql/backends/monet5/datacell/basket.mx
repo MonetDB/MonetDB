@@ -427,7 +427,7 @@ BSKTpass(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bskt = BSKTlocate(tbl);
 	if (bskt == 0 )
 		throw(MAL,"basket.pass","Basket not found");
-	if ( baskets[bskt].colcount != pci->retc - 3)
+	if ( baskets[bskt].colcount != pci->argc - 2)
 		throw(MAL,"basket.pass","Non-matchin arguments");
 
 	/* copy the content of the temporary BATs into the basket */

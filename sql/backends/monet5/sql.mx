@@ -50,7 +50,7 @@ pattern trans(type:int,chain:int,name:str):void
 address SQLtransaction
 comment "a transaction statement (type can be commit,release,rollback or start)";
 
-pattern transaction()
+pattern transaction{unsafe}()
 address SQLtransaction2
 comment "Start an autocommit transaction";
 

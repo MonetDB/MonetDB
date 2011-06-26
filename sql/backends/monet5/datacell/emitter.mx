@@ -401,7 +401,7 @@ static void
 EMbody(Emitter em)
 {
 	BUN cnt;
-	size_t i,j;
+	size_t j;
 	int k, ret;
 	BAT *b;
 
@@ -454,6 +454,7 @@ If the thread is suspended, we sleep for at least one second.
 			if ( em->table.format[k].c[0] )
 				BBPunfix( em->table.format[k].c[0]->batCacheid);
 			b = em->table.format[k].c[0] =  baskets[em->bskt].primary[k];
+			em->table.format[k].ci[0] = bat_iterator(b);
 			if (  b->htype == TYPE_oid) {
 				baskets[em->bskt].primary[k] = BATnew(TYPE_void, b->ttype, 0);
 				BATseqbase(baskets[em->bskt].primary[k], 0);
@@ -476,15 +477,9 @@ If the thread is suspended, we sleep for at least one second.
 			if (ret < 0)
 				mnstr_printf(EMout, "Tuple emission failed\n");
 #endif
-			if (ret < 0) {
+			if (ret < 0)
 				/* keep the events and try to setup a new connection */
-				BSKTunlock(&em->lck, &em->name);
 				break;
-			}
-			/* clean the baskets */
-			for (i = 1; i < em->table.nr_attrs; i++)
-				BATclear(em->table.format[i].c[0]);
-
 			if (em->table.error) {
 				mnstr_printf(GDKerr, em->table.error);
 				em->table.error = 0;

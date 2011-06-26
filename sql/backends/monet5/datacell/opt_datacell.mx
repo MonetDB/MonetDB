@@ -92,7 +92,7 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
     for (i = 0; i < limit; i++) 
 	if( old[i]) {
         p = old[i];
-		if ( i == 2) 
+		if ( i == 1) 
 			/* inject transaction start */
 			newFcnCall(mb,sqlRef,putName("transaction",11));
 		
