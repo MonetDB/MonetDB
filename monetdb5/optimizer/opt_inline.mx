@@ -55,25 +55,6 @@ comment "Expand inline functions";
 
 extern int OPTinlineMultiplex(Client cntxt, MalBlkPtr mb, InstrPtr p);
 
-/* simple scalar function can be compiled into their BAT equivalent */
-/* we restrict ourselves for non-loop cases */
-static int
-canbecompiled(MalBlkPtr mb)
-{
-	InstrPtr p;
-	int i,j;
-
-	for( i= 0; i < mb->stop; i++){
-		p= getInstrPtr(mb,i);
-		for( j= 0; j< p->argc; j++)
-			if ( isaBatType(getVarType(mb, getArg(p,j))) )
-				return 0;
-		if ( p->barrier && p->barrier != RETURNsymbol )
-			return 0;
-	}
-	return 1;
-}
-
 static int
 isCorrectInline(MalBlkPtr mb){
 	/* make sure we have a simple inline function with a singe return */
@@ -89,84 +70,6 @@ isCorrectInline(MalBlkPtr mb){
 	return retseen <= 1;
 }
 
-static int
-compileScalarExpression(Client cntxt, MalBlkPtr mb, MalBlkPtr mq, int pc){
-	/* make sure we have a simple inline function with a singe return */
-	InstrPtr p,pci;
-	MalBlkPtr new;
-	int i,j,fnd;
-	char *mapped;
-
-	new = copyMalBlk(mb);
-	if( new == 0)
-		return 0;
-	/* check existence of alternatives */
-
-	mapped = (char*) GDKzalloc(mb->vtop);
-	for( i= 0; i < new->stop; i++){
-		p= getInstrPtr(new,i);
-
-		if ( getModuleId(p) == sqlRef && getFunctionId(p) == mvcRef) {
-			/* we don't need that for inlining */
-			clrFunction(p);
-			p->token = REMsymbol;
-		}
-		fnd = 0;
-		for ( j = 0; j< p->argc; j++) 
-		if ( !isVarConstant(new, getArg(p,j))  ){
-			if ( i == 0) {
-				mapped[getArg(p,j)] = 1;
-				new->var[getArg(p,j)]->type = newBatType(TYPE_oid,getVarType(new, getArg(p,j)));
-			}
-			fnd += mapped[getArg(p,j)];
-		}
-
-		if (fnd)   {
-			fnd = 0;
-			if( getModuleId(p) == calcRef) {
-				getModuleId(p) = batcalcRef;
-				fnd++;
-			}
-			if( getModuleId(p) == mmathRef) {
-				getModuleId(p) = batmmathRef;
-				fnd++;	
-			}
-			if( getModuleId(p) == strRef) {
-				getModuleId(p) = strRef;
-				fnd++;	
-			}
-			if( getModuleId(p) == mtimeRef) {
-				getModuleId(p) = batmtimeRef;
-				fnd++;	
-			}
-			if( getModuleId(p) == 0) 
-				fnd++;
-			if ( fnd )
-				for( j = 0; j < p->retc; j++) {
-					mapped[getArg(p,j)] = 1;
-					new->var[getArg(p,j)]->type = newBatType(TYPE_oid,getVarType(new, getArg(p,j)));
-				}
-		}
-	}
-	chkTypes(cntxt->nspace, new, TRUE);
-
-	/* printFunction(cntxt->fdout,new,0,LIST_MAL_ALL); */
-	fnd = new->errors;
-	if ( new->errors == 0 && isCorrectInline(new) )  {
-		/* rephrase the multiplex */
-		pci = getInstrPtr(mq,pc);
-		getModuleId(pci) = getModuleId(getInstrPtr(new,0));
-		getFunctionId(pci) =getFunctionId( getInstrPtr(new,0));
-		for ( j = pci->retc; j < pci->argc -2; j++)
-			pci->argv[j] = pci->argv[j+2];
-		pci->argc = j;
-		(void) inlineMALblock(mq,pc,new);
-	}
-
-	freeMalBlk(new);
-	GDKfree(mapped);
-	return fnd == 0;
-}
 
 int
 OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
@@ -174,7 +77,6 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int i,limit;
 	InstrPtr q,sig;
 	int actions = 0;
-	Symbol s;
 
 	(void) p;
 
@@ -192,19 +94,6 @@ They are produced by SQL compiler.
 				printInstruction(cntxt->fdout,mb,0,q,LIST_MAL_ALL);
 				printInstruction(cntxt->fdout,q->blk,0,sig,LIST_MAL_ALL);
 			}
-
-			if( getModuleId(q) == malRef &&
-				getFunctionId(q)== multiplexRef
-			) {
-				/* precompile scalar functions */
-				s = findSymbol(cntxt->nspace, userRef, getVarConstant(mb,getArg(q,2)).val.sval);
-				if ( s && canbecompiled(s->def) && compileScalarExpression(cntxt, s->def, mb, i) ) {
-					i--;
-					actions ++;
-					continue;
-				}
-			}
-
 			if( getModuleId(q) == malRef &&
 				getFunctionId(q)== multiplexRef &&
 				OPTinlineMultiplex(cntxt,mb,q)){
