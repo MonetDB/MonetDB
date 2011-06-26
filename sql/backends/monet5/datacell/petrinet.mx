@@ -386,6 +386,7 @@ PNanalysis(Client cntxt, MalBlkPtr mb)
 	str tbl;
 	char buf[BUFSIZ], *nme= buf;
 
+	(void) cntxt;
 	snprintf(buf,BUFSIZ,"%s.%s", getModuleId(sig), getFunctionId(sig));
 	/* first check for errors */
 	for( i = 0; i < mb->stop; i++){
@@ -403,15 +404,14 @@ PNanalysis(Client cntxt, MalBlkPtr mb)
 	for( i = 0; i < mb->stop; i++){
 		p= getInstrPtr(mb,i);
 		if ( getModuleId(p) == basketRef &&  getFunctionId(p) == grabRef ){
-			tbl = getVarConstant(mb,getArg(p,p->argc-2)).val.sval;
-			flg = getVarConstant(mb,getArg(p,p->argc-1)).val.ival;
-			if ( flg) {
-				mnstr_printf(cntxt->fdout,"#input basket %s \n", tbl);
-				PNsource(&ret, &nme , &tbl);
-			} else {
-				mnstr_printf(cntxt->fdout,"#output basket %s \n", tbl);
-				PNtarget(&ret, &nme, &tbl);
-			}
+			tbl = getVarConstant(mb,getArg(p,p->argc-1)).val.sval;
+			mnstr_printf(cntxt->fdout,"#input basket %s \n", tbl);
+			PNsource(&ret, &nme , &tbl);
+		}
+		if ( getModuleId(p) == basketRef &&  getFunctionId(p) == putName("pass",4) ){
+			tbl = getVarConstant(mb,getArg(p,p->retc)).val.sval;
+			mnstr_printf(cntxt->fdout,"#output basket %s \n", tbl);
+			PNtarget(&ret, &nme, &tbl);
 		}
 	}
 	return MAL_SUCCEED;

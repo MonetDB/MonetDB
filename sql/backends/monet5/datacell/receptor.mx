@@ -71,8 +71,12 @@ address RCprotocol
 comment "Set the protocol of the receptor to udp/tcp/csv");
 
 command drop(tbl:str)
-address DCreceptorDrop
+address RCdrop
 comment "Drop a receptor";
+
+command reset()
+address RCreset
+comment "Remove all receptors";
 
 command dump()
 address RCdump
@@ -127,7 +131,8 @@ event stream at the same speed as it arrives.
 adapters_export str DCreceptorNew(int *ret, str *tbl, str *host, int *port);
 adapters_export str DCreceptorPause(int *ret, str *nme);
 adapters_export str DCreceptorResume(int *ret, str *nme);
-adapters_export str DCreceptorDrop(int *ret, str *nme);
+adapters_export str RCdrop(int *ret, str *nme);
+adapters_export str RCreset(int *ret);
 adapters_export str RCmode(int *ret, str *nme, str *arg);
 adapters_export str RCprotocol(int *ret, str *nme, str *arg);
 adapters_export str DCscenario(int *ret, str *nme, str *fnme, int *seq);
@@ -329,7 +334,7 @@ str DCreceptorResume(int *ret, str *nme)
 	return MAL_SUCCEED;
 }
 
-str DCreceptorDrop(int *ret, str *nme)
+str RCdrop(int *ret, str *nme)
 {
 	Receptor rc, rb;
 
@@ -351,6 +356,16 @@ str DCreceptorDrop(int *ret, str *nme)
 	if (rc->lck)
 		BSKTunlock(&rc->lck, &rc->name);
 	MT_join_thread(rc->pid);
+	return MAL_SUCCEED;
+}
+
+str RCreset(int *ret)
+{
+	Receptor r,o;
+	for( r= rcAnchor; r; r = o){
+		o= r->nxt;
+		RCdrop(ret, &r->name);
+	}
 	return MAL_SUCCEED;
 }
 

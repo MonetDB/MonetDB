@@ -386,9 +386,10 @@ str
 DCpostlude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int ret=0;
-	if ( DCprepared != DCINITIALIZED && DCprepared != DCPAUSED)
-		throw(MAL,"datacell.pause","Datacell already stopped");
 	PNstopScheduler(&ret);
+	RCreset(&ret);
+	EMreset(&ret);
+	BSKTreset(&ret);
 	(void) cntxt;
 	(void) mb;
 	(void) stk;

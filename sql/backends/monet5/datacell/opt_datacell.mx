@@ -62,9 +62,10 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
     int bskt, i, j, k, limit, vlimit, slimit;
     InstrPtr p, *old;
 	str  col;
-	int maxbasket= 32, m=0;
-	char *tables[32];
-	InstrPtr q[32];
+	int maxbasket= 128, m=0,a=0;
+	char *tables[128];
+	char *appends[128];
+	InstrPtr q[128], qa[128];
 	lng clk,t;
 	int *alias;
 	char buf[BUFSIZ];
@@ -97,6 +98,8 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		
 		if ( p->token == ENDsymbol){
 			/* a good place to commit the SQL transaction */
+			for ( j = 0; j < a; j++)
+				pushInstruction(mb, qa[j]);
 			(void) newFcnCall(mb, sqlRef, commitRef);
 		}
 		if ( getModuleId(p) == sqlRef  && getFunctionId(p) == putName("affectedRows",12)) {
@@ -115,7 +118,6 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 					if ( m == maxbasket) return 0;
 					/* grab the basket tables by swapping the BATs used for the SQL table */
 					q[m]= BSKTgrabInstruction(mb,buf);
-					q[m] = pushInt(mb,q[m],1);
 					tables[m++]= GDKstrdup(buf);
 					actions = 1;
 				}
@@ -156,19 +158,22 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			getArg(p,j) = alias[getArg(p,j)];
 
 		if ( getModuleId(p) == sqlRef  && getFunctionId(p) == appendRef){
+			/* the appends come in multiple steps. 
+			   The first initializes an basket update statement,
+			   which is triggered when we commit the transaction.
+			*/
 			snprintf(buf,BUFSIZ,"%s.%s", getVarConstant(mb, getArg(p,2)).val.sval, getVarConstant(mb, getArg(p,3)).val.sval);
 			col = getVarConstant(mb, getArg(p,4)).val.sval;
 			bskt = BSKTlocate(buf);
 			if ( bskt ){
-				for( j =0; j< m; j++)
-					if ( strcmp(buf,tables[j])==0)
+				for( j =0; j< a; j++)
+					if ( strcmp(buf,appends[j])==0)
 						break;
-				if ( j == m ){
-					if ( m == maxbasket) return 0;
+				if ( j == a ){
+					if ( a == maxbasket) return 0;
 					/* grab the basket tables instruction */
-					q[m]= BSKTgrabInstruction(mb,buf);
-					q[m] = pushInt(mb,q[m],0);
-					tables[m++]= GDKstrdup(buf);
+					qa[a]= BSKTpassInstruction(mb,buf);
+					appends[a++]= GDKstrdup(buf);
 					actions = 1;
 				}
 				fnd = 0;
@@ -178,11 +183,10 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 					break;
 				}
 				if ( fnd) {
-					setModuleId(p, batRef);
-					getArg(p,0) = newTmpVariable(mb,TYPE_any);
-					getArg(p, 1) = getArg(q[j],k);
-					getArg(p, 2) = getArg(p, 5);
-					p->argc = 3;
+					clrFunction(p);
+					getArg(p, 0) = getArg(qa[j], k + 2);
+					getArg(p, 1) = getArg(p, 5);
+					p->argc = 2;
 				}
 			}
 		}

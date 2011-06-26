@@ -40,13 +40,21 @@ command unlock{unsafe}(tbl:str):void
 address BSKTunlock
 comment "Unlock the basket";
 
-pattern grab(tbl:str, flg:int):bat[:oid,:any]...
+pattern grab(tbl:str):bat[:oid,:any]...
 address BSKTgrab
 comment "Take a snapshot of the basket, destroying the origin when flg is set";
+
+pattern pass(tbl:str, cols:bat[:oid,:any]...)
+address BSKTpass
+comment "Dump the new tuples into the basket";
 
 command drop(tbl:str):void
 address BSKTdrop
 comment "Remove the basket";
+
+command reset():void
+address BSKTreset
+comment "Remove all baskets";
 
 command dump()
 address BSKTdump
@@ -88,11 +96,13 @@ typedef struct{
 datacell_export str schema_default;
 datacell_export str BSKTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str BSKTdrop(int *ret, str *tbl);
+datacell_export str BSKTreset(int *ret);
 datacell_export str BSKTinventory(int *ret);
 datacell_export int BSKTmemberCount(str tbl);
 datacell_export int BSKTlocate(str tbl);
 datacell_export str BSKTdump(int *ret);
 datacell_export str BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+datacell_export str BSKTpass(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 datacell_export str BSKTlock(int *ret, str *tbl, int *delay);
 datacell_export str BSKTunlock(int *ret, str *tbl);
@@ -101,6 +111,7 @@ datacell_export str BSKTlock2(int *ret, str *tbl);
 datacell_export str BSKTnewbasket(sql_schema *s, sql_table *t, sql_trans *tr);
 datacell_export void BSKTelements(str nme, str buf, str *schema, str *tbl);
 datacell_export InstrPtr BSKTgrabInstruction(MalBlkPtr mb, str tbl);
+datacell_export InstrPtr BSKTpassInstruction(MalBlkPtr mb, str tbl);
 datacell_export void BSKTtolower(char *src);
 
 datacell_export BSKTbasketRec *baskets;
@@ -346,6 +357,14 @@ BSKTdrop(int *ret, str *tbl)
 }
 
 str
+BSKTreset(int *ret)
+{
+	int i;
+	for ( i = 1; i < bsktLimit; i++)
+		BSKTdrop(ret, &baskets[i].name);
+	return MAL_SUCCEED;
+}
+str
 BSKTdump(int *ret)
 {
 	int bskt;
@@ -365,13 +384,12 @@ str
 BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str tbl;
-	int bskt, i, *ret, flg;
+	int bskt, i, *ret;
 	BAT *b;
 
 	(void) cntxt;
 	(void) mb;
-	tbl = *(str*) getArgReference(stk,pci, pci->argc-2);
-	flg = *(int*) getArgReference(stk,pci, pci->argc-1);
+	tbl = *(str*) getArgReference(stk,pci, pci->argc-1);
 
 	bskt = BSKTlocate(tbl);
 	if (bskt == 0 )
@@ -385,13 +403,41 @@ BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		*ret = b->batCacheid;
 		BBPfix(*ret);
 		BBPkeepref(*ret);
-		if ( flg) {
-			if (  b->htype == TYPE_oid) {
-				baskets[bskt].primary[i] = BATnew(TYPE_void, b->ttype, 0);
-				BATseqbase(baskets[bskt].primary[i], 0);
-			} else
-				baskets[bskt].primary[i] = BATnew(b->htype, b->ttype, 0);
-		}
+		if (  b->htype == TYPE_oid) {
+			baskets[bskt].primary[i] = BATnew(TYPE_void, b->ttype, 0);
+			BATseqbase(baskets[bskt].primary[i], 0);
+		} else
+			baskets[bskt].primary[i] = BATnew(b->htype, b->ttype, 0);
+	}
+	mal_unset_lock(baskets[bskt].lock, "unlock basket");
+	return MAL_SUCCEED;
+}
+
+str
+BSKTpass(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str tbl;
+	int bskt, i, j, ret;
+	BAT *b, *bn;
+
+	(void) cntxt;
+	(void) mb;
+	tbl = *(str*) getArgReference(stk,pci, pci->retc);
+
+	bskt = BSKTlocate(tbl);
+	if (bskt == 0 )
+		throw(MAL,"basket.pass","Basket not found");
+	if ( baskets[bskt].colcount != pci->retc - 3)
+		throw(MAL,"basket.pass","Non-matchin arguments");
+
+	/* copy the content of the temporary BATs into the basket */
+	mal_set_lock(baskets[bskt].lock, "lock basket");
+	for ( j = 2,  i=0; i < baskets[bskt].colcount; i++, j++) {
+		ret= *(int*) getArgReference(stk,pci,j);
+		b = baskets[bskt].primary[i];
+		bn = BATdescriptor(ret);
+		BATappend(b, bn, FALSE);
+		BBPreleaseref(ret);
 	}
 	mal_unset_lock(baskets[bskt].lock, "unlock basket");
 	return MAL_SUCCEED;
@@ -418,6 +464,29 @@ BSKTgrabInstruction(MalBlkPtr mb, str tbl)
 	}
 	p->retc= p->argc;
 	p= pushStr(mb,p,tbl);
+	return p;
+}
+
+InstrPtr
+BSKTpassInstruction(MalBlkPtr mb, str tbl)
+{
+	int i, j, bskt;
+	InstrPtr p;
+	BAT *b;
+
+	bskt = BSKTlocate(tbl);
+	if (bskt == 0 )
+		return 0;
+	p = newInstruction(mb, ASSIGNsymbol);
+	getArg(p,0)= newTmpVariable(mb,TYPE_any);
+	getModuleId(p) = basketRef;
+	getFunctionId(p) = putName("pass",4);
+	p = pushStr(mb,p, tbl);
+	for ( i=0; i < baskets[bskt].colcount; i++) {
+		b = baskets[bskt].primary[i];
+		j= newTmpVariable(mb,newBatType(TYPE_oid,b->ttype));
+		p= pushArgument(mb,p, j);
+	}
 	return p;
 }
 @}
