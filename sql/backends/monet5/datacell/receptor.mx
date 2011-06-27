@@ -192,6 +192,8 @@ typedef struct RECEPTOR {
 } RCrecord, *Receptor;
 
 static Receptor rcAnchor = NULL;
+static str rcError = NULL;
+static int rcErrorEvent = 0;
 static int protocol = TCP;
 
 static str RCstartThread(Receptor rc);
@@ -589,7 +591,13 @@ parse:
 						line = buf;
 						e = strchr(line, '\n');
 						if (e == 0) {
-							mnstr_printf(RCout, "#gobbled event %d %d :%s \n", m, n, line);
+							/* only keep the last errorenous event for analysis */
+							if ( rcError )
+								GDKfree(rcError);
+							rcError= (char*) GDKmalloc(strlen(line)+1 );
+							if ( rcError)
+								strncpy(rcError,line, strlen(line) + 1);
+							rcErrorEvent = cnt;
 							cnt--;
 							break;
 						}
@@ -837,6 +845,8 @@ RCdump()
 	Receptor rc = rcAnchor;
 	for ( ; rc; rc= rc->nxt)
 		dumpReceptor(rc);
+	if ( rcError)
+		mnstr_printf(GDKout,"#last error event %d:%s", rcErrorEvent, rcError);
 	return MAL_SUCCEED;
 }
 @}

@@ -233,8 +233,7 @@ It becomes the synchronization handle.
 		em->table.format[j].c[0] = BATcopy(b,b->htype, b->ttype,FALSE);;
 		em->table.format[j].ci[0] = bat_iterator(b);
 		em->table.format[j].name = GDKstrdup(baskets[idx].cols[i]);
-		em->table.format[j].sep =
-			j <= len - 1 ? GDKstrdup(",") : GDKstrdup("]\n");
+		em->table.format[j].sep = GDKstrdup(",");
 		em->table.format[j].seplen = (int)strlen(em->table.format[j].sep);
 		em->table.format[j].type = ATOMname(b->ttype);
 		em->table.format[j].adt = (b)->ttype;
@@ -247,6 +246,9 @@ It becomes the synchronization handle.
 		em->table.format[j].data = GDKmalloc(em->table.format[j].len);
 		j++;
 	}
+	GDKfree(em->table.format[j-1].sep);
+	em->table.format[j-1].sep = GDKstrdup("\n");
+	em->table.format[j-1].seplen = (int)strlen(em->table.format[j-1].sep);
 	em->table.nr_attrs = j;
 
 	(void)ret;

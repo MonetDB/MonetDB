@@ -46,7 +46,7 @@ It collects statistics on the events.
 #include "dcsocket.h"
 
 
-#define _DEBUG_ACTUATOR_ 
+/* #define _DEBUG_ACTUATOR_ */
 #define ACout GDKout
 
 FILE *fd;
@@ -87,7 +87,7 @@ usage()
 	mnstr_printf(ACout, "--actuator=<actuator name> to identify the event received \n");
     mnstr_printf(ACout, "--server run as a server (default)\n");
     mnstr_printf(ACout, "--client run as a client\n");
-	mnstr_printf(ACout, "--events=<number>  number of events to receive \n");
+	mnstr_printf(ACout, "--events=<number>  number of events to receive (default -1)\n");
 	mnstr_printf(ACout, "--statistics=<number>  show statistics after a series of events\n");
 	exit(-1);
 }
@@ -114,7 +114,7 @@ static lng receivedFirst = 0;
 static int characters = 0;
 
 /* control the display and auto terminate the actuator */
-static int events = 1;
+static int events = -1;
 static int tuples = 0;
 
 @-
@@ -396,7 +396,7 @@ consumeStream(Actuator ac)
 		received++;
 		tuples++;
 		if (trace)
-			mnstr_printf(ACout, "%s\n", buf);
+			mnstr_printf(ACout, "%s%s", buf, (buf[m-1]=='\n'?"":"\n"));
 		/*mnstr_printf(ACout, "Received tuple[%d]:%s\n",received,buf);*/
 
 		endptr = 0;
@@ -420,7 +420,6 @@ consumeStream(Actuator ac)
 		if( statistics && (received % statistics ) == 0) {
 		    showStatistics();
 		}
-		mnstr_flush(ac->fromServer);
 	}
 	if (errno == EPIPE || errno == ECONNRESET) {
 		mnstr_printf(ACout, "errno:%s\n", strerror(errno));
