@@ -37,7 +37,7 @@ BuildRequires: geos-devel >= 2.2.0
 BuildRequires: libcurl-devel
 BuildRequires: libuuid-devel
 BuildRequires: libxml2-devel
-BuildRequires: openssl-devel >= 0.9.8f
+BuildRequires: openssl-devel
 BuildRequires: pcre-devel >= 4.5
 BuildRequires: perl
 BuildRequires: perl-devel
@@ -145,7 +145,7 @@ Summary: MonetDB - Monet Database Management System Client Programs
 Group: Applications/Databases
 Requires: %{name}-client = %{version}-%{release}
 Requires: %{name}-stream-devel = %{version}-%{release}
-Requires: openssl-devel >= 0.9.8f
+Requires: openssl-devel
 
 %description client-devel
 MonetDB is a database management system that is developed from a
