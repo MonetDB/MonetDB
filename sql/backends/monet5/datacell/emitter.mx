@@ -454,14 +454,11 @@ If the thread is suspended, we sleep for at least one second.
 		BSKTlock(&em->lck, &em->name, &em->delay);
 		for ( k =0 ; k < baskets[em->bskt].colcount; k++ ) {
 			if ( em->table.format[k].c[0] )
-				BBPunfix( em->table.format[k].c[0]->batCacheid);
-			b = em->table.format[k].c[0] =  baskets[em->bskt].primary[k];
+				BBPunfix( em->table.format[k].c[0]->batCacheid );
+			b = baskets[em->bskt].primary[k];
+			em->table.format[k].c[0] =  BATcopy(b, b->htype, b->ttype,TRUE);
 			em->table.format[k].ci[0] = bat_iterator(b);
-			if (  b->htype == TYPE_oid) {
-				baskets[em->bskt].primary[k] = BATnew(TYPE_void, b->ttype, 0);
-				BATseqbase(baskets[em->bskt].primary[k], 0);
-			} else
-				baskets[em->bskt].primary[k] = BATnew(b->htype, b->ttype, 0);
+			BATclear(b);
 		}
 		BSKTunlock(&em->lck, &em->name);
 		if ((cnt = BATcount(em->table.format[1].c[0]))) {
