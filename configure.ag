@@ -269,7 +269,8 @@ AM_CONDITIONAL(CROSS_COMPILING, test x$cross_compiling = xyes)
 dnl logs usually end up in /var/log
 logdir='${localstatedir}/log/monetdb'
 AC_ARG_WITH(logdir,
-	[--with-logdir=DIR     Where to put log files (LOCALSTATEDIR/log/monetdb/)],
+	AS_HELP_STRING([--with-logdir=DIR],
+		[Where to put log files (LOCALSTATEDIR/log/monetdb/)]),
 	[case "$withval" in
 		yes|no|auto)
 			AC_MSG_WARN([--with-logdir called without argument - will use default])
@@ -283,7 +284,8 @@ AC_ARG_WITH(logdir,
 dnl pidfiles usually end up in /var/run
 rundir='${localstatedir}/run/monetdb'
 AC_ARG_WITH(rundir,
-	[--with-rundir=DIR     Where to put pid files (LOCALSTATEDIR/run/monetdb/)],
+	AS_HELP_STRING([--with-rundir=DIR],
+		[Where to put pid files (LOCALSTATEDIR/run/monetdb/)]),
 	[case "$withval" in
 		yes|no|auto)
 			AC_MSG_WARN([--with-rundir called without argument - will use default])
