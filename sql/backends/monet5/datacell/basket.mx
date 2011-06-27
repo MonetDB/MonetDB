@@ -239,13 +239,7 @@ BSKTnewbasket(sql_schema *s, sql_table *t, sql_trans *tr)
 			mal_unset_lock(mal_contextLock, "register");
 			throw(SQL, "sql.basket", "Can not access descriptor");
 		}
-		if (b->htype == TYPE_oid) {
-			baskets[idx].primary[i] = BATnew(TYPE_void, b->ttype, 0);
-			BATseqbase(baskets[idx].primary[i], 0);
-		} else
-			baskets[idx].primary[i] = BATnew(b->htype, b->ttype, 0);
-
-		BBPreleaseref(b->batCacheid);
+		baskets[idx].primary[i] = b;
 		baskets[idx].cols[i++] = GDKstrdup(c->base.name);
 	}
 	mal_unset_lock(mal_contextLock, "register");
@@ -385,7 +379,7 @@ BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str tbl;
 	int bskt, i, *ret;
-	BAT *b;
+	BAT *b,*bn;
 
 	(void) cntxt;
 	(void) mb;
@@ -400,14 +394,10 @@ BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for ( i=0; i < baskets[bskt].colcount; i++) {
 		ret= (int*) getArgReference(stk,pci,i);
 		b = baskets[bskt].primary[i];
-		*ret = b->batCacheid;
-		BBPfix(*ret);
+		bn = BATcopy(b, b->htype, b->ttype,TRUE);
+		*ret = bn->batCacheid;
 		BBPkeepref(*ret);
-		if (  b->htype == TYPE_oid) {
-			baskets[bskt].primary[i] = BATnew(TYPE_void, b->ttype, 0);
-			BATseqbase(baskets[bskt].primary[i], 0);
-		} else
-			baskets[bskt].primary[i] = BATnew(b->htype, b->ttype, 0);
+		BATclear(b);
 	}
 	mal_unset_lock(baskets[bskt].lock, "unlock basket");
 	return MAL_SUCCEED;
