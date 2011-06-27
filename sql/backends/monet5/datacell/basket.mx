@@ -418,7 +418,7 @@ BSKTpass(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (bskt == 0 )
 		throw(MAL,"basket.pass","Basket not found");
 	if ( baskets[bskt].colcount != pci->argc - 2)
-		throw(MAL,"basket.pass","Non-matchin arguments");
+		throw(MAL,"basket.pass","Non-matching arguments");
 
 	/* copy the content of the temporary BATs into the basket */
 	mal_set_lock(baskets[bskt].lock, "lock basket");
@@ -426,7 +426,7 @@ BSKTpass(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		ret= *(int*) getArgReference(stk,pci,j);
 		b = baskets[bskt].primary[i];
 		bn = BATdescriptor(ret);
-		BATappend(b, bn, FALSE);
+		BATappend(b, bn, TRUE);
 		BBPreleaseref(ret);
 	}
 	mal_unset_lock(baskets[bskt].lock, "unlock basket");
