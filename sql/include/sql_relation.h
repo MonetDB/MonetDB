@@ -124,13 +124,13 @@ typedef enum operator_type {
 	op_basetable = 0,
 	op_table,
 	op_ddl,
-	op_project,
-	op_select,	/* includes order by */
+	op_project, 		/* includes order by */
+	op_select,	
 	op_join,
 	op_left,
 	op_right,
 	op_full,
-	op_semi,	
+	op_semi,
 	op_anti,
 	op_union,
 	op_inter,

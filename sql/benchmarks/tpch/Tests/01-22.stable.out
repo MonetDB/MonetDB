@@ -500,7 +500,7 @@ Over..
 % rewrite,	count # name
 % clob,	int # type
 % 7,	1 # length
-[ "joinidx",	0	]
+[ "joinidx",	1	]
 
 # 00:16:03 >  
 # 00:16:03 >  Mtimeout -timeout 60 mclient -lsql -ftest -i -e --host=alf --port=39190  < /net/alf.ins.cwi.nl/export/scratch1/niels/rc/MonetDB/sql/src/benchmarks/tpch/16.sql

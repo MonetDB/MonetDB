@@ -83,14 +83,16 @@ re-ordering basic blocks only.
 @c
 typedef struct{
 	int cnt;
+	int used;
+	int pos,pos2;
 	int stmt[];
 } *Node, NodeRecord;
 
 static Node *
-OPTdependencies(Client cntxt, MalBlkPtr mb){
+OPTdependencies(Client cntxt, MalBlkPtr mb, int **Ulist){
 	Node *list = (Node *) GDKzalloc(sizeof(Node) * mb->stop);
-	int *var = (int*) GDKzalloc(sizeof(int) * mb->vtop);
-	int i,j;
+	int *var = (int*) GDKzalloc(sizeof(int) * mb->vtop), *uselist = NULL;
+	int i,j,sz=0;
 	InstrPtr p = NULL;
 	int block = 0;
 	
@@ -113,70 +115,111 @@ OPTdependencies(Client cntxt, MalBlkPtr mb){
 			GDKfree(var);
 			return 0;
 		}
-		list[i]->cnt= p->argc;
-		for( j=p->retc; j<p->argc; j++)
-			list[i]->stmt[j]= var[getArg(p,j)];
+		list[i]->cnt = p->argc;
+		for( j=p->retc; j<p->argc; j++) {
+			list[i]->stmt[j] = var[getArg(p,j)];
+			list[var[getArg(p,j)]]->used++;
+		}
 		/* keep the assignment order */
-		for( j= 0; j < p->retc; j++)
-		if ( var[ getArg(p,j)] )
-			list[i]->stmt[j] = var [getArg(p,j)];
-		/* remember the last assignment  */
+		for( j= 0; j < p->retc; j++) {
+			if ( var[ getArg(p,j)] ) {
+				//list[i]->stmt[j] = var [getArg(p,j)];
+				// escape we should avoid reused variables.
+				for (i--; i>=0; i--)
+					GDKfree(list[i]);
+				GDKfree(list);
+				GDKfree(var);
+				return 0;
+			}
+		}
+		/* remember the last assignment */
 		for( j=0; j<p->retc; j++)
-			var[getArg(p,j)]= i;
-		/* and also remember when it was last used.
-		   this would lead to more breath-first processing,
-		   something we want to avoid.
-		for( j=p->retc; j<p->argc; j++)
-			var[getArg(p,j)]= i;
-		*/
+			var[getArg(p,j)] = i;
 	}
 @-
 	mnstr_printf(cntxt->fdout,"DEPENDENCY TABLE\n");
 	for(i=0;i<mb->stop; i++)
-	if( list[i]->cnt){
-		mnstr_printf(cntxt->fdout,"[%d]",i);
-		for(j=p->retc; j< list[i]->cnt; j++)
-			mnstr_printf(cntxt->fdout," %d",list[i]->stmt[j]);
+		if( list[i]->cnt){
+			mnstr_printf(cntxt->fdout,"%s.%s [%d,%d]",
+				mb->stmt[i]->modname,
+				mb->stmt[i]->fcnname, i, list[i]->used);
+			for(j=p->retc; j< list[i]->cnt; j++)
+				mnstr_printf(cntxt->fdout, " %d", list[i]->stmt[j]);
+			mnstr_printf(cntxt->fdout,"\n");
+		}
+@c
+	for(i=0;i<mb->stop; i++) {
+		list[i]->pos = sz;
+		list[i]->pos2 = sz;
+		sz += list[i]->used;
+	}
+	uselist = GDKzalloc(sizeof(int)*sz);
+
+	for(i=0;i<mb->stop; i++) {
+		if (list[i]->cnt) {
+			p= getInstrPtr(mb,i);
+			for(j=p->retc; j< list[i]->cnt; j++) {
+				uselist[list[list[i]->stmt[j]]->pos2] = i;
+				list[list[i]->stmt[j]]->pos2++;
+			}
+		}
+	}
+@-
+	for(i=0, sz = 0; i<mb->stop; i++) {
+		mnstr_printf(cntxt->fdout,"%d is used by", i);
+		for(j=0; j<list[i]->used; j++, sz++)
+			mnstr_printf(cntxt->fdout," %d", uselist[sz]);
 		mnstr_printf(cntxt->fdout,"\n");
 	}
 @c
+
 	if ( block ){
 		for (i--; i>=0; i--)
 			GDKfree(list[i]);
+		GDKfree(uselist);
 		GDKfree(list);
 		GDKfree(var);
 		return NULL;
 	}
 	GDKfree(var);
+	*Ulist = uselist;
 	return list;
 }
 
 static void
-OPTremoveDep(Node *list, int lim){
+OPTremoveDep(Node *list, int lim)
+{
 	int i;
-	for( i=0; i< lim; i++)
-	if( list[i])
-		GDKfree(list[i]);
+
+	for (i=0; i< lim; i++)
+		if (list[i])
+			GDKfree(list[i]);
 	GDKfree(list);
 }
 
 static void
-OPTdepthfirst(Client cntxt, MalBlkPtr mb, int pc, InstrPtr old[], Node dep[])
+OPTbreadthfirst(Client cntxt, MalBlkPtr mb, int pc, int max, InstrPtr old[], Node dep[], int *uselist)
 {
 	int i;
 	InstrPtr p;
 
-	p= old[pc];
-	old[pc] = 0;
-	if( p == NULL)
+	if (pc > max)
 		return;
-	for (i= 0; i< dep[pc]->cnt; i++)
-		OPTdepthfirst(cntxt, mb,dep[pc]->stmt[i], old, dep);
-		OPTDEBUGreorder{
-			mnstr_printf(cntxt->fdout,"dump[%d]:",pc);
-			printInstruction(cntxt->fdout,mb,0,p,LIST_MAL_STMT | LIST_MAPI);
-		}
-	pushInstruction(mb, p);
+
+	p = old[pc];
+	if (p == NULL)
+		return;
+
+	for (i= p->retc; i< dep[pc]->cnt; i++)
+		OPTbreadthfirst(cntxt, mb, dep[pc]->stmt[i], max, old, dep, uselist);
+	if (old[pc] != NULL) {
+		old[pc] = 0;
+		pushInstruction(mb, p);
+	}
+	if (getFunctionId(p) == leftjoinRef || getFunctionId(p) == newRef ||
+			getFunctionId(p) == deriveRef || getFunctionId(p) == mirrorRef) 
+		for (i = 0; i< dep[pc]->used; i++)
+			OPTbreadthfirst(cntxt, mb, uselist[dep[pc]->pos+i], max, old, dep, uselist);
 }
 
 static int
@@ -184,12 +227,12 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i,j, start;
 	InstrPtr *old;
-	int limit, slimit;
+	int limit, slimit, *uselist = NULL;
 	Node *dep;
 
 	(void) cntxt;
 	(void) stk;
-	dep = OPTdependencies(cntxt,mb);
+	dep = OPTdependencies(cntxt,mb,&uselist);
 	if ( dep == NULL)
 		return 0;
 	limit= mb->stop;
@@ -201,24 +244,28 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	pushInstruction(mb,old[0]);
 	old[0]=0;
 	for( i=1; i<limit; i++)
-	if ( getModuleId(old[i]) == datacyclotronRef && getFunctionId(old[i]) == bindRef){
-		pushInstruction(mb,old[i]);
-		old[i] = 0;
-	}
+		if ( getModuleId(old[i]) == datacyclotronRef && getFunctionId(old[i]) == bindRef){
+			pushInstruction(mb,old[i]);
+			old[i] = 0;
+		}
 
 	start=1;
-	for( i=1; i<limit; i++){
+	for (i=1; i<limit; i++){
 		p= old[i];
 		if ( p == 0)
 			continue;
 		if( p->token == ENDsymbol)
 			break;
-		if( hasSideEffects(p,TRUE) || (getModuleId(p) != sqlRef && isUpdateInstruction(p))  || isUnsafeFunction(p) || p->barrier ){
-			OPTdepthfirst(cntxt, mb, i, old, dep);
+		if( hasSideEffects(p,FALSE) || isUnsafeFunction(p) || p->barrier ){
+			OPTbreadthfirst(cntxt, mb, i, i, old, dep, uselist);
 			/* remove last instruction and keep for later */
-			p= mb->stmt[mb->stop-1];
-			mb->stmt[mb->stop-1]=0;
-			mb->stop--;
+			if (p == mb->stmt[mb->stop-1]) {
+				p= mb->stmt[mb->stop-1];
+				mb->stmt[mb->stop-1]=0;
+				mb->stop--;
+			} else {
+				p = 0;
+			}
 			/* collect all seen sofar by backward grouping */
 			/* since p has side-effects, we should secure all seen sofar */
 			for(j=i-1; j>=start;j--) {
@@ -226,9 +273,10 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 					mnstr_printf(cntxt->fdout,"leftover: %d",start+1);
 					printInstruction(cntxt->fdout,mb,0,old[j],LIST_MAL_STMT | LIST_MAPI);
 				}
-				OPTdepthfirst(cntxt, mb, j, old, dep);
+				OPTbreadthfirst(cntxt, mb, j, i, old, dep, uselist);
 			}
-			pushInstruction(mb,p);
+			if (p)
+				pushInstruction(mb,p);
 			start = i+1;
 		}
 	}

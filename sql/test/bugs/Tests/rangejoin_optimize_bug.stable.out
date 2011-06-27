@@ -39,24 +39,24 @@ Over..
 [ 49	]
 [ 49	]
 % sys.statistics # table_name
-% L13 # name
+% L16 # name
 % wrd # type
 % 2 # length
 [ 49	]
 [ 49	]
 % sys.statistics # table_name
-% L16 # name
+% L24 # name
 % wrd # type
 % 1 # length
 [ 0	]
 [ 49	]
 % sys.statistics # table_name
-% L21 # name
+% L32 # name
 % wrd # type
 % 2 # length
 [ 49	]
 % sys.statistics # table_name
-% L22 # name
+% L33 # name
 % wrd # type
 % 2 # length
 [ 49	]

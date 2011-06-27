@@ -838,6 +838,13 @@ push_semijoin( mvc *sql, stmt *select, stmt *s )
 		op1 = stmt_unop(sql->sa, op1, select->op4.funcval);
 		return op1;
 	}
+	if (select->type == st_alias){ 
+		stmt *op1 = select->op1;
+
+		op1 = push_semijoin(sql, op1, s);
+		op1 = stmt_alias(sql->sa, op1, table_name(sql->sa, select), column_name(sql->sa, select));
+		return op1;
+	}
 	if (select->type == st_binop) {
 		stmt *op1 = select->op1;
 		stmt *op2 = select->op2;

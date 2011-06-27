@@ -73,9 +73,6 @@ insert_exp_array(sql_table *t, int *Len)
 }
 
 #define get_basetable(rel) rel->l
-#define is_updateble(rel) \
-	(rel->op == op_basetable || \
-	(rel->op == op_ddl && (rel->flag == DDL_CREATE_TABLE || rel->flag == DDL_ALTER_TABLE)))
 
 sql_table *
 rel_ddl_table_get(sql_rel *r)

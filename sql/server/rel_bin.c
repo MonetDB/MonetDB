@@ -1717,7 +1717,7 @@ rel2bin_select( mvc *sql, sql_rel *rel, list *refs)
 static stmt *
 rel2bin_groupby( mvc *sql, sql_rel *rel, list *refs)
 {
-	list *l, *aggrs;
+	list *l, *aggrs, *gbexps = list_new(sql->sa);
 	node *n, *en;
 	stmt *sub = NULL, *cursub;
 	group *groupby = NULL;
@@ -1744,6 +1744,8 @@ rel2bin_groupby( mvc *sql, sql_rel *rel, list *refs)
 	}
 
 	/* groupby columns */
+
+	/* Keep groupby columns, sub that they can be lookup in the aggr list */
 	if (rel->r) {
 		list *exps = rel->r; 
 
@@ -1756,6 +1758,8 @@ rel2bin_groupby( mvc *sql, sql_rel *rel, list *refs)
 				return NULL;
 			}
 			groupby = grp_create(sql->sa, gbcol, groupby);
+			gbcol = stmt_alias(sql->sa, gbcol, exp_find_rel_name(e), exp_name(e));
+			list_append(gbexps, gbcol);
 		}
 	}
 	grp_done(groupby);
@@ -1766,8 +1770,17 @@ rel2bin_groupby( mvc *sql, sql_rel *rel, list *refs)
 	for( n = aggrs->h; n; n = n->next ) {
 		sql_exp *aggrexp = n->data;
 
-		stmt *aggrstmt = exp_bin(sql, aggrexp, sub, NULL, groupby, NULL); 
+		stmt *aggrstmt = NULL;
 
+		/* first look in the group by column list */
+		if (gbexps && !aggrstmt && aggrexp->type == e_column) {
+			aggrstmt = list_find_column(sql->sa, gbexps, aggrexp->l, aggrexp->r);
+			if (aggrstmt && groupby)
+				aggrstmt = stmt_join(sql->sa, groupby->ext, aggrstmt, cmp_equal);
+		}
+
+		if (!aggrstmt)
+			aggrstmt = exp_bin(sql, aggrexp, sub, NULL, groupby, NULL); 
 		/* maybe the aggr uses intermediate results of this group by,
 		   therefore we pass the group by columns too 
 		 */
@@ -1934,30 +1947,6 @@ insert_check_ukey(mvc *sql, list *inserts, sql_key *k, stmt *idx_inserts)
 
 		/* 2e stage: find out if inserted are unique */
 		if ((!idx_inserts && nth(inserts,0)->nrcols) || (idx_inserts && idx_inserts->nrcols)) {	/* insert columns not atoms */
-#if 0
-			sql_subtype *Oid = sql_bind_localtype("oid");
-			sql_subfunc *nu, *or = sql_bind_func_result(sql->sa, sql->session->schema, "or", bt, bt, bt);
-			stmt *ss = NULL;
-
-			/* implementation uses group, not_uniques,
-				join, derive, not_uniques keyed check */
-			for (m = k->columns->h; m; m = m->next) {
-				sql_kc *c = m->data;
-
-				if (ss) {
-					ss = stmt_derive(sql->sa, ss, stmt_join(sql->sa, stmt_mirror(sql->sa, ss), nth(inserts, c->c->colnr)->op1, cmp_equal));
-				} else {
-					ss = stmt_group(sql->sa, nth(inserts, c->c->colnr)->op1);
-				}
-			}
- 			nu = sql_bind_func_result(sql->sa, sql->session->schema, "not_uniques", tail_type(ss), NULL, Oid);
-			ss = stmt_unop(sql->sa, ss, nu);
-
-			sum = sql_bind_aggr(sql->sa, sql->session->schema, "not_unique", tail_type(ss));
-			ssum = stmt_aggr(sql->sa, ss, NULL, sum, 1);
-			/* combine results */
-			s = stmt_binop(sql->sa, s, ssum, or);
-#else
 			stmt *ss = NULL;
 			sql_subfunc *or = sql_bind_func_result(sql->sa, sql->session->schema, "or", bt, bt, bt);
 			/* implementation uses sort,refine, key check */
@@ -1974,7 +1963,6 @@ insert_check_ukey(mvc *sql, list *inserts, sql_key *k, stmt *idx_inserts)
 			ssum = stmt_aggr(sql->sa, ss, NULL, sum, 1);
 			/* combine results */
 			s = stmt_binop(sql->sa, s, ssum, or);
-#endif
 		}
 
 		if (k->type == pkey) {

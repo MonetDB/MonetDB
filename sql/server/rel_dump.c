@@ -1086,25 +1086,25 @@ rel_read(mvc *sql, char *r, int *pos)
 		j = op_left;
 		/* fall through */
 	case 'r': 
-		if (j != op_basetable) {
+		if (j == op_basetable) {
 			*pos += strlen("right outer join");
 			j = op_right;
 		}
 		/* fall through */
 	case 'f':
-		if (j != op_basetable) {
+		if (j == op_basetable) {
 			*pos += strlen("full outer join");
 			j = op_full;
 		}
 		/* fall through */
 	case 'c':
-		if (j != op_basetable) {
+		if (j == op_basetable) {
 			*pos += strlen("crossproduct");
 			j = op_join;
 		}
 		/* fall through */
 	case 'j':
-		if (j != op_basetable) {
+		if (j == op_basetable) {
 			*pos += strlen("join");
 			j = op_join;
 		}
