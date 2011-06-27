@@ -189,47 +189,6 @@ push_select( sql_allocator *sa, stmt *select, stmt *s )
 	return NULL;
 }
 
-#if 0
-/sql/src/server/bin_optimizer.c:193:1: error: ‘is_reduced’ defined but not used
-
-static int 
-is_reduced( stmt *s )
-{
-	switch(s->type) 
-	{
-	case st_relselect:
-	case st_select:
-	case st_select2:
-	case st_uselect:
-	case st_uselect2:
-	case st_semijoin:
-	case st_limit:
-	case st_limit2:
-	case st_releqjoin:
-	case st_join2:
-	case st_joinN:
-		return 1;
-
-	case st_join:
-		/* fetch join, look at the join operands */
-		if (isEqJoin(s) &&
-		    s->op1->t && s->op1->t == s->op2->h) 
-			return  is_reduced(s->op1) + 
-				is_reduced(s->op2);
-		return 1;
-	case st_union:	
-		return is_reduced(s->op1) + is_reduced(s->op2);
-	case st_reverse:
-	case st_mark:
-	case st_diff:	
-		return is_reduced(s->op1);
-	default:
-		return 0;
-	}
-}
-#endif
-
-
 stmt *
 _bin_optimizer(mvc *c, stmt *s)
 {

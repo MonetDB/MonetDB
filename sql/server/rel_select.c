@@ -47,10 +47,10 @@ rel_destroy_(sql_rel *rel)
 	if (!rel)
 		return;
 	if (is_join(rel->op) ||
-			is_semi(rel->op) ||
-			is_select(rel->op) ||
-			is_set(rel->op) ||
-			rel->op == op_topn) {
+	    is_semi(rel->op) ||
+	    is_select(rel->op) ||
+	    is_set(rel->op) ||
+	    rel->op == op_topn) {
 		if (rel->l)
 			rel_destroy(rel->l);
 		if (rel->r)
@@ -116,6 +116,8 @@ rel_issubquery(sql_rel*r)
 
 /* we don't name relations directly, but sometimes we need the relation
    name. So we look it up in the first expression
+
+   we should clean up (remove) this function.
  */
 char *
 rel_name( sql_rel *r )
@@ -824,14 +826,12 @@ rel_groupby(sql_allocator *sa, sql_rel *l, list *groupbyexps )
 	if (groupbyexps) {
 		rel->card = CARD_AGGR;
 		for (en = groupbyexps->h; en; en = en->next) {
-			/* TODO make a proper exp_copy (problem
-			   is we refer to a groupby expression in this
-			   relation and need to pass a long the same name) */
-			sql_exp *e = en->data;
+			sql_exp *e = en->data, *ne;
 
 			/* after the group by the cardinality reduces */
 			e->card = rel->card;
-			append(aggrs, e);
+			ne = exp_column(sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), 0);
+			append(aggrs, ne);
 		}
 	}
 	rel->l = l;
@@ -915,9 +915,9 @@ rel_push_select(sql_allocator *sa, sql_rel *rel, sql_exp *ls, sql_exp *e)
 
 		/* push down as long as the operators allow this */
 		if (!is_select(lrel->op) &&
-				!(is_semi(lrel->op) && !rel_is_ref(lrel->l)) &&
-				lrel->op != op_join &&
-				lrel->op != op_left)
+		    !(is_semi(lrel->op) && !rel_is_ref(lrel->l)) &&
+		    lrel->op != op_join &&
+		    lrel->op != op_left)
 			break;
 		/* pushing through left head of a left join is allowed */
 		if (lrel->op == op_left && (
@@ -2077,7 +2077,12 @@ rel_compare(mvc *sql, sql_rel *rel, symbol *lo, symbol *ro,
 			/* get inner queries result value, ie
 			   get last expression of r */
 			if (r) {
-				rs = rel_lastexp(sql, r);
+				sql_rel *inner = r;
+
+				/* subqueries may result in semijoins */
+				if (is_semi(inner->op))
+					inner = inner->r;
+				rs = rel_lastexp(sql, inner);
 				rel = r;
 			}
 		} else if (r) {
@@ -4478,7 +4483,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 		rel = rel_distinct(rel);
 
 	if (outer && jexps) {
-		rel = rel_crossproduct(sql->sa, outer, rel, op_join);
+		rel = rel_crossproduct(sql->sa, outer, rel, (pre_prj||!ek.reduce)?op_join:op_semi);
 		rel_join_add_exps(sql->sa, rel, jexps );
 
 		/* We need to project all of the (old) outer
@@ -4491,7 +4496,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 			rel = rel_project(sql->sa, rel, exps);
 			rel_project_add_exp(sql, rel, e);
 			set_processed(rel);
-		} else {
+		} else if (!ek.reduce) {
 			if (!is_project(rel->op)) {
 				rel = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 1));
 				set_processed(rel);
@@ -4515,6 +4520,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 				list_prepend(outer_gbexps, n->data);
 			list_append(outer_gbexps, n->data);
 			rel->exps = outer_gbexps;
+			exps_fix_card(outer_gbexps, rel->card);
 		}
 		l = rel = rel_project(sql->sa, rel, pre_prj);
 		while(l && l->op != op_join)

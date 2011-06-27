@@ -392,23 +392,10 @@ exp_relname( sql_exp *e )
 }
 
 char *
-exp_func_name( sql_exp *e )
-{
-	if (e->type == e_func && e->f) {
-		sql_subfunc *f = e->f;
-		return f->func->base.name;
-	}
-	if (e->name)
-		return e->name;
-	if (e->type == e_convert && e->l)
-		return exp_name(e->l);
-	return NULL;
-}
-
-
-char *
 exp_find_rel_name(sql_exp *e)
 {
+	if (e->rname)
+		return e->rname;
 	switch(e->type) {
 	case e_column:
 		if (e->l)
@@ -419,6 +406,26 @@ exp_find_rel_name(sql_exp *e)
 	default:
 		return NULL;
 	}
+	return NULL;
+}
+
+int
+exp_card( sql_exp *e )
+{
+	return e->card;
+}
+
+char *
+exp_func_name( sql_exp *e )
+{
+	if (e->type == e_func && e->f) {
+		sql_subfunc *f = e->f;
+		return f->func->base.name;
+	}
+	if (e->name)
+		return e->name;
+	if (e->type == e_convert && e->l)
+		return exp_name(e->l);
 	return NULL;
 }
 

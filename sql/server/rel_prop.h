@@ -31,6 +31,7 @@ typedef struct prop {
 #define PROP_JOINIDX	1	/* could use join idx */
 #define PROP_HASHIDX	2	/* could use hash idx */
 #define PROP_SORTIDX	3	/* could use sortedness */
+#define PROP_FETCH	4	/* fetchjoin */
 #define PROP_USED	10	/* number of times exp is used */
 
 #define prop_list() 	list_create((fdestroy)&prop_destroy)

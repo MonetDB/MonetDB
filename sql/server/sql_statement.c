@@ -244,12 +244,13 @@ stmt_ext(sql_allocator *sa, stmt *grp)
 	return ns;
 }
 
-stmt *
-stmt_group(sql_allocator *sa, stmt *s)
+static stmt *
+stmt_group(sql_allocator *sa, stmt *s, group *g)
 {
 	stmt *ns = stmt_create(sa, st_group);
 
 	ns->op1 = s;
+	ns->op4.grp = g;
 	ns->nrcols = s->nrcols;
 	ns->key = 0;
 	ns->h = s->h;
@@ -257,13 +258,14 @@ stmt_group(sql_allocator *sa, stmt *s)
 	return ns;
 }
 
-stmt *
-stmt_derive(sql_allocator *sa, stmt *s, stmt *t)
+static stmt *
+stmt_derive(sql_allocator *sa, stmt *s, stmt *t, group *g)
 {
 	stmt *ns = stmt_create(sa, st_derive);
 
 	ns->op1 = s;
 	ns->op2 = t;
+	ns->op4.grp = g;
 	ns->nrcols = s->nrcols;
 	ns->key = 0;
 	ns->h = s->h;
@@ -277,9 +279,9 @@ grp_create(sql_allocator *sa, stmt *s, group *og)
 	group *g = SA_NEW(sa, group);
 
 	if (og) {
-		g->grp = stmt_derive(sa, og->grp, s);
+		g->grp = stmt_derive(sa, og->grp, s, g);
 	} else {
-		g->grp = stmt_group(sa, s);
+		g->grp = stmt_group(sa, s, g);
 	}
 	g->ext = stmt_ext(sa, g->grp);
 	return g;

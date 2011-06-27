@@ -73,6 +73,7 @@ extern void rel_destroy(sql_rel *rel);
 
 #define new_rel_list() list_create((fdestroy)NULL)
 
+/* TODO shouldn't be needed (isn't save) ! */
 extern char * rel_name( sql_rel *r );
 
 extern sql_rel *rel_groupby(sql_allocator *sa, sql_rel *l, list *groupbyexps );
