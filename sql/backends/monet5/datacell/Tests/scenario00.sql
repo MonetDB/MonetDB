@@ -10,6 +10,7 @@ create table datacell.bsktin(
     tag timestamp,
     payload integer
 );
+create table datacell.bsktout (like datacell.bsktin);
 
 call datacell.receptor('datacell.bsktin','localhost',50500);
 
