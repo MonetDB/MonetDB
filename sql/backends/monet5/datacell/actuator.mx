@@ -46,7 +46,7 @@ It collects statistics on the events.
 #include "dcsocket.h"
 
 
-/* #define _DEBUG_ACTUATOR_ */
+/* #define _DEBUG_ACTUATOR_  */
 #define ACout GDKout
 
 FILE *fd;
@@ -74,6 +74,10 @@ ACnew(str nme)
 #define UDP 2
 static int protocol = TCP;
 
+#define ACTIVE 1
+#define PASSIVE 2
+static int mode = PASSIVE;
+
 void
 usage()
 {
@@ -85,8 +89,8 @@ usage()
 	mnstr_printf(ACout, "--port=<portnr>, default 50600 \n");
 	mnstr_printf(ACout, "--protocol=<name>  either tpc/udp\n");
 	mnstr_printf(ACout, "--actuator=<actuator name> to identify the event received \n");
-    mnstr_printf(ACout, "--server run as a server (default)\n");
-    mnstr_printf(ACout, "--client run as a client\n");
+    mnstr_printf(ACout, "--active run as a active listener \n");
+    mnstr_printf(ACout, "--passive run as a passive listener (default)\n");
 	mnstr_printf(ACout, "--events=<number>  number of events to receive (default -1)\n");
 	mnstr_printf(ACout, "--statistics=<number>  show statistics after a series of events\n");
 	exit(-1);
@@ -95,7 +99,6 @@ usage()
 static char *host = "localhost";
 static int port = 50600;
 static char *actuator = "X";
-static int server = 1;
 static int trace = 1;
 static int timestamp = 1; /* first column is a timestamp*/
 
@@ -174,7 +177,7 @@ extern int consumeStream(Actuator ac);
 int
 main(int argc, char **argv)
 {
-	int i, j = 0;
+	int i;
 	char *err = NULL;
 	char name[MYBUFSIZ + 1];
 	char hostname[1024];
@@ -185,8 +188,8 @@ main(int argc, char **argv)
 	static struct option long_options[13] = {
 		{ "port", 1, 0, 'p' },
 		{ "actuator", 1, 0, 'a' },
-		{ "client", 0, 0, 'c' },
-		{ "server", 0, 0, 's' },
+		{ "active", 0, 0, 'a' },
+		{ "passive", 0, 0, 'p' },
 		{ "statistics", 0, 0, 's' },
 		{ "protocol", 1, 0, 'o' },
 		{ "events", 1, 0, 'e' },
@@ -229,20 +232,22 @@ main(int argc, char **argv)
 				exit(0);
 			} 
 			break;
-		case 'c':
-			if (strcmp(long_options[option_index].name, "client") == 0) {
-				server = 0;
-				break;
-			}
-			break;
 		case 'a':
-			actuator = optarg? optarg: "dummy";
+			if (strcmp(long_options[option_index].name, "active") == 0) {
+				mode = ACTIVE;
+				break;
+			} else
+				actuator = optarg? optarg: "dummy";
 			break;
 		case 'p':
 			if (strcmp(long_options[option_index].name, "port") == 0) {
 				port = optarg? atol(optarg): -1;
 				break;
-			}
+			} else
+			if (strcmp(long_options[option_index].name, "passive") == 0) {
+				mode = PASSIVE;
+				break;
+			} else
 			if (strcmp(long_options[option_index].name, "protocol") == 0) {
                 if (strcmp(optarg, "TCP") == 0 || strcmp(optarg, "tcp") == 0) {
                     protocol = TCP;
@@ -257,10 +262,6 @@ main(int argc, char **argv)
 		case 's':
 			if (strcmp(long_options[option_index].name, "statistics") == 0) {
 				statistics = optarg? atol(optarg): 100;
-				break;
-			} else
-			if (strcmp(long_options[option_index].name, "server") == 0) {
-				server = 1;
 				break;
 			} else {
 				usage();
@@ -295,43 +296,60 @@ main(int argc, char **argv)
 		mnstr_printf(ACout, "--events=%d\n", events);
 		mnstr_printf(ACout, "--timestamp=%d\n", timestamp);
 		mnstr_printf(ACout, "--statistics=%d\n", statistics);
-		mnstr_printf(ACout, "--%s\n", server?"server":"client");
+		mnstr_printf(ACout, "--%s\n", mode == ACTIVE?"active":"passive");
 	}
     strncpy(hostname,host,1024);
     if ( strcmp(host,"localhost")== 0 )
         gethostname(hostname,1024);
     host= hostname;
 
-	if (protocol == UDP) {
-		ac = ACnew(actuator);
-		ac->fromServer = udp_rastream(host, port, actuator);
-		if (ac->fromServer == NULL) {
-			perror("Actuator: Could not open stream");
-			mnstr_printf(ACout, "stream %s.%d.%s\n", host, port, actuator);
-			return 0;
-		}
-		consumeStream(ac);
-	}
 
-	if (server && (err = socket_server_connect(&sockfd, port))) {
-		mnstr_printf(ACout, "ACTUATOR:start server:%s\n", err);
-		return 0;
-	}
-	snprintf(name, MYBUFSIZ - (strlen(actuator) + sizeof(j)), "%s%d", actuator, j++);
-	ac = ACnew(name);
+	ac = ACnew(actuator);
 	name[0] = 0;
 	err = NULL;
+	if ( mode == PASSIVE) {
+		ac->fromServer = udp_rastream(host, port, actuator);
+		consumeStream(ac);
+#ifdef _DEBUG_ACTUATOR_
+			mnstr_printf(ACout, "stream consumed\n");
+#endif
+	}
+
+	if( mode == ACTIVE)
+    do {
+        err = socket_client_connect(&sockfd, host, port);
+        if (err) {
+            mnstr_printf(ACout, "actuator connect fails: %s\n", err);
+            MT_sleep_ms(1000);
+        }
+    } while (err);
+
+	if ( mode == PASSIVE )
+	{
+		err = socket_server_listen(sockfd, &(ac->newsockfd));
+		if (err) {
+			mnstr_printf(ACout, "ACTUATOR:server listen fails:%s\n", err);
+			return 0;
+		}
+	}
 	do {
-		if (server) {
+		if (mode == PASSIVE) {
 #ifdef _DEBUG_ACTUATOR_
 			mnstr_printf(ACout, "Actuator listens\n");
 #endif
-			err = socket_server_listen(sockfd, &(ac->newsockfd));
-			if (err) {
-				mnstr_printf(ACout, "ACTUATOR:server listen fails:%s\n", err);
-				continue;
+
+			if ( protocol == UDP) 
+				ac->fromServer = udp_rastream(host, port, actuator);
+			else
+				ac->fromServer = socket_rastream(ac->newsockfd, actuator);
+			if (ac->fromServer == NULL) {
+				perror("Actuator: Could not open stream");
+				mnstr_printf(ACout, "stream %s.%d.%s\n", host, port, actuator);
+				return 0;
 			}
-		} else {
+			consumeStream(ac);
+		} else 
+		if( mode == ACTIVE ) {
 #ifdef _DEBUG_ACTUATOR_
 			mnstr_printf(ACout, "Actuator connects\n");
 #endif
@@ -340,20 +358,23 @@ main(int argc, char **argv)
 				mnstr_printf(ACout, "ACTUATOR:start client:%s\n", err);
 				continue;
 			}
-		}
 
 #ifdef _DEBUG_ACTUATOR_
-		mnstr_printf(ACout, "Initialize stream\n");
+			mnstr_printf(ACout, "Initialize stream\n");
 #endif
-		ac->fromServer = socket_rastream(ac->newsockfd, actuator);
+			if ( protocol == UDP) 
+				ac->fromServer = udp_rastream(host, port, actuator);
+			else
+				ac->fromServer = socket_rastream(ac->newsockfd, actuator);
 
-		if (ac->fromServer == NULL) {
-			perror("Actuator: Could not open stream");
-			mnstr_printf(ACout, "stream %s.%d.%s\n", host, port, actuator);
-			continue;
+			if (ac->fromServer == NULL) {
+				perror("Actuator: Could not open stream");
+				mnstr_printf(ACout, "stream %s.%d.%s\n", host, port, actuator);
+				continue;
+			}
 		}
 		consumeStream(ac);
-	} while (server);
+	} while (mode == PASSIVE && (events == -1 || tuples < events) );
 	socket_close(sockfd);
 	terminate(ac);
 	return 0;
