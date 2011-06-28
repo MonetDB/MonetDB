@@ -4,18 +4,18 @@
 
 set optimizer='datacell_pipe';
 
-create table datacell.bsktin(
+create table datacell.potin(
     id integer,
     tag timestamp,
     payload integer
 );
-create table datacell.bsktout( tag timestamp, cnt integer);
+create table datacell.potout( tag timestamp, cnt integer);
 
-call datacell.receptor('datacell.bsktin','localhost',50500);
+call datacell.receptor('datacell.potin','localhost',50500);
 
-call datacell.emitter('datacell.bsktout','localhost',50600);
+call datacell.emitter('datacell.potout','localhost',50600);
 
-call datacell.query('datacell.pass', 'insert into datacell.bsktout select now(), count(*) from datacell.bsktin;');
+call datacell.query('datacell.putter', 'insert into datacell.potout select now(), count(*) from datacell.potin;');
 
 call datacell.resume();
 call datacell.dump();
@@ -28,6 +28,6 @@ call datacell.dump();
 
 -- wrapup
 call datacell.postlude();
-drop table datacell.bsktin;
-drop table datacell.bsktout;
+drop table datacell.potin;
+drop table datacell.potout;
 
