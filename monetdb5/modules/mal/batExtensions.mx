@@ -87,6 +87,9 @@ comment "Extract the first tuple from a BAT.";
 pattern bat.pack(h:any_1,t:any_2):bat[:any_1,:any_2]
 address CMDbatpack
 comment "Pack a pair of values into a BAT.";
+pattern bat.pack(v:any_1):bat[:oid,:any_1]
+address CMDbatsingleton
+comment "Create a BAT and store the value";
 
 pattern bat.setBase(b:bat[:any_1,:any_2],c:bat[:any_1,:any_2]...):void
 address CMDsetBase
@@ -131,6 +134,7 @@ be_export str CMDbatunpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 be_export str CMDbatpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 be_export str CMDbatpartition2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 be_export str CMDbatpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+be_export str CMDbatsingleton(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 be_export str CMDsetBase(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 @-
@@ -561,6 +565,24 @@ CMDbatpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	b = BATnew(ht, tt, cap);
 	BUNins(b, (ptr) getArgReference(stk, pci, 1), getArgReference(stk, pci, 2), FALSE);
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
+	*ret = b->batCacheid;
+	BBPkeepref(*ret);
+	return MAL_SUCCEED;
+}
+str
+CMDbatsingleton(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int *ret = (int*) getArgReference(stk,pci,0);
+	BAT *b;
+	oid o = 0;
+	(void) cntxt;
+
+	b= BATnew(TYPE_oid, getArgType(mb,pci,1), BATTINY);
+	if ( b == NULL)
+		throw(MAL, "bat.pack", MAL_MALLOC_FAIL);
+	BATseqbase(b,o);
+	BUNins(b, &o, getArgReference(stk,pci,1), FALSE);
+
 	*ret = b->batCacheid;
 	BBPkeepref(*ret);
 	return MAL_SUCCEED;
