@@ -369,8 +369,8 @@ DCquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* if so, get its definition to be compiled */
 
 	msg = SQLstatementIntern(cntxt, def, ltbl, 0, 0);
-	/* if ( msg )
-		return msg; */
+	if ( msg )
+		return msg;
 	scope = findModule(cntxt->nspace,putName(lsch,strlen(lsch)));
 	s = newFunction(putName(lsch,strlen(lsch)), putName(ltbl, strlen(ltbl)),FUNCTIONsymbol);
 	if ( s == NULL) 
