@@ -25,10 +25,10 @@ returns table (kind string, nme string)
    external name datacell.inventory;
 
 create procedure datacell.receptor(tbl string, host string, portid integer)
-    external name receptor."start";
+    external name datacell.receptor;
 
 create procedure datacell.emitter(tbl string, host string, portid integer)
-    external name emitter."start";
+    external name datacell.emitter;
 
 create procedure datacell.mode(tbl string, mode string)
 	external name datacell.mode;

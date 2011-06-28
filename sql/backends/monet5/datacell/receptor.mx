@@ -53,6 +53,10 @@ command resume(tbl:str)
 address DCreceptorResume
 comment "Resume a receptor thread";
 
+command resume()
+address RCresume
+comment "Resume all receptor threads";
+
 command scenario(tbl:str, fnme:str, sequence:int)
 address DCscenario
 comment "Use a file scenario to be run a number of times.
@@ -131,6 +135,7 @@ event stream at the same speed as it arrives.
 adapters_export str DCreceptorNew(int *ret, str *tbl, str *host, int *port);
 adapters_export str DCreceptorPause(int *ret, str *nme);
 adapters_export str DCreceptorResume(int *ret, str *nme);
+adapters_export str RCresume(int *ret);
 adapters_export str RCdrop(int *ret, str *nme);
 adapters_export str RCreset(int *ret);
 adapters_export str RCmode(int *ret, str *nme, str *arg);
@@ -194,7 +199,6 @@ typedef struct RECEPTOR {
 static Receptor rcAnchor = NULL;
 static str rcError = NULL;
 static int rcErrorEvent = 0;
-static int protocol = TCP;
 
 static str RCstartThread(Receptor rc);
 static void RCscenario(Receptor rc);
@@ -257,6 +261,7 @@ DCreceptorNew(int *ret, str *tbl, str *host, int *port )
 	rc->modnme = 0;
 	rc->fcnnme = 0;
 	rc->mode = RCPASSIVE;
+	rc->protocol = UDP;
 
 	rc->bskt = idx = BSKTlocate(*tbl);
 	if (idx == 0) /* should not happen */
@@ -333,6 +338,16 @@ str DCreceptorResume(int *ret, str *nme)
 	mnstr_printf(RCout, "#Resume a receptor\n");
 #endif
 	(void)ret;
+	return MAL_SUCCEED;
+}
+
+str
+RCresume(int *ret)
+{
+	Receptor rc;
+	for( rc = rcAnchor; rc ; rc= rc->nxt) 
+	if (rc ->status == RCSTOP)
+		DCreceptorResume(ret, &rc->name);
 	return MAL_SUCCEED;
 }
 
@@ -456,12 +471,7 @@ RCreconnect(Receptor rc)
 {
 	do {
 		rc->error = NULL;
-		if (protocol == UDP) {
-			rc->receptor = udp_rastream(rc->host, rc->port, rc->name);
-			if (rc->receptor == NULL)
-				rc->error = GDKstrdup("Could not open UDP stream");
-		}
-		if (protocol == TCP)
+		if (rc->mode == RCACTIVE)
 			rc->error = socket_client_connect(&rc->newsockfd, rc->host, rc->port);
 		if (rc->error) {
 			mnstr_printf(RCout, "#Receptor connect fails: %s\n", rc->error);
@@ -496,7 +506,9 @@ RCbody(Receptor rc)
 
 bodyRestart:
 	/* create the channel the first time or when connection was lost. */
-	rc->receptor = socket_rastream(rc->newsockfd, rc->name);
+	if ( rc->mode == RCACTIVE && rc->protocol == UDP)
+		rc->receptor = udp_rastream(rc->host, rc->port, rc->name);
+	else rc->receptor = socket_rastream(rc->newsockfd, rc->name);
 	if (rc->receptor == NULL) {
 		perror("Receptor: Could not open stream");
 		mnstr_printf(RCout, "#stream %s.%d.%s\n", rc->host, rc->port, rc->name);
@@ -769,30 +781,15 @@ in passive mode.  The UDP channel part is not our focus right now.
 str
 RCstartThread(Receptor rc)
 {
-	GDKprotect();
-
 #ifdef _DEBUG_RECEPTOR_
 	mnstr_printf(RCout, "#Receptor body %s starts at %s:%d\n", rc->name, rc->host, rc->port);
 #endif
-	if (protocol == UDP) {
-		rc->receptor = udp_rastream(rc->host, rc->port, rc->name);
-		if (rc->receptor == NULL) {
-			perror("Receptor: Could not open stream");
-			mnstr_printf(RCout, "stream %s.%d.%s\n", rc->host, rc->port, rc->name);
-			return NULL;
-		}
-		RCbody(rc);
-#ifdef _DEBUG_RECEPTOR_
-		mnstr_printf(RCout, "#End of receptor thread\n");
-#endif
-		return NULL;
-	}
 
-	/* Handle the TCP protocol */
+	/* Handle a server mode protocol */
 #ifdef _DEBUG_RECEPTOR_
 	mnstr_printf(RCout, "#Start the receptor thread, protocol=%d\n", rc->protocol);
 #endif
-	if (rc->protocol == RCPASSIVE &&
+	if (rc->mode == RCPASSIVE &&
 		(rc->error = socket_server_connect(&rc->sockfd, rc->port))) {
 		rc->status = RCERROR;
 		mnstr_printf(RCout, "Failed to start receptor server:%s\n", rc->error);
@@ -802,8 +799,10 @@ RCstartThread(Receptor rc)
 	/* the receptor should continously attempt to either connect the
 	   remote site for new events or listing for the next request */
 	do {
-		if (rc->status == RCSTOP) return NULL;
-		if (rc->protocol == RCPASSIVE) {
+		if (rc->status == RCSTOP) 
+			break;
+		if (rc->mode == RCPASSIVE) {
+			/* in server mode you should expect new connections */
 #ifdef _DEBUG_RECEPTOR_
 			mnstr_printf(RCout, "#Receptor listens\n");
 #endif
@@ -812,22 +811,20 @@ RCstartThread(Receptor rc)
 				mnstr_printf(RCout, "Receptor listen fails: %s\n", rc->error);
 				rc->status = RCERROR;
 			}
-		}
 #ifdef _DEBUG_RECEPTOR_
 			mnstr_printf(RCout, "#Receptor connection request received \n");
 #endif
-		/* in server mode you should expect new connections */
-		if (rc->protocol == RCPASSIVE) {
 			if (MT_create_thread(&rc->pid, (void (*)(void *))RCbody, rc, MT_THR_DETACHED) != 0) {
 				mnstr_close(rc->receptor);
 				throw(MAL, "receptor.start", "Process creation failed");
 			}
 		} else
 		if ( rc->mode == RCACTIVE) {
+			/* take the initiative to connect to sensor */
 			RCreconnect(rc);
 			RCbody(rc);
 		}
-	} while (rc->mode == RCPASSIVE && rc->status != RCSTOP);
+	} while (rc->status != RCSTOP);
 	shutdown(rc->newsockfd, SHUT_RDWR);
 	return MAL_SUCCEED;
 }

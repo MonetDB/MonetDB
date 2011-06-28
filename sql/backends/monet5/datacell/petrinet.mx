@@ -29,7 +29,7 @@ Both query and emitter attached are scheduled.
 @end example
 @mal
 module petrinet;
-pattern register(mod:str,fcn:str, delay:int):void
+pattern register(nme:str, delay:int):void
 address PNregister
 comment "Add a continous query to the Petri net. It will analyse
 the MAL block to determine the input/output dependencies. 

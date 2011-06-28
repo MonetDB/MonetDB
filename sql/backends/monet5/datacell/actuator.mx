@@ -313,7 +313,6 @@ main(int argc, char **argv)
 		consumeStream(ac);
 	}
 
-	/* Handle TCP protocol */
 	if (server && (err = socket_server_connect(&sockfd, port))) {
 		mnstr_printf(ACout, "ACTUATOR:start server:%s\n", err);
 		return 0;

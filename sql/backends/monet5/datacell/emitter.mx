@@ -49,6 +49,10 @@ command resume(tbl:str)
 address DCemitterResume
 comment "Resume a emitter thread";
 
+command resume()
+address EMresume
+comment "Resume all emitter threads";
+
 command mode(tbl:str, arg:str)
 address EMmode
 comment "Set the mode of the emitter to either active/passive");
@@ -81,7 +85,7 @@ The implementation is derived from the emitter module.
 #include "mtime.h"
 #include "basket.h"
 
-#define _DEBUG_EMITTER_ 
+/* #define _DEBUG_EMITTER_ */
 #define EMout GDKout
 
 #ifdef WIN32
@@ -97,6 +101,7 @@ The implementation is derived from the emitter module.
 adapters_export str DCemitterNew(int *ret, str *tbl, str *host, int *port);
 adapters_export str DCemitterPause(int *ret, str *nme);
 adapters_export str DCemitterResume(int *ret, str *nme);
+adapters_export str EMresume(int *ret);
 adapters_export str EMstop(int *ret, str *nme);
 adapters_export str EMreset(int *ret);
 adapters_export str EMdump();
@@ -297,6 +302,16 @@ str DCemitterResume(int *ret, str *nme)
 	return MAL_SUCCEED;
 }
 
+str
+EMresume(int *ret)
+{
+	Emitter em;
+	for( em = emAnchor; em ; em= em->nxt) 
+	if (em ->status == EMSTOP)
+		DCemitterResume(ret, &em->name);
+	return MAL_SUCCEED;
+}
+
 str EMstop(int *ret, str *nme)
 {
 	Emitter em, rb;
@@ -408,7 +423,7 @@ EMbody(Emitter em)
 
 bodyRestart:
 	/* create the actual channel */
-	if ( em->protocol == UDP)
+	if (em->mode == EMACTIVE && em->protocol == UDP)
 			em->emitter = udp_wastream(em->host, em->port, em->name);
 	else
 		em->emitter = socket_wastream(em->newsockfd, em->name);
@@ -527,9 +542,10 @@ EMstartThread(Emitter em)
 		mnstr_printf(EMout, "EMSTART THREAD: failed to start server:%s\n", em->error);
 		return MAL_SUCCEED;
 	}
-	do {
-		if (em->status == EMSTOP) return MAL_SUCCEED;
+	while (em->status != EMSTOP)
+	{
 		if (em->mode == EMPASSIVE) {
+			/* in server mode you should expect new connections */
 #ifdef _DEBUG_EMITTER_
 			mnstr_printf(EMout, "Emitter listens\n");
 #endif
@@ -538,22 +554,22 @@ EMstartThread(Emitter em)
 				em->status = EMERROR;
 				mnstr_printf(EMout, "Emitter listen fails: %s\n", em->error);
 			}
-		}
 
-		/* in server mode you should expect new connections */
-		if (em->mode == EMACTIVE) {
 			if (MT_create_thread(&em->pid, (void (*)(void *))EMbody, em, MT_THR_DETACHED) != 0) {
 				close_stream(em->emitter);
 				throw(MAL, "emitter.start", "Process creation failed");
 			}
-		} else {
+		} else
+		if ( em->mode == EMACTIVE) {
+			/* connect the actuator */
 			EMreconnect(em);
 			EMbody(em);
 		}
-	} while (em->mode == EMPASSIVE);
+	} 
 	shutdown(em->newsockfd, SHUT_RDWR);
 	return MAL_SUCCEED;
 } 
+
 static void
 dumpEmitter(Emitter em)
 {

@@ -124,7 +124,7 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			}
 
 			fnd = 0;
-			if (  getFunctionId(p) == bindRef && getVarConstant(mb, getArg(p, p->argc-1)).val.ival == 0  ){
+			if ( bskt &&  getFunctionId(p) == bindRef && getVarConstant(mb, getArg(p, p->argc-1)).val.ival == 0  ){
 				/* only the primary BAT is used and inject the call to empty the basket. */
 				for( j = 0; fnd == 0 && j < baskets[bskt].colcount; j++)
 				if ( strcmp( baskets[bskt].cols[j], col) == 0){

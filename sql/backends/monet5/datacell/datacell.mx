@@ -29,11 +29,11 @@ address DCregister
 comment "Initialize a new basket based on a specific table definition in the datacell schema");
 
 pattern emitter(tbl:str, host:str, port:int)
-address DCemitterNew
+address DCemitter
 comment "Define a emitter based on a basket table.";
 
 pattern receptor(tbl:str, host:str, port:int)
-address DCreceptorNew
+address DCreceptor
 comment "Define a receptor based on a basket table..";
 
 pattern mode(tbl:str, arg:str)
@@ -53,7 +53,7 @@ address DCpause
 comment "Pause a receptor or emitter";
 
 pattern resume(obj:str):void
-address DCresume
+address DCresumeObject
 comment "Pause a receptor or emitter";
 
 pattern query(name:str,def:str):void
@@ -79,7 +79,7 @@ address DCpauseScheduler
 comment "(Re)start the petrinet scheduler.";
 
 pattern resume()
-address DCresumeScheduler
+address DCresume
 comment "Resume the petrinet scheduler.";
 
 pattern postlude()
@@ -121,9 +121,11 @@ comment "Dump receptor/emitter status";
 /* #define _DEBUG_DATACELL     debug this module */
 
 datacell_export str DCprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+datacell_export str DCreceptor(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str DCregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str DCremove(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str DCpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+datacell_export str DCresumeObject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str DCresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str DCmode(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str DCprotocol(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -194,6 +196,32 @@ DCprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
+DCreceptor(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int *ret = (int *) getArgReference(stk,pci,0);
+	str *tbl = (str *) getArgReference(stk,pci,1);
+	str *host = (str *) getArgReference(stk,pci,2);
+	int *port  = (int *) getArgReference(stk,pci,3);
+	int  idx = BSKTlocate(*tbl);
+	if ( idx == 0)
+		BSKTregister(cntxt,mb,stk,pci);
+	return DCreceptorNew(ret,tbl,host,port);
+}
+
+str
+DCemitter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int *ret = (int *) getArgReference(stk,pci,0);
+	str *tbl = (str *) getArgReference(stk,pci,1);
+	str *host = (str *) getArgReference(stk,pci,2);
+	int *port  = (int *) getArgReference(stk,pci,3);
+	int  idx = BSKTlocate(*tbl);
+	if ( idx == 0)
+		BSKTregister(cntxt,mb,stk,pci);
+	return DCemitterNew(ret,tbl,host,port);
+}
+
+str
 DCregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	return BSKTregister(cntxt,mb,stk,pci);
@@ -217,7 +245,7 @@ DCpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-DCresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+DCresumeObject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int idx, ret= 0;
 	str tbl= *(str*) getArgReference(stk, pci,1);
@@ -231,6 +259,15 @@ DCresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 	return MAL_SUCCEED;
+}
+
+str
+DCresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int ret;
+	RCresume(&ret);
+	EMresume(&ret);
+	return DCresumeScheduler(cntxt,mb,stk,pci);
 }
 
 str
@@ -355,6 +392,7 @@ DCquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			msg = optimizerCheck(cntxt, s->def, "optimizer.datacell", 1, GDKusec() - clk, OPT_CHECK_ALL);
 		addtoMalBlkHistory(mb, "datacell");
 	}
+	PNregister(cntxt,mb,stk,pci);
 	return msg;
 }
 

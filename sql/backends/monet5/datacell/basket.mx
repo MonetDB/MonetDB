@@ -355,6 +355,7 @@ BSKTreset(int *ret)
 {
 	int i;
 	for ( i = 1; i < bsktLimit; i++)
+	if ( baskets[i].name)
 		BSKTdrop(ret, &baskets[i].name);
 	return MAL_SUCCEED;
 }
