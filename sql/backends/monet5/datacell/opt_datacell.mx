@@ -183,7 +183,12 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 					break;
 				}
 				if ( fnd) {
+					/* upgrade single values to a BAT */
 					clrFunction(p);
+					if ( !isaBatType(getVarType(mb,getArg(p,5))) ) {
+						getModuleId(p) = batRef;
+						getFunctionId(p) = packRef;
+					} 
 					getArg(p, 0) = getArg(qa[j], k + 2);
 					getArg(p, 1) = getArg(p, 5);
 					p->argc = 2;

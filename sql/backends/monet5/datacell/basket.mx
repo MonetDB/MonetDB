@@ -44,6 +44,10 @@ pattern grab(tbl:str):bat[:oid,:any]...
 address BSKTgrab
 comment "Take a snapshot of the basket, destroying the origin when flg is set";
 
+pattern pass(tbl:str, cols:any...)
+address BSKTpass
+comment "Dump the new tuples into the basket";
+
 pattern pass(tbl:str, cols:bat[:oid,:any]...)
 address BSKTpass
 comment "Dump the new tuples into the basket";
