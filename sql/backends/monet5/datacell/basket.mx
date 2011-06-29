@@ -56,6 +56,14 @@ command drop(tbl:str):void
 address BSKTdrop
 comment "Remove the basket";
 
+command threshold(tbl:str,N:int):bit
+address BSKTthreshold
+comment "Set an acceptance threshold of N events before inspecting";
+
+command window(tbl:str,N:int, S:int):bit
+address BSKTwindow
+comment "Use a window of N event and slide S afterwards";
+
 command reset():void
 address BSKTreset
 comment "Remove all baskets";
@@ -91,6 +99,10 @@ comment "Dump the status of the basket table";
 typedef struct{
 	MT_Lock lock;
 	str name;	/* table that represents the basket */
+	int threshold ; /* bound to determine scheduling eligibility */
+	int delay;	/* heartbeat to schedule next inspection */
+	int winsize, winslide; /* sliding window operations */
+	lng lastseen;
 	int colcount;
 	str *cols;
 	BAT **primary;	
@@ -107,6 +119,8 @@ datacell_export int BSKTlocate(str tbl);
 datacell_export str BSKTdump(int *ret);
 datacell_export str BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str BSKTpass(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+datacell_export str BSKTthreshold(int *ret, str *tbl, int *sz);
+datacell_export str BSKTwindow(int *ret, str *tbl, int *sz, int *slide);
 
 datacell_export str BSKTlock(int *ret, str *tbl, int *delay);
 datacell_export str BSKTunlock(int *ret, str *tbl);
@@ -370,9 +384,12 @@ BSKTdump(int *ret)
 
 	for ( bskt = 0; bskt < bsktLimit; bskt++) 
 	if ( baskets[bskt].name){
-		mnstr_printf(GDKout, "#baskets[%2d] %s columns %d events " BUNFMT "\n", bskt,
+		mnstr_printf(GDKout, "#baskets[%2d] %s columns %d threshold %d window=[%d,%d] events " BUNFMT "\n", bskt,
 			baskets[bskt].name,
 			baskets[bskt].colcount,
+			baskets[bskt].threshold,
+			baskets[bskt].winsize,
+			baskets[bskt].winslide,
 			(baskets[bskt].primary[0]? BATcount(baskets[bskt].primary[0]): 0));
 	}
 	(void)ret;
@@ -384,7 +401,7 @@ BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str tbl;
 	int bskt, i, *ret;
-	BAT *b,*bn;
+	BAT *b,*bn,*v;
 
 	(void) cntxt;
 	(void) mb;
@@ -395,14 +412,27 @@ BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL,"basket.grab","Basket not found");
 	if ( baskets[bskt].colcount != pci->retc)
 		throw(MAL,"basket.grab","Incompatible arguments");
+
 	mal_set_lock(baskets[bskt].lock, "lock basket");
 	for ( i=0; i < baskets[bskt].colcount; i++) {
 		ret= (int*) getArgReference(stk,pci,i);
 		b = baskets[bskt].primary[i];
-		bn = BATcopy(b, b->htype, b->ttype,TRUE);
+
+		/* take care of sliding windows */
+		if ( baskets[bskt].winsize ){
+			bn = BATcopy(b, b->htype, b->ttype,TRUE);
+			v = BATslice(bn, baskets[bskt].winslide,BATcount(bn));
+			BATclear(b);
+			BATins(b,v, FALSE);
+			BATsetcount(bn, baskets[bskt].winsize);
+			BBPunfix(v->batCacheid);
+		} else {
+			bn = BATcopy(b, b->htype, b->ttype,TRUE);
+			BATclear(b);
+		}
+
 		*ret = bn->batCacheid;
 		BBPkeepref(*ret);
-		BATclear(b);
 	}
 	mal_unset_lock(baskets[bskt].lock, "unlock basket");
 	return MAL_SUCCEED;
@@ -483,5 +513,43 @@ BSKTpassInstruction(MalBlkPtr mb, str tbl)
 		p= pushArgument(mb,p, j);
 	}
 	return p;
+}
+
+str
+BSKTthreshold(int *ret, str *tbl, int *sz)
+{
+	int bskt;
+	bskt = BSKTlocate(*tbl);
+	if (bskt == 0 )
+		throw(MAL,"basket.threshold","Basket not found");
+	if ( *sz < 0)
+		throw(MAL,"basket.threshold","Illegal value");
+	if ( *sz < baskets[bskt].winsize)
+		throw(MAL,"basket.threshold","Threshold smaller then window size");
+	baskets[bskt].threshold = *sz;
+	*ret = TRUE;
+	return MAL_SUCCEED;
+}
+
+str
+BSKTwindow(int *ret, str *tbl, int *sz, int *slide)
+{
+	int idx;
+
+	idx = BSKTlocate(*tbl);
+	if (idx == 0 )
+		throw(MAL,"basket.window","Basket not found");
+	if ( *slide < 0 || *slide > *sz)
+		throw(MAL,"basket.window","Illegal window slide");
+	if ( *sz < 0 )
+		throw(MAL,"basket.window","Illegal window size");
+
+	/* administer the required size */
+	baskets[idx].winsize = *sz;
+	if ( baskets[idx].threshold < *sz)
+		baskets[idx].threshold = *sz;
+	baskets[idx].winslide = *slide;
+	*ret = TRUE;
+	return MAL_SUCCEED;
 }
 @}

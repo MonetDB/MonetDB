@@ -42,17 +42,11 @@ create procedure datacell.pause (tbl string)
 create procedure datacell.resume (tbl string)
     external name datacell.resume;
 
-create procedure datacell.remove (tbl string)
-    external name datacell.remove;
-
 create procedure datacell.query(proc string, def string)
 	external name datacell.query;
 
-create procedure datacell.register(proc string)
-	external name datacell.register;
-
-create procedure datacell.unregister(proc string)
-	external name datacell.unregister;
+create procedure datacell.remove (obj string)
+    external name datacell.remove;
 
 -- scheduler activation
 create procedure datacell.prelude()
@@ -69,3 +63,17 @@ create procedure datacell.resume()
 
 create procedure datacell.dump()
 	external name datacell.dump;
+
+
+-- Continueous query predicates.
+create function datacell.threshold(bskt string, mi integer)
+returns boolean
+	external name datacell.threshold;
+
+create function datacell.window(bskt string, size integer, slide integer)
+returns boolean
+	external name datacell.window;
+
+create function datacell.beat(bskt string, t integer)
+returns boolean
+	external name datacell.beat;

@@ -60,20 +60,6 @@ pattern query(name:str,def:str):void
 address DCquery
 comment "Add a new continuous query.";
 
-pattern register(def:str, delay:int):void
-address PNregister
-comment "Add a new continuous query to the scheduler with an
-indicative maximum delady of scheduling.";
-
-pattern register(def:str):void
-address PNregister
-comment "Add a new continuous query to the scheduler.";
-
-pattern unregister(def:str):void
-address PNunregister
-comment "Remove a new continuous query from the scheduler.";
-
-
 pattern pause()
 address DCpauseScheduler
 comment "(Re)start the petrinet scheduler.";
@@ -93,6 +79,18 @@ comment "Produce a tabular view of the datacell streaming components";
 command dump()
 address DCdump
 comment "Dump receptor/emitter status";
+
+command threshold(bskt:str, mi:int):bit
+address DCthreshold 
+comment "Prefilter on bucket content";
+
+command window(bskt:str, size:int, slide:int):bit
+address DCwindow
+comment "Slide the basket with a limited number of events";
+
+command beat(bskt:str, t:int):bit
+address DCbeat
+comment "Schedule query with T milliseconds interval";
 @{
 @h
 #ifndef _DATACELLS_
@@ -131,6 +129,9 @@ datacell_export str DCmode(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 datacell_export str DCprotocol(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str DCquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str DCdump(int *ret);
+datacell_export str DCthreshold(int *ret, str *bskt, int *mi);
+datacell_export str DCwindow(int *ret, str *bskt, int *sz, int *slide);
+datacell_export str DCbeat(int *ret, str *bskt, int *t);
 
 datacell_export str DCpauseScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str DCresumeScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -274,11 +275,11 @@ str
 DCremove(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int idx;
-	str tbl= *(str*) getArgReference(stk, pci,1);
+	str nme= *(str*) getArgReference(stk, pci,1);
 
 	(void) cntxt;
 	(void) mb;
-	idx = BSKTlocate(tbl);
+	idx = BSKTlocate(nme);
 	if ( idx == 0) 
 		throw(MAL,"datacell.remove","Basket not found");
 	/* remove basket  and corresponding receptor/emitters depending on it*/
@@ -424,9 +425,9 @@ str
 DCpostlude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int ret=0;
-	PNstopScheduler(&ret);
 	RCreset(&ret);
 	EMreset(&ret);
+	PNstopScheduler(&ret);
 	BSKTreset(&ret);
 	(void) cntxt;
 	(void) mb;
@@ -443,6 +444,30 @@ DCdump(int *ret)
 	RCdump();
 	EMdump();
 	PNdump(ret);
+	return MAL_SUCCEED;
+}
+
+str
+DCthreshold(int *ret, str *bskt, int *mi)
+{
+	return BSKTthreshold(ret,bskt,mi);
+}
+
+str
+DCwindow(int *ret, str *bskt, int *sz, int *slide)
+{
+	return BSKTwindow(ret,bskt,sz,slide);
+}
+
+str
+DCbeat(int *ret, str *bskt, int *t)
+{
+	int idx;
+	idx = BSKTlocate(*bskt);
+	if ( idx == 0)
+		throw(SQL, "datacell.beat", "Basket not found");
+	*ret = TRUE;
+	baskets[idx].delay = *t;
 	return MAL_SUCCEED;
 }
 @}

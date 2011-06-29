@@ -422,6 +422,8 @@ EMbody(Emitter em)
 	BAT *b;
 
 bodyRestart:
+	if ( em->status == EMDROP)
+		return;
 	/* create the actual channel */
 	if (em->mode == EMACTIVE && em->protocol == UDP)
 			em->emitter = udp_wastream(em->host, em->port, em->name);
@@ -455,8 +457,6 @@ If the thread is suspended, we sleep for at least one second.
 			for (j = 0; j < em->table.nr_attrs; j++) {
 				GDKfree(em->table.format[j].sep);
 				GDKfree(em->table.format[j].name);
-				if (em->table.format[j].c)
-					BBPdecref(em->table.format[j].c[0]->batCacheid, TRUE);
 			}
 			GDKfree(em->table.format);
 			shutdown(em->newsockfd, SHUT_RDWR);
@@ -509,7 +509,8 @@ If the thread is suspended, we sleep for at least one second.
 #ifdef _DEBUG_EMITTER_
 		mnstr_printf(EMout, "Restart the connection\n");
 #endif
-		EMreconnect(em);
+		if ( em->status != EMSTOP)
+			EMreconnect(em);
 		goto bodyRestart;
 	}
 #ifdef _DEBUG_EMITTER_
