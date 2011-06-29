@@ -445,8 +445,10 @@ BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPkeepref(*ret);
 	}
 	mal_unset_lock(baskets[bskt].lock, "unlock basket");
-	if ( i != baskets[bskt].colcount)
+	if ( i != baskets[bskt].colcount) {
+		BBPunfix( bn->batCacheid);
 		throw(MAL,"basket.grab","too early");
+	}
 	return MAL_SUCCEED;
 }
 
@@ -577,9 +579,9 @@ BSKTbeat(int *ret, str *tbl, int *sz)
 	if ( *sz < baskets[bskt].winsize)
 		throw(MAL,"basket.threshold","Threshold smaller then window size");
 	baskets[bskt].beat = *sz;
+	*ret = TRUE;
 	if ( baskets[bskt].beat + baskets[bskt].lastseen < GDKusec() )
 		throw(MAL,"basket.heat","too early");
-	*ret = TRUE;
 	return MAL_SUCCEED;
 }
 @}
