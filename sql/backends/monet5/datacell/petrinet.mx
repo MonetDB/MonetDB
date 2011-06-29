@@ -573,10 +573,10 @@ PNcontroller(void *dummy)
 				pnet[i].cycletime += GDKusec() - t;
 				if ( msg != MAL_SUCCEED){
 					char buf[BUFSIZ];
-					if ( pnet[i].error )
-						GDKfree(pnet[i].error);
-					snprintf(buf,BUFSIZ-1,"Function: %s failed:%s", pnet[i].fcn, msg);
-					pnet[i].error = GDKstrdup(buf);
+					if ( pnet[i].error == NULL ) {
+						snprintf(buf,BUFSIZ-1,"Query %s failed:%s", pnet[i].fcn, msg);
+						pnet[i].error = GDKstrdup(buf);
+					} else GDKfree(msg);
 					pnet[i].enabled = -1;
 				} else {
 					pnet[i].cycles++;

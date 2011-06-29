@@ -11,7 +11,7 @@ create table datacell.winin(
     tag timestamp,
     payload integer
 );
-create table datacell.winout( tag timestamp, mi integer, ma integer, su integer);
+create table datacell.winout( tag timestamp, mi integer, ma integer, su bigint);
 
 call datacell.receptor('datacell.winin','localhost',50500);
 

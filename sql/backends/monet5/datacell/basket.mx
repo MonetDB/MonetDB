@@ -423,6 +423,7 @@ BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			bn = BATcopy(b, b->htype, b->ttype,TRUE);
 			v = BATslice(bn, baskets[bskt].winslide,BATcount(bn));
 			BATclear(b);
+			b = BATsetaccess(b, BAT_WRITE);
 			BATins(b,v, FALSE);
 			BATsetcount(bn, baskets[bskt].winsize);
 			BBPunfix(v->batCacheid);
