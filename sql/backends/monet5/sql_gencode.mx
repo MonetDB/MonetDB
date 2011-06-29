@@ -577,6 +577,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if (s->op1) {
 				if (VAR_GLOBAL(s->flag)) { /* globals */
 					int tt = tail_type(s)->type->localtype;
+
 					q = newStmt1(mb, sqlRef, "getVariable");
 					q = pushArgument(mb, q, sql->mvc_var);
 					q = pushStr(mb, q, s->op1->op4.aval->data.val.sval);

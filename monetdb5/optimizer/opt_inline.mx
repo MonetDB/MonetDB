@@ -70,12 +70,14 @@ isCorrectInline(MalBlkPtr mb){
 	return retseen <= 1;
 }
 
+
 int
 OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i,limit;
 	InstrPtr q,sig;
 	int actions = 0;
+
 	(void) p;
 
 	limit = mb->stop;
@@ -92,7 +94,6 @@ They are produced by SQL compiler.
 				printInstruction(cntxt->fdout,mb,0,q,LIST_MAL_ALL);
 				printInstruction(cntxt->fdout,q->blk,0,sig,LIST_MAL_ALL);
 			}
-
 			if( getModuleId(q) == malRef &&
 				getFunctionId(q)== multiplexRef &&
 				OPTinlineMultiplex(cntxt,mb,q)){

@@ -1324,6 +1324,7 @@ hasSideEffects(InstrPtr p, int strict)
 		/* assertions are the end-point of a flow path */
 		if (getFunctionId(p) == not_uniqueRef) return FALSE;
 		if (getFunctionId(p) == zero_or_oneRef) return FALSE;
+		if (getFunctionId(p) == mvcRef) return FALSE;
 		/* the update instructions for SQL has side effects.
 		   whether this is relevant should be explicitly checked
 		   in the environment of the call */
@@ -1364,7 +1365,7 @@ Side-effect free functions are crucial for several operators.
 int
 isSideEffectFree(MalBlkPtr mb){
 	int i;
-	for(i=1; i< mb->stop; i++){
+	for(i=1; i< mb->stop && getInstrPtr(mb,i)->token != ENDsymbol; i++){
 		if( hasSideEffects(getInstrPtr(mb,i), TRUE))
 			return FALSE;
 	}

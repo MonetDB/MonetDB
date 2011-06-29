@@ -57,6 +57,7 @@ comment "Dataflow bracket code injection";
 #include "opt_support.h"
 
 #define OPTDEBUGdataflow  if ( optDebug & (1 <<DEBUG_OPT_DATAFLOW) )
+opt_export void removeDataflow(InstrPtr *old, int limit);
 
 @-
 The statemens are all checked for being eligible for dataflow.
@@ -97,6 +98,28 @@ The statemens are all checked for being eligible for dataflow.
 #include "opt_dataflow.h"
 #include "mal_instruction.h"
 #include "mal_interpreter.h"
+
+void removeDataflow(InstrPtr *old, int limit)
+{
+	int i, flowblock=0;
+	InstrPtr p;
+	/* remove the inlined dataflow barriers */
+	for (i = 1; i<limit; i++) {
+		p = old[i];
+
+		if (!flowblock && blockStart(p) && 
+		    getModuleId(p) == languageRef &&
+		    getFunctionId(p) == dataflowRef){
+			flowblock = getArg(p,0);
+			freeInstruction(p);
+			old[i] = NULL;
+		} else if (flowblock && blockExit(p) && getArg(p,0) == flowblock) {
+			flowblock = 0;
+			freeInstruction(p);
+			old[i] = NULL;
+		}
+	}
+}
 
 static int
 dflowAssignTest(Lifespan span, InstrPtr p, int i)
@@ -148,21 +171,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	}
 	pushInstruction(mb,old[0]);
 
-	/* remove the inlined dataflow barriers */
-	for (i = 1; i<limit; i++) {
-		p = old[i];
-
-		if (!flowblock && blockStart(p) && 
-		    getFunctionId(p) == dataflowRef){
-			flowblock = getArg(p,0);
-			freeInstruction(p);
-			old[i] = NULL;
-		} else if (flowblock && blockExit(p) && getArg(p,0) == flowblock) {
-			flowblock = 0;
-			freeInstruction(p);
-			old[i] = NULL;
-		}
-	}
+	removeDataflow(old,limit);
 
 	/* inject new dataflow barriers */
 	for (i = 1; i<limit; i++) {

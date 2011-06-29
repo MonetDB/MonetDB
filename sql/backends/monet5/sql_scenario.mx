@@ -573,7 +573,7 @@ front-ends to benefit from the SQL functionality.
 It expects a string and returns the name of the
 corresponding MAL block as it is known in the
 SQL_cache, where it can be picked up.
-The SQLstatement operation also executes the instruction.
+The SQLstatement operation also executes the instruction upon request.
 
 In both cases the SQL string is handled like an ordinary
 user query, following the same optimization paths and
@@ -730,6 +730,8 @@ We don;t search the cache for a previous incarnation yet.
 				freeVariables(c,c->curprg->def, c->glb, oldvtop);
 			}
 			sqlcleanup(m, 0);
+			if (!execute) 
+				goto endofcompile;
 		}
 #ifdef _SQL_COMPILE
 	mnstr_printf(c->fdout, "#parse/execute result %d\n", err);
@@ -739,7 +741,8 @@ We don;t search the cache for a previous incarnation yet.
 We are done; a MAL procedure recides in the cache.
 @c
 endofcompile:
-	MSresetInstructions(c->curprg->def, 1);
+	if (execute) 
+		MSresetInstructions(c->curprg->def, 1);
 
 	c->state[MAL_SCENARIO_PARSER] = be;
 	backend_destroy(sql);

@@ -45,16 +45,16 @@ _bind_table(sql_table *t, sql_schema *ss, sql_schema *s, char *name)
 }
 
 static sql_rel *
-rel_table(sql_allocator *sa, int cat_type, char *sname, sql_table *t, int nr)
+rel_table(mvc *sql, int cat_type, char *sname, sql_table *t, int nr)
 {
-	sql_rel *rel = rel_create(sa);
-	list *exps = new_exp_list(sa);
+	sql_rel *rel = rel_create(sql->sa);
+	list *exps = new_exp_list(sql->sa);
 
-	append(exps, exp_atom_int(sa, nr));
-	append(exps, exp_atom_str(sa, sname, sql_bind_localtype("str") ));
+	append(exps, exp_atom_int(sql->sa, nr));
+	append(exps, exp_atom_str(sql->sa, sname, sql_bind_localtype("str") ));
 	if (t)
-		append(exps, exp_atom_ptr(sa, t));
-	rel->l = NULL;
+		append(exps, exp_atom_ptr(sql->sa, t));
+	rel->l = rel_basetable(sql, t, t->base.name);
 	rel->r = NULL;
 	rel->op = op_ddl;
 	rel->flag = cat_type;
@@ -683,10 +683,19 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 	} 	break;
 	case SQL_LIKE:
 	{
+		char *sname = qname_schema(s->data.lval);
 		char *name = qname_table(s->data.lval);
-		sql_table *ot = mvc_bind_table(sql, ss, name);
+		sql_schema *os = NULL;
+		sql_table *ot = NULL;
 		node *n;
 
+		if (sname && !(os = mvc_bind_schema(sql, sname))) {
+			sql_error(sql, 02, "CREATE TABLE: no such schema '%s'", sname);
+			return SQL_ERR;
+		}
+		if (!os)
+			os = ss;
+	       	ot = mvc_bind_table(sql, os, name);
 		if (!ot)
 			return SQL_ERR;
 		for (n = ot->columns.set->h; n; n = n->next) {
@@ -798,7 +807,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 				return NULL;
 		}
 		temp = (tt == tt_table)?temp:SQL_PERSIST;
-		return rel_table(sql->sa, DDL_CREATE_TABLE, sname, t, temp);
+		return rel_table(sql, DDL_CREATE_TABLE, sname, t, temp);
 	} else { /* [col name list] as subquery with or without data */
 		sql_rel *sq = NULL, *res = NULL;
 		dlist *as_sq = table_elements_or_subquery->data.lval;
@@ -820,7 +829,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 
 		/* insert query result into this table */
 		temp = (tt == tt_table)?temp:SQL_PERSIST;
-		res = rel_table(sql->sa, DDL_CREATE_TABLE, sname, t, temp);
+		res = rel_table(sql, DDL_CREATE_TABLE, sname, t, temp);
 		if (with_data) {
 			res = rel_insert(sql, res, sq);
 		} else {
@@ -886,7 +895,7 @@ rel_create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symb
 				rel_destroy(sq);
 				return NULL;
 			}
-			return rel_table(sql->sa, DDL_CREATE_VIEW, s->base.name, t, SQL_PERSIST);
+			return rel_table(sql, DDL_CREATE_VIEW, s->base.name, t, SQL_PERSIST);
 		} else {
 			t = mvc_bind_table(sql, s, name);
 		}
@@ -1068,7 +1077,7 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 
 		if (!te) /* Set Read only */
 			nt = mvc_readonly(sql, nt, 1);
-		res = rel_table(sql->sa, DDL_ALTER_TABLE, sname, nt, 0);
+		res = rel_table(sql, DDL_ALTER_TABLE, sname, nt, 0);
 		if (!te) /* Set Read only */
 			return res;
 		/* table add table */

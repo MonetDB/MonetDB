@@ -41,28 +41,28 @@ lib__datacell = {
 		  petrinet.mx \
 		  dcoperator.mx \
 		  opt_datacell.mx \
+		  datacell.mx \
 		  emitter.mx 
 
-    LIBS = ../../../../monetdb5/tools/libmonetdb5 \
+	LIBS = ../../../../monetdb5/tools/libmonetdb5 \
 		../../../../gdk/libbat 
 }
 
-lib__actuator = {
-	MODULE
-	DIR = libdir/monetdb5
-	SEP = _
-	SOURCES = actuator.mx 
-    LIBS = ../../../../monetdb5/tools/libmonetdb5 \
-		../../../../gdk/libbat 
+bin_actuator = {
+	SOURCES = actuator.mx dcsocket.mx
+	LIBS = ../../../../common/stream/libstream \
+		   ../../../../common/options/libmoptions \
+		   ../../../../gdk/libbat \
+		   ../../../../monetdb5/tools/libmonetdb5
+		
 }
 
-lib__sensor = {
-	MODULE
-	DIR = libdir/monetdb5
-	SEP = _
-	SOURCES = sensor.mx
-    LIBS = ../../../../monetdb5/tools/libmonetdb5 \
-		../../../../gdk/libbat 
+bin_sensor = {
+	SOURCES = sensor.mx dcsocket.mx
+	LIBS = ../../../../common/stream/libstream \
+		   ../../../../common/options/libmoptions \
+		   ../../../../gdk/libbat \
+		   ../../../../monetdb5/tools/libmonetdb5
 }
 
 scripts_mal = {
@@ -72,14 +72,15 @@ scripts_mal = {
 		  receptor.mal \
 		  emitter.mal \
 		  petrinet.mal \
-		  opt_datacell.mx \
+		  datacell.mal \
+		  opt_datacell.mal \
 		  dcoperator.mal
 }
 
 scripts_sql = {
 	HEADERS = sql
-	DIR = libdir/monetdb5
-	SOURCES = datacell.sql 
+	DIR = libdir/monetdb5/createdb
+	SOURCES = 50_datacell.sql 
 }
 
 headers_datacellautoload = {
@@ -88,4 +89,4 @@ headers_datacellautoload = {
 	SOURCES = 50_datacell.mal
 }
 
-EXTRA_DIST = 50_datacell.mal datacell.sql
+EXTRA_DIST = 50_datacell.mal 50_datacell.sql

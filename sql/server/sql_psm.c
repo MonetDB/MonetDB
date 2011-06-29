@@ -592,7 +592,7 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 				if (instantiate) {
 					return b;
 				} else if (create) {
-					f = mvc_create_func(sql, sql->session->schema, fname, l, restype, is_aggr, "user", q, q, is_func);
+					f = mvc_create_func(sql, s, fname, l, restype, is_aggr, "user", q, q, is_func);
 					if (b) {
 						id_col_l = stmt_list_dependencies(sql->sa, b, COLUMN_DEPENDENCY);
 						id_func_l = stmt_list_dependencies(sql->sa, b, FUNC_DEPENDENCY);
@@ -613,7 +613,7 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 
 				sql->params = NULL;
 				if (create) {
-					sql_func *f = mvc_create_func(sql, sql->session->schema, fname, l, restype, is_aggr, fmod, fnme, q, is_func);
+					sql_func *f = mvc_create_func(sql, s, fname, l, restype, is_aggr, fmod, fnme, q, is_func);
 					if (!backend_resolve_function(sql, f)) 
 						return sql_error(sql, 01, "CREATE %s: external name %s.%s not bound", F, fmod, fnme);
 				} else if (!sf) {

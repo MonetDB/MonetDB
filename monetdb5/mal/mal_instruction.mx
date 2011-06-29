@@ -969,7 +969,6 @@ getRefName(MalBlkPtr mb, int i)
 	return nme;
 }
 
-@c
 int
 findVariable(MalBlkPtr mb, str name)
 {

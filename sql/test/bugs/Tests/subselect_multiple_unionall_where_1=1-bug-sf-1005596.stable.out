@@ -30,7 +30,25 @@ Over..
 % tinyint # type
 % 1 # length
 [ 1	]
-% .tables,	sys.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
+#SELECT * FROM (
+# 	SELECT 'demo' AS "TABLE_CAT",
+#		"schemas"."name" AS "TABLE_SCHEM",
+#		"tables"."name" AS "TABLE_NAME",
+#		'SYSTEM TABLE' AS "TABLE_TYPE",
+#		'' AS "REMARKS",
+#		null AS "TYPE_CAT",
+#		null AS "TYPE_SCHEM",
+#		null AS "TYPE_NAME",
+#		'rowid' AS "SELF_REFERENCING_COL_NAME",
+#		'SYSTEM' AS "REF_GENERATION"
+#	FROM "tables", "schemas"
+#	WHERE "tables"."schema_id" = "schemas"."id"
+#		AND "tables"."system" = true
+#		AND "tables"."type" = 0
+#) AS "tables"
+#WHERE 1 = 1
+#	AND ("TABLE_TYPE" LIKE 'TABLE' OR "TABLE_T
+% .tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
 % TABLE_CAT,	TABLE_SCHEM,	TABLE_NAME,	TABLE_TYPE,	REMARKS,	TYPE_CAT,	TYPE_SCHEM,	TYPE_NAME,	SELF_REFERENCING_COL_NAME,	REF_GENERATION # name
 % char,	varchar,	varchar,	char,	char,	char,	char,	char,	char,	char # type
 % 4,	0,	0,	12,	0,	0,	0,	0,	5,	6 # length

@@ -624,7 +624,7 @@ PMAbulkdel_@1(void *dummy, bat *bid, oid *lo, oid *hi) {
 pma_export str
 PMAfnd_@1(oid *lo_res, oid *hi_res, bat *bid, oid *lo, oid *hi, @1 *val) {
 	BAT* b = BATdescriptor(*bid);
-	BUN i, md, h, l;
+	BUN i, md = 0, h, l;
 	@1 *base;
 	if (b == NULL) throw(MAL,"pma.fnd","illegal bat parameter");
 	if (*lo > *hi) throw(MAL,"pma.fnd","low>high");

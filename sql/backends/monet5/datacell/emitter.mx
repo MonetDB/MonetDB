@@ -21,15 +21,9 @@
 This module is a prototype for the implementation of a
 DataCell emitter.  It can be used as follows.
 @example
-pl:= basket.new("X_p1",:bat[:lng, :int]);
-emitter.new("Y");
-emitter.start("Y","localhost",50000);
 @end example
 After this call it will sent tuples from basket X_p1
 to the stream Y at the localhost default port.
-
-[tag each tuple with the latency?, use as derived
-baskets? [arrival,departure,latency]]
 
 Each emitter is supported by an independent thread
 that reads the data from a container composed of a series of baskets.
@@ -41,31 +35,43 @@ baskets.
 
 @mal
 module emitter;
-command new(sch:str,tbl:str):void
+
+command start{unsafe}(tbl:str, host:str, port:int)
 address DCemitterNew
-comment "Define a new emitter.";
+comment "Define a emitter based on a basket table. 
+The emitter protocol is active. Return its handle";
 
-command setType(sch:str,tbl:str, type:str):void
-address DCemitterSetType
-comment "Set the emitter as a server or a client.";
-
-command start(sch:str,tbl:str)
-address DCemitterStart
-comment "Start an emitter thread";
-command start(sch:str,tbl:str, host:str, port:int)
-address DCemitterStartFull
-comment "Start an emitter thread";
-
-command pause(sch:str,tbl:str)
+command pause(tbl:str)
 address DCemitterPause
-comment "Pause sending";
-command stop(sch:str,tbl:str)
-address DCemitterStop
-comment "Stop an emitter thread";
+comment "Pause listening";
 
-command drop(sch:str,tbl:str)
-address DCemitterDrop
-comment "Drop the emitter";
+command resume(tbl:str)
+address DCemitterResume
+comment "Resume a emitter thread";
+
+command resume()
+address EMresume
+comment "Resume all emitter threads";
+
+command mode(tbl:str, arg:str)
+address EMmode
+comment "Set the mode of the emitter to either active/passive");
+
+command protocol(tbl:str, arg:str)
+address EMprotocol
+comment "Set the protocol of the emitter to udp/tcp/csv");
+
+command drop(tb:str)
+address EMstop
+comment "Drop a emitter";
+
+command reset()
+address EMreset
+comment "Remove all emitters";
+
+command dump()
+address EMdump
+comment "Dump a emitter status";
 @-
 @{
 @+ Implementation
@@ -92,13 +98,16 @@ The implementation is derived from the emitter module.
 #define adapters_export extern
 #endif
 
-adapters_export str DCemitterNew(int *ret, str *schema, str *grp);
-adapters_export str DCemitterSetType(int *ret, str *schema, str *grp, str *type);
-adapters_export str DCemitterStart(int *ret, str *schema,  str *nme);
-adapters_export str DCemitterStartFull(int *ret, str *schema, str *nme, str *host, int *port);
-adapters_export str DCemitterStop(int *ret, str *schema, str *nme);
-adapters_export str DCemitterPause(int *ret, str *schema, str *nme);
-adapters_export str DCemitterDrop(int *ret, str *schema, str *nme);
+adapters_export str DCemitterNew(int *ret, str *tbl, str *host, int *port);
+adapters_export str DCemitterPause(int *ret, str *nme);
+adapters_export str DCemitterResume(int *ret, str *nme);
+adapters_export str EMresume(int *ret);
+adapters_export str EMstop(int *ret, str *nme);
+adapters_export str EMreset(int *ret);
+adapters_export str EMdump();
+adapters_export str EMmode(int *ret, str *nme, str *arg);
+adapters_export str EMprotocol(int *ret, str *nme, str *arg);
+
 #endif
 
 @c
@@ -112,21 +121,29 @@ adapters_export str DCemitterDrop(int *ret, str *schema, str *nme);
 #define EMRESHUFFLE 4	/* reorganization of the BATs */
 #define EMDROP 5		
 #define EMERROR 8               /* failed to establish the stream */
+static str statusname[6]= {"<unknown>", "pause", "listen", "stop", "drop","error"};
+
+#define EMPASSIVE 2
+#define EMACTIVE 1
+static str modename[3]= {"<unknown>","active","passive"};
 
 #define TCP 1
 #define UDP 2
-static int protocol= TCP;
+#define CSV 3
+
+static str protocolname[4] = {"<unknown>","TCP","UDP","CSV"}; 
 
 #define PAUSEDEFAULT 1000
 
 typedef struct EMITTER{
-	str schema;
 	str name;	
 	str host;
 	int port;
+    int mode;   /* active/passive */
+    int protocol;   /* event protocol UDP,TCP,CSV */
+    int bskt;   /* connected to a basket */
 	int status;
-	int server;/* control the delay between attempts to connect */
-	int delay;
+	int delay;/* control the delay between attempts to connect */
 	int lck;
 	SOCKET sockfd;
 	SOCKET newsockfd;
@@ -136,30 +153,33 @@ typedef struct EMITTER{
 	lng sent;
 	Tablet table;
 	struct EMITTER *nxt, *prv;
-}EMrecord, *Emitter;
+} EMrecord, *Emitter;
 
-static Emitter emAnchor= NULL;
+static Emitter emAnchor = NULL;
 
 static str EMstartThread(Emitter em);
 
 static Emitter
-EMnew(str schema, str nme){
+EMnew(str nme)
+{
 	Emitter em;
-	em= (Emitter) GDKzalloc(sizeof(EMrecord));
-	em->schema= GDKstrdup(schema);
-	em->name= GDKstrdup(nme);
+	em = (Emitter)GDKzalloc(sizeof(EMrecord));
+	if ( em == NULL)
+		return em;
+	em->name = GDKstrdup(nme);
 	if (emAnchor)
 		emAnchor->prv = em;
-	em->nxt= emAnchor;
-	emAnchor= em;
+	em->nxt = emAnchor;
+	emAnchor = em;
 	return em;
 }
 
-static Emitter
-EMfind(str schema, str nme){
+Emitter
+EMfind(str nme)
+{
 	Emitter r;
-	for( r= emAnchor; r; r= r->nxt)
-		if(strcmp(schema,r->schema)== 0 && strcmp(nme,r->name)==0) 
+	for (r = emAnchor; r; r = r->nxt)
+		if (strcmp(nme, r->name) == 0)
 			break;
 	return r;
 }
@@ -168,199 +188,207 @@ The MAL interface for managing the emitter pool
 The baskets should already be defined. There order
 is used to interpret the messages sent.
 @c
-str DCemitterNew(int *ret, str *schema, str *grp)
+str DCemitterNew(int *ret, str *tbl, str *host, int *port)
 {
 	Emitter em;
-	int idx, i,j,len;
+	int idx, i, j, len;
 	BAT *b;
 
-	if( EMfind(*schema,*grp))
-		throw(MAL,"emitter.new","Duplicate emitter");
-	em= EMnew(*schema,*grp);
-	em->host= GDKstrdup("localhost");
-	em->port= 50001;
-	em->delay= PAUSEDEFAULT;
+	if (EMfind(*tbl))
+		throw(MAL, "emitter.new", "Duplicate emitter");
+
+	idx = BSKTlocate(*tbl);
+	if (idx == 0) /* should not happen */
+		throw(MAL, "emitter.new", "Basket not found");
+
+	em = EMnew(*tbl);
+	if( em == NULL)
+		throw(MAL, "emitter.new", MAL_MALLOC_FAIL);
+	em->host = GDKstrdup(*host);
+	em->port = *port;
+	em->delay = PAUSEDEFAULT;
 	em->lck = 0;
-	em->error= NULL;
-	em->server= 1;
+	em->error = NULL;
+	em->mode = EMACTIVE;
+	em->protocol = UDP;
+	em->bskt = idx;
+	em->delay = 10;
 @-
 All tables are prepended with a default tick bat.
 It becomes the synchronization handle.
 @c
-	len= DCmemberCount(*schema,*grp);
-	if( len == 0)
-		throw(MAL,"receptor.new","Group has no members");
+	len = BSKTmemberCount(*tbl);
+	if (len == 0)
+		throw(MAL, "emitter.new", "Group has no members");
 
-	em->table.format= GDKzalloc(sizeof(Column)*(len+1));
+	em->table.format = GDKzalloc(sizeof(Column) * (len + 1));
 	em->table.format[0].c[0] = NULL;
 	em->table.format[0].name = NULL;
 	em->table.format[0].sep = GDKstrdup("[ ");
-	em->table.format[0].seplen = (int) strlen(em->table.format[0].sep);
-	em->status= EMSTOP;
+	em->table.format[0].seplen = (int)strlen(em->table.format[0].sep);
+	em->status = EMSTOP;
 
-	idx = DClocate(*schema, *grp);
-	if ( idx == 0)
-		throw(MAL,"receptor.new","basket not found");
-
-	for(j=0, i=0; i < baskets[idx].colcount; i++)
-	{
+	for (j = 0, i = 0; i < baskets[idx].colcount; i++) {
 		b = baskets[idx].primary[j];
-		if( b== NULL){
-			em->table.nr_attrs=j;   /* ensure a consistent structure*/
-			throw(MAL,"receptor.new","Could not access descriptor");
+		if (b == NULL) {
+			em->table.nr_attrs = j;   /* ensure a consistent structure*/
+			throw(MAL, "receptor.new", "Could not access descriptor");
 		}
-		BBPincref(b->batCacheid,TRUE);
 
-		em->table.format[j].c[0] = b;
+		em->table.format[j].c[0] = BATcopy(b,b->htype, b->ttype,FALSE);;
 		em->table.format[j].ci[0] = bat_iterator(b);
-		em->table.format[j].name = GDKstrdup( baskets[i].name);
-		em->table.format[j].sep = 
-			j <= len-1 ? GDKstrdup(",") : GDKstrdup("]\n");
-		em->table.format[j].seplen = (int) strlen(em->table.format[j].sep);
+		em->table.format[j].name = GDKstrdup(baskets[idx].cols[i]);
+		em->table.format[j].sep = GDKstrdup(",");
+		em->table.format[j].seplen = (int)strlen(em->table.format[j].sep);
 		em->table.format[j].type = ATOMname(b->ttype);
 		em->table.format[j].adt = (b)->ttype;
+		em->table.format[j].nullstr = GDKstrdup("");
 		em->table.format[j].tostr = &TABLETadt_toStr;
 		em->table.format[j].frstr = &TABLETadt_frStr;
-		em->table.format[j].extra = em->table.format+j;
+		em->table.format[j].extra = em->table.format + j;
 		em->table.format[j].len = em->table.format[j].nillen =
-			ATOMlen(em->table.format[j].adt, ATOMnilptr(em->table.format[j].adt));
+									  ATOMlen(em->table.format[j].adt, ATOMnilptr(em->table.format[j].adt));
 		em->table.format[j].data = GDKmalloc(em->table.format[j].len);
 		j++;
 	}
-	em->table.nr_attrs=j;
+	GDKfree(em->table.format[j-1].sep);
+	em->table.format[j-1].sep = GDKstrdup("\n");
+	em->table.format[j-1].seplen = (int)strlen(em->table.format[j-1].sep);
+	em->table.nr_attrs = j;
 
-	(void) ret; 
+	(void)ret;
 #ifdef _DEBUG_EMITTER_
-	mnstr_printf(EMout,"Instantiate a new emitter %d fields\n",i);
+	mnstr_printf(EMout, "Instantiate a new emitter %d fields\n", i);
 #endif
 	return MAL_SUCCEED;
 }
 
-str DCemitterSetType(int *ret, str *schema, str *nme, str *type) {
+str DCemitterPause(int *ret, str *nme)
+{
 	Emitter em;
 
-	(void) ret; 
-	em= EMfind(*schema, *nme);
-	if( em == NULL)
-		throw(MAL,"emitter.setType","Emitter not defined");
-	if (strcmp(*type,"server") == 0){
-		em->server = 1;
-		return MAL_SUCCEED;
-	}
-	if (strcmp(*type,"client") == 0) {
-		em->server = 0;
-		return MAL_SUCCEED;
-	}
-	throw(MAL,"emitter.setType","The type should be <server> or <client>.");
-}
+	em = EMfind(*nme);
+	if (em == NULL)
+		throw(MAL, "emitter.pause", "Emitter not defined");
+	if (em->status == EMLISTEN)
+		throw(MAL, "emitter.pause", "Emitter not started");
 
-str DCemitterStop(int *ret, str *schema, str *nme){
-	Emitter em;
-
-	em= EMfind(*schema,*nme);
-	if( em == NULL)
-		throw(MAL,"emitter.stop","Emitter not defined");
-	em->status= EMSTOP;
+	em->status = EMPAUSE;
 
 #ifdef _DEBUG_EMITTER_
-	mnstr_printf(EMout,"Stop a new emitter\n");
+	mnstr_printf(EMout, "Pause a emitter\n");
 #endif
-	(void) ret;
+	(void)ret;
 	return MAL_SUCCEED;
 }
 
-str DCemitterPause(int *ret, str *schema, str *nme){
+str DCemitterResume(int *ret, str *nme)
+{
 	Emitter em;
 
-	em= EMfind(*schema,*nme);
-	if( em == NULL)
-		throw(MAL,"emitter.pause","Emitter not defined");
-	if( em->status == EMLISTEN)
-		throw(MAL,"emitter.pause","Emitter not started");
-	
-	em->status= EMPAUSE;
-
-#ifdef _DEBUG_EMITTER_
-	mnstr_printf(EMout,"Pause a emitter\n");
-#endif
 	(void) ret;
+	em = EMfind(*nme);
+	if (em == NULL)
+		throw(MAL, "emitter.resume", "Emitter not defined");
+	if (em->status == EMLISTEN)
+		throw(MAL, "emitter.resume", "Emitter running, stop it first");
+#ifdef _DEBUG_EMITTER_
+	mnstr_printf(EMout, "resume an emitter\n");
+#endif
+	em->status = EMLISTEN;
+	(void)ret;
+	if ( MT_create_thread(&em->pid, (void (*)(void *))EMstartThread, em, MT_THR_DETACHED) != 0) 
+		throw(MAL, "emitter.start", "Emitter initiation failed");
 	return MAL_SUCCEED;
 }
 
-str DCemitterStart(int *ret, str *schema, str *nme){
+str
+EMresume(int *ret)
+{
 	Emitter em;
-	MT_Id pid;
-
-	em= EMfind(*schema,*nme);
-	if( em == NULL)
-		throw(MAL,"emitter.start","Emitter not defined");
-	if( em->status  == EMLISTEN)
-		throw(MAL,"emitter.start","Emitter already started");
-#ifdef _DEBUG_EMITTER_
-	mnstr_printf(EMout,"Start a new emitter\n");
-#endif
-	if( em->status == EMPAUSE){
-		em->status= EMLISTEN;
-		return MAL_SUCCEED;
-	}
-	em->status= EMLISTEN;
-	(void) ret;
-	if( MT_create_thread(&pid, (void (*) (void *))EMstartThread, em, MT_THR_DETACHED) !=0) {
-		throw(MAL,"emitter.start","Emitter initiation failed");
-	}
+	for( em = emAnchor; em ; em= em->nxt) 
+	if (em ->status == EMSTOP)
+		DCemitterResume(ret, &em->name);
 	return MAL_SUCCEED;
 }
 
-str DCemitterStartFull(int *ret, str *schema, str *nme, str *host, int *port){
-	Emitter em;
-	MT_Id pid;
+str EMstop(int *ret, str *nme)
+{
+	Emitter em, rb;
 
-	em= EMfind(*schema,*nme);
-	if( em == NULL)
-		throw(MAL,"emitter.start","Emitter not defined");
-	if( em->status  == EMLISTEN)
-		throw(MAL,"emitter.start","Emitter already started");
+	em = EMfind(*nme);
+	if (em == NULL)
+		throw(MAL, "emitter.drop", "Emitter not defined");
 #ifdef _DEBUG_EMITTER_
-	mnstr_printf(EMout,"Start a new emitter\n");
+	mnstr_printf(EMout, "Drop a emitter\n");
 #endif
-	if( em->status == EMPAUSE){
-		em->status= EMLISTEN;
-		return MAL_SUCCEED;
-	}
-	em->status= EMLISTEN;
-	(void) ret;
-	em->host= GDKstrdup(*host);
-	em->port= *port;
-	if( MT_create_thread(&pid, (void (*) (void *)) EMstartThread, em, MT_THR_DETACHED) !=0) {
-		throw(MAL,"emitter.start","Emitter initiation failed");
-	}
-	return MAL_SUCCEED;
-}
-
-str DCemitterDrop(int *ret, str *schema, str *nme){
-	Emitter em,rb;
-	
-	em= EMfind(*schema,*nme);
-	if( em == NULL)
-		throw(MAL,"emitter.drop","Emitter not defined");
-#ifdef _DEBUG_EMITTER_
-	mnstr_printf(EMout,"Drop a emitter\n");
-#endif
-	(void) ret;
-	if( emAnchor == em)
-		emAnchor= em->nxt;
-	rb= em->prv;
-	if( em->nxt)
-		em->nxt->prv= em->prv;
-	if( rb)
-		rb->nxt= em->nxt;
+	(void)ret;
+	if (emAnchor == em)
+		emAnchor = em->nxt;
+	rb = em->prv;
+	if (em->nxt)
+		em->nxt->prv = em->prv;
+	if (rb)
+		rb->nxt = em->nxt;
 	em->status = EMDROP;
 	if (em->lck)
-		DCunlock(&em->lck, &em->schema, &em->name);
+		BSKTunlock(&em->lck, &em->name);
 	MT_join_thread(em->pid);
 	return MAL_SUCCEED;
 }
 
+str EMreset(int *ret)
+{
+	Emitter r,o;
+	for( r= emAnchor; r; r = o){
+		o= r->nxt;
+		EMstop(ret, &r->name);
+	}
+	return MAL_SUCCEED;
+}
+
+str EMmode(int *ret, str *nme, str *arg)
+{
+	Emitter em;
+	em = EMfind(*nme);
+	if (em == NULL)
+		throw(MAL, "emitter.mode", "Emitter not defined");
+#ifdef _DEBUG_EMITTER_
+	mnstr_printf(EMout, "#Define emitter mode\n");
+#endif
+	(void)ret;
+	if ( strcmp(*arg,"passive") == 0 )
+		em->mode = EMPASSIVE;
+	else
+	if ( strcmp(*arg,"active") == 0 )
+		em->mode = EMACTIVE;
+	else
+		throw(MAL,"emitter.mode","Must be either passive/active");
+	return MAL_SUCCEED;
+}
+
+str EMprotocol(int *ret, str *nme, str *mode)
+{
+	Emitter em;
+	em = EMfind(*nme);
+	if (em == NULL)
+		throw(MAL, "emitter.protocol", "Emitter not defined");
+#ifdef _DEBUG_EMITTER_
+	mnstr_printf(EMout, "#Define emitter protocol\n");
+#endif
+	(void)ret;
+	if ( strcmp(*mode,"udp") == 0 )
+		em->protocol = UDP;
+	else
+	if ( strcmp(*mode,"tcp") == 0)
+		em->protocol = TCP;
+	else
+	if ( strcmp(*mode,"csv") == 0)
+		em->protocol = CSV;
+	else
+		throw(MAL,"emitter.protocol","Must be either udp/tcp/csv");
+	return MAL_SUCCEED;
+}
 
 
 /*open a stream socket to a certain server:port*/
@@ -374,31 +402,37 @@ we have to attempt a reconnect upon failure.
 @c
 			
 static void
-EMreconnect(Emitter em){
-	do{
+EMreconnect(Emitter em)
+{
+	do {
 		em->error = socket_client_connect(&em->newsockfd, em->host, em->port);
-		if(em->error){
-			mnstr_printf(EMout,"Emitter connect fails: %s\n", em->error);
+		if (em->error) {
+			mnstr_printf(EMout, "Emitter connect fails: %s\n", em->error);
 			MT_sleep_ms(em->delay);
 		}
-	} while(em->error);
+	} while (em->error);
 }
 
 static void
-EMbody(Emitter em){
+EMbody(Emitter em)
+{
 	BUN cnt;
-	size_t i, j;
-	int ret;
+	size_t j;
+	int k, ret;
+	BAT *b;
 
 bodyRestart:
 	/* create the actual channel */
-	em->emitter= socket_wastream(em->newsockfd,em->name);
-	if(em->emitter == NULL){
+	if (em->mode == EMACTIVE && em->protocol == UDP)
+			em->emitter = udp_wastream(em->host, em->port, em->name);
+	else
+		em->emitter = socket_wastream(em->newsockfd, em->name);
+	if (em->emitter == NULL) {
 		perror("Emitter: Could not open stream");
-		mnstr_printf(EMout,"stream %s.%d.%s\n", em->host,em->port, em->name);
+		mnstr_printf(EMout, "stream %s.%d.%s\n", em->host, em->port, em->name);
 		socket_close(em->newsockfd);
 #ifdef _DEBUG_EMITTER_
-	mnstr_printf(EMout,"Exit emitter body loop\n");
+		mnstr_printf(EMout, "Exit emitter body loop\n");
 #endif
 		return;
 	}
@@ -406,22 +440,23 @@ bodyRestart:
 Consume each event and store the result.
 If the thread is suspended, we sleep for at least one second.
 @c
-	for(ret = 1; ret>=0;){
-		while( em->status == EMPAUSE) {
+	for (ret = 1; ret >= 0; )
+	{
+		while (em->status == EMPAUSE) {
 #ifdef _DEBUG_EMITTER_
-            mnstr_printf(EMout,"pause emitter\n");
+			mnstr_printf(EMout, "pause emitter\n");
 #endif
 			MT_sleep_ms(em->delay);
 		}
-		if ( em->status == EMSTOP )
+		if (em->status == EMSTOP)
 			break;
-		if ( em->status == EMDROP ) {
+		if (em->status == EMDROP) {
 			mnstr_close(em->emitter);
-			for(j= 0; j< em->table.nr_attrs; j++){
+			for (j = 0; j < em->table.nr_attrs; j++) {
 				GDKfree(em->table.format[j].sep);
 				GDKfree(em->table.format[j].name);
-				if( em->table.format[j].c)
-					BBPdecref(em->table.format[j].c[0]->batCacheid,TRUE);
+				if (em->table.format[j].c)
+					BBPdecref(em->table.format[j].c[0]->batCacheid, TRUE);
 			}
 			GDKfree(em->table.format);
 			shutdown(em->newsockfd, SHUT_RDWR);
@@ -429,48 +464,56 @@ If the thread is suspended, we sleep for at least one second.
 			em = NULL;
 			return;
 		}
-		if( (cnt= BATcount(em->table.format[1].c[0])) ){
-			DClock(&em->lck,&em->schema,&em->name,&em->delay);
-			if ( em->status != EMLISTEN )
+		/* to speed up parallel processing the emitter should
+		   grab the BATs from the basket primary store and
+		   replace it with empty BATs.
+		*/
+		BSKTlock(&em->lck, &em->name, &em->delay);
+		for ( k =0 ; k < baskets[em->bskt].colcount; k++ ) {
+			if ( em->table.format[k].c[0] )
+				BBPunfix( em->table.format[k].c[0]->batCacheid );
+			b = baskets[em->bskt].primary[k];
+			em->table.format[k].c[0] =  BATcopy(b, b->htype, b->ttype,TRUE);
+			em->table.format[k].ci[0] = bat_iterator(b);
+			BATclear(b);
+		}
+		BSKTunlock(&em->lck, &em->name);
+		if ((cnt = BATcount(em->table.format[1].c[0]))) {
+			if (em->status != EMLISTEN)
 				break;
-			
-			cnt= BATcount(em->table.format[1].c[0]);
+
+			cnt = BATcount(em->table.format[1].c[0]);
 #ifdef _DEBUG_EMITTER_
-			mnstr_printf(EMout,"Emit " BUNFMT " tuples \n",cnt);
+			mnstr_printf(EMout, "Emit " BUNFMT " tuples \n", cnt);
 #endif
-			em->table.nr= cnt;
-			
-			ret= TABLEToutput_file(&em->table, em->table.format[1].c[0], em->emitter); 
+			em->table.nr = cnt;
+
+			ret = TABLEToutput_file(&em->table, em->table.format[1].c[0], em->emitter);
 #ifdef _DEBUG_EMITTER_
-			if( ret<0)
-				mnstr_printf(EMout,"Tuple emission failed\n");
+			if (ret < 0)
+				mnstr_printf(EMout, "Tuple emission failed\n");
 #endif
-			if( ret<0){
+			if (ret < 0)
 				/* keep the events and try to setup a new connection */
-				DCunlock(&em->lck, &em->schema, &em->name);
 				break;
+			if (em->table.error) {
+				mnstr_printf(GDKerr, em->table.error);
+				em->table.error = 0;
 			}
-			/* clean the baskets */
-			for(i=1; i< em->table.nr_attrs; i++)
-				BATclear(em->table.format[i].c[0]);
-			
-			DCunlock(&em->lck, &em->schema, &em->name);
-			if( em->table.error){
-				mnstr_printf(GDKerr,em->table.error);
-				em->table.error=0;
-			}
-		} 
+		} else	
+		if ( em->delay)
+			MT_sleep_ms(em->delay);
 	}
 	/* writing failed, lets restart */
-	if( !em->server){
+	if (em->mode == EMPASSIVE) {
 #ifdef _DEBUG_EMITTER_
-       		mnstr_printf(EMout,"Restart the connection\n");
+		mnstr_printf(EMout, "Restart the connection\n");
 #endif
 		EMreconnect(em);
 		goto bodyRestart;
 	}
 #ifdef _DEBUG_EMITTER_
-	mnstr_printf(EMout,"Exit emitter body loop\n");
+	mnstr_printf(EMout, "Exit emitter body loop\n");
 #endif
 	mnstr_close(em->emitter);
 }
@@ -479,57 +522,67 @@ str
 EMstartThread(Emitter em)
 {
 	GDKprotect();
-	
+
 #ifdef _DEBUG_EMITTER_
-	mnstr_printf(EMout,"Emitter body %s started at %s:%d, servermode=%d\n",
-		em->name,em->host,em->port, em->server);
+	mnstr_printf(EMout, "Emitter body %s started at %s:%d, servermode=%d\n",
+		em->name, em->host, em->port, em->mode);
 #endif
-	if (protocol == UDP) {
-		em->emitter = udp_wastream(em->host,em->port,em->name);
-		if(em->emitter == NULL){
-			perror("Emitter: Could not open stream");
-			mnstr_printf(EMout,"stream %s.%d.%s\n", em->host,em->port, em->name);
-			return MAL_SUCCEED;
-		}
+	if (em->mode == EMACTIVE) {
 		EMbody(em);
 #ifdef _DEBUG_EMITTER_
-		mnstr_printf(EMout,"End of emitter thread\n");
+		mnstr_printf(EMout, "End of emitter thread\n");
 #endif
 		return MAL_SUCCEED;
 	}
 
 	/* Handling the TCP connection */
-	if ( em->server && 
+	if (em->mode == EMPASSIVE &&
 		(em->error = socket_server_connect(&em->sockfd, em->port))) {
-		em->status= EMERROR;
-		mnstr_printf(EMout,"EMSTART THREAD: failed to start server:%s\n", em->error);
+		em->status = EMERROR;
+		mnstr_printf(EMout, "EMSTART THREAD: failed to start server:%s\n", em->error);
 		return MAL_SUCCEED;
 	}
-	do { 
-		if (em->status == EMSTOP) return MAL_SUCCEED;
-		if (em->server){
-#ifdef _DEBUG_RECEPTOR_
-			mnstr_printf(EMout,"Emitter listens\n");
+	while (em->status != EMSTOP)
+	{
+		if (em->mode == EMPASSIVE) {
+			/* in server mode you should expect new connections */
+#ifdef _DEBUG_EMITTER_
+			mnstr_printf(EMout, "Emitter listens\n");
 #endif
 			em->error = socket_server_listen(em->sockfd, &em->newsockfd);
-			if(em->error){
-				em->status= EMERROR;
-				mnstr_printf(EMout,"Emitter listen fails: %s\n", em->error);
+			if (em->error) {
+				em->status = EMERROR;
+				mnstr_printf(EMout, "Emitter listen fails: %s\n", em->error);
 			}
-		} 
-		
-		/* in server mode you should expect new connections */
-		if( em->server){
-			if(MT_create_thread(&em->pid, (void (*) (void *))EMbody, em, MT_THR_DETACHED) !=0) {
-                close_stream(em->emitter);
-                throw(MAL,"emitter.start","Process creation failed");
+
+			if (MT_create_thread(&em->pid, (void (*)(void *))EMbody, em, MT_THR_DETACHED) != 0) {
+				close_stream(em->emitter);
+				throw(MAL, "emitter.start", "Process creation failed");
 			}
-		} else {
+		} else
+		if ( em->mode == EMACTIVE) {
+			/* connect the actuator */
 			EMreconnect(em);
 			EMbody(em);
 		}
-	} while(em->server);
+	} 
 	shutdown(em->newsockfd, SHUT_RDWR);
+	return MAL_SUCCEED;
+} 
+
+static void
+dumpEmitter(Emitter em)
+{
+	mnstr_printf(GDKout,"#emitter %s at %s:%d protocol=%s mode=%s status=%s delay=%d\n",
+		em->name, em->host, em->port, protocolname[em->protocol], modename[em->mode], statusname[em->status], em->delay);
+}
+
+str
+EMdump() 
+{
+	Emitter rc = emAnchor;
+	for ( ; rc; rc= rc->nxt)
+		dumpEmitter(rc);
 	return MAL_SUCCEED;
 }
 @}

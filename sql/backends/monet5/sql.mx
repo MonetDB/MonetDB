@@ -50,6 +50,14 @@ pattern trans(type:int,chain:int,name:str):void
 address SQLtransaction
 comment "a transaction statement (type can be commit,release,rollback or start)";
 
+pattern transaction{unsafe}()
+address SQLtransaction2
+comment "Start an autocommit transaction";
+
+pattern commit()
+address SQLcommit
+comment "Trigger the commit operation for a MAL block";
+
 pattern catalog(type:int,sname:str,name:str,action:int):void
 address SQLcatalog
 comment "a catalog statement";
@@ -1168,6 +1176,8 @@ extern BAT *mvc_bind_idxbat(mvc *m, char *sname, char *tname, char *iname, int a
 
 sql5_export str SQLmvc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLtransaction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLcommit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLtransaction2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 sql5_export str mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -1445,6 +1455,7 @@ backend_reset(backend *b)
 	b->currIndex = NULL;
 	b->vtop = 0;
 	b->q = NULL;
+	b->mvc_var = 0;
 	return b;
 }
 
@@ -1456,6 +1467,7 @@ backend_create(mvc *m, Client c)
 	b->console = isAdministrator(c);
 	b->mvc = m;
 	b->client = c;
+	b->mvc_var = 0;
 	return backend_reset(b);
 }
 
@@ -1723,6 +1735,42 @@ SQLtransaction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.trans", "transaction unknown type");
 	}
 	return MAL_SUCCEED;
+}
+
+str
+SQLcommit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int ret;
+	mvc *sql = NULL;
+	str msg = getContext(cntxt, mb, &sql, NULL);
+	(void) stk;
+	(void) pci;
+
+	if (sql->session->auto_commit != 0) 
+		throw(SQL,"sql.trans", "COMMIT: not allowed in auto commit mode");
+	ret = mvc_commit(sql, 0, 0);
+	if (ret < 0 ) 
+		throw(SQL, "sql.trans", "COMMIT: failed");
+	return msg;
+}
+
+str
+SQLtransaction2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *sql = NULL;
+	str msg = getContext(cntxt, mb, &sql, NULL);
+
+	(void) stk;
+	(void) pci;
+	if (sql->session->auto_commit == 0) 
+		throw(SQL, "sql.trans", "START TRANSACTION: cannot start a transaction within a transaction");
+	if (sql->session->active)
+		mvc_rollback(sql, 0, NULL);
+	sql->session->auto_commit = 0;
+	sql->session->ac_on_commit = 1;
+	sql->session->level = 0;
+	(void) mvc_trans(sql);
+	return msg;
 }
 
 static str

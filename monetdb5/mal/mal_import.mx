@@ -184,7 +184,7 @@ malInclude(Client c, str name, int listing)
 	str filename;
 	str p;
 
-	bstream *oldfdin = c->fdin, *cfdin;
+	bstream *oldfdin = c->fdin;
 	int oldyycur = c->yycur;
 	int oldlisting = c->listing;
 	int oldmode = c->mode;
@@ -213,7 +213,6 @@ malInclude(Client c, str name, int listing)
 			c->yycur = 0;
 			c->bak = NULL;
 			if ((s = malLoadScript(c, filename, &c->fdin)) == 0) {
-				cfdin = c->fdin;
 				parseMAL(c, c->curprg);
 				bstream_destroy(c->fdin);
 			}

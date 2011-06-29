@@ -35,6 +35,7 @@ PAUSE -> pause the emission/reception of tuples (to continue use START)
 STOP  -> stops the receptor/emitter (closing the connection)
 
 These commands allow you to influence tuples movements in the system.
+[OBSOLETE]
 A concrete example is given in the test file:
 datacell/src/engine/Tests/conveyor/ConveyorScript2.mal.demo 
 

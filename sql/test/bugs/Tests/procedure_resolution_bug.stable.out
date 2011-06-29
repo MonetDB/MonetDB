@@ -1,0 +1,36 @@
+stdout of test 'procedure_resolution_bug` in directory 'test/bugs` itself:
+
+
+# 23:43:49 >  
+# 23:43:49 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/ufs/niels/scratch/current-clean/Linux-x86_64/var/MonetDB" --set mapi_open=true --set mapi_port=32645 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_test_bugs" --set mal_listing=0 ; echo ; echo Over..
+# 23:43:49 >  
+
+# MonetDB 5 server v11.4.0
+# This is an unreleased version
+# Serving database 'mTests_test_bugs', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.752 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:32645/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+Over..
+
+# 23:43:49 >  
+# 23:43:49 >  mclient -lsql -ftest -i -e --host=alf --port=32645 
+# 23:43:49 >  
+
+#create schema xyz;
+#create procedure xyz.p() begin declare x integer; set x = 1; end;
+#drop procedure xyz.p;
+#drop schema xyz;
+
+# 23:43:49 >  
+# 23:43:49 >  Done.
+# 23:43:49 >  
+
