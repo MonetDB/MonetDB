@@ -2592,7 +2592,7 @@ rel_push_join_down(int *changes, mvc *sql, sql_rel *rel)
 			for(n = gbes->h; n; n = n->next) {
 				sql_exp *gbe = n->data;
 				int fnd = 0;
-				char *rname, *name;
+				char *rname = NULL, *name = NULL;
 
 				/* project in between, ie find alias */
 				/* first find expression in expression list */
@@ -2602,7 +2602,7 @@ rel_push_join_down(int *changes, mvc *sql, sql_rel *rel)
 				if (ogb != gb) 
 					gbe = exp_uses_exp( ogb->exps, gbe);
 				if (gbe) {
-			       		rname = exp_find_rel_name(gbe);
+					rname = exp_find_rel_name(gbe);
 					name = exp_name(gbe);
 				}
 
