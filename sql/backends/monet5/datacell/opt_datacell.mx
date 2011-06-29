@@ -100,7 +100,7 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			isVarConstant(mb, getArg(p,1)) && isVarConstant(mb, getArg(p,2)) && isVarConstant(mb,getArg(p,3)) ){
 			/* let's move the window to the start of the block  when it consists of constants*/
 			pushInstruction(mb,p);
-			for ( j = mb->stop-1; j >2; j--)
+			for ( j = mb->stop-1; j > 1; j--)
 				mb->stmt[j]= mb->stmt[j-1];
 			mb->stmt[j] = p;
 			continue;
@@ -109,7 +109,7 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			isVarConstant(mb, getArg(p,1)) && isVarConstant(mb, getArg(p,2)) ){
 			/* let's move the threshold/beat to the start of the block  when it consists of constants*/
 			pushInstruction(mb,p);
-			for ( j = mb->stop-1; j >2; j--)
+			for ( j = mb->stop-1; j > 1; j--)
 				mb->stmt[j]= mb->stmt[j-1];
 			mb->stmt[j] = p;
 			continue;
