@@ -1320,6 +1320,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 	/* the BAT we will return */
 	b = BATnew(bb.Htype, bb.Ttype, bb.size);
 	b->hseqbase = bb.seqbase;
+	b->T->width = bb.tailsize / bb.size;
 
 	mnstr_read(in, b->T->heap.base, bb.tailsize, 1);
 	b->batCount = bb.size;

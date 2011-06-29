@@ -1,0 +1,42 @@
+# let connect figure out itself how to connect to the running db
+uri := sabaoth.getLocalConnectionURI();
+
+# create a persistent connecton to ourself
+conn1:str := remote.connect(uri, "monetdb", "monetdb");
+
+b := bat.new(:oid, :str);
+
+b := bat.insert(b, nil:oid, "maandag");
+b := bat.insert(b, nil:oid, "dinsdag");
+b := bat.insert(b, nil:oid, "woensdag");
+b := bat.insert(b, nil:oid, "donderdag");
+b := bat.insert(b, nil:oid, "vrijdag");
+b := bat.insert(b, nil:oid, "januari");
+b := bat.insert(b, nil:oid, "februari");
+b := bat.insert(b, nil:oid, "maart");
+b := bat.insert(b, nil:oid, "april");
+b := bat.insert(b, nil:oid, "mei");
+b := bat.insert(b, nil:oid, "juni");
+b := bat.insert(b, nil:oid, "juli");
+b := bat.insert(b, nil:oid, "augustus");
+b := bat.insert(b, nil:oid, "september");
+b := bat.insert(b, nil:oid, "oktober");
+b := bat.insert(b, nil:oid, "november");
+b := bat.insert(b, nil:oid, "december");
+b := bat.insert(b, nil:oid, "morgen");
+b := bat.insert(b, nil:oid, "middag");
+b := bat.insert(b, nil:oid, "avond");
+b := bat.insert(b, nil:oid, "nacht");
+b := bat.insert(b, nil:oid, "licht");
+b := bat.insert(b, nil:oid, "duisternis");
+
+b := algebra.markH(b);
+
+rb2 := remote.put(conn1, b);
+lb2:bat[:oid,:str] := remote.get(conn1, rb2);
+
+io.print(lb2);
+
+# help testweb a bit, since currently no cleanup is done on server
+# shutdown
+remote.disconnect(conn1);
