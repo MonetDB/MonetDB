@@ -1223,17 +1223,15 @@ str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			TYPE_void,
 			b->ttype,
 			b->hseqbase == oid_nil ? 0 : b->hseqbase,
-			BATcount(b),
-			BATcount(b) * b->T->width,
-			b->T->varsized ? b->T->vheap->free : 0
+			b->batCount,
+			b->batCount * Tsize(b),
+			b->tvarsized ? b->T->vheap->free : 0
 			);
 	mnstr_write(cntxt->fdout, /* tail */
-			b->T->heap.base + (b->U->first * b->T->width),
-			BATcount(b) * b->T->width, 1);
-	if (b->T->varsized)
+			Tloc(b, BUNfirst(b)), b->batCount * Tsize(b), 1);
+	if (b->tvarsized)
 		mnstr_write(cntxt->fdout, /* theap */
-				b->T->vheap->base,
-				b->T->vheap->free, 1);
+				Tbase(b), b->T->vheap->free, 1);
 	mnstr_flush(cntxt->fdout);
 
 	return(MAL_SUCCEED);
@@ -1319,7 +1317,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 	b->hseqbase = bb.seqbase;
 
 	mnstr_read(in, b->T->heap.base, bb.tailsize, 1);
-	b->U->count = bb.size;
+	b->batCount = bb.size;
 	if (bb.theapsize > 0) {
 		if (b->T->vheap->size < bb.theapsize) {
 			GDKfree(b->T->vheap->base);
