@@ -1232,7 +1232,7 @@ str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b->tvarsized)
 		mnstr_write(cntxt->fdout, /* theap */
 				Tbase(b), b->T->vheap->free, 1);
-	mnstr_flush(cntxt->fdout);
+	/* flush is done by the calling environment (MAL) */
 
 	return(MAL_SUCCEED);
 }
@@ -1255,6 +1255,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 	binbat bb = { 0, 0, 0, 0, 0, 0 };
 	char *nme = NULL;
 	char *val = NULL;
+	char tmp;
 
 	BAT *b;
 
@@ -1264,7 +1265,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 
 	/* could skip whitespace, but we just don't allow that */
 	if (*hdr++ != '{')
-		throw(MAL, "remote.bincopyfrom", "illegal input, not a JSON header");
+		throw(MAL, "remote.bincopyfrom", "illegal input, not a JSON header (got '%s')", hdr - 1);
 	while (*hdr != '\0') {
 		switch (*hdr) {
 			case '"':
@@ -1326,6 +1327,11 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 		}
 		mnstr_read(in, b->T->vheap->base, bb.theapsize, 1);
 		b->T->vheap->free = bb.theapsize;
+	}
+
+	/* read blockmode flush */
+	while (mnstr_read(in, &tmp, 1, 1) != 0) {
+		mnstr_printf(GDKout, "!MALexception:remote.bincopyfrom: expected flush, got: %c", tmp);
 	}
 
 	*ret = b;

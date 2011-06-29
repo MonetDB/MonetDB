@@ -25,6 +25,10 @@ function user.main():void;
     b := bat.insert(b,nil:oid,4);
     b := bat.insert(b,nil:oid,6);
     b := bat.delete(b,nil:oid,2);
+    b := algebra.markH(b);
+    rb2 := remote.put(conn1,b);
+    lb2:bat[:oid,:int]  := remote.get(conn1,rb2);
+    io.print(lb2);
     b := bat.insert(b,nil:oid,8);
     b := bat.insert(b,nil:oid,10);
     b := algebra.slice(b,1,2);
@@ -36,6 +40,12 @@ function user.main():void;
 # shutdown 
     remote.disconnect(conn1);
 end main;
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  6	  ]
+[ 1@0,	  4	  ]
 #-----------------#
 # h	t	  # name
 # void	int	  # type
