@@ -60,7 +60,7 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 {
 	int actions = 0, fnd;
     int bskt, i, j, k, limit, vlimit, slimit;
-    InstrPtr p, *old;
+    InstrPtr r, p, *old;
 	str  col;
 	int maxbasket= 128, m=0,a=0;
 	char *tables[128];
@@ -100,6 +100,22 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			/* a good place to commit the SQL transaction */
 			for ( j = 0; j < a; j++)
 				pushInstruction(mb, qa[j]);
+			/* catch any exception left behind */
+			r= newAssignment(mb);
+			j = getArg(r,0)=  newVariable(mb,GDKstrdup("SQLexception"),TYPE_str);
+			setVarUDFtype(mb,j);
+			r->barrier= CATCHsymbol;
+			r= newAssignment(mb);
+			getArg(r,0)= j;
+			r->barrier= EXITsymbol;
+			r= newAssignment(mb);
+			j = getArg(r,0)=  newVariable(mb,GDKstrdup("MALexception"),TYPE_str);
+			setVarUDFtype(mb,j);
+			r->barrier= CATCHsymbol;
+			r= newAssignment(mb);
+			getArg(r,0)= j;
+			r->barrier= EXITsymbol;
+			
 			(void) newFcnCall(mb, sqlRef, commitRef);
 		}
 		if ( getModuleId(p) == sqlRef  && getFunctionId(p) == putName("affectedRows",12)) {
@@ -186,8 +202,8 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 					/* upgrade single values to a BAT */
 					clrFunction(p);
 					if ( !isaBatType(getVarType(mb,getArg(p,5))) ) {
-						getModuleId(p) = batRef;
-						getFunctionId(p) = packRef;
+						getModuleId(p) = sqlRef;
+						getFunctionId(p) = singleRef;
 					} 
 					getArg(p, 0) = getArg(qa[j], k + 2);
 					getArg(p, 1) = getArg(p, 5);
