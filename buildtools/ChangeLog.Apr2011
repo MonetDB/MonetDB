@@ -1,3 +1,10 @@
 # ChangeLog file for buildtools
 # This file is updated with Maddlog
 
+* Wed Jun 29 2011 Sjoerd Mullender <sjoerd@acm.org>
+- We can now also build on Fedora 15.  This required some very minor
+  changes.
+- Changed configure check for OpenSSL so that we can also build on CentOS
+  5.6.  We now no longer demand that OpenSSL is at least version 0.9.8f,
+  but instead we require that the hash functions we need are supported.
+

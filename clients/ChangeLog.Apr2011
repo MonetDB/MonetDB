@@ -1,3 +1,7 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Wed Jun 29 2011 Sjoerd Mullender <sjoerd@acm.org>
+- The separate Python distribution now uses the same version number as
+  the main package.
+
