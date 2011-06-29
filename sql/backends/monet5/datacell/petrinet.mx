@@ -530,7 +530,7 @@ PNcontroller(void *dummy)
 						break;
 					}
 					/* check heart beat delays */
-					if ( baskets[idx].lastseen + baskets[idx].delay > now){
+					if ( baskets[idx].lastseen + baskets[idx].beat > now){
 						pnet[i].enabled = 0;
 						break;
 					}
@@ -571,7 +571,7 @@ PNcontroller(void *dummy)
 				t= GDKusec();
 				msg = reenterMAL(cntxt, mb, pnet[i].pc, pnet[i].pc + 1, glb, 0, 0);
 				pnet[i].cycletime += GDKusec() - t;
-				if ( msg != MAL_SUCCEED){
+				if ( msg != MAL_SUCCEED && !strstr(msg,"too early") ){
 					char buf[BUFSIZ];
 					if ( pnet[i].error == NULL ) {
 						snprintf(buf,BUFSIZ-1,"Query %s failed:%s", pnet[i].fcn, msg);

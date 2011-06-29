@@ -80,11 +80,11 @@ command dump()
 address DCdump
 comment "Dump receptor/emitter status";
 
-command threshold(bskt:str, mi:int):bit
+command threshold{unsafe}(bskt:str, mi:int):bit
 address DCthreshold 
 comment "Prefilter on bucket content";
 
-command window(bskt:str, size:int, slide:int):bit
+command window{unsafe}(bskt:str, size:int, slide:int):bit
 address DCwindow
 comment "Slide the basket with a limited number of events";
 
@@ -460,14 +460,9 @@ DCwindow(int *ret, str *bskt, int *sz, int *slide)
 }
 
 str
-DCbeat(int *ret, str *bskt, int *t)
+DCbeat(int *ret, str *bskt, int *beat)
 {
-	int idx;
-	idx = BSKTlocate(*bskt);
-	if ( idx == 0)
-		throw(SQL, "datacell.beat", "Basket not found");
-	*ret = TRUE;
-	baskets[idx].delay = *t;
+	return BSKTbeat(ret,bskt,beat);
 	return MAL_SUCCEED;
 }
 @}

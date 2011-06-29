@@ -96,6 +96,25 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			/* inject transaction start */
 			newFcnCall(mb,sqlRef,putName("transaction",11));
 		
+		if ( getModuleId(p) == datacellRef && getFunctionId(p) == putName("window",6) &&
+			isVarConstant(mb, getArg(p,1)) && isVarConstant(mb, getArg(p,2)) && isVarConstant(mb,getArg(p,3)) ){
+			/* let's move the window to the start of the block  when it consists of constants*/
+			pushInstruction(mb,p);
+			for ( j = mb->stop-1; j >2; j--)
+				mb->stmt[j]= mb->stmt[j-1];
+			mb->stmt[j] = p;
+			continue;
+		}
+		if ( getModuleId(p) == datacellRef &&  ( getFunctionId(p) == putName("threshold",9)  || getFunctionId(p) == putName("beat",4) ) &&
+			isVarConstant(mb, getArg(p,1)) && isVarConstant(mb, getArg(p,2)) ){
+			/* let's move the threshold/beat to the start of the block  when it consists of constants*/
+			pushInstruction(mb,p);
+			for ( j = mb->stop-1; j >2; j--)
+				mb->stmt[j]= mb->stmt[j-1];
+			mb->stmt[j] = p;
+			continue;
+		}
+
 		if ( p->token == ENDsymbol){
 			/* a good place to commit the SQL transaction */
 			for ( j = 0; j < a; j++)
@@ -188,7 +207,7 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				if ( j == a ){
 					if ( a == maxbasket) return 0;
 					/* grab the basket tables instruction */
-					qa[a]= BSKTpassInstruction(mb,buf);
+					qa[a]= BSKTupdateInstruction(mb,buf);
 					appends[a++]= GDKstrdup(buf);
 					actions = 1;
 				}
