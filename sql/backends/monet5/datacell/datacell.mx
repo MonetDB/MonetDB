@@ -72,10 +72,6 @@ pattern postlude()
 address DCpostlude
 comment "Stop the petrinet scheduler.";
 
-command inventory():bat[:str,:bat]
-address DCinventory
-comment "Produce a tabular view of the datacell streaming components";
-
 command dump()
 address DCdump
 comment "Dump receptor/emitter status";
@@ -91,6 +87,15 @@ comment "Slide the basket with a limited number of events";
 command beat(bskt:str, t:int):bit
 address DCbeat
 comment "Schedule query with T milliseconds interval";
+
+command baskets():bat[:str,:bat]
+address BSKTtable
+comment "Inspect the datacell baskets";
+
+command queries():bat[:str,:bat]
+address PNtable
+comment "Inspect the datacell queries";
+
 @{
 @h
 #ifndef _DATACELLS_
@@ -137,7 +142,6 @@ datacell_export str DCpauseScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, 
 datacell_export str DCresumeScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str DCpostlude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-datacell_export str DCinventory(int *ret);
 
 #endif
 @c
@@ -322,29 +326,6 @@ DCprotocol(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str
-DCinventory(int *ret)
-{
-	BAT *b, *bn;
-	int i;
-	str msg = MAL_SUCCEED;
-
-	b = BATnew(TYPE_str, TYPE_bat, BATTINY);
-	if (b == NULL)
-		throw(SQL, "datacell.inventory", MAL_MALLOC_FAIL);
-	for (i = 0; msg == MAL_SUCCEED && i < bsktTop; i++) {
-		bn = BATdescriptor(BBPindex(baskets[i].name));
-		if (bn == NULL)
-			msg = createException(SQL, "datacell.inventory", MAL_MALLOC_FAIL);
-		else {
-			BUNins(b, baskets[i].name, &bn->batCacheid, FALSE);
-			BBPreleaseref(bn->batCacheid);
-		}
-	}
-	*ret = b->batCacheid;
-	BBPkeepref(b->batCacheid);
-	return msg;
-}
 
 /* locate the MAL representation of this operation and extract the flow */
 /* If the operation is not available yet, it should be compiled from its

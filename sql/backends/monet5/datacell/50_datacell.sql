@@ -20,10 +20,6 @@ create schema datacell;
 create procedure datacell.basket(tbl string)
    external name datacell.basket;
 
-create function datacell.inventory()
-returns table (kind string, nme string)
-   external name datacell.inventory;
-
 create procedure datacell.receptor(tbl string, host string, portid integer)
     external name datacell.receptor;
 
@@ -77,3 +73,14 @@ returns boolean
 create function datacell.beat(bskt string, t integer)
 returns boolean
 	external name datacell.beat;
+
+-- Inspection tables
+
+create function datacell.baskets()
+returns table( nme string, threshold int, winsize int, winslide int, beat int,
+	seen timestamp, grabs int, events int)
+external name datacell.baskets;
+
+create function datacell.queries()
+returns table( nme string, status string, cycles int, events int, time bigint, error string, def string)
+external name datacell.queries;

@@ -1,7 +1,7 @@
 -- Scenario to exercise the datacell implementation
 -- using a single receptor and emitter
 -- this is the extended version of scenario00
--- with sliding beatdow and a 2 seconds delay
+-- with sliding window and a 2 seconds delay
 
 create schema datacell;
 set optimizer='datacell_pipe';
@@ -22,6 +22,9 @@ call datacell.query('datacell.mavgbeat', 'insert into datacell.beatout select no
 
 call datacell.resume();
 call datacell.dump();
+
+select * from datacell.baskets();
+select * from datacell.queries();
 
 -- externally, activate the sensor 
 --sensor --host=localhost --port=50500 --events=100 --columns=3 --delay=1

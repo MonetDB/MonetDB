@@ -29,17 +29,16 @@ Both query and emitter attached are scheduled.
 @end example
 @mal
 module petrinet;
-pattern register(nme:str, delay:int):void
+pattern register(nme:str, def:str):void
 address PNregister
 comment "Add a continous query to the Petri net. It will analyse
-the MAL block to determine the input/output dependencies. 
-The delay provides an indicative upperbound on how fast to react";
+the MAL block to determine the input/output dependencies. ";
 
-command source(fcn:str, tbl:str):void
+command source(nme:str, tbl:str):void
 address PNsource
 comment "Manually define an input basket for a transformation";
 
-command target(fcn:str, tbl:str):void
+command target(nme:str, tbl:str):void
 address PNtarget
 comment "Manually define an output basket for a transformation";
 
@@ -58,6 +57,11 @@ comment "Stop the Petri net controller";
 pattern analyse(mod:str, fcn:str)
 address PNanalyseWrapper
 comment "Check the input/output relationship";
+
+command queries():bat[:str,:bat]
+address PNtable
+comment "Inspect the datacell queries";
+
 command dump()
 address PNdump
 comment "Show the status of the Petri net";
@@ -96,6 +100,7 @@ datacell_export str PNsource(int *ret, str *fcn, str *tbl);
 datacell_export str PNtarget(int *ret, str *fcn, str *tbl);
 datacell_export str PNanalysis(Client cntxt, MalBlkPtr mb);
 datacell_export str PNanalyseWrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+datacell_export str PNtable(int *ret);
 #endif
 
 @c
@@ -120,7 +125,8 @@ typedef struct {
 } PoolRec;
 
 typedef struct {
-	str fcn;
+	str name;
+	str def;	/* query definition */
 	MalBlkPtr mb;       /* Factory MAL block */
 	MalStkPtr stk;      /* Factory stack */
 	InstrPtr pci;       /* Factory re-entry point */
@@ -130,7 +136,7 @@ typedef struct {
 	int cycles;     /* number of invocations of the factory */
 	int events;		/* number of events consumed */
 	str error;		/* last error seen */
-	size_t cycletime;   /* total cycle time for all invocations */
+	lng time;   	/* total time spent for all invocations */
 	int enabled, available;
 	int srctop, trgttop;
 	PoolRec *source, *target;
@@ -185,7 +191,7 @@ str PNregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	Symbol s = 0;
 	int *ret = (int *)getArgReference(stk, pci, 0);
 	str nme = *(str *)getArgReference(stk, pci, 1);
-	int *delay = (int*) getArgReference(stk,pci,2);
+	str def = *(str*) getArgReference(stk,pci,2);
 	int i;
 	char buf[BUFSIZ], *modnme, *fcnnme;
 
@@ -208,23 +214,16 @@ str PNregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(MAL, "petrinet.register", MAL_MALLOC_FAIL);
 
 	for ( i = 0; i< pnettop; i++)
-		if ( strcmp(pnet[i].fcn, nme) == 0)
+		if ( strcmp(pnet[i].name, nme) == 0)
 			break;
 	if ( i != pnettop)
 			throw(MAL, "petrinet.register", "Duplicate definition of transition");
-	pnet[pnettop].fcn = GDKstrdup(nme);
+	pnet[pnettop].name = GDKstrdup(nme);
+	pnet[pnettop].def = GDKstrdup(def);;
 	pnet[pnettop].mb = s->def;
 	pnet[pnettop].status = PNwaiting;
 	pnet[pnettop].cycles = 0;
 	/* all the rest is zero */
-	/*assert(pnettop<MAXPN);*/
-
-	if( pci->argc >2 ){
-		delay = (int*) getArgReference(stk,pci,3);
-		if (*delay < 0)
-			throw(MAL, "datacell.register", "Negative delay value not allowed");
-		pnet[pnettop].delay = *delay;
-	}
 	pnettop++;
 
 	(void)ret;
@@ -256,7 +255,7 @@ PNremove(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "datacell.remove", "Continuous query found");
 	PNpauseScheduler(&ret);
 	for( i = j = 0; i< pnettop; i++)
-		if (strcmp(nme, pnet[i].fcn) == 0) {
+		if (strcmp(nme, pnet[i].name) == 0) {
 		} else
 			pnet[j++] = pnet[i];
 	pnettop = j;
@@ -315,7 +314,7 @@ str PNdump(int *ret)
 	mnstr_printf(PNout,"#scheduler status %s\n", statusnames[status]);
 	for (i = 0; i < pnettop; i++) {
 		mnstr_printf(PNout, "#[%d]\t%s %s delay %d cycles %d events %d time %d ms\n",
-			i, pnet[i].fcn, statusnames[pnet[i].status], pnet[i].delay, pnet[i].cycles, pnet[i].events, pnet[i].cycletime/1000);
+			i, pnet[i].name, statusnames[pnet[i].status], pnet[i].delay, pnet[i].cycles, pnet[i].events, pnet[i].time/1000);
 		if ( pnet[i].error)
 			mnstr_printf(PNout,"#%s\n", pnet[i].error);
 		for (k = 0; k < pnet[i].srctop; k++)
@@ -345,7 +344,7 @@ str PNsource(int *ret, str *fcn, str *tbl)
 
 	z = BSKTlocate(*tbl);
 	for (i = 0; i < pnettop; i++) {
-		if (strcmp(*fcn, pnet[i].fcn) == 0) {
+		if (strcmp(*fcn, pnet[i].name) == 0) {
 			k = pnet[i].srctop;
 			if (k >= MAXPN) {
 				if ((pnet[i].source = (PoolRec*)GDKrealloc(pnet[i].source, sizeof(PoolRec) * (k + 1))) == NULL)
@@ -371,7 +370,7 @@ str PNtarget(int *ret, str *fcn, str *tbl)
 
 	z = BSKTlocate(*tbl);
 	for (i = 0; i < pnettop; i++) {
-		if (strcmp(*fcn, pnet[i].fcn) == 0) {
+		if (strcmp(*fcn, pnet[i].name) == 0) {
 			k = pnet[i].trgttop;
 			if (k >= MAXPN) {
 				if ((pnet[i].target = (PoolRec*)GDKrealloc(pnet[i].target, sizeof(PoolRec) * (k + 1))) == NULL)
@@ -454,7 +453,7 @@ PNcontroller(void *dummy)
 	int k = -1;
 	int m = 0;
 	str msg;
-	lng t, now;
+	lng t, analysis, now;
 
 	cntxt = mal_clients; /* run as admin */ 
 	SQLinitEnvironment(cntxt);
@@ -478,7 +477,7 @@ PNcontroller(void *dummy)
 	for (i = 0; i < pnettop; i++) {
 		char buf[BUFSIZ], *modnme, *fcnnme;
 
-		BSKTelements( pnet[i].fcn, buf, &modnme, &fcnnme);
+		BSKTelements( pnet[i].name, buf, &modnme, &fcnnme);
 		BSKTtolower(modnme);
 		BSKTtolower(fcnnme);
 		p = newFcnCall(mb, modnme,fcnnme);
@@ -530,18 +529,18 @@ PNcontroller(void *dummy)
 						break;
 					}
 					/* check heart beat delays */
-					if ( baskets[idx].lastseen + baskets[idx].beat > now){
+					if ( baskets[idx].seen + baskets[idx].beat > now){
 						pnet[i].enabled = 0;
 						break;
 					}
 #ifdef _DEBUG_PETRINET_
-					mnstr_printf(cntxt->fdout, "#PETRINET:%d tuples for %s, source %d\n", cnt, pnet[i].fcn, j);
+					mnstr_printf(cntxt->fdout, "#PETRINET:%d tuples for %s, source %d\n", cnt, pnet[i].name, j);
 #endif
 					pnet[i].available += cnt;
 					pnet[i].enabled++;
 				} else {
 #ifdef _DEBUG_PETRINET_
-					mnstr_printf(cntxt->fdout, "#PETRINET:no tuples for %s, source %d\n",  pnet[i].fcn, j);
+					mnstr_printf(cntxt->fdout, "#PETRINET:no tuples for %s, source %d\n",  pnet[i].name, j);
 #endif
 					/*stop checking if the rest input BATs does not contain elements */
 					pnet[i].enabled = 0;
@@ -552,6 +551,7 @@ PNcontroller(void *dummy)
 				/*save the ids of all continuous queries that can be executed */
 				enabled[k++] = i;
 		}
+		analysis = GDKusec()-now;
 
 		/* execute each enabled transformation */
 		/* We don't need to access again all the factories and check again which are available to execute them
@@ -561,20 +561,20 @@ PNcontroller(void *dummy)
 			i = enabled[m];
 			if (pnet[i].srctop == pnet[i].enabled && pnet[i].available > 0) {
 #ifdef _DEBUG_PETRINET_
-				mnstr_printf(cntxt->fdout, "#Run transition %s pc %d\n", pnet[i].fcn, pnet[i].pc);
+				mnstr_printf(cntxt->fdout, "#Run transition %s pc %d\n", pnet[i].name, pnet[i].pc);
 #endif
 #ifdef _BASKET_SIZE_
 				mnstr_printf(cntxt->fdout, "\npnet[%d].srctop:%d\n", i, pnet[i].srctop);
-				mnstr_printf(cntxt->fdout, "Function: %s basket size %d\n", pnet[i].fcn, pnet[i].source[0].available);
+				mnstr_printf(cntxt->fdout, "Function: %s basket size %d\n", pnet[i].name, pnet[i].source[0].available);
 #endif
 
 				t= GDKusec();
 				msg = reenterMAL(cntxt, mb, pnet[i].pc, pnet[i].pc + 1, glb, 0, 0);
-				pnet[i].cycletime += GDKusec() - t;
+				pnet[i].time += GDKusec() - t + analysis;
 				if ( msg != MAL_SUCCEED && !strstr(msg,"too early") ){
 					char buf[BUFSIZ];
 					if ( pnet[i].error == NULL ) {
-						snprintf(buf,BUFSIZ-1,"Query %s failed:%s", pnet[i].fcn, msg);
+						snprintf(buf,BUFSIZ-1,"Query %s failed:%s", pnet[i].name, msg);
 						pnet[i].error = GDKstrdup(buf);
 					} else GDKfree(msg);
 					pnet[i].enabled = -1;
@@ -582,7 +582,7 @@ PNcontroller(void *dummy)
 					pnet[i].cycles++;
 					for (j = 0; j < pnet[i].srctop; j++) {
 						idx = pnet[i].source[j].bskt;
-						baskets[idx].lastseen = now;
+						baskets[idx].seen = now;
 						pnet[i].events += pnet[i].source[j].available;
 						pnet[i].source[j].available = 0;  /* force recount */
 					}
@@ -625,6 +625,79 @@ str PNstart(int *ret)
 	PNcontroller(&s);
 
 	(void)ret;
+	return MAL_SUCCEED;
+}
+
+/* inspection  routines */
+str
+PNtable(int *ret)
+{
+	BAT *bn, *name, *def, *status, *cycles, *events, *time, *error;
+	int i;
+
+	bn = BATnew(TYPE_str, TYPE_bat, BATTINY);
+	if ( bn == 0)
+		throw(MAL,"dictionary.baskets",MAL_MALLOC_FAIL);
+
+	name = BATnew(TYPE_oid,TYPE_str, BATTINY);
+	if ( name == 0 ) goto wrapup;
+	BATseqbase(name,0);
+	def = BATnew(TYPE_oid,TYPE_str, BATTINY);
+	if ( def == 0 ) goto wrapup;
+	BATseqbase(def,0);
+	status = BATnew(TYPE_oid,TYPE_str, BATTINY);
+	if ( status == 0 ) goto wrapup;
+	BATseqbase(status,0);
+	cycles = BATnew(TYPE_oid,TYPE_int, BATTINY);
+	if ( cycles == 0 ) goto wrapup;
+	BATseqbase(cycles,0);
+	events = BATnew(TYPE_oid,TYPE_int, BATTINY);
+	if ( events == 0 ) goto wrapup;
+	BATseqbase(events,0);
+	time = BATnew(TYPE_oid,TYPE_lng, BATTINY);
+	if ( time == 0 ) goto wrapup;
+	BATseqbase(time,0);
+	error = BATnew(TYPE_oid,TYPE_str, BATTINY);
+	if ( error == 0 ) goto wrapup;
+	BATseqbase(error,0);
+
+	for ( i =0; i < pnettop; i++) {
+		BUNappend(name, pnet[i].name, FALSE);
+		BUNappend(def, pnet[i].def, FALSE);
+		BUNappend(status, statusnames[pnet[i].status], FALSE);
+		BUNappend(cycles, &pnet[i].cycles, FALSE);
+		BUNappend(events, &pnet[i].events, FALSE);
+		BUNappend(time, &pnet[i].time, FALSE);
+		BUNappend(error, (pnet[i].error ? pnet[i].error:""), FALSE);
+	}
+	BUNins(bn,"nme", & name->batCacheid, FALSE);
+	BUNins(bn,"status", & status->batCacheid, FALSE);
+	BUNins(bn,"cycles", & cycles->batCacheid, FALSE);
+	BUNins(bn,"events", & events->batCacheid, FALSE);
+	BUNins(bn,"time", & time->batCacheid, FALSE);
+	BUNins(bn,"error", & error->batCacheid, FALSE);
+	BUNins(bn,"def", & def->batCacheid, FALSE);
+
+	*ret = bn->batCacheid;
+	BBPkeepref(bn->batCacheid);
+	BBPreleaseref(name->batCacheid);
+	BBPreleaseref(def->batCacheid);
+	BBPreleaseref(status->batCacheid);
+	BBPreleaseref(cycles->batCacheid);
+	BBPreleaseref(events->batCacheid);
+	BBPreleaseref(time->batCacheid);
+	BBPreleaseref(error->batCacheid);
+	return MAL_SUCCEED;
+wrapup:
+	if ( bn) BBPreleaseref(bn->batCacheid);
+	if ( name) BBPreleaseref(name->batCacheid);
+	if ( def) BBPreleaseref(def->batCacheid);
+	if ( status) BBPreleaseref(status->batCacheid);
+	if ( cycles) BBPreleaseref(cycles->batCacheid);
+	if ( events) BBPreleaseref(events->batCacheid);
+	if ( time) BBPreleaseref(time->batCacheid);
+	if ( error) BBPreleaseref(error->batCacheid);
+	throw(MAL,"datacell.queries",MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 @}
