@@ -109,12 +109,12 @@ typedef struct{
 	str name;	/* table that represents the basket */
 	int threshold ; /* bound to determine scheduling eligibility */
 	int winsize, winslide; /* sliding window operations */
-	lng seen;
 	lng beat;	/* milliseconds delay */
 	int colcount;
 	str *cols;
 	BAT **primary;	
 	/* statistics */
+	timestamp seen;
 	int events; /* total number of events grabbed */
 	int grabs; /* number of grabs */
 } *BSKTbasket, BSKTbasketRec;
@@ -415,7 +415,7 @@ BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str tbl;
 	int bskt, i, *ret;
 	BAT *b,*bn = 0,*v;
-	int cnt;
+	int cnt = 0;
 
 	(void) cntxt;
 	(void) mb;
@@ -581,7 +581,8 @@ BSKTwindow(int *ret, str *tbl, int *sz, int *slide)
 str
 BSKTbeat(int *ret, str *tbl, int *sz)
 {
-	int bskt;
+	int bskt, tst;
+	timestamp ts,tn;
 	bskt = BSKTlocate(*tbl);
 	if (bskt == 0 )
 		throw(MAL,"basket.beat","Basket not found");
@@ -589,7 +590,10 @@ BSKTbeat(int *ret, str *tbl, int *sz)
 		throw(MAL,"basket.beat","Illegal value");
 	baskets[bskt].beat = *sz;
 	*ret = TRUE;
-	if ( baskets[bskt].beat + baskets[bskt].seen > GDKusec() )
+	(void) MTIMEunix_epoch(&ts);
+	(void) MTIMEtimestamp_add(&tn, &baskets[bskt].seen, &baskets[bskt].beat);
+	tst = tn.days < ts.days || (tn.days == ts.days && tn.msecs < ts.msecs);
+	if ( tst)
 		throw(MAL,"basket.heat","too early");
 	return MAL_SUCCEED;
 }

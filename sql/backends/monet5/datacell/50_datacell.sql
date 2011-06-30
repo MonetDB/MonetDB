@@ -82,5 +82,5 @@ returns table( nme string, threshold int, winsize int, winslide int, beat int,
 external name datacell.baskets;
 
 create function datacell.queries()
-returns table( nme string, status string, cycles int, events int, time bigint, error string, def string)
+returns table( nme string, status string, seen timestamp, cycles int, events int, time bigint, error string, def string)
 external name datacell.queries;

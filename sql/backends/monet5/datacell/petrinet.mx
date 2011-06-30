@@ -133,6 +133,7 @@ typedef struct {
 	int pc;
 	int status;		/* query status waiting/running/ready */
 	int delay;		/* maximum delay between calls */
+	timestamp seen;	/* last executed */
 	int cycles;     /* number of invocations of the factory */
 	int events;		/* number of events consumed */
 	str error;		/* last error seen */
@@ -523,15 +524,20 @@ PNcontroller(void *dummy)
 				}
 				pnet[i].source[j].available = cnt = (int)BATcount(pnet[i].source[j].b);
 				if (cnt) {
+					timestamp ts, tn;
 					/* only look at large enough baskets */
 					if ( cnt <  baskets[idx].threshold) {
 						pnet[i].enabled = 0;
 						break;
 					}
 					/* check heart beat delays */
-					if ( baskets[idx].seen + baskets[idx].beat > now){
-						pnet[i].enabled = 0;
-						break;
+					if ( baskets[idx].beat) {
+						(void) MTIMEunix_epoch(&ts);
+						(void) MTIMEtimestamp_add(&tn, &baskets[idx].seen, &baskets[idx].beat);
+						if(  tn.days < ts.days || (tn.days == ts.days && tn.msecs < ts.msecs) ){
+							pnet[i].enabled = 0;
+							break;
+						}
 					}
 #ifdef _DEBUG_PETRINET_
 					mnstr_printf(cntxt->fdout, "#PETRINET:%d tuples for %s, source %d\n", cnt, pnet[i].name, j);
@@ -570,7 +576,7 @@ PNcontroller(void *dummy)
 
 				t= GDKusec();
 				msg = reenterMAL(cntxt, mb, pnet[i].pc, pnet[i].pc + 1, glb, 0, 0);
-				pnet[i].time += GDKusec() - t + analysis;
+				pnet[i].time += GDKusec() - t + analysis;	/* keep around in microseconds */
 				if ( msg != MAL_SUCCEED && !strstr(msg,"too early") ){
 					char buf[BUFSIZ];
 					if ( pnet[i].error == NULL ) {
@@ -580,9 +586,10 @@ PNcontroller(void *dummy)
 					pnet[i].enabled = -1;
 				} else {
 					pnet[i].cycles++;
+					(void) MTIMEcurrent_timestamp(&pnet[i].seen);
 					for (j = 0; j < pnet[i].srctop; j++) {
 						idx = pnet[i].source[j].bskt;
-						baskets[idx].seen = now;
+						(void) MTIMEcurrent_timestamp(&baskets[idx].seen);
 						pnet[i].events += pnet[i].source[j].available;
 						pnet[i].source[j].available = 0;  /* force recount */
 					}
@@ -632,7 +639,7 @@ str PNstart(int *ret)
 str
 PNtable(int *ret)
 {
-	BAT *bn, *name, *def, *status, *cycles, *events, *time, *error;
+	BAT *bn, *name, *def, *status, *seen, *cycles, *events, *time, *error;
 	int i;
 
 	bn = BATnew(TYPE_str, TYPE_bat, BATTINY);
@@ -648,6 +655,9 @@ PNtable(int *ret)
 	status = BATnew(TYPE_oid,TYPE_str, BATTINY);
 	if ( status == 0 ) goto wrapup;
 	BATseqbase(status,0);
+	seen = BATnew(TYPE_oid,TYPE_timestamp, BATTINY);
+	if ( seen == 0 ) goto wrapup;
+	BATseqbase(seen,0);
 	cycles = BATnew(TYPE_oid,TYPE_int, BATTINY);
 	if ( cycles == 0 ) goto wrapup;
 	BATseqbase(cycles,0);
@@ -665,6 +675,7 @@ PNtable(int *ret)
 		BUNappend(name, pnet[i].name, FALSE);
 		BUNappend(def, pnet[i].def, FALSE);
 		BUNappend(status, statusnames[pnet[i].status], FALSE);
+		BUNappend(seen, &pnet[i].seen, FALSE);
 		BUNappend(cycles, &pnet[i].cycles, FALSE);
 		BUNappend(events, &pnet[i].events, FALSE);
 		BUNappend(time, &pnet[i].time, FALSE);
@@ -672,6 +683,7 @@ PNtable(int *ret)
 	}
 	BUNins(bn,"nme", & name->batCacheid, FALSE);
 	BUNins(bn,"status", & status->batCacheid, FALSE);
+	BUNins(bn,"seen", & seen->batCacheid, FALSE);
 	BUNins(bn,"cycles", & cycles->batCacheid, FALSE);
 	BUNins(bn,"events", & events->batCacheid, FALSE);
 	BUNins(bn,"time", & time->batCacheid, FALSE);
@@ -683,6 +695,7 @@ PNtable(int *ret)
 	BBPreleaseref(name->batCacheid);
 	BBPreleaseref(def->batCacheid);
 	BBPreleaseref(status->batCacheid);
+	BBPreleaseref(seen->batCacheid);
 	BBPreleaseref(cycles->batCacheid);
 	BBPreleaseref(events->batCacheid);
 	BBPreleaseref(time->batCacheid);
@@ -693,6 +706,7 @@ wrapup:
 	if ( name) BBPreleaseref(name->batCacheid);
 	if ( def) BBPreleaseref(def->batCacheid);
 	if ( status) BBPreleaseref(status->batCacheid);
+	if ( seen) BBPreleaseref(seen->batCacheid);
 	if ( cycles) BBPreleaseref(cycles->batCacheid);
 	if ( events) BBPreleaseref(events->batCacheid);
 	if ( time) BBPreleaseref(time->batCacheid);

@@ -478,7 +478,10 @@ If the thread is suspended, we sleep for at least one second.
 			BATclear(b);
 		}
 		BSKTunlock(&em->lck, &em->name);
-		if ((cnt = BATcount(em->table.format[1].c[0]))) {
+		if ((cnt = BATcount(em->table.format[0].c[0]))) {
+			MTIMEcurrent_timestamp(&baskets[em->bskt].seen);
+			baskets[em->bskt].events = cnt;
+			baskets[em->bskt].grabs ++;
 			if (em->status != EMLISTEN)
 				break;
 
