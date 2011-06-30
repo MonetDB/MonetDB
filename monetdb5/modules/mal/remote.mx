@@ -1320,7 +1320,10 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 	/* the BAT we will return */
 	b = BATnew(bb.Htype, bb.Ttype, bb.size);
 	b->hseqbase = bb.seqbase;
-	b->T->width = bb.tailsize / bb.size;
+	/* for strings, the width may not match, fix it to match what we
+	 * retrieved */
+	if (bb.size > 0 && bb.Ttype == TYPE_str)
+		b->T->width = bb.tailsize / bb.size;
 
 	mnstr_read(in, b->T->heap.base, bb.tailsize, 1);
 	b->batCount = bb.size;
