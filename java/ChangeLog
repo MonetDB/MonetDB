@@ -1,6 +1,12 @@
 # ChangeLog file for java
 # This file is updated with Maddlog
 
+* Thu Jun 30 2011 Fabian Groffen <fabian@cwi.nl>
+- Add so_timeout Driver property to specify a SO_TIMEOUT value for the
+  socket in use to the database.  Setting this property to a value in
+  milliseconds defines the timeout for read calls, which may 'unlock'
+  the driver if the server hangs, bug #2828
+
 * Wed May 25 2011 Fabian Groffen <fabian@cwi.nl>
 - Added a naive implementation for PreparedStatement.setCharacterStream
 

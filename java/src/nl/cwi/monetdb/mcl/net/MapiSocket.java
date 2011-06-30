@@ -119,6 +119,9 @@ public final class MapiSocket {
 	/** A short in two bytes for holding the block size in bytes */
 	private byte[] blklen = new byte[2];
 
+	/** SO_TIMEOUT value for the underlying java.net.Socket */
+	private int sockTimeout = 0;
+
 	/**
 	 * Constructs a new MapiSocket.
 	 */
@@ -188,6 +191,20 @@ public final class MapiSocket {
 	}
 
 	/**
+	 * Set the SO_TIMEOUT on the underlying Socket.  When for some
+	 * reason the connection to the database hangs, this setting can be
+	 * useful to break out of this indefinite wait.
+	 * This option must be enabled prior to entering the blocking
+	 * operation to have effect.
+	 *
+	 * @param timeout The specified timeout, in milliseconds.  A timeout
+	 *        of zero is interpreted as an infinite timeout.
+	 */
+	public void setSoTimeout(int s) {
+		this.sockTimeout = s;
+	}
+
+	/**
 	 * Connects to the given host and port, logging in as the given
 	 * user.  If followRedirect is false, a RedirectionException is
 	 * thrown when a redirect is encountered.
@@ -203,7 +220,7 @@ public final class MapiSocket {
 	 * @throws MCLParseException if bogus data is received
 	 * @throws MCLException if an MCL related error occurs
 	 */
-	public List connect(String host, int port, String user, String pass) 
+	public List connect(String host, int port, String user, String pass)
 		throws IOException, MCLParseException, MCLException
 	{
 		// Wrap around the internal connect that needs to know if it
@@ -212,7 +229,7 @@ public final class MapiSocket {
 	}
 
 	private List connect(String host, int port, String user, String pass,
-			boolean makeConnection) 
+			boolean makeConnection)
 		throws IOException, MCLParseException, MCLException
 	{
 		if (ttl-- <= 0)
@@ -223,6 +240,8 @@ public final class MapiSocket {
 			// set nodelay, as it greatly speeds up small messages (like we
 			// often do)
 			con.setTcpNoDelay(true);
+			// limit time to wait on blocking operations (0 = indefinite)
+			con.setSoTimeout(sockTimeout);
 
 			fromMonet = new BlockInputStream(con.getInputStream());
 			toMonet = new BlockOutputStream(con.getOutputStream());
@@ -678,7 +697,7 @@ public final class MapiSocket {
 
 			// write the actual block
 			out.write(block, 0, writePos);
-				
+
 			if (debug) {
 				if (last) {
 					logTd("write final block: " + writePos + " bytes");
