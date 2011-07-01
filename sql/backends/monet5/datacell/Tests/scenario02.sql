@@ -2,6 +2,7 @@
 -- using a single receptor and emitter
 -- Monitor the aggregation level 
 
+create schema datacell;
 set optimizer='datacell_pipe';
 
 create table datacell.potin(

@@ -233,7 +233,7 @@ pattern clear_table{unsafe}(sname:str, tname:str) :wrd
 address mvc_clear_table_wrap
 comment "Clear table";
 
-pattern delete(mvc:int, sname:str, tname:str, b:any):int 
+pattern delete{unsafe}(mvc:int, sname:str, tname:str, b:any):int
 address mvc_delete_wrap
 comment "delete from table";
 

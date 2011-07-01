@@ -1,6 +1,9 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Fri Jul  1 2011 Fabian Groffen <fabian@cwi.nl>
+- Fix stethoscope's mod.fcn filter when using multiple targets, bug #2827
+
 * Wed Jun 29 2011 Sjoerd Mullender <sjoerd@acm.org>
 - The separate Python distribution now uses the same version number as
   the main package.

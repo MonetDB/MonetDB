@@ -451,7 +451,7 @@ case $bits-$enable_oid32 in
 	;;
 esac
 AC_SUBST(oids)
-AC_MSG_RESULT($bits bits)
+AC_MSG_RESULT($oids bits)
 
 AC_C_BIGENDIAN()
 
@@ -3278,7 +3278,7 @@ for comp in \
 done
 echo
 echo "* Important options:"
-echo "    OID size:   " ${bits} bits
+echo "    OID size:   " ${oids} bits
 echo
 
 dnl give some hints to the user

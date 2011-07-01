@@ -149,7 +149,12 @@ public class MonetConnection implements Connection {
 		boolean debug = Boolean.valueOf(props.getProperty("debug")).booleanValue();
 		String hash = props.getProperty("hash");
 		blobIsBinary = Boolean.valueOf(props.getProperty("treat_blob_as_binary")).booleanValue();
-
+		int sockTimeout = 0;
+		try {
+			sockTimeout = Integer.parseInt(props.getProperty("so_timeout"));
+		} catch (NumberFormatException e) {
+			sockTimeout = 0;
+		}
 		// check input arguments
 		if (hostname == null || hostname.trim().equals(""))
 			throw new IllegalArgumentException("hostname should not be null or empty");
@@ -173,6 +178,7 @@ public class MonetConnection implements Connection {
 		if (hash != null) server.setHash(hash);
 		if (database != null) server.setDatabase(database);
 		server.setLanguage(language);
+		server.setSoTimeout(sockTimeout);
 
 		// we're debugging here... uhm, should be off in real life
 		if (debug) {

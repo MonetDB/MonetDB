@@ -44,21 +44,37 @@ pattern grab(tbl:str):bat[:oid,:any]...
 address BSKTgrab
 comment "Take a snapshot of the basket, destroying the origin when flg is set";
 
-pattern pass(tbl:str, cols:any...)
-address BSKTpass
+pattern update(tbl:str, cols:any...)
+address BSKTupdate
 comment "Dump the new tuples into the basket";
 
-pattern pass(tbl:str, cols:bat[:oid,:any]...)
-address BSKTpass
+pattern update(tbl:str, cols:bat[:oid,:any]...)
+address BSKTupdate
 comment "Dump the new tuples into the basket";
 
 command drop(tbl:str):void
 address BSKTdrop
 comment "Remove the basket";
 
+command threshold(tbl:str,N:int):bit
+address BSKTthreshold
+comment "Set an acceptance threshold of N events before inspecting";
+
+command window{unsafe}(tbl:str,N:int, S:int):bit
+address BSKTwindow
+comment "Use a window of N event and slide S afterwards";
+
+command beat(tbl:str,N:int):bit
+address BSKTbeat
+comment "Set an delay to N milliseconds";
+
 command reset():void
 address BSKTreset
 comment "Remove all baskets";
+
+command baskets():bat[:str,:bat]
+address BSKTtable
+comment "Inspect the datacell baskets";
 
 command dump()
 address BSKTdump
@@ -91,10 +107,16 @@ comment "Dump the status of the basket table";
 typedef struct{
 	MT_Lock lock;
 	str name;	/* table that represents the basket */
+	int threshold ; /* bound to determine scheduling eligibility */
+	int winsize, winslide; /* sliding window operations */
+	lng beat;	/* milliseconds delay */
 	int colcount;
 	str *cols;
 	BAT **primary;	
 	/* statistics */
+	timestamp seen;
+	int events; /* total number of events grabbed */
+	int grabs; /* number of grabs */
 } *BSKTbasket, BSKTbasketRec;
 
 datacell_export str schema_default;
@@ -106,7 +128,11 @@ datacell_export int BSKTmemberCount(str tbl);
 datacell_export int BSKTlocate(str tbl);
 datacell_export str BSKTdump(int *ret);
 datacell_export str BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-datacell_export str BSKTpass(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+datacell_export str BSKTupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+datacell_export str BSKTthreshold(int *ret, str *tbl, int *sz);
+datacell_export str BSKTbeat(int *ret, str *tbl, int *sz);
+datacell_export str BSKTwindow(int *ret, str *tbl, int *sz, int *slide);
+datacell_export str BSKTtable(int *ret);
 
 datacell_export str BSKTlock(int *ret, str *tbl, int *delay);
 datacell_export str BSKTunlock(int *ret, str *tbl);
@@ -115,7 +141,7 @@ datacell_export str BSKTlock2(int *ret, str *tbl);
 datacell_export str BSKTnewbasket(sql_schema *s, sql_table *t, sql_trans *tr);
 datacell_export void BSKTelements(str nme, str buf, str *schema, str *tbl);
 datacell_export InstrPtr BSKTgrabInstruction(MalBlkPtr mb, str tbl);
-datacell_export InstrPtr BSKTpassInstruction(MalBlkPtr mb, str tbl);
+datacell_export InstrPtr BSKTupdateInstruction(MalBlkPtr mb, str tbl);
 datacell_export void BSKTtolower(char *src);
 
 datacell_export BSKTbasketRec *baskets;
@@ -131,7 +157,7 @@ datacell_export lng usec(void);
 str schema_default = "datacell";
 
 BSKTbasketRec *baskets;   /* the datacell catalog */
-int bsktTop, bsktLimit = 0;
+int bsktTop = 0, bsktLimit = 0;
 static MT_Lock bsktLock;
 
 #define lockBSKTbasketCatalog() mal_set_lock(bsktLock, "basket");
@@ -370,9 +396,13 @@ BSKTdump(int *ret)
 
 	for ( bskt = 0; bskt < bsktLimit; bskt++) 
 	if ( baskets[bskt].name){
-		mnstr_printf(GDKout, "#baskets[%2d] %s columns %d events " BUNFMT "\n", bskt,
+		mnstr_printf(GDKout, "#baskets[%2d] %s columns %d threshold %d window=[%d,%d] beat %d events " BUNFMT "\n", bskt,
 			baskets[bskt].name,
 			baskets[bskt].colcount,
+			baskets[bskt].threshold,
+			baskets[bskt].winsize,
+			baskets[bskt].winslide,
+			baskets[bskt].beat,
 			(baskets[bskt].primary[0]? BATcount(baskets[bskt].primary[0]): 0));
 	}
 	(void)ret;
@@ -384,7 +414,8 @@ BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str tbl;
 	int bskt, i, *ret;
-	BAT *b,*bn;
+	BAT *b,*bn = 0,*v;
+	int cnt = 0;
 
 	(void) cntxt;
 	(void) mb;
@@ -395,21 +426,45 @@ BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL,"basket.grab","Basket not found");
 	if ( baskets[bskt].colcount != pci->retc)
 		throw(MAL,"basket.grab","Incompatible arguments");
+
 	mal_set_lock(baskets[bskt].lock, "lock basket");
 	for ( i=0; i < baskets[bskt].colcount; i++) {
 		ret= (int*) getArgReference(stk,pci,i);
 		b = baskets[bskt].primary[i];
-		bn = BATcopy(b, b->htype, b->ttype,TRUE);
+
+		/* take care of sliding windows */
+		if ( baskets[bskt].winsize ){
+			/* we may be too early */
+			if ( BATcount(b) < (BUN) baskets[bskt].winsize)
+				break;
+			bn = BATcopy(b, b->htype, b->ttype,TRUE);
+			v = BATslice(bn, baskets[bskt].winslide,BATcount(bn));
+			BATclear(b);
+			b = BATsetaccess(b, BAT_WRITE);
+			BATins(b,v, FALSE);
+			BATsetcount(bn, baskets[bskt].winsize);
+			cnt = (int) BATcount(bn);
+			BBPunfix(v->batCacheid);
+		} else {
+			bn = BATcopy(b, b->htype, b->ttype,TRUE);
+			BATclear(b);
+		}
+
 		*ret = bn->batCacheid;
 		BBPkeepref(*ret);
-		BATclear(b);
 	}
 	mal_unset_lock(baskets[bskt].lock, "unlock basket");
+	if ( i != baskets[bskt].colcount) {
+		if( bn) BBPunfix( bn->batCacheid);
+		throw(MAL,"basket.grab","too early");
+	}
+	baskets[bskt].grabs++;
+	baskets[bskt].events += cnt;
 	return MAL_SUCCEED;
 }
 
 str
-BSKTpass(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+BSKTupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str tbl;
 	int bskt, i, j, ret;
@@ -421,9 +476,9 @@ BSKTpass(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	bskt = BSKTlocate(tbl);
 	if (bskt == 0 )
-		throw(MAL,"basket.pass","Basket not found");
+		throw(MAL,"basket.update","Basket not found");
 	if ( baskets[bskt].colcount != pci->argc - 2)
-		throw(MAL,"basket.pass","Non-matching arguments");
+		throw(MAL,"basket.update","Non-matching arguments");
 
 	/* copy the content of the temporary BATs into the basket */
 	mal_set_lock(baskets[bskt].lock, "lock basket");
@@ -463,7 +518,7 @@ BSKTgrabInstruction(MalBlkPtr mb, str tbl)
 }
 
 InstrPtr
-BSKTpassInstruction(MalBlkPtr mb, str tbl)
+BSKTupdateInstruction(MalBlkPtr mb, str tbl)
 {
 	int i, j, bskt;
 	InstrPtr p;
@@ -475,7 +530,7 @@ BSKTpassInstruction(MalBlkPtr mb, str tbl)
 	p = newInstruction(mb, ASSIGNsymbol);
 	getArg(p,0)= newTmpVariable(mb,TYPE_any);
 	getModuleId(p) = basketRef;
-	getFunctionId(p) = putName("pass",4);
+	getFunctionId(p) = putName("update",6);
 	p = pushStr(mb,p, tbl);
 	for ( i=0; i < baskets[bskt].colcount; i++) {
 		b = baskets[bskt].primary[i];
@@ -483,5 +538,144 @@ BSKTpassInstruction(MalBlkPtr mb, str tbl)
 		p= pushArgument(mb,p, j);
 	}
 	return p;
+}
+
+str
+BSKTthreshold(int *ret, str *tbl, int *sz)
+{
+	int bskt;
+	bskt = BSKTlocate(*tbl);
+	if (bskt == 0 )
+		throw(MAL,"basket.threshold","Basket not found");
+	if ( *sz < 0)
+		throw(MAL,"basket.threshold","Illegal value");
+	if ( *sz < baskets[bskt].winsize)
+		throw(MAL,"basket.threshold","Threshold smaller then window size");
+	baskets[bskt].threshold = *sz;
+	*ret = TRUE;
+	return MAL_SUCCEED;
+}
+
+str
+BSKTwindow(int *ret, str *tbl, int *sz, int *slide)
+{
+	int idx;
+
+	idx = BSKTlocate(*tbl);
+	if (idx == 0 )
+		throw(MAL,"basket.window","Basket not found");
+	if ( *slide < 0 || *slide > *sz)
+		throw(MAL,"basket.window","Illegal window slide");
+	if ( *sz < 0 )
+		throw(MAL,"basket.window","Illegal window size");
+
+	/* administer the required size */
+	baskets[idx].winsize = *sz;
+	if ( baskets[idx].threshold < *sz)
+		baskets[idx].threshold = *sz;
+	baskets[idx].winslide = *slide;
+	*ret = TRUE;
+	return MAL_SUCCEED;
+}
+
+str
+BSKTbeat(int *ret, str *tbl, int *sz)
+{
+	int bskt, tst;
+	timestamp ts,tn;
+	bskt = BSKTlocate(*tbl);
+	if (bskt == 0 )
+		throw(MAL,"basket.beat","Basket not found");
+	if ( *sz < 0)
+		throw(MAL,"basket.beat","Illegal value");
+	baskets[bskt].beat = *sz;
+	*ret = TRUE;
+	(void) MTIMEunix_epoch(&ts);
+	(void) MTIMEtimestamp_add(&tn, &baskets[bskt].seen, &baskets[bskt].beat);
+	tst = tn.days < ts.days || (tn.days == ts.days && tn.msecs < ts.msecs);
+	if ( tst)
+		throw(MAL,"basket.heat","too early");
+	return MAL_SUCCEED;
+}
+
+/* provide a tabular view for inspection */
+str
+BSKTtable(int *ret)
+{
+	BAT *bn, *name, *seen, *events, *grabs;
+	BAT *threshold, *winsize, *winslide, *beat;
+	int i;
+
+	bn = BATnew(TYPE_str, TYPE_bat, BATTINY);
+	if ( bn == 0)
+		throw(MAL,"dictionary.baskets",MAL_MALLOC_FAIL);
+
+	name = BATnew(TYPE_oid,TYPE_str, BATTINY);
+	if ( name == 0 ) goto wrapup;
+	BATseqbase(name,0);
+	threshold = BATnew(TYPE_oid,TYPE_int, BATTINY);
+	if ( threshold == 0 ) goto wrapup;
+	BATseqbase(threshold,0);
+	winsize = BATnew(TYPE_oid,TYPE_int, BATTINY);
+	if ( winsize == 0 ) goto wrapup;
+	BATseqbase(winsize,0);
+	winslide = BATnew(TYPE_oid,TYPE_int, BATTINY);
+	if ( winslide == 0 ) goto wrapup;
+	BATseqbase(winslide,0);
+	beat = BATnew(TYPE_oid,TYPE_int, BATTINY);
+	if ( beat == 0 ) goto wrapup;
+	BATseqbase(beat,0);
+	seen = BATnew(TYPE_oid,TYPE_timestamp, BATTINY);
+	if ( seen == 0 ) goto wrapup;
+	BATseqbase(seen,0);
+	grabs = BATnew(TYPE_oid,TYPE_int, BATTINY);
+	if ( grabs == 0 ) goto wrapup;
+	BATseqbase(grabs,0);
+	events = BATnew(TYPE_oid,TYPE_int, BATTINY);
+	if ( events == 0 ) goto wrapup;
+	BATseqbase(events,0);
+
+	for ( i =1; i < bsktTop; i++) 
+	if ( baskets[i].name ) {
+		BUNappend(name, baskets[i].name, FALSE);
+		BUNappend(threshold, &baskets[i].threshold, FALSE);
+		BUNappend(winsize, &baskets[i].winsize, FALSE);
+		BUNappend(winslide, &baskets[i].winslide, FALSE);
+		BUNappend(beat, &baskets[i].beat, FALSE);
+		BUNappend(seen, &baskets[i].seen, FALSE);
+		BUNappend(grabs, &baskets[i].grabs, FALSE);
+		BUNappend(events, &baskets[i].events, FALSE);
+	}
+	BUNins(bn,"nme", & name->batCacheid, FALSE);
+	BUNins(bn,"threshold", & threshold->batCacheid, FALSE);
+	BUNins(bn,"winsize", & winsize->batCacheid, FALSE);
+	BUNins(bn,"winslide", & winslide->batCacheid, FALSE);
+	BUNins(bn,"beat", & beat->batCacheid, FALSE);
+	BUNins(bn,"seen", & seen->batCacheid, FALSE);
+	BUNins(bn,"grabs", & grabs->batCacheid, FALSE);
+	BUNins(bn,"events", & events->batCacheid, FALSE);
+
+	*ret = bn->batCacheid;
+	BBPkeepref(bn->batCacheid);
+	BBPkeepref(name->batCacheid);
+	BBPkeepref(threshold->batCacheid);
+	BBPkeepref(winsize->batCacheid);
+	BBPkeepref(winslide->batCacheid);
+	BBPkeepref(beat->batCacheid);
+	BBPkeepref(seen->batCacheid);
+	BBPkeepref(grabs->batCacheid);
+	BBPkeepref(events->batCacheid);
+	return MAL_SUCCEED;
+wrapup:
+	if ( bn) BBPreleaseref(bn->batCacheid);
+	if ( name) BBPreleaseref(name->batCacheid);
+	if ( threshold) BBPreleaseref(threshold->batCacheid);
+	if ( winsize) BBPreleaseref(winsize->batCacheid);
+	if ( winslide) BBPreleaseref(winslide->batCacheid);
+	if ( beat) BBPreleaseref(beat->batCacheid);
+	if ( seen) BBPreleaseref(seen->batCacheid);
+	if ( grabs) BBPreleaseref(grabs->batCacheid);
+	if ( events) BBPreleaseref(events->batCacheid);
+	throw(MAL,"datacell.baskets",MAL_MALLOC_FAIL);
 }
 @}

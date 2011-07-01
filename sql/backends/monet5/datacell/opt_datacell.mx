@@ -60,7 +60,7 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 {
 	int actions = 0, fnd;
     int bskt, i, j, k, limit, vlimit, slimit;
-    InstrPtr p, *old;
+    InstrPtr r, p, *old;
 	str  col;
 	int maxbasket= 128, m=0,a=0;
 	char *tables[128];
@@ -96,10 +96,45 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			/* inject transaction start */
 			newFcnCall(mb,sqlRef,putName("transaction",11));
 		
+		if ( getModuleId(p) == datacellRef && getFunctionId(p) == putName("window",6) &&
+			isVarConstant(mb, getArg(p,1)) && isVarConstant(mb, getArg(p,2)) && isVarConstant(mb,getArg(p,3)) ){
+			/* let's move the window to the start of the block  when it consists of constants*/
+			pushInstruction(mb,p);
+			for ( j = mb->stop-1; j > 1; j--)
+				mb->stmt[j]= mb->stmt[j-1];
+			mb->stmt[j] = p;
+			continue;
+		}
+		if ( getModuleId(p) == datacellRef &&  ( getFunctionId(p) == putName("threshold",9)  || getFunctionId(p) == putName("beat",4) ) &&
+			isVarConstant(mb, getArg(p,1)) && isVarConstant(mb, getArg(p,2)) ){
+			/* let's move the threshold/beat to the start of the block  when it consists of constants*/
+			pushInstruction(mb,p);
+			for ( j = mb->stop-1; j > 1; j--)
+				mb->stmt[j]= mb->stmt[j-1];
+			mb->stmt[j] = p;
+			continue;
+		}
+
 		if ( p->token == ENDsymbol){
 			/* a good place to commit the SQL transaction */
 			for ( j = 0; j < a; j++)
 				pushInstruction(mb, qa[j]);
+			/* catch any exception left behind */
+			r= newAssignment(mb);
+			j = getArg(r,0)=  newVariable(mb,GDKstrdup("SQLexception"),TYPE_str);
+			setVarUDFtype(mb,j);
+			r->barrier= CATCHsymbol;
+			r= newAssignment(mb);
+			getArg(r,0)= j;
+			r->barrier= EXITsymbol;
+			r= newAssignment(mb);
+			j = getArg(r,0)=  newVariable(mb,GDKstrdup("MALexception"),TYPE_str);
+			setVarUDFtype(mb,j);
+			r->barrier= CATCHsymbol;
+			r= newAssignment(mb);
+			getArg(r,0)= j;
+			r->barrier= EXITsymbol;
+			
 			(void) newFcnCall(mb, sqlRef, commitRef);
 		}
 		if ( getModuleId(p) == sqlRef  && getFunctionId(p) == putName("affectedRows",12)) {
@@ -172,7 +207,7 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				if ( j == a ){
 					if ( a == maxbasket) return 0;
 					/* grab the basket tables instruction */
-					qa[a]= BSKTpassInstruction(mb,buf);
+					qa[a]= BSKTupdateInstruction(mb,buf);
 					appends[a++]= GDKstrdup(buf);
 					actions = 1;
 				}
@@ -186,8 +221,8 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 					/* upgrade single values to a BAT */
 					clrFunction(p);
 					if ( !isaBatType(getVarType(mb,getArg(p,5))) ) {
-						getModuleId(p) = batRef;
-						getFunctionId(p) = packRef;
+						getModuleId(p) = sqlRef;
+						getFunctionId(p) = singleRef;
 					} 
 					getArg(p, 0) = getArg(qa[j], k + 2);
 					getArg(p, 1) = getArg(p, 5);

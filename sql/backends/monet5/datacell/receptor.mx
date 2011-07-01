@@ -843,7 +843,7 @@ RCdump()
 	for ( ; rc; rc= rc->nxt)
 		dumpReceptor(rc);
 	if ( rcError)
-		mnstr_printf(GDKout,"#last error event %d:%s", rcErrorEvent, rcError);
+		mnstr_printf(GDKout,"#last error event %d:%s\n", rcErrorEvent, rcError);
 	return MAL_SUCCEED;
 }
 @}
