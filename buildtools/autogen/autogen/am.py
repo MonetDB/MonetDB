@@ -1014,7 +1014,8 @@ def am_gem(fd, var, gem, am):
         fd.write("\tmkdir -p $(DESTDIR)'%s'\n" % rd)
         fd.write("\tgem install --local --install-dir $(DESTDIR)'%s' --force --rdoc '%s'\n" % (rd, f[:-4]))
         fd.write("uninstall-local-%s: %s\n" % (sf, f[:-4]))
-        fd.write("\tgem uninstall --install-dir $(DESTDIR)'%s' '%s'\n" % (rd, f[:-4]))
+        # remove "-0.1.gemspec" from end of `f'
+        fd.write("\tgem uninstall --install-dir $(DESTDIR)'%s' '%s'\n" % (rd, f[:-12]))
         am['BUILT_SOURCES'].append(f[:-4])
         am['CLEAN'].append(f[:-4])
     fd.write('else\n')
