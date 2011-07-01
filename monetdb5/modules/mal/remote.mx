@@ -716,7 +716,6 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		stream *sin;
 		char buf[256];
 		ssize_t sz = 0, rd;
-		str err;
 		BAT *b = NULL;
 
 		/* this call should be a single transaction over the channel*/
@@ -735,14 +734,20 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		while ((rd = mnstr_read(sin, &buf[sz], 1, 1)) == 1 && buf[sz] != '\n') {
 			sz += rd;
 		}
-		if (rd < 0)
+		if (rd < 0) {
+			mal_unset_lock(c->lock, "remote.get"); 
 			throw(MAL, "remote.get", "could not read BAT JSON header");
-		if (buf[0] == '!')
+		}
+		if (buf[0] == '!') {
+			mal_unset_lock(c->lock, "remote.get"); 
 			return(GDKstrdup(buf));
+		}
 
 		buf[sz] = '\0';
-		if ((err = RMTinternalcopyfrom(&b, buf, sin)) != NULL)
-			return(err);
+		if ((tmp = RMTinternalcopyfrom(&b, buf, sin)) != NULL) {
+			mal_unset_lock(c->lock, "remote.get"); 
+			return(tmp);
+		}
 
 		v->val.bval = b->batCacheid;
 		v->vtype = TYPE_bat;
