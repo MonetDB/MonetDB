@@ -1360,7 +1360,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 
 	/* for strings, the width may not match, fix it to match what we
 	 * retrieved */
-	if (bb.Ttype == TYPE_str)
+	if (bb.Ttype == TYPE_str && bb.size)
 		b->T->width = bb.tailsize / bb.size;
 
 	if (bb.headsize > 0)
