@@ -1207,6 +1207,8 @@ str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int bid = *(int *)getArgReference(stk, pci, 1);
 	BAT *b = BBPquickdesc(bid, FALSE);
 	char sendhead = 0;
+	char sendtheap = 0;
+	oid Hseqbase = 0;
 
 	(void)mb;
 	(void)stk;
@@ -1220,12 +1222,21 @@ str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPincref(bid, FALSE);
 
 	sendhead = b->htype != TYPE_void && (b->htype != TYPE_oid || !b->H->dense);
+	sendtheap = b->ttype != TYPE_void && b->tvarsized;
+
+	if (b->htype == TYPE_oid && b->H->dense) {
+		BATiter bi = bat_iterator(b);
+		Hseqbase = *(oid *)BUNhead(bi, BUNfirst(b));
+	} else {
+		Hseqbase = b->hseqbase;
+	}
 
 	mnstr_printf(cntxt->fdout, /*JSON*/"{"
 			"\"version\":1,"
 			"\"htype\":%d,"
 			"\"ttype\":%d,"
-			"\"seqbase\":" OIDFMT ","
+			"\"hseqbase\":" OIDFMT ","
+			"\"tseqbase\":" OIDFMT ","
 			"\"size\":" SZFMT ","
 			"\"headsize\":" SZFMT ","
 			"\"tailsize\":" SZFMT ","
@@ -1233,20 +1244,24 @@ str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			"}\n",
 			sendhead ? b->htype : TYPE_void,
 			b->ttype,
-			b->hseqbase == oid_nil ? 0 : b->hseqbase,
+			Hseqbase,
+			b->tseqbase,
 			b->batCount,
 			sendhead ? b->batCount * Hsize(b) : 0,
 			b->batCount * Tsize(b),
-			b->ttype != TYPE_void && b->tvarsized && b->batCount > 0 ? b->T->vheap->free : 0
+			sendtheap && b->batCount > 0 ? b->T->vheap->free : 0
 			);
-	if (sendhead)
-		mnstr_write(cntxt->fdout, /* head */
-				Hloc(b, BUNfirst(b)), b->batCount * Hsize(b), 1);
-	mnstr_write(cntxt->fdout, /* tail */
-			Tloc(b, BUNfirst(b)), b->batCount * Tsize(b), 1);
-	if (b->batCount > 0 && b->tvarsized)
-		mnstr_write(cntxt->fdout, /* theap */
-				Tbase(b), b->T->vheap->free, 1);
+
+	if (b->batCount > 0) {
+		if (sendhead)
+			mnstr_write(cntxt->fdout, /* head */
+					Hloc(b, BUNfirst(b)), b->batCount * Hsize(b), 1);
+		mnstr_write(cntxt->fdout, /* tail */
+				Tloc(b, BUNfirst(b)), b->batCount * Tsize(b), 1);
+		if (sendtheap)
+			mnstr_write(cntxt->fdout, /* theap */
+					Tbase(b), b->T->vheap->free, 1);
+	}
 	/* flush is done by the calling environment (MAL) */
 
 	BBPdecref(bid, FALSE);
@@ -1260,7 +1275,8 @@ remote_export str RMTbincopyfrom(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Inst
 typedef struct _binbat_v1 {
 	int Htype;
 	int Ttype;
-	oid seqbase;
+	oid Hseqbase;
+	oid Tseqbase;
 	size_t size;
 	size_t headsize;
 	size_t tailsize;
@@ -1270,7 +1286,7 @@ typedef struct _binbat_v1 {
 static inline str
 RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 {
-	binbat bb = { 0, 0, 0, 0, 0, 0, 0 };
+	binbat bb = { 0, 0, 0, 0, 0, 0, 0, 0 };
 	char *nme = NULL;
 	char *val = NULL;
 	char tmp;
@@ -1314,8 +1330,10 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 					bb.Htype = atoi(val);
 				} else if (strcmp(nme, "ttype") == 0) {
 					bb.Ttype = atoi(val);
-				} else if (strcmp(nme, "seqbase") == 0) {
-					bb.seqbase = (oid)atol(val);
+				} else if (strcmp(nme, "hseqbase") == 0) {
+					bb.Hseqbase = (oid)atol(val);
+				} else if (strcmp(nme, "tseqbase") == 0) {
+					bb.Tseqbase = (oid)atol(val);
 				} else if (strcmp(nme, "size") == 0) {
 					bb.size = atol(val);
 				} else if (strcmp(nme, "headsize") == 0) {
@@ -1335,17 +1353,20 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 
 	/* the BAT we will return */
 	b = BATnew(bb.Htype, bb.Ttype, bb.size);
-	b->hseqbase = bb.seqbase;
+	b->hseqbase = bb.Hseqbase;
+	if (bb.Ttype == TYPE_void)
+		b->tseqbase = bb.Tseqbase;
+	b->batCount = bb.size;
+
 	/* for strings, the width may not match, fix it to match what we
 	 * retrieved */
-	if (bb.size > 0 && bb.Ttype == TYPE_str)
+	if (bb.Ttype == TYPE_str)
 		b->T->width = bb.tailsize / bb.size;
 
 	if (bb.headsize > 0)
 		mnstr_read(in, b->H->heap.base, bb.headsize, 1);
-	if (bb.size > 0)
+	if (bb.tailsize > 0)
 		mnstr_read(in, b->T->heap.base, bb.tailsize, 1);
-	b->batCount = bb.size;
 	if (bb.theapsize > 0) {
 		if (b->T->vheap->size < bb.theapsize) {
 			GDKfree(b->T->vheap->base);
