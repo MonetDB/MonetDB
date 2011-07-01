@@ -1237,7 +1237,7 @@ str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			b->batCount,
 			sendhead ? b->batCount * Hsize(b) : 0,
 			b->batCount * Tsize(b),
-			b->htype != TYPE_void && b->tvarsized && b->batCount > 0 ? b->T->vheap->free : 0
+			b->ttype != TYPE_void && b->tvarsized && b->batCount > 0 ? b->T->vheap->free : 0
 			);
 	if (sendhead)
 		mnstr_write(cntxt->fdout, /* head */
