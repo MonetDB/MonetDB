@@ -1810,7 +1810,7 @@ GDKexit(int status)
 	if (GDKstopped == 0) {
 		GDKstopped = 1;	/* shouldn't there be a lock here? */
 #ifdef HAVE_POSIX_FADVISE
-		if (!GDKembedded && GDK_vm_trim)
+		if (!GDKembedded && GDK_vm_trim && GDKvmtrim_id)
 			MT_join_thread(GDKvmtrim_id);
 #endif
 		GDKnrofthreads = 0;
