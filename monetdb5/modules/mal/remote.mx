@@ -1343,7 +1343,8 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 
 	if (bb.headsize > 0)
 		mnstr_read(in, b->H->heap.base, bb.headsize, 1);
-	mnstr_read(in, b->T->heap.base, bb.tailsize, 1);
+	if (bb.size > 0)
+		mnstr_read(in, b->T->heap.base, bb.tailsize, 1);
 	b->batCount = bb.size;
 	if (bb.theapsize > 0) {
 		if (b->T->vheap->size < bb.theapsize) {
