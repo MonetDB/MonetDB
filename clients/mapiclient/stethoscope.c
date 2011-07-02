@@ -297,20 +297,24 @@ doProfile(void *d)
 	} else {
 		for (a = 0; a < wthr->argc; a++) {
 			char *c;
-			c = strchr(wthr->argv[a], '.');
+			char *arg = strdup(wthr->argv[a]);
+			c = strchr(arg, '.');
 			if (c) {
-				mod = wthr->argv[a];
-				if (mod == c) mod = "*";
+				mod = arg;
+				if (mod == c)
+					mod = "*";
 				fcn = c + 1;
-				if (*fcn == 0) fcn = "*";
+				if (*fcn == 0)
+					fcn = "*";
 				*c = 0;
 			} else {
-				fcn = wthr->argv[a];
+				fcn = arg;
 				mod = "*";
 			}
 			snprintf(buf, BUFSIZ, "profiler.setFilter(\"%s\",\"%s\");", mod, fcn);
 			printf("-- %s%s\n", id, buf);
 			doQ(buf);
+			free(arg);
 		}
 	}
 	printf("-- %sprofiler.start();\n", id);

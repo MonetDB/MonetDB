@@ -649,7 +649,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			rt, ident);
 	GDKfree(rt);
 
-	if (isaBatType(rtype) && (localtype == 0 || localtype != c->type || (getHeadType(rtype) != TYPE_void && getHeadType(rtype) != TYPE_oid)))
+	if (isaBatType(rtype) && (localtype == 0 || localtype != c->type || (ATOMvarsized(getHeadType(rtype)))))
 	{
 		int h, t, s;
 		ptr l, r;
@@ -716,7 +716,6 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		stream *sin;
 		char buf[256];
 		ssize_t sz = 0, rd;
-		str err;
 		BAT *b = NULL;
 
 		/* this call should be a single transaction over the channel*/
@@ -735,14 +734,20 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		while ((rd = mnstr_read(sin, &buf[sz], 1, 1)) == 1 && buf[sz] != '\n') {
 			sz += rd;
 		}
-		if (rd < 0)
+		if (rd < 0) {
+			mal_unset_lock(c->lock, "remote.get"); 
 			throw(MAL, "remote.get", "could not read BAT JSON header");
-		if (buf[0] == '!')
+		}
+		if (buf[0] == '!') {
+			mal_unset_lock(c->lock, "remote.get"); 
 			return(GDKstrdup(buf));
+		}
 
 		buf[sz] = '\0';
-		if ((err = RMTinternalcopyfrom(&b, buf, sin)) != NULL)
-			return(err);
+		if ((tmp = RMTinternalcopyfrom(&b, buf, sin)) != NULL) {
+			mal_unset_lock(c->lock, "remote.get"); 
+			return(tmp);
+		}
 
 		v->val.bval = b->batCacheid;
 		v->vtype = TYPE_bat;
@@ -1201,6 +1206,9 @@ str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int bid = *(int *)getArgReference(stk, pci, 1);
 	BAT *b = BBPquickdesc(bid, FALSE);
+	char sendhead = 0;
+	char sendtheap = 0;
+	oid Hseqbase = 0;
 
 	(void)mb;
 	(void)stk;
@@ -1208,32 +1216,52 @@ str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (b == NULL)
 		throw(MAL, "remote.bincopyto", RUNTIME_OBJECT_UNDEFINED);
-	if (!(b->htype == TYPE_void || (b->htype == TYPE_oid && b->H->dense)))
-		throw(ILLARG, "remote.bincopyto", "only void-headed BATs are supported");
+	if (b->htype != TYPE_void && b->hvarsized)
+		throw(ILLARG, "remote.bincopyto", "varsized-headed BATs are not supported");
 
 	BBPincref(bid, FALSE);
+
+	sendhead = b->htype != TYPE_void && (b->htype != TYPE_oid || !b->H->dense);
+	sendtheap = b->ttype != TYPE_void && b->tvarsized;
+
+	if (b->htype == TYPE_oid && b->H->dense) {
+		BATiter bi = bat_iterator(b);
+		Hseqbase = *(oid *)BUNhead(bi, BUNfirst(b));
+	} else {
+		Hseqbase = b->hseqbase;
+	}
 
 	mnstr_printf(cntxt->fdout, /*JSON*/"{"
 			"\"version\":1,"
 			"\"htype\":%d,"
 			"\"ttype\":%d,"
-			"\"seqbase\":" OIDFMT ","
+			"\"hseqbase\":" OIDFMT ","
+			"\"tseqbase\":" OIDFMT ","
 			"\"size\":" SZFMT ","
+			"\"headsize\":" SZFMT ","
 			"\"tailsize\":" SZFMT ","
 			"\"theapsize\":" SZFMT
 			"}\n",
-			TYPE_void,
+			sendhead ? b->htype : TYPE_void,
 			b->ttype,
-			b->hseqbase == oid_nil ? 0 : b->hseqbase,
+			Hseqbase,
+			b->tseqbase,
 			b->batCount,
+			sendhead ? b->batCount * Hsize(b) : 0,
 			b->batCount * Tsize(b),
-			b->tvarsized ? b->T->vheap->free : 0
+			sendtheap && b->batCount > 0 ? b->T->vheap->free : 0
 			);
-	mnstr_write(cntxt->fdout, /* tail */
-			Tloc(b, BUNfirst(b)), b->batCount * Tsize(b), 1);
-	if (b->tvarsized)
-		mnstr_write(cntxt->fdout, /* theap */
-				Tbase(b), b->T->vheap->free, 1);
+
+	if (b->batCount > 0) {
+		if (sendhead)
+			mnstr_write(cntxt->fdout, /* head */
+					Hloc(b, BUNfirst(b)), b->batCount * Hsize(b), 1);
+		mnstr_write(cntxt->fdout, /* tail */
+				Tloc(b, BUNfirst(b)), b->batCount * Tsize(b), 1);
+		if (sendtheap)
+			mnstr_write(cntxt->fdout, /* theap */
+					Tbase(b), b->T->vheap->free, 1);
+	}
 	/* flush is done by the calling environment (MAL) */
 
 	BBPdecref(bid, FALSE);
@@ -1247,8 +1275,10 @@ remote_export str RMTbincopyfrom(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Inst
 typedef struct _binbat_v1 {
 	int Htype;
 	int Ttype;
-	oid seqbase;
+	oid Hseqbase;
+	oid Tseqbase;
 	size_t size;
+	size_t headsize;
 	size_t tailsize;
 	size_t theapsize;
 } binbat;
@@ -1256,7 +1286,7 @@ typedef struct _binbat_v1 {
 static inline str
 RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 {
-	binbat bb = { 0, 0, 0, 0, 0, 0 };
+	binbat bb = { 0, 0, 0, 0, 0, 0, 0, 0 };
 	char *nme = NULL;
 	char *val = NULL;
 	char tmp;
@@ -1300,10 +1330,14 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 					bb.Htype = atoi(val);
 				} else if (strcmp(nme, "ttype") == 0) {
 					bb.Ttype = atoi(val);
-				} else if (strcmp(nme, "seqbase") == 0) {
-					bb.seqbase = (oid)atol(val);
+				} else if (strcmp(nme, "hseqbase") == 0) {
+					bb.Hseqbase = (oid)atol(val);
+				} else if (strcmp(nme, "tseqbase") == 0) {
+					bb.Tseqbase = (oid)atol(val);
 				} else if (strcmp(nme, "size") == 0) {
 					bb.size = atol(val);
+				} else if (strcmp(nme, "headsize") == 0) {
+					bb.headsize = atol(val);
 				} else if (strcmp(nme, "tailsize") == 0) {
 					bb.tailsize = atol(val);
 				} else if (strcmp(nme, "theapsize") == 0) {
@@ -1319,14 +1353,20 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 
 	/* the BAT we will return */
 	b = BATnew(bb.Htype, bb.Ttype, bb.size);
-	b->hseqbase = bb.seqbase;
+	b->hseqbase = bb.Hseqbase;
+	if (bb.Ttype == TYPE_void)
+		b->tseqbase = bb.Tseqbase;
+	b->batCount = bb.size;
+
 	/* for strings, the width may not match, fix it to match what we
 	 * retrieved */
-	if (bb.size > 0 && bb.Ttype == TYPE_str)
+	if (bb.Ttype == TYPE_str && bb.size)
 		b->T->width = bb.tailsize / bb.size;
 
-	mnstr_read(in, b->T->heap.base, bb.tailsize, 1);
-	b->batCount = bb.size;
+	if (bb.headsize > 0)
+		mnstr_read(in, b->H->heap.base, bb.headsize, 1);
+	if (bb.tailsize > 0)
+		mnstr_read(in, b->T->heap.base, bb.tailsize, 1);
 	if (bb.theapsize > 0) {
 		if (b->T->vheap->size < bb.theapsize) {
 			GDKfree(b->T->vheap->base);
