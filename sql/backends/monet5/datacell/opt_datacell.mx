@@ -58,7 +58,7 @@ We keep a flow dependency table to detect.
 int
 OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int actions = 0, fnd;
+	int actions = 0, fnd, mvc= 0;
     int bskt, i, j, k, limit, vlimit, slimit;
     InstrPtr r, p, *old;
 	str  col;
@@ -141,6 +141,9 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			freeInstruction(p);
 			continue;
 		}
+
+		if ( getModuleId(p) == sqlRef && getFunctionId(p) == mvcRef)
+			mvc= getArg(p,0);
 		if ( getModuleId(p) == sqlRef  && (getFunctionId(p) == bindRef ||getFunctionId(p) == binddbatRef)){
 			snprintf(buf,BUFSIZ,"%s.%s", getVarConstant(mb, getArg(p,2)).val.sval, getVarConstant(mb, getArg(p,3)).val.sval);
 			col = getVarConstant(mb, getArg(p,4)).val.sval;
@@ -156,6 +159,9 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 					tables[m++]= GDKstrdup(buf);
 					actions = 1;
 				}
+			} else {
+				pushInstruction(mb,p);
+				continue;
 			}
 
 			fnd = 0;
@@ -228,6 +234,9 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 					getArg(p, 1) = getArg(p, 5);
 					p->argc = 2;
 				}
+			} else {
+				getArg(p,1) = mvc;
+				mvc = getArg(p,0);
 			}
 		}
 		pushInstruction(mb, p);
@@ -235,6 +244,7 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	(void)stk;
 	(void)pci;
 
+	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT | LIST_MAPI);
 	if (actions)
 	{
 		addPipeDefinition("datacell_pipe",

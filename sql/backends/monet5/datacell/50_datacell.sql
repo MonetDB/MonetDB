@@ -41,6 +41,9 @@ create procedure datacell.resume (tbl string)
 create procedure datacell.query(proc string, def string)
 	external name datacell.query;
 
+create procedure datacell.query(proc string)
+	external name datacell.query;
+
 create procedure datacell.remove (obj string)
     external name datacell.remove;
 

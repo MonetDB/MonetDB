@@ -60,6 +60,10 @@ pattern query(name:str,def:str):void
 address DCquery
 comment "Add a new continuous query.";
 
+pattern query(name:str):void
+address DCquery
+comment "Add a new continuous query procedure.";
+
 pattern pause()
 address DCpauseScheduler
 comment "(Re)start the petrinet scheduler.";
@@ -148,6 +152,7 @@ datacell_export str DCpostlude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 #include "datacell.h"
 #include "opt_datacell.h"
 #include "sql_optimizer.h"
+#include "sql_gencode.h"
 
 #ifdef WIN32
 #include "winsock2.h"
@@ -168,6 +173,33 @@ static int DCprepared;
  * grab all tables in the datacell schema and turn them into baskets.
  * The same for all procedures, turn them into continuous queries.
 */
+static str
+DCprocedureStmt(Client cntxt, MalBlkPtr mb, str schema, str nme)
+{
+	mvc *m = NULL;
+	str msg = getContext(cntxt, mb, &m, NULL);
+	sql_schema  *s;
+	backend *be;
+	node *o;
+	sql_func *f;
+	sql_trans *tr;
+
+	if ( msg)
+		return msg;
+	s = mvc_bind_schema(m, schema);
+	if (s == NULL)
+		throw(SQL, "datacell.query", "Schema missing");
+	tr = m->session->tr;
+	for (o = s->funcs.set->h; o; o = o->next) {
+		f = o->data;
+		if ( strcmp(f->base.name, nme) == 0 ){
+			be = (void *) backend_create(m, cntxt);
+			backend_create_func(be, f);
+			break;
+		}
+	}
+	return MAL_SUCCEED;
+}
 
 str
 DCprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -334,34 +366,62 @@ str
 DCquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str nme = *(str*) getArgReference(stk,pci,1);
-	str *def = (str*) getArgReference(stk,pci,2);
-	Symbol s;
+	str def;
+	Symbol s = NULL;
+	MalBlkPtr qry;
 	str msg;
 	InstrPtr p;
 	Module scope;
 	lng clk = GDKusec();
-	char buf[BUFSIZ], *lsch, *ltbl;
+	char buf[BUFSIZ], *lsch, *lnme;
 
-	BSKTelements( nme, buf, &lsch, &ltbl);
+	BSKTelements( nme, buf, &lsch, &lnme);
 	BSKTtolower(lsch);
-	BSKTtolower(ltbl);
+	BSKTtolower(lnme);
 
 	(void) mb;
 	/* check if the argument denotes a procedure name */
 	/* if so, get its definition to be compiled */
 
-	msg = SQLstatementIntern(cntxt, def, ltbl, 0, 0);
-	if ( msg )
-		return msg;
+	/* check existing of the pre-compiled function */
 	scope = findModule(cntxt->nspace,putName(lsch,strlen(lsch)));
-	s = newFunction(putName(lsch,strlen(lsch)), putName(ltbl, strlen(ltbl)),FUNCTIONsymbol);
+	if ( scope) 
+		s = findSymbolInModule(scope,putName(lnme,strlen(lnme)));
+	/* is it defined in module user */
+	if ( s == NULL)
+		s = findSymbolInModule(cntxt->nspace,putName(lnme,strlen(lnme)));
+
+	if (s == NULL){
+		if ( pci->argc == 3 ) {
+			def = *(str*) getArgReference(stk,pci,2);
+			msg = SQLstatementIntern(cntxt, &def, lnme, 0, 0);
+			if ( msg )
+				return msg;
+			qry =cntxt->curprg->def;
+		} else {
+			/* get definition from catalog */
+			msg =DCprocedureStmt(cntxt, mb, lsch, lnme);
+			if ( msg)
+				return msg;
+			s = findSymbolInModule(cntxt->nspace,putName(lnme,strlen(lnme)));
+			if ( s == NULL)
+				throw(SQL,"datacell.query","Definition missing");
+			qry= s->def;
+		}
+	} else 
+		if ( pci->argc == 3)
+			throw(SQL,"datacell.query","Query already defined");
+		else qry = s->def;
+
+	scope = findModule(cntxt->nspace,putName(lsch,strlen(lsch)));
+	s = newFunction(putName(lsch,strlen(lsch)), putName(lnme, strlen(lnme)),FUNCTIONsymbol);
 	if ( s == NULL) 
 		throw(SQL,"datacell.query","Procedure code does not exist");
     freeMalBlk(s->def);
-    s->def = copyMalBlk(cntxt->curprg->def);
+    s->def = copyMalBlk(qry);
 	p= getInstrPtr(s->def,0);
 	setModuleId(p, putName(lsch,strlen(lsch)));
-	setFunctionId(p, putName(ltbl,strlen(ltbl)));
+	setFunctionId(p, putName(lnme,strlen(lnme)));
     insertSymbol(scope,s);
 	/* printFunction(cntxt->fdout, s->def, 0, LIST_MAL_STMT);*/
 	/* optimize the code and register at scheduler */

@@ -29,6 +29,11 @@ Both query and emitter attached are scheduled.
 @end example
 @mal
 module petrinet;
+pattern register(nme:str):void
+address PNregister
+comment "Add a continous query to the Petri net. It will analyse
+the MAL block to determine the input/output dependencies. ";
+
 pattern register(nme:str, def:str):void
 address PNregister
 comment "Add a continous query to the Petri net. It will analyse
@@ -192,7 +197,6 @@ str PNregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	Symbol s = 0;
 	int *ret = (int *)getArgReference(stk, pci, 0);
 	str nme = *(str *)getArgReference(stk, pci, 1);
-	str def = *(str*) getArgReference(stk,pci,2);
 	int i;
 	char buf[BUFSIZ], *modnme, *fcnnme;
 
@@ -220,8 +224,11 @@ str PNregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( i != pnettop)
 			throw(MAL, "petrinet.register", "Duplicate definition of transition");
 	pnet[pnettop].name = GDKstrdup(nme);
-	pnet[pnettop].def = GDKstrdup(def);;
-	pnet[pnettop].mb = s->def;
+	if ( pci->argc == 3)
+		pnet[pnettop].def = GDKstrdup(*(str*) getArgReference(stk,pci,2));
+	else
+		pnet[pnettop].def = GDKstrdup("");
+
 	pnet[pnettop].status = PNwaiting;
 	pnet[pnettop].cycles = 0;
 	/* all the rest is zero */
