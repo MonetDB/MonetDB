@@ -246,6 +246,9 @@ DCreceptorNew(int *ret, str *tbl, str *host, int *port )
 
 	if (RCfind(*tbl))
 		throw(MAL, "receptor.new", "Duplicate receptor");
+	for ( i = 1; i < bsktTop; i++)
+	if ( baskets[i].port == *port)
+		throw(MAL,"receptor.new","Port already in use");
 
 	rc = RCnew(*tbl);
 	if ( rc == 0)
@@ -269,6 +272,7 @@ DCreceptorNew(int *ret, str *tbl, str *host, int *port )
 	len = BSKTmemberCount(*tbl);
 	fmt = rc->table.format = GDKzalloc(sizeof(Column) * len);
 
+	baskets[idx].port = *port;
 	for (j = 0, i = 0; i < baskets[idx].colcount; i++) {
 		b = baskets[idx].primary[j];
 		if (b == NULL) {
@@ -618,7 +622,8 @@ parse:
 						mnstr_printf(RCout, "#insert line :%s \n", line);
 #endif
 						if (insert_line(&rc->table, line, NULL, 0, rc->table.nr_attrs) < 0) {
-							mnstr_printf(RCout, "#failed insert_line %s\n", line);
+							if ( baskets[rc->bskt].errors)
+								BUNappend(baskets[rc->bskt].errors, line, TRUE);
 							break;
 						}
 						rc->received++;
