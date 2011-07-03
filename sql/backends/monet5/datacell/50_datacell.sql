@@ -69,9 +69,13 @@ create function datacell.threshold(bskt string, mi integer)
 returns boolean
 	external name datacell.threshold;
 
-create function datacell.window(bskt string, size integer, slide integer)
+create function datacell.window(bskt string, size integer, stride integer)
 returns boolean
 	external name datacell.window;
+
+create function datacell.window(bskt string, size interval second, stride interval second)
+returns boolean
+	external name datacell.timewindow;
 
 create function datacell.beat(bskt string, t integer)
 returns boolean
@@ -80,10 +84,14 @@ returns boolean
 -- Inspection tables
 
 create function datacell.baskets()
-returns table( nme string, threshold int, winsize int, winslide int, beat int,
+returns table( nme string, threshold int, winsize int, winstride int,  timeslice int, timestride int, beat int,
 	seen timestamp, grabs int, events int)
 external name datacell.baskets;
 
 create function datacell.queries()
 returns table( nme string, status string, seen timestamp, cycles int, events int, time bigint, error string, def string)
 external name datacell.queries;
+
+create function datacell.errors()
+returns table( nme string, error string)
+external name datacell.errors;
