@@ -14,9 +14,9 @@ create table datacell.barrelin(
 create table datacell.barrelout (like datacell.barrelin);
 create table datacell.barrellog( ts timestamp, cnt integer);
 
-call datacell.receptor('datacell.barrelin','localhost',50500);
+call datacell.receptor('datacell.barrelin','localhost',50506);
 
-call datacell.emitter('datacell.barrelout','localhost',50600);
+call datacell.emitter('datacell.barrelout','localhost',50606);
 
 create procedure datacell.splitter()
 begin
@@ -29,7 +29,7 @@ call datacell.resume();
 call datacell.dump();
 
 -- externally, activate the sensor 
---sensor --host=localhost --port=50500 --events=100 --columns=3 --delay=1
+--sensor --host=localhost --port=50506 --events=100 --columns=3 --delay=1
 -- externally, activate the actuator server to listen
 -- actuator 
 

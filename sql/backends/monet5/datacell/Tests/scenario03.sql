@@ -14,9 +14,9 @@ create table datacell.bakin(
 );
 create table datacell.bakout( tag timestamp, cnt integer);
 
-call datacell.receptor('datacell.bakin','localhost',50500);
+call datacell.receptor('datacell.bakin','localhost',50503);
 
-call datacell.emitter('datacell.bakout','localhost',50600);
+call datacell.emitter('datacell.bakout','localhost',50603);
 
 call datacell.query('datacell.schep', 'insert into datacell.bakout select now(), count(*) from datacell.bakin where datacell.threshold(\'datacell.bakin\',15);');
 
@@ -24,7 +24,7 @@ call datacell.resume();
 call datacell.dump();
 
 -- externally, activate the sensor 
---sensor --host=localhost --port=50500 --events=100 --columns=3 --delay=1
+--sensor --host=localhost --port=50503 --events=100 --columns=3 --delay=1
 -- externally, activate the actuator server to listen
 -- actuator 
 

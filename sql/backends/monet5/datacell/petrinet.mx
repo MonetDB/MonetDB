@@ -232,9 +232,9 @@ str PNregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	pnet[pnettop].status = PNwaiting;
 	pnet[pnettop].cycles = 0;
 	/* all the rest is zero */
-	pnettop++;
 
 	(void)ret;
+	pnettop++;
 	return PNanalysis(cntxt,s->def);
 }
 
@@ -402,7 +402,7 @@ str PNtarget(int *ret, str *fcn, str *tbl)
 str
 PNanalysis(Client cntxt, MalBlkPtr mb)
 {
-	int i, j, k, flg, ret;
+	int i, j, k, ret;
 	InstrPtr p, sig = getInstrPtr(mb,0);
 	str tbl;
 	char buf[BUFSIZ], *nme= buf;
@@ -413,8 +413,7 @@ PNanalysis(Client cntxt, MalBlkPtr mb)
 	for( i = 0; i < mb->stop; i++){
 		p= getInstrPtr(mb,i);
 		if ( getModuleId(p) == basketRef && getFunctionId(p) == grabRef ){
-			tbl = getVarConstant(mb,getArg(p,p->argc-2)).val.sval;
-			flg = getVarConstant(mb,getArg(p,p->argc-1)).val.ival;
+			tbl = getVarConstant(mb,getArg(p,p->argc-1)).val.sval;
 			
 			for (j = 0; j < pnettop; j++) 
 			for ( k = 0; k < pnet[j].srctop; k++)
@@ -426,7 +425,6 @@ PNanalysis(Client cntxt, MalBlkPtr mb)
 		p= getInstrPtr(mb,i);
 		if ( getModuleId(p) == basketRef &&  getFunctionId(p) == grabRef ){
 			tbl = getVarConstant(mb,getArg(p,p->argc-1)).val.sval;
-			mnstr_printf(cntxt->fdout,"#input basket %s \n", tbl);
 			PNsource(&ret, &nme , &tbl);
 		}
 		if ( getModuleId(p) == basketRef &&  getFunctionId(p) == putName("pass",4) ){

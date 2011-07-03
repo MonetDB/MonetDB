@@ -18,7 +18,7 @@ call datacell.basket('datacell.bsktin');
 call datacell.basket('datacell.bsktout');
 
 -- initialize receptor
-call datacell.receptor('datacell.bsktin','localhost',50500);
+call datacell.receptor('datacell.bsktin','localhost',50501);
 call datacell.mode('datacell.bsktin','passive');
 call datacell.protocol('datacell.bsktin','udp');
 call datacell.resume('datacell.bsktin');
@@ -27,7 +27,7 @@ call datacell.resume('datacell.bsktin');
 --sensor --host=localhost --port=50500 --events=100 --columns=3 --delay=1
 
 -- initialize emitter
-call datacell.emitter('datacell.bsktout','localhost',50600);
+call datacell.emitter('datacell.bsktout','localhost',50601);
 call datacell.mode('datacell.bsktout','active');
 call datacell.protocol('datacell.bsktout','udp');
 call datacell.resume('datacell.bsktout');

@@ -244,7 +244,6 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	(void)stk;
 	(void)pci;
 
-	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT | LIST_MAPI);
 	if (actions)
 	{
 		addPipeDefinition("datacell_pipe",
