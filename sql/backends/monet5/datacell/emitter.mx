@@ -196,6 +196,9 @@ str DCemitterNew(int *ret, str *tbl, str *host, int *port)
 
 	if (EMfind(*tbl))
 		throw(MAL, "emitter.new", "Duplicate emitter");
+	for ( i = 1; i < bsktTop; i++)
+	if ( baskets[i].port == *port)
+		throw(MAL,"receptor.new","Port already in use");
 
 	idx = BSKTlocate(*tbl);
 	if (idx == 0) /* should not happen */
@@ -228,6 +231,7 @@ It becomes the synchronization handle.
 	em->table.format[0].seplen = (int)strlen(em->table.format[0].sep);
 	em->status = EMSTOP;
 
+	baskets[idx].port = *port;
 	for (j = 0, i = 0; i < baskets[idx].colcount; i++) {
 		b = baskets[idx].primary[j];
 		if (b == NULL) {
@@ -480,7 +484,7 @@ If the thread is suspended, we sleep for at least one second.
 		BSKTunlock(&em->lck, &em->name);
 		if ((cnt = BATcount(em->table.format[0].c[0]))) {
 			MTIMEcurrent_timestamp(&baskets[em->bskt].seen);
-			baskets[em->bskt].events = cnt;
+			baskets[em->bskt].events += cnt;
 			baskets[em->bskt].grabs ++;
 			if (em->status != EMLISTEN)
 				break;
