@@ -88,6 +88,10 @@ command window{unsafe}(bskt:str, size:int, slide:int):bit
 address DCwindow
 comment "Slide the basket with a limited number of events";
 
+command timewindow{unsafe}(bskt:str, N:int, S:int):bit
+address DCtimewindow
+comment "Slide the basket with a time window of N milliseconds with stride S milliseconds";
+
 command beat(bskt:str, t:int):bit
 address DCbeat
 comment "Schedule query with T milliseconds interval";
@@ -99,6 +103,10 @@ comment "Inspect the datacell baskets";
 command queries():bat[:str,:bat]
 address PNtable
 comment "Inspect the datacell queries";
+
+command errors():bat[:str,:bat]
+address BSKTtableerrors
+comment "Inspect the erroneous events";
 
 @{
 @h
@@ -140,6 +148,7 @@ datacell_export str DCquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 datacell_export str DCdump(int *ret);
 datacell_export str DCthreshold(int *ret, str *bskt, int *mi);
 datacell_export str DCwindow(int *ret, str *bskt, int *sz, int *slide);
+datacell_export str DCtimewindow(int *ret, str *bskt, int *sz, int *slide);
 datacell_export str DCbeat(int *ret, str *bskt, int *t);
 
 datacell_export str DCpauseScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -498,6 +507,12 @@ str
 DCwindow(int *ret, str *bskt, int *sz, int *slide)
 {
 	return BSKTwindow(ret,bskt,sz,slide);
+}
+
+str
+DCtimewindow(int *ret, str *bskt, int *sz, int *slide)
+{
+	return BSKTtimewindow(ret,bskt, sz,slide);
 }
 
 str
