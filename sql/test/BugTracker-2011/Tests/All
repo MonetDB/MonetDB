@@ -1,3 +1,4 @@
+aggregate-in-subquery.Bug-2739
 correlated-update.Bug-2771
 double_erange.Bug-2774
 view_avg_incorrect_result.Bug-2790
