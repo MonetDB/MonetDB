@@ -1205,7 +1205,7 @@ remote_export str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int bid = *(int *)getArgReference(stk, pci, 1);
-	BAT *b = BBPquickdesc(bid, FALSE);
+	BAT *b = BBPquickdesc(ABS(bid), FALSE);
 	char sendhead = 0;
 	char sendtheap = 0;
 	oid Hseqbase = 0;
