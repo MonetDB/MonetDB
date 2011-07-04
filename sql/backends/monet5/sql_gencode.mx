@@ -55,6 +55,7 @@ sql5_export void initSQLreferences(void);
 sql5_export str backend_name(cq *cq);
 sql5_export void monet5_create_table_function(ptr M, char *name, sql_rel *rel, sql_table *t);
 sql5_export int monet5_resolve_function(ptr M, sql_func *f);
+sql5_export void backend_create_func(backend *be, sql_func *f);
 
 #endif /* _SQL2MAL_H */
 @c
@@ -72,7 +73,6 @@ sql5_export int monet5_resolve_function(ptr M, sql_func *f);
 #include <rel_bin.h>
 
 static int _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s);
-static void backend_create_func(backend *be, sql_func *f);
 
 @+ MAL code support
 To simplify construction of the MAL program use the following
@@ -2352,7 +2352,7 @@ monet5_resolve_function(ptr M, sql_func *f)
 }
 
 /* TODO handle aggr */
-static void
+void
 backend_create_func(backend *be, sql_func *f)
 {
 	mvc *m = be->mvc;

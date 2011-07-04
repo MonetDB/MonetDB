@@ -237,7 +237,7 @@ class Server:
         while count > 0:
             try:
                 recv = self.socket.recv(bytes, flags)
-                logging.debug("II: package size: %i payload: %s" % (len(recv), recv))
+                logger.debug("II: package size: %i payload: %s" % (len(recv), recv))
             except socket.error, error:
                 raise OperationalError(error[1])
             count -= len(recv)
