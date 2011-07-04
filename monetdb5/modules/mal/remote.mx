@@ -1205,7 +1205,7 @@ remote_export str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int bid = *(int *)getArgReference(stk, pci, 1);
-	BAT *b = BBPquickdesc(bid, FALSE);
+	BAT *b = BBPquickdesc(ABS(bid), FALSE);
 	char sendhead = 0;
 	char sendtheap = 0;
 	oid Hseqbase = 0;
@@ -1354,8 +1354,15 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 	/* the BAT we will return */
 	b = BATnew(bb.Htype, bb.Ttype, bb.size);
 	b->hseqbase = bb.Hseqbase;
-	if (bb.Ttype == TYPE_void)
+	if (bb.Ttype == TYPE_void) {
 		b->tseqbase = bb.Tseqbase;
+		b->tdense = 1;
+		b->tkey = 1;
+	}
+	if (bb.Htype == TYPE_void) {
+		b->hdense = 1;
+		b->hkey = 1;
+	}
 	b->batCount = bb.size;
 
 	/* for strings, the width may not match, fix it to match what we
@@ -1381,6 +1388,8 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 	while (mnstr_read(in, &tmp, 1, 1) != 0) {
 		mnstr_printf(GDKout, "!MALexception:remote.bincopyfrom: expected flush, got: %c", tmp);
 	}
+
+	BATpropcheck(b, BATPROPS_ALL);
 
 	*ret = b;
 	return(MAL_SUCCEED);

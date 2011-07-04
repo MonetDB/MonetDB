@@ -902,8 +902,8 @@ BBPreadEntries(FILE *fp, char *src, int *min_stamp, int *max_stamp, int oidsize)
 			if (BBPsize >= BBPlimit)
 				BBPextend(BATMARGIN, FALSE);
 		}
-		if (src == 0)
-			assert(BBP[bid].cache == NULL);	/* no duplicates in BBP.dir */
+		if (src == 0 && BBP[bid].cache != NULL)
+			GDKfatal("BBPinit: duplicate entry in BBP.dir.");
 		bs = GDKzalloc(sizeof(BATstore));
 		if (bs == NULL)
 			GDKfatal("BBPinit: cannot allocate memory for BATstore.");
@@ -1155,16 +1155,20 @@ BBPheader(FILE *fp, int *BBPlimit, oid *BBPoid, int *OIDsize, int silent)
 @-
 In a distributed version of MonetDB, it would be nice to easily share the BATs
 with other server instances. Although concurrency control issues should be handled
-with care, it can avoid excessive communiction costs. The BBPimportEntry creates
-a BATdescriptor using symbolic links to its source. Presummably this would lead
-to a transparant behavior.
+with care, it can avoid excessive communication costs. The BBPimportEntry creates
+a BATdescriptor using symbolic links to its source. Presumably this would lead
+to a transparent behavior.
 @= linkHeap
-	lstat(@3, &st);
+	if (lstat(@3, &st) < 0) {
+		GDKerror("BBPimportEntry: file '%s' does not exist.\n", @3);
+		BBPdestroy(bn);
+		return 0;
+	}
 	GDKfilepath(path, BATDIR, BBP_physical(bn->batCacheid), "@4");
 	GDKcreatedir(path);
 	IODEBUG mnstr_printf(GDKerr, "#symlink %s ->%s\n", @3, path);
 	if (symlink(@3, path) < 0) {
-		GDKerror("attach.bind:cannot link '%s' -> '%s'\n", path, @3);
+		GDKerror("BBPimportEntry: cannot link '%s' -> '%s'\n", path, @3);
 		BBPdestroy(bn);
 		return 0;
 	}
@@ -1174,15 +1178,23 @@ to a transparant behavior.
 		GDKfree(bn->@1->@2.filename);
 		bn->@1->@2.filename = 0;
 	}
-	HEAPload(&bn->@1->@2, BBP_physical(bn->batCacheid), "@4", TRUE);
+	if (HEAPload(&bn->@1->@2, BBP_physical(bn->batCacheid), "@4", TRUE) < 0) {
+		GDKerror("BBPimportEntry: cannot read heap file '%s'\n", @3);
+		BBPdestroy(bn);
+		return 0;
+	}
 
 @= linkvHeap
-	lstat(@2, &st);
+	if (lstat(@2, &st) < 0) {
+		GDKerror("BBPimportEntry: file '%s' does not exist.\n", @2);
+		BBPdestroy(bn);
+		return 0;
+	}
 	GDKfilepath(path, BATDIR, BBP_physical(bn->batCacheid), "@3");
 	GDKcreatedir(path);
 	IODEBUG mnstr_printf(GDKerr, "#symlink %s ->%s\n", @2, path);
 	if (symlink(@2, path) < 0) {
-		GDKerror("attach.bind:cannot link '%s' -> '%s'\n", path, @2);
+		GDKerror("BBPimportEntry: cannot link '%s' -> '%s'\n", path, @2);
 		BBPdestroy(bn);
 		return 0;
 	}
@@ -1195,7 +1207,11 @@ to a transparant behavior.
 		GDKfree(bn->@1->vheap->filename);
 		bn->@1->vheap->filename = 0;
 	}
-	HEAPload(bn->@1->vheap, BBP_physical(bn->batCacheid), "@3", TRUE);
+	if (HEAPload(bn->@1->vheap, BBP_physical(bn->batCacheid), "@3", TRUE) < 0) {
+		GDKerror("BBPimportEntry: cannot read heap file '%s'\n", @2);
+		BBPdestroy(bn);
+		return 0;
+	}
 
 @c
 bat
@@ -1221,6 +1237,10 @@ BBPimportEntry(char *nme)
 	int BBPlimit;
 
 	IODEBUG mnstr_printf(GDKerr,"#importEntry %s\n",nme);
+	if (strlen(nme) >= sizeof(bbpdir)) {
+		GDKerror("BBPimportEntry: file name too long\n");
+		return 0;
+	}
 	strcpy(bbpdir,nme);
 	s= strstr(bbpdir,BATDIR);
 	if (s == 0)
