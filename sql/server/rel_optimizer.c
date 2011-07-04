@@ -1688,6 +1688,55 @@ find_func( mvc *sql, char *name, list *exps )
 }
 
 static sql_exp *
+sql_div_fixup( mvc *sql, sql_exp *e, sql_exp *cond, int lr )
+{
+	list *args = e->l;
+	sql_exp *le = args->h->data, *o;
+	sql_exp *re = args->h->next->data;
+	sql_subfunc *ifthen;
+
+	/* if (cond) then val else const */
+	args = new_exp_list(sql->sa);
+	append(args, cond);
+	if (!lr)
+		append(args, re);
+	o = exp_atom_wrd(sql->sa, 1);
+	append(args, exp_convert(sql->sa, o, exp_subtype(o), exp_subtype(re)));
+	if (lr)
+		append(args, re);
+	ifthen = find_func(sql, "ifthenelse", args);
+	assert(ifthen);
+	re = exp_op(sql->sa, args, ifthen);
+
+	return exp_binop(sql->sa, le, re, e->f);
+}
+
+static list *
+exps_case_fixup( mvc *sql, list *exps, sql_exp *cond, int lr )
+{
+	node *n;
+
+	if (exps) {
+		list *nexps = new_exp_list(sql->sa);
+		for( n = exps->h; n; n = n->next) {
+			sql_exp *e = n->data;
+			if (e->type == e_func && e->l && !is_rank_op(e) ) {
+				sql_subfunc *f = e->f;
+
+				if (!f->func->s && !strcmp(f->func->base.name, "sql_div")) 
+					e = sql_div_fixup(sql, e, cond, lr);
+				else 
+					e->l = exps_case_fixup(sql, e->l, cond, lr);
+
+			}
+			append(nexps, e);
+		}
+		return nexps;
+	}
+	return exps;
+}
+
+static sql_exp *
 exp_case_fixup( mvc *sql, sql_exp *e )
 {
 	/* only functions need fix up */
@@ -1713,46 +1762,19 @@ exp_case_fixup( mvc *sql, sql_exp *e )
 			sql_exp *a2 = args->h->next->next->data; 
 			sql_subfunc *a1f = a1->f;
 			sql_subfunc *a2f = a2->f;
-			sql_subfunc *ifthen;
-
-			/* TODO we should find the div recursively ! */
 
 			/* rewrite right hands of div */
 			if (a1->type == e_func && !a1f->func->s && 
 			     !strcmp(a1f->func->base.name, "sql_div")) {
-				list *args = a1->l;
-				sql_exp *le = args->h->data, *o;
-				sql_exp *re = args->h->next->data;
-
-				/* if (cond) then val else const */
-				args = new_exp_list(sql->sa);
-				append(args, cond);
-				append(args, re);
-				o = exp_atom_wrd(sql->sa, 1);
-				append(args, exp_convert(sql->sa, o, exp_subtype(o), exp_subtype(re)));
-				ifthen = find_func(sql, "ifthenelse", args);
-				assert(ifthen);
-				re = exp_op(sql->sa, args, ifthen);
-
-				a1 = exp_binop(sql->sa, le, re, a1->f);
+				a1 = sql_div_fixup(sql, a1, cond, 0);
+			} else if (a1->type == e_func && a1->l) { 
+				a1->l = exps_case_fixup(sql, a1->l, cond, 0); 
 			}
 			if  (a2->type == e_func && !a2f->func->s && 
 			     !strcmp(a2f->func->base.name, "sql_div")) { 
-				list *args = a2->l;
-				sql_exp *le = args->h->data, *o;
-				sql_exp *re = args->h->next->data;
-
-				/* if (cond) then const else val */
-				args = new_exp_list(sql->sa);
-				append(args, cond);
-				o = exp_atom_wrd(sql->sa, 1);
-				append(args, exp_convert(sql->sa, o, exp_subtype(o), exp_subtype(re)));
-				append(args, re);
-				ifthen = find_func(sql, "ifthenelse", args);
-				assert(ifthen);
-				re = exp_op(sql->sa, args, ifthen);
-
-				a2 = exp_binop(sql->sa, le, re, a2->f);
+				a2 = sql_div_fixup(sql, a2, cond, 1);
+			} else if (a2->type == e_func && a2->l) { 
+				a2->l = exps_case_fixup(sql, a2->l, cond, 1); 
 			}
 			nne = exp_op3(sql->sa, cond, a1, a2, ne->f);
 			exp_setname(sql->sa, nne, ne->rname, ne->name );
