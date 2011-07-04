@@ -902,9 +902,9 @@ BBPheader(FILE *fp, int *BBPlimit, oid *BBPoid, int silent)
 @-
 In a distributed version of MonetDB, it would be nice to easily share the BATs
 with other server instances. Although concurrency control issues should be handled
-with care, it can avoid excessive communiction costs. The BBPimportEntry creates
-a BATdescriptor using symbolic links to its source. Presummably this would lead
-to a transparant behavior.
+with care, it can avoid excessive communication costs. The BBPimportEntry creates
+a BATdescriptor using symbolic links to its source. Presumably this would lead
+to a transparent behavior.
 @= linkHeap
 	lstat(@3, &st);
 	GDKfilepath(path, BATDIR, BBP_physical(bn->batCacheid), "@4");
