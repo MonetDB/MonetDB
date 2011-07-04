@@ -659,7 +659,7 @@ BBPreadEntries(FILE *fp, char *src, int *min_stamp, int *max_stamp)
 				BBPextend(BATMARGIN, FALSE);
 		}
 		if (src == 0)
-			assert(BBP[bid].cache == NULL);	/* no duplicates in BBP.dir */
+			GDKfatal("BBPinit: duplicate entry in BBP.dir.");
 		bs = GDKzalloc(sizeof(BATstore));
 		if (bs == NULL)
 			GDKfatal("BBPinit: cannot allocate memory for BATstore.");
