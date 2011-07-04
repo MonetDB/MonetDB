@@ -239,6 +239,8 @@ opt_export int hlbProp;			/* any (head lower bound) */
 opt_export int hubProp;			/* any (head upper bound) */
 opt_export int tlbProp;			/* any (tail lower bound) */
 opt_export int tubProp;			/* any (tail upper bound) */
+opt_export int horiginProp;		/* original oid source */
+opt_export int toriginProp;		/* original oid source */
 
 opt_export void optimizerInit(void);
 #endif
@@ -457,6 +459,8 @@ int hlbProp;
 int hubProp;
 int tlbProp;
 int tubProp;
+int horiginProp;		/* original oid source */
+int toriginProp;		/* original oid source */
 
 void optimizerInit(){
 	if(batRef == NULL){
@@ -671,6 +675,9 @@ void optimizerInit(){
 		hubProp = PropertyIndex("hub");
 		tlbProp = PropertyIndex("tlb");
 		tubProp = PropertyIndex("tub");
+
+		horiginProp = PropertyIndex("horigin");
+		toriginProp = PropertyIndex("torigin");
 @-
 Set the optimizer debugging flag
 @c
