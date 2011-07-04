@@ -658,7 +658,7 @@ BBPreadEntries(FILE *fp, char *src, int *min_stamp, int *max_stamp)
 			if (BBPsize >= BBPlimit)
 				BBPextend(BATMARGIN, FALSE);
 		}
-		if (src == 0)
+		if (src == 0 && BBP[bid].cache != NULL)
 			GDKfatal("BBPinit: duplicate entry in BBP.dir.");
 		bs = GDKzalloc(sizeof(BATstore));
 		if (bs == NULL)
