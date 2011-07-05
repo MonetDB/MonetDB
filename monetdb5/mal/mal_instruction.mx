@@ -2789,8 +2789,10 @@ varGetPropStr( MalBlkPtr mb, int var )
 		MalProp *p = mb->prps+v->prps[i];
 		char *nme = PropertyName(p->idx);
 
-		if (!first)
+		if (!first) {
 			*s++ = ',';
+			*s++ = ' ';
+		}
 		if (p->var) {
 			VarPtr v = getVar(mb, p->var);
 			char *op = PropertyOperatorString((prop_op_t)p->op); 

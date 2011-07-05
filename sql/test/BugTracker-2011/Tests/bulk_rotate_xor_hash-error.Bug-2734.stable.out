@@ -1,0 +1,44 @@
+stdout of test 'bulk_rotate_xor_hash-error.Bug-2734` in directory 'test/BugTracker-2011` itself:
+
+
+# 11:34:34 >  
+# 11:34:34 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/ufs/sjoerd/Monet-stable/var/MonetDB" --set mapi_open=true --set mapi_port=38431 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_test_BugTracker-2011" --set mal_listing=0 ; echo ; echo Over..
+# 11:34:34 >  
+
+# MonetDB 5 server v11.3.4
+# This is an unreleased version
+# Serving database 'mTests_test_BugTracker-2011', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://ottar.ins.cwi.nl:38431/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+
+Over..
+
+# 11:34:34 >  
+# 11:34:34 >  mclient -lsql -ftest -i -e --host=ottar --port=38431 
+# 11:34:34 >  
+
+#CREATE TABLE t_bug2734 (a INT);
+#INSERT INTO t_bug2734 VALUES (1);
+[ 1	]
+#SELECT * FROM (SELECT a, 1 AS n FROM t_bug2734 UNION SELECT a, 2 AS n FROM t_bug2734) AS abc INNER JOIN (SELECT a, 1 AS n FROM t_bug2734 UNION SELECT a, 2 AS n FROM t_bug2734) AS cba ON abc.a = cba.a AND abc.n = cba.n;
+% sys.abc,	sys.abc,	sys.cba,	sys.cba # table_name
+% a,	n,	a,	n # name
+% int,	tinyint,	int,	tinyint # type
+% 1,	1,	1,	1 # length
+[ 1,	1,	1,	1	]
+[ 1,	2,	1,	2	]
+#DROP TABLE t_bug2734;
+
+# 11:34:35 >  
+# 11:34:35 >  Done.
+# 11:34:35 >  
+

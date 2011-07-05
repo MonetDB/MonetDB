@@ -10,7 +10,7 @@ set optimizer='datacell_pipe';
 create table datacell.temperature(
     location string,
     tag time with time zone,
-    tmp decimal(3,1)
+    tmp decimal(4,2)
 );
 
 create table datacell.warnings (msg string, ts time with time zone, location string);
@@ -23,9 +23,9 @@ call datacell.emitter('datacell.warnings','localhost',50650);
 create procedure datacell.guardian()
 begin
 	declare flg boolean;
-	set flg = datacell.window('datacell.temperature',interval '3' second, interval '1' second); 
+	set flg = datacell.window('datacell.temperature',interval '5' minute, interval '1' minute); 
 	insert into datacell.warnings
-	select 'WARNING', now(), location from datacell.temperature group by location having avg(tmp) >3;
+	select 'WARNING', now(), location from datacell.temperature group by location having avg(tmp) > 0.2;
 	insert into datacell.templog values (now(), (select count(*) from datacell.temperature));
 end;
 call datacell.query('datacell.guardian');
@@ -40,6 +40,6 @@ call datacell.dump();
 -- wrapup
 call datacell.postlude();
 drop table datacell.temperature;
-drop table datacell.tempout;
+drop table datacell.warnings;
 drop table datacell.templog;
 

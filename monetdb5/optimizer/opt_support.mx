@@ -544,6 +544,7 @@ to easily trace their performance.
 #define DEBUG_OPT_MACRO				23
 #define DEBUG_OPT_MERGETABLE		24
 #define DEBUG_OPT_OCTOPUS			25
+#define DEBUG_OPT_ORIGIN			52
 #define DEBUG_OPT_PARTITIONS		26
 #define DEBUG_OPT_PEEPHOLE			27
 #define DEBUG_OPT_PREJOIN      		28
@@ -721,6 +722,7 @@ struct OPTcatalog {
 {"mitosis",		0,	0,	0,	DEBUG_OPT_MITOSIS},
 {"multiplex",	0,	0,	0,	DEBUG_OPT_MULTIPLEX},
 {"octopus",		0,	0,	0,	DEBUG_OPT_OCTOPUS},
+{"origin",		0,	0,	0,	DEBUG_OPT_ORIGIN},
 {"partitions",	0,	0,	0,	DEBUG_OPT_PARTITIONS},
 {"peephole",	0,	0,	0,	DEBUG_OPT_PEEPHOLE},
 {"prejoin",		0,	0,	0,	DEBUG_OPT_PREJOIN},

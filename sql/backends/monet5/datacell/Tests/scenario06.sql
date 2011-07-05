@@ -38,4 +38,5 @@ call datacell.dump();
 call datacell.postlude();
 drop table datacell.barrelin;
 drop table datacell.barrelout;
+drop table datacell.barrellog;
 
