@@ -43,12 +43,11 @@ The geom library is based on the geos (Geometry Engine Open Source) library.
 
 #include "geos_c.h"
 
-typedef struct mbr
-{
-        float xmin;
-        float ymin;
-        float xmax;
-        float ymax;
+typedef struct mbr {
+	float xmin;
+	float ymin;
+	float xmax;
+	float ymax;
 } mbr;
 
 @+
@@ -97,29 +96,27 @@ Type values:
 */
 
 typedef enum wkb_type {
-      wkbPoint = 1,
-      wkbLineString = 2,
-      wkbPolygon = 3,
-      wkbMultiPoint = 4,
-      wkbMultiLineString = 5,
-      wkbMultiPolygon = 6,
-      wkbGeometryCollection = 7,
+	wkbPoint = 1,
+	wkbLineString = 2,
+	wkbPolygon = 3,
+	wkbMultiPoint = 4,
+	wkbMultiLineString = 5,
+	wkbMultiPolygon = 6,
+	wkbGeometryCollection = 7,
 } wkb_type;
 
-libgeom_export const char * geom_type2str(int t);
+libgeom_export const char *geom_type2str(int t);
 
-typedef struct wkb
-{
-	int  len;
+typedef struct wkb {
+	int len;
 	char data[1];
 } wkb;
 
-typedef struct 
-{
-	unsigned char 	type;	
-	mbr	bbox;
-	int		SRID;
-	wkb	wkb;	
+typedef struct {
+	unsigned char type;
+	mbr bbox;
+	int SRID;
+	wkb wkb;
 } geom_geometry;
 
 libgeom_export void libgeom_init(void);
@@ -133,9 +130,9 @@ libgeom_export void libgeom_exit(void);
 	wkb_isnil((geom))? NULL: \
 	GEOSGeomFromWKB_buf((unsigned char *)((geom)->data), (geom)->len)
 
-libgeom_export int wkb_isnil(wkb *wkb);
-libgeom_export int getMbrGeos( mbr *mbr, const GEOSGeom geosGeometry );
-libgeom_export int getMbrGeom( mbr *res,  wkb* geom );
+libgeom_export int wkb_isnil(wkb *wkbp);
+libgeom_export int getMbrGeos(mbr *mbr, const GEOSGeom geosGeometry);
+libgeom_export int getMbrGeom(mbr *res, wkb *geom);
 
 #endif /* LIBGEOM_H */
 @c
@@ -146,24 +143,24 @@ libgeom_export int getMbrGeom( mbr *res,  wkb* geom );
 #include <math.h>
 
 void
-libgeom_init(void) 
+libgeom_init(void)
 {
-	initGEOS((GEOSMessageHandler)GDKerror, (GEOSMessageHandler)GDKerror);
-	GEOS_setWKBByteOrder(1);  /* NDR (little endian) */
+	initGEOS((GEOSMessageHandler) GDKerror, (GEOSMessageHandler) GDKerror);
+	GEOS_setWKBByteOrder(1);	/* NDR (little endian) */
 	printf("# MonetDB/GIS module loaded\n");
-	fflush(stdout); /* make merovingian see this *now* */
+	fflush(stdout);		/* make merovingian see this *now* */
 }
 
 void
-libgeom_exit(void) 
+libgeom_exit(void)
 {
 	finishGEOS();
 }
 
 int
-wkb_isnil(wkb *wkb)
+wkb_isnil(wkb *w)
 {
-	if (!wkb || wkb->len == ~0) 
+	if (!w ||w->len == ~0)
 		return 1;
 	return 0;
 }
@@ -174,7 +171,7 @@ wkb_isnil(wkb *wkb)
  * of a GEOSGeom.
  */
 int
-getMbrGeos( mbr *res, const GEOSGeom geosGeometry )
+getMbrGeos(mbr *res, const GEOSGeom geosGeometry)
 {
 	GEOSGeom envelope;
 	double xmin, ymin, xmax, ymax;
@@ -196,7 +193,7 @@ getMbrGeos( mbr *res, const GEOSGeom geosGeometry )
 		res->ymin = (float) ymin;
 		res->xmax = (float) xmin;
 		res->ymax = (float) ymin;
-	} else { /* GEOSGeomTypeId(envelope) == GEOS_POLYGON */
+	} else {		/* GEOSGeomTypeId(envelope) == GEOS_POLYGON */
 #if GEOS_CAPI_VERSION_MAJOR >= 1 && GEOS_CAPI_VERSION_MINOR >= 3
 		const GEOSGeometry *ring = GEOSGetExteriorRing(envelope);
 #else
@@ -206,7 +203,7 @@ getMbrGeos( mbr *res, const GEOSGeom geosGeometry )
 #if GEOS_CAPI_VERSION_MAJOR >= 1 && GEOS_CAPI_VERSION_MINOR >= 3
 			const GEOSCoordSequence *coords = GEOSGeom_getCoordSeq(ring);
 #else
-			const GEOSCoordSeq coords = GEOSGeom_getCoordSeq(ring); 
+			const GEOSCoordSeq coords = GEOSGeom_getCoordSeq(ring);
 #endif
 			GEOSCoordSeq_getX(coords, 0, &xmin);
 			GEOSCoordSeq_getY(coords, 0, &ymin);
@@ -230,7 +227,7 @@ getMbrGeos( mbr *res, const GEOSGeom geosGeometry )
  * A wrapper for getMbrGeos on a geom_geometry.
  */
 int
-getMbrGeom( mbr *res,  wkb* geom )
+getMbrGeom(mbr *res, wkb *geom)
 {
 	GEOSGeom geosGeometry = wkb2geos(geom);
 
@@ -246,15 +243,20 @@ const char *
 geom_type2str(int t)
 {
 	switch (t) {
-	case wkbPoint: return "Point";
-	case wkbLineString: return "Line";
-	case wkbPolygon: return "Polygon";
-	case wkbMultiPoint: return "MultiPoint";
-	case wkbMultiLineString: return "MultiLine";
-	case wkbMultiPolygon: return "MultiPolygon";
-	case wkbGeometryCollection: return "GeomCollection";
+	case wkbPoint:
+		return "Point";
+	case wkbLineString:
+		return "Line";
+	case wkbPolygon:
+		return "Polygon";
+	case wkbMultiPoint:
+		return "MultiPoint";
+	case wkbMultiLineString:
+		return "MultiLine";
+	case wkbMultiPolygon:
+		return "MultiPolygon";
+	case wkbGeometryCollection:
+		return "GeomCollection";
 	}
 	return "unknown";
 }
-
-
