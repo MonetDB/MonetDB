@@ -1,0 +1,52 @@
+stdout of test 'copy-into-file-error.Bug-2722` in directory 'test/BugTracker-2011` itself:
+
+
+# 12:45:02 >  
+# 12:45:02 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/ufs/sjoerd/Monet-stable/var/MonetDB" --set mapi_open=true --set mapi_port=33109 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_test_BugTracker-2011" --set mal_listing=0 ; echo ; echo Over..
+# 12:45:02 >  
+
+# MonetDB 5 server v11.3.4
+# This is an unreleased version
+# Serving database 'mTests_test_BugTracker-2011', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://ottar.ins.cwi.nl:33109/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+
+Over..
+
+# 12:45:02 >  
+# 12:45:02 >  mclient -lsql -ftest -i -e --host=ottar --port=33109 
+# 12:45:02 >  
+
+#create table bug2722 (time timestamp, val int, fk int);
+#insert into bug2722 values (current_timestamp(), 1, 1);
+[ 1	]
+#insert into bug2722 values (current_timestamp(), 2, 2);
+[ 1	]
+#insert into bug2722 values (current_timestamp(), 3, 1);
+[ 1	]
+#insert into bug2722 values (current_timestamp(), 4, 2);
+[ 1	]
+#copy select val from bug2722 where fk=2 order by time into stdout using delimiters ' ' , '\n';
+% sys.bug2722 # table_name
+% val # name
+% int # type
+% 1 # length
+2
+4
+#copy select val from bug2722 where fk=2 order by time into stdout using delimiters ' ' , '\n';
+[ 2	]
+#drop table bug2722;
+
+# 12:45:02 >  
+# 12:45:02 >  Done.
+# 12:45:02 >  
+
