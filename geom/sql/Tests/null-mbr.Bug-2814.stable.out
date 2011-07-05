@@ -1,0 +1,54 @@
+stdout of test 'null-mbr.Bug-2814` in directory 'sql` itself:
+
+
+# 14:31:02 >  
+# 14:31:02 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/ufs/sjoerd/Monet-stable/var/MonetDB" --set mapi_open=true --set mapi_port=38824 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_sql" --set mal_listing=0 ; echo ; echo Over..
+# 14:31:02 >  
+
+# MonetDB 5 server v11.3.4
+# This is an unreleased version
+# Serving database 'mTests_sql', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://ottar.ins.cwi.nl:38824/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+
+Over..
+
+# 14:31:02 >  
+# 14:31:02 >  mclient -lsql -ftest -i -e --host=ottar --port=38824 
+# 14:31:02 >  
+
+#create table geom_bug2814(id int, g Geometry);
+#insert into geom_bug2814 values(1, GeomFromText('POINT(4 5)', 0));
+[ 1	]
+#insert into geom_bug2814 values(2, GeomFromText('POLYGON((0 0, 10 0, 0 10, 0 0))', 0));
+[ 1	]
+#insert into geom_bug2814 values(3, null);
+[ 1	]
+#select id, mbr(g) from geom_bug2814 where id=1 or id=2;
+% sys.geom_bug2814,	sys. # table_name
+% id,	mbr_g # name
+% int,	mbr # type
+% 1,	0 # length
+[ 1,	"BOX (4 5, 4 5)"	]
+[ 2,	"BOX (0 0, 10 10)"	]
+#select id, mbr(g) from geom_bug2814 where id=3;
+% sys.geom_bug2814,	sys. # table_name
+% id,	mbr_g # name
+% int,	mbr # type
+% 1,	0 # length
+[ 3,	NULL	]
+#drop table geom_bug2814;
+
+# 14:31:02 >  
+# 14:31:02 >  Done.
+# 14:31:02 >  
+
