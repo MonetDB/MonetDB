@@ -1,0 +1,4 @@
+CREATE TABLE t_bug2734 (a INT);
+INSERT INTO t_bug2734 VALUES (1);
+SELECT * FROM (SELECT a, 1 AS n FROM t_bug2734 UNION SELECT a, 2 AS n FROM t_bug2734) AS abc INNER JOIN (SELECT a, 1 AS n FROM t_bug2734 UNION SELECT a, 2 AS n FROM t_bug2734) AS cba ON abc.a = cba.a AND abc.n = cba.n;
+DROP TABLE t_bug2734;
