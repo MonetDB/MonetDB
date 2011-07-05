@@ -1385,6 +1385,32 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 
 	/* the BAT we will return */
 	b = BATnew(bb.Htype, bb.Ttype, bb.size);
+
+	/* for strings, the width may not match, fix it to match what we
+	 * retrieved */
+	if (bb.Ttype == TYPE_str && bb.size) {
+		b->T->width = bb.tailsize / bb.size;
+		b->T->shift = ATOMelmshift(Tsize(b));
+	}
+
+	if (bb.headsize > 0) {
+		HEAPextend(&b->H->heap, bb.headsize); /* cheap if already done */
+		mnstr_read(in, b->H->heap.base, bb.headsize, 1);
+		b->H->heap.dirty = TRUE;
+	}
+	if (bb.tailsize > 0) {
+		HEAPextend(&b->T->heap, bb.tailsize);
+		mnstr_read(in, b->T->heap.base, bb.tailsize, 1);
+		b->T->heap.dirty = TRUE;
+	}
+	if (bb.theapsize > 0) {
+		HEAPextend(b->T->vheap, bb.theapsize);
+		mnstr_read(in, b->T->vheap->base, bb.theapsize, 1);
+		b->T->vheap->free = bb.theapsize;
+		b->T->vheap->dirty = TRUE;
+	}
+
+	/* set properties */
 	b->hseqbase = bb.Hseqbase;
 	b->tseqbase = bb.Tseqbase;
 	b->hsorted = bb.Hsorted;
@@ -1396,31 +1422,9 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 	if (bb.Htype == TYPE_void)
 		b->hdense = TRUE;
 	b->tdense = bb.Tdense;
+	BATsetcapacity(b, b->T->heap.size >> b->T->shift);
 	BATsetcount(b, (oid)bb.size);
 	b->batDirty = TRUE;
-
-	/* for strings, the width may not match, fix it to match what we
-	 * retrieved */
-	if (bb.Ttype == TYPE_str && bb.size) {
-		b->T->width = bb.tailsize / bb.size;
-		b->T->shift = ATOMelmshift(Tsize(b));
-		b->U->capacity = b->T->heap.size >> b->T->shift;
-	}
-
-	if (bb.headsize > 0) {
-		mnstr_read(in, b->H->heap.base, bb.headsize, 1);
-		b->H->heap.dirty = TRUE;
-	}
-	if (bb.tailsize > 0) {
-		mnstr_read(in, b->T->heap.base, bb.tailsize, 1);
-		b->T->heap.dirty = TRUE;
-	}
-	if (bb.theapsize > 0) {
-		HEAPextend(b->T->vheap, bb.theapsize); /* cheap if already done */
-		mnstr_read(in, b->T->vheap->base, bb.theapsize, 1);
-		b->T->vheap->free = bb.theapsize;
-		b->T->vheap->dirty = TRUE;
-	}
 
 	/* read blockmode flush */
 	while (mnstr_read(in, &tmp, 1, 1) != 0) {
