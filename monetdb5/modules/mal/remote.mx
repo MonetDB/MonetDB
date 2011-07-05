@@ -1237,15 +1237,24 @@ str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			"\"ttype\":%d,"
 			"\"hseqbase\":" OIDFMT ","
 			"\"tseqbase\":" OIDFMT ","
+			"\"hsorted\":%d,"
+			"\"tsorted\":%d,"
+			"\"hkey\":%d,"
+			"\"tkey\":%d,"
+			"\"hnonil\":%d,"
+			"\"tnonil\":%d,"
+			"\"tdense\":%d,"
 			"\"size\":" SZFMT ","
 			"\"headsize\":" SZFMT ","
 			"\"tailsize\":" SZFMT ","
 			"\"theapsize\":" SZFMT
 			"}\n",
-			sendhead ? b->htype : TYPE_void,
-			b->ttype,
-			Hseqbase,
-			b->tseqbase,
+			sendhead ? b->htype : TYPE_void, b->ttype,
+			Hseqbase, b->tseqbase,
+			b->hsorted, b->tsorted,
+			b->hkey, b->tkey,
+			b->H->nonil, b->T->nonil,
+			b->tdense,
 			b->batCount,
 			sendhead ? b->batCount * Hsize(b) : 0,
 			b->batCount * Tsize(b),
@@ -1277,6 +1286,14 @@ typedef struct _binbat_v1 {
 	int Ttype;
 	oid Hseqbase;
 	oid Tseqbase;
+	bit Hsorted;
+	bit Tsorted;
+	unsigned int
+		Hkey:2,
+		Tkey:2,
+		Hnonil:1,
+		Tnonil:1,
+		Tdense:1;
 	size_t size;
 	size_t headsize;
 	size_t tailsize;
@@ -1286,7 +1303,7 @@ typedef struct _binbat_v1 {
 static inline str
 RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 {
-	binbat bb = { 0, 0, 0, 0, 0, 0, 0, 0 };
+	binbat bb = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 	char *nme = NULL;
 	char *val = NULL;
 	char tmp;
@@ -1334,6 +1351,20 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 					bb.Hseqbase = (oid)atol(val);
 				} else if (strcmp(nme, "tseqbase") == 0) {
 					bb.Tseqbase = (oid)atol(val);
+				} else if (strcmp(nme, "hsorted") == 0) {
+					bb.Hsorted = *val != '0';
+				} else if (strcmp(nme, "tsorted") == 0) {
+					bb.Tsorted = *val != '0';
+				} else if (strcmp(nme, "hkey") == 0) {
+					bb.Hkey = *val != '0';
+				} else if (strcmp(nme, "tkey") == 0) {
+					bb.Tkey = *val != '0';
+				} else if (strcmp(nme, "hnonil") == 0) {
+					bb.Hnonil = *val != '0';
+				} else if (strcmp(nme, "tnonil") == 0) {
+					bb.Tnonil = *val != '0';
+				} else if (strcmp(nme, "tdense") == 0) {
+					bb.Tdense = *val != '0';
 				} else if (strcmp(nme, "size") == 0) {
 					bb.size = atol(val);
 				} else if (strcmp(nme, "headsize") == 0) {
@@ -1343,7 +1374,8 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 				} else if (strcmp(nme, "theapsize") == 0) {
 					bb.theapsize = atol(val);
 				} else {
-					throw(MAL, "remote.bincopyfrom", "unknown element: %s", nme);
+					throw(MAL, "remote.bincopyfrom",
+							"unknown element: %s", nme);
 				}
 				nme = val = NULL;
 				break;
@@ -1354,26 +1386,35 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 	/* the BAT we will return */
 	b = BATnew(bb.Htype, bb.Ttype, bb.size);
 	b->hseqbase = bb.Hseqbase;
-	if (bb.Ttype == TYPE_void) {
-		b->tseqbase = bb.Tseqbase;
-		b->tdense = 1;
-		b->tkey = 1;
-	}
-	if (bb.Htype == TYPE_void) {
-		b->hdense = 1;
-		b->hkey = 1;
-	}
-	b->batCount = bb.size;
+	b->tseqbase = bb.Tseqbase;
+	b->hsorted = bb.Hsorted;
+	b->tsorted = bb.Tsorted;
+	b->hkey = bb.Hkey;
+	b->tkey = bb.Tkey;
+	b->H->nonil = bb.Hnonil;
+	b->T->nonil = bb.Tnonil;
+	if (bb.Htype == TYPE_void)
+		b->hdense = TRUE;
+	b->tdense = bb.Tdense;
+	BATsetcount(b, (oid)bb.size);
+	b->batDirty = TRUE;
 
 	/* for strings, the width may not match, fix it to match what we
 	 * retrieved */
-	if (bb.Ttype == TYPE_str && bb.size)
+	if (bb.Ttype == TYPE_str && bb.size) {
 		b->T->width = bb.tailsize / bb.size;
+		b->T->shift = ATOMelmshift(Tsize(b));
+		b->U->capacity = b->T->heap.size >> b->T->shift;
+	}
 
-	if (bb.headsize > 0)
+	if (bb.headsize > 0) {
 		mnstr_read(in, b->H->heap.base, bb.headsize, 1);
-	if (bb.tailsize > 0)
+		b->H->heap.dirty = TRUE;
+	}
+	if (bb.tailsize > 0) {
 		mnstr_read(in, b->T->heap.base, bb.tailsize, 1);
+		b->T->heap.dirty = TRUE;
+	}
 	if (bb.theapsize > 0) {
 		if (b->T->vheap->size < bb.theapsize) {
 			GDKfree(b->T->vheap->base);
@@ -1382,6 +1423,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 		}
 		mnstr_read(in, b->T->vheap->base, bb.theapsize, 1);
 		b->T->vheap->free = bb.theapsize;
+		b->T->vheap->dirty = TRUE;
 	}
 
 	/* read blockmode flush */
