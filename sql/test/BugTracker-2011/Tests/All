@@ -1,3 +1,5 @@
+copy-into-file-error.Bug-2722
+bulk_rotate_xor_hash-error.Bug-2734
 aggregate-in-subquery.Bug-2739
 correlated-update.Bug-2771
 double_erange.Bug-2774
