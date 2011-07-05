@@ -946,9 +946,12 @@ wkbMBR(
 )
 {
 	*res = (mbr*)GDKmalloc(sizeof(mbr));
-	if (*res && getMbrGeom(*res, *geom))
-	{
-		return MAL_SUCCEED;
+	if (*res != NULL) {
+		if (wkb_isnil(*geom)) {
+			**res = *mbrNULL();
+			return MAL_SUCCEED;
+		} else if (getMbrGeom(*res, *geom))
+			return MAL_SUCCEED;
 	}
 	throw(MAL, "geom.mbr", "Failed to create mbr");
 }
