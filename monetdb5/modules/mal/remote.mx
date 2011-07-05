@@ -1416,11 +1416,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 		b->T->heap.dirty = TRUE;
 	}
 	if (bb.theapsize > 0) {
-		if (b->T->vheap->size < bb.theapsize) {
-			GDKfree(b->T->vheap->base);
-			b->T->vheap->base = GDKmalloc(bb.theapsize);
-			b->T->vheap->size = b->T->vheap->maxsize = bb.theapsize;
-		}
+		HEAPextend(b->T->vheap, bb.theapsize); /* cheap if already done */
 		mnstr_read(in, b->T->vheap->base, bb.theapsize, 1);
 		b->T->vheap->free = bb.theapsize;
 		b->T->vheap->dirty = TRUE;
