@@ -1286,7 +1286,17 @@ derive(BAT **H, BAT **M, BAT *ct_histo, BAT *ct_map, BAT *b, int tt)
 		b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b),
 		tt);
 
-	if (!ct_map->tkey) { /* cannot derive more groups */
+	if (ct_map->tkey) { /* cannot derive more groups */
+		bn = ct_map;
+		histo = ct_histo;
+		if (!synced) {
+			bn = BATsemijoin(ct_map, b);
+			histo = BATsemijoin(ct_histo, BATmirror(bn));
+		} else {
+			BBPfix(ct_map->batCacheid);
+			BBPfix(ct_histo->batCacheid);
+		}
+	} else {
 		if (synced &&
 		    !BATtkey(b) &&
 	    	    BAThdense(b) &&
@@ -1391,16 +1401,6 @@ derive(BAT **H, BAT **M, BAT *ct_histo, BAT *ct_map, BAT *b, int tt)
 				BATkey(bn, TRUE);
 		}
 
-	} else {
-		bn = ct_map;
-		histo = ct_histo;
-		if (!synced) {
-			bn = BATsemijoin(ct_map, b);
-			histo = BATsemijoin(ct_histo, BATmirror(bn));
-		} else {
-			BBPfix(ct_map->batCacheid);
-			BBPfix(ct_histo->batCacheid);
-		}
 	}
 	*M = bn;
 	*H = histo;
