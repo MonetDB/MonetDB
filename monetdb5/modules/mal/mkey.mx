@@ -692,11 +692,6 @@ CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 		mnstr_printf(GDKout,"#CMDbulk_rotate_xor_hash: (%s,%d,%s): not synced on head.\n", BATgetId(bn), *rotate, BATgetId(b));
 #endif
 		return " Operands not synced on head";
-	} else if (isVIEW(bn) || bn->batRestricted) {
-#ifdef _DEBUG_MKEY_
-		mnstr_printf(GDKout,"#CMDbulk_rotate_xor_hash: (%s,%d,%s): left operand not writeable.\n", BATgetId(bn), *rotate, BATgetId(b));
-#endif
-		return " Left operand not writeable";
 	} else if (*rotate < 0 || *rotate >= (int)(sizeof(wrd)*8)) {
 #ifdef _DEBUG_MKEY_
 		mnstr_printf(GDKout,"CMDbulk_rotate_xor_hash: (%s,%d,%s): illegal number of rotate bits.\n", BATgetId(bn), *rotate, BATgetId(b));
