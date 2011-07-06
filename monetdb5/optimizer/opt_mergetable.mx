@@ -860,6 +860,10 @@ mat_join(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m, int n)
 	
 					/* add result to mat */
 					r = pushArgument(mb,r,getArg(q,0));
+
+					/* join explosion */
+					if (r->argc > 2*mat[m].mi->argc) 
+						return -1;
 				}
 			}
 		    }

@@ -930,8 +930,8 @@ q_enqueue(queue *q, void *d)
 		q->data = GDKrealloc(q->data, sizeof(void*)*q->size);
 	}
 	q->data[q->last++] = d;
-	MT_lock_unset(&q->l, "q_enqueue");
 	MT_sema_up(&q->s, "q_enqueue");
+	MT_lock_unset(&q->l, "q_enqueue");
 }
 
 static void
@@ -948,8 +948,8 @@ q_requeue(queue *q, void *d)
 		q->data[i]= q->data[i-1];
 	q->data[0] = d;
 	q->last++;
-	MT_lock_unset(&q->l, "q_requeue");
 	MT_sema_up(&q->s, "q_requeue");
+	MT_lock_unset(&q->l, "q_requeue");
 }
 
 static void *
@@ -1150,7 +1150,7 @@ just produced. THis way it need not be saved on disk for a long time.
 static void
 runDFLOWworker(void *t)
 {
-	FlowStep fs,oldfs =0;
+	FlowStep fs;
 	FlowTask *task = (FlowTask*) t;
 	str err;
 	Thread thr;
@@ -1160,13 +1160,6 @@ runDFLOWworker(void *t)
 		fs = (FlowStep)q_dequeue(task->todo);
 		PARDEBUG
 			mnstr_printf(GDKstdout,"#execute pc=%d thread =%d \n",fs->pc, task->id);
-		if ( fs == oldfs){
-			q_requeue(task->todo,fs);
-			MT_sleep_ms(10);
-			oldfs = 0;	/* don't escape it always */
-			continue;
-		}
-		oldfs = fs;
 #ifdef DEBUG_FLOW
 		if ( fs->pc >= 0)
 			printInstruction(GDKstdout, fs->flow->mb, 0, getInstrPtr(fs->flow->mb,fs->pc), LIST_MAL_STMT | LIST_MAPI);
@@ -1239,11 +1232,14 @@ DFLOWinit(DataFlow flow, FlowStep fs)
 
 			if (j<p->retc && flow->assign[a] == 0 && flow->inuse[a] == 0) {
 				flow->assign[a] = i;
-				flow->blocked[a] = isNotUsedIn(p,p->retc,a)?1:0;
+				assert(isNotUsedIn(p,p->retc,a));
+				/* we should block until this statement is finished */
+				flow->blocked[a] = 1; 
 			}
 
+			/* mark input arguments as used */
 			if (j>=p->retc  && !isVarConstant(flow->mb, a)  )
-				flow->inuse[a] += isNotUsedIn(p,j+1,a);
+				flow->inuse[a] += 1; 
 		}
 	}
 
@@ -1279,8 +1275,9 @@ DFLOWeligible(DataFlow flow, FlowStep fs, int i, InstrPtr p, int pc)
 {
 	int j, k, l, blocked = 0;
 	InstrPtr q;
-	(void) pc;
 
+	if (pc < 0)
+		pc = 0;
 	for(j=0; j<p->argc && !blocked; j++) {
 		int var = getArg(p,j);
 		if ( j >= p->retc && flow->blocked[var] ) {
@@ -1302,7 +1299,7 @@ DFLOWeligible(DataFlow flow, FlowStep fs, int i, InstrPtr p, int pc)
 				break;
 			}
 			else
-				for ( k=0; k < i ; k++)
+				for ( k=pc; k < i ; k++)
 					if ( fs[k].status != DFLOWwrapup && fs[k].pc >= 0/* pc = -1 could be the case before wrapup is set*/
 						 && !isNotUsedIn(getInstrPtr(flow->mb, fs[k].pc), 0, var) ) {
 						blocked = 1;
@@ -1332,7 +1329,7 @@ DFLOWactivate(DataFlow flow, FlowStep fs, int i,InstrPtr p)
 	int j;
 	for(j=p->retc; j<p->argc; j++) {
 		if (!isVarConstant(flow->mb, getArg(p,j)))
-			flow->inuse[getArg(p,j)] += isNotUsedIn(p,j+1,getArg(p,j));
+			flow->inuse[getArg(p,j)] += 1; 
 	}
 
 	/* the target variables become blocked until this instruction is finished */
@@ -1361,7 +1358,7 @@ execution hold.
 static str
 DFLOWscheduler( DataFlow flow )
 {
-	int queued = 0, candidates;
+	int queued = 0;
 	int todo = 0, done = 0;
 	int pc = 0, i, j, oa =0, ia,k;
 	int limit = flow->stop - flow->start, lookahead =0;
@@ -1404,6 +1401,7 @@ DFLOWscheduler( DataFlow flow )
 					(*f->flow->stk->wrapup)(f->flow->cntxt, f->flow->mb, f->flow->stk, getInstrPtr(flow->mb, abs(f->pc)));
 				(void)q_dequeue(flow->done);
 				done++;
+				queued--;
 			}
 			return f->error;
 		} else {
@@ -1422,7 +1420,7 @@ DFLOWscheduler( DataFlow flow )
 				if (isVarConstant(flow->mb, ia))
 					continue;
 
-				flow->inuse[ia] -= isNotUsedIn(p,j+1,ia);
+				flow->inuse[ia] -= 1; 
 			}
 			/* deblock the output args */
 			for(j=0; j<p->retc; j++) {
@@ -1450,43 +1448,40 @@ DFLOWscheduler( DataFlow flow )
 			lookahead = limit;
 
 		if (flow->stk->admit == 0) {
-			@:DFLOWscheduler_body( DFLOWeligible(flow,fs,i,p,pc), foundit1 )@
+			@:DFLOWscheduler_body( DFLOWeligible(flow,fs,i,p,pc) )@
 		} else {
-			@:DFLOWscheduler_body( DFLOWeligible(flow,fs,i,p,pc) && (*flow->stk->admit)(flow->cntxt, flow->mb, flow->stk, p), foundit2 )@
+			@:DFLOWscheduler_body( DFLOWeligible(flow,fs,i,p,pc) && (*flow->stk->admit)(flow->cntxt, flow->mb, flow->stk, p) )@
 		}
 @= DFLOWscheduler_body
 		/* first try to find an instructions that use the released target */
-		candidates = 0;
 		if ( last)
-		for(i = pc; i < lookahead ; i++)
+		for(i = pc; i < lookahead && flow->done->last == 0; i++)
 			if (fs[i].status == DFLOWpending ) {
 				p = getInstrPtr(flow->mb, fs[i].pc);
-				for ( j= p->retc; j < p->argc; j++)
-				for ( k= 0; k < last->retc; k++)
-					if ( getArg(p,j)== getArg(last,k) ) {
-						if ( @1 ) {
-							queued++;
-							todo++;
-							candidates = 1;
-							DFLOWactivate(flow,fs,i,p);
-							q_enqueue(flow->todo, fs+i);
+				for ( j = p->retc; j < p->argc; j++)
+					for ( k = 0; k < last->retc; k++)
+						if ( getArg(p,j) == getArg(last,k) ) {
+							if ( @1 ) {
+								queued++;
+								todo++;
+								DFLOWactivate(flow,fs,i,p);
+								q_enqueue(flow->todo, fs+i);
+							}
+							j = p->argc;
+							break;
 						}
-						goto @2;
-					}
-				@2: /* it can only be activated once */;
 			}
 		/* if all work done then inspect rest */
-		if (candidates < flow->nway)
-			for(i = pc ; i < limit && queued < flow->nway ; i++)
-				if (fs[i].status == DFLOWpending ) {
-					p = getInstrPtr(flow->mb, fs[i].pc);
-					if ( @1 ) {
-						queued++;
-						todo++;
-						DFLOWactivate(flow,fs,i,p);
-						q_enqueue(flow->todo, fs+i);
-					}
+		for(i = pc ; i < limit && queued < flow->nway && flow->done->last == 0; i++)
+			if (fs[i].status == DFLOWpending ) {
+				p = getInstrPtr(flow->mb, fs[i].pc);
+				if ( @1 ) {
+					queued++;
+					todo++;
+					DFLOWactivate(flow,fs,i,p);
+					q_enqueue(flow->todo, fs+i);
 				}
+			}
 @c
 	}
 	PARDEBUG {
