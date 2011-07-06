@@ -529,17 +529,33 @@ multiplexThread(void *d)
 		/* evaluate if connections have to be switched */
 		for (i = 0; i < m->dbcc; i++) {
 			if (m->dbcv[i]->connupdate) {
-				/* put new connection live */
-				Mfprintf(stdout, "performing deferred connection cycle "
-						"for %s from %s to %s\n",
-						m->dbcv[i]->database,
-						mapi_get_uri(m->dbcv[i]->conn),
-						mapi_get_uri(m->dbcv[i]->newconn));
-				mapi_disconnect(m->dbcv[i]->conn);
-				mapi_destroy(m->dbcv[i]->conn);
-				m->dbcv[i]->conn = m->dbcv[i]->newconn;
-				m->dbcv[i]->newconn = NULL;
-				m->dbcv[i]->connupdate = 0;
+				if (m->dbcv[i]->newconn != NULL) {
+					/* put new connection live */
+					Mfprintf(stdout, "performing deferred connection cycle "
+							"for %s from %s to %s\n",
+							m->dbcv[i]->database,
+							m->dbcv[i]->conn != NULL ?
+								mapi_get_uri(m->dbcv[i]->conn) :
+								"<unconnected>",
+							mapi_get_uri(m->dbcv[i]->newconn));
+					mapi_disconnect(m->dbcv[i]->conn);
+					mapi_destroy(m->dbcv[i]->conn);
+					m->dbcv[i]->conn = m->dbcv[i]->newconn;
+					m->dbcv[i]->newconn = NULL;
+					m->dbcv[i]->connupdate = 0;
+				} else {
+					/* put new connection live */
+					Mfprintf(stdout, "performing deferred connection drop "
+							"for %s from %s\n",
+							m->dbcv[i]->database,
+							m->dbcv[i]->conn != NULL ?
+								mapi_get_uri(m->dbcv[i]->conn) :
+								"<unconnected>");
+					mapi_disconnect(m->dbcv[i]->conn);
+					mapi_destroy(m->dbcv[i]->conn);
+					m->dbcv[i]->conn = NULL;
+					m->dbcv[i]->connupdate = 0;
+				}
 			}
 		}
 
