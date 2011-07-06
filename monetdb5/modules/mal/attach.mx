@@ -21,13 +21,13 @@ All Rights Reserved.
 @a Martin Kersten
 @v 0.1
 @+ Attach
-The attach module provides a mechanism to easily share a (readonly)
+The attach module provides a mechanism to easily share (readonly)
 BATs between two mservers.
 
 The module is intended to support cheap attachment of BATs identified
 using several protocols, but for the moment we assume a single Linux
-cluster with NSF.
-In this context the bind() creates a symbolic link. 
+cluster with NFS.
+In this context the bind() creates a symbolic link.
 
 Beware that the argument to the patterns is the full path to 
 the base of the BAT. Depending on their type we need to
