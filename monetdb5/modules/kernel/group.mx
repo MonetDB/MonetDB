@@ -827,7 +827,7 @@ CTderive_@1_@2_@5(BAT* ct_map, BAT *ct_histo, BAT *b, BAT *bn)
 		hcur = *(oid*) BUNtloc(ct_mapi,cp);
 
 		/* hash-lookup of [hcur,tcur] in map */
-		c = (((BUN) hcur) ^ HASH_@2(tcur));
+		c = (((BUN) hcur) ^ mix_BUN(HASH_@2(tcur)));
 		c = mix_BUN(c) & mask;
 		chain_@5 {
 			r = zz;
