@@ -561,6 +561,8 @@ BATappend(BAT *b, BAT *n, bit force)
 		    b->T->vheap->hashash == n->T->vheap->hashash &&
 		    VIEWtparent(n) == 0) {
 			b = insert_string_bat(b, n, 1);
+			if (b == NULL)
+				return NULL;
 		} else if (b->htype == TYPE_void) {
 			BATiter ni = bat_iterator(n);
 
