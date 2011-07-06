@@ -306,11 +306,11 @@ hashing.
 #endif
 #define HASH_bte(p) ((BUN) (*(unsigned char*) (p)))
 #define HASH_sht(p) ((BUN) (*(unsigned short*) (p)))
-#define HASH_int(p) ((BUN) *(unsigned int*) (p))
+#define HASH_int(p) ((BUN) (*(unsigned int*) (p)))
 #if SIZEOF_BUN == SIZEOF_LNG
 #define HASH_lng(p) ((BUN) (*(BUN *) (p)))
 #else
-#define HASH_lng(p) ((BUN)(((unsigned int*)(p))[0]^((unsigned int*)(p))[1]))
+#define HASH_lng(p) ((BUN) (((unsigned int*)(p))[0]^((unsigned int*)(p))[1]))
 #endif
 #define HASH_str_hv(p) (((BUN *) (p))[-1])
 #define HASH_any(p) ((*hashfcn)(p))
