@@ -1286,7 +1286,9 @@ derive(BAT **H, BAT **M, BAT *ct_histo, BAT *ct_map, BAT *b, int tt)
 		b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b),
 		tt);
 
-	if (ct_map->tkey) { /* cannot derive more groups */
+	if (ct_map->tkey ||
+	    BATcount(ct_histo) >= MAX(BATcount(ct_map),BATcount(b))) {
+		/* cannot derive more groups */
 		bn = ct_map;
 		histo = ct_histo;
 		if (!synced) {
