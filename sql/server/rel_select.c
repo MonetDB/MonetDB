@@ -554,7 +554,7 @@ rel_crossproduct(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type join)
 void
 rel_join_add_exp( sql_allocator *sa, sql_rel *rel, sql_exp *e)
 {
-	assert(is_join(rel->op) || is_semi(rel->op));
+	assert(is_join(rel->op) || is_semi(rel->op) || is_select(rel->op));
 
 	if (!rel->exps)
 		rel->exps = new_exp_list(sa);
