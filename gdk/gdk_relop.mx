@@ -1521,8 +1521,10 @@ BATleftjoin(BAT *l, BAT *r, BUN estimate)
 	 * Disable via command line option  --debug=16777216
 	 */
 	JOINPROPCHK {
-		if (b)
+		if (b) {
+			BATpropcheck(b, BATPROPS_QUICK);
 			BATpropcheck(BATmirror(b), BATPROPS_QUICK);
+		}
 	}
 	return b;
 }
