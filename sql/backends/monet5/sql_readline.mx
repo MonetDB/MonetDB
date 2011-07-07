@@ -81,14 +81,11 @@ static const char *sql_commands[] = {
 };
 static int sqlcommandlimit = 13;
 
-@-
-@= tst
 #ifdef HAVE_STRNCASECMP
-		(strncasecmp(@1, @2, @3) == 0)
+#define STR_EQUAL(a, b, l)	(strncasecmp(a, b, l) == 0)
 #else
-		(strncmp(@1, @2, @3) == 0)
+#define STR_EQUAL(a, b, l)	(strncmp(a, b, l) == 0)
 #endif
-@c
 
 static char *
 sql_command_generator(const char *text, int state)
@@ -105,13 +102,13 @@ sql_command_generator(const char *text, int state)
 	}
 	if( mdbSession() ){
 		while ( (name = sql_commands[index++]) ){
-				if( @:tst(name,text,len)@ ) 
+				if( STR_EQUAL(name, text, len) ) 
 					return strdup(name);
 		}
 		return NULL;
 	}
 	while (index < sqlcommandlimit && (name = sql_commands[index++])) {
-			if( @:tst(name,text,len)@ ) 
+			if( STR_EQUAL(name, text, len) ) 
 				return strdup(name);
 	}
 	return NULL;

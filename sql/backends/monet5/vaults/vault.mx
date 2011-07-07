@@ -229,13 +229,6 @@ vault_export char vaultpath[BUFSIZ];
 
 char vaultpath[BUFSIZ];
 @-
-@= initialize
-	if ( vaultpath[0] == 0){
-		snprintf(vaultpath, PATHLENGTH, "%s%c%s%cvault", GDKgetenv("gdk_dbfarm"), DIR_SEP, GDKgetenv("gdk_dbname"), DIR_SEP);
-		if (mkdir(vaultpath, 0755) < 0 && errno != EEXIST) 
-			return createException(MAL,"vault.getLocation", "can not access vault directory");
-	}
-@-
 The curl sample code has been copied from http://curl.haxx.se/libcurl/c/import.html
 @c
 #ifdef HAVE_CURL
@@ -342,7 +335,11 @@ VLTprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		curl_global_init(CURL_GLOBAL_DEFAULT);
 	}
 #endif
-	@:initialize@
+	if ( vaultpath[0] == 0){
+		snprintf(vaultpath, PATHLENGTH, "%s%c%s%cvault", GDKgetenv("gdk_dbfarm"), DIR_SEP, GDKgetenv("gdk_dbname"), DIR_SEP);
+		if (mkdir(vaultpath, 0755) < 0 && errno != EEXIST) 
+			return createException(MAL,"vault.getLocation", "can not access vault directory");
+	}
 	(void) cntxt;
 	(void) mb;
 	(void) stk;
