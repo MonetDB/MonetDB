@@ -918,8 +918,8 @@ bailout:
 	return (worry);
 }
 
-/* a thread informs it is goin to (preload==1) or stops (preload==-1)
-   using a range of memory */
+/* a thread informs it is going to (preload==1) or stops
+   using (preload==-1) a range of memory */
 void
 MT_mmap_inform(void *base, size_t len, int preload, int advice, int writable)
 {
@@ -944,12 +944,12 @@ MT_mmap_inform(void *base, size_t len, int preload, int advice, int writable)
 	(void) pthread_mutex_unlock(&MT_mmap_lock);
 	if (ret) {
 		mnstr_printf(GDKerr,
-			      "#MT_mmap_inform: posix_madvise(file=%s, fd=%d, base=" PTRFMT ", len=" SZFMT "MB, advice=MMAP_SEQUENTIAL) = %d\n",
+			      "#MT_mmap_inform: posix_madvise(file=%s, fd=%d, base=" PTRFMT ", len=" SZFMT "MB, advice=MMAP_SEQUENTIAL) = %d (%s)\n",
 			      (i >= 0 ? MT_mmap_tab[i].path : ""),
 			      (i >= 0 ? MT_mmap_tab[i].fd : -1),
 			      PTRFMTCAST base,
 			      len >> 20,
-			      errno);
+			      errno, strerror(errno));
 	}
 }
 
