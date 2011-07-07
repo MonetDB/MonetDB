@@ -1502,7 +1502,8 @@ BATjoin(BAT *l, BAT *r, BUN estimate)
 	JOINPROPCHK {
 		if (b) {
 			BATpropcheck(b, BATPROPS_QUICK);
-			BATpropcheck(BATmirror(b), BATPROPS_QUICK);
+			if (b->H != b->T)
+				BATpropcheck(BATmirror(b), BATPROPS_QUICK);
 		}
 	}
 
@@ -1523,7 +1524,8 @@ BATleftjoin(BAT *l, BAT *r, BUN estimate)
 	JOINPROPCHK {
 		if (b) {
 			BATpropcheck(b, BATPROPS_QUICK);
-			BATpropcheck(BATmirror(b), BATPROPS_QUICK);
+			if (b->H != b->T)
+				BATpropcheck(BATmirror(b), BATPROPS_QUICK);
 		}
 	}
 	return b;
