@@ -40,9 +40,11 @@
 #ifdef HAVE_PTHREAD_H
 #include <pthread.h>
 #endif
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netdb.h>
+#ifdef HAVE_GETADDRINFO
+# include <sys/types.h>
+# include <sys/socket.h>
+# include <netdb.h>
+#endif
 
 #ifndef HAVE_GETOPT_LONG
 # include "monet_getopt.h"
