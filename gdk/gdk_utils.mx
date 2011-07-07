@@ -1433,7 +1433,7 @@ GDKmmap(char *path, int mode, off_t off, size_t len)
 		GDKmemfail("GDKmmap", len, 0, BBPTRIM_ALL);
 		ret = MT_mmap(path, mode, off, len);
 		if (ret != (void *) -1L) {
-			THRprintf(GDKout, "#GDKmmap: recovery ok. Continuing..\n");
+			THRprintf(GDKstdout, "#GDKmmap: recovery ok. Continuing..\n");
 		}
 	}
 	ALLOCDEBUG fprintf(stderr, "#GDKmmap " LLFMT " " SZFMT " " PTRFMT "\n", (lng) off, len, PTRFMTCAST ret);
@@ -1483,7 +1483,7 @@ GDKvmalloc(size_t size, size_t *maxsize, int emergency)
 			MT_alloc_print();
 			GDKfatal("GDKvmalloc: failed for " SZFMT " bytes", size);
 		} else {
-			THRprintf(GDKout, "#GDKvmalloc(" SZFMT "): recovery ok. Continuing..\n", size);
+			THRprintf(GDKstdout, "#GDKvmalloc(" SZFMT "): recovery ok. Continuing..\n", size);
 		}
 	}
 	ALLOCDEBUG fprintf(stderr, "#GDKvmalloc " SZFMT " " SZFMT " " PTRFMT "\n", size, *maxsize, PTRFMTCAST ret);
@@ -1510,7 +1510,7 @@ GDKvmrealloc(void *pold, size_t oldsize, size_t newsize, size_t oldmax, size_t *
 			MT_alloc_print();
 			GDKfatal("GDKvmrealloc: failed for " SZFMT " bytes (from " SZFMT ")", newsize, oldsize);
 		} else {
-			THRprintf(GDKout, "#GDKvmrealloc(" SZFMT "): recovery ok. Continuing..\n", newsize);
+			THRprintf(GDKstdout, "#GDKvmrealloc(" SZFMT "): recovery ok. Continuing..\n", newsize);
 		}
 	}
 	ALLOCDEBUG fprintf(stderr, "#GDKvmrealloc " SZFMT " " SZFMT " " PTRFMT " " PTRFMT "\n", newsize, *newmax, PTRFMTCAST pold, PTRFMTCAST ret);
