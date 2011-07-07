@@ -418,10 +418,10 @@ MKEYbathash(bat *res, bat *bid )
 	if( (b = BATdescriptor(*bid)) == NULL ){
 		throw(SQL, "bathash", "Cannot access descriptor");
 	}
-	assert(BAThrestricted(b));
+	assert(BAThvoid(b) || BAThrestricted(b));
 
 	msg = voidbathash(&dst, b);
-	if (b->htype != TYPE_void) {
+	if (!BAThvoid(b)) {
 		BAT *x = VIEWcreate(b, dst);
 		BBPreleaseref(dst->batCacheid);
 		dst = x;
