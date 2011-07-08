@@ -70,6 +70,10 @@ mvc_init(char *dbname, int debug, store_type store, backend_stack stk)
 			mvc_drop_table(m, s, t, 0);
 			t = mvc_bind_table(m, s, "columns");
 			mvc_drop_table(m, s, t, 0);
+			t = mvc_bind_table(m, s, "arrays");
+			mvc_drop_table(m, s, t, 0);
+			t = mvc_bind_table(m, s, "dimensions");
+			mvc_drop_table(m, s, t, 0);
 		}
 
 		t = mvc_create_view(m, s, "tables", SQL_PERSIST, "SELECT * FROM (SELECT p.*, 0 AS \"temporary\" FROM \"sys\".\"_tables\" AS p UNION ALL SELECT t.*, 1 AS \"temporary\" FROM \"tmp\".\"_tables\" AS t) AS tables where tables.type < 2;", 1);
@@ -95,21 +99,33 @@ mvc_init(char *dbname, int debug, store_type store, backend_stack stk)
 		mvc_create_column_(m, t, "number", "int", 32);
 		mvc_create_column_(m, t, "storage_type", "int", 32);
 
-		t = mvc_create_view(m, s, "arrays", SQL_PERSIST, "SELECT * FROM (SELECT p.*, 0 AS \"temporary\" FROM \"sys\".\"_arrays\" AS p UNION ALL SELECT t.*, 1 AS \"temporary\" FROM \"tmp\".\"_arrays\" AS t) AS arrays;", 1);
-		mvc_create_column_(m, t, "table_id", "int", 32);
-		mvc_create_column_(m, t, "ndims", "int", 32);
-		mvc_create_column_(m, t, "fixed", "boolean", 1);
+		/* TODO: check the correctness of this new query for arrays */
+		t = mvc_create_view(m, s, "arrays", SQL_PERSIST, "SELECT * FROM (SELECT p.*, 0 AS \"temporary\" FROM \"sys\".\"_tables\" WHERE type = 5 AS p UNION ALL SELECT t.*, 1 AS \"temporary\" FROM \"tmp\".\"_tables\" WHERE type = 5 AS t) AS arrays;", 1);
+		mvc_create_column_(m, t, "id", "int", 32);
+		mvc_create_column_(m, t, "name", "varchar", 1024);
+		mvc_create_column_(m, t, "schema_id", "int", 32);
+		mvc_create_column_(m, t, "query", "varchar", 2048);
+		mvc_create_column_(m, t, "type", "smallint", 16);
+		mvc_create_column_(m, t, "system", "boolean", 1);
+		mvc_create_column_(m, t, "commit_action", "smallint", 16);
+		mvc_create_column_(m, t, "readonly", "boolean", 1);
+		mvc_create_column_(m, t, "temporary", "smallint", 16);
 
-		t = mvc_create_view(m, s, "dimensions", SQL_PERSIST, "SELECT * FROM (SELECT p.* FROM \"sys\".\"_dimensions\" AS p UNION ALL SELECT t.* FROM \"tmp\".\"_dimensions\" AS t) AS dimensions;", 1);
-		mvc_create_column_(m, t, "column_id", "int", 32);
-		mvc_create_column_(m, t, "dim_nr", "int", 32);
+		/* TODO: check the correctness of this new query for dimensions */
+		t = mvc_create_view(m, s, "dimensions", SQL_PERSIST, "SELECT * FROM (SELECT pc.*, pd.fixed, pd.start, pd.step, pd.stop FROM \"sys\".\"_columns\" AS pc, \"sys\".\"_dimensions\" AS pd WHERE pc.id = pd.column_id AND pc.table_id = pd.table_id UNION ALL SELECT tc.*, td.fixed, td.start, td.step, td.stop FROM \"tmp\".\"_columns\" AS tc, \"tmp\".\"_dimensions\" AS td WHERE tc.id = td.column_id AND tc.table_id = td.table_id) AS dimensions;", 1);
+		mvc_create_column_(m, t, "id", "int", 32);
+		mvc_create_column_(m, t, "name", "varchar", 1024);
+		mvc_create_column_(m, t, "schema_id", "int", 32);
+		mvc_create_column_(m, t, "query", "varchar", 2048);
+		mvc_create_column_(m, t, "type", "smallint", 16);
+		mvc_create_column_(m, t, "system", "boolean", 1);
+		mvc_create_column_(m, t, "commit_action", "smallint", 16);
+		mvc_create_column_(m, t, "readonly", "boolean", 1);
+		mvc_create_column_(m, t, "temporary", "smallint", 16);
+		mvc_create_column_(m, t, "fixed", "boolean", 1);
 		mvc_create_column_(m, t, "start", "varchar", 2048);
 		mvc_create_column_(m, t, "step", "varchar", 2048);
 		mvc_create_column_(m, t, "stop", "varchar", 2048);
-		mvc_create_column_(m, t, "curr_start", "varchar", 2048);
-		mvc_create_column_(m, t, "curr_step", "varchar", 2048);
-		mvc_create_column_(m, t, "curr_stop", "varchar", 2048);
-		mvc_create_column_(m, t, "fixed", "boolean", 1);
 
 		if (!catalog_version) {
 			sql_create_env(m, s);
@@ -974,7 +990,9 @@ mvc_create_table(mvc *m, sql_schema *s, char *name, int tt, bit system, int pers
 	sql_table *t = NULL;
 
 	if (mvc_debug)
-		fprintf(stderr, "#mvc_create_table %s %s %d %d %d %d\n", s->base.name, name, tt, system, persistence, commit_action);
+		fprintf(stderr, "#mvc_create_table %s %s %s %d %d %d %d\n",
+				tt == tt_table? "TABLE":(tt == tt_array? "ARRAY":"OTHER_TT"),
+				s->base.name, name, tt, system, persistence, commit_action);
 
 	if (persistence == SQL_DECLARED_TABLE) {
 		/* declared tables should not end up in the catalog */
