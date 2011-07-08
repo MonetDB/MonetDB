@@ -120,6 +120,7 @@ All Rights Reserved.
     <antcall target="Test_Rpositioning" />
     <antcall target="Test_Rtimedate" />
     <antcall target="Test_Sbatching" />
+    <antcall target="Test_Smoreresults" />
     <antcall target="BugConcurrent_clients_SF_1504657" />
     <antcall target="BugConcurrent_sequences" />
   </target>
@@ -183,6 +184,12 @@ All Rights Reserved.
   <target name="Test_Sbatching">
     <antcall target="test_class">
       <param name="test.class" value="Test_Sbatching" />
+    </antcall>
+  </target>
+
+  <target name="Test_Smoreresults">
+    <antcall target="test_class">
+      <param name="test.class" value="Test_Smoreresults" />
     </antcall>
   </target>
 

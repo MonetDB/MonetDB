@@ -1,6 +1,11 @@
 # ChangeLog file for java
 # This file is updated with Maddlog
 
+* Fri Jul  8 2011 Fabian Groffen <fabian@cwi.nl>
+- Return false from Statement.getMoreResults() instead of a
+  NullPointerException when no query has been performed on the Statement
+  yet, bug #2833
+
 * Mon Jun  6 2011 Fabian Groffen <fabian@cwi.nl>
 - Fixed read-only interpretation.  Connection.isReadOnly now always
   returns false, setReadOnly now generates a warning when called with
