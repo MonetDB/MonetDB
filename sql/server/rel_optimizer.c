@@ -3125,7 +3125,7 @@ rel_reduce_groupby_exps(int *changes, mvc *sql, sql_rel *rel)
 	(void)sql;
 	if (is_groupby(rel->op) && list_length(gbe) > 1) {
 		node *n, *m;
-		char *scores = alloca(list_length(gbe));
+		signed char *scores = alloca(list_length(gbe));
 		int k, j, i;
 		sql_column *c;
 		sql_table **tbls;

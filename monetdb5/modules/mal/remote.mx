@@ -1423,7 +1423,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 		b->hdense = b->hkey = TRUE;
 	b->tdense = bb.Tdense;
 	if (bb.Ttype == TYPE_str && bb.size)
-		BATsetcapacity(b, b->T->heap.size >> b->T->shift);
+		BATsetcapacity(b, bb.tailsize >> b->T->shift);
 	BATsetcount(b, (oid)bb.size);
 	b->batDirty = TRUE;
 

@@ -41,8 +41,15 @@
 #include <pthread.h>
 #endif
 #include <sys/types.h>
-#include <sys/socket.h>
-#include <netdb.h>
+#ifdef HAVE_SYS_SOCKET_H
+# include <sys/socket.h>
+#endif
+#ifdef NATIVE_WIN32
+# include <winsock.h>
+#endif
+#ifdef HAVE_NETDB_H
+# include <netdb.h>
+#endif
 
 #ifndef HAVE_GETOPT_LONG
 # include "monet_getopt.h"

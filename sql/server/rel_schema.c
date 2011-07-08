@@ -286,7 +286,7 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 			return res;
 		}
 		if (name && mvc_bind_key(sql, ss, name)) {
-			(void) sql_error(sql, 02, "CONSTRAINT PRIMARY KEY: key %s already exists", name);
+			(void) sql_error(sql, 02, "CONSTRAINT FOREIGN KEY: key %s already exists", name);
 			return res;
 		}
 
@@ -485,7 +485,8 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 			return SQL_ERR;
 		}
 		if (name && mvc_bind_key(sql, ss, name)) {
-			sql_error(sql, 02, "CONSTRAINT PRIMARY KEY: key %s already exists", name);
+			sql_error(sql, 02, "CONSTRAINT %s: key %s already exists",
+					kt == pkey ? "PRIMARY KEY" : "UNIQUE", name);
 			return SQL_ERR;
 		}
 			
@@ -495,7 +496,9 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 			sql_column *c = mvc_bind_column(sql, t, nm);
 
 			if (!c) {
-				sql_error(sql, 02, "no such column '%s' for table '%s'\n", nm, t->base.name);
+				sql_error(sql, 02, "CONSTRAINT %s: no such column '%s' for table '%s'",
+						kt == pkey ? "PRIMARY KEY" : "UNIQUE",
+						nm, t->base.name);
 				return SQL_ERR;
 			} 
 			(void) mvc_create_kc(sql, k, c);

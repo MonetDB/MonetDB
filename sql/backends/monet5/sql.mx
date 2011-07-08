@@ -4205,7 +4205,7 @@ batstr_2_@1( int *res, int *bid )
 		msg = str_2_@1( &r, &v );
 		if (msg)
 			break;
-		BUNins(dst, BUNhead(bi,p), &r, FALSE);
+		BUNins(dst, BUNhead(bi,p), @5 r, FALSE);
 	}
 	BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BBPkeepref( *res = dst->batCacheid);
@@ -4213,19 +4213,19 @@ batstr_2_@1( int *res, int *bid )
 	return msg;
 }
 @c
-@:cast(bit,bitToStr,bit, *res = *(bit*)p)@
-@:cast(oid,OIDtoStr,oid, *res = *(oid*)p)@
-@:cast(bte,bteToStr,bte, *res = *(bte*)p)@
-@:cast(sht,shtToStr,sht, *res = *(sht*)p)@
-@:cast(int,intToStr,int, *res = *(int*)p)@
-@:cast(lng,lngToStr,lng, *res = *(lng*)p)@
-@:cast(wrd,wrdToStr,wrd, *res = *(wrd*)p)@
-@:cast(flt,fltToStr,flt, *res = *(flt*)p)@
-@:cast(dbl,dblToStr,dbl, *res = *(dbl*)p)@
-@:cast(timestamp,timestamp_tostr,timestamp, *res = *(timestamp*)p)@
-@:cast(daytime,daytime_tostr,daytime, *res = *(daytime*)p)@
-@:cast(date,date_tostr,date, *res = *(date*)p)@
-@:cast(sqlblob,sqlblob_tostr,sqlblob*, *res = (sqlblob*)p)@
+@:cast(bit,bitToStr,bit, *res = *(bit*)p,&)@
+@:cast(oid,OIDtoStr,oid, *res = *(oid*)p,&)@
+@:cast(bte,bteToStr,bte, *res = *(bte*)p,&)@
+@:cast(sht,shtToStr,sht, *res = *(sht*)p,&)@
+@:cast(int,intToStr,int, *res = *(int*)p,&)@
+@:cast(lng,lngToStr,lng, *res = *(lng*)p,&)@
+@:cast(wrd,wrdToStr,wrd, *res = *(wrd*)p,&)@
+@:cast(flt,fltToStr,flt, *res = *(flt*)p,&)@
+@:cast(dbl,dblToStr,dbl, *res = *(dbl*)p,&)@
+@:cast(timestamp,timestamp_tostr,timestamp, *res = *(timestamp*)p,&)@
+@:cast(daytime,daytime_tostr,daytime, *res = *(daytime*)p,&)@
+@:cast(date,date_tostr,date, *res = *(date*)p,&)@
+@:cast(sqlblob,sqlblob_tostr,sqlblob*, *res = (sqlblob*)p,)@
 
 str
 SQLstr_2_str( str *res, str *val )
