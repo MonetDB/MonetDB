@@ -1575,6 +1575,8 @@ store_manager(void)
 		if (logging && res == LOG_OK)
 			res = logger_funcs.cleanup();
 		logging = 0;
+		if (res != LOG_OK)
+			GDKfatal("write-ahead logging failure, disk full?");
 	}
 }
 
