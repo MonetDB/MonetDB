@@ -598,7 +598,7 @@ MT_mmap_new(char *path, void *base, size_t len, int fd, int writable)
 		if (MT_mmap_cur == -1)
 			MT_mmap_cur = i;
 #ifdef MMAP_DEBUG
-		mnstr_printf(GDKerr, "#MT_mmap_new: %s fd=%d\n", path, fd);
+		mnstr_printf(GDKstdout, "#MT_mmap_new: %s fd=%d\n", path, fd);
 #endif
 		strncpy(MT_mmap_tab[i].path, path, 128);
 		MT_mmap_tab[i].base = base;
@@ -649,7 +649,7 @@ MT_mmap_del(void *base, size_t len)
 				/* tell the OS quite clearly that you want to drop this */
 				ret = posix_fadvise(MT_mmap_tab[victim].fd, 0LL, MT_mmap_tab[victim].len & ~(MT_pagesize() - 1), POSIX_FADV_DONTNEED);
 #ifdef MMAP_DEBUG
-				mnstr_printf(GDKerr,
+				mnstr_printf(GDKstdout,
 					      "#MT_mmap_del: posix_fadvise(%s,fd=%d,%uMB,POSIX_FADV_DONTNEED) = %d\n",
 					      MT_mmap_tab[victim].path,
 					      MT_mmap_tab[victim].fd,
@@ -660,7 +660,7 @@ MT_mmap_del(void *base, size_t len)
 #endif
 			ret = close(MT_mmap_tab[victim].fd);
 #ifdef MMAP_DEBUG
-			mnstr_printf(GDKerr,
+			mnstr_printf(GDKstdout,
 				      "#MT_mmap_del: close(%s fd=%d) = %d\n",
 				      MT_mmap_tab[victim].path,
 				      MT_mmap_tab[victim].fd,
@@ -693,7 +693,7 @@ MT_fadvise(void *base, size_t len, int advice)
 			if (MT_mmap_tab[i].fd >= 0) {
 				ret = posix_fadvise(MT_mmap_tab[i].fd, 0, len & ~(MT_pagesize() - 1), advice);
 #ifdef MMAP_DEBUG
-				mnstr_printf(GDKerr,
+				mnstr_printf(GDKstdout,
 					      "#MT_fadvise: posix_fadvise(%s,fd=%d,%uMB,%d) = %d\n",
 					      MT_mmap_tab[i].path,
 					      MT_mmap_tab[i].fd,
@@ -907,8 +907,8 @@ bailout:
 	return (worry);
 }
 
-/* a thread informs it is goin to (preload==1) or stops (preload==-1)
-   using a range of memory */
+/* a thread informs it is going to (preload==1) or stops
+   using (preload==-1) a range of memory */
 void
 MT_mmap_inform(void *base, size_t len, int preload, int advice, int writable)
 {
@@ -932,13 +932,13 @@ MT_mmap_inform(void *base, size_t len, int preload, int advice, int writable)
 	}
 	(void) pthread_mutex_unlock(&MT_mmap_lock);
 	if (ret) {
-		mnstr_printf(GDKerr,
-			      "#MT_mmap_inform: posix_madvise(file=%s, fd=%d, base=" PTRFMT ", len=" SZFMT "MB, advice=MMAP_SEQUENTIAL) = %d\n",
+		mnstr_printf(GDKstdout,
+			      "#MT_mmap_inform: posix_madvise(file=%s, fd=%d, base=" PTRFMT ", len=" SZFMT "MB, advice=MMAP_SEQUENTIAL) = %d (%s)\n",
 			      (i >= 0 ? MT_mmap_tab[i].path : ""),
 			      (i >= 0 ? MT_mmap_tab[i].fd : -1),
 			      PTRFMTCAST base,
 			      len >> 20,
-			      errno);
+			      errno, strerror(errno));
 	}
 }
 
@@ -1127,7 +1127,7 @@ MT_munmap(void *p, size_t len)
 	int ret = munmap(p, len);
 
 #ifdef MMAP_DEBUG
-	mnstr_printf(GDKerr, "#munmap(" LLFMT "," LLFMT ",%d) = %d\n", (long long) p, (long long) len, ret);
+	mnstr_printf(GDKstdout, "#munmap(" LLFMT "," LLFMT ",%d) = %d\n", (long long) p, (long long) len, ret);
 #endif
 	MT_mmap_del(p, len);
 	return ret;
@@ -1139,7 +1139,7 @@ MT_msync(void *p, size_t off, size_t len, int mode)
 	int ret = msync(((char *) p) + off, len, (mode & MMAP_SYNC) ? MS_SYNC : ((mode & MMAP_ASYNC) ? MS_ASYNC : MS_INVALIDATE));
 
 #ifdef MMAP_DEBUG
-	mnstr_printf(GDKerr,
+	mnstr_printf(GDKstdout,
 		      "#msync(" LLFMT "," LLFMT ",%s) = %d\n",
 		      (long long) p, (long long) len,
 		      (mode & MMAP_SYNC) ? "MS_SYNC" : ((mode & MMAP_ASYNC) ? "MS_ASYNC" : "MS_INVALIDATE"),
@@ -1156,7 +1156,7 @@ MT_madvise(void *p, size_t len, int advice)
 	int ret = posix_madvise(p, len & ~(MT_pagesize() - 1), advice);
 
 #ifdef MMAP_DEBUG
-	mnstr_printf(GDKerr, "#posix_madvise(" PTRFMT "," SZFMT ",%d) = %d\n",
+	mnstr_printf(GDKstdout, "#posix_madvise(" PTRFMT "," SZFMT ",%d) = %d\n",
 		      PTRFMTCAST p, len, advice, ret);
 #endif
 	if (MT_fadvise(p, len, advice))
@@ -1536,7 +1536,7 @@ MT_mallinfo(void)
 	}
 	if (heapstatus == _HEAPBADPTR || heapstatus == _HEAPBADBEGIN || heapstatus == _HEAPBADNODE) {
 
-		mnstr_printf(GDKerr, "#mallinfo(): heap is corrupt.");
+		mnstr_printf(GDKstdout, "#mallinfo(): heap is corrupt.");
 	}
 	_heapmin();
 	return _ret;
@@ -1733,7 +1733,7 @@ win_rename(const char *old, const char *new)
 		/* it could be the <expletive deleted> indexing
 		 * service which prevents us from doing what we have a
 		 * right to do, so try again (once) */
-		IODEBUG THRprintf(GDKout, "#retry rename %s %s\n", old, new);
+		IODEBUG THRprintf(GDKstdout, "#retry rename %s %s\n", old, new);
 		MT_sleep_ms(100);	/* wait a little */
 		ret = rename(old, new);
 	}
@@ -2018,7 +2018,7 @@ MT_vmalloc(size_t size, size_t *maxsize)
 	p = (void *) VirtualAlloc(a, size, MEM_COMMIT | mode, PAGE_READWRITE);
 	(void) pthread_mutex_unlock(&MT_mmap_lock);
 	if (p == NULL) {
-		mnstr_printf(GDKerr, "#VirtualAlloc(" PTRFMT "," SZFMT ",MEM_COMMIT,PAGE_READWRITE): failed\n", PTRFMTCAST a, size);
+		mnstr_printf(GDKstdout, "#VirtualAlloc(" PTRFMT "," SZFMT ",MEM_COMMIT,PAGE_READWRITE): failed\n", PTRFMTCAST a, size);
 	}
 	return p;
 }
@@ -2028,9 +2028,9 @@ void
 MT_vmfree(void *p, size_t size)
 {
 	if (VirtualFree(p, size, MEM_DECOMMIT) == 0)
-		mnstr_printf(GDKerr, "#VirtualFree(" PTRFMT "," SZFMT ",MEM_DECOMMIT): failed\n", PTRFMTCAST p, size);
+		mnstr_printf(GDKstdout, "#VirtualFree(" PTRFMT "," SZFMT ",MEM_DECOMMIT): failed\n", PTRFMTCAST p, size);
 	if (VirtualFree(p, 0, MEM_RELEASE) == 0)
-		mnstr_printf(GDKerr, "#VirtualFree(" PTRFMT ",0,MEM_RELEASE): failed\n", PTRFMTCAST p);
+		mnstr_printf(GDKstdout, "#VirtualFree(" PTRFMT ",0,MEM_RELEASE): failed\n", PTRFMTCAST p);
 }
 
 void *
@@ -2051,7 +2051,7 @@ MT_vmrealloc(void *v, size_t oldsize, size_t newsize, size_t oldmaxsize, size_t 
 		size_t ret = VirtualFree(p + newsize, oldsize - newsize, MEM_DECOMMIT);
 
 		if (ret == 0)
-			mnstr_printf(GDKerr, "#VirtualFree(" PTRFMT "," SSZFMT ",MEM_DECOMMIT): failed\n", PTRFMTCAST(p + newsize), (ssize_t) (oldsize - newsize));
+			mnstr_printf(GDKstdout, "#VirtualFree(" PTRFMT "," SSZFMT ",MEM_DECOMMIT): failed\n", PTRFMTCAST(p + newsize), (ssize_t) (oldsize - newsize));
 	} else if (oldsize < newsize) {
 		(void) pthread_mutex_lock(&MT_mmap_lock);
 		a = (char *) VirtualAlloc(p, newsize, MEM_COMMIT, PAGE_READWRITE);
