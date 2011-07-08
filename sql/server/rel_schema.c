@@ -286,7 +286,7 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 			return res;
 		}
 		if (name && mvc_bind_key(sql, ss, name)) {
-			(void) sql_error(sql, 02, "CONSTRAINT PRIMARY KEY: key %s already exists", name);
+			(void) sql_error(sql, 02, "CONSTRAINT FOREIGN KEY: key %s already exists", name);
 			return res;
 		}
 
