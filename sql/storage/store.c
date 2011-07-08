@@ -628,7 +628,7 @@ load_table(sql_trans *tr, sql_schema *s, oid rid)
 	if (!isTable(t) && !isMergeTable(t)) 
 		return t;
 
-	/* load idx's first as the may be needed by the keys */
+	/* load idx's first as they may be needed by the keys */
 	idx_table_id = find_sql_column(idxs, "table_id");
 	rs = table_funcs.rids_select(tr, idx_table_id, &t->base.id, &t->base.id, NULL);
 	for(rid = table_funcs.rids_next(rs); rid != oid_nil; rid = table_funcs.rids_next(rs)) {
