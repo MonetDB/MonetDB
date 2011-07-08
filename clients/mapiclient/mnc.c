@@ -40,9 +40,14 @@
 #ifdef HAVE_PTHREAD_H
 #include <pthread.h>
 #endif
-#ifdef HAVE_GETADDRINFO
-# include <sys/types.h>
+#include <sys/types.h>
+#ifdef HAVE_SYS_SOCKET_H
 # include <sys/socket.h>
+#endif
+#ifdef NATIVE_WIN32
+# include <winsock.h>
+#endif
+#ifdef HAVE_NETDB_H
 # include <netdb.h>
 #endif
 
