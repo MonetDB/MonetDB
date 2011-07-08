@@ -539,14 +539,15 @@ static int
 create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 {
 	dlist *l = s->data.lval;
+	dlist *dim = NULL;
 	char *cname = l->h->data.sval;
 	sql_subtype *ctype = &l->h->next->data.typeval;
 	dlist *opt_list = NULL;
 	int res = SQL_OK;
 
 (void)ss;
-	if (alter && !isTable(t)) {
-		sql_error(sql, 02, "ALTER TABLE: cannot add column to VIEW '%s'\n", t->base.name);
+	if (alter && !isTable(t) && !isArray(t)) {
+		sql_error(sql, 02, "ALTER %s: cannot add column to VIEW '%s'\n", isTable(t)?"TABLE":"ARRAY", t->base.name);
 		return SQL_ERR;
 	}
 	if (l->h->next->next)
@@ -560,7 +561,24 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 			sql_error(sql, 02, "%s TABLE: a column named '%s' already exists\n", (alter)?"ALTER":"CREATE", cname);
 			return SQL_ERR;
 		}
-		cs = mvc_create_column(sql, t, cname, ctype);
+
+		if (l->h->next->next->next) {
+			/* this is a dimension, see its structure in parser.y/column_def */
+			assert(l->h->next->next->next->data.sym->token == SQL_DIMENSION);
+			if (t->type != tt_array){
+				sql_error(sql, 02, "%s %s: dimension column '%s' used in non-ARRAY\n", (alter)?"ALTER":"CREATE", (t->type==tt_table)?"TABLE":"OTHER_TT", cname);
+				return SQL_ERR;
+			}
+
+			sql_dimspec ds;
+			if (dim = l->h->next->next->next->data.sym->data.lval) {
+				/* 'DIMENSION dim_range' case */
+
+			} /* otherwise, 'DIMENSION' case */
+			/* cs = mvc_create_dimension(sql, t, cname, ctype, ds); */
+		} else { /* normal column */
+			cs = mvc_create_column(sql, t, cname, ctype);
+		}
 		if (column_options(sql, opt_list, ss, t, cs) == SQL_ERR)
 			return SQL_ERR;
 	}
@@ -575,7 +593,8 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 {
 	int res = SQL_OK;
 
-	if (alter && (isView(t) || (isMergeTable(t) && s->token != SQL_TABLE && s->token != SQL_DROP_TABLE) || (isTable(t) && (s->token == SQL_TABLE || s->token == SQL_DROP_TABLE)) )){
+	if (alter && (isView(t) || (isMergeTable(t) && s->token != SQL_TABLE && s->token != SQL_DROP_TABLE) || (isTable(t) && (s->token == SQL_TABLE || s->token == SQL_DROP_TABLE)) || (isArray(t) && (s->token == SQL_ARRAY || s->token == SQL_DROP_ARRAY))
+				)){
 		char *msg = "";
 
 		switch (s->token) {
@@ -584,6 +603,9 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 			break;
 		case SQL_COLUMN: 	
 			msg = "add column to"; 
+			break;
+		case SQL_DIMENSION:
+			msg = "add dimension to";
 			break;
 		case SQL_CONSTRAINT: 	
 			msg = "add constraint to"; 
@@ -607,7 +629,9 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 			msg = "drop constraint from"; 
 			break;
 		}
-		sql_error(sql, 02, "ALTER TABLE: cannot %s %s '%s'\n",
+		sql_error(sql, 02, "ALTER %s: cannot %s %s '%s'\n",
+				/* TODO: check if we only have TABLE or ARRAY */
+				isTable(t)?"TABLE":"ARRAY",
 				msg, 
 				isMergeTable(t)?"MERGE TABLE":"VIEW",
 				t->base.name);
@@ -758,18 +782,20 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 	int deps = (sql->emode == m_deps);
 	int create = (!instantiate && !deps);
 	int tt = (temp == SQL_STREAM)?tt_stream:
-	         ((temp == SQL_MERGE_TABLE)?tt_merge_table:tt_table);
+	         ((temp == SQL_MERGE_TABLE)?tt_merge_table:
+			  ((temp == SQL_ARRAY)? tt_array:tt_table));
+	char *t_a = (table_elements_or_subquery->token == SQL_CREATE_TABLE)?"TABLE":"ARRAY";
 
 	(void)create;
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, "CREATE TABLE: no such schema '%s'", sname);
+		return sql_error(sql, 02, "CREATE %s: no such schema '%s'", t_a, sname);
 
-	if (temp != SQL_PERSIST && tt == tt_table && 
+	if (temp != SQL_PERSIST && (tt == tt_table || tt == tt_array) && 
 			commit_action == CA_COMMIT)
 		commit_action = CA_DELETE;
 	
 	if (temp != SQL_DECLARED_TABLE) {
-		if (temp != SQL_PERSIST && tt == tt_table) {
+		if (temp != SQL_PERSIST && (tt == tt_table|| tt == tt_array) ) {
 			s = mvc_bind_schema(sql, "tmp");
 		} else if (s == NULL) {
 			s = ss;
@@ -781,23 +807,26 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 
 	if (mvc_bind_table(sql, s, name)) {
 		char *cd = (temp == SQL_DECLARED_TABLE)?"DECLARE":"CREATE";
-		return sql_error(sql, 02, "%s TABLE: name '%s' already in use", cd, name);
+		return sql_error(sql, 02, "%s %s: name '%s' already in use", cd, t_a, name);
 	} else if (temp != SQL_DECLARED_TABLE &&!schema_privs(sql->role_id, s)){
-		return sql_error(sql, 02, "CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
-	} else if (table_elements_or_subquery->token == SQL_CREATE_TABLE) { 
-		/* table element list */
+		return sql_error(sql, 02, "CREATE %s: insufficient privileges for user '%s' in schema '%s'", t_a, stack_get_string(sql, "current_user"), s->base.name);
+	} else if (table_elements_or_subquery->token == SQL_CREATE_TABLE || table_elements_or_subquery->token == SQL_CREATE_ARRAY) { 
+		/* table or array element list */
+		/* reuse SQL_DECLARED_TABLE for temp arrays as well. actual type is in 'tt' */
 		sql_table *t = mvc_create_table(sql, s, name, tt, 0, SQL_DECLARED_TABLE, commit_action, -1);
 		dnode *n;
 		dlist *columns = table_elements_or_subquery->data.lval;
 
 		for (n = columns->h; n; n = n->next) {
 			symbol *sym = n->data.sym;
+			/* TODO: handle array dim.s ??? */
 			int res = table_element(sql, sym, s, t, 0);
 
 			if (res == SQL_ERR) 
 				return NULL;
 		}
-		temp = (tt == tt_table)?temp:SQL_PERSIST;
+		temp = (tt == tt_table || tt == tt_array)?temp:SQL_PERSIST;
+		/* TODO: need sth. special for arrays??? */
 		return rel_table(sql->sa, DDL_CREATE_TABLE, sname, t, temp);
 	} else { /* [col name list] as subquery with or without data */
 		sql_rel *sq = NULL, *res = NULL;
@@ -812,14 +841,14 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 		if (!sq)
 			return NULL;
 
-		/* create table */
+		/* create table */ /* TODO: handle create_array_as_subquery */
 		if (create && (t = mvc_create_table_as_subquery( sql, sq, s, name, column_spec, temp, commit_action)) == NULL) { 
 			rel_destroy(sq);
 			return NULL;
 		}
 
-		/* insert query result into this table */
-		temp = (tt == tt_table)?temp:SQL_PERSIST;
+		/* insert query result into this table */ /* TODO: handle create_array_as_subquery */
+		temp = (tt == tt_table || tt == tt_array)?temp:SQL_PERSIST;
 		res = rel_table(sql->sa, DDL_CREATE_TABLE, sname, t, temp);
 		if (with_data) {
 			res = rel_insert(sql, res, sq);
