@@ -194,6 +194,12 @@ typedef struct sql_subtype {
 	struct sql_table *comp_type;	
 } sql_subtype;
 
+typedef struct sql_dimspec {
+	lng *start; /* NULL means unbounded */
+	lng *step;
+	lng *stop;
+} sql_dimspec;
+
 /* sql_func need type transform rules types are equal if underlying
  * types are equal + scale is equal if types do not mach we try type
  * conversions which means for simple 1 arg functions
@@ -339,6 +345,7 @@ typedef enum sql_histype {
 typedef struct sql_column {
 	sql_base base;
 	sql_subtype type;
+	sql_dimspec *dim;
 	int colnr;
 	bit null;
 	char *def;
@@ -366,10 +373,11 @@ typedef enum table_types {
 #define isMergeTable(x) (x->type==tt_merge_table)
 #define isStream(x)  	(x->type==tt_stream)
 #define isArray(x)  	(x->type==tt_array)
+#define isFixedDim(x)   (x->start && x->step && x->stop)
 
 typedef struct sql_table {
 	sql_base base;
-	sht type;		/* table, view or generated */
+	sht type;		/* table, view, generated, merge_table, stream or array*/
 	bit system;		/* system or user table */
 	temp_t persistence;	/* persistent, global or local temporary */
 	ca_t commit_action;  	/* on commit action */
