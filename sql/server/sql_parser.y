@@ -1569,14 +1569,18 @@ generated_column:
 
 dimension: DIMENSION dim_range
 	{
-		$$= _symbol_create_list(SQL_DIMENSION,$2);
+		dlist *l = L();
+		append_list(l, $2);
+		$$= _symbol_create_list(SQL_DIMENSION,l);
 	}
   | DIMENSION {
 		$$= _symbol_create_list(SQL_DIMENSION,NULL);
 	}
   | ARRAY dim_range_list
 	{
-		$$= _symbol_create_list(SQL_DIMENSION,$2);
+		dlist *l = L();
+		append_list(l, $2);
+		$$= _symbol_create_list(SQL_DIMENSION,l);
 	}
 ;
 
