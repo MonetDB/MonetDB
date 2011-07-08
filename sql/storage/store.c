@@ -1425,21 +1425,13 @@ store_init(int debug, store_type store, char *logdir, char *dbname, backend_stac
 		bootstrap_create_column(tr, t, "number", "int", 32);
 		bootstrap_create_column(tr, t, "storage", "varchar", 2048);
 
-		t = bootstrap_create_table(tr, s, "_arrays");
-		bootstrap_create_column(tr, t, "table_id", "int", 32);
-		bootstrap_create_column(tr, t, "ndims", "int", 32);
-		bootstrap_create_column(tr, t, "fixed", "boolean", 1);
-
 		t = bootstrap_create_table(tr, s, "_dimensions");
+		bootstrap_create_column(tr, t, "table_id", "int", 32);
 		bootstrap_create_column(tr, t, "column_id", "int", 32);
+		bootstrap_create_column(tr, t, "fixed", "boolean", 1);
 		bootstrap_create_column(tr, t, "start", "varchar", 2048);
 		bootstrap_create_column(tr, t, "step", "varchar", 2048);
 		bootstrap_create_column(tr, t, "stop", "varchar", 2048);
-		/* mbb: minimal bounding box */
-		bootstrap_create_column(tr, t, "mbb_start", "varchar", 2048);
-		bootstrap_create_column(tr, t, "mbb_step", "varchar", 2048);
-		bootstrap_create_column(tr, t, "mbb_stop", "varchar", 2048);
-		bootstrap_create_column(tr, t, "fixed", "boolean", 1);
 
 		t = bootstrap_create_table(tr, s, "keys");
 		bootstrap_create_column(tr, t, "id", "int", 32);
@@ -3815,7 +3807,7 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, char *sql, int 
 
 	/* temps all belong to a special tmp schema and only views
 	   have a query */
-	assert( (isTable(t) ||
+	assert( (isTable(t) || isArray(t) ||
 		(!isTempTable(t) || (strcmp(s->base.name, "tmp") == 0) || isDeclaredTable(t))) || (isView(t) && !sql) || isStream(t));
 
 	t->query = sql ? _strdup(sql) : NULL;
@@ -3825,7 +3817,7 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, char *sql, int 
 		t->sz = COLSIZE;
 	cs_add(&s->tables, t, TR_NEW);
 
-	if (isTable(t))
+	if (isTable(t) || isArray(t))
 		store_funcs.create_del(tr, t);
 
 	ca = t->commit_action;
@@ -3958,6 +3950,8 @@ create_sql_column(sql_allocator *sa, sql_table *t, char *name, sql_subtype *tpe)
 	col->unique = 0;
 	col->storage_type = NULL;
 
+	col->dim = NULL;
+
 	cs_add(&t->columns, col, TR_NEW);
 	return col;
 }
@@ -4036,8 +4030,11 @@ sql_trans_create_column(sql_trans *tr, sql_table *t, char *name, sql_subtype *tp
 
 	if (isTable(col->t))
 		store_funcs.create_col(tr, col);
-	if (!isDeclaredTable(t))
+	if (!isDeclaredTable(t)) {
 		table_funcs.table_insert(tr, syscolumn, &col->base.id, col->base.name, col->type.type->sqlname, &col->type.digits, &col->type.scale, &t->base.id, (col->def) ? col->def : ATOMnilptr(TYPE_str), &col->null, &col->colnr, (col->storage_type) ? col->storage_type : ATOMnilptr(TYPE_str));
+		if (isArray(t)) /* column_id, fixed, start, step, stop*/
+		{ /* TODO */ }
+	}
 
 	col->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
 	if (isGlobal(t)) 
