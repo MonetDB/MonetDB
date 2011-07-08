@@ -79,6 +79,7 @@ static void displayVolume(Client cntxt, lng vol);
 #define MEMORY_THRESHOLD  0.8
 
 #ifdef USE_DFLOW_ADMISSION
+/* does not seem to have a major impact */
 static lng memorypool;      /* memory claimed by concurrent threads */
 static int memoryclaims = 0;    /* number of threads active with expensive operations */
 #endif
@@ -709,7 +710,6 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag)
  */
 #ifdef USE_DFLOW_ADMISSION
 /* experiments on sf-100 on small machine showed no real improvement
-   Q10 became even 3x slower.
 */
 int
 DFLOWadmission(lng argclaim, lng hotclaim)
@@ -1053,7 +1053,7 @@ runDFLOWworker(void *t)
 #ifdef USE_DFLOW_ADMISSION
 		if (DFLOWadmission(fs->argclaim, fs->hotclaim)) {
 			fs->hotclaim = 0;   /* don't assume priority anymore */
-			MT_sleep_ms(fs->argclaim / 1000000);
+			MT_sleep_ms(1);
 			q_requeue(task->todo, fs);
 			nxtfs = 0;
 			continue;
@@ -1200,6 +1200,9 @@ DFLOWinit(DataFlow flow, Client cntxt, MalBlkPtr mb, MalStkPtr stk, int size)
 		}
 		mnstr_printf(GDKstdout, "\n");
 	}
+#ifdef USE_DFLOW_ADMISSION
+	memorypool = memoryclaims = 0;
+#endif
 }
 
 @-

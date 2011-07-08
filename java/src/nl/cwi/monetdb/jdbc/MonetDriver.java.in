@@ -117,6 +117,7 @@ final public class MonetDriver implements Driver {
 		props.put("port", PORT);
 		props.put("debug", "false");
 		props.put("language", "sql");	// mal, sql, <future>
+		props.put("so_timeout", "0");
 
 		props.putAll(info);
 		info = props;
@@ -237,6 +238,11 @@ final public class MonetDriver implements Driver {
 		prop = new DriverPropertyInfo("treat_blob_as_binary", "false");
 		prop.required = false;
 		prop.description = "Whether BLOBs on the server should be treated as BINARY types, thus mapped to byte[]";
+		props.add(prop);
+
+		prop = new DriverPropertyInfo("so_timeout", "0");
+		prop.required = false;
+		prop.description = "Defines the maximum time to wait in milliseconds on a blocking read socket call";
 		props.add(prop);
 
 		DriverPropertyInfo[] dpi = new DriverPropertyInfo[props.size()];

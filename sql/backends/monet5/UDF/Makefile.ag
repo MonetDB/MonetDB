@@ -48,7 +48,7 @@ headers_mal = {
 headers_sql = {
 	HEADERS = sql
 	DIR = libdir/monetdb5
-	SOURCES = udf.sql
+	SOURCES = 80_udf.sql
 }
 
 headers_autoload = {

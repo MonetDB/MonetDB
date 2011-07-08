@@ -37,6 +37,7 @@ typedef union stmtdata {
 	sql_subtype typeval;
 	struct sql_subaggr *aggrval;
 	struct sql_subfunc *funcval;
+	struct group *grp;
 } stmtdata;
 
 typedef enum stmt_type {
@@ -319,9 +320,6 @@ extern list* stmt_list_dependencies(sql_allocator *sa, stmt *s, int depend_type)
 
 extern group *grp_create(sql_allocator *sa, stmt *s, group *og);
 extern void grp_done(group *g);
-
-extern stmt *stmt_group(sql_allocator *sa, stmt *s);
-extern stmt *stmt_derive(sql_allocator *sa, stmt *g, stmt *s);
 
 extern stmt *const_column(sql_allocator *sa, stmt *val );
 

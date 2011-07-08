@@ -1,0 +1,25 @@
+#The test is based on the definition the datacell baskets x and y
+# run datacell00.sql first
+
+sql.init();
+
+basket.register("datacell","x");
+basket.register("datacell","y");
+
+petrinet.register("datacell","transform", 0);
+petrinet.start();
+io.print("petrinet scheduler started");
+
+receptor.start("datacell","x","localhost",50501,"passive");
+io.print("receptor started");
+
+emitter.start("datacell","y","localhost",50502,"active");
+io.print("actuator started");
+
+alarm.sleep(25);
+petrinet.stop();
+receptor.drop("datacell","x");
+emitter.drop("datacell","x");
+
+# The SQL equivalents
+# call datacell.initialize();

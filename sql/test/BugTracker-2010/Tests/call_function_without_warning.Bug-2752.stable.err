@@ -72,9 +72,9 @@ stderr of test 'call_function_without_warning.Bug-2752` in directory 'test/BugTr
 # 20:43:24 >  mclient -lsql -ftest -i -e --host=alf --port=39246 
 # 20:43:24 >  
 
-MAPI  = monetdb@alf:39246
+MAPI  = monetdb@alf:36767
 QUERY = call sin(1);
-ERROR = !function calls are ignored
+ERROR = !SELECT: no such unary operator 'sin(tinyint)'
 
 # 20:43:24 >  
 # 20:43:24 >  Done.

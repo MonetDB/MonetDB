@@ -1379,8 +1379,13 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 				i = BBPindex(b);
 				if (i != 0){
 					printBATelm(out, i, size, first);
-				} else
+				} else {
+					i = atoi(b);
+					if ( i || *b == '0')
+						printStackElm(out, mb, stk->stk + i, i, size, first);
+					else
 					mnstr_printf(out, "%s Symbol not found\n", "#mdb ");
+				}
 				continue;
 			}
 			if (isaBatType(getVarType(mb,i)) && upper =='p'){
@@ -1435,7 +1440,7 @@ signatures satisfying the pattern.
 			InstrPtr q;
 
 			lstng= LIST_MAL_DEBUG | LIST_MAL_UDF | LIST_MAL_LNR;
-			if ( *b=='L') lstng |= LIST_MAL_PROPS | LIST_MAL_DETAIL;
+			if ( *b=='L') lstng |= LIST_MAL_DETAIL;
 			skipWord(cntxt, b);
 			if (*b != 0) {
 				MalBlkPtr m= mdbLocateMalBlk(cntxt,mb,b,out);
@@ -1858,6 +1863,8 @@ printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
 	str nme, nmeOnStk;
 	VarPtr n = getVar(mb, index);
 
+	if ( !isVarUsed(mb,index) )
+		return;
 	printStackHdr(f,mb,v,index);
 
 	if (v && v->vtype == TYPE_bat){
@@ -1883,7 +1890,7 @@ printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
 	if (strcmp(nmeOnStk, nme) && strncmp(nmeOnStk,"BAT",3))
 		mnstr_printf(f,"!%s ",nmeOnStk);
 	mnstr_printf(f, " %s", (isVarConstant(mb,index)? " constant" : ""));
-	mnstr_printf(f, " %s", (isVarUsed(mb,index) ? "": " not used" ));
+	/* mnstr_printf(f, " %s", (isVarUsed(mb,index) ? "": " not used" ));*/
 	mnstr_printf(f, " %s", (isVarTypedef(mb,index) ? " type variable" : ""));
 	if ( getEndOfLife(mb,index))
 		mnstr_printf(f," eolife=%d ", getEndOfLife(mb,index));

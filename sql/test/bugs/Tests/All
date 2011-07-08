@@ -100,3 +100,4 @@ or_in_crash
 crash_order_by
 in_or_bug
 create_insert_select_aggr-bug-00001
+procedure_resolution_bug

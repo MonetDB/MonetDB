@@ -37,7 +37,7 @@ Over..
 [ "SATURDAY",	6,	64	]
 [ "SUNDAY",	7,	64	]
 % sys.day_name,	sys.day_name # table_name
-% day_name,	L2 # name
+% day_name,	L3 # name
 % char,	wrd # type
 % 9,	2 # length
 [ "MONDAY",	64	]
@@ -57,7 +57,7 @@ Over..
 [ "JULY",	"SUNDAY"	]
 #select day_name.day_name,flight_day.day_code,count(*) from flight_day,day_name where day_name.day_code=flight_day.day_code group by flight_day.day_code,day_name.day_name order by day_code;
 % sys.day_name,	sys.flight_day,	sys.flight_day # table_name
-% day_name,	day_code,	L3 # name
+% day_name,	day_code,	L4 # name
 % char,	decimal,	wrd # type
 % 9,	2,	2 # length
 [ "MONDAY",	1,	64	]
@@ -68,57 +68,57 @@ Over..
 [ "SATURDAY",	6,	64	]
 [ "SUNDAY",	7,	64	]
 % sys.aircraft # table_name
-% L4 # name
+% L5 # name
 % decimal # type
 % 2 # length
 [ 278	]
 % sys. # table_name
-% L5 # name
+% L6 # name
 % double # type
 % 22 # length
 [ 2.059259259	]
 % sys. # table_name
-% L10 # name
+% L11 # name
 % double # type
 % 22 # length
 [ 2.376068376	]
 % sys.aircraft,	sys.aircraft,	sys.aircraft # table_name
-% L13,	L14,	L15 # name
+% L14,	L15,	L16 # name
 % wrd,	int,	int # type
 % 2,	3,	6 # length
 [ 94,	240,	165710	]
 % sys.flight,	sys.flight # table_name
-% L16,	L17 # name
+% L17,	L20 # name
 % int,	int # type
 % 6,	6 # length
 [ 101908,	101908	]
 % sys.flight,	sys.flight # table_name
-% L20,	L21 # name
+% L21,	L22 # name
 % char,	char # type
 % 3,	3 # length
 [ "ATL",	"ATL"	]
 % sys.aircraft # table_name
-% L22 # name
+% L23 # name
 % wrd # type
 % 2 # length
 [ 50	]
 % sys.aircraft # table_name
-% L23 # name
+% L24 # name
 % wrd # type
 % 2 # length
 [ 94	]
 % sys.flight # table_name
-% L24 # name
+% L25 # name
 % wrd # type
 % 3 # length
 [ 279	]
 % sys.flight,	sys.flight,	sys. # table_name
-% from_airport,	to_airport,	L25 # name
+% from_airport,	to_airport,	L26 # name
 % char,	char,	double # type
 % 3,	3,	22 # length
 [ "ATL",	"BOS",	154.3684211	]
 % sys.ground_service,	sys. # table_name
-% city_code,	L30 # name
+% city_code,	L31 # name
 % char,	double # type
 % 4,	22 # length
 [ "MATL",	9	]
@@ -133,7 +133,7 @@ Over..
 [ "WWAS",	12	]
 [ "BBWI",	5	]
 % sys.ground_service,	sys.ground_service # table_name
-% L33,	city_code # name
+% L34,	city_code # name
 % wrd,	char # type
 % 1,	4 # length
 [ 3,	"MATL"	]
@@ -156,7 +156,7 @@ Over..
 [ "PROPELLER",	16	]
 [ "TURBOPROP",	32	]
 % sys.aircraft,	sys.aircraft # table_name
-% category,	L36 # name
+% category,	L37 # name
 % char,	wrd # type
 % 10,	2 # length
 [ "JET",	15	]

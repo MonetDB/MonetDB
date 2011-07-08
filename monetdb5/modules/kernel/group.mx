@@ -299,10 +299,19 @@ In the unary group case, we optimized processing on 1-byte
 and 2-byte values by using direct mapping in an array instead of
 hashing.
 @c
+#if SIZEOF_BUN == SIZEOF_INT
+#define mix_BUN(v) mix_int(v)
+#else
+#define mix_BUN(v) mix_int((v)^((v)>>31))
+#endif
 #define HASH_bte(p) ((BUN) (*(unsigned char*) (p)))
 #define HASH_sht(p) ((BUN) (*(unsigned short*) (p)))
-#define HASH_int(p) ((BUN) *(unsigned int*) (p))
-#define HASH_lng(p) ((BUN)(((unsigned int*)(p))[0]^((unsigned int*)(p))[1]))
+#define HASH_int(p) ((BUN) (*(unsigned int*) (p)))
+#if SIZEOF_BUN == SIZEOF_LNG
+#define HASH_lng(p) ((BUN) (*(BUN *) (p)))
+#else
+#define HASH_lng(p) ((BUN) (((unsigned int*)(p))[0]^((unsigned int*)(p))[1]))
+#endif
 #define HASH_str_hv(p) (((BUN *) (p))[-1])
 #define HASH_any(p) ((*hashfcn)(p))
 
@@ -476,7 +485,7 @@ CTgroup_@1_@4_@5(group_params_@5 BAT *b, BAT *bn)
 
 		/* hash-lookup of 'tcur' in map */
 		BUN c = HASH_@1(tcur);
-		c = mix_int(c) & mask;
+		c = mix_BUN(c) & mask;
 		chain_@4 {
 			r = zz;
 			e = (mapentry_t*) BUNhloc(mapi,r);
@@ -818,8 +827,8 @@ CTderive_@1_@2_@5(BAT* ct_map, BAT *ct_histo, BAT *b, BAT *bn)
 		hcur = *(oid*) BUNtloc(ct_mapi,cp);
 
 		/* hash-lookup of [hcur,tcur] in map */
-		c = (((BUN) hcur) ^ HASH_@2(tcur));
-		c = mix_int(c) & mask;
+		c = (((BUN) hcur) ^ mix_BUN(HASH_@2(tcur)));
+		c = mix_BUN(c) & mask;
 		chain_@5 {
 			r = zz;
 			e = (mapentry_t*) Hloc(map,r);
@@ -1277,7 +1286,19 @@ derive(BAT **H, BAT **M, BAT *ct_histo, BAT *ct_map, BAT *b, int tt)
 		b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b),
 		tt);
 
-	if (!ct_map->tkey) { /* cannot derive more groups */
+	if (ct_map->tkey ||
+	    BATcount(ct_histo) >= MAX(BATcount(ct_map),BATcount(b))) {
+		/* cannot derive more groups */
+		bn = ct_map;
+		histo = ct_histo;
+		if (!synced) {
+			bn = BATsemijoin(ct_map, b);
+			histo = BATsemijoin(ct_histo, BATmirror(bn));
+		} else {
+			BBPfix(ct_map->batCacheid);
+			BBPfix(ct_histo->batCacheid);
+		}
+	} else {
 		if (synced &&
 		    !BATtkey(b) &&
 	    	    BAThdense(b) &&
@@ -1382,16 +1403,6 @@ derive(BAT **H, BAT **M, BAT *ct_histo, BAT *ct_map, BAT *b, int tt)
 				BATkey(bn, TRUE);
 		}
 
-	} else {
-		bn = ct_map;
-		histo = ct_histo;
-		if (!synced) {
-			bn = BATsemijoin(ct_map, b);
-			histo = BATsemijoin(ct_histo, BATmirror(bn));
-		} else {
-			BBPfix(ct_map->batCacheid);
-			BBPfix(ct_histo->batCacheid);
-		}
 	}
 	*M = bn;
 	*H = histo;
