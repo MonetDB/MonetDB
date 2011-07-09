@@ -558,9 +558,9 @@ RMTquery(MapiHdl *ret, str func, Mapi conn, str query) {
 }
 
 str RMTprelude(int *ret) {
-	(void)ret;
 	int type = 0;
 	
+	(void)ret;
 #ifdef WORDS_BIGENDIAN
 	type |= RMTT_B_ENDIAN;
 #else

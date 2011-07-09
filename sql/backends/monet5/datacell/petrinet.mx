@@ -644,7 +644,7 @@ str PNstart(int *ret)
 str
 PNtable(int *ret)
 {
-	BAT *bn, *name, *def, *status, *seen, *cycles, *events, *time, *error;
+	BAT *bn = NULL, *name = NULL, *def = NULL, *status = NULL, *seen = NULL, *cycles = NULL, *events = NULL, *time = NULL, *error = NULL;
 	int i;
 
 	bn = BATnew(TYPE_str, TYPE_bat, BATTINY);

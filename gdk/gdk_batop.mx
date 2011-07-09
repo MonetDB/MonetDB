@@ -99,11 +99,13 @@ insert_string_bat(BAT *b, BAT *n, int append)
 	    (!GDK_ELIMDOUBLES(b->@2->vheap) || b->batCount == 0) &&
 	    !GDK_ELIMDOUBLES(n->@2->vheap) &&
 	    b->@2->vheap->hashash == n->@2->vheap->hashash &&
+	    /* if needs to be kept unique, take slow path */
 	    (b->@1key & BOUND2BTRUE) == 0 &&
+	    /* if view, only copy if significant part of parent is used */
 	    (VIEW@1parent(n) == 0 ||
 	     BATcapacity(BBP_cache(VIEW@1parent(n))) < 2 * BATcount(n))) {
 		/* append string heaps */
-		@1off = b->batCount == 0 ? 0 : b->@2->vheap->size;
+		@1off = b->batCount == 0 ? 0 : b->@2->vheap->free;
 		/* make sure we get alignment right */
 		@1off = (@1off + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1);
 		assert(((@1off >> GDK_VARSHIFT) << GDK_VARSHIFT) == @1off);

@@ -49,7 +49,8 @@ bin_mnc = {
 	NOINST
 	SOURCES = mnc.c
 	LIBS = ../../common/stream/libstream \
-		$(curl_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS)
+		../mapilib/libmapi \
+		$(curl_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(SOCKET_LIBS)
 }
 
 man_MANS = mclient.1 msqldump.1

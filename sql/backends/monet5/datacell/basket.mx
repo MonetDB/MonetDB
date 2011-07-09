@@ -702,9 +702,9 @@ BSKTbeat(int *ret, str *tbl, int *sz)
 str
 BSKTtable(int *ret)
 {
-	BAT *bn, *name, *seen, *events, *grabs;
-	BAT *threshold, *winsize, *winstride, *beat;
-	BAT *timeslice, *timestride;
+	BAT *bn = NULL, *name = NULL, *seen = NULL, *events = NULL, *grabs = NULL;
+	BAT *threshold = NULL, *winsize = NULL, *winstride = NULL, *beat = NULL;
+	BAT *timeslice = NULL, *timestride = NULL;
 	int i;
 
 	bn = BATnew(TYPE_str, TYPE_bat, BATTINY);

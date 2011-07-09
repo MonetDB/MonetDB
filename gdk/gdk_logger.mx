@@ -804,7 +804,7 @@ logger_readlog(logger *lg, char *filename)
 	if (!lg->log || mnstr_errnr(lg->log)) {
 		if (lg->log)
 			mnstr_destroy(lg->log);
-
+		lg->log = NULL;
 		return 0;
 	}
 	while (!err && log_read_format(lg, &l)) {
