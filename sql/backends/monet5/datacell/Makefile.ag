@@ -68,13 +68,13 @@ bin_sensor = {
 scripts_mal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
-	SOURCES = basket.mal \
-		  receptor.mal \
-		  emitter.mal \
-		  petrinet.mal \
-		  datacell.mal \
-		  opt_datacell.mal \
-		  dcoperator.mal
+	SOURCES = basket.mx \
+		  receptor.mx \
+		  emitter.mx \
+		  petrinet.mx \
+		  datacell.mx \
+		  opt_datacell.mx \
+		  dcoperator.mx
 }
 
 scripts_sql = {
