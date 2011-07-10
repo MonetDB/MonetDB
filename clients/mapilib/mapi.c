@@ -3287,19 +3287,19 @@ mapi_param_store(MapiHdl hdl)
 			switch (hdl->params[i].intype) {
 			case MAPI_TINY:
 				checkSpace(5);
-				sprintf(hdl->query + k, "%d", *(signed char *) src);
+				sprintf(hdl->query + k, "%hhd", *(signed char *) src);
 				break;
 			case MAPI_UTINY:
 				checkSpace(5);
-				sprintf(hdl->query + k, "%u", *(unsigned char *) src);
+				sprintf(hdl->query + k, "%hhu", *(unsigned char *) src);
 				break;
 			case MAPI_SHORT:
 				checkSpace(10);
-				sprintf(hdl->query + k, "%d", *(short *) src);
+				sprintf(hdl->query + k, "%hd", *(short *) src);
 				break;
 			case MAPI_USHORT:
 				checkSpace(10);
-				sprintf(hdl->query + k, "%u", *(unsigned short *) src);
+				sprintf(hdl->query + k, "%hu", *(unsigned short *) src);
 				break;
 			case MAPI_INT:
 				checkSpace(20);
@@ -3336,7 +3336,7 @@ mapi_param_store(MapiHdl hdl)
 			case MAPI_DATE:
 				checkSpace(50);
 				sprintf(hdl->query + k,
-					"DATE '%04d-%02u-%02u'",
+					"DATE '%04hd-%02hu-%02hu'",
 					((MapiDate *) src)->year,
 					((MapiDate *) src)->month,
 					((MapiDate *) src)->day);
@@ -3344,7 +3344,7 @@ mapi_param_store(MapiHdl hdl)
 			case MAPI_TIME:
 				checkSpace(60);
 				sprintf(hdl->query + k,
-					"TIME '%02u:%02u:%02u'",
+					"TIME '%02hu:%02hu:%02hu'",
 					((MapiTime *) src)->hour,
 					((MapiTime *) src)->minute,
 					((MapiTime *) src)->second);
@@ -3352,7 +3352,7 @@ mapi_param_store(MapiHdl hdl)
 			case MAPI_DATETIME:
 				checkSpace(110);
 				sprintf(hdl->query + k,
-					"TIMESTAMP '%04d-%02u-%02u %02u:%02u:%02u.%09u'",
+					"TIMESTAMP '%04hd-%02hu-%02hu %02hu:%02hu:%02hu.%09u'",
 					((MapiDateTime *) src)->year,
 					((MapiDateTime *) src)->month,
 					((MapiDateTime *) src)->day,

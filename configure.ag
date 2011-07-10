@@ -638,6 +638,8 @@ yes-*-*)
 	dnl  Be rigid; MonetDB code is supposed to adhere to this... ;-)
 	dnl  Let warning #266 "function declared implicitly" become an error.
 	X_CFLAGS="$X_CFLAGS -we266"
+	dnl  Let remark #181 "argument is incompatible with corresponding format string conversion" become an error.
+	X_CFLAGS="$X_CFLAGS -we181"
 	X_CFLAGS="$X_CFLAGS -Werror"
 	dnl  ... however, some things aren't solved, yet:
 	dnl  (for the time being,) we need to disable some warnings (making them remarks doesn't seem to work with -Werror):
