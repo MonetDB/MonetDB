@@ -871,6 +871,7 @@ void chkDeclarations(MalBlkPtr mb){
 		/* check correct use of the arguments*/
 		for(k=p->retc;k<p->argc; k++) {
 			l=getArg(p,k);
+			assert( l < mb->vtop);
 			setVarUsed(mb,l);
 			if( decl[l] == 0){
 @-
