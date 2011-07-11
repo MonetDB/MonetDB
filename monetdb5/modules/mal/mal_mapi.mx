@@ -615,7 +615,7 @@ SERVERlistenThread(SOCKET *Sock)
 				socket_rastream(msgsock, "Server read"),
 				socket_wastream(msgsock, "Server write"));
 	} while (1);
-	return;
+	/*return;*/ /* never reached as while loop only exits with "goto error" */
 error:
 	fprintf(stderr, "!mal_mapi.listen: %s, terminating listener\n", msg);
 }

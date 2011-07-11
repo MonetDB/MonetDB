@@ -661,10 +661,18 @@ yes-*-*)
 	dnl  Be rigid; MonetDB code is supposed to adhere to this... ;-)
 	dnl  Let warning #266 "function declared implicitly" become an error.
 	X_CFLAGS="$X_CFLAGS -we266"
+	dnl  Let remark #181 "argument is incompatible with corresponding format string conversion" become an error.
+	X_CFLAGS="$X_CFLAGS -we181"
+	dnl  Let remark #810 "conversion from "." to "." may lose significant bits" become an error.
+	X_CFLAGS="$X_CFLAGS -we810"
+	dnl  Let remark #111 "statement is unreachable" become an error.
+	X_CFLAGS="$X_CFLAGS -we111"
+	dnl  Let remark #271: "trailing comma is nonstandard" become an error.
+	X_CFLAGS="$X_CFLAGS -we271"
 	X_CFLAGS="$X_CFLAGS -Werror"
 	dnl  ... however, some things aren't solved, yet:
 	dnl  (for the time being,) we need to disable some warnings (making them remarks doesn't seem to work with -Werror):
-	X_CFLAGS="$X_CFLAGS -wd1418,1419,981,810,193,111,1357"
+	X_CFLAGS="$X_CFLAGS -wd1418,1419,981,193,1357"
 	dnl ICC 11 warns about non-pointer conversion from "<type>" to
 	dnl "<smaller>" may lose significant bits, it does however, also for
 	dnl constants like short s = 1234, which is too much
@@ -680,12 +688,11 @@ yes-*-*)
 	dnl  #1418: external definition with no prior declaration
 	dnl  #1419: external declaration in primary source file
 	dnl  # 981: operands are evaluated in unspecified order
-	dnl  # 810: conversion from "." to "." may lose significant bits
 	dnl  # 193: zero used for undefined preprocessing identifier
-	dnl  # 111: statement is unreachable
 	dnl  #1357: optimization disabled due to excessive resource requirements; contact Intel Premier Support for assistance
 	dnl  #1572: floating-point equality and inequality comparisons are unreliable
 	dnl  #1599: declaration hides variable 
+	dnl  #2259: non-pointer conversion from "." to "." may lose significant bits
 
 	dnl  (At least on Fedora Core 4,) bison 2.0 seems to generate code
 	dnl  that icc does not like; since the problem only occurs with

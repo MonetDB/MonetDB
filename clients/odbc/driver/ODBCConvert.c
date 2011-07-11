@@ -2862,7 +2862,10 @@ ODBCStore(ODBCStmt *stmt,
 			}
 			/* fall through */
 		case SQL_C_TYPE_DATE:
-			snprintf(data, sizeof(data), "DATE '%u-%02u-%02u'", dval.year, dval.month, dval.day);
+			snprintf(data, sizeof(data), "DATE '%u-%02u-%02u'",
+				 (unsigned int) dval.year,
+				 (unsigned int) dval.month,
+				 (unsigned int) dval.day);
 			assigns(buf, bufpos, buflen, data, stmt);
 			break;
 		default:
@@ -2961,7 +2964,7 @@ ODBCStore(ODBCStmt *stmt,
 			/* fall through */
 		case SQL_C_TYPE_TIMESTAMP:
 			snprintf(data, sizeof(data),
-				 "TIMESTAMP '%u-%02d-%02d %02u:%02u:%02u",
+				 "TIMESTAMP '%u-%02u-%02u %02u:%02u:%02u",
 				 (unsigned int) tsval.year,
 				 (unsigned int) tsval.month,
 				 (unsigned int) tsval.day,

@@ -102,7 +102,7 @@ typedef enum wkb_type {
 	wkbMultiPoint = 4,
 	wkbMultiLineString = 5,
 	wkbMultiPolygon = 6,
-	wkbGeometryCollection = 7,
+	wkbGeometryCollection = 7
 } wkb_type;
 
 libgeom_export const char *geom_type2str(int t);

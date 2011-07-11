@@ -840,7 +840,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 		}
 		return res;
 	}
-	return NULL;
+	/*return NULL;*/ /* never reached as all branches of the above if() end with return ... */
 }
 
 static sql_rel *
