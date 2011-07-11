@@ -1530,10 +1530,15 @@ convertConstant(int type, ValPtr vr)
 	}
 	switch (ATOMstorage(type)) {
 	case TYPE_any:
+	/* In case *DEBUG*_MAL_INSTR is not defined and assertions are disabled,
+	 * this will fall-through to the type cases below, rather than triggering an exception.
+	 * Is this correct/intended like this??
+	 */
 #ifdef DEBUG_MAL_INSTR
 		throw(SYNTAX, "convertConstant", "missing type");
-#endif
+#else
 		assert(0);
+#endif
 	case TYPE_bit:
 	case TYPE_chr:
 	case TYPE_sht:

@@ -453,6 +453,11 @@ TODO synced/key case..
 							HIT@1(h, t);
 							break;
 						}
+#if @5 != k
+/* Otherwise, icc complains about         */
+/* "error #111: statement is unreachable" */
+/* at "if ((++pb) >= q2) {"               */
+/* due to "#define EQUALk(t1,t2) TRUE".   */
 						if ((++pb) >= q2) {
 							MISS@1(h, t);
 							break;
@@ -462,6 +467,7 @@ TODO synced/key case..
 							MISS@1(h, t);
 							break;
 						}
+#endif
 					}
 					continue;
 				}

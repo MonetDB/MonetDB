@@ -642,6 +642,8 @@ yes-*-*)
 	X_CFLAGS="$X_CFLAGS -we181"
 	dnl  Let remark #810 "conversion from "." to "." may lose significant bits" become an error.
 	X_CFLAGS="$X_CFLAGS -we810"
+	dnl  Let remark #111 "statement is unreachable" become an error.
+	X_CFLAGS="$X_CFLAGS -we111"
 	dnl  Let remark #271: "trailing comma is nonstandard" become an error.
 	X_CFLAGS="$X_CFLAGS -we271"
 	X_CFLAGS="$X_CFLAGS -Werror"
@@ -664,7 +666,6 @@ yes-*-*)
 	dnl  #1419: external declaration in primary source file
 	dnl  # 981: operands are evaluated in unspecified order
 	dnl  # 193: zero used for undefined preprocessing identifier
-	dnl  # 111: statement is unreachable
 	dnl  #1357: optimization disabled due to excessive resource requirements; contact Intel Premier Support for assistance
 	dnl  #1572: floating-point equality and inequality comparisons are unreliable
 	dnl  #1599: declaration hides variable 
