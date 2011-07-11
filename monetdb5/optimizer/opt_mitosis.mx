@@ -68,7 +68,6 @@ comment "Modify the plan to exploit parallel processing on multiple cores";
 #include "monetdb_config.h"
 #include "opt_mitosis.h"
 #include "opt_octopus.h"
-#include "opt_tarantula.h"
 #include "mal_interpreter.h"
 
 #define PARTITION_THRESHOLD (wrd) threads	/* should be increased in production version */
@@ -143,13 +142,8 @@ at least all threads.
 Experience shows that the pieces should not be too small.
 To keep the threads working, we create more pieces than threads.
 
-The pieces to be used may be overruled by the octopus and
-tarantula optimizer.
 @c
 	if ( (i = OPTlegAdviceInternal(mb,stk,p)) > 0 )
-		pieces = i;
-	else
-	if ( (i = OPTtarantulaAdviceInternal(mb,stk,p)) > 0 )
 		pieces = i;
 	else {
 		/* ensure that GDKnr_threads partitions fit into main memory */
@@ -243,7 +237,7 @@ tarantula optimizer.
 			setVarUDFtype(mb,k);
 			setVarUsed(mb,k);
 @-
-The target variable should inherit file location and row count for the tarantula.
+The target variable should inherit file location and row count 
 @c
 			loc = varGetProp(mb, getArg(p,0), fileProp);
 			if ( loc ){
