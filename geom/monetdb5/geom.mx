@@ -425,7 +425,8 @@ BUN
 mbrHASH(mbr *atom		/* IN: to-be-hashed mbr. */
     )
 {
-	return (BUN) ((((int) atom->xmin) *((int) atom->ymin)) * (((int) atom->xmax) *((int) atom->ymax)));
+	return (BUN) (((int) atom->xmin * (int) atom->ymin) *
+		      ((int) atom->xmax * (int) atom->ymax));
 }
 
 /* COMP: compare two mbrs. */
@@ -862,11 +863,17 @@ ordinatesMBR(mbr **res,		/* INOUT. */
 	     flt *maxY		/* IN. */
     )
 {
-	*res = (mbr *) GDKmalloc(sizeof(mbr));
-	(*res)->xmin = *minX;
-	(*res)->ymin = *minY;
-	(*res)->xmax = *maxX;
-	(*res)->ymax = *maxY;
+	if ((*res = (mbr *) GDKmalloc(sizeof(mbr))) == NULL)
+		throw(MAL, "geom.mbr", MAL_MALLOC_FAIL);
+	if (*minX == flt_nil || *minY == flt_nil ||
+	    *maxX == flt_nil || *maxY == flt_nil)
+		**res = *mbrNULL();
+	else {
+		(*res)->xmin = *minX;
+		(*res)->ymin = *minY;
+		(*res)->xmax = *maxX;
+		(*res)->ymax = *maxY;
+	}
 	return MAL_SUCCEED;
 }
 
@@ -898,10 +905,17 @@ wkb *
 geos2wkb(GEOSGeom geosGeometry)
 {
 	size_t wkbLen = 0;
-	unsigned char *w = GEOSGeomToWKB_buf(geosGeometry, &wkbLen);
-	wkb *atom = GDKmalloc(wkb_size(wkbLen));
+	unsigned char *w = NULL;
+	wkb *atom;
 
-	if (!w) {
+	if (geosGeometry != NULL)
+		w = GEOSGeomToWKB_buf(geosGeometry, &wkbLen);
+
+	atom = GDKmalloc(wkb_size(wkbLen));
+	if (atom == NULL)
+		return NULL;
+
+	if (geosGeometry == NULL || w == NULL) {
 		*atom = *wkbNULL();
 	} else {
 		assert(wkbLen <= GDK_int_max);
@@ -952,16 +966,24 @@ wkbgetcoord@1(double *out, wkb **geom)
 @:getcoord(Y)@
 
 @c
-geom_export str wkbcreatepoint(wkb **out, double *x, double *y);
+geom_export str wkbcreatepoint(wkb **out, dbl *x, dbl *y);
 
 str
-wkbcreatepoint(wkb **out, double *x, double *y)
+wkbcreatepoint(wkb **out, dbl *x, dbl *y)
 {
-	GEOSCoordSeq pnt = GEOSCoordSeq_create(1, 2);
-	GEOSCoordSeq_setX(pnt, 0, *x);
-	GEOSCoordSeq_setY(pnt, 0, *y);
-	*out = geos2wkb(GEOSGeom_createPoint(pnt));
-	GEOSCoordSeq_destroy(pnt);
+	GEOSCoordSeq pnt;
+	if (*x == dbl_nil || *y == dbl_nil) {
+		if ((*out = GDKmalloc(sizeof(wkb))) != NULL)
+			**out = *wkbNULL();
+	} else {
+		pnt = GEOSCoordSeq_create(1, 2);
+		GEOSCoordSeq_setX(pnt, 0, *x);
+		GEOSCoordSeq_setY(pnt, 0, *y);
+		*out = geos2wkb(GEOSGeom_createPoint(pnt));
+		GEOSCoordSeq_destroy(pnt);
+	}
+	if (*out == NULL)
+		throw(MAL, "geom.point", MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -1041,10 +1063,13 @@ geom_export str mbroverlaps(bit *out, mbr *b1, mbr *b2);
 str
 mbroverlaps(bit *out, mbr *b1, mbr *b2)
 {
-	*out = ((b1->ymax >= b2->ymax && b1->xmin <= b2->ymax) ||
-		(b2->ymax >= b1->ymax && b2->xmin <= b1->ymax)) &&
-	       ((b1->xmax >= b2->xmax && b1->ymin <= b2->xmax) ||
-		(b2->xmax >= b1->xmax && b2->ymin <= b1->xmax));
+	if (mbr_isnil(b1) || mbr_isnil(b2))
+		*out = 0;
+	else
+		*out = ((b1->ymax >= b2->ymax && b1->xmin <= b2->ymax) ||
+			(b2->ymax >= b1->ymax && b2->xmin <= b1->ymax)) &&
+		       ((b1->xmax >= b2->xmax && b1->ymin <= b2->xmax) ||
+			(b2->xmax >= b1->xmax && b2->ymin <= b1->xmax));
 	return MAL_SUCCEED;
 }
 
@@ -1097,8 +1122,6 @@ wkb@1( bit *out, wkb **a, wkb **b)
 		throw(MAL, "geom.@1", "wkb2geos(*b) failed");
 	}
 	if (!ga && !gb) {
-		GEOSGeom_destroy(ga);
-		GEOSGeom_destroy(gb);
 		throw(MAL, "geom.@1", "wkb2geos(*a) and wkb2geos(*b) both failed");
 	}
 
@@ -1127,8 +1150,6 @@ wkb@1( bit *out, wkb **a, wkb **b, @3 @4)
 		throw(MAL, "geom.@1", "wkb2geos(*b) failed");
 	}
 	if (!ga && !gb) {
-		GEOSGeom_destroy(ga);
-		GEOSGeom_destroy(gb);
 		throw(MAL, "geom.@1", "wkb2geos(*a) and wkb2geos(*b) both failed");
 	}
 
@@ -1190,8 +1211,6 @@ wkb@1( dbl *out, wkb **a, wkb **b)
 		throw(MAL, "geom.@1", "wkb2geos(*b) failed");
 	}
 	if (!ga && !gb) {
-		GEOSGeom_destroy(ga);
-		GEOSGeom_destroy(gb);
 		throw(MAL, "geom.@1", "wkb2geos(*a) and wkb2geos(*b) both failed");
 	}
 
@@ -1223,8 +1242,6 @@ wkb@1( @2 *out, wkb **a, wkb **b)
 		throw(MAL, "geom.@1", "wkb2geos(*b) failed");
 	}
 	if (!ga && !gb) {
-		GEOSGeom_destroy(ga);
-		GEOSGeom_destroy(gb);
 		throw(MAL, "geom.@1", "wkb2geos(*a) and wkb2geos(*b) both failed");
 	}
 
