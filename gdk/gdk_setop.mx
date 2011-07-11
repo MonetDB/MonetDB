@@ -447,27 +447,24 @@ TODO synced/key case..
 				h2 = hnil;
 				if (@4) { /* check for not-nil (nils don't match anyway) */
 					BUN pb = p2;
+					int done = FALSE;
 
-					for (;;) {
+					for (;!done;) {
 						if (EQUAL@5(t, BUNtail(ri, pb))) {
 							HIT@1(h, t);
-							break;
+							done = TRUE;
+						} else {
+							if ((++pb) >= q2) {
+								MISS@1(h, t);
+								done = TRUE;
+							} else {
+								h2 = BUNh@2(ri, pb);
+								if (@4) {
+									MISS@1(h, t);
+									done = TRUE;
+								}
+							}
 						}
-#if @5 != k
-/* Otherwise, icc complains about         */
-/* "error #111: statement is unreachable" */
-/* at "if ((++pb) >= q2) {"               */
-/* due to "#define EQUALk(t1,t2) TRUE".   */
-						if ((++pb) >= q2) {
-							MISS@1(h, t);
-							break;
-						}
-						h2 = BUNh@2(ri, pb);
-						if (@4) {
-							MISS@1(h, t);
-							break;
-						}
-#endif
 					}
 					continue;
 				}
