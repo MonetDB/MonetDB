@@ -41,14 +41,14 @@ lib__sql = {
 	DIR = libdir/monetdb5
 	SOURCES = \
 		sql.mx \
-		sql_user.mx \
-		sql_scenario.mx \
-		sql_gencode.mx \
-		sql_optimizer.mx \
+		sql_user.c \
+		sql_scenario.c \
+		sql_gencode.c \
+		sql_optimizer.c \
 		sql_result.mx \
-		sql_readline.mx \
-		sql_emptyset.mx \
-		sql_bpm.mx 
+		sql_readline.c \
+		sql_emptyset.c \
+		sql_bpm.c 
 	LIBS = ../../server/libsqlserver \
 		   ../../storage/libstore \
 		   ../../storage/bat/libbatstore \
@@ -101,7 +101,7 @@ lib__sql = {
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
-	SOURCES = sql.mx sql_bpm.mx sql_emptyset.mx
+	SOURCES = sql.mx sql_bpm.mal
 }
 
 headers_autoload = {
@@ -110,5 +110,5 @@ headers_autoload = {
 	SOURCES = 40_sql.mal
 }
 
-EXTRA_DIST = 40_sql.mal 
+EXTRA_DIST = 40_sql.mal sql_bpm.mal sql_bpm.h sql_emptyset.h sql_gencode.h sql_optimizer.h sql_scenario.h sql_user.h sql_readline.h
 EXTRA_DIST_DIR = Tests

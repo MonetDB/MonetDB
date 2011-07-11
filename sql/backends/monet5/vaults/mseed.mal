@@ -15,12 +15,15 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-MTSAFE
-INCLUDES = ../../common/options ../../common/stream ../../gdk $(GEOS_INCS)
+module mseed;
+pattern import{unsafe}(vid:int, entry:str):int
+address MseedImport
+comment "Fetch the record descriptors of a mseed file and stores them into the mseed catalog";
 
-lib_geom = {
-	NOINST
-	DIR = libdir/MonetDB
-	SOURCES = libgeom.c 
-}
-EXTRA_DIST = libgeom.h
+pattern load{unsafe}(entry:str)(:bat[:oid,:timestamp],:bat[:oid,:int])
+address MseedLoad
+comment "Load the content of a mseed file into BATs";
+
+pattern load{unsafe}(entry:str):bat[:str,:bat]
+address MseedLoadSQL
+comment "Load the content of a mseed file into SQL TABLE";

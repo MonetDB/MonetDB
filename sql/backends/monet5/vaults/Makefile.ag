@@ -36,7 +36,7 @@ INCLUDES = ../../../include \
 lib__vault = {
 	MODULE
 	DIR = libdir/monetdb5
-	SOURCES = vault.mx
+	SOURCES = vault.c
 	LIBS = ../../../../monetdb5/tools/libmonetdb5 \
 		   ../../../../gdk/libbat $(curl_LIBS)
 }
@@ -45,7 +45,7 @@ lib__mseed = {
 	MODULE
 	COND = HAVE_MSEED
 	DIR = libdir/monetdb5
-	SOURCES = mseed.mx
+	SOURCES = mseed.c
 	LIBS = ../../../../monetdb5/tools/libmonetdb5 \
 		   ../../../../gdk/libbat \
 		   $(MSEED_LIBS) 
@@ -55,7 +55,7 @@ lib__fits = {
 	MODULE
 	COND = HAVE_CFITSIO
 	DIR = libdir/monetdb5
-	SOURCES = fits.mx
+	SOURCES = fits.c
 	LIBS = ../../../../monetdb5/tools/libmonetdb5 \
 		   $(cfitsio_LIBS)
 }
@@ -63,27 +63,27 @@ lib__fits = {
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
-	SOURCES = vault.mx
+	SOURCES = vault.mal
 }
 
 headers_sql = {
 	HEADERS = sql
 	DIR = libdir/monetdb5
-	SOURCES = vault.mx
+	SOURCES = vault.sql
 }
 
 headers_mseedmal = {
 	COND = HAVE_MSEED
 	HEADERS = mal
 	DIR = libdir/monetdb5
-	SOURCES = mseed.mx
+	SOURCES = mseed.mal
 }
 
 headers_fitsmal = {
 	COND = HAVE_CFITSIO
 	HEADERS = mal
 	DIR = libdir/monetdb5
-	SOURCES = fits.mx
+	SOURCES = fits.mal
 }
 
 headers_autoload = {
@@ -107,4 +107,4 @@ headers_fitsautoload = {
 }
 
 EXTRA_DIST_DIR = Tests
-EXTRA_DIST = 70_vault.mal 71_mseed.mal 72_fits.mal
+EXTRA_DIST = 70_vault.mal 71_mseed.mal 72_fits.mal fits.mal fits.h mseed.mal mseed.h vault.mal vault.sql vault.h

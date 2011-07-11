@@ -15,12 +15,25 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-MTSAFE
-INCLUDES = ../../common/options ../../common/stream ../../gdk $(GEOS_INCS)
+module fits;
 
-lib_geom = {
-	NOINST
-	DIR = libdir/MonetDB
-	SOURCES = libgeom.c 
-}
-EXTRA_DIST = libgeom.h
+pattern listdir(dirname:str):void
+address FITSdir
+comment "Attach all FITS files in the directory";
+
+pattern listdirpattern(dirname:str, pattern:str):void
+address FITSdirpat
+comment "Attach all FITS file in the directory, giving a pattern";
+
+command fitstest(filename:str):int
+address FITStest
+comment "Returns the type of first extension in the FITS file filename";
+
+pattern attach(fname:str):void
+address FITSattach
+comment "Open a FITS file and return catalog of the table HDUs";
+
+pattern load(tablename:str):void
+address FITSloadTable
+comment "Load a FITS table from an attached file";
+

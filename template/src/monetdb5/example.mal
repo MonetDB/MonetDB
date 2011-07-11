@@ -15,12 +15,11 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-MTSAFE
-INCLUDES = ../../common/options ../../common/stream ../../gdk $(GEOS_INCS)
+module example;
 
-lib_geom = {
-	NOINST
-	DIR = libdir/MonetDB
-	SOURCES = libgeom.c 
-}
-EXTRA_DIST = libgeom.h
+command hello( argument:str ) :str
+address hello
+comment "hello world command";
+
+x:=example.hello("world");
+io.print(x);

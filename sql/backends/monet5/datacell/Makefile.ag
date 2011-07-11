@@ -35,21 +35,21 @@ lib__datacell = {
 	MODULE
 	DIR = libdir/monetdb5
 	SEP = _
-	SOURCES = basket.mx \
-		  dcsocket.mx \
-		  receptor.mx \
-		  petrinet.mx \
-		  dcoperator.mx \
-		  opt_datacell.mx \
-		  datacell.mx \
-		  emitter.mx 
+	SOURCES = basket.c \
+		  dcsocket.c \
+		  receptor.c \
+		  petrinet.c \
+		  dcoperator.c \
+		  opt_datacell.c \
+		  datacell.c \
+		  emitter.c 
 
 	LIBS = ../../../../monetdb5/tools/libmonetdb5 \
 		../../../../gdk/libbat 
 }
 
 bin_actuator = {
-	SOURCES = actuator.mx dcsocket.mx
+	SOURCES = actuator.c dcsocket.c
 	LIBS = ../../../../common/stream/libstream \
 		   ../../../../common/options/libmoptions \
 		   ../../../../gdk/libbat \
@@ -58,7 +58,7 @@ bin_actuator = {
 }
 
 bin_sensor = {
-	SOURCES = sensor.mx dcsocket.mx
+	SOURCES = sensor.c dcsocket.c
 	LIBS = ../../../../common/stream/libstream \
 		   ../../../../common/options/libmoptions \
 		   ../../../../gdk/libbat \
@@ -89,4 +89,4 @@ headers_datacellautoload = {
 	SOURCES = 50_datacell.mal
 }
 
-EXTRA_DIST = 50_datacell.mal 50_datacell.sql
+EXTRA_DIST = 50_datacell.mal 50_datacell.sql basket.mal basket.h datacell.mal datacell.h dcoperator.mal dcoperator.h dcsocket.h emitter.mal emitter.h opt_datacell.mal opt_datacell.h petrinet.mal petrinet.h receptor.mal receptor.h
