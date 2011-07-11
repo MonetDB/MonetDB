@@ -23,7 +23,6 @@ RDF_INC = -I../../../monetdb5/extras/rdf
 INCLUDES = ../../include ../../common ../../storage ../../server \
 		   ../../../monetdb5/misc \
 		   ../../../monetdb5/modules/atoms \
-		   ../../../monetdb5/compiler \
 		   ../../../monetdb5/modules/kernel \
 		   ../../../monetdb5/mal \
 		   ../../../monetdb5/modules/mal \

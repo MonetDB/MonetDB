@@ -15,8 +15,6 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-INCLUDES = ../include
-
 DEFS = @DEFS@
 
 lib_MonetODBCs = {

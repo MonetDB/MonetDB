@@ -21,7 +21,6 @@ INCLUDES = ../lib \
 		   ../../common/stream \
 		   ../../gdk \
 		   ../../monetdb5/modules/atoms \
-		   ../../monetdb5/compiler \
 		   ../../monetdb5/modules/kernel \
 		   ../../monetdb5/mal \
 		   ../../monetdb5/modules/mal \
