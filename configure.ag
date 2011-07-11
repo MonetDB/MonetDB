@@ -640,6 +640,8 @@ yes-*-*)
 	X_CFLAGS="$X_CFLAGS -we266"
 	dnl  Let remark #181 "argument is incompatible with corresponding format string conversion" become an error.
 	X_CFLAGS="$X_CFLAGS -we181"
+	dnl  Let remark #271: "trailing comma is nonstandard" become an error.
+	X_CFLAGS="$X_CFLAGS -we271"
 	X_CFLAGS="$X_CFLAGS -Werror"
 	dnl  ... however, some things aren't solved, yet:
 	dnl  (for the time being,) we need to disable some warnings (making them remarks doesn't seem to work with -Werror):
