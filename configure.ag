@@ -579,7 +579,7 @@ yes-*-*)
 	dnl  Hence, we use GCC_SWIG_CFLAGS to disable the respective warning
 	dnl  as locally as possbile via "-Wno-strict-aliasing -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter -Wno-undef -Wno-missing-field-initializers"
 	dnl  (see also sql/backends/monet5/Makefile.ag, clients/perl/Cimpl/Makefile.ag).
-	GCC_SWIG_CFLAGS="$GCC_SWIG_CFLAGS -Wno-strict-aliasing -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter -Wno-undef"
+	GCC_SWIG_CFLAGS="$GCC_SWIG_CFLAGS -Wno-strict-aliasing -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter -Wno-undef -Wno-unused-value"
 	case "$gcc_ver-$host_os" in
 	[[4-9]].*-*)
 	    dnl  -Wno-missing-field-initializers is only available as of gcc 4.*
