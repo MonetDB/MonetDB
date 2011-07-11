@@ -1,0 +1,107 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2011 MonetDB B.V.
+# All Rights Reserved.
+
+module datacell;
+
+pattern prelude()
+address DCprelude
+comment "Convert the datacell schema to a stream processing infrastructure";
+
+pattern basket(tab:str):void
+address DCregister
+comment "Initialize a new basket based on a specific table definition in the datacell schema");
+
+pattern emitter(tbl:str, host:str, port:int)
+address DCemitter
+comment "Define a emitter based on a basket table.";
+
+pattern receptor(tbl:str, host:str, port:int)
+address DCreceptor
+comment "Define a receptor based on a basket table..";
+
+pattern mode(tbl:str, arg:str)
+address DCmode
+comment "Change the mode of the adaptor to active/passive";
+
+pattern protocol(tbl:str, arg:str)
+address DCprotocol
+comment "Change the protocol of the adaptor UDP/TCP/CSV";
+
+pattern remove(obj:str):void
+address DCremove
+comment "Remove a basket, receptor or emitter";
+
+pattern pause(obj:str):void
+address DCpause
+comment "Pause a receptor or emitter";
+
+pattern resume(obj:str):void
+address DCresumeObject
+comment "Pause a receptor or emitter";
+
+pattern query(name:str,def:str):void
+address DCquery
+comment "Add a new continuous query.";
+
+pattern query(name:str):void
+address DCquery
+comment "Add a new continuous query procedure.";
+
+pattern pause()
+address DCpauseScheduler
+comment "(Re)start the petrinet scheduler.";
+
+pattern resume()
+address DCresume
+comment "Resume the petrinet scheduler.";
+
+pattern postlude()
+address DCpostlude
+comment "Stop the petrinet scheduler.";
+
+command dump()
+address DCdump
+comment "Dump receptor/emitter status";
+
+command threshold{unsafe}(bskt:str, mi:int):bit
+address DCthreshold
+comment "Prefilter on bucket content";
+
+command window{unsafe}(bskt:str, size:int, slide:int):bit
+address DCwindow
+comment "Slide the basket with a limited number of events";
+
+command timewindow{unsafe}(bskt:str, N:int, S:int):bit
+address DCtimewindow
+comment "Slide the basket with a time window of N milliseconds with stride S milliseconds";
+
+command beat(bskt:str, t:int):bit
+address DCbeat
+comment "Schedule query with T milliseconds interval";
+
+command baskets():bat[:str,:bat]
+address BSKTtable
+comment "Inspect the datacell baskets";
+
+command queries():bat[:str,:bat]
+address PNtable
+comment "Inspect the datacell queries";
+
+command errors():bat[:str,:bat]
+address BSKTtableerrors
+comment "Inspect the erroneous events";
+

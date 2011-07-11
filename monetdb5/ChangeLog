@@ -1,8 +1,3 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
-* Fri Apr 22 2011 Fabian Groffen <fabian@cwi.nl>
-- Authorisation no longer takes scenarios into account.  Access for only
-  sql or mal is no longer possible.  Any credentials now mean access to
-  all scenarios that the server has available.
-

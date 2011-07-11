@@ -1,0 +1,51 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2011 MonetDB B.V.
+# All Rights Reserved.
+
+
+module mat;
+
+pattern bind(sname:str, tname:str, cname:str, access:int, part:int) :bat[:oid,:any_1]
+address mat_bind_wrap
+comment "Bind the bat tname.cname into the focus with specific access mode";
+
+pattern bind_idxbat(sname:str, tname:str, iname:str, access:int, part:int):bat[:oid,:any_1]
+address mat_bind_idxbat_wrap
+comment "Bind the idx bat, tname.idx
+	with specific accsess modes";
+
+pattern inc_parts(sname:str, tname:str):void
+address inc_parts_wrap
+comment "Increment the number of partions";
+
+pattern send_part(host:str, sname:str, tname:str, column:str, part:int):void
+address send_part_wrap
+comment "Send part to a remote host";
+
+pattern get_part(sname:str, tname:str, column:str, part:int):bat[:oid,:any_1]
+address get_part_wrap
+comment "Get part from a remote host";
+
+pattern print_part(sname:str, tname:str, column:str, part:int):void
+address print_part_wrap
+comment "Get part from a remote host";
+
+module constraints;
+
+pattern parts(sname:str, tname:str, cname:str, access:int, nrparts:int):void
+address Cparts
+comment "Check if the number of partions is still valid";
+

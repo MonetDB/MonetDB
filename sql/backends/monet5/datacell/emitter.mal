@@ -1,0 +1,55 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2011 MonetDB B.V.
+# All Rights Reserved.
+
+module emitter;
+
+command start{unsafe}(tbl:str, host:str, port:int)
+address DCemitterNew
+comment "Define a emitter based on a basket table.
+The emitter protocol is active. Return its handle";
+
+command pause(tbl:str)
+address DCemitterPause
+comment "Pause listening";
+
+command resume(tbl:str)
+address DCemitterResume
+comment "Resume a emitter thread";
+
+command resume()
+address EMresume
+comment "Resume all emitter threads";
+
+command mode(tbl:str, arg:str)
+address EMmode
+comment "Set the mode of the emitter to either active/passive");
+
+command protocol(tbl:str, arg:str)
+address EMprotocol
+comment "Set the protocol of the emitter to udp/tcp/csv");
+
+command drop(tb:str)
+address EMstop
+comment "Drop a emitter";
+
+command reset()
+address EMreset
+comment "Remove all emitters";
+
+command dump()
+address EMdump
+comment "Dump a emitter status";

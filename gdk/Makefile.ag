@@ -22,7 +22,7 @@ INCLUDES = ../common/options ../common/stream ../common/utils $(valgrind_CFLAGS)
 gdk_scanselect_CFLAGS = $(NO_INLINE_CFLAGS)
 # gdk_relop.mx
 
-EXTRA_DIST = gdk_scanselect_defs.mx gdk_private.h
+EXTRA_DIST = gdk_scanselect_defs.mx gdk_private.h gdk_delta.h gdk_logger.h gdk_posix.h gdk_system.h gdk_tm.h gdk_storage.h
 
 lib_gdk = { 
 	VERSION = $(GDK_VERSION)
@@ -39,12 +39,12 @@ lib_gdk = {
 		gdk_scanselect_defs_fix.mx \
 		gdk_scanselect_defs_var.mx \
 		gdk_scanselect.mx gdk.mx gdk_batop.mx \
-		gdk_search.mx gdk_tm.mx gdk_align.mx gdk_bbp.mx \
-		gdk_heap.mx gdk_setop.mx gdk_utils.mx gdk_atoms.mx \
-		gdk_qsort.mx gdk_ssort.mx gdk_storage.mx gdk_bat.mx \
-		gdk_delta.mx gdk_relop.mx gdk_system.mx gdk_value.mx \
+		gdk_search.mx gdk_tm.c gdk_align.c gdk_bbp.mx \
+		gdk_heap.c gdk_setop.mx gdk_utils.mx gdk_atoms.mx \
+		gdk_qsort.mx gdk_ssort.mx gdk_storage.c gdk_bat.mx \
+		gdk_delta.c gdk_relop.mx gdk_system.c gdk_value.mx \
 		gdk_rangejoin.mx \
-		gdk_posix.mx gdk_logger.mx bat.feps bat1.feps bat2.feps \
+		gdk_posix.c gdk_logger.c bat.feps bat1.feps bat2.feps \
 		libbat.rc
 	LIBS = ../common/options/libmoptions \
 		../common/stream/libstream \

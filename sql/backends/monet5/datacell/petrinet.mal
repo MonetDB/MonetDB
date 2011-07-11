@@ -1,0 +1,59 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2011 MonetDB B.V.
+# All Rights Reserved.
+
+module petrinet;
+pattern register(nme:str):void
+address PNregister
+comment "Add a continous query to the Petri net. It will analyse
+the MAL block to determine the input/output dependencies. ";
+
+pattern register(nme:str, def:str):void
+address PNregister
+comment "Add a continous query to the Petri net. It will analyse
+the MAL block to determine the input/output dependencies. ";
+
+command source(nme:str, tbl:str):void
+address PNsource
+comment "Manually define an input basket for a transformation";
+
+command target(nme:str, tbl:str):void
+address PNtarget
+comment "Manually define an output basket for a transformation";
+
+command pause()
+address PNpauseScheduler
+comment "Pause the Petri net controller";
+
+command resume()
+address PNresumeScheduler
+comment "Resume the interpretation";
+
+command stop()
+address PNstopScheduler
+comment "Stop the Petri net controller";
+
+pattern analyse(mod:str, fcn:str)
+address PNanalyseWrapper
+comment "Check the input/output relationship";
+
+command queries():bat[:str,:bat]
+address PNtable
+comment "Inspect the datacell queries";
+
+command dump()
+address PNdump
+comment "Show the status of the Petri net";

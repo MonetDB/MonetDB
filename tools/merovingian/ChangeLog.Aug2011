@@ -1,0 +1,6 @@
+# ChangeLog file for sql/src/backends/monet5/merovingian
+# This file is updated with mchangelog
+
+* Fri Apr 29 2011 Fabian Groffen <fabian@cwi.nl>
+- added status property to get command
+

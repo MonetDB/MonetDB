@@ -1,0 +1,47 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2011 MonetDB B.V.
+# All Rights Reserved.
+
+module dcoperator;
+
+command select(b:bat[:any_1,:any_2], low:any_2, high:any_2):bat[:any_1,:any_2]
+address DCselect
+comment "Range selection on a BAT, the selected BUNs are also removed from the original BAT";
+
+
+command selectInsert(r:bat[:lng,:lng], b:bat[:lng,:lng], low:lng, hgh:lng):void
+address DCselectInsert
+comment "Tuples that qualify the range selection of bat b are appented to bat r";
+
+command selectInsertDelete(r:bat[:lng,:lng], b:bat[:lng,:lng], low:lng, hgh:lng):void
+address DCselectInsertDelete
+comment "In place modify r such as we append tuples that qualify the range selection in bat b and keep the remaining in bat r.";
+
+command sliceStrict(b:bat[:any_1,:any_2], x:lng, y:lng) :bat[:any_1,:any_2]
+address DCsliceStrict
+comment "Return the slice with the BUNs at position x till y only when it is possible, otherwise return an empty bat.";
+
+command deleteUpperSlice(r:bat[:oid,:int], pos:int):void
+address DCdeleteUpperSlice
+comment "Remove upper slice";
+
+
+command replaceTailBasedOnHead(b:bat[:oid,:int], r:bat[:oid,:int]):void
+address DCreplaceTailBasedOnHead
+comment "Replace the tails of the buns in bat b that their heads are also contained in the bat r,
+	 by the corresponding tails of bat r, comparing the heads of both bats.
+         It is optimized considering that bat b is bense.";
+
