@@ -669,6 +669,7 @@ yes-*-*)
 	dnl  #1357: optimization disabled due to excessive resource requirements; contact Intel Premier Support for assistance
 	dnl  #1572: floating-point equality and inequality comparisons are unreliable
 	dnl  #1599: declaration hides variable 
+	dnl  #2259: non-pointer conversion from "." to "." may lose significant bits
 
 	dnl  (At least on Fedora Core 4,) bison 2.0 seems to generate code
 	dnl  that icc does not like; since the problem only occurs with
