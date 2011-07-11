@@ -347,7 +347,7 @@ discoveryRunner(void *d)
 						val = "";
 					snprintf(buf, 512, "ANNC %s%s%s mapi:monetdb://%s:%u/ %d",
 							stats->dbname, val[0] == '\0' ? "" : "/", val,
-							_mero_hostname, getConfNum(_mero_props, "port"),
+							_mero_hostname, (unsigned int)getConfNum(_mero_props, "port"),
 							discttl->ival + 60);
 					broadcast(buf);
 				}
