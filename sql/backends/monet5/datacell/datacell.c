@@ -399,5 +399,4 @@ str
 DCbeat(int *ret, str *bskt, int *beat)
 {
 	return BSKTbeat(ret,bskt,beat);
-	return MAL_SUCCEED;
 }

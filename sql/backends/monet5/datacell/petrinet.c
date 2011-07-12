@@ -658,5 +658,4 @@ wrapup:
 	if ( time) BBPreleaseref(time->batCacheid);
 	if ( error) BBPreleaseref(error->batCacheid);
 	throw(MAL,"datacell.queries",MAL_MALLOC_FAIL);
-	return MAL_SUCCEED;
 }
