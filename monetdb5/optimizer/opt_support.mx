@@ -570,6 +570,7 @@ to easily trace their performance.
 #define DEBUG_OPT_TRACE				48
 #define DEBUG_OPT_HEURISTIC			49
 #define DEBUG_OPT_TARANTULA			50
+#define DEBUG_OPT_SLICING			51
 
 #define DEBUG_OPT(X) ((lng) 1 << (X))
 opt_export lng optDebug;
@@ -738,7 +739,7 @@ struct OPTcatalog {
 {"singleton",	0,	0,	0,	DEBUG_OPT_SINGLETON},
 {"strengthreduction",	0,	0,	0,	DEBUG_OPT_STRENGTHREDUCTION},
 {"trace",		0,	0,	0,	DEBUG_OPT_TRACE},
-{"tarantula",	0,	0,	0,	DEBUG_OPT_TARANTULA},
+{"slicing",	0,	0,	0,	DEBUG_OPT_SLICING},
 { 0,	0,	0,	0,	0}
 };
 
@@ -1349,7 +1350,7 @@ hasSideEffects(InstrPtr p, int strict)
 			return TRUE;
 	}
 	if (strict &&  getFunctionId(p) == newRef &&
-		getModuleId(p) != groupRef )
+		(getModuleId(p) != groupRef && getModuleId(p) != batRef) )
 		return TRUE;
 
 	if ( getModuleId(p) == octopusRef){
