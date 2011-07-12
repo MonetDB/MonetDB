@@ -50,7 +50,7 @@ CREATE FUNCTION Point(x double,y double) RETURNS Point external name geom.point;
 -- CREATE FUNCTION Polygon(g Geometry) RETURNS Polygon external name geom.polygon;
 
 -- ogc basic methods
-CREATE FUNCTION Dimension(g Geometry) RETURNS integer external name geom."Dimension";
+CREATE FUNCTION "Dimension"(g Geometry) RETURNS integer external name geom."Dimension";
 CREATE FUNCTION GeometryTypeId(g Geometry) RETURNS integer external name geom."GeometryTypeId";
 CREATE FUNCTION SRID(g Geometry) RETURNS integer external name geom."SRID";
 CREATE FUNCTION Envelope(g Geometry) RETURNS Geometry external name geom."Envelope";
