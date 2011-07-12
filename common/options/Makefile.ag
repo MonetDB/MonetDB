@@ -19,10 +19,10 @@
 
 MTSAFE
 
-EXTRA_DIST = monet_getopt.h getopt.c getopt1.c
+EXTRA_DIST = monet_getopt.h getopt.c getopt1.c monet_options.h
 
 lib_moptions = { 
 	NOINST
 	NAME = moptions
-	SOURCES = monet_options.mx monet_getopt.h
+	SOURCES = monet_options.c monet_getopt.h
 }

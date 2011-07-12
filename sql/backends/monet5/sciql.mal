@@ -1,0 +1,49 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2011 MonetDB B.V.
+# All Rights Reserved.
+
+module sciql;
+pattern newDimension(sch:str, tab:str, col:str, kind:int, start:any_1, stop:any_1, step:any_1):bat[:oid,:any_1]
+address SCI1D
+comment "Define the dimension of a vector";
+
+pattern newDimension(sch:str, tab:str, col:str, kind:int,
+	start1:any_1, stop1:any_1, step1:any_1,
+	col2:str, start2:any_2, stop2:any_2, step2:any_2
+)(:bat[:oid,:any_1], :bat[:oid,:any_2])
+address SCI2D
+comment "Define the dimensions of a 2D space";
+
+pattern newDimension(sch:str, tab:str, col:str, kind:int,
+	start1:any_1, stop1:any_1, step1:any_1,
+	col2:str, start2:any_2, stop2:any_2, step2:any_2,
+	col3:str, start3:any_3, stop3:any_3, step3:any_3
+)(:bat[:oid,:any_1], :bat[:oid,:any_2], :bat[:oid,:any_3])
+address SCI3D
+comment "Define the dimensions of a 3D space";
+
+pattern newDimension(sch:str, tab:str, col:str, kind:int,
+	start1:any_1, stop1:any_1, step1:any_1,
+	col2:str, start2:any_2, stop2:any_2, step2:any_2,
+	col3:str, start3:any_3, stop3:any_3, step3:any_3,
+	col4:str, start4:any_4, stop4:any_4, step4:any_4
+)(:bat[:oid,:any_1], :bat[:oid,:any_2], :bat[:oid,:any_3], :bat[:oid,:any_4])
+address SCI3D
+comment "Define the dimensions of a 4D space";
+
+pattern setDefault(b:bat[:oid,:any_1], def:any_2):bat[:oid,:any_2]
+address SCIsetDefault
+comment "Create an array instance initialized with default values);

@@ -21,5 +21,6 @@ INCLUDES = ../../common/options ../../common/stream ../../gdk $(GEOS_INCS)
 lib_geom = {
 	NOINST
 	DIR = libdir/MonetDB
-	SOURCES = libgeom.mx 
+	SOURCES = libgeom.c 
 }
+EXTRA_DIST = libgeom.h
