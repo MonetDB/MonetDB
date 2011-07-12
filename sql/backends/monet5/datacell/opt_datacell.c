@@ -46,9 +46,9 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
     InstrPtr r, p, *old;
 	str  col;
 	int maxbasket= 128, m=0,a=0;
-	char *tables[128];
-	char *appends[128];
-	InstrPtr q[128], qa[128];
+	char *tables[128] = {NULL};
+	char *appends[128] = {NULL};
+	InstrPtr q[128], qa[128] = {NULL};
 	lng clk,t;
 	int *alias;
 	char buf[BUFSIZ];
