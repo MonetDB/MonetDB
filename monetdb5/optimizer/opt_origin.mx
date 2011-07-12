@@ -20,7 +20,7 @@ All Rights Reserved.
 @f opt_origin
 @- OID origin tracking.
 This simple module extends the MAL plan with properties that
-identify the source of OIDs in the underlying SQL persistent tables.
+identify the source of values in the underlying SQL persistent tables.
 It stops when it can not be unique pinpointed anymore.
 The information is kept with the variables as horigin and torigin.
 [still incomplete]
@@ -42,9 +42,9 @@ comment "OID origin tracker";
 
 @:exportOptimizer(origin)@
 
+/* #define _DEBUG_OPT_ORIGIN_ */
 #undef DEBUG_OPT_ORIGIN
 #define DEBUG_OPT_ORIGIN 1
-#define _DEBUG_OPT_ORIGIN_
 #define OPTDEBUGorigin  if ( optDebug & (1 <<DEBUG_OPT_ORIGIN) )
 
 #endif
@@ -81,30 +81,15 @@ OPToriginImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 		}
 		if ( getModuleId(p) == algebraRef) {
-			if ( getFunctionId(p) == kunionRef) {
-				h= varGetProp(mb, getArg(p,1), horiginProp);
-				t= varGetProp(mb, getArg(p,2), horiginProp);
-				if ( strcmp(h->value.val.sval, t->value.val.sval) == 0) {
-					VALset(&val, TYPE_str, GDKstrdup(h->value.val.sval));
-					varSetProp(mb, getArg(p,0), horiginProp, op_eq, &val);
-				}
-			}
-			if ( getFunctionId(p) == kdifferenceRef) {
+			if ( getFunctionId(p) == kdifferenceRef ||
+				 getFunctionId(p) == kunionRef ||
+				 getFunctionId(p) == thetauselectRef 
+				) {
 				h= varGetProp(mb, getArg(p,1), horiginProp);
 				if ( h ) {
 					VALset(&val, TYPE_str, GDKstrdup(h->value.val.sval));
 					varSetProp(mb, getArg(p,0), horiginProp, op_eq, &val);
 				}
-			}
-			if ( getFunctionId(p) == thetauselectRef) {
-				h= varGetProp(mb, getArg(p,1), horiginProp);
-				t= varGetProp(mb, getArg(p,1), toriginProp);
-				if ( h ) {
-					VALset(&val, TYPE_str, GDKstrdup(h->value.val.sval));
-					varSetProp(mb, getArg(p,0), horiginProp, op_eq, &val);
-				}
-				if ( t)
-					{}
 			}
 			if ( getFunctionId(p) == markTRef) {
 				h= varGetProp(mb, getArg(p,1), horiginProp);
@@ -113,8 +98,42 @@ OPToriginImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					varSetProp(mb, getArg(p,0), horiginProp, op_eq, &val);
 				}
 			}
+			if ( getFunctionId(p) == leftjoinRef ||
+				 getFunctionId(p) == joinRef) {
+				h= varGetProp(mb, getArg(p,1), horiginProp);
+				t= varGetProp(mb, getArg(p,2), toriginProp);
+				if ( h ){
+					VALset(&val, TYPE_str, GDKstrdup(h->value.val.sval));
+					varSetProp(mb, getArg(p,0), horiginProp, op_eq, &val);
+				}
+				if ( t ){
+					VALset(&val, TYPE_str, GDKstrdup(h->value.val.sval));
+					varSetProp(mb, getArg(p,0), toriginProp, op_eq, &val);
+				}
+			}
+		}
+		if ( getModuleId(p) == groupRef) {
+			if ( getFunctionId(p) == newRef ||
+				 getFunctionId(p) == doneRef ) {
+				h= varGetProp(mb, getArg(p,1), horiginProp);
+				if ( h ){
+					VALset(&val, TYPE_str, GDKstrdup(h->value.val.sval));
+					varSetProp(mb, getArg(p,0), horiginProp, op_eq, &val);
+					VALset(&val, TYPE_str, GDKstrdup(h->value.val.sval));
+					varSetProp(mb, getArg(p,1), horiginProp, op_eq, &val);
+				}
+			}
 		}
 		if ( getModuleId(p) == batRef) {
+			if ( getFunctionId(p) == mirrorRef) {
+				h= varGetProp(mb, getArg(p,1), horiginProp);
+				if ( h ){
+					VALset(&val, TYPE_str, GDKstrdup(h->value.val.sval));
+					varSetProp(mb, getArg(p,0), horiginProp, op_eq, &val);
+					VALset(&val, TYPE_str, GDKstrdup(h->value.val.sval));
+					varSetProp(mb, getArg(p,0), toriginProp, op_eq, &val);
+				}
+			}
 			if ( getFunctionId(p) == reverseRef) {
 				h= varGetProp(mb, getArg(p,1), horiginProp);
 				t= varGetProp(mb, getArg(p,1), toriginProp);
