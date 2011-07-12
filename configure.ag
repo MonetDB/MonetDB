@@ -590,7 +590,6 @@ yes-*-*)
 	dnl X_CFLAGS="$X_CFLAGS -Waggregate-return"
 	dnl X_CFLAGS="$X_CFLAGS -Wbad-function-cast"
 	dnl X_CFLAGS="$X_CFLAGS -Wcast-qual"
-	dnl X_CFLAGS="$X_CFLAGS -Wc++-compat"
 	dnl X_CFLAGS="$X_CFLAGS -Wconversion"
 	dnl X_CFLAGS="$X_CFLAGS -Wdisabled-optimization"
 	dnl X_CFLAGS="$X_CFLAGS -Wfloat-equal"
@@ -601,20 +600,31 @@ yes-*-*)
 	dnl X_CFLAGS="$X_CFLAGS -Wmissing-prototypes"
 	dnl X_CFLAGS="$X_CFLAGS -Wnested-externs"
 	dnl X_CFLAGS="$X_CFLAGS -Wold-style-definition"
-	dnl X_CFLAGS="$X_CFLAGS -Woverlength-strings"
 	dnl X_CFLAGS="$X_CFLAGS -Wpadded"
 	dnl X_CFLAGS="$X_CFLAGS -Wredundant-decls"
 	dnl X_CFLAGS="$X_CFLAGS -Wshadow"
-	dnl X_CFLAGS="$X_CFLAGS -Wsign-conversion"
-	dnl X_CFLAGS="$X_CFLAGS -Wstrict-overflow=5"
 	dnl X_CFLAGS="$X_CFLAGS -Wstrict-prototypes"
 	dnl X_CFLAGS="$X_CFLAGS -Wswitch-default"
 	dnl X_CFLAGS="$X_CFLAGS -Wswitch-enum"
 	dnl X_CFLAGS="$X_CFLAGS -Wtraditional"
 	dnl X_CFLAGS="$X_CFLAGS -Wtraditional-conversion"
-	dnl X_CFLAGS="$X_CFLAGS -Wunsuffixed-float-constants"
-	dnl X_CFLAGS="$X_CFLAGS -Wvla"
 	dnl X_CFLAGS="$X_CFLAGS -Wwrite-strings"
+	dnl case "$CC-$gcc_ver" in
+	dnl *clang*-*|*-3.[[5-9]].*|*-[[4-9]].*)
+	dnl 	dnl gcc < 3.5 does not know these
+	dnl 	X_CFLAGS="$X_CFLAGS -Wc++-compat"
+	dnl 	X_CFLAGS="$X_CFLAGS -Woverlength-strings"
+	dnl 	X_CFLAGS="$X_CFLAGS -Wsign-conversion"
+	dnl 	X_CFLAGS="$X_CFLAGS -Wstrict-overflow=5"
+	dnl 	X_CFLAGS="$X_CFLAGS -Wvla"
+	dnl 	case "$gcc_ver" in
+	dnl 	4.[[5-9]].*|[[5-9]].*)
+	dnl 		dnl gcc < 4.5 does not know this
+	dnl 		X_CFLAGS="$X_CFLAGS -Wunsuffixed-float-constants"
+	dnl 		;;
+	dnl 	esac
+	dnl 	;;
+	dnl esac
 
 	dnl  The default configure invocation when doing an rpmbuild also uses this
 	case "$CC-$gcc_ver" in
