@@ -56,7 +56,7 @@
 #define DCINITIALIZED 2
 #define DCPAUSED 3
 
-static int DCprepared;
+/*static int DCprepared;*/
 
 /*
  * grab all tables in the datacell schema and turn them into baskets.
@@ -71,14 +71,14 @@ DCprocedureStmt(Client cntxt, MalBlkPtr mb, str schema, str nme)
 	backend *be;
 	node *o;
 	sql_func *f;
-	sql_trans *tr;
+	/*sql_trans *tr;*/
 
 	if ( msg)
 		return msg;
 	s = mvc_bind_schema(m, schema);
 	if (s == NULL)
 		throw(SQL, "datacell.query", "Schema missing");
-	tr = m->session->tr;
+	/*tr = m->session->tr;*/
 	for (o = s->funcs.set->h; o; o = o->next) {
 		f = o->data;
 		if ( strcmp(f->base.name, nme) == 0 ){
@@ -115,7 +115,7 @@ DCprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		f = o->data;
 		printf("function %s\n", f->base.name);
 	}
-	DCprepared = DCINITIALIZED;
+	/*DCprepared = DCINITIALIZED;*/
 	(void) stk;
 	(void) pci;
 	return msg;
@@ -363,7 +363,7 @@ DCpostlude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	DCprepared = DCNONINITIALIZED;
+	/*DCprepared = DCNONINITIALIZED;*/
 	return MAL_SUCCEED;
 }
 

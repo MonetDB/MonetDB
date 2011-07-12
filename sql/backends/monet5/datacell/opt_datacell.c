@@ -42,14 +42,14 @@ int
 OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int actions = 0, fnd, mvc= 0;
-    int bskt, i, j, k, limit, vlimit, slimit;
+    int bskt, i, j, k, limit, /*vlimit,*/ slimit;
     InstrPtr r, p, *old;
 	str  col;
 	int maxbasket= 128, m=0,a=0;
 	char *tables[128] = {NULL};
 	char *appends[128] = {NULL};
 	InstrPtr q[128], qa[128] = {NULL};
-	lng clk,t;
+	lng clk/*,t*/;
 	int *alias;
 	char buf[BUFSIZ];
 
@@ -63,7 +63,7 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
     old= mb->stmt;
     limit = mb->stop;
     slimit = mb->ssize;
-    vlimit = mb->vtop;
+    /*vlimit = mb->vtop;*/
     if ( newMalBlkStmt(mb, slimit) < 0)
         return 0;
 
@@ -235,7 +235,7 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			"history,multiplex,accumulators,garbageCollector");
 		/* extend the plan with the new optimizer pipe required */
 		clk= GDKusec();
-		optimizerCheck(cntxt, mb, "optimizer.datacell", 1, t = (GDKusec() - clk), OPT_CHECK_ALL);
+		optimizerCheck(cntxt, mb, "optimizer.datacell", 1, /*t =*/ (GDKusec() - clk), OPT_CHECK_ALL);
 		addtoMalBlkHistory(mb, "datacell");
 	}
 	GDKfree(alias);

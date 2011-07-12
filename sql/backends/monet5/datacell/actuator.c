@@ -200,7 +200,7 @@ main(int argc, char **argv)
 {
 	int i;
 	char *err = NULL;
-	char name[MYBUFSIZ + 1];
+	/*char name[MYBUFSIZ + 1];*/
 	char hostname[1024];
 	static SOCKET sockfd;
 	Actuator ac = NULL;
@@ -326,7 +326,7 @@ main(int argc, char **argv)
 
 
 	ac = ACnew(actuator);
-	name[0] = 0;
+	/*name[0] = 0;*/
 	err = NULL;
 	if ( mode == PASSIVE) {
 		ac->fromServer = udp_rastream(host, port, actuator);
