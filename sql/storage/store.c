@@ -477,9 +477,12 @@ load_column(sql_trans *tr, sql_table *t, oid rid)
 	void *v;
 	char *def, *tpe, *st;
 	int sz, d;
+	lng dim_v;
+	oid dim_rid;
 	sql_column *c = ZNEW(sql_column);
 	sql_schema *syss = find_sql_schema(tr, "sys");
 	sql_table *columns = find_sql_table(syss, "_columns");
+	sql_table *dimensions = find_sql_table(syss, "_dimensions");
 	sqlid cid;
 
 	v = table_funcs.column_find_value(tr, find_sql_column(columns, "id"), rid);
@@ -495,6 +498,18 @@ load_column(sql_trans *tr, sql_table *t, oid rid)
 	if (!sql_find_subtype(&c->type, tpe, sz, d))
 		sql_init_subtype(&c->type, sql_trans_bind_type(tr, t->s, tpe), sz, d);
 	_DELETE(tpe);
+
+	dim_rid = table_funcs.column_find_row(tr, find_sql_column(dimensions, "column_id"), &cid, NULL);
+	if (dim_rid != oid_nil){ /* this is a dimension column */
+		c->dim = ZNEW(sql_dimspec);
+		if(v = table_funcs.column_find_value(tr, find_sql_column(dimensions, "start"), dim_rid))
+			c->dim->start = ZNEW(lng); *c->dim->start = *(lng *)v; _DELETE(v);
+		if(v = table_funcs.column_find_value(tr, find_sql_column(dimensions, "step"), dim_rid))
+			c->dim->step = ZNEW(lng); *c->dim->step = *(lng *)v; _DELETE(v);
+		if(v = table_funcs.column_find_value(tr, find_sql_column(dimensions, "stop"), dim_rid))
+			c->dim->stop = ZNEW(lng); *c->dim->stop = *(lng *)v; _DELETE(v);
+	}
+
 	c->def = NULL;
 	def = table_funcs.column_find_value(tr, find_sql_column(columns, "default"), rid);
 	if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), def) != 0)
@@ -625,7 +640,7 @@ load_table(sql_trans *tr, sql_schema *s, oid rid)
 		cs_add(&t->columns, load_column(tr, t, rid), TR_OLD);
 	table_funcs.rids_destroy(rs);
 
-	if (!isTable(t) && !isMergeTable(t)) 
+	if (!isTable(t) && !isArray(t) && !isMergeTable(t)) 
 		return t;
 
 	/* load idx's first as they may be needed by the keys */
@@ -1426,9 +1441,7 @@ store_init(int debug, store_type store, char *logdir, char *dbname, backend_stac
 		bootstrap_create_column(tr, t, "storage", "varchar", 2048);
 
 		t = bootstrap_create_table(tr, s, "_dimensions");
-		bootstrap_create_column(tr, t, "table_id", "int", 32);
 		bootstrap_create_column(tr, t, "column_id", "int", 32);
-		bootstrap_create_column(tr, t, "fixed", "boolean", 1);
 		bootstrap_create_column(tr, t, "start", "varchar", 2048);
 		bootstrap_create_column(tr, t, "step", "varchar", 2048);
 		bootstrap_create_column(tr, t, "stop", "varchar", 2048);
@@ -4032,7 +4045,7 @@ sql_trans_create_column(sql_trans *tr, sql_table *t, char *name, sql_subtype *tp
 		store_funcs.create_col(tr, col);
 	if (!isDeclaredTable(t)) {
 		table_funcs.table_insert(tr, syscolumn, &col->base.id, col->base.name, col->type.type->sqlname, &col->type.digits, &col->type.scale, &t->base.id, (col->def) ? col->def : ATOMnilptr(TYPE_str), &col->null, &col->colnr, (col->storage_type) ? col->storage_type : ATOMnilptr(TYPE_str));
-		if (isArray(t)) /* column_id, fixed, start, step, stop*/
+		if (isArray(t)) /* column_id, start, step, stop*/
 		{ /* TODO */ }
 	}
 

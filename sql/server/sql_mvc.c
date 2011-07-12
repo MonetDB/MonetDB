@@ -99,8 +99,7 @@ mvc_init(char *dbname, int debug, store_type store, backend_stack stk)
 		mvc_create_column_(m, t, "number", "int", 32);
 		mvc_create_column_(m, t, "storage_type", "int", 32);
 
-		/* TODO: check the correctness of this new query for arrays */
-		t = mvc_create_view(m, s, "arrays", SQL_PERSIST, "SELECT * FROM (SELECT p.*, 0 AS \"temporary\" FROM \"sys\".\"_tables\" WHERE type = 5 AS p UNION ALL SELECT t.*, 1 AS \"temporary\" FROM \"tmp\".\"_tables\" WHERE type = 5 AS t) AS arrays;", 1);
+		t = mvc_create_view(m, s, "arrays", SQL_PERSIST, "SELECT * FROM (SELECT p.*, 0 AS \"temporary\" FROM \"sys\".\"_tables\" AS p WHERE type = 5 UNION ALL SELECT t.*, 1 AS \"temporary\" FROM \"tmp\".\"_tables\" AS t WHERE type = 5) AS arrays;", 1);
 		mvc_create_column_(m, t, "id", "int", 32);
 		mvc_create_column_(m, t, "name", "varchar", 1024);
 		mvc_create_column_(m, t, "schema_id", "int", 32);
@@ -111,8 +110,7 @@ mvc_init(char *dbname, int debug, store_type store, backend_stack stk)
 		mvc_create_column_(m, t, "readonly", "boolean", 1);
 		mvc_create_column_(m, t, "temporary", "smallint", 16);
 
-		/* TODO: check the correctness of this new query for dimensions */
-		t = mvc_create_view(m, s, "dimensions", SQL_PERSIST, "SELECT * FROM (SELECT pc.*, pd.fixed, pd.start, pd.step, pd.stop FROM \"sys\".\"_columns\" AS pc, \"sys\".\"_dimensions\" AS pd WHERE pc.id = pd.column_id AND pc.table_id = pd.table_id UNION ALL SELECT tc.*, td.fixed, td.start, td.step, td.stop FROM \"tmp\".\"_columns\" AS tc, \"tmp\".\"_dimensions\" AS td WHERE tc.id = td.column_id AND tc.table_id = td.table_id) AS dimensions;", 1);
+		t = mvc_create_view(m, s, "dimensions", SQL_PERSIST, "SELECT * FROM (SELECT pc.*, \"pd\".\"start\", pd.step, pd.stop FROM \"sys\".\"_columns\" AS pc, \"sys\".\"_dimensions\" AS pd WHERE pc.id = pd.column_id UNION ALL SELECT tc.*, \"td\".\"start\", td.step, td.stop FROM \"tmp\".\"_columns\" AS tc, \"tmp\".\"_dimensions\" AS td WHERE tc.id = td.column_id) AS dimensions;", 1);
 		mvc_create_column_(m, t, "id", "int", 32);
 		mvc_create_column_(m, t, "name", "varchar", 1024);
 		mvc_create_column_(m, t, "schema_id", "int", 32);
@@ -122,7 +120,6 @@ mvc_init(char *dbname, int debug, store_type store, backend_stack stk)
 		mvc_create_column_(m, t, "commit_action", "smallint", 16);
 		mvc_create_column_(m, t, "readonly", "boolean", 1);
 		mvc_create_column_(m, t, "temporary", "smallint", 16);
-		mvc_create_column_(m, t, "fixed", "boolean", 1);
 		mvc_create_column_(m, t, "start", "varchar", 2048);
 		mvc_create_column_(m, t, "step", "varchar", 2048);
 		mvc_create_column_(m, t, "stop", "varchar", 2048);
