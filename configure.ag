@@ -613,7 +613,6 @@ yes-*-*)
 	dnl X_CFLAGS="$X_CFLAGS -Waggregate-return"
 	dnl X_CFLAGS="$X_CFLAGS -Wbad-function-cast"
 	dnl X_CFLAGS="$X_CFLAGS -Wcast-qual"
-	dnl X_CFLAGS="$X_CFLAGS -Wc++-compat"
 	dnl X_CFLAGS="$X_CFLAGS -Wconversion"
 	dnl X_CFLAGS="$X_CFLAGS -Wdisabled-optimization"
 	dnl X_CFLAGS="$X_CFLAGS -Wfloat-equal"
@@ -624,20 +623,31 @@ yes-*-*)
 	dnl X_CFLAGS="$X_CFLAGS -Wmissing-prototypes"
 	dnl X_CFLAGS="$X_CFLAGS -Wnested-externs"
 	dnl X_CFLAGS="$X_CFLAGS -Wold-style-definition"
-	dnl X_CFLAGS="$X_CFLAGS -Woverlength-strings"
 	dnl X_CFLAGS="$X_CFLAGS -Wpadded"
 	dnl X_CFLAGS="$X_CFLAGS -Wredundant-decls"
 	dnl X_CFLAGS="$X_CFLAGS -Wshadow"
-	dnl X_CFLAGS="$X_CFLAGS -Wsign-conversion"
-	dnl X_CFLAGS="$X_CFLAGS -Wstrict-overflow=5"
 	dnl X_CFLAGS="$X_CFLAGS -Wstrict-prototypes"
 	dnl X_CFLAGS="$X_CFLAGS -Wswitch-default"
 	dnl X_CFLAGS="$X_CFLAGS -Wswitch-enum"
 	dnl X_CFLAGS="$X_CFLAGS -Wtraditional"
 	dnl X_CFLAGS="$X_CFLAGS -Wtraditional-conversion"
-	dnl X_CFLAGS="$X_CFLAGS -Wunsuffixed-float-constants"
-	dnl X_CFLAGS="$X_CFLAGS -Wvla"
 	dnl X_CFLAGS="$X_CFLAGS -Wwrite-strings"
+	dnl case "$CC-$gcc_ver" in
+	dnl *clang*-*|*-3.[[5-9]].*|*-[[4-9]].*)
+	dnl 	dnl gcc < 3.5 does not know these
+	dnl 	X_CFLAGS="$X_CFLAGS -Wc++-compat"
+	dnl 	X_CFLAGS="$X_CFLAGS -Woverlength-strings"
+	dnl 	X_CFLAGS="$X_CFLAGS -Wsign-conversion"
+	dnl 	X_CFLAGS="$X_CFLAGS -Wstrict-overflow=5"
+	dnl 	X_CFLAGS="$X_CFLAGS -Wvla"
+	dnl 	case "$gcc_ver" in
+	dnl 	4.[[5-9]].*|[[5-9]].*)
+	dnl 		dnl gcc < 4.5 does not know this
+	dnl 		X_CFLAGS="$X_CFLAGS -Wunsuffixed-float-constants"
+	dnl 		;;
+	dnl 	esac
+	dnl 	;;
+	dnl esac
 
 	dnl  The default configure invocation when doing an rpmbuild also uses this
 	case "$CC-$gcc_ver" in
@@ -753,16 +763,14 @@ yes-*-*)
 	dnl  Be picky; "-Werror" seems to be too rigid for autoconf...
 	CFLAGS="$CFLAGS -Wall -w2 -Wcheck"
 	dnl  Be rigid; MonetDB code is supposed to adhere to this... ;-)
-	dnl  Let warning #266 "function declared implicitly" become an error.
-	X_CFLAGS="$X_CFLAGS -we266"
-	dnl  Let remark #181 "argument is incompatible with corresponding format string conversion" become an error.
-	X_CFLAGS="$X_CFLAGS -we181"
-	dnl  Let remark #810 "conversion from "." to "." may lose significant bits" become an error.
-	X_CFLAGS="$X_CFLAGS -we810"
-	dnl  Let remark #111 "statement is unreachable" become an error.
-	X_CFLAGS="$X_CFLAGS -we111"
-	dnl  Let remark #271: "trailing comma is nonstandard" become an error.
-	X_CFLAGS="$X_CFLAGS -we271"
+	dnl  Let the follows remarks and warning become errors:
+	dnl  #266: "function declared implicitly"
+	dnl  #181: "argument is incompatible with corresponding format string conversion"
+	dnl  #810: "conversion from "." to "." may lose significant bits"
+	dnl  #111: "statement is unreachable"
+	dnl  #271: "trailing comma is nonstandard"
+	dnl  #593: "variable "." was set but never used"
+	X_CFLAGS="$X_CFLAGS -we266,181,810,271,593"
 	X_CFLAGS="$X_CFLAGS -Werror -Werror-all"
 	dnl  ... however, some things aren't solved, yet:
 	dnl  (for the time being,) we need to disable some warnings (making them remarks doesn't seem to work with -Werror):
