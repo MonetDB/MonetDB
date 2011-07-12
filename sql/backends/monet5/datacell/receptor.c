@@ -409,7 +409,10 @@ RCbody(Receptor rc)
 	size_t j;
 	str e, he;
 	str line = "\0";
-	int i, n, m = 0;
+	int i, n;
+#ifdef _DEBUG_RECEPTOR_
+	int m = 0;
+#endif
 	buf[MYBUFSIZ] = 0; /* ensure null terminated string */
 
 	if (rc->scenario) {
@@ -488,8 +491,8 @@ bodyRestart:
 			buf[n + 1] = 0;
 #ifdef _DEBUG_RECEPTOR_
 			mnstr_printf(RCout, "#Receptor buf [%d]:%s \n", n, buf);
-#endif
 			m = 0;
+#endif
 			/* use trivial concurrency measure */
 			line = buf;
 

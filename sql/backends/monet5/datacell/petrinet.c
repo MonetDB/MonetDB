@@ -55,7 +55,7 @@
 #define PNcontrolInfinit 1	/* infinit loop of PNController  */
 #define PNcontrolEnd 2		/* when all factories are disable PNController exits */
 
-static int controlRounds = PNcontrolInfinit;
+/*static int controlRounds = PNcontrolInfinit;*/
 
 static MT_Lock petriLock;
 
@@ -573,7 +573,7 @@ str PNstart(int *ret)
 	if ( status != PNstopped )
 		status = PNrunning;
 	mal_unset_lock(petriLock,"pncontroller");
-	controlRounds = PNcontrolEnd;
+	/*controlRounds = PNcontrolEnd;*/
 
 	PNcontroller(&s);
 
@@ -658,5 +658,4 @@ wrapup:
 	if ( time) BBPreleaseref(time->batCacheid);
 	if ( error) BBPreleaseref(error->batCacheid);
 	throw(MAL,"datacell.queries",MAL_MALLOC_FAIL);
-	return MAL_SUCCEED;
 }
