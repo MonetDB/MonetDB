@@ -1350,7 +1350,7 @@ hasSideEffects(InstrPtr p, int strict)
 			return TRUE;
 	}
 	if (strict &&  getFunctionId(p) == newRef &&
-		(getModuleId(p) != groupRef && getModuleId(p) != batRef) )
+		getModuleId(p) != groupRef )
 		return TRUE;
 
 	if ( getModuleId(p) == octopusRef){
