@@ -576,7 +576,7 @@ yes-*-*)
 				X_CFLAGS="$X_CFLAGS -Wjump-misses-init"
 				dnl these trigger a warning (-> error) with clang (2.8) & gcc < 4.5
 				X_CFLAGS="$X_CFLAGS -Wunreachable-code"
-				dnl clang (2.8) does not know these
+				dnl clang (2.8) & gcc < 4.3 do not know these
 				dnl these trigger a warning (-> error) with gcc < 4.5
 				X_CFLAGS="$X_CFLAGS -Wlogical-op"
 				;;
@@ -679,12 +679,16 @@ yes-*-*)
 	dnl  as locally as possbile via "-Wno-strict-aliasing -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter -Wno-undef -Wno-missing-field-initializers"
 	dnl  (see also clients/perl/Cimpl/Makefile.ag).
 	GCC_SWIG_CFLAGS="$GCC_SWIG_CFLAGS -Wno-strict-aliasing -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter -Wno-undef -Wno-unused-value"
-	case "$CC-$gcc_ver" in
-	*clang*-*)
+	case "$CC" in
+	*clang*)
 		;;
-	*-3.[[5-9]].*|*-[[4-9]].*)
-		dnl clang (2.8) & gcc < 3.5 do not know this
-		GCC_SWIG_CFLAGS="$GCC_SWIG_CFLAGS -Wno-logical-op"
+	*)
+		case "$gcc_ver" in
+		4.[[3-9]].*|[[5-9]].*)
+			dnl clang (2.8) & gcc < 4.3 do not know this
+			GCC_SWIG_CFLAGS="$GCC_SWIG_CFLAGS -Wno-logical-op"
+			;;
+		esac
 		case "$gcc_ver" in
 		3.[[5-9]].*|4.[[0-4]].*)
 			dnl 3.4 < gcc < 4.5 trigger a warning (-> error) without this
