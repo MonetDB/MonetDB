@@ -796,7 +796,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 	int tt = (temp == SQL_STREAM)?tt_stream:
 	         ((temp == SQL_MERGE_TABLE)?tt_merge_table:
 			  ((temp == SQL_ARRAY)? tt_array:tt_table));
-	char *t_a = (table_elements_or_subquery->token == SQL_CREATE_TABLE)?"TABLE":"ARRAY";
+	char *t_a = (tt == tt_array)?"TABLE":"ARRAY";
 
 	(void)create;
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
@@ -822,8 +822,8 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 		return sql_error(sql, 02, "%s %s: name '%s' already in use", cd, t_a, name);
 	} else if (temp != SQL_DECLARED_TABLE &&!schema_privs(sql->role_id, s)){
 		return sql_error(sql, 02, "CREATE %s: insufficient privileges for user '%s' in schema '%s'", t_a, stack_get_string(sql, "current_user"), s->base.name);
-	} else if (table_elements_or_subquery->token == SQL_CREATE_TABLE || table_elements_or_subquery->token == SQL_CREATE_ARRAY) { 
-		/* table or array element list */
+	} else if (table_elements_or_subquery->token == SQL_CREATE_TABLE) {
+		/* table or array element list, value of 'tt' separates ARRAY from TABLE */
 		/* reuse SQL_DECLARED_TABLE for temp arrays as well. actual type is in 'tt' */
 		sql_table *t = mvc_create_table(sql, s, name, tt, 0, SQL_DECLARED_TABLE, commit_action, -1);
 		dnode *n;
