@@ -526,11 +526,11 @@ if test "x$enable_strict" = xyes; then
 case "$GCC-$CC-$host_os" in
 yes-*-*)
 	dnl  GNU (gcc/g++)
-	case "$gcc_ver-$host_os" in
-	*-cygwin*)
+	case "$host_os" in
+	cygwin*)
 		LDFLAGS="$LDFLAGS -no-undefined"
 		;;
-	*-mingw*)
+	mingw*)
 		dnl  On MinGW we need the -Wno-format flag since gcc
 		dnl  doesn't know about the %I64d format string for
 		dnl  long long
@@ -540,10 +540,10 @@ yes-*-*)
 	esac
 	dnl  Be picky; "-Werror" seems to be too rigid for autoconf...
 	CFLAGS="$CFLAGS -Wall"
-	case "$gcc_ver-$host_os" in
-	3.[[4-9]].*-*|[[4-9]].*-*)
+	case "$CC-$gcc_ver" in
+	*clang*-*|*-3.[[4-9]].*|*-[[4-9]].*)
 		CFLAGS="$CFLAGS -Wextra";;
-	*)
+	*-*)
 		CFLAGS="$CFLAGS -W";;
 	esac
 	dnl  Be rigid; MonetDB code is supposed to adhere to this... ;-)
@@ -551,8 +551,8 @@ yes-*-*)
 	    X_CFLAGS="$X_CFLAGS -Werror"
 	dnl  Make sure that gcc is as strict as icc, MSVC++, etc.:
 	    X_CFLAGS="$X_CFLAGS -Wpointer-arith"
-	case "$gcc_ver-$host_os" in
-	3.[[4-9]].*-*|[[4-9]].*-*)
+	case "$CC-$gcc_ver" in
+	*clang*-*|*-3.[[4-9]].*|*-[[4-9]].*)
 	    X_CFLAGS="$X_CFLAGS -Wdeclaration-after-statement";;
 	esac
 	X_CFLAGS="$X_CFLAGS -Wundef"
@@ -560,25 +560,51 @@ yes-*-*)
 	X_CFLAGS="$X_CFLAGS -Wformat=2 -Wno-format-nonliteral"
 	X_CFLAGS="$X_CFLAGS -Winit-self"
 	X_CFLAGS="$X_CFLAGS -Winvalid-pch"
-	X_CFLAGS="$X_CFLAGS -Wmissing-include-dirs"
 	X_CFLAGS="$X_CFLAGS -Wpacked"
-	X_CFLAGS="$X_CFLAGS -Wstack-protector"
 	X_CFLAGS="$X_CFLAGS -Wunknown-pragmas"
-	X_CFLAGS="$X_CFLAGS -Wvariadic-macros"
+	case "$CC-$gcc_ver" in
+	*clang*-*|*-4.[[4-9]].*|*-[[5-9]].*)
+		dnl these trigger a warning (-> error) with gcc < 4.4
+		X_CFLAGS="$X_CFLAGS -Wmissing-include-dirs"
+		;;
+	esac
+	case "$CC-$gcc_ver" in
+	*clang*-*|*-3.[[5-9]].*|*-[[4-9]].*)
+		dnl gcc < 3.5 does not know these
+		X_CFLAGS="$X_CFLAGS -Wstack-protector"
+		X_CFLAGS="$X_CFLAGS -Wvariadic-macros"
+		;;
+	esac
 
 	case "$CC" in
 	*clang*)
 		;;
 	*)
-		dnl clang (2.8) does not know these
-		X_CFLAGS="$X_CFLAGS -Wjump-misses-init"
-		X_CFLAGS="$X_CFLAGS -Wlogical-op"
-		X_CFLAGS="$X_CFLAGS -Wpacked-bitfield-compat"
-		X_CFLAGS="$X_CFLAGS -Wsync-nand"
+		case "$gcc_ver" in
+		[[0-2]].*|3.[[0-4]].*)
+			dnl gcc < 3.5 triggers a warning (-> error) without this
+			X_CFLAGS="$X_CFLAGS -Wno-uninitialized"
+			;;
+		4.[[4-9]].*|[[5-9]].*)
+			dnl clang (2.8) & gcc < 4.4 do not know these
+			X_CFLAGS="$X_CFLAGS -Wpacked-bitfield-compat"
+			X_CFLAGS="$X_CFLAGS -Wsync-nand"
+			case "$gcc_ver" in
+			4.[[5-9]].*|[[5-9]].*)
+				dnl clang (2.8) & gcc < 4.5 do not know these
+				X_CFLAGS="$X_CFLAGS -Wjump-misses-init"
+				dnl these trigger a warning (-> error) with clang (2.8) & gcc < 4.5
+				X_CFLAGS="$X_CFLAGS -Wunreachable-code"
+				dnl clang (2.8) does not know these
+				dnl these trigger a warning (-> error) with gcc < 4.5
+				X_CFLAGS="$X_CFLAGS -Wlogical-op"
+				;;
+			esac
 
+			;;
+		esac
 		dnl these trigger a warning (-> error) with clang (2.8)
 		X_CFLAGS="$X_CFLAGS -Wcast-align"
-		X_CFLAGS="$X_CFLAGS -Wunreachable-code"
 		;;
 	esac
 
@@ -614,7 +640,12 @@ yes-*-*)
 	dnl X_CFLAGS="$X_CFLAGS -Wwrite-strings"
 
 	dnl  The default configure invocation when doing an rpmbuild also uses this
-	X_CFLAGS="$X_CFLAGS -Wp,-D_FORTIFY_SOURCE=2"
+	case "$CC-$gcc_ver" in
+	*clang*-*|*-4.[[1-9]].*|*-[[5-9]].*)
+		dnl _FORTIFY_SOURCE supported only with GCC 4.1 and later
+		X_CFLAGS="$X_CFLAGS -Wp,-D_FORTIFY_SOURCE=2"
+		;;
+	esac
 
 	dnl  Some versions of bison seem to generate code
 	dnl  that does not compile with `gcc -Wundef`;
@@ -625,13 +656,15 @@ yes-*-*)
 	dnl  Likewise, at least with gcc 4.3.0 and bison 2.3 on Gentoo 1.12.11.1,
 	dnl  gcc complains about some bison-generated code that defines an unused static function:
 	dnl  "warning: 'input' defined but not used".
-	case "$gcc_ver-$host_os" in
-	4.[[3-9]]*-*|[[5-9]].*-*)
+	case "$CC-$gcc_ver" in
+	*clang*-*)
+	    ;;
+	*-4.[[3-9]]*|*-[[5-9]].*)
 	    GCC_BISON_CFLAGS="$GCC_BISON_CFLAGS -Wno-unused-function";;
 	esac
 	dnl  ... however, some things are beyond our control:
-	case $gcc_ver-$host_os in
-	*-solaris*|*-aix*)
+	case $host_os in
+	solaris*|aix*)
 		dnl  In some cases, there is a (possibly) uninitialized
 		dnl  variable in bison.simple ... |-(
 		X_CFLAGS="$X_CFLAGS -Wno-uninitialized"
@@ -650,20 +683,26 @@ yes-*-*)
 	dnl  as locally as possbile via "-Wno-strict-aliasing -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter -Wno-undef -Wno-missing-field-initializers"
 	dnl  (see also clients/perl/Cimpl/Makefile.ag).
 	GCC_SWIG_CFLAGS="$GCC_SWIG_CFLAGS -Wno-strict-aliasing -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter -Wno-undef -Wno-unused-value"
-	case "$CC" in
-	*clang*)
+	case "$CC-$gcc_ver" in
+	*clang*-*)
 		;;
-	*)
-		dnl clang (2.8) does not know this
+	*-3.[[5-9]].*|*-[[4-9]].*)
+		dnl clang (2.8) & gcc < 3.5 do not know this
 		GCC_SWIG_CFLAGS="$GCC_SWIG_CFLAGS -Wno-logical-op"
+		case "$gcc_ver" in
+		3.[[5-9]].*|4.[[0-4]].*)
+			dnl 3.4 < gcc < 4.5 trigger a warning (-> error) without this
+			GCC_SWIG_CFLAGS="$GCC_SWIG_CFLAGS -Wno-nonnull"
+			;;
+		esac
 		;;
 	esac
-	case "$gcc_ver-$host_os" in
-	[[4-9]].*-*)
+	case "$gcc_ver" in
+	[[4-9]].*)
 	    dnl  -Wno-missing-field-initializers is only available as of gcc 4.*
 	    GCC_SWIG_CFLAGS="$GCC_SWIG_CFLAGS -Wno-missing-field-initializers"
 	    ;;
-	*-*)
+	*)
 	    dnl  need to use -Wno-extra with older gcc
 	    GCC_SWIG_CFLAGS="$GCC_SWIG_CFLAGS -Wno-extra"
 	    ;;
@@ -3294,8 +3333,8 @@ esac
 
 dnl  CFLAGS for our code are stricter than what autoconf can cope with.
 CFLAGS="$CFLAGS \$(X_CFLAGS)"
-case "$GCC-$gcc_ver-$host_os" in
-yes-3.[[4-9]].*-*|yes-[[4-9]].*-*)
+case "$GCC-$CC-$gcc_ver" in
+yes-*clang*-*|yes-*-3.[[4-9]].*|yes-*-[[4-9]].*)
 	CFLAGS="$CFLAGS -Wno-declaration-after-statement";;
 esac
 
