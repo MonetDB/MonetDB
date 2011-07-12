@@ -546,9 +546,14 @@ yes-*-*)
 		;;
 	esac
 	case "$CC-$gcc_ver" in
+	*clang*-*|*-4.[[3-9]].*|*-[[5-9]].*)
+		dnl this triggers a warning (-> error) with gcc < 4.3
+		X_CFLAGS="$X_CFLAGS -Wstack-protector"
+		;;
+	esac
+	case "$CC-$gcc_ver" in
 	*clang*-*|*-3.[[5-9]].*|*-[[4-9]].*)
 		dnl gcc < 3.5 does not know these
-		X_CFLAGS="$X_CFLAGS -Wstack-protector"
 		X_CFLAGS="$X_CFLAGS -Wvariadic-macros"
 		;;
 	esac
