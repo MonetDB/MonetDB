@@ -839,7 +839,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 		}
 		temp = (tt == tt_table || tt == tt_array)?temp:SQL_PERSIST;
 		/* TODO: need sth. special for arrays??? */
-		return rel_table(sql->sa, DDL_CREATE_TABLE, sname, t, temp);
+		return rel_table(sql, DDL_CREATE_TABLE, sname, t, temp);
 	} else { /* [col name list] as subquery with or without data */
 		sql_rel *sq = NULL, *res = NULL;
 		dlist *as_sq = table_elements_or_subquery->data.lval;
@@ -861,7 +861,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 
 		/* insert query result into this table */ /* TODO: handle create_array_as_subquery */
 		temp = (tt == tt_table || tt == tt_array)?temp:SQL_PERSIST;
-		res = rel_table(sql->sa, DDL_CREATE_TABLE, sname, t, temp);
+		res = rel_table(sql, DDL_CREATE_TABLE, sname, t, temp);
 		if (with_data) {
 			res = rel_insert(sql, res, sq);
 		} else {
