@@ -945,7 +945,11 @@ alter_statement:
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_symbol(l, $6);
-	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
+	  if ($2 == SQL_TABLE)
+	  	$$ = _symbol_create_list( SQL_ALTER_TABLE, l );
+	  else /* $2 == SQL_ARRAY */
+	  	$$ = _symbol_create_list( SQL_ALTER_ARRAY, l );
+	}
  | ALTER TABLE qname ADD TABLE qname
 	{ dlist *l = L();
 	  append_list(l, $3);
@@ -955,17 +959,29 @@ alter_statement:
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_symbol(l, $5);
-	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
+	  if ($2 == SQL_TABLE)
+	  	$$ = _symbol_create_list( SQL_ALTER_TABLE, l );
+	  else /* $2 == SQL_ARRAY */
+	  	$$ = _symbol_create_list( SQL_ALTER_ARRAY, l );
+	}
  | ALTER table_or_array qname DROP drop_table_element
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_symbol(l, $5);
-	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
+	  if ($2 == SQL_TABLE)
+	  	$$ = _symbol_create_list( SQL_ALTER_TABLE, l );
+	  else /* $2 == SQL_ARRAY */
+	  	$$ = _symbol_create_list( SQL_ALTER_ARRAY, l );
+	}
  | ALTER table_or_array qname SET READ ONLY
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_symbol(l, NULL);
-	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
+	  if ($2 == SQL_TABLE)
+	  	$$ = _symbol_create_list( SQL_ALTER_TABLE, l );
+	  else /* $2 == SQL_ARRAY */
+	  	$$ = _symbol_create_list( SQL_ALTER_ARRAY, l );
+	}
  | ALTER USER ident passwd_schema
 	{ dlist *l = L();
 	  append_string(l, $3);
@@ -1301,18 +1317,28 @@ table_def:
     opt_temp table_or_array qname table_content_source opt_on_commit 
 	{ int commit_action = CA_COMMIT;
 	  dlist *l = L();
-	  append_int(l, $1);
+	  /* HACK: since table_content_source cannot distinguish a CREATE ARRAY
+	   * from a CREATE TABLE, we (mis)use the value holding opt_temp to
+	   * annotate that this is an ARRAY */
+	  if ($2 == SQL_TABLE)
+	  	append_int(l, $1);
+	  else /* $2 == SQL_ARRAY */
+	  	append_int(l, $2);
 	  append_list(l, $3);
 	  append_symbol(l, $4);
 	  if ($1 != SQL_PERSIST)
 		commit_action = $5;
 	  append_int(l, commit_action);
-	  $$ = _symbol_create_list( $2, l ); }
+	  if ($2 == SQL_TABLE)
+	    $$ = _symbol_create_list(SQL_CREATE_TABLE, l );
+	  else /* $2 == SQL_ARRAY */
+	    $$ = _symbol_create_list(SQL_CREATE_ARRAY, l );
+	}
  ;
 
 table_or_array:
-	TABLE	{$$= SQL_CREATE_TABLE;}
-	| ARRAY	{$$= SQL_CREATE_ARRAY;}
+	TABLE	{$$= SQL_TABLE;}
+	| ARRAY	{$$= SQL_ARRAY;}
 
 opt_temp:
     /* empty */		{ $$ = SQL_PERSIST; }
@@ -1977,7 +2003,7 @@ return_value:
       select_no_parens_orderby
    |  search_condition
    |  table_or_array '(' select_no_parens_orderby ')'	
-		{ $$ = _symbol_create_symbol(SQL_TABLE, $3); }
+		{ $$ = _symbol_create_symbol($1, $3); }
    |  sqlNULL 	{ $$ = _newAtomNode( NULL);  }
    ;
 
