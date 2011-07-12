@@ -740,16 +740,14 @@ yes-*-*)
 	dnl  Be picky; "-Werror" seems to be too rigid for autoconf...
 	CFLAGS="$CFLAGS -Wall -w2 -Wcheck"
 	dnl  Be rigid; MonetDB code is supposed to adhere to this... ;-)
-	dnl  Let warning #266 "function declared implicitly" become an error.
-	X_CFLAGS="$X_CFLAGS -we266"
-	dnl  Let remark #181 "argument is incompatible with corresponding format string conversion" become an error.
-	X_CFLAGS="$X_CFLAGS -we181"
-	dnl  Let remark #810 "conversion from "." to "." may lose significant bits" become an error.
-	X_CFLAGS="$X_CFLAGS -we810"
-	dnl  Let remark #111 "statement is unreachable" become an error.
-	X_CFLAGS="$X_CFLAGS -we111"
-	dnl  Let remark #271: "trailing comma is nonstandard" become an error.
-	X_CFLAGS="$X_CFLAGS -we271"
+	dnl  Let the follows remarks and warning become errors:
+	dnl  #266: "function declared implicitly"
+	dnl  #181: "argument is incompatible with corresponding format string conversion"
+	dnl  #810: "conversion from "." to "." may lose significant bits"
+	dnl  #111: "statement is unreachable"
+	dnl  #271: "trailing comma is nonstandard"
+	dnl  #593: "variable "." was set but never used"
+	X_CFLAGS="$X_CFLAGS -we266,181,810,271,593"
 	X_CFLAGS="$X_CFLAGS -Werror -Werror-all"
 	dnl  ... however, some things aren't solved, yet:
 	dnl  (for the time being,) we need to disable some warnings (making them remarks doesn't seem to work with -Werror):
