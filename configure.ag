@@ -575,7 +575,6 @@ yes-*-*)
 		X_CFLAGS="$X_CFLAGS -Wvariadic-macros"
 		;;
 	esac
-
 	case "$CC" in
 	*clang*)
 		;;
@@ -600,11 +599,16 @@ yes-*-*)
 				X_CFLAGS="$X_CFLAGS -Wlogical-op"
 				;;
 			esac
-
 			;;
 		esac
-		dnl these trigger a warning (-> error) with clang (2.8)
-		X_CFLAGS="$X_CFLAGS -Wcast-align"
+		case "$host" in
+		sparc*)
+			;;
+		*)
+			dnl these trigger a warning (-> error) with clang (2.8) and on sparc
+			X_CFLAGS="$X_CFLAGS -Wcast-align"
+			;;
+		esac
 		;;
 	esac
 
