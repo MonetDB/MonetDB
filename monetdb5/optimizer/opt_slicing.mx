@@ -440,7 +440,7 @@ OPTsliceDependency(Client cntxt, MalBlkPtr mb, int pc)
 	int i, j, fnd;
 	InstrPtr p;
 
-	mnstr_printf(cntxt->fdout,"#sliceDependency %d\n",pc);
+	(void) cntxt;
 	vec= (char*) GDKzalloc(mb->ssize * 2);
 	if( vec == 0)
 		return 0;
@@ -609,15 +609,11 @@ OPTcodegen(Client cntxt, MalBlkPtr mb, int pc, Gauge gauge )
 
 	/* supportive routines */
 	smb = OPTslicingStub(cntxt, mb, pc,  nmb, gauge);
-	if ( smb)
-		printFunction(cntxt->fdout, smb, 0, LIST_MAL_STMT);
 	msg = OPTdeadcode(cntxt, smb, 0, 0);
 	if ( msg)
 		goto wrapup;
 
 	cmb = OPTslicingCntrl(cntxt,mb,pc,nmb, gauge);
-	if ( cmb)
-		printFunction(cntxt->fdout, cmb, 0, LIST_MAL_STMT);
 	chkProgram(cntxt->nspace, cmb);
 	if ( cmb->errors)
 		goto wrapup;

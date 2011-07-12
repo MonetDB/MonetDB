@@ -153,6 +153,7 @@ structure to compute a group of common aggregates.
 		@:aggrX3_count3_loop_body(@1,@2,@3,@4,@5,@6,@7,oid *h = (oid*) Tloc(g, w))@
 		BATaccessEnd(g,USE_TAIL,MMAP_SEQUENTIAL);
 	}
+	break;
 @c
 /*	aggrX3_count3_loop_body
 	@8:	oid hh = (oid) (gt_offset + v); oid *h = &hh		g tail value calculation
@@ -184,7 +185,6 @@ structure to compute a group of common aggregates.
 		BATaccessEnd(b,b_use,MMAP_SEQUENTIAL);
 	if (!(@1 && cnt))
 		BATaccessEnd(bn,USE_HEAD|USE_HHASH|USE_TAIL,BATtordered(g)&BAThordered(e)&1?MMAP_SEQUENTIAL:MMAP_WILLNEED);
-	break;
 @h
 int
 CMDaggrX3_count3(BAT **ret, BAT *b, BAT *g, BAT *e, bit *ignore_nils);

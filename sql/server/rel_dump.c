@@ -612,7 +612,7 @@ read_prop( mvc *sql, sql_exp *exp, char *r, int *pos)
 	/* PROPs */
 	if (strncmp(r+*pos, "JOINIDX",  strlen("JOINIDX")) == 0) {
 		int old;
-		char *sname,*tname,*iname;
+		char *sname,*iname;
 		sql_schema *s = NULL;
 		prop *p;
 
@@ -625,7 +625,6 @@ read_prop( mvc *sql, sql_exp *exp, char *r, int *pos)
 			return sql_error(sql, -1, "JOINIDX: missing '.'\n");
 		r[*pos] = 0;
 		(*pos)++;
-		tname = r+*pos;
 		skipIdent(r,pos);
 		if (r[*pos] != '.') 
 			return sql_error(sql, -1, "JOINIDX: missing '.'\n");
@@ -689,7 +688,8 @@ read_exps(mvc *sql, sql_rel *lrel, sql_rel *rrel, char *r, int *pos, char bracke
 static sql_exp*
 exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, char *r, int *pos, int grp) 
 {
-	int not = 1, f = 0, old, d=0, s=0, unique = 0, no_nils = 0;
+	comp_type f = cmp_equal;
+	int not = 1, old, d=0, s=0, unique = 0, no_nils = 0;
 	char *tname, *cname = NULL, *e, *b = r + *pos, *st;
 	sql_exp *exp = NULL;
 	list *exps = NULL;

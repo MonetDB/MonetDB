@@ -766,6 +766,12 @@ public class MonetStatement implements Statement {
 	 * @throws SQLException if a database access error occurs
 	 */
 	public boolean getMoreResults(int current) throws SQLException {
+		// protect against people calling this on an unitialised state
+		if (lastResponseList == null) {
+			header = null;
+			return(false);
+		}
+
 		if (current == CLOSE_CURRENT_RESULT) {
 			lastResponseList.closeCurrentResponse();
 		} else if (current == CLOSE_ALL_RESULTS) {

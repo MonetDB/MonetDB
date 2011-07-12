@@ -1,0 +1,82 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2011 MonetDB B.V.
+# All Rights Reserved.
+
+module basket;
+
+pattern register(tab:str):void
+address BSKTregister
+comment "Initialize a new basket based on a specific table definition in the datacell schema");
+
+command lock{unsafe}(tbl:str,delay:int):void
+address BSKTlock
+comment "Lock a basket group and spinlock upon need";
+
+command lock{unsafe}(tbl:str):void
+address BSKTlock2
+comment "Lock a basket group ";
+
+command unlock{unsafe}(tbl:str):void
+address BSKTunlock
+comment "Unlock the basket";
+
+pattern grab(tbl:str):bat[:oid,:any]...
+address BSKTgrab
+comment "Take a snapshot of the basket, destroying the origin when flg is set";
+
+pattern update(tbl:str, cols:any...)
+address BSKTupdate
+comment "Dump the new tuples into the basket";
+
+pattern update(tbl:str, cols:bat[:oid,:any]...)
+address BSKTupdate
+comment "Dump the new tuples into the basket";
+
+command drop(tbl:str):void
+address BSKTdrop
+comment "Remove the basket";
+
+command threshold(tbl:str,N:int):bit
+address BSKTthreshold
+comment "Set an acceptance threshold of N events before inspecting";
+
+command window{unsafe}(tbl:str,N:int, S:int):bit
+address BSKTwindow
+comment "Use a window of N event and slide S afterwards";
+
+command timewindow{unsafe}(tbl:str, N:int, S:int):bit
+address BSKTtimewindow
+comment "Use a window of N milliseconds and slide S milliseconds afterwards";
+
+command beat(tbl:str,N:int):bit
+address BSKTbeat
+comment "Set an delay to N milliseconds";
+
+command reset():void
+address BSKTreset
+comment "Remove all baskets";
+
+command baskets():bat[:str,:bat]
+address BSKTtable
+comment "Inspect the datacell baskets";
+
+command errors():bat[:str,:bat]
+address BSKTtableerrors
+comment "Return the table with all errors";
+
+command dump()
+address BSKTdump
+comment "Dump the status of the basket table";

@@ -21,7 +21,7 @@ dnl All Rights Reserved.
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.60)
-AC_INIT([MonetDB], [11.4.0], [info@monetdb.org], [MonetDB])
+AC_INIT([MonetDB], [11.6.0], [info@monetdb.org], [MonetDB])
 AC_CONFIG_AUX_DIR([buildtools/conf])
 AC_CONFIG_MACRO_DIR([buildtools/conf])
 AC_CANONICAL_HOST
@@ -526,11 +526,11 @@ if test "x$enable_strict" = xyes; then
 case "$GCC-$CC-$host_os" in
 yes-*-*)
 	dnl  GNU (gcc/g++)
-	case "$gcc_ver-$host_os" in
-	*-cygwin*)
+	case "$host_os" in
+	cygwin*)
 		LDFLAGS="$LDFLAGS -no-undefined"
 		;;
-	*-mingw*)
+	mingw*)
 		dnl  On MinGW we need the -Wno-format flag since gcc
 		dnl  doesn't know about the %I64d format string for
 		dnl  long long
@@ -540,10 +540,10 @@ yes-*-*)
 	esac
 	dnl  Be picky; "-Werror" seems to be too rigid for autoconf...
 	CFLAGS="$CFLAGS -Wall"
-	case "$gcc_ver-$host_os" in
-	3.[[4-9]].*-*|[[4-9]].*-*)
+	case "$CC-$gcc_ver" in
+	*clang*-*|*-3.[[4-9]].*|*-[[4-9]].*)
 		CFLAGS="$CFLAGS -Wextra";;
-	*)
+	*-*)
 		CFLAGS="$CFLAGS -W";;
 	esac
 	dnl  Be rigid; MonetDB code is supposed to adhere to this... ;-)
@@ -551,13 +551,112 @@ yes-*-*)
 	    X_CFLAGS="$X_CFLAGS -Werror"
 	dnl  Make sure that gcc is as strict as icc, MSVC++, etc.:
 	    X_CFLAGS="$X_CFLAGS -Wpointer-arith"
-	case "$gcc_ver-$host_os" in
-	3.[[4-9]].*-*|[[4-9]].*-*)
+	case "$CC-$gcc_ver" in
+	*clang*-*|*-3.[[4-9]].*|*-[[4-9]].*)
 	    X_CFLAGS="$X_CFLAGS -Wdeclaration-after-statement";;
 	esac
 	X_CFLAGS="$X_CFLAGS -Wundef"
+
+	X_CFLAGS="$X_CFLAGS -Wformat=2 -Wno-format-nonliteral"
+	X_CFLAGS="$X_CFLAGS -Winit-self"
+	X_CFLAGS="$X_CFLAGS -Winvalid-pch"
+	X_CFLAGS="$X_CFLAGS -Wpacked"
+	X_CFLAGS="$X_CFLAGS -Wunknown-pragmas"
+	case "$CC-$gcc_ver" in
+	*clang*-*|*-4.[[4-9]].*|*-[[5-9]].*)
+		dnl these trigger a warning (-> error) with gcc < 4.4
+		X_CFLAGS="$X_CFLAGS -Wmissing-include-dirs"
+		;;
+	esac
+	case "$CC-$gcc_ver" in
+	*clang*-*|*-3.[[5-9]].*|*-[[4-9]].*)
+		dnl gcc < 3.5 does not know these
+		X_CFLAGS="$X_CFLAGS -Wstack-protector"
+		X_CFLAGS="$X_CFLAGS -Wvariadic-macros"
+		;;
+	esac
+
+	case "$CC" in
+	*clang*)
+		;;
+	*)
+		case "$gcc_ver" in
+		[[0-2]].*|3.[[0-4]].*)
+			dnl gcc < 3.5 triggers a warning (-> error) without this
+			X_CFLAGS="$X_CFLAGS -Wno-uninitialized"
+			;;
+		4.[[4-9]].*|[[5-9]].*)
+			dnl clang (2.8) & gcc < 4.4 do not know these
+			X_CFLAGS="$X_CFLAGS -Wpacked-bitfield-compat"
+			X_CFLAGS="$X_CFLAGS -Wsync-nand"
+			case "$gcc_ver" in
+			4.[[5-9]].*|[[5-9]].*)
+				dnl clang (2.8) & gcc < 4.5 do not know these
+				X_CFLAGS="$X_CFLAGS -Wjump-misses-init"
+				dnl these trigger a warning (-> error) with clang (2.8) & gcc < 4.5
+				X_CFLAGS="$X_CFLAGS -Wunreachable-code"
+				dnl clang (2.8) does not know these
+				dnl these trigger a warning (-> error) with gcc < 4.5
+				X_CFLAGS="$X_CFLAGS -Wlogical-op"
+				;;
+			esac
+
+			;;
+		esac
+		dnl these trigger a warning (-> error) with clang (2.8)
+		X_CFLAGS="$X_CFLAGS -Wcast-align"
+		;;
+	esac
+
+	dnl  Our code is not (yet?) up to these:
+	dnl X_CFLAGS="$X_CFLAGS -pedantic-errors -Wno-long-long"
+	dnl X_CFLAGS="$X_CFLAGS -Waggregate-return"
+	dnl X_CFLAGS="$X_CFLAGS -Wbad-function-cast"
+	dnl X_CFLAGS="$X_CFLAGS -Wcast-qual"
+	dnl X_CFLAGS="$X_CFLAGS -Wconversion"
+	dnl X_CFLAGS="$X_CFLAGS -Wdisabled-optimization"
+	dnl X_CFLAGS="$X_CFLAGS -Wfloat-equal"
+	dnl X_CFLAGS="$X_CFLAGS -Winline"
+	dnl X_CFLAGS="$X_CFLAGS -Wmissing-declarations"
+	dnl X_CFLAGS="$X_CFLAGS -Wmissing-format-attribute"
+	dnl X_CFLAGS="$X_CFLAGS -Wmissing-noreturn"
+	dnl X_CFLAGS="$X_CFLAGS -Wmissing-prototypes"
+	dnl X_CFLAGS="$X_CFLAGS -Wnested-externs"
+	dnl X_CFLAGS="$X_CFLAGS -Wold-style-definition"
+	dnl X_CFLAGS="$X_CFLAGS -Wpadded"
+	dnl X_CFLAGS="$X_CFLAGS -Wredundant-decls"
+	dnl X_CFLAGS="$X_CFLAGS -Wshadow"
+	dnl X_CFLAGS="$X_CFLAGS -Wstrict-prototypes"
+	dnl X_CFLAGS="$X_CFLAGS -Wswitch-default"
+	dnl X_CFLAGS="$X_CFLAGS -Wswitch-enum"
+	dnl X_CFLAGS="$X_CFLAGS -Wtraditional"
+	dnl X_CFLAGS="$X_CFLAGS -Wtraditional-conversion"
+	dnl X_CFLAGS="$X_CFLAGS -Wwrite-strings"
+	dnl case "$CC-$gcc_ver" in
+	dnl *clang*-*|*-3.[[5-9]].*|*-[[4-9]].*)
+	dnl 	dnl gcc < 3.5 does not know these
+	dnl 	X_CFLAGS="$X_CFLAGS -Wc++-compat"
+	dnl 	X_CFLAGS="$X_CFLAGS -Woverlength-strings"
+	dnl 	X_CFLAGS="$X_CFLAGS -Wsign-conversion"
+	dnl 	X_CFLAGS="$X_CFLAGS -Wstrict-overflow=5"
+	dnl 	X_CFLAGS="$X_CFLAGS -Wvla"
+	dnl 	case "$gcc_ver" in
+	dnl 	4.[[5-9]].*|[[5-9]].*)
+	dnl 		dnl gcc < 4.5 does not know this
+	dnl 		X_CFLAGS="$X_CFLAGS -Wunsuffixed-float-constants"
+	dnl 		;;
+	dnl 	esac
+	dnl 	;;
+	dnl esac
+
 	dnl  The default configure invocation when doing an rpmbuild also uses this
-	X_CFLAGS="$X_CFLAGS -Wp,-D_FORTIFY_SOURCE=2"
+	case "$CC-$gcc_ver" in
+	*clang*-*|*-4.[[1-9]].*|*-[[5-9]].*)
+		dnl _FORTIFY_SOURCE supported only with GCC 4.1 and later
+		X_CFLAGS="$X_CFLAGS -Wp,-D_FORTIFY_SOURCE=2"
+		;;
+	esac
+
 	dnl  Some versions of bison seem to generate code
 	dnl  that does not compile with `gcc -Wundef`;
 	dnl  we use GCC_BISON_CFLAGS to disable the respective warning as
@@ -567,24 +666,15 @@ yes-*-*)
 	dnl  Likewise, at least with gcc 4.3.0 and bison 2.3 on Gentoo 1.12.11.1,
 	dnl  gcc complains about some bison-generated code that defines an unused static function:
 	dnl  "warning: 'input' defined but not used".
-	case "$gcc_ver-$host_os" in
-	4.[[3-9]]*-*|[[5-9]].*-*)
+	case "$CC-$gcc_ver" in
+	*clang*-*)
+	    ;;
+	*-4.[[3-9]]*|*-[[5-9]].*)
 	    GCC_BISON_CFLAGS="$GCC_BISON_CFLAGS -Wno-unused-function";;
 	esac
-	dnl  Our code it not (yet?) up to these:
-	dnl X_CFLAGS="$X_CFLAGS -Wshadow"
-	dnl X_CFLAGS="$X_CFLAGS -Wconversion"
-	dnl X_CFLAGS="$X_CFLAGS -Wstrict-prototypes"
-	dnl X_CFLAGS="$X_CFLAGS -Wold-style-definition"
-	dnl X_CFLAGS="$X_CFLAGS -Wmissing-prototypes"
-	dnl X_CFLAGS="$X_CFLAGS -Wmissing-declarations"
-	dnl X_CFLAGS="$X_CFLAGS -Wmissing-format-attribute"
-	dnl X_CFLAGS="$X_CFLAGS -Wredundant-decls"
-	dnl X_CFLAGS="$X_CFLAGS -Wnested-externs"
-	dnl X_CFLAGS="$X_CFLAGS -Wunreachable-code"
 	dnl  ... however, some things are beyond our control:
-	case $gcc_ver-$host_os in
-	*-solaris*|*-aix*)
+	case $host_os in
+	solaris*|aix*)
 		dnl  In some cases, there is a (possibly) uninitialized
 		dnl  variable in bison.simple ... |-(
 		X_CFLAGS="$X_CFLAGS -Wno-uninitialized"
@@ -601,14 +691,28 @@ yes-*-*)
 	dnl  "warning: missing initializer".
 	dnl  Hence, we use GCC_SWIG_CFLAGS to disable the respective warning
 	dnl  as locally as possbile via "-Wno-strict-aliasing -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter -Wno-undef -Wno-missing-field-initializers"
-	dnl  (see also sql/backends/monet5/Makefile.ag, clients/perl/Cimpl/Makefile.ag).
-	GCC_SWIG_CFLAGS="$GCC_SWIG_CFLAGS -Wno-strict-aliasing -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter -Wno-undef"
-	case "$gcc_ver-$host_os" in
-	[[4-9]].*-*)
+	dnl  (see also clients/perl/Cimpl/Makefile.ag).
+	GCC_SWIG_CFLAGS="$GCC_SWIG_CFLAGS -Wno-strict-aliasing -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter -Wno-undef -Wno-unused-value"
+	case "$CC-$gcc_ver" in
+	*clang*-*)
+		;;
+	*-3.[[5-9]].*|*-[[4-9]].*)
+		dnl clang (2.8) & gcc < 3.5 do not know this
+		GCC_SWIG_CFLAGS="$GCC_SWIG_CFLAGS -Wno-logical-op"
+		case "$gcc_ver" in
+		3.[[5-9]].*|4.[[0-4]].*)
+			dnl 3.4 < gcc < 4.5 trigger a warning (-> error) without this
+			GCC_SWIG_CFLAGS="$GCC_SWIG_CFLAGS -Wno-nonnull"
+			;;
+		esac
+		;;
+	esac
+	case "$gcc_ver" in
+	[[4-9]].*)
 	    dnl  -Wno-missing-field-initializers is only available as of gcc 4.*
 	    GCC_SWIG_CFLAGS="$GCC_SWIG_CFLAGS -Wno-missing-field-initializers"
 	    ;;
-	*-*)
+	*)
 	    dnl  need to use -Wno-extra with older gcc
 	    GCC_SWIG_CFLAGS="$GCC_SWIG_CFLAGS -Wno-extra"
 	    ;;
@@ -657,14 +761,20 @@ yes-*-*)
 	*)	CFLAGS="$CFLAGS -ansi";;
 	esac
 	dnl  Be picky; "-Werror" seems to be too rigid for autoconf...
-	CFLAGS="$CFLAGS -Wall -w2"
+	CFLAGS="$CFLAGS -Wall -w2 -Wcheck"
 	dnl  Be rigid; MonetDB code is supposed to adhere to this... ;-)
-	dnl  Let warning #266 "function declared implicitly" become an error.
-	X_CFLAGS="$X_CFLAGS -we266"
-	X_CFLAGS="$X_CFLAGS -Werror"
+	dnl  Let the follows remarks and warning become errors:
+	dnl  #266: "function declared implicitly"
+	dnl  #181: "argument is incompatible with corresponding format string conversion"
+	dnl  #810: "conversion from "." to "." may lose significant bits"
+	dnl  #111: "statement is unreachable"
+	dnl  #271: "trailing comma is nonstandard"
+	dnl  #593: "variable "." was set but never used"
+	X_CFLAGS="$X_CFLAGS -we266,181,810,271,593"
+	X_CFLAGS="$X_CFLAGS -Werror -Werror-all"
 	dnl  ... however, some things aren't solved, yet:
 	dnl  (for the time being,) we need to disable some warnings (making them remarks doesn't seem to work with -Werror):
-	X_CFLAGS="$X_CFLAGS -wd1418,1419,981,810,193,111,1357"
+	X_CFLAGS="$X_CFLAGS -wd1418,1419,981,193,1357"
 	dnl ICC 11 warns about non-pointer conversion from "<type>" to
 	dnl "<smaller>" may lose significant bits, it does however, also for
 	dnl constants like short s = 1234, which is too much
@@ -680,12 +790,11 @@ yes-*-*)
 	dnl  #1418: external definition with no prior declaration
 	dnl  #1419: external declaration in primary source file
 	dnl  # 981: operands are evaluated in unspecified order
-	dnl  # 810: conversion from "." to "." may lose significant bits
 	dnl  # 193: zero used for undefined preprocessing identifier
-	dnl  # 111: statement is unreachable
 	dnl  #1357: optimization disabled due to excessive resource requirements; contact Intel Premier Support for assistance
 	dnl  #1572: floating-point equality and inequality comparisons are unreliable
 	dnl  #1599: declaration hides variable 
+	dnl  #2259: non-pointer conversion from "." to "." may lose significant bits
 
 	dnl  (At least on Fedora Core 4,) bison 2.0 seems to generate code
 	dnl  that icc does not like; since the problem only occurs with
@@ -714,7 +823,7 @@ yes-*-*)
 	dnl  'error #310: old-style parameter list (anachronism)'.
 	dnl  Hence, we use ICC_SWIG_CFLAGS to disable the respective warning
 	dnl  as locally as possbile via "-wd869 -wd177 -wd310"
-	dnl  (see also sql/backends/monet5/Makefile.ag, clients/perl/Cimpl/Makefile.ag).
+	dnl  (see also clients/perl/Cimpl/Makefile.ag).
 	ICC_SWIG_CFLAGS="$ICC_SWIG_CFLAGS -wd869 -wd177 -wd310"
 
 	NO_INLINE_CFLAGS="-fno-inline -fno-inline-functions"
@@ -3232,8 +3341,8 @@ esac
 
 dnl  CFLAGS for our code are stricter than what autoconf can cope with.
 CFLAGS="$CFLAGS \$(X_CFLAGS)"
-case "$GCC-$gcc_ver-$host_os" in
-yes-3.[[4-9]].*-*|yes-[[4-9]].*-*)
+case "$GCC-$CC-$gcc_ver" in
+yes-*clang*-*|yes-*-3.[[4-9]].*|yes-*-[[4-9]].*)
 	CFLAGS="$CFLAGS -Wno-declaration-after-statement";;
 esac
 

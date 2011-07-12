@@ -23,12 +23,13 @@ INCLUDES = $(MONETDB5_INCS) $(MONETDB_INCS)
 lib__example = {
 	MODULE
 	DIR = libdir/MonetDB5
-	SOURCES = example.mx
+	SOURCES = example.c
 	LIBS = $(MONETDB5_MODS) 
 }
 
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/MonetDB5
-	SOURCES = example.mx
+	SOURCES = example.mal
 }
+EXTRA_DIST = example.mal example.h

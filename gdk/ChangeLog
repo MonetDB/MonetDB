@@ -1,7 +1,3 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
-* Wed May 11 2011 Sjoerd Mullender <sjoerd@acm.org>
-- Implemented automatic conversion of a 64-bit database with 32-bit OIDs
-  to one with 64-bit OIDs.
-

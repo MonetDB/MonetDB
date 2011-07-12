@@ -45,6 +45,10 @@ address MATpack
 comment "Define a Merge Association Table (MAT). Faal back to the pack operation
 when this is called ";
 
+pattern pack(:any_2...):bat[:void,:any_2]
+address MATpackValues
+comment "Materialize the MAT (of values) into a BAT";
+
 pattern pack(:any_2...):bat[:oid,:any_2]
 address MATpackValues
 comment "Materialize the MAT (of values) into a BAT";

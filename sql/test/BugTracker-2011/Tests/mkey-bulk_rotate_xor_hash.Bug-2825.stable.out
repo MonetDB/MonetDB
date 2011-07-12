@@ -1,0 +1,58 @@
+stdout of test 'mkey-bulk_rotate_xor_hash.Bug-2825` in directory 'test/BugTracker-2011` itself:
+
+
+# 18:51:40 >  
+# 18:51:40 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/HG/Apr2011/prefix/--disable-debug_--enable-optimize_--disable-assert/var/MonetDB" --set mapi_open=true --set mapi_port=32579 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_test_BugTracker-2011" --set mal_listing=0 ; echo ; echo Over..
+# 18:51:40 >  
+
+# MonetDB 5 server v11.3.4
+# This is an unreleased version
+# Serving database 'mTests_test_BugTracker-2011', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:32579/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+
+Over..
+
+# 18:51:40 >  
+# 18:51:40 >  mclient -lsql -ftest -i -e --host=rig --port=32579 
+# 18:51:40 >  
+
+#create table table1 (user_id  integer, item_id integer);
+#create table table2 (user_id  integer, item_id integer, primary key(user_id, item_id));
+#insert into table1 values (1,1);
+[ 1	]
+#INSERT INTO table2(user_id,item_id)
+#SELECT DISTINCT USER_ID, ITEM_ID 
+#FROM table1;
+[ 1	]
+#delete from table2;
+[ 1	]
+#insert into table1 values (1,1);
+[ 1	]
+#SELECT DISTINCT USER_ID, ITEM_ID
+#FROM table1;
+% sys.table1,	sys.table1 # table_name
+% user_id,	item_id # name
+% int,	int # type
+% 1,	1 # length
+[ 1,	1	]
+#INSERT INTO table2(user_id,item_id) 
+#SELECT  DISTINCT USER_ID, ITEM_ID 
+#FROM table1;
+[ 1	]
+#drop table table1;
+#drop table table2;
+
+# 18:51:40 >  
+# 18:51:40 >  Done.
+# 18:51:40 >  
+

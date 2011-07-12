@@ -41,8 +41,15 @@
 #include <pthread.h>
 #endif
 #include <sys/types.h>
-#include <sys/socket.h>
-#include <netdb.h>
+#ifdef HAVE_SYS_SOCKET_H
+# include <sys/socket.h>
+#endif
+#ifdef NATIVE_WIN32
+# include <winsock.h>
+#endif
+#ifdef HAVE_NETDB_H
+# include <netdb.h>
+#endif
 
 #ifndef HAVE_GETOPT_LONG
 # include "monet_getopt.h"
@@ -81,9 +88,9 @@ main(int argc, char **argv)
 	char *host = NULL;
 	int port = 0;
 	char clisten = 0;
-	char udp = 0;
-	char zip = 0;
-	char buffer = 0;
+	/* char udp = 0; */
+	/* char zip = 0; */
+	/* char buffer = 0; */
 	char block = 0;
 	SOCKET s = INVALID_SOCKET;
 	stream *in = NULL;
@@ -113,16 +120,16 @@ main(int argc, char **argv)
 				clisten = 1;
 				break;
 			case 'u':
-				udp = 1;
+				/* udp = 1; */
 				break;
 			case 'g':
-				zip = 1;
+				/* zip = 1; */
 				break;
 			case 'j':
-				zip = 2;
+				/* zip = 2; */
 				break;
 			case 'b':
-				buffer = 1;
+				/* buffer = 1; */
 				break;
 			case 'B':
 				block = 1;
