@@ -49,6 +49,10 @@ pattern pack(:any_2...):bat[:void,:any_2]
 address MATpackValues
 comment "Materialize the MAT (of values) into a BAT";
 
+pattern pack(:any_2...):bat[:oid,:any_2]
+address MATpackValues
+comment "Materialize the MAT (of values) into a BAT";
+
 pattern pack(b:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
 address MATpack
 comment "Materialize the MAT into a BAT";

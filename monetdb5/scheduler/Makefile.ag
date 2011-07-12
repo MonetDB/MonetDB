@@ -31,8 +31,7 @@ lib_scheduler = {
 		run_isolate.mx \
 		run_memo.mx \
 		run_octopus.mx \
-		run_pipeline.mx \
-		run_tarantula.mx
+		run_pipeline.mx 
 }
 
 headers_mal = {

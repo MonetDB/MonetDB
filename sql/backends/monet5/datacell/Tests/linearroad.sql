@@ -31,6 +31,8 @@ call datacell.basket('lrbm.preAccident2');
 CREATE TABLE lrbm.accident(carid1 integer, carid2 integer, firstMinute integer, lastMinute integer, dir integer, seg integer, pos integer);
 call datacell.basket('lrbm.accident');
 
+CREATE TABLE lrbm.statisticsinput ( dir int, seg int, "time" int);
+call datacell.basket('lrbm.statisticsinput');
 CREATE TABLE lrbm.statistics(dir  int,seg  int,time_minute int,numvehicles  int,lav   float,toll  int,accident int,accidentSeg int);
 call datacell.basket('lrbm.statistics');
 
@@ -54,13 +56,22 @@ CREATE TABLE lrbm.dailyExpenditureanswer ( "carid" int, "day2" int, "bal" int, "
 CREATE TABLE lrbm.completehistory ( "carid" int, "day2" int, "xway" int, "toll" int);
 CREATE TABLE lrbm.accountBalanceRequests ( "type" int, "time" int, "carid" int, "xway" int, "qid" int, "day2" int);
 
-CREATE PROCEDURE lrbm.accidents()
+-- split the incoming stream over the 5 different groups first.
+CREATE PROCEDURE lrb.splitter()
 BEGIN
 	INSERT INTO lrbm.preAccident1 (time, carid, lane, dir, seg, pos) 
 	SELECT  time, carid, lane, dir, seg, pos 
 	FROM lrbm.input 
 	WHERE   speed = 0 AND type = 0;
 
+	-- collect all unique triples
+	INSERT INTO lrbm.statisticsinput
+	SELECT dir, seg, "time" FROM lrbm.input WHERE type = 0
+	GROUP BY dir, seg, "time";
+END;
+
+CREATE PROCEDURE lrbm.accidents()
+BEGIN
 	INSERT INTO lrbm.preAccident2 (carid1 ,carid2 , time , dir , seg , pos) 
 	SELECT  in1.carid, in2.carid, in2.time, in1.dir, in1.seg, in1.pos 
 	FROM    lrbm.preAccident1 AS in1, 
@@ -94,12 +105,15 @@ BEGIN
 	GROUP BY dir,seg,pos;
 END;
 
+
 CREATE PROCEDURE lrbm.statistics()
 BEGIN
+	-- how to ensure you only have unique dir/seq/tme triples, use the time window
 	INSERT INTO  lrbm.statistics (dir,seg,time_minute,numvehicles,lav,toll,accident,accidentSeg) 
 	SELECT dir, seg, tme+1, 0,null,null,null,null 
 	FROM 
-		(SELECT dir AS dir , seg AS seg, (time/60) AS tme FROM lrbm.input WHERE type = 0) AS tmpT 
+		(SELECT dir AS dir , seg AS seg, (time/60) AS tme FROM lrbm.statisticsinput  and 
+			datacell.window('lrbm.statisticsinput',interval '1' second, interval '1' second) AS tmpT 
 	GROUP BY dir,seg,tme;
 END;
 
@@ -511,4 +525,4 @@ DROP TABLE lrbm.dailyExpenditureAnswer ;
 DROP TABLE lrbm.dailyExpenditureRequests ;
 DROP TABLE lrbm.completehistory;
 DROP TABLE lrbm.accountBalanceRequests ;
-
+DROP TABLE lrbm.statisticsinput;
