@@ -692,7 +692,7 @@ load_type(sql_trans *tr, sql_schema *s, oid rid)
 static sql_table *
 schema_get_table(sql_schema *s, sqlid id)
 {
-	if (s) {
+	if (s && s->tables.set) {
 		node *n;
 
 		for (n=s->tables.set->h; n; n = n->next) {
