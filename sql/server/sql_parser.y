@@ -1651,8 +1651,7 @@ dim_exp :
  |	'-' literal
 	{
 		dlist *l = L();
-		append_list(l, 
-			append_string(l, sa_strdup(SA, "sql_neg")));
+		append_string(l, sa_strdup(SA, "sql_neg"));
 		$$= append_symbol(l, $2);
 	}
   | '*'
