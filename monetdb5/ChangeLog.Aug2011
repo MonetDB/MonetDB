@@ -1,6 +1,10 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Wed Jul 13 2011 Fabian Groffen <fabian@cwi.nl>
+- Make crackers optional and disable by default, since it wasn't used
+  normally
+
 * Fri Apr 22 2011 Fabian Groffen <fabian@cwi.nl>
 - Authorisation no longer takes scenarios into account.  Access for only
   sql or mal is no longer possible.  Any credentials now mean access to

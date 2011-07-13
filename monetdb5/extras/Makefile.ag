@@ -15,5 +15,5 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = compiler crackers HAVE_RAPTOR?rdf HAVE_SPHINXCLIENT?sphinx
+SUBDIRS = compiler ENABLE_CRACKERS?crackers HAVE_RAPTOR?rdf HAVE_SPHINXCLIENT?sphinx
 

@@ -312,7 +312,7 @@ OPTslicingCntrl(Client cntxt, MalBlkPtr mb, int pc, MalBlkPtr pmb, Gauge gauge)
 	MalBlkPtr cmb;
 	Symbol s;
 	char nme[BUFSIZ];
-	int tpe, x, i, j, k, *alias, nrpack;
+	int /*tpe,*/ x, i, j, k, *alias, nrpack;
 	InstrPtr call, ret, q, *pack;
 
 	(void) gauge;
@@ -384,7 +384,7 @@ OPTslicingCntrl(Client cntxt, MalBlkPtr mb, int pc, MalBlkPtr pmb, Gauge gauge)
 		setVarType(cmb,x,TYPE_int);
 	}
 
-	tpe = getArgType( pmb, getInstrPtr(pmb,0),0);
+	/* tpe = getArgType( pmb, getInstrPtr(pmb,0),0); */
 
 	for ( i = 0; i < nrpeers ; i++) {
 		q= copyInstruction(call);
