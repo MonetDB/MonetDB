@@ -435,6 +435,7 @@ AC_C_BIGENDIAN()
 LINUX_DIST=''
 case "$host_os" in
     linux*)
+	dnl  Please keep this aligned / in sync with testing/Mtest.py.in !
 	AC_MSG_CHECKING(which Linux distribution we're using) 
 	if test -s /etc/fedora-release ; then
 		LINUX_DIST="`cat /etc/fedora-release | head -n1 \
