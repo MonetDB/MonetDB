@@ -441,7 +441,7 @@ case "$host_os" in
 			| sed 's|^.*\(Fedora\).* release \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\2|'`" 
 	elif test -s /etc/centos-release ; then
 		LINUX_DIST="`cat /etc/centos-release | head -n1 \
-			| sed 's|^\(CentOS\) release \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\2|'`"
+			| sed 's|^\(CentOS\).* release \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\2|'`"
 	elif test -s /etc/yellowdog-release ; then
 		LINUX_DIST="`cat /etc/yellowdog-release | head -n1 \
 			| sed 's|^\(Yellow\) Dog Linux release \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\2|'`"
@@ -449,7 +449,7 @@ case "$host_os" in
 		LINUX_DIST="`cat /etc/redhat-release | head -n1 \
 			| sed 's|^.*\(Red\) \(Hat\).* Linux *\([[A-Z]]*\) release \([[0-9]][[^ \n]]*\)\( .*\)*$|\1\2:\4\3|' \
 			| sed 's|^Red Hat Enterprise Linux \([[AW]]S\) release \([[0-9]][[^ \n]]*\)\( .*\)*$|RHEL:\2\1|' \
-			| sed 's|^\(CentOS\) release \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\2|' \
+			| sed 's|^\(CentOS\).* release \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\2|' \
 			| sed 's|^\(Scientific\) Linux SL release \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\2|'`" 
 	elif test -s /etc/SuSE-release ; then
 		LINUX_DIST="`cat /etc/SuSE-release   | head -n1 \
