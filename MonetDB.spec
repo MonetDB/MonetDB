@@ -33,7 +33,10 @@ BuildRequires: bison
 BuildRequires: bzip2-devel
 # BuildRequires: cfitsio-devel
 BuildRequires: flex
+%if %{?centos:0}%{!?centos:1}
+# no geos library on CentOS
 BuildRequires: geos-devel >= 2.2.0
+%endif
 BuildRequires: libcurl-devel
 BuildRequires: libuuid-devel
 BuildRequires: libxml2-devel
@@ -263,8 +266,8 @@ program.
 %{gemdir}/doc/activerecord-monetdb-adapter-0.1/*
 %{gemdir}/doc/ruby-monetdb-sql-0.1/*
 %{gemdir}/cache/*.gem
-%dir %{gemdir}/gems/activerecord-monetdb-adapter-0.1
-%dir %{gemdir}/gems/ruby-monetdb-sql-0.1
+# %dir %{gemdir}/gems/activerecord-monetdb-adapter-0.1
+# %dir %{gemdir}/gems/ruby-monetdb-sql-0.1
 %{gemdir}/gems/activerecord-monetdb-adapter-0.1
 %{gemdir}/gems/ruby-monetdb-sql-0.1
 %{gemdir}/specifications/*.gemspec
@@ -306,6 +309,7 @@ developer.
 %{_bindir}/sqlsample.pl
 %{_bindir}/sqlsample.py
 
+%if %{?centos:0}%{!?centos:1}
 %package geom-MonetDB5
 Summary: MonetDB5 SQL GIS support module
 Group: Applications/Databases
@@ -328,6 +332,7 @@ extensions for MonetDB-SQL-server5.
 %{_libdir}/monetdb5/createdb/*_geom.sql
 %{_libdir}/monetdb5/geom.mal
 %{_libdir}/monetdb5/lib_geom.so
+%endif
 
 %package -n MonetDB5-server
 Summary: MonetDB - Monet Database Management System
@@ -376,7 +381,9 @@ fi
 %{_libdir}/libmonetdb5.so.*
 %dir %{_libdir}/monetdb5
 %dir %{_libdir}/monetdb5/autoload
+%if %{?centos:0}%{!?centos:1}
 %exclude %{_libdir}/monetdb5/geom.mal
+%endif
 # %exclude %{_libdir}/monetdb5/rdf.mal
 %exclude %{_libdir}/monetdb5/sql.mal
 %exclude %{_libdir}/monetdb5/sql_bpm.mal
@@ -385,7 +392,9 @@ fi
 %{_libdir}/monetdb5/autoload/*_vault.mal
 %{_libdir}/monetdb5/autoload/*_lsst.mal
 %{_libdir}/monetdb5/autoload/*_udf.mal
+%if %{?centos:0}%{!?centos:1}
 %exclude %{_libdir}/monetdb5/lib_geom.so
+%endif
 # %exclude %{_libdir}/monetdb5/lib_rdf.so
 %exclude %{_libdir}/monetdb5/lib_sql.so
 %{_libdir}/monetdb5/*.so
@@ -438,7 +447,9 @@ use SQL with MonetDB, you will need to install this package.
 %{_libdir}/monetdb5/lib_sql.so
 %{_libdir}/monetdb5/*.sql
 %dir %{_libdir}/monetdb5/createdb
+%if %{?centos:0}%{!?centos:1}
 %exclude %{_libdir}/monetdb5/createdb/*_geom.sql
+%endif
 # %exclude %{_libdir}/monetdb5/createdb/*_rdf.sql
 %{_libdir}/monetdb5/createdb/*
 %{_libdir}/monetdb5/sql*.mal
@@ -538,6 +549,7 @@ developer, but if you do want to test, this is the package you need.
 	--enable-fits=no \
 	--with-valgrind=no \
 	--with-mseed=no \
+	--with-geos=%{?centos:no}%{!?centos:yes}
 	%{?oid32:--enable-oid32} \
 	%{?comp_cc:CC="%{comp_cc}"} \
 	%{?_with_netcdf} %{?_without_netcdf}

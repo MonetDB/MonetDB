@@ -2769,7 +2769,7 @@ if sys.platform == 'linux2' and CONDITIONALS['CROSS_COMPILING']:
     RELEASE = "5.2"
 
 if SYST == "Linux":
-    #  Please keep this aligned / in sync with configure.ag & TestTools/.Mconfig.rc & TestTools/MdoServer !
+    #  Please keep this aligned / in sync with configure.ag !
     LINUX_DIST=''
     if os.path.isfile('/etc/fedora-release'):
         l = open('/etc/fedora-release').readline()
@@ -2778,7 +2778,7 @@ if SYST == "Linux":
             LINUX_DIST = '%s:%s' % (x.group(1),x.group(2))
     elif os.path.isfile('/etc/centos-release'):
         l = open('/etc/centos-release').readline()
-        x = re.compile('^(CentOS) release ([0-9][^ \n]*)( .*)*$').match(l)
+        x = re.compile('^(CentOS).* release ([0-9][^ \n]*)( .*)*$').match(l)
         if x:
             LINUX_DIST = '%s:%s' % (x.group(1),x.group(2))
     elif os.path.isfile('/etc/yellowdog-release'):
@@ -2790,7 +2790,7 @@ if SYST == "Linux":
         l = open('/etc/redhat-release').readline()
         x0 = re.compile('^.*(Red) (Hat).* Linux *([A-Z]*) release ([0-9][^ \n]*)( .*)*$').match(l)
         x1 = re.compile('^Red Hat Enterprise Linux ([AW]S) release ([0-9][^ \n]*)( .*)*$').match(l)
-        x2 = re.compile('^(CentOS) release ([0-9][^ \n]*)( .*)*$').match(l)
+        x2 = re.compile('^(CentOS).* release ([0-9][^ \n]*)( .*)*$').match(l)
         x3 = re.compile('^(Scientific) Linux SL release ([0-9][^ \n]*)( .*)*$').match(l)
         if x0:
             LINUX_DIST = '%s%s:%s%s' % (x0.group(1),x0.group(2),x0.group(4),x0.group(3))
