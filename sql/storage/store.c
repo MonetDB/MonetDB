@@ -4357,7 +4357,6 @@ key_create_done(sql_allocator *sa, sql_key *k)
 			if (!k->idx->key)
 				k->idx->key = k;
 		}
-		return k;
 	}
 
 	/* we need to create an index */
