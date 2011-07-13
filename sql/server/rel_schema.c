@@ -542,7 +542,7 @@ static int
 create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 {
 	dlist *l = s->data.lval;
-	dlist *dim = NULL;
+	dlist *dim = NULL, *dim_range = NULL, *dim_start = NULL, *dim_step = NULL, *dim_stop = NULL;
 	char *cname = l->h->data.sval;
 	sql_subtype *ctype = &l->h->next->data.typeval;
 	dlist *opt_list = NULL;
@@ -565,22 +565,106 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 			return SQL_ERR;
 		}
 
+		cs = mvc_create_column(sql, t, cname, ctype);
 		if (l->h->next->next->next) {
 			/* this is a dimension, see its structure in parser.y/column_def */
-			assert(l->h->next->next->next->data.sym->token == SQL_DIMENSION);
+			assert(l->h->next->next->next->type == type_symbol && l->h->next->next->next->data.sym->token == SQL_DIMENSION);
 			if (t->type != tt_array){
 				sql_error(sql, 02, "%s %s: dimension column '%s' used in non-ARRAY\n", (alter)?"ALTER":"CREATE", (t->type==tt_table)?"TABLE":"OTHER_TT", cname);
 				return SQL_ERR;
 			}
 
-			sql_dimspec ds;
-			if (dim = l->h->next->next->next->data.sym->data.lval) {
-				/* 'DIMENSION dim_range' case */
+			/* TODO: check if this is the correct place where the NULL
+			 * dim_range list of the "DIMENSION" case is denoted */
+			dim = l->h->next->next->next->data.sym->data.lval;
+			if (dim && !dim->h->next) { /* "DIMENSION dim_range" case */
+				dim_range = dim->h->data.lval;
 
-			} /* otherwise, 'DIMENSION' case */
-			/* cs = mvc_create_dimension(sql, t, cname, ctype, ds); */
-		} else { /* normal column */
-			cs = mvc_create_column(sql, t, cname, ctype);
+				cs->dim = ZNEW(sql_dimspec);
+				switch (dim_range->cnt) { /* TODO: what if '-' is used in a non-numeric dim_exp? */
+					case 1:
+						if(dim_range->h->type == type_string) { /* TODO: implementation: look up the constraints of the [seq] */
+							sql_error(sql, 02, "%s ARRAY: dimension column '%s' uses sequence \"%s\" as constraint, not implemented yet\n", (alter)?"ALTER":"CREATE", cname, dim_range->h->data.sval);
+							return SQL_ERR;
+						} else { /* TODO: check column data type, in cases [size] or [-size], it MUST be INT */
+							assert(dim_range->h->type == type_list);
+							if (dim_range->h->data.lval->h->type == type_symbol){
+								if (dim_range->h->data.lval->h->data.sym) { 		/* the case: [size] */
+									cs->dim->start = ZNEW(lng); *cs->dim->start = 0; /* TODO: make this configurable */
+									cs->dim->step = ZNEW(lng); *cs->dim->step = 1;
+									cs->dim->stop = ZNEW(lng); *cs->dim->stop = atom_get_int(((AtomNode*)dim_range->h->data.lval->h->data.sym)->a);
+								} 													/* else the case [*]: nothing to do */
+							} else { 												/* the case: [-size] */
+								assert(dim_range->h->data.lval->h->type == type_string && strcmp(dim_range->h->data.lval->h->data.sval, "sql_neg")==0);
+
+								cs->dim->start = ZNEW(lng); *cs->dim->start = 0; /* TODO: make this configurable */
+								cs->dim->step = ZNEW(lng); *cs->dim->step = -1;
+								atom_neg( ((AtomNode *) dim_range->h->data.lval->h->next->data.sym)->a );
+								cs->dim->stop = ZNEW(lng); *cs->dim->stop = atom_get_int(((AtomNode*)dim_range->h->data.lval->h->next->data.sym)->a);
+							}
+						}
+						break;
+					case 2:
+						dim_start = dim_range->h->data.lval;
+						if (dim_start->h->type == type_string) { /* handle negative (numerical) value */
+							cs->dim->start = ZNEW(lng);
+							atom_neg( ((AtomNode *) dim_start->h->next->data.sym)->a );
+							*cs->dim->start = atom_get_int( ((AtomNode *) dim_start->h->next->data.sym)->a );
+						} else if (dim_start->h->data.lval) { /* handle non-negative value */
+							cs->dim->start = ZNEW(lng);
+							*cs->dim->start = atom_get_int(((AtomNode *) dim_start->h->data.sym)->a);
+						} /* else start == '*': nothing to do */
+
+						dim_stop = dim_range->h->next->data.lval;
+						if (dim_stop->h->type == type_string) { /* handle negative (numerical) value */
+							cs->dim->stop = ZNEW(lng);
+							atom_neg( ((AtomNode *) dim_stop->h->next->data.sym)->a );
+							*cs->dim->stop = atom_get_int( ((AtomNode *) dim_stop->h->next->data.sym)->a );
+						} else if (dim_stop->h->data.lval) { /* handle non-negative value */
+							cs->dim->stop = ZNEW(lng);
+							*cs->dim->stop = atom_get_int(((AtomNode *) dim_stop->h->data.sym)->a);
+						} /* else stop == '*': nothing to do */
+						break;
+					case 3:
+						dim_start = dim_range->h->data.lval;
+						if (dim_start->h->type == type_string) { /* handle negative (numerical) value */
+							cs->dim->start = ZNEW(lng);
+							atom_neg( ((AtomNode *) dim_start->h->next->data.sym)->a );
+							*cs->dim->start = atom_get_int( ((AtomNode *) dim_start->h->next->data.sym)->a );
+						} else if (dim_start->h->data.lval) { /* handle non-negative value */
+							cs->dim->start = ZNEW(lng);
+							*cs->dim->start = atom_get_int(((AtomNode *) dim_start->h->data.sym)->a);
+						} /* else start == '*': nothing to do */
+
+						dim_step = dim_range->h->next->data.lval;
+						if (dim_step->h->type == type_string) { /* handle negative (numerical) value */
+							cs->dim->step = ZNEW(lng);
+							*cs->dim->step = atom_get_int( ((AtomNode *) dim_step->h->next->data.sym)->a );
+						} else if (dim_step->h->data.lval) { /* handle non-negative value */
+							cs->dim->step = ZNEW(lng);
+							*cs->dim->step = atom_get_int(((AtomNode *) dim_step->h->data.sym)->a);
+						} /* else step == '*': nothing to do */
+
+						dim_stop = dim_range->h->next->next->data.lval;
+						if (dim_stop->h->type == type_string) { /* handle negative (numerical) value */
+							cs->dim->stop = ZNEW(lng);
+							atom_neg( ((AtomNode *) dim_stop->h->next->data.sym)->a );
+							*cs->dim->stop = atom_get_int( ((AtomNode *) dim_stop->h->next->data.sym)->a );
+						} else if (dim_stop->h->data.lval) { /* handle non-negative value */
+							cs->dim->stop = ZNEW(lng);
+							*cs->dim->stop = atom_get_int(((AtomNode *) dim_stop->h->data.sym)->a);
+						} /* else stop == '*': nothing to do */
+						break;
+					default:
+						sql_error(sql, 02, "%s ARRAY: dimension '%s' has wrong number of range constraints %d\n", (alter)?"ALTER":"CREATE", cname, dim_range->cnt);
+						return SQL_ERR;
+				}
+			} else if (dim && dim->h->next) {
+				sql_error(sql, 02, "%s ARRAY: dimension '%s' constraint with syntax 'ARRAY dim_range_list' not implemented yet\n", (alter)?"ALTER":"CREATE", cname);
+				return SQL_ERR;
+			} /* else "DIMENSION" case: nothing to do */
+
+			/* TODO: the case "ARRAY dim_range_list" is not dealt with */
 		}
 		if (column_options(sql, opt_list, ss, t, cs) == SQL_ERR)
 			return SQL_ERR;
@@ -796,7 +880,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 	int tt = (temp == SQL_STREAM)?tt_stream:
 	         ((temp == SQL_MERGE_TABLE)?tt_merge_table:
 			  ((temp == SQL_ARRAY)? tt_array:tt_table));
-	char *t_a = (tt == tt_array)?"TABLE":"ARRAY";
+	char *t_a = (tt == tt_array)?"ARRAY":"TABLE";
 
 	(void)create;
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
