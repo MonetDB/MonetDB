@@ -535,107 +535,6 @@ yes-*-*)
 	esac
 	X_CFLAGS="$X_CFLAGS -Wundef"
 
-	X_CFLAGS="$X_CFLAGS -Wformat=2 -Wno-format-nonliteral"
-	X_CFLAGS="$X_CFLAGS -Winit-self"
-	X_CFLAGS="$X_CFLAGS -Winvalid-pch"
-	X_CFLAGS="$X_CFLAGS -Wpacked"
-	X_CFLAGS="$X_CFLAGS -Wunknown-pragmas"
-	case "$CC-$gcc_ver" in
-	*clang*-*|*-4.[[4-9]].*|*-[[5-9]].*)
-		dnl these trigger a warning (-> error) with gcc < 4.4
-		X_CFLAGS="$X_CFLAGS -Wmissing-include-dirs"
-		;;
-	esac
-	case "$CC-$gcc_ver" in
-	*clang*-*|*-4.[[3-9]].*|*-[[5-9]].*)
-		dnl this triggers a warning (-> error) with gcc < 4.3
-		X_CFLAGS="$X_CFLAGS -Wstack-protector"
-		;;
-	esac
-	case "$CC-$gcc_ver" in
-	*clang*-*|*-3.[[5-9]].*|*-[[4-9]].*)
-		dnl gcc < 3.5 does not know these
-		X_CFLAGS="$X_CFLAGS -Wvariadic-macros"
-		;;
-	esac
-	case "$CC" in
-	*clang*)
-		;;
-	*)
-		case "$gcc_ver" in
-		[[0-2]].*|3.[[0-4]].*)
-			dnl gcc < 3.5 triggers a warning (-> error) without this
-			X_CFLAGS="$X_CFLAGS -Wno-uninitialized"
-			;;
-		4.[[4-9]].*|[[5-9]].*)
-			dnl clang (2.8) & gcc < 4.4 do not know these
-			X_CFLAGS="$X_CFLAGS -Wpacked-bitfield-compat"
-			X_CFLAGS="$X_CFLAGS -Wsync-nand"
-			case "$gcc_ver" in
-			4.[[5-9]].*|[[5-9]].*)
-				dnl clang (2.8) & gcc < 4.5 do not know these
-				X_CFLAGS="$X_CFLAGS -Wjump-misses-init"
-				dnl these trigger a warning (-> error) with clang (2.8) & gcc < 4.5
-				X_CFLAGS="$X_CFLAGS -Wunreachable-code"
-				dnl clang (2.8) & gcc < 4.3 do not know these
-				dnl these trigger a warning (-> error) with gcc < 4.5
-				X_CFLAGS="$X_CFLAGS -Wlogical-op"
-				;;
-			esac
-			;;
-		esac
-		case "$host" in
-		sparc*)
-			;;
-		*)
-			dnl these trigger a warning (-> error) with clang (2.8) and on sparc
-			X_CFLAGS="$X_CFLAGS -Wcast-align"
-			;;
-		esac
-		;;
-	esac
-
-	dnl  Our code is not (yet?) up to these:
-	dnl X_CFLAGS="$X_CFLAGS -pedantic-errors -Wno-long-long"
-	dnl X_CFLAGS="$X_CFLAGS -Waggregate-return"
-	dnl X_CFLAGS="$X_CFLAGS -Wbad-function-cast"
-	dnl X_CFLAGS="$X_CFLAGS -Wcast-qual"
-	dnl X_CFLAGS="$X_CFLAGS -Wconversion"
-	dnl X_CFLAGS="$X_CFLAGS -Wdisabled-optimization"
-	dnl X_CFLAGS="$X_CFLAGS -Wfloat-equal"
-	dnl X_CFLAGS="$X_CFLAGS -Winline"
-	dnl X_CFLAGS="$X_CFLAGS -Wmissing-declarations"
-	dnl X_CFLAGS="$X_CFLAGS -Wmissing-format-attribute"
-	dnl X_CFLAGS="$X_CFLAGS -Wmissing-noreturn"
-	dnl X_CFLAGS="$X_CFLAGS -Wmissing-prototypes"
-	dnl X_CFLAGS="$X_CFLAGS -Wnested-externs"
-	dnl X_CFLAGS="$X_CFLAGS -Wold-style-definition"
-	dnl X_CFLAGS="$X_CFLAGS -Wpadded"
-	dnl X_CFLAGS="$X_CFLAGS -Wredundant-decls"
-	dnl X_CFLAGS="$X_CFLAGS -Wshadow"
-	dnl X_CFLAGS="$X_CFLAGS -Wstrict-prototypes"
-	dnl X_CFLAGS="$X_CFLAGS -Wswitch-default"
-	dnl X_CFLAGS="$X_CFLAGS -Wswitch-enum"
-	dnl X_CFLAGS="$X_CFLAGS -Wtraditional"
-	dnl X_CFLAGS="$X_CFLAGS -Wtraditional-conversion"
-	dnl X_CFLAGS="$X_CFLAGS -Wwrite-strings"
-	dnl case "$CC-$gcc_ver" in
-	dnl *clang*-*|*-3.[[5-9]].*|*-[[4-9]].*)
-	dnl 	dnl gcc < 3.5 does not know these
-	dnl 	X_CFLAGS="$X_CFLAGS -Wc++-compat"
-	dnl 	X_CFLAGS="$X_CFLAGS -Woverlength-strings"
-	dnl 	X_CFLAGS="$X_CFLAGS -Wsign-conversion"
-	dnl 	X_CFLAGS="$X_CFLAGS -Wstrict-overflow=5"
-	dnl 	X_CFLAGS="$X_CFLAGS -Wvla"
-	dnl 	case "$gcc_ver" in
-	dnl 	4.[[5-9]].*|[[5-9]].*)
-	dnl 		dnl gcc < 4.5 does not know this
-	dnl 		X_CFLAGS="$X_CFLAGS -Wunsuffixed-float-constants"
-	dnl 		;;
-	dnl 	esac
-	dnl 	;;
-	dnl esac
-
 	dnl  The default configure invocation when doing an rpmbuild also uses this
 	case "$CC-$gcc_ver" in
 	*clang*-*|*-4.[[1-9]].*|*-[[5-9]].*)
@@ -659,6 +558,7 @@ yes-*-*)
 	*-4.[[3-9]]*|*-[[5-9]].*)
 	    GCC_BISON_CFLAGS="$GCC_BISON_CFLAGS -Wno-unused-function";;
 	esac
+
 	dnl  ... however, some things are beyond our control:
 	case $host_os in
 	solaris*|aix*)
@@ -679,25 +579,7 @@ yes-*-*)
 	dnl  Hence, we use GCC_SWIG_CFLAGS to disable the respective warning
 	dnl  as locally as possbile via "-Wno-strict-aliasing -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter -Wno-undef -Wno-missing-field-initializers"
 	dnl  (see also clients/perl/Cimpl/Makefile.ag).
-	GCC_SWIG_CFLAGS="$GCC_SWIG_CFLAGS -Wno-strict-aliasing -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter -Wno-undef -Wno-unused-value"
-	case "$CC" in
-	*clang*)
-		;;
-	*)
-		case "$gcc_ver" in
-		4.[[3-9]].*|[[5-9]].*)
-			dnl clang (2.8) & gcc < 4.3 do not know this
-			GCC_SWIG_CFLAGS="$GCC_SWIG_CFLAGS -Wno-logical-op"
-			;;
-		esac
-		case "$gcc_ver" in
-		3.[[5-9]].*|4.[[0-4]].*)
-			dnl 3.4 < gcc < 4.5 trigger a warning (-> error) without this
-			GCC_SWIG_CFLAGS="$GCC_SWIG_CFLAGS -Wno-nonnull"
-			;;
-		esac
-		;;
-	esac
+	GCC_SWIG_CFLAGS="$GCC_SWIG_CFLAGS -Wno-strict-aliasing -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter -Wno-undef"
 	case "$gcc_ver" in
 	[[4-9]].*)
 	    dnl  -Wno-missing-field-initializers is only available as of gcc 4.*
