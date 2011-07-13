@@ -251,7 +251,10 @@ rel_insert_idxs(mvc *sql, sql_table *t, sql_rel *inserts)
 	inserts->r = rel_label(sql, inserts->r); 
 	for (n = t->idxs.set->h; n; n = n->next) {
 		sql_idx *i = n->data;
+		sql_rel *ins = inserts->r;
 
+		if (ins->op == op_union) 
+			inserts->r = rel_project(sql->sa, ins, rel_projections(sql, ins, NULL, 0, 1));
 		if (hash_index(i->type) || i->type == no_idx) {
 			rel_insert_hash_idx(sql, i, inserts);
 		} else if (i->type == join_idx) {
