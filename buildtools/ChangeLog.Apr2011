@@ -1,6 +1,10 @@
 # ChangeLog file for buildtools
 # This file is updated with Maddlog
 
+* Wed Jul 13 2011 Sjoerd Mullender <sjoerd@acm.org>
+- We can now build RPMs on CentOS 6.0.  Since there is no geos library
+  on CentOS, we do not support the geom modules there.
+
 * Wed Jun 29 2011 Sjoerd Mullender <sjoerd@acm.org>
 - We can now also build on Fedora 15.  This required some very minor
   changes.
