@@ -15,7 +15,10 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-INCLUDES = ../../modules/atoms ../../modules/kernel ../../mal \
+INCLUDES = ../../modules/atoms \
+		   ../../modules/kernel \
+		   ../../mal \
+		   ../../optimizer \
 		   ../../../common/options \
 		   ../../../common/stream \
 		   ../../../gdk
@@ -27,10 +30,25 @@ lib_crackers = {
 	DIR = libdir/monetdb5
 	SEP = _
 	SOURCES = crackers.mx \
-		crackers_AVL_index.mx crackers_AVL_tree.mx crackers_index.mx \
-		crackers_core_ordered.mx crackers_core_unordered.mx crackers_validation.mx \
-		crackers_joinselect_ops.mx crackers_select_ops.mx crackers_sideways.mx crackers_partial_sideways.mx crackers_updates.mx crackers_joins.mx crackers_sortmerge.mx crackers_crackmerge.mx crackers_pq.mx \
-		crackers_populate.mx
+			  crackers_AVL_index.mx \
+			  crackers_AVL_tree.mx \
+			  crackers_index.mx \
+			  crackers_core_ordered.mx \
+			  crackers_core_unordered.mx \
+			  crackers_validation.mx \
+			  crackers_joinselect_ops.mx \
+			  crackers_select_ops.mx \
+			  crackers_sideways.mx \
+			  crackers_partial_sideways.mx \
+			  crackers_updates.mx \
+			  crackers_joins.mx \
+			  crackers_sortmerge.mx \
+			  crackers_crackmerge.mx \
+			  crackers_pq.mx \
+			  crackers_populate.mx \
+			  opt_crack.mx \
+			  opt_selcrack.mx \
+			  opt_sidcrack.mx
 	LIBS = ../../tools/libmonetdb5 \
 		   ../../../gdk/libbat \
 		   ../../../common/stream/libstream \
@@ -40,7 +58,10 @@ lib_crackers = {
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
-	SOURCES = crackers.mx 
+	SOURCES = crackers.mx \
+			  opt_crack.mx \
+			  opt_selcrack.mx \
+			  opt_sidcrack.mx
 }
 
-#EXTRA_DIST_DIR = Tests
+EXTRA_DIST_DIR = Tests

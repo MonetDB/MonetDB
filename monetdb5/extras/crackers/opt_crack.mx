@@ -117,7 +117,7 @@ OPTcrackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return actions;
 }
 
-@include optimizerWrapper.mx
+@include ../../optimizer/optimizerWrapper.mx
 @h
 @:exportOptimizer(crack)@
 #endif

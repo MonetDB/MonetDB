@@ -464,7 +464,7 @@ OPTsidcrackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	return actions;
 }
 
-@include optimizerWrapper.mx
+@include ../../optimizer/optimizerWrapper.mx
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(sidcrack,OPT_CHECK_ALL)@
