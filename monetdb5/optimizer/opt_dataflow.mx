@@ -38,6 +38,10 @@ threads.
 Dataflow blocks may not be nested. Therefore, any dataflow block produced for
 inlined code is removed first.
 
+A dataflow block should only be created if there is potential parallelism.
+This means that either we have multiple starters for a thread, or a
+result produced in the block is used concurrently multiple times.
+
 Initial experiments on e.g. the RDF benchmark showed a speed up of
 20\% on average, with a peak of a factor 2 for individual queries.
 The main reason for this limited gain stems from the little 

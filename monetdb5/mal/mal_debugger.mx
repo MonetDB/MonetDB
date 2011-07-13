@@ -750,7 +750,7 @@ printTraceCall(stream *out, MalBlkPtr mb, MalStkPtr stk, int pc, int flags)
 
 	p= getInstrPtr(mb,pc);
 	msg = instruction2str(mb, stk, p, flags);
-	mnstr_printf(out, "#%s\n", msg);
+	mnstr_printf(out, "#%s%s\n", (mb->errors?"!":""), msg);
 	GDKfree(msg);
 }
 

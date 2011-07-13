@@ -128,6 +128,10 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				break;
 			} 
 
+		if ( p->token == NOOPsymbol){
+			freeInstruction(p);
+			actions++;
+		} else
 		if( getModuleId(p)== sqlRef && getFunctionId(p)== assertRef &&
 			isVarConstant(mb,getArg(p,1)) && getVarConstant(mb,getArg(p,1)).val.ival==0){
 			freeInstruction(p);
