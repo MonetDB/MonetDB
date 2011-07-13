@@ -295,7 +295,7 @@ of the return statement.
 		pp = getInstrPtr(mb, 0);
 		/* set return types */
 		for (i = 0; i < pci->retc; i++) {
-			lhs = &stk->stk[i];
+			lhs = &stk->stk[pp->argv[i]];
 			lhs->vtype = getVarGDKType(mb, i);
 		}
 		for (k = pp->retc; i < pci->argc; i++, k++) {
