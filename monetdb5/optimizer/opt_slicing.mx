@@ -42,7 +42,7 @@ comment "Derive a series of gauge values based on sampling";
 
 opt_export str OPTgauges(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-#define _DEBUG_OPT_SLICE_
+/* #define _DEBUG_OPT_SLICE_ */
 #define OPTDEBUGslicing  if ( optDebug & ((lng)1 <<DEBUG_OPT_SLICING) )
 #endif
 @c
@@ -83,19 +83,6 @@ typedef	struct{
 	int lgauge, hgauge;
 	ValRecord bounds[MAXSITES];
 } Gauge;
-
-static void 
-OPTsliceGauges(MalBlkPtr mb, Gauge gauge, int peercnt)
-{
-	/* use sampling to determine initial gauge setting */
-	int i;
-
-	(void) mb;
-	for ( i=0; i < peercnt; i++){
-		gauge.bounds[i].vtype = gauge.type;
-		gauge.bounds[i].val.ival = 0;
-	}
-}
 
 static int
 OPTfindPeer(str uri)
@@ -261,7 +248,7 @@ OPTslicingStub(Client cntxt, MalBlkPtr mb, int pc, MalBlkPtr pmb, Gauge gauge)
 	}
 
 	/* (k1,...kn):= remote.exec(conn,slicing,qry,version....) */
-	snprintf(nme,BUFSIZ,"%s_subq",getFunctionId( getInstrPtr(mb,0)));
+	snprintf(nme,BUFSIZ,"%s_sub",getFunctionId( getInstrPtr(mb,0)));
 	q= newFcnCall(smb,remoteRef,execRef);
 	q->retc=  q->argc= 0;
 	for (j=0; j < sig->retc; j++){
@@ -419,6 +406,13 @@ OPTslicingCntrl(Client cntxt, MalBlkPtr mb, int pc, MalBlkPtr pmb, Gauge gauge)
 	} else 
 	if ( getFunctionId(q) == putName("exportValue",11)) 
 		getArg(q,8)= getArg(pack[0],0);
+	else
+	if ( getFunctionId(q) == NULL){
+		/* simple assignment */
+		assert(nrpack == q->retc);
+		for( k = 0; k < nrpack; k++)
+			getArg(q, q->retc + k) = getArg(pack[k],0);
+	}
 	
 	pushInstruction(cmb,q);
 
@@ -484,7 +478,7 @@ OPTcodegen(Client cntxt, MalBlkPtr mb, int pc, Gauge gauge )
 	str msg= MAL_SUCCEED;
 	
 	/* define the sub query as part of the user space */
-	snprintf(nme,BUFSIZ,"%s_subq%d",getFunctionId( getInstrPtr(mb,0)), pc);
+	snprintf(nme,BUFSIZ,"%s_qry%d",getFunctionId( getInstrPtr(mb,0)), pc);
 	s = newFunction(userRef, putName(nme, strlen(nme)),FUNCTIONsymbol);
 	if ( s == NULL)
 		return 0;
@@ -492,7 +486,6 @@ OPTcodegen(Client cntxt, MalBlkPtr mb, int pc, Gauge gauge )
 	s->def = copyMalBlk(mb);
 	nmb = s->def;
 	getFunctionId( getInstrPtr(nmb,0)) = putName(nme,strlen(nme));
-	insertSymbol(cntxt->nspace,s);
 
 	limit = nmb->stop;
 	old = nmb->stmt;
@@ -549,7 +542,6 @@ OPTcodegen(Client cntxt, MalBlkPtr mb, int pc, Gauge gauge )
 				/* temporary extend signature with bounds */
 				nmb->stmt[0] =  pushArgument(nmb,getInstrPtr(nmb,0), gauge.lgauge);
 				nmb->stmt[0] =  pushArgument(nmb,getInstrPtr(nmb,0), gauge.hgauge);
-				OPTsliceGauges(nmb, gauge, nrpeers);
 			}
 			
 			if (strcmp(gauge.column, getVarConstant(nmb, getArg(p,4)).val.sval) == 0) {
@@ -603,21 +595,18 @@ OPTcodegen(Client cntxt, MalBlkPtr mb, int pc, Gauge gauge )
 		freeMalBlk(nmb);
 		return 0;
 	}
+	insertSymbol(cntxt->nspace,s);
 
 
 	q = 0;
 
 	/* supportive routines */
 	smb = OPTslicingStub(cntxt, mb, pc,  nmb, gauge);
-	if ( smb)
-		printFunction(cntxt->fdout, smb, 0, LIST_MAL_STMT);
 	msg = OPTdeadcode(cntxt, smb, 0, 0);
 	if ( msg)
 		goto wrapup;
 
 	cmb = OPTslicingCntrl(cntxt,mb,pc,nmb, gauge);
-	if ( cmb)
-		printFunction(cntxt->fdout, cmb, 0, LIST_MAL_STMT);
 	chkProgram(cntxt->nspace, cmb);
 	if ( cmb->errors)
 		goto wrapup;
@@ -640,6 +629,7 @@ OPTcodegen(Client cntxt, MalBlkPtr mb, int pc, Gauge gauge )
 	q->token = ASSIGNsymbol;
 	/* beware this instruction refers to cmb variables */
 wrapup:
+#ifdef _DEBUG_OPT_SLICE_
 	mnstr_printf(cntxt->fdout,"#Grabbed part\n");
 	if ( nmb)
 		printFunction(cntxt->fdout, nmb, 0, LIST_MAL_STMT);
@@ -649,6 +639,7 @@ wrapup:
 	mnstr_printf(cntxt->fdout,"#cntrl\n");
 	if ( cmb)
 		printFunction(cntxt->fdout, cmb, 0, LIST_MAL_STMT);
+#endif
 
 	if (vec) GDKfree(vec);
 	return q;
@@ -674,7 +665,10 @@ OPTslicingImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	if ( nrpeers == 0 )
 		OPTdiscover(cntxt);
 	mal_unset_lock(mal_contextLock,"optimizer.slicing");
+    /* nrpeers = GDKnr_threads ? GDKnr_threads:1;*/
+	/* to ease debugging now */
 	nrpeers = 2;
+	slicingLocal = 1;
 
 	/* modify the block as we go */
 	omb= copyMalBlk(mb);
@@ -809,20 +803,64 @@ wrapup:
 @include optimizerWrapper.mx
 @c
 #include "opt_statistics.h"
+#include "algebra.h"
 @:wrapOptimizer(slicing,OPT_CHECK_ALL)@
 
+@-
+@= histo
+	{ @1 *vv;
+		vv= (@1 *) getArgReference(stk, pci, 0 );
+		*vv = @1_nil;
+		vx = (ptr) &max.val.@2;
+		BATmax(b, vx);
+		vv= (ptr) getArgReference(stk, pci, pci->retc -1 );
+		*vv = @1_nil;
+		vm = (ptr) &min.val.@2;
+		BATmin(b, vm);
+		step.val.@2 = (max.val.@2 - min.val.@2) / pci->retc-2;
+		if ( step.val.@2 == 0)
+				step.val.@2 = max.val.@2;
+		for ( i = 1; i < pci->retc-1; i++) {
+			vx= (ptr) getArgReference(stk, pci, i );
+			((ValPtr) vx ) ->val.@2 = min.val.@2 + i * step.val.@2;
+		}
+	}
+@c
 /* determine the initial gauge values */
+/* the min/max bounds are null values */
 /* It is the heart of the approach and requires experimentation */
 str
 OPTgauges(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	
 	BAT *b;
 	int bid = *(int*) getArgReference(stk,pci, pci->argc-1);
+	ValRecord min,max, step;
+	int i;
+	ptr vx,vm;
+
 	(void) cntxt;
 	(void) mb;
+	if ( pci->retc < 2)
+		throw(SQL,"sql.gauges","Not enough gauges");
 	b = BATdescriptor(bid);
 	if (b == NULL)
 		throw(SQL,"sql.gauges","Can not access BAT");
+    switch (ATOMstorage(b->ttype)) {
+    case TYPE_bte: @:histo(bte,btval)@ break;
+    case TYPE_sht: @:histo(sht,shval)@ break;
+    case TYPE_int: @:histo(int,ival)@ break;
+    case TYPE_wrd: @:histo(wrd,wval)@ break;
+    case TYPE_lng: @:histo(lng,lval)@ break;
+    case TYPE_oid: @:histo(oid,oval)@ break;
+    case TYPE_flt: @:histo(flt,fval)@ break;
+    case TYPE_dbl: @:histo(dbl,dval)@ break;
+	default:
+		throw(SQL,"sql.gauges","Can not slice column by value or oid");
+    }
+
+	for( i = 0; i < pci->retc; i++){
+	}
+
 	BBPreleaseref(bid);
 	return MAL_SUCCEED;
 }
