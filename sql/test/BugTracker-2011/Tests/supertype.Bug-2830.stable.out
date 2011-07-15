@@ -1,0 +1,38 @@
+stdout of test 'supertype.Bug-2830` in directory 'test/BugTracker-2011` itself:
+
+
+# 22:35:24 >  
+# 22:35:24 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/ufs/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB" --set mapi_open=true --set mapi_port=38266 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_test_BugTracker-2011" --set mal_listing=0 ; echo ; echo Over..
+# 22:35:24 >  
+
+# MonetDB 5 server v11.3.4
+# This is an unreleased version
+# Serving database 'mTests_test_BugTracker-2011', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.752 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:38266/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+Over..
+
+# 22:35:24 >  
+# 22:35:24 >  mclient -lsql -ftest -i -e --host=alf --port=38266 
+# 22:35:24 >  
+
+#select 30. - 0.025;
+% . # table_name
+% sql_sub_single_value # name
+% decimal # type
+% 11 # length
+[ 29.975	]
+
+# 22:35:24 >  
+# 22:35:24 >  Done.
+# 22:35:24 >  
+
