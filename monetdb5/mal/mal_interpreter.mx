@@ -184,7 +184,6 @@ updateBigFoot(Client cntxt, int bid, int add)
 Copy the constant values onto the stack frame
 Also we cannot overwrite values on the stack as this maybe part of a
 sequence of factory calls.
-BEWARE WE ASSUME THAT FIRST VARIABLES ON THE STACK ALIGN WITH THE SIGNATURE.
 @= initStack
 	for (i = @1; i < mb->vtop; i++) {
 		lhs = &stk->stk[i];
@@ -224,7 +223,7 @@ prepareMALstack(MalBlkPtr mb, int size)
 	stk->stksize = size;
 	stk->blk = mb;
 
-	@:initStack(1)@
+	@:initStack(0)@
 	return stk;
 }
 
@@ -248,7 +247,6 @@ Prepare a new interpreter call. This involves two steps, (1) allocate
 the minimum amount of stack space needed, some slack resources
 are included to permit code optimizers to add a few variables at run time,
 (2) copying the arguments into the new stack frame.
-Notice that arguments are always the first entries on the stack.
 
 The env stackframe is set when a MAL function is called recursively.
 Alternatively, there is no caller but a stk to be re-used for interpretation.
@@ -281,15 +279,29 @@ being called.
 				throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
 		}
 	}
+@-
+An optimization is to copy all constant variables used in functions immediately
+onto the value stack. Then we do not have to check for their location
+later on any more. At some point, the effect is optimal, if at least several
+constants are referenced in a function (a gain on tst400a of 20% has been
+observed due the small size of the function).
+@c
+	if (env && mbcaller) {
+		@:initStack(0)@
+	} else if (env && env->stkbot) {
+		@:initStack(env->stkbot)@
+	} else {
+		@:initStack(0)@
+	}
 
 	if (env && mbcaller) {
 		InstrPtr pp;
 		int k;
 @-
-Beware, a function signature f(a1..an):(b1..bn) is parsed in such a way that
-the symbol table and stackframe contains the sequence
-f,a1..an,b1..bn. This slightly complicates the implementation
-of the return statement.
+Moreover, we have to copy the result types to the stack for later
+use. The stack value has been cleared to avoid misinterpretation of left-over
+information. Since a stack frame may contain values of a previous call,
+we should first remove garbage.
 @c
 		pci = pcicaller;
 		pp = getInstrPtr(mb, 0);
@@ -309,25 +321,6 @@ of the return statement.
 				BBPincref(lhs->val.bval, TRUE);
 		}
 		stk->up = env;
-	}
-@-
-An optimization is to copy all constant variables used in functions immediately
-onto the value stack. Then we do not have to check for their location
-later on any more. At some point, the effect is optimal, if at least several
-constants are referenced in a function (a gain on tst400a of 20% has been
-observed due the small size of the function).
-
-Moreover, we have to copy the result types to the stack for later
-use. The stack value is cleared to avoid misinterpretation of left-over
-information. Since a stack frame may contain values of a previous call,
-we should first remove garbage.
-@c
-	if (env && mbcaller) {
-		@:initStack(pci->argc)@
-	} else if (env && env->stkbot) {
-		@:initStack(env->stkbot)@
-	} else {
-		@:initStack(mbcaller ? pci->argc:1)@
 	}
 
 	if (stk->cmd && env && stk->cmd != 'f')
@@ -411,7 +404,7 @@ all arguments and return values.
 			stk->stksize = mb->vsize;
 			stk->blk = mb;
 			stk->up = 0;
-			@:initStack(pci->argc)@
+			@:initStack(0)@
 			*env = stk;
 		} else stk = *env;
 		assert(stk);
