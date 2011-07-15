@@ -2525,6 +2525,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 			} else {
 				if( getTailType(getArgType(mb,p,i)) > TYPE_str )
 				{ char *ct=cv;
+					strcat(t, "=");
 					VALformat(&cv, &getVar(mb, getArg(p, i))->value);
 					ct= (char*) GDKmalloc(1024+strlen(cv));
 					if (isVarUDFtype(mb, getArg(p, i)) ) {
@@ -2543,7 +2544,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 					VALformat(&cv, &getVar(mb, getArg(p, i))->value);
 			}
 			if ( cv && strlen(cv) > len - (t - s)) {
-				char *ns = (char *) GDKmalloc(len = strlen(cv) + len + 2);
+				char *ns = (char *) GDKmalloc(len = strlen(cv) + len + 5);
 
 				*t = 0;
 				strcpy(ns, s);
@@ -2551,8 +2552,9 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 				GDKfree(s);
 				s = ns;
 			}
-			if ( cv )
+			if ( cv ) 
 				strcat(t, cv);
+			
 			advance(t,base,len);
 			if ( (cv && strlen(cv)==0) || isVarUDFtype(mb, getArg(p, i)) ||
 				isAmbiguousType(getArgType(mb,p,i)) ){
