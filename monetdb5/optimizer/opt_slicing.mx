@@ -135,10 +135,10 @@ OPTgetPeer(str uri)
 void OPTcleanFunReg(int i)
 {	
 	Registry r, q;
-	mal_set_lock(mal_contextLock,"tarantula.cleanFunReg");
+	mal_set_lock(mal_contextLock,"slicing.cleanFunReg");
 	r = peers[i].nxt;
 	peers[i].nxt = NULL;
-	mal_unset_lock(mal_contextLock,"tarantula.cleanFunReg");
+	mal_unset_lock(mal_contextLock,"slicing.cleanFunReg");
 	while ( r ) {
 			q = r->nxt;
 			GDKfree(r->fcn);
@@ -155,7 +155,7 @@ OPTdiscover(Client cntxt)
 	BUN p,q;
 	str msg = MAL_SUCCEED;
 	BATiter bi;
-	char buf[BUFSIZ]= "*/tarantula", *s= buf;
+	char buf[BUFSIZ]= "*/slicing", *s= buf;
 	int i, nrworkers = 0;
 
 	slicingLocal = 0;
@@ -260,7 +260,7 @@ OPTslicingStub(Client cntxt, MalBlkPtr mb, int pc, MalBlkPtr pmb, Gauge gauge)
 		arg[j]= getArg(q,0);
 	}
 
-	/* (k1,...kn):= remote.exec(conn,tarantula,qry,version....) */
+	/* (k1,...kn):= remote.exec(conn,slicing,qry,version....) */
 	snprintf(nme,BUFSIZ,"%s_subq",getFunctionId( getInstrPtr(mb,0)));
 	q= newFcnCall(smb,remoteRef,execRef);
 	q->retc=  q->argc= 0;
