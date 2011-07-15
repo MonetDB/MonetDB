@@ -31,14 +31,13 @@ lib_scheduler = {
 		run_isolate.mx \
 		run_memo.mx \
 		run_octopus.mx \
-		run_pipeline.mx \
-		run_tarantula.mx
+		run_pipeline.mx 
 }
 
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
-	SOURCES = run_adder.mx run_isolate.mx run_pipeline.mx run_memo.mx run_octopus.mx run_tarantula.mx
+	SOURCES = run_adder.mx run_isolate.mx run_pipeline.mx run_memo.mx run_octopus.mx
 }
 
 EXTRA_DIST_DIR = Tests
