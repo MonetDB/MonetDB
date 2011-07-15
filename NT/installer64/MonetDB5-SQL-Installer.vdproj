@@ -267,12 +267,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_42926A9FCCE04738A23BD54972BE73E5"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_455196B50BC54D958DEFB4D1603A7D23"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -514,12 +508,6 @@
         "Entry"
         {
         "MsmKey" = "8:_73EEE7F1A9A349E9AF0F42BF9F5C5BFC"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_756EFB7E9A6C4F0591F4237A9E50E44A"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -2057,26 +2045,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_42926A9FCCE04738A23BD54972BE73E5"
-            {
-            "SourcePath" = "8:lib\\monetdb5\\opt_tarantula.mal"
-            "TargetName" = "8:opt_tarantula.mal"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_455196B50BC54D958DEFB4D1603A7D23"
             {
             "SourcePath" = "8:lib\\monetdb5\\opt_selcrack.mal"
@@ -2881,26 +2849,6 @@
             {
             "SourcePath" = "8:lib\\monetdb5\\factories.mal"
             "TargetName" = "8:factories.mal"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_756EFB7E9A6C4F0591F4237A9E50E44A"
-            {
-            "SourcePath" = "8:lib\\monetdb5\\run_tarantula.mal"
-            "TargetName" = "8:run_tarantula.mal"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
