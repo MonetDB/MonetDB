@@ -19,9 +19,7 @@ stdout of test 'tst3050` in directory 'mal` itself:
 function user.dummy{dense=true}(a:int,b:int):int;
     return dummy := 1;
 end dummy;
-#function myprint{unsafe,optimizer}():void;
-#end myprint;
-function user.myprint{unsafe,optimizer}():void;
+function user.myprint{unsafe, optimizer}():void;
 end myprint;
 #
 #a:= 0;
