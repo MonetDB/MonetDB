@@ -2942,11 +2942,11 @@ exp_mark_used(sql_rel *subrel, sql_exp *e)
 			for (n = l->h; n != NULL; n = n->next) 
 				exp_mark_used(subrel, n->data);
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
-			list *l = e->r;
+			list *r = e->r;
 			node *n;
 
 			exp_mark_used(subrel, e->l);
-			for (n = l->h; n != NULL; n = n->next)
+			for (n = r->h; n != NULL; n = n->next)
 				exp_mark_used(subrel, n->data);
 		} else {
 			exp_mark_used(subrel, e->l);
