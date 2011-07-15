@@ -1674,10 +1674,18 @@ public class MonetResultSet implements ResultSet {
 		}
 		if (pdate == null) {
 			// parsing failed
-			addWarning("parsing failed," +
-					 " found: '" + monetDate.charAt(ppos.getErrorIndex()) + "'" +
-					 " in: \"" + monetDate + "\"" +
-					 " at pos: " + ppos.getErrorIndex());
+			int epos = ppos.getErrorIndex();
+			if (epos == -1) {
+				addWarning("parsing '" + monetDate + "' failed");
+			} else if (epos < monetDate.length()) {
+				addWarning("parsing failed," +
+						 " found: '" + monetDate.charAt(epos) + "'" +
+						 " in: \"" + monetDate + "\"" +
+						 " at pos: " + ppos.getErrorIndex());
+			} else {
+				addWarning("parsing failed, expected more data after '" +
+						monetDate + "'");
+			}
 			// default value
 			cal.clear();
 			nanos = 0;

@@ -1228,10 +1228,11 @@ _exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 				return NULL;
 			return exp_or(sql->sa, l, r);
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
-			sql_exp *l = _exp_push_down(sql, e->l, f, t);
-			list *r = exps_push_down(sql, e->r, f, t);
+			list *r;
 
-			if (!l || !r) 
+			l = _exp_push_down(sql, e->l, f, t);
+			r = exps_push_down(sql, e->r, f, t);
+			if (!l || !r)
 				return NULL;
 			return exp_in(sql->sa, l, r, e->flag);
 		} else {
@@ -3507,9 +3508,9 @@ exp_mark_used(sql_rel *subrel, sql_exp *e)
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			list *r = e->r;
 			node *n;
-	
+
 			exp_mark_used(subrel, e->l);
-			for (n = r->h; n != NULL; n = n->next) 
+			for (n = r->h; n != NULL; n = n->next)
 				exp_mark_used(subrel, n->data);
 		} else {
 			exp_mark_used(subrel, e->l);
