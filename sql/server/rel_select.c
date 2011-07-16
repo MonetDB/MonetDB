@@ -1456,14 +1456,7 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 
 		if (sname && !(s=mvc_bind_schema(sql,sname)))
 			return sql_error(sql, 02, "SELECT: no such schema '%s'", sname);
-		if (!s)
-			s = cur_schema(sql);
-		t = mvc_bind_table(sql, s, tname);
 		/* TODO: search path */
-		if (!t && !sname) {
-			s = tmp_schema(sql);
-			t = mvc_bind_table(sql, s, tname);
-		}
 		if (!t && !sname) {
 			sql_subtype *tpe;
 			if ((tpe = stack_find_type(sql, tname)) != NULL &&
@@ -1475,6 +1468,15 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 			}
 			if (temp_table)
 				rel_dup(temp_table);
+		}
+		if (!t && !temp_table) {
+			if (!s)
+				s = cur_schema(sql);
+			t = mvc_bind_table(sql, s, tname);
+			if (!t && !sname) {
+				s = tmp_schema(sql);
+				t = mvc_bind_table(sql, s, tname);
+			}
 		}
 		if (!t && !temp_table) {
 			return sql_error(sql, 02, "SELECT: no such table '%s'", tname);
