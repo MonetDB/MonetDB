@@ -1,0 +1,81 @@
+stdout of test 'UDF_in_schema.Bug-2817` in directory 'test/BugTracker-2011` itself:
+
+
+# 15:41:16 >  
+# 15:41:16 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/HG/Apr2011/prefix/--disable-debug_--enable-optimize_--disable-assert/var/MonetDB" --set mapi_open=true --set mapi_port=39969 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_test_BugTracker-2011" --set mal_listing=0 ; echo ; echo Over..
+# 15:41:16 >  
+
+# MonetDB 5 server v11.3.4
+# This is an unreleased version
+# Serving database 'mTests_test_BugTracker-2011', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:39969/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+
+Over..
+
+# 15:41:16 >  
+# 15:41:16 >  mclient -lsql -ftest -i -e --host=rig --port=39969 
+# 15:41:16 >  
+
+#create schema datacell;
+#create table datacell.basket_X(
+#    id integer auto_increment,
+#    tag timestamp default now(),
+#    payload integer
+#);
+#create function datacell.basket_X()
+#returns table (id integer, tag timestamp, payload integer)
+#begin
+#    return select * from datacell.basket_X;
+#end;
+#select * from datacell.basket_X;
+% datacell.basket_x,	datacell.basket_x,	datacell.basket_x # table_name
+% id,	tag,	payload # name
+% int,	timestamp,	int # type
+% 1,	26,	1 # length
+#select * from datacell.basket_X();
+% datacell.basket_x,	datacell.basket_x,	datacell.basket_x # table_name
+% id,	tag,	payload # name
+% int,	timestamp,	int # type
+% 1,	26,	1 # length
+#drop function datacell.basket_X;  
+#drop table datacell.basket_X;
+#drop schema datacell;
+#create schema schema_2817;
+#create table schema_2817.table_2817(
+#    id integer auto_increment,
+#    tag timestamp default now(),
+#    payload integer
+#);
+#create function schema_2817.function_2817()
+#returns table (id integer, tag timestamp, payload integer)
+#begin
+#    return select * from schema_2817.table_2817;
+#end;
+#select * from schema_2817.table_2817;
+% schema_2817.table_2817,	schema_2817.table_2817,	schema_2817.table_2817 # table_name
+% id,	tag,	payload # name
+% int,	timestamp,	int # type
+% 1,	26,	1 # length
+#select * from schema_2817.function_2817();
+% schema_2817.table_2817,	schema_2817.table_2817,	schema_2817.table_2817 # table_name
+% id,	tag,	payload # name
+% int,	timestamp,	int # type
+% 1,	26,	1 # length
+#drop function schema_2817.function_2817;
+#drop table schema_2817.table_2817;
+#drop schema schema_2817;
+
+# 15:41:17 >  
+# 15:41:17 >  Done.
+# 15:41:17 >  
+
