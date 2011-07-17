@@ -22,3 +22,4 @@ Crash_in_query_analysis.Bug-2831
 CASE_division_exception.Bug-2822
 nested_SELECT_UNIAL_ALL.Bug-2816
 subquery_in_where.Bug-2823
+func_iter_vs_bulk.Bug-2826
