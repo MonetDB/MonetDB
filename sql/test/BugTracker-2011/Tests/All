@@ -18,3 +18,4 @@ subquery_in_from_clause.Bug-2812
 mkey-bulk_rotate_xor_hash.Bug-2825
 supertype.Bug-2830
 UNIQUE_Constraint_reference.Bug-2835
+Crash_in_query_analysis.Bug-2831
