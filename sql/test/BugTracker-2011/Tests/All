@@ -20,3 +20,4 @@ supertype.Bug-2830
 UNIQUE_Constraint_reference.Bug-2835
 Crash_in_query_analysis.Bug-2831
 CASE_division_exception.Bug-2822
+nested_SELECT_UNIAL_ALL.Bug-2816
