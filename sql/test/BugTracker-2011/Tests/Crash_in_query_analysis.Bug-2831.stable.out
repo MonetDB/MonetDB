@@ -1,0 +1,56 @@
+stdout of test 'Crash_in_query_analysis.Bug-2831` in directory 'test/BugTracker-2011` itself:
+
+
+# 14:49:39 >  
+# 14:49:39 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/HG/Apr2011/prefix/_/var/MonetDB" --set mapi_open=true --set mapi_port=38367 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_test_BugTracker-2011" --set mal_listing=0 ; echo ; echo Over..
+# 14:49:39 >  
+
+# MonetDB 5 server v11.3.4
+# This is an unreleased version
+# Serving database 'mTests_test_BugTracker-2011', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:38367/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+
+Over..
+
+# 14:49:39 >  
+# 14:49:39 >  mclient -lsql -ftest -i -e --host=rig --port=38367 
+# 14:49:39 >  
+
+#create schema lrbm_bug_2831;
+#CREATE TABLE lrbm_bug_2831.accident(carid1 integer, carid2 integer, firstMinute integer,
+#lastMinute integer, dir integer, seg integer, pos integer);
+#CREATE TABLE lrbm_bug_2831.statistics(dir  int,seg  int,time_minute int,numvehicles 
+#int,lav   float,toll  int,accident int,accidentSeg int);
+#UPDATE lrbm_bug_2831.statistics 
+#    SET    toll = 0, accident = 1 
+#    WHERE EXISTS(   
+#        SELECT acc.seg
+#        FROM   lrbm_bug_2831.accident AS acc
+#        WHERE  acc.dir = statistics.dir AND
+#            acc.firstMinute + 1 <= statistics.time_minute AND
+#            acc.lastMinute + 1 >= statistics.time_minute AND
+#            ( 
+#                (
+#                    (acc.dir = 0) AND
+#                    (acc.seg >= statistics.seg) AND
+#                    (acc.seg <= statistics.seg + 4)
+#             
+[ 0	]
+#drop table lrbm_bug_2831.statistics;
+#drop table lrbm_bug_2831.accident;
+#drop schema lrbm_bug_2831;
+
+# 14:49:39 >  
+# 14:49:39 >  Done.
+# 14:49:39 >  
+

@@ -1,0 +1,84 @@
+stdout of test 'UNIQUE_Constraint_reference.Bug-2835` in directory 'test/BugTracker-2011` itself:
+
+
+# 14:14:58 >  
+# 14:14:58 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/HG/Apr2011/prefix/_/var/MonetDB" --set mapi_open=true --set mapi_port=39931 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_test_BugTracker-2011" --set mal_listing=0 ; echo ; echo Over..
+# 14:14:58 >  
+
+# MonetDB 5 server v11.3.4
+# This is an unreleased version
+# Serving database 'mTests_test_BugTracker-2011', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:39931/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+
+Over..
+
+# 14:14:58 >  
+# 14:14:58 >  mclient -lsql -ftest -i -e --host=rig --port=39931 
+# 14:14:58 >  
+
+#CREATE TABLE "Bug_2835_0" ("id" INT PRIMARY KEY );
+#INSERT INTO "Bug_2835_0" VALUES (0);
+[ 1	]
+#INSERT INTO "Bug_2835_0" VALUES (1);
+[ 1	]
+#INSERT INTO "Bug_2835_0" VALUES (2);
+[ 1	]
+#select * from "Bug_2835_0";
+% sys.Bug_2835_0 # table_name
+% id # name
+% int # type
+% 1 # length
+[ 0	]
+[ 1	]
+[ 2	]
+#CREATE TABLE "Bug_2835_1" ("ref" INT REFERENCES "Bug_2835_0" , CONSTRAINT "unique" UNIQUE ("ref") );
+#INSERT INTO "Bug_2835_1" VALUES (0);
+[ 1	]
+#select * from "Bug_2835_1";
+% sys.Bug_2835_1 # table_name
+% ref # name
+% int # type
+% 1 # length
+[ 0	]
+#create table "Bug_2835_2" (id int unique references "Bug_2835_0");
+#insert into "Bug_2835_2" values (1);
+[ 1	]
+#select * from "Bug_2835_2";
+% sys.Bug_2835_2 # table_name
+% id # name
+% int # type
+% 1 # length
+[ 1	]
+#CREATE TABLE "Bug_2835_3" (
+#        "id" INTEGER,
+#        CONSTRAINT "Bug_2835_6_id_unique" UNIQUE ("id"),
+#        CONSTRAINT "Bug_2835_6_id_fkey" FOREIGN KEY ("id") REFERENCES "Bug_2835_0"
+#("id")
+#);
+#insert into "Bug_2835_3" values (2);
+[ 1	]
+#select * from "Bug_2835_3";
+% sys.Bug_2835_3 # table_name
+% id # name
+% int # type
+% 1 # length
+[ 2	]
+#drop table "Bug_2835_3";
+#drop table "Bug_2835_2";
+#drop table "Bug_2835_1";
+#drop table "Bug_2835_0";
+
+# 14:14:58 >  
+# 14:14:58 >  Done.
+# 14:14:58 >  
+

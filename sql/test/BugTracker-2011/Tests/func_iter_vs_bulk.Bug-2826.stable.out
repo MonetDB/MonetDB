@@ -1,0 +1,73 @@
+stdout of test 'func_iter_vs_bulk.Bug-2826` in directory 'test/BugTracker-2011` itself:
+
+
+# 15:25:53 >  
+# 15:25:53 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/HG/Apr2011/prefix/_/var/MonetDB" --set mapi_open=true --set mapi_port=36720 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_test_BugTracker-2011" --set mal_listing=0 ; echo ; echo Over..
+# 15:25:53 >  
+
+# MonetDB 5 server v11.3.4
+# This is an unreleased version
+# Serving database 'mTests_test_BugTracker-2011', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:36720/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+
+Over..
+
+# 15:25:53 >  
+# 15:25:53 >  mclient -lsql -ftest -i -e --host=rig --port=36720 
+# 15:25:53 >  
+
+#create table tab_2826 (d double);
+#insert into tab_2826 values (1.0),(2.0),(3.0),(4.0),(5.0);
+[ 5	]
+#create function func_2826(f real) returns real begin return log10(f); end;
+#explain select * from tab_2826 where func_2826(d) > 1;
+% .explain # table_name
+% mal # name
+% clob # type
+% 0 # length
+function user.s0_1{autoCommit=true}():void;
+barrier _58 := language.dataflow();
+    _2 := sql.mvc();
+    _10:bat[:oid,:dbl]  := sql.bind(_2,"sys","tab_2826","d",0);
+    _8:bat[:oid,:dbl]  := sql.bind(_2,"sys","tab_2826","d",2);
+    _12 := algebra.kdifference(_10,_8);
+    _13 := algebra.kunion(_12,_8);
+    _5:bat[:oid,:dbl]  := sql.bind(_2,"sys","tab_2826","d",1);
+    _14 := algebra.kunion(_13,_5);
+    _15:bat[:oid,:oid]  := sql.bind_dbat(_2,"sys","tab_2826",1);
+    _16 := bat.reverse(_15);
+    _17 := algebra.kdifference(_14,_16);
+    _18 := batcalc.flt(_17);
+    _42 := batmmath.log10(_18);
+    _19 := algebra.thetauselect(_42,1:flt,">");
+    _21 := algebra.markT(_19,0@0:oid);
+    _22 := bat.reverse(_21);
+    _23 := algebra.leftjoin(_22,_14);
+exit _58;
+    _24 := sql.resultSet(1,1,_23);
+    sql.rsColumn(_24,"sys.tab_2826","d","double",53,0,_23);
+    _30 := io.stdout();
+    sql.exportResult(_30,_24);
+end s0_1;
+#select * from tab_2826 where func_2826(d) > 1;   
+% sys.tab_2826 # table_name
+% d # name
+% double # type
+% 22 # length
+#drop function func_2826;
+#drop table tab_2826;
+
+# 15:25:53 >  
+# 15:25:53 >  Done.
+# 15:25:53 >  
+
