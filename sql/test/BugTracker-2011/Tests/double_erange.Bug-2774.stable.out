@@ -1,0 +1,261 @@
+stdout of test 'double_erange.Bug-2774` in directory 'test/BugTracker-2011` itself:
+
+
+# 19:20:46 >  
+# 19:20:46 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/HG/Apr2011/prefix/_/var/MonetDB" --set mapi_open=true --set mapi_port=35514 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_test_BugTracker-2011" --set mal_listing=0 ; echo ; echo Over..
+# 19:20:46 >  
+
+# MonetDB 5 server v11.3.4
+# This is an unreleased version
+# Serving database 'mTests_test_BugTracker-2011', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:35514/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+
+Over..
+
+# 19:20:46 >  
+# 19:20:46 >  mclient -lsql -ftest -i -e --host=rig --port=35514 
+# 19:20:46 >  
+
+#create table f2774 (i int, f float);
+#create table d2774 (i int, d double);
+#select * from f2774;
+% sys.f2774,	sys.f2774 # table_name
+% i,	f # name
+% int,	double # type
+% 1,	22 # length
+#select * from d2774;
+% sys.d2774,	sys.d2774 # table_name
+% i,	d # name
+% int,	double # type
+% 1,	22 # length
+#insert into f2774 values (300,1e-300);
+[ 1	]
+#insert into d2774 values (300,1e-300);
+[ 1	]
+#insert into f2774 values (302,1e-302);
+[ 1	]
+#insert into d2774 values (302,1e-302);
+[ 1	]
+#insert into f2774 values (304,1e-304);
+[ 1	]
+#insert into d2774 values (304,1e-304);
+[ 1	]
+#insert into f2774 values (306,1e-306);
+[ 1	]
+#insert into d2774 values (306,1e-306);
+[ 1	]
+#insert into f2774 values (307,1e-307);
+[ 1	]
+#insert into d2774 values (307,1e-307);
+[ 1	]
+#insert into f2774 values (324,1e-324);
+[ 1	]
+#insert into d2774 values (324,1e-324);
+[ 1	]
+#insert into f2774 values (326,1e-326);
+[ 1	]
+#insert into d2774 values (326,1e-326);
+[ 1	]
+#insert into f2774 values (328,1e-328);
+[ 1	]
+#insert into d2774 values (328,1e-328);
+[ 1	]
+#insert into f2774 values (330,1e-330);
+[ 1	]
+#insert into d2774 values (330,1e-330);
+[ 1	]
+#select * from f2774;
+% sys.f2774,	sys.f2774 # table_name
+% i,	f # name
+% int,	double # type
+% 3,	22 # length
+[ 300,	1e-300	]
+[ 302,	1e-302	]
+[ 304,	1e-304	]
+[ 306,	1e-306	]
+[ 307,	1e-307	]
+
+! to be checked & approved !
+
+#select * from d2774;
+% sys.d2774,	sys.d2774 # table_name
+% i,	d # name
+% int,	double # type
+% 3,	22 # length
+[ 300,	1e-300	]
+[ 302,	1e-302	]
+[ 304,	1e-304	]
+[ 306,	1e-306	]
+[ 307,	1e-307	]
+
+! to be checked & approved !
+
+#delete from f2774;
+[ 	]
+#delete from d2774;
+[ 	]
+#select * from f2774;
+% sys.f2774,	sys.f2774 # table_name
+% i,	f # name
+% int,	double # type
+% 1,	22 # length
+#select * from d2774;
+% sys.d2774,	sys.d2774 # table_name
+% i,	d # name
+% int,	double # type
+% 1,	22 # length
+#copy 18 records into f2774 from stdin using delimiters ',','\n';
+#300,1e-300
+#302,1e-302
+#304,1e-304
+#306,1e-306
+#307,1e-307
+#308,1e-308
+#310,1e-310
+#312,1e-312
+#314,1e-314
+#316,1e-316
+#318,1e-318
+#320,1e-320
+#322,1e-322
+#323,1e-323
+#324,1e-324
+#326,1e-326
+#328,1e-328
+#330,1e-330
+#copy 18 records into d2774 from stdin using delimiters ',','\n';
+#300,1e-300
+#302,1e-302
+#304,1e-304
+#306,1e-306
+#307,1e-307
+#308,1e-308
+#310,1e-310
+#312,1e-312
+#314,1e-314
+#316,1e-316
+#318,1e-318
+#320,1e-320
+#322,1e-322
+#323,1e-323
+#324,1e-324
+#326,1e-326
+#328,1e-328
+#330,1e-330
+#select * from f2774;
+% sys.f2774,	sys.f2774 # table_name
+% i,	f # name
+% int,	double # type
+% 1,	22 # length
+
+! to be checked & approved !
+
+#select * from d2774;
+% sys.d2774,	sys.d2774 # table_name
+% i,	d # name
+% int,	double # type
+% 1,	22 # length
+
+! to be checked & approved !
+
+#delete from f2774;
+[ 	]
+#delete from d2774;
+[ 	]
+#select * from f2774;
+% sys.f2774,	sys.f2774 # table_name
+% i,	f # name
+% int,	double # type
+% 1,	22 # length
+#select * from d2774;
+% sys.d2774,	sys.d2774 # table_name
+% i,	d # name
+% int,	double # type
+% 1,	22 # length
+#copy 9 records into f2774 from stdin using delimiters ',','\n';
+#300,1e-300
+#302,1e-302
+#304,1e-304
+#306,1e-306
+#307,1e-307
+#324,1e-324
+#326,1e-326
+#328,1e-328
+#330,1e-330
+#copy 9 records into d2774 from stdin using delimiters ',','\n';
+#300,1e-300
+#302,1e-302
+#304,1e-304
+#306,1e-306
+#307,1e-307
+#324,1e-324
+#326,1e-326
+#328,1e-328
+#330,1e-330
+#
+[ 9	]
+#copy 9 records into f2774 from stdin using delimiters ',','\n';
+#300,1e-300
+#302,1e-302
+#304,1e-304
+#306,1e-306
+#307,1e-307
+#324,1e-324
+#326,1e-326
+#328,1e-328
+#330,1e-330
+#copy 9 records into d2774 from stdin using delimiters ',','\n';
+#300,1e-300
+#302,1e-302
+#304,1e-304
+#306,1e-306
+#307,1e-307
+#324,1e-324
+#326,1e-326
+#328,1e-328
+#330,1e-330
+#
+[ 9	]
+#select * from f2774;
+% sys.f2774,	sys.f2774 # table_name
+% i,	f # name
+% int,	double # type
+% 3,	22 # length
+[ 300,	1e-300	]
+[ 302,	1e-302	]
+[ 304,	1e-304	]
+[ 306,	1e-306	]
+[ 307,	1e-307	]
+
+! to be checked & approved !
+
+#select * from d2774;
+% sys.d2774,	sys.d2774 # table_name
+% i,	d # name
+% int,	double # type
+% 3,	22 # length
+[ 300,	1e-300	]
+[ 302,	1e-302	]
+[ 304,	1e-304	]
+[ 306,	1e-306	]
+[ 307,	1e-307	]
+
+! to be checked & approved !
+
+#drop table f2774;
+#drop table d2774;
+
+# 19:20:46 >  
+# 19:20:46 >  Done.
+# 19:20:46 >  
+
