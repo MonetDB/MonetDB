@@ -251,7 +251,7 @@ mal_export int newVariable(MalBlkPtr mb, str name, malType type);
 mal_export int cloneVariable(MalBlkPtr dst, MalBlkPtr src, int varid);
 mal_export void renameVariable(MalBlkPtr mb, int i, str name);
 mal_export void resetVarName(MalBlkPtr mb, int i);
-mal_export void copyVariable(MalBlkPtr dst, MalBlkPtr src, VarPtr v);
+mal_export void copyVariable(MalBlkPtr dst, VarPtr v);
 mal_export void removeVariable(MalBlkPtr mb, int varid);
 mal_export int newTmpVariable(MalBlkPtr mb, malType type);
 mal_export int newTmpSink(MalBlkPtr mb, malType type);
@@ -508,11 +508,10 @@ copyMalBlk(MalBlkPtr old)
 		return NULL;
 	}
 	mb->vsize = old->vsize;
-	memcpy((char *) mb->var, old->var, sizeof(VarPtr) * old->vtop);
 
 	mb->vtop = 0;
 	for (i = 0; i < old->vtop; i++) {
-		copyVariable(mb, old, getVar(old, i));
+		copyVariable(mb, getVar(old, i));
 		mb->vtop++;
 	}
 
@@ -1285,12 +1284,11 @@ delVariable(MalBlkPtr mb, int varid)
 	}
 }
 void
-copyVariable(MalBlkPtr dst, MalBlkPtr src, VarPtr v)
+copyVariable(MalBlkPtr dst, VarPtr v)
 {
 	int i;
 	VarPtr w;
 
-	(void) src;		/* fool the compiler */
 	assert(v->propc <= v->maxprop);
 	w = (VarPtr) GDKzalloc(sizeof(VarRecord) + v->maxprop * sizeof(int));
 	w->name = v->name ? GDKstrdup(v->name) : 0;
@@ -2527,6 +2525,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 			} else {
 				if( getTailType(getArgType(mb,p,i)) > TYPE_str )
 				{ char *ct=cv;
+					strcat(t, "=");
 					VALformat(&cv, &getVar(mb, getArg(p, i))->value);
 					ct= (char*) GDKmalloc(1024+strlen(cv));
 					if (isVarUDFtype(mb, getArg(p, i)) ) {
@@ -2545,7 +2544,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 					VALformat(&cv, &getVar(mb, getArg(p, i))->value);
 			}
 			if ( cv && strlen(cv) > len - (t - s)) {
-				char *ns = (char *) GDKmalloc(len = strlen(cv) + len + 2);
+				char *ns = (char *) GDKmalloc(len = strlen(cv) + len + 5);
 
 				*t = 0;
 				strcpy(ns, s);
@@ -2553,8 +2552,9 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 				GDKfree(s);
 				s = ns;
 			}
-			if ( cv )
+			if ( cv ) 
 				strcat(t, cv);
+			
 			advance(t,base,len);
 			if ( (cv && strlen(cv)==0) || isVarUDFtype(mb, getArg(p, i)) ||
 				isAmbiguousType(getArgType(mb,p,i)) ){

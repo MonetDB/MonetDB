@@ -42,7 +42,7 @@ comment "Derive a series of gauge values based on sampling";
 
 opt_export str OPTgauges(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-#define _DEBUG_OPT_SLICE_
+/* #define _DEBUG_OPT_SLICE_ */
 #define OPTDEBUGslicing  if ( optDebug & ((lng)1 <<DEBUG_OPT_SLICING) )
 #endif
 @c
@@ -73,8 +73,8 @@ typedef struct {
 } Peer;
 
 static Peer peers[MAXSITES];    /* registry of peer servers */
-static int nrpeers;
-static bte slicingLocal;
+static int nrpeers;				/* peers active in sliced processing */
+static bte slicingLocal;		/* only use local node without remote calls*/
 
 typedef	struct{
 	InstrPtr target;
@@ -83,19 +83,6 @@ typedef	struct{
 	int lgauge, hgauge;
 	ValRecord bounds[MAXSITES];
 } Gauge;
-
-static void 
-OPTsliceGauges(MalBlkPtr mb, Gauge gauge, int peercnt)
-{
-	/* use sampling to determine initial gauge setting */
-	int i;
-
-	(void) mb;
-	for ( i=0; i < peercnt; i++){
-		gauge.bounds[i].vtype = gauge.type;
-		gauge.bounds[i].val.ival = 0;
-	}
-}
 
 static int
 OPTfindPeer(str uri)
@@ -135,10 +122,10 @@ OPTgetPeer(str uri)
 void OPTcleanFunReg(int i)
 {	
 	Registry r, q;
-	mal_set_lock(mal_contextLock,"tarantula.cleanFunReg");
+	mal_set_lock(mal_contextLock,"slicing.cleanFunReg");
 	r = peers[i].nxt;
 	peers[i].nxt = NULL;
-	mal_unset_lock(mal_contextLock,"tarantula.cleanFunReg");
+	mal_unset_lock(mal_contextLock,"slicing.cleanFunReg");
 	while ( r ) {
 			q = r->nxt;
 			GDKfree(r->fcn);
@@ -155,7 +142,7 @@ OPTdiscover(Client cntxt)
 	BUN p,q;
 	str msg = MAL_SUCCEED;
 	BATiter bi;
-	char buf[BUFSIZ]= "*/tarantula", *s= buf;
+	char buf[BUFSIZ]= "*/slicing", *s= buf;
 	int i, nrworkers = 0;
 
 	slicingLocal = 0;
@@ -260,8 +247,8 @@ OPTslicingStub(Client cntxt, MalBlkPtr mb, int pc, MalBlkPtr pmb, Gauge gauge)
 		arg[j]= getArg(q,0);
 	}
 
-	/* (k1,...kn):= remote.exec(conn,tarantula,qry,version....) */
-	snprintf(nme,BUFSIZ,"%s_subq",getFunctionId( getInstrPtr(mb,0)));
+	/* (k1,...kn):= remote.exec(conn,slicing,qry,version....) */
+	snprintf(nme,BUFSIZ,"%s_sub",getFunctionId( getInstrPtr(mb,0)));
 	q= newFcnCall(smb,remoteRef,execRef);
 	q->retc=  q->argc= 0;
 	for (j=0; j < sig->retc; j++){
@@ -377,10 +364,12 @@ OPTslicingCntrl(Client cntxt, MalBlkPtr mb, int pc, MalBlkPtr pmb, Gauge gauge)
 		pushInstruction(cmb,q);
 	}
 
-	q= newFcnCall(cmb,languageRef,dataflowRef);
-	q->barrier= BARRIERsymbol;
-	x = getArg(q,0);
-	setVarType(cmb,x,TYPE_int);
+	if ( slicingLocal == 0){
+		q= newFcnCall(cmb,languageRef,dataflowRef);
+		q->barrier= BARRIERsymbol;
+		x = getArg(q,0);
+		setVarType(cmb,x,TYPE_int);
+	}
 
 	/* tpe = getArgType( pmb, getInstrPtr(pmb,0),0); */
 
@@ -404,9 +393,11 @@ OPTslicingCntrl(Client cntxt, MalBlkPtr mb, int pc, MalBlkPtr pmb, Gauge gauge)
 		pushInstruction(cmb, pack[k]);
 
 
-	q= newAssignment(cmb);
-	q->barrier = EXITsymbol;
-	getArg(q,0) = x;
+	if ( slicingLocal == 0){
+		q= newAssignment(cmb);
+		q->barrier = EXITsymbol;
+		getArg(q,0) = x;
+	}
 
 	q = copyInstruction(getInstrPtr(mb,pc));
 	if ( getFunctionId(q) == countRef) {
@@ -415,6 +406,13 @@ OPTslicingCntrl(Client cntxt, MalBlkPtr mb, int pc, MalBlkPtr pmb, Gauge gauge)
 	} else 
 	if ( getFunctionId(q) == putName("exportValue",11)) 
 		getArg(q,8)= getArg(pack[0],0);
+	else
+	if ( getFunctionId(q) == NULL){
+		/* simple assignment */
+		assert(nrpack == q->retc);
+		for( k = 0; k < nrpack; k++)
+			getArg(q, q->retc + k) = getArg(pack[k],0);
+	}
 	
 	pushInstruction(cmb,q);
 
@@ -480,7 +478,7 @@ OPTcodegen(Client cntxt, MalBlkPtr mb, int pc, Gauge gauge )
 	str msg= MAL_SUCCEED;
 	
 	/* define the sub query as part of the user space */
-	snprintf(nme,BUFSIZ,"%s_subq%d",getFunctionId( getInstrPtr(mb,0)), pc);
+	snprintf(nme,BUFSIZ,"%s_qry%d",getFunctionId( getInstrPtr(mb,0)), pc);
 	s = newFunction(userRef, putName(nme, strlen(nme)),FUNCTIONsymbol);
 	if ( s == NULL)
 		return 0;
@@ -488,7 +486,6 @@ OPTcodegen(Client cntxt, MalBlkPtr mb, int pc, Gauge gauge )
 	s->def = copyMalBlk(mb);
 	nmb = s->def;
 	getFunctionId( getInstrPtr(nmb,0)) = putName(nme,strlen(nme));
-	insertSymbol(cntxt->nspace,s);
 
 	limit = nmb->stop;
 	old = nmb->stmt;
@@ -510,82 +507,86 @@ OPTcodegen(Client cntxt, MalBlkPtr mb, int pc, Gauge gauge )
 		GDKfree(gauge.column);
 	gauge.column = 0;
 
-	for ( i = 0; i < limit; i++)
-	if ( vec[i]) {
+	for ( i = 0; i < limit; i++) {
 		p = old[i];
-		if ( p->token == ENDsymbol)
-			continue;
-
-		if ( i == last) {
-			if ( getFunctionId(old[i]) == rsColumnRef) {
-				ret = pushReturn(nmb, ret, getArg(p,7));
-				nmb->stmt[0] =  pushReturn(nmb, getInstrPtr(nmb,0), getArg(p,7));
-				continue;
-			} else 
-			if ( getFunctionId(old[i]) == putName("exportValue",11)) {
-				ret = pushReturn(nmb, ret, getArg(p,0));
-			} else {
-				pushInstruction(nmb,old[i]);
-				for ( k = 0; k < p->retc; k++) {
-					ret = pushReturn(nmb, ret, getArg(p,k));
-					nmb->stmt[0] =  pushReturn(nmb, getInstrPtr(nmb,0), getArg(p,k));
+		if ( vec[i]) {
+			if ( i == last) {
+				if ( getFunctionId(old[i]) == rsColumnRef) {
+					ret = pushReturn(nmb, ret, getArg(p,7));
+					nmb->stmt[0] =  pushReturn(nmb, getInstrPtr(nmb,0), getArg(p,7));
+					continue;
+				} else 
+				if ( getFunctionId(old[i]) == putName("exportValue",11)) {
+					ret = pushReturn(nmb, ret, getArg(p,0));
+				} else {
+					pushInstruction(nmb,old[i]);
+					for ( k = 0; k < p->retc; k++) {
+						ret = pushReturn(nmb, ret, getArg(p,k));
+						nmb->stmt[0] =  pushReturn(nmb, getInstrPtr(nmb,0), getArg(p,k));
+					}
 				}
+			} else
+				pushInstruction(nmb,old[i]);
+
+			if ( ! (getModuleId(p) == sqlRef && getFunctionId(p) == bindRef ) )
+				continue;
+			if ( ! (strcmp(gauge.schema, getVarConstant(nmb, getArg(p,2)).val.sval) == 0 &&
+				strcmp(gauge.table, getVarConstant(nmb, getArg(p,3)).val.sval) == 0) )
+				continue;
+
+			if ( gauge.column == 0) {
+				gauge.column = GDKstrdup(getVarConstant(nmb,getArg(p,4)).val.sval);
+				gauge.type = getTailType(getVarType(nmb,getArg(p,0)));
+				gauge.lgauge =  newTmpVariable(nmb, gauge.type);
+				gauge.hgauge =  newTmpVariable(nmb, gauge.type);
+				/* temporary extend signature with bounds */
+				nmb->stmt[0] =  pushArgument(nmb,getInstrPtr(nmb,0), gauge.lgauge);
+				nmb->stmt[0] =  pushArgument(nmb,getInstrPtr(nmb,0), gauge.hgauge);
 			}
-		} else
+			
+			if (strcmp(gauge.column, getVarConstant(nmb, getArg(p,4)).val.sval) == 0) {
+				/* add the slice operation */
+				parallel = 1;
+				q= newInstruction(nmb,ASSIGNsymbol);
+				setModuleId(q,algebraRef);
+				setFunctionId(q,selectRef);
+				gauge.slice = k = newTmpVariable(nmb, getVarType(nmb, getArg(p,0)));
+				setVarUDFtype(nmb,k);
+				setVarUsed(nmb,k);
+				getArg(q,0)= getArg(p,0);
+				getArg(p,0)= k;
+				/* add the gauge to the call */
+				q= pushArgument(nmb,q, getArg(p,0));
+				q= pushArgument(nmb,q, gauge.lgauge);
+				q= pushArgument(nmb,q, gauge.hgauge);
+				q= pushBit(nmb,q, TRUE);
+				q= pushBit(nmb,q, FALSE);
+				pushInstruction(nmb,q);
+			} else {
+				/* sideways projection the range selection */
+				q= newInstruction(nmb,ASSIGNsymbol);
+				setModuleId(q,algebraRef);
+				setFunctionId(q,semijoinRef);
+				k = newTmpVariable(nmb, getVarType(nmb, getArg(p,0)));
+				setVarUDFtype(nmb,k);
+				setVarUsed(nmb,k);
+				getArg(q,0)= getArg(p,0);
+				getArg(p,0)= k;
+				q= pushArgument(nmb,q, k);
+				q= pushArgument(nmb,q, gauge.slice);
+				pushInstruction(nmb,q);
+			}
+		} else if ( p->token == ENDsymbol) {
+			pushInstruction(nmb,ret);
+			pushEndInstruction(nmb);
+			continue;
+		}
+		else if ( getModuleId(p) == optimizerRef)
 			pushInstruction(nmb,old[i]);
-
-		if ( ! (getModuleId(p) == sqlRef && getFunctionId(p) == bindRef ) )
-			continue;
-		if ( ! (strcmp(gauge.schema, getVarConstant(nmb, getArg(p,2)).val.sval) == 0 &&
-		    strcmp(gauge.table, getVarConstant(nmb, getArg(p,3)).val.sval) == 0) )
-			continue;
-
-		if ( gauge.column == 0) {
-			gauge.column = GDKstrdup(getVarConstant(nmb,getArg(p,4)).val.sval);
-			gauge.type = getTailType(getVarType(nmb,getArg(p,0)));
-			gauge.lgauge =  newTmpVariable(nmb, gauge.type);
-			gauge.hgauge =  newTmpVariable(nmb, gauge.type);
-			/* temporary extend signature with bounds */
-			nmb->stmt[0] =  pushArgument(nmb,getInstrPtr(nmb,0), gauge.lgauge);
-			nmb->stmt[0] =  pushArgument(nmb,getInstrPtr(nmb,0), gauge.hgauge);
-			OPTsliceGauges(nmb, gauge, nrpeers);
+		else {
+			freeInstruction(old[i]);
+			old[i] = 0;
 		}
-		
-		if (strcmp(gauge.column, getVarConstant(nmb, getArg(p,4)).val.sval) == 0) {
-			/* add the slice operation */
-			parallel = 1;
-			q= newInstruction(nmb,ASSIGNsymbol);
-			setModuleId(q,algebraRef);
-			setFunctionId(q,selectRef);
-			gauge.slice = k = newTmpVariable(nmb, getVarType(nmb, getArg(p,0)));
-			setVarUDFtype(nmb,k);
-			setVarUsed(nmb,k);
-			getArg(q,0)= getArg(p,0);
-			getArg(p,0)= k;
-			/* add the gauge to the call */
-			q= pushArgument(nmb,q, getArg(p,0));
-			q= pushArgument(nmb,q, gauge.lgauge);
-			q= pushArgument(nmb,q, gauge.hgauge);
-			q= pushBit(nmb,q, TRUE);
-			q= pushBit(nmb,q, FALSE);
-			pushInstruction(nmb,q);
-		} else {
-			/* sideways projection the range selection */
-			q= newInstruction(nmb,ASSIGNsymbol);
-			setModuleId(q,algebraRef);
-			setFunctionId(q,semijoinRef);
-			k = newTmpVariable(nmb, getVarType(nmb, getArg(p,0)));
-			setVarUDFtype(nmb,k);
-			setVarUsed(nmb,k);
-			getArg(q,0)= getArg(p,0);
-			getArg(p,0)= k;
-			q= pushArgument(nmb,q, k);
-			q= pushArgument(nmb,q, gauge.slice);
-			pushInstruction(nmb,q);
-		}
-	} else {
-		freeInstruction(old[i]);
-		old[i] = 0;
 	}
 
 	if ( parallel == 0 ){
@@ -594,18 +595,10 @@ OPTcodegen(Client cntxt, MalBlkPtr mb, int pc, Gauge gauge )
 		freeMalBlk(nmb);
 		return 0;
 	}
+	insertSymbol(cntxt->nspace,s);
 
-	pushInstruction(nmb,ret);
+
 	q = 0;
-	/* change the source */
-	pushEndInstruction(nmb);
-
-	msg = OPTdeadcode(cntxt, nmb, 0, 0);
-	if ( msg)
-		goto wrapup;
-	msg= optimizeMALBlock(cntxt, nmb);
-	if ( msg)
-		goto wrapup;
 
 	/* supportive routines */
 	smb = OPTslicingStub(cntxt, mb, pc,  nmb, gauge);
@@ -618,6 +611,17 @@ OPTcodegen(Client cntxt, MalBlkPtr mb, int pc, Gauge gauge )
 	if ( cmb->errors)
 		goto wrapup;
 
+	msg = OPTdeadcode(cntxt, nmb, 0, 0);
+	if ( msg)
+		goto wrapup;
+	chkProgram(cntxt->nspace, nmb);
+	if ( nmb->errors)
+		goto wrapup;
+	/* beware, optimizer may reorder/relabel variables */
+	msg= optimizeMALBlock(cntxt, nmb);
+	if ( msg)
+		goto wrapup;
+
 	/* remove the gauge variables */
 	/* nmb->stmt[0]->argc -= 2;*/
 	q = copyInstruction(getInstrPtr(cmb,0));
@@ -625,6 +629,7 @@ OPTcodegen(Client cntxt, MalBlkPtr mb, int pc, Gauge gauge )
 	q->token = ASSIGNsymbol;
 	/* beware this instruction refers to cmb variables */
 wrapup:
+#ifdef _DEBUG_OPT_SLICE_
 	mnstr_printf(cntxt->fdout,"#Grabbed part\n");
 	if ( nmb)
 		printFunction(cntxt->fdout, nmb, 0, LIST_MAL_STMT);
@@ -634,6 +639,7 @@ wrapup:
 	mnstr_printf(cntxt->fdout,"#cntrl\n");
 	if ( cmb)
 		printFunction(cntxt->fdout, cmb, 0, LIST_MAL_STMT);
+#endif
 
 	if (vec) GDKfree(vec);
 	return q;
@@ -655,11 +661,14 @@ OPTslicingImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	(void) pci;
 
 	/* determine the peers using merovingian */ 
-    mal_set_lock(mal_contextLock,"optimizer.slicing");
-    if ( nrpeers == 0 )
-        OPTdiscover(cntxt);
-    mal_unset_lock(mal_contextLock,"optimizer.slicing");
+	mal_set_lock(mal_contextLock,"optimizer.slicing");
+	if ( nrpeers == 0 )
+		OPTdiscover(cntxt);
+	mal_unset_lock(mal_contextLock,"optimizer.slicing");
+    /* nrpeers = GDKnr_threads ? GDKnr_threads:1;*/
+	/* to ease debugging now */
 	nrpeers = 2;
+	slicingLocal = 1;
 
 	/* modify the block as we go */
 	omb= copyMalBlk(mb);
@@ -794,16 +803,65 @@ wrapup:
 @include optimizerWrapper.mx
 @c
 #include "opt_statistics.h"
+#include "algebra.h"
 @:wrapOptimizer(slicing,OPT_CHECK_ALL)@
 
+@-
+@= histo
+	{ @1 *vv;
+		vv= (@1 *) getArgReference(stk, pci, 0 );
+		*vv = @1_nil;
+		vx = (ptr) &max.val.@2;
+		BATmax(b, vx);
+		vv= (ptr) getArgReference(stk, pci, pci->retc -1 );
+		*vv = @1_nil;
+		vm = (ptr) &min.val.@2;
+		BATmin(b, vm);
+		step.val.@2 = (max.val.@2 - min.val.@2) / pci->retc-2;
+		if ( step.val.@2 == 0)
+				step.val.@2 = max.val.@2;
+		for ( i = 1; i < pci->retc-1; i++) {
+			vx= (ptr) getArgReference(stk, pci, i );
+			((ValPtr) vx ) ->val.@2 = min.val.@2 + i * step.val.@2;
+		}
+	}
+@c
 /* determine the initial gauge values */
+/* the min/max bounds are null values */
+/* It is the heart of the approach and requires experimentation */
 str
 OPTgauges(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	
+	BAT *b;
+	int bid = *(int*) getArgReference(stk,pci, pci->argc-1);
+	ValRecord min,max, step;
+	int i;
+	ptr vx,vm;
+
 	(void) cntxt;
 	(void) mb;
-	(void) stk;
-	(void) pci;
+	if ( pci->retc < 2)
+		throw(SQL,"sql.gauges","Not enough gauges");
+	b = BATdescriptor(bid);
+	if (b == NULL)
+		throw(SQL,"sql.gauges","Can not access BAT");
+    switch (ATOMstorage(b->ttype)) {
+    case TYPE_bte: @:histo(bte,btval)@ break;
+    case TYPE_sht: @:histo(sht,shval)@ break;
+    case TYPE_int: @:histo(int,ival)@ break;
+    case TYPE_wrd: @:histo(wrd,wval)@ break;
+    case TYPE_lng: @:histo(lng,lval)@ break;
+    case TYPE_oid: @:histo(oid,oval)@ break;
+    case TYPE_flt: @:histo(flt,fval)@ break;
+    case TYPE_dbl: @:histo(dbl,dval)@ break;
+	default:
+		throw(SQL,"sql.gauges","Can not slice column by value or oid");
+    }
+
+	for( i = 0; i < pci->retc; i++){
+	}
+
+	BBPreleaseref(bid);
 	return MAL_SUCCEED;
 }
 @}

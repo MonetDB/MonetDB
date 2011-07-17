@@ -113,16 +113,16 @@ MALException:addUser:user 'monetdb' already exists
 # oid	str		  # type
 #-------------------------#
 [ 0@0,	  "monetdb"	  ]
-[ 2@0,	  "checkpoint"	  ]
 [ 1@0,	  "test"	  ]
+[ 2@0,	  "checkpoint"	  ]
 #-------------------------#
 # h	t		  # name
 # oid	str		  # type
 #-------------------------#
 [ 0@0,	  "monetdb"	  ]
 [ 1@0,	  "test"	  ]
-MALException:removeScenario:scenario 'mal' not found for user 'test'
-MALException:addScenario:scenario 'mal' already exists for user 'test'
+MALException:removeScenario:scenario-based authorisation is no longer supported
+MALException:addScenario:scenario-based authorisation is no longer supported
 InvalidCredentialsException:setPassword:The administrator cannot set its own password, use changePassword instead
 InvalidCredentialsException:changePassword:Access denied
 InvalidCredentialsException:checkCredentials:invalid credentials for user 'monetdb'

@@ -16,3 +16,4 @@ count-count-distinct.Bug-2808
 crash_in_push_exp_down.Bug-2811
 subquery_in_from_clause.Bug-2812
 mkey-bulk_rotate_xor_hash.Bug-2825
+supertype.Bug-2830
