@@ -527,7 +527,6 @@ dnl  Only GNU (gcc) and Intel ([ie]cc/[ie]cpc on Linux) are done so far.
 NO_INLINE_CFLAGS=""
 GCC_SWIG_CFLAGS=""
 ICC_SWIG_CFLAGS=""
-CFLAGS_NO_OPT="-O0"
 if test "x$enable_strict" = xyes; then
 case "$GCC-$CC-$host_os" in
 yes-*-*)
@@ -845,7 +844,6 @@ esac
 dnl some dirty hacks
 THREAD_SAVE_FLAGS="\$(thread_safe_flag_spec) -D_REENTRANT"
 # only needed in monet
-NO_OPTIMIZE_FILES=""
 case "$host_os" in
 solaris*)
     case "$GCC" in
@@ -860,12 +858,6 @@ aix*)
     case "$GCC" in
       yes)
         THREAD_SAVE_FLAGS="$THREAD_SAVE_FLAGS -mthreads"
-        dnl  With "-On" (n>0), compilation of monet_multiplex.mx fails on sara's solo with
-        dnl  "Assembler: /tmp/cc8qluZf.s: line 33198: Displacement must be divisible by 4.".
-        dnl  Likewise, the MIL parser does not work correctly, unless compile monet_parse.yy.c
-        dnl  without optimization (i.e., with "$(CFLAGS_NO_OPT)").
-        dnl  Hence:
-        NO_OPTIMIZE_FILES="monet_multiplex.mx monet_parse.yy.mx"
         ;;
       *)
         THREAD_SAVE_FLAGS="$THREAD_SAVE_FLAGS -qthreaded"
@@ -875,7 +867,6 @@ aix*)
 esac
 AC_SUBST(thread_safe_flag_spec)
 AC_SUBST(THREAD_SAVE_FLAGS)
-AC_SUBST(NO_OPTIMIZE_FILES)
 
 AC_PROG_INSTALL
 AC_LIBTOOL_DLOPEN
@@ -1226,7 +1217,6 @@ if test "x$enable_optim" = xyes; then
       case "$host-$icc_ver" in
       dnl handle non-Intel compilers ($icc_ver=""), first
       *solaris*-)      CFLAGS="$CFLAGS -xO5"
-                       CFLAGS_NO_OPT="-xO0"
                        ;;
 #     *irix*-)         CFLAGS="$CFLAGS -O3 -Ofast=IP27 -OPT:alias=restrict -IPA"
       *irix*-)         CFLAGS="$CFLAGS -O3 -OPT:div_split=ON:fast_complex=ON:fast_exp=ON:fast_nint=ON:Olimit=2147483647:roundoff=3 -TARG:processor=r10k -IPA"
@@ -1317,7 +1307,6 @@ if test "x$enable_optim" = xyes; then
 else
 	AC_MSG_RESULT([no])
 fi
-AC_SUBST(CFLAGS_NO_OPT)
 AC_SUBST(NO_INLINE_CFLAGS)
 AC_SUBST(GCC_SWIG_CFLAGS)
 AC_SUBST(ICC_SWIG_CFLAGS)
