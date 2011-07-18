@@ -25,21 +25,6 @@ INCLUDES = ../include ../common ../storage \
 
 YFLAGS = -d -p sql
 
-#  Some versions of flex & bison seem to generate code
-#  that does not compile with `gcc -Wundef`;
-#  we use GCC_BISON_CFLAGS to disable the respective warning as
-#  locally as possible via "-Wno-undef"
-#  (see also configure.ag).
-#
-#  (At least on Fedora Core 4,) bison 2.0 seems to generate code
-#  that icc does not like; since the problem only occurs with
-#  sql/src/server/sql_parser.y,
-#  we use ICC_BISON_CFLAGS
-#  to disable the respective warning as locally as possible
-#  via "-wd592" (#592: variable "." is used before its value is set)
-#  (see also configure.ag).
-CFLAGS = $(ICC_BISON_CFLAGS) $(GCC_BISON_CFLAGS)
-
 lib_sqlserver = {
 	NOINST
 	DIR = libdir

@@ -19,9 +19,6 @@ MTSAFE
 
 INCLUDES = ../common/options ../common/stream ../common/utils $(valgrind_CFLAGS)
 
-gdk_scanselect_CFLAGS = $(NO_INLINE_CFLAGS)
-# gdk_relop.mx
-
 EXTRA_DIST = gdk_scanselect_defs.mx gdk_private.h gdk_delta.h gdk_logger.h gdk_posix.h gdk_system.h gdk_tm.h gdk_storage.h
 
 lib_gdk = { 

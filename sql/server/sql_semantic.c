@@ -751,6 +751,9 @@ char *dlist2string(mvc *sql, dlist *l, char **err)
 			return NULL;
 		if (b) {
 			char *o = b;
+			b = strconcat(b,".");
+			_DELETE(o);
+			o = b;
 			b = strconcat(b,s);
 			_DELETE(o);
 			_DELETE(s);
@@ -775,9 +778,11 @@ char *symbol2string(mvc *sql, symbol *se, char **err)
 
 		len = snprintf( buf+len, BUFSIZ-len, "%s(", op); 
 		for (; ops; ops = ops->next) {
-			char *tmp;
+			char *tmp = symbol2string(sql, ops->data.sym, err);
+			if (tmp == NULL)
+				return NULL;
 			len = snprintf( buf+len, BUFSIZ-len, "%s%s", 
-				tmp = symbol2string(sql, ops->data.sym, err), 
+				tmp, 
 				(ops->next)?",":"");
 			_DELETE(tmp);
 		}
@@ -786,8 +791,16 @@ char *symbol2string(mvc *sql, symbol *se, char **err)
 	case SQL_BINOP: {
 		dnode *lst = se->data.lval->h;
 		char *op = qname_fname(lst->data.lval);
-		char *l = symbol2string(sql, lst->next->data.sym, err);
-		char *r = symbol2string(sql, lst->next->next->data.sym, err);
+		char *l;
+		char *r;
+		l = symbol2string(sql, lst->next->data.sym, err);
+		if (l == NULL)
+			return NULL;
+		r = symbol2string(sql, lst->next->next->data.sym, err);
+		if (r == NULL) {
+			_DELETE(l);
+			return NULL;
+		}
 		len = snprintf( buf+len, BUFSIZ-len, "%s(%s,%s)", op, l, r); 
 		_DELETE(l);
 		_DELETE(r);
@@ -801,6 +814,8 @@ char *symbol2string(mvc *sql, symbol *se, char **err)
 		dnode *lst = se->data.lval->h;
 		char *op = qname_fname(lst->data.lval);
 		char *l = symbol2string(sql, lst->next->data.sym, err);
+		if (l == NULL)
+			return NULL;
 		len = snprintf( buf+len, BUFSIZ-len, "%s(%s)", op, l); 
 		_DELETE(l);
 		break;
@@ -834,15 +849,25 @@ char *symbol2string(mvc *sql, symbol *se, char **err)
 			atom *a = sql_bind_arg(sql, l->h->data.i_val);
 			return atom2sql(a);
 		} else {
-			*err = dlist2string(sql, l, err);
+			char *e = dlist2string(sql, l, err);
+			if (e)
+				*err = e;
 		}
 		return NULL;
 	} 	
 	case SQL_CAST: {
 		dlist *dl = se->data.lval;
-		char *val = symbol2string(sql, dl->h->data.sym, err);
-		char *tpe = subtype2string(&dl->h->next->data.typeval);
-	
+		char *val;
+		char *tpe;
+
+		val = symbol2string(sql, dl->h->data.sym, err);
+		if (val == NULL)
+			return NULL;
+		tpe = subtype2string(&dl->h->next->data.typeval);
+		if (tpe == NULL) {
+			_DELETE(val);
+			return NULL;
+		}
 		len = snprintf( buf+len, BUFSIZ-len, "cast ( %s as %s )",
 				val, tpe);
 		_DELETE(val);
