@@ -1,0 +1,45 @@
+stdout of test 'subquery_in_where.Bug-2823` in directory 'test/BugTracker-2011` itself:
+
+
+# 15:17:43 >  
+# 15:17:43 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/HG/Apr2011/prefix/_/var/MonetDB" --set mapi_open=true --set mapi_port=33284 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_test_BugTracker-2011" --set mal_listing=0 ; echo ; echo Over..
+# 15:17:43 >  
+
+# MonetDB 5 server v11.3.4
+# This is an unreleased version
+# Serving database 'mTests_test_BugTracker-2011', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:33284/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+
+Over..
+
+# 15:17:44 >  
+# 15:17:44 >  mclient -lsql -ftest -i -e --host=rig --port=33284 
+# 15:17:44 >  
+
+#SELECT * FROM (SELECT 0 AS "value") AS row WHERE row.value = (SELECT 0) AND row.value = 0;
+% .row # table_name
+% value # name
+% tinyint # type
+% 1 # length
+[ 0	]
+#SELECT * FROM (SELECT 0 AS "value") AS row WHERE row.value = 0 AND row.value = (SELECT 0);
+% .row # table_name
+% value # name
+% tinyint # type
+% 1 # length
+[ 0	]
+
+# 15:17:44 >  
+# 15:17:44 >  Done.
+# 15:17:44 >  
+

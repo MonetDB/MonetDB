@@ -36,12 +36,17 @@ false	false
 9. 3, 2004-04-24, 2004-04-24
 1. 4, 2004-04-24 11:43:53.000000, 2004-04-24 11:43:53.0
 2. 4, 2004-04-24 11:43:53.000000, 00:00:00
+warning: java.sql.SQLWarning: parsing failed, found: '-' in: "2004-04-24 11:43:53.000000" at pos: 4
 3. 4, 2004-04-24 11:43:53.000000, 2004-04-24
 4. 5, 11:43:53, 1970-01-01 00:00:00.0
+warning: java.sql.SQLWarning: parsing failed, found: ':' in: "11:43:53" at pos: 2
 5. 5, 11:43:53, 11:43:53
 6. 5, 11:43:53, 1970-01-01
-7. 6, 2004-04-24, 2004-04-24 00:00:00.0
+warning: java.sql.SQLWarning: parsing failed, found: ':' in: "11:43:53" at pos: 2
+7. 6, 2004-04-24, 1970-01-01 00:00:00.0
+warning: java.sql.SQLWarning: parsing failed, expected more data after '2004-04-24'
 8. 6, 2004-04-24, 00:00:00
+warning: java.sql.SQLWarning: parsing failed, found: '-' in: "2004-04-24" at pos: 4
 9. 6, 2004-04-24, 2004-04-24
 
 # 09:05:23 >  

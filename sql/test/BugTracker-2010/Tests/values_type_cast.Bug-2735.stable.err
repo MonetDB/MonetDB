@@ -49,7 +49,6 @@ stderr of test 'values_type_cast.Bug-2735` in directory 'test/BugTracker-2010` i
 # config opt 	sidcrack_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,sidcrack,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,multiplex,garbageCollector
 # config opt 	datacell_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,deadcode,constants,commonTerms,joinPath,datacell,deadcode,reduce,dataflow,history,multiplex,garbageCollector
 # config opt 	octopus_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,octopus,reduce,dataflow,history,multiplex,garbageCollector
-# config opt 	tarantula_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,constants,commonTerms,joinPath,tarantula,deadcode,reduce,dataflow,history,multiplex,garbageCollector
 # config opt 	mapreduce_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,mapreduce,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector
 # config opt 	datacyclotron_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,datacyclotron,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,replication,multiplex,garbageCollector
 # config opt 	derive_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,derivePath,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector

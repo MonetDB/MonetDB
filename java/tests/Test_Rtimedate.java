@@ -45,48 +45,93 @@ public class Test_Rtimedate {
 			rs = stmt.executeQuery("SELECT * FROM table_Test_Rtimedate");
 
 			rs.next();
+			readWarnings(rs.getWarnings());
+			rs.clearWarnings();
 			// the next three should all go well
 			System.out.println("1. " + rs.getString("id") + ", " + rs.getString("ts") + ", " + rs.getTimestamp("ts"));
+			readWarnings(rs.getWarnings());
+			rs.clearWarnings();
 			System.out.println("2. " + rs.getString("id") + ", " + rs.getString("ts") + ", " + rs.getTime("ts"));
+			readWarnings(rs.getWarnings());
+			rs.clearWarnings();
 			System.out.println("3. " + rs.getString("id") + ", " + rs.getString("ts") + ", " + rs.getDate("ts"));
+			readWarnings(rs.getWarnings());
+			rs.clearWarnings();
 			rs.next();
+			readWarnings(rs.getWarnings());
+			rs.clearWarnings();
 			// the next two should go fine
 			System.out.println("4. " + rs.getString("id") + ", " + rs.getString("t") + ", " + rs.getTimestamp("t"));
+			readWarnings(rs.getWarnings());
+			rs.clearWarnings();
 			System.out.println("5. " + rs.getString("id") + ", " + rs.getString("t") + ", " + rs.getTime("t"));
+			readWarnings(rs.getWarnings());
+			rs.clearWarnings();
 			// this one should return 0
 			System.out.println("6. " + rs.getString("id") + ", " + rs.getString("t") + ", " + rs.getDate("t"));
+			readWarnings(rs.getWarnings());
+			rs.clearWarnings();
 			rs.next();
+			readWarnings(rs.getWarnings());
+			rs.clearWarnings();
 			// the next one passes
 			System.out.println("7. " + rs.getString("id") + ", " + rs.getString("d") + ", " + rs.getTimestamp("d"));
+			readWarnings(rs.getWarnings());
+			rs.clearWarnings();
 			// this one should return 0
 			System.out.println("8. " + rs.getString("id") + ", " + rs.getString("d") + ", " + rs.getTime("d"));
+			readWarnings(rs.getWarnings());
+			rs.clearWarnings();
 			// and this one should pass again
 			System.out.println("9. " + rs.getString("id") + ", " + rs.getString("d") + ", " + rs.getDate("d"));
+			readWarnings(rs.getWarnings());
+			rs.clearWarnings();
 
 			// in the tests below a bare string is parsed
 			// everything will fail except the ones commented on
 			rs.next();
+			readWarnings(rs.getWarnings());
+			rs.clearWarnings();
 			// timestamp -> timestamp should go
 			System.out.println("1. " + rs.getString("id") + ", " + rs.getString("vc") + ", " + rs.getTimestamp("vc"));
+			readWarnings(rs.getWarnings());
+			rs.clearWarnings();
 			System.out.println("2. " + rs.getString("id") + ", " + rs.getString("vc") + ", " + rs.getTime("vc"));
+			readWarnings(rs.getWarnings());
+			rs.clearWarnings();
 			// timestamp -> date goes because the begin is the same
 			System.out.println("3. " + rs.getString("id") + ", " + rs.getString("vc") + ", " + rs.getDate("vc"));
+			readWarnings(rs.getWarnings());
+			rs.clearWarnings();
 			rs.next();
+			readWarnings(rs.getWarnings());
+			rs.clearWarnings();
 			System.out.println("4. " + rs.getString("id") + ", " + rs.getString("vc") + ", " + rs.getTimestamp("vc"));
+			readWarnings(rs.getWarnings());
+			rs.clearWarnings();
 			// time -> time should fit
 			System.out.println("5. " + rs.getString("id") + ", " + rs.getString("vc") + ", " + rs.getTime("vc"));
+			readWarnings(rs.getWarnings());
+			rs.clearWarnings();
 			System.out.println("6. " + rs.getString("id") + ", " + rs.getString("vc") + ", " + rs.getDate("vc"));
+			readWarnings(rs.getWarnings());
+			rs.clearWarnings();
 			rs.next();
+			readWarnings(rs.getWarnings());
+			rs.clearWarnings();
 			System.out.println("7. " + rs.getString("id") + ", " + rs.getString("vc") + ", " + rs.getTimestamp("vc"));
+			readWarnings(rs.getWarnings());
+			rs.clearWarnings();
 			System.out.println("8. " + rs.getString("id") + ", " + rs.getString("vc") + ", " + rs.getTime("vc"));
+			readWarnings(rs.getWarnings());
+			rs.clearWarnings();
 			// date -> date should be fine
 			System.out.println("9. " + rs.getString("id") + ", " + rs.getString("vc") + ", " + rs.getDate("vc"));
+			readWarnings(rs.getWarnings());
+			rs.clearWarnings();
 
-			SQLWarning w = con.getWarnings();
-			while (w != null) {
-				System.out.println("warning: " + w.toString());
-				w = w.getNextWarning();
-			}
+			readWarnings(stmt.getWarnings());
+			readWarnings(con.getWarnings());
 		} catch (SQLException e) {
 			System.out.println("failed :( "+ e.getMessage());
 			System.out.println("ABORTING TEST!!!");
@@ -94,5 +139,12 @@ public class Test_Rtimedate {
 
 		con.rollback();
 		con.close();
+	}
+
+	private static void readWarnings(SQLWarning w) {
+		while (w != null) {
+			System.out.println("warning: " + w.toString());
+			w = w.getNextWarning();
+		}
 	}
 }
