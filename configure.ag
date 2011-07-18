@@ -525,8 +525,6 @@ dnl  i.e., at the end of this configure[.ag] script.
 dnl  Only GNU (gcc) and Intel ([ie]cc/[ie]cpc on Linux) are done so far.
 : ${X_CFLAGS=} # initialize to empty if not set
 NO_INLINE_CFLAGS=""
-GCC_BISON_CFLAGS=""
-ICC_BISON_CFLAGS=""
 GCC_SWIG_CFLAGS=""
 ICC_SWIG_CFLAGS=""
 CFLAGS_NO_OPT="-O0"
@@ -674,22 +672,6 @@ yes-*-*)
 		;;
 	esac
 
-	dnl  Some versions of bison seem to generate code
-	dnl  that does not compile with `gcc -Wundef`;
-	dnl  we use GCC_BISON_CFLAGS to disable the respective warning as
-	dnl  locally as possible via "-Wno-undef"
-	dnl  (see also sql/server/Makefile.ag).
-	GCC_BISON_CFLAGS="$GCC_BISON_CFLAGS -Wno-undef"
-	dnl  Likewise, at least with gcc 4.3.0 and bison 2.3 on Gentoo 1.12.11.1,
-	dnl  gcc complains about some bison-generated code that defines an unused static function:
-	dnl  "warning: 'input' defined but not used".
-	case "$CC-$gcc_ver" in
-	*clang*-*)
-	    ;;
-	*-4.[[3-9]]*|*-[[5-9]].*)
-	    GCC_BISON_CFLAGS="$GCC_BISON_CFLAGS -Wno-unused-function";;
-	esac
-	dnl  ... however, some things are beyond our control:
 	case $host_os in
 	solaris*|aix*)
 		dnl  In some cases, there is a (possibly) uninitialized
@@ -816,26 +798,6 @@ yes-*-*)
 	dnl  #1572: floating-point equality and inequality comparisons are unreliable
 	dnl  #1599: declaration hides variable 
 	dnl  #2259: non-pointer conversion from "." to "." may lose significant bits
-
-	dnl  (At least on Fedora Core 4,) bison 2.0 seems to generate code
-	dnl  that icc does not like; since the problem only occurs with
-	dnl  sql/server/sql_parser.mx, 
-	dnl  we use ICC_BISON_CFLAGS 
-	dnl  to disable the respective warning as locally as possible
-	dnl  (see also sql/server/Makefile.ag).
-	case "`bison -V | head -n1`" in
-	*2.0*)
-		ICC_BISON_CFLAGS="$ICC_BISON_CFLAGS -wd592"
-		dnl  # 592: variable "." is used before its value is set
-		;;
-	esac
-	
-	dnl  Some versions of bison seem to generate code that icc does not like;
-	dnl  we use ICC_BISON_CFLAGS to disable the respective warning as
-	dnl  locally as possible via "-wd177"
-	dnl  (#177: label "." was declared but never referenced)
-	dnl  (see also sql/server/Makefile.ag).
-	ICC_BISON_CFLAGS="$ICC_BISON_CFLAGS -wd177"
 
 	dnl  Intel's icc does not like to compile swig-generated code
 	dnl  (at least not with our strict X_CFLAGS), complaining about
@@ -1357,8 +1319,6 @@ else
 fi
 AC_SUBST(CFLAGS_NO_OPT)
 AC_SUBST(NO_INLINE_CFLAGS)
-AC_SUBST(GCC_BISON_CFLAGS)
-AC_SUBST(ICC_BISON_CFLAGS)
 AC_SUBST(GCC_SWIG_CFLAGS)
 AC_SUBST(ICC_SWIG_CFLAGS)
 
