@@ -915,16 +915,16 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 
 		for (n = columns->h; n; n = n->next) {
 			symbol *sym = n->data.sym;
-			/* TODO: handle array dim.s ??? */
 			int res = table_element(sql, sym, s, t, 0);
 
 			if (res == SQL_ERR) 
 				return NULL;
 		}
 		temp = (tt == tt_table || tt == tt_array)?temp:SQL_PERSIST;
-		/* TODO: need sth. special for arrays??? */
+		/* TODO: is DDL_CREATE_TABLE sufficient for arrays? */
 		return rel_table(sql, DDL_CREATE_TABLE, sname, t, temp);
 	} else { /* [col name list] as subquery with or without data */
+		/* TODO: handle create_array_as_subquery??? */
 		sql_rel *sq = NULL, *res = NULL;
 		dlist *as_sq = table_elements_or_subquery->data.lval;
 		dlist *column_spec = as_sq->h->data.lval;
@@ -937,13 +937,13 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 		if (!sq)
 			return NULL;
 
-		/* create table */ /* TODO: handle create_array_as_subquery */
+		/* create table */
 		if (create && (t = mvc_create_table_as_subquery( sql, sq, s, name, column_spec, temp, commit_action)) == NULL) { 
 			rel_destroy(sq);
 			return NULL;
 		}
 
-		/* insert query result into this table */ /* TODO: handle create_array_as_subquery */
+		/* insert query result into this table */
 		temp = (tt == tt_table || tt == tt_array)?temp:SQL_PERSIST;
 		res = rel_table(sql, DDL_CREATE_TABLE, sname, t, temp);
 		if (with_data) {
