@@ -45,23 +45,23 @@ function user.main():void;
     mdb.List("sql","query");
 end main;
 function sql.query(A0:sht):void;        #  0 query:void := sql.query(A0:sht) {G}
-    x1:bat[:oid,:int] {notnil=true,rows=1,bid=1489} := sql.bind("sys","y","i",0);#  1 x1:bat[:oid,:int] := MDBdummy(_6:str, _7:str, _8:str, _9:int) {G}
-    x6:bat[:oid,:int] {notnil=true,rows=0,bid=1485} := sql.bind("sys","y","i",1);#  2 x6:bat[:oid,:int] := MDBdummy(_6:str, _7:str, _8:str, _4:int) {G}
-    bpm10:bat[:oid,:int]  := bpm.unfold(x6{notnil=true,rows=0,bid=1485});#  3 bpm10:bat[:oid,:int] := BPMunfold(x6:bat[:oid,:int]) {G}
+    x1:bat[:oid,:int] {notnil=true, rows=1, bid=1489} := sql.bind("sys","y","i",0);#  1 x1:bat[:oid,:int] := MDBdummy(_6:str, _7:str, _8:str, _9:int) {G}
+    x6:bat[:oid,:int] {notnil=true, rows=0, bid=1485} := sql.bind("sys","y","i",1);#  2 x6:bat[:oid,:int] := MDBdummy(_6:str, _7:str, _8:str, _4:int) {G}
+    bpm10:bat[:oid,:int]  := bpm.unfold(x6{notnil=true, rows=0, bid=1485});#  3 bpm10:bat[:oid,:int] := BPMunfold(x6:bat[:oid,:int]) {G}
     bpm.emptySet(bpm10);                #  4 _12:void := BPMemptySet(bpm10:bat[:oid,:int]) {G}
-    x8:bat[:oid,:int] {notnil=true,rows=0,bid=1491} := sql.bind("sys","y","i",2);#  5 x8:bat[:oid,:int] := MDBdummy(_6:str, _7:str, _8:str, _15:int) {G}
-    bpm13:bat[:oid,:int]  := bpm.unfold(x8{notnil=true,rows=0,bid=1491});#  6 bpm13:bat[:oid,:int] := BPMunfold(x8:bat[:oid,:int]) {G}
+    x8:bat[:oid,:int] {notnil=true, rows=0, bid=1491} := sql.bind("sys","y","i",2);#  5 x8:bat[:oid,:int] := MDBdummy(_6:str, _7:str, _8:str, _15:int) {G}
+    bpm13:bat[:oid,:int]  := bpm.unfold(x8{notnil=true, rows=0, bid=1491});#  6 bpm13:bat[:oid,:int] := BPMunfold(x8:bat[:oid,:int]) {G}
     bpm.emptySet(bpm13);                #  7 _16:void := BPMemptySet(bpm13:bat[:oid,:int]) {G}
-    x16:bat[:oid,:int] {notnil=true,rows=1,bid=1492} := sql.bind("sys","y","j",0);#  8 x16:bat[:oid,:int] := MDBdummy(_6:str, _7:str, _19:str, _9:int) {G}
-    x11{rows=1} := algebra.markT(x1{notnil=true,rows=1,bid=1489},0@0);#  9 x11:bat[:oid,:oid] := ALGtmark(x1:bat[:oid,:int], _21:oid) {G}
+    x16:bat[:oid,:int] {notnil=true, rows=1, bid=1492} := sql.bind("sys","y","j",0);#  8 x16:bat[:oid,:int] := MDBdummy(_6:str, _7:str, _19:str, _9:int) {G}
+    x11{rows=1} := algebra.markT(x1{notnil=true, rows=1, bid=1489},0@0);#  9 x11:bat[:oid,:oid] := ALGtmark(x1:bat[:oid,:int], _21:oid) {G}
     x12{rows=1} := bat.reverse(x11{rows=1});# 10 x12:bat[:oid,:oid] := BKCreverse(x11:bat[:oid,:oid]) {G}
-    x13{rows=1} := algebra.join(x12{rows=1},x1{notnil=true,rows=1,bid=1489});# 11 x13:bat[:oid,:int] := ALGjoin(x12:bat[:oid,:oid], x1:bat[:oid,:int]) {G}
+    x13{rows=1} := algebra.join(x12{rows=1},x1{notnil=true, rows=1, bid=1489});# 11 x13:bat[:oid,:int] := ALGjoin(x12:bat[:oid,:oid], x1:bat[:oid,:int]) {G}
     (ext23,grp21) := group.new(x13{rows=1});# 12 (ext23:bat[:oid,:wrd], grp21:bat[:oid,:oid]) := GRPgroup(x13:bat[:oid,:int]) {G}
-    x18{rows=1} := algebra.join(x12{rows=1},x16{notnil=true,rows=1,bid=1492});# 13 x18:bat[:oid,:int] := ALGjoin(x12:bat[:oid,:oid], x16:bat[:oid,:int]) {G}
+    x18{rows=1} := algebra.join(x12{rows=1},x16{notnil=true, rows=1, bid=1492});# 13 x18:bat[:oid,:int] := ALGjoin(x12:bat[:oid,:oid], x16:bat[:oid,:int]) {G}
     (ext34,grp32) := group.derive(ext23,grp21,x18{rows=1});# 14 (ext34:bat[:oid,:wrd], grp32:bat[:oid,:oid]) := GRPderive(ext23:bat[:oid,:wrd], grp21:bat[:oid,:oid], x18:bat[:oid,:int]) {G}
     x21 := bat.mirror(ext34);           # 15 x21:bat[:oid,:oid] := BKCmirror(ext34:bat[:oid,:wrd]) {G}
-    x22 := algebra.joinPath(x21,x12{rows=1},x1{notnil=true,rows=1,bid=1489});# 16 x22:bat[:any,:any] := ALGjoinPath(x21:bat[:oid,:oid], x12:bat[:oid,:oid], x1:bat[:oid,:int]) {G}
-    x23 := algebra.joinPath(x21,x12{rows=1},x16{notnil=true,rows=1,bid=1492});# 17 x23:bat[:any,:any] := ALGjoinPath(x21:bat[:oid,:oid], x12:bat[:oid,:oid], x16:bat[:oid,:int]) {G}
+    x22 := algebra.joinPath(x21,x12{rows=1},x1{notnil=true, rows=1, bid=1489});# 16 x22:bat[:any,:any] := ALGjoinPath(x21:bat[:oid,:oid], x12:bat[:oid,:oid], x1:bat[:oid,:int]) {G}
+    x23 := algebra.joinPath(x21,x12{rows=1},x16{notnil=true, rows=1, bid=1492});# 17 x23:bat[:any,:any] := ALGjoinPath(x21:bat[:oid,:oid], x12:bat[:oid,:oid], x16:bat[:oid,:int]) {G}
     x24 := sql.resultSet(2,1,x22);      # 18 x24:void := MDBdummy(_15:int, _4:int, x22:bat[:any,:any]) {G}
     sql.rsColumn(x24,"sys.y","i","int",32,0,x22);# 19 _33:void := MDBdummy(x24:void, _34:str, _8:str, _35:str, _36:int, _9:int, x22:bat[:any,:any]) {G}
     sql.rsColumn(x24,"sys.y","j","int",32,0,x23);# 20 _37:void := MDBdummy(x24:void, _34:str, _19:str, _35:str, _36:int, _9:int, x23:bat[:any,:any]) {G}

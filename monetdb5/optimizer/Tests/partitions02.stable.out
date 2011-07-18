@@ -35,14 +35,14 @@ function user.main():void;
     mdb.List("sql","query");
 end main;
 function sql.query(A0:sht):void;        #  0 query:void := sql.query(A0:sht) {G}
-    x1:bat[:oid,:int] {notnil=true,rows=0,bid=765} := sql.bind("sys","x","i",0);#  1 x1:bat[:oid,:int] := MDBdummy(_6:str, _7:str, _8:str, _4:int) {G}
-    x6:bat[:oid,:int] {notnil=true,rows=0,bid=769} := sql.bind("sys","x","i",1);#  2 x6:bat[:oid,:int] := MDBdummy(_6:str, _7:str, _8:str, _11:int) {G}
-    bpm9:bat[:oid,:int]  := bpm.unfold(x6{notnil=true,rows=0,bid=769});#  3 bpm9:bat[:oid,:int] := BPMunfold(x6:bat[:oid,:int]) {G}
+    x1:bat[:oid,:int] {notnil=true, rows=0, bid=765} := sql.bind("sys","x","i",0);#  1 x1:bat[:oid,:int] := MDBdummy(_6:str, _7:str, _8:str, _4:int) {G}
+    x6:bat[:oid,:int] {notnil=true, rows=0, bid=769} := sql.bind("sys","x","i",1);#  2 x6:bat[:oid,:int] := MDBdummy(_6:str, _7:str, _8:str, _11:int) {G}
+    bpm9:bat[:oid,:int]  := bpm.unfold(x6{notnil=true, rows=0, bid=769});#  3 bpm9:bat[:oid,:int] := BPMunfold(x6:bat[:oid,:int]) {G}
     bpm.emptySet(bpm9);                 #  4 _12:void := BPMemptySet(bpm9:bat[:oid,:int]) {G}
-    x8:bat[:oid,:int] {notnil=true,rows=0,bid=771} := sql.bind("sys","x","i",2);#  5 x8:bat[:oid,:int] := MDBdummy(_6:str, _7:str, _8:str, _15:int) {G}
-    bpm13:bat[:oid,:int]  := bpm.unfold(x8{notnil=true,rows=0,bid=771});#  6 bpm13:bat[:oid,:int] := BPMunfold(x8:bat[:oid,:int]) {G}
+    x8:bat[:oid,:int] {notnil=true, rows=0, bid=771} := sql.bind("sys","x","i",2);#  5 x8:bat[:oid,:int] := MDBdummy(_6:str, _7:str, _8:str, _15:int) {G}
+    bpm13:bat[:oid,:int]  := bpm.unfold(x8{notnil=true, rows=0, bid=771});#  6 bpm13:bat[:oid,:int] := BPMunfold(x8:bat[:oid,:int]) {G}
     bpm.emptySet(bpm13);                #  7 _16:void := BPMemptySet(bpm13:bat[:oid,:int]) {G}
-    x11{rows=0} := algebra.markT(x1{notnil=true,rows=0,bid=765},0@0);#  8 x11:bat[:oid,:oid] := ALGtmark(x1:bat[:oid,:int], _18:oid) {G}
+    x11{rows=0} := algebra.markT(x1{notnil=true, rows=0, bid=765},0@0);#  8 x11:bat[:oid,:oid] := ALGtmark(x1:bat[:oid,:int], _18:oid) {G}
     x12{rows=0} := bat.reverse(x11{rows=0});#  9 x12:bat[:oid,:oid] := BKCreverse(x11:bat[:oid,:oid]) {G}
     x13{rows=1} := aggr.count(x12{rows=0});# 10 x13:wrd := ALGcount_bat(x12:bat[:oid,:oid]) {G}
     sql.exportValue(1,"sys.","countx","int",32,0,6,x13{rows=1},"");# 11 _21:void := MDBdummy(_11:int, _22:str, _23:str, _24:str, _25:int, _4:int, _26:int, x13:wrd, _27:str) {G}
