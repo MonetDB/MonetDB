@@ -524,7 +524,6 @@ dnl  CFLAGS once configure/autoconf are done with their job,
 dnl  i.e., at the end of this configure[.ag] script.
 dnl  Only GNU (gcc) and Intel ([ie]cc/[ie]cpc on Linux) are done so far.
 : ${X_CFLAGS=} # initialize to empty if not set
-NO_INLINE_CFLAGS=""
 GCC_SWIG_CFLAGS=""
 ICC_SWIG_CFLAGS=""
 if test "x$enable_strict" = xyes; then
@@ -732,9 +731,6 @@ yes-*-*)
 		CFLAGS="$CFLAGS -fno-strict-aliasing"
 		;;
 	esac
-	
-
-	NO_INLINE_CFLAGS="-fno-inline -fno-inline-functions"
 	;;
 -*icc*-linux*|-*ecc*-linux*)
 	dnl  Intel ([ie]cc/[ie]cpc on Linux)
@@ -807,8 +803,6 @@ yes-*-*)
 	dnl  as locally as possbile via "-wd869 -wd177 -wd310"
 	dnl  (see also clients/perl/Cimpl/Makefile.ag).
 	ICC_SWIG_CFLAGS="$ICC_SWIG_CFLAGS -wd869 -wd177 -wd310"
-
-	NO_INLINE_CFLAGS="-fno-inline -fno-inline-functions"
 	;;
 -*pgcc*-linux*)
 	dnl  Portland Group (PGI) (pgcc/pgCC on Linux)
@@ -1223,7 +1217,6 @@ if test "x$enable_optim" = xyes; then
                        LDFLAGS="$LDFLAGS -IPA"
                        ;;
       *aix*-)          CFLAGS="$CFLAGS -O3"
-                       NO_INLINE_CFLAGS="$NO_INLINE_CFLAGS -qnooptimize"
                        ;;
       *-*-*-)          CFLAGS="$CFLAGS -O2"
                        ;;
@@ -1273,7 +1266,6 @@ if test "x$enable_optim" = xyes; then
 #     ia64-*-*-10.*)   CFLAGS="$CFLAGS          -restrict                                           "
 #     ia64-*-*-10.*)   CFLAGS="$CFLAGS                    -unroll                                   "
 #     ia64-*-*-10.*)   CFLAGS="$CFLAGS                                                -mcpu=itanium2"
-                       NO_INLINE_CFLAGS="$NO_INLINE_CFLAGS -O0"
                        ;;
 
       i*86-*-*)        CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll -ipo -ipo_obj -tpp6 -axiMKW";;
@@ -1307,7 +1299,6 @@ if test "x$enable_optim" = xyes; then
 else
 	AC_MSG_RESULT([no])
 fi
-AC_SUBST(NO_INLINE_CFLAGS)
 AC_SUBST(GCC_SWIG_CFLAGS)
 AC_SUBST(ICC_SWIG_CFLAGS)
 
