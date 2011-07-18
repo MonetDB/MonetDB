@@ -32,9 +32,9 @@ stderr of test 'alter_incorrect_syntax_crash.Bug-2795` in directory 'test/BugTra
 # 12:32:37 >  mclient -lsql -ftest -i -e --host=alf --port=38195 
 # 12:32:37 >  
 
-MAPI  = monetdb@alf:38195
+MAPI  = monetdb@ottar:34692
 QUERY = alter table t2795 add r float default sqrt(power(t2795.x, 2) + power(t2795.y, 2));
-ERROR = !syntax error, unexpected sqlNULL in: "select sqrt(sql_add(power((null"
+ERROR = !incorrect default value 't2795.x'
 
 # 12:32:37 >  
 # 12:32:37 >  Done.
