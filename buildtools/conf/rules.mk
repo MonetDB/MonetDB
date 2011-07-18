@@ -118,15 +118,6 @@ MX = $(top_builddir)/buildtools/Mx/Mx
 %.eps: %.feps
 	$(CP) $< $@
 
-$(patsubst %.mx,%.lo,$(filter %.mx,$(NO_OPTIMIZE_FILES))): %.lo: %.c
-	$(LTCOMPILE) -c -o $@ $(CFLAGS_NO_OPT) $<
-
-$(patsubst %.c,%.o,$(filter %.c,$(NO_OPTIMIZE_FILES))): %.o: %.c
-	$(COMPILE) $(CFLAGS_NO_OPT) -c $<
-
-$(patsubst %.c,%.lo,$(filter %.c,$(NO_OPTIMIZE_FILES))): %.lo: %.c
-	$(LTCOMPILE) -c -o $@ $(CFLAGS_NO_OPT) $<
-
 SUFFIXES-local: $(BUILT_SOURCES)
 
 distdir: check_dist
