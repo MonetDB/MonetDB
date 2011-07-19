@@ -496,7 +496,7 @@ mccRestoreTarget(stream *f, MalBlkPtr mb, InstrPtr p, int *catch, int *ctop){
 			if( getArgType(mb,p,i)== TYPE_str){
 				mnstr_printf(f,"\tif(backup[%d] && sbackup[%d]!= ",i,i);
 				mccVar(f,mb,getArg(p,i));
-				mnstr_printf(f,"\t) GDKfree(sbackup[%d]);\n");
+				mnstr_printf(f,"\t) GDKfree(sbackup[%d]);\n",i);
 			} 
 		}
 	}

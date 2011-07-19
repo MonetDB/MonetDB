@@ -1164,7 +1164,7 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 					else k++;
 					mnstr_printf(cntxt->fdout, "%3d\t", v);
 				}
-			mnstr_printf(cntxt->fdout, "\nIntermediate size "LLFMT" tuples\n\n", octCluster[i].rows);
+			mnstr_printf(cntxt->fdout, "\nIntermediate size "LLFMT" tuples\n\n", (lng) octCluster[i].rows);
 			if ( k )
 				mnstr_printf(cntxt->fdout, "No estimate for %d results\n", k);
 		}

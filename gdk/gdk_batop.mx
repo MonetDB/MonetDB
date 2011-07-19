@@ -1303,7 +1303,7 @@ Hash changes the order; IDX yields ordered tail; scan respects original order.
 		bn->T->nonil = tail;
 	else if (equi && !lnil)
 		bn->T->nonil = tail;
-	ALGODEBUG THRprintf(GDKout, "#BAT_select_(b=%s): %s: hkey=" BUNFMT ", tkey=" BUNFMT ", hsorted=" BUNFMT ", tsorted=" BUNFMT ".\n", BATgetId(b), BATgetId(bn), bn->hkey, bn->tkey, bn->hsorted, bn->tsorted);
+	ALGODEBUG THRprintf(GDKout, "#BAT_select_(b=%s): %s: hkey=%d, tkey=%d, hsorted=%d, tsorted=%d.\n", BATgetId(b), BATgetId(bn), bn->hkey, bn->tkey, bn->hsorted, bn->tsorted);
 	ESTIDEBUG THRprintf(GDKout, "#BAT_select_(b=%s): resultsize: estimated " BUNFMT ", got " BUNFMT ".\n", BATgetId(b), estimate, BATcount(bn));
 
 	return bn;

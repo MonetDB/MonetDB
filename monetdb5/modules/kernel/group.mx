@@ -521,7 +521,7 @@ found:		/* ultra-fast 'insert' of [oid,gid] into ct */
 
 	_t_ = GDKusec() - _t_;
 	ALGODEBUG THRprintf(GDKout,
-		"#  CTgroup_@1_@4_@5 <@2,@3> ( b=#%d:[%s,%s]:"BUNFMT" , bn=#%d:[%s,%s]:"BUNFMT" ) -> rtrn=#%d:[%s,%s] {%d.%06d s}\n",
+		"#  CTgroup_@1_@4_@5 <@2,@3> ( b=#%d:[%s,%s]:"BUNFMT" , bn=#%d:[%s,%s]:"BUNFMT" ) -> rtrn=#%d:[%s,%s]:"BUNFMT" {%d.%06d s}\n",
 		b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b),
 		bn->batCacheid, ATOMname(bn->htype), ATOMname(bn->ttype), BATcount(bn),
 		rtrn->batCacheid, ATOMname(rtrn->htype), ATOMname(rtrn->ttype), BATcount(rtrn),
@@ -1730,7 +1730,7 @@ GRPgroup0(int *ret, int *bid, int *start, int *incr, int *grpsize)
 	_t_ = GDKusec() - _t_;
 	ALGODEBUG THRprintf(GDKout,
 		"# GRPgroup0 ( bid=%d , start=%d , incr=%d , grpsize=%d ) -> ret=%d {%d.%06d s}\n",
-		*bid, *ret, (int)(_t_ / 1000000),(int)(_t_ % 1000000));
+		*bid, *start, *incr, *grpsize, *ret, (int)(_t_ / 1000000),(int)(_t_ % 1000000));
 
 	return MAL_SUCCEED;
 }
