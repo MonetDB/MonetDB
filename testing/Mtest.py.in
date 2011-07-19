@@ -1302,7 +1302,6 @@ def GetBitsAndOIDsAndModsAndStatic(env) :
     env['TST_MODS'] = []
     env['TST_BITS'] = ""
     env['TST_OIDS'] = ""
-    env['TST_FIVE'] = ""
     env['TST_STATIC'] = ""
     if qOut:
         tbs = re.compile("^# Compiled for .*/([63][42]bit) with ([63][42])bit OIDs;? (.*) linked", re.MULTILINE)
@@ -1348,9 +1347,6 @@ def GetBitsAndOIDsAndModsAndStatic(env) :
             STDERR.write("\n")
             STDERR.flush()
     os.environ['TST_MODS'] = str(env['TST_MODS'])
-    if par['M5']:
-        env['TST_FIVE'] = "Five"
-        os.environ['TST_FIVE'] = "Five"
     return rtrn
 ### GetBitsAndOIDsAndModsAndStatic(env) #
 
@@ -1477,14 +1473,11 @@ def StopAt(ATJOB,ME) :
 def StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION) :
     BITS = env['TST_BITS']
     OIDS = env['TST_OIDS']
-    FIVE = env['TST_FIVE']
     STATIC = env['TST_STATIC']
-    if FIVE:
-        FIVE = "(\.Five)?"
     if STATIC:
         STATIC = "(\.STATIC)?"
     dir,file = os.path.split(TST)
-    outre = re.compile('^'+re.escape(file)+'\.stable\.(?P<tp>out|err)(\.(%s(%s)?|%s(%s)?))?(\.%s)?(\.%s)?%s%s$' % (re.escape(SYST), re.escape(RELEASE), re.escape(DIST), re.escape(VERSION), BITS, OIDS, FIVE, STATIC))
+    outre = re.compile('^'+re.escape(file)+'\.stable\.(?P<tp>out|err)(\.(%s(%s)?|%s(%s)?))?(\.%s)?(\.%s)?%s$' % (re.escape(SYST), re.escape(RELEASE), re.escape(DIST), re.escape(VERSION), BITS, OIDS, STATIC))
     bestout = besterr = ''
     for f in os.listdir(dir or os.curdir):
         res = outre.match(f)
@@ -2682,7 +2675,6 @@ def ReadMapproveRc(f) :
     v['VERSION'] = VERSION
     v['BITS'] = ''
     v['OIDS'] = ''
-    v['FIVE'] = ''
     v['STATIC'] = ''
     if os.path.isfile(f):
         r = re.compile('^([A-Z]+) = "(.*)".*$')
@@ -2992,7 +2984,7 @@ def main(argv) :
     elif THISFILE == 'Mapprove.py':
         f = _configure(os.path.join('@QXprefix@',dftTSTPREF,'.Mapprove.rc'))
         v = ReadMapproveRc(f)
-        for i in 'BITS', 'OIDS', 'FIVE', 'STATIC':
+        for i in 'BITS', 'OIDS', 'STATIC':
             if v[i]:
                 v[i] = '[.%s]' % v[i]
         options = cmd_options + [
@@ -3001,9 +2993,9 @@ def main(argv) :
              "(default: <ext> = 'out' & 'err')"),
             (None, 'S', 'sys', '<sys>',
              "approve specific output *.<ext><sys>\n"
-             "(<sys> = '[.(<SYST>[<RELEASE>]|<DIST>[<VERSION>])][.(32|64)bit][.oid(32|64)][.Five][.STATIC]',\n"
-             "(default: longest match for <sys> = '[.(%s[%s]|%s[%s])]%s%s%s%s')"
-              % (v['SYST'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['OIDS'], v['FIVE'], v['STATIC'])),
+             "(<sys> = '[.(<SYST>[<RELEASE>]|<DIST>[<VERSION>])][.(32|64)bit][.oid(32|64)][.STATIC]',\n"
+             "(default: longest match for <sys> = '[.(%s[%s]|%s[%s])]%s%s%s')"
+              % (v['SYST'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['OIDS'], v['STATIC'])),
             (None, 'f', 'force', None,
              "force approval of error messages (i.e., lines starting with '!')"),
             ]
@@ -3194,17 +3186,17 @@ def main(argv) :
         os.environ['DISTVER'] = DISTVER
         os.environ['VERSION'] = VERSION
         w = {}
-        for i in 'SYST', 'RELEASE', 'DIST', 'VERSION', 'BITS', 'OIDS', 'FIVE', 'STATIC':
+        for i in 'SYST', 'RELEASE', 'DIST', 'VERSION', 'BITS', 'OIDS', 'STATIC':
             w[i] = re.escape(v[i])
-        for i in 'BITS', 'OIDS', 'FIVE', 'STATIC':
+        for i in 'BITS', 'OIDS', 'STATIC':
             j = 'TST_'+i
             env[j] = v[i]
             os.environ[j] = v[i]
             if v[i]:
                 v[i] = '(.%s)?' % v[i]
                 w[i] = '(\.%s)?' % w[i]
-        sv = '^(.(%s(%s)?|%s(%s)?))?%s%s%s%s$' % (v['SYST'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['OIDS'], v['FIVE'], v['STATIC'])
-        sw = '^(\.(%s(%s)?|%s(%s)?))?%s%s%s%s$' % (w['SYST'], w['RELEASE'], w['DIST'], w['VERSION'], w['BITS'], w['OIDS'], w['FIVE'], w['STATIC'])
+        sv = '^(.(%s(%s)?|%s(%s)?))?%s%s%s$' % (v['SYST'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['OIDS'], v['STATIC'])
+        sw = '^(\.(%s(%s)?|%s(%s)?))?%s%s%s$' % (w['SYST'], w['RELEASE'], w['DIST'], w['VERSION'], w['BITS'], w['OIDS'], w['STATIC'])
         r = re.compile(sw)
         if not r.match(par['SYSTEM']):
             ErrXit("System (-S) must match '"+sv+"' !")
@@ -3451,7 +3443,6 @@ def main(argv) :
         env['TST_MODS'] = []
         env['TST_BITS'] = ""
         env['TST_OIDS'] = ""
-        env['TST_FIVE'] = ""
         env['TST_STATIC'] = ""
         if par['PACKAGE'] in ('common', 'clients', 'gdk', 'java'):
             if   CONDITIONALS.has_key('BITS32') and CONDITIONALS['BITS32']:
@@ -3503,7 +3494,7 @@ def main(argv) :
         env['VERSION'] = os.environ['VERSION']
         n = os.path.join(env['TSTTRGBASE'],TSTPREF,'.Mapprove.rc')
         f = open(n, 'w')
-        for v in 'SYST', 'RELEASE', 'DIST', 'VERSION', 'TST_BITS', 'TST_OIDS', 'TST_FIVE', 'TST_STATIC':
+        for v in 'SYST', 'RELEASE', 'DIST', 'VERSION', 'TST_BITS', 'TST_OIDS', 'TST_STATIC':
             w = v.replace('TST_','')
             f.write('%s = "%s"\n' % (w, env[v]))
         f.close()
@@ -3546,8 +3537,6 @@ def main(argv) :
         fl = open(fn+"sql","w")
         host = socket.gethostname()
         product = os.path.split(env['TSTSRCBASE'])[-1]
-        if product == 'sql':
-            product += env['TST_FIVE']
 
         compiler = ''
         # TODO:
