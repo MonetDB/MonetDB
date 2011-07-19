@@ -2383,7 +2383,7 @@ mvc_logfile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		m->scanner.log = NULL;
 	}
 
-	if (filename != str_nil) 
+	if (strcmp(filename, str_nil)) 
 		m->scanner.log = open_wastream(filename);
 	*res = 0;
 	return MAL_SUCCEED;
