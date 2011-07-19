@@ -909,7 +909,7 @@ location of a temporary variable should be flagged as an error.
 @= chkTemporary
     if( isTmpName(name)){
 		int j;
-        i= atol(name+1);
+        i= atol(name+ (*name == TMPMARKER? 1:2));
         /* quick test validity*/
         if( i< mb->vtop && isTmpVar(mb,i) && getVarTmp(mb,i) == i)
             return i;
@@ -1160,7 +1160,7 @@ newVariable(MalBlkPtr mb, str name, malType type)
 		return -1;
 	@:makeVarSpace@
 	if (isTmpName(name)) {
-		int i = atol(name + 1);
+		int i = atol(name+ (*name == TMPMARKER? 1:2));
 
 		/* test validity */
 		if (i > mb->vtop) {
@@ -2525,7 +2525,6 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 			} else {
 				if( getTailType(getArgType(mb,p,i)) > TYPE_str )
 				{ char *ct=cv;
-					strcat(t, "=");
 					VALformat(&cv, &getVar(mb, getArg(p, i))->value);
 					ct= (char*) GDKmalloc(1024+strlen(cv));
 					if (isVarUDFtype(mb, getArg(p, i)) ) {
@@ -2552,8 +2551,11 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 				GDKfree(s);
 				s = ns;
 			}
-			if ( cv ) 
+			if ( cv )  {
+				if ( !isVarConstant(mb, getArg(p, i)) )
+					strcat(t,"=");
 				strcat(t, cv);
+			}
 			
 			advance(t,base,len);
 			if ( (cv && strlen(cv)==0) || isVarUDFtype(mb, getArg(p, i)) ||
