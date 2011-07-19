@@ -551,8 +551,7 @@ developer, but if you do want to test, this is the package you need.
 	--with-mseed=no \
 	--with-geos=%{?centos:no}%{!?centos:yes}
 	%{?oid32:--enable-oid32} \
-	%{?comp_cc:CC="%{comp_cc}"} \
-	%{?_with_netcdf} %{?_without_netcdf}
+	%{?comp_cc:CC="%{comp_cc}"}
 
 make
 

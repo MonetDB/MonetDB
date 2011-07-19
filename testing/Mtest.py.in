@@ -216,7 +216,6 @@ CONDITIONALS = {
     'HAVE_LIBZ'            : "@HAVE_LIBZ_FALSE@",
     'HAVE_MONETDB5'        : "@HAVE_MONETDB5_FALSE@",
     'HAVE_MSEED'           : "@HAVE_MSEED_FALSE@",
-    'HAVE_NETCDF'          : "@HAVE_NETCDF_FALSE@",
     'HAVE_ODBC'            : "@HAVE_ODBC_FALSE@",
     'HAVE_PCRE'            : "@HAVE_PCRE_FALSE@",
     'HAVE_PERL_DEVEL'      : "@HAVE_PERL_DEVEL_FALSE@",
