@@ -1,6 +1,10 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Tue Jul 19 2011 Fabian Groffen <fabian@cwi.nl>
+- Fixed regression where the superuser password could no longer be
+  changed, bug #2844
+
 * Wed Jun 29 2011 Sjoerd Mullender <sjoerd@acm.org>
 - Fixed incorrect insert counts.
 - Fixed bug 2823: MAL exeption on SQL query with subquery in the where

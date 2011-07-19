@@ -516,6 +516,9 @@ sql_alter_user(mvc *sql, char *user, char *passwd, char enc,
 		char *schema, char *oldpasswd)
 {
 	sqlid schema_id = 0;
+	/* we may be called from MAL (nil) */
+	if (user != NULL && strcmp(user, str_nil) == 0)
+		user = NULL;
 	/* USER == NULL -> current_user */
 	if (user != NULL && backend_find_user(sql, user) < 0)
 		return sql_message("ALTER USER: no such user '%s'", user);
