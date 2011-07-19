@@ -755,7 +755,6 @@ possible:
 - ``HAVE_ICONV=1`` - the iconv library is available;
 - ``HAVE_LIBXML2=1`` - the libxml2 library is available;
 - ``HAVE_RAPTOR=1`` - the raptor library is available;
-- ``HAVE_NETCDF=1`` - the netcdf library is available;
 - ``HAVE_OPENSSL=1`` - the OpenSSL library is available;
 - ``HAVE_PERL=1`` - Perl is available;
 - ``HAVE_PERL_DEVEL=1`` - Perl development is possible (include files
