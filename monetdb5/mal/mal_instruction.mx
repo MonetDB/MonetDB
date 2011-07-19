@@ -2525,7 +2525,6 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 			} else {
 				if( getTailType(getArgType(mb,p,i)) > TYPE_str )
 				{ char *ct=cv;
-					strcat(t, "=");
 					VALformat(&cv, &getVar(mb, getArg(p, i))->value);
 					ct= (char*) GDKmalloc(1024+strlen(cv));
 					if (isVarUDFtype(mb, getArg(p, i)) ) {
