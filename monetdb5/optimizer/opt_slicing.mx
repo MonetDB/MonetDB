@@ -42,7 +42,7 @@ comment "Derive a series of gauge values based on sampling";
 
 opt_export str OPTgauges(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-/* #define _DEBUG_OPT_SLICE_ */
+#define _DEBUG_OPT_SLICE_ 
 #define OPTDEBUGslicing  if ( optDebug & ((lng)1 <<DEBUG_OPT_SLICING) )
 #endif
 @c
@@ -50,29 +50,9 @@ opt_export str OPTgauges(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 #include "opt_slicing.h"
 #include "opt_deadcode.h"
 #include "mal_builder.h"
-#include <mapi.h>
-#include "remote.h"
-#include "mal_sabaoth.h"
 #include "mal_recycle.h"
-
 #include "mal_interpreter.h"
 
-typedef struct REGMAL{
-    str fcn;
-    struct REGMAL *nxt;
-} *Registry;
-
-typedef struct {
-    str uri;
-    str usr;
-    str pwd;
-    Registry nxt; /* list of registered mal functions */
-    bte active;
-    str conn;
-    int inuse;
-} Peer;
-
-static Peer peers[MAXSITES];    /* registry of peer servers */
 static int nrpeers;				/* peers active in sliced processing */
 static bte slicingLocal;		/* only use local node without remote calls*/
 
@@ -85,110 +65,6 @@ typedef	struct{
 } Gauge;
 
 static int
-OPTfindPeer(str uri)
-{
-    int i;
-    for (i = 0; i < nrpeers; i++)
-        if ( strcmp(uri, peers[i].uri) == 0 )
-            return i;
-    return -1;
-}
-/* Look for and add a peer with uri in the registry.  Return index in registry */
-int
-OPTgetPeer(str uri)
-{
-	int i;
-
-	i = OPTfindPeer(uri);
-	if ( i >=0 ) {
-		peers[i].active = 1;
-		return i;
-	}
-	if ( nrpeers == MAXSITES)
-		return -1;
-	i = nrpeers;
-	peers[i].usr = GDKstrdup("monetdb");
-	peers[i].uri = GDKstrdup(uri);
-	peers[i].pwd = GDKstrdup("monetdb");
-	peers[i].active = 1;
-	peers[i].nxt = NULL;
-	peers[i].inuse = 0;		
-	nrpeers++;
-	return i;
-}
-
-/* Clean function registry of non-active peers */
-
-void OPTcleanFunReg(int i)
-{	
-	Registry r, q;
-	mal_set_lock(mal_contextLock,"slicing.cleanFunReg");
-	r = peers[i].nxt;
-	peers[i].nxt = NULL;
-	mal_unset_lock(mal_contextLock,"slicing.cleanFunReg");
-	while ( r ) {
-			q = r->nxt;
-			GDKfree(r->fcn);
-			GDKfree(r);
-			r = q;
-	}
-}
-
-str
-OPTdiscover(Client cntxt)
-{
-	bat bid = 0;
-	BAT *b;
-	BUN p,q;
-	str msg = MAL_SUCCEED;
-	BATiter bi;
-	char buf[BUFSIZ]= "*/slicing", *s= buf;
-	int i, nrworkers = 0;
-
-	slicingLocal = 0;
-
-	/* we have a new list of candidate peers */
-	for (i=0; i<nrpeers; i++)
-		peers[i].active = 0;
-
-	msg = RMTresolve(&bid,&s);
-	if ( msg == MAL_SUCCEED) {
-		b = BATdescriptor(bid);
-		if ( b != NULL && BATcount(b) > 0 ) {
-			bi = bat_iterator(b);
-			BATloop(b,p,q){
-				str t= (str) BUNtail(bi,p);
-				nrworkers += OPTgetPeer(t) >= 0; 
-			}
-		}
-		BBPreleaseref(bid);
-	} else
-		GDKfree(msg);
-
-	if ( !nrworkers  ) {
-	 	/* there is a last resort, local execution */
-		SABAOTHgetLocalConnection(&s);
-	
-		nrworkers += OPTgetPeer(s) >= 0;
-		slicingLocal = 1; 
-	}
-
-#ifdef DEBUG_RUN_OPT
-	mnstr_printf(cntxt->fdout,"Active peers discovered %d\n",nrworkers);
-	for (i=0; i<nrpeers; i++)
-	if ( peers[i].uri )
-		mnstr_printf(cntxt->fdout,"%s\n", peers[i].uri);
-#else
-		(void) cntxt;
-#endif
-
-	for (i=0; i<nrpeers; i++)
-		if ( !peers[i].active )
-			OPTcleanFunReg(i);
-
-	return MAL_SUCCEED;
-}
-static int
 OPTinitcode(Client cntxt, MalBlkPtr mb){
     InstrPtr p;
     str s;
@@ -199,8 +75,9 @@ OPTinitcode(Client cntxt, MalBlkPtr mb){
     /* _x := remote.connect(uri,"monetdb","monetdb","msql"); */
     p = newStmt(mb, remoteRef,connectRef);
     s = GDKgetenv("merovingian_uri");
-    if (s == NULL) /* aparently not under Merovingian control, fall back to local only */
-        SABAOTHgetLocalConnection(&l);
+    if (s == NULL)  /* aparently not under Merovingian control, fall back to local only */
+		s= "dummyconnection";
+        /* SABAOTHgetLocalConnection(&l);*/
     p= pushStr(mb,p, s == NULL ? l : s);
     p= pushStr(mb,p,"monetdb");
     p= pushStr(mb,p,"monetdb");
@@ -300,7 +177,7 @@ OPTslicingCntrl(Client cntxt, MalBlkPtr mb, int pc, MalBlkPtr pmb, Gauge gauge)
 	Symbol s;
 	char nme[BUFSIZ];
 	int /*tpe,*/ x, i, j, k, *alias, nrpack;
-	InstrPtr call, ret, q, *pack;
+	InstrPtr call, ret, p, q, *pack;
 
 	(void) gauge;
 	/* define the query controller */
@@ -313,7 +190,14 @@ OPTslicingCntrl(Client cntxt, MalBlkPtr mb, int pc, MalBlkPtr pmb, Gauge gauge)
 	cmb = s->def;
 	if ( newMalBlkStmt(cmb,cmb->ssize) < 0 )
 		return 0;
-	nrpack = getInstrPtr(mb,pc)->retc;
+	q= getInstrPtr(mb,pc);
+	if ( getModuleId(q) == groupRef && getFunctionId(q) == doneRef) 
+		nrpack = 1;
+	else
+	if ( getModuleId(q) == sqlRef && getFunctionId(q) == resultSetRef) 
+		nrpack = q->retc -1;
+	else
+		nrpack = q->retc;
 	pack = (InstrPtr *) GDKzalloc(sizeof(InstrPtr) * nrpack);
 	pushInstruction(cmb, copyInstruction(pmb->stmt[0]));
 	call = copyInstruction(getInstrPtr(pmb,0));
@@ -331,6 +215,7 @@ OPTslicingCntrl(Client cntxt, MalBlkPtr mb, int pc, MalBlkPtr pmb, Gauge gauge)
 		getFunctionId(q) = bindRef;
 		q = pushArgument(cmb,q,x);
 		j = getArg(q,0) = newTmpVariable(cmb,newBatType(TYPE_oid, gauge.type));
+		setVarUDFtype(cmb,j);
 		q= pushStr(cmb,q, gauge.schema);
 		q= pushStr(cmb,q, gauge.table);
 		q= pushStr(cmb,q, gauge.column);
@@ -349,22 +234,23 @@ OPTslicingCntrl(Client cntxt, MalBlkPtr mb, int pc, MalBlkPtr pmb, Gauge gauge)
 	}
 	/* dataflow */
 	if ( gauge.column) {
-		for ( k = 0; k < nrpack ; k++){
+		p = getInstrPtr(pmb,0);
+		for ( k=0  ;k < nrpack ; k++){
 			pack[k] = newInstruction(cmb,ASSIGNsymbol);
 			getModuleId(pack[k]) = matRef;
 			getFunctionId(pack[k]) = packRef;
-			getArg(pack[k],0) = newTmpVariable(cmb, newBatType(TYPE_oid, getTailType(getArgType(cmb,getInstrPtr(pmb,0),k))) );
+			getArg(pack[k],0) = newTmpVariable(cmb, newBatType(TYPE_oid, getTailType(getArgType(cmb,p,k))) );
 		}
 	}
 
-	for ( k = 0; k < nrpack ; k++){
-		q = newInstruction(cmb,ASSIGNsymbol);
-		getArg(q,0) = getArg(pack[k],0);
-		pushNil(cmb,q, getArgType(cmb,pack[k],0));
-		pushInstruction(cmb,q);
-	}
-
 	if ( slicingLocal == 0){
+		for ( k=0 ; k < nrpack ; k++){
+			q = newInstruction(cmb,ASSIGNsymbol);
+			getArg(q,0) = getArg(pack[k],0);
+			pushNil(cmb,q, getArgType(cmb,pack[k],0));
+			pushInstruction(cmb,q);
+		}
+
 		q= newFcnCall(cmb,languageRef,dataflowRef);
 		q->barrier= BARRIERsymbol;
 		x = getArg(q,0);
@@ -377,8 +263,8 @@ OPTslicingCntrl(Client cntxt, MalBlkPtr mb, int pc, MalBlkPtr pmb, Gauge gauge)
 		q= copyInstruction(call);
 		q->token = ASSIGNsymbol;
 		q->barrier = 0;
-		for ( k = 0; k < q->retc; k++) {
-			getArg(q,k) = newTmpVariable(cmb, getArgType(mb,q,k));
+		for ( k=0 ; k < q->retc; k++) {
+			getArg(q,k) = newTmpVariable(cmb, getArgType(pmb,q,k));
 			pack[k] = pushArgument(cmb,pack[k], getArg(q,k));
 		}
 
@@ -389,7 +275,7 @@ OPTslicingCntrl(Client cntxt, MalBlkPtr mb, int pc, MalBlkPtr pmb, Gauge gauge)
 		pushInstruction(cmb,q);
 	}
 	if ( gauge.column) 
-	for ( k = 0; k < nrpack; k++)
+	for ( k=0 ; k < nrpack; k++)
 		pushInstruction(cmb, pack[k]);
 
 
@@ -407,6 +293,21 @@ OPTslicingCntrl(Client cntxt, MalBlkPtr mb, int pc, MalBlkPtr pmb, Gauge gauge)
 	if ( getFunctionId(q) == putName("exportValue",11)) 
 		getArg(q,8)= getArg(pack[0],0);
 	else
+	if ( getModuleId(q) == groupRef && getFunctionId(q) == doneRef) {
+		/* just return the argument */
+		clrFunction(q);
+		q->argc = q->retc = 1;
+		q = pushArgument(cmb,q, getArg(pack[0],0));
+		getArg(q,0) = getArg(q,1);
+	} else
+	if ( getModuleId(q) == sqlRef && getFunctionId(q) == resultSetRef) {
+		p = newInstruction(NULL,ASSIGNsymbol);
+		for ( k = q->retc +3; k< q->argc; k++){
+			p = pushReturn(cmb,p,getArg(q,k));
+			p = pushArgument(cmb,p, getArg(pack[k - q->retc-3], 0));
+		}
+		q= p;
+	} else
 	if ( getFunctionId(q) == NULL){
 		/* simple assignment */
 		assert(nrpack == q->retc);
@@ -511,13 +412,24 @@ OPTcodegen(Client cntxt, MalBlkPtr mb, int pc, Gauge gauge )
 		p = old[i];
 		if ( vec[i]) {
 			if ( i == last) {
-				if ( getFunctionId(old[i]) == rsColumnRef) {
-					ret = pushReturn(nmb, ret, getArg(p,7));
-					nmb->stmt[0] =  pushReturn(nmb, getInstrPtr(nmb,0), getArg(p,7));
+				if ( getFunctionId(old[i]) == resultSetRef) {
+					for ( k = p->retc +3; k < p->argc; k++) {
+						ret = pushReturn(nmb, ret, getArg(p,k));
+						nmb->stmt[0] =  pushReturn(nmb, getInstrPtr(nmb,0), getArg(p,k));
+					}
+					p->argc = p->retc + 3;
+					for ( k = p->retc-1; k > 0 ; k--)
+						delArgument(p,1);
 					continue;
-				} else 
+				} else
 				if ( getFunctionId(old[i]) == putName("exportValue",11)) {
 					ret = pushReturn(nmb, ret, getArg(p,0));
+				} else 
+				if ( getModuleId(p)== groupRef && getFunctionId(p) == doneRef){
+					/* return alternative */
+					ret = pushReturn(nmb,ret,getArg(p,p->retc));
+					nmb->stmt[0] =  pushReturn(nmb, getInstrPtr(nmb,0), getArg(p,p->retc));
+					continue;
 				} else {
 					pushInstruction(nmb,old[i]);
 					for ( k = 0; k < p->retc; k++) {
@@ -550,7 +462,8 @@ OPTcodegen(Client cntxt, MalBlkPtr mb, int pc, Gauge gauge )
 				q= newInstruction(nmb,ASSIGNsymbol);
 				setModuleId(q,algebraRef);
 				setFunctionId(q,selectRef);
-				gauge.slice = k = newTmpVariable(nmb, getVarType(nmb, getArg(p,0)));
+				gauge.slice = getArg(p,0);
+				k = newTmpVariable(nmb, getVarType(nmb, getArg(p,0)));
 				setVarUDFtype(nmb,k);
 				setVarUsed(nmb,k);
 				getArg(q,0)= getArg(p,0);
@@ -582,7 +495,7 @@ OPTcodegen(Client cntxt, MalBlkPtr mb, int pc, Gauge gauge )
 			continue;
 		}
 		else if ( getModuleId(p) == optimizerRef)
-			pushInstruction(nmb,old[i]);
+		pushInstruction(nmb,old[i]);
 		else {
 			freeInstruction(old[i]);
 			old[i] = 0;
@@ -600,13 +513,22 @@ OPTcodegen(Client cntxt, MalBlkPtr mb, int pc, Gauge gauge )
 
 	q = 0;
 
+	mnstr_printf(cntxt->fdout,"#nmb, CODEGEN BEFORE SUBS? %d\n", nmb->errors);
+	if ( nmb)
+		printFunction(cntxt->fdout, nmb, 0, LIST_MAL_STMT);
 	/* supportive routines */
 	smb = OPTslicingStub(cntxt, mb, pc,  nmb, gauge);
+	mnstr_printf(cntxt->fdout,"#smb,BEFORE test? %d\n", smb->errors);
+	if ( smb)
+		printFunction(cntxt->fdout, smb, 0, LIST_MAL_STMT);
 	msg = OPTdeadcode(cntxt, smb, 0, 0);
 	if ( msg)
 		goto wrapup;
 
 	cmb = OPTslicingCntrl(cntxt,mb,pc,nmb, gauge);
+	mnstr_printf(cntxt->fdout,"#cntrl,BEFORE test? %d\n", cmb->errors);
+	if ( cmb)
+		printFunction(cntxt->fdout, cmb, 0, LIST_MAL_STMT);
 	chkProgram(cntxt->nspace, cmb);
 	if ( cmb->errors)
 		goto wrapup;
@@ -614,6 +536,10 @@ OPTcodegen(Client cntxt, MalBlkPtr mb, int pc, Gauge gauge )
 	msg = OPTdeadcode(cntxt, nmb, 0, 0);
 	if ( msg)
 		goto wrapup;
+
+	mnstr_printf(cntxt->fdout,"#nmb,BEFORE test? %d\n", nmb->errors);
+	if ( nmb)
+		printFunction(cntxt->fdout, nmb, 0, LIST_MAL_STMT);
 	chkProgram(cntxt->nspace, nmb);
 	if ( nmb->errors)
 		goto wrapup;
@@ -630,13 +556,13 @@ OPTcodegen(Client cntxt, MalBlkPtr mb, int pc, Gauge gauge )
 	/* beware this instruction refers to cmb variables */
 wrapup:
 #ifdef _DEBUG_OPT_SLICE_
-	mnstr_printf(cntxt->fdout,"#Grabbed part\n");
+	mnstr_printf(cntxt->fdout,"#Grabbed part, nmb error ? %d\n",nmb->errors);
 	if ( nmb)
 		printFunction(cntxt->fdout, nmb, 0, LIST_MAL_STMT);
-	mnstr_printf(cntxt->fdout,"#stub\n");
+	mnstr_printf(cntxt->fdout,"#stub, smb error ? %d\n", smb->errors);
 	if ( smb)
 		printFunction(cntxt->fdout, smb, 0, LIST_MAL_STMT);
-	mnstr_printf(cntxt->fdout,"#cntrl\n");
+	mnstr_printf(cntxt->fdout,"#cntrl, cmb error? %d\n", cmb->errors);
 	if ( cmb)
 		printFunction(cntxt->fdout, cmb, 0, LIST_MAL_STMT);
 #endif
@@ -650,7 +576,7 @@ OPTslicingImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 {
 	int i,j,pc = 0;
 	wrd r = 0, rowcnt=0;	/* table should be sizeable to consider parallel execution*/
-	InstrPtr p,q, target= 0, rsset;
+	InstrPtr sig,p,q, target= 0, rsset=0;
 	Gauge gauge;
 	str msg = NULL;
 	MalBlkPtr  omb;
@@ -660,11 +586,6 @@ OPTslicingImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	(void) stk;
 	(void) pci;
 
-	/* determine the peers using merovingian */ 
-	mal_set_lock(mal_contextLock,"optimizer.slicing");
-	if ( nrpeers == 0 )
-		OPTdiscover(cntxt);
-	mal_unset_lock(mal_contextLock,"optimizer.slicing");
     /* nrpeers = GDKnr_threads ? GDKnr_threads:1;*/
 	/* to ease debugging now */
 	nrpeers = 2;
@@ -672,7 +593,6 @@ OPTslicingImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 
 	/* modify the block as we go */
 	omb= copyMalBlk(mb);
-	rsset= newInstruction(mb, ASSIGNsymbol);
 	gauge.column = 0;
 	/* locate the largest non-partitioned table */
 	for (i=1; i< mb->stop; i++){
@@ -696,10 +616,17 @@ OPTslicingImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	gauge.target = target;
 	gauge.schema = getVarConstant(mb, getArg(target,2)).val.sval;
 	gauge.table = getVarConstant(mb, getArg(target,3)).val.sval;
+
+	/* for result sets we have to collect the arguments of the rsColumn */
+	/* gather all columns into the resultSet constructor to ease code generation */
+	/* be aware that the resultSet already has three arguments */
 	for (i=1; i< mb->stop; i++){
 		q= getInstrPtr(mb,i);
 		if ( getModuleId(q) == sqlRef) {
+			if ( getFunctionId(q) == resultSetRef) 
+				rsset= copyInstruction(q);
 			if ( getFunctionId(q) == rsColumnRef) {
+				assert(rsset != NULL);
 				j = newTmpVariable(mb, getArgType(mb,q,7));
 				rsset= pushReturn(mb,rsset, j);
 				rsset= pushArgument(mb,rsset, getArg(q,7));
@@ -707,6 +634,11 @@ OPTslicingImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			}
 		}
 	}
+	if ( rsset) {
+		mnstr_printf(cntxt->fdout,"#replaced resultSet constructor\n");
+		printInstruction(cntxt->fdout, mb, 0, rsset, LIST_MAL_STMT);
+	}
+
 	OPTDEBUGslicing
 		mnstr_printf(cntxt->fdout,"#opt_slicing: target is %s.%s "
 			" with " BUNFMT " rows into %d peers\n",
@@ -719,16 +651,20 @@ OPTslicingImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 
 
 		if ( getModuleId(p) == sqlRef && getFunctionId(p) == resultSetRef) {
-			insertInstruction(mb,rsset,i);
+			mb->stmt[i]  = rsset;
 			q = OPTcodegen(cntxt, mb, i, gauge);
-			i++;
+			mnstr_printf(cntxt->fdout, "#codegenerated resultSet constructor\n");
+			printInstruction(cntxt->fdout, mb, 0, q, LIST_MAL_STMT);
 
 			if ( q ) {
 				getModuleId(rsset) = userRef;
 				getFunctionId(rsset) = getFunctionId(q);
-				/* now drop the arguments */
-				rsset->argc -= rsset->retc;
-				freeInstruction(q);
+				delArgument(rsset,0);
+				/* now drop the column arguments added and pass the additional argument */
+				rsset->argc = rsset->retc;
+				insertInstruction(mb,p,i+1);
+				i++;
+				/* pass the query arguments */
 				q= getInstrPtr(mb,0);
 				for ( j = q->retc; j < q->argc; j++)
 					rsset = pushArgument(mb,rsset, getArg(q,j));
@@ -736,6 +672,9 @@ OPTslicingImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 				msg = OPTdeadcode(cntxt, mb, 0, 0);
 				if ( msg )
 					mnstr_printf(cntxt->fdout,"codegen deadcode %s\n",msg);
+			} else {
+				mb->stmt[i] = p;
+				freeInstruction(rsset);
 			}
 			continue;
 		}
@@ -765,6 +704,26 @@ OPTslicingImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 				continue;
 			}
 		}
+		/* grouping for now is a blocking instruction */
+		if ( getModuleId(p) == groupRef && getFunctionId(p) == doneRef) {
+			/* except consolidated input arguments */
+			q = OPTcodegen(cntxt, mb, i, gauge);
+			if ( q ) {
+				j = newTmpVariable(mb, getArgType(mb,q,0));
+				getArg(q,0) = getArg(p,p->retc) = j;
+				insertInstruction(mb,q,i);
+				/* pass the query arguments */
+				sig = getInstrPtr(mb,0);
+				for ( j = sig->retc; j < sig->argc; j++)
+					q = pushArgument(mb,q,getArg(sig,j));
+
+				msg = OPTdeadcode(cntxt, mb, 0, 0);
+				if ( msg )
+					mnstr_printf(cntxt->fdout,"codegen deadcode %s\n",msg);
+				i++;
+				continue;
+			}
+		}
 		if ( p->token == ENDsymbol)
 			pc = i -1;
 	}
@@ -776,9 +735,13 @@ OPTslicingImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		GDKfree(vec);
 	}
 
+	mnstr_printf(cntxt->fdout,"#orig BEFORE deadcode test\n");
+	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
 	msg = OPTdeadcode(cntxt, mb, 0, 0);
 	if ( msg)
 		goto wrapup;
+	mnstr_printf(cntxt->fdout,"#orig BEFORE test\n");
+	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
 	chkProgram(cntxt->nspace, mb);
 #ifdef _DEBUG_OPT_SLICE_
 	mnstr_printf(cntxt->fdout,"#gauge %s.%s.%s type %d %s\n",
