@@ -1208,7 +1208,6 @@ str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b = BBPquickdesc(ABS(bid), FALSE);
 	char sendhead = 0;
 	char sendtheap = 0;
-	oid Hseqbase = 0;
 
 	(void)mb;
 	(void)stk;
@@ -1221,15 +1220,8 @@ str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	BBPincref(bid, FALSE);
 
-	sendhead = b->htype != TYPE_void && (b->htype != TYPE_oid || !b->H->dense);
+	sendhead = !BAThvoid(b);
 	sendtheap = b->ttype != TYPE_void && b->tvarsized;
-
-	if (b->htype == TYPE_oid && b->H->dense) {
-		BATiter bi = bat_iterator(b);
-		Hseqbase = *(oid *)BUNhead(bi, BUNfirst(b));
-	} else {
-		Hseqbase = b->hseqbase;
-	}
 
 	mnstr_printf(cntxt->fdout, /*JSON*/"{"
 			"\"version\":1,"
@@ -1244,20 +1236,20 @@ str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			"\"hnonil\":%d,"
 			"\"tnonil\":%d,"
 			"\"tdense\":%d,"
-			"\"size\":" SZFMT ","
+			"\"size\":" BUNFMT ","
 			"\"headsize\":" SZFMT ","
 			"\"tailsize\":" SZFMT ","
 			"\"theapsize\":" SZFMT
 			"}\n",
 			sendhead ? b->htype : TYPE_void, b->ttype,
-			Hseqbase, b->tseqbase,
+			b->hseqbase, b->tseqbase,
 			b->hsorted, b->tsorted,
 			b->hkey, b->tkey,
 			b->H->nonil, b->T->nonil,
 			b->tdense,
 			b->batCount,
-			sendhead ? b->batCount * Hsize(b) : 0,
-			b->batCount * Tsize(b),
+			sendhead ? (size_t)b->batCount * Hsize(b) : 0,
+			(size_t)b->batCount * Tsize(b),
 			sendtheap && b->batCount > 0 ? b->T->vheap->free : 0
 			);
 
@@ -1294,7 +1286,7 @@ typedef struct _binbat_v1 {
 		Hnonil:1,
 		Tnonil:1,
 		Tdense:1;
-	size_t size;
+	BUN size;
 	size_t headsize;
 	size_t tailsize;
 	size_t theapsize;
@@ -1366,7 +1358,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 				} else if (strcmp(nme, "tdense") == 0) {
 					bb.Tdense = *val != '0';
 				} else if (strcmp(nme, "size") == 0) {
-					bb.size = atol(val);
+					bb.size = (BUN)atol(val);
 				} else if (strcmp(nme, "headsize") == 0) {
 					bb.headsize = atol(val);
 				} else if (strcmp(nme, "tailsize") == 0) {
@@ -1424,12 +1416,12 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 	b->tdense = bb.Tdense;
 	if (bb.Ttype == TYPE_str && bb.size)
 		BATsetcapacity(b, bb.tailsize >> b->T->shift);
-	BATsetcount(b, (oid)bb.size);
+	BATsetcount(b, bb.size);
 	b->batDirty = TRUE;
 
 	/* read blockmode flush */
-	while (mnstr_read(in, &tmp, 1, 1) != 0) {
-		mnstr_printf(GDKout, "!MALexception:remote.bincopyfrom: expected flush, got: %c", tmp);
+	while (mnstr_read(in, &tmp, 1, 1) > 0) {
+		mnstr_printf(GDKout, "!MALexception:remote.bincopyfrom: expected flush, got: %c\n", tmp);
 	}
 
 	BATpropcheck(b, BATPROPS_ALL);

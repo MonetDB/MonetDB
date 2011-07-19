@@ -234,9 +234,6 @@
 /* Define to 1 if you have the <libintl.h> header file. */
 /* #undef HAVE_LIBINTL_H */
 
-/* Define if you have the netcdf library */
-/* #undef HAVE_LIBNETCDF */
-
 /* Define if you have the pcl library */
 /* #undef HAVE_LIBPCL */
 

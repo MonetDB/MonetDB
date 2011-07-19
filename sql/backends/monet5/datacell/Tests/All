@@ -1,4 +1,4 @@
-basket00
-receptor00
-emitter00
-pair00
+ENABLE_DATACELL?basket00
+ENABLE_DATACELL?receptor00
+ENABLE_DATACELL?emitter00
+ENABLE_DATACELL?pair00
