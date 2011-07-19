@@ -529,7 +529,7 @@ rel_print(mvc *sql, sql_rel *rel, int depth)
 	b->buf[b->pos - 1] = '\0';  /* should always end with a \n, can overwrite */
 
 	/* craft a semi-professional header */
-	mnstr_printf(fd, "&1 0 %d 1 %d\n", /* type id rows columns tuples */
+	mnstr_printf(fd, "&1 0 " SZFMT " 1 " SZFMT "\n", /* type id rows columns tuples */
 			nl, nl);
 	mnstr_printf(fd, "%% .plan # table_name\n");
 	mnstr_printf(fd, "%% rel # name\n");

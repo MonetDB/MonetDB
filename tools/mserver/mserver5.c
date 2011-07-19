@@ -521,7 +521,7 @@ main(int argc, char **av)
 				secret[1023] = '\0';
 				/* don't show this as a crash */
 				msab_registerStop();
-				GDKfatal(secret);
+				GDKfatal("%s", secret);
 			}
 			len = fread(secret, 1, 1023, secretf);
 			secret[len] = '\0';
@@ -530,7 +530,7 @@ main(int argc, char **av)
 				snprintf(secret, 1023, "vault key has zero-length!");
 				/* don't show this as a crash */
 				msab_registerStop();
-				GDKfatal(secret);
+				GDKfatal("%s", secret);
 			} else if (len < 5) {
 				fprintf(stderr, "#warning: your vault key is too short "
 						"(" SZFMT "), enlarge your vault key!\n", len);
@@ -538,11 +538,11 @@ main(int argc, char **av)
 			fclose(secretf);
 		}
 		if ((err = AUTHunlockVault(&secret)) != MAL_SUCCEED)
-			GDKfatal(err);
+			GDKfatal("%s", err);
 	}
 	/* make sure the authorisation BATs are loaded */
 	if ((err = AUTHinitTables()) != MAL_SUCCEED)
-		GDKfatal(err);
+		GDKfatal("%s", err);
 	if (mal_init())
 		return 0;
 

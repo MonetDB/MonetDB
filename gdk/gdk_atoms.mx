@@ -2005,7 +2005,7 @@ strPut(Heap *h, var_t *dst, const char *v)
 		assert(newsize);
 
 		if (h->free + pad + len + extralen >= (((size_t) VAR_MAX) << GDK_VARSHIFT)) {
-			GDKerror("strPut: string heaps gets larger than %dGB.\n", (((size_t) VAR_MAX) << GDK_VARSHIFT) >> 30);
+			GDKerror("strPut: string heaps gets larger than " SZFMT "GB.\n", (((size_t) VAR_MAX) << GDK_VARSHIFT) >> 30);
 			return 0;
 		}
 		if (h->free + pad + len + extralen < h->maxsize) {

@@ -1197,7 +1197,7 @@ HEAP_check(Heap *heap, HeapRepair *hr)
 		return FALSE;
 	}
 	if ((head != roundup_num(head, hheader->alignment))) {
-		GDKerror("HEAP_check: Heap structure corrupt: head = %d\n", head);
+		GDKerror("HEAP_check: Heap structure corrupt: head = " SZFMT "\n", head);
 		return FALSE;
 	}
 

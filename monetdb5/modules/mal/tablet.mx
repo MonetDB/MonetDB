@@ -379,7 +379,6 @@ pre presented on the screen directly.
 #include <mal_client.h>
 #include <mal_interpreter.h>
 #include <mapi.h> /* for PROMPT1, PROMPT2 */
-#include "histogram.h"
 
 #ifdef WIN32
 #if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
@@ -409,7 +408,6 @@ typedef struct Column_t {
 	int adt;		/* type index */
 	BAT *c[SLICES];			/* set to NULL when scalar is meant */
 	BATiter ci[SLICES];
-	Histogram histogram[SLICES];
 	BAT *bin[BINS];
 	BUN p;
 	unsigned int tabs;	/* field size in tab positions */
@@ -1333,7 +1331,7 @@ TABLETcollect_bats(Tablet * as)
 
 		if (cnt != BATcount(fmt[i].c[0])) {
 			if ( as->error == 0) /* a new error */
-				GDKerror("Error: column %d  count " BUNFMT " differs from " BUNFMT "\n",i,BATcount(fmt[i].c[0]),cnt);
+				GDKerror("Error: column " BUNFMT "  count " BUNFMT " differs from " BUNFMT "\n",i,BATcount(fmt[i].c[0]),cnt);
 			BBPunfix(bats->batCacheid);
 			return NULL;
 		}
@@ -1387,7 +1385,7 @@ TABLETcollect_parts(Tablet * as, BUN offset)
 
 		if (cnt != BATcount(b)) {
 			if ( as->error == 0) /* a new error */
-				GDKerror("Error: column %d  count " BUNFMT " differs from " BUNFMT "\n",i,BATcount(b),cnt);
+				GDKerror("Error: column " BUNFMT "  count " BUNFMT " differs from " BUNFMT "\n",i,BATcount(b),cnt);
 			BBPunfix(bats->batCacheid);
 			return NULL;
 		}
@@ -1876,7 +1874,7 @@ TABLETload_bulk(Tablet * as, bstream *b, stream *out, BUN col1, BUN col2, int st
 						if (b->len > b->pos &&
 						    i>=offset &&
 						    insert_line(as, s, NULL, col1,col2) < 0 && !as->tryall ) {
-								GDKerror(as->error);
+								GDKerror("%s", as->error);
 								as->error=0;
 								GDKerror("TABLETload_bulk: read error "
 										"(after loading " BUNFMT " records)\n",
@@ -2353,8 +2351,6 @@ clearColumn(Column * c)
 	c->tabs = 0;
 	for(i=0;i<SLICES;i++)
 		c->c[i] = NULL;
-	for(i=0;i<SLICES;i++)
-		c->histogram[i] = NULL;
 	for(i=0;i<BINS;i++)
 		c->bin[i] = NULL;
 	c->p = 0;

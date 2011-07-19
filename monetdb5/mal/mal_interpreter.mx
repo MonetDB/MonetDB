@@ -2647,9 +2647,9 @@ if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
 	if( cntxt-> flags & ioFlag){
 		struct  rusage resource;
 		getrusage(RUSAGE_SELF, &resource);
-		mnstr_printf(cntxt->fdout," %3d R",
+		mnstr_printf(cntxt->fdout," %3ld R",
 			resource.ru_inblock- oldinblock);
-		mnstr_printf(cntxt->fdout," %3d W ",
+		mnstr_printf(cntxt->fdout," %3ld W ",
 			resource.ru_oublock- oldoublock);
 	}
 #endif
