@@ -1449,7 +1449,7 @@ close_result(MapiHdl hdl)
 				snprintf(msg, sizeof(msg), "Xclose %d\n", hdl->pending_close[i]);
 				mapi_log_record(mid, msg);
 				mid->active = hdl;
-				if (mnstr_printf(mid->to, msg) < 0 ||
+				if (mnstr_printf(mid->to, "%s", msg) < 0 ||
 				    mnstr_flush(mid->to)) {
 					close_connection(mid);
 					mapi_setError(mid, mnstr_error(mid->to), "mapi_close_handle", MTIMEOUT);
@@ -1467,7 +1467,7 @@ close_result(MapiHdl hdl)
 				snprintf(msg, sizeof(msg), "Xclose %d\n", result->tableid);
 				mapi_log_record(mid, msg);
 				mid->active = hdl;
-				if (mnstr_printf(mid->to, msg) < 0 ||
+				if (mnstr_printf(mid->to, "%s", msg) < 0 ||
 				    mnstr_flush(mid->to)) {
 					close_connection(mid);
 					mapi_setError(mid, mnstr_error(mid->to), "mapi_close_handle", MTIMEOUT);
@@ -1670,7 +1670,7 @@ finish_handle(MapiHdl hdl)
 			snprintf(msg, sizeof(msg), "Xclose %d\n", hdl->pending_close[i]);
 			mapi_log_record(mid, msg);
 			mid->active = hdl;
-			if (mnstr_printf(mid->to, msg) < 0 ||
+			if (mnstr_printf(mid->to, "%s", msg) < 0 ||
 			    mnstr_flush(mid->to)) {
 				close_connection(mid);
 				mapi_setError(mid, mnstr_error(mid->to), "finish_handle", MTIMEOUT);

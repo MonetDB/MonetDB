@@ -337,7 +337,7 @@ RECYCLEdumpDataTrans(stream *s)
 	}
 	mnstr_printf(s,"#########\n# Total transfer "LLFMT" Total reused "LLFMT"\n", sum, rsum);
 	if (err)
-		mnstr_printf(s,"# CL %d points to missing query pattern\n", err, 
+		mnstr_printf(s,"# CL %d points to missing query pattern\n",
 			getInstrPtr(recycleBlk,err)->recycle );
 	
 	GDKfree(dt);

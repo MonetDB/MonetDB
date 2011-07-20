@@ -401,6 +401,27 @@ An error at this stage normally lead to an abort.
 #endif
 #endif
 
+/* defines to help the compiler check printf-style format arguments
+ * see the declaration of mnstr_printf below.  Also see stream.h for a
+ * copy of this stuff. */
+#if !defined(__GNUC__) || __GNUC__ < 2 || (__GNUC__ == 2 && __GNUC_MINOR__ < 5)
+/* This feature is available in gcc versions 2.5 and later.  */
+# ifndef __attribute__
+#  define __attribute__(Spec) /* empty */
+# endif
+#else
+/* The __-protected variants of `format' and `printf' attributes are
+ * accepted by gcc versions 2.6.4 (effectively 2.7) and later.  */
+# if !defined(__format__) && (__GNUC__ < 2 || (__GNUC__ == 2 && __GNUC_MINOR__ < 7))
+#  define __format__ format
+#  define __printf__ printf
+# endif
+#endif
+#if !defined(_MSC_VER) && !defined(_In_z_)
+# define _In_z_
+# define _Printf_format_string_
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -2441,9 +2462,12 @@ by the user. A pointer to this buffer is kept in the pseudo-variable
 
 /* Data Distilleries uses ICU for internationalization of some MonetDB error messages */
 
-gdk_export int GDKerror(const char *format, ...);
-gdk_export int GDKsyserror(const char *format, ...);
-gdk_export int GDKfatal(const char *format, ...);
+gdk_export int GDKerror(_In_z_ _Printf_format_string_ const char *format, ...)
+	__attribute__((__format__(__printf__, 1, 2)));
+gdk_export int GDKsyserror(_In_z_ _Printf_format_string_ const char *format, ...)
+	__attribute__((__format__(__printf__, 1, 2)));
+gdk_export int GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
+	__attribute__((__format__(__printf__, 1, 2)));
 
 @
 @h
@@ -2600,7 +2624,8 @@ gdk_export void THRdel(Thread t);
 gdk_export void THRsetdata(int, ptr);
 gdk_export void *THRgetdata(int);
 gdk_export int THRhighwater(void);
-gdk_export int THRprintf(stream *s, const char *format, ...);
+gdk_export int THRprintf(stream *s, _In_z_ _Printf_format_string_ const char *format, ...)
+	__attribute__((__format__(__printf__, 2, 3)));
 
 gdk_export void *THRdata[16];
 

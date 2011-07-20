@@ -586,16 +586,16 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 	}
 #ifdef HAVE_TIMES
 	if (profileCounter[PROFcpu].status && delayswitch < 0) {
-		log("%d,\t", newTms.tms_utime - mb->profiler[pc].timer.tms_utime);
-		log("%d,\t", newTms.tms_cutime - mb->profiler[pc].timer.tms_cutime);
-		log("%d,\t", newTms.tms_stime - mb->profiler[pc].timer.tms_stime);
-		log("%d,\t", newTms.tms_cstime - mb->profiler[pc].timer.tms_cstime);
+		log("%ld,\t", (long) (newTms.tms_utime - mb->profiler[pc].timer.tms_utime));
+		log("%ld,\t", (long) (newTms.tms_cutime - mb->profiler[pc].timer.tms_cutime));
+		log("%ld,\t", (long) (newTms.tms_stime - mb->profiler[pc].timer.tms_stime));
+		log("%ld,\t", (long) (newTms.tms_cstime - mb->profiler[pc].timer.tms_cstime));
 	}
 #endif
 
 	if (profileCounter[PROFmemory].status && delayswitch < 0) {
 #ifdef HAVE_SYS_RESOURCE_H
-		log("%d,\t", infoUsage.ru_maxrss);
+		log("%ld,\t", infoUsage.ru_maxrss);
 #endif
 		log(SZFMT ",\t", (size_t)(infoMalloc.arena - prevMalloc.arena));
 		log(SZFMT ",\t", (size_t)(infoMalloc.ordblks - prevMalloc.ordblks));
@@ -609,16 +609,16 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 #ifdef HAVE_SYS_RESOURCE_H
 	if ((profileCounter[PROFreads].status ||
 		 profileCounter[PROFwrites].status) && delayswitch < 0) {
-		log("%d,\t", infoUsage.ru_inblock - prevUsage.ru_inblock);
-		log("%d,\t", infoUsage.ru_oublock - prevUsage.ru_oublock);
+		log("%ld,\t", infoUsage.ru_inblock - prevUsage.ru_inblock);
+		log("%ld,\t", infoUsage.ru_oublock - prevUsage.ru_oublock);
 		prevUsage = infoUsage;
 	}
 	if (profileCounter[PROFprocess].status && delayswitch < 0) {
-		log("%d,\t", infoUsage.ru_minflt - prevUsage.ru_minflt);
-		log("%d,\t", infoUsage.ru_majflt - prevUsage.ru_majflt);
-		log("%d,\t", infoUsage.ru_nswap - prevUsage.ru_nswap);
-		log("%d,\t", infoUsage.ru_nvcsw - prevUsage.ru_nvcsw);
-		log("%d,\t", infoUsage.ru_nivcsw - prevUsage.ru_nivcsw);
+		log("%ld,\t", infoUsage.ru_minflt - prevUsage.ru_minflt);
+		log("%ld,\t", infoUsage.ru_majflt - prevUsage.ru_majflt);
+		log("%ld,\t", infoUsage.ru_nswap - prevUsage.ru_nswap);
+		log("%ld,\t", infoUsage.ru_nvcsw - prevUsage.ru_nvcsw);
+		log("%ld,\t", infoUsage.ru_nivcsw - prevUsage.ru_nivcsw);
 		prevUsage = infoUsage;
 	}
 #endif
@@ -628,7 +628,7 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 		log(LLFMT ",\t", mb->profiler[pc].wbytes);
 
 	if (profileCounter[PROFaggr].status)
-		log2("%d,\t%d,\t", mb->profiler[pc].counter, mb->profiler[pc].clk);
+		log2("%d,\t" LLFMT ",\t", mb->profiler[pc].counter, mb->profiler[pc].clk);
 
 	if (profileCounter[PROFstmt].status) {
 		/* generate actual call statement */

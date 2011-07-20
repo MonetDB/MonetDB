@@ -274,7 +274,7 @@ SQLload_file_line(READERtask *task, int idx)
 				snprintf(errmsg,BUFSIZ, "End of string (%c) missing "
 					"in \"%s\" at line " BUNFMT " field "BUNFMT"\n", task->quote, (errline?errline:""), BATcount(as->format->c[0]) + task->next +1, i);
 				if ( errline )
-					GDKerror(errmsg);
+					GDKerror("%s", errmsg);
 				GDKfree(errline);
 				goto errors;
 			}
