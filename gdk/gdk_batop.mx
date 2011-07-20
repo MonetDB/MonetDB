@@ -2280,7 +2280,7 @@ Use the histogram to determine good split boundaries on b.
 	BBPreclaim(histo);
 
 	if (n > 1 && n != yy + 1) {
-		PROPDEBUG THRprintf(GDKout, "#rangesplit: delivering %lu instead of %lu fragments\n", yy + 1, n);
+		PROPDEBUG THRprintf(GDKout, "#rangesplit: delivering " BUNFMT " instead of " BUNFMT " fragments\n", yy + 1, n);
 		n = yy + 1;
 	}
 @-
