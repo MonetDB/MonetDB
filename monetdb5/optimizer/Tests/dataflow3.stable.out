@@ -1,0 +1,25 @@
+stdout of test 'dataflow3` in directory 'optimizer` itself:
+
+
+# 17:56:35 >  
+# 17:56:35 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/HG/Aug2011/prefix/_/var/MonetDB" --set mapi_open=true --set mapi_port=30526 --set monet_prompt= --trace --forcemito --set mal_listing=2  --dbname=mTests_optimizer  dataflow3.mal
+# 17:56:35 >  
+
+# MonetDB 5 server v11.5.0
+# This is an unreleased version
+# Serving database 'mTests_optimizer', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:30526/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+! to be checked / approved !
+
+# 17:56:35 >  
+# 17:56:35 >  Done.
+# 17:56:35 >  
+

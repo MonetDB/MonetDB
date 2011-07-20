@@ -529,7 +529,7 @@ la_bat_use(logger *lg, logaction *la)
 	BAT *b = BATdescriptor(bid);
 
 	if (!b) {
-		GDKerror("logger: could not use bat (" OIDFMT ") for %s\n", bid, la->name);
+		GDKerror("logger: could not use bat (%d) for %s\n", (int) bid, la->name);
 		return;
 	}
 	logger_add_bat(lg, b, la->name);

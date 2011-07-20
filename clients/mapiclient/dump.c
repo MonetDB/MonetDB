@@ -434,14 +434,14 @@ dump_type(Mapi mid, stream *toConsole, char *c_type, char *c_type_digits, char *
 			space += mnstr_printf(toConsole, "(%s)", c_type_digits);
 	} else if (strcmp(c_type, "timestamp") == 0 ||
 		   strcmp(c_type, "timestamptz") == 0) {
-		space = mnstr_printf(toConsole, "TIMESTAMP", c_type);
+		space = mnstr_printf(toConsole, "TIMESTAMP");
 		if (strcmp(c_type_digits, "7") != 0)
 			space += mnstr_printf(toConsole, "(%d)", atoi(c_type_digits) - 1);
 		if (strcmp(c_type, "timestamptz") == 0)
 			space += mnstr_printf(toConsole, " WITH TIME ZONE");
 	} else if (strcmp(c_type, "time") == 0 ||
 		   strcmp(c_type, "timetz") == 0) {
-		space = mnstr_printf(toConsole, "TIME", c_type);
+		space = mnstr_printf(toConsole, "TIME");
 		if (strcmp(c_type_digits, "1") != 0)
 			space += mnstr_printf(toConsole, "(%d)", atoi(c_type_digits) - 1);
 		if (strcmp(c_type, "timetz") == 0)

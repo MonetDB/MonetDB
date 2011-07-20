@@ -1,3 +1,89 @@
+monetdb (11.3.5-20110720) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 20 Jul 2011 12:43:02 +0200
+
+monetdb (11.3.5-20110720) unstable; urgency=low
+
+  * sql: Fixed regression where the superuser password could no longer be
+    changed, bug #2844
+
+ -- Fabian Groffen <fabian@cwi.nl>  Tue, 19 Jul 2011 12:43:02 +0200
+
+monetdb (11.3.5-20110720) unstable; urgency=low
+
+  * buildtools: We can now build RPMs on CentOS 6.0.  Since there is no geos library
+    on CentOS, we do not support the geom modules there.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 13 Jul 2011 12:43:02 +0200
+
+monetdb (11.3.5-20110720) unstable; urgency=low
+
+  * gdk: Fixed a problem where appending string BATs could cause enormous growth
+    of the string heap.  This fixes bug 2820.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Sat, 9 Jul 2011 12:43:02 +0200
+
+monetdb (11.3.5-20110720) unstable; urgency=low
+
+  * java: Return false from Statement.getMoreResults() instead of a
+    NullPointerException when no query has been performed on the Statement
+    yet, bug #2833
+
+ -- Fabian Groffen <fabian@cwi.nl>  Fri, 8 Jul 2011 12:43:02 +0200
+
+monetdb (11.3.5-20110720) unstable; urgency=low
+
+  * clients: Fix stethoscope's mod.fcn filter when using multiple targets, bug #2827
+
+ -- Fabian Groffen <fabian@cwi.nl>  Fri, 1 Jul 2011 12:43:02 +0200
+
+monetdb (11.3.5-20110720) unstable; urgency=low
+
+  * buildtools: We can now also build on Fedora 15.  This required some very minor
+    changes.
+  * buildtools: Changed configure check for OpenSSL so that we can also build on CentOS
+    5.6.  We now no longer demand that OpenSSL is at least version 0.9.8f,
+    but instead we require that the hash functions we need are supported.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 29 Jun 2011 12:43:02 +0200
+
+monetdb (11.3.5-20110720) unstable; urgency=low
+
+  * clients: The separate Python distribution now uses the same version number as
+    the main package.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 29 Jun 2011 12:43:02 +0200
+
+monetdb (11.3.5-20110720) unstable; urgency=low
+
+  * gdk: Fixes to memory detection on FreeBSD.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 29 Jun 2011 12:43:02 +0200
+
+monetdb (11.3.5-20110720) unstable; urgency=low
+
+  * sql: Fixed incorrect insert counts.
+  * sql: Fixed bug 2823: MAL exeption on SQL query with subquery in the where
+    part.
+  * sql: Redirect error from create scripts back to the first client.  This
+    fixes bug 2813.
+  * sql: Added joinidx based semijoin; push join through union (using
+    joinidx).
+  * sql: Fixed pushing select down.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 29 Jun 2011 12:43:02 +0200
+
+monetdb (11.3.5-20110720) unstable; urgency=low
+
+  * java: Fixed read-only interpretation.  Connection.isReadOnly now always
+    returns false, setReadOnly now generates a warning when called with
+    true.  Partly from bug #2818
+  * java: Allow readonly to be set when autocommit is disabled as well.  Bug #2818
+
+ -- Fabian Groffen <fabian@cwi.nl>  Mon, 6 Jun 2011 12:43:02 +0200
+
 monetdb (11.3.3-20110517) unstable; urgency=low
 
   * Rebuilt.

@@ -1,0 +1,34 @@
+stdout of test 'lsst_htmxmatch` in directory 'backends/monet5/LSST` itself:
+
+
+# 10:09:12 >  
+# 10:09:12 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/HG/Aug2011/prefix/_/var/MonetDB" --set mapi_open=true --set mapi_port=33762 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_backends_monet5_LSST" --set mal_listing=0 ; echo ; echo Over..
+# 10:09:12 >  
+
+# MonetDB 5 server v11.5.0
+# This is an unreleased version
+# Serving database 'mTests_backends_monet5_LSST', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:33762/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+
+Over..
+
+# 10:09:12 >  
+# 10:09:12 >  mclient -lsql -ftest -i -e --host=rig --port=33762 
+# 10:09:12 >  
+
+! to be checked / approved !
+
+# 10:09:12 >  
+# 10:09:12 >  Done.
+# 10:09:12 >  
+

@@ -527,7 +527,7 @@ sqlblob_fromstr(char *instr, int *l, blob **val)
 	 */
 	i = strlen(instr);
 	if (i % 2 == 1) {
-		GDKerror("sqlblob_fromstr: Illegal blob length '%d' (should be even)\n", i);
+		GDKerror("sqlblob_fromstr: Illegal blob length '" SZFMT "' (should be even)\n", i);
 		instr = 0;
 		nil = 1;
 	}
