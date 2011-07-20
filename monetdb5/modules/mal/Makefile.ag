@@ -41,6 +41,7 @@ lib_mal = {
 		constraints.mx \
 		factories.mx \
 		groupby.mx \
+		histogram.mx \
 		inspect.mx \
 		language.mx \
 		mal_io.mx \
@@ -74,7 +75,7 @@ headers_mal = {
 		profiler.mx const.mx attach.mx batExtensions.mx algebraExtensions.mx \
 		inspect.mx manual.mx mal_io.mx pqueue.mx mkey.mx \
 		chopper.mx clients.mx \
-		factories.mx groupby.mx mdb.mx pcre.mx  tablet.mx mat.mx \
+		factories.mx groupby.mx mdb.mx pcre.mx  tablet.mx mat.mx histogram.mx \
 		urlbox.mx statistics.mx transaction.mx \
 		mal_mapi.mx sabaoth.mx remote.mx  \
 		bpm.mx txtsim.mx recycle.mx \
