@@ -20,6 +20,7 @@ Use a single gauge structure to split the largest table.
 @f opt_slicing
 @a M. Kersten
 @- Slicing
+todo: alias required for all object returned from subqueries
 @{
 @mal
 pattern optimizer.slicing():str
@@ -216,6 +217,7 @@ OPTslicingCntrl(Client cntxt, MalBlkPtr mb, int pc, MalBlkPtr pmb, Gauge gauge)
 		q = pushArgument(cmb,q,x);
 		j = getArg(q,0) = newTmpVariable(cmb,newBatType(TYPE_oid, gauge.type));
 		setVarUDFtype(cmb,j);
+		setVarFixed(cmb,j);
 		q= pushStr(cmb,q, gauge.schema);
 		q= pushStr(cmb,q, gauge.table);
 		q= pushStr(cmb,q, gauge.column);
@@ -513,22 +515,28 @@ OPTcodegen(Client cntxt, MalBlkPtr mb, int pc, Gauge gauge )
 
 	q = 0;
 
+#ifdef DEBUG_DETAIL
 	mnstr_printf(cntxt->fdout,"#nmb, CODEGEN BEFORE SUBS? %d\n", nmb->errors);
 	if ( nmb)
 		printFunction(cntxt->fdout, nmb, 0, LIST_MAL_STMT);
+#endif
 	/* supportive routines */
 	smb = OPTslicingStub(cntxt, mb, pc,  nmb, gauge);
+#ifdef DEBUG_DETAIL
 	mnstr_printf(cntxt->fdout,"#smb,BEFORE test? %d\n", smb->errors);
 	if ( smb)
 		printFunction(cntxt->fdout, smb, 0, LIST_MAL_STMT);
+#endif
 	msg = OPTdeadcode(cntxt, smb, 0, 0);
 	if ( msg)
 		goto wrapup;
 
 	cmb = OPTslicingCntrl(cntxt,mb,pc,nmb, gauge);
+#ifdef DEBUG_DETAIL
 	mnstr_printf(cntxt->fdout,"#cntrl,BEFORE test? %d\n", cmb->errors);
 	if ( cmb)
 		printFunction(cntxt->fdout, cmb, 0, LIST_MAL_STMT);
+#endif
 	chkProgram(cntxt->nspace, cmb);
 	if ( cmb->errors)
 		goto wrapup;
@@ -537,9 +545,11 @@ OPTcodegen(Client cntxt, MalBlkPtr mb, int pc, Gauge gauge )
 	if ( msg)
 		goto wrapup;
 
+#ifdef DEBUG_DETAIL
 	mnstr_printf(cntxt->fdout,"#nmb,BEFORE test? %d\n", nmb->errors);
 	if ( nmb)
 		printFunction(cntxt->fdout, nmb, 0, LIST_MAL_STMT);
+#endif
 	chkProgram(cntxt->nspace, nmb);
 	if ( nmb->errors)
 		goto wrapup;
@@ -620,24 +630,28 @@ OPTslicingImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	/* for result sets we have to collect the arguments of the rsColumn */
 	/* gather all columns into the resultSet constructor to ease code generation */
 	/* be aware that the resultSet already has three arguments */
+	/* be careful with first result column */
 	for (i=1; i< mb->stop; i++){
 		q= getInstrPtr(mb,i);
 		if ( getModuleId(q) == sqlRef) {
-			if ( getFunctionId(q) == resultSetRef) 
+			if ( getFunctionId(q) == resultSetRef)
 				rsset= copyInstruction(q);
 			if ( getFunctionId(q) == rsColumnRef) {
 				assert(rsset != NULL);
-				j = newTmpVariable(mb, getArgType(mb,q,7));
-				rsset= pushReturn(mb,rsset, j);
+				/* j = newTmpVariable(mb, getArgType(mb,q,7));
+				rsset= pushReturn(mb,rsset, j); */
+				rsset= pushReturn(mb,rsset, j = getArg(q,7));
 				rsset= pushArgument(mb,rsset, getArg(q,7));
 				getArg(q,7) = j;
 			}
 		}
 	}
+#ifdef DEBUG_DETAIL
 	if ( rsset) {
 		mnstr_printf(cntxt->fdout,"#replaced resultSet constructor\n");
 		printInstruction(cntxt->fdout, mb, 0, rsset, LIST_MAL_STMT);
 	}
+#endif
 
 	OPTDEBUGslicing
 		mnstr_printf(cntxt->fdout,"#opt_slicing: target is %s.%s "
@@ -653,10 +667,10 @@ OPTslicingImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		if ( getModuleId(p) == sqlRef && getFunctionId(p) == resultSetRef) {
 			mb->stmt[i]  = rsset;
 			q = OPTcodegen(cntxt, mb, i, gauge);
-			mnstr_printf(cntxt->fdout, "#codegenerated resultSet constructor\n");
-			printInstruction(cntxt->fdout, mb, 0, q, LIST_MAL_STMT);
 
 			if ( q ) {
+				mnstr_printf(cntxt->fdout, "#codegenerated resultSet constructor\n");
+				printInstruction(cntxt->fdout, mb, 0, q, LIST_MAL_STMT);
 				getModuleId(rsset) = userRef;
 				getFunctionId(rsset) = getFunctionId(q);
 				delArgument(rsset,0);
@@ -717,6 +731,10 @@ OPTslicingImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 				for ( j = sig->retc; j < sig->argc; j++)
 					q = pushArgument(mb,q,getArg(sig,j));
 
+#ifdef DEBUG_DETAIL
+				mnstr_printf(cntxt->fdout,"#done instruction BEFORE deadcode test\n");
+				printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
+#endif
 				msg = OPTdeadcode(cntxt, mb, 0, 0);
 				if ( msg )
 					mnstr_printf(cntxt->fdout,"codegen deadcode %s\n",msg);
@@ -734,14 +752,17 @@ OPTslicingImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			getInstrPtr(mb,i)->token = NOOPsymbol;
 		GDKfree(vec);
 	}
-
+#ifdef DEBUG_DETAIL
 	mnstr_printf(cntxt->fdout,"#orig BEFORE deadcode test\n");
 	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
+#endif
 	msg = OPTdeadcode(cntxt, mb, 0, 0);
 	if ( msg)
 		goto wrapup;
+#ifdef DEBUG_DETAIL
 	mnstr_printf(cntxt->fdout,"#orig BEFORE test\n");
 	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
+#endif
 	chkProgram(cntxt->nspace, mb);
 #ifdef _DEBUG_OPT_SLICE_
 	mnstr_printf(cntxt->fdout,"#gauge %s.%s.%s type %d %s\n",
