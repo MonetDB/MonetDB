@@ -33,7 +33,7 @@ Over..
 #insert into bug2058b values ('good');
 [ 1	]
 #with bug2058a as (select * from bug2058b) select * from bug2058a;
-% sys.bug2058b # table_name
+% sys.bug2058a # table_name
 % s # name
 % varchar # type
 % 4 # length
