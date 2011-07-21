@@ -911,6 +911,11 @@ in the context of a global stack.
 		/* define variables */
 		for(k=0; k<p->retc; k++){
 			l= getArg(p,k);
+			if (isVarInit(mb, l) && decl[l] == 0) {
+				/* first time we see this variable and it is already
+				 * initialized: assume it exists globally */
+				decl[l] = blks[0];
+			}
 			setVarInit(mb,l);
 			if( decl[l] == 0){
 				/* variable has not been defined yet */
