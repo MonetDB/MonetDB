@@ -923,18 +923,6 @@ in the context of a global stack.
 				mnstr_printf(GDKout,"defined %s in block %d\n", 
 					getVarName(mb,l),decl[l]);
 #endif
-			} else
-			if( !isVarInit(mb,l) ){
-			    /* is the block still active ? */
-			    for( i=0; i<= top; i++)
-					if( blks[i] == decl[l] ) 
-						break;
-			    if( i> top || blks[i]!= decl[l] ){
-			            showScriptException(mb,pc,TYPE,
-							"'%s' assigned outside scope",
-							getVarName(mb,l));
-			        mb->errors++;
-			    }
 			}
 			if( blockCntrl(p) || blockStart(p) )
 				setVarUsed(mb, l);
