@@ -102,7 +102,7 @@ include remote;
 include trader; # experimental
 
 include mat; 	# experimental
-include histogram; 	# experimental
+# include histogram; 	# experimental
 include bpm;	# experimental
 include inspect;
 include manual;
