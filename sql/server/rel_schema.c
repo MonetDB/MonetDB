@@ -881,6 +881,8 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 	         ((temp == SQL_MERGE_TABLE)?tt_merge_table:
 			  ((temp == SQL_ARRAY)? tt_array:tt_table));
 	char *t_a = (tt == tt_array)?"ARRAY":"TABLE";
+	/* TODO: compute 'fixed' somewhere somehow */
+	bit fixed = 1, found_dim = 0;
 
 	(void)create;
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
@@ -916,13 +918,44 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 		for (n = columns->h; n; n = n->next) {
 			symbol *sym = n->data.sym;
 			int res = table_element(sql, sym, s, t, 0);
+			found_dim = sym->data.lval->h->next->next->next && sym->data.lval->h->next->next->next->type == type_symbol && sym->data.lval->h->next->next->next->data.sym->token == SQL_DIMENSION;
 
 			if (res == SQL_ERR) 
 				return NULL;
 		}
+
+		if (tt == tt_array && !found_dim) 
+			return sql_error(sql, 02, "CREATE ARRAY: an array must have at least one dimension");
+
 		temp = (tt == tt_table || tt == tt_array)?temp:SQL_PERSIST;
-		/* TODO: is DDL_CREATE_TABLE sufficient for arrays? */
-		return rel_table(sql, DDL_CREATE_TABLE, sname, t, temp);
+		/* For unbounded arrays we don't immediately create the columns */
+		if ((tt == tt_table) || (tt == tt_array && !fixed)) {
+			/* TODO: is DDL_CREATE_TABLE sufficient for arrays? */
+			return rel_table(sql, DDL_CREATE_TABLE, sname, t, temp);
+		} else {
+			sql_rel *res = NULL;
+			list *prjs = new_exp_list(sql->sa);
+			node *col = NULL;
+
+			assert(tt == tt_array && fixed);
+
+			for (col = t->columns.set->h; col; col = col->next){
+				sql_column *sc = (sql_column *) col->data;
+				list *args = new_exp_list(sql->sa);
+				if (sc->dim){
+					append(args, exp_atom_lng(sql->sa, *sc->dim->start));
+					append(args, exp_atom_lng(sql->sa, *sc->dim->step));
+					append(args, exp_atom_lng(sql->sa, *sc->dim->stop));
+					/* TODO: compute the 'N' and 'M' */
+					append(args, exp_atom_int(sql->sa, 1));
+					append(args, exp_atom_int(sql->sa, 4));
+
+					append(prjs, exp_op(sql->sa, args, sql_find_func(sql->sa, sql->session->schema, "series", 5)));
+				}
+			}
+			res = rel_table(sql, DDL_CREATE_TABLE, sname, t, temp);
+			return rel_insert(sql, res, rel_project(sql->sa, res, prjs));
+		}
 	} else { /* [col name list] as subquery with or without data */
 		/* TODO: handle create_array_as_subquery??? */
 		sql_rel *sq = NULL, *res = NULL;
