@@ -39,7 +39,7 @@ comment "Load a FITS table from an attached file";
 
 pattern export(tablename :str): void
 address FITSexportTable
-comment "Export a FITS table to a FITS file";
+comment "Export a table to a FITS file";
 
 
 
