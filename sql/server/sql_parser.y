@@ -4015,7 +4015,7 @@ interval_expression:
 			while (cpyval /= 10)
 				inlen++;
 		    	if (inlen > t.digits) {
-				char *msg = sql_message("incorrect interval (%d > %d)", inlen, t.digits);
+				char *msg = sql_message("incorrect interval (" LLFMT " > %d)", inlen, t.digits);
 				yyerror(msg);
 				$$ = NULL;
 				YYABORT;
