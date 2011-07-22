@@ -1014,7 +1014,7 @@ str DICTdecompress(int *ret, str *nme)
 			BUNins(b, &o, BUNtail(bvi,p), FALSE);
 		}
 #ifdef DEBUG_OPT_DICTIONARY 
-	mnstr_printf(GDKout,"#dictionary.new values in encoding table" SZFMT " \n", BATcount(bv));
+	mnstr_printf(GDKout,"#dictionary.new values in encoding table" BUNFMT " \n", BATcount(bv));
 #endif
 	} break;
 @c
