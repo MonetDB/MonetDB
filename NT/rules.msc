@@ -364,22 +364,12 @@ MAKEDEBUG=DEBUG=1
 PSAPILIB = psapi.lib
 
 # When compiled with plain `nmake`,
-# 32-bit OIDs are used by default on 64-bit Windows
-# (see winconfig.h for details);
-# compile with `nmake MONET_OID64=1` to use 64-bit OIDs on 64-bit Windows;
-# compile with `nmake MONET_OID32=1` to use 32-bit OIDs on 64-bit Windows
-# in case the default is altered in winconfig.h .
-#!IFDEF BITS64
+# 64-bit OIDs are used by default on 64-bit Windows
+# (see monetdb_config.h.in for details);
+# compile with `nmake MONET_OID32=1` to use 32-bit OIDs on 64-bit Windows.
 !IF $(bits) == 64
-!IFNDEF MONET_OID64
 !IFDEF MONET_OID32
 CFLAGS = $(CFLAGS) -DMONET_OID32
-!ENDIF
-!ENDIF
-!IFNDEF MONET_OID32
-!IFDEF MONET_OID64
-CFLAGS = $(CFLAGS) -DMONET_OID64
-!ENDIF
 !ENDIF
 !ENDIF
 
