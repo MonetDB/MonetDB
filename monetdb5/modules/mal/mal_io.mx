@@ -782,11 +782,11 @@ IOdatafile(str *ret, str *fnme){
 	stream *s = open_rstream(*fnme);
 	*ret = 0;
 	if (s == NULL )
-		throw(MAL, "io.export", RUNTIME_FILE_NOT_FOUND ":%s", fnme);
+		throw(MAL, "io.export", RUNTIME_FILE_NOT_FOUND ":%s", *fnme);
 	
 	if (mnstr_errnr(s)) {
 		mnstr_close(s);
-		throw(MAL, "io.export", RUNTIME_FILE_NOT_FOUND ":%s", fnme);
+		throw(MAL, "io.export", RUNTIME_FILE_NOT_FOUND ":%s", *fnme);
 	}
 	*ret= GDKstrdup(*fnme);
 	mnstr_close(s);
@@ -807,12 +807,12 @@ IOexport(bit *ret, int *bid, str *fnme)
 	s = open_wastream(*fnme);
 	if (s == NULL ){
 		BBPunfix(b->batCacheid);
-		throw(MAL, "io.export", RUNTIME_FILE_NOT_FOUND ":%s", fnme);
+		throw(MAL, "io.export", RUNTIME_FILE_NOT_FOUND ":%s", *fnme);
 	}
 	if (mnstr_errnr(s)) {
 		mnstr_close(s);
 		BBPunfix(b->batCacheid);
-		throw(MAL, "io.export", RUNTIME_FILE_NOT_FOUND ":%s", fnme);
+		throw(MAL, "io.export", RUNTIME_FILE_NOT_FOUND ":%s", *fnme);
 	}
 	BATprintf(s, b);
 	mnstr_close(s);
@@ -942,7 +942,7 @@ Parse the line, and insert a BUN.
 			char msg[BUFSIZ];
 			BBPunfix(*ret=b->batCacheid);
 			snprintf(msg,BUFSIZ,"error in input %s",buf);
-			throw(MAL,  "io.import", msg);
+			throw(MAL,  "io.import", "%s", msg);
 		}
 		p += @1(p, @3, @4);
 @c

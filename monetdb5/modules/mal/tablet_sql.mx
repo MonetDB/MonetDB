@@ -582,7 +582,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 		if(task->errbuf && task->errbuf[0] ) {
 			msg = catchKernelException(cntxt, msg);
 			if ( msg ){
-				showException(MAL,"copy_from",msg);
+				showException(MAL, "copy_from", "%s", msg);
 				GDKfree(msg);
 				goto bailout;
 			}

@@ -1684,7 +1684,7 @@ possible change in the control flow.
 		ret = NULL;
 		if (getVarType(mb, getDestVar(pci)) == TYPE_str) {
 			ret = createScriptException(mb, stkpc, MAL, NULL,
-				stk->stk[getDestVar(pci)].val.sval);
+				"%s", stk->stk[getDestVar(pci)].val.sval);
 		}
 		@:skipToCatch(exceptionVar, @2, stk)@
 		if (stkpc == mb->stop)
