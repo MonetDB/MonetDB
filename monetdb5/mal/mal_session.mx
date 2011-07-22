@@ -680,7 +680,7 @@ and marking all non-temporary variables as being (potentially) used.
 		msg = (str) runMAL(c, prg->def, 1, 0, c->glb, 0);
 	if (msg) {
 		str place = getExceptionPlace(msg);
-		showException(getExceptionType(msg), place, getExceptionMessage(msg));
+		showException(getExceptionType(msg), place, "%s", getExceptionMessage(msg));
 		GDKfree(place);
 		if (!c->listing)
 			printFunction(c->fdout, c->curprg->def, 0, c->listing);

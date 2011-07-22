@@ -957,7 +957,7 @@ wkbgetcoord@1(double *out, wkb **geom)
 	GEOSGeom_destroy(geosGeometry);
 
 	if (ret != MAL_SUCCEED)
-		throw(MAL, "geom.@1", ret);
+		throw(MAL, "geom.@1", "%s", ret);
 
 	return ret;
 }
@@ -1030,7 +1030,7 @@ wkbcreatepoint_bat(int *out, int *ix, int *iy)
 			BBPreleaseref(bx->batCacheid);
 			BBPreleaseref(by->batCacheid);
 			BBPreleaseref(bo->batCacheid);
-			throw(MAL, "geom.point", err);
+			throw(MAL, "geom.point", "%s", err);
 		}
 		tfastins_nocheck(bo, o, p, Tsize(bo));
 		GDKfree(p);
@@ -1189,7 +1189,7 @@ wkb@1( dbl *out, wkb **a)
 	GEOSGeom_destroy(ga);
 
 	if (ret != MAL_SUCCEED)
-		throw(MAL, "geom.@1", ret);
+		throw(MAL, "geom.@1", "%s", ret);
 	return ret;
 }
 @= analysis2
@@ -1221,7 +1221,7 @@ wkb@1( dbl *out, wkb **a, wkb **b)
 	GEOSGeom_destroy(gb);
 
 	if (ret != MAL_SUCCEED)
-		throw(MAL, "geom.@1", ret);
+		throw(MAL, "geom.@1", "%s", ret);
 	return ret;
 }
 @= analysis3

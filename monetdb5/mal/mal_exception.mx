@@ -155,10 +155,18 @@ enum malexception {
 #define rethrow(FCN, TMP, PRV) \
 	if ((TMP = PRV) != MAL_SUCCEED) return(TMP);
 
-mal_export str	createException(enum malexception, str, str, ...);
-mal_export void	showException(enum malexception, str, str, ...);
-mal_export str	createScriptException(MalBlkPtr, int, enum malexception, str, str, ...);
-mal_export void	showScriptException(MalBlkPtr, int, enum malexception, str, ...);
+mal_export str	createException(enum malexception, const char *,
+	_In_z_ _Printf_format_string_ const char *, ...)
+	__attribute__((__format__(__printf__, 3, 4)));
+mal_export void	showException(enum malexception, const char *,
+	_In_z_ _Printf_format_string_ const char *, ...)
+	__attribute__((__format__(__printf__, 3, 4)));
+mal_export str	createScriptException(MalBlkPtr, int, enum malexception, const char *,
+	_In_z_ _Printf_format_string_ const char *, ...)
+	__attribute__((__format__(__printf__, 5, 6)));
+mal_export void	showScriptException(MalBlkPtr, int, enum malexception,
+	_In_z_ _Printf_format_string_ const char *, ...)
+	__attribute__((__format__(__printf__, 4, 5)));
 mal_export int isExceptionVariable(str nme);
 
 mal_export enum malexception	getExceptionType(str);
@@ -212,7 +220,7 @@ char *M5OutOfMemory = "Memory allocation failed.";
  * is good.
  */
 static str
-createExceptionInternal(enum malexception type, str fcn, str format, va_list ap)
+createExceptionInternal(enum malexception type, const char *fcn, const char *format, va_list ap)
 {
 	char *message;
 	int len;
@@ -237,7 +245,7 @@ createExceptionInternal(enum malexception type, str fcn, str format, va_list ap)
  * the exceptionNames array.
  */
 str
-createException(enum malexception type, str fcn, str format, ...)
+createException(enum malexception type, const char *fcn, const char *format, ...)
 {
 	va_list ap;
 	str ret;
@@ -284,7 +292,7 @@ dumpToStream(stream *out, str whatever) {
  * console as defined by GDKout.
  */
 void
-showException(enum malexception type, str fcn, str format, ...)
+showException(enum malexception type, const char *fcn, const char *format, ...)
 {
 	va_list ap;
 	str msg;
@@ -307,7 +315,7 @@ showException(enum malexception type, str fcn, str format, ...)
  * is good.
  */
 static str
-createScriptExceptionInternal(MalBlkPtr mb, int pc, enum malexception type, str prev, str format, va_list ap)
+createScriptExceptionInternal(MalBlkPtr mb, int pc, enum malexception type, const char *prev, const char *format, va_list ap)
 {
 	char buf[GDKMAXERRLEN];
 	size_t i;
@@ -337,7 +345,7 @@ createScriptExceptionInternal(MalBlkPtr mb, int pc, enum malexception type, str 
  * malexception enum is not aligned with the exceptionNames array.
  */
 str
-createScriptException(MalBlkPtr mb, int pc, enum malexception type, str prev, str format, ...)
+createScriptException(MalBlkPtr mb, int pc, enum malexception type, const char *prev, const char *format, ...)
 {
 	va_list ap;
 	str ret;
@@ -355,7 +363,7 @@ createScriptException(MalBlkPtr mb, int pc, enum malexception type, str prev, st
  * defined by GDKout.
  */
 void
-showScriptException(MalBlkPtr mb, int pc, enum malexception type, str format, ...)
+showScriptException(MalBlkPtr mb, int pc, enum malexception type, const char *format, ...)
 {
 	va_list ap;
 	str msg;

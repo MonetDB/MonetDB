@@ -75,7 +75,7 @@ extend_part( sql_bpm *p, BAT *b, BAT *i, bat u)
 	}*/
 	bat = p->parts+nr;
 	if (!bat->name) 
-		bat->name = sql_message("%s_%d", p->name);
+		bat->name = sql_message("%s_%d", p->name, nr);
 	create_delta( bat, b, i, u);
 	p -> nr++;
 	return nr;

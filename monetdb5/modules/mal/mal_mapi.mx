@@ -1279,7 +1279,7 @@ SERVERprepare(int *ret, int *key, str *qry){
 		mapi_close_handle(SERVERsessions[i].hdl);
 	SERVERsessions[i].hdl= mapi_prepare(mid, *qry);
 	if( mapi_error(mid) ) 
-		throw(MAL, "mapi.prepare",
+		throw(MAL, "mapi.prepare", "%s",
 			mapi_result_error(SERVERsessions[i].hdl));
 	*ret = *key;
 	return MAL_SUCCEED;
@@ -1292,7 +1292,7 @@ SERVERexecute(int *ret, int *key){
 	@:accessTest(*key,execute)@
 	mapi_execute(SERVERsessions[i].hdl);
 	if( mapi_error(mid) ) 
-		throw(MAL, "mapi.execute",
+		throw(MAL, "mapi.execute", "%s",
 			mapi_result_error(SERVERsessions[i].hdl));
 	*ret = *key;
 	return MAL_SUCCEED;
@@ -1305,7 +1305,7 @@ SERVERfinish(int *ret, int *key){
 	@:accessTest(*key,finish)@
 	mapi_finish(SERVERsessions[i].hdl);
 	if( mapi_error(mid) ) 
-		throw(MAL, "mapi.finish",
+		throw(MAL, "mapi.finish", "%s",
 			mapi_result_error(SERVERsessions[i].hdl));
 	*ret = *key;
 	return MAL_SUCCEED;
@@ -1318,7 +1318,7 @@ SERVERget_row_count(lng *ret, int *key){
 	@:accessTest(*key,get_row_count)@
 	*ret= mapi_get_row_count(SERVERsessions[i].hdl);
 	if( mapi_error(mid) ) 
-		throw(MAL, "mapi.get_row_count",
+		throw(MAL, "mapi.get_row_count", "%s",
 			mapi_result_error(SERVERsessions[i].hdl));
 	return MAL_SUCCEED;
 }
@@ -1330,7 +1330,7 @@ SERVERget_field_count(int *ret, int *key){
 	@:accessTest(*key,get_field_count)@
 	*ret= mapi_get_field_count(SERVERsessions[i].hdl);
 	if( mapi_error(mid) ) 
-		throw(MAL, "mapi.get_field_count",
+		throw(MAL, "mapi.get_field_count", "%s",
 			mapi_result_error(SERVERsessions[i].hdl));
 	return MAL_SUCCEED;
 }
@@ -1371,7 +1371,7 @@ SERVERfetch_field_str(str *ret, int *key, int *fnr){
 	fld= mapi_fetch_field(SERVERsessions[i].hdl,*fnr);
 	*ret= GDKstrdup(fld? fld: str_nil);
 	if( mapi_error(mid) ) 
-		throw(MAL, "mapi.fetch_field_str",
+		throw(MAL, "mapi.fetch_field_str", "%s",
 			mapi_result_error(SERVERsessions[i].hdl));
 	return MAL_SUCCEED;
 }
@@ -1385,7 +1385,7 @@ SERVERfetch_field_int(int *ret, int *key, int *fnr){
 	fld= mapi_fetch_field(SERVERsessions[i].hdl,*fnr);
 	*ret= fld? (int) atol(fld): int_nil;
 	if( mapi_error(mid) ) 
-		throw(MAL, "mapi.fetch_field_int",
+		throw(MAL, "mapi.fetch_field_int", "%s",
 			mapi_result_error(SERVERsessions[i].hdl));
 	return MAL_SUCCEED;
 }
@@ -1399,7 +1399,7 @@ SERVERfetch_field_lng(lng *ret, int *key, int *fnr){
 	fld= mapi_fetch_field(SERVERsessions[i].hdl,*fnr);
 	*ret= fld? atol(fld): lng_nil;
 	if( mapi_error(mid) ) 
-		throw(MAL, "mapi.fetch_field_lng",
+		throw(MAL, "mapi.fetch_field_lng", "%s",
 			mapi_result_error(SERVERsessions[i].hdl));
 	return MAL_SUCCEED;
 }
@@ -1413,7 +1413,7 @@ SERVERfetch_field_sht(sht *ret, int *key, int *fnr){
 	fld= mapi_fetch_field(SERVERsessions[i].hdl,*fnr);
 	*ret= fld? (sht) atol(fld): sht_nil;
 	if( mapi_error(mid) ) 
-		throw(MAL, "mapi.fetch_field",
+		throw(MAL, "mapi.fetch_field", "%s",
 			mapi_result_error(SERVERsessions[i].hdl));
 	return MAL_SUCCEED;
 }
@@ -1436,7 +1436,7 @@ SERVERfetch_field_oid(oid *ret, int *key, int *fnr){
 	@:accessTest(*key,fetch_field)@
 	fld= mapi_fetch_field(SERVERsessions[i].hdl,*fnr);
 	if( mapi_error(mid) ) 
-		throw(MAL, "mapi.fetch_field_oid",
+		throw(MAL, "mapi.fetch_field_oid", "%s",
 			mapi_result_error(SERVERsessions[i].hdl));
 	if(fld==0 || strcmp(fld,"nil")==0)
 		*(oid*) ret= void_nil;
@@ -1452,7 +1452,7 @@ SERVERfetch_field_chr(chr *ret, int *key, int *fnr){
 	@:accessTest(*key,fetch_field)@
 	fld= mapi_fetch_field(SERVERsessions[i].hdl,*fnr);
 	if( mapi_error(mid) ) 
-		throw(MAL, "mapi.fetch_field_chr",
+		throw(MAL, "mapi.fetch_field_chr", "%s",
 			mapi_result_error(SERVERsessions[i].hdl));
 	if(fld==0 || strcmp(fld,"nil")==0)
 		*(chr*) ret= chr_nil;
@@ -1468,7 +1468,7 @@ SERVERfetch_line(str *ret, int *key){
 	@:accessTest(*key,fetch_line)@
 	fld= mapi_fetch_line(SERVERsessions[i].hdl);
 	if( mapi_error(mid) ) 
-		throw(MAL, "mapi.fetch_line",
+		throw(MAL, "mapi.fetch_line", "%s",
 			mapi_result_error(SERVERsessions[i].hdl));
 	*ret= GDKstrdup(fld? fld:str_nil);
 	return MAL_SUCCEED;
@@ -1481,7 +1481,7 @@ SERVERnext_result(int *ret, int *key){
 	@:accessTest(*key,next_result)@
 	mapi_next_result(SERVERsessions[i].hdl);
 	if( mapi_error(mid) ) 
-		throw(MAL, "mapi.next_result",
+		throw(MAL, "mapi.next_result", "%s",
 			mapi_result_error(SERVERsessions[i].hdl));
 	*ret= *key;
 	return MAL_SUCCEED;
@@ -1494,7 +1494,7 @@ SERVERfetch_reset(int *ret, int *key){
 	@:accessTest(*key,fetch_reset)@
 	mapi_fetch_reset(SERVERsessions[i].hdl);
 	if( mapi_error(mid) ) 
-		throw(MAL, "mapi.fetch_reset",
+		throw(MAL, "mapi.fetch_reset", "%s",
 			mapi_result_error(SERVERsessions[i].hdl));
 	*ret= *key;
 	return MAL_SUCCEED;
@@ -1516,7 +1516,7 @@ SERVERfetch_field_bat(int *bid, int *key){
 		if( mapi_error(mid) ) {
 			*bid = b->batCacheid;
 			BBPkeepref(*bid);
-			throw(MAL, "mapi.fetch_field_bat",
+			throw(MAL, "mapi.fetch_field_bat", "%s",
 				mapi_result_error(SERVERsessions[i].hdl));
 		}
 		BUNins(b,&o,fld, FALSE);
