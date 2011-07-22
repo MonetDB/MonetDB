@@ -223,7 +223,7 @@ OCTOPUSconnect(str *c, str *dburi)
 
 	i = OCTOPUSfindPeer(*dburi);
 	if ( i < 0 ){
-		msg = createException(MAL, "octopus.connect", "Server %s is not registered", dburi);
+		msg = createException(MAL, "octopus.connect", "Server %s is not registered", *dburi);
 		*c = NULL;
 		return msg;
 	}

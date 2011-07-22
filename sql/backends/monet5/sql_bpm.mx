@@ -245,11 +245,11 @@ inc_parts_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "mat.inc_parts", 
 			"currently no bpm store support available");
 	if (!s)
-		throw(SQL, "mat.inc_parts", 
+		throw(SQL, "mat.inc_parts", "%s",
 			sql_message("schema %s unknown", *sname));
  	t = mvc_bind_table(m, s, *tname);
 	if (!t)
-		throw(SQL, "mat.inc_parts", 
+		throw(SQL, "mat.inc_parts", "%s",
 			sql_message("table %s unknown", *tname));
 	inc_parts(t);
 	return MAL_SUCCEED;
@@ -269,13 +269,13 @@ send_part(sql_column *col, int part, BAT *b, str *conn)
 	/* lookup conn */
 /*
 	if ((tmp= RMTfindconn(&c, *conn)) != MAL_SUCCEED)
-		throw(SQL,"mat.send_part",tmp);
+		throw(SQL, "mat.send_part", "%s", tmp);
 */
 	
 	/*send the fragment to the remote site*/ 
 /*
 	if ((tmp = RMTinternalput(&ident, c->mconn, newBatType(b->H->type, b->T->type), &b->batCacheid)) != MAL_SUCCEED)
-		throw(SQL,"mat.send_part",tmp);
+		throw(SQL, "mat.send_part", "%s", tmp);
 	
 */
 	/*store the information about the fragment location*/
@@ -306,20 +306,20 @@ send_part_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	s = mvc_bind_schema(m, *sname);
 	if (!s)
-		throw(SQL, "mat.send_part", 
+		throw(SQL, "mat.send_part", "%s",
 			sql_message("schema %s unknown", *sname));
  	t = mvc_bind_table(m, s, *tname);
 	if (!t)
-		throw(SQL, "mat.send_part", 
+		throw(SQL, "mat.send_part", "%s",
 			sql_message("table %s unknown", *tname));
 	c = mvc_bind_column(m, t, *cname);
 	if (!c)
-		throw(SQL, "mat.send_part", 
+		throw(SQL, "mat.send_part", "%s",
 			sql_message("column %s unknown", *cname));
 
 	b = mat_bind(m, *sname, *tname, *cname, access, *part);
 	if (!b) 
-		throw(SQL, "mat.send_part", 
+		throw(SQL, "mat.send_part", "%s",
 				sql_message("table %s with column %s does not contain part %d", *tname, *cname, *part));
 
 	send_part(c, *part, b, host);
@@ -339,17 +339,17 @@ get_part(sql_column *col, int part, ptr b)
 	/* lookup conn */
 /*
 	if ((tmp = RMTfindconn(&c, host)) != MAL_SUCCEED)
-		throw(SQL,"mat.get_part",tmp);
+		throw(SQL, "mat.get_part", "%s", tmp);
 */
 	
 	/*get a fragment from the remote site */
 /*
 	if ((tmp = RMTinternalget(c->mconn, remote, b)) != MAL_SUCCEED)	
-		throw(SQL,"mat.get_part",tmp);
+		throw(SQL, "mat.get_part", "%s", tmp);
 */
 
 	if(!b)
-		throw(SQL, "mat.get_part", sql_message("Get remote part %d for column %s", part, col->base.name));
+		throw(SQL, "mat.get_part", "%s", sql_message("Get remote part %d for column %s", part, col->base.name));
 	return MAL_SUCCEED;
 }
 
@@ -372,15 +372,15 @@ get_part_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	s = mvc_bind_schema(m, *sname);
 	if (!s)
-		throw(SQL, "mat.send_part", 
+		throw(SQL, "mat.send_part", "%s",
 			sql_message("schema %s unknown", *sname));
  	t = mvc_bind_table(m, s, *tname);
 	if (!t)
-		throw(SQL, "mat.send_part", 
+		throw(SQL, "mat.send_part", "%s",
 			sql_message("table %s unknown", *tname));
 	c = mvc_bind_column(m, t, *cname);
 	if (!c)
-		throw(SQL, "mat.send_part", 
+		throw(SQL, "mat.send_part", "%s",
 			sql_message("column %s unknown", *cname));
 	get_part(c, *part,  &stk->stk[getArg(pci, 0)]);
 	if (&stk->stk[getArg(pci, 0)])
@@ -408,15 +408,15 @@ print_part_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	s = mvc_bind_schema(m, *sname);
 	if (!s)
-		throw(SQL, "mat.send_part", 
+		throw(SQL, "mat.send_part", "%s",
 			sql_message("schema %s unknown", *sname));
  	t = mvc_bind_table(m, s, *tname);
 	if (!t)
-		throw(SQL, "mat.send_part", 
+		throw(SQL, "mat.send_part", "%s",
 			sql_message("table %s unknown", *tname));
 	c = mvc_bind_column(m, t, *cname);
 	if (!c)
-		throw(SQL, "mat.send_part", 
+		throw(SQL, "mat.send_part", "%s",
 			sql_message("column %s unknown", *cname));
 	 
 	get_part(c, *part,  &val);
