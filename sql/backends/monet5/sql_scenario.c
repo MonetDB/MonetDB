@@ -1562,7 +1562,7 @@ cleanup_engine:
 			return SQLrecompile(c, be);
 		} else {
 			str p = getExceptionPlace(msg);
-			showException(getExceptionType(msg), p, getExceptionMessage(msg));
+			showException(getExceptionType(msg), p, "%s", getExceptionMessage(msg));
 			GDKfree(p);
 		}
 		showErrors(c);
@@ -1647,7 +1647,7 @@ SQLassert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	(void)mb;
 	if (*flg){
 		/* mdbDump(mb,stk,pci);*/
-		throw(SQL, "assert", *msg);
+		throw(SQL, "assert", "%s", *msg);
 	}
 	return MAL_SUCCEED;
 }
@@ -1660,7 +1660,7 @@ SQLassertInt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	(void)mb;
 	if (*flg){
 		/* mdbDump(mb,stk,pci);*/
-		throw(SQL, "assert", *msg);
+		throw(SQL, "assert", "%s", *msg);
 	}
 	return MAL_SUCCEED;
 }
@@ -1673,7 +1673,7 @@ SQLassertWrd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	(void)mb;
 	if (*flg){
 		/* mdbDump(mb,stk,pci);*/
-		throw(SQL, "assert", *msg);
+		throw(SQL, "assert", "%s", *msg);
 	}
 	return MAL_SUCCEED;
 }
@@ -1686,7 +1686,7 @@ SQLassertLng(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	(void)mb;
 	if (*flg){
 		/* mdbDump(mb,stk,pci);*/
-		throw(SQL, "assert", *msg);
+		throw(SQL, "assert", "%s", *msg);
 	}
 	return MAL_SUCCEED;
 }

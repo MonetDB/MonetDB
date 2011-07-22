@@ -673,7 +673,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 					qbuf, tmp);
 #endif
 			mal_unset_lock(c->lock, "remote.get"); 
-			throw(MAL, "remote.get", tmp);
+			throw(MAL, "remote.get", "%s", tmp);
 		}
 		h = getHeadType(rtype);
 		t = getTailType(rtype);

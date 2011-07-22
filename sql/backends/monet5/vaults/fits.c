@@ -281,7 +281,7 @@ FITStest(int *res, str *fname)
 
 	*res = 0;
 	if (fits_open_file(&fptr, *fname, READONLY, &status))
-		msg = createException(MAL, "fits.test", "Missing FITS file %s", fname);
+		msg = createException(MAL, "fits.test", "Missing FITS file %s", *fname);
 	else {
 		fits_movabs_hdu(fptr, 2, &hdutype, &status);
 		*res = hdutype;
@@ -487,7 +487,7 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	tbl = mvc_bind_table(m, sch, tname);
 	if (tbl) {
-		msg = createException(MAL, "fits.loadtable", "Table %d is already created.\n", tname);
+		msg = createException(MAL, "fits.loadtable", "Table %s is already created.\n", tname);
 		return msg;
 	}
 
