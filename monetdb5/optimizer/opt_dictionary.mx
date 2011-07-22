@@ -788,7 +788,7 @@ str DICTcompress(int *ret, str *nme, int *bid)
 		ratio = (double) BATcount(bh) / (double) BATcount(bs);
 #ifdef DEBUG_OPT_DICTIONARY 
 	if ( bs && bh )
-		mnstr_printf(GDKout,"#dictionary.compress sample " SZFMT " " SZFMT" %f %f\n", BATcount(bs), BATcount(bh),ratio, ratio * BATcount(b));
+		mnstr_printf(GDKout,"#dictionary.compress sample " BUNFMT " " BUNFMT" %f %f\n", BATcount(bs), BATcount(bh),ratio, ratio * BATcount(b));
 #endif
 	if ( bs) BBPreleaseref(bs->batCacheid);
 	if ( bh) BBPreleaseref(bh->batCacheid);
@@ -843,7 +843,7 @@ Factor out the index construction by type
 	bx = BATjoin(b,BATmirror(bv), BUN_NONE);
 	BATpropcheck(bx, BATPROPS_QUICK);
 #ifdef DEBUG_OPT_DICTIONARY 
-	mnstr_printf(GDKout,"#dictionary.new values table " SZFMT " \n", BATcount(bv));
+	mnstr_printf(GDKout,"#dictionary.new values table " BUNFMT " \n", BATcount(bv));
 #endif
 
 	if (!(bx->batDirty&2)) bx = BATsetaccess(bx, BAT_READ);
@@ -894,7 +894,7 @@ DICTexpand(int *rval, int *val, int *bid)
 	bn = BATsemijoin(BATmirror(b), BATmirror(rv));
 #ifdef DEBUG_OPT_DICTIONARY 
 	mnstr_printf(GDKout,"#dictionary.expand %d %d\n",*val,*bid);
-	mnstr_printf(GDKout,"#dictionary.expand " SZFMT " " SZFMT " " SZFMT "\n", 
+	mnstr_printf(GDKout,"#dictionary.expand " BUNFMT " " BUNFMT " " BUNFMT "\n", 
 		BATcount(rv), BATcount(b), BATcount(bn));
 #endif
 	if ( BATcount(bn) == 0){
@@ -915,7 +915,7 @@ DICTexpand(int *rval, int *val, int *bid)
 			o++;
 		}
 #ifdef DEBUG_OPT_DICTIONARY 
-	mnstr_printf(GDKout,"#dictionary.new values in encoding table" SZFMT " \n", BATcount(bv));
+	mnstr_printf(GDKout,"#dictionary.new values in encoding table" BUNFMT " \n", BATcount(bv));
 #endif
 	} break;
 @c
@@ -952,7 +952,7 @@ DICTencode(int *ridx, int *vid, int *bid)
 
 	bx = BATjoin(b,BATmirror(bv), BUN_NONE);
 #ifdef DEBUG_OPT_DICTIONARY 
-	mnstr_printf(GDKout,"#dictionary.encode index in encoding table" SZFMT " \n", BATcount(bx));
+	mnstr_printf(GDKout,"#dictionary.encode index in encoding table" BUNFMT " \n", BATcount(bx));
 #endif
 	BBPkeepref(*ridx= bx->batCacheid);
 	BBPreleaseref(b->batCacheid);
@@ -1014,7 +1014,7 @@ str DICTdecompress(int *ret, str *nme)
 			BUNins(b, &o, BUNtail(bvi,p), FALSE);
 		}
 #ifdef DEBUG_OPT_DICTIONARY 
-	mnstr_printf(GDKout,"#dictionary.new values in encoding table" SZFMT " \n", BATcount(bv));
+	mnstr_printf(GDKout,"#dictionary.new values in encoding table" BUNFMT " \n", BATcount(bv));
 #endif
 	} break;
 @c
