@@ -209,6 +209,7 @@ sub error {
   my ($self,$line) = @_;
   my $err = $self->{errstr};
   $err = "$err\n" if (length($err) > 0);
+  $line =~ s/^\!//;
   $self->{errstr} = $err . $line;
 # $self->showState();
   $self->{row}= "";
