@@ -43,7 +43,6 @@ BuildRequires: libxml2-devel
 BuildRequires: openssl-devel
 BuildRequires: pcre-devel >= 4.5
 BuildRequires: perl
-BuildRequires: perl-devel
 BuildRequires: python
 # BuildRequires: raptor-devel >= 1.4.16
 BuildRequires: readline-devel
