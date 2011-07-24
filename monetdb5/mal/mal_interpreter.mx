@@ -262,14 +262,15 @@ being called.
 		if (mb->vtop > stk->stksize)
 			showScriptException(mb, 0, MAL, "stack too small\n");
 		pci = pcicaller;
+		@:initStack(env->stkbot)@
 	} else {
-		newStack(stk, mb->vsize);
-		stk->stktop = mb->vtop;
-		stk->stksize = mb->vsize;
+		stk= prepareMALstack(mb, mb->vsize);
+		if (stk == 0)
+			throw(MAL,"mal.interpreter",MAL_STACK_FAIL);
 		stk->blk = mb;
 		stk->cmd = cntxt->itrace;    /* set debug mode */
+		/*safeguardStack*/
 		if (env) {
-			/*safeguardStack*/
 			stk->stkdepth = stk->stksize + env->stkdepth;
 			stk->calldepth = env->calldepth + 1;
 			if (stk->calldepth > 256)
@@ -278,7 +279,6 @@ being called.
 				/* we are running low on stack space */
 				throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
 		}
-	}
 @-
 An optimization is to copy all constant variables used in functions immediately
 onto the value stack. Then we do not have to check for their location
@@ -286,12 +286,6 @@ later on any more. At some point, the effect is optimal, if at least several
 constants are referenced in a function (a gain on tst400a of 20% has been
 observed due the small size of the function).
 @c
-	if (env && mbcaller) {
-		@:initStack(0)@
-	} else if (env && env->stkbot) {
-		@:initStack(env->stkbot)@
-	} else {
-		@:initStack(0)@
 	}
 
 	if (env && mbcaller) {
@@ -381,7 +375,7 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 	MalStkPtr stk = NULL;
 	str ret = MAL_SUCCEED;
 	int i;
-	ValPtr lhs, rhs;
+	ValPtr lhs;
 	InstrPtr pci = getInstrPtr(mb, 0);
 	@:performanceVariables@
 
@@ -398,13 +392,8 @@ in place. We assume that the caller has supplied pointers for
 all arguments and return values.
 @c
 		if (*env == NULL) {
-			stk = newGlobalStack(mb->vsize);
-			memset((char *)stk, 0, stackSize(mb->vtop));
-			stk->stktop = mb->vtop;
-			stk->stksize = mb->vsize;
-			stk->blk = mb;
+			stk = prepareMALstack(mb, mb->vsize);
 			stk->up = 0;
-			@:initStack(0)@
 			*env = stk;
 		} else stk = *env;
 		assert(stk);
@@ -2035,10 +2024,37 @@ non-returned values.
 
 @-
 @= functioncall
-{
+{	MalStkPtr nstk;
+	InstrPtr q;
+	int ii, arg;
+
 	stk->pcup = stkpc;
 	@:safeTarget(@1)@
-	ret = runMAL(cntxt, pci->blk, 1, mb, stk, pci);
+	nstk = prepareMALstack(pci->blk, pci->blk->vsize);
+	if (nstk == 0)
+		throw(MAL,"mal.interpreter",MAL_STACK_FAIL);
+
+	/*safeguardStack*/
+	nstk->stkdepth = nstk->stksize + stk->stkdepth;
+	nstk->calldepth = stk->calldepth + 1;
+	if (nstk->calldepth > 256)
+		throw(MAL, "mal.interpreter", MAL_CALLDEPTH_FAIL);
+	if ((unsigned)nstk->stkdepth > THREAD_STACK_SIZE / sizeof(mb->var[0]) / 4 && THRhighwater())
+		/* we are running low on stack space */
+		throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
+
+	/* copy arguments onto destination stack */
+	q= getInstrPtr(pci->blk,0);
+	arg = q->retc;
+	for (ii = pci->retc; ii < pci->argc; ii++,arg++) {
+		lhs = &nstk->stk[q->argv[arg]];
+		rhs = &stk->stk[pci->argv[ii]];
+		VALcopy(lhs, rhs);
+		if (lhs->vtype == TYPE_bat)
+			BBPincref(lhs->val.bval, TRUE);
+	}
+	ret = runMALsequence(cntxt, pci->blk, 1, pci->blk->stop, nstk, stk, pci);
+	GDKfree(nstk);
 	@:restoreTarget(@1,@3)@
 	@:exceptionHndlr(@1,@2,@3)@
 	@:timingHndlr(@1)@
@@ -2282,6 +2298,8 @@ if (ret != MAL_SUCCEED) {
 	}
 	/* assure correct variable type */
 	if (getVarType(mb, exceptionVar) == TYPE_str) {
+		/* watch out for concurrent access */
+		mal_set_lock(mal_contextLock, "exception handler");
 		v = &stk->stk[exceptionVar];
 		if (v->val.sval)
 			FREE_EXCEPTION(v->val.sval);    /* old exception*/
@@ -2289,6 +2307,7 @@ if (ret != MAL_SUCCEED) {
 		v->val.sval = ret;
 		v->len = (int)strlen(v->val.sval);
 		ret = 0;
+		mal_unset_lock(mal_contextLock, "exception handler");
 	} else {
 		mnstr_printf(cntxt->fdout, "%s", ret);
 		FREE_EXCEPTION(ret);
