@@ -1,6 +1,0 @@
-# ChangeLog file for hgrepo
-# This file is updated with Maddlog
-
-* Sun Jul 24 2011 Fabian Groffen <fabian@cwi.nl>
-- SWIG and Perl development requirements have been dropped
-
