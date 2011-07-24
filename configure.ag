@@ -1339,7 +1339,7 @@ if test "x$have_perl" != xno; then
 	case "$have_perl_libdir" in
 		yes|auto)
 			if test x$cross_compiling = xyes; then
-				AC_MSG_ERROR([Must specify --with-perl-incdir --with-perl-libdir --with-perl-library when cross compiling])
+				AC_MSG_ERROR([Must specify --with-perl-libdir when cross compiling])
 			fi
 			PERL_LIBDIR=`"$PERL" -MConfig -e '$x=$Config{installvendorarch}; $x =~ s|$Config{vendorprefix}/||; print $x;' 2>/dev/null`
 			;;
