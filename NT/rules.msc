@@ -173,7 +173,6 @@ RUBY_DIR = lib\ruby\gems\1.9.1
 # install python, flex and bison on your systems 
 PYTHON = python
 YACC = bison -b y -y
-SWIG = swig
 
 ARCHIVER = lib
 GENDLL =

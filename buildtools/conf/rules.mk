@@ -119,7 +119,3 @@ MX = $(top_builddir)/buildtools/Mx/Mx
 	$(CP) $< $@
 
 SUFFIXES-local: $(BUILT_SOURCES)
-
-distdir: check_dist
-check_dist:
-	@if [ "$(SWIG)" = "no" ]; then echo "Cannot create distribution because one of the necessary programs or libraries is missing"; echo "swig	= $(SWIG)"; exit 1; fi

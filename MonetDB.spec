@@ -49,7 +49,6 @@ BuildRequires: python
 BuildRequires: readline-devel
 BuildRequires: ruby
 BuildRequires: rubygems
-BuildRequires: swig
 BuildRequires: unixODBC-devel
 BuildRequires: zlib-devel
 

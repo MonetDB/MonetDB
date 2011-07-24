@@ -557,18 +557,6 @@ sources somewhere (e.g. as a subfolder of the binary installation).
 
 __ http://www.php.net/
 
-.. _SWIG:
-
-SWIG (Simplified Wrapper and Interface Generator)
--------------------------------------------------
-
-We use SWIG__ to build interface files for Perl.  You can download
-SWIG from http://www.swig.org/download.html.  Get the latest swigwin
-ZIP file and extract it somewhere.  It contains the ``swig.exe``
-binary.
-
-__ http://www.swig.org/
-
 Java
 ----
 
@@ -702,8 +690,6 @@ is an example: version numbers may differ)::
  set Path=%JAVA_HOME%\bin;%ProgramFiles%\Java\jre1.5.0_16\bin;%Path%
  rem Apache Ant is optional, but required for Java compilation
  set Path=%ProgramFiles%\apache-ant-1.7.1\bin;%Path%
- rem SWIG is optional
- set Path=%ProgramFiles%\swigwin-1.3.36;%Path%
 
 For testing purposes it may be handy to add some more folders to the
 ``Path``.  This includes the ``bin`` and ``lib`` folders of the

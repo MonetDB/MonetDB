@@ -93,7 +93,6 @@ standard software development tools
 	configuration and if they are missing, the feature is just
 	missing:
 
-	- swig
 	- perl
 	- php
 
