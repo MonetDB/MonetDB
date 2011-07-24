@@ -86,7 +86,7 @@ $DBD::monetdb::db::imp_data_size = 0;
 sub ping {
     my ($dbh) = @_;
 
-    my $statement = $dbh->{monetdb_language} eq 'sql' ? 'select 7' : 'print(7);';
+    my $statement = $dbh->{monetdb_language} eq 'sql' ? 'select 7' : 'io.print(7);';
     my $rv = $dbh->selectrow_array($statement) || 0;
     $dbh->set_err(undef, undef);
     $rv == 7 ? 1 : 0;
