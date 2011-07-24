@@ -536,9 +536,7 @@ Perl program to communicate with a MonetDB server.
 
 We have used ActiveState__'s ActivePerl__ distribution (release
 5.12.1.1201).  Just install the 32 or 64 bit version and compile the
-clients component with the additional ``nmake`` flags ``HAVE_PERL=1
-HAVE_PERL_DEVEL=1 HAVE_PERL_SWIG=1`` (the latter flag only if SWIG_ is
-also installed).
+clients component with the additional ``nmake`` flags ``HAVE_PERL=1``.
 
 __ http://www.perl.org/
 __ http://www.activestate.com/
@@ -757,10 +755,6 @@ possible:
 - ``HAVE_RAPTOR=1`` - the raptor library is available;
 - ``HAVE_OPENSSL=1`` - the OpenSSL library is available;
 - ``HAVE_PERL=1`` - Perl is available;
-- ``HAVE_PERL_DEVEL=1`` - Perl development is possible (include files
-  and libraries are available--also need ``HAVE_PERL=1``);
-- ``HAVE_PERL_SWIG=1`` - Perl development is possible and SWIG is
-  available (also need ``HAVE_PERL=1``);
 - ``HAVE_PHP=1`` - PHP is available.
 
 In addition, you can add a parameter which points to a file with extra
