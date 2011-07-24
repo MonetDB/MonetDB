@@ -285,6 +285,7 @@ sub getBlock {
   $self->{skip} = 0; # next+skip is current result row
   $self->{next} = 0; # all done
   $self->{offset} = 0;
+  $self->{hdrs} = [];
 
   if (@chars[0] eq '&') {
 	  if (@chars[1] eq '1' || @chars[1] eq 6) {
@@ -304,10 +305,11 @@ sub getBlock {
         $self->{offset} = $offset;
       }
 		  # for now skip table header information
-		  my $i = 1;
-  		  while ($self->{lines}[$i] =~ '%') {
-			  $i++;
-		  }
+      my $i = 1;
+      while ($self->{lines}[$i] =~ '%') {
+        $self->{hdrs}[$i - 1] = $self->{lines}[$i];
+        $i++;
+      }
       $self->{skip} = $i;
 		  $self->{next} = $i;
 		  $self->{row} = $self->{lines}[$self->{next}++];
