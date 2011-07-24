@@ -2,6 +2,7 @@
 # This file is updated with Maddlog
 
 * Sun Jul 24 2011 Fabian Groffen <fabian@cwi.nl>
+- Removed perl/Cimpl, MonetDB-CLI-MapiLib and MonetDB-CLI-MapiXS
 - Switched implementation of MonetDB::CLI::MapiPP to Mapi.pm, and made
   it the default MonetDB::CLI provider.
 
