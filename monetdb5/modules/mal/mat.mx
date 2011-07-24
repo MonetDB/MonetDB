@@ -199,6 +199,8 @@ The pack operation could be quite expensive, because it
 may create a really large BAT.
 The slice over a mat helps to avoid constructing intermediates
 that are subsequently reduced.
+Contrary to most operations, NIL arguments are skipped and
+do not produce RUNTIME_OBJECT_MISSING.
 @c
 static str
 MATpackInternal(MalStkPtr stk, InstrPtr p)
@@ -213,15 +215,18 @@ MATpackInternal(MalStkPtr stk, InstrPtr p)
 		b = BBPquickdesc(ABS(bid),FALSE);
 		if (b && bid < 0)
 			b = BATmirror(b);
-		if( b == NULL)
-			throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
-		if (ht == TYPE_any){
-			ht = b->htype;
-			tt = b->ttype;
+		if( b ){
+			if (ht == TYPE_any){
+				ht = b->htype;
+				tt = b->ttype;
+			}
+			cap += BATcount(b);
 		}
-		cap += BATcount(b);
 	}
-	assert(ht != TYPE_any);
+	if (ht == TYPE_any){
+		*ret = 0;
+		return MAL_SUCCEED;
+	}
 
 	bn = BATnew(ht, tt, cap);
 	if (bn == NULL)
@@ -234,13 +239,11 @@ MATpackInternal(MalStkPtr stk, InstrPtr p)
 
 	for (i = 1; i < p->argc; i++) {
 		b = BATdescriptor(stk->stk[getArg(p,i)].val.ival);
-		if( b == NULL){
-			BBPreleaseref(bn->batCacheid);
-			throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
+		if( b ){
+			/* use the right oid ranges, don't change the input */
+			BATins(bn,b,FALSE);
+			BBPunfix(b->batCacheid);
 		}
-		/* use the right oid ranges, don't change the input */
-		BATins(bn,b,FALSE);
-		BBPunfix(b->batCacheid);
 	}
 	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
