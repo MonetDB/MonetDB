@@ -35,7 +35,7 @@ Start a simple Monet SQL interaction
 data sources: dbi:monetdb:
 field[0]: 2, last index: 0
 field[0]: 3, last index: 0
-ERROR REPORTED: DBD::monetdb::st execute failed: syntax error, unexpected IDENT, expecting SELECT or '(' in: "( xyz"
+ERROR REPORTED: DBD::monetdb::st execute failed: syntax error, unexpected IDENT, expecting SELECT or '(' in: "( xyz" at /ufs/manegold/_/scratch0/Monet/HG/Aug2011/prefix/--disable-debug_--enable-optimize_--disable-assert/lib64/perl5/MonetDB/CLI/MapiPP.pm line 120.
 bun: 3, three
 bun: 7, seven
 rows: 2, fields: 2

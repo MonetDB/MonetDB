@@ -46,7 +46,7 @@ GenCode(void)
 			if (isspace((int) (*s)))
 				*s = 0;
 			if (s == fname) {
-				Error("File name missing. %s", d->d_line);
+				Error("File name missing. %d", d->d_line);
 			}
 		}
 			break;
@@ -91,7 +91,6 @@ GenCode(void)
 		case DTD:
 		case XSL:
 		case Config:
-		case Swig:
 		case CCyacc:
 		case CClex:
 			if (!extract(d->d_dir))
@@ -368,7 +367,6 @@ CodeLine(void)
 		case XML:
 		case DTD:
 		case XSL:
-		case Swig:
 		case Cyacc:
 		case Clex:
 		case CCyacc:

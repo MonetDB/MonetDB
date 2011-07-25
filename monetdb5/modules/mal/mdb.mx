@@ -912,7 +912,7 @@ MDBshowFlowGraph(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (s == NULL) {
 		char buf[1024];
 		snprintf(buf,1024, "Could not find %s.%s\n", modnme, fcnnme);
-		throw(MAL, "mdb.dot", buf);
+		throw(MAL, "mdb.dot", "%s", buf);
 	}
 	showFlowGraph(s->def, stk, fname);
 	return MAL_SUCCEED;

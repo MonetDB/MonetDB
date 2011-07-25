@@ -94,6 +94,7 @@ QUERY = INSERT INTO "examines" ("docID", "vicID") VALUES
         )
         );
 ERROR = !SQLException:zero_or_one:cardinality violation (2>1)
+        !SQLException:zero_or_one:cardinality violation (2>1)
 MAPI  = monetdb@alf:36639
 QUERY = INSERT INTO "timelines" ("vicID", "time", "event") VALUES
         (

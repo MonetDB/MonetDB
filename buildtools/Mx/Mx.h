@@ -64,7 +64,7 @@ typedef enum {
 	Pspec, Pimpl, Cdef, Csrc, ODLspec, SQL,
 	OQLspec, Cyacc, Clex, Prolog, Haskell, MALcode,
 	Qnap, HTML, Java,
-	ProC, Shell, fGrammar, Macro, XML, DTD, XSL, Config, Swig,
+	ProC, Shell, fGrammar, Macro, XML, DTD, XSL, Config,
 	CCyacc, CClex
 } CmdCode;
 

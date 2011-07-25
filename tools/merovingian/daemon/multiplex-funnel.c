@@ -485,7 +485,7 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 	}
 	/* Compose the header.  For the table id, we just send 0, such that
 	 * we never get a close request.  Steal headers from the first node. */
-	mnstr_printf(fout, "&%d 0 %d %d %d\n", Q_TABLE, rlen, fcnt, rlen);
+	mnstr_printf(fout, "&%d 0 " LLFMT " %d " LLFMT "\n", Q_TABLE, rlen, fcnt, rlen);
 	/* now read the answers, and write them directly to the client */
 	for (i = 0; i < m->dbcc; i++) {
 		while ((t = mapi_fetch_line(hdl[i])) != NULL)

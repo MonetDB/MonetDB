@@ -167,7 +167,7 @@ To keep the threads working, we create more pieces than threads.
 		return 0;
 	OPTDEBUGmitosis
 		mnstr_printf(cntxt->fdout,"#opt_mitosis: target is %s.%s "
-			" with " BUNFMT " rows into " BUNFMT " rows/piece %d threads %d pieces\n",
+			" with " SSZFMT " rows into " SSZFMT " rows/piece %d threads %d pieces\n",
 				getVarConstant(mb, getArg(target,2)).val.sval,
 				getVarConstant(mb, getArg(target,3)).val.sval,
 				rowcnt, r, threads, pieces);

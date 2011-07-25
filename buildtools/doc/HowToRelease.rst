@@ -63,8 +63,7 @@ Preparation of a Major Release
 - Set version numbers in the new stable branch (e.g. ``vertoo.py -m
   MonetDB set 1.24.0``).
 - Change defaults in ``configure.ag`` for release builds
-  (``dft_strict=no``, ``dft_assert=no``, ``dft_optimi=yes``,
-  ``dft_netcdf=no``).
+  (``dft_strict=no``, ``dft_assert=no``, ``dft_optimi=yes``).
 - Create a tag on the head of the new branch for propagation purposes
   (e.g. ``cvs tag MonetDB_1-24_sync``).
 - Update the nightly testing setup to use the new branch for nightly
@@ -113,13 +112,11 @@ Releasing
 
   Use these ``nmake`` options for a 32 bit compile: ``NDEBUG=1
   HAVE_JAVA=1 HAVE_JAVAJDBC=1 HAVE_PYTHON=1 HAVE_PHP=1 HAVE_PCRE=1
-  HAVE_MONETDB5=1 HAVE_PERL=1 HAVE_PERL_SWIG=1 HAVE_PERL_DEVEL=1
-  HAVE_LIBXML2=1 HAVE_MONETDB5_XML=1``
+  HAVE_MONETDB5=1 HAVE_PERL=1 HAVE_LIBXML2=1 HAVE_MONETDB5_XML=1``
 
   Use these ``nmake`` options for a 64 bit compile: ``bits=64 NDEBUG=1
   HAVE_MONETDB5=1 HAVE_JAVA=1 HAVE_JAVAJDBC=1 HAVE_PYTHON=1 HAVE_PCRE=1
-  HAVE_PERL=1 HAVE_PERL_SWIG=1 HAVE_PERL_DEVEL=1 HAVE_LIBXML2=1
-  HAVE_MONETDB5_XML=1``
+  HAVE_PERL=1 HAVE_LIBXML2=1 HAVE_MONETDB5_XML=1``
 
 - Create PGP signatures and SHA1 checksums::
 

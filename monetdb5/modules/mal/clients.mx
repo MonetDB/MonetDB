@@ -411,7 +411,7 @@ CLTquit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;		/* fool compiler */
 	
 	if ( pci->argc==2 && cntxt->idx != 0)
-		throw(MAL, "client.quit", INVCRED_ACCESS_DENIED,"");
+		throw(MAL, "client.quit", INVCRED_ACCESS_DENIED);
 	if ( pci->argc==2)
 		id = *(int*) getArgReference(stk,pci,1);
 	else id =cntxt->idx;

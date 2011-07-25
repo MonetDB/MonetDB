@@ -1048,8 +1048,8 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 					cntxt->flags |=ioFlag ;
 #ifdef HAVE_SYS_RESOURCE_H
 					getrusage(RUSAGE_SELF, &resource);
-					mnstr_printf(out, "#maxrss %d ixrss=%d idrss=%d isrss=%d" 
-									" minflt=%d majflt=%d nswap=%d inblock=%d oublock=%d\n", 
+					mnstr_printf(out, "#maxrss %ld ixrss=%ld idrss=%ld isrss=%ld" 
+									" minflt=%ld majflt=%ld nswap=%ld inblock=%ld oublock=%ld\n", 
 									resource.ru_maxrss, resource.ru_ixrss, 
 									resource.ru_idrss, resource.ru_isrss,
 									resource.ru_minflt, resource.ru_majflt, 
@@ -1652,12 +1652,12 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		state.p = getInstrPtr(mb,pc);
 		state.pc= pc;
 		cntxt->mdb= &state;
-		mnstr_printf(mal_clients[0].fdout,"#Process %d put to sleep\n",cntxt-mal_clients);
+		mnstr_printf(mal_clients[0].fdout,"#Process %d put to sleep\n",(int)(cntxt-mal_clients));
 		cntxt->itrace = 'W';
 		mdbTrap(cntxt,mb,stk,pc);
 		while(cntxt->itrace== 'W')
 			MT_sleep_ms(cntxt->delay);
-		mnstr_printf(mal_clients[0].fdout,"#Process %d woke up\n",cntxt-mal_clients);
+		mnstr_printf(mal_clients[0].fdout,"#Process %d woke up\n",(int)(cntxt-mal_clients));
 		return;
 	}
 	if (stk->cmd == 0)
@@ -1998,7 +1998,7 @@ if(hp && hp->base){
 h= @1;
 if(h && h->mask){
 	    mnstr_printf(out,"\t@2=" PTRFMT " size=" SZFMT "\n",PTRFMTCAST h, sizeof(*h));
-	    mnstr_printf(out,"\t@2link=" BUNFMT " size=" SZFMT "\n",h->link,
+	    mnstr_printf(out,"\t@2link=" PTRFMT " size=" SZFMT "\n",PTRFMTCAST h->link,
 	            (h->mask+h->lim+1)*sizeof(int));
 }
 @-

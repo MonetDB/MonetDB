@@ -1795,7 +1795,7 @@ parseTuple(Client cntxt) {
 	sprintf(buf,"input%d",(int)(cntxt-mal_clients));
 	f = fopen(buf,"w");
 	if (f==NULL)
-		showException(SYNTAX, "temp file not writeable", "");
+		showException(SYNTAX, "parser", "temp file not writeable");
 	while( (c=currChar(cntxt)) == '[' && c){
 		do {
 			if (f && c) fputc(c, f);
@@ -1804,8 +1804,8 @@ parseTuple(Client cntxt) {
 		if (f && c && fputc(c, f)  == EOF){
 			(void)fclose(f);
 			if (unlink(buf) < 0)
-				showException(SYNTAX, "out of temp file space and unable to unlink", "");
-			showException(SYNTAX, "out of temp file space", "");
+				showException(SYNTAX, "parser", "out of temp file space and unable to unlink");
+			showException(SYNTAX, "parser", "out of temp file space");
 			return;
 		}
 		nextChar(cntxt);
@@ -2005,7 +2005,7 @@ str parseError(Client cntxt, str msg)
 	*s++= '\n';
 	*s = 0;
 	if( s != buf+1 && strlen(buf)<1024){
-		showException(SYNTAX, "parseError", buf);
+		showException(SYNTAX, "parseError", "%s", buf);
 		/* produce the position marker*/
 		s= buf;
 		i = position(cntxt) -1;
@@ -2019,7 +2019,7 @@ str parseError(Client cntxt, str msg)
 	if( msg && strlen(msg))
 		snprintf(s,1020,"%s", msg);
 	skipToEnd(cntxt);
-	showException(SYNTAX, "parseError", buf);
+	showException(SYNTAX, "parseError", "%s", buf);
 	return 0;
 }
 @}

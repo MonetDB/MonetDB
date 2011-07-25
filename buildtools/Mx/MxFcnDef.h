@@ -139,6 +139,27 @@ extern void HideText(void);
 
 /* Sys.c
  */
+/* defines to help the compiler check printf-style format arguments
+ * see the declaration of mnstr_printf below.  Also see gdk.h for a
+ * copy of this stuff. */
+#if !defined(__GNUC__) || __GNUC__ < 2 || (__GNUC__ == 2 && __GNUC_MINOR__ < 5)
+/* This feature is available in gcc versions 2.5 and later.  */
+# ifndef __attribute__
+#  define __attribute__(Spec) /* empty */
+# endif
+#else
+/* The __-protected variants of `format' and `printf' attributes are
+ * accepted by gcc versions 2.6.4 (effectively 2.7) and later.  */
+# if !defined(__format__) && (__GNUC__ < 2 || (__GNUC__ == 2 && __GNUC_MINOR__ < 7))
+#  define __format__ format
+#  define __printf__ printf
+# endif
+#endif
+#if !defined(_MSC_VER) && !defined(_In_z_)
+# define _In_z_
+# define _Printf_format_string_
+#endif
+
 extern void ofile_putc(char);
 extern void ofile_puts(char *);
 
@@ -147,10 +168,14 @@ extern void Free(char *);
 extern char *StrDup(const char *);
 extern char *Strndup(const char *, size_t);
 
-extern void ofile_printf(char *, ...);
-extern void Fatal(char *, char *, ...);
-extern void Error(char *, ...);
-extern void Message(char *, ...);
+extern void ofile_printf(_In_z_ _Printf_format_string_ const char *, ...)
+	__attribute__((__format__(__printf__, 1, 2)));
+extern void Fatal(const char *, _In_z_ _Printf_format_string_ const char *, ...)
+	__attribute__((__format__(__printf__, 2, 3)));
+extern void Error(_In_z_ _Printf_format_string_ const char *, ...)
+	__attribute__((__format__(__printf__, 1, 2)));
+extern void Message(_In_z_ _Printf_format_string_ const char *, ...)
+	__attribute__((__format__(__printf__, 1, 2)));
 
 /* Tok.c
  */

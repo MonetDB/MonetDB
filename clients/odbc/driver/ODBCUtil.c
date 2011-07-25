@@ -73,7 +73,7 @@ dupODBCstring(const SQLCHAR *inStr, size_t length)
 	char *tmp = (char *) malloc((length + 1) * sizeof(char));
 
 	assert(tmp);
-	strncpy(tmp, (char *) inStr, length);
+	strncpy(tmp, (const char *) inStr, length);
 	tmp[length] = '\0';	/* make it null terminated */
 	return tmp;
 }

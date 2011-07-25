@@ -17,10 +17,10 @@
 
 MTSAFE
 
-SUBDIRS = HAVE_PERL_DEVEL?MonetDB-CLI-MapiPP HAVE_PERL_DEVEL?MonetDB-CLI-MapiLib HAVE_PERL_DEVEL?MonetDB-CLI HAVE_PERL_DEVEL?DBD HAVE_PERL_SWIG?Cimpl HAVE_PERL_SWIG?Tests
+SUBDIRS = MonetDB-CLI-MapiPP MonetDB-CLI DBD Tests
 
 headers_perl = {
-	HEADERS = pl pm
-	DIR = datadir/monetdb/perl
+	HEADERS = pm
+	DIR = $(prefix)/$(PERL_LIBDIR)
 	SOURCES = Mapi.pm 
 }

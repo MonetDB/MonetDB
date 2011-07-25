@@ -30,7 +30,7 @@ print "data sources: @ds\n";
 # connect to the database:
 my $dsn = "dbi:monetdb:database=$ARGV[1];host=localhost;port=$ARGV[0];language=mal";
 my $dbh = DBI->connect( $dsn,
-  undef, undef,  # no authentication in MAL
+  "monetdb", "monetdb",  # no authentication in MAL
   { PrintError => 0, RaiseError => 1 }  # turn on exception handling
 );
 {
@@ -71,7 +71,8 @@ $dbh->do('bat.insert(b,3,"three");');
   $sth->execute;
   my $t = $sth->fetchall_arrayref;
   my $r = @$t;         # row count
-  my $f = @{$t->[0]};  # field count
+  my $f = 0;
+  $f = @{$t->[0]} if $r > 0;  # field count
   print "rows: $r, fields: $f\n";
   for my $i ( 0 .. $r-1 ) {
     for my $j ( 0 .. $f-1 ) {

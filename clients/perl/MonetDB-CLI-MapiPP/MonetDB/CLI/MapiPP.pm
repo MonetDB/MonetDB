@@ -1,11 +1,11 @@
 package MonetDB::CLI::MapiPP;
 
-use IO::Socket::INET();
 use Text::ParseWords();
+use Mapi;
 use strict;
 use warnings;
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 
 my %unescape = ( n => "\n", t => "\t", r => "\r", f => "\f");
@@ -14,7 +14,7 @@ sub unquote
 {
   my ($class, $v) = @_;
 
-  return undef if $v eq 'NULL' || $v eq 'nil';
+  return undef if !$v || $v eq 'NULL' || $v eq 'nil';
 
   if ( $v =~ /^["']/) {
     $v =~ s/^["']//;
@@ -29,14 +29,10 @@ sub connect
 {
   my ($class, $host, $port, $user, $pass, $lang, $db) = @_;
 
-  my $h = IO::Socket::INET->new( PeerAddr => $host, PeerPort => $port )
-    or die "Handle is undefined: $@";
-  <$h>;
-  print $h "$user:$pass:$lang:line\n" or die $!;
-  while ( local $_ = <$h> ) {
-    last if /^\001/;
-  }
-  bless { h => $h, lang => $lang },'MonetDB::CLI::MapiPP::Cxn';
+  my $h = new Mapi($host, $port, $user, $pass, $lang, $db, 0)
+  	or die "Making connection failed: $@";
+
+  bless { h => $h },'MonetDB::CLI::MapiPP::Cxn';
 }
 
 
@@ -47,7 +43,7 @@ sub query
   my ($self, $statement) = @_;
 
   my $h = $self->new_handle;
-  $h->query( $statement );
+  $h->query($statement);
 
   return $h;
 }
@@ -56,14 +52,14 @@ sub new_handle
 {
   my ($self) = @_;
 
-  bless { p => $self },'MonetDB::CLI::MapiPP::Req';
+  bless { h => $self->{h} },'MonetDB::CLI::MapiPP::Req';
 }
 
 sub DESTROY
 {
   my ($self) = @_;
 
-  $self->{h}->close;
+  $self->{h}->disconnect();
 
   return;
 }
@@ -75,64 +71,57 @@ sub query
 {
   my ($self, $statement) = @_;
 
-  my $lang  = $self->{p}{lang};
-  my $h     = $self->{p}{h};
-  my $delim = $lang eq 'sql' ? qr(\s*,\s*) : qr(\s+);
-  my @err;
+  my $h = $self->{h};
+  $h->doRequest($statement);
 
-  if ( $lang eq 'sql') {
-    my @statement = split /\n/, $statement;
-    s/--.*// for @statement;  # TODO: -- inside '' (or blocked mode?)
-    $statement  = join ' ', @statement;
-    $statement .= ';' unless $statement =~ /;$/;
-    $statement  = 's' . $statement;
+  $self->{i} = -1;
+  $self->{rows} = [];
+  $self->{querytype} = -1;
+  $self->{id} = -1;
+  $self->{affrows} = -1;
+  $self->{colcnt} = -1;
+  $self->{colnames} = [];
+  $self->{coltypes} = [];
+  $self->{collens} = [];
+
+  my $tpe = $h->getReply();
+  if ($tpe > 0) {
+    # "regular" resultset
+    $self->{querytype} = 1;
+    $self->{id} = $h->{id};
+    $self->{affrows} = $h->{count};
+    $self->{colcnt} = $h->{nrcols};
+
+    my $hdr;
+    foreach $hdr (@{$h->{hdrs}}) {
+      my $nme = substr($hdr, rindex($hdr, "# "));
+      $hdr = substr($hdr, 2, -(length($nme) + 1));
+      if ($nme eq "# name") {
+        @{$self->{colnames}} = split(/,\t/, $hdr);
+      } elsif ($nme eq "# type") {
+        @{$self->{coltypes}} = split(/,\t/, $hdr);
+      } elsif ($nme eq "# length") {
+        @{$self->{collens}} = split(/,\t/, $hdr);
+      }
+      # TODO: table_name
+    }
+    do {
+      my @cols = split(/,\t */, $h->{row});
+      my $i = -1;
+      while (++$i < @cols) {
+        $cols[$i] =~ s/^\[ //;
+        $cols[$i] =~ s/[ \t]+\]$//;
+        $cols[$i] = MonetDB::CLI::MapiPP->unquote($cols[$i]);
+      }
+      push(@{$self->{rows}}, [@cols]);
+    } while (($tpe = $h->getReply()) > 0);
+  } elsif ($tpe == -1) {
+    # error
+    die $h->{errstr};
+  } elsif ($tpe == -2) {
+    # update count/affected rows
+    $self->{affrows} = $h->{count};
   }
-  else {
-    $statement  =~ s/\n/ /g;
-  }
-  print $h $statement,"\n" or die $!;
-
-  $self->finish;
-
-  while ( local $_ = <$h> ) {
-    chomp;
-    if (/^\[/) {
-      die "Incomplete tuple: $_" unless /\]$/;
-      s/^\[\s*//;
-      s/\s*\]$//;
-      my @a = Text::ParseWords::parse_line( qr(\s*,\s*), 0, $_ );
-      push @{$self->{rs}}, [ map { MonetDB::CLI::MapiPP->unquote( $_ ) } @a ];
-    }
-    elsif (/^&(\d) (\d+) (\d+) (\d+)/) {
-      $self->{querytype}   = $1 if $self->{querytype}   < 0;
-      $self->{id}          = $2 if $self->{id}          < 0;
-      $self->{tuplecount}  = $3 if $self->{tuplecount}  < 0;
-      $self->{columncount} = $4 if $self->{columncount} < 0;
-    }
-    elsif (/^&(\d) (\d+)/) {
-      $self->{querytype}   = $1 if $self->{querytype}   < 0;
-      $self->{tuplecount}  = $2 if $self->{tuplecount}  < 0;
-    }
-    elsif (/^#\s+\b(.*)\b\s+# (name|type|length)$/) {
-      $self->{$2} = [ split $delim, $1 ];
-    }
-    elsif (/^!/) {
-      push @err, $_;
-    }
-    elsif (/^\001\001/) {
-      last;
-    }
-    elsif (/^\001\002/) {
-      die "Incomplete query: $statement";
-    }
-  }
-  $self->{columncount}   = @{$self->{name}} if $self->{columncount} < 0;;
-  $self->{columncount} ||= @{$self->{rs}[0]} if $self->{rs}[0];
-  $self->{tuplecount}    = @{$self->{rs}} if $lang ne 'sql';
-
-  die join "\n", @err if @err;
-
-  return;
 }
 
 sub querytype
@@ -153,50 +142,50 @@ sub rows_affected
 {
   my ($self) = @_;
 
-  return $self->{tuplecount};
+  return $self->{affrows};
 }
 
 sub columncount
 {
   my ($self) = @_;
 
-  return $self->{columncount};
+  return $self->{colcnt};
 }
 
 sub name
 {
   my ($self, $fnr) = @_;
 
-  return $self->{name}[$fnr] || '';
+  return $self->{colnames}[$fnr] || '';
 }
 
 sub type
 {
   my ($self, $fnr) = @_;
 
-  return $self->{type}[$fnr] || '';
+  return $self->{coltypes}[$fnr] || '';
 }
 
 sub length
 {
   my ($self, $fnr) = @_;
 
-  return $self->{length}[$fnr] || 0;
+  return $self->{collens}[$fnr] || 0;
 }
 
 sub fetch
 {
   my ($self) = @_;
 
-  return if ++$self->{i} > $#{$self->{rs}};
-  return $self->{columncount};
+  return if ++$self->{i} > $#{$self->{rows}};
+  return $self->{colcnt};
 }
 
 sub field
 {
   my ($self, $fnr) = @_;
 
-  return $self->{rs}[$self->{i}][$fnr];
+  return $self->{rows}[$self->{i}][$fnr];
 }
 
 sub finish
@@ -204,7 +193,8 @@ sub finish
   my ($self) = @_;
 
   $self->{$_} = -1 for qw(querytype id tuplecount columncount i);
-  $self->{$_} = [] for qw(rs name type length);
+  $self->{$_} = "" for qw(query);
+  $self->{$_} = [] for qw(rows name type length);
 
   return;
 }
@@ -234,6 +224,7 @@ choose an implementation module.
 =head1 AUTHORS
 
 Steffen Goeldner E<lt>sgoeldner@cpan.orgE<gt>.
+Fabian Groffen E<lt>fabian@cwi.nlE<gt>.
 
 =head1 COPYRIGHT AND LICENCE
 
@@ -258,11 +249,12 @@ All Rights Reserved.
 
 =head2 MonetDB
 
-  Homepage    : http://monetdb.cwi.nl
-  SourceForge : http://sourceforge.net/projects/monetdb
+  Homepage    : http://www.monetdb.org/
 
 =head2 Perl modules
 
 L<MonetDB::CLI>
 
 =cut
+
+# vim: set ts=2 sw=2 expandtab:

@@ -125,7 +125,7 @@ handleClient(int sock, char isusock)
 		e = newErr("client %s sent challenge in incomplete block: %s",
 				host, buf);
 		mnstr_printf(fout, "!merovingian: client sent something this "
-				"server could not understand, sorry\n", user);
+				"server could not understand, sorry\n");
 		mnstr_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);

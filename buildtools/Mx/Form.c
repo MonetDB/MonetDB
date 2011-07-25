@@ -227,9 +227,6 @@ GenForm(void)
 				case Config:
 					PrCodeDisplay(d, "cfg");
 					break;
-				case Swig:
-					PrCodeDisplay(d, "i");
-					break;
 				case CCyacc:
 					PrCodeDisplay(d, "yy");
 					break;
