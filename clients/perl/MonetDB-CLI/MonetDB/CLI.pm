@@ -3,7 +3,7 @@ package MonetDB::CLI;
 our $VERSION = '0.03';
 
 our @Modules = split /;/, $ENV{PERL_MONETDB_CLI_MODULES}
-  || 'MonetDB::CLI::MapiLib;MonetDB::CLI::MapiXS;MonetDB::CLI::MapiPP';
+  || 'MonetDB::CLI::MapiPP';
 
 sub connect
 {
