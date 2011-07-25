@@ -51,7 +51,8 @@ typedef char* err;
 	fprintf(S, __VA_ARGS__); \
 	fflush(S);
 
-char *newErr(char *fmt, ...);
+char *newErr(_In_z_ _Printf_format_string_ const char *fmt, ...)
+	__attribute__((__format__(__printf__, 1, 2)));
 void terminateProcess(void *p);
 void logFD(int fd, char *type, char *dbname, long long int pid, FILE *stream);
 

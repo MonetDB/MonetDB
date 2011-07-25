@@ -401,27 +401,6 @@ An error at this stage normally lead to an abort.
 #endif
 #endif
 
-/* defines to help the compiler check printf-style format arguments
- * see the declaration of mnstr_printf below.  Also see stream.h for a
- * copy of this stuff. */
-#if !defined(__GNUC__) || __GNUC__ < 2 || (__GNUC__ == 2 && __GNUC_MINOR__ < 5)
-/* This feature is available in gcc versions 2.5 and later.  */
-# ifndef __attribute__
-#  define __attribute__(Spec) /* empty */
-# endif
-#else
-/* The __-protected variants of `format' and `printf' attributes are
- * accepted by gcc versions 2.6.4 (effectively 2.7) and later.  */
-# if !defined(__format__) && (__GNUC__ < 2 || (__GNUC__ == 2 && __GNUC_MINOR__ < 7))
-#  define __format__ format
-#  define __printf__ printf
-# endif
-#endif
-#if !defined(_MSC_VER) && !defined(_In_z_)
-# define _In_z_
-# define _Printf_format_string_
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif

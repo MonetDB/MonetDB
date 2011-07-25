@@ -2220,13 +2220,11 @@ backend_call(backend *be, Client c, cq *cq)
 			sql_subtype *pt = cq->params+i;
 
 			if (!atom_cast(a, pt)) {
-				char buf[512];
-
-				snprintf(buf, 512, "wrong type for argument %d of "
-					"function call: %s, expected %s\n",
-					i + 1, atom_type(a)->type->sqlname,
-					pt->type->sqlname);
-				sql_error(m, 003, buf);
+				sql_error(m, 003,
+					  "wrong type for argument %d of "
+					  "function call: %s, expected %s\n",
+					  i + 1, atom_type(a)->type->sqlname,
+					  pt->type->sqlname);
 				break;
 			}
 			if (atom_null(a)) {

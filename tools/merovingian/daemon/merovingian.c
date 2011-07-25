@@ -347,7 +347,7 @@ terminateProcess(void *p)
  * freed using freeErr().
  */
 char *
-newErr(char *fmt, ...)
+newErr(const char *fmt, ...)
 {
 	va_list ap;
 	char message[4096];

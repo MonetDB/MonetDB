@@ -130,7 +130,8 @@ SQLRETURN SQLGetDiagRec_(SQLSMALLINT handleType, SQLHANDLE handle, SQLSMALLINT r
 				}					\
 			} while (0)
 #else
-extern void ODBCLOG(const char *fmt, ...);
+extern void ODBCLOG(_In_z_ _Printf_format_string_ const char *fmt, ...)
+	__attribute__((__format__(__printf__, 1, 2)));
 #endif
 #endif
 
