@@ -193,8 +193,12 @@ rel_insert_join_idx(mvc *sql, sql_idx *i, sql_rel *inserts)
 		sql_subfunc *isnil = sql_bind_func(sql->sa, sql->session->schema, "isnull", &c->c->type, NULL);
 		sql_exp *_is = nth(ins->exps, c->c->colnr), *nl, *je; 
 		sql_exp *rtc = exp_column(sql->sa, rel_name(rt), rc->c->base.name, &rc->c->type, CARD_MULTI, rc->c->null, 0);
+		char *ename = exp_name(_is);
 
-		_is = exp_column(sql->sa, exp_relname(_is), exp_name(_is), exp_subtype(_is), _is->card, has_nil(_is), is_intern(_is));
+		if (!ename)
+			exp_label(sql->sa, _is, ++sql->label);
+		ename = exp_name(_is);
+		_is = exp_column(sql->sa, exp_relname(_is), ename, exp_subtype(_is), _is->card, has_nil(_is), is_intern(_is));
 		nl = exp_unop(sql->sa, _is, isnil);
 		if (need_nulls) {
 		    if (nll_exps) {
