@@ -314,7 +314,6 @@ MakeDefs(char *name)
 		case DTD:
 		case XSL:
 		case Config:
-		case Swig:
 		case CCyacc:
 		case CClex:
 			if (allTrue()) {
