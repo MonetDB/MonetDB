@@ -36,9 +36,16 @@ for each shape tripple.
 @{
 
 @= array_mdefs
-command series(start:@1, step:@1, stop:@1, N:int, M:int) :bat[:oid,:@1] 
+command series_(start:@1, step:@1, stop:@1, N:int, M:int) :bat[:oid,:@1] 
 address ARRAYseries_@1
 comment  "Generates a single series BAT based on range condition, repeating each value N times and repeat the process M times.";
+
+function series (start:@1, step:@1, stop:@1, N:int, M:int) :bat[:str,:bat];
+	b1 := bat.new(:str,:bat,1);
+	b2 := series_(start, step, stop, N, M);
+	b3 := bat.insert(b1, "dim", b2);
+	return series := b3;
+end series;
 
 @mal
 module array;
@@ -48,13 +55,27 @@ module array;
 @:array_mdefs(lng)@
 @:array_mdefs(flt)@
 @:array_mdefs(dbl)@
+@-
+to be dealt with differently
 @:array_mdefs(date)@
 @:array_mdefs(daytime)@
 @:array_mdefs(timestamp)@
 
-pattern filler(idx:bat[:oid,:any_1], v:any_2):bat[:oid,:any_2]
-address ARRAYfiller
+@mal
+pattern filler_(idx:bat[:oid,:any_1], v:any_2):bat[:oid,:any_2]
+address ARRAYfiller_bat
 comment "Create an array value representation described by a series column and fill it with V";
+
+pattern filler_(cnt:oid, v:any_2):bat[:oid,:any_2]
+address ARRAYfiller
+comment "Create an array value representation of CNT items and fill it with V";
+
+function filler(cnt:oid, v:any_2):bat[:str,:bat];
+	b1 := bat.new(:str,:bat,1);
+	b2 := filler_(cnt, v);
+	b3 := bat.insert(b1, "vals", b2);
+	return filler := b3;
+end filler;
 
 pattern map(dims:bat[:oid,:any]...):bat[:oid,:oid]
 address ARRAYmap
@@ -134,6 +155,7 @@ It can be used to create an embedding of values from one array into another.";
 array_export str ARRAYisFixed(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 array_export str ARRAYgetDimensions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 array_export str ARRAYproduct(int *ret, int *bid, int *rid);
+array_export str ARRAYfiller_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 array_export str ARRAYfiller(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 array_export str ARRAYmap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 array_export str ARRAYumap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
@@ -153,10 +175,13 @@ array_export str ARRAYtilesSum_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 @:array_defs(lng)@
 @:array_defs(flt)@
 @:array_defs(dbl)@
+@-
+to be dealt with differently
 @:array_defs(date)@
 @:array_defs(daytime)@
 @:array_defs(timestamp)@
 
+@h
 /* The maximum number of series_ that the print-function can handle... */
 #define MAX_ARRAY_DIM 16
 
@@ -323,7 +348,7 @@ ARRAYproduct(int *ret, int *bid, int *rid)
 }
 
 str
-ARRAYfiller(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+ARRAYfiller_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *bn, *b;
 	BUN p, q;
@@ -343,6 +368,32 @@ ARRAYfiller(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BUNfastins(bn, BUNhead(bi, p), val);
 	}
 	(void) cntxt;
+	BBPkeepref(*ret = bn->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+ARRAYfiller(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *bn;
+	BATiter bi;
+	int *ret = (int*) getArgReference(stk,pci,0);
+	oid i = 0, cnt = *(oid*) getArgReference(stk,pci,1);
+	void *val = (void*) getArgReference(stk,pci,2);
+
+	(void) cntxt;
+
+	/* TODO: why not TYPE_void? */
+	if(!(bn = BATnew(TYPE_oid, getArgType(mb,pci,2), cnt)))
+		throw(MAL, "array.filler", MAL_MALLOC_FAIL);
+
+	bi = bat_iterator(bn);
+	for (i = 0; i < cnt; i++)
+		BUNfastins(bn, BUNhead(bi, i), val);
+
+	BATsetcount(bn, cnt);
+	bn->tsorted = 1;
+	bn->T->nonil = TRUE;
 	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
 }
