@@ -198,7 +198,6 @@ Directive str2dir[] = {
 	{"dtd", DTD, "dtd",},
 	{"xsl", XSL, "xsl",},
 	{"cfg", Config, "cfg",},
-	{"swig", Swig, "i",},
 	{"Y", CCyacc, "yy",},
 	{"L", CClex, "ll",},
 	{"{", InHide, "",},

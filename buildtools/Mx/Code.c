@@ -91,7 +91,6 @@ GenCode(void)
 		case DTD:
 		case XSL:
 		case Config:
-		case Swig:
 		case CCyacc:
 		case CClex:
 			if (!extract(d->d_dir))
@@ -368,7 +367,6 @@ CodeLine(void)
 		case XML:
 		case DTD:
 		case XSL:
-		case Swig:
 		case Cyacc:
 		case Clex:
 		case CCyacc:

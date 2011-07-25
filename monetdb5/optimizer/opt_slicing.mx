@@ -709,7 +709,7 @@ OPTslicingImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	}
 	OPTDEBUGslicing
 		mnstr_printf(cntxt->fdout,"#opt_slicing: target is %s.%s "
-			" with " BUNFMT " rows into %d peers\n",
+			" with " SSZFMT " rows into %d peers\n",
 				getVarConstant(mb, getArg(gauge.target,2)).val.sval,
 				getVarConstant(mb, getArg(gauge.target,3)).val.sval,
 				rowcnt, nrpeers);

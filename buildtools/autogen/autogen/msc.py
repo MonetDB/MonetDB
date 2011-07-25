@@ -377,11 +377,6 @@ def msc_dep(fd, tar, deplist, msc):
             if dext in ("c", "yy.c", "tab.c"):
                 fd.write('\t$(CC) $(CFLAGS) $(%s_CFLAGS) $(GENDLL) -DLIB%s -Fo"%s" -c "%s"\n' %
                          (split_filename(msc_basename(src))[0], name, t, src))
-    if ext == 'pm' and deplist[0].endswith('.pm.i'):
-        fd.write('\t$(SWIG) -perl $(SWIGFLAGS) -outdir . -o dummy.c "%s"\n' % src)
-        fd.write('\t$(DEL) dummy.c\n')
-    if ext == 'pm.c' and deplist[0].endswith('.pm.i'):
-        fd.write('\t$(SWIG) -perl $(SWIGFLAGS) -outdir . -o "$@" "%s"\n' % src)
     if ext == 'res':
         fd.write("\t$(RC) -fo%s %s\n" % (t, src))
 
