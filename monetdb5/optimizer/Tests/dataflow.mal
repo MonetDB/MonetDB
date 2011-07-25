@@ -29,6 +29,7 @@ barrier go:= language.dataflow();
 	t8:= algebra.select(s,l,h);
 	z:= mat.pack(t1,t2,t3,t4,t5,t6,t7,t8);
 exit go;
+mdb.var();
 c:= aggr.count(z);
 io.print(c);
 io.print("done");
