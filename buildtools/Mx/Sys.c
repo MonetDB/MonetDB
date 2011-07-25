@@ -32,7 +32,7 @@ extern int somethingPrinted;	/* used for preventing to empty display lines */
 
 /* VARARGS */
 void
-ofile_printf(char *format, ...)
+ofile_printf(const char *format, ...)
 {
 	va_list ap;
 
@@ -70,7 +70,7 @@ ofile_putc(char c)
 
 
 void
-Fatal(char *fcn, char *format, ...)
+Fatal(const char *fcn, const char *format, ...)
 {
 	va_list ap;
 
@@ -115,7 +115,7 @@ StrDup(const char *str)
 }
 
  /*VARGARGS*/ void
-Error(char *format, ...)
+Error(const char *format, ...)
 {
 	va_list ap;
 
@@ -132,7 +132,7 @@ Error(char *format, ...)
 
 /*VARGARGS1*/
 void
-Message(char *format, ...)
+Message(const char *format, ...)
 {
 	va_list ap;
 
