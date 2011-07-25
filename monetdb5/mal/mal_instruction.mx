@@ -251,7 +251,7 @@ mal_export int newVariable(MalBlkPtr mb, str name, malType type);
 mal_export int cloneVariable(MalBlkPtr dst, MalBlkPtr src, int varid);
 mal_export void renameVariable(MalBlkPtr mb, int i, str name);
 mal_export void resetVarName(MalBlkPtr mb, int i);
-mal_export void copyVariable(MalBlkPtr dst, MalBlkPtr src, VarPtr v);
+mal_export void copyVariable(MalBlkPtr dst, VarPtr v);
 mal_export void removeVariable(MalBlkPtr mb, int varid);
 mal_export int newTmpVariable(MalBlkPtr mb, malType type);
 mal_export int newTmpSink(MalBlkPtr mb, malType type);
@@ -508,11 +508,10 @@ copyMalBlk(MalBlkPtr old)
 		return NULL;
 	}
 	mb->vsize = old->vsize;
-	memcpy((char *) mb->var, old->var, sizeof(VarPtr) * old->vtop);
 
 	mb->vtop = 0;
 	for (i = 0; i < old->vtop; i++) {
-		copyVariable(mb, old, getVar(old, i));
+		copyVariable(mb, getVar(old, i));
 		mb->vtop++;
 	}
 
@@ -910,7 +909,7 @@ location of a temporary variable should be flagged as an error.
 @= chkTemporary
     if( isTmpName(name)){
 		int j;
-        i= atol(name+1);
+        i= atol(name+ (*name == TMPMARKER? 1:2));
         /* quick test validity*/
         if( i< mb->vtop && isTmpVar(mb,i) && getVarTmp(mb,i) == i)
             return i;
@@ -1161,7 +1160,7 @@ newVariable(MalBlkPtr mb, str name, malType type)
 		return -1;
 	@:makeVarSpace@
 	if (isTmpName(name)) {
-		int i = atol(name + 1);
+		int i = atol(name+ (*name == TMPMARKER? 1:2));
 
 		/* test validity */
 		if (i > mb->vtop) {
@@ -1285,12 +1284,11 @@ delVariable(MalBlkPtr mb, int varid)
 	}
 }
 void
-copyVariable(MalBlkPtr dst, MalBlkPtr src, VarPtr v)
+copyVariable(MalBlkPtr dst, VarPtr v)
 {
 	int i;
 	VarPtr w;
 
-	(void) src;		/* fool the compiler */
 	assert(v->propc <= v->maxprop);
 	w = (VarPtr) GDKzalloc(sizeof(VarRecord) + v->maxprop * sizeof(int));
 	w->name = v->name ? GDKstrdup(v->name) : 0;
@@ -1714,6 +1712,10 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst )
 	ValPtr vr;
 	str msg;
 
+	if (isaBatType(type) && cst->vtype == TYPE_void){
+		cst->vtype = TYPE_bat;
+		cst->val.bval = 0;
+	} else
 	if (cst->vtype != type && !isaBatType(type) && !isPolyType(type)){
 		ValRecord vr = *cst;
 		int otype = cst->vtype;
@@ -2421,7 +2423,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 				cv = NULL;
 				VALformat(&cv, &stk->stk[getArg(p, i)]);
 				if ( cv && strlen(cv) > len - (t - s)) {
-					char *ns = (char *) GDKmalloc(len = strlen(cv) + len + 2);
+					char *ns = (char *) GDKmalloc(len = strlen(cv) + len + 5);
 					*t = 0;
 					strcpy(ns, s);
 					t = ns + (t - s);
@@ -2429,6 +2431,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 					s = ns;
 				}
 				if ( cv && strcmp(cv,"nil") ){
+					strcat(t, "=");
 					strcat(t, cv);
 					advance(t,base,len);
 					if (cv)
@@ -2438,7 +2441,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 						snprintf(t,(len-(t-base)),"[" BUNFMT "]", BATcount(d));
 						advance(t,base,len);
 					}
-				}
+				} else strcat(t, "=nil");
 			}
 			if (i < p->retc - 1)
 				*t++ = ',';
@@ -2512,14 +2515,14 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 					ct= (char*) GDKmalloc(1024+strlen(cv));
 					if (isVarUDFtype(mb, getArg(p, i)) ) {
 						if ( strcmp(cv,"nil") == 0)
-							snprintf(ct, 1024+strlen(cv), "%s", cv);
+							snprintf(ct, 1024+strlen(cv), "=%s", cv);
 						else
-							snprintf(ct, 1024+strlen(cv), "\"%s\"", cv);
+							snprintf(ct, 1024+strlen(cv), "=\"%s\"", cv);
 					} else
 					if ( strcmp(cv,"nil") == 0)
-						snprintf(ct, 1024+strlen(cv), "%s:%s", cv, getTypeName(getTailType(getArgType(mb,p,i))));
+						snprintf(ct, 1024+strlen(cv), "=%s:%s", cv, getTypeName(getTailType(getArgType(mb,p,i))));
 					else
-						snprintf(ct, 1024+strlen(cv), "\"%s\":%s", cv, getTypeName(getTailType(getArgType(mb,p,i))));
+						snprintf(ct, 1024+strlen(cv), "=\"%s\":%s", cv, getTypeName(getTailType(getArgType(mb,p,i))));
 					if( cv) GDKfree(cv);
 					cv= ct;
 				} else
@@ -2545,7 +2548,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 					VALformat(&cv, &getVar(mb, getArg(p, i))->value);
 			}
 			if ( cv && strlen(cv) > len - (t - s)) {
-				char *ns = (char *) GDKmalloc(len = strlen(cv) + len + 2);
+				char *ns = (char *) GDKmalloc(len = strlen(cv) + len + 5);
 
 				*t = 0;
 				strcpy(ns, s);
@@ -2553,8 +2556,12 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 				GDKfree(s);
 				s = ns;
 			}
-			if ( cv )
+			if ( cv )  {
+				if ( !isVarConstant(mb, getArg(p, i)) )
+					strcat(t,"=");
 				strcat(t, cv);
+			}
+			
 			advance(t,base,len);
 			if ( (cv && strlen(cv)==0) || isVarUDFtype(mb, getArg(p, i)) ||
 				isAmbiguousType(getArgType(mb,p,i)) ){
