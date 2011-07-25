@@ -30,7 +30,7 @@ print "data sources: @ds\n";
 # connect to the database:
 my $dsn = "dbi:monetdb:database=$ARGV[1];host=localhost;port=$ARGV[0];language=sql";
 my $dbh = DBI->connect( $dsn,
-  undef, undef,  # no authentication in SQL
+  "monetdb", "monetdb",
   { PrintError => 0, RaiseError => 1 }  # turn on exception handling
 );
 {

@@ -20,7 +20,56 @@ package Mapi;
 use strict;
 use Socket;
 use IO::Socket;
-#use IO::Handle;
+use Digest::MD5 'md5_hex';
+use Digest::SHA qw(sha1_hex sha256_hex sha512_hex);
+
+sub pass_chal {
+  my ($passwd, @challenge) = @_;
+  if (@challenge[2] == 9) {
+    my $pwhash = @challenge[5];
+    if ($pwhash eq 'SHA512') {
+      $passwd = sha512_hex($passwd);
+    } elsif ($pwhash eq 'SHA256') {
+      $passwd = sha256_hex($passwd);
+    } elsif ($pwhash eq 'SHA1') {
+      $passwd = sha1_hex($passwd);
+    } elsif ($pwhash eq 'MD5') {
+      $passwd = md5_hex($passwd);
+    } else {
+      warn "unsupported password hash: ".$pwhash;
+      return;
+    }
+  } elsif (@challenge[2] == 8) {
+    # can leave passwd cleartext
+  } else {
+    warn "unsupported protocol version: ".@challenge[2];
+    return;
+  }
+
+  my @cyphers = split(/,/, @challenge[3]);
+  my $chal;
+  foreach (@cyphers) {
+    if ($_ eq 'SHA512') {
+      $chal = "{$_}".sha512_hex($passwd.@challenge[0]);
+      last;
+    } elsif ($_ eq 'SHA256') {
+      $chal = "{$_}".sha256_hex($passwd.@challenge[0]);
+      last;
+    } elsif ($_ eq 'SHA1') {
+      $chal = "{$_}".sha1_hex($passwd.@challenge[0]);
+      last;
+    } elsif ($_ eq 'MD5') {
+      $chal = "{$_}".md5_hex($passwd.@challenge[0]);
+      last;
+    }
+  }
+  if (!$chal) {
+    # we assume v8's "plain"
+    $chal = "{plain}".$passwd.@challenge[0];
+  }
+
+  return $chal;
+}
 
 sub new {
   my $mapi = shift;
@@ -54,12 +103,15 @@ sub new {
   #binmode($self->{socket},":utf8");
 
   #block challenge:mserver:8:cypher(s):content_byteorder(BIG/LIT)\n");
+  #block challenge:mserver:9:cypher(s):content_byteorder(BIG/LIT):pwhash\n");
   my $block = $self->getblock();
   my @challenge = split(/:/, $block);
   print "Connection to socket established ($block)\n" if ($self->{trace});
 
+  my $passchal = pass_chal($passwd, @challenge) || die;
+
   # content_byteorder(BIG/LIT):user:{cypher_algo}mypasswordchallenge_cyphered:lang:database: 
-  $self->putblock("LIT:$user:{plain}$passwd" . @challenge[0] . ":$lang:$db:\n");
+  $self->putblock("LIT:$user:$passchal:$lang:$db:\n");
   my $prompt = $self->getblock();
   if ($prompt =~ /^\^mapi:monetdb:/) {
     # full reconnect
@@ -67,13 +119,14 @@ sub new {
     print "Following redirect: $prompt\n" if ($self->{trace});
     my @tokens = split(/[\n\/:\?]+/, $prompt); # dirty, but it's Perl anyway
     return new Mapi(@tokens[3], @tokens[4], $user, $passwd, $lang, @tokens[5], $trace);
-  } elsif ($prompt =~ /^\^mapi:merovingian:proxy/) {
+  } elsif ($prompt =~ /^\^mapi:merovingian:\/\/proxy/) {
     # proxied redirect
     do {
       print "Being proxied by $host:$port\n" if ($self->{trace});
       $block = $self->getblock();
       @challenge = split(/:/, $block);
-      $self->putblock("LIT:$user:{plain}$passwd" . @challenge[0] . ":$lang:$db:\n");
+      $passchal = pass_chal($passwd, @challenge) || die;
+      $self->putblock("LIT:$user:$passchal:$lang:$db:\n");
       $prompt = $self->getblock();
     } while ($prompt =~ /^\^mapi:merovingian:proxy/);
   } # TODO: don't die on warnings (#)
@@ -156,6 +209,7 @@ sub error {
   my ($self,$line) = @_;
   my $err = $self->{errstr};
   $err = "$err\n" if (length($err) > 0);
+  $line =~ s/^\!//;
   $self->{errstr} = $err . $line;
 # $self->showState();
   $self->{row}= "";
@@ -232,6 +286,7 @@ sub getBlock {
   $self->{skip} = 0; # next+skip is current result row
   $self->{next} = 0; # all done
   $self->{offset} = 0;
+  $self->{hdrs} = [];
 
   if (@chars[0] eq '&') {
 	  if (@chars[1] eq '1' || @chars[1] eq 6) {
@@ -251,10 +306,11 @@ sub getBlock {
         $self->{offset} = $offset;
       }
 		  # for now skip table header information
-		  my $i = 1;
-  		  while ($self->{lines}[$i] =~ '%') {
-			  $i++;
-		  }
+      my $i = 1;
+      while ($self->{lines}[$i] =~ '%') {
+        $self->{hdrs}[$i - 1] = $self->{lines}[$i];
+        $i++;
+      }
       $self->{skip} = $i;
 		  $self->{next} = $i;
 		  $self->{row} = $self->{lines}[$self->{next}++];
