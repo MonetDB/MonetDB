@@ -477,7 +477,6 @@ load_column(sql_trans *tr, sql_table *t, oid rid)
 	void *v;
 	char *def, *tpe, *st;
 	int sz, d;
-	lng dim_v;
 	oid dim_rid;
 	sql_column *c = ZNEW(sql_column);
 	sql_schema *syss = find_sql_schema(tr, "sys");
@@ -502,11 +501,11 @@ load_column(sql_trans *tr, sql_table *t, oid rid)
 	dim_rid = table_funcs.column_find_row(tr, find_sql_column(dimensions, "column_id"), &cid, NULL);
 	if (dim_rid != oid_nil){ /* this is a dimension column */
 		c->dim = ZNEW(sql_dimspec);
-		if(v = table_funcs.column_find_value(tr, find_sql_column(dimensions, "start"), dim_rid))
+		if((v = table_funcs.column_find_value(tr, find_sql_column(dimensions, "start"), dim_rid)))
 			c->dim->start = ZNEW(lng); *c->dim->start = *(lng *)v; _DELETE(v);
-		if(v = table_funcs.column_find_value(tr, find_sql_column(dimensions, "step"), dim_rid))
+		if((v = table_funcs.column_find_value(tr, find_sql_column(dimensions, "step"), dim_rid)))
 			c->dim->step = ZNEW(lng); *c->dim->step = *(lng *)v; _DELETE(v);
-		if(v = table_funcs.column_find_value(tr, find_sql_column(dimensions, "stop"), dim_rid))
+		if((v = table_funcs.column_find_value(tr, find_sql_column(dimensions, "stop"), dim_rid)))
 			c->dim->stop = ZNEW(lng); *c->dim->stop = *(lng *)v; _DELETE(v);
 	}
 
