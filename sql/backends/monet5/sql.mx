@@ -1091,9 +1091,6 @@ address SQLepilogue;
 
 sql.prelude();
 
-include sql_bpm;
-
-
 @h
 #ifndef _SQL_H
 #define _SQL_H

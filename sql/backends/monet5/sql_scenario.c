@@ -232,8 +232,7 @@ SQLinit(void)
 	if (readonly)
 		SQLdebug |= 32;
 	dbname = GDKgetenv("gdk_dbname");
-	if (((SQLdebug&16)==16 && (SQLnewcatalog = mvc_init(dbname, FALSE, store_bpm, 0)) < 0) ||
-			((SQLdebug&96)==96 && (SQLnewcatalog = mvc_init(dbname, FALSE, store_suro, 0)) < 0) ||
+	if (((SQLdebug&96)==96 && (SQLnewcatalog = mvc_init(dbname, FALSE, store_suro, 0)) < 0) ||
 			((SQLdebug&96)==64 && (SQLnewcatalog = mvc_init(dbname, FALSE, store_su, 0)) < 0) ||
 			((SQLdebug&96)==32 && (SQLnewcatalog = mvc_init(dbname, FALSE, store_ro, 0)) < 0) ||
 			((SQLdebug&112)==0 && (SQLnewcatalog = mvc_init(dbname, FALSE, store_bat, 0)) < 0))
