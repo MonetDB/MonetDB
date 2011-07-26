@@ -60,7 +60,7 @@ facilities
  * The Basic UNIX commands.
  */
 
-int
+static int
 unix_getenv(str *res, str varname)
 {
 	char *p = getenv(varname);
@@ -72,7 +72,7 @@ unix_getenv(str *res, str varname)
 	return GDK_SUCCEED;
 }
 
-int
+static int
 unix_setenv(bit *res, str varname, str valname)
 {
 #ifdef HAVE_PUTENV		/* prefer POSIX putenv */

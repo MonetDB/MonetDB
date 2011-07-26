@@ -184,7 +184,7 @@ sql_revoke_table_privs( mvc *sql, char *grantee, int privs, char *tname, char *c
 	return NULL;
 }
 
-int
+static int
 sql_create_role_id(mvc *m, unsigned int id, str auth, int grantor)
 {
 	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
@@ -386,7 +386,7 @@ table_privs(mvc *m, sql_table *t, int priv)
 	return 0;
 }
 
-int
+static int
 sql_grantable_(mvc *m, int grantorid, int obj_id, int privs, int sub)
 {
 	oid rid;

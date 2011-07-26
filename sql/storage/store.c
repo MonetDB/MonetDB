@@ -58,7 +58,7 @@ static int bs_debug = 0;
 static sql_trans *spare_trans[MAX_SPARES];
 static int spares = 0;
 
-int
+static int
 key_cmp(sql_key *k, sqlid *id)
 {
 	if (k && id &&k->base.id == *id)
@@ -125,7 +125,7 @@ idx_destroy(sql_idx * i)
 	_DELETE(i);
 }
 
-void
+static void
 trigger_destroy(sql_trigger *tr)
 {
 	/* remove trigger from schema */
@@ -170,7 +170,7 @@ table_destroy(sql_table *t)
 	_DELETE(t);
 }
 
-void
+static void
 seq_destroy(sql_sequence *s)
 {
 	base_destroy(&s->base);
@@ -946,7 +946,7 @@ create_trans(backend_stack stk)
 	return t;
 }
 
-void
+static void
 load_trans(sql_trans* tr, sqlid id)
 {
 	sql_schema *syss = find_sql_schema(tr, "sys");
@@ -1167,7 +1167,7 @@ create_sql_table(sql_allocator *sa, char *name, sht type, bit system, int persis
 	return t;
 }
 
-sql_column *
+static sql_column *
 dup_sql_column(sql_allocator *sa, sql_table *t, sql_column *c)
 {
 	sql_column *col = SA_ZNEW(sa, sql_column);
@@ -3151,7 +3151,7 @@ sql_trans_commit(sql_trans *tr)
 }
 
 
-void
+static void
 sql_trans_drop_all_dependencies(sql_trans *tr, sql_schema *s, int id, short type)
 {
 	int dep_id=0, t_id = -1;

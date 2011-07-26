@@ -465,7 +465,7 @@ result_type(mvc *sql, char *fname, symbol *res, int instantiate )
 	return NULL;
 }
 
-list *
+static list *
 create_type_list(dlist *params, int param)
 {
 	sql_subtype *par_subtype;
@@ -632,7 +632,7 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 	return stmt_none(sql->sa);
 }
 
-stmt* 
+static stmt* 
 drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int is_func)
 {
 	char *name = qname_table(qname);
@@ -716,7 +716,7 @@ drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int is_func)
 	return stmt_none(sql->sa);
 }
 
-stmt* 
+static stmt* 
 drop_all_func(mvc *sql, dlist *qname, int drop_action, int is_func)
 {
 	char *name = qname_table(qname);

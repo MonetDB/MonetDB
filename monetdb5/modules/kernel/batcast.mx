@@ -275,9 +275,6 @@ The lengthly list of coercions options could have been generated.
 #include "monetdb_config.h"
 #include "batcast.h"
 
-int	oidToStr(char **dst, int *len, oid *src  ){
-		return OIDtoStr(dst,len, src);
-}
 	@:Idempotent(bit)@
 	@:Idempotent(chr)@
 	@:Idempotent(bte)@

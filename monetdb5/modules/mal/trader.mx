@@ -59,6 +59,7 @@ comment "Make execution bids for functions octopus.<fnname1>, ...";
 #endif
 
 trader_export str TRADERmakeBid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+trader_export str TRADERmakeBids(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #define BID_TRANS	1
 #define BID_COVER	2
@@ -85,7 +86,7 @@ static lng estimateSavings0(MalBlkPtr mb,  sht bidtype)
 }
 */
 
-lng estimateSavings(MalBlkPtr mb, sht bidtype)
+static lng estimateSavings(MalBlkPtr mb, sht bidtype)
 {
 	MalStkPtr stk = NULL;
 	int i, j, k, marked = 0;

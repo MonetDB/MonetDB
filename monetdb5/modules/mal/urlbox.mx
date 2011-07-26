@@ -118,6 +118,7 @@ urlbox_export str URLBOXprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 urlbox_export str URLBOXopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 urlbox_export str URLBOXclose(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 urlbox_export str URLBOXdestroy(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+urlbox_export str URLBOXdepositFile(int *r, str *fnme);
 urlbox_export str URLBOXdeposit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 urlbox_export str URLBOXtake(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 urlbox_export str URLBOXrelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -129,6 +130,11 @@ urlbox_export str URLBOXdiscardAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, In
 urlbox_export str URLBOXtoString(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 urlbox_export str URLBOXnewIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 urlbox_export str URLBOXhasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+urlbox_export str URLBOXgetLevel(int *r, int *level);
+urlbox_export str URLBOXgetNames(int *r);
+urlbox_export str URLBOXgetCount(int *r);
+urlbox_export str URLBOXgetCardinality(int *r);
+urlbox_export str URLBOXgetSize(int *r);
 #endif /* _URL_BOX_H */
 
 @- Module initializaton
@@ -222,7 +228,7 @@ to a named box.
 @-
 The real work starts here. We have to insert an URL.
 @c
-int
+static int
 URLBOXchop(str url, str *parts){
 	char *s, *t;
 	int depth=0;
@@ -240,7 +246,7 @@ URLBOXchop(str url, str *parts){
 	}
 	return depth;
 }
-str
+static str
 URLBOXinsert(char *tuple)
 {
 	str parts[MAXURLDEPTH];

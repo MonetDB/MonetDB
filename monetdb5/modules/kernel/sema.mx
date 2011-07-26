@@ -58,7 +58,7 @@ typedef ptr monet_sema;
 #define sema_export extern
 #endif
 
-int
+static int
 create_sema(monet_sema *s, int *init)
 {
 	*s = (monet_sema) GDKmalloc(sizeof(MT_Sema));
@@ -67,7 +67,7 @@ create_sema(monet_sema *s, int *init)
 	return GDK_SUCCEED;
 }
 
-int
+static int
 up_sema(monet_sema *s)
 {
 	if (*s == NULL || *s == ptr_nil) return GDK_FAIL;
@@ -75,7 +75,7 @@ up_sema(monet_sema *s)
 	return GDK_SUCCEED;
 }
 
-int
+static int
 down_sema(monet_sema *s)
 {
     if (*s == NULL || *s == ptr_nil) return GDK_FAIL;
@@ -83,7 +83,7 @@ down_sema(monet_sema *s)
 	return GDK_SUCCEED;
 }
 
-int
+static int
 destroy_sema(monet_sema *s)
 {
 	if (*s == NULL || *s == ptr_nil) return GDK_FAIL;

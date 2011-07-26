@@ -565,7 +565,7 @@ rel_join_add_exp( sql_allocator *sa, sql_rel *rel, sql_exp *e)
 		rel->card = e->card;
 }
 
-void
+static void
 rel_join_add_exps( sql_allocator *sa, sql_rel *rel, list *exps)
 {
 	node *n;
@@ -1195,7 +1195,8 @@ rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, char *cname )
 	return NULL;
 }
 
-sql_exp *
+#if 0
+static sql_exp *
 rel_find_column( mvc *sql, sql_rel *rel, char *cname )
 {
 	sql_rel *p = NULL;
@@ -1212,6 +1213,7 @@ rel_find_column( mvc *sql, sql_rel *rel, char *cname )
 	}
 	return NULL;
 }
+#endif
 
 sql_exp *
 rel_bind_column( mvc *sql, sql_rel *rel, char *cname, int f )
@@ -1726,7 +1728,7 @@ convert_arg(mvc *sql, int nr, sql_subtype *rt)
 	a->tpe = *rt;
 }
 
-sql_exp *
+static sql_exp *
 exp_convert_inplace(mvc *sql, sql_subtype *t, sql_exp *exp)
 {
 	atom *a;
@@ -3633,7 +3635,7 @@ rel_next_value_for( mvc *sql, symbol *se )
 }
 
 /* some users like to use aliases already in the groupby */
-sql_exp *
+static sql_exp *
 rel_selection_ref(mvc *sql, sql_rel *rel, symbol *grp, dlist *selection )
 {
 	dnode *n;
@@ -4219,7 +4221,8 @@ join_on_column_name(mvc *sql, sql_rel *rel, sql_rel *t1, sql_rel *t2, int op, in
 }
 
 
-sql_rel *exp_top_relation(sql_exp *e )
+#if 0
+static sql_rel *exp_top_relation(sql_exp *e )
 {
 	switch(e->type) {	
 	case e_atom:
@@ -4235,6 +4238,7 @@ sql_rel *exp_top_relation(sql_exp *e )
 	}
 	return NULL;
 }
+#endif
 
 static int
 check_correlation_exps( list *exps )
@@ -4572,7 +4576,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 }
 
 
-sql_rel *
+static sql_rel *
 rel_query(mvc *sql, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek)
 {
 	sql_rel *res = NULL;

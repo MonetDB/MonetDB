@@ -438,7 +438,7 @@ Before continuing we should make sure that all clients
 	unloadLibraries(); 
 #if 0
 	/* skip this to solve random crashes, needs work */
-	freeBoxes();
+	freeBoxes(mal_clients);
 	freeModuleList(mal_clients->nspace);
 
 	finishNamespace();

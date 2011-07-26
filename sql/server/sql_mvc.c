@@ -704,7 +704,7 @@ mvc_bind_idx(mvc *m, sql_schema *s, char *iname)
 	return i;
 }
 
-int
+static int
 uniqueKey(sql_key *k)
 {
 	return (k->type == pkey || k->type == ukey);

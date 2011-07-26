@@ -293,7 +293,8 @@ BSKTdump(int *ret)
 
 	for ( bskt = 0; bskt < bsktLimit; bskt++)
 	if ( baskets[bskt].name){
-		mnstr_printf(GDKout, "#baskets[%2d] %s columns %d threshold %d window=[%d,%d] time window=[%d,%d] beat %d milliseconds events " BUNFMT "\n", bskt,
+		mnstr_printf(GDKout, "#baskets[%2d] %s columns %d threshold %d window=[%d,%d] time window=[" LLFMT "," LLFMT "] beat " LLFMT " milliseconds events " BUNFMT "\n",
+				bskt,
 			baskets[bskt].name,
 			baskets[bskt].colcount,
 			baskets[bskt].threshold,

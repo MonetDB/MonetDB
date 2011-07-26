@@ -37,7 +37,7 @@ only.
 #include "opt_support.h"
 
 opt_export str getPipeDefinition(str name);
-opt_export str getPipeCatalog(int *ret);
+opt_export str getPipeCatalog(int *nme, int *def);
 opt_export str addPipeDefinition(str name, str pipe);
 
 #endif
@@ -155,7 +155,7 @@ getPipeDefinition(str name)
 }
 
 str
-getpipeCatalog(int *nme, int *def)
+getPipeCatalog(int *nme, int *def)
 {
 	BAT *b,*bn;
 	int i;

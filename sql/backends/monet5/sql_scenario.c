@@ -344,7 +344,7 @@ error(stream *out, char *str)
 
 #define TRANS_ABORTED "!current transaction is aborted (please ROLLBACK)\n"
 
-int
+static int
 handle_error(mvc *m, stream *out, int pstatus)
 {
 	int go = 1;
@@ -820,7 +820,7 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * the duration of these calls.
  */
 
-int SQLautocommit(Client c, mvc *m){
+static int SQLautocommit(Client c, mvc *m){
 	if (m->session->auto_commit && m->session->active) {
 		if (mvc_status(m) < 0) {
 			mvc_rollback(m, 0, NULL);
@@ -970,7 +970,7 @@ SQLreader(Client c)
  * The current analysis is simple and fulfills our short-term needs.
  * A future version may analyze the parameter settings in more detail.
  */
-void
+static void
 SQLsetDebugger(Client c, mvc *m, int onoff)
 {
 	if (m == 0 || !(m->emod & mod_debug))
@@ -997,7 +997,7 @@ SQLsetDebugger(Client c, mvc *m, int onoff)
  * which makes it possible to inspect the results later using
  * SQL itself. (Script needed to bind the BATs to a SQL table.)
  */
-void
+static void
 SQLsetTrace(backend *be, Client c, bit onoff)
 {
 	int i = 0, j = 0;
@@ -1104,7 +1104,7 @@ SQLsetTrace(backend *be, Client c, bit onoff)
 	GDKfree(def);
 }
 
-void
+static void
 SQLshowPlan(Client c)
 {
 	/* we should determine rendering requirements first */
@@ -1397,7 +1397,7 @@ finalize:
  * However, when we received an Execute call, we make a shortcut
  * and prepare the stack for immediate execution
  */
-str
+static str
 SQLexecutePrepared(Client c, backend *be, cq *q )
 {
 	mvc *m = be->mvc;
@@ -1484,7 +1484,7 @@ SQLexecutePrepared(Client c, backend *be, cq *q )
 
 str SQLrecompile(Client c, backend *be);
 
-str
+static str
 SQLengineIntern(Client c, backend *be)
 {
 	str msg = MAL_SUCCEED;

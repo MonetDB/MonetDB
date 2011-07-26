@@ -363,7 +363,7 @@ stmt_max(sql_allocator *sa, stmt *x, stmt *y)
 	return stmt_binop(sa, x, y, f);
 }
 
-list *
+static list *
 shrink_select_ranges(mvc *sql, list *oldsels)
 {
 	/* find minimal ranges for selects per column on one table */
@@ -789,7 +789,7 @@ reljoin( mvc *sql, stmt *rj, list *l2 )
 	return res;
 }
 
-int
+static int
 find_unique( stmt *s, void *v)
 {
 	stmt *c = head_column(s);
@@ -801,7 +801,7 @@ find_unique( stmt *s, void *v)
 }
 
 /* push the semijoin of (select,s) through the select statement (select) */
-stmt *
+static stmt *
 push_semijoin( mvc *sql, stmt *select, stmt *s )
 {
 	if (select->type == st_list){ 

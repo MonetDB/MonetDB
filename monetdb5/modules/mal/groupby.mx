@@ -106,6 +106,7 @@ group_by str GROUPid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 group_by str GROUPcount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 group_by str GROUPmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 group_by str GROUPmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+group_by str GROUPavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* _GROUPBY_H */
 @c

@@ -79,7 +79,7 @@ mb_export str MBMskewed(int *ret, oid *base, int *size, int *domain, int *skew);
 #include <mal_exception.h>
 #include "microbenchmark.h"
 
-int
+static int
 BATrandom(BAT **bn, oid *base, int *size, int *domain)
 {
 	BUN n = (BUN) * size;
@@ -129,7 +129,7 @@ BATrandom(BAT **bn, oid *base, int *size, int *domain)
 	return GDK_SUCCEED;
 }
 
-int
+static int
 BATuniform(BAT **bn, oid *base, int *size, int *domain)
 {
 	BUN n = (BUN) * size, i, r;
@@ -188,7 +188,7 @@ BATuniform(BAT **bn, oid *base, int *size, int *domain)
 	return GDK_SUCCEED;
 }
 
-int
+static int
 BATskewed(BAT **bn, oid *base, int *size, int *domain, int *skew)
 {
 	BUN n = (BUN) * size, i, r;
@@ -264,7 +264,7 @@ BATskewed(BAT **bn, oid *base, int *size, int *domain, int *skew)
 # define M_E		2.7182818284590452354	/* e */
 #endif
 
-int
+static int
 BATnormal(BAT **bn, oid *base, int *size, int *domain, int *stddev, int *mean)
 {
 	BUN n = (BUN) * size, i;

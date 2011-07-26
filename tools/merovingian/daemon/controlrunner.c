@@ -43,6 +43,7 @@
 #include "discoveryrunner.h" /* broadcast, remotedb */
 #include "peering.h"
 #include "forkmserver.h"
+#include "controlrunner.h"
 
 
 static void

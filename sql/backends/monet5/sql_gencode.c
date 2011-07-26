@@ -121,7 +121,7 @@ void initSQLreferences(void){
  * The dump_header produces a sequence of instructions for
  * the front-end to prepare presentation of a result table.
  */
-void
+static void
 dump_header(mvc *sql, MalBlkPtr mb, stmt *s, list *l)
 {
 	node *n;
@@ -197,7 +197,7 @@ drop_table(MalBlkPtr mb, str n)
  * The dump_cols produces a sequence of instructions for
  * the front-end to prepare presentation of a result table (bat).
  */
-int
+static int
 dump_cols(mvc *sql, MalBlkPtr mb, list *l, int result_set)
 {
 	node *n;
@@ -223,14 +223,14 @@ dump_cols(mvc *sql, MalBlkPtr mb, list *l, int result_set)
  * Some utility routines to generate code
  * The equality operator in MAL is '==' instead of '='.
  */
-str
+static str
 convertMultiplexMod(str mod, str op)
 {
 	if (strcmp(op, "=") == 0)
 		return "calc";
 	return mod;
 }
-str
+static str
 convertMultiplexFcn(str op)
 {
 	if (strcmp(op, "=") == 0)
@@ -238,7 +238,7 @@ convertMultiplexFcn(str op)
 	return op;
 }
 
-str
+static str
 convertOperator(str op)
 {
 	if (strcmp(op, "=") == 0)
@@ -246,7 +246,7 @@ convertOperator(str op)
 	return op;
 }
 
-int
+static int
 range_join_convertable(stmt *s, stmt **base, stmt **L, stmt **H)
 {
 	int ls = 0, hs = 0;
@@ -327,7 +327,7 @@ dump_2(backend *sql, MalBlkPtr mb, stmt *s, char *mod, char *name)
 	s->nr = _dump_2(mb, mod, name, o1, o2);
 }
 
-InstrPtr
+static InstrPtr
 multiplex2(MalBlkPtr mb, char *mod, char *name /* should be eaten */, int o1, int o2, int rtype)
 {
 	InstrPtr q;
@@ -342,7 +342,7 @@ multiplex2(MalBlkPtr mb, char *mod, char *name /* should be eaten */, int o1, in
 	return q;
 }
 
-InstrPtr
+static InstrPtr
 dump_crossproduct(MalBlkPtr mb, int l, int r)
 {
 	int z;
@@ -372,7 +372,7 @@ dump_crossproduct(MalBlkPtr mb, int l, int r)
 	return q;
 }
 
-InstrPtr
+static InstrPtr
 multiplexN(MalBlkPtr mb, char *mod, char *name)
 {
 	InstrPtr q = NULL;
@@ -382,7 +382,7 @@ multiplexN(MalBlkPtr mb, char *mod, char *name)
 	return q;
 }
 
-int
+static int
 dump_joinN(backend *sql, MalBlkPtr mb, stmt *s)
 {
 	char *mod = sql_func_mod(s->op4.funcval->func);
@@ -460,7 +460,7 @@ dump_joinN(backend *sql, MalBlkPtr mb, stmt *s)
 	return k;
 }
 
-InstrPtr
+static InstrPtr
 pushSchema(MalBlkPtr mb, InstrPtr q, sql_table *t)
 {
 	if (t->s)
@@ -505,7 +505,7 @@ reconnect(MalBlkPtr mb, list *l)
 }
 
 
-void
+static void
 disconnect(MalBlkPtr mb, list *l)
 {
 	InstrPtr q = NULL;

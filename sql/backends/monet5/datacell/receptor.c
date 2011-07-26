@@ -553,7 +553,7 @@ parse:
 			}
 			BSKTunlock(&rc->lck, &rc->name);
 			if (rc->table.error) {
-				mnstr_printf(GDKerr, rc->table.error);
+				mnstr_printf(GDKerr, "%s", rc->table.error);
 				rc->table.error = 0;
 			}
 		}

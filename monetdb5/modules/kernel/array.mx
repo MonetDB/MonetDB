@@ -121,7 +121,7 @@ array_export str ARRAYgridShift_@1(@1 *ret, @1 *groups, @1 *groupsize, @1 *clust
 array_export str ARRAYgridBAT_@1(@1 *ret, @1 *bid, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset);
 array_export str ARRAYgridBATshift_@1(@1 *ret, @1 *bid, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset, @1 *shift);
 
-int
+static int
 fillgrid_@1(BAT **out, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset, @1 *shift)
 {
 	register @1 *ptr;
@@ -156,7 +156,7 @@ fillgrid_@1(BAT **out, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset, @
 	return GDK_SUCCEED;
 }
 
-int
+static int
 grid_@1(BAT **out, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset)
 {
 	@1 i = *groups;
@@ -178,7 +178,7 @@ grid_@1(BAT **out, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset)
 	return fillgrid_@1(out, groups, groupsize, clustersize, offset, &s);
 }
 
-int
+static int
 gridShift_@1(BAT **out, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset, @1 *shift)
 {
 	@1 i = *groups;

@@ -1239,6 +1239,7 @@ sql5_export str second_interval_str( lng *res, str *s, int *ek, int *sk );
 sql5_export str dump_cache(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str dump_opt_stats(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str sql_rowid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str sql_rank_grp(bat *rid, bat *bid, bat *gid, bat *gpe);
 sql5_export str sql_rank(bat *rid, bat *bid);
@@ -4224,17 +4225,7 @@ batstr_2_@1( int *res, int *bid )
 @:cast(date,date_tostr,date, *res = *(date*)p,&)@
 @:cast(sqlblob,sqlblob_tostr,sqlblob*, *res = (sqlblob*)p,)@
 
-str
-SQLstr_2_str( str *res, str *val )
-{
-	if( *val == str_nil) 
-		*res = (str)str_nil;
-	else
-		*res =  GDKstrdup(*val);
-	return MAL_SUCCEED;
-}
-
-str
+static str
 SQLstr_cast_(str *res, mvc *m, int eclass, int d, int s, int has_tz, ptr p, int tpe, int len)
 {
 	char *r = NULL;

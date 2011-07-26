@@ -37,6 +37,7 @@
 #include <stream_socket.h>
 
 #include "merovingian.h"
+#include "proxy.h"
 
 
 typedef struct _merovingian_proxy {

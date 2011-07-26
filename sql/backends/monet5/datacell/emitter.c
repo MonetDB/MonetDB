@@ -451,7 +451,7 @@ bodyRestart:
 				/* keep the events and try to setup a new connection */
 				break;
 			if (em->table.error) {
-				mnstr_printf(GDKerr, em->table.error);
+				mnstr_printf(GDKerr, "%s", em->table.error);
 				em->table.error = 0;
 			}
 		} else

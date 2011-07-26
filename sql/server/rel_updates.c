@@ -54,7 +54,7 @@ insert_value(mvc *sql, sql_column *c, sql_rel **r, symbol *s)
 	}
 }
 
-sql_exp ** 
+static sql_exp ** 
 insert_exp_array(sql_table *t, int *Len)
 {
 	sql_exp **inserts;

@@ -516,7 +516,7 @@ produceStream(Sensor se)
 			if (timestamp) {
 				currenttsmp = GDKusec();
 
-				snprintf(tuple + tlen, maxtuple - tlen, "%s%lld", (autoincrement?separator[protocol]:""), currenttsmp);
+				snprintf(tuple + tlen, maxtuple - tlen, "%s" LLFMT "", (autoincrement?separator[protocol]:""), currenttsmp);
 				tlen += (int)strlen(tuple + tlen);
 				if (tlen >= maxtuple) {
 					mnstr_printf(SEout, "Buffer not large enough to handle request.\n");

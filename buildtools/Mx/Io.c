@@ -270,40 +270,6 @@ CompareFiles(char *nm1, char *nm2)
 }
 
 void
-KillLines(FILE *fp, char *pattern, int killprev)
-{
-	long lastpos = 0, curpos = 0;
-	size_t patlen = strlen(pattern);
-	char line[8192];
-
-	fflush(fp);
-	fseek(fp, 0, SEEK_SET);
-	while (fgets(line, 8192, fp)) {
-		long newpos = ftell(fp);
-
-		if (strlen(line) == 0)
-			continue;
-		if (strncmp(line, pattern, patlen) == 0) {
-			long killpos = curpos;
-			long killen = newpos - curpos;
-
-			if (killprev && lastpos) {
-				killpos = lastpos;
-				killen += curpos - lastpos;
-			}
-			fseek(fp, killpos, SEEK_SET);
-			while (killen--)
-				fputc(' ', fp);
-			fflush(fp);
-			fseek(fp, newpos, SEEK_SET);
-		}
-		lastpos = curpos;
-		curpos = ftell(fp);
-	}
-	fseek(fp, 0, SEEK_END);
-}
-
-void
 UpdateFiles(void)
 {
 	File *f;

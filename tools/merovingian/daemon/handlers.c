@@ -33,6 +33,7 @@
 #include <utils/properties.h>
 
 #include "merovingian.h"
+#include "handlers.h"
 
 
 static char *sigint  = "SIGINT";

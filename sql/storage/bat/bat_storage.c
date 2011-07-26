@@ -410,7 +410,7 @@ count_idx(sql_idx *idx)
 }
 
 
-sql_column *
+static sql_column *
 find_col( sql_trans *tr, char *sname, char *tname, char *cname )
 {
 	sql_schema *s = find_sql_schema(tr, sname);
@@ -1120,7 +1120,7 @@ clear_del(sql_trans *tr, sql_table *t)
 	return clear_dbat(tr, t->data);
 }
 
-void
+static void
 BATcleanProps( BAT *b )
 {
 	if (b->T->props) {
@@ -1129,7 +1129,7 @@ BATcleanProps( BAT *b )
 	}
 }
 
-int 
+static int 
 gtr_update_delta( sql_trans *tr, sql_delta *cbat)
 {
 	int ok = LOG_OK;
@@ -1222,7 +1222,7 @@ gtr_update( sql_trans *tr )
 	return _gtr_update(tr, &gtr_update_table);
 }
 
-int 
+static int 
 gtr_minmax_col( sql_trans *tr, sql_column *c)
 {
 	int ok = LOG_OK;

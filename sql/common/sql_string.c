@@ -40,7 +40,7 @@ mkLower(char *s)
 	return r;
 }
 
-char *
+static char *
 mkUpper(char *s)
 {
 	char *r = s;

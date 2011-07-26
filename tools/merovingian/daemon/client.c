@@ -41,6 +41,7 @@
 #include "forkmserver.h"
 #include "proxy.h"
 #include "multiplex-funnel.h"
+#include "client.h"
 
 typedef struct _mplist {
 	multiplex *mpf;

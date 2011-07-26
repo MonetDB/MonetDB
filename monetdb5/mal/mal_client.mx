@@ -775,11 +775,13 @@ int MCcountClients(){
 		if (c->mode != FREECLIENT) cnt++;
 	return cnt;
 }
+#if 0
 int MCrunEmbedded(Client c){
 	(void) c;
 	/* to be defined */
 	return 0;
 }
+#endif
 
 @}
 @+ Client input

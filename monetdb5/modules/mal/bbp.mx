@@ -820,6 +820,7 @@ CMDbbpreleaseBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+#if 0
 @-
 A BAT designated as garbage can be removed, provided we
 do not keep additional references in the stack frame
@@ -861,6 +862,7 @@ CMDbbpgarbage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*bid = 0;
 	return MAL_SUCCEED;
 }
+#endif
 
 @-
 A BAT can be removed forever immediately or at the end of

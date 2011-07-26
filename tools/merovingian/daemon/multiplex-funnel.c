@@ -50,7 +50,7 @@ static int mfpipe[2];
  * database.  To maintain a stable query performance, the connection
  * creation must happen in the background and set life once established.
  */
-void
+static void
 MFconnectionManager(void *d)
 {
 	int i;
@@ -379,7 +379,7 @@ multiplexInit(multiplex **ret, char *database)
 	return(NO_ERR);
 }
 
-void
+static void
 multiplexQuery(multiplex *m, char *buf, stream *fout)
 {
 	int i;

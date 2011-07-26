@@ -107,7 +107,7 @@ extern int convert2str( mvc *m, int eclass, int d, int sc, int has_tz, ptr p, in
 	return l-1;
 @c
 
-int
+static int
 dec_tostr(void *extra, char **Buf, int *len, int type, ptr a)
 {
 	/* support dec map to bte, sht, int and lng */
@@ -131,7 +131,7 @@ struct time_res {
 	lng timezone;
 };
 
-int
+static int
 sql_time_tostr(void *TS_RES, char **buf, int *len, int type, ptr A)
 {
 	struct time_res *ts_res = TS_RES;
@@ -180,7 +180,7 @@ sql_time_tostr(void *TS_RES, char **buf, int *len, int type, ptr A)
 	return (int) (s - *buf);
 }
 
-int
+static int
 sql_timestamp_tostr(void *TS_RES, char **buf, int *len, int type, ptr A)
 {
 	struct time_res *ts_res = TS_RES;
@@ -332,7 +332,7 @@ bat_max_@1length(BAT *b)
 	return (ptr*)r;
 @c
 
-ptr *
+static ptr *
 dec_frstr(Column *c, int type, char *s, char *e, char quote)
 {
 	/* support dec map to bte, sht, int and lng */
@@ -352,7 +352,7 @@ dec_frstr(Column *c, int type, char *s, char *e, char quote)
 	return NULL;
 }
 
-ptr *
+static ptr *
 _ASCIIadt_frStr(Column *c, int type, char *s, char *e, char quote)
 {
 	int len;
@@ -642,7 +642,7 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 @-
 improved formatting of positive integers
 @= mvc_send
-int
+static int
 mvc_send_@1(stream *s, @1 cnt){
 	char buf[50], *b;
 	int neg = cnt <0;
@@ -707,7 +707,7 @@ convert2str( mvc *m, int eclass, int d, int sc, int has_tz, ptr p, int mtype, ch
 	return l;
 }
 
-int
+static int
 export_value( mvc *m, stream *s, int eclass, char *sqlname, int d, int sc, ptr p, int mtype, char **buf, int *len, str ns)
 {
 	int ok = 0;
