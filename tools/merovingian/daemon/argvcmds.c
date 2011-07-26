@@ -31,6 +31,7 @@
 #include <utils/properties.h>
 
 #include "merovingian.h"
+#include "argvcmds.h"
 
 int
 command_help(int argc, char *argv[])

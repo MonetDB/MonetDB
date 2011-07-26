@@ -121,12 +121,14 @@ int typeKind(MalBlkPtr mb, InstrPtr p, int i);
 str traceFcnName= "____";
 int tracefcn;
 int polyVector[MAXTYPEVAR];
-void polyInit(){
+#if 0
+void polyInit(void){
 	int i;
 	for(i=0;i<MAXTYPEVAR;i++) polyVector[i]= TYPE_any;
 }
+#endif
 
-malType findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p,int silent){
+static malType findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p,int silent){
 	Module m;
 	Symbol s;
 	InstrPtr sig;

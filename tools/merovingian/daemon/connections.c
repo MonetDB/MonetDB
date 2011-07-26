@@ -34,6 +34,7 @@
 #include <stream_socket.h>
 
 #include "merovingian.h"
+#include "connections.h"
 
 
 err

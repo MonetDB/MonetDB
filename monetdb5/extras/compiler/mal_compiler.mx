@@ -136,6 +136,7 @@ comment "Compile the mal file");
 
 mal_compiler_export str MCdynamicCompiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_compiler_export str MCloadFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_compiler_export str MCmcc(int *ret, str *fname);
 
 #endif /* _MAL_COMPILER_H_ */
 @-
@@ -221,7 +222,7 @@ static char *mccPrelude[] = {
 	"#define CALCint2lng(X,Y)  ((*X)= *(Y), MAL_SUCCEED)\n",
 	0
 };
-void
+static void
 mccVar(stream *f, MalBlkPtr mb, int i)
 {
 	if (isTmpVar(mb, i))
@@ -230,14 +231,14 @@ mccVar(stream *f, MalBlkPtr mb, int i)
 		mnstr_printf(f, "%s", mb->var[i]->name);
 }
 
-void
+static void
 mccArg(stream *f, MalBlkPtr mb, int i)
 {
 	mnstr_printf(f, "&");
 	mccVar(f, mb, i);
 }
 
-void
+static void
 mccValue(stream *f, MalBlkPtr mb, int i)
 {
 	int (*tostr) (str *, int *, ptr);
@@ -259,7 +260,7 @@ mccValue(stream *f, MalBlkPtr mb, int i)
 	}
 }
 
-void
+static void
 mccType(stream *f, MalBlkPtr mb, int i)
 {
 	str tpe;
@@ -275,7 +276,7 @@ mccType(stream *f, MalBlkPtr mb, int i)
 	GDKfree(tpe);
 }
 
-void
+static void
 mccInitUse(stream *f, MalBlkPtr mb)
 {
 	int j;
@@ -290,7 +291,7 @@ mccInitUse(stream *f, MalBlkPtr mb)
 		}
 	}
 }
-void
+static void
 mccInit(stream *f, MalBlkPtr mb)
 {
 	int i, j;
@@ -312,7 +313,7 @@ mccInit(stream *f, MalBlkPtr mb)
 	mnstr_printf(f, ")\n{\n");
 }
 
-void
+static void
 mccVariables(stream *f, MalBlkPtr mb)
 {
 	int i,j;
@@ -359,7 +360,7 @@ mccVariables(stream *f, MalBlkPtr mb)
 		mnstr_printf(f,"\tBID *backup= (BID*) alloca(%d * sizeof(BID));\n",mb->maxarg);
 }
 
-void
+static void
 mccEntry(stream *f, MalBlkPtr mb, int i)
 {
 	switch (getVarType(mb, i)) {
@@ -422,7 +423,7 @@ Before we generate code, we should check existence of
 CATCH blocks. If they do not exist, then any exception
 terminates the function. Otherwise, we jump to the first one.
 @c
-void
+static void
 mccCall(stream *f, MalBlkPtr mb, InstrPtr p, int *catch, int *ctop){
 	int j;
 	if (p->blk && p->blk->binding) {
@@ -441,7 +442,7 @@ mccCall(stream *f, MalBlkPtr mb, InstrPtr p, int *catch, int *ctop){
 	}
 }
 
-void
+static void
 mccAssignment(stream *f, MalBlkPtr mb, InstrPtr p, int *catch, int *ctop){
 	int i;
 	for(i=0; i<p->retc; i++)
@@ -458,7 +459,7 @@ mccAssignment(stream *f, MalBlkPtr mb, InstrPtr p, int *catch, int *ctop){
 	(void) ctop;
 }
 
-void
+static void
 mccSafeTarget(stream *f, MalBlkPtr mb, InstrPtr p, int *catch, int *ctop){
 	int i;
 	if( garbageControl(p)){
@@ -482,7 +483,7 @@ mccSafeTarget(stream *f, MalBlkPtr mb, InstrPtr p, int *catch, int *ctop){
 	(void) ctop;
 }
 
-void
+static void
 mccRestoreTarget(stream *f, MalBlkPtr mb, InstrPtr p, int *catch, int *ctop){
 	int i;
 	if( garbageControl(p)){
@@ -504,7 +505,7 @@ mccRestoreTarget(stream *f, MalBlkPtr mb, InstrPtr p, int *catch, int *ctop){
 	(void) ctop;
 }
 
-int
+static int
 mccInstruction(stream *f, MalBlkPtr mb, InstrPtr p, int i, int *catch, int *ctop)
 {
 	int errors = 0;
@@ -568,7 +569,7 @@ mccInstruction(stream *f, MalBlkPtr mb, InstrPtr p, int i, int *catch, int *ctop
 @-
 Multiplex script calls are expanded to their code base.
 @c
-void
+static void
 mccMultiplex(Client cntxt, stream *f, MalBlkPtr mb, InstrPtr p)
 {
 	int pc = getPC(mb, p);
@@ -595,7 +596,7 @@ mccMultiplex(Client cntxt, stream *f, MalBlkPtr mb, InstrPtr p)
 	freeInstruction(pn);
 }
 
-void
+static void
 mccJoinPath(stream *f, MalBlkPtr mb, InstrPtr p){
 	int i;
 	(void)mb;
@@ -611,7 +612,7 @@ mccJoinPath(stream *f, MalBlkPtr mb, InstrPtr p){
 	mnstr_printf(f,"};\n");
 }
 
-void
+static void
 mccProject(stream *f, MalBlkPtr mb, InstrPtr p, int *catch, int *ctop){
 	int j;
 	mnstr_printf(f, "\tif( (Xmsg = ALGprojectCstBody(");
@@ -627,7 +628,7 @@ mccProject(stream *f, MalBlkPtr mb, InstrPtr p, int *catch, int *ctop){
 	else
 		mnstr_printf(f, " goto wrapup;\n");
 }
-void
+static void
 mccBATnew(stream *f, MalBlkPtr mb, InstrPtr p, int *catch, int *ctop){
 	mnstr_printf(f,"{");
 	mnstr_printf(f,"\tint ht=%d;\n",getVarType(mb,getArg(p,1)));
@@ -649,7 +650,7 @@ mccBATnew(stream *f, MalBlkPtr mb, InstrPtr p, int *catch, int *ctop){
 	mnstr_printf(f,"}\n");
 }
 
-void
+static void
 mccBody(Client cntxt, stream *f, MalBlkPtr mb)
 {
 	int i;
@@ -711,7 +712,7 @@ functions.
 		showErrors(cntxt);
 }
 
-void
+static void
 mccExit(stream *f, MalBlkPtr mb)
 {
 	int i;
@@ -753,7 +754,7 @@ the routine be expanded and the designated file.
 @c
 static char *codefile;
 
-str
+static str
 mccGenerate(Client cntxt, MalBlkPtr mb, str alias)
 {
 	char buf[1024];
@@ -775,7 +776,7 @@ mccGenerate(Client cntxt, MalBlkPtr mb, str alias)
 @-
 Dump the code produced in the standard output for ease of testing
 @c
-void
+static void
 mccDump(){
 	FILE *f;
 	int ch;

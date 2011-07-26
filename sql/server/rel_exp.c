@@ -513,7 +513,7 @@ exps_match_col_exps( sql_exp *e1, sql_exp *e2)
 	return 0;
 }
 
-int 
+static int 
 exp_match_list( list *l, list *r)
 {
 	node *n, *m;
@@ -703,7 +703,7 @@ distinct_rel(sql_exp *e, char **rname)
 	}
 	return 0;
 }
-int 
+static int 
 exp_is_rangejoin(sql_exp *e)
 {
 	/* assume e is a e_cmp with 3 args 

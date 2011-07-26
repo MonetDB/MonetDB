@@ -36,6 +36,7 @@
 
 #include "merovingian.h"
 #include "discoveryrunner.h" /* remotedb */
+#include "forkmserver.h"
 
 
 /**

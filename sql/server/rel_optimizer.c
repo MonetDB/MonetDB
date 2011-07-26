@@ -654,7 +654,7 @@ find_basetable( sql_rel *r)
 	}
 }
 
-list *
+static list *
 order_join_expressions(sql_allocator *sa, list *dje, list *rels)
 {
 	list *res = list_new(sa);

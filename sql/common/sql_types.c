@@ -170,7 +170,7 @@ sql_create_subtype(sql_type *t, unsigned int digits, unsigned int scale)
 	return res;
 }
 
-int
+static int
 localtypes_cmp(int nlt, int olt)
 {
 	if (nlt == TYPE_flt || nlt == TYPE_dbl) {
@@ -318,6 +318,7 @@ sql_bind_localtype(char *name)
 	return NULL;
 }
 
+#if 0
 sql_type *
 sql_bind_type(char *name)
 {
@@ -334,6 +335,7 @@ sql_bind_type(char *name)
 	assert(0);
 	return NULL;
 }
+#endif
 
 int
 type_cmp(sql_type *t1, sql_type *t2)
@@ -687,7 +689,7 @@ sql_bind_func3(sql_allocator *sa, sql_schema *s, char *sqlfname, sql_subtype *tp
 	return fres;
 }
 
-int
+static int
 arg_subtype_cmp(sql_arg *a, sql_subtype *t)
 {
 	if (a->type.type->eclass == EC_ANY)
@@ -901,7 +903,7 @@ func_destroy(sql_func *t)
 	_DELETE(t);
 }
 
-void
+static void
 sql_create_alias(char *name, char *alias)
 {
 	sql_alias *a = ZNEW(sql_alias);
@@ -913,7 +915,7 @@ sql_create_alias(char *name, char *alias)
 		keywords_insert(a->alias, KW_ALIAS);
 }
 
-void
+static void
 alias_destroy(sql_alias * a)
 {
 	_DELETE(a->name);

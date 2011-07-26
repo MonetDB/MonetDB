@@ -688,7 +688,7 @@ BATload_intern(bat i, int lock)
  * Of course, it does not make sense to touch more then we can physically accomodate (budget).
  */
 /* quick and probabilistic test for a sequentially correlated heap */
-int
+static int
 heap_sequential(BAT *b)
 {
 	BUN n = BATcount(b), skip = n / 100, i = BUNfirst(b);

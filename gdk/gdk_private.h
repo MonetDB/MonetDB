@@ -131,6 +131,8 @@ void BBPextend(dbl factor, int buildhash);
 void BBPatom_drop(int atom);
 void BBPatom_load(int atom);
 int BBPbackup(BAT *b, bit subcommit);
+void BBPdump(void);		/* never called: for debugging only */
+void BBPdumpcache(void);	/* never called: for debugging only */
 int MT_alloc_register(void *p, size_t size, char mode);
 int MT_alloc_print(void);
 int MT_alloc_table(void);
@@ -145,10 +147,6 @@ Hash *HASHnew(Heap *hp, int tpe, BUN size, BUN mask);
 BUN HASHmask(BUN cnt);
 BAT *HASHprint(BAT *b);
 int HASHgonebad(BAT *b, ptr v);
-int MT_alive(int pid);	/* OS independent way to check if some process is still alive. */
-#ifdef HAVE_PTHREAD_SIGMASK
-void MT_thread_sigmask(sigset_t *new_mask, sigset_t *orig_mask);
-#endif
 void GDKlog(_In_z_ _Printf_format_string_ const char *format, ...)
 	__attribute__((__format__(__printf__, 1, 2)));
 void GDKunlockHome(void);

@@ -309,7 +309,7 @@ int
 factoryHasFreeSpace(){
 	return lastPlant <MAXPLANTS-1;
 }
-int
+static int
 findPlant(MalBlkPtr mb){
 	int i;
 	for(i=0; i<lastPlant; i++)

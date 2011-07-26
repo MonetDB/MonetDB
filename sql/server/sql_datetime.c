@@ -79,7 +79,7 @@ qualifier2multiplier( int sk )
 	return mul;
 }
 
-int
+static int
 parse_interval_(mvc *sql, lng sign, char *str, int sk, int ek, lng *i)
 {
 	char *n = NULL;

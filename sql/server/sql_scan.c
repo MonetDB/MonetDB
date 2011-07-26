@@ -871,7 +871,7 @@ tokenize(mvc * c, int cur)
 	}
 }
 
-int
+static int
 valid_ident(char *s, char *dst)
 {
 	int escaped = 0;
@@ -967,6 +967,9 @@ sql_get_next_token(YYSTYPE *yylval, void *parm) {
 
 	return(token);
 }
+
+/* also see sql_parser.y */
+extern int sqllex( YYSTYPE *yylval, void *m );
 
 int
 sqllex(YYSTYPE * yylval, void *parm)

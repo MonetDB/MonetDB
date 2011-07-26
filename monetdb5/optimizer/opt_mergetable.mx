@@ -192,7 +192,7 @@ useMatType( mat_t *mat, int n)
 	return type;
 }
 
-int overlap( MalBlkPtr mb, int lv, int rv)
+static int overlap( MalBlkPtr mb, int lv, int rv)
 {
 	VarPtr llb = varGetProp(mb, lv, tlbProp); 
 	VarPtr lub = varGetProp(mb, lv, tubProp); 
@@ -223,7 +223,7 @@ int overlap( MalBlkPtr mb, int lv, int rv)
 	return 1;
 }
 
-int Hoverlap( MalBlkPtr mb, int lv, int rv)
+static int Hoverlap( MalBlkPtr mb, int lv, int rv)
 {
 	VarPtr llb = varGetProp(mb, lv, hlbProp); 
 	VarPtr lub = varGetProp(mb, lv, hubProp); 

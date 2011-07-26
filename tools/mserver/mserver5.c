@@ -74,7 +74,7 @@ mserver_abort()
 }
 #endif
 
-void
+static void
 usage(char *prog)
 {
 	fprintf(stderr, "Usage: %s [options] [scripts]\n", prog);
@@ -150,7 +150,7 @@ monet_hello(void)
 	printf("# Visit http://monetdb.cwi.nl/ for further information\n");
 }
 
-str
+static str
 absolute_path(str s)
 {
 	if (!MT_path_absolute(s)) {
@@ -165,7 +165,7 @@ absolute_path(str s)
 
 #define BSIZE 8192
 
-int
+static int
 monet_init(opt *set, int setlen)
 {
 	/* determine Monet's kernel settings */
@@ -185,7 +185,7 @@ monet_init(opt *set, int setlen)
 	return 1;
 }
 
-void emergencyBreakpoint(){
+static void emergencyBreakpoint(){
 	/* just a handle to break after system initialization for GDB */
 }
 

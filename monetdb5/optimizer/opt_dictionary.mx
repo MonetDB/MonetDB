@@ -198,7 +198,7 @@ DICTfind(int *idx, int *val, int *base, str nme)
 	return -1;
 }
 
-int
+static int
 OPTdictionaryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i,j,k, actions=0;
@@ -613,7 +613,7 @@ Derived paths are similar to the group new.
 Dictionary implementation.
 @c
 
-void 
+static void 
 DICTcommit(BAT *b1, BAT *b2, BAT *b3, BAT *b4 )
 {
 	bat bl[5];

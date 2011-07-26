@@ -413,7 +413,7 @@ For the time being we limit ourself to a default of 1Kelements
 @c
 /*#define SAMPLE_THRESHOLD_lOG 17*/
 #define SMALL_OPERAND	1024
-BUN
+static BUN
 ALGjoinCost(Client cntxt, BAT *l, BAT *r, int flag)
 {
 	int actions = 1;

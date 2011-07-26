@@ -233,7 +233,7 @@ decompose_filename(str nme)
  * files-with-holes on Unixes (on Windows, it actually always performs I/O which is not
  * nice).
  */
-size_t
+static size_t
 HEAPmargin(size_t maxsize)
 {
 	size_t ret;

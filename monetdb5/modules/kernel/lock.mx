@@ -83,7 +83,7 @@ lock_export str LCKdestroy(int *res, monet_lock *l);
 #include "mal_exception.h"
 #include "lock.h"
 
-int
+static int
 create_lock(monet_lock *l)
 {
 	*l = (monet_lock) GDKmalloc(sizeof(MT_Lock));
@@ -92,7 +92,7 @@ create_lock(monet_lock *l)
 	return GDK_SUCCEED;
 }
 
-int
+static int
 set_lock(monet_lock *l)
 {
 	if (*l == NULL || *l == ptr_nil) return GDK_FAIL;
@@ -100,7 +100,7 @@ set_lock(monet_lock *l)
 	return GDK_SUCCEED;
 }
 
-int
+static int
 try_lock(int *res, monet_lock *l)
 {
 	if (*l == NULL || *l == ptr_nil) return GDK_FAIL;
@@ -108,7 +108,7 @@ try_lock(int *res, monet_lock *l)
 	return GDK_SUCCEED;
 }
 
-int
+static int
 unset_lock(monet_lock *l)
 {
 	if (*l == NULL || *l == ptr_nil) return GDK_FAIL;
@@ -116,7 +116,7 @@ unset_lock(monet_lock *l)
 	return GDK_SUCCEED;
 }
 
-int
+static int
 destroy_lock(monet_lock *l)
 {
 	if (*l == NULL || *l == ptr_nil) return GDK_FAIL;

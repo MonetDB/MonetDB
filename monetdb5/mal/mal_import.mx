@@ -308,7 +308,7 @@ evalFile(Client c, str fname, int listing){
 }
 
 /* patch a newline character if needed */
-str mal_cmdline( char *s, int *len)
+static str mal_cmdline( char *s, int *len)
 {
 	if (s[*len - 1] != '\n') {
 		char *n = GDKmalloc(*len + 1 + 1);

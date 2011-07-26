@@ -387,7 +387,7 @@ pthread_cond_wait(pthread_cond_t *cv, pthread_mutex_t *external_mutex)
 }
 #else  /* !defined(HAVE_PTHREAD_H) && defined(_MSC_VER) */
 #ifdef HAVE_PTHREAD_SIGMASK
-void
+static void
 MT_thread_sigmask(sigset_t * new_mask, sigset_t * orig_mask)
 {
 	(void) sigdelset(new_mask, SIGQUIT);
@@ -608,17 +608,6 @@ MT_getpid(void)
 	return (MT_Id) (((size_t) pthread_self().p) + 1);
 #else
 	return (MT_Id) (((size_t) pthread_self()) + 1);
-#endif
-}
-
-int
-MT_alive(int pid)
-{
-#ifdef HAVE_KILL
-	return kill(pid, 0) == 0;
-#else
-	(void) pid;
-	return 0;
 #endif
 }
 

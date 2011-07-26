@@ -124,7 +124,7 @@ return 1;
 #define MAXPATHLEN 1024
 #endif
 
-void setAtomName(InstrPtr pci)
+static void setAtomName(InstrPtr pci)
 {
 	char buf[MAXPATHLEN];
 	snprintf(buf, MAXPATHLEN, "#%s", getFunctionId(pci));

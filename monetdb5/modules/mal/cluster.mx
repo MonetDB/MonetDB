@@ -165,7 +165,7 @@ cluster_export str CLS_split( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 #include "algebra.h"
 
 @= map_fixed
-void
+static void
 CLUSTER_key_@1( BAT *map, BAT *b)
 {
 	@1 *bt, *be;
@@ -182,7 +182,8 @@ CLUSTER_key_@1( BAT *map, BAT *b)
 	}
 }
 
-str  
+#if 0
+static str
 CLUSTER_column_@1(BAT *nb, BAT *b, BAT *cmap)
 {
 	@1 *r,*qb;
@@ -213,6 +214,7 @@ CLUSTER_column_@1(BAT *nb, BAT *b, BAT *cmap)
     	BATpropcheck(nb, BATPROPS_QUICK);
 	return MAL_SUCCEED;
 }
+#endif
 
 @c
 @:map_fixed(chr)@
@@ -225,7 +227,7 @@ CLUSTER_column_@1(BAT *nb, BAT *b, BAT *cmap)
 @:map_fixed(flt)@
 @:map_fixed(dbl)@
 
-void
+static void
 CLUSTER_key_str( BAT *map, BAT *b)
 {
 	char *bt, *be;
@@ -270,7 +272,7 @@ CLUSTER_key_str( BAT *map, BAT *b)
 		break;
 	}
 }
-str  
+static str  
 CLUSTER_column_any(BAT *nb, BAT *b, BAT *cmap)
 {
 	oid *ct, *ce, o = 0;
@@ -775,7 +777,7 @@ CLS_create2_@1( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int
 @:c_cls_new2(dbl)@
 
 @= c_cls_map
-str  
+static str  
 CLS_map_@1(BAT *rb, BAT *cmap, BAT *b)
 {
 	wrd *m;
@@ -801,7 +803,7 @@ CLS_map_@1(BAT *rb, BAT *cmap, BAT *b)
 @:c_cls_map(lng)@
 
 @= c_cls_map2
-str  
+static str  
 CLS_map2_@1(BAT *rb, wrd *psum, BAT *cmap, BAT *b)
 {
 	bte *m;

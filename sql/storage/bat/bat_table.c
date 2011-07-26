@@ -21,7 +21,7 @@
 #include "bat_table.h"
 #include "bat_utils.h"
 
-BAT *
+static BAT *
 delta_full_bat_( sql_column *c, sql_delta *bat, int temp, BAT *d, BAT *s)
 {
 	/* return full normalized column bat

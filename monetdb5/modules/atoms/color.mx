@@ -172,7 +172,7 @@ color_export int color_tostr(char **colorStr, int *len, color *c);
 @- Atom commands
 @c
 
-int
+static int
 CLRhextoint(chr h, chr l)
 {
 	int r = 0;
@@ -316,7 +316,7 @@ CLRblue(int *b, color *c)
 
 #define EPS 0.001f
 
-void
+static void
 color_rgb2hsv(float *h, float *s, float *v, int R, int G, int B)
 {
 	register float H, S, V, max;

@@ -2105,7 +2105,7 @@ stmt *const_column(sql_allocator *sa, stmt *val )
 	return s;
 }
 
-void
+static void
 stack_push_stmt( sql_stack *stk, stmt *s, int first )
 {
 	if (first && s->nr == 0) {
@@ -2116,7 +2116,7 @@ stack_push_stmt( sql_stack *stk, stmt *s, int first )
 	}
 }
 
-void
+static void
 stack_push_list( sql_stack *stk, list *l )
 {
 	int top;
@@ -2129,7 +2129,7 @@ stack_push_list( sql_stack *stk, list *l )
 		stk->values[--top] = n->data;
 }
 
-void
+static void
 stack_push_children( sql_stack *stk, stmt *s)
 {
 	switch( s->type) {
@@ -2188,7 +2188,7 @@ stmt_array( sql_allocator *sa, stmt *s)
 	return res;
 }
 
-void
+static void
 print_stmt( sql_allocator *sa, stmt *s ) 
 {
 	switch(s->type) {

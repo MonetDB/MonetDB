@@ -544,7 +544,7 @@ MATnonil( BAT **bats, int len)
 	return nonil;
 }
 
-BAT *
+static BAT *
 MATproject_( BAT *map, BAT **bats, int len ) 
 {
 	BAT *res = NULL;
@@ -882,7 +882,7 @@ MATsortReverseTail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MATsort( cntxt, mb, stk, pci, 1);
 }
 
-str
+static str
 MATrefine_(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int rev)
 {
 	bat *rval_id = (bat*) getArgReference(stk,pci,0); /* result sorted */

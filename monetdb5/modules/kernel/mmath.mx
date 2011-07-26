@@ -369,100 +369,8 @@ MNisinf(double x)
 #define floor_unary(x, z)     *z = floor(*x)
 #define fmod_binary(x, y, z)  *z = fmod(*x,*y)
 
-@:unop(_ACOS,acos)@
-@:unop(_ASIN,asin)@
-@:unop(_ATAN,atan)@
-@:binop(_ATAN2,atan2)@
-@:unop(_COS,cos)@
-@:unop(_SIN,sin)@
-@:unop(_TAN,tan)@
-@:unop(_COT,cot)@
-
-@:unop(_COSH,cosh)@
-@:unop(_SINH,sinh)@
-@:unop(_TANH,tanh)@
-@:unop(_RADIANS,radians)@
-@:unop(_DEGREES,degrees)@
-
-@:unop(_EXP,exp)@
-@:unop(_LOG,log)@
-@:unop(_LOG10,log10)@
-
-@:binop(_POW,pow)@
-@:unop(_SQRT,sqrt)@
-
-@:unop(_CEIL,ceil)@
-@:unop(_FABS,fabs)@
-@:unop(_FLOOR,floor)@
-@:binop(_FMOD,fmod)@
-
-@= unop
-str
-math_unary@1(dbl *res , dbl *a )
-{
-#ifdef DEBUG
-	printf( "math_unary@1\n");
-#endif
-	if (*a == dbl_nil) {
-		*res = dbl_nil;
-	} else {
-		errno = 0;
-		@2_unary( a, res );
-		if (errno == EDOM)
-			throw(MAL, "mmath.@1",OPERATION_FAILED " Negative argument is not allowed");
-		if (errno == ERANGE)
-			throw(MAL, "mmath.@1", OPERATION_FAILED " Range error");
-		if (MNisnan(*res))
-			throw(MAL, "mmath.@1", OPERATION_FAILED " Negative argument is not allowed");
-		if (!MNfinite(*res))
-			throw(MAL, "mmath.@1", OPERATION_FAILED " Range error");
-	}
-	return MAL_SUCCEED;
-}
-@
-
-@= binop
-str
-math_binary@1(dbl *res, dbl *a, dbl *b )
-{
-#ifdef DEBUG
-	printf( "math_binary@1\n");
-#endif
-	if (*a == dbl_nil || *b == dbl_nil) {
-		*res = dbl_nil;
-	} else {
-		@2_binary( a, b, res);
-	}
-	return MAL_SUCCEED;
-}
-
 @c
-str
-math_binary_ROUND(dbl *res, dbl *x, int *y)
-{
-	if (*x == dbl_nil || *y == int_nil) {
-		*res = dbl_nil;
-	} else {
-		double factor = pow(10, *y), integral;
-		double tmp = *y > 0 ? modf(*x, &integral) : *x;
-
-		tmp *= factor;
-		if (tmp >= 0)
-			tmp = floor(tmp + 0.5);
-		else
-			tmp = ceil(tmp - 0.5);
-		tmp /= factor;
-
-		if (*y > 0)
-			tmp += integral;
-
-		*res = tmp;
-	}
-
-	return MAL_SUCCEED;
-}
-
-str
+static str
 math_unary_ISNAN(bit *res, dbl *a)
 {
 #ifdef DEBUG
@@ -476,7 +384,7 @@ math_unary_ISNAN(bit *res, dbl *a)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 math_unary_ISINF(int *res, dbl *a)
 {
 #ifdef DEBUG
@@ -494,7 +402,7 @@ math_unary_ISINF(int *res, dbl *a)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 math_unary_FINITE(bit *res, dbl *a)
 {
 #ifdef DEBUG

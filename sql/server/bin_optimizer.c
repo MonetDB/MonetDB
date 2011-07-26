@@ -189,7 +189,7 @@ push_select( sql_allocator *sa, stmt *select, stmt *s )
 	return NULL;
 }
 
-stmt *
+static stmt *
 _bin_optimizer(mvc *c, stmt *s)
 {
 	if (s->optimized >= 3) {

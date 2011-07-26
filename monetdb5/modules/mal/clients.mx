@@ -225,7 +225,7 @@ local_itoa(int i)
 	return buf;
 }
 
-void
+static void
 CLTtimeConvert(time_t l, char *s){
 			struct tm localt;
 

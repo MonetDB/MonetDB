@@ -71,7 +71,7 @@ isCorrectInline(MalBlkPtr mb){
 }
 
 
-int
+static int
 OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i,limit;

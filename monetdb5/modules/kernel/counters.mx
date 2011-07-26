@@ -2303,7 +2303,7 @@ event_t *X_event = NO_event;
 #define monet_modulesilent (!(GDKdebug&16384))
 
 
-int
+static int
 init_counters(void)
 {
 #if ( defined(HWCOUNTERS) )
@@ -2481,14 +2481,7 @@ init_counters(void)
 }
 
 
-int
-compare_counter(counter *c1, counter *c2)
-{
-	return (int) (c1->usec - c2->usec);	/* compare on time in usecs */
-}
-
-
-int
+static int
 start_count(counter *retval, int *event0, int *event1)
 {
 #ifdef HWCOUNTERS
@@ -2900,7 +2893,7 @@ start_count(counter *retval, int *event0, int *event1)
 }
 
 
-int
+static int
 stop_count(counter *retval, counter *c)
 {
 	lng usec = GDKusec() - c->usec;
@@ -3072,7 +3065,7 @@ stop_count(counter *retval, counter *c)
 }
 
 
-int
+static int
 counter2bat(BAT **ret, counter *c)
 {
 	lng ms;
@@ -3122,7 +3115,7 @@ counter2bat(BAT **ret, counter *c)
 }
 
 
-int
+static int
 show_native_events(BAT **ret)
 {
 #ifdef HWCOUNTERS
@@ -3142,7 +3135,7 @@ show_native_events(BAT **ret)
 }
 
 
-int
+static int
 show_unified_events(BAT **ret)
 {
 #ifdef HWCOUNTERS
@@ -3171,6 +3164,7 @@ The remainder wraps around the M4 library.
 static counter cntrs[32];
 static int ctop=0;
 
+counters_export str CNTRSinit(int *ret);
 str
 CNTRSinit(int *ret){
 	(void) ret;

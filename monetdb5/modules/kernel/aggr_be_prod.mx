@@ -32,6 +32,7 @@ structure to compute a group of common aggregates.
 #include <gdk.h>
 #include <gdk_scanselect.h>	/* for type-specific HT_bunfastins_nocheck_noinc(), until they're moved to gdk.mx */
 #include "aggr.h"
+#include "aggr_be_prod.h"
 
 @- Result initialization
 /*	init_result

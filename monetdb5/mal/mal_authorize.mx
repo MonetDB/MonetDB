@@ -158,7 +158,7 @@ AUTHrequireAdminOrUser(Client *c, str *username) {
 	return(MAL_SUCCEED);
 }
 
-void
+static void
 AUTHcommit()
 {
 	bat blist[3];

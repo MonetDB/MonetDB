@@ -174,7 +174,7 @@ QEPdelete(QEP qep, int pos){
 	return q;
 }
 #endif
-QEP
+static QEP
 QEPappend(QEP qep, QEP child){
 	int i;
 	for( i=0; i< qep->climit-1; i++)

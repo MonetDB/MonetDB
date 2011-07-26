@@ -1051,7 +1051,7 @@ TRACEcreate(str hnme, str tnme, int tt)
 
 #define CLEANUPprofile(X)  if (X) { BBPdecref((X)->batCacheid, TRUE); (X)->batPersistence = TRANSIENT; } (X) = NULL;
 
-void
+static void
 _cleanupProfiler(void)
 {
 	CLEANUPprofile(TRACE_id_event);
