@@ -574,6 +574,8 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 				return SQL_ERR;
 			}
 
+			t->ndims++;
+
 			/* TODO: check if this is the correct place where the NULL
 			 * dim_range list of the "DIMENSION" case is denoted */
 			dim = l->h->next->next->next->data.sym->data.lval;
@@ -663,7 +665,7 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 				sql_error(sql, 02, "%s ARRAY: dimension '%s' constraint with syntax 'ARRAY dim_range_list' not implemented yet\n", (alter)?"ALTER":"CREATE", cname);
 				return SQL_ERR;
 			} /* else "DIMENSION" case: nothing to do */
-
+			t->fixed = dim->start && dim->step && dim->stop;
 			/* TODO: the case "ARRAY dim_range_list" is not dealt with */
 		}
 		if (column_options(sql, opt_list, ss, t, cs) == SQL_ERR)
@@ -882,7 +884,6 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 			  ((temp == SQL_ARRAY)? tt_array:tt_table));
 	char *t_a = (tt == tt_array)?"ARRAY":"TABLE";
 	/* TODO: compute 'fixed' somewhere somehow */
-	bit fixed = 1, found_dim = 0;
 
 	(void)create;
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
@@ -918,26 +919,24 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 		for (n = columns->h; n; n = n->next) {
 			symbol *sym = n->data.sym;
 			int res = table_element(sql, sym, s, t, 0);
-			found_dim = sym->data.lval->h->next->next->next && sym->data.lval->h->next->next->next->type == type_symbol && sym->data.lval->h->next->next->next->data.sym->token == SQL_DIMENSION;
-
 			if (res == SQL_ERR) 
 				return NULL;
 		}
 
-		if (tt == tt_array && !found_dim) 
+		if (tt == tt_array && t->ndims == 0) 
 			return sql_error(sql, 02, "CREATE ARRAY: an array must have at least one dimension");
 
 		temp = (tt == tt_table || tt == tt_array)?temp:SQL_PERSIST;
 		/* For unbounded arrays we don't immediately create the columns */
-		if ((tt == tt_table) || (tt == tt_array && !fixed)) {
+		if ((tt == tt_table) || (tt == tt_array && !t->fixed)) {
 			/* TODO: is DDL_CREATE_TABLE sufficient for arrays? */
 			return rel_table(sql, DDL_CREATE_TABLE, sname, t, temp);
 		} else {
 			sql_rel *res = NULL;
-			list *prjs = new_exp_list(sql->sa);
+			list *rp = new_exp_list(sql->sa);
 			node *col = NULL;
 
-			assert(tt == tt_array && fixed);
+			assert(tt == tt_array && t->fixed);
 
 			for (col = t->columns.set->h; col; col = col->next){
 				sql_column *sc = (sql_column *) col->data;
@@ -948,13 +947,13 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 					append(args, exp_atom_lng(sql->sa, *sc->dim->stop));
 					/* TODO: compute the 'N' and 'M' */
 					append(args, exp_atom_int(sql->sa, 1));
-					append(args, exp_atom_int(sql->sa, 4));
+					append(args, exp_atom_int(sql->sa, *sc->dim->stop));
 
-					append(prjs, exp_op(sql->sa, args, sql_find_func(sql->sa, sql->session->schema, "series", 5)));
+					append(rp, exp_op(sql->sa, args, sql_bind_func_(sql->sa, sql->session->schema, "array_series", args)));
 				}
 			}
 			res = rel_table(sql, DDL_CREATE_TABLE, sname, t, temp);
-			return rel_insert(sql, res, rel_project(sql->sa, res, prjs));
+			return rel_insert(sql, res, rel_project(sql->sa, res, rp));
 		}
 	} else { /* [col name list] as subquery with or without data */
 		/* TODO: handle create_array_as_subquery??? */
