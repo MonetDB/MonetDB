@@ -2153,14 +2153,14 @@ if test x"$have_zlib" = x"yes" ; then
 fi
 AM_CONDITIONAL(HAVE_LIBZ, test x"$have_zlib" != xno)
 
-have_valgrind=auto
+have_valgrind=no
 AC_ARG_WITH(valgrind,
 	AS_HELP_STRING([--with-valgrind],
-		[include valgrind support]),
+		[include valgrind support (default=no)]),
 	have_valgrind=$withval)
 if test "x$have_valgrind" != xno; then
 	PKG_CHECK_MODULES([valgrind], [valgrind],
-		[AC_DEFINE(HAVE_VALGRIND, 1, [Define if you have valgrind installed])],
+		[AC_DEFINE(HAVE_VALGRIND, 1, [Define if you have valgrind installed and want to use it])],
 		[if test "x$have_valgrind" = xyes; then AC_MSG_ERROR([no valgrind support found]); fi])
 fi
 
@@ -3100,6 +3100,25 @@ typedef lng ptrdiff_t;
 #define PTRFMTCAST	(unsigned long long)
 #else
 #error no definition for PTRFMT
+#endif
+
+/* defines to help the compiler check printf-style format arguments */
+#if !defined(__GNUC__) || __GNUC__ < 2 || (__GNUC__ == 2 && __GNUC_MINOR__ < 5)
+/* This feature is available in gcc versions 2.5 and later.  */
+# ifndef __attribute__
+#  define __attribute__(Spec) /* empty */
+# endif
+#else
+/* The __-protected variants of `format' and `printf' attributes are
+ * accepted by gcc versions 2.6.4 (effectively 2.7) and later.  */
+# if !defined(__format__) && (__GNUC__ < 2 || (__GNUC__ == 2 && __GNUC_MINOR__ < 7))
+#  define __format__ format
+#  define __printf__ printf
+# endif
+#endif
+#if !defined(_MSC_VER) && !defined(_In_z_)
+# define _In_z_
+# define _Printf_format_string_
 #endif
 
 #endif /* _SEEN_MONETDB_CONFIG_H */

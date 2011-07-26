@@ -46,7 +46,7 @@ GenCode(void)
 			if (isspace((int) (*s)))
 				*s = 0;
 			if (s == fname) {
-				Error("File name missing. %s", d->d_line);
+				Error("File name missing. %d", d->d_line);
 			}
 		}
 			break;

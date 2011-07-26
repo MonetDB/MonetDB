@@ -99,7 +99,7 @@ extern char *ODBCTranslateSQL(const SQLCHAR *query, size_t length, SQLUINTEGER n
 		}							\
 		_l = (str) ? (lent) (strlen) : 0;			\
 		if (buf)						\
-			strncpy((char *) (buf), (str) ? (char *) (str) : "", (len)); \
+			strncpy((char *) (buf), (str) ? (const char *) (str) : "", (len)); \
 		if (lenp)						\
 			*(lenp) = _l;					\
 		if ((buf) == NULL || _l >= (len))			\

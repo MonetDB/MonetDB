@@ -149,7 +149,8 @@ int MT_alive(int pid);	/* OS independent way to check if some process is still a
 #ifdef HAVE_PTHREAD_SIGMASK
 void MT_thread_sigmask(sigset_t *new_mask, sigset_t *orig_mask);
 #endif
-void GDKlog(const char *format, ...);
+void GDKlog(_In_z_ _Printf_format_string_ const char *format, ...)
+	__attribute__((__format__(__printf__, 1, 2)));
 void GDKunlockHome(void);
 int GDKgetHome(void);
 
