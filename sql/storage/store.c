@@ -1177,8 +1177,6 @@ create_sql_table(sql_allocator *sa, char *name, sht type, bit system, int persis
 	t->pkey = NULL;
 	t->sz = COLSIZE;
 	t->cleared = 0;
-	t->fixed = 1; /* This is ONLY for arrays, should be set to 0 if an unbounded dimension is found. */
-	t->ndims = 0; /* This is ONLY for arrays */
 	t->s = NULL;
 	return t;
 }

@@ -994,6 +994,8 @@ mvc_create_table(mvc *m, sql_schema *s, char *name, int tt, bit system, int pers
 	if (persistence == SQL_DECLARED_TABLE) {
 		/* declared tables should not end up in the catalog */
 		t = create_sql_table(m->sa, name, tt, system, persistence, commit_action);
+		t->fixed = 1; /* This is ONLY for arrays, should be set to 0 if an unbounded dimension is found. */
+		t->ndims = 0; /* This is ONLY for arrays */
 		t->s = s;
 	} else {
 		t = sql_trans_create_table(m->session->tr, s, name, NULL, tt, system, persistence, commit_action, sz);
