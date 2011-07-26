@@ -67,6 +67,7 @@ extern sql_exp* exp_label(sql_allocator *sa, sql_exp *e, int nr);
 extern void exp_swap( sql_exp *e );
 
 extern sql_subtype * exp_subtype( sql_exp *e );
+extern list * exps_subtype( list *l );
 extern char * exp_name( sql_exp *e );
 extern char * exp_relname( sql_exp *e );
 extern char * exp_func_name( sql_exp *e );

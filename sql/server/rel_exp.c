@@ -386,6 +386,20 @@ exp_subtype( sql_exp *e )
 	return NULL;
 }
 
+list *
+exps_subtype( list *l )
+{
+	node *n;
+	list *t = list_create(l->sa);
+
+	for (n = l->h; n; n = n->next) {
+		sql_exp *e = n->data;
+
+		append(t, exp_subtype(e));
+	}
+	return t;
+}
+
 char *
 exp_name( sql_exp *e )
 {
