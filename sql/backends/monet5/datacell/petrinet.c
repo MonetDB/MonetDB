@@ -260,18 +260,18 @@ str PNdump(int *ret)
 	int i, k;
 	mnstr_printf(PNout,"#scheduler status %s\n", statusnames[status]);
 	for (i = 0; i < pnettop; i++) {
-		mnstr_printf(PNout, "#[%d]\t%s %s delay %d cycles %d events %d time %d ms\n",
+		mnstr_printf(PNout, "#[%d]\t%s %s delay %d cycles %d events %d time %lld ms\n",
 			i, pnet[i].name, statusnames[pnet[i].status], pnet[i].delay, pnet[i].cycles, pnet[i].events, pnet[i].time/1000);
 		if ( pnet[i].error)
 			mnstr_printf(PNout,"#%s\n", pnet[i].error);
 		for (k = 0; k < pnet[i].srctop; k++)
-			mnstr_printf(PNout, "#<--\t%s basket[%d] %d\n",
+			mnstr_printf(PNout, "#<--\t%s basket[%d] " SZFMT " " SZFMT "\n",
 				pnet[i].source[k].table,
 				pnet[i].source[k].bskt,
 				pnet[i].source[k].lastcount,
 				pnet[i].source[k].consumed);
 		for (k = 0; k < pnet[i].trgttop; k++)
-			mnstr_printf(PNout, "#-->\t%s basket[%d] %d %d\n",
+			mnstr_printf(PNout, "#-->\t%s basket[%d] " SZFMT " " SZFMT "\n",
 				pnet[i].target[k].table,
 				pnet[i].source[k].bskt,
 				pnet[i].target[k].lastcount,

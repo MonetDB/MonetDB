@@ -300,7 +300,7 @@ str OPTdatacell(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT | LIST_MAPI);
 	}
 	DEBUGoptimizers
-		mnstr_printf(cntxt->fdout, "#opt_reduce: %d ms\n", t);
+		mnstr_printf(cntxt->fdout, "#opt_reduce: %lld ms\n", t);
 	QOTupdateStatistics("datacell", actions, t);
 	addtoMalBlkHistory(mb, "datacell");
 	return msg;
