@@ -1791,7 +1791,7 @@ create_table_or_view( mvc *sql, char *sname, sql_table *t, int temp)
 		char *cd = (temp == SQL_DECLARED_TABLE)?"DECLARE":"CREATE";
 		return sql_message("%s TABLE: name '%s' already in use", cd, t->base.name);
 	} else if (temp != SQL_DECLARED_TABLE &&!schema_privs(sql->role_id, s)){
-		return sql_message("CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+		return sql_message("CREATE %s: insufficient privileges for user '%s' in schema '%s'", (temp == SQL_ARRAY)?"ARRAY":"TABLE", stack_get_string(sql, "current_user"), s->base.name);
 	}
 
 	/* first check default values */
