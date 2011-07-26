@@ -46,13 +46,11 @@ lib__sql = {
 		sql_optimizer.c \
 		sql_result.mx \
 		sql_readline.c \
-		sql_emptyset.c \
-		sql_bpm.c 
+		sql_emptyset.c
 	LIBS = ../../server/libsqlserver \
 		   ../../storage/libstore \
 		   ../../storage/bat/libbatstore \
 		   ../../storage/restrict/librestrictstore \
-		   ../../storage/bpm/libbpmstore \
 		   ../../common/libsqlcommon \
 		   HAVE_RAPTOR?../../../monetdb5/extras/rdf/librdf \
 		   ../../../monetdb5/tools/libmonetdb5 \
@@ -72,7 +70,6 @@ lib__sql = {
 #		   ../../storage/libstore \
 #		   ../../storage/bat/libbatstore \
 #		   ../../storage/restrict/librestrictstore \
-#		   ../../storage/bpm/libbpmstore \
 #		   ../../common/libsqlcommon \
 #		   ../../../monetdb5/tools/libmonetdb5 \
 #		   ../../../gdk/libbat \
@@ -88,7 +85,6 @@ lib__sql = {
 #		   ../../storage/libstore \
 #		   ../../storage/bat/libbatstore \
 #		   ../../storage/restrict/librestrictstore \
-#		   ../../storage/bpm/libbpmstore \
 #		   ../../common/libsqlcommon \
 #		   ../../../monetdb5/tools/libmonetdb5 \
 #		   ../../../gdk/libbat \
@@ -100,7 +96,7 @@ lib__sql = {
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
-	SOURCES = sql.mx sql_bpm.mal
+	SOURCES = sql.mx
 }
 
 headers_autoload = {
@@ -109,5 +105,5 @@ headers_autoload = {
 	SOURCES = 40_sql.mal
 }
 
-EXTRA_DIST = 40_sql.mal sql_bpm.mal sql_bpm.h sql_emptyset.h sql_gencode.h sql_optimizer.h sql_scenario.h sql_user.h sql_readline.h
+EXTRA_DIST = 40_sql.mal sql_emptyset.h sql_gencode.h sql_optimizer.h sql_scenario.h sql_user.h sql_readline.h
 EXTRA_DIST_DIR = Tests
