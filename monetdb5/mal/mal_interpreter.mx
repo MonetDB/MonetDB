@@ -84,8 +84,8 @@ static lng memorypool;      /* memory claimed by concurrent threads */
 static int memoryclaims = 0;    /* number of threads active with expensive operations */
 #endif
 
-#define heapinfo(X) if((X) && (X)->base) vol = (X)->free; else vol = 0;
-#define hashinfo(X) if((X) && (X)->mask) vol = ((X)->mask+(X)->lim+1)*sizeof(int) + sizeof(*(X)); else vol = 0;
+#define heapinfo(X) if ((X) && (X)->base) vol = (X)->free; else vol = 0;
+#define hashinfo(X) if ((X) && (X)->mask) vol = ((X)->mask + (X)->lim + 1) * sizeof(int) + sizeof(*(X)); else vol = 0;
 
 #define FREE_EXCEPTION(p) { if (p && p != M5OutOfMemory) GDKfree(p); }
 
@@ -264,9 +264,9 @@ being called.
 		pci = pcicaller;
 		@:initStack(env->stkbot)@
 	} else {
-		stk= prepareMALstack(mb, mb->vsize);
+		stk = prepareMALstack(mb, mb->vsize);
 		if (stk == 0)
-			throw(MAL,"mal.interpreter",MAL_STACK_FAIL);
+			throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
 		stk->blk = mb;
 		stk->cmd = cntxt->itrace;    /* set debug mode */
 		/*safeguardStack*/
@@ -321,7 +321,8 @@ we should first remove garbage.
 		for (k = pp->retc; i < pci->argc; i++, k++) {
 			lhs = &stk->stk[pp->argv[k]];
 			/* variable arguments ? */
-			if (k == pp->argc - 1) k--;
+			if (k == pp->argc - 1)
+				k--;
 
 			rhs = &env->stk[pci->argv[i]];
 			VALcopy(lhs, rhs);
