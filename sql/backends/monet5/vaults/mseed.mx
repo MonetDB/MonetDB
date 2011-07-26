@@ -369,7 +369,7 @@ wrapup:
 	/* Make sure everything is cleaned up */
 	ms_readmsr (&msr, NULL, 0, NULL, NULL, 0, 0, 0);
 	if ( retcode != MS_ENDOFFILE )
-		throw(MAL, "mseed.load", "Cannot read %s: %s\n", *targetfile, ms_errorstr(retcode));
+		throw(MAL, "mseed.load", "Cannot read %s: %s\n", targetfile, ms_errorstr(retcode));
 	return msg;
 }  
 
