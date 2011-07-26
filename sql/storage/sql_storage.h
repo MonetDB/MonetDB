@@ -41,7 +41,6 @@ typedef enum store_type {
 	store_su,	/* single user, read/write */
 	store_ro,	/* multi user, read only */
 	store_suro,	/* single user, read only */
-	store_bpm,	/* bat partition manager */
 	store_tst
 } store_type;
 

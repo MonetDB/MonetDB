@@ -22,7 +22,7 @@
 EXTRA_DIST = sql_storage.h store_connections.h store_dependency.h \
 	store_sequence.h
 
-SUBDIRS = bat restrict bpm 
+SUBDIRS = bat restrict
 
 INCLUDES = ../include ../common \
 		   ../../common/options \
