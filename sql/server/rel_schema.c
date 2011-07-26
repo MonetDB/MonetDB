@@ -665,7 +665,7 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 				sql_error(sql, 02, "%s ARRAY: dimension '%s' constraint with syntax 'ARRAY dim_range_list' not implemented yet\n", (alter)?"ALTER":"CREATE", cname);
 				return SQL_ERR;
 			} /* else "DIMENSION" case: nothing to do */
-			t->fixed = dim->start && dim->step && dim->stop;
+			t->fixed = cs->dim->start && cs->dim->step && cs->dim->stop;
 			/* TODO: the case "ARRAY dim_range_list" is not dealt with */
 		}
 		if (column_options(sql, opt_list, ss, t, cs) == SQL_ERR)
