@@ -799,8 +799,8 @@ msab_serialise(char **ret, const sabdb *db)
 	snprintf(buf, sizeof(buf), "sabdb:" SABDBVER ":"
 			"%s,%d,%d,%s,%s" ","
 			"%d,%d,%d,"
-			"%lld,%lld,%lld,"
-			"%lld,%lld,"
+			"" LLFMT "," LLFMT "," LLFMT ","
+			"" LLFMT "," LLFMT ","
 			"%d,%f,%f",
 			db->path, db->locked, (int)(db->state), scens, conns,
 			dbu.startcntr, dbu.stopcntr, dbu.crashcntr,

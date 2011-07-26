@@ -502,7 +502,7 @@ str CRKmaterializeH(int *res, int *bid){
 		TJtotal+=CRKjoin(BATmirror(res), BATmirror(markedViewRight), markedViewLeft);
 	}
 /*
-printf("Join %lld, Cost %lld, Left "OIDFMT" Right "OIDFMT"\n",joinsDone, TJtotal-temp, curPosLeft - prevPosLeft +1, curPosRight - prevPosRight +1);
+printf("Join " LLFMT ", Cost " LLFMT ", Left "OIDFMT" Right "OIDFMT"\n",joinsDone, TJtotal-temp, curPosLeft - prevPosLeft +1, curPosRight - prevPosRight +1);
 */
 	BBPunfix(markedViewRight->batCacheid);
 	BBPunfix(markedViewLeft->batCacheid);
@@ -851,7 +851,7 @@ printf("Join %lld, Cost %lld, Left "OIDFMT" Right "OIDFMT"\n",joinsDone, TJtotal
 		BBPunfix(markedViewLeft->batCacheid);
 	}
 #ifdef DEBUG_CRACKERS_JOIN
-	printf("Join %lld, Cost %lld, Left "OIDFMT" Right "OIDFMT" ReuseHash: %d \n",joinsDone, TJtotal-temp, curPosLeft - prevPosLeft +1, curPosRight - prevPosRight +1, (existsHashTableLeft == FALSE && existsHashTableRight == TRUE)?1:0);
+	printf("Join " LLFMT ", Cost " LLFMT ", Left "OIDFMT" Right "OIDFMT" ReuseHash: %d \n",joinsDone, TJtotal-temp, curPosLeft - prevPosLeft +1, curPosRight - prevPosRight +1, (existsHashTableLeft == FALSE && existsHashTableRight == TRUE)?1:0);
 	printf("\n Res \n");
 	BATprint(res);
 	@:dumpIndex(Index Left)@
@@ -2058,7 +2058,7 @@ printf("Join %lld, Cost %lld, Left "OIDFMT" Right "OIDFMT"\n",joinsDone, TJtotal
 
 	T2=GDKusec();
 
-	printf("Total  %lld Join %lld Rest  %lld Joins %lld Crack %lld Pieces %lld \n", 
+	printf("Total  " LLFMT " Join " LLFMT " Rest  " LLFMT " Joins " LLFMT " Crack " LLFMT " Pieces " LLFMT " \n", 
 			T2-T1, TJtotal, ((T2-T1)-TJtotal)-TCtotal, joinsDone, TCtotal, CrackerIndex[mapPosLeft].pieces + CrackerIndex[mapPosRight].pieces );
 	printf("result is "BUNFMT" \n", BATcount(res));
 @
@@ -2193,7 +2193,7 @@ str CRKsimpleJoin_@1_@5(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bid
 
 	T2=GDKusec();
 
-	printf("Total  %lld Join %lld Rest  %lld Joins %lld Crack %lld Pieces %lld \n", 
+	printf("Total  " LLFMT " Join " LLFMT " Rest  " LLFMT " Joins " LLFMT " Crack " LLFMT " Pieces " LLFMT " \n", 
 			T2-T1, TJtotal, ((T2-T1)-TJtotal)-TCtotal, joinsDone, TCtotal, CrackerIndex[mapLpos].pieces + CrackerIndex[mapRpos].pieces );
 
 	return MAL_SUCCEED;
@@ -2311,8 +2311,8 @@ str CRKcrackJoin_@1_@5(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bidR
 
 #ifdef DEBUG_CRACKERS_JOIN
 		printf(" leftVal %d rightVal %d \n", curValueLeft, curValueRight);
-		printf(" prevPosLeft %lld curPosLeft %lld \n", prevPosLeft,curPosLeft);
-		printf(" prevPosRight %lld curPosRight %lld \n", prevPosRight,curPosRight);
+		printf(" prevPosLeft " LLFMT " curPosLeft " LLFMT " \n", prevPosLeft,curPosLeft);
+		printf(" prevPosRight " LLFMT " curPosRight " LLFMT " \n", prevPosRight,curPosRight);
 #endif
 
 		if (curValueLeft < curValueRight || 
@@ -2399,8 +2399,8 @@ str CRKcrackJoin_@1_@5(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bidR
 		
 #ifdef DEBUG_CRACKERS_JOIN
 		printf(" leftVal %d rightVal %d \n", curValueLeft, curValueRight);
-		printf(" prevPosLeft %lld curPosLeft %lld \n", prevPosLeft,curPosLeft);
-		printf(" prevPosRight %lld curPosRight %lld \n", prevPosRight,curPosRight);
+		printf(" prevPosLeft " LLFMT " curPosLeft " LLFMT " \n", prevPosLeft,curPosLeft);
+		printf(" prevPosRight " LLFMT " curPosRight " LLFMT " \n", prevPosRight,curPosRight);
 #endif
 
 		if (curNodeLeft != NULL && curNodeRight == NULL){	
@@ -2486,7 +2486,7 @@ str CRKcrackJoin_@1_@5(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bidR
 
 	T2=GDKusec();
 
-	printf("Total  %lld Join %lld Rest  %lld Joins %lld Crack %lld Pieces %lld \n", 
+	printf("Total  " LLFMT " Join " LLFMT " Rest  " LLFMT " Joins " LLFMT " Crack " LLFMT " Pieces " LLFMT " \n", 
 			T2-T1, TJtotal, ((T2-T1)-TJtotal)-TCtotal, joinsDone, TCtotal, CrackerIndex[mapLpos].pieces + CrackerIndex[mapRpos].pieces );
 
 	return MAL_SUCCEED;
@@ -2868,7 +2868,7 @@ str CRKcacheConsciousCrackHashJoinAlignOnly_@1_@5(int *resid, int *bidL1, int *b
 
 	T2=GDKusec();
 
-	printf("Total  %lld Join %lld Rest  %lld Joins %lld Crack %lld Pieces %lld \n", 
+	printf("Total  " LLFMT " Join " LLFMT " Rest  " LLFMT " Joins " LLFMT " Crack " LLFMT " Pieces " LLFMT " \n", 
 			T2-T1, TJtotal, ((T2-T1)-TJtotal)-TCtotal, joinsDone, TCtotal, CrackerIndex[mapLpos].pieces + CrackerIndex[mapRpos].pieces );
 	return MAL_SUCCEED;
 
@@ -3266,7 +3266,7 @@ str CRKcacheConsciousCrackHashJoin_@1_@5(int *resid, int *bidL1, int *bidL2, int
 
 	T2=GDKusec();
 
-	printf("Total  %lld Join %lld Rest  %lld Joins %lld Crack %lld Pieces %lld \n", 
+	printf("Total  " LLFMT " Join " LLFMT " Rest  " LLFMT " Joins " LLFMT " Crack " LLFMT " Pieces " LLFMT " \n", 
 			T2-T1, TJtotal, ((T2-T1)-TJtotal)-TCtotal, joinsDone, TCtotal, CrackerIndex[mapLpos].pieces + CrackerIndex[mapRpos].pieces );
 	return MAL_SUCCEED;
 
@@ -3366,7 +3366,7 @@ str CRKactiveCrackSortMergeJoin_@1_@5(int *resid, int *bidL1, int *bidL2, int *b
 	(void) existsHashTableLeft;
 	(void) existsHashTableRight;
 
-	printf("Sort time %lld \n",Tsort);
+	printf("Sort time " LLFMT " \n",Tsort);
 	return MAL_SUCCEED;
 }	
 
@@ -3917,7 +3917,7 @@ str CRKcrackHashJoin_@1_@5(int *resid, int *bidL1, int *bidL2, int *bidR1, int *
 
 #ifdef TIMER_CRACKERS_JOIN
 	T2=GDKusec();
-	printf("Total  %lld Join %lld Rest  %lld Joins %lld Crack %lld Pieces %lld \n", 
+	printf("Total  " LLFMT " Join " LLFMT " Rest  " LLFMT " Joins " LLFMT " Crack " LLFMT " Pieces " LLFMT " \n", 
 			T2-T1, TJtotal, ((T2-T1)-TJtotal)-TCtotal, joinsDone, TCtotal, CrackerIndex[mapLpos].pieces + CrackerIndex[mapRpos].pieces );
 #endif
 

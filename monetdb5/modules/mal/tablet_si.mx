@@ -1559,7 +1559,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 
 	/* restore system setting */
 	GDK_vm_trim = vmtrim;
-	printf("Total Load Time: %lld \n",GDKusec()-startTime);
+	printf("Total Load Time: " LLFMT " \n",GDKusec()-startTime);
 	return res < 0 ? BUN_NONE : cnt;
 }
 

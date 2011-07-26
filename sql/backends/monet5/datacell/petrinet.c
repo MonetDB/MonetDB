@@ -260,7 +260,7 @@ str PNdump(int *ret)
 	int i, k;
 	mnstr_printf(PNout,"#scheduler status %s\n", statusnames[status]);
 	for (i = 0; i < pnettop; i++) {
-		mnstr_printf(PNout, "#[%d]\t%s %s delay %d cycles %d events %d time %lld ms\n",
+		mnstr_printf(PNout, "#[%d]\t%s %s delay %d cycles %d events %d time " LLFMT " ms\n",
 			i, pnet[i].name, statusnames[pnet[i].status], pnet[i].delay, pnet[i].cycles, pnet[i].events, pnet[i].time/1000);
 		if ( pnet[i].error)
 			mnstr_printf(PNout,"#%s\n", pnet[i].error);

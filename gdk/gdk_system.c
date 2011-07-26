@@ -132,7 +132,7 @@ MT_locktrace_end()
 			int idx = MT_locktrace_hash(MT_locktrace_nme[i]);
 
 			if (my_cnt[idx])
-				printf("%s %llu\n", MT_locktrace_nme[i], my_cnt[idx]);
+				printf("%s " ULLFMT "\n", MT_locktrace_nme[i], my_cnt[idx]);
 			my_cnt[idx] = 0;
 		}
 	MT_locktrace = 0;
