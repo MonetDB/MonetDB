@@ -894,7 +894,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 		commit_action = CA_DELETE;
 	
 	if (temp != SQL_DECLARED_TABLE) {
-		if (temp != SQL_PERSIST && (tt == tt_table|| tt == tt_array) ) {
+		if (temp != SQL_PERSIST && tt == tt_table ) {
 			s = mvc_bind_schema(sql, "tmp");
 		} else if (s == NULL) {
 			s = ss;
