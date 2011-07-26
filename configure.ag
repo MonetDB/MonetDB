@@ -562,6 +562,7 @@ yes-*-*)
 	X_CFLAGS="$X_CFLAGS -Wformat=2 -Wno-format-nonliteral"
 	X_CFLAGS="$X_CFLAGS -Winit-self"
 	X_CFLAGS="$X_CFLAGS -Winvalid-pch"
+	X_CFLAGS="$X_CFLAGS -Wmissing-format-attribute"
 	X_CFLAGS="$X_CFLAGS -Wpacked"
 	X_CFLAGS="$X_CFLAGS -Wunknown-pragmas"
 	case "$CC-$gcc_ver" in
@@ -629,7 +630,6 @@ yes-*-*)
 	dnl X_CFLAGS="$X_CFLAGS -Wfloat-equal"
 	dnl X_CFLAGS="$X_CFLAGS -Winline"
 	dnl X_CFLAGS="$X_CFLAGS -Wmissing-declarations"
-	dnl X_CFLAGS="$X_CFLAGS -Wmissing-format-attribute"
 	dnl X_CFLAGS="$X_CFLAGS -Wmissing-noreturn"
 	dnl X_CFLAGS="$X_CFLAGS -Wmissing-prototypes"
 	dnl X_CFLAGS="$X_CFLAGS -Wnested-externs"
