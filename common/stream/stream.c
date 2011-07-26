@@ -659,7 +659,7 @@ stream_gzwrite(stream *s, const void *buf, size_t elmsize, size_t cnt)
 	int size = (int) (elmsize * cnt);
 
 	if (size) {
-		size = gzwrite((gzFile *) s->stream_data.p, (void *) buf, size);
+		size = gzwrite((gzFile *) s->stream_data.p, buf, size);
 		return (ssize_t) (size / elmsize);
 	}
 	return (ssize_t) cnt;
@@ -1346,7 +1346,7 @@ socket_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 		/* send works on int, make sure the argument fits */
 		((nr = send(s->stream_data.s, (void *) ((char *) buf + res), (int) min(size - res, 1 << 16), 0)) > 0)
 #else
-		((nr = write(s->stream_data.s, (void *) ((char *) buf + res), size - res)) > 0)
+		((nr = write(s->stream_data.s, ((const char *) buf + res), size - res)) > 0)
 #endif
 		|| errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)
 		) {
@@ -1852,7 +1852,7 @@ static ssize_t
 ic_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 {
 	struct icstream *ic = (struct icstream *) s->stream_data.p;
-	ICONV_CONST char *inbuf = (char *) buf;
+	ICONV_CONST char *inbuf = (ICONV_CONST char *) buf;
 	size_t inbytesleft = elmsize * cnt;
 
 	/* if unconverted data from a previous call remains, add it to
@@ -2307,7 +2307,7 @@ bs_write(stream *ss, const void *buf, size_t elmsize, size_t cnt)
 		memcpy(s->buf + s->nr, buf, n);
 		s->nr += (unsigned) n;
 		todo -= n;
-		buf = (void *) ((char *) buf + n);
+		buf = ((const char *) buf + n);
 		if (s->nr == sizeof(s->buf)) {
 			/* block is full, write it to the stream */
 #ifdef BSTREAM_DEBUG
@@ -2821,7 +2821,7 @@ mnstr_writeBteArray(stream *s, const signed char *val, size_t cnt)
 {
 	if (!s || s->errnr)
 		return (0);
-	return s->write(s, (void *) val, sizeof(*val), cnt) == (ssize_t) cnt;
+	return s->write(s, val, sizeof(*val), cnt) == (ssize_t) cnt;
 }
 
 int
@@ -2845,7 +2845,7 @@ mnstr_writeShtArray(stream *s, const short *val, size_t cnt)
 {
 	if (!s || s->errnr)
 		return (0);
-	return s->write(s, (void *) val, sizeof(*val), cnt) == (ssize_t) cnt;
+	return s->write(s, val, sizeof(*val), cnt) == (ssize_t) cnt;
 }
 
 int
@@ -2869,7 +2869,7 @@ mnstr_writeIntArray(stream *s, const int *val, size_t cnt)
 {
 	if (!s || s->errnr)
 		return (0);
-	return s->write(s, (void *) val, sizeof(*val), cnt) == (ssize_t) cnt;
+	return s->write(s, val, sizeof(*val), cnt) == (ssize_t) cnt;
 }
 
 int
@@ -2893,7 +2893,7 @@ mnstr_writeLngArray(stream *s, const lng *val, size_t cnt)
 {
 	if (!s || s->errnr)
 		return (0);
-	return s->write(s, (void *) val, sizeof(*val), cnt) == (ssize_t) cnt;
+	return s->write(s, val, sizeof(*val), cnt) == (ssize_t) cnt;
 }
 
 int
@@ -3113,7 +3113,7 @@ wbs_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 		}
 		memcpy(wbs->buf + wbs->pos, buf, nbytes);
 		todo -= nbytes;
-		buf = (void *) (((char *) buf) + nbytes);
+		buf = (((const char *) buf) + nbytes);
 		wbs->pos += nbytes;
 		if (flush && wbs_flush(s) < 0)
 			return -1;

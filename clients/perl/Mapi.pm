@@ -197,8 +197,8 @@ sub resetState {
 sub doRequest {
   my($self,$cmd) = @_;
 
-  $cmd =~ s/\n/ /g;    # remove newlines ???
   $cmd = "S" . $cmd if $self->{lang} eq 'sql';
+  $cmd = $cmd . ";\n" unless $cmd =~ m/;\n$/;
   print "doRequest:$cmd\n" if ($self->{trace});
   $self->putblock($cmd); # TODO handle exceptions || die "!ERROR can't send $cmd: $!";
   $self->resetState();
@@ -242,29 +242,34 @@ sub getRow {
 
   if (@chars[0] eq '!') { 
     $self->error($row);
-		my $i = 1;
-  	while ($self->{lines}[$i] =~ '!') {
+    my $i = 1;
+    while ($self->{lines}[$i] =~ '!') {
       $self->error($self->{lines}[$i]);
       $i++;
-		}
+    }
     $self->{active} = 0;
     return -1
   } elsif (@chars[0] eq '&') {
     # not expected
   } elsif (@chars[0] eq '%') {
-	  # header line
+    # header line
   } elsif (@chars[0] eq '[') {
-	  # row result
+    # row result
     $self->{row} = $row;
+    if ($self->{nrcols} < 0) {
+      $self->{nrcols} = () = $row =~ /,\t/g;
+      $self->{nrcols}++;
+    }
     $self->{active} = 1;
   } elsif (@chars[0] eq '=') {
-	  # xml result line
+    # xml result line
     $self->{row} = substr($row, 1); # skip = 
     $self->{active} = 1;
   } elsif (@chars[0] eq '^') {
-	  # ^ redirect, ie use different server
+    # ^ redirect, ie use different server
   } elsif (@chars[0] eq '#') {
-	  # warnings etc
+    # warnings etc, skip, and return what follows
+    return $self->getRow;
   }
   return $self->{active};
 }
@@ -278,9 +283,9 @@ sub getBlock {
   my $header = $self->{lines}[0];
   my @chars = split(//, $header);
 
-	$self->{id} = -1;
+  $self->{id} = -1;
   $self->{count} = scalar(@{$self->{lines}}); 
-  $self->{nrcols} = 1;
+  $self->{nrcols} = -1;
   $self->{replysize} = $self->{count};
   $self->{active} = 0;
   $self->{skip} = 0; # next+skip is current result row
@@ -289,56 +294,56 @@ sub getBlock {
   $self->{hdrs} = [];
 
   if (@chars[0] eq '&') {
-	  if (@chars[1] eq '1' || @chars[1] eq 6) {
-	    if (@chars[1] eq '1') {
-		    # &1 id result-count nr-cols rows-in-this-block
-		    my ($dummy,$id,$cnt,$nrcols,$replysize) = split(' ', $header);
-		    $self->{id} = $id;
-		    $self->{count} = $cnt;
-		    $self->{nrcols} = $nrcols;
-		    $self->{replysize} = $replysize;
+    if (@chars[1] eq '1' || @chars[1] eq 6) {
+      if (@chars[1] eq '1') {
+        # &1 id result-count nr-cols rows-in-this-block
+        my ($dummy,$id,$cnt,$nrcols,$replysize) = split(' ', $header);
+        $self->{id} = $id;
+        $self->{count} = $cnt;
+        $self->{nrcols} = $nrcols;
+        $self->{replysize} = $replysize;
       } else {
-		    # &6 id nr-cols,rows-in-this-block,offset
-		    my ($dummy,$id,$nrcols,$replysize,$offset) = split(' ', $header);
-		    $self->{id} = $id;
-		    $self->{nrcols} = $nrcols;
-		    $self->{replysize} = $replysize;
+        # &6 id nr-cols,rows-in-this-block,offset
+        my ($dummy,$id,$nrcols,$replysize,$offset) = split(' ', $header);
+        $self->{id} = $id;
+        $self->{nrcols} = $nrcols;
+        $self->{replysize} = $replysize;
         $self->{offset} = $offset;
       }
-		  # for now skip table header information
+      # for now skip table header information
       my $i = 1;
       while ($self->{lines}[$i] =~ '%') {
         $self->{hdrs}[$i - 1] = $self->{lines}[$i];
         $i++;
       }
       $self->{skip} = $i;
-		  $self->{next} = $i;
-		  $self->{row} = $self->{lines}[$self->{next}++];
+      $self->{next} = $i;
+      $self->{row} = $self->{lines}[$self->{next}++];
 
-  		$self->{active} = 1;
-  	} elsif (@chars[1] eq '2') { # updates
-		  my ($dummy,$cnt) = split(' ', $header);
-		  $self->{count} = $cnt;
-		  $self->{nrcols} = 1;
-		  $self->{replysize} = 1;
+      $self->{active} = 1;
+    } elsif (@chars[1] eq '2') { # updates
+      my ($dummy,$cnt) = split(' ', $header);
+      $self->{count} = $cnt;
+      $self->{nrcols} = 1;
+      $self->{replysize} = 1;
       $self->{row} = "" . $cnt;
       $self->{next} = $cnt; # all done
       return -2;
-  	} elsif (@chars[1] eq '3') { # transaction 
+    } elsif (@chars[1] eq '3') { # transaction 
       # nothing todo
-  	} elsif (@chars[1] eq '4') { # auto_commit 
-		  my ($dummy,$ac) = split(' ', $header);
+    } elsif (@chars[1] eq '4') { # auto_commit 
+      my ($dummy,$ac) = split(' ', $header);
       if ($ac eq 't') {
         $self->{auto_commit} = 1;
       } else {
         $self->{auto_commit} = 0;
       }
-  	} elsif (@chars[1] eq '5') { # prepare 
-		  my ($dummy,$id,$cnt,$nrcols,$replysize) = split(' ', $header);
+    } elsif (@chars[1] eq '5') { # prepare 
+      my ($dummy,$id,$cnt,$nrcols,$replysize) = split(' ', $header);
       # TODO parse result, rows (type, digits, scale)
-		  $self->{count} = $cnt;
-		  $self->{nrcols} = $nrcols;
-		  $self->{replysize} = $replysize;
+      $self->{count} = $cnt;
+      $self->{nrcols} = $nrcols;
+      $self->{replysize} = $replysize;
       $self->{row} = "";
       $self->{next} = $cnt; # all done
     }

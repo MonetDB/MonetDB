@@ -804,7 +804,7 @@ rel_project2groupby(mvc *sql, sql_rel *g)
 
 			if (e->card > g->card) {
 				if (e->type == e_column && e->r) {
-					return sql_error(sql, 02, "cannot use non GROUP BY column '%s' in query results without an aggregate function", e->r);
+					return sql_error(sql, 02, "cannot use non GROUP BY column '%s' in query results without an aggregate function", (char *) e->r);
 				} else {
 					return sql_error(sql, 02, "cannot use non GROUP BY column in query results without an aggregate function");
 				}

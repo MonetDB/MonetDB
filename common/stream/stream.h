@@ -58,9 +58,9 @@ typedef long long lng;
 # endif
 #endif
 
-/* defines to help the compiler check printf-style format arguments
- * see the declaration of mnstr_printf below.  Also see gdk.h for a
- * copy of this stuff. */
+/* Defines to help the compiler check printf-style format arguments.
+ * These defines are also in our config.h, but we repeat them here so
+ * that we don't need that for this file.*/
 #if !defined(__GNUC__) || __GNUC__ < 2 || (__GNUC__ == 2 && __GNUC_MINOR__ < 5)
 /* This feature is available in gcc versions 2.5 and later.  */
 # ifndef __attribute__

@@ -253,7 +253,7 @@ HideOff(void)
 	extern char *defHideText;
 
 	if (pr_hide == opt_hide && !pr_hide_text && defHideText != 0)
-		ofile_printf(defHideText);
+		ofile_printf("%s", defHideText);
 	pr_hide--;
 	pr_hide_text = 0;
 }

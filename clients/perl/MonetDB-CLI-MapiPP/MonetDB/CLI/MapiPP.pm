@@ -106,11 +106,11 @@ sub query
       # TODO: table_name
     }
     do {
-      my @cols = split(/,\t/, $h->{row});
+      my @cols = split(/,\t */, $h->{row});
       my $i = -1;
       while (++$i < @cols) {
         $cols[$i] =~ s/^\[ //;
-        $cols[$i] =~ s/\t\]$//;
+        $cols[$i] =~ s/[ \t]+\]$//;
         $cols[$i] = MonetDB::CLI::MapiPP->unquote($cols[$i]);
       }
       push(@{$self->{rows}}, [@cols]);

@@ -459,7 +459,7 @@ forkMserver(char *database, sabdb** stats, int force)
 	close(pfdo[1]);
 	close(pfde[0]);
 	close(pfde[1]);
-	return(newErr(strerror(errno)));
+	return(newErr("%s", strerror(errno)));
 }
 
 /* vim:set ts=4 sw=4 noexpandtab: */

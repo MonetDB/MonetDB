@@ -219,6 +219,8 @@ char *M5OutOfMemory = "Memory allocation failed.";
  * showException such that they share the same code, because reuse
  * is good.
  */
+static str createExceptionInternal(enum malexception type, const char *fcn, const char *format, va_list ap)
+	__attribute__((__format__(__printf__, 3, 0)));
 static str
 createExceptionInternal(enum malexception type, const char *fcn, const char *format, va_list ap)
 {
@@ -314,6 +316,9 @@ showException(enum malexception type, const char *fcn, const char *format, ...)
  * showScriptException such that they share the same code, because reuse
  * is good.
  */
+static str
+createScriptExceptionInternal(MalBlkPtr mb, int pc, enum malexception type, const char *prev, const char *format, va_list ap)
+	__attribute__((__format__(__printf__, 5, 0)));
 static str
 createScriptExceptionInternal(MalBlkPtr mb, int pc, enum malexception type, const char *prev, const char *format, va_list ap)
 {
