@@ -1,0 +1,55 @@
+stdout of test 'select_value_insert_into.Bug-2845` in directory 'test/BugTracker-2011` itself:
+
+
+# 16:50:48 >  
+# 16:50:48 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/ufs/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB" --set mapi_open=true --set mapi_port=38292 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_test_BugTracker-2011" --set mal_listing=0 ; echo ; echo Over..
+# 16:50:48 >  
+
+# MonetDB 5 server v11.3.4
+# This is an unreleased version
+# Serving database 'mTests_test_BugTracker-2011', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.752 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:38292/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+Over..
+
+# 16:50:48 >  
+# 16:50:48 >  mclient -lsql -ftest -i -e --host=alf --port=38292 
+# 16:50:48 >  
+
+#CREATE TABLE table1 (
+#	  tablename VARCHAR(50) NOT NULL,
+#	  PRIMARY KEY (tablename)
+#);
+#CREATE TABLE table2 (
+#	  table1_name VARCHAR(50) NOT NULL,
+#	  FOREIGN KEY (table1_name) REFERENCES table1 (tablename)
+#);
+#insert into table1 (tablename) values ('A');
+[ 1	]
+#insert into table2 (table1_name) values ('A');
+[ 1	]
+#insert into table2 (table1_name) select 'A';
+[ 1	]
+#select * from table2;
+% sys.table2 # table_name
+% table1_name # name
+% varchar # type
+% 1 # length
+[ "A"	]
+[ "A"	]
+#drop table table2;
+#drop table table1;
+
+# 16:50:48 >  
+# 16:50:48 >  Done.
+# 16:50:48 >  
+
