@@ -931,7 +931,9 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 		if ((tt == tt_table) || (tt == tt_array && !t->fixed)) {
 			/* TODO: is DDL_CREATE_TABLE sufficient for arrays? */
 			return rel_table(sql, DDL_CREATE_TABLE, sname, t, temp);
-		} else {
+		} else { /* For fixed arrays, we immediately create and fill in BATs
+					for dimensions with dimension values, and for non-dim.
+					attributes with default values */
 			sql_rel *res = NULL;
 			list *rp = new_exp_list(sql->sa);
 			node *col = NULL;
@@ -948,12 +950,12 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 					/* TODO: compute the 'N' and 'M' */
 					append(args, exp_atom_int(sql->sa, 1));
 					append(args, exp_atom_int(sql->sa, *sc->dim->stop));
-
-					append(rp, exp_op(sql->sa, args, sql_bind_func_(sql->sa, sql->session->schema, "array_series", args)));
+	
+					append(rp, exp_op(sql->sa, args, sql_bind_func_(sql->sa, sql->session->schema, "array_series", exps_subtype(args))));
 				}
 			}
 			res = rel_table(sql, DDL_CREATE_TABLE, sname, t, temp);
-			return rel_insert(sql, res, rel_project(sql->sa, res, rp));
+			return rel_insert(sql, res, rel_project(sql->sa, NULL, rp));
 		}
 	} else { /* [col name list] as subquery with or without data */
 		/* TODO: handle create_array_as_subquery??? */
