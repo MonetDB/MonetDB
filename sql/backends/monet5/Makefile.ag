@@ -47,7 +47,7 @@ lib__sql = {
 		sql_result.mx \
 		sql_readline.c \
 		sql_emptyset.c \
-		sciql.c \
+		sciql.c
 	LIBS = ../../server/libsqlserver \
 		   ../../storage/libstore \
 		   ../../storage/bat/libbatstore \
