@@ -3642,7 +3642,7 @@ VALUES (%s, '%s', '%s', '%s',
         if Failed:
             print """\
 
- !ERROR:  Testing FAILED %s !
+ !ERROR:  Testing FAILED %s (%d out of %d tests failed)
 
 %s
  First, check the testing results in  %s  !
@@ -3653,7 +3653,7 @@ VALUES (%s, '%s', '%s', '%s',
   - approving test output by Mapprove.py (cf. Mapprove.py -?)
 
  After that, re-run Mtest.
-""" % (how, what, os.path.join(env['TSTTRGBASE'],TSTPREF,"index.html"))
+""" % (how, Failed, num_tests, what, os.path.join(env['TSTTRGBASE'],TSTPREF,"index.html"))
             sys.exit(1)
         else:
             if not quiet:

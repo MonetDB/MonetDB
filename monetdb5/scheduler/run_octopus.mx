@@ -688,7 +688,7 @@ OCTOPUSmakeSchedule(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-OCTOPUSdisconnect()
+OCTOPUSdisconnect(void)
 {
 	int i, ret;
 	str msg = MAL_SUCCEED;

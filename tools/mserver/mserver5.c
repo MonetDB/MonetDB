@@ -185,7 +185,7 @@ monet_init(opt *set, int setlen)
 	return 1;
 }
 
-static void emergencyBreakpoint(){
+static void emergencyBreakpoint(void){
 	/* just a handle to break after system initialization for GDB */
 }
 

@@ -152,7 +152,7 @@ typedef struct _wthread {
 static wthread *thds = NULL;
 
 static void
-usage()
+usage(void)
 {
 	fprintf(stderr, "stethoscope [options] +[trace options] {<mod>.<fcn>}\n");
 	fprintf(stderr, "  -d | --dbname=<database_name>\n");

@@ -366,7 +366,7 @@ void tstAligned(void)
 	    GDKfatal("Recompile with STRUCT_ALIGNED flag disabled\n");
 #endif
 }
-int mal_init(){
+int mal_init(void){
 	MT_lock_init( &mal_contextLock, "mal_contextLock");
 	MT_lock_init( &mal_remoteLock, "mal_remoteLock");
 	MT_lock_init( &mal_profileLock, "mal_profileLock");

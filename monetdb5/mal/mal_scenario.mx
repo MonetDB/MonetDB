@@ -218,7 +218,7 @@ Currently each user can define a new scenario, provided we have a free slot.
 Scenarios not hardwired can always be dropped.
 @c
 Scenario
-getFreeScenario()
+getFreeScenario(void)
 {
 	int i;
 	Scenario scen = NULL;

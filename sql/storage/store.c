@@ -68,7 +68,7 @@ key_cmp(sql_key *k, sqlid *id)
 
 static int stamp = 1;
 
-static int timestamp () {
+static int timestamp (void) {
 	return stamp++;
 }
 
@@ -222,7 +222,7 @@ sql_trans_destroy(sql_trans *t)
 }
 
 static void
-destroy_spare_transactions() 
+destroy_spare_transactions(void) 
 {
 	int i, s = spares;
 
@@ -1269,7 +1269,7 @@ bootstrap_create_schema(sql_trans *tr, char *name, int auth_id, int owner)
 }
 
 static int
-store_schema_number()
+store_schema_number(void)
 {
 	return schema_number;
 }

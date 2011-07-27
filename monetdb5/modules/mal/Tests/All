@@ -42,7 +42,8 @@ remote99
 
 remote10
 
-attach00
+# unlikely to work
+#attach00
 
 # this will always return something else
 #sabaoth00

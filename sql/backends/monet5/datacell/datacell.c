@@ -18,22 +18,6 @@
  */
 
 /*
- * # The contents of this file are subject to the MonetDB Public License
- * # Version 1.1 (the "License"); you may not use this file except in
- * # compliance with the License. You may obtain a copy of the License at
- * # http://www.monetdb.org/Legal/MonetDBLicense
- * #
- * # Software distributed under the License is distributed on an "AS IS"
- * # basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * # License for the specific language governing rights and limitations
- * # under the License.
- * #
- * # The Original Code is the MonetDB Database System.
- * #
- * # The Initial Developer of the Original Code is CWI.
- * # Portions created by CWI are Copyright (C) 1997-2008 CWI.
- * # All Rights Reserved.
- *
  * @f datacell
  * The interface from SQL passes through here.
  *
@@ -100,6 +84,12 @@ DCprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_table *t;
 	sql_func *f;
 	sql_trans *tr;
+
+	if (m == NULL) {
+		fprintf(stdout, "# MonetDB/DataCell module loaded\n");
+		fflush(stdout); /* make merovingian see this *now* */
+		return MAL_SUCCEED;
+	}
 
 	s = mvc_bind_schema(m, schema_default);
 	if (s == NULL)
