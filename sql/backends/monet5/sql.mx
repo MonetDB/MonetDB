@@ -4237,10 +4237,10 @@ SQLstr_cast_(str *res, mvc *m, int eclass, int d, int s, int has_tz, ptr p, int 
 	} else {
 		str v = (str)p; 
 		strLength(&sz, v);
-		if (len == 0 || sz <= len) 
+		if (len == 0 || (sz >= 0 && sz <= len)) 
 			r = GDKstrdup(v);
 	}
-	if (len > 0 && sz > len) {
+	if ((len > 0 && sz > len) || sz < 0) {
 		if (r) 
 			GDKfree(r);
 		if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), p) != 0) {
