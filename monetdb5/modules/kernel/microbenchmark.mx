@@ -353,7 +353,7 @@ The M5 wrapper code
 
 str
 MBMrandom(int *ret, oid *base, int *size, int *domain){
-	BAT *bn;
+	BAT *bn = NULL;
 	
 	BATrandom(&bn, base, size, domain);
 	if( bn ){
@@ -365,7 +365,7 @@ MBMrandom(int *ret, oid *base, int *size, int *domain){
 
 str
 MBMuniform(int *ret, oid *base, int *size, int *domain){
-	BAT *bn;
+	BAT *bn = NULL;
 	
 	BATuniform(&bn, base, size, domain);
 	if( bn ){
@@ -377,7 +377,7 @@ MBMuniform(int *ret, oid *base, int *size, int *domain){
 
 str
 MBMnormal(int *ret, oid *base, int *size, int *domain, int *stddev, int *mean){
-	BAT *bn;
+	BAT *bn = NULL;
 	BATnormal(&bn, base, size, domain, stddev, mean);
 	if( bn ){
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
@@ -419,7 +419,7 @@ MBMmix(int *bn, int *batid)
 
 str
 MBMskewed(int *ret, oid *base, int *size, int *domain, int *skew){
-	BAT *bn;
+	BAT *bn = NULL;
 	
 	BATskewed(&bn, base, size, domain, skew);
 	if( bn ){

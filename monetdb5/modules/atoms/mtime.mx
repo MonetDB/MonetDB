@@ -458,7 +458,7 @@ address MTIMEdate_add_month_interval_wrap
 comment "Add months to a date";
 
 @-
-#command int(d:date):int = MTIMEdate_2in;
+#command int(d:date):int = MTIMEdate_2int;
 #command int(d:daytime):int = MTIMEdaytime_2int;
 #command lng(d:timestamp):int = MTIMEtimestamp_2lng;
 #command lng(d:timezone):lng = MTIMEtzone_2lng;
