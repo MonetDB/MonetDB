@@ -4321,6 +4321,159 @@ rel_find_range(int *changes, mvc *sql, sql_rel *rel)
 	return rel;
 }
 
+/* 
+ * Casting decimal values on both sides of a compare expression is expensive,
+ * both in preformance (cpu cost) and memory requirements (need for large 
+ * types). 
+ */
+
+static int
+reduce_scale(atom *a)
+{
+	if (a->data.vtype == TYPE_lng) {
+		lng v = a->data.val.lval;
+		int i = 0;
+
+		while( (v/10)*10 == v ) {
+			i++;
+			v /= 10;
+		}
+		a->data.val.lval = v;
+		return i;
+	}
+	if (a->data.vtype == TYPE_int) {
+		int v = a->data.val.ival;
+		int i = 0;
+
+		while( (v/10)*10 == v ) {
+			i++;
+			v /= 10;
+		}
+		a->data.val.lval = v;
+		return i;
+	}
+	if (a->data.vtype == TYPE_sht) {
+		sht v = a->data.val.shval;
+		int i = 0;
+
+		while( (v/10)*10 == v ) {
+			i++;
+			v /= 10;
+		}
+		a->data.val.lval = v;
+		return i;
+	}
+	return 0;
+}
+
+static sql_rel *
+rel_project_reduce_casts(int *changes, mvc *sql, sql_rel *rel) 
+{
+	if (is_project(rel->op) && list_length(rel->exps)) {
+		list *exps = rel->exps;
+		node *n;
+
+		for (n=exps->h; n; n = n->next) {
+			sql_exp *e = n->data;
+
+			if (e && e->type == e_func) {
+				sql_subfunc *f = e->f;
+
+				if (!f->func->s && !strcmp(f->func->base.name, "sql_mul") && f->res.scale > 0) {
+					list *args = e->l;
+					sql_exp *h = args->h->data;
+					sql_exp *t = args->t->data;
+					atom *a;
+
+					if ((is_atom(h->type) && (a = exp_value(h, sql->args, sql->argc)) != NULL) ||
+					    (is_atom(t->type) && (a = exp_value(t, sql->args, sql->argc)) != NULL)) {
+						int rs = reduce_scale(a);
+
+						f->res.scale -= rs; 
+						(*changes)++;
+					}
+				}
+			}
+		}
+	}
+	return rel;
+}
+
+static sql_rel *
+rel_reduce_casts(int *changes, mvc *sql, sql_rel *rel) 
+{
+	*changes = 0; 
+
+	(void)sql;
+	if ((is_join(rel->op) || is_semi(rel->op) || is_select(rel->op)) && 
+			rel->exps && list_length(rel->exps)) {
+		list *exps = rel->exps;
+		node *n;
+
+		for (n=exps->h; n; n = n->next) {
+			sql_exp *e = n->data;
+			sql_exp *le = e->l;
+			sql_exp *re = e->r;
+	
+			/* handle the and's in the or lists */
+			if (e->type != e_cmp || 
+			   (e->flag != cmp_lt && e->flag != cmp_gt)) 
+				continue;
+			/* rewrite e if left or right is cast */
+			if (le->type == e_convert || re->type == e_convert) {
+				sql_rel *l = rel->l, *r = rel->r;
+
+				/* if convert on left then find
+				 * mul or div on right which increased
+				 * scale!
+				 *
+				 * TODO handle select case
+				 */
+				(void)l;
+				if (le->type == e_convert && re->type == e_column && r && is_project(r->op)) {
+					sql_exp *nre = rel_find_exp(r, re);
+					sql_subtype *tt = exp_totype(le);
+					sql_subtype *ft = exp_fromtype(le);
+
+					if (nre && nre->type == e_func) {
+						sql_subfunc *f = nre->f;
+
+						if (!f->func->s && !strcmp(f->func->base.name, "sql_mul")) {
+							list *args = nre->l;
+							sql_exp *ce = args->t->data;
+							sql_subtype *fst = exp_subtype(args->h->data);
+							atom *a;
+
+							if (fst->scale == ft->scale &&
+							   (a = exp_value(ce, sql->args, sql->argc)) != NULL) {
+								lng v = 1;
+								/* multiply with smallest value, then scale and (round) */
+								int scale = tt->scale - ft->scale;
+								int rs = reduce_scale(a);
+
+								scale -= rs;
+
+								args = new_exp_list(sql->sa);
+								while(scale > 0) {
+									scale--;
+									v *= 10;
+								}
+								append(args, re);
+								append(args, exp_atom_lng(sql->sa, v));
+								f = find_func(sql, "scale_down", args);
+								nre = exp_op(sql->sa, args, f);
+								e = exp_compare(sql->sa, le->l, nre, e->flag);
+							}
+						}
+					}
+				}
+			}
+			n->data = e;	
+		}
+	}
+	return rel;
+}
+
 static int
 is_identity( sql_exp *e, sql_rel *r)
 {
@@ -4620,8 +4773,12 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 
 	if (gp.cnt[op_join] || 
 	    gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || 
-	    gp.cnt[op_select]) 
+	    gp.cnt[op_semi] || gp.cnt[op_anti] ||
+	    gp.cnt[op_select]) {
 		rel = rewrite(sql, rel, &rel_find_range, &changes);
+		rel = rel_project_reduce_casts(&changes, sql, rel);
+		rel = rewrite(sql, rel, &rel_reduce_casts, &changes);
+	}
 
 	if (gp.cnt[op_union]) {
 		rel = rewrite(sql, rel, &rel_merge_union, &changes); 
