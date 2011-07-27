@@ -33,7 +33,7 @@ Over..
 % sys. # table_name
 % ifthenelse_isnull_=_i # name
 % char # type
-% 0 # length
+% 23 # length
 [ "base table"	]
 [ "system table"	]
 [ "view"	]

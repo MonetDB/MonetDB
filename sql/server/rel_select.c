@@ -3526,6 +3526,8 @@ rel_case(mvc *sql, sql_rel **rel, int token, symbol *opt_cond, dlist *when_searc
 		res = rel_nop_(sql, cond, result, res, NULL, NULL, "ifthenelse", 0);
 		if (!res) 
 			return NULL;
+		/* ugh overwrite res type */
+		((sql_subfunc*)res->f)->res = *restype;
 	}
 	return res;
 }
