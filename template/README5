@@ -10,7 +10,7 @@ Prerequisites
 Before compiling the "example" module, make sure you have version 4.10.3 (or
 newer) of MonetDB installed, and "monetdb-config" is reachable via your
 $PATH.
-See http://monetdb.cwi.nl/ for details.
+See http://www.monetdb.org/ for details.
 
 Further, make sure that you also have the "buildtools" installed, and
 "autogen.py", "Mx" and "mel" are reachable via your $PATH.

@@ -22,7 +22,7 @@ PREREQUISITES
   DBI
   MonetDB::CLI
 
-  MonetDB (http://monetdb.cwi.nl)
+  MonetDB (http://www.monetdb.org/)
 
 INSTALLATION
 
