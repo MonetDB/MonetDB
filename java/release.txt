@@ -6,7 +6,7 @@ Release date: 2011-06-06
 
 
 This JDBC driver is designed for use with MonetDB, a main-memory
-database.  For more information see http://monetdb.cwi.nl/.
+database.  For more information see http://www.monetdb.org/.
 
 Within the current implementation not all functionalities of the JDBC
 interface are available.  It is believed, however, that this

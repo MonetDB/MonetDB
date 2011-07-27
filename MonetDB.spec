@@ -26,7 +26,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
-URL: http://monetdb.cwi.nl/
+URL: http://www.monetdb.org/
 Source: http://dev.monetdb.org/downloads/sources/Apr2011-SP2/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
