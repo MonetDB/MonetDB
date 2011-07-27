@@ -1361,7 +1361,7 @@ void initProfiler(MalBlkPtr mb)
 }
 
 lng
-getDiskWrites()
+getDiskWrites(void)
 {
 #ifdef HAVE_SYS_RESOURCE_H
 	struct rusage infoUsage;
@@ -1373,7 +1373,7 @@ getDiskWrites()
 }
 
 lng
-getDiskReads()
+getDiskReads(void)
 {
 #ifdef HAVE_SYS_RESOURCE_H
 	struct rusage infoUsage;
@@ -1385,7 +1385,7 @@ getDiskReads()
 }
 
 lng
-getUserTime()
+getUserTime(void)
 {
 #ifdef HAVE_TIMES
 	struct tms newTms;
@@ -1397,7 +1397,7 @@ getUserTime()
 }
 
 lng
-getSystemTime()
+getSystemTime(void)
 {
 #ifdef HAVE_TIMES
 	struct tms newTms;
@@ -1409,7 +1409,7 @@ getSystemTime()
 }
 
 lng
-getDiskSpace()
+getDiskSpace(void)
 {
 	BAT *b;
 	int i;

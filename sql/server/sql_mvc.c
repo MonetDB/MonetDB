@@ -114,7 +114,7 @@ mvc_init(char *dbname, int debug, store_type store, backend_stack stk)
 }
 
 void
-mvc_exit()
+mvc_exit(void)
 {
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_exit\n");
@@ -124,13 +124,13 @@ mvc_exit()
 }
 
 void
-mvc_logmanager()
+mvc_logmanager(void)
 {
 	store_manager();
 }
 
 void
-mvc_minmaxmanager()
+mvc_minmaxmanager(void)
 {
 	minmax_manager();
 }

@@ -132,7 +132,7 @@ typedef struct{
 } AGGRtask;
 
 static void
-GROUPinit(){
+GROUPinit(void){
 	if( ! groupinitialized) {
         MT_lock_init(&grouplock,"group lock");
         groupinitialized= 1;

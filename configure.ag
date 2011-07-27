@@ -564,6 +564,7 @@ yes-*-*)
 	X_CFLAGS="$X_CFLAGS -Wmissing-declarations"
 	X_CFLAGS="$X_CFLAGS -Wmissing-format-attribute"
 	X_CFLAGS="$X_CFLAGS -Wmissing-prototypes"
+	X_CFLAGS="$X_CFLAGS -Wold-style-definition"
 	X_CFLAGS="$X_CFLAGS -Wpacked"
 	X_CFLAGS="$X_CFLAGS -Wunknown-pragmas"
 	case "$CC-$gcc_ver" in
@@ -632,7 +633,6 @@ yes-*-*)
 	dnl X_CFLAGS="$X_CFLAGS -Winline"
 	dnl X_CFLAGS="$X_CFLAGS -Wmissing-noreturn"
 	dnl X_CFLAGS="$X_CFLAGS -Wnested-externs"
-	dnl X_CFLAGS="$X_CFLAGS -Wold-style-definition"
 	dnl X_CFLAGS="$X_CFLAGS -Wpadded"
 	dnl X_CFLAGS="$X_CFLAGS -Wredundant-decls"
 	dnl X_CFLAGS="$X_CFLAGS -Wshadow"

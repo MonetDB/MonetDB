@@ -270,7 +270,7 @@ STAT_create(str hnme, str tnme, int ht, int tt)
 }
 
 static void
-STATcommit()
+STATcommit(void)
 {
 	bat b[10];
 
@@ -288,7 +288,7 @@ STATcommit()
 }
 
 static void
-STATinit()
+STATinit(void)
 {
 	if( STAT_id_inuse) 
 		return;
@@ -345,7 +345,7 @@ STATinit()
 }
 
 static void
-STATexit()
+STATexit(void)
 {
 	if(STAT_id_inuse ==0) return;
 	mal_set_lock(mal_contextLock, "statistics");

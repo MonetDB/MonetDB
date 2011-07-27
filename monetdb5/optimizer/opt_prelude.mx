@@ -460,7 +460,7 @@ int tubProp;
 int horiginProp;		/* original oid source */
 int toriginProp;		/* original oid source */
 
-void optimizerInit(){
+void optimizerInit(void){
 	if(batRef == NULL){
 		affectedRowsRef = putName("affectedRows",12);
 		aggrRef = putName("aggr",4);

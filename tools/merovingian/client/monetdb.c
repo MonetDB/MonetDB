@@ -170,7 +170,7 @@ command_help(int argc, char *argv[])
 }
 
 static void
-command_version()
+command_version(void)
 {
 	printf("MonetDB Database Server Toolkit v%s (%s)\n",
 			TOOLKIT_VERSION, MONETDB_RELEASE);
