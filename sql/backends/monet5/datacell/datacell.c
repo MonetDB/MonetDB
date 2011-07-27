@@ -101,6 +101,12 @@ DCprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_func *f;
 	sql_trans *tr;
 
+	if (m == NULL) {
+		fprintf(stdout, "# MonetDB/DataCell module loaded\n");
+		fflush(stdout); /* make merovingian see this *now* */
+		return MAL_SUCCEED;
+	}
+
 	s = mvc_bind_schema(m, schema_default);
 	if (s == NULL)
 		throw(SQL, "datacell.prelude", "Schema missing");
