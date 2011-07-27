@@ -114,7 +114,6 @@ else
 	dft_optimi=no
 	dft_develop=no
 fi
-dft_warning=no
 
 dnl small hack to get icc -no-gcc, done here because AC_PROG_CC shouldn't
 dnl set GCC=yes if we use icc.
@@ -957,12 +956,6 @@ AC_ARG_ENABLE(optimize,
 	enable_optim=$enableval,
 	enable_optim=def_$dft_optimi)
 
-AC_ARG_ENABLE(warning,
-	AS_HELP_STRING([--enable-warning],
-		[enable extended compiler warnings (default=$dft_warning)]),
-	enable_warning=$enableval,
-	enable_warning=def_$dft_warning)
-
 need_profiling=no
 AC_ARG_ENABLE(profile,
 	AS_HELP_STRING([--enable-profile], [enable profiling (default=no)]),
@@ -1034,7 +1027,6 @@ case "x$enable_debug.$enable_optim.$enable_prof.$enable_instrument" in
 esac
 # make defaults real for flags which don't conflict with anything
 enable_assert="`echo $enable_assert | sed 's:^def_::'`"
-enable_warning="`echo $enable_warning | sed 's:^def_::'`"
 
 AC_MSG_CHECKING([for --enable-debug])
 if test "x$enable_debug" = xyes; then
@@ -1243,25 +1235,6 @@ if test "x$enable_optim" = xyes; then
 	done
 	changedCFLAGS="`echo $changedCFLAGS | sed -e 's|^, ||'`"
 	AC_MSG_RESULT([yes: $changedCFLAGS])
-else
-	AC_MSG_RESULT([no])
-fi
-
-AC_MSG_CHECKING([for --enable-warning])
-if test "x$enable_warning" = xyes; then
-	dnl  Basically, we disable/overule X_CFLAGS, i.e., "-Werror" and some "-Wno-*".
-	dnl  All warnings should be on by default (see above).
-	case $GCC-$host_os in
-		yes-*)
-		dnl  GNU (gcc/g++)
-		X_CFLAGS="-pedantic -Wno-long-long"
-		;;
-		-linux*)
-		dnl  Intel ([ie]cc/[ie]cpc on Linux)
-		X_CFLAGS=""
-		;;
-	esac
-	AC_MSG_RESULT([yes: ${X_CFLAGS}])
 else
 	AC_MSG_RESULT([no])
 fi
