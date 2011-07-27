@@ -147,7 +147,7 @@ monet_hello(void)
 #endif
 	printf("# Copyright (c) 1993-July 2008 CWI.\n");
 	printf("# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved\n");
-	printf("# Visit http://monetdb.cwi.nl/ for further information\n");
+	printf("# Visit http://www.monetdb.org/ for further information\n");
 }
 
 str

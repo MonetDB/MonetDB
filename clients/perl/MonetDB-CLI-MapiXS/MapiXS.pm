@@ -45,8 +45,7 @@ All Rights Reserved.
 
 =head2 MonetDB
 
-  Homepage    : http://monetdb.cwi.nl
-  SourceForge : http://sourceforge.net/projects/monetdb
+  Homepage    : http://www.monetdb.org/
 
 =head2 Perl modules
 

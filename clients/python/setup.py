@@ -33,7 +33,7 @@ program.
 ''',
       author='MonetDB BV',
       author_email='info@monetdb.org',
-      url='http://monetdb.cwi.nl/',
+      url='http://www.monetdb.org/',
       packages=['monetdb', 'monetdb.sql'],
       download_url='<will be filled in before a release>/python-monetdb-11.3.8.tar.gz',
      )

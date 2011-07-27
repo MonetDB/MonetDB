@@ -46,7 +46,7 @@ monet_version(void)
 		printf("This is an unreleased version\n");
 	printf("Copyright (c) 1993-July 2008 CWI\n"
 			"Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved\n");
-	printf("Visit http://monetdb.cwi.nl/ for further information\n");
+	printf("Visit http://www.monetdb.org/ for further information\n");
 #ifdef WIN32
 	/* Detection of cpus is fine on windows, but multithreading doesn't
 	 * work, so it's forced to 1.  Don't suggest we misdetect #cpus.

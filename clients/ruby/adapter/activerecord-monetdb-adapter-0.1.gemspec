@@ -6,7 +6,7 @@ Gem::Specification.new do |s|
    s.authors = ["G Modena"]
    s.email = %q{gm@cwi.nl}
    s.summary = %q{ActiveRecord Connector for MonetDB}
-   s.homepage = %q{http://monetdb.cwi.nl/}
+   s.homepage = %q{http://www.monetdb.org/}
    s.description = %q{ActiveRecord Connector for MonetDB built on top of the pure Ruby database driver}
    s.files = [ "lib/active_record/connection_adapters/monetdb_adapter.rb" ]
    s.has_rdoc = true
