@@ -2478,8 +2478,16 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 			return rel_lastexp(sql, *rel);
 		return NULL;
 	}
-	default:
-		return sql_error(sql, 02, "Predicate %s %d: time to implement some more", token2string(sc->token), sc->token);
+	default: {
+		sql_exp *re, *le = rel_value_exp(sql, rel, sc, f, ek);
+
+		if (!le)
+			return NULL;
+		re = exp_atom_bool(sql->sa, 1);
+		if (rel_convert_types(sql, &le, &re, 1, type_equal) < 0) 
+			return NULL;
+		return rel_binop_(sql, le, re, NULL, "=", 0);
+	}
 	}
 }
 
