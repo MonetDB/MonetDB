@@ -25,7 +25,7 @@ Summary: MonetDB - Monet Database Management System
 Vendor: MonetDB BV <info@monetdb.org>
 
 Group: Applications/Databases
-License: MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://monetdb.cwi.nl/
 Source: http://dev.monetdb.org/downloads/sources/Apr2011-SP2/%{name}-%{version}.tar.bz2
 
