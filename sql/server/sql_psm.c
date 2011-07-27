@@ -435,6 +435,7 @@ result_type(mvc *sql, char *fname, symbol *res, int instantiate )
 		return &res->data.lval->h->data.typeval;
 	} else if (res->token == SQL_TABLE) {
 		/* here we create a new table-type */
+		sql_schema *sys = find_sql_schema(sql->session->tr, "sys");
 		sql_subtype *t = SA_NEW(sql->sa, sql_subtype);
 		sql_table *tbl;
 		char *tnme = NEW_ARRAY(char, strlen(fname) + 2);
@@ -442,14 +443,15 @@ result_type(mvc *sql, char *fname, symbol *res, int instantiate )
 		tnme[0] = '#';
 		strcpy(tnme+1, fname);
 		if (instantiate) {
-			tbl = mvc_bind_table(sql, sql->session->schema, tnme);
+
+			tbl = mvc_bind_table(sql, sys, tnme);
 			_DELETE(tnme);
 			if (!tbl)
 				return NULL;
 		} else {
 			dnode *n = res->data.lval->h;
 
-			tbl = mvc_create_generated(sql, sql->session->schema, tnme, NULL, 1 /* system ?*/);
+			tbl = mvc_create_generated(sql, sys, tnme, NULL, 1 /* system ?*/);
 			for(;n; n = n->next->next) {
 				sql_subtype *ct = &n->next->data.typeval;
 		    		mvc_create_column(sql, tbl, n->data.sval, ct);
@@ -592,7 +594,7 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 				if (instantiate) {
 					return b;
 				} else if (create) {
-					f = mvc_create_func(sql, sql->session->schema, fname, l, restype, is_aggr, "user", q, q, is_func);
+					f = mvc_create_func(sql, s, fname, l, restype, is_aggr, "user", q, q, is_func);
 					if (b) {
 						id_col_l = stmt_list_dependencies(sql->sa, b, COLUMN_DEPENDENCY);
 						id_func_l = stmt_list_dependencies(sql->sa, b, FUNC_DEPENDENCY);
@@ -613,7 +615,7 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 
 				sql->params = NULL;
 				if (create) {
-					sql_func *f = mvc_create_func(sql, sql->session->schema, fname, l, restype, is_aggr, fmod, fnme, q, is_func);
+					sql_func *f = mvc_create_func(sql, s, fname, l, restype, is_aggr, fmod, fnme, q, is_func);
 					if (!backend_resolve_function(sql, f)) 
 						return sql_error(sql, 01, "CREATE %s: external name %s.%s not bound", F, fmod, fnme);
 				} else if (!sf) {
