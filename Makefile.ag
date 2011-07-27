@@ -27,4 +27,4 @@ SUBDIRS = buildtools common clients \
 EXTRA_DIST = bootstrap configure configure.ac configure.ag libversions \
 			 MonetDB.spec rpm.mk.in COPYING README license.txt HowToStart.rst
 
-EXTRA_DIST_DIR = NT debian template
+EXTRA_DIST_DIR = NT debian

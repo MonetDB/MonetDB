@@ -346,7 +346,7 @@ ALARMalarm(int t, str *action)
 #endif
 
 str
-ALARMprelude()
+ALARMprelude(void)
 {
 #ifdef SIGALRM
 	(void) signal(SIGALRM, (void (*)()) CLKsignal);
@@ -355,7 +355,7 @@ ALARMprelude()
 }
 
 str
-ALARMepilogue()
+ALARMepilogue(void)
 {
 	int k;
 

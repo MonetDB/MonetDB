@@ -151,7 +151,7 @@ short idCharacter[256];
 short idCharacter2[256];
 
 void 
-initParser()
+initParser(void)
 {
 	int i;
 

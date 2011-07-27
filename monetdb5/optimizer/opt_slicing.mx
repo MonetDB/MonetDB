@@ -94,7 +94,7 @@ OPTfindPeer(str uri)
     return -1;
 }
 /* Look for and add a peer with uri in the registry.  Return index in registry */
-int
+static int
 OPTgetPeer(str uri)
 {
 	int i;
@@ -119,7 +119,7 @@ OPTgetPeer(str uri)
 
 /* Clean function registry of non-active peers */
 
-void OPTcleanFunReg(int i)
+static void OPTcleanFunReg(int i)
 {	
 	Registry r, q;
 	mal_set_lock(mal_contextLock,"slicing.cleanFunReg");
@@ -134,7 +134,7 @@ void OPTcleanFunReg(int i)
 	}
 }
 
-str
+static str
 OPTdiscover(Client cntxt)
 {
 	bat bid = 0;

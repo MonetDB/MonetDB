@@ -68,7 +68,7 @@
 
 
 static void
-usage()
+usage(void)
 {
 	fprintf(stderr, "mnc [options] destination port\n");
 	fprintf(stderr, "  -l | --listen   listen for connection instead\n");

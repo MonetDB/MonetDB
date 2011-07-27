@@ -306,7 +306,7 @@ static int plantId = 1;
 mal_export Plant newPlant(MalBlkPtr mb);
 
 int
-factoryHasFreeSpace(){
+factoryHasFreeSpace(void){
 	return lastPlant <MAXPLANTS-1;
 }
 static int

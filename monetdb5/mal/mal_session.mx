@@ -68,7 +68,7 @@ mal_export int MALcommentsOnly(MalBlkPtr mb);
 #include <gdk.h>	/* for opendir and friends */
 
 int
-malBootstrap()
+malBootstrap(void)
 {
 	Client c;
 	str bootfile = "mal_init", s;

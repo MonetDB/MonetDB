@@ -128,7 +128,7 @@ static void expandNamespace(int incr){
 #endif
 
 }
-void initNamespace() {
+void initNamespace(void) {
 	namespace.nme= (str *) GDKzalloc(sizeof(str *) * MAXIDENTIFIERS);
 	namespace.link= (int *) GDKzalloc(sizeof(int) * MAXIDENTIFIERS);
 	namespace.hit= (int *) GDKzalloc(sizeof(int) * MAXIDENTIFIERS);
@@ -161,7 +161,7 @@ void initNamespace() {
 	backup.nmetop= 256; /* hash overflow */
 #endif
 }
-void finishNamespace() {
+void finishNamespace(void) {
 	int i;
 	for(i=0;i<namespace.nmetop; i++) {
 		if( namespace.nme[i]) 

@@ -15,7 +15,7 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-# This loads the MonetDB/SQL module
+# This loads the MonetDB/DataCell module
 include opt_datacell;
 include datacell;
 include basket;

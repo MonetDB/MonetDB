@@ -105,3 +105,4 @@ command errors():bat[:str,:bat]
 address BSKTtableerrors
 comment "Inspect the erroneous events";
 
+datacell.prelude();
