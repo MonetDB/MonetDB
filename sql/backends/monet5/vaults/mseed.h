@@ -86,6 +86,7 @@
 
 vault_export str MseedImport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 vault_export str MseedLoadSQL(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+vault_export str MseedLoad(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #define _MSEED_DEBUG_
 
