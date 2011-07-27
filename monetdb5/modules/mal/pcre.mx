@@ -248,7 +248,7 @@ typedef struct RE {
 } RE;
 
 #ifndef HAVE_STRCASESTR
-char *
+static char *
 strcasestr (char *haystack, char *needle)
 {
 	char *p, *startn = 0, *np = 0;
