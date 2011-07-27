@@ -43,7 +43,7 @@ Over..
 % int,	timestamp,	int # type
 % 1,	26,	1 # length
 #select * from datacell.basket_X();
-% datacell.basket_x,	datacell.basket_x,	datacell.basket_x # table_name
+% .,	.,	. # table_name
 % id,	tag,	payload # name
 % int,	timestamp,	int # type
 % 1,	26,	1 # length
@@ -67,7 +67,7 @@ Over..
 % int,	timestamp,	int # type
 % 1,	26,	1 # length
 #select * from schema_2817.function_2817();
-% schema_2817.table_2817,	schema_2817.table_2817,	schema_2817.table_2817 # table_name
+% .,	.,	. # table_name
 % id,	tag,	payload # name
 % int,	timestamp,	int # type
 % 1,	26,	1 # length

@@ -532,7 +532,8 @@ int yydebug=1;
 %left <operation> '='
 %left <operation> '&' '|' '^' LEFT_SHIFT RIGHT_SHIFT
 %left <operation> '+' '-'
-%left <operation> '*' '/' '%' 
+%left <operation> '*'
+%left <operation> '/' '%' 
 %left <operation> SUBSTRING CONCATSTRING POSITION
 %right UMINUS
 
@@ -4019,7 +4020,7 @@ literal:
 		  }
 		}
  |  INTNUM
-		{ char *s = strip_extra_zeros(sa_strdup(SA, $1));
+		{ char *s = $1;
 		  char *dot = strchr(s, '.');
 		  int digits = _strlen(s) - 1;
 		  int scale = digits - (int) (dot-s);
