@@ -884,7 +884,6 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 	         ((temp == SQL_MERGE_TABLE)?tt_merge_table:
 			  ((temp == SQL_ARRAY)? tt_array:tt_table));
 	char *t_a = (tt == tt_array)?"ARRAY":"TABLE";
-	/* TODO: compute 'fixed' somewhere somehow */
 
 	(void)create;
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
@@ -930,7 +929,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 		temp = (tt == tt_table || tt == tt_array)?temp:SQL_PERSIST;
 		/* For unbounded arrays we don't immediately create the columns */
 		if ((tt == tt_table) || (tt == tt_array && !t->fixed)) {
-			/* TODO: is DDL_CREATE_TABLE sufficient for arrays? */
+			/* TODO: DDL_CREATE_TABLE looks sufficient for arrays for now */
 			return rel_table(sql, DDL_CREATE_TABLE, sname, t, temp);
 		} else { /* For fixed arrays, we immediately create and fill in BATs
 					for dimensions with dimension values, and for non-dim.
@@ -938,23 +937,77 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 			sql_rel *res = NULL;
 			list *rp = new_exp_list(sql->sa);
 			node *col = NULL;
+			int i = 0, j = 0, cnt = 0, *N, *M;
+			lng cntall = 1;
 
 			assert(tt == tt_array && t->fixed);
 
-			for (col = t->columns.set->h; col; col = col->next){
+			N = GDKmalloc(sizeof(lng) * t->ndims);
+			M = GDKmalloc(sizeof(lng) * t->ndims);
+			if(!N || !M) {
+				if(N) GDKfree(N);
+				if(M) GDKfree(M);
+				return sql_error(sql, 02, "CREATE ARRAY: failed to allocate space");
+			}
+			for(i = 0; i < t->ndims; i++) N[i] = M[i] = 1;
+
+			for (col = t->columns.set->h, i = 0; col; col = col->next){
+				sql_column *sc = (sql_column *) col->data;
+				if (sc->dim){
+					cnt = (*sc->dim->stop - *sc->dim->start) / *sc->dim->step;
+					for (j = 0; j < i; j++) N[j] = N[j] * cnt;
+					for (j = t->ndims; j > i; j--) M[j] = M[j] * cnt;
+					cntall *= cnt;
+					i++;
+				}
+			}
+			if (i != t->ndims) {
+				GDKfree(N); GDKfree(M);
+				return sql_error(sql, 02, "CREATE ARRAY: expected number of dimension columns (%d) does not match actual numbre of dimension columns (%d)", t->ndims, i);
+			}
+
+			/* Create columns for the dimentional attributes */
+			for (col = t->columns.set->h, i = 0; col; col = col->next){
 				sql_column *sc = (sql_column *) col->data;
 				list *args = new_exp_list(sql->sa);
 				if (sc->dim){
 					append(args, exp_atom_lng(sql->sa, *sc->dim->start));
 					append(args, exp_atom_lng(sql->sa, *sc->dim->step));
 					append(args, exp_atom_lng(sql->sa, *sc->dim->stop));
-					/* TODO: compute the 'N' and 'M' */
-					append(args, exp_atom_int(sql->sa, 1));
-					append(args, exp_atom_int(sql->sa, *sc->dim->stop));
-	
+					append(args, exp_atom_int(sql->sa, N[i]));
+					append(args, exp_atom_int(sql->sa, M[i]));
 					append(rp, exp_op(sql->sa, args, sql_bind_func_(sql->sa, sql->session->schema, "array_series", exps_subtype(args))));
+					i++;
 				}
 			}
+			if (i != t->ndims) {
+				GDKfree(N); GDKfree(M);
+				return sql_error(sql, 02, "CREATE ARRAY: expected number of dimension columns (%d) does not match actual numbre of dimension columns (%d)", t->ndims, i);
+			}
+
+			/* Create columns for the non-dimentional attributes */
+			for (col = t->columns.set->h, i = 0; col; col = col->next){
+				sql_column *sc = (sql_column *) col->data;
+				list *args = new_exp_list(sql->sa);
+				if (!sc->dim){
+					sql_exp *e = NULL;
+
+					if (sc->def) {
+						char *q = sql_message("select %s;", sc->def);
+						e = rel_parse_val(sql, q, sql->emode);
+						_DELETE(q);
+						if (!e || (e = rel_check_type(sql, &sc->type, e, type_equal)) == NULL)
+							return NULL;
+					} else {
+						atom *a = atom_general(sql->sa, &sc->type, NULL);
+						e = exp_atom(sql->sa, a);
+					}
+					append(args, exp_atom_lng(sql->sa, cntall));
+					append(args, e);
+					append(rp, exp_op(sql->sa, args, sql_bind_func_(sql->sa, sql->session->schema, "array_filler", exps_subtype(args))));
+				}
+			}
+
 			res = rel_table(sql, DDL_CREATE_TABLE, sname, t, temp);
 			return rel_insert(sql, res, rel_project(sql->sa, NULL, rp));
 		}

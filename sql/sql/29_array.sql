@@ -30,20 +30,20 @@ create function array_series("start" bigint, step bigint, stop bigint, N integer
 create function array_series("start" float, step float, stop float, N integer, M integer) returns table (dim float)
 	external name "array".series;
 
-create function array_filler(cnt oid, val integer) returns table (vals integer)
+create function array_filler(cnt bigint, val integer) returns table (vals integer)
 	external name "array".filler;
-create function array_filler(cnt oid, val bigint) returns table (vals bigint)
+create function array_filler(cnt bigint, val bigint) returns table (vals bigint)
 	external name "array".filler;
-create function array_filler(cnt oid, val float) returns table (vals float)
+create function array_filler(cnt bigint, val float) returns table (vals float)
 	external name "array".filler;
-create function array_filler(cnt oid, val date) returns table (vals date)
+create function array_filler(cnt bigint, val date) returns table (vals date)
 	external name "array".filler;
-create function array_filler(cnt oid, val time) returns table (vals time)
+create function array_filler(cnt bigint, val time) returns table (vals time)
 	external name "array".filler;
-create function array_filler(cnt oid, val timestamp) returns table (vals timestamp)
+create function array_filler(cnt bigint, val timestamp) returns table (vals timestamp)
 	external name "array".filler;
-create function array_filler(cnt oid, val char(1024)) returns table (vals char(1024))
+create function array_filler(cnt bigint, val char(1024)) returns table (vals char(1024))
 	external name "array".filler;
-create function array_filler(cnt oid, val varchar(1024)) returns table (vals varchar(1024))
+create function array_filler(cnt bigint, val varchar(1024)) returns table (vals varchar(1024))
 	external name "array".filler;
 
