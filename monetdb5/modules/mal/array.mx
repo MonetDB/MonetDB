@@ -153,6 +153,7 @@ It can be used to create an embedding of values from one array into another.";
 #endif
 
 array_export str ARRAYisFixed(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+array_export str ARRAYisUnbounded(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 array_export str ARRAYgetDimensions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 array_export str ARRAYproduct(int *ret, int *bid, int *rid);
 array_export str ARRAYfiller_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
