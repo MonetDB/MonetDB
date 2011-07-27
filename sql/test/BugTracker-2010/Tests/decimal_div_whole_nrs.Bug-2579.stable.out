@@ -28,8 +28,8 @@ Over..
 % . # table_name
 % sql_div_single_value # name
 % decimal # type
-% 4 # length
-[ 0.5	]
+% 7 # length
+[ 0.500	]
 
 # 17:32:31 >  
 # 17:32:31 >  Done.

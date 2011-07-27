@@ -915,7 +915,7 @@ SERVERclient(int *res, stream **In, stream **Out)
 }
 
 void
-SERVERexit(){
+SERVERexit(void){
 	int ret;
 	SERVERstop(&ret);
 	/* remove any port identity file */

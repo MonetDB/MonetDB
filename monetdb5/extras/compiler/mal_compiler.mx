@@ -777,7 +777,7 @@ mccGenerate(Client cntxt, MalBlkPtr mb, str alias)
 Dump the code produced in the standard output for ease of testing
 @c
 static void
-mccDump(){
+mccDump(void){
 	FILE *f;
 	int ch;
 	f= fopen(codefile,"r");

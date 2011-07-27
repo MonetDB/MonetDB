@@ -1557,7 +1557,7 @@ mdbDump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	printStack(cntxt->fdout,mb,stk);
 }
 static int mdbSessionActive;
-int mdbSession(){
+int mdbSession(void){
 	return mdbSessionActive;
 }
 @-

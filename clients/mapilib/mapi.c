@@ -1274,7 +1274,7 @@ mapi_get_autocommit(Mapi mid)
 }
 
 static long
-usec()
+usec(void)
 {
 #ifdef HAVE_GETTIMEOFDAY
 	struct timeval tp;

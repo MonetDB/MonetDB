@@ -331,7 +331,7 @@ we exit the server. This does not involve the libraries themselves,
 because they may still be in use.
 @c
 void
-unloadLibraries()
+unloadLibraries(void)
 {
 	int i;
 
@@ -376,7 +376,7 @@ isPreloaded(str nme)
 }
 
 void
-initLibraries()
+initLibraries(void)
 {
 	int i;
 	str msg;

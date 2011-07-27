@@ -2969,7 +2969,7 @@ str MTIME@1_max_no_nil(@1 *ret, @1 *v, @1 *w)
 static BAT *timezones = NULL;
 
 str
-MTIMEprelude()
+MTIMEprelude(void)
 {
 	char *msg = NULL;
 	Box box;
@@ -3037,7 +3037,7 @@ MTIMEprelude()
 
 
 str
-MTIMEepilogue()
+MTIMEepilogue(void)
 {
 	closeBox("time", 0);
 	return MAL_SUCCEED;

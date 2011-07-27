@@ -89,7 +89,7 @@ QOT_create(str hnme, str tnme, int ht, int tt)
 	return b;
 }
 
-static void QOTstatisticsInit(){
+static void QOTstatisticsInit(void){
 	oid o=0;
 	int i;
 
@@ -187,7 +187,7 @@ QOTupdateStatistics(str nme, int actions, lng val)
 }
 
 void
-QOTstatisticsExit()
+QOTstatisticsExit(void)
 {
 	bat names[5];
 

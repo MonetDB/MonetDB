@@ -283,14 +283,14 @@ timerEnd(void)
 
 static timertype th = 0;
 static void
-timerHumanStop()
+timerHumanStop(void)
 {
 	th = gettime();
 }
 
 static char htimbuf[32];
 static char *
-timerHuman()
+timerHuman(void)
 {
 	timertype t = th - t0;
 

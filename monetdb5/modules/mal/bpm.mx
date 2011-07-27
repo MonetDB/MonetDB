@@ -730,7 +730,7 @@ BAT rings.
 @c
 static Partition *bpmcatbase = 0;
 
-static void assureSpace(){
+static void assureSpace(void){
 	if( BBPlimit >bpmcatsize){
 		Partition *new;
 		mal_set_lock(mal_contextLock, "bpm");
@@ -892,7 +892,7 @@ of BATs.
 @c
 
 static str
-BPMloadCatalog(){
+BPMloadCatalog(void){
 	int i,k,tp,vi;
 	bat idx;
 	BAT *b, *pb;
@@ -978,7 +978,7 @@ BPMloadCatalog(){
 }
 
 str
-BPMopen()
+BPMopen(void)
 {
 	if(bpmcat) {
 		assureSpace();

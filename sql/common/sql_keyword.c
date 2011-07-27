@@ -86,7 +86,7 @@ keyword_exists(char *text)
 }
 
 void
-keyword_init()
+keyword_init(void)
 {
 	int i;
 
@@ -99,7 +99,7 @@ keyword_init()
 }
 
 void
-keyword_exit()
+keyword_exit(void)
 {
 	int i;
 

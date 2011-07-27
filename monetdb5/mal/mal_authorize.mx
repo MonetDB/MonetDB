@@ -159,7 +159,7 @@ AUTHrequireAdminOrUser(Client *c, str *username) {
 }
 
 static void
-AUTHcommit()
+AUTHcommit(void)
 {
 	bat blist[3];
 
@@ -181,7 +181,7 @@ administrator account is added.  Initialising the authorization tables
 can only be done after the GDK kernel has been initialized.
 @c
 str
-AUTHinitTables() {
+AUTHinitTables(void) {
 	bat bid;
 	BAT *b;
 	int isNew = 1;

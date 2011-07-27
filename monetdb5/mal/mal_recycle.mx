@@ -323,7 +323,7 @@ void RECYCLEinitQPat(int sz)
 	}
 }
 
-static void extendQPat()
+static void extendQPat(void)
 {
 	int s, i;
 	QryStatPtr *old;
@@ -446,7 +446,7 @@ The recycle statistics can be kept in the performance table
 associated with the recycle MAL block without problems, because 
 the block is never executed.
 @c
-static void RECYCLEspace()
+static void RECYCLEspace(void)
 {
 	if (recycleBlk == NULL) {
 		recycleBlk = newMalBlk(MAXVARS, STMT_INCREMENT);
