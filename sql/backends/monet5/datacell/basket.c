@@ -56,20 +56,19 @@ static MT_Lock bsktLock;
 #define lockBSKTbasketCatalog() mal_set_lock(bsktLock, "basket");
 #define unlockBSKTbasketCatalog() mal_unset_lock(bsktLock, "basket");
 
-/*
- * @-
- * We have to obtain the precise wall-clock time
+/* We have to obtain the precise wall-clock time
  * This is not produced by GDKusec, which returns microseconds
  * since the start of the program.
  * Notice that this routine consumes noticable time.
- * lng usec(void)
- * {
- * 	struct timeval tp;
- *
- * 	gettimeofday(&tp, NULL);
- * 	return ((lng)tp.tv_sec) * LL_CONSTANT(1000000) + (lng)tp.tv_usec;
- * }
  */
+lng usec(void)
+{
+	struct timeval tp;
+
+	gettimeofday(&tp, NULL);
+	return ((lng)tp.tv_sec) * LL_CONSTANT(1000000) + (lng)tp.tv_usec;
+}
+
 
 /* assume BUFSIZ buffer space */
 void
