@@ -27,3 +27,4 @@ UDF_in_schema.Bug-2817
 with-scope.Bug-2058
 blob-update-crash.Bug-2832
 select_value_insert_into.Bug-2845
+recursive_case.Bug-2838
