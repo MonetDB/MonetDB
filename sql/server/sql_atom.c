@@ -24,7 +24,7 @@
 
 static int atom_debug = 0;
 
-atom *
+static atom *
 atom_create( sql_allocator *sa )
 {
 	atom *a;
@@ -35,7 +35,7 @@ atom_create( sql_allocator *sa )
 	return a;
 }
 
-ValPtr
+static ValPtr
 SA_VALcopy(sql_allocator *sa, ValPtr d, ValPtr s)
 {
 	if (!ATOMextern(s->vtype)) {

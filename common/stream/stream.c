@@ -1661,7 +1661,7 @@ udp_create(const char *name)
 	return s;
 }
 
-int
+static int
 udp_socket(udp_stream * udp, char *hostname, int port, int write)
 {
 	struct sockaddr *serv;

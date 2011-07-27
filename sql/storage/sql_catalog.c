@@ -219,7 +219,7 @@ find_sql_schema(sql_trans *t, char *sname)
 	return NULL;
 }
 
-node *
+static node *
 find_sqlname(list *l, char *name)
 {
 	if (l) {

@@ -1394,7 +1394,7 @@ TABLETcollect_parts(Tablet * as, BUN offset)
 	return bats;
 }
 
-void
+static void
 sync_bats(Tablet * as)
 {
 	unsigned int i;
@@ -2187,7 +2187,7 @@ tablet_load(BAT **bats, BAT *names, BAT *seps, BAT *types, str datafile, int *N)
 		*bats = TABLETload(&as, datafile);
 }
 
-void
+static void
 tablet_dump(BAT *names, BAT *seps, BAT *bats, str datafile, int *nr)
 {
 	TABLETdump(names, seps, bats, datafile, *nr);

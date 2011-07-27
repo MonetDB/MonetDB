@@ -304,7 +304,7 @@ They are recognized by an estimated zero row count and they
 are not the target of an update.
 @c
 
-int
+static int
 OPTemptySetImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	char *empty;

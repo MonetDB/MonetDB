@@ -465,6 +465,8 @@ command mapNxt() :bat[:int,:int]
 address BPMmapnxt;
 command mapPrv() :bat[:int,:int] 
 address BPMmapprv;
+command mapCnt() :bat[:int,:int] 
+address BPMmapcnt;
 command mapTlowLng() :bat[:int,:lng] 
 address BPMmaptlowlng;
 command mapTlowDbl() :bat[:int,:dbl] 
@@ -587,6 +589,7 @@ bpm_export str BPMmapbid(int *ret);
 bpm_export str BPMmapalias(int *ret);
 bpm_export str BPMmapnxt(int *ret);
 bpm_export str BPMmapprv(int *ret);
+bpm_export str BPMmapcnt(int *ret);
 bpm_export str BPMmaptlowlng(int *ret);
 bpm_export str BPMmaptlowdbl(int *ret);
 bpm_export str BPMmapthghlng(int *ret);
@@ -888,7 +891,7 @@ of BATs.
 	@:getPartitionBound(@1,@2,bhd,thgh,dbl)@
 @c
 
-str
+static str
 BPMloadCatalog(){
 	int i,k,tp,vi;
 	bat idx;
@@ -1397,7 +1400,7 @@ BPMemptySet(int *ret, bat *bid)
 	return MAL_SUCCEED;
 }
 
-int BPMpiecesCnt(bat bid){
+static int BPMpiecesCnt(bat bid){
 	int i,cnt=0;
 	Partition ps;
 	if( (ps= getAlias(bid)) == 0)
@@ -2901,7 +2904,7 @@ BPMmap@1(int *ret)
 @:bpmView(prv,int)@
 @:bpmView(cnt,int)@
 
-int nilval(ValPtr v)
+static int nilval(ValPtr v)
 {
 	int tpe; 
 	int (*cmp) (ptr, ptr);
@@ -3070,7 +3073,7 @@ BPMsaveCatalog(int *r)
 
 
 
-void findQuantHisto(ValPtr vp, BAT * b, lng sp, lng msz, lng maxno)
+static void findQuantHisto(ValPtr vp, BAT * b, lng sp, lng msz, lng maxno)
 {
 	BUN p, pprev, stop; 
 	BUN c;

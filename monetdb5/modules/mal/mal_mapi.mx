@@ -626,7 +626,7 @@ error:
  * hostname address is used, to make the info usable for servers outside
  * localhost.
  */
-void SERVERannounce(struct in_addr addr, int port, str usockfile) {
+static void SERVERannounce(struct in_addr addr, int port, str usockfile) {
 	str buf;
 	str host = NULL;
 
@@ -991,7 +991,7 @@ static int sessionkey=0;
 
 /* #define MAPI_TEST*/
 
-str
+static str
 SERVERconnectAll(Client cntxt, int *key, str *host, int *port, str *username, str *password, str *lang)
 {
 	Mapi mid;
@@ -1567,7 +1567,7 @@ mapi.rpc(key,"query")
 The generic scheme for handling a remote MAL
 procedure call with a single row answer.
 @c
-void SERVERfieldAnalysis(str fld, int tpe, ValPtr v){
+static void SERVERfieldAnalysis(str fld, int tpe, ValPtr v){
 	v->vtype= tpe;
 	switch(tpe){
 	case TYPE_void:

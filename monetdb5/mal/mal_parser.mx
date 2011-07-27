@@ -197,7 +197,7 @@ idLength(Client cntxt)
 @-
 Simple type identifiers can not be marked with a type variable.
 @c
-int 
+static int 
 typeidLength(Client cntxt)
 {
 	int l;
@@ -645,7 +645,7 @@ scope.
 Additional information, such as a repetition factor,
 encoding tables, or type dependency should be modelled as properties.
 @c
-int 
+static int 
 typeAlias(Client cntxt, int tpe)
 {
 	int t;
@@ -667,7 +667,7 @@ typeAlias(Client cntxt, int tpe)
 The simple type analysis currently assumes a proper type identifier.
 We should change getTypeIndex to return a failure instead.
 @c
-int 
+static int 
 simpleTypeId(Client cntxt)
 {
 	int l, tpe;
@@ -689,7 +689,7 @@ simpleTypeId(Client cntxt)
 	return tpe;
 }
 
-int 
+static int 
 parseTypeId(Client cntxt, int defaultType)
 {   
 	int i = TYPE_any, ht, tt, kh = 0, kt = 0;
@@ -843,7 +843,7 @@ for updates by concurrent users.
 @-
 An atom statement does not introduce a new module.
 @c
-str 
+static str 
 parseAtom(Client cntxt) 
 {
 	str modnme = 0;
@@ -867,7 +867,7 @@ parseAtom(Client cntxt)
 	return "";
 }
 
-str parseLibrary(Client cntxt) 
+static str parseLibrary(Client cntxt) 
 {
 	str libnme = 0,s;
 	int l;
@@ -895,7 +895,7 @@ It might be handy to clone a module.
 It gets a copy of all functions known
 at the point of creation.
 @c
-str parseModule(Client cntxt) 
+static str parseModule(Client cntxt) 
 {
 	str modnme = 0,parent;
 	int l;
@@ -939,7 +939,7 @@ are ensured that any possible signature definition will be known
 afterwards. The effect is that errors in the include sequence are
 marked as warnings.
 @c
-str
+static str
 parseInclude(Client cntxt)
 {
 	str modnme = 0,s;
@@ -1275,7 +1275,7 @@ help information.
 		parseError(cntxt,"';' expected\n");
 	skipToEnd(cntxt);
 @c
-MalBlkPtr parseCommandPattern(Client cntxt, int kind){
+static MalBlkPtr parseCommandPattern(Client cntxt, int kind){
 	MalBlkPtr curBlk = 0;
 	Symbol curPrg = 0;
 	InstrPtr curInstr=0;
@@ -1350,7 +1350,7 @@ This scheme is intended for just-in-time compilation.
 	return curBlk;
 }
 
-MalBlkPtr parseFunction(Client cntxt, int kind){
+static MalBlkPtr parseFunction(Client cntxt, int kind){
 	MalBlkPtr curBlk = 0;
 	Symbol curPrg = 0;
 	InstrPtr curInstr=0;
@@ -1390,7 +1390,7 @@ The routine below checks for misalignment of the closing statements.
 Any instruction parsed after the function block is considered an
 error.
 @c
-int parseEnd(Client cntxt)
+static int parseEnd(Client cntxt)
 {   MalBlkPtr curBlk = 0;
 	Symbol curPrg = 0;
 	int l,showit=0;
@@ -1470,7 +1470,7 @@ if ((varid = findVariableLength(curBlk, CURRENT(cntxt), l)) == -1){
 	advance(cntxt,l); 
 @-
 @c
-void 
+static void 
 parseAssign(Client cntxt, int cntrl) 
 {   
 	InstrPtr curInstr;

@@ -307,6 +307,7 @@ newBox(str name)
 
 }
 
+#if 0
 static void
 freeBox(Client cntxt, int i){
 		if (malbox[i] && malbox[i]->val) {
@@ -326,6 +327,7 @@ freeBoxes(Client cntxt)
 	for (i = 0; i < topbox;  i++)
 		freeBox(cntxt, i);
 }
+#endif
 
 Box
 findBox(str name)

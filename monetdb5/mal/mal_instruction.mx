@@ -619,7 +619,7 @@ and guesses the size of variable and statement table.
 Experience shows that trimming leads to memory fragmentation (140K lost
 after server init) and is therefore turned off.
 */
-void
+static void
 trimexpand(MalBlkPtr mb, int varsize, int stmtsize)
 {
 	VarRecord **v;
@@ -1060,6 +1060,7 @@ Although MAL has been designed as a minimal language, several
 identifiers are not eligible as variables. The encoding below
 is geared at simple and speed.
 */
+#if 0
 int
 isReserved(str nme)
 {
@@ -1127,6 +1128,7 @@ isReserved(str nme)
 	}
 	return 0;
 }
+#endif
 
 /*
 Beware, the symbol table structure assumes that it is relatively

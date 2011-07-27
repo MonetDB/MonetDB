@@ -117,7 +117,7 @@ sql_bind_arg(mvc *sql, int nr)
 	return NULL;
 }
 
-void
+static void
 sql_convert_arg(mvc *sql, int nr, sql_subtype *rt)
 {
 	atom *a = sql_bind_arg(sql, nr);
@@ -448,7 +448,7 @@ fix_scale(mvc *sql, sql_subtype *ct, stmt *s, int both, int always)
  * This is only done to be able to map more cached queries onto the same 
  * interface.
  */
-stmt *
+static stmt *
 inplace_convert(mvc *sql, sql_subtype *ct, stmt *s)
 {
 	atom *a;

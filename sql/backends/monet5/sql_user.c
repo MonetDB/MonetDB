@@ -32,6 +32,7 @@
 #include "bat5.h"
 #include "mal_authorize.h"
 
+#if 0
 int
 sql_find_auth_schema(mvc *m, str auth)
 {
@@ -54,7 +55,7 @@ sql_find_auth_schema(mvc *m, str auth)
 	}
 	return res;
 }
-
+#endif
 
 static int
 monet5_drop_user(ptr _mvc, str user)
@@ -390,7 +391,7 @@ monet5_rename_user(ptr _mvc, str olduser, str newuser)
 	return(TRUE);
 }
 
-void*
+static void*
 monet5_schema_user_dependencies(ptr _trans, int schema_id)
 {
 	rids *A, *U;

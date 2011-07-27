@@ -542,7 +542,7 @@ and much less expensive as reserving debugger space in each instruction.
 @c
 mdbStateRecord mdbTable[MAL_MAXCLIENTS];
 
-char
+static char
 isBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
 {
 	int i, j;
@@ -666,7 +666,7 @@ mdbShowBreakpoints(Client cntxt)
 		mnstr_printf(cntxt->fdout, "breakpoint on '%s'\n", mdb->brkRequest[i]);
 }
 
-void
+static void
 mdbClrBreakpoint(Client cntxt, int pc)
 {
 	int i, j = 0;
@@ -1566,6 +1566,7 @@ as underlying types not being aligned with what is expected
 at the MAL level. Since such tests can be quite expensive
 it should be used with care.
 @c
+#if 0
 void
 mdbSanityCheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 {
@@ -1601,6 +1602,7 @@ mdbSanityCheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		}
 	}
 }
+#endif
 
 static Client trapped_cntxt;
 static MalBlkPtr trapped_mb;

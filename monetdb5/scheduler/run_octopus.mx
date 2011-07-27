@@ -200,7 +200,7 @@ OCTOPUSgetPeer(str uri)
 
 /* Clean function registry of non-active peers */
 
-void OCTOPUScleanFunReg(int i)
+static void OCTOPUScleanFunReg(int i)
 {	
 	Registry r, q;
 	r = peers[i].nxt;

@@ -131,7 +131,7 @@ point for the modules to be added later.
 Module mal_scope;    /* the root of the tree */
 Module scopeJump[256][256];  /* to speedup access to correct scope */
 
-void newSubScope(Module scope){
+static void newSubScope(Module scope){
 	int len = (MAXSCOPE)*sizeof(Module);
 	scope->subscope = (Symbol *) GDKzalloc(len);
 }
@@ -144,7 +144,7 @@ table to find the correct one. This simple scheme safes about
 100ms/100K calls
 @c
 
-void clrModuleJump(str nme, Module cur){
+static void clrModuleJump(str nme, Module cur){
 		if( scopeJump[(int)(*nme)][(int)(*(nme+1))]== cur)
 			scopeJump[(int)(*nme)][(int)(*(nme+1))]= cur->sibling;
 }
@@ -166,6 +166,7 @@ Module newModule(Module scope, str nme){
 	} 
 	return cur;
 }
+#if 0
 Module cpyModule(Module scope){
 	Module nxt= NULL;
 	Module cur;
@@ -179,6 +180,7 @@ Module cpyModule(Module scope){
 	cur->outer = nxt;
 	return cur;
 }
+#endif
 @-
 The scope can be fixed. This is used by the parser to avoid creation of
 a string structure when possible. Subsequently we can
@@ -225,7 +227,7 @@ The final action of the system is to remove all
 instructions and procedures. This forcefull action
 helps in localization of memory leakages.
 @c
-void freeSubScope(Module scope){
+static void freeSubScope(Module scope){
 	int i;
 	if(scope->subscope==0) return;
 	for(i=0;i<MAXSCOPE;i++)
@@ -488,7 +490,7 @@ int displayModule(stream *f, Module v, str fcn, int listing){
 }
 @- Utilities
 @c
-void  printModuleScope(stream *fd, Module scope, int tab, int outer)
+static void  printModuleScope(stream *fd, Module scope, int tab, int outer)
 {
 	int j;
 	Module s=scope;
@@ -549,14 +551,16 @@ void dumpManualHeader(stream *f){
 void dumpManualFooter(stream *f){
 	mnstr_printf(f,"</manual>\n");
 }
-int cmpModName(Module *f, Module *l){
+static int cmpModName(Module *f, Module *l){
 	return strcmp((*f)->name, (*l)->name);
 }
+#if 0
 int cmpFcnName(InstrPtr f, InstrPtr l){
 	if(getFunctionId(f) && getFunctionId(l))
 		return strcmp(getFunctionId(f), getFunctionId(l));
 	return 0;
 }
+#endif
 void dumpManual(stream *f, Module s, int recursive){
 	int j;
 	Symbol t;
@@ -842,7 +846,7 @@ void dumpManualHelp(stream *f, Module s, int recursive){
 Summarize the type resolution table.
 @c
 
-void showModuleStat(stream *f, Module v,int cnt[256]){
+static void showModuleStat(stream *f, Module v,int cnt[256]){
 	int sigs=0,i,max=0,m;
 	Symbol s;
 	int c[256];
@@ -878,7 +882,7 @@ void showModuleStatistics(stream *f,Module s){
 Some primitives to aid online help and completions.
 Note that pattern matching is on string prefix.
 @c
-int tstDuplicate(char **msg, char *s){
+static int tstDuplicate(char **msg, char *s){
 	int i;
 	size_t len;
 	len= strlen(s);

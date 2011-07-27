@@ -78,7 +78,7 @@ the opportunity to perform the select push through.
 @c
 #include "monetdb_config.h"
 #include "opt_heuristics.h"
-int
+static int
 SPcombi000(MalBlkPtr mb, int pc1, int pc2)
 {
 	InstrPtr p, q;
@@ -103,7 +103,7 @@ SPcombi000(MalBlkPtr mb, int pc1, int pc2)
 	return 0;
 }
 
-int
+static int
 SPsqueezer000(MalBlkPtr mb, int pc1, int pc2)
 {
 	InstrPtr p, q;

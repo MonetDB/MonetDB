@@ -939,7 +939,7 @@ RECYCLEsync(InstrPtr p)
 }
 #endif
 
-bit
+static bit
 VALisNil(ValPtr p)
 {
 
@@ -1460,7 +1460,7 @@ pureOverlap(rngPtr p, rngPtr q)
 
 }
 
-void copyRange(rngPtr t, rngPtr s)
+static void copyRange(rngPtr t, rngPtr s)
 {
 	VALcopy(&t->low, &s->low);
 	VALcopy(&t->hgh, &s->hgh);
@@ -1495,7 +1495,7 @@ findPieces(rngPtr qry, int bid, int *pcs)
 }
 
 
-double
+static double
 intLen(ValPtr l, ValPtr h)
 {
 	double len;
@@ -1529,7 +1529,7 @@ intLen(ValPtr l, ValPtr h)
     return (len >= 0? len : -len);
 }
 
-void
+static void
 VALadd(ValPtr y, ValPtr v, dbl x)
 {
 	
@@ -1564,7 +1564,7 @@ VALadd(ValPtr y, ValPtr v, dbl x)
 /* given bat piece of n tuples with value range (l,h)
 estimate the number of tuples in the range (sl,sh) */
 
-size_t sizeEst(size_t n, ValPtr l, ValPtr h, ValPtr sl, ValPtr sh)
+static size_t sizeEst(size_t n, ValPtr l, ValPtr h, ValPtr sl, ValPtr sh)
 {
 	double len, slen;
 

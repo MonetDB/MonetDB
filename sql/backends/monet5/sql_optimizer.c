@@ -152,6 +152,7 @@
 
 #define TOSMALL 10
 
+#if 0
 str
 FXoptimizer(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -269,6 +270,7 @@ FXoptimizer(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 	return MAL_SUCCEED;
 }
+#endif
 /*
  * @-
  * Cost-based optimization and semantic evaluations require statistics to work with.

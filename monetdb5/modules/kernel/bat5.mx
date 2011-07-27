@@ -732,14 +732,14 @@ CMDnew(BAT **ret, int *ht, int *tt, BUN *cap)
 	return (*ret) ? GDK_SUCCEED : GDK_FAIL;
 }
 
-int
+static int
 CMDattach(BAT **ret, int *tt, str heapfile)
 {
 	*ret = BATattach(*tt, heapfile);
 	return *ret ? GDK_SUCCEED : GDK_FAIL;
 }
 
-int
+static int
 CMDdensebat(BAT **ret, wrd *size)
 {
 	BAT *b;
@@ -760,7 +760,7 @@ CMDdensebat(BAT **ret, wrd *size)
 	return GDK_SUCCEED;
 }
 
-int
+static int
 CMDreverse(BAT **ret, BAT *b)
 {
 	*ret = BATmirror(b);
@@ -768,7 +768,7 @@ CMDreverse(BAT **ret, BAT *b)
 	return GDK_SUCCEED;
 }
 
-int
+static int
 CMDmirror(BAT **ret, BAT *b)
 {
 	BAT *v = *ret = VIEWcombine(b);
@@ -780,228 +780,10 @@ CMDmirror(BAT **ret, BAT *b)
 	return (*ret) ? GDK_SUCCEED : GDK_FAIL;
 }
 
-int
-CMDrevert(BAT **ret, BAT *b)
-{
-	if (BATrevert(*ret = b) == NULL)
-		return GDK_FAIL;
-	BBPfix(b->batCacheid);
-	return GDK_SUCCEED;
-}
-
-int
-CMDorder(BAT **ret, BAT *b)
-{
-	if (BATorder(*ret = b) == NULL)
-		return GDK_FAIL;
-	BBPfix(b->batCacheid);
-	return GDK_SUCCEED;
-}
-
-int
-CMDorder_rev(BAT **ret, BAT *b)
-{
-	if (BATorder_rev(*ret = b) == NULL)
-		return GDK_FAIL;
-	BBPfix(b->batCacheid);
-	return GDK_SUCCEED;
-}
-
-int
-CMDsorder(BAT **ret, BAT *b)
-{
-	if (BATsorder(*ret = b) == NULL)
-		return GDK_FAIL;
-	BBPfix(b->batCacheid);
-	return GDK_SUCCEED;
-}
-
-int
-CMDsorder_rev(BAT **ret, BAT *b)
-{
-	if (BATsorder_rev(*ret = b) == NULL)
-		return GDK_FAIL;
-	BBPfix(b->batCacheid);
-	return GDK_SUCCEED;
-}
-
-int
-CMDinsert_bun(BAT **r, BAT *b, ptr h, ptr t)
-{
-	if (BUNins(*r = b, @:batconvert(b,h)@, @:batconvert(b,t)@,FALSE) == NULL)
-		return GDK_FAIL;
-	BBPfix(b->batCacheid);
-	return GDK_SUCCEED;
-}
-
-int
-CMDinsert_bat(BAT **r, BAT *b, BAT *s)
-{
-	if (BATins(*r = b, s, FALSE) == NULL)
-		return GDK_FAIL;
-	BBPfix(b->batCacheid);
-	return GDK_SUCCEED;
-}
-
-int
-CMDreplace_bun(BAT **r, BAT *b, ptr h, ptr t)
-{
-	if (BUNreplace(*r = b, @:batconvert(b,h)@, @:batconvert(b,t)@, 0) == NULL)
-		return GDK_FAIL;
-	BBPfix(b->batCacheid);
-	return GDK_SUCCEED;
-}
-
-int
-CMDreplace_bat(BAT **r, BAT *b, BAT *s)
-{
-	if (BATreplace(*r = b, s, 0) == NULL)
-		return GDK_FAIL;
-	BBPfix(b->batCacheid);
-	return GDK_SUCCEED;
-}
-
-int
-CMDreplace_bun_force(BAT **r, BAT *b, ptr h, ptr t, bit *force)
-{
-	if (BUNreplace(*r = b, @:batconvert(b,h)@, @:batconvert(b,t)@, *force) == NULL)
-		return GDK_FAIL;
-	BBPfix(b->batCacheid);
-	return GDK_SUCCEED;
-}
-
-int
-CMDreplace_bat_force(BAT **r, BAT *b, BAT *s, bit *force)
-{
-	if (BATreplace(*r = b, s, *force) == NULL)
-		return GDK_FAIL;
-	BBPfix(b->batCacheid);
-	return GDK_SUCCEED;
-}
-
-int
-CMDdelete_bun(BAT **r, BAT *b, ptr h, ptr t)
-{
-	if (BUNdel(*r = b, h, t, FALSE) == NULL)
-		return GDK_FAIL;
-	BBPfix(b->batCacheid);
-	return GDK_SUCCEED;
-}
-
-int
-CMDdelete_head(BAT **r, BAT *b, ptr h)
-{
-	if (BUNdelHead(*r = b, @:batconvert(b,h)@, FALSE) == NULL)
-		return GDK_FAIL;
-	BBPfix(b->batCacheid);
-	return GDK_SUCCEED;
-}
-
-int
-CMDdelete_all(BAT **r, BAT *b)
-{
-	if (BATclear(*r = b) == NULL)
-		return GDK_FAIL;
-	BBPfix(b->batCacheid);
-	return GDK_SUCCEED;
-}
-
-int
-CMDdelete_bat_bun(BAT **r, BAT *b, BAT *s)
-{
-	if (BATdel(*r = b, s, FALSE) == NULL)
-		return GDK_FAIL;
-	BBPfix(b->batCacheid);
-	return GDK_SUCCEED;
-}
-
-int
-CMDdelete_bat_head(BAT **r, BAT *b, BAT *s)
-{
-	if (BATdelHead(*r = b, s, FALSE) == NULL)
-		return GDK_FAIL;
-	BBPfix(b->batCacheid);
-	return GDK_SUCCEED;
-}
-
-
 @-
 The next collection of operators fill a hole in the MonetDB kernel libraries.
 It provide handy operations on void-BATs.
 @c
-int
-bun_inplace(BAT **res, BAT *b, oid *id, ptr val )
-{
-	int ret = void_inplace(b,*id,val,FALSE);
-	*res = b;
-	BBPfix(b->batCacheid);
-	return ret;
-}
-
-int
-bun_inplace_force(BAT **res, BAT *b, oid *id, ptr val, bit *force )
-{
-	int ret = void_inplace(b,*id,val,*force);
-	*res = b;
-	BBPfix(b->batCacheid);
-	return ret;
-}
-
-int
-bat_inplace(BAT **res, BAT *o, BAT *d)
-{
-	*res = o;
-	if (void_replace_bat(o, d, FALSE) == BUN_NONE)
-		return GDK_FAIL;
-	BBPfix(o->batCacheid);
-	return GDK_SUCCEED;
-}
-
-int
-bat_inplace_force(BAT **res, BAT *o, BAT *d, bit *force)
-{
-	*res = o;
-	if (void_replace_bat(o, d, *force) == BUN_NONE)
-		return GDK_FAIL;
-	BBPfix(o->batCacheid);
-	return GDK_SUCCEED;
-}
-
-int
-BATappend_force(BAT **res, BAT *i, BAT *u, bit *force)
-{
-	if (!BATappend(i, u, *force))
-		return GDK_FAIL;
-	*res = i;
-	BBPfix(i->batCacheid);
-	return GDK_SUCCEED;
-}
-
-int
-BATappend_wrap(BAT **res, BAT *i, BAT *u)
-{
-	bit force = FALSE;
-	return BATappend_force(res, i, u, &force);
-}
-
-int
-BUNappend_force(BAT **res, BAT *i, ptr t, bit *force)
-{
-	*res = BUNappend(i, @:batconvert(i,t)@, *force);
-	if (*res) {
-		BBPfix((*res)->batCacheid);
-		return GDK_SUCCEED;
-	}
-	return GDK_FAIL;
-}
-
-int
-BUNappend_wrap(BAT **res, BAT *i, ptr t)
-{
-	bit force = FALSE;
-	return BUNappend_force(res, i, t, &force);
-}
-
 static BAT *
 lock_desc(bat bid)
 {
@@ -1015,7 +797,7 @@ unlock_desc(bat bid)
 	BBPunfix(bid);
 }
 
-int
+static int
 CMDcapacity(lng *res, int *bid)
 {
 	if (BBPcheck((bat) *bid, "CMDcapacity")) {
@@ -1031,7 +813,7 @@ CMDcapacity(lng *res, int *bid)
 	return GDK_SUCCEED;
 }
 
-int
+static int
 CMDhead(str *res, int *bid)
 {
 	if (BBPcheck((bat) *bid, "CMDhead")) {
@@ -1049,35 +831,7 @@ CMDhead(str *res, int *bid)
 	return GDK_SUCCEED;
 }
 
-int
-CMDhead_bat(str *res, BAT *b)
-{
-	return CMDhead(res, &b->batCacheid);
-}
-
-int
-CMDhtype(int *res, int *bid)
-{
-	int ret = int_nil;
-	if (BBPcheck((bat) *bid, "CMDhtype")) {
-		BAT *b = lock_desc((bat) *bid);
-		if (b) {
-			ret = *bid > 0 ? b->htype : b->ttype;
-		}
-		unlock_desc(*bid);
-	} *res = ret;
-	return GDK_SUCCEED;
-	
-}
-
-int
-CMDhtype_bat(int *res, BAT *b)
-{
-	*res = b->htype; 
-	return GDK_SUCCEED;
-}
-
-int
+static int
 CMDtail(str *res, int *bid)
 {
 	if (BBPcheck((bat) *bid, "CMDtail")) {
@@ -1095,98 +849,14 @@ CMDtail(str *res, int *bid)
 	return GDK_SUCCEED;
 }
 
-int
-CMDtail_bat(str *res, BAT *b)
-{
-	return CMDtail(res, &b->batCacheid);
-}
-
-int
-CMDttype(int *res, int *bid)
-{
-	int ret = int_nil;
-	if (BBPcheck((bat) *bid, "CMDttype")) {
-		BAT *b = lock_desc((bat) *bid);
-		if (b) {
-			ret = *bid > 0 ? b->ttype : b->htype;
-		}
-		unlock_desc(*bid);
-	} *res = ret;
-	return GDK_SUCCEED;
-}
-
-int
-CMDttype_bat(int *res, BAT *b)
-{
-	*res = b->ttype; 
-	return GDK_SUCCEED;
-}
-
-
-
-int
-CMDsetkey(BAT **result, BAT *input, bit *param)
-{
-	BATkey(*result = input, *param ? BOUND2BTRUE : FALSE);
-	BBPfix(input->batCacheid);
-	return GDK_SUCCEED;
-}
-
-int
-CMDsetset(BAT **result, BAT *input, bit *param)
-{
-	BATset(*result = input, *param ? BOUND2BTRUE : FALSE);
-	BBPfix(input->batCacheid);
-	return GDK_SUCCEED;
-}
-
-int
+static int
 CMDordered(bit *result, BAT *input)
 {
 	*result = BATordered(input) ? 1 : 0;
 	return GDK_SUCCEED;
 }
 
-int
-CMDchk_order(BAT **result, BAT *input)
-{
-	BATordered(input);
-	BATordered(BATmirror(input));
-	BBPfix(input->batCacheid);
-	*result = input;
-	return GDK_SUCCEED;
-}
-
-int
-CMDassert_order(BAT **result, BAT *input)
-{
-	PROPDEBUG {
-	    /* only with -d8 actually check */
-	    BATordered(BATmirror(input));
-	    if (!(BATtordered(input)&1)) {
-		GDKerror("assert_order(%s): tail was not ordered.\n", BBP_logical(input->batCacheid));
-		return GDK_FAIL;
-	    }
-	}
-
-	/* mark tail sorted */
-	if (!(BATtordered(input)&1)) {
-	    input->tsorted = GDK_SORTED;
-	    input->batDirtydesc = TRUE;
-	}
-	BBPfix(input->batCacheid);
-	*result = input;
-	return GDK_SUCCEED;
-}
-
-int
-CMDordered_rev(bit *result, BAT *input)
-{
-	*result = BATordered_rev(input) ? 1 : 0;
-	return GDK_SUCCEED;
-}
-
-int
+static int
 CMDgetkey(bit *ret, BAT *b)
 {
 	/* we must take care of the special case of a nil column (TYPE_void,seqbase=nil)
@@ -1204,15 +874,7 @@ CMDgetkey(bit *ret, BAT *b)
 	return GDK_SUCCEED;
 }
 
-int
-CMDpersists(BAT **r, BAT *input, bit *param)
-{
-	BATmode(*r = input, (*param == TRUE) ? PERSISTENT : (*param == FALSE) ? TRANSIENT : SESSION);
-	BBPfix(input->batCacheid);
-	return GDK_SUCCEED;
-}
-
-int
+static int
 CMDdestroy(bit *res, str input )
 {
 	int bid = BBPindex(input);
@@ -1231,7 +893,7 @@ CMDdestroy(bit *res, str input )
 	return GDK_SUCCEED;
 }
 
-int
+static int
 CMDsetaccess(BAT **r, BAT *input, int *param)
 {
 	bat oldCacheid = input->batCacheid;
@@ -1240,13 +902,6 @@ CMDsetaccess(BAT **r, BAT *input, int *param)
 	if ((*r)->batCacheid == oldCacheid) {
 		BBPfix(oldCacheid);
 	}
-	return GDK_SUCCEED;
-}
-
-int
-CMDgetaccess(int *r, BAT *input)
-{
-	*r = BATgetaccess(input);
 	return GDK_SUCCEED;
 }
 
@@ -1345,7 +1000,7 @@ oidtostr(oid i)
 	return bf;
 }
 
-int
+static int
 CMDinfo(BAT **retval, BAT *b)
 {
 	BAT *bn;
@@ -1524,22 +1179,9 @@ CMDbatsize(lng *tot, BAT *b, int force)
 	return GDK_SUCCEED;
 }
 
-int
-CMDbatsize_str(lng *tot, str batname, int force)
-{
-	bat bid = BBPindex(batname);
-	BAT *b = bid ? (BAT *) BBPgetdesc(bid) : NULL;
-
-	if (b == NULL) {
-		GDKerror("CMDbatsize_str: %s no such bat.\n", batname);
-		return GDK_FAIL;
-	}
-	return CMDbatsize(tot, b, force);
-}
-
 @+ Synced BATs
 @c
-int
+static int
 CMDsynced(bit *ret, BAT *b1, BAT *b2)
 {
 	*ret = ALIGNsynced(b1, b2) ? 1 : 0;
@@ -1548,23 +1190,7 @@ CMDsynced(bit *ret, BAT *b1, BAT *b2)
 
 @+ BBP Management, IO
 @c
-int
-CMDroles(BAT **r, BAT *b, str hname, str tname)
-{
-	BATroles(*r = b, hname, tname);
-	BBPfix(b->batCacheid);
-	return GDK_SUCCEED;
-}
-
-int
-CMDcol_name(BAT **r, BAT *b, str tname)
-{
-	BATcol_name(*r = b, tname);
-	BBPfix(b->batCacheid);
-	return GDK_SUCCEED;
-}
-
-int
+static int
 CMDrename(bit *retval, BAT *b, str s)
 {
 	int ret;
@@ -1595,14 +1221,7 @@ CMDrename(bit *retval, BAT *b, str s)
 	return GDK_SUCCEED;
 }
 
-int
-CMDname(str *retval, BAT *b)
-{
-	*retval = GDKstrdup(BBPname(b->batCacheid));
-	return GDK_SUCCEED;
-}
-
-int
+static int
 CMDunload(bit *res, str input)
 {
 	bat bid = ABS(BBPindex(input));
@@ -1623,32 +1242,7 @@ CMDunload(bit *res, str input)
 	return GDK_SUCCEED;
 }
 
-int
-CMDhot(str input)
-{
-	BBPhot(BBPindex(input));
-	return GDK_SUCCEED;
-}
-
-int
-CMDcold(str input)
-{
-	BBPcold(BBPindex(input));
-	return GDK_SUCCEED;
-}
-
-int
-CMDheat(int *res, str input)
-{
-	int bid = BBPindex(input);
-
-	if (bid) {
-		*res = BBP_lastused(bid) & 0x7fffffff;
-	}
-	return GDK_SUCCEED;
-}
-
-int
+static int
 CMDsave(bit *res, str input)
 {
 	bat bid = BBPindex(input);
@@ -1668,7 +1262,7 @@ CMDsave(bit *res, str input)
 }
 
 
-int
+static int
 CMDmmap(BAT **r, BAT *b, int *hbns, int *tbns, int *hhp, int *thp)
 {
 	/* == int_nil means no change */
@@ -1687,598 +1281,6 @@ CMDmmap(BAT **r, BAT *b, int *hbns, int *tbns, int *hhp, int *thp)
 	return GDK_FAIL;
 }
 
-int
-CMDmadvise(BAT **r, BAT *b, int *hbns, int *tbns, int *hhp, int *thp)
-{
-	BBPfix(b->batCacheid);
-	return BATmadvise(*r = b, (*hbns == int_nil) ? -1 : *hbns, (*tbns == int_nil) ? -1 : *tbns, (*hhp == int_nil) ? -1 : *hhp, (*thp == int_nil) ? -1 : *thp) ? GDK_FAIL : GDK_SUCCEED;
-}
-
-@+ Accelerator Control
-@c
-int
-CMDaccbuild(BAT *b, str acc )
-{
-	if (strcmp(acc, "hash") == 0 && BAThash(b,0)) {
-		return GDK_SUCCEED;
-	}
-	return GDK_FAIL;
-}
-
-int
-CMDaccdel(BAT *b, str acc)
-{
-	if (strcmp(acc, "hash") == 0)
-		HASHremove(b);
-	return GDK_SUCCEED;
-}
-
-/* ITERATIONS ARE DEFINED ELSEWHERE */
-
-
-int
-CMDget_seqbase(oid *o, BAT *b)
-{
-	*o = b->hseqbase;
-	return GDK_SUCCEED;
-}
-
-int
-CMDset_seqbase(BAT **r, BAT *b, oid *o)
-{
-	BATseqbase(*r = b, *o);
-	BBPfix(b->batCacheid);
-	return GDK_SUCCEED;
-}
-
-@+ Page-wise BAT remappings
-@T
-The XML node storage scheme of MonetDB/XQuery needs some extra kernel support. 
-
-@itemize
-@item
-  we introduce a fast way to create BATs with the VM pages in a different order
-  (to cheaply support inserting new pages halfway). 
-@item
-  for other bats, there is a new rcopy(), that copies large heaps using
-  copy-on-write memory maps. This is also done for string heaps, if they are
-  no longer double eliminated. 
-@item
-  we introduce a primitive to swizzle OIDs for such remappings between RIDs (the real
-  voids on disk) and PREs (the voids of the remapped copy).
-@item
-  we introduce 'isolate()' a primitive that executes a number of idempotent updates
-  on a bat, such that all modified logical pages have received physical page
-  copies (transparently by the MMU page faults it generates).
-@end itemize
-
-Also, we use copy-on-write maps for transaction isolation. Contrary to intuition, we 
-write into STORE_MMAP read-only master bats (overriding the read-only protection 
-with a new 'force' flag), and read only from the copy-on-write copies produced by 
-the 'remap' and 'rcopy'. These copies provide efficient shadow paging. That is, before a master bat 
-is replaced into (appends are no problem) then all live read copies (copy-on-write remaps) 
-get a 'idempotent' replace on the affected pages (a BUN replace with a value that was 
-already there), such that a shadow copy of the page is made by the OS. In this way, 
-the subsequent update in the master bat is invisible in the copy-on-write copies 
-(transaction isolation). 
-
-The shadow copying could be done with BUN-replaces but can be optimized to touch just
-one word per physical page. This is done by CMDisolate.
-
-Similarly, the swizzle computations (from physical to logical id in remapped bats)
-could be done with shifts, mask, addition and fetchjoins; it is done much faster
-using the special-purpose CMDswizzle.  
-
-other changes were:
-
-@ itemize
-@item
-  gdk_bat.mx/gdk_batop.mx: a 'force' flag in update operations that allow to update
-  read-only/append-only BATs anyway. Note that if used, another (WAL-based) recovery
-  mechanism must be used to repair BATs after a system crash!! This is a user
-  respsonability (in this case, of the MonetDB/XQuery frontend).
-@item
-  gdk_bat.mx: make a true copy of remapped/rcopied BUN heaps if the bat becomes persistent 
-  or updatable. 
-@item
-  gdk_batop.mx: optimized fetchjoin for idempotent positional joins (into a bat[void,void]
-  with equal seqbase and all tuples hitting). To keep semantics consistent, it is now
-  an error if a fetchjoin is performed with a key that is out-of-range. Everything *must* match!
-@item
-  gdk_storage.mx: batload.  To preserve the integritry of string heaps with such forced updates, 
-  the kernel zaps the internal hash table of string heaps. Note that this is only allowed if 
-  double-elimination inside the string heap is disabled (in that case the hash table is not 
-  required to be complete).  To prevent problems, the rcopy() does not do mmap-tricks for 
-  double-eliminating heaps.
-@end itemize
-
-In swizzling as well as in positional join, specific optimizations are made for
-the common case where all pages appear in order (this occurs in XML tables that have
-not yet received updates or are read-only). In this case swizzling is a no-op.
-
-For read-only tables, logical node IDs (nids) are equal to both PREs and RIDs. A 
-translation from NID to PRE (or RID) then becomes positional join onto a bat[void,void] 
-with seqbases 0@0, which is an idempotent join. This case now returns a view at
-zero cost.
-
-@- Remapped Copy
-@T
-CMDremap makes a copy of a bat, putting the logical 'pages' (REMAP_PAGE_SIZE tuples) in an 
-alternative order, specified by a map. It is optimized to use copy-on-write memory 
-mappings to make cheap copies, when possible.
-
-The result is a read-only copy of the original. As it is a true copy, in principle 
-we can replace (but nor insert/delete) BUNs in it, overriding the access restriction.
-
-Making such bats persistent or appendable/writable, will force a true copy of the 
-copy-on-write mmap heap to be made.
-@c
-static int
-copy_segment(MT_mmap_hdl *hdl, BAT *bn, BAT *b, oid src, BUN dst, BUN cnt)
-{
-	int ret = 0;
-
-	if (cnt) {
-		size_t xx = REMAP_PAGE_SIZE * Tsize(b);
-		off_t src_off = (off_t) (src * xx); /* 64bit: could overflow */
-		size_t dst_off = dst * xx;
-		size_t nbytes  = cnt * xx;
-		size_t partial = (Tloc(b,BUNlast(b)) - Tloc(b,BUNfirst(b))) - src_off;
-
-		if (!hdl) {
-			/* copy segment from master bat */
-			memcpy(Tloc(bn,BUNfirst(bn)) + dst_off, Tloc(b,BUNfirst(b)) + src_off, (partial < nbytes)?partial:nbytes);
-		} else {
-			if (MT_mmap_remap(hdl, src_off, nbytes) == (void *) -1) return 0;
-		}
-		if (partial < nbytes) {
-			/* fill a partial page with nils */
-			ptr nil = ATOMnilptr(bn->ttype);
-			BUN cur = BUNfirst(bn) + (BUN) ((dst_off + partial) >> bn->T->shift);
-			BUN end = BUNlast(bn);
-
-			for (; cur < end; cur++) {
-				Treplacevalue(bn, Tloc(bn,cur), nil);
-			}
-		}
-	}
-	ret = 1;
-bunins_failed:
-	return ret;
-}
-
-int
-CMDremap(BAT **res, BAT *b, BAT *map, bit *force)
-{
-	BATiter mapi = bat_iterator(map), bni;
-	BUN cnt = BATcount(map), n = BATcount(b);
-	BUN max = (BUN) (1 + (((ssize_t) n) - 1) / (size_t) REMAP_PAGE_SIZE);
-	int (*fix) (ptr) = BATatoms[b->ttype].atomFix;
-	int mode = (MMAP_READ|MMAP_SEQUENTIAL) | ((*force)?MMAP_WRITE:MMAP_COPY);
-	oid* pid = (oid*) alloca(cnt*sizeof(oid));
-	BUN xx, yy = 0, zz = 0;
-	char path[PATHLENGTH];
-	char *chk;
-	BUN p, q;
-	BAT *bn;
-	BATstore *bs;
-	MT_mmap_hdl hdl;
-
-   	/* try to use fast page-wise memory mapping technique on read-only mmapped [void,X] bats */ 
-	char* mmappath = (b->batRestricted != BAT_WRITE &&
-		    (b->T->heap.storage == STORE_MMAP))?path:NULL;
-
-	/* sanity check on page map */
-	if (BAThdense(map) == 0 || map->hseqbase ) {
-		GDKerror("remap: map head column must be dense and starting from 0@0.\n");
-		return GDK_FAIL;
-	}
-	if (b->ttype == TYPE_void) {
-		/* remappings on bat[void,void] are only supported in the trivial case (all pages in order) */
-		if (!BATtdense(map)) {
-			GDKerror("remap: a bat[void,void] cannot me remapped.\n");
-			return GDK_FAIL;
-		}
-		/* create another bat[void,void]. BEWARE: last page is not NIL padded!! */
-		*res = bn = BATnew(TYPE_void, TYPE_void, 10);
-		if (bn == NULL) return GDK_FAIL;
-		BATseqbase(bn, 0);
-		if (cnt) {
-			oid mpid = *(oid*) BUNtail(mapi,BUNfirst(map));
-			BATseqbase(BATmirror(bn), mpid << REMAP_PAGE_BITS);
-		}
-		BATsetcount(bn,cnt <<= REMAP_PAGE_BITS);
-		return GDK_SUCCEED;
-	}
-
-	/* chk is a bit mask to ensure that no page is requested twice */
-	chk = (char*) GDKzalloc(n = 1 + max/8);
-	if (chk == NULL) return GDK_FAIL;
-
-	/* check that the set of requested page-ids is a subset of all existing page-ids */
-	BATloop(map, p, q) {
-		oid id = *(oid*) BUNtail(mapi, p);
-		size_t idx = id >> 3;  
-		char mask = (char) (1 << (id & 7));  
-		if (id > max) {
-			GDKerror("remap: map index " OIDFMT "@0 out of range [0@0," BUNFMT "@0]\n", id, max);
-			GDKfree(chk);
-			return GDK_FAIL;
-		} else if (chk[idx] & mask) {
-			GDKerror("remap: map index " OIDFMT "@0 occurs twice.\n", id);
-			GDKfree(chk);
-			return GDK_FAIL;
-		}
-		pid[yy++] = id;
-		chk[idx] |= mask;
-	}
-	GDKfree(chk);
-
-	/* create result bat descriptor */
-	bs = BATcreatedesc(TYPE_void, b->ttype, TRUE);
-	bn = bs ? &bs->B : NULL;
-	*res = bn; 
-	bni = bat_iterator(bn);
-	if (bn == NULL) return GDK_FAIL;
-	BATinit_idents(bn);
-
-	bn->H->type = TYPE_void;
-	bn->H->varsized = 1;
-	bn->H->shift = 0;
-	bn->H->width = 0;
-	bn->H->seq = 0;
-	bn->H->nonil = 0;
-
-	bn->T->type = b->T->type;
-	bn->T->varsized = b->T->varsized;
-	bn->T->shift = b->T->shift; 
-	bn->T->width = b->T->width;
-	bn->T->seq = b->T->seq;
-
-	bn->tsorted = 0;
-	bn->tkey = 0;
-	bn->T->nonil = 0;
-	bn->batRestricted = BAT_READ;
-	n = cnt << REMAP_PAGE_BITS;
-
-	/* copy the entire tail heap (if present) */
-	if (ATOMvarsized(bn->ttype)) {
-		if (HEAPalloc(bn->T->vheap, (size_t) (b->T->vheap->free*BATMARGIN), 1) >= 0) {
-			memcpy(bn->T->vheap->base, b->T->vheap->base, bn->T->vheap->free = b->T->vheap->free);
-		} else {
-			goto error;
-		}
-	}
-	/* try to get a reserved mmap region */
-	if (mmappath) {
-		void *base;
-		size_t heapsize = tailsize(bn, n);
-
-		if (bn->T->heap.filename)
-			GDKfree(bn->T->heap.filename); 
-		bn->T->heap.filename = GDKstrdup(b->T->heap.filename); 
-		if (bn->T->heap.filename == NULL)
-			goto error;
-		GDKfilepath(mmappath, BATDIR, bn->T->heap.filename, NULL);
-		base = MT_mmap_open(&hdl, mmappath, mode, 0, heapsize, cnt);
-		if (base == (void*) -1) goto error;
-
-		bn->T->heap.base = base;
-		bn->T->heap.size = bn->T->heap.maxsize = heapsize; 
-		bn->T->heap.storage = STORE_MMAP;
-		if (!*force)
-			bn->T->heap.storage |= STORE_PRIV; 
-	} else if (HEAPalloc(&bn->T->heap, n, Tsize(bn)) < 0) {
-		goto error;
-	}
-
-	/* set the right bat size */
-	bn->batCapacity = n;
-	BATsetcount(bn, n);
-	bn->batFirst = bn->batDeleted = 0;
-	bn->batInserted = (cnt << REMAP_PAGE_BITS);
-
-	/* go over all pages and copy them in segments that unite consecutively mapped pages */
-	for(xx=1; xx<cnt; xx++) {
-		if (pid[xx]-1 != pid[xx-1]) {
-			if (!copy_segment(mmappath ? &hdl : NULL, bn, b, pid[zz], zz, xx-zz))
-				break;
-			zz = xx;
-		}
-	}
-	if (xx < cnt || !copy_segment(mmappath ? &hdl : NULL, bn, b, pid[zz], zz, cnt-zz)) {
-		HEAPfree(&bn->T->heap);
-		goto error;
-	}
-	if (mmappath) {
-		MT_mmap_close(&hdl);
-		GDKvminc(tailsize(bn, n));
-	}
-
-	/* if the tail atom has refcounting, we must fix the copies */
-	if (fix) {
-		BATloop(bn, p, q) {
-			fix(BUNtail(bni, p));
-		}
-	}
-	BBPcacheit(bs, 1);
-	if (mmappath) {
-		/* if copy-on-write was used, make bn a logical view on b */
-		bn->P->lview = TRUE;
-		bn->T->heap.copied = TRUE;
-		if (bn->H->type != TYPE_void)
-			BBPshare(bn->H->heap.parentid = b->batCacheid);
-		if (bn->T->type != TYPE_void)
-			BBPshare(bn->T->heap.parentid = -b->batCacheid);
-	}
-	return GDK_SUCCEED;
-  error:
-	if (mmappath)
-		MT_mmap_close(&hdl);
-	if (bn->T->vheap) {
-		HEAPfree(bn->T->vheap);
-		GDKfree(bn->T->vheap);
-	}
-	HEAPfree(&bn->T->heap);
-	BBPclear(bn->batCacheid);
-	return GDK_FAIL;
-}
-
-@- page-wise OID swizzling
-@c
-#ifdef HAVE_RESTRICT
-#define __r     restrict
-#else
-#ifdef HAVE___RESTRICT__
-#define __r     __restrict__
-#else
-#define __r
-#endif
-#endif
-
-#define SWIZZLE(idx) ((map[idx >> REMAP_PAGE_BITS] << REMAP_PAGE_BITS) | (idx & (oid) REMAP_PAGE_MASK))  
-#define SWIZZLE_CHECK(idx) ((map[(idx >> REMAP_PAGE_BITS) & (ok &= ((idx >= max) - 1))] << REMAP_PAGE_BITS) | (idx & (oid) REMAP_PAGE_MASK))  
-
-static int 
-swizzle(oid max, int htpe, oid tbase, BUN cnt, 
-	oid *__r hdst, oid *__r tdst, oid *__r map, oid *__r head, oid *__r tail) 
-{
-	BUN i, n = cnt;
-	int ok = -1;
-
-	if (tbase != oid_nil) {
-		if (tbase + cnt > max) {
-			ok = 0;
-		} else if (htpe) {
-			for(i=0; i<n; i++, tbase++) {
-				*hdst++ = head[i];
-				*tdst++ = SWIZZLE(tbase);
-			}
-		} else {
-			for(i=0; i<n; i++, tbase++) {
-				*tdst++ = SWIZZLE(tbase);
-			}
-		}
-	} else {
-		if (htpe) {
-			for(i=0; i<n; i++) {
-				*hdst++ = head[i];
-				*tdst++ = SWIZZLE_CHECK(tail[i]);
-			}
-		} else {
-			for(i=0; i<n; i++) {
-				*tdst++ = SWIZZLE_CHECK(tail[i]);
-			}
-		}
-	}
-	return ok;
-}
-
-int
-CMDswizzle(BAT **res, BAT *b, BAT *map)
-{
-	BATiter mapi = bat_iterator(map), bi = bat_iterator(b), bni;
-	BUN xx, yy=0, n = BATcount(b), max = BATcount(map);
-	oid *pid = (oid*) BUNtail(mapi, BUNfirst(map));
-	BUN p, q;
-	BAT *bn;
-	oid sqbs;
-
-	if (map->hseqbase) {
-		GDKerror("[swizzle]: map %s should be a void column starting at 0@0.\n", 
-			BBP_logical(map->batCacheid));
-		return GDK_FAIL;
-	}
-
-	/* sometimes we can just return the input bat (idempotent swizzle) */
-	if (max == 0 || (BATtdense(map) && map->tseqbase == 0)) { 
-		/* special semantics: empty bat (max == 0) => no remapping */
-		/* or if map-tdense with base 0 => do not check for out-of-range oids (HACK) */
-		if (max && map->tseqbase) {
-			GDKerror("[swizzle]: map %s is a void view.\n", BBP_logical(map->batCacheid)); 
-			return GDK_FAIL;
-		}
-		*res = VIEWcreate(b, b); /* used in the fast, read-only XML case */
-		return GDK_SUCCEED;
-	} 
-
-	/* for efficiency, we ensure the map to be a simple array (copy if necessary) */
-	if (map->ttype == TYPE_void) {
-		pid = (oid*) GDKmalloc(max*sizeof(oid));
-		if (pid == NULL) return GDK_FAIL;
-		BATloop(map, p, q)
-			pid[yy++] = *(oid*) BUNtail(mapi,p);
-	}
-
-	/* create the result bat and set its final size */
-	*res = bn = BATnew(BAThdense(b)?TYPE_void:b->htype, TYPE_oid, n);
-	bni = bat_iterator(bn);
-	if (bn == NULL) return GDK_FAIL;
-	BATsetcount(bn, n);
-	BATseqbase(bn, b->hseqbase);
-
-	/* do the work in a fast function */
-	xx = swizzle(max << REMAP_PAGE_BITS,            /* maximum offset (for range check) */
-		     bn->htype,                         /* generate a head column? */
-		     BATtdense(b)?b->tseqbase:oid_nil,  /* input tail is dense? */
-		     n,                                 /* number of input tuples */
-		     (oid*) Hloc( bn, BUNfirst(bn)),    /* result array */
-		     (oid*) Tloc( bn, BUNfirst(bn)),    /* result array */
-		     pid,                               /* page-id lookup array */
-		     (oid*) BUNhloc(bi,BUNfirst(b)),     /* head input array */
-		     (oid*) BUNtloc(bi,BUNfirst(b))      /* tail input array */
-		     ) == 0;
-
-	if (yy) GDKfree(pid);
-	if (xx) {
-		GDKerror("[swizzle]: %s contains illegal offsets.\n", BBP_logical(b->batCacheid)); 
-		BBPreclaim(bn);
-		return GDK_FAIL;
-	}
-
-	sqbs = n == 0 ? 0 : *(oid*)BUNhead(bni,BUNfirst(bn));
-	bn->hdense = BAThdense(b) || (n < 2 && sqbs != oid_nil);
-	if (bn->hdense) {
-		BATseqbase(bn, sqbs);
-	}
-	bn->hsorted = (bn->hdense || BAThordered(b)&1) ? GDK_SORTED : FALSE;
-	BATkey(bn, bn->hdense || b->hkey != 0);
-
-	sqbs = n == 0 ? 0 : *(oid*)BUNtail(bni,BUNfirst(bn));
-	bn->tdense = n < 2 && sqbs != oid_nil;
-	if (bn->tdense) {
-		BATseqbase(BATmirror(bn), sqbs);
-	}
-	bn->tsorted = bn->tdense ? GDK_SORTED : FALSE;
-	BATkey(BATmirror(bn), bn->tdense || b->tkey != 0);
-
-	return GDK_SUCCEED;
-}
-
-@- fast isolation support
-
-If *pageids == TRUE, the oids are logical page-ids (REMAP_PAGE_SIZE) and the entire page
-needs to be isolated. Note the distinction between physical and logical pages. VM needs
-isolation on the physical level. The difference can be significant. A locical page is defined 
-as a number of tuples (e.g. 64K) thus spans up to 512KB in case of a 8-byte type such as lng 
-or oid. Such a a 512KB range may span up to 128 physical OS pages (MT_pagesize can be as low 
-as 4KB on current systems).
-
-All this is taken csre of by CMDisolate.
-@c
-int
-CMDisolate(BAT *b, BAT *dirty, bit *pageids) {
-	BATiter dirtyi = bat_iterator(dirty);
-	int bogus = ~((((*pageids)&64)>>5) != (((*pageids)&32)>>4)); /* yields all ones */
-	BUN cnt = BATcount(b);
-
-	if (!BAThdense(b) || b->hseqbase || Tsize(b) != ATOMsize(b->ttype)) {
-		GDKerror("isolate(%s): should be a unary column.\n", BBP_logical(b->batCacheid));
-		return GDK_FAIL;
-	}
-	if (b->T->vheap && b->T->vheap->base && b->T->vheap->storage != STORE_MEM) {
-		GDKerror("isolate(%s): cannot isolate tail heaps.\n", BBP_logical(b->batCacheid));
-		return GDK_FAIL;
-	}
-	if (b->T->heap.storage == STORE_MMAP) {
-		GDKerror("isolate(%s): cannot isolate direct maps.\n", BBP_logical(b->batCacheid));
-		return GDK_FAIL;
-	}
-	if (cnt && (b->T->heap.storage & STORE_PRIV)) {
-		size_t pagebits, pagesize = MT_pagesize(), pagecnt = pagesize/ATOMsize(b->ttype);
-		size_t pos, lim = 0, idx, xx, yy = pagecnt;
-		unsigned int *bitmask;
-		BUN p, q;
-		for(pagebits=0; yy>1; pagebits++) yy >>= 1;
-
-		/* determine the number of bitmask slots, and zalloc it */
-		yy = 1+ ((cnt-1) >> (pagebits+5)); /* 5 is for 32, #bits in a unsigned int */
-		bitmask = (unsigned int*) GDKmalloc(yy*sizeof(unsigned int));
-		if (bitmask == NULL) {
-			GDKerror("isolate(%s): memory failure.\n", BBP_logical(b->batCacheid));
-			return GDK_FAIL;
-		}
-		for(xx=0; xx<yy; xx++) bitmask[xx] = 0;
-
-		if (*pageids) {
-			BATloop(dirty, p, q) {
-				/* oid is a page number, calculate absolute oid */
-				pos = (*(oid*) BUNtail(dirtyi,p)) << REMAP_PAGE_BITS;
-				lim = pos + (size_t) REMAP_PAGE_SIZE;
-	
-				if (lim > cnt) lim = cnt; /* out of bounds!! */
-
-				/* must touch all physical pages in this logical page */
-				for(; pos<lim; pos+=pagecnt) { 
-					idx = pos >> pagebits;
-					bitmask[idx >> 5] |= 1 << (idx&31); 
-				}
-			}
-		} else {
-			/* oids are the BUNs that must be isolated */
-			BATloop(dirty, p, q) {
-				pos = *(oid*) BUNtail(dirtyi,p);
-
-				if (pos > cnt) continue; /* out of bounds!! */
-
-				idx = pos >> pagebits;
-				bitmask[idx >> 5] |= 1 << (idx&31); 
-			}
-		}	
-
-		/* write an idempotent byte into all pages that need isolation */
-		for(xx=0; xx<yy; xx++) {
-			unsigned int msk = bitmask[xx];
-			if (msk) {
-				chr *touch = ((chr*) b->T->heap.base) + xx * (pagesize << 5);
-				do {
-					if ((msk&127) == 0) { /* skip 7 clean pages */
-						msk >>=7; touch += (pagesize<<3)-pagesize;
-					} 
-					if (msk&1) {
-						/* do LOAD/STORE; bit-AND with all-ones to fool compiler */
-						*(int*)touch = (*(int*)touch)&bogus; /* causes OS trap (copy-on-write) */
-					} 
-					msk >>= 1; touch += pagesize;
-				} while(msk);
-			} /* else: skip 32 clean pages */
-		}
-		GDKfree(bitmask);
-	}
-	return GDK_SUCCEED;
-}
-
-int
-CMDmsync(BAT **r, BAT *b, oid* lo, oid *hi, bit *async)
-{
-	if (b->hseqbase == oid_nil || Tsize(b) > ATOMsize(ATOMtype(b->ttype))) {
-		GDKerror("msync(%s, " OIDFMT ", " OIDFMT "): illegal head column.\n", BBP_logical(b->batCacheid), *lo, *hi);
-		return GDK_FAIL;
-	}
-	if (*lo < b->hseqbase || *lo > *hi || (*hi - *lo) > BATcount(b)) {
-		GDKerror("msync(%s, " OIDFMT ", " OIDFMT "): illegal lo-hi head range.\n", BBP_logical(b->batCacheid), *lo, *hi);
-		return GDK_FAIL;
-	}
-	if (*lo < *hi && (b->T->heap.storage == STORE_MMAP)) {
-		size_t lo_off = (*lo - b->hseqbase) * Tsize(b);
-		size_t hi_off = (*hi - b->hseqbase) * Tsize(b);
-		lo_off = (lo_off / MT_pagesize()) * MT_pagesize();
-		hi_off = (((hi_off - 1) / MT_pagesize()) + 1) * MT_pagesize();
-		if (MT_msync(b->T->heap.base, lo_off, hi_off - lo_off, (*async==TRUE)?MMAP_ASYNC:MMAP_SYNC)) {
-			GDKerror("msync(%s, " OIDFMT ", " OIDFMT "): buns sync failed.\n", BBP_logical(b->batCacheid), *lo, *hi);
-			return GDK_FAIL;
-		}
-	}
-	if (b->T->vheap && b->T->vheap->storage == STORE_MMAP) { /* flush tail heaps fully */
-		if (MT_msync(b->T->vheap->base, 0, b->T->vheap->free, (*async==TRUE)?MMAP_ASYNC:MMAP_SYNC)) { 
-			GDKerror("msync(%s, " OIDFMT ", " OIDFMT "): tail sync failed.\n", BBP_logical(b->batCacheid), *lo, *hi);
-			return GDK_FAIL;
-		}
-	}
-	*r = b;
-	BBPfix(b->batCacheid);
-	return GDK_SUCCEED;
-}
 @}
 
 @- Wrapping
@@ -2795,66 +1797,6 @@ BKCdestroy(signed char *r, int *bid)
 	BATmode(b, TRANSIENT);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
-}
-
-/* The SQL frontend uses void-head bats */
-BUN
-void_delete_bat(BAT *b, BAT *d, int delta)
-{
-	BATiter di = bat_iterator(d);
-	BUN nr = 0;
-	BUN r, s;
-	ptr nil = ATOMnilptr(b->ttype);
-
-	if (delta) {
-		for (r = d->batInserted; r < BUNlast(d); r++) {
-			oid delid = *(oid *) BUNtail(di, r);
-
-			void_inplace(b, delid, nil, TRUE);
-			nr++;
-		}
-	} else {
-		BATaccessBegin(d,USE_TAIL,MMAP_SEQUENTIAL);
-		BATloop(d, r, s) {
-			oid delid = *(oid *) BUNtail(di, r);
-
-			void_inplace(b, delid, nil, TRUE);
-			nr++;
-		}
-		BATaccessEnd(d,USE_TAIL,MMAP_SEQUENTIAL);
-	}
-	return nr;
-}
-
-BUN
-void_insert_delta(BAT *b, BAT *u)
-{
-	BATiter ui = bat_iterator(u);
-	BUN nr = 0;
-	BUN r;
-
-	for (r = u->batInserted; r < BUNlast(u); r++) {
-		BUNappend(b, BUNtail(ui, r),FALSE);
-		nr++;
-	}
-	return nr;
-}
-
-BUN
-void_replace_delta(BAT *b, BAT *u)
-{
-	BATiter ui = bat_iterator(u);
-	BUN nr = 0;
-	BUN r;
-
-	for (r = u->batInserted; r < BUNlast(u); r++) {
-		oid updid = *(oid *) BUNhead(ui, r);
-		ptr val = BUNtail(ui, r);
-
-		void_inplace(b, updid, val, TRUE);
-		nr++;
-	}
-	return nr;
 }
 
 char *

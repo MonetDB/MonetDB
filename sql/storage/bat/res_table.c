@@ -85,7 +85,7 @@ res_col_create(sql_trans *tr, res_table *t, char *tn, char *name, char *typename
 	return c;
 }
 
-void
+static void
 res_col_destroy(res_col *c)
 {
 	if (c->b) {

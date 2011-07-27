@@ -195,7 +195,7 @@ the impact of the choices is not yet clear.
 The hash indexing routines have been extended with a Band argument.
 @{
 @c
-BAT *
+static BAT *
 BATbandjoin_nl(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi)
 {
 	BAT *bn;

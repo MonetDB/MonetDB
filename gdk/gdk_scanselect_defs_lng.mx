@@ -48,6 +48,7 @@ Generate all working functions.
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
+#include "gdk_scanselect_defs_lng.h"
 
 #if defined(__sgi) && defined(__GNUC__) && (SIZEOF_VOID_P == 8)
 #define SKIP_TYPE_EXPANSIONS

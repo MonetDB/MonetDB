@@ -1273,7 +1273,7 @@ mapi_get_autocommit(Mapi mid)
 	return mid->auto_commit;
 }
 
-long
+static long
 usec()
 {
 #ifdef HAVE_GETTIMEOFDAY
@@ -1292,7 +1292,7 @@ usec()
 }
 
 
-void
+static void
 mapi_log_header(Mapi mid, char *mark)
 {
 	static long firstcall = 0;
@@ -1307,7 +1307,7 @@ mapi_log_header(Mapi mid, char *mark)
 	mnstr_flush(mid->tracelog);
 }
 
-void
+static void
 mapi_log_record(Mapi mid, const char *msg)
 {
 	mapi_log_header(mid, "W");

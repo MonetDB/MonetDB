@@ -288,6 +288,7 @@ The primary debugger controls
 	else if(stk->cmd==0 && X) \
 		mnstr_printf(cntxt->fdout,"#Monet Debugger on\n");
 
+#if 0
 str
 MDBtoggle(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
@@ -317,6 +318,7 @@ MDBtoggle(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	cntxt->itrace = b ? 'n' : 0;
 	return MAL_SUCCEED;
 }
+#endif
 
 str
 MDBstart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
@@ -363,7 +365,7 @@ MDBstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
-void
+static void
 MDBtraceFlag(Client cntxt, MalStkPtr stk, int b)
 {
 	if (b) {
@@ -598,7 +600,7 @@ MDBStkDepth(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 MDBgetFrame(BAT *b, Client cntxt, MalBlkPtr mb, MalStkPtr s, int depth)
 {
 	ValPtr v;
@@ -945,7 +947,7 @@ MDBtrapFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 Obtains a list of modules by looking at what files are present in the
 module directory.
 @c
-BAT *
+static BAT *
 TBL_getdir(void)
 {
 	BAT *b = BATnew(TYPE_int, TYPE_str, 100);

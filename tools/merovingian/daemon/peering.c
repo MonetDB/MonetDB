@@ -25,6 +25,7 @@
 
 #include "merovingian.h"
 #include "discoveryrunner.h"
+#include "peering.h"
 
 
 void

@@ -525,11 +525,13 @@ After finishing a session in a scenario, we should reset the
 state of the previous one. But also call the exitClient
 to garbage collect any scenario specific structures.
 @c
+#if 0
 str
 getCurrentScenario(Client c)
 {
 	return c->scenario;
 }
+#endif
 
 void
 resetScenario(Client c)

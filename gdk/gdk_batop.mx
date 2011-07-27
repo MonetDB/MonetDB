@@ -838,7 +838,7 @@ We have to do it: create a new BAT and put everything into it.
 	return NULL;
 }
 
-BAT *
+static BAT *
 BATslice2(BAT *b, BUN l1, BUN h1, BUN l2, BUN h2)
 {
 	BUN p, q;

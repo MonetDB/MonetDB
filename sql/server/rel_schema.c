@@ -25,6 +25,7 @@
 #include "rel_exp.h"
 #include "rel_bin.h"
 #include "rel_subquery.h"
+#include "rel_schema.h"
 #include "sql_parser.h"
 #include "sql_privileges.h"
 

@@ -136,7 +136,7 @@ qc_destroy(qc *cache)
 	_DELETE(cache);
 }
 
-int
+static int
 param_cmp(sql_subtype *t1, sql_subtype *t2)
 {
 	int res;
@@ -154,7 +154,7 @@ param_cmp(sql_subtype *t1, sql_subtype *t2)
 	return 0;
 }
 
-int
+static int
 param_list_cmp(sql_subtype *typelist, atom **atoms, int plen)
 {
 	int i;

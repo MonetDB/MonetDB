@@ -201,7 +201,7 @@ dlist_length(dlist *l)
 	return l->cnt;
 }
 
-dlist *
+static dlist *
 dlist_append_default(dlist *l, dnode *n)
 {
 	if (l->cnt) {

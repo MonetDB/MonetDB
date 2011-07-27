@@ -279,7 +279,7 @@ OCTaddResult(int cl, int residx, int iidx)
 	}
 }
 
-bit 
+static bit 
 isAView(InstrPtr p)
 {
 	if ( ( getModuleId(p) == batRef && 

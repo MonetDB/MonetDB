@@ -131,6 +131,7 @@ CLKinitTimer(int sec, int usec)
 A new alarm is pushed onto the stack using @%CLKalarm@.
 The parameter is the real-time value to be approximated.
 @c
+#if 0
 #ifdef SIGALRM
 static void
 CLKalarm(time_t t, str action)
@@ -161,6 +162,7 @@ CLKalarm(time_t t, str action)
 		CLKinitTimer(t, 0);	/* set it sooner */
 	}
 }
+#endif
 #endif
 @-
 Once a timer interrupt occurs, we should inspect the timer queue and
@@ -204,36 +206,7 @@ CLKsignal(int nr)
 }
 #endif
 
-bat *
-CLKprelude(void)
-{
-#ifdef SIGALRM
-	(void) signal(SIGALRM, CLKsignal);
-#endif
-	return NULL;
-}
-
-void
-CLKepilogue(void)
-{
-	int k;
-
-#if (defined(SIGALRM) && defined(SIG_IGN))
-/* HACK to pacify compiler */
-#if (defined(__INTEL_COMPILER) && (SIZEOF_VOID_P > SIZEOF_INT))
-#undef  SIG_IGN			/*((__sighandler_t)1 ) */
-#define SIG_IGN   ((__sighandler_t)1L)
-#endif
-	(void) signal(SIGALRM, SIG_IGN);
-#endif
-	for (k = 0; k < timerTop; k++) {
-		if (timer[k].action)
-			GDKfree(timer[k].action);
-	}
-}
-
-
-int
+static int
 CMDsleep(int *secs)
 {
 
@@ -254,24 +227,6 @@ CMDsleep(int *secs)
 	return GDK_SUCCEED;
 }
 
-int
-CMDalarm(int *secs, str action)
-{
-	if (*secs < 0) {
-		GDKerror("CMDalarm: negative delay\n");
-		return GDK_FAIL;
-	} else {
-#ifndef SIGALRM
-		(void)action;
-		GDKerror("CMDalarm: not implemented\n");
-		return GDK_FAIL;
-#else
-		CLKalarm(time(0) + *secs, action);
-#endif
-	}
-	return GDK_SUCCEED;
-}
-
 @-
 Problem with CMDtimers is that they use static buffers that
 may be overwritten under parallel processing.
@@ -279,7 +234,8 @@ Therefore, the code below is dangerous (!) and the re-entrant code
 should be used.  However, on Windows where ctime_r is not available,
 ctime is actually thread-safe.
 @c
-int
+#if 0
+static int
 CMDtimers(BAT **retval)
 {
 	char buf[27];
@@ -305,8 +261,9 @@ CMDtimers(BAT **retval)
 	}
 	return GDK_SUCCEED;
 }
+#endif
 
-int
+static int
 CMDctime(str *retval)
 {
 	time_t t = time(0);
@@ -339,7 +296,7 @@ CMDctime(str *retval)
 	return GDK_SUCCEED;
 }
 
-int
+static int
 CMDepoch(int *retval)		/* XXX should be lng */
 {
 	*retval = (int) time(0);
@@ -347,14 +304,14 @@ CMDepoch(int *retval)		/* XXX should be lng */
 }
 
 /* should return lng */
-int
+static int
 CMDusec(lng *retval)
 {
 	*retval = GDKusec();
 	return GDK_SUCCEED;
 }
 
-int
+static int
 CMDtime(int *retval)
 {
 	*retval = GDKms();
@@ -367,6 +324,7 @@ Wrapping the Version 4 code base
 #include "mal.h"
 #include "mal_exception.h"
 
+#if 0
 void
 ALARMinitTimer(int sec, int usec)
 {
@@ -385,6 +343,7 @@ ALARMalarm(int t, str *action)
 	return MAL_SUCCEED;
 }
 #endif
+#endif
 
 str
 ALARMprelude()
@@ -398,7 +357,20 @@ ALARMprelude()
 str
 ALARMepilogue()
 {
-	CLKepilogue();
+	int k;
+
+#if (defined(SIGALRM) && defined(SIG_IGN))
+/* HACK to pacify compiler */
+#if (defined(__INTEL_COMPILER) && (SIZEOF_VOID_P > SIZEOF_INT))
+#undef  SIG_IGN			/*((__sighandler_t)1 ) */
+#define SIG_IGN   ((__sighandler_t)1L)
+#endif
+	(void) signal(SIGALRM, SIG_IGN);
+#endif
+	for (k = 0; k < timerTop; k++) {
+		if (timer[k].action)
+			GDKfree(timer[k].action);
+	}
 	return MAL_SUCCEED;
 }
 

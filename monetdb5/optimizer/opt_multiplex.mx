@@ -311,9 +311,6 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	if (mb->errors){
 		/* rollback */
 	}
-	if ( mb->errors == 0)
-		setLifespan(mb); /* leave a proper initialized life span behind */
-
 	return mb->errors? 0: actions;
 }
 @include optimizerWrapper.mx
