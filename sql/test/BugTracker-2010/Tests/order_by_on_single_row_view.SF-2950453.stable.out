@@ -30,22 +30,23 @@ Over..
 % .x,	.x,	.x # table_name
 % score,	avalue,	displayname # name
 % decimal,	char,	char # type
-% 2,	1,	1 # length
-[ 1,	"a",	"b"	]
+% 4,	1,	1 # length
+[ 1.0,	"a",	"b"	]
 #SELECT * FROM x ORDER BY score;
 % .x,	.x,	.x # table_name
 % score,	avalue,	displayname # name
 % decimal,	char,	char # type
-% 2,	1,	1 # length
-[ 1,	"a",	"b"	]
+% 4,	1,	1 # length
+[ 1.0,	"a",	"b"	]
 #SELECT * FROM (SELECT 1.0 as score) AS x ORDER BY x.score;
 % .x # table_name
 % score # name
 % decimal # type
-% 2 # length
-[ 1	]
+% 4 # length
+[ 1.0	]
+#drop view x;
 
-# 09:31:28 >  
-# 09:31:28 >  Done.
-# 09:31:28 >  
+# 16:16:44 >  
+# 16:16:44 >  Done.
+# 16:16:44 >  
 

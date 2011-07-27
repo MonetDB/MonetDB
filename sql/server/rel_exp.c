@@ -230,6 +230,21 @@ exp_atom_ref(sql_allocator *sa, int i, sql_subtype *tpe)
 	return e;
 }
 
+atom *
+exp_value(sql_exp *e, atom **args, int maxarg)
+{
+	if (!e || e->type != e_atom)
+		return NULL; 
+	if (e->l) {	   /* literal */
+		return e->l;
+	} else if (e->r) { /* param (ie not set) */
+		return NULL; 
+	} else if (e->flag < maxarg) {
+		return args[e->flag]; 
+	}
+	return NULL; 
+}
+
 sql_exp * 
 exp_param(sql_allocator *sa, char *name, sql_subtype *tpe, int frame) 
 {
