@@ -1,2 +1,1 @@
-debian/tmp/usr/share/monetdb/perl/* usr/share/monetdb/perl
 debian/tmp/usr/lib/perl5/* usr/lib/perl5
