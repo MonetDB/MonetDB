@@ -31,7 +31,6 @@ Source: http://dev.monetdb.org/downloads/sources/Apr2011-SP2/%{name}-%{version}.
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
-# BuildRequires: cfitsio-devel
 BuildRequires: flex
 %if %{?centos:0}%{!?centos:1}
 # no geos library on CentOS
@@ -239,8 +238,6 @@ program.
 %files client-perl
 %defattr(-,root,root)
 %{_prefix}/%{perl_libdir}/*
-%dir %{_datadir}/monetdb/perl
-%{_datadir}/monetdb/perl/*
 
 %package client-ruby
 Summary: MonetDB ruby interface
@@ -384,11 +381,7 @@ fi
 %endif
 # %exclude %{_libdir}/monetdb5/rdf.mal
 %exclude %{_libdir}/monetdb5/sql.mal
-%exclude %{_libdir}/monetdb5/sql_bpm.mal
 %{_libdir}/monetdb5/*.mal
-# %{_libdir}/monetdb5/autoload/*_fits.mal
-%{_libdir}/monetdb5/autoload/*_vault.mal
-%{_libdir}/monetdb5/autoload/*_lsst.mal
 %{_libdir}/monetdb5/autoload/*_udf.mal
 %if %{?centos:0}%{!?centos:1}
 %exclude %{_libdir}/monetdb5/lib_geom.so
@@ -536,18 +529,41 @@ developer, but if you do want to test, this is the package you need.
 %build
 
 %{configure} \
-	--enable-strict=no \
 	--enable-assert=no \
-	--enable-debug=no \
-	--enable-optimize=yes \
 	--enable-bits=%{bits} \
+	--enable-console=yes \
+	--enable-crackers=no \
+	--enable-datacell=no \
+	--enable-debug=no \
+	--enable-developer=no \
+	--enable-gdk=yes \
+	--enable-geom=%{?centos:no}%{!?centos:yes} \
+	--enable-instrument=no \
 	--enable-jdbc=no \
 	--enable-merocontrol=no \
+	--enable-monetdb5=yes \
+	--enable-noexpand=no \
+	--enable-odbc=yes \
+	--enable-oid32=%{?oid32:yes}%{!?oid32:no} \
+	--enable-optimize=yes \
+	--enable-profile=no \
 	--enable-rdf=no \
-	--enable-fits=no \
+	--enable-sql=yes \
+	--enable-strict=no \
+	--enable-testing=yes \
+	--with-ant=no \
+	--with-bz2=yes \
+	--with-geos=%{?centos:no}%{!?centos:yes} \
+	--with-hwcounters=no \
+	--with-java=no \
+	--with-perl=yes \
+	--with-pthread=yes \
+	--with-python=yes \
+	--with-readline=yes \
+	--with-rubygem=yes \
+	--with-sphinxclient=no \
+	--with-unixodbc=yes \
 	--with-valgrind=no \
-	--with-geos=%{?centos:no}%{!?centos:yes}
-	%{?oid32:--enable-oid32} \
 	%{?comp_cc:CC="%{comp_cc}"}
 
 make

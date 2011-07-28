@@ -2,7 +2,7 @@ debian/tmp/usr/bin/monetdbd usr/bin
 debian/tmp/usr/bin/monetdb usr/bin
 debian/tmp/usr/lib/monetdb5/*.sql usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/autoload/*_sql.mal usr/lib/monetdb5/autoload
-debian/tmp/usr/lib/monetdb5/sql*.mal usr/lib/monetdb5
+debian/tmp/usr/lib/monetdb5/sql.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/lib_sql.so usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/createdb/10_math.sql usr/lib/monetdb5/createdb
 debian/tmp/usr/lib/monetdb5/createdb/11_times.sql usr/lib/monetdb5/createdb
@@ -21,4 +21,3 @@ debian/tmp/usr/lib/monetdb5/createdb/23_skyserver.sql usr/lib/monetdb5/createdb
 debian/tmp/usr/lib/monetdb5/createdb/24_zorder.sql usr/lib/monetdb5/createdb
 debian/tmp/usr/lib/monetdb5/createdb/25_debug.sql usr/lib/monetdb5/createdb
 debian/tmp/usr/lib/monetdb5/createdb/99_system.sql usr/lib/monetdb5/createdb
-debian/tmp/var/monetdb5/dbfarm/.merovingian_properties var/monetdb5/dbfarm
