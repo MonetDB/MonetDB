@@ -40,11 +40,12 @@ command series_(start:@1, step:@1, stop:@1, N:int, M:int) :bat[:oid,:@1]
 address ARRAYseries_@1
 comment  "Generates a single series BAT based on range condition, repeating each value N times and repeat the process M times.";
 
-function series (start:@1, step:@1, stop:@1, N:int, M:int) :bat[:str,:bat];
-	b1 := bat.new(:str,:bat,1);
-	b2 := series_(start, step, stop, N, M);
-	b3 := bat.insert(b1, "dim", b2);
-	return series := b3;
+function series (start:@1, step:@1, stop:@1, N:int, M:int) :bat[:oid, :@1];
+#	b1 := bat.new(:str,:bat,1);
+#	b2 := series_(start, step, stop, N, M);
+	return series_(start, step, stop, N, M);
+#	b3 := bat.insert(b1, "dim", b2);
+#	return series := b3;
 end series;
 
 @mal
@@ -70,11 +71,12 @@ pattern filler_(cnt:lng, v:any_2):bat[:oid,:any_2]
 address ARRAYfiller
 comment "Create an array value representation of CNT items and fill it with V";
 
-function filler(cnt:lng, v:any_2):bat[:str,:bat];
-	b1 := bat.new(:str,:bat,1);
-	b2 := filler_(cnt, v);
-	b3 := bat.insert(b1, "vals", b2);
-	return filler := b3;
+function filler(cnt:lng, v:any_2):bat[:oid,:any_2];
+#	b1 := bat.new(:str,:bat,1);
+#	b2 := filler_(cnt, v);
+	return filler_(cnt, v);
+#	b3 := bat.insert(b1, "vals", b2);
+#	return filler := b3;
 end filler;
 
 pattern map(dims:bat[:oid,:any]...):bat[:oid,:oid]
