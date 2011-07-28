@@ -1,9 +1,9 @@
 stdout of test 'dataflow` in directory 'optimizer` itself:
 
 
-# 17:56:33 >  
-# 17:56:33 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/HG/Aug2011/prefix/_/var/MonetDB" --set mapi_open=true --set mapi_port=30526 --set monet_prompt= --trace --forcemito --set mal_listing=2  --dbname=mTests_optimizer  dataflow.mal
-# 17:56:33 >  
+# 18:05:39 >  
+# 18:05:39 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/ufs/mk/Aug2011//Linux/var/MonetDB" --set mapi_open=true --set mapi_port=32759 --set monet_prompt= --trace --forcemito --set mal_listing=2  --dbname=mTests_optimizer  dataflow.mal
+# 18:05:39 >  
 
 # MonetDB 5 server v11.5.0
 # This is an unreleased version
@@ -13,13 +13,113 @@ stdout of test 'dataflow` in directory 'optimizer` itself:
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:30526/
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32759/
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
+function user.slow():bat[:oid,:lng];
+    b := bat.new(:oid,:lng);
+barrier (go,i) := language.newRange(0:lng);
+    k := mmath.rand();
+    l := calc.lng(k);
+    bat.insert(b,nil:oid,l);
+    redo (go,i) := language.nextElement(1:lng,1000000:lng);
+exit (go,i);
+    return slow := b;
+end slow;
+function user.tst():void;
+    s := user.slow();
+    l := aggr.min(s);
+    h := l;
+    mdb.setTimer(true);
+    mdb.setThread(true);
+    z := nil:bat[:oid,:lng];
+barrier go := language.dataflow();
+    t1 := algebra.select(s,l,h);
+    t2 := algebra.select(s,l,h);
+    t3 := algebra.select(s,l,h);
+    t4 := algebra.select(s,l,h);
+    t5 := algebra.select(s,l,h);
+    t6 := algebra.select(s,l,h);
+    t7 := algebra.select(s,l,h);
+    t8 := algebra.select(s,l,h);
+    z := mat.pack(t1,t2,t3,t4,t5,t6,t7,t8);
+exit go;
+    mdb.var();
+    c := aggr.count(z);
+    io.print(c);
+    io.print("done");
+end tst;
+function user.main():void;
+# a simple dataflow test 
+    mdb.List("user","tst");
+    user.tst();
+end main;
+function user.tst():void;               #  0 tst:void := user.tst() {G}
+    s := user.slow();                   #  1 s:bat[:oid,:lng] := user.slow() {G}
+    l := aggr.min(s);                   #  2 l:lng := ALGmin_lng(s:bat[:oid,:lng]) {G}
+    h := l;                             #  3 h:lng := l:lng 
+    mdb.setTimer(true);                 #  4 _4:void := MDBsetTimer(_5:bit) 
+    mdb.setThread(true);                #  5 _6:void := MDBsetThread(_5:bit) 
+    z := nil:bat[:oid,:lng];            #  6 z:bat[:oid,:lng] := _8:bat[:oid,:lng] {G}
+barrier go := language.dataflow();      #  7 go:int := MALstartDataflow() {J17}
+    t1 := algebra.select(s,l,h);        #  8 t1:bat[:oid,:lng] := ALGselect(s:bat[:oid,:lng], l:lng, h:lng) {G}
+    t2 := algebra.select(s,l,h);        #  9 t2:bat[:oid,:lng] := ALGselect(s:bat[:oid,:lng], l:lng, h:lng) {G}
+    t3 := algebra.select(s,l,h);        # 10 t3:bat[:oid,:lng] := ALGselect(s:bat[:oid,:lng], l:lng, h:lng) {G}
+    t4 := algebra.select(s,l,h);        # 11 t4:bat[:oid,:lng] := ALGselect(s:bat[:oid,:lng], l:lng, h:lng) {G}
+    t5 := algebra.select(s,l,h);        # 12 t5:bat[:oid,:lng] := ALGselect(s:bat[:oid,:lng], l:lng, h:lng) {G}
+    t6 := algebra.select(s,l,h);        # 13 t6:bat[:oid,:lng] := ALGselect(s:bat[:oid,:lng], l:lng, h:lng) {G}
+    t7 := algebra.select(s,l,h);        # 14 t7:bat[:oid,:lng] := ALGselect(s:bat[:oid,:lng], l:lng, h:lng) {G}
+    t8 := algebra.select(s,l,h);        # 15 t8:bat[:oid,:lng] := ALGselect(s:bat[:oid,:lng], l:lng, h:lng) {G}
+    z := mat.pack(t1,t2,t3,t4,t5,t6,t7,t8);# 16 z:bat[:oid,:lng] := MATpack(t1:bat[:oid,:lng], t2:bat[:oid,:lng], t3:bat[:oid,:lng], t4:bat[:oid,:lng], t5:bat[:oid,:lng], t6:bat[:oid,:lng], t7:bat[:oid,:lng], t8:bat[:oid,:lng]) {G}
+exit go;                                # 17 go:int 
+    s := nil:BAT;                       # 18 s:bat[:oid,:lng] := _24:BAT {G}
+    mdb.var();                          # 19 _18:void := MDBvar() 
+    c := aggr.count(z);                 # 20 c:wrd := ALGcount_bat(z:bat[:oid,:lng]) {G}
+    io.print(c);                        # 21 _20:void := IOprint_val(c:wrd) 
+    io.print("done");                   # 22 _21:void := IOprint_val(_22:str) {G}
+end tst;                                # 23  
 
-! to be checked / approved !
 
-# 17:56:35 >  
-# 17:56:35 >  Done.
-# 17:56:35 >  
+
+
+
+
+
+
+
+
+
+
+
+
+#Stack 'tst' size=32 top=25
+#[1]     s = nil :bat[:oid,:lng]   eolife=18 
+#[2]     l = 735 :lng  
+#[3]     h = 735 :lng  
+#[5]    _5 = true :bit  constant 
+#[7]     z = <tmp_1101> :bat[:oid,:lng] rows=8   eolife=20 
+#[8]    _8 = nil :bat[:oid,:lng]  constant  eolife=6 
+#[9]    go = -1 :int  
+#[10]    t1 = nil :bat[:oid,:lng]   eolife=16 
+#[11]    t2 = nil :bat[:oid,:lng]   eolife=16 
+#[12]    t3 = nil :bat[:oid,:lng]   eolife=16 
+#[13]    t4 = nil :bat[:oid,:lng]   eolife=16 
+#[14]    t5 = nil :bat[:oid,:lng]   eolife=16 
+#[15]    t6 = nil :bat[:oid,:lng]   eolife=16 
+#[16]    t7 = nil :bat[:oid,:lng]   eolife=16 
+#[17]    t8 = nil :bat[:oid,:lng]   eolife=16 
+#[19]     c = 0 :wrd  
+#[22]   _22 = "done" :str  constant 
+#[24]   _24 = nil :BAT  constant 
+
+
+[ 8 ]
+
+[ "done" ]
+
+
+
+# 18:05:41 >  
+# 18:05:41 >  Done.
+# 18:05:41 >  
 
