@@ -597,7 +597,7 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 						tname = ctype->type->sqlname;
 						len = strlen(tname);
 						if(tname[len-3] != 'i' || tname[len-2] != 'n' || tname[len-1] != 't') {
-							sql_error(sql, 02, "%s ARRAY: syntax short cut [size] only allowed for int typed dimensions, dimension column '%s' has type \"%s\"\n", (alter)?"ALTER":"CREATE", cname, tname);
+							sql_error(sql, 02, "%s ARRAY: syntax short cut '[size]' only allowed for int typed dimensions, dimension column \"%s\" has type \"%s\"\n", (alter)?"ALTER":"CREATE", cname, tname);
 							return SQL_ERR;
 						}
 
