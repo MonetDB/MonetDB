@@ -586,32 +586,47 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 				cs->dim = ZNEW(sql_dimspec);
 				switch (dim_range->cnt) { /* TODO: what if '-' is used in a non-numeric dim_exp? */
 					case 1: {/* [size], [-size], [seqname] */
-						size_t len = strlen(ctype->type->sqlname);
+						size_t len = 0;
+						char *tname = NULL;
 						if(dim_range->h->type == type_string) { /* TODO: implementation: look up the constraints of the [seq] */
 							sql_error(sql, 02, "%s ARRAY: dimension column '%s' uses sequence \"%s\" as constraint, not implemented yet\n", (alter)?"ALTER":"CREATE", cname, dim_range->h->data.sval);
 							return SQL_ERR;
 						}
 
 						/* In cases [size] or [-size], the column's data type MUST be INT */
-						if(ctype->type->sqlname[len-3] != 'i' || ctype->type->sqlname[len-2] != 'n' ||ctype->type->sqlname[len-1] != 't') {
-							sql_error(sql, 02, "%s ARRAY: invalid type of dimension column '%s': expect int type, got \"%s\"\n", (alter)?"ALTER":"CREATE", cname, ctype->type->sqlname);
+						tname = ctype->type->sqlname;
+						len = strlen(tname);
+						if(tname[len-3] != 'i' || tname[len-2] != 'n' || tname[len-1] != 't') {
+							sql_error(sql, 02, "%s ARRAY: syntax short cut [size] only allowed for int typed dimensions, dimension column '%s' has type \"%s\"\n", (alter)?"ALTER":"CREATE", cname, tname);
 							return SQL_ERR;
 						}
 
 						assert(dim_range->h->type == type_list);
 						if (dim_range->h->data.lval->h->type == type_symbol){
 							if (dim_range->h->data.lval->h->data.sym) { 		/* the case: [size] */
+								tname = ((AtomNode*)dim_range->h->data.lval->h->data.sym)->a->tpe.type->sqlname;
+								len = strlen(tname);
+								if(tname[len-3] != 'i' || tname[len-2] != 'n' || tname[len-1] != 't') {
+									sql_error(sql, 02, "%s ARRAY: constraints of dimension column '%s' has invalid data type: expect int type, got \"%s\"\n", (alter)?"ALTER":"CREATE", cname, tname);
+									return SQL_ERR;
+								}
+
 								cs->dim->start = ZNEW(lng); *cs->dim->start = 0; /* TODO: make this configurable */
 								cs->dim->step = ZNEW(lng); *cs->dim->step = 1;
-								/* TODO: check if the atom is indeed an int */
 								cs->dim->stop = ZNEW(lng); *cs->dim->stop = atom_get_int(((AtomNode*)dim_range->h->data.lval->h->data.sym)->a);
 							} 													/* else the case [*]: nothing to do */
 						} else { 												/* the case: [-size] */
 							assert(dim_range->h->data.lval->h->type == type_string && strcmp(dim_range->h->data.lval->h->data.sval, "sql_neg")==0);
 
+							tname = ((AtomNode*)dim_range->h->data.lval->h->next->data.sym)->a->tpe.type->sqlname;
+							len = strlen(tname);
+							if(tname[len-3] != 'i' || tname[len-2] != 'n' || tname[len-1] != 't') {
+								sql_error(sql, 02, "%s ARRAY: constraints of dimension column '%s' has invalid data type: expect int type, got \"%s\"\n", (alter)?"ALTER":"CREATE", cname, tname);
+								return SQL_ERR;
+							}
+
 							cs->dim->start = ZNEW(lng); *cs->dim->start = 0; /* TODO: make this configurable */
 							cs->dim->step = ZNEW(lng); *cs->dim->step = -1;
-							/* TODO: check if the atom is indeed an int */
 							atom_neg( ((AtomNode *) dim_range->h->data.lval->h->next->data.sym)->a );
 							cs->dim->stop = ZNEW(lng); *cs->dim->stop = atom_get_int(((AtomNode*)dim_range->h->data.lval->h->next->data.sym)->a);
 						}
