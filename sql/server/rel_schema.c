@@ -585,29 +585,38 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 
 				cs->dim = ZNEW(sql_dimspec);
 				switch (dim_range->cnt) { /* TODO: what if '-' is used in a non-numeric dim_exp? */
-					case 1:
+					case 1: {/* [size], [-size], [seqname] */
+						size_t len = strlen(ctype->type->sqlname);
 						if(dim_range->h->type == type_string) { /* TODO: implementation: look up the constraints of the [seq] */
 							sql_error(sql, 02, "%s ARRAY: dimension column '%s' uses sequence \"%s\" as constraint, not implemented yet\n", (alter)?"ALTER":"CREATE", cname, dim_range->h->data.sval);
 							return SQL_ERR;
-						} else { /* TODO: check column data type, in cases [size] or [-size], it MUST be INT */
-							assert(dim_range->h->type == type_list);
-							if (dim_range->h->data.lval->h->type == type_symbol){
-								if (dim_range->h->data.lval->h->data.sym) { 		/* the case: [size] */
-									cs->dim->start = ZNEW(lng); *cs->dim->start = 0; /* TODO: make this configurable */
-									cs->dim->step = ZNEW(lng); *cs->dim->step = 1;
-									cs->dim->stop = ZNEW(lng); *cs->dim->stop = atom_get_int(((AtomNode*)dim_range->h->data.lval->h->data.sym)->a);
-								} 													/* else the case [*]: nothing to do */
-							} else { 												/* the case: [-size] */
-								assert(dim_range->h->data.lval->h->type == type_string && strcmp(dim_range->h->data.lval->h->data.sval, "sql_neg")==0);
-
-								cs->dim->start = ZNEW(lng); *cs->dim->start = 0; /* TODO: make this configurable */
-								cs->dim->step = ZNEW(lng); *cs->dim->step = -1;
-								atom_neg( ((AtomNode *) dim_range->h->data.lval->h->next->data.sym)->a );
-								cs->dim->stop = ZNEW(lng); *cs->dim->stop = atom_get_int(((AtomNode*)dim_range->h->data.lval->h->next->data.sym)->a);
-							}
 						}
-						break;
-					case 2:
+
+						/* In cases [size] or [-size], the column's data type MUST be INT */
+						if(ctype->type->sqlname[len-3] != 'i' || ctype->type->sqlname[len-2] != 'n' ||ctype->type->sqlname[len-1] != 't') {
+							sql_error(sql, 02, "%s ARRAY: invalid type of dimension column '%s': expect int type, got \"%s\"\n", (alter)?"ALTER":"CREATE", cname, ctype->type->sqlname);
+							return SQL_ERR;
+						}
+
+						assert(dim_range->h->type == type_list);
+						if (dim_range->h->data.lval->h->type == type_symbol){
+							if (dim_range->h->data.lval->h->data.sym) { 		/* the case: [size] */
+								cs->dim->start = ZNEW(lng); *cs->dim->start = 0; /* TODO: make this configurable */
+								cs->dim->step = ZNEW(lng); *cs->dim->step = 1;
+								/* TODO: check if the atom is indeed an int */
+								cs->dim->stop = ZNEW(lng); *cs->dim->stop = atom_get_int(((AtomNode*)dim_range->h->data.lval->h->data.sym)->a);
+							} 													/* else the case [*]: nothing to do */
+						} else { 												/* the case: [-size] */
+							assert(dim_range->h->data.lval->h->type == type_string && strcmp(dim_range->h->data.lval->h->data.sval, "sql_neg")==0);
+
+							cs->dim->start = ZNEW(lng); *cs->dim->start = 0; /* TODO: make this configurable */
+							cs->dim->step = ZNEW(lng); *cs->dim->step = -1;
+							/* TODO: check if the atom is indeed an int */
+							atom_neg( ((AtomNode *) dim_range->h->data.lval->h->next->data.sym)->a );
+							cs->dim->stop = ZNEW(lng); *cs->dim->stop = atom_get_int(((AtomNode*)dim_range->h->data.lval->h->next->data.sym)->a);
+						}
+					} break;
+					case 2: /* [start:stop] */
 						dim_start = dim_range->h->data.lval;
 						if (dim_start->h->type == type_string) { /* handle negative (numerical) value */
 							cs->dim->start = ZNEW(lng);
@@ -628,7 +637,7 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 							*cs->dim->stop = atom_get_int(((AtomNode *) dim_stop->h->data.sym)->a);
 						} /* else stop == '*': nothing to do */
 						break;
-					case 3:
+					case 3: /* [start:step:stop] */
 						dim_start = dim_range->h->data.lval;
 						if (dim_start->h->type == type_string) { /* handle negative (numerical) value */
 							cs->dim->start = ZNEW(lng);
@@ -971,9 +980,9 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 				sql_column *sc = (sql_column *) col->data;
 				list *args = new_exp_list(sql->sa);
 				if (sc->dim){
-					append(args, exp_atom_lng(sql->sa, *sc->dim->start));
-					append(args, exp_atom_lng(sql->sa, *sc->dim->step));
-					append(args, exp_atom_lng(sql->sa, *sc->dim->stop));
+					append(args, exp_atom_int(sql->sa, *sc->dim->start));
+					append(args, exp_atom_int(sql->sa, *sc->dim->step));
+					append(args, exp_atom_int(sql->sa, *sc->dim->stop));
 					append(args, exp_atom_int(sql->sa, N[i]));
 					append(args, exp_atom_int(sql->sa, M[i]));
 					append(rp, exp_op(sql->sa, args, sql_bind_func_(sql->sa, sql->session->schema, "array_series", exps_subtype(args))));
