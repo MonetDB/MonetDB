@@ -2,7 +2,7 @@
  * The contents of this file are subject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ * http://www.monetdb.org/Legal/MonetDBLicense
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -18,26 +18,11 @@
  */
 
 /*
- * @' The contents of this file are subject to the MonetDB Public License
- * @' Version 1.1 (the "License"); you may not use this file except in
- * @' compliance with the License. You may obtain a copy of the License at
- * @' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
- * @'
- * @' Software distributed under the License is distributed on an "AS IS"
- * @' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * @' License for the specific language governing rights and limitations
- * @' under the License.
- * @'
- * @' The Original Code is the MonetDB Database System.
- * @'
- * @' The Initial Developer of the Original Code is CWI.
- * @' Portions created by CWI are Copyright (C) 1997-2008 CWI.
- * @' All Rights Reserved.
- *
  * @a M. Kersten, E. Liarou, R. Goncalves
- * @* The Actuator Simulation program
- * This program listens to an event stream on a particular port.
- * It collects statistics on the events.
+The Actuator Simulation program
+
+This program listens to an event stream on a particular port.
+It collects statistics on the events.
  * @f actuator
  */
 #ifndef ACTUATOR
@@ -98,6 +83,26 @@ static int protocol = TCP;
 #define PASSIVE 2
 static int mode = PASSIVE;
 
+/*
+The actuator.
+Events leave the Datacell to trigger actions in the real world. It may be as simple 
+as being displayed on a screen, upto and including calling the mergency fighters
+by telephone. Since, the mapping from event message to real world action is situation
+specific, the default provided here is to only show the event message.
+
+Users interested in experimentation with real actuators, can hook up the event
+stream with a SCADA system or directly sent the events in a proper format to
+the channel where the actuators is listening.
+
+The actuator runs in two modes, active or passive. In the former case, the tool
+contacts the server and establishes an UDF channel to pass CSV encoded event strings.
+Optionally, the event can be tagged with a serial key and a time-stamp.
+
+Events are generated using a built-in random number generator. They are sent over the
+channel with an optional delay, expressed in number of microseconds.
+
+The code is relatively straightforward to extend to create your favoured dummy sensor.
+*/
 void
 usage()
 {
