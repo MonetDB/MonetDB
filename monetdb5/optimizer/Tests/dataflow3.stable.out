@@ -1,9 +1,9 @@
 stdout of test 'dataflow3` in directory 'optimizer` itself:
 
 
-# 17:56:35 >  
-# 17:56:35 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/HG/Aug2011/prefix/_/var/MonetDB" --set mapi_open=true --set mapi_port=30526 --set monet_prompt= --trace --forcemito --set mal_listing=2  --dbname=mTests_optimizer  dataflow3.mal
-# 17:56:35 >  
+# 15:05:21 >  
+# 15:05:21 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/ufs/mk/Aug2011//Linux/var/MonetDB" --set mapi_open=true --set mapi_port=32629 --set monet_prompt= --trace --forcemito --set mal_listing=2  --dbname=mTests_optimizer  dataflow3.mal
+# 15:05:21 >  
 
 # MonetDB 5 server v11.5.0
 # This is an unreleased version
@@ -13,13 +13,111 @@ stdout of test 'dataflow3` in directory 'optimizer` itself:
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:30526/
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32629/
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
+function user.mvc():int;
+    return mvc := 1;
+end mvc;
+function user.s1_0{autoCommit=true}():void;
+    X2 := user.mvc();
+#distributing work over columns selected for mapreduce 
+    X17 := bat.new(nil:oid,nil:wrd);
+    X54 := bat.new(nil:oid,nil:wrd);
+    X55 := bat.new(nil:oid,nil:wrd);
+    X56 := bat.new(nil:oid,nil:wrd);
+    X57 := bat.new(nil:oid,nil:wrd);
+#barrier _58 := language.dataflow(); 
+    X59 := remote.connect("mapi:monetdb://volund.ins.cwi.nl:50000/sn4","monetdb","monetdb","msql");
+    remote.register(X59,"user","s1_0map");
+    X66 := remote.put(X59,X54);
+    X66 := remote.exec(X59,"user","s1_0map");
+    X54 := remote.get(X59,X66);
+    remote.disconnect(X59);
+#exit _58; 
+#barrier _69 := language.dataflow(); 
+    X70 := remote.connect("mapi:monetdb://volund.ins.cwi.nl:50000/sn3","monetdb","monetdb","msql");
+    remote.register(X70,"user","s1_0map");
+    X73 := remote.put(X70,X55);
+    X73 := remote.exec(X70,"user","s1_0map");
+    X55 := remote.get(X70,X73);
+    remote.disconnect(X70);
+#exit _69; 
+#barrier _76 := language.dataflow(); 
+    X77 := remote.connect("mapi:monetdb://volund.ins.cwi.nl:50000/sn1","monetdb","monetdb","msql");
+    remote.register(X77,"user","s1_0map");
+    X80 := remote.put(X77,X56);
+    X80 := remote.exec(X77,"user","s1_0map");
+    X56 := remote.get(X77,X80);
+    remote.disconnect(X77);
+#exit _76; 
+#barrier _83 := language.dataflow(); 
+    X84 := remote.connect("mapi:monetdb://volund.ins.cwi.nl:50000/sn2","monetdb","monetdb","msql");
+    remote.register(X84,"user","s1_0map");
+    X87 := remote.put(X84,X57);
+    X87 := remote.exec(X84,"user","s1_0map");
+    X57 := remote.get(X84,X87);
+    remote.disconnect(X84);
+#exit _83; 
+    bat.insert(X17,X54);
+    bat.insert(X17,X55);
+    bat.insert(X17,X56);
+    bat.insert(X17,X57);
+    io.print(X17);
+    X17 := algebra.markH(X17);
+#end distribution, optimisations may follow 
+#COUNT/SUM 
+    X19 := aggr.sum(X17);
+    io.print(X19);
+end s1_0;
+function user.main():void;
+#map reduce development test. 
+    mdb.list("user","s1_0");
+end main;
+function user.s1_0{autoCommit=true}():void;
+    X17 := bat.new(nil:oid,nil:wrd);
+    X54 := bat.new(nil:oid,nil:wrd);
+    X55 := bat.new(nil:oid,nil:wrd);
+    X56 := bat.new(nil:oid,nil:wrd);
+    X57 := bat.new(nil:oid,nil:wrd);
+    X59 := remote.connect("mapi:monetdb://volund.ins.cwi.nl:50000/sn4","monetdb","monetdb","msql");
+    remote.register(X59,"user","s1_0map");
+    X66 := remote.put(X59,X54);
+    X66 := remote.exec(X59,"user","s1_0map");
+    X54 := remote.get(X59,X66);
+    remote.disconnect(X59);
+    X70 := remote.connect("mapi:monetdb://volund.ins.cwi.nl:50000/sn3","monetdb","monetdb","msql");
+    remote.register(X70,"user","s1_0map");
+    X73 := remote.put(X70,X55);
+    X73 := remote.exec(X70,"user","s1_0map");
+    X55 := remote.get(X70,X73);
+    remote.disconnect(X70);
+    X77 := remote.connect("mapi:monetdb://volund.ins.cwi.nl:50000/sn1","monetdb","monetdb","msql");
+    remote.register(X77,"user","s1_0map");
+    X80 := remote.put(X77,X56);
+    X80 := remote.exec(X77,"user","s1_0map");
+    X56 := remote.get(X77,X80);
+    remote.disconnect(X77);
+    X84 := remote.connect("mapi:monetdb://volund.ins.cwi.nl:50000/sn2","monetdb","monetdb","msql");
+    remote.register(X84,"user","s1_0map");
+    X87 := remote.put(X84,X57);
+    X87 := remote.exec(X84,"user","s1_0map");
+    X57 := remote.get(X84,X87);
+    remote.disconnect(X84);
+    bat.insert(X17,X54);
+    bat.insert(X17,X55);
+    bat.insert(X17,X56);
+    bat.insert(X17,X57);
+    io.print(X17);
+    X19 := nil:dbl;
+barrier X_43 := language.dataflow();
+    X17 := algebra.markH(X17);
+    X19 := aggr.sum(X17);
+exit X_43;
+    io.print(X19);
+end s1_0;
 
-! to be checked / approved !
-
-# 17:56:35 >  
-# 17:56:35 >  Done.
-# 17:56:35 >  
+# 15:05:21 >  
+# 15:05:21 >  Done.
+# 15:05:21 >  
 
