@@ -13,8 +13,6 @@ stdout of test 'select_from_seq.Bug-2730` in directory 'test/BugTracker-2010` it
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
-#WARNING: LoaderException:loadLibrary:Loading error 'libmseed.so.2: cannot open shared object file: No such file or directory' from within file 'vault'
-#WARNING: MALException:malInclude:could not open file: vault
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:33557/
 # MonetDB/SQL module v2.41.0 loaded
 

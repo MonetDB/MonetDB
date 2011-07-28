@@ -29,7 +29,7 @@ INCLUDES = .. \
 	../../../../common/options \
 	../../../../common/stream \
 	../../../../gdk \
-	$(READLINE_INCS) $(MSEED_CFLAGS) $(cfitsio_CFLAGS) $(curl_CFLAGS)
+	$(READLINE_INCS) $(curl_CFLAGS)
 
 lib__udf = {
 	MODULE

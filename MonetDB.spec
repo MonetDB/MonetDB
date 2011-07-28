@@ -546,7 +546,6 @@ developer, but if you do want to test, this is the package you need.
 	--enable-rdf=no \
 	--enable-fits=no \
 	--with-valgrind=no \
-	--with-mseed=no \
 	--with-geos=%{?centos:no}%{!?centos:yes}
 	%{?oid32:--enable-oid32} \
 	%{?comp_cc:CC="%{comp_cc}"}

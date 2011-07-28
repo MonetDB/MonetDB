@@ -13,7 +13,6 @@ stdout of test 'mserver5-sql-readonly-view` in directory 'test/mserver5-sql-read
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
-#WARNING: LoaderException:loadLibrary:Loading error 'libmseed.so.2: cannot open shared object file: No such file or directory' from within file 'vault'
 # Listening for connection requests on mapi:monetdb://yngling.ins.cwi.nl:36267/
 # MonetDB/SQL module v2.39.0 loaded
 
@@ -31,7 +30,6 @@ stdout of test 'mserver5-sql-readonly-view` in directory 'test/mserver5-sql-read
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
-#WARNING: LoaderException:loadLibrary:Loading error 'libmseed.so.2: cannot open shared object file: No such file or directory' from within file 'vault'
 # Listening for connection requests on mapi:monetdb://yngling.ins.cwi.nl:36267/
 # MonetDB/SQL module v2.39.0 loaded
 

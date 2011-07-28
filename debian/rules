@@ -3,4 +3,4 @@
 include /usr/share/cdbs/1/rules/debhelper.mk
 include /usr/share/cdbs/1/class/autotools.mk
 
-DEB_CONFIGURE_EXTRA_FLAGS := --enable-strict=no --enable-assert=no --enable-debug=no --enable-optimize=yes --enable-java=no --enable-rdf=no --enable-fits=no --with-valgrind=no --with-mseed=no --with-rubygem-dir=lib/ruby/gems/1.8
+DEB_CONFIGURE_EXTRA_FLAGS := --enable-strict=no --enable-assert=no --enable-debug=no --enable-optimize=yes --enable-java=no --enable-rdf=no --enable-fits=no --with-valgrind=no --with-rubygem-dir=lib/ruby/gems/1.8

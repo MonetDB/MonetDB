@@ -13,7 +13,6 @@ stdout of test 'wrong_error_message_dropping_view.Bug-2713` in directory 'test/B
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
-#WARNING: LoaderException:loadLibrary:Loading error 'libmseed.so.2: cannot open shared object file: No such file or directory' from within file 'vault'
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:32564/
 # MonetDB/SQL module v2.40.0 loaded
 

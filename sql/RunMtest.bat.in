@@ -15,11 +15,6 @@ set srcdir=@XSOURCE@
 REM enable auto-loading of modules before `make install`
 if not exist "%buildbase%\sql\backends\monet5\autoload" mkdir "%buildbase%\sql\backends\monet5\autoload"
 copy /y "%srcdir%"\sql\backends\monet5\??_*.mal "%buildbase%\sql\backends\monet5\autoload"
-rem vaults is not (yet?) built on Windows
-rem if not exist "%buildbase%\sql\backends\monet5\vaults\autoload" mkdir "%buildbase%\sql\backends\monet5\vaults\autoload"
-rem copy /y "%srcdir%"\sql\backends\monet5\vaults\??_*.mal "%buildbase%\sql\backends\monet5\vaults\autoload"
-rem if "@HAVE_MSEED_FALSE@"==""	del /f "%buildbase%\sql\backends\monet5\vaults\autoload\71_mseed.mal"
-rem if "@HAVE_CFITSIO_FALSE@"==""	del /f "%buildbase%\sql\backends\monet5\vaults\autoload\72_fits.mal"
 
 REM enable auto-loading of SQL createdb scripts before `make install`
 if not exist "%buildbase%\sql\sql\createdb" mkdir "%buildbase%\sql\sql\createdb"
@@ -49,8 +44,6 @@ set MOD_PATH=%buildbase%\monetdb5\modules\kernel;%MOD_PATH%
 set MOD_PATH=%buildbase%\monetdb5\modules\mal;%MOD_PATH%
 set MOD_PATH=%buildbase%\monetdb5\optimizer;%MOD_PATH%
 set MOD_PATH=%buildbase%\monetdb5\scheduler;%MOD_PATH%
-rem vaults is not (yet?) built on Windows
-rem set MOD_PATH=%buildbase%\sql\backends\monet5\vaults;%MOD_PATH%
 set MOD_PATH=%buildbase%\sql\backends\monet5;%MOD_PATH%
 set MOD_PATH=%buildbase%\sql\sql;%MOD_PATH%
 

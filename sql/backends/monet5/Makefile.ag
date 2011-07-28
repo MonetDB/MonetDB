@@ -15,7 +15,7 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = NOT_WIN32?vaults UDF NOT_WIN32?LSST ENABLE_DATACELL?datacell
+SUBDIRS = ENABLE_DATACELL?datacell
 
 # force sql.o to not depend on .../rdf/rdf.h since it only optionally created
 RDF_INC = -I../../../monetdb5/extras/rdf

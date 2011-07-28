@@ -80,9 +80,6 @@
 /* Define to 1 if the system has the type `bool'. */
 /* #undef HAVE_BOOL */
 
-/* Define if you have the cfitsio library */
-/* #undef HAVE_CFITSIO */
-
 /* If the console should be used */
 #define HAVE_CONSOLE 1
 
@@ -312,9 +309,6 @@
 
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
-
-/* Define if you have the mseed library */
-/* #undef HAVE_MSEED */
 
 /* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
 /* #undef HAVE_NDIR_H */
