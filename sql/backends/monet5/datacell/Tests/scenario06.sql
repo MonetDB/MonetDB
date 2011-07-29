@@ -35,6 +35,7 @@ call datacell.dump();
 
 -- wrapup
 call datacell.postlude();
+drop procedure datacell.splitter;
 drop table datacell.barrelin;
 drop table datacell.barrelout;
 drop table datacell.barrellog;

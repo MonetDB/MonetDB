@@ -38,6 +38,7 @@ call datacell.dump();
 
 -- wrapup
 call datacell.postlude();
+drop procedure datacell.guardian;
 drop table datacell.temperature;
 drop table datacell.warnings;
 drop table datacell.templog;
