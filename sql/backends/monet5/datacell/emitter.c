@@ -101,7 +101,7 @@ EMnew(str nme)
 	return em;
 }
 
-Emitter
+static Emitter
 EMfind(str nme)
 {
 	Emitter r;

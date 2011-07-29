@@ -161,7 +161,7 @@ str PNregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return PNanalysis(cntxt,s->def);
 }
 
-str
+static str
 PNremove(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str nme = *(str*) getArgReference(stk,pci,1);
@@ -546,7 +546,7 @@ str PNstartThread(int *ret)
 	return MAL_SUCCEED;
 }
 
-str PNstart(int *ret)
+static str PNstart(int *ret)
 {
 	int s;
 #ifdef _DEBUG_PETRINET_

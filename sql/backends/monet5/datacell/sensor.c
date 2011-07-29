@@ -92,7 +92,7 @@ static char *datafile;
 static int server = 0;
 
 
-void
+static void
 usage(void)
 {
 	mnstr_printf(SEout, "The sensor tool can be used to generate a sequence of\n");
@@ -137,7 +137,7 @@ static MapiHdl hdl = NULL;*/
 	if ((hdl = mapi_query(dbh, X)) == NULL || mapi_error(dbh) != MOK) \
 			 die(dbh, hdl);
 
-void
+static void
 stopSend(int i)
 {
 	(void)i;
@@ -147,7 +147,7 @@ stopSend(int i)
 static void produceStream(Sensor se);
 static void produceServerStream(Sensor se);
 static void produceDataStream(Sensor se);
-lng estimateOverhead(void);
+static lng estimateOverhead(void);
 
 int main(int argc, char **argv)
 {
@@ -429,7 +429,7 @@ int main(int argc, char **argv)
 
 #define L(X) (X + strlen(X))
 
-lng
+static lng
 estimateOverhead(void)
 {
 	int i;
