@@ -49,7 +49,7 @@ adapters_export str DCemitterResume(int *ret, str *nme);
 adapters_export str EMresume(int *ret);
 adapters_export str EMstop(int *ret, str *nme);
 adapters_export str EMreset(int *ret);
-adapters_export str EMdump();
+adapters_export str EMdump(void);
 adapters_export str EMmode(int *ret, str *nme, str *arg);
 adapters_export str EMprotocol(int *ret, str *nme, str *arg);
 

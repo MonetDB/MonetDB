@@ -747,7 +747,7 @@ dumpReceptor(Receptor rc)
 }
 
 str
-RCdump()
+RCdump(void)
 {
 	Receptor rc = rcAnchor;
 	for ( ; rc; rc= rc->nxt)

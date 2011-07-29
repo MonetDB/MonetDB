@@ -93,7 +93,7 @@ static int server = 0;
 
 
 void
-usage()
+usage(void)
 {
 	mnstr_printf(SEout, "The sensor tool can be used to generate a sequence of\n");
 	mnstr_printf(SEout, "events and direct them to a receptor port at a DataCell.\n");
@@ -430,7 +430,7 @@ int main(int argc, char **argv)
 #define L(X) (X + strlen(X))
 
 lng
-estimateOverhead()
+estimateOverhead(void)
 {
 	int i;
 	lng l;

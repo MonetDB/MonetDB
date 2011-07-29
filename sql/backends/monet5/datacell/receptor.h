@@ -42,7 +42,7 @@
 
 /* #define _DEBUG_RECEPTOR_*/
 #define RCout GDKout
-datacell_export str RCdump();
+datacell_export str RCdump(void);
 
 /*
  * @-
@@ -75,6 +75,6 @@ adapters_export str RCmode(int *ret, str *nme, str *arg);
 adapters_export str RCprotocol(int *ret, str *nme, str *arg);
 adapters_export str DCscenario(int *ret, str *nme, str *fnme, int *seq);
 adapters_export str DCgenerator(int *ret, str *nme, str *modnme, str *fcnnme);
-adapters_export str RCdump() ;
+adapters_export str RCdump(void) ;
 #endif
 
