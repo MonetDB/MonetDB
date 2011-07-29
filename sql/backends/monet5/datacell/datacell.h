@@ -31,7 +31,7 @@
 #include "petrinet.h"
 
 #ifdef WIN32
-#ifndef LIBCONTAINERS
+#ifndef LIBDATACELL
 #define datacell_export extern __declspec(dllimport)
 #else
 #define datacell_export extern __declspec(dllexport)

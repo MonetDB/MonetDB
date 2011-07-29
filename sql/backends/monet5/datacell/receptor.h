@@ -45,7 +45,7 @@
 #define PAUSEDEFAULT 1000
 
 #ifdef WIN32
-#ifndef LIBADAPTERS
+#ifndef LIBDATACELL
 #define adapters_export extern __declspec(dllimport)
 #else
 #define adapters_export extern __declspec(dllexport)
