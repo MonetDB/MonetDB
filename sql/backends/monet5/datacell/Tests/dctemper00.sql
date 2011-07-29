@@ -4,7 +4,6 @@
 -- a warning is issued if the temperature in any of the
 -- rooms fluctuates more then a predefined thresshold within a few minutes/
 
-create schema datacell;
 set optimizer='datacell_pipe';
 
 create table datacell.temperature(

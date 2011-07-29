@@ -3,7 +3,6 @@
 -- use a compound query to deliver the events to both emitter
 -- and store aggregated information in a log
 
-create schema datacell;
 set optimizer='datacell_pipe';
 
 create table datacell.barrelin(

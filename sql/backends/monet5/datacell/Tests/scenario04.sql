@@ -3,7 +3,6 @@
 -- this is the extended version of scenario00
 -- with datacell.window option
 
-create schema datacell;
 set optimizer='datacell_pipe';
 
 create table datacell.winin(
