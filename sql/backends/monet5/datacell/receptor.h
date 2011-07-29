@@ -30,19 +30,8 @@
 #include "mtime.h"
 #include "basket.h"
 
-#ifdef WIN32
-#ifndef LIBCONTAINERS
-#define datacell_export extern __declspec(dllimport)
-#else
-#define datacell_export extern __declspec(dllexport)
-#endif
-#else
-#define datacell_export extern
-#endif
-
 /* #define _DEBUG_RECEPTOR_*/
 #define RCout GDKout
-datacell_export str RCdump(void);
 
 /*
  * @-
