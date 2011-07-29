@@ -1854,12 +1854,17 @@ ic_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 	struct icstream *ic = (struct icstream *) s->stream_data.p;
 	ICONV_CONST char *inbuf = (ICONV_CONST char *) buf;
 	size_t inbytesleft = elmsize * cnt;
+	char *bf = NULL;
 
 	/* if unconverted data from a previous call remains, add it to
 	   the start of the new data, using temporary space */
 	if (ic->buflen > 0) {
-		char *bf = alloca(ic->buflen + inbytesleft);
-
+		bf = malloc(ic->buflen + inbytesleft);
+		if (bf == NULL) {
+			/* cannot allocate memory */
+			s->errnr = MNSTR_WRITE_ERROR;
+			return -1;
+		}
 		memcpy(bf, ic->buffer, ic->buflen);
 		memcpy(bf + ic->buflen, buf, inbytesleft);
 		buf = bf;
@@ -1875,6 +1880,8 @@ ic_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 			case EILSEQ:
 				/* invalid multibyte sequence encountered */
 				s->errnr = MNSTR_WRITE_ERROR;
+				if (bf)
+					free(bf);
 				return -1;
 			case EINVAL:
 				/* incomplete multibyte sequence encountered */
@@ -1885,10 +1892,14 @@ ic_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 				if (inbytesleft > sizeof(ic->buffer)) {
 					/* ridiculously long multibyte sequence, so return error */
 					s->errnr = MNSTR_WRITE_ERROR;
+					if (bf)
+						free(bf);
 					return -1;
 				}
 				memcpy(ic->buffer, inbuf, inbytesleft);
 				ic->buflen = inbytesleft;
+				if (bf)
+					free(bf);
 				return (ssize_t) cnt;
 			case E2BIG:
 				/* not enough space in output buffer */
@@ -1896,11 +1907,15 @@ ic_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 			default:
 				/* cannot happen (according to manual) */
 				s->errnr = MNSTR_WRITE_ERROR;
+				if (bf)
+					free(bf);
 				return -1;
 			}
 		}
 		mnstr_write(ic->s, ic->buffer, 1, sizeof(ic->buffer) - outbytesleft);
 	}
+	if (bf)
+		free(bf);
 	return (ssize_t) cnt;
 }
 
