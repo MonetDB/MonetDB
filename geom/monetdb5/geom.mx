@@ -24,29 +24,29 @@ All Rights Reserved.
 @mal
 module geom;
 
-@' overwrite lng needed for fixed size! Sizes are fixed in geom.prelude 
+@' overwrite lng needed for fixed size! Sizes are fixed in geom.prelude
 @mal
-atom mbr:lng;	
+atom mbr:lng;
 
-command tostr() :str 		address mbrTOSTR;
+command tostr() :str		address mbrTOSTR;
 command fromstr() :mbr		address mbrFROMSTR;
-command hash() :int    		address mbrHASH;
-command null() :int   		address mbrNULL;
+command hash() :int		address mbrHASH;
+command null() :int		address mbrNULL;
 command cmp() :int		address mbrCOMP;
-command read()    		address mbrREAD;
-command write()   		address mbrWRITE;
+command read()			address mbrREAD;
+command write()			address mbrWRITE;
 
 command mbr(v:str) :mbr address mbrFromString;
 
 atom wkb;
 
-command tostr() :str 		address wkbTOSTR;
+command tostr() :str		address wkbTOSTR;
 command fromstr() :wkb		address wkbFROMSTR;
-command hash() :int    		address wkbHASH;
-command null() :int   		address wkbNULL;
+command hash() :int		address wkbHASH;
+command null() :int		address wkbNULL;
 command cmp() :int		address wkbCOMP;
-command read()    		address wkbREAD;
-command write()   		address wkbWRITE;
+command read()			address wkbREAD;
+command write()			address wkbWRITE;
 
 command put() :int		address wkbPUT;
 command del() :int		address wkbDEL;
@@ -84,11 +84,11 @@ comment "Returns true if the two mbrs overlap";
 
 
 command AsText(w:wkb) :str	address wkbAsText;
-command mbr(:flt,:flt,:flt,:flt) :mbr 
+command mbr(:flt,:flt,:flt,:flt) :mbr
 address ordinatesMBR
 comment "Creates the mbr for the given (xmin,ymin) and (xmax,ymax).";
-   
-command mbr(:wkb) :mbr 
+
+command mbr(:wkb) :mbr
 address wkbMBR
 comment "Creates the mbr for the given wkb.";
 
@@ -228,9 +228,9 @@ address wkbSymDifference
 comment "Returns a geometry that represents the point set semmetric difference of Geometry a with b.";
 
 
-command prelude():void 	address geom_prelude;
+command prelude():void	address geom_prelude;
 command epilogue():void address geom_epilogue;
-   
+
 geom.prelude();
 
 module calc;
@@ -264,11 +264,19 @@ command calc.isnil(v:wkb):bit
 address wkbIsnil
 comment "Nil test for wkb value";
 
-@h
-#ifndef GEOM_H
-#define GEOM_H
+@c
 
+#include <monetdb_config.h>
+#include <mal.h>
+#include <mal_atom.h>
+#include <mal_exception.h>
 #include "libgeom.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include <time.h>
 
 #ifdef WIN32
 #ifndef LIBGEOM
@@ -280,25 +288,9 @@ comment "Nil test for wkb value";
 #define geom_export extern
 #endif
 
-geom_export wkb *wkbNULL(void);
-
-#endif /* GEOM_H */
-
-@c
-
-#include <monetdb_config.h>
-#include <mal.h>
-#include <mal_atom.h>
-#include <mal_exception.h>
-#include "geom.h"
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-#include <time.h>
-
 int TYPE_mbr;
+
+geom_export wkb *wkbNULL(void);
 
 geom_export bat *geom_prelude(void);
 
@@ -485,7 +477,7 @@ mbrWRITE(mbr *c, stream *s, size_t cnt)
 
 	for (i = 0; i < cnt; i++, c++) {
 		/* use binary writeInt (as sizeof (flt) == sizeof(int)); */
-		/* We want to write nil's here too. 
+		/* We want to write nil's here too.
 		   So no overflow checking needed */
 		if (!mnstr_writeInt(s, (int) c->xmin) ||
 		    !mnstr_writeInt(s, (int) c->ymin) ||
@@ -951,7 +943,7 @@ wkbgetcoord@1(double *out, wkb **geom)
 		throw(MAL, "geom.wkbgetcoord@1", "GEOSGeom_getCoordSeq failed");
 
 	/* we could also check if geom is a
-		LineString, LinearRing or Point */ 
+		LineString, LinearRing or Point */
 	if (GEOSCoordSeq_get@1(gcs, 0, out) == 0)
 		ret = "GEOSCoordSeq_get@1 failed";
 
@@ -1319,7 +1311,7 @@ wkbBuffer(wkb **out, wkb **geom, dbl *distance)
 		throw(MAL, "geom." Z, "no space available "); \
 	} \
 	X->hsorted=Y->hsorted; \
-	X->tsorted=0; 
+	X->tsorted=0;
 #define finalizeResult(X,Y,Z) \
 	if (!((Y)->batDirty&2)) (Y) = BATsetaccess((Y), BAT_READ); \
 	*X = (Y)->batCacheid; \
@@ -1328,9 +1320,9 @@ wkbBuffer(wkb **out, wkb **geom, dbl *distance)
 
 geom_export str bat_wkbMBR(int *ret, int *l);
 
-str 
+str
 bat_wkbMBR(int *ret, int *l)
-{   
+{
 	BAT *bn, *b;
 	BUN p,q;
 	int xx;
@@ -1346,7 +1338,7 @@ bat_wkbMBR(int *ret, int *l)
 		x = (wkb*)BUNtail(b,p);
 		if (wkb_isnil(x))
 			yp = mbrNULL();
-		else 
+		else
 			wkbMBR(yp,&x);
 		bunfastins(bn, h, yp);
 	}
