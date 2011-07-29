@@ -161,6 +161,7 @@ str PNregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return PNanalysis(cntxt,s->def);
 }
 
+#if 0
 static str
 PNremove(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -193,6 +194,7 @@ PNremove(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	PNresumeScheduler(&ret);
 	return MAL_SUCCEED;
 }
+#endif
 
 str PNstopScheduler(int *ret)
 {
@@ -546,6 +548,7 @@ str PNstartThread(int *ret)
 	return MAL_SUCCEED;
 }
 
+#if 0
 static str PNstart(int *ret)
 {
 	int s;
@@ -564,6 +567,7 @@ static str PNstart(int *ret)
 	(void)ret;
 	return MAL_SUCCEED;
 }
+#endif
 
 /* inspection  routines */
 str
