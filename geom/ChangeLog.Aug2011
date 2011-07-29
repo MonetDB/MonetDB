@@ -1,3 +1,8 @@
 # ChangeLog file for geom
 # This file is updated with Maddlog
 
+* Fri Jul 29 2011 Sjoerd Mullender <sjoerd@acm.org>
+- Implemented NULL checks in the geom module.  Now when given NULL
+  as input, the module functions return NULL instead of an exception.
+  This fixes bug 2814.
+
