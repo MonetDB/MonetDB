@@ -1,0 +1,35 @@
+stdout of test 'scenario04` in directory 'backends/monet5/datacell` itself:
+
+
+# 16:50:39 >  
+# 16:50:39 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/HG/Aug2011/prefix/--enable-datacell_--disable-debug_--enable-optimize_--disable-assert/var/MonetDB" --set mapi_open=true --set mapi_port=36254 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_backends_monet5_datacell" --set mal_listing=0 ; echo ; echo Over..
+# 16:50:39 >  
+
+# MonetDB 5 server v11.5.0
+# This is an unreleased version
+# Serving database 'mTests_backends_monet5_datacell', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:36254/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/DataCell module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+
+Over..
+
+# 16:50:39 >  
+# 16:50:39 >  mclient -lsql -ftest -i -e --host=rig --port=36254 
+# 16:50:39 >  
+
+= to be checked / approved !
+
+# 16:50:40 >  
+# 16:50:40 >  Done.
+# 16:50:40 >  
+
