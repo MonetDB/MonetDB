@@ -28,15 +28,14 @@ INCLUDES = .. \
 	../../../../clients/mapilib \
 	../../../../common/options \
 	../../../../common/stream \
-	../../../../gdk \
-	$(READLINE_INCS) $(MSEED_CFLAGS) $(cfitsio_CFLAGS) $(curl_CFLAGS)
+	../../../../gdk
 
 lib__udf = {
 	MODULE
 	DIR = libdir/monetdb5
 	SOURCES = udf.c
 	LIBS = ../../../../monetdb5/tools/libmonetdb5 \
-		   ../../../../gdk/libbat $(curl_LIBS)
+		   ../../../../gdk/libbat
 }
 
 headers_mal = {

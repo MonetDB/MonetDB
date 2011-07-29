@@ -976,6 +976,9 @@ typedef enum {
 	INHERIT
 } meroset;
 
+static void command_set(int argc, char *argv[], meroset type)
+	__attribute__((__noreturn__));
+
 static void
 command_set(int argc, char *argv[], meroset type)
 {

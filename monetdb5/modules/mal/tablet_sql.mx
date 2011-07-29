@@ -431,6 +431,8 @@ SQLworkdivider(READERtask *task, READERtask *ptask, int nr_attrs, int threads)
 Reading is handled by a separate task as a preparation for
 mode parallelism
 @c
+static void SQLloader(void *p)
+	__attribute__((__noreturn__));
 static void
 SQLloader(void *p){
 	READERtask *task = (READERtask *)p;

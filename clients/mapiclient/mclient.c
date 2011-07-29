@@ -2350,6 +2350,9 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 	return errseen;
 }
 
+static void usage(const char *prog, int xit)
+	__attribute__((__noreturn__));
+
 static void
 usage(const char *prog, int xit)
 {
