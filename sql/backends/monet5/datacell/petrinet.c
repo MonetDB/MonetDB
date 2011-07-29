@@ -161,7 +161,8 @@ str PNregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return PNanalysis(cntxt,s->def);
 }
 
-str
+#if 0
+static str
 PNremove(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str nme = *(str*) getArgReference(stk,pci,1);
@@ -193,6 +194,7 @@ PNremove(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	PNresumeScheduler(&ret);
 	return MAL_SUCCEED;
 }
+#endif
 
 str PNstopScheduler(int *ret)
 {
@@ -546,7 +548,8 @@ str PNstartThread(int *ret)
 	return MAL_SUCCEED;
 }
 
-str PNstart(int *ret)
+#if 0
+static str PNstart(int *ret)
 {
 	int s;
 #ifdef _DEBUG_PETRINET_
@@ -564,6 +567,7 @@ str PNstart(int *ret)
 	(void)ret;
 	return MAL_SUCCEED;
 }
+#endif
 
 /* inspection  routines */
 str

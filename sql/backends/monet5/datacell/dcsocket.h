@@ -43,7 +43,7 @@
 #define MYBUFSIZ 64*1024
 
 #ifdef WIN32
-#ifndef LIBDCSOCKET
+#ifndef LIBDATACELL
 #define dcsocket_export extern __declspec(dllimport)
 #else
 #define dcsocket_export extern __declspec(dllexport)

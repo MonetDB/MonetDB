@@ -70,7 +70,7 @@ BSKTelements(str nme, str buf, str *schema, str *tbl)
 	*tbl = c;
 }
 
-static int BSKTnewEntry()
+static int BSKTnewEntry(void)
 {
 	int i;
 	for ( i=1; i< bsktLimit; i++)

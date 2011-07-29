@@ -124,7 +124,8 @@ DCreceptor(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return DCreceptorNew(ret,tbl,host,port);
 }
 
-str
+#if 0
+static str
 DCemitter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *ret = (int *) getArgReference(stk,pci,0);
@@ -136,6 +137,7 @@ DCemitter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BSKTregister(cntxt,mb,stk,pci);
 	return DCemitterNew(ret,tbl,host,port);
 }
+#endif
 
 str
 DCregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
