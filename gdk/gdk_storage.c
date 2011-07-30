@@ -1182,10 +1182,22 @@ BATmultiprintf(stream *s,	/* output stream */
 	       int printorder	/* boolean: print the orderby column? */
     )
 {
-	col_format_t *c = (col_format_t *) alloca((unsigned) (argc * sizeof(col_format_t)));
-	col_format_t **cp = (col_format_t **) alloca((unsigned) ((argc + 1) * sizeof(void *)));
-	ColFcn *value_fcn = (ColFcn *) alloca((unsigned) (argc * sizeof(ColFcn)));
+	col_format_t *c = (col_format_t *) GDKmalloc((unsigned) (argc * sizeof(col_format_t)));
+	col_format_t **cp = (col_format_t **) GDKmalloc((unsigned) ((argc + 1) * sizeof(void *)));
+	ColFcn *value_fcn = (ColFcn *) GDKmalloc((unsigned) (argc * sizeof(ColFcn)));
 	int ret = 0, j, total = 0;
+
+	if (c == NULL)
+		return -1;
+	if (cp == NULL) {
+		GDKfree(c);
+		return -1;
+	}
+	if (value_fcn == NULL) {
+		GDKfree(c);
+		GDKfree(cp);
+		return -1;
+	}
 
 	/*
 	 * @-
@@ -1251,11 +1263,14 @@ BATmultiprintf(stream *s,	/* output stream */
        * @-
        * Cleanup.
        */
-      cleanup:
+cleanup:
 	for (j = 0; j <= argc; j++) {
 		if (c[j].buf)
 			GDKfree(c[j].buf);
 	}
+	GDKfree(c);
+	GDKfree(cp);
+	GDKfree(value_fcn);
 	return ret;
 }
 
