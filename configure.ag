@@ -161,21 +161,21 @@ esac
 dft_rdf=no
 AC_ARG_ENABLE(rdf,
 	AS_HELP_STRING([--enable-rdf],
-		[enable support for RDF (default=no)]),
+		[enable support for RDF [experimental/unsupported] (default=no)]),
 	enable_rdf=$enableval,
 	enable_rdf=$dft_rdf)
 
 dft_crackers=no
 AC_ARG_ENABLE(crackers,
 	AS_HELP_STRING([--enable-crackers],
-		[enable database cracking components (default=no)]),
+		[enable database cracking components [experimental/unsupported] (default=no)]),
 	enable_crackers=$enableval,
 	enable_crackers=$dft_crackers)
 
 dft_datacell=no
 AC_ARG_ENABLE(datacell,
 	AS_HELP_STRING([--enable-datacell],
-		[enable datacell stream components (default=no)]),
+		[enable datacell stream components [experimental/unsupported] (default=no)]),
 	enable_datacell=$enableval,
 	enable_datacell=$dft_datacell)
 
