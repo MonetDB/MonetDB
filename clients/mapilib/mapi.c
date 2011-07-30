@@ -2469,10 +2469,8 @@ mapi_start_talking(Mapi mid)
 			if (mid->password[0] != '\1') {
 				unsigned char md[64];	/* should be SHA512_DIGEST_LENGTH */
 				size_t n = strlen(mid->password);
-				char *key = alloca(n);
+				char *key = mid->password;
 				int len;
-
-				strncpy(key, mid->password, n);
 
 #ifdef HAVE_RIPEMD160
 				if (strcmp(serverhash, "RIPEMD160") == 0) {
