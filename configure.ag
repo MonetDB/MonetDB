@@ -2324,6 +2324,7 @@ AC_CHECK_HEADERS([crypt.h \
 	mach-o/dyld.h \
 	malloc.h \
 	netdb.h \
+	netinet/in.h \
 	procfs.h \
 	pwd.h \
 	regex.h \
