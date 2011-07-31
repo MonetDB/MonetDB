@@ -2087,11 +2087,15 @@ non-returned values.
 		/* reshuffle for profiling */
 		MalBlkPtr safemb = mb;
 		MalStkPtr safestk = stk;
+		int safepc= stkpc;
+		pci->blk->profiler = mb->profiler;
 		mb = pci->blk;
 		stk = nstk;
+		stkpc = 0;
 		@:beginProfile(stk,1)@
 		ret = runMALsequence(cntxt, pci->blk, 1, pci->blk->stop, nstk, safestk, pci);
 		@:endProfile(stk,1)@
+		stkpc = safepc;
 		mb = safemb;
 		stk = safestk;
 	}
