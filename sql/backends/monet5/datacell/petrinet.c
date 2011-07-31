@@ -2,7 +2,7 @@
  * The contents of this file are subject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ * http://www.monetdb.org/Legal/MonetDBLicense
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -18,35 +18,58 @@
  */
 
 /*
- * @' The contents of this file are subject to the MonetDB Public License
- * @' Version 1.1 (the "License"); you may not use this file except in
- * @' compliance with the License. You may obtain a copy of the License at
- * @' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
- * @'
- * @' Software distributed under the License is distributed on an "AS IS"
- * @' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * @' License for the specific language governing rights and limitations
- * @' under the License.
- * @'
- * @' The Original Code is the MonetDB Database System.
- * @'
- * @' The Initial Developer of the Original Code is CWI.
- * @' Portions created by CWI are Copyright (C) 1997-2008 CWI.
- * @' All Rights Reserved.
- *
  * @f petrinet
  * @a Martin Kersten
  * @v 1
  * @+ Petri-net engine
- * This module is a prototype for the implementation of a
- * Petri-net interpreter for the DataCell.
- *
- * The example below accepts events at channel X
- * and the continuous query move them to Y.
- * Both query and emitter attached are scheduled.
- * @example
- * -see test directory
- * @end example
+The Datacell scheduler is based on the long-standing and mature Petri-net technology. For completeness, we
+recap its salient points taken from Wikipedia. For more detailed information look at the science library.
+
+A Petri net (also known as a place/transition net or P/T net) is one of several mathematical modeling 
+languages for the description of distributed systems. A Petri net is a directed bipartite graph, 
+in which the nodes represent transitions (i.e. events that may occur, signified by bars) and 
+places (i.e. conditions, signified by circles). The directed arcs describe which places are pre- 
+and/or postconditions for which transitions (signified by arrows). 
+Some sources state that Petri nets were invented in August 1939 by Carl Adam Petri – 
+at the age of 13 – for the purpose of describing chemical processes.
+
+Like industry standards such as UML activity diagrams, BPMN and EPCs, Petri nets offer a 
+graphical notation for stepwise processes that include choice, iteration, and concurrent execution. 
+Unlike these standards, Petri nets have an exact mathematical definition of their execution semantics,
+with a well-developed mathematical theory for process analysis.
+
+A Petri net consists of places, transitions, and directed arcs. Arcs run from a place to a transition or vice versa, 
+never between places or between transitions. The places from which an arc runs to a transition are called the input 
+places of the transition; the places to which arcs run from a transition are called the output places of the transition.
+
+Places may contain a natural number of tokens. A distribution of tokens over the places of a net is called a marking.
+A transition of a Petri net may fire whenever there is a token at the start of all input arcs; when it fires,
+it consumes these tokens, and places tokens at the end of all output arcs. A firing is atomic, i.e., a single non-interruptible step.
+
+Execution of Petri nets is nondeterministic: when multiple transitions are enabled at the same time,
+any one of them may fire. If a transition is enabled, it may fire, but it doesn't have to.
+
+Since firing is nondeterministic, and multiple tokens may be present anywhere in the net (even in the same place), Petri nets are well suited for modeling the concurrent behavior of distributed systems.
+
+The Datacell scheduler is a fair implementation of a Petri-net interpreter. It models all continuous queries as transitions,
+and the baskets as the places. The events are equivalent to tokens. Unlike the pure Petri-net model, all tokens in a place
+are taken out on each firing. They may result into placing multiple tokens into receiving baskets.
+
+The scheduling amongst the transistions is currently deterministic. Upon each round of the scheduler, it determines all
+transitions eligble to fire, i.e. have non-empty baskets, which are then actived one after the other. Future implementations
+may relax this rigid scheme using a parallel implementation of the scheduler, such that each transition by itself can
+decide to fire. However, when resources are limited to handle all complex continuous queries, it may pay of to invest
+into a domain specif scheduler.
+
+For example, in the EMILI case, we may want to give priority to fire transistions based on the sensor type (is there fire)
+or detection of emergency trends (the heat increases beyong model-based prediction). The software structure where to
+inject this domain specific code is well identified and relatively easy to extend.
+
+The current implementation is limited to a fixed number of transitions. The scheduler can be stopped and restarted
+at any time. Even selectively for specific baskets. This provides the handle to debug a system before being deployed.
+In general, event processing through multiple layers of continous queries is too fast to trace them one by one.
+Some general statistics about number of events handled per transition is maintained, as well as the processing time
+for each continous query step. This provides the information to re-design the event handling system.
  */
 #include "petrinet.h"
 #include "mal_builder.h"
@@ -260,18 +283,18 @@ str PNdump(int *ret)
 	int i, k;
 	mnstr_printf(PNout,"#scheduler status %s\n", statusnames[status]);
 	for (i = 0; i < pnettop; i++) {
-		mnstr_printf(PNout, "#[%d]\t%s %s delay %d cycles %d events %d time %d ms\n",
+		mnstr_printf(PNout, "#[%d]\t%s %s delay %d cycles %d events %d time " LLFMT " ms\n",
 			i, pnet[i].name, statusnames[pnet[i].status], pnet[i].delay, pnet[i].cycles, pnet[i].events, pnet[i].time/1000);
 		if ( pnet[i].error)
 			mnstr_printf(PNout,"#%s\n", pnet[i].error);
 		for (k = 0; k < pnet[i].srctop; k++)
-			mnstr_printf(PNout, "#<--\t%s basket[%d] %d\n",
+			mnstr_printf(PNout, "#<--\t%s basket[%d] " SZFMT " " SZFMT "\n",
 				pnet[i].source[k].table,
 				pnet[i].source[k].bskt,
 				pnet[i].source[k].lastcount,
 				pnet[i].source[k].consumed);
 		for (k = 0; k < pnet[i].trgttop; k++)
-			mnstr_printf(PNout, "#-->\t%s basket[%d] %d %d\n",
+			mnstr_printf(PNout, "#-->\t%s basket[%d] " SZFMT " " SZFMT "\n",
 				pnet[i].target[k].table,
 				pnet[i].source[k].bskt,
 				pnet[i].target[k].lastcount,

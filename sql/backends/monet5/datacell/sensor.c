@@ -2,7 +2,7 @@
  * The contents of this file are subject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ * http://www.monetdb.org/Legal/MonetDBLicense
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -18,34 +18,39 @@
  */
 
 /*
- * @' The contents of this file are subject to the MonetDB Public License
- * @' Version 1.1 (the "License"); you may not use this file except in
- * @' compliance with the License. You may obtain a copy of the License at
- * @' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
- * @'
- * @' Software distributed under the License is distributed on an "AS IS"
- * @' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * @' License for the specific language governing rights and limitations
- * @' under the License.
- * @'
- * @' The Original Code is the MonetDB Database System.
- * @'
- * @' The Initial Developer of the Original Code is CWI.
- * @' Portions created by CWI are Copyright (C) 1997-2008 CWI.
- * @' All Rights Reserved.
- *
- * @a M. Kersten, E. Liarou, R. Goncalves
- * @* The Sensor Simulation program
- * This program generates an event stream on a particular port.
- * The controlling parameters are the host (-h), the port id (-p).
- * The events either come from a pre-cooked ascii file (-f)
- * or they are generated internally (-l). In the latter case
- * it assumes integer fields only and the number of columns
- * should explicity be set (-C).
- * Sending the events to the DataCell can be batched (-B) or delayed (-D)
- * a number of milliseconds.
- * @f sensor
- */
+ * @a M. Kersten, F.Groffen, E. Liarou, R. Goncalves
+The Sensor Simulation program
+
+The sensor tool can be used to simulate a simple sensor, such as an on/off sensor or
+a heat sensor. It is an independent tool, which runs on any platform where a C-compiler
+is available for compilation, and where the fire-wall settings permit connection to 
+specific host:port channels. 
+
+The sensor generator runs in two modes, active or passive. In the former case, the tool
+contacts the server and establishes an UDF channel to pass CSV encoded event strings.
+In the latter case, it is the datacell server that periodically contacts the sensor to
+deliver an event.
+Optionally, the event can be tagged with a serial key and a time-stamp.
+
+Events are generated using a built-in random number generator or a file.
+The latter can be used to re-play a scenario, precisely mimicking the time
+an event was raised.
+The events are sent over the channel with an optional delay, expressed in number of microseconds.
+
+To stress the system under various situations, the events can be sent in batches,
+where between each batch an optional delay is obeyed. The delay is specified in 
+number of milliseconds. Setting the delay to zero results in an event stream burst.
+
+The sensor program provides a template to experiment with your own sensors.
+The structure has been set up to generate MonetDB tuple formatted events,
+comma-separated-input (CSV) and tab-separated-input (TSV). The protocol
+can readily be extended with SOAP and JSON based schemes.
+
+More esotheric solutions, e.g. to mimick real sensor systems, calls for
+development of a simple event constructor and serialization scheme.
+Moreover, in those cases a receptor should be constructed, which understands
+the event message protocol.
+*/
 #ifndef SENSOR
 #define SENSOR
 #include "monetdb_config.h"
@@ -94,6 +99,12 @@ SEnew(str nme)
 	return se;
 }
 
+/*
+Defaults:
+The default settings for the sensor simulator are single millisecond delay, 
+sending each event in isolatio, e.g. no batching, using a single payload columns.
+The datacell is presumed to life on the same host and listens to the port 50500.
+*/
 static int delay = 1;	/* intra batch delay in ms, use 1 to avoid loosing too many */
 static int batchsize = 1;
 static int events = -1;
@@ -516,7 +527,7 @@ produceStream(Sensor se)
 			if (timestamp) {
 				currenttsmp = GDKusec();
 
-				snprintf(tuple + tlen, maxtuple - tlen, "%s%lld", (autoincrement?separator[protocol]:""), currenttsmp);
+				snprintf(tuple + tlen, maxtuple - tlen, "%s" LLFMT "", (autoincrement?separator[protocol]:""), currenttsmp);
 				tlen += (int)strlen(tuple + tlen);
 				if (tlen >= maxtuple) {
 					mnstr_printf(SEout, "Buffer not large enough to handle request.\n");
