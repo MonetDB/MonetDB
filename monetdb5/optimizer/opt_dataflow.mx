@@ -186,7 +186,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 		if (p->token == ENDsymbol)
 			break;
-		if (hasSideEffects(p,TRUE) || isUnsafeFunction(p) || blockCntrl(p) || (!dumbcopy && blockExit(p)) || (getModuleId(p) == sqlRef && isUpdateInstruction(p)) || dflowAssignTest(span,p,i) ){
+		if (hasSideEffects(p,FALSE) || isUnsafeFunction(p) || blockCntrl(p) || (!dumbcopy && blockExit(p)) || (getModuleId(p) == sqlRef && isUpdateInstruction(p)) || dflowAssignTest(span,p,i) ){
 			@:flowblock@
 			pushInstruction(mb,p);
 			continue;
@@ -226,13 +226,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		if (cnt && cnt == p->argc-p->retc)
 			entries++;
 	}
-	if (flowblock){
-		for( j=start ; j<i; j++){
-			if (old[j] == NULL)
-				continue;
-			pushInstruction(mb,old[j]);
-		}
-	}
+	@:flowblock@
 	/* take the remainder as is */
 	for (; i<limit; i++) 
 		if (old[i])
