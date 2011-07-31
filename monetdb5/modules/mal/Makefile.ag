@@ -33,7 +33,6 @@ lib_mal = {
 		batExtensions.mx \
 		bbp.mx \
 		box.mx \
-		bpm.mx \
 		chopper.mx \
 		clients.mx \
 		cluster.mx \
@@ -78,7 +77,7 @@ headers_mal = {
 		factories.mx groupby.mx mdb.mx pcre.mx  tablet.mx mat.mx histogram.mx \
 		urlbox.mx statistics.mx transaction.mx \
 		mal_mapi.mx sabaoth.mx remote.mx  \
-		bpm.mx txtsim.mx recycle.mx \
+		txtsim.mx recycle.mx \
 		cluster.mx trader.mx pma.mx \
 		tokenizer.mx zorder.mx
 }
