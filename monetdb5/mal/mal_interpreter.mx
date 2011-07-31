@@ -2026,7 +2026,7 @@ non-returned values.
 @= functioncall
 {	MalStkPtr nstk;
 	InstrPtr q;
-	int ii, arg;
+	int ii, arg, cmdsafe = 0, itracesafe = 0;
 
 	stk->pcup = stkpc;
 	@:safeTarget(@1)@
@@ -2054,18 +2054,21 @@ non-returned values.
 			BBPincref(lhs->val.bval, TRUE);
 	}
 	/* show call before entering the function */
-	if (cntxt->itrace || mb->trap) {
+	itracesafe = cntxt->itrace;
+	cmdsafe = stk->cmd;
+	if (stk->cmd =='s' || pci->blk->trap) {
 		lng t = 0;
 
-		if (stk->cmd == 0)
-			stk->cmd = cntxt->itrace;
+		stk->cmd = 's';
+
 		if (oldtimer)
 			t = GDKusec();
 		mdbStep(cntxt, pci->blk, nstk, 0);
 		if (stk->cmd == 'x' || cntxt->mode == FINISHING) {
 			stk->cmd = 0;
 			stkpc = mb->stop;
-		}
+			cmdsafe =  'x';
+		} 
 		if (oldtimer) {
 			/* ignore debugger waiting time*/
 			t = GDKusec() - t;
@@ -2076,9 +2079,26 @@ non-returned values.
 			if (cntxt->flags & memoryFlag)
 				oldMemory = MT_mallinfo();
 		}
+	} else {
+		cntxt->itrace = 0;
+		stk->cmd = 'c';
 	}
-	if ( stkpc != mb->stop)
-		ret = runMALsequence(cntxt, pci->blk, 1, pci->blk->stop, nstk, stk, pci);
+	if ( stkpc != mb->stop) {
+		/* reshuffle for profiling */
+		MalBlkPtr safemb = mb;
+		MalStkPtr safestk = stk;
+		mb = pci->blk;
+		stk = nstk;
+		@:beginProfile(stk,1)@
+		ret = runMALsequence(cntxt, pci->blk, 1, pci->blk->stop, nstk, safestk, pci);
+		@:endProfile(stk,1)@
+		mb = safemb;
+		stk = safestk;
+	}
+	if ( itracesafe) {
+		cntxt->itrace = itracesafe;
+		stk->cmd = cmdsafe;
+	}
 	GDKfree(nstk);
 	@:restoreTarget(@1,@3)@
 	@:exceptionHndlr(@1,@2,@3)@
