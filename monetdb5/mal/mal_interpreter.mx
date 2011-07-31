@@ -192,7 +192,7 @@ sequence of factory calls.
 				rhs = &getVarConstant(mb, i);
 				VALcopy(lhs, rhs);
 			}
-		} else{
+		} else {
 			lhs->vtype = getVarGDKType(mb, i);
 			lhs->val.pval = 0;
 			lhs->len = 0;
@@ -2053,7 +2053,32 @@ non-returned values.
 		if (lhs->vtype == TYPE_bat)
 			BBPincref(lhs->val.bval, TRUE);
 	}
-	ret = runMALsequence(cntxt, pci->blk, 1, pci->blk->stop, nstk, stk, pci);
+	/* show call before entering the function */
+	if (cntxt->itrace || mb->trap) {
+		lng t = 0;
+
+		if (stk->cmd == 0)
+			stk->cmd = cntxt->itrace;
+		if (oldtimer)
+			t = GDKusec();
+		mdbStep(cntxt, pci->blk, nstk, 0);
+		if (stk->cmd == 'x' || cntxt->mode == FINISHING) {
+			stk->cmd = 0;
+			stkpc = mb->stop;
+		}
+		if (oldtimer) {
+			/* ignore debugger waiting time*/
+			t = GDKusec() - t;
+			oldtimer += t;
+#ifdef HAVE_SYS_RESOURCE_H
+			getrusage(RUSAGE_SELF, &oldResource);
+#endif
+			if (cntxt->flags & memoryFlag)
+				oldMemory = MT_mallinfo();
+		}
+	}
+	if ( stkpc != mb->stop)
+		ret = runMALsequence(cntxt, pci->blk, 1, pci->blk->stop, nstk, stk, pci);
 	GDKfree(nstk);
 	@:restoreTarget(@1,@3)@
 	@:exceptionHndlr(@1,@2,@3)@
@@ -2067,8 +2092,33 @@ Factory calls should deal with the reference counting.
 	if (pci->blk == NULL)
 		ret = createScriptException(mb, stkpc, MAL, NULL,
 			"reference to MAL function missing");
-	else
+	else {
+		/* show call before entering the factory */
+		if (cntxt->itrace || mb->trap) {
+			lng t = 0;
+
+			if (stk->cmd == 0)
+				stk->cmd = cntxt->itrace;
+			if (oldtimer)
+				t = GDKusec();
+			mdbStep(cntxt, pci->blk, stk, 0);
+			if (stk->cmd == 'x' || cntxt->mode == FINISHING) {
+				stk->cmd = 0;
+				stkpc = mb->stop;
+			}
+			if (oldtimer) {
+				/* ignore debugger waiting time*/
+				t = GDKusec() - t;
+				oldtimer += t;
+	#ifdef HAVE_SYS_RESOURCE_H
+				getrusage(RUSAGE_SELF, &oldResource);
+	#endif
+				if (cntxt->flags & memoryFlag)
+					oldMemory = MT_mallinfo();
+			}
+		}
 		ret = runFactory(cntxt, pci->blk, mb, stk, pci);
+	}
 	@:exceptionHndlr(@1,@2,@3)@
 	@:timingHndlr(SLOW)@
 @-
