@@ -74,7 +74,7 @@ lib_optimizer = {
 		opt_statistics.mx \
 		opt_strengthReduction.mx \
 		opt_support.mx \
-		opt_slicing.mx \
+		opt_partition.mx \
 		opt_trace.mx
 }
 
@@ -94,7 +94,7 @@ headers_mal = {
 		opt_accessmode.mx opt_joinpath.mx opt_heuristics.mx opt_remap.mx \
 		opt_statistics.mx opt_trace.mx  opt_recycler.mx opt_dataflow.mx \
 		opt_cluster.mx opt_dictionary.mx opt_mapreduce.mx opt_origin.mx \
-		opt_mitosis.mx opt_octopus.mx opt_slicing.mx opt_history.mx
+		opt_mitosis.mx opt_octopus.mx opt_partition.mx opt_history.mx
 }
 
 EXTRA_DIST = optimizerWrapper.mx

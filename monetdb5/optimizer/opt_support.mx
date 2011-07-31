@@ -569,7 +569,7 @@ to easily trace their performance.
 #define DEBUG_OPT_SIDCRACK			47
 #define DEBUG_OPT_TRACE				48
 #define DEBUG_OPT_HEURISTIC			49
-#define DEBUG_OPT_SLICING			50
+#define DEBUG_OPT_PARTITION			50
 
 #define DEBUG_OPT(X) ((lng) 1 << (X))
 opt_export lng optDebug;
@@ -738,7 +738,7 @@ struct OPTcatalog {
 {"singleton",	0,	0,	0,	DEBUG_OPT_SINGLETON},
 {"strengthreduction",	0,	0,	0,	DEBUG_OPT_STRENGTHREDUCTION},
 {"trace",		0,	0,	0,	DEBUG_OPT_TRACE},
-{"slicing",	0,	0,	0,	DEBUG_OPT_SLICING},
+{"slicing",	0,	0,	0,	DEBUG_OPT_PARTITION},
 { 0,	0,	0,	0,	0}
 };
 
@@ -1306,7 +1306,6 @@ hasSideEffects(InstrPtr p, int strict)
 		getModuleId(p) == streamsRef ||
 		getModuleId(p) == bstreamRef ||
 		getModuleId(p) == mdbRef ||
-		getModuleId(p) == bpmRef ||
 		getModuleId(p) == malRef ||
 		getModuleId(p) == remapRef ||
 		getModuleId(p) == constraintsRef ||
