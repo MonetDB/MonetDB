@@ -333,8 +333,9 @@ MDBstart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		/* make client aware of being debugged */
 		cntxt= c;
 	} else
+	if ( stk->cmd == 0)
 		stk->cmd = 'n';
-	cntxt->itrace = 'n';
+	cntxt->itrace = stk->cmd;
 	cntxt->debugOptimizer= TRUE;
 	(void) mb;
 	(void) p;
