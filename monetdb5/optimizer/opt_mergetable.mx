@@ -145,7 +145,6 @@ comment "Resolve the multi-table definitions";
 @c
 #include "monetdb_config.h"
 #include "opt_mergetable.h"
-#include "bpm.h"
 
 typedef enum mat_type {
 	mat_none = 0,	/* Simple mat aligned operations (ie batcalc etc) */

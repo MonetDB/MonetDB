@@ -1,6 +1,0 @@
-a:= bat.new(:oid,:int);
-bat.insert(a,0@0,1);
-io.print(a);
-b:= bpm.unfold(a);
-c:= bpm.fold(b);
-io.print(c);
