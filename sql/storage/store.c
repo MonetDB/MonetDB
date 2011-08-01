@@ -502,11 +502,11 @@ load_column(sql_trans *tr, sql_table *t, oid rid)
 	if (dim_rid != oid_nil){ /* this is a dimension column */
 		c->dim = ZNEW(sql_dimspec);
 		if((v = table_funcs.column_find_value(tr, find_sql_column(dimensions, "start"), dim_rid)))
-			c->dim->start = ZNEW(lng); *c->dim->start = *(lng *)v; _DELETE(v);
+			c->dim->start = GDKstrdup((char *)v); _DELETE(v);
 		if((v = table_funcs.column_find_value(tr, find_sql_column(dimensions, "step"), dim_rid)))
-			c->dim->step = ZNEW(lng); *c->dim->step = *(lng *)v; _DELETE(v);
+			c->dim->step = GDKstrdup((char *)v); _DELETE(v);
 		if((v = table_funcs.column_find_value(tr, find_sql_column(dimensions, "stop"), dim_rid)))
-			c->dim->stop = ZNEW(lng); *c->dim->stop = *(lng *)v; _DELETE(v);
+			c->dim->stop = GDKstrdup((char *)v); _DELETE(v);
 	}
 
 	c->def = NULL;

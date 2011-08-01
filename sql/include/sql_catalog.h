@@ -195,9 +195,9 @@ typedef struct sql_subtype {
 } sql_subtype;
 
 typedef struct sql_dimspec {
-	lng *start; /* NULL means unbounded */
-	lng *step;
-	lng *stop;
+	char *start; /* NULL means unbounded */
+	char *step;
+	char *stop;
 } sql_dimspec;
 
 /* sql_func need type transform rules types are equal if underlying

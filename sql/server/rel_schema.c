@@ -539,11 +539,45 @@ table_constraint(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 	return res;
 }
 
+/**
+ * Get the string value of a dimension constraint 'dimcstr' out of the parse
+ * tree 'lst'.  Also check if the data type of this dimension constraint
+ * conforms the data type of the column 'ctype'.
+ *
+ * TODO: deal with TIMESTAMP dimensions differently, since the 'step' is an
+ * interval.
+ */
+static int
+get_dim_constraints(mvc *sql, sql_subtype *ctype, dlist *lst, char **dimcstr)
+{
+	int res = SQL_OK;
+	sql_exp *exp = NULL;
+	atom *a = NULL;
+
+	assert(lst->h->type == type_string || lst->h->type == type_symbol);
+
+	if(lst->h->type == type_symbol && !lst->h->data.sym)
+		return res; /* '*' case: nothing to do */
+
+	if (lst->h->type == type_string) { /* handle negative (numerical) value */
+		a = ((AtomNode *) lst->h->next->data.sym)->a;
+		atom_neg(a);
+	} else { /* handle non-negative value */
+		a = ((AtomNode *) lst->h->data.sym)->a;
+	}
+	exp = exp_atom(sql->sa, a);
+	if (!(exp = rel_check_type(sql, ctype, exp, type_equal)))
+		return SQL_ERR;
+	a = (atom *) exp->l; /* see rel_exp.c:exp_atom() */
+	*dimcstr = GDKstrdup(atom2string(sql->sa, a));
+	return res;
+}
+
 static int
 create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 {
 	dlist *l = s->data.lval;
-	dlist *dim = NULL, *dim_range = NULL, *dim_start = NULL, *dim_step = NULL, *dim_stop = NULL;
+	dlist *dim = NULL;
 	char *cname = l->h->data.sval;
 	sql_subtype *ctype = &l->h->next->data.typeval;
 	dlist *opt_list = NULL;
@@ -581,15 +615,15 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 			 * dim_range list of the "DIMENSION" case is denoted */
 			dim = l->h->next->next->next->data.sym->data.lval;
 			if (dim && !dim->h->next) { /* "DIMENSION dim_range" case */
-				dim_range = dim->h->data.lval;
+				dim = dim->h->data.lval; /* here starts the actual dimension constraints */
 
 				cs->dim = ZNEW(sql_dimspec);
-				switch (dim_range->cnt) { /* TODO: what if '-' is used in a non-numeric dim_exp? */
+				switch (dim->cnt) { /* TODO: what if '-' is used in a non-numeric dim_exp? */
 					case 1: {/* [size], [-size], [seqname] */
 						size_t len = 0;
 						char *tname = NULL;
-						if(dim_range->h->type == type_string) { /* TODO: implementation: look up the constraints of the [seq] */
-							sql_error(sql, 02, "%s ARRAY: dimension column '%s' uses sequence \"%s\" as constraint, not implemented yet\n", (alter)?"ALTER":"CREATE", cname, dim_range->h->data.sval);
+						if(dim->h->type == type_string) { /* TODO: implementation: look up the constraints of the [seq] */
+							sql_error(sql, 02, "%s ARRAY: dimension column '%s' uses sequence \"%s\" as constraint, not implemented yet\n", (alter)?"ALTER":"CREATE", cname, dim->h->data.sval);
 							return SQL_ERR;
 						}
 
@@ -601,89 +635,54 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 							return SQL_ERR;
 						}
 
-						assert(dim_range->h->type == type_list);
-						if (dim_range->h->data.lval->h->type == type_symbol){
-							if (dim_range->h->data.lval->h->data.sym) { 		/* the case: [size] */
-								tname = ((AtomNode*)dim_range->h->data.lval->h->data.sym)->a->tpe.type->sqlname;
+						assert(dim->h->type == type_list);
+						if (dim->h->data.lval->h->type == type_symbol){
+							if (dim->h->data.lval->h->data.sym) { 		/* the case: [size] */
+								tname = ((AtomNode*)dim->h->data.lval->h->data.sym)->a->tpe.type->sqlname;
 								len = strlen(tname);
 								if(tname[len-3] != 'i' || tname[len-2] != 'n' || tname[len-1] != 't') {
 									sql_error(sql, 02, "%s ARRAY: constraints of dimension column '%s' has invalid data type: expect int type, got \"%s\"\n", (alter)?"ALTER":"CREATE", cname, tname);
 									return SQL_ERR;
 								}
 
-								cs->dim->start = ZNEW(lng); *cs->dim->start = 0; /* TODO: make this configurable */
-								cs->dim->step = ZNEW(lng); *cs->dim->step = 1;
-								cs->dim->stop = ZNEW(lng); *cs->dim->stop = atom_get_int(((AtomNode*)dim_range->h->data.lval->h->data.sym)->a);
-							} 													/* else the case [*]: nothing to do */
-						} else { 												/* the case: [-size] */
-							assert(dim_range->h->data.lval->h->type == type_string && strcmp(dim_range->h->data.lval->h->data.sval, "sql_neg")==0);
+								cs->dim->start = GDKstrdup("0");
+								cs->dim->step = GDKstrdup("1");
+								cs->dim->step = GDKstrdup(atom2string(sql->sa, ((AtomNode*)dim->h->data.lval->h->data.sym)->a));
+							} else {									/* the case [*]: nothing to do */
+								/* TODO: check */
+							}
+						} else { 										/* the case: [-size] */
+							assert(dim->h->data.lval->h->type == type_string && strcmp(dim->h->data.lval->h->data.sval, "sql_neg")==0);
 
-							tname = ((AtomNode*)dim_range->h->data.lval->h->next->data.sym)->a->tpe.type->sqlname;
+							tname = ((AtomNode*)dim->h->data.lval->h->next->data.sym)->a->tpe.type->sqlname;
 							len = strlen(tname);
 							if(tname[len-3] != 'i' || tname[len-2] != 'n' || tname[len-1] != 't') {
 								sql_error(sql, 02, "%s ARRAY: constraints of dimension column '%s' has invalid data type: expect int type, got \"%s\"\n", (alter)?"ALTER":"CREATE", cname, tname);
 								return SQL_ERR;
 							}
 
-							cs->dim->start = ZNEW(lng); *cs->dim->start = 0; /* TODO: make this configurable */
-							cs->dim->step = ZNEW(lng); *cs->dim->step = -1;
-							atom_neg( ((AtomNode *) dim_range->h->data.lval->h->next->data.sym)->a );
-							cs->dim->stop = ZNEW(lng); *cs->dim->stop = atom_get_int(((AtomNode*)dim_range->h->data.lval->h->next->data.sym)->a);
+							cs->dim->start = GDKstrdup("0");
+							cs->dim->step = GDKstrdup("-1");
+							atom_neg( ((AtomNode *) dim->h->data.lval->h->next->data.sym)->a );
+							cs->dim->step = GDKstrdup(atom2string(sql->sa, ((AtomNode*)dim->h->data.lval->h->next->data.sym)->a));
 						}
 					} break;
 					case 2: /* [start:stop] */
-						dim_start = dim_range->h->data.lval;
-						if (dim_start->h->type == type_string) { /* handle negative (numerical) value */
-							cs->dim->start = ZNEW(lng);
-							atom_neg( ((AtomNode *) dim_start->h->next->data.sym)->a );
-							*cs->dim->start = atom_get_int( ((AtomNode *) dim_start->h->next->data.sym)->a );
-						} else if (dim_start->h->data.lval) { /* handle non-negative value */
-							cs->dim->start = ZNEW(lng);
-							*cs->dim->start = atom_get_int(((AtomNode *) dim_start->h->data.sym)->a);
-						} /* else start == '*': nothing to do */
-
-						dim_stop = dim_range->h->next->data.lval;
-						if (dim_stop->h->type == type_string) { /* handle negative (numerical) value */
-							cs->dim->stop = ZNEW(lng);
-							atom_neg( ((AtomNode *) dim_stop->h->next->data.sym)->a );
-							*cs->dim->stop = atom_get_int( ((AtomNode *) dim_stop->h->next->data.sym)->a );
-						} else if (dim_stop->h->data.lval) { /* handle non-negative value */
-							cs->dim->stop = ZNEW(lng);
-							*cs->dim->stop = atom_get_int(((AtomNode *) dim_stop->h->data.sym)->a);
-						} /* else stop == '*': nothing to do */
+						if((res = get_dim_constraints(sql, ctype, dim->h->data.lval, &cs->dim->start)) != SQL_OK)
+							return res;
+						if((res = get_dim_constraints(sql, ctype, dim->h->next->data.lval, &cs->dim->stop)) != SQL_OK)
+							return res;
 						break;
 					case 3: /* [start:step:stop] */
-						dim_start = dim_range->h->data.lval;
-						if (dim_start->h->type == type_string) { /* handle negative (numerical) value */
-							cs->dim->start = ZNEW(lng);
-							atom_neg( ((AtomNode *) dim_start->h->next->data.sym)->a );
-							*cs->dim->start = atom_get_int( ((AtomNode *) dim_start->h->next->data.sym)->a );
-						} else if (dim_start->h->data.lval) { /* handle non-negative value */
-							cs->dim->start = ZNEW(lng);
-							*cs->dim->start = atom_get_int(((AtomNode *) dim_start->h->data.sym)->a);
-						} /* else start == '*': nothing to do */
-
-						dim_step = dim_range->h->next->data.lval;
-						if (dim_step->h->type == type_string) { /* handle negative (numerical) value */
-							cs->dim->step = ZNEW(lng);
-							*cs->dim->step = atom_get_int( ((AtomNode *) dim_step->h->next->data.sym)->a );
-						} else if (dim_step->h->data.lval) { /* handle non-negative value */
-							cs->dim->step = ZNEW(lng);
-							*cs->dim->step = atom_get_int(((AtomNode *) dim_step->h->data.sym)->a);
-						} /* else step == '*': nothing to do */
-
-						dim_stop = dim_range->h->next->next->data.lval;
-						if (dim_stop->h->type == type_string) { /* handle negative (numerical) value */
-							cs->dim->stop = ZNEW(lng);
-							atom_neg( ((AtomNode *) dim_stop->h->next->data.sym)->a );
-							*cs->dim->stop = atom_get_int( ((AtomNode *) dim_stop->h->next->data.sym)->a );
-						} else if (dim_stop->h->data.lval) { /* handle non-negative value */
-							cs->dim->stop = ZNEW(lng);
-							*cs->dim->stop = atom_get_int(((AtomNode *) dim_stop->h->data.sym)->a);
-						} /* else stop == '*': nothing to do */
+						if((res = get_dim_constraints(sql, ctype, dim->h->data.lval, &cs->dim->start)) != SQL_OK)
+							return res;
+						if((res = get_dim_constraints(sql, ctype, dim->h->next->data.lval, &cs->dim->step)) != SQL_OK)
+							return res;
+						if((res = get_dim_constraints(sql, ctype, dim->h->next->next->data.lval, &cs->dim->stop)) != SQL_OK)
+							return res;
 						break;
 					default:
-						sql_error(sql, 02, "%s ARRAY: dimension '%s' has wrong number of range constraints %d\n", (alter)?"ALTER":"CREATE", cname, dim_range->cnt);
+						sql_error(sql, 02, "%s ARRAY: dimension '%s' has wrong number of range constraints %d\n", (alter)?"ALTER":"CREATE", cname, dim->cnt);
 						return SQL_ERR;
 				}
 			} else if (dim && dim->h->next) {
