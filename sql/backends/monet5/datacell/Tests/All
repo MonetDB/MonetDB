@@ -1,4 +1,20 @@
+# SQL
+# (Must be first as otherwise creation of schema datacell via
+#  50_datacell.sql is not triggered, as first SQL-clients does not connect
+#  on "virgin" database!???)
+ENABLE_DATACELL?scenario00.sql
+ENABLE_DATACELL?scenario01.sql
+ENABLE_DATACELL?scenario02.sql
+ENABLE_DATACELL?scenario03.sql
+ENABLE_DATACELL?scenario04.sql
+ENABLE_DATACELL?scenario05.sql
+ENABLE_DATACELL?scenario06.sql
+ENABLE_DATACELL?datacell00.sql
+ENABLE_DATACELL?dctemper00.sql
+ENABLE_DATACELL?linearroad.sql
+# MAL
 ENABLE_DATACELL?basket00
 ENABLE_DATACELL?receptor00
 ENABLE_DATACELL?emitter00
 ENABLE_DATACELL?pair00
+ENABLE_DATACELL?petrinet00

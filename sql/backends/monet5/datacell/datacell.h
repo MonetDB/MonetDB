@@ -31,7 +31,7 @@
 #include "petrinet.h"
 
 #ifdef WIN32
-#ifndef LIBCONTAINERS
+#ifndef LIBDATACELL
 #define datacell_export extern __declspec(dllimport)
 #else
 #define datacell_export extern __declspec(dllexport)
@@ -62,5 +62,6 @@ datacell_export str DCpauseScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, 
 datacell_export str DCresumeScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str DCpostlude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
+datacell_export str DCemitter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif

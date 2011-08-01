@@ -4,7 +4,6 @@
 -- with datacell.threshold option
 -- it assumes that events arrive from sensor with a delay of X milliseconds
 
-create schema datacell;
 set optimizer='datacell_pipe';
 
 create table datacell.bakin(

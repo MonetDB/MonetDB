@@ -3,7 +3,6 @@
 -- this is the extended version of scenario00
 -- with sliding window and a 2 seconds delay
 
-create schema datacell;
 set optimizer='datacell_pipe';
 
 create table datacell.beatin(

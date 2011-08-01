@@ -74,6 +74,9 @@ mserver_abort()
 }
 #endif
 
+static void usage(char *prog)
+	__attribute__((__noreturn__));
+
 static void
 usage(char *prog)
 {

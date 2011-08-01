@@ -30,19 +30,8 @@
 #include "mtime.h"
 #include "basket.h"
 
-#ifdef WIN32
-#ifndef LIBCONTAINERS
-#define datacell_export extern __declspec(dllimport)
-#else
-#define datacell_export extern __declspec(dllexport)
-#endif
-#else
-#define datacell_export extern
-#endif
-
 /* #define _DEBUG_RECEPTOR_*/
 #define RCout GDKout
-datacell_export str RCdump();
 
 /*
  * @-
@@ -56,7 +45,7 @@ datacell_export str RCdump();
 #define PAUSEDEFAULT 1000
 
 #ifdef WIN32
-#ifndef LIBADAPTERS
+#ifndef LIBDATACELL
 #define adapters_export extern __declspec(dllimport)
 #else
 #define adapters_export extern __declspec(dllexport)
@@ -75,6 +64,6 @@ adapters_export str RCmode(int *ret, str *nme, str *arg);
 adapters_export str RCprotocol(int *ret, str *nme, str *arg);
 adapters_export str DCscenario(int *ret, str *nme, str *fnme, int *seq);
 adapters_export str DCgenerator(int *ret, str *nme, str *modnme, str *fcnnme);
-adapters_export str RCdump() ;
+adapters_export str RCdump(void) ;
 #endif
 

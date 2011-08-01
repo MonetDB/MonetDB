@@ -150,7 +150,7 @@ extern char *Strndup(const char *, size_t);
 extern void ofile_printf(_In_z_ _Printf_format_string_ const char *, ...)
 	__attribute__((__format__(__printf__, 1, 2)));
 extern void Fatal(const char *, _In_z_ _Printf_format_string_ const char *, ...)
-	__attribute__((__format__(__printf__, 2, 3)));
+	__attribute__((__format__(__printf__, 2, 3), __noreturn__));
 extern void Error(_In_z_ _Printf_format_string_ const char *, ...)
 	__attribute__((__format__(__printf__, 1, 2)));
 extern void Message(_In_z_ _Printf_format_string_ const char *, ...)

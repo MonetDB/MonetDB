@@ -101,7 +101,7 @@ EMnew(str nme)
 	return em;
 }
 
-Emitter
+static Emitter
 EMfind(str nme)
 {
 	Emitter r;
@@ -517,7 +517,7 @@ dumpEmitter(Emitter em)
 }
 
 str
-EMdump()
+EMdump(void)
 {
 	Emitter rc = emAnchor;
 	for ( ; rc; rc= rc->nxt)

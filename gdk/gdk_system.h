@@ -108,8 +108,10 @@ typedef size_t MT_Id;		/* thread number. will not be zero */
 enum MT_thr_detach { MT_THR_JOINABLE, MT_THR_DETACHED };
 
 gdk_export int MT_create_thread(MT_Id *t, void (*function) (void *), void *arg, enum MT_thr_detach d);
-gdk_export void MT_exit_thread(int status);
-gdk_export void MT_global_exit(int status);
+gdk_export void MT_exit_thread(int status)
+	__attribute__((__noreturn__));
+gdk_export void MT_global_exit(int status)
+	__attribute__((__noreturn__));
 gdk_export MT_Id MT_getpid(void);
 gdk_export int MT_join_thread(MT_Id t);
 gdk_export int MT_kill_thread(MT_Id t);
