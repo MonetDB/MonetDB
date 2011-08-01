@@ -401,10 +401,6 @@ An error at this stage normally lead to an abort.
 #endif
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include "gdk_system.h"
 #include "gdk_posix.h"
 #include <stream.h>
@@ -2621,9 +2617,6 @@ gdk_export void *THRdata[16];
 #define THRset_errbuf(t,b)	(t->data[2] = b)
 
 #ifndef GDK_NOLINK
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 static inline bat
 BBPcheck(register bat x, register const char *y)
@@ -2680,9 +2673,6 @@ BATmirror(register BAT *b)
 	return BBP_cache(-b->batCacheid);
 }
 
-#ifdef __cplusplus
-}
-#endif
 #endif
 
 /*
@@ -3422,10 +3412,6 @@ gdk_export BAT *BATkdiff(BAT *b, BAT *c);
 
 typedef void (*ColFcn) (ptr, ptr);
 typedef void (*RowFcn) (ptr, ptr *);
-
-#ifdef __cplusplus
-}
-#endif
 @
 
 @h
