@@ -2,10 +2,10 @@ The MonetDB Database System
 ===========================
 
 The MonetDB database is developed by the CWI database research group 
-(see http://monetdb.cwi.nl).
+(see http://www.monetdb.org/).
 
 Via the MonetDB project we have brought the MonetDB system in open source,
-where it is accessible at http://monetdb.cwi.nl/Download/
+where it is accessible at http://www.monetdb.org/Downloads/
 
 The MonetDB database system is a high-performance database kernel for
 query-intensive applications. The MonetDB kernel works together with an
@@ -22,7 +22,7 @@ Copyright Notice
 The contents of this file are subject to the MonetDB Public License
 Version 1.1 (the "License"); you may not use this file except in
 compliance with the License. You may obtain a copy of the License at
-http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+http://www.monetdb.org/Legal/MonetDBLicense
 
 Software distributed under the License is distributed on an "AS IS"
 basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the

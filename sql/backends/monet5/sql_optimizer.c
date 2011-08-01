@@ -2,7 +2,7 @@
  * The contents of this file are subject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ * http://www.monetdb.org/Legal/MonetDBLicense
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -148,11 +148,11 @@
 #include "sql_optimizer.h"
 #include "sql_scenario.h"
 #include "sql_gencode.h"
-#include "bpm/bpm_storage.h"
 #include "opt_pipes.h"
 
 #define TOSMALL 10
 
+#if 0
 str
 FXoptimizer(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -270,6 +270,7 @@ FXoptimizer(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 	return MAL_SUCCEED;
 }
+#endif
 /*
  * @-
  * Cost-based optimization and semantic evaluations require statistics to work with.
@@ -294,7 +295,7 @@ static void
 SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 {
 	InstrPtr *old = NULL;
-	int oldtop, i, actions = 0, size = 0, j = 0;
+	int oldtop, i, actions = 0, size = 0;
 	lng clk = GDKusec();
 
 	old = mb->stmt;
@@ -311,16 +312,13 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 		if( getModuleId(p) == sqlRef &&
 		    (f == bindRef || f == bindidxRef || f == binddbatRef ) ){
 			ValRecord vr;
-			InstrPtr q;
 			char *sname = getVarConstant(mb, getArg(p,2)).val.sval;
 			char *tname = getVarConstant(mb, getArg(p,3)).val.sval;
 			char *cname = NULL;
 			int not_null = 0;
 			wrd rows = 1; /* default to cope with delta bats */
 			int mode = 0;
-			int part = 0;
 			int k = getArg(p,0);
-			sql_bpm *bpm = NULL;
 			sql_schema *s = mvc_bind_schema(m, sname);
 			BAT *b;
 
@@ -340,10 +338,6 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 				size_t cnt;
 				sql_idx *i = mvc_bind_idx(m, s, cname);
 
-				if (active_store_type == store_bpm && i->data) {
-					bpm = i->data;
-					part = bpm->nr;
-				}
 				cnt = store_funcs.count_idx(i);
 				assert(cnt <= (size_t) GDK_oid_max);
 				b = store_funcs.bind_idx(m->session->tr,i,0);
@@ -363,10 +357,6 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 				if (c) {
 					not_null = !c->null;
 
-					if (active_store_type == store_bpm && c->data) {
-						bpm = c->data;
-						part = bpm->nr;
-					}
 					cnt = store_funcs.count_col(c);
 					assert(cnt <= (size_t) GDK_oid_max);
 					b = store_funcs.bind_col(m->session->tr,c,0);
@@ -384,18 +374,7 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 				varSetProp(mb, k, rowsProp, op_eq, VALset(&vr, TYPE_wrd, &rows));
 			if (not_null)
 				varSetProp(mb, k, notnilProp, op_eq, NULL);
-			if (0 && active_store_type == store_bpm && part &&
-			    f != binddbatRef) {
-				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, constraintsRef);
-				setFunctionId(q, putName("parts", 5));
-		        	setDestVar(q, newTmpVariable(mb, TYPE_void));
-				for(j=p->retc; j<p->argc; j++)
-					q = pushArgument(mb, q, getArg(p,j));
-				pushInt(mb, q, part);
-				pushInstruction(mb,q);
-			}
-			if (part <= 1) {
+			{
 				int lowprop = hlbProp, highprop = hubProp;
 				/* rows == cnt has been checked above to be <= GDK_oid_max */
 				oid low = 0, high = low + (oid)rows;
@@ -404,7 +383,7 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 				if (mode == RD_INS) {
 					if (f != binddbatRef)
 						low = high;
-					high += BPM_SPLIT;
+					high += 1024*1024;
 				}
 				if (f == binddbatRef) {
 					lowprop = tlbProp;
@@ -412,38 +391,9 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 				}
 				varSetProp(mb, getArg(p,0), lowprop, op_gte, VALset(&vr, TYPE_oid, &low));
 				varSetProp(mb, getArg(p,0), highprop, op_lt, VALset(&vr, TYPE_oid, &high));
-			} else {
-				int i, v = getArg(p,0);
-				int tpe = getVarType(mb, v);
-				int top = mb->stop;
-				oid low = 0, high = 0;
-
-				for(i=0; i<part; i++){
-					high += BPM_SPLIT;
-					q = newInstruction(mb, ASSIGNsymbol);
-					setModuleId(q, matRef);
-					setFunctionId(q, f);
-					getArg(q,0) = newTmpVariable(mb, tpe);
-					for(j=p->retc; j<p->argc; j++)
-						q = pushArgument(mb, q, getArg(p,j));
-					q = pushInt(mb, q, i);
-					pushInstruction(mb,q);
-
-					varSetProp(mb, getArg(q,0), hlbProp, op_gte, VALset(&vr, TYPE_oid, &low));
-					varSetProp(mb, getArg(q,0), hubProp, op_lt, VALset(&vr, TYPE_oid, &high));
-
-					low = high;
-				}
-				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q,matRef);
-				setFunctionId(q,newRef);
-				getArg(q,0)= v;
-				for(; top<mb->stop; top++)
-					q= pushArgument(mb, q, getArg(getInstrPtr(mb,top), 0));
-				pushInstruction(mb,q);
 			}
 
-			if (not_null || part>1)
+			if (not_null)
 				actions++;
 		} else {
 			pushInstruction(mb,p);

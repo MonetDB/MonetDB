@@ -2,7 +2,7 @@
  * The contents of this file are subject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ * http://www.monetdb.org/Legal/MonetDBLicense
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -132,7 +132,7 @@ MT_locktrace_end()
 			int idx = MT_locktrace_hash(MT_locktrace_nme[i]);
 
 			if (my_cnt[idx])
-				printf("%s %llu\n", MT_locktrace_nme[i], my_cnt[idx]);
+				printf("%s " ULLFMT "\n", MT_locktrace_nme[i], my_cnt[idx]);
 			my_cnt[idx] = 0;
 		}
 	MT_locktrace = 0;
@@ -387,7 +387,7 @@ pthread_cond_wait(pthread_cond_t *cv, pthread_mutex_t *external_mutex)
 }
 #else  /* !defined(HAVE_PTHREAD_H) && defined(_MSC_VER) */
 #ifdef HAVE_PTHREAD_SIGMASK
-void
+static void
 MT_thread_sigmask(sigset_t * new_mask, sigset_t * orig_mask)
 {
 	(void) sigdelset(new_mask, SIGQUIT);
@@ -608,17 +608,6 @@ MT_getpid(void)
 	return (MT_Id) (((size_t) pthread_self().p) + 1);
 #else
 	return (MT_Id) (((size_t) pthread_self()) + 1);
-#endif
-}
-
-int
-MT_alive(int pid)
-{
-#ifdef HAVE_KILL
-	return kill(pid, 0) == 0;
-#else
-	(void) pid;
-	return 0;
 #endif
 }
 

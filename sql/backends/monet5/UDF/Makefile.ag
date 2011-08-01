@@ -1,7 +1,7 @@
 # The contents of this file are subject to the MonetDB Public License
 # Version 1.1 (the "License"); you may not use this file except in
 # compliance with the License. You may obtain a copy of the License at
-# http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+# http://www.monetdb.org/Legal/MonetDBLicense
 #
 # Software distributed under the License is distributed on an "AS IS"
 # basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -28,15 +28,14 @@ INCLUDES = .. \
 	../../../../clients/mapilib \
 	../../../../common/options \
 	../../../../common/stream \
-	../../../../gdk \
-	$(READLINE_INCS) $(MSEED_CFLAGS) $(cfitsio_CFLAGS) $(curl_CFLAGS)
+	../../../../gdk
 
 lib__udf = {
 	MODULE
 	DIR = libdir/monetdb5
 	SOURCES = udf.c
 	LIBS = ../../../../monetdb5/tools/libmonetdb5 \
-		   ../../../../gdk/libbat $(curl_LIBS)
+		   ../../../../gdk/libbat
 }
 
 headers_mal = {

@@ -2,7 +2,7 @@
  * The contents of this file are subject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ * http://www.monetdb.org/Legal/MonetDBLicense
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -434,14 +434,14 @@ dump_type(Mapi mid, stream *toConsole, char *c_type, char *c_type_digits, char *
 			space += mnstr_printf(toConsole, "(%s)", c_type_digits);
 	} else if (strcmp(c_type, "timestamp") == 0 ||
 		   strcmp(c_type, "timestamptz") == 0) {
-		space = mnstr_printf(toConsole, "TIMESTAMP", c_type);
+		space = mnstr_printf(toConsole, "TIMESTAMP");
 		if (strcmp(c_type_digits, "7") != 0)
 			space += mnstr_printf(toConsole, "(%d)", atoi(c_type_digits) - 1);
 		if (strcmp(c_type, "timestamptz") == 0)
 			space += mnstr_printf(toConsole, " WITH TIME ZONE");
 	} else if (strcmp(c_type, "time") == 0 ||
 		   strcmp(c_type, "timetz") == 0) {
-		space = mnstr_printf(toConsole, "TIME", c_type);
+		space = mnstr_printf(toConsole, "TIME");
 		if (strcmp(c_type_digits, "1") != 0)
 			space += mnstr_printf(toConsole, "(%d)", atoi(c_type_digits) - 1);
 		if (strcmp(c_type, "timetz") == 0)

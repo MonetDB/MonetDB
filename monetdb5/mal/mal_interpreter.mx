@@ -84,8 +84,8 @@ static lng memorypool;      /* memory claimed by concurrent threads */
 static int memoryclaims = 0;    /* number of threads active with expensive operations */
 #endif
 
-#define heapinfo(X) if((X) && (X)->base) vol = (X)->free; else vol = 0;
-#define hashinfo(X) if((X) && (X)->mask) vol = ((X)->mask+(X)->lim+1)*sizeof(int) + sizeof(*(X)); else vol = 0;
+#define heapinfo(X) if ((X) && (X)->base) vol = (X)->free; else vol = 0;
+#define hashinfo(X) if ((X) && (X)->mask) vol = ((X)->mask + (X)->lim + 1) * sizeof(int) + sizeof(*(X)); else vol = 0;
 
 #define FREE_EXCEPTION(p) { if (p && p != M5OutOfMemory) GDKfree(p); }
 
@@ -264,9 +264,9 @@ being called.
 		pci = pcicaller;
 		@:initStack(env->stkbot)@
 	} else {
-		stk= prepareMALstack(mb, mb->vsize);
+		stk = prepareMALstack(mb, mb->vsize);
 		if (stk == 0)
-			throw(MAL,"mal.interpreter",MAL_STACK_FAIL);
+			throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
 		stk->blk = mb;
 		stk->cmd = cntxt->itrace;    /* set debug mode */
 		/*safeguardStack*/
@@ -307,7 +307,8 @@ we should first remove garbage.
 		for (k = pp->retc; i < pci->argc; i++, k++) {
 			lhs = &stk->stk[pp->argv[k]];
 			/* variable arguments ? */
-			if (k == pp->argc - 1) k--;
+			if (k == pp->argc - 1)
+				k--;
 
 			rhs = &env->stk[pci->argv[i]];
 			VALcopy(lhs, rhs);
@@ -1042,7 +1043,7 @@ runDFLOWworker(void *t)
 		}
 #endif
 		assert(fs->pc > 0);
-		PARDEBUG mnstr_printf(GDKstdout, "#execute pc= %d thr= %d claim= %d,%d %s\n", fs->pc, task->id, fs->argclaim, fs->hotclaim, fs->error ? fs->error : "");
+		PARDEBUG mnstr_printf(GDKstdout, "#execute pc= %d thr= %d claim= " LLFMT "," LLFMT " %s\n", fs->pc, task->id, fs->argclaim, fs->hotclaim, fs->error ? fs->error : "");
 		fs->error = DFLOWstep(task, fs);
 
 		PARDEBUG mnstr_printf(GDKstdout, "#execute pc= %d thr= %d finished %s\n", fs->pc, task->id, fs->error ? fs->error : "");
@@ -1072,7 +1073,7 @@ runDFLOWworker(void *t)
 					task->flow->status[i].argclaim += fs->hotclaim;
 					task->flow->status[i].error = NULL;
 					nxtfs = task->flow->status + i;
-					PARDEBUG mnstr_printf(GDKstdout, "#continue pc= %d thr= %d claim= %d\n", nxtfs->pc, task->id, task->flow->status[i].argclaim);
+					PARDEBUG mnstr_printf(GDKstdout, "#continue pc= %d thr= %d claim= " LLFMT "\n", nxtfs->pc, task->id, task->flow->status[i].argclaim);
 					break;
 				}
 
@@ -1246,7 +1247,7 @@ DFLOWscheduler(DataFlow flow)
 #endif
 			queued++;
 			flow->status[i].state = DFLOWrunning;
-			PARDEBUG mnstr_printf(GDKstdout, "#enqueue pc=%d claim=%d queue %d\n", flow->status[i].pc, flow->status[i].argclaim, queued);
+			PARDEBUG mnstr_printf(GDKstdout, "#enqueue pc=%d claim=" LLFMT " queue %d\n", flow->status[i].pc, flow->status[i].argclaim, queued);
 			q_enqueue_(flow->todo, flow->status + i);
 		}
 	MT_lock_unset(&flow->todo->l, "q_enqueue");
@@ -1290,7 +1291,7 @@ DFLOWscheduler(DataFlow flow)
 		 */
 		f->state = DFLOWwrapup;
 		last = ABS(f->pc) - flow->start;
-		PARDEBUG mnstr_printf(GDKstdout, "#finished pc=%d claim %d\n", f->pc, f->hotclaim);
+		PARDEBUG mnstr_printf(GDKstdout, "#finished pc=%d claim " LLFMT "\n", f->pc, f->hotclaim);
 
 		/* enter all dependencies before releasing the queue  */
 		MT_lock_set(&flow->todo->l, "q_enqueue");
@@ -1306,14 +1307,14 @@ DFLOWscheduler(DataFlow flow)
 					flow->status[i].state = DFLOWrunning;
 					flow->status[i].blocks--;
 					PARDEBUG
-					mnstr_printf(GDKstdout, "#enqueue pc=%d claim=%d queued= %d\n", flow->status[i].pc, flow->status[i].argclaim, queued);
+					mnstr_printf(GDKstdout, "#enqueue pc=%d claim= " LLFMT " queued= %d\n", flow->status[i].pc, flow->status[i].argclaim, queued);
 				} else {
 					 if (ret == MAL_SUCCEED)
-						PARDEBUG mnstr_printf(GDKstdout, "#await   pc %d block %d claim= %d\n", flow->start + i, flow->status[i].blocks, flow->status[i].argclaim);
+						PARDEBUG mnstr_printf(GDKstdout, "#await   pc %d block %d claim= " LLFMT "\n", flow->start + i, flow->status[i].blocks, flow->status[i].argclaim);
 					flow->status[i].blocks--;
 				}
 			} else { /* worker stole the candidate */
-				PARDEBUG mnstr_printf(GDKstdout, "#woke up pc %d block %d claim %d\n", flow->start + i, flow->status[i].blocks, flow->status[i].argclaim);
+				PARDEBUG mnstr_printf(GDKstdout, "#woke up pc %d block %d claim " LLFMT "\n", flow->start + i, flow->status[i].blocks, flow->status[i].argclaim);
 				queued++;
 				oldq++;
 			}
@@ -1457,7 +1458,7 @@ runMALdetached(void *t)
 	msg = reenterMAL(cntxt, mb, p->start, p->stop, stk, 0, 0);
 	stk->keepAlive = sve;
 	if (msg != MAL_SUCCEED)
-		GDKerror(msg);      /* indirect way to pass an error */
+		GDKerror("%s", msg);      /* indirect way to pass an error */
 #ifdef DEBUG_DETACHED
 	mnstr_printf(cntxt->fdout, "finished thread in background\n");
 #endif
@@ -1673,7 +1674,7 @@ possible change in the control flow.
 		ret = NULL;
 		if (getVarType(mb, getDestVar(pci)) == TYPE_str) {
 			ret = createScriptException(mb, stkpc, MAL, NULL,
-				stk->stk[getDestVar(pci)].val.sval);
+				"%s", stk->stk[getDestVar(pci)].val.sval);
 		}
 		@:skipToCatch(exceptionVar, @2, stk)@
 		if (stkpc == mb->stop)
@@ -2026,7 +2027,7 @@ non-returned values.
 @= functioncall
 {	MalStkPtr nstk;
 	InstrPtr q;
-	int ii, arg, cmdsafe = 0, itracesafe = 0;
+	int ii, arg;
 
 	stk->pcup = stkpc;
 	@:safeTarget(@1)@
@@ -2053,56 +2054,7 @@ non-returned values.
 		if (lhs->vtype == TYPE_bat)
 			BBPincref(lhs->val.bval, TRUE);
 	}
-	/* show call before entering the function */
-	itracesafe = cntxt->itrace;
-	cmdsafe = stk->cmd;
-	if (stk->cmd =='s' || pci->blk->trap) {
-		lng t = 0;
-
-		stk->cmd = 's';
-
-		if (oldtimer)
-			t = GDKusec();
-		mdbStep(cntxt, pci->blk, nstk, 0);
-		if (stk->cmd == 'x' || cntxt->mode == FINISHING) {
-			stk->cmd = 0;
-			stkpc = mb->stop;
-			cmdsafe =  'x';
-		} 
-		if (oldtimer) {
-			/* ignore debugger waiting time*/
-			t = GDKusec() - t;
-			oldtimer += t;
-#ifdef HAVE_SYS_RESOURCE_H
-			getrusage(RUSAGE_SELF, &oldResource);
-#endif
-			if (cntxt->flags & memoryFlag)
-				oldMemory = MT_mallinfo();
-		}
-	} else {
-		cntxt->itrace = 0;
-		stk->cmd = 'c';
-	}
-	if ( stkpc != mb->stop) {
-		/* reshuffle for profiling */
-		MalBlkPtr safemb = mb;
-		MalStkPtr safestk = stk;
-		int safepc= stkpc;
-		pci->blk->profiler = mb->profiler;
-		mb = pci->blk;
-		stk = nstk;
-		stkpc = 0;
-		@:beginProfile(stk,1)@
-		ret = runMALsequence(cntxt, pci->blk, 1, pci->blk->stop, nstk, safestk, pci);
-		@:endProfile(stk,1)@
-		stkpc = safepc;
-		mb = safemb;
-		stk = safestk;
-	}
-	if ( itracesafe) {
-		cntxt->itrace = itracesafe;
-		stk->cmd = cmdsafe;
-	}
+	ret = runMALsequence(cntxt, pci->blk, 1, pci->blk->stop, nstk, stk, pci);
 	GDKfree(nstk);
 	@:restoreTarget(@1,@3)@
 	@:exceptionHndlr(@1,@2,@3)@
@@ -2605,9 +2557,9 @@ if (cntxt->flags && stk->cmd != 't' && stk->cmd != 'C') {
 	if (cntxt->flags & ioFlag) {
 		struct  rusage resource;
 		getrusage(RUSAGE_SELF, &resource);
-		mnstr_printf(cntxt->fdout, " %3d R",
+		mnstr_printf(cntxt->fdout, " %3ld R",
 			resource.ru_inblock - oldinblock);
-		mnstr_printf(cntxt->fdout, " %3d W ",
+		mnstr_printf(cntxt->fdout, " %3ld W ",
 			resource.ru_oublock - oldoublock);
 	}
 #endif

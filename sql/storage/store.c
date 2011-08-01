@@ -2,7 +2,7 @@
  * The contents of this file are subject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ * http://www.monetdb.org/Legal/MonetDBLicense
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -58,7 +58,7 @@ static int bs_debug = 0;
 static sql_trans *spare_trans[MAX_SPARES];
 static int spares = 0;
 
-int
+static int
 key_cmp(sql_key *k, sqlid *id)
 {
 	if (k && id &&k->base.id == *id)
@@ -68,7 +68,7 @@ key_cmp(sql_key *k, sqlid *id)
 
 static int stamp = 1;
 
-static int timestamp () {
+static int timestamp (void) {
 	return stamp++;
 }
 
@@ -125,7 +125,7 @@ idx_destroy(sql_idx * i)
 	_DELETE(i);
 }
 
-void
+static void
 trigger_destroy(sql_trigger *tr)
 {
 	/* remove trigger from schema */
@@ -170,7 +170,7 @@ table_destroy(sql_table *t)
 	_DELETE(t);
 }
 
-void
+static void
 seq_destroy(sql_sequence *s)
 {
 	base_destroy(&s->base);
@@ -222,7 +222,7 @@ sql_trans_destroy(sql_trans *t)
 }
 
 static void
-destroy_spare_transactions() 
+destroy_spare_transactions(void) 
 {
 	int i, s = spares;
 
@@ -946,7 +946,7 @@ create_trans(backend_stack stk)
 	return t;
 }
 
-void
+static void
 load_trans(sql_trans* tr, sqlid id)
 {
 	sql_schema *syss = find_sql_schema(tr, "sys");
@@ -1167,7 +1167,7 @@ create_sql_table(sql_allocator *sa, char *name, sht type, bit system, int persis
 	return t;
 }
 
-sql_column *
+static sql_column *
 dup_sql_column(sql_allocator *sa, sql_table *t, sql_column *c)
 {
 	sql_column *col = SA_ZNEW(sa, sql_column);
@@ -1269,7 +1269,7 @@ bootstrap_create_schema(sql_trans *tr, char *name, int auth_id, int owner)
 }
 
 static int
-store_schema_number()
+store_schema_number(void)
 {
 	return schema_number;
 }
@@ -3151,7 +3151,7 @@ sql_trans_commit(sql_trans *tr)
 }
 
 
-void
+static void
 sql_trans_drop_all_dependencies(sql_trans *tr, sql_schema *s, int id, short type)
 {
 	int dep_id=0, t_id = -1;

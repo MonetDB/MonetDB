@@ -2,7 +2,7 @@
 The contents of this file are subject to the MonetDB Public License
 Version 1.1 (the "License"); you may not use this file except in
 compliance with the License. You may obtain a copy of the License at
-http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+http://www.monetdb.org/Legal/MonetDBLicense
 
 Software distributed under the License is distributed on an "AS IS"
 basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -204,7 +204,7 @@ blobsize(size_t nitems)
 	return (var_t) (sizeof(size_t) + nitems);
 }
 
-var_t
+static var_t
 blob_put(Heap *h, var_t *bun, blob *val)
 {
 	char *base = NULL;
@@ -237,7 +237,7 @@ blob_get(Heap *h, int *bun, int *l, blob **val)
 }
 #endif
 
-int
+static int
 blob_nequal(blob *l, blob *r)
 {
 	size_t len = l->nitems;
@@ -251,19 +251,19 @@ blob_nequal(blob *l, blob *r)
 	return memcmp(l->data, r->data, len) != 0;
 }
 
-void
+static void
 blob_del(Heap *h, var_t *idx)
 {
 	HEAP_free(h, *idx);
 }
 
-BUN
+static BUN
 blob_hash(blob *b)
 {
 	return (BUN) b->nitems;
 }
 
-blob *
+static blob *
 blob_null(void)
 {
 	static blob nullval;
@@ -272,7 +272,7 @@ blob_null(void)
 	return (&nullval);
 }
 
-blob *
+static blob *
 blob_read(blob *a, stream *s, size_t cnt)
 {
 	int len;
@@ -290,7 +290,7 @@ blob_read(blob *a, stream *s, size_t cnt)
 	return a;
 }
 
-int
+static int
 blob_write(blob *a, stream *s, size_t cnt)
 {
 	var_t len = blobsize(a->nitems);
@@ -310,14 +310,14 @@ blob_write(blob *a, stream *s, size_t cnt)
 #define normal_vart_SWAP(x)	((var_t) long_long_SWAP((lng)x))
 #endif
 
-void
+static void
 blob_convert(blob *b, int direction)
 {
 	(void) direction;
 	b->nitems = normal_vart_SWAP(b->nitems);
 }
 
-int
+static int
 blob_length(blob *p)
 {
 	var_t l = blobsize(p->nitems); /* 64bit: check for overflow */
@@ -326,7 +326,7 @@ blob_length(blob *p)
 }
 
 
-void
+static void
 blob_heap(Heap *heap, size_t capacity)
 {
 	HEAP_initialize(heap, capacity, 0, (int) sizeof(var_t));
@@ -335,7 +335,7 @@ blob_heap(Heap *heap, size_t capacity)
 #ifndef OLDSTYLE
 static char hexit[] = "0123456789ABCDEF";
 
-int
+static int
 blob_tostr(str *tostr, int *l, blob *p)
 {
 	char *s;
@@ -413,7 +413,7 @@ sqlblob_tostr(str *tostr, int *l, blob *p)
 	return (int) (s - *tostr); /* 64bit: check for overflow */
 }
 
-int
+static int
 blob_fromstr(char *instr, int *l, blob **val)
 {
 	size_t i;
@@ -527,7 +527,7 @@ sqlblob_fromstr(char *instr, int *l, blob **val)
 	 */
 	i = strlen(instr);
 	if (i % 2 == 1) {
-		GDKerror("sqlblob_fromstr: Illegal blob length '%d' (should be even)\n", i);
+		GDKerror("sqlblob_fromstr: Illegal blob length '" SZFMT "' (should be even)\n", i);
 		instr = 0;
 		nil = 1;
 	}
@@ -677,7 +677,7 @@ blob_eoln(char *src, char *end)
 	return end;
 }
 
-int
+static int
 blob_fromstr(char *src, int *size, blob **dst)
 {
 	int l = strlen(src), memsize = sizeof(int) + 1 + (l * 3) / 4;
@@ -756,7 +756,7 @@ fromblob_idx(str *retval, blob *b, int *idx)
 	return GDK_SUCCEED;
 }
 
-int
+static int
 fromblob(str *retval, blob *b)
 {
 	int zero = 0;
@@ -764,7 +764,7 @@ fromblob(str *retval, blob *b)
 	return fromblob_idx(retval, b, &zero);
 }
 
-int
+static int
 toblob(blob **retval, str s)
 {
 	int len = strLen(s);
@@ -776,12 +776,14 @@ toblob(blob **retval, str s)
 	return GDK_SUCCEED;
 }
 
-int
+#if 0
+static int
 blob_nitems(int *ret, blob *b)
 {
 	*ret = (int) b->nitems;
 	return GDK_SUCCEED;
 }
+#endif
 
 @}
 @- Wrapping section

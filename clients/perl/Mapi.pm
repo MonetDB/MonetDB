@@ -1,7 +1,7 @@
 # The contents of this file are subject to the MonetDB Public License
 # Version 1.1 (the "License"); you may not use this file except in
 # compliance with the License. You may obtain a copy of the License at
-# http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+# http://www.monetdb.org/Legal/MonetDBLicense
 #
 # Software distributed under the License is distributed on an "AS IS"
 # basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -20,7 +20,56 @@ package Mapi;
 use strict;
 use Socket;
 use IO::Socket;
-#use IO::Handle;
+use Digest::MD5 'md5_hex';
+use Digest::SHA qw(sha1_hex sha256_hex sha512_hex);
+
+sub pass_chal {
+  my ($passwd, @challenge) = @_;
+  if (@challenge[2] == 9) {
+    my $pwhash = @challenge[5];
+    if ($pwhash eq 'SHA512') {
+      $passwd = sha512_hex($passwd);
+    } elsif ($pwhash eq 'SHA256') {
+      $passwd = sha256_hex($passwd);
+    } elsif ($pwhash eq 'SHA1') {
+      $passwd = sha1_hex($passwd);
+    } elsif ($pwhash eq 'MD5') {
+      $passwd = md5_hex($passwd);
+    } else {
+      warn "unsupported password hash: ".$pwhash;
+      return;
+    }
+  } elsif (@challenge[2] == 8) {
+    # can leave passwd cleartext
+  } else {
+    warn "unsupported protocol version: ".@challenge[2];
+    return;
+  }
+
+  my @cyphers = split(/,/, @challenge[3]);
+  my $chal;
+  foreach (@cyphers) {
+    if ($_ eq 'SHA512') {
+      $chal = "{$_}".sha512_hex($passwd.@challenge[0]);
+      last;
+    } elsif ($_ eq 'SHA256') {
+      $chal = "{$_}".sha256_hex($passwd.@challenge[0]);
+      last;
+    } elsif ($_ eq 'SHA1') {
+      $chal = "{$_}".sha1_hex($passwd.@challenge[0]);
+      last;
+    } elsif ($_ eq 'MD5') {
+      $chal = "{$_}".md5_hex($passwd.@challenge[0]);
+      last;
+    }
+  }
+  if (!$chal) {
+    # we assume v8's "plain"
+    $chal = "{plain}".$passwd.@challenge[0];
+  }
+
+  return $chal;
+}
 
 sub new {
   my $mapi = shift;
@@ -54,12 +103,15 @@ sub new {
   #binmode($self->{socket},":utf8");
 
   #block challenge:mserver:8:cypher(s):content_byteorder(BIG/LIT)\n");
+  #block challenge:mserver:9:cypher(s):content_byteorder(BIG/LIT):pwhash\n");
   my $block = $self->getblock();
   my @challenge = split(/:/, $block);
   print "Connection to socket established ($block)\n" if ($self->{trace});
 
+  my $passchal = pass_chal($passwd, @challenge) || die;
+
   # content_byteorder(BIG/LIT):user:{cypher_algo}mypasswordchallenge_cyphered:lang:database: 
-  $self->putblock("LIT:$user:{plain}$passwd" . @challenge[0] . ":$lang:$db:\n");
+  $self->putblock("LIT:$user:$passchal:$lang:$db:\n");
   my $prompt = $self->getblock();
   if ($prompt =~ /^\^mapi:monetdb:/) {
     # full reconnect
@@ -67,13 +119,14 @@ sub new {
     print "Following redirect: $prompt\n" if ($self->{trace});
     my @tokens = split(/[\n\/:\?]+/, $prompt); # dirty, but it's Perl anyway
     return new Mapi(@tokens[3], @tokens[4], $user, $passwd, $lang, @tokens[5], $trace);
-  } elsif ($prompt =~ /^\^mapi:merovingian:proxy/) {
+  } elsif ($prompt =~ /^\^mapi:merovingian:\/\/proxy/) {
     # proxied redirect
     do {
       print "Being proxied by $host:$port\n" if ($self->{trace});
       $block = $self->getblock();
       @challenge = split(/:/, $block);
-      $self->putblock("LIT:$user:{plain}$passwd" . @challenge[0] . ":$lang:$db:\n");
+      $passchal = pass_chal($passwd, @challenge) || die;
+      $self->putblock("LIT:$user:$passchal:$lang:$db:\n");
       $prompt = $self->getblock();
     } while ($prompt =~ /^\^mapi:merovingian:proxy/);
   } # TODO: don't die on warnings (#)
@@ -144,8 +197,8 @@ sub resetState {
 sub doRequest {
   my($self,$cmd) = @_;
 
-  $cmd =~ s/\n/ /g;    # remove newlines ???
   $cmd = "S" . $cmd if $self->{lang} eq 'sql';
+  $cmd = $cmd . ";\n" unless $cmd =~ m/;\n$/;
   print "doRequest:$cmd\n" if ($self->{trace});
   $self->putblock($cmd); # TODO handle exceptions || die "!ERROR can't send $cmd: $!";
   $self->resetState();
@@ -156,6 +209,7 @@ sub error {
   my ($self,$line) = @_;
   my $err = $self->{errstr};
   $err = "$err\n" if (length($err) > 0);
+  $line =~ s/^\!//;
   $self->{errstr} = $err . $line;
 # $self->showState();
   $self->{row}= "";
@@ -188,29 +242,34 @@ sub getRow {
 
   if (@chars[0] eq '!') { 
     $self->error($row);
-		my $i = 1;
-  	while ($self->{lines}[$i] =~ '!') {
+    my $i = 1;
+    while ($self->{lines}[$i] =~ '!') {
       $self->error($self->{lines}[$i]);
       $i++;
-		}
+    }
     $self->{active} = 0;
     return -1
   } elsif (@chars[0] eq '&') {
     # not expected
   } elsif (@chars[0] eq '%') {
-	  # header line
+    # header line
   } elsif (@chars[0] eq '[') {
-	  # row result
+    # row result
     $self->{row} = $row;
+    if ($self->{nrcols} < 0) {
+      $self->{nrcols} = () = $row =~ /,\t/g;
+      $self->{nrcols}++;
+    }
     $self->{active} = 1;
   } elsif (@chars[0] eq '=') {
-	  # xml result line
+    # xml result line
     $self->{row} = substr($row, 1); # skip = 
     $self->{active} = 1;
   } elsif (@chars[0] eq '^') {
-	  # ^ redirect, ie use different server
+    # ^ redirect, ie use different server
   } elsif (@chars[0] eq '#') {
-	  # warnings etc
+    # warnings etc, skip, and return what follows
+    return $self->getRow;
   }
   return $self->{active};
 }
@@ -224,65 +283,67 @@ sub getBlock {
   my $header = $self->{lines}[0];
   my @chars = split(//, $header);
 
-	$self->{id} = -1;
+  $self->{id} = -1;
   $self->{count} = scalar(@{$self->{lines}}); 
-  $self->{nrcols} = 1;
+  $self->{nrcols} = -1;
   $self->{replysize} = $self->{count};
   $self->{active} = 0;
   $self->{skip} = 0; # next+skip is current result row
   $self->{next} = 0; # all done
   $self->{offset} = 0;
+  $self->{hdrs} = [];
 
   if (@chars[0] eq '&') {
-	  if (@chars[1] eq '1' || @chars[1] eq 6) {
-	    if (@chars[1] eq '1') {
-		    # &1 id result-count nr-cols rows-in-this-block
-		    my ($dummy,$id,$cnt,$nrcols,$replysize) = split(' ', $header);
-		    $self->{id} = $id;
-		    $self->{count} = $cnt;
-		    $self->{nrcols} = $nrcols;
-		    $self->{replysize} = $replysize;
+    if (@chars[1] eq '1' || @chars[1] eq 6) {
+      if (@chars[1] eq '1') {
+        # &1 id result-count nr-cols rows-in-this-block
+        my ($dummy,$id,$cnt,$nrcols,$replysize) = split(' ', $header);
+        $self->{id} = $id;
+        $self->{count} = $cnt;
+        $self->{nrcols} = $nrcols;
+        $self->{replysize} = $replysize;
       } else {
-		    # &6 id nr-cols,rows-in-this-block,offset
-		    my ($dummy,$id,$nrcols,$replysize,$offset) = split(' ', $header);
-		    $self->{id} = $id;
-		    $self->{nrcols} = $nrcols;
-		    $self->{replysize} = $replysize;
+        # &6 id nr-cols,rows-in-this-block,offset
+        my ($dummy,$id,$nrcols,$replysize,$offset) = split(' ', $header);
+        $self->{id} = $id;
+        $self->{nrcols} = $nrcols;
+        $self->{replysize} = $replysize;
         $self->{offset} = $offset;
       }
-		  # for now skip table header information
-		  my $i = 1;
-  		  while ($self->{lines}[$i] =~ '%') {
-			  $i++;
-		  }
+      # for now skip table header information
+      my $i = 1;
+      while ($self->{lines}[$i] =~ '%') {
+        $self->{hdrs}[$i - 1] = $self->{lines}[$i];
+        $i++;
+      }
       $self->{skip} = $i;
-		  $self->{next} = $i;
-		  $self->{row} = $self->{lines}[$self->{next}++];
+      $self->{next} = $i;
+      $self->{row} = $self->{lines}[$self->{next}++];
 
-  		$self->{active} = 1;
-  	} elsif (@chars[1] eq '2') { # updates
-		  my ($dummy,$cnt) = split(' ', $header);
-		  $self->{count} = $cnt;
-		  $self->{nrcols} = 1;
-		  $self->{replysize} = 1;
+      $self->{active} = 1;
+    } elsif (@chars[1] eq '2') { # updates
+      my ($dummy,$cnt) = split(' ', $header);
+      $self->{count} = $cnt;
+      $self->{nrcols} = 1;
+      $self->{replysize} = 1;
       $self->{row} = "" . $cnt;
       $self->{next} = $cnt; # all done
       return -2;
-  	} elsif (@chars[1] eq '3') { # transaction 
+    } elsif (@chars[1] eq '3') { # transaction 
       # nothing todo
-  	} elsif (@chars[1] eq '4') { # auto_commit 
-		  my ($dummy,$ac) = split(' ', $header);
+    } elsif (@chars[1] eq '4') { # auto_commit 
+      my ($dummy,$ac) = split(' ', $header);
       if ($ac eq 't') {
         $self->{auto_commit} = 1;
       } else {
         $self->{auto_commit} = 0;
       }
-  	} elsif (@chars[1] eq '5') { # prepare 
-		  my ($dummy,$id,$cnt,$nrcols,$replysize) = split(' ', $header);
+    } elsif (@chars[1] eq '5') { # prepare 
+      my ($dummy,$id,$cnt,$nrcols,$replysize) = split(' ', $header);
       # TODO parse result, rows (type, digits, scale)
-		  $self->{count} = $cnt;
-		  $self->{nrcols} = $nrcols;
-		  $self->{replysize} = $replysize;
+      $self->{count} = $cnt;
+      $self->{nrcols} = $nrcols;
+      $self->{replysize} = $replysize;
       $self->{row} = "";
       $self->{next} = $cnt; # all done
     }

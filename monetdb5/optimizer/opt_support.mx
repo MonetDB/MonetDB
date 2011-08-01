@@ -2,7 +2,7 @@
 The contents of this file are subject to the MonetDB Public License
 Version 1.1 (the "License"); you may not use this file except in
 compliance with the License. You may obtain a copy of the License at
-http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+http://www.monetdb.org/Legal/MonetDBLicense
 
 Software distributed under the License is distributed on an "AS IS"
 basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -845,7 +845,7 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 				msg = (str) (*p->fcn) (cntxt, mb, 0, p);
 				if (msg) {
 					str place = getExceptionPlace(msg);
-					msg= createException(getExceptionType(msg), place, getExceptionMessage(msg));
+					msg= createException(getExceptionType(msg), place, "%s", getExceptionMessage(msg));
 					GDKfree(place);
 					return msg;
 				}
@@ -969,6 +969,7 @@ countBlocks(MalBlkPtr mb, int start, int stop){
 	}
 	return cnt;
 }
+#if 0
 int
 allArgumentsVisible(MalBlkPtr mb, Lifespan span, int pc,int qc){
 	int i;
@@ -984,6 +985,7 @@ allArgumentsVisible(MalBlkPtr mb, Lifespan span, int pc,int qc){
 	}
 	return TRUE;
 }
+#endif
 int
 allTargetsVisible(MalBlkPtr mb, Lifespan span, int pc,int qc){
 	int i;
@@ -1143,6 +1145,7 @@ In many cases we should be assured that a variable is not used in
 the instruction range identified. For, we may exchange some instructions that
 might change its content.
 @c
+#if 0
 int
 isTouched(MalBlkPtr mb, int varid, int p1, int p2)
 {
@@ -1157,6 +1160,7 @@ isTouched(MalBlkPtr mb, int varid, int p1, int p2)
 	}
 	return FALSE;
 }
+#endif
 
 @}
 @-

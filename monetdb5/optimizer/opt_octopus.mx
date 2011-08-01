@@ -2,7 +2,7 @@
 The contents of this file are subject to the MonetDB Public License
 Version 1.1 (the "License"); you may not use this file except in
 compliance with the License. You may obtain a copy of the License at
-http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+http://www.monetdb.org/Legal/MonetDBLicense
 
 Software distributed under the License is distributed on an "AS IS"
 basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -218,7 +218,7 @@ static int octClResSize = 32; /* maximum number of results per tentacle */
 static int octFullRepl = 0;
 
 static void
-OCTinitMalPart()
+OCTinitMalPart(void)
 {
 	if ( octClCnt ){
 		int i;
@@ -279,7 +279,7 @@ OCTaddResult(int cl, int residx, int iidx)
 	}
 }
 
-bit 
+static bit 
 isAView(InstrPtr p)
 {
 	if ( ( getModuleId(p) == batRef && 
@@ -1164,7 +1164,7 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 					else k++;
 					mnstr_printf(cntxt->fdout, "%3d\t", v);
 				}
-			mnstr_printf(cntxt->fdout, "\nIntermediate size "LLFMT" tuples\n\n", octCluster[i].rows);
+			mnstr_printf(cntxt->fdout, "\nIntermediate size "LLFMT" tuples\n\n", (lng) octCluster[i].rows);
 			if ( k )
 				mnstr_printf(cntxt->fdout, "No estimate for %d results\n", k);
 		}

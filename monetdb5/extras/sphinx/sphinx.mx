@@ -2,7 +2,7 @@
 The contents of this file are subject to the MonetDB Public License
 Version 1.1 (the "License"); you may not use this file except in
 compliance with the License. You may obtain a copy of the License at
-http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+http://www.monetdb.org/Legal/MonetDBLicense
 
 Software distributed under the License is distributed on an "AS IS"
 basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -91,7 +91,7 @@ sphinx_export str SPHINXsearchIndexLimitWrap(Client cntxt, MalBlkPtr mb, MalStkP
 
 /* COMMAND "SPHINXsearchIndexLimit": Search the query on the specified indices, with limit
  * SIGNATURE: SPHINXsearchIndexLimit(str, str, int) : bat[oid,lng]; */
-str
+static str
 sphinx_searchIndexLimit(BAT **ret, /* put pointer to BAT[oid,int] record here. */
                         str query, str index, int limit)
 {
@@ -130,7 +130,7 @@ sphinx_searchIndexLimit(BAT **ret, /* put pointer to BAT[oid,int] record here. *
 	return MAL_SUCCEED;
 }
 
-str
+static str
 SPHINXsearchIndexLimit(int *ret, str *query, str *index, int *limit)
 {
 	BAT *b = NULL;

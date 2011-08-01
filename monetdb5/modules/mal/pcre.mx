@@ -2,7 +2,7 @@
 The contents of this file are subject to the MonetDB Public License
 Version 1.1 (the "License"); you may not use this file except in
 compliance with the License. You may obtain a copy of the License at
-http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+http://www.monetdb.org/Legal/MonetDBLicense
 
 Software distributed under the License is distributed on an "AS IS"
 basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -248,7 +248,7 @@ typedef struct RE {
 } RE;
 
 #ifndef HAVE_STRCASESTR
-char *
+static char *
 strcasestr (char *haystack, char *needle)
 {
 	char *p, *startn = 0, *np = 0;
@@ -439,7 +439,7 @@ re_select(RE *pattern, BAT *strs, int ignore)
 #define m2p(p) (pcre*)(((size_t*)p)+1)
 #define p2m(p) (pcre*)(((size_t*)p)-1)
 
-void *
+static void *
 my_pcre_malloc(size_t s)
 {
 	size_t *sz = (size_t *) GDKmalloc(s + sizeof(size_t));
@@ -450,7 +450,7 @@ my_pcre_malloc(size_t s)
 	return (void *) (sz + 1);
 }
 
-void
+static void
 my_pcre_free(void *blk)
 {
 	size_t *sz = (size_t *) blk;
@@ -459,7 +459,7 @@ my_pcre_free(void *blk)
 	GDKfree(sz);
 }
 
-str
+static str
 pcre_compile_wrap(pcre ** res, str pattern, bit insensitive)
 {
 	pcre *r;
@@ -478,7 +478,7 @@ pcre_compile_wrap(pcre ** res, str pattern, bit insensitive)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 pcre_exec_wrap(bit *res, pcre * pattern, str s)
 {
 	if (pcre_exec(m2p(pattern), NULL, s, (int) strlen(s), 0, 0, NULL, 0) >= 0) {
@@ -489,7 +489,7 @@ pcre_exec_wrap(bit *res, pcre * pattern, str s)
 	throw(MAL, "pcre.exec", OPERATION_FAILED);
 }
 
-str
+static str
 pcre_index(int *res, pcre * pattern, str s)
 {
 	int v[2];
@@ -501,7 +501,7 @@ pcre_index(int *res, pcre * pattern, str s)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 pcre_select(BAT **res, str pattern, BAT *strs, bit insensitive)
 {
 	BATiter strsi = bat_iterator(strs);
@@ -537,7 +537,7 @@ pcre_select(BAT **res, str pattern, BAT *strs, bit insensitive)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 pcre_uselect(BAT **res, str pattern, BAT *strs, bit insensitive)
 {
 	BATiter strsi = bat_iterator(strs);
@@ -588,7 +588,7 @@ pcre_uselect(BAT **res, str pattern, BAT *strs, bit insensitive)
 
 #define MAX_NR_CAPTURES  1024 /* Maximal number of captured substrings in one original string */
 
-str
+static str
 pcre_replace(str *res, str origin_str, str pattern, str replacement, str flags)
 {
 	const char err[BUFSIZ], *err_p = err, *err_p2 = err;
@@ -695,7 +695,7 @@ pcre_replace(str *res, str origin_str, str pattern, str replacement, str flags)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 pcre_replace_bat(BAT **res, BAT *origin_strs, str pattern, str replacement, str flags)
 {
 	BATiter origin_strsi = bat_iterator(origin_strs);
@@ -821,11 +821,6 @@ pcre_init(void)
 	pcre_malloc = my_pcre_malloc;
 	pcre_free = my_pcre_free;
 	return NULL;
-}
-
-void
-pcre_exit(void)
-{
 }
 
 static str
@@ -970,7 +965,7 @@ pcre_heap(Heap *heap, size_t capacity)
 }
 
 /* change SQL LIKE pattern into PCRE pattern */
-int
+static int
 sql2pcre(str *r, str pat, str esc_str) 
 {
 	int escaped = 0;
@@ -1048,7 +1043,7 @@ sql2pcre(str *r, str pat, str esc_str)
 }
 
 /* change SQL PATINDEX pattern into PCRE pattern */
-int
+static int
 pat2pcre(str *r, str pat) 
 {
 	int len = (int) strlen(pat);
@@ -1510,7 +1505,7 @@ re_simple(char *pat)
 	return nr;
 }
 
-str
+static str
 PCRElike_pcre(int *ret, int *b, str *pat, str *esc, bit us, bit ignore)
 {
 	char *ppat = NULL;

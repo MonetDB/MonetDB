@@ -3,7 +3,7 @@
 # The contents of this file are subject to the MonetDB Public License
 # Version 1.1 (the "License"); you may not use this file except in
 # compliance with the License. You may obtain a copy of the License at
-# http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+# http://www.monetdb.org/Legal/MonetDBLicense
 #
 # Software distributed under the License is distributed on an "AS IS"
 # basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -205,9 +205,12 @@ CONDITIONALS = {
     'BITS64'               : "@BITS64_FALSE@",
     'CROSS_COMPILING'      : "@CROSS_COMPILING_FALSE@",
     'DOCTOOLS'             : "@DOCTOOLS_FALSE@",
+    'ENABLE_CRACKERS'      : "@ENABLE_CRACKERS_FALSE@",
+    'ENABLE_DATACELL'      : "@ENABLE_DATACELL_FALSE@",
     'HAVE_ANT'             : "@HAVE_ANT_FALSE@",
     'HAVE_CFITSIO'         : "@HAVE_CFITSIO_FALSE@",
     'HAVE_DEVELOPER'       : "@HAVE_DEVELOPER_FALSE@",
+    'HAVE_GDK'             : "@HAVE_GDK_FALSE@",
     'HAVE_GEOM'            : "@HAVE_GEOM_FALSE@",
     'HAVE_JAVA'            : "@HAVE_JAVA_FALSE@",
     'HAVE_JAVAJDBC'        : "@HAVE_JAVAJDBC_FALSE@",
@@ -216,12 +219,9 @@ CONDITIONALS = {
     'HAVE_LIBZ'            : "@HAVE_LIBZ_FALSE@",
     'HAVE_MONETDB5'        : "@HAVE_MONETDB5_FALSE@",
     'HAVE_MSEED'           : "@HAVE_MSEED_FALSE@",
-    'HAVE_NETCDF'          : "@HAVE_NETCDF_FALSE@",
     'HAVE_ODBC'            : "@HAVE_ODBC_FALSE@",
     'HAVE_PCRE'            : "@HAVE_PCRE_FALSE@",
-    'HAVE_PERL_DEVEL'      : "@HAVE_PERL_DEVEL_FALSE@",
     'HAVE_PERL'            : "@HAVE_PERL_FALSE@",
-    'HAVE_PERL_SWIG'       : "@HAVE_PERL_SWIG_FALSE@",
     'HAVE_PYTHON'          : "@HAVE_PYTHON_FALSE@",
     'HAVE_RAPTOR'          : "@HAVE_RAPTOR_FALSE@",
     'HAVE_RUBYGEM'         : "@HAVE_RUBYGEM_FALSE@",
@@ -238,8 +238,6 @@ CONDITIONALS = {
     'HAVE_JDBCTESTS_JAR'   : "",
     'HAVE_JDBCTESTS_DIR'   : "",
     'HAVE_JDBCTESTS'       : "",
-    'WITH_ALGEBRA'         : "",
-    'NOT_ALGEBRA'          : "",
 }
 
 # a bunch of classes to help with generating (X)HTML files
@@ -1305,7 +1303,6 @@ def GetBitsAndOIDsAndModsAndStatic(env) :
     env['TST_MODS'] = []
     env['TST_BITS'] = ""
     env['TST_OIDS'] = ""
-    env['TST_FIVE'] = ""
     env['TST_STATIC'] = ""
     if qOut:
         tbs = re.compile("^# Compiled for .*/([63][42]bit) with ([63][42])bit OIDs;? (.*) linked", re.MULTILINE)
@@ -1351,9 +1348,6 @@ def GetBitsAndOIDsAndModsAndStatic(env) :
             STDERR.write("\n")
             STDERR.flush()
     os.environ['TST_MODS'] = str(env['TST_MODS'])
-    if par['M5']:
-        env['TST_FIVE'] = "Five"
-        os.environ['TST_FIVE'] = "Five"
     return rtrn
 ### GetBitsAndOIDsAndModsAndStatic(env) #
 
@@ -1480,18 +1474,11 @@ def StopAt(ATJOB,ME) :
 def StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION) :
     BITS = env['TST_BITS']
     OIDS = env['TST_OIDS']
-    FIVE = env['TST_FIVE']
     STATIC = env['TST_STATIC']
-    ALGEBRA = env['TST_ALGEBRA']
-    NOALGEBRA = env['TST_NOALGEBRA']
-    if FIVE:
-        FIVE = "(\.Five)?"
     if STATIC:
         STATIC = "(\.STATIC)?"
-    if ALGEBRA:
-        ALGEBRA = "(\.Algebra)?"
     dir,file = os.path.split(TST)
-    outre = re.compile('^'+re.escape(file)+'\.stable\.(?P<tp>out|err)(\.(%s(%s)?|%s(%s)?))?(\.%s)?(\.%s)?%s%s%s$' % (re.escape(SYST), re.escape(RELEASE), re.escape(DIST), re.escape(VERSION), BITS, OIDS, FIVE, STATIC, ALGEBRA))
+    outre = re.compile('^'+re.escape(file)+'\.stable\.(?P<tp>out|err)(\.(%s(%s)?|%s(%s)?))?(\.%s)?(\.%s)?%s$' % (re.escape(SYST), re.escape(RELEASE), re.escape(DIST), re.escape(VERSION), BITS, OIDS, STATIC))
     bestout = besterr = ''
     for f in os.listdir(dir or os.curdir):
         res = outre.match(f)
@@ -2689,10 +2676,7 @@ def ReadMapproveRc(f) :
     v['VERSION'] = VERSION
     v['BITS'] = ''
     v['OIDS'] = ''
-    v['FIVE'] = ''
     v['STATIC'] = ''
-    v['ALGEBRA'] = ''
-    v['NOALGEBRA'] = ''
     if os.path.isfile(f):
         r = re.compile('^([A-Z]+) = "(.*)".*$')
         for l in open(f):
@@ -3001,7 +2985,7 @@ def main(argv) :
     elif THISFILE == 'Mapprove.py':
         f = _configure(os.path.join('@QXprefix@',dftTSTPREF,'.Mapprove.rc'))
         v = ReadMapproveRc(f)
-        for i in 'BITS', 'OIDS', 'FIVE', 'STATIC', 'ALGEBRA', 'NOALGEBRA':
+        for i in 'BITS', 'OIDS', 'STATIC':
             if v[i]:
                 v[i] = '[.%s]' % v[i]
         options = cmd_options + [
@@ -3010,9 +2994,9 @@ def main(argv) :
              "(default: <ext> = 'out' & 'err')"),
             (None, 'S', 'sys', '<sys>',
              "approve specific output *.<ext><sys>\n"
-             "(<sys> = '[.(<SYST>[<RELEASE>]|<DIST>[<VERSION>])][.(32|64)bit][.oid(32|64)][.Five][.STATIC][.Algebra]',\n"
-             "(default: longest match for <sys> = '[.(%s[%s]|%s[%s])]%s%s%s%s%s')"
-              % (v['SYST'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['OIDS'], v['FIVE'], v['STATIC'], v['ALGEBRA'])),
+             "(<sys> = '[.(<SYST>[<RELEASE>]|<DIST>[<VERSION>])][.(32|64)bit][.oid(32|64)][.STATIC]',\n"
+             "(default: longest match for <sys> = '[.(%s[%s]|%s[%s])]%s%s%s')"
+              % (v['SYST'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['OIDS'], v['STATIC'])),
             (None, 'f', 'force', None,
              "force approval of error messages (i.e., lines starting with '!')"),
             ]
@@ -3044,10 +3028,6 @@ def main(argv) :
     if config:
         config = ' "--config=%s"' % config
 
-    par['ALGEBRA'] = opts.get('algebra', 0)
-    par['NOALGEBRA'] = opts.get('no-algebra', 0)
-    if par['ALGEBRA'] and par['NOALGEBRA']:
-        ErrXit('"-G/--algebra" conflicts with "-g/--no-algebra"!')
     par['RECURSIVE'] = opts.get('recursive', 0)
     par['QUIET'] = opts.get('quiet', 0)
     verbose = opts.get('verbose', 0)
@@ -3135,23 +3115,6 @@ def main(argv) :
     else:
         CONDITIONALS['HAVE_MONETDB5'] = ''
     CheckClassPath(quiet)
-    if par['ALGEBRA']:
-        CONDITIONALS['WITH_ALGEBRA'] = '#'
-        CONDITIONALS['NOT_ALGEBRA']  = ''
-    elif par['NOALGEBRA']:
-        CONDITIONALS['WITH_ALGEBRA'] = ''
-        CONDITIONALS['NOT_ALGEBRA']  = '#'
-    else:
-        CONDITIONALS['WITH_ALGEBRA'] = ''
-        CONDITIONALS['NOT_ALGEBRA']  = '#'
-    env['TST_ALGEBRA'] = ""
-    env['TST_NOALGEBRA'] = ""
-    if CONDITIONALS['WITH_ALGEBRA']:
-        env['TST_ALGEBRA'] = "Algebra"
-        os.environ['TST_ALGEBRA'] = "Algebra"
-    if CONDITIONALS['NOT_ALGEBRA']:
-        env['TST_NOALGEBRA'] = "NoAlgebra"
-        os.environ['TST_NOALGEBRA'] = "NoAlgebra"
 
     # tidy-up and fall-back to defaults where necessary
     if THISFILE == "Mtest.py":
@@ -3224,17 +3187,17 @@ def main(argv) :
         os.environ['DISTVER'] = DISTVER
         os.environ['VERSION'] = VERSION
         w = {}
-        for i in 'SYST', 'RELEASE', 'DIST', 'VERSION', 'BITS', 'OIDS', 'FIVE', 'STATIC', 'ALGEBRA', 'NOALGEBRA':
+        for i in 'SYST', 'RELEASE', 'DIST', 'VERSION', 'BITS', 'OIDS', 'STATIC':
             w[i] = re.escape(v[i])
-        for i in 'BITS', 'OIDS', 'FIVE', 'STATIC', 'ALGEBRA', 'NOALGEBRA':
+        for i in 'BITS', 'OIDS', 'STATIC':
             j = 'TST_'+i
             env[j] = v[i]
             os.environ[j] = v[i]
             if v[i]:
                 v[i] = '(.%s)?' % v[i]
                 w[i] = '(\.%s)?' % w[i]
-        sv = '^(.(%s(%s)?|%s(%s)?))?%s%s%s%s%s$' % (v['SYST'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['OIDS'], v['FIVE'], v['STATIC'], v['ALGEBRA'])
-        sw = '^(\.(%s(%s)?|%s(%s)?))?%s%s%s%s%s$' % (w['SYST'], w['RELEASE'], w['DIST'], w['VERSION'], w['BITS'], w['OIDS'], w['FIVE'], w['STATIC'], w['ALGEBRA'])
+        sv = '^(.(%s(%s)?|%s(%s)?))?%s%s%s$' % (v['SYST'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['OIDS'], v['STATIC'])
+        sw = '^(\.(%s(%s)?|%s(%s)?))?%s%s%s$' % (w['SYST'], w['RELEASE'], w['DIST'], w['VERSION'], w['BITS'], w['OIDS'], w['STATIC'])
         r = re.compile(sw)
         if not r.match(par['SYSTEM']):
             ErrXit("System (-S) must match '"+sv+"' !")
@@ -3481,10 +3444,7 @@ def main(argv) :
         env['TST_MODS'] = []
         env['TST_BITS'] = ""
         env['TST_OIDS'] = ""
-        env['TST_FIVE'] = ""
         env['TST_STATIC'] = ""
-        env['TST_ALGEBRA'] = ""
-        env['TST_NOALGEBRA'] = ""
         if par['PACKAGE'] in ('common', 'clients', 'gdk', 'java'):
             if   CONDITIONALS.has_key('BITS32') and CONDITIONALS['BITS32']:
                 env['TST_BITS'] = "32bit"
@@ -3535,7 +3495,7 @@ def main(argv) :
         env['VERSION'] = os.environ['VERSION']
         n = os.path.join(env['TSTTRGBASE'],TSTPREF,'.Mapprove.rc')
         f = open(n, 'w')
-        for v in 'SYST', 'RELEASE', 'DIST', 'VERSION', 'TST_BITS', 'TST_OIDS', 'TST_FIVE', 'TST_STATIC', 'TST_ALGEBRA', 'TST_NOALGEBRA':
+        for v in 'SYST', 'RELEASE', 'DIST', 'VERSION', 'TST_BITS', 'TST_OIDS', 'TST_STATIC':
             w = v.replace('TST_','')
             f.write('%s = "%s"\n' % (w, env[v]))
         f.close()
@@ -3578,10 +3538,6 @@ def main(argv) :
         fl = open(fn+"sql","w")
         host = socket.gethostname()
         product = os.path.split(env['TSTSRCBASE'])[-1]
-        if product == 'sql':
-            product += env['TST_FIVE']
-            product += env['TST_ALGEBRA']
-            product += env['TST_NOALGEBRA']
 
         compiler = ''
         # TODO:
@@ -3686,7 +3642,7 @@ VALUES (%s, '%s', '%s', '%s',
         if Failed:
             print """\
 
- !ERROR:  Testing FAILED %s !
+ !ERROR:  Testing FAILED %s (%d out of %d tests failed)
 
 %s
  First, check the testing results in  %s  !
@@ -3697,7 +3653,7 @@ VALUES (%s, '%s', '%s', '%s',
   - approving test output by Mapprove.py (cf. Mapprove.py -?)
 
  After that, re-run Mtest.
-""" % (how, what, os.path.join(env['TSTTRGBASE'],TSTPREF,"index.html"))
+""" % (how, Failed, num_tests, what, os.path.join(env['TSTTRGBASE'],TSTPREF,"index.html"))
             sys.exit(1)
         else:
             if not quiet:

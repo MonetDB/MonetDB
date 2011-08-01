@@ -2,7 +2,7 @@
  * The contents of this file are subject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ * http://www.monetdb.org/Legal/MonetDBLicense
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -228,6 +228,21 @@ exp_atom_ref(sql_allocator *sa, int i, sql_subtype *tpe)
 	if (tpe)
 		e->tpe = *tpe;
 	return e;
+}
+
+atom *
+exp_value(sql_exp *e, atom **args, int maxarg)
+{
+	if (!e || e->type != e_atom)
+		return NULL; 
+	if (e->l) {	   /* literal */
+		return e->l;
+	} else if (e->r) { /* param (ie not set) */
+		return NULL; 
+	} else if (e->flag < maxarg) {
+		return args[e->flag]; 
+	}
+	return NULL; 
 }
 
 sql_exp * 
@@ -513,7 +528,7 @@ exps_match_col_exps( sql_exp *e1, sql_exp *e2)
 	return 0;
 }
 
-int 
+static int 
 exp_match_list( list *l, list *r)
 {
 	node *n, *m;
@@ -703,7 +718,7 @@ distinct_rel(sql_exp *e, char **rname)
 	}
 	return 0;
 }
-int 
+static int 
 exp_is_rangejoin(sql_exp *e)
 {
 	/* assume e is a e_cmp with 3 args 

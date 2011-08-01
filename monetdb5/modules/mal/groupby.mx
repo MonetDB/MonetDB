@@ -2,7 +2,7 @@
 The contents of this file are subject to the MonetDB Public License
 Version 1.1 (the "License"); you may not use this file except in
 compliance with the License. You may obtain a copy of the License at
-http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+http://www.monetdb.org/Legal/MonetDBLicense
 
 Software distributed under the License is distributed on an "AS IS"
 basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -106,6 +106,7 @@ group_by str GROUPid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 group_by str GROUPcount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 group_by str GROUPmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 group_by str GROUPmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+group_by str GROUPavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* _GROUPBY_H */
 @c
@@ -131,7 +132,7 @@ typedef struct{
 } AGGRtask;
 
 static void
-GROUPinit(){
+GROUPinit(void){
 	if( ! groupinitialized) {
         MT_lock_init(&grouplock,"group lock");
         groupinitialized= 1;
@@ -188,7 +189,7 @@ GROUPcollect( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	}
 #ifdef _DEBUG_GROUPBY_
 	for(i=0; i<a->last; i++)
-		mnstr_printf(cntxt->fdout,"#group %d estimate "LLFMT "\n", i, a->estimate[i]);
+		mnstr_printf(cntxt->fdout,"#group %d estimate "BUNFMT "\n", i, a->estimate[i]);
 #endif
 	/* get iterator stuff ready as well */
 	for(i=0; i<a->last; i++)

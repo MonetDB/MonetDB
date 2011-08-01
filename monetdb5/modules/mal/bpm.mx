@@ -2,7 +2,7 @@
 The contents of this file are subject to the MonetDB Public License
 Version 1.1 (the "License"); you may not use this file except in
 compliance with the License. You may obtain a copy of the License at
-http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+http://www.monetdb.org/Legal/MonetDBLicense
 
 Software distributed under the License is distributed on an "AS IS"
 basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -465,6 +465,8 @@ command mapNxt() :bat[:int,:int]
 address BPMmapnxt;
 command mapPrv() :bat[:int,:int] 
 address BPMmapprv;
+command mapCnt() :bat[:int,:int] 
+address BPMmapcnt;
 command mapTlowLng() :bat[:int,:lng] 
 address BPMmaptlowlng;
 command mapTlowDbl() :bat[:int,:dbl] 
@@ -587,6 +589,7 @@ bpm_export str BPMmapbid(int *ret);
 bpm_export str BPMmapalias(int *ret);
 bpm_export str BPMmapnxt(int *ret);
 bpm_export str BPMmapprv(int *ret);
+bpm_export str BPMmapcnt(int *ret);
 bpm_export str BPMmaptlowlng(int *ret);
 bpm_export str BPMmaptlowdbl(int *ret);
 bpm_export str BPMmapthghlng(int *ret);
@@ -727,7 +730,7 @@ BAT rings.
 @c
 static Partition *bpmcatbase = 0;
 
-static void assureSpace(){
+static void assureSpace(void){
 	if( BBPlimit >bpmcatsize){
 		Partition *new;
 		mal_set_lock(mal_contextLock, "bpm");
@@ -888,8 +891,8 @@ of BATs.
 	@:getPartitionBound(@1,@2,bhd,thgh,dbl)@
 @c
 
-str
-BPMloadCatalog(){
+static str
+BPMloadCatalog(void){
 	int i,k,tp,vi;
 	bat idx;
 	BAT *b, *pb;
@@ -975,7 +978,7 @@ BPMloadCatalog(){
 }
 
 str
-BPMopen()
+BPMopen(void)
 {
 	if(bpmcat) {
 		assureSpace();
@@ -1397,7 +1400,7 @@ BPMemptySet(int *ret, bat *bid)
 	return MAL_SUCCEED;
 }
 
-int BPMpiecesCnt(bat bid){
+static int BPMpiecesCnt(bat bid){
 	int i,cnt=0;
 	Partition ps;
 	if( (ps= getAlias(bid)) == 0)
@@ -2901,7 +2904,7 @@ BPMmap@1(int *ret)
 @:bpmView(prv,int)@
 @:bpmView(cnt,int)@
 
-int nilval(ValPtr v)
+static int nilval(ValPtr v)
 {
 	int tpe; 
 	int (*cmp) (ptr, ptr);
@@ -3070,7 +3073,7 @@ BPMsaveCatalog(int *r)
 
 
 
-void findQuantHisto(ValPtr vp, BAT * b, lng sp, lng msz, lng maxno)
+static void findQuantHisto(ValPtr vp, BAT * b, lng sp, lng msz, lng maxno)
 {
 	BUN p, pprev, stop; 
 	BUN c;

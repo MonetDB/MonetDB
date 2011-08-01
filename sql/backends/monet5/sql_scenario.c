@@ -2,7 +2,7 @@
  * The contents of this file are subject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ * http://www.monetdb.org/Legal/MonetDBLicense
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -232,8 +232,7 @@ SQLinit(void)
 	if (readonly)
 		SQLdebug |= 32;
 	dbname = GDKgetenv("gdk_dbname");
-	if (((SQLdebug&16)==16 && (SQLnewcatalog = mvc_init(dbname, FALSE, store_bpm, 0)) < 0) ||
-			((SQLdebug&96)==96 && (SQLnewcatalog = mvc_init(dbname, FALSE, store_suro, 0)) < 0) ||
+	if (((SQLdebug&96)==96 && (SQLnewcatalog = mvc_init(dbname, FALSE, store_suro, 0)) < 0) ||
 			((SQLdebug&96)==64 && (SQLnewcatalog = mvc_init(dbname, FALSE, store_su, 0)) < 0) ||
 			((SQLdebug&96)==32 && (SQLnewcatalog = mvc_init(dbname, FALSE, store_ro, 0)) < 0) ||
 			((SQLdebug&112)==0 && (SQLnewcatalog = mvc_init(dbname, FALSE, store_bat, 0)) < 0))
@@ -345,7 +344,7 @@ error(stream *out, char *str)
 
 #define TRANS_ABORTED "!current transaction is aborted (please ROLLBACK)\n"
 
-int
+static int
 handle_error(mvc *m, stream *out, int pstatus)
 {
 	int go = 1;
@@ -821,7 +820,7 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * the duration of these calls.
  */
 
-int SQLautocommit(Client c, mvc *m){
+static int SQLautocommit(Client c, mvc *m){
 	if (m->session->auto_commit && m->session->active) {
 		if (mvc_status(m) < 0) {
 			mvc_rollback(m, 0, NULL);
@@ -971,7 +970,7 @@ SQLreader(Client c)
  * The current analysis is simple and fulfills our short-term needs.
  * A future version may analyze the parameter settings in more detail.
  */
-void
+static void
 SQLsetDebugger(Client c, mvc *m, int onoff)
 {
 	if (m == 0 || !(m->emod & mod_debug))
@@ -998,7 +997,7 @@ SQLsetDebugger(Client c, mvc *m, int onoff)
  * which makes it possible to inspect the results later using
  * SQL itself. (Script needed to bind the BATs to a SQL table.)
  */
-void
+static void
 SQLsetTrace(backend *be, Client c, bit onoff)
 {
 	int i = 0, j = 0;
@@ -1105,7 +1104,7 @@ SQLsetTrace(backend *be, Client c, bit onoff)
 	GDKfree(def);
 }
 
-void
+static void
 SQLshowPlan(Client c)
 {
 	/* we should determine rendering requirements first */
@@ -1398,7 +1397,7 @@ finalize:
  * However, when we received an Execute call, we make a shortcut
  * and prepare the stack for immediate execution
  */
-str
+static str
 SQLexecutePrepared(Client c, backend *be, cq *q )
 {
 	mvc *m = be->mvc;
@@ -1485,7 +1484,7 @@ SQLexecutePrepared(Client c, backend *be, cq *q )
 
 str SQLrecompile(Client c, backend *be);
 
-str
+static str
 SQLengineIntern(Client c, backend *be)
 {
 	str msg = MAL_SUCCEED;
@@ -1562,7 +1561,7 @@ cleanup_engine:
 			return SQLrecompile(c, be);
 		} else {
 			str p = getExceptionPlace(msg);
-			showException(getExceptionType(msg), p, getExceptionMessage(msg));
+			showException(getExceptionType(msg), p, "%s", getExceptionMessage(msg));
 			GDKfree(p);
 		}
 		showErrors(c);
@@ -1647,7 +1646,7 @@ SQLassert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	(void)mb;
 	if (*flg){
 		/* mdbDump(mb,stk,pci);*/
-		throw(SQL, "assert", *msg);
+		throw(SQL, "assert", "%s", *msg);
 	}
 	return MAL_SUCCEED;
 }
@@ -1660,7 +1659,7 @@ SQLassertInt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	(void)mb;
 	if (*flg){
 		/* mdbDump(mb,stk,pci);*/
-		throw(SQL, "assert", *msg);
+		throw(SQL, "assert", "%s", *msg);
 	}
 	return MAL_SUCCEED;
 }
@@ -1673,7 +1672,7 @@ SQLassertWrd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	(void)mb;
 	if (*flg){
 		/* mdbDump(mb,stk,pci);*/
-		throw(SQL, "assert", *msg);
+		throw(SQL, "assert", "%s", *msg);
 	}
 	return MAL_SUCCEED;
 }
@@ -1686,7 +1685,7 @@ SQLassertLng(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	(void)mb;
 	if (*flg){
 		/* mdbDump(mb,stk,pci);*/
-		throw(SQL, "assert", *msg);
+		throw(SQL, "assert", "%s", *msg);
 	}
 	return MAL_SUCCEED;
 }

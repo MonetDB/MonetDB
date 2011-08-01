@@ -2,7 +2,7 @@
  * The contents of this file are subject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ * http://www.monetdb.org/Legal/MonetDBLicense
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -68,7 +68,7 @@
 
 
 static void
-usage()
+usage(void)
 {
 	fprintf(stderr, "mnc [options] destination port\n");
 	fprintf(stderr, "  -l | --listen   listen for connection instead\n");
@@ -98,6 +98,8 @@ main(int argc, char **argv)
 	char buf[8096];
 	size_t len;
 	fd_set fds;
+	char seeneof = 0;
+	char seenflush = 0;
 
 	static struct option long_options[8] = {
 		{ "listen", 0, 0, 'l' },
@@ -269,16 +271,30 @@ main(int argc, char **argv)
 			if ((len = mnstr_read(in, buf, 1, sizeof(buf))) != 0) {
 				if (!write(1, buf, len))
 					exit(2);
+				seenflush = 0;
 			} else {
-				/* EOF */
-				break;
+				/* flush or error */
+				if (!seenflush) {
+					seenflush = 1;
+				} else {
+					break;
+				}
 			}
 		}
 		if (FD_ISSET(0, &fds)) {
 			if ((len = read(0, buf, sizeof(buf))) != 0) {
 				mnstr_write(out, buf, len, 1);
-			} else {
+				seeneof = 0;
+			} else if (len == 0) {
 				/* EOF */
+				if (!seeneof) {
+					mnstr_flush(out);
+					seeneof = 1;
+				} else {
+					break;
+				}
+			} else {
+				/* error */
 				break;
 			}
 		}

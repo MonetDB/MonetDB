@@ -2,7 +2,7 @@
  * The contents of this file are subject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ * http://www.monetdb.org/Legal/MonetDBLicense
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -1273,8 +1273,8 @@ mapi_get_autocommit(Mapi mid)
 	return mid->auto_commit;
 }
 
-long
-usec()
+static long
+usec(void)
 {
 #ifdef HAVE_GETTIMEOFDAY
 	struct timeval tp;
@@ -1292,7 +1292,7 @@ usec()
 }
 
 
-void
+static void
 mapi_log_header(Mapi mid, char *mark)
 {
 	static long firstcall = 0;
@@ -1307,7 +1307,7 @@ mapi_log_header(Mapi mid, char *mark)
 	mnstr_flush(mid->tracelog);
 }
 
-void
+static void
 mapi_log_record(Mapi mid, const char *msg)
 {
 	mapi_log_header(mid, "W");
@@ -1449,7 +1449,7 @@ close_result(MapiHdl hdl)
 				snprintf(msg, sizeof(msg), "Xclose %d\n", hdl->pending_close[i]);
 				mapi_log_record(mid, msg);
 				mid->active = hdl;
-				if (mnstr_printf(mid->to, msg) < 0 ||
+				if (mnstr_printf(mid->to, "%s", msg) < 0 ||
 				    mnstr_flush(mid->to)) {
 					close_connection(mid);
 					mapi_setError(mid, mnstr_error(mid->to), "mapi_close_handle", MTIMEOUT);
@@ -1467,7 +1467,7 @@ close_result(MapiHdl hdl)
 				snprintf(msg, sizeof(msg), "Xclose %d\n", result->tableid);
 				mapi_log_record(mid, msg);
 				mid->active = hdl;
-				if (mnstr_printf(mid->to, msg) < 0 ||
+				if (mnstr_printf(mid->to, "%s", msg) < 0 ||
 				    mnstr_flush(mid->to)) {
 					close_connection(mid);
 					mapi_setError(mid, mnstr_error(mid->to), "mapi_close_handle", MTIMEOUT);
@@ -1670,7 +1670,7 @@ finish_handle(MapiHdl hdl)
 			snprintf(msg, sizeof(msg), "Xclose %d\n", hdl->pending_close[i]);
 			mapi_log_record(mid, msg);
 			mid->active = hdl;
-			if (mnstr_printf(mid->to, msg) < 0 ||
+			if (mnstr_printf(mid->to, "%s", msg) < 0 ||
 			    mnstr_flush(mid->to)) {
 				close_connection(mid);
 				mapi_setError(mid, mnstr_error(mid->to), "finish_handle", MTIMEOUT);
@@ -4257,9 +4257,9 @@ mapi_query_part(MapiHdl hdl, const char *query, size_t size)
 		printf("mapi_query_part:" SZFMT ":%.*s\n", size, (int) size, query);
 	}
 	hdl->needmore = 0;
-	mnstr_write(mid->to, (char *) query, 1, size);
+	mnstr_write(mid->to, query, 1, size);
 	if (mid->tracelog) {
-		mnstr_write(mid->tracelog, (char *) query, 1, size);
+		mnstr_write(mid->tracelog, query, 1, size);
 		mnstr_flush(mid->tracelog);
 	}
 	check_stream(mid, mid->to, "write error on stream", "mapi_query_part", mid->error);

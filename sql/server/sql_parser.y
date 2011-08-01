@@ -2,7 +2,7 @@
  * The contents of this file are subject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ * http://www.monetdb.org/Legal/MonetDBLicense
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -515,7 +515,8 @@ int yydebug=1;
 %left <operation> '='
 %left <operation> '&' '|' '^' LEFT_SHIFT RIGHT_SHIFT
 %left <operation> '+' '-'
-%left <operation> '*' '/' '%' 
+%left <operation> '*'
+%left <operation> '/' '%' 
 %left <operation> SUBSTRING CONCATSTRING POSITION
 %right UMINUS
 
@@ -3812,7 +3813,7 @@ literal:
 		  }
 		}
  |  INTNUM
-		{ char *s = strip_extra_zeros(sa_strdup(SA, $1));
+		{ char *s = $1;
 		  char *dot = strchr(s, '.');
 		  int digits = _strlen(s) - 1;
 		  int scale = digits - (int) (dot-s);
@@ -4015,7 +4016,7 @@ interval_expression:
 			while (cpyval /= 10)
 				inlen++;
 		    	if (inlen > t.digits) {
-				char *msg = sql_message("incorrect interval (%d > %d)", inlen, t.digits);
+				char *msg = sql_message("incorrect interval (" LLFMT " > %d)", inlen, t.digits);
 				yyerror(msg);
 				$$ = NULL;
 				YYABORT;

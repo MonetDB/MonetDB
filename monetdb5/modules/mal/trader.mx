@@ -2,7 +2,7 @@
 The contents of this file are subject to the MonetDB Public License
 Version 1.1 (the "License"); you may not use this file except in
 compliance with the License. You may obtain a copy of the License at
-http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+http://www.monetdb.org/Legal/MonetDBLicense
 
 Software distributed under the License is distributed on an "AS IS"
 basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -59,6 +59,7 @@ comment "Make execution bids for functions octopus.<fnname1>, ...";
 #endif
 
 trader_export str TRADERmakeBid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+trader_export str TRADERmakeBids(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #define BID_TRANS	1
 #define BID_COVER	2
@@ -85,7 +86,7 @@ static lng estimateSavings0(MalBlkPtr mb,  sht bidtype)
 }
 */
 
-lng estimateSavings(MalBlkPtr mb, sht bidtype)
+static lng estimateSavings(MalBlkPtr mb, sht bidtype)
 {
 	MalStkPtr stk = NULL;
 	int i, j, k, marked = 0;

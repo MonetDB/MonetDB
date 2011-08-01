@@ -2,7 +2,7 @@
 The contents of this file are subject to the MonetDB Public License
 Version 1.1 (the "License"); you may not use this file except in
 compliance with the License. You may obtain a copy of the License at
-http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+http://www.monetdb.org/Legal/MonetDBLicense
 
 Software distributed under the License is distributed on an "AS IS"
 basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -542,7 +542,7 @@ and much less expensive as reserving debugger space in each instruction.
 @c
 mdbStateRecord mdbTable[MAL_MAXCLIENTS];
 
-char
+static char
 isBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
 {
 	int i, j;
@@ -666,7 +666,7 @@ mdbShowBreakpoints(Client cntxt)
 		mnstr_printf(cntxt->fdout, "breakpoint on '%s'\n", mdb->brkRequest[i]);
 }
 
-void
+static void
 mdbClrBreakpoint(Client cntxt, int pc)
 {
 	int i, j = 0;
@@ -1048,8 +1048,8 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 					cntxt->flags |=ioFlag ;
 #ifdef HAVE_SYS_RESOURCE_H
 					getrusage(RUSAGE_SELF, &resource);
-					mnstr_printf(out, "#maxrss %d ixrss=%d idrss=%d isrss=%d" 
-									" minflt=%d majflt=%d nswap=%d inblock=%d oublock=%d\n", 
+					mnstr_printf(out, "#maxrss %ld ixrss=%ld idrss=%ld isrss=%ld" 
+									" minflt=%ld majflt=%ld nswap=%ld inblock=%ld oublock=%ld\n", 
 									resource.ru_maxrss, resource.ru_ixrss, 
 									resource.ru_idrss, resource.ru_isrss,
 									resource.ru_minflt, resource.ru_majflt, 
@@ -1557,7 +1557,7 @@ mdbDump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	printStack(cntxt->fdout,mb,stk);
 }
 static int mdbSessionActive;
-int mdbSession(){
+int mdbSession(void){
 	return mdbSessionActive;
 }
 @-
@@ -1566,6 +1566,7 @@ as underlying types not being aligned with what is expected
 at the MAL level. Since such tests can be quite expensive
 it should be used with care.
 @c
+#if 0
 void
 mdbSanityCheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 {
@@ -1601,6 +1602,7 @@ mdbSanityCheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		}
 	}
 }
+#endif
 
 static Client trapped_cntxt;
 static MalBlkPtr trapped_mb;
@@ -1652,12 +1654,12 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		state.p = getInstrPtr(mb,pc);
 		state.pc= pc;
 		cntxt->mdb= &state;
-		mnstr_printf(mal_clients[0].fdout,"#Process %d put to sleep\n",cntxt-mal_clients);
+		mnstr_printf(mal_clients[0].fdout,"#Process %d put to sleep\n",(int)(cntxt-mal_clients));
 		cntxt->itrace = 'W';
 		mdbTrap(cntxt,mb,stk,pc);
 		while(cntxt->itrace== 'W')
 			MT_sleep_ms(cntxt->delay);
-		mnstr_printf(mal_clients[0].fdout,"#Process %d woke up\n",cntxt-mal_clients);
+		mnstr_printf(mal_clients[0].fdout,"#Process %d woke up\n",(int)(cntxt-mal_clients));
 		return;
 	}
 	if (stk->cmd == 0)
@@ -1998,7 +2000,7 @@ if(hp && hp->base){
 h= @1;
 if(h && h->mask){
 	    mnstr_printf(out,"\t@2=" PTRFMT " size=" SZFMT "\n",PTRFMTCAST h, sizeof(*h));
-	    mnstr_printf(out,"\t@2link=" BUNFMT " size=" SZFMT "\n",h->link,
+	    mnstr_printf(out,"\t@2link=" PTRFMT " size=" SZFMT "\n",PTRFMTCAST h->link,
 	            (h->mask+h->lim+1)*sizeof(int));
 }
 @-

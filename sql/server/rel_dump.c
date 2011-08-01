@@ -2,7 +2,7 @@
  * The contents of this file are subject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ * http://www.monetdb.org/Legal/MonetDBLicense
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -543,7 +543,7 @@ rel_print(mvc *sql, sql_rel *rel, int depth)
 	b->buf[b->pos - 1] = '\0';  /* should always end with a \n, can overwrite */
 
 	/* craft a semi-professional header */
-	mnstr_printf(fd, "&1 0 %d 1 %d\n", /* type id rows columns tuples */
+	mnstr_printf(fd, "&1 0 " SZFMT " 1 " SZFMT "\n", /* type id rows columns tuples */
 			nl, nl);
 	mnstr_printf(fd, "%% .plan # table_name\n");
 	mnstr_printf(fd, "%% rel # name\n");

@@ -2,7 +2,7 @@
 The contents of this file are subject to the MonetDB Public License
 Version 1.1 (the "License"); you may not use this file except in
 compliance with the License. You may obtain a copy of the License at
-http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+http://www.monetdb.org/Legal/MonetDBLicense
 
 Software distributed under the License is distributed on an "AS IS"
 basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -223,49 +223,49 @@ values together. We create a hash and rotate command to do this.
 #include "monetdb_config.h"
 #include "mkey.h"
 /* TODO: nil handling. however; we do not want to lose time in bulk_rotate_xor_hash with that */
-int
+static int
 CMDrotate(wrd *res, wrd *val, int *n)
 {
 	*res = GDK_ROTATE(*val, *n, (sizeof(wrd)*8) - *n, (((wrd)1) << *n) - 1);
 	return GDK_SUCCEED;
 }
 
-int
+static int
 CMDhash_bte(wrd *res, bte *val)
 {
 	*res = *val;
 	return GDK_SUCCEED;
 }
 
-int
+static int
 CMDhash_sht(wrd *res, sht *val)
 {
 	*res = *val;
 	return GDK_SUCCEED;
 }
 
-int
+static int
 CMDhash_int(wrd *res, int *val)
 {
 	*res = *val;
 	return GDK_SUCCEED;
 }
 
-int
+static int
 CMDhash_flt(wrd *res, flt *val)
 {
 	*res = *(int*) val;
 	return GDK_SUCCEED;
 }
 
-int
+static int
 CMDhash_wrd(wrd *res, wrd *val)
 {
 	*res = *val;
 	return GDK_SUCCEED;
 }
 
-int
+static int
 CMDhash_lng(wrd *res, lng *val)
 {
 #if SIZEOF_WRD == SIZEOF_LNG
@@ -276,7 +276,7 @@ CMDhash_lng(wrd *res, lng *val)
 	return GDK_SUCCEED;
 }
 
-int
+static int
 CMDhash_dbl(wrd *res, dbl *val)
 {
 #if SIZEOF_WRD == SIZEOF_LNG
@@ -287,7 +287,7 @@ CMDhash_dbl(wrd *res, dbl *val)
 	return GDK_SUCCEED;
 }
 
-int
+static int
 CMDhash_str(wrd *res, str val)
 {
 	BUN h = strHash(val);
@@ -295,7 +295,7 @@ CMDhash_str(wrd *res, str val)
 	return GDK_SUCCEED;
 }
 
-int
+static int
 CMDhash(wrd *res, ptr val, int tpe)
 {
 	wrd code;

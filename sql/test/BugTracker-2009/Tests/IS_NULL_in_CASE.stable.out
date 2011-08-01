@@ -31,14 +31,14 @@ Over..
 % sys.sometable,	sys. # table_name
 % somecol,	NewColumnName # name
 % int,	char # type
-% 1,	0 # length
+% 1,	10 # length
 [ 0,	"small"	]
 [ 1,	"small"	]
 [ NULL,	"NULL FOUND"	]
 % sys.sometable,	sys. # table_name
 % somecol,	NewColumnName # name
 % int,	char # type
-% 1,	0 # length
+% 1,	10 # length
 [ 0,	"small"	]
 [ 1,	"small"	]
 [ NULL,	"NULL FOUND"	]

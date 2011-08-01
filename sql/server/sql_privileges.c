@@ -2,7 +2,7 @@
  * The contents of this file are subject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ * http://www.monetdb.org/Legal/MonetDBLicense
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -184,7 +184,7 @@ sql_revoke_table_privs( mvc *sql, char *grantee, int privs, char *tname, char *c
 	return NULL;
 }
 
-int
+static int
 sql_create_role_id(mvc *m, unsigned int id, str auth, int grantor)
 {
 	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
@@ -386,7 +386,7 @@ table_privs(mvc *m, sql_table *t, int priv)
 	return 0;
 }
 
-int
+static int
 sql_grantable_(mvc *m, int grantorid, int obj_id, int privs, int sub)
 {
 	oid rid;
@@ -516,6 +516,9 @@ sql_alter_user(mvc *sql, char *user, char *passwd, char enc,
 		char *schema, char *oldpasswd)
 {
 	sqlid schema_id = 0;
+	/* we may be called from MAL (nil) */
+	if (user != NULL && strcmp(user, str_nil) == 0)
+		user = NULL;
 	/* USER == NULL -> current_user */
 	if (user != NULL && backend_find_user(sql, user) < 0)
 		return sql_message("ALTER USER: no such user '%s'", user);

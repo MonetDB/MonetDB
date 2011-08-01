@@ -2,7 +2,7 @@
  * The contents of this file are subject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ * http://www.monetdb.org/Legal/MonetDBLicense
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -74,7 +74,10 @@ mserver_abort()
 }
 #endif
 
-void
+static void usage(char *prog)
+	__attribute__((__noreturn__));
+
+static void
 usage(char *prog)
 {
 	fprintf(stderr, "Usage: %s [options] [scripts]\n", prog);
@@ -147,10 +150,10 @@ monet_hello(void)
 #endif
 	printf("# Copyright (c) 1993-July 2008 CWI.\n");
 	printf("# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved\n");
-	printf("# Visit http://monetdb.cwi.nl/ for further information\n");
+	printf("# Visit http://www.monetdb.org/ for further information\n");
 }
 
-str
+static str
 absolute_path(str s)
 {
 	if (!MT_path_absolute(s)) {
@@ -165,7 +168,7 @@ absolute_path(str s)
 
 #define BSIZE 8192
 
-int
+static int
 monet_init(opt *set, int setlen)
 {
 	/* determine Monet's kernel settings */
@@ -185,7 +188,7 @@ monet_init(opt *set, int setlen)
 	return 1;
 }
 
-void emergencyBreakpoint(){
+static void emergencyBreakpoint(void){
 	/* just a handle to break after system initialization for GDB */
 }
 
@@ -521,7 +524,7 @@ main(int argc, char **av)
 				secret[1023] = '\0';
 				/* don't show this as a crash */
 				msab_registerStop();
-				GDKfatal(secret);
+				GDKfatal("%s", secret);
 			}
 			len = fread(secret, 1, 1023, secretf);
 			secret[len] = '\0';
@@ -530,7 +533,7 @@ main(int argc, char **av)
 				snprintf(secret, 1023, "vault key has zero-length!");
 				/* don't show this as a crash */
 				msab_registerStop();
-				GDKfatal(secret);
+				GDKfatal("%s", secret);
 			} else if (len < 5) {
 				fprintf(stderr, "#warning: your vault key is too short "
 						"(" SZFMT "), enlarge your vault key!\n", len);
@@ -538,11 +541,11 @@ main(int argc, char **av)
 			fclose(secretf);
 		}
 		if ((err = AUTHunlockVault(&secret)) != MAL_SUCCEED)
-			GDKfatal(err);
+			GDKfatal("%s", err);
 	}
 	/* make sure the authorisation BATs are loaded */
 	if ((err = AUTHinitTables()) != MAL_SUCCEED)
-		GDKfatal(err);
+		GDKfatal("%s", err);
 	if (mal_init())
 		return 0;
 

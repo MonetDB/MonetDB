@@ -2,7 +2,7 @@
  * The contents of this file are subject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ * http://www.monetdb.org/Legal/MonetDBLicense
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -435,6 +435,7 @@ result_type(mvc *sql, char *fname, symbol *res, int instantiate )
 		return &res->data.lval->h->data.typeval;
 	} else if (res->token == SQL_TABLE) {
 		/* here we create a new table-type */
+		sql_schema *sys = find_sql_schema(sql->session->tr, "sys");
 		sql_subtype *t = SA_NEW(sql->sa, sql_subtype);
 		sql_table *tbl;
 		char *tnme = NEW_ARRAY(char, strlen(fname) + 2);
@@ -442,14 +443,15 @@ result_type(mvc *sql, char *fname, symbol *res, int instantiate )
 		tnme[0] = '#';
 		strcpy(tnme+1, fname);
 		if (instantiate) {
-			tbl = mvc_bind_table(sql, sql->session->schema, tnme);
+
+			tbl = mvc_bind_table(sql, sys, tnme);
 			_DELETE(tnme);
 			if (!tbl)
 				return NULL;
 		} else {
 			dnode *n = res->data.lval->h;
 
-			tbl = mvc_create_generated(sql, sql->session->schema, tnme, NULL, 1 /* system ?*/);
+			tbl = mvc_create_generated(sql, sys, tnme, NULL, 1 /* system ?*/);
 			for(;n; n = n->next->next) {
 				sql_subtype *ct = &n->next->data.typeval;
 		    		mvc_create_column(sql, tbl, n->data.sval, ct);
@@ -465,7 +467,7 @@ result_type(mvc *sql, char *fname, symbol *res, int instantiate )
 	return NULL;
 }
 
-list *
+static list *
 create_type_list(dlist *params, int param)
 {
 	sql_subtype *par_subtype;
@@ -632,7 +634,7 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 	return stmt_none(sql->sa);
 }
 
-stmt* 
+static stmt* 
 drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int is_func)
 {
 	char *name = qname_table(qname);
@@ -716,7 +718,7 @@ drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int is_func)
 	return stmt_none(sql->sa);
 }
 
-stmt* 
+static stmt* 
 drop_all_func(mvc *sql, dlist *qname, int drop_action, int is_func)
 {
 	char *name = qname_table(qname);

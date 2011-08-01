@@ -2,7 +2,7 @@
 The contents of this file are subject to the MonetDB Public License
 Version 1.1 (the "License"); you may not use this file except in
 compliance with the License. You may obtain a copy of the License at
-http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+http://www.monetdb.org/Legal/MonetDBLicense
 
 Software distributed under the License is distributed on an "AS IS"
 basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -975,7 +975,7 @@ printCrackerDeletions(int bid){
 		BAT *b;
 		b=BATdescriptor(CrackerIndex[i].did);
 		if (b == NULL){
-                	mnstr_printf(GDKout,"\n crack print deletions", "Failed to access deletions.");
+                	mnstr_printf(GDKout,"\n crack print deletions: Failed to access deletions.");
 			return;
 		}
 		BATprint(b);
@@ -992,7 +992,7 @@ printCrackerInsertions(int bid){
 		BAT *b;
 		b=BATdescriptor(CrackerIndex[i].iid);
 		if (b == NULL){
-                	mnstr_printf(GDKout,"\n crack print insertions", "Failed to access insertions.");
+                	mnstr_printf(GDKout,"\n crack print insertions: Failed to access insertions.");
 			return;
 		}
 		BATprint(b);
@@ -1010,7 +1010,7 @@ sizeCrackerDeletions(int bid){
         if (CrackerIndex[i].did > 0){
                 u = BATdescriptor(CrackerIndex[i].did);
 		if (u == NULL){
-                	mnstr_printf(GDKout,"\n crack print deletions", "Failed to access deletions.");
+                	mnstr_printf(GDKout,"\n crack print deletions: Failed to access deletions.");
 			return;
 		}
                 printf("\n pending deletions size: "BUNFMT"\n",BATcount(u));
@@ -1030,7 +1030,7 @@ sizeCrackerInsertions(int bid){
 	if (CrackerIndex[i].iid > 0){
 		u = BATdescriptor(CrackerIndex[i].iid);
 		if (u == NULL){
-                	mnstr_printf(GDKout,"\n crack print insertions", "Failed to access insertions.");
+                	mnstr_printf(GDKout,"\n crack print insertions: Failed to access insertions.");
 			return;
 		}
 		printf("\n pending insertions size: "BUNFMT" \n",BATcount(u));

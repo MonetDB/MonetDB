@@ -2,7 +2,7 @@
 The contents of this file are subject to the MonetDB Public License
 Version 1.1 (the "License"); you may not use this file except in
 compliance with the License. You may obtain a copy of the License at
-http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+http://www.monetdb.org/Legal/MonetDBLicense
 
 Software distributed under the License is distributed on an "AS IS"
 basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -838,7 +838,7 @@ We have to do it: create a new BAT and put everything into it.
 	return NULL;
 }
 
-BAT *
+static BAT *
 BATslice2(BAT *b, BUN l1, BUN h1, BUN l2, BUN h2)
 {
 	BUN p, q;
@@ -1303,7 +1303,7 @@ Hash changes the order; IDX yields ordered tail; scan respects original order.
 		bn->T->nonil = tail;
 	else if (equi && !lnil)
 		bn->T->nonil = tail;
-	ALGODEBUG THRprintf(GDKout, "#BAT_select_(b=%s): %s: hkey=" BUNFMT ", tkey=" BUNFMT ", hsorted=" BUNFMT ", tsorted=" BUNFMT ".\n", BATgetId(b), BATgetId(bn), bn->hkey, bn->tkey, bn->hsorted, bn->tsorted);
+	ALGODEBUG THRprintf(GDKout, "#BAT_select_(b=%s): %s: hkey=%d, tkey=%d, hsorted=%d, tsorted=%d.\n", BATgetId(b), BATgetId(bn), bn->hkey, bn->tkey, bn->hsorted, bn->tsorted);
 	ESTIDEBUG THRprintf(GDKout, "#BAT_select_(b=%s): resultsize: estimated " BUNFMT ", got " BUNFMT ".\n", BATgetId(b), estimate, BATcount(bn));
 
 	return bn;
@@ -2280,7 +2280,7 @@ Use the histogram to determine good split boundaries on b.
 	BBPreclaim(histo);
 
 	if (n > 1 && n != yy + 1) {
-		PROPDEBUG THRprintf(GDKout, "#rangesplit: delivering %lu instead of %lu fragments\n", yy + 1, n);
+		PROPDEBUG THRprintf(GDKout, "#rangesplit: delivering " BUNFMT " instead of " BUNFMT " fragments\n", yy + 1, n);
 		n = yy + 1;
 	}
 @-

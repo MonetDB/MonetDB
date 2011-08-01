@@ -2,7 +2,7 @@
 The contents of this file are subject to the MonetDB Public License
 Version 1.1 (the "License"); you may not use this file except in
 compliance with the License. You may obtain a copy of the License at
-http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+http://www.monetdb.org/Legal/MonetDBLicense
 
 Software distributed under the License is distributed on an "AS IS"
 basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -968,11 +968,11 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 		base      = BUNfirst(c);
 		t1=GDKusec();
 		@:FullMerge(@1,@2,@3,@4)@
-		printf("\n Merging %lld \n",GDKusec()-t1);
-		printf("\n Slicing %lld \n",timeSlice);
-		printf("\n Copying %lld \n",timeCopy);
-		printf("\n Headmake %lld \n",timeHead);
-		printf("\n Ordering %lld \n",timeSort);
+		printf("\n Merging " LLFMT " \n",GDKusec()-t1);
+		printf("\n Slicing " LLFMT " \n",timeSlice);
+		printf("\n Copying " LLFMT " \n",timeCopy);
+		printf("\n Headmake " LLFMT " \n",timeHead);
+		printf("\n Ordering " LLFMT " \n",timeSort);
 		goto done;
 	}
 
@@ -1211,8 +1211,8 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 		}
 	}
 
-	printf("MergeTime %lld \n",MergeTime);
-	printf("   pqTime %lld \n",pqTime);
+	printf("MergeTime " LLFMT " \n",MergeTime);
+	printf("   pqTime " LLFMT " \n",pqTime);
 
 	/*printf("Live slices are "OIDFMT" \n",i);*/
 	BBPunfix(br->batCacheid);
@@ -1431,7 +1431,7 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 	totalTuples=BATcount(br);
 	BBPunfix(bo->batCacheid);
 	
-	printf("sorting phase %lld \n",GDKusec()-timeStart);
+	printf("sorting phase " LLFMT " \n",GDKusec()-timeStart);
 
 	@:MergeExtSort(@1,@2,@3,@4)@
 

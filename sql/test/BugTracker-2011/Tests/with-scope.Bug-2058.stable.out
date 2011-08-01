@@ -1,0 +1,45 @@
+stdout of test 'with-scope.Bug-2058` in directory 'test/BugTracker-2011` itself:
+
+
+# 10:42:35 >  
+# 10:42:35 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/home/sjoerd/Monet-stable/var/MonetDB" --set mapi_open=true --set mapi_port=34437 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_test_BugTracker-2011" --set mal_listing=0 ; echo ; echo Over..
+# 10:42:35 >  
+
+# MonetDB 5 server v11.3.4
+# This is an unreleased version
+# Serving database 'mTests_test_BugTracker-2011', using 2 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 3.868 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://koolmees.mullender.nl:34437/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+
+Over..
+
+# 10:42:36 >  
+# 10:42:36 >  mclient -lsql -ftest -i -e --host=koolmees --port=34437 
+# 10:42:36 >  
+
+#create table bug2058a (s varchar(10));
+#create table bug2058b (s varchar(10));
+#insert into bug2058a values ('bad');
+[ 1	]
+#insert into bug2058b values ('good');
+[ 1	]
+#with bug2058a as (select * from bug2058b) select * from bug2058a;
+% sys.bug2058a # table_name
+% s # name
+% varchar # type
+% 4 # length
+[ "good"	]
+
+# 10:42:36 >  
+# 10:42:36 >  Done.
+# 10:42:36 >  
+

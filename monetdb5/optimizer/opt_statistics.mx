@@ -2,7 +2,7 @@
 The contents of this file are subject to the MonetDB Public License
 Version 1.1 (the "License"); you may not use this file except in
 compliance with the License. You may obtain a copy of the License at
-http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+http://www.monetdb.org/Legal/MonetDBLicense
 
 Software distributed under the License is distributed on an "AS IS"
 basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -89,7 +89,7 @@ QOT_create(str hnme, str tnme, int ht, int tt)
 	return b;
 }
 
-static void QOTstatisticsInit(){
+static void QOTstatisticsInit(void){
 	oid o=0;
 	int i;
 
@@ -187,7 +187,7 @@ QOTupdateStatistics(str nme, int actions, lng val)
 }
 
 void
-QOTstatisticsExit()
+QOTstatisticsExit(void)
 {
 	bat names[5];
 

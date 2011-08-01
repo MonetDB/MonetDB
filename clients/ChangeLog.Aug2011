@@ -1,6 +1,14 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Sun Jul 24 2011 Fabian Groffen <fabian@cwi.nl>
+- Removed perl/Cimpl, MonetDB-CLI-MapiLib and MonetDB-CLI-MapiXS
+- Switched implementation of MonetDB::CLI::MapiPP to Mapi.pm, and made
+  it the default MonetDB::CLI provider.
+
+* Sun Jul 17 2011 Fabian Groffen <fabian@cwi.nl>
+- Made Mapi.pm usable with current versions of MonetDB again
+
 * Mon Apr 18 2011 Fabian Groffen <fabian@cwi.nl>
 - When the first non-option argument of mclient does not refer to an
   exising file, it now is taken as database name.  This allows to simply

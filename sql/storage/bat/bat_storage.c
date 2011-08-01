@@ -2,7 +2,7 @@
  * The contents of this file are subject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ * http://www.monetdb.org/Legal/MonetDBLicense
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -410,7 +410,7 @@ count_idx(sql_idx *idx)
 }
 
 
-sql_column *
+static sql_column *
 find_col( sql_trans *tr, char *sname, char *tname, char *cname )
 {
 	sql_schema *s = find_sql_schema(tr, sname);
@@ -1120,7 +1120,7 @@ clear_del(sql_trans *tr, sql_table *t)
 	return clear_dbat(tr, t->data);
 }
 
-void
+static void
 BATcleanProps( BAT *b )
 {
 	if (b->T->props) {
@@ -1129,7 +1129,7 @@ BATcleanProps( BAT *b )
 	}
 }
 
-int 
+static int 
 gtr_update_delta( sql_trans *tr, sql_delta *cbat)
 {
 	int ok = LOG_OK;
@@ -1222,7 +1222,7 @@ gtr_update( sql_trans *tr )
 	return _gtr_update(tr, &gtr_update_table);
 }
 
-int 
+static int 
 gtr_minmax_col( sql_trans *tr, sql_column *c)
 {
 	int ok = LOG_OK;

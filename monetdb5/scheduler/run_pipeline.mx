@@ -2,7 +2,7 @@
 The contents of this file are subject to the MonetDB Public License
 Version 1.1 (the "License"); you may not use this file except in
 compliance with the License. You may obtain a copy of the License at
-http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+http://www.monetdb.org/Legal/MonetDBLicense
 
 Software distributed under the License is distributed on an "AS IS"
 basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -205,7 +205,7 @@ optimizer. We look for specific scheduler module calls and act accordingly.
 The result should be a MAL block that can be executed by the corresponding
 engine. 
 @c
-str
+static str
 schedulerMALBlock(Client cntxt, MalBlkPtr mb)
 {
 	InstrPtr p;
@@ -285,6 +285,7 @@ dynamic optimization, something that is not known at the MAL level.
 done here and upon explicit request]
 @c
 @{
+#if 0
 str
 RUNinline(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
@@ -302,11 +303,13 @@ RUNinline(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	return MAL_SUCCEED;
 }
+#endif
 
 @-
 The SQL scheduler is presented merely as an example. The real one
 is located in  the SQL libraries for it needs specific information.
 @c
+#if 0
 str
 RUNsqlbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
@@ -334,5 +337,6 @@ RUNsqlbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 #endif
 	return msg;
 }
+#endif
 
 @}

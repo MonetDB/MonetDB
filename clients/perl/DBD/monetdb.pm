@@ -86,7 +86,7 @@ $DBD::monetdb::db::imp_data_size = 0;
 sub ping {
     my ($dbh) = @_;
 
-    my $statement = $dbh->{monetdb_language} eq 'sql' ? 'select 7' : 'print(7);';
+    my $statement = $dbh->{monetdb_language} eq 'sql' ? 'select 7' : 'io.print(7);';
     my $rv = $dbh->selectrow_array($statement) || 0;
     $dbh->set_err(undef, undef);
     $rv == 7 ? 1 : 0;
@@ -862,7 +862,7 @@ Current maintainer is Steffen Goeldner E<lt>sgoeldner@cpan.orgE<gt>.
 The contents of this file are subject to the MonetDB Public License
 Version 1.1 (the "License"); you may not use this file except in
 compliance with the License. You may obtain a copy of the License at
-http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+http://www.monetdb.org/Legal/MonetDBLicense
 
 Software distributed under the License is distributed on an "AS IS"
 basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -883,8 +883,7 @@ Contributor(s): Steffen Goeldner.
 
 =head2 MonetDB
 
-  Homepage    : http://monetdb.cwi.nl
-  SourceForge : http://sourceforge.net/projects/monetdb
+  Homepage    : http://www.monetdb.org/
 
 =head2 Perl modules
 

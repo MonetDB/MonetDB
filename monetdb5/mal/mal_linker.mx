@@ -2,7 +2,7 @@
 The contents of this file are subject to the MonetDB Public License
 Version 1.1 (the "License"); you may not use this file except in
 compliance with the License. You may obtain a copy of the License at
-http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+http://www.monetdb.org/Legal/MonetDBLicense
 
 Software distributed under the License is distributed on an "AS IS"
 basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -331,7 +331,7 @@ we exit the server. This does not involve the libraries themselves,
 because they may still be in use.
 @c
 void
-unloadLibraries()
+unloadLibraries(void)
 {
 	int i;
 
@@ -376,7 +376,7 @@ isPreloaded(str nme)
 }
 
 void
-initLibraries()
+initLibraries(void)
 {
 	int i;
 	str msg;

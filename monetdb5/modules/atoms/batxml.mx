@@ -2,7 +2,7 @@
 The contents of this file are subject to the MonetDB Public License
 Version 1.1 (the "License"); you may not use this file except in
 compliance with the License. You may obtain a copy of the License at
-http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+http://www.monetdb.org/Legal/MonetDBLicense
 
 Software distributed under the License is distributed on an "AS IS"
 basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -332,7 +332,7 @@ BATXMLxmltext(int *ret, int *bid)
 		xmlFreeDoc(doc);
 	if (content != NULL)
 		GDKfree(content);
-	throw(MAL, "xml.text", err );
+	throw(MAL, "xml.text", "%s", err );
 }
 
 @-
@@ -395,7 +395,7 @@ BATXMLstr2xml(int *ret, int *bid)
 	BBPunfix(bn->batCacheid);
 	if ( buf != NULL )
 		GDKfree(buf);
-	throw(MAL, "xml.xml", err);
+	throw(MAL, "xml.xml", "%s", err);
 }
 
 str
@@ -454,7 +454,7 @@ BATXMLdocument(int *ret, int *bid)
 	GDKfree(buf);
 	BBPreleaseref(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	throw(MAL, "xml.document",err);
+	throw(MAL, "xml.document", "%s", err);
 }
 
 str
@@ -533,7 +533,7 @@ BATXMLcontent(int *ret, int *bid)
 		GDKfree(buf);
 	BBPreleaseref(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	throw(MAL, "xml.document", err);
+	throw(MAL, "xml.document", "%s", err);
 }
 
 str
@@ -649,7 +649,7 @@ bunins_failed:
 		GDKfree(buf);
 	if ( val != NULL)
 		GDKfree(val);
-	throw(MAL, "batxml.options", err);
+	throw(MAL, "batxml.options", "%s", err);
 }
 
 str
@@ -705,7 +705,7 @@ BATXMLcomment(int *ret, int *bid)
 	BBPunfix(bn->batCacheid);
 	if ( buf != NULL)
 		GDKfree(buf);
-	throw(MAL, "xml.comment", err);
+	throw(MAL, "xml.comment", "%s", err);
 }
 
 str
@@ -775,7 +775,7 @@ BATXMLpi(int *ret, str *target, int *bid)
 	BBPunfix(bn->batCacheid);
 	if ( buf != NULL )
 		GDKfree(buf);
-	throw(MAL, "xml.pi", err);
+	throw(MAL, "xml.pi", "%s", err);
 }
 
 str
@@ -854,7 +854,7 @@ BATXMLroot(int *ret, int *bid, str *version, str *standalone)
 	BBPunfix(bn->batCacheid);
 	if ( buf != NULL )
 		GDKfree(buf);
-	throw(MAL, "xml.root", err);
+	throw(MAL, "xml.root", "%s", err);
 }
 
 str
@@ -915,7 +915,7 @@ BATXMLattribute(int *ret, str *name, int *bid)
 	BBPunfix(bn->batCacheid);
 	if ( buf != NULL )
 		GDKfree(buf);
-	throw(MAL, "xml.attribute", err);
+	throw(MAL, "xml.attribute", "%s", err);
 }
 
 str
@@ -1002,7 +1002,7 @@ BATXMLelement(int *ret, str *name, xml *nspace, xml *attr, int *bid)
 	BBPunfix(bn->batCacheid);
 	if ( buf != NULL )
 		GDKfree(buf);
-	throw(MAL, "xml.element", err);
+	throw(MAL, "xml.element", "%s", err);
 }
 
 str
@@ -1105,7 +1105,7 @@ BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPunfix(bn->batCacheid);
 	if ( buf != NULL )
 		GDKfree(buf);
-	throw(MAL, "xml.forest", err);
+	throw(MAL, "xml.forest", "%s", err);
 }
 
 str
@@ -1192,7 +1192,7 @@ BATXMLconcat(int *ret, int *bid, int *rid)
 	BBPunfix(bn->batCacheid);
 	if ( buf != NULL)
 		GDKfree(buf);
-	throw(MAL, "xml.concat", err);
+	throw(MAL, "xml.concat", "%s", err);
 }
 
 str
@@ -1302,7 +1302,7 @@ BATXMLagg3(int *ret, int *bid, int *grp, int *ext)
 	BBPunfix(bn->batCacheid);
 	if ( buf != NULL)
 		GDKfree(buf);
-	throw(MAL, "xml.agg", err);
+	throw(MAL, "xml.agg", "%s", err);
 }
 
 str
@@ -1407,7 +1407,7 @@ BATXMLagg(int *ret, int *bid, int *grp)
 	BBPunfix(r->batCacheid);
 	if ( buf != NULL)
 		GDKfree(buf);
-	throw(MAL, "xml.agg", err);
+	throw(MAL, "xml.agg", "%s", err);
 }
 
 str
@@ -1469,7 +1469,7 @@ BATXMLgroup(xml *ret, int *bid)
 	BBPreleaseref(b->batCacheid);
 	if ( buf != NULL)
 		GDKfree(buf);
-	throw(MAL, "xml.agg", err);
+	throw(MAL, "xml.agg", "%s", err);
 }
 
 str

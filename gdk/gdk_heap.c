@@ -2,7 +2,7 @@
  * The contents of this file are subject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ * http://www.monetdb.org/Legal/MonetDBLicense
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -233,7 +233,7 @@ decompose_filename(str nme)
  * files-with-holes on Unixes (on Windows, it actually always performs I/O which is not
  * nice).
  */
-size_t
+static size_t
 HEAPmargin(size_t maxsize)
 {
 	size_t ret;
@@ -959,7 +959,7 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 	HEADER *hheader = HEAP_index(heap, 0, HEADER);
 
 #ifdef TRACE
-	THRprintf(GDKout, "#Enter malloc with " VARFMT " bytes\n", nbytes);
+	THRprintf(GDKout, "#Enter malloc with " SZFMT " bytes\n", nbytes);
 #endif
 
 	/* add space for size field */
@@ -979,7 +979,7 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 		blockp = HEAP_index(heap, block, CHUNK);
 
 #ifdef TRACE
-		THRprintf(GDKout, "#block " VARFMT " is " VARFMT " bytes\n", block, blockp->size);
+		THRprintf(GDKout, "#block " SZFMT " is " SZFMT " bytes\n", block, blockp->size);
 #endif
 		if ((trail != 0) && (block <= trail))
 			GDKfatal("HEAP_malloc: Free list is not orderered\n");
@@ -1019,7 +1019,7 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 		trailp = HEAP_index(heap, trail, CHUNK);
 
 #ifdef TRACE
-		THRprintf(GDKout, "#New block made at pos " VARFMT " with size " SZFMT "\n", block, heap->size - block);
+		THRprintf(GDKout, "#New block made at pos " SZFMT " with size " SZFMT "\n", block, heap->size - block);
 #endif
 
 		blockp->next = 0;
@@ -1180,7 +1180,7 @@ HEAP_check(Heap *heap, HeapRepair *hr)
 		return FALSE;
 	}
 	if ((head != roundup_num(head, hheader->alignment))) {
-		GDKerror("HEAP_check: Heap structure corrupt: head = %d\n", head);
+		GDKerror("HEAP_check: Heap structure corrupt: head = " SZFMT "\n", head);
 		return FALSE;
 	}
 
@@ -1206,7 +1206,7 @@ HEAP_check(Heap *heap, HeapRepair *hr)
 		if ((block <= prevblock) && (block != 0)) {
 			GDKerror("HEAP_check: Freelist is not ordered\n");
 		} else if (block <= 0 || block > heap->free) {
-			GDKerror("HEAP_check: Entry freelist corrupt: block " VARFMT " not in heap\n", block);
+			GDKerror("HEAP_check: Entry freelist corrupt: block " SZFMT " not in heap\n", block);
 		} else {
 			freemask[pos] |= mask;
 			continue;
@@ -1247,7 +1247,7 @@ HEAP_check(Heap *heap, HeapRepair *hr)
 		int mask = 1 << (idx & 31);
 
 		if (freemask[pos] & mask) {
-			GDKerror("HEAP_check: Entry freelist corrupt: block " VARFMT " not in blocklist\n", block);
+			GDKerror("HEAP_check: Entry freelist corrupt: block " SZFMT " not in blocklist\n", block);
 			goto xit;
 		}
 	}

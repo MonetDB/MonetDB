@@ -2,7 +2,7 @@
  * The contents of this file are subject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ * http://www.monetdb.org/Legal/MonetDBLicense
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -36,6 +36,7 @@
 
 #include "merovingian.h"
 #include "discoveryrunner.h" /* remotedb */
+#include "forkmserver.h"
 
 
 /**
@@ -459,7 +460,7 @@ forkMserver(char *database, sabdb** stats, int force)
 	close(pfdo[1]);
 	close(pfde[0]);
 	close(pfde[1]);
-	return(newErr(strerror(errno)));
+	return(newErr("%s", strerror(errno)));
 }
 
 /* vim:set ts=4 sw=4 noexpandtab: */

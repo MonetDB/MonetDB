@@ -2,7 +2,7 @@
  * The contents of this file are subject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ * http://www.monetdb.org/Legal/MonetDBLicense
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -363,7 +363,7 @@ stmt_max(sql_allocator *sa, stmt *x, stmt *y)
 	return stmt_binop(sa, x, y, f);
 }
 
-list *
+static list *
 shrink_select_ranges(mvc *sql, list *oldsels)
 {
 	/* find minimal ranges for selects per column on one table */
@@ -789,7 +789,7 @@ reljoin( mvc *sql, stmt *rj, list *l2 )
 	return res;
 }
 
-int
+static int
 find_unique( stmt *s, void *v)
 {
 	stmt *c = head_column(s);
@@ -801,7 +801,7 @@ find_unique( stmt *s, void *v)
 }
 
 /* push the semijoin of (select,s) through the select statement (select) */
-stmt *
+static stmt *
 push_semijoin( mvc *sql, stmt *select, stmt *s )
 {
 	if (select->type == st_list){ 

@@ -2,7 +2,7 @@
 The contents of this file are subject to the MonetDB Public License
 Version 1.1 (the "License"); you may not use this file except in
 compliance with the License. You may obtain a copy of the License at
-http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+http://www.monetdb.org/Legal/MonetDBLicense
 
 Software distributed under the License is distributed on an "AS IS"
 basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -172,7 +172,7 @@ color_export int color_tostr(char **colorStr, int *len, color *c);
 @- Atom commands
 @c
 
-int
+static int
 CLRhextoint(chr h, chr l)
 {
 	int r = 0;
@@ -316,7 +316,7 @@ CLRblue(int *b, color *c)
 
 #define EPS 0.001f
 
-void
+static void
 color_rgb2hsv(float *h, float *s, float *v, int R, int G, int B)
 {
 	register float H, S, V, max;

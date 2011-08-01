@@ -25,9 +25,9 @@ Summary: MonetDB - Monet Database Management System
 Vendor: MonetDB BV <info@monetdb.org>
 
 Group: Applications/Databases
-License: MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
-URL: http://monetdb.cwi.nl/
-Source: http://dev.monetdb.org/downloads/sources/Apr2011-SP1/%{name}-%{version}.tar.bz2
+License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
+URL: http://www.monetdb.org/
+Source: http://dev.monetdb.org/downloads/sources/Apr2011-SP2/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -43,13 +43,11 @@ BuildRequires: libxml2-devel
 BuildRequires: openssl-devel
 BuildRequires: pcre-devel >= 4.5
 BuildRequires: perl
-BuildRequires: perl-devel
 BuildRequires: python
 # BuildRequires: raptor-devel >= 1.4.16
 BuildRequires: readline-devel
 BuildRequires: ruby
 BuildRequires: rubygems
-BuildRequires: swig
 BuildRequires: unixODBC-devel
 BuildRequires: zlib-devel
 
@@ -241,8 +239,6 @@ program.
 %files client-perl
 %defattr(-,root,root)
 %{_prefix}/%{perl_libdir}/*
-%dir %{_datadir}/monetdb/perl
-%{_datadir}/monetdb/perl/*
 
 %package client-ruby
 Summary: MonetDB ruby interface
@@ -386,7 +382,6 @@ fi
 %endif
 # %exclude %{_libdir}/monetdb5/rdf.mal
 %exclude %{_libdir}/monetdb5/sql.mal
-%exclude %{_libdir}/monetdb5/sql_bpm.mal
 %{_libdir}/monetdb5/*.mal
 # %{_libdir}/monetdb5/autoload/*_fits.mal
 %{_libdir}/monetdb5/autoload/*_vault.mal
@@ -538,21 +533,44 @@ developer, but if you do want to test, this is the package you need.
 %build
 
 %{configure} \
-	--enable-strict=no \
 	--enable-assert=no \
-	--enable-debug=no \
-	--enable-optimize=yes \
 	--enable-bits=%{bits} \
+	--enable-console=yes \
+	--enable-crackers=no \
+	--enable-datacell=no \
+	--enable-debug=no \
+	--enable-developer=no \
+	--enable-fits=no \
+	--enable-gdk=yes \
+	--enable-geom=%{?centos:no}%{!?centos:yes} \
+	--enable-instrument=no \
 	--enable-jdbc=no \
 	--enable-merocontrol=no \
+	--enable-monetdb5=yes \
+	--enable-noexpand=no \
+	--enable-odbc=yes \
+	--enable-oid32=%{?oid32:yes}%{!?oid32:no} \
+	--enable-optimize=yes \
+	--enable-profile=no \
 	--enable-rdf=no \
-	--enable-fits=no \
-	--with-valgrind=no \
+	--enable-sql=yes \
+	--enable-strict=no \
+	--enable-testing=yes \
+	--with-ant=no \
+	--with-bz2=yes \
+	--with-geos=%{?centos:no}%{!?centos:yes} \
+	--with-hwcounters=no \
+	--with-java=no \
 	--with-mseed=no \
-	--with-geos=%{?centos:no}%{!?centos:yes}
-	%{?oid32:--enable-oid32} \
-	%{?comp_cc:CC="%{comp_cc}"} \
-	%{?_with_netcdf} %{?_without_netcdf}
+	--with-perl=yes \
+	--with-pthread=yes \
+	--with-python=yes \
+	--with-readline=yes \
+	--with-rubygem=yes \
+	--with-sphinxclient=no \
+	--with-unixodbc=yes \
+	--with-valgrind=no \
+	%{?comp_cc:CC="%{comp_cc}"}
 
 make
 
@@ -588,6 +606,62 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Tue Jul 26 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.3.7-20110726
+- Rebuilt.
+
+* Wed Jul 20 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.3.5-20110720
+- Rebuilt.
+
+* Tue Jul 19 2011 Fabian Groffen <fabian@cwi.nl> - 11.3.5-20110720
+- sql: Fixed regression where the superuser password could no longer be
+  changed, bug #2844
+
+* Wed Jul 13 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.3.5-20110720
+- buildtools: We can now build RPMs on CentOS 6.0.  Since there is no geos library
+  on CentOS, we do not support the geom modules there.
+
+* Sat Jul  9 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.3.5-20110720
+- gdk: Fixed a problem where appending string BATs could cause enormous growth
+  of the string heap.  This fixes bug 2820.
+
+* Fri Jul  8 2011 Fabian Groffen <fabian@cwi.nl> - 11.3.5-20110720
+- java: Return false from Statement.getMoreResults() instead of a
+  NullPointerException when no query has been performed on the Statement
+  yet, bug #2833
+
+* Fri Jul  1 2011 Fabian Groffen <fabian@cwi.nl> - 11.3.5-20110720
+- clients: Fix stethoscope's mod.fcn filter when using multiple targets, bug #2827
+
+* Wed Jun 29 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.3.5-20110720
+- buildtools: We can now also build on Fedora 15.  This required some very minor
+  changes.
+- buildtools: Changed configure check for OpenSSL so that we can also build on CentOS
+  5.6.  We now no longer demand that OpenSSL is at least version 0.9.8f,
+  but instead we require that the hash functions we need are supported.
+
+* Wed Jun 29 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.3.5-20110720
+- clients: The separate Python distribution now uses the same version number as
+  the main package.
+
+* Wed Jun 29 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.3.5-20110720
+- gdk: Fixes to memory detection on FreeBSD.
+
+* Wed Jun 29 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.3.5-20110720
+- sql: Fixed incorrect insert counts.
+- sql: Fixed bug 2823: MAL exeption on SQL query with subquery in the where
+  part.
+- sql: Redirect error from create scripts back to the first client.  This
+  fixes bug 2813.
+- sql: Added joinidx based semijoin; push join through union (using
+  joinidx).
+- sql: Fixed pushing select down.
+
+* Mon Jun  6 2011 Fabian Groffen <fabian@cwi.nl> - 11.3.5-20110720
+- java: Fixed read-only interpretation.  Connection.isReadOnly now always
+  returns false, setReadOnly now generates a warning when called with
+  true.  Partly from bug #2818
+- java: Allow readonly to be set when autocommit is disabled as well.  Bug #2818
+
 * Tue May 17 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.3.3-20110517
 - Rebuilt.
 

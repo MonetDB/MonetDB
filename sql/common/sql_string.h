@@ -2,7 +2,7 @@
  * The contents of this file are subject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ * http://www.monetdb.org/Legal/MonetDBLicense
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -35,8 +35,10 @@ extern char *sql2str(char *s);
 extern char *sql_strdup(char *s);
 extern char *sql_escape_str(char *s);
 extern char *sql_escape_ident(char *s);
-extern char *sql_message(const char *format, ...);
-extern char *sa_message(sql_allocator *sa, const char *format, ...);
+extern char *sql_message(_In_z_ _Printf_format_string_ const char *format, ...)
+	__attribute__((__format__(__printf__, 1, 2)));
+extern char *sa_message(sql_allocator *sa, _In_z_ _Printf_format_string_ const char *format, ...)
+	__attribute__((__format__(__printf__, 2, 3)));
 
 #endif /*_SQL_STRING_H_*/
 

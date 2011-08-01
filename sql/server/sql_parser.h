@@ -2,7 +2,7 @@
  * The contents of this file are subject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ * http://www.monetdb.org/Legal/MonetDBLicense
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -186,7 +186,8 @@ typedef enum jt {
 } jt;
 
 extern char *token2string(int token);
-extern void *sql_error(mvc *sql, int error_code, char *format, ...);
+extern void *sql_error(mvc *sql, int error_code, _In_z_ _Printf_format_string_ char *format, ...)
+	__attribute__((__format__(__printf__, 3, 4)));
 extern int parse_error(mvc *sql, const char *s);
 extern int sqlparse(void *);
 

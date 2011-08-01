@@ -2,7 +2,7 @@
  * The contents of this file are subject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ * http://www.monetdb.org/Legal/MonetDBLicense
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -21,7 +21,7 @@
 #include "bat_table.h"
 #include "bat_utils.h"
 
-BAT *
+static BAT *
 delta_full_bat_( sql_column *c, sql_delta *bat, int temp, BAT *d, BAT *s)
 {
 	/* return full normalized column bat

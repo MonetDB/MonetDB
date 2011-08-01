@@ -2,7 +2,7 @@
 The contents of this file are subject to the MonetDB Public License
 Version 1.1 (the "License"); you may not use this file except in
 compliance with the License. You may obtain a copy of the License at
-http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+http://www.monetdb.org/Legal/MonetDBLicense
 
 Software distributed under the License is distributed on an "AS IS"
 basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -765,7 +765,7 @@ CMDbbptake(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (isIdentifier(name)< 0)
 		throw(MAL, "bbp.take", IDENTIFIER_EXPECTED);
 	if (strstr(name, "M5system_auth") == name)
-		throw(MAL, "bbp.take", INVCRED_ACCESS_DENIED,"");
+		throw(MAL, "bbp.take", INVCRED_ACCESS_DENIED);
 	v = getArgReference(stk,pci,0); 
 	if (takeBox(box, name, v, (int) getArgType(mb, pci, 0))) {
 		int bid = BBPindex(name);
@@ -820,6 +820,7 @@ CMDbbpreleaseBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+#if 0
 @-
 A BAT designated as garbage can be removed, provided we
 do not keep additional references in the stack frame
@@ -861,6 +862,7 @@ CMDbbpgarbage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*bid = 0;
 	return MAL_SUCCEED;
 }
+#endif
 
 @-
 A BAT can be removed forever immediately or at the end of

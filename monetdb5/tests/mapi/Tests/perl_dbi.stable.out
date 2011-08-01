@@ -35,8 +35,8 @@ Start a simple Monet MAL interaction
 data sources: dbi:monetdb:
 field[0]: 2, last index: 0
 field[0]: 3, last index: 0
-ERROR REPORTED: DBD::monetdb::st execute failed: SyntaxException:parseError:( xyz 1);
-SyntaxException:parseError:     ^<identifier> expected
+ERROR REPORTED: DBD::monetdb::st execute failed: SyntaxException:parseError:( xyz 1);;
+SyntaxException:parseError:     ^<identifier> expected at /ufs/fabian/scratch/monetdb/Aug2011/program-x86_64/lib/perl5/vendor_perl/5.12.3/x86_64-linux/MonetDB/CLI/MapiPP.pm line 120.
 bun: 3, three
 bun: 7, seven
 rows: 2, fields: 2

@@ -2,7 +2,7 @@
  * The contents of this file are subject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ * http://www.monetdb.org/Legal/MonetDBLicense
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -18,22 +18,6 @@
  */
 
 /*
- * @' The contents of this file are subject to the MonetDB Public License
- * @' Version 1.1 (the "License"); you may not use this file except in
- * @' compliance with the License. You may obtain a copy of the License at
- * @' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
- * @'
- * @' Software distributed under the License is distributed on an "AS IS"
- * @' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * @' License for the specific language governing rights and limitations
- * @' under the License.
- * @'
- * @' The Original Code is the MonetDB Database System.
- * @'
- * @' The Initial Developer of the Original Code is CWI.
- * @' Portions created by CWI are Copyright (C) 1997-2008 CWI.
- * @' All Rights Reserved.
- *
  * @f receptor
  * @a Martin Kersten
  * @v 1
@@ -553,7 +537,7 @@ parse:
 			}
 			BSKTunlock(&rc->lck, &rc->name);
 			if (rc->table.error) {
-				mnstr_printf(GDKerr, rc->table.error);
+				mnstr_printf(GDKerr, "%s", rc->table.error);
 				rc->table.error = 0;
 			}
 		}
@@ -763,7 +747,7 @@ dumpReceptor(Receptor rc)
 }
 
 str
-RCdump()
+RCdump(void)
 {
 	Receptor rc = rcAnchor;
 	for ( ; rc; rc= rc->nxt)

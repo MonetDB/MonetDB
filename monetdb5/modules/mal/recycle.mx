@@ -2,7 +2,7 @@
 The contents of this file are subject to the MonetDB Public License
 Version 1.1 (the "License"); you may not use this file except in
 compliance with the License. You may obtain a copy of the License at
-http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+http://www.monetdb.org/Legal/MonetDBLicense
 
 Software distributed under the License is distributed on an "AS IS"
 basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -202,7 +202,7 @@ RECYCLEresetCMD(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-void
+static void
 RECYCLEdump(stream *s)
 {
 	int i, incache;
@@ -274,7 +274,7 @@ RECYCLEdump(stream *s)
 	
 }
 
-void
+static void
 RECYCLEdumpQPat(stream *s)
 {
 	int i;
@@ -294,7 +294,7 @@ RECYCLEdumpQPat(stream *s)
 	}
 }
 
-void
+static void
 RECYCLEdumpDataTrans(stream *s)
 {
 	int i, n, qidx, err=0;
@@ -337,7 +337,7 @@ RECYCLEdumpDataTrans(stream *s)
 	}
 	mnstr_printf(s,"#########\n# Total transfer "LLFMT" Total reused "LLFMT"\n", sum, rsum);
 	if (err)
-		mnstr_printf(s,"# CL %d points to missing query pattern\n", err, 
+		mnstr_printf(s,"# CL %d points to missing query pattern\n",
 			getInstrPtr(recycleBlk,err)->recycle );
 	
 	GDKfree(dt);

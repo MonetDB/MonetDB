@@ -3,7 +3,7 @@
 # The contents of this file are subject to the MonetDB Public License
 # Version 1.1 (the "License"); you may not use this file except in
 # compliance with the License. You may obtain a copy of the License at
-# http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+# http://www.monetdb.org/Legal/MonetDBLicense
 #
 # Software distributed under the License is distributed on an "AS IS"
 # basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -173,7 +173,6 @@ RUBY_DIR = lib\ruby\gems\1.9.1
 # install python, flex and bison on your systems 
 PYTHON = python
 YACC = bison -b y -y
-SWIG = swig
 
 ARCHIVER = lib
 GENDLL =
@@ -196,10 +195,8 @@ ZI = -Zi
 ZI = -ZI
 !ENDIF
 COMPILERFLAGS = -GF -W3 $(W_CFLAGS) -wd4273 -wd4102 -MDd -nologo -Od -D_DEBUG -RTC1 $(ZI)
-NO_INLINE_CFLAGS =
 !ELSE
 COMPILERFLAGS = -GF -W3 $(W_CFLAGS) -wd4273 -wd4102 -MD -nologo -Ox
-NO_INLINE_CFLAGS = -Od -Ob0gysi-
 !ENDIF
 CFLAGS = $(COMPILERFLAGS)  -I. -I$(TOPDIR) $(LIBC_INCS) $(INCLUDES) $(WINCONFIG_INCS) $(ICONV_CFLAGS)
 
@@ -273,23 +270,14 @@ HAVE_MONETDB5_FALSE=^#
 !IFDEF HAVE_RAPTOR
 HAVE_RAPTOR_FALSE=^#
 !ENDIF
-!IFDEF HAVE_NETCDF
-HAVE_NETCDF_FALSE=^#
-!ENDIF
 !IFDEF HAVE_ODBC
 HAVE_ODBC_FALSE=^#
 !ENDIF
 !IFDEF HAVE_PCRE
 HAVE_PCRE_FALSE=^#
 !ENDIF
-!IFDEF HAVE_PERL_DEVEL
-HAVE_PERL_DEVEL_FALSE=^#
-!ENDIF
 !IFDEF HAVE_PERL
 HAVE_PERL_FALSE=^#
-!ENDIF
-!IFDEF HAVE_PERL_SWIG
-HAVE_PERL_SWIG_FALSE=^#
 !ENDIF
 !IFDEF HAVE_PHP
 HAVE_PHP_FALSE=^#
@@ -320,13 +308,10 @@ CONFIGURE=$(PYTHON) $(CONFIGURE_PY) \
 	"HAVE_LIBZ_FALSE=$(HAVE_LIBZ_FALSE)" \
 	"HAVE_MONETDB5_FALSE=$(HAVE_MONETDB5_FALSE)" \
 	"HAVE_MSEED_FALSE=$(HAVE_MSEED_FALSE)" \
-	"HAVE_NETCDF_FALSE=$(HAVE_NETCDF_FALSE)" \
 	"HAVE_OPENSSL_FALSE=$(HAVE_OPENSSL_FALSE)" \
 	"HAVE_ODBC_FALSE=$(HAVE_ODBC_FALSE)" \
 	"HAVE_PCRE_FALSE=$(HAVE_PCRE_FALSE)" \
-	"HAVE_PERL_DEVEL_FALSE=$(HAVE_PERL_DEVEL_FALSE)" \
 	"HAVE_PERL_FALSE=$(HAVE_PERL_FALSE)" \
-	"HAVE_PERL_SWIG_FALSE=$(HAVE_PERL_SWIG_FALSE)" \
 	"HAVE_PHP_FALSE=$(HAVE_PHP_FALSE)" \
 	"HAVE_PYTHON_FALSE=$(HAVE_PYTHON_FALSE)" \
 	"HAVE_RAPTOR_FALSE=$(HAVE_RAPTOR_FALSE)" \
@@ -370,22 +355,12 @@ MAKEDEBUG=DEBUG=1
 PSAPILIB = psapi.lib
 
 # When compiled with plain `nmake`,
-# 32-bit OIDs are used by default on 64-bit Windows
-# (see winconfig.h for details);
-# compile with `nmake MONET_OID64=1` to use 64-bit OIDs on 64-bit Windows;
-# compile with `nmake MONET_OID32=1` to use 32-bit OIDs on 64-bit Windows
-# in case the default is altered in winconfig.h .
-#!IFDEF BITS64
+# 64-bit OIDs are used by default on 64-bit Windows
+# (see monetdb_config.h.in for details);
+# compile with `nmake MONET_OID32=1` to use 32-bit OIDs on 64-bit Windows.
 !IF $(bits) == 64
-!IFNDEF MONET_OID64
 !IFDEF MONET_OID32
 CFLAGS = $(CFLAGS) -DMONET_OID32
-!ENDIF
-!ENDIF
-!IFNDEF MONET_OID32
-!IFDEF MONET_OID64
-CFLAGS = $(CFLAGS) -DMONET_OID64
-!ENDIF
 !ENDIF
 !ENDIF
 

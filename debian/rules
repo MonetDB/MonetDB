@@ -3,4 +3,42 @@
 include /usr/share/cdbs/1/rules/debhelper.mk
 include /usr/share/cdbs/1/class/autotools.mk
 
-DEB_CONFIGURE_EXTRA_FLAGS := --enable-strict=no --enable-assert=no --enable-debug=no --enable-optimize=yes --enable-java=no --enable-rdf=no --enable-fits=no --with-valgrind=no --with-mseed=no --with-rubygem-dir=lib/ruby/gems/1.8
+DEB_CONFIGURE_EXTRA_FLAGS := \
+	--enable-assert=no \
+	--enable-console=yes \
+	--enable-crackers=no \
+	--enable-datacell=no \
+	--enable-debug=no \
+	--enable-developer=no \
+	--enable-fits=no \
+	--enable-gdk=yes \
+	--enable-geom=yes \
+	--enable-instrument=no \
+	--enable-jdbc=no \
+	--enable-merocontrol=no \
+	--enable-monetdb5=yes \
+	--enable-noexpand=no \
+	--enable-odbc=yes \
+	--enable-oid32=no \
+	--enable-optimize=yes \
+	--enable-profile=no \
+	--enable-rdf=no \
+	--enable-sql=yes \
+	--enable-strict=no \
+	--enable-testing=yes \
+	--with-valgrind=no \
+	--with-ant=no \
+	--with-bz2=yes \
+	--with-geos=yes \
+	--with-hwcounters=no \
+	--with-java=no \
+	--with-mseed=no \
+	--with-perl=yes \
+	--with-pthread=yes \
+	--with-python=yes \
+	--with-readline=yes \
+	--with-rubygem=yes \
+	--with-rubygem-dir=lib/ruby/gems/1.8 \
+	--with-sphinxclient=no \
+	--with-unixodbc=yes \
+	--with-valgrind=no

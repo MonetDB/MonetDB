@@ -2,7 +2,7 @@
  * The contents of this file are subject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ * http://www.monetdb.org/Legal/MonetDBLicense
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -267,40 +267,6 @@ CompareFiles(char *nm1, char *nm2)
 	fclose(fp2);
 	fclose(fp1);
 	return ret;
-}
-
-void
-KillLines(FILE *fp, char *pattern, int killprev)
-{
-	long lastpos = 0, curpos = 0;
-	size_t patlen = strlen(pattern);
-	char line[8192];
-
-	fflush(fp);
-	fseek(fp, 0, SEEK_SET);
-	while (fgets(line, 8192, fp)) {
-		long newpos = ftell(fp);
-
-		if (strlen(line) == 0)
-			continue;
-		if (strncmp(line, pattern, patlen) == 0) {
-			long killpos = curpos;
-			long killen = newpos - curpos;
-
-			if (killprev && lastpos) {
-				killpos = lastpos;
-				killen += curpos - lastpos;
-			}
-			fseek(fp, killpos, SEEK_SET);
-			while (killen--)
-				fputc(' ', fp);
-			fflush(fp);
-			fseek(fp, newpos, SEEK_SET);
-		}
-		lastpos = curpos;
-		curpos = ftell(fp);
-	}
-	fseek(fp, 0, SEEK_END);
 }
 
 void

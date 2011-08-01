@@ -7,7 +7,7 @@ Gem::Specification.new do |s|
    s.authors = ["G Modena"]
    s.email = %q{gm@cwi.nl}
    s.summary = %q{Pure Ruby database driver for MonetDB/SQL}
-   s.homepage = %q{http://monetdb.cwi.nl/}
+   s.homepage = %q{http://www.monetdb.org/}
    s.description = %q{Pure Ruby database driver for the MonetDB/SQL columnar database management system}
    s.files = ["README", "lib/MonetDB.rb", "lib/MonetDBConnection.rb", "lib/MonetDBData.rb", "lib/MonetDBExceptions.rb", "lib/hasher.rb"]
    s.has_rdoc = true

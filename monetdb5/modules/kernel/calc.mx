@@ -2,7 +2,7 @@
 The contents of this file are subject to the MonetDB Public License
 Version 1.1 (the "License"); you may not use this file except in
 compliance with the License. You may obtain a copy of the License at
-http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+http://www.monetdb.org/Legal/MonetDBLicense
 
 Software distributed under the License is distributed on an "AS IS"
 basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -1446,25 +1446,12 @@ str CALC@12str(str *ret, @1 *val){
 	}
 	return MAL_SUCCEED;
 }
-str @1FromvoidImpl(@1 *ret, void *val){
-	(void) val; /* fool compiler */
-	memcpy(ret, ATOMnilptr(TYPE_@1), ATOMsize(TYPE_@1));
-	return MAL_SUCCEED;
-}
 @-
 Strings have to be dealt with differently, because
 we recieve a pointer to the string directly.
 To make it work properly, we need a call be reference
 in those places where we leave a result behind.
 @c
-str
-voidFromStrImpl(void *ret, str val)
-{
-	(void) val;		/* fool compiler */
-	memcpy(ret, ATOMnilptr(TYPE_void), ATOMsize(TYPE_void));
-	return MAL_SUCCEED;
-}
-
 calc_export str CALCnil2str(str *ret, void *val);
 str
 CALCnil2str(str *ret, void *val)

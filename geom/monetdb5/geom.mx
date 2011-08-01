@@ -2,7 +2,7 @@
 The contents of this file are subject to the MonetDB Public License
 Version 1.1 (the "License"); you may not use this file except in
 compliance with the License. You may obtain a copy of the License at
-http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+http://www.monetdb.org/Legal/MonetDBLicense
 
 Software distributed under the License is distributed on an "AS IS"
 basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -24,29 +24,29 @@ All Rights Reserved.
 @mal
 module geom;
 
-@' overwrite lng needed for fixed size! Sizes are fixed in geom.prelude 
+@' overwrite lng needed for fixed size! Sizes are fixed in geom.prelude
 @mal
-atom mbr:lng;	
+atom mbr:lng;
 
-command tostr() :str 		address mbrTOSTR;
+command tostr() :str		address mbrTOSTR;
 command fromstr() :mbr		address mbrFROMSTR;
-command hash() :int    		address mbrHASH;
-command null() :int   		address mbrNULL;
+command hash() :int		address mbrHASH;
+command null() :int		address mbrNULL;
 command cmp() :int		address mbrCOMP;
-command read()    		address mbrREAD;
-command write()   		address mbrWRITE;
+command read()			address mbrREAD;
+command write()			address mbrWRITE;
 
 command mbr(v:str) :mbr address mbrFromString;
 
 atom wkb;
 
-command tostr() :str 		address wkbTOSTR;
+command tostr() :str		address wkbTOSTR;
 command fromstr() :wkb		address wkbFROMSTR;
-command hash() :int    		address wkbHASH;
-command null() :int   		address wkbNULL;
+command hash() :int		address wkbHASH;
+command null() :int		address wkbNULL;
 command cmp() :int		address wkbCOMP;
-command read()    		address wkbREAD;
-command write()   		address wkbWRITE;
+command read()			address wkbREAD;
+command write()			address wkbWRITE;
 
 command put() :int		address wkbPUT;
 command del() :int		address wkbDEL;
@@ -84,11 +84,11 @@ comment "Returns true if the two mbrs overlap";
 
 
 command AsText(w:wkb) :str	address wkbAsText;
-command mbr(:flt,:flt,:flt,:flt) :mbr 
+command mbr(:flt,:flt,:flt,:flt) :mbr
 address ordinatesMBR
 comment "Creates the mbr for the given (xmin,ymin) and (xmax,ymax).";
-   
-command mbr(:wkb) :mbr 
+
+command mbr(:wkb) :mbr
 address wkbMBR
 comment "Creates the mbr for the given wkb.";
 
@@ -228,9 +228,9 @@ address wkbSymDifference
 comment "Returns a geometry that represents the point set semmetric difference of Geometry a with b.";
 
 
-command prelude():void 	address geom_prelude;
+command prelude():void	address geom_prelude;
 command epilogue():void address geom_epilogue;
-   
+
 geom.prelude();
 
 module calc;
@@ -264,11 +264,19 @@ command calc.isnil(v:wkb):bit
 address wkbIsnil
 comment "Nil test for wkb value";
 
-@h
-#ifndef GEOM_H
-#define GEOM_H
+@c
 
+#include <monetdb_config.h>
+#include <mal.h>
+#include <mal_atom.h>
+#include <mal_exception.h>
 #include "libgeom.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include <time.h>
 
 #ifdef WIN32
 #ifndef LIBGEOM
@@ -280,25 +288,9 @@ comment "Nil test for wkb value";
 #define geom_export extern
 #endif
 
-geom_export wkb *wkbNULL(void);
-
-#endif /* GEOM_H */
-
-@c
-
-#include <monetdb_config.h>
-#include <mal.h>
-#include <mal_atom.h>
-#include <mal_exception.h>
-#include "geom.h"
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-#include <time.h>
-
 int TYPE_mbr;
+
+geom_export wkb *wkbNULL(void);
 
 geom_export bat *geom_prelude(void);
 
@@ -485,7 +477,7 @@ mbrWRITE(mbr *c, stream *s, size_t cnt)
 
 	for (i = 0; i < cnt; i++, c++) {
 		/* use binary writeInt (as sizeof (flt) == sizeof(int)); */
-		/* We want to write nil's here too. 
+		/* We want to write nil's here too.
 		   So no overflow checking needed */
 		if (!mnstr_writeInt(s, (int) c->xmin) ||
 		    !mnstr_writeInt(s, (int) c->ymin) ||
@@ -940,8 +932,10 @@ wkbgetcoord@1(double *out, wkb **geom)
 	const GEOSCoordSeq gcs;
 #endif
 
-	if (!geosGeometry)
-		throw(MAL, "geom.wkbgetcoord@1", "wkb2geos failed");
+	if (!geosGeometry) {
+		*out = dbl_nil;
+		return MAL_SUCCEED;
+	}
 
 	gcs = GEOSGeom_getCoordSeq(geosGeometry);
 
@@ -949,7 +943,7 @@ wkbgetcoord@1(double *out, wkb **geom)
 		throw(MAL, "geom.wkbgetcoord@1", "GEOSGeom_getCoordSeq failed");
 
 	/* we could also check if geom is a
-		LineString, LinearRing or Point */ 
+		LineString, LinearRing or Point */
 	if (GEOSCoordSeq_get@1(gcs, 0, out) == 0)
 		ret = "GEOSCoordSeq_get@1 failed";
 
@@ -957,7 +951,7 @@ wkbgetcoord@1(double *out, wkb **geom)
 	GEOSGeom_destroy(geosGeometry);
 
 	if (ret != MAL_SUCCEED)
-		throw(MAL, "geom.@1", ret);
+		throw(MAL, "geom.@1", "%s", ret);
 
 	return ret;
 }
@@ -1030,7 +1024,7 @@ wkbcreatepoint_bat(int *out, int *ix, int *iy)
 			BBPreleaseref(bx->batCacheid);
 			BBPreleaseref(by->batCacheid);
 			BBPreleaseref(bo->batCacheid);
-			throw(MAL, "geom.point", err);
+			throw(MAL, "geom.point", "%s", err);
 		}
 		tfastins_nocheck(bo, o, p, Tsize(bo));
 		GDKfree(p);
@@ -1081,8 +1075,10 @@ wkb@1( @2 *out, wkb **geom)
 {
 	GEOSGeom geosGeometry = wkb2geos(*geom);
 
-	if (!geosGeometry)
-		throw(MAL, "geom.@1", "wkb2geos failed");
+	if (!geosGeometry) {
+		@7;
+		return MAL_SUCCEED;
+	}
 
 	*out = @4(@3(geosGeometry));
 
@@ -1096,13 +1092,13 @@ wkb@1( @2 *out, wkb **geom)
 
 }
 @c
-@:basic(Dimension,int,GEOSGeom_getDimensions,,0,1)@
-@:basic(GeometryTypeId,int,GEOSGeomTypeId,,-1,1)@
-@:basic(SRID,int,GEOSGetSRID,,,0)@
-@:basic(Envelope,wkb*,GEOSEnvelope,geos2wkb,NULL,1)@
-@:basic(IsEmpty,bit,GEOSisEmpty,,2,1)@
-@:basic(IsSimple,bit,GEOSisSimple,,2,1)@
-@:basic(Boundary,wkb*,GEOSBoundary,geos2wkb,NULL,1)@
+@:basic(Dimension,int,GEOSGeom_getDimensions,,0,1,*out=int_nil)@
+@:basic(GeometryTypeId,int,GEOSGeomTypeId,,-1,1,*out=int_nil)@
+@:basic(SRID,int,GEOSGetSRID,,,0,*out=int_nil)@
+@:basic(Envelope,wkb*,GEOSEnvelope,geos2wkb,NULL,1,*out=geos2wkb(NULL))@
+@:basic(IsEmpty,bit,GEOSisEmpty,,2,1,*out=bit_nil)@
+@:basic(IsSimple,bit,GEOSisSimple,,2,1,*out=bit_nil)@
+@:basic(Boundary,wkb*,GEOSBoundary,geos2wkb,NULL,1,*out=geos2wkb(NULL))@
 
 @= spatial
 geom_export str wkb@1( bit *out, wkb **a, wkb **b);
@@ -1115,14 +1111,17 @@ wkb@1( bit *out, wkb **a, wkb **b)
 
 	if (!ga && gb) {
 		GEOSGeom_destroy(gb);
-		throw(MAL, "geom.@1", "wkb2geos(*a) failed");
+		*out = bit_nil;
+		return MAL_SUCCEED;
 	}
 	if (ga && !gb) {
 		GEOSGeom_destroy(ga);
-		throw(MAL, "geom.@1", "wkb2geos(*b) failed");
+		*out = bit_nil;
+		return MAL_SUCCEED;
 	}
 	if (!ga && !gb) {
-		throw(MAL, "geom.@1", "wkb2geos(*a) and wkb2geos(*b) both failed");
+		*out = bit_nil;
+		return MAL_SUCCEED;
 	}
 
 	*out = @2(ga, gb);
@@ -1143,14 +1142,17 @@ wkb@1( bit *out, wkb **a, wkb **b, @3 @4)
 
 	if (!ga && gb) {
 		GEOSGeom_destroy(gb);
-		throw(MAL, "geom.@1", "wkb2geos(*a) failed");
+		*out = bit_nil;
+		return MAL_SUCCEED;
 	}
 	if (ga && !gb) {
 		GEOSGeom_destroy(ga);
-		throw(MAL, "geom.@1", "wkb2geos(*b) failed");
+		*out = bit_nil;
+		return MAL_SUCCEED;
 	}
 	if (!ga && !gb) {
-		throw(MAL, "geom.@1", "wkb2geos(*a) and wkb2geos(*b) both failed");
+		*out = bit_nil;
+		return MAL_SUCCEED;
 	}
 
 	*out = @2(ga, gb, * @4);
@@ -1180,8 +1182,10 @@ wkb@1( dbl *out, wkb **a)
 	str ret = MAL_SUCCEED;
 	GEOSGeom ga = wkb2geos(*a);
 
-	if (!ga)
-		throw(MAL, "geom.@1", "wkb2geos failed");
+	if (!ga) {
+		*out = dbl_nil;
+		return ret;
+	}
 
 	if (@2(ga, out) == 0)
 		ret = "@2 failed";
@@ -1189,7 +1193,7 @@ wkb@1( dbl *out, wkb **a)
 	GEOSGeom_destroy(ga);
 
 	if (ret != MAL_SUCCEED)
-		throw(MAL, "geom.@1", ret);
+		throw(MAL, "geom.@1", "%s", ret);
 	return ret;
 }
 @= analysis2
@@ -1204,14 +1208,17 @@ wkb@1( dbl *out, wkb **a, wkb **b)
 
 	if (!ga && gb) {
 		GEOSGeom_destroy(gb);
-		throw(MAL, "geom.@1", "wkb2geos(*a) failed");
+		*out = dbl_nil;
+		return ret;
 	}
 	if (ga && !gb) {
 		GEOSGeom_destroy(ga);
-		throw(MAL, "geom.@1", "wkb2geos(*b) failed");
+		*out = dbl_nil;
+		return ret;
 	}
 	if (!ga && !gb) {
-		throw(MAL, "geom.@1", "wkb2geos(*a) and wkb2geos(*b) both failed");
+		*out = dbl_nil;
+		return ret;
 	}
 
 	if (@2(ga, gb, out) == 0)
@@ -1221,31 +1228,34 @@ wkb@1( dbl *out, wkb **a, wkb **b)
 	GEOSGeom_destroy(gb);
 
 	if (ret != MAL_SUCCEED)
-		throw(MAL, "geom.@1", ret);
+		throw(MAL, "geom.@1", "%s", ret);
 	return ret;
 }
 @= analysis3
-geom_export str wkb@1( @2 *out, wkb **a, wkb **b);
+geom_export str wkb@1( wkb **out, wkb **a, wkb **b);
 
 str
-wkb@1( @2 *out, wkb **a, wkb **b)
+wkb@1( wkb **out, wkb **a, wkb **b)
 {
 	GEOSGeom ga = wkb2geos(*a);
 	GEOSGeom gb = wkb2geos(*b);
 
 	if (!ga && gb) {
 		GEOSGeom_destroy(gb);
-		throw(MAL, "geom.@1", "wkb2geos(*a) failed");
+		*out = geos2wkb(NULL);
+		return MAL_SUCCEED;
 	}
 	if (ga && !gb) {
 		GEOSGeom_destroy(ga);
-		throw(MAL, "geom.@1", "wkb2geos(*b) failed");
+		*out = geos2wkb(NULL);
+		return MAL_SUCCEED;
 	}
 	if (!ga && !gb) {
-		throw(MAL, "geom.@1", "wkb2geos(*a) and wkb2geos(*b) both failed");
+		*out = geos2wkb(NULL);
+		return MAL_SUCCEED;
 	}
 
-	*out = @4(@3( ga, gb));
+	*out = @3(@2( ga, gb));
 
 	GEOSGeom_destroy(ga);
 	GEOSGeom_destroy(gb);
@@ -1253,17 +1263,17 @@ wkb@1( @2 *out, wkb **a, wkb **b)
 	if (*out != NULL)
 		return MAL_SUCCEED;
 
-	throw(MAL, "geom.@1", "@3 failed");
+	throw(MAL, "geom.@1", "@2 failed");
 }
 @c
 @:analysis(Area,GEOSArea)@
 @:analysis(Length,GEOSLength)@
 @:analysis2(Distance,GEOSDistance)@
-@:basic(ConvexHull,wkb*,GEOSConvexHull,geos2wkb,NULL,1)@
-@:analysis3(Intersection,wkb*,GEOSIntersection,geos2wkb)@
-@:analysis3(Union,wkb*,GEOSUnion,geos2wkb)@
-@:analysis3(Difference,wkb*,GEOSDifference,geos2wkb)@
-@:analysis3(SymDifference,wkb*,GEOSSymDifference,geos2wkb)@
+@:basic(ConvexHull,wkb*,GEOSConvexHull,geos2wkb,NULL,1,*out=geos2wkb(NULL))@
+@:analysis3(Intersection,GEOSIntersection,geos2wkb)@
+@:analysis3(Union,GEOSUnion,geos2wkb)@
+@:analysis3(Difference,GEOSDifference,geos2wkb)@
+@:analysis3(SymDifference,GEOSSymDifference,geos2wkb)@
 
 @c
 geom_export str wkbBuffer(wkb **out, wkb **geom, dbl *distance);
@@ -1273,8 +1283,10 @@ wkbBuffer(wkb **out, wkb **geom, dbl *distance)
 {
 	GEOSGeom geosGeometry = wkb2geos(*geom);
 
-	if (!geosGeometry)
-		throw(MAL, "geom.Buffer", "wkb2geos failed");
+	if (!geosGeometry) {
+		*out = geos2wkb(NULL);
+		return MAL_SUCCEED;
+	}
 
 	*out = geos2wkb(GEOSBuffer(geosGeometry, *distance, -1));
 
@@ -1299,7 +1311,7 @@ wkbBuffer(wkb **out, wkb **geom, dbl *distance)
 		throw(MAL, "geom." Z, "no space available "); \
 	} \
 	X->hsorted=Y->hsorted; \
-	X->tsorted=0; 
+	X->tsorted=0;
 #define finalizeResult(X,Y,Z) \
 	if (!((Y)->batDirty&2)) (Y) = BATsetaccess((Y), BAT_READ); \
 	*X = (Y)->batCacheid; \
@@ -1308,9 +1320,9 @@ wkbBuffer(wkb **out, wkb **geom, dbl *distance)
 
 geom_export str bat_wkbMBR(int *ret, int *l);
 
-str 
+str
 bat_wkbMBR(int *ret, int *l)
-{   
+{
 	BAT *bn, *b;
 	BUN p,q;
 	int xx;
@@ -1326,7 +1338,7 @@ bat_wkbMBR(int *ret, int *l)
 		x = (wkb*)BUNtail(b,p);
 		if (wkb_isnil(x))
 			yp = mbrNULL();
-		else 
+		else
 			wkbMBR(yp,&x);
 		bunfastins(bn, h, yp);
 	}

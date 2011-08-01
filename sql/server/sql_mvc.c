@@ -2,7 +2,7 @@
  * The contents of this file are subject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ * http://www.monetdb.org/Legal/MonetDBLicense
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -114,7 +114,7 @@ mvc_init(char *dbname, int debug, store_type store, backend_stack stk)
 }
 
 void
-mvc_exit()
+mvc_exit(void)
 {
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_exit\n");
@@ -124,13 +124,13 @@ mvc_exit()
 }
 
 void
-mvc_logmanager()
+mvc_logmanager(void)
 {
 	store_manager();
 }
 
 void
-mvc_minmaxmanager()
+mvc_minmaxmanager(void)
 {
 	minmax_manager();
 }
@@ -243,7 +243,7 @@ mvc_commit(mvc *m, int chain, char *name)
 	if (sql_trans_validate(tr)) {
 		if ((ok = sql_trans_commit(tr)) != SQL_OK) {
 			char *msg = sql_message("COMMIT: transation commit failed (perhaps your disk is full?) exiting (kernel error: %s)", GDKerrbuf);
-			GDKfatal(msg);
+			GDKfatal("%s", msg);
 			_DELETE(msg);
 		}
 	} else {
@@ -704,7 +704,7 @@ mvc_bind_idx(mvc *m, sql_schema *s, char *iname)
 	return i;
 }
 
-int
+static int
 uniqueKey(sql_key *k)
 {
 	return (k->type == pkey || k->type == ukey);

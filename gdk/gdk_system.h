@@ -2,7 +2,7 @@
  * The contents of this file are subject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ * http://www.monetdb.org/Legal/MonetDBLicense
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -108,8 +108,10 @@ typedef size_t MT_Id;		/* thread number. will not be zero */
 enum MT_thr_detach { MT_THR_JOINABLE, MT_THR_DETACHED };
 
 gdk_export int MT_create_thread(MT_Id *t, void (*function) (void *), void *arg, enum MT_thr_detach d);
-gdk_export void MT_exit_thread(int status);
-gdk_export void MT_global_exit(int status);
+gdk_export void MT_exit_thread(int status)
+	__attribute__((__noreturn__));
+gdk_export void MT_global_exit(int status)
+	__attribute__((__noreturn__));
 gdk_export MT_Id MT_getpid(void);
 gdk_export int MT_join_thread(MT_Id t);
 gdk_export int MT_kill_thread(MT_Id t);

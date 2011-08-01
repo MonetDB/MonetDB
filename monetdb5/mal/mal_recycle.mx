@@ -2,7 +2,7 @@
 The contents of this file are subject to the MonetDB Public License
 Version 1.1 (the "License"); you may not use this file except in
 compliance with the License. You may obtain a copy of the License at
-http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+http://www.monetdb.org/Legal/MonetDBLicense
 
 Software distributed under the License is distributed on an "AS IS"
 basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -323,7 +323,7 @@ void RECYCLEinitQPat(int sz)
 	}
 }
 
-static void extendQPat()
+static void extendQPat(void)
 {
 	int s, i;
 	QryStatPtr *old;
@@ -446,7 +446,7 @@ The recycle statistics can be kept in the performance table
 associated with the recycle MAL block without problems, because 
 the block is never executed.
 @c
-static void RECYCLEspace()
+static void RECYCLEspace(void)
 {
 	if (recycleBlk == NULL) {
 		recycleBlk = newMalBlk(MAXVARS, STMT_INCREMENT);
@@ -939,7 +939,7 @@ RECYCLEsync(InstrPtr p)
 }
 #endif
 
-bit
+static bit
 VALisNil(ValPtr p)
 {
 
@@ -1460,7 +1460,7 @@ pureOverlap(rngPtr p, rngPtr q)
 
 }
 
-void copyRange(rngPtr t, rngPtr s)
+static void copyRange(rngPtr t, rngPtr s)
 {
 	VALcopy(&t->low, &s->low);
 	VALcopy(&t->hgh, &s->hgh);
@@ -1495,7 +1495,7 @@ findPieces(rngPtr qry, int bid, int *pcs)
 }
 
 
-double
+static double
 intLen(ValPtr l, ValPtr h)
 {
 	double len;
@@ -1529,7 +1529,7 @@ intLen(ValPtr l, ValPtr h)
     return (len >= 0? len : -len);
 }
 
-void
+static void
 VALadd(ValPtr y, ValPtr v, dbl x)
 {
 	
@@ -1564,7 +1564,7 @@ VALadd(ValPtr y, ValPtr v, dbl x)
 /* given bat piece of n tuples with value range (l,h)
 estimate the number of tuples in the range (sl,sh) */
 
-size_t sizeEst(size_t n, ValPtr l, ValPtr h, ValPtr sl, ValPtr sh)
+static size_t sizeEst(size_t n, ValPtr l, ValPtr h, ValPtr sl, ValPtr sh)
 {
 	double len, slen;
 

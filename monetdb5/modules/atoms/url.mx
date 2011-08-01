@@ -2,7 +2,7 @@
 The contents of this file are subject to the MonetDB Public License
 Version 1.1 (the "License"); you may not use this file except in
 compliance with the License. You may obtain a copy of the License at
-http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+http://www.monetdb.org/Legal/MonetDBLicense
 
 Software distributed under the License is distributed on an "AS IS"
 basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -226,13 +226,15 @@ url_export int URLtoString(str *s, int *len, str src);
 #include "mal.h"
 #include "mal_exception.h"
 
-void getword(char *word, char *line, char stop);
-char x2c(char *what);
-void plustospace(char *str);
+#if 0
+static void getword(char *word, char *line, char stop);
+static void plustospace(char *str);
+#endif
+static char x2c(char *what);
 
 /* COMMAND "getAnchor": Extract an anchor (reference) from the URL
  * SIGNATURE: getAnchor(url) : str; */
-str
+static str
 url_getAnchor(str *retval, /* put string: pointer to char here. */
 		url Str1)          /* string: pointer to char. */
 {
@@ -253,7 +255,7 @@ url_getAnchor(str *retval, /* put string: pointer to char here. */
 /* COMMAND "getBasename": Extract the base of the last file name of the URL,
  *                        thus, excluding the file extension.
  * SIGNATURE: getBasename(str) : str; */
-str
+static str
 url_getBasename(str *retval, url t)
 {
 	str d = 0, s;
@@ -275,9 +277,10 @@ url_getBasename(str *retval, url t)
 	return MAL_SUCCEED;
 }
 
+#if 0
 /* COMMAND "getContent": Retrieve the file referenced
  * SIGNATURE: getContent(str) : str; */
-str
+static str
 url_getContent(str *retval, /* put string: pointer to char here. */
 		url Str1)           /* string: pointer to char. */
 {
@@ -287,10 +290,11 @@ url_getContent(str *retval, /* put string: pointer to char here. */
 	strcpy(*retval, "functions not implemented");
 	return MAL_SUCCEED;
 }
+#endif
 
 /* COMMAND "getContext": Extract the path context from the URL
  * SIGNATURE: getContext(str) : str; */
-str
+static str
 url_getContext(str *retval, url Str1)
 {
 	str s, d;
@@ -315,9 +319,10 @@ url_getContext(str *retval, url Str1)
 	return MAL_SUCCEED;
 }
 
+#if 0
 /* COMMAND "getDirectory": Extract the directory names from the URL
  * SIGNATURE: getDirectory(str) : bat[int,str]; */
-str
+static str
 url_getDirectory(BAT **retval, /* put pointer to BAT[int,str] record here. */
 		url t)
 {
@@ -363,6 +368,7 @@ getDir_done:
 	@:Pseudo(dir,name)@
 	return MAL_SUCCEED;
 }
+#endif
 
 /* COMMAND "getDomain": Extract the Internet domain from the URL
  * SIGNATURE: getDomain(str) : str; */
@@ -411,7 +417,7 @@ getDomain_done:
 
 /* COMMAND "getExtension": Extract the file extension of the URL
  * SIGNATURE: getExtension(str) : str; */
-str
+static str
 url_getExtension(str *retval, url t)
 {
 	str d = 0, s;
@@ -437,7 +443,7 @@ url_getExtension(str *retval, url t)
 
 /* COMMAND "getFile": Extract the last file name of the URL
  * SIGNATURE: getFile(str) : str; */
-str
+static str
 url_getFile(str *retval, url t)
 {
 	str d = 0, s;
@@ -458,7 +464,7 @@ url_getFile(str *retval, url t)
 
 /* COMMAND "getHost": Extract the server identity from the URL */
 /* SIGNATURE: getHost(str) : str; */
-str
+static str
 url_getHost(str *retval, url t)
 {
 	static char buf[1024];
@@ -495,7 +501,7 @@ getHost_done:
 
 /* COMMAND "getPort": Extract the port id from the URL
  * SIGNATURE: getPort(str) : str; */
-str
+static str
 url_getPort(str *retval, url t)
 {
 	static char buf[1024];
@@ -537,7 +543,7 @@ getPort_done:
 
 /* COMMAND "getProtocol": Extract the protocol from the URL
  * SIGNATURE: getProtocol(str) : str; */
-str
+static str
 url_getProtocol(str *retval, /* put string: pointer to char here. */
 		url t)
 {
@@ -563,7 +569,7 @@ url_getProtocol(str *retval, /* put string: pointer to char here. */
 
 /* COMMAND "getQuery": Extract the query part from the URL
  * SIGNATURE: getQuery(str) : str; */
-str
+static str
 url_getQuery(str *retval, url Str1)
 {
 	char *s, *d;
@@ -582,9 +588,10 @@ url_getQuery(str *retval, url Str1)
 	return MAL_SUCCEED;
 }
 
+#if 0
 /* COMMAND "getQueryArg": Extract the argument mappings from the URL query
  * SIGNATURE: getQueryArg(str) : bat[str,str]; */
-str
+static str
 url_getQueryArg(BAT **retval, url t)
 {
 	char query[1024];
@@ -619,10 +626,11 @@ url_getQueryArg(BAT **retval, url t)
 	@:Pseudo(dir,name)@
 	return MAL_SUCCEED;
 }
+#endif
 
 /* COMMAND "getRobotURL": Extract the location of the robot control file
  * SIGNATURE: getRobotURL(str) : str; */
-str
+static str
 url_getRobotURL(str *retval, /* put string: pointer to char here. */
 		url t)               /* string: pointer to char. */
 {
@@ -665,7 +673,7 @@ getRobot_done:
 
 /* COMMAND "getUser": Extract the user identity from the URL
  * SIGNATURE: getUser(str) : str; */
-str
+static str
 url_getUser(str *retval, url t)
 {
 	static char buf[1024];
@@ -712,7 +720,7 @@ getUser_done:
 
 /* COMMAND "isaURL": Check conformity of the URL syntax
  * SIGNATURE: isaURL(str) : bit; */
-str
+static str
 url_isaURL(bit *retval, /* put return atom here. */
 		url t)          /* string: pointer to char. */
 {
@@ -729,7 +737,7 @@ url_isaURL(bit *retval, /* put return atom here. */
 	return MAL_SUCCEED;
 }
 
-int needEscape(char c){
+static int needEscape(char c){
 	if( isalnum((int)c) )
 		return 0;
 	if( c == '#' || c == '-' || c == '_' || c == '.' || c == '!' ||
@@ -811,6 +819,7 @@ unescape_str(str *retval, str s)
 	return MAL_SUCCEED;
 }
 
+#if 0
 /* COMMAND "newurl": Construct a URL from protocol, host,and file
  * SIGNATURE: newurl(str, str, str) : str; */
 str
@@ -855,6 +864,7 @@ url_new4(str *retval,   /* put string: pointer to char here. */
 	*retval = d;
 	return MAL_SUCCEED;
 }
+#endif
 
 @+ Utilities
 @c
@@ -862,7 +872,8 @@ url_new4(str *retval,   /* put string: pointer to char here. */
 #define LF 10
 #define CR 13
 
-void
+#if 0
+static void
 getword(char *word, char *line, char stop)
 {
 	int x = 0, y;
@@ -897,8 +908,9 @@ makeword(char *line, char stop)
 		;
 	return word;
 }
+#endif
 
-char
+static char
 x2c(char *what)
 {
 	char digit;
@@ -909,7 +921,8 @@ x2c(char *what)
 	return (digit);
 }
 
-void
+#if 0
+static void
 plustospace(char *str)
 {
 	int x;
@@ -918,6 +931,7 @@ plustospace(char *str)
 		if (str[x] == '+')
 			str[x] = ' ';
 }
+#endif
 
 @}
 

@@ -2,7 +2,7 @@
  * The contents of this file are subject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ * http://www.monetdb.org/Legal/MonetDBLicense
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -58,6 +58,27 @@ typedef long long lng;
 # endif
 #endif
 
+/* Defines to help the compiler check printf-style format arguments.
+ * These defines are also in our config.h, but we repeat them here so
+ * that we don't need that for this file.*/
+#if !defined(__GNUC__) || __GNUC__ < 2 || (__GNUC__ == 2 && __GNUC_MINOR__ < 5)
+/* This feature is available in gcc versions 2.5 and later.  */
+# ifndef __attribute__
+#  define __attribute__(Spec) /* empty */
+# endif
+#else
+/* The __-protected variants of `format' and `printf' attributes are
+ * accepted by gcc versions 2.6.4 (effectively 2.7) and later.  */
+# if !defined(__format__) && (__GNUC__ < 2 || (__GNUC__ == 2 && __GNUC_MINOR__ < 7))
+#  define __format__ format
+#  define __printf__ printf
+# endif
+#endif
+#if !defined(_MSC_VER) && !defined(_In_z_)
+# define _In_z_
+# define _Printf_format_string_
+#endif
+
 #define EOT 4
 
 #define ST_ASCII  0
@@ -92,7 +113,8 @@ stream_export int mnstr_readIntArray(stream *s, int *val, size_t cnt);
 stream_export int mnstr_writeIntArray(stream *s, const int *val, size_t cnt);
 stream_export int mnstr_readLngArray(stream *s, lng *val, size_t cnt);
 stream_export int mnstr_writeLngArray(stream *s, const lng *val, size_t cnt);
-stream_export int mnstr_printf(stream *s, const char *format, ...);
+stream_export int mnstr_printf(stream *s, _In_z_ _Printf_format_string_ const char *format, ...)
+	__attribute__((__format__(__printf__, 2, 3)));
 stream_export ssize_t mnstr_read(stream *s, void *buf, size_t elmsize, size_t cnt);
 stream_export ssize_t mnstr_readline(stream *s, void *buf, size_t maxcnt);
 stream_export ssize_t mnstr_write(stream *s, const void *buf, size_t elmsize, size_t cnt);

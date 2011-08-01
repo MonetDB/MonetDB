@@ -2,7 +2,7 @@
  * The contents of this file are subject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ * http://www.monetdb.org/Legal/MonetDBLicense
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -41,7 +41,6 @@ typedef enum store_type {
 	store_su,	/* single user, read/write */
 	store_ro,	/* multi user, read only */
 	store_suro,	/* single user, read only */
-	store_bpm,	/* bat partition manager */
 	store_tst
 } store_type;
 

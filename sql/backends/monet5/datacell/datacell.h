@@ -2,7 +2,7 @@
  * The contents of this file are subject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ * http://www.monetdb.org/Legal/MonetDBLicense
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -31,7 +31,7 @@
 #include "petrinet.h"
 
 #ifdef WIN32
-#ifndef LIBCONTAINERS
+#ifndef LIBDATACELL
 #define datacell_export extern __declspec(dllimport)
 #else
 #define datacell_export extern __declspec(dllexport)
@@ -62,5 +62,6 @@ datacell_export str DCpauseScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, 
 datacell_export str DCresumeScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str DCpostlude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
+datacell_export str DCemitter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif

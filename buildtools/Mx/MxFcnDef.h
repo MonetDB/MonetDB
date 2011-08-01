@@ -2,7 +2,7 @@
  * The contents of this file are subject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ * http://www.monetdb.org/Legal/MonetDBLicense
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -147,10 +147,14 @@ extern void Free(char *);
 extern char *StrDup(const char *);
 extern char *Strndup(const char *, size_t);
 
-extern void ofile_printf(char *, ...);
-extern void Fatal(char *, char *, ...);
-extern void Error(char *, ...);
-extern void Message(char *, ...);
+extern void ofile_printf(_In_z_ _Printf_format_string_ const char *, ...)
+	__attribute__((__format__(__printf__, 1, 2)));
+extern void Fatal(const char *, _In_z_ _Printf_format_string_ const char *, ...)
+	__attribute__((__format__(__printf__, 2, 3), __noreturn__));
+extern void Error(_In_z_ _Printf_format_string_ const char *, ...)
+	__attribute__((__format__(__printf__, 1, 2)));
+extern void Message(_In_z_ _Printf_format_string_ const char *, ...)
+	__attribute__((__format__(__printf__, 1, 2)));
 
 /* Tok.c
  */

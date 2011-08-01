@@ -2,7 +2,7 @@
 The contents of this file are subject to the MonetDB Public License
 Version 1.1 (the "License"); you may not use this file except in
 compliance with the License. You may obtain a copy of the License at
-http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+http://www.monetdb.org/Legal/MonetDBLicense
 
 Software distributed under the License is distributed on an "AS IS"
 basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -168,7 +168,7 @@ do_pqueue_init(BAT **h, BAT *b, BUN maxsize)
 	return GDK_SUCCEED;
 }
 
-int 
+static int 
 pqueue_init(BAT **h, BAT *b, wrd *maxsize)
 {
 	return do_pqueue_init(h, b, (BUN) *maxsize);
@@ -198,7 +198,7 @@ pqueue_init(BAT **h, BAT *b, wrd *maxsize)
 
 @= pqueueimpl_minmax
 /*enqueue an element*/
-int pqueue_enqueue_@1@2(BAT *h,
+static int pqueue_enqueue_@1@2(BAT *h,
 		 oid *idx, 
 		 @3 *el)
 {
@@ -264,7 +264,7 @@ static int pqueue_movedowntop_@1@2(BAT *h)
 }
 
 /* removes the root element, puts the last element as root and moves it down */
-int pqueue_dequeue_@1@2(BAT *h)
+static int pqueue_dequeue_@1@2(BAT *h)
 {
   BATiter hi = bat_iterator(h);
   BUN hbase;
@@ -289,7 +289,7 @@ int pqueue_dequeue_@1@2(BAT *h)
 
 /* replaces the top element with the input if it is larger (smaller) and
  * updates the heap */
-int pqueue_topreplace_@1@2(BAT *h,
+static int pqueue_topreplace_@1@2(BAT *h,
 		 oid *idx,
 		 @3 *el)
 {
@@ -331,7 +331,7 @@ heap2bat_@1@2( BAT *h )
 	return r;
 }
 
-int pqueue_topn_void@1@2(BAT **H, BAT *t, wrd *N)
+static int pqueue_topn_void@1@2(BAT **H, BAT *t, wrd *N)
 {
   BAT *h = NULL;
   BATiter ti = bat_iterator(t);
@@ -357,7 +357,7 @@ int pqueue_topn_void@1@2(BAT **H, BAT *t, wrd *N)
   return GDK_SUCCEED;
 }
 
-int pqueue_topn_@1@2(BAT **H, BAT *t, wrd *N)
+static int pqueue_topn_@1@2(BAT **H, BAT *t, wrd *N)
 {
   BAT *h = NULL;
   BATiter ti = bat_iterator(t);
@@ -383,7 +383,7 @@ int pqueue_topn_@1@2(BAT **H, BAT *t, wrd *N)
 
 /* TopN (unique values), based on @2-pqueue */
 
-int pqueue_utopn_void@1@2(BAT **H, BAT *t, wrd *N)
+static int pqueue_utopn_void@1@2(BAT **H, BAT *t, wrd *N)
 {
   BAT *duplicates = NULL, *b;
   BATiter ti = bat_iterator(t);
@@ -437,7 +437,7 @@ int pqueue_utopn_void@1@2(BAT **H, BAT *t, wrd *N)
   return GDK_SUCCEED;
 }
 
-int pqueue_utopn_@1@2(BAT **H, BAT *t, wrd *N)
+static int pqueue_utopn_@1@2(BAT **H, BAT *t, wrd *N)
 {
   BAT *duplicates = NULL, *b;
   BATiter ti = bat_iterator(t);
@@ -511,7 +511,7 @@ int pqueue_utopn_@1@2(BAT **H, BAT *t, wrd *N)
 
 @= pqueueimpl_any
 /*enqueue an element*/
-int pqueue_enqueue_any@1(BAT *h, oid *idx, ptr el, int tpe)
+static int pqueue_enqueue_any@1(BAT *h, oid *idx, ptr el, int tpe)
 {
   BATiter hi = bat_iterator(h);
   BUN hbase;
@@ -589,7 +589,7 @@ static int pqueue_movedowntop_any@1(BAT *h)
 }
 
 /* removes the root element, puts the last element as root and moves it down */
-int pqueue_dequeue_any@1(BAT *h)
+static int pqueue_dequeue_any@1(BAT *h)
 {
   BATiter hi = bat_iterator(h);
   BUN hbase;
@@ -615,7 +615,7 @@ int pqueue_dequeue_any@1(BAT *h)
 
 /* replaces the top element with the input if it is larger (smaller) and
  * updates the heap */
-int pqueue_topreplace_any@1(BAT *h, oid *idx, ptr el, int tpe)
+static int pqueue_topreplace_any@1(BAT *h, oid *idx, ptr el, int tpe)
 {
   BATiter hi = bat_iterator(h);
   BUN hbase = BUNfirst(h);
@@ -654,7 +654,7 @@ heap2bat_any@1( BAT *h )
 	return r;
 }
 
-int pqueue_topn_voidany@1(BAT **H, BAT *t, wrd *N)
+static int pqueue_topn_voidany@1(BAT **H, BAT *t, wrd *N)
 {
   BAT *h = NULL;
   BATiter ti = bat_iterator(t);
@@ -680,7 +680,7 @@ int pqueue_topn_voidany@1(BAT **H, BAT *t, wrd *N)
   return GDK_SUCCEED;
 }
 
-int pqueue_topn_any@1(BAT **H, BAT *t, wrd *N)
+static int pqueue_topn_any@1(BAT **H, BAT *t, wrd *N)
 {
   BAT *h = NULL;
   BATiter ti = bat_iterator(t);
@@ -705,7 +705,7 @@ int pqueue_topn_any@1(BAT **H, BAT *t, wrd *N)
   return GDK_SUCCEED;
 }
 
-int pqueue_utopn_voidany@1(BAT **H, BAT *t, wrd *N)
+static int pqueue_utopn_voidany@1(BAT **H, BAT *t, wrd *N)
 {
   BAT *duplicates = NULL, *b;
   BATiter hi, ti = bat_iterator(t);
@@ -763,7 +763,7 @@ int pqueue_utopn_voidany@1(BAT **H, BAT *t, wrd *N)
   return GDK_SUCCEED;
 }
 
-int pqueue_utopn_any@1(BAT **H, BAT *t, wrd *N)
+static int pqueue_utopn_any@1(BAT **H, BAT *t, wrd *N)
 {
   BAT *duplicates = NULL, *b;
   BATiter hi, ti = bat_iterator(t);

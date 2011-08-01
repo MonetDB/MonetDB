@@ -2,7 +2,7 @@
  * The contents of this file are subject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ * http://www.monetdb.org/Legal/MonetDBLicense
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -871,7 +871,7 @@ tokenize(mvc * c, int cur)
 	}
 }
 
-int
+static int
 valid_ident(char *s, char *dst)
 {
 	int escaped = 0;
@@ -967,6 +967,9 @@ sql_get_next_token(YYSTYPE *yylval, void *parm) {
 
 	return(token);
 }
+
+/* also see sql_parser.y */
+extern int sqllex( YYSTYPE *yylval, void *m );
 
 int
 sqllex(YYSTYPE * yylval, void *parm)

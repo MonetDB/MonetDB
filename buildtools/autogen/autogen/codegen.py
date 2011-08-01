@@ -1,7 +1,7 @@
 # The contents of this file are subject to the MonetDB Public License
 # Version 1.1 (the "License"); you may not use this file except in
 # compliance with the License. You may obtain a copy of the License at
-# http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+# http://www.monetdb.org/Legal/MonetDBLicense
 #
 # Software distributed under the License is distributed on an "AS IS"
 # basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -32,7 +32,6 @@ mx2c = re.compile("^@c[ \t\r\n]+", re.MULTILINE)
 mx2y = re.compile("^@y[ \t\r\n]+", re.MULTILINE)
 mx2l = re.compile("^@l[ \t\r\n]+", re.MULTILINE)
 mx2cfg = re.compile("^@cfg[ \t\r\n]+", re.MULTILINE)
-mx2swig = re.compile("^@swig[ \t\r\n]+", re.MULTILINE)
 mx2sql = re.compile("^@sql[ \t\r\n]+", re.MULTILINE)
 mx2java = re.compile("^@java[ \t\r\n]+", re.MULTILINE)
 mx2xsl = re.compile("^@xsl[ \t\r\n]+", re.MULTILINE)
@@ -50,7 +49,6 @@ code_extract = { 'mx': [
                   (mx2l, '.l'),
                   (mx2cfg, '.cfg'),
                   (mx2sql, '.sql'),
-                  (mx2swig, '.i'),
                   (mx2java, '.java'),
                   (mx2xsl, '.xsl'),
                   (mx2sh, ''), ],
@@ -66,7 +64,6 @@ code_extract = { 'mx': [
                   (mx2l, '.l'),
                   (mx2cfg, '.cfg'),
                   (mx2sql, '.sql'),
-                  (mx2swig, '.i'),
                   (mx2java, '.java'),
                   (mx2xsl, '.xsl'),
                   (mx2sh, ''), ]
@@ -86,8 +83,6 @@ code_gen = {'y':        [ '.tab.c', '.tab.h' ],
             'brg':      [ '.c' ],
             't':        [ '.c' ],
             'c':        [ '.o' ],
-            'pm.i':     [ '.pm.c', '.pm' ],
-            'pm.c':     [ '.pm.o' ],
 #            'java':     [ '.class' ],
             'mx.in':    [ '.mx' ],
             #'tex':      [ '.html', '.dvi', '.pdf' ],

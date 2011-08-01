@@ -2,7 +2,7 @@
  * The contents of this file are subject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ * http://www.monetdb.org/Legal/MonetDBLicense
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -54,7 +54,7 @@ insert_value(mvc *sql, sql_column *c, sql_rel **r, symbol *s)
 	}
 }
 
-sql_exp ** 
+static sql_exp ** 
 insert_exp_array(sql_table *t, int *Len)
 {
 	sql_exp **inserts;
@@ -190,8 +190,12 @@ rel_insert_join_idx(mvc *sql, sql_idx *i, sql_rel *inserts)
 		sql_subfunc *isnil = sql_bind_func(sql->sa, sql->session->schema, "isnull", &c->c->type, NULL);
 		sql_exp *_is = nth(ins->exps, c->c->colnr), *nl, *je; 
 		sql_exp *rtc = exp_column(sql->sa, rel_name(rt), rc->c->base.name, &rc->c->type, CARD_MULTI, rc->c->null, 0);
+		char *ename = exp_name(_is);
 
-		_is = exp_column(sql->sa, exp_relname(_is), exp_name(_is), exp_subtype(_is), _is->card, has_nil(_is), is_intern(_is));
+		if (!ename)
+			exp_label(sql->sa, _is, ++sql->label);
+		ename = exp_name(_is);
+		_is = exp_column(sql->sa, exp_relname(_is), ename, exp_subtype(_is), _is->card, has_nil(_is), is_intern(_is));
 		nl = exp_unop(sql->sa, _is, isnil);
 		if (need_nulls) {
 		    if (nll_exps) {

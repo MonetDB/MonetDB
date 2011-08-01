@@ -2,7 +2,7 @@
 The contents of this file are subject to the MonetDB Public License
 Version 1.1 (the "License"); you may not use this file except in
 compliance with the License. You may obtain a copy of the License at
-http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+http://www.monetdb.org/Legal/MonetDBLicense
 
 Software distributed under the License is distributed on an "AS IS"
 basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -619,7 +619,7 @@ and guesses the size of variable and statement table.
 Experience shows that trimming leads to memory fragmentation (140K lost
 after server init) and is therefore turned off.
 */
-void
+static void
 trimexpand(MalBlkPtr mb, int varsize, int stmtsize)
 {
 	VarRecord **v;
@@ -1060,6 +1060,7 @@ Although MAL has been designed as a minimal language, several
 identifiers are not eligible as variables. The encoding below
 is geared at simple and speed.
 */
+#if 0
 int
 isReserved(str nme)
 {
@@ -1127,6 +1128,7 @@ isReserved(str nme)
 	}
 	return 0;
 }
+#endif
 
 /*
 Beware, the symbol table structure assumes that it is relatively
@@ -2413,7 +2415,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 
 		for (i = 0; i < p->retc; i++) {
 			if (flg & LIST_MAL_STMT) {
-				snprintf(t,(len-(t-base)),"%s%s", (getVarTmp(mb,getArg(p,i))?"X":""), getArgName(mb, p, i));
+				snprintf(t,(len-(t-base)),"%s%s", (*getArgName(mb,p,i) == TMPMARKER?"X":""), getArgName(mb, p, i));
 				advance(t,base,len);
 				@:showVariableProperties@
 			}
@@ -2507,7 +2509,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 
 			if (stk && flg & LIST_MAL_VALUE){
 				if ( !isVarConstant(mb, getArg(p,i)) && flg & LIST_MAL_ARG)
-					snprintf(t,(len-(t-base)),"%s%s", (getVarTmp(mb,getArg(p,i))?"X":""), getArgName(mb, p, i));
+					snprintf(t,(len-(t-base)),"%s%s", (*getArgName(mb,p,i)== TMPMARKER?"X":""), getArgName(mb, p, i));
 				advance(t,base,len);
 				if( getTailType(getArgType(mb,p,i)) > TYPE_str )
 				{ 	char *ct;
@@ -2585,7 +2587,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 			}
 		} else {
 			if( ! isVarTypedef(mb,getArg(p,i))  ){
-				snprintf(t,(len-(t-base)),"%s%s", (getVarTmp(mb,getArg(p,i))?"X":""), getArgName(mb, p, i));
+				snprintf(t,(len-(t-base)),"%s%s", (*getArgName(mb,p,i) == TMPMARKER?"X":""), getArgName(mb, p, i));
 				advance(t,base,len);
 				@:showVariableProperties@
 			} else {

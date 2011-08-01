@@ -2,7 +2,7 @@
 The contents of this file are subject to the MonetDB Public License
 Version 1.1 (the "License"); you may not use this file except in
 compliance with the License. You may obtain a copy of the License at
-http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+http://www.monetdb.org/Legal/MonetDBLicense
 
 Software distributed under the License is distributed on an "AS IS"
 basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -79,7 +79,7 @@ mb_export str MBMskewed(int *ret, oid *base, int *size, int *domain, int *skew);
 #include <mal_exception.h>
 #include "microbenchmark.h"
 
-int
+static int
 BATrandom(BAT **bn, oid *base, int *size, int *domain)
 {
 	BUN n = (BUN) * size;
@@ -129,7 +129,7 @@ BATrandom(BAT **bn, oid *base, int *size, int *domain)
 	return GDK_SUCCEED;
 }
 
-int
+static int
 BATuniform(BAT **bn, oid *base, int *size, int *domain)
 {
 	BUN n = (BUN) * size, i, r;
@@ -188,7 +188,7 @@ BATuniform(BAT **bn, oid *base, int *size, int *domain)
 	return GDK_SUCCEED;
 }
 
-int
+static int
 BATskewed(BAT **bn, oid *base, int *size, int *domain, int *skew)
 {
 	BUN n = (BUN) * size, i, r;
@@ -264,7 +264,7 @@ BATskewed(BAT **bn, oid *base, int *size, int *domain, int *skew)
 # define M_E		2.7182818284590452354	/* e */
 #endif
 
-int
+static int
 BATnormal(BAT **bn, oid *base, int *size, int *domain, int *stddev, int *mean)
 {
 	BUN n = (BUN) * size, i;
@@ -353,7 +353,7 @@ The M5 wrapper code
 
 str
 MBMrandom(int *ret, oid *base, int *size, int *domain){
-	BAT *bn;
+	BAT *bn = NULL;
 	
 	BATrandom(&bn, base, size, domain);
 	if( bn ){
@@ -365,7 +365,7 @@ MBMrandom(int *ret, oid *base, int *size, int *domain){
 
 str
 MBMuniform(int *ret, oid *base, int *size, int *domain){
-	BAT *bn;
+	BAT *bn = NULL;
 	
 	BATuniform(&bn, base, size, domain);
 	if( bn ){
@@ -377,7 +377,7 @@ MBMuniform(int *ret, oid *base, int *size, int *domain){
 
 str
 MBMnormal(int *ret, oid *base, int *size, int *domain, int *stddev, int *mean){
-	BAT *bn;
+	BAT *bn = NULL;
 	BATnormal(&bn, base, size, domain, stddev, mean);
 	if( bn ){
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
@@ -419,7 +419,7 @@ MBMmix(int *bn, int *batid)
 
 str
 MBMskewed(int *ret, oid *base, int *size, int *domain, int *skew){
-	BAT *bn;
+	BAT *bn = NULL;
 	
 	BATskewed(&bn, base, size, domain, skew);
 	if( bn ){

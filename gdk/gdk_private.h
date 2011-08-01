@@ -2,7 +2,7 @@
  * The contents of this file are subject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ * http://www.monetdb.org/Legal/MonetDBLicense
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -131,6 +131,8 @@ void BBPextend(dbl factor, int buildhash);
 void BBPatom_drop(int atom);
 void BBPatom_load(int atom);
 int BBPbackup(BAT *b, bit subcommit);
+void BBPdump(void);		/* never called: for debugging only */
+void BBPdumpcache(void);	/* never called: for debugging only */
 int MT_alloc_register(void *p, size_t size, char mode);
 int MT_alloc_print(void);
 int MT_alloc_table(void);
@@ -145,11 +147,8 @@ Hash *HASHnew(Heap *hp, int tpe, BUN size, BUN mask);
 BUN HASHmask(BUN cnt);
 BAT *HASHprint(BAT *b);
 int HASHgonebad(BAT *b, ptr v);
-int MT_alive(int pid);	/* OS independent way to check if some process is still alive. */
-#ifdef HAVE_PTHREAD_SIGMASK
-void MT_thread_sigmask(sigset_t *new_mask, sigset_t *orig_mask);
-#endif
-void GDKlog(const char *format, ...);
+void GDKlog(_In_z_ _Printf_format_string_ const char *format, ...)
+	__attribute__((__format__(__printf__, 1, 2)));
 void GDKunlockHome(void);
 int GDKgetHome(void);
 

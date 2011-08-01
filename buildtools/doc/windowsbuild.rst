@@ -1,7 +1,7 @@
 .. The contents of this file are subject to the MonetDB Public License
 .. Version 1.1 (the "License"); you may not use this file except in
 .. compliance with the License. You may obtain a copy of the License at
-.. http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+.. http://www.monetdb.org/Legal/MonetDBLicense
 ..
 .. Software distributed under the License is distributed on an "AS IS"
 .. basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -536,9 +536,7 @@ Perl program to communicate with a MonetDB server.
 
 We have used ActiveState__'s ActivePerl__ distribution (release
 5.12.1.1201).  Just install the 32 or 64 bit version and compile the
-clients component with the additional ``nmake`` flags ``HAVE_PERL=1
-HAVE_PERL_DEVEL=1 HAVE_PERL_SWIG=1`` (the latter flag only if SWIG_ is
-also installed).
+clients component with the additional ``nmake`` flags ``HAVE_PERL=1``.
 
 __ http://www.perl.org/
 __ http://www.activestate.com/
@@ -558,18 +556,6 @@ http://www.php.net/.  Install the binary package and extract the
 sources somewhere (e.g. as a subfolder of the binary installation).
 
 __ http://www.php.net/
-
-.. _SWIG:
-
-SWIG (Simplified Wrapper and Interface Generator)
--------------------------------------------------
-
-We use SWIG__ to build interface files for Perl.  You can download
-SWIG from http://www.swig.org/download.html.  Get the latest swigwin
-ZIP file and extract it somewhere.  It contains the ``swig.exe``
-binary.
-
-__ http://www.swig.org/
 
 Java
 ----
@@ -704,8 +690,6 @@ is an example: version numbers may differ)::
  set Path=%JAVA_HOME%\bin;%ProgramFiles%\Java\jre1.5.0_16\bin;%Path%
  rem Apache Ant is optional, but required for Java compilation
  set Path=%ProgramFiles%\apache-ant-1.7.1\bin;%Path%
- rem SWIG is optional
- set Path=%ProgramFiles%\swigwin-1.3.36;%Path%
 
 For testing purposes it may be handy to add some more folders to the
 ``Path``.  This includes the ``bin`` and ``lib`` folders of the
@@ -755,13 +739,8 @@ possible:
 - ``HAVE_ICONV=1`` - the iconv library is available;
 - ``HAVE_LIBXML2=1`` - the libxml2 library is available;
 - ``HAVE_RAPTOR=1`` - the raptor library is available;
-- ``HAVE_NETCDF=1`` - the netcdf library is available;
 - ``HAVE_OPENSSL=1`` - the OpenSSL library is available;
 - ``HAVE_PERL=1`` - Perl is available;
-- ``HAVE_PERL_DEVEL=1`` - Perl development is possible (include files
-  and libraries are available--also need ``HAVE_PERL=1``);
-- ``HAVE_PERL_SWIG=1`` - Perl development is possible and SWIG is
-  available (also need ``HAVE_PERL=1``);
 - ``HAVE_PHP=1`` - PHP is available.
 
 In addition, you can add a parameter which points to a file with extra

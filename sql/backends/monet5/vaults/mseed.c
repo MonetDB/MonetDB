@@ -2,7 +2,7 @@
  * The contents of this file are subject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ * http://www.monetdb.org/Legal/MonetDBLicense
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -284,7 +284,7 @@ wrapup:
 	/* Make sure everything is cleaned up */
 	ms_readmsr (&msr, NULL, 0, NULL, NULL, 0, 0, 0);
 	if ( retcode != MS_ENDOFFILE )
-		throw(MAL, "mseed.load", "Cannot read %s: %s\n", *targetfile, ms_errorstr(retcode));
+		throw(MAL, "mseed.load", "Cannot read %s: %s\n", targetfile, ms_errorstr(retcode));
 	return msg;
 }
 

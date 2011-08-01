@@ -2,7 +2,7 @@
  * The contents of this file are subject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ * http://www.monetdb.org/Legal/MonetDBLicense
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -50,7 +50,7 @@ static int mfpipe[2];
  * database.  To maintain a stable query performance, the connection
  * creation must happen in the background and set life once established.
  */
-void
+static void
 MFconnectionManager(void *d)
 {
 	int i;
@@ -379,7 +379,7 @@ multiplexInit(multiplex **ret, char *database)
 	return(NO_ERR);
 }
 
-void
+static void
 multiplexQuery(multiplex *m, char *buf, stream *fout)
 {
 	int i;
@@ -485,7 +485,7 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 	}
 	/* Compose the header.  For the table id, we just send 0, such that
 	 * we never get a close request.  Steal headers from the first node. */
-	mnstr_printf(fout, "&%d 0 %d %d %d\n", Q_TABLE, rlen, fcnt, rlen);
+	mnstr_printf(fout, "&%d 0 " LLFMT " %d " LLFMT "\n", Q_TABLE, rlen, fcnt, rlen);
 	/* now read the answers, and write them directly to the client */
 	for (i = 0; i < m->dbcc; i++) {
 		while ((t = mapi_fetch_line(hdl[i])) != NULL)

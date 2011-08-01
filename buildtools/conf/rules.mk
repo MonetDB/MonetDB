@@ -3,7 +3,7 @@
 # The contents of this file are subject to the MonetDB Public License
 # Version 1.1 (the "License"); you may not use this file except in
 # compliance with the License. You may obtain a copy of the License at
-# http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+# http://www.monetdb.org/Legal/MonetDBLicense
 #
 # Software distributed under the License is distributed on an "AS IS"
 # basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -65,24 +65,6 @@ MX = $(top_builddir)/buildtools/Mx/Mx
 	$(MX) $(MXFLAGS) -l -x sh $<
 	chmod a+x $@
 
-# The following rules generate two files using swig, the .xx.c and the
-# .xx file.  There may be a race condition here when using a parallel
-# make.  We try to alleviate the problem by sending the .xx.c output
-# to a dummy file in the second rule.
-# We also make sure that "$(CONFIG_H)" is included first, also with
-# swig-generated files.  This is crucial to prevent inconsistent
-# (re-)definitions of macros.
-%.pm.c: %.pm.i
-	$(SWIG) -perl5 $(SWIGFLAGS) -outdir . -o $@ $<
-	$(MV) $@ $@.tmp
-	echo '#include <'"$(CONFIG_H)"'>' > $@
-	grep -v '^#include.*[<"]'"$(CONFIG_H)"'[">]' $@.tmp >> $@
-	$(RM) $@.tmp
-
-%.pm: %.pm.i
-	$(SWIG) -perl5 $(SWIGFLAGS) -outdir . -o dummy.c $<
-	$(RM) dummy.c
-
 %.tex: %.mx
 	$(MX) -1 -H$(HIDE) -t $< 
 
@@ -118,17 +100,4 @@ MX = $(top_builddir)/buildtools/Mx/Mx
 %.eps: %.feps
 	$(CP) $< $@
 
-$(patsubst %.mx,%.lo,$(filter %.mx,$(NO_OPTIMIZE_FILES))): %.lo: %.c
-	$(LTCOMPILE) -c -o $@ $(CFLAGS_NO_OPT) $<
-
-$(patsubst %.c,%.o,$(filter %.c,$(NO_OPTIMIZE_FILES))): %.o: %.c
-	$(COMPILE) $(CFLAGS_NO_OPT) -c $<
-
-$(patsubst %.c,%.lo,$(filter %.c,$(NO_OPTIMIZE_FILES))): %.lo: %.c
-	$(LTCOMPILE) -c -o $@ $(CFLAGS_NO_OPT) $<
-
 SUFFIXES-local: $(BUILT_SOURCES)
-
-distdir: check_dist
-check_dist:
-	@if [ "$(SWIG)" = "no" ]; then echo "Cannot create distribution because one of the necessary programs or libraries is missing"; echo "swig	= $(SWIG)"; exit 1; fi

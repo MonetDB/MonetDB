@@ -2,7 +2,7 @@
 The contents of this file are subject to the MonetDB Public License
 Version 1.1 (the "License"); you may not use this file except in
 compliance with the License. You may obtain a copy of the License at
-http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+http://www.monetdb.org/Legal/MonetDBLicense
 
 Software distributed under the License is distributed on an "AS IS"
 basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -151,7 +151,7 @@ short idCharacter[256];
 short idCharacter2[256];
 
 void 
-initParser()
+initParser(void)
 {
 	int i;
 
@@ -197,7 +197,7 @@ idLength(Client cntxt)
 @-
 Simple type identifiers can not be marked with a type variable.
 @c
-int 
+static int 
 typeidLength(Client cntxt)
 {
 	int l;
@@ -645,7 +645,7 @@ scope.
 Additional information, such as a repetition factor,
 encoding tables, or type dependency should be modelled as properties.
 @c
-int 
+static int 
 typeAlias(Client cntxt, int tpe)
 {
 	int t;
@@ -667,7 +667,7 @@ typeAlias(Client cntxt, int tpe)
 The simple type analysis currently assumes a proper type identifier.
 We should change getTypeIndex to return a failure instead.
 @c
-int 
+static int 
 simpleTypeId(Client cntxt)
 {
 	int l, tpe;
@@ -689,7 +689,7 @@ simpleTypeId(Client cntxt)
 	return tpe;
 }
 
-int 
+static int 
 parseTypeId(Client cntxt, int defaultType)
 {   
 	int i = TYPE_any, ht, tt, kh = 0, kt = 0;
@@ -843,7 +843,7 @@ for updates by concurrent users.
 @-
 An atom statement does not introduce a new module.
 @c
-str 
+static str 
 parseAtom(Client cntxt) 
 {
 	str modnme = 0;
@@ -867,7 +867,7 @@ parseAtom(Client cntxt)
 	return "";
 }
 
-str parseLibrary(Client cntxt) 
+static str parseLibrary(Client cntxt) 
 {
 	str libnme = 0,s;
 	int l;
@@ -895,7 +895,7 @@ It might be handy to clone a module.
 It gets a copy of all functions known
 at the point of creation.
 @c
-str parseModule(Client cntxt) 
+static str parseModule(Client cntxt) 
 {
 	str modnme = 0,parent;
 	int l;
@@ -939,7 +939,7 @@ are ensured that any possible signature definition will be known
 afterwards. The effect is that errors in the include sequence are
 marked as warnings.
 @c
-str
+static str
 parseInclude(Client cntxt)
 {
 	str modnme = 0,s;
@@ -1275,7 +1275,7 @@ help information.
 		parseError(cntxt,"';' expected\n");
 	skipToEnd(cntxt);
 @c
-MalBlkPtr parseCommandPattern(Client cntxt, int kind){
+static MalBlkPtr parseCommandPattern(Client cntxt, int kind){
 	MalBlkPtr curBlk = 0;
 	Symbol curPrg = 0;
 	InstrPtr curInstr=0;
@@ -1350,7 +1350,7 @@ This scheme is intended for just-in-time compilation.
 	return curBlk;
 }
 
-MalBlkPtr parseFunction(Client cntxt, int kind){
+static MalBlkPtr parseFunction(Client cntxt, int kind){
 	MalBlkPtr curBlk = 0;
 	Symbol curPrg = 0;
 	InstrPtr curInstr=0;
@@ -1390,7 +1390,7 @@ The routine below checks for misalignment of the closing statements.
 Any instruction parsed after the function block is considered an
 error.
 @c
-int parseEnd(Client cntxt)
+static int parseEnd(Client cntxt)
 {   MalBlkPtr curBlk = 0;
 	Symbol curPrg = 0;
 	int l,showit=0;
@@ -1470,7 +1470,7 @@ if ((varid = findVariableLength(curBlk, CURRENT(cntxt), l)) == -1){
 	advance(cntxt,l); 
 @-
 @c
-void 
+static void 
 parseAssign(Client cntxt, int cntrl) 
 {   
 	InstrPtr curInstr;
@@ -1795,7 +1795,7 @@ parseTuple(Client cntxt) {
 	sprintf(buf,"input%d",(int)(cntxt-mal_clients));
 	f = fopen(buf,"w");
 	if (f==NULL)
-		showException(SYNTAX, "temp file not writeable", "");
+		showException(SYNTAX, "parser", "temp file not writeable");
 	while( (c=currChar(cntxt)) == '[' && c){
 		do {
 			if (f && c) fputc(c, f);
@@ -1804,8 +1804,8 @@ parseTuple(Client cntxt) {
 		if (f && c && fputc(c, f)  == EOF){
 			(void)fclose(f);
 			if (unlink(buf) < 0)
-				showException(SYNTAX, "out of temp file space and unable to unlink", "");
-			showException(SYNTAX, "out of temp file space", "");
+				showException(SYNTAX, "parser", "out of temp file space and unable to unlink");
+			showException(SYNTAX, "parser", "out of temp file space");
 			return;
 		}
 		nextChar(cntxt);
@@ -2005,7 +2005,7 @@ str parseError(Client cntxt, str msg)
 	*s++= '\n';
 	*s = 0;
 	if( s != buf+1 && strlen(buf)<1024){
-		showException(SYNTAX, "parseError", buf);
+		showException(SYNTAX, "parseError", "%s", buf);
 		/* produce the position marker*/
 		s= buf;
 		i = position(cntxt) -1;
@@ -2019,7 +2019,7 @@ str parseError(Client cntxt, str msg)
 	if( msg && strlen(msg))
 		snprintf(s,1020,"%s", msg);
 	skipToEnd(cntxt);
-	showException(SYNTAX, "parseError", buf);
+	showException(SYNTAX, "parseError", "%s", buf);
 	return 0;
 }
 @}

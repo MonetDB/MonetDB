@@ -2,7 +2,7 @@
  * The contents of this file are subject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ * http://www.monetdb.org/Legal/MonetDBLicense
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -565,7 +565,7 @@ rel_join_add_exp( sql_allocator *sa, sql_rel *rel, sql_exp *e)
 		rel->card = e->card;
 }
 
-void
+static void
 rel_join_add_exps( sql_allocator *sa, sql_rel *rel, list *exps)
 {
 	node *n;
@@ -804,7 +804,7 @@ rel_project2groupby(mvc *sql, sql_rel *g)
 
 			if (e->card > g->card) {
 				if (e->type == e_column && e->r) {
-					return sql_error(sql, 02, "cannot use non GROUP BY column '%s' in query results without an aggregate function", e->r);
+					return sql_error(sql, 02, "cannot use non GROUP BY column '%s' in query results without an aggregate function", (char *) e->r);
 				} else {
 					return sql_error(sql, 02, "cannot use non GROUP BY column in query results without an aggregate function");
 				}
@@ -1195,7 +1195,8 @@ rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, char *cname )
 	return NULL;
 }
 
-sql_exp *
+#if 0
+static sql_exp *
 rel_find_column( mvc *sql, sql_rel *rel, char *cname )
 {
 	sql_rel *p = NULL;
@@ -1212,6 +1213,7 @@ rel_find_column( mvc *sql, sql_rel *rel, char *cname )
 	}
 	return NULL;
 }
+#endif
 
 sql_exp *
 rel_bind_column( mvc *sql, sql_rel *rel, char *cname, int f )
@@ -1459,14 +1461,7 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 
 		if (sname && !(s=mvc_bind_schema(sql,sname)))
 			return sql_error(sql, 02, "SELECT: no such schema '%s'", sname);
-		if (!s)
-			s = cur_schema(sql);
-		t = mvc_bind_table(sql, s, tname);
 		/* TODO: search path */
-		if (!t && !sname) {
-			s = tmp_schema(sql);
-			t = mvc_bind_table(sql, s, tname);
-		}
 		if (!t && !sname) {
 			sql_subtype *tpe;
 			if ((tpe = stack_find_type(sql, tname)) != NULL &&
@@ -1478,6 +1473,15 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 			}
 			if (temp_table)
 				rel_dup(temp_table);
+		}
+		if (!t && !temp_table) {
+			if (!s)
+				s = cur_schema(sql);
+			t = mvc_bind_table(sql, s, tname);
+			if (!t && !sname) {
+				s = tmp_schema(sql);
+				t = mvc_bind_table(sql, s, tname);
+			}
 		}
 		if (!t && !temp_table) {
 			return sql_error(sql, 02, "SELECT: no such table '%s'", tname);
@@ -1724,7 +1728,7 @@ convert_arg(mvc *sql, int nr, sql_subtype *rt)
 	a->tpe = *rt;
 }
 
-sql_exp *
+static sql_exp *
 exp_convert_inplace(mvc *sql, sql_subtype *t, sql_exp *exp)
 {
 	atom *a;
@@ -2484,8 +2488,16 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 			return rel_lastexp(sql, *rel);
 		return NULL;
 	}
-	default:
-		return sql_error(sql, 02, "Predicate %s %d: time to implement some more", token2string(sc->token), sc->token);
+	default: {
+		sql_exp *re, *le = rel_value_exp(sql, rel, sc, f, ek);
+
+		if (!le)
+			return NULL;
+		re = exp_atom_bool(sql->sa, 1);
+		if (rel_convert_types(sql, &le, &re, 1, type_equal) < 0) 
+			return NULL;
+		return rel_binop_(sql, le, re, NULL, "=", 0);
+	}
 	}
 }
 
@@ -3549,6 +3561,8 @@ rel_case(mvc *sql, sql_rel **rel, int token, symbol *opt_cond, dlist *when_searc
 		res = rel_nop_(sql, cond, result, res, NULL, NULL, "ifthenelse", card_value);
 		if (!res) 
 			return NULL;
+		/* ugh overwrite res type */
+		((sql_subfunc*)res->f)->res = *restype;
 	}
 	return res;
 }
@@ -3631,7 +3645,7 @@ rel_next_value_for( mvc *sql, symbol *se )
 }
 
 /* some users like to use aliases already in the groupby */
-sql_exp *
+static sql_exp *
 rel_selection_ref(mvc *sql, sql_rel *rel, symbol *grp, dlist *selection )
 {
 	dnode *n;
@@ -4217,7 +4231,8 @@ join_on_column_name(mvc *sql, sql_rel *rel, sql_rel *t1, sql_rel *t2, int op, in
 }
 
 
-sql_rel *exp_top_relation(sql_exp *e )
+#if 0
+static sql_rel *exp_top_relation(sql_exp *e )
 {
 	switch(e->type) {	
 	case e_atom:
@@ -4233,6 +4248,7 @@ sql_rel *exp_top_relation(sql_exp *e )
 	}
 	return NULL;
 }
+#endif
 
 static int
 check_correlation_exps( list *exps )
@@ -4570,7 +4586,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 }
 
 
-sql_rel *
+static sql_rel *
 rel_query(mvc *sql, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek)
 {
 	sql_rel *res = NULL;

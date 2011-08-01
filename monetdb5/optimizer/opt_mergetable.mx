@@ -2,7 +2,7 @@
 The contents of this file are subject to the MonetDB Public License
 Version 1.1 (the "License"); you may not use this file except in
 compliance with the License. You may obtain a copy of the License at
-http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+http://www.monetdb.org/Legal/MonetDBLicense
 
 Software distributed under the License is distributed on an "AS IS"
 basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -191,7 +191,7 @@ useMatType( mat_t *mat, int n)
 	return type;
 }
 
-int overlap( MalBlkPtr mb, int lv, int rv)
+static int overlap( MalBlkPtr mb, int lv, int rv)
 {
 	VarPtr llb = varGetProp(mb, lv, tlbProp); 
 	VarPtr lub = varGetProp(mb, lv, tubProp); 
@@ -222,7 +222,7 @@ int overlap( MalBlkPtr mb, int lv, int rv)
 	return 1;
 }
 
-int Hoverlap( MalBlkPtr mb, int lv, int rv)
+static int Hoverlap( MalBlkPtr mb, int lv, int rv)
 {
 	VarPtr llb = varGetProp(mb, lv, hlbProp); 
 	VarPtr lub = varGetProp(mb, lv, hubProp); 

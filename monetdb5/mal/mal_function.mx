@@ -2,7 +2,7 @@
 The contents of this file are subject to the MonetDB Public License
 Version 1.1 (the "License"); you may not use this file except in
 compliance with the License. You may obtain a copy of the License at
-http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+http://www.monetdb.org/Legal/MonetDBLicense
 
 Software distributed under the License is distributed on an "AS IS"
 basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -478,7 +478,7 @@ linear scans as it comes to locating information of interest.
 Patterns should not be cloned, because the alternative interpretations
 are handled by the underlying code fragments.
 @c
-void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
+static void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 	int j,i,x,y;
 #ifdef DEBUG_MAL_FCN
 	mnstr_printf(GDKout,"replace type _%d by type %s\n",v,
@@ -911,6 +911,11 @@ in the context of a global stack.
 		/* define variables */
 		for(k=0; k<p->retc; k++){
 			l= getArg(p,k);
+			if (isVarInit(mb, l) && decl[l] == 0) {
+				/* first time we see this variable and it is already
+				 * initialized: assume it exists globally */
+				decl[l] = blks[0];
+			}
 			setVarInit(mb,l);
 			if( decl[l] == 0){
 				/* variable has not been defined yet */
@@ -923,18 +928,6 @@ in the context of a global stack.
 				mnstr_printf(GDKout,"defined %s in block %d\n", 
 					getVarName(mb,l),decl[l]);
 #endif
-			} else
-			if( !isVarInit(mb,l) ){
-			    /* is the block still active ? */
-			    for( i=0; i<= top; i++)
-					if( blks[i] == decl[l] ) 
-						break;
-			    if( i> top || blks[i]!= decl[l] ){
-			            showScriptException(mb,pc,TYPE,
-							"'%s' assigned outside scope",
-							getVarName(mb,l));
-			        mb->errors++;
-			    }
 			}
 			if( blockCntrl(p) || blockStart(p) )
 				setVarUsed(mb, l);

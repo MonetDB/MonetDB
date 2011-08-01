@@ -3,7 +3,7 @@
 # The contents of this file are subject to the MonetDB Public License
 # Version 1.1 (the "License"); you may not use this file except in
 # compliance with the License. You may obtain a copy of the License at
-# http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+# http://www.monetdb.org/Legal/MonetDBLicense
 #
 # Software distributed under the License is distributed on an "AS IS"
 # basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -130,12 +130,13 @@ norm_in  = re.compile('(?:'+')|(?:'.join([
 ##  r'^(variable\(s\) out of scope or unknown: at )(?:.*)\n',                                                                                   # 18: 1
 ##  r'^(bad usage of XML namespaces: at )(?:.*)\n',                                                                                             # 19: 1
     r"^(QUERY|ERROR)( =.* connect)( to|)( ')(localhost)(' port )([0-9]+)( .*)\n",                                                               # 21: 8
-    r"^([Uu]sage: |)(/.*/\.libs/|/.*/lt-|)([A-Za-z0-9_]+:?[ \t].*)\n",                                                                          # 22: 3
+    r"^([Uu]sage: )(/.*/\.libs/|/.*/lt-|)([A-Za-z0-9_]+:?[ \t].*)\n",                                                                          # 22: 3
 ##  r'^(.*: )(illegal|invalid)( option -- .*)\n',                                                                                               # 23: 3
 #   r'^(01/Jan/1970 01:00:00 shttpd_open_port: bind\(|!ERROR: MAPIlisten:binding to stream socket \()([0-9]+)(\): Address already in use|\) failed)\n', # 24: 3
     r'^(!.*Exception:remote\.[^:]*:\(mapi:monetdb://monetdb@)([^/]*)(/mTests_.*\).*)\n',                                                        # 25: 3
 ##  r'^(ERROR = !sql_stmt symbol\()(.*)(\)->token = CREATE_SCHEMA)\n',                                                                          # 26: 3
 #   r'^(ERROR = !IOException:mapi.connect:Could not connect: getaddrinfo failed: )(No .* is|.* not)( known[\. ]*)\n',                           # 27: 3
+    r'^(ERROR REPORTED: DBD::.+ at )([\./].+)(/[^/]+\.pm line [0-9]+\.)\n',                                                                     # 28: 3
 ##  r'^(ERROR =|       )( !ERROR: | !SQLException:assert:| !SQLException:sql: | !SQLException:| !MALException:)([^:]+)(: *)([^ ].*)\n',         # 90: 5
 #   r'^(.*: at )(\([0-9]+,[0-9]+\-[0-9]+,[0-9]+\))(: .*)\n',                                                                                    # 91: 3
 ##  r'^(fatal error|ERROR)(: err:FORG0005, fn:exactly-one called with a sequence containing zero or more than one item..*)()\n',                # 99: 3
@@ -169,6 +170,7 @@ norm_out = (
     None, 'localhost', None,                                                                            # 25: 3
 ##  None, '...', None,                                                                                  # 26: 3
 #   None, 'un', 'known',                                                                                # 27: 3
+    None, '', None,                                                                                     # 28: 3
 ##  None, ' !ERROR', '', ': ', None,                                                                    # 90: 5
 #   None, '...', None,                                                                                  # 91: 3
 ##  '=ERROR', None, '\n#',                                                                              # 99: 3

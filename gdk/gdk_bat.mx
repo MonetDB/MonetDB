@@ -2,7 +2,7 @@
 The contents of this file are subject to the MonetDB Public License
 Version 1.1 (the "License"); you may not use this file except in
 compliance with the License. You may obtain a copy of the License at
-http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+http://www.monetdb.org/Legal/MonetDBLicense
 
 Software distributed under the License is distributed on an "AS IS"
 basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -2565,8 +2565,8 @@ BATmmap(BAT *b, int hb, int tb, int hhp, int thp, int force)
 	if (@1 >= 0 && (@2) && @3 > 0 && (@2)->base &&
 			((@2)->storage != STORE_MEM) && MT_madvise((@2)->base, @3, BUF_TO_MMAP[@1]))
 	{
-		GDKsyserror("madvise(%x, " SZFMT ", %d) on @2 @1 failed\n",
-				(@2)->base, @3, @1);
+		GDKsyserror("madvise(" PTRFMT ", " SZFMT ", %d) on @2 @1 failed\n",
+				PTRFMTCAST (@2)->base, @3, @1);
 		return -1;
 	}
 @c

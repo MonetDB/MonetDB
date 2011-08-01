@@ -2,7 +2,7 @@
 The contents of this file are subject to the MonetDB Public License
 Version 1.1 (the "License"); you may not use this file except in
 compliance with the License. You may obtain a copy of the License at
-http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+http://www.monetdb.org/Legal/MonetDBLicense
 
 Software distributed under the License is distributed on an "AS IS"
 basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -551,7 +551,7 @@ MATnonil( BAT **bats, int len)
 	return nonil;
 }
 
-BAT *
+static BAT *
 MATproject_( BAT *map, BAT **bats, int len ) 
 {
 	BAT *res = NULL;
@@ -889,7 +889,7 @@ MATsortReverseTail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MATsort( cntxt, mb, stk, pci, 1);
 }
 
-str
+static str
 MATrefine_(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int rev)
 {
 	bat *rval_id = (bat*) getArgReference(stk,pci,0); /* result sorted */

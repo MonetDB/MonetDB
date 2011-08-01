@@ -3,7 +3,7 @@
  * The contents of this file are subject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ * http://www.monetdb.org/Legal/MonetDBLicense
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -46,7 +46,7 @@ monet_version(void)
 		printf("This is an unreleased version\n");
 	printf("Copyright (c) 1993-July 2008 CWI\n"
 			"Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved\n");
-	printf("Visit http://monetdb.cwi.nl/ for further information\n");
+	printf("Visit http://www.monetdb.org/ for further information\n");
 #ifdef WIN32
 	/* Detection of cpus is fine on windows, but multithreading doesn't
 	 * work, so it's forced to 1.  Don't suggest we misdetect #cpus.

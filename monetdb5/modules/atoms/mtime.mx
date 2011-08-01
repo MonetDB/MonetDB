@@ -2,7 +2,7 @@
 The contents of this file are subject to the MonetDB Public License
 Version 1.1 (the "License"); you may not use this file except in
 compliance with the License. You may obtain a copy of the License at
-http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+http://www.monetdb.org/Legal/MonetDBLicense
 
 Software distributed under the License is distributed on an "AS IS"
 basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -1160,7 +1160,7 @@ int TYPE_timestamp;
 int TYPE_tzone;
 int TYPE_rule;
 
-bat *
+static bat *
 monettime_prelude(void)
 {
 	ts_nil.nilval = lng_nil;
@@ -1178,26 +1178,9 @@ monettime_prelude(void)
 	return NULL;
 }
 
-void
-monettime_epilogue(void)
-{
-}
-
-timestamp *
-timestamp_null(void)
-{
-	return (timestamp_nil);
-}
-
-tzone *
-tzone_null(void)
-{
-	return (tzone_nil);
-}
-
 static int synonyms = TRUE;
 
-int
+static int
 monettime_synonyms(bit *allow)
 {
 	if (*allow != bit_nil)
@@ -1742,7 +1725,7 @@ timestamp_tostr(str *buf, int *len, timestamp *val)
 	return timestamp_tz_tostr(buf, len, val, &tzone_local);
 }
 
-str
+static str
 count1(int i)
 {
 	static char buf[16];
@@ -1999,7 +1982,7 @@ date_prelude(void)
 	set_offset(&tzone_local, 0);
 }
 
-int
+static int
 oldduration(int *ndays, str s)
 {
 	int year = 0, month = 0, day = 0;
@@ -2055,7 +2038,7 @@ oldduration(int *ndays, str s)
 	return GDK_SUCCEED;
 }
 
-int
+static int
 olddate(date *d, str buf)
 {
 	int day = 0, month, year, yearneg = (buf[0] == '-'), pos = yearneg;
@@ -2087,14 +2070,14 @@ olddate(date *d, str buf)
 	return GDK_SUCCEED;
 }
 
-int
+static int
 tzone_set_local(tzone *z)
 {
 	tzone_local = *z;
 	return GDK_SUCCEED;
 }
 
-int
+static int
 tzone_get_local(tzone *z)
 {
 	*z = tzone_local;
@@ -2102,7 +2085,7 @@ tzone_get_local(tzone *z)
 }
 
 /* Returns month number [1-12] from a string (or nil if does not match any). */
-int
+static int
 month_from_str(int *ret, str month)
 {
 	parse_substr(ret, month, 3, MONTHS, 12);
@@ -2873,15 +2856,6 @@ Include BAT macros
 #include "mal.h"
 #include "mal_exception.h"
 #include <mal_box.h>
-@-
-@= coerce
-str MTIME@1_2@2(@2 *ret,@1 *src){
-	*ret= *src;
-	return MAL_SUCCEED;
-}
-@c
-@:coerce(date,lng)@
-@:coerce(daytime,lng)@
 
 str
 MTIMEnil2date(date *ret, int *src)
@@ -2995,7 +2969,7 @@ str MTIME@1_max_no_nil(@1 *ret, @1 *v, @1 *w)
 static BAT *timezones = NULL;
 
 str
-MTIMEprelude()
+MTIMEprelude(void)
 {
 	char *msg = NULL;
 	Box box;
@@ -3063,7 +3037,7 @@ MTIMEprelude()
 
 
 str
-MTIMEepilogue()
+MTIMEepilogue(void)
 {
 	closeBox("time", 0);
 	return MAL_SUCCEED;
@@ -3213,18 +3187,6 @@ str
 MTIMEdaytime_create(daytime *ret, int *hour, int *min, int *sec, int *msec)
 {
 	daytime_create(ret, hour, min, sec, msec);
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEtimestamp_tostr(str *s, timestamp *d)
-{
-	char buf[128], *s1 = buf;
-	int len = 128;
-
-	*s1 = 0;
-	timestamp_tostr(&s1, &len, d);
-	*s = GDKstrdup(buf);
 	return MAL_SUCCEED;
 }
 

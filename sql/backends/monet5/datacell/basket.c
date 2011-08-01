@@ -2,7 +2,7 @@
  * The contents of this file are subject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ * http://www.monetdb.org/Legal/MonetDBLicense
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -18,22 +18,6 @@
  */
 
 /*
- * # The contents of this file are subject to the MonetDB Public License
- * # Version 1.1 (the "License"); you may not use this file except in
- * # compliance with the License. You may obtain a copy of the License at
- * # http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
- * #
- * # Software distributed under the License is distributed on an "AS IS"
- * # basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * # License for the specific language governing rights and limitations
- * # under the License.
- * #
- * # The Original Code is the MonetDB Database System.
- * #
- * # The Initial Developer of the Original Code is CWI.
- * # Portions created by CWI are Copyright (C) 1997-2008 CWI.
- * # All Rights Reserved.
- *
  * @f basket
  * @- Event baskets
  * Continuous query processing relies on event baskets
@@ -56,20 +40,19 @@ static MT_Lock bsktLock;
 #define lockBSKTbasketCatalog() mal_set_lock(bsktLock, "basket");
 #define unlockBSKTbasketCatalog() mal_unset_lock(bsktLock, "basket");
 
-/*
- * @-
- * We have to obtain the precise wall-clock time
+/* We have to obtain the precise wall-clock time
  * This is not produced by GDKusec, which returns microseconds
  * since the start of the program.
  * Notice that this routine consumes noticable time.
- * lng usec(void)
- * {
- * 	struct timeval tp;
- *
- * 	gettimeofday(&tp, NULL);
- * 	return ((lng)tp.tv_sec) * LL_CONSTANT(1000000) + (lng)tp.tv_usec;
- * }
  */
+lng usec(void)
+{
+	struct timeval tp;
+
+	gettimeofday(&tp, NULL);
+	return ((lng)tp.tv_sec) * LL_CONSTANT(1000000) + (lng)tp.tv_usec;
+}
+
 
 /* assume BUFSIZ buffer space */
 void
@@ -87,7 +70,7 @@ BSKTelements(str nme, str buf, str *schema, str *tbl)
 	*tbl = c;
 }
 
-static int BSKTnewEntry()
+static int BSKTnewEntry(void)
 {
 	int i;
 	for ( i=1; i< bsktLimit; i++)
@@ -293,7 +276,8 @@ BSKTdump(int *ret)
 
 	for ( bskt = 0; bskt < bsktLimit; bskt++)
 	if ( baskets[bskt].name){
-		mnstr_printf(GDKout, "#baskets[%2d] %s columns %d threshold %d window=[%d,%d] time window=[%d,%d] beat %d milliseconds events " BUNFMT "\n", bskt,
+		mnstr_printf(GDKout, "#baskets[%2d] %s columns %d threshold %d window=[%d,%d] time window=[" LLFMT "," LLFMT "] beat " LLFMT " milliseconds events " BUNFMT "\n",
+				bskt,
 			baskets[bskt].name,
 			baskets[bskt].colcount,
 			baskets[bskt].threshold,

@@ -1,7 +1,7 @@
 # The contents of this file are subject to the MonetDB Public License
 # Version 1.1 (the "License"); you may not use this file except in
 # compliance with the License. You may obtain a copy of the License at
-# http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+# http://www.monetdb.org/Legal/MonetDBLicense
 #
 # Software distributed under the License is distributed on an "AS IS"
 # basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -24,21 +24,6 @@ INCLUDES = ../include ../common ../storage \
 		   ../../gdk
 
 YFLAGS = -d -p sql
-
-#  Some versions of flex & bison seem to generate code
-#  that does not compile with `gcc -Wundef`;
-#  we use GCC_BISON_CFLAGS to disable the respective warning as
-#  locally as possible via "-Wno-undef"
-#  (see also configure.ag).
-#
-#  (At least on Fedora Core 4,) bison 2.0 seems to generate code
-#  that icc does not like; since the problem only occurs with
-#  sql/src/server/sql_parser.y,
-#  we use ICC_BISON_CFLAGS
-#  to disable the respective warning as locally as possible
-#  via "-wd592" (#592: variable "." is used before its value is set)
-#  (see also configure.ag).
-CFLAGS = $(ICC_BISON_CFLAGS) $(GCC_BISON_CFLAGS)
 
 lib_sqlserver = {
 	NOINST
