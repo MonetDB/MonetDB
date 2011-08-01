@@ -62,8 +62,8 @@ typedef struct {
 	   most 2 lng's, we don't need to allocate anything. */
 	void *th;
 	void *tt;
-	char tempstorageh[sizeof(lng)];
-	char tempstoraget[sizeof(lng)];
+	char tempstorageh[16];	/* 16 bytes should be wide enough ... */
+	char tempstoraget[16];	/* ... for all our fixed-sized data */
 
 	/* This controls when we get *into* galloping mode.  It's
 	   initialized to MIN_GALLOP.  merge_lo and merge_hi tend to
@@ -1003,9 +1003,10 @@ GDKssort@1(void *h, void *t, void *heap, size_t nitems, int hs, int ts, int tpe)
 	if (!t) 
 		t = &temp;
 	ms.bt = t;
-	ms.th = (size_t) hs <= sizeof(ms.tempstorageh) ? ms.tempstorageh : alloca(hs);
-	ms.tt = (size_t) ts <= sizeof(ms.tempstoraget) ? ms.tempstoraget : alloca(ts);
-
+	ms.th = ms.tempstorageh;
+	ms.tt = ms.tempstoraget;
+	assert((size_t) hs <= sizeof(ms.tempstorageh));
+	assert((size_t) ts <= sizeof(ms.tempstoraget));
 	nremaining = (ssize_t) nitems;
 
 	if (nremaining < 2)

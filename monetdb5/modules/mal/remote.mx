@@ -1498,6 +1498,6 @@ str RMTbintype(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	return(MAL_SUCCEED);
 }
 
-@h /* _REMOTE_DEF */
-#endif
+@h
+#endif /* _REMOTE_DEF */
 @}
