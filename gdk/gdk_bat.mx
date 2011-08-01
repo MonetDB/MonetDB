@@ -1070,9 +1070,11 @@ around and adapt search accelerator structures.
 }
 @= acc_move
 {
-	char *htmp = alloca(hs);
-	char *ttmp = alloca(ts);
+	char htmp[16];
+	char ttmp[16];
 
+	assert(hs <= 16);
+	assert(ts <= 16);
 	if (b->H->hash) {
 		HASHmove(b->H->hash, @3, @4, BUNhead(bi, @1), @1 < last); 
 	}
@@ -1089,7 +1091,6 @@ around and adapt search accelerator structures.
 	/* move first to deleted */
 	@:un_move(htmp,Hloc(b,@2),hs)@
 	@:un_move(ttmp,Tloc(b,@2),ts)@
-
 }
 
 @- BUN Insertion
