@@ -18,7 +18,6 @@
  */
 
 #ifndef _MAL_LINKER_H
-#include "mal_module.h"
 
 #define MAL_EXT ".mal"
 #define SQL_EXT ".sql"
