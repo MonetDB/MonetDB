@@ -83,8 +83,28 @@ static int protocol = TCP;
 #define PASSIVE 2
 static int mode = PASSIVE;
 
-static void
-usage(void)
+/*
+The actuator.
+Events leave the Datacell to trigger actions in the real world. It may be as simple 
+as being displayed on a screen, upto and including calling the mergency fighters
+by telephone. Since, the mapping from event message to real world action is situation
+specific, the default provided here is to only show the event message.
+
+Users interested in experimentation with real actuators, can hook up the event
+stream with a SCADA system or directly sent the events in a proper format to
+the channel where the actuators is listening.
+
+The actuator runs in two modes, active or passive. In the former case, the tool
+contacts the server and establishes an UDF channel to pass CSV encoded event strings.
+Optionally, the event can be tagged with a serial key and a time-stamp.
+
+Events are generated using a built-in random number generator. They are sent over the
+channel with an optional delay, expressed in number of microseconds.
+
+The code is relatively straightforward to extend to create your favoured dummy sensor.
+*/
+void
+usage()
 {
 	mnstr_printf(ACout, "The actuator tool can be used to catch an event sequence \n");
 	mnstr_printf(ACout, "from the emitter port. Data is in ascii .\n");

@@ -1070,9 +1070,13 @@ around and adapt search accelerator structures.
 }
 @= acc_move
 {
-	char *htmp = alloca(hs);
-	char *ttmp = alloca(ts);
+	char tmp[16];
+	/* avoid compiler warning: dereferencing type-punned pointer
+	 * will break strict-aliasing rules */
+	char *tmpp = tmp;
 
+	assert(hs <= 16);
+	assert(ts <= 16);
 	if (b->H->hash) {
 		HASHmove(b->H->hash, @3, @4, BUNhead(bi, @1), @1 < last); 
 	}
@@ -1081,15 +1085,18 @@ around and adapt search accelerator structures.
 	}
 
 	/* move first to tmp */
-	@:un_move(Hloc(b,@1),htmp,hs)@
-	@:un_move(Tloc(b,@1),ttmp,ts)@
+	@:un_move(Hloc(b,@1),tmpp,hs)@
 	/* move delete to first */
 	@:un_move(Hloc(b,@2),Hloc(b,@1),hs)@
+	/* move first to deleted */
+	@:un_move(tmpp,Hloc(b,@2),hs)@
+
+	/* move first to tmp */
+	@:un_move(Tloc(b,@1),tmpp,ts)@
+	/* move delete to first */
 	@:un_move(Tloc(b,@2),Tloc(b,@1),ts)@
 	/* move first to deleted */
-	@:un_move(htmp,Hloc(b,@2),hs)@
-	@:un_move(ttmp,Tloc(b,@2),ts)@
-
+	@:un_move(tmpp,Tloc(b,@2),ts)@
 }
 
 @- BUN Insertion

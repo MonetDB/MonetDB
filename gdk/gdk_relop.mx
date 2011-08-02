@@ -84,19 +84,24 @@ On small joins we just assume 1-N joins with a limited (=3) hit rate.
 				_slices++;
 		}
 		if (_slices > SAMPLE_TRESHOLD_LOG) {
-			/* use cheapo sampling by taking a number of slices and joining those with the algo */
+			/* use cheapo sampling by taking a number of
+			 * slices and joining those with the algo */
 			BUN _idx = 0, _tot = 0, _step, _lo, _avg, _sample, *_cnt;
 			BAT *_tmp1 = l, *_tmp2, *_tmp3 = NULL;
 
 			_step = _lcount / (_slices -= SAMPLE_TRESHOLD_LOG);
 			_sample = _slices * SAMPLE_SLICE_SIZE;
-			_cnt = (BUN *) alloca(_slices * sizeof(BUN));
+			_cnt = GDKmalloc(_slices * sizeof(BUN));
+			if (_cnt == NULL)
+				return NULL;
 			for (_lo = 0; _idx < _slices; _lo += _step) {
 				BUN _size = 0, _hi = _lo + SAMPLE_SLICE_SIZE;
 
 				l = BATslice(_tmp1, _lo, _hi);	/* slice keeps all parent properties */
-				if (l == NULL)
+				if (l == NULL) {
+					GDKfree(_cnt);
 					return NULL;
+				}
 				_tmp2 = @2;	/* @2 = e.g. BATXjoin(l,r) */
 				if (_tmp2) {
 					_size = BATcount(_tmp2);
@@ -105,7 +110,8 @@ On small joins we just assume 1-N joins with a limited (=3) hit rate.
 				_tot += (_cnt[_idx++] = _size);
 				BBPreclaim(l);
 			}
-			/* do outlier detection on sampling results; this guards against skew */
+			/* do outlier detection on sampling results;
+			 * this guards against skew */
 			if (@1 == JOIN_EQ) {
 				for (_avg = _tot / _slices, _idx = 0; _idx < _slices; _idx++) {
 					BUN _diff = _cnt[_idx] - _avg;
@@ -116,7 +122,9 @@ On small joins we just assume 1-N joins with a limited (=3) hit rate.
 						break;
 				}
 				if (_idx < _slices) {
-					/* outliers detected, compute a real sample on at most 1% of the data */
+					/* outliers detected, compute
+					 * a real sample on at most 1%
+					 * of the data */
 					_sample = MIN(_lcount / 100, (1 << SAMPLE_TRESHOLD_LOG) / 3);
 					_tmp2 = BATsample(_tmp1, _sample);
 					if (_tmp2) {
@@ -127,10 +135,13 @@ On small joins we just assume 1-N joins with a limited (=3) hit rate.
 						}
 						BBPreclaim(_tmp2);
 					}
-					if (_tmp3 == NULL)
+					if (_tmp3 == NULL) {
+						GDKfree(_cnt);
 						return NULL;
+					}
 				}
 			}
+			GDKfree(_cnt);
 			/* overestimate always by 5% */
 			{
 				double _d = (double) (((lng) _tot) * ((lng) _lcount)) / (0.95 * (double) _sample);
@@ -2997,8 +3008,8 @@ the parameter number of the BAT which was used as leader
 int
 BATmultijoin(int argc, BAT *argv[], RowFcn tuple_fcn, ptr tuple_data, ColFcn value_fcn[], ptr value_data[], int orderby)
 {
-	column_t *lead_col, *c = (column_t *) alloca(argc * (int) sizeof(column_t));
-	column_t **reorder = (column_t **) alloca(argc * (int) sizeof(column_t *));
+	column_t *lead_col, *c = (column_t *) GDKmalloc(argc * (int) sizeof(column_t));
+	column_t **reorder = (column_t **) GDKmalloc(argc * (int) sizeof(column_t *));
 	int status = 0, algo = LEAD_TRAVERSE_SEQ;
 	int i, k;
 	BUN p, q;
@@ -3007,6 +3018,11 @@ BATmultijoin(int argc, BAT *argv[], RowFcn tuple_fcn, ptr tuple_data, ColFcn val
 @-
 Init the table descriptor.
 @c
+	if (c == NULL || reorder == NULL) {
+		GDKfree(c);
+		GDKfree(reorder);
+		return 0;
+	}
 	memset(c, 0, argc * sizeof(column_t));
 	t.tuple_data = tuple_data;
 	t.value_data = value_data;
@@ -3137,11 +3153,15 @@ If none of this is the case, we do hash-lookup using an on-the-fly hash-table.
 		} else if (!BAThkey(n->b) && n->sync == NULL) {
 			if (BATprepareHash(n->b)) {
 				GDKerror("BATmultijoin: could not hash '%s'\n", BATgetId(n->b));
+				GDKfree(c);
+				GDKfree(reorder);
 				return 0;
 			}
 			n->hitsize = 20;
 			n->hit = (BUN *) GDKmalloc(n->hitsize * sizeof(BUN));
 			if (n->hit == NULL) {
+				GDKfree(c);
+				GDKfree(reorder);
 				return 0;
 			}
 		}
@@ -3172,6 +3192,8 @@ Cleanup & exit.
 		if (c[i].hitsize)
 			GDKfree(c[i].hit);
 	}
+	GDKfree(c);
+	GDKfree(reorder);
 	return status;
 }
 

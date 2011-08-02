@@ -1,0 +1,53 @@
+stdout of test 'str_cast_exception.Bug-2847` in directory 'test/BugTracker-2011` itself:
+
+
+# 17:24:33 >  
+# 17:24:33 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/ufs/sjoerd/Monet-candidate/var/MonetDB" --set mapi_open=true --set mapi_port=35537 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_test_BugTracker-2011" --set mal_listing=0 ; echo ; echo Over..
+# 17:24:33 >  
+
+# MonetDB 5 server v11.5.0
+# This is an unreleased version
+# Serving database 'mTests_test_BugTracker-2011', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://ottar.ins.cwi.nl:35537/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+
+Over..
+
+# 17:24:33 >  
+# 17:24:33 >  mclient -lsql -ftest -i -e --host=ottar --port=35537 
+# 17:24:33 >  
+
+#START TRANSACTION;
+#CREATE SCHEMA "testschema";
+#CREATE TABLE "testschema"."test" (
+#        "type"                        CHARACTER LARGE OBJECT NOT NULL,
+#        "output"                      CHARACTER LARGE OBJECT NOT NULL,
+#        "output_min_time_value_1"     BIGINT
+#);
+#INSERT INTO "testschema"."test" VALUES ('INPUT','see_person','3');
+[ 1	]
+#INSERT INTO "testschema"."test" VALUES ('WORKING','greet_person','3');
+[ 1	]
+#INSERT INTO "testschema"."test" VALUES ('OUTPUT','greet_person','3');
+[ 1	]
+#SELECT "output_min_time_value_1" FROM "testschema"."test" WHERE "type" = 'OUTPUT' AND "output" = 'greet_person' ;
+% . # table_name
+% output_min_time_value_1 # name
+% tinyint # type
+% 1 # length
+[ 3	]
+#ROLLBACK;
+
+# 17:24:33 >  
+# 17:24:33 >  Done.
+# 17:24:33 >  
+

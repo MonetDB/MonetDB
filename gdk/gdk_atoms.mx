@@ -89,9 +89,6 @@ type, which ensures uniqueness of its members.
 This leads to the following type descriptor table.
 @h
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 gdk_export int lngFromStr(str src, int *len, lng **dst);
 gdk_export int lngToStr(str *dst, int *len, lng *src);
 gdk_export int intFromStr(str src, int *len, int **dst);
@@ -122,9 +119,6 @@ gdk_export int strLen(const char *s);
 gdk_export int strNil(const char *s);
 gdk_export int escapedStrlen(const char *src);
 gdk_export int escapedStr(char *dst, const char *src, int dstlen);
-#ifdef __cplusplus
-}
-#endif
 @- inline comparison routines
 Return 0 on l==r, < 0 iff l < r, >0 iff l > r  
 @c
@@ -1358,11 +1352,12 @@ batFromStr(char *src, int *len, bat **dst)
 	t = r;
 	while ((c = *t) && (c == '_' || GDKisalnum(c)))
 		t++;
-	s = (char *) alloca((unsigned) (1 + t - r));
+	s = GDKmalloc((unsigned) (1 + t - r));
 	if (s != NULL) {
 		strncpy(s, r, t - r);
 		s[t - r] = 0;
 		bid = BBPindex(s);
+		GDKfree(s);
 	}
 	**dst = bid == 0 ? bat_nil : bid;
 	return (int) (t + (c == '>') - src);
