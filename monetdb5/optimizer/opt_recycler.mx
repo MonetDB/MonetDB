@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f opt_recycler
+
 @c
 /*
- * @f opt_recycler
  * @- The recycler
  * Query optimization and processing in off-the-shelf database systems is often
  * still focused on individual queries. The queries are analyzed in isolation

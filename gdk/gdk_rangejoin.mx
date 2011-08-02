@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f gdk_rangejoin
+
 @c
 /*
- * @f gdk_rangejoin
  * @a N. J. Nes
  *
  * @* Range Join Operators

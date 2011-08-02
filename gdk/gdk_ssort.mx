@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f gdk_ssort
+
 @c
 /*
- * @f gdk_ssort
  * @a Sjoerd Mullender
  * @* Ssort
  * This file implements a stable sort algorithm.  The algorithm is a

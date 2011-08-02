@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f opt_evaluate
+
 @c
 /*
- * @f opt_evaluate
  * @a M. Kersten
  * @- Constant Expression Evaluation
  * Expressions produced by compilers involving only constant

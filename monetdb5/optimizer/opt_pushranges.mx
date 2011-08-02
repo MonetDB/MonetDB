@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f opt_pushranges
+
 @c
 /*
- * @f opt_pushranges
  * @a M. Kersten
  * @- Range Propagation
  * Almost all queries are interested in a few slices

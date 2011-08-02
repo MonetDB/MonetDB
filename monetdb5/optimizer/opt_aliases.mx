@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f opt_aliases
+
 @c
 /*
- * @f opt_aliases
  * @- Alias Removal
  * The routine @sc{optimizer.aliasRemoval()}
  * walks through the program looking for simple

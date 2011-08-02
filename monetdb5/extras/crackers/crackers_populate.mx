@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f crackers_populate
+
 @c
 /*
- * @f crackers_populate
  * @a Stefan Manegold
  * @d Feb 2010
  * @* Populate cracker column & index with pro-actively created pieces

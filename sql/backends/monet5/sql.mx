@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f sql
+
 @c
 /*
- * @f sql
  * @t SQL Scenario implementation
  * @a M Kersten
  * @v 0

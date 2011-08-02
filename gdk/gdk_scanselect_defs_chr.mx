@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f gdk_scanselect_defs_chr
+
 @c
 /*
- * @f gdk_scanselect_defs_chr
  * @a S. Manegold, N. J. Nes, M. L. Kersten, P. Boncz
  */
 @include gdk_scanselect_defs.mx

@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f opt_dictionary
+
 @c
 /*
- * @f opt_dictionary
  * @- The dictionary optimizer
  * Datawarehouse applications are organized as star-schemas, where dimension
  * tables factor out common recurring bits-and-pieces. For example,

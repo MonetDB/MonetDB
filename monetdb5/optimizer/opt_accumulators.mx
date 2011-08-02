@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f opt_accumulators
+
 @c
 /*
- * @f opt_accumulators
  * @- Accumulator Evaluations
  * Bulk arithmetic calculations are pretty expensive,
  * because new @sc{bat}s are created for each expression.

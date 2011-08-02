@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f status
+
 @c
 /*
- * @f status
  * @a M.L. Kersten, P. Boncz, N.Nes
  * @v 2.0
  * @+ System state information

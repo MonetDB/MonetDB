@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f batifthen
+
 @c
 /*
- * @f batifthen
  * @a M.L. Kersten
  * @+ BAT if-then-else multiplex expressions.
  * The assembled code for IF-THEN-ELSE multiplex operations.

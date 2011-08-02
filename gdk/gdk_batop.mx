@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f gdk_batop
+
 @c
 /*
- * @f gdk_batop
  * @a M. L. Kersten, P. Boncz, S. Manegold, N. Nes
  * @* Common BAT Operations
  * This module contains the following BAT algebra operations:

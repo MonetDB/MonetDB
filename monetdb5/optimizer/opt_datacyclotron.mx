@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f opt_datacyclotron
+
 @c
 /*
- * @f opt_datacyclotron
  * @- The data cyclotron
  */
 @mal

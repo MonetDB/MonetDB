@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f radix
+
 @c
 /*
- * @f radix
  * @a Peter Boncz
  * @v 1.0
  * @t Radix Algorithms
@@ -1007,7 +1008,6 @@ comment
 @c
 /*
  * @-
- * @f radix
  * @* Implementation
  */
 #include "monetdb_config.h"

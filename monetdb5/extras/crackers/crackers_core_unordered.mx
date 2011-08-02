@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f crackers_core_unordered
+
 @c
 /*
- * @f crackers_core_unordered
  * @a Martin Kersten, Stratos Idreos, Stefan Manegold
  * @d March 2006 - July 2007
  * @* Core Cracking (unordered)

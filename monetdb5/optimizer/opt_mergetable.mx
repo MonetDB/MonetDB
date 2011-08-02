@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f opt_mergetable
+
 @c
 /*
- * @f opt_mergetable
  * @a M. Kersten, N. Nes
  * @- Merge Tables
  * A merge association table (MAT) descriptor defines an ordered collection

@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f crackers_partial_sideways
+
 @c
 /*
- * @f crackers_partial_sideways
  * @a Martin Kersten, Stratos Idreos, Stefan Manegold
  * @d March 2006 - July 2008
  * @* Partial Sideways Cracking

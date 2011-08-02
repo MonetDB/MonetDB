@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f opt_prejoin
+
 @c
 /*
- * @f opt_prejoin
  * @- Prejoin heuristics
  * In out of memory situations the algorithms to implement e.g. joins
  * are sup-optimal and should use a pre-sorting on the tail.

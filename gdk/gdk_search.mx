@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f gdk_search
+
 @c
 /*
- * @f gdk_search
  * @a M. L. Kersten, P. Boncz, N. Nes
  *
  * @* Search Accelerators

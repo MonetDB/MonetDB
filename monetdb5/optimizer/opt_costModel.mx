@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f opt_costModel
+
 @c
 /*
- * @f opt_costModel
  * @a M. L. Kersten
  * @- Costmodel Approach
  * Cost models form the basis for many optimization decisions.

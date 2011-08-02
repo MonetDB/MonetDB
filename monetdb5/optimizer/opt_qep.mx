@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f opt_qep
+
 @c
 /*
- * @f opt_qep
  * @a M. Kersten
  * @- Query Execution Plans
  * A commonly used data structure to represent and manipulate

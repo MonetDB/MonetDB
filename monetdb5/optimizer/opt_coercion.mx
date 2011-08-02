@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f opt_coercion
+
 @c
 /*
- * @f opt_coercion
  * @- Coercion Removal
  * A simple optimizer that removes coercions that are not needed.
  * They may result from a sloppy code-generator or function

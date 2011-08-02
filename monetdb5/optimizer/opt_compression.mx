@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f opt_compression
+
 @c
 /*
- * @f opt_compression
  * @- The compressed database
  * Column stores mostly exploit some form of compression to reduce the
  * footprint on disk and to improve disk/memory/cache bandwidth at

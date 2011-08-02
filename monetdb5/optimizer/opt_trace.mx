@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f opt_trace
+
 @c
 /*
- * @f opt_trace
  * @- MAL Instruction Trace
  * Collection of runtime statistics on specific instructions
  * is sometimes handy for post-session analysis. To accomplish
