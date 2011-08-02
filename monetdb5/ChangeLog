@@ -1,3 +1,21 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Tue Aug  2 2011 mk@cwi.nl
+- mal_interpreter.mx Protect against concurrent exceptions If multiple
+  parallel blocks access the exception variables and perform GDKfree
+  on old messages, then we may enter a case that one thread attempts a
+  second free.  Simple lock-based protection is the first line of defense.
+
+* Tue Aug  2 2011 mk@cwi.nl
+- bpm and partitions have been moved to the attic.  It is replaced by
+  the partition optimizer, still under construction.
+
+* Tue Aug  2 2011 mk@cwi.nl
+- The MAL debugger next/step operations semantics have been fixed.
+  The profiler also now clearly shows entrance/exit of a MAL function.
+
+* Tue Aug  2 2011 mk@cwi.nl
+- The dataflow optimizer uses a less strict side-effect test for BAT
+  new operations and better recognizes trivial plans.
+
