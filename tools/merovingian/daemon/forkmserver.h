@@ -20,7 +20,6 @@
 #ifndef _FORKMSERVER_H
 #define _FORKMSERVER_H 1
 
-#include "monetdb_config.h"
 #include <msabaoth.h> /* sabdb */
 #include "merovingian.h" /* err */
 
