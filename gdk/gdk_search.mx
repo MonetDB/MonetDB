@@ -17,65 +17,66 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f gdk_search
-@a M. L. Kersten, P. Boncz, N. Nes
-
-@* Search Accelerators
-
-What sets BATs apart from normal arrays is their built-in ability to
-search on both dimensions of the binary association.  The easiest way to
-implement this is simply walk to the whole table and compare against each
-element.  This method is of course highly inefficient, much better performance
-can be obtained if the BATs use some kind of index method to speed up
-searching.
-
-While index methods speed up searching they also have disadvantages.
-In the first place extra storage is needed for the index. Second,
-insertion of data or removing old data requires updating of the index
-structure, which takes extra time.
-
-This means there is a need for both indexed and non-indexed BAT, the
-first to be used when  little or no searching is needed, the
-second to be used when searching is predominant. Also, there is no
-best index method for all cases, different methods have different storage
-needs and different performance. Thus, multiple index methods are provided,
-each suited to particular types of usage.
-
-For query-dominant environments it pays to build a search accelerator.
-The main problems to be solved are:
-@itemize
-@item
-avoidance of excessive storage requirements, and
-@item
-limited maintenance overhead.
-@end itemize
-
-@-
-The idea that query intensive tasks need many different index methods has
-been proven invalid. The current direction is multiple copies of data, which
-can than be sorted or clustered.
-
-@-
-The BAT library automatically decides when an index becomes cost
-effective.
-
-In situations where an index is expected, a call is
-made to @emph{BAThash}.
-This operation check for indexing on the header.
-@{
-@+ Interface Declarations
+@c
+/*
+ * @f gdk_search
+ * @a M. L. Kersten, P. Boncz, N. Nes
+ *
+ * @* Search Accelerators
+ *
+ * What sets BATs apart from normal arrays is their built-in ability to
+ * search on both dimensions of the binary association.  The easiest way to
+ * implement this is simply walk to the whole table and compare against each
+ * element.  This method is of course highly inefficient, much better performance
+ * can be obtained if the BATs use some kind of index method to speed up
+ * searching.
+ *
+ * While index methods speed up searching they also have disadvantages.
+ * In the first place extra storage is needed for the index. Second,
+ * insertion of data or removing old data requires updating of the index
+ * structure, which takes extra time.
+ *
+ * This means there is a need for both indexed and non-indexed BAT, the
+ * first to be used when  little or no searching is needed, the
+ * second to be used when searching is predominant. Also, there is no
+ * best index method for all cases, different methods have different storage
+ * needs and different performance. Thus, multiple index methods are provided,
+ * each suited to particular types of usage.
+ *
+ * For query-dominant environments it pays to build a search accelerator.
+ * The main problems to be solved are:
+ * @itemize
+ * @item
+ * avoidance of excessive storage requirements, and
+ * @item
+ * limited maintenance overhead.
+ * @end itemize
+ *
+ * @-
+ * The idea that query intensive tasks need many different index methods has
+ * been proven invalid. The current direction is multiple copies of data, which
+ * can than be sorted or clustered.
+ *
+ * @-
+ * The BAT library automatically decides when an index becomes cost
+ * effective.
+ *
+ * In situations where an index is expected, a call is
+ * made to @emph{BAThash}.
+ * This operation check for indexing on the header.
+ * @+ Interface Declarations
+ */
 @h
 #ifndef _GDK_SEARCH_H_
 #define _GDK_SEARCH_H_
-@}
-@+ Hash indexing
-This is a highly efficient implementation of simple bucket-chained hashing.
-
-In the past, we used integer modulo for hashing, with bucket chains of mean size 4.
-This was shown to be inferior to direct hashing with integer anding. The new implementation
-reflects this.
-@{
-@h
+/*
+ * @+ Hash indexing
+ * This is a highly efficient implementation of simple bucket-chained hashing.
+ *
+ * In the past, we used integer modulo for hashing, with bucket chains of mean size 4.
+ * This was shown to be inferior to direct hashing with integer anding. The new implementation
+ * reflects this.
+ */
 gdk_export void HASHremove(BAT *b);
 gdk_export void HASHdestroy(BAT *b);
 gdk_export BUN HASHprobe(Hash *h, ptr v);
@@ -118,6 +119,7 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 			break;						\
 		}							\
 }
+@
 @h
 #define HASHfnd_str(x,y,z)	{					\
 	BUN _i;								\
@@ -163,16 +165,18 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 #define HASHfnd_flt(x,y,z)	HASHfnd_int(x,y,z)
 #define HASHfnd_dbl(x,y,z)	HASHfnd_lng(x,y,z)
 #define HASHfnd_any(x,y,z)	HASHfnd(x,y,z)
-@-
-A new entry is added with @%HASHins@ using the BAT, the BUN index,
-and a pointer to the value to be stored. An entry is removed by @%HASdel@.
-
+/*
+ * @-
+ * A new entry is added with HASHins using the BAT, the BUN index,
+ * and a pointer to the value to be stored. An entry is removed by HASdel.
+ */
 @= hashins
 #define HASHins_@1(h, i, v) do {		\
 	BUN _c = hash_@1(h,v);			\
 	h->link[i] = h->hash[_c];		\
 	h->hash[_c] = i;			\
 } while (0)
+@
 @h
 #define HASHins_str(h,i,v) do {			\
 	BUN _c;					\
@@ -261,28 +265,28 @@ and a pointer to the value to be stored. An entry is removed by @%HASdel@.
 		}							\
 	} h->link[j] = h->link[i];					\
 }
-@}
-@- Hash Table Creation
-The @emph{hash} indexing scheme for BATs reserves a block of memory to maintain
-the hash table and a collision list. A one-to-one mapping exists between
-the BAT and the collision list using the BUN index. NOTE: we alloc the
-link list as a parallel array to the BUN array; hence the hash link array has
-the same size as BATcapacity(b) (not BATcount(b)). This allows us in the
-BUN insert and delete to assume that there is hash space iff there is BUN
-space. If there is no BUN space, the BATextend now destroys the hash table.
-
-The hash mask size is a power of two, so we can do bitwise AND on the
-hash (integer) number to quickly find the head of the bucket chain.
-Clearly, the hash mask size is a crucial parameter. If we know that the column
-is unique (hkey), we use direct hashing (mask size ~= BATcount). Otherwise
-we dynamically determine the mask size by starting out with mask size = BATcount/64
-(just 1.5% of memory storage overhead). Then we start building the hash table
-on the first 25% of the BAT. As we aim for max-collisions list length of 4,
-the list on 25% should not exceed length 1. So, if a small number of collisssions
-occurs (mask/2) then we abandon the attempt and restart with a mask that is 4 times
-larger. This converges after three cycles to direct hashing.
-@{
 @c
+/*
+ * @- Hash Table Creation
+ * The @emph{hash} indexing scheme for BATs reserves a block of memory to maintain
+ * the hash table and a collision list. A one-to-one mapping exists between
+ * the BAT and the collision list using the BUN index. NOTE: we alloc the
+ * link list as a parallel array to the BUN array; hence the hash link array has
+ * the same size as BATcapacity(b) (not BATcount(b)). This allows us in the
+ * BUN insert and delete to assume that there is hash space iff there is BUN
+ * space. If there is no BUN space, the BATextend now destroys the hash table.
+ *
+ * The hash mask size is a power of two, so we can do bitwise AND on the
+ * hash (integer) number to quickly find the head of the bucket chain.
+ * Clearly, the hash mask size is a crucial parameter. If we know that the column
+ * is unique (hkey), we use direct hashing (mask size ~= BATcount). Otherwise
+ * we dynamically determine the mask size by starting out with mask size = BATcount/64
+ * (just 1.5% of memory storage overhead). Then we start building the hash table
+ * on the first 25% of the BAT. As we aim for max-collisions list length of 4,
+ * the list on 25% should not exceed length 1. So, if a small number of collisssions
+ * occurs (mask/2) then we abandon the attempt and restart with a mask that is 4 times
+ * larger. This converges after three cycles to direct hashing.
+ */
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
@@ -352,11 +356,14 @@ HASHnew(Heap *hp, int tpe, BUN size, BUN mask)
 		}
 	}
 	break;
-@-
-The prime routine for the BAT layer is to create a new hash index.
-Its argument is the element type and the maximum number of BUNs
-be stored under the hash function.
+@
 @c
+/*
+ * @-
+ * The prime routine for the BAT layer is to create a new hash index.
+ * Its argument is the element type and the maximum number of BUNs
+ * be stored under the hash function.
+ */
 BAT *
 BAThash(BAT *b, BUN masksize)
 {
@@ -529,10 +536,11 @@ BAThash(BAT *b, BUN masksize)
 	return b;
 }
 
-@-
-The entry on which a value hashes can be calculated with the
-routine @%HASHprobe@.
-@c
+/*
+ * @-
+ * The entry on which a value hashes can be calculated with the
+ * routine HASHprobe.
+ */
 BUN
 HASHprobe(Hash *h, ptr v)
 {
@@ -668,42 +676,42 @@ HASHgonebad(BAT *b, ptr v)
 	return 0;		/* a-ok */
 }
 
-@}
 
-@+ Binary Search on a Sorted BAT
-We have two main routines, @`SORTfndfirst@5(b,v) and @`SORTfndlast@5(b,v), that
-search for a TAIL value 'v' in a sorted BAT. If the value is present, 
-the first routine returns a pointer to its first occurrence, while the second
-routine returns a pointer to the BUN just after the last occurrence of 'v'.
-In case value 'v' does not occur in the tail of BAT b, both routines return
-a pointer to the first BUN with a tail value larger than 'v' 
-(i.e., @%BUNfirst(b)@, in case all tail values are larger than 'v'); 
-or @%BUNlast(b)@, in case all tail values are smaller than 'v'.
-@
-@
-From the above routines we now also defined the @`SORTfnd@5 and @%SORTfnd_tpe@
-routines that look for a certain value and return a (not necessarily the first
-or last) reference to it, or NULL (if the value does not exist).
-
-Note: of the SORTfnd, only @`SORTfndfirst@5(b,v) and
-@`SORTfndlast@5(b,v) work on the tail of a bat!
-@
-@
-
-@- Range Binary Search
-Type-specific versions of @:SORTfndfirst@ are available using macro
-expansions. It finds the first BUN larger or equal than a certain
-value and expands to @`SORTfndfirst_chr@5, @`SORTfndfirst_sht@5,
-@`SORTfndfirst_int@5, @`SORTfndfirst_flt@5, @`SORTfndfirst_lng@5,
-@`SORTfndfirst_dbl@5, @`SORTfndfirst_loc@5 and @`SORTfndfirst_var@5.
-
-Type-specific versions of @:SORTfndlast@ are available using macro
-expansions. It finds the first BUN smaller or equal than a certain
-value and expands to @`SORTfndlast_chr@5, @`SORTfndlast_sht@5,
-@`SORTfndlast_int@5, @`SORTfndlast_flt@5, @`SORTfndlast_lng@5,
-@`SORTfndlast_dbl@5, @`SORTfndlast_loc@5 and @`SORTfndlast_var@5.
-@{
 @h
+/*
+ * @+ Binary Search on a Sorted BAT
+ * We have two main routines, @`SORTfndfirst@5(b,v) and @`SORTfndlast@5(b,v), that
+ * search for a TAIL value 'v' in a sorted BAT. If the value is present,
+ * the first routine returns a pointer to its first occurrence, while the second
+ * routine returns a pointer to the BUN just after the last occurrence of 'v'.
+ * In case value 'v' does not occur in the tail of BAT b, both routines return
+ * a pointer to the first BUN with a tail value larger than 'v'
+ * (i.e., BUNfirst(b), in case all tail values are larger than 'v');
+ * or BUNlast(b), in case all tail values are smaller than 'v'.
+ *
+ * @
+ * From the above routines we now also defined the @`SORTfnd@5 and SORTfnd_tpe
+ * routines that look for a certain value and return a (not necessarily the first
+ * or last) reference to it, or NULL (if the value does not exist).
+ *
+ * Note: of the SORTfnd, only @`SORTfndfirst@5(b,v) and
+ * @`SORTfndlast@5(b,v) work on the tail of a bat!
+ *
+ * @
+ *
+ * @- Range Binary Search
+ * Type-specific versions of SORTfndfirst are available using macro
+ * expansions. It finds the first BUN larger or equal than a certain
+ * value and expands to @`SORTfndfirst_chr@5, @`SORTfndfirst_sht@5,
+ * @`SORTfndfirst_int@5, @`SORTfndfirst_flt@5, @`SORTfndfirst_lng@5,
+ * @`SORTfndfirst_dbl@5, @`SORTfndfirst_loc@5 and @`SORTfndfirst_var@5.
+ *
+ * Type-specific versions of SORTfndlast are available using macro
+ * expansions. It finds the first BUN smaller or equal than a certain
+ * value and expands to @`SORTfndlast_chr@5, @`SORTfndlast_sht@5,
+ * @`SORTfndlast_int@5, @`SORTfndlast_flt@5, @`SORTfndlast_lng@5,
+ * @`SORTfndlast_dbl@5, @`SORTfndlast_loc@5 and @`SORTfndlast_var@5.
+ */
 /* type specific binary search implementations */
 gdk_export BUN SORTfnd_chr(BAT *b, ptr v);
 gdk_export BUN SORTfnd_bte(BAT *b, ptr v);
@@ -735,15 +743,15 @@ gdk_export BUN SORTfndlast_var(BAT *b, ptr v);
 
 #endif /* _GDK_SEARCH_H_ */
 
-@-
-@}
-By Peter sept-99. This is a simple implementation that avoids all multiply
-and divs on most bats by using integer BUNindex numbers rather than absolute
-pointers (the BUNptr employed to obtain a pointer uses shift where possible).
-Also, the gradient-based approach has been dropped again, which allows all
-atoms to be treated in one macro. Main motivation: distrust of gradient
-performance on odmg data and its high mult/div overhead.
-@{
+/*
+ * @-
+ * By Peter sept-99. This is a simple implementation that avoids all multiply
+ * and divs on most bats by using integer BUNindex numbers rather than absolute
+ * pointers (the BUNptr employed to obtain a pointer uses shift where possible).
+ * Also, the gradient-based approach has been dropped again, which allows all
+ * atoms to be treated in one macro. Main motivation: distrust of gradient
+ * performance on odmg data and its high mult/div overhead.
+ */
 @= SORTfnd
 BUN
 SORTfndfirst_@2(BAT *b, ptr v)
@@ -884,6 +892,7 @@ SORTfnd@2(BAT *b, ptr v)
 	}
 	return BUN_NONE;
 }
+@
 @c
 @:SORTfnd(loc,chr,simple,chr)@
 @:SORTfnd(loc,bte,simple,bte)@
@@ -899,6 +908,4 @@ SORTfnd@2(BAT *b, ptr v)
 @:SORTfnd_switch(t,last)@
 @:SORTfnd_switch(t,first)@
 
-@c
 
-@}

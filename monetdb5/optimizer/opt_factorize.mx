@@ -17,65 +17,67 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f opt_factorize
-@a M. Kersten
-@- Code Factorization
-In most real-life situations queries are repeatedly called with
-only slight changes in their parameters. This situation can be
-captured by the query compilers by keeping a cache of recent query
-plans. In MonetDB context such queries are represented as parameterized
-MAL programs.
-
-To further optimize the cached functions it might help to
-split the query plan into two sections. One section with
-those actions that do not depend on the arguments given and
-another section that contains the heart of the query using
-all information.
-Such a program can be represented by a MAL factory, which is
-a re-entrend query plan.
-
-An example of how factorize changes the code is shown below:
-@verbatim
-function test(s:str):lng;
-    b:= bat.new(:int,:str);
-    bat.insert(b,1,"hello");
-    z:= algebra.select(b,s,s);
-    i:= aggr.count(z);
-    return i;
-end test;
-optimizer.factorize("user","test");
-@end verbatim
-which translates into the following block: 
-@verbatim
-factory user.test(s:str):lng;
-    b := bat.new(:int,:str);
-    bat.insert(b,1,"hello");
-barrier always := true;
-    z := algebra.select(b,s,s);
-    i := aggr.count(z);
-    yield i;
-    redo always;
-exit always;
-end test;
-@end verbatim
-The factorizer included is a prototype implementation
-of MAL factorization. The approach taken is to split the program
-into two pieces and wrap it as a MAL factory. The optimization
-assumes that the database is not changed on tables accessed only
-once during the factory lifetime. Such changes should be detected
-from the outside and followed by re-starting the factory.
-
-A refined scheme where the user can identify the 'frozen'
-parameters is left for the future. As the mapping of a query
-to any of the possible available factories to deal with the request.
-For the time being we simple reorganize the plan for all
-parameters
-
-The factorize operation interferes with 
-@sc{optimizer.expressionAccumulation()}
-because that may overwrite the arguments.
-For the time being, this is captured in a local routine.
-@{
+@c
+/*
+ * @f opt_factorize
+ * @a M. Kersten
+ * @- Code Factorization
+ * In most real-life situations queries are repeatedly called with
+ * only slight changes in their parameters. This situation can be
+ * captured by the query compilers by keeping a cache of recent query
+ * plans. In MonetDB context such queries are represented as parameterized
+ * MAL programs.
+ *
+ * To further optimize the cached functions it might help to
+ * split the query plan into two sections. One section with
+ * those actions that do not depend on the arguments given and
+ * another section that contains the heart of the query using
+ * all information.
+ * Such a program can be represented by a MAL factory, which is
+ * a re-entrend query plan.
+ *
+ * An example of how factorize changes the code is shown below:
+ * @verbatim
+ * function test(s:str):lng;
+ *     b:= bat.new(:int,:str);
+ *     bat.insert(b,1,"hello");
+ *     z:= algebra.select(b,s,s);
+ *     i:= aggr.count(z);
+ *     return i;
+ * end test;
+ * optimizer.factorize("user","test");
+ * @end verbatim
+ * which translates into the following block:
+ * @verbatim
+ * factory user.test(s:str):lng;
+ *     b := bat.new(:int,:str);
+ *     bat.insert(b,1,"hello");
+ * barrier always := true;
+ *     z := algebra.select(b,s,s);
+ *     i := aggr.count(z);
+ *     yield i;
+ *     redo always;
+ * exit always;
+ * end test;
+ * @end verbatim
+ * The factorizer included is a prototype implementation
+ * of MAL factorization. The approach taken is to split the program
+ * into two pieces and wrap it as a MAL factory. The optimization
+ * assumes that the database is not changed on tables accessed only
+ * once during the factory lifetime. Such changes should be detected
+ * from the outside and followed by re-starting the factory.
+ *
+ * A refined scheme where the user can identify the 'frozen'
+ * parameters is left for the future. As the mapping of a query
+ * to any of the possible available factories to deal with the request.
+ * For the time being we simple reorganize the plan for all
+ * parameters
+ *
+ * The factorize operation interferes with
+ * @sc{optimizer.expressionAccumulation()}
+ * because that may overwrite the arguments.
+ * For the time being, this is captured in a local routine.
+ */
 @mal
 pattern optimizer.factorize():str
 address OPTfactorize;
@@ -97,14 +99,14 @@ comment "Turn function into a factory";
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_builder.h"
 
-@+ Factorize Implementation
-Factorize of the code is defensive. An intruction group is
-added to the repeated part when analysis gets too complicated,
-e.g. when a variable is used within a guarded block.
-Moving instruction out of the guarded block is a separate
-optimization step.
-
-@c
+/*
+ * @+ Factorize Implementation
+ * Factorize of the code is defensive. An intruction group is
+ * added to the repeated part when analysis gets too complicated,
+ * e.g. when a variable is used within a guarded block.
+ * Moving instruction out of the guarded block is a separate
+ * optimization step.
+ */
 static int
 OPTallowed(InstrPtr p)
 {
@@ -291,4 +293,3 @@ OPTfactorizeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(factorize,OPT_CHECK_ALL)@
-@}

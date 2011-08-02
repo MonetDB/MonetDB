@@ -17,42 +17,44 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f opt_accumulators
-@- Accumulator Evaluations
-Bulk arithmetic calculations are pretty expensive,
-because new @sc{bat}s are created for each expression. 
-This memory hunger can be reduced
-by detecting opportunities for accummulator processing, i.e.
-where a (temporary) variable is overwritten.
-For example, consider the program snippet
-@example
-	t3:= batcalc.*(64,t2);
-	t4:= batcalc,+(t1,t3);
-	optimizer.accumulators();
-@end example
-If variable t2 is a temporary variable and not used any further in
-the program block, we can re-use its storage space.
-@example
-	t3:= batcalc.*(t2,64,true,false);
-	t4:= batcalc.+(t1,t3);
-@end example
-The implementation is straight forward. It only deals with the
-arithmetic operations available in @sc{batcalc} right now.
-This set may be gradually extended.
-The key decision is to determine whether we may overwrite
-any of the arguments. This is hard to detect at compile
-time, e.g. the argument may be the result of a binding operation
-or represent a view over a persistent BAT.
-
-[NOTE the accumulator optimizer is known to produce
-problems due to concurrent access to the BATs.
-However, the last instruction for a BAT is now scheduled only
-when all other uses have finished.
-
-The accumulator can be installed just before garbage collector,
-because the other modules do not recognize batcalc operations with
-more arguments.]
-@{
+@c
+/*
+ * @f opt_accumulators
+ * @- Accumulator Evaluations
+ * Bulk arithmetic calculations are pretty expensive,
+ * because new @sc{bat}s are created for each expression.
+ * This memory hunger can be reduced
+ * by detecting opportunities for accummulator processing, i.e.
+ * where a (temporary) variable is overwritten.
+ * For example, consider the program snippet
+ * @example
+ * 	t3:= batcalc.*(64,t2);
+ * 	t4:= batcalc,+(t1,t3);
+ * 	optimizer.accumulators();
+ * @end example
+ * If variable t2 is a temporary variable and not used any further in
+ * the program block, we can re-use its storage space.
+ * @example
+ * 	t3:= batcalc.*(t2,64,true,false);
+ * 	t4:= batcalc.+(t1,t3);
+ * @end example
+ * The implementation is straight forward. It only deals with the
+ * arithmetic operations available in @sc{batcalc} right now.
+ * This set may be gradually extended.
+ * The key decision is to determine whether we may overwrite
+ * any of the arguments. This is hard to detect at compile
+ * time, e.g. the argument may be the result of a binding operation
+ * or represent a view over a persistent BAT.
+ *
+ * [NOTE the accumulator optimizer is known to produce
+ * problems due to concurrent access to the BATs.
+ * However, the last instruction for a BAT is now scheduled only
+ * when all other uses have finished.
+ *
+ * The accumulator can be installed just before garbage collector,
+ * because the other modules do not recognize batcalc operations with
+ * more arguments.]
+ */
 @mal
 pattern optimizer.accumulators():str
 address OPTaccumulators;
@@ -167,4 +169,3 @@ OPTaccumulatorsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(accumulators,OPT_CHECK_ALL)@
-@}

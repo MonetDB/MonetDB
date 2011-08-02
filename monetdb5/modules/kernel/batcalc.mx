@@ -17,58 +17,60 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f batcalc
-@a M.L. Kersten
-@+ BAT calculator
-Many applications require extension of the basic calculator and
-mathematic functions to work on BAT arguments. Although the
-MAL multiplex optimizer contains a command ('optimizer.multiplex')
-to generate the necessary code, it is often much more efficient to 
-use one of the dedidacted batcalc functions introduced below.
-
-The operators supported are limited to the built-in fixed length
-atoms, because they permit ease of storage of the operation result.
-Variable sized atoms, especially user defined, may require more
-administrative activities.
-Furthermore, the operands involved are assumed to be aligned
-to assure the fastest possible join evaluation.
-
-Optimal processing performance is further obtained when the operators
-can work as 'accumulators', for then we do not pay the price
-of space allocation for a new intermediate. It may imply a BATcopy
-before the accummulator function is being called.
-A new BAT is of course created when the result of a function does not fit 
-the accumulator.
-
-The implementation does not take into account possible overflows
-caused by the operators. However, the operators respect the NIL
-semantics and division by zero produces a NIL.
-
-In addition to arithmetic and comparison operators, casting and
-mathematical functions are directly supported.
-
-@+ NULL semantics
-The batcalc arithmetic is already constraint to BATs of equal size.
-Another improvement is obtained when we do not have to check
-for NULLs in each and every basic operation +,-,/,* and comparisons.
-A problem is to propagate the general 'nonil' property, because
-this depends on the semantics of the operator. Checking the result
-for a nil value depleats most of the expected gain.
-
-Currently only set for the NOT operation and comparisons operators when
-neither argument has nils.
-@{
+@c
+/*
+ * @f batcalc
+ * @a M.L. Kersten
+ * @+ BAT calculator
+ * Many applications require extension of the basic calculator and
+ * mathematic functions to work on BAT arguments. Although the
+ * MAL multiplex optimizer contains a command ('optimizer.multiplex')
+ * to generate the necessary code, it is often much more efficient to
+ * use one of the dedidacted batcalc functions introduced below.
+ *
+ * The operators supported are limited to the built-in fixed length
+ * atoms, because they permit ease of storage of the operation result.
+ * Variable sized atoms, especially user defined, may require more
+ * administrative activities.
+ * Furthermore, the operands involved are assumed to be aligned
+ * to assure the fastest possible join evaluation.
+ *
+ * Optimal processing performance is further obtained when the operators
+ * can work as 'accumulators', for then we do not pay the price
+ * of space allocation for a new intermediate. It may imply a BATcopy
+ * before the accummulator function is being called.
+ * A new BAT is of course created when the result of a function does not fit
+ * the accumulator.
+ *
+ * The implementation does not take into account possible overflows
+ * caused by the operators. However, the operators respect the NIL
+ * semantics and division by zero produces a NIL.
+ *
+ * In addition to arithmetic and comparison operators, casting and
+ * mathematical functions are directly supported.
+ *
+ * @+ NULL semantics
+ * The batcalc arithmetic is already constraint to BATs of equal size.
+ * Another improvement is obtained when we do not have to check
+ * for NULLs in each and every basic operation +,-,/,* and comparisons.
+ * A problem is to propagate the general 'nonil' property, because
+ * this depends on the semantics of the operator. Checking the result
+ * for a nil value depleats most of the expected gain.
+ *
+ * Currently only set for the NOT operation and comparisons operators when
+ * neither argument has nils.
+ */
 @mal
 module batcalc;
 
-@+ Basic arithmetic
-The first group of functions provide abstractions over the
-binary operators +,/,-,*, and %. Both on (BAT,BAT) and (BAT,CST)
-operands. We also support the type enlargement and auto coercions,
-because they avoid expensive BAT copying.
-
-The accumulator versions modifies the first argument,
-provided it is a temporary BAT and not a view.
+# @+ Basic arithmetic
+# The first group of functions provide abstractions over the
+# binary operators +,/,-,*, and %. Both on (BAT,BAT) and (BAT,CST)
+# operands. We also support the type enlargement and auto coercions,
+# because they avoid expensive BAT copying.
+#
+# The accumulator versions modifies the first argument,
+# provided it is a temporary BAT and not a view.
 @= calcGrp1
 	command @1(b:bat[:oid,:@3], cst:@4) :bat[:oid,:@5] 
 	address CMDbat@2cst_@3_@4_@5;
@@ -79,7 +81,8 @@ provided it is a temporary BAT and not a view.
 	command @1(b:bat[:oid,:@3], c:bat[:oid,:@4]) :bat[:oid,:@5] 
 	address CMDbat@2_@3_@4_@5
 	comment "Binary BAT calculator function with new BAT result";
-@-
+@
+# @-
 @= calcGrp2
 
 	command @1(b:bat[:oid,:@3], c:bat[:oid,:@4], aflag:bit, bflag:bit):bat[:oid,:@5]
@@ -93,17 +96,19 @@ provided it is a temporary BAT and not a view.
 	command @1(b:bat[:oid,:@3], cst:@4, bflag:bit, cflag:bit) :bat[:oid,:@5]
 	address CMDbataccum@2cst_@3_@4_@5
 	comment "(BAT,Constant) calculator function which may re-use store of BAT argument";
-@-
+@
+# @-
 @= calcGrp3
 	@:calcGrp1(@1,@2,@3,@4,@5)@
 	@:calcGrp2(@1,@2,@3,@4,@5)@
 
-@-
-We need instantiations for the accumulator code,
-but should limit modulo functions to integer-based types.
-The calc group contains the operator, the desired result typ, its
-C qualifier and the operands
+@
 @mal
+# @-
+# We need instantiations for the accumulator code,
+# but should limit modulo functions to integer-based types.
+# The calc group contains the operator, the desired result typ, its
+# C qualifier and the operands
 	@:calcGrp3(%,MOD,bte,bte,bte)@
 	@:calcGrp3(%,MOD,sht,sht,sht)@
 	@:calcGrp3(%,MOD,int,int,int)@
@@ -213,13 +218,14 @@ C qualifier and the operands
 
 	@:calcGrp3(@1,@2,flt,flt,flt)@
 
-@-
+@
 @mal
+# @-
 	@:coerceGrp(/,DIV)@
 	@:coerceGrp(*,MUL)@
 	@:coerceGrp(-,SUB)@
 	@:coerceGrp(+,ADD)@
-@-
+	# @-
 @= unary
 	command -(b:bat[:any_1,:@1]):bat[:any_1,:@1] 
 	address CMDunaryMIN
@@ -236,8 +242,9 @@ C qualifier and the operands
 	command abs(b:bat[:any_1,:@1]):bat[:any_1,:@1] 
 	address CMDunaryABS
 	comment "Unary abs over the tail of the bat";
-@-
+@
 @mal
+# @-
 @:unary(bte)@
 @:unary(sht)@
 @:unary(int)@
@@ -245,13 +252,14 @@ C qualifier and the operands
 @:unary(lng)@
 @:unary(flt)@
 @:unary(dbl)@
-@-
+# @-
 @= unaryISNIL
 	command isnil(b:bat[:any_1,:@1]):bat[:any_1,:bit] 
 	address CMDunaryISNIL
 	comment "Unary check for nil over the tail of the bat";
-@-
+@
 @mal
+# @-
 @:unaryISNIL(bit)@
 @:unaryISNIL(chr)@
 @:unaryISNIL(bte)@
@@ -263,9 +271,9 @@ C qualifier and the operands
 @:unaryISNIL(flt)@
 @:unaryISNIL(dbl)@
 @:unaryISNIL(str)@
-@-
-@+ Comparison routines
-The command signatures are similar to those above, producing a bit result.
+# @-
+# @+ Comparison routines
+# The command signatures are similar to those above, producing a bit result.
 @= comparison
 	command @1(b:bat[:any_1,:@2], c:bat[:any_1,:@2]) :bat[:any_1,:bit]
 	address CMD_@3_@2;
@@ -291,6 +299,7 @@ The command signatures are similar to those above, producing a bit result.
 	@:comparison(<,@1,LT)@
 	@:comparison(==,@1,EQ)@
 	@:comparison(!=,@1,NEQ)@
+@
 @mal
 	@:compareGrp(bit)@
 	@:compareGrp(bte)@
@@ -305,10 +314,8 @@ The command signatures are similar to those above, producing a bit result.
 	@:comparison(and,bit,AND)@
 	@:comparison(or,bit,OR)@
 
-@+ Boolean operations
-The command signature can mostly be borrowed from the arithmetic.
-
-@mal
+# @+ Boolean operations
+# The command signature can mostly be borrowed from the arithmetic.
 command not(b:bat[:any_1,:bit]):bat[:any_1,:bit] 
 address CMDbitbatNOT
 comment "Return a new BAT with the negated tail";
@@ -317,9 +324,8 @@ command not(a:bat[:any_1,:bit], b:bat[:any_1,:bit]):bat[:any_1,:bit]
 address CMDbitbataccumNOT
 comment "Return a BAT with the negated tail";
 
-@- Implementation
+# @- Implementation
 @include kprelude.mx
-
 @h
 #include "gdk.h"
 #include "math.h"
@@ -335,11 +341,13 @@ comment "Return a BAT with the negated tail";
 #define batcalc_export extern
 #endif
 
-@-
-The accumulator operators are relatively straight forward,
-when the target BAT is known and we only have to deal with
-fixed-sized types. 
-@-
+/*
+ * @-
+ * The accumulator operators are relatively straight forward,
+ * when the target BAT is known and we only have to deal with
+ * fixed-sized types.
+ * @-
+ */
 @= accum
 {
 	@4 *o = (@4*)Tloc(bn, BUNfirst(bn));
@@ -464,20 +472,22 @@ fixed-sized types.
 		}
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 }
-@-
-A general assumption in all cases is the bats are synchronized on their
-head column. This is not checked and may be mis-used to deploy the
-implementation for shifted window arithmetic as well.
+@
+ * @-
+ * A general assumption in all cases is the bats are synchronized on their
+ * head column. This is not checked and may be mis-used to deploy the
+ * implementation for shifted window arithmetic as well.
 @= chkSize
 	if( BATcount(@1) != BATcount(@2) )
 	throw(MAL, "batcalc.@3", ILLEGAL_ARGUMENT " Requires bats of identical size");
-@-
-The code block below heavily uses the MX code expansion involved,
-but in essence the structure is relatively simple.
-The BAT loops to cover the cases for arithmetic are
-collected in bataccum<operator>. Initialization of the
-two primary command structures are dealt with in the CMD* alternatives.
-The similar code base is produced for dealing with a constant argument. 
+@
+ * @-
+ * The code block below heavily uses the MX code expansion involved,
+ * but in essence the structure is relatively simple.
+ * The BAT loops to cover the cases for arithmetic are
+ * collected in bataccum<operator>. Initialization of the
+ * two primary command structures are dealt with in the CMD* alternatives.
+ * The similar code base is produced for dealing with a constant argument.
 @= loopImpl
 {	
 	@5 *o = (@5*)Tloc(bn, BUNfirst(bn));
@@ -693,7 +703,8 @@ str CMDcst@2bat_@3_@4_@5(int *ret, void *cst, int *l)
 	BBPreleaseref(b->batCacheid);
 	return res;
 }
-@-
+@
+ * @-
 @= arithmeticImpl_2
 /*
 The accumulator variants may re-use the storage of an argument only when it is not shared,
@@ -835,12 +846,16 @@ str CMDbataccum@2cst2_@3_@4_@5(int *ret, void *cst, int *r, bit *lflag, bit *rfl
 		BBPreleaseref(b->batCacheid);
 	return res;
 }
-@-
+@
+ * @-
 @= arithmeticImpl_3
 	@:arithmeticImpl_1(@1,@2,@3,@4,@5,@6)@
 	@:arithmeticImpl_2(@1,@2,@3,@4,@5,@6)@
-@-
+@
 @c
+/*
+ * @-
+ */
 #include "monetdb_config.h"
 #include "batcalc.h"
 
@@ -921,6 +936,7 @@ str CMDbataccum@2cst2_@3_@4_@5(int *ret, void *cst, int *r, bit *lflag, bit *rfl
 
 @:arithmeticImpl_3(@1,@2,flt,flt,flt,@3)@
 
+@
 @c
 /*
 @1:   +,   -,   *,   /     basic arithmetic operator symbol
@@ -943,11 +959,6 @@ str CMDbataccum@2cst2_@3_@4_@5(int *ret, void *cst, int *r, bit *lflag, bit *rfl
 @:arithGrpImpl(-,SUB,(1|8))@
 @:arithGrpImpl(+,ADD,(1|2))@
 
-@-  Modulo arithmetic
-The Modulo function doesn;t work on all types. Therefore we 
-define here the necessary implementations separately by copying
-the arithmeticImpl block and removing elements not required.
-@c
 @= numeric_funcs
 batcalc_export str bataccum@2_@3_@4_@5(BAT *bn, BAT *b, BAT *right);
 str bataccum@2_@3_@4_@5(BAT *bn, BAT *b, BAT *right)
@@ -1124,7 +1135,14 @@ str CMDbataccum@2cst2_@3_@4_@5(int *ret, void *cst, int *r, bit *lflag, bit *rfl
 		BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
+@
 @c
+/*
+ * @-  Modulo arithmetic
+ * The Modulo function doesn;t work on all types. Therefore we
+ * define here the necessary implementations separately by copying
+ * the arithmeticImpl block and removing elements not required.
+ */
 @:numeric_funcs(%,MOD,bte,bte,bte)@
 @:numeric_funcs(%,MOD,sht,sht,sht)@
 @:numeric_funcs(%,MOD,int,int,int)@
@@ -1166,7 +1184,9 @@ str CMDbataccum@2cst2_@3_@4_@5(int *ret, void *cst, int *r, bit *lflag, bit *rfl
 @:numeric_funcs(>>,RSH,wrd,int,wrd)@
 @:numeric_funcs(>>,RSH,lng,int,lng)@
 
-@- Implementation of unary operations
+/*
+ * @- Implementation of unary operations
+ */
 @= accumUnary
 	{
 		@2* p = (@2*)Tloc(b,BUNfirst(b));
@@ -1188,9 +1208,10 @@ str CMDbataccum@2cst2_@3_@4_@5(int *ret, void *cst, int *r, bit *lflag, bit *rfl
 			}
 		BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	}
-@-
-Unary accummulators are only called indirectly. They cannot
-always be defined without signature clashes, eg. -(batA,batC).
+@
+ * @-
+ * Unary accummulators are only called indirectly. They cannot
+ * always be defined without signature clashes, eg. -(batA,batC).
 @= unary_impl
 batcalc_export str CMDunary@2(int *ret, int *bid);
 str CMDunary@2(int *ret, int *bid)
@@ -1226,6 +1247,7 @@ str CMDunary@2(int *ret, int *bid)
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
+@
 @c
 @:unary_impl(-,MIN)@
 @:unary_impl(--,MINMIN)@
@@ -1245,6 +1267,7 @@ str CMDunary@2(int *ret, int *bid)
 			*o = (*p == @1_nil);
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 }
+@
 @c
 batcalc_export str CMDunaryISNIL(int *ret, int *bid);
 str CMDunaryISNIL(int *ret, int *bid)
@@ -1302,8 +1325,10 @@ str CMDunaryISNIL(int *ret, int *bid)
 	return MAL_SUCCEED;
 }
 
-@- Comparison operator implementation
-The structure of this code is copied from the arithmetic scheme.
+/*
+ * @- Comparison operator implementation
+ * The structure of this code is copied from the arithmetic scheme.
+ */
 @= baselineCode
 batcalc_export str CMD_@2_@3(int *ret, int *l, int *r);
 str CMD_@2_@3(int *ret, int *l, int *r)
@@ -1700,7 +1725,8 @@ str CMDaccum_@4_cst_@3(int *ret, int *r, @3 *cst, int *l)
 	return CMDaccum_@2_@3_cst(ret, r, l, cst);
 }
 
-@-
+@
+ * @-
 @= operatorImpl
 	@:baselineCode(@1,@2,bit)@
 	@:baselineCode(@1,@2,bte)@
@@ -1721,6 +1747,7 @@ str CMDaccum_@4_cst_@3(int *ret, int *r, @3 *cst, int *l)
 	@:baselineCstCode(@1,@2,dbl,@3)@
 	@:baselineCstCode(@1,@2,flt,@3)@
 	@:baselineCstCode(@1,@2,oid,@3)@
+@
 @c
 /* these 8 macros are there to be able to do prepossessor-time conditionals */
 #define OPERATOR_GE 0
@@ -1832,4 +1859,3 @@ CMDbitbatNOT(int *ret, int *bid)
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
-@}

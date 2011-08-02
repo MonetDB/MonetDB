@@ -17,19 +17,20 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@a M. Kersten
-@v 0.0
-@* The MAL Interpreter
-The MAL interpreter always works in the context of a single user session,
-which provides for storage access to global variables and modules.
-@menu
-* MAL API::
-* Exception Handling::
-* Garbage Collection::
-* Stack Management::
-@end menu
-
-@{
+@c
+/*
+ * @a M. Kersten
+ * @v 0.0
+ * @* The MAL Interpreter
+ * The MAL interpreter always works in the context of a single user session,
+ * which provides for storage access to global variables and modules.
+ * @menu
+ * * MAL API::
+ * * Exception Handling::
+ * * Garbage Collection::
+ * * Stack Management::
+ * @end menu
+ */
 @h
 #ifndef _MAL_INTERPRET_H
 #define _MAL_INTERPRET_H
@@ -38,10 +39,11 @@ which provides for storage access to global variables and modules.
 #include "mal_factory.h"
 #include "mal_profiler.h"
 
-@-
-Activation of a thread requires construction of the argument list
-to be passed by a handle.
-@h
+/*
+ * @-
+ * Activation of a thread requires construction of the argument list
+ * to be passed by a handle.
+ */
 
 /*#define DEBUG_MAL_INTERPRETER*/
 /* #define DEBUG_FLOW */
@@ -89,9 +91,10 @@ static int memoryclaims = 0;    /* number of threads active with expensive opera
 
 #define FREE_EXCEPTION(p) { if (p && p != M5OutOfMemory) GDKfree(p); }
 
-@-
-The struct alignment leads to 40% gain in simple instructions when set.
-@c
+/*
+ * @-
+ * The struct alignment leads to 40% gain in simple instructions when set.
+ */
 inline
 ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k)
 {
@@ -139,14 +142,15 @@ void showErrors(Client cntxt)
 		cntxt->errbuf[0] = '\0';
 	}
 }
-@-
-The bigfoot memory tracker keeps track on the space occupancy of BATs.
-The property 'memory' illustrates the total amount of memory claimed.
-It ignores for the time being the heaps for the variable sized atoms.
-Moreover, it is not thread safe and it can not correctly handle
-aliases embedded in MAL assignments.
-This means that the footprint is only to be used as indicative.
-@c
+/*
+ * @-
+ * The bigfoot memory tracker keeps track on the space occupancy of BATs.
+ * The property 'memory' illustrates the total amount of memory claimed.
+ * It ignores for the time being the heaps for the variable sized atoms.
+ * Moreover, it is not thread safe and it can not correctly handle
+ * aliases embedded in MAL assignments.
+ * This means that the footprint is only to be used as indicative.
+ */
 static inline void
 updateBigFoot(Client cntxt, int bid, int add)
 {
@@ -180,10 +184,12 @@ updateBigFoot(Client cntxt, int bid, int add)
 			cntxt->bigfoot = cntxt->vmfoot;
 	}
 }
-@-
-Copy the constant values onto the stack frame
-Also we cannot overwrite values on the stack as this maybe part of a
-sequence of factory calls.
+/*
+ * @-
+ * Copy the constant values onto the stack frame
+ * Also we cannot overwrite values on the stack as this maybe part of a
+ * sequence of factory calls.
+ */
 @= initStack
 	for (i = @1; i < mb->vtop; i++) {
 		lhs = &stk->stk[i];
@@ -198,6 +204,7 @@ sequence of factory calls.
 			lhs->len = 0;
 		}
 	}
+@
 @c
 static int
 isNotUsedIn(InstrPtr p, int start, int a)
@@ -242,17 +249,18 @@ str runMAL(Client cntxt, MalBlkPtr mb, int startpc, MalBlkPtr mbcaller,
 		if (cntxt->itrace == 0) /* permit debugger analysis */
 			return createScriptException(mb, 0, MAL, NULL, "Syntax error in script");
 	}
-@-
-Prepare a new interpreter call. This involves two steps, (1) allocate
-the minimum amount of stack space needed, some slack resources
-are included to permit code optimizers to add a few variables at run time,
-(2) copying the arguments into the new stack frame.
-
-The env stackframe is set when a MAL function is called recursively.
-Alternatively, there is no caller but a stk to be re-used for interpretation.
-We assume here that it aligns with the variable table of the routine
-being called.
-@c
+	/*
+	 * @-
+	 * Prepare a new interpreter call. This involves two steps, (1) allocate
+	 * the minimum amount of stack space needed, some slack resources
+	 * are included to permit code optimizers to add a few variables at run time,
+	 * (2) copying the arguments into the new stack frame.
+	 *
+	 * The env stackframe is set when a MAL function is called recursively.
+	 * Alternatively, there is no caller but a stk to be re-used for interpretation.
+	 * We assume here that it aligns with the variable table of the routine
+	 * being called.
+	 */
 	/* allocate space for value stack */
 	/* the global stack should be large enough */
 	if (mbcaller == NULL && env != NULL) {
@@ -279,24 +287,26 @@ being called.
 				/* we are running low on stack space */
 				throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
 		}
-@-
-An optimization is to copy all constant variables used in functions immediately
-onto the value stack. Then we do not have to check for their location
-later on any more. At some point, the effect is optimal, if at least several
-constants are referenced in a function (a gain on tst400a of 20% has been
-observed due the small size of the function).
-@c
+	/*
+	 * @-
+	 * An optimization is to copy all constant variables used in functions immediately
+	 * onto the value stack. Then we do not have to check for their location
+	 * later on any more. At some point, the effect is optimal, if at least several
+	 * constants are referenced in a function (a gain on tst400a of 20% has been
+	 * observed due the small size of the function).
+	 */
 	}
 
 	if (env && mbcaller) {
 		InstrPtr pp;
 		int k;
-@-
-Moreover, we have to copy the result types to the stack for later
-use. The stack value has been cleared to avoid misinterpretation of left-over
-information. Since a stack frame may contain values of a previous call,
-we should first remove garbage.
-@c
+		/*
+		 * @-
+		 * Moreover, we have to copy the result types to the stack for later
+		 * use. The stack value has been cleared to avoid misinterpretation of left-over
+		 * information. Since a stack frame may contain values of a previous call,
+		 * we should first remove garbage.
+		 */
 		pci = pcicaller;
 		pp = getInstrPtr(mb, 0);
 		/* set return types */
@@ -332,17 +342,18 @@ we should first remove garbage.
 		GDKfree(stk);
 	return ret;
 }
-@-
-
-@+ Single instruction
-It is possible to re-enter the interpreter at a specific place.
-This is used in the area where we need to support co-routines.
-
-A special case for MAL interpretation is to execute just one instruction.
-This is typically used by optimizers and schedulers that need part of the
-answer to direct their actions. Or, a dataflow scheduler could step in
-to enforce a completely different execution order.
-@c
+/*
+ * @-
+ *
+ * @+ Single instruction
+ * It is possible to re-enter the interpreter at a specific place.
+ * This is used in the area where we need to support co-routines.
+ *
+ * A special case for MAL interpretation is to execute just one instruction.
+ * This is typically used by optimizers and schedulers that need part of the
+ * answer to direct their actions. Or, a dataflow scheduler could step in
+ * to enforce a completely different execution order.
+ */
 str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc,
 			   MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller)
 {
@@ -362,14 +373,15 @@ str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc,
 		garbageCollector(cntxt, mb, stk, env != stk);
 	return ret;
 }
-@-
-Front ends may benefit from a more direct call to any of the MAL
-procedural abstractions. The argument list points to the arguments
-for the block to be executed. An old stack frame may be re-used,
-but it is then up to the caller to ensure it is properly
-initialized.
-The call does not return values, they are ignored.
-@c
+/*
+ * @-
+ * Front ends may benefit from a more direct call to any of the MAL
+ * procedural abstractions. The argument list points to the arguments
+ * for the block to be executed. An old stack frame may be re-used,
+ * but it is then up to the caller to ensure it is properly
+ * initialized.
+ * The call does not return values, they are ignored.
+ */
 str
 callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 {
@@ -387,11 +399,12 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 	switch (pci->token) {
 	case FUNCTIONsymbol:
 	case FCNcall:
-@-
-Prepare the stack frame for this operation. Copy all the arguments
-in place. We assume that the caller has supplied pointers for
-all arguments and return values.
-@c
+		/*
+		 * @-
+		 * Prepare the stack frame for this operation. Copy all the arguments
+		 * in place. We assume that the caller has supplied pointers for
+		 * all arguments and return values.
+		 */
 		if (*env == NULL) {
 			stk = prepareMALstack(mb, mb->vsize);
 			stk->up = 0;
@@ -419,11 +432,12 @@ all arguments and return values.
 	@:endProfile(stk)@
 	return ret;
 }
-@-
-The core of the interpreter is presented next. It takes the context information
-and starts the interpretation at the designated instruction.
-Note that the stack frame is aligned and initialized in the enclosing routine.
-@c
+/*
+ * @-
+ * The core of the interpreter is presented next. It takes the context information
+ * and starts the interpretation at the designated instruction.
+ * Note that the stack frame is aligned and initialized in the enclosing routine.
+ */
 str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				   int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller)
 {
@@ -459,15 +473,16 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 	stkpc = startpc;
 	exceptionVar = -1;
-@-
-From this point onwards we should differentiate fast processing
-against monitored processing. Fast processing is possible if there is
-no call to the debugger statically/dynamically set. Same holds for
-performance control statements.
-The code currently does not statically checks the mode change.
-Preferrably we should introduce a itrace flag PROFILE
-We rely on optimizing compilers to remove the redundant code.
-@c
+	/*
+	 * @-
+	 * From this point onwards we should differentiate fast processing
+	 * against monitored processing. Fast processing is possible if there is
+	 * no call to the debugger statically/dynamically set. Same holds for
+	 * performance control statements.
+	 * The code currently does not statically checks the mode change.
+	 * Preferrably we should introduce a itrace flag PROFILE
+	 * We rely on optimizing compilers to remove the redundant code.
+	 */
 	if (mb->recycle == TRUE && malProfileMode == 0 &&
 		cntxt->itrace == 0 && cntxt->flags == 0 && GDKdebug == 0) {
 		while (stkpc < mb->stop && stkpc != stoppc) {
@@ -532,25 +547,29 @@ workslow:
 	@:MALwrapup@
 	return ret;
 }
-@- Out of order execution
-The alternative is to execute the instructions out of order
-using dataflow dependencies and as an independent process.
-Dataflow processing only works on a code
-sequence that does not include additional (implicit) flow of control
-statements and, ideally, consist of expensive BAT operations.
-The dataflow interpreter selects cheap instructions
-using a simple costfunction based on the size of the BATs involved.
-
-The dataflow portion is identified as a guarded block,
-whose entry is controlled by the function language.dataflow();
-This way the function can inform the caller to skip the block
-when dataflow execution was performed.
 @h
+/*
+ * @- Out of order execution
+ * The alternative is to execute the instructions out of order
+ * using dataflow dependencies and as an independent process.
+ * Dataflow processing only works on a code
+ * sequence that does not include additional (implicit) flow of control
+ * statements and, ideally, consist of expensive BAT operations.
+ * The dataflow interpreter selects cheap instructions
+ * using a simple costfunction based on the size of the BATs involved.
+ *
+ * The dataflow portion is identified as a guarded block,
+ * whose entry is controlled by the function language.dataflow();
+ * This way the function can inform the caller to skip the block
+ * when dataflow execution was performed.
+ */
 mal_export str runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
-@-
-The flow graphs should be organized such that parallel threads can
-access it mostly without expensive locking.
 @c
+/*
+ * @-
+ * The flow graphs should be organized such that parallel threads can
+ * access it mostly without expensive locking.
+ */
 #define DFLOWpending 0		/* runnable */
 #define DFLOWrunning 1		/* currently in progress */
 #define DFLOWwrapup  2		/* done! */
@@ -565,11 +584,12 @@ typedef struct queue {
 } queue;
 
 
-@-
-The dataflow dependency is administered in a graph list structure. 
-For each instruction we keep the list of instructions that
-should be checked for eligibility once we are finished with it.
-@c 
+/*
+ * @-
+ * The dataflow dependency is administered in a graph list structure.
+ * For each instruction we keep the list of instructions that
+ * should be checked for eligibility once we are finished with it.
+ */
 typedef struct {
 	MT_Id tid;
 	int id;
@@ -603,9 +623,10 @@ typedef struct DataFlow {
 	struct DataFlow *free;	/* free list */
 } *DataFlow, DataFlowRec;
 
-@-
-Calculate the size of the dataflow dependency graph.
-@c
+/*
+ * @-
+ * Calculate the size of the dataflow dependency graph.
+ */
 static int
 DFLOWgraphSize(MalBlkPtr mb, int start, int stop)
 {
@@ -617,38 +638,40 @@ DFLOWgraphSize(MalBlkPtr mb, int start, int stop)
 	return cnt;
 }
 
-@-
-Running all eligible instructions in parallel creates
-resource contention. This means we should implement
-an admission control scheme where threads are temporarily
-postponed if the claim for memory exceeds a threshold
-In general such contentions will be hard to predict,
-because they depend on the algorithm, the input sizes,
-concurrent use of the same variables, and the output produced.
-
-The heuristic is based on calculating the storage footprint
-of the operands and assuming it preferrably should fit in memory.
-Ofcourse, there may be intermediate structures being
-used and the size of the result is not a priori known.
-For this, we use a high watermark on the amount of
-physical memory we pre-allocate for the claims.
-
-Instructions are eligible to be executed when the
-total footprint of all concurrent executions stays below
-the high-watermark or it is the single expensive
-instruction being started.
-
-When we run out of memory, the instruction is delayed.
-How long depends on the other instructions to free up
-resources. The current policy simple takes a local
-decision by delaying the instruction based on its
-past and the size of the memory pool size.
-The waiting penalty decreases with each step to ensure
-it will ultimately taken into execution, with possibly
-all resource contention effects.
-
-Another option would be to maintain a priority queue of
-suspended instructions.
+/*
+ * @-
+ * Running all eligible instructions in parallel creates
+ * resource contention. This means we should implement
+ * an admission control scheme where threads are temporarily
+ * postponed if the claim for memory exceeds a threshold
+ * In general such contentions will be hard to predict,
+ * because they depend on the algorithm, the input sizes,
+ * concurrent use of the same variables, and the output produced.
+ *
+ * The heuristic is based on calculating the storage footprint
+ * of the operands and assuming it preferrably should fit in memory.
+ * Ofcourse, there may be intermediate structures being
+ * used and the size of the result is not a priori known.
+ * For this, we use a high watermark on the amount of
+ * physical memory we pre-allocate for the claims.
+ *
+ * Instructions are eligible to be executed when the
+ * total footprint of all concurrent executions stays below
+ * the high-watermark or it is the single expensive
+ * instruction being started.
+ *
+ * When we run out of memory, the instruction is delayed.
+ * How long depends on the other instructions to free up
+ * resources. The current policy simple takes a local
+ * decision by delaying the instruction based on its
+ * past and the size of the memory pool size.
+ * The waiting penalty decreases with each step to ensure
+ * it will ultimately taken into execution, with possibly
+ * all resource contention effects.
+ *
+ * Another option would be to maintain a priority queue of
+ * suspended instructions.
+ */
 @= calcFootprint
 	heapinfo(&b->H->heap); total += vol;
 	heapinfo(b->H->vheap); total += vol;
@@ -657,6 +680,7 @@ suspended instructions.
 	heapinfo(&b->T->heap); total += vol;
 	heapinfo(b->T->vheap); total += vol;
 	hashinfo(b->T->hash); total += vol;
+@
 @c
 /*
  * The memory claim is the estimate for the amount of memory hold.
@@ -732,11 +756,12 @@ DFLOWadmission(lng argclaim, lng hotclaim)
 }
 #endif
 
-@-
-The dataflow execution is confined to a barrier block.
-Within the block there are multiple flows, which, in principle,
-can be executed in parallel.
-@c
+/*
+ * @-
+ * The dataflow execution is confined to a barrier block.
+ * Within the block there are multiple flows, which, in principle,
+ * can be executed in parallel.
+ */
 
 static queue*
 q_create(int sz)
@@ -864,24 +889,25 @@ queue_sort(queue *q)
 		((FlowStatus)q->data[i])->argclaim /= 2;
 }
 
-@-
-We simply move an instruction into the front of the queue.
-Beware, we assume that variables are assigned a value once, otherwise
-the order may really create errors.
-The order of the instructions should be retained as long as possible.
-@-
-Delay processing when we run out of memory.  Push the instruction back
-on the end of queue, waiting for another attempt. Problem might become
-that all threads but one are cycling through the queue, each time
-finding an eligible instruction, but without enough space.
-Therefore, we wait for a few milliseconds as an initial punishment.
-
-The process could be refined by checking for cheap operations,
-i.e. those that would require no memory at all (aggr.count)
-This, however, would lead to a dependency to the upper layers,
-because in the kernel we don't know what routines are available
-with this property. Nor do we maintain such properties.
-@c
+/*
+ * @-
+ * We simply move an instruction into the front of the queue.
+ * Beware, we assume that variables are assigned a value once, otherwise
+ * the order may really create errors.
+ * The order of the instructions should be retained as long as possible.
+ * @-
+ * Delay processing when we run out of memory.  Push the instruction back
+ * on the end of queue, waiting for another attempt. Problem might become
+ * that all threads but one are cycling through the queue, each time
+ * finding an eligible instruction, but without enough space.
+ * Therefore, we wait for a few milliseconds as an initial punishment.
+ *
+ * The process could be refined by checking for cheap operations,
+ * i.e. those that would require no memory at all (aggr.count)
+ * This, however, would lead to a dependency to the upper layers,
+ * because in the kernel we don't know what routines are available
+ * with this property. Nor do we maintain such properties.
+ */
 static str
 DFLOWstep(FlowTask *t, FlowStatus fs)
 {
@@ -958,10 +984,11 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 	ret = MAL_SUCCEED;
 	@:MALrecycleStart(t)@ {
 		@:beginProfile(t,1)@
-@-
-The number of instructions allowed is severely limited.
-We don't allow sequential flow control here, which is enforced by the dataflow optimizer;
-@c
+		/*
+		 * @-
+		 * The number of instructions allowed is severely limited.
+		 * We don't allow sequential flow control here, which is enforced by the dataflow optimizer;
+		 */
 		switch (pci->token) {
 		case ASSIGNsymbol: 
 			@:assignStmt(FAST,fs->pc = -fs->pc; return ret,t)@ 
@@ -996,27 +1023,28 @@ We don't allow sequential flow control here, which is enforced by the dataflow o
 	return ret;
 }
 
-@-
-A consequence of multiple threads is that they may claim more
-space then available. This may cause GDKmalloc to fail.
-In many cases this situation will be temporary, because
-threads will ultimately release resources.
-Therefore, we wait for it.
-
-Alternatively, a front-end can set the flow administration
-program counter to -1, which leads to a soft abort.
-[UNFORTUNATELY this approach does not (yet) work
-because there seem to a possibility of a deadlock
-between incref and bbptrim. Furthermore, we have
-to be assured that the partial executed instruction
-does not lead to ref-count errors.]
-
-The worker produces a result which will potentially unblock
-instructions. This it can find itself without the help of the scheduler
-and without the need for a lock. (does it?, parallel workers?)
-It could also give preference to an instruction that eats away the object
-just produced. THis way it need not be saved on disk for a long time.
-@c
+/*
+ * @-
+ * A consequence of multiple threads is that they may claim more
+ * space then available. This may cause GDKmalloc to fail.
+ * In many cases this situation will be temporary, because
+ * threads will ultimately release resources.
+ * Therefore, we wait for it.
+ *
+ * Alternatively, a front-end can set the flow administration
+ * program counter to -1, which leads to a soft abort.
+ * [UNFORTUNATELY this approach does not (yet) work
+ * because there seem to a possibility of a deadlock
+ * between incref and bbptrim. Furthermore, we have
+ * to be assured that the partial executed instruction
+ * does not lead to ref-count errors.]
+ *
+ * The worker produces a result which will potentially unblock
+ * instructions. This it can find itself without the help of the scheduler
+ * and without the need for a lock. (does it?, parallel workers?)
+ * It could also give preference to an instruction that eats away the object
+ * just produced. THis way it need not be saved on disk for a long time.
+ */
 static void
 runDFLOWworker(void *t)
 {
@@ -1088,12 +1116,13 @@ runDFLOWworker(void *t)
 	THRdel(thr);
 }
 
-@-
-The dataflow administration is based on administration of
-how many variables are still missing before it can be executed.
-For each instruction we keep a list of instructions whose
-blocking counter should be decremented upon finishing it.
-@c
+/*
+ * @-
+ * The dataflow administration is based on administration of
+ * how many variables are still missing before it can be executed.
+ * For each instruction we keep a list of instructions whose
+ * blocking counter should be decremented upon finishing it.
+ */
 static void
 DFLOWinit(DataFlow flow, Client cntxt, MalBlkPtr mb, MalStkPtr stk, int size)
 {
@@ -1188,15 +1217,16 @@ DFLOWinit(DataFlow flow, Client cntxt, MalBlkPtr mb, MalStkPtr stk, int size)
 #endif
 }
 
-@-
-Parallel processing is mostly driven by dataflow, but within this context
-there may be different schemes to take instructions into execution.
-The admission scheme (and wrapup) are the necessary scheduler hooks.
-A scheduler registers the functions needed and should release them
-at the end of the parallel block.
-They take effect after we have ensured that the basic properties for
-execution hold.
-@c
+/*
+ * @-
+ * Parallel processing is mostly driven by dataflow, but within this context
+ * there may be different schemes to take instructions into execution.
+ * The admission scheme (and wrapup) are the necessary scheduler hooks.
+ * A scheduler registers the functions needed and should release them
+ * at the end of the parallel block.
+ * They take effect after we have ensured that the basic properties for
+ * execution hold.
+ */
 static void showFlowStatus(DataFlow flow, int pc)
 {
 	int i;
@@ -1414,15 +1444,16 @@ str runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc,
 	mal_unset_lock(mal_contextLock, "runMALdataflow");
 	return ret;
 }
-@+ Independent threads
-Distributed execution calls for asynchronous execution of MAL
-instructions. To simplify the interpreter, we assume that all
-the code to be executed is already grouped in a MAL function,
-which is called independently. The result variables are initialized
-to NIL before the code is started. When the process crashes,
-an exception is raised.
-
 @h
+/*
+ * @+ Independent threads
+ * Distributed execution calls for asynchronous execution of MAL
+ * instructions. To simplify the interpreter, we assume that all
+ * the code to be executed is already grouped in a MAL function,
+ * which is called independently. The result variables are initialized
+ * to NIL before the code is started. When the process crashes,
+ * an exception is raised.
+ */
 mal_export str runMALprocess(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int start, int stop);
 @c
 typedef struct {
@@ -1496,16 +1527,19 @@ str runMALprocess(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int start, int stop
 			}
 		}
 	}
-@+ Safeguarding
-The physical stack for each thread is an operating system parameter.
-We do not want recursive programs crashing the server, so once in
-a while we check whether we are running dangerously low on available
-stack space.
-
-This situation can be detected by calling upon the GDK functionality
-of by limiting the depth of a function calls.
-Expensive? 70 msec for 1M calls. Use with care.
+@
 @h
+/*
+ * @+ Safeguarding
+ * The physical stack for each thread is an operating system parameter.
+ * We do not want recursive programs crashing the server, so once in
+ * a while we check whether we are running dangerously low on available
+ * stack space.
+ *
+ * This situation can be detected by calling upon the GDK functionality
+ * of by limiting the depth of a function calls.
+ * Expensive? 70 msec for 1M calls. Use with care.
+ */
 mal_export str safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
 str
@@ -1519,21 +1553,22 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-@+ The interpreter loop
-The interpreter is geared towards execution a MAL procedure together
-with all its decendant invocations. As such, it provides the
-MAL abtract machine processor.
-
-The value-stack frame of the surrounding scope is needed to resolve
-binding values.  Getting (putting) a value from (into) a surrounding
-scope should be guarded with the exclusive access lock.
-This situation is encapsulated by a bind() function call, whose parameters
-contain the access mode required.
-
-The formal procedure arguments are assumed to always occupy the first
-elements in the value stack.
-@+ The major switch
-
+/*
+ * @+ The interpreter loop
+ * The interpreter is geared towards execution a MAL procedure together
+ * with all its decendant invocations. As such, it provides the
+ * MAL abtract machine processor.
+ *
+ * The value-stack frame of the surrounding scope is needed to resolve
+ * binding values.  Getting (putting) a value from (into) a surrounding
+ * scope should be guarded with the exclusive access lock.
+ * This situation is encapsulated by a bind() function call, whose parameters
+ * contain the access mode required.
+ *
+ * The formal procedure arguments are assumed to always occupy the first
+ * elements in the value stack.
+ * @+ The major switch
+ */
 @= MALinterpret
 	ret = 0;
 	switch (pci->token) {
@@ -1582,9 +1617,10 @@ elements in the value stack.
 		stkpc= mb->stop;
 		continue;
 	}
-@-
-After the expression has been evaluated we should check for a
-possible change in the control flow.
+@
+ * @-
+ * After the expression has been evaluated we should check for a
+ * possible change in the control flow.
 @= MALflowofcontrol
 	switch (pci->barrier) {
 	case BARRIERsymbol:
@@ -1718,19 +1754,20 @@ possible change in the control flow.
 		stkpc++;
 	}
 
-@+ Assignment command
-The assignment statement copies values around on the stack frame,
-including multiple assignments.
-
-Pushing constants/initial values onto the stack is a separate operation.
-It takes the constant value discovered at compile time and stored in the
-symbol table and moves it to the stackframe location. This activity
-is made part of the start-up procedure.
-
-The before after calls should be reconsidered here, because
-their. They seem superflous and the way they are used will
-cause errors in multi-assignment statements.
-@-
+@
+ * @+ Assignment command
+ * The assignment statement copies values around on the stack frame,
+ * including multiple assignments.
+ *
+ * Pushing constants/initial values onto the stack is a separate operation.
+ * It takes the constant value discovered at compile time and stored in the
+ * symbol table and moves it to the stackframe location. This activity
+ * is made part of the start-up procedure.
+ *
+ * The before after calls should be reconsidered here, because
+ * their. They seem superflous and the way they are used will
+ * cause errors in multi-assignment statements.
+ * @-
 @= assignStmt
 {
 	@:safeTarget(@1)@
@@ -1746,44 +1783,43 @@ cause errors in multi-assignment statements.
 	@:exceptionHndlr(@1, @2, @3)@
 	@:timingHndlr(@1)@
 }
-@}
-@-
-@node MAL API, Exception Handling, The MAL Interpreter, The MAL Interpreter
-
-@+ MAL API
-The linkage between MAL interpreter and compiled C-routines
-is kept as simple as possible.
-Basically we distinguish four kinds of calling conventions:
-CMDcall, FCNcall, FACcall, and  PATcall.
-The FCNcall indicates calling a MAL procedure, which leads
-to a recursive call to the interpreter.
-
-CMDcall initiates calling a linked function, passing pointers
-to the parameters and result variable, i.e.  f(ptr a0,..., ptr aN)
-The function returns a MAL-SUCCEED upon success and a pointer
-to an exception string upon failure.
-Failure leads to raise-ing an exception in the interpreter loop,
-by either looking up the relevant exception message in the module
-administration or construction of a standard string.
-
-The PATcall initiates a call which contains the MAL context,
-i.e. f(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-The mb provides access to the code definitions. It is primarilly
-used by routines intended to manipulate the code base itself, such
-as the optimizers. The Mal stack frame pointer provides access
-to the values maintained. The arguments passed are offsets
-into the stack frame rather than pointers to the actual value.
-
-@{
-BAT parameters require some care. Ideally, a BAT should not be kept
-around long. This would mean that each time we access a BAT it has to be
-pinned in memory and upon leaving the function, it is unpinned.
-This degrades performance significantly.
-After the parameters are fixed, we can safely free the destination
-variable and re-initialize it to nil.
-
-Before we execute an instruction the variables to be garbage collected
-are identified. In the post-execution phase they are removed.
+@
+ * @-
+ * @node MAL API, Exception Handling, The MAL Interpreter, The MAL Interpreter
+ *
+ * @+ MAL API
+ * The linkage between MAL interpreter and compiled C-routines
+ * is kept as simple as possible.
+ * Basically we distinguish four kinds of calling conventions:
+ * CMDcall, FCNcall, FACcall, and  PATcall.
+ * The FCNcall indicates calling a MAL procedure, which leads
+ * to a recursive call to the interpreter.
+ *
+ * CMDcall initiates calling a linked function, passing pointers
+ * to the parameters and result variable, i.e.  f(ptr a0,..., ptr aN)
+ * The function returns a MAL-SUCCEED upon success and a pointer
+ * to an exception string upon failure.
+ * Failure leads to raise-ing an exception in the interpreter loop,
+ * by either looking up the relevant exception message in the module
+ * administration or construction of a standard string.
+ *
+ * The PATcall initiates a call which contains the MAL context,
+ * i.e. f(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+ * The mb provides access to the code definitions. It is primarilly
+ * used by routines intended to manipulate the code base itself, such
+ * as the optimizers. The Mal stack frame pointer provides access
+ * to the values maintained. The arguments passed are offsets
+ * into the stack frame rather than pointers to the actual value.
+ *
+ * BAT parameters require some care. Ideally, a BAT should not be kept
+ * around long. This would mean that each time we access a BAT it has to be
+ * pinned in memory and upon leaving the function, it is unpinned.
+ * This degrades performance significantly.
+ * After the parameters are fixed, we can safely free the destination
+ * variable and re-initialize it to nil.
+ *
+ * Before we execute an instruction the variables to be garbage collected
+ * are identified. In the post-execution phase they are removed.
 @= safeTarget
 #ifdef STACKTRACE
 	printf("safeTarget %d\n", garbageControl(pci));
@@ -1887,7 +1923,8 @@ are identified. In the post-execution phase they are removed.
 			}
 		}
 	}
-@-
+@
+ * @-
 @= commandcall
 {
 	@:safeTarget(@1)@
@@ -2006,7 +2043,8 @@ are identified. In the post-execution phase they are removed.
 	@:exceptionHndlr(@1,@2,@3)@
 	@:timingHndlr(@1,@2)@
 }
-@-
+@
+ * @-
 @= patterncall
 	if (pci->fcn == NULL) {
 		ret = createScriptException(mb, stkpc, MAL, NULL,
@@ -2018,12 +2056,13 @@ are identified. In the post-execution phase they are removed.
 	}
 	@:exceptionHndlr(@1,@2,@3)@
 	@:timingHndlr(@1,@2)@
-@-
-MAL function calls are relatively expensive, because they have to assemble
-a new stack frame and do housekeeping, such as garbagecollection of all
-non-returned values.
-
-@-
+@
+ * @-
+ * MAL function calls are relatively expensive, because they have to assemble
+ * a new stack frame and do housekeeping, such as garbagecollection of all
+ * non-returned values.
+ *
+ * @-
 @= functioncall
 {	MalStkPtr nstk;
 	InstrPtr q;
@@ -2060,10 +2099,11 @@ non-returned values.
 	@:exceptionHndlr(@1,@2,@3)@
 	@:timingHndlr(@1)@
 }
-@-
-Factory calls are more involved. At this stage it is a synchrononous
-call to the factory manager.
-Factory calls should deal with the reference counting.
+@
+ * @-
+ * Factory calls are more involved. At this stage it is a synchrononous
+ * call to the factory manager.
+ * Factory calls should deal with the reference counting.
 @= factorycall
 	if (pci->blk == NULL)
 		ret = createScriptException(mb, stkpc, MAL, NULL,
@@ -2097,19 +2137,19 @@ Factory calls should deal with the reference counting.
 	}
 	@:exceptionHndlr(@1,@2,@3)@
 	@:timingHndlr(SLOW)@
-@-
-The type dispatching table in getArgReference can be removed if we
-determine at compile time the address offset within a ValRecord.
-We leave this optimization for the future, it leads to about 10%
-improvement (100ms for 1M calls).
-
-@+ Flow of control statements
-Each assignment (function call) may be part of the initialization
-of a barrier- block. In that case we have to test the
-outcome of the operation and possibly skip the block altogether.
-The latter is implemented as a linear scan for the corresponding
-labeled statemtent. This might be optimized later.
-
+@
+ * @-
+ * The type dispatching table in getArgReference can be removed if we
+ * determine at compile time the address offset within a ValRecord.
+ * We leave this optimization for the future, it leads to about 10%
+ * improvement (100ms for 1M calls).
+ *
+ * @+ Flow of control statements
+ * Each assignment (function call) may be part of the initialization
+ * of a barrier- block. In that case we have to test the
+ * outcome of the operation and possibly skip the block altogether.
+ * The latter is implemented as a linear scan for the corresponding
+ * labeled statemtent. This might be optimized later.
 @= barrierControl
 {
 	v = &stk->stk[getDestVar(pci)];
@@ -2155,11 +2195,12 @@ labeled statemtent. This might be optimized later.
 	}
 }
 
-@-
-You can skip to a catch block by searching for the corresponding 'lab'
-The return value should be set to pass the error automatically upon
-reaching end of function block.
-@-
+@
+ * @-
+ * You can skip to a catch block by searching for the corresponding 'lab'
+ * The return value should be set to pass the error automatically upon
+ * reaching end of function block.
+ * @-
 @= skipToCatch
 	if (stk->cmd == 'C' || mb->trap) {
 		stk->cmd = 'n';
@@ -2191,57 +2232,57 @@ reaching end of function block.
 		@:endProfile(@3)@
 		@2;
 	}
-@-
-Each time we enter a barrier block, we could keep its position in the
-interpreter stack frame. It forms the starting point to issue a redo.
-Unfortunately, this does not easily work in the presence of optimizers, which
-may change the order/block structure. Therefore, we simple have to search
-the beginning or ensure that during chkProgram the barrier/redo/leave/catch
-jumps are re-established.
-
-@}
-@-
-@node Exception Handling, Garbage Collection, MAL API, The MAL Interpreter
-@+ Exception handling
-Calling a built-in or user-defined routine may lead to an error or a
-cached status message to be dealt with in MAL.
-To improve error handling in MAL, an exception handling
-scheme based on @sc{catch}-@sc{exit} blocks. The @sc{catch}
-statement identifies a (string-valued) variable, which carries the
-exception message from
-the originally failed routine or @sc{raise} exception assignment.
-During normal processing @sc{catch}-@sc{exit} blocks are simply skipped.
-Upon receiving an exception status from a function call, we set the
-exception variable and skip to the first associated @sc{catch}-@sc{exit}
-block.
-MAL interpretation then continues until it reaches the end of the block.
-If no exception variable was defined, we should abandon the function
-alltogether searching for a catch block at a higher layer.
-
-@{
-For the time being we have ignored cascaded/stacked exceptions.
-The policy is to pass the first recognized exception to a context
-in which it can be handled.
-
-@}
-@-
-Exceptions raised within a linked-in function requires some care.
-First, the called procedure does not know anything about the MAL
-interpreter context. Thus, we need to return all relevant information
-upon leaving the linked library routine.
-
-Second, exceptional cases can be handled deeply in the recursion, where they
-may also be handled, i.e. by issueing an GDKerror message. The upper layers
-merely receive a negative integer value to indicate occurrence of an
-error somewhere in the calling sequence.
-We then have to also look into GDKerrbuf to see if there was
-an error raised deeply inside the system.
-
-The policy is to require all C-functions to return a string-pointer.
-Upon a successfull call, it is a NULL string. Otherwise it contains an
-encoding of the exceptional state encountered. This message
-starts with the exception identifer, followed by contextual details.
+@
 @h
+/*
+ * @-
+ * Each time we enter a barrier block, we could keep its position in the
+ * interpreter stack frame. It forms the starting point to issue a redo.
+ * Unfortunately, this does not easily work in the presence of optimizers, which
+ * may change the order/block structure. Therefore, we simple have to search
+ * the beginning or ensure that during chkProgram the barrier/redo/leave/catch
+ * jumps are re-established.
+ *
+ * @-
+ * @node Exception Handling, Garbage Collection, MAL API, The MAL Interpreter
+ * @+ Exception handling
+ * Calling a built-in or user-defined routine may lead to an error or a
+ * cached status message to be dealt with in MAL.
+ * To improve error handling in MAL, an exception handling
+ * scheme based on @sc{catch}-@sc{exit} blocks. The @sc{catch}
+ * statement identifies a (string-valued) variable, which carries the
+ * exception message from
+ * the originally failed routine or @sc{raise} exception assignment.
+ * During normal processing @sc{catch}-@sc{exit} blocks are simply skipped.
+ * Upon receiving an exception status from a function call, we set the
+ * exception variable and skip to the first associated @sc{catch}-@sc{exit}
+ * block.
+ * MAL interpretation then continues until it reaches the end of the block.
+ * If no exception variable was defined, we should abandon the function
+ * alltogether searching for a catch block at a higher layer.
+ *
+ * For the time being we have ignored cascaded/stacked exceptions.
+ * The policy is to pass the first recognized exception to a context
+ * in which it can be handled.
+ *
+ * @-
+ * Exceptions raised within a linked-in function requires some care.
+ * First, the called procedure does not know anything about the MAL
+ * interpreter context. Thus, we need to return all relevant information
+ * upon leaving the linked library routine.
+ *
+ * Second, exceptional cases can be handled deeply in the recursion, where they
+ * may also be handled, i.e. by issueing an GDKerror message. The upper layers
+ * merely receive a negative integer value to indicate occurrence of an
+ * error somewhere in the calling sequence.
+ * We then have to also look into GDKerrbuf to see if there was
+ * an error raised deeply inside the system.
+ *
+ * The policy is to require all C-functions to return a string-pointer.
+ * Upon a successfull call, it is a NULL string. Otherwise it contains an
+ * encoding of the exceptional state encountered. This message
+ * starts with the exception identifer, followed by contextual details.
+ */
 mal_export str catchKernelException(Client cntxt, str ret);
 @c
 str catchKernelException(Client cntxt, str ret)
@@ -2268,7 +2309,6 @@ str catchKernelException(Client cntxt, str ret)
 		z = ret;
 	return z;
 }
-@{
 @= exceptionHndlr
 if (cntxt->errbuf && cntxt->errbuf[0]) {
 	str oldret = ret;
@@ -2342,12 +2382,13 @@ if (ret != MAL_SUCCEED) {
 	@:skipToCatch(exceptionVar,@2,@3)@
 	pci = getInstrPtr(mb, stkpc);
 }
-@-
-@+ Result Recycler
-An optimization scheme for query sequences is to re-use variables
-as much as possible.
-The recycler works for any variable and relies on policy functions
-registered.
+@
+ * @-
+ * @+ Result Recycler
+ * An optimization scheme for query sequences is to re-use variables
+ * as much as possible.
+ * The recycler works for any variable and relies on policy functions
+ * registered.
 @= MALrecycleStart
 	if (pci->recycle > 0)
 		@1->clk = GDKusec();
@@ -2356,28 +2397,29 @@ registered.
 	if (pci->recycle > 0) {
 		RECYCLEexit(cntxt, mb, stk, pci, @1->clk);
 	}
-@}
-@-
-@node Garbage Collection, Stack Management, Exception Handling, The MAL Interpreter
-@+ Garbage collection
-Garbage collection is relatively straightforward, because most values are
-retained on the stackframe of an interpreter call. However, two storage
-types and possibly user-defined type garbage collector definitions
-require attention: BATs and strings.
-
-A key issue is to deal with temporary BATs in an efficient way.
-References to bats in the buffer pool may cause dangling references
-at the language level. This appears as soons as your share
-a reference and delete the BAT from one angle. If not carefull, the
-dangling pointer may subsequently be associated with another BAT
-
-All string values are private to the VALrecord, which means they
-have to be freed explicitly before a MAL function returns.
-The first step is to always safe the destination variable
-before a function call is made.
-@{
-@-
+@
 @c
+/*
+ * @-
+ * @node Garbage Collection, Stack Management, Exception Handling, The MAL Interpreter
+ * @+ Garbage collection
+ * Garbage collection is relatively straightforward, because most values are
+ * retained on the stackframe of an interpreter call. However, two storage
+ * types and possibly user-defined type garbage collector definitions
+ * require attention: BATs and strings.
+ *
+ * A key issue is to deal with temporary BATs in an efficient way.
+ * References to bats in the buffer pool may cause dangling references
+ * at the language level. This appears as soons as your share
+ * a reference and delete the BAT from one angle. If not carefull, the
+ * dangling pointer may subsequently be associated with another BAT
+ *
+ * All string values are private to the VALrecord, which means they
+ * have to be freed explicitly before a MAL function returns.
+ * The first step is to always safe the destination variable
+ * before a function call is made.
+ * @-
+ */
 void garbageElement(Client cntxt, ValPtr v)
 {
 	if (v->vtype == TYPE_str) {
@@ -2389,17 +2431,16 @@ void garbageElement(Client cntxt, ValPtr v)
 		return;
 	}
 	if (v->vtype == TYPE_bat) {
-@}
-@-
-All operations are responsible to properly set the
-reference count of the BATs being produced or destroyed.
-The libraries should not leave the
-physical reference count being set. This is only
-allowed during the execution of a GDK operation.
-All references should be logical.
-@-
-@{
-@c
+		/*
+		 * @-
+		 * All operations are responsible to properly set the
+		 * reference count of the BATs being produced or destroyed.
+		 * The libraries should not leave the
+		 * physical reference count being set. This is only
+		 * allowed during the execution of a GDK operation.
+		 * All references should be logical.
+		 * @-
+		 */
 		bat bid = ABS(v->val.bval);
 		/* printf("garbage collecting: %d lrefs=%d refs=%d\n",
 		   bid, BBP_lrefs(bid),BBP_refs(bid));*/
@@ -2413,25 +2454,24 @@ All references should be logical.
 		BBPdecref(bid, TRUE);
 	}
 }
-@-
-@}
-
-Before we return from the interpreter, we should free all
-dynamically allocated objects and adjust the BAT reference counts.
-Early experience shows that for small stack frames the overhead
-is about 200 ms for a 1M function call loop (tst400e). This means that
-for the time being we do not introduce more complex garbage
-administration code.
-
-Also note that for top-level stack frames (no environment available),
-we should retain the value stack because it acts as a global variables.
-This situation is indicated by the 'global' in the stack frame.
-@{
-Upon termination of the session, the stack should be cleared.
-Beware that variables may be know polymorphic, their actual
-type should be saved for variables that recide on a global
-stack frame.
-@c
+/*
+ * @-
+ *
+ * Before we return from the interpreter, we should free all
+ * dynamically allocated objects and adjust the BAT reference counts.
+ * Early experience shows that for small stack frames the overhead
+ * is about 200 ms for a 1M function call loop (tst400e). This means that
+ * for the time being we do not introduce more complex garbage
+ * administration code.
+ *
+ * Also note that for top-level stack frames (no environment available),
+ * we should retain the value stack because it acts as a global variables.
+ * This situation is indicated by the 'global' in the stack frame.
+ * Upon termination of the session, the stack should be cleared.
+ * Beware that variables may be know polymorphic, their actual
+ * type should be saved for variables that recide on a global
+ * stack frame.
+ */
 void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag)
 {
 	int k;
@@ -2455,12 +2495,13 @@ void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag)
 	(void)cntxt;
 #endif
 }
-@-
-Sometimes it helps to release a BAT when it won;t be used anymore.
-In this case, we have to assure that all references are cleared
-as well. The routine below performs this action in the local
-stack frame and its parents only.
-@c
+/*
+ * @-
+ * Sometimes it helps to release a BAT when it won;t be used anymore.
+ * In this case, we have to assure that all references are cleared
+ * as well. The routine below performs this action in the local
+ * stack frame and its parents only.
+ */
 void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid)
 {
 	int k;
@@ -2479,14 +2520,15 @@ void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid)
 	} while (stk);
 }
 
-@-
-@+ Performance section
-Running the program under dataflow control will screw up the
-order in which performance trace data is displayed. Moreover,
-we do not clearly see the start and end of the dataflow execution,
-because the performance data is the result of the 'failed' runMALdataflow().
-It simply skips the barrier block upon return.
-
+/*
+ * @-
+ * @+ Performance section
+ * Running the program under dataflow control will screw up the
+ * order in which performance trace data is displayed. Moreover,
+ * we do not clearly see the start and end of the dataflow execution,
+ * because the performance data is the result of the 'failed' runMALdataflow().
+ * It simply skips the barrier block upon return.
+ */
 @= performanceVariables
 	lng newclk = 0;
 	int ppc = -2;
@@ -2539,8 +2581,9 @@ It simply skips the barrier block upon return.
 			throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 	}
 
-@-
-#if @1
+@
+ * @-
+ * #if @1
 @= timingHndlr
 if (cntxt->flags && stk->cmd != 't' && stk->cmd != 'C') {
 	if (lock)
@@ -2601,14 +2644,17 @@ if (cntxt->flags && stk->cmd != 't' && stk->cmd != 'C') {
 	if (lock)
 		MT_lock_unset(&*lock, "timing");
 }
-@-
-#endif
-@-
-For performance evaluation it is handy to know the
-maximal amount of bytes read/written. The actual
-amount is harder to guess, because it too much
-depends on the operation.
+@
 @c
+/*
+ * @-
+ * #endif
+ * @-
+ * For performance evaluation it is handy to know the
+ * maximal amount of bytes read/written. The actual
+ * amount is harder to guess, because it too much
+ * depends on the operation.
+ */
 lng getVolume(MalStkPtr stk, InstrPtr pci, int rd)
 {
 	int i, limit;
@@ -2649,4 +2695,3 @@ void displayVolume(Client cntxt, lng vol)
 }
 @h
 #endif /*  _MAL_INTERPRET_H*/
-@}

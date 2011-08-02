@@ -17,17 +17,18 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f aggr_bge_prod
-@a S. Manegold 
-@v 1.0
-@+ Aggregates Module
-
-@{
-
-@+ Implementation
-These implementations need just one scan and a simple hash-maintained data
-structure to compute a group of common aggregates.
 @c
+/*
+ * @f aggr_bge_prod
+ * @a S. Manegold
+ * @v 1.0
+ * @+ Aggregates Module
+ *
+ *
+ * @+ Implementation
+ * These implementations need just one scan and a simple hash-maintained data
+ * structure to compute a group of common aggregates.
+ */
 #include "monetdb_config.h"
 #include <gdk.h>
 #include <gdk_scanselect.h>	/* for type-specific HT_bunfastins_nocheck_noinc(), until they're moved to gdk.mx */
@@ -35,14 +36,17 @@ structure to compute a group of common aggregates.
 #include "aggr_bge_prod.h"
 #include "aggr_be_prod.h"
 
-@- Result initialization
-/*	init_result
-	@1:	tail-type:	bte/sht/int/wrd/lng/flt/dbl / any / void
-*/
+/*
+ * @- Result initialization
+ * //	init_result
+ * 	@1:	tail-type:	bte/sht/int/wrd/lng/flt/dbl / any / void
+ *
+ */
 @include aggr_ri.mx
-
-@- Product
 @c
+/*
+ * @- Product
+ */
 /*	aggrX3_prod3
 		e-void-head	e-oid-head	e-oid-head	e-oid-head
 		void-lookup	array-lookup	scan-lookup	hash-lookup
@@ -149,6 +153,7 @@ structure to compute a group of common aggregates.
 	}
 	if (hit)
 		GDKfree(hit);
+@
 @c
 /*	aggrX3_prod3_body
 	@[11]:	oid hh = (oid) (gt_offset + v); oid *h = &hh		g tail value calculation
@@ -371,9 +376,9 @@ CMDaggrX3_prod3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e)
 @:arithprod3_hc(@1,flt,flt)@
 @:arithprod3_hc(@1,flt,dbl)@
 @:arithprod3_hc(@1,dbl,dbl)@
+@
 @h
 @:arithprod3(h)@
 @c
 @:arithprod3(c)@
 
-@}

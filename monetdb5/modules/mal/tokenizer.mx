@@ -17,35 +17,37 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f tokenizer
-@a Lefteris Sidirourgos
-@v 0.1
-@* Tokenizer
-This module implements a vertical fragmented tokenizer for strings. It is based
-on the ideas of the urlbox module by mk.
-
-The input string is tokenized according to a separator character. Each token is
-inserted to the next BAT with the same order of appearance in the string. We
-currently support 255 tokens in each string as this module is intended for use
-with short and similar strings such as URLs. In addition we maintain a
-2-dimensional index that points to the depth and height of the last token of
-each string. The 2-dimensional index is combined to one BAT where the 8 least
-significant bits represent the depth, and the rest bits the height.
-
-The tokenizer can be accessed in two ways. Given the oid retrieve the
-re-constructed string, or given a string return its oid if present, otherwise
-nil.
-
-Strings can be added either in batch (from a file or a bat of strings) and by
-appending a single string. Duplicate elimination is always performed.
-
-There can be only one tokenizer open at the same time. This is achieved by
-setting a TRANSaction bat. This might change in the future. However there
-can be more than one tokenizers stored in the disk, each of which is identified
-by its name (usually the name of the active schema of the db). These
-administrative issues and security aspects (e.g., opening a tokenizer of
-a different schema) should be addressed more thoroughly.
-
+@c
+/*
+ * @f tokenizer
+ * @a Lefteris Sidirourgos
+ * @v 0.1
+ * @* Tokenizer
+ * This module implements a vertical fragmented tokenizer for strings. It is based
+ * on the ideas of the urlbox module by mk.
+ *
+ * The input string is tokenized according to a separator character. Each token is
+ * inserted to the next BAT with the same order of appearance in the string. We
+ * currently support 255 tokens in each string as this module is intended for use
+ * with short and similar strings such as URLs. In addition we maintain a
+ * 2-dimensional index that points to the depth and height of the last token of
+ * each string. The 2-dimensional index is combined to one BAT where the 8 least
+ * significant bits represent the depth, and the rest bits the height.
+ *
+ * The tokenizer can be accessed in two ways. Given the oid retrieve the
+ * re-constructed string, or given a string return its oid if present, otherwise
+ * nil.
+ *
+ * Strings can be added either in batch (from a file or a bat of strings) and by
+ * appending a single string. Duplicate elimination is always performed.
+ *
+ * There can be only one tokenizer open at the same time. This is achieved by
+ * setting a TRANSaction bat. This might change in the future. However there
+ * can be more than one tokenizers stored in the disk, each of which is identified
+ * by its name (usually the name of the active schema of the db). These
+ * administrative issues and security aspects (e.g., opening a tokenizer of
+ * a different schema) should be addressed more thoroughly.
+ */
 @mal
 module tokenizer
 comment "The tokenizer provides fast access to a large collection of strings
@@ -91,10 +93,11 @@ command getCardinality():bat[:void,:wrd]
 address TKNZRgetCardinality
 comment "debugging function that returns the unique tokens at each level";
 
-@{
-@-
-@+ Implementation
 @h
+/*
+ * @-
+ * @+ Implementation
+ */
 #ifndef _TKNZR_H
 #define _TKNZR_H
 #include "mal.h"
@@ -114,6 +117,7 @@ comment "debugging function that returns the unique tokens at each level";
 @= params
 (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
+@
 @h
 tokenizer_export str TKNZRopen             (int *r, str *name);
 tokenizer_export str TKNZRclose            (int *r);
@@ -228,6 +232,7 @@ if (TRANS == NULL) {
 	throw(MAL, "tokenizer", "no tokenizer store open");
 }
 
+@
 @c
 str
 TKNZRclose(int *r)
@@ -251,14 +256,15 @@ TKNZRclose(int *r)
 	return MAL_SUCCEED;
 }
 
-@- Tokenize operations
-The tokenizer operation assumes a private copy to mark the
-end of the token separators with a zero byte. Tokens are
-separated by a single character for simplicity.
-Might be a good scheme to assume that strings to be broken
-are properly ended with either 0 or nl, not both.
-It seems 0 can be assumed.
-@c
+/*
+ * @- Tokenize operations
+ * The tokenizer operation assumes a private copy to mark the
+ * end of the token separators with a zero byte. Tokens are
+ * separated by a single character for simplicity.
+ * Might be a good scheme to assume that strings to be broken
+ * are properly ended with either 0 or nl, not both.
+ * It seems 0 can be assumed.
+ */
 static int
 TKNZRtokenize(str in, str *parts, char tkn) {
 	char *s, *t;
@@ -324,8 +330,9 @@ TKNZRtokenize(str in, str *parts, char tkn) {
 		tokenDepth = depth;
 	}
 
-@-
-Find the common prefix first
+@
+ * @-
+ * Find the common prefix first
 @= findcommon
 	p = BUNfnd(BATmirror(tokenBAT[0]), parts[0]);
 	if (p != BUN_NONE) {
@@ -349,8 +356,9 @@ Find the common prefix first
 		i = 0;
 	}
 
-@-
-Insert the remainder as a new string
+@
+ * @-
+ * Insert the remainder as a new string
 @= insremainder
 	for(; i < depth; i++){
 		idx = BATcount(tokenBAT[i]);
@@ -373,6 +381,7 @@ Insert the remainder as a new string
 		prv = (oid) idx;
 	}
 
+@
 @c
 str
 TKNZRappend(oid *pos, str *s)
@@ -654,4 +663,3 @@ TKNZRgetCardinality (int *r) {
 	return MAL_SUCCEED;
 }
 
-@}

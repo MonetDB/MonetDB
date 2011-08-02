@@ -17,44 +17,47 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f bat5
-@v 2.0
-@a Peter Boncz, M.L. Kersten
-@+ Binary Association Tables
-This module contains the commands and patterns to manage Binary
-Association Tables (BATs). The relational operations you can execute
-on BATs have the form of a neat algebra, described in algebra.mx
-
-But a database system needs more that just this algebra, since often it
-is crucial to do table-updates (this would not be permitted in a strict
-algebra).
-
-All commands needed for BAT updates, property management, basic I/O, 
-persistence, and storage options can be found in this module.
-
-All parameters to the modules are passed by reference.
-In particular, this means that string values are passed to the module
-layer as (str *)
-and we have to de-reference them before entering the gdk library.
-(Actual a design error in gdk to differentiate passing int/str)
-This calls for knowledge on the underlying BAT types`s
-@-
-@{
+@c
+/*
+ * @f bat5
+ * @v 2.0
+ * @a Peter Boncz, M.L. Kersten
+ * @+ Binary Association Tables
+ * This module contains the commands and patterns to manage Binary
+ * Association Tables (BATs). The relational operations you can execute
+ * on BATs have the form of a neat algebra, described in algebra.mx
+ *
+ * But a database system needs more that just this algebra, since often it
+ * is crucial to do table-updates (this would not be permitted in a strict
+ * algebra).
+ *
+ * All commands needed for BAT updates, property management, basic I/O,
+ * persistence, and storage options can be found in this module.
+ *
+ * All parameters to the modules are passed by reference.
+ * In particular, this means that string values are passed to the module
+ * layer as (str *)
+ * and we have to de-reference them before entering the gdk library.
+ * (Actual a design error in gdk to differentiate passing int/str)
+ * This calls for knowledge on the underlying BAT types`s
+ * @-
+ */
 @= derefStr
 { if( @1->@2type >= TYPE_str  && ATOMstorage(@1->@2type) >= TYPE_str)
  { if(@3== 0 || *(str*)@3==0) @3 = (str)str_nil;
    else @3 = *(str *)@3; 
 }}
-@-
-The code speaks for itself
-
-#command access( b:bat[:any_1,:any_2], mode:int) :bat[:any_1,:any_2]
-#address BKCaccess;
-
-#command setSequenceBase( b:bat[:oid,:any_1], base:oid):void
-#address BKCsetSequenceBase
-#comment "Set the sequence base for the void column of a BAT.";
+@
 @mal
+# @-
+# The code speaks for itself
+#
+# #command access( b:bat[:any_1,:any_2], mode:int) :bat[:any_1,:any_2]
+# #address BKCaccess;
+#
+# #command setSequenceBase( b:bat[:oid,:any_1], base:oid):void
+# #address BKCsetSequenceBase
+# #comment "Set the sequence base for the void column of a BAT.";
 module bat;
 command attach(tt:int, heapfile:str) :bat[:void,:any_1]
 address BKCattach
@@ -88,64 +91,62 @@ address BKCrevert
 comment "Puts all BUNs in a BAT in reverse order.  (Belongs to the 
         BAT sequence module)";
 
-@+ BAT properties
-Properties of BATs not necessarily require loading the BAT completely.
-The BAT identifier can be used to access the descriptors.
-These properties can be inspected with the 
-@emph{info(BAT[:any_1,:any_2]) :bat[str,str] } command:
-@verbatim
-> car_age.info.print;
-#---------------------------------#
-# BAT:               tmp_31       #
-# (str)              (str)        #
-#---------------------------------#
-[ "batId",           "car_age"    ] # logical bat name
-[ "batCacheid",      "26"         ] # BBP index
-[ "batParentid",     "0"          ] # set if a BAT is a view
-[ "head",            "void"       ] # physical head-type
-[ "tail",            "int"        ] # physical tail-type
-[ "batPersistence",  "persistent" ] # transient/session/persistent
-[ "batRestricted",   "updatable"  ] # read-only/append-only/updatable
-[ "batDirty",        "clean"      ] # clean/dirty
-[ "batRefcnt",       "1"          ] # physical refcount
-[ "batLRefcnt",      "1"          ] # logical refcount (total)
-[ "batPlevel",       "1"          ] # logical refcount (persistent part)
-[ "batSet",          "0"          ] # [head,tail] combinations are unique
-[ "batCopiedtodisk", "1"          ] # has been saved or not
-@end verbatim
-
-Per column, a number of properties are kept. We only show the head-properties; the tail properties
-have the first character of their named replaced by 't' (@emph{sorted}, @emph{tdense}, etc.):
-
-@verbatim
-[ "hsorted",         "1"          ] # column is known to be sorted
-[ "hdense",          "1"          ] # column is known to be densely ascended
-[ "hseqbase",        "0@0"        ] # if densely ascending first value
-@end verbatim
-
-As described in the @[<a href="www/gdk.html#mod_1_3_0">GDK Technical Reference</a>@,
-BATs store their data in one to six heaps. For each column type that is @emph{variable-sized} - 
-like @emph{str} - another
-heap might be present (@emph{hheap} and @emph{theap}). 
-
-@verbatim
-[ "head.free",    "400004"     ] # occupied size in bytes
-[ "head.size",    "400012"     ] # allocated size in bytes
-[ "head.maxsize", "400012"     ] # reserver virtual memory in bytes
-[ "head.storage", "malloced"   ] # malloced/mmap/priv
-@end verbatim
-
-Properties steer the algorithms that Monet uses to execute algebra command. For instance,
-the @emph{find(bat[:any_1,:any_2] b, :any_1) :any_2} that looks up a tail value by head,
-uses binary search if and only if the head column is sorted (in other cases, hash-lookup
-and scan are execution options).
-
-Sometimes new (extension) code contains bugs in the property management, leaving false
-properties on produced BATs. You can imagine that later on, this leads to additional
-bugs, as e,g, the binary search algorithms will yield erroneous results on a non-sorted
-sequence.
-
-@mal
+# @+ BAT properties
+# Properties of BATs not necessarily require loading the BAT completely.
+# The BAT identifier can be used to access the descriptors.
+# These properties can be inspected with the
+# @emph{info(BAT[:any_1,:any_2]) :bat[str,str] } command:
+# @verbatim
+# > car_age.info.print;
+# #---------------------------------#
+# # BAT:               tmp_31       #
+# # (str)              (str)        #
+# #---------------------------------#
+# [ "batId",           "car_age"    ] # logical bat name
+# [ "batCacheid",      "26"         ] # BBP index
+# [ "batParentid",     "0"          ] # set if a BAT is a view
+# [ "head",            "void"       ] # physical head-type
+# [ "tail",            "int"        ] # physical tail-type
+# [ "batPersistence",  "persistent" ] # transient/session/persistent
+# [ "batRestricted",   "updatable"  ] # read-only/append-only/updatable
+# [ "batDirty",        "clean"      ] # clean/dirty
+# [ "batRefcnt",       "1"          ] # physical refcount
+# [ "batLRefcnt",      "1"          ] # logical refcount (total)
+# [ "batPlevel",       "1"          ] # logical refcount (persistent part)
+# [ "batSet",          "0"          ] # [head,tail] combinations are unique
+# [ "batCopiedtodisk", "1"          ] # has been saved or not
+# @end verbatim
+#
+# Per column, a number of properties are kept. We only show the head-properties; the tail properties
+# have the first character of their named replaced by 't' (@emph{sorted}, @emph{tdense}, etc.):
+#
+# @verbatim
+# [ "hsorted",         "1"          ] # column is known to be sorted
+# [ "hdense",          "1"          ] # column is known to be densely ascended
+# [ "hseqbase",        "0@0"        ] # if densely ascending first value
+# @end verbatim
+#
+# As described in the @[<a href="www/gdk.html#mod_1_3_0">GDK Technical Reference</a>@,
+# BATs store their data in one to six heaps. For each column type that is @emph{variable-sized} -
+# like @emph{str} - another
+# heap might be present (@emph{hheap} and @emph{theap}).
+#
+# @verbatim
+# [ "head.free",    "400004"     ] # occupied size in bytes
+# [ "head.size",    "400012"     ] # allocated size in bytes
+# [ "head.maxsize", "400012"     ] # reserver virtual memory in bytes
+# [ "head.storage", "malloced"   ] # malloced/mmap/priv
+# @end verbatim
+#
+# Properties steer the algorithms that Monet uses to execute algebra command. For instance,
+# the @emph{find(bat[:any_1,:any_2] b, :any_1) :any_2} that looks up a tail value by head,
+# uses binary search if and only if the head column is sorted (in other cases, hash-lookup
+# and scan are execution options).
+#
+# Sometimes new (extension) code contains bugs in the property management, leaving false
+# properties on produced BATs. You can imagine that later on, this leads to additional
+# bugs, as e,g, the binary search algorithms will yield erroneous results on a non-sorted
+# sequence.
 command info ( b:bat[:any_1,:any_2]) :bat[:str,:str] 
 address BKCinfo
 comment "Produce a BAT containing info about a BAT in [attribute,value] format. 
@@ -270,10 +271,9 @@ command getSpaceUsed(b:bat[:any_1,:any_2]) :lng
 address BKCgetSpaceUsed
 comment "Determine the total space (in bytes) occupied by a BAT.";
 
-@- BAT updates
-Update commands come in many disguises.  Note that we don;t return
-the BAT id, but merely a success/failure code.
-@mal
+# @- BAT updates
+# Update commands come in many disguises.  Note that we don;t return
+# the BAT id, but merely a success/failure code.
 command insert(b:bat[:any_1,:any_2], src:bat[:any_1,:any_2]):bat[:any_1,:any_2]
 address BKCinsert_bat
 comment "Insert all BUNs of the second BAT into the first.";
@@ -290,8 +290,7 @@ command insert(b:bat[:any_1,:any_2], h:any_1, t:any_2, force:bit) :bat[:any_1,:a
 address BKCinsert_bun_force
 comment "Insert one BUN[h,t] in a BAT.";
 
-@+
-@mal
+# @+
 command replace(b:bat[:any_1, :any_2], src:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
 address BKCreplace_bat
 comment "Perform replace for all BUNs of the second BAT into the first.";
@@ -307,9 +306,8 @@ comment "Replace the tail value of one BUN that has some head value.";
 command replace(b:bat[:any_1, :any_2], h:any_1, t:any_2, force:bit) :bat[:any_1,:any_2]
 address BKCreplace_bun_force
 comment "Replace the tail value of one BUN that has some head value.";
-@-
-The SQL append/inplace commands
-@mal
+# @-
+# The SQL append/inplace commands
 command append( i:bat[:any_1,:any_2], u:bat[:any_1,:any_2] ) :bat[:any_1,:any_2]
 address BKCappend_wrap
 comment "append the content of u to i";
@@ -350,7 +348,6 @@ command inplace( o:bat[:any_1,:any_2], d:bat[:any_1,:any_2], force:bit) :bat[:an
 address BKCbat_inplace_force
 comment "inplace replace values on the given locations";
 
-@mal
 command delete(b:bat[:any_1, :any_2], h:any_1, t:any_2) :bat[:any_1,:any_2]
 address BKCdelete_bun
 comment "Delete one specific BUN.";
@@ -363,7 +360,6 @@ command delete(b:bat[:any_1, :any_2]) :bat[:any_1,:any_2]
 address BKCdelete_all
 comment "Delete all BUNs in a BAT.";
 
-@mal
 command deleteHead(b:bat[:any_1, :any_2], src:bat[:any_1,:any]) :void
 address BKCdelete_bat
 comment "Delete from the first BAT all BUNs with a corresponding head  
@@ -380,23 +376,21 @@ comment "Obtain the list of BUNs added";
 command getDelta(b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
 address BKCgetDelta
 comment "Obtain the list of BUNs deleted";
-@- BAT I/O, Persistency
-The BAT Buffer Pool (BBP) manages all known BATs. It administers
-their logical and physical names and a reference count. BATs can
-either be @emph{persistent} or @emph{transient}. The BBP also manages
-swapping on a BAT level:a BAT is either loaded entirely or not.
-MAL variables of type @emph{bat} can either be loaded or not. When
-the Monet server is started, all BATs are swapped out. If an unloaded
-bat-variable is used as an operand in a command, it is automatically
-loaded.  The BBP applies a simple but effective LRU based swapping
-algorithm. BATs have a @emph{heat}, which drops over time, and is
-increased when a BAT is used by some command.  If the size of the
-allocated arena gets to be large, BATs may be swapped out.
-
-Note, we should move old-fashioned mil operator definitions
-into a separate module.
-
-@mal
+# @- BAT I/O, Persistency
+# The BAT Buffer Pool (BBP) manages all known BATs. It administers
+# their logical and physical names and a reference count. BATs can
+# either be @emph{persistent} or @emph{transient}. The BBP also manages
+# swapping on a BAT level:a BAT is either loaded entirely or not.
+# MAL variables of type @emph{bat} can either be loaded or not. When
+# the Monet server is started, all BATs are swapped out. If an unloaded
+# bat-variable is used as an operand in a command, it is automatically
+# loaded.  The BBP applies a simple but effective LRU based swapping
+# algorithm. BATs have a @emph{heat}, which drops over time, and is
+# increased when a BAT is used by some command.  If the size of the
+# allocated arena gets to be large, BATs may be swapped out.
+#
+# Note, we should move old-fashioned mil operator definitions
+# into a separate module.
 command setName ( b:bat[:any_1,:any_2] , s:str) :void
 address BKCsetName
 comment "Give a logical name to a BAT. ";
@@ -470,37 +464,36 @@ address BKChotBAT
 comment "Makes a BAT very hot for the BBP. The chance of being chosen for 
         swapout is small, afterwards.";
 
-@- Heap Specific Commands
-BATs are stored in memory in a number of Heap objects. A heap is nothing
-more than a contiguous range of memory. Bats are saved to disk by just writing
-away their image. This approach without pointer swizzling makes it possible
-to either load an image into an alloced range of memory (STORE_MEM), or
-memory-map (STORE_MMAP) an image into virtual memory.
-
-The heap images of a BAT are stored in the @emph{$MONETHOME/dbfarm/$DB/bat/}
-directory.  For each bat X, the following heaps are stored:
-@table @code
-@item[X.buns] 
-    an array with all the fixed-size parts of all BUNs.
-@item[X.hheap] 
-    if the head column contains a variable sized atoms (e.g. str),
-then the fixed-size part of a BUN contains an integer byte-offset into
-the heap. String values themselves are stored in this the X.hheap.
-@item[X.theap] 
-    similar to X.hheap, but for the tail column.
-@item[X.desc] 
-the BAT descriptor. Stores most of the properties of a BAT.
-@end table
-
-Each of these heaps can be compressed using the Unix @emph{compress}
-utility forming a X.ext.Z file. Monet will automatically decompress it
-upon load. Compressed heaps cannot be memory mapped.
-
-@
-For more technical information on BATs, we refer to the
-@[<a href="http://www.cwi.nl/~monet/www/scw/gdk/470_pseudo.html">GDK</a>@
-documentation.
-@mal
+# @- Heap Specific Commands
+# BATs are stored in memory in a number of Heap objects. A heap is nothing
+# more than a contiguous range of memory. Bats are saved to disk by just writing
+# away their image. This approach without pointer swizzling makes it possible
+# to either load an image into an alloced range of memory (STORE_MEM), or
+# memory-map (STORE_MMAP) an image into virtual memory.
+#
+# The heap images of a BAT are stored in the @emph{$MONETHOME/dbfarm/$DB/bat/}
+# directory.  For each bat X, the following heaps are stored:
+# @table @code
+# @item[X.buns]
+#     an array with all the fixed-size parts of all BUNs.
+# @item[X.hheap]
+#     if the head column contains a variable sized atoms (e.g. str),
+# then the fixed-size part of a BUN contains an integer byte-offset into
+# the heap. String values themselves are stored in this the X.hheap.
+# @item[X.theap]
+#     similar to X.hheap, but for the tail column.
+# @item[X.desc]
+# the BAT descriptor. Stores most of the properties of a BAT.
+# @end table
+#
+# Each of these heaps can be compressed using the Unix @emph{compress}
+# utility forming a X.ext.Z file. Monet will automatically decompress it
+# upon load. Compressed heaps cannot be memory mapped.
+#
+#
+# For more technical information on BATs, we refer to the
+# @[<a href="http://www.cwi.nl/~monet/www/scw/gdk/470_pseudo.html">GDK</a>@
+# documentation.
 command setMemoryMap(b:bat[:any_1,:any_2], head_mode:int, tail_mode:int, hheap_mode:int, theap_mode:int) :bit 
 address BKCmmap
 comment "For each individual heap, you can change the allocation mode 
@@ -534,49 +527,47 @@ comment "alias for madvise(b, mode, mode, mode, mode)";
 command setHash(b:bat[:any_1,:any_2],prop:bit):bit 
 address BKCsetHash;
 
-@- Synced BATs
-The binary model of Monet has important advantages when working in
-main-memory. Tables are thin and very efficiently processed. The binary
-model gives rise, however, to a larger-than-normal number of join
-and semijoin operations. Relations are split up in vertical parts that
-are very much related to each other. Then, for instance, multiple
-similar semijoins occur on different vertical parts. By equipping the
-kernel with knowledge about the correspondence of these parts, we
-can greatly limit the amount of work to be done.
-
-When two BATs effectively contain the same sequence of head elements,
-we call them 'synced'. This is implemented by storing a very large
-OID for each column. An update to the column destroys this OID.
-By comparing two OIDs the Monet kernel can very quickly decide that
-two columns are exactly equal. All BAT algebra operations propagate
-these 'sync' OIDs with their own propagation rules.
-@mal
+# @- Synced BATs
+# The binary model of Monet has important advantages when working in
+# main-memory. Tables are thin and very efficiently processed. The binary
+# model gives rise, however, to a larger-than-normal number of join
+# and semijoin operations. Relations are split up in vertical parts that
+# are very much related to each other. Then, for instance, multiple
+# similar semijoins occur on different vertical parts. By equipping the
+# kernel with knowledge about the correspondence of these parts, we
+# can greatly limit the amount of work to be done.
+#
+# When two BATs effectively contain the same sequence of head elements,
+# we call them 'synced'. This is implemented by storing a very large
+# OID for each column. An update to the column destroys this OID.
+# By comparing two OIDs the Monet kernel can very quickly decide that
+# two columns are exactly equal. All BAT algebra operations propagate
+# these 'sync' OIDs with their own propagation rules.
 command isSynced (b1:bat[:any_1,:any_2], b2:bat[:any_3,:any_4]) :bit 
 address BKCisSynced
 comment "Tests whether two BATs are synced or not. ";
 
-@- Constants
-The following constants have not been integrated in the code base
-
-#Constants have been added to mal/const.mx prelude
-#    STORE_MEM   := 0;     # load into GDKmalloced memory
-#    STORE_MMAP  := 1;     # mmap() into virtual memory
-#    STORE_COMPR := 2;     # currently not implemented this way
-#    BUF_NORMAL    := 0;   # No further special treatment
-#    BUF_RANDOM    := 1;   # Expect random page references
-#    BUF_SEQUENTIAL:= 2;   # Expect sequential page references
-#    BUF_WILLNEED  := 3;   # Will need these pages
-#    BUF_DONTNEED  := 4;   # Don't need these pages
-
-@- Shrinking BATs
-The SQL front-end uses a multi-BAT representation for relational tables.
-This includes a list of tuples to be deleted at some convenient time.
-The primitives to consolidate the information consists of shrink()
-and reuse(). 
-The former simply compresses the underlying BAT skipping over all
-oids mentioned as to-be-deleted. The reuse() operator takes the tail
-of the BAT an fills all the holes that occur due to the deletion list.
-@mal
+# @- Constants
+# The following constants have not been integrated in the code base
+#
+# #Constants have been added to mal/const.mx prelude
+# #    STORE_MEM   := 0;     # load into GDKmalloced memory
+# #    STORE_MMAP  := 1;     # mmap() into virtual memory
+# #    STORE_COMPR := 2;     # currently not implemented this way
+# #    BUF_NORMAL    := 0;   # No further special treatment
+# #    BUF_RANDOM    := 1;   # Expect random page references
+# #    BUF_SEQUENTIAL:= 2;   # Expect sequential page references
+# #    BUF_WILLNEED  := 3;   # Will need these pages
+# #    BUF_DONTNEED  := 4;   # Don't need these pages
+#
+# @- Shrinking BATs
+# The SQL front-end uses a multi-BAT representation for relational tables.
+# This includes a list of tuples to be deleted at some convenient time.
+# The primitives to consolidate the information consists of shrink()
+# and reuse().
+# The former simply compresses the underlying BAT skipping over all
+# oids mentioned as to-be-deleted. The reuse() operator takes the tail
+# of the BAT an fills all the holes that occur due to the deletion list.
 command shrink(b:bat[:oid,:any_1],del:bat[:oid,:oid]):bat[:oid,:any_1]
 address BKCshrinkBAT
 comment "Shrink the BAT based on a list of entries identified as to-be-deleted";
@@ -593,12 +584,13 @@ command reuseMap(b:bat[:oid,:any_1],del:bat[:oid,:oid]):bat[:oid,:oid]
 address BKCreuseBATmap
 comment "Derive the oid mapping for reuse BAT based on list of to-be-deleted";
 
-@+ Implementation Code
-In Version 5, we are not going to support recursive BATs.
-It is up to the programmer to translate a bat into a
-bat-name or batCacheid
-
 @h
+/*
+ * @+ Implementation Code
+ * In Version 5, we are not going to support recursive BATs.
+ * It is up to the programmer to translate a bat into a
+ * bat-name or batCacheid
+ */
 #ifndef _BAT_H_
 #define _BAT_H_
 
@@ -716,12 +708,17 @@ bat5_export str BKCreuseBATmap(int *ret, int *bid, int *did);
 #include "monetdb_config.h"
 #include "bat5.h"
 #include "mal_exception.h"
-@-
+/*
+ * @-
+ */
 @= batconvert
 	(BAT@2type(@1) == TYPE_bat)?(ptr)&((BAT*)@2)->batCacheid:(ptr)@2
 
-@+ Information Functions
+@
 @c
+/*
+ * @+ Information Functions
+ */
 
 static int
 CMDnew(BAT **ret, int *ht, int *tt, BUN *cap)
@@ -780,10 +777,11 @@ CMDmirror(BAT **ret, BAT *b)
 	return (*ret) ? GDK_SUCCEED : GDK_FAIL;
 }
 
-@-
-The next collection of operators fill a hole in the MonetDB kernel libraries.
-It provide handy operations on void-BATs.
-@c
+/*
+ * @-
+ * The next collection of operators fill a hole in the MonetDB kernel libraries.
+ * It provide handy operations on void-BATs.
+ */
 static BAT *
 lock_desc(bat bid)
 {
@@ -1179,8 +1177,9 @@ CMDbatsize(lng *tot, BAT *b, int force)
 	return GDK_SUCCEED;
 }
 
-@+ Synced BATs
-@c
+/*
+ * @+ Synced BATs
+ */
 static int
 CMDsynced(bit *ret, BAT *b1, BAT *b2)
 {
@@ -1188,8 +1187,9 @@ CMDsynced(bit *ret, BAT *b1, BAT *b2)
 	return GDK_SUCCEED;
 }
 
-@+ BBP Management, IO
-@c
+/*
+ * @+ BBP Management, IO
+ */
 static int
 CMDrename(bit *retval, BAT *b, str s)
 {
@@ -1281,17 +1281,17 @@ CMDmmap(BAT **r, BAT *b, int *hbns, int *tbns, int *hhp, int *thp)
 	return GDK_FAIL;
 }
 
-@}
 
-@- Wrapping
-The remainder contains the wrapper code over the version 4
-@+ InformationFunctions
-In most cases we pass a BAT identifier, which should be unified
-with a BAT descriptor. Upon failure we can simply abort the function.
-
-The logical head type :oid is mapped to a TYPE_void
-with sequenceBase. It represents the old fashioned :vid
-@c
+/*
+ * @- Wrapping
+ * The remainder contains the wrapper code over the version 4
+ * @+ InformationFunctions
+ * In most cases we pass a BAT identifier, which should be unified
+ * with a BAT descriptor. Upon failure we can simply abort the function.
+ *
+ * The logical head type :oid is mapped to a TYPE_void
+ * with sequenceBase. It represents the old fashioned :vid
+ */
 
 
 str
@@ -1435,10 +1435,12 @@ BKCorder_rev(int *ret, int *bid)
 	return MAL_SUCCEED;
 }
 
-@-
-Insertions into the BAT may involve void types (=no storage required)
-These cases should actually be captured during BUNins, because they
-may emerge internally as well.
+/*
+ * @-
+ * Insertions into the BAT may involve void types (=no storage required)
+ * These cases should actually be captured during BUNins, because they
+ * may emerge internally as well.
+ */
 @= void_insertbun
 if (b->@1type == TYPE_void && *(oid*) @1 != oid_nil &&
     *(oid*) @1 != (b->@1seqbase + BUNgetpos(b, BUNlast(b))))
@@ -1447,6 +1449,7 @@ printf("val " OIDFMT " seqbase " OIDFMT " pos " BUNFMT "\n", *(oid*)@1,
 	b->@1seqbase,  BUNgetpos(b, BUNlast(b)) );
       throw(MAL, "bat.insert", OPERATION_FAILED " Insert non-nil values in a void column.");
 }
+@
 @c
 
 char *
@@ -2107,11 +2110,12 @@ BKCisSortedReverse(bit *res, int *bid)
 	return MAL_SUCCEED;
 }
 
-@-
-We must take care of the special case of a nil column (TYPE_void,seqbase=nil)
-such nil columns never set hkey (and BUNins will never invalidate it if set) yet
-a nil column of a BAT with <= 1 entries does not contain doubles => return TRUE.
-@c
+/*
+ * @-
+ * We must take care of the special case of a nil column (TYPE_void,seqbase=nil)
+ * such nil columns never set hkey (and BUNins will never invalidate it if set) yet
+ * a nil column of a BAT with <= 1 entries does not contain doubles => return TRUE.
+ */
 
 str
 BKCgetKey(bit *ret, int *bid)
@@ -2187,7 +2191,9 @@ BKCisTransient(bit *res, int *bid)
 	return MAL_SUCCEED;
 }
 
-@-
+/*
+ * @-
+ */
 @= accessMode_export
 bat5_export str BKCset@1(int *res, int *bid) ;
 bat5_export str BKChas@1(bit *res, int *bid);
@@ -2213,8 +2219,11 @@ str BKChas@1(bit *res, int *bid) {
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
-@-
+@
 @h
+/*
+ * @-
+ */
 @:accessMode_export(WriteMode,0,w)@
 @:accessMode_export(ReadMode,1,r)@
 @:accessMode_export(AppendMode,2,a)@
@@ -2300,11 +2309,12 @@ BKCgetAccess(str *res, int *bid)
 	return MAL_SUCCEED;
 }
 
-@- Property management
-All property operators should ensure exclusive access to the BAT
-descriptor.
-Where necessary use the primary view to access the properties
-@c
+/*
+ * @- Property management
+ * All property operators should ensure exclusive access to the BAT
+ * descriptor.
+ * Where necessary use the primary view to access the properties
+ */
 str
 BKCinfo(int *retval, int *bid)
 {
@@ -2406,8 +2416,9 @@ BKCgetStorageSize_str(lng *tot, str batname)
 	return BKCgetStorageSize(tot, &bid);
 }
 
-@+ Synced BATs
-@c
+/*
+ * @+ Synced BATs
+ */
 str
 BKCisSynced(bit *ret, int *bid1, int *bid2)
 {
@@ -2426,8 +2437,9 @@ BKCisSynced(bit *ret, int *bid1, int *bid2)
 	return MAL_SUCCEED;
 }
 
-@+ Role Management
-@c
+/*
+ * @+ Role Management
+ */
 char *
 BKCsetRole(int *r, int *bid, char **hname, char **tname)
 {
@@ -2636,7 +2648,6 @@ BKCsave2(int *r, int *bid)
 	return MAL_SUCCEED;
 }
 
-@c
 str
 BKCmmap(bit *res, int *bid, int *hbns, int *tbns, int *hhp, int *thp)
 {
@@ -2683,8 +2694,9 @@ BKCmadvise2(bit *res, int *bid, int *mode)
 	return BKCmadvise(res, bid, mode, mode, mode, mode);
 }
 
-@+ Accelerator Control
-@c
+/*
+ * @+ Accelerator Control
+ */
 str
 BKCaccbuild(int *ret, int *bid, str *acc, ptr *param)
 {
@@ -2756,8 +2768,10 @@ BKCgetSequenceBase(oid *r, int *bid)
 	return MAL_SUCCEED;
 }
 
-@-
-Shrinking a void-headed BAT using a list of oids to ignore. 
+/*
+ * @-
+ * Shrinking a void-headed BAT using a list of oids to ignore.
+ */
 @= shrinkloop
 {
 	@1 *p = (@1*)Tloc(b, BUNfirst(b));
@@ -2774,6 +2788,7 @@ Shrinking a void-headed BAT using a list of oids to ignore.
 		}
 	}
 }
+@
 @c
 str
 BKCshrinkBAT(int *ret, int *bid, int *did)
@@ -2931,8 +2946,10 @@ BKCshrinkBATmap(int *ret, int *bid, int *did)
 	BBPkeepref(*ret= bn->batCacheid);
 	return MAL_SUCCEED;
 }
-@-
-Shrinking a void-headed BAT using a list of oids to ignore. 
+/*
+ * @-
+ * Shrinking a void-headed BAT using a list of oids to ignore.
+ */
 @= reuseloop
 {
 	@1 *p = (@1*)Tloc(b, BUNfirst(b));
@@ -2952,6 +2969,7 @@ Shrinking a void-headed BAT using a list of oids to ignore.
 			*r++ = *p; 
 	}
 }
+@
 @c
 str
 BKCreuseBAT(int *ret, int *bid, int *did)
@@ -3109,4 +3127,3 @@ BKCreuseBATmap(int *ret, int *bid, int *did)
 	return MAL_SUCCEED;
 }
 
-@}

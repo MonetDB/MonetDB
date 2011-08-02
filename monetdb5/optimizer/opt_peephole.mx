@@ -17,17 +17,19 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f opt_peephole
-@a M. Kersten
-@- Peephole optimization
-Recursive descend query compilers easily miss opportunities
-for better code generation, because limited context is retained
-or lookahead available. The peephole optimizer is
-built around such recurring patterns and compensates
-for the compilers 'mistakes'.
-The collection of peephole patterns should grow over time and
-front-end specific variations are foreseen.
-@{
+@c
+/*
+ * @f opt_peephole
+ * @a M. Kersten
+ * @- Peephole optimization
+ * Recursive descend query compilers easily miss opportunities
+ * for better code generation, because limited context is retained
+ * or lookahead available. The peephole optimizer is
+ * built around such recurring patterns and compensates
+ * for the compilers 'mistakes'.
+ * The collection of peephole patterns should grow over time and
+ * front-end specific variations are foreseen.
+ */
 @mal
 pattern optimizer.peephole():str
 address OPTpeephole;
@@ -49,49 +51,48 @@ comment "Perform local rewrites";
 #include "monetdb_config.h"
 #include "opt_peephole.h"
 #include "opt_aliases.h"
-@}
-@- 
-The SQL frontend heavily relies on a pivot table, which
-is a generated oid sequence. Unfortunately, this
-is not seen and the pattern '$i := calc.oid(0@@0); $j:= algebra.markT($k,$i);'
-occurs often. This can be replaced with '$j:= algebra.markT($k)';
-
-Another example of a 2-way instruction sequence produced is then
-'$j:= algebra.markT($k); $l:= bat.reverse($j);',
-which can be replaced by '$l:= algebra.markH($k);'.
-
-The reverse-reverse operation also falls into this category.
-Reversal pairs may result from the processing scheme of a front-end compiler
-or from a side-effect from other optimization steps. Such reversal pairs should
-be removed as quickly as possible, so as to reduce the complexity of finding
-alternative optimization opportunities.
-As in all cases we should ensure that the intermediates dropped are not
-used for other purposes as well.
-
-@verbatim
-	r:bat[:int,:int]:= bat.new(:int,:int);
-	o:= calc.oid(0@0);
-	z:= algebra.markT(r,o);
-	rr:= bat.reverse(z);
-	s := bat.reverse(r);
-	t := bat.reverse(s);
-	io.print(t);
-	optimizer.peephole();
-@end verbatim
-which is translated by the peephole optimizer into:
-@verbatim
-	r:bat[:int,:int] := bat.new(:int,:int);
-	rr := algebra.markH(r);
-	io.print(r);
-@end verbatim
-
-Another example is the combination of a BAT partition operation
-followed by a re-construction without using the partitions
-individually.
-@{
-The type of a variable may have to be reset when you change
-the program structure.
-@c
+/*
+ * @-
+ * The SQL frontend heavily relies on a pivot table, which
+ * is a generated oid sequence. Unfortunately, this
+ * is not seen and the pattern '$i := calc.oid(0@@0); $j:= algebra.markT($k,$i);'
+ * occurs often. This can be replaced with '$j:= algebra.markT($k)';
+ *
+ * Another example of a 2-way instruction sequence produced is then
+ * '$j:= algebra.markT($k); $l:= bat.reverse($j);',
+ * which can be replaced by '$l:= algebra.markH($k);'.
+ *
+ * The reverse-reverse operation also falls into this category.
+ * Reversal pairs may result from the processing scheme of a front-end compiler
+ * or from a side-effect from other optimization steps. Such reversal pairs should
+ * be removed as quickly as possible, so as to reduce the complexity of finding
+ * alternative optimization opportunities.
+ * As in all cases we should ensure that the intermediates dropped are not
+ * used for other purposes as well.
+ *
+ * @verbatim
+ * 	r:bat[:int,:int]:= bat.new(:int,:int);
+ * 	o:= calc.oid(0@0);
+ * 	z:= algebra.markT(r,o);
+ * 	rr:= bat.reverse(z);
+ * 	s := bat.reverse(r);
+ * 	t := bat.reverse(s);
+ * 	io.print(t);
+ * 	optimizer.peephole();
+ * @end verbatim
+ * which is translated by the peephole optimizer into:
+ * @verbatim
+ * 	r:bat[:int,:int] := bat.new(:int,:int);
+ * 	rr := algebra.markH(r);
+ * 	io.print(r);
+ * @end verbatim
+ *
+ * Another example is the combination of a BAT partition operation
+ * followed by a re-construction without using the partitions
+ * individually.
+ * The type of a variable may have to be reset when you change
+ * the program structure.
+ */
 static int
 OPTpartitionpack(InstrPtr p, InstrPtr part[], int top)
 {
@@ -191,5 +192,4 @@ OPTpeepholeImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(peephole,OPT_CHECK_ALL)@
-@}
 

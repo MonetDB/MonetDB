@@ -17,40 +17,41 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f gdk_relop
-@a M. L. Kersten, P. Boncz, S. Manegold
-@* BAT relational operators
-The basic relational operators are implemented for BATs.
-Particular attention has been paid to speed-up processing
-joins, such that navigational access and object re-assembly
-are not being harmed too much.
-@{
 @c
+/*
+ * @f gdk_relop
+ * @a M. L. Kersten, P. Boncz, S. Manegold
+ * @* BAT relational operators
+ * The basic relational operators are implemented for BATs.
+ * Particular attention has been paid to speed-up processing
+ * joins, such that navigational access and object re-assembly
+ * are not being harmed too much.
+ */
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
 
 #define SAMPLE_TRESHOLD_LOG 17
 #define SAMPLE_SLICE_SIZE 1000
-@}
-@+ Join Algorithms
-All join related operations have the same prelude to check
-domain compatibility and to creates the BAT to hold the result.
-
-We do some dynamic effort to estimate the result size. Good
-estimates enhance performance and reduce the memory hunger of the join.
-Method: we sample on l, and join on the whole r. This macro is called by
-the physical join algorithms, hence we already decided on the algorithm
-and join method, so the initial costs on r (e.g. hash creation) would have
-to be paid anyway, and are reused later in the real join phase.
-
-Sampling was made more robust by using a logarithmic number of slices
-taken at equal-spaced intervals across l. The results are then analyzed
-and checked for outliers. If outliers are present, a real sample is taken
-and executed with the generic join algorithm to obtain an better estimate.
-
-On small joins we just assume 1-N joins with a limited (=3) hit rate.
-@{
+/*
+ * @+ Join Algorithms
+ * All join related operations have the same prelude to check
+ * domain compatibility and to creates the BAT to hold the result.
+ *
+ * We do some dynamic effort to estimate the result size. Good
+ * estimates enhance performance and reduce the memory hunger of the join.
+ * Method: we sample on l, and join on the whole r. This macro is called by
+ * the physical join algorithms, hence we already decided on the algorithm
+ * and join method, so the initial costs on r (e.g. hash creation) would have
+ * to be paid anyway, and are reused later in the real join phase.
+ *
+ * Sampling was made more robust by using a logarithmic number of slices
+ * taken at equal-spaced intervals across l. The results are then analyzed
+ * and checked for outliers. If outliers are present, a real sample is taken
+ * and executed with the generic join algorithm to obtain an better estimate.
+ *
+ * On small joins we just assume 1-N joins with a limited (=3) hit rate.
+ */
 @= joincheck
 	ERRORcheck(l == NULL, "@1: invalid left operand");
 	ERRORcheck(r == NULL, "@1: invalid right operand");
@@ -169,15 +170,16 @@ On small joins we just assume 1-N joins with a limited (=3) hit rate.
 		if (bn == NULL) 
 			return bn;
 	}
-@}
-@- Merge join
-In the case that both join columns are ordered, we can do a merging
-(@%BATmergejoin@). The merge is opportunistic in that it tries to do
-merge between l and r, but if for a long time no matching tuples are
-found in r, it uses binary search. It also allows joining of an
-unsorted l with a sorted r; in that case it always uses binary search.
-@{
+@
 @c
+/*
+ * @- Merge join
+ * In the case that both join columns are ordered, we can do a merging
+ * (BATmergejoin). The merge is opportunistic in that it tries to do
+ * merge between l and r, but if for a long time no matching tuples are
+ * found in r, it uses binary search. It also allows joining of an
+ * unsorted l with a sorted r; in that case it always uses binary search.
+ */
 #define BATPERC(lfirst,lcur,lend,rfirst,rcur,rend)\
 		((((dbl) (lend-lfirst))*((dbl) (rend-rfirst))) / \
 		 MAX(1,((lcur-lfirst)*((dbl) (rend-rfirst))+(dbl) (rcur-rfirst))))
@@ -268,6 +270,7 @@ unsorted l with a sorted r; in that case it always uses binary search.
 			}
 		}
 	}
+@
 @c
 /* serves both normal equi-join (nil_on_miss==NULL) and outerjoin (nil_on_miss=nil) */
 static BAT *
@@ -457,10 +460,11 @@ BATleftmergejoin(BAT *l, BAT *r, BUN estimate)
 	return batmergejoin(l, r, estimate, FALSE, NULL);
 }
 
-@- hash join
-These macros encode the core of the join algorithm. They are
-the fast inner loops, optimized towards their type.
-
+/*
+ * @- hash join
+ * These macros encode the core of the join algorithm. They are
+ * the fast inner loops, optimized towards their type.
+ */
 @= hashjoin
 	{
 		BUN yy;
@@ -481,6 +485,7 @@ the fast inner loops, optimized towards their type.
 		bn->tsorted = FALSE;
 		break;
 	}
+@
 @c
 BAT *
 BAThashjoin(BAT *l, BAT *r, BUN estimate)
@@ -560,26 +565,25 @@ BAThashjoin(BAT *l, BAT *r, BUN estimate)
 
 }
 
-@}
 
-@- Fetch-join
-The @`BATfetchjoin@5(l,r) does a join on the basis of positional lookup.
-It looks up index numbers from the second parameter in first parameter BAT.
-The right parameter may contain OIDs, in which case their base is
-subtracted.
-
-In a typical join(BAT[any::1,oid) L, BATvoid,any::2] R) : BAT[any::1,any::2]
-we expect each tuple of L to hit exactly once in R. Now if any::1=void
-this void column can be carried over to the result. We do that.
-
-However, it is possible that an tail-oid is out of range with respect
-to R; in that case some tuples will be missing and we cannot carry on
-producing a void column. In that case, we have to switch back
-on-the-fly to the non-dense implementation.
-
-The aftermath -- property setting -- is relatively straightforward here.
-@{
-@c
+/*
+ * @- Fetch-join
+ * The @`BATfetchjoin@5(l,r) does a join on the basis of positional lookup.
+ * It looks up index numbers from the second parameter in first parameter BAT.
+ * The right parameter may contain OIDs, in which case their base is
+ * subtracted.
+ *
+ * In a typical join(BAT[any::1,oid) L, BATvoid,any::2] R) : BAT[any::1,any::2]
+ * we expect each tuple of L to hit exactly once in R. Now if any::1=void
+ * this void column can be carried over to the result. We do that.
+ *
+ * However, it is possible that an tail-oid is out of range with respect
+ * to R; in that case some tuples will be missing and we cannot carry on
+ * producing a void column. In that case, we have to switch back
+ * on-the-fly to the non-dense implementation.
+ *
+ * The aftermath -- property setting -- is relatively straightforward here.
+ */
 #define HLATOMput(bn, dst) ATOMput(bn->htype, bn->H->vheap, dst, BUNhloc(li,l_cur))
 #define HVATOMput(bn, dst) Hputvalue(bn, dst, BUNhvar(li,l_cur), 1)
 #define TLATOMput(bn, dst) ATOMput(bn->ttype, bn->T->vheap, dst, BUNtloc(ri,r_cur))
@@ -588,6 +592,7 @@ The aftermath -- property setting -- is relatively straightforward here.
 @= SIMPLEput
 #define H@1put(bn,dst)	*(@1*) (dst) = *(@1*) (BUNhloc(li,l_cur))
 #define T@1put(bn,dst)	*(@1*) (dst) = *(@1*) (BUNtloc(ri,r_cur))
+@
 @c
 @:SIMPLEput(chr)@
 @:SIMPLEput(bte)@
@@ -598,6 +603,7 @@ The aftermath -- property setting -- is relatively straightforward here.
 @= bunfastins_nocheck_
 	H@1put(bn, BUNhloc(bni, dst));
 	T@2put(bn, BUNtloc(bni, dst));
+@
 @c
 @= fetchjoin
 static BAT *
@@ -726,6 +732,7 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 		BBPreclaim(bn);
 	return ret;
 }
+@
 @c
 @= fetchjoin2
 	@:fetchjoin(@1,chr)@
@@ -735,6 +742,7 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 	@:fetchjoin(@1,lng)@
 	@:fetchjoin(@1,VATOM)@
 	@:fetchjoin(@1,LATOM)@
+@
 @c
 @:fetchjoin2(chr)@
 @:fetchjoin2(bte)@
@@ -744,7 +752,6 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 
 @:fetchjoin2(VATOM)@
 @:fetchjoin2(LATOM)@
-@c
 
 @= fetchjoin_switch_rtt
 	if (ATOMstorage(rtt) == TYPE_chr) {
@@ -774,6 +781,7 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 	} else {
 		bn = @1fetchjoin_@2_LATOM(bn, l, r);
 	}
+@
 @c
 @= fetchjoin_switch_lht
 	if (ATOMstorage(lht) == TYPE_chr) {
@@ -803,6 +811,7 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 	} else {
 		@:fetchjoin_switch_rtt(@1,LATOM)@
 	}
+@
 @c
 @= densevoidfetchjoin
 	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: densevoidfetchjoin(@1);\n");
@@ -816,6 +825,7 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 	}
 	BATaccessEnd(r, USE_TAIL, MMAP_SEQUENTIAL);
 	/*BATaccessEnd(bn, MMAP_SEQUENTIAL);*/
+@
 @c
 @= orderedvoidfetchjoin
 	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: orderedvoidfetchjoin(@1);\n");
@@ -832,6 +842,7 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 	BATaccessEnd(l, USE_TAIL, MMAP_SEQUENTIAL);
 	BATaccessEnd(r, USE_TAIL, MMAP_SEQUENTIAL);
 	/*BATaccessEnd(bn, MMAP_SEQUENTIAL);*/
+@
 @c
 @= defaultvoidfetchjoin
 	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: defaultvoidfetchjoin(@1);\n");
@@ -884,6 +895,7 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 		BATaccessEnd(l, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 		BATaccessEnd(r, USE_TAIL, MMAP_WILLNEED);
 	}
+@
 @c
 @= voidfetchjoin
 	if (BATtdense(l)) {
@@ -899,6 +911,7 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 		ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: BAThvoid(l) && !BATtvoid(l) && !BATtdense(l) && !BATtordered(l)&1 && !hitalways\n");
 		@:defaultvoidfetchjoin(@1)@
 	}
+@
 @c
 #define SIMPLEput(tpe,hp,dst,src) *(tpe*) (dst) = *(tpe*) (src)
 
@@ -968,6 +981,7 @@ batfetchjoin(BAT *l, BAT *r, BUN estimate, bit swap, bit hitalways)
 			BATseqbase(BATmirror(bn), @2->ttype == TYPE_void ? @2->tseqbase : 0);
 		}
 		return bn;
+@
 @c
 	} else if (hitalways && BATtdense(l) && BAThdense(r) && l->tseqbase == r->hseqbase) {
 		/* always hit and tail of left is alligned with head of right */
@@ -1267,9 +1281,10 @@ BATleftfetchjoin(BAT *l, BAT *r, BUN estimate)
 	return batfetchjoin(l, r, estimate, FALSE, TRUE);
 }
 
-@-
-This routine does the join optimization. 
-@c
+/*
+ * @-
+ * This routine does the join optimization.
+ */
 static BAT *
 batjoin(BAT *l, BAT *r, BUN estimate, bit swap)
 {
@@ -1291,9 +1306,10 @@ batjoin(BAT *l, BAT *r, BUN estimate, bit swap)
 
 		@:return_empty_join_result(l,r, BATjoin: |l|==0 or |r|==0 or tail(l)==NIL or head(r)==NIL,0)@
 	}
-@-
-collect statistics that help us decide what to do
-@c
+	/*
+	 * @-
+	 * collect statistics that help us decide what to do
+	 */
 	lsize = lcount * (Hsize(l) + Tsize(l)) + (l->H->vheap ? l->H->vheap->size : 0) + (l->T->vheap ? l->T->vheap->size : 0) + 2 * lcount * sizeof(BUN);
 	rsize = rcount * (Hsize(r) + Tsize(r)) + (r->H->vheap ? r->H->vheap->size : 0) + (r->T->vheap ? r->T->vheap->size : 0) + 2 * rcount * sizeof(BUN);
 	for (logr = 4, i = rcount; i > 0; logr++)
@@ -1320,9 +1336,10 @@ collect statistics that help us decide what to do
 			rfetch = 0;
 	}
 	must_hash = swap && rsize > lsize ? l->T->hash == NULL : r->H->hash == NULL;
-@-
-Inner input out of memory => sort-merge-join performs better than hash-join or even random-access fetch-join.
-@c
+	/*
+	 * @-
+	 * Inner input out of memory => sort-merge-join performs better than hash-join or even random-access fetch-join.
+	 */
 	if (((swap && MIN(lsize, rsize) > mem_size) ||
 	     (!swap && rsize > mem_size)) &&
 	    !(BATtordered(l) & BAThordered(r) & 1)) {
@@ -1452,10 +1469,11 @@ Inner input out of memory => sort-merge-join performs better than hash-join or e
 			return j;
 		}
 	}
-@-
-In special cases (equal join columns, void join columns, or ordered
-join columns), we take special action.
-@c
+	/*
+	 * @-
+	 * In special cases (equal join columns, void join columns, or ordered
+	 * join columns), we take special action.
+	 */
 	if (swap && lfetch && !(rfetch && lcount <= rcount)) {
 		ALGODEBUG THRprintf(GDKout, "#BATjoin: BATmirror(BATfetchjoin(BATmirror(r), BATmirror(l), " BUNFMT "));\n", estimate);
 
@@ -1465,11 +1483,12 @@ join columns), we take special action.
 
 		return batfetchjoin(l, r, estimate, swap, FALSE);
 	}
-@-
-If both are ordered we do merge-join, or if hash-join is not possible right
-away and one input is ordered and the other is much smaller, we do nested
-loop binary search (both implemented by BATmergejoin).
-@c
+	/*
+	 * @-
+	 * If both are ordered we do merge-join, or if hash-join is not possible right
+	 * away and one input is ordered and the other is much smaller, we do nested
+	 * loop binary search (both implemented by BATmergejoin).
+	 */
 	if ((BATtordered(l) & BAThordered(r) & 1) ||
 	    (must_hash &&
 	     (((BATtordered(l) & 1) &&
@@ -1481,9 +1500,10 @@ loop binary search (both implemented by BATmergejoin).
 
 		return batmergejoin(l, r, estimate, swap, NULL);
 	}
-@-
-hash join: the bread&butter join of monet
-@c
+	/*
+	 * @-
+	 * hash join: the bread&butter join of monet
+	 */
 	/* Simple rule, always build hash on the smallest */
 	if (swap && rsize > lsize) {
 		ALGODEBUG THRprintf(GDKout, "#BATjoin: BATmirror(BAThashjoin(BATmirror(r), BATmirror(l)," BUNFMT "));\n", estimate);
@@ -1537,13 +1557,12 @@ BATleftjoin(BAT *l, BAT *r, BUN estimate)
 	return b;
 }
 
-@
-@}
-@+  Outerjoin
-The left outerjoin between two BAT is also supported. The code is
-identical to the hashjoin algorithm with the extension to insert a BUN
-if no match can be found.
-@{
+/*
+ * @+  Outerjoin
+ * The left outerjoin between two BAT is also supported. The code is
+ * identical to the hashjoin algorithm with the extension to insert a BUN
+ * if no match can be found.
+ */
 @= outerjoinloop
 {
 	ptr v, nilh = ATOMnilptr(r->htype), nilt = ATOMnilptr(r->ttype);
@@ -1575,10 +1594,12 @@ if no match can be found.
 }
 break;
 @
-@-
-The baseline join algorithm creates a hash on the smallest element and
-probes it using the larger one. [TODO]
 @c
+/*
+ * @-
+ * The baseline join algorithm creates a hash on the smallest element and
+ * probes it using the larger one. [TODO]
+ */
 BAT *
 BATouterjoin(BAT *l, BAT *r, BUN estimate)
 {
@@ -1701,6 +1722,7 @@ BATouterjoin(BAT *l, BAT *r, BUN estimate)
 		default:
 			@:outerjoinloop(atom,any,@1,@2,any)@
 		}
+@
 @c
 		bn->tsorted = 0;
 	}
@@ -1732,24 +1754,21 @@ BATouterjoin(BAT *l, BAT *r, BUN estimate)
 	return NULL;
 }
 
-@
-@}
-
-@+ ThetaJoin
-Current predicates supported are: JOIN_EQ, JOIN_LT,
-JOIN_GE, JOIN_LE and JOIN_GT. The JOIN_EQ will pass the control to the
-normal @:BATjoin@ equijoin. The is and index-based join: if an index
-is not present, it will be created on the smallest relation.
-
-We do lots of code-inlining: first of all on join type (4), and
-furthermore on left-tail (equal right-head) type (5), which are the
-join columns.  We factor out more by splitting on storage strategy
-(variable-sized/fixed-size) of both the left-head, and right tail
-columns (2*2).
-
-In the end, this results in 4*5*2*2 = 80 different inner loops.
-@{
-@c
+/*
+ * @+ ThetaJoin
+ * Current predicates supported are: JOIN_EQ, JOIN_LT,
+ * JOIN_GE, JOIN_LE and JOIN_GT. The JOIN_EQ will pass the control to the
+ * normal BATjoin equijoin. The is and index-based join: if an index
+ * is not present, it will be created on the smallest relation.
+ *
+ * We do lots of code-inlining: first of all on join type (4), and
+ * furthermore on left-tail (equal right-head) type (5), which are the
+ * join columns.  We factor out more by splitting on storage strategy
+ * (variable-sized/fixed-size) of both the left-head, and right tail
+ * columns (2*2).
+ *
+ * In the end, this results in 4*5*2*2 = 80 different inner loops.
+ */
 BAT *
 BATthetajoin(BAT *l, BAT *r, int op, BUN estimate)
 {
@@ -1908,6 +1927,7 @@ nlthetajoin_@2_@1(BAT *bn, BAT *l, BAT *r)
 #ifndef NOEXPAND_DBL
 	@:nlthetajoin_@1(dbl,@2,@3)@
 #endif
+@
 @c
 @:nlthetajoin_tpe(impl,gt,>)@
 @:nlthetajoin_tpe(impl,ge,>=)@
@@ -2013,20 +2033,20 @@ BATnlthetajoin(BAT *l, BAT *r, int op, BUN estimate)
 	return NULL;
 }
 
-@}
 
-@+ Semijoin
-
-The @%BATsemijoin@ performs a semijoin over @%l@ and @%r@. It returns
-a subset of @%l@ that matches at least one element in @%r@.
-The result inherits the integrity properties.
-
-Various algorithms exist. The main one BATkintersect() resides
-outside this file, in the set-operations implementation (gdk_setop).
-Other variants for the semijoin include the fetch-semijoin
-(for dense join columns), the reverse semijoin that loops over r
-instead of l, and semijoin using binary search in r.
-@{
+/*
+ * @+ Semijoin
+ *
+ * The BATsemijoin performs a semijoin over l and r. It returns
+ * a subset of l that matches at least one element in r.
+ * The result inherits the integrity properties.
+ *
+ * Various algorithms exist. The main one BATkintersect() resides
+ * outside this file, in the set-operations implementation (gdk_setop).
+ * Other variants for the semijoin include the fetch-semijoin
+ * (for dense join columns), the reverse semijoin that loops over r
+ * instead of l, and semijoin using binary search in r.
+ */
 @= semijoinbat
 	bn = BATnew(BAThtype(@1), BATttype(@1), MAX(BATTINY, MIN(BATcount(l), BATcount(r))));
 	ESTIDEBUG THRprintf(GDKout, "#%s.semijoinbat: estimated resultsize: " BUNFMT "\n",@4,MAX(BATTINY, MIN(BATcount(l), BATcount(r))));
@@ -2036,14 +2056,13 @@ instead of l, and semijoin using binary search in r.
 	BATkey(BATmirror(bn), BATtkey(@1));
 	bn->hsorted = @2;
 	bn->tsorted = @3;
-@}
-@-
-In the sorted cases with a low semijoin hit-rate, we do lookup using
-probe-based binary search, instead of a full merge scan.
-Normal merge-semijoin with a full scan on both is handled by kintersect
-(default exit) if both relations are large or if their sizes do not
-differ significantly.
-@{
+@
+ * @-
+ * In the sorted cases with a low semijoin hit-rate, we do lookup using
+ * probe-based binary search, instead of a full merge scan.
+ * Normal merge-semijoin with a full scan on both is handled by kintersect
+ * (default exit) if both relations are large or if their sizes do not
+ * differ significantly.
 @= binsemijoin
 {
 	BATiter li = bat_iterator(l);
@@ -2093,6 +2112,7 @@ differ significantly.
 	}
 }
 break;
+@
 @c
 static BAT *
 BATbinsemijoin(BAT *l, BAT *r, BAT *cpy)
@@ -2176,12 +2196,13 @@ BATbinsemijoin(BAT *l, BAT *r, BAT *cpy)
 	return NULL;
 }
 
-@-
-The reverse semijoin is only better if the other side (r) is much
-smaller than l, and iff you already have the hash table on l. It uses hash tables on
-both relations: on r to check that no item is processed twice (not necessary to check
-iff BAThkey(r) and one on l to find the matching tuples.
-@{
+/*
+ * @-
+ * The reverse semijoin is only better if the other side (r) is much
+ * smaller than l, and iff you already have the hash table on l. It uses hash tables on
+ * both relations: on r to check that no item is processed twice (not necessary to check
+ * iff BAThkey(r) and one on l to find the matching tuples.
+ */
 @= revsemijoin
 {
 	BATiter li = bat_iterator(l);
@@ -2259,6 +2280,7 @@ iff BAThkey(r) and one on l to find the matching tuples.
 	}
 }
 break;
+@
 @c
 static BAT *
 BATrevsemijoin(BAT *l, BAT *r)
@@ -2319,13 +2341,12 @@ BATrevsemijoin(BAT *l, BAT *r)
 	return NULL;
 }
 
-@}
-@-
-The positional semijoin performs a semijoin using positional lookup.
-This implementation is dirty as it also allows fetches with
-hard integer positions, rather than oid matching on a dense-oid column.
-@{
-@c
+/*
+ * @-
+ * The positional semijoin performs a semijoin using positional lookup.
+ * This implementation is dirty as it also allows fetches with
+ * hard integer positions, rather than oid matching on a dense-oid column.
+ */
 static BAT *
 BATfetchsemijoin(BAT *l, BAT *r, BAT *cpy, int denselookup)
 {
@@ -2432,9 +2453,10 @@ BATfetch(BAT *l, BAT *r)
 	return BATfetchsemijoin(r, l, l, FALSE);
 }
 
-@-
-The BATsemijoin chooses between various alternatives.
-@c
+/*
+ * @-
+ * The BATsemijoin chooses between various alternatives.
+ */
 
 BAT *
 BATsemijoin(BAT *l, BAT *r)
@@ -2448,11 +2470,12 @@ BATsemijoin(BAT *l, BAT *r)
 	ERRORcheck(r == NULL, "BATsemijoin");
 	ERRORcheck(TYPEerror(l->htype, r->htype), "BATsemijoin: type conflict\n");
 
-@- algorithm selection
-We have 10 algorithms implementing semijoin. Their conditions are checked in order
-of efficiency. Some algorithms reverse the semijoin (loop over r, lookup in l).
-To do that r should be unique. To that end, doubles may sometimes be eliminated from r.
-@c
+	/*
+	 * @- algorithm selection
+	 * We have 10 algorithms implementing semijoin. Their conditions are checked in order
+	 * of efficiency. Some algorithms reverse the semijoin (loop over r, lookup in l).
+	 * To do that r should be unique. To that end, doubles may sometimes be eliminated from r.
+	 */
 	for (logr = 4, i = countr = BATcount(r); i > 0; logr++)
 		i >>= 1;
 	for (logl = 4, i = countl = BATcount(l); i > 0; logl++)
@@ -2522,12 +2545,12 @@ To do that r should be unique. To that end, doubles may sometimes be eliminated 
 	return bn;
 }
 
-@}
-@+ AntiJoin
-This operation computes the cross product of two BATs, returning only the
-head-value from the 'left' operand and then tail-value from the 'right'
-provided the tail-head pair do not (!) match.
-@{
+/*
+ * @+ AntiJoin
+ * This operation computes the cross product of two BATs, returning only the
+ * head-value from the 'left' operand and then tail-value from the 'right'
+ * provided the tail-head pair do not (!) match.
+ */
 @= antijoin2
 static BAT *
 antijoin_@1_@2(BAT *bn, BAT *l, BAT *r)
@@ -2582,6 +2605,7 @@ bunins_failed:
 	@:antijoin2(@1,lng)@
 	@:antijoin2(@1,VATOM)@
 	@:antijoin2(@1,LATOM)@
+@
 @c
 @:antijoin1(chr)@
 @:antijoin1(bte)@
@@ -2591,7 +2615,6 @@ bunins_failed:
 
 @:antijoin1(VATOM)@
 @:antijoin1(LATOM)@
-@c
 
 @= antijoin_switch_rtt
 {
@@ -2624,6 +2647,7 @@ bunins_failed:
 		bn = antijoin_@1_LATOM(bn, l, r);
 	}
 }
+@
 @c
 @= antijoin_switch_lht
 {
@@ -2656,6 +2680,7 @@ bunins_failed:
 		@:antijoin_switch_rtt(LATOM)@
 	}
 }
+@
 @c
 BAT *
 BATantijoin(BAT *l, BAT *r)
@@ -2705,11 +2730,12 @@ BATantijoin(BAT *l, BAT *r)
 	return bn;
 }
 
-@+ Cross Product
-This operation computes the cross product of two BATs, returning only the
-head-value from the 'left' operand and then tail-value from the 'right'
-operand.
-@{
+/*
+ * @+ Cross Product
+ * This operation computes the cross product of two BATs, returning only the
+ * head-value from the 'left' operand and then tail-value from the 'right'
+ * operand.
+ */
 @= cross2
 static BAT *
 cross_@1_@2(BAT *bn, BAT *l, BAT *r)
@@ -2757,6 +2783,7 @@ bunins_failed:
 	@:cross2(@1,lng)@
 	@:cross2(@1,VATOM)@
 	@:cross2(@1,LATOM)@
+@
 @c
 @:cross1(chr)@
 @:cross1(bte)@
@@ -2766,7 +2793,6 @@ bunins_failed:
 
 @:cross1(VATOM)@
 @:cross1(LATOM)@
-@c
 
 @= cross_switch_rtt
 {
@@ -2799,6 +2825,7 @@ bunins_failed:
 		bn = cross_@1_LATOM(bn, l, r);
 	}
 }
+@
 @c
 @= cross_switch_lht
 {
@@ -2831,6 +2858,7 @@ bunins_failed:
 		@:cross_switch_rtt(LATOM)@
 	}
 }
+@
 @c
 BAT *
 BATcross(BAT *l, BAT *r)
@@ -2880,24 +2908,23 @@ BATcross(BAT *l, BAT *r)
 	return bn;
 }
 
-@}
-@+ Cartesian product
-The matching algorithms tries to construct non-empty matches on all head
-columns. Each time this succeeds, it calls the Cartesian routine to
-construct a join result that consists of the Cartesian product of these
-matches.
-
-The matching tuples can be encoded in two ways:
-@table @samp
-@item clustered
- here we have two BUN pointers 'hi' and 'lo' that point
-to a consecutive range of BUNs in a BAT that match.
-@item nonclustered here we have a hit pointer that points to an array
-of BUN  pointers that match.
-@end table
-@{
-The below structures are used for keeping track of the matching process.
-@c
+/*
+ * @+ Cartesian product
+ * The matching algorithms tries to construct non-empty matches on all head
+ * columns. Each time this succeeds, it calls the Cartesian routine to
+ * construct a join result that consists of the Cartesian product of these
+ * matches.
+ *
+ * The matching tuples can be encoded in two ways:
+ * @table @samp
+ * @item clustered
+ *  here we have two BUN pointers 'hi' and 'lo' that point
+ * to a consecutive range of BUNs in a BAT that match.
+ * @item nonclustered here we have a hit pointer that points to an array
+ * of BUN  pointers that match.
+ * @end table
+ * The below structures are used for keeping track of the matching process.
+ */
 typedef struct _column_t {
 	BAT *b;			/* BAT of this column */
 	BATiter bi;
@@ -2958,42 +2985,41 @@ column_result(table_t *t, int i)
 	}
 }
 
-@}
-@* MultiColumn Joins
-Computes the n-ary equijoin over the head columns of multiple BATs.
-This function is complex, and uses nested functions calls,
-for the specific stuff, it uses the stack for generating the
-Cartesian product on each hit tuple. Most of all, it emits tuples one
-at a time, in a pipeline rather than bulk fashion. For all these reasons,
-it is not main-memory efficient. It does things that MonetDB actually
-specifically was designed to avoid.
-
-USE THIS FUNCTION ONLY WHEN YOU REALLY REALLY HAVE TO:
-@table @code
-@item  -
-printing a multicolumn table to a watching end-user is one such example
-@end table
-@+ multijoin entry routine
-The multijoin will cause a cascade of value_fcn() calls putting
-values in to place, rounded off each time by a tuple_fcn() that is
-executed on each produced tuple. If this corresponds 1-1 with
-the elements of one of the parameter BAT, the 'result' of the
-operation would be aligned with it.
-
-The return value of this operation contains this status information.
-It is an integer, of which all 4 bytes are used:
-@table @code
-@item ret[0] == 1,
-if a mergejoin was used, 0 otherwise
-@item ret[1] == 1,
-if all bats had the key property set, 0 otherwise
-@item ret[2] == 1
-if there was a 1-1 join, 0 otherwise
-@item ret[3] ==
-the parameter number of the BAT which was used as leader
-@end table
-@{
-@c
+/*
+ * @* MultiColumn Joins
+ * Computes the n-ary equijoin over the head columns of multiple BATs.
+ * This function is complex, and uses nested functions calls,
+ * for the specific stuff, it uses the stack for generating the
+ * Cartesian product on each hit tuple. Most of all, it emits tuples one
+ * at a time, in a pipeline rather than bulk fashion. For all these reasons,
+ * it is not main-memory efficient. It does things that MonetDB actually
+ * specifically was designed to avoid.
+ *
+ * USE THIS FUNCTION ONLY WHEN YOU REALLY REALLY HAVE TO:
+ * @table @code
+ * @item  -
+ * printing a multicolumn table to a watching end-user is one such example
+ * @end table
+ * @+ multijoin entry routine
+ * The multijoin will cause a cascade of value_fcn() calls putting
+ * values in to place, rounded off each time by a tuple_fcn() that is
+ * executed on each produced tuple. If this corresponds 1-1 with
+ * the elements of one of the parameter BAT, the 'result' of the
+ * operation would be aligned with it.
+ *
+ * The return value of this operation contains this status information.
+ * It is an integer, of which all 4 bytes are used:
+ * @table @code
+ * @item ret[0] == 1,
+ * if a mergejoin was used, 0 otherwise
+ * @item ret[1] == 1,
+ * if all bats had the key property set, 0 otherwise
+ * @item ret[2] == 1
+ * if there was a 1-1 join, 0 otherwise
+ * @item ret[3] ==
+ * the parameter number of the BAT which was used as leader
+ * @end table
+ */
 #define COLSIZE(c)\
 	(((c)->b->htype!=TYPE_void || (c)->b->hseqbase!=oid_nil)?(c)->size:0)
 #define REALLOCBUNS(c,n) if (c->hitsize <= n)\
@@ -3015,9 +3041,10 @@ BATmultijoin(int argc, BAT *argv[], RowFcn tuple_fcn, ptr tuple_data, ColFcn val
 	BUN p, q;
 	table_t t;
 
-@-
-Init the table descriptor.
-@c
+	/*
+	 * @-
+	 * Init the table descriptor.
+	 */
 	if (c == NULL || reorder == NULL) {
 		GDKfree(c);
 		GDKfree(reorder);
@@ -3030,9 +3057,10 @@ Init the table descriptor.
 	t.value_fcn = value_fcn;
 	t.argc = argc;
 	t.c = c;
-@-
-order columns by their size (smallest first)
-@c
+	/*
+	 * @-
+	 * order columns by their size (smallest first)
+	 */
 	for (i = 0; i < argc; i++) {
 		int j;
 
@@ -3059,19 +3087,18 @@ order columns by their size (smallest first)
 		}
 		reorder[j] = c + i;
 	}
-@}
-@- handle explicit ordering requests
-An 'orderby' specification tells that the multijoin should match in the
-order of one specific BAT parameter.
-
-Notice that we *respect* the ordering of the orderby column rather than we
-sort it explicitly (ie; you should order the most significant column beforehand).
-This allows for both for join results ordered on some tail column as results
-ordered on head column, or even 'reverse' or other specific orderings.
-One such specific ordering is the SQL ORDER BY multi-column ordering that
-can be obtained with the CTorderby command from the xtables module.
-@{
-@c
+	/*
+	 * @- handle explicit ordering requests
+	 * An 'orderby' specification tells that the multijoin should match in the
+	 * order of one specific BAT parameter.
+	 *
+	 * Notice that we *respect* the ordering of the orderby column rather than we
+	 * sort it explicitly (ie; you should order the most significant column beforehand).
+	 * This allows for both for join results ordered on some tail column as results
+	 * ordered on head column, or even 'reverse' or other specific orderings.
+	 * One such specific ordering is the SQL ORDER BY multi-column ordering that
+	 * can be obtained with the CTorderby command from the xtables module.
+	 */
 	if (orderby) {		/* order on tail of some column */
 		int lead = orderby - 1;
 
@@ -3084,20 +3111,19 @@ can be obtained with the CTorderby command from the xtables module.
 		reorder[0] = c + lead;
 	}
 	lead_col = reorder[0];
-@}
-@- lead column traversal mode
-The default action is to do LEAD_TRAVERSE_SEQ: 1-by-1 traversal of the lead_col,
-and for each head value use the best possible matching algorithm.
-A local optimization is to signal a sorted head column in the lead column,
-so we can switch to LEAD_TRAVERSE_SRT; if double lead values occur we do them
-in one match iteration.
-
-We record in MULTIJOIN_SORTED(status) whether the chosen traversal method
-visits the head values in the lead column in order. This is important
-for the matching algorithms of the other columns (only if the head
-values are visited in order, merge algorithms may be employed).
-@{
-@c
+	/*
+	 * @- lead column traversal mode
+	 * The default action is to do LEAD_TRAVERSE_SEQ: 1-by-1 traversal of the lead_col,
+	 * and for each head value use the best possible matching algorithm.
+	 * A local optimization is to signal a sorted head column in the lead column,
+	 * so we can switch to LEAD_TRAVERSE_SRT; if double lead values occur we do them
+	 * in one match iteration.
+	 *
+	 * We record in MULTIJOIN_SORTED(status) whether the chosen traversal method
+	 * visits the head values in the lead column in order. This is important
+	 * for the matching algorithms of the other columns (only if the head
+	 * values are visited in order, merge algorithms may be employed).
+	 */
 	if (BAThordered(lead_col->b) & 1) {
 		if (!BAThkey(lead_col->b)) {
 			algo = LEAD_TRAVERSE_SRT;
@@ -3112,19 +3138,18 @@ values are visited in order, merge algorithms may be employed).
 	if (algo == LEAD_TRAVERSE_SEQ && BAThkey(lead_col->b)) {
 		algo = (BAThordered(lead_col->b) & 1) ? LEAD_TRAVERSE_SSK : LEAD_TRAVERSE_SNK;
 	}
-@}
 
-@- matching algorithms for the other columns
-Finally, the issue of choosing matching-algorithms for the other columns
-is treated. There are a number of possibilities. If a column is
-synced with a previous column, this is registered, so it can copy the
-matching results of that previous column. If not, we use the fact that a
-column is ordered and if not, has an binary index on it. Both cases
-fall into two sub cases: merge-lookup or binary-search; depending on
-whether we visit the head elements in order (MULTIJOIN_SORTED(status)).
-If none of this is the case, we do hash-lookup using an on-the-fly hash-table.
-@{
-@c
+	/*
+	 * @- matching algorithms for the other columns
+	 * Finally, the issue of choosing matching-algorithms for the other columns
+	 * is treated. There are a number of possibilities. If a column is
+	 * synced with a previous column, this is registered, so it can copy the
+	 * matching results of that previous column. If not, we use the fact that a
+	 * column is ordered and if not, has an binary index on it. Both cases
+	 * fall into two sub cases: merge-lookup or binary-search; depending on
+	 * whether we visit the head elements in order (MULTIJOIN_SORTED(status)).
+	 * If none of this is the case, we do hash-lookup using an on-the-fly hash-table.
+	 */
 	for (k = 1; k < argc; k++) {
 		column_t *n = reorder[k];
 		int j;
@@ -3167,10 +3192,11 @@ If none of this is the case, we do hash-lookup using an on-the-fly hash-table.
 		}
 	}
 
-@- the matching phase
-We optimize in the case that the head-columns are OID. Below
-macro's help to separate the two cases cleanly.
-@c
+/*
+ * @- the matching phase
+ * We optimize in the case that the head-columns are OID. Below
+ * macro's help to separate the two cases cleanly.
+ */
 #if (SIZEOF_OID == SIZEOF_INT)
 #define OIDcmp(v1,v2)	simple_CMP(v1,v2,int)
 #else
@@ -3185,9 +3211,10 @@ macro's help to separate the two cases cleanly.
 
 		@:multijoin(head,STD,_any)@
 	}
-@-
-Cleanup & exit.
-@c
+	/*
+	 * @-
+	 * Cleanup & exit.
+	 */
 	for (i = 0; i < argc; i++) {
 		if (c[i].hitsize)
 			GDKfree(c[i].hit);
@@ -3197,56 +3224,56 @@ Cleanup & exit.
 	return status;
 }
 
-@}
-@+ The Matching Algorithm
-In multi-column join, all MonetDB accelerators are put to use when
-equi-lookup is done on a number of head columns.  In order of
-preference, it:
-
-@itemize
-@item
-    does positional lookup on @emph{ virtual oid} columns (void).
-@item
-    reuses lookup info on @emph{ synced columns}.
-@item
-    uses merge scan on @emph{ ordered columns}.
-@item
-    uses binary tree leaf scan on @emph{ indexed columns}.
-@item
-    uses hash lookup in other cases. If a hash-table does not
-exist; it is created on the fly.
-@end itemize
-
-The algorithm goes one by one, for unique head values in the smallest-sized
-BAT. The strategy is for each column to find a range of BUNs that match it.
-
-The algorithm is intelligent in that it processes the columns in order
-of cardinality. If a column has no matches, you can cut off the matching
-process for the current ID (head value) and go to the next. Smallest BATs
-first means highest miss probability first.
-
-Another optimization is that when a column has a cardinality much larger
-than the smallest column, you can expect sparse matching (e.g. you selected
-1% tuples out of a 1M tuple BAT, and re-joins both with this routine). In
-those cases the merge algorithms use binary search instead of mergescan.
-
-In non-empty matching ranges are found in all head columns, a recursive
-routine is used to go over all combinations of matching BUNs. This recursive
-routine calls for every match (the Cartesian product) a special-purpose
-routine that is passed all matching BUN pointers. This sequence of calls
-represents the result of the multijoin.
-
-Normally you want to perform an action on each value (like formatting or
-copying), but many values reoccur in the same place when the Cartesian product
-over all columns is formed.  For instance, when we have 5 attributes in which
-each has 2 matches on the current id, we have 2*2*2*2*2=32 result tuples for
-this one id. A simple-minded strategy would then do 32*5 value actions, when
-processing these result tuples. This multijoin reduces that to just 32, by
-calling whenever a value is 'changed' in the result-tuple-under-construction,
-a value specific function, provided by the user. Since each column can have
-a different value function, this also allows for factoring out type-checking
-overhead.
-@{
+/*
+ * @+ The Matching Algorithm
+ * In multi-column join, all MonetDB accelerators are put to use when
+ * equi-lookup is done on a number of head columns.  In order of
+ * preference, it:
+ *
+ * @itemize
+ * @item
+ *     does positional lookup on @emph{ virtual oid} columns (void).
+ * @item
+ *     reuses lookup info on @emph{ synced columns}.
+ * @item
+ *     uses merge scan on @emph{ ordered columns}.
+ * @item
+ *     uses binary tree leaf scan on @emph{ indexed columns}.
+ * @item
+ *     uses hash lookup in other cases. If a hash-table does not
+ * exist; it is created on the fly.
+ * @end itemize
+ *
+ * The algorithm goes one by one, for unique head values in the smallest-sized
+ * BAT. The strategy is for each column to find a range of BUNs that match it.
+ *
+ * The algorithm is intelligent in that it processes the columns in order
+ * of cardinality. If a column has no matches, you can cut off the matching
+ * process for the current ID (head value) and go to the next. Smallest BATs
+ * first means highest miss probability first.
+ *
+ * Another optimization is that when a column has a cardinality much larger
+ * than the smallest column, you can expect sparse matching (e.g. you selected
+ * 1% tuples out of a 1M tuple BAT, and re-joins both with this routine). In
+ * those cases the merge algorithms use binary search instead of mergescan.
+ *
+ * In non-empty matching ranges are found in all head columns, a recursive
+ * routine is used to go over all combinations of matching BUNs. This recursive
+ * routine calls for every match (the Cartesian product) a special-purpose
+ * routine that is passed all matching BUN pointers. This sequence of calls
+ * represents the result of the multijoin.
+ *
+ * Normally you want to perform an action on each value (like formatting or
+ * copying), but many values reoccur in the same place when the Cartesian product
+ * over all columns is formed.  For instance, when we have 5 attributes in which
+ * each has 2 matches on the current id, we have 2*2*2*2*2=32 result tuples for
+ * this one id. A simple-minded strategy would then do 32*5 value actions, when
+ * processing these result tuples. This multijoin reduces that to just 32, by
+ * calling whenever a value is 'changed' in the result-tuple-under-construction,
+ * a value specific function, provided by the user. Since each column can have
+ * a different value function, this also allows for factoring out type-checking
+ * overhead.
+ */
 @= multijoin
 	for (i = 0; i < argc; i++)
 		BATaccessBegin(reorder[i]->b, USE_HEAD|USE_TAIL|USE_HHASH, reorder[i]->sync?MMAP_SEQUENTIAL:MMAP_WILLNEED);
@@ -3362,4 +3389,4 @@ overhead.
 	}
 	for (i = 0; i < argc; i++)
 		BATaccessEnd(reorder[i]->b, USE_HEAD|USE_TAIL|USE_HHASH, reorder[i]->sync?MMAP_SEQUENTIAL:MMAP_WILLNEED);
-@}
+@

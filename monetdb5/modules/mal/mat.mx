@@ -17,26 +17,29 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f mat
-@a Martin Kersten
-@v 1
-@+ Multiple association tables
-A MAT is a convenient way to deal represent horizontal fragmented
-tables. It combines the definitions of several, type compatible
-BATs under a single name. 
-It is produced by the mitosis optimizer and the operations
-are the target of the mergetable optimizer.
-
-The MAT is materialized when the operations
-can not deal with the components individually,
-or the incremental operation is not supported.
-Normally all mat.new() operations are removed by the
-mergetable optimizer.
-In case a mat.new() is retained in the code, then it will
-behaves as a mat.pack();
-
-The primitives below are chosen to accomodate the SQL
-front-end to produce reasonable efficient code.
+@c
+/*
+ * @f mat
+ * @a Martin Kersten
+ * @v 1
+ * @+ Multiple association tables
+ * A MAT is a convenient way to deal represent horizontal fragmented
+ * tables. It combines the definitions of several, type compatible
+ * BATs under a single name.
+ * It is produced by the mitosis optimizer and the operations
+ * are the target of the mergetable optimizer.
+ *
+ * The MAT is materialized when the operations
+ * can not deal with the components individually,
+ * or the incremental operation is not supported.
+ * Normally all mat.new() operations are removed by the
+ * mergetable optimizer.
+ * In case a mat.new() is retained in the code, then it will
+ * behaves as a mat.pack();
+ *
+ * The primitives below are chosen to accomodate the SQL
+ * front-end to produce reasonable efficient code.
+ */
 @mal
 module mat;
 
@@ -116,9 +119,8 @@ command info(g:str, e:str):bat[:any_1,:any_2]
 address MATinfo
 comment "retrieve the definition from the partition catalogue";
 
-@-
-@{
-@+ Implementation
+# @-
+# @+ Implementation
 @include prelude.mx
 @h
 #ifndef _INSPECT_H
@@ -153,9 +155,11 @@ mat_export str MATsortReverseTail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 mat_export str MATsortTail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mat_export str MATrefineReverse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif /* _INSPECT_H */
-@- 
-Mal symbol table and environment analysis.
 @c
+/*
+ * @-
+ * Mal symbol table and environment analysis.
+ */
 #include "monetdb_config.h"
 #include "mat.h"
 #include "group.h"
@@ -192,16 +196,17 @@ MAThasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) mb; 
 	return MAL_SUCCEED;
 }
-@-
-The pack is an ordinary multi BAT insert. Oid synchronistion
-between pieces should be ensured by the code generators.
-The pack operation could be quite expensive, because it
-may create a really large BAT.
-The slice over a mat helps to avoid constructing intermediates
-that are subsequently reduced.
-Contrary to most operations, NIL arguments are skipped and
-do not produce RUNTIME_OBJECT_MISSING.
-@c
+/*
+ * @-
+ * The pack is an ordinary multi BAT insert. Oid synchronistion
+ * between pieces should be ensured by the code generators.
+ * The pack operation could be quite expensive, because it
+ * may create a really large BAT.
+ * The slice over a mat helps to avoid constructing intermediates
+ * that are subsequently reduced.
+ * Contrary to most operations, NIL arguments are skipped and
+ * do not produce RUNTIME_OBJECT_MISSING.
+ */
 static str
 MATpackInternal(MalStkPtr stk, InstrPtr p)
 {
@@ -534,6 +539,7 @@ MATproject_@1( BAT *map, BAT **bats, int len )
 	GDKfree(batsT);
 	return res;
 }
+@
 @c
 @:project(bte)@
 @:project(sht)@
@@ -678,6 +684,7 @@ MATsortloop_@1( bte *map_res, BAT *i1, bte *map_i1, BUN cnt_i1, BAT *i2, bte map
 	}
 	return res;
 }
+@
 @c
 
 @:sort_any2(rev,>=,<)@
@@ -720,7 +727,6 @@ MATsort_any( BAT **map, BAT **bats, int len, BUN cnt, int rev )
 	BATsetcount(*map, len1);
 	return res;
 }
-@c
 
 @= sort2
 static int
@@ -765,6 +771,7 @@ MATsortloop_@1_@2( @1 *val_res, bte *map_res, @1 *val_i1, bte *map_i1, BUN cnt_i
 	}
 	return 0;
 }
+@
 @c
 
 @= sort
@@ -816,6 +823,7 @@ MATsort_@1( BAT **map, BAT **bats, int len, BUN cnt, int rev )
 	GDKfree(batsT);
 	return res;
 }
+@
 @c
 @:sort(bte)@
 @:sort(sht)@
@@ -963,4 +971,3 @@ MATrefineReverse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MATrefine_( cntxt, mb, stk, pci, 1);
 }
 
-@}

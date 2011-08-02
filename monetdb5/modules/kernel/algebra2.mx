@@ -17,18 +17,20 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f algebra2
-@a Arjen P. de Vries, S. Manegold
-@v 1.0
-@t Work around internal select and join algorithm selection
-@+ Introduction
-
-Too many bugs.[ Unclear if this still holds]
-The module is a copy of modules/contrib/malalgebra and heavily used
-by Pathfinder.
-The commands are added to the algebra module, because it is considered
-a natural extension of the operations provided there.
-@{
+@c
+/*
+ * @f algebra2
+ * @a Arjen P. de Vries, S. Manegold
+ * @v 1.0
+ * @t Work around internal select and join algorithm selection
+ * @+ Introduction
+ *
+ * Too many bugs.[ Unclear if this still holds]
+ * The module is a copy of modules/contrib/malalgebra and heavily used
+ * by Pathfinder.
+ * The commands are added to the algebra module, because it is considered
+ * a natural extension of the operations provided there.
+ */
 @mal
 
 @= join
@@ -44,6 +46,7 @@ comment "Hook directly into the 'left@1join' implementation of the join.
 prefix 'left' means that left and right input are not swapped during 
 processing, and hence, the order of the left input's head in maintained 
 in the result.";
+@
 @mal
 @:join(fetch)@
 @:join(merge)@
@@ -100,13 +103,14 @@ address AL2ord_@1select1
 comment "Like standard '@1select(b, value)', but preserves the order of 
 	the input BAT; (for the time being) this means, only the scan-based 
 		select algorithm is used.";
+@
 @mal
 @:select(,:any_2)@
 @:select(u,:void)@
 
 
-@- 
-old stuff
+# @-
+# old stuff
 @= sum
 command {_csum}(BAT[oid,@1] b) : BAT[oid,@1] 
 address CMDclustered_sum_@1
@@ -119,8 +123,11 @@ comment "grouped tail sum";
 @:sum(flt)@
 @:sum(dbl)@
 
-@* Implementation Code
+@
 @h
+/*
+ * @* Implementation Code
+ */
 #ifndef __MALALGEBRA_H__
 #define __MALALGEBRA_H__
 #include "gdk.h"
@@ -244,6 +251,7 @@ int CMD@1join(BAT **result, BAT *left, BAT* right) {
   ERRORcheck(TYPEerror(left->ttype, right->htype), "@1-join: type conflict\n"); 
   return (*result = (BAT*) BATmal@1join(left, right))?GDK_SUCCEED:GDK_FAIL;
 }
+@
 @c
 @:joincmd(left)@
 @:joincmd(fetch)@
@@ -285,6 +293,7 @@ int CMDord_@1select_(BAT **result, BAT *b, ptr low, ptr high, bit* l_in, bit* h_
 	}
 	return (*result = BAT_select_(b, low, high, *l_in, *h_in, @2, FALSE, TRUE))?GDK_SUCCEED:GDK_FAIL;
 }
+@
 @c
 @:selectcmd(,TRUE)@
 @:selectcmd(u,FALSE)@
@@ -323,6 +332,7 @@ int CMDclustered_sum_@1(BAT **ret, BAT *b ) {
 	*ret = bn;
 	return GDK_SUCCEED;
 }
+@
 @c
 @:sumcmd(bte)@
 @:sumcmd(sht)@
@@ -332,11 +342,14 @@ int CMDclustered_sum_@1(BAT **ret, BAT *b ) {
 @:sumcmd(flt)@
 @:sumcmd(dbl)@
 
-@}
-@-
+/*
+ * @-
+ */
 @include ../mal/prelude.mx
-@-
 @c
+/*
+ * @-
+ */
 #include "algebra.h"
 #include "algebra2.h"
 
@@ -361,6 +374,7 @@ str AL2@1join(int *ret, int *lid, int *rid ){
 	BBPkeepref(*ret);
 	return MAL_SUCCEED;
 }
+@
 @c
 @:joincmdMAL(left)@
 @:joincmdMAL(fetch)@
@@ -475,6 +489,7 @@ str AL2ord_@1select_(int *ret, int *bid, ptr *lval, ptr *hval, bit *l_in, bit *h
 	BBPkeepref(*ret);
 	return MAL_SUCCEED;
 }
+@
 @c
 @:selectcmdMAL(, TRUE)@
 @:selectcmdMAL(u, FALSE)@

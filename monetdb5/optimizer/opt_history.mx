@@ -17,45 +17,47 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f opt_history
-@- SQL History 
-Collection of runtime statistics on SQL queries 
-is handy for post-session analysis. To accomplish
-this, the very last step of the optimization consists
-of injection of performance gathering statements.
-This way we ensure that no code shuffling optimizer has effect.
-
-The interface is based on two MAL signatures defined in
-the SQL runtime environment. A dummy version is included
-here to ensure we can debug the code without SQL frontend.
-
-
-create table queryHistory(
-    id wrd primary key,
-    defined timestamp,  -- when entered into the cache
-    ipnumber string,    -- origin of the request
-    name string,        -- database user name
-    query string,
-    parse bigint,       -- time in usec
-    optimize bigint     -- time in usec
-);
-
-create table History(
-	id wrd references queryHistory(id), -- references query plan
-    called timestamp,   -- time the first statement was executed
-    arguments string,
-    xtime bigint,       -- time from the first statement until result export
-    rtime bigint,       -- time to ship the result to the client
-    foot bigint,        -- footprint for all bats in the plan
-    xsize bigint,       -- storage size of intermediates created
-    tuples bigint,      -- number of tuples in the result set
-    inblock bigint,     -- number of physical blocks read
-    oublock bigint,     -- number of physical blocks written
-)
-@{
-The keepquery is defined to trigger an expection the first
-time you use the history without initialization.
-The keepcall can be used to check for initialization of the cache.
+@c
+/*
+ * @f opt_history
+ * @- SQL History
+ * Collection of runtime statistics on SQL queries
+ * is handy for post-session analysis. To accomplish
+ * this, the very last step of the optimization consists
+ * of injection of performance gathering statements.
+ * This way we ensure that no code shuffling optimizer has effect.
+ *
+ * The interface is based on two MAL signatures defined in
+ * the SQL runtime environment. A dummy version is included
+ * here to ensure we can debug the code without SQL frontend.
+ *
+ *
+ * create table queryHistory(
+ *     id wrd primary key,
+ *     defined timestamp,  -- when entered into the cache
+ *     ipnumber string,    -- origin of the request
+ *     name string,        -- database user name
+ *     query string,
+ *     parse bigint,       -- time in usec
+ *     optimize bigint     -- time in usec
+ * );
+ *
+ * create table History(
+ * 	id wrd references queryHistory(id), -- references query plan
+ *     called timestamp,   -- time the first statement was executed
+ *     arguments string,
+ *     xtime bigint,       -- time from the first statement until result export
+ *     rtime bigint,       -- time to ship the result to the client
+ *     foot bigint,        -- footprint for all bats in the plan
+ *     xsize bigint,       -- storage size of intermediates created
+ *     tuples bigint,      -- number of tuples in the result set
+ *     inblock bigint,     -- number of physical blocks read
+ *     oublock bigint,     -- number of physical blocks written
+ * )
+ * The keepquery is defined to trigger an expection the first
+ * time you use the history without initialization.
+ * The keepcall can be used to check for initialization of the cache.
+ */
 @mal
 module sql;
 function keepquery{unsafe}(qid:int,qry:str,parse:lng,optimize:lng):void;
@@ -95,14 +97,17 @@ opt_export str OPTforgetPrevious(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Inst
 
 #define OPTDEBUGhistory  if ( optDebug & ((lng)1 <<DEBUG_OPT_HISTORY) )
 #endif
-@-
-Prepare the call to the history manager.
+/*
+ * @-
+ * Prepare the call to the history manager.
+ */
 @= arguments
 	q = newStmt1(mb, sqlRef, "argRecord");
 	for ( argc=1; argc < old[0]->argc; argc++)
 		q = pushArgument(mb, q, getArg(old[0],argc));
 	arg= getArg(q,0)= newVariable(mb,GDKstrdup("args"),TYPE_str);
-@-
+@
+ * @-
 @= initCounter
 	q = newStmt(mb, "@2", "@3");
 	@1= getArg(q,0)= newVariable(mb,GDKstrdup("@1"),TYPE_@4);
@@ -122,10 +127,13 @@ Prepare the call to the history manager.
 	@:initCounter(inblock,profiler,getDiskReads,lng)@
 	@:initCounter(oublock,profiler,getDiskWrites,lng)@
 	@:initCounter(xtime,alarm,usec,lng)@
-@-
-A tricky piece of code. We invalidate an instruction
-based on the return variable.
+@
 @c
+/*
+ * @-
+ * A tricky piece of code. We invalidate an instruction
+ * based on the return variable.
+ */
 #include "monetdb_config.h"
 #include "opt_history.h"
 
@@ -207,13 +215,16 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 				continue;
 			}
 			returnseen++;
-@-
+			/*
+			 * @-
+			 */
 @= update
 			q = newStmt(mb, "@2", "@3");
 			r = newStmt1(mb, calcRef, "@4");
 			r = pushArgument(mb, r, getArg(q,0));
 			r = pushArgument(mb, r, @1);
 			getArg(r,0)=@1;
+@
 @c
 			@:initCounter(foot,profiler,getFootprint,lng)@
 			@:initCounter(memory,profiler,getMemory,lng)@
@@ -254,4 +265,3 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(history,OPT_CHECK_ALL)@
-@}

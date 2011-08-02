@@ -17,15 +17,17 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f opt_replication
-@- Database replication
-The replication optimizer supports distribution of the 
-updates on an SQL database to be distributed over multiple
-destination databases.
-It initiates the code to prepare simple MAL-log files.
-
-Further details are given in the replication module code.
-@{
+@c
+/*
+ * @f opt_replication
+ * @- Database replication
+ * The replication optimizer supports distribution of the
+ * updates on an SQL database to be distributed over multiple
+ * destination databases.
+ * It initiates the code to prepare simple MAL-log files.
+ *
+ * Further details are given in the replication module code.
+ */
 @mal
 pattern optimizer.replication():str
 address OPTreplication;
@@ -150,4 +152,3 @@ OPTreplicationImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(replication,OPT_CHECK_ALL)@
-@}

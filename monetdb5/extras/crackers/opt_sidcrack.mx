@@ -17,11 +17,12 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f opt_sidcrack
-@a S.Idreos
-This cracker optimizer changes a query plan in order to use the sideways cracking operators
-
-@{
+@c
+/*
+ * @f opt_sidcrack
+ * @a S.Idreos
+ * This cracker optimizer changes a query plan in order to use the sideways cracking operators
+ */
 @mal
 pattern optimizer.sidcrack():str
 address OPTsidcrack;
@@ -39,7 +40,7 @@ comment "Sideways cracking";
 @:exportOptimizer(sidcrack)@
 #define OPTDEBUGsidcrack  if ( optDebug & ((lng)1 <<DEBUG_OPT_SIDCRACK) )
 #endif
-@c  
+@c
 #include "monetdb_config.h"
 #include "opt_sidcrack.h"
 #include "mal_interpreter.h"	/* for showErrors() */
@@ -468,4 +469,3 @@ OPTsidcrackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(sidcrack,OPT_CHECK_ALL)@
-@}

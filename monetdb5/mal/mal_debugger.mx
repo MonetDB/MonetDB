@@ -17,439 +17,440 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@a M.L. Kersten
-@* The MAL Debugger
-
-In practice it is hard to write a correct MAL program the
-first time around. Instead, it is more often constructed by
-trial-and-error. As long as there are syntax and semantic errors
-the MAL compiler provides a sufficient handle to proceed. Once
-it passes the compiler we have to resort to a debugger to
-assess its behavior.
-
-Note, the MAL debugger described here can be used in conjunction
-with the textual interface client @emph{mclient} only.
-The JDBC protocol does not permit passing through information that
-'violates' the protocol.
-@menu
-* Program Debugging ::
-* Handling Breakpoints::
-* Profile Switches::
-* Program Inspection::
-* Runtime Inspection::
-* Debugger Attachment::
-@end menu
-@node Program Debugging, Handling Breakpoints, The MAL Debugger, The MAL Debugger
-@+ Program Debugging
-To ease debugging and performance monitoring, the MAL interpreter
-comes with a gdb-like debugger.
-An illustrative session elicits the functionality offered.
-
-@example
-mal>function test(i:int):str;
-mal>	io.print(i);
-mal>	i:= i*2;
-mal>	b:= bat.new(:int,:int);
-mal>	bat.insert(b,1,i);
-mal>	io.print(b);
-mal>	return test:= "ok";
-mal>end test;
-mal>user.test(1);
-[ 1 ]
-#-----------------#
-# h     t         # name
-# int   int       # type
-#-----------------#
-[ 1,      2       ]
-@end example
-
-The debugger can be entered at any time using the call mdb.start().
-An overview of the available commands is readily available.
-@example
-mal>mdb.start();
-#mdb !end main;
-mdb>help
-	next             -- Advance to next statement
-	continue         -- Continue program being debugged
-	catch            -- Catch the next exception 
-	break [<var>]    -- set breakpoint on instruction <var>
-	break [#]        -- set breakpoint on instruction # 
-	delete [<var>]   -- remove break/trace point # or <var>
-	debug <int>      -- set kernel debugging mask
-	dot <obj> [<file>]  -- generate the dependency graph 
-	step             -- advance to next MAL instruction
-	module           -- display a module signatures
-	atom             -- show atom list
-	finish           -- finish current call
-	exit             -- terminate executionr
-	quit             -- turn off debugging
-	list <obj>       -- list current program block 
-	list  #  [+#, -#] -- list current program slice
-	List <obj> [#]   -- list with type information (slice)
-	List  #  [+#, -#] -- list current program slice
-	span             -- list the life span of variables
-	var  <obj>       -- print symbol table for module
-	optimizer <obj>  -- display optimizer steps
-	print <var>      -- display value of a variable
-	print <var> <cnt>[<first>] -- display BAT chunk
-	info <var>       -- display bat variable properties
-	run              -- restart current procedure
-	where            -- print stack trace
-	down             -- go down the stack
-	up               -- go up the stack
-	trace <var>      -- trace assignment to variables
-	trap <mod>.<fcn> -- catch MAL function call in console
-	set @verb{ { },timer,thread,flow,io,memory,bbp,bigfoot@verb{ } } -- set trace switches
-	unset            -- turn off switches
-	help             -- this message
-mdb>
-@end example
-
-The term @sc{<obj>} is an abbreviation for a 
-MAL operation @sc{<mod>.<fcn>}, optionally extended with
-a version number, i.e. @sc{[<nr>]}.
-The @sc{var} denotes a variable in the current stack frame.
-Debugger commands may be abbreviated.
-
-We walk our way through a debugging session, highlighting the
-effects of the debugger commands.
-The call to mdb.start() has been encapsulated in a complete
-MAL function, as shown by issuing the list command.
-A more detailed listing shows the binding to the C-routine
-and the result of type resolution.
-@example
-mal>mdb.start();
-#end main;
-mdb>l 0
-#  0 function user.main():int;
-#  1 	mdb.start();
-#  2 end main;
-mdb>L 0
-#  0 function user.main():int;       # 0  (main:int)
-#  1 	mdb.start();        # 1 MDBstart (_1:void)
-#  2 end main;       # 2
-@end example
-The list command has an optional instruction counter argument,
-followed by optional +# or -# arguments.
-The user module is the default place for function defined at
-the console. The modules loaded can be shown typeing the
-command 'module' (or 'm'  for short). 
-The function signatures become visible using the module and optionally
-the function name.
-@example
-mdb>m alarm
-#command alarm.alarm(secs:int,action:str):void address ALARMsetalarm;
-#command alarm.ctime():str address ALARMctime;
-#command alarm.epilogue():void address ALARMepilogue;
-#command alarm.epoch():int address ALARMepoch;
-#command alarm.prelude():void address ALARMprelude;
-#command alarm.sleep(secs:int):void address ALARMsleep;
-#command alarm.time():int address ALARMtime;
-#command alarm.timers():bat[:str,:str] address ALARMtimers;
-#command alarm.usec():lng address ALARMusec;
-mdb>m alarm.sleep
-#command alarm.sleep(secs:int):void address ALARMsleep;
-mdb>
-@end example
-The debugger mode is left with a <return>.
-Any subsequent MAL instruction re-activates the debugger to
-await for commands. The default operation is to step through
-the execution using the 'next' ('n') or 'step' ('s) commands,
-as shown below.
-@example
-mal>user.test(1);
-#    user.test(1);
-mdb>n
-#    io.print(i);
-mdb>
-[ 1 ]
-#    i := calc.*(i,2);
-mdb>
-#    b := bat.new(:int,:int);
-mdb>
-@end example
-The last instruction shown is next to be executed. The result can be
-shown using a print statement, which contains the location of
-the variable on the stack frame, its name, its value and type.
-The complete stack frame becomes visible with 'values' ('v')
-command:
-@example
-#    bat.insert(b,1,i);
-mdb>
-#    io.print(b);
-mdb>v
-#Stack for 'test' size=32 top=11
-#[0] test        = nil:str
-#[1] i   = 4:int
-#[2] _2  = 0:int   unused
-#[3] _3  = 2:int  constant
-#[4] b   = <tmp_1226>:bat[:int,:int]   count=1 lrefs=1 refs=0
-#[5] _5  = 0:int   type variable
-#[6] _6  = nil:bat[:int,:int]   unused
-#[7] _7  = 1:int  constant
-#[8] _8  = 0:int   unused
-#[9] _9  = "ok":str  constant
-@end example
-The variables marked 'unused' have been introduced as temporary variables,
-but which are not referenced in the remainder of the program.
-It also illustrates basic BAT properties, a complete description of which
-can be obtained using the 'info' ('i') command.
-A sample of the BAT content can be printed passing tuple indices, e.g.
-'print b 10 10' prints the second batch of ten tuples.
-
-@node Handling Breakpoints, Profile Switches, Program Debugging, The MAL Debugger
-@+ Handling Breakpoints
-A powerful mechanism for debugging a program is to set breakpoints
-during the debugging session.
-The breakpoints are designated by a target variable name,
-a [module.]function name, or a MAL line number (#<number>).
-
-The snippet below illustrates the reaction to set a break point
-on assignment to variable 'i'. 
-@example
-mal>mdb.start();
-#end main;
-mdb>
-mal>user.test(1);
-#    user.test(1);
-mdb>break i
-breakpoint on 'i' not set
-mdb>n
-#    io.print(i);
-mdb>break i
-mdb>c
-[ 1 ]
-#    i := calc.*(i,2);
-mdb>
-@end example
-
-The breakpoints remain in effect over multiple function calls.
-They can be removed with the @sc{delete} statement.
-A list of all remaining breakpoints is obtained with @sc{breakpoints}.
-
-The interpreter can be instructed to call the debugger as soon as an exception
-is raised. Simply add the instruction @sc{mdb.setCatch(true)}.
-
-@node Profile Switches, Program Inspection, Handling Breakpoints,  The MAL Debugger
-@+ Profile Switches
-Switches control the level of detail output shown while debugging
-or tracing program execution.
-They are toggled with the @sc{set} and @sc{unset} command.
-The following switches are currently supported:
-@table @sc
-@item timer
-activates a listing of all instructions being executed.
-It is measured in wall-clock time.
-@item flow
-shows the total byte size of all BAT target results and input arguments.
-It is a good indicator on the amount of data being processed.
-@item memory
-keeps track on growing memory needs.
-@item io
-keeps track on the amount of physical IO
-and is used to detect operators consuming excessive amounts of space.
-@item bigfoot
-keeps track of the current and maximum virtual memory footprint 
-of the BATs.[incomplete]
-@end table
-
-The snippet below shows setting the @sc{memory} and @sc{timer}
-switch. The switches take effect at the next instruction.
-@example
-mdb>set timer
-mdb>set flow
-mdb>c
-[ 3 ]
-#    26 usec#   0  0#    io.print(i=3)
-#     6 usec#   0  0#    i := calc.*(i=6, _3=2)
-#    10 usec#   0  0#    b := bat.new(_5=0, _6=0)
-#     7 usec#   0  8#    bat.insert(b=<tmp_167>bat[:int,:int]@verb{ { }1@verb{ } }, _8=1, i=6)
-#-----------------#
-# h     t         # name
-# int   int       # type
-#-----------------#
-[ 1,      6       ]
-#    41 usec#   0  8#    io.print(b=<tmp_167>bat[:int,:int]@verb{ { }1@verb{ } })
-#     7 usec#   0  0#    return test := "ok";
-#   211 usec#   0  0#    user.test(_2=3)
-
-@end example
-@node Program Inspection, Runtime Inspection, Profile Switches,  The MAL Debugger
-@+ Program Inspection 
-The debugger commands available for inspection of the program and
-symbol tables are:
-@table @sc
-@item list (List) [<mod>.<fcn>['['<nr>']']]
-A listing of the current MAL block, or one designated
-by the <mod>.<fcn> is produced.
-The @sc{[<nr>]} extension provides access to an element
-in the MAL block history.
-The alternative name 'List' also produces the type information.
-@item optimizer  [<mod>.<fcn>['['<nr>']']]
-Gives an overview of the optimizer actions in the history of the MAL block.
-Intermediate results can be accessed using the list command.
-@item atoms
-Lists the atoms currently known
-@item modules [<mod>]
-Lists the modules currently known. An optional <mod> argument
-produces a list of all signatures within the module identified.
-@item dot <mod>.<fcn>['['<nr>']'] [<file>]
-A dataflow diagram can be produced using the @sc{dot} command.
-It expects a function identifier with an optional history index
-and produces a file for the Linux program @sc{dot},
-which can produce a nice, multi-page graph to illustrate plan
-complexity.
-@end table
-
-@example
-mdb>dot user.main
-@end example
-This example produces the @sc{user.main.dot} in the current
-working directory. The program call
-@example
-dot -Tpdf user-tst-0.dot -o user-tst-0.pdf
-@end example
-creates a PDF file with the graphs. The Linux pdfposter utility can be used to
-produce a proper printing. Alternatively, the Adobe reader professional
-can break it up into multiple pages.
-
-@node Runtime Inspection, Debugger Attachment, Program Inspection,  The MAL Debugger
-@+ Runtime Inspection and Reflection
-Part of the debugger functionality can also be used directly with
-MAL instructions. 
-The execution trace of a snippet of code can be visualized 
-encapsulation with @sc{mdb.setTrace(true)} and @sc{mdb.setTrace(false)}.
-Likewise, the performance can be monitored with the command @sc{mdb.setTimer(on/off)}.
-Using a boolean argument makes it easy to control the (performance) trace
-at run time. The following snippet shows the effect of patching
-the test case.
-@example
-mal>function test(i:int):str;
-mal>	mdb.setTrace(true);
-mal>	io.print(i);
-mal>	i:= i*2;
-mal>	b:= bat.new(:int,:int);
-mal>	bat.insert(b,1,i);
-mal>	io.print(b);
-mal>	mdb.setTrace(false);
-mal>	return test:= "ok";
-mal>end test;
-mal>user.test(1);
-#    mdb.setTrace(_3=true)
-[ 1 ]
-#    io.print(i=1)
-#    i := calc.*(i=2, _5=2)
-#    b := bat.new(_7=0, _8=0)
-#    bat.insert(b=<tmp_1226>, _10=1, i=2)
-#-----------------#
-# h     t         # name
-# int   int       # type
-#-----------------#
-[ 1,      2       ]
-#    io.print(b=<tmp_1226>)
-#   261 usec!    user.test(_2=1)
-mal>
-@end example
-
-The command @sc{mdb.setTimer()} toggles the performance traceing flag. 
-The argument is a boolen to designate its state. 
-The primary output of the timer switch is statistics in micro-seconds,
-the memory tracer shows the arena increment, and the IO tracer
-shows in- and out-blocks.
-The time spent on preparing the trace information is excluded
-from the report.
-For more detailed timing information the Linux
-tool @emph{valgrind} may be of help.
-
-The routines @sc{mdb.setFlow()}, @sc{mdb.setMemory()}, and @sc{mdb.setIO()} 
-(de-)activate the other switches.
-@example
-mal>function test(i:int):str;
-mal>	mdb.setTimer(true);
-mal>	io.print(i);
-mal>	i:= i*2;
-mal>	b:= bat.new(:int,:int);
-mal>	bat.insert(b,1,i);
-mal>	io.print(b);
-mal>	mdb.setTimer(false);
-mal>	return test:= "ok";
-mal>end test;
-mal>user.test(1);
-#     6 usec#    mdb.setTimer(_3=true)
-[ 1 ]
-#    43 usec#    io.print(i=1)
-#     5 usec#    i := calc.*(i=2, _5=2)
-#    24 usec#    b := bat.new(_7=0, _8=0)
-#    10 usec#    bat.insert(b=<tmp_1226>, _10=1, i=2)
-#-----------------#
-# h     t         # name
-# int   int       # type
-#-----------------#
-[ 1,      2       ]
-#   172 usec#    io.print(b=<tmp_1226>)
-#   261 usec#    user.test(_2=1)
-@end example
-
-It is also possible to activate the debugger from within a program 
-using @sc{mdb.start()}. It remains in this mode until 
-you either issue a quit command, or the command mdb.stop() instruction is
-encountered. 
-The debugger is only activated when the user can direct its execution
-from the client interface. Otherwise, there is no proper input channel
-and the debugger will run in trace mode.
-
-The program listing functionality of the debugger is 
-also captured in the MAL debugger module. The current code
-block can be listed using @sc{mdb.list()} and @sc{mdb.List()}.
-An arbitrary code block can be shown with  @sc{mdb.list}(@emph{module},@emph{function})
-and @sc{mdb.List}(@emph{module},@emph{function}).
-A BAT representation of the current function is return by @sc{mdb.getDefinition()}@.
-
-The symbol table and stack content, if available, can be shown with
-the operations @sc{mdb.var()} and @sc{mdb.list}(@emph{module},@emph{function})
-Access to the stack frames may be helpful in the context of exception handling.
-The operation @sc{mdb.getStackDepth()} gives the depth and individual
-elements can be accessed as BATs using @sc{mdb.getStackFrame(@emph{n})}.
-The top stack frame is accessed using @sc{mdb.getStackFrame()}.
-
-@node Debugger Attachment, The MAL Profiler, Runtime Inspection,  The MAL Debugger
-@+ Debugger Attachment
-Debugging a running MAL process is simplified with a few
-hooks in the kernel. It is illustrated with a short example.
-
-First open a client connection using MAL as
-preferred language. Then the state of the system can be inspected,
-in particular, the clients active can be looked up.
-@example
-mal>b:= clients.getLogins();
-mal>c:= clients.getUsers();
-mal>io.print(b,c);
-#-------------------------------------------------#
-# client        login                           users     # name
-# int   str                             str       # type
-#-------------------------------------------------#
-[ 0,      "Thu Feb  7 15:57:08 2008",     "0"     ]
-[ 1,      "Thu Feb  7 15:57:11 2008",     "0"     ]
-@end example
-Locate the process you are interested in and obtain its identifier,
-say N (the first column in the list above).
-The next step is to gracefully put the running process into
-debugging mode without jeopardizing the application running.
-@example
-mal> mdb.setTrap(1);
-#process 1 put to sleep
-mal> mdb.grab();
-@end example
-As soon as the next MAL instruction of process N starts 
-the target process is put to sleep and you can access
-the context for debugging. 
-The control ends when you leave the debugger with a 'quit' command.
-
-@{
-@- Compilation control
-Being able to debug comes at a price.
-It should be possible to turn off the feature at compile time.
-
+@c
+/*
+ * @a M.L. Kersten
+ * @* The MAL Debugger
+ *
+ * In practice it is hard to write a correct MAL program the
+ * first time around. Instead, it is more often constructed by
+ * trial-and-error. As long as there are syntax and semantic errors
+ * the MAL compiler provides a sufficient handle to proceed. Once
+ * it passes the compiler we have to resort to a debugger to
+ * assess its behavior.
+ *
+ * Note, the MAL debugger described here can be used in conjunction
+ * with the textual interface client @emph{mclient} only.
+ * The JDBC protocol does not permit passing through information that
+ * 'violates' the protocol.
+ * @menu
+ * * Program Debugging ::
+ * * Handling Breakpoints::
+ * * Profile Switches::
+ * * Program Inspection::
+ * * Runtime Inspection::
+ * * Debugger Attachment::
+ * @end menu
+ * @node Program Debugging, Handling Breakpoints, The MAL Debugger, The MAL Debugger
+ * @+ Program Debugging
+ * To ease debugging and performance monitoring, the MAL interpreter
+ * comes with a gdb-like debugger.
+ * An illustrative session elicits the functionality offered.
+ *
+ * @example
+ * mal>function test(i:int):str;
+ * mal>	io.print(i);
+ * mal>	i:= i*2;
+ * mal>	b:= bat.new(:int,:int);
+ * mal>	bat.insert(b,1,i);
+ * mal>	io.print(b);
+ * mal>	return test:= "ok";
+ * mal>end test;
+ * mal>user.test(1);
+ * [ 1 ]
+ * #-----------------#
+ * # h     t         # name
+ * # int   int       # type
+ * #-----------------#
+ * [ 1,      2       ]
+ * @end example
+ *
+ * The debugger can be entered at any time using the call mdb.start().
+ * An overview of the available commands is readily available.
+ * @example
+ * mal>mdb.start();
+ * #mdb !end main;
+ * mdb>help
+ * 	next             -- Advance to next statement
+ * 	continue         -- Continue program being debugged
+ * 	catch            -- Catch the next exception
+ * 	break [<var>]    -- set breakpoint on instruction <var>
+ * 	break [#]        -- set breakpoint on instruction #
+ * 	delete [<var>]   -- remove break/trace point # or <var>
+ * 	debug <int>      -- set kernel debugging mask
+ * 	dot <obj> [<file>]  -- generate the dependency graph
+ * 	step             -- advance to next MAL instruction
+ * 	module           -- display a module signatures
+ * 	atom             -- show atom list
+ * 	finish           -- finish current call
+ * 	exit             -- terminate executionr
+ * 	quit             -- turn off debugging
+ * 	list <obj>       -- list current program block
+ * 	list  #  [+#, -#] -- list current program slice
+ * 	List <obj> [#]   -- list with type information (slice)
+ * 	List  #  [+#, -#] -- list current program slice
+ * 	span             -- list the life span of variables
+ * 	var  <obj>       -- print symbol table for module
+ * 	optimizer <obj>  -- display optimizer steps
+ * 	print <var>      -- display value of a variable
+ * 	print <var> <cnt>[<first>] -- display BAT chunk
+ * 	info <var>       -- display bat variable properties
+ * 	run              -- restart current procedure
+ * 	where            -- print stack trace
+ * 	down             -- go down the stack
+ * 	up               -- go up the stack
+ * 	trace <var>      -- trace assignment to variables
+ * 	trap <mod>.<fcn> -- catch MAL function call in console
+ * 	set @verb{ { },timer,thread,flow,io,memory,bbp,bigfoot@verb{ } } -- set trace switches
+ * 	unset            -- turn off switches
+ * 	help             -- this message
+ * mdb>
+ * @end example
+ *
+ * The term @sc{<obj>} is an abbreviation for a
+ * MAL operation @sc{<mod>.<fcn>}, optionally extended with
+ * a version number, i.e. @sc{[<nr>]}.
+ * The @sc{var} denotes a variable in the current stack frame.
+ * Debugger commands may be abbreviated.
+ *
+ * We walk our way through a debugging session, highlighting the
+ * effects of the debugger commands.
+ * The call to mdb.start() has been encapsulated in a complete
+ * MAL function, as shown by issuing the list command.
+ * A more detailed listing shows the binding to the C-routine
+ * and the result of type resolution.
+ * @example
+ * mal>mdb.start();
+ * #end main;
+ * mdb>l 0
+ * #  0 function user.main():int;
+ * #  1 	mdb.start();
+ * #  2 end main;
+ * mdb>L 0
+ * #  0 function user.main():int;       # 0  (main:int)
+ * #  1 	mdb.start();        # 1 MDBstart (_1:void)
+ * #  2 end main;       # 2
+ * @end example
+ * The list command has an optional instruction counter argument,
+ * followed by optional +# or -# arguments.
+ * The user module is the default place for function defined at
+ * the console. The modules loaded can be shown typeing the
+ * command 'module' (or 'm'  for short).
+ * The function signatures become visible using the module and optionally
+ * the function name.
+ * @example
+ * mdb>m alarm
+ * #command alarm.alarm(secs:int,action:str):void address ALARMsetalarm;
+ * #command alarm.ctime():str address ALARMctime;
+ * #command alarm.epilogue():void address ALARMepilogue;
+ * #command alarm.epoch():int address ALARMepoch;
+ * #command alarm.prelude():void address ALARMprelude;
+ * #command alarm.sleep(secs:int):void address ALARMsleep;
+ * #command alarm.time():int address ALARMtime;
+ * #command alarm.timers():bat[:str,:str] address ALARMtimers;
+ * #command alarm.usec():lng address ALARMusec;
+ * mdb>m alarm.sleep
+ * #command alarm.sleep(secs:int):void address ALARMsleep;
+ * mdb>
+ * @end example
+ * The debugger mode is left with a <return>.
+ * Any subsequent MAL instruction re-activates the debugger to
+ * await for commands. The default operation is to step through
+ * the execution using the 'next' ('n') or 'step' ('s) commands,
+ * as shown below.
+ * @example
+ * mal>user.test(1);
+ * #    user.test(1);
+ * mdb>n
+ * #    io.print(i);
+ * mdb>
+ * [ 1 ]
+ * #    i := calc.*(i,2);
+ * mdb>
+ * #    b := bat.new(:int,:int);
+ * mdb>
+ * @end example
+ * The last instruction shown is next to be executed. The result can be
+ * shown using a print statement, which contains the location of
+ * the variable on the stack frame, its name, its value and type.
+ * The complete stack frame becomes visible with 'values' ('v')
+ * command:
+ * @example
+ * #    bat.insert(b,1,i);
+ * mdb>
+ * #    io.print(b);
+ * mdb>v
+ * #Stack for 'test' size=32 top=11
+ * #[0] test        = nil:str
+ * #[1] i   = 4:int
+ * #[2] _2  = 0:int   unused
+ * #[3] _3  = 2:int  constant
+ * #[4] b   = <tmp_1226>:bat[:int,:int]   count=1 lrefs=1 refs=0
+ * #[5] _5  = 0:int   type variable
+ * #[6] _6  = nil:bat[:int,:int]   unused
+ * #[7] _7  = 1:int  constant
+ * #[8] _8  = 0:int   unused
+ * #[9] _9  = "ok":str  constant
+ * @end example
+ * The variables marked 'unused' have been introduced as temporary variables,
+ * but which are not referenced in the remainder of the program.
+ * It also illustrates basic BAT properties, a complete description of which
+ * can be obtained using the 'info' ('i') command.
+ * A sample of the BAT content can be printed passing tuple indices, e.g.
+ * 'print b 10 10' prints the second batch of ten tuples.
+ *
+ * @node Handling Breakpoints, Profile Switches, Program Debugging, The MAL Debugger
+ * @+ Handling Breakpoints
+ * A powerful mechanism for debugging a program is to set breakpoints
+ * during the debugging session.
+ * The breakpoints are designated by a target variable name,
+ * a [module.]function name, or a MAL line number (#<number>).
+ *
+ * The snippet below illustrates the reaction to set a break point
+ * on assignment to variable 'i'.
+ * @example
+ * mal>mdb.start();
+ * #end main;
+ * mdb>
+ * mal>user.test(1);
+ * #    user.test(1);
+ * mdb>break i
+ * breakpoint on 'i' not set
+ * mdb>n
+ * #    io.print(i);
+ * mdb>break i
+ * mdb>c
+ * [ 1 ]
+ * #    i := calc.*(i,2);
+ * mdb>
+ * @end example
+ *
+ * The breakpoints remain in effect over multiple function calls.
+ * They can be removed with the @sc{delete} statement.
+ * A list of all remaining breakpoints is obtained with @sc{breakpoints}.
+ *
+ * The interpreter can be instructed to call the debugger as soon as an exception
+ * is raised. Simply add the instruction @sc{mdb.setCatch(true)}.
+ *
+ * @node Profile Switches, Program Inspection, Handling Breakpoints,  The MAL Debugger
+ * @+ Profile Switches
+ * Switches control the level of detail output shown while debugging
+ * or tracing program execution.
+ * They are toggled with the @sc{set} and @sc{unset} command.
+ * The following switches are currently supported:
+ * @table @sc
+ * @item timer
+ * activates a listing of all instructions being executed.
+ * It is measured in wall-clock time.
+ * @item flow
+ * shows the total byte size of all BAT target results and input arguments.
+ * It is a good indicator on the amount of data being processed.
+ * @item memory
+ * keeps track on growing memory needs.
+ * @item io
+ * keeps track on the amount of physical IO
+ * and is used to detect operators consuming excessive amounts of space.
+ * @item bigfoot
+ * keeps track of the current and maximum virtual memory footprint
+ * of the BATs.[incomplete]
+ * @end table
+ *
+ * The snippet below shows setting the @sc{memory} and @sc{timer}
+ * switch. The switches take effect at the next instruction.
+ * @example
+ * mdb>set timer
+ * mdb>set flow
+ * mdb>c
+ * [ 3 ]
+ * #    26 usec#   0  0#    io.print(i=3)
+ * #     6 usec#   0  0#    i := calc.*(i=6, _3=2)
+ * #    10 usec#   0  0#    b := bat.new(_5=0, _6=0)
+ * #     7 usec#   0  8#    bat.insert(b=<tmp_167>bat[:int,:int]@verb{ { }1@verb{ } }, _8=1, i=6)
+ * #-----------------#
+ * # h     t         # name
+ * # int   int       # type
+ * #-----------------#
+ * [ 1,      6       ]
+ * #    41 usec#   0  8#    io.print(b=<tmp_167>bat[:int,:int]@verb{ { }1@verb{ } })
+ * #     7 usec#   0  0#    return test := "ok";
+ * #   211 usec#   0  0#    user.test(_2=3)
+ *
+ * @end example
+ * @node Program Inspection, Runtime Inspection, Profile Switches,  The MAL Debugger
+ * @+ Program Inspection
+ * The debugger commands available for inspection of the program and
+ * symbol tables are:
+ * @table @sc
+ * @item list (List) [<mod>.<fcn>['['<nr>']']]
+ * A listing of the current MAL block, or one designated
+ * by the <mod>.<fcn> is produced.
+ * The @sc{[<nr>]} extension provides access to an element
+ * in the MAL block history.
+ * The alternative name 'List' also produces the type information.
+ * @item optimizer  [<mod>.<fcn>['['<nr>']']]
+ * Gives an overview of the optimizer actions in the history of the MAL block.
+ * Intermediate results can be accessed using the list command.
+ * @item atoms
+ * Lists the atoms currently known
+ * @item modules [<mod>]
+ * Lists the modules currently known. An optional <mod> argument
+ * produces a list of all signatures within the module identified.
+ * @item dot <mod>.<fcn>['['<nr>']'] [<file>]
+ * A dataflow diagram can be produced using the @sc{dot} command.
+ * It expects a function identifier with an optional history index
+ * and produces a file for the Linux program @sc{dot},
+ * which can produce a nice, multi-page graph to illustrate plan
+ * complexity.
+ * @end table
+ *
+ * @example
+ * mdb>dot user.main
+ * @end example
+ * This example produces the @sc{user.main.dot} in the current
+ * working directory. The program call
+ * @example
+ * dot -Tpdf user-tst-0.dot -o user-tst-0.pdf
+ * @end example
+ * creates a PDF file with the graphs. The Linux pdfposter utility can be used to
+ * produce a proper printing. Alternatively, the Adobe reader professional
+ * can break it up into multiple pages.
+ *
+ * @node Runtime Inspection, Debugger Attachment, Program Inspection,  The MAL Debugger
+ * @+ Runtime Inspection and Reflection
+ * Part of the debugger functionality can also be used directly with
+ * MAL instructions.
+ * The execution trace of a snippet of code can be visualized
+ * encapsulation with @sc{mdb.setTrace(true)} and @sc{mdb.setTrace(false)}.
+ * Likewise, the performance can be monitored with the command @sc{mdb.setTimer(on/off)}.
+ * Using a boolean argument makes it easy to control the (performance) trace
+ * at run time. The following snippet shows the effect of patching
+ * the test case.
+ * @example
+ * mal>function test(i:int):str;
+ * mal>	mdb.setTrace(true);
+ * mal>	io.print(i);
+ * mal>	i:= i*2;
+ * mal>	b:= bat.new(:int,:int);
+ * mal>	bat.insert(b,1,i);
+ * mal>	io.print(b);
+ * mal>	mdb.setTrace(false);
+ * mal>	return test:= "ok";
+ * mal>end test;
+ * mal>user.test(1);
+ * #    mdb.setTrace(_3=true)
+ * [ 1 ]
+ * #    io.print(i=1)
+ * #    i := calc.*(i=2, _5=2)
+ * #    b := bat.new(_7=0, _8=0)
+ * #    bat.insert(b=<tmp_1226>, _10=1, i=2)
+ * #-----------------#
+ * # h     t         # name
+ * # int   int       # type
+ * #-----------------#
+ * [ 1,      2       ]
+ * #    io.print(b=<tmp_1226>)
+ * #   261 usec!    user.test(_2=1)
+ * mal>
+ * @end example
+ *
+ * The command @sc{mdb.setTimer()} toggles the performance traceing flag.
+ * The argument is a boolen to designate its state.
+ * The primary output of the timer switch is statistics in micro-seconds,
+ * the memory tracer shows the arena increment, and the IO tracer
+ * shows in- and out-blocks.
+ * The time spent on preparing the trace information is excluded
+ * from the report.
+ * For more detailed timing information the Linux
+ * tool @emph{valgrind} may be of help.
+ *
+ * The routines @sc{mdb.setFlow()}, @sc{mdb.setMemory()}, and @sc{mdb.setIO()}
+ * (de-)activate the other switches.
+ * @example
+ * mal>function test(i:int):str;
+ * mal>	mdb.setTimer(true);
+ * mal>	io.print(i);
+ * mal>	i:= i*2;
+ * mal>	b:= bat.new(:int,:int);
+ * mal>	bat.insert(b,1,i);
+ * mal>	io.print(b);
+ * mal>	mdb.setTimer(false);
+ * mal>	return test:= "ok";
+ * mal>end test;
+ * mal>user.test(1);
+ * #     6 usec#    mdb.setTimer(_3=true)
+ * [ 1 ]
+ * #    43 usec#    io.print(i=1)
+ * #     5 usec#    i := calc.*(i=2, _5=2)
+ * #    24 usec#    b := bat.new(_7=0, _8=0)
+ * #    10 usec#    bat.insert(b=<tmp_1226>, _10=1, i=2)
+ * #-----------------#
+ * # h     t         # name
+ * # int   int       # type
+ * #-----------------#
+ * [ 1,      2       ]
+ * #   172 usec#    io.print(b=<tmp_1226>)
+ * #   261 usec#    user.test(_2=1)
+ * @end example
+ *
+ * It is also possible to activate the debugger from within a program
+ * using @sc{mdb.start()}. It remains in this mode until
+ * you either issue a quit command, or the command mdb.stop() instruction is
+ * encountered.
+ * The debugger is only activated when the user can direct its execution
+ * from the client interface. Otherwise, there is no proper input channel
+ * and the debugger will run in trace mode.
+ *
+ * The program listing functionality of the debugger is
+ * also captured in the MAL debugger module. The current code
+ * block can be listed using @sc{mdb.list()} and @sc{mdb.List()}.
+ * An arbitrary code block can be shown with  @sc{mdb.list}(@emph{module},@emph{function})
+ * and @sc{mdb.List}(@emph{module},@emph{function}).
+ * A BAT representation of the current function is return by @sc{mdb.getDefinition()}@.
+ *
+ * The symbol table and stack content, if available, can be shown with
+ * the operations @sc{mdb.var()} and @sc{mdb.list}(@emph{module},@emph{function})
+ * Access to the stack frames may be helpful in the context of exception handling.
+ * The operation @sc{mdb.getStackDepth()} gives the depth and individual
+ * elements can be accessed as BATs using @sc{mdb.getStackFrame(@emph{n})}.
+ * The top stack frame is accessed using @sc{mdb.getStackFrame()}.
+ *
+ * @node Debugger Attachment, The MAL Profiler, Runtime Inspection,  The MAL Debugger
+ * @+ Debugger Attachment
+ * Debugging a running MAL process is simplified with a few
+ * hooks in the kernel. It is illustrated with a short example.
+ *
+ * First open a client connection using MAL as
+ * preferred language. Then the state of the system can be inspected,
+ * in particular, the clients active can be looked up.
+ * @example
+ * mal>b:= clients.getLogins();
+ * mal>c:= clients.getUsers();
+ * mal>io.print(b,c);
+ * #-------------------------------------------------#
+ * # client        login                           users     # name
+ * # int   str                             str       # type
+ * #-------------------------------------------------#
+ * [ 0,      "Thu Feb  7 15:57:08 2008",     "0"     ]
+ * [ 1,      "Thu Feb  7 15:57:11 2008",     "0"     ]
+ * @end example
+ * Locate the process you are interested in and obtain its identifier,
+ * say N (the first column in the list above).
+ * The next step is to gracefully put the running process into
+ * debugging mode without jeopardizing the application running.
+ * @example
+ * mal> mdb.setTrap(1);
+ * #process 1 put to sleep
+ * mal> mdb.grab();
+ * @end example
+ * As soon as the next MAL instruction of process N starts
+ * the target process is put to sleep and you can access
+ * the context for debugging.
+ * The control ends when you leave the debugger with a 'quit' command.
+ *
+ * @- Compilation control
+ * Being able to debug comes at a price.
+ * It should be possible to turn off the feature at compile time.
+ */
 @h
 #ifndef _MAL_DEBUGGER_H
 #define _MAL_DEBUGGER_H
@@ -508,10 +509,12 @@ mal_export void optimizerDebug(Client cntxt, MalBlkPtr mb, str name, int actions
 mal_export str debugOptimizers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export void debugLifespan(Client cntxt, MalBlkPtr mb, Lifespan span);
 #endif /* _MAL_DEBUGGER_h */
-@+ Debugger framework
-Before the interpreter is allowed to proceed we give control
-to the user to alter the trace/debugger options.
 @c
+/*
+ * @+ Debugger framework
+ * Before the interpreter is allowed to proceed we give control
+ * to the user to alter the trace/debugger options.
+ */
 #include "monetdb_config.h"
 #include "mal_readline.h"
 #include "mal_debugger.h"
@@ -535,11 +538,12 @@ int MDBdelay;			/* do not immediately react */
 static void printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first);
 static void printStackHdr(stream *f, MalBlkPtr mb, ValPtr v, int index);
 
-@-
-Each client has its own breakpoint administration, kept in a global table.
-Although a little space consumptive, it is the easiest to maintain
-and much less expensive as reserving debugger space in each instruction.
-@c
+/*
+ * @-
+ * Each client has its own breakpoint administration, kept in a global table.
+ * Although a little space consumptive, it is the easiest to maintain
+ * and much less expensive as reserving debugger space in each instruction.
+ */
 mdbStateRecord mdbTable[MAL_MAXCLIENTS];
 
 static char
@@ -567,10 +571,11 @@ isBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
 	return 0;
 }
 
-@-
-Break points can be set on assignment to a specific variable,
-specific operation, or a instruction line
-@c
+/*
+ * @-
+ * Break points can be set on assignment to a specific variable,
+ * specific operation, or a instruction line
+ */
 void
 mdbSetBreakRequest(Client cntxt, MalBlkPtr mb, str request, char cmd)
 {
@@ -635,9 +640,10 @@ mdbSetBreakRequest(Client cntxt, MalBlkPtr mb, str request, char cmd)
 	}
 }
 
-@-
-A breakpoint should be set once for each combination
-@c
+/*
+ * @-
+ * A breakpoint should be set once for each combination
+ */
 void
 mdbSetBreakpoint(Client cntxt, MalBlkPtr mb, int pc, char cmd)
 {
@@ -762,11 +768,12 @@ mdbBacktrace(Client cntxt, MalStkPtr stk, int pci){
 			pci = stk->up->pcup;
 	}
 }
-@-
-Sometimes we may want to trace the changes applied to the
-BAT buffer pool and report them together with the MAL
-instruction where it happened.
-@c
+/*
+ * @-
+ * Sometimes we may want to trace the changes applied to the
+ * BAT buffer pool and report them together with the MAL
+ * instruction where it happened.
+ */
 static int BBPtraceEnabled = 0;
 static str BBPtracePattern = NULL;
 char
@@ -824,17 +831,18 @@ printBATproperties(stream *f, BAT *b){
 	if (b->T->heap.parentid)
 		mnstr_printf(f, "tail view on %s ", BBPname(b->T->heap.parentid));
 }
-@+ MAL debugger parser
-The debugger structure is inherited from GDB.
-The routine mdbCommand is called with p=0 after finishing a mal- function call
-and before continuing at the next level of invocation.
-The commands are self-explanatory.
-
-The prompt string sent to the user indicates the debugger mode.
-
-The history of the optimizers is maintained, which can be localized
-for inspection.
-@c
+/*
+ * @+ MAL debugger parser
+ * The debugger structure is inherited from GDB.
+ * The routine mdbCommand is called with p=0 after finishing a mal- function call
+ * and before continuing at the next level of invocation.
+ * The commands are self-explanatory.
+ *
+ * The prompt string sent to the user indicates the debugger mode.
+ *
+ * The history of the optimizers is maintained, which can be localized
+ * for inspection.
+ */
 #define MDBstatus(X) if(cntxt->fdout) \
 	mnstr_printf(cntxt->fdout,"#MonetDB Debugger %s\n", (X?"on":"off"));
 
@@ -1426,11 +1434,12 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 			mdbBacktrace(cntxt, stk, pc);
 			continue;
 		}
-@-
-While debugging it should be possible to inspect the symbol
-table using the 'module.function' name. The default is to list all
-signatures satisfying the pattern.
-@c
+		/*
+		 * @-
+		 * While debugging it should be possible to inspect the symbol
+		 * table using the 'module.function' name. The default is to list all
+		 * signatures satisfying the pattern.
+		 */
 		case 'L':
 		case 'l':	/* list the current MAL block or module */
 		{
@@ -1485,10 +1494,11 @@ signatures satisfying the pattern.
 				if( m) 
 					printFunction(out, m, 0, lstng);
 			} else  {
-@-
-Listing the program starts at the pc last given.
-Repeated use of the list command moves you up and down the program
-@c
+				/*
+				 * @-
+				 * Listing the program starts at the pc last given.
+				 * Repeated use of the list command moves you up and down the program
+				 */
 				partial:
 				if (isdigit((int)*b) ) {
 					first = (int) atoi(b);
@@ -1560,12 +1570,13 @@ static int mdbSessionActive;
 int mdbSession(void){
 	return mdbSessionActive;
 }
-@-
-It may be relevant to trap against dangerous situations, such
-as underlying types not being aligned with what is expected
-at the MAL level. Since such tests can be quite expensive
-it should be used with care.
-@c
+/*
+ * @-
+ * It may be relevant to trap against dangerous situations, such
+ * as underlying types not being aligned with what is expected
+ * at the MAL level. Since such tests can be quite expensive
+ * it should be used with care.
+ */
 #if 0
 void
 mdbSanityCheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
@@ -1707,11 +1718,12 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	mdbSessionActive= 0; /* for name completion */
 }
 
-@-
-Grabbing the execution state of a running query can be
-useful to inspect its runtime environment. Ideally, any
-suspended running MAL block should be accessed this way.
-@c
+/*
+ * @-
+ * Grabbing the execution state of a running query can be
+ * useful to inspect its runtime environment. Ideally, any
+ * suspended running MAL block should be accessed this way.
+ */
 str
 mdbGrab(Client cntxt, MalBlkPtr mb1, MalStkPtr stk1, InstrPtr pc1){
 	Client c;
@@ -1765,11 +1777,12 @@ mdbTrapClient(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	mnstr_flush(cntxt->fdout);
 	return MAL_SUCCEED;
 }
-@-
-It would come in handy if at any time you could activate
-the debugger on a specific function. This calls for the
-creation of a minimal execution environment first.
-@c
+/*
+ * @-
+ * It would come in handy if at any time you could activate
+ * the debugger on a specific function. This calls for the
+ * creation of a minimal execution environment first.
+ */
 str
 runMALDebugger(Client cntxt, Symbol s)
 {
@@ -1778,16 +1791,17 @@ runMALDebugger(Client cntxt, Symbol s)
 	return MAL_SUCCEED;
 }
 
-@+ Utilities
-Dumping a stack on a file is primarilly used for debugging.
-Printing the stack requires access to both the symbol table and
-the stackframes in most cases.
-Beware that a stack frame need not be initialized with null values.
-It has been zeroed upon creation.
-
-The routine  can also be used to inspect the symbol table of
-arbitrary functions.
-@c
+/*
+ * @+ Utilities
+ * Dumping a stack on a file is primarilly used for debugging.
+ * Printing the stack requires access to both the symbol table and
+ * the stackframes in most cases.
+ * Beware that a stack frame need not be initialized with null values.
+ * It has been zeroed upon creation.
+ *
+ * The routine  can also be used to inspect the symbol table of
+ * arbitrary functions.
+ */
 void
 printStack(stream *f, MalBlkPtr mb, MalStkPtr s)
 {
@@ -1989,9 +2003,11 @@ printBatProperties(stream *f, VarPtr n, ValPtr v, str props)
 	}
 }
 
-@-
-The memory positions for the BATs is useful information to
-asses for memory fragmentation.
+/*
+ * @-
+ * The memory positions for the BATs is useful information to
+ * asses for memory fragmentation.
+ */
 @= heapinfo
 hp= @1;
 if(hp && hp->base){
@@ -2003,17 +2019,19 @@ if(h && h->mask){
 	    mnstr_printf(out,"\t@2link=" PTRFMT " size=" SZFMT "\n",PTRFMTCAST h->link,
 	            (h->mask+h->lim+1)*sizeof(int));
 }
-@-
-The memProfileVector routine produces a character string to represent
-the usage of memory by BAT information. The characters are interpreted
-as follows:
-.=unused, X=completely used, [0-9]=small elements within the granule
-More then 9 elements makes it full.
+@
+ * @-
+ * The memProfileVector routine produces a character string to represent
+ * the usage of memory by BAT information. The characters are interpreted
+ * as follows:
+ * .=unused, X=completely used, [0-9]=small elements within the granule
+ * More then 9 elements makes it full.
 @= setVector
 	start= (((long)@1)-min)/granule;
 	lim= (((long)@1)-min + @2)/granule;
 	mnstr_printf(out,"start %ld lim %ld\n",start,lim);
 
+@
 @c
 static str
 memProfileVector(stream *out, int cells)
@@ -2089,9 +2107,10 @@ printBBPinfo(stream *out)
 #endif
 }
 
-@-
-Some utilities for the debugger
-@c
+/*
+ * @-
+ * Some utilities for the debugger
+ */
 void
 mdbHelp(stream *f)
 {
@@ -2129,17 +2148,18 @@ mdbHelp(stream *f)
 	mnstr_printf(f, "help             -- this message\n");
 }
 
-@+ Optimizer debugging
-The modular approach to optimize a MAL program brings with it the
-need to check individual steps. Two options come to mind. If in
-debug mode we could stop after each optimizer action for inspection.
-Alternatively, we keep a history of all MAL program versions for
-aposteriori analysis.
-The latter is implemented first.
-
-A global stack is used for simplity, later we may have to
-make it thread safe by assigning it to a client record.
-@c
+/*
+ * @+ Optimizer debugging
+ * The modular approach to optimize a MAL program brings with it the
+ * need to check individual steps. Two options come to mind. If in
+ * debug mode we could stop after each optimizer action for inspection.
+ * Alternatively, we keep a history of all MAL program versions for
+ * aposteriori analysis.
+ * The latter is implemented first.
+ *
+ * A global stack is used for simplity, later we may have to
+ * make it thread safe by assigning it to a client record.
+ */
 int isInvariant(MalBlkPtr mb, int pcf, int pcl, int varid);
 
 str
@@ -2153,7 +2173,6 @@ debugOptimizers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-@c
 void
 debugLifespan(Client cntxt, MalBlkPtr mb, Lifespan span)
 {
@@ -2176,4 +2195,3 @@ debugLifespan(Client cntxt, MalBlkPtr mb, Lifespan span)
 			mnstr_printf(cntxt->fdout,"constant \n"); 
 	}
 }
-@}

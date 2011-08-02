@@ -17,32 +17,33 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f gdk_qsort
-@a Peter Boncz, Niels Nes et al
-@* Qsort
-There were two problems with the OS provided qsort() library routine:
-@table @samp
-@item unreliable
-on certain OSs (e.g. SunOS), the qsort somehow degenerates
-if there are a very small number of different values (on 
-132K elements with 7 values, I never saw it return). 
-This is a serious bug.
-@item atom format
- when comparing GDK atoms (e.g. in BATs) it was not
-possible to use qsort on varsized atoms (as monet stores them 
-as integer offsets from a global base pointer that qsort does 
-not know about), nor if the values were not placed at the start 
-of the record (e.g.  if the column is the tail column of a BAT).
-@end table
-
-Both these problems are fixed in the new GDKqsort function, that
-is based on the standard Berkeley qsort (see copyright notice below).
-
-The routine was "monet"-ified with macro code expansions for the specific
-data types to obtain extra speed (we know more about our data than the stdlib 
-qsort() ever can).
-@{
 @c
+/*
+ * @f gdk_qsort
+ * @a Peter Boncz, Niels Nes et al
+ * @* Qsort
+ * There were two problems with the OS provided qsort() library routine:
+ * @table @samp
+ * @item unreliable
+ * on certain OSs (e.g. SunOS), the qsort somehow degenerates
+ * if there are a very small number of different values (on
+ * 132K elements with 7 values, I never saw it return).
+ * This is a serious bug.
+ * @item atom format
+ *  when comparing GDK atoms (e.g. in BATs) it was not
+ * possible to use qsort on varsized atoms (as monet stores them
+ * as integer offsets from a global base pointer that qsort does
+ * not know about), nor if the values were not placed at the start
+ * of the record (e.g.  if the column is the tail column of a BAT).
+ * @end table
+ *
+ * Both these problems are fixed in the new GDKqsort function, that
+ * is based on the standard Berkeley qsort (see copyright notice below).
+ *
+ * The routine was "monet"-ified with macro code expansions for the specific
+ * data types to obtain extra speed (we know more about our data than the stdlib
+ * qsort() ever can).
+ */
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
@@ -80,10 +81,11 @@ qsort() ever can).
  * SUCH DAMAGE.
  */
 
-@-
-Record containing all data-specific info.
-Introduced to reduce number of qsort parameters 
-@c
+/*
+ * @-
+ * Record containing all data-specific info.
+ * Introduced to reduce number of qsort parameters
+ */
 typedef struct {
 	int (*cmp) (ptr, ptr);	/* routine that compares two atoms */
 	char *offst;		/* NULL or start of varsized heap */
@@ -124,6 +126,7 @@ typedef struct {
 
 #define offset_@1_multi_SWAP(TYPE, a, b, n, nt, s) offset_any_multi_SWAP(TYPE, a, b, n, nt, s)
 
+@
 @c
 @:register_swap(chr)@
 @:register_swap(bte)@
@@ -174,34 +177,33 @@ typedef struct {
 		}				\
 	} while (0)
 
-@}
-@-
-qsort is macro expanded in four dimensions:
-@table @samp
-@item direction:2
-	L: from lesser to greater is standard.
-	G: from greater to lesser is the _rev version of quicksort.
-@item type:7
-	in order to factor out a type-specific check, or a function call for each 
-	value comparison, we separate different qsort implementations by the comparison 
-	type, of which each has the comparison hard-coded. We factor out the types 
-	@{chr,bte,sht,int,wrd,flt,lng,dbl,any@} (the latter uses an adt function call).
-@item storage:2
-	denoted @{direct,offset@}, means whether the array to be sorted contains the 
-	(fixed-width) values itself, or whether it contains integer byte-offsets, that point 
-	into some heap. Note that we support byte-offset qsort also on fixed-size types, 
-	as this is handy in many cases.
-@item swapmethod:2
-	qsort sorts an array by continually swapping entries. To do this, two
-	implementations of the swap action are supported: @{iterate,register@}. 
-	The default implementation takes the comparison type and does the swapping by 
-	iterating a number of times per entry, copying one comparison value per iteration. 
-	One often-occurring special case is when the entry width is 8 (two integers). These 
-	can be copied by one long integer load and store; without the loop overhead.
-@end table
-Thus, there are 2 * 7 * 2 * 2 = 56 GDKqsort implementation routines.
-@{
-@c
+/*
+ * @-
+ * qsort is macro expanded in four dimensions:
+ * @table @samp
+ * @item direction:2
+ * 	L: from lesser to greater is standard.
+ * 	G: from greater to lesser is the _rev version of quicksort.
+ * @item type:7
+ * 	in order to factor out a type-specific check, or a function call for each
+ * 	value comparison, we separate different qsort implementations by the comparison
+ * 	type, of which each has the comparison hard-coded. We factor out the types
+ * 	@{chr,bte,sht,int,wrd,flt,lng,dbl,any@} (the latter uses an adt function call).
+ * @item storage:2
+ * 	denoted @{direct,offset@}, means whether the array to be sorted contains the
+ * 	(fixed-width) values itself, or whether it contains integer byte-offsets, that point
+ * 	into some heap. Note that we support byte-offset qsort also on fixed-size types,
+ * 	as this is handy in many cases.
+ * @item swapmethod:2
+ * 	qsort sorts an array by continually swapping entries. To do this, two
+ * 	implementations of the swap action are supported: @{iterate,register@}.
+ * 	The default implementation takes the comparison type and does the swapping by
+ * 	iterating a number of times per entry, copying one comparison value per iteration.
+ * 	One often-occurring special case is when the entry width is 8 (two integers). These
+ * 	can be copied by one long integer load and store; without the loop overhead.
+ * @end table
+ * Thus, there are 2 * 7 * 2 * 2 = 56 GDKqsort implementation routines.
+ */
 #ifndef HAVE_PTRDIFF_T
 #if SIZEOF_SIZE_T == SIZEOF_INT
 typedef int ptrdiff_t;
@@ -507,8 +509,8 @@ GDKqsort@1(void *h, void *t, void* base, size_t n, int hs, int ts, int tpe)
 		@:call_iterate_or_register_swapmethod(@1,any)@
 	}
 }
+@
 @c
 @:qsort()@
 @:qsort(_rev)@
 
-@}

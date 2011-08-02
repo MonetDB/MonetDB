@@ -17,29 +17,30 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f crackers_joins
-@a Martin Kersten, Stratos Idreos, Stefan Manegold
-@d March 2006 - July 2007
-@* Cracker Joins 
-
-
-@+ Interface
-
-
-@- Type expansion
-
+@c
+/*
+ * @f crackers_joins
+ * @a Martin Kersten, Stratos Idreos, Stefan Manegold
+ * @d March 2006 - July 2007
+ * @* Cracker Joins
+ *
+ *
+ * @+ Interface
+ *
+ *
+ * @- Type expansion
+ */
 @= TypeSwitch_1
 @:@1(int,simple,,int,int)@
 @:@1(int,simple,,int,oid)@
 @
-
 @= TypeSwitch_2
 @:@1(int,simple,,int)@
 @
-
-@- Header file
-
 @h
+/*
+ * @- Header file
+ */
 #ifndef _CRACKERS_JOINS_H_
 #define _CRACKERS_JOINS_H_
 /* Exported signatures */
@@ -51,10 +52,9 @@ crackers_export str CRKmaterializeH(int *res, int *bid);
 /* #define DEBUG_CRACKERS_JOIN 		to enable debug trace */
  #define TIMER_CRACKERS_JOIN 		to enable timing pieces 
 #endif /* _CRACKERS_JOINS_H */
-@
-
-@- Exported signatures
-
+/*
+ * @- Exported signatures
+ */
 @= JoinFunctions_decl1
 crackers_export str CRKsimpleJoin_@1_@5(int *res, int *bidL1, int *bidL2, int *bidR1, int *bidR2);
 crackers_export str CRKcrackJoin_@1_@5(int *res, int *bidL1, int *bidL2, int *bidR1, int *bidR2);
@@ -67,19 +67,17 @@ crackers_export str CRKcacheConsciousCrackHashJoinAlignOnly_@1_@5(int *res, int 
 crackers_export str CRKFullAlignment_@1_@5(int *res, int *bidL, int *bidR1, int *bidR2);
 crackers_export str CRKAlignJoin_@1_@5(int *res, int *bidL, int *bidR1, int *bidR2);
 @
-
 @= JoinFunctions_decl2
 crackers_export str CRKbandJoin_@1(int *resid, int *bidL, int *bidR, @1 *c1, @1 *c2, bit *inclusiveLow, bit *inclusiveHgh);
 crackers_export str CRKsortBandJoin_@1(int *resid, int *bidL, int *bidR, @1 *c1, @1 *c2, bit *inclusiveLow, bit *inclusiveHgh);
 @
-
-@{
-@+ Implementation
-
-
-@- C file
-
 @c
+/*
+ * @+ Implementation
+ *
+ *
+ * @- C file
+ */
 #include "monetdb_config.h"
 #include "crackers.h"
 #include "bat5.h"
@@ -181,6 +179,7 @@ crackers_export str CRKsortBandJoin_@1(int *resid, int *bidL, int *bidR, @1 *c1,
 			@3 = MIN(_m,MAX(_lcount,_rcount));
 		}
 	}
+@
 @c
 #define BATPERC(lfirst,lcur,lend,rfirst,rcur,rend)\
 		((((dbl) (lend-lfirst))*((dbl) (rend-rfirst))) / \
@@ -271,6 +270,7 @@ crackers_export str CRKsortBandJoin_@1(int *resid, int *bidL, int *bidR, @1 *c1,
 			}
 		}
 	}
+@
 @c
 /* serves both normal equi-join (nil_on_miss==NULL) and outerjoin (nil_on_miss=nil) */
 lng
@@ -397,6 +397,7 @@ CRKmergejoin(BAT *bn,BAT *l, BAT *r){
                 break;
 	}
 
+@
 @c
 
 lng
@@ -476,11 +477,9 @@ str CRKmaterializeH(int *res, int *bid){
 	(void)res;
 	return MAL_SUCCEED;
 }
-@
-
-
-@- Exported functions
-
+/*
+ * @- Exported functions
+ */
 @= JoinTwoPieces
 	joinsDone++;
 	viewHeadLeft = VIEWhead_(mapLeft,  BAT_READ);
@@ -507,7 +506,6 @@ printf("Join " LLFMT ", Cost " LLFMT ", Left "OIDFMT" Right "OIDFMT"\n",joinsDon
 	BBPunfix(markedViewRight->batCacheid);
 	BBPunfix(markedViewLeft->batCacheid);
 @
-
 @= dumpIndex
 #ifdef DEBUG_CRACKERS_JOIN
 	printf("\n @1 \n");
@@ -516,7 +514,6 @@ printf("Join " LLFMT ", Cost " LLFMT ", Left "OIDFMT" Right "OIDFMT"\n",joinsDon
 	printAVLTree(CrackerIndex[mapRpos].Tree, indexRight, baseRight);
 #endif
 @
-
 @= JoinTwoSuperPiecesReuseHashTablesIntermediates
 #ifdef TIMER_CRACKERS_JOIN
 		joinsDone++;
@@ -552,7 +549,6 @@ printf("Join " LLFMT ", Cost " LLFMT ", Left "OIDFMT" Right "OIDFMT"\n",joinsDon
 	@:dumpIndex(Index Left)@
 #endif
 @
-
 @= JoinTwoSuperPiecesReuseHashTablesSortMerge
 #ifdef TIMER_CRACKERS_JOIN
 		joinsDone++;
@@ -597,7 +593,6 @@ printf("Join " LLFMT ", Cost " LLFMT ", Left "OIDFMT" Right "OIDFMT"\n",joinsDon
 	@:dumpIndex(Index Left)@
 #endif
 @
-
 @= JoinTwoSuperPiecesReuseHashTables
 #ifdef TIMER_CRACKERS_JOIN
 		joinsDone++;
@@ -857,7 +852,6 @@ printf("Join " LLFMT ", Cost " LLFMT ", Left "OIDFMT" Right "OIDFMT"\n",joinsDon
 	@:dumpIndex(Index Left)@
 #endif
 @
-
 @= SinglePassJoin
 	existsHashTableRight = FALSE;
 
@@ -923,7 +917,6 @@ printf("Join " LLFMT ", Cost " LLFMT ", Left "OIDFMT" Right "OIDFMT"\n",joinsDon
 	@:dumpIndex(Index Left)@
 #endif
 @
-
 @= AlignJoin
 	existsHashTableRight = FALSE;
 	viewLeft  = BATslice(mapLeft, prevPosLeft,  curPosLeft +1);
@@ -991,7 +984,6 @@ printf("Join " LLFMT ", Cost " LLFMT ", Left "OIDFMT" Right "OIDFMT"\n",joinsDon
 	@:dumpIndex(Index Left)@
 #endif
 @
-
 @= JoinTwoPiecesReuseHashTablesRightFirstCall
 	@:dumpIndex(Index Left)@
 	/* Exploit existing views if possible */
@@ -1036,7 +1028,6 @@ printf("Join " LLFMT ", Cost " LLFMT ", Left "OIDFMT" Right "OIDFMT"\n",joinsDon
 	@:dumpIndex(Index Left)@
 #endif
 @
-
 @= JoinTwoPiecesReuseHashTablesRight
 	@:dumpIndex(Index Left)@
 	/* Exploit existing views if possible */
@@ -1106,7 +1097,6 @@ printf("Join " LLFMT ", Cost " LLFMT ", Left "OIDFMT" Right "OIDFMT"\n",joinsDon
 	@:dumpIndex(Index Left)@
 #endif
 @
-
 @= MoveToNextPiece
 #ifdef DEBUG_CRACKERS_JOIN
 	printf("Move @2 \n"); 
@@ -1119,8 +1109,6 @@ printf("Join " LLFMT ", Cost " LLFMT ", Left "OIDFMT" Right "OIDFMT"\n",joinsDon
 		curPos@2   =  *(oid*)Hloc(index@2, curTuple@2);
 	}
 @
-
-
 @= addPartialResult
 	curViewTupleHead = (oid*)Hloc(b,BUNfirst(b)+vl);
 
@@ -1141,7 +1129,6 @@ printf("Join " LLFMT ", Cost " LLFMT ", Left "OIDFMT" Right "OIDFMT"\n",joinsDon
 
 	resCount += (vh-vl) + 1;
 @
-
 @= sortInsertPartialResult
 	*currentResTupleHead = *currentTupleLeftHead;
 	*currentResTupleTail = *(oid*)Hloc(BATRight, currentTupleRight);
@@ -1154,7 +1141,6 @@ printf("Join " LLFMT ", Cost " LLFMT ", Left "OIDFMT" Right "OIDFMT"\n",joinsDon
         if (currentTupleRight == BUNlast(BATRight))
 		goto next;
 @
-
 @= crackDoubleSidedBound
 	if (*inclusiveLow == TRUE && *inclusiveHgh == TRUE)
 		CRKcrackUnorderedThree_LE_RE_@1(b,low,hgh, @2, @3, &vl, &vh);
@@ -1171,7 +1157,6 @@ printf("Join " LLFMT ", Cost " LLFMT ", Left "OIDFMT" Right "OIDFMT"\n",joinsDon
 		addCrackerIndex_@1(m,&hgh,HBound,vh,c);
 	
 @
-
 @= crackSingleSidedBoundLeft
 	if (*inclusiveLow == TRUE)
 		CRKcrackUnorderedZero_RE_@1(b,low, cl1, ch1,&vl);
@@ -1186,7 +1171,6 @@ printf("Join " LLFMT ", Cost " LLFMT ", Left "OIDFMT" Right "OIDFMT"\n",joinsDon
 	}
 	vl++; 
 @
-
 @= crackSingleSidedBoundRight
 	if (*inclusiveHgh == TRUE)
 		CRKcrackUnorderedZero_LE_@1(b,hgh, cl2, ch2,&vh);
@@ -1200,7 +1184,6 @@ printf("Join " LLFMT ", Cost " LLFMT ", Left "OIDFMT" Right "OIDFMT"\n",joinsDon
 		vh--;
 	}
 @
-
 @= CreateCrackerMapReuseExistingBAT
 		BAT *c, *b;
 		int m;
@@ -1243,7 +1226,6 @@ printf("Join " LLFMT ", Cost " LLFMT ", Left "OIDFMT" Right "OIDFMT"\n",joinsDon
 		TC2=GDKusec();	
 		TCtotal+=TC2-TC1;
 @
-
 @= CreateCrackerMapFromExistingBAT
 		BAT *bo, *b, *c;
                 oid sizeM;
@@ -1290,7 +1272,6 @@ printf("Join " LLFMT ", Cost " LLFMT ", Left "OIDFMT" Right "OIDFMT"\n",joinsDon
 		TC2=GDKusec();	
 		TCtotal+=TC2-TC1;
 @
-
 @= CreateCrackerMapMultiCrack
 		BAT *bo, *bp, *b, *c;
                 oid sizeM;
@@ -1337,7 +1318,6 @@ printf("Join " LLFMT ", Cost " LLFMT ", Left "OIDFMT" Right "OIDFMT"\n",joinsDon
 		TC2=GDKusec();	
 		TCtotal+=TC2-TC1;
 @
-
 @= CreateCrackerMap
 		BAT *bo, *bp, *b, *c;
                 oid sizeM;
@@ -1402,7 +1382,6 @@ printf("Join " LLFMT ", Cost " LLFMT ", Left "OIDFMT" Right "OIDFMT"\n",joinsDon
 		TC2=GDKusec();	
 		TCtotal+=TC2-TC1;
 @
-
 @= activeCrackInitialize
 	if (*mode==4){
 		struct Node * temp = curNode@1;
@@ -1422,7 +1401,6 @@ printf("Join " LLFMT ", Cost " LLFMT ", Left "OIDFMT" Right "OIDFMT"\n",joinsDon
 		if (positionOfPieceToCrack@1 >0 ) positionOfPieceToCrack@1 ++;
 	}	
 @
-
 @= printVarTypes
 {
 /* @1: the type; e.g., chr bte sht int oid wrd flt dbl lng str */
@@ -1433,7 +1411,6 @@ printf("Join " LLFMT ", Cost " LLFMT ", Left "OIDFMT" Right "OIDFMT"\n",joinsDon
 	GDKfree(MyBuf);
 }
 @
-
 @= activeCrack
 		
 	/*Mode 1. Every piece we see on the way we crack it if bigger than the threshold*/
@@ -1672,7 +1649,6 @@ printf("Join " LLFMT ", Cost " LLFMT ", Left "OIDFMT" Right "OIDFMT"\n",joinsDon
 
 
 @
-
 @= ActiveJoinMainPart
         /* Get the piece that holds the lowest values */
         curNodeRight = getFirstNode(CrackerIndex[mapPosRight].Tree);
@@ -2062,7 +2038,6 @@ printf("Join " LLFMT ", Cost " LLFMT ", Left "OIDFMT" Right "OIDFMT"\n",joinsDon
 			T2-T1, TJtotal, ((T2-T1)-TJtotal)-TCtotal, joinsDone, TCtotal, CrackerIndex[mapPosLeft].pieces + CrackerIndex[mapPosRight].pieces );
 	printf("result is "BUNFMT" \n", BATcount(res));
 @
-
 @= JoinFunctions_impl_1
 str CRKsimpleJoin_@1_@5(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bidR2){
 	lng TJtotal = 0, T1=GDKusec(), T2, TCtotal=0;
@@ -4070,7 +4045,6 @@ str CRKFullAlignment_@1_@5(int *res, int *bidL, int *bidR1, int *bidR2){
 
 }
 @
-
 @= JoinFunctions_impl_2
 
 str SinglePassJoinPutTuple_@1(@1 *value, oid *id, struct Node *current, BUN baseLeft, BAT * indexLeft, BAT *firstPieceBAT, struct Node *prevNode){
@@ -4377,8 +4351,3 @@ void alignStep_@1(BAT *mapLeft, struct Node *curNodeRight, oid startPos, oid end
 	}
 }
 @
-
-@}
-
-
-

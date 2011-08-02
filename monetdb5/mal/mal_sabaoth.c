@@ -1,0 +1,276 @@
+/*
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.monetdb.org/Legal/MonetDBLicense
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * The Original Code is the MonetDB Database System.
+ *
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2011 MonetDB B.V.
+ * All Rights Reserved.
+ */
+
+/*
+ * @f mal_sabaoth
+ * @a Fabian Groffen
+ * @+ Cluster support
+ * The cluster facilitation currently only deals with (de-)registering of
+ * services offered by the local server to other servers.
+ * The name of this module is inspired by the Armada setting of anchient
+ * times and origanisational structures.  Sabaoth, stands for ``Lord of
+ * Hosts'' in an army setting as found in the Bible's New Testament.  This
+ * module allows an army of Mservers to be aware of each other on a local
+ * machine and redirect to each other when necessary.
+ * @- Implementation
+ *
+ */
+/*
+ * @-
+ *
+ */
+#include "monetdb_config.h"
+#include "mal_sabaoth.h"
+#include <stdio.h> /* fseek, rewind */
+#include <unistd.h>	/* unlink and friends */
+#include <sys/types.h>
+#ifdef HAVE_DIRENT_H
+#include <dirent.h> /* readdir, DIR */
+#endif
+#include <sys/stat.h>
+#include <errno.h>
+#include <string.h> /* for getting error messages */
+#include <assert.h>
+
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+#define close _close
+#endif
+
+inline static char *
+fromMallocToGDK(char *val)
+{
+	char *ret = GDKstrdup(val);
+	free(val);
+	return(ret);
+}
+
+#define excFromMem(TPE, WHRE, X)   { str _me = createException(TPE, WHRE, "%s", X); free(X); return(_me); }
+/**
+ * Initialises this Sabaoth instance to use the given dbfarm and dbname.
+ * dbname may be NULL to indicate that there is no active database.  The
+ * arguments are copied for internal use.
+ */
+void SABAOTHinit(str dbfarm, str dbname) {
+	msab_init(dbfarm, dbname);
+}
+
+/**
+ * Returns the dbfarm as received during SABAOTHinit.  Throws an
+ * exception if not initialised.
+ */
+str SABAOTHgetDBfarm(str *ret) {
+	str dbfarm;
+	str err = msab_getDBfarm(&dbfarm);
+	if (err != NULL)
+		excFromMem(MAL, "sabaoth.getdbfarm", err);
+	*ret = fromMallocToGDK(dbfarm);
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Returns the dbname as received during SABAOTHinit.  Throws an
+ * exception if not initialised or dbname was set to NULL.
+ */
+str SABAOTHgetDBname(str *ret) {
+	str dbname;
+	str err = msab_getDBname(&dbname);
+	if (err != NULL)
+		excFromMem(MAL, "sabaoth.getdbname", err);
+	*ret = fromMallocToGDK(dbname);
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Writes the given language to the scenarios file.  If the file doesn't
+ * exist, it is created.  Multiple invocations of this function for the
+ * same language are ignored.
+ */
+str SABAOTHmarchScenario(int *ret, str *lang) {
+	str err = msab_marchScenario(*lang);
+	if (err != NULL)
+		excFromMem(MAL, "sabaoth.marchscenario", err);
+	(void)ret;
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Removes the given language from the scenarios file.  If the scenarios
+ * file is empty (before or) after removing the language, the file is
+ * removed.
+ */
+str SABAOTHretreatScenario(int *ret, str *lang) {
+	str err = msab_retreatScenario(*lang);
+	if (err != NULL)
+		excFromMem(MAL, "sabaoth.retreatscenario", err);
+	(void)ret;
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Writes an URI to the connection file based on the given arguments.
+ * If the file doesn't exist, it is created.  Multiple invocations of
+ * this function for the same arguments are NOT ignored.  If port is set
+ * to <= 0, this function treats the host argument as UNIX domain
+ * socket, in which case host must start with a '/'.
+ */
+str SABAOTHmarchConnection(int *ret, str *host, int *port) {
+	str err = msab_marchConnection(*host, *port);
+	if (err != NULL)
+		excFromMem(MAL, "sabaoth.marchconnection", err);
+	(void)ret;
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Returns the connection string for the current database, or nil when
+ * there is none.  If there are multiple connections defined, only the
+ * first is returned.
+ */
+str SABAOTHgetLocalConnection(str *ret) {
+	char data[8096];
+	sabdb *stats;
+	str err;
+
+	err = msab_getMyStatus(&stats);
+	if (err != NULL)
+		excFromMem(MAL, "sabaoth.getlocalconnection", err);
+
+	if (stats == NULL || stats->conns == NULL || stats->conns->val == NULL) {
+		*ret = GDKstrdup(str_nil);
+	} else {
+		if (stats->conns->val[15] == '/') {
+			snprintf(data, sizeof(data), "%s?database=%s",
+					stats->conns->val, stats->dbname);
+		} else {
+			snprintf(data, sizeof(data), "%s%s",
+					stats->conns->val, stats->dbname);
+		}
+		*ret = GDKstrdup(data);
+	}
+
+	if (stats != NULL)
+		SABAOTHfreeStatus(&stats);
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Removes all known publications of available services.  The function
+ * name is a nostalgic phrase from "Defender of the Crown" from the
+ * Commodore Amiga age.
+ */
+str SABAOTHwildRetreat(int *ret) {
+	str err = msab_wildRetreat();
+	if (err != NULL)
+		excFromMem(MAL, "sabaoth.wildretreat", err);
+	(void)ret;
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Writes a start attempt to the sabaoth start/stop log.  Examination of
+ * the log at a later stage might reveal crashes of the server.
+ */
+str SABAOTHregisterStart(int *ret) {
+	str err = msab_registerStart();
+	if (err != NULL)
+		excFromMem(MAL, "sabaoth.registerstart", err);
+	(void)ret;
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Writes a start attempt to the sabaoth start/stop log.  Examination of
+ * the log at a later stage might reveal crashes of the server.
+ */
+str SABAOTHregisterStop(int *ret) {
+	str err = msab_registerStop();
+	if (err != NULL)
+		excFromMem(MAL, "sabaoth.registerstop", err);
+	(void)ret;
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Returns the status as NULL terminated sabdb struct list for the
+ * current database.  Since the current database should always exist,
+ * this function never returns NULL.
+ */
+str SABAOTHgetMyStatus(sabdb** ret) {
+	str err = msab_getMyStatus(ret);
+	if (err != NULL)
+		excFromMem(MAL, "sabaoth.getmystatus", err);
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Returns a list of populated sabdb structs.  If dbname == NULL, the
+ * list contains sabdb structs for all found databases in the dbfarm.
+ * Otherwise, at most one sabdb struct is returned for the database from
+ * the dbfarm that matches dbname.
+ * If no database could be found, an empty list is returned.  Each list
+ * is terminated by a NULL entry.
+ */
+str SABAOTHgetStatus(sabdb** ret, str dbname) {
+	str err = msab_getStatus(ret, dbname);
+	if (err != NULL)
+		excFromMem(MAL, "sabaoth.getstatus", err);
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Frees up the sabdb structure returned by getStatus.
+ */
+str SABAOTHfreeStatus(sabdb** ret) {
+	str err = msab_freeStatus(ret);
+	if (err != NULL)
+		excFromMem(MAL, "sabaoth.freestatus", err);
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Parses the .uplog file for the given database, and fills ret with the
+ * parsed information.
+ */
+str SABAOTHgetUplogInfo(sabuplog *ret, sabdb *db) {
+	str err = msab_getUplogInfo(ret, db);
+	if (err != NULL)
+		excFromMem(MAL, "sabaoth.getuploginfo", err);
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Produces a string representation suitable for storage/sending.
+ */
+str SABAOTHserialise(str *ret, sabdb *db) {
+	str err = msab_serialise(ret, db);
+	if (err != NULL)
+		excFromMem(MAL, "sabaoth.serialise", err);
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Produces a sabdb struct out of a serialised string.
+ */
+str SABAOTHdeserialise(sabdb **ret, str *sdb) {
+	str err = msab_deserialise(ret, *sdb);
+	if (err != NULL)
+		excFromMem(MAL, "sabaoth.deserialise", err);
+	return(MAL_SUCCEED);
+}
+

@@ -16,11 +16,14 @@ Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
 Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
-@f opt_partition
-@a M. Kersten
-@- Partitioning
-Documentation in accompanying paper.
-@{
+
+@c
+/*
+ * @f opt_partition
+ * @a M. Kersten
+ * @- Partitioning
+ * Documentation in accompanying paper.
+ */
 @mal
 module partition;
 pattern optimizer.partition():str
@@ -1095,7 +1098,9 @@ OPTpartitionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 #include "algebra.h"
 @:wrapOptimizer(partition,OPT_CHECK_ALL)@
 
-@-
+/*
+ * @-
+ */
 @= histo
 	{ @1 *vv;
 		vv= (@1 *) getArgReference(stk, pci, 0 );
@@ -1114,6 +1119,7 @@ OPTpartitionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			((ValPtr) vx ) ->val.@2 = min.val.@2 + i * step.val.@2;
 		}
 	}
+@
 @c
 /* determine the initial slices values */
 /* the min/max bounds are null values */
@@ -1180,4 +1186,3 @@ opt_export str OPTmarkHead(int *result, int *bid)
 	}
 	return ALGmarkHead(result,bid, &base);
 }
-@}

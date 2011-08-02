@@ -17,23 +17,25 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f language
-@a Martin Kersten
-@v 1.0
-@+ Language Extensions
-Iterators over scalar ranges are often needed, also at the MAL level.
-The barrier and control primitives are sufficient to mimic them directly.
-
-The modules located in the kernel directory should not
-rely on the MAL datastructures. That's why we have to deal with
-some bat operations here and delegate the signature to the
-proper module upon loading.
-
-Running a script is typically used to initialize a context. 
-Therefore we need access to the runtime context. 
-For the call variants we have
-to determine an easy way to exchange the parameter/return values.
-
+@c
+/*
+ * @f language
+ * @a Martin Kersten
+ * @v 1.0
+ * @+ Language Extensions
+ * Iterators over scalar ranges are often needed, also at the MAL level.
+ * The barrier and control primitives are sufficient to mimic them directly.
+ *
+ * The modules located in the kernel directory should not
+ * rely on the MAL datastructures. That's why we have to deal with
+ * some bat operations here and delegate the signature to the
+ * proper module upon loading.
+ *
+ * Running a script is typically used to initialize a context.
+ * Therefore we need access to the runtime context.
+ * For the call variants we have
+ * to determine an easy way to exchange the parameter/return values.
+ */
 @mal
 module language;
 
@@ -124,9 +126,10 @@ address CMDevalFile
 comment "Merge the instructions stored in the 
 	file with the current program.";
 
-@{
-@+ Dummy code 
 @h
+/*
+ * @+ Dummy code
+ */
 #ifndef _LANGUAGE_H
 #define _LANGUAGE_H
 #include "mal.h"
@@ -230,17 +233,18 @@ MALassertTriple(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	throw(MAL, "mal.assert", PROGRAM_NYI);
 }
 
-@+ Printing
-The print commands are implemented as single instruction rules,
-because they need access to the calling context.
-At a later stage we can look into the issues related to
-parsing the format string as part of the initialization phase.
-The old method in V4 essentially causes a lot of overhead
-because you have to prepare for the worst (e.g. mismatch format
-identifier and argument value)
-
-@- Input redirectionrs
-@c
+/*
+ * @+ Printing
+ * The print commands are implemented as single instruction rules,
+ * because they need access to the calling context.
+ * At a later stage we can look into the issues related to
+ * parsing the format string as part of the initialization phase.
+ * The old method in V4 essentially causes a lot of overhead
+ * because you have to prepare for the worst (e.g. mismatch format
+ * identifier and argument value)
+ *
+ * @- Input redirectionrs
+ */
 str
 CMDcallString(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -325,10 +329,11 @@ CMDevalFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = evalFile(cntxt, s, 0);
 	return msg;
 }
-@-
-Calling a BAT is simply translated into a concatenation of
-all the unquoted strings and then passing it to the callEval.
-@c
+/*
+ * @-
+ * Calling a BAT is simply translated into a concatenation of
+ * all the unquoted strings and then passing it to the callEval.
+ */
 str
 CMDcallBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -358,23 +363,25 @@ CMDdebug(int *ret, int *flg)
 	return MAL_SUCCEED;
 }
 
-@+ MAL iterator code
-This module contains the framework for the construction of iterators.
-Iterators enumerate elements in a collection defined by a few parameters,
-e.g. a lower/upper bound.
-
-Iterators appear as ordinary function calls in the MAL code and
-always return a boolean, to indicate that an element is available for
-consumption. Initialization of the iterator representation depends
-on its kind.
-
-The most common class of iterators encountered in a programming
-environment is the for-loop. It contains a for-loop variable,
-a starting point and a limit. Changing the for-loop variable
-within the for-loop body is considered bad code and should be avoided
-to simplify data-flow analysis.
-
-We assume that the range boundaries comply with the underlying domain.
+/*
+ * @+ MAL iterator code
+ * This module contains the framework for the construction of iterators.
+ * Iterators enumerate elements in a collection defined by a few parameters,
+ * e.g. a lower/upper bound.
+ *
+ * Iterators appear as ordinary function calls in the MAL code and
+ * always return a boolean, to indicate that an element is available for
+ * consumption. Initialization of the iterator representation depends
+ * on its kind.
+ *
+ * The most common class of iterators encountered in a programming
+ * environment is the for-loop. It contains a for-loop variable,
+ * a starting point and a limit. Changing the for-loop variable
+ * within the for-loop body is considered bad code and should be avoided
+ * to simplify data-flow analysis.
+ *
+ * We assume that the range boundaries comply with the underlying domain.
+ */
 @= newRange
 language_export str RNGnewRange_@1(bit *res, @1 *i, @1 *first);
 str RNGnewRange_@1(bit *res, @1 *i, @1 *first){
@@ -392,6 +399,7 @@ str RNGnextElement_@1(bit *res, @1 *i, @1 *step, @1 *last){
 	*res = v < *last;
 	return MAL_SUCCEED;
 }
+@
 @c
 
 @:newRange(oid)@
@@ -408,10 +416,11 @@ str RNGnextElement_@1(bit *res, @1 *i, @1 *step, @1 *last){
 @:nextElement(flt)@
 @:nextElement(dbl)@
 
-@-
-There are a few more atom-airy storage types we have to introduce here:
-OID, str, void, bit, ptr
-@c
+/*
+ * @-
+ * There are a few more atom-airy storage types we have to introduce here:
+ * OID, str, void, bit, ptr
+ */
 str
 CMDsetMemoryTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -476,4 +485,3 @@ CMDsetIOTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
     return MAL_SUCCEED;
 }
-@}
