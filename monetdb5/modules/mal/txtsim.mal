@@ -1,0 +1,137 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://www.monetdb.org/Legal/MonetDBLicense
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2011 MonetDB B.V.
+# All Rights Reserved.
+
+module txtsim;
+
+command levenshtein(s:str, t:str, insdel_cost:int, replace_cost:int, transpose_cost:int) : int
+address levenshtein_impl
+comment "Calculates Levenshtein distance (edit distance) between two strings, variable operation costs (ins/del, replacement, transposition)";
+
+command levenshtein(s:str, t:str) : int
+address levenshteinbasic_impl
+comment "Calculates Levenshtein distance (edit distance) between two strings";
+
+command editdistance(s:str, t:str) : int
+address levenshteinbasic_impl
+comment "Alias for Levenshtein(str,str)";
+
+command editdistance2(s:str, t:str) : int
+address levenshteinbasic2_impl
+comment "Calculates Levenshtein distance (edit distance) between two strings. Cost of transposition is 1 instead of 2";
+
+command similarity(string1:str, string2:str, minimum:dbl) : dbl
+address fstrcmp_impl
+comment "Normalized edit distance between two strings";
+
+command similarity(string1:str, string2:str) : dbl
+address fstrcmp0_impl
+comment "Normalized edit distance between two strings";
+
+command soundex(name:str) : str
+address soundex_impl
+comment "Soundex function for phonetic matching";
+
+command stringdiff(s1:str, s2:str) :int
+address stringdiff_impl
+comment "calculate the soundexed editdistance";
+
+command qgramnormalize(input:str): str
+address CMDqgramnormalize
+comment "'Normalizes' strings (eg. toUpper and replaces non-alphanumerics with one space";
+
+command qgramselfjoin(qgram:bat[:oid, :oid], id:bat[:oid, :oid], pos:bat[:oid, :int], len:bat[:oid, :int], c:flt, k:int) :bat[:int, :int]
+address CMDqgramselfjoin
+comment "QGram self-join on ordered(!) qgram tables and sub-ordered q-gram positions";
+
+# @-
+# #mil implementation
+#
+# #proc str2qgrams(str s) : bat[oid,str]
+# #{
+# #    s := qgramnormalize(s);
+# #
+# #    var len := s.length();
+# #    var b := bat(str,void,len+4);
+# #    var i := 0;
+# #    var last := " ";
+# #
+# #    b.insert("#",nil);
+# #    b.insert("#",nil);
+# #    while(i < len) {
+# #        b.insert(s.string(i,1), nil);
+# #        if (b.count() > 32764) break; # ignore suffix of >32KB strings
+# #        i :+= 1;
+# #    }
+# #    b.insert("$",nil);
+# #    b.insert("$",nil);
+# #    b.reverse().seqbase(0@0);
+# #
+# #    var c0 := b.select(0@0, oid(b.count() - 3)).mark(0@0).reverse();
+# #    var c1 := b.select(1@0, oid(b.count() - 2)).mark(0@0).reverse();
+# #    var c2 := b.select(2@0, oid(b.count() - 1)).mark(0@0).reverse();
+# #    return [+](c0, [+](c1, c2));
+# #}
+# #mal implementation
+function txtsim.str2qgrams{inline}(s:str):bat[:oid,:str];
+    s := txtsim.qgramnormalize(s);
+
+    l := calc.length(s);
+	len := calc.lng(l);
+    len := calc.+(len,4);
+    b := bat.new(:str,:oid,len);
+    i := 0;
+    last := " ";
+    bat.insert(b,"#",nil:oid);
+    bat.insert(b,"#",nil:oid);
+	cnt:= 0:wrd;
+    id := calc.oid(cnt);
+    barrier B:= calc.<(i,len);
+  	sstr := str.string(s,i,1);
+        bat.insert(b,sstr, nil:oid);
+	cnt := aggr.count(b);
+        leave B:= calc.>(cnt,32764); # ignore suffix of >32KB strings
+        i := calc.+(i,1);
+    redo B:= calc.<(i,len);
+    exit B;
+    bat.insert(b,"$",nil:oid);
+    bat.insert(b,"$",nil:oid);
+    rev := bat.reverse (b);
+    alg := algebra.markH(rev, 0@0);
+    cnt := aggr.count(alg);
+    cnt := calc.-(cnt,3);
+    sel := algebra.select(b, 0@0, id);
+    mrk := algebra.markT(sel, 0@0);
+    c0  := bat.reverse(mrk);
+
+    cnt := aggr.count(alg);
+    cnt := calc.-(cnt,2);
+    id := calc.oid(cnt);
+    sel := algebra.select(b, 1@0, id);
+    mrk := algebra.markT(sel, 0@0);
+    c1  := bat.reverse(mrk);
+    cnt := aggr.count(alg);
+    cnt := calc.-(cnt,1);
+    id := calc.oid(cnt);
+    sel := algebra.select(b, 2@0, id);
+    mrk := algebra.markT(sel, 0@0);
+    c2  := bat.reverse(mrk);
+
+    res := batcalc.+(c1, c2);
+    res := batcalc.+(c0, res);
+
+    return str2qgrams := res;
+end str2qgrams;

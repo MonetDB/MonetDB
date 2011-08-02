@@ -17,54 +17,56 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f opt_deadcode
-@- Dead Code Removal
-Dead code fragments are recognized by assignments to variables
-whose value is not consumed any more. 
-It can be detected  by marking all variables used as 
-arguments as being relevant. 
-In parallel, we built a list of instructions that should appear 
-in the final result.
-The new code block is than built in one scan, discarding the
-superflous instructions.
-
-Instructions that produce side effects to the environment, 
-e.g., printing and BAT updates, should be taken into account. 
-Such (possibly recursive) functions should be marked with a property 
-(@sc{unsafe}). For now we recognize a few important ones
-Likewise, instructions marked as control flow instructions should be retained.
-
-An illustrative example is the following MAL snippet:
-@verbatim
-	V7 := bat.new(:oid,:int);
-	V10 := bat.new(:int,:oid);
-	V16 := algebra.markH(V7);
-	V17 := algebra.join(V16,V7);
-	V19 := bat.new(:oid,:int);
-	V22 := bat.new(:oid,:int);
-	V23 := algebra.join(V16,V22);
-	io.print("done");
-	optimizer.deadCodeRemoval();
-@end verbatim
-The dead code removal trims this program to the following short block:
-@verbatim
-	io.print("done");
-@end verbatim
-
-A refinement of the dead code comes from using arguments
-that ceased to exist due to actions taken by an optimizer.
-For example, in the snippet below the @sc{pushranges} optimizer
-may conclude that variable V31 becomes empty and simply
-injects a 'dead' variable by dropping the assignment statement.
-This makes other code dead as well.
-@example
-	V30 := algebra.select( V7, 10,100);
-	V31 := algebra.select(V30,-1,5);
-	V32 := aggr.sum(V31);
-	io.print(V32);
-@end example
-[implementation pending]
-@{
+@c
+/*
+ * @f opt_deadcode
+ * @- Dead Code Removal
+ * Dead code fragments are recognized by assignments to variables
+ * whose value is not consumed any more.
+ * It can be detected  by marking all variables used as
+ * arguments as being relevant.
+ * In parallel, we built a list of instructions that should appear
+ * in the final result.
+ * The new code block is than built in one scan, discarding the
+ * superflous instructions.
+ *
+ * Instructions that produce side effects to the environment,
+ * e.g., printing and BAT updates, should be taken into account.
+ * Such (possibly recursive) functions should be marked with a property
+ * (@sc{unsafe}). For now we recognize a few important ones
+ * Likewise, instructions marked as control flow instructions should be retained.
+ *
+ * An illustrative example is the following MAL snippet:
+ * @verbatim
+ * 	V7 := bat.new(:oid,:int);
+ * 	V10 := bat.new(:int,:oid);
+ * 	V16 := algebra.markH(V7);
+ * 	V17 := algebra.join(V16,V7);
+ * 	V19 := bat.new(:oid,:int);
+ * 	V22 := bat.new(:oid,:int);
+ * 	V23 := algebra.join(V16,V22);
+ * 	io.print("done");
+ * 	optimizer.deadCodeRemoval();
+ * @end verbatim
+ * The dead code removal trims this program to the following short block:
+ * @verbatim
+ * 	io.print("done");
+ * @end verbatim
+ *
+ * A refinement of the dead code comes from using arguments
+ * that ceased to exist due to actions taken by an optimizer.
+ * For example, in the snippet below the @sc{pushranges} optimizer
+ * may conclude that variable V31 becomes empty and simply
+ * injects a 'dead' variable by dropping the assignment statement.
+ * This makes other code dead as well.
+ * @example
+ * 	V30 := algebra.select( V7, 10,100);
+ * 	V31 := algebra.select(V30,-1,5);
+ * 	V32 := aggr.sum(V31);
+ * 	io.print(V32);
+ * @end example
+ * [implementation pending]
+ */
 @mal
 pattern optimizer.deadcode():str
 address OPTdeadcode;
@@ -162,4 +164,3 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(deadcode,OPT_CHECK_ALL)@
-@}

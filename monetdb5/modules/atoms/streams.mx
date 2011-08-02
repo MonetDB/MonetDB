@@ -17,14 +17,16 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f streams
-@a Niels Nes
-@* A simple interface to IO streams
-All file IO is tunneled through the stream library, which guarantees
-cross-platform capabilities.  Several protocols are provided, e.g. it
-can be used to open 'non compressed, gzipped, bzip2ed' data files.  It
-encapsulates the corresponding library managed in common/stream.
-
+@c
+/*
+ * @f streams
+ * @a Niels Nes
+ * @* A simple interface to IO streams
+ * All file IO is tunneled through the stream library, which guarantees
+ * cross-platform capabilities.  Several protocols are provided, e.g. it
+ * can be used to open 'non compressed, gzipped, bzip2ed' data files.  It
+ * encapsulates the corresponding library managed in common/stream.
+ */
 @mal
 module streams;
 
@@ -102,9 +104,10 @@ command read{unsafe}(s:bstream,size:int):int
 address bstream_read_wrapwrap
 comment "read at least size bytes into the buffer of s";
 
-@-
-@{
 @h
+/*
+ * @-
+ */
 #ifndef _STREAMS_H_
 #define _STREAMS_H_
 
@@ -170,7 +173,7 @@ str mnstr_open_@1wrap(Stream *S, str *filename)
 
 	return MAL_SUCCEED;
 }
-@}
+@
 @c
 #include "mal_exception.h"
 
@@ -179,7 +182,9 @@ str mnstr_open_@1wrap(Stream *S, str *filename)
 @:open_streamwrap(rastream)@
 @:open_streamwrap(wastream)@
 
-@-
+/*
+ * @-
+ */
 @= mnstr_streamwrap
 streams_export str mnstr_stream_@1wrap(Stream *sout, Stream *sin);
 str
@@ -188,10 +193,13 @@ mnstr_stream_@1wrap(Stream *sout, Stream *sin)
 	*(stream**)sout = mnstr_@1(*(stream**)sin);
 	return MAL_SUCCEED;
 }
+@
 @c
 @:mnstr_streamwrap(rstream)@
 @:mnstr_streamwrap(wstream)@
-@-
+/*
+ * @-
+ */
 @= open_socketwrap
 streams_export str mnstr_socket_@1wrap(Stream *S, int *socket, str *name);
 str
@@ -211,6 +219,7 @@ mnstr_socket_@1wrap(Stream *S, int *socket, str *name)
 
 	return MAL_SUCCEED;
 }
+@
 @c
 @:open_socketwrap(rstream)@
 @:open_socketwrap(wstream)@

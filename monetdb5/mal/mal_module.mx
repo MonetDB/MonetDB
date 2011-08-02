@@ -17,33 +17,35 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@a M. L. Kersten
-@+ Module Management
-
-The operations are organized in separate MAL modules.
-Each module contains a local symbol table of all function names
-known to it so far. These names are stored in the global namespace
-pool and never removed to guarantee stability of remote references.
-
-All dynamically loaded functions remain in existing
-for the duration of the server session. Only the administrator can
-load functions (upon system restart). Therefore, we do not have
-to lock the dictionary table while traversing it for information.
-Global (private) variables can be realized keeping the symbol table
-and runtime stack around between requests.
-
-@{
-The symbol descriptors within a scope are organized in a list of subscopes 
-indexed by the first character of the function name.
-
-The modules are still collected in a linked list to ease access
-and debug its content. It should be used with care for 
-resolving unknown modules.
-
-The function symbols are collected in a global name space table,
-indexed by a small hash table. Once added, the name may not be removed 
-anymore.
-Care should be taken not to generate many unique function names.
+@c
+/*
+ * @a M. L. Kersten
+ * @+ Module Management
+ *
+ * The operations are organized in separate MAL modules.
+ * Each module contains a local symbol table of all function names
+ * known to it so far. These names are stored in the global namespace
+ * pool and never removed to guarantee stability of remote references.
+ *
+ * All dynamically loaded functions remain in existing
+ * for the duration of the server session. Only the administrator can
+ * load functions (upon system restart). Therefore, we do not have
+ * to lock the dictionary table while traversing it for information.
+ * Global (private) variables can be realized keeping the symbol table
+ * and runtime stack around between requests.
+ *
+ * The symbol descriptors within a scope are organized in a list of subscopes
+ * indexed by the first character of the function name.
+ *
+ * The modules are still collected in a linked list to ease access
+ * and debug its content. It should be used with care for
+ * resolving unknown modules.
+ *
+ * The function symbols are collected in a global name space table,
+ * indexed by a small hash table. Once added, the name may not be removed
+ * anymore.
+ * Care should be taken not to generate many unique function names.
+ */
 @h
 #ifndef _MAL_SCOPE_H_
 #define _MAL_SCOPE_H_
@@ -101,11 +103,12 @@ mal_export void showHelp(Module m, str txt,stream *fs);
 #define getSubScope(N)  (*(N))
 
 #endif /* _MAL_SCOPE_H_ */
-@+ Module scope management
-Upon system restart, the global scope is created. It is called "root" and
-does not contain any symbol definitions. It merely functions as an anchor
-point for the modules to be added later.
-
+/*
+ * @+ Module scope management
+ * Upon system restart, the global scope is created. It is called "root" and
+ * does not contain any symbol definitions. It merely functions as an anchor
+ * point for the modules to be added later.
+ */
 @= newscope
 	assert(nme != NULL);
 	cur = (Module) GDKzalloc(sizeof(ModuleRecord));
@@ -120,6 +123,7 @@ point for the modules to be added later.
 		cur->isAtomModule = FALSE;
 	}
 
+@
 @c
 #include "monetdb_config.h"
 #include "mal_module.h"
@@ -135,14 +139,15 @@ static void newSubScope(Module scope){
 	int len = (MAXSCOPE)*sizeof(Module);
 	scope->subscope = (Symbol *) GDKzalloc(len);
 }
-@-
-Definition of a new module scope may interfere with concurrent
-actions of multiple threads. This calls for a secure update 
-of the scope tree structure. 
-A jump table is mainted to provide a quick start in the module
-table to find the correct one. This simple scheme safes about
-100ms/100K calls
-@c
+/*
+ * @-
+ * Definition of a new module scope may interfere with concurrent
+ * actions of multiple threads. This calls for a secure update
+ * of the scope tree structure.
+ * A jump table is mainted to provide a quick start in the module
+ * table to find the correct one. This simple scheme safes about
+ * 100ms/100K calls
+ */
 
 static void clrModuleJump(str nme, Module cur){
 		if( scopeJump[(int)(*nme)][(int)(*(nme+1))]== cur)
@@ -181,14 +186,15 @@ Module cpyModule(Module scope){
 	return cur;
 }
 #endif
-@-
-The scope can be fixed. This is used by the parser to avoid creation of
-a string structure when possible. Subsequently we can
-replace the module name in the instructions to become a pointer
-to the scope directly.
-Reading a module often calls for opening a scope level
-if it didn't exist.
-@c
+/*
+ * @-
+ * The scope can be fixed. This is used by the parser to avoid creation of
+ * a string structure when possible. Subsequently we can
+ * replace the module name in the instructions to become a pointer
+ * to the scope directly.
+ * Reading a module often calls for opening a scope level
+ * if it didn't exist.
+ */
 Module fixModule(Module scope, str nme){
 	Module s= scope;
 	if( scopeJump[(int)(*nme)][(int)(*(nme+1))]) 
@@ -200,11 +206,12 @@ Module fixModule(Module scope, str nme){
 	}
 	return newModule(scope, nme);
 }
-@-
-A derived module inherits copies of all known
-functions in the parent module. These can be
-refined or expanded.
-@c
+/*
+ * @-
+ * A derived module inherits copies of all known
+ * functions in the parent module. These can be
+ * refined or expanded.
+ */
 void
 deriveModule(Module scope, str nme){
 	Module src= findModule(scope,nme);
@@ -219,14 +226,15 @@ deriveModule(Module scope, str nme){
 		}
 	}
 }
-@-
-The freeModule operation throws away a symbol without
-concerns on it whereabouts in the scope structure.
-This routine therefore assumes care in use.
-The final action of the system is to remove all
-instructions and procedures. This forcefull action
-helps in localization of memory leakages.
-@c
+/*
+ * @-
+ * The freeModule operation throws away a symbol without
+ * concerns on it whereabouts in the scope structure.
+ * This routine therefore assumes care in use.
+ * The final action of the system is to remove all
+ * instructions and procedures. This forcefull action
+ * helps in localization of memory leakages.
+ */
 static void freeSubScope(Module scope){
 	int i;
 	if(scope->subscope==0) return;
@@ -265,12 +273,13 @@ void freeModuleList(Module s){
 		s=t;
 	}
 }
-@-
-After filling in a structure it is added to the multi-level
-symbol table. We keep a skip list of similar named function
-symbols. This speeds up searching provided the modules adhire
-to the structure group the functions as well.
-@c
+/*
+ * @-
+ * After filling in a structure it is added to the multi-level
+ * symbol table. We keep a skip list of similar named function
+ * symbols. This speeds up searching provided the modules adhire
+ * to the structure group the functions as well.
+ */
 void insertSymbol(Module scope, Symbol prg){
 	InstrPtr sig;
 	int t;
@@ -300,13 +309,14 @@ void insertSymbol(Module scope, Symbol prg){
 	}
 	assert(prg != prg->peer);
 }
-@-
-Removal of elements from the symbol table should be
-done with care. For, it should be assured that
-there are no references to the definition at the
-moment of removal. This situation can not easily
-checked at runtime, without tremendous overhead.
-@c
+/*
+ * @-
+ * Removal of elements from the symbol table should be
+ * done with care. For, it should be assured that
+ * there are no references to the definition at the
+ * moment of removal. This situation can not easily
+ * checked at runtime, without tremendous overhead.
+ */
 void deleteSymbol(Module scope, Symbol prg){
 	InstrPtr sig;
 	int t;
@@ -337,29 +347,30 @@ void deleteSymbol(Module scope, Symbol prg){
 	}
 }
 
-@+ Inheritance
-The MAL type checker does not apply type inheritance. Such a functionality
-can, however, be readily implemented with a MAL rewriter.
-
-An early version of the interpreter contained a simple inheritance scheme,
-which quickly became too complex to manage properly.
-The default inheritance sequence is derived from the include order.
-Most recently modules shield older modules, unless the user has specified
-an explicit module name. This dus not work for dynamically loaded modules,
-which may cause existing programs to be falsely bound to new implementations.
-
-The mechanism to control the inheritance structure consists of three features.
-First, a module can be excluded from automatic inheritance by setting a flag.
-This leads to skipping it during function resoluation.
-The second mechanism is to enforce a partial order among the scopes.
-The routine setInheritance(F,S) ensures that module F is inspected
-before module S. In case it does not hold, S is placed just after F.
-
-Since the modules are currently shared between all clients,
-such reshufflings may have drastic side effects.
-To circumvent this, we have to make a private copy of the Scope chain
-and the lookup table. [TODO]
-@c
+/*
+ * @+ Inheritance
+ * The MAL type checker does not apply type inheritance. Such a functionality
+ * can, however, be readily implemented with a MAL rewriter.
+ *
+ * An early version of the interpreter contained a simple inheritance scheme,
+ * which quickly became too complex to manage properly.
+ * The default inheritance sequence is derived from the include order.
+ * Most recently modules shield older modules, unless the user has specified
+ * an explicit module name. This dus not work for dynamically loaded modules,
+ * which may cause existing programs to be falsely bound to new implementations.
+ *
+ * The mechanism to control the inheritance structure consists of three features.
+ * First, a module can be excluded from automatic inheritance by setting a flag.
+ * This leads to skipping it during function resoluation.
+ * The second mechanism is to enforce a partial order among the scopes.
+ * The routine setInheritance(F,S) ensures that module F is inspected
+ * before module S. In case it does not hold, S is placed just after F.
+ *
+ * Since the modules are currently shared between all clients,
+ * such reshufflings may have drastic side effects.
+ * To circumvent this, we have to make a private copy of the Scope chain
+ * and the lookup table. [TODO]
+ */
 void setInheritanceMode(Module m,int flag){
 	(void) flag;
 	m->inheritance = 0;
@@ -391,13 +402,14 @@ Module setInheritance(Module h, Module f, Module s){
 	}
 	return h;
 }
-@+ Searching the scope structure.
-Finding a scope is unrestricted. For modules we explicitly look for
-the start of a new module scope.
-All core modules are accessed through the jumptable.
-The 'user' module is an alias for the scope attached
-to the current user.
-@c
+/*
+ * @+ Searching the scope structure.
+ * Finding a scope is unrestricted. For modules we explicitly look for
+ * the start of a new module scope.
+ * All core modules are accessed through the jumptable.
+ * The 'user' module is an alias for the scope attached
+ * to the current user.
+ */
 Module findModule(Module scope, str name){
 	Module def=scope;
 	if( name==NULL) return scope;
@@ -422,18 +434,19 @@ int isModuleDefined(Module scope, str name){
 	}
 	return FALSE;
 }
-@-
-The routine @%findSymbolInModule@ starts at a MAL scope level and searches 
-an element amongst the peers. If it fails, it will recursively
-inspect the outer scopes.
-
-In principal, external variables are subject to synchronization actions
-to avoid concurrency conflicts. This also implies, that any parallel
-block introduces a temporary scope.
-
-The variation on this routine is to dump the definition of
-all matching definitions.
-@c
+/*
+ * @-
+ * The routine findSymbolInModule starts at a MAL scope level and searches
+ * an element amongst the peers. If it fails, it will recursively
+ * inspect the outer scopes.
+ *
+ * In principal, external variables are subject to synchronization actions
+ * to avoid concurrency conflicts. This also implies, that any parallel
+ * block introduces a temporary scope.
+ *
+ * The variation on this routine is to dump the definition of
+ * all matching definitions.
+ */
 Symbol findSymbolInModule(Module v, str fcn){
 	Symbol s;
 	if( v == NULL || fcn == NULL) return NULL;
@@ -488,8 +501,9 @@ int displayModule(stream *f, Module v, str fcn, int listing){
 	}
 	return k;
 }
-@- Utilities
-@c
+/*
+ * @- Utilities
+ */
 static void  printModuleScope(stream *fd, Module scope, int tab, int outer)
 {
 	int j;
@@ -539,11 +553,12 @@ void debugModule(stream *f, Module start, str nme){
 		else printModuleScope(f,m,0,FALSE);
 	}
 }
-@-
-The commands and operators come with a short description. 
-The dumpManual() command produces a single XML file for post 
-processing and producing a system manual.
-@c
+/*
+ * @-
+ * The commands and operators come with a short description.
+ * The dumpManual() command produces a single XML file for post
+ * processing and producing a system manual.
+ */
 void dumpManualHeader(stream *f){
 	mnstr_printf(f,"<?xml version=\"1.0\"?>\n");
 	mnstr_printf(f,"<manual>\n");
@@ -653,10 +668,11 @@ void dumpManualSection(stream *f, Module s){
 	}
 	mnstr_printf(f,"@end table\n");
 }
-@-
-The manual overview merely lists the mod.function names
-in texi format for inclusion in the documetation.
-@c
+/*
+ * @-
+ * The manual overview merely lists the mod.function names
+ * in texi format for inclusion in the documetation.
+ */
 void dumpManualOverview(stream *f, Module s, int recursive){
 	int j,z,rows,cols;
 	Symbol t;
@@ -744,10 +760,11 @@ void dumpManualOverview(stream *f, Module s, int recursive){
 	if (x != NULL)
 		GDKfree(x);
 }
-@-
-The manual help overview merely lists the mod.function names
-together with the help oneliner in texi format for inclusion in the documentation.
-@c
+/*
+ * @-
+ * The manual help overview merely lists the mod.function names
+ * together with the help oneliner in texi format for inclusion in the documentation.
+ */
 void dumpManualHelp(stream *f, Module s, int recursive){
 	int j,z;
 	Symbol t;
@@ -842,9 +859,10 @@ void dumpManualHelp(stream *f, Module s, int recursive){
 	if (hlp_texi != NULL)
 		GDKfree(hlp_texi);
 }
-@-
-Summarize the type resolution table.
-@c
+/*
+ * @-
+ * Summarize the type resolution table.
+ */
 
 static void showModuleStat(stream *f, Module v,int cnt[256]){
 	int sigs=0,i,max=0,m;
@@ -878,10 +896,11 @@ void showModuleStatistics(stream *f,Module s){
 	for(i=0;i<256;i++) cnt[i]=0;
 	showModuleStat(f,s,cnt);
 }
-@-
-Some primitives to aid online help and completions.
-Note that pattern matching is on string prefix.
-@c
+/*
+ * @-
+ * Some primitives to aid online help and completions.
+ * Note that pattern matching is on string prefix.
+ */
 static int tstDuplicate(char **msg, char *s){
 	int i;
 	size_t len;
@@ -1054,11 +1073,12 @@ char **getHelp(Module m, str inputpat, int completion)
 	GDKfree(pat);
 	return msg;
 }
-@-
-The second primitive of relevance is to find documentation matching
-a keyword. Since we can not assume pcre to be everywhere, we keep
-it simple.
-@c
+/*
+ * @-
+ * The second primitive of relevance is to find documentation matching
+ * a keyword. Since we can not assume pcre to be everywhere, we keep
+ * it simple.
+ */
 char **getHelpMatch(char *pat){
 	char **msg, buf[BUFSIZ];
 	Module m;
@@ -1130,10 +1150,11 @@ showHelp(Module m, str txt, stream *fs){
 			mnstr_printf(fs,"%s\n",msg[i]);
 	}
 }
-@-
-The tags file is used by the mclient frontend to
-enable language specific word completion.
-@c
+/*
+ * @-
+ * The tags file is used by the mclient frontend to
+ * enable language specific word completion.
+ */
 void dumpHelpTable(stream *f, Module s, str text, int flag){
 	str *msg;
 	int j,m;
@@ -1170,4 +1191,3 @@ void dumpSearchTable(stream *f, str text){
 	}
 	GDKfree(msg);
 }
-@}

@@ -17,25 +17,26 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f crackers_sortmerge
-@a Martin Kersten, Stratos Idreos, Stefan Manegold
-@d March 2006 - July 2007
-@* Select Operators for Incremental sort merge
-
-
-@+ Interface
-
-
-@- Type expansion
-
+@c
+/*
+ * @f crackers_sortmerge
+ * @a Martin Kersten, Stratos Idreos, Stefan Manegold
+ * @d March 2006 - July 2007
+ * @* Select Operators for Incremental sort merge
+ *
+ *
+ * @+ Interface
+ *
+ *
+ * @- Type expansion
+ */
 @= TypeSwitch
 @:@1(int,simple,,int)@
 @
-
-
-@- Header file
-
 @h
+/*
+ * @- Header file
+ */
 #ifndef _CRACKERS_SORTMERGE_H_
 #define _CRACKERS_SORTMERGE_H_
 
@@ -43,25 +44,21 @@ All Rights Reserved.
 @:TypeSwitch(SelectFunctions_decl)@
 
 #endif /* _CRACKERS_SORTMERGE_H */
-@
-
-
-@- Exported signatures
-
+/*
+ * @- Exported signatures
+ */
 @= SelectFunctions_decl
 crackers_export str CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, int *mode, bit *rounding, int *sliceSize);
 crackers_export str CRKPartitionedSort_@1(int *vid, int *bid, int *mode);
 crackers_export str CRKExternalSort_@1(int *vid, int *bid, int *psliceSize);
 @
-
-
-@{
-@+ Implementation
-
-
-@- C file
-
 @c
+/*
+ * @+ Implementation
+ *
+ *
+ * @- C file
+ */
 #include "monetdb_config.h"
 #include "algebra.h"
 #include "crackers.h"
@@ -71,11 +68,9 @@ crackers_export str CRKExternalSort_@1(int *vid, int *bid, int *psliceSize);
 
 /* Exported functions */
 @:TypeSwitch(SelectFunctions_impl)@
-@
-
-
-@- Exported functions
-
+/*
+ * @- Exported functions
+ */
 @= SelectFunctions_impl
 str
 CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, int *mode, bit *rounding, int *sliceSize){		
@@ -87,10 +82,7 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 		return SelectSortMergeBounds_@1(vid, bid, low, hgh, inclusiveLow, inclusiveHgh, mode,rounding,sliceSize);
 }
 @
-
-
-@- Local support functions and macros
-
+ * @- Local support functions and macros
 @= NwayMergeSort
 	QNodesSize=0;
 	current=head;
@@ -111,7 +103,6 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 		@:PQMerge(@1)@
 	}
 @
-
 @= MergeExtSort
 
 	QNodesSize=0;
@@ -234,7 +225,6 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 	}
 }
 @
-
 @= NwayMerge
 	if (!gotSlices){
 		/* Take the slices */
@@ -308,7 +298,6 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 		MergeTime+=GDKusec()-tempTime1;
 	}
 @
-
 @= PQMergeAM
 {
 	PQ_state pq;
@@ -381,7 +370,6 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 	free(space);
 }
 @
-
 @= PQMerge
 {
 	PQ_state pq;
@@ -462,7 +450,6 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 	}
 }
 @
-
 @= CopyMerge
 	for(j=0;j<QNodesSize;j++){
 		oid tup=0,k=0;
@@ -495,7 +482,6 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 	br=BATmirror(br);
 
 @
-
 @= LoopMerge
 	for(i=0;i<totalTuples;i++){
 		merge=NULL;	
@@ -525,7 +511,6 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 		merge->tuples--;
 	}
 @
-
 @= BinarySearchBounds
 	/* binary search to find the position of the lowest requested value in the current slice */
 	l  = SORTfndfirst_@4(slice,@5);
@@ -596,7 +581,6 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 	if (notFound)
 		start=end=0;
 @
-
 @= BinarySearchHgh
 	/* binary search to find the position of the lowest requested value in the current slice */
 	t0 = (@1*)Tloc(slice,BUNfirst(slice));
@@ -634,7 +618,6 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 	else
 		end=0;
 @
-
 @= BinarySearchLow
 	/* binary search to find the position of the lowest requested value in the current slice */
 	l  = SORTfndfirst_@4(slice,@5);
@@ -671,7 +654,6 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 		}
 	}
 @
-
 @= FullMerge
 	@:NwayMerge(@1,@2,@3,@4,low,hgh,*inclusiveLow,*inclusiveHgh)@
 
@@ -699,14 +681,12 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 	resStart=totalLowerTuples;
 	resEnd=resStart+totalTuples;
 @
-
 @= MergeMid
 	nexNodeInclusive=nexNode->inclusive?FALSE:TRUE;
 	@:NwayMerge(@1,@2,@3,@4,curValue,nexValue,curNode->inclusive,nexNodeInclusive)@
 	curNode->sliceSize=totalTuples;
 	totalmergedTuples+=totalTuples;
 @
-
 @= MergeHgh
 	@:NwayMerge(@1,@2,@3,@4,curValue,hgh,curNode->inclusive,*inclusiveHgh)@
 	curNode->sliceSize=totalTuples;
@@ -721,7 +701,6 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 		hghResultNode->contiguousArea=0;
 	}
 @
-
 @= MergeLow1
 	nexNodeInclusive=curNode->inclusive?FALSE:TRUE;
 	@:NwayMerge(@1,@2,@3,@4,low,curValue,*inclusiveLow,nexNodeInclusive)@
@@ -750,7 +729,6 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 		lowResultNode->contiguousArea=0;
 	}
 @
-
 @= NextPiece
 
 	notFound=TRUE;
@@ -776,7 +754,6 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 	curValue = (@1 *)Tloc(c, curTuple);
 	curPos   = *(oid*)Hloc(c, curTuple)+1;
 @
-
 @= printVarTypes
 {
 	str MyBuf = NULL;
@@ -786,7 +763,6 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 	GDKfree(MyBuf);
 }
 @
-
 @= RangeSelectBody
 	/*MODE: 1=Nway merge.2=copy+inplace sort.3=priority queue*/
 	BAT *b,*bo,*br,*c,*view,*slice;
@@ -1219,7 +1195,6 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 	BBPunfix(c->batCacheid);
 	return MAL_SUCCEED;
 @
-
 @= SortBody
 	/*MODE  1=Nway merge.2=copy+inplace sort.3=priority queue.4=one step copy+sort*/
 	BAT *b,*bo,*br;
@@ -1347,7 +1322,6 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 	BBPunfix(bo->batCacheid);
 	return MAL_SUCCEED;
 @
-
 @= ExtSortBody
 	BAT *b,*bo,*br;
 	oid sliceSize,i;
@@ -1447,8 +1421,6 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 
 	return MAL_SUCCEED;
 @
-
-
 @= SortMergeOperations
 static str
 SelectSortMergeBounds_@1(int *vid, int *bid, @1 *plow, @1 *phgh, bit *inclusiveLow, bit *inclusiveHgh, int *mode, bit *rounding, int *psliceSize){	
@@ -1465,6 +1437,3 @@ CRKExternalSort_@1(int *vid, int *bid, int *psliceSize){
 	@:ExtSortBody(@1,@2,@3,@4,)@
 }
 @
-
-@}
-

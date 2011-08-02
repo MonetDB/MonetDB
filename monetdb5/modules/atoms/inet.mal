@@ -1,0 +1,124 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://www.monetdb.org/Legal/MonetDBLicense
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2011 MonetDB B.V.
+# All Rights Reserved.
+
+atom inet:lng;
+
+command fromstr()
+address INETfromString
+comment "Convert a string to an inet";
+command tostr()
+address INETtoString
+comment "Convert inet to string equivalent";
+command new(s:str):inet
+address INETnew
+comment "Create an inet from a string literal";
+command isnil(v:inet):bit
+address INET_isnil
+comment "Nil test for inet value";
+command =(v:inet,w:inet):bit
+address INET_comp_EQ
+comment "Equality of two inets";
+command !=(v:inet,w:inet):bit
+address INET_comp_NEQ
+comment "Inequality of two inets";
+command <(v:inet,w:inet):bit
+address INET_comp_LT
+comment "Whether v is less than w";
+command >(v:inet,w:inet):bit
+address INET_comp_GT
+comment "Whether v is greater than w";
+command <=(v:inet,w:inet):bit
+address INET_comp_LE
+comment "Whether v is less than or equal to w";
+command >=(v:inet,w:inet):bit
+address INET_comp_GE
+comment "Whether v is equal to or greater than w";
+command <<(v:inet,w:inet):bit
+address INET_comp_CW
+comment "Whether v is contained within w";
+command <<=(v:inet,w:inet):bit
+address INET_comp_CWE
+comment "Whether v is contained within or is equal to w";
+command >>(v:inet,w:inet):bit
+address INET_comp_CS
+comment "Whether v contains w";
+command >>=(v:inet,w:inet):bit
+address INET_comp_CSE
+comment "Whether v contains or is equal to w";
+command broadcast(:inet):inet
+address INETbroadcast
+comment "Returns the broadcast address for network";
+command host(:inet):str
+address INEThost
+comment "Extract IP address as text";
+command masklen(:inet):int
+address INETmasklen
+comment "Extract netmask length";
+command setmasklen(:inet,:int):inet
+address INETsetmasklen
+comment "Set netmask length for inet value";
+command netmask(:inet):inet
+address INETnetmask
+comment "Construct netmask for network";
+command hostmask(:inet):inet
+address INEThostmask
+comment "Construct host mask for network";
+command network(:inet):inet
+address INETnetwork
+comment "Extract network part of address";
+command text(:inet):str
+address INETtext
+comment "Extract IP address and netmask length as text";
+command abbrev(:inet):str
+address INETabbrev
+comment "Abbreviated display format as text";
+module calc;
+
+command inet(s:inet):inet
+address INET_inet
+comment "Convert a inet to an inet";
+
+command inet(s:str):inet
+address INET_fromstr
+comment "Convert a string to an inet";
+command isnil(v:inet):bit
+address INET_isnil
+comment "Nil test for inet value";
+
+command =(v:inet,w:inet):bit
+address INET_comp_EQ
+comment "Equality of two inets";
+
+command !=(v:inet,w:inet):bit
+address INET_comp_NEQ
+comment "Inequality of two inets";
+
+command <(v:inet,w:inet):bit
+address INET_comp_LT
+comment "Whether v is less than w";
+
+command >(v:inet,w:inet):bit
+address INET_comp_GT
+comment "Whether v is greater than w";
+
+command <=(v:inet,w:inet):bit
+address INET_comp_LE
+comment "Whether v is less than or equal to w";
+
+command >=(v:inet,w:inet):bit
+address INET_comp_GE
+comment "Whether v is equal to or greater than w";

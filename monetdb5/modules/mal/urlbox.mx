@@ -17,12 +17,15 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f urlbox
-@a Martin Kersten
-@v 0.1
-@* URL box
-This module implements the flattened tree model for URLs.
-It is targeted at the GGLETICK student project
+@c
+/*
+ * @f urlbox
+ * @a Martin Kersten
+ * @v 0.1
+ * @* URL box
+ * This module implements the flattened tree model for URLs.
+ * It is targeted at the GGLETICK student project
+ */
 @mal
 module urlbox
 comment "The URL box provides fast access to
@@ -89,15 +92,16 @@ command getCardinality():bat[:int,:lng]
 address URLBOXgetCardinality;
 command getSize():bat[:int,:lng]
 address URLBOXgetSize;
-@{
 pattern prelude():void 
 address URLBOXprelude
 comment "Initialize the URL box";
 
 urlbox.prelude();
-@-
-@+ Implementation
 @h
+/*
+ * @-
+ * @+ Implementation
+ */
 #ifndef _URL_BOX_H
 #define _URL_BOX_H
 #include "mal.h"
@@ -137,13 +141,16 @@ urlbox_export str URLBOXgetCardinality(int *r);
 urlbox_export str URLBOXgetSize(int *r);
 #endif /* _URL_BOX_H */
 
-@- Module initializaton
-The content of this box my only be changed by the Administrator.
+/*
+ * @- Module initializaton
+ * The content of this box my only be changed by the Administrator.
+ */
 @= authorize
 	{
 		str tmp = NULL;
 		rethrow("urlBox.@1", tmp, AUTHrequireAdmin(&cntxt));
 	}
+@
 @c
 #include "monetdb_config.h"
 #include "urlbox.h"
@@ -176,8 +183,9 @@ URLBOXprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-@- Operator implementation
-@c
+/*
+ * @- Operator implementation
+ */
 str
 URLBOXopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -217,17 +225,22 @@ URLBOXdestroy(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-@-
-Access to a box calls for resolving the first parameter
-to a named box.
+/*
+ * @-
+ * Access to a box calls for resolving the first parameter
+ * to a named box.
+ */
 @= OpenBox
 	@:authorize(@1)@
 	box= findBox("urlbox");
 	if( box ==0) 
 	throw(MAL, "urlbox.@1", BOX_CLOSED);
-@-
-The real work starts here. We have to insert an URL.
+@
 @c
+/*
+ * @-
+ * The real work starts here. We have to insert an URL.
+ */
 static int
 URLBOXchop(str url, str *parts){
 	char *s, *t;
@@ -281,9 +294,10 @@ URLBOXinsert(char *tuple)
 		}
 		urlDepth= depth;
 	}
-@-
-Find the common prefix first
-@c
+	/*
+	 * @-
+	 * Find the common prefix first
+	 */
 	p= BUNfnd(BATmirror(urlBAT[0]),parts[0]);
 	if (p != BUN_NONE) 
 		for( i=1; i<depth; i++){
@@ -294,9 +308,10 @@ Find the common prefix first
 			prv = *(int*)Hloc(urlBAT[i], p);
 		}
 	else i = 0;
-@-
-Insert the remainder as a new url string
-@c
+	/*
+	 * @-
+	 * Insert the remainder as a new url string
+	 */
 	for( ; i<depth; i++){
 		/* printf("update [%d]:%s\n",i,parts[i]);*/
 		idx = BATcount(urlBAT[i]);
@@ -641,4 +656,3 @@ URLBOXgetSize(int *r){
 	BBPkeepref(*r);
 	return MAL_SUCCEED;
 }
-@}

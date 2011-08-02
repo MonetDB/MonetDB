@@ -17,17 +17,19 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f crackers_validation
-@a Martin Kersten, Stratos Idreos, Stefan Manegold
-@d March 2006 - July 2007
-@* Cracker Validation
-
-
-@+ Interface
-
-
-@- Type expansion
-
+@c
+/*
+ * @f crackers_validation
+ * @a Martin Kersten, Stratos Idreos, Stefan Manegold
+ * @d March 2006 - July 2007
+ * @* Cracker Validation
+ *
+ *
+ * @+ Interface
+ *
+ *
+ * @- Type expansion
+ */
 @= TypeSwitch
 @:@1(chr,simple,,@2)@
 @:@1(sht,simple,,@2)@
@@ -37,11 +39,10 @@ All Rights Reserved.
 @:@1(dbl,simple,,@2)@
 @:@1(date,atom,TYPE_,@2)@
 @
-
-
-@- Header file
- 
 @h
+/*
+ * @- Header file
+ */
 #ifndef _CRACKERS_VALIDATION_H_
 #define _CRACKERS_VALIDATION_H_
 
@@ -51,30 +52,25 @@ All Rights Reserved.
 @:TypeSwitch(verifyIndex_decl,)@
 
 #endif /* _CRACKERS_VALIDATION_H */
-@
-
-
-@- Exported signatures
-
+/*
+ * @- Exported signatures
+ */
 @= validate_operations_decl
 crackers_export str CRKcrack@4Zero_validate_@1 (bit *res, int *bid, @1 *_mid);
 crackers_export str CRKcrack@4One_validate_@1 (int *res, int *bid, @1 *_mid);
 crackers_export str CRKcrack@4Two_validate_@1 (bit *res, int *bid, @1 *_low, @1 *_hgh);
 crackers_export str CRKcrack@4Three_validate_@1 (bit *res, int *bid, @1 *_low, @1 *_hgh);
 @
-
 @= verifyIndex_decl
 crackers_export str CRKverifyCrackerIndex_@1(int *k, int *bid);
 @
- 
-
-@{
-@+ Implementation
-
- 
-@- C file
-
 @c
+/*
+ * @+ Implementation
+ *
+ *
+ * @- C file
+ */
 #include "monetdb_config.h"
 #include "crackers.h"
 
@@ -82,11 +78,9 @@ crackers_export str CRKverifyCrackerIndex_@1(int *k, int *bid);
 @:TypeSwitch(validate_operations_impl,Unordered)@
 @:TypeSwitch(validate_operations_impl,Ordered)@
 @:TypeSwitch(verifyIndex_impl,)@
-@
-
-
-@- Exported functions
-
+/*
+ * @- Exported functions
+ */
 @= validate_operations_impl
 str
 CRKcrack@4Zero_validate_@1 (bit *res, int *bid, @1 *_mid){
@@ -151,7 +145,6 @@ CRKcrack@4Three_validate_@1 (bit *res, int *bid, @1 *_low, @1 *_hgh){
 	)@
 }
 @
-
 @= verifyIndex_impl
 str
 CRKverifyCrackerIndex_@1(int *k, int *bid){
@@ -270,10 +263,7 @@ CRKverifyCrackerIndex_@1(int *k, int *bid){
 	return MAL_SUCCEED;
 }
 @
-
-
-@- Local support functions and macros
- 
+ * @- Local support functions and macros
 @= validate_init_1
 	BAT *b,*c,*w;
 	BUN fst_bn, lst_bn, bn;
@@ -288,21 +278,18 @@ CRKverifyCrackerIndex_@1(int *k, int *bid){
 	lst_bn = BUNlast(b);
 	bn = fst_bn;
 @
-
 @= validate_init_2
 	if (low > hgh) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "crackers.@2crack_validate", "illegal range");
 	}
 @
-
 @= validate_checkUnordered
         while (bn < lst_bn @2 @3 ) {
                 bn ++;
                 count[@1]++;
         }
 @
-
 @= validate_checkOrdered
 {	oid hd = 0;
 	while (bn < lst_bn && hd <= *(oid*)Hloc(b, bn) @2 @3 ) {
@@ -312,15 +299,12 @@ CRKverifyCrackerIndex_@1(int *k, int *bid){
 	}	
 }
 @
-
 @= validate_check_1
 	@:validate_check@5(@2, && *(@1*)Tloc(b, bn) @3 @4 )@
 @
-
 @= validate_check_2
 	@:validate_check@7(@2, && *(@1*)Tloc(b, bn) @3 @4 , && *(@1*)Tloc(b, bn) @5 @6 )@
 @
-
 @= validate_end
 	count[0] = BATcount(b);
 	if (bn < lst_bn) {
@@ -342,7 +326,3 @@ CRKverifyCrackerIndex_@1(int *k, int *bid){
 	*res = TRUE;
 	return MAL_SUCCEED;
 @
-
-@}
-
-

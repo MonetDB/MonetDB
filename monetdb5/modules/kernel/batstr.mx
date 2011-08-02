@@ -17,19 +17,21 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f batstr
-@a M.L. Kersten
-@+ String multiplexes
-[TODO: property propagations]
-The collection of routines provided here are map operations
-for the atom string primitives. 
-
-In line with the batcalc module, we assume that
-if two bat operands are provided that they are already
-aligned on the head. Moreover, the head of the BATs
-are limited to :void, which can be cheaply realized using
-the GRPsplit operation.
-@{
+@c
+/*
+ * @f batstr
+ * @a M.L. Kersten
+ * @+ String multiplexes
+ * [TODO: property propagations]
+ * The collection of routines provided here are map operations
+ * for the atom string primitives.
+ *
+ * In line with the batcalc module, we assume that
+ * if two bat operands are provided that they are already
+ * aligned on the head. Moreover, the head of the BATs
+ * are limited to :void, which can be cheaply realized using
+ * the GRPsplit operation.
+ */
 @mal
 module batstr;
 
@@ -167,8 +169,10 @@ command batstr.replace(s:bat[:oid,:str],pat:str,s2:str):bat[:oid,:str]
 address STRbatreplace
 comment "Insert a string into another";
 
-@+ Implementation
 @c
+/*
+ * @+ Implementation
+ */
 #include "monetdb_config.h"
 #include <gdk.h>
 #include "ctype.h"
@@ -266,6 +270,7 @@ bunins_failed:
 	throw(MAL, "batstr.@1", OPERATION_FAILED " During bulk operation");
 }
 
+@
 @c
 @:BATint(Length,strLength,str)@
 @:BATint(stringLength,strSQLLength,str)@
@@ -307,6 +312,7 @@ bunins_failed:
 	BBPunfix(bn->batCacheid);
 	throw(MAL, "batstr.@1", OPERATION_FAILED " During bulk operation");
 }
+@
 @c
 @:BATstr(Lower,strLower,str)@
 @:BATstr(Upper,strUpper,str)@
@@ -314,8 +320,6 @@ bunins_failed:
 @:BATstr(Ltrim,strLtrim,str)@
 @:BATstr(Rtrim,strRtrim,str)@
 
-@-
-@c
 @= STRbatcstcmp
 batstr_export str STRbat@2Cst(int *ret, int *l, str *cst);
 str
@@ -357,17 +361,24 @@ bunins_failed:
 	BBPunfix(bn->batCacheid);
 	throw(MAL, "batstr.@1", OPERATION_FAILED " During bulk operation");
 }
+@
 @c
+/*
+ * @-
+ */
 @:STRbatcstcmp(==,Equal,GDK_SORTED_REV)@
 @:STRbatcstcmp(!=,NotEqual,GDK_SORTED)@
 
-@-
-A general assumption in all cases is the bats are synchronized on their
-head column. This is not checked and may be mis-used to deploy the
-implementation for shifted window arithmetic as well.
+/*
+ * @-
+ * A general assumption in all cases is the bats are synchronized on their
+ * head column. This is not checked and may be mis-used to deploy the
+ * implementation for shifted window arithmetic as well.
+ */
 @= chkSize
 	if( BATcount(@1) != BATcount(@2) )
 	throw(MAL, "batstr.@3", ILLEGAL_ARGUMENT " Requires bats of identical size");
+@
 @c
 @= STRbatcmp
 batstr_export str STRbat@2(int *ret, int *l, int *r);
@@ -413,6 +424,7 @@ bunins_failed:
 	BBPunfix(*ret);
 	throw(MAL, "batstr.@1", OPERATION_FAILED " During bulk operation");
 }
+@
 @c
 @:STRbatcmp(==,Equal,GDK_SORTED_REV)@
 @:STRbatcmp(!=,NotEqual,GDK_SORTED)@
@@ -598,6 +610,7 @@ bunins_failed:
 	BBPunfix(*ret);
 	throw(MAL, "batstr"@5, OPERATION_FAILED " During bulk operation");
 }
+@
 @c
 @:binarySTRstr(Prefix,bit,str,STRPrefix,"prefix",vp,)@
 @:binarySTRstr(Suffix,bit,str,STRSuffix,"suffix",vp,)@
@@ -645,9 +658,10 @@ bunins_failed:
 	throw(MAL, "batstr.subString", OPERATION_FAILED " During bulk operation");
 }
 
-@-
-The pattern matching routine is optimized for SQL pattern structures.
-@c
+/*
+ * @-
+ * The pattern matching routine is optimized for SQL pattern structures.
+ */
 #define percent "\001"
 #define underscore "\002"
 batstr_export str STRbatlike_uselect(int *ret, int *bid, str *pat, str *esc);
@@ -692,9 +706,10 @@ STRbatlike_uselect2(int *ret, int *bid, str *pat)
 	str esc="";
 	return STRbatlike_uselect(ret,bid,pat,&esc);
 }
-@-
-The substring functions require slightly different arguments
-@c
+/*
+ * @-
+ * The substring functions require slightly different arguments
+ */
 batstr_export str STRbatsubstringcst(int *ret, int *bid, int *start, int *length);
 str
 STRbatsubstringcst(int *ret, int *bid, int *start, int *length)
@@ -838,4 +853,3 @@ bunins_failed:
 }
 
 
-@}

@@ -17,31 +17,33 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f aggr
-@a S. Manegold 
-@v 1.0
-@+ Aggregates Module
-
-This module contains some efficient aggregate functions that compute their
-result in one scan, rather than in the iterative manner of the generic
-MIL aggregrate implementations.
-
-The implementation code is derived from the original 'aggr' module. 
-It uses a complete type-specific code expansion to avoid any type-checking
-in the inner-most loops.
-Where feasible, it replaced (expansive) hash-lookup by significantly cheaper positional
-void-lookups (if the head-column of the group-extend BAT ("e") is "void") or at least by 
-(also positional) array lookups (in case the group-ids span a reasonably small range);
-
-In addition to the 2-parameter @{ { } @{ } }(BAT[oid,any::1] b, BAT[oid,any] e)
-functions, there are now also 3-parameter @{ { } @{ } }(BAT[void,any::1] b,
-BAT[void,oid] g, BAT[oid,any] e) functions, that require b & g to be
-head-aligned, and do the fetchjoin(reverse(g),b) on-the-fly;
-
-The routines should not be stored in their own module, but
-added to the 'group' module. This can be achieved by setting
-the module.
-@{
+@c
+/*
+ * @f aggr
+ * @a S. Manegold
+ * @v 1.0
+ * @+ Aggregates Module
+ *
+ * This module contains some efficient aggregate functions that compute their
+ * result in one scan, rather than in the iterative manner of the generic
+ * MIL aggregrate implementations.
+ *
+ * The implementation code is derived from the original 'aggr' module.
+ * It uses a complete type-specific code expansion to avoid any type-checking
+ * in the inner-most loops.
+ * Where feasible, it replaced (expansive) hash-lookup by significantly cheaper positional
+ * void-lookups (if the head-column of the group-extend BAT ("e") is "void") or at least by
+ * (also positional) array lookups (in case the group-ids span a reasonably small range);
+ *
+ * In addition to the 2-parameter @{ { } @{ } }(BAT[oid,any::1] b, BAT[oid,any] e)
+ * functions, there are now also 3-parameter @{ { } @{ } }(BAT[void,any::1] b,
+ * BAT[void,oid] g, BAT[oid,any] e) functions, that require b & g to be
+ * head-aligned, and do the fetchjoin(reverse(g),b) on-the-fly;
+ *
+ * The routines should not be stored in their own module, but
+ * added to the 'group' module. This can be achieved by setting
+ * the module.
+ */
 @mal
 module aggr;
 @= sumprod_signatures
@@ -58,6 +60,7 @@ command product(b:bat[:oid,:@1], g:bat[:oid,:oid], e:bat[:oid,:any_1])
 		:bat[:oid,:@2] 
 address AX3aggrX3_prod3_@1_@2
 comment "Product over grouped tail on @1";
+@
 @mal
 @:sumprod_signatures(bte,bte)@
 @:sumprod_signatures(bte,sht)@
@@ -88,9 +91,10 @@ command avg(b:bat[:oid,:@1], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl
 address AX3aggrX3_avg3_@1
 comment "Grouped tail average on @1";
 
-@-
-We may have to extend the signatures to all possible {void,oid} combos
+@
 @mal
+# @-
+# We may have to extend the signatures to all possible {void,oid} combos
 @:sum_avg_signatures(bte)@
 @:sum_avg_signatures(sht)@
 @:sum_avg_signatures(int)@
@@ -143,35 +147,39 @@ command count_no_nil(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2])
 	:bat[:oid,:wrd]
 address AX3count_no_nil3;
 
-@+ Implementation
-These implementations need just one scan and a simple hash-maintained data
-structure to compute a group of common aggregates.
-
-@-
-With group OIDs spanning a range of less than SMALL_AGGR_MAX (the actual
-number of groups might be even less, in case there are "holes" in the group
-OID range), we use a simple array as temporary sum/cnt table on order to
-benefit from positional lookups; with size of sum <= 8 bytes and size of
-cnt == 4 bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache.
 @h
+/*
+ * @+ Implementation
+ * These implementations need just one scan and a simple hash-maintained data
+ * structure to compute a group of common aggregates.
+ *
+ * @-
+ * With group OIDs spanning a range of less than SMALL_AGGR_MAX (the actual
+ * number of groups might be even less, in case there are "holes" in the group
+ * OID range), we use a simple array as temporary sum/cnt table on order to
+ * benefit from positional lookups; with size of sum <= 8 bytes and size of
+ * cnt == 4 bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache.
+ */
 #define SMALL_AGGR_MAX 1024
 
-@-
-The macro CHKrange is just for array-lookups, analogously to BUNfndVOID &
-HASHfnd_oid for void- and hash-lookups, respectively
-@h
+/*
+ * @-
+ * The macro CHKrange is just for array-lookups, analogously to BUNfndVOID &
+ * HASHfnd_oid for void- and hash-lookups, respectively
+ */
 /* if the test succeeds, we must return something not equal to
    BUN_NONE, but the actual value doesn't matter since it is not
    otherwise used */
 #define CHKrange(r, bn, h)	r = (BUN)(*(oid*)(h) >= min && *(oid*)(h) <= max ? 0 : BUN_NONE)
 
-@-
-In case the group OIDs span a range of more than SMALL_AGGR_MAX,
-but the number of groups is less then SCAN_AGGR_MAX,
-we use (backward-) "scan"-lookup (unrolled implementation exploiting
-fall-through in C's switch statment) instead of hash-lookup,
-as the latter turned out to be rather expensive ...
-@h
+/*
+ * @-
+ * In case the group OIDs span a range of more than SMALL_AGGR_MAX,
+ * but the number of groups is less then SCAN_AGGR_MAX,
+ * we use (backward-) "scan"-lookup (unrolled implementation exploiting
+ * fall-through in C's switch statment) instead of hash-lookup,
+ * as the latter turned out to be rather expensive ...
+ */
 #define SCAN_AGGR_MAX 8
 
 #define SCAN_aggr_init \
@@ -194,18 +202,19 @@ as the latter turned out to be rather expensive ...
 	case 1: if (_bnh[0] == _h) { r = _r + 0; break; } \
 	}
 
-@-
-In case the head of the group extend (e) is sorted, we assume that also the
-the tail of the group map (g) is "almost" sorted or "mostly ascending" ---
-or at least clustered such that group IDs in cluster i are smaller than
-those in cluster i+1; this is the case if the first grouping attribute
-(column/BAT) is sorted --- and resorted to "local scanning" rather than
-(inherently random and expensive) hash-lookups.
-Lacking a suitable and efficient way to detect that the tail of the group
-map (g) is "almost sorted" or "mostly ascending", we require that the tail
-of the group map (g) is sorted --- the "local scanning" performs much worse
-than hash-lookups in case the tail of the group map (g) is in random order.
-@h
+/*
+ * @-
+ * In case the head of the group extend (e) is sorted, we assume that also the
+ * the tail of the group map (g) is "almost" sorted or "mostly ascending" ---
+ * or at least clustered such that group IDs in cluster i are smaller than
+ * those in cluster i+1; this is the case if the first grouping attribute
+ * (column/BAT) is sorted --- and resorted to "local scanning" rather than
+ * (inherently random and expensive) hash-lookups.
+ * Lacking a suitable and efficient way to detect that the tail of the group
+ * map (g) is "almost sorted" or "mostly ascending", we require that the tail
+ * of the group map (g) is sorted --- the "local scanning" performs much worse
+ * than hash-lookups in case the tail of the group map (g) is in random order.
+ */
 #define MERGE_aggr_init						\
 	BUN _i = 0, _j = BATcount(bn), _r = BUNfirst(bn);	\
 	oid _h, *_bnh = (oid*) Hloc(bn, _r);		\
@@ -246,17 +255,17 @@ than hash-lookups in case the tail of the group map (g) is in random order.
 	}
 */
 
-@- Wrapper
-The remainder is a wrapper around the V4 code base.
-
 @c
+/*
+ * @- Wrapper
+ * The remainder is a wrapper around the V4 code base.
+ */
 #include "monetdb_config.h"
 @(
 #include <gdk.h>
 #include <gdk_scanselect.h>	/* for type-specific HT_bunfastins_nocheck_noinc(), until they're moved to gdk.mx */
 @)
 
-@c
 #include "mal.h"
 #include "mal_exception.h"
 #include "aggr_be_sum.h"
@@ -280,7 +289,9 @@ The remainder is a wrapper around the V4 code base.
 #define aggr_export extern
 #endif
 
-@-
+/*
+ * @-
+ */
 @= AX3sum
 aggr_export str AX3aggrX3_sum_@1_@2(int *retid, int *bid, int *eid);
 str AX3aggrX3_sum_@1_@2(int *retid, int *bid, int *eid){
@@ -306,8 +317,8 @@ str AX3aggrX3_sum_@1_@2(int *retid, int *bid, int *eid){
 	BBPreleaseref(e->batCacheid);
 	throw(MAL, "aggrX3_sum.@4",GDK_EXCEPTION);
 }
-@-
-
+@
+ * @-
 @= AX3prod
 aggr_export str AX3aggrX3_prod_@1_@2(int *retid, int *bid, int *eid);
 str AX3aggrX3_prod_@1_@2(int *retid, int *bid, int *eid){
@@ -332,11 +343,13 @@ str AX3aggrX3_prod_@1_@2(int *retid, int *bid, int *eid){
 	BBPreleaseref(e->batCacheid);
 	throw(MAL, "aggrX3_prod.@4",GDK_EXCEPTION);
 }
-@-
+@
+ * @-
 @= AX3sumprod
 	@:AX3sum(@1,@2)@
 	/* product here */
 	@:AX3prod(@1,@2)@
+@
 @c
 
 @:AX3sumprod(bte,bte)@
@@ -359,7 +372,9 @@ str AX3aggrX3_prod_@1_@2(int *retid, int *bid, int *eid){
 @:AX3sumprod(flt,dbl)@
 @:AX3sumprod(dbl,dbl)@
 
-@-
+/*
+ * @-
+ */
 @= AX3arithavg
 aggr_export str AX3aggrX3_avg_@1(int *retid, int *bid, int *eid);
 str AX3aggrX3_avg_@1(int *retid, int *bid, int *eid){
@@ -384,6 +399,7 @@ str AX3aggrX3_avg_@1(int *retid, int *bid, int *eid){
 	BBPreleaseref(e->batCacheid);
 	throw(MAL, "aggrX3_avg.@1",GDK_EXCEPTION);
 }
+@
 @c
 @:AX3arithavg(bte)@
 @:AX3arithavg(sht)@
@@ -394,7 +410,9 @@ str AX3aggrX3_avg_@1(int *retid, int *bid, int *eid){
 @:AX3arithavg(dbl)@
 
 
-@- "Extremes" (Min & Max)
+/*
+ * @- "Extremes" (Min & Max)
+ */
 @= AX3extreme
 aggr_export str AX3aggrX3_@1(int *ret, int *bid, int *eid);
 str AX3aggrX3_@1(int *ret, int *bid, int *eid){
@@ -419,12 +437,14 @@ str AX3aggrX3_@1(int *ret, int *bid, int *eid){
 	BBPreleaseref(e->batCacheid);
 	throw(MAL, "aggrX3_@1",GDK_EXCEPTION);
 }
+@
 @c
 @:AX3extreme(min,<)@
 @:AX3extreme(max,>)@
 
-@- Count
-@c
+/*
+ * @- Count
+ */
 aggr_export str AX3aggrX3_count(int *retid, int *bid, int *eid, bit *ignore_nils);
 str
 AX3aggrX3_count(int *retid, int *bid, int *eid, bit *ignore_nils)
@@ -452,8 +472,9 @@ AX3aggrX3_count(int *retid, int *bid, int *eid, bit *ignore_nils)
 	throw(MAL, "aggrX3_count", GDK_EXCEPTION);
 }
 
-@- Size
-@c
+/*
+ * @- Size
+ */
 aggr_export str AX3aggrX3_size(int *retid, int *bid, int *eid);
 str
 AX3aggrX3_size(int *retid, int *bid, int *eid)
@@ -481,7 +502,9 @@ AX3aggrX3_size(int *retid, int *bid, int *eid)
 	throw(MAL, "aggrX3_size", GDK_EXCEPTION);
 }
 
-@- Sum & Average & Prod	
+/*
+ * @- Sum & Average & Prod
+ */
 @= AX3arithsum3
 aggr_export str AX3aggrX3_sum3_@1_@2(int *retid,int *bid, int *gid, int *eid);
 str AX3aggrX3_sum3_@1_@2(int *retid,int *bid, int *gid, int *eid){
@@ -514,7 +537,8 @@ str AX3aggrX3_sum3_@1_@2(int *retid,int *bid, int *gid, int *eid){
 	BBPreleaseref(g->batCacheid);
 	throw(MAL, "aggrX3_sum3",GDK_EXCEPTION);
 }
-@-
+@
+ * @-
 @= AX3prod3
 aggr_export str AX3aggrX3_prod3_@1_@2(int *retid,int *bid, int *gid, int *eid);
 str AX3aggrX3_prod3_@1_@2(int *retid,int *bid, int *gid, int *eid){
@@ -546,10 +570,12 @@ str AX3aggrX3_prod3_@1_@2(int *retid,int *bid, int *gid, int *eid){
 	BBPreleaseref(g->batCacheid);
 	throw(MAL, "aggrX3_prod3",GDK_EXCEPTION);
 }
-@-
+@
+ * @-
 @= AX3sumprod3
 @:AX3arithsum3(@1,@2)@
 @:AX3prod3(@1,@2)@
+@
 @c
 
 @:AX3sumprod3(bte,bte)@
@@ -604,6 +630,7 @@ str AX3aggrX3_avg3_@1(int *retid,int *bid, int *gid, int *eid){
 	BBPreleaseref(g->batCacheid);
 	throw(MAL, "aggrX3_avg3",GDK_EXCEPTION);
 }
+@
 @c
 @:AX3arithavg3(bte)@
 @:AX3arithavg3(sht)@
@@ -613,8 +640,6 @@ str AX3aggrX3_avg3_@1(int *retid,int *bid, int *gid, int *eid){
 @:AX3arithavg3(flt)@
 @:AX3arithavg3(dbl)@
 
-@- "Extremes" (Min & Max)
-@c
 @= AX3extreme3
 aggr_export str AX3aggrX3_@13(int *ret,int *bid, int *gid, int *eid);
 str AX3aggrX3_@13(int *ret,int *bid, int *gid, int *eid){
@@ -646,7 +671,11 @@ str AX3aggrX3_@13(int *ret,int *bid, int *gid, int *eid){
 	BBPreleaseref(g->batCacheid);
 	throw(MAL, "aggrX3_@13",GDK_EXCEPTION);
 }
+@
 @c
+/*
+ * @- "Extremes" (Min & Max)
+ */
 @:AX3extreme3(min,<)@
 @:AX3extreme3(max,>)@
 
@@ -683,9 +712,10 @@ AX3aggrX3_count3(int *retid, int *bid, int *gid, int *eid, bit *ignore_nils)
 	BBPreleaseref(g->batCacheid);
 	throw(MAL, "aggrX3_count3", GDK_EXCEPTION);
 }
-@-
-The remainder contains the few MIL proc translations 
-@c
+/*
+ * @-
+ * The remainder contains the few MIL proc translations
+ */
 aggr_export str AX3aggrX3_count3Nils(int *retid, int *bid, int *gid, int *eid);
 str
 AX3aggrX3_count3Nils(int *retid, int *bid, int *gid, int *eid)
@@ -717,5 +747,3 @@ AX3count_no_nil2(int *retid, int *bid, int *eid)
 	bit ignore_nils = TRUE;
 	return AX3aggrX3_count(retid, bid, eid, &ignore_nils);
 }
-@-
-@}

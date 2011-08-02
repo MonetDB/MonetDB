@@ -1,0 +1,99 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://www.monetdb.org/Legal/MonetDBLicense
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2011 MonetDB B.V.
+# All Rights Reserved.
+
+module remote;
+
+# module loading and unloading funcs
+
+command prelude():void
+address RMTprelude
+comment "initialise the remote module";
+
+command epilogue():void
+address RMTepilogue
+comment "release the resources held by the remote module";
+
+
+# global connection resolve function
+
+command resolve(pattern:str):bat[:oid,:str]
+address RMTresolve
+comment "resolve a pattern against Merovingian and return the URIs";
+
+
+# session local connection instantiation functions
+
+command connect(uri:str, user:str, passwd:str):str
+address RMTconnect
+comment "returns a newly created connection for uri, using user name and password";
+command connect(uri:str, user:str, passwd:str, scen:str):str
+address RMTconnectScen
+comment "returns a newly created connection for uri, using user name, password and scenario";
+
+command disconnect(conn:str):void
+address RMTdisconnect
+comment "disconnects the connection pointed to by handle (received from a call to connect()";
+
+
+# core transfer functions
+
+pattern get(conn:str, ident:str):any
+address RMTget
+comment "retrieves a copy of remote object ident";
+
+pattern put(conn:str, object:any):str
+address RMTput
+comment "copies object to the remote site and returns its identifier";
+
+pattern register(conn:str, mod:str, fcn:str):void
+address RMTregister
+comment "register <mod>.<fcn> at the remote site";
+
+pattern exec(conn:str, mod:str, func:str):str
+address RMTexec
+comment "remotely executes <mod>.<func> and returns the handle to its result";
+pattern exec(conn:str, mod:str, func:str):str...
+address RMTexec
+comment "remotely executes <mod>.<func> and returns the handle to its result";
+pattern exec(conn:str, mod:str, func:str, :str...):str
+address RMTexec
+comment "remotely executes <mod>.<func> using the argument list of remote objects and returns the handle to its result";
+pattern exec(conn:str, mod:str, func:str, :str...):str...
+address RMTexec
+comment "remotely executes <mod>.<func> using the argument list of remote objects and returns the handle to its result";
+
+
+# helper functions not primilarily intended for normal use
+
+pattern batload(ht:any_1, tt:any_2, size:int):bat[:any_1,:any_2]
+address RMTbatload
+comment "create a BAT of the given type and size, and load values from the input stream";
+
+pattern batbincopy(b:bat):void
+address RMTbincopyto
+comment "dump BAT b in binary form to the stream";
+pattern batbincopy():bat[:void,:any]
+address RMTbincopyfrom
+comment "store the binary BAT data in the BBP and return as BAT";
+
+pattern bintype():void
+address RMTbintype
+comment "print the binary type of this mserver5";
+
+
+# initialise our localtype
+remote.prelude();

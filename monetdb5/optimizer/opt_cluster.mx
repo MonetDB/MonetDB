@@ -17,18 +17,19 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f opt_cluster
-@a N.J. Nes
-@- Cluster
-The simple goal of the cluster optimizer is to reduce the size(s) of hash
-tables. For example the hash tables in group.new or algebra.join. 
-The goal is reached by partitioning, the grouping columns or both sides
-of the join. 
-The base decision for clustering stems from the size estimates of xxx optimizer.
-
-Example
-
-@{
+@c
+/*
+ * @f opt_cluster
+ * @a N.J. Nes
+ * @- Cluster
+ * The simple goal of the cluster optimizer is to reduce the size(s) of hash
+ * tables. For example the hash tables in group.new or algebra.join.
+ * The goal is reached by partitioning, the grouping columns or both sides
+ * of the join.
+ * The base decision for clustering stems from the size estimates of xxx optimizer.
+ *
+ * Example
+ */
 @mal
 pattern optimizer.cluster():str
 address OPTcluster;
@@ -677,4 +678,3 @@ OPTclusterImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(cluster,OPT_CHECK_ALL)@
-@}

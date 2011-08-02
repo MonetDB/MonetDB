@@ -1,0 +1,134 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://www.monetdb.org/Legal/MonetDBLicense
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2011 MonetDB B.V.
+# All Rights Reserved.
+
+module profiler;
+
+pattern activate(name:str...):void
+address CMDactivateProfiler
+comment "A list of counters to be activated.";
+
+pattern deactivate(name:str...):void
+address CMDdeactivateProfiler
+comment "A list of counters to be deactivated.";
+
+pattern openStream():void
+address CMDopenProfilerStream
+comment "Send the events to output stream";
+pattern openStream(fnme:str):void
+address CMDsetProfilerFile
+comment "Send the log events to a file, stdout or console";
+pattern openStream(host:str, port:int):void
+address CMDsetProfilerStream
+comment "Send the log events to a stream ";
+command closeStream():void
+address CMDcloseProfilerStream
+comment "Stop sending the event records";
+
+pattern setAll():void
+address CMDsetAllProfiler
+comment "Short cut for setFilter(*,*).";
+pattern setNone():void
+address CMDsetNoneProfiler
+comment "Short cut for clrFilter(*,*).";
+
+pattern setFilter(mod:str,fcn:str):void
+address CMDsetFilterProfiler
+comment "Generate an event record for all
+	function calls that satisfy the regular
+	expression mod.fcn. A wildcard (*) can
+	be used as name to identify all";
+
+pattern setFilter(v:any):void
+address CMDsetFilterVariable
+comment "Generate an event record for
+	every instruction where v is used.";
+
+pattern clrFilter(mod:str,fcn:str):void
+address CMDclrFilterProfiler
+comment "Clear the performance trace bit
+	of the selected functions.";
+
+pattern clrFilter(v:any):void
+address CMDsetFilterVariable
+comment "Stop tracing the variable" ;
+
+pattern setStartPoint(mod:str,fcn:str):void
+address CMDstartPointProfiler
+comment "Start performance tracing at mod.fcn";
+pattern setEndPoint(mod:str,fcn:str)
+address CMDendPointProfiler
+comment "End performance tracing after mod.fcn";
+
+pattern start():void
+address CMDstartProfiler
+comment "Start performance tracing";
+
+command noop():void
+address CMDnoopProfiler
+comment "Fetch any pending performance events";
+
+pattern stop():void
+address CMDstopProfiler
+comment "Stop performance tracing";
+
+command reset():void
+address CMDclearTrace
+comment "Clear the profiler traces";
+
+command dumpTrace():void
+address CMDdumpTrace
+comment "List the events collected";
+
+command getTrace(e:str):bat[:int,:any_1]
+address CMDgetTrace
+comment "Get the trace details of a specific event";
+
+pattern getEvent()(:lng,:lng,:lng)
+address CMDgetEvent
+comment "Retrieve the performance indicators of the previous instruction";
+
+command cleanup():void
+address CMDcleanup
+comment "Remove the temporary tables for profiling";
+
+command getDiskReads():lng
+address CMDgetDiskReads
+comment "Obtain the number of physical reads";
+command getDiskWrites():lng
+address CMDgetDiskWrites
+comment "Obtain the number of physical reads";
+
+command getUserTime():lng
+address CMDgetUserTime
+comment "Obtain the user timing information.";
+command getSystemTime():lng
+address CMDgetSystemTime
+comment "Obtain the user timing information.";
+
+pattern setFootprintFlag{unsafe}():void
+address CMDsetFootprintFlag
+comment "Trace memory footprint of BATs during query";
+pattern setMemoryFlag{unsafe}():void
+address CMDsetMemoryFlag
+comment "Trace memory accress";
+
+pattern getFootprint():lng
+address CMDgetFootprint
+comment "Get the memory footprint and reset the flag";
+pattern getMemory():lng
+address CMDgetMemory
+comment "Get the amount of memory claimed and reset the flag";

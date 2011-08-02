@@ -46,7 +46,7 @@ headers_mal = {
 
 headers_sql = {
 	HEADERS = sql
-	DIR = libdir/monetdb5
+	DIR = libdir/monetdb5/createdb
 	SOURCES = 80_udf.sql
 }
 

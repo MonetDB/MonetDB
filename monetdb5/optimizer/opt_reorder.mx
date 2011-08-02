@@ -17,43 +17,45 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f opt_reorder
-@- The dataflow reorder
-MAL programs are largely logical descriptions of an execution plan.
-After the mitosis and mergetable optimizers we have a large program, which when
-executed as is, does not necessarily benefit from the locality
-of data and operations. The problem is that the execution plan is
-a DAG for which a topological order should be found that
-minimizes the life time of variables and maximizes parallel execution. 
-This is an NP hard optimization problem. Therefore, we have
-to rely on an affordable heuristic steps.
-
-The reorder optimizer transfers the breadth-first plans of 
-the mergetable into a depth-first traversal.
-This increases cohesion for parallel execution.
-It is performed by basic block that ends in a side-effect
-bearing instruction. 
-Simply walking backward and pulling out subplans is then
-the way to go. This step could be optimized somewhat
-by giving preference to variables that are too far
-away in the plan from their source. It is however not
-explored.
-
-The secondary approach is to pull instructions to the
-head of the plan if the dataflow such permits.
-If you are not careful, you will end up with
-the breadth first plan again.
-This track is abandonded in favor of a combination
-of octopus and recycler on a single platform.
-
-Beware, variables can be assigned a value multiple times.
-The order this implies should be respected.
-
-Hidden dependencies occur als with e.g. sql.assert() calls.
-Reordering them may easily lead to an assertion violation.
-Therefore, reordering should be limited to basic blocks without
-side-effects.
-@{
+@c
+/*
+ * @f opt_reorder
+ * @- The dataflow reorder
+ * MAL programs are largely logical descriptions of an execution plan.
+ * After the mitosis and mergetable optimizers we have a large program, which when
+ * executed as is, does not necessarily benefit from the locality
+ * of data and operations. The problem is that the execution plan is
+ * a DAG for which a topological order should be found that
+ * minimizes the life time of variables and maximizes parallel execution.
+ * This is an NP hard optimization problem. Therefore, we have
+ * to rely on an affordable heuristic steps.
+ *
+ * The reorder optimizer transfers the breadth-first plans of
+ * the mergetable into a depth-first traversal.
+ * This increases cohesion for parallel execution.
+ * It is performed by basic block that ends in a side-effect
+ * bearing instruction.
+ * Simply walking backward and pulling out subplans is then
+ * the way to go. This step could be optimized somewhat
+ * by giving preference to variables that are too far
+ * away in the plan from their source. It is however not
+ * explored.
+ *
+ * The secondary approach is to pull instructions to the
+ * head of the plan if the dataflow such permits.
+ * If you are not careful, you will end up with
+ * the breadth first plan again.
+ * This track is abandonded in favor of a combination
+ * of octopus and recycler on a single platform.
+ *
+ * Beware, variables can be assigned a value multiple times.
+ * The order this implies should be respected.
+ *
+ * Hidden dependencies occur als with e.g. sql.assert() calls.
+ * Reordering them may easily lead to an assertion violation.
+ * Therefore, reordering should be limited to basic blocks without
+ * side-effects.
+ */
 @mal
 pattern optimizer.reorder():str
 address OPTreorder;
@@ -74,13 +76,14 @@ comment "Reorder by dataflow dependencies";
 #include "mal_instruction.h"
 #include "mal_interpreter.h"
 
-@-
-Collect the statement dependencies in a table first
-This can be done in linear time in size of the program.
-Also check for barrier blocks. We only allow reordering
-for a linear plan. Future extensions could consider
-re-ordering basic blocks only.
-@c
+/*
+ * @-
+ * Collect the statement dependencies in a table first
+ * This can be done in linear time in size of the program.
+ * Also check for barrier blocks. We only allow reordering
+ * for a linear plan. Future extensions could consider
+ * re-ordering basic blocks only.
+ */
 typedef struct{
 	int cnt;
 	int used;
@@ -136,18 +139,19 @@ OPTdependencies(Client cntxt, MalBlkPtr mb, int **Ulist){
 		for( j=0; j<p->retc; j++)
 			var[getArg(p,j)] = i;
 	}
-@-
-	mnstr_printf(cntxt->fdout,"DEPENDENCY TABLE\n");
-	for(i=0;i<mb->stop; i++)
-		if( list[i]->cnt){
-			mnstr_printf(cntxt->fdout,"%s.%s [%d,%d]",
-				mb->stmt[i]->modname,
-				mb->stmt[i]->fcnname, i, list[i]->used);
-			for(j=p->retc; j< list[i]->cnt; j++)
-				mnstr_printf(cntxt->fdout, " %d", list[i]->stmt[j]);
-			mnstr_printf(cntxt->fdout,"\n");
-		}
-@c
+	/*
+	 * @-
+	 * 	mnstr_printf(cntxt->fdout,"DEPENDENCY TABLE\n");
+	 * 	for(i=0;i<mb->stop; i++)
+	 * 		if( list[i]->cnt){
+	 * 			mnstr_printf(cntxt->fdout,"%s.%s [%d,%d]",
+	 * 				mb->stmt[i]->modname,
+	 * 				mb->stmt[i]->fcnname, i, list[i]->used);
+	 * 			for(j=p->retc; j< list[i]->cnt; j++)
+	 * 				mnstr_printf(cntxt->fdout, " %d", list[i]->stmt[j]);
+	 * 			mnstr_printf(cntxt->fdout,"\n");
+	 * 		}
+	 */
 	for(i=0;i<mb->stop; i++) {
 		list[i]->pos = sz;
 		list[i]->pos2 = sz;
@@ -164,14 +168,15 @@ OPTdependencies(Client cntxt, MalBlkPtr mb, int **Ulist){
 			}
 		}
 	}
-@-
-	for(i=0, sz = 0; i<mb->stop; i++) {
-		mnstr_printf(cntxt->fdout,"%d is used by", i);
-		for(j=0; j<list[i]->used; j++, sz++)
-			mnstr_printf(cntxt->fdout," %d", uselist[sz]);
-		mnstr_printf(cntxt->fdout,"\n");
-	}
-@c
+	/*
+	 * @-
+	 * 	for(i=0, sz = 0; i<mb->stop; i++) {
+	 * 		mnstr_printf(cntxt->fdout,"%d is used by", i);
+	 * 		for(j=0; j<list[i]->used; j++, sz++)
+	 * 			mnstr_printf(cntxt->fdout," %d", uselist[sz]);
+	 * 		mnstr_printf(cntxt->fdout,"\n");
+	 * 	}
+	 */
 
 	if ( block ){
 		for (i--; i>=0; i--)
@@ -298,4 +303,3 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 #include "opt_statistics.h"
 
 @:wrapOptimizer(reorder,OPT_CHECK_ALL)@
-@}

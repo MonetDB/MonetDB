@@ -17,10 +17,13 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f opt_joinselect
-@a S. Idreos
-The combination of joins and selects is effective in the 
-context of cracker optimizations.
+@c
+/*
+ * @f opt_joinselect
+ * @a S. Idreos
+ * The combination of joins and selects is effective in the
+ * context of cracker optimizations.
+ */
 @mal
 pattern optimizer.joinselect():str
 address OPTjoinselect;
@@ -43,7 +46,6 @@ comment "Replace select with join select";
 
 #endif
 @c
-@{
 #include "monetdb_config.h"
 #include "opt_joinselect.h"
 #include "mal_interpreter.h"	/* for showErrors() */
@@ -314,4 +316,3 @@ end:
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(joinselect,OPT_CHECK_ALL)@
-@}

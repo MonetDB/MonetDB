@@ -17,19 +17,21 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f crackers_AVL_tree
-@a Martin Kersten, Stratos Idreos, Stefan Manegold
-@d March 2006 - July 2007
-@* AVL Tree
-
-AVL-tree implementation for the cracker index
-
-
-@+ Interface
- 
-
-@- Type expansion
-
+@c
+/*
+ * @f crackers_AVL_tree
+ * @a Martin Kersten, Stratos Idreos, Stefan Manegold
+ * @d March 2006 - July 2007
+ * @* AVL Tree
+ *
+ * AVL-tree implementation for the cracker index
+ *
+ *
+ * @+ Interface
+ *
+ *
+ * @- Type expansion
+ */
 @= TypeSwitch
 @:@1(chr,simple,)@
 @:@1(sht,simple,)@
@@ -39,11 +41,10 @@ AVL-tree implementation for the cracker index
 @:@1(dbl,simple,)@
 @:@1(date,atom,TYPE_)@
 @
-
-
-@- Header file
-
 @h
+/*
+ * @- Header file
+ */
 #ifndef _CRACKERS_AVL_TREE_H_
 #define _CRACKERS_AVL_TREE_H_
 
@@ -54,11 +55,9 @@ AVL-tree implementation for the cracker index
 #endif
 
 #endif /* _CRACKERS_AVL_TREE_H */
-@
-
-
-@- Signatures shared within the crackers module/library
-
+/*
+ * @- Signatures shared within the crackers module/library
+ */
 @= AVLtreeSharedFunctions_decl_0
 int Height(struct Node * x);
 struct Node * SingleRotateLeft(struct Node **head, struct Node * node);
@@ -76,7 +75,6 @@ struct Node * getPreviousNodeAny(struct Node * current);
 struct Node * getPreviousNonLocalNode(struct Node * current);
 struct Node * getNextNonLocalNode(struct Node * current);
 @
-
 @= AVLtreeSharedFunctions_decl_1
 bit GetLow_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, oid *p1, oid *p2, oid previous, oid next);
 bit GetHgh_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, oid *p1, oid *p2, oid previous, oid next);
@@ -90,15 +88,13 @@ struct Node * findNodeL_@1(@1  x, bit inclusive, struct Node * current, BAT *b, 
 void PartiallyLazyFreeAVLTree_@1(struct Node * current, @1 value, BAT *b, BUN base);
 struct NodeSimple * InsertTreeSimple_@1(struct NodeSimple ** head, oid position, @1 value, struct NodeSimple * current, BAT * b);
 @
-
-
-@{
-@+ Implementation
-
-
-@- C file
-
 @c
+/*
+ * @+ Implementation
+ *
+ *
+ * @- C file
+ */
 #include "monetdb_config.h"
 #include "crackers.h"
 
@@ -112,11 +108,9 @@ struct NodeSimple * InsertTreeSimple_@1(struct NodeSimple ** head, oid position,
 @:AVLtreeSharedFunctions_impl_0(Simple)@
 @:AVLtreeSharedFunctions_impl_2@
 @:TypeSwitch(AVLtreeSharedFunctions_impl_1)@
-@
-
-
-@-Functions shared within the crackers module/library
-
+/*
+ * @-Functions shared within the crackers module/library
+ */
 @= AVLtreeSharedFunctions_impl_0
 int
 Height@1(struct Node@1 * x){
@@ -330,7 +324,6 @@ getLastNode@1(struct Node@1 * node){
 }
 
 @
-
 @= AVLtreeSharedFunctions_impl_2
 void
 printAVLTreeIncrementalSideways(struct Node * current, BAT *b, BUN base){
@@ -381,7 +374,6 @@ printAVLTree(struct Node * current, BAT *b, BUN base){
         return;
 }
 @
-
 @= AVLtreeSharedFunctions_impl_1
 bit
 GetLow_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, oid *p1, oid *p2, oid previous, oid next){
@@ -1120,10 +1112,7 @@ InsertTreeSimple_@1(struct NodeSimple ** head, oid position, @1 value, struct No
 }
 
 @
-
-
-@- Local support functions and macros
-
+ * @- Local support functions and macros
 @= AVLtreeLocalFunctions
 /* Get the previous node in the tree (in terms of value), the result can be only a non deleted node */
 static struct Node *
@@ -1199,7 +1188,6 @@ getNextNonLocalNode(struct Node * current){
 }
 
 @
-
 @= AVLtreeLocalFunctions2
 
 static struct Node@1 *
@@ -1269,7 +1257,3 @@ getNextNodeAny@1(struct Node@1 * current){
 }
 
 @
-
-
-
-@}

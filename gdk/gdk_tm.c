@@ -190,9 +190,14 @@ int
 TMsubcommit(BAT *b)
 {
 	int cnt = 1;
-	bat *subcommit = (bat *) alloca((BATcount(b) + 1) * sizeof(bat));
+	int ret = -1;
+	bat *subcommit;
 	BUN p, q;
 	BATiter bi = bat_iterator(b);
+
+	subcommit = (bat *) GDKmalloc((BATcount(b) + 1) * sizeof(bat));
+	if (subcommit == NULL)
+		return -1;
 
 	subcommit[0] = 0;	/* BBP artifact: slot 0 in the array will be ignored */
 	/* collect the list and save the new bats outside any locking */
@@ -205,7 +210,9 @@ TMsubcommit(BAT *b)
 			subcommit[cnt++] = bid;
 	}
 
-	return TMsubcommit_list(subcommit, cnt);
+	ret = TMsubcommit_list(subcommit, cnt);
+	GDKfree(subcommit);
+	return ret;
 }
 
 /*

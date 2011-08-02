@@ -17,47 +17,49 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f gdk_setop
-@a Peter Boncz
-
-@* Set Operations
-Set operations are provided in two series:
-@itemize
-@item
-k-@emph{operand}, which look only at the head column.
-@item
-s-@emph{operand} series, that look at the whole BUN.
-@end itemize
-
-Operands provided are:
-@itemize
-@item [s,k]unique
-produces a copy of the bat, with double elimination
-@item [s,k]union
-produces a bat union.
-@item [s,k]diff
-produces bat difference.
-@item [s,k]intersection
-produce bat intersection.
-@end itemize
-Implementations typically take two forms: if the input relation(s) is/are
-ordered, a merge-algorithm is used. Otherwise, hash-indices are produced
-on demand for the hash-based versions.
-
-The @emph{[k,s]intersect(l,r)} operations result in all BUNs of @emph{l} that
-are also in @emph{r}. They do not do double-elimination over the @emph{l} BUNs.
-
-The @emph{[k,s]diff(l,r)} operations result in all BUNs of @emph{l} that are
-not in @emph{r}. They do not do double-elimination over the @emph{l} BUNs.
-
-The @emph{[k,s]union(l,r)} operations result in all BUNs of @emph{l}, plus 
-all BUNs of @emph{r} that are not in @emph{l}. They do not do double-elimination
-over the @emph{l} nor @emph{r} BUNs.
-
-Operations with double-elimination can be formed by performing @emph{[k,s]unique(l)} on their operands.
-
-The @emph{kintersect(l,r)} is used also as implementation for the @emph{semijoin()}.
-@{
+@c
+/*
+ * @f gdk_setop
+ * @a Peter Boncz
+ *
+ * @* Set Operations
+ * Set operations are provided in two series:
+ * @itemize
+ * @item
+ * k-@emph{operand}, which look only at the head column.
+ * @item
+ * s-@emph{operand} series, that look at the whole BUN.
+ * @end itemize
+ *
+ * Operands provided are:
+ * @itemize
+ * @item [s,k]unique
+ * produces a copy of the bat, with double elimination
+ * @item [s,k]union
+ * produces a bat union.
+ * @item [s,k]diff
+ * produces bat difference.
+ * @item [s,k]intersection
+ * produce bat intersection.
+ * @end itemize
+ * Implementations typically take two forms: if the input relation(s) is/are
+ * ordered, a merge-algorithm is used. Otherwise, hash-indices are produced
+ * on demand for the hash-based versions.
+ *
+ * The @emph{[k,s]intersect(l,r)} operations result in all BUNs of @emph{l} that
+ * are also in @emph{r}. They do not do double-elimination over the @emph{l} BUNs.
+ *
+ * The @emph{[k,s]diff(l,r)} operations result in all BUNs of @emph{l} that are
+ * not in @emph{r}. They do not do double-elimination over the @emph{l} BUNs.
+ *
+ * The @emph{[k,s]union(l,r)} operations result in all BUNs of @emph{l}, plus
+ * all BUNs of @emph{r} that are not in @emph{l}. They do not do double-elimination
+ * over the @emph{l} nor @emph{r} BUNs.
+ *
+ * Operations with double-elimination can be formed by performing @emph{[k,s]unique(l)} on their operands.
+ *
+ * The @emph{kintersect(l,r)} is used also as implementation for the @emph{semijoin()}.
+ */
 @h
 #ifndef _GDK_SETOP_H
 #define _GDK_SETOP_H
@@ -100,9 +102,11 @@ The @emph{kintersect(l,r)} is used also as implementation for the @emph{semijoin
 #include "gdk_setop.h"
 #include "gdk_search.h"
 
-@+ Double Elimination
-Comes in two flavors: looking at one column, or at two at-a-time.
-Implementation is either merge- or hash-based.
+/*
+ * @+ Double Elimination
+ * Comes in two flavors: looking at one column, or at two at-a-time.
+ * Implementation is either merge- or hash-based.
+ */
 @= mergeelim
 	BATloop(b, p, q) {
 		ptr h = BUNh@2(bi,p);
@@ -220,6 +224,7 @@ Implementation is either merge- or hash-based.
 			}
 		}
 	}
+@
 @c
 static BAT *
 BATins_kunique(BAT *bn, BAT *b)
@@ -304,10 +309,11 @@ BATins_sunique(BAT *bn, BAT *b)
 }
 
 
-@- Unique
-The routine @`BATsunique@5 removes duplicate BUNs,
-The routine @`BATkunique@5 removes duplicate head entries.
-@c
+/*
+ * @- Unique
+ * The routine @`BATsunique@5 removes duplicate BUNs,
+ * The routine @`BATkunique@5 removes duplicate head entries.
+ */
 BAT *
 BATkunique(BAT *b)
 {
@@ -406,15 +412,14 @@ BATsunique(BAT *b)
 	return bn;
 }
 
-@}
-@+ Difference and Intersect
-Difference and Intersection are handled together. For each routine
-there are two versions: @`BATkdiff@5(l,r) and @`BATkintersect@5(l,r) (which
-look at the head column only), versus @`BATsdiff@5(l,r) and
-@`BATsintersect@5(l,r) (looking at both columns).
-TODO synced/key case..
-@{
-
+/*
+ * @+ Difference and Intersect
+ * Difference and Intersection are handled together. For each routine
+ * there are two versions: @`BATkdiff@5(l,r) and @`BATkintersect@5(l,r) (which
+ * look at the head column only), versus @`BATsdiff@5(l,r) and
+ * @`BATsintersect@5(l,r) (looking at both columns).
+ * TODO synced/key case..
+ */
 @= mergecheck
 	BUN p1 = BUNfirst(l), p2 = BUNfirst(r);
 	BUN q1 = BUNlast(l),  q2 = BUNlast(r);
@@ -506,6 +511,7 @@ TODO synced/key case..
 	BATaccessEnd(l, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	(void)h2; /* in some cases the @6 check doesn't use the h2 */
 
+@
 @c
 #define DIRECT_MAX 256
 
@@ -841,6 +847,7 @@ BAT@1@2(BAT *l, BAT *r)
 	bn->T->nonil = l->T->nonil;
 	return bn;
 }
+@
 @c
 #define EMPTYldiff(l) BATclone(l,10)
 #define EMPTYrdiff(l) BATcopy(l, l->htype, l->ttype, FALSE)
@@ -856,13 +863,14 @@ BAT@1@2(BAT *l, BAT *r)
 @:batcheck(k,diff,-)@
 
 
-@+ Union
-Union also consists of two versions: @`BATkunion@5(l,r), which
-unites with double elimination over the head column only, and
-@`BATsunion@5(l,r), that looks at both columns. Their
-implementation uses the s/kdiff() and s/kunique() code for efficient
-double elimination.
-@c
+/*
+ * @+ Union
+ * Union also consists of two versions: @`BATkunion@5(l,r), which
+ * unites with double elimination over the head column only, and
+ * @`BATsunion@5(l,r), that looks at both columns. Their
+ * implementation uses the s/kdiff() and s/kunique() code for efficient
+ * double elimination.
+ */
 #define KEYk	TRUE
 #define KEYs	FALSE
 
@@ -1004,5 +1012,4 @@ BAT@1union(BAT *l, BAT *r)
 	BBPreclaim(bn);
 	return NULL;
 }
-@}
-@-
+@

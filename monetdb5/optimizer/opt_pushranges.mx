@@ -17,55 +17,56 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f opt_pushranges
-@a M. Kersten
-@- Range Propagation
-Almost all queries are interested in a few slices
-of the table. If applied to a view, the query plans
-often contain multiple selections over the same column.
-They may also have fixed range arguments comming from
-fragmentation criteria.
-
-The purpose of the @sc{pushranges} optimizer is to
-minimize the number of table scans by cascading the
-range terms as much as possible. Useless instructions
-are removed from the plan.
-
-@example
-    b := bat.new(:oid,:int);
-    s1:= algebra.select(b,1,100);
-    s2:= algebra.select(s1,5,95);
-    s3:= algebra.select(s2,50,nil);
-    s4:= algebra.select(s3,nil,75);
-    optimizer.pushranges();
-@end example
-
-This lengthly sequence can be compressed into a single one:
-@example
-    b := bat.new(:oid,:int);
-    s1:= algebra.select(b,50,75);
-@end example
-A union over two range selections from a single
-source could also be a target.
-@example
-    t1:= algebra.select(b,1,10);
-    t2:= algebra.select(b,0,5);
-    t3:= algebra.union(t1,t2);
-@end example
-would become
-@example
-   t3:= algebra.select(0,10);
-@end example
-
-@{
-The range cascades should be limited to simple blocks.
-Furthermore, we should ensure that variables are not re-used
-other then in side-effect functions.
-
-The aliasRemoval and constantExpression optimizers should
-have done their work. Empty scans are simply dropped,
-which leads to a planned cleaning by the dead code optimizer.
-
+@c
+/*
+ * @f opt_pushranges
+ * @a M. Kersten
+ * @- Range Propagation
+ * Almost all queries are interested in a few slices
+ * of the table. If applied to a view, the query plans
+ * often contain multiple selections over the same column.
+ * They may also have fixed range arguments comming from
+ * fragmentation criteria.
+ *
+ * The purpose of the @sc{pushranges} optimizer is to
+ * minimize the number of table scans by cascading the
+ * range terms as much as possible. Useless instructions
+ * are removed from the plan.
+ *
+ * @example
+ *     b := bat.new(:oid,:int);
+ *     s1:= algebra.select(b,1,100);
+ *     s2:= algebra.select(s1,5,95);
+ *     s3:= algebra.select(s2,50,nil);
+ *     s4:= algebra.select(s3,nil,75);
+ *     optimizer.pushranges();
+ * @end example
+ *
+ * This lengthly sequence can be compressed into a single one:
+ * @example
+ *     b := bat.new(:oid,:int);
+ *     s1:= algebra.select(b,50,75);
+ * @end example
+ * A union over two range selections from a single
+ * source could also be a target.
+ * @example
+ *     t1:= algebra.select(b,1,10);
+ *     t2:= algebra.select(b,0,5);
+ *     t3:= algebra.union(t1,t2);
+ * @end example
+ * would become
+ * @example
+ *    t3:= algebra.select(0,10);
+ * @end example
+ *
+ * The range cascades should be limited to simple blocks.
+ * Furthermore, we should ensure that variables are not re-used
+ * other then in side-effect functions.
+ *
+ * The aliasRemoval and constantExpression optimizers should
+ * have done their work. Empty scans are simply dropped,
+ * which leads to a planned cleaning by the dead code optimizer.
+ */
 @mal
 pattern optimizer.pushranges():str
 address OPTpushranges;
@@ -80,7 +81,7 @@ comment "Push constant range selections through the program";
 #include "opt_prelude.h"
 
 #define OPTDEBUGpushranges  if ( optDebug & (1 <<DEBUG_OPT_PUSHRANGES) )
-@c  
+@c
 #include "monetdb_config.h"
 #include "opt_pushranges.h"
 #include "mal_interpreter.h"	/* for showErrors() */
@@ -126,9 +127,10 @@ OPTpushrangesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	
 	limit = mb->stop;
 	old = mb->stmt;
-@-
-In phase I we collect information about constants
-@c
+	/*
+	 * @-
+	 * In phase I we collect information about constants
+	 */
 	for (i = 0; i < limit; i++) {
 		p = old[i];
 		if( p->barrier) 
@@ -141,14 +143,15 @@ In phase I we collect information about constants
 				range[getArg(p,j)].lastrange= i;
 		} if( getModuleId(p)== algebraRef && 
 			( getFunctionId(p)== selectRef || getFunctionId(p)== uselectRef) ){
-@-
-The operation X:= algebra.select(Y,L,H,Li,Hi) is analysed.
-First, we attempt to propagate the range known for Y onto the 
-requested range of X. This may lead to smaller range of
-even the conclusion that X is necessarily empty.
-Of course, only under the condition that Y has not been changed by a
-side-effect since it was bound to X.
-@c
+			/*
+			 * @-
+			 * The operation X:= algebra.select(Y,L,H,Li,Hi) is analysed.
+			 * First, we attempt to propagate the range known for Y onto the
+			 * requested range of X. This may lead to smaller range of
+			 * even the conclusion that X is necessarily empty.
+			 * Of course, only under the condition that Y has not been changed by a
+			 * side-effect since it was bound to X.
+			 */
 			x= getArg(p,1);
 			y= getArg(p,2);
 			if( range[x].lcst && isVarConstant(mb,y) ){
@@ -180,10 +183,11 @@ side-effect since it was bound to X.
 					}
 				}
 			}
-@-
-The second step is to assign the result of this exercise to the
-result variable.
-@c
+			/*
+			 * @-
+			 * The second step is to assign the result of this exercise to the
+			 * result variable.
+			 */
 			x= getArg(p,0);
 			if( isVarConstant(mb, getArg(p,2)) ){
 				range[x].lcst = getArg(p,2);
@@ -195,10 +199,11 @@ result variable.
 				range[x].srcvar= getArg(p,1);
 				range[x].lastupdate= range[x].lastrange = i;
 			}
-@-
-If both range bounds are constant, we can also detect empty results.
-It is empty if L> H or when L=H and the bounds are !(true,true).
-@c
+			/*
+			 * @-
+			 * If both range bounds are constant, we can also detect empty results.
+			 * It is empty if L> H or when L=H and the bounds are !(true,true).
+			 */
 			x= getArg(p,2);
 			y= getArg(p,3);
 			if( isVarConstant(mb, x)  &&
@@ -234,11 +239,12 @@ It is empty if L> H or when L=H and the bounds are !(true,true).
 		for(j=0; j< mb->vtop; j++)
 		if( range[j].used )
 			printRange(cntxt, mb,range,j);
-@-
-Phase II, if we succeeded in pushing constants around and
-changing instructions, we might as well try once more to perform
-aliasRemoval, constantExpression, and pushranges.
-@c
+	/*
+	 * @-
+	 * Phase II, if we succeeded in pushing constants around and
+	 * changing instructions, we might as well try once more to perform
+	 * aliasRemoval, constantExpression, and pushranges.
+	 */
 	GDKfree(range);
 	return actions;
 }
@@ -249,4 +255,3 @@ aliasRemoval, constantExpression, and pushranges.
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(pushranges,OPT_CHECK_ALL)@
-@}

@@ -17,15 +17,16 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f geom
-@a Wouter Scherphof, Niels Nes
-@* The simple geom module
-
+@c
+/*
+ * @f geom
+ * @a Wouter Scherphof, Niels Nes
+ * @* The simple geom module
+ */
 @mal
 module geom;
 
-@' overwrite lng needed for fixed size! Sizes are fixed in geom.prelude
-@mal
+# @' overwrite lng needed for fixed size! Sizes are fixed in geom.prelude
 atom mbr:lng;
 
 command tostr() :str		address mbrTOSTR;
@@ -64,6 +65,7 @@ function @1FromText{unsafe}( wkt:str, srid:sht ) :wkb;
 	return x;
 end @1FromText;
 
+@
 @mal
 @:types(Point,point,1)@
 @:types(Curve,curve,2)@
@@ -92,13 +94,12 @@ command mbr(:wkb) :mbr
 address wkbMBR
 comment "Creates the mbr for the given wkb.";
 
-@+
-command mbr(:bat[:any_1,:wkb]) :bat[:any_1,:mbr]
-address bat_wkbMBR
-comment "Creates the mbr's for the given wkb's.";
-
-@+ ogc basic methods
-@mal
+# @+
+# command mbr(:bat[:any_1,:wkb]) :bat[:any_1,:mbr]
+# address bat_wkbMBR
+# comment "Creates the mbr's for the given wkb's.";
+#
+# @+ ogc basic methods
 command Dimension(w:wkb) :int
 address wkbDimension
 comment "The inherent dimension of this geometry object, which must be less than or equal to the coordinate dimension. This specification is restricted to geometries in two-dimensional coordinate space.";
@@ -127,8 +128,7 @@ command Boundary(w:wkb) :wkb
 address wkbBoundary
 comment "Returns the closure of the combinatorial boundary of this Geometry.";
 
-@+ ogc spatial relation methods
-@mal
+# @+ ogc spatial relation methods
 
 command Equals(a:wkb, b:wkb) :bit
 address wkbEquals
@@ -166,8 +166,7 @@ command Relate(a:wkb, b:wkb, intersectionPatternMatrix:str) :bit
 address wkbRelate
 comment "Returns true if the Geometry a 'spatially related' to Geometry b, by testing for intersection between the Interior, Boundary and Exterior of the two geometries as specified by the values in the intersectionPatternMatrix.";
 
-@+ ogc constructor functions
-@mal
+# @+ ogc constructor functions
 command point(x:dbl,y:dbl) :wkb
 address wkbcreatepoint
 comment "Construct a point from two geometries";
@@ -178,8 +177,7 @@ address wkbcreatepoint_bat
 comment "Construct a point-BAT from two geometry-BATs";
 module geom;
 
-@+ ogc information methods
-@mal
+# @+ ogc information methods
 command X(g:wkb) :dbl
 address wkbgetcoordX
 comment "Returns the x-coordinate of a point geometry.";
@@ -188,8 +186,7 @@ command Y(g:wkb) :dbl
 address wkbgetcoordY
 comment "Returns the y-coordinate of a point geometry.";
 
-@+ ogc Spatial Analysis methods
-@mal
+# @+ ogc Spatial Analysis methods
 
 command Area(g:wkb) :dbl
 address wkbArea
@@ -245,6 +242,7 @@ function @2{unsafe}( wkt:str ) :wkb;
 	x := wkb.FromText(wkt,@3);
 	return x;
 end @2;
+@
 @mal
 @:ctypes(Point,point,1)@
 @:ctypes(Curve,curve,2)@
@@ -955,11 +953,11 @@ wkbgetcoord@1(double *out, wkb **geom)
 
 	return ret;
 }
+@
 @c
 @:getcoord(X)@
 @:getcoord(Y)@
 
-@c
 geom_export str wkbcreatepoint(wkb **out, dbl *x, dbl *y);
 
 str
@@ -1091,6 +1089,7 @@ wkb@1( @2 *out, wkb **geom)
 	return MAL_SUCCEED;
 
 }
+@
 @c
 @:basic(Dimension,int,GEOSGeom_getDimensions,,0,1,*out=int_nil)@
 @:basic(GeometryTypeId,int,GEOSGeomTypeId,,-1,1,*out=int_nil)@
@@ -1162,6 +1161,7 @@ wkb@1( bit *out, wkb **a, wkb **b, @3 @4)
 
 	return MAL_SUCCEED;
 }
+@
 @c
 @:spatial(Equals,GEOSEquals)@
 @:spatial(Disjoint,GEOSDisjoint)@
@@ -1265,6 +1265,7 @@ wkb@1( wkb **out, wkb **a, wkb **b)
 
 	throw(MAL, "geom.@1", "@2 failed");
 }
+@
 @c
 @:analysis(Area,GEOSArea)@
 @:analysis(Length,GEOSLength)@
@@ -1275,7 +1276,6 @@ wkb@1( wkb **out, wkb **a, wkb **b)
 @:analysis3(Difference,GEOSDifference,geos2wkb)@
 @:analysis3(SymDifference,GEOSSymDifference,geos2wkb)@
 
-@c
 geom_export str wkbBuffer(wkb **out, wkb **geom, dbl *distance);
 
 str
