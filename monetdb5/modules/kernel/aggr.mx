@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f aggr
+
 @c
 /*
- * @f aggr
  * @a S. Manegold
  * @v 1.0
  * @+ Aggregates Module

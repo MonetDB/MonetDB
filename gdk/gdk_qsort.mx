@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f gdk_qsort
+
 @c
 /*
- * @f gdk_qsort
  * @a Peter Boncz, Niels Nes et al
  * @* Qsort
  * There were two problems with the OS provided qsort() library routine:

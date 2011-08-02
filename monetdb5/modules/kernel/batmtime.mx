@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f batmtime
+
 @c
 /*
- * @f batmtime
  * @a M.L. Kersten
  * @+ Time/Date multiplexes
  * [TODO: arithmetic multiplexes]

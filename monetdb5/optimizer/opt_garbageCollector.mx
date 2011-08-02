@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f opt_garbageCollector
+
 @c
 /*
- * @f opt_garbageCollector
  * @a M. Kersten
  * @- Garbage Collection
  * Garbage collection of temporary variables, such as strings and BATs,

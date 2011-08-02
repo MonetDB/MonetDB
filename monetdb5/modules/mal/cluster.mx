@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f cluster
+
 @c
 /*
- * @f cluster
  * @a Martin Kersten, Niels Nes
  * @v 1.0
  * @t Hash cluster Algorithms

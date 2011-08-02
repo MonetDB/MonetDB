@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f batmmath
+
 @c
 /*
- * @f batmmath
  * @a M.L. Kersten
  * @+ BAT math calculator
  * This module contains the multiplex versions of the linked

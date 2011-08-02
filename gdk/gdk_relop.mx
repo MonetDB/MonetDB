@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f gdk_relop
+
 @c
 /*
- * @f gdk_relop
  * @a M. L. Kersten, P. Boncz, S. Manegold
  * @* BAT relational operators
  * The basic relational operators are implemented for BATs.

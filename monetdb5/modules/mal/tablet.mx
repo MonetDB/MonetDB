@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f tablet
+
 @c
 /*
- * @f tablet
  * @a Niels Nes, Martin Kersten
  * @d 29/07/2003
  * @+ The table interface

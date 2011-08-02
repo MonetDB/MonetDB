@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f mdb
+
 @c
 /*
- * @f mdb
  * @a Martin Kersten
  * @v 1
  * @+ MAL debugger interface

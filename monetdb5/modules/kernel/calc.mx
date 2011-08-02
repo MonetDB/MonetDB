@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f calc
+
 @c
 /*
- * @f calc
  * @a N.J. Nes, P. Boncz, M. Kersten, A. de Vries
  * @v 2.0
  * @+ Basic arithmetic

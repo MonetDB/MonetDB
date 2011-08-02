@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f pqueue
+
 @c
 /*
- * @f pqueue
  * @a Nikos Mamoulis, Niels Nes
  * @v 2.0
  * @+ Priority queues

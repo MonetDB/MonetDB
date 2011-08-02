@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f opt_replication
+
 @c
 /*
- * @f opt_replication
  * @- Database replication
  * The replication optimizer supports distribution of the
  * updates on an SQL database to be distributed over multiple

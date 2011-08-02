@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f opt_reduce
+
 @c
 /*
- * @f opt_reduce
  * @a M. Kersten
  * @- Stack Reduction
  * The compilers producing MAL may generate an abundance of temporary variables

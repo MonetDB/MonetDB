@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f opt_emptySet
+
 @c
 /*
- * @f opt_emptySet
  * @a M. Kersten
  * @- Emptyset Reduction
  * One of the key decisions during MAL optimization is to estimate

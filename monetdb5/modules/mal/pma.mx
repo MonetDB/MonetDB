@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f pma
+
 @c
 /*
- * @f pma
  * @a N.Tang and P.Boncz
  * @+ PMA Organized BAT
  * The database columns have high maintance cost for inserting/deleting items,

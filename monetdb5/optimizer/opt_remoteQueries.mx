@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f opt_remoteQueries
+
 @c
 /*
- * @f opt_remoteQueries
  * @a M. Kersten
  * @- Remote Queries
  * MAL variables may live at a different site from where they are used.

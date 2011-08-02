@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f clients
+
 @c
 /*
- * @f clients
  * @a Martin Kersten, Fabian Groffen
  * @v 0.2
  * @+ Client Management

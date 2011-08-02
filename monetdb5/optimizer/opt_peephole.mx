@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f opt_peephole
+
 @c
 /*
- * @f opt_peephole
  * @a M. Kersten
  * @- Peephole optimization
  * Recursive descend query compilers easily miss opportunities

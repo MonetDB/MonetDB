@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f opt_reorder
+
 @c
 /*
- * @f opt_reorder
  * @- The dataflow reorder
  * MAL programs are largely logical descriptions of an execution plan.
  * After the mitosis and mergetable optimizers we have a large program, which when

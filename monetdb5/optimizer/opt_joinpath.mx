@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f opt_joinpath
+
 @c
 /*
- * @f opt_joinpath
  * @- Join Paths
  * The routine @sc{optimizer.joinPath()}
  * walks through the program looking for join operations

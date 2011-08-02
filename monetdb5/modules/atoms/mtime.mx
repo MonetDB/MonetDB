@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f mtime
+
 @c
 /*
- * @f mtime
  * @t New Temporal Module
  * @a Peter Boncz, Martin van Dinther
  * @v 1.0

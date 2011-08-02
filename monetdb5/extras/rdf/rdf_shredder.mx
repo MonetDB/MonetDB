@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f rdf_shredder
+
 @c
 /*
- * @f rdf_shredder
  * @a L.Sidirourgos
  *
  * @+ Shredder for RDF Documents

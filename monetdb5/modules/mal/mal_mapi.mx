@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f mal_mapi
+
 @c
 /*
- * @f mal_mapi
  * @a N.J. Nes P. Boncz, S. Mullender, M. Kersten
  * @v 1.1
  * @+ MAPI interface

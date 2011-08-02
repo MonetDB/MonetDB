@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f opt_heuristics
+
 @c
 /*
- * @f opt_heuristics
  * @- Heuristic rewrites rules
  * One of the oldest optimizer tricks in relational query processing is
  * to apply heuristic rules to reduce the processing cost. For example,

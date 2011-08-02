@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f streams
+
 @c
 /*
- * @f streams
  * @a Niels Nes
  * @* A simple interface to IO streams
  * All file IO is tunneled through the stream library, which guarantees

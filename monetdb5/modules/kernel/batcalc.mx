@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f batcalc
+
 @c
 /*
- * @f batcalc
  * @a M.L. Kersten
  * @+ BAT calculator
  * Many applications require extension of the basic calculator and
