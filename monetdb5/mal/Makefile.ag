@@ -27,36 +27,36 @@ MTSAFE
 lib_mal = {
 	NOINST
 	SOURCES = \
-		mal.mx \
+		mal.c \
 		mal_atom.mx \
-		mal_authorize.mx \
+		mal_authorize.c \
 		mal_box.mx \
-		mal_builder.mx \
+		mal_builder.c \
 		mal_client.mx \
 		mal_debugger.mx \
-		mal_errors.mx \
-		mal_exception.mx \
-		mal_factory.mx \
-		mal_function.mx \
+		mal_exception.c \
+		mal_factory.c \
+		mal_function.c \
 		mal_import.mx \
 		mal_instruction.mx \
 		mal_interpreter.mx \
-		mal_linker.mx \
+		mal_linker.c \
 		mal_module.mx \
-		mal_namespace.mx \
+		mal_namespace.c \
 		mal_parser.mx \
 		mal_profiler.mx \
-		mal_properties.mx \
+		mal_properties.c \
 		mal_readline.mx \
-		mal_recycle.mx \
+		mal_recycle.c \
 		mal_resolve.mx \
-		mal_sabaoth.mx \
-		mal_scenario.mx \
-		mal_session.mx \
-		mal_stack.mx \
-		mal_type.mx \
-		mal_utils.mx \
-		mal_xml.mx
+		mal_sabaoth.c \
+		mal_scenario.c \
+		mal_session.c \
+		mal_stack.c \
+		mal_type.c \
+		mal_utils.c \
+		mal_xml.c
 }
 
 EXTRA_DIST_DIR = Tests
+EXTRA_DIST = mal.mal mal.h mal_authorize.h mal_builder.h mal_errors.h mal_exception.h mal_factory.h mal_function.h mal_linker.h mal_namespace.h mal_properties.h mal_recycle.h mal_sabaoth.h mal_scenario.h mal_session.h mal_stack.h mal_type.h mal_utils.h mal_xml.h

@@ -1,0 +1,60 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://www.monetdb.org/Legal/MonetDBLicense
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2011 MonetDB B.V.
+# All Rights Reserved.
+
+module counters;
+
+command start(event0:int, event1:int) :int
+address CNTRSstart
+comment "Start counters for two events specified by number. Return its handle";
+
+command reset(idx:int, event0:int, event1:int) :int
+address CNTRSreset
+comment "Reset a counter for two events specified by number. Return its handle";
+
+command stop(c:int) :void
+address CNTRSstop
+comment "Stop the counting for the handle identified";
+
+command bat(c:int) :bat[:str,:lng]
+address CNTRScounter2bat
+comment "Store the retrieved results in a BAT";
+
+command str(c:int) :str
+address CNTRScounter2str
+comment "Store the retrieved results in a str";
+
+command nativeEvents() :bat[:int,:str]
+address CNTRSnativeEvents
+comment "All available events";
+
+command unifiedEvents() :bat[:int,:str]
+address CNTRSunifiedEvents
+comment "All unified event names";
+
+command eventNumber(s:str):int
+address CNTRSeventNumber
+comment "Return the number of an event given by name ";
+
+command eventName(s:int):str
+address CNTRSeventName
+comment "Return the name of an event ";
+
+command init()
+address CNTRSinit
+comment "Initialize counters module (to be used on initial load, only)";
+
+counters.init();

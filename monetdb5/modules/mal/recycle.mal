@@ -1,0 +1,111 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://www.monetdb.org/Legal/MonetDBLicense
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2011 MonetDB B.V.
+# All Rights Reserved.
+
+module recycle;
+
+pattern start():void
+address RECYCLEstart
+comment "Initialize recycler for the current block";
+
+pattern stop():void
+address RECYCLEstop
+comment "Cleans recycler bookkeeping";
+
+pattern dump():void
+address RECYCLEdumpWrap
+comment "Dump summary of recycle table";
+
+pattern dump(tp: int):void
+address RECYCLEdumpWrap
+comment "Dump summary of recycler structures:
+1: recycle table;
+2: statistics of query patterns;
+3: statistics of data transfer.";
+
+pattern dump(tp: int, nm:str):void
+address RECYCLEdumpWrap
+comment "Dump summary of recycler structures into a file:
+1: recycle table;
+2: statistics of query patterns;
+3: statistics of data transfer.";
+
+pattern setAdmPolicy(p:int...):void
+address RECYCLEsetAdmission
+comment "Set recycler admission policy:
+0- ADM_NONE: baseline, keeps stat, no admission, no reuse
+1- ADM_ALL: infinite case, admit all
+2- ADM_CAT: use query category
+3- ADM_INTEREST: use credits
+4- ADM_ADAPT: adaptive credits for globally reused templates";
+
+command getAdmPolicy():int
+address RECYCLEgetAdmission;
+
+pattern setReusePolicy(p:int...):void
+address RECYCLEsetReuse
+comment "Set recycler reuse policy";
+
+command getReusePolicy():int
+address RECYCLEgetReuse;
+
+pattern setCachePolicy(p:int...):void
+address RECYCLEsetCache
+comment "Set recycler cache policy:
+0- RCACHE_ALL: baseline, do nothing
+1- RCACHE_LRU: throw LRU by setting the limit
+2- RCACHE_CREDIT: credit-based LRU scheme
+3- RCACHE_CAT: use semantics of query patterns
+optional arguments are [ instruction-, [memory -]] limit";
+
+pattern setCachePolicy(p:int,cl:int,mem:int,alpha:flt):void
+address RECYCLEsetCache
+comment "Set recycler cache policy with alpha parameter"
+
+command getCachePolicy():int
+address RECYCLEgetCache;
+
+pattern reset(bid:bat):void
+address RECYCLEresetCMD
+comment "Reset a recycled bat variable";
+
+pattern reset(delta:int,sname:str...):void
+address RECYCLEresetCMD
+comment "Reset off all recycled variables matching the arguments:
+delta:0 only the main bat, 2 including delta bats
+sname: schema name,
+tname: table name (optional)
+cname: column name (optional)";
+
+pattern shutdown():void
+address RECYCLEshutdownWrap
+comment "Clear the recycle cache";
+
+command monitor(f:int):void
+address RECYCLEmonitor
+comment "start/stop the monitoring (printing) of the recycler info (storage size used and number of statements admitted)";
+
+command log(nm:str):void
+address RECYCLElog
+comment "Set the name of recycle log file";
+
+pattern prelude():void
+address RECYCLEprelude
+comment "Called at the start of a recycle controlled function";
+
+pattern epilogue():void
+address RECYCLEepilogue
+comment "Called at the start of a recycle controlled function";

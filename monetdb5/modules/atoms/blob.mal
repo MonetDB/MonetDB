@@ -1,0 +1,95 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://www.monetdb.org/Legal/MonetDBLicense
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2011 MonetDB B.V.
+# All Rights Reserved.
+
+module blob;
+
+atom blob;
+
+command tostr()   address BLOBtostr;
+command fromstr() address BLOBfromstr;
+command nequal()  address BLOBnequal;
+command hash()    address BLOBhash;
+command null()    address BLOBnull;
+command read()    address BLOBread;
+command write()   address BLOBwrite;
+command convert() address BLOBconvert;
+command put()     address BLOBput;
+command del()     address BLOBdel;
+command length()  address BLOBlength;
+command heap()    address BLOBheap;
+
+command blob(s:blob):blob
+address BLOBblob_blob
+comment "Noop routine.";
+
+command blob(s:str):blob
+address BLOBblob_fromstr;
+
+# @+ string functions
+# Manipulation functions to extract strings from blobs and vice versa.
+# Not to be confused with blob parsing and printing.
+command tostring(v:blob) :str
+address BLOBfromblob
+comment "get the bytes from blob as a string, till
+	the first 0 byte or the end of the blob";
+command tostring(v:blob, index:int ) :str
+address BLOBfromidx
+comment "get the bytes from blob as a string,
+	 starting at byte 'index' till the first
+	0 byte or the end of the blob.";
+command toblob(v:str) :blob
+address BLOBtoblob
+comment "store a string as a blob.";
+command nitems(b:blob):int
+address BLOBnitems
+comment " get the number of bytes in this blob.";
+
+atom sqlblob:blob;
+
+command tostr()   address SQLBLOBtostr;
+command fromstr() address SQLBLOBfromstr;
+
+command sqlblob(s:sqlblob):sqlblob
+address BLOBblob_blob
+comment "Noop routine.";
+
+command sqlblob(s:str):sqlblob
+address BLOBsqlblob_fromstr;
+
+module blob;
+
+command prelude() :void
+address BLOBprelude;
+
+blob.prelude();
+
+module calc;
+
+command blob(b:blob):blob address BLOBblob_blob;
+command blob(s:str):blob address BLOBblob_fromstr;
+command sqlblob(b:sqlblob):sqlblob address BLOBblob_blob;
+command sqlblob(s:str):sqlblob address BLOBsqlblob_fromstr;
+
+command calc.isnil(v:blob):bit
+address BLOB_isnil
+comment "Nil test for blob value";
+
+command calc.isnil(v:sqlblob):bit
+address BLOB_isnil
+comment "Nil test for blob value";
+
+

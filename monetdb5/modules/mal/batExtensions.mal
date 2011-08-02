@@ -1,0 +1,80 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://www.monetdb.org/Legal/MonetDBLicense
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2011 MonetDB B.V.
+# All Rights Reserved.
+
+
+pattern bat.new(ht:any_1, tt:any_2, b:bat[:any_3,:any_4]) :bat[:any_1,:any_2]
+address CMDBATclone
+comment "Creates a new empty transient BAT by cloning another.";
+pattern bat.new(ht:any_1, tt:any_2) :bat[:any_1,:any_2]
+address CMDBATnew
+comment "Creates a new empty transient BAT,
+	with head- and tail-types as indicated.";
+pattern bat.new(ht:any_1, tt:bat[:any_2,:any_3]) :bat[:any_1,:bat]
+address CMDBATnew
+comment "Creates a new empty transient BAT,
+	with head- and tail-types as indicated.";
+pattern bat.new(ht:any_1, tt:any_2, size:int) :bat[:any_1,:any_2]
+address CMDBATnewint
+comment "Creates a new BAT with sufficient space.";
+pattern bat.new(ht:any_1, tt:any_2, size:lng) :bat[:any_1,:any_2]
+address CMDBATnew
+comment "Creates a new BAT and allocate space.";
+pattern bat.new(ht:oid, tt:any_2, size:int) :bat[:oid,:any_2]
+address CMDBATnewint;
+pattern bat.new(ht:oid, tt:any_2, size:lng) :bat[:oid,:any_2]
+address CMDBATnew;
+
+pattern bat.new(b:bat[:any_1,:any_2] ) :bat[:any_1,:any_2]
+address CMDBATnewDerived;
+pattern bat.new(b:bat[:any_1,:any_2], size:lng) :bat[:any_1,:any_2]
+address CMDBATnewDerived;
+command bat.new(nme:str):bat[:any_1,:any_2]
+address CMDBATderivedByName
+comment "Localize a bat by name and produce a clone.";
+
+command bat.reduce(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
+address CMDBATreduce
+comment "Drop auxillary BAT structures.";
+command bat.flush(b:bat[:any_1,:any_2]):void
+address CMDBATflush
+comment "Designate a BAT as not needed anymore.";
+pattern bat.setGarbage(b:bat[:any_1,:any_2]):void
+address CMDBATsetGarbage
+comment "Designate a BAT as garbage.";
+
+pattern bat.partition(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]...
+address CMDbatpartition
+comment "Create a series of cheap slices over the first argument. The BUNs are distributed evenly.";
+
+pattern bat.partition(b:bat[:any_1,:any_2],pieces:int,part:int):bat[:any_1,:any_2]
+address CMDbatpartition2
+comment "Create a series of cheap slices over the first argument. The BUNs are distributed evenly.";
+
+pattern bat.unpack(b:bat[:any_1,:any_2])(h:any_1,t:any_2)
+address CMDbatunpack
+comment "Extract the first tuple from a BAT.";
+pattern bat.pack(h:any_1,t:any_2):bat[:any_1,:any_2]
+address CMDbatpack
+comment "Pack a pair of values into a BAT.";
+pattern bat.pack(v:any_1):bat[:oid,:any_1]
+address CMDbatsingleton
+comment "Create a BAT and store the value";
+
+pattern bat.setBase(b:bat[:any_1,:any_2],c:bat[:any_1,:any_2]...):void
+address CMDsetBase
+comment "Give the non-empty BATs consecutive oid bases.";
+
