@@ -27,6 +27,8 @@
  * -see test directory
  * @end example
  */
+
+#include "monetdb_config.h"
 #include "dcoperator.h"
 #include "mal_builder.h"
 

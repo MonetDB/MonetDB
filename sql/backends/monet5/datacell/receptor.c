@@ -43,6 +43,7 @@
  * module to parse them.
  */
 
+#include "monetdb_config.h"
 #include "receptor.h"
 #include "dcsocket.h"
 #include "stream_socket.h"

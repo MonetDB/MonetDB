@@ -24,7 +24,6 @@
  */
 #ifndef _EMITTER_
 #define _EMITTER_
-#include "monetdb_config.h"
 #include "mal_interpreter.h"
 #include "tablet.h"
 #include "mtime.h"
