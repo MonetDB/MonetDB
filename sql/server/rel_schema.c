@@ -548,16 +548,22 @@ table_constraint(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
  * interval.
  */
 static int
-get_dim_constraints(mvc *sql, sql_subtype *ctype, dlist *lst, char **dimcstr)
+get_dim_constraints(mvc *sql, sql_subtype *ctype, dlist *lst, char **dimcstr, int isStep)
 {
-	int res = SQL_OK;
 	sql_exp *exp = NULL;
 	atom *a = NULL;
 
 	assert(lst->h->type == type_string || lst->h->type == type_symbol);
 
 	if(lst->h->type == type_symbol && !lst->h->data.sym)
-		return res; /* '*' case: nothing to do */
+		return SQL_OK; /* '*' case: nothing to do */
+
+	if (isStep && (strcmp(ctype->type->base.name, "str") == 0 || strcmp(ctype->type->base.name, "date") == 0 || strcmp(ctype->type->base.name, "daytime") == 0 || strcmp(ctype->type->base.name, "timestamp") == 0 ))
+	{
+		/* TODO: for these type of dimensions, their step size should always be an int-typed value */
+		sql_error(sql, 02, "CREATE ARRAY: dimension type \"%s\" unsupported yet", ctype->type->sqlname);
+		return SQL_ERR;
+	}
 
 	if (lst->h->type == type_string) { /* handle negative (numerical) value */
 		a = ((AtomNode *) lst->h->next->data.sym)->a;
@@ -568,9 +574,9 @@ get_dim_constraints(mvc *sql, sql_subtype *ctype, dlist *lst, char **dimcstr)
 	exp = exp_atom(sql->sa, a);
 	if (!(exp = rel_check_type(sql, ctype, exp, type_equal)))
 		return SQL_ERR;
-	a = (atom *) exp->l; /* see rel_exp.c:exp_atom() */
+	/* TODO: do we want to convert the atom? */
 	*dimcstr = GDKstrdup(atom2string(sql->sa, a));
-	return res;
+	return SQL_OK;
 }
 
 static int
@@ -618,7 +624,7 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 				dim = dim->h->data.lval; /* here starts the actual dimension constraints */
 
 				cs->dim = ZNEW(sql_dimspec);
-				switch (dim->cnt) { /* TODO: what if '-' is used in a non-numeric dim_exp? */
+				switch (dim->cnt) {
 					case 1: {/* [size], [-size], [seqname] */
 						size_t len = 0;
 						char *tname = NULL;
@@ -668,17 +674,17 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 						}
 					} break;
 					case 2: /* [start:stop] */
-						if((res = get_dim_constraints(sql, ctype, dim->h->data.lval, &cs->dim->start)) != SQL_OK)
+						if((res = get_dim_constraints(sql, ctype, dim->h->data.lval, &cs->dim->start, 0)) != SQL_OK)
 							return res;
-						if((res = get_dim_constraints(sql, ctype, dim->h->next->data.lval, &cs->dim->stop)) != SQL_OK)
+						if((res = get_dim_constraints(sql, ctype, dim->h->next->data.lval, &cs->dim->stop, 0)) != SQL_OK)
 							return res;
 						break;
 					case 3: /* [start:step:stop] */
-						if((res = get_dim_constraints(sql, ctype, dim->h->data.lval, &cs->dim->start)) != SQL_OK)
+						if((res = get_dim_constraints(sql, ctype, dim->h->data.lval, &cs->dim->start, 0)) != SQL_OK)
 							return res;
-						if((res = get_dim_constraints(sql, ctype, dim->h->next->data.lval, &cs->dim->step)) != SQL_OK)
+						if((res = get_dim_constraints(sql, ctype, dim->h->next->data.lval, &cs->dim->step, 1)) != SQL_OK)
 							return res;
-						if((res = get_dim_constraints(sql, ctype, dim->h->next->next->data.lval, &cs->dim->stop)) != SQL_OK)
+						if((res = get_dim_constraints(sql, ctype, dim->h->next->next->data.lval, &cs->dim->stop, 0)) != SQL_OK)
 							return res;
 						break;
 					default:
@@ -938,6 +944,11 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 		sql_table *t = mvc_create_table(sql, s, name, tt, 0, SQL_DECLARED_TABLE, commit_action, -1);
 		dnode *n;
 		dlist *columns = table_elements_or_subquery->data.lval;
+		sql_rel *res = NULL;
+		list *rp = new_exp_list(sql->sa);
+		node *col = NULL;
+		int i = 0, j = 0, cnt = 0, *N, *M;
+		lng cntall = 1;
 
 		for (n = columns->h; n; n = n->next) {
 			symbol *sym = n->data.sym;
@@ -950,90 +961,96 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 			return sql_error(sql, 02, "CREATE ARRAY: an array must have at least one dimension");
 
 		temp = (tt == tt_table || tt == tt_array)?temp:SQL_PERSIST;
-		/* For unbounded arrays we don't immediately create the columns */
+		/* For tables and unbounded arrays we are done */
 		if ((tt == tt_table) || (tt == tt_array && !t->fixed)) {
 			/* TODO: DDL_CREATE_TABLE looks sufficient for arrays for now */
 			return rel_table(sql, DDL_CREATE_TABLE, sname, t, temp);
-		} else { /* For fixed arrays, we immediately create and fill in BATs
-					for dimensions with dimension values, and for non-dim.
-					attributes with default values */
-			sql_rel *res = NULL;
-			list *rp = new_exp_list(sql->sa);
-			node *col = NULL;
-			int i = 0, j = 0, cnt = 0, *N, *M;
-			lng cntall = 1;
-
-			assert(tt == tt_array && t->fixed);
-
-			N = GDKmalloc(sizeof(lng) * t->ndims);
-			M = GDKmalloc(sizeof(lng) * t->ndims);
-			if(!N || !M) {
-				if(N) GDKfree(N);
-				if(M) GDKfree(M);
-				return sql_error(sql, 02, "CREATE ARRAY: failed to allocate space");
-			}
-			for(i = 0; i < t->ndims; i++) N[i] = M[i] = 1;
-
-			for (col = t->columns.set->h, i = 0; col; col = col->next){
-				sql_column *sc = (sql_column *) col->data;
-				if (sc->dim){
-					cnt = (*sc->dim->stop - *sc->dim->start) / *sc->dim->step;
-					for (j = 0; j < i; j++) N[j] = N[j] * cnt;
-					for (j = t->ndims; j > i; j--) M[j] = M[j] * cnt;
-					cntall *= cnt;
-					i++;
-				}
-			}
-			if (i != t->ndims) {
-				GDKfree(N); GDKfree(M);
-				return sql_error(sql, 02, "CREATE ARRAY: expected number of dimension columns (%d) does not match actual numbre of dimension columns (%d)", t->ndims, i);
-			}
-
-			/* Create columns for the dimentional attributes */
-			for (col = t->columns.set->h, i = 0; col; col = col->next){
-				sql_column *sc = (sql_column *) col->data;
-				list *args = new_exp_list(sql->sa);
-				if (sc->dim){
-					append(args, exp_atom_int(sql->sa, *sc->dim->start));
-					append(args, exp_atom_int(sql->sa, *sc->dim->step));
-					append(args, exp_atom_int(sql->sa, *sc->dim->stop));
-					append(args, exp_atom_int(sql->sa, N[i]));
-					append(args, exp_atom_int(sql->sa, M[i]));
-					append(rp, exp_op(sql->sa, args, sql_bind_func_(sql->sa, sql->session->schema, "array_series", exps_subtype(args))));
-					i++;
-				}
-			}
-			if (i != t->ndims) {
-				GDKfree(N); GDKfree(M);
-				return sql_error(sql, 02, "CREATE ARRAY: expected number of dimension columns (%d) does not match actual numbre of dimension columns (%d)", t->ndims, i);
-			}
-
-			/* Create columns for the non-dimentional attributes */
-			for (col = t->columns.set->h, i = 0; col; col = col->next){
-				sql_column *sc = (sql_column *) col->data;
-				list *args = new_exp_list(sql->sa);
-				if (!sc->dim){
-					sql_exp *e = NULL;
-
-					if (sc->def) {
-						char *q = sql_message("select %s;", sc->def);
-						e = rel_parse_val(sql, q, sql->emode);
-						_DELETE(q);
-						if (!e || (e = rel_check_type(sql, &sc->type, e, type_equal)) == NULL)
-							return NULL;
-					} else {
-						atom *a = atom_general(sql->sa, &sc->type, NULL);
-						e = exp_atom(sql->sa, a);
-					}
-					append(args, exp_atom_lng(sql->sa, cntall));
-					append(args, e);
-					append(rp, exp_op(sql->sa, args, sql_bind_func_(sql->sa, sql->session->schema, "array_filler", exps_subtype(args))));
-				}
-			}
-
-			res = rel_table(sql, DDL_CREATE_TABLE, sname, t, temp);
-			return rel_insert(sql, res, rel_project(sql->sa, NULL, rp));
 		}
+		
+		/* For fixed arrays, we immediately create and fill in BATs for dimensions with dimension values, and for non-dim. attributes with default values */
+		assert(tt == tt_array && t->fixed);
+
+		/* To compute N (the #times each value is repeated), multiply the size of dimensions defined after the current dimension.  For the last dimension, its N is 1.  To compute M (the #times each value group is repeated), multiply the size of dimensions defined before the current dimension.  For the first dimension, its M is 1. */
+		N = GDKmalloc(sizeof(lng) * t->ndims);
+		M = GDKmalloc(sizeof(lng) * t->ndims);
+		if(!N || !M) {
+			if(N) GDKfree(N);
+			if(M) GDKfree(M);
+			return sql_error(sql, 02, "CREATE ARRAY: failed to allocate space");
+		}
+		for(i = 0; i < t->ndims; i++) N[i] = M[i] = 1;
+
+		for (col = t->columns.set->h, i = 0; col; col = col->next){
+			sql_column *sc = (sql_column *) col->data;
+			atom *a_sta = atom_general(sql->sa, &sc->type, sc->dim->start);
+			atom *a_ste = atom_general(sql->sa, &sc->type, sc->dim->step);
+			atom *a_sto = atom_general(sql->sa, &sc->type, sc->dim->stop);
+			if (sc->dim){
+				switch(a_sto->data.vtype){
+				case TYPE_bte:
+					cnt = (*(bte *)VALget(&a_sto->data) - *(bte *)VALget(&a_sta->data)) / *(bte *)VALget(&a_ste->data); break;
+				case TYPE_sht:
+					cnt = (*(sht *)VALget(&a_sto->data) - *(sht *)VALget(&a_sta->data)) / *(sht *)VALget(&a_ste->data); break;
+				case TYPE_int:
+					cnt = (*(int *)VALget(&a_sto->data) - *(int *)VALget(&a_sta->data)) / *(int *)VALget(&a_ste->data); break;
+				case TYPE_flt:
+					cnt = (*(flt *)VALget(&a_sto->data) - *(flt *)VALget(&a_sta->data)) / *(flt *)VALget(&a_ste->data); break;
+				case TYPE_dbl:
+					cnt = (*(dbl *)VALget(&a_sto->data) - *(dbl *)VALget(&a_sta->data)) / *(dbl *)VALget(&a_ste->data); break;
+				case TYPE_lng:
+					cnt = (*(lng *)VALget(&a_sto->data) - *(lng *)VALget(&a_sta->data)) / *(lng *)VALget(&a_ste->data); break;
+				default: /* should not reach here */
+					GDKfree(N); GDKfree(M);
+					return sql_error(sql, 02, "CREATE ARRAY: unsupported data type \"%s\"", sc->type.type->sqlname);
+				}
+				for (j = 0; j < i; j++) N[j] = N[j] * cnt;
+				for (j = t->ndims; j > i; j--) M[j] = M[j] * cnt;
+				cntall *= cnt;
+				i++;
+			}
+		}
+		if (i != t->ndims) {
+			GDKfree(N); GDKfree(M);
+			return sql_error(sql, 02, "CREATE ARRAY: expected number of dimension columns (%d) does not match actual numbre of dimension columns (%d)", t->ndims, i);
+		}
+
+		/* create and fill all columns */
+		for (col = t->columns.set->h, i = 0; col; col = col->next){
+			sql_column *sc = (sql_column *) col->data;
+			list *args = new_exp_list(sql->sa);
+			sql_exp *e = NULL;
+
+			if (sc->dim){
+				/* TODO: can we avoid computing these 'atom_general' twice? */
+				append(args, exp_atom(sql->sa, atom_general(sql->sa, &sc->type, sc->dim->start)));
+				append(args, exp_atom(sql->sa, atom_general(sql->sa, &sc->type, sc->dim->step)));
+				append(args, exp_atom(sql->sa, atom_general(sql->sa, &sc->type, sc->dim->stop)));
+				append(args, exp_atom_int(sql->sa, N[i]));
+				append(args, exp_atom_int(sql->sa, M[i]));
+				append(rp, exp_op(sql->sa, args, sql_bind_func_(sql->sa, sql->session->schema, "array_series", exps_subtype(args))));
+				i++;
+			} else {
+				if (sc->def) {
+					char *q = sql_message("select %s;", sc->def);
+					e = rel_parse_val(sql, q, sql->emode);
+					_DELETE(q);
+					if (!e || (e = rel_check_type(sql, &sc->type, e, type_equal)) == NULL)
+						return NULL;
+				} else {
+					atom *a = atom_general(sql->sa, &sc->type, NULL);
+					e = exp_atom(sql->sa, a);
+				}
+				append(args, exp_atom_lng(sql->sa, cntall));
+				append(args, e);
+				append(rp, exp_op(sql->sa, args, sql_bind_func_(sql->sa, sql->session->schema, "array_filler", exps_subtype(args))));
+			}
+		}
+		if (i != t->ndims) {
+			GDKfree(N); GDKfree(M);
+			return sql_error(sql, 02, "CREATE ARRAY: expected number of dimension columns (%d) does not match actual numbre of dimension columns (%d)", t->ndims, i);
+		}
+		res = rel_table(sql, DDL_CREATE_TABLE, sname, t, temp);
+		return rel_insert(sql, res, rel_project(sql->sa, NULL, rp));
 	} else { /* [col name list] as subquery with or without data */
 		/* TODO: handle create_array_as_subquery??? */
 		sql_rel *sq = NULL, *res = NULL;
