@@ -95,6 +95,8 @@ reallocGlobalStack(MalStkPtr old, int cnt)
 	return s;
 }
 
+#if 0
+/* dark code, we need quite some lux to shed a little light on this */
 MalStkPtr
 reallocStack(MalStkPtr s, int cnt)
 {
@@ -113,6 +115,7 @@ reallocStack(MalStkPtr s, int cnt)
 	GDKfree(old);
 	return s;
 }
+#endif
 
 /*
  * @-
@@ -124,9 +127,15 @@ reallocStack(MalStkPtr s, int cnt)
 void
 chkStack(MalStkPtr stk, int i)
 {
+#if 0
+/* avoid the darkness */
 	if (stk->stksize <= i) {
 		reallocStack(stk, STACKINCR);
 	}
+#else
+	(void)stk;
+	(void)i;
+#endif
 }
 void
 freeStack(MalStkPtr stk)
