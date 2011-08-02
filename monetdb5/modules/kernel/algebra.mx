@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f algebra
+
 @c
 /*
- * @f algebra
  * @a Peter Boncz, Martin Kersten, Niels Nes
  * @v 2.0
  * @+ BAT Algebra

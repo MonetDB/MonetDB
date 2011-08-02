@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f opt_mitosis
+
 @c
 /*
- * @f opt_mitosis
  * @a M. Kersten
  * @- Mitosis
  * The SQL plans are produced without knowledge of possible

@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f opt_joinselect
+
 @c
 /*
- * @f opt_joinselect
  * @a S. Idreos
  * The combination of joins and selects is effective in the
  * context of cracker optimizations.

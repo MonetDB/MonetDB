@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f mal_io
+
 @c
 /*
- * @f mal_io
  * @a N.J. Nes, M.L. Kersten
  * @d 01/07/1996, 31/01/2002
  *

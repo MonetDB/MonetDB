@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f opt_strengthReduction
+
 @c
 /*
- * @f opt_strengthReduction
  * @a M. Kersten
  * @- Strength Reduction
  * An effective optimization technique in compiler construction is to

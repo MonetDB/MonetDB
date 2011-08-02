@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f gdk
+
 @h
 /*
- * @f gdk
  * @t The Goblin Database Kernel
  * @v Version 3.05
  * @a Martin L. Kersten, Peter Boncz, Niels Nes

@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f gdk_atoms
+
 @c
 /*
- * @f gdk_atoms
  * @a M. L. Kersten, P. Boncz
  * @* Atomic types
  * The Binary Association Table library assumes efficient implementation of

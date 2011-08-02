@@ -17,11 +17,12 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f opt_multiplex
+
 @c
 /*
  * @'
  *
- * @f opt_multiplex
  * @a M. Kersten
  * @- Multiplex Compilation
  * The MonetDB operator multiplex concept has been pivotal to

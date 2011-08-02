@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f opt_origin
+
 @c
 /*
- * @f opt_origin
  * @- OID origin tracking.
  * This simple module extends the MAL plan with properties that
  * identify the source of OIDs in the underlying SQL persistent tables.

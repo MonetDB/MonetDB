@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f sql_result
+
 @c
 /*
- * @f sql_result
  * @a N.J. Nes
  * @*
  */

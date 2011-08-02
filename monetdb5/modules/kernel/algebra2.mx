@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f algebra2
+
 @c
 /*
- * @f algebra2
  * @a Arjen P. de Vries, S. Manegold
  * @v 1.0
  * @t Work around internal select and join algorithm selection

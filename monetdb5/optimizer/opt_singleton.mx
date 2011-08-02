@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f opt_singleton
+
 @c
 /*
- * @f opt_singleton
  * @a M. Kersten
  * @- Singleton Set Reduction
  * Application semantics and precise cost analysis may

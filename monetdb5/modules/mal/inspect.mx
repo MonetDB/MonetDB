@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f inspect
+
 @c
 /*
- * @f inspect
  * @a Martin Kersten
  * @v 1
  * @+ Inspection

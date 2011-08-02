@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f opt_crack
+
 @c
 /*
- * @f opt_crack
  * @a S.Idreos
  * The cracker optimizer searches patterns to be replaced by
  * the special cracker index operations.

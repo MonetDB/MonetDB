@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f str
+
 @c
 /*
- * @f str
  * @a N.J. Nes, M.L. Kersten
  * @v 1.1
  * @+ The String Module

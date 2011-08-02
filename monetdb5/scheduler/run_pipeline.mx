@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f run_pipeline
+
 @c
 /*
- * @f run_pipeline
  * @a M. Kersten
  * @* Scheduler framework
  * A key design decision for this MonetDB  version is to create a clean

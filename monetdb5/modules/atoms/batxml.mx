@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f batxml
+
 @c
 /*
- * @f batxml
  * @a M.L. Kersten
  * @+ XML multiplexes
  * SQL/XML requires a handful of instructions.

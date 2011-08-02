@@ -17,9 +17,10 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
+@f opt_factorize
+
 @c
 /*
- * @f opt_factorize
  * @a M. Kersten
  * @- Code Factorization
  * In most real-life situations queries are repeatedly called with
