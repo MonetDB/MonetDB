@@ -17,14 +17,15 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f gdk_ssort
-@a Sjoerd Mullender
-@* Ssort
-This file implements a stable sort algorithm.  The algorithm is a
-straight copy of the listsort function in the Python 2.5 source code,
-heavily modified to fit into the MonetDB environment.
-@{
 @c
+/*
+ * @f gdk_ssort
+ * @a Sjoerd Mullender
+ * @* Ssort
+ * This file implements a stable sort algorithm.  The algorithm is a
+ * straight copy of the listsort function in the Python 2.5 source code,
+ * heavily modified to fit into the MonetDB environment.
+ */
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
@@ -140,6 +141,7 @@ merge_getmem@1(MergeState *ms, ssize_t need)
 
 #define MERGE_GETMEM@2(MS, NEED) ((NEED) * (MS)->@1s <= (MS)->alloced@1 ? 0 :	\
 				merge_getmem@1(MS, NEED))
+@
 @c
 @:merge_getmem(h,H)@
 @:merge_getmem(t,T)@
@@ -148,6 +150,7 @@ merge_getmem@1(MergeState *ms, ssize_t need)
 
 @= copy
 #define COPY_@1(d,s,w)		(* (@1 *) (d) = * (@1 *) (s))
+@
 @c
 #define COPY_any(d,s,w) do {					\
 		switch (w) {					\
@@ -211,6 +214,7 @@ merge_getmem@1(MergeState *ms, ssize_t need)
 @= islt
 #define ISLT_@1@2(X, Y, ms)	(* (@1 *) (X) @3 * (@1 *) (Y))
 
+@
 @c
 /* Reverse a slice of a list in place, from lo up to (exclusive) hi. */
 static void
@@ -826,6 +830,7 @@ merge_at_@1@2(MergeState *ms, ssize_t i)
 @:ssort(@1,_rev)@
 #endif
 
+@
 @c
 @:typeexpand(chr,CHR)@
 @:typeexpand(bte,BTE)@
@@ -836,7 +841,6 @@ merge_at_@1@2(MergeState *ms, ssize_t i)
 @:typeexpand(dbl,DBL)@
 @:typeexpand(oid,OID)@
 
-@c
 @:ssort(any,)@
 @:ssort(any,_rev)@
 
@@ -1074,8 +1078,8 @@ GDKssort@1(void *h, void *t, void *heap, size_t nitems, int hs, int ts, int tpe)
 	return result;
 }
 
+@
 @c
 @:GDKsort()@
 @:GDKsort(_rev)@
 
-@}

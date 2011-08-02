@@ -17,84 +17,86 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f opt_joinpath
-@- Join Paths
-The routine @sc{optimizer.joinPath()}
-walks through the program looking for join operations
-and cascades them into multiple join paths.
-To illustrate, consider
-@verbatim
-	a:= bat.new(:oid,:oid);
-	b:= bat.new(:oid,:oid);
-	c:= bat.new(:oid,:str);
-	j1:= algebra.join(a,b);
-	j2:= algebra.join(j1,c);
-	j3:= algebra.join(b,b);
-	j4:= algebra.join(b,j3);
-@end verbatim
-The optimizer will first replace all arguments
-by their join sequence. The underlying instructions
-are left behind for the deadcode optimizer to be removed.
-@verbatim
-	a:= bat.new(:oid,:oid);
-	j1:= algebra.join(a,b);
-	j2:= algebra.joinPath(a,b,c);
-	j3:= algebra.join(b,b);
-	j4:= algebra.joinPath(b,b,b);
-@end verbatim
-The same operation is applied to sequences of leftjoin
-operations.
-
-Any join result used multiple times should be calculated once.
-A list of inlined paths is kept around to detect those.
-
-In principle, the joinpaths may contain common
-subpaths, whose materialization would improve performance.
-
-The SQL front-end produces often produces
-snippets of the following structure
-@verbatim
-    t1:= algebra.join(b,c);
-    z1:= algebra.join(a,t1);
-	...
-    t2:= algebra.join(b,d);
-    z2:= algebra.join(a,t2);
-@end verbatim
-The joinpath would merge them into
-@verbatim
-    z1:= algebra.joinPath(a,b,c);
-	...
-    z2:= algebra.joinPath(a,b,d);
-@end verbatim
-which are handle by a heuristic looking
-at the first two argments and re-uses
-a materialized join.
-@verbatim
-    _13:= algebra.join(a,b);
-    z1:= algebra.join(_13,c);
-	...
-    z2:= algebra.join(_13,d);
-@end verbatim
-
-An alternative is to make recognition
-of any common re-useable paths an
-integral part of the joinPath body.
-
-@verbatim
-    x3:= algebra.join(a,b);
-	r3:= bat.reverse(x3);
-	j1:= join(c,r3);
-@end verbatim
-@verbatim
-	rb:= bat.reverse(b);
-	ra:= bat.reverse(a);
-	j1:= algebra.joinpath(c,rb,ra);
-@end verbatim
-
-As a final step in the speed up of the joinpath
-we consider clustering large operands if that
-is expected to improve IO behavior.
-@{
+@c
+/*
+ * @f opt_joinpath
+ * @- Join Paths
+ * The routine @sc{optimizer.joinPath()}
+ * walks through the program looking for join operations
+ * and cascades them into multiple join paths.
+ * To illustrate, consider
+ * @verbatim
+ * 	a:= bat.new(:oid,:oid);
+ * 	b:= bat.new(:oid,:oid);
+ * 	c:= bat.new(:oid,:str);
+ * 	j1:= algebra.join(a,b);
+ * 	j2:= algebra.join(j1,c);
+ * 	j3:= algebra.join(b,b);
+ * 	j4:= algebra.join(b,j3);
+ * @end verbatim
+ * The optimizer will first replace all arguments
+ * by their join sequence. The underlying instructions
+ * are left behind for the deadcode optimizer to be removed.
+ * @verbatim
+ * 	a:= bat.new(:oid,:oid);
+ * 	j1:= algebra.join(a,b);
+ * 	j2:= algebra.joinPath(a,b,c);
+ * 	j3:= algebra.join(b,b);
+ * 	j4:= algebra.joinPath(b,b,b);
+ * @end verbatim
+ * The same operation is applied to sequences of leftjoin
+ * operations.
+ *
+ * Any join result used multiple times should be calculated once.
+ * A list of inlined paths is kept around to detect those.
+ *
+ * In principle, the joinpaths may contain common
+ * subpaths, whose materialization would improve performance.
+ *
+ * The SQL front-end produces often produces
+ * snippets of the following structure
+ * @verbatim
+ *     t1:= algebra.join(b,c);
+ *     z1:= algebra.join(a,t1);
+ * 	...
+ *     t2:= algebra.join(b,d);
+ *     z2:= algebra.join(a,t2);
+ * @end verbatim
+ * The joinpath would merge them into
+ * @verbatim
+ *     z1:= algebra.joinPath(a,b,c);
+ * 	...
+ *     z2:= algebra.joinPath(a,b,d);
+ * @end verbatim
+ * which are handle by a heuristic looking
+ * at the first two argments and re-uses
+ * a materialized join.
+ * @verbatim
+ *     _13:= algebra.join(a,b);
+ *     z1:= algebra.join(_13,c);
+ * 	...
+ *     z2:= algebra.join(_13,d);
+ * @end verbatim
+ *
+ * An alternative is to make recognition
+ * of any common re-useable paths an
+ * integral part of the joinPath body.
+ *
+ * @verbatim
+ *     x3:= algebra.join(a,b);
+ * 	r3:= bat.reverse(x3);
+ * 	j1:= join(c,r3);
+ * @end verbatim
+ * @verbatim
+ * 	rb:= bat.reverse(b);
+ * 	ra:= bat.reverse(a);
+ * 	j1:= algebra.joinpath(c,rb,ra);
+ * @end verbatim
+ *
+ * As a final step in the speed up of the joinpath
+ * we consider clustering large operands if that
+ * is expected to improve IO behavior.
+ */
 @mal
 pattern optimizer.joinPath():str
 address OPTjoinPath;
@@ -122,15 +124,17 @@ comment "Routine to handle join paths.  The type analysis is rather tricky.";
 
 #define OPTDEBUGjoinPath  if ( optDebug & ((lng)1 <<DEBUG_OPT_JOINPATH) )
 
-@-
-Post-optimization. After the join path has been constructed
-we could search for common subpaths. This heuristic is to
-remove any pair which is used more then once.
-Inner paths are often foreign key walks.
-The heuristics is sufficient for the code produced by SQL frontend.
-The alternative is to search for all possible subpaths and materialize them.
-For example, using recursion for all common paths.
 @c
+/*
+ * @-
+ * Post-optimization. After the join path has been constructed
+ * we could search for common subpaths. This heuristic is to
+ * remove any pair which is used more then once.
+ * Inner paths are often foreign key walks.
+ * The heuristics is sufficient for the code produced by SQL frontend.
+ * The alternative is to search for all possible subpaths and materialize them.
+ * For example, using recursion for all common paths.
+ */
 #include "monetdb_config.h"
 #include "opt_joinpath.h"
 #include "cluster.h"
@@ -242,8 +246,9 @@ OPTjoinSubPath(Client cntxt, MalBlkPtr mb)
 	*/
 	return actions;
 }
-@-
-@c
+/*
+ * @-
+ */
 static int
 OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
@@ -276,9 +281,10 @@ OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		if (varcnt ) GDKfree(varcnt);
 		return 0;
 	}
-@-
-Count the variable use as arguments first.
-@c
+	/*
+	 * @-
+	 * Count the variable use as arguments first.
+	 */
 	for (i = 0; i<limit; i++){
 		p= old[i];
 		for(j=p->retc; j<p->argc; j++)
@@ -288,17 +294,19 @@ Count the variable use as arguments first.
 	for (i = 0; i<limit; i++){
 		p= old[i];
 		if( getModuleId(p)== algebraRef && (getFunctionId(p)== joinRef || getFunctionId(p) == leftjoinRef || getFunctionId(p) == semijoinRef)){
-@-
-Try to expand its argument list with what we have found so far.
-This creates a series of join paths, many of which will be removed during deadcode elimination.
-@c
+			/*
+			 * @-
+			 * Try to expand its argument list with what we have found so far.
+			 * This creates a series of join paths, many of which will be removed during deadcode elimination.
+			 */
 			q= copyInstruction(p);
 			q->argc=1;
 			for(j=p->retc; j<p->argc; j++){
 				r= getInstrPtr(mb,pc[getArg(p,j)]);
-@-
-Don't inject a pattern when it is used more then once.
-@c
+				/*
+				 * @-
+				 * Don't inject a pattern when it is used more then once.
+				 */
 				if (r && varcnt[getArg(p,j)] > 1){
 					OPTDEBUGjoinPath {
 						mnstr_printf(cntxt->fdout,"#double use %d %d\n", getArg(p,j), varcnt[getArg(p,j)]);
@@ -341,9 +349,10 @@ Don't inject a pattern when it is used more then once.
 				freeInstruction(q);
 				goto wrapup;
 			}
-@-
-Final type check.
-@c
+			/*
+			 * @-
+			 * Final type check.
+			 */
 			for(j=1; j<q->argc-1; j++)
 				if( getTailType(getArgType(mb,q,j)) != getHeadType(getArgType(mb,q,j+1)) &&
 				!( getTailType(getArgType(mb,q,j))== TYPE_oid  &&
@@ -391,26 +400,27 @@ opt_export str ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(joinPath,OPT_CHECK_ALL)@
-@-
-The join path optimizer takes a join sequence and
-attempts to minimize the intermediate result.
-The choice depends on a good estimate of intermediate
-results using properties.
-For the time being, we use a simplistic model, based
-on the assumption that most joins are foreign key joins anyway.
-
-We use a sample based approach for sizeable  tables.
-The model is derived from the select statement. However, we did not succeed.
-The code is now commented for future improvement.
-
-Final conclusion from this exercise is:
-The difference between the join input size and the join output size is not 
-the correct (or unique) metric which should be used to decide which order 
-should be used in the joinPath. 
-A SMALL_OPERAND is preferrable set to those cases where the table
-fits in the cache. This depends on the cache size and operand type.
-For the time being we limit ourself to a default of 1Kelements
-@c
+/*
+ * @-
+ * The join path optimizer takes a join sequence and
+ * attempts to minimize the intermediate result.
+ * The choice depends on a good estimate of intermediate
+ * results using properties.
+ * For the time being, we use a simplistic model, based
+ * on the assumption that most joins are foreign key joins anyway.
+ *
+ * We use a sample based approach for sizeable  tables.
+ * The model is derived from the select statement. However, we did not succeed.
+ * The code is now commented for future improvement.
+ *
+ * Final conclusion from this exercise is:
+ * The difference between the join input size and the join output size is not
+ * the correct (or unique) metric which should be used to decide which order
+ * should be used in the joinPath.
+ * A SMALL_OPERAND is preferrable set to those cases where the table
+ * fits in the cache. This depends on the cache size and operand type.
+ * For the time being we limit ourself to a default of 1Kelements
+ */
 /*#define SAMPLE_THRESHOLD_lOG 17*/
 #define SMALL_OPERAND	1024
 static BUN
@@ -519,18 +529,20 @@ ALGjoinCost(Client cntxt, BAT *l, BAT *r, int flag)
 		mnstr_printf(cntxt->fdout,"#batjoin cost ?"BUNFMT"\n",cost);
 	return cost;
 }
-@-
-The join path type analysis should also be done at run time,
-because the expressive power of MAL is insufficient to
-enforce a proper join type list.
-The current  costmodel is rather limited. It takes as default
-the order presented and catches a few more cases that do not
-lead to materialization of large views. This solved the earlier
-problem noticable on TPC-H that join order was producing slower
-results. Now, on TPCH-H, all queries run equal or better.
-about 12 out of 84 joinpaths are improved with more then 10%.
-(affecting Q2, Q5, Q7, Q8,Q11,Q13)
 @h
+/*
+ * @-
+ * The join path type analysis should also be done at run time,
+ * because the expressive power of MAL is insufficient to
+ * enforce a proper join type list.
+ * The current  costmodel is rather limited. It takes as default
+ * the order presented and catches a few more cases that do not
+ * lead to materialization of large views. This solved the earlier
+ * problem noticable on TPC-H that join order was producing slower
+ * results. Now, on TPCH-H, all queries run equal or better.
+ * about 12 out of 84 joinpaths are improved with more then 10%.
+ * (affecting Q2, Q5, Q7, Q8,Q11,Q13)
+ */
 opt_export BAT * ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag);
 @c
 BAT *
@@ -559,15 +571,16 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag)
 				j = i;
 			}
 		}
-@-
-BEWARE. you may not use a size estimation, because it
-may fire a BATproperty check in a few cases.
-In case a join fails, we may try another order first before 
-abandoning the task.
-
-A left-join sequence only requires the result to be sorted
-against the first operand. For all others operand pairs, the cheapest join suffice.
-@c
+		/*
+		 * @-
+		 * BEWARE. you may not use a size estimation, because it
+		 * may fire a BATproperty check in a few cases.
+		 * In case a join fails, we may try another order first before
+		 * abandoning the task.
+		 *
+		 * A left-join sequence only requires the result to be sorted
+		 * against the first operand. For all others operand pairs, the cheapest join suffice.
+		 */
 		switch(flag){
 		case 0:
 			if ( j == 0) {
@@ -649,4 +662,3 @@ ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "algebra.joinPath", INTERNAL_OBJ_CREATE);
 	return MAL_SUCCEED;
 }
-@}

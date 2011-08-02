@@ -17,26 +17,28 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f const
-@a Martin Kersten
-@v 0.1
-@+ Constants
-The @code{const} module provides a box abstraction store for global constants.
-Between sessions, the value of the constants is saved on disk 
-in the form of a simple MAL program, which is scanned and made 
-available by opening the box.  A future implementation should 
-provide transaction support over the box, which would permit 
-multiple clients to exchange (scalar) information easily.
-
-The default constant box is initialized with session variables,
-such as 'user','dbname', 'dbfarm', and 'dbdir'.
-These actions are encapsulated in the prelude routine called.
-
-A box should be opened before being used. It is typically used
-to set-up the list of current users and to perform authorization.
-The constant box is protected with a simple authorization scheme,
-prohibiting all updates unless issued by the system administrator.
-
+@c
+/*
+ * @f const
+ * @a Martin Kersten
+ * @v 0.1
+ * @+ Constants
+ * The @code{const} module provides a box abstraction store for global constants.
+ * Between sessions, the value of the constants is saved on disk
+ * in the form of a simple MAL program, which is scanned and made
+ * available by opening the box.  A future implementation should
+ * provide transaction support over the box, which would permit
+ * multiple clients to exchange (scalar) information easily.
+ *
+ * The default constant box is initialized with session variables,
+ * such as 'user','dbname', 'dbfarm', and 'dbdir'.
+ * These actions are encapsulated in the prelude routine called.
+ *
+ * A box should be opened before being used. It is typically used
+ * to set-up the list of current users and to perform authorization.
+ * The constant box is protected with a simple authorization scheme,
+ * prohibiting all updates unless issued by the system administrator.
+ */
 @mal
 module const;
 
@@ -78,7 +80,6 @@ pattern hasMoreElements()(:lng,:str)
 address CSThasMoreElements
 comment "Locate next element in the box.";
 
-@{
 pattern prelude():void 
 address CSTprelude
 comment "Initialize the const box";
@@ -88,9 +89,11 @@ address CSTepilogue
 comment "Cleanup the const box";
 
 const.prelude();
-@-
-@+ Implementation
 @h
+/*
+ * @-
+ * @+ Implementation
+ */
 #ifndef _CONST_H
 #define _CONST_H
 #include "clients.h"
@@ -123,18 +126,22 @@ const_export str CSTnewIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 const_export str CSThasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 const_export  str CSTepilogue(int *ret);
 #endif /* _CONST_H */
-@- Module initializaton
-The content of this box my only be changed by the Administrator.
+/*
+ * @- Module initializaton
+ * The content of this box my only be changed by the Administrator.
+ */
 @= authorize
 	{
 		str tmp = NULL;
 		rethrow("const.@1", tmp, AUTHrequireAdmin(&cntxt));
 	}
-@-
+@
+ * @-
 @= insertBox
 	msg = @2;
 	insertToBox(box,@1,msg);
 	GDKfree(msg);
+@
 @c
 #include "monetdb_config.h"
 #include "const.h"
@@ -178,8 +185,9 @@ CSTepilogue(int *ret)
 	return MAL_SUCCEED;
 }
 
-@- Operator implementation
-@c
+/*
+ * @- Operator implementation
+ */
 str
 CSTopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -220,16 +228,21 @@ CSTdestroy(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-@-
-Access to a box calls for resolving the first parameter
-to a named box.
+/*
+ * @-
+ * Access to a box calls for resolving the first parameter
+ * to a named box.
+ */
 @= OpenBox
 	@:authorize(@1)@
 	box= findBox("const");
 	if( box ==0) 
 	throw(MAL, "const.@1", BOX_CLOSED);
-@-
+@
 @c
+/*
+ * @-
+ */
 str
 CSTdeposit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -370,4 +383,3 @@ CSThasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-@}

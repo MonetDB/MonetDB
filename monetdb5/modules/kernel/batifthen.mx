@@ -17,13 +17,15 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f batifthen
-@a M.L. Kersten
-@+ BAT if-then-else multiplex expressions.
-The assembled code for IF-THEN-ELSE multiplex operations.
-Again we assume that the BAT arguments are aligned.
-@{
-@-
+@c
+/*
+ * @f batifthen
+ * @a M.L. Kersten
+ * @+ BAT if-then-else multiplex expressions.
+ * The assembled code for IF-THEN-ELSE multiplex operations.
+ * Again we assume that the BAT arguments are aligned.
+ * @-
+ */
 @= ifthenGrp
 command batcalc.ifthen(b:bat[:oid,:bit], t:bat[:oid,:@1]) :bat[:oid,:@1] 
 address CMDifThen_@1
@@ -51,6 +53,7 @@ command batcalc.ifthenelse(b:bat[:oid,:bit], t:bat[:any_1,:@1], e:@1)
 	:bat[:oid,:@1] 
 address CMDifThenElseCst2_@1
 comment "If-then-else operation to assemble a conditional result ";
+@
 @mal
 	@:ifthenGrp(bit)@
 	@:ifthenGrp(chr)@
@@ -62,7 +65,7 @@ comment "If-then-else operation to assemble a conditional result ";
 	@:ifthenGrp(flt)@
 	@:ifthenGrp(dbl)@
 	@:ifthenGrp(str)@
-@- Implementation
+	# @- Implementation
 @include kprelude.mx
 @h
 #ifndef _BATIFTHEN_
@@ -81,10 +84,12 @@ comment "If-then-else operation to assemble a conditional result ";
 #define batifthen_export extern
 #endif
 #endif /* _BATIFTHEN_ */
-@-
-A general assumption in all cases is the bats are synchronized on their
-head column. This is not checked and may be mis-used to deploy the
-implementation for shifted window arithmetic as well.
+/*
+ * @-
+ * A general assumption in all cases is the bats are synchronized on their
+ * head column. This is not checked and may be mis-used to deploy the
+ * implementation for shifted window arithmetic as well.
+ */
 @= chkSize
 	if( BATcount(@1) != BATcount(@2) )
 	throw(MAL, "batcalc.@3", ILLEGAL_ARGUMENT " Requires bats of identical size");
@@ -107,13 +112,14 @@ implementation for shifted window arithmetic as well.
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 
-@- IfThenElse
-The conditional multiplex operations .
-@-
-The constant versions are typed by the parser
-String arguments call for an extra type casting. In combination
-with type resolution and runtime checks it provides a dense
-definitoin.
+@
+ * @- IfThenElse
+ * The conditional multiplex operations .
+ * @-
+ * The constant versions are typed by the parser
+ * String arguments call for an extra type casting. In combination
+ * with type resolution and runtime checks it provides a dense
+ * definitoin.
 @= ifthenImpl
 batifthen_export str CMDifThen_@1(int *ret, int *bid, int *tid);
 str
@@ -328,6 +334,7 @@ CMDifThenElseCst2_@1(int *ret, int *bid, int *tid, @1 *val)
 	@:void_wrapup@
 }
 @:ifthenImpl(@1)@
+@
 @c
 #include "monetdb_config.h"
 #include "batifthen.h"
@@ -528,7 +535,7 @@ CMDifThenElseCst2_@1(int *ret, int *bid, int *tid, @1 *val)
 	@:wrapup@
 }
 @:ifthenImpl(@1)@
+@
 @c
 @:ifthenelseDefault(oid,0)@
 @:ifthenelseDefault(str,1)@
-@}

@@ -17,17 +17,19 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f batcast
-@a M.L. Kersten
-@+ BAT Coercion Routines
-The coercion routines over BATs can not easily be speed up using
-an accumulator approach, because they often require different storage space. 
-Nevertheless, the implementation provided here are much faster compared
-to the Version 4.* implementation.
-
-The coercion routines are build for speed. They are not protected
-against overflow.
-@{
+@c
+/*
+ * @f batcast
+ * @a M.L. Kersten
+ * @+ BAT Coercion Routines
+ * The coercion routines over BATs can not easily be speed up using
+ * an accumulator approach, because they often require different storage space.
+ * Nevertheless, the implementation provided here are much faster compared
+ * to the Version 4.* implementation.
+ *
+ * The coercion routines are build for speed. They are not protected
+ * against overflow.
+ */
 @= idempotent
 	command batcalc.@1(b:bat[:any_1,:@1]):bat[:any_1,:@1] 
 	address CMDconvert_@1;
@@ -35,6 +37,7 @@ against overflow.
 	command batcalc.@2(b:bat[:any_1,:@1]):bat[:any_1,:@2] 
 	address CMDconvert_@1_@2
 	comment "Coerce an @1 tail to a bat with @2 tail.";
+@
 @mal
 	@:idempotent(bit)@
 	@:idempotent(chr)@
@@ -124,10 +127,12 @@ against overflow.
 	@:coercion(str,bit)@
 
 	@:coercion(str,int)@
-@-
+	# @-
 @include kprelude.mx
-@- Implementation
 @h
+/*
+ * @- Implementation
+ */
 #include "gdk.h"
 #include "math.h"
 #include "mal_exception.h"
@@ -142,14 +147,15 @@ against overflow.
 #define batcast_export extern
 #endif
 
-@- Implementation of coercions
-
-The different coercion implementations exploit the fact
-that many coercions are simply space enlargers.
-The others effectively may loose information, which calls
-for a more expensive operation based on the conversion
-routines in the GDK kernel.
-
+/*
+ * @- Implementation of coercions
+ *
+ * The different coercion implementations exploit the fact
+ * that many coercions are simply space enlargers.
+ * The others effectively may loose information, which calls
+ * for a more expensive operation based on the conversion
+ * routines in the GDK kernel.
+ */
 @= Idempotent
 batcast_export str CMDconvert_@1(int *ret, int *bid);
 str CMDconvert_@1(int *ret, int *bid)
@@ -177,7 +183,8 @@ str CMDconvert_@1(int *ret, int *bid)
 	BBPkeepref(*ret = bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
-@-
+@
+ * @-
 @= GeneralFixed
 batcast_export str CMDconvert_@1_@2(int *ret, int *bid);
 str CMDconvert_@1_@2(int *ret, int *bid)
@@ -269,9 +276,12 @@ bunins_failed:
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	@:wrapup@
 }
-@-
-The lengthly list of coercions options could have been generated.
+@
 @c
+/*
+ * @-
+ * The lengthly list of coercions options could have been generated.
+ */
 #include "monetdb_config.h"
 #include "batcast.h"
 
@@ -296,16 +306,21 @@ The lengthly list of coercions options could have been generated.
 	@:GeneralStr(flt)@
 	@:GeneralStr(dbl)@
 
-@-
-The reduction coding is still to be provided.
+	/*
+	 * @-
+	 * The reduction coding is still to be provided.
+	 */
 @= CoercionEnlarge
 	@:GeneralFixed(@1,@2)@
 @= CoercionReduce
 	@:GeneralFixed(@1,@2)@
-@-
-Write out all combinations to ease subsequent
-code fine tuning
+@
 @c
+/*
+ * @-
+ * Write out all combinations to ease subsequent
+ * code fine tuning
+ */
 	@:CoercionEnlarge(bte,sht)@
 	@:CoercionEnlarge(bte,oid)@
 	@:CoercionEnlarge(bte,int)@
@@ -379,4 +394,3 @@ code fine tuning
 	@:CoercionReduce(int,bit)@
 	@:CoercionReduce(wrd,bit)@
 	@:CoercionReduce(lng,bit)@
-@}

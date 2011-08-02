@@ -17,69 +17,72 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f opt_aliases
-@- Alias Removal
-The routine @sc{optimizer.aliasRemoval()}
-walks through the program looking for simple
-assignment statements, e.g. V:=W. It replaces all subsequent
-occurrences of V by W, provided V is assigned a value once and
-W does not change in the remainder of the code.
-Special care should be taken for iterator blocks as illustrated in
-the case below:
-@verbatim
-	i:=0;
-	b:= "done";
-barrier go:= true;
-	c:=i+1;
-	d:="step";
-	v:=d;
-	io.print(v);
-	i:=c;
-redo go:= i<2;
-exit go;
-	io.print(b);
-	optimizer.aliasRemoval();
-@end verbatim
-The constant strings are propagated to the @sc{print()} routine, while
-the initial assigment @sc{i:=0} should be retained. The code block becomes:
-@verbatim
-	i:=0;
-barrier go:= true;
-	c:=i+1;
-	io.print("step");
-	i:=c;
-redo go:= i<2;
-exit go;
-	io.print("done");
-@end verbatim
-A special case is backward propagation of constants. 
-The following snippet is the result of the JITO emptyset.
-It can be further reduced to avoid useless assignments.
-@verbatim
-    _53 := sql.bind("sys","_tables","type",0);
-    (_54,_56,_58,_60) := bat.partition(_53);
-    _53 := nil;
-    _67 := _54;
-    _54 := nil;
-    _75 := _67;
-    _67 := nil;
-    _83 := _75;
-    _75 := nil;
-@end verbatim
-
-@{
+@c
+/*
+ * @f opt_aliases
+ * @- Alias Removal
+ * The routine @sc{optimizer.aliasRemoval()}
+ * walks through the program looking for simple
+ * assignment statements, e.g. V:=W. It replaces all subsequent
+ * occurrences of V by W, provided V is assigned a value once and
+ * W does not change in the remainder of the code.
+ * Special care should be taken for iterator blocks as illustrated in
+ * the case below:
+ * @verbatim
+ * 	i:=0;
+ * 	b:= "done";
+ * barrier go:= true;
+ * 	c:=i+1;
+ * 	d:="step";
+ * 	v:=d;
+ * 	io.print(v);
+ * 	i:=c;
+ * redo go:= i<2;
+ * exit go;
+ * 	io.print(b);
+ * 	optimizer.aliasRemoval();
+ * @end verbatim
+ * The constant strings are propagated to the @sc{print()} routine, while
+ * the initial assigment @sc{i:=0} should be retained. The code block becomes:
+ * @verbatim
+ * 	i:=0;
+ * barrier go:= true;
+ * 	c:=i+1;
+ * 	io.print("step");
+ * 	i:=c;
+ * redo go:= i<2;
+ * exit go;
+ * 	io.print("done");
+ * @end verbatim
+ * A special case is backward propagation of constants.
+ * The following snippet is the result of the JITO emptyset.
+ * It can be further reduced to avoid useless assignments.
+ * @verbatim
+ *     _53 := sql.bind("sys","_tables","type",0);
+ *     (_54,_56,_58,_60) := bat.partition(_53);
+ *     _53 := nil;
+ *     _67 := _54;
+ *     _54 := nil;
+ *     _75 := _67;
+ *     _67 := nil;
+ *     _83 := _75;
+ *     _75 := nil;
+ * @end verbatim
+ */
 @mal
 pattern optimizer.aliases():str
 address OPTaliases;
 pattern optimizer.aliases(mod:str, fcn:str):str
 address OPTaliases
 comment "Alias removal optimizer";
-@-
-The key decision is to find the next statement that
-changes the candidate. 
-Beware that parameters could be changed as part of a call.
-They are marked as unsafe.
 @h
+/*
+ * @-
+ * The key decision is to find the next statement that
+ * changes the candidate.
+ * Beware that parameters could be changed as part of a call.
+ * They are marked as unsafe.
+ */
 #ifndef _OPT_ALIASES_
 #define _OPT_ALIASES_
 #include "opt_prelude.h"
@@ -91,21 +94,23 @@ opt_export void OPTaliasRemap(InstrPtr p, int *alias);
 
 #define OPTDEBUGaliases  if ( optDebug & (1 <<DEBUG_OPT_ALIASES) )
 
-@-
-When you propagate an alias through the program, the properties
-maintained should also be updated. In particular, the lifespan
-of the alias changes as part of the move.
-
-Alias removal is targeted at simple assignments only,
-because MAL does not allow for nested expressions.
-Instructions changing the flow of control should also be ignored.
-In all other cases the target variables are potential candidates
-for alias removal.
-@-
-The new aliasremoval code performs a single scan through the
-code. We are currently only interested in simple V:=W
-expressions.
 @c
+/*
+ * @-
+ * When you propagate an alias through the program, the properties
+ * maintained should also be updated. In particular, the lifespan
+ * of the alias changes as part of the move.
+ *
+ * Alias removal is targeted at simple assignments only,
+ * because MAL does not allow for nested expressions.
+ * Instructions changing the flow of control should also be ignored.
+ * In all other cases the target variables are potential candidates
+ * for alias removal.
+ * @-
+ * The new aliasremoval code performs a single scan through the
+ * code. We are currently only interested in simple V:=W
+ * expressions.
+ */
 #include "monetdb_config.h"
 #include "opt_aliases.h"
 int
@@ -162,9 +167,10 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	for(i=k; i<limit; i++)
 		mb->stmt[i]= NULL;
 	mb->stop= k;
-@-
-The second phase is constant alias replacement should be implemented.
-@c
+	/*
+	 * @-
+	 * The second phase is constant alias replacement should be implemented.
+	 */
 	GDKfree(span);
 	GDKfree(alias);
 	DEBUGoptimizers
@@ -178,4 +184,3 @@ The second phase is constant alias replacement should be implemented.
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(aliases,OPT_CHECK_ALL)@
-@}

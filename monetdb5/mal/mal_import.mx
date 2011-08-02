@@ -17,15 +17,17 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@a M. Kersten
-@v 0.0
-@+ Module import
-The import statement simple switches the parser to a new input file, which
-takes precedence. The context for which the file should be interpreted
-is determined by the module name supplied.
-Typically this involves a module, whose definitions are stored at 
-a known location.
-@{
+@c
+/*
+ * @a M. Kersten
+ * @v 0.0
+ * @+ Module import
+ * The import statement simple switches the parser to a new input file, which
+ * takes precedence. The context for which the file should be interpreted
+ * is determined by the module name supplied.
+ * Typically this involves a module, whose definitions are stored at
+ * a known location.
+ */
 @h
 #ifndef _MAL_IMPORT_H
 #define _MAL_IMPORT_H
@@ -36,17 +38,19 @@ a known location.
 #include "mal_utils.h"
 
 mal_export void slash_2_dir_sep(str fname);
-@-
-The import context is located. If the module already exists, 
-we should silently skip parsing the file. This is handled at the parser level.
-The files are extracted from a default location,
-namely the DBHOME/modules directory.
-
-If the string starts with '/' or '~' the context is not changed.
-
-Every IMPORT statement denotes a possible dynamic load library.
-Make sure it is loaded as well.
 @c
+/*
+ * @-
+ * The import context is located. If the module already exists,
+ * we should silently skip parsing the file. This is handled at the parser level.
+ * The files are extracted from a default location,
+ * namely the DBHOME/modules directory.
+ *
+ * If the string starts with '/' or '~' the context is not changed.
+ *
+ * Every IMPORT statement denotes a possible dynamic load library.
+ * Make sure it is loaded as well.
+ */
 #include "monetdb_config.h"
 #include "mal_import.h"
 #include "mal_interpreter.h"	/* for showErrors() */
@@ -91,14 +95,16 @@ malOpenSource(str file)
 	return fd;
 }
 
-@-
-The malLoadScript routine merely reads the contents of a file into
-the input buffer of the client. It is typically used in situations
-where an intermediate file is used to pass commands around.
-Since the parser needs access to the complete block, we first have
-to find out how long the input is.
-For the time being, we assume at most 1Mb.
 @h
+/*
+ * @-
+ * The malLoadScript routine merely reads the contents of a file into
+ * the input buffer of the client. It is typically used in situations
+ * where an intermediate file is used to pass commands around.
+ * Since the parser needs access to the complete block, we first have
+ * to find out how long the input is.
+ * For the time being, we assume at most 1Mb.
+ */
 mal_export str malLoadScript(Client c, str name, bstream **fdin);
 @c
 str
@@ -117,14 +123,16 @@ malLoadScript(Client c, str name, bstream **fdin)
 	return MAL_SUCCEED;
 }
 
-@-
-Beware that we have to isolate the execution of the source file
-in its own environment. E.g. we have to removed the execution
-state until we are finished.
-The script being read my contain errors, such as non-balanced
-brackets as indicated by blkmode.
-It should be reset before continuing.
-@-
+/*
+ * @-
+ * Beware that we have to isolate the execution of the source file
+ * in its own environment. E.g. we have to removed the execution
+ * state until we are finished.
+ * The script being read my contain errors, such as non-balanced
+ * brackets as indicated by blkmode.
+ * It should be reset before continuing.
+ * @-
+ */
 @= restoreState
 	bstream *oldfdin = c->fdin;
 	int oldyycur = c->yycur;
@@ -171,10 +179,13 @@ It should be reset before continuing.
 	c->mode = oldmode;
 	c->blkmode = oldblkmode;
 	c->srcFile = oldsrcFile;
-@-
-The include operation parses the file indentified and 
-leaves the MAL code behind in the 'main' function.
+@
 @h
+/*
+ * @-
+ * The include operation parses the file indentified and
+ * leaves the MAL code behind in the 'main' function.
+ */
 mal_export str malInclude(Client c, str name, int listing);
 @c
 str
@@ -227,24 +238,26 @@ malInclude(Client c, str name, int listing)
 	return s;
 }
 
-@+ File and input processing
-A recurring situation is to execute a stream of simple MAL instructions
-stored on a file or comes from standard input. We parse one MAL 
-instruction line at a time and attempt to execute it immediately.
-Note, this precludes entering complex MAL structures on the primary
-input channel, because 1) this requires complex code to keep track
-that we are in 'definition mode' 2) this requires (too) careful
-typing by the user, because he cannot make a typing error
-
-Therefore, all compound code fragments should be loaded and executed
-using the evalFile and callString command. It will parse the complete
-file into a MAL program block and execute it.
-
-Running looks much like an Import operation, except for the execution
-phase. This is performed in the context of an a priori defined
-stack frame. Life becomes a little complicated when the script contains
-a definition.
 @h
+/*
+ * @+ File and input processing
+ * A recurring situation is to execute a stream of simple MAL instructions
+ * stored on a file or comes from standard input. We parse one MAL
+ * instruction line at a time and attempt to execute it immediately.
+ * Note, this precludes entering complex MAL structures on the primary
+ * input channel, because 1) this requires complex code to keep track
+ * that we are in 'definition mode' 2) this requires (too) careful
+ * typing by the user, because he cannot make a typing error
+ *
+ * Therefore, all compound code fragments should be loaded and executed
+ * using the evalFile and callString command. It will parse the complete
+ * file into a MAL program block and execute it.
+ *
+ * Running looks much like an Import operation, except for the execution
+ * phase. This is performed in the context of an a priori defined
+ * stack frame. Life becomes a little complicated when the script contains
+ * a definition.
+ */
 mal_export str evalFile(Client c, str fname, int listing);
 @c
 str
@@ -379,8 +392,10 @@ compileString(Symbol *fcn, Client c, str s)
 	GDKfree(b);
 	return MAL_SUCCEED;
 }
-@-
-Selectively run the phases
+/*
+ * @-
+ * Selectively run the phases
+ */
 @= runPhase
 	if(msg== MAL_SUCCEED && c->phase[@1] && (msg= (str) (*c->phase[@1])(c)) ){
 		/* error occurred  and ignored */
@@ -390,6 +405,7 @@ Selectively run the phases
 		if (qry) GDKfree(qry);
 		return 0;
 	}
+@
 @h
 mal_export int callString(Client c, str s, int listing);
 @c
@@ -434,4 +450,3 @@ callString(Client c, str s, int listing)
 
 @h
 #endif /*  _MAL_IMPORT_H */
-@}

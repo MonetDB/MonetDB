@@ -17,42 +17,44 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f opt_partitions
-@a M. Kersten
-@- BAT Partitions
-Limitations on the addressing space in older PCs and the need
-for distributed storage makes that BATs ideally should be 
-looked upon as a union of smaller BATs which are processed
-within the (memory) resource limitations given.
-
-The @sc{partition()} optimizer with the supportive 
-bat partition library @code{bpm}
-addresses the issue with an adaptive database segmentation algorithm.
-It is designed incrementally with a focus 
-on supporting the SQL front-end. In particularly, the
-operators considered is a limited subset of MAL. Occurrence
-of an operator outside this set terminates the optimizer
-activities.
-
-The operation @sc{optimizer.partitions()} hunts for bindings
-of SQL column BATs and prepare code for using partitioned
-versions instead. 
-
-We use two implementations. The first one attempts to find
-segments of linear dependent data and builds an iterator
-around it. This approach is tricky, because you have to 
-take care of special cases. In particular, the semantics
-of the operators on the sequence construction posed quite
-some problems.
-
-The naive() approach simply looks at individual operations
-and surround them with an iterator. An alias table is
-kept around for re-use and detect already partitioned operands.
-The drawback is that potentially a partitioned BAT is 
-read multiple times [it depends on the re-use of variables,
-which can be calculated] and write+read of intermediates.
-Experiments should demonstrate the optimal one.
-@{
+@c
+/*
+ * @f opt_partitions
+ * @a M. Kersten
+ * @- BAT Partitions
+ * Limitations on the addressing space in older PCs and the need
+ * for distributed storage makes that BATs ideally should be
+ * looked upon as a union of smaller BATs which are processed
+ * within the (memory) resource limitations given.
+ *
+ * The @sc{partition()} optimizer with the supportive
+ * bat partition library @code{bpm}
+ * addresses the issue with an adaptive database segmentation algorithm.
+ * It is designed incrementally with a focus
+ * on supporting the SQL front-end. In particularly, the
+ * operators considered is a limited subset of MAL. Occurrence
+ * of an operator outside this set terminates the optimizer
+ * activities.
+ *
+ * The operation @sc{optimizer.partitions()} hunts for bindings
+ * of SQL column BATs and prepare code for using partitioned
+ * versions instead.
+ *
+ * We use two implementations. The first one attempts to find
+ * segments of linear dependent data and builds an iterator
+ * around it. This approach is tricky, because you have to
+ * take care of special cases. In particular, the semantics
+ * of the operators on the sequence construction posed quite
+ * some problems.
+ *
+ * The naive() approach simply looks at individual operations
+ * and surround them with an iterator. An alias table is
+ * kept around for re-use and detect already partitioned operands.
+ * The drawback is that potentially a partitioned BAT is
+ * read multiple times [it depends on the re-use of variables,
+ * which can be calculated] and write+read of intermediates.
+ * Experiments should demonstrate the optimal one.
+ */
 @mal
 pattern optimizer.partitions():str
 address OPTpartitions;
@@ -71,14 +73,15 @@ comment "Experiment with partitioned databases";
 #include "opt_partitions.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 
-@-
-Calling the optimizer from the MAL context currently
-assumes that all sql.bind operations references partitioned BATs.
-We mark the segments derived from a single partitioned bat group.
-This continues until we find a blocking operator
-that requires the results of multiple threads.
-Then we have to close the iterator block and gather the results.
-@c
+/*
+ * @-
+ * Calling the optimizer from the MAL context currently
+ * assumes that all sql.bind operations references partitioned BATs.
+ * We mark the segments derived from a single partitioned bat group.
+ * This continues until we find a blocking operator
+ * that requires the results of multiple threads.
+ * Then we have to close the iterator block and gather the results.
+ */
 static int localVar(MalBlkPtr mb, char *prefix, int idx, int tpe){
 	char name[256];
 	snprintf(name,256,"%s%d",prefix,idx);
@@ -88,13 +91,13 @@ static int localVar(MalBlkPtr mb, char *prefix, int idx, int tpe){
 	return newVariable(mb,GDKstrdup(name),tpe);
 }
 
-@- Naive partitioning
-The simplistic approach starts here
-An operation should be replace by an iterator if
-any of its arguments is partitioned. This is detected
-by an alias function, which is set to the alternative.
-
-@c
+/*
+ * @- Naive partitioning
+ * The simplistic approach starts here
+ * An operation should be replace by an iterator if
+ * any of its arguments is partitioned. This is detected
+ * by an alias function, which is set to the alternative.
+ */
 static int 
 OPTuseIterator(MalBlkPtr mb, InstrPtr p, int *alias){
 	int i;
@@ -182,22 +185,24 @@ OPTbakeIterator(MalBlkPtr mb, InstrPtr p, int *alias, int *garbage){
 
 	OPTredoList(mb,p,alias);
 }
-@-
-Be aware the the SQL produces sql.bind(-,-,-,0) and sql.bind(-,-,-,3)
-which lead to the same BAT id. This causes sharing in a ring, with
-possib;e side effects upon garbage collection.
-@c
+/*
+ * @-
+ * Be aware the the SQL produces sql.bind(-,-,-,0) and sql.bind(-,-,-,3)
+ * which lead to the same BAT id. This causes sharing in a ring, with
+ * possib;e side effects upon garbage collection.
+ */
 static int bindTest(MalBlkPtr mb, InstrPtr p){
 	ValPtr v;
 	v= &getVarConstant(mb,getArg(p,4));
 	return v->val.ival>0;
 }
-@-
-Garbage collection of partitioned BATs is tricky when the
-sql.bind() operations are nested inside BARRIER-EXIT blocks.
-For the time being we ignore plans that rely on this.
-The test below is rather coarse grained.
-@c
+/*
+ * @-
+ * Garbage collection of partitioned BATs is tricky when the
+ * sql.bind() operations are nested inside BARRIER-EXIT blocks.
+ * For the time being we ignore plans that rely on this.
+ * The test below is rather coarse grained.
+ */
 static int
 OPTisSimple(MalBlkPtr mb){
 	int i,nested=0;
@@ -240,9 +245,10 @@ OPTnaiveIterations(MalBlkPtr mb){
 	pushInstruction(mb,old[0]); /* signature */
 	for(i=1;i< limit; i++){
 		p= old[i];
-@- 
-Assume all bind operations are over partitioned bats.
-@c
+		/*
+		 * @-
+		 * Assume all bind operations are over partitioned bats.
+		 */
 		if( getFunctionId(p)== bindRef && getModuleId(p)== sqlRef &&
 			bindTest(mb,p) ){
 			pushInstruction(mb,p);
@@ -266,23 +272,24 @@ Assume all bind operations are over partitioned bats.
 			/* printf("unfold  %d %d\n",getArg(q,0),getArg(q,1));*/
 			continue;
 		}
-@-
-The instruction should be broken into an interator
-if any of its arguments is already partitioned.
-The exceptions are 1) there exists a fast direct
-implementation in the bpm for it, 2) it has
-side-effects, 3) it involves a blocking instruction
-@-
-Caveats.
-The batcalc module uses a merge-like operation
-to scan through multiple BATs. A naive iterator expansion approach would
-lead to a cartesian product. This means the opt_accumulator
-can not be used in this context or a complex backwards
-analysis is needed. At this stage we consider them blocking,
-later a correct partitioned solution can be made.
-
-The bakeIterator currently supports a single result variable.
-@c
+		/*
+		 * @-
+		 * The instruction should be broken into an interator
+		 * if any of its arguments is already partitioned.
+		 * The exceptions are 1) there exists a fast direct
+		 * implementation in the bpm for it, 2) it has
+		 * side-effects, 3) it involves a blocking instruction
+		 * @-
+		 * Caveats.
+		 * The batcalc module uses a merge-like operation
+		 * to scan through multiple BATs. A naive iterator expansion approach would
+		 * lead to a cartesian product. This means the opt_accumulator
+		 * can not be used in this context or a complex backwards
+		 * analysis is needed. At this stage we consider them blocking,
+		 * later a correct partitioned solution can be made.
+		 *
+		 * The bakeIterator currently supports a single result variable.
+		 */
 		if( OPTuseIterator(mb, p, alias) == 0 )
 			goto jump2;
 		if( getModuleId(p) == constraintsRef ){
@@ -302,9 +309,10 @@ The bakeIterator currently supports a single result variable.
 			OPTbakeIterator(mb, p, alias, garbage);
 			continue;
 		}
-@-
-At this stage we first undo the partitioning.
-@c
+	/*
+	 * @-
+	 * At this stage we first undo the partitioning.
+	 */
 	jump2:
 		for(j= p->retc; j<p->argc; j++)
 		if( (alias[getArg(p,j)] && alias[getArg(p,j)]!= getArg(p,j)) ){
@@ -320,10 +328,11 @@ At this stage we first undo the partitioning.
 			break;
 		pushInstruction(mb,p);
 	}
-@-
-Whenever an exception is raised, we should still process
-the garbage collection statements for the partitioned bats.
-@c
+	/*
+	 * @-
+	 * Whenever an exception is raised, we should still process
+	 * the garbage collection statements for the partitioned bats.
+	 */
 	q= newAssignment(mb);
 	j=findVariable(mb,"SQLexception");
 	if( j <0)
@@ -366,15 +375,16 @@ OPTpartitionsImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	return OPTnaiveIterations(mb);
 }
 
-@-
-The translation of a MAL block into a multi-iterator only works if
-the network flow is simple, i.e there exists a 'single' sink, 
-or all the information is compressed
-into variables that are passed back to the caller as a single value,
-or is sent non-interupted to the output channels.
-The bottom-line is to avoid expansion.
-An assignment to the target is not allowed [to be checked separately]
-
+/*
+ * @-
+ * The translation of a MAL block into a multi-iterator only works if
+ * the network flow is simple, i.e there exists a 'single' sink,
+ * or all the information is compressed
+ * into variables that are passed back to the caller as a single value,
+ * or is sent non-interupted to the output channels.
+ * The bottom-line is to avoid expansion.
+ * An assignment to the target is not allowed [to be checked separately]
+ */
 @include optimizerWrapper.mx
 @h
 @:exportOptimizer(partitions)@
@@ -382,4 +392,3 @@ An assignment to the target is not allowed [to be checked separately]
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(partitions,OPT_CHECK_ALL)@
-@}

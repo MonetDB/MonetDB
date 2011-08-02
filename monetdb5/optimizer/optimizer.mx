@@ -17,21 +17,23 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f optimizer
-@a Martin Kersten
-@v 0.1
-@* Optimizer support 
-This module contains the framework for inclusion query transformers, i.e.
-C-programs geared at optimizing a piece of MAL.
-The query transformer appears at the language level as an ordinary function,
-but it is effective only at a specific execution phase.
-
-Each optimizer function has access to the runtime scope of the
-routine in which it is called. This can be used to maintain status
-information between successive calls. 
-
-The routines below are linked with the kernel by default
-
+@c
+/*
+ * @f optimizer
+ * @a Martin Kersten
+ * @v 0.1
+ * @* Optimizer support
+ * This module contains the framework for inclusion query transformers, i.e.
+ * C-programs geared at optimizing a piece of MAL.
+ * The query transformer appears at the language level as an ordinary function,
+ * but it is effective only at a specific execution phase.
+ *
+ * Each optimizer function has access to the runtime scope of the
+ * routine in which it is called. This can be used to maintain status
+ * information between successive calls.
+ *
+ * The routines below are linked with the kernel by default
+ */
 @mal
 
 module optimizer;
@@ -60,16 +62,16 @@ address QOTshowPlan;
 pattern showPlan()
 address QOTshowPlan
 comment "Illustrate the plan derived so far";
-@-
-The remainder of this file contains dynamic optimization
-routines, i.e. those not covered by the current backend.
-The most important one is the multi-path join, which should
-be optimized to reduce a potential exploding size/
-@mal
+# @-
+# The remainder of this file contains dynamic optimization
+# routines, i.e. those not covered by the current backend.
+# The most important one is the multi-path join, which should
+# be optimized to reduce a potential exploding size/
 optimizer.prelude();
-@{
-@+ Dummy code 
 @h
+/*
+ * @+ Dummy code
+ */
 #ifndef _OPTIMIZER_H
 #define _OPTIMIZER_H
 /* #define OPTIMIZER_DEBUG*/
@@ -92,11 +94,11 @@ opt_export BUN QOTjoinEstimate(BAT *l, BAT *r);
 @c
 #include "monetdb_config.h"
 #include "optimizer.h"
-@
-Upon loading the module it should inspect the scenario table
-for any unresolved references to the MALoptimizer and set the 
-callback function.
-@c
+/*
+ * Upon loading the module it should inspect the scenario table
+ * for any unresolved references to the MALoptimizer and set the
+ * callback function.
+ */
 str
 optimizer_prelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
@@ -130,11 +132,12 @@ QOTclrdebugOptimizers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-@-
-MAL functions can be optimized explicitly using the routines below.
-Beware, the function names should be known as literalstrings, because
-you may not know the runtime situation.
-@c
+/*
+ * @-
+ * MAL functions can be optimized explicitly using the routines below.
+ * Beware, the function names should be known as literalstrings, because
+ * you may not know the runtime situation.
+ */
 
 str
 QOToptimize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -221,7 +224,9 @@ QOTshowPlan(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
-@-
+/*
+ * @-
+ */
 @= macroOptimizer
 opt_export str QOT@1optimizerSymbol( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str QOT@1optimizerSymbol( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
@@ -319,6 +324,6 @@ str QOT@1optimizer( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	chkDeclarations(mb);
 	return msg;
 }
+@
 @c
 
-@}

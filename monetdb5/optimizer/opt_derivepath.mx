@@ -17,28 +17,31 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f opt_derivepath
-@- Group derive paths
-The routine @sc{optimizer.derivepaths()}
-walks through the program looking for grouping operations
-and cascades them into a single multiple group paths.
-To illustrate, consider
-@verbatim
-	(ext1,grp1) := group.new(b);
-	(ext2,grp2) := group.derive(ext1,grp1, c);
-	(ext3,grp3) := group.done(ext2,grp2, d);
-@end verbatim
-The result becomes.
-@verbatim
-	(ext3,grp3) := group.derivepath(b,c,d);
-@end verbatim
-
-The implementation of this operator can freely re-order the BATs 
-for reduced intermediate results or as a basis for parallel scanning
-all BATs involved to derive their group id.
-
-The collection can be extended to immediately aim for group counting
-or summation, avoiding the materialisation of the group id table.
+@c
+/*
+ * @f opt_derivepath
+ * @- Group derive paths
+ * The routine @sc{optimizer.derivepaths()}
+ * walks through the program looking for grouping operations
+ * and cascades them into a single multiple group paths.
+ * To illustrate, consider
+ * @verbatim
+ * 	(ext1,grp1) := group.new(b);
+ * 	(ext2,grp2) := group.derive(ext1,grp1, c);
+ * 	(ext3,grp3) := group.done(ext2,grp2, d);
+ * @end verbatim
+ * The result becomes.
+ * @verbatim
+ * 	(ext3,grp3) := group.derivepath(b,c,d);
+ * @end verbatim
+ *
+ * The implementation of this operator can freely re-order the BATs
+ * for reduced intermediate results or as a basis for parallel scanning
+ * all BATs involved to derive their group id.
+ *
+ * The collection can be extended to immediately aim for group counting
+ * or summation, avoiding the materialisation of the group id table.
+ */
 @mal
 pattern optimizer.derivePath():str
 address OPTderivePath;
@@ -66,7 +69,6 @@ comment "Derive a group sum.";
 pattern group.deriveSum(s:bat[:oid,:dbl],l:bat[:oid,:any]...):bat[:oid,:dbl]
 address ALGderiveSum
 comment "Derive a group sum.";
-@{
 @h
 #ifndef _OPT_DERIVEPATH_
 #define _OPT_DERIVEPATH_
@@ -129,10 +131,11 @@ OPTderivePathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				}
 		}
 		if (getModuleId(p) == groupRef && p->argc == 5 && (getFunctionId(p) == deriveRef || getFunctionId(p) == doneRef)){
-@-
-Try to expand its argument list with what we have found so far.
-This creates a series of derive paths, many of which will be removed during deadcode elimination.
-@c
+			/*
+			 * @-
+			 * Try to expand its argument list with what we have found so far.
+			 * This creates a series of derive paths, many of which will be removed during deadcode elimination.
+			 */
 			if (pc[getArg(p,2)] && pc[getArg(p,2)]== pc[getArg(p,3)]){
 				q= copyInstruction(getInstrPtr(mb,pc[getArg(p,2)]));
 				q= pushArgument(mb,q, getArg(p,4));
@@ -167,11 +170,12 @@ opt_export str ALGderivePath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(derivePath,OPT_CHECK_ALL)@
-@-
-The derive path optimizer takes a derivation sequence and attempts to minimize the intermediate result.
-The choice depends on a good estimate of intermediate results using properties.
-For the time being, we use a simplistic model, based on the assumption that most joins are foreign key joins anyway.
-@c
+/*
+ * @-
+ * The derive path optimizer takes a derivation sequence and attempts to minimize the intermediate result.
+ * The choice depends on a good estimate of intermediate results using properties.
+ * For the time being, we use a simplistic model, based on the assumption that most joins are foreign key joins anyway.
+ */
 typedef struct{
 	int *arg;
 	BAT *b;
@@ -232,4 +236,3 @@ ALGderiveSum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	throw(MAL,"group.deriveSum",PROGRAM_NYI);
 }
 
-@}

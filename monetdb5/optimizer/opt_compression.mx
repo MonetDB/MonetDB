@@ -17,47 +17,50 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f opt_compression
-@- The compressed database
-Column stores mostly exploit some form of compression to reduce the
-footprint on disk and to improve disk/memory/cache bandwidth at 
-the expense of cpu/memory cycles. 
-
-A naive approach is to take a (preferrably lightweight) compression
-algorithm and deploy it against the units of access, e.g. disk/buffers.
-In MonetDB our granularity is a BAT, which therefore forms the basis
-for (de)compressed access.
-
-This optimizer simple injects calls to a
-decompression routine to exploit any available compressed image
-in favor of accessing the expanded version. This would allow
-for experimentation with readonly databases.
-@verbatim
-b:bat[:oid,:int]:= sql.bind("sys","tab","col",0);
-@end verbatim
-becomes 
-@verbatim
- _1:bat[:oid,:int]:= sql.bind("sys","tab","col",0);
- b:bat[:oid,:int]:= bbp.decompress(_1,"sys_tab_col_0");
-@end verbatim
-
-Caveats. The benefit from this approach should not be overestimated.
-For example, accessing corresponding attributes for a small result set
-stil calls for a complete decoding of the complete column. 
-The recycler would come in handy to avoid this overhead over multiple
-queries.
-
-Furthermore, the BAT id associated with a SQL column will change
-under updates. This means you can effectively only use it in
-readonly mode. Create database, load it, compress it, and 
-only read it afterwards. Therefore, we inject a symbolic name,
-which in the context of SQL would be unique.
-
-The optimizer merely functions as an example on how to deal with
-foreign storage schemes, which are converted into the BAT format
-as part of a binding phase. The routines CMDbbpcompress and CMDbbpdecompress
-in the bbp module contains further details on how to extract the
-data and move it into a temporary memory mapped BAT.
+@c
+/*
+ * @f opt_compression
+ * @- The compressed database
+ * Column stores mostly exploit some form of compression to reduce the
+ * footprint on disk and to improve disk/memory/cache bandwidth at
+ * the expense of cpu/memory cycles.
+ *
+ * A naive approach is to take a (preferrably lightweight) compression
+ * algorithm and deploy it against the units of access, e.g. disk/buffers.
+ * In MonetDB our granularity is a BAT, which therefore forms the basis
+ * for (de)compressed access.
+ *
+ * This optimizer simple injects calls to a
+ * decompression routine to exploit any available compressed image
+ * in favor of accessing the expanded version. This would allow
+ * for experimentation with readonly databases.
+ * @verbatim
+ * b:bat[:oid,:int]:= sql.bind("sys","tab","col",0);
+ * @end verbatim
+ * becomes
+ * @verbatim
+ *  _1:bat[:oid,:int]:= sql.bind("sys","tab","col",0);
+ *  b:bat[:oid,:int]:= bbp.decompress(_1,"sys_tab_col_0");
+ * @end verbatim
+ *
+ * Caveats. The benefit from this approach should not be overestimated.
+ * For example, accessing corresponding attributes for a small result set
+ * stil calls for a complete decoding of the complete column.
+ * The recycler would come in handy to avoid this overhead over multiple
+ * queries.
+ *
+ * Furthermore, the BAT id associated with a SQL column will change
+ * under updates. This means you can effectively only use it in
+ * readonly mode. Create database, load it, compress it, and
+ * only read it afterwards. Therefore, we inject a symbolic name,
+ * which in the context of SQL would be unique.
+ *
+ * The optimizer merely functions as an example on how to deal with
+ * foreign storage schemes, which are converted into the BAT format
+ * as part of a binding phase. The routines CMDbbpcompress and CMDbbpdecompress
+ * in the bbp module contains further details on how to extract the
+ * data and move it into a temporary memory mapped BAT.
+ */
 @mal
 pattern optimizer.compression():str
 address OPTcompress;
@@ -65,8 +68,10 @@ pattern optimizer.compression(mod:str, fcn:str):str
 address OPTcompress
 comment "Compression code injection";
 
-@-
 @h
+/*
+ * @-
+ */
 #ifndef _OPT_COMPRESS_
 #define _OPT_COMPRESS_
 
@@ -76,8 +81,10 @@ comment "Compression code injection";
 
 #define OPTDEBUGcompress  if ( optDebug & ((lng)1 <<DEBUG_OPT_COMPRESS) )
 
-@-
 @c
+/*
+ * @-
+ */
 #include "monetdb_config.h"
 #include "opt_compression.h"
 
@@ -127,7 +134,6 @@ OPTcompressImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 @include optimizerWrapper.mx
 @h
 @:exportOptimizer(compress)@
-@h
 #endif
 @c
 #include "opt_statistics.h"

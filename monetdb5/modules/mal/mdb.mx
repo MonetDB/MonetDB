@@ -17,36 +17,38 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f mdb
-@a Martin Kersten
-@v 1
-@+ MAL debugger interface
-This module provides access to the functionality offered
-by the MonetDB debugger and interpreter status.
-It is primarilly used in interactive sessions to activate
-the debugger at a given point. Furthermore, the instructions
-provide the necessary handle to generate information
-for post-mortum analysis.
-
-To enable ease of debugging and performance monitoring, the MAL interpreter
-comes with a hardwired gdb-like text-based debugger.
-A limited set of instructions can be included in the programs themselves,
-but beware that debugging has a global effect. Any concurrent user
-will be affected by breakpoints being set.
-
-The prime scheme to inspect the MAL interpreter status is to use
-the MAL debugger directly. However, in case of automatic exception handling
-it helps to be able to obtain BAT versions of the critical information,
-such as stack frame table, stack trace,
-and the instruction(s) where an exception occurred.
-The inspection typically occurs in the exception handling part of the
-MAL block.
-
-Beware, a large class of internal errors can not easily captured this way.
-For example, bus-errors and segmentation faults lead to premature
-termination of the process. Similar, creation of the post-mortum
-information may fail due to an inconsistent state or insufficient resources.
-
+@c
+/*
+ * @f mdb
+ * @a Martin Kersten
+ * @v 1
+ * @+ MAL debugger interface
+ * This module provides access to the functionality offered
+ * by the MonetDB debugger and interpreter status.
+ * It is primarilly used in interactive sessions to activate
+ * the debugger at a given point. Furthermore, the instructions
+ * provide the necessary handle to generate information
+ * for post-mortum analysis.
+ *
+ * To enable ease of debugging and performance monitoring, the MAL interpreter
+ * comes with a hardwired gdb-like text-based debugger.
+ * A limited set of instructions can be included in the programs themselves,
+ * but beware that debugging has a global effect. Any concurrent user
+ * will be affected by breakpoints being set.
+ *
+ * The prime scheme to inspect the MAL interpreter status is to use
+ * the MAL debugger directly. However, in case of automatic exception handling
+ * it helps to be able to obtain BAT versions of the critical information,
+ * such as stack frame table, stack trace,
+ * and the instruction(s) where an exception occurred.
+ * The inspection typically occurs in the exception handling part of the
+ * MAL block.
+ *
+ * Beware, a large class of internal errors can not easily captured this way.
+ * For example, bus-errors and segmentation faults lead to premature
+ * termination of the process. Similar, creation of the post-mortum
+ * information may fail due to an inconsistent state or insufficient resources.
+ */
 @mal
 module mdb;
 
@@ -203,9 +205,8 @@ address MDBgetDefinition
 comment "Returns a string representation of the current function 
 	with typing information attached";
 
-@-
-@{
-@+ Implementation
+	# @-
+	# @+ Implementation
 @include prelude.mx
 @h
 #ifndef _MDB_H
@@ -279,9 +280,10 @@ mdb_export str MDBtrapFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 mdb_export str MDBdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mdb_export str MDBdummy(int *ret);
 
-@-
-The primary debugger controls
-@c
+/*
+ * @-
+ * The primary debugger controls
+ */
 #define MDBstatus(X) \
 	if( stk->cmd && X==0 ) \
 		mnstr_printf(cntxt->fdout,"#Monet Debugger off\n"); \
@@ -573,9 +575,10 @@ MDBinspect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return runMALDebugger(cntxt, s);
 }
 
-@+ Variables and stack information
-The variable information can be turned into a BAT for inspection as well.
-@c
+/*
+ * @+ Variables and stack information
+ * The variable information can be turned into a BAT for inspection as well.
+ */
 
 static int
 getStkDepth(MalStkPtr s)
@@ -700,8 +703,9 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
-@+ Display routines
-@c
+/*
+ * @+ Display routines
+ */
 str
 MDBlifespan(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
@@ -814,10 +818,11 @@ MDBvar3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return NULL;
 }
 
-@-
-It is illustrative to dump the code when you
-have encountered an error.
-@c
+/*
+ * @-
+ * It is illustrative to dump the code when you
+ * have encountered an error.
+ */
 str
 MDBgetDefinition(Client cntxt, MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 {
@@ -943,10 +948,11 @@ MDBtrapFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 	
-@- CMDmodules
-Obtains a list of modules by looking at what files are present in the
-module directory.
-@c
+/*
+ * @- CMDmodules
+ * Obtains a list of modules by looking at what files are present in the
+ * module directory.
+ */
 static BAT *
 TBL_getdir(void)
 {
@@ -1021,4 +1027,3 @@ CMDmodules(int *bid)
 	return MAL_SUCCEED;
 }
 
-@}

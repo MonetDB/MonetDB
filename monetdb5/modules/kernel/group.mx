@@ -17,69 +17,71 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f group
-@a M.L. Kersten, P. Boncz, A.P. de Vries, N.J. Nes
-@v 2.3
-@+ The group module
-This module contains the primitives to construct, derive, and
-perform statistical operations on BATs representing groups.
-The default scheme in Monet is to assume the head to represent
-the group identifier and the tail an element in the group.
-
-Groups play an important role in datamining, where they are used
-to construct cross-tables. Such cross tables over a single
-BAT are already supported by the histogram function.
-This module provides extensions to support identification of groups in a
-(multi-)dimensional space.
-
-The module implementation has a long history. The first implementation
-provided several alternatives to produce/derive the grouping.
-A more complete (and complex) scheme was derived during its
-extensive use in the context of the Data Distilleries  product.
-The current implementation is partly a cleanup of this code-base,
-but also enables provides better access to the intermediate
-structures produced in the process, i.e. the histogram and
-the sub-group mapping. They can be used for various optimization
-schemes at the MAL level.
-
-The prime limitation of the current implementation is that an
-underlying database of @code{oid->any} BATs is assumed.
-This enables representation of each group using an oid,
-and the value representation of the group can be accordingly be
-retrieved easily. An optimized implementation in which we use positional
-integer id's (as embodied by Monet's void type) is also available.
-
-This limitation on (v)oid-headers is marginal. The primitive GRPsplit
-produces for any BAT two copies with both a (v)oid header.
-@- Algorithms
-There are several approaches to build a cross table. The one chosen here
-is aimed at incremental construction, such that re-use of intermediates
-becomes possible. Starting with the first dimension, a BAT is derived to
-represent the various groups, called a @emph{GRP BAT} or cross-table BAT.
-
-@- Cross Table (GRP)
-A cross table is an <oid,oid> BAT where the first (head) denotes a tuple in
-the cross table and the second (tail) marks all identical lists.
-The tail-oids contain group identifiers; that is, @emph{this value is equal
-@strong{iff} two tuples belong to the same group}. The group identifiers are
-chosen from the domain of the tuple-identifiers. This simplifies
-getting back to the original tuples, when talking about a group.
-If the tuple-oid of 'John' is chosen as a group-id, you might view this
-as saying that each member of the group is 'like John' with respect
-to the grouping-criterion.
-
-@- 
-Successively the subgroups can be identified by modifying the GRP BAT or
-to derive a new GRP BAT for the subgroups. After all groups have been
-identified this way, a BAT histogram operation can be used to obtain
-the counts of each data cube. Other aggregation operations using the MIL
-set aggregate construct @code{@{X@}(bat)} 
-can be used as well; note for instance that @code{histogram == @{count@}(b.reverse())}.
-
-The Monet interface module specification is shown below.
-Ideally we should defined stronger type constraints, e.g.
-command group.new(attr:bat[@{void,oid@},:any_1]
-@{
+@c
+/*
+ * @f group
+ * @a M.L. Kersten, P. Boncz, A.P. de Vries, N.J. Nes
+ * @v 2.3
+ * @+ The group module
+ * This module contains the primitives to construct, derive, and
+ * perform statistical operations on BATs representing groups.
+ * The default scheme in Monet is to assume the head to represent
+ * the group identifier and the tail an element in the group.
+ *
+ * Groups play an important role in datamining, where they are used
+ * to construct cross-tables. Such cross tables over a single
+ * BAT are already supported by the histogram function.
+ * This module provides extensions to support identification of groups in a
+ * (multi-)dimensional space.
+ *
+ * The module implementation has a long history. The first implementation
+ * provided several alternatives to produce/derive the grouping.
+ * A more complete (and complex) scheme was derived during its
+ * extensive use in the context of the Data Distilleries  product.
+ * The current implementation is partly a cleanup of this code-base,
+ * but also enables provides better access to the intermediate
+ * structures produced in the process, i.e. the histogram and
+ * the sub-group mapping. They can be used for various optimization
+ * schemes at the MAL level.
+ *
+ * The prime limitation of the current implementation is that an
+ * underlying database of @code{oid->any} BATs is assumed.
+ * This enables representation of each group using an oid,
+ * and the value representation of the group can be accordingly be
+ * retrieved easily. An optimized implementation in which we use positional
+ * integer id's (as embodied by Monet's void type) is also available.
+ *
+ * This limitation on (v)oid-headers is marginal. The primitive GRPsplit
+ * produces for any BAT two copies with both a (v)oid header.
+ * @- Algorithms
+ * There are several approaches to build a cross table. The one chosen here
+ * is aimed at incremental construction, such that re-use of intermediates
+ * becomes possible. Starting with the first dimension, a BAT is derived to
+ * represent the various groups, called a @emph{GRP BAT} or cross-table BAT.
+ *
+ * @- Cross Table (GRP)
+ * A cross table is an <oid,oid> BAT where the first (head) denotes a tuple in
+ * the cross table and the second (tail) marks all identical lists.
+ * The tail-oids contain group identifiers; that is, @emph{this value is equal
+ * @strong{iff} two tuples belong to the same group}. The group identifiers are
+ * chosen from the domain of the tuple-identifiers. This simplifies
+ * getting back to the original tuples, when talking about a group.
+ * If the tuple-oid of 'John' is chosen as a group-id, you might view this
+ * as saying that each member of the group is 'like John' with respect
+ * to the grouping-criterion.
+ *
+ * @-
+ * Successively the subgroups can be identified by modifying the GRP BAT or
+ * to derive a new GRP BAT for the subgroups. After all groups have been
+ * identified this way, a BAT histogram operation can be used to obtain
+ * the counts of each data cube. Other aggregation operations using the MIL
+ * set aggregate construct @code{@{X@}(bat)}
+ * can be used as well; note for instance that @code{histogram == @{count@}(b.reverse())}.
+ *
+ * The Monet interface module specification is shown below.
+ * Ideally we should defined stronger type constraints, e.g.
+ * command group.new(attr:bat[@{void,oid@},:any_1]
+ */
 @mal
 module group;
 
@@ -155,16 +157,16 @@ comment "refine the ordering of a tail-ordered BAT by sub-ordering on the
 		The effect of this is similar to (hash-based) GRPderive, with the 
 		distinction that the group ids respect the ordering of the group 
 		values.";
-@-
-@+ Group Aggregate operations
-
-This module also contains some efficient aggregate functions over
-groups that compute their result in one scan.
-
-For the groups we assume a bat structure where the head indicates the group
-and the tail contains the group elements. This leads to the situation that
-most value-based operators work on the tail, while counting groups
-is focussed on the head.
+		# @-
+		# @+ Group Aggregate operations
+		#
+		# This module also contains some efficient aggregate functions over
+		# groups that compute their result in one scan.
+		#
+		# For the groups we assume a bat structure where the head indicates the group
+		# and the tail contains the group elements. This leads to the situation that
+		# most value-based operators work on the tail, while counting groups
+		# is focussed on the head.
 @= grpSignature
 command sum(b:bat[:any_2,:@1], e:bat[:any_2,:any_1]) :bat[:any_2,:@1] 
 address GRPsum_@1_@1
@@ -186,15 +188,16 @@ command variance(b:bat[:any_2,:@1], e:bat[:any_2,:any_1]) :bat[:any_2,:@1]
 address GRPvar_@1
 comment "grouped tail variance";
 
-@-
-Not used yet
-#command min(b:bat[:any_2,:@1], size:int) :bat[:any_2,:@1] 
-#address GRPwindowmin@1
-#comment "Tail minimum of groups of a fixed size";
-#command max(b:bat[:any_2,:@1], size:int) :bat[:any_2,:@1] 
-#address GRPwindowmax@1
-#comment "Tail minimum of groups of a fixed size";
+@
 @mal
+# @-
+# Not used yet
+# #command min(b:bat[:any_2,:@1], size:int) :bat[:any_2,:@1]
+# #address GRPwindowmin@1
+# #comment "Tail minimum of groups of a fixed size";
+# #command max(b:bat[:any_2,:@1], size:int) :bat[:any_2,:@1]
+# #address GRPwindowmax@1
+# #comment "Tail minimum of groups of a fixed size";
 	@:grpSignature(bte)@
 	@:grpSignature(sht)@
 	@:grpSignature(int)@
@@ -222,11 +225,13 @@ command prelude()
 address GRPprelude;
 
 group.prelude();
-@+ Implementation Code
-Inclusion of the xtables requires some preliminary definitions
-and als renaming :group by something else, because Mx can;t handle
-macros identical to file names.
 @h
+/*
+ * @+ Implementation Code
+ * Inclusion of the xtables requires some preliminary definitions
+ * and als renaming :group by something else, because Mx can;t handle
+ * macros identical to file names.
+ */
 #ifndef _GROUP_H_
 #define _GROUP_H_
 #include "gdk.h"
@@ -284,21 +289,22 @@ grp_new(BAT *b, BAT *h)
 }
 
 
-@+ Core Grouping Algorithms
-We use hash-grouping all the way. This implementation employs
-a simple sequential scan through the operands, adding group
-values to a hash-table. This hash-table gives access to the group
-identifiers, which are always OIDs.
-
-This strategy is also followed on binary groupings; here
-we construct a special integer consisting of the XORed hashnumber
-of both columns. In such a way, we can build a hash table on
-map_entries (instead of simple atomic values -- the unary case).
-
-In the unary group case, we optimized processing on 1-byte
-and 2-byte values by using direct mapping in an array instead of
-hashing.
-@c
+/*
+ * @+ Core Grouping Algorithms
+ * We use hash-grouping all the way. This implementation employs
+ * a simple sequential scan through the operands, adding group
+ * values to a hash-table. This hash-table gives access to the group
+ * identifiers, which are always OIDs.
+ *
+ * This strategy is also followed on binary groupings; here
+ * we construct a special integer consisting of the XORed hashnumber
+ * of both columns. In such a way, we can build a hash table on
+ * map_entries (instead of simple atomic values -- the unary case).
+ *
+ * In the unary group case, we optimized processing on 1-byte
+ * and 2-byte values by using direct mapping in an array instead of
+ * hashing.
+ */
 #if SIZEOF_BUN == SIZEOF_INT
 #define mix_BUN(v) mix_int(v)
 #else
@@ -385,6 +391,7 @@ typedef union {
 		return NULL;						\
 	}								\
 	mapsize = BUNlast(map);
+@
 @c
 
 static BAT *
@@ -420,37 +427,36 @@ bunins_failed:
 		BBPreclaim(map);
 	return bn;
 }
-@}
-@-
-The group macro is split along three dimensions:
-@multitable @columnfractions 0.2 0.8
-@item [type:] 
-@tab
-Type specific implementation for selecting the right
-hash function and data size etc.;
-@item [clustered:] 
-@tab
-The @{clustered and unclustered@} select the
-appropriate algorithm, i.e., with or without taking advantage of 
-an order of values in the parent groups;
-@item [physical properties:] 
-@tab
-Values @{standard and custom@}, 
-choosing between a fixed predefined and a custom hashmask. Custom
-allows the user to determine the size of the hashmask (and indirectly
-the estimated size of the result). The hashmask is @math{2^n - 1} where @math{n}
-is given by the user, or 1023 otherwise, and the derived result
-size is @math{4 @dots{} 2^n}.
-@end multitable
-
-Further research should point out whether fitting a simple statistical
-model (possibly a simple mixture model) can help choose these parameters
-automatically; the current idea is that the user (which could be a
-domain-specific extension of the higher-level language) knows the
-properties of the data, especially for IR in which the standard grouping
-settings differ significantly from the original datamining application.
-@{
-@c
+/*
+ * @-
+ * The group macro is split along three dimensions:
+ * @multitable @columnfractions 0.2 0.8
+ * @item [type:]
+ * @tab
+ * Type specific implementation for selecting the right
+ * hash function and data size etc.;
+ * @item [clustered:]
+ * @tab
+ * The @{clustered and unclustered@} select the
+ * appropriate algorithm, i.e., with or without taking advantage of
+ * an order of values in the parent groups;
+ * @item [physical properties:]
+ * @tab
+ * Values @{standard and custom@},
+ * choosing between a fixed predefined and a custom hashmask. Custom
+ * allows the user to determine the size of the hashmask (and indirectly
+ * the estimated size of the result). The hashmask is @math{2^n - 1} where @math{n}
+ * is given by the user, or 1023 otherwise, and the derived result
+ * size is @math{4 @dots{} 2^n}.
+ * @end multitable
+ *
+ * Further research should point out whether fitting a simple statistical
+ * model (possibly a simple mixture model) can help choose these parameters
+ * automatically; the current idea is that the user (which could be a
+ * domain-specific extension of the higher-level language) knows the
+ * properties of the data, especially for IR in which the standard grouping
+ * settings differ significantly from the original datamining application.
+ */
 #define group_params_STANDARD	/* fixed */
 #define group_params_CUSTOM   BUN custom_MASK, BUN custom_rng,
 
@@ -537,6 +543,7 @@ bunins_failed:
 	return NULL;
 }
 
+@
 @c
 static int
 tailtype(BAT *b, int str_trick)
@@ -574,12 +581,14 @@ tailtype(BAT *b, int str_trick)
 @:wrappedgroupinner(unclustered,@1)@
 @:wrappedgroupinner(clustered,@1)@
 
+@
 @c
 @:wrappedgroupouter(STANDARD)@
 @:wrappedgroupouter(CUSTOM)@
 
 @= returnvalue
 	@1 =
+@
 @c
 #define declare_mask_STANDARD	/* fixed */
 #define declare_mask_CUSTOM	BUN mask = (((BUN)1) << *N) - 1;
@@ -710,6 +719,7 @@ bits(BUN i)
 		break;
 	}
 
+@
 @c
 static int
 CTderive(BAT **M, BAT **H, BAT *ct_histo, BAT *ct_map, BAT *b);
@@ -888,6 +898,7 @@ bunins_failed:
 	return NULL;
 }
 
+@
 @c
 
 /* Generate both 'normal' CTderive and clustered CTderive */
@@ -904,6 +915,7 @@ bunins_failed:
 @:derive(hash,lng,tloc,simple,@1)@
 @:derive(hash,str_hv,tvar,str_hv,@1)@
 @:derive(hash,any,tail,atom,@1)@
+@
 @c
 @:wrappedderive(unclustered)@
 @:wrappedderive(clustered)@
@@ -933,6 +945,7 @@ bunins_failed:
 		histo = CTderive_@1_any_@2(ct_map,ct_histo,b,bn);
 		break;
 	}
+@
 @c
 
 #if 0
@@ -1104,7 +1117,6 @@ CTderive_ordered(BAT *ohisto, BAT *b, BAT **res, BAT **reshisto)
 }
 #endif
 
-@c
 static int
 derive(BAT **H, BAT **M, BAT *ct_histo, BAT *ct_map, BAT *b, int tt);
 
@@ -1465,8 +1477,9 @@ CTderive(BAT **M, BAT **H, BAT *ct_histo, BAT *ct_map, BAT *b)
 	return ret;
 }
 
-@+ Support for Order-by
-@c
+/*
+ * @+ Support for Order-by
+ */
 #define DEFAULT_SIZE 10000
 
 static inline BUN
@@ -1654,6 +1667,7 @@ refine(BAT **res, BAT *b, BAT *a, int rv)
 		else
 			BATaccessEnd(a, USE_HEAD|USE_HHASH|USE_TAIL, MMAP_WILLNEED);
 		BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
+@
 @c
 		cnt = sort_flush(offp, ids, cur, tpe, base ? base : a->T->vheap->base, hdst, tdst, &id, rv);
 		hdst += cnt;
@@ -1682,19 +1696,23 @@ CTrefine_rev(BAT **res, BAT *b, BAT *a)
 	return refine(res, b, a, TRUE);
 }
 
-@- Wrapping
-Wrapping the version 4 xtables code base
-@c
+/*
+ * @- Wrapping
+ * Wrapping the version 4 xtables code base
+ */
 #include "mal.h"
 #include "mal_exception.h"
 #include "mal_atom.h"
 
-@-
-Recall that we only support void- and oid- typed heads.
-This is captured as a runtime check in the implementation.
+/*
+ * @-
+ * Recall that we only support void- and oid- typed heads.
+ * This is captured as a runtime check in the implementation.
+ */
 @= chkHeader
 	if(@1->htype != TYPE_oid && @1->htype != TYPE_void)
 		throw(MAL, "group.@2", SEMANTIC_TYPE_ERROR "(v)oid head required\n");
+@
 @c
 str
 GRPprelude(void)
@@ -1823,6 +1841,7 @@ CTgroup_@1_ordered(BAT *b, BAT **res)
 
 	return histo;
 }
+@
 @c
 @:group_ordered(bte)@
 @:group_ordered(sht)@
@@ -2073,21 +2092,23 @@ GRPrefine_rev(int *retid, int *bid, int *aid)
 	return MAL_SUCCEED;
 }
 
-@-
-
-These implementations need just one scan and a simple hash-maintained data
-structure to compute a group of common aggregates.
-
-With group OIDs spanning a range of less SMALL_AGGR_MAX (the actual number
-of groups might be even less, in case there are "holes" in the group OID
-range), we use a simple array as temporary sum/cnt table on order to benefit
-from positional lookups; with size of sum <= 8 bytes and size of cnt == 4
-bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
-
-@c
+/*
+ * @-
+ *
+ * These implementations need just one scan and a simple hash-maintained data
+ * structure to compute a group of common aggregates.
+ *
+ * With group OIDs spanning a range of less SMALL_AGGR_MAX (the actual number
+ * of groups might be even less, in case there are "holes" in the group OID
+ * range), we use a simple array as temporary sum/cnt table on order to benefit
+ * from positional lookups; with size of sum <= 8 bytes and size of cnt == 4
+ * bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
+ */
 #define SMALL_AGGR_MAX 1024
 
-@-
+/*
+ * @-
+ */
 @= large_aggr_sum
 	if (BATprepareHash(bn)) {
 		BBPreclaim(bn);
@@ -2119,7 +2140,8 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 	else
 		BATaccessEnd(bn, USE_HEAD|USE_HHASH|USE_TAIL, MMAP_WILLNEED);
 	BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
-@-
+@
+ * @-
 @= small_aggr_sum
 	sums = (@3*) GDKzalloc(range*sizeof(@3));
 	BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
@@ -2175,6 +2197,7 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 	else
 		BATaccessEnd(bn, USE_HEAD|USE_HHASH|USE_TAIL, MMAP_WILLNEED);
 	BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
+@
 @c
 @= small_aggr_prod
 	prods = (@3*) GDKmalloc(range*sizeof(@3));
@@ -2247,6 +2270,7 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 		yy++;
 	}
 	GDKfree(cnt);
+@
 @c
 @= small_aggr_avg
 	sums = (dbl*) GDKzalloc(range*sizeof(dbl));
@@ -2439,6 +2463,7 @@ str GRPprod_@1_@3(int *retval, int *bid, int  *eid, bit *ignore_nils)
 	BBPreleaseref(e->batCacheid);
 	return MAL_SUCCEED;
 }
+@
 @c
 @:arithsumprod(bte,tloc,bte)@
 @:arithsumprod(bte,tloc,sht)@
@@ -2540,6 +2565,7 @@ str GRPavg_@1(int *ret, int *bid, int *eid)
 	BBPreleaseref(e->batCacheid);
 	return MAL_SUCCEED;
 }
+@
 @c
 @:arithavg(bte,tloc)@
 @:arithavg(sht,tloc)@
@@ -2694,6 +2720,7 @@ str GRPvar_@1(int *ret, int *bid, int *eid)
 	BBPreleaseref(e->batCacheid);
 	return MAL_SUCCEED;
 }
+@
 @c
 @:arithvar(bte)@
 @:arithvar(sht)@
@@ -2834,11 +2861,11 @@ GRP@1(int *retval, int *bid, int *eid)
 	BBPreleaseref(e->batCacheid);
 	return MAL_SUCCEED;
 }
+@
 @c
 @:extreme_(min,<,max)@
 @:extreme_(max,>,min)@
 
-@c
 @= large_aggr_count
 	if (BATprepareHash(bn)) {
 		BBPreclaim(bn);
@@ -2867,6 +2894,7 @@ GRP@1(int *retval, int *bid, int *eid)
 	else
 		BATaccessEnd(bn, USE_HEAD|USE_HHASH|USE_TAIL, MMAP_WILLNEED);
 	BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
+@
 @c
 @= small_aggr_count
 	cnt  = (wrd*) GDKzalloc(range*sizeof(wrd));
@@ -2888,6 +2916,7 @@ GRP@1(int *retval, int *bid, int *eid)
 		*(wrd*)BUNtloc(bni, p) = cnt[h];
 	}
         GDKfree(cnt);
+@
 @c
 
 group_export str GRPaggr_count(int *retval, int *bid, int *eid, bit *ignore_nils);
@@ -3062,8 +3091,10 @@ GRPsize(int *retval, int *bid, int *eid)
 	return MAL_SUCCEED;
 }
 
-@-
-The window aggregate functions
+/*
+ * @-
+ * The window aggregate functions
+ */
 @= windowsum
 group_export str GRPslidingsum_@1(int *retval, int *bid, int  *size, int *shift);
 str GRPslidingsum_@1(int *retval, int *bid, int  *size, int *shift)
@@ -3122,6 +3153,7 @@ group_export str GRPwindowsum_@1(int *retval, int *bid, int  *size);
 str GRPwindowsum_@1(int *retval, int *bid, int  *size){
 	return GRPslidingsum_@1(retval,bid,size,size);
 }
+@
 @c
 @:windowsum(bte,lng)@
 @:windowsum(sht,lng)@
@@ -3131,4 +3163,3 @@ str GRPwindowsum_@1(int *retval, int *bid, int  *size){
 @:windowsum(wrd,lng)@
 @:windowsum(flt,dbl)@
 @:windowsum(dbl,dbl)@
-@}

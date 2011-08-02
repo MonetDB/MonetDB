@@ -17,10 +17,12 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@a M. Kersten
-@v 1.0
-@* MonetDB Assembly Language (MAL)
-
+@c
+/*
+ * @a M. Kersten
+ * @v 1.0
+ * @* MonetDB Assembly Language (MAL)
+ */
 @h
 #ifndef _MAL_INSTR_H
 #define _MAL_INSTR_H
@@ -177,11 +179,14 @@ for separate name space management.
 #define getVarType(M,I)     ((M)->var[I]->type)
 #define getVarGDKType(M,I)      getGDKType((M)->var[I]->type)
 #define ignoreVar(M,I)		((M)->var[I]->type == TYPE_ptr? 1: 0)
-@-
+/*
+ * @-
+ */
 @= varProperty
 #define clrVar@1(M,I)       ((M)->var[I]->flags &= ~VAR_@2)
 #define setVar@1(M,I)       ((M)->var[I]->flags |= VAR_@2)
 #define isVar@1(M,I)        ((M)->var[I]->flags & VAR_@2)
+@
 @h
 @:varProperty(Fixed,FIXTYPE)@
 @:varProperty(Cleanup,CLEANUP)@
@@ -917,6 +922,7 @@ location of a temporary variable should be flagged as an error.
 			if( getVarTmp(mb,j)== i && isTmpVar(mb,j)) return j;
         return -1;
     }
+@
 @c
 /*
 Temporary names are not materialized as strings unless necessary.
@@ -1152,6 +1158,7 @@ cheap to perform a linear search to a variable or constant.
 		mb->vsize= s;
 		mb->var= new;
 	}
+@
 @c
 int
 newVariable(MalBlkPtr mb, str name, malType type)
@@ -2187,6 +2194,7 @@ beginning of each line.
         snprintf(t,(len-(t-base)),"[%7d, %5.2f] ",mb->profiler[pc].counter,avg);
     }
     advance(t,base,len);
+@
 @c
 
 @= showParam
@@ -2200,6 +2208,7 @@ beginning of each line.
 	if( i<p->@1-1) sprintf(t,",");
 	if(pstring) { GDKfree(pstring); pstring=0;}
 	GDKfree(tpe);
+@
 @c
 str
 fcnClass(InstrPtr p)
@@ -2327,6 +2336,7 @@ operatorName(int i)
 		}
 	}
 }
+@
 @c
 
 str
@@ -2865,4 +2875,3 @@ varGetProp( MalBlkPtr mb, int var, int prop )
 	}
 	return NULL;
 }
-@}

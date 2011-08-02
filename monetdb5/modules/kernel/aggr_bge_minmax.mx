@@ -17,17 +17,18 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f aggr_bge_minmax
-@a S. Manegold 
-@v 1.0
-@+ Aggregates Module
-
-@{
-
-@+ Implementation
-These implementations need just one scan and a simple hash-maintained data
-structure to compute a group of common aggregates.
 @c
+/*
+ * @f aggr_bge_minmax
+ * @a S. Manegold
+ * @v 1.0
+ * @+ Aggregates Module
+ *
+ *
+ * @+ Implementation
+ * These implementations need just one scan and a simple hash-maintained data
+ * structure to compute a group of common aggregates.
+ */
 #include "monetdb_config.h"
 #include <gdk.h>
 #include <gdk_scanselect.h>	/* for type-specific HT_bunfastins_nocheck_noinc(), until they're moved to gdk.mx */
@@ -35,14 +36,17 @@ structure to compute a group of common aggregates.
 #include "aggr_bge_minmax.h"
 #include "aggr_be_minmax.h"
 
-@- Result initialization
-/*	init_result
-	@1:	tail-type:	bte/sht/int/wrd/lng/flt/dbl / any / void
-*/
+/*
+ * @- Result initialization
+ * //	init_result
+ * 	@1:	tail-type:	bte/sht/int/wrd/lng/flt/dbl / any / void
+ *
+ */
 @include aggr_ri.mx
-
-@- "Extremes" (Min & Max)
 @c
+/*
+ * @- "Extremes" (Min & Max)
+ */
 /*	aggrX3_minmax3_ptr
 		e-void-head	e-oid-head	e-oid-head	e-oid-head
 		void-lookup	array-lookup	scan-lookup	hash-lookup
@@ -102,6 +106,7 @@ structure to compute a group of common aggregates.
 		Tputvalue(bn, BUNtloc(bni,r), val?val:nil, 0);
 	}
 	BATaccessEnd(bn,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
+@
 @c
 /*	aggrX3_minmax3_ptr_body
 	@[10]:	oid hh = (oid) (gt_offset + v); oid *h = &hh		g tail value calculation
@@ -150,6 +155,7 @@ structure to compute a group of common aggregates.
 			}
 		}
 	}
+@
 @c
 /*	aggrX3_minmax3_oid
 		e-void-head	e-oid-head	e-oid-head	e-oid-head
@@ -207,6 +213,7 @@ structure to compute a group of common aggregates.
 		@:aggrX3_minmax3_oid_body(@1,@2,@3,@4,@5,@6,@7,@8,@9,oid *h = (oid*) Tloc(g, w))@
 		BATaccessEnd(g,USE_TAIL,MMAP_SEQUENTIAL);
 	}
+@
 @c
 /*	aggrX3_minmax3_oid_body
 	@[10]:	oid hh = (oid) (gt_offset + v); oid *h = &hh		g tail value calculation
@@ -267,6 +274,7 @@ structure to compute a group of common aggregates.
 		(void) h;	/* silence compiler about unused variable */
 		Tputvalue(bn, BUNtloc(bni,r), &val, 0);
 	}
+@
 @c
 
 /*	extreme_typed
@@ -388,6 +396,7 @@ bunins_failed:
 #endif
 	return *ret?GDK_SUCCEED:GDK_FAIL;
 }
+@
 @c
 /*	extreme
 	@1:	min/max
@@ -442,6 +451,7 @@ CMDaggrX3_@13(BAT **ret, BAT *b, BAT *g, BAT *e)
 	}
 	return rtrn;
 }
+@
 @h
 @:extreme3_h(min,<,max)@
 @:extreme3_h(max,>,min)@
@@ -449,4 +459,3 @@ CMDaggrX3_@13(BAT **ret, BAT *b, BAT *g, BAT *e)
 @:extreme3_c(min,<,max)@
 @:extreme3_c(max,>,min)@
 
-@}

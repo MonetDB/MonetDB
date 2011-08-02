@@ -17,103 +17,105 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f opt_dictionary
-@- The dictionary optimizer
-Datawarehouse applications are organized as star-schemas, where dimension
-tables factor out common recurring bits-and-pieces. For example, 
-the list of US states, cities, regions, etc..
-To get the most compact and still performance wise fast datawarehouse,
-a DBA should analyse the database and repeatedly finetune the decisions
-towards a compact star schema.
-
-The dictionary optimizer is meant to alleviate this task by maintaining
-dictionaries for organizing static data sets and replace their database
-valued by references into the index. For example, a string column
-with all US states can be replaced by a tinyint column with indices
-into the dictionary table.
-
-The MonetDB approach is to mimick this behavior using straightforward
-dictionary encodings.
-The optimizer maintains a list of dictionaries, represented by a persistent
-catalog BAT.
-
-An example of the optimizer is shown below, which uses a selection
-on one dictionary compressed column to collect values of
-the second one without materializing the original table.
-@verbatim
-  a:bat[:oid,:str]:= sql.bind("sys","tab","col",0);
-  d:bat[:oid,:int]  := sql.bind("sys","tab","col",1);
-  x := algebra.kdifference(b,d);
-  e:bat[:oid,:int]  := sql.bind("sys","tab","col",2);
-  y := algebra.kunion(x,e);
-  c := algebra.select(y,0,2);
-  io.print(c);
-@end verbatim
-and replaces it based on the catalog knowledge
-that the base table is organised as dictionary 
-@verbatim
-    (_14:bat[:oid,:bte] ,_15:bat[:bte,:int] ) := dictionary.bind("sys/tab/col/0");
-    d:bat[:oid,:int]  := sql.bind("sys","tab","col",1);
-    _18 := dictionary.expand(_15,d);
-    _19 := dictionary.encode(_18,d);    
-    _20 := algebra.kdifference(_14,_19);
-    e:bat[:oid,:int]  := sql.bind("sys","tab","col",2);
-    _22 := dictionary.expand(_15,e);
-    _23 := dictionary.encode(_22,e);    
-    _24 := algebra.kunion(_20,_23);     
-    _25 := algebra.select(_15,0,2);     
-    c := algebra.join(_24,_25);         
-    io.print(c);                        
-@end verbatim
-The insertion/update deltas may lead to possible updates of the dictionary value list,
-which is taken care of by expand(). It returns a fresh local dictionary pair;
-it can not be found in the persistent dictionary catalog.
-The next step is to encode the list of tuples to be included in the index itself using encode().
-The remainder reflects a common SQL block, such that the selection is executed against
-the compressed table. Only when needed in the print(), it will be expanded to include
-the OIDs needed.
-
-The source BAT remains in existence, but will be emptied. This way we can always
-migrate the dictionary back into the persistent table without disturbing the BAT catalog.
-Ultimately, the optimizer should detect opportunities for replacement of columns
-automatically.
-
-Pushing the dictionary information through the plan is organized around a subset
-of the MAL operators. As soon as we find any other instruction, the dictionary
-is expanded to its normal BAT for further processing.
-
-@- When to use dictionary compression.
-The key challenge is to determine when to move a BAT into its dictionary format.
-Dictionary compression is a two-sided sword. You can safe significant storage
-space, but you pay for it during query processing when portions have to be
-decompressed. Even when performed in memory, it takes significant time,
-because you effectively have to perform a join between index and value tables.
-
-For example, in TPCH sf-1 a column was compressed to its 1 byte wide index, but subsequent
-arithmetic in Q1 required the decompressed form to be available. Conversion from dictionary back
-into a 6M element :bat[:oid,:lng] took about 200ms, which must be weighted against the IO cost
-of loading 50MB (ca 500ms on the reference platform).
-Ofcourse, you can postpone reconstruction as long as possible, which is shown in the 
-implementation below. Selections over the value table reduces the amount of
-reconstruction significantly.
-
-The decision to apply dictionary compression is therefore not easily taken without 
-knowledge over the workload. The code contains a heuristic based on sampling the tables.
-Enhancement of this optimizer to learn over time is considered a research issue.
-
-@- Implementation details
-We keep both dictionary encoding and original available on disk.
-Preferrably we deal with read only tables.
-
-The current limitation are the batcalc operations, which require the fully
-materialized table (mostly). Likewise, the grouping operations may call
-for reconstruction of the original. The implementation can be pushed
-further by replacement/enhancement of this libraries with dictionary 
-awareness.
-@{
-The implementation is somewhat simplified by the fact that we already
-know that the plan is semantically correct before the optimizer
-starts its work.
+@c
+/*
+ * @f opt_dictionary
+ * @- The dictionary optimizer
+ * Datawarehouse applications are organized as star-schemas, where dimension
+ * tables factor out common recurring bits-and-pieces. For example,
+ * the list of US states, cities, regions, etc..
+ * To get the most compact and still performance wise fast datawarehouse,
+ * a DBA should analyse the database and repeatedly finetune the decisions
+ * towards a compact star schema.
+ *
+ * The dictionary optimizer is meant to alleviate this task by maintaining
+ * dictionaries for organizing static data sets and replace their database
+ * valued by references into the index. For example, a string column
+ * with all US states can be replaced by a tinyint column with indices
+ * into the dictionary table.
+ *
+ * The MonetDB approach is to mimick this behavior using straightforward
+ * dictionary encodings.
+ * The optimizer maintains a list of dictionaries, represented by a persistent
+ * catalog BAT.
+ *
+ * An example of the optimizer is shown below, which uses a selection
+ * on one dictionary compressed column to collect values of
+ * the second one without materializing the original table.
+ * @verbatim
+ *   a:bat[:oid,:str]:= sql.bind("sys","tab","col",0);
+ *   d:bat[:oid,:int]  := sql.bind("sys","tab","col",1);
+ *   x := algebra.kdifference(b,d);
+ *   e:bat[:oid,:int]  := sql.bind("sys","tab","col",2);
+ *   y := algebra.kunion(x,e);
+ *   c := algebra.select(y,0,2);
+ *   io.print(c);
+ * @end verbatim
+ * and replaces it based on the catalog knowledge
+ * that the base table is organised as dictionary
+ * @verbatim
+ *     (_14:bat[:oid,:bte] ,_15:bat[:bte,:int] ) := dictionary.bind("sys/tab/col/0");
+ *     d:bat[:oid,:int]  := sql.bind("sys","tab","col",1);
+ *     _18 := dictionary.expand(_15,d);
+ *     _19 := dictionary.encode(_18,d);
+ *     _20 := algebra.kdifference(_14,_19);
+ *     e:bat[:oid,:int]  := sql.bind("sys","tab","col",2);
+ *     _22 := dictionary.expand(_15,e);
+ *     _23 := dictionary.encode(_22,e);
+ *     _24 := algebra.kunion(_20,_23);
+ *     _25 := algebra.select(_15,0,2);
+ *     c := algebra.join(_24,_25);
+ *     io.print(c);
+ * @end verbatim
+ * The insertion/update deltas may lead to possible updates of the dictionary value list,
+ * which is taken care of by expand(). It returns a fresh local dictionary pair;
+ * it can not be found in the persistent dictionary catalog.
+ * The next step is to encode the list of tuples to be included in the index itself using encode().
+ * The remainder reflects a common SQL block, such that the selection is executed against
+ * the compressed table. Only when needed in the print(), it will be expanded to include
+ * the OIDs needed.
+ *
+ * The source BAT remains in existence, but will be emptied. This way we can always
+ * migrate the dictionary back into the persistent table without disturbing the BAT catalog.
+ * Ultimately, the optimizer should detect opportunities for replacement of columns
+ * automatically.
+ *
+ * Pushing the dictionary information through the plan is organized around a subset
+ * of the MAL operators. As soon as we find any other instruction, the dictionary
+ * is expanded to its normal BAT for further processing.
+ *
+ * @- When to use dictionary compression.
+ * The key challenge is to determine when to move a BAT into its dictionary format.
+ * Dictionary compression is a two-sided sword. You can safe significant storage
+ * space, but you pay for it during query processing when portions have to be
+ * decompressed. Even when performed in memory, it takes significant time,
+ * because you effectively have to perform a join between index and value tables.
+ *
+ * For example, in TPCH sf-1 a column was compressed to its 1 byte wide index, but subsequent
+ * arithmetic in Q1 required the decompressed form to be available. Conversion from dictionary back
+ * into a 6M element :bat[:oid,:lng] took about 200ms, which must be weighted against the IO cost
+ * of loading 50MB (ca 500ms on the reference platform).
+ * Ofcourse, you can postpone reconstruction as long as possible, which is shown in the
+ * implementation below. Selections over the value table reduces the amount of
+ * reconstruction significantly.
+ *
+ * The decision to apply dictionary compression is therefore not easily taken without
+ * knowledge over the workload. The code contains a heuristic based on sampling the tables.
+ * Enhancement of this optimizer to learn over time is considered a research issue.
+ *
+ * @- Implementation details
+ * We keep both dictionary encoding and original available on disk.
+ * Preferrably we deal with read only tables.
+ *
+ * The current limitation are the batcalc operations, which require the fully
+ * materialized table (mostly). Likewise, the grouping operations may call
+ * for reconstruction of the original. The implementation can be pushed
+ * further by replacement/enhancement of this libraries with dictionary
+ * awareness.
+ * The implementation is somewhat simplified by the fact that we already
+ * know that the plan is semantically correct before the optimizer
+ * starts its work.
+ */
 @mal
 module dictionary;
 
@@ -249,10 +251,11 @@ OPTdictionaryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			snprintf(buf,BUFSIZ,"%s/%s/%s/%d", 
 				getVarConstant(mb,getArg(q,1)).val.sval, getVarConstant(mb, getArg(q,2)).val.sval,
 				getVarConstant(mb,getArg(q,3)).val.sval, getVarConstant(mb, getArg(q,4)).val.ival);
-@-
-The dbat is not part of the dictionary encoding. It should be dealt with in the context
-of OID sizes. The same holds for idx bats.
-@c
+				/*
+				 * @-
+				 * The dbat is not part of the dictionary encoding. It should be dealt with in the context
+				 * of OID sizes. The same holds for idx bats.
+				 */
 
 		if ( buf[0] ){
 			BATiter bidx = bat_iterator(dictIndex);
@@ -294,30 +297,32 @@ of OID sizes. The same holds for idx bats.
 				continue;
 			} else  
 				pushInstruction(mb,q);
-@-
-The trigger to convert tables is postponed.
-For all 0-kind binds we will try to create a dictionary pair.
-This means it becomes visible at the next query, then it
-is also the right moment to zap the base table itself.
-Moreover, we have to invalidate the plan when a new
-dictionary element has been added since its construction.
-Recompilation is then necessary, and preferably done automatically.
-			if ( getModuleId(q) == sqlRef && getFunctionId(q) == bindRef && getVarConstant(mb,getArg(q,4)).val.ival == 0 ){
-				int one=1;
-				pushInstruction(mb,q);
-				qq = newStmt(mb, dictionaryRef, putName("compress",8));
-				qq = pushStr(mb,qq,buf);
-				varSetProp(mb, getArg(getInstrPtr(mb,0), 0), runonceProp, op_eq, (ptr) &one);
-				pushArgument(mb,qq, getArg(q,0));
-			} else
-				pushInstruction(mb,q);
-@c
+		/*
+		 * @-
+		 * The trigger to convert tables is postponed.
+		 * For all 0-kind binds we will try to create a dictionary pair.
+		 * This means it becomes visible at the next query, then it
+		 * is also the right moment to zap the base table itself.
+		 * Moreover, we have to invalidate the plan when a new
+		 * dictionary element has been added since its construction.
+		 * Recompilation is then necessary, and preferably done automatically.
+		 * 			if ( getModuleId(q) == sqlRef && getFunctionId(q) == bindRef && getVarConstant(mb,getArg(q,4)).val.ival == 0 ){
+		 * 				int one=1;
+		 * 				pushInstruction(mb,q);
+		 * 				qq = newStmt(mb, dictionaryRef, putName("compress",8));
+		 * 				qq = pushStr(mb,qq,buf);
+		 * 				varSetProp(mb, getArg(getInstrPtr(mb,0), 0), runonceProp, op_eq, (ptr) &one);
+		 * 				pushArgument(mb,qq, getArg(q,0));
+		 * 			} else
+		 * 				pushInstruction(mb,q);
+		 */
 		} else {
-@-
-We have to re-cast each instruction based on a possible dictionary 
-representation of an argument. For some operators we may postpone
-reconstruction and introduce a new dictionary pair.
-@c
+			/*
+			 * @-
+			 * We have to re-cast each instruction based on a possible dictionary
+			 * representation of an argument. For some operators we may postpone
+			 * reconstruction and introduce a new dictionary pair.
+			 */
 			if (  getModuleId(q) == algebraRef ){
 				if ( (getFunctionId(q) == selectRef ||
 					 getFunctionId(q) == thetaselectRef ) &&
@@ -372,11 +377,12 @@ reconstruction and introduce a new dictionary pair.
 						actions++;
 						continue;
 				}
-@-
-The arguments can be singular or both ref to a dictionary pair.
-We deal with the most prominent case provided by SQL only. 
-After a kdifference, the value table may contain too much information.
-@c
+				/*
+				 * @-
+				 * The arguments can be singular or both ref to a dictionary pair.
+				 * We deal with the most prominent case provided by SQL only.
+				 * After a kdifference, the value table may contain too much information.
+				 */
 				if ( getFunctionId(q) == kdifferenceRef   && isDiction(getArg(q,1)) && ! isDiction(getArg(q,2))){
 					j = getArg(q,0);
 					val[j] = val[getArg(q,1)];
@@ -388,10 +394,11 @@ After a kdifference, the value table may contain too much information.
 					setVarUDFtype(mb,val[j]);
 					continue;
 				} 
-@-
-The kunion requires that both operands have the same signature.
-This means we have to possibly expand the encoding table and derive an encoding for the 2nd argument.
-@c
+				/*
+				 * @-
+				 * The kunion requires that both operands have the same signature.
+				 * This means we have to possibly expand the encoding table and derive an encoding for the 2nd argument.
+				 */
 				if ( getFunctionId(q) == kunionRef && isDiction(getArg(q,1))   && ! isDiction(getArg(q,2))){
 					actions++;
 					if( getVarType(mb,idx[getArg(q,2)]) == getArgType(mb,q,1)  ){
@@ -431,10 +438,11 @@ This means we have to possibly expand the encoding table and derive an encoding 
 						mnstr_printf(GDKout,"#dictionary %d %s -> %d %d\n", j, getVarName(mb,j), idx[j],val[j]);
 					continue;
 				}
-@-
-Marking the dictionary pair idx(oid,bte) and val(bte,int) can be realised by performing
-a semijoin on idx followed by the markT. The value is of no interested.
-@c
+				/*
+				 * @-
+				 * Marking the dictionary pair idx(oid,bte) and val(bte,int) can be realised by performing
+				 * a semijoin on idx followed by the markT. The value is of no interested.
+				 */
 				if ( getFunctionId(q) == markTRef && isDiction(getArg(q,1)) ) {
 					qq= newStmt(mb,batRef,reverseRef);
 					qq= pushArgument(mb, qq, idx[getArg(q,1)]);
@@ -452,10 +460,10 @@ a semijoin on idx followed by the markT. The value is of no interested.
 					pushInstruction(mb,q);
 					continue;
 				}
-@c
-@-
-Combination of the next column with the pivot table.
-@c
+				/*
+				 * @-
+				 * Combination of the next column with the pivot table.
+				 */
 				if ( getFunctionId(q) == semijoinRef && isDiction(getArg(q,1))  && !isDiction(getArg(q,2)) ) {
 					j = getArg(q,0);
 					val[j] = val[getArg(q,1)];
@@ -467,9 +475,10 @@ Combination of the next column with the pivot table.
 					pushInstruction(mb,q);
 					continue;
 				}
-@-
-In the (left)join you can prejoin the value encoding.
-@c
+				/*
+				 * @-
+				 * In the (left)join you can prejoin the value encoding.
+				 */
 				if ( (getFunctionId(q) == leftjoinRef  || getFunctionId(q) == joinRef) &&
 					isDiction(getArg(q,2)) && !isDiction(getArg(q,1)) ){
 					j = getArg(q,0);
@@ -522,23 +531,25 @@ In the (left)join you can prejoin the value encoding.
 					getArg(q,0) = j;
 					continue;
 				}
-@-
-Projections are easy. We simply drop the encoding table.
-@c
+				/*
+				 * @-
+				 * Projections are easy. We simply drop the encoding table.
+				 */
 				if ( getFunctionId(q) == projectRef && isDiction(getArg(q,1))   && q->argc==2) {
 					getArg(q,1) = idx[getArg(q,1)];
 					pushInstruction(mb,q);
 					continue;
 				}
 			}
-@-
-The aggregation group is more involved, because we use the expensive OID scheme to
-administer the groups. This calls for a modification of the encoding table.
-case : (ext,grp):= group.new((idx,val)),
-gives: (ext,grp) := group.new(idx); val:= dictionary.group(idx,val)
-We have to remember the grouping only.
-Derived paths are similar to the group new.
-@c
+			/*
+			 * @-
+			 * The aggregation group is more involved, because we use the expensive OID scheme to
+			 * administer the groups. This calls for a modification of the encoding table.
+			 * case : (ext,grp):= group.new((idx,val)),
+			 * gives: (ext,grp) := group.new(idx); val:= dictionary.group(idx,val)
+			 * We have to remember the grouping only.
+			 * Derived paths are similar to the group new.
+			 */
 			if (  getModuleId(q) == groupRef ){
 				if (q->argc == 3 &&
 			           (getFunctionId(q) == newRef ||
@@ -600,7 +611,9 @@ Derived paths are similar to the group new.
 	GDKfree(val);
 	return actions;
 }
-@-
+/*
+ * @-
+ */
 @include optimizerWrapper.mx
 @h
 @:exportOptimizer(dictionary)@
@@ -609,9 +622,10 @@ Derived paths are similar to the group new.
 #include "opt_statistics.h"
 
 @:wrapOptimizer(dictionary,OPT_CHECK_ALL)@
-@-
-Dictionary implementation.
-@c
+/*
+ * @-
+ * Dictionary implementation.
+ */
 
 static void 
 DICTcommit(BAT *b1, BAT *b2, BAT *b3, BAT *b4 )
@@ -631,10 +645,11 @@ DICTcommit(BAT *b1, BAT *b2, BAT *b3, BAT *b4 )
 	TMsubcommit_list(bl, i);
 }
 
-@-
-We should distinguish between enabling the dictionary optimizer
-and initialization of the current run.
-@c
+/*
+ * @-
+ * We should distinguish between enabling the dictionary optimizer
+ * and initialization of the current run.
+ */
 
 int
 DICTinit(void)
@@ -818,8 +833,10 @@ str DICTcompress(int *ret, str *nme, int *bid)
 	mnstr_printf(GDKout,"#dictionary.new %s compressed from type %s to %s " SZFMT" elm\n", *nme, getTypeName(b->ttype), getTypeName(typ), cnt);
 	bv =  BATnew(typ, b->ttype, BATcount(b));
 	/* create the dictionary representation */
-@=
-Factor out the index construction by type
+	/*
+	 * @=
+	 * Factor out the index construction by type
+	 */
 @= mkindex
 	{	@1 o;
 		/* complete encoding table */
@@ -830,6 +847,7 @@ Factor out the index construction by type
 			o++;
 		}
 	} break;
+@
 @c
 	switch(typ){
 	case TYPE_bte: @:mkindex(bte,bo,bte_nil+1)@
@@ -870,11 +888,12 @@ Factor out the index construction by type
 	return MAL_SUCCEED;
 }
 
-@-
-Extending a dictionary could lead to overflow of the reference type.
-This means, we end up with larger idx tables.
-This should trigger a partial re-compilation of the MAL program.
-@c
+/*
+ * @-
+ * Extending a dictionary could lead to overflow of the reference type.
+ * This means, we end up with larger idx tables.
+ * This should trigger a partial re-compilation of the MAL program.
+ */
 str 
 DICTexpand(int *rval, int *val, int *bid)
 {
@@ -918,6 +937,7 @@ DICTexpand(int *rval, int *val, int *bid)
 	mnstr_printf(GDKout,"#dictionary.new values in encoding table" BUNFMT " \n", BATcount(bv));
 #endif
 	} break;
+@
 @c
 	switch(bv->htype){
 	case TYPE_bte: @:mkindex2(bte,b)@
@@ -930,9 +950,10 @@ DICTexpand(int *rval, int *val, int *bid)
 	BBPkeepref(*rval = bv->batCacheid);
 	return MAL_SUCCEED;
 }
-@-
-Use a value table to encode the BAT.
-@c
+/*
+ * @-
+ * Use a value table to encode the BAT.
+ */
 str 
 DICTencode(int *ridx, int *vid, int *bid)
 {
@@ -1017,6 +1038,7 @@ str DICTdecompress(int *ret, str *nme)
 	mnstr_printf(GDKout,"#dictionary.new values in encoding table" BUNFMT " \n", BATcount(bv));
 #endif
 	} break;
+@
 @c
 
 opt_export str DICTgroupid(int *ret, int *idx, int *val)
@@ -1047,4 +1069,3 @@ opt_export str DICTgroupid(int *ret, int *idx, int *val)
 	BBPkeepref(*ret = b->batCacheid);
 	return MAL_SUCCEED;
 }
-@}

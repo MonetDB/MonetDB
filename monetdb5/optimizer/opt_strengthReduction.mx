@@ -17,50 +17,52 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f opt_strengthReduction
-@a M. Kersten
-@- Strength Reduction
-An effective optimization technique in compiler construction is to
-move invariant statements out of the loops. The equivalent strategy can be
-applied to the guarded blocks in MAL programs.
-Any variable introduced in a block and assigned a value using a
-side-effect free operation is a candidate to be moved.
-Furthermore, it may not be used outside the block and the expression
-may not depend on variables assigned a value within the same block.
-
-@verbatim
-	j:= "hello world";
-barrier go:=true;
-	i:= 23;
-	j:= "not moved";
-	k:= j; 
-	io.print(i);
-	redo go:= false;
-exit go;
-	z:= j;
-optimizer.strengthReduction();
-@end verbatim
-which is translated into the following code:
-@verbatim
-	j := "hello world";
-	i := 23;
-barrier go := true;
-	j := "not moved";
-	k := j;
-	io.print(i);
-	redo go:= false;
-exit go;
-	z:= j;
-@end verbatim
-Application is only applicable to loops and not to
-guarded blocks in general,
-because execution of a statement outside the guarded block
-consumes processing resources which may have been prohibited by
-the block condition.
-
-For example, it doesn't make sense to move creation of objects
-outside the barrier.
-@{
+@c
+/*
+ * @f opt_strengthReduction
+ * @a M. Kersten
+ * @- Strength Reduction
+ * An effective optimization technique in compiler construction is to
+ * move invariant statements out of the loops. The equivalent strategy can be
+ * applied to the guarded blocks in MAL programs.
+ * Any variable introduced in a block and assigned a value using a
+ * side-effect free operation is a candidate to be moved.
+ * Furthermore, it may not be used outside the block and the expression
+ * may not depend on variables assigned a value within the same block.
+ *
+ * @verbatim
+ * 	j:= "hello world";
+ * barrier go:=true;
+ * 	i:= 23;
+ * 	j:= "not moved";
+ * 	k:= j;
+ * 	io.print(i);
+ * 	redo go:= false;
+ * exit go;
+ * 	z:= j;
+ * optimizer.strengthReduction();
+ * @end verbatim
+ * which is translated into the following code:
+ * @verbatim
+ * 	j := "hello world";
+ * 	i := 23;
+ * barrier go := true;
+ * 	j := "not moved";
+ * 	k := j;
+ * 	io.print(i);
+ * 	redo go:= false;
+ * exit go;
+ * 	z:= j;
+ * @end verbatim
+ * Application is only applicable to loops and not to
+ * guarded blocks in general,
+ * because execution of a statement outside the guarded block
+ * consumes processing resources which may have been prohibited by
+ * the block condition.
+ *
+ * For example, it doesn't make sense to move creation of objects
+ * outside the barrier.
+ */
 @mal
 pattern optimizer.strengthReduction():str
 address OPTstrengthReduction;
@@ -80,15 +82,16 @@ comment "Move constant expressions out of the loop";
 #include "opt_strengthReduction.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 
-@+ Strength reduction implementation
-Strength reduction of the code is defensive. 
-This first shot assumes a single loop, so we do not have to
-maintain a complex administration. We simply split the code
-into two sections. Those that should do Before and  Within the loop.
-
-A critical decision is to make sure that none of the arguments
-are overwritten in a given context.
-@c
+/*
+ * @+ Strength reduction implementation
+ * Strength reduction of the code is defensive.
+ * This first shot assumes a single loop, so we do not have to
+ * maintain a complex administration. We simply split the code
+ * into two sections. Those that should do Before and  Within the loop.
+ *
+ * A critical decision is to make sure that none of the arguments
+ * are overwritten in a given context.
+ */
 static int
 SRoverwritten(InstrPtr p, int varid)
 {
@@ -179,32 +182,36 @@ OPTstrengthReductionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, In
 			before[bk++] = p;
 			continue;
 		}
-@-
-Strength reduction is only relevant inside a block;
-@c
+		/*
+		 * @-
+		 * Strength reduction is only relevant inside a block;
+		 */
 		if( blkexit == 0) {
 			within[ik++] = p;
 			continue;
 		}
-@-
-Flow control statements may not be moved around
-@c
+		/*
+		 * @-
+		 * Flow control statements may not be moved around
+		 */
 		if ( p->barrier != 0){
 			within[ik++] = p;
 			continue;
 		}
-@-
-Limit strength reduction to the type modules and the batcalc, batstr, batcolor
-and sql.bind.
-@c
+		/*
+		 * @-
+		 * Limit strength reduction to the type modules and the batcalc, batstr, batcolor
+		 * and sql.bind.
+		 */
 		if(getModuleId(p) && !isNewSource(p) ) {
 			within[ik++] = p;
 			continue;
 		}
-@-
-Search the prospective new block and make sure that
-none of the arguments is assigned a value.
-@c
+		/*
+		 * @-
+		 * Search the prospective new block and make sure that
+		 * none of the arguments is assigned a value.
+		 */
 		for (j = ik-1; j > 0; j--) {
 			InstrPtr q = within[j];
 			for (k = 0; k < q->retc; k++)
@@ -215,10 +222,11 @@ none of the arguments is assigned a value.
 					goto noreduction;
 				}
 		}
-@-
-Make sure the variables are not declared before the loop and used
-after the loop, because then you may not simple move an expression.
-@c
+		/*
+		 * @-
+		 * Make sure the variables are not declared before the loop and used
+		 * after the loop, because then you may not simple move an expression.
+		 */
 		for (k = 0; k < p->retc; k++)
 			if ( getBeginLifespan(span, getArg(p, k))<= blkbegin ||
 				 getEndLifespan(span, getArg(p, k))> blkexit) {
@@ -272,4 +280,3 @@ after the loop, because then you may not simple move an expression.
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(strengthReduction,OPT_CHECK_ALL)@
-@}

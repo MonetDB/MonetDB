@@ -17,586 +17,589 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f radix
-@a Peter Boncz
-@v 1.0
-@t Radix Algorithms
-
-@* Introduction
-
-This module introduces algorithms that enhance performance of
-generic join processing in Monet, by optimizing both memory and CPU
-resources in modern hardware. We now shortly discuss the problems at
-hand, and in the next section go into detail on how these algorithms
-are applied in Monet's join processing strategy.
-
-@+ The Memory Story
-Computer RAM carries the acronym Random Access Memory, indicating that
-the memory access speed is independent of memory location. While this
-is still (mostly) true, the imbalance in speed improvements between CPU
-speed and access speed of the most common memory type DRAM has caused the
-situation that reading a byte of memory takes 100 CPU cycles (e.g. given a
-1GHz processor and 100ns memory latency). Load instructions are frequent in
-most programs (sometimes one in four instructions references memory), and in
-order not to let the CPU stall for 100 cycles too often, the memory subsystem
-of a computer therefore does not solely consist of DRAM chips anymore, but also
-has various levels of "cache memory" built from more speedy SRAM chips. A typical modern
-computer has at least an L1 (level-one) cache (typical size 16-32KB, typical latency 5-10ns)
-and a L2 (level-two) cache (typical size 256-2MB, typical latency 10-30ns). The L1
-and sometimes even the L2 are now located on the CPU chip itself in order to reduce latency.
-
-Cache memories are organized in @emph{cache lines} of a fixed width. A typical width for
-an L1 line is 32 bytes, whereas a line L2 can be 32-128 bytes long. A cache line
-is the smallest unit of transfer, which means that on a miss, the memory system fetches
-all bytes of the line from the lower levels of the memory hierarchy in one go.
-This simultaneous transfer often happens through a wide bus where each line in the
-bus gets one bit from a DRAM chip in parallel. In reality, transfer is not fully simultaneous,
-as the different bytes of a cache line arrive in a sequential burst, but the total difference
-in arrival-time tends to be no more than 4 cycles apart from first to last byte.  This design of
-the memory caches (on all levels, but with varying size and line width parameters) has consequences
-for application performance, whose severity depend on what kind of @emph{memory access patterns}
-the application exhibits. Reading (or writing) a memory location that is not in the cache, causes
-a miss, and the CPU is forced for waiting the latency period. It is obvious that subsequent
-reading of this exact same data will not cause sub-sequent cache misses, and be fast -- because
-this data is already in cache.  But what happens with a sequential access pattern to data that
-is not in the cache? Again, the first read causes a cache miss. However, subsequent reads
-to adjacent bytes access the same cache line that is already loaded and therefore
-do @emph{not} cause any cache misses. This is the reason why sequential memory access
-is cheaper than random access, as the latter pattern may cause a cache miss on every
-read (considering the access is to an uncached memory region).
-
-In all, costs of memory access can be high (up to 100 cycles, and rising),
-may occur frequently (up to one in four CPU instructions), and are strongly
-dependent on the access pattern of the application (is the access repetitive,
-sequential or random, and to how large a total region). This is not just a
-theoretical exercise for DBMS designers, since measurements on the
-memory performance of data-intensive operations like query processing in
-relational DBMS products has indeed shown that CPUs are stalled for most of
-their time on memory cache misses.
-
-@- Optimizing Memory Access during Join
-We focus here on improving the memory access performance of the join
-operator in order to gain performance. This is relevant, because the
-most popular main-memory join algorithm is hash-join, which exhibits a
-random access pattern to a hash-table that is used to find values in an
-"inner" relation, while an "outer" relation is scanned sequentially.
-
-Concerning memory access, this algorithm works fine only as long as
-the inner relation plus its hash-table can be cached at all levels
-of the memory hierarchy. As soon as it does not fit the smallest cache
-anymore, (multiple) cache misses will appear for each random access to
-this inner relation and hash table (at least one miss to the hash-table and
-one to the relation itself). The CPU stalls caused by these misses can soon
-start to dominate overall join costs, which can be in Monet -- without cache
-misses -- as low as 20 cycles per tuple (hence two 100 cycle misses every
-tuple seriously damage performance).
-
-The idea of the radix-algorithms implemented in this module is to change
-the access pattern of the join operation, in such a way that the overall
-number of cache misses is reduced. This is typically achieved by doing
-extra CPU work and/or by making additional sequential passes over the
-memory. In particular, the @emph{partitioned-join} strategy first partitions
-(or clusters) both inner and outer relations into small clusters, such that
-each cluster fits the smallest memory cache. The partitioned-join then only
-has to combine tuples from corresponding clusters. This module provides two
-partitioned-join algorithms:
-@itemize
-@item 
-the @emph{phash join} algorithm that performs hash-join on the matching clusters.
-@item 
-as an alternative, we provide @emph{radix join} that performs nested loop
-join on the matching clusters.
-@end itemize
-Phash join needs clusters where the clusters of the inner relation plus hash
-table fit the smallest cache. If we assume that tuples in the inner relation
-(plus hash table) occupy 16 bytes and the L1 cache is 16KB, we need clusters
-of (less than) 1000 tuples.  Radix join needs even smaller clusters, that consist
-of just 8 tuple to perform well.
-
-Partitioning/clustering into such small cluster sizes can become a memory access
-problem in itself; due to the high number of clusters required for a large relation.
-A straightforward clustering algorithm that creates H clusters, would allocate
-H output buffers and scan the input relation once, inserting each tuple into the
-cluster where it belongs. Hence there are H different "output cursors" that should
-reside in the cache to perform well. But, a 16KB L1 cache with 32 byte lines only
-holds 500 lines, hence when H exceeds 500, the "output cursors" cannot be cached and
-the cluster operation itself will start to generate a huge number of cache misses.
-This reduces the efficiency of partitioned join.
-
-The @emph{radix-cluster} algorithm proposed
-here solves this problem by making multiple passes; in each pass the relation is
-subclustered on a number of radix-bits.  Radix-bits are a subsequence of bits taken
-from a @emph{radix-number}, which usually is the integer result of hashing the value on which
-we want to cluster. The first pass of the radix-cluster algorithm puts all tuples with an
-equal bit-pattern in the higher H1 radix-bits together in a cluster. The second pass starts
-where the previous left off, and subdivides each cluster on the second-highest H2 bits.
-This process repeats for p passes such that H1*..*HP=H. By keeping Hi lower than the
-total amount of cache lines, high cache miss ratios can be avoided.
-
-On platforms that implement "software TLB" management (Transition Lookaside Buffer;
-the "cache" of most-recent translations of virtual memory addresses from logical to
-physical form), TLB misses are also an expensive, and heavily influence performance.
-As the number of TLB entries is typically limited to 64, on such platforms the TLB
-poses an even lower bound on the size of Hi than the number of cache lines.
-This makes radix-cluster even more beneficial on those platforms.
-
-@+ The CPU Story
-Modern CPUs are called @emph{super-scalar}, by which is meant that the CPU
-has two mechanisms for parallel processing:
-@enumerate
-@item 
-CPU instruction execution is chopped into as many as 10-25 different
-stages, which can be executed one after the other by different pieces of hardware.
-These pieces of hardware form a pipeline, so each cycle a new instruction can enter
-the pipeline, while at the other end one leaves (or "graduates").
-The more stages the pipeline has, less tasks have to be performed per stage,
-hence the quicker the hardware can execute a stage, hence the higher the overall
-clock speed of the CPU can be. The search of ever higher CPU clock speeds hence
-explains the trend of ever longer pipelines found in modern CPUs.
-@item 
-multiple independent pipelines may be implemented, meaning that
-two CPU instructions that are independent can be pushed each cycle into two
-different hardware pipelines for execution. Modern CPUs have at least
-2 and possibly up to 9 replicated pipelines (often separated in integer and
-floating-point pipelines).
-This second trend is driven by the ever smaller process technology, which gives
-CPU designers the possibility to use ever more circuits on a single CPU. As
-a consequence these circuits are used to create replicated execution units
-organized in pipelines whose parallel activity is supposed to increase the
-performance of the CPU.
-@end enumerate
-
-All this complexity comes at a price though, which is performance vulnerability.
-Application code must at all times have three totally independent instructions
-ready for execution to keep three replicated pipelines busy. This is probably
-only true for specific scientific computation code, other applications will
-leave the replicated pipelines mostly without use. Additionally, pipelined execution
-itself poses the challenge that before the previous execution is finished executing,
-the CPU has to guess correctly what the next instruction will be.
-That is, when one instruction enters the pipeline, at the next CPU cycle,
-it is only past stage one of typically 10-20 stages that have to pass for
-it to be fully executed, we have to push a next instruction into the pipeline.
-
-This turns nasty on if-then-else code like:
-@verbatim
-if (A)
-then B
-else C
-@end verbatim
-The basic problem is that just after entering "if A" in the pipeline at stage 1,
-the CPU does not yet know whether this instruction will evaluate to true or false,
-hence it does not know whether the next instruction will be B or C. Modern CPUs
-resort in this situation to @emph{speculative execution}, by e.g. putting B in the
-pipeline just because that taking the then-branch is default (a poor estimator)
-or because in a high percentage of the previous cases this piece of code was executed,
-"if A" turned out to evaluate to true (which is a better estimator).
-
-Clearly, the CPU will turn out to guess wrong in a certain percentage of cases
-(called the @emph{mis-prediction rate}). Mis-predicting execution has performance
-consequences, as the real outcome of "if A" only comes to light when the instruction
-is already deep into the pipeline, and many instructions have already been inserted
-after it. That work has to be thrown away. Suppose now C would have been the correct
-next instruction instead of B, then the whole pipeline up to the stage where "if A"
-is then, needs to be flushed. Also, corrective action needs also to be taken in order
-to e.g. undo all effect of executing B and all other flushed instructions (e.g. by
-restoring CPU flags and registers) and we need to start over with C in stage 1. Notice
-that a mis-prediction rate as low as 5% on a 20-stage pipeline will typically cause 50%
-of the pipeline to be thrown away, which already decreases performance below the level
-where a 20-stage pipeline at that speed is actually useful (i.e. some code would do better
-at a lower speed with a shorter pipeline).
-
-The mis-prediction rate is obviously dependent on the type of code being executed.
-Code that contains many if-statements typically suffers a high mis-prediction
-rate (as explained above, correctly predicting 95% of the if-branches can still give
-awful performance), whereas scientific code that does millions of independent
-scalar operations in a matrix multiplication is highly predictable and will suffer
-almost none. In addition, such scientific code contains sufficient independent
-instructions to keep a whole array of independent pipelines busy (assuming, for a
-minute, that we solved our first problem, memory access).
-
-@- The CPU optimization problem
-Many independent studies show that CPU resource usage during most DBMS loads is awful,
-plagued by low prediction rates (and high number of cache misses). This indicates that
-typical DBMS software has a nature of being full of if-statements and branches,
-much different from scientific code used for matrix processing.
-
-We think that that is not necessary. DBMS tasks typically process millions of
-independent tuples that could well profit from the parallel capabilities of
-modern CPUs, just like scientific matrix code does. The question is: what needs to
-be done in DBMS code to make it CPU-wise efficient?
-
-In Monet, we apply two techniques:
-@itemize
-@item 
-macro-driven (explicit) loop unrolling. This is often dubbed code-expansion.
-Loop unrolling is a well-known technique to improve the pipelined performance
-of code that processes a bulk data structure. Regrettably, compilers can only
-detect opportunity for loop unrolling when the bounds of the bulk structure (array)
-are known. The sizes of arrays that store database tables are not known
-at compile time, hence the compiler needs to be helped a bit.
-@item 
-factoring-out function calls. Function calls are an important source of
-dependence among subsequent instructions. In a language like C, a function call
-may modify any reachable memory location, hence the compiler must generate code to
-reload many values that are cached in registers. On top of that, executing a function
-call carries substantial stack management overhead (e.g. 20 cycles) and decreases
-the prediction-rate of the CPU.
-@end itemize
-
-We provide our radix-algorithms in such versions that they can be experimented with
-with and without these optimization techniques enabled in order to monitor
-their effectiveness.
-
-@* Join Processing Optimized for Memory/CPU cost
-We now address the issue of optimizing generic join processing for optimal usage of
-CPU resources and memory hardware on super-scalar CPUs featuring long pipelines and
-out-of-order speculative execution and memory subsystems that consist of deep hierarchies
-with various levels of memory cache.
-
-We specifically want to compare the effectiveness of the 'Monet-approach' with a standard
-'relational approach'. We consider the generic join query:
-
-@verbatim
-SELECT larger.a1, .., larger.aY, smaller.b1, .., smaller.bZ
-FROM   larger, smaller
-WHERE  larger.key = smaller.key
-@end verbatim
-Without loss of generality we assume that the "larger" table has the same amount or more
-tuples than the "smaller" table.
-
-@+ The Monet Approach
-In the standard approach this query would be executed in Monet with the following MIL statements:
-@verbatim
-01
-02  # join is either positional-, merge- or hash-join.
-03  res_join := join(larger_key, smaller_key.reverse);
-04  res_larger := res_join.mark(0@0).reverse;
-05  res_smaller := res_join.reverse.mark(0@0).reverse;
-
-    # positional-join projected columns from smaller table into result
-A1  res_a1 := join(res_smaller, smaller_a1);
-AX  ....
-AY  res_aY := join(res_smaller, smaller_aY);
-
-    # positional-join projected columns from larger table into result
-B1  res_b1 := join(res_larger, larger_b1);
-BX  ....
-BZ  res_bZ := join(res_larger, larger_bZ);
-@end verbatim
-
-A positional join is a highly efficient kind of join found in the Monet system, that occurs
-when an OID-column is joined with a VOID column. A VOID column is a column that contains
-a sequence of densely ascending OIDs: 1@@0, 2@@0, 3@@0, ..., N@@0. In its implementation,
-Monet does not materialize suchOID sequences, hence the type-name "void". It is easy to lookup
-a value in a VOID column, as the value you look up (e.g. 3@@0) already tells its position (=3).
-The positional join algorithms joins an outer BAT[any,oid] with an inner BAT[void,any]
-by scanning over the inner-BAT and performing positional lookup into the outer BAT.
-
-In a typical data warehouse, the join at line 03 would be positional if the "key"
-columns are foreign keys between tables with a 1-1, 1-N or N-1 relationship (in those cases,
-one of the key columns would be of type VOID). However, if the columns are a N-M relationship,
-or if they do not form a foreign key at all, the join
-would become a merge-join or a hash-join. Merge-join is only taken if both
-smaller_key and larger_key are already be sorted on key (tail column). As this cannot
-generally be assumed, normally a hash-join would be the implementation chosen by Monet.
-A hash-join performs well as long as the smaller_key BAT plus its associated hash-table
-(which adds about 8 bytes per tuple), is smaller than the memory cache.
-
-The latter phase of the query (lines A0-AY,B0-BZ) fetches column values from the projected columns
-using positional join.  This performs fine up until table sizes of the larger table when one
-larger_bX column BAT starts to exceed the size of the memory cache.
-
-We now turn our attention to what happens if these sizes exceed. First, we discuss what happens
-if the larger_bX BATs (which for simplicity we assume all have approximately the same size)
-do not fit the memory cache. Then, we discuss what happens if even the smaller_key BAT plus
-its hash-table does not fit anymore.
-
-@- The Role of Sorting in improving Memory Access
-If the BATs storing the columns of the "larger" table do not fit the memory cache anymore,
-the positional joins in the last Y statements of the MIL script will start to generate cache
-misses. This is caused by the fact that the OIDs in the tail of the res_larger BATs are
-not sorted; hence the access to the larger_bX column BATs is random.
-
-This problem can be solved, by sorting the result of the join first on the OIDs that point
-to the "larger" table (the head column of res_join):
-
-@verbatim
-..
-03  res_join := join(larger_key, smaller_key.reverse).sort;
-04  res_larger_sorted := res_join.mark(0@0).reverse;
-05  res_smaller := res_join.reverse.mark(0@0).reverse;
-..
-    # positional-join projected columns from larger table into result
-B1  res_b1 := join(res_larger_sorted, larger_b1);
-BX  ....
-BZ  res_bZ := join(res_larger_sorted, larger_bZ);
-@end verbatim
-
-As a result, the res_larger BAT will be ordered on tail, hence the positional joins on the larger_bX
-columns will cause a nice sequential access to both res_larger (as it is scanned in its role as
-"outer" join operand) and larger_bX (due to the fact that the lookup values from res_larger are
-now sorted). We must, however, take into account that res_join
-may be a BAT that itself is larger than the memory cache, in which case the sorting operation
-itself could cause a great many cache misses itself, and therefore perform badly.  Let us therefore
-shortly discuss the memory access properties of Monet's sorting algorithms.
-
-Monet uses a CPU-optimized quicksort algorithm for sorting large relations. The CPU-optimizations
-reduce the amount of function calls, by doing all value-comparison and data movement in line,
-using C macros. In this sense it differs from the standard Unix library call qsort(), as that
-routine compares values with a user-provided function, and (often) moves values with memcpy().
-
-The memory access pattern of the Monet quicksort consists of one sequential scan per recursion
-level (walking two cursors simultaneously, one from the start of the BAT forward, as well as another
-from the end of the BAT backward, until both meet in the middle). Quicksort is binary recursive and
-therefore takes log2(ntuples) recursion levels to sort a BAT, hence its total memory access consists of log2(ntuples)
-sequential scans.  However, since quicksort zooms into ever smaller sub-chunks of the BAT, there will
-be cache re-use in the deeper recursion levels as soon as such a chunk fits the memory cache, which
-happens when @math{sizeof(chunk) = sizeof(BAT)/(2^level) <= sizeof(cache)}.  Hence, the total memory cost of
-quicksort is @math{log2(ntuples)-log2(sizeof(cache)/sizeof(tuple))} sequential scans.
-
-In all, the Monet quicksort implementation behaves quite good both concerning CPU efficiency and
-memory access pattern. Still, for some simple data types (in particular columns containing OIDs) one
-can further improve the memory access performance by using @emph{radix-sort} instead of quicksort.
-
-Radix-sort is essentially a radix-cluster on all bits, hence we do:
-
-@verbatim
-..
-03 res_join := join(larger_key, smaller_key.reverse).reverse.radix_cluster(R1,..,Rp).reverse;
-..
-@end verbatim
-
-Where p is a suitable number of passes and R=R1+..+Rp is the total number of "significant bits"
-(the most significant bit in a collection of integer values is the highest bit set in all values).
-The head column of the join(larger_key, smaller_key.reverse) is of type OID, and contains
-the OIDs from the matching tuples in the larger table. Table-OID are automatically generated by
-the VOID columns of Monet, and therefore these integer values are from the range [0,...,N], where N
-is the number of tuples in the "larger" table. We call such an integer
-sub-domain a "dense" domain. As a result, the number of significant bits is minimal (i.e. R=log2(N),
-there are no "spoiled" values), and we do not expect skew in such a column. This motivates our choice
-to implement radix-cluster for the OID type by getting radix bits @emph{without} hashing (for all other
-types, we hash first). Hashing is not necessary due to absence of value-skew on OID columns, and
-absence of hashing allows us to use radix-cluster as radix-sort.
-
-@- Partitioned Hash Join
-We now discuss the case that even the smaller_key BAT with its hash structure does not fit the
-smallest cache. What happens then in the join-phase? Since the hash-join algorithm exhibits a random
-access pattern, compulsory cache misses will start to appear up to the point that each access to
-the hash-table will be a miss. Even in the direct hashing employed by Monet, this amounts to at least
-3 misses per tuple in the "larger" table (one in the hash-mask, at least one in the BAT, and at least
-one in the hash-link list to conclude that this is the last match).  To these memory cost, we should
-also add the cost of constructing the hash table, which amount to (at least) one miss per tuple in
-the "smaller" table. As cache misses can be as expensive as 100 CPU cycles, and pure CPU costs for
-direct hashing in Monet can be as low as 20 cycles per tuple, such a high cache miss ratio
-tremendously slows down the join (e.g. by a factor 10).
-
-In the situation mentioned above, performance can be improved by using partitioned hash-join,
-as presented earlier in this module, instead of simple hash-join. The partitioned hash-join uses
-radix-cluster to quickly cluster both the smaller_key and larger_key BATs into clusters that fit
-the memory cache, and then repeatedly performs hash-join on the corresponding clusters. In this way,
-the random access is restricted to areas that fit the memory cache, hence the expensive cache misses
-disappear (mostly).
-
-This is realized in Monet by using radix-clustering both relations on H bits, e.g. larger_key
-in l passes, and smaller_key in s passes, such that H = L1+..+Ll = S1+..+Ss:
-@verbatim
-00  # first radix cluster both key columns on H bits (maybe different number of passes and bit settings)
-01  cluster_larger := radix_cluster(larger_key, L1,..,Ll);
-02  cluster_smaller := radix_cluster(smaller_key, S1,..,Ss);
-
-    # partitioned hash join on clusters of H radix-bits.
-03  res_join := phash_join(cluster_larger, cluster_smaller.reverse, H);
-..
-@end verbatim
-Line 03 above uses phash_join, but could alternatively use radix-join:
-@verbatim
-..
-03  res_join := radix_join(cluster_larger, cluster_smaller.reverse, H);
-..
-@end verbatim
-
-From this point on, the same code as in the previous MIL script could be applied to fetch the column
-values for columns a1..aY from "smaller" and b1..bZ from "larger". The remaining problem here is that both
-the larger_bX *and* the smaller_aX BATs will tend to be bigger than the smallest memory cache (though this
-also depends on the join hit-ratio, but let use suppose it is >= 1).
-
-To improve this, we can sort on the OIDs from the "larger" table, like described in the previous section.
-This will enhance the access pattern of the subsequent positional joins to the larger_bX column BATs:
-
-@verbatim
-..
-    # partitioned hash join on clusters of H radix-bits, followed by radix-sort on head column.
-03  res_join := phash_join(cluster_larger, cluster_smaller.reverse, H).reverse.radix_cluster(R1,..,Rp).reverse;
-04  res_larger_sorted := res_join.mark(0@0).reverse;
-05  res_smaller := res_join.reverse.mark(0@0).reverse;
-..
-@end verbatim
-
-Now, as the smaller_aX column BATs probably are also larger than the memory cache, we would like to do
-the same for the "smaller" table. But, we then cannot sort res_join twice. We could sort res_smaller on tail
-after line 05:
-@verbatim
-..
-05  res_smaller := res_join.reverse.mark(0@0).reverse.radix_cluster(R1,..,Rp);
-..
-@end verbatim
-However, this approach of the problem only transfers the problem to later phases of query processing.
-The positional joins would run fine, but as a tail-sorted res_smaller would be a BAT[oid,oid] (i.e.
-it would no longer have a VOID head column), the result of the positional joins with the smaller_aX
-BAT[void,T]s would be of the form BAT[oid,T]. These results would not only take more space than the
-desired form BAT[void,T], but would also create a problem in further use of the query result, as these
-res_aX BATs will not be sorted on head. Join access to them would go to the hash-join rather than the
-positional join, and due to the random access this would pose a memory caching problem as these
-res_aX BATs tend to be larger than the memory cache.
-
-Therefore, for these projection joins, we propose the use of a new memory-conscious join algorithm that is
-called @emph{clustered positional join} which implements a join(BAT[void,oid] L, BAT[void,T] R) : BAT[void,T]
-
-This algorithm consists of three phases, of which we already know the first two:
-@table @code
-@item [partial radix-cluster]
-First, the res_smaller is @emph{partially} radix-clustered on tail-OID. That is, the relation L (= res_smaller in
-the positional joins to the column BATs smaller_aX) is clustered on some number of highest significant
-radix-bits, but not on all radix-bits. Because the radix-cluster on OIDs does not use a hash-function,
-clustering an OID column on all significant bits radix-sorts it, or - as in this case - on a subset of the
-highest significant bits, partially orders it. The partial ordering of OIDs in chunks is done in such a way that the
-size of the corresponding chunk in R (remember R is a BAT[void,T] and has all OIDs in a densely ascending sequence) fits
-the memory cache.
-@item [positional join]
-The purpose of the radix-clustering in the previous phase L is to accelerate the positional join between L and R
-(i.e. res_smaller and smaller_aX).  Because the OIDs in the tail of L are now partially sorted, each chunk in L
-will only randomly access data from one chunk in R.  Therefore, during positional join, these chunks in R stay
-memory resident, accelerating performance with respect to to doing the same with a non-clustered L (where each access to
-R would be a cache miss).
-@item [radix decluster]
-The result of the positional join is a BAT[oid,T]. Still, we know that the head column, when sorted, would
-form an void column. What is now the fastest way to sort it and convert it back to a void BAT? One special property
-of the radix-cluster algorithm is that when we cluster on tail column, each result chunk will have the head-values
-in order. In this case, the clustered version of L (res_smaller_clustered, see below) has the head OIDs in order @emph{within the
-chunk}. This sub-ordering is also carried over by the positional join to result of the positional join: in each
-'virtual chunk' in the BAT[oid,T], the OIDs appear in order. Therefore, we can perform an merge operation to merge
-all BAT[oid,T] chunks into a BAT[void,T] result. Normally, the cost of a merge is at least O(log(P)*N), where N
-is the total number of tuples, and P is the number of chunks. By using the special property that eventually,
-the merged OIDs form a densely ascending sequence (0@@0, 1@@0,..,N@@0), we can bring this cost back to O(N)! This @emph{radix decluster}
-algorithm keeps a windows open of OIDs [windowStart, windowStart+1, ..., windowStart+windowSize-1] during the
-merge. Each iteration of the algorithm finds all the next windowSize OIDs in the chunks and inserts them
-in the result BAT[void,T]. This is done by going to through all (not yet empty) chunks and inserting from the top of
-each chunk all elements whose OID fits into the window. Due to the fact that all chunks are sorted, we are
-sure to have found all OIDs after having processed all chunks. Then, the window is shifted windowSize positions
-and the process repeats. The windowSize is typically a multiple of the number of chunks, such that per iteration
-in each chunk multiple tuples fall into the window. Because these multiple tuples are accessed sequentially
-in the chunk, the chunk cache lines will be re-used and performance will be good. The only restriction on the windowSize
-is that the insertion window on the output BAT must fit the memory cache. This will only start to exceed on very
-large table sizes (a possible remedy is then to perform the merge in multiple passes).
-@end table
-
-In all, in Monet this join strategy is expressed in the following MIL:
-@verbatim
-..
-    # subcluster on Rs significant radix-bits, ignoring lowest Ri bits
-05  res_smaller_clustered := res_join.reverse.mark(0@0).reverse.radix_cluster(-Ri, Rs);
-
-    # positional-join and decluster projected columns from smaller table into result
-A0  borders_smaller := res_smaller_clustered.radix_count(Ri, Rs);
-A1  res_a1 := join(res_smaller_clustered, smaller_a1).radix_decluster(borders_smaller);
-AX   ....
-AY  res_aY := join(res_smaller_clustered, smaller_aY).radix_decluster(borders_smaller);
-..
-@end verbatim
-
-Possibly, one could consider to use this approach as well for the projections on the larger table
-(instead of the sort). However, sorting once (with radix-sort by radix-clustering on all significant
-bits) is probably faster than one-time partial radix-cluster, followed by multiple times positional decluster
-operations (one for each projected column). Therefore, it is best to do one of the set of projections
-with the sort/join strategy and the other with the clustered positional join strategy.
-The decision to do which (sort on the smaller or on the larger table?), could also be made in function of the
-number of projection attributes needed from the "smaller" and "larger" tables. That is, one could choose to do
-the clustered positional join on the table with least projections, and sort/join on the other.
-
-The full MIL script when the individual BATs of both the "smaller" and "larger" tables as well as
-the (N-M) join result, exceed the memory cache becomes:
-@verbatim
-    # first radix cluster both key columns on H bits (maybe different number of passes and bit settings)
-01  cluster_larger := radix_cluster(larger_key, L1,..,Ll);
-02  cluster_smaller := radix_cluster(smaller_key, S1,..,Ss);
-
-    # partitioned hash join on clusters of H radix-bits, followed by radix-sort on head column.
-03  res_join := phash_join(cluster_larger, cluster_smaller.reverse, H).reverse.radix_cluster(R1,..,Rp).reverse;
-04  res_larger_sorted := res_join.mark(0@0).reverse;
-
-    # subcluster on Rs significant radix-bits, ignoring lowest Ri bits
-05  res_smaller_clustered := res_join.reverse.mark(0@0).reverse.radix_cluster(-Ri, Rs);
-
-    # positional-join and decluster projected columns from smaller table into result
-A0  borders_smaller := res_smaller_clustered.radix_count(Ri, Rs);
-A1  res_a1 := join(res_smaller_clustered, smaller_a1).radix_decluster(borders_smaller);
-AX   ....
-AY  res_aY := join(res_smaller_clustered, smaller_aY).radix_decluster(borders_smaller);
-
-    # positional-join projected columns from larger table into result
-B1  res_b1 := join(res_larger_sorted, larger_b1);
-BX  ....
-BZ  res_bZ := join(res_larger_sorted, larger_bZ);
-@end verbatim
-
-@+ The Relational Approach
-A cache-conscious join in a relational DBMS would first radix-cluster both the smaller and larger table,
-where in the process it would project on just the selected columns. As the relational model does not
-separate its algebraic actions by column, as Monet in MIL does, it cannot use the technique of type-expansion
-and have primitives that are optimized for a specific type. In other words, the join operator in a relational
-DBMS must be able to handle tables of variable number of columns with variable constellations of column types.
-This is either implemented in the kernel of a relational DBMS by using ADT interfaces with functions dereferenced
-from a type table, or through late-binding style C++ overloaded methods to handle data values of variable types.
-That means that, e.g. during the radix-cluster, for each projected column, at least one function call is executed
-to move a data value from the source record to the destination record.
-
-To model this extra function calling overhead, we use the integerX Monet types, that were created specifically
-for these experiments.  An integerX value models a relational tuple that stores X simple integer column values.
-Through some tricks, copying one integer8 value in Monet is actually done by copying 8 integers width memcpy(),
-which closely mimics what happens in a typical relational DBMS.
-
-In order to give a concrete example, we suppose "smaller" and "larger" each have 128 columns, and
-the projection widths are Y=Z=8; we emulate relational storage of both tables in Monet by storing
-them as BAT[integer128,integer], where the tail columns contain the "key" value and the head contains
-all other columns.
-
-The entire MIL sequence are then the following 5 statements:
-@verbatim
-01  smaller_all := [integer]([integer](smaller_key,1).reverse, 128).reverse;
-02  larger_all := [integer]([integer](larger_key,1).reverse, 128).reverse;
-
-03  smaller_view := [integer](smaller_all.reverse, 8).reverse;
-04  larger_view := [integer](larger_all.reverse, 8).reverse;
-
-05  cluster_smaller := radix_cluster(smaller_view, S1,..,Ss);
-06  cluster_larger := radix_cluster(larger_view, L1,..,Ll);
-07  res_join := phash_join(cluster_larger, cluster_smaller.reverse, H);
-@end verbatim
-
-Notice that the fact that smaller_view and larger_view are MIL views on the base BATs
-smaller_all and larger_all, means that the projection is never materialized. Projecting
-is done on the fly during the first pass of radix cluster, just like what would happen in
-a relational system. What is more, the copying of each integer8 (view) value from its
-storage as integer128 is done with 8 memcpy() calls that fetch values at regular intervals
-(i.e. at positions 0, 16, 32, 48, 64,  80, 96 and 112). In practice, this means that
-each memcpy() causes a memory cache miss.
-
-We expect that the relational strategy will have a different performance characteristic than
-Monet. First, there will be many more cache misses due to the reasons described above.
-Even radix-cluster cannot avoid those cache misses, as it is inherent to the relational
-storage format of base data. Second, there will be much more CPU cost, due to the fact that
-function-call overhead cannot be eliminated. In Monet algorithms, CPU optimizations cause
-a 5-fold performance improvement.
-
-Therefore, it might even be that the increased cost of radix-cluster will make simple
-hash-join faster than partitioned hash-join:
-@verbatim
-05  res_join := join(larger_view, smaller_view.reverse);
-@end verbatim
-In either way, we expect a relational performance to be a factor 10 slower than Monet
-on big sizes of both the "smaller" and "larger" tables with hit rates such that the result table is big.
-
-@* Module Definition
+@c
+/*
+ * @f radix
+ * @a Peter Boncz
+ * @v 1.0
+ * @t Radix Algorithms
+ *
+ * @* Introduction
+ *
+ * This module introduces algorithms that enhance performance of
+ * generic join processing in Monet, by optimizing both memory and CPU
+ * resources in modern hardware. We now shortly discuss the problems at
+ * hand, and in the next section go into detail on how these algorithms
+ * are applied in Monet's join processing strategy.
+ *
+ * @+ The Memory Story
+ * Computer RAM carries the acronym Random Access Memory, indicating that
+ * the memory access speed is independent of memory location. While this
+ * is still (mostly) true, the imbalance in speed improvements between CPU
+ * speed and access speed of the most common memory type DRAM has caused the
+ * situation that reading a byte of memory takes 100 CPU cycles (e.g. given a
+ * 1GHz processor and 100ns memory latency). Load instructions are frequent in
+ * most programs (sometimes one in four instructions references memory), and in
+ * order not to let the CPU stall for 100 cycles too often, the memory subsystem
+ * of a computer therefore does not solely consist of DRAM chips anymore, but also
+ * has various levels of "cache memory" built from more speedy SRAM chips. A typical modern
+ * computer has at least an L1 (level-one) cache (typical size 16-32KB, typical latency 5-10ns)
+ * and a L2 (level-two) cache (typical size 256-2MB, typical latency 10-30ns). The L1
+ * and sometimes even the L2 are now located on the CPU chip itself in order to reduce latency.
+ *
+ * Cache memories are organized in @emph{cache lines} of a fixed width. A typical width for
+ * an L1 line is 32 bytes, whereas a line L2 can be 32-128 bytes long. A cache line
+ * is the smallest unit of transfer, which means that on a miss, the memory system fetches
+ * all bytes of the line from the lower levels of the memory hierarchy in one go.
+ * This simultaneous transfer often happens through a wide bus where each line in the
+ * bus gets one bit from a DRAM chip in parallel. In reality, transfer is not fully simultaneous,
+ * as the different bytes of a cache line arrive in a sequential burst, but the total difference
+ * in arrival-time tends to be no more than 4 cycles apart from first to last byte.  This design of
+ * the memory caches (on all levels, but with varying size and line width parameters) has consequences
+ * for application performance, whose severity depend on what kind of @emph{memory access patterns}
+ * the application exhibits. Reading (or writing) a memory location that is not in the cache, causes
+ * a miss, and the CPU is forced for waiting the latency period. It is obvious that subsequent
+ * reading of this exact same data will not cause sub-sequent cache misses, and be fast -- because
+ * this data is already in cache.  But what happens with a sequential access pattern to data that
+ * is not in the cache? Again, the first read causes a cache miss. However, subsequent reads
+ * to adjacent bytes access the same cache line that is already loaded and therefore
+ * do @emph{not} cause any cache misses. This is the reason why sequential memory access
+ * is cheaper than random access, as the latter pattern may cause a cache miss on every
+ * read (considering the access is to an uncached memory region).
+ *
+ * In all, costs of memory access can be high (up to 100 cycles, and rising),
+ * may occur frequently (up to one in four CPU instructions), and are strongly
+ * dependent on the access pattern of the application (is the access repetitive,
+ * sequential or random, and to how large a total region). This is not just a
+ * theoretical exercise for DBMS designers, since measurements on the
+ * memory performance of data-intensive operations like query processing in
+ * relational DBMS products has indeed shown that CPUs are stalled for most of
+ * their time on memory cache misses.
+ *
+ * @- Optimizing Memory Access during Join
+ * We focus here on improving the memory access performance of the join
+ * operator in order to gain performance. This is relevant, because the
+ * most popular main-memory join algorithm is hash-join, which exhibits a
+ * random access pattern to a hash-table that is used to find values in an
+ * "inner" relation, while an "outer" relation is scanned sequentially.
+ *
+ * Concerning memory access, this algorithm works fine only as long as
+ * the inner relation plus its hash-table can be cached at all levels
+ * of the memory hierarchy. As soon as it does not fit the smallest cache
+ * anymore, (multiple) cache misses will appear for each random access to
+ * this inner relation and hash table (at least one miss to the hash-table and
+ * one to the relation itself). The CPU stalls caused by these misses can soon
+ * start to dominate overall join costs, which can be in Monet -- without cache
+ * misses -- as low as 20 cycles per tuple (hence two 100 cycle misses every
+ * tuple seriously damage performance).
+ *
+ * The idea of the radix-algorithms implemented in this module is to change
+ * the access pattern of the join operation, in such a way that the overall
+ * number of cache misses is reduced. This is typically achieved by doing
+ * extra CPU work and/or by making additional sequential passes over the
+ * memory. In particular, the @emph{partitioned-join} strategy first partitions
+ * (or clusters) both inner and outer relations into small clusters, such that
+ * each cluster fits the smallest memory cache. The partitioned-join then only
+ * has to combine tuples from corresponding clusters. This module provides two
+ * partitioned-join algorithms:
+ * @itemize
+ * @item
+ * the @emph{phash join} algorithm that performs hash-join on the matching clusters.
+ * @item
+ * as an alternative, we provide @emph{radix join} that performs nested loop
+ * join on the matching clusters.
+ * @end itemize
+ * Phash join needs clusters where the clusters of the inner relation plus hash
+ * table fit the smallest cache. If we assume that tuples in the inner relation
+ * (plus hash table) occupy 16 bytes and the L1 cache is 16KB, we need clusters
+ * of (less than) 1000 tuples.  Radix join needs even smaller clusters, that consist
+ * of just 8 tuple to perform well.
+ *
+ * Partitioning/clustering into such small cluster sizes can become a memory access
+ * problem in itself; due to the high number of clusters required for a large relation.
+ * A straightforward clustering algorithm that creates H clusters, would allocate
+ * H output buffers and scan the input relation once, inserting each tuple into the
+ * cluster where it belongs. Hence there are H different "output cursors" that should
+ * reside in the cache to perform well. But, a 16KB L1 cache with 32 byte lines only
+ * holds 500 lines, hence when H exceeds 500, the "output cursors" cannot be cached and
+ * the cluster operation itself will start to generate a huge number of cache misses.
+ * This reduces the efficiency of partitioned join.
+ *
+ * The @emph{radix-cluster} algorithm proposed
+ * here solves this problem by making multiple passes; in each pass the relation is
+ * subclustered on a number of radix-bits.  Radix-bits are a subsequence of bits taken
+ * from a @emph{radix-number}, which usually is the integer result of hashing the value on which
+ * we want to cluster. The first pass of the radix-cluster algorithm puts all tuples with an
+ * equal bit-pattern in the higher H1 radix-bits together in a cluster. The second pass starts
+ * where the previous left off, and subdivides each cluster on the second-highest H2 bits.
+ * This process repeats for p passes such that H1*..*HP=H. By keeping Hi lower than the
+ * total amount of cache lines, high cache miss ratios can be avoided.
+ *
+ * On platforms that implement "software TLB" management (Transition Lookaside Buffer;
+ * the "cache" of most-recent translations of virtual memory addresses from logical to
+ * physical form), TLB misses are also an expensive, and heavily influence performance.
+ * As the number of TLB entries is typically limited to 64, on such platforms the TLB
+ * poses an even lower bound on the size of Hi than the number of cache lines.
+ * This makes radix-cluster even more beneficial on those platforms.
+ *
+ * @+ The CPU Story
+ * Modern CPUs are called @emph{super-scalar}, by which is meant that the CPU
+ * has two mechanisms for parallel processing:
+ * @enumerate
+ * @item
+ * CPU instruction execution is chopped into as many as 10-25 different
+ * stages, which can be executed one after the other by different pieces of hardware.
+ * These pieces of hardware form a pipeline, so each cycle a new instruction can enter
+ * the pipeline, while at the other end one leaves (or "graduates").
+ * The more stages the pipeline has, less tasks have to be performed per stage,
+ * hence the quicker the hardware can execute a stage, hence the higher the overall
+ * clock speed of the CPU can be. The search of ever higher CPU clock speeds hence
+ * explains the trend of ever longer pipelines found in modern CPUs.
+ * @item
+ * multiple independent pipelines may be implemented, meaning that
+ * two CPU instructions that are independent can be pushed each cycle into two
+ * different hardware pipelines for execution. Modern CPUs have at least
+ * 2 and possibly up to 9 replicated pipelines (often separated in integer and
+ * floating-point pipelines).
+ * This second trend is driven by the ever smaller process technology, which gives
+ * CPU designers the possibility to use ever more circuits on a single CPU. As
+ * a consequence these circuits are used to create replicated execution units
+ * organized in pipelines whose parallel activity is supposed to increase the
+ * performance of the CPU.
+ * @end enumerate
+ *
+ * All this complexity comes at a price though, which is performance vulnerability.
+ * Application code must at all times have three totally independent instructions
+ * ready for execution to keep three replicated pipelines busy. This is probably
+ * only true for specific scientific computation code, other applications will
+ * leave the replicated pipelines mostly without use. Additionally, pipelined execution
+ * itself poses the challenge that before the previous execution is finished executing,
+ * the CPU has to guess correctly what the next instruction will be.
+ * That is, when one instruction enters the pipeline, at the next CPU cycle,
+ * it is only past stage one of typically 10-20 stages that have to pass for
+ * it to be fully executed, we have to push a next instruction into the pipeline.
+ *
+ * This turns nasty on if-then-else code like:
+ * @verbatim
+ * if (A)
+ * then B
+ * else C
+ * @end verbatim
+ * The basic problem is that just after entering "if A" in the pipeline at stage 1,
+ * the CPU does not yet know whether this instruction will evaluate to true or false,
+ * hence it does not know whether the next instruction will be B or C. Modern CPUs
+ * resort in this situation to @emph{speculative execution}, by e.g. putting B in the
+ * pipeline just because that taking the then-branch is default (a poor estimator)
+ * or because in a high percentage of the previous cases this piece of code was executed,
+ * "if A" turned out to evaluate to true (which is a better estimator).
+ *
+ * Clearly, the CPU will turn out to guess wrong in a certain percentage of cases
+ * (called the @emph{mis-prediction rate}). Mis-predicting execution has performance
+ * consequences, as the real outcome of "if A" only comes to light when the instruction
+ * is already deep into the pipeline, and many instructions have already been inserted
+ * after it. That work has to be thrown away. Suppose now C would have been the correct
+ * next instruction instead of B, then the whole pipeline up to the stage where "if A"
+ * is then, needs to be flushed. Also, corrective action needs also to be taken in order
+ * to e.g. undo all effect of executing B and all other flushed instructions (e.g. by
+ * restoring CPU flags and registers) and we need to start over with C in stage 1. Notice
+ * that a mis-prediction rate as low as 5% on a 20-stage pipeline will typically cause 50%
+ * of the pipeline to be thrown away, which already decreases performance below the level
+ * where a 20-stage pipeline at that speed is actually useful (i.e. some code would do better
+ * at a lower speed with a shorter pipeline).
+ *
+ * The mis-prediction rate is obviously dependent on the type of code being executed.
+ * Code that contains many if-statements typically suffers a high mis-prediction
+ * rate (as explained above, correctly predicting 95% of the if-branches can still give
+ * awful performance), whereas scientific code that does millions of independent
+ * scalar operations in a matrix multiplication is highly predictable and will suffer
+ * almost none. In addition, such scientific code contains sufficient independent
+ * instructions to keep a whole array of independent pipelines busy (assuming, for a
+ * minute, that we solved our first problem, memory access).
+ *
+ * @- The CPU optimization problem
+ * Many independent studies show that CPU resource usage during most DBMS loads is awful,
+ * plagued by low prediction rates (and high number of cache misses). This indicates that
+ * typical DBMS software has a nature of being full of if-statements and branches,
+ * much different from scientific code used for matrix processing.
+ *
+ * We think that that is not necessary. DBMS tasks typically process millions of
+ * independent tuples that could well profit from the parallel capabilities of
+ * modern CPUs, just like scientific matrix code does. The question is: what needs to
+ * be done in DBMS code to make it CPU-wise efficient?
+ *
+ * In Monet, we apply two techniques:
+ * @itemize
+ * @item
+ * macro-driven (explicit) loop unrolling. This is often dubbed code-expansion.
+ * Loop unrolling is a well-known technique to improve the pipelined performance
+ * of code that processes a bulk data structure. Regrettably, compilers can only
+ * detect opportunity for loop unrolling when the bounds of the bulk structure (array)
+ * are known. The sizes of arrays that store database tables are not known
+ * at compile time, hence the compiler needs to be helped a bit.
+ * @item
+ * factoring-out function calls. Function calls are an important source of
+ * dependence among subsequent instructions. In a language like C, a function call
+ * may modify any reachable memory location, hence the compiler must generate code to
+ * reload many values that are cached in registers. On top of that, executing a function
+ * call carries substantial stack management overhead (e.g. 20 cycles) and decreases
+ * the prediction-rate of the CPU.
+ * @end itemize
+ *
+ * We provide our radix-algorithms in such versions that they can be experimented with
+ * with and without these optimization techniques enabled in order to monitor
+ * their effectiveness.
+ *
+ * @* Join Processing Optimized for Memory/CPU cost
+ * We now address the issue of optimizing generic join processing for optimal usage of
+ * CPU resources and memory hardware on super-scalar CPUs featuring long pipelines and
+ * out-of-order speculative execution and memory subsystems that consist of deep hierarchies
+ * with various levels of memory cache.
+ *
+ * We specifically want to compare the effectiveness of the 'Monet-approach' with a standard
+ * 'relational approach'. We consider the generic join query:
+ *
+ * @verbatim
+ * SELECT larger.a1, .., larger.aY, smaller.b1, .., smaller.bZ
+ * FROM   larger, smaller
+ * WHERE  larger.key = smaller.key
+ * @end verbatim
+ * Without loss of generality we assume that the "larger" table has the same amount or more
+ * tuples than the "smaller" table.
+ *
+ * @+ The Monet Approach
+ * In the standard approach this query would be executed in Monet with the following MIL statements:
+ * @verbatim
+ * 01
+ * 02  # join is either positional-, merge- or hash-join.
+ * 03  res_join := join(larger_key, smaller_key.reverse);
+ * 04  res_larger := res_join.mark(0@0).reverse;
+ * 05  res_smaller := res_join.reverse.mark(0@0).reverse;
+ *
+ *     # positional-join projected columns from smaller table into result
+ * A1  res_a1 := join(res_smaller, smaller_a1);
+ * AX  ....
+ * AY  res_aY := join(res_smaller, smaller_aY);
+ *
+ *     # positional-join projected columns from larger table into result
+ * B1  res_b1 := join(res_larger, larger_b1);
+ * BX  ....
+ * BZ  res_bZ := join(res_larger, larger_bZ);
+ * @end verbatim
+ *
+ * A positional join is a highly efficient kind of join found in the Monet system, that occurs
+ * when an OID-column is joined with a VOID column. A VOID column is a column that contains
+ * a sequence of densely ascending OIDs: 1@@0, 2@@0, 3@@0, ..., N@@0. In its implementation,
+ * Monet does not materialize suchOID sequences, hence the type-name "void". It is easy to lookup
+ * a value in a VOID column, as the value you look up (e.g. 3@@0) already tells its position (=3).
+ * The positional join algorithms joins an outer BAT[any,oid] with an inner BAT[void,any]
+ * by scanning over the inner-BAT and performing positional lookup into the outer BAT.
+ *
+ * In a typical data warehouse, the join at line 03 would be positional if the "key"
+ * columns are foreign keys between tables with a 1-1, 1-N or N-1 relationship (in those cases,
+ * one of the key columns would be of type VOID). However, if the columns are a N-M relationship,
+ * or if they do not form a foreign key at all, the join
+ * would become a merge-join or a hash-join. Merge-join is only taken if both
+ * smaller_key and larger_key are already be sorted on key (tail column). As this cannot
+ * generally be assumed, normally a hash-join would be the implementation chosen by Monet.
+ * A hash-join performs well as long as the smaller_key BAT plus its associated hash-table
+ * (which adds about 8 bytes per tuple), is smaller than the memory cache.
+ *
+ * The latter phase of the query (lines A0-AY,B0-BZ) fetches column values from the projected columns
+ * using positional join.  This performs fine up until table sizes of the larger table when one
+ * larger_bX column BAT starts to exceed the size of the memory cache.
+ *
+ * We now turn our attention to what happens if these sizes exceed. First, we discuss what happens
+ * if the larger_bX BATs (which for simplicity we assume all have approximately the same size)
+ * do not fit the memory cache. Then, we discuss what happens if even the smaller_key BAT plus
+ * its hash-table does not fit anymore.
+ *
+ * @- The Role of Sorting in improving Memory Access
+ * If the BATs storing the columns of the "larger" table do not fit the memory cache anymore,
+ * the positional joins in the last Y statements of the MIL script will start to generate cache
+ * misses. This is caused by the fact that the OIDs in the tail of the res_larger BATs are
+ * not sorted; hence the access to the larger_bX column BATs is random.
+ *
+ * This problem can be solved, by sorting the result of the join first on the OIDs that point
+ * to the "larger" table (the head column of res_join):
+ *
+ * @verbatim
+ * ..
+ * 03  res_join := join(larger_key, smaller_key.reverse).sort;
+ * 04  res_larger_sorted := res_join.mark(0@0).reverse;
+ * 05  res_smaller := res_join.reverse.mark(0@0).reverse;
+ * ..
+ *     # positional-join projected columns from larger table into result
+ * B1  res_b1 := join(res_larger_sorted, larger_b1);
+ * BX  ....
+ * BZ  res_bZ := join(res_larger_sorted, larger_bZ);
+ * @end verbatim
+ *
+ * As a result, the res_larger BAT will be ordered on tail, hence the positional joins on the larger_bX
+ * columns will cause a nice sequential access to both res_larger (as it is scanned in its role as
+ * "outer" join operand) and larger_bX (due to the fact that the lookup values from res_larger are
+ * now sorted). We must, however, take into account that res_join
+ * may be a BAT that itself is larger than the memory cache, in which case the sorting operation
+ * itself could cause a great many cache misses itself, and therefore perform badly.  Let us therefore
+ * shortly discuss the memory access properties of Monet's sorting algorithms.
+ *
+ * Monet uses a CPU-optimized quicksort algorithm for sorting large relations. The CPU-optimizations
+ * reduce the amount of function calls, by doing all value-comparison and data movement in line,
+ * using C macros. In this sense it differs from the standard Unix library call qsort(), as that
+ * routine compares values with a user-provided function, and (often) moves values with memcpy().
+ *
+ * The memory access pattern of the Monet quicksort consists of one sequential scan per recursion
+ * level (walking two cursors simultaneously, one from the start of the BAT forward, as well as another
+ * from the end of the BAT backward, until both meet in the middle). Quicksort is binary recursive and
+ * therefore takes log2(ntuples) recursion levels to sort a BAT, hence its total memory access consists of log2(ntuples)
+ * sequential scans.  However, since quicksort zooms into ever smaller sub-chunks of the BAT, there will
+ * be cache re-use in the deeper recursion levels as soon as such a chunk fits the memory cache, which
+ * happens when @math{sizeof(chunk) = sizeof(BAT)/(2^level) <= sizeof(cache)}.  Hence, the total memory cost of
+ * quicksort is @math{log2(ntuples)-log2(sizeof(cache)/sizeof(tuple))} sequential scans.
+ *
+ * In all, the Monet quicksort implementation behaves quite good both concerning CPU efficiency and
+ * memory access pattern. Still, for some simple data types (in particular columns containing OIDs) one
+ * can further improve the memory access performance by using @emph{radix-sort} instead of quicksort.
+ *
+ * Radix-sort is essentially a radix-cluster on all bits, hence we do:
+ *
+ * @verbatim
+ * ..
+ * 03 res_join := join(larger_key, smaller_key.reverse).reverse.radix_cluster(R1,..,Rp).reverse;
+ * ..
+ * @end verbatim
+ *
+ * Where p is a suitable number of passes and R=R1+..+Rp is the total number of "significant bits"
+ * (the most significant bit in a collection of integer values is the highest bit set in all values).
+ * The head column of the join(larger_key, smaller_key.reverse) is of type OID, and contains
+ * the OIDs from the matching tuples in the larger table. Table-OID are automatically generated by
+ * the VOID columns of Monet, and therefore these integer values are from the range [0,...,N], where N
+ * is the number of tuples in the "larger" table. We call such an integer
+ * sub-domain a "dense" domain. As a result, the number of significant bits is minimal (i.e. R=log2(N),
+ * there are no "spoiled" values), and we do not expect skew in such a column. This motivates our choice
+ * to implement radix-cluster for the OID type by getting radix bits @emph{without} hashing (for all other
+ * types, we hash first). Hashing is not necessary due to absence of value-skew on OID columns, and
+ * absence of hashing allows us to use radix-cluster as radix-sort.
+ *
+ * @- Partitioned Hash Join
+ * We now discuss the case that even the smaller_key BAT with its hash structure does not fit the
+ * smallest cache. What happens then in the join-phase? Since the hash-join algorithm exhibits a random
+ * access pattern, compulsory cache misses will start to appear up to the point that each access to
+ * the hash-table will be a miss. Even in the direct hashing employed by Monet, this amounts to at least
+ * 3 misses per tuple in the "larger" table (one in the hash-mask, at least one in the BAT, and at least
+ * one in the hash-link list to conclude that this is the last match).  To these memory cost, we should
+ * also add the cost of constructing the hash table, which amount to (at least) one miss per tuple in
+ * the "smaller" table. As cache misses can be as expensive as 100 CPU cycles, and pure CPU costs for
+ * direct hashing in Monet can be as low as 20 cycles per tuple, such a high cache miss ratio
+ * tremendously slows down the join (e.g. by a factor 10).
+ *
+ * In the situation mentioned above, performance can be improved by using partitioned hash-join,
+ * as presented earlier in this module, instead of simple hash-join. The partitioned hash-join uses
+ * radix-cluster to quickly cluster both the smaller_key and larger_key BATs into clusters that fit
+ * the memory cache, and then repeatedly performs hash-join on the corresponding clusters. In this way,
+ * the random access is restricted to areas that fit the memory cache, hence the expensive cache misses
+ * disappear (mostly).
+ *
+ * This is realized in Monet by using radix-clustering both relations on H bits, e.g. larger_key
+ * in l passes, and smaller_key in s passes, such that H = L1+..+Ll = S1+..+Ss:
+ * @verbatim
+ * 00  # first radix cluster both key columns on H bits (maybe different number of passes and bit settings)
+ * 01  cluster_larger := radix_cluster(larger_key, L1,..,Ll);
+ * 02  cluster_smaller := radix_cluster(smaller_key, S1,..,Ss);
+ *
+ *     # partitioned hash join on clusters of H radix-bits.
+ * 03  res_join := phash_join(cluster_larger, cluster_smaller.reverse, H);
+ * ..
+ * @end verbatim
+ * Line 03 above uses phash_join, but could alternatively use radix-join:
+ * @verbatim
+ * ..
+ * 03  res_join := radix_join(cluster_larger, cluster_smaller.reverse, H);
+ * ..
+ * @end verbatim
+ *
+ * From this point on, the same code as in the previous MIL script could be applied to fetch the column
+ * values for columns a1..aY from "smaller" and b1..bZ from "larger". The remaining problem here is that both
+ * the larger_bX *and* the smaller_aX BATs will tend to be bigger than the smallest memory cache (though this
+ * also depends on the join hit-ratio, but let use suppose it is >= 1).
+ *
+ * To improve this, we can sort on the OIDs from the "larger" table, like described in the previous section.
+ * This will enhance the access pattern of the subsequent positional joins to the larger_bX column BATs:
+ *
+ * @verbatim
+ * ..
+ *     # partitioned hash join on clusters of H radix-bits, followed by radix-sort on head column.
+ * 03  res_join := phash_join(cluster_larger, cluster_smaller.reverse, H).reverse.radix_cluster(R1,..,Rp).reverse;
+ * 04  res_larger_sorted := res_join.mark(0@0).reverse;
+ * 05  res_smaller := res_join.reverse.mark(0@0).reverse;
+ * ..
+ * @end verbatim
+ *
+ * Now, as the smaller_aX column BATs probably are also larger than the memory cache, we would like to do
+ * the same for the "smaller" table. But, we then cannot sort res_join twice. We could sort res_smaller on tail
+ * after line 05:
+ * @verbatim
+ * ..
+ * 05  res_smaller := res_join.reverse.mark(0@0).reverse.radix_cluster(R1,..,Rp);
+ * ..
+ * @end verbatim
+ * However, this approach of the problem only transfers the problem to later phases of query processing.
+ * The positional joins would run fine, but as a tail-sorted res_smaller would be a BAT[oid,oid] (i.e.
+ * it would no longer have a VOID head column), the result of the positional joins with the smaller_aX
+ * BAT[void,T]s would be of the form BAT[oid,T]. These results would not only take more space than the
+ * desired form BAT[void,T], but would also create a problem in further use of the query result, as these
+ * res_aX BATs will not be sorted on head. Join access to them would go to the hash-join rather than the
+ * positional join, and due to the random access this would pose a memory caching problem as these
+ * res_aX BATs tend to be larger than the memory cache.
+ *
+ * Therefore, for these projection joins, we propose the use of a new memory-conscious join algorithm that is
+ * called @emph{clustered positional join} which implements a join(BAT[void,oid] L, BAT[void,T] R) : BAT[void,T]
+ *
+ * This algorithm consists of three phases, of which we already know the first two:
+ * @table @code
+ * @item [partial radix-cluster]
+ * First, the res_smaller is @emph{partially} radix-clustered on tail-OID. That is, the relation L (= res_smaller in
+ * the positional joins to the column BATs smaller_aX) is clustered on some number of highest significant
+ * radix-bits, but not on all radix-bits. Because the radix-cluster on OIDs does not use a hash-function,
+ * clustering an OID column on all significant bits radix-sorts it, or - as in this case - on a subset of the
+ * highest significant bits, partially orders it. The partial ordering of OIDs in chunks is done in such a way that the
+ * size of the corresponding chunk in R (remember R is a BAT[void,T] and has all OIDs in a densely ascending sequence) fits
+ * the memory cache.
+ * @item [positional join]
+ * The purpose of the radix-clustering in the previous phase L is to accelerate the positional join between L and R
+ * (i.e. res_smaller and smaller_aX).  Because the OIDs in the tail of L are now partially sorted, each chunk in L
+ * will only randomly access data from one chunk in R.  Therefore, during positional join, these chunks in R stay
+ * memory resident, accelerating performance with respect to to doing the same with a non-clustered L (where each access to
+ * R would be a cache miss).
+ * @item [radix decluster]
+ * The result of the positional join is a BAT[oid,T]. Still, we know that the head column, when sorted, would
+ * form an void column. What is now the fastest way to sort it and convert it back to a void BAT? One special property
+ * of the radix-cluster algorithm is that when we cluster on tail column, each result chunk will have the head-values
+ * in order. In this case, the clustered version of L (res_smaller_clustered, see below) has the head OIDs in order @emph{within the
+ * chunk}. This sub-ordering is also carried over by the positional join to result of the positional join: in each
+ * 'virtual chunk' in the BAT[oid,T], the OIDs appear in order. Therefore, we can perform an merge operation to merge
+ * all BAT[oid,T] chunks into a BAT[void,T] result. Normally, the cost of a merge is at least O(log(P)*N), where N
+ * is the total number of tuples, and P is the number of chunks. By using the special property that eventually,
+ * the merged OIDs form a densely ascending sequence (0@@0, 1@@0,..,N@@0), we can bring this cost back to O(N)! This @emph{radix decluster}
+ * algorithm keeps a windows open of OIDs [windowStart, windowStart+1, ..., windowStart+windowSize-1] during the
+ * merge. Each iteration of the algorithm finds all the next windowSize OIDs in the chunks and inserts them
+ * in the result BAT[void,T]. This is done by going to through all (not yet empty) chunks and inserting from the top of
+ * each chunk all elements whose OID fits into the window. Due to the fact that all chunks are sorted, we are
+ * sure to have found all OIDs after having processed all chunks. Then, the window is shifted windowSize positions
+ * and the process repeats. The windowSize is typically a multiple of the number of chunks, such that per iteration
+ * in each chunk multiple tuples fall into the window. Because these multiple tuples are accessed sequentially
+ * in the chunk, the chunk cache lines will be re-used and performance will be good. The only restriction on the windowSize
+ * is that the insertion window on the output BAT must fit the memory cache. This will only start to exceed on very
+ * large table sizes (a possible remedy is then to perform the merge in multiple passes).
+ * @end table
+ *
+ * In all, in Monet this join strategy is expressed in the following MIL:
+ * @verbatim
+ * ..
+ *     # subcluster on Rs significant radix-bits, ignoring lowest Ri bits
+ * 05  res_smaller_clustered := res_join.reverse.mark(0@0).reverse.radix_cluster(-Ri, Rs);
+ *
+ *     # positional-join and decluster projected columns from smaller table into result
+ * A0  borders_smaller := res_smaller_clustered.radix_count(Ri, Rs);
+ * A1  res_a1 := join(res_smaller_clustered, smaller_a1).radix_decluster(borders_smaller);
+ * AX   ....
+ * AY  res_aY := join(res_smaller_clustered, smaller_aY).radix_decluster(borders_smaller);
+ * ..
+ * @end verbatim
+ *
+ * Possibly, one could consider to use this approach as well for the projections on the larger table
+ * (instead of the sort). However, sorting once (with radix-sort by radix-clustering on all significant
+ * bits) is probably faster than one-time partial radix-cluster, followed by multiple times positional decluster
+ * operations (one for each projected column). Therefore, it is best to do one of the set of projections
+ * with the sort/join strategy and the other with the clustered positional join strategy.
+ * The decision to do which (sort on the smaller or on the larger table?), could also be made in function of the
+ * number of projection attributes needed from the "smaller" and "larger" tables. That is, one could choose to do
+ * the clustered positional join on the table with least projections, and sort/join on the other.
+ *
+ * The full MIL script when the individual BATs of both the "smaller" and "larger" tables as well as
+ * the (N-M) join result, exceed the memory cache becomes:
+ * @verbatim
+ *     # first radix cluster both key columns on H bits (maybe different number of passes and bit settings)
+ * 01  cluster_larger := radix_cluster(larger_key, L1,..,Ll);
+ * 02  cluster_smaller := radix_cluster(smaller_key, S1,..,Ss);
+ *
+ *     # partitioned hash join on clusters of H radix-bits, followed by radix-sort on head column.
+ * 03  res_join := phash_join(cluster_larger, cluster_smaller.reverse, H).reverse.radix_cluster(R1,..,Rp).reverse;
+ * 04  res_larger_sorted := res_join.mark(0@0).reverse;
+ *
+ *     # subcluster on Rs significant radix-bits, ignoring lowest Ri bits
+ * 05  res_smaller_clustered := res_join.reverse.mark(0@0).reverse.radix_cluster(-Ri, Rs);
+ *
+ *     # positional-join and decluster projected columns from smaller table into result
+ * A0  borders_smaller := res_smaller_clustered.radix_count(Ri, Rs);
+ * A1  res_a1 := join(res_smaller_clustered, smaller_a1).radix_decluster(borders_smaller);
+ * AX   ....
+ * AY  res_aY := join(res_smaller_clustered, smaller_aY).radix_decluster(borders_smaller);
+ *
+ *     # positional-join projected columns from larger table into result
+ * B1  res_b1 := join(res_larger_sorted, larger_b1);
+ * BX  ....
+ * BZ  res_bZ := join(res_larger_sorted, larger_bZ);
+ * @end verbatim
+ *
+ * @+ The Relational Approach
+ * A cache-conscious join in a relational DBMS would first radix-cluster both the smaller and larger table,
+ * where in the process it would project on just the selected columns. As the relational model does not
+ * separate its algebraic actions by column, as Monet in MIL does, it cannot use the technique of type-expansion
+ * and have primitives that are optimized for a specific type. In other words, the join operator in a relational
+ * DBMS must be able to handle tables of variable number of columns with variable constellations of column types.
+ * This is either implemented in the kernel of a relational DBMS by using ADT interfaces with functions dereferenced
+ * from a type table, or through late-binding style C++ overloaded methods to handle data values of variable types.
+ * That means that, e.g. during the radix-cluster, for each projected column, at least one function call is executed
+ * to move a data value from the source record to the destination record.
+ *
+ * To model this extra function calling overhead, we use the integerX Monet types, that were created specifically
+ * for these experiments.  An integerX value models a relational tuple that stores X simple integer column values.
+ * Through some tricks, copying one integer8 value in Monet is actually done by copying 8 integers width memcpy(),
+ * which closely mimics what happens in a typical relational DBMS.
+ *
+ * In order to give a concrete example, we suppose "smaller" and "larger" each have 128 columns, and
+ * the projection widths are Y=Z=8; we emulate relational storage of both tables in Monet by storing
+ * them as BAT[integer128,integer], where the tail columns contain the "key" value and the head contains
+ * all other columns.
+ *
+ * The entire MIL sequence are then the following 5 statements:
+ * @verbatim
+ * 01  smaller_all := [integer]([integer](smaller_key,1).reverse, 128).reverse;
+ * 02  larger_all := [integer]([integer](larger_key,1).reverse, 128).reverse;
+ *
+ * 03  smaller_view := [integer](smaller_all.reverse, 8).reverse;
+ * 04  larger_view := [integer](larger_all.reverse, 8).reverse;
+ *
+ * 05  cluster_smaller := radix_cluster(smaller_view, S1,..,Ss);
+ * 06  cluster_larger := radix_cluster(larger_view, L1,..,Ll);
+ * 07  res_join := phash_join(cluster_larger, cluster_smaller.reverse, H);
+ * @end verbatim
+ *
+ * Notice that the fact that smaller_view and larger_view are MIL views on the base BATs
+ * smaller_all and larger_all, means that the projection is never materialized. Projecting
+ * is done on the fly during the first pass of radix cluster, just like what would happen in
+ * a relational system. What is more, the copying of each integer8 (view) value from its
+ * storage as integer128 is done with 8 memcpy() calls that fetch values at regular intervals
+ * (i.e. at positions 0, 16, 32, 48, 64,  80, 96 and 112). In practice, this means that
+ * each memcpy() causes a memory cache miss.
+ *
+ * We expect that the relational strategy will have a different performance characteristic than
+ * Monet. First, there will be many more cache misses due to the reasons described above.
+ * Even radix-cluster cannot avoid those cache misses, as it is inherent to the relational
+ * storage format of base data. Second, there will be much more CPU cost, due to the fact that
+ * function-call overhead cannot be eliminated. In Monet algorithms, CPU optimizations cause
+ * a 5-fold performance improvement.
+ *
+ * Therefore, it might even be that the increased cost of radix-cluster will make simple
+ * hash-join faster than partitioned hash-join:
+ * @verbatim
+ * 05  res_join := join(larger_view, smaller_view.reverse);
+ * @end verbatim
+ * In either way, we expect a relational performance to be a factor 10 slower than Monet
+ * on big sizes of both the "smaller" and "larger" tables with hit rates such that the result table is big.
+ *
+ * @* Module Definition
+ */
 @mal
 module radix;
 
@@ -1001,11 +1004,12 @@ comment
 ;
 @)
 
-@-
-@{
-@f radix
-@* Implementation
 @c
+/*
+ * @-
+ * @f radix
+ * @* Implementation
+ */
 #include "monetdb_config.h"
 #include "mal.h"
 #include "mal_exception.h"
@@ -1041,9 +1045,10 @@ comment
 
 #define int_HUSSLE(x)	(((x)>>7)^((x)>>13)^((x)>>21)^(x))
 
-@+ Experimentation Gimmicks
-@- Data Generation
-@c
+/*
+ * @+ Experimentation Gimmicks
+ * @- Data Generation
+ */
 
 int
 M4_RDX_BATuniform(BAT **bn, oid *base, int *size, int *domain)
@@ -1488,53 +1493,54 @@ M4_RDX_pax_blocksize_get(int *ret)
 @)
 
 
-@+ Radix Cluster
-In radix cluster we want to deliver one new BAT that consists
-of a consecutive memory area (like all BATs do) with the tuples
-clustered on a certain radix. To do this correctly in one scan
-we would need perfect information on how large each cluster is.
-Only then we can initialize the correct buffer boundaries.
-
-Such perfect information could be obtained by a 'histogram' scan; that
-would prelude the real clustering scan. On uniform data (and as the radix is
-taken from a hashed number -- that is what we hope to encounter) two
-scans is a waste, though.
-
-In this approach we start assuming perfect uniformity and continue
-clustering till one of the cluster buffers overflows. If this happens
-when N (with N near 100) percent of data is clustered; we just have to
-do the histogram on 100-N percent of the data; and subsequently
-shift the buffers to make correct room for each cluster. If data
-is near to uniform, very little data will need to be moved.
-
-TODO (easy): make N tunable
-
-functions:
-@itemize
-@item radix_buns()	
-does the basic clustering stuff (95% of effort)
-@item cnt_buns()	
-is the histogram scan that is triggered when we need
-to move data
-@item move_buns()	
-does the moving work. This is tricky; as copy
-dependencies bind you to a certain schedule.
-@item radix_chunk()	
-is the main routine that does one radix scan and
-produces a new (chunk of a) bat. Does so by first going
-for uniform distributions and executing radix_buns().
-If a buffer overflows, this stops and cnt_buns() is
-done. The buffers are then moved into correct position
-by move_buns(). Clustering is then finished by again
-radix_buns().
-@item radix_cluster()	
-is the multilevel radix cluster routine. On the first
-level; it processes 1 chunk and produced N1 new ones.
-On the second level, N1 chunks are processed and divided
-each in N2 new ones (making for N1*N2 clusters), etc.
-For clustering each chunk, it calls radix_chunk().
-@end itemize
-@c
+/*
+ * @+ Radix Cluster
+ * In radix cluster we want to deliver one new BAT that consists
+ * of a consecutive memory area (like all BATs do) with the tuples
+ * clustered on a certain radix. To do this correctly in one scan
+ * we would need perfect information on how large each cluster is.
+ * Only then we can initialize the correct buffer boundaries.
+ *
+ * Such perfect information could be obtained by a 'histogram' scan; that
+ * would prelude the real clustering scan. On uniform data (and as the radix is
+ * taken from a hashed number -- that is what we hope to encounter) two
+ * scans is a waste, though.
+ *
+ * In this approach we start assuming perfect uniformity and continue
+ * clustering till one of the cluster buffers overflows. If this happens
+ * when N (with N near 100) percent of data is clustered; we just have to
+ * do the histogram on 100-N percent of the data; and subsequently
+ * shift the buffers to make correct room for each cluster. If data
+ * is near to uniform, very little data will need to be moved.
+ *
+ * TODO (easy): make N tunable
+ *
+ * functions:
+ * @itemize
+ * @item radix_buns()
+ * does the basic clustering stuff (95% of effort)
+ * @item cnt_buns()
+ * is the histogram scan that is triggered when we need
+ * to move data
+ * @item move_buns()
+ * does the moving work. This is tricky; as copy
+ * dependencies bind you to a certain schedule.
+ * @item radix_chunk()
+ * is the main routine that does one radix scan and
+ * produces a new (chunk of a) bat. Does so by first going
+ * for uniform distributions and executing radix_buns().
+ * If a buffer overflows, this stops and cnt_buns() is
+ * done. The buffers are then moved into correct position
+ * by move_buns(). Clustering is then finished by again
+ * radix_buns().
+ * @item radix_cluster()
+ * is the multilevel radix cluster routine. On the first
+ * level; it processes 1 chunk and produced N1 new ones.
+ * On the second level, N1 chunks are processed and divided
+ * each in N2 new ones (making for N1*N2 clusters), etc.
+ * For clustering each chunk, it calls radix_chunk().
+ * @end itemize
+ */
 #define any_RADIX(p,rd) ((hash_t)((*BATatoms[any].atomHash)(p) & rd))
 #define oid_RADIX(p,rd) ((hash_t) *(oid*) (p) & rd)
 #define int_RADIX(p,rd) ((hash_t)int_HUSSLE(*(unsigned int*) (p)) & rd)
@@ -1738,6 +1744,7 @@ radix_buns_@1(BAT *bn, BAT *b, BUN start, BUN end, BUN base,
   bunins_failed:
 	return NULL;
 }
+@
 @c
 #define lng_CHECK(dst,v) dst = 0	/* dummy */
 #define int_CHECK(dst,v) dst = 0	/* dummy */
@@ -1809,6 +1816,7 @@ cnt_buns_@1(BAT *bn, BAT *b, BUN src, BUN end, size_t *cnt,
 		cnt[x] += dst_bunsize;
 	}
 }
+@
 @c
 @:cnt_buns(oid)@
 @:cnt_buns(int)@
@@ -1884,6 +1892,7 @@ radix_chunk_@1(BAT *bn, BAT *b, BAT *limits, BUN start, BUN init, BUN end, BUN o
 		GDKfree(mov);
 	return cur?0:-1;
 }
+@
 @c
 @:radix_chunk(oid)@
 @:radix_chunk(int)@
@@ -2165,10 +2174,11 @@ M4_RDX_radix_cluster2(BAT **ret, BAT *b, int *p, int *r, int *i)
 	return GDK_FAIL;
 }
 
-@+ Radix Statistics
-
-@- radix bits
-@c
+/*
+ * @+ Radix Statistics
+ *
+ * @- radix bits
+ */
 int
 M4_RDX_radix_bits(int *nbits, BAT *b)
 {
@@ -2187,10 +2197,11 @@ M4_RDX_radix_bits(int *nbits, BAT *b)
 	return GDK_SUCCEED;
 }
 
-@- radix-count
-simple statistics function that tells us how large the radix chunks are on a certain
-radix setting for a certain BAT dataset (tail column).
-@c
+/*
+ * @- radix-count
+ * simple statistics function that tells us how large the radix chunks are on a certain
+ * radix setting for a certain BAT dataset (tail column).
+ */
 #define RADIX_COUNT_MASK 65535
 
 int
@@ -2279,19 +2290,20 @@ M4_RDX_radix_count2(BAT **res, BAT *b, int *shift, int *radix)
 	return GDK_SUCCEED;
 }
 
-@+ Phash Join
-@T
-Joins two clustered inputs with partitioned hash-join. The main innovation of this
-implementation is to avoid the (int % mask) and replace it with shifts and masks.
-The % takes 40 cycles in modern CPUs while the >>, and, xor take one. Moreover;
-there is independence of various operators, so the below hash function may well
-take less than 7 cycles on a RISC cpu featuring speculative execution.
-
-One consequence is that the number of buckets is always a power of two.
-
-This new implementation also ensures that the same memory block is used
-as the mask and link list for all phash invocations.
-@c
+/*
+ * @+ Phash Join
+ * @T
+ * Joins two clustered inputs with partitioned hash-join. The main innovation of this
+ * implementation is to avoid the (int % mask) and replace it with shifts and masks.
+ * The % takes 40 cycles in modern CPUs while the >>, and, xor take one. Moreover;
+ * there is independence of various operators, so the below hash function may well
+ * take less than 7 cycles on a RISC cpu featuring speculative execution.
+ *
+ * One consequence is that the number of buckets is always a power of two.
+ *
+ * This new implementation also ensures that the same memory block is used
+ * as the mask and link list for all phash invocations.
+ */
 #define hash_atom(x)  ((hash_t)((x)%h->mask))
 #define hash_simple(x)((hash_t)(x))
 
@@ -2424,6 +2436,7 @@ hash_join(Hash *h, BAT *bn, BAT *l, BUN llo, BUN lhi, BAT *r, BUN rlo, BUN rhi, 
 												      }
 		}
 	}
+@
 @c
 int
 M4_RDX_phash_join(BAT **res, BAT *l, BAT *r, int *radix, int *hitrate, bit *cutoff)
@@ -2615,9 +2628,12 @@ M4_RDX_phash_join_xhc(BAT **res, BAT *l, BAT *r)
 		}
 	}
 
-@+ Radix Join
-this is a nested-loop join on the matching clusters (inputs should be radix clustered)
+@
 @c
+/*
+ * @+ Radix Join
+ * this is a nested-loop join on the matching clusters (inputs should be radix clustered)
+ */
 int
 M4_RDX_radix_join(BAT **res, BAT *l, BAT *r, int *radix, int *hitrate)
 {
@@ -2770,14 +2786,14 @@ M4_RDX_radix_join_xh(BAT **res, BAT *l, BAT *r)
 	}
 
 
-@+ Radix Decluster
-@T
-Radix decluster reclusters a BAT that is partially radix-clustered on tail by converting
-its non-sorted OID head column into a sorted and densely ascending void column. The tail
-itself does not need to contain the partially sorted values; in fact we do not even look
-at those values but directly take the cluster boundaries as an input parameter. This input
-parameter is a radix_count BAT that must have been created with the radix_count command.
-
+@
+ * @+ Radix Decluster
+ * @T
+ * Radix decluster reclusters a BAT that is partially radix-clustered on tail by converting
+ * its non-sorted OID head column into a sorted and densely ascending void column. The tail
+ * itself does not need to contain the partially sorted values; in fact we do not even look
+ * at those values but directly take the cluster boundaries as an input parameter. This input
+ * parameter is a radix_count BAT that must have been created with the radix_count command.
 @= radix_decluster
 {
 	@1 *dst = (@1*) BUNfirst(bn);
@@ -2807,6 +2823,7 @@ parameter is a radix_count BAT that must have been created with the radix_count 
 	}
 	break;
 }
+@
 @c
 #define simple_put(var,tpe,val) var = *(tpe*) val
 #define atom_put(var,tpe,val) ATOMput(any, bn->T->vheap, &var, val)
@@ -2960,14 +2977,15 @@ M4_RDX_radix_decluster_m(BAT **res, BAT *b, BAT *cnts)
 	return M4_RDX_radix_decluster(res, b, cnts, &multiplier);
 }
 
-@- radix_decluster
-intends to improve performance by using a cheaper positional join:
-	join(bat[void,oid], bat[void,T])
-instead of
-	join(bat[oid,oid], bat[void,T])
-
-price paid are two parameters to radix_decluster.
-
+/*
+ * @- radix_decluster
+ * intends to improve performance by using a cheaper positional join:
+ * 	join(bat[void,oid], bat[void,T])
+ * instead of
+ * 	join(bat[oid,oid], bat[void,T])
+ *
+ * price paid are two parameters to radix_decluster.
+ */
 @= radix_decluster2
 {
 	@1 *dst = ((@1*) BUNfirst(bn)) - lim;
@@ -3073,6 +3091,7 @@ price paid are two parameters to radix_decluster.
 	/* if (bad) printf("4: %d/%d = %f% miss-located writes!\n",bad,all,(flt)bad/(flt)all); */
 	break;
 }
+@
 @c
 typedef struct {
 	size_t cur1, end1, cur2;
@@ -3543,12 +3562,13 @@ M4_RDX_posjoin_tuple(BAT **res, BAT *proj, BAT *attr)
 }
 @)
 
-@+ jivejoin
-
-First phase of jivejoin does a positional join of join index with the left table.
-Its output is clustered inline on left head-oid in a single pass and consists of two separate
-(synced on void head) bats, one with the attribute values, the other with the other table oids.
-
+/*
+ * @+ jivejoin
+ *
+ * First phase of jivejoin does a positional join of join index with the left table.
+ * Its output is clustered inline on left head-oid in a single pass and consists of two separate
+ * (synced on void head) bats, one with the attribute values, the other with the other table oids.
+ */
 @= jivejoin0
 	if (@6 || proj->ttype != TYPE_void) {
 		size_t off = BUNindex(attr, BUNfirst(attr)) - attr->hseqbase;
@@ -3574,6 +3594,7 @@ Its output is clustered inline on left head-oid in a single pass and consists of
 		}
 		break;
 	}
+@
 @c
 #define SIMPLEput(tpe,hp,dst,src) *(tpe*) (dst) = *(tpe*) (src)
 
@@ -3672,6 +3693,7 @@ M4_RDX_jivejoin0(BAT **res, BAT *proj, BAT *attr, BAT *radix_count, int *shift, 
 		}
 		break;
 	}
+@
 @c
 int
 M4_RDX_jivejoin1(BAT **res, BAT *bo, BAT *proj, BAT *attr, BAT *radix_count, int *shift, int *nbits)
@@ -3801,6 +3823,7 @@ M4_RDX_jivejoin1(BAT **res, BAT *bo, BAT *proj, BAT *attr, BAT *radix_count, int
 		}
 		break;
 	}
+@
 @c
 int
 M4_RDX_jivejoin2(BAT **res, BAT *proj, BAT *attr)
@@ -3873,13 +3896,13 @@ M4_RDX_jivejoin2(BAT **res, BAT *proj, BAT *attr)
 	return GDK_SUCCEED;
 }
 
-@+ Prefetching
-Seems hardware prefetching isn't up to its take on most platforms (P4 being the exception). Therefore we implement
-software prefetching optimized per platform. A default implementation just sums int with cacheline strides.
-For AMD Athlon systems backward read of 'movl's is optimal (see www.amd.com).  For systems without hardware
-prefetching, a software prefetch is implemented, ie a simple prefetch loop.
-
-@c
+/*
+ * @+ Prefetching
+ * Seems hardware prefetching isn't up to its take on most platforms (P4 being the exception). Therefore we implement
+ * software prefetching optimized per platform. A default implementation just sums int with cacheline strides.
+ * For AMD Athlon systems backward read of 'movl's is optimal (see www.amd.com).  For systems without hardware
+ * prefetching, a software prefetch is implemented, ie a simple prefetch loop.
+ */
 #ifdef HAVE_RESTRICT
 #define __r	restrict
 #else
@@ -3955,8 +3978,9 @@ Mem2Cache(int *__r p, size_t size)
 #endif
 #endif
 
-@+ clustered positional join
-@c
+/*
+ * @+ clustered positional join
+ */
 static dbl
 prefetch(ssize_t n, int stride, dbl *__r src)
 {
@@ -4058,6 +4082,7 @@ posjoin_@1(int pf, @1*__r p1, int oidhead, ssize_t n, @1*__r res, oid*__r pos, @
 	}
 	return (int) (tot1 + tot2 + tot3 + tot4);
 }
+@
 @c
 @:posjoin(bte)@
 @:posjoin(sht)@
@@ -4221,6 +4246,7 @@ M4_RDX_cache_join(BAT **ret, BAT *left, BAT *right, int *_cache_size, int *_cach
 			if (cluster_values)	BBPreclaim(cluster_values);
 			if (cluster_ids)	BBPreclaim(cluster_ids);
 			return @1;
+@
 @c
 			@:cache_join_end(GDK_FAIL)@
 		}
@@ -4264,11 +4290,12 @@ M4_RDX_cache_join_256k_32(BAT **ret, BAT *left, BAT *right)
 }
 
 
-@+ M5 header file & M5/MAL Wrappers
-
-In M4, this was generated by MEL, in M5 we have to do it by hand.
-
 @h
+/*
+ * @+ M5 header file & M5/MAL Wrappers
+ *
+ * In M4, this was generated by MEL, in M5 we have to do it by hand.
+ */
 #ifndef _M5_RDX_H
 #define _M5_RDX_H
 
@@ -4936,4 +4963,3 @@ M5_RDX_cache_join_256k_32(int *M5res, int *M5left, int *M5right)
 
 @h
 #endif /* _M5_RDX_H */
-@}

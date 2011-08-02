@@ -17,20 +17,21 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f array
-@a A.R. van Ballegooij
-@+ Basic array support
-
-The array support library constructs the index arrays essential
-for the Relational Algebra Model language.
-The grid filler operation assumes that there is enough space.
-The shift variant multiplies all elements with a constant factor.
-It is a recurring operation for the RAM front-end and will save
-an additional copying.
-
-The optimization is captured in a contraction macro.
-@{
-
+@c
+/*
+ * @f array
+ * @a A.R. van Ballegooij
+ * @+ Basic array support
+ *
+ * The array support library constructs the index arrays essential
+ * for the Relational Algebra Model language.
+ * The grid filler operation assumes that there is enough space.
+ * The shift variant multiplies all elements with a constant factor.
+ * It is a recurring operation for the RAM front-end and will save
+ * an additional copying.
+ *
+ * The optimization is captured in a contraction macro.
+ */
 @mal
 module array;
 @= grid_mdefs
@@ -52,6 +53,7 @@ address ARRAYgridBATshift_@1
 comment  "Fills an index BAT, (grpcount,grpsize,clustersize,offset)
 and shift all elemenets with a factor s";
 
+@
 @mal
 @:grid_mdefs(int)@
 @:grid_mdefs(lng)@
@@ -64,7 +66,7 @@ command project(b:bat[:oid,:any_1],i:int):bat[:oid,:int]
 address ARRAYproject
 comment "Fill an array representation with constants ";
 
-@- Implementation
+# @- Implementation
 @include ../mal/prelude.mx
 @h
 
@@ -83,6 +85,7 @@ comment "Fill an array representation with constants ";
                          BATkey(BATmirror((b)),0);          \
                          (b)->tsorted = 0;                  }
 #define get_@1_ptr(b)   ((@1*)(Tloc(b,BUNfirst((b)))))
+@
 @h
 @:grid_hdefs(int)@
 @:grid_hdefs(lng)@
@@ -197,13 +200,15 @@ gridShift_@1(BAT **out, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset, 
 	return fillgrid_@1(out, groups, groupsize, clustersize, offset, shift);
 }
 
+@
 @c
 @:grid_impl(int,"%d")@
 @:grid_impl(lng,LLFMT)@
 
-@+
-The M5 wrapper code
-@c
+/*
+ * @+
+ * The M5 wrapper code
+ */
 #include "mal.h"
 @= grid_wrapper_impl
 str
@@ -265,11 +270,14 @@ ARRAYgridBATshift_@1(@1 *ret, @1 *bid, @1 *groups, @1 *groupsize, @1 *clustersiz
 	BBPkeepref((int)*ret);
 	return MAL_SUCCEED;
 }
+@
 @c
 @:grid_wrapper_impl(int)@
 @:grid_wrapper_impl(lng)@
 
-@-
+/*
+ * @-
+ */
 @= arraymultiply
 array_export str ARRAYmultiply_@1_@2(int *ret, int *bid, int *rid);
 str
@@ -306,6 +314,7 @@ ARRAYmultiply_@1_@2(int *ret, int *bid, int *rid){
 	BBPreleaseref(r->batCacheid);
 	return MAL_SUCCEED;
 }
+@
 @c
 @:arraymultiply(sht,lng)@
 @:arraymultiply(sht,int)@
@@ -381,203 +390,3 @@ ARRAYproject(int *ret, int *bid, int *cst)
 }
 
 
-@-
-The printing stuff is postponed to the future. Then it also needs
-a solution to the GDKout issues.
-/*---------------------------------------------------------------------------*/
-/*
-   memory-hungry function;
-   it internally builds the index to be able to print the array in-order.
-	This is postpone to the future of arrays.
-*/
-
-static int
-print_array(BAT *val, ...)
-{
-	BATiter vali = bat_iterator(val);
-	va_list ap;
-	BAT *tmp, *batptr[MAX_ARRAY_DIM];
-	int *minvector;
-	int *idxvector;
-	int *maxvector;
-	int *lenvector;
-	oid *arrayindex;
-	int i, dims;
-	BUN j, c;
-	stream *st = GDKout;
-	int type_id = BATttype(val);
-
-	va_start(ap, val);
-	dims = 0;
-	while ((tmp = va_arg(ap, BAT *)) != NULL) {
-		if (dims == MAX_ARRAY_DIM) {
-			GDKerror("print_array: Error, too high dimensionality.\n");
-			goto exit_err_none;
-		}
-		batptr[dims++] = tmp;
-	}
-	if (dims == 0) {
-		GDKerror("print_array: Error, no index bats provided.\n");
-		goto exit_err_none;
-	}
-	va_end(ap);
-
-#ifdef EXCESSIVE_DEBUGGING
-	fprintf(stderr, "[PRINT_ARRAY] Dims = %d\n", dims);
-#endif
-
-	minvector = GDKmalloc(sizeof(ptr) * dims);
-	if ( minvector == NULL) 
-		goto exit_err_full;
-	idxvector = GDKzalloc(sizeof(int) * dims);
-	if ( idxvector == NULL) 
-		goto exit_err_full;
-	maxvector = GDKmalloc(sizeof(ptr) * dims);
-	if ( maxvector == NULL) 
-		goto exit_err_full;
-	lenvector = GDKmalloc(sizeof(ptr) * dims);
-	if ( lenvector == NULL) 
-		goto exit_err_full;
-
-	c = 1;
-	j = BATcount(val);
-	for (i = 0; i < dims; i++) {
-		if (BATttype(batptr[i]) != TYPE_int) {
-			GDKerror("print_array: Index %d error, not int type\n", i);
-			goto exit_err_part;
-		}
-		if (BATcount(batptr[i]) != j) {
-			GDKerror("print_array: Index %d error, count doesn't match\n", i);
-			goto exit_err_part;
-		}
-
-		BATmin(batptr[i], &(minvector[i]));
-		BATmax(batptr[i], &(maxvector[i]));
-		lenvector[i] = maxvector[i] - minvector[i] + 1;
-		c *= lenvector[i];
-#ifdef EXCESSIVE_DEBUGGING
-		fprintf(stderr, "[PRINT_ARRAY] Axis %d = %d..%d\n", i, minvector[i], maxvector[i]);
-#endif
-	}
-
-	if (c != j) {
-		GDKerror("print_array: array size does not match array count\n");
-		goto exit_err_part;
-	}
-	arrayindex = GDKmalloc(sizeof(oid) * c);
-	if ( arrayindex == NULL)
-		goto exit_err_full;
-
-	/* Iterate over the first index BAT.              */
-	/* And fetch additional indices (for a given oid) */
-	/* building the full M-D structure (of oid's).    */
-	{
-		BATiter b0i = bat_iterator(batptr[0]);
-		register BUN p, q;
-
-		p = BUNfirst(batptr[0]);
-		q = BUNlast(batptr[0]);
-		while (p < q) {
-			register oid *o = (oid *) BUNhead(b0i, p);
-			register int offset;
-
-			offset = *((int *) BUNtail(b0i, p)) - minvector[0];
-			for (i = 1; i < dims; i++) {
-				register BUN p = BUNfnd(batptr[i], o);
-
-				if (p == BUN_NONE) {
-					GDKerror("print_array: Index %d missing for oid " OIDFMT ".\n", i, *o);
-					goto exit_err_full;
-				}
-				offset = (offset * lenvector[i]) + ((*((int *) Tloc(batptr[i],p))) - minvector[i]);
-			}
-			arrayindex[offset] = *o;
-			p++;
-		}
-	}
-
-	/* Iterate over all valid indices             */
-	/* (note: normalized to [0..l-1] ranges !)    */
-	/* And print the values within the 'correct'  */
-	/* bracket structure...                       */
-#ifdef EXCESSIVE_DEBUGGING
-	fprintf(stderr, "[PRINT_ARRAY] ");
-#endif
-	while (idxvector[dims - 1] < lenvector[dims - 1]) {
-		int offset;
-
-		for (i = 0; i < dims; i++) {
-			if (idxvector[i] != 0) {
-#ifdef EXCESSIVE_DEBUGGING
-				fprintf(stderr, ",");
-#endif
-				mnstr_printf(st, ",");
-				break;
-			}
-		}
-		i = 0;
-		while (i < dims && idxvector[i] == 0) {
-#ifdef EXCESSIVE_DEBUGGING
-			fprintf(stderr, "[");
-#endif
-			mnstr_printf(st, "[");
-			i++;
-		}
-		for (offset = idxvector[0], i = 1; i < dims; i++) {
-			offset = (offset * lenvector[i]) + idxvector[i];
-		}
-		{
-			register BUN p = BUNfnd(val, &arrayindex[offset]);
-
-			if (p == BUN_NONE) {
-				GDKerror("print_array: Value missing for oid " OIDFMT ".\n", arrayindex[offset]);
-				goto exit_err_full;
-			}
-#ifdef EXCESSIVE_DEBUGGING
-			fprintf(stderr, OIDFMT "\@0", arrayindex[offset]);
-#endif
-			ATOMprint(type_id, BUNtail(vali, p), st);
-			if (mnstr_errnr(st))
-				goto exit_err_full;
-		}
-		i = 0;
-		while (i < dims && (++idxvector[i]) == lenvector[i]) {
-#ifdef EXCESSIVE_DEBUGGING
-			fprintf(stderr, "]");
-#endif
-			mnstr_printf(st, "]");
-			if (i < dims - 1) {
-				idxvector[i] = 0;
-				i++;
-			}
-		}
-	}
-#ifdef EXCESSIVE_DEBUGGING
-	fprintf(stderr, "\n");
-#endif
-	mnstr_printf(st, "\n");
-
-	/* Exit strategies... */
-	GDKfree(arrayindex);
-	GDKfree(maxvector);
-	GDKfree(idxvector);
-	GDKfree(minvector);
-	GDKfree(lenvector);
-	return GDK_SUCCEED;
-
-exit_err_full:
-	if (arrayindex)
-		GDKfree(arrayindex);
-exit_err_part:
-	if ( maxvector)
-		GDKfree(maxvector);
-	if (idxvector)
-		GDKfree(idxvector);
-	if (minvector)
-		GDKfree(minvector);
-	if (lenvector)
-		GDKfree(lenvector);
-exit_err_none:
-	return GDK_FAIL;
-}
-@}

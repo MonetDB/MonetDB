@@ -17,29 +17,32 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f bbp
-@v 2.0
-@a M.L.Kersten, P. Boncz
-@+ BAT Buffer Pool
-The BBP module implements a box interface over the BAT buffer pool.
-It is primarilly meant to ease inspection of the BAT collection managed
-by the server.
-
-The two predominant approaches to use bbp is to access the BBP
-with either @emph{bind} or @emph{take}. The former merely maps the BAT name
-to the object in the bat buffer pool.  
-A more controlled scheme is to @emph{ deposit}, @emph{take}, @emph{release}
-and @emph{ discard} elements.
-Any BAT B created can be brought under this scheme with the name N.
-The association N->B is only maintained in the box administration
-and not reflected in the BAT descriptor.
-In particular, taking a  BAT object out of the box leads to a private 
-copy to isolate the user from concurrent updates on the underlying store.
-Upon releasing it, the updates are merged with the master copy [todo].
-
-The remainder of this module contains operations that rely
-on the MAL runtime setting, but logically belong to the kernel/bat
-module.
+@c
+/*
+ * @f bbp
+ * @v 2.0
+ * @a M.L.Kersten, P. Boncz
+ * @+ BAT Buffer Pool
+ * The BBP module implements a box interface over the BAT buffer pool.
+ * It is primarilly meant to ease inspection of the BAT collection managed
+ * by the server.
+ *
+ * The two predominant approaches to use bbp is to access the BBP
+ * with either @emph{bind} or @emph{take}. The former merely maps the BAT name
+ * to the object in the bat buffer pool.
+ * A more controlled scheme is to @emph{ deposit}, @emph{take}, @emph{release}
+ * and @emph{ discard} elements.
+ * Any BAT B created can be brought under this scheme with the name N.
+ * The association N->B is only maintained in the box administration
+ * and not reflected in the BAT descriptor.
+ * In particular, taking a  BAT object out of the box leads to a private
+ * copy to isolate the user from concurrent updates on the underlying store.
+ * Upon releasing it, the updates are merged with the master copy [todo].
+ *
+ * The remainder of this module contains operations that rely
+ * on the MAL runtime setting, but logically belong to the kernel/bat
+ * module.
+ */
 @mal
 module bbp;
 
@@ -129,26 +132,9 @@ pattern getObjects():bat[:int,:str]
 address CMDbbpGetObjects
 	comment "View of the box content.";
 
-@{
-@- Singleton Set management
-Singleton sets are ideally not represented by BATs, but they
-nevertheless emerge as the result of an operation.
-They can be packed/unpacked easily.
-@- BAT declarations
-A pattern block may be required to make the proper translation to
-the BAT library. In particular when the type information is needed
-to steer the process. This means the code can not belong to the
-kernel module, because MAL context knowledge is forbidden there.
-The signatures are, however, moved into the proper place.
-@- Algebraic operators
-There are also a few algebraic operators that have to be defined here/
-They rely on knowledge of the runtime environment
-@mal
-@+ BAT buffer pool
-The following list of operations permits inspection of the
-buffer pool
-@}
-@mal
+# @+ BAT buffer pool
+# The following list of operations permits inspection of the
+# buffer pool
 command getIndex(b:bat[:any_1,:any_2]):int
 address CMDbbpgetIndex
 comment "Retrieve the index in the BBP";
@@ -205,14 +191,14 @@ command getPageSize():int
 address CMDgetPageSize
 comment "Obtain the memory page size";
 
-@-
-@{
+# @-
 @include prelude.mx
-@+ Implementation section
-In most cases we pass a BAT identifier, which should be unified
-with a BAT descriptor. Upon failure we can simply abort the function.
-
 @h
+/*
+ * @+ Implementation section
+ * In most cases we pass a BAT identifier, which should be unified
+ * with a BAT descriptor. Upon failure we can simply abort the function.
+ */
 #ifndef _BBP_H_
 #define _BBP_H_
 #include "mal.h"
@@ -284,10 +270,12 @@ bbp_export str CMDbbptruncate(int *ret, int *bid, str *fnme);
 bbp_export str CMDbbpexpand(int *ret, int *bid, str *fnme);
 #endif /* _BBP_H_*/
 
-@-
-Access to a box calls for resolving the first parameter
-to a named box. The bbp box is automatically opened.
 @c
+/*
+ * @-
+ * Access to a box calls for resolving the first parameter
+ * to a named box. The bbp box is automatically opened.
+ */
 #include "monetdb_config.h"
 #include "bbp.h"
 
@@ -311,8 +299,9 @@ CMDbbpprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	throw(MAL, "bbp.prelude", BOX_CLOSED);
 }
 
-@- Operator implementation
-@c
+/*
+ * @- Operator implementation
+ */
 str
 CMDbbpopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -352,11 +341,12 @@ CMDbbpdestroy(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-@-
-Beware that once you deposit a BAT into a box, it should
-increment the reference count to assure it is not
-garbage collected. Moreover, it should be done so only once.
-@c
+/*
+ * @-
+ * Beware that once you deposit a BAT into a box, it should
+ * increment the reference count to assure it is not
+ * garbage collected. Moreover, it should be done so only once.
+ */
 str
 CMDbbpdeposit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -529,13 +519,14 @@ CMDbbpbindindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BBPkeepref(*ret);
 	return MAL_SUCCEED;
 }
-@-
-Compression and decompression are handled explicity. A compressed BAT is
-recognized by its file extension on the heap name.
-Compression of heaps can be useful to reduce the diskspace and as preparation
-for shipping data around. We keep the truncated file around for consistency
-of the database structures.
-@c
+/*
+ * @-
+ * Compression and decompression are handled explicity. A compressed BAT is
+ * recognized by its file extension on the heap name.
+ * Compression of heaps can be useful to reduce the diskspace and as preparation
+ * for shipping data around. We keep the truncated file around for consistency
+ * of the database structures.
+ */
 
 static void
 CMDtruncateheap(Heap *h,str fnme)
@@ -744,13 +735,14 @@ CMDbbpexpand(int *ret, int *bid, str *fnme)
 	BBPkeepref(*ret = *bid);
 	return MAL_SUCCEED;
 }
-@-
-Moving BATs in/out of the box also involves
-checking the type already known for possible misfits.
-Therefore, we need access to the runtime context.
-If the bat is not known in the box, we go to the bbp pool
-and make an attempt to load it directly.
-@c
+/*
+ * @-
+ * Moving BATs in/out of the box also involves
+ * checking the type already known for possible misfits.
+ * Therefore, we need access to the runtime context.
+ * If the bat is not known in the box, we go to the bbp pool
+ * and make an attempt to load it directly.
+ */
 str
 CMDbbptake(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -800,11 +792,12 @@ CMDbbprelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-@-
-A BAT can be released to make room for others.
-We decrease the reference count with one, but should not
-immediately release it, because there may be aliases.
-@c
+/*
+ * @-
+ * A BAT can be released to make room for others.
+ * We decrease the reference count with one, but should not
+ * immediately release it, because there may be aliases.
+ */
 str
 CMDbbpreleaseBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -821,13 +814,14 @@ CMDbbpreleaseBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 #if 0
-@-
-A BAT designated as garbage can be removed, provided we
-do not keep additional references in the stack frame
-Be careful here not to remove persistent BATs.
-Note that we clear the dirty bit to ensure that
-the BAT is not written back to store before being freed.
-@c
+/*
+ * @-
+ * A BAT designated as garbage can be removed, provided we
+ * do not keep additional references in the stack frame
+ * Be careful here not to remove persistent BATs.
+ * Note that we clear the dirty bit to ensure that
+ * the BAT is not written back to store before being freed.
+ */
 str
 CMDbbpgarbage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -864,11 +858,12 @@ CMDbbpgarbage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 #endif
 
-@-
-A BAT can be removed forever immediately or at the end of
-a session. The references within the current frame
-should also be zapped.
-@c
+/*
+ * @-
+ * A BAT can be removed forever immediately or at the end of
+ * a session. The references within the current frame
+ * should also be zapped.
+ */
 str
 CMDbbpdestroyBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -987,15 +982,17 @@ CMDbbpiterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 
 
-@+ BBP status
-The BAT buffer pool datastructures describe the memory resident information
-on the whereabouts of the BATs. The three predominant tables are made accessible
-for inspection. 
-
-The most interesting system bat for end-users is the BID-> NAME mapping,
-because it provides access to the system guaranteed persistent BAT identifier.
-It may be the case that the user already introduced a BAT with this name,
-it is simply removed first
+/*
+ * @+ BBP status
+ * The BAT buffer pool datastructures describe the memory resident information
+ * on the whereabouts of the BATs. The three predominant tables are made accessible
+ * for inspection.
+ *
+ * The most interesting system bat for end-users is the BID-> NAME mapping,
+ * because it provides access to the system guaranteed persistent BAT identifier.
+ * It may be the case that the user already introduced a BAT with this name,
+ * it is simply removed first
+ */
 @= Pseudo2
 	if (BBPindex("@1_@2") > 0) 
 		BATdelete(BBPdescriptor(BBPindex("@1_@2")));
@@ -1004,6 +1001,7 @@ it is simply removed first
 	BATfakeCommit(b);
 	*ret = b->batCacheid;
 	BBPkeepref(*ret);
+@
 @c
 str
 CMDbbpGetObjects(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -1129,9 +1127,10 @@ CMDbbpCount(int *ret)
 	return MAL_SUCCEED;
 }
 
-@-
-The BAT status is redundantly stored in CMDbat_info.
-@c
+/*
+ * @-
+ * The BAT status is redundantly stored in CMDbat_info.
+ */
 str
 CMDbbpLocation(int *ret)
 {
@@ -1194,9 +1193,10 @@ CMDbbpHeat(int *ret)
 	return MAL_SUCCEED;
 }
 
-@-
-The BAT dirty status:dirty => (mem != disk); diffs = not-committed
-@c
+/*
+ * @-
+ * The BAT dirty status:dirty => (mem != disk); diffs = not-committed
+ */
 str
 CMDbbpDirty(int *ret)
 {
@@ -1221,9 +1221,10 @@ CMDbbpDirty(int *ret)
 	return MAL_SUCCEED;
 }
 
-@-
-The BAT status is redundantly stored in CMDbat_info.
-@c
+/*
+ * @-
+ * The BAT status is redundantly stored in CMDbat_info.
+ */
 str
 CMDbbpStatus(int *ret)
 {
@@ -1357,7 +1358,9 @@ CMDgetBATlrefcnt(int *res, int *bid)
 }
 
 
-@-
+/*
+ * @-
+ */
 @= headtailProperty
 bbp_export str CMDbbp@2( int *ret);
 str CMDbbp@2( int *ret){
@@ -1379,6 +1382,7 @@ str CMDbbp@2( int *ret){
 	return MAL_SUCCEED;
 }
 
+@
 @c
 @:headtailProperty(htype,HeadType)@
 @:headtailProperty(ttype,TailType)@

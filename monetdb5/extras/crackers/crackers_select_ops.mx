@@ -17,17 +17,19 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f crackers_select_ops
-@a Martin Kersten, Stratos Idreos, Stefan Manegold
-@d March 2006 - July 2007
-@* Select Operators
-
-
-@+ Interface
-
-
-@- Type expansion
-
+@c
+/*
+ * @f crackers_select_ops
+ * @a Martin Kersten, Stratos Idreos, Stefan Manegold
+ * @d March 2006 - July 2007
+ * @* Select Operators
+ *
+ *
+ * @+ Interface
+ *
+ *
+ * @- Type expansion
+ */
 @= TypeSwitch
 @:@1(chr,simple,,chr)@
 @:@1(sht,simple,,sht)@
@@ -37,11 +39,10 @@ All Rights Reserved.
 @:@1(dbl,simple,,dbl)@
 @:@1(date,atom,TYPE_,loc)@
 @
-
-
-@- Header file
-
 @h
+/*
+ * @- Header file
+ */
 #ifndef _CRACKERS_SELECT_H_
 #define _CRACKERS_SELECT_H_
 
@@ -49,11 +50,9 @@ All Rights Reserved.
 @:TypeSwitch(SelectFunctions_decl)@
 
 #endif /* _CRACKERS_SELECT_H */
-@
-
-
-@- Exported signatures
-
+/*
+ * @- Exported signatures
+ */
 @= SelectFunctions_decl
 crackers_export str CRKselectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
 crackers_export str CRKselectBounds2_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
@@ -65,15 +64,13 @@ crackers_export str CRKuselect_@1(int *vid, int *bid, @1 *low, @1 *hgh);
 crackers_export str CRKthetaselect_@1(int *vid, int *bid, @1 *val, str *op);
 crackers_export str CRKthetauselect_@1(int *vid, int *bid, @1 *val, str *op);
 @
-
-
-@{
-@+ Implementation
-
-
-@- C file
-
 @c
+/*
+ * @+ Implementation
+ *
+ *
+ * @- C file
+ */
 #include "monetdb_config.h"
 #include "crackers.h"
 
@@ -82,11 +79,9 @@ crackers_export str CRKthetauselect_@1(int *vid, int *bid, @1 *val, str *op);
 
 /* Exported functions */
 @:TypeSwitch(SelectFunctions_impl)@
-@
-
-
-@- Exported functions
-
+/*
+ * @- Exported functions
+ */
 @= SelectFunctions_impl
 str
 CRKselectBounds2_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh){		
@@ -188,10 +183,7 @@ CRKthetauselect_@1(int *vid, int *bid, @1 *val, str *OP){
 }
 
 @
-
-
-@- Local support functions and macros
-
+ * @- Local support functions and macros
 @= crkThreeTree2
         /*printf("crack in three pieces\n");*/
 	if (*inclusiveLow == TRUE && *inclusiveHgh == TRUE)
@@ -209,7 +201,6 @@ CRKthetauselect_@1(int *vid, int *bid, @1 *val, str *OP){
 		addCrackerIndex_@1(m,hgh,HBound,vh,c);
 	
 @
-
 @= crkTwoLTree2
 	/*CRACK in two pieces cl1-ch1 using >incLow bound*/
 	if (*inclusiveLow == TRUE)
@@ -228,7 +219,6 @@ CRKthetauselect_@1(int *vid, int *bid, @1 *val, str *OP){
 	vl++; /* We need to take next position because the crack function always returns the last bun of the left piece.
 		Instead we want the first bun of the right piece*/
 @
-
 @= crkTwoRTree2
 	/*CRACK in two pieces cl2-ch2 using <incHgh bound*/
 	if (*inclusiveHgh == TRUE)
@@ -246,7 +236,6 @@ CRKthetauselect_@1(int *vid, int *bid, @1 *val, str *OP){
 		vh--;
 	}
 @
-
 @= crkThreeTree
         /*printf("crack in three pieces\n");*/
 	if (*inclusiveLow == TRUE && *inclusiveHgh == TRUE)
@@ -264,7 +253,6 @@ CRKthetauselect_@1(int *vid, int *bid, @1 *val, str *OP){
 		addCrackerIndex_@1(m,hgh,HBound,vh,c);
 	
 @
-
 @= crkThreeTreeCopy
         /*printf("crack in three pieces\n");*/
 	if (*inclusiveLow == TRUE && *inclusiveHgh == TRUE)
@@ -282,7 +270,6 @@ CRKthetauselect_@1(int *vid, int *bid, @1 *val, str *OP){
 		addCrackerIndex_@1(m,hgh,HBound,vh,c);
 	
 @
-
 @= crkTwoLTree
 	/*CRACK in two pieces cl1-ch1 using >incLow bound*/
 	if (*inclusiveLow == TRUE)
@@ -301,7 +288,6 @@ CRKthetauselect_@1(int *vid, int *bid, @1 *val, str *OP){
 	vl++; /* We need to take next position because the crack function always returns the last bun of the left piece.
 		Instead we want the first bun of the right piece*/
 @
-
 @= crkTwoRTree
 	/*CRACK in two pieces cl2-ch2 using <incHgh bound*/
 	if (*inclusiveHgh == TRUE)
@@ -319,7 +305,6 @@ CRKthetauselect_@1(int *vid, int *bid, @1 *val, str *OP){
 		vh--;
 	}
 @
-
 @= CreateResult
 createView:
 
@@ -334,7 +319,6 @@ createView:
 	BBPunfix(b->batCacheid);
 	BBPunfix(c->batCacheid);
 @
-
 @= RangeSelectBody
 	BAT *b,*c,*bo;
 	BAT *view;
@@ -605,7 +589,6 @@ createView:
 	@:CreateResult()@
 	return MAL_SUCCEED;
 @
-
 @= crackOperations
 static oid
 shiftHoles_@1(struct Node *lowNode, struct Node *lowNodeNext, BAT *b, BAT *c, BUN idxFirst, @1 *hgh, bit *inclusiveHgh, int position){
@@ -1092,5 +1075,3 @@ CRKRangeRightNilTree_@1(int *vid, int *bid, @1 *low, bit *inclusiveLow, bit tail
 	return MAL_SUCCEED;
 }
 @
-
-@}

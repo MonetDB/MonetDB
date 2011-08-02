@@ -17,17 +17,19 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f opt_accessmode
-@a M. Kersten
-@-
-@- Access mode optimization
-The routine @sc{optimizer.accessmode()} reduces the number of read/write
-mode changes of
-variables to a minimum. Especially setting a BAT to write mode is expensive,
-because it often implies creation of a private copy first.
-
-A full implementation is delayed until really needed.
-@{
+@c
+/*
+ * @f opt_accessmode
+ * @a M. Kersten
+ * @-
+ * @- Access mode optimization
+ * The routine @sc{optimizer.accessmode()} reduces the number of read/write
+ * mode changes of
+ * variables to a minimum. Especially setting a BAT to write mode is expensive,
+ * because it often implies creation of a private copy first.
+ *
+ * A full implementation is delayed until really needed.
+ */
 @mal
 pattern optimizer.accessmode():str
 address OPTaccessmode;
@@ -46,15 +48,17 @@ comment "Reduce the number of mode changes.";
 #define OPTDEBUGaccessmode  if ( optDebug & (1 <<DEBUG_OPT_ACCESSMODE) )
 
 #endif
-@-
-The implementation strategy is currently quite simple.
-We make a scan to identify all setWriteModes and see if
-they are later indeed to target of a function with side
-effects.
-We should also remember the BATs that are already been set
-writable, to avoid subsequent calls.[todo]
-In a second pass we can then remove/keep them upon need.
 @c
+/*
+ * @-
+ * The implementation strategy is currently quite simple.
+ * We make a scan to identify all setWriteModes and see if
+ * they are later indeed to target of a function with side
+ * effects.
+ * We should also remember the BATs that are already been set
+ * writable, to avoid subsequent calls.[todo]
+ * In a second pass we can then remove/keep them upon need.
+ */
 #include "monetdb_config.h"
 #include "opt_accessmode.h"
 #include "mal_interpreter.h"
@@ -119,4 +123,3 @@ OPTaccessmodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(accessmode,OPT_CHECK_ALL)@
-@}

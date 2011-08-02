@@ -17,18 +17,20 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f box
-@a Martin Kersten
-@v 0.1
-@+ Box definitions
-This module shows the behavior of a simple box of objects.
-Objects are stored into the box using @emph{ deposit} and taken
-out with @emph{ take}. Once you are done, elements can be
-removed by name or reference using @emph{ discard}.
-
-A box should be opened before being used. It is typically used
-to set-up the list of current users and to perform authorization.
-
+@c
+/*
+ * @f box
+ * @a Martin Kersten
+ * @v 0.1
+ * @+ Box definitions
+ * This module shows the behavior of a simple box of objects.
+ * Objects are stored into the box using @emph{ deposit} and taken
+ * out with @emph{ take}. Once you are done, elements can be
+ * removed by name or reference using @emph{ discard}.
+ *
+ * A box should be opened before being used. It is typically used
+ * to set-up the list of current users and to perform authorization.
+ */
 @mal
 module box;
 
@@ -66,10 +68,11 @@ comment "Locates the next element in the box.";
 command getBoxNames():bat[:int,:str]
 address BOXgetBoxNames
 comment "Retrieve the names of all boxes.";
-@-
-@{
-@+ Dummy code 
 @h
+/*
+ * @-
+ * @+ Dummy code
+ */
 #ifndef __BOX_H
 #define __BOX_H
 
@@ -143,16 +146,21 @@ BOXdestroy(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-@-
-Access to a box calls for resolving the first parameter
-to a named box.
+/*
+ * @-
+ * Access to a box calls for resolving the first parameter
+ * to a named box.
+ */
 @= OpenBox
 	name = *(str *) getArgReference(stk,pci,1);
 	box= findBox(name);
 	if( box ==0) 
 	throw(MAL, "box.@1",BOX_CLOSED);
-@-
+@
 @c
+/*
+ * @-
+ */
 str
 BOXdeposit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -265,4 +273,3 @@ BOXiterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-@}

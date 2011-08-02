@@ -17,39 +17,41 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f opt_singleton
-@a M. Kersten
-@- Singleton Set Reduction
-Application semantics and precise cost analysis may
-identify the result of an operation to produce a BAT with
-a single element. Such variables can be tagged with the
-property @sc{singleton}, whereafter the operation
-@sc{optimizer.singleton()} derives an MAL program
-using a symbolic evaluation as far as possible.
-
-During its evaluation, more singleton sets can be created, 
-leading to a ripple effect through the code.
-A non-optimizable instruction leads to
-a construction of a new table with the single instance.
-
-	@verbatim
-	b:= bat.new(:int,:int);
-	bat.insert(b,1,2);
-	c{singleton}:= algebra.select(b,0,4);
-	d:= algebra.markH(c);
-	io.print(d);
-	optimizer.singleton();
-@end verbatim
-is translated by into the code block
-@verbatim
-	b := bat.new(:int,:int);
-	bat.insert(b,1,2);
-	c{singleton} := algebra.select(b,0,4);
-	(_15,_16):= bat.unpack(c{singleton});
-	d := bat.pack(nil,_16);
-	io.print(d);
-@end verbatim
-@{
+@c
+/*
+ * @f opt_singleton
+ * @a M. Kersten
+ * @- Singleton Set Reduction
+ * Application semantics and precise cost analysis may
+ * identify the result of an operation to produce a BAT with
+ * a single element. Such variables can be tagged with the
+ * property @sc{singleton}, whereafter the operation
+ * @sc{optimizer.singleton()} derives an MAL program
+ * using a symbolic evaluation as far as possible.
+ *
+ * During its evaluation, more singleton sets can be created,
+ * leading to a ripple effect through the code.
+ * A non-optimizable instruction leads to
+ * a construction of a new table with the single instance.
+ *
+ * 	@verbatim
+ * 	b:= bat.new(:int,:int);
+ * 	bat.insert(b,1,2);
+ * 	c{singleton}:= algebra.select(b,0,4);
+ * 	d:= algebra.markH(c);
+ * 	io.print(d);
+ * 	optimizer.singleton();
+ * @end verbatim
+ * is translated by into the code block
+ * @verbatim
+ * 	b := bat.new(:int,:int);
+ * 	bat.insert(b,1,2);
+ * 	c{singleton} := algebra.select(b,0,4);
+ * 	(_15,_16):= bat.unpack(c{singleton});
+ * 	d := bat.pack(nil,_16);
+ * 	io.print(d);
+ * @end verbatim
+ */
 @mal
 pattern optimizer.singleton():str
 address OPTsingleton;
@@ -71,10 +73,11 @@ comment "Perform singleton optimization";
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_builder.h"
 
-@-
-When we run into an instruction that can not be optimized,
-we have to rebuild the singleton set as an ordinary BAT.
-@c
+/*
+ * @-
+ * When we run into an instruction that can not be optimized,
+ * we have to rebuild the singleton set as an ordinary BAT.
+ */
 typedef struct {
 	int vidx;
 	int hidx;
@@ -159,10 +162,11 @@ STevaluate(Client cntxt, MalBlkPtr mb, int cnt, int *vars)
 	slimit = mb->ssize;
 	old = mb->stmt;
 
-@-
-Prepare the list of tuple aliases using allocation of
-variables on the stack.
-@c
+	/*
+	 * @-
+	 * Prepare the list of tuple aliases using allocation of
+	 * variables on the stack.
+	 */
 	for (i = 0; i < cnt; i++)
 		STnewTuple(mb, vars[i], &top, tuples);
 	OPTDEBUGsingleton{
@@ -368,4 +372,3 @@ OPTsingletonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(singleton,OPT_CHECK_ALL)@
-@}

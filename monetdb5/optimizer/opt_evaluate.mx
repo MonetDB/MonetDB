@@ -17,35 +17,37 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f opt_evaluate
-@a M. Kersten
-@- Constant Expression Evaluation
-Expressions produced by compilers involving only constant
-arguments can be evaluated once. It is particular relevant
-in functions that are repeatably called. One time queries
-would not benefit from this extra step.
-
-Consider the following snippet, which contains recursive
-use of constant arguments
-@verbatim
-    a:= 1+1;        io.print(a);
-    b:= 2;           io.print(b);
-    c:= 3*b;        io.print(c);
-    d:= calc.flt(c);io.print(d);
-    e:= mmath.sin(d);io.print(e);
-    optimizer.aliasRemoval();
-    optimizer.evaluate();
-@end verbatim
-The code produced by the optimizer would be
-@verbatim
-    io.print(2);
-    io.print(2);
-    io.print(6);
-    io.print(6);
-    io.print(-0.279415488);
-@end verbatim
-Likewise we attempt to catch barrier blocks based on constants.
-@{
+@c
+/*
+ * @f opt_evaluate
+ * @a M. Kersten
+ * @- Constant Expression Evaluation
+ * Expressions produced by compilers involving only constant
+ * arguments can be evaluated once. It is particular relevant
+ * in functions that are repeatably called. One time queries
+ * would not benefit from this extra step.
+ *
+ * Consider the following snippet, which contains recursive
+ * use of constant arguments
+ * @verbatim
+ *     a:= 1+1;        io.print(a);
+ *     b:= 2;           io.print(b);
+ *     c:= 3*b;        io.print(c);
+ *     d:= calc.flt(c);io.print(d);
+ *     e:= mmath.sin(d);io.print(e);
+ *     optimizer.aliasRemoval();
+ *     optimizer.evaluate();
+ * @end verbatim
+ * The code produced by the optimizer would be
+ * @verbatim
+ *     io.print(2);
+ *     io.print(2);
+ *     io.print(6);
+ *     io.print(6);
+ *     io.print(-0.279415488);
+ * @end verbatim
+ * Likewise we attempt to catch barrier blocks based on constants.
+ */
 @mal
 pattern optimizer.evaluate():str
 address OPTevaluate;
@@ -66,7 +68,7 @@ comment "Evaluate constant expressions once.";
 #define OPTDEBUGevaluate  if ( optDebug & (1 <<DEBUG_OPT_EVALUATE) )
 
 #endif
-@c  
+@c
 #include "monetdb_config.h"
 #include "opt_evaluate.h"
 #include "opt_aliases.h"
@@ -244,5 +246,4 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(evaluate,OPT_CHECK_ALL)@
-@}
 

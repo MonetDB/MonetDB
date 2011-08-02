@@ -17,12 +17,15 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f factories
-@a Martin Kersten
-@v 1.0
-@+ Factory management 
-The factory infrastructure can be inspected and steered with 
-the commands provided here.
+@c
+/*
+ * @f factories
+ * @a Martin Kersten
+ * @v 1.0
+ * @+ Factory management
+ * The factory infrastructure can be inspected and steered with
+ * the commands provided here.
+ */
 @mal
 module factories;
 
@@ -49,11 +52,12 @@ comment "Retrieve the time stamp the last answer was returned.";
 pattern shutdown(m:str, f:str):void
 address FCTshutdown
 comment "Close a factory.";
-@-
-@{
+# @-
 @include prelude.mx
-@+ Implementation code 
 @h
+/*
+ * @+ Implementation code
+ */
 #ifndef _FACTORIES_H
 #define _FACTORIES_H
 
@@ -85,8 +89,9 @@ factories_export str FCTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Inst
 #include "factories.h"
 
 
-@+ Inspection
-@c
+/*
+ * @+ Inspection
+ */
 str
 FCTgetPlants(int *ret, int *ret2)
 {
@@ -184,4 +189,3 @@ FCTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	shutdownFactory(cntxt,s->def, TRUE);
 	return MAL_SUCCEED;
 }
-@}

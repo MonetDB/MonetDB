@@ -17,67 +17,69 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f opt_garbageCollector
-@a M. Kersten
-@- Garbage Collection
-Garbage collection of temporary variables, such as strings and BATs,
-takes place upon returning from a function call. Especially for BATs
-this may keep sizable resources locked longer than strictly necessary.
-Although the programmer can influence their lifespan by assignment
-of the @sc{nil}, thereby triggering the garbage collector,
-it is more appropriate to rely on an optimizer to inject these statements. 
-For, it keeps the program smaller and a better
-target for code-optimizations.
-
-The operation @sc{optimizer.garbageCollector()} removes all 
-BAT references that are at their end of life to make room for new ones.
-It is typically called as one of the last optimizer steps.
-A snippet of a the effect of the garbage collector:
-@verbatim
-    t1 := bat.new(:oid,:int);
-    t2 := array.grid(132000,8,1,0);
-    t3 := array.grid(1,100,10560,0);
-    t4 := array.grid(1,100,10560,0,8);
-    t5 := batcalc.+(t2,t4);
-    t6 := batcalc.oid(t5);
-    t7 := algebra.join(t6,t1);
-    optimizer.garbageCollector();
-@end verbatim
-is translated into the following code block:
-@verbatim
-    t1 := bat.new(:oid,:int);
-    t2 := array.grid(132000,8,1,0);
-    t3 := array.grid(1,100,10560,0);
-    t4 := array.grid(1,100,10560,0,8);
-    t5 := batcalc.+(t2,t4);
-    bat.setGarbage(t2);
-    bat.setGarbage(t4);
-    t6 := batcalc.oid(t5);
-    bat.setGarbage(t5);
-    t7 := algebra.join(t6,t1);
-    bat.setGarbage(t6);
-    bat.setGarbage(t1);
-@end verbatim
-
-The current algorithm is straight forward. After each instruction,
-we check whether its BAT arguments are needed in the future.
-If not, we inject a garbage collection statement to release them,
-provided there are no other reasons to retain it.
-This should be done carefully, because the instruction may be part of a loop.
-If the variable is defined inside the loop, we can safely remove it. 
-
-@{
-A variable can only be released in the scope in which
-it is introduced. This means we need an overview of
-the scope nesting and maintain a list of variables
-still to be garbage collected.
-
-We don;t have to worry about pre-mature return from the
-function, because this will trigger garbage collection
-anyway.
-
-This optimizer should not be called when the scheduler
-intends to keep intermediates around for re-use.
+@c
+/*
+ * @f opt_garbageCollector
+ * @a M. Kersten
+ * @- Garbage Collection
+ * Garbage collection of temporary variables, such as strings and BATs,
+ * takes place upon returning from a function call. Especially for BATs
+ * this may keep sizable resources locked longer than strictly necessary.
+ * Although the programmer can influence their lifespan by assignment
+ * of the @sc{nil}, thereby triggering the garbage collector,
+ * it is more appropriate to rely on an optimizer to inject these statements.
+ * For, it keeps the program smaller and a better
+ * target for code-optimizations.
+ *
+ * The operation @sc{optimizer.garbageCollector()} removes all
+ * BAT references that are at their end of life to make room for new ones.
+ * It is typically called as one of the last optimizer steps.
+ * A snippet of a the effect of the garbage collector:
+ * @verbatim
+ *     t1 := bat.new(:oid,:int);
+ *     t2 := array.grid(132000,8,1,0);
+ *     t3 := array.grid(1,100,10560,0);
+ *     t4 := array.grid(1,100,10560,0,8);
+ *     t5 := batcalc.+(t2,t4);
+ *     t6 := batcalc.oid(t5);
+ *     t7 := algebra.join(t6,t1);
+ *     optimizer.garbageCollector();
+ * @end verbatim
+ * is translated into the following code block:
+ * @verbatim
+ *     t1 := bat.new(:oid,:int);
+ *     t2 := array.grid(132000,8,1,0);
+ *     t3 := array.grid(1,100,10560,0);
+ *     t4 := array.grid(1,100,10560,0,8);
+ *     t5 := batcalc.+(t2,t4);
+ *     bat.setGarbage(t2);
+ *     bat.setGarbage(t4);
+ *     t6 := batcalc.oid(t5);
+ *     bat.setGarbage(t5);
+ *     t7 := algebra.join(t6,t1);
+ *     bat.setGarbage(t6);
+ *     bat.setGarbage(t1);
+ * @end verbatim
+ *
+ * The current algorithm is straight forward. After each instruction,
+ * we check whether its BAT arguments are needed in the future.
+ * If not, we inject a garbage collection statement to release them,
+ * provided there are no other reasons to retain it.
+ * This should be done carefully, because the instruction may be part of a loop.
+ * If the variable is defined inside the loop, we can safely remove it.
+ *
+ * A variable can only be released in the scope in which
+ * it is introduced. This means we need an overview of
+ * the scope nesting and maintain a list of variables
+ * still to be garbage collected.
+ *
+ * We don;t have to worry about pre-mature return from the
+ * function, because this will trigger garbage collection
+ * anyway.
+ *
+ * This optimizer should not be called when the scheduler
+ * intends to keep intermediates around for re-use.
+ */
 @mal
 pattern optimizer.garbageCollector():str
 address OPTgarbageCollector;
@@ -102,16 +104,18 @@ comment "Garbage collector optimizer";
 #include "opt_prelude.h"
 #include "mal_properties.h"
 
-@-
-There are three ways to release a BAT. The cheapest one is to
-let the system do it automatically upon last use. Alternative,
-to assign a nil value, which triggers the decrement
-of the reference count. The second option is to call a function,
-which could take care of more things, such as saving
-potential interesting results or issueing a memory map advice.
-Furthermore, it makes sense to only release larger temporary BATs
-during the execution, because they may unnecessarily push base
-tables out of memory.
+/*
+ * @-
+ * There are three ways to release a BAT. The cheapest one is to
+ * let the system do it automatically upon last use. Alternative,
+ * to assign a nil value, which triggers the decrement
+ * of the reference count. The second option is to call a function,
+ * which could take care of more things, such as saving
+ * potential interesting results or issueing a memory map advice.
+ * Furthermore, it makes sense to only release larger temporary BATs
+ * during the execution, because they may unnecessarily push base
+ * tables out of memory.
+ */
 @= releaseBATbyFunction
 {
 	q= newInstruction(NULL,ASSIGNsymbol);
@@ -122,20 +126,20 @@ tables out of memory.
 	pushInstruction(mb,q);
 	typeChecker(s,mb,q,TRUE);
 }
-@-
-@{
-[this is dropped, because memory footprint should
-be handled at a different level, it incurs reshuffling
-code and calls for a cost-based assessment ]
-One of the sources for resource consumption are auxilary
-datastructures introduced to speed up an algorithm,
-e.g. building a hash-table.
-Since such structures are 'dirty' memory pages, they may
-become the target for forced write to disk.
-To void this situation, the garbage collector injects
-an early release of resources.
-This step is only take against private (=temporary)
-tables.
+@
+ * @-
+ * [this is dropped, because memory footprint should
+ * be handled at a different level, it incurs reshuffling
+ * code and calls for a cost-based assessment ]
+ * One of the sources for resource consumption are auxilary
+ * datastructures introduced to speed up an algorithm,
+ * e.g. building a hash-table.
+ * Since such structures are 'dirty' memory pages, they may
+ * become the target for forced write to disk.
+ * To void this situation, the garbage collector injects
+ * an early release of resources.
+ * This step is only take against private (=temporary)
+ * tables.
 @= releaseHash
 {
 	q= newInstruction(NULL,ASSIGNsymbol);
@@ -147,11 +151,13 @@ tables.
 	typeChecker(s,mb,q,TRUE);
 	actions++;
 }
-@}
-@-
-Keeping variables around beyond their end-of-life-span
-can be marked with the proper 'keep'.
+@
 @c
+/*
+ * @-
+ * Keeping variables around beyond their end-of-life-span
+ * can be marked with the proper 'keep'.
+ */
 static int
 OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -248,4 +254,3 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(garbageCollector,OPT_CHECK_ALL)@
-@}

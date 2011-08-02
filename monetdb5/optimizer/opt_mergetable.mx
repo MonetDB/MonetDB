@@ -17,116 +17,118 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f opt_mergetable
-@a M. Kersten, N. Nes
-@- Merge Tables 
-A merge association table (MAT) descriptor defines an ordered collection 
-of type compatible BATs, whose union represents a single (virtual) BAT.
-The MAT may represent a partitioned BAT (see BPM), but could also 
-be an arbitrary collection of temporary BATs within a program fragment.
-
-The MAT definition lives within the scope of a single block.
-The MAT optimizer simply expands the plan to
-deal with its components on an instruction basis.
-Only when a blocking operator is encounted, the underlying BAT is materialized.
-
-The MAT object cannot be passed as an argument to any function
-without first being materialized. Simply because
-the MAT is not known by the type system and none of the lower
-level operations are aware of its existence.
-
-In the first approach of the MAT optimizer we assume that the 
-first BAT in the MAT sequence is used as an accumulator.
-Furthermore, no semantic knowledge is used to reduce the
-possible superflous (semi)joins. Instead, we limit expansion
-to a single argument. 
-This is changed at a later stage when a cost-based evaluation
-can be used to decide different.
-
-To illustrate, consider:
-@example
-	m0:= bat.new(:oid,:int);
-	m1:= bat.new(:oid,:int);
-	m2:= bat.new(:oid,:int);
-	b := mat.new(m0,m1,m2);
-	s := algebra.select(b,1,3);
-	i := aggr.count(s);
-	io.print(s);
-	io.print(i);
-	c0 := bat.new(:int,:int);
-	c1 := bat.new(:int,:int);
-	c := mat.new(c0,c1);
-	j := algebra.join(b,c);
-	io.print(j);
-@end example
-
-The selection and aggregate operations can simply be rewritten using a MAT:
-@example
-	_33 := algebra.select(m0,1,3);
-	_34 := algebra.select(m1,1,3);
-	_35 := algebra.select(m2,1,3);
-    s := mat.new(_33,_34,_35);
-    i := 0:int;
-    _36 := aggr.count(_33);
-    i := calc.+(i,_36);
-    _37 := aggr.count(_34);
-    i := calc.+(i,_37);
-    _38 := aggr.count(_35);
-    i := calc.+(i,_38);
-    io.print(i);
-@end example
-
-The print operation does not have MAT semantics yet.
-It requires a function that does not produce the header
-with each call.
-Instead, we can also pack the elements before printing.
-@example
-    s := mat.pack(_33,_34,_35);
-    io.print(s);
-@end example
-For the join we have to generate all possible combinations,
-not knowing anything about the properties of the components.
-The current heuristic is to limit expansion to a single
-argument. This leads to 
-@example
-    b := mat.pack(m0,m1,m2);
-    _39 := algebra.join(b,c0);
-    _40 := algebra.join(b,c1);
-    j := mat.new(_39,_40);
-@end example
-
-The drawback of the scheme is the potential explosion in MAL statements.
-A challenge of the optimizer is to find the minimum by inspection of
-the properties of the MAT elements. For example, it might attempt
-to partially pack elements before proceding. This would be a runtime
-scheduling decision.
-
-Alternatively, the system could use MAT iterators to avoid packing
-at the cost of more complex program analysis afterwards.
-
-@example
-	ji:= bat.new(:oid,:int);
-barrier b:= mat.newIterator(m0,m1,m2);
-barrier c:= mat.newIterator(c0,c1);
-	ji := algebra.join(b,c);
-	bat.insert(j,ji);
-	redo c:= mat.newIterator(c0,c1);
-	redo b:= mat.newIterator(m0,m1,m2);
-exit c;
-exit b;
-@end example
-
-@{
-Also consider the MAT as a variable property. This is needed
-to pass a MAT as an argument to functions. If the function does
-not accept a MAT, the argument should be packed, otherwise
-we can simply let it pass.
-
-We have to add routines to deal with duplicate elimination.
-Moreover, the other optimizers should become aware of the MAT
-operations. The operations mat.new() and mat.range() can be
-removed as a last step in the optimizer. It is now handy for
-debugging.
+@c
+/*
+ * @f opt_mergetable
+ * @a M. Kersten, N. Nes
+ * @- Merge Tables
+ * A merge association table (MAT) descriptor defines an ordered collection
+ * of type compatible BATs, whose union represents a single (virtual) BAT.
+ * The MAT may represent a partitioned BAT (see BPM), but could also
+ * be an arbitrary collection of temporary BATs within a program fragment.
+ *
+ * The MAT definition lives within the scope of a single block.
+ * The MAT optimizer simply expands the plan to
+ * deal with its components on an instruction basis.
+ * Only when a blocking operator is encounted, the underlying BAT is materialized.
+ *
+ * The MAT object cannot be passed as an argument to any function
+ * without first being materialized. Simply because
+ * the MAT is not known by the type system and none of the lower
+ * level operations are aware of its existence.
+ *
+ * In the first approach of the MAT optimizer we assume that the
+ * first BAT in the MAT sequence is used as an accumulator.
+ * Furthermore, no semantic knowledge is used to reduce the
+ * possible superflous (semi)joins. Instead, we limit expansion
+ * to a single argument.
+ * This is changed at a later stage when a cost-based evaluation
+ * can be used to decide different.
+ *
+ * To illustrate, consider:
+ * @example
+ * 	m0:= bat.new(:oid,:int);
+ * 	m1:= bat.new(:oid,:int);
+ * 	m2:= bat.new(:oid,:int);
+ * 	b := mat.new(m0,m1,m2);
+ * 	s := algebra.select(b,1,3);
+ * 	i := aggr.count(s);
+ * 	io.print(s);
+ * 	io.print(i);
+ * 	c0 := bat.new(:int,:int);
+ * 	c1 := bat.new(:int,:int);
+ * 	c := mat.new(c0,c1);
+ * 	j := algebra.join(b,c);
+ * 	io.print(j);
+ * @end example
+ *
+ * The selection and aggregate operations can simply be rewritten using a MAT:
+ * @example
+ * 	_33 := algebra.select(m0,1,3);
+ * 	_34 := algebra.select(m1,1,3);
+ * 	_35 := algebra.select(m2,1,3);
+ *     s := mat.new(_33,_34,_35);
+ *     i := 0:int;
+ *     _36 := aggr.count(_33);
+ *     i := calc.+(i,_36);
+ *     _37 := aggr.count(_34);
+ *     i := calc.+(i,_37);
+ *     _38 := aggr.count(_35);
+ *     i := calc.+(i,_38);
+ *     io.print(i);
+ * @end example
+ *
+ * The print operation does not have MAT semantics yet.
+ * It requires a function that does not produce the header
+ * with each call.
+ * Instead, we can also pack the elements before printing.
+ * @example
+ *     s := mat.pack(_33,_34,_35);
+ *     io.print(s);
+ * @end example
+ * For the join we have to generate all possible combinations,
+ * not knowing anything about the properties of the components.
+ * The current heuristic is to limit expansion to a single
+ * argument. This leads to
+ * @example
+ *     b := mat.pack(m0,m1,m2);
+ *     _39 := algebra.join(b,c0);
+ *     _40 := algebra.join(b,c1);
+ *     j := mat.new(_39,_40);
+ * @end example
+ *
+ * The drawback of the scheme is the potential explosion in MAL statements.
+ * A challenge of the optimizer is to find the minimum by inspection of
+ * the properties of the MAT elements. For example, it might attempt
+ * to partially pack elements before proceding. This would be a runtime
+ * scheduling decision.
+ *
+ * Alternatively, the system could use MAT iterators to avoid packing
+ * at the cost of more complex program analysis afterwards.
+ *
+ * @example
+ * 	ji:= bat.new(:oid,:int);
+ * barrier b:= mat.newIterator(m0,m1,m2);
+ * barrier c:= mat.newIterator(c0,c1);
+ * 	ji := algebra.join(b,c);
+ * 	bat.insert(j,ji);
+ * 	redo c:= mat.newIterator(c0,c1);
+ * 	redo b:= mat.newIterator(m0,m1,m2);
+ * exit c;
+ * exit b;
+ * @end example
+ *
+ * Also consider the MAT as a variable property. This is needed
+ * to pass a MAT as an argument to functions. If the function does
+ * not accept a MAT, the argument should be packed, otherwise
+ * we can simply let it pass.
+ *
+ * We have to add routines to deal with duplicate elimination.
+ * Moreover, the other optimizers should become aware of the MAT
+ * operations. The operations mat.new() and mat.range() can be
+ * removed as a last step in the optimizer. It is now handy for
+ * debugging.
+ */
 @mal
 pattern optimizer.mergetable():str
 address OPTmergetable;
@@ -349,10 +351,11 @@ isMATalias(int idx, mat_t *mat, int top){
 	return -1;
 }
 
-@-
-Packing the BATs into a single one is handled here
-Note that MATs can be defined recursively.
-@c
+/*
+ * @-
+ * Packing the BATs into a single one is handled here
+ * Note that MATs can be defined recursively.
+ */
 static InstrPtr 
 mat_pack_mat(MalBlkPtr mb, InstrPtr r, mat_t *mat, int m, int *mtop)
 {
@@ -1949,10 +1952,11 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			error++;
 			goto fail;
 		}
-@-
-If the instruction does not contain MAT references it can simply be added.
-Otherwise we have to decide on either packing them or replacement.
-@c
+		/*
+		 * @-
+		 * If the instruction does not contain MAT references it can simply be added.
+		 * Otherwise we have to decide on either packing them or replacement.
+		 */
 		if ((match = MATcount(p, mat, mtop)) == 0) {
 			if (p->argc >= 2) {
 				if (getFunctionId(p) == markHRef|| 
@@ -1969,16 +1973,17 @@ Otherwise we have to decide on either packing them or replacement.
 			pushInstruction(mb, copyInstruction(p));
 			continue;
 		}
-@- 
-Here we handle horizontal aligned mats. This information is passed using
-the properties hlb <= x < hub. 
-So if this is available, we can simplify 
-batcalc operations and for fetch joins we can use this information to do 
-per part joins only.
-
-Also we should translate the mirror().join() (a groupby attribute) into
-UNION(mirror().join()).
-@c
+		/*
+		 * @-
+		 * Here we handle horizontal aligned mats. This information is passed using
+		 * the properties hlb <= x < hub.
+		 * So if this is available, we can simplify
+		 * batcalc operations and for fetch joins we can use this information to do
+		 * per part joins only.
+		 *
+		 * Also we should translate the mirror().join() (a groupby attribute) into
+		 * UNION(mirror().join()).
+		 */
 
 		/* only handle simple joins, ie not range/band joins */
 		/* For range/band joins (argc == 4), the propagation of oids
@@ -2052,9 +2057,10 @@ UNION(mirror().join()).
 			actions++;
 			continue;
 		}
-@- 
-Now we handle group, derive and aggregation statements. 
-@c
+		/*
+		 * @-
+		 * Now we handle group, derive and aggregation statements.
+		 */
 		if (match == 1 && p->argc == 3 && getModuleId(p) == groupRef && 
 		   (getFunctionId(p) == newRef || getFunctionId(p) == doneRef) && 
 	 	   ((m=isMATalias(getArg(p,2), mat, mtop)) >= 0)) {
@@ -2109,12 +2115,13 @@ Now we handle group, derive and aggregation statements.
 		}
 		if (match == 3 && getModuleId(p) == aggrRef && p->argc == 4)
 			assert(0); 
-@-
-Aggregate handling is a prime target for optimization.
-The simple cases are dealt with first.
-Handle the rewrite v:=aggr.count(b) and sum()
-And the min/max is as easy
-@c
+		/*
+		 * @-
+		 * Aggregate handling is a prime target for optimization.
+		 * The simple cases are dealt with first.
+		 * Handle the rewrite v:=aggr.count(b) and sum()
+		 * And the min/max is as easy
+		 */
 		if( getModuleId(p)==aggrRef && p->argc == 2 &&
 			(getFunctionId(p)== countRef || 
 			 getFunctionId(p)== count_no_nilRef || 
@@ -2182,11 +2189,12 @@ And the min/max is as easy
 			actions++;
 			continue;
 		}
-@-
-The slice operation can also be piggy backed onto the mat.pack using it
-as a property of the MAT. Pushing it through
-would be feasible as well, provided the start of the slice is a constant 0.
-@c
+		/*
+		 * @-
+		 * The slice operation can also be piggy backed onto the mat.pack using it
+		 * as a property of the MAT. Pushing it through
+		 * would be feasible as well, provided the start of the slice is a constant 0.
+		 */
 		if (match > 0 && getModuleId(p) == algebraRef &&
 				getFunctionId(p) == sliceRef &&
 				(m = isMATalias(getArg(p, 1), mat, mtop)) >= 0)
@@ -2208,10 +2216,11 @@ would be feasible as well, provided the start of the slice is a constant 0.
 			actions++;
 			continue;
 		}
-@-
-The mark operators are a special case of apply on parts as we need to
-correct the mark base oid's 
-@c
+		/*
+		 * @-
+		 * The mark operators are a special case of apply on parts as we need to
+		 * correct the mark base oid's
+		 */
 		if (match == 1 && 
 		    getModuleId(p) == algebraRef && 
 		    (getFunctionId(p) == markTRef ||
@@ -2224,19 +2233,21 @@ correct the mark base oid's
 			actions++;
 			continue;
 		}
-@-
-Pack MAT arguments, except one, to limit plan explosion.
-The preferred partitioned one is the first argment as it
-often reflects a base table.
-Look at the depth of the MAT definition to limit the explosion.
-@c
+		/*
+		 * @-
+		 * Pack MAT arguments, except one, to limit plan explosion.
+		 * The preferred partitioned one is the first argment as it
+		 * often reflects a base table.
+		 * Look at the depth of the MAT definition to limit the explosion.
+		 */
 		for( fm= p->argc-1; fm>p->retc ; fm--)
 			if ((m=isMATalias(getArg(p,fm), mat, mtop)) >= 0)
 				break;
-@-
-Not all instructions can be replaced by the sequence. We have to
-group them and check for them individually.
-@c
+		/*
+		 * @-
+		 * Not all instructions can be replaced by the sequence. We have to
+		 * group them and check for them individually.
+		 */
 		if (match == 1 && isDiffOp(p) && fm == 1 && 
 		   (m=isMATalias(getArg(p,fm), mat, mtop)) >= 0){
 			InstrPtr r;
@@ -2287,10 +2298,11 @@ group them and check for them individually.
 			actions++;
 			continue;
 		} 
-@-
-All other instructions should be checked for remaining MAT dependencies.
-It requires MAT materialization. 
-@c
+		/*
+		 * @-
+		 * All other instructions should be checked for remaining MAT dependencies.
+		 * It requires MAT materialization.
+		 */
 		OPTDEBUGmergetable mnstr_printf(GDKout, "# %s.%s %d\n", getModuleId(p), getFunctionId(p), match);
 
 
@@ -2307,11 +2319,12 @@ It requires MAT materialization.
 		if (p->argc >= 2)
 			propagateProp(mb, p, getArg(p,1));
 	}
-@-
-As a final optimization, we could remove the mal.new definitions,
-because they are not needed for the execution.
-For the time being, they are no-ops.
-@c
+	/*
+	 * @-
+	 * As a final optimization, we could remove the mal.new definitions,
+	 * because they are not needed for the execution.
+	 * For the time being, they are no-ops.
+	 */
 	(void) stk; 
 	chkTypes(cntxt->nspace,mb, TRUE);
 
@@ -2364,4 +2377,3 @@ fail:
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(mergetable,OPT_CHECK_ALL)@
-@}

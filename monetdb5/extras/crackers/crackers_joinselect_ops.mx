@@ -17,17 +17,19 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f crackers_joinselect_ops
-@a Martin Kersten, Stratos Idreos, Stefan Manegold
-@d March 2006 - July 2007
-@* JoinSelect Operators
-
-
-@+ Interface
- 
-
-@- Type expansion
-
+@c
+/*
+ * @f crackers_joinselect_ops
+ * @a Martin Kersten, Stratos Idreos, Stefan Manegold
+ * @d March 2006 - July 2007
+ * @* JoinSelect Operators
+ *
+ *
+ * @+ Interface
+ *
+ *
+ * @- Type expansion
+ */
 @= TypeSwitch
 @:@1(chr,simple,)@
 @:@1(sht,simple,)@
@@ -37,11 +39,10 @@ All Rights Reserved.
 @:@1(dbl,simple,)@
 @:@1(date,atom,TYPE_)@
 @
-
-
-@- Header file
-
 @h
+/*
+ * @- Header file
+ */
 #ifndef _CRACKERS_JOINSELECT_H_
 #define _CRACKERS_JOINSELECT_H_
 
@@ -49,25 +50,21 @@ All Rights Reserved.
 @:TypeSwitch(JoinSelectFunctions_decl)@
 
 #endif /* _CRACKERS_JOINSELECT_H */
-@
-
-
-@- Exported signatures
-
+/*
+ * @- Exported signatures
+ */
 @= JoinSelectFunctions_decl
 crackers_export str CRKjoinSelectDefault_@1(int *res, int *right, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, int *left);
 crackers_export str CRKjoinSelectBounds_@1(int *res, int *right, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, int *left, bit *inPlace, bit *isForeignKey);
 crackers_export str CRKjointhetauselect_@1(int *res, int *right, @1 *val, str *OP, int *left, bit *inPlace, bit *isForeignKey);
 @
-
-
-@{
-@+ Implementation
-
-
-@- C file
-
 @c
+/*
+ * @+ Implementation
+ *
+ *
+ * @- C file
+ */
 #include "monetdb_config.h"
 #include "crackers.h"
 
@@ -76,11 +73,9 @@ crackers_export str CRKjointhetauselect_@1(int *res, int *right, @1 *val, str *O
 
 /* Exported functions */
 @:TypeSwitch(JoinSelectFunctions_impl)@
-@
-
-
-@- Exported functions
-
+/*
+ * @- Exported functions
+ */
 @= JoinSelectFunctions_impl
 str
 CRKjoinSelectDefault_@1(int *res, int *right, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, int *left){
@@ -175,10 +170,7 @@ CRKjointhetauselect_@1(int *vid, int *bid, @1 *val, str *OP, int *left, bit *inp
 	return CRKjoinSelectBounds_@1(vid, bid, low, high, &lin, &rin, left, inplace, foreignKey);
 }
 @
-
-
-@- Local support functions and macros
-
+ * @- Local support functions and macros
 @= JoinSelectOperations
 @(
 @:JoinSelectR(@1,LO,RE,GT,LE,@2,@3)@
@@ -191,22 +183,18 @@ CRKjointhetauselect_@1(int *vid, int *bid, @1 *val, str *OP, int *left, bit *inp
 @:JoinSelectS(@1,LO,GT,@2,@3)@
 @:JoinSelectS(@1,LE,GE,@2,@3)@
 @
-
-
 @= JoinSelectR
 static str
 JoinSelectRange_@2_@3_@1(int *res, BAT *l, BAT *r, @1 *low, @1 *hgh, bit inPlace, bit isForeignKey){
 	@:JoinSelectBody(@6_@4(rt,low,@7@1) && @6_@5(rt,hgh,@7@1),@1)@
 }
 @
-
 @= JoinSelectS
 static str
 JoinSelectSingle_@2_@1(int *res, BAT *l, BAT *r, @1 *mid, bit inPlace, bit isForeignKey){
 	@:JoinSelectBody(@4_@3(rt,mid,@5@1),@1)@
 }
 @
-
 @= JoinSelectBody
 /* Joins a left=[oid,void] bat with a right=[void, any_type] bat on head-OIDs.
 From the right bat, only BUNs that pass the range-restriction on the tail qualify.
@@ -318,5 +306,3 @@ The result is a [oid,void] bat. */
 	
 	return MAL_SUCCEED;
 @
-
-@}

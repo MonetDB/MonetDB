@@ -17,17 +17,19 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f crackers_populate
-@a Stefan Manegold
-@d Feb 2010
-@* Populate cracker column & index with pro-actively created pieces
-
-
-@+ Interface
-
-
-@- Type expansion
-
+@c
+/*
+ * @f crackers_populate
+ * @a Stefan Manegold
+ * @d Feb 2010
+ * @* Populate cracker column & index with pro-actively created pieces
+ *
+ *
+ * @+ Interface
+ *
+ *
+ * @- Type expansion
+ */
 @= TypeSwitch
 @:@1(chr)@
 @(
@@ -40,11 +42,10 @@ All Rights Reserved.
 @)
 @:@1(lng)@
 @
-
-
-@- Header file
-
 @h
+/*
+ * @- Header file
+ */
 #ifndef _CRACKERS_POPULATE_H_
 #define _CRACKERS_POPULATE_H_
 
@@ -52,11 +53,9 @@ All Rights Reserved.
 @:TypeSwitch(FunctionDecl)@
 
 #endif /* _CRACKERS_POPULATE_H */
-@
-
-
-@- External signatures
-
+/*
+ * @- External signatures
+ */
 @= FunctionDecl
 str
 CrackGetMinMax_@1(
@@ -88,15 +87,13 @@ CrackPopulateSideways_@1(
 	int pieces	/* number of pieces to create (power of 2) */
 );
 @
-
-
-@{
-@+ Implementation
-
-
-@- C file
-
 @c
+/*
+ * @+ Implementation
+ *
+ *
+ * @- C file
+ */
 #include "monetdb_config.h"
 #include "crackers.h"
 
@@ -115,11 +112,9 @@ typedef unsigned __int64   unsigned_lng;
 
 /* External functions */
 @:TypeSwitch(FunctionImpl)@
-@
-
-
-@- External functions
-
+/*
+ * @- External functions
+ */
 @= FunctionImpl
 str
 CrackGetMinMax_@1(
@@ -462,5 +457,3 @@ CrackPopulateSideways_@1(
 	return MAL_SUCCEED;
 }
 @
-
-@}

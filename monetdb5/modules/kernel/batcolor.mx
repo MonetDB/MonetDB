@@ -17,19 +17,21 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f batcolor
-@a M.L. Kersten
-@+ Color multiplexes
-[TODO: property propagations and general testing]
-The collection of routines provided here are map operations
-for the color string primitives. 
-
-In line with the batcalc module, we assume that
-if two bat operands are provided that they are already
-aligned on the head. Moreover, the head of the BATs
-are limited to :oid, which can be cheaply realized using
-the GRPsplit operation.
-@{
+@c
+/*
+ * @f batcolor
+ * @a M.L. Kersten
+ * @+ Color multiplexes
+ * [TODO: property propagations and general testing]
+ * The collection of routines provided here are map operations
+ * for the color string primitives.
+ *
+ * In line with the batcalc module, we assume that
+ * if two bat operands are provided that they are already
+ * aligned on the head. Moreover, the head of the BATs
+ * are limited to :oid, which can be cheaply realized using
+ * the GRPsplit operation.
+ */
 @mal
 module batcolor;
 command str(b:bat[:oid,:color]):bat[:oid,:str]
@@ -84,11 +86,10 @@ command value(c:bat[:oid,:color]) :bat[:oid,:flt]
 address CLRbatValue
 comment	"Extracts value component from a color atom";
 
-@-
-#command ycc(y:bat[:oid,:int],cr:bat[:oid,:int],cb:bat[:oid,:int]) :bat[:oid,:color] 
-#address CLRbatycc
-#comment	"Converts an YCC triplets to a color atom";
-@mal
+# @-
+# #command ycc(y:bat[:oid,:int],cr:bat[:oid,:int],cb:bat[:oid,:int]) :bat[:oid,:color]
+# #address CLRbatycc
+# #comment	"Converts an YCC triplets to a color atom";
 
 command luminance (c:bat[:oid,:color]) :bat[:oid,:int] 
 address CLRbatLuminance
@@ -101,8 +102,10 @@ comment	"Extracts Cr(red color) component from a color atom";
 command cb(c:bat[:oid,:color]) :bat[:oid,:int] 
 address CLRbatCb
 comment	"Extracts Cb(blue color) component from a color atom";
-@+ Implementation
 @c
+/*
+ * @+ Implementation
+ */
 #include "monetdb_config.h"
 #include <gdk.h>
 #include <string.h>
@@ -189,6 +192,7 @@ bunins_failed:
 	throw(MAL, "batstr.==", OPERATION_FAILED " During bulk operation");
 }
 
+@
 @c
 @:BATwalk(Color,CLRcolor,str,color)@
 @:BATwalk(Str,CLRstr,color,str)@
@@ -209,9 +213,10 @@ bunins_failed:
 @:BATwalk(Cr,CLRcr,color,int)@
 @:BATwalk(Cb,CLRcb,color,int)@
 
-@-
-A few triple versions.
-
+/*
+ * @-
+ * A few triple versions.
+ */
 @= BATwalk3
 batcolor_export str CLRbat@1(int *ret, int *l, int *bid2, int *bid3);
 str CLRbat@1(int *ret, int *l, int *bid2, int *bid3)
@@ -270,8 +275,8 @@ bunins_failed:
 	BBPreleaseref(bn->batCacheid);
 	throw(MAL, "batstr.==", OPERATION_FAILED " During bulk operation");
 }
+@
 @c
 @:BATwalk3(Hsv,CLRhsv,flt,color)@
 @:BATwalk3(Rgb,CLRrgb,int,color)@
 @:BATwalk3(ycc,CLRycc,int,color)@
-@}

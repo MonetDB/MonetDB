@@ -17,84 +17,85 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f opt_remoteQueries
-@a M. Kersten
-@- Remote Queries
-MAL variables may live at a different site from where they are used.
-In particular, the SQL front-end uses portions of remote
-BATs as replication views. Each time such a view is needed,
-the corresponding BAT is fetched and added to the local cache.
-
-Consider the following snippet produced by a query compiler,
-@verbatim
-mid:= mapi.reconnect("s0_0","localhost",50000,"monetdb","monetdb","mal");
-b:bat[:oid,:int] := mapi.bind(mid,"rvar");
-c:=algebra.select(b,0,12);
-io.print(c);
-d:=algebra.select(b,5,10);
-low:= 5+1;
-e:=algebra.select(d,low,7);
-i:=aggr.count(e);
-io.printf(" count %d\n",i);
-io.print(d);
-@end verbatim
-which uses a BAT @sc{rvar} stored at the remote site @sc{db1}.
-
-There are several options to execute this query.
-The remote BAT can be fetched as soon as the bind operation is executed,
-or a portion can be fetched after a remote select,
-or the output for the user could be retrieved.
-An optimal solution depends on the actual resources 
-available at both ends and the time to ship the BAT. 
-
-The remote query optimizer 
-assumes that the remote site has sufficient
-resources to handle the instructions.
-For each remote query it creates a private connection.
-It is re-used in subsequent calls .
-
-The remote environment is used to execute
-the statements. The objects are retrieved
-just before they are locally needed.
-
-@verbatim
-mid:= mapi.reconnect("s0_0","localhost",50000,"monetdb","monetdb","mal");
-mapi.rpc(mid,"b:bat[:oid,:int] :=bbp.bind(\"rvar\");");
-mapi.rpc(mid,"c:=algebra.select(b,0,12);");
-c:bat[:oid,:int]:= mapi.rpc(mid, "io.print(c);");
-io.print(c);
-mapi.rpc(mid,"d:=algebra.select(b,5,10);");
-low:= 5+1;
-mapi.put(mid,"low",low);
-mapi.rpc(mid,"e:=algebra.select(d,low,7);");
-mapi.rpc(mid,"i:=aggr.count(d);");
-i:= mapi.rpc(mid,"io.print(i);");
-io.printf(" count %d\n",i);
-io.print(d);
-@end verbatim
-
-To reduce the number of interprocess communications
-this code can be further improved by glueing
-the instructions together when until the first
-result is needed. 
-@{
-Glueing together statements should respect the flow.
-It seems that we can savely concatenate subsequence
-requests.
-@verbatim
-    mid:= mapi.reconnect("s0_0","localhost",50000,"monetdb","monetdb","mal");
-    mapi.rpc(mid,"b:bat[:oid,:int] :=bbp.bind(\"rvar\");");
-    mapi.rpc(mid,"c:=algebra.select(b,0,12);");
-    c:bat[:oid,:int]:= mapi.rpc(mid, "io.print(c);");
-    io.print(c);
-    mapi.rpc(mid,"d:=algebra.select(b,5,10);");
-    low:= 5+1;
-    mapi.put(mid,"low",low);
-    i:= mapi.rpc(mid,"e:=algebra.select(d,low,7); i:=aggr.count(d); io.print(i);");
-    io.printf(" count %d\n",i);
-    io.print(d);
-@end verbatim
-
+@c
+/*
+ * @f opt_remoteQueries
+ * @a M. Kersten
+ * @- Remote Queries
+ * MAL variables may live at a different site from where they are used.
+ * In particular, the SQL front-end uses portions of remote
+ * BATs as replication views. Each time such a view is needed,
+ * the corresponding BAT is fetched and added to the local cache.
+ *
+ * Consider the following snippet produced by a query compiler,
+ * @verbatim
+ * mid:= mapi.reconnect("s0_0","localhost",50000,"monetdb","monetdb","mal");
+ * b:bat[:oid,:int] := mapi.bind(mid,"rvar");
+ * c:=algebra.select(b,0,12);
+ * io.print(c);
+ * d:=algebra.select(b,5,10);
+ * low:= 5+1;
+ * e:=algebra.select(d,low,7);
+ * i:=aggr.count(e);
+ * io.printf(" count %d\n",i);
+ * io.print(d);
+ * @end verbatim
+ * which uses a BAT @sc{rvar} stored at the remote site @sc{db1}.
+ *
+ * There are several options to execute this query.
+ * The remote BAT can be fetched as soon as the bind operation is executed,
+ * or a portion can be fetched after a remote select,
+ * or the output for the user could be retrieved.
+ * An optimal solution depends on the actual resources
+ * available at both ends and the time to ship the BAT.
+ *
+ * The remote query optimizer
+ * assumes that the remote site has sufficient
+ * resources to handle the instructions.
+ * For each remote query it creates a private connection.
+ * It is re-used in subsequent calls .
+ *
+ * The remote environment is used to execute
+ * the statements. The objects are retrieved
+ * just before they are locally needed.
+ *
+ * @verbatim
+ * mid:= mapi.reconnect("s0_0","localhost",50000,"monetdb","monetdb","mal");
+ * mapi.rpc(mid,"b:bat[:oid,:int] :=bbp.bind(\"rvar\");");
+ * mapi.rpc(mid,"c:=algebra.select(b,0,12);");
+ * c:bat[:oid,:int]:= mapi.rpc(mid, "io.print(c);");
+ * io.print(c);
+ * mapi.rpc(mid,"d:=algebra.select(b,5,10);");
+ * low:= 5+1;
+ * mapi.put(mid,"low",low);
+ * mapi.rpc(mid,"e:=algebra.select(d,low,7);");
+ * mapi.rpc(mid,"i:=aggr.count(d);");
+ * i:= mapi.rpc(mid,"io.print(i);");
+ * io.printf(" count %d\n",i);
+ * io.print(d);
+ * @end verbatim
+ *
+ * To reduce the number of interprocess communications
+ * this code can be further improved by glueing
+ * the instructions together when until the first
+ * result is needed.
+ * Glueing together statements should respect the flow.
+ * It seems that we can savely concatenate subsequence
+ * requests.
+ * @verbatim
+ *     mid:= mapi.reconnect("s0_0","localhost",50000,"monetdb","monetdb","mal");
+ *     mapi.rpc(mid,"b:bat[:oid,:int] :=bbp.bind(\"rvar\");");
+ *     mapi.rpc(mid,"c:=algebra.select(b,0,12);");
+ *     c:bat[:oid,:int]:= mapi.rpc(mid, "io.print(c);");
+ *     io.print(c);
+ *     mapi.rpc(mid,"d:=algebra.select(b,5,10);");
+ *     low:= 5+1;
+ *     mapi.put(mid,"low",low);
+ *     i:= mapi.rpc(mid,"e:=algebra.select(d,low,7); i:=aggr.count(d); io.print(i);");
+ *     io.printf(" count %d\n",i);
+ *     io.print(d);
+ * @end verbatim
+ */
 @mal
 pattern optimizer.remoteQueries():str
 address OPTremoteQueries;
@@ -116,10 +117,11 @@ comment "Resolve the multi-table definitions";
 #include "opt_remoteQueries.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_builder.h"
-@-
-The instruction sent is produced with a variation of call2str
-from the debugger.
-@c
+/*
+ * @-
+ * The instruction sent is produced with a variation of call2str
+ * from the debugger.
+ */
 static str
 RQcall2str(MalBlkPtr mb, InstrPtr p)
 {
@@ -183,16 +185,18 @@ RQcall2str(MalBlkPtr mb, InstrPtr p)
 /* printf("#RQcall:%s\n",msg);*/
 	return msg;
 }
-@- 
-The algorithm follows the common scheme used so far.
-Instructions are taken out one-by-one and copied
-to the new block.
-
-A local cache of connections is established, because
-the statements related to a single remote database
-should be executed in the same stack context.
-A pitfall is to create multiple connections with
-their isolated runtime environment.
+/*
+ * @-
+ * The algorithm follows the common scheme used so far.
+ * Instructions are taken out one-by-one and copied
+ * to the new block.
+ *
+ * A local cache of connections is established, because
+ * the statements related to a single remote database
+ * should be executed in the same stack context.
+ * A pitfall is to create multiple connections with
+ * their isolated runtime environment.
+ */
 @= lookupServer
 	/* lookup the server connection */
 	if( location[getArg(p,0)] == 0){
@@ -239,6 +243,7 @@ their isolated runtime environment.
 	pushInstruction(mb,r);
 	freeInstruction(p);
 	doit++;
+@
 @c
 typedef struct{
 	str dbname;
@@ -382,14 +387,15 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 		else if (cnt == 0 || p->barrier) /* local only or flow control statement */
 			pushInstruction(mb,p);
 		else {
-@-
-The hard part is to decide what to do with instructions that
-contain a reference to a remote variable.
-In the first implementation we use the following policy.
-If there are multiple sites involved, all arguments are
-moved local for processing. Moreover, all local arguments
-to be shipped should be simple.
-@c
+			/*
+			 * @-
+			 * The hard part is to decide what to do with instructions that
+			 * contain a reference to a remote variable.
+			 * In the first implementation we use the following policy.
+			 * If there are multiple sites involved, all arguments are
+			 * moved local for processing. Moreover, all local arguments
+			 * to be shipped should be simple.
+			 */
 			remoteSite=0;
 			collectFirst= FALSE;
 			for(j=0; j<p->argc; j++)
@@ -473,4 +479,3 @@ to be shipped should be simple.
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(remoteQueries,OPT_CHECK_ALL)@
-@}

@@ -17,44 +17,47 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f statistics
-@a M.L. Kersten
-@+ Statistics box.
-Most optimizers need easy access to key information 
-for proper plan generation. Amongst others, this
-volatile information consists of the tuple count, size,
-min- and max-value, the null-density, and 
-a histogram of the value distribution.
-
-The statistics are management by a Box, which gives 
-a controlled environment to manage a collection of BATs
-and system variables.
-
-BATs have to be deposit into the  statistics box 
-separately, because the costs attached maintaining them are high.
-The consistency of the statistics box is partly
-the responsibility of the upper layers. There is
-no automatic triggering when the BATs referenced
-are heavily modified or are being destroyed. 
-They disappear from the statistics box the first time 
-an invalid access is attempted or during system reboot.
-
-The staleness of the information can be controlled in several
-ways. The easiest, and most expensive, is to assure that
-the statistics are updated when you start the server.
-Alternative, you can set a expiration interval, which will
-update the information only when it is considered expired.
-This test will be triggered either at server restart or
-your explicit call to update the statistics tables.
-The statistics table is commited each time you change it.
-
-A forced update can be called upon when the front-end
-expects the situation to be changed drastically.
-
-The statistics table is mostly used internally, but
-once in a while you need a dump for closed inspection.
-in your MAL program for inspection. Just
-use the BBP bind operation to locate them in the buffer pool.
+@c
+/*
+ * @f statistics
+ * @a M.L. Kersten
+ * @+ Statistics box.
+ * Most optimizers need easy access to key information
+ * for proper plan generation. Amongst others, this
+ * volatile information consists of the tuple count, size,
+ * min- and max-value, the null-density, and
+ * a histogram of the value distribution.
+ *
+ * The statistics are management by a Box, which gives
+ * a controlled environment to manage a collection of BATs
+ * and system variables.
+ *
+ * BATs have to be deposit into the  statistics box
+ * separately, because the costs attached maintaining them are high.
+ * The consistency of the statistics box is partly
+ * the responsibility of the upper layers. There is
+ * no automatic triggering when the BATs referenced
+ * are heavily modified or are being destroyed.
+ * They disappear from the statistics box the first time
+ * an invalid access is attempted or during system reboot.
+ *
+ * The staleness of the information can be controlled in several
+ * ways. The easiest, and most expensive, is to assure that
+ * the statistics are updated when you start the server.
+ * Alternative, you can set a expiration interval, which will
+ * update the information only when it is considered expired.
+ * This test will be triggered either at server restart or
+ * your explicit call to update the statistics tables.
+ * The statistics table is commited each time you change it.
+ *
+ * A forced update can be called upon when the front-end
+ * expects the situation to be changed drastically.
+ *
+ * The statistics table is mostly used internally, but
+ * once in a while you need a dump for closed inspection.
+ * in your MAL program for inspection. Just
+ * use the BBP bind operation to locate them in the buffer pool.
+ */
 @mal
 module statistics;
 
@@ -154,23 +157,22 @@ comment "Return latest stored maximum information";
 pattern getHistogram(nme:str):bat[:any_1,:any_2]
 address STATgetHistogram
 comment "Return the latest histogram");
-@{
-@- Implementation
-
-The Box can optimize its behaviour by e.g. keeping 
-often used histograms locked into memory or propagate
-updates quickly. This is only applicable for objects
-taken from the box and until it is released.
-
-The implementation is based on the assumption that in
-most cases front-ends deal with BAT names as opposed to
-the internal index.
-
-Furthermore, the code is split in two sections. The first
-contains the primitves as they will also be used in
-linked-in code. The second part provides a MAL interface.
-It is assumed that any direct call obeys the semantics of
-this interface.
+# @- Implementation
+#
+# The Box can optimize its behaviour by e.g. keeping
+# often used histograms locked into memory or propagate
+# updates quickly. This is only applicable for objects
+# taken from the box and until it is released.
+#
+# The implementation is based on the assumption that in
+# most cases front-ends deal with BAT names as opposed to
+# the internal index.
+#
+# Furthermore, the code is split in two sections. The first
+# contains the primitves as they will also be used in
+# linked-in code. The second part provides a MAL interface.
+# It is assumed that any direct call obeys the semantics of
+# this interface.
 @include prelude.mx
 @h
 #ifndef _STATISTICS_DEF
@@ -193,8 +195,10 @@ this interface.
 #endif
 
 #endif /* _STATISTICS_DEF */
-@-
 @c
+/*
+ * @-
+ */
 #include "monetdb_config.h"
 #include "statistics.h"
 #include "algebra.h"
@@ -239,10 +243,11 @@ BAT *STAT_id_min_lng;
 BAT *STAT_id_max_lng;
 BAT *STAT_id_histogram;
 
-@-
-The statistics are currently limited to the server session.
-Upon need we can turn it into a persistent mode.
-@c
+/*
+ * @-
+ * The statistics are currently limited to the server session.
+ * Upon need we can turn it into a persistent mode.
+ */
 static int statisticsMode= TRANSIENT;
 
 static BAT *
@@ -414,11 +419,12 @@ STATenrollHistogram(int *ret, str *nme)
 	return MAL_SUCCEED;
 }
 
-@-
-An update on all BATs in use can be requested.
-The amount of work is somewhat limited by ensuring
-that the underlying store has been changed 
-@c
+/*
+ * @-
+ * An update on all BATs in use can be requested.
+ * The amount of work is somewhat limited by ensuring
+ * that the underlying store has been changed
+ */
 str
 STATupdateAll(int *ret, int forced)
 {
@@ -468,10 +474,11 @@ STATforceUpdateAll(int *ret)
 	return STATupdateAll(ret, TRUE);
 }
 
-@-
-Here the real work is done. This should be refined to
-accomodate different base types .
-@c
+/*
+ * @-
+ * Here the real work is done. This should be refined to
+ * accomodate different base types .
+ */
 str
 STATforceUpdate(int *ret, str *nme)
 {
@@ -563,9 +570,10 @@ STATdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-@- Module initializaton
-The content of this box my only be changed by the Administrator.
-@c
+/*
+ * @- Module initializaton
+ * The content of this box my only be changed by the Administrator.
+ */
 #include "mal_client.h"
 #include "mal_interpreter.h"
 #include "mal_authorize.h"
@@ -573,8 +581,9 @@ The content of this box my only be changed by the Administrator.
 #define authorize(X)\
 { str tmp = NULL; rethrow("statistics." X, tmp, AUTHrequireAdmin(&cntxt)); }
 
-@- Operator implementation
-@c
+/*
+ * @- Operator implementation
+ */
 #define OpenBox(X) \
 	authorize(X); \
 	box= findBox("statistics"); \
@@ -648,10 +657,11 @@ STATdestroy(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-@-
-Access to a box calls for resolving the first parameter
-to a named box.
-@c
+/*
+ * @-
+ * Access to a box calls for resolving the first parameter
+ * to a named box.
+ */
 str
 STATdepositStr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -752,13 +762,14 @@ STATreleaseStr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-@-
-We should keep track of all BATs taken from the Box, for this
-can be used to upgrade the information quickly.
-For example, the update functio only looks at those in use to detect
-stale information. All others are only updated with a forceful update.
-The release policy is not yet implemented.
-@c
+/*
+ * @-
+ * We should keep track of all BATs taken from the Box, for this
+ * can be used to upgrade the information quickly.
+ * For example, the update functio only looks at those in use to detect
+ * stale information. All others are only updated with a forceful update.
+ * The release policy is not yet implemented.
+ */
 str
 STATreleaseAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -890,7 +901,9 @@ STATgetObjects(int *bid)
 	return MAL_SUCCEED;
 }
 
-@-
+/*
+ * @-
+ */
 @= stat
 s_export str STATget@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str
@@ -918,6 +931,7 @@ STATget@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*ret = *(lng*)Tloc(STAT_id_@2,p);
 	return MAL_SUCCEED;
 }
+@
 @c
 @:stat(Count,count)@
 @:stat(Size,size)@
@@ -957,4 +971,3 @@ STATgetHistogram(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPincref(*ret = h->batCacheid, TRUE);
 	return MAL_SUCCEED;
 }
-@}

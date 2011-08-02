@@ -17,38 +17,33 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f gdk_rangejoin
-@a N. J. Nes
-
-@* Range Join Operators
-The sql statement b.x <= a.z <= b.y, could be implemented using too thetajoins.
-But that results in very large intermediates.
-
-@{
+@c
+/*
+ * @f gdk_rangejoin
+ * @a N. J. Nes
+ *
+ * @* Range Join Operators
+ * The sql statement b.x <= a.z <= b.y, could be implemented using too thetajoins.
+ * But that results in very large intermediates.
+ */
 @h
 #ifndef GDK_RANGEJOIN_H
 #define GDK_RANGEJOIN_H
 
-@- BAT range and band join operators
-The @%BATbandjoin@ produces the associations [A, D] such that S.C-c1 <=
-R.b <= S.C + c2.  The special case c1 = 0 and c2 = infinite leads to a
-thetajoin.  
-
-@h
+/*
+ * @- BAT range and band join operators
+ * The BATbandjoin produces the associations [A, D] such that S.C-c1 <=
+ * R.b <= S.C + c2.  The special case c1 = 0 and c2 = infinite leads to a
+ * thetajoin.
+ */
 gdk_export BAT *BATrangejoin(BAT *l, BAT *rl, BAT *rh, bit li, bit hi);
-@
-Join all BUNs of the BATs that have tail values: {rl <= l <= rh}. 
-
-@h
+/*
+ * Join all BUNs of the BATs that have tail values: {rl <= l <= rh}.
+ */
 gdk_export BAT *BATbandjoin(BAT *l, BAT *r, ptr mnus, ptr plus, bit li, bit hi);
-@
-Join all BUNs of the BATs that have tail values: {r-mnus <= l <= r+plus}. 
-
-@h
-@
-Versions of bandjoin fixed on the merge implementation (possibly with a cut-off limit);
-
-@h
+/*
+ * Versions of bandjoin fixed on the merge implementation (possibly with a cut-off limit);
+ */
 #endif /* GDK_RANGEJOIN_H */
 @c
 
@@ -57,7 +52,6 @@ Versions of bandjoin fixed on the merge implementation (possibly with a cut-off 
 #include "gdk_private.h"
 #include "gdk_rangejoin.h"
 
-@{
 BAT *BATrangejoin(BAT *l, BAT *rl, BAT *rh, bit li, bit hi)
 {
 	BAT *bn;
@@ -175,26 +169,27 @@ break;
 		}
 	}
 }
-@-
-@}
-@+ Bandjoin
-A non-equi join of two relations R and S is called a Band-join if
-the join predicate requires the values of R to fall within a given range.
-This kind of joins is encountered in real world domains, such as those
-involved with time and distance.
-
-The boundary conditions for the bandjoin are constants or a NULL value.
-The latter enables encoding of arbitrary theta joins using the more
-general bandjoin.
-Incidentally note that c1 = c2 = 0 leads to an equi-join.
-
-The straight forward implementation uses a nested loop.
-The current implementation does not optimize processing, because
-the impact of the choices is not yet clear.
-
-The hash indexing routines have been extended with a Band argument.
-@{
+@
 @c
+/*
+ * @-
+ * @+ Bandjoin
+ * A non-equi join of two relations R and S is called a Band-join if
+ * the join predicate requires the values of R to fall within a given range.
+ * This kind of joins is encountered in real world domains, such as those
+ * involved with time and distance.
+ *
+ * The boundary conditions for the bandjoin are constants or a NULL value.
+ * The latter enables encoding of arbitrary theta joins using the more
+ * general bandjoin.
+ * Incidentally note that c1 = c2 = 0 leads to an equi-join.
+ *
+ * The straight forward implementation uses a nested loop.
+ * The current implementation does not optimize processing, because
+ * the impact of the choices is not yet clear.
+ *
+ * The hash indexing routines have been extended with a Band argument.
+ */
 static BAT *
 BATbandjoin_nl(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi)
 {
@@ -259,12 +254,12 @@ BATbandjoin_nl(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi)
 	return bn;
 }
 
-@}
-@-
-The easiest case is to implement a nested loop for band operations.
-Choice point is to determine the status of the NULL values in the final
-result.
-@{
+/*
+ * @-
+ * The easiest case is to implement a nested loop for band operations.
+ * Choice point is to determine the status of the NULL values in the final
+ * result.
+ */
 @= bandjoin_nl_
 {
 	BATiter li = bat_iterator(l), ri = bat_iterator(r);
@@ -297,7 +292,6 @@ else
 	@:bandjoin_nl_(@1,>,<)
 break;
 @
-
 @= bandjoin_mj_loop
 	/* sliding window like solution */
 	while(lp < lc && rp < rc) {
@@ -369,6 +363,7 @@ else if (!li && hi)
 else
 	@:bandjoin_mj(@1,>,<)
 break;
+@
 @c
 
 static BAT *
@@ -470,4 +465,3 @@ BATbandjoin(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi)
 	return BATbandmergejoin(l, r, c1, c2, li, hi);
 }
 
-@}

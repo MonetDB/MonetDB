@@ -17,18 +17,20 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f opt_inline
-@a M. Kersten
-@subsection Function Inliners
-The routine @sc{optimizer.inline()} searches MAL function definitions
-whose property @{inline@}  is set. In addition, all MAL function calls
-whose primary target variable carry the @{inline@} property are inlined
-as well.
-The code is expanded inline using the macro processor.
-
-The inline optimizer processes all instructions, thereby
-causing recursive inlined functions to appear as well.
-@{
+@c
+/*
+ * @f opt_inline
+ * @a M. Kersten
+ * @subsection Function Inliners
+ * The routine @sc{optimizer.inline()} searches MAL function definitions
+ * whose property @{inline@}  is set. In addition, all MAL function calls
+ * whose primary target variable carry the @{inline@} property are inlined
+ * as well.
+ * The code is expanded inline using the macro processor.
+ *
+ * The inline optimizer processes all instructions, thereby
+ * causing recursive inlined functions to appear as well.
+ */
 @mal
 pattern optimizer.inline():str
 address OPTinline;
@@ -85,10 +87,11 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		q = getInstrPtr(mb, i);
 		if( q->blk ){
 			sig = getInstrPtr(q->blk,0);
-@-
-Time for inlining functions that are used in multiplex operations.
-They are produced by SQL compiler.
-@c
+			/*
+			 * @-
+			 * Time for inlining functions that are used in multiplex operations.
+			 * They are produced by SQL compiler.
+			 */
 			OPTDEBUGinline {
 				mnstr_printf(cntxt->fdout,"#check inline statement\n");
 				printInstruction(cntxt->fdout,mb,0,q,LIST_MAL_ALL);
@@ -105,9 +108,10 @@ They are produced by SQL compiler.
 
 			    varSetProp(mb, getArg(q,0), inlineProp, op_eq, NULL);
 			} else
-@-
-Check if the function definition is tagged as being inlined.
-@c
+			/*
+			 * @-
+			 * Check if the function definition is tagged as being inlined.
+			 */
 			if (sig->token == FUNCTIONsymbol &&
 			    varGetProp(q->blk, getArg(sig, 0), inlineProp) != NULL &&
 				isCorrectInline(q->blk) ) {
@@ -119,9 +123,10 @@ Check if the function definition is tagged as being inlined.
 					printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
 				}
 			} else 
-@-
-Check if the local call is tagged as being inlined.
-@c
+			/*
+			 * @-
+			 * Check if the local call is tagged as being inlined.
+			 */
 			if (varGetProp(mb, getArg(q,0), inlineProp) != NULL) {
 				inlineMALblock(mb,i,q->blk);
 				i--;
@@ -152,14 +157,15 @@ int OPTinlineMultiplex(Client cntxt, MalBlkPtr mb, InstrPtr p){
 	fcn = VALget(&getVar(mb, getArg(p, 2))->value);
 	if( (s= findSymbol(cntxt->nspace, mod,fcn)) ==0 )
 		return FALSE;
-@-
-Before we decide to propagate the inline request
-to the multiplex operation, we check some basic properties
-of the target function. Moreover, we apply the inline optimizer
-to the target function as well.
-This code should be protected against overflow due to recursive calls.
-In general, this is a hard problem. For now, we just expand.
-@c
+	/*
+	 * @-
+	 * Before we decide to propagate the inline request
+	 * to the multiplex operation, we check some basic properties
+	 * of the target function. Moreover, we apply the inline optimizer
+	 * to the target function as well.
+	 * This code should be protected against overflow due to recursive calls.
+	 * In general, this is a hard problem. For now, we just expand.
+	 */
 	(void) OPTinlineImplementation(cntxt, s->def, NULL, p);
 	res= varGetProp(s->def , getArg(getInstrPtr(s->def,0), 0),
 				inlineProp) != NULL;
@@ -169,4 +175,3 @@ In general, this is a hard problem. For now, we just expand.
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(inline,OPT_CHECK_ALL)@
-@}

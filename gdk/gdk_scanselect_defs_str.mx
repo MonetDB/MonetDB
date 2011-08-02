@@ -17,28 +17,28 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f gdk_scanselect_defs_str
-@a S. Manegold, N. J. Nes, M. L. Kersten, P. Boncz
-
+@c
+/*
+ * @f gdk_scanselect_defs_str
+ * @a S. Manegold, N. J. Nes, M. L. Kersten, P. Boncz
+ */
 @include gdk_scanselect_defs.mx
-
-@-
-
-Expanding on input-tail-type for data read and comparison.
-Most is straight forward.
-Taking special care of equi selects on str when there are no doubles in the
-heap.
-Adding test for v != nil for types where nil != MIN.
-
-@{
-
+ * @-
+ *
+ * Expanding on input-tail-type for data read and comparison.
+ * Most is straight forward.
+ * Taking special care of equi selects on str when there are no doubles in the
+ * heap.
+ * Adding test for v != nil for types where nil != MIN.
 @= DEFseqscanTTget
 	@:DEFseqscanHTget(eq_str,var,tloc,if((b->T->width==1?(var_t)*(unsigned char*)v:(b->T->width==2?(var_t)*(unsigned short*)v:(b->T->width==4?(var_t)*(unsigned int*)v:*(var_t*)v)))==str_idx),tl,@1)@
-@-
-
-Generate all working functions.
-
+@
 @h
+/*
+ * @-
+ *
+ * Generate all working functions.
+ */
 @:DEFseqscanTTget(h)@
 @c
 #include "monetdb_config.h"
@@ -51,6 +51,3 @@ Generate all working functions.
 #endif
 #include "gdk_scanselect.h"
 @:DEFseqscanTTget(c)@
-@-
-
-@}

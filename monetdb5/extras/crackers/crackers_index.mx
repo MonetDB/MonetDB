@@ -17,17 +17,19 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f crackers_index
-@a Martin Kersten, Stratos Idreos, Stefan Manegold
-@d March 2006 - July 2007
-@* Cracker index
-
-
-@+ Interface
- 
-
-@- Type expansion
-
+@c
+/*
+ * @f crackers_index
+ * @a Martin Kersten, Stratos Idreos, Stefan Manegold
+ * @d March 2006 - July 2007
+ * @* Cracker index
+ *
+ *
+ * @+ Interface
+ *
+ *
+ * @- Type expansion
+ */
 @= TypeSwitch
 @:@1(chr,simple,)@
 @:@1(sht,simple,)@
@@ -37,11 +39,10 @@ All Rights Reserved.
 @:@1(dbl,simple,)@
 @:@1(date,atom,TYPE_)@
 @
-
-
-@- Header file
-
 @h
+/*
+ * @- Header file
+ */
 #ifndef _CRACKERS_INDEX_H_
 #define _CRACKERS_INDEX_H_
 
@@ -232,25 +233,19 @@ struct storageManagement{
 @:IndexExport_decl@
 
 #endif /* _CRACKERS_INDEX_H */
-@
-
-
-@- Exported signatures
-
+/*
+ * @- Exported signatures
+ */
 @= IndexExport_decl
 crackers_export str CRKprintCrackerIndexBATpart(int *k, int *bid);
 crackers_export str CRKprintAVLTree_int(int *k, int *bid);
 crackers_export str CRKprintCrackerBAT(int *k, int *bid);
 crackers_export str CRKgetCrackerBAT(int *vid, int *bid);
 @
-
-
-@- Signatures shared within the crackers module/library
-
+ * @- Signatures shared within the crackers module/library
 @= IndexSharedFunctions_decl_0
 int existsCrackerIndex(int bid);
 @
-
 @= IndexSharedFunctions_decl_1
 /* CreateNewIndex */
 int newCrackerIndex_@1(int bid, int cbid);
@@ -261,15 +256,13 @@ void reCreateMap_@1(int position);
 struct Node * addCrackerIndex_@1(int m, @1 *value, bit inclusive, oid index, BAT * b);
 struct Node * addCrackerIndexIncrementalSideways_@1(int m, @1 value, bit inclusive, oid indexLocal, oid index, BAT * b, bit localBound, bit first, int pieceBAT);
 @
-
-
-@{
-@+ Implementation
-
-
-@- C file
-
 @c
+/*
+ * @+ Implementation
+ *
+ *
+ * @- C file
+ */
 #include "monetdb_config.h"
 #include "crackers.h"
 
@@ -279,11 +272,9 @@ struct Node * addCrackerIndexIncrementalSideways_@1(int m, @1 value, bit inclusi
 
 /* Exported functions */
 @:IndexExport_impl@
-@
-
-
-@- Exported functions
-
+/*
+ * @- Exported functions
+ */
 @= IndexExport_impl
 str
 CRKprintCrackerIndexBATpart(int *k, int *bid){
@@ -349,10 +340,7 @@ CRKgetCrackerBAT(int *vid, int *bid){
         return MAL_SUCCEED;
 }
 @
-
-
-@- Functions shared within the crackers module/library
-
+ * @- Functions shared within the crackers module/library
 @= IndexSharedFunctions_impl_0
 int
 existsCrackerIndex(int bid){
@@ -364,7 +352,6 @@ existsCrackerIndex(int bid){
 	return -1;
 }
 @
-
 @= IndexSharedFunctions_impl_1
 /* CreateNewIndex */
 int
@@ -631,15 +618,10 @@ addCrackerIndexIncrementalSideways_@1(int m, @1 value, bit inclusive, oid indexL
 	return newNode;
 }
 @
-
-
-@- Local support functions and macros
-
+ * @- Local support functions and macros
 @= insertIndexElement
 	*@2 = @4;	
 	*@3 = @5;	
 	count++;
 	BATsetcount(b,count);
 @
-
-@}
