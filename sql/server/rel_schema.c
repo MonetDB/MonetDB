@@ -982,10 +982,10 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 
 		for (col = t->columns.set->h, i = 0; col; col = col->next){
 			sql_column *sc = (sql_column *) col->data;
-			atom *a_sta = atom_general(sql->sa, &sc->type, sc->dim->start);
-			atom *a_ste = atom_general(sql->sa, &sc->type, sc->dim->step);
-			atom *a_sto = atom_general(sql->sa, &sc->type, sc->dim->stop);
 			if (sc->dim){
+				atom *a_sta = atom_general(sql->sa, &sc->type, sc->dim->start);
+				atom *a_ste = atom_general(sql->sa, &sc->type, sc->dim->step);
+				atom *a_sto = atom_general(sql->sa, &sc->type, sc->dim->stop);
 				switch(a_sto->data.vtype){
 				case TYPE_bte:
 					cnt = (*(bte *)VALget(&a_sto->data) - *(bte *)VALget(&a_sta->data)) / *(bte *)VALget(&a_ste->data); break;
