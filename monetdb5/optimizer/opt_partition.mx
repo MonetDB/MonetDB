@@ -845,6 +845,32 @@ remapVariable( MalBlkPtr mb, int i, int old, int new)
 }
 
 static int
+OPTgatherArgs(Client cntxt, MalBlkPtr mb, InstrPtr p, int i, Slices *slices)
+{
+	MalBlkPtr gmb;
+	InstrPtr q, sig = getInstrPtr(mb,0);
+	int hits = 0;
+	int j,k;
+
+	for ( j = p->retc; j < p->argc; j++)
+	if ( isaBatType(getArgType(mb,p,j)) ){
+		gmb = OPTgather(cntxt,mb,i, getArg(p,j), slices);
+		if ( gmb ) {
+			q= newInstruction(mb, ASSIGNsymbol);
+			getModuleId(q) = userRef;
+			getFunctionId(q) = getFunctionId(getInstrPtr(gmb,0));
+			getArg(q,0) = getArg(p,j);
+			for ( k =sig->retc; k < sig->argc; k++)
+				q= pushArgument(mb,q, getArg(sig,k));
+			insertInstruction(mb,q,i);
+			k = newTmpVariable(mb, getArgType(mb,q,0));
+			remapVariable(mb, i, getArg(p,j), k);
+			hits++;
+		}
+	}
+	return hits;
+} 
+static int
 OPTpartitionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i,j,k,pc = 0;
@@ -855,6 +881,7 @@ OPTpartitionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	MalBlkPtr  omb;
 	char *vec;
 	int	*alias;
+	int parallel = TRUE;	/* stop parallel execution when we have reconstructed the db */
 
 	(void)cntxt;
 	(void) stk;
@@ -939,10 +966,12 @@ OPTpartitionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		p= getInstrPtr(mb,i);
 
 
-		if ( getModuleId(p) == sqlRef && getFunctionId(p) == resultSetRef) {
-			mb->stmt[i]  = rsset;
-			q = OPTcodegen(cntxt, mb, i, slices, FALSE);
-
+		if ( getModuleId(p) == sqlRef && getFunctionId(p) == resultSetRef ) {
+			if ( parallel) {
+				mb->stmt[i]  = rsset;
+				q = OPTcodegen(cntxt, mb, i, slices, FALSE);
+				parallel = FALSE;
+			} else q = 0;
 			if ( q ) {
 				clrFunction(rsset);
 #ifdef DEBUGDETAILS
@@ -971,7 +1000,9 @@ OPTpartitionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				if ( msg )
 					mnstr_printf(cntxt->fdout,"codegen deadcode %s\n",msg);
 			} else {
+				/* gather arguments */
 				mb->stmt[i] = p;
+				i += OPTgatherArgs(cntxt,mb,p,i, &slices);
 				freeInstruction(rsset);
 				rsset = NULL;
 			}
@@ -980,6 +1011,7 @@ OPTpartitionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 		if ( getModuleId(p) == sqlRef && getFunctionId(p) == putName("exportValue",11)) {
 			q = OPTcodegen(cntxt, mb, i, slices, FALSE);
+			parallel = FALSE;
 			if ( q ) {
 				getArg(p,8) = getArg(q,0);
 				freeInstruction(q);
@@ -1010,26 +1042,7 @@ OPTpartitionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		}
 		if ( getModuleId(p) == aggrRef && p->argc == 4 ) {
 			/* grouped aggregation */
-			MalBlkPtr gmb;
-			InstrPtr sig = getInstrPtr(mb,0);
-			int hits = 0;
-
-			for ( j = p->retc; j < p->argc; j++){
-				gmb = OPTgather(cntxt,mb,i, getArg(p,j), &slices);
-				if ( gmb ) {
-					q= newInstruction(mb, ASSIGNsymbol);
-					getModuleId(q) = userRef;
-					getFunctionId(q) = getFunctionId(getInstrPtr(gmb,0));
-					getArg(q,0) = getArg(p,j);
-					for ( k =sig->retc; k < sig->argc; k++)
-						q= pushArgument(mb,q, getArg(sig,k));
-					insertInstruction(mb,q,i);
-					k = newTmpVariable(mb, getArgType(mb,q,0));
-					remapVariable(mb, i, getArg(p,j), k);
-					hits++;
-				}
-			}
-			i+= hits;
+			i += OPTgatherArgs(cntxt,mb,p,i, &slices);
 			continue;
 		}
 		/* grouping for now is a blocking instruction */
@@ -1037,24 +1050,29 @@ OPTpartitionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			(getFunctionId(p) == doneRef || getFunctionId(p) == newRef) &&
 			alias[getArg(p,3)] == 0) {
 			/* except consolidated input arguments */
-			q = OPTcodegen(cntxt, mb, i, slices, FALSE);
-			if ( q ) {
-				j = newTmpVariable(mb, getArgType(mb,q,0));
-				remapVariable(mb, i, getArg(p,p->retc), j);
-				alias[getArg(p,p->retc)] = j;
-				getArg(q,0) = getArg(p,p->retc) = j;
-				q->argc = getInstrPtr(mb,0)->argc - getInstrPtr(mb,0)->retc + q->retc;
-				insertInstruction(mb,q,i);
+			if ( parallel ) 
+			{	/* database not yet consolidated */
+				q = OPTcodegen(cntxt, mb, i, slices, FALSE);
+				parallel = FALSE;
+				if ( q ) {
+					j = newTmpVariable(mb, getArgType(mb,q,0));
+					remapVariable(mb, i, getArg(p,p->retc), j);
+					alias[getArg(p,p->retc)] = j;
+					getArg(q,0) = getArg(p,p->retc) = j;
+					q->argc = getInstrPtr(mb,0)->argc - getInstrPtr(mb,0)->retc + q->retc;
+					insertInstruction(mb,q,i);
 #ifdef DEBUG_DETAIL
-				mnstr_printf(cntxt->fdout,"#done instruction BEFORE deadcode test\n");
-				printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
+					mnstr_printf(cntxt->fdout,"#done instruction BEFORE deadcode test\n");
+					printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
 #endif
-				msg = OPTdeadcode(cntxt, mb, 0, 0);
-				if ( msg )
-					mnstr_printf(cntxt->fdout,"codegen deadcode %s\n",msg);
-				i++;
-				continue;
-			}
+					msg = OPTdeadcode(cntxt, mb, 0, 0);
+					if ( msg )
+						mnstr_printf(cntxt->fdout,"codegen deadcode %s\n",msg);
+					i++;
+					continue;
+				}
+			} else 
+				i += OPTgatherArgs(cntxt,mb,p,i, &slices);
 		}
 		if ( p->token == ENDsymbol)
 			pc = i -1;
