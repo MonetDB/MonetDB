@@ -25,6 +25,7 @@
  * - * expands to an arbitrary string
  */
 
+#include "monetdb_config.h"
 #include <stdlib.h>  /* NULL */
 #include "glob.h"
 

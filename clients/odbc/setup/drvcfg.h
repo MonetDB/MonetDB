@@ -31,8 +31,6 @@
 #ifndef _ODBCINST_H
 #define _ODBCINST_H
 
-#include "monetdb_config.h"
-
 #include <unistd.h>
 #ifdef HAVE_PWD_H
 #include <pwd.h>

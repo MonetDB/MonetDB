@@ -420,8 +420,7 @@ int chooseVictims(Client cntxt, int *lvs, int ltop, lng wr)
 
 	(void) cntxt;
 
-	wben = (dbl *)alloca(sizeof(dbl)*ltop);
-	memset(wben,0, sizeof(dbl)*ltop);
+	wben = (dbl *)GDKzalloc(sizeof(dbl)*ltop);
 	for (l = 0; l < ltop; l++){
 		sz = recycleBlk->profiler[lvs[l]].wbytes;
 		switch(rcachePolicy){
@@ -434,8 +433,10 @@ int chooseVictims(Client cntxt, int *lvs, int ltop, lng wr)
 		wben[l] = sz? ben / sz : -1;
 		totmem += sz;
 	}
-	if (totmem <= wr) /* all leaves need to be dropped */
+	if (totmem <= wr) { /* all leaves need to be dropped */
+		GDKfree(wben);
 		return ltop;
+	}
 
 	/* reorder instructions on increasing weighted credit */
 	/* knapsack: find a set with biggest wben fitting in totmem-wr.
@@ -501,6 +502,7 @@ int chooseVictims(Client cntxt, int *lvs, int ltop, lng wr)
 		mnstr_printf(cntxt->fdout,"Don't drop critical item : instruction %d, credit %f\n" ,tmpl,ci_ben);
 #endif
 	}
+	GDKfree(wben);
 	return newtop;
 
 }

@@ -22,6 +22,8 @@
  * The interface from SQL passes through here.
  *
  */
+
+#include "monetdb_config.h"
 #include "datacell.h"
 #include "opt_datacell.h"
 #include "sql_optimizer.h"

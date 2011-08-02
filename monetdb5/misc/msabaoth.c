@@ -176,9 +176,10 @@ char *
 msab_marchScenario(const char *lang)
 {
 	FILE *f;
-	char *buf = alloca(sizeof(char) * 256);	/* should be enough for now */
+	char buf[256];	/* should be enough for now */
 	size_t len;
-	char *path = alloca(sizeof(char) * (PATHLENGTH));
+	char pathbuf[PATHLENGTH];
+	char *path = pathbuf;
 	char *tmp;
 
 	if ((tmp = getDBPath(&path, PATHLENGTH, SCENARIOFILE)) != NULL)
@@ -189,14 +190,15 @@ msab_marchScenario(const char *lang)
 			char *p;
 
 			buf[len] = '\0';
+			tmp = buf;
 			/* find newlines and evaluate string */
-			while ((p = strchr(buf, '\n')) != NULL) {
+			while ((p = strchr(tmp, '\n')) != NULL) {
 				*p = '\0';
-				if (strcmp(buf, lang) == 0) {
+				if (strcmp(tmp, lang) == 0) {
 					(void)fclose(f);
 					return(NULL);
 				}
-				buf = p;
+				tmp = p;
 			}
 		}
 		/* append to the file */
@@ -219,9 +221,10 @@ char *
 msab_retreatScenario(const char *lang)
 {
 	FILE *f;
-	char *buf = alloca(sizeof(char) * 256);	/* should be enough for now */
+	char buf[256];	/* should be enough for now */
 	size_t len;
-	char *path = alloca(sizeof(char) * (PATHLENGTH));
+	char pathbuf[PATHLENGTH];
+	char *path = pathbuf;
 	char *tmp;
 
 	if ((tmp = getDBPath(&path, PATHLENGTH, SCENARIOFILE)) != NULL)
@@ -230,29 +233,30 @@ msab_retreatScenario(const char *lang)
 	if ((f = fopen(path, "a+")) != NULL) {
 		if ((len = fread(buf, 1, 255, f)) > 0) {
 			char *p;
-			FILE *tmp = tmpfile();
+			FILE *tmpf = tmpfile();
 			int written = 0;
 
 			buf[len] = '\0';
+			tmp = buf;
 			/* find newlines and evaluate string */
-			while ((p = strchr(buf, '\n')) != NULL) {
+			while ((p = strchr(tmp, '\n')) != NULL) {
 				*p = '\0';
-				if (strcmp(buf, lang) != 0) {
-					fprintf(tmp, "%s\n", buf);
+				if (strcmp(tmp, lang) != 0) {
+					fprintf(tmpf, "%s\n", buf);
 					written = 1;
 				}
-				buf = p;
+				tmp = p;
 			}
 			if (written != 0) {
 				/* no idea how to "move" a file by it's fd (sounds
 				 * impossible anyway) and tmpnam is so much "DO NOT USE"
 				 * that I decided to just copy over the file again... */
 				rewind(f);
-				fflush(tmp);
-				rewind(tmp);
-				len = fread(buf, 1, 256, tmp);
-				if (fwrite(buf, 1, len, f) < len) {
-					(void)fclose(tmp);
+				fflush(tmpf);
+				rewind(tmpf);
+				len = fread(tmp, 1, 256, tmpf);
+				if (fwrite(tmp, 1, len, f) < len) {
+					(void)fclose(tmpf);
 					(void)fclose(f);
 					snprintf(buf, sizeof(buf), "failed to write: %s (%s)",
 							strerror(errno), path);
@@ -260,7 +264,7 @@ msab_retreatScenario(const char *lang)
 				}
 				fflush(f);
 				fclose(f);
-				fclose(tmp); /* this should remove it automagically */
+				fclose(tmpf); /* this should remove it automagically */
 				return(NULL);
 			} else {
 				(void)fclose(f);
@@ -295,7 +299,8 @@ char *
 msab_marchConnection(const char *host, const int port)
 {
 	FILE *f;
-	char *path = alloca(sizeof(char) * (PATHLENGTH));
+	char pathbuf[PATHLENGTH];
+	char *path = pathbuf;
 	char *tmp;
 
 	if ((tmp = getDBPath(&path, PATHLENGTH, CONNECTIONFILE)) != NULL)
@@ -316,7 +321,7 @@ msab_marchConnection(const char *host, const int port)
 		(void)fclose(f);
 		return(NULL);
 	} else {
-		char buf[PATHLENGTH];
+		char buf[PATHLENGTH + 1024];
 		snprintf(buf, sizeof(buf), "failed to open file: %s (%s)",
 				strerror(errno), path);
 		return(strdup(buf));
@@ -331,7 +336,8 @@ msab_marchConnection(const char *host, const int port)
 char *
 msab_wildRetreat(void)
 {
-	char *path = alloca(sizeof(char) * (PATHLENGTH));
+	char pathbuf[PATHLENGTH];
+	char *path = pathbuf;
 	char *tmp;
 
 	if ((tmp = getDBPath(&path, PATHLENGTH, SCENARIOFILE)) != NULL)
@@ -360,7 +366,8 @@ msab_registerStart(void)
 	 * uplog. */
 
 	FILE *f;
-	char *path = alloca(sizeof(char) * (PATHLENGTH));
+	char pathbuf[PATHLENGTH];
+	char *path = pathbuf;
 	char *tmp;
 
 	if ((tmp = getDBPath(&path, PATHLENGTH, UPLOGFILE)) != NULL)
@@ -388,7 +395,8 @@ char *
 msab_registerStop(void)
 {
 	FILE *f;
-	char *path = alloca(sizeof(char) * (PATHLENGTH));
+	char pathbuf[PATHLENGTH];
+	char *path = pathbuf;
 	char *tmp;
 
 	if ((tmp = getDBPath(&path, PATHLENGTH, UPLOGFILE)) != NULL)
@@ -441,10 +449,11 @@ msab_getStatus(sabdb** ret, char *dbname)
 {
 	DIR *d;
 	struct dirent *e;
-	char *buf = alloca(sizeof(char) * (PATHLENGTH));
-	char *data = alloca(sizeof(char) * 8096);
-	char *path = alloca(sizeof(char) * (PATHLENGTH));
-	char *log = alloca(sizeof(char) * (PATHLENGTH));
+	char buf[PATHLENGTH];
+	char data[8096];
+	char pathbuf[PATHLENGTH];
+	char *path = pathbuf;
+	char log[PATHLENGTH];
 	char *p;
 	FILE *f;
 	int fd;
@@ -458,7 +467,6 @@ msab_getStatus(sabdb** ret, char *dbname)
 	sabdb *sdb, *top;
 	sdb = top = *ret = NULL;
 
-	buf[PATHLENGTH - 1] = '\0';
 	/* scan the parent for directories */
 	if ((p = getFarmPath(&path, PATHLENGTH, NULL)) != NULL)
 		return(p);
@@ -474,7 +482,7 @@ msab_getStatus(sabdb** ret, char *dbname)
 		if (strcmp(e->d_name, "..") == 0 || strcmp(e->d_name, ".") == 0)
 			continue;
 
-		snprintf(buf, PATHLENGTH, "%s/%s/%s", path, e->d_name, UPLOGFILE);
+		snprintf(buf, sizeof(buf), "%s/%s/%s", path, e->d_name, UPLOGFILE);
 		if (stat(buf, &statbuf) == -1)
 			continue;
 
@@ -487,13 +495,13 @@ msab_getStatus(sabdb** ret, char *dbname)
 		sdb->next = NULL;
 
 		/* store the database name */
-		snprintf(buf, PATHLENGTH, "%s/%s", path, e->d_name);
+		snprintf(buf, sizeof(buf), "%s/%s", path, e->d_name);
 		sdb->path = strdup(buf);
 		sdb->dbname = sdb->path + strlen(sdb->path) - strlen(e->d_name);
 
 		/* add scenarios that are supported */
 		sdb->scens = NULL;
-		snprintf(buf, PATHLENGTH, "%s/%s/%s", path, e->d_name, SCENARIOFILE);
+		snprintf(buf, sizeof(buf), "%s/%s/%s", path, e->d_name, SCENARIOFILE);
 		if ((f = fopen(buf, "r")) != NULL) {
 			sablist* np = NULL;
 			while (fgets(data, 8095, f) != NULL) {
@@ -515,7 +523,7 @@ msab_getStatus(sabdb** ret, char *dbname)
 
 		/* add how this server can be reached */
 		sdb->conns = NULL;
-		snprintf(buf, PATHLENGTH, "%s/%s/%s", path, e->d_name, CONNECTIONFILE);
+		snprintf(buf, sizeof(buf), "%s/%s/%s", path, e->d_name, CONNECTIONFILE);
 		if ((f = fopen(buf, "r")) != NULL) {
 			sablist* np = NULL;
 			while (fgets(data, 8095, f) != NULL) {
@@ -542,7 +550,7 @@ msab_getStatus(sabdb** ret, char *dbname)
 		 * - to distinguish between a crash and proper shutdown, consult
 		 *   the uplog
 		 */
-		snprintf(buf, PATHLENGTH, "%s/%s/%s", path, e->d_name, ".gdk_lock");
+		snprintf(buf, sizeof(buf), "%s/%s/%s", path, e->d_name, ".gdk_lock");
 		if (_sabaoth_internal_dbname != NULL &&
 				strcmp(_sabaoth_internal_dbname, e->d_name) == 0)
 		{
@@ -560,7 +568,7 @@ msab_getStatus(sabdb** ret, char *dbname)
 			sdb->state = SABdbRunning;
 		} else {
 			/* locking succeed, check for a crash in the uplog */
-			snprintf(log, PATHLENGTH, "%s/%s/%s", path, e->d_name, UPLOGFILE);
+			snprintf(log, sizeof(log), "%s/%s/%s", path, e->d_name, UPLOGFILE);
 			if ((f = fopen(log, "r")) != NULL) {
 				(void)fseek(f, -1, SEEK_END);
 				if (fread(data, 1, 1, f) != 1) {
@@ -580,7 +588,7 @@ msab_getStatus(sabdb** ret, char *dbname)
 			/* release the lock */
 			close(fd);
 		}
-		snprintf(buf, PATHLENGTH, "%s/%s/%s", path, e->d_name, MAINTENANCEFILE);
+		snprintf(buf, sizeof(buf), "%s/%s/%s", path, e->d_name, MAINTENANCEFILE);
 		f = fopen(buf, "r");
 		if (f != NULL) {
 			(void)fclose(f);

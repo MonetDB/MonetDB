@@ -36,7 +36,6 @@
  *
  **********************************************************************/
 
-#include <monetdb_config.h>
 #include "ODBCGlobal.h"
 #include "ODBCDbc.h"
 #include "ODBCUtil.h"

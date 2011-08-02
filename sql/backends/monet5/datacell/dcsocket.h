@@ -19,7 +19,6 @@
 
 #ifndef _DCSOCKET_
 #define _DCSOCKET_
-#include "monetdb_config.h"
 #ifdef WIN32
 #include <winsock.h>
 #else
