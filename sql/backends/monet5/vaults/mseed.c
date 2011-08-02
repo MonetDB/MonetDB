@@ -105,6 +105,9 @@
  * @end verbatim
  *
  */
+
+#include "monetdb_config.h"
+
 #include "mseed.h"
 #include "vault.h"
 #include "mtime.h"

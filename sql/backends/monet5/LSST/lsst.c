@@ -17,6 +17,8 @@
  * All Rights Reserved.
 */
 
+#include "monetdb_config.h"
+
 #include "lsst.h"
 
 /* The remainder of the code base is taken over from MySQLSpatialUdf.c */

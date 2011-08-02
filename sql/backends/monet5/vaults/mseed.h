@@ -65,7 +65,6 @@
 #ifndef _MSEED_H
 #define _MSEED_H
 
-#include "monetdb_config.h"
 #include "clients.h"
 #include "mal.h"
 #include "mal_client.h"
