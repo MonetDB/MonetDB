@@ -133,7 +133,6 @@ include opt_mitosis;
 include opt_reorder;
 include opt_octopus;
 include opt_origin;
-include opt_partitions;
 include opt_peephole;
 include opt_prejoin;
 include opt_qep;

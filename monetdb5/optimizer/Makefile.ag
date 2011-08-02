@@ -58,7 +58,6 @@ lib_optimizer = {
 		opt_multiplex.mx \
 		opt_octopus.mx \
 		opt_origin.mx \
-		opt_partitions.mx \
 		opt_peephole.mx \
 		opt_pipes.c \
 		opt_prejoin.mx \
@@ -87,7 +86,7 @@ headers_mal = {
 		opt_coercion.mx opt_emptySet.mx opt_peephole.mx opt_multiplex.mx \
 		opt_singleton.mx opt_costModel.mx opt_reduce.mx opt_macro.mx \
 		opt_accumulators.mx opt_qep.mx opt_mergetable.mx \
-		opt_remoteQueries.mx opt_joinselect.mx opt_partitions.mx \
+		opt_remoteQueries.mx opt_joinselect.mx \
 		opt_reorder.mx opt_prejoin.mx opt_compression.mx \
 		opt_evaluate.mx opt_inline.mx opt_pushranges.mx opt_derivepath.mx \
 		opt_accessmode.mx opt_joinpath.mx opt_heuristics.mx opt_remap.mx \
