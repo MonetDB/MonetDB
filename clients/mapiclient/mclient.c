@@ -399,7 +399,7 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 	char *t;
 	int rows = 0;		/* return number of output lines printed */
 	size_t ulen;
-	int *cutafter = alloca(sizeof(int) * fields);
+	int *cutafter = malloc(sizeof(int) * fields);
 
 	/* trim the text if needed */
 	if (trim == 1) {
@@ -528,6 +528,8 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 		first = 0;
 		rows++;
 	} while (more);
+
+	free(cutafter);
 	return rows;
 }
 
@@ -966,8 +968,8 @@ SQLheader(MapiHdl hdl, int *len, int fields, char more)
 	SQLseparator(len, fields, '-');
 	if (mapi_get_name(hdl, 0)) {
 		int i;
-		char **names = (char **) alloca(fields * sizeof(char *));
-		int *numeric = (int *) alloca(fields * sizeof(int));
+		char **names = (char **) malloc(fields * sizeof(char *));
+		int *numeric = (int *) malloc(fields * sizeof(int));
 
 		for (i = 0; i < fields; i++) {
 			names[i] = mapi_get_name(hdl, i);
@@ -975,6 +977,8 @@ SQLheader(MapiHdl hdl, int *len, int fields, char more)
 		}
 		SQLrow(len, numeric, names, fields, 1, more);
 		SQLseparator(len, fields, '=');
+		free(names);
+		free(numeric);
 	}
 }
 
