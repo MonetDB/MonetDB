@@ -591,7 +591,6 @@ struct OPTcatalog {
 {"multiplex",	0,	0,	0,	DEBUG_OPT_MULTIPLEX},
 {"octopus",		0,	0,	0,	DEBUG_OPT_OCTOPUS},
 {"origin",		0,	0,	0,	DEBUG_OPT_ORIGIN},
-{"partitions",	0,	0,	0,	DEBUG_OPT_PARTITIONS},
 {"peephole",	0,	0,	0,	DEBUG_OPT_PEEPHOLE},
 {"prejoin",		0,	0,	0,	DEBUG_OPT_PREJOIN},
 {"pushranges",	0,	0,	0,	DEBUG_OPT_PUSHRANGES},
