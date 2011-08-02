@@ -130,11 +130,13 @@ void polyInit(void){
 }
 #endif
 
-static malType findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p,int silent){
+static malType
+findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
+{
 	Module m;
 	Symbol s;
 	InstrPtr sig;
-	int i,k, unmatched = 0, s1;
+	int i, k, unmatched = 0, s1;
 	/* int foundbutwrong=0;*/
 	int polytype[MAXTYPEVAR];
 	int *returntype;
@@ -155,164 +157,164 @@ static malType findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p,int silen
 	 * it will be looked up multiple types to resolve the instruction.[todo]
 	 * Simplify polytype using a map into the concrete argument table.
 	 */
-	m= scope;
-	s= m->subscope[(int)(getSubScope(getFunctionId(p)))];
-	if( s == 0) return -1;
-	while(s != NULL){   /* single scope element check */
-	if( getFunctionId(p) != s->name  ){
-		s= s->skip; continue;
-	}
-	/*
-	 * @-
-	 * Perform a strong type-check on the actual arguments. If it turns
-	 * out to be a polymorphic MAL function, we have to clone it.
-	 * Provided the actual/formal parameters are compliant throughout
-	 * the function call.
-	 *
-	 * Also look out for variable argument lists. This means that we
-	 * have to keep two iterators, one for the caller (i) and one for
-	 * the callee (k). Since a variable argument only occurs as the last one,
-	 * we simple avoid an increment when running out of formal arguments.
-	 *
-	 * A call of the form (X1,..., Xi) := f(Y1,....,Yn) can be matched against
-	 * the function signature (B1,...,Bk):= f(A1,...,Am) where i==k , n<=m
-	 * and type(Ai)=type(Yi). Furthermore, the variables Xi obtain their type
-	 * from Bi (or type(Bi)==type(Xi)).
-	 */
-	sig = getSignature(s); 
-	unmatched = 0;
+	m = scope;
+	s = m->subscope[(int)(getSubScope(getFunctionId(p)))];
+	if (s == 0) return -1;
+	while (s != NULL) {  /* single scope element check */
+		if (getFunctionId(p) != s->name) {
+			s = s->skip; continue;
+		}
+		/*
+		 * @-
+		 * Perform a strong type-check on the actual arguments. If it turns
+		 * out to be a polymorphic MAL function, we have to clone it.
+		 * Provided the actual/formal parameters are compliant throughout
+		 * the function call.
+		 *
+		 * Also look out for variable argument lists. This means that we
+		 * have to keep two iterators, one for the caller (i) and one for
+		 * the callee (k). Since a variable argument only occurs as the last one,
+		 * we simple avoid an increment when running out of formal arguments.
+		 *
+		 * A call of the form (X1,..., Xi) := f(Y1,....,Yn) can be matched against
+		 * the function signature (B1,...,Bk):= f(A1,...,Am) where i==k , n<=m
+		 * and type(Ai)=type(Yi). Furthermore, the variables Xi obtain their type
+		 * from Bi (or type(Bi)==type(Xi)).
+		 */
+		sig = getSignature(s);
+		unmatched = 0;
 
 #ifdef DEBUG_MAL_RESOLVE
-	if(tracefcn) {
-	mnstr_printf(GDKout,"-->resolving\n");
-	printInstruction(GDKout,mb,0,p,LIST_MAL_ALL);
-	mnstr_printf(GDKout,"++> test against signature\n");
-	printInstruction(GDKout,s->def,0,getSignature(s),LIST_MAL_ALL);
-	mnstr_printf(GDKout," %s \n", sig->polymorphic?"polymorphic":"");
-	}
+		if (tracefcn) {
+			mnstr_printf(GDKout, "-->resolving\n");
+			printInstruction(GDKout, mb, 0, p, LIST_MAL_ALL);
+			mnstr_printf(GDKout, "++> test against signature\n");
+			printInstruction(GDKout, s->def, 0, getSignature(s), LIST_MAL_ALL);
+			mnstr_printf(GDKout, " %s \n", sig->polymorphic ? "polymorphic" : "");
+		}
 #endif
-	/*
-	 * @-
-	 * The simple case could be taken care of separately to speedup processing
-	 * However, it turned out not to make a big difference.
-	 * The first time we encounter a polymorphic argument in the
-	 * signature.
-	 * Subsequently, the polymorphic arguments update this table
-	 * and check for any type mismatches that might occur.
-	 * There are at most 2 type variables involved per argument
-	 * due to the limited type nesting permitted.
-	 * Note, each function returns at least one value.
-	 */
-	if( sig->polymorphic ){
-	int limit = sig->polymorphic;
-	if( ! (sig->argc== p->argc ||
-		(sig->argc<p->argc && sig->varargs & (VARARGS | VARRETS) )) 
-	){
-		s= s->peer; continue;
-	}
-	if( sig->retc != p->retc && !(sig->varargs & VARRETS)) {
-		s= s->peer;
-		continue;
-	}
+		/*
+		 * @-
+		 * The simple case could be taken care of separately to speedup processing
+		 * However, it turned out not to make a big difference.
+		 * The first time we encounter a polymorphic argument in the
+		 * signature.
+		 * Subsequently, the polymorphic arguments update this table
+		 * and check for any type mismatches that might occur.
+		 * There are at most 2 type variables involved per argument
+		 * due to the limited type nesting permitted.
+		 * Note, each function returns at least one value.
+		 */
+		if (sig->polymorphic) {
+			int limit = sig->polymorphic;
+			if (!(sig->argc == p->argc ||
+				  (sig->argc < p->argc && sig->varargs & (VARARGS | VARRETS)))
+				) {
+				s = s->peer; continue;
+			}
+			if (sig->retc != p->retc && !(sig->varargs & VARRETS)) {
+				s = s->peer;
+				continue;
+			}
 /*  if(polyVector[0]==0) polyInit();
-	memcpy(polytype,polyVector, 2*sig->argc*sizeof(int)); */
+    memcpy(polytype,polyVector, 2*sig->argc*sizeof(int)); */
 
-	for(k=0; k< limit; k++) polytype[k] = TYPE_any;
-	/*
-	 * @-
-	 * Most polymorphic functions don;t have a variable argument
-	 * list. So we save some instructions factoring this caise out.
-	 * Be careful, the variable number of return arguments should
-	 * be considered as well.
-	 */
-	i= p->retc;
-	/* first handle the variable argument list */
-	for(k=sig->retc; i<p->argc; k++, i++){
-		int actual = getArgType(mb,p,i);
-		int formal = getArgType(s->def,sig,k);
-		if (k == sig->argc-1 && sig->varargs & VARARGS)
-			k--;
-		/*
-		 * @-
-		 * Take care of variable argument lists.
-		 * They are allowed as the last in the signature only.
-		 * Furthermore, for patterns if the formal type is 'any' then all remaining arguments
-		 * are acceptable and detailed type analysis becomes part of the pattern
-		 * implementation.
-		 * In all other cases the type should apply to all remaining arguments.
-		 */
-		if (formal == actual)
-			continue;
-		if( updateTypeMap(formal, actual, polytype)){
-			unmatched= i; 
-		   break;
-		}
-		formal= getPolyType(formal,polytype);
-		/*
-		 * @-
-		 * Collect the polymorphic types and resolve them.
-		 * If it fails, we know this isn;t the function we are
-		 * looking for.
-		 */
-		if( resolveType( formal,actual) == -1 ){
-			unmatched= i;
-			break;
-		}
-	}
-	  /*
-	   * @-
-	   * The last argument/result type could be a polymorphic variable list.
-	   * It should only be allowed for patterns, where it can deal with the stack.
-	   * If the type is specified as :any then any mix of arguments is allowed.
-	   * If the type is a new numbered type variable then the first element
-	   * in the list determines the required type of all.
-	   */
-	  if( sig->varargs ) {
-		if( sig->token != PATTERNsymbol )
-			unmatched = i;
-		else {
-			/* resolve the arguments */
-			for(; i<p->argc; i++){
-				/* the type of the last one has already been set */
-				int actual = getArgType(mb,p,i);
-				int formal = getArgType(s->def,sig,k);
-				if (k == sig->argc-1 && sig->varargs & VARARGS)
+			for (k = 0; k < limit; k++) polytype[k] = TYPE_any;
+			/*
+			 * @-
+			 * Most polymorphic functions don;t have a variable argument
+			 * list. So we save some instructions factoring this caise out.
+			 * Be careful, the variable number of return arguments should
+			 * be considered as well.
+			 */
+			i = p->retc;
+			/* first handle the variable argument list */
+			for (k = sig->retc; i < p->argc; k++, i++) {
+				int actual = getArgType(mb, p, i);
+				int formal = getArgType(s->def, sig, k);
+				if (k == sig->argc - 1 && sig->varargs & VARARGS)
 					k--;
-
-				formal= getPolyType(formal,polytype);
-				if( formal == actual || formal == TYPE_any) 
+				/*
+				 * @-
+				 * Take care of variable argument lists.
+				 * They are allowed as the last in the signature only.
+				 * Furthermore, for patterns if the formal type is 'any' then all remaining arguments
+				 * are acceptable and detailed type analysis becomes part of the pattern
+				 * implementation.
+				 * In all other cases the type should apply to all remaining arguments.
+				 */
+				if (formal == actual)
 					continue;
-				if( resolveType( formal,actual) == -1 ){
-					unmatched= i;
+				if (updateTypeMap(formal, actual, polytype)) {
+					unmatched = i;
+					break;
+				}
+				formal = getPolyType(formal, polytype);
+				/*
+				 * @-
+				 * Collect the polymorphic types and resolve them.
+				 * If it fails, we know this isn;t the function we are
+				 * looking for.
+				 */
+				if (resolveType(formal, actual) == -1) {
+					unmatched = i;
+					break;
+				}
+			}
+			/*
+			 * @-
+			 * The last argument/result type could be a polymorphic variable list.
+			 * It should only be allowed for patterns, where it can deal with the stack.
+			 * If the type is specified as :any then any mix of arguments is allowed.
+			 * If the type is a new numbered type variable then the first element
+			 * in the list determines the required type of all.
+			 */
+			if (sig->varargs) {
+				if (sig->token != PATTERNsymbol)
+					unmatched = i;
+				else {
+					/* resolve the arguments */
+					for (; i < p->argc; i++) {
+						/* the type of the last one has already been set */
+						int actual = getArgType(mb, p, i);
+						int formal = getArgType(s->def, sig, k);
+						if (k == sig->argc - 1 && sig->varargs & VARARGS)
+							k--;
+
+						formal = getPolyType(formal, polytype);
+						if (formal == actual || formal == TYPE_any)
+							continue;
+						if (resolveType(formal, actual) == -1) {
+							unmatched = i;
+							break;
+						}
+					}
+				}
+			}
+		} else {
+			/*
+			 * @-
+			 * We have to check the argument types to determine a
+			 * possible match for the non-polymorphic case.
+			 */
+			if (sig->argc != p->argc ||
+				sig->retc != p->retc) {
+				s = s->peer;
+				continue;
+			}
+			for (i = p->retc; i < p->argc; i++) {
+				int actual = getArgType(mb, p, i);
+				int formal = getArgType(s->def, sig, i);
+				if (resolveType(formal, actual) == -1) {
+#ifdef DEBUG_MAL_RESOLVE
+					mnstr_printf(GDKout, "unmatched %d formal %s actual %s\n",
+						i, getTypeName(formal), getTypeName(actual));
+#endif
+					unmatched = i;
 					break;
 				}
 			}
 		}
-	  }
-   } else {
-		/*
-		 * @-
-		 * We have to check the argument types to determine a
-		 * possible match for the non-polymorphic case.
-		 */
-		if( sig->argc != p->argc ||
-			sig->retc != p->retc) {
-			s= s->peer;
-			continue;
-		}
-		for(i=p->retc;i<p->argc;i++){
-			int actual = getArgType(mb,p,i);
-			int formal = getArgType(s->def,sig,i);
-			if( resolveType(formal,actual) == -1 ){
-#ifdef DEBUG_MAL_RESOLVE
-			mnstr_printf(GDKout,"unmatched %d formal %s actual %s\n",
-				i, getTypeName(formal), getTypeName(actual));
-#endif
-				unmatched= i;
-				break;
-			}
-		}
-	}
 /*
  * @-
  * It is possible that you may have to coerce the value to another type.
@@ -322,148 +324,151 @@ static malType findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p,int silen
  * An optimizer may at a later stage automatically insert such coercion requests.
  */
 #ifdef DEBUG_MAL_RESOLVE
-	if(tracefcn) {
-		 mnstr_printf(GDKout,"finished %s.%s unmatched=%d polymorphic=%d %d\n",
-			getModuleId(sig), getFunctionId(sig), unmatched, sig->polymorphic,p==sig);
-		if( sig->polymorphic){
-			int l;
-			for(l=0;l<2*p->argc;l++) 
-			if( polytype[l] != TYPE_any)
-			mnstr_printf(GDKout,"poly %d %s\n",l,getTypeName(polytype[l]));
+		if (tracefcn) {
+			mnstr_printf(GDKout, "finished %s.%s unmatched=%d polymorphic=%d %d\n",
+				getModuleId(sig), getFunctionId(sig), unmatched, sig->polymorphic, p == sig);
+			if (sig->polymorphic) {
+				int l;
+				for (l = 0; l < 2 * p->argc; l++)
+					if (polytype[l] != TYPE_any)
+						mnstr_printf(GDKout, "poly %d %s\n", l, getTypeName(polytype[l]));
+			}
+			mnstr_printf(GDKout, "-->resolving\n");
+			printInstruction(GDKout, mb, 0, p, LIST_MAL_ALL);
+			mnstr_printf(GDKout, "++> test against signature\n");
+			printInstruction(GDKout, s->def, 0, getSignature(s), LIST_MAL_ALL);
+			mnstr_printf(GDKout, "\nmismatch unmatched %d test %s poly %s\n",
+				unmatched, getTypeName(getArgType(mb, p, unmatched)),
+				getTypeName(getArgType(s->def, sig, unmatched)));
 		}
-		mnstr_printf(GDKout,"-->resolving\n");
-		printInstruction(GDKout,mb,0,p,LIST_MAL_ALL);
-		mnstr_printf(GDKout,"++> test against signature\n");
-		printInstruction(GDKout,s->def,0,getSignature(s),LIST_MAL_ALL);
-		mnstr_printf(GDKout,"\nmismatch unmatched %d test %s poly %s\n",
-			unmatched, getTypeName(getArgType(mb,p,unmatched)),
-			getTypeName(getArgType(s->def,sig,unmatched)));
-	}
 #endif
-	if( unmatched) { s= s->peer; continue; }
-	/*
-	 * @-
-	 * At this stage we know all arguments are type compatible with the
-	 * signature.
-	 * We should assure that also the target variables have the proper types
-	 * or can inherit them from the signature. The result type vector should be
-	 * build separately first, because we may encounter an error later on.
-	 *
-	 * If any of the arguments refer to a constraint type, any_x, then
-	 * the resulting type can not be determined.
-	 */
-	s1 = 0;
-	returntype= (int*) alloca(p->retc * sizeof(int));
-	if( sig->polymorphic)
-	for(k=i=0; i < p->retc; k++, i++){
-		int actual = getArgType(mb,p,i);
-		int formal = getArgType(s->def,sig,k);
-
-		if (k== sig->retc-1 && sig->varargs & VARRETS) k--;
-
-		s1= getPolyType(formal, polytype);
-
-		returntype[i]= resolveType(s1,actual);
-		if( returntype[i]== -1 ){
-			s1= -1;
-			break;
+		if (unmatched) {
+			s = s->peer; continue;
 		}
-	} else 
-	/* check for non-polymorphic return */
-	for( k = i=0; i < p->retc; i++){
-		int actual = getArgType(mb,p,i);
-		int formal = getArgType(s->def,sig,i);
+		/*
+		 * @-
+		 * At this stage we know all arguments are type compatible with the
+		 * signature.
+		 * We should assure that also the target variables have the proper types
+		 * or can inherit them from the signature. The result type vector should be
+		 * build separately first, because we may encounter an error later on.
+		 *
+		 * If any of the arguments refer to a constraint type, any_x, then
+		 * the resulting type can not be determined.
+		 */
+		s1 = 0;
+		returntype = (int*)alloca(p->retc * sizeof(int));
+		if (sig->polymorphic)
+			for (k = i = 0; i < p->retc; k++, i++) {
+				int actual = getArgType(mb, p, i);
+				int formal = getArgType(s->def, sig, k);
 
-		if (k== sig->retc-1 && sig->varargs & VARRETS) k--;
+				if (k == sig->retc - 1 && sig->varargs & VARRETS) k--;
 
-		if( actual== formal)
-			returntype[i]= actual;
-		else {
-			returntype[i]= resolveType(formal,actual);
-			if( returntype[i]== -1 ){
-				s1= -1;
-				break;
+				s1 = getPolyType(formal, polytype);
+
+				returntype[i] = resolveType(s1, actual);
+				if (returntype[i] == -1) {
+					s1 = -1;
+					break;
+				}
+			}
+		else
+			/* check for non-polymorphic return */
+			for (k = i = 0; i < p->retc; i++) {
+				int actual = getArgType(mb, p, i);
+				int formal = getArgType(s->def, sig, i);
+
+				if (k == sig->retc - 1 && sig->varargs & VARRETS) k--;
+
+				if (actual == formal)
+					returntype[i] = actual;
+				else {
+					returntype[i] = resolveType(formal, actual);
+					if (returntype[i] == -1) {
+						s1 = -1;
+						break;
+					}
+				}
+			}
+		if (s1 < 0) {
+			/* if(getSignature(s)->token !=PATTERNsymbol) foundbutwrong++;*/
+			s = s->peer; continue;
+		}
+		/*
+		 * @-
+		 * If the return types are correct, copy them in place.
+		 * Beware that signatures should be left untouched, which
+		 * means that we may not overwrite any formal argument.
+		 * Using the knowledge dat the arguments occupy the header
+		 * of the symbol stack, it is easy to filter such errors.
+		 * Also mark all variables that are subject to garbage control.
+		 * Beware, this is not yet effectuated in the interpreter.
+		 */
+		p->typechk = TYPE_RESOLVED;
+		for (i = 0; i < p->retc; i++) {
+			int ts = returntype[i];
+			if (isVarConstant(mb, getArg(p, i))) {
+				showScriptException(mb, getPC(mb, p), TYPE, "Assignment to constant");
+				p->typechk = TYPE_UNKNOWN;
+				mb->errors++;
+				return -3;
+			}
+			if (!isVarFixed(mb, getArg(p, i)) && ts >= 0) {
+				setVarType(mb, getArg(p, i), ts);
+				setVarFixed(mb, getArg(p, i));
+			}
+			@:prepostProcess(ts,i,mb)@
+		}
+		/*
+		 * @-
+		 * Also the arguments may contain constants
+		 * to be garbage collected.
+		 */
+		for (i = p->retc; i < p->argc; i++)
+			if (findGDKtype(getArgType(mb, p, i)) == TYPE_str ||
+				getArgType(mb, p, i) == TYPE_bat ||
+				isaBatType(getArgType(mb, p, i)) ||
+				(!isPolyType(getArgType(mb, p, i)) && getArgType(mb, p, i) < TYPE_any &&
+				 getArgType(mb, p, i) >= 0 && ATOMstorage(getArgType(mb, p, i)) == TYPE_str)) {
+				getInstrPtr(mb, 0)->gc |= GARBAGECONTROL;
+				p->gc |= GARBAGECONTROL;
+			}
+		/*
+		 * @-
+		 * It may happen that an argument was still untyped and as a result of
+		 * the polymorphism matching became strongly typed. This should be
+		 * reflected in the symbol table.
+		 */
+		s1 = returntype[0];     /* for those interested */
+		/* foundbutwrong = 0;*/
+		/*
+		 * @-
+		 * If the call refers to a polymorphic function, we
+		 * clone it to arrive at a bounded instance. Polymorphic patterns and
+		 * commands are responsible for type resolution themselves.
+		 * Note that cloning pre-supposes that the function being cloned
+		 * does not contain errors detected earlier in the process,
+		 * nor does it contain polymorphic actual arguments.
+		 */
+		if (sig->polymorphic) {
+			int cnt = 0;
+			for (k = i = p->retc; i < p->argc; i++) {
+				int actual = getArgType(mb, p, i);
+				if (isAnyExpression(actual)) cnt++;
+			}
+			if (cnt == 0 && s->kind != COMMANDsymbol && s->kind != PATTERNsymbol) {
+				s = cloneFunction(scope, s, mb, p);
+				if (s->def->errors) return -3;
 			}
 		}
-	}
-	if(s1<0 ){
-		/* if(getSignature(s)->token !=PATTERNsymbol) foundbutwrong++;*/
-		s= s->peer; continue;
-	}
-	/*
-	 * @-
-	 * If the return types are correct, copy them in place.
-	 * Beware that signatures should be left untouched, which
-	 * means that we may not overwrite any formal argument.
-	 * Using the knowledge dat the arguments occupy the header
-	 * of the symbol stack, it is easy to filter such errors.
-	 * Also mark all variables that are subject to garbage control.
-	 * Beware, this is not yet effectuated in the interpreter.
-	 */
-	p->typechk= TYPE_RESOLVED;
-	for(i=0;i<p->retc;i++) {
-		int ts= returntype[i];
-		if( isVarConstant(mb, getArg(p,i)) ){
-			showScriptException( mb, getPC(mb,p), TYPE, "Assignment to constant");
-			p->typechk= TYPE_UNKNOWN;
-			mb->errors++;
-			return -3;
-		}
-		if( !isVarFixed(mb,getArg(p,i)) && ts>=0) {
-			setVarType(mb, getArg(p,i),ts);
-			setVarFixed(mb, getArg(p,i));
-		}
-		@:prepostProcess(ts,i,mb)@
-	}
-	/*
-	 * @-
-	 * Also the arguments may contain constants
-	 * to be garbage collected.
-	 */
-	for(i=p->retc;i<p->argc;i++) 
-	if ( findGDKtype(getArgType(mb,p,i)) == TYPE_str ||
-		 getArgType(mb,p,i) == TYPE_bat ||
-		 isaBatType(getArgType(mb,p,i)) ||
-	    (!isPolyType(getArgType(mb,p,i)) && getArgType(mb,p,i)< TYPE_any && 
-             getArgType(mb,p,i)>=0 && ATOMstorage(getArgType(mb,p,i)) == TYPE_str)){
-		getInstrPtr(mb,0)->gc |= GARBAGECONTROL;
-		p->gc |= GARBAGECONTROL;
-	}
-	/*
-	 * @-
-	 * It may happen that an argument was still untyped and as a result of
-	 * the polymorphism matching became strongly typed. This should be
-	 * reflected in the symbol table.
-	 */
-	s1= returntype[0];  /* for those interested */
-	/* foundbutwrong = 0;*/
-	/*
-	 * @-
-	 * If the call refers to a polymorphic function, we
-	 * clone it to arrive at a bounded instance. Polymorphic patterns and
-	 * commands are responsible for type resolution themselves.
-	 * Note that cloning pre-supposes that the function being cloned
-	 * does not contain errors detected earlier in the process,
-	 * nor does it contain polymorphic actual arguments.
-	 */
-	if( sig->polymorphic){ 
-		int cnt=0;
-		for(k=i=p->retc;i<p->argc;i++){
-			int actual = getArgType(mb,p,i);
-			if( isAnyExpression(actual)) cnt++;
-		}
-		if(cnt==0 && s->kind!= COMMANDsymbol && s->kind!=PATTERNsymbol ){
-			s = cloneFunction(scope, s, mb,p);
-			if( s->def->errors) return -3;
-		}
-	}
-	/*
-	 * @-
-	 * We found the proper function. Copy some properties. In particular,
-	 * determine the calling strategy, i.e. FCNcall, CMDcall, FACcall, PATcall
-	 * Beware that polymorphic functions may produce type-incorrect clones.
-	 * This piece of code may be shared by the separate binder
-	 */
+/*
+ * @-
+ * We found the proper function. Copy some properties. In particular,
+ * determine the calling strategy, i.e. FCNcall, CMDcall, FACcall, PATcall
+ * Beware that polymorphic functions may produce type-incorrect clones.
+ * This piece of code may be shared by the separate binder
+ */
 @= bindFunction
 	if (s->def->errors) {
 		p->typechk = TYPE_UNKNOWN;
@@ -472,71 +477,68 @@ static malType findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p,int silen
 	}
 	if (p->token == ASSIGNsymbol) {
 		switch (getSignature(s)->token) {
-			case COMMANDsymbol:
-				p->token = CMDcall;
-				p->fcn = getSignature(s)->fcn;  /* C implementation mandatory */
-				if (p->fcn == NULL) {
-					showScriptException(mb, getPC(mb, p), TYPE,
-							"object code for command %s.%s missing",
-							p->modname, p->fcnname);
-					p->typechk = TYPE_UNKNOWN;
-					mb->errors++;
-					return -3;
-				}
-				break;
-			case PATTERNsymbol:
-				p->token = PATcall;
-				p->fcn = getSignature(s)->fcn;  /* C implementation optional */
-				break;
-			case FACTORYsymbol:
-				p->token = FACcall;
-				p->fcn = getSignature(s)->fcn;  /* C implementation optional */
-				break;
-			case FUNCTIONsymbol:
-				p->token = FCNcall;
-				if (getSignature(s)->fcn)
-					p->fcn = getSignature(s)->fcn; /* C implementation optional */
-				break;
-			default: {
-				if (!silent)
-					showScriptException(mb, getPC(mb, p), MAL,
-							"MALresolve: unexpected token type");
+		case COMMANDsymbol:
+			p->token = CMDcall;
+			p->fcn = getSignature(s)->fcn;      /* C implementation mandatory */
+			if (p->fcn == NULL) {
+				showScriptException(mb, getPC(mb, p), TYPE,
+					"object code for command %s.%s missing",
+					p->modname, p->fcnname);
+				p->typechk = TYPE_UNKNOWN;
 				mb->errors++;
 				return -3;
 			}
+			break;
+		case PATTERNsymbol:
+			p->token = PATcall;
+			p->fcn = getSignature(s)->fcn;      /* C implementation optional */
+			break;
+		case FACTORYsymbol:
+			p->token = FACcall;
+			p->fcn = getSignature(s)->fcn;      /* C implementation optional */
+			break;
+		case FUNCTIONsymbol:
+			p->token = FCNcall;
+			if (getSignature(s)->fcn)
+				p->fcn = getSignature(s)->fcn;     /* C implementation optional */
+			break;
+		default: {
+			if (!silent)
+				showScriptException(mb, getPC(mb, p), MAL,
+					"MALresolve: unexpected token type");
+			mb->errors++;
+			return -3;
+		}
 		}
 		p->blk = s->def;
 	}
 @
 @c
+		@:bindFunction@
 /*
  * @-
+ * Since we now know the storage type of the receiving variable, we can
+ * set the garbage collection flag.
  */
-	@:bindFunction@
-	/*
-	 * @-
-	 * Since we now know the storage type of the receiving variable, we can
-	 * set the garbage collection flag.
-	 */
 @= prepostProcess
 	if (findGDKtype(@1) == TYPE_bat ||
-		 isaBatType(@1) ||
+		isaBatType(@1) ||
 		findGDKtype(@1) == TYPE_str ||
-	    (!isPolyType(@1) && @1< TYPE_any && 
-             @1>=0 && ATOMstorage(@1) == TYPE_str)){
-		getInstrPtr(@3,0)->gc |= GARBAGECONTROL;
-		setVarCleanup(mb,getArg(p,@2));
-		p->gc|= GARBAGECONTROL;
+		(!isPolyType(@1) && @1 < TYPE_any &&
+		 @1 >= 0 && ATOMstorage(@1) == TYPE_str)) {
+		getInstrPtr(@3, 0)->gc |= GARBAGECONTROL;
+		setVarCleanup(mb, getArg(p, @2));
+		p->gc |= GARBAGECONTROL;
 	}
 @
 @c
 #ifdef DEBUG_MAL_RESOLVE
-	if(tracefcn) {
-		printInstruction(GDKout,mb,0mp,LIST_MAL_ALL);
-		mnstr_printf(GDKout,"Finished matching\n");
-	}
+		if (tracefcn) {
+			printInstruction(GDKout, mb, 0mp, LIST_MAL_ALL);
+			mnstr_printf(GDKout, "Finished matching\n");
+		}
 #endif
-	return s1;
+		return s1;
 	} /* while */
 	/*
 	 * @-
