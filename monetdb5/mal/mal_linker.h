@@ -18,6 +18,7 @@
  */
 
 #ifndef _MAL_LINKER_H
+#define _MAL_LINKER_H
 
 #define MAL_EXT ".mal"
 #define SQL_EXT ".sql"
@@ -41,4 +42,4 @@ mal_export void unloadLibraries(void);
 mal_export void initLibraries(void);
 mal_export int isPreloaded(str nme);
 mal_export int isLoaded(str modulename);
-#endif
+#endif /* _MAL_LINKER_H */
