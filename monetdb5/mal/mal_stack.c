@@ -106,12 +106,9 @@ reallocStack(MalStkPtr s, int cnt)
 	if (s->stksize > cnt)
 		return s;
 	k = ((cnt / STACKINCR) + 1) * STACKINCR;
-	s = (MalStkPtr) alloca(stackSize(k));
-	memset((char *) s, 0, stackSize(k));
+	s = (MalStkPtr) GDKzalloc(stackSize(k));
 	memcpy(s, old, stackSize(old->stksize));
 	s->stksize = k;
-	/* cannot gdk free, alloca data */
-	assert(0);
 	GDKfree(old);
 	return s;
 }
@@ -124,19 +121,6 @@ reallocStack(MalStkPtr s, int cnt)
  * stack frames, because the others are allocated in the
  * runtime stack.
  */
-void
-chkStack(MalStkPtr stk, int i)
-{
-#if 0
-/* avoid the darkness */
-	if (stk->stksize <= i) {
-		reallocStack(stk, STACKINCR);
-	}
-#else
-	(void)stk;
-	(void)i;
-#endif
-}
 void
 freeStack(MalStkPtr stk)
 {
