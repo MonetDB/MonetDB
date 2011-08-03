@@ -19,9 +19,6 @@
 
 #EXTRA_HEADERS = sql_storage.h
 
-EXTRA_DIST = sql_storage.h store_connections.h store_dependency.h \
-	store_sequence.h
-
 SUBDIRS = bat restrict
 
 INCLUDES = ../include ../common \
@@ -34,5 +31,7 @@ lib_store = {
 	DIR = libdir
 	SOURCES = \
 		store_dependency.c store_connections.c store_sequence.c \
-		store.c sql_catalog.c 
+		store.c sql_catalog.c \
+		sql_storage.h store_connections.h store_dependency.h \
+		store_sequence.h
 }

@@ -57,13 +57,12 @@ lib_sqlserver = {
 		rel_optimizer.c \
 		rel_bin.c \
 		rel_xml.c \
-		rel_dump.c
+		rel_dump.c \
+		bin_optimizer.h rel_bin.h rel_dump.h rel_exp.h \
+		rel_optimizer.h rel_prop.h rel_schema.h rel_select.h \
+		rel_semantic.h rel_sequence.h rel_subquery.h rel_trans.h \
+		rel_updates.h rel_xml.h sql_atom.h sql_datetime.h \
+		sql_decimal.h sql_env.h sql_mvc.h sql_parser.h \
+		sql_privileges.h sql_psm.h sql_qc.h sql_rel2bin.h sql_scan.h \
+		sql_schema.h sql_semantic.h sql_statement.h sql_symbol.h
 }
-
-EXTRA_DIST = bin_optimizer.h rel_bin.h rel_dump.h rel_exp.h \
-	rel_optimizer.h rel_prop.h rel_schema.h rel_select.h \
-	rel_semantic.h rel_sequence.h rel_subquery.h rel_trans.h \
-	rel_updates.h rel_xml.h sql_atom.h sql_datetime.h \
-	sql_decimal.h sql_env.h sql_mvc.h sql_parser.h \
-	sql_privileges.h sql_psm.h sql_qc.h sql_rel2bin.h sql_scan.h \
-	sql_schema.h sql_semantic.h sql_statement.h sql_symbol.h

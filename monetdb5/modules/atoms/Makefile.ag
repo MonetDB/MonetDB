@@ -26,15 +26,15 @@ lib_atoms = {
 	NOINST
 	SOURCES = \
 		batxml.mx \
-		blob.c \
-		color.c \
-		identifier.c \
-		inet.c \
+		blob.c blob.h \
+		color.c color.h \
+		identifier.c identifier.h \
+		inet.c inet.h \
 		mtime.mx \
 		streams.mx \
 		str.mx \
 		url.mx \
-		xml.c
+		xml.c xml.h
 }
 
 headers_mal = {
@@ -54,4 +54,4 @@ headers_mal = {
 }
 
 EXTRA_DIST_DIR = Tests
-EXTRA_DIST = blob.mal blob.h color.mal color.h identifier.mal identifier.h inet.mal inet.h xml.mal xml.h xml.sql
+EXTRA_DIST = blob.mal color.mal identifier.mal inet.mal xml.mal xml.sql

@@ -24,7 +24,7 @@ INCLUDES = ../../mal \
 lib__sphinx = {
 	MODULE
 	DIR = libdir/monetdb5
-	SOURCES = sphinx.c
+	SOURCES = sphinx.c sphinx.h
 
 	LIBS = ../../tools/libmonetdb5 $(SPHINXCLIENT_LIBS)
 }
@@ -35,4 +35,4 @@ headers_sphinx_mal = {
 	SOURCES = sphinx.mal
 }
 
-EXTRA_DIST = sphinx.mal sphinx.h
+EXTRA_DIST = sphinx.mal

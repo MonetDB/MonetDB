@@ -19,7 +19,7 @@ MTSAFE
 
 INCLUDES = ../common/options ../common/stream ../common/utils $(valgrind_CFLAGS)
 
-EXTRA_DIST = gdk_scanselect_defs.mx gdk_private.h gdk_delta.h gdk_logger.h gdk_posix.h gdk_system.h gdk_tm.h gdk_storage.h
+EXTRA_DIST = gdk_scanselect_defs.mx
 
 lib_gdk = { 
 	VERSION = $(GDK_VERSION)
@@ -41,7 +41,10 @@ lib_gdk = {
 		gdk_qsort.mx gdk_ssort.mx gdk_storage.c gdk_bat.mx \
 		gdk_delta.c gdk_relop.mx gdk_system.c gdk_value.mx \
 		gdk_rangejoin.mx \
-		gdk_posix.c gdk_logger.c bat.feps bat1.feps bat2.feps \
+		gdk_posix.c gdk_logger.c \
+		gdk_private.h gdk_delta.h gdk_logger.h gdk_posix.h \
+		gdk_system.h gdk_tm.h gdk_storage.h \
+		bat.feps bat1.feps bat2.feps \
 		libbat.rc
 	LIBS = ../common/options/libmoptions \
 		../common/stream/libstream \

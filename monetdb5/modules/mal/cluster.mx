@@ -413,7 +413,7 @@ CLUSTER_map(bat *RB, bat *B)
 	mnstr_printf(GDKout,"bucket pages %d size %d max %d  N %d\n", 
 		(int)MT_npages(), (int)bsize, (int)rng, (int)N);
 #endif
-	basket = (Basket*) alloca((N+1) * sizeof(Basket));
+	basket = (Basket*) GDKzalloc((N+1) * sizeof(Basket));
 	if (basket==NULL)
 		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
 
@@ -462,6 +462,7 @@ CLUSTER_map(bat *RB, bat *B)
 	BATaccessEnd(map,USE_TAIL,MMAP_WILLNEED);
 	BBPunfix(*B);
 	BBPkeepref(*RB= map->batCacheid);
+	GDKfree(basket);
 	return MAL_SUCCEED;
 }
 /*
@@ -612,7 +613,7 @@ CLS_create_@1( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int 
 	}
 
 	/* convert histogram into prefix sum */
-	pos = (wrd*)alloca(sizeof(wrd) * (mask+1)); 
+	pos = (wrd*)GDKzalloc(sizeof(wrd) * (mask+1)); 
 	for (sum = 0, i=0 ; i <= mask; i++) {
 		wrd psum = sum;
 
@@ -624,6 +625,7 @@ CLS_create_@1( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int 
 	if ((cmap = BATnew(TYPE_void, TYPE_wrd, BATcount(b))) == NULL) {
 		BBPunfix(*B);
 		BBPunfix(psum->batCacheid);
+		GDKfree(pos);
 		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(cmap, b->H->seq);
@@ -639,6 +641,7 @@ CLS_create_@1( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int 
 		*m++ = pos[h]++;
 	}
 
+	GDKfree(pos);
 	BBPunfix(*B);
 	BBPkeepref(*rpsum = psum->batCacheid);
 	BBPkeepref(*rcmap = cmap->batCacheid);

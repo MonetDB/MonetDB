@@ -19,15 +19,13 @@
 
 MTSAFE
 
-EXTRA_DIST = stream_socket.h
-
 INCLUDES = $(zlib_CFLAGS) \
 		   $(BZ_CFLAGS) \
 		   $(openssl_CFLAGS) \
 		   $(curl_CFLAGS)
 
 lib_stream  =  {
-	SOURCES = stream.c stream.h
+	SOURCES = stream.c stream.h stream_socket.h
 	VERSION = $(STREAM_VERSION)
 	LIBS = $(SOCKET_LIBS) \
 		   $(zlib_LIBS) \
