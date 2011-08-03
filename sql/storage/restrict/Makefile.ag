@@ -26,7 +26,6 @@ lib_restrictstore = {
 	NOINST
 	DIR = libdir
 	SOURCES = \
-		restrict_table.c restrict_storage.c restrict_logger.c 
+		restrict_table.c restrict_storage.c restrict_logger.c \
+		restrict_logger.h restrict_storage.h restrict_table.h
 }
-
-EXTRA_DIST = restrict_logger.h restrict_storage.h restrict_table.h

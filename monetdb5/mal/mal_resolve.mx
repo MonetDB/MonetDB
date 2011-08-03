@@ -139,7 +139,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 	int i, k, unmatched = 0, s1;
 	/* int foundbutwrong=0;*/
 	int polytype[MAXTYPEVAR];
-	int *returntype;
+	int *returntype= NULL;
 	/*
 	 * @-
 	 * Within a module find the subscope to locate the element in its list
@@ -357,7 +357,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 		 * the resulting type can not be determined.
 		 */
 		s1 = 0;
-		returntype = (int*)alloca(p->retc * sizeof(int));
+		returntype= (int*) GDKzalloc(p->retc * sizeof(int));
 		if (sig->polymorphic)
 			for (k = i = 0; i < p->retc; k++, i++) {
 				int actual = getArgType(mb, p, i);
@@ -412,7 +412,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 				showScriptException(mb, getPC(mb, p), TYPE, "Assignment to constant");
 				p->typechk = TYPE_UNKNOWN;
 				mb->errors++;
-				return -3;
+				goto wrapup;
 			}
 			if (!isVarFixed(mb, getArg(p, i)) && ts >= 0) {
 				setVarType(mb, getArg(p, i), ts);
@@ -459,7 +459,8 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 			}
 			if (cnt == 0 && s->kind != COMMANDsymbol && s->kind != PATTERNsymbol) {
 				s = cloneFunction(scope, s, mb, p);
-				if (s->def->errors) return -3;
+				if (s->def->errors)
+					goto wrapup;
 			}
 		}
 /*
@@ -473,7 +474,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 	if (s->def->errors) {
 		p->typechk = TYPE_UNKNOWN;
 		mb->errors++;
-		return -3;
+		goto wrapup;
 	}
 	if (p->token == ASSIGNsymbol) {
 		switch (getSignature(s)->token) {
@@ -486,7 +487,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 					p->modname, p->fcnname);
 				p->typechk = TYPE_UNKNOWN;
 				mb->errors++;
-				return -3;
+				goto wrapup;
 			}
 			break;
 		case PATTERNsymbol:
@@ -507,7 +508,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 				showScriptException(mb, getPC(mb, p), MAL,
 					"MALresolve: unexpected token type");
 			mb->errors++;
-			return -3;
+			goto wrapup;
 		}
 		}
 		p->blk = s->def;
@@ -538,6 +539,8 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 			mnstr_printf(GDKout, "Finished matching\n");
 		}
 #endif
+		if ( returntype)
+			GDKfree(returntype);
 		return s1;
 	} /* while */
 	/*
@@ -546,12 +549,15 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 	 * that we found an instruction with the proper arguments, but that clashes
 	 * with one of the target variables.
 	 */
+wrapup:
 	/* foundbutwrong has not been changed, commented out code above
 	if( foundbutwrong && !silent){
 		showScriptException(mb, getPC(mb, p), TYPE,
 			"type conflict in assignment");
 	}
 	*/
+	if ( returntype)
+		GDKfree(returntype);
 	return -3;
 }
 
@@ -847,6 +853,7 @@ int fcnBinder(Module scope, MalBlkPtr mb, InstrPtr p){
 			@:bindFunction@
 		}
 	}
+wrapup:
 	return 0;
 }
 /*

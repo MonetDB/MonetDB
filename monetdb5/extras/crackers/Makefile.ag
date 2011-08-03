@@ -44,7 +44,7 @@ lib_crackers = {
 			  crackers_joins.mx \
 			  crackers_sortmerge.mx \
 			  crackers_crackmerge.mx \
-			  crackers_pq.c \
+			  crackers_pq.c crackers_pq.h \
 			  crackers_populate.mx \
 			  opt_crack.mx \
 			  opt_selcrack.mx \
@@ -65,4 +65,3 @@ headers_mal = {
 }
 
 EXTRA_DIST_DIR = Tests
-EXTRA_DIST = crackers_pq.h
