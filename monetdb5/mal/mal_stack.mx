@@ -112,7 +112,6 @@ mal_export MalStkPtr reallocStack(MalStkPtr s, int cnt);
 mal_export MalStkPtr reallocGlobalStack(MalStkPtr s, int cnt);
 mal_export void freeStack(MalStkPtr stk);
 mal_export void clearStack(MalStkPtr s);
-mal_export void chkStack(MalStkPtr stk, int i);	/* used in src/mal/mal_box.c */
 
 #define VARfreeze(X)    if(X){X->frozen=TRUE;}
 #define VARfixate(X)    if(X){X->constant=TRUE;}
@@ -173,12 +172,9 @@ reallocStack(MalStkPtr s, int cnt)
 	if (s->stksize > cnt)
 		return s;
 	k = ((cnt / STACKINCR) + 1) * STACKINCR;
-	s = (MalStkPtr) alloca(stackSize(k));
-	memset((char *) s, 0, stackSize(k));
+	s = (MalStkPtr) GDKzalloc(stackSize(k));
 	memcpy(s, old, stackSize(old->stksize));
 	s->stksize = k;
-	/* cannot gdk free, alloca data */
-	assert(0);
 	GDKfree(old);
 	return s;
 }
@@ -189,13 +185,6 @@ there is space left. It should only be used for global
 stack frames, because the others are allocated in the
 runtime stack.
 @c
-void
-chkStack(MalStkPtr stk, int i)
-{
-	if (stk->stksize <= i) {
-		reallocStack(stk, STACKINCR);
-	}
-}
 void
 freeStack(MalStkPtr stk)
 {

@@ -418,7 +418,8 @@ depositBox(Box box, str name, int type, ValPtr val)
 		return 0;
 	if (i < 0) {
 		i = newVariable(box->sym, GDKstrdup(name), type);
-		chkStack(box->val, i);
+		if (box->val->stksize <= i) 
+			box->val =reallocStack(box->val, STACKINCR);
 	}
 	v = &box->val->stk[i];
 	VALclear(v);
