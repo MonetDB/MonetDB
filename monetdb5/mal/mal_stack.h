@@ -77,7 +77,6 @@ mal_export MalStkPtr reallocStack(MalStkPtr s, int cnt);
 mal_export MalStkPtr reallocGlobalStack(MalStkPtr s, int cnt);
 mal_export void freeStack(MalStkPtr stk);
 mal_export void clearStack(MalStkPtr s);
-mal_export void chkStack(MalStkPtr stk, int i);	/* used in src/mal/mal_box.c */
 
 #define VARfreeze(X)    if(X){X->frozen=TRUE;}
 #define VARfixate(X)    if(X){X->constant=TRUE;}
