@@ -95,7 +95,6 @@ reallocGlobalStack(MalStkPtr old, int cnt)
 	return s;
 }
 
-#if 0
 /* dark code, we need quite some lux to shed a little light on this */
 MalStkPtr
 reallocStack(MalStkPtr s, int cnt)
@@ -112,7 +111,6 @@ reallocStack(MalStkPtr s, int cnt)
 	GDKfree(old);
 	return s;
 }
-#endif
 
 /*
  * @-
