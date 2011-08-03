@@ -590,8 +590,8 @@ static int
 cluster_join(MalBlkPtr mb)
 {
 	int i, j = 0, k = 0, jn = 0, mr = -1, rmr = -1, state = JOIN_NONE, state_mr = JOIN_NONE, state_rmr = JOIN_NONE, actions = 0;
-	int *join = (int*) GDKzallov(sizeof(int) * MAX_STMTS);
-	int *prj = (int*) GDKzallov(sizeof(int) * MAX_STMTS);
+	int *join = (int*) GDKzalloc(sizeof(int) * MAX_STMTS);
+	int *prj = (int*) GDKzalloc(sizeof(int) * MAX_STMTS);
 	InstrPtr q;
 
 	/* locate the a sequence of group.new/derive statements */
