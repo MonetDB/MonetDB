@@ -1913,28 +1913,27 @@ struct {
 	char *color;
 	char *info;
 } Encoding[] = {
-	{
-	'.', "0x00FFFDFE", "free"}, {
-	'0', "0x000035FC", "thread stack space of thread 0"}, {
-	'1', "0x000067FE", "thread stack space of thread 1"}, {
-	'2', "0x000095FE", "thread stack space of thread 2"}, {
-	'3', "0x0000BDFC", "thread stack space of thread 3"}, {
-	'4', "0x0000DCF8", "thread stack space of thread 4"}, {
-	'5', "0x002735FC", "thread stack space of thread 5"}, {
-	'6', "0x002767FE", "thread stack space of thread 6"}, {
-	'7', "0x002795FE", "thread stack space of thread 7"}, {
-	'8', "0x0027BDFC", "thread stack space of thread 8"}, {
-	'9', "0x0027DCF8", "thread stack space of thread 9"}, {
-	'B', "0x0000672D", "in use for a large BAT heap."}, {
-	'b', "0x004EF2A7", "free (last usage was B)"}, {
-	'S', "0x00B4006E", "in use for a malloc block"}, {
-	's', "0x00F2BDE0", "free (last usage was S)"}, {
-	'P', "0x00F26716", "in use for the BBP array"}, {
-	'p', "0x00F2BD16", "free (last usage was P)"}, {
-	'M', "0x00959516", "in use as memory mapped region"}, {
-	'm', "0x00CEDC16", "free (last usage was M)"}, {
-	'c', "0x00FFFD2D", "free (last usage was M)"}, {
-	0, "0x00FFFDFE", "free"}
+	{'.', "0x00FFFDFE", "free"},
+	{'0', "0x000035FC", "thread stack space of thread 0"},
+	{'1', "0x000067FE", "thread stack space of thread 1"},
+	{'2', "0x000095FE", "thread stack space of thread 2"},
+	{'3', "0x0000BDFC", "thread stack space of thread 3"},
+	{'4', "0x0000DCF8", "thread stack space of thread 4"},
+	{'5', "0x002735FC", "thread stack space of thread 5"},
+	{'6', "0x002767FE", "thread stack space of thread 6"},
+	{'7', "0x002795FE", "thread stack space of thread 7"},
+	{'8', "0x0027BDFC", "thread stack space of thread 8"},
+	{'9', "0x0027DCF8", "thread stack space of thread 9"},
+	{'B', "0x0000672D", "in use for a large BAT heap."},
+	{'b', "0x004EF2A7", "free (last usage was B)"},
+	{'S', "0x00B4006E", "in use for a malloc block"},
+	{'s', "0x00F2BDE0", "free (last usage was S)"},
+	{'P', "0x00F26716", "in use for the BBP array"},
+	{'p', "0x00F2BD16", "free (last usage was P)"},
+	{'M', "0x00959516", "in use as memory mapped region"},
+	{'m', "0x00CEDC16", "free (last usage was M)"},
+	{'c', "0x00FFFD2D", "free (last usage was M)"},
+	{0, "0x00FFFDFE", "free"}
 };
 #endif
 
