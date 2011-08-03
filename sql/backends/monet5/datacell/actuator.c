@@ -102,8 +102,8 @@ channel with an optional delay, expressed in number of microseconds.
 
 The code is relatively straightforward to extend to create your favoured dummy sensor.
 */
-void
-usage()
+static void
+usage(void)
 {
 	mnstr_printf(ACout, "The actuator tool can be used to catch an event sequence \n");
 	mnstr_printf(ACout, "from the emitter port. Data is in ascii .\n");
