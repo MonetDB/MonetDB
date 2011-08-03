@@ -27,7 +27,7 @@ LIBS = {
 	MODULE
 	DIR = libdir/monetdb5
 	SEP = _
-	SOURCES = mal_compiler.c 
+	SOURCES = mal_compiler.c mal_compiler.h
 
 	LIBS = ../../tools/libmonetdb5 \
 		../../../gdk/libbat \
@@ -42,4 +42,4 @@ headers_mal = {
 }
 
 EXTRA_DIST_DIR = Tests
-EXTRA_DIST = mal_compiler.mal mal_compiler.h
+EXTRA_DIST = mal_compiler.mal

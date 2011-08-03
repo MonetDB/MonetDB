@@ -65,16 +65,16 @@
  * @example
  * str MCCuser_tst903(void *tst903)
  * {
- *         BID *b= 0; /* bat[:void,:lng] */
- *         void *V2= 0; /* void */
+ *         BID *b= 0; // bat[:void,:lng]
+ *         void *V2= 0; // void
  *         lng V3 = 0;
  *         bit go = 0;
  *         lng i = 0;
  *         lng V6 = 0;
  *         int k = 0;
  *         lng l = 0;
- *         void *V9= 0; /* void */
- *         void *V10= 0; /* void */
+ *         void *V9= 0; // void
+ *         void *V10= 0; // void
  *         lng V11 = 1;
  *         lng V12 = 1000000;
  *         str Xmsg = MAL_SUCCEED;

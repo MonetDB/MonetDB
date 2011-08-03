@@ -28,8 +28,8 @@ MTSAFE
 lib_mal = {
 	NOINST
 	SOURCES = \
-		algebraExtensions.c \
-		attach.c \
+		algebraExtensions.c algebraExtensions.h \
+		attach.c attach.h \
 		batExtensions.c \
 		bbp.mx \
 		box.mx \
@@ -37,31 +37,32 @@ lib_mal = {
 		clients.mx \
 		cluster.mx \
 		const.mx \
-		constraints.c \
+		constraints.c constraints.h \
 		factories.mx \
-		groupby.c \
+		groupby.c groupby.h \
+		histogram.h \
 		inspect.mx \
 		language.mx \
 		mal_io.mx \
 		mal_mapi.mx \
-		manual.c \
+		manual.c manual.h \
 		mat.mx \
 		mdb.mx \
-		mkey.c \
+		mkey.c mkey.h \
 		pcre.c \
 		pma.mx \
 		pqueue.mx \
-		profiler.c \
-		recycle.c \
-		remote.c \
-		sabaoth.c \
+		profiler.c profiler.h \
+		recycle.c recycle.h \
+		remote.c remote.h \
+		sabaoth.c sabaoth.h \
 		statistics.mx \
 		tablet.mx \
 		tablet_sql.c \
 		tokenizer.mx \
-		trader.c \
+		trader.c trader.h \
 		transaction.c \
-		txtsim.c \
+		txtsim.c txtsim.h \
 		urlbox.mx \
 		zorder.mx
 }
@@ -81,6 +82,6 @@ headers_mal = {
 		tokenizer.mx zorder.mx
 }
 
-EXTRA_DIST = prelude.mx algebraExtensions.mal algebraExtensions.h attach.mal attach.h batExtensions.mal chopper.mal constraints.mal constraints.h groupby.mal groupby.h histogram.mal histogram.h mal_init.mal manual.mal manual.h mkey.mal mkey.h pcre.mal profiler.mal profiler.h recycle.mal recycle.h remote.mal remote.h sabaoth.mal sabaoth.h trader.mal trader.h transaction.mal txtsim.mal txtsim.h
+EXTRA_DIST = prelude.mx algebraExtensions.mal attach.mal batExtensions.mal chopper.mal constraints.mal groupby.mal histogram.mal mal_init.mal manual.mal mkey.mal pcre.mal profiler.mal recycle.mal remote.mal sabaoth.mal trader.mal transaction.mal txtsim.mal
 
 EXTRA_DIST_DIR = Tests
