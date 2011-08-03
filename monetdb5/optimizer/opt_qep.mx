@@ -18,69 +18,72 @@ All Rights Reserved.
 @
 
 @f opt_qep
-@a M. Kersten
-@- Query Execution Plans
-A commonly used data structure to represent and manipulate
-a query is a tree (or graph). Its nodes represent the
-operators and the leaves the operands. 
-Such a view comes in handy when you have to re-organize
-whole sections of code or to built-up an optimized plan
-bottom up, e.g. using a memo structure.
 
-The MAL optimizer toolkit provides functions to
-overlay the body of any MAL block with a tree (graph)
-structure and to linearize them back into a MAL block.
-The linearization order is determined by a recursive
-descend tree walk from the anchor points in the source program.
-
-To illustrate, consider the code block:
-@example
-#T1:= bat.new(:int,:int);
-#T2:= bat.new(:int,:int);
-#T3:= bat.new(:int,:int);
-#T4:= bat.new(:int,:int);
-a:= algebra.select(T1,1,3);
-b:= algebra.select(T2,1,3);
-c:= algebra.select(T3,0,5);
-d:= algebra.select(T4,0,5);
-e:= algebra.join(a,c);
-f:= algebra.join(b,d);
-h:= algebra.join(e,f);
-optimizer.dumpQEP();
-@end example
-which produces an indented structure of the query plan.
-@example
-h := algebra.join(e,f);
-    e := algebra.join(a,c);
-        a := algebra.select(T1,1,3);
-            T1 := bat.new(:int,:int);
-        c := algebra.select(T3,0,5);
-            T3 := bat.new(:int,:int);
-    f := algebra.join(b,d);
-        b := algebra.select(T2,1,3);
-            T2 := bat.new(:int,:int);
-        d := algebra.select(T4,0,5);
-            T4 := bat.new(:int,:int);
-@end example
-
-Any valid MAL routine can be overlayed with a tree (graph)
-view based on the flow dependencies, but not all MAL programs
-can be derived from a simple tree. For example, the code snippet
-above when interpreted as a linear sequence can not be represented
-unless the execution order itself becomes an operator node itself. 
-
-However, since we haven't added or changed the original
-MAL program, the routine @code{qep.propagate} produces
-the orginial program, where the linear order has
-priority. If, however, we had entered new instructions
-into the tree, they would have been placed in close proximity
-of the other tree nodes.
-
-Special care is given to the flow-of-control blocks, because
-to produce a query plan section that can not easily be moved
-around.
-[give dot examples]
-@{
+@c
+/*
+ * @a M. Kersten
+ * @- Query Execution Plans
+ * A commonly used data structure to represent and manipulate
+ * a query is a tree (or graph). Its nodes represent the
+ * operators and the leaves the operands.
+ * Such a view comes in handy when you have to re-organize
+ * whole sections of code or to built-up an optimized plan
+ * bottom up, e.g. using a memo structure.
+ *
+ * The MAL optimizer toolkit provides functions to
+ * overlay the body of any MAL block with a tree (graph)
+ * structure and to linearize them back into a MAL block.
+ * The linearization order is determined by a recursive
+ * descend tree walk from the anchor points in the source program.
+ *
+ * To illustrate, consider the code block:
+ * @example
+ * #T1:= bat.new(:int,:int);
+ * #T2:= bat.new(:int,:int);
+ * #T3:= bat.new(:int,:int);
+ * #T4:= bat.new(:int,:int);
+ * a:= algebra.select(T1,1,3);
+ * b:= algebra.select(T2,1,3);
+ * c:= algebra.select(T3,0,5);
+ * d:= algebra.select(T4,0,5);
+ * e:= algebra.join(a,c);
+ * f:= algebra.join(b,d);
+ * h:= algebra.join(e,f);
+ * optimizer.dumpQEP();
+ * @end example
+ * which produces an indented structure of the query plan.
+ * @example
+ * h := algebra.join(e,f);
+ *     e := algebra.join(a,c);
+ *         a := algebra.select(T1,1,3);
+ *             T1 := bat.new(:int,:int);
+ *         c := algebra.select(T3,0,5);
+ *             T3 := bat.new(:int,:int);
+ *     f := algebra.join(b,d);
+ *         b := algebra.select(T2,1,3);
+ *             T2 := bat.new(:int,:int);
+ *         d := algebra.select(T4,0,5);
+ *             T4 := bat.new(:int,:int);
+ * @end example
+ *
+ * Any valid MAL routine can be overlayed with a tree (graph)
+ * view based on the flow dependencies, but not all MAL programs
+ * can be derived from a simple tree. For example, the code snippet
+ * above when interpreted as a linear sequence can not be represented
+ * unless the execution order itself becomes an operator node itself.
+ *
+ * However, since we haven't added or changed the original
+ * MAL program, the routine @code{qep.propagate} produces
+ * the orginial program, where the linear order has
+ * priority. If, however, we had entered new instructions
+ * into the tree, they would have been placed in close proximity
+ * of the other tree nodes.
+ *
+ * Special care is given to the flow-of-control blocks, because
+ * to produce a query plan section that can not easily be moved
+ * around.
+ * [give dot examples]
+ */
 @mal
 pattern optimizer.dumpQEP()
 address OPTdumpQEP
@@ -157,9 +160,10 @@ QEPfree(QEP qep){
 	return NULL;
 }
 #endif
-@-
-Extract a child from the qep, to be inserted somewhere else
-@c
+/*
+ * @-
+ * Extract a child from the qep, to be inserted somewhere else
+ */
 #if 0
 static QEP
 QEPdelete(QEP qep, int pos){
@@ -209,10 +213,11 @@ QEPinsert(QEP qep, int pos, QEP child){
 	return qep;
 }
 #endif
-@-
-The core of the work is focused on building the tree using a flow analysis. 
-Building the tree means that we should not allow the same variable can not be used twice.
-@c
+/*
+ * @-
+ * The core of the work is focused on building the tree using a flow analysis.
+ * Building the tree means that we should not allow the same variable can not be used twice.
+ */
 #define LEAFNODE 2
 #define TOPNODE 3
 
@@ -251,9 +256,10 @@ QEPbuilt(MalBlkPtr mb){
 		}
 
 	}
-@-
-We may end up with multiple variables not yet bound to a QEP.
-@c
+	/*
+	 * @-
+	 * We may end up with multiple variables not yet bound to a QEP.
+	 */
 	qroot= QEPnew(MAXPARENT,mb->stop);
 	for(i=1; i< mb->stop-1; i++){
 		p= getInstrPtr(mb,i);
@@ -276,10 +282,11 @@ We may end up with multiple variables not yet bound to a QEP.
 	GDKfree(status);
 	return qroot;
 }
-@-
-It may be handy to dump the graph for inspection
-or to prepare for the dot program.
-@c
+/*
+ * @-
+ * It may be handy to dump the graph for inspection
+ * or to prepare for the dot program.
+ */
 static void
 QEPdump(stream *f, QEP qep, int indent){
 	int i,inc = 0;
@@ -310,4 +317,3 @@ OPTdumpQEPImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(dumpQEP,OPT_CHECK_ALL)@
-@}

@@ -26,6 +26,8 @@
  * processing is ignored.
  *
  */
+
+#include "monetdb_config.h"
 #include "basket.h"
 #ifdef WIN32
 #include "winsock2.h"

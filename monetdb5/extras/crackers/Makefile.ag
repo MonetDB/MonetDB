@@ -44,7 +44,7 @@ lib_crackers = {
 			  crackers_joins.mx \
 			  crackers_sortmerge.mx \
 			  crackers_crackmerge.mx \
-			  crackers_pq.mx \
+			  crackers_pq.c crackers_pq.h \
 			  crackers_populate.mx \
 			  opt_crack.mx \
 			  opt_selcrack.mx \

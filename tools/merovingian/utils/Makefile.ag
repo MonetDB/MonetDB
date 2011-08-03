@@ -21,19 +21,12 @@ INCLUDES = ../../../monetdb5/misc \
 		   ../../../common/options \
 		   ../../../common/utils
 
-EXTRA_DIST = \
-	control.h \
-	database.h \
-	glob.h \
-	properties.h \
-	utils.h
-
 lib_meroutil = {
 	NOINST
 	SOURCES = \
-		control.c \
-		database.c \
-		glob.c \
-		properties.c \
-		utils.c
+		control.c control.h \
+		database.c database.h \
+		glob.c glob.h \
+		properties.c properties.h \
+		utils.c utils.h
 }

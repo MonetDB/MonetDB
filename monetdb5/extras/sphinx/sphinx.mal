@@ -1,0 +1,49 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://www.monetdb.org/Legal/MonetDBLicense
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2011 MonetDB B.V.
+# All Rights Reserved.
+
+module sphinx;
+
+command searchIndexLimit(q:str, i:str, l:int) :bat[:oid,:lng]
+address SPHINXsearchIndexLimit
+comment "Search the query on the specified index, with limit";
+
+function search(q:str) :bat[:oid,:lng];
+	ret := searchIndexLimit(q, "*", 20);
+	return ret;
+end search;
+
+function searchIndex(q:str, i:str) :bat[:oid,:lng];
+	ret := searchIndexLimit(q, i, 20);
+	return ret;
+end searchIndex;
+
+
+pattern sphinx_searchIndexLimit(q:str, i:str, l:int) :bat[:str,:bat]
+address SPHINXsearchIndexLimitWrap
+comment "Search the query on the specified index, with limit";
+
+function sphinx_search(q:str) :bat[:str,:bat];
+	ret := sphinx_searchIndexLimit(q, "*", 20);
+	return ret;
+end sphinx_search;
+
+function sphinx_searchIndex(q:str, i:str) :bat[:str,:bat];
+	ret := sphinx_searchIndexLimit(q, i, 20);
+	return ret;
+end sphinx_searchIndex;
+
+

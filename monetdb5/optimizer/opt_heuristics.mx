@@ -18,46 +18,52 @@ All Rights Reserved.
 @
 
 @f opt_heuristics
-@- Heuristic rewrites rules
-One of the oldest optimizer tricks in relational query processing is
-to apply heuristic rules to reduce the processing cost. For example,
-a selection predicate is pushed through another operator to reduce
-the number of tuples to consider.
-Heuristic rewrites are relatively easy to apply in a context where 
-the expression is still close to a relational algebra tree.
-Therefore, many of the standard rewrite rules are already applied by the SQL
-front-end as part of its strategic optimization decisions.
 
-Finding rewrite opportunities within a linear MAL program may
-be more difficult. For example, the pattern should respect the flow
-of control that may already be introduced.
-The last resort for the optimizer builder is to write a
-C-function to look for a pattern of interest and transform it.
-The code base contains an example how to built such 
-user specific optimizer routines.
-It translates the pattern:
-@example
-y:= reverse(R);
-z:= select(y,l,h);          
-@end example
-into the statement:
-@example
-z:= selectHead(x,R,l,h) 
-@end example
-
-@{
-@-
-During a final pass through the program, we can convert all combinators 
-back into their elementary steps.
+@c
+/*
+ * @- Heuristic rewrites rules
+ * One of the oldest optimizer tricks in relational query processing is
+ * to apply heuristic rules to reduce the processing cost. For example,
+ * a selection predicate is pushed through another operator to reduce
+ * the number of tuples to consider.
+ * Heuristic rewrites are relatively easy to apply in a context where
+ * the expression is still close to a relational algebra tree.
+ * Therefore, many of the standard rewrite rules are already applied by the SQL
+ * front-end as part of its strategic optimization decisions.
+ *
+ * Finding rewrite opportunities within a linear MAL program may
+ * be more difficult. For example, the pattern should respect the flow
+ * of control that may already be introduced.
+ * The last resort for the optimizer builder is to write a
+ * C-function to look for a pattern of interest and transform it.
+ * The code base contains an example how to built such
+ * user specific optimizer routines.
+ * It translates the pattern:
+ * @example
+ * y:= reverse(R);
+ * z:= select(y,l,h);
+ * @end example
+ * into the statement:
+ * @example
+ * z:= selectHead(x,R,l,h)
+ * @end example
+ *
+ * @-
+ * During a final pass through the program, we can convert all combinators
+ * back into their elementary steps.
+ */
 @= fndOperator
 /* commented out the tests for @2 and @3 since in practice they are constants */
 	(( getModuleId(@1)==0 || (/* @2 && */ idcmp(getModuleId(@1),@2)==0) ) &&
 		 (getFunctionId(@1)==0 || (/* @3 && */ idcmp(getFunctionId(@1),@3)==0) ))
-@-
-A more complete implementation should als push the selection through
-multiple operators. In particular, a reverse operator may obscure
-the opportunity to perform the select push through. 
+@
 @h
+/*
+ * @-
+ * A more complete implementation should als push the selection through
+ * multiple operators. In particular, a reverse operator may obscure
+ * the opportunity to perform the select push through.
+ */
 #ifndef _OPT_HEURISTICS_
 #define _OPT_HEURISTICS_
 
@@ -143,24 +149,24 @@ OPTheuristicsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	return squeeze;
 }
 
-@-
-Pushing a selection geared at the left operand through the join operator
-is more complex, because you can only recognize those instances when later
-on the semijoin is recognized. The pattern we are looking for
-@T
-\begin{verbatim}
-AD := join (AB, CD);
-ZZ := semijoin (AB, AD);
-Za := select(ZZ, l,h);
-\end{verbatim}
-@-
-Note that this operation depends on HRoptimizer, because it already
-pushes down the selection through the semijoin.
-Should be done differently
-
+/*
+ * @-
+ * Pushing a selection geared at the left operand through the join operator
+ * is more complex, because you can only recognize those instances when later
+ * on the semijoin is recognized. The pattern we are looking for
+ * @T
+ * \begin{verbatim}
+ * AD := join (AB, CD);
+ * ZZ := semijoin (AB, AD);
+ * Za := select(ZZ, l,h);
+ * \end{verbatim}
+ * @-
+ * Note that this operation depends on HRoptimizer, because it already
+ * pushes down the selection through the semijoin.
+ * Should be done differently
+ */
 @include optimizerWrapper.mx
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(heuristics,OPT_CHECK_ALL)@
 
-@}

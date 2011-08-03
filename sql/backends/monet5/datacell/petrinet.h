@@ -23,7 +23,6 @@
  */
 #ifndef _PETRINET_
 #define _PETRINET_
-#include "monetdb_config.h"
 #include "mal_interpreter.h"
 #include "sql_scenario.h"
 #include "basket.h"

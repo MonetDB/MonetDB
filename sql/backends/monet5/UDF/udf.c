@@ -18,6 +18,7 @@
 */
 
 
+#include "monetdb_config.h"
 #include "udf.h"
 
 static str

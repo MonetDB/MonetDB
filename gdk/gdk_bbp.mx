@@ -18,64 +18,67 @@ All Rights Reserved.
 @
 
 @f gdk_bbp
-@a M. L. Kersten, P. Boncz, N. J. Nes
-@* BAT Buffer Pool (BBP)
-The BATs created and loaded are collected in a BAT buffer pool.
-The Bat Buffer Pool has a number of functions:
-@table @code
 
-@item administration and lookup
-The BBP is a directory which contains status information about all known BATs.
-This interface may be used very heavily, by data-intensive applications.
-To eliminate all overhead, read-only access to the BBP may be done by
-table-lookups. The integer index type for these lookups is @emph{bat}, as
-retrieved by @emph{BBPcacheid(b)}. The @emph{bat} zero is reserved for the nil bat.
-
-@item persistence
-The BBP is made persistent by saving it to the dictionary file
-called @emph{BBP.dir} in the database.
-
-When the number of BATs rises, having all files in one directory
-becomes a bottleneck.  The BBP therefore implements a scheme that distributes
-all BATs in a growing directory tree with at most 64 BATs stored in one node.
-
-@item buffer management
-The BBP is responsible for loading and saving of BATs to disk. It also
-contains routines to unload BATs from memory when memory resources
-get scarce. For this purpose, it administers BAT memory reference
-counts (to know which BATs can be unloaded) and BAT usage statistics
-(it unloads the least recently used BATs).
-
-@item recovery
-When the database is closed or during a run-time syncpoint, the system
-tables must be written to disk in a safe way, that is immune for system
-failures (like disk full). To do so, the BBP implements an atomic commit and
-recovery protocol: first all files to be overwritten are moved to a BACKUP/
-dir. If that succeeds, the writes are done. If that also fully succeeds
-the BACKUP/ dir is renamed to DELETE_ME/ and subsequently deleted.
-If not, all files in BACKUP/ are moved back to their original location.
-
-@item unloading
-Bats which have a logical reference (ie. a lrefs > 0) but no memory
-reference (refcnt == 0) can be unloaded. Unloading dirty bats means,
-moving the original (committed version) to the BACKUP/ dir and saving
-the bat. This complicates the commit and recovery/abort issues.
-The commit has to check if the bat is already moved. And The recovery
-has to always move back the files from the BACKUP/ dir.
-
-@item reference counting
-Bats use have two kinds of references: logical and physical (pointer) ones.
-Both are administered with the BBPincref/BBPdecref routines. For
-backward compatibility, we maintain BBPfix/BBPunfix as shorthands
-for the adjusting the pointer references.
-
-@item share counting
-Views use the heaps of there parent bats. To save guard this, the
-parent has a shared counter, which is incremented and decremented
-using BBPshare and BBPunshare. These functions make sure the
-parent is memory resident as required because of the 'pointer' sharing.
-@end table
-@{
+@c
+/*
+ * @a M. L. Kersten, P. Boncz, N. J. Nes
+ * @* BAT Buffer Pool (BBP)
+ * The BATs created and loaded are collected in a BAT buffer pool.
+ * The Bat Buffer Pool has a number of functions:
+ * @table @code
+ *
+ * @item administration and lookup
+ * The BBP is a directory which contains status information about all known BATs.
+ * This interface may be used very heavily, by data-intensive applications.
+ * To eliminate all overhead, read-only access to the BBP may be done by
+ * table-lookups. The integer index type for these lookups is @emph{bat}, as
+ * retrieved by @emph{BBPcacheid(b)}. The @emph{bat} zero is reserved for the nil bat.
+ *
+ * @item persistence
+ * The BBP is made persistent by saving it to the dictionary file
+ * called @emph{BBP.dir} in the database.
+ *
+ * When the number of BATs rises, having all files in one directory
+ * becomes a bottleneck.  The BBP therefore implements a scheme that distributes
+ * all BATs in a growing directory tree with at most 64 BATs stored in one node.
+ *
+ * @item buffer management
+ * The BBP is responsible for loading and saving of BATs to disk. It also
+ * contains routines to unload BATs from memory when memory resources
+ * get scarce. For this purpose, it administers BAT memory reference
+ * counts (to know which BATs can be unloaded) and BAT usage statistics
+ * (it unloads the least recently used BATs).
+ *
+ * @item recovery
+ * When the database is closed or during a run-time syncpoint, the system
+ * tables must be written to disk in a safe way, that is immune for system
+ * failures (like disk full). To do so, the BBP implements an atomic commit and
+ * recovery protocol: first all files to be overwritten are moved to a BACKUP/
+ * dir. If that succeeds, the writes are done. If that also fully succeeds
+ * the BACKUP/ dir is renamed to DELETE_ME/ and subsequently deleted.
+ * If not, all files in BACKUP/ are moved back to their original location.
+ *
+ * @item unloading
+ * Bats which have a logical reference (ie. a lrefs > 0) but no memory
+ * reference (refcnt == 0) can be unloaded. Unloading dirty bats means,
+ * moving the original (committed version) to the BACKUP/ dir and saving
+ * the bat. This complicates the commit and recovery/abort issues.
+ * The commit has to check if the bat is already moved. And The recovery
+ * has to always move back the files from the BACKUP/ dir.
+ *
+ * @item reference counting
+ * Bats use have two kinds of references: logical and physical (pointer) ones.
+ * Both are administered with the BBPincref/BBPdecref routines. For
+ * backward compatibility, we maintain BBPfix/BBPunfix as shorthands
+ * for the adjusting the pointer references.
+ *
+ * @item share counting
+ * Views use the heaps of there parent bats. To save guard this, the
+ * parent has a shared counter, which is incremented and decremented
+ * using BBPshare and BBPunshare. These functions make sure the
+ * parent is memory resident as required because of the 'pointer' sharing.
+ * @end table
+ */
 @h
 #ifndef _GDK_BBP_H_
 #define _GDK_BBP_H_
@@ -134,26 +137,24 @@ gdk_export void BBPreleaselref(bat i);
 gdk_export int BBPdecref(bat b, int logical);
 gdk_export void BBPshare(bat b);
 
-@
 @c
+/*
+ * @
+ */
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
 #include "gdk_storage.h"
 #include "mutils.h"
 /*
-@}
-@-
-The BBP has a fixed address, so re-allocation due to a growing BBP
-caused by one thread does not disturb reads to the old entries by another.
-This is implemented using anonymous virtual memory; extensions on the same
-address are guaranteed because a large non-committed VM area is requested
-initially. New slots in the BBP are found in O(1) by keeping a freelist
-that uses the 'next' field in the BBPrec records.
-@{
-@c
-*/
-@c
+ * @-
+ * The BBP has a fixed address, so re-allocation due to a growing BBP
+ * caused by one thread does not disturb reads to the old entries by another.
+ * This is implemented using anonymous virtual memory; extensions on the same
+ * address are guaranteed because a large non-committed VM area is requested
+ * initially. New slots in the BBP are found in O(1) by keeping a freelist
+ * that uses the 'next' field in the BBPrec records.
+ */
 BBPrec *BBP = NULL;		/* fixed base VM address of BBP array */
 bat BBPmaxsize = BBPMAXSIZE;	/* size of non-committed VM BBP array */
 bat BBPlimit = 0;		/* current committed VM BBP array */
@@ -161,14 +162,11 @@ bat BBPsize = 0;		/* current used size of BBP array */
 
 #define BBPNONAME "."		/* filler for no name in BBP.dir */
 /*
-@}
-@-
-The hash index uses a bucket index (int array) of size mask that is
-tuned for perfect hashing (1 lookup). The bucket chain uses the 'next'
-field in the BBPrec records.
-@{
-@c
-*/
+ * @-
+ * The hash index uses a bucket index (int array) of size mask that is
+ * tuned for perfect hashing (1 lookup). The bucket chain uses the 'next'
+ * field in the BBPrec records.
+ */
 @h
 #define BBPtmpcheck(s) ((s)[0] == 't' && (s)[1] == 'm' && (s)[2] == 'p' && ((s)[3] == '_' || ((s)[3] == 'r' && (s)[4] == '_')))	/* (strncmp((s), "tmp_", 4) == 0) */
 #define BBPnamecheck(s) (BBPtmpcheck(s) ? ((s)[3] == '_' ? strtol((s) + 4, NULL, 8) : -strtol((s) + 5, NULL, 8)) : 0)
@@ -224,9 +222,10 @@ BBP_delete(bat i)
 	}
 }
 
-@-
-other globals
-@c
+/*
+ * @-
+ * other globals
+ */
 int BBP_curstamp = 0;		/* unique stamp for creation of a bat */
 MT_Id BBP_notrim = ~((MT_Id) 0);	/* avoids BBPtrim when we really do not want it */
 int BBP_dirty = 0;		/* BBP structures modified? */
@@ -234,59 +233,56 @@ int BBPin = 0;			/* bats loaded statistic */
 int BBPout = 0;			/* bats saved statistic */
 
 /*
-@}
 
-@+ BBP Consistency and Concurrency
-While GDK provides the basic building blocks for an ACID system, in
-itself it is not such a system, as we this would entail too much overhead
-that is often not needed. Hence, some consistency control is left to the
-user. The first important user constraint is that if a user updates a
-BAT, (s)he himself must assure that no-one else accesses this BAT.
-
-Concerning buffer management, the BBP carries out a swapping policy.
-BATs are kept in memory till the memory is full. If the memory is full,
-the malloc functions initiate BBP trim actions, that unload the coldest BATs
-that have a zero reference count. The second important user constraint
-is therefore that a user may only manipulate live BAT data in memory if it
-is sure that there is at least one reference count to that BAT.
-
-The main BBP array is protected by two locks:
-@table @code
-@item GDKcacheLock]
-this lock guards the free slot management in the BBP array.  The BBP
-operations that allocate a new slot for a new BAT (@emph{BBPinit},@emph{BBPcacheit}),
-delete the slot of a destroyed BAT (@emph{BBPreclaim}), or rename a BAT
-(@emph{BBPrename}), hold this lock. It also protects all BAT (re)naming actions
-include (read and write) in the hash table with BAT names.
-@item GDKswapLock
-this lock guards the swap (loaded/unloaded) status of the BATs. Hence, all
-BBP routines that influence the swapping policy, or actually carry out the
-swapping policy itself, acquire this lock (e.g. @emph{BBPfix},@emph{BBPunfix}).
-Note that this also means that updates to the BBP_status indicator array
-must be protected by GDKswapLock.
-
-To reduce contention GDKswapLock was split into multiple locks; it is now
-an array of lock pointers which is accessed by GDKswapLock(ABS(bat))
-@end table
-
-Routines that need both locks should first acquire the locks in the GDKswapLock
-array (in ascending order) and then GDKcacheLock (and release them in reverse order).
-
-To obtain maximum speed, read operations to existing elements in the BBP are
-unguarded. As said, it is the users responsibility that the BAT that is being
-read is not being modified. BBP update actions that modify the BBP data structure
-itself are locked by the BBP functions themselves. Hence, multiple concurrent BBP read
-operations may be ongoing while at the same time at most one BBP write
-operation @strong{on a different BAT} is executing.
-This holds for accesses to the public (quasi-)
-arrays @emph{BBPcache}, @emph{BBPstatus}, @emph{BBPrefs}, @emph{BBPlogical} and @emph{BBPphysical}. These
-arrays are called quasi as now they are actually stored together in one big BBPrec
-array called BBP, that is allocated in anonymous VM space, so we can reallocate
-this structure without changing the base address (a crucial feature if read
-actions are to go on unlocked while other entries in the BBP may be modified).
-@{
-@c
-*/
+ * @+ BBP Consistency and Concurrency
+ * While GDK provides the basic building blocks for an ACID system, in
+ * itself it is not such a system, as we this would entail too much overhead
+ * that is often not needed. Hence, some consistency control is left to the
+ * user. The first important user constraint is that if a user updates a
+ * BAT, (s)he himself must assure that no-one else accesses this BAT.
+ *
+ * Concerning buffer management, the BBP carries out a swapping policy.
+ * BATs are kept in memory till the memory is full. If the memory is full,
+ * the malloc functions initiate BBP trim actions, that unload the coldest BATs
+ * that have a zero reference count. The second important user constraint
+ * is therefore that a user may only manipulate live BAT data in memory if it
+ * is sure that there is at least one reference count to that BAT.
+ *
+ * The main BBP array is protected by two locks:
+ * @table @code
+ * @item GDKcacheLock]
+ * this lock guards the free slot management in the BBP array.  The BBP
+ * operations that allocate a new slot for a new BAT (@emph{BBPinit},@emph{BBPcacheit}),
+ * delete the slot of a destroyed BAT (@emph{BBPreclaim}), or rename a BAT
+ * (@emph{BBPrename}), hold this lock. It also protects all BAT (re)naming actions
+ * include (read and write) in the hash table with BAT names.
+ * @item GDKswapLock
+ * this lock guards the swap (loaded/unloaded) status of the BATs. Hence, all
+ * BBP routines that influence the swapping policy, or actually carry out the
+ * swapping policy itself, acquire this lock (e.g. @emph{BBPfix},@emph{BBPunfix}).
+ * Note that this also means that updates to the BBP_status indicator array
+ * must be protected by GDKswapLock.
+ *
+ * To reduce contention GDKswapLock was split into multiple locks; it is now
+ * an array of lock pointers which is accessed by GDKswapLock(ABS(bat))
+ * @end table
+ *
+ * Routines that need both locks should first acquire the locks in the GDKswapLock
+ * array (in ascending order) and then GDKcacheLock (and release them in reverse order).
+ *
+ * To obtain maximum speed, read operations to existing elements in the BBP are
+ * unguarded. As said, it is the users responsibility that the BAT that is being
+ * read is not being modified. BBP update actions that modify the BBP data structure
+ * itself are locked by the BBP functions themselves. Hence, multiple concurrent BBP read
+ * operations may be ongoing while at the same time at most one BBP write
+ * operation @strong{on a different BAT} is executing.
+ * This holds for accesses to the public (quasi-)
+ * arrays @emph{BBPcache}, @emph{BBPstatus}, @emph{BBPrefs}, @emph{BBPlogical} and @emph{BBPphysical}. These
+ * arrays are called quasi as now they are actually stored together in one big BBPrec
+ * array called BBP, that is allocated in anonymous VM space, so we can reallocate
+ * this structure without changing the base address (a crucial feature if read
+ * actions are to go on unlocked while other entries in the BBP may be modified).
+ */
 @h
 #define BBP_status_set(bid, mode, nme) {	\
 		BBP_status(bid) = mode;		\
@@ -393,12 +389,10 @@ BBPinithash(void)
 }
 
 /*
-@-
-BBPextend must take the trimlock, as it is called when other BBP locks are
-held and it will allocate memory. This could trigger a BBPtrim, causing deadlock.
-@c
-*/
-@c
+ * @-
+ * BBPextend must take the trimlock, as it is called when other BBP locks are
+ * held and it will allocate memory. This could trigger a BBPtrim, causing deadlock.
+ */
 void
 BBPextend(dbl factor, int buildhash)
 {
@@ -836,6 +830,7 @@ fixstrheap(void)
 			}
 			HEAPfree(&h);
 		}
+@
 @c
 		@:fixstrheap(H,h)@
 		@:fixstrheap(T,t)@
@@ -854,10 +849,11 @@ fixstrheap(void)
 }
 #endif
 
-@-
-A read only BAT can be shared in a file system by reading its descriptor separately.
-The default src=0 is to read the full BBPdir file.
-@c
+/*
+ * @-
+ * A read only BAT can be shared in a file system by reading its descriptor separately.
+ * The default src=0 is to read the full BBPdir file.
+ */
 static BATstore *
 BBPreadEntries(FILE *fp, char *src, int *min_stamp, int *max_stamp, int oidsize)
 {
@@ -1003,6 +999,7 @@ BBPreadEntries(FILE *fp, char *src, int *min_stamp, int *max_stamp, int oidsize)
 			bs->@1.heap.dirty = 0;
 			nread += n;
 		}
+@
 @c
 		@:heapinit(H)@
 		@:heapinit(T)@
@@ -1034,6 +1031,7 @@ BBPreadEntries(FILE *fp, char *src, int *min_stamp, int *max_stamp, int oidsize)
 			bs->@1.vheap->parentid = bid;
 			nread += n;
 		}
+@
 @c
 		@:vheapinit(H)@
 		@:vheapinit(T)@
@@ -1152,12 +1150,14 @@ BBPheader(FILE *fp, int *BBPlimit, oid *BBPoid, int *OIDsize, int silent)
 	}
 	return bbpversion;
 }
-@-
-In a distributed version of MonetDB, it would be nice to easily share the BATs
-with other server instances. Although concurrency control issues should be handled
-with care, it can avoid excessive communication costs. The BBPimportEntry creates
-a BATdescriptor using symbolic links to its source. Presumably this would lead
-to a transparent behavior.
+/*
+ * @-
+ * In a distributed version of MonetDB, it would be nice to easily share the BATs
+ * with other server instances. Although concurrency control issues should be handled
+ * with care, it can avoid excessive communication costs. The BBPimportEntry creates
+ * a BATdescriptor using symbolic links to its source. Presumably this would lead
+ * to a transparent behavior.
+ */
 @= linkHeap
 	if (lstat(@3, &st) < 0) {
 		GDKerror("BBPimportEntry: file '%s' does not exist.\n", @3);
@@ -1213,6 +1213,7 @@ to a transparent behavior.
 		return 0;
 	}
 
+@
 @c
 bat
 BBPimportEntry(char *nme)
@@ -1418,17 +1419,13 @@ BBPinit(void)
 }
 
 /*
-@}
-@-
-During the exit phase all non-persistent BATs are removed.
-Upon exit the status of the BBP tables is saved on disk.
-This function is called once and during the shutdown of the
-server. Since shutdown may be issued from any thread (dangerous)
-it may lead to interference in a parallel session.
-@{
-@c
-*/
-@c
+ * @-
+ * During the exit phase all non-persistent BATs are removed.
+ * Upon exit the status of the BBP tables is saved on disk.
+ * This function is called once and during the shutdown of the
+ * server. Since shutdown may be issued from any thread (dangerous)
+ * it may lead to interference in a parallel session.
+ */
 
 void
 BBPexit(void)
@@ -1503,17 +1500,13 @@ BBPexit(void)
 }
 
 /*
-@}
-@-
-The routine @%BBPdir@ creates the BAT pool dictionary file.
-It includes some information about the current state of affair in the pool.
-The location in the buffer pool is saved for later use as well.
-This is merely done for ease of debugging and of no importance to front-ends.
-The tail of non-used entries is reclaimed as well.
-@{
-@c
-*/
-@c
+ * @-
+ * The routine BBPdir creates the BAT pool dictionary file.
+ * It includes some information about the current state of affair in the pool.
+ * The location in the buffer pool is saved for later use as well.
+ * This is merely done for ease of debugging and of no importance to front-ends.
+ * The tail of non-used entries is reclaimed as well.
+ */
 static int
 new_bbpentry(stream *s, bat i)
 {
@@ -1557,6 +1550,7 @@ new_bbpentry(stream *s, bat i)
 			  BBP[i].cache->@1.heap.size,
 			  BBP[i].cache->@1.heap.newstorage) < 0)
 		return -1;
+@
 @c
 	@:columnprint(H)@
 	@:columnprint(T)@
@@ -1568,6 +1562,7 @@ new_bbpentry(stream *s, bat i)
 			  BBP[i].cache->@1.vheap->size,
 			  BBP[i].cache->@1.vheap->newstorage) < 0)
 		return -1;
+@
 @c
 	@:vheapprint(H)@
 	@:vheapprint(T)@
@@ -1841,18 +1836,14 @@ BBPdump(void)
 }
 
 /*
-@}
-@+ BBP Readonly Interface
-
-These interface functions do not change the BBP tables. If they only
-access one specific BAT, the caller must have ensured that no other thread
-is modifying that BAT, therefore such functions do not need locking.
-@{
-@-
-BBP index lookup by BAT name:
-@c
-*/
-@c
+ * @+ BBP Readonly Interface
+ *
+ * These interface functions do not change the BBP tables. If they only
+ * access one specific BAT, the caller must have ensured that no other thread
+ * is modifying that BAT, therefore such functions do not need locking.
+ * @-
+ * BBP index lookup by BAT name:
+ */
 static inline bat
 BBP_find(const char *nme, int lock)
 {
@@ -1925,19 +1916,15 @@ BBPphysical(bat bid, str buf)
 }
 
 /*
-@}
-@+ BBP Update Interface
-Operations to insert, delete, clear, and modify BBP entries.
-Our policy for the BBP is to provide unlocked BBP access for
-speed, but still write operations have to be locked.
-@{
-#ifdef DEBUG_THREADLOCAL_BATS
-Create the shadow version (reversed) of a bat.
-@-
-An existing BAT is inserted into the BBP
-@c
-*/
-@c
+ * @+ BBP Update Interface
+ * Operations to insert, delete, clear, and modify BBP entries.
+ * Our policy for the BBP is to provide unlocked BBP access for
+ * speed, but still write operations have to be locked.
+ * #ifdef DEBUG_THREADLOCAL_BATS
+ * Create the shadow version (reversed) of a bat.
+ * @-
+ * An existing BAT is inserted into the BBP
+ */
 static inline str
 BBPsubdir_recursive(str s, bat i)
 {
@@ -2100,12 +2087,10 @@ BBPcacheit(BATstore *bs, int lock)
 }
 
 /*
-@-
-@%BBPuncacheit@ changes the BBP status to swapped out.  Currently only
-used in BBPfree (bat swapped out) and BBPclear (bat destroyed forever).
-@c
-*/
-@c
+ * @-
+ * BBPuncacheit changes the BBP status to swapped out.  Currently only
+ * used in BBPfree (bat swapped out) and BBPclear (bat destroyed forever).
+ */
 
 void
 BBPuncacheit(bat i)
@@ -2139,11 +2124,9 @@ BBPuncacheit_(bat i, int unloaddesc)
 }
 
 /*
-@- BBPclear
-@%BBPclear@ removes a BAT from the BBP directory forever.
-@c
-*/
-@c
+ * @- BBPclear
+ * BBPclear removes a BAT from the BBP directory forever.
+ */
 static inline void
 bbpclear(bat i, int idx, str lock)
 {
@@ -2195,29 +2178,25 @@ BBPclear(bat i)
 }
 
 /*
-@}
-@- BBP rename
-
-Each BAT has a logical name that is globally unique. Its reverse view can
-also be assigned a name, that also has to be globally unique.  The batId is
-the same as the logical BAT name.
-
-The default logical name of a BAT is tmp_X, where X is the batCacheid.
-Apart from being globally unique, new logical bat names cannot be of the
-form tmp_X, unless X is the batCacheid.
-
-Physical names consist of a directory name followed by a logical name suffix.
-The directory name is derived from the batCacheid, and is currently organized
-in a hierarchy that puts max 64 bats in each directory (see BBPgetsubdir).
-
-Concerning the physical suffix: it is almost always bat_X. This saves us
-a whole lot of trouble, as bat_X is always unique and no conflicts can occur.
-Other suffixes are only supported in order just for backward compatibility with
-old repositories (you won't see them anymore in new repositories).
-@{
-@c
-*/
-@c
+ * @- BBP rename
+ *
+ * Each BAT has a logical name that is globally unique. Its reverse view can
+ * also be assigned a name, that also has to be globally unique.  The batId is
+ * the same as the logical BAT name.
+ *
+ * The default logical name of a BAT is tmp_X, where X is the batCacheid.
+ * Apart from being globally unique, new logical bat names cannot be of the
+ * form tmp_X, unless X is the batCacheid.
+ *
+ * Physical names consist of a directory name followed by a logical name suffix.
+ * The directory name is derived from the batCacheid, and is currently organized
+ * in a hierarchy that puts max 64 bats in each directory (see BBPgetsubdir).
+ *
+ * Concerning the physical suffix: it is almost always bat_X. This saves us
+ * a whole lot of trouble, as bat_X is always unique and no conflicts can occur.
+ * Other suffixes are only supported in order just for backward compatibility with
+ * old repositories (you won't see them anymore in new repositories).
+ */
 int
 BBPrename(bat bid, const char *nme)
 {
@@ -2280,30 +2259,26 @@ BBPrename(bat bid, const char *nme)
 }
 
 /*
-@}
 
-@+ BBP swapping Policy
-The BAT can be moved back to disk using the routine @%BBPfree@.
-It frees the storage for other BATs. After this call BAT* references
-maintained for the BAT are wrong.
-We should keep track of dirty unloaded BATs. They may have to be committed
-later on, which may include reading them in again.
-
-BBPswappable: may this bat be unloaded?
-Only real bats without memory references can be unloaded.
-@{
-@c
-*/
+ * @+ BBP swapping Policy
+ * The BAT can be moved back to disk using the routine BBPfree.
+ * It frees the storage for other BATs. After this call BAT* references
+ * maintained for the BAT are wrong.
+ * We should keep track of dirty unloaded BATs. They may have to be committed
+ * later on, which may include reading them in again.
+ *
+ * BBPswappable: may this bat be unloaded?
+ * Only real bats without memory references can be unloaded.
+ */
 @h
 #define BBPswappable(b) ((b) && (b)->batCacheid && BBP_refs((b)->batCacheid) == 0)
 #define BBPtrimmable(b) (BBPswappable(b) && b->P->lview == 0 && isVIEW(b) == 0 && (BBP_status((b)->batCacheid)&BBPWAITING) == 0)
 /*
-@-
-The @%BBP_ref@ contains the amount of live references to a BAT.
-These might be in recursive BATs, C or MAL variables.  The count is
-incremented with @%BBPfix@ and decremented with @%BBPunfix@.
-@h
-*/
+ * @-
+ * The BBP_ref contains the amount of live references to a BAT.
+ * These might be in recursive BATs, C or MAL variables.  The count is
+ * incremented with BBPfix and decremented with BBPunfix.
+ */
 @c
 static inline void
 BBPspin(bat i, str s, int event)
@@ -2583,15 +2558,13 @@ BBPdecref(bat i, int logical)
 }
 
 /*
-@-
-M5 often changes the physical ref into a logical reference.
-This state change consist of the sequence BBPincref(b,TRUE);BBPunfix(b).
-A faster solution is given below, because it does not trigger
-the BBP management actions, such as garbage collecting the bats.
-[first step, initiate code change]
-@c
-*/
-@c
+ * @-
+ * M5 often changes the physical ref into a logical reference.
+ * This state change consist of the sequence BBPincref(b,TRUE);BBPunfix(b).
+ * A faster solution is given below, because it does not trigger
+ * the BBP management actions, such as garbage collecting the bats.
+ * [first step, initiate code change]
+ */
 void
 BBPkeepref(bat i)
 {
@@ -2650,16 +2623,14 @@ BBPunshare(bat parent)
 }
 
 /*
-@-
-BBPreclaim is a user-exported function; the common way to destroy a BAT the hard way.
-
-Return values:
--1 = bat cannot be unloaded (it has more than your own memory fix)
- 0 = unloaded successfully
- 1 = unload failed (due to write-to-disk failure)
-@c
-*/
-@c
+ * @-
+ * BBPreclaim is a user-exported function; the common way to destroy a BAT the hard way.
+ *
+ * Return values:
+ * -1 = bat cannot be unloaded (it has more than your own memory fix)
+ *  0 = unloaded successfully
+ *  1 = unload failed (due to write-to-disk failure)
+ */
 int
 BBPreclaim(BAT *b)
 {
@@ -2676,12 +2647,10 @@ BBPreclaim(BAT *b)
 }
 
 /*
-@-
-BBPdescriptor checks whether BAT needs loading and does so if necessary. You must
-have at least one fix on the BAT before calling this.
-@c
-*/
-@c
+ * @-
+ * BBPdescriptor checks whether BAT needs loading and does so if necessary. You must
+ * have at least one fix on the BAT before calling this.
+ */
 static BAT *
 getBBPdescriptor(bat i, int lock)
 {
@@ -2738,12 +2707,10 @@ BBPdescriptor(bat i)
 }
 
 /*
-@-
-In BBPsave executes unlocked; it just marks the BBP_status of the BAT to BBPsaving, so others
-that want to save or unload this BAT must spin lock on the BBP_status field.
-@c
-*/
-@c
+ * @-
+ * In BBPsave executes unlocked; it just marks the BBP_status of the BAT to BBPsaving, so others
+ * that want to save or unload this BAT must spin lock on the BBP_status field.
+ */
 int
 BBPsave(BAT *b)
 {
@@ -2794,12 +2761,10 @@ BBPsave(BAT *b)
 }
 
 /*
-@-
-TODO merge BBPfree with BATfree? Its function is to prepare a BAT for being
-unloaded (or even destroyed, if the BAT is not persistent).
-@c
-*/
-@c
+ * @-
+ * TODO merge BBPfree with BATfree? Its function is to prepare a BAT for being
+ * unloaded (or even destroyed, if the BAT is not persistent).
+ */
 static int BBPaddtobin(BAT *b);
 static int
 BBPdestroy(BAT *b)
@@ -2890,67 +2855,63 @@ BBPfree(BAT *b, str calledFrom)
 }
 
 /*
-@}
-@- Storage trimming
-BBPtrim unloads the least recently used BATs to free memory resources.
-It gets passed targets in bytes of physical memory and logical
-virtual memory resources to free. Overhead costs are reduced by
-making just one scan, analyzing the first BBPMAXTRIM bats
-and keeping the result in a list for later use (the oldest bat
-now is going to be the oldest bat in the future as well).
-This list is sorted on last-used timestamp. BBPtrim keeps unloading
-BATs till the targets are met or there are no more BATs to unload.
-
-In determining whether a BAT will be unloaded, first it has
-to be BBPswappable, and second its resources occupied must
-be of the requested type. The algorithm actually makes two passes,
-in the first only clean bats are unloaded (in order of their stamp).
-
-In order to keep this under control with multiple threads all
-running out of memory at the same time, we make sure that
-@itemize
-@item
-just one thread does a BBPtrim at a time (by having a BBPtrimLock set).
-@item
-while decisions are made as to which bats to unload (1) the BBP is
-scanned, and (2) unload decisions are made. Due to these properties,
-the search&decide phase of BBPtrim acquires both GDKcacheLock (due to (1))
-and all GDKswapLocks (due to (2)). They must be released during the actual
-unloading.  (as otherwise deadlock occurs => unloading a bat may e.g. kill
-an accelerator that is a BAT, which in turn requires BBP lock acquisition).
-@item
-to avoid further deadlock, the update functions in BBP that hold either
-GDKcacheLock or a GDKswapLock may never cause a BBPtrim (notice that BBPtrim
-could theoretically be set off just by allocating a little piece of memory, e.g.
-GDKstrdup()). If these routines must alloc memory, they must set the BBP_notrim
-variable, acquiring the addition GDKtrimLock, in order to prevent such deadlock.
-@item
-the BBPtrim is atomic; only releases its locks when all BAT unload
-work is done. This ensures that if all memory requests that triggered
-BBPtrim could possible be satisfied by unloading BATs, this will succeed.
-@end itemize
-
-The scan phase was optimized further in order to stop early when
-it is a priori known that the targets are met (which is the case if the
-BBPtrim is not due to memory shortage but due to the ndesc quota).
-Note that scans may always stop before BBPsize as the BBPMAXTRIM is a fixed
-number which may be smaller. As such, a mechanism was added to resume
-a broken off scan at the point where scanning was broken off rather than
-always starting at BBP[1] (this does more justice to the lower numbered
-bats and will more quickly find fresh unload candidates).
-
-We also refined the swap criterion. If the BBPtrim was initiated due to:
-- too much descriptors: small bats are unloaded first (from LRU cold to hot)
-- too little memory: big bats are unloaded first (from LRU cold to hot).
-Unloading-first is enforced by subtracting @math{2^31} from the stamp in the
-field where the candidates are sorted on.
-
-BBPtrim is abandoned when the application has indicated that it does not
-need it anymore.
-@{
-@c
-*/
-@c
+ * @- Storage trimming
+ * BBPtrim unloads the least recently used BATs to free memory resources.
+ * It gets passed targets in bytes of physical memory and logical
+ * virtual memory resources to free. Overhead costs are reduced by
+ * making just one scan, analyzing the first BBPMAXTRIM bats
+ * and keeping the result in a list for later use (the oldest bat
+ * now is going to be the oldest bat in the future as well).
+ * This list is sorted on last-used timestamp. BBPtrim keeps unloading
+ * BATs till the targets are met or there are no more BATs to unload.
+ *
+ * In determining whether a BAT will be unloaded, first it has
+ * to be BBPswappable, and second its resources occupied must
+ * be of the requested type. The algorithm actually makes two passes,
+ * in the first only clean bats are unloaded (in order of their stamp).
+ *
+ * In order to keep this under control with multiple threads all
+ * running out of memory at the same time, we make sure that
+ * @itemize
+ * @item
+ * just one thread does a BBPtrim at a time (by having a BBPtrimLock set).
+ * @item
+ * while decisions are made as to which bats to unload (1) the BBP is
+ * scanned, and (2) unload decisions are made. Due to these properties,
+ * the search&decide phase of BBPtrim acquires both GDKcacheLock (due to (1))
+ * and all GDKswapLocks (due to (2)). They must be released during the actual
+ * unloading.  (as otherwise deadlock occurs => unloading a bat may e.g. kill
+ * an accelerator that is a BAT, which in turn requires BBP lock acquisition).
+ * @item
+ * to avoid further deadlock, the update functions in BBP that hold either
+ * GDKcacheLock or a GDKswapLock may never cause a BBPtrim (notice that BBPtrim
+ * could theoretically be set off just by allocating a little piece of memory, e.g.
+ * GDKstrdup()). If these routines must alloc memory, they must set the BBP_notrim
+ * variable, acquiring the addition GDKtrimLock, in order to prevent such deadlock.
+ * @item
+ * the BBPtrim is atomic; only releases its locks when all BAT unload
+ * work is done. This ensures that if all memory requests that triggered
+ * BBPtrim could possible be satisfied by unloading BATs, this will succeed.
+ * @end itemize
+ *
+ * The scan phase was optimized further in order to stop early when
+ * it is a priori known that the targets are met (which is the case if the
+ * BBPtrim is not due to memory shortage but due to the ndesc quota).
+ * Note that scans may always stop before BBPsize as the BBPMAXTRIM is a fixed
+ * number which may be smaller. As such, a mechanism was added to resume
+ * a broken off scan at the point where scanning was broken off rather than
+ * always starting at BBP[1] (this does more justice to the lower numbered
+ * bats and will more quickly find fresh unload candidates).
+ *
+ * We also refined the swap criterion. If the BBPtrim was initiated due to:
+ * - too much descriptors: small bats are unloaded first (from LRU cold to hot)
+ * - too little memory: big bats are unloaded first (from LRU cold to hot).
+ * Unloading-first is enforced by subtracting @math{2^31} from the stamp in the
+ * field where the candidates are sorted on.
+ *
+ * BBPtrim is abandoned when the application has indicated that it does not
+ * need it anymore.
+ */
 #define BBPMAXTRIM 40000
 #define BBPSMALLBAT 1000
 
@@ -3322,23 +3283,19 @@ BBPcold(bat i)
 }
 
 /*
-@}
-@-
-BBPquickdesc loads a BAT descriptor without loading the entire BAT, of which the
-result be used only for a *limited* number of purposes. Specifically, during the
-global sync/commit, we do not want to load any BATs that are not already loaded, both
-because this costs performance, and because getting into memory shortage during a commit
-is extremely dangerous, as the global sync has all the BBPlocks, so no BBPtrim() can be
-done to free memory when needed. Loading a BAT tends not to be required, since the commit
-actions mostly involve moving some pointers in the BAT descriptor. However, some column
-types do require loading the full bat. This is tested by the complexatom() routine. Such
-columns are those of which the type has a fix/unfix method, or those that have HeapDelete
-methods. The HeapDelete actions are not always required and therefore the BBPquickdesc
-is parametrized.
-@{
-@c
-*/
-@c
+ * @-
+ * BBPquickdesc loads a BAT descriptor without loading the entire BAT, of which the
+ * result be used only for a *limited* number of purposes. Specifically, during the
+ * global sync/commit, we do not want to load any BATs that are not already loaded, both
+ * because this costs performance, and because getting into memory shortage during a commit
+ * is extremely dangerous, as the global sync has all the BBPlocks, so no BBPtrim() can be
+ * done to free memory when needed. Loading a BAT tends not to be required, since the commit
+ * actions mostly involve moving some pointers in the BAT descriptor. However, some column
+ * types do require loading the full bat. This is tested by the complexatom() routine. Such
+ * columns are those of which the type has a fix/unfix method, or those that have HeapDelete
+ * methods. The HeapDelete actions are not always required and therefore the BBPquickdesc
+ * is parametrized.
+ */
 static int
 complexatom(int t, int delaccess)
 {
@@ -3372,42 +3329,38 @@ BBPquickdesc(bat bid, int delaccess)
 }
 
 /*
-@}
 
-@+ Small BAT Cache
-PETER: rewrote the batcache to make it stable with views and actually faster
-       than allocating new bats (I guess that was the purpose of it)
-
-this is tuned to minimizing the needed actions to get a BAT, in particular
-we will do no BBPinsert, BUN dimension modifications, BATextends().
-
-it also covers more cases, such as views and TYPE_str
-
-main ideas:
-- have [htpe,ttpe] specific lists to O(1) get a BAT from the desired type (bin-lists)
-- implement LRU when the cache is full, with O(1) delete cost by using a fifo list
-- keep bats in the BBP, as zombies (by invalidating their name)
-- support views as void,void bats (they have in common that they lack heaps)
-- support TYPE_str as well, zapping their built-in string hash table
-- only recycle BATTINY bats. Increase BATTINY to make more BATnews use the cache.
-  BATTINY=256 leading to bunheaps ~1K-2K (in balance with ~500byte BAT record)
-
-and then benchmark it (missing in the previous exercise) :
-
- module(alarm);
- bbp_batcache_minsize(wrd(256));
- @{ var t := time(), i := 0; while((i :+= 1) < 100000) bat(int,int); print(time() - t); @}
- [ 490 ]
- bbp_batcache_minsize(wrd(0));
- @{ var t := time(), i := 0; while((i :+= 1) < 100000) bat(int,int); print(time() - t); @}
- [ 847 ]
-
-so with caching *some* programs can be nearly twice as fast (optimized compile),
-though I expect the gains to be smaller in general.
-@{
-@c
-*/
-@c
+ * @+ Small BAT Cache
+ * PETER: rewrote the batcache to make it stable with views and actually faster
+ *        than allocating new bats (I guess that was the purpose of it)
+ *
+ * this is tuned to minimizing the needed actions to get a BAT, in particular
+ * we will do no BBPinsert, BUN dimension modifications, BATextends().
+ *
+ * it also covers more cases, such as views and TYPE_str
+ *
+ * main ideas:
+ * - have [htpe,ttpe] specific lists to O(1) get a BAT from the desired type (bin-lists)
+ * - implement LRU when the cache is full, with O(1) delete cost by using a fifo list
+ * - keep bats in the BBP, as zombies (by invalidating their name)
+ * - support views as void,void bats (they have in common that they lack heaps)
+ * - support TYPE_str as well, zapping their built-in string hash table
+ * - only recycle BATTINY bats. Increase BATTINY to make more BATnews use the cache.
+ *   BATTINY=256 leading to bunheaps ~1K-2K (in balance with ~500byte BAT record)
+ *
+ * and then benchmark it (missing in the previous exercise) :
+ *
+ *  module(alarm);
+ *  bbp_batcache_minsize(wrd(256));
+ *  @{ var t := time(), i := 0; while((i :+= 1) < 100000) bat(int,int); print(time() - t); @}
+ *  [ 490 ]
+ *  bbp_batcache_minsize(wrd(0));
+ *  @{ var t := time(), i := 0; while((i :+= 1) < 100000) bat(int,int); print(time() - t); @}
+ *  [ 847 ]
+ *
+ * so with caching *some* programs can be nearly twice as fast (optimized compile),
+ * though I expect the gains to be smaller in general.
+ */
 #define BATCACHE_NOTYPE(t) 	(ATOMstorage(t) > TYPE_str || BATatoms[t].atomFix != NULL)
 #define BATCACHE_SIZE 		1023	/* max size: 32767 */
 #define BATCACHE_DIMS 		6	/* 0,1,2,4,8 byte types + str */
@@ -3870,14 +3823,9 @@ BBPrecycle_minsize(wrd val)
 }
 
 /*
-@}
 
-@+ Global Commit
-
-@{
-@c
-*/
-@c
+ * @+ Global Commit
+ */
 static BAT *
 dirty_bat(bat *i, int subcommit)
 {
@@ -3901,16 +3849,12 @@ dirty_bat(bat *i, int subcommit)
 }
 
 /*
-@}
 
-@- backup-bat
-Backup-bat moves all files of a BAT to a backup directory. Only after this
-succeeds, it may be saved. If some failure occurs halfway saving, we
-can thus always roll back.
-@{
-@c
-*/
-@c
+ * @- backup-bat
+ * Backup-bat moves all files of a BAT to a backup directory. Only after this
+ * succeeds, it may be saved. If some failure occurs halfway saving, we
+ * can thus always roll back.
+ */
 static int
 file_move(const char *srcdir, const char *dstdir, const char *name, const char *ext)
 {
@@ -3986,23 +3930,19 @@ heap_move(Heap *hp, str srcdir, str dstdir, str nme, str ext)
 }
 
 /*
-@}
 
-@- BBPprepare
-
-this routine makes sure there is a BAKDIR/, and initiates one if not.
-For subcommits, it does the same with SUBDIR.
-
-It is now locked, to get proper file counters, and also to prevent
-concurrent BBPrecovers, etc.
-
-backup_dir == 0 => no backup BBP.dir
-backup_dir == 1 => BBP.dir saved in BACKUP/
-backup_dir == 2 => BBP.dir saved in SUBCOMMIT/
-@{
-@c
-*/
-@c
+ * @- BBPprepare
+ *
+ * this routine makes sure there is a BAKDIR/, and initiates one if not.
+ * For subcommits, it does the same with SUBDIR.
+ *
+ * It is now locked, to get proper file counters, and also to prevent
+ * concurrent BBPrecovers, etc.
+ *
+ * backup_dir == 0 => no backup BBP.dir
+ * backup_dir == 1 => BBP.dir saved in BACKUP/
+ * backup_dir == 2 => BBP.dir saved in SUBCOMMIT/
+ */
 static int backup_files = 0, backup_dir = 0, backup_subdir = 0;
 
 static int
@@ -4116,6 +4056,7 @@ BBPbackup(BAT *b, bit subcommit)
 		}
 		if (ret) return -1;
 	}
+@
 @c
 	@:backup(head,(&b->H->heap), b->htype, (b->batDirty || b->H->heap.dirty))@
 	@:backup(tail,(&b->T->heap), b->ttype, (b->batDirty || b->T->heap.dirty))@
@@ -4125,22 +4066,17 @@ BBPbackup(BAT *b, bit subcommit)
 }
 
 /*
-@}
 
-@+ Atomic Write
-The atomic BBPsync() function first safeguards the old images of all files
-to be written in BAKDIR. It then saves all files. If that succeeds
-fully, BAKDIR is renamed to DELDIR. The rename is considered an
-atomic action. If it succeeds, the DELDIR is removed.
-If something fails, the pre-sync status can be obtained by moving
-back all backed up files; this is done by BBPrecover().
-
-The BBP.dir is also moved into the BAKDIR.
-
-@{
-@c
-*/
-@c
+ * @+ Atomic Write
+ * The atomic BBPsync() function first safeguards the old images of all files
+ * to be written in BAKDIR. It then saves all files. If that succeeds
+ * fully, BAKDIR is renamed to DELDIR. The rename is considered an
+ * atomic action. If it succeeds, the DELDIR is removed.
+ * If something fails, the pre-sync status can be obtained by moving
+ * back all backed up files; this is done by BBPrecover().
+ *
+ * The BBP.dir is also moved into the BAKDIR.
+ */
 int
 BBPsync(int cnt, bat *subcommit)
 {
@@ -4238,15 +4174,11 @@ BBPsync(int cnt, bat *subcommit)
 }
 
 /*
-@}
-@-
-Recovery just moves all files back to their original location. this is an incremental
-process: if something fails, just stop with still files left for moving in BACKUP/.
-The recovery process can resume later with the left over files.
-@{
-@c
-*/
-@c
+ * @-
+ * Recovery just moves all files back to their original location. this is an incremental
+ * process: if something fails, just stop with still files left for moving in BACKUP/.
+ * The recovery process can resume later with the left over files.
+ */
 static int
 force_move(str srcdir, str dstdir, str name)
 {
@@ -4386,12 +4318,9 @@ BBPrecover(void)
 }
 
 /*
-@
-SUBDIR recovery is quite mindlessly moving all files back to the parent (BAKDIR).
-We do recognize moving back BBP.dir and set backed_up_subdir accordingly.
-@c
-*/
-@c
+ * SUBDIR recovery is quite mindlessly moving all files back to the parent (BAKDIR).
+ * We do recognize moving back BBP.dir and set backed_up_subdir accordingly.
+ */
 int
 BBPrecover_subdir(void)
 {
@@ -4432,18 +4361,14 @@ BBPrecover_subdir(void)
 }
 
 /*
-@}
-@- The diskscan
-The BBPdiskscan routine walks through the BAT dir, cleans up leftovers, and measures disk occupancy.
-Leftovers are files that cannot belong to a BAT. in order to establish this for [ht]heap files,
-the BAT descriptor is loaded in order to determine whether these files are still required.
-
-The routine gathers all bat sizes in a bat that contains bat-ids and bytesizes. The return value is
-the number of bytes of space freed.
-@{
-@c
-*/
-@c
+ * @- The diskscan
+ * The BBPdiskscan routine walks through the BAT dir, cleans up leftovers, and measures disk occupancy.
+ * Leftovers are files that cannot belong to a BAT. in order to establish this for [ht]heap files,
+ * the BAT descriptor is loaded in order to determine whether these files are still required.
+ *
+ * The routine gathers all bat sizes in a bat that contains bat-ids and bytesizes. The return value is
+ * the number of bytes of space freed.
+ */
 static int
 persistent_bat(bat bid)
 {
@@ -4621,8 +4546,5 @@ BBPatom_load(int atom)
 	BBPunlock("BBPatom_load");
 }
 
-@}
-@{
 @h
 #endif /* _GDK_BBP_H_ */
-@}

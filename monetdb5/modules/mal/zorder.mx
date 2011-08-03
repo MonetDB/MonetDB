@@ -18,18 +18,21 @@ All Rights Reserved.
 @
 
 @f zorder
-@a Martin Kersten
-@* Z-order
-This module provides the primitives to implement 2-dim Z-order functionality. 
-Arrays stored in Z-order have a better locality of reference for many
-operations. Slicing part of the array amounts to deriving a BAT with
-the z-order indices required, whereafter a simple semijoin would be
-sufficient to fetch the values.
 
-The encoding produces OIDs, which makes it easy to align 
-any void headed BAT as a sorted Z-ordered representation.
-This gives both fast point access and clustered slicing.
-
+@c
+/*
+ * @a Martin Kersten
+ * @* Z-order
+ * This module provides the primitives to implement 2-dim Z-order functionality.
+ * Arrays stored in Z-order have a better locality of reference for many
+ * operations. Slicing part of the array amounts to deriving a BAT with
+ * the z-order indices required, whereafter a simple semijoin would be
+ * sufficient to fetch the values.
+ *
+ * The encoding produces OIDs, which makes it easy to align
+ * any void headed BAT as a sorted Z-ordered representation.
+ * This gives both fast point access and clustered slicing.
+ */
 @mal
 module zorder;
 
@@ -72,7 +75,6 @@ comment "Wrapper of the function zorder.slice() for SQL function";
 command slice(xb:int, yb:int, xt:int, yt:int ):bat[:oid,:oid]
 address ZORDslice_int
 comment "Extract the Z-order indices between two points";
-@{
 @h
 #ifndef _ZORDER_H
 #define _ZORDER_H
@@ -163,6 +165,7 @@ static inline void Zdecode_@1_@2_y(@1 *y, @2 *z)
 	}
 	*y = yv;
 }
+@
 @c
 @:Zcode(int,oid)@
 
@@ -507,4 +510,3 @@ str ZORDsql_slice_int(int *r, int *xb, int *yb, int *xt, int *yt)
 	BBPkeepref(*r);
 	return MAL_SUCCEED;
 }
-@}

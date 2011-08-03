@@ -18,16 +18,18 @@ All Rights Reserved.
 @
 
 @f aggr_bge_avg
-@a S. Manegold 
-@v 1.0
-@+ Aggregates Module
 
-@{
-
-@+ Implementation
-These implementations need just one scan and a simple hash-maintained data
-structure to compute a group of common aggregates.
 @c
+/*
+ * @a S. Manegold
+ * @v 1.0
+ * @+ Aggregates Module
+ *
+ *
+ * @+ Implementation
+ * These implementations need just one scan and a simple hash-maintained data
+ * structure to compute a group of common aggregates.
+ */
 #include "monetdb_config.h"
 #include <gdk.h>
 #include <gdk_scanselect.h>	/* for type-specific HT_bunfastins_nocheck_noinc(), until they're moved to gdk.mx */
@@ -35,14 +37,17 @@ structure to compute a group of common aggregates.
 #include "aggr_bge_avg.h"
 #include "aggr_be_avg.h"
 
-@- Result initialization
-/*	init_result
-	@1:	tail-type:	bte/sht/int/wrd/lng/flt/dbl / any / void
-*/
+/*
+ * @- Result initialization
+ * //	init_result
+ * 	@1:	tail-type:	bte/sht/int/wrd/lng/flt/dbl / any / void
+ *
+ */
 @include aggr_ri.mx
-
-@- Average
 @c
+/*
+ * @- Average
+ */
 /*	aggrX3_avg3
 		e-void-head	e-oid-head	e-oid-head	e-oid-head
 		void-lookup	array-lookup	scan-lookup	hash-lookup
@@ -147,6 +152,7 @@ structure to compute a group of common aggregates.
 	}
 	if (cnt)
 		GDKfree(cnt);
+@
 @c
 /*	aggrX3_avg3_body
 	@[11]:	oid hh = (oid) (gt_offset + v); oid *h = &hh		g tail value calculation
@@ -195,6 +201,7 @@ structure to compute a group of common aggregates.
 			}
 		}
 	}
+@
 @c
 /*	arithavg3
 	@6:	bte / sht / int / wrd / lng / flt / dbl	b-tail-type
@@ -310,9 +317,9 @@ CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e)
 @:arithavg3_hc(@1,lng,loc)@
 @:arithavg3_hc(@1,flt,loc)@
 @:arithavg3_hc(@1,dbl,loc)@
+@
 @h
 @:arithavg3(h)@
 @c
 @:arithavg3(c)@
 
-@}

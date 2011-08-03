@@ -58,11 +58,10 @@ lib_optimizer = {
 		opt_multiplex.mx \
 		opt_octopus.mx \
 		opt_origin.mx \
-		opt_partitions.mx \
 		opt_peephole.mx \
-		opt_pipes.mx \
+		opt_pipes.c opt_pipes.h \
 		opt_prejoin.mx \
-		opt_prelude.mx \
+		opt_prelude.c opt_prelude.h \
 		opt_pushranges.mx \
 		opt_qep.mx \
 		opt_recycler.mx \
@@ -71,31 +70,31 @@ lib_optimizer = {
 		opt_remoteQueries.mx \
 		opt_reorder.mx \
 		opt_singleton.mx \
-		opt_statistics.mx \
+		opt_statistics.c opt_statistics.h \
 		opt_strengthReduction.mx \
-		opt_support.mx \
+		opt_support.c opt_support.h \
 		opt_trace.mx
 }
 
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
-	SOURCES =  opt_prelude.mx \
-		opt_support.mx optimizer.mx  opt_factorize.mx \
+	SOURCES = \
+		opt_support.mal optimizer.mx  opt_factorize.mx \
 		opt_deadcode.mx opt_garbageCollector.mx opt_strengthReduction.mx \
 		opt_aliases.mx opt_constants.mx opt_commonTerms.mx opt_datacyclotron.mx \
 		opt_coercion.mx opt_emptySet.mx opt_peephole.mx opt_multiplex.mx \
 		opt_singleton.mx opt_costModel.mx opt_reduce.mx opt_macro.mx \
 		opt_accumulators.mx opt_qep.mx opt_mergetable.mx \
-		opt_remoteQueries.mx opt_joinselect.mx opt_partitions.mx \
+		opt_remoteQueries.mx opt_joinselect.mx \
 		opt_reorder.mx opt_prejoin.mx opt_compression.mx \
 		opt_evaluate.mx opt_inline.mx opt_pushranges.mx opt_derivepath.mx \
 		opt_accessmode.mx opt_joinpath.mx opt_heuristics.mx opt_remap.mx \
-		opt_statistics.mx opt_trace.mx  opt_recycler.mx opt_dataflow.mx \
+		opt_statistics.mal opt_trace.mx  opt_recycler.mx opt_dataflow.mx \
 		opt_cluster.mx opt_dictionary.mx opt_mapreduce.mx opt_origin.mx \
 		opt_mitosis.mx opt_octopus.mx opt_history.mx
 }
 
-EXTRA_DIST = optimizerWrapper.mx
+EXTRA_DIST = optimizerWrapper.mx opt_statistics.mal opt_support.mal
 
 EXTRA_DIST_DIR = Tests

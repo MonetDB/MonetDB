@@ -18,26 +18,29 @@ All Rights Reserved.
 @
 
 @f algebra
-@a Peter Boncz, Martin Kersten, Niels Nes
-@v 2.0
-@+ BAT Algebra
-This modules contains the most common algebraic BAT manipulation
-commands. We call them @#algebra@, because all operations take
-values as parameters, and produce new result values, but
-@%do not modify their parameters@.
-@
-Unlike the previous Monet versions, we reduce the number
-of functions returning a BAT reference. This was previously needed
-to simplify recursive bat-expression and manage reference counts.
-In the current version we return only a BAT identifier when a new
-bat is being created.
-@-
-All parameters to the modules are passed by reference.
-In particular, this means that
-string values are passed to the module layer as (str *)
-and we have to de-reference them before entering the gdk library.
-This calls for knowlegde on the underlying BAT typs`s
-@{
+
+@c
+/*
+ * @a Peter Boncz, Martin Kersten, Niels Nes
+ * @v 2.0
+ * @+ BAT Algebra
+ * This modules contains the most common algebraic BAT manipulation
+ * commands. We call them algebra, because all operations take
+ * values as parameters, and produce new result values, but
+ * do not modify their parameters.
+ *
+ * Unlike the previous Monet versions, we reduce the number
+ * of functions returning a BAT reference. This was previously needed
+ * to simplify recursive bat-expression and manage reference counts.
+ * In the current version we return only a BAT identifier when a new
+ * bat is being created.
+ * @-
+ * All parameters to the modules are passed by reference.
+ * In particular, this means that
+ * string values are passed to the module layer as (str *)
+ * and we have to de-reference them before entering the gdk library.
+ * This calls for knowlegde on the underlying BAT typs`s
+ */
 @= derefStr
 {int _tpe= ATOMstorage(@1->@2type);
  if( _tpe >= TYPE_str )
@@ -46,10 +49,10 @@ This calls for knowlegde on the underlying BAT typs`s
 }}
 
 @
-We split between selections that return one value, and selections
-that return a BAT.
-@+ Value Selections
 @mal
+# We split between selections that return one value, and selections
+# that return a BAT.
+# @+ Value Selections
 module algebra;
 
 command exist(b:bat[:any_1,:any_2], h:any_1):bit 
@@ -84,11 +87,10 @@ address ALGfetchint
 comment "Returns the tail value of the BUN at x-th position 
 	with 0 <= x < b.count";
 
-@+ BAT Selections
-The operations are grouped by positional and range selections.
-A simple sampling operation is also provided.
-@- Positional selection
-@mal
+# @+ BAT Selections
+# The operations are grouped by positional and range selections.
+# A simple sampling operation is also provided.
+# @- Positional selection
 command fetch(b:bat[:any_1,:any_2], s:bat[:int,:any_3]) :bat[:any_1,:any_2] 
 address ALGfetchbat;
 command fetch(b:bat[:any_1,:any_2], s:bat[:lng,:any_3] ) :bat[:any_1,:any_2] 
@@ -98,9 +100,8 @@ address ALGfetchbat
 comment "Returns a positional selection of b by the oid 
 	head values of s";
 
-@- Range selection
-The range selections are targeted at the tail of the BAT.
-@mal
+# @- Range selection
+# The range selections are targeted at the tail of the BAT.
 command select(b:bat[:any_1,:any_2], low:any_2, high:any_2) 
 		:bat[:any_1,:any_2] 
 address ALGselect
@@ -137,9 +138,8 @@ comment "Select all BUNs of a BAT with a certain
 command selectNotNil(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
 address ALGselectNotNil
 comment "Select all not-nil values";
-@-
-The second group uses the head to perform the range selection.
-@mal
+# @-
+# The second group uses the head to perform the range selection.
 command selectH(b:bat[:any_1,:any_2], low:any_1, high:any_1) 
 			:bat[:any_1,:any_2] 
 address ALGselectHead;
@@ -150,9 +150,8 @@ address ALGselectInclusiveHead;
 
 command selectH(b:bat[:any_1,:any_2],value:any_1) :bat[:any_1,:any_2] 
 address ALGselect1Head;
-@-
-A special case for this set are the void tailed bats.
-@mal
+# @-
+# A special case for this set are the void tailed bats.
 command select(b:bat[:any_2,:void], low:any_2) 
 		:bat[:any_2,:void] 
 address ALGselect1Head;
@@ -164,9 +163,8 @@ command select(b:bat[:any_2,:void], low:any_2, high:any_2,li:bit, hi:bit)
 		:bat[:any_2,:void] 
 address ALGselectInclusiveHead;
 
-@-
-The second group uses the head to perform the range selection
-@mal
+# @-
+# The second group uses the head to perform the range selection
 
 command fragment ( b:bat[:any_1,:any_2], hlow:any_1, hhigh:any_1,
 		tlow:any_2, thigh:any_2 ) :bat[:any_1,:any_2] 
@@ -218,24 +216,20 @@ command antiuselect(b:bat[:any_1,:any_2], low:any_2, high:any_2,
 		li:bit, hi:bit) :bat[:any_1,:void] 
 address ALGantiuselectInclusive
 comment "See select() but limited to head values";
-@- Pattern matching
-@mal
+# @- Pattern matching
 command like(b:bat[:any_1,:str], substr:str) :bat[:any_1,:str]
 address ALGlike
 comment "Selects all elements that have 'substr' as in the tail.";
 
-@- Sampling
-@mal
+# @- Sampling
 command sample ( b:bat[:oid,:any_2], num:int ) :bat[:oid,:any_2] 
 address ALGsample
 comment "Produce a random selection of size 'num' from the input BAT.";
-@+ BAT copying
-@mal
+# @+ BAT copying
 command copy( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
 address ALGcopy
 comment "Returns physical copy of a BAT.";
-@- Sorted copy
-@mal
+# @- Sorted copy
 command sort( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
 address ALGhsort
 comment "Returns a BAT copy sorted on the head column.";
@@ -270,50 +264,49 @@ command revert( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
 address ALGrevert
 comment "Returns a BAT copy with buns in reverse order";
 
-@+ Set operations
-Sets in Monet can be viewed in two ways:
-@itemize
-@item
-by looking at both columns of a BAT together (Set-, or s-operators).
-@item
-by looking at the head column only (Key- or k-operators).
-by looking at the tail column only (Tail key- or t-operators).
-@end itemize
-For this reason, all standard set operations come in three flavors:
-k-@emph{operand} series, which look only at the head column, 
-t-@emph{operand} series, which look only at the tail column, and
-s-@emph{operand} series, that look at the whole BUN.
-
-@noindent Operands provided are:
-@itemize
-@item [s,k,t]unique(bat[:any_1,:any_2]) :bat[:any_1,:any_2]
-produces a copy of the bat, with double elimination
-@item [s,k,t]union(bat[:any_1,:any_2],bat[:any_1,:any_2]) :bat[:any_1,:any_2]
-bat union.
-@item [s,k,t]difference(bat[:any_1,:any_2],bat[:any_1,:any_2]) :bat[:any_1,:any_2]
-bat difference.
-@item [s,k,t]intersection(bat[:any_1,:any_2],bat[:any_1,:any_2]) :bat[:any_1,:any_2]
-bat intersection.
-@end itemize
-Implementations typically take two forms: if the input relation(s) is/are
-ordered, a merge-algorithm is used. Otherwise, hash-indices are produced
-on demand for the hash-based algorithms.
-The [k,s]intersect(l,r) operations result in all BUNs of @emph{l} that
-are also in @emph{r}. They do not do double-elimination over the @emph{l} BUNs.
-The [k,s]difference(l,r) operations result in all BUNs of @emph{l} that are
-not in @emph{r}. They do not do double-elimination over the @emph{l} BUNs.
-The [k,s]union(l,r) operations result in all BUNs of l, plus all BUNs
-of @emph{r} that are not in @emph{l}. They do not do double-elimination
-over the @emph{l} nor @emph{r} BUNs.
-Operations with double-elimination can be formed by performing
-[k,s]unique(l) on their operands.
-The kintersect(l,r) is used also as implementation for the
-@emph{semijoin()}.
-
-The t-@emph{operand} series are cast into a k-@emph{operand}
-expression enclosing it with a BATmirror.
-@- Bun-unique elements
-@mal
+# @+ Set operations
+# Sets in Monet can be viewed in two ways:
+# @itemize
+# @item
+# by looking at both columns of a BAT together (Set-, or s-operators).
+# @item
+# by looking at the head column only (Key- or k-operators).
+# by looking at the tail column only (Tail key- or t-operators).
+# @end itemize
+# For this reason, all standard set operations come in three flavors:
+# k-@emph{operand} series, which look only at the head column,
+# t-@emph{operand} series, which look only at the tail column, and
+# s-@emph{operand} series, that look at the whole BUN.
+#
+# @noindent Operands provided are:
+# @itemize
+# @item [s,k,t]unique(bat[:any_1,:any_2]) :bat[:any_1,:any_2]
+# produces a copy of the bat, with double elimination
+# @item [s,k,t]union(bat[:any_1,:any_2],bat[:any_1,:any_2]) :bat[:any_1,:any_2]
+# bat union.
+# @item [s,k,t]difference(bat[:any_1,:any_2],bat[:any_1,:any_2]) :bat[:any_1,:any_2]
+# bat difference.
+# @item [s,k,t]intersection(bat[:any_1,:any_2],bat[:any_1,:any_2]) :bat[:any_1,:any_2]
+# bat intersection.
+# @end itemize
+# Implementations typically take two forms: if the input relation(s) is/are
+# ordered, a merge-algorithm is used. Otherwise, hash-indices are produced
+# on demand for the hash-based algorithms.
+# The [k,s]intersect(l,r) operations result in all BUNs of @emph{l} that
+# are also in @emph{r}. They do not do double-elimination over the @emph{l} BUNs.
+# The [k,s]difference(l,r) operations result in all BUNs of @emph{l} that are
+# not in @emph{r}. They do not do double-elimination over the @emph{l} BUNs.
+# The [k,s]union(l,r) operations result in all BUNs of l, plus all BUNs
+# of @emph{r} that are not in @emph{l}. They do not do double-elimination
+# over the @emph{l} nor @emph{r} BUNs.
+# Operations with double-elimination can be formed by performing
+# [k,s]unique(l) on their operands.
+# The kintersect(l,r) is used also as implementation for the
+# @emph{semijoin()}.
+#
+# The t-@emph{operand} series are cast into a k-@emph{operand}
+# expression enclosing it with a BATmirror.
+# @- Bun-unique elements
 command unique (b:bat[:any_1,:any_2] ) :bat[:any_1,:any_2] 
 address ALGsunique;
 command sunique (b:bat[:any_1,:any_2] ) :bat[:any_1,:any_2] 
@@ -321,8 +314,7 @@ address ALGsunique
 comment "Select unique tuples from the input BAT. Double elimination is 
 		done over BUNs as a whole (head and tail).  Result is a BAT 
 	with real set() semantics.";
-@- Head-unique elements
-@mal
+# @- Head-unique elements
 command kunique ( b:bat[:any_1,:any_2] ) :bat[:any_1,:any_2] 
 address ALGkunique
 comment "Select unique tuples from the input BAT.  Double elimination is 
@@ -335,8 +327,7 @@ comment "Select unique tuples from the input BAT. Double elimination is
 		done over the BUNs tail. The result is a BAT with property
 		tkeyd()== true";
 
-@- Bun-intersecting elements
-@mal
+# @- Bun-intersecting elements
 command intersect ( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2]) 
 		:bat[:any_1,:any_2] 
 address ALGsintersect;
@@ -349,8 +340,7 @@ comment "Returns the intersection taken over *both* columns of two BATs.
 	 'sintersect(sunique(left),sunique(right))' 
 	or: 'sunique(sintersect(left,right))'.";
 
-@- Head-intersecting elements (a.k.a. semijoin)
-@mal
+# @- Head-intersecting elements (a.k.a. semijoin)
 command semijoin( left:bat[:any_1,:any_2], right:bat[:any_1,:any] ) 
 		:bat[:any_1,:any_2] 
 address ALGsemijoin
@@ -368,8 +358,7 @@ comment "Returns the intersection taken over only the *head* columns of two BATs
 		Does *not* do double- elimination over the 'left' BUNs.
 		If you want this, use: 'kintersect(kunique(left),kunique(right))' 
 	or: 'kunique(kintersect(left,right))'.";
-@- Bun-differing elements
-@mal
+# @- Bun-differing elements
 command difference( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2] ) 
 		:bat[:any_1,:any_2] 
 address ALGsdiff;
@@ -382,8 +371,7 @@ comment "Returns the difference taken over *both* columns of two BATs.
 		If you want this, use:
 		 'sdifference(left.sunique,right.sunique)' 
 	or: 'sdifference(left,right).sunique'.";
-@- Head-differing elements
-@mal
+# @- Head-differing elements
 command kdifference ( left:bat[:any_1,:any_2], right:bat[:any_1,:any] ) 
 		:bat[:any_1,:any_2] 
 address ALGkdiff
@@ -393,8 +381,7 @@ comment "Returns the difference taken over only the *head* columns of two BATs.
 		If you want this, use:
 	 'kdifference(left.kunique,right.kunique)' 
 	or: 'kdifference(left,right).kunique'.";
-@- Unions on bun
-@mal
+# @- Unions on bun
 command union ( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2]) 
 		:bat[:any_1,:any_2] 
 address ALGsunion;
@@ -407,8 +394,7 @@ comment "Returns the union of two BATs; looking at both columns of both BATs.
 		If you want this, do:
 	 'sunion(left.sunique,right.sunique)' 
 	or: 'sunion(left,right).sunique'.";
-@- Union on head
-@mal
+# @- Union on head
 command kunion ( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2])
 		:bat[:any_1,:any_2] 
 address ALGkunion
@@ -418,11 +404,10 @@ comment "Returns the union of two BATs; looking at head-columns only.
 		If you want this, do:
 	'kunion(left.kunique,right.kunique)' 
 	or: 'sunion(left,right).kunique'.";
-@+ Join operations
-The core of every relational engine.
-The join collection provided by the GDK kernel.
-Note that joins over void columns are handled as if they are oids.
-@mal
+# @+ Join operations
+# The core of every relational engine.
+# The join collection provided by the GDK kernel.
+# Note that joins over void columns are handled as if they are oids.
 command crossproduct(left:bat[:any_1,:any_2], right:bat[:any_3,:any_4])
 	:bat[:any_1,:any_4]
 address ALGcross
@@ -481,8 +466,7 @@ command indexjoin ( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3])
 address ALGindexjoin
 comment "Hook directly into the index implementation of the join.";
 
-@- Outer Join
-@mal
+# @- Outer Join
 command outerjoin( outer:bat[:any_1,:any_2], inner:bat[:any_2,:any_3]) 
 		:bat[:any_1,:any_3] 
 address ALGouterjoin
@@ -506,8 +490,7 @@ command outerjoin( outer:bat[:any_1,:any_2], inner:bat[:any_2,:any_3],
 		estimate:lng) :bat[:any_1,:any_3] 
 address ALGouterjoinestimate;
 
-@- Theta Join
-@mal
+# @- Theta Join
 command thetajoin( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3],
 		opname:int) :bat[:any_1,:any_3] 
 address ALGthetajoin
@@ -520,8 +503,7 @@ comment "Theta join on for 'mode' in { LE, LT, EQ, GT, GE }.  JOIN_EQ is
 command thetajoin( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3],
 		opname:int,estimate:lng) :bat[:any_1,:any_3] 
 address ALGthetajoinEstimate;
-@- Band Join (approximate match)
-@mal
+# @- Band Join (approximate match)
 command bandjoin( outer:bat[:any_1,:any_2], inner:bat[:any_2,:any_3],
 		   minus:any_2 , plus:any_2 ) :bat[:any_1,:any_3] 
 address ALGbandjoin_default
@@ -542,8 +524,7 @@ comment "This is a join() for which the predicate is that two BUNs match
 command join(l:bat[:any_1,:any_2], rl:bat[:any_3,:any_2], rh:bat[:any_3,:any_2], li:bit, hi:bit) :bat[:any_1,:any_3] 
 address ALGrangejoin;
 
-@+ Projection operations
-@mal
+# @+ Projection operations
 command project(b:bat[:any_1,:any_2]) :bat[:any_1,:void]
 address ALGprojectNIL
 comment "Extract the head of a BAT.";
@@ -555,6 +536,7 @@ comment "Fill the head with a constant, e.g. [0~b]";
 command project(b:bat[:any_2,:any_1],v:@1) :bat[:any_2,:@1] 
 address ALGprojecttail_@1
 comment "Fill the tail with a constant, e.g. [0~b]";
+@
 @mal
 	@:projectGrp(bit)@
 	@:projectGrp(chr)@
@@ -565,11 +547,9 @@ comment "Fill the tail with a constant, e.g. [0~b]";
 	@:projectGrp(lng)@
 	@:projectGrp(flt)@
 	@:projectGrp(dbl)@
-@+ OID Introducing Commands
-For relational processing, some operators are necessary to produce newly
-initiated OID columns, for representing n-ary (intermediary) relations.
-
-@mal
+# @+ OID Introducing Commands
+# For relational processing, some operators are necessary to produce newly
+# initiated OID columns, for representing n-ary (intermediary) relations.
 command markT( b:bat[:any_1,:any_2], base:oid ) :bat[:any_1,:oid] 
 address ALGtmark
 comment "Produces a BAT with fresh unique dense sequense of OIDs in 
@@ -635,12 +615,11 @@ command split(b:bat[:lng,:oid]):bat[:oid,:oid]
 address ALGsplit
 comment "Split head into two values";
 
-@+ BAT fragmentation commands
-Various operations for splitting BATs into useful fragments.
-
-@- Variable management
-It is sometimes needed to cast a type at runtime
-@mal
+# @+ BAT fragmentation commands
+# Various operations for splitting BATs into useful fragments.
+#
+# @- Variable management
+# It is sometimes needed to cast a type at runtime
 command materialize(b:bat[:oid,:any_1]):bat[:oid,:any_1]
 address ALGmaterialize
 comment "Materialize the void column";
@@ -651,10 +630,9 @@ comment "Reuse a temporary BAT if you can. Otherwise,
 	allocate enough storage to accept result of an
  	operation (not involving the heap)";
 
-@- Hash Split
-The commands below is temporarilly postponed, because
-we don;t handle nested bats
-@mal
+# @- Hash Split
+# The commands below is temporarilly postponed, because
+# we don;t handle nested bats
 command hashsplit( b:bat[:any_1,:any_2], buckects:int ) 
 		:bat[:int,:bat] 
 address ALGhashsplit
@@ -665,8 +643,7 @@ comment "Split a BAT on tail column according (hash-value MOD buckets).
 command uhashsplit ( b:bat[:any_1,:any_2], buckets:int ) :bat[:int,:bat] 
 address ALGuhashsplit
 comment "Same as hashsplit, but only collect the head values in the fragments";
-@- Range Split
-@mal
+# @- Range Split
 command rangesplit ( b:bat[:any_1,:any_2], ranges:int ) 
 		:bat[:any_2,:bat] 
 address ALGrangesplit
@@ -680,11 +657,10 @@ command urangesplit( b:bat[:any_1,:any_2], ranges:int )
 address ALGurangesplit
 comment "Same as rangesplit, but only collect the head values in the fragments" ;
 
-@+ Common BAT Aggregates
-These operations examine a BAT, and compute some simple aggregate result
-over it.
-@- BAT size
-@mal
+# @+ Common BAT Aggregates
+# These operations examine a BAT, and compute some simple aggregate result
+# over it.
+# @- BAT size
 module aggr;
 
 command count( b:bat[:any_1,:any] ) :wrd 
@@ -698,29 +674,26 @@ command count_no_nil ( b:bat[:any_1,:any_2]) :wrd
 address ALGcount_no_nil
 comment "Return the number of elements currently 
 	in a BAT ignoring BUNs with nil-tail";
-@- Histogram on Tail
-@mal
+# @- Histogram on Tail
 command histogram ( b:bat[:any_1,:any_2]) :bat[:any_2,:int] 
 address ALGhistogram
 comment "Produce a BAT containing the histogram over the tail values.";
 
-@- Default Min and Max
-Implementations a generic Min and Max routines get declared first. The
-@emph{min()} and @emph{max()} routines below catch any tail-type.
-The type-specific routines defined later are faster, and will
-override these any implementations.
-@mal
+# @- Default Min and Max
+# Implementations a generic Min and Max routines get declared first. The
+# @emph{min()} and @emph{max()} routines below catch any tail-type.
+# The type-specific routines defined later are faster, and will
+# override these any implementations.
 command cardinality( b:bat[:any_1,:any_2] ) :lng 
 address ALGcard
 comment "Return the cardinality of the BAT tail values.";
-@- 
-Implementations a generic Min and Max routines get declared first. The
-@emph{ min()} and @emph{ max()} routines below catch any tail-type.
-The type-specific routines defined later are faster, and will
-override these any implementations.
-
-@- 
-@mal
+# @-
+# Implementations a generic Min and Max routines get declared first. The
+# @emph{ min()} and @emph{ max()} routines below catch any tail-type.
+# The type-specific routines defined later are faster, and will
+# override these any implementations.
+#
+# @-
 command min(b:bat[:any_1,:any_2]):any_2 
 address ALGminany
 comment "Return the lowest tail value or nil.";
@@ -728,11 +701,10 @@ comment "Return the lowest tail value or nil.";
 command max(b:bat[:any_1,:any_2]):any_2 
 address ALGmaxany
 comment "Return the highest tail value or nil.";
-@+ Type-Specific Sum, Prod, Max and Min
-For X in @{ bte,sht,int,wrd,flt,dbl,lng @},  we generate the
-aggregate functions using a macro.
-@-
-@mal
+# @+ Type-Specific Sum, Prod, Max and Min
+# For X in @{ bte,sht,int,wrd,flt,dbl,lng @},  we generate the
+# aggregate functions using a macro.
+# @-
 @:sumprod(sum,"Gives the sum of all tail values.")@
 @:sumprod(prod,"Gives the product of all tail values.")@
 @= sumprod_definition
@@ -743,6 +715,7 @@ comment @3;
 function @1 (b:bat[:any_1,:@2] ) :@4;
 	return @1 := aggr.@1(b, true); 
 end @1;
+@
 @mal
 @= sumprod
 @:sumprod_definition(@1,bte,@2,bte)@
@@ -774,6 +747,7 @@ end @1;
 command avg (b:bat[:any_1,:@1] ) :dbl 
 address ALGavg_@1
 comment "Gives the avg of all tail values";
+@
 @mal
 @:avg_definition(bte)@
 @:avg_definition(sht)@
@@ -783,15 +757,15 @@ comment "Gives the avg of all tail values";
 @:avg_definition(flt)@
 @:avg_definition(dbl)@
 
-@- Standard deviation
-The standard deviation of a set is the square root of its variance.
-The variance is the sum of squares of the deviation of each value in the set
-from the mean (average) value, divided by the population of the set.
-
+# @- Standard deviation
+# The standard deviation of a set is the square root of its variance.
+# The variance is the sum of squares of the deviation of each value in the set
+# from the mean (average) value, divided by the population of the set.
 @= stdev_definition
 command stdev (b:bat[:any_1,:@1] ) :dbl
 address ALGstdev_@1
 comment "Gives the standard deviation of all tail values";
+@
 @mal
 @:stdev_definition(bte)@
 @:stdev_definition(sht)@
@@ -801,7 +775,7 @@ comment "Gives the standard deviation of all tail values";
 @:stdev_definition(flt)@
 @:stdev_definition(dbl)@
 
-@-
+# @-
 @= aggregate_definition
 command @1 ( b:bat[:any_1,:@2] ) :@2 
 address ALG@1_@2 comment @3;
@@ -814,76 +788,75 @@ address ALG@1_@2 comment @3;
 @:aggregate_definition(@1,dbl,@2)@
 @:aggregate_definition(@1,lng,@2)@
 
+@
 @mal
 @:aggregate(max,"Give the highest tail value.")@
 @:aggregate(min,"Give the lowest tail value. ")@
 
-@+ Exented selection predicates
-For SQL convenience we provide a serie of interval selectors.
-@mal
+# @+ Exented selection predicates
+# For SQL convenience we provide a serie of interval selectors.
 module algebra;
-@+ Modeling With Properties
-The Monet kernel performs run-time optimizations. To choose between
-alternative algorithms in a sensible way, it maintains knowledge about
-each BAT, sometimes as a BAT property, sometimes as two
-column properties for each column (head and tail)
-of a BAT. An example of the former is size(bat):int
-(which gives the number of BUNs in a BAT), an example
-of the latter is ordered(column) :bit, indicating
-whether the column contains its valued stored in ascending order.
-The convention is to use a BAT as operand also for the column
-properties; which then is supposed to be valid for the head
-column (ordered(BAT)). Tail columns can be described by
-using the mirror BAT with the minus operator (ordered(-BAT)).
-
-@- Column Properties
-@table @code
-@item [ordered(BAT) :bit]
-	TRUE if the head column is stored in ascending order, else FALSE.
-@item [keyed(BAT) :bit]
-	TRUE if no duplicates are present in the head column, else FALSE.
-@item [idx(BAT) :bit]
-	TRUE if a binary index tree search accelerator is present on
-	the head column of the BAT, else FALSE.
-@item [hashtab(BAT) :bit] 
-	presence of hash table on the head column of
-	a BAT. TRUE if a bucket-chained hash table search accelerator is
-	present on the head column of the BAT, else FALSE.
-@item [subcol(BAT, BAT) :bit]
-	TRUE if the bag of all values in the head column of the left BAT is
-	a bag-subset of the bag of all values in the head column of the
-	right BAT, else FALSE.
-@item [sync(BAT) :oid]
-	Sync-OID on the head column of a BAT. A sync-OID denotes some unique
-	sequence of values. If two columns have the same sync-OID, then they
-	are guaranteed to contain the same values, in the same sequence.
-
-@item [size(BAT) :int]
-	The (estimated) length of a column.
-@item [unique(BAT) :int]
-	The (estimated) number of distinct values in one column.
-@item [subset(BAT, BAT) :bit]
-	TRUE if the left BAT is a subset of the BUNs of the right BAT,
-	else FALSE.
-@item [setunique(BAT) :bit]
-	TRUE if the BAT contains no duplicate BUNs, else FALSE.
-@end table
-
-@- Property Propagation Rules
-At database creation time, the properties of the BATs in the database
-can be derived directly from the database schema.
-
-When queries are executed, they will produce @emph{intermediate results},
-which in terms are operands for further execution. Hence it is necessary
-to @emph{propagate properties} from the operands of an algebraic operator,
-to its result.
-
-This process can be captured by having a series of @emph{propagation rules}
-for each algebraic operand. Since each algebraic operands may apply
-different strategies, according to different status in its operand properties,
-each algebraic operator may have different propagation rules with these
-different situations as conditions.
-
+# @+ Modeling With Properties
+# The Monet kernel performs run-time optimizations. To choose between
+# alternative algorithms in a sensible way, it maintains knowledge about
+# each BAT, sometimes as a BAT property, sometimes as two
+# column properties for each column (head and tail)
+# of a BAT. An example of the former is size(bat):int
+# (which gives the number of BUNs in a BAT), an example
+# of the latter is ordered(column) :bit, indicating
+# whether the column contains its valued stored in ascending order.
+# The convention is to use a BAT as operand also for the column
+# properties; which then is supposed to be valid for the head
+# column (ordered(BAT)). Tail columns can be described by
+# using the mirror BAT with the minus operator (ordered(-BAT)).
+#
+# @- Column Properties
+# @table @code
+# @item [ordered(BAT) :bit]
+# 	TRUE if the head column is stored in ascending order, else FALSE.
+# @item [keyed(BAT) :bit]
+# 	TRUE if no duplicates are present in the head column, else FALSE.
+# @item [idx(BAT) :bit]
+# 	TRUE if a binary index tree search accelerator is present on
+# 	the head column of the BAT, else FALSE.
+# @item [hashtab(BAT) :bit]
+# 	presence of hash table on the head column of
+# 	a BAT. TRUE if a bucket-chained hash table search accelerator is
+# 	present on the head column of the BAT, else FALSE.
+# @item [subcol(BAT, BAT) :bit]
+# 	TRUE if the bag of all values in the head column of the left BAT is
+# 	a bag-subset of the bag of all values in the head column of the
+# 	right BAT, else FALSE.
+# @item [sync(BAT) :oid]
+# 	Sync-OID on the head column of a BAT. A sync-OID denotes some unique
+# 	sequence of values. If two columns have the same sync-OID, then they
+# 	are guaranteed to contain the same values, in the same sequence.
+#
+# @item [size(BAT) :int]
+# 	The (estimated) length of a column.
+# @item [unique(BAT) :int]
+# 	The (estimated) number of distinct values in one column.
+# @item [subset(BAT, BAT) :bit]
+# 	TRUE if the left BAT is a subset of the BUNs of the right BAT,
+# 	else FALSE.
+# @item [setunique(BAT) :bit]
+# 	TRUE if the BAT contains no duplicate BUNs, else FALSE.
+# @end table
+#
+# @- Property Propagation Rules
+# At database creation time, the properties of the BATs in the database
+# can be derived directly from the database schema.
+#
+# When queries are executed, they will produce @emph{intermediate results},
+# which in terms are operands for further execution. Hence it is necessary
+# to @emph{propagate properties} from the operands of an algebraic operator,
+# to its result.
+#
+# This process can be captured by having a series of @emph{propagation rules}
+# for each algebraic operand. Since each algebraic operands may apply
+# different strategies, according to different status in its operand properties,
+# each algebraic operator may have different propagation rules with these
+# different situations as conditions.
 @include kprelude.mx
 @h
 #ifndef ALGEBRA_H
@@ -907,6 +880,7 @@ algebra_export ptr BATmin(BAT *b, ptr aggr);
 
 @= avg_export
 algebra_export str ALGavg_@1(dbl *res, int *bid);
+@
 @h
 @:avg_export(bte)@
 @:avg_export(sht)@
@@ -918,6 +892,7 @@ algebra_export str ALGavg_@1(dbl *res, int *bid);
 
 @= stdev_export
 algebra_export str ALGstdev_@1(dbl *res, int *bid);
+@
 @h
 @:stdev_export(bte)@
 @:stdev_export(sht)@
@@ -931,6 +906,7 @@ algebra_export str ALGstdev_@1(dbl *res, int *bid);
 algebra_export str ALGsum_@1_@2(@2* res, int *bid, bit *empty_is_nil) ;
 @= ALGprod_export
 algebra_export str ALGprod_@1_@2(@2* res, int *bid, bit *empty_is_nil) ;
+@
 @h
 @:ALGsum_export(bte,bte,0)@
 @:ALGsum_export(bte,sht,0)@
@@ -985,6 +961,7 @@ algebra_export str ALGprod_@1_@2(@2* res, int *bid, bit *empty_is_nil) ;
 @= ALGaggregate_export
 algebra_export str ALGmin_@1(@1* res, int *bid) ;
 algebra_export str ALGmax_@1(@1* res, int *bid) ;
+@
 @h
 @:ALGaggregate_export(bte)@
 @:ALGaggregate_export(sht)@
@@ -1032,6 +1009,7 @@ algebra_export str ALG@1(int *result, int* bid, int *param) ;
 @= ALGbinaryestimateExport
 algebra_export str ALG@1estimate(int *result, int *lid, int *rid, lng *estimate);
 algebra_export str ALG@1(int *result, int* lid, int *rid);
+@
 @h
 @:ALGunaryExport(histogram)@
 @:ALGunaryExport(number)@
@@ -1105,6 +1083,7 @@ algebra_export str ALGuhashsplit(int *result, int *bid, int *nfrag);
 @= project_export
 algebra_export str ALGprojecthead_@1(int *ret,ptr *val, int *bid);
 algebra_export str ALGprojecttail_@1(int *ret,int *bid, ptr *val);
+@
 @h
 @:project_export(int)@
 @:project_export(sht)@
@@ -1126,15 +1105,16 @@ algebra_export str ALGreuse(int *ret, int *bid);
 #include "gdk_rangejoin.h"
 #include <math.h>
 
-@* Command Implementations in C
-This module contains just a wrapper implementations; since all described
-operations are part of the GDK kernel.
-
-@+ BAT sum operation
-The sum aggregate only works for int and float fields.
-The routines below assumes that the caller knows what type
-is large enough to prevent overflow.
-
+/*
+ * @* Command Implementations in C
+ * This module contains just a wrapper implementations; since all described
+ * operations are part of the GDK kernel.
+ *
+ * @+ BAT sum operation
+ * The sum aggregate only works for int and float fields.
+ * The routines below assumes that the caller knows what type
+ * is large enough to prevent overflow.
+ */
 @= sum_implementation
 static int
 CMDsum_@1_@2(@2* res, BAT *b, bit *empty_is_nil)
@@ -1167,11 +1147,11 @@ CMDsum_@1_@2(@2* res, BAT *b, bit *empty_is_nil)
 	return GDK_SUCCEED;
 }
 
-@+ BAT prod[uct] operation
-The prod[uct] aggregate only works for int and float fields.
-The routines below assumes that the caller knows what type
-is large enough to prevent overflow.
-
+@
+ * @+ BAT prod[uct] operation
+ * The prod[uct] aggregate only works for int and float fields.
+ * The routines below assumes that the caller knows what type
+ * is large enough to prevent overflow.
 @= prod_implementation
 static int
 CMDprod_@1_@2(@2* res, BAT *b, bit *empty_is_nil)
@@ -1204,13 +1184,13 @@ CMDprod_@1_@2(@2* res, BAT *b, bit *empty_is_nil)
 	return GDK_SUCCEED;
 }
 
-@+ Minimum and Maximum
-The routines @`BATmin@5(b) and @`BATmax@5(b) compute the minimum and
-maximum value of the tail column of a BAT.
-Aggregate values are calculated just before they are requested by
-the user. They are not maintained continuously, because we expect
-them to be used sparsely.
-
+@
+ * @+ Minimum and Maximum
+ * The routines @`BATmin@5(b) and @`BATmax@5(b) compute the minimum and
+ * maximum value of the tail column of a BAT.
+ * Aggregate values are calculated just before they are requested by
+ * the user. They are not maintained continuously, because we expect
+ * them to be used sparsely.
 @= aggregate_implementation
 static int
 CMDmin_@1(@1* result, BAT *b)
@@ -1323,6 +1303,7 @@ BAT@1(BAT *b, ptr aggr)
 	}
 	return x;
 }
+@
 @c
 @:BATaggr(min)@
 @:BATaggr(max)@
@@ -1417,11 +1398,11 @@ CMDmaxany(ptr result, BAT *b)
 	return GDK_FAIL;
 }
 
-@* Command Implementations in C
-This module contains just a wrapper implementations; since all described
-operations are part of the GDK kernel.
-
-@c
+/*
+ * @* Command Implementations in C
+ * This module contains just a wrapper implementations; since all described
+ * operations are part of the GDK kernel.
+ */
 static int
 CMDselect1(BAT **result, BAT *b, ptr value)
 {
@@ -1559,8 +1540,10 @@ CMDbandjoin(BAT **result, BAT *left, BAT *right, ptr minus, ptr plus, bit *li, b
 	return (*result = BATbandjoin(left, right, minus, plus, *li, *hi)) ? GDK_SUCCEED : GDK_FAIL;
 }
 
-@-
-Let's cut this text down with some Mx macros
+/*
+ * @-
+ * Let's cut this text down with some Mx macros
+ */
 @= unary
 static int
 CMD@1(BAT **result, BAT *b)
@@ -1585,6 +1568,7 @@ CMD@1(BAT **result, BAT* b, int *param)
 {
 	return (*result = @2(b, *param))?GDK_SUCCEED:GDK_FAIL;
 }
+@
 @h
 #define BATtdiff(l,r) BATmirror(BATkdiff(BATmirror(l),BATmirror(r)))
 #define BATtintersect(l,r) BATmirror(BATkintersect(BATmirror(l),BATmirror(r)))
@@ -1742,11 +1726,12 @@ CMDurangesplit(BAT **res, BAT *b, int *nfrag)
 	return (*res = BATrangesplit(b, (BUN) *nfrag, TRUE)) ? GDK_SUCCEED : GDK_FAIL;
 }
 
-@- Substring Select
-The string pattern matching routine has been added. It should be
-dynamically linked.
-A simple string matcher is included. It should be refined later on
-@c
+/*
+ * @- Substring Select
+ * The string pattern matching routine has been added. It should be
+ * dynamically linked.
+ * A simple string matcher is included. It should be refined later on
+ */
 static inline int
 like(char *x, char *y, BUN ylen)
 {
@@ -1814,8 +1799,9 @@ CMDlike(BAT **ret, BAT *b, str s)
 	return GDK_SUCCEED;
 }
 
-@- BAT slice
-@c
+/*
+ * @- BAT slice
+ */
 static int
 slice(BAT **retval, BAT *b, lng start, lng end)
 {
@@ -1840,8 +1826,9 @@ CMDslice(BAT **retval, BAT *b, lng *start, lng *end)
 	return slice(retval, b, *start, *end);
 }
 
-@- BUN Get/Fetch
-@c
+/*
+ * @- BUN Get/Fetch
+ */
 static int
 CMDposition(wrd *retval, BAT *b, ptr val)
 {
@@ -1897,6 +1884,7 @@ CMDpositionBUN(wrd *retval, BAT *b, ptr val, ptr tval)
 			memcpy(ret, Tloc(b, @1), _s);
 		}
 	}
+@
 @c
 
 static int
@@ -1984,16 +1972,17 @@ bunins_failed:
 	return GDK_FAIL;
 }
 
-@- Wrapper
-The remainder of this file contains the wrapper around the V4 code base
-The BAT identifiers passed through this module may indicate
-that the 'reverse' view applies. This should be taken into
-account while resolving them.
-@+ BAT sum and product aggregation 
-The sum aggregate only works for int and float fields.
-The routines below assumes that the caller knows what type
-is large enough to prevent overflow.
-
+/*
+ * @- Wrapper
+ * The remainder of this file contains the wrapper around the V4 code base
+ * The BAT identifiers passed through this module may indicate
+ * that the 'reverse' view applies. This should be taken into
+ * account while resolving them.
+ * @+ BAT sum and product aggregation
+ * The sum aggregate only works for int and float fields.
+ * The routines below assumes that the caller knows what type
+ * is large enough to prevent overflow.
+ */
 @= ALGsum_implementation
 str ALGsum_@1_@2(@2* res, int *bid, bit *empty_is_nil) {
 	BAT *b;
@@ -2016,6 +2005,7 @@ str ALGprod_@1_@2(@2* res, int *bid, bit *empty_is_nil) {
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
+@
 @c
 @:ALGsum_implementation(bte,bte,0)@
 @:ALGsum_implementation(bte,sht,0)@
@@ -2068,7 +2058,9 @@ str ALGprod_@1_@2(@2* res, int *bid, bit *empty_is_nil) {
 @:ALGprod_implementation(lng,dbl,0.0)@
 
 
-@-
+/*
+ * @-
+ */
 @= ALGaggregate_implementation
 str ALGmin_@1(@1* res, int *bid) {
 	BAT *b;
@@ -2094,6 +2086,7 @@ str ALGmax_@1(@1* res, int *bid) {
 	BBPreleaseref(b->batCacheid);
 	throw(MAL, "algebra.max", GDK_EXCEPTION);
 }
+@
 @c
 @:ALGaggregate_implementation(bte)@
 @:ALGaggregate_implementation(sht)@
@@ -2104,7 +2097,6 @@ str ALGmax_@1(@1* res, int *bid) {
 @:ALGaggregate_implementation(dbl)@
 
 
-@c
 str
 ALGminany(ptr result, int *bid)
 {
@@ -2705,8 +2697,10 @@ ALGrangejoin(int *result, int *lid, int *rlid, int *rhid, bit *li, bit *hi)
 	throw(MAL, "algebra.rangejoin", GDK_EXCEPTION);
 }
 
-@-
-Let cut this text down with some Mx macro's
+/*
+ * @-
+ * Let cut this text down with some Mx macro's
+ */
 @= ALGunary
 str ALG@1(int *result, int *bid) {
 	BAT *b,*bn;
@@ -2818,6 +2812,7 @@ str ALG@1(int *result, int* lid, int *rid) {
 	lng estimate= lng_nil;
 	return ALG@1estimate(result,lid,rid,&estimate);
 }
+@
 @c
 @:ALGunary(histogram)@
 @:ALGunary(number)@
@@ -3393,8 +3388,9 @@ ALGslice_wrd(int *ret, bat *bid, wrd *start, wrd *end)
 	return ALGslice(ret, bid, &s, &e);
 }
 
-@- BUN Get/Fetch
-@c
+/*
+ * @- BUN Get/Fetch
+ */
 str
 ALGposition(wrd *retval, int *bid, ptr val)
 {
@@ -3694,8 +3690,10 @@ ALGprojectNIL(int *ret, int *bid)
     throw(MAL, "algebra.project", MAL_MALLOC_FAIL);
 }
 
-@-
-The constant versions are typed by the parser
+/*
+ * @-
+ * The constant versions are typed by the parser
+ */
 @= projectImpl
 str ALGprojecthead_@1(int *ret,ptr *val, int *bid){
 	BAT *b, *bn;
@@ -3747,9 +3745,11 @@ bunins_failed:
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
-@-
-
+@
 @c
+/*
+ * @-
+ */
 @:projectImpl(int)@
 @:projectImpl(sht)@
 @:projectImpl(lng)@
@@ -3813,9 +3813,10 @@ str ALGreuse(int *ret, int *bid)
 	return MAL_SUCCEED;
 }
 
-@+ BAT avg operation
-The avg aggregate only works for int and float fields.
-
+/*
+ * @+ BAT avg operation
+ * The avg aggregate only works for int and float fields.
+ */
 @= avg_implementation
 static int
 CMDavg_@1(dbl* res, BAT *b)
@@ -3834,6 +3835,7 @@ CMDavg_@1(dbl* res, BAT *b)
 	return GDK_SUCCEED;
 }
 
+@
 @c
 @:avg_implementation(bte)@
 @:avg_implementation(sht)@
@@ -3853,6 +3855,7 @@ str ALGavg_@1(dbl *res, int *bid) {
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
+@
 @c
 @:avg_impl(bte)@
 @:avg_impl(sht)@
@@ -3862,8 +3865,9 @@ str ALGavg_@1(dbl *res, int *bid) {
 @:avg_impl(flt)@
 @:avg_impl(dbl)@
 
-@+ BAT standard deviation
-
+/*
+ * @+ BAT standard deviation
+ */
 @= stdev_impl
 str ALGstdev_@1(dbl *res, int *bid) {
 	BAT *b;
@@ -3911,6 +3915,7 @@ str ALGstdev_@1(dbl *res, int *bid) {
 	return MAL_SUCCEED;
 }
 
+@
 @c
 @:stdev_impl(bte)@
 @:stdev_impl(sht)@
@@ -3920,4 +3925,3 @@ str ALGstdev_@1(dbl *res, int *bid) {
 @:stdev_impl(flt)@
 @:stdev_impl(dbl)@
 
-@}

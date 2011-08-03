@@ -18,18 +18,21 @@ All Rights Reserved.
 @
 
 @f opt_coercion
-@- Coercion Removal
-A simple optimizer that removes coercions that are not needed.
-They may result from a sloppy code-generator or function
-call resolution decision. For example:
-@example
-  v:= calc.int(23);
-@end example
-becomes a single assignment without function call.
 
-The primary role is a small illustration of coding
-an optimizer algorithm.
-@{
+@c
+/*
+ * @- Coercion Removal
+ * A simple optimizer that removes coercions that are not needed.
+ * They may result from a sloppy code-generator or function
+ * call resolution decision. For example:
+ * @example
+ *   v:= calc.int(23);
+ * @end example
+ * becomes a single assignment without function call.
+ *
+ * The primary role is a small illustration of coding
+ * an optimizer algorithm.
+ */
 @mal
 pattern optimizer.coercions():str
 address OPTcoercion;
@@ -37,12 +40,14 @@ pattern optimizer.coercions(mod:str, fcn:str):str
 address OPTcoercion
 comment "Handle simple type coercions";
 
-@-
-The key decision is to find the next statement that
-changes the candidate. 
-Beware that parameters could be changed as part of a call.
-They are marked as unsafe.
 @h
+/*
+ * @-
+ * The key decision is to find the next statement that
+ * changes the candidate.
+ * Beware that parameters could be changed as part of a call.
+ * They are marked as unsafe.
+ */
 #ifndef _OPT_COERCION_
 #define _OPT_COERCION_
 #include "opt_prelude.h"
@@ -101,10 +106,11 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			if( k) i--;
 		}
 	}
-@-
-This optimizer affects the flow, but not the type and declaration
-structure. A cheaper optimizer is sufficient.
-@c
+	/*
+	 * @-
+	 * This optimizer affects the flow, but not the type and declaration
+	 * structure. A cheaper optimizer is sufficient.
+	 */
 	DEBUGoptimizers
 		mnstr_printf(cntxt->fdout,"#opt_coercion: %d coersions applied\n",actions);
 	return actions;
@@ -113,4 +119,3 @@ structure. A cheaper optimizer is sufficient.
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(coercion,OPT_CHECK_FLOW)@
-@}

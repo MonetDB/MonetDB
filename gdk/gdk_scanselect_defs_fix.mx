@@ -18,27 +18,28 @@ All Rights Reserved.
 @
 
 @f gdk_scanselect_defs_fix
-@a S. Manegold, N. J. Nes, M. L. Kersten, P. Boncz
 
+@c
+/*
+ * @a S. Manegold, N. J. Nes, M. L. Kersten, P. Boncz
+ */
 @include gdk_scanselect_defs.mx
-
-@-
-
-Expanding on input-tail-type for data read and comparison.
-Most is straight forward.
-Taking special care of equi selects on str when there are no doubles in the
-heap.
-Adding test for v != nil for types where nil != MIN.
-
-@{
-
+ * @-
+ *
+ * Expanding on input-tail-type for data read and comparison.
+ * Most is straight forward.
+ * Taking special care of equi selects on str when there are no doubles in the
+ * heap.
+ * Adding test for v != nil for types where nil != MIN.
 @= DEFseqscanTTget
 	@:DEFseqscanIF(fix,fix,tloc,atom,t,&&!atom_EQ(nil,v,t),@1)@
-@-
-
-Generate all working functions.
-
+@
 @h
+/*
+ * @-
+ *
+ * Generate all working functions.
+ */
 @:DEFseqscanTTget(h)@
 @c
 #include "monetdb_config.h"
@@ -51,6 +52,3 @@ Generate all working functions.
 #endif
 #include "gdk_scanselect.h"
 @:DEFseqscanTTget(c)@
-@-
-
-@}

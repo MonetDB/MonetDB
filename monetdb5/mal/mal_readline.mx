@@ -17,57 +17,59 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@- Online help
-The textual interface @sc{mclient} supports a limited
-form of online help commands.
-The argument is a (partial) operator call,
-which is looked up in the symbol table.
-If the pattern includes a '(' it also
-displays the signature for each match.
-The @sc{argument types} and @sc{address} attributes
-are also shown if the call contains the closing bracket ')'.
-@example
->?bat.is
-bat.isSynced
-bat.isCached
-bat.isPersistent
-bat.isTransient
-bat.isSortedReverse
-bat.isSorted
-bat.isaSet
-bat.isaKey
->?bat.isSorted(
-command bat.isSorted(b:bat[:any_1,:any_2]):bit
->?bat.isSorted()
-command bat.isSorted(b:bat[:any_1,:any_2]):bit address BKCisSorted;
-Returns whether a BAT is ordered on head or not.
-@end example
-
-The module and function names can be replaced by the 
-wildcard character '*'. General regulat pattern matching is not supported.
-@example
->?*.print()
-command color.print(c:color):void
-pattern array.print(a:bat[:any_1,:any_2],b:bat[:any_1,:int]...):void
-pattern io.print(b1:bat[:any_1,:any]...):int
-pattern io.print(order:int,b:bat[:any_1,:any],b2:bat[:any_1,:any]...):int
-pattern io.print(val:any_1):int
-pattern io.print(val:any_1,lst:any...):int
-pattern io.print(val:bat[:any_1,:any_2]):int
-@end example
-
-The result of the help command can also be obtained in a BAT,
-using the commands @sc{manual.help}.
-Keyword based lookup is supported by the operation @sc{manual.search};
-Additional routines are available in the @sc{inspect}
-module to built reflexive code.
-
-@{
-For console input the @sc{readline} library linked with
-the system provides a history mechanism and also name completion.
-Add readline functionality to the MAL console.
-This means that the user has history access and some other
-features to assemble a command before it is being interpreted.
+@c
+/*
+ * @- Online help
+ * The textual interface @sc{mclient} supports a limited
+ * form of online help commands.
+ * The argument is a (partial) operator call,
+ * which is looked up in the symbol table.
+ * If the pattern includes a '(' it also
+ * displays the signature for each match.
+ * The @sc{argument types} and @sc{address} attributes
+ * are also shown if the call contains the closing bracket ')'.
+ * @example
+ * >?bat.is
+ * bat.isSynced
+ * bat.isCached
+ * bat.isPersistent
+ * bat.isTransient
+ * bat.isSortedReverse
+ * bat.isSorted
+ * bat.isaSet
+ * bat.isaKey
+ * >?bat.isSorted(
+ * command bat.isSorted(b:bat[:any_1,:any_2]):bit
+ * >?bat.isSorted()
+ * command bat.isSorted(b:bat[:any_1,:any_2]):bit address BKCisSorted;
+ * Returns whether a BAT is ordered on head or not.
+ * @end example
+ *
+ * The module and function names can be replaced by the
+ * wildcard character '*'. General regulat pattern matching is not supported.
+ * @example
+ * >?*.print()
+ * command color.print(c:color):void
+ * pattern array.print(a:bat[:any_1,:any_2],b:bat[:any_1,:int]...):void
+ * pattern io.print(b1:bat[:any_1,:any]...):int
+ * pattern io.print(order:int,b:bat[:any_1,:any],b2:bat[:any_1,:any]...):int
+ * pattern io.print(val:any_1):int
+ * pattern io.print(val:any_1,lst:any...):int
+ * pattern io.print(val:bat[:any_1,:any_2]):int
+ * @end example
+ *
+ * The result of the help command can also be obtained in a BAT,
+ * using the commands @sc{manual.help}.
+ * Keyword based lookup is supported by the operation @sc{manual.search};
+ * Additional routines are available in the @sc{inspect}
+ * module to built reflexive code.
+ *
+ * For console input the @sc{readline} library linked with
+ * the system provides a history mechanism and also name completion.
+ * Add readline functionality to the MAL console.
+ * This means that the user has history access and some other
+ * features to assemble a command before it is being interpreted.
+ */
 @h
 #ifndef READLINETOOLS_H_INCLUDED
 #define READLINETOOLS_H_INCLUDED
@@ -159,13 +161,16 @@ static void mal_help_display(char **msg, int a, int b){
 	for(i=0;i<a; i++)
 		mnstr_printf(GDKout,"%s\n",msg[i]);
 }
-@-
+/*
+ * @-
+ */
 @= tst
 #ifdef HAVE_STRNCASECMP
 		(strncasecmp(@1, @2, @3) == 0)
 #else
 		(strncmp(@1, @2, @3) == 0)
 #endif
+@
 @c
 
 static char *
@@ -293,8 +298,9 @@ deinit_readline(void)
 	}
 }
 #endif /* HAVE_LIBREADLINE */
-@-
-@c
+/*
+ * @-
+ */
 #ifndef S_ISCHR
 #define S_ISCHR(m)  (((m) & S_IFMT) == S_IFCHR)
 #endif
@@ -523,4 +529,3 @@ readConsole(Client cntxt)
 	}
 	return -1;
 }
-@}

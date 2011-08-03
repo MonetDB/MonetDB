@@ -18,54 +18,58 @@ All Rights Reserved.
 @
 
 @f str
-@a N.J. Nes, M.L. Kersten
-@v 1.1
-@+ The String Module
-Strings can be created in many ways. Already in the built-in operations
-each atom can be cast to a string using the str(atom) mil command.
-The string module gives the possibility of construction string as a
-substring of the a given string (s). There are two such construction functions.
-The first is the substring from some position (offset) until the end of
-the string. The second start again on the given offset position but only
-copies count number of bytes. The functions fail when the position and
-count fall out of bounds. A negative position indicates that the position is
-computed from the end of the source string.
 
-The strings can be compared using the "=" and "!=" operators.
-
-The operator "+" concatenates a string and an atom. The atom will be
-converted to a string using the atom to string c function. The
-string and the result of the conversion are concatenated to form a new
-string. This string is returned.
-
-The length function returns the length of the string. The length is
-the number of characters in the string. The maximum string length
-handled by the kernel is 32-bits long.
-
-chrAt() returns the character at position index in the string s. The
-function will fail when the index is out of range. The range is
-from 0 to length(s)-1.
-
-The startsWith and endsWith functions test if the string s starts with or
-ends with the given prefix or suffix.
-
-The toLower and toUpper functions cast the string to lower or upper case
-characters.
-
-The search(str,chr) function searches for the first occurrence of a
-character from the begining of the string. The search(chr,str) searches
-for the last occurrence (or first from the end of the string). The last
-search function locates the position of first occurrence of the string s2
-in string s. All search functions return -1 when the search failed.
-Otherwise the position is returned.
-
-All string functions fail when an incorrect string (NULL pointer) is given.
-In the current implementation, a fail is signaled by returning nil, since
-this facilitates the use of the string module in bulk operations.
-
-All functions in the module have now been converted to Unicode. Internally,
-we use UTF-8 to store strings as Unicode in zero-terminated byte-sequences.
-@* Module Definition
+@c
+/*
+ * @a N.J. Nes, M.L. Kersten
+ * @v 1.1
+ * @+ The String Module
+ * Strings can be created in many ways. Already in the built-in operations
+ * each atom can be cast to a string using the str(atom) mil command.
+ * The string module gives the possibility of construction string as a
+ * substring of the a given string (s). There are two such construction functions.
+ * The first is the substring from some position (offset) until the end of
+ * the string. The second start again on the given offset position but only
+ * copies count number of bytes. The functions fail when the position and
+ * count fall out of bounds. A negative position indicates that the position is
+ * computed from the end of the source string.
+ *
+ * The strings can be compared using the "=" and "!=" operators.
+ *
+ * The operator "+" concatenates a string and an atom. The atom will be
+ * converted to a string using the atom to string c function. The
+ * string and the result of the conversion are concatenated to form a new
+ * string. This string is returned.
+ *
+ * The length function returns the length of the string. The length is
+ * the number of characters in the string. The maximum string length
+ * handled by the kernel is 32-bits long.
+ *
+ * chrAt() returns the character at position index in the string s. The
+ * function will fail when the index is out of range. The range is
+ * from 0 to length(s)-1.
+ *
+ * The startsWith and endsWith functions test if the string s starts with or
+ * ends with the given prefix or suffix.
+ *
+ * The toLower and toUpper functions cast the string to lower or upper case
+ * characters.
+ *
+ * The search(str,chr) function searches for the first occurrence of a
+ * character from the begining of the string. The search(chr,str) searches
+ * for the last occurrence (or first from the end of the string). The last
+ * search function locates the position of first occurrence of the string s2
+ * in string s. All search functions return -1 when the search failed.
+ * Otherwise the position is returned.
+ *
+ * All string functions fail when an incorrect string (NULL pointer) is given.
+ * In the current implementation, a fail is signaled by returning nil, since
+ * this facilitates the use of the string module in bulk operations.
+ *
+ * All functions in the module have now been converted to Unicode. Internally,
+ * we use UTF-8 to store strings as Unicode in zero-terminated byte-sequences.
+ * @* Module Definition
+ */
 @mal
 module str;
 
@@ -239,10 +243,11 @@ command STRepilogue() :void
 address strEpilogue;
 
 str.STRprelude();	
-@-
-@{
-@* Implementation Code
 @h
+/*
+ * @-
+ * @* Implementation Code
+ */
 #ifndef __string_H__
 #define __string_H__
 #include <gdk.h>
@@ -333,9 +338,7 @@ str_export str STRrepeat(str *ret, str *s, int *c);
 str_export str STRspace(str *ret, int *l);
 
 #endif /* __string_H__ */
-@}
 
-@{
 @c
 #include "monetdb_config.h"
 #include "str.h"
@@ -348,33 +351,34 @@ str_export str STRspace(str *ret, int *l);
 #include <iconv.h>
 #endif
 
-@+ UTF-8 Handling
-UTF-8 is a way to store Unicode strings in zero-terminated byte sequences, which you can e.g.
-strcmp() with old 8-bit Latin-1 strcmp() functions and which then gives the same results as doing
-the strcmp() on equivalent Latin-1 and ASCII character strings stored in simple one-byte sequences.
-These characteristics make UTF-8 an attractive format for upgrading an ASCII-oriented computer
-program towards one that supports Unicode. That is why we use UTF-8 in Monet.
-
-For Monet, UTF-8 mostly has no consequences, as strings stored in BATs are regarded as data,
-and it does not matter for the database kernel whether the zero-terminated byte sequence it is
-processing has UTF-8 or Latin-1 semantics. This module is the only place where explicit string
-functionality is located. We {\bf do} have to adapt the behavior of the MIL length(), search(),
-substring() and the like commands to the fact that one (Unicode) character is now stored in
-a variable number of bytes (possibly > 1).
-
-One of the things that become more complex in Unicode are uppercase/lowercase conversions. The
-below tables are the simple one-to-one Unicode case mappings. We do not support the special casing mappings
-(e.g. from one to two letters).
-
-References:
-\begin{verbatim}
-simple casing:	http://www.unicode.org/Public/UNIDATA/UnicodeData.txt
-complex casing: http://www.unicode.org/Public/UNIDATA/SpecialCasing.txt
-\end{verbatim}
-
-The Unicode case conversion implementation in Monet fills a mapping BAT of int,int combinations,
-in which we perform high-performance hash-lookup (all code inlined).
-@c
+/*
+ * @+ UTF-8 Handling
+ * UTF-8 is a way to store Unicode strings in zero-terminated byte sequences, which you can e.g.
+ * strcmp() with old 8-bit Latin-1 strcmp() functions and which then gives the same results as doing
+ * the strcmp() on equivalent Latin-1 and ASCII character strings stored in simple one-byte sequences.
+ * These characteristics make UTF-8 an attractive format for upgrading an ASCII-oriented computer
+ * program towards one that supports Unicode. That is why we use UTF-8 in Monet.
+ *
+ * For Monet, UTF-8 mostly has no consequences, as strings stored in BATs are regarded as data,
+ * and it does not matter for the database kernel whether the zero-terminated byte sequence it is
+ * processing has UTF-8 or Latin-1 semantics. This module is the only place where explicit string
+ * functionality is located. We {\bf do} have to adapt the behavior of the MIL length(), search(),
+ * substring() and the like commands to the fact that one (Unicode) character is now stored in
+ * a variable number of bytes (possibly > 1).
+ *
+ * One of the things that become more complex in Unicode are uppercase/lowercase conversions. The
+ * below tables are the simple one-to-one Unicode case mappings. We do not support the special casing mappings
+ * (e.g. from one to two letters).
+ *
+ * References:
+ * \begin{verbatim}
+ * simple casing:	http://www.unicode.org/Public/UNIDATA/UnicodeData.txt
+ * complex casing: http://www.unicode.org/Public/UNIDATA/SpecialCasing.txt
+ * \end{verbatim}
+ *
+ * The Unicode case conversion implementation in Monet fills a mapping BAT of int,int combinations,
+ * in which we perform high-performance hash-lookup (all code inlined).
+ */
 /* This table was generated from the Unicode 5.0.0 spec.
    The table is generated by using the codes for conversion to lower
    case and for conversion to title case and upper case.
@@ -1470,6 +1474,7 @@ strEpilogue(void)
 		*(@2)++ = 0x80 | (((@1) >> 6) & 0x3F);
 		*(@2)++ = 0x80 | ((@1) & 0x3F);
 	}
+@
 @c
 static inline int
 UTF8_strlen(str val)
@@ -2055,12 +2060,12 @@ strSQLLength(int *res, str s)
 	return GDK_SUCCEED;
 }
 
-@
-@- Wrappers
-Here you find the wrappers around the version 4 library code
-It also contains the direct implementation of the string
-matching support routines.
-@c
+/*
+ * @- Wrappers
+ * Here you find the wrappers around the version 4 library code
+ * It also contains the direct implementation of the string
+ * matching support routines.
+ */
 #include "mal_exception.h"
 
 str
@@ -2076,9 +2081,10 @@ STRfindUnescapedOccurrence(str b, str c, str esc){
 	}
 	return 0;
 }
-@-
-The SQL like function return a boolean
-@c
+/*
+ * @-
+ * The SQL like function return a boolean
+ */
 int
 STRlike(str s, str pat, str esc){
 	str t,p;
@@ -2129,9 +2135,10 @@ STRtostr(str *res, str *src)
 	return MAL_SUCCEED;
 }
 
-@-
-The concatenate operator requires a type in most cases.
-@c
+/*
+ * @-
+ * The concatenate operator requires a type in most cases.
+ */
 str
 STRConcat(str *res, str *val1, str *val2)
 {
@@ -2350,9 +2357,10 @@ STRSubstitute(str *res, str *arg1, str *arg2, str *arg3, bit *g)
 	return MAL_SUCCEED;
 }
 
-@-
-A few old MIL procs implementations
-@c
+/*
+ * @-
+ * A few old MIL procs implementations
+ */
 str 
 STRascii(int *ret, str *s){
 	int offset=0;
@@ -2470,4 +2478,3 @@ STRstringLength(int *res, str *s)
 }
 
 
-@}

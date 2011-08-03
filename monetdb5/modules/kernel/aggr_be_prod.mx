@@ -18,30 +18,35 @@ All Rights Reserved.
 @
 
 @f aggr_be_prod
-@a S. Manegold 
-@v 1.0
-@+ Aggregates Module
 
-@{
-
-@+ Implementation
-These implementations need just one scan and a simple hash-maintained data
-structure to compute a group of common aggregates.
 @c
+/*
+ * @a S. Manegold
+ * @v 1.0
+ * @+ Aggregates Module
+ *
+ *
+ * @+ Implementation
+ * These implementations need just one scan and a simple hash-maintained data
+ * structure to compute a group of common aggregates.
+ */
 #include "monetdb_config.h"
 #include <gdk.h>
 #include <gdk_scanselect.h>	/* for type-specific HT_bunfastins_nocheck_noinc(), until they're moved to gdk.mx */
 #include "aggr.h"
 #include "aggr_be_prod.h"
 
-@- Result initialization
-/*	init_result
-	@1:	tail-type:	bte/sht/int/wrd/lng/flt/dbl / any / void
-*/
+/*
+ * @- Result initialization
+ * //	init_result
+ * 	@1:	tail-type:	bte/sht/int/wrd/lng/flt/dbl / any / void
+ *
+ */
 @include aggr_ri.mx
-
-@- Product
 @c
+/*
+ * @- Product
+ */
 /*	aggrX3_prod
 		e-void-head	e-oid-head	e-oid-head	e-oid-head
 		void-lookup	array-lookup	scan-lookup	hash-lookup
@@ -278,9 +283,9 @@ CMDaggrX3_prod_@1_@3(BAT **ret, BAT *b, BAT *e)
 @:arithprod_hc(@1,flt,loc,flt)@
 @:arithprod_hc(@1,flt,loc,dbl)@
 @:arithprod_hc(@1,dbl,loc,dbl)@
+@
 @h
 @:arithprod(h)@
 @c
 @:arithprod(c)@
 
-@}

@@ -28,40 +28,41 @@ MTSAFE
 lib_mal = {
 	NOINST
 	SOURCES = \
-		algebraExtensions.mx \
-		attach.mx \
-		batExtensions.mx \
+		algebraExtensions.c algebraExtensions.h \
+		attach.c attach.h \
+		batExtensions.c \
 		bbp.mx \
 		box.mx \
-		chopper.mx \
+		chopper.c \
 		clients.mx \
 		cluster.mx \
 		const.mx \
-		constraints.mx \
+		constraints.c constraints.h \
 		factories.mx \
-		groupby.mx \
+		groupby.c groupby.h \
+		histogram.h \
 		inspect.mx \
 		language.mx \
 		mal_io.mx \
 		mal_mapi.mx \
-		manual.mx \
+		manual.c manual.h \
 		mat.mx \
 		mdb.mx \
-		mkey.mx \
-		pcre.mx \
+		mkey.c mkey.h \
+		pcre.c \
 		pma.mx \
 		pqueue.mx \
-		profiler.mx \
-		recycle.mx \
-		remote.mx \
-		sabaoth.mx \
+		profiler.c profiler.h \
+		recycle.c recycle.h \
+		remote.c remote.h \
+		sabaoth.c sabaoth.h \
 		statistics.mx \
 		tablet.mx \
-		tablet_sql.mx \
+		tablet_sql.c \
 		tokenizer.mx \
-		trader.mx \
-		transaction.mx \
-		txtsim.mx \
+		trader.c trader.h \
+		transaction.c \
+		txtsim.c txtsim.h \
 		urlbox.mx \
 		zorder.mx
 }
@@ -69,18 +70,18 @@ lib_mal = {
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
-	SOURCES = language.mx constraints.mx mal_init.mx box.mx bbp.mx \
-		profiler.mx const.mx attach.mx batExtensions.mx algebraExtensions.mx \
-		inspect.mx manual.mx mal_io.mx pqueue.mx mkey.mx \
-		chopper.mx clients.mx \
-		factories.mx groupby.mx mdb.mx pcre.mx  tablet.mx mat.mx \
-		urlbox.mx statistics.mx transaction.mx \
-		mal_mapi.mx sabaoth.mx remote.mx  \
-		txtsim.mx recycle.mx \
-		cluster.mx trader.mx pma.mx \
+	SOURCES = language.mx constraints.mal mal_init.mal box.mx bbp.mx \
+		profiler.mal const.mx attach.mal batExtensions.mal algebraExtensions.mal \
+		inspect.mx manual.mal mal_io.mx pqueue.mx mkey.mal \
+		chopper.mal clients.mx \
+		factories.mx groupby.mal mdb.mx pcre.mal  tablet.mx mat.mx \
+		urlbox.mx statistics.mx transaction.mal \
+		mal_mapi.mx sabaoth.mal remote.mal  \
+		txtsim.mal recycle.mal \
+		cluster.mx trader.mal pma.mx \
 		tokenizer.mx zorder.mx
 }
 
-EXTRA_DIST = prelude.mx
+EXTRA_DIST = prelude.mx algebraExtensions.mal attach.mal batExtensions.mal chopper.mal constraints.mal groupby.mal histogram.mal mal_init.mal manual.mal mkey.mal pcre.mal profiler.mal recycle.mal remote.mal sabaoth.mal trader.mal transaction.mal txtsim.mal
 
 EXTRA_DIST_DIR = Tests

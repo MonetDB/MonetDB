@@ -18,13 +18,16 @@ All Rights Reserved.
 @
 
 @f opt_origin
-@- OID origin tracking.
-This simple module extends the MAL plan with properties that
-identify the source of OIDs in the underlying SQL persistent tables.
-It stops when it can not be unique pinpointed anymore.
-The information is kept with the variables as horigin and torigin.
-[still incomplete]
-@{
+
+@c
+/*
+ * @- OID origin tracking.
+ * This simple module extends the MAL plan with properties that
+ * identify the source of OIDs in the underlying SQL persistent tables.
+ * It stops when it can not be unique pinpointed anymore.
+ * The information is kept with the variables as horigin and torigin.
+ * [still incomplete]
+ */
 @mal
 pattern optimizer.origin():str
 address OPTorigin;
@@ -137,4 +140,3 @@ OPToriginImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(origin,OPT_CHECK_ALL)@
-@}

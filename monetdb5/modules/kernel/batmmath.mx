@@ -18,19 +18,23 @@ All Rights Reserved.
 @
 
 @f batmmath
-@a M.L. Kersten
-@+ BAT math calculator
-This module contains the multiplex versions of the linked
-in mathematical functions.
-@{
+
+@c
+/*
+ * @a M.L. Kersten
+ * @+ BAT math calculator
+ * This module contains the multiplex versions of the linked
+ * in mathematical functions.
+ */
 @= tstBat
 if( bn== NULL) {*ret= 0;
 	throw(MAL, "batcalc.@1", MAL_MALLOC_FAIL);}
 
-@+ Scientific routines
-The mmath functions are also overloaded to provide for
-the fast execution of expanded code blocks.
-The common set of math functions is supported.
+@
+ * @+ Scientific routines
+ * The mmath functions are also overloaded to provide for
+ * the fast execution of expanded code blocks.
+ * The common set of math functions is supported.
 @= scienceFcn
 	command @1(x:bat[:oid,:dbl])  :bat[:oid,:dbl] 
 	address CMDscience_bat_dbl_@1;
@@ -41,8 +45,9 @@ The common set of math functions is supported.
 	address CMDscience_bat_cst_@1_dbl;
 	command @1(x:bat[:oid,:flt],y:flt):bat[:oid,:flt] 
 	address CMDscience_bat_cst_@1_flt;
-@-
+@
 @mal
+# @-
 module batmmath;
 	@:scienceFcn(asin)@
 	@:scienceFcn(acos)@
@@ -62,23 +67,23 @@ module batmmath;
 	@:scienceFcn(ceil)@
 	@:scienceFcn(fabs)@
 	@:scienceFcn(floor)@
-@-
-	round is not binary...
-	@:scienceFcnBinary(round,int)@
-@mal
+	# @-
+	# 	round is not binary...
+	# 	scienceFcnBinary(round,int)
 	@:scienceFcnBinary(fmod)@
 	@:scienceFcnBinary(atan2)@
 	@:scienceFcnBinary(pow)@
-@- Implementation
+	# @- Implementation
 @include kprelude.mx
-
 @h
 #ifdef _BATMATH_H
 #define _BATMATH_H
 
 #endif  /* _BATMATH_H */
-@- Implementations of scientific functions
 @c
+/*
+ * @- Implementations of scientific functions
+ */
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "math.h"
@@ -99,7 +104,9 @@ module batmmath;
 #define degrees(x)       ((x) * 180.0 / 3.14159265358979323846)
 #define radiansf(x)      ((flt) radians(x))
 #define degreesf(x)      ((flt) degrees(x))
-@-
+/*
+ * @-
+ */
 @= scienceFcnImpl
 batmmath_export str CMDscience_bat_@2_@1(int *ret, int *bid);
 str CMDscience_bat_@2_@1(int *ret, int *bid)
@@ -182,6 +189,7 @@ str CMDscience_bat_cst_@1_@2(int *ret, int *bid, @2 *d)
 @= scienceImpl
 @:scienceFcnImpl(@1,dbl,)@
 @:scienceFcnImpl(@1,flt,f)@
+@
 @c
 @:scienceImpl(asin)@
 @:scienceImpl(acos)@
@@ -201,10 +209,11 @@ str CMDscience_bat_cst_@1_@2(int *ret, int *bid, @2 *d)
 @:scienceImpl(ceil)@
 @:scienceImpl(fabs)@
 @:scienceImpl(floor)@
-@-
-	round is not binary...
-	@:scienceBinaryImpl(round,int)@
-@c
+/*
+ * @-
+ * 	round is not binary...
+ * 	scienceBinaryImpl(round,int)
+ */
 @:scienceBinaryImpl(fmod,dbl,)@
 @:scienceBinaryImpl(fmod,flt,f)@
 @:scienceBinaryImpl(atan2,dbl,)@
@@ -212,4 +221,3 @@ str CMDscience_bat_cst_@1_@2(int *ret, int *bid, @2 *d)
 @:scienceBinaryImpl(pow,dbl,)@
 @:scienceBinaryImpl(pow,flt,f)@
 
-@}

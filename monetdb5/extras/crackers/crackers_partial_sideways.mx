@@ -18,22 +18,24 @@ All Rights Reserved.
 @
 
 @f crackers_partial_sideways
-@a Martin Kersten, Stratos Idreos, Stefan Manegold
-@d March 2006 - July 2008
-@* Partial Sideways Cracking
 
-
-@+ Interface
-
-
-@- Type expansion
-
+@c
+/*
+ * @a Martin Kersten, Stratos Idreos, Stefan Manegold
+ * @d March 2006 - July 2008
+ * @* Partial Sideways Cracking
+ *
+ *
+ * @+ Interface
+ *
+ *
+ * @- Type expansion
+ */
 @= TypeSwitch_2
 @:@1(int,,simple,,int,@2)@
 @:@1(dbl,,simple,,dbl,@2)@
 @:@1(date,,atom,TYPE_,loc,@2)@
 @
-
 @= TypeSwitch_3
 /* TODO: add the rest of the type combinations once code is stable */
 @:@1(int,int,simple,,,@2)@
@@ -50,10 +52,10 @@ All Rights Reserved.
 @:@1(date,dbl,atom,TYPE_,,@2)@
 @:@1(date,date,atom,TYPE_,,@2)@
 @
-
-@- Header file
- 
 @h
+/*
+ * @- Header file
+ */
 #ifndef _CRACKERS_PARTIAL_SIDEWAYS_H_
 #define _CRACKERS_PARTIAL_SIDEWAYS_H_
 
@@ -67,23 +69,17 @@ All Rights Reserved.
 @:TypeSwitch_3(IncSidewaysFunctions_decl_3)@
 
 #endif /* _CRACKERS_PARTIAL_SIDEWAYS_H */
-@
-
-@- Signatures shared within the crackers module/library
-
-
+/*
+ * @- Signatures shared within the crackers module/library
+ */
 @= IncSidewaysSharedFunctions_decl_2
 str AddToTapeIncrementalSideways_@1(struct Node *node, @1 value, bit inclusive);
 @
-
-
-@- Exported signatures
- 
+ * @- Exported signatures
 @= IncSidewaysFunctions_decl_0
 crackers_export str CRKaddReference(int* res, int *bid, int *pbid);
 crackers_export str CRKclearReferences(int* res, int *bid);
 @
-
 @= IncSidewaysFunctions_decl_3
 crackers_export str CRKselectBoundsIncrementalSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, @2 *low2, @2 *hgh2, bit *inclusiveLow2, bit *inclusiveHgh2);
 crackers_export str CRKselectBoundsTailIncrementalSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
@@ -91,15 +87,13 @@ crackers_export str CRKjoinSelectIncrementalSideways_@1_@2(int *res, int *bid, i
 crackers_export str CRKProjectIncrementalSideways_@1_@2(int *res, int *bid, int *pbid, int *pivot, @1 *low1, @1 *hgh1, bit *inclusiveLow1, bit *inclusiveHgh1);
 crackers_export str CRKMaxTailIncrementalSideways_@1_@2(int *res, int *bid, int *pbid, @1 *low1, @1 *hgh1, bit *inclusiveLow1, bit *inclusiveHgh1);
 @
-
-
-@{
-@+ Implementation
-
- 
-@- C file
-
 @c
+/*
+ * @+ Implementation
+ *
+ *
+ * @- C file
+ */
 #include "monetdb_config.h"
 #include "crackers.h"
 #include "crackers_partial_sideways.h"
@@ -116,11 +110,9 @@ crackers_export str CRKMaxTailIncrementalSideways_@1_@2(int *res, int *bid, int 
 
 /* Exported functions */
 @:TypeSwitch_3(IncSidewaysFunctions_impl_3)@
-@
-
-@- Exported functions
-
-
+/*
+ * @- Exported functions
+ */
 @= IncSidewaysFunctions_impl_3
 /* return bit vector of the conjuction */
 str
@@ -175,10 +167,7 @@ CRKMaxTailIncrementalSideways_@1_@2(int *res, int *bid, int *pbid, @1 *low1, @1 
                	return MaxTailIncrementalSideways_@1_@2(res, bid, pbid, low1, hgh1, inclusiveLow1, inclusiveHgh1);
 }
 @
-
-
-@- Local support functions and macros
-
+ * @- Local support functions and macros
 @= pieceReferencesManagement
 void
 newReference(int m, int batid){
@@ -634,7 +623,6 @@ removePieceFromAVLtree(struct Node *localFirst){
 		temp->deleted = TRUE;
 }
 @
-
 @= PieceMaps
 
 BAT * 
@@ -746,7 +734,6 @@ dropPiece_@1(int batId, int tailBatId, struct Node *localFirst){
 	return MAL_SUCCEED;
 }
 @
-
 @= crkTwoRTree
 	if (@4==NULL) cl2=0;
         else cl2 = @4->indexLocal;
@@ -770,7 +757,6 @@ dropPiece_@1(int batId, int tailBatId, struct Node *localFirst){
                 vh--;
         }
 @
-
 @= crkTwoLTree
 	if (@4==NULL) cl1=0;
         else cl1 = @4->indexLocal;
@@ -795,7 +781,6 @@ dropPiece_@1(int batId, int tailBatId, struct Node *localFirst){
         vl++; /* We need to take next position because the crack function always returns the last bun of the left piece.
                 Instead we want the first bun of the right piece*/
 @
-
 @= crkThreeTree
         if (*inclusiveLow == TRUE && *inclusiveHgh == TRUE)
                 CRKcrackUnorderedThree_LE_RE_@1(b,*low,*hgh, @3, @4, &vl, &vh);
@@ -822,7 +807,6 @@ dropPiece_@1(int batId, int tailBatId, struct Node *localFirst){
         if (*inclusiveLow == FALSE && *inclusiveHgh == FALSE)
                 CRKcrackUnorderedThreeSideways_LO_RO_@1_@2(@5,*low,*hgh, @3, @4, &vl, &vh);
 @
-
 @= crkTwoRTreeIncrementalSideways
 	if (@4==NULL) cl2=0;
         else cl2 = @4->indexLocal;
@@ -846,7 +830,6 @@ dropPiece_@1(int batId, int tailBatId, struct Node *localFirst){
                 vh--;
         }
 @
-
 @= crkTwoLTreeIncrementalSideways
 	if (@4==NULL) cl1=0;
         else cl1 = @4->indexLocal;
@@ -872,7 +855,6 @@ dropPiece_@1(int batId, int tailBatId, struct Node *localFirst){
         vl++; /* We need to take next position because the crack function always returns the last bun of the left piece.
                 Instead we want the first bun of the right piece*/
 @
-
 @= crkTwoLTreeIncrementalSideways2
 	if (@4==NULL) cl1=0;
         else cl1 = @4->indexLocal;
@@ -898,7 +880,6 @@ dropPiece_@1(int batId, int tailBatId, struct Node *localFirst){
         vl++; /* We need to take next position because the crack function always returns the last bun of the left piece.
                 Instead we want the first bun of the right piece*/
 @
-
 @= SyncOperation
 lng
 SyncPiece_@1_@2(int m, BAT * b, struct Node * cur, int CBindex, int tailBatId, bit force){
@@ -971,7 +952,6 @@ SyncPiece_@1_@2(int m, BAT * b, struct Node * cur, int CBindex, int tailBatId, b
 	return syncs;
 }
 @
-
 @= TapeOperations
 str
 AddToTapeIncrementalSideways_@1(struct Node *node, @1 value, bit inclusive){
@@ -1004,7 +984,6 @@ AddToTapeIncrementalSideways_@1(struct Node *node, @1 value, bit inclusive){
         return MAL_SUCCEED;
 }
 @
-
 @= CreateCrackerBAT
 {
 		BAT *bo;
@@ -1056,7 +1035,6 @@ AddToTapeIncrementalSideways_@1(struct Node *node, @1 value, bit inclusive){
 
 }
 @
-
 @= EnrichMaxTailResultIncrementalSideways
 	size+=@5;
 	if (pairt==NULL)	
@@ -1081,7 +1059,6 @@ AddToTapeIncrementalSideways_@1(struct Node *node, @1 value, bit inclusive){
 		BBPunfix(piece->batCacheid);		
 	newPiece = FALSE;
 @
-
 @= analyzeTailConjunction
  
         for (j = 0; j<@6; j++){
@@ -1094,7 +1071,6 @@ AddToTapeIncrementalSideways_@1(struct Node *node, @1 value, bit inclusive){
                 pivott ++;
         }
 @	
-
 @= EnrichConjunctiveResultIncrementalSideways
 
 	size+=@5;
@@ -1119,7 +1095,6 @@ AddToTapeIncrementalSideways_@1(struct Node *node, @1 value, bit inclusive){
 		BBPunfix(piece->batCacheid);		
 	newPiece = FALSE;
 @
-
 @= analyzeTailConjunctionPivot
  
         for (j = 0; j<@6; j++){
@@ -1132,7 +1107,6 @@ AddToTapeIncrementalSideways_@1(struct Node *node, @1 value, bit inclusive){
                 pivott ++;
         }
 @	
-
 @= EnrichConjunctivePivotResultIncrementalSideways
 
 	size+=@5;
@@ -1158,7 +1132,6 @@ AddToTapeIncrementalSideways_@1(struct Node *node, @1 value, bit inclusive){
 		BBPunfix(piece->batCacheid);		
 	newPiece = FALSE;
 @
-
 @= EnrichProjectionResultIncrementalSideways
 
 	size+=@5;
@@ -1176,7 +1149,6 @@ AddToTapeIncrementalSideways_@1(struct Node *node, @1 value, bit inclusive){
 		BBPunfix(piece->batCacheid);		
 	newPiece = FALSE;
 @
-
 @= EnrichProjectionPivotResultIncrementalSideways
 	for (j = 0; j<@5; j++){
 		if (*pivott == (bit)TRUE){
@@ -1196,7 +1168,6 @@ AddToTapeIncrementalSideways_@1(struct Node *node, @1 value, bit inclusive){
 		BBPunfix(piece->batCacheid);		
 	newPiece = FALSE;
 @
-
 @= analyzeTailDisjunction
  
         for (j = 0; j<vl; j++){
@@ -1226,7 +1197,6 @@ AddToTapeIncrementalSideways_@1(struct Node *node, @1 value, bit inclusive){
                 pivott ++;
         }
 @
-
 @= CrackPieceb
 		if (crkTwoLTree || crkThreeTree ){
 			if (crkTwoLTree){
@@ -1246,7 +1216,6 @@ AddToTapeIncrementalSideways_@1(struct Node *node, @1 value, bit inclusive){
 			increaseLocalCursor(nodeLow1,*pbid,1);
 		}	
 @
-
 @= CrackPiece
 	crkTwoLTree = crkTwoRTree = crkThreeTree = FALSE;
 	if (localNodeLow1==NULL) cl1=0;
@@ -1285,7 +1254,6 @@ AddToTapeIncrementalSideways_@1(struct Node *node, @1 value, bit inclusive){
         }
 
 @
-
 @= SyncAndCrackBasedonFirstBound
                 syncs=SyncPiece_@1_@2(h, piece, nodeLow1, m, *pbid, FALSE);
 		if (syncs<0)
@@ -1304,13 +1272,11 @@ AddToTapeIncrementalSideways_@1(struct Node *node, @1 value, bit inclusive){
 		base = nodeLow1->indexLocal;
 		CrackPiece = SyncAndCrackBasedonFirstBound = TRUE;
 @
-
 @= SyncAndCrackBasedonFirstBoundLastPart
         	pairt = (@2*)Tloc(piece, BUNfirst(piece)+vl);
 		tuplesToAnalyze = BATcount(piece) - vl;
 		SyncAndCrackBasedonFirstBound = CrackPiece = FALSE;
 @
-
 @= SyncAndCrackBasedonLastBound
 		syncs=SyncPiece_@1_@2(h, piece, nodeLow1, m, *pbid, FALSE);
 		if (syncs<0)
@@ -1339,13 +1305,11 @@ AddToTapeIncrementalSideways_@1(struct Node *node, @1 value, bit inclusive){
         		pairt = (@2*)Tloc(piece, BUNfirst(piece));
 		}
 @
-
 @= SyncAndCrackBasedonLastBoundLastPart
 		tuplesToAnalyze = vh + 1;
         	pairt = (@2*)Tloc(piece, BUNfirst(piece));
 		SyncAndCrackBasedonLastBound =  CrackPiece = FALSE;
 @
-
 @= SyncAndCrackBasedonBothBounds
 		syncs=SyncPiece_@1_@2(h, piece, nodeLow1, m, *pbid, FALSE);
 		if (syncs<0)
@@ -1367,13 +1331,11 @@ AddToTapeIncrementalSideways_@1(struct Node *node, @1 value, bit inclusive){
 		base = nodeLow1->indexLocal;
 		CrackPiece = SyncAndCrackBasedonBothBounds = TRUE;
 @
-
 @= SyncAndCrackBasedonBothBoundsLastPart
 		tuplesToAnalyze = vh-vl+1;
                 pairt = (@2*)Tloc(piece, BUNfirst(piece)+vl);
 		CrackPiece = SyncAndCrackBasedonBothBounds = FALSE;
 @
-
 @= makeNewMapPiece1
 		/*printStorageInfo(); can be used to what is in the Storage management structure */
 			piece = createPieceMap_@1_@2(b, tailBAT, nodeLow1, nodeHgh1, m);
@@ -1385,7 +1347,6 @@ AddToTapeIncrementalSideways_@1(struct Node *node, @1 value, bit inclusive){
 	        	curPieceNodeLast = addCrackerIndexIncrementalSideways_@1(h, *(@1*)Tloc(c, BUNfirst(c)+nodeHgh1->position), nodeHgh1->inclusive, BATcount(piece)-1, nodeHgh1->indexLocal, cm, FALSE, FALSE, piece->batCacheid);
 			registerPieceForStorageManagement(*bid, *pbid, localFirst, nodeHgh1->indexLocal - nodeLow1->indexLocal);
 @
-
 @= makeNewMapPiece2
 			piece = createPieceMap_@1_@2(b, tailBAT, nodeLow1, nodeHgh1, m);
 			if (piece==NULL)
@@ -1398,7 +1359,6 @@ AddToTapeIncrementalSideways_@1(struct Node *node, @1 value, bit inclusive){
 	        	localNodeHgh1 = addCrackerIndexIncrementalSideways_@1(h, *(@1*)Tloc(c, BUNfirst(c)+nodeHgh1->position), nodeHgh1->inclusive, BATcount(piece)-1, nodeHgh1->indexLocal, cm, FALSE, FALSE, piece->batCacheid);
 			registerPieceForStorageManagement(*bid, *pbid, localNodeLow1, nodeHgh1->indexLocal - nodeLow1->indexLocal);
 @
-
 @= FirstBoundWithinAnExistingArea
 		foundLow = GetLowNodes_@1(*low, *inclusiveLow, CrackerIndex[m].Tree, c, BUNfirst(c), &nodeLow1, &nodeHgh1, NULL, NULL);
 		if ( (nodeLow1 == NULL) || 
@@ -1423,7 +1383,6 @@ AddToTapeIncrementalSideways_@1(struct Node *node, @1 value, bit inclusive){
 		}
                 curCBatNodeLast = nodeHgh1;
 @
-
 @= LastBoundWithinAnExistingArea
 		if (nodeLow1->first == TRUE){
 			@:makeNewMapPiece2(@1,@2)@
@@ -1450,7 +1409,6 @@ AddToTapeIncrementalSideways_@1(struct Node *node, @1 value, bit inclusive){
 			pairt = (@2*)Tloc(piece, BUNfirst(piece));
 		}
 @
-
 @= BothBoundsWithinAnExistingArea
 		foundLow = GetLowNodes_@1(*low, *inclusiveLow, CrackerIndex[m].Tree, c, BUNfirst(c), &nodeLow1, &nodeHgh1, NULL, NULL);
 		foundHgh = GetHghNodes_@1(*hgh, *inclusiveHgh, CrackerIndex[m].Tree, c, BUNfirst(c), &nodeLow2, &nodeHgh2, NULL, NULL);
@@ -1555,7 +1513,6 @@ AddToTapeIncrementalSideways_@1(struct Node *node, @1 value, bit inclusive){
 
 		curCBatNodeLast = nodeHgh1;
 @
-
 @= IncrementalCrackingBasicBodyA
         BAT *b=NULL, *c=NULL, *cm=NULL, *tailBAT=NULL, *piece=NULL;
         int  m, h;
@@ -1590,7 +1547,6 @@ AddToTapeIncrementalSideways_@1(struct Node *node, @1 value, bit inclusive){
         if ((tailBAT = BATdescriptor(*pbid)) == NULL)
 	        throw(MAL, "crackers.crackRange", "Cannot access crack index");
 @
-
 @= IncrementalCrackingBasicBodyB
 
 	pivott = (bit*)Tloc(p, BUNfirst(p));
@@ -1842,7 +1798,6 @@ AddToTapeIncrementalSideways_@1(struct Node *node, @1 value, bit inclusive){
 			
 	BBPunfix(tailBAT->batCacheid);		
 @
-
 @= crackOperationsIncSideways
 static str
 CRKRangeIncrementalSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, @2 *low2, @2 *hgh2, bit *inclusiveLow2, bit *inclusiveHgh2){
@@ -1954,5 +1909,3 @@ MaxTailIncrementalSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh
         return MAL_SUCCEED;
 }
 @
-
-@}

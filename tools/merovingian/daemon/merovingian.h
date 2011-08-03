@@ -20,7 +20,6 @@
 #ifndef _MEROVINGIAN_H
 #define _MEROVINGIAN_H 1
 
-#include "monetdb_config.h"
 #include <stdio.h>
 #include <netinet/in.h> /* struct sockaddr_in */
 #include <pthread.h> /* pthread_mutex_t */

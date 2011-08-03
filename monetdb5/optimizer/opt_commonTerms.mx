@@ -18,8 +18,11 @@ All Rights Reserved.
 @
 
 @f opt_commonTerms
-@a M. Kersten
-@{
+
+@c
+/*
+ * @a M. Kersten
+ */
 @mal
 pattern optimizer.commonTerms():str
 address OPTcommonTerms;
@@ -43,69 +46,67 @@ comment "Common sub-expression optimizer"
 #include "monetdb_config.h"
 #include "opt_commonTerms.h"
 #include "mal_exception.h"
-@}
-@- Common Subexpression Elimination
-Common subexpression elimination merely involves a scan through the 
-program block to detect re-curring statements.
-The key problem to be addressed is to make sure that the parameters involved
-in the repeatative instruction are invariant. 
-
-The analysis of @sc{optimizer.commonTerms()}
-is rather crude. All functions with possible side-effects on
-their arguments should have been marked as 'unsafe'.
-Their use within a MAL block breaks the dataflow graph for all 
-objects involved (BATs, everything kept in boxes).
-@-
-The common subexpression optimizer locates backwards the identical 
-instructions. 
-It stops as soon as it has found an identical one. Before we can replace the 
-expression with the variable(s) of the previous one, we should assure that
-we haven;t passed a non-empty barrier block.
-
-@verbatim
-    b:= bat.new(:int,:int);
-    c:= bat.new(:int,:int);
-    d:= algebra.select(b,0,100);
-    e:= algebra.select(b,0,100);
-    k1:= 24;
-    k2:= 27;
-    l:= k1+k2;
-    l2:= k1+k2;
-    l3:= l2+k1;
-    optimizer.commonTerms();
-@end verbatim
-is translated into the code block where the first two instructions 
-are not common, because they have side effects.
-@verbatim
-    b := bat.new(:int,:int);
-    c := bat.new(:int,:int);
-    d := algebra.select(b,0,100);
-    e := d;
-    l := calc.+(24,27);
-    l3 := calc.+(l,24);
-@end verbatim
-@{
-The common term removal creates opportunities for alias removal,
-which in turn could lead to common terms to be detected.
-
-Pathological case require alias removal also to find dependents.
-@verbatim
-a:= e();
-b:= e();
-c:= f(a);
-d:= f(b);
-@end verbatim
-
-A method is to keep a link to all instructions based on one (the first)
-of the arguments. This gives a good starting point for attempting a match.
-This walk backward analysis should be terminated when we hit a barrier.
-
-Caveat. A lot of time was lost due to constants that are indistinguisable 
-at the surface level. It may miss common expressions if their constants
-are introduced too far apart in the MAL program.
-It requires the constant optimizer to be ran first.
-
-@c
+/*
+ * @- Common Subexpression Elimination
+ * Common subexpression elimination merely involves a scan through the
+ * program block to detect re-curring statements.
+ * The key problem to be addressed is to make sure that the parameters involved
+ * in the repeatative instruction are invariant.
+ *
+ * The analysis of @sc{optimizer.commonTerms()}
+ * is rather crude. All functions with possible side-effects on
+ * their arguments should have been marked as 'unsafe'.
+ * Their use within a MAL block breaks the dataflow graph for all
+ * objects involved (BATs, everything kept in boxes).
+ * @-
+ * The common subexpression optimizer locates backwards the identical
+ * instructions.
+ * It stops as soon as it has found an identical one. Before we can replace the
+ * expression with the variable(s) of the previous one, we should assure that
+ * we haven;t passed a non-empty barrier block.
+ *
+ * @verbatim
+ *     b:= bat.new(:int,:int);
+ *     c:= bat.new(:int,:int);
+ *     d:= algebra.select(b,0,100);
+ *     e:= algebra.select(b,0,100);
+ *     k1:= 24;
+ *     k2:= 27;
+ *     l:= k1+k2;
+ *     l2:= k1+k2;
+ *     l3:= l2+k1;
+ *     optimizer.commonTerms();
+ * @end verbatim
+ * is translated into the code block where the first two instructions
+ * are not common, because they have side effects.
+ * @verbatim
+ *     b := bat.new(:int,:int);
+ *     c := bat.new(:int,:int);
+ *     d := algebra.select(b,0,100);
+ *     e := d;
+ *     l := calc.+(24,27);
+ *     l3 := calc.+(l,24);
+ * @end verbatim
+ * The common term removal creates opportunities for alias removal,
+ * which in turn could lead to common terms to be detected.
+ *
+ * Pathological case require alias removal also to find dependents.
+ * @verbatim
+ * a:= e();
+ * b:= e();
+ * c:= f(a);
+ * d:= f(b);
+ * @end verbatim
+ *
+ * A method is to keep a link to all instructions based on one (the first)
+ * of the arguments. This gives a good starting point for attempting a match.
+ * This walk backward analysis should be terminated when we hit a barrier.
+ *
+ * Caveat. A lot of time was lost due to constants that are indistinguisable
+ * at the surface level. It may miss common expressions if their constants
+ * are introduced too far apart in the MAL program.
+ * It requires the constant optimizer to be ran first.
+ */
 static int
 OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -171,18 +172,20 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 					pushInstruction(mb,old[i]);
 			break;
 		}
-@-
-Any non-empty barrier block signals the end of this optimizer,
-the impact of the block can affect the common code.
-@c
+		/*
+		 * @-
+		 * Any non-empty barrier block signals the end of this optimizer,
+		 * the impact of the block can affect the common code.
+		 */
 		barrier |= (p->barrier== BARRIERsymbol || p->barrier== CATCHsymbol) && old[i+1]->barrier!=EXITsymbol;
-@-
-Also block further optimization when you have seen an assert().
-This works particularly for SQL, because it is not easy to track
-the BAT identifier aliases to look for updates. The sql.assert
-at least tells us that an update is planned.
-Like all optimizer decisions, it is safe to stop.
-@c
+		/*
+		 * @-
+		 * Also block further optimization when you have seen an assert().
+		 * This works particularly for SQL, because it is not easy to track
+		 * the BAT identifier aliases to look for updates. The sql.assert
+		 * at least tells us that an update is planned.
+		 * Like all optimizer decisions, it is safe to stop.
+		 */
 		barrier |= getFunctionId(p) == assertRef;
 		if (p->token == NOOPsymbol || p->token == ASSIGNsymbol || barrier /* || p->retc == p->argc */) {
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
@@ -216,11 +219,12 @@ Like all optimizer decisions, it is safe to stop.
 					isLinearFlow(q),
 					isLinearFlow(p));
 #endif
-@-
-Simple assignments are not replaced either. They should be
-handled by the alias removal part. All arguments should
-be assigned their value before instruction p.
-@c
+				/*
+				 * @-
+				 * Simple assignments are not replaced either. They should be
+				 * handled by the alias removal part. All arguments should
+				 * be assigned their value before instruction p.
+				 */
 				if ( hasSameArguments(mb, p, q) && 
 					hasSameSignature(mb, p, q, p->retc) && 
 					!hasCommonResults(p, q) && 
@@ -276,4 +280,3 @@ be assigned their value before instruction p.
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(commonTerms,OPT_CHECK_ALL)@
-@}

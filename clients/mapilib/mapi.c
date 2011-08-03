@@ -2559,18 +2559,20 @@ mapi_start_talking(Mapi mid)
 			 * sequence is used.
 			 */
 			unsigned char md[20];	/* should be RIPEMD160_DIGEST_LENGTH */
-			size_t n = strlen(mid->password) + strlen(chal);
-			char *key = alloca(n + 1);
-			key[0] = '\0';
+			char *p;
+			RIPEMD160_CTX c;
 
 			if (pversion == 9) {
-				strcpy(key, mid->password + 1);
-				n--;
+				p = mid->password + 1;
 			} else {
-				strcpy(key, mid->password);
+				p = mid->password;
 			}
-			strncat(key, chal, strlen(chal));
-			RIPEMD160((unsigned char *) key, n, md);
+
+			RIPEMD160_Init(&c);
+			RIPEMD160_Update(&c, p, strlen(p));
+			RIPEMD160_Update(&c, chal, strlen(chal));
+			RIPEMD160_Final(md, &c);
+
 			hash = malloc(sizeof(char) * ( /*{RIPEMD160} */ 11 + 20 * 2 + 1));
 			sprintf(hash, "{RIPEMD160}%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
 				"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
@@ -2588,18 +2590,20 @@ mapi_start_talking(Mapi mid)
 			 * sequence is used.
 			 */
 			unsigned char md[20];	/* should be SHA_DIGEST_LENGTH */
-			size_t n = strlen(mid->password) + strlen(chal);
-			char *key = alloca(n + 1);
-			key[0] = '\0';
+			char *p;
+			SHA_CTX c;
 
 			if (pversion == 9) {
-				strcpy(key, mid->password + 1);
-				n--;
+				p = mid->password + 1;
 			} else {
-				strcpy(key, mid->password);
+				p = mid->password;
 			}
-			strncat(key, chal, strlen(chal));
-			SHA1((unsigned char *) key, n, md);
+
+			SHA1_Init(&c);
+			SHA1_Update(&c, p, strlen(p));
+			SHA1_Update(&c, chal, strlen(chal));
+			SHA1_Final(md, &c);
+
 			hash = malloc(sizeof(char) * ( /*{SHA1} */ 6 + 20 * 2 + 1));
 			sprintf(hash, "{SHA1}%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
 				"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
@@ -2617,18 +2621,20 @@ mapi_start_talking(Mapi mid)
 			 * sequence is used.
 			 */
 			unsigned char md[16];	/* should be MD5_DIGEST_LENGTH */
-			size_t n = strlen(mid->password) + strlen(chal);
-			char *key = alloca(n + 1);
-			key[0] = '\0';
+			char *p;
+			MD5_CTX c;
 
 			if (pversion == 9) {
-				strcpy(key, mid->password + 1);
-				n--;
+				p = mid->password + 1;
 			} else {
-				strcpy(key, mid->password);
+				p = mid->password;
 			}
-			strncat(key, chal, strlen(chal));
-			MD5((unsigned char *) key, n, md);
+
+			MD5_Init(&c);
+			MD5_Update(&c, p, strlen(p));
+			MD5_Update(&c, chal, strlen(chal));
+			MD5_Final(md, &c);
+
 			hash = malloc(sizeof(char) * ( /*{MD5} */ 5 + 16 * 2 + 1));
 			sprintf(hash, "{MD5}%02x%02x%02x%02x%02x%02x%02x%02x"
 				"%02x%02x%02x%02x%02x%02x%02x%02x",
@@ -2875,12 +2881,11 @@ mapi_start_talking(Mapi mid)
 				}
 				return mapi_start_talking(mid);
 			} else {
-				q = alloca(sizeof(char) * (strlen(red) + 50));
-				snprintf(q, strlen(red) + 50,
-					 "error while parsing redirect: %s\n",
-					 red);
+				char re[BUFSIZ];
+				snprintf(re, sizeof(re),
+						"error while parsing redirect: %s\n", red);
 				mapi_close_handle(hdl);
-				mapi_setError(mid, q, "mapi_start_talking", MERROR);
+				mapi_setError(mid, re, "mapi_start_talking", MERROR);
 				return mid->error;
 			}
 		}

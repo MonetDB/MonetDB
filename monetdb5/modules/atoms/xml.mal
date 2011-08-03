@@ -1,0 +1,97 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://www.monetdb.org/Legal/MonetDBLicense
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2011 MonetDB B.V.
+# All Rights Reserved.
+
+atom xml :str;
+
+command fromstr():xml
+address XMLfromString
+comment "Convert a string to an xml.";
+
+command tostr():str
+address XMLtoString
+comment "Convert xml to string equivalent";
+
+command xml(src:str):xml
+address XMLstr2xml
+comment "Cast the string to an xml compliant string";
+
+command str(src:xml):str
+address XMLxml2str
+comment "Cast the string to an xml compliant string";
+
+command text(src:xml):str
+address XMLxmltext
+comment "Extract text from an xml atom";
+
+command comment(val:str):xml
+address XMLcomment
+comment "Construct an comment struction ";
+
+command parse(doccont:str,val:str,option:str):xml
+address XMLparse
+comment "Parse the XML document or element string values ";
+
+command pi(target:str,val:str):xml
+address XMLpi
+comment "Construct a processing instruction";
+
+command document(val:str):xml
+address XMLdocument
+comment "Check the value for compliance as XML document";
+
+command content(val:str):xml
+address XMLcontent
+comment "Check the value for compliance as content, i.e.  it may contain multiple roots and character data.";
+
+command root(val:xml, version:str, standalone:str):xml
+address XMLroot
+comment "Construct the root nodes";
+
+command attribute(name:str, val:str):xml
+address XMLattribute
+comment "Construct an attribute value pair";
+
+command element(name:str, ns:xml, attr:xml, s:xml) :xml
+address XMLelement
+comment "The basic building block for XML elements are namespaces, attributes and a sequence of xml elements. The name space and the attributes may be left unspecified(=nil:bat).";
+
+command element(name:str, s:xml) :xml
+address XMLelementSmall
+comment "The basic building block for XML elements are namespaces, attributes and a sequence of xml elements. The name space and the attributes may be left unspecified(=nil:bat).";
+
+command concat(val1:xml, val2:xml):xml
+address XMLconcat
+comment "Concatenate the xml values";
+
+pattern forest(val:xml...):xml
+address XMLforest
+comment "Construct an element list";
+
+command isdocument(val:str):bit
+address XMLisdocument
+comment "Validate the string as a document";
+
+command prelude() :void
+address XMLprelude;
+
+xml.prelude();
+
+module calc;
+command xml(src:str):xml address XMLstr2xml;
+command xml(src:xml):xml address XMLxml2xml;
+
+

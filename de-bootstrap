@@ -70,4 +70,4 @@ MonetDB'\''s Mercurial (HG) source clone.
 	exit 1
 fi
 
-RM -rf `hg purge --all -p -I{\*\*Makefile.\*,\*\*.pyc,aclocal.m4,acout.in,autom4te.cache,buildtools/conf/{config.{guess,sub},install-sh,ltmain.sh,l[ti]\*.m4,missing,ylwrap},configure{,.ac},{doc,install}.lst,monetdb_config.h.in}`
+RM -rf `hg --config extensions.purge= purge --all -p -I{\*\*Makefile.\*,\*\*.pyc,aclocal.m4,acout.in,autom4te.cache,buildtools/conf/{config.{guess,sub},install-sh,ltmain.sh,l[ti]\*.m4,missing,ylwrap},configure{,.ac},{doc,install}.lst,monetdb_config.h.in}`

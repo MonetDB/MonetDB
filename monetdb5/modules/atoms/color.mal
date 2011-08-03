@@ -1,0 +1,92 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://www.monetdb.org/Legal/MonetDBLicense
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2011 MonetDB B.V.
+# All Rights Reserved.
+
+module color;
+
+atom color:int;
+
+command tostr():str address color_tostr;
+command fromstr():color address color_fromstr;
+
+command str(s:color):str
+address CLRstr
+comment "Converts color to string ";
+
+command color(s:str):color
+address CLRcolor
+comment "Converts string to color";
+
+command rgb(r:int, g:int, b:int):color
+address CLRrgb
+comment	"Converts an RGB triplets to a color atom";
+
+command red  (c:color) :int
+address CLRred
+comment	"Extracts red component from a color atom";
+
+command green(c:color) :int
+address CLRgreen
+comment	"Extracts green component from a color atom";
+
+command blue (c:color) :int
+address CLRblue
+comment	"Extracts blue component from a color atom";
+
+command hue(c:color) :int
+address CLRhueInt
+comment	"Extracts hue component from a color atom";
+
+command saturation(c:color) :int
+address CLRsaturationInt
+comment	"Extracts saturation component from a color atom";
+
+command value(c:color) :int
+address CLRvalueInt
+comment	"Extracts value component from a color atom";
+
+command hsv(h:flt,s:flt, v:flt) :color
+address CLRhsv
+comment	"Converts an HSV triplets to a color atom";
+
+command hue(c:color) :flt
+address CLRhue
+comment	"Extracts hue component from a color atom";
+
+command saturation(c:color) :flt
+address CLRsaturation
+comment	"Extracts saturation component from a color atom";
+
+command value(c:color) :flt
+address CLRvalue
+comment	"Extracts value component from a color atom";
+
+command ycc(y:int,cr:int,cb:int) :color
+address CLRycc
+comment	"Converts an YCC triplets to a color atom";
+
+command luminance (c:color) :int
+address CLRluminance
+comment	"Extracts Y(luminance) component from a color atom";
+
+command cr(c:color) :int
+address CLRcr
+comment	"Extracts Cr(red color) component from a color atom";
+
+command cb(c:color) :int
+address CLRcb
+comment	"Extracts Cb(blue color) component from a color atom";
+

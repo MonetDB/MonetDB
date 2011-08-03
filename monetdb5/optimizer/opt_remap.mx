@@ -18,40 +18,42 @@ All Rights Reserved.
 @
 
 @f opt_remap
-@- Remapping functions.
-Sometimes functions used by front-end should be re-routed
-towards their proper module of interest.
-A good example are is the
-multiplex instruction, which can be implemented in several ways.
-The bottom line implementation is the iterator produced
-in @code{mal.multiplex}. Often, however, there are
-already highly tuned multiplex implementations. 
-They have to be located amongst the modules.
 
-The mapping policy adhired to in the libraries is to store the
-multiplex variants for module M in batM.
-
-An illustrative example is the following MAL snippet:
-@verbatim
-	V1 := bat.new(:oid,:int);
-	V2 := remap.multiplex("calc","+",V1,1);
-	optimizer.remap();
-@end verbatim
-The remap optimizer trims this program to the following short block:
-@verbatim
-	V1 := bat.new(:oid,:int);
-	V2 := batcalc.+(V1,1);
-@end verbatim
-@{
+@c
+/*
+ * @- Remapping functions.
+ * Sometimes functions used by front-end should be re-routed
+ * towards their proper module of interest.
+ * A good example are is the
+ * multiplex instruction, which can be implemented in several ways.
+ * The bottom line implementation is the iterator produced
+ * in @code{mal.multiplex}. Often, however, there are
+ * already highly tuned multiplex implementations.
+ * They have to be located amongst the modules.
+ *
+ * The mapping policy adhired to in the libraries is to store the
+ * multiplex variants for module M in batM.
+ *
+ * An illustrative example is the following MAL snippet:
+ * @verbatim
+ * 	V1 := bat.new(:oid,:int);
+ * 	V2 := remap.multiplex("calc","+",V1,1);
+ * 	optimizer.remap();
+ * @end verbatim
+ * The remap optimizer trims this program to the following short block:
+ * @verbatim
+ * 	V1 := bat.new(:oid,:int);
+ * 	V2 := batcalc.+(V1,1);
+ * @end verbatim
+ */
 @mal
 pattern optimizer.remap():str
 address OPTremap;
 pattern optimizer.remap(mod:str, fcn:str):str
 address OPTremap
 comment "Remapping function calls to a their multiplex variant";
-@-
-Use a dummy signature to catch the function calls of interest.
-@mal
+# @-
+# Use a dummy signature to catch the function calls of interest.
 module mal;
 pattern mal.multiplex(a:any...):any
 address OPTremapMultiplex;
@@ -73,12 +75,14 @@ opt_export str OPTremapMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Inst
 #define OPTDEBUGremap  if ( optDebug & ((lng)1 <<DEBUG_OPT_REMAP) )
 
 #endif
-@-
-The first attempt of the multiple optimizer is to locate
-a properly typed multi-plexed implementation.
-The policy is to search for bat<mod>.<fcn> before going
-into the iterator code generation.
 @c
+/*
+ * @-
+ * The first attempt of the multiple optimizer is to locate
+ * a properly typed multi-plexed implementation.
+ * The policy is to search for bat<mod>.<fcn> before going
+ * into the iterator code generation.
+ */
 #include "monetdb_config.h"
 #include "opt_remap.h"
 #include "opt_macro.h"
@@ -128,37 +132,38 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module s
 	return 1;
 }
 
-@-
-Multiplex inline functions should be done with care.
-The approach taken is to make a temporary copy of the function to be inlined. 
-To change all the statements to reflect the new situation
-and, if no error occurs, replaces the target instruction
-with this new block.
-
-By the time we get here, we know that function is
-side-effect free.
-
-The multiplex upgrade is targeted at all function
-arguments whose actual is a BAT and its formal
-is a scalar.
-This seems sufficient for the SQL generated PSM code,
-but does in general not hold.
-For example,
-
-function foo(b:int,c:bat[:oid,:int])
-	... d:= batcalc.+(b,c)
-and
-multiplex("user","foo",ba:bat[:oid,:int],ca:bat[:oid,:int])
-upgrades the first argument. The naive upgrade of
-the statement that would fail. The code below catches
-most of them by simple prepending "bat" to the MAL function
-name and leave it to the type resolver to generate the
-error.
-
-The process terminates as soon as we
-find an instruction that does not have a multiplex
-counterpart.
-@c
+/*
+ * @-
+ * Multiplex inline functions should be done with care.
+ * The approach taken is to make a temporary copy of the function to be inlined.
+ * To change all the statements to reflect the new situation
+ * and, if no error occurs, replaces the target instruction
+ * with this new block.
+ *
+ * By the time we get here, we know that function is
+ * side-effect free.
+ *
+ * The multiplex upgrade is targeted at all function
+ * arguments whose actual is a BAT and its formal
+ * is a scalar.
+ * This seems sufficient for the SQL generated PSM code,
+ * but does in general not hold.
+ * For example,
+ *
+ * function foo(b:int,c:bat[:oid,:int])
+ * 	... d:= batcalc.+(b,c)
+ * and
+ * multiplex("user","foo",ba:bat[:oid,:int],ca:bat[:oid,:int])
+ * upgrades the first argument. The naive upgrade of
+ * the statement that would fail. The code below catches
+ * most of them by simple prepending "bat" to the MAL function
+ * name and leave it to the type resolver to generate the
+ * error.
+ *
+ * The process terminates as soon as we
+ * find an instruction that does not have a multiplex
+ * counterpart.
+ */
 static int 
 OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 {
@@ -182,9 +187,10 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 		}
 		return 0;
 	}
-@-
-Determine the variables to be upgraded and adjust their type
-@c
+	/*
+	 * @-
+	 * Determine the variables to be upgraded and adjust their type
+	 */
 	mq= copyMalBlk(s->def);
 	sig= getInstrPtr(mq,0);
 	OPTDEBUGremap {
@@ -217,11 +223,12 @@ Determine the variables to be upgraded and adjust their type
 			refbat= getArg(sig,i-2);
 		}
 	}
-@-
-The next step is to check each instruction of the
-to-be-inlined function for arguments that require
-an upgrade and resolve it afterwards.
-@c
+	/*
+	 * @-
+	 * The next step is to check each instruction of the
+	 * to-be-inlined function for arguments that require
+	 * an upgrade and resolve it afterwards.
+	 */
 	for(i=1; i<mq->stop; i++) {
 		int fnd = 0;
 
@@ -324,12 +331,13 @@ terminateMX:
 		GDKfree(upgrade);
 		return 0;
 	}
-@-
-We have successfully constructed a variant
-of the to-be-inlined function. Put it in place
-of the original multiplex.
-But first, shift the arguments of the multiplex.
-@c
+	/*
+	 * @-
+	 * We have successfully constructed a variant
+	 * of the to-be-inlined function. Put it in place
+	 * of the original multiplex.
+	 * But first, shift the arguments of the multiplex.
+	 */
 	delArgument(p,2);
 	delArgument(p,1);
 	inlineMALblock(mb,pc,mq);
@@ -346,10 +354,11 @@ But first, shift the arguments of the multiplex.
 	GDKfree(upgrade);
 	return 1;
 }
-@-
-The comparison multiplex operations with a constant head may be supported
-by reverse of the operation.
-@c
+/*
+ * @-
+ * The comparison multiplex operations with a constant head may be supported
+ * by reverse of the operation.
+ */
 static struct{
 	char *src, *dst;
 	int len;
@@ -416,12 +425,13 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p = old[i];
 		if ( getModuleId(p) == malRef && 
 			getFunctionId(p) == multiplexRef) {
-@-
-The next step considered is to handle inlined functions.
-It means we have already skipped the most obvious ones,
-such as the calculator functions. It is particularly
-geared at handling the PSM code.
-@c
+			/*
+			 * @-
+			 * The next step considered is to handle inlined functions.
+			 * It means we have already skipped the most obvious ones,
+			 * such as the calculator functions. It is particularly
+			 * geared at handling the PSM code.
+			 */
 			if ( varGetProp(mb,getArg(p,0),inlineProp)!= NULL) {
 				OPTDEBUGremap{
 					mnstr_printf(cntxt->fdout,"#Multiplex inline\n");
@@ -533,4 +543,3 @@ OPTremapMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(remap,OPT_CHECK_ALL)@
-@}

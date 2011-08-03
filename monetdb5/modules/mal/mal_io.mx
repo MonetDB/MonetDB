@@ -18,23 +18,26 @@ All Rights Reserved.
 @
 
 @f mal_io
-@a N.J. Nes, M.L. Kersten
-@d 01/07/1996, 31/01/2002
 
-@+ Input/Output module
-The IO module provides simple @sc{ascii-io} rendering options.
-It is modeled after the tuple formats, but does not
-attempt to outline the results. Instead, it is geared at speed,
-which also means that some functionality regarding the built-in
-types is duplicated from the atoms definitions.
-
-A functional limited form of formatted printf is also provided.
-It accepts at most one variable.
-A more complete approach is the tablet module.
-
-The commands to load and save a BAT from/to an ASCII dump
-are efficient, but work only for binary tables. 
-
+@c
+/*
+ * @a N.J. Nes, M.L. Kersten
+ * @d 01/07/1996, 31/01/2002
+ *
+ * @+ Input/Output module
+ * The IO module provides simple @sc{ascii-io} rendering options.
+ * It is modeled after the tuple formats, but does not
+ * attempt to outline the results. Instead, it is geared at speed,
+ * which also means that some functionality regarding the built-in
+ * types is duplicated from the atoms definitions.
+ *
+ * A functional limited form of formatted printf is also provided.
+ * It accepts at most one variable.
+ * A more complete approach is the tablet module.
+ *
+ * The commands to load and save a BAT from/to an ASCII dump
+ * are efficient, but work only for binary tables.
+ */
 @mal
 module io;
 pattern stdin():bstream
@@ -123,14 +126,15 @@ comment "Import a BAT from an ASCII dump. The new tuples are *inserted* into the
  parameter BAT. You have to create it! Its signature must match the dump,
  else parsing errors will occur and FALSE is returned.";
 
-@-
-@{
-@* Implementation Code
-
-The polymorphic print commands are collected here.
-Watch out, the order of definitions is crucial, because the most
-specific should be introduced last.
 @h
+/*
+ * @-
+ * @* Implementation Code
+ *
+ * The polymorphic print commands are collected here.
+ * Watch out, the order of definitions is crucial, because the most
+ * specific should be introduced last.
+ */
 #ifndef _PRINT_H_
 #define _PRINT_H_
 
@@ -182,18 +186,20 @@ io_export str io_stdout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 io_export str io_stderr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif /* _PRINT_H_ */
 
-@+ Printing
-The print commands are implemented as single instruction rules,
-because they need access to the calling context.
-At a later stage we can look into the issues related to
-parsing the format string as part of the initialization phase.
-The old method in V4 essentially causes a lot of overhead
-because you have to prepare for the worst (e.g. mismatch format
-identifier and argument value)
-Beware, the types of the objects to be printed should be
-obtained from the stack, because the symbol table may actually
-allow for any type to be assigned.
 @c
+/*
+ * @+ Printing
+ * The print commands are implemented as single instruction rules,
+ * because they need access to the calling context.
+ * At a later stage we can look into the issues related to
+ * parsing the format string as part of the initialization phase.
+ * The old method in V4 essentially causes a lot of overhead
+ * because you have to prepare for the worst (e.g. mismatch format
+ * identifier and argument value)
+ * Beware, the types of the objects to be printed should be
+ * obtained from the stack, because the symbol table may actually
+ * allow for any type to be assigned.
+ */
 #include "monetdb_config.h"
 #include "mal_io.h"
 
@@ -316,15 +322,16 @@ IOprompt_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return IOprintBoth(cntxt, mb, stk, pci, 1, 0, 0, 1);
 }
 
-@-
-The @%IOprintf_@() gets a format str, and a sequence of (ptr,int) parameters
-containing values and their type numbers. The @%printf@() proved to be a
-great risk; people formatting badly their "%s" format strings were crashing
-the kernel. This function will prevent you from doing so.
-
-New implementation that repeatedly invokes sprintf => hacking the va_alist
-for using vfsprintf proved to be too compiler-dependent (OLD approach).
-
+/*
+ * @-
+ * The IOprintf_() gets a format str, and a sequence of (ptr,int) parameters
+ * containing values and their type numbers. The printf() proved to be a
+ * great risk; people formatting badly their "%s" format strings were crashing
+ * the kernel. This function will prevent you from doing so.
+ *
+ * New implementation that repeatedly invokes sprintf => hacking the va_alist
+ * for using vfsprintf proved to be too compiler-dependent (OLD approach).
+ */
 @= writemem
 	if (dst+@1 > buf+size) {
 		ptrdiff_t offset = dst - buf;
@@ -348,6 +355,7 @@ for using vfsprintf proved to be too compiler-dependent (OLD approach).
 		add = (str) alloca ((int)adds);
 		n = snprintf( add, adds, meta, @1 );
 	}
+@
 @c
 static char toofew_error[80] = OPERATION_FAILED " At least %d parameter(s) expected.\n";
 static char format_error[80] = OPERATION_FAILED " Error in format before param %d.\n";
@@ -680,10 +688,11 @@ IOprintfStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	return msg;
 }
 
-@-
-The table printing routine implementations rely on the multiprintf.
-They merely differ in destination and order prerequisite
-@c
+/*
+ * @-
+ * The table printing routine implementations rely on the multiprintf.
+ * They merely differ in destination and order prerequisite
+ */
 str
 IOtableAll(stream *f, Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int order, int printhead, int printorder)
 {
@@ -763,20 +772,23 @@ IOtotable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return IOtableAll(cntxt->fdout, cntxt, mb, stk, pci, 2, order, FALSE, TRUE);
 }
 
-@+ Bulk export/loading
-To simplify conversion between versions and to interface with other
-applications, we use a simple import/export operation.
-
-The conversion routine assumes space in the buffer for storing the result.
-@{
+/*
+ * @+ Bulk export/loading
+ * To simplify conversion between versions and to interface with other
+ * applications, we use a simple import/export operation.
+ *
+ * The conversion routine assumes space in the buffer for storing the result.
+ */
 @include prelude.mx
-@-
-A BAT can be saved in Monet format using the export command.
-It is of particular use in preparing an ASCII version for migration.
-The exported file is saved in the context of the directory
-where the server was started unless an absolute file name was
-presented.
 @c
+/*
+ * @-
+ * A BAT can be saved in Monet format using the export command.
+ * It is of particular use in preparing an ASCII version for migration.
+ * The exported file is saved in the context of the directory
+ * where the server was started unless an absolute file name was
+ * presented.
+ */
 str
 IOdatafile(str *ret, str *fnme){
 	stream *s = open_rstream(*fnme);
@@ -822,10 +834,11 @@ IOexport(bit *ret, int *bid, str *fnme)
 	return MAL_SUCCEED;
 }
 
-@-
-The import command reads a single BAT from an ASCII file. It assumes
-a layout compatible with that produced by print or export.
-@c
+/*
+ * @-
+ * The import command reads a single BAT from an ASCII file. It assumes
+ * a layout compatible with that produced by print or export.
+ */
 #define COMMA ','
 str
 IOimport(int *ret, int *bid, str *fnme)
@@ -847,9 +860,10 @@ IOimport(int *ret, int *bid, str *fnme)
 
 	hconvert = BATatoms[BAThtype(b)].atomFromStr;
 	tconvert = BATatoms[BATttype(b)].atomFromStr;
-@-
-Open the file. Memory map it to minimize buffering problems.
-@c
+	/*
+	 * @-
+	 * Open the file. Memory map it to minimize buffering problems.
+	 */
 	if (fp == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "io.import", RUNTIME_FILE_NOT_FOUND ":%s", *fnme);
@@ -894,9 +908,10 @@ Open the file. Memory map it to minimize buffering problems.
 		}
 
 	}
-@-
-Parse a line. Copy it into a buffer. Concat broken lines with a slash.
-@c
+	/*
+	 * @-
+	 * Parse a line. Copy it into a buffer. Concat broken lines with a slash.
+	 */
 	while (cur < end) {
 		str dst = buf, src = cur, p = strchr(cur, '\n');
 		size_t l = p - cur;
@@ -915,7 +930,9 @@ Parse a line. Copy it into a buffer. Concat broken lines with a slash.
 				l = p - src;
 			}
 		@:memcpy@
-@-
+		/*
+		 * @-
+		 */
 @= memcpy
 		if (buf+bufsize < dst+l) {
 			size_t len = dst - buf;
@@ -924,17 +941,21 @@ Parse a line. Copy it into a buffer. Concat broken lines with a slash.
 			dst = buf + len;
 		}
 		memcpy(dst, src, l-1);
+@
 @c
 		dst[l] = 0;
 		cur = p + 1;
-@-
-Parse the line, and insert a BUN.
-@c
+		/*
+		 * @-
+		 * Parse the line, and insert a BUN.
+		 */
 		for (p = buf; *p && GDKisspace(*p); p++)
 			;
 		if (*p == '#')
 			continue;
-@-
+			/*
+			 * @-
+			 */
 @= parsevalue
 		for (;*p && *p != @2; p++);
 		if (*p) for (p++; *p && GDKisspace(*p); p++);
@@ -945,14 +966,16 @@ Parse the line, and insert a BUN.
 			throw(MAL,  "io.import", "%s", msg);
 		}
 		p += @1(p, @3, @4);
+@
 @c
 		@:parsevalue(hconvert,'[',&lh,(ptr *) &h)@
 		@:parsevalue(tconvert,COMMA,&lt,(ptr *) &t)@
 		BUNins(b, h, t, FALSE);
 
-@-
-Unmap already parsed memory, to keep the memory usage low.
-@c
+/*
+ * @-
+ * Unmap already parsed memory, to keep the memory usage low.
+ */
 #ifndef WIN32
 #define MAXBUF 40*MT_pagesize()
 		if ((unsigned) (cur - base) > MAXBUF) {
@@ -961,9 +984,10 @@ Unmap already parsed memory, to keep the memory usage low.
 		}
 #endif
 	}
-@-
-Cleanup and exit. Return the filled BAT.
-@c
+	/*
+	 * @-
+	 * Cleanup and exit. Return the filled BAT.
+	 */
 	if (h)
 		GDKfree(h);
 	if (t)
@@ -974,4 +998,3 @@ Cleanup and exit. Return the filled BAT.
 	return MAL_SUCCEED;
 }
 
-@}

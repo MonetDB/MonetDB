@@ -18,9 +18,12 @@ All Rights Reserved.
 @
 
 @f sql_result
-@a N.J. Nes
-@*
 
+@c
+/*
+ * @a N.J. Nes
+ * @*
+ */
 @h
 #ifndef sql_result_H
 #define sql_result_H
@@ -105,6 +108,7 @@ extern int convert2str( mvc *m, int eclass, int d, int sc, int has_tz, ptr p, in
 	}
 	strcpy(*Buf, buf+cur+1);
 	return l-1;
+@
 @c
 
 static int
@@ -274,6 +278,7 @@ bat_max_@1length(BAT *b)
 		ret++;
 	return ret;
 }
+@
 @c
 @:bat_max_xlength(bte)@
 @:bat_max_xlength(sht)@
@@ -330,6 +335,7 @@ bat_max_@1length(BAT *b)
 	else
 		*r = res;
 	return (ptr*)r;
+@
 @c
 
 static ptr *
@@ -569,11 +575,12 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 	return bats;
 }
 
-@-
-mvc_export_result dumps the sql header information and the 
-first part (reply_size) of the result set. It should be produced in Monet format to 
-enable mapi to work with it.
-@c
+/*
+ * @-
+ * mvc_export_result dumps the sql header information and the
+ * first part (reply_size) of the result set. It should be produced in Monet format to
+ * enable mapi to work with it.
+ */
 
 static int
 mvc_export_warning(stream *s, str w) {
@@ -639,8 +646,10 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 }
 
 
-@-
-improved formatting of positive integers
+/*
+ * @-
+ * improved formatting of positive integers
+ */
 @= mvc_send
 static int
 mvc_send_@1(stream *s, @1 cnt){
@@ -657,6 +666,7 @@ mvc_send_@1(stream *s, @1 cnt){
 	else b++;
 	return mnstr_write(s, b, 50- (b-buf),1)==1;
 }
+@
 @c
 @:mvc_send(bte)@
 @:mvc_send(sht)@

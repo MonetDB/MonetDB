@@ -18,10 +18,12 @@ All Rights Reserved.
 @
 
 @f opt_selcrack
-@a S.Idreos
-This cracker optimizer changes a query plan in order to use the selection cracking operators
 
-@{
+@c
+/*
+ * @a S.Idreos
+ * This cracker optimizer changes a query plan in order to use the selection cracking operators
+ */
 @mal
 pattern optimizer.selcrack():str
 address OPTselcrack;
@@ -40,7 +42,7 @@ comment "Selection cracking";
 #define OPTDEBUGselcrack  if ( optDebug & ((lng)1 <<DEBUG_OPT_SELCRACK) )
 
 #endif
-@c  
+@c
 #include "monetdb_config.h"
 #include "opt_selcrack.h"
 #include "mal_interpreter.h"	/* for showErrors() */
@@ -208,4 +210,3 @@ OPTselcrackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(selcrack,OPT_CHECK_ALL)@
-@}

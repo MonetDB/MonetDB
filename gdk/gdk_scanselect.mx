@@ -18,98 +18,102 @@ All Rights Reserved.
 @
 
 @f gdk_scanselect
-@a S. Manegold, N. J. Nes, M. L. Kersten, P. Boncz
-@* Fast sequential scan
-@-
-This module provides BAT_scanselect, used by gdk_batop.mx's BAT_select to do
-selections that cannot be done any better than doing a sequential scan. The
-function needed to be "sourced-out" from gdk_batop.mx, as the fully expanded
-code grows too large to be (conveniently) compiled in a single file (see
-below).  This file is accompanied by gdk_scanselect_defs.mx where the
-worker functions are defined that are called from the dispatcher which
-is definend in this file.
 
-@+ Background and Idea
-In tests with Q1 of TPC-H showed, a range select that produces a big result
-(~98% of its input) was much slower than expected. A profiler told us,
-that the (CPU-)time was lost in BUNfastins, or more precisely in ATOMput:
-Thought being expanded on the selection attribute's type to use
-type-specific predicates/compare functions, storing the result BUNs in the
-result BAT was done in a generic way. Hence, type-checking, etc. was done
-for each result BUN twice (head & tail). This type check (performed by
-ATOMput) turned out to be the major CPU bottleneck. On medusa (R12k/300),
-the total cost of a uselect on [void,date] was made up by ~87% CPU
-time and ~13% memory access time.
-
-The idea to solve the problem was to expand the function's code also for the
-type being store in the result, both head & tail. Thinking about it, we
-thought why not completely eliminate all branches (except the actual
-predicate, of course) from the inner loop (BATloop) --- we do have Mx,
-so let's (ab?)use it!
-This means
-
-@itemize
-@item
-Expanding on whether we created the result BAT (at least) as big as
-	the input BAT, or not (see BAT_select in gdk_batop.mx). In the first
-	case ("nocheck"), we do not have to check for a "BAT overflow" in
-	the inner loop.  
-@item
-Expanding on the output-tail-type which is either identical to
-	input-tail-type or TYPE_void (uselect).
-@item
-Expand on output-head-type; usually inherited from input-head-type.
-@item
-Expanding on input-head-type for data read.  Taking special care of
-	void/oid.
-@item
-Expanding on the type of predicate: either equi, or range.  The
-	latter with both, one, or none of upper bound and lower bound.  In
-	case of a range select we skip all nil.
-@item
-Expanding on input-tail-type for data read and comparison.  Most is
-	straight forward.  Taking special care of equi selects on str when
-	there are no doubles in the heap.
-@end itemize
-For more details, see the comment next to the code below.
-@-
-Well, to get this feasible (i.e., both the Mx code still readable tomorrow
-and the generated C code compilable), we came up with some kind of "design
-idea":
-
-The toplevel BAT_scanselect get expanded by a set of cascading levels of Mx
-macros that dispatch to the different alternatives. To give the compiler a
-chance to "concentrate on the important parts", only branches are created,
-here. The actual working block (i.e., the inner BATloop) are enclosed in
-a separate function each. Each leaf of the decision tree calls the
-respective function, and each function is called by exactly on leaf.
-
-A second set of cascading levels of Mx macros take care of generating the
-working functions. For convenience, the matching macros of both sets are
-placed next to each other.
-
-Altogether, we currently generate 1230(!) different scanselect loops. Some
-compilers (e.g., gcc 2.95.3 on IRIX) try to inline all these functions into
-the decision-/dispatching- tree, and fail with "Branch at has out of range
-target". We "help" these compiler a bit by explicitly switching off
-inlining for this file (it doesn't make sense here, anyway).
-
-And finally, what do we achieve by all this effort?
-Well, the on medusa, CPU costs are reduced by (up to) factor 8(!), resulting
-in an overall improvement of about factor 4.5.
-@{
-@+ Implementation
+@c
+/*
+ * @a S. Manegold, N. J. Nes, M. L. Kersten, P. Boncz
+ * @* Fast sequential scan
+ * @-
+ * This module provides BAT_scanselect, used by gdk_batop.mx's BAT_select to do
+ * selections that cannot be done any better than doing a sequential scan. The
+ * function needed to be "sourced-out" from gdk_batop.mx, as the fully expanded
+ * code grows too large to be (conveniently) compiled in a single file (see
+ * below).  This file is accompanied by gdk_scanselect_defs.mx where the
+ * worker functions are defined that are called from the dispatcher which
+ * is definend in this file.
+ *
+ * @+ Background and Idea
+ * In tests with Q1 of TPC-H showed, a range select that produces a big result
+ * (~98% of its input) was much slower than expected. A profiler told us,
+ * that the (CPU-)time was lost in BUNfastins, or more precisely in ATOMput:
+ * Thought being expanded on the selection attribute's type to use
+ * type-specific predicates/compare functions, storing the result BUNs in the
+ * result BAT was done in a generic way. Hence, type-checking, etc. was done
+ * for each result BUN twice (head & tail). This type check (performed by
+ * ATOMput) turned out to be the major CPU bottleneck. On medusa (R12k/300),
+ * the total cost of a uselect on [void,date] was made up by ~87% CPU
+ * time and ~13% memory access time.
+ *
+ * The idea to solve the problem was to expand the function's code also for the
+ * type being store in the result, both head & tail. Thinking about it, we
+ * thought why not completely eliminate all branches (except the actual
+ * predicate, of course) from the inner loop (BATloop) --- we do have Mx,
+ * so let's (ab?)use it!
+ * This means
+ *
+ * @itemize
+ * @item
+ * Expanding on whether we created the result BAT (at least) as big as
+ * 	the input BAT, or not (see BAT_select in gdk_batop.mx). In the first
+ * 	case ("nocheck"), we do not have to check for a "BAT overflow" in
+ * 	the inner loop.
+ * @item
+ * Expanding on the output-tail-type which is either identical to
+ * 	input-tail-type or TYPE_void (uselect).
+ * @item
+ * Expand on output-head-type; usually inherited from input-head-type.
+ * @item
+ * Expanding on input-head-type for data read.  Taking special care of
+ * 	void/oid.
+ * @item
+ * Expanding on the type of predicate: either equi, or range.  The
+ * 	latter with both, one, or none of upper bound and lower bound.  In
+ * 	case of a range select we skip all nil.
+ * @item
+ * Expanding on input-tail-type for data read and comparison.  Most is
+ * 	straight forward.  Taking special care of equi selects on str when
+ * 	there are no doubles in the heap.
+ * @end itemize
+ * For more details, see the comment next to the code below.
+ * @-
+ * Well, to get this feasible (i.e., both the Mx code still readable tomorrow
+ * and the generated C code compilable), we came up with some kind of "design
+ * idea":
+ *
+ * The toplevel BAT_scanselect get expanded by a set of cascading levels of Mx
+ * macros that dispatch to the different alternatives. To give the compiler a
+ * chance to "concentrate on the important parts", only branches are created,
+ * here. The actual working block (i.e., the inner BATloop) are enclosed in
+ * a separate function each. Each leaf of the decision tree calls the
+ * respective function, and each function is called by exactly on leaf.
+ *
+ * A second set of cascading levels of Mx macros take care of generating the
+ * working functions. For convenience, the matching macros of both sets are
+ * placed next to each other.
+ *
+ * Altogether, we currently generate 1230(!) different scanselect loops. Some
+ * compilers (e.g., gcc 2.95.3 on IRIX) try to inline all these functions into
+ * the decision-/dispatching- tree, and fail with "Branch at has out of range
+ * target". We "help" these compiler a bit by explicitly switching off
+ * inlining for this file (it doesn't make sense here, anyway).
+ *
+ * And finally, what do we achieve by all this effort?
+ * Well, the on medusa, CPU costs are reduced by (up to) factor 8(!), resulting
+ * in an overall improvement of about factor 4.5.
+ * @+ Implementation
+ */
 @h
 #ifndef _GDK_SCANSELECT_H
 #define _GDK_SCANSELECT_H
 
-@- "Tools"
-First, we need some tools. These are the type-expanded replacements
-for some generic macros from gdk.mx, gdk_bat.mx, and gdk_atom.mx.
-Eventually, they should be moved there to be used in other places as well.
-
-VOIDput & SIMPLEput should go to gdk_atoms where ATOMput is defined.
-@h
+/*
+ * @- "Tools"
+ * First, we need some tools. These are the type-expanded replacements
+ * for some generic macros from gdk.mx, gdk_bat.mx, and gdk_atom.mx.
+ * Eventually, they should be moved there to be used in other places as well.
+ *
+ * VOIDput & SIMPLEput should go to gdk_atoms where ATOMput is defined.
+ */
 #ifdef NOEXPAND_CHR
 #ifndef NOEXPAND_BIT
 #define NOEXPAND_BIT 1
@@ -211,14 +215,6 @@ VOIDput & SIMPLEput should go to gdk_atoms where ATOMput is defined.
 #define VOID_PUT(b,tpe,p,src,SRC)
 #define VID_PUT(b,tpe,p,src,SRC) ((oid*)((b)->SRC->heap.base))[p] = (src)
 
-@-
-Type-specific
-HT_bunfastins_nocheck_noinc, HT_bunfastins_nocheck & HT_bunfastins
-should go to gdk.mx, and
-HT_BUNfastins
-should go to gdk_bat.mx
-replacing their generic versions there.
-@h
 @= T_BUNfastins
 #define @1@4_bunfastins_nocheck_noinc(b, p, h, t)		\
 	do {							\
@@ -242,8 +238,9 @@ replacing their generic versions there.
 		@1@4_bunfastins_nocheck(b, _p, h, t, Hsize(b), Tsize(b)); \
 	} while (0)
 
-@-
-Expand on tail type
+@
+ * @-
+ * Expand on tail type
 @= H_BUNfastins
 	@:T_BUNfastins(@1,@2,@3,void,VOID,void)@
 	@:T_BUNfastins(@1,@2,@3,chr,SIMPLE,chr)@
@@ -257,9 +254,21 @@ Expand on tail type
 	@:T_BUNfastins(@1,@2,@3,dbl,SIMPLE,dbl)@
 	@:T_BUNfastins(@1,@2,@3,fix,FIXEDATOM,(b)->ttype)@
 	@:T_BUNfastins(@1,@2,@3,var,VARATOM,(b)->ttype)@
-@-
-Expand on head type
+@
 @h
+/*
+ * @-
+ * Expand on head type
+ */
+/*
+ * @-
+ * Type-specific
+ * HT_bunfastins_nocheck_noinc, HT_bunfastins_nocheck & HT_bunfastins
+ * should go to gdk.mx, and
+ * HT_BUNfastins
+ * should go to gdk_bat.mx
+ * replacing their generic versions there.
+ */
 @:H_BUNfastins(void,VOID,void)@
 @:H_BUNfastins(chr,SIMPLE,chr)@
 @:H_BUNfastins(bte,SIMPLE,bte)@
@@ -274,10 +283,11 @@ Expand on head type
 @:H_BUNfastins(fix,FIXEDATOM,(b)->htype)@
 @:H_BUNfastins(var,VARATOM,(b)->htype)@
 
-@-
-For backward compatibility:
-(also to be moved to gdk.mx and gdk_bat.mx, respectively)
-@h
+/*
+ * @-
+ * For backward compatibility:
+ * (also to be moved to gdk.mx and gdk_bat.mx, respectively)
+ */
 
 BAT *BAT_scanselect(BAT *b, BAT *bn, ptr tl, ptr th, bit li, bit hi, int equi, int nequi, int lval, int hval, int nocheck);
 
@@ -303,27 +313,28 @@ BAT *BAT_scanselect(BAT *b, BAT *bn, ptr tl, ptr th, bit li, bit hi, int equi, i
 #include "gdk_scanselect_defs_fix.h"
 #include "gdk_scanselect_defs_var.h"
 
-@-
-With all the expansions enabled, (our) GNU compiler (gcc 3.2.1)
-on medusa (IRIX64) fails to produce (correctly) working 64-bit code.
-Apparently, the jumps from the return statements in the leaves of the
-decision tree to the end of the dispatcher function (BAT_scanselect())
-get too long --- at least the Mserver segfaults on these returns.
-An attempt to use labels and goto's to provide "stepping stones" did not
-help.
-Hence, we skip some type-expansions in this very case.
-@c
+/*
+ * @-
+ * With all the expansions enabled, (our) GNU compiler (gcc 3.2.1)
+ * on medusa (IRIX64) fails to produce (correctly) working 64-bit code.
+ * Apparently, the jumps from the return statements in the leaves of the
+ * decision tree to the end of the dispatcher function (BAT_scanselect())
+ * get too long --- at least the Mserver segfaults on these returns.
+ * An attempt to use labels and goto's to provide "stepping stones" did not
+ * help.
+ * Hence, we skip some type-expansions in this very case.
+ */
 
-@- The actual BAT_scanselect
-
-@-
-The templates for the inner loops that do the actual work.
-
-Expanding on whether we created the result BAT (at least) as big as the
-input BAT, or not (see BAT_select in gdk_batop.mx). In the first case
-("nocheck"), we do not have to check for a "BAT overflow" in the inner loop.
-
-@c
+/*
+ * @- The actual BAT_scanselect
+ *
+ * @-
+ * The templates for the inner loops that do the actual work.
+ *
+ * Expanding on whether we created the result BAT (at least) as big as the
+ * input BAT, or not (see BAT_select in gdk_batop.mx). In the first case
+ * ("nocheck"), we do not have to check for a "BAT overflow" in the inner loop.
+ */
 /*	@1: input-tail-type for working function name,
 	    prefixed with predicate type (eq,lh,ln,nl,nn)
 	@2: output-tail-type for bunfastins macro name
@@ -348,12 +359,14 @@ input BAT, or not (see BAT_select in gdk_batop.mx). In the first case
 	} else {
 		return seqscan_@1_@2_@3_@6_@7(b, bn, tl, th, str_idx);
 	}
-@-
-
-Output-tail-type is either identical to input-tail-type or TYPE_void
-(uselect).
-
+@
 @c
+/*
+ * @-
+ *
+ * Output-tail-type is either identical to input-tail-type or TYPE_void
+ * (uselect).
+ */
 /*	@1: input-tail-type for working function name,
 	    prefixed with predicate type (eq,lh,ln,nl,nn)
 	@2: output-tail-type for bunfastins macro name
@@ -377,11 +390,13 @@ Output-tail-type is either identical to input-tail-type or TYPE_void
 	} else {
 		@:seqscan(@1,@2,@3,@4,@5,@6,@7,@8,@9)@
 	}
-@-
-
-Expand on output-head-type; usually inherited from input-head-type.
-
+@
 @c
+/*
+ * @-
+ *
+ * Expand on output-head-type; usually inherited from input-head-type.
+ */
 /*	@1: input-tail-type for working function name,
 	    prefixed with predicate type (eq,lh,ln,nl,nn)
 	@2: output-tail-type for bunfastins macro name
@@ -433,12 +448,14 @@ Expand on output-head-type; usually inherited from input-head-type.
 	} else {
 		@:seqscanTTput(@1,@2,@3,@4,@5,fix,fix,BUNhloc(bi,p),)@
 	}
-@-
-
-Expanding on input-head-type for data read.
-Taking special care of void/oid.
-
+@
 @c
+/*
+ * @-
+ *
+ * Expanding on input-head-type for data read.
+ * Taking special care of void/oid.
+ */
 /*	@1: input-tail-type for working function name,
 	    prefixed with predicate type (eq,lh,ln,nl,nn)
 	@2: output-tail-type for bunfastins macro name
@@ -465,13 +482,15 @@ Taking special care of void/oid.
 		/* output-head is identical to input-head. */
 		@:seqscanHTput(@1,@2,@3,@4,@5)@
 	}
-@-
-
-Expanding on the type of predicate: either equi, or range.
-The latter with both, one, or none of upper bound and lower bound.
-In case of a range select we skip all nil.
-
+@
 @c
+/*
+ * @-
+ *
+ * Expanding on the type of predicate: either equi, or range.
+ * The latter with both, one, or none of upper bound and lower bound.
+ * In case of a range select we skip all nil.
+ */
 /*	@1: input-tail-type for working function name
 	@2: output-tail-type for bunfastins macro name
 	@3: "tloc" / "tvar" specifying how to read the tail-input
@@ -529,14 +548,14 @@ In case of a range select we skip all nil.
 	} else {
 		@:seqscanHTget(nn_@1,@2,@3,if (!@4_EQ(nil,v,@5)                      ),v)@
 	}
-@-
-
-Expanding on input-tail-type for data read and comparison.
-Most is straight forward.
-Taking special care of equi selects on str when there are no doubles in the
-heap.
-Adding test for v != nil for types where nil != MIN.
-
+@
+ * @-
+ *
+ * Expanding on input-tail-type for data read and comparison.
+ * Most is straight forward.
+ * Taking special care of equi selects on str when there are no doubles in the
+ * heap.
+ * Adding test for v != nil for types where nil != MIN.
 @= seqscanTTget
 #ifndef SKIP_TYPE_EXPANSIONS
 #ifndef NOEXPAND_CHR
@@ -593,11 +612,13 @@ Adding test for v != nil for types where nil != MIN.
 	} else {
 		@:seqscanIF(fix,fix,tloc,atom,t,&&!atom_EQ(nil,v,t))@
 	}
-@-
-
-The dispatcher, called from BAT_select (gdk_batop.mx).
-
+@
 @c
+/*
+ * @-
+ *
+ * The dispatcher, called from BAT_select (gdk_batop.mx).
+ */
 BAT *
 BAT_scanselect(BAT *b, BAT *bn, ptr tl, ptr th, bit li, bit hi, int equi, int nequi, int lval, int hval, int nocheck)
 {
@@ -616,5 +637,3 @@ BAT_scanselect(BAT *b, BAT *bn, ptr tl, ptr th, bit li, bit hi, int equi, int ne
 	 * the exit from this dispatcher function. */
 }
 
-@}
-@-

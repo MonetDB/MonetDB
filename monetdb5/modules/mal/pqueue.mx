@@ -18,22 +18,25 @@ All Rights Reserved.
 @
 
 @f pqueue
-@a Nikos Mamoulis, Niels Nes
-@v 2.0
-@+ Priority queues
 
-This module includes functions for accessing and updating a pqueue.
-A pqueue is an (oid,any) bat. The tail is used as a comparison key.
-The first element of the pqueue is the smallest one in a min-pqueue
-or the largest one in a max-pqueue. 
-Each element is larger than (smaller than) or equal to 
-its parent which is defined by (position/2) if position is odd or 
-(position-1)/2 if position is even (positions are from 0 to n-1).
-The head of the bat is used to keep track of the object-ids which are
-organized in the heap with respect to their values (tail column).
-@{
-
-@+ Module Definition 
+@c
+/*
+ * @a Nikos Mamoulis, Niels Nes
+ * @v 2.0
+ * @+ Priority queues
+ *
+ * This module includes functions for accessing and updating a pqueue.
+ * A pqueue is an (oid,any) bat. The tail is used as a comparison key.
+ * The first element of the pqueue is the smallest one in a min-pqueue
+ * or the largest one in a max-pqueue.
+ * Each element is larger than (smaller than) or equal to
+ * its parent which is defined by (position/2) if position is odd or
+ * (position-1)/2 if position is even (positions are from 0 to n-1).
+ * The head of the bat is used to keep track of the object-ids which are
+ * organized in the heap with respect to their values (tail column).
+ *
+ * @+ Module Definition
+ */
 @mal
 module pqueue;
 
@@ -103,12 +106,14 @@ comment "Return the unique topn elements of the bat t using a @1-pqueue";
 @= mel_pqueue_any
   @:mel_minmax_any(min)@
   @:mel_minmax_any(max)@
+@
 @mal
 @:mel_pqueue_any()@
 
 @= mel_pqueue
   @:mel_minmax(@1,min)@
   @:mel_minmax(@1,max)@
+@
 @mal
 
 @:mel_pqueue(chr)@
@@ -122,8 +127,10 @@ comment "Return the unique topn elements of the bat t using a @1-pqueue";
 @:mel_pqueue(flt)@
 @:mel_pqueue(dbl)@
 
-@+ Implementation
 @h
+/*
+ * @+ Implementation
+ */
 #ifndef _PQUEUE_
 #define _PQUEUE_
 
@@ -491,10 +498,12 @@ static int pqueue_utopn_@1@2(BAT **H, BAT *t, wrd *N)
   *H = BATmirror(b);
   return GDK_SUCCEED;
 }
+@
 @c
 @= pqueueimpl
   @:pqueueimpl_minmax(@1,min,@1,<)@
   @:pqueueimpl_minmax(@1,max,@1,>)@
+@
 @c
 @:pqueueimpl(chr)@
 @:pqueueimpl(bte)@
@@ -822,13 +831,15 @@ static int pqueue_utopn_any@1(BAT **H, BAT *t, wrd *N)
   return GDK_SUCCEED;
 }
 
+@
 @c
 @:pqueueimpl_any(min,<)@
 @:pqueueimpl_any(max,>)@
 
-@-
-The M5 wrapper code
-@c
+/*
+ * @-
+ * The M5 wrapper code
+ */
 str
 PQinit(int *ret, int *bid, wrd *maxsize){
 	BAT *b,*bn;
@@ -840,7 +851,9 @@ PQinit(int *ret, int *bid, wrd *maxsize){
 	BBPkeepref(bn->batCacheid);
 	return MAL_SUCCEED;
 }
-@-
+/*
+ * @-
+ */
 @= PQimpl1
 pqueue_export str PQenqueue_@1@2(int *ret, int *bid, oid *idx, @1 *el);
 str
@@ -1012,6 +1025,7 @@ PQutopn2_@1@2(int *ret, int *aid, int *bid, wrd *N)
 @= PQminmax
  	@:PQminmax1(@1)@
  	@:PQminmax2(@1)@
+@
 @c
 	@:PQminmax(bte)@
 	@:PQminmax(chr)@
@@ -1079,7 +1093,7 @@ str  PQtopreplace_any@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	pqueue_topreplace_any@1(h, idx, el, tpe);
 	return MAL_SUCCEED;
 }
+@
 @c
 	@:PQany(min)@
 	@:PQany(max)@
-@}

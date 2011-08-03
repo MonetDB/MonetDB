@@ -18,8 +18,11 @@ All Rights Reserved.
 @
 
 @f opt_datacyclotron
-@- The data cyclotron 
 
+@c
+/*
+ * @- The data cyclotron
+ */
 @mal
 module datacyclotron;
 
@@ -47,10 +50,12 @@ address DCYunpin
 comment "UnPin a request for a query";
 
 
-@-
-
-The number of overloaded instructions is kept to a minimum.
 @h
+/*
+ * @-
+ *
+ * The number of overloaded instructions is kept to a minimum.
+ */
 #ifndef _OPT_DATACYCLOTRON_
 #define _OPT_DATACYCLOTRON_
 
@@ -90,8 +95,10 @@ opt_export str printRegists(void);
 
 #define OPTDEBUGdatacyclotron  if ( optDebug & (1 <<DEBUG_OPT_DATACYCLOTRON) )
 
-@-
 @c
+/*
+ * @-
+ */
 #include "monetdb_config.h"
 #include "opt_datacyclotron.h"
 #include "mal_instruction.h"
@@ -495,8 +502,10 @@ out:
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(datacyclotron,OPT_CHECK_ALL)@
-@- The DataCyclotron Wrapper
 @h
+/*
+ * @- The DataCyclotron Wrapper
+ */
 opt_export str DCYbind(int *ret, str *sch, str *tab, str *col, int *kind, int *part, int *fbun, int *lbun);
 @c
 str

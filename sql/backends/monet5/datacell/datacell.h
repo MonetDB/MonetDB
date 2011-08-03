@@ -20,7 +20,6 @@
 #ifndef _DATACELLS_
 #define _DATACELLS_
 
-#include "monetdb_config.h"
 #include "mal.h"
 #include "mal_interpreter.h"
 #include "sql.h"

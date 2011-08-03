@@ -17,32 +17,34 @@ Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
-@a M. L. Kersten
-@v 1.1
-
-@-
-@{
-@+ The Parser Implementation
-The parser (and its target language) are designed for speed of analysis.
-For, parsing is a dominant cost-factor in applications interfering with
-MonetDB. For the language design it meant that look-ahead and ambiguity
-is avoided where-ever possible without compromising readability and
-to ease debugging.
-
-The syntax layout of a MAL program consists of a module name,
-a list of include commands, a list of function/ pattern/ command/ factory
-definitions and concludes with the statements to be executed as
-the main body of the program.  All components are optional.
-
-The program may be decorated with comments, which starts with a # and
-runs till the end of the current line. Comments are retained
-in the code block for debugging, but can be removed with an optimizer to reduce space
-and interpretation overhead.
-
-@+ The lexical analyzer
-The implementation of the lexical analyzer is straightforward:
-the input is taken from a client input buffer. It is assumed that
-this buffer contains the complete MAL structure to be parsed.
+@c
+/*
+ * @a M. L. Kersten
+ * @v 1.1
+ *
+ * @-
+ * @+ The Parser Implementation
+ * The parser (and its target language) are designed for speed of analysis.
+ * For, parsing is a dominant cost-factor in applications interfering with
+ * MonetDB. For the language design it meant that look-ahead and ambiguity
+ * is avoided where-ever possible without compromising readability and
+ * to ease debugging.
+ *
+ * The syntax layout of a MAL program consists of a module name,
+ * a list of include commands, a list of function/ pattern/ command/ factory
+ * definitions and concludes with the statements to be executed as
+ * the main body of the program.  All components are optional.
+ *
+ * The program may be decorated with comments, which starts with a # and
+ * runs till the end of the current line. Comments are retained
+ * in the code block for debugging, but can be removed with an optimizer to reduce space
+ * and interpretation overhead.
+ *
+ * @+ The lexical analyzer
+ * The implementation of the lexical analyzer is straightforward:
+ * the input is taken from a client input buffer. It is assumed that
+ * this buffer contains the complete MAL structure to be parsed.
+ */
 @h
 #ifndef _MAL_PARSER_H
 #define _MAL_PARSER_H
@@ -75,11 +77,13 @@ mal_export long position(Client cntxt);
 
 #endif /* _MAL_PARSER_H */
 
-@- lexical utilities
-Before a line is parsed we check for a request to echo it.
-This command should be executed at the beginning of a parse
-request and each time we encounter EOL.
 @c
+/*
+ * @- lexical utilities
+ * Before a line is parsed we check for a request to echo it.
+ * This command should be executed at the beginning of a parse
+ * request and each time we encounter EOL.
+ */
 #include "monetdb_config.h"
 #include "mal_parser.h"
 #include "mal_resolve.h"
@@ -136,16 +140,16 @@ advance(Client cntxt, int length)
 	skipSpace(cntxt);
 }
 
-@-
-The most recurring situation is to recognize identifiers.
-This process is split into a few steps to simplify subsequent
-construction and comparison.
-IdLength searches the end of an identifier without changing
-the cursor into the input pool.
-IdCopy subsequently prepares a GDK string for inclusion in the
-instruction datastructures.
-
-@c
+/*
+ * @-
+ * The most recurring situation is to recognize identifiers.
+ * This process is split into a few steps to simplify subsequent
+ * construction and comparison.
+ * IdLength searches the end of an identifier without changing
+ * the cursor into the input pool.
+ * IdCopy subsequently prepares a GDK string for inclusion in the
+ * instruction datastructures.
+ */
 short opCharacter[256];
 short idCharacter[256];
 short idCharacter2[256];
@@ -194,9 +198,10 @@ idLength(Client cntxt)
 		s++;
 	return (int) (s-t);
 }
-@-
-Simple type identifiers can not be marked with a type variable.
-@c
+/*
+ * @-
+ * Simple type identifiers can not be marked with a type variable.
+ */
 static int 
 typeidLength(Client cntxt)
 {
@@ -265,11 +270,12 @@ MALlookahead(Client cntxt, str kw, int length)
 	}
 	return 0;
 }
-@-
-Keyphrase testing is limited to a few characters only
-(check manually). To speed this up we use a pipelined and
-inline macros.
-@c
+/*
+ * @-
+ * Keyphrase testing is limited to a few characters only
+ * (check manually). To speed this up we use a pipelined and
+ * inline macros.
+ */
 static inline int 
 keyphrase1(Client cntxt, str kw)
 {
@@ -301,13 +307,14 @@ keyphrase(Client cntxt, str kw,int length)
 	}
 	return 0;
 }
-@-
-A similar approach is used for string literals.
-Beware, string lengths returned include the
-brackets and escapes. They are eaten away in strCopy.
-We should provide the C-method to split strings and
-concatenate them upon retrieval[todo]
-@c
+/*
+ * @-
+ * A similar approach is used for string literals.
+ * Beware, string lengths returned include the
+ * brackets and escapes. They are eaten away in strCopy.
+ * We should provide the C-method to split strings and
+ * concatenate them upon retrieval[todo]
+ */
 int 
 stringLength(Client cntxt)
 {
@@ -334,10 +341,11 @@ stringLength(Client cntxt)
 	}
 	return l+2;
 }
-@-
-Beware, the idcmp routine uses a short cast to compare multiple bytes
-at once. This may cause problems when the net string length is zero.
-@c
+/*
+ * @-
+ * Beware, the idcmp routine uses a short cast to compare multiple bytes
+ * at once. This may cause problems when the net string length is zero.
+ */
 str strCopy(Client cntxt, int length){
 	str s;
 	int i;
@@ -350,11 +358,12 @@ str strCopy(Client cntxt, int length){
 	mal_unquote(s);
 	return s;
 }
-@-
-And a similar approach is used for operator names.
-A lookup table is considered, because it generally is
-faster then a non-dense switch.
-@c
+/*
+ * @-
+ * And a similar approach is used for operator names.
+ * A lookup table is considered, because it generally is
+ * faster then a non-dense switch.
+ */
 int 
 operatorLength(Client cntxt)
 {
@@ -376,11 +385,12 @@ operatorCopy(Client cntxt, int length)
 {
 	return idCopy(cntxt,length);
 }
-@-
-For error reporting we may have to find the start of the previous line,
-which, ofcourse, is easy given the client buffer.
-The remaining functions are self-explanatory.
-@c
+/*
+ * @-
+ * For error reporting we may have to find the start of the previous line,
+ * which, ofcourse, is easy given the client buffer.
+ * The remaining functions are self-explanatory.
+ */
 str 
 lastline(Client cntxt)
 {
@@ -401,21 +411,23 @@ position(Client cntxt)
 	return (long) (CURRENT(cntxt) - s);
 }
 
-@-
-Upon encountering an error we skip to the nearest semicolon,
-or comment terminated by a new line
-@c
+/*
+ * @-
+ * Upon encountering an error we skip to the nearest semicolon,
+ * or comment terminated by a new line
+ */
 static inline void 
 skipToEnd(Client cntxt)
 {	char c;
 	while( (c= *CURRENT(cntxt)) != ';' && c && c !='\n') nextChar(cntxt);
 	if(c && c != '\n') nextChar(cntxt);
 }
-@-
-The lexical analyser for constants is a little more complex.
-Aside from getting its length, we need an indication of its type.
-The constant structure is initialized for later use.
-@c
+/*
+ * @-
+ * The lexical analyser for constants is a little more complex.
+ * Aside from getting its length, we need an indication of its type.
+ * The constant structure is initialized for later use.
+ */
 int cstToken(Client cntxt, ValPtr cst)
 {   
 	int i = 0;
@@ -611,40 +623,41 @@ handleInts:
 
 #define cstCopy(C,I)  idCopy(C,I)
 
-@- Type qualifier
-Types are recognized as identifiers preceded by a colon.
-They may be extended with a property list
-and 'any' types can be marked with an alias.
-The type qualifier parser returns the encoded type 
-as a short 32-bit integer. 
-The syntax structure is
-
-@multitable @columnfractions 0.15 0.8
-@item typeQualifier  
-@tab : typeName propQualifier 
-@item typeName
-@tab : scalarType | collectionType | anyType
-@item scalarType
-@tab :  ':' @sc{ identifier} 
-@item collectionType 
-@tab :  ':' @sc{ bat} ['[' col ',' col ']'] 
-@item anyType
-@tab :  ':' @sc{ any} [typeAlias] 
-@item col
-@tab :  scalarType | anyType 
-@item propQualifier  
-@tab :  ['@{' property '@}']
-@end multitable
-
-The type ANY matches any type specifier.
-Appending it with an alias turns it into a type variable.
-The type alias is \$DIGIT (1-9) and can be used to relate types
-by type equality. 
-The type variable are defined within the context of a function
-scope.
-Additional information, such as a repetition factor,
-encoding tables, or type dependency should be modelled as properties.
-@c
+/*
+ * @- Type qualifier
+ * Types are recognized as identifiers preceded by a colon.
+ * They may be extended with a property list
+ * and 'any' types can be marked with an alias.
+ * The type qualifier parser returns the encoded type
+ * as a short 32-bit integer.
+ * The syntax structure is
+ *
+ * @multitable @columnfractions 0.15 0.8
+ * @item typeQualifier
+ * @tab : typeName propQualifier
+ * @item typeName
+ * @tab : scalarType | collectionType | anyType
+ * @item scalarType
+ * @tab :  ':' @sc{ identifier}
+ * @item collectionType
+ * @tab :  ':' @sc{ bat} ['[' col ',' col ']']
+ * @item anyType
+ * @tab :  ':' @sc{ any} [typeAlias]
+ * @item col
+ * @tab :  scalarType | anyType
+ * @item propQualifier
+ * @tab :  ['@{' property '@}']
+ * @end multitable
+ *
+ * The type ANY matches any type specifier.
+ * Appending it with an alias turns it into a type variable.
+ * The type alias is \$DIGIT (1-9) and can be used to relate types
+ * by type equality.
+ * The type variable are defined within the context of a function
+ * scope.
+ * Additional information, such as a repetition factor,
+ * encoding tables, or type dependency should be modelled as properties.
+ */
 static int 
 typeAlias(Client cntxt, int tpe)
 {
@@ -663,10 +676,11 @@ typeAlias(Client cntxt, int tpe)
 	}
 	return -1;
 }
-@-
-The simple type analysis currently assumes a proper type identifier.
-We should change getTypeIndex to return a failure instead.
-@c
+/*
+ * @-
+ * The simple type analysis currently assumes a proper type identifier.
+ * We should change getTypeIndex to return a failure instead.
+ */
 static int 
 simpleTypeId(Client cntxt)
 {
@@ -753,9 +767,10 @@ static inline int typeElm(Client cntxt, int def)
 		return def;	/* no type qualifier */
 	return parseTypeId(cntxt,def);
 }
-@-
-Character constants may be escaped.
-@c
+/*
+ * @-
+ * Character constants may be escaped.
+ */
 int
 charCst(Client cntxt, ValPtr cst) 
 {
@@ -807,42 +822,43 @@ charCst(Client cntxt, ValPtr cst)
 	}
 	return i+1;
 }
-@+ The Parser
-The client is responsible to collect the
-input for parsing in a single string before calling the parser.
-Once the input is available parsing runs in a critial section for
-a single client thread.
-
-The parser uses the rigid structure of the language to speedup
-analysis. In particular, each input line is translated into
-a MAL instruction record as quickly as possible. Its context is
-manipulated during the parsing process, by keeping the  curPrg,
-curBlk, and curInstr variables.
-
-The language statements of the parser are gradually introduced, with
-the overall integration framework last.
-The convention is to return a zero when an error has been
-reported or when the structure can not be recognized.
-Furthermore, we assume that blancs have been skipped before entering
-recognition of a new token.
-
-@- Module statement.
-The module and import commands have immediate effect.
-The module statement switches the location for symbol table update
-to a specific named area. The effect is that all definitions may become
-globally known (?) and symbol table should be temporarilly locked
-for updates by concurrent users.
-
-@multitable @columnfractions 0.15 0.8
-@item moduleStmt
-@tab :  @sc{atom} ident [':'ident]
-@item
-@tab | @sc{module} ident
-@end multitable
-
-@-
-An atom statement does not introduce a new module.
-@c
+/*
+ * @+ The Parser
+ * The client is responsible to collect the
+ * input for parsing in a single string before calling the parser.
+ * Once the input is available parsing runs in a critial section for
+ * a single client thread.
+ *
+ * The parser uses the rigid structure of the language to speedup
+ * analysis. In particular, each input line is translated into
+ * a MAL instruction record as quickly as possible. Its context is
+ * manipulated during the parsing process, by keeping the  curPrg,
+ * curBlk, and curInstr variables.
+ *
+ * The language statements of the parser are gradually introduced, with
+ * the overall integration framework last.
+ * The convention is to return a zero when an error has been
+ * reported or when the structure can not be recognized.
+ * Furthermore, we assume that blancs have been skipped before entering
+ * recognition of a new token.
+ *
+ * @- Module statement.
+ * The module and import commands have immediate effect.
+ * The module statement switches the location for symbol table update
+ * to a specific named area. The effect is that all definitions may become
+ * globally known (?) and symbol table should be temporarilly locked
+ * for updates by concurrent users.
+ *
+ * @multitable @columnfractions 0.15 0.8
+ * @item moduleStmt
+ * @tab :  @sc{atom} ident [':'ident]
+ * @item
+ * @tab | @sc{module} ident
+ * @end multitable
+ *
+ * @-
+ * An atom statement does not introduce a new module.
+ */
 static str 
 parseAtom(Client cntxt) 
 {
@@ -890,11 +906,12 @@ static str parseLibrary(Client cntxt)
 	advance(cntxt,l);
 	return "";
 }
-@-
-It might be handy to clone a module.
-It gets a copy of all functions known
-at the point of creation.
-@c
+/*
+ * @-
+ * It might be handy to clone a module.
+ * It gets a copy of all functions known
+ * at the point of creation.
+ */
 static str parseModule(Client cntxt) 
 {
 	str modnme = 0,parent;
@@ -921,24 +938,25 @@ static str parseModule(Client cntxt)
 	@:helpInfo(cntxt->nspace->help)@
 	return "";
 }
-@- Include statement
-An include statement is immediately taken into effect. This
-calls for temporary switching the input for a particular client.
-The administration for this is handled by malInclude.
-No listing is produced, because module sources are assumed to
-be debugged upfront already.
-@multitable @columnfractions 0.15 0.8
-@item includeStmt
-@tab : @sc{include} identifier 
-@item
-@tab | @sc{include} string_literal
-@end multitable
-
-Include files should be handled in line with parsing. This way we
-are ensured that any possible signature definition will be known
-afterwards. The effect is that errors in the include sequence are
-marked as warnings.
-@c
+/*
+ * @- Include statement
+ * An include statement is immediately taken into effect. This
+ * calls for temporary switching the input for a particular client.
+ * The administration for this is handled by malInclude.
+ * No listing is produced, because module sources are assumed to
+ * be debugged upfront already.
+ * @multitable @columnfractions 0.15 0.8
+ * @item includeStmt
+ * @tab : @sc{include} identifier
+ * @item
+ * @tab | @sc{include} string_literal
+ * @end multitable
+ *
+ * Include files should be handled in line with parsing. This way we
+ * are ensured that any possible signature definition will be known
+ * afterwards. The effect is that errors in the include sequence are
+ * marked as warnings.
+ */
 static str
 parseInclude(Client cntxt)
 {
@@ -978,33 +996,35 @@ parseInclude(Client cntxt)
 	}
 	return "";
 }
-@- Definition
-The definition statements share a lot in common, which calls for factoring
-out the code in a few text macros. Upon encountering a definition, we
-initialize a MAL instruction container. We should also check for
-non-terminated definitions.
-
-@multitable @columnfractions 0.15 0.8
-@item program
-@tab : ( definition [helpinfo] | statement ) *
-
-@item definition
-@tab : moduleStmt | includeStmt 
-@item
-@tab  |  commandStmt | patternStmt 
-@item
-@tab  | functionStmt | factoryStmt
-@item
-@tab  | includeStmt
-@end multitable
-
-Beware, a function signature f(a1..an):(b1..bn) is parsed in such a way that
-the symbol table and stackframe contains the sequence
-f,a1..an,b1..bn. This slightly complicates the implementation
-of the return statement.
-
-Note, the function name could be mod.fcn, which calls for storing
-the function definition in a particular module instead of the current one.
+/*
+ * @- Definition
+ * The definition statements share a lot in common, which calls for factoring
+ * out the code in a few text macros. Upon encountering a definition, we
+ * initialize a MAL instruction container. We should also check for
+ * non-terminated definitions.
+ *
+ * @multitable @columnfractions 0.15 0.8
+ * @item program
+ * @tab : ( definition [helpinfo] | statement ) *
+ *
+ * @item definition
+ * @tab : moduleStmt | includeStmt
+ * @item
+ * @tab  |  commandStmt | patternStmt
+ * @item
+ * @tab  | functionStmt | factoryStmt
+ * @item
+ * @tab  | includeStmt
+ * @end multitable
+ *
+ * Beware, a function signature f(a1..an):(b1..bn) is parsed in such a way that
+ * the symbol table and stackframe contains the sequence
+ * f,a1..an,b1..bn. This slightly complicates the implementation
+ * of the return statement.
+ *
+ * Note, the function name could be mod.fcn, which calls for storing
+ * the function definition in a particular module instead of the current one.
+ */
 @= fcnHeader
 	l = operatorLength(cntxt);
 	if (l == 0)
@@ -1140,19 +1160,19 @@ during the final phase reshuffle the return values to the beginning (?)
 	} else { /* default */
 		setVarType(curBlk,0,TYPE_void);
 	}
-@-
-The common theme in definitions is to parse the argument list.
-@multitable @columnfractions .15 .8
-@item header
-@tab :  hdrName '(' params ')' result 
-@item result
-@tab :  paramType | '(' params ')'
-@item params
-@tab :  binding [',' binding]* 
-@item binding
-@tab :  identifier typeName [propQualifier]
-@end multitable
 @
+ * @-
+ * The common theme in definitions is to parse the argument list.
+ * @multitable @columnfractions .15 .8
+ * @item header
+ * @tab :  hdrName '(' params ')' result
+ * @item result
+ * @tab :  paramType | '(' params ')'
+ * @item params
+ * @tab :  binding [',' binding]*
+ * @item binding
+ * @tab :  identifier typeName [propQualifier]
+ * @end multitable
 @= binding
 	l = idLength(cntxt);
 	if( l>0) {
@@ -1189,26 +1209,25 @@ The common theme in definitions is to parse the argument list.
 	} else 
 		parseError(cntxt,"argument expected\n");
 	curInstr= pushArgument(curBlk,curInstr, varid);
-@-
-@}
-MAL variables are statically/dynamically typed.
-Function and procedure arguments should always be typed.
-We do not permit polymorphism at this interpretation level.
-
-The type information maintained simplifies analysis of 
-BAT results. If the underlying type is not known, then it
-may be replaced once during execution of a MAL instruction
-typically as a side-effect of calling a bat-returning function.
-
-We should also allow for variable argument lists. However, they
-may only appear in patterns, because the calling context is necessary
-to resolve the actual argument list. Furthermore, we can not 
-assume much about its type structure.
-@-
-Variables are extended with a property list to enable
-optimizers to make decisions. (See the section on properties).
-@{
-@-
+@
+ * @-
+ * MAL variables are statically/dynamically typed.
+ * Function and procedure arguments should always be typed.
+ * We do not permit polymorphism at this interpretation level.
+ *
+ * The type information maintained simplifies analysis of
+ * BAT results. If the underlying type is not known, then it
+ * may be replaced once during execution of a MAL instruction
+ * typically as a side-effect of calling a bat-returning function.
+ *
+ * We should also allow for variable argument lists. However, they
+ * may only appear in patterns, because the calling context is necessary
+ * to resolve the actual argument list. Furthermore, we can not
+ * assume much about its type structure.
+ * @-
+ * Variables are extended with a property list to enable
+ * optimizers to make decisions. (See the section on properties).
+ * @-
 @= propList
 	if( keyphrase1(cntxt,"{")) {
 		do {
@@ -1247,19 +1266,19 @@ optimizers to make decisions. (See the section on properties).
 			/* return (MalBlkPtr) */
 			parseError(cntxt,"'}' expected\n");
 	}
-@-
-Each procedure definition opens a structure in which the
-information is gathered. The enclosing module is statically
-determined.
-
-A proc-header translates into a single MAL instruction.
-Since no recursive rules are included, we can stick to
-using a single global variable to accummulate the
-properties.
-
-The external commands and rules come with a short
-help information.
-
+@
+ * @-
+ * Each procedure definition opens a structure in which the
+ * information is gathered. The enclosing module is statically
+ * determined.
+ *
+ * A proc-header translates into a single MAL instruction.
+ * Since no recursive rules are included, we can stick to
+ * using a single global variable to accummulate the
+ * properties.
+ *
+ * The external commands and rules come with a short
+ * help information.
 @= helpInfo
 	if( MALkeyword(cntxt,"comment",7)){
 		skipSpace(cntxt);
@@ -1274,6 +1293,7 @@ help information.
 	if (currChar(cntxt) != ';')
 		parseError(cntxt,"';' expected\n");
 	skipToEnd(cntxt);
+@
 @c
 static MalBlkPtr parseCommandPattern(Client cntxt, int kind){
 	MalBlkPtr curBlk = 0;
@@ -1303,18 +1323,19 @@ static MalBlkPtr parseCommandPattern(Client cntxt, int kind){
 		cntxt->curprg = cntxt->backup;
 		cntxt->backup = 0;
 	}
-@- Short-cut function calls
-Most functions are (dynamically) linked with the kernel as
-commands or pattern definitions.  This enables for fast execution.
-
-In addition we allow functions to be bound to both
-a linked C-function and a MAL specification block.
-It the function address is not available, the interpreter
-will use the MAL block instead.
-This scheme is intended for just-in-time compilation.
-
-[note, command and patterns do not have a MAL block]
-@c
+	/*
+	 * @- Short-cut function calls
+	 * Most functions are (dynamically) linked with the kernel as
+	 * commands or pattern definitions.  This enables for fast execution.
+	 *
+	 * In addition we allow functions to be bound to both
+	 * a linked C-function and a MAL specification block.
+	 * It the function address is not available, the interpreter
+	 * will use the MAL block instead.
+	 * This scheme is intended for just-in-time compilation.
+	 *
+	 * [note, command and patterns do not have a MAL block]
+	 */
 	if( MALkeyword(cntxt,"address",7)){
 		str nme;
 		int i;
@@ -1384,12 +1405,13 @@ static MalBlkPtr parseFunction(Client cntxt, int kind){
 	return curBlk;
 }
 
-@-
-Functions and  factories end with a labeled end-statement. 
-The routine below checks for misalignment of the closing statements.
-Any instruction parsed after the function block is considered an
-error.
-@c
+/*
+ * @-
+ * Functions and  factories end with a labeled end-statement.
+ * The routine below checks for misalignment of the closing statements.
+ * Any instruction parsed after the function block is considered an
+ * error.
+ */
 static int parseEnd(Client cntxt)
 {   MalBlkPtr curBlk = 0;
 	Symbol curPrg = 0;
@@ -1435,41 +1457,45 @@ static int parseEnd(Client cntxt)
 	}
 	return 0;
 }
-@-
-Most instructions are simple assignments, possibly
-modified with a barrier/catch tag.
-@multitable @columnfractions .15 .8
-@item statement	   
-@tab :  tag varlist [':=' expr ] propQualifier
-@item tag			 
-@tab :  @sc{ return} | @sc{ barrier} | @sc{ catch}
-@item
-@tab |  @sc{ leave} | @sc{ redo} | 
-@item expr			
-@tab :  fcncall 
-@item
-@tab : [factor  operator] factor 
-@item varlist		 
-@tab :  variable 
-@item
-@tab |  @verb{'{' variable {',' variable}* ')' } 
-@item variable		
-@tab :  identifier propQualifier 
-@item factor		  
-@tab :  constant | var 
-@end multitable
-
-The basic types are also predefined as a variable.
-This makes it easier to communicate types to MAL patterns.
-
+/*
+ * @-
+ * Most instructions are simple assignments, possibly
+ * modified with a barrier/catch tag.
+ * @multitable @columnfractions .15 .8
+ * @item statement
+ * @tab :  tag varlist [':=' expr ] propQualifier
+ * @item tag
+ * @tab :  @sc{ return} | @sc{ barrier} | @sc{ catch}
+ * @item
+ * @tab |  @sc{ leave} | @sc{ redo} |
+ * @item expr
+ * @tab :  fcncall
+ * @item
+ * @tab : [factor  operator] factor
+ * @item varlist
+ * @tab :  variable
+ * @item
+ * @tab |  @verb{'{' variable {',' variable}* ')' }
+ * @item variable
+ * @tab :  identifier propQualifier
+ * @item factor
+ * @tab :  constant | var
+ * @end multitable
+ *
+ * The basic types are also predefined as a variable.
+ * This makes it easier to communicate types to MAL patterns.
+ */
 @= GETvariable
 if ((varid = findVariableLength(curBlk, CURRENT(cntxt), l)) == -1){
 	arg = idCopy(cntxt,l); 
 	varid = newVariable(curBlk,arg,TYPE_any);
 } else
 	advance(cntxt,l); 
-@-
+@
 @c
+/*
+ * @-
+ */
 static void 
 parseAssign(Client cntxt, int cntrl) 
 {   
@@ -1595,11 +1621,13 @@ parseAssign(Client cntxt, int cntrl)
 		pushInstruction(curBlk,curInstr);
 		return;
 	}
-@-
-At this stage the LHS part has been parsed and the destination
-variables have been set. Next step is to parse the expression,
-which starts with an operand.
-This code is used in both positions of the expression
+	/*
+	 * @-
+	 * At this stage the LHS part has been parsed and the destination
+	 * variables have been set. Next step is to parse the expression,
+	 * which starts with an operand.
+	 * This code is used in both positions of the expression
+	 */
 @= term
 	str v = NULL;
 
@@ -1667,8 +1695,9 @@ This code is used in both positions of the expression
 		curInstr = pushArgument(curBlk,curInstr,idx);
 		@1;
 	}
-@-
-The parameter of parseArguments is the return value of the enclosing function.
+@
+	 * @-
+	 * The parameter of parseArguments is the return value of the enclosing function.
 @= parseArguments
 while( currChar(cntxt)!= ')'){
 	@:term()@ 
@@ -1689,11 +1718,14 @@ while( currChar(cntxt)!= ')'){
 }
 if (currChar(cntxt) == ')') 
 	advance(cntxt,1);
-@-
-We have so far the LHS part of an assignment. The remainder is
-either a simple term expression, a multi assignent, or the start 
-of a function call.
+@
 @c
+/*
+ * @-
+ * We have so far the LHS part of an assignment. The remainder is
+ * either a simple term expression, a multi assignent, or the start
+ * of a function call.
+ */
 FCNcallparse:
 	if( (l=idLength(cntxt)) && CURRENT(cntxt)[l] == '(') {
 		/*  parseError(cntxt,"<module> expected\n");*/
@@ -1732,9 +1764,10 @@ FCNcallparse2:
 		parseError(cntxt,"';' expected\n");
 		goto part3;
 	}
-@-
-Handle the ordinary assignments and expressions
-@c
+	/*
+	 * @-
+	 * Handle the ordinary assignments and expressions
+	 */
 	{@:term(goto part2)@}
 part2:  /* consume <operator><term> part of expression */
 	if( (i= operatorLength(cntxt)) ){
@@ -1775,14 +1808,15 @@ part3:
 	
 }
 
-@-
-A piggybacked way to ship tuples is to mimick
-a copycommand through the language interface.
-All tuples are stored in a temporary file 
-whose name can be picked up immediately afterwards.
-The code should be made thread safe, by storing
-the file name in the client record.
-@c
+/*
+ * @-
+ * A piggybacked way to ship tuples is to mimick
+ * a copycommand through the language interface.
+ * All tuples are stored in a temporary file
+ * whose name can be picked up immediately afterwards.
+ * The code should be made thread safe, by storing
+ * the file name in the client record.
+ */
 static void
 parseTuple(Client cntxt) {
 	InstrPtr curInstr;
@@ -1865,13 +1899,14 @@ int parseMAL(Client cntxt, Symbol curPrg){
 			if( e>start && curBlk->stop > 0 &&
 				 strncmp("line ",start,5)!= 0 ){
 				ValRecord cst;
-@-
-Keep the comment lines as un-used constants.
-However, comment lines produced by Mx, i.e. #line
-directives are not saved. The unnecessarily consume
-resources when kept.
-The deadcode optimizer removes all comment information.
-@c
+				/*
+				 * @-
+				 * Keep the comment lines as un-used constants.
+				 * However, comment lines produced by Mx, i.e. #line
+				 * directives are not saved. The unnecessarily consume
+				 * resources when kept.
+				 * The deadcode optimizer removes all comment information.
+				 */
 				curInstr= newInstruction(NULL, REMsymbol);
 				cst.vtype= TYPE_str;
 				cst.len = (int) strlen(start);
@@ -1976,12 +2011,13 @@ The deadcode optimizer removes all comment information.
 	}
 	return curPrg->def->errors;
 }
-@- Error display
-Display the error information for the current client.
-An arrow and state number is printed at the "appropriate" place. 
-If no lookahead character is a used and the next character is a newline,
-we should also copy the input.
-@c
+/*
+ * @- Error display
+ * Display the error information for the current client.
+ * An arrow and state number is printed at the "appropriate" place.
+ * If no lookahead character is a used and the next character is a newline,
+ * we should also copy the input.
+ */
 str parseError(Client cntxt, str msg)
 {   
 	Symbol curPrg;
@@ -2022,4 +2058,3 @@ str parseError(Client cntxt, str msg)
 	showException(SYNTAX, "parseError", "%s", buf);
 	return 0;
 }
-@}

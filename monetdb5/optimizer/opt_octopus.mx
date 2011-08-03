@@ -18,137 +18,140 @@ All Rights Reserved.
 @
 
 @f opt_octopus
-@a M. Kersten
-@- Map-reduce processing
-Query execution can be improved significantly using distributed processing.
-Traditionally, this encompasses fragmentation and allocation of the base
-tables over multiple sites and query plans that include on the fly transport
-of intermediate results.
 
-Breaking the database into pieces itself is a well-studied area.
-Most approaches consider the workload and search for a good split
-of the base tables, such that the workload performance improves.
-
-In the Octopus we focus on SQL for map-reduce processing.
-The first approach is to capitalize upon the metosis and
-mergetable optimizers. They break the table into pieces
-based on the head and propagate the effect through the plan.
-Breaking the table depends on the number of sites to play with,
-which can be obtained dynamically from the merovingian.
-
-The octopus untangles the resulting plan into a controlling function
-and a plan for each tentacle.
-The octopus is to be called after the mergetable optimizer.
-
-A snippet of an octopus plan with two tentacles is shown below 
-
-@verbatim
-function octopus.exec_qry(srv:str,fcn:str, ver:int):bat[:oid,:int];
-	conn:= remote.connect(srv,"monetdb","monetdb");
-	v:= remote.put(conn,ver);
-	r:= remote.exec(conn,"octopus",fcn,v);
-	b:bat[:oid,:int]:= remote.get(conn,r);
-catch REMOTEexception;
-	octopus.reschedule(srv);
-exit REMOTEexception;
-	return b;
-end exec_qry;
-function octopus.leg0(version:int):bat[:oid,:int];
-	conn:= remote.connect("demo","monetdb","monetdb");
-    _54:bat[:oid,:int] := octopus.bind(conn,mvc,"sys","squida","bid",0,0@0,25@0,version);
-    _64:bat[:oid,:int] := octopus.bind(conn,mvc,"sys","squida","bid",2,0@0,25@0,version);
-    _72 := algebra.kdifference(_54,_64);
-    _78 := algebra.kunion(_72,_64);
-    _13:bat[:oid,:oid]  := octopus.bind_dbat(conn,mvc,"sys","squida",1,version);
-    _14 := bat.reverse(_13);
-    _85 := algebra.kdifference(_78,_14);
-    return leg0:= _85;
-end octopus.leg0;
-function octopus.leg1( version:int):bat[:oid,:int];
-	conn:= remote.connect("demo","monetdb","monetdb");
-    _56:bat[:oid,:int] := octopus.bind(conn,mvc,"sys","squida","bid",0,version,2,1);
-    _65:bat[:oid,:int] := octopus.bind(conn,mvc,"sys","squida","bid",2,version,2,1);
-    _72 := algebra.kdifference(_56,_65);
-    _78 := algebra.kunion(_72,_65);
-    _13:bat[:oid,:oid]  := octopus.bind_dbat(conn,mvc,"sys","squida",1,version);
-    _14 := bat.reverse(_13);
-    _85 := algebra.kdifference(_78,_14);
-    return leg1= _85;
-end octopus.leg1;
-
-function user.qry():void;
-barrier (_100,version:int):= scheduler.octopus(10);
-    _87 := octopus.exec_qry("tbd","leg0",version);
-    _88 := octopus.exec_qry("tbd","leg1",version);
-exit (_100,version);
-    _15 := mat.pack(_87,_88);
-    _16 := sql.resultSet(1,1,_15);
-    sql.rsColumn(_16,"sys.squida","bid","int",32,0,_15);
-    _21 := io.stdout();
-    sql.exportResult(_21,_16);
-end qry;
-@end verbatim
-
-[versioning]
-The argument to the tentacle is the expected version of the database
-to be used and optional arguments for the query.
-
-[partition access]
-For a tentacle to work it needs access to its storage layer.
-It is encapsulated in the operation octopus.bind(Conn,S,T,C,V,P,I),
-which performs an upcall to the octopus Conn to deliver 
-the Ith piece of the column S.T.C partitioned into P pieces 
-matching version V.
-
-Ideally, the interaction with the head is restricted
-to calling for a handle to access the partition from
-its source directly. 
-In a shared disk setup, we merely ensure that a
-possibly cached version is not out of date.
-The last resort is to deliver the partition by the
-octopus using a remote BAT copy.
-Doing so would effectively implement
-a kind of distributed disk system. The current state of
-affairs allows for a track where even a low level 
-ftp- call would suffice to obtain the complete BAT
-from anywhere, or we can provide a NAS functionality
-over the database store that delivers the partitions
-of interest.
-
-The octopus upcalls for delivering the partitions should
-be encapsulated into a function to shield all possible
-remote access operations. It is a function registered
-by the SQL front-end.
-
-[recycling]
-The version argument passed during the tentacle call
-is used to enforce synchronisation of the recycler caches
-between the octopus and its tentacles.
-If the version does not change between calls, the
-recylcer will simply step over the bind() calls,
-reusing with it already have instead.
-If for local resource management decisions the cache
-is cleared, then it will automatically trigger a
-re-execution of the bind().
-
-[Naming]
-The tentacles received from the octopus should be ensured
-not to clash with those already known. Therefore, we simply
-tag them by orginating site.
-
-[Caveats]
-Updates on the persistent tables are not handled yet. They should
-lead to an upcall to the head for inclusion. Any update invalidates
-the request to distributed processing.
-In the same line, multi-statement SQL transactions and
-updates to global variables are ignored. 
-
-Global variables are tricky, because they are part of the
-session context. To make it work, we need to be able to perform
-an upcall to that context (=dangerous).
-The solution is that any variable context should be
-passed through a relation.
-@{
+@c
+/*
+ * @a M. Kersten
+ * @- Map-reduce processing
+ * Query execution can be improved significantly using distributed processing.
+ * Traditionally, this encompasses fragmentation and allocation of the base
+ * tables over multiple sites and query plans that include on the fly transport
+ * of intermediate results.
+ *
+ * Breaking the database into pieces itself is a well-studied area.
+ * Most approaches consider the workload and search for a good split
+ * of the base tables, such that the workload performance improves.
+ *
+ * In the Octopus we focus on SQL for map-reduce processing.
+ * The first approach is to capitalize upon the metosis and
+ * mergetable optimizers. They break the table into pieces
+ * based on the head and propagate the effect through the plan.
+ * Breaking the table depends on the number of sites to play with,
+ * which can be obtained dynamically from the merovingian.
+ *
+ * The octopus untangles the resulting plan into a controlling function
+ * and a plan for each tentacle.
+ * The octopus is to be called after the mergetable optimizer.
+ *
+ * A snippet of an octopus plan with two tentacles is shown below
+ *
+ * @verbatim
+ * function octopus.exec_qry(srv:str,fcn:str, ver:int):bat[:oid,:int];
+ * 	conn:= remote.connect(srv,"monetdb","monetdb");
+ * 	v:= remote.put(conn,ver);
+ * 	r:= remote.exec(conn,"octopus",fcn,v);
+ * 	b:bat[:oid,:int]:= remote.get(conn,r);
+ * catch REMOTEexception;
+ * 	octopus.reschedule(srv);
+ * exit REMOTEexception;
+ * 	return b;
+ * end exec_qry;
+ * function octopus.leg0(version:int):bat[:oid,:int];
+ * 	conn:= remote.connect("demo","monetdb","monetdb");
+ *     _54:bat[:oid,:int] := octopus.bind(conn,mvc,"sys","squida","bid",0,0@0,25@0,version);
+ *     _64:bat[:oid,:int] := octopus.bind(conn,mvc,"sys","squida","bid",2,0@0,25@0,version);
+ *     _72 := algebra.kdifference(_54,_64);
+ *     _78 := algebra.kunion(_72,_64);
+ *     _13:bat[:oid,:oid]  := octopus.bind_dbat(conn,mvc,"sys","squida",1,version);
+ *     _14 := bat.reverse(_13);
+ *     _85 := algebra.kdifference(_78,_14);
+ *     return leg0:= _85;
+ * end octopus.leg0;
+ * function octopus.leg1( version:int):bat[:oid,:int];
+ * 	conn:= remote.connect("demo","monetdb","monetdb");
+ *     _56:bat[:oid,:int] := octopus.bind(conn,mvc,"sys","squida","bid",0,version,2,1);
+ *     _65:bat[:oid,:int] := octopus.bind(conn,mvc,"sys","squida","bid",2,version,2,1);
+ *     _72 := algebra.kdifference(_56,_65);
+ *     _78 := algebra.kunion(_72,_65);
+ *     _13:bat[:oid,:oid]  := octopus.bind_dbat(conn,mvc,"sys","squida",1,version);
+ *     _14 := bat.reverse(_13);
+ *     _85 := algebra.kdifference(_78,_14);
+ *     return leg1= _85;
+ * end octopus.leg1;
+ *
+ * function user.qry():void;
+ * barrier (_100,version:int):= scheduler.octopus(10);
+ *     _87 := octopus.exec_qry("tbd","leg0",version);
+ *     _88 := octopus.exec_qry("tbd","leg1",version);
+ * exit (_100,version);
+ *     _15 := mat.pack(_87,_88);
+ *     _16 := sql.resultSet(1,1,_15);
+ *     sql.rsColumn(_16,"sys.squida","bid","int",32,0,_15);
+ *     _21 := io.stdout();
+ *     sql.exportResult(_21,_16);
+ * end qry;
+ * @end verbatim
+ *
+ * [versioning]
+ * The argument to the tentacle is the expected version of the database
+ * to be used and optional arguments for the query.
+ *
+ * [partition access]
+ * For a tentacle to work it needs access to its storage layer.
+ * It is encapsulated in the operation octopus.bind(Conn,S,T,C,V,P,I),
+ * which performs an upcall to the octopus Conn to deliver
+ * the Ith piece of the column S.T.C partitioned into P pieces
+ * matching version V.
+ *
+ * Ideally, the interaction with the head is restricted
+ * to calling for a handle to access the partition from
+ * its source directly.
+ * In a shared disk setup, we merely ensure that a
+ * possibly cached version is not out of date.
+ * The last resort is to deliver the partition by the
+ * octopus using a remote BAT copy.
+ * Doing so would effectively implement
+ * a kind of distributed disk system. The current state of
+ * affairs allows for a track where even a low level
+ * ftp- call would suffice to obtain the complete BAT
+ * from anywhere, or we can provide a NAS functionality
+ * over the database store that delivers the partitions
+ * of interest.
+ *
+ * The octopus upcalls for delivering the partitions should
+ * be encapsulated into a function to shield all possible
+ * remote access operations. It is a function registered
+ * by the SQL front-end.
+ *
+ * [recycling]
+ * The version argument passed during the tentacle call
+ * is used to enforce synchronisation of the recycler caches
+ * between the octopus and its tentacles.
+ * If the version does not change between calls, the
+ * recylcer will simply step over the bind() calls,
+ * reusing with it already have instead.
+ * If for local resource management decisions the cache
+ * is cleared, then it will automatically trigger a
+ * re-execution of the bind().
+ *
+ * [Naming]
+ * The tentacles received from the octopus should be ensured
+ * not to clash with those already known. Therefore, we simply
+ * tag them by orginating site.
+ *
+ * [Caveats]
+ * Updates on the persistent tables are not handled yet. They should
+ * lead to an upcall to the head for inclusion. Any update invalidates
+ * the request to distributed processing.
+ * In the same line, multi-statement SQL transactions and
+ * updates to global variables are ignored.
+ *
+ * Global variables are tricky, because they are part of the
+ * session context. To make it work, we need to be able to perform
+ * an upcall to that context (=dangerous).
+ * The solution is that any variable context should be
+ * passed through a relation.
+ */
 @mal
 module octopus; 
 pattern optimizer.octopus():str
@@ -197,18 +200,19 @@ typedef struct MALPART {
 #define memb1(x,i) (!( x & ~((int)1 << i) ))
 
 
-@-
-The algorithm consists of several steps. The first one
-replaces the original query and creates the tentacle
-functions. In the second phase the should be registered
-at the different sites.
-
-The key observation is that whenever we encouter a mat.pack,
-there is a need to bring information together for inspection.
-Therefore, we recursively break a plan by looking for the
-pack instructions and collect all dependent instructions.
-The original block is trimmed as far as needed.
-@c
+/*
+ * @-
+ * The algorithm consists of several steps. The first one
+ * replaces the original query and creates the tentacle
+ * functions. In the second phase the should be registered
+ * at the different sites.
+ *
+ * The key observation is that whenever we encouter a mat.pack,
+ * there is a need to bring information together for inspection.
+ * Therefore, we recursively break a plan by looking for the
+ * pack instructions and collect all dependent instructions.
+ * The original block is trimmed as far as needed.
+ */
 static lng octopusSeq = 0;
 sht bidStrategy = 1;
 
@@ -326,12 +330,13 @@ OCTgetCluster(int mask)
 		return i-1; 
 }
 
-@-
-Be prepared to catch errors from the remote site.
-You should catch them, otherwise the session is not closed.
-Beware, exceptions should be catched and thrown after the
-connection has been closed.
-@c
+/*
+ * @-
+ * Be prepared to catch errors from the remote site.
+ * You should catch them, otherwise the session is not closed.
+ * Beware, exceptions should be catched and thrown after the
+ * connection has been closed.
+ */
 
 static int
 getJoinPathType(MalBlkPtr mb, InstrPtr p)
@@ -476,9 +481,10 @@ OCTnewTentacle(Client cntxt, MalBlkPtr mb, bte tidx, int v2, int *cl)
 	tp = pushStr(tmb, tp, octopusRef);
 	tp = pushStr(tmb, tp, getFunctionId(tsig));
 
-@-
-The tentacle code should be optimized by the remaining optimizers too.
-@c
+	/*
+	 * @-
+	 * The tentacle code should be optimized by the remaining optimizers too.
+	 */
 	for (i = last + 1; i < mb->stop; i++){
 		p = mb->stmt[i];
 		if ( p->token != REMsymbol) {
@@ -1285,15 +1291,16 @@ cleanup:
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(octopus,OPT_CHECK_ALL)@
-@-
-The remainder contains the octopus support routines.
-The legAdviceInternal function has to negotiate with merovingian to
-determine the number of legs to use for a specific query plan.
-This may involve the size and structure of the database tables 
-accessed as well.
-Furthermore, the advice should only be given when the octopus
-optimizer is enabled.
-@c
+/*
+ * @-
+ * The remainder contains the octopus support routines.
+ * The legAdviceInternal function has to negotiate with merovingian to
+ * determine the number of legs to use for a specific query plan.
+ * This may involve the size and structure of the database tables
+ * accessed as well.
+ * Furthermore, the advice should only be given when the octopus
+ * optimizer is enabled.
+ */
 int 
 OPTlegAdviceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -1314,4 +1321,3 @@ OPTlegAdvice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*ret = OPTlegAdviceInternal(mb,stk,pci);
 	return MAL_SUCCEED;
 }
-@}

@@ -18,18 +18,21 @@ All Rights Reserved.
 @
 
 @f batmtime
-@a M.L. Kersten
-@+ Time/Date multiplexes
-[TODO: arithmetic multiplexes]
-The collection of routines provided here are map operations
-for the atom time and date primitives. 
 
-In line with the batcalc module, we assume that
-if two bat operands are provided that they are already
-aligned on the head. Moreover, the head of the BATs
-are limited to :void, which can be cheaply realized using
-the GRPsplit operation.
-@{
+@c
+/*
+ * @a M.L. Kersten
+ * @+ Time/Date multiplexes
+ * [TODO: arithmetic multiplexes]
+ * The collection of routines provided here are map operations
+ * for the atom time and date primitives.
+ *
+ * In line with the batcalc module, we assume that
+ * if two bat operands are provided that they are already
+ * aligned on the head. Moreover, the head of the BATs
+ * are limited to :void, which can be cheaply realized using
+ * the GRPsplit operation.
+ */
 @= compareOp
 command batcalc.@2( l:bat[:oid,:@1], r:bat[:oid,:@1]) :bat[:oid,:bit]
 address MTIMEbat_@1_@3;
@@ -66,6 +69,7 @@ comment "Compare a bat of @1 against a singleton";
     address MTIMEunaryISNIL
     comment "Unary check for nil over the tail of the bat";
 
+@
 @mal
 @:compareGrp(date)@
 @:compareGrp(daytime)@
@@ -75,8 +79,10 @@ comment "Compare a bat of @1 against a singleton";
 @:unaryISNIL(daytime)@
 @:unaryISNIL(timestamp)@
 
-@+ Implementation
 @h
+/*
+ * @+ Implementation
+ */
 #include "gdk.h"
 #include "ctype.h"
 #include "mal_exception.h"
@@ -96,10 +102,12 @@ comment "Compare a bat of @1 against a singleton";
 #include "monetdb_config.h"
 #include "batmtime.h"
 
-@-
-A general assumption in all cases is the bats are synchronized on their
-head column. This is not checked and may be mis-used to deploy the
-implementation for shifted window arithmetic as well.
+/*
+ * @-
+ * A general assumption in all cases is the bats are synchronized on their
+ * head column. This is not checked and may be mis-used to deploy the
+ * implementation for shifted window arithmetic as well.
+ */
 @= chkSize
 	if( BATcount(@1) != BATcount(@2) )
 		throw(MAL, "batcalc.@3", ILLEGAL_ARGUMENT " Requires bats of identical size");
@@ -113,12 +121,13 @@ batmtime_export str MTIMEaccum_@1_@2_cst(int *ret, int *r, int *l, @1 *cst);
 batmtime_export str MTIMEaccum_@1_cst_@2(int *ret, int *r, @1 *cst, int *l);
 batmtime_export str MTIMEunaryISNIL(int *ret, int *bid);
 
-@- Comparison operator implementation for temporal objects
-The structure of this code is copied from the arithmetic scheme.
-@-
+@
+ * @- Comparison operator implementation for temporal objects
+ * The structure of this code is copied from the arithmetic scheme.
+ * @-
 @include kprelude.mx
-@-
-The basic wrappers code structures.
+ * @-
+ * The basic wrappers code structures.
 @= unarybaselineCode
 str MTIMEbat_@1_@2_@3(int *ret, int *l)
 {	
@@ -432,9 +441,9 @@ str MTIMEaccum_@1_cst_@2(int *ret, int *r, @1 *cst, int *l)
 	return MAL_SUCCEED;
 }
 
-@-
-The implementation section.
-
+@
+ * @-
+ * The implementation section.
 @= implCmpGrpDef
 @:implDef(@1,EQ)@
 @:implDef(@1,NEQ)@
@@ -443,6 +452,7 @@ The implementation section.
 @:implDef(@1,GT)@
 @:implDef(@1,GE)@
 
+@
 @h
 @:implCmpGrpDef(date)@
 @:implCmpGrpDef(daytime)@
@@ -482,6 +492,7 @@ The implementation section.
             *o = @1_isnil(*p);
     BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 }
+@
 @c
 str MTIMEunaryISNIL(int *ret, int *bid)
 {
@@ -519,4 +530,3 @@ str MTIMEunaryISNIL(int *ret, int *bid)
     return MAL_SUCCEED;
 }
 
-@}

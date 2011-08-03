@@ -38,6 +38,8 @@
  * baskets.
  *
  */
+
+#include "monetdb_config.h"
 #include "emitter.h"
 #include "batcalc.h"
 #include "dcsocket.h"

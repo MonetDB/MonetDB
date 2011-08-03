@@ -18,38 +18,38 @@ All Rights Reserved.
 @
 
 @f gdk_value
-@a Martin L. Kersten & Peter Boncz
-@v 2.0
-@+ Value representation
 
-
-When manipulating values, MonetDB puts them into value records.
-The built-in types have a direct entry in the union. Others should
-be represented as a pointer of memory in pval or as a string, which
-is basically the same. In such cases the @%len@ field indicates
-the size of this piece of memory.
-
-MonetDB extenders will use value records for passing parameters to
-their new operators. MonetDB algebraic commands receive an
-(argc, argv) combination, where
-argc is an integer indicating the size of the the argv array of value
-records. On call, the first record, argv[0], is always empty. The
-routine must place its return value - if any - there. The other
-values are the parameters.
-
-@{
-Actually, the gdk value type defined here should become a built-in
-type in the kernel. Next step will be to define the corresponding
-extension module.
-@}
-
-@{
-@+ Value operations
-The following primitives are required to manipulate value records.
-Note that binding a BAT requires upgrading its reference count.
-The receiver of the value should have been cleared or represent
-free space.
 @c
+/*
+ * @a Martin L. Kersten & Peter Boncz
+ * @v 2.0
+ * @+ Value representation
+ *
+ *
+ * When manipulating values, MonetDB puts them into value records.
+ * The built-in types have a direct entry in the union. Others should
+ * be represented as a pointer of memory in pval or as a string, which
+ * is basically the same. In such cases the len field indicates
+ * the size of this piece of memory.
+ *
+ * MonetDB extenders will use value records for passing parameters to
+ * their new operators. MonetDB algebraic commands receive an
+ * (argc, argv) combination, where
+ * argc is an integer indicating the size of the the argv array of value
+ * records. On call, the first record, argv[0], is always empty. The
+ * routine must place its return value - if any - there. The other
+ * values are the parameters.
+ *
+ * Actually, the gdk value type defined here should become a built-in
+ * type in the kernel. Next step will be to define the corresponding
+ * extension module.
+ *
+ * @+ Value operations
+ * The following primitives are required to manipulate value records.
+ * Note that binding a BAT requires upgrading its reference count.
+ * The receiver of the value should have been cleared or represent
+ * free space.
+ */
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
@@ -190,10 +190,11 @@ VALinit(ValPtr d, int tpe, ptr s)
 	return d;
 }
 
-@-
-VALprint shows the contents of a value record, but without
-expanding the BAT contents.
-@c
+/*
+ * @-
+ * VALprint shows the contents of a value record, but without
+ * expanding the BAT contents.
+ */
 int
 VALprint(stream *s, ValPtr res)
 {
@@ -212,13 +213,14 @@ VALformat(char **buf, ValPtr res)
 	return ATOMformat(t, VALptr(res), buf);
 }
 
-@-
-The routine @%VALconvert@ transforms a value for interpretation
-in a certain type. It uses some standard cast conventions to do this.
-The result, a pointer to a value, is returned. If there are
-illegal values, or type combinations involved, it gives
-up with an ILLEGALVALUE.
-
+/*
+ * @-
+ * The routine VALconvert transforms a value for interpretation
+ * in a certain type. It uses some standard cast conventions to do this.
+ * The result, a pointer to a value, is returned. If there are
+ * illegal values, or type combinations involved, it gives
+ * up with an ILLEGALVALUE.
+ */
 @= valcheck
 	((@3) @1 < (@3) GDK_@2_min || (@3) @1 > (@3) GDK_@2_max) ? @2_nil : (@2) @1
 @= valcheck_r
@@ -270,6 +272,7 @@ up with an ILLEGALVALUE.
 		@1 = (@2) src->val.bval;
 		break;
 	}
+@
 @c
 /* convert value in src and store in dst
    does not destroy src, but src and dst are allowed to point to the
@@ -718,5 +721,3 @@ VALcmp(ValPtr p, ValPtr q)
 
 }
 
-@}
-@

@@ -18,84 +18,85 @@ All Rights Reserved.
 @
 
 @f opt_macro
-@a M. L. Kersten
-@- Macro and Orcam Processing
-The optimizers form the basis for replacing code fragments.
-Two optimizers are focused on code expansion and contraction.
-The former involves replacing individual instructions by a block of
-MAL code, i.e. a @sc{macro} call.
-The latter depicts the inverse operation, a group of instructions
-is replaced by a single MAL assignment statement, i.e. a @sc{orcam}
-call.
 
-The macro facility is limited to type-correct MAL functions,
-which means that replacement is not essential from a semantic
-point of view. They could have been called, or the block need
-not be compressed. It is equivalent to inline code expansion.
-
-The @sc{macro} and @sc{orcam} transformations provide 
-a basis to develop front-end specific code generation templates.
-The prototypical test case is the following template:
-@example
-function user.joinPath( a:bat[:any_1,:any_2],
-                b:bat[:any_2,:any_3],
-                c:bat[:any_3,:any_4]):bat[:any_1,:any_4]
-address fastjoinpath;
-    z:= join(a,b);
-    zz:= join(z,c);
-    return zz;
-end user.joinPath;
-@end example
-
-The call @sc{optimizer.macro("user", "joinPath")} hunts
-for occurrences of the instruction call in the block in
-which it is called
-and replaces it with the body, i.e. it in-lines the code.
-Conversely,  the @sc{optimizer.orcam("user", "joinPath")}
-attempts to localize a block of two join operations and,
-when found, it is replaced by the direct call to @sc{joinPath}.
-In turn, type resolution then directs execution to a built-in
-function @sc{fastjoinpath}.
-
-The current implementation is limited to finding a consecutive
-sequence, ending in a return-statement. The latter is needed to
-properly embed the result in the enclosed environment.
-It may be extended in the future to consider the flow of control as well.
-
-@{
-After both operations the flow of control structure has to be
-checked and for contraction we also have to resolve the new
-code, e.g. to bind the new instruction with an implementation.
-(Or become part of a macro expansion)
-
-The implementation is based on matching MAL instructions.
-This means they address the same function, but also that their 
-variables are isomorphic.
-The generalization of malMatch is malFcnMatch, which checks
-equivalence of a function body as an occurrence in another one.
-@}
-
-The optimizer can be targeted to a function @sc{user.foo()}
-using the call @sc{optimizer.macro("user","foo","user","joinPath");
-@- Known issues
-The functions subject to expansion or contraction should be
-checked on 'proper' behavior.
-
-The current implementation is extremely limited. 
-The @sc{macro} optimizer does not recognize use of intermediate results 
-outside the block being contracted. This should be checked and
-it should block the replacement, unless the intermediates are part of
-the return list.
-Likewise, we assume here that the block has a single return
-statement, which is also the last one to be executed.
-
-The @sc{macro} optimizer can only expand functions. Factories already
-carry a significant complex flow of control that is hard
-to simulate in the nested flow structure of an arbitrary function.
-
-The @sc{orcam} optimizer can not deal with calls controlled by a barrier.
-It would often require a rewrite of several other statements as well.
-
+@c
+/*
+ * @a M. L. Kersten
+ * @- Macro and Orcam Processing
+ * The optimizers form the basis for replacing code fragments.
+ * Two optimizers are focused on code expansion and contraction.
+ * The former involves replacing individual instructions by a block of
+ * MAL code, i.e. a @sc{macro} call.
+ * The latter depicts the inverse operation, a group of instructions
+ * is replaced by a single MAL assignment statement, i.e. a @sc{orcam}
+ * call.
+ *
+ * The macro facility is limited to type-correct MAL functions,
+ * which means that replacement is not essential from a semantic
+ * point of view. They could have been called, or the block need
+ * not be compressed. It is equivalent to inline code expansion.
+ *
+ * The @sc{macro} and @sc{orcam} transformations provide
+ * a basis to develop front-end specific code generation templates.
+ * The prototypical test case is the following template:
+ * @example
+ * function user.joinPath( a:bat[:any_1,:any_2],
+ *                 b:bat[:any_2,:any_3],
+ *                 c:bat[:any_3,:any_4]):bat[:any_1,:any_4]
+ * address fastjoinpath;
+ *     z:= join(a,b);
+ *     zz:= join(z,c);
+ *     return zz;
+ * end user.joinPath;
+ * @end example
+ *
+ * The call @sc{optimizer.macro("user", "joinPath")} hunts
+ * for occurrences of the instruction call in the block in
+ * which it is called
+ * and replaces it with the body, i.e. it in-lines the code.
+ * Conversely,  the @sc{optimizer.orcam("user", "joinPath")}
+ * attempts to localize a block of two join operations and,
+ * when found, it is replaced by the direct call to @sc{joinPath}.
+ * In turn, type resolution then directs execution to a built-in
+ * function @sc{fastjoinpath}.
+ *
+ * The current implementation is limited to finding a consecutive
+ * sequence, ending in a return-statement. The latter is needed to
+ * properly embed the result in the enclosed environment.
+ * It may be extended in the future to consider the flow of control as well.
+ *
+ * After both operations the flow of control structure has to be
+ * checked and for contraction we also have to resolve the new
+ * code, e.g. to bind the new instruction with an implementation.
+ * (Or become part of a macro expansion)
+ *
+ * The implementation is based on matching MAL instructions.
+ * This means they address the same function, but also that their
+ * variables are isomorphic.
+ * The generalization of malMatch is malFcnMatch, which checks
+ * equivalence of a function body as an occurrence in another one.
+ *
+ * The optimizer can be targeted to a function @sc{user.foo()}
+ * using the call @sc{optimizer.macro("user","foo","user","joinPath");
+ * @- Known issues
+ * The functions subject to expansion or contraction should be
+ * checked on 'proper' behavior.
+ *
+ * The current implementation is extremely limited.
+ * The @sc{macro} optimizer does not recognize use of intermediate results
+ * outside the block being contracted. This should be checked and
+ * it should block the replacement, unless the intermediates are part of
+ * the return list.
+ * Likewise, we assume here that the block has a single return
+ * statement, which is also the last one to be executed.
+ *
+ * The @sc{macro} optimizer can only expand functions. Factories already
+ * carry a significant complex flow of control that is hard
+ * to simulate in the nested flow structure of an arbitrary function.
+ *
+ * The @sc{orcam} optimizer can not deal with calls controlled by a barrier.
+ * It would often require a rewrite of several other statements as well.
+ */
 @mal
 pattern optimizer.macro(targetmod:str,targetfcn:str):void
 address OPTmacro
@@ -111,16 +112,17 @@ pattern optimizer.orcam(mod:str,fcn:str,targetmod:str,targetfcn:str):void
 address OPTorcam
 comment "Inverse macro, find pattern and replace with a function call.";
 
-@-
-@{
-#pattern optimizer.macro(targetmod:str):void
-#address OPTmacro
-#comment "Inline functions known a specific module.";
-#pattern optimizer.orcam(targetmod:str):void
-#address OPTorcam
-#comment "Inverse macro processor for a module";
-@+ Implementation section
 @h
+/*
+ * @-
+ * #pattern optimizer.macro(targetmod:str):void
+ * #address OPTmacro
+ * #comment "Inline functions known a specific module.";
+ * #pattern optimizer.orcam(targetmod:str):void
+ * #address OPTorcam
+ * #comment "Inverse macro processor for a module";
+ * @+ Implementation section
+ */
 #ifndef _MAL_MACRO_H_
 #define _MAL_MACRO_H_
 
@@ -133,18 +135,21 @@ opt_export int inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc);
 #define OPTDEBUGorcam  if ( optDebug & (1 <<DEBUG_OPT_ORCAM) )
 
 #endif /* _MAL_MACRO_H_ */
-@-
 @c
+/*
+ * @-
+ */
 #include "monetdb_config.h"
 #include "opt_prelude.h"
 #include "opt_macro.h"
 #include "mal_interpreter.h"
 #include "mal_instruction.h"
 
-@-
-The optimizer hooks are introduced first.
-They are refered to from the optimizer module.
-@c
+/*
+ * @-
+ * The optimizer hooks are introduced first.
+ * They are refered to from the optimizer module.
+ */
 static int
 malMatch(InstrPtr p1, InstrPtr p2)
 {
@@ -173,16 +178,17 @@ malMatch(InstrPtr p1, InstrPtr p2)
 	return 1;
 }
 
-@-
-Matching a block calls for building two variable lists used.
-The isomorphism can be determined after-wards using a single scan.
-The candidate block is matched with mb starting at a given pc.
-The candidate block is expected to defined as a function, including
-a signature and end-statement. They are ignored in the comparison
-
-Beware, the variables in the block being removed, could be
-used furtheron in the program. [tricky to detect, todo]
-@c
+/*
+ * @-
+ * Matching a block calls for building two variable lists used.
+ * The isomorphism can be determined after-wards using a single scan.
+ * The candidate block is matched with mb starting at a given pc.
+ * The candidate block is expected to defined as a function, including
+ * a signature and end-statement. They are ignored in the comparison
+ *
+ * Beware, the variables in the block being removed, could be
+ * used furtheron in the program. [tricky to detect, todo]
+ */
 static int
 malFcnMatch(MalBlkPtr mc, MalBlkPtr mb, int pc)
 {
@@ -232,12 +238,13 @@ malFcnMatch(MalBlkPtr mc, MalBlkPtr mb, int pc)
 	GDKfree(mvar);
 	return 1;
 }
-@- Macro expansions
-The macro expansion routine walks through the MAL code block in search
-for the function to be expanded.  
-The macro expansion process is restarted at the first new instruction.
-A global is used to protect at (direct) recursive expansions
-@c
+/*
+ * @- Macro expansions
+ * The macro expansion routine walks through the MAL code block in search
+ * for the function to be expanded.
+ * The macro expansion process is restarted at the first new instruction.
+ * A global is used to protect at (direct) recursive expansions
+ */
 #define MAXEXPANSION 256
 
 int
@@ -390,14 +397,15 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 	return pc;
 }
 
-@-
-The macro processor should be carefull in replacing the
-instruction. In particular, any RETURN or YIELD statement
-should be replaced by a jump. For the time being,
-we only allow for a single return statement at the end
-of the block.
-The semantic test is encapsulated in a routines.
-@c
+/*
+ * @-
+ * The macro processor should be carefull in replacing the
+ * instruction. In particular, any RETURN or YIELD statement
+ * should be replaced by a jump. For the time being,
+ * we only allow for a single return statement at the end
+ * of the block.
+ * The semantic test is encapsulated in a routines.
+ */
 
 static str
 MACROvalidate(MalBlkPtr mb)
@@ -448,16 +456,17 @@ MACROprocessor(Client cntxt, MalBlkPtr mb, Symbol t)
 	return msg;
 }
 
-@- Macro inversions
-Macro inversions map a consecutive sequences of MAL instructions
-into a single call. Subsequence resolution will bind it with the proper
-function. The pattern being replaced should be a self-standing
-assignment. [could be improved]
-
-The function being replaced should assign the result to
-the signature variables. Otherwise it will be difficult
-to assess which result to retain.
-@c
+/*
+ * @- Macro inversions
+ * Macro inversions map a consecutive sequences of MAL instructions
+ * into a single call. Subsequence resolution will bind it with the proper
+ * function. The pattern being replaced should be a self-standing
+ * assignment. [could be improved]
+ *
+ * The function being replaced should assign the result to
+ * the signature variables. Otherwise it will be difficult
+ * to assess which result to retain.
+ */
 static int
 replaceMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 {
@@ -555,11 +564,6 @@ ORCAMprocessor(Client cntxt, MalBlkPtr mb, Symbol t)
 	return msg;
 }
 
-@-
-The optimizer call infrastructure is identical to the liners
-function with the exception that here we inline all possible
-functions, regardless their
-@c
 @= implementation
 static int
 OPT@1Implementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
@@ -599,23 +603,32 @@ OPT@1Implementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	}
 	return 1;
 }
+@
 @c
+/*
+ * @-
+ * The optimizer call infrastructure is identical to the liners
+ * function with the exception that here we inline all possible
+ * functions, regardless their
+ */
 @:implementation(macro,MACRO)@
 @:implementation(orcam,ORCAM)@
-@- Optimizer code wrapper
-The optimizer wrapper code is the interface to the MAL optimizer calls.
-It prepares the environment for the optimizers to do their work and removes
-the call itself to avoid endless recursions.
-
-Before an optimizer is finished, it should leave a clean state behind.
-Moreover, the information of the optimization step is saved for
-debugging and analysis.
-
-The wrapper expects the optimizers to return the number of
-actions taken, i.e. number of succesful changes to the code.
-
-This code is slightly different from other optimizer
-wrappers, because the mod.fcn argument is optional.
+/*
+ * @- Optimizer code wrapper
+ * The optimizer wrapper code is the interface to the MAL optimizer calls.
+ * It prepares the environment for the optimizers to do their work and removes
+ * the call itself to avoid endless recursions.
+ *
+ * Before an optimizer is finished, it should leave a clean state behind.
+ * Moreover, the information of the optimization step is saved for
+ * debugging and analysis.
+ *
+ * The wrapper expects the optimizers to return the number of
+ * actions taken, i.e. number of succesful changes to the code.
+ *
+ * This code is slightly different from other optimizer
+ * wrappers, because the mod.fcn argument is optional.
+ */
 @= exportOptimizer
 opt_export str OPT@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
@@ -648,7 +661,7 @@ str OPT@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		actions= OPT@1Implementation(cntxt,mb,stk,p);
     return optimizerCheck(cntxt,mb, "optimizer.@1", actions, GDKusec() - clk, OPT_CHECK_ALL);
 }
+@
 @c
 @:wrapOptimizer(macro,OPT_CHECK_ALL)@
 @:wrapOptimizer(orcam,OPT_CHECK_ALL)@
-@}

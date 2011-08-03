@@ -18,16 +18,19 @@ All Rights Reserved.
 @
 
 @f crackers_crackmerge
-@a Martin Kersten, Stratos Idreos, Stefan Manegold
-@d March 2006 - July 2007
-@* Select Operators for Incrmental crack merge
 
-
-@+ Interface
-
-
-@- Type expansion
-
+@c
+/*
+ * @a Martin Kersten, Stratos Idreos, Stefan Manegold
+ * @d March 2006 - July 2007
+ * @* Select Operators for Incrmental crack merge
+ *
+ *
+ * @+ Interface
+ *
+ *
+ * @- Type expansion
+ */
 @= TypeSwitch
 @:@1(chr,simple,,chr)@
 @:@1(sht,simple,,sht)@
@@ -37,11 +40,10 @@ All Rights Reserved.
 @:@1(dbl,simple,,dbl)@
 @:@1(date,atom,TYPE_,loc)@
 @
-
-
-@- Header file
-
 @h
+/*
+ * @- Header file
+ */
 #ifndef _CRACKERS_CRACKMERGE_H_
 #define _CRACKERS_CRACKMERGE_H_
 
@@ -49,23 +51,19 @@ All Rights Reserved.
 @:TypeSwitch(SelectFunctions_decl)@
 
 #endif /* _CRACKERS_CRACKMERGE_H */
-@
-
-
-@- Exported signatures
-
+/*
+ * @- Exported signatures
+ */
 @= SelectFunctions_decl
 crackers_export str CRKselectCrackMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, int *sliceSize, int *mode);
 @
-
-
-@{
-@+ Implementation
-
-
-@- C file
-
 @c
+/*
+ * @+ Implementation
+ *
+ *
+ * @- C file
+ */
 #include "monetdb_config.h"
 #include "crackers.h"
 
@@ -74,11 +72,9 @@ crackers_export str CRKselectCrackMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh,
 
 /* Exported functions */
 @:TypeSwitch(SelectFunctions_impl)@
-@
-
-
-@- Exported functions
-
+/*
+ * @- Exported functions
+ */
 @= SelectFunctions_impl
 str
 CRKselectCrackMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, int *sliceSize, int *mode){		
@@ -90,11 +86,7 @@ CRKselectCrackMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, 
 		return SelectCrackMergeBounds_@1(vid, bid, low, hgh, inclusiveLow, inclusiveHgh, sliceSize, mode);
 }
 @
-
-
-@- Local support functions and macros
-
-
+ * @- Local support functions and macros
 @= printVarTypes
 {
 /* @1: the type; e.g., chr bte sht int oid wrd flt dbl lng str */
@@ -105,7 +97,6 @@ CRKselectCrackMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, 
 	GDKfree(MyBuf);
 }
 @
-
 @= crkThreeTree
         /*printf("crack in three pieces\n");*/
 	if (@7 == TRUE && @8 == TRUE)
@@ -122,7 +113,6 @@ CRKselectCrackMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, 
 		addCrackerIndex_@1(@4,&@5,@7,_vl,@3);
 		addCrackerIndex_@1(@4,&@6,!@8,vh,@3);
 @
-
 @= crkThreeTreeHybrid
         /*printf("crack in three pieces\n");*/
 	if (@7 == TRUE && @8 == TRUE)
@@ -141,7 +131,6 @@ CRKselectCrackMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, 
 		offset+=vh-vl;
 		if (vh==vl || vl==0) offset++;
 @
-
 @= crkThreeTree2
         /*printf("crack in three pieces\n");*/
 	if (@7 == TRUE && @8 == TRUE)
@@ -153,7 +142,6 @@ CRKselectCrackMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, 
 	if (@7 == FALSE && @8 == FALSE)
 		CRKcrackUnorderedThree_LO_RO_@1(@2,@5,@6, cl1, ch2, &vl, &vh);
 @
-
 @= crkTwoLTree
 	/*CRACK in two pieces cl1-ch1 using >incLow bound*/
 	if (@4 == TRUE)
@@ -172,7 +160,6 @@ CRKselectCrackMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, 
 	vl++; /* We need to take next position because the crack function always returns the last bun of the left piece.
 		Instead we want the first bun of the right piece*/
 @
-
 @= crkTwoRTree
 	/*CRACK in two pieces cl2-ch2 using <incHgh bound*/
 	if (@4 == TRUE)
@@ -190,7 +177,6 @@ CRKselectCrackMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, 
 		vh--;
 	}
 @
-
 @= CrackAndCollectTuples
 	current=CrackerIndex[m].smNode;
 	resTuplesLocal=0;
@@ -268,7 +254,6 @@ CRKselectCrackMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, 
 		current=current->next;
 	}
 @
-
 @= FullMergeFillGap
 	@:CrackAndCollectTuples(@1,@2,@3,@4,@5)@
 	
@@ -282,7 +267,6 @@ CRKselectCrackMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, 
 		BBPunfix(br->batCacheid);
 	
 @
-
 @= FullMergeFillLowGap
 	@:CrackAndCollectTuples(@1,@2,@3,@4,@5)@
 
@@ -302,7 +286,6 @@ CRKselectCrackMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, 
 		BBPunfix(br->batCacheid);
 	
 @
-
 @= FullMergeFillHghGap
 	@:CrackAndCollectTuples(@1,@2,@3,@4,@5)@
 
@@ -322,8 +305,6 @@ CRKselectCrackMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, 
 		BBPunfix(br->batCacheid);
 	
 @
-
-
 @= FullMerge
 	@:CrackAndCollectTuples(@1,@2,@3,@4,@5)@
 	if (resTuplesLocal>0){
@@ -343,7 +324,6 @@ CRKselectCrackMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, 
 	}else
 		BBPunfix(br->batCacheid);
 @
-
 @= CrackSearchBounds
 printf("\nsearch bounds \n");
 	markLow=markHgh=0;
@@ -425,7 +405,6 @@ printf("\nsearch bounds \n");
 	resTuples+=resTuplesLocal;
 	printf("local result tuples are "OIDFMT"\n",resTuplesLocal);
 @
-
 @= CrackSearchLow
 	b=BATdescriptor(curNode->pieceBAT);
 	if (b==NULL)
@@ -454,7 +433,6 @@ printf("\nsearch bounds \n");
 	}
 	BBPunfix(b->batCacheid);
 @
-
 @= CrackSearchHgh
 	b=BATdescriptor(curNode->pieceBAT);
 	if (b==NULL)
@@ -483,7 +461,6 @@ printf("\nsearch bounds \n");
 	}
 	BBPunfix(b->batCacheid);
 @
-
 @= NextPiece
 	notFound=TRUE;
 	/*jump over contiguous already merged pieces*/
@@ -510,7 +487,6 @@ printf("\nsearch bounds \n");
 	curValue = (@1 *)Tloc(cr, curTuple);
 	curPos   = *(oid*)Hloc(cr, curTuple)+1;
 @
-
 @= printVarTypes
 {
 	str MyBuf = NULL;
@@ -520,7 +496,6 @@ printf("\nsearch bounds \n");
 	GDKfree(MyBuf);
 }
 @
-
 @= firstQueryOriginalCrack
 		while (1){
 			struct sortMergeNode *smNode;
@@ -573,7 +548,6 @@ printf("\nsearch bounds \n");
 			endSlice=endSlice+sliceSize>BATcount(bo)?BATcount(bo):endSlice+sliceSize;
 		}
 @
-
 @= firstQueryHybridCrack
 		while (1){
 			struct sortMergeNode *smNode;
@@ -623,7 +597,6 @@ printf("\nsearch bounds \n");
 		}
 		resTuples=offset;
 @
-
 @= RangeSelectBody
 	BAT *b,*bo,*br,*cr;
 	int  m;
@@ -816,14 +789,9 @@ printf("\nsearch bounds \n");
 	(void) nexPos;
 	return MAL_SUCCEED;
 @
-
 @= CrackMergeOperations
 static str
 SelectCrackMergeBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, int *psliceSize, int *mode){	
 	@:RangeSelectBody(@1,@2,@3,@4,)@
 }
 @
-
-@}
-
-

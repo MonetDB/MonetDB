@@ -18,16 +18,19 @@ All Rights Reserved.
 @
 
 @f crackers_core_unordered
-@a Martin Kersten, Stratos Idreos, Stefan Manegold
-@d March 2006 - July 2007
-@* Core Cracking (unordered)
 
-
-@+ Interface
- 
-
-@- Type expansion
-
+@c
+/*
+ * @a Martin Kersten, Stratos Idreos, Stefan Manegold
+ * @d March 2006 - July 2007
+ * @* Core Cracking (unordered)
+ *
+ *
+ * @+ Interface
+ *
+ *
+ * @- Type expansion
+ */
 @= TypeSwitch
 @:@1(chr,simple,,@2)@
 @:@1(sht,simple,,@2)@
@@ -37,13 +40,11 @@ All Rights Reserved.
 @:@1(dbl,simple,,@2)@
 @:@1(date,atom,TYPE_,@2)@
 @
-
 @= TypeSwitch_2
 @:@1(int,,simple,,int,@2)@
 @:@1(dbl,,simple,,dbl,@2)@
 @:@1(date,,atom,TYPE_,loc,@2)@
 @
-
 @= TypeSwitch_4
 /* TODO: add the rest of the type combinations once code is stable */
 @:@1(int,lng,simple,,,@2)@
@@ -59,7 +60,6 @@ All Rights Reserved.
 @:@1(date,dbl,atom,TYPE_,,@2)@
 @:@1(date,date,atom,TYPE_,,@2)@
 @
-
 @= TypeSwitch_5
 /* TODO: add the rest of the type combinations once code is stable */
 @:@1(int,int,simple,,,@2)@
@@ -69,10 +69,10 @@ All Rights Reserved.
 @:@1(dbl,int,simple,,,@2)@
 @:@1(dbl,dbl,simple,,,@2)@
 @
-
-@- Header file
-
 @h
+/*
+ * @- Header file
+ */
 #ifndef _CRACKERS_CORE_UNORDERED_H_
 #define _CRACKERS_CORE_UNORDERED_H_
 
@@ -88,19 +88,14 @@ All Rights Reserved.
 @:TypeSwitch(CoreUnorderedFunctions_decl,)@
 
 #endif /* _CRACKERS_CORE_UNORDERED_H */
-@
-
-
-@- Exported signatures
-
+/*
+ * @- Exported signatures
+ */
 @= CoreUnorderedFunctions_decl
 crackers_export str CRKcrackUnorderedZero_@1 (int *res, int *bid, @1 *mid);
 crackers_export str CRKcrackUnorderedThree_@1 (int *res, int *bid, @1 *low, @1 *hgh);
 @
-
-
-@- Signatures shared within the crackers module/library
-
+ * @- Signatures shared within the crackers module/library
 @= operations
 @:crackInTwoUnorderedPieces@4(@1,LE,LE,GT,@2,@3)@
 @:crackInTwoUnorderedPieces@4(@1,RE,LT,GE,@2,@3)@
@@ -109,19 +104,16 @@ crackers_export str CRKcrackUnorderedThree_@1 (int *res, int *bid, @1 *low, @1 *
 @:crackInThreeUnorderedPieces@4(@1,LO,RO,LE,GT,LT,GE,@2,@3)@
 @:crackInThreeUnorderedPieces@4(@1,LE,RO,LT,GE,LT,GE,@2,@3)@
 @
-
 @= crackInTwoUnorderedPieces_decl
 str CRKcrackUnorderedZero_@2_@1( BAT *b, @1 mval, oid first, oid last, oid *pos);
 str CRKcrackUnorderedZero2_@2_@1( BAT *b, @1 mval, oid first, oid last, oid *pos, int indexPosition, BAT * index);
 @
-
 @= crackInThreeUnorderedPieces_decl
 str CRKcrackUnorderedThree_@2_@3_@1( BAT *b, @1 low, @1 hgh, oid first, oid last, oid *posl, oid *posh);
 str CRKcrackUnorderedThree2_@2_@3_@1( BAT *b, @1 low, @1 hgh, oid first, oid last, oid *posl, oid *posh);
 str CRKcrackUnorderedThreeCopy_@2_@3_@1( BAT *b, @1 low, @1 hgh, oid first, oid last, oid *posl, oid *posh, BAT *bc);
 str CRKcrackUnorderedThreeHybrid_@2_@3_@1( BAT *slice, @1 low, @1 hgh, oid *posl, oid *posh, BAT *partition, BAT *result, oid resoffset);
 @
-
 @= operationsSideways
 @:crackInTwoUnorderedPiecesSideways@6(@1,@2,LE,LE,GT,@3,@4)@
 @:crackInTwoUnorderedPiecesSideways@6(@1,@2,RE,LT,GE,@3,@4)@
@@ -130,12 +122,10 @@ str CRKcrackUnorderedThreeHybrid_@2_@3_@1( BAT *slice, @1 low, @1 hgh, oid *posl
 @:crackInThreeUnorderedPiecesSideways@6(@1,@2,LO,RO,LE,GT,LT,GE,@3,@4)@
 @:crackInThreeUnorderedPiecesSideways@6(@1,@2,LE,RO,LT,GE,LT,GE,@3,@4)@
 @
-
 @= operationsSidewaysSample
 @:crackInTwoUnorderedPiecesSidewaysSample@6(@1,@2,LE,LE,GT,@3,@4)@
 @:crackInTwoUnorderedPiecesSidewaysSample@6(@1,@2,RE,LT,GE,@3,@4)@
 @
-
 @= operationsSideways_str
 @:crackInTwoUnorderedPiecesSideways_str@6(@1,,LE,LE,GT,@3,@4)@
 @:crackInTwoUnorderedPiecesSideways_str@6(@1,,RE,LT,GE,@3,@4)@
@@ -144,34 +134,28 @@ str CRKcrackUnorderedThreeHybrid_@2_@3_@1( BAT *slice, @1 low, @1 hgh, oid *posl
 @:crackInThreeUnorderedPiecesSideways_str@6(@1,,LO,RO,LE,GT,LT,GE,@3,@4)@
 @:crackInThreeUnorderedPiecesSideways_str@6(@1,,LE,RO,LT,GE,LT,GE,@3,@4)@
 @
-
 @= crackInTwoUnorderedPiecesSideways_decl
 str CRKcrackUnorderedZeroSideways_@3_@1_@2( BAT *b, @1 mval, oid first, oid last, oid *pos);
 @
-
 @= crackInTwoUnorderedPiecesSidewaysSample_decl
 str CRKcrackUnorderedZeroSidewaysSample_@3_@1_@2( BAT *b, @1 *mid, oid first, oid last, oid *pos, lng *pieceSize, bit sample);
 @
-
 @= crackInTwoUnorderedPiecesSideways_str_decl
 str CRKcrackUnorderedZeroSideways_@3_@1_str( BAT *b, @1 mval, oid first, oid last, oid *pos);
 @
-
 @= crackInThreeUnorderedPiecesSideways_decl
 str CRKcrackUnorderedThreeSideways_@3_@4_@1_@2( BAT *b, @1 low, @1 hgh, oid first, oid last, oid *posl, oid *posh);
 @
-
 @= crackInThreeUnorderedPiecesSideways_str_decl
 str CRKcrackUnorderedThreeSideways_@3_@4_@1_str( BAT *b, @1 low, @1 hgh, oid first, oid last, oid *posl, oid *posh);
 @
-
-@{
-@+ Implementation
-
-
-@- C file
-
 @c
+/*
+ * @+ Implementation
+ *
+ *
+ * @- C file
+ */
 #include "monetdb_config.h"
 #include "crackers.h"
 
@@ -183,11 +167,9 @@ str CRKcrackUnorderedThreeSideways_@3_@4_@1_str( BAT *b, @1 low, @1 hgh, oid fir
 
 /* Exported functions */
 @:TypeSwitch(CoreUnorderedFunctions_impl,)@
-@
-
-
-@- Exported functions
-
+/*
+ * @- Exported functions
+ */
 @= CoreUnorderedFunctions_impl
 str
 CRKcrackUnorderedZero_@1 (int *res, int *bid, @1 *mid){
@@ -231,10 +213,7 @@ CRKcrackUnorderedThree_@1 (int *res, int *bid, @1 *low, @1 *hgh){
         return msg;
 }
 @
-
-
-@- Functions shared within the crackers module/library
-
+ * @- Functions shared within the crackers module/library
 @= crackInTwoUnorderedPieces_impl
 str
 CRKcrackUnorderedZero_@2_@1( BAT *b, @1 mval, BUN first, BUN last, oid *pos){
@@ -398,7 +377,6 @@ CRKcrackUnorderedZero2_@2_@1( BAT *b, @1 mval, BUN first, BUN last, oid *pos, in
         return MAL_SUCCEED;
 }
 @
-
 @= crackInThreeUnorderedPieces_impl
 str
 CRKcrackUnorderedThree_@2_@3_@1( BAT *b, @1 low, @1 hgh, oid first, oid last, oid *posl, oid *posh){
@@ -770,10 +748,7 @@ CRKcrackUnorderedThreeHybrid_@2_@3_@1( BAT *slice, @1 low, @1 hgh, oid *posl, oi
 	return MAL_SUCCEED;
 }
 @
-
-
-@- Local support functions and macros
-
+ * @- Local support functions and macros
 @= shuffle
         tdummy = *@2;
         *@2 = *@3;
@@ -783,7 +758,6 @@ CRKcrackUnorderedThreeHybrid_@2_@3_@1( BAT *slice, @1 low, @1 hgh, oid *posl, oi
         *@4 = *@5;
         *@5 = hdummy;
 @
-
 @= shuffle2
         *@7 = *@2;
         *@6 = *@3;
@@ -791,7 +765,6 @@ CRKcrackUnorderedThreeHybrid_@2_@3_@1( BAT *slice, @1 low, @1 hgh, oid *posl, oi
         *@9 = @4;
         *@8 = @5;
 @
-
 @= shuffleSideways
 	hdummy = *(@1*) @3;
 	*(@1*) @3= *(@1*) @4;
@@ -830,7 +803,6 @@ CRKcrackUnorderedThreeHybrid_@2_@3_@1( BAT *slice, @1 low, @1 hgh, oid *posl, oi
 		break;
 	}
 @
-
 @= printVarTypes
 {
 /* @1: the type; e.g., chr bte sht int oid wrd flt dbl lng str */
@@ -841,7 +813,6 @@ CRKcrackUnorderedThreeHybrid_@2_@3_@1( BAT *slice, @1 low, @1 hgh, oid *posl, oi
 	GDKfree(MyBuf);
 }
 @
-
 @= crackInTwoUnorderedPiecesSideways_impl
 str
 CRKcrackUnorderedZeroSideways_@3_@1_@2( BAT *b, @1 mval, BUN first, BUN last, oid *pos){
@@ -892,7 +863,6 @@ CRKcrackUnorderedZeroSideways_@3_@1_@2( BAT *b, @1 mval, BUN first, BUN last, oi
         return MAL_SUCCEED;
 }
 @
-
 @= crackInTwoUnorderedPiecesSidewaysSample_impl
 
 str
@@ -973,7 +943,6 @@ CRKcrackUnorderedZeroSidewaysSample_@3_@1_@2( BAT *b, @1 *mid, BUN first, BUN la
         return MAL_SUCCEED;
 }
 @
-
 @= crackInThreeUnorderedPiecesSideways_impl
 str
 CRKcrackUnorderedThreeSideways_@3_@4_@1_@2( BAT *b, @1 low, @1 hgh, BUN first, BUN last, oid *posl, oid *posh){
@@ -1064,8 +1033,6 @@ CRKcrackUnorderedThreeSideways_@3_@4_@1_@2( BAT *b, @1 low, @1 hgh, BUN first, B
 	return MAL_SUCCEED;
 }
 @
-
-
 @= crackInTwoUnorderedPiecesSideways_str_impl
 str
 CRKcrackUnorderedZeroSideways_@3_@1_str( BAT *b, @1 mval, BUN first, BUN last, oid *pos){
@@ -1116,7 +1083,6 @@ CRKcrackUnorderedZeroSideways_@3_@1_str( BAT *b, @1 mval, BUN first, BUN last, o
         return MAL_SUCCEED;
 }
 @
-
 @= crackInThreeUnorderedPiecesSideways_str_impl
 str
 CRKcrackUnorderedThreeSideways_@3_@4_@1_str( BAT *b, @1 low, @1 hgh, BUN first, BUN last, oid *posl, oid *posh){
@@ -1206,5 +1172,3 @@ CRKcrackUnorderedThreeSideways_@3_@4_@1_str( BAT *b, @1 low, @1 hgh, BUN first, 
 	return MAL_SUCCEED;
 }
 @
-
-@}

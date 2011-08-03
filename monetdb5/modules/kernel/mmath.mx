@@ -18,16 +18,19 @@ All Rights Reserved.
 @
 
 @f mmath
-@a N.J. Nes, M. Kersten
-@d 07/01/1996
-@+ The math module
-This module contains the math commands. The implementation is very simply,
-the c math library functions are called. See for documentation the
-ANSI-C/POSIX manuals of the equaly named functions.
 
-NOTE: the operand itself is being modified, rather than that we produce
-a new BAT. This to save the expensive copying.
-@{
+@c
+/*
+ * @a N.J. Nes, M. Kersten
+ * @d 07/01/1996
+ * @+ The math module
+ * This module contains the math commands. The implementation is very simply,
+ * the c math library functions are called. See for documentation the
+ * ANSI-C/POSIX manuals of the equaly named functions.
+ *
+ * NOTE: the operand itself is being modified, rather than that we produce
+ * a new BAT. This to save the expensive copying.
+ */
 @mal
 module mmath;
 
@@ -208,8 +211,7 @@ address MATHunary_FINITE
 comment "The finite(x) function returns true if x is neither infinite 
         nor a 'not-a-number' (NaN) value, and false otherwise.";
 
-@+ Random numbers
-@mal
+# @+ Random numbers
 command rand{unsafe} () :int 
 address MATHrandint
 comment "return a random number";
@@ -221,9 +223,11 @@ command pi():dbl
 address MATHpi
 comment "return an important mathematical value";
 
-@-
-The constants defined in math.h are defined in const.mx
 @h
+/*
+ * @-
+ * The constants defined in math.h are defined in const.mx
+ */
 #ifndef __MMATH_H__
 #define __MMATH_H__
 #include "mal.h"
@@ -257,6 +261,7 @@ mmath_export str MATHbinary@1@2(@2 *res, @2 *a, @3 *b );
   @:binopbaseM5_export(@1,dbl,dbl)@
   @:binopbaseM5_export(@1,flt,flt)@
 
+@
 @h
 @:unopM5_export(_ACOS)@
 @:unopM5_export(_ASIN)@
@@ -295,8 +300,10 @@ mmath_export str MATHsrandint(int *seed);
 mmath_export str MATHpi(dbl *pi);
 #endif /* __MMATH_H__ */
 
-@+ Implementation Code
 @c
+/*
+ * @+ Implementation Code
+ */
 #include "monetdb_config.h"
 #include "mmath.h"
 
@@ -369,7 +376,6 @@ MNisinf(double x)
 #define floor_unary(x, z)     *z = floor(*x)
 #define fmod_binary(x, y, z)  *z = fmod(*x,*y)
 
-@c
 static str
 math_unary_ISNAN(bit *res, dbl *a)
 {
@@ -416,9 +422,11 @@ math_unary_FINITE(bit *res, dbl *a)
 	return MAL_SUCCEED;
 }
 
-@- Wrapping
-Wrapping around the M4 code base
-@-
+/*
+ * @- Wrapping
+ * Wrapping around the M4 code base
+ * @-
+ */
 @= unopbaseM5
 str MATHunary@1@3(@3 *res , @3 *a ) {
 #ifdef DEBUG
@@ -436,7 +444,8 @@ str MATHunary@1@3(@3 *res , @3 *a ) {
    return msg;
 }
 
-@-
+@
+ * @-
 @= unopM5
   @:unopbaseM5(@1,@2,dbl)@
   @:unopbaseM5(@1,@2,flt)@
@@ -481,6 +490,7 @@ str MATHbinary_ROUND@1(@1 *res, @1 *x, int *y) {
   }
   return MAL_SUCCEED;
 }
+@
 @c
 @:unopM5(_ACOS,acos)@
 @:unopM5(_ASIN,asin)@
@@ -551,4 +561,3 @@ MATHpi(dbl *pi)
 	return MAL_SUCCEED;
 }
 
-@}

@@ -18,51 +18,54 @@ All Rights Reserved.
 @
 
 @f opt_costModel
-@a M. L. Kersten
-@- Costmodel Approach
-Cost models form the basis for many optimization decisions.
-The cost parameters are typically the size of the (intermediate)
-results and response time. Alternatively, they are running
-aggregates, e.g. max memory and total execution time,
-obtained from a simulated run.
-The current implementation contains a framework and an example for
-building your own cost-based optimized.
 
-The @sc{optimizer.costModel()} works its way through a 
-MAL program in search for
-relational operators and estimates their result size. 
-The estimated size is left behind as the property @sc{rows}.
-@verbatim
-    r{rows=100} := bat.new(:oid,:int);
-    s{rows=1000}:= bat.new(:oid,:int);
-    rs:= algebra.select(s,1,1);
-    rr:= bat.reverse(r);
-    j:= algebra.join(rs,rr);
-    optimizer.costModel();
-@end verbatim
-changes the properties of the instructions as follows:
-@verbatim
-    r{rows=100} := bat.new(:oid,:int);
-    s{rows=1000} := bat.new(:oid,:int);
-    rs{rows=501} := algebra.select(s,1,1);
-    rr{rows=100} := bat.reverse(r);
-    j{rows=100} := algebra.join(rs,rr);
-@end verbatim
-
-The cost estimation does not use any statistics on the actual
-data distribution yet. It relies on the @sc{rows}
-property provided by the front-end or other optimizers.
-It just applies a few heuristic cost estimators.
-However, it ensures that empty results are only tagged
-with @sc{rows=0} if the estimate is accurate, otherwise
-it assumes at least one result row. This property makes
-it possible to safely pass the result of the cost estimation
-to the @sc{emptySet} optimizer for code reduction.
-@{
-@+ Implementation section
-To work in conjunction with the emptySet optimizer, we should
-assure that we don't estimate empty sets. The row count may
-only become zero if you are absolutely sure.
+@c
+/*
+ * @a M. L. Kersten
+ * @- Costmodel Approach
+ * Cost models form the basis for many optimization decisions.
+ * The cost parameters are typically the size of the (intermediate)
+ * results and response time. Alternatively, they are running
+ * aggregates, e.g. max memory and total execution time,
+ * obtained from a simulated run.
+ * The current implementation contains a framework and an example for
+ * building your own cost-based optimized.
+ *
+ * The @sc{optimizer.costModel()} works its way through a
+ * MAL program in search for
+ * relational operators and estimates their result size.
+ * The estimated size is left behind as the property @sc{rows}.
+ * @verbatim
+ *     r{rows=100} := bat.new(:oid,:int);
+ *     s{rows=1000}:= bat.new(:oid,:int);
+ *     rs:= algebra.select(s,1,1);
+ *     rr:= bat.reverse(r);
+ *     j:= algebra.join(rs,rr);
+ *     optimizer.costModel();
+ * @end verbatim
+ * changes the properties of the instructions as follows:
+ * @verbatim
+ *     r{rows=100} := bat.new(:oid,:int);
+ *     s{rows=1000} := bat.new(:oid,:int);
+ *     rs{rows=501} := algebra.select(s,1,1);
+ *     rr{rows=100} := bat.reverse(r);
+ *     j{rows=100} := algebra.join(rs,rr);
+ * @end verbatim
+ *
+ * The cost estimation does not use any statistics on the actual
+ * data distribution yet. It relies on the @sc{rows}
+ * property provided by the front-end or other optimizers.
+ * It just applies a few heuristic cost estimators.
+ * However, it ensures that empty results are only tagged
+ * with @sc{rows=0} if the estimate is accurate, otherwise
+ * it assumes at least one result row. This property makes
+ * it possible to safely pass the result of the cost estimation
+ * to the @sc{emptySet} optimizer for code reduction.
+ * @+ Implementation section
+ * To work in conjunction with the emptySet optimizer, we should
+ * assure that we don't estimate empty sets. The row count may
+ * only become zero if you are absolutely sure.
+ */
 @mal
 pattern optimizer.costModel():str
 address OPTcostModel;
@@ -85,13 +88,17 @@ comment "Estimate the cost of a relational expression";
 #define OPTDEBUGcostModel  if ( optDebug & (1 <<DEBUG_OPT_COSTMODEL) )
 
 #endif /* _OPT_COSTMODEL_H_ */
-@-
 @c
+/*
+ * @-
+ */
 #include "monetdb_config.h"
 #include "opt_costModel.h"
 
-@-
-The cost formula are repetative
+/*
+ * @-
+ * The cost formula are repetative
+ */
 @= newRows
 {
 		ValRecord v;
@@ -111,10 +118,13 @@ The cost formula are repetative
 		@:newRows(@1,@1,@2,0)@
 @= newRows2
 		@:newRows(1,2,@1,0)@
-@-
-SQL specific back propagation of table size may be needed to avoid
-the empty-set optimizer to through away a BAT we need.
+@
 @c
+/*
+ * @-
+ * SQL specific back propagation of table size may be needed to avoid
+ * the empty-set optimizer to through away a BAT we need.
+ */
 static void
 OPTbackpropagate(MalBlkPtr mb, int i, int idx){
 	wrd rows;
@@ -133,16 +143,17 @@ OPTbackpropagate(MalBlkPtr mb, int i, int idx){
 		} 
 	}
 }
-@-
-The cost will be used in many places to make decisions.
-Access should be fast.
-The SQL front-end also makes the BAT index available as the
-property bid. This can be used to access the BAT and involve
-more properties into the decision procedure.
-[to be done]
-Also make sure you don't re-use variables, because then the
-row count becomes non-deterministic.
-@c
+/*
+ * @-
+ * The cost will be used in many places to make decisions.
+ * Access should be fast.
+ * The SQL front-end also makes the BAT index available as the
+ * property bid. This can be used to access the BAT and involve
+ * more properties into the decision procedure.
+ * [to be done]
+ * Also make sure you don't re-use variables, because then the
+ * row count becomes non-deterministic.
+ */
 static int
 OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -215,19 +226,20 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				@:newRows1(1, c1)@
 			} else if (getFunctionId(p) == appendRef ||
 				   getFunctionId(p) == insertRef ){
-@-
-Updates are a little more complicated, because you have to
-propagate changes in the expected size up the expression tree.
-For example, the SQL snippet:
-    _49:bat[:oid,:oid]{rows=0,bid=622}  := sql.bind_dbat("sys","example",3);
-    _54 := bat.setWriteMode(_49);
-    bat.append(_54,_47,true);
-shows what is produced when it encounters a deletion. If a non-empty
-append is not properly passed back to _49, the emptySet 
-optimizer might remove the complete deletion code.
-The same holds for replacement operations, which add information to
-an initially empty insertion BAT.
-@c
+				/*
+				 * @-
+				 * Updates are a little more complicated, because you have to
+				 * propagate changes in the expected size up the expression tree.
+				 * For example, the SQL snippet:
+				 *     _49:bat[:oid,:oid]{rows=0,bid=622}  := sql.bind_dbat("sys","example",3);
+				 *     _54 := bat.setWriteMode(_49);
+				 *     bat.append(_54,_47,true);
+				 * shows what is produced when it encounters a deletion. If a non-empty
+				 * append is not properly passed back to _49, the emptySet
+				 * optimizer might remove the complete deletion code.
+				 * The same holds for replacement operations, which add information to
+				 * an initially empty insertion BAT.
+				 */
 				if( isaBatType(getArgType(mb,p,2)) ){
 					/* insert BAT */
 					@:newRows(1,2, c1 + c2+1,1)@ 
@@ -282,10 +294,11 @@ an initially empty insertion BAT.
 	return 1;
 }
 @include optimizerWrapper.mx
-@-
-The costModel does not change the program properties,
-which means we can skip the expensive defensive tests.
 @c
+/*
+ * @-
+ * The costModel does not change the program properties,
+ * which means we can skip the expensive defensive tests.
+ */
 #include "opt_statistics.h"
 @:wrapOptimizer(costModel,0)@
-@}

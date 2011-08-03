@@ -18,26 +18,30 @@ All Rights Reserved.
 @
 
 @f mal_mapi
-@a N.J. Nes P. Boncz, S. Mullender, M. Kersten
-@v 1.1
-@+ MAPI interface
-The complete Mapi library is available to setup
-communication with another Mserver.
 
-Clients may initialize a private listener to implement
-specific services. For example, in an OLTP environment
-it may make sense to have a listener for each transaction
-type, which simply parses a sequence of transaction parameters.
-
-Authorization of access to the server is handled as part
-of the client record initialization phase.
-
-This library internally uses pointer handles, which we replace with
-an index in a locally maintained table. It provides a handle
-to easily detect havoc clients.
-
-A cleaner and simplier interface for distributed processing is available in
-the module remote.
+@c
+/*
+ * @a N.J. Nes P. Boncz, S. Mullender, M. Kersten
+ * @v 1.1
+ * @+ MAPI interface
+ * The complete Mapi library is available to setup
+ * communication with another Mserver.
+ *
+ * Clients may initialize a private listener to implement
+ * specific services. For example, in an OLTP environment
+ * it may make sense to have a listener for each transaction
+ * type, which simply parses a sequence of transaction parameters.
+ *
+ * Authorization of access to the server is handled as part
+ * of the client record initialization phase.
+ *
+ * This library internally uses pointer handles, which we replace with
+ * an index in a locally maintained table. It provides a handle
+ * to easily detect havoc clients.
+ *
+ * A cleaner and simplier interface for distributed processing is available in
+ * the module remote.
+ */
 @mal
 module mapi;
 
@@ -245,10 +249,10 @@ comment "Bind a remote variable to a local one.";
 
 
 mapi.listen();
-@-
-@{
-
 @h
+/*
+ * @-
+ */
 #ifndef SERVER_H
 #define SERVER_H
 /* #define DEBUG_SERVER */
@@ -825,12 +829,13 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 	return MAL_SUCCEED;
 }
 
-@- Wrappers
-The MonetDB Version 5 wrappers are collected here
-The latest port known to gain access is stored
-in the database, so that others can more easily
-be notified.
-@c
+/*
+ * @- Wrappers
+ * The MonetDB Version 5 wrappers are collected here
+ * The latest port known to gain access is stored
+ * in the database, so that others can more easily
+ * be notified.
+ */
 str
 SERVERlisten_default(int *ret)
 {
@@ -866,14 +871,15 @@ SERVERlisten_port(int *ret, int *pid)
 	(void) ret;
 	return SERVERlisten(&port, 0, &maxusers);
 }
-@-
-The internet connection listener may be terminated from the server console,
-or temporarily suspended to enable system maintenance.
-It is advisable to trace the interactions of clients on the server
-side. At least as far as it concerns requests received.
-The kernel supports this 'spying' behavior with a file descriptor
-field in the client record.
-@c
+/*
+ * @-
+ * The internet connection listener may be terminated from the server console,
+ * or temporarily suspended to enable system maintenance.
+ * It is advisable to trace the interactions of clients on the server
+ * side. At least as far as it concerns requests received.
+ * The kernel supports this 'spying' behavior with a file descriptor
+ * field in the client record.
+ */
 
 str
 SERVERstop(int *ret)
@@ -922,27 +928,29 @@ SERVERexit(void){
 	ret = system("rm -rf .*_port");
 	(void) ret;
 }
-@+ Remote Processing
-The remainder of the file contains the wrappers around
-the Mapi library used by application programmers.
-Details on the functions can be found there.
-
-Sessions have a lifetime different from dynamic scopes.
-This means the  user should use a session identifier
-to select the correct handle.
-For the time being we use the index in the global
-session table. The client pointer is retained to
-perform access control. 
-
-We use a single result set handle. All data should be
-consumed before continueing.
-
-A few extra routines should be defined to
-dump and inspect the sessions table.
-	
-The remote site may return a single error
-with a series of error lines. These contain
-then a starting !. They are all stripped here.
+/*
+ * @+ Remote Processing
+ * The remainder of the file contains the wrappers around
+ * the Mapi library used by application programmers.
+ * Details on the functions can be found there.
+ *
+ * Sessions have a lifetime different from dynamic scopes.
+ * This means the  user should use a session identifier
+ * to select the correct handle.
+ * For the time being we use the index in the global
+ * session table. The client pointer is retained to
+ * perform access control.
+ *
+ * We use a single result set handle. All data should be
+ * consumed before continueing.
+ *
+ * A few extra routines should be defined to
+ * dump and inspect the sessions table.
+ *
+ * The remote site may return a single error
+ * with a series of error lines. These contain
+ * then a starting !. They are all stripped here.
+ */
 @= catchErrors
 {int rn = mapi_error(mid);
 	if ( ( rn == -4 && hdl && mapi_result_error(hdl))  || rn){
@@ -977,6 +985,7 @@ then a starting !. They are all stripped here.
 		throw(MAL, "@1", OPERATION_FAILED ": remote error: %s", newerr);
 	}
 }
+@
 @c
 #define MAXSESSIONS 32
 struct{
@@ -1150,7 +1159,9 @@ SERVERreconnectWithoutAlias(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		msg = SERVERsetAlias(&i, key, &nme);
 	return msg;
 }
-@-
+/*
+ * @-
+ */
 @= accessTest
  for(i=0; i< MAXSESSIONS; i++)
  if( SERVERsessions[i].c &&
@@ -1160,6 +1171,7 @@ SERVERreconnectWithoutAlias(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		" could not find matching session descriptor");
   mid= SERVERsessions[i].mid;
   (void) mid; /* silence compilers */
+@
 @c
 str
 SERVERsetAlias(int *ret, int *key, str *dbalias){
@@ -1555,18 +1567,19 @@ SERVERexplain(str *ret, int *key){
 	*ret= GDKstrdup(mapi_error_str(mid));
 	return MAL_SUCCEED;
 }
-@-
-The remainder should contain the wrapping of 
-relevant SERVER functions. Furthermore, we 
-should analyse the return value and update 
-the stack trace.
-
-Two routines should be 
-mapi.rpc(key,"query") 
-@-
-The generic scheme for handling a remote MAL
-procedure call with a single row answer.
-@c
+/*
+ * @-
+ * The remainder should contain the wrapping of
+ * relevant SERVER functions. Furthermore, we
+ * should analyse the return value and update
+ * the stack trace.
+ *
+ * Two routines should be
+ * mapi.rpc(key,"query")
+ * @-
+ * The generic scheme for handling a remote MAL
+ * procedure call with a single row answer.
+ */
 static void SERVERfieldAnalysis(str fld, int tpe, ValPtr v){
 	v->vtype= tpe;
 	switch(tpe){
@@ -1712,11 +1725,12 @@ SERVERmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		throw(MAL, "mapi.rpc","Too many answers");
 	return MAL_SUCCEED;
 }
-@-
-Transport of the BATs is only slightly more complicated.
-The generic implementation based on a pattern is the next
-step. 
-@c
+/*
+ * @-
+ * Transport of the BATs is only slightly more complicated.
+ * The generic implementation based on a pattern is the next
+ * step.
+ */
 str
 SERVERmapi_rpc_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int *ret;
@@ -1911,4 +1925,3 @@ SERVERbindBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	@:catchErrors(mapi.bind)@
 	return MAL_SUCCEED;
 }
-@}

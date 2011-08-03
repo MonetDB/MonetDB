@@ -18,20 +18,23 @@ All Rights Reserved.
 @
 
 @f batxml
-@a M.L. Kersten
-@+ XML multiplexes
-SQL/XML requires a handful of instructions.
-The collection of routines provided here are map operations
-for the atom xml primitives. 
 
-In line with the batcalc module, we assume that
-if two bat operands are provided that they are already
-aligned on the head. Moreover, the head of the BATs
-are limited to :oid.
-
-The implementation is focussed on functionality. At a later stage
-we may postpone string contstruction until it is really needed.
-@{
+@c
+/*
+ * @a M.L. Kersten
+ * @+ XML multiplexes
+ * SQL/XML requires a handful of instructions.
+ * The collection of routines provided here are map operations
+ * for the atom xml primitives.
+ *
+ * In line with the batcalc module, we assume that
+ * if two bat operands are provided that they are already
+ * aligned on the head. Moreover, the head of the BATs
+ * are limited to :oid.
+ *
+ * The implementation is focussed on functionality. At a later stage
+ * we may postpone string contstruction until it is really needed.
+ */
 @mal
 
 command xml.xml(src:bat[:oid,:str]):bat[:oid,:xml]
@@ -70,12 +73,11 @@ command xml.xquery(val:bat[:oid,:str],expr:str):bat[:oid,:xml]
 address BATXMLxquery
 comment "Execute the XQuery against the elements.";
 
-@-
-todo
-command xml.table(val:bat[:oid,:str],expr:str):bat[:oid,:xml]
-address BATXMLquery
-comment "Execute the XQuery against the elements";
-@mal
+# @-
+# todo
+# command xml.table(val:bat[:oid,:str],expr:str):bat[:oid,:xml]
+# address BATXMLquery
+# comment "Execute the XQuery against the elements";
 
 command xml.pi(target:str, val:bat[:oid,:xml]):bat[:oid,:xml]
 address BATXMLpi
@@ -128,11 +130,11 @@ comment "Validate the string as a XML document.";
 module batcalc;
 command xml(src:bat[:oid,:str]):bat[:oid,:xml] address BATXMLstr2xml;
 
-@{
 @include ../../modules/kernel/kprelude.mx
-
-@+ Implementation
 @h
+/*
+ * @+ Implementation
+ */
 #ifndef _BATXML_H_
 #define _BATXML_H_
 #include <gdk.h>
@@ -335,18 +337,19 @@ BATXMLxmltext(int *ret, int *bid)
 	throw(MAL, "xml.text", "%s", err );
 }
 
-@-
-The core of the activity is str2xml, where the actual strings
-are constructed.
-To avoid repetitive copying we make sure that the garbage
-collector does not remove the xml intermediates. 
-This way, we know that as long as the xml-variables are not
-reused, the complete structure of the xml document(s) are available.
-We merely have to collect the pieces.
-[FOR LATER, FIRST GO FOR THE EASY IMPLEMENTATION]
-@-
-XML values are represented by strings already.
-@c
+/*
+ * @-
+ * The core of the activity is str2xml, where the actual strings
+ * are constructed.
+ * To avoid repetitive copying we make sure that the garbage
+ * collector does not remove the xml intermediates.
+ * This way, we know that as long as the xml-variables are not
+ * reused, the complete structure of the xml document(s) are available.
+ * We merely have to collect the pieces.
+ * [FOR LATER, FIRST GO FOR THE EASY IMPLEMENTATION]
+ * @-
+ * XML values are represented by strings already.
+ */
 str
 BATXMLstr2xml(int *ret, int *bid)
 {
@@ -574,18 +577,19 @@ BATXMLisdocument(int *ret, int *bid)
 	throw(MAL, "xml.isdocument", OPERATION_FAILED " During bulk processing");
 }
 
-@-
-The standard supports specific mappings for
-NULL values,i.e. {null,absent,empty,nil,niloncontent)
-in the context of an element and forest construction.
-The standard should be studied in more detail, because
-the syntax(rules) seem ambiguous.
-It applies to all components of an element or their
-concatenation.
-
-For the time being, the variaton on XMLtag seems the
-most reasonable interpretation.
-@c
+/*
+ * @-
+ * The standard supports specific mappings for
+ * NULL values,i.e. {null,absent,empty,nil,niloncontent)
+ * in the context of an element and forest construction.
+ * The standard should be studied in more detail, because
+ * the syntax(rules) seem ambiguous.
+ * It applies to all components of an element or their
+ * concatenation.
+ *
+ * For the time being, the variaton on XMLtag seems the
+ * most reasonable interpretation.
+ */
 str
 BATXMLoptions(int *ret, str *name, str *options, int *bid)
 {
@@ -1482,7 +1486,6 @@ BATXMLxquery(int *ret, int *bid, str *expr)
 	throw(MAL, "xml.xquery", PROGRAM_NYI);
 }
 
-@}
 
 @sql
 CREATE AGGREGATE "xmlagg"( x xml ) RETURNS xml external name xml.agg;

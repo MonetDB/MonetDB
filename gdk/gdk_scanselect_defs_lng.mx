@@ -18,31 +18,32 @@ All Rights Reserved.
 @
 
 @f gdk_scanselect_defs_lng
-@a S. Manegold, N. J. Nes, M. L. Kersten, P. Boncz
 
+@c
+/*
+ * @a S. Manegold, N. J. Nes, M. L. Kersten, P. Boncz
+ */
 @include gdk_scanselect_defs.mx
-
-@-
-
-Expanding on input-tail-type for data read and comparison.
-Most is straight forward.
-Taking special care of equi selects on str when there are no doubles in the
-heap.
-Adding test for v != nil for types where nil != MIN.
-
-@{
-
+ * @-
+ *
+ * Expanding on input-tail-type for data read and comparison.
+ * Most is straight forward.
+ * Taking special care of equi selects on str when there are no doubles in the
+ * heap.
+ * Adding test for v != nil for types where nil != MIN.
 @= DEFseqscanTTget
 #ifndef SKIP_TYPE_EXPANSIONS
 #ifndef NOEXPAND_LNG
 	@:DEFseqscanIF(lng,lng,tloc,simple,lng,,@1)@
 #endif
 #endif	/* SKIP_TYPE_EXPANSIONS */
-@-
-
-Generate all working functions.
-
+@
 @h
+/*
+ * @-
+ *
+ * Generate all working functions.
+ */
 @:DEFseqscanTTget(h)@
 @c
 #include "monetdb_config.h"
@@ -55,6 +56,3 @@ Generate all working functions.
 #endif
 #include "gdk_scanselect.h"
 @:DEFseqscanTTget(c)@
-@-
-
-@}

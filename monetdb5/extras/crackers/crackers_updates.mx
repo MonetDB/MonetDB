@@ -18,16 +18,19 @@ All Rights Reserved.
 @
 
 @f crackers_updates
-@a Martin Kersten, Stratos Idreos, Stefan Manegold
-@d March 2006 - July 2007
-@* Cracker Updates
 
-
-@+ Interface
-
-
-@- Type expansion
-
+@c
+/*
+ * @a Martin Kersten, Stratos Idreos, Stefan Manegold
+ * @d March 2006 - July 2007
+ * @* Cracker Updates
+ *
+ *
+ * @+ Interface
+ *
+ *
+ * @- Type expansion
+ */
 @= TypeSwitch
 @:@1(chr,simple,,oid)@
 @:@1(sht,simple,,oid)@
@@ -53,11 +56,10 @@ All Rights Reserved.
 @:@1(date,atom,TYPE_,dbl)@
 @:@1(date,atom,TYPE_,date)@
 @
-
-
-@- Header file
- 
 @h
+/*
+ * @- Header file
+ */
 #ifndef _CRACKERS_UPDATES_H_
 #define _CRACKERS_UPDATES_H_
 
@@ -70,11 +72,9 @@ All Rights Reserved.
 @:TypeSwitch(UpdatesFunctions_decl_1)@
 
 #endif /* _CRACKERS_UPDATES_H */
-@
-
-
-@- Exported signatures
- 
+/*
+ * @- Exported signatures
+ */
 @= UpdatesFunctions_decl_0
 crackers_export str CRKsizeCrackerInsertions(int *k, int *bid);
 crackers_export str CRKsizeCrackerDeletions(int *k, int *bid);
@@ -89,19 +89,14 @@ crackers_export str CRKmergeDeletions_OnNeed(int *k, int *bid, int *new);
 crackers_export str CRKmergeDeletions_OnNeedGradually(int *k, int *bid, int *new);
 crackers_export str CRKmergeDeletions_OnNeedGraduallyRipple(int *k, int *bid, int *new);
 @
-
 @= UpdatesFunctions_decl_1
 crackers_export str CRKmergeInsertions_PartiallyForget_@1_@4(int *k, int *bid, int *new);
 crackers_export str CRKmergeInsertionsB_Force_@1_@4(int *k, int *bid, int *new);
 @
-
-
-@- Signatures shared within the crackers module/library
-
+ * @- Signatures shared within the crackers module/library
 @= UpdatesSharedFunctions_decl_0
 str appendInsertions(int *new, int position);
 @
-
 @= UpdatesSharedFunctions_decl_1
 /* mergeInsertionOperations */
 str mergeInsertionsB_@1_@4(int *bid, int *new, oid startPosition, oid endPosition);
@@ -111,15 +106,13 @@ str mergeDeletions_@1_@4(int *bid, int *del, oid startPosition, oid endPosition)
 str mergeDeletionsGradually_@1_@4(int *bid, int *del, oid startPosition, oid endPosition);
 str mergeDeletionsGraduallyRipple_@1_@4(int *bid, int *del, oid startPosition, oid endPosition, @1 *lowV, bit inclusiveL, @1 *hghV, bit inclusiveH);
 @
-
-
-@{
-@+ Implementation
-
- 
-@- C file
-
 @c
+/*
+ * @+ Implementation
+ *
+ *
+ * @- C file
+ */
 #include "monetdb_config.h"
 #include "crackers.h"
 
@@ -136,11 +129,9 @@ str mergeDeletionsGraduallyRipple_@1_@4(int *bid, int *del, oid startPosition, o
 @:updatesOnNeed(Gradually,1)@
 @:updatesOnNeed(GraduallyRipple,2)@
 @:TypeSwitch(UpdatesFunctions_impl_1)@
-@
-
-
-@- Exported functions
-
+/*
+ * @- Exported functions
+ */
 @= UpdatesFunctions_impl_0
 str
 CRKsizeCrackerDeletions(int *k, int *bid){
@@ -210,7 +201,6 @@ CRKextendCrackerBAT(int *k, int *bid, lng *positions){
 	return MAL_SUCCEED;
 }
 @
-
 @= updatesOnNeed
 str
 CRKmergeInsertionsB_OnNeed@1(int *k, int *bid, int *new){
@@ -256,7 +246,6 @@ CRKmergeDeletions_OnNeed@1(int *k, int *bid, int *del){
         return MAL_SUCCEED;
 }
 @
-
 @= UpdatesFunctions_impl_1
 str
 CRKmergeInsertions_PartiallyForget_@1_@4(int *k, int *bid, int *new){
@@ -330,10 +319,7 @@ CRKmergeInsertionsB_Force_@1_@4(int *k, int *bid, int *new){
  	return MAL_SUCCEED;
 }
 @
-
-
-@- Functions shared within the crackers module/library
-
+ * @- Functions shared within the crackers module/library
 @= UpdatesSharedFunctions_impl_0
 /* used both for selection and sideways cracking */
 str
@@ -361,7 +347,6 @@ appendInsertions(int *new, int position){
         return MAL_SUCCEED;
 }
 @
-
 @= UpdatesSharedFunctions_impl_1
 /* mergeInsertionOperations */
 str
@@ -961,10 +946,7 @@ mergeDeletionsGraduallyRipple_@1_@4(int *bid, int *del, oid startPosition, oid e
         return MAL_SUCCEED;
 }
 @
-
-
-@- Local support functions and macros
-
+ * @- Local support functions and macros
 @= UpdatesLocal
 static void
 printCrackerDeletions(int bid){
@@ -1128,8 +1110,6 @@ appendDeletions(int *del, int position){
         return MAL_SUCCEED;
 }
 @
-
-
 @= mergeInsertionsFromTheEndBodyI
         BAT *c, *u, *b;
 	BUN idxFirst, cur, crkFirst, insFirst, next, write;
@@ -1203,7 +1183,6 @@ appendDeletions(int *del, int position){
 	crkFirst = BUNfirst(b);
 	prevPos = prevcrsize - 1;
 @
-
 @= mergeInsertionsFromTheEndBodyIb
 /*same as above only diffrence is -> endPosition = BATcount(u) - 1*/
         BAT *c, *u, *b;
@@ -1280,7 +1259,6 @@ appendDeletions(int *del, int position){
 	crkFirst = BUNfirst(b);
 	prevPos = prevcrsize - 1;
 @
-
 @= mergeLoop
 	if ( IndexNode == NULL )
 		goto mergeDone;
@@ -1385,7 +1363,6 @@ appendDeletions(int *del, int position){
 	}
 	prevNode = IndexNode;
 @
-
 @= mergeInsertionsFromTheEndBodyCG
 	/* merge for the last piece only */
 	if ( remainingIns > 0) {
@@ -1395,7 +1372,6 @@ appendDeletions(int *del, int position){
 		@:mergeLoop(@1,@2,@3,@4)@
 	}
 @
-
 @= mergeInsertionsFromTheEndBodyII
 	/* Here the actual merging happens. Starting from the piece where next belongs we continuously 
 	   insert and shift until there are no more insertions or pieces */
@@ -1419,7 +1395,6 @@ appendDeletions(int *del, int position){
 		}
 	}
 @
-
 @= shrinkInsertions
 	if (startPosition == 0 && (BUN)endPosition == BATcount(u)){
         	BATmode(u, TRANSIENT);
@@ -1437,7 +1412,6 @@ appendDeletions(int *del, int position){
    		BATsetcount(u, insFirst + (startPosition + (BATcount(u) - endPosition)));
 	}
 @
-
 @= shrinkDeletions
 	endPosition += 1;
 {
@@ -1450,7 +1424,6 @@ appendDeletions(int *del, int position){
 	BBPunfix(shrinkCopy->batCacheid);
 }
 @
-
 @= mergeDeletionsBody
         BAT *c, *u, *b, *crackerPieceO, *deletesPieceO,  *crackerPieceV, *deletesPieceV;
 	BAT *positionsO, *positionsV, *positions, *crackerSlice, *deletesSlice;
@@ -1670,5 +1643,3 @@ appendDeletions(int *del, int position){
 
         BATsetcount(b, BUNlast(b) - (deletions-remainingDel) + notFound);
 @
-
-@}

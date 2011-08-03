@@ -18,74 +18,77 @@ All Rights Reserved.
 @
 
 @f opt_emptySet
-@a M. Kersten
-@- Emptyset Reduction
-One of the key decisions during MAL optimization is to estimate
-the size of the BATs produced and consumed. Two cases are of interest
-for symbolic processing. Namely, when a BAT is known to contain no
-tuples and those that have precisely one element.
-Such information may come from application domain knowledge or as a
-side effect from symbolic evaluation. It is associated with the
-program under inspection as properties.
 
-The empty set property is used by the reduction algorithm
-presented here. Any empty set is propagated through the program
-to arrive at a smaller and therefore faster evaluation.
-
-For example, consider the following MAL test:
-@example
-    V1 := bat.new(:oid,:int);
-    V7 := bat.new(:oid,:int);
-    V10@verb{ { }rows=0@verb{ } } := bat.new(:int,:oid);
-    V11 := bat.reverse(V10);
-    V12 := algebra.kdifference(V7,V11);
-    V16 := algebra.markH(V12);
-    V17 := algebra.join(V16,V7);
-    bat.append(V1,V17);
-	optimizer.costModel();
-	optimizer.emptySet();
-@end example
-Calling the optimizers replaces this program
-by the following code snippet. 
-@example
-    V1 := bat.new(:oid,:int);
-    V7 := bat.new(:oid,:int);
-    V10@verb{ { }rows=0@verb{ } } := bat.new(:int,:oid);
-    V11@verb{ { }rows=0@verb{ } } := bat.new(:oid,:int);
-    V12 := V7;
-    V16 := algebra.markH(V12);
-    V17 := algebra.join(V16,V7);
-    bat.append(V1,V17);
-
-@end example
-This block can be further optimized using alias propagation
-and dead code removal. The final block becomes:
-@example
-    V1 := bat.new(:oid,:int);
-    V7 := bat.new(:oid,:int);
-    V16 := algebra.markH(V7);
-    V17 := algebra.join(V16,V7);
-    bat.append(V1,V17);
-@end example
-During empty set propagation, new candidates may appear. For example,
-taking the intersection with an empty set creates a target variable
-that is empty too. It becomes an immediate target for optimization.
-The current implementation is conservative. A limited set of
-instructions is considered. Any addition to the MonetDB instruction
-set would call for assessment on their effect.
-@- SQL specifics
-The @code{bind} operations of SQL requires special care,
-because they refer to containers that might initially be empty,
-but aren't upon a second call of the query plan.
-This calls for a defensive approach, where a constraint check
-is left behind to detect a plan whose conditions are not met
-anymore. Of course, we can drop the constraint if we know that
-a plan is used onlye once (and not recursively).
-This can be marked by the SQL compiler, who is in control
-over the query cache.
-@{
-The implementation differs slightly from other optimizers in that
-we need first to collect the BAT variables that are designated as being empty
+@c
+/*
+ * @a M. Kersten
+ * @- Emptyset Reduction
+ * One of the key decisions during MAL optimization is to estimate
+ * the size of the BATs produced and consumed. Two cases are of interest
+ * for symbolic processing. Namely, when a BAT is known to contain no
+ * tuples and those that have precisely one element.
+ * Such information may come from application domain knowledge or as a
+ * side effect from symbolic evaluation. It is associated with the
+ * program under inspection as properties.
+ *
+ * The empty set property is used by the reduction algorithm
+ * presented here. Any empty set is propagated through the program
+ * to arrive at a smaller and therefore faster evaluation.
+ *
+ * For example, consider the following MAL test:
+ * @example
+ *     V1 := bat.new(:oid,:int);
+ *     V7 := bat.new(:oid,:int);
+ *     V10@verb{ { }rows=0@verb{ } } := bat.new(:int,:oid);
+ *     V11 := bat.reverse(V10);
+ *     V12 := algebra.kdifference(V7,V11);
+ *     V16 := algebra.markH(V12);
+ *     V17 := algebra.join(V16,V7);
+ *     bat.append(V1,V17);
+ * 	optimizer.costModel();
+ * 	optimizer.emptySet();
+ * @end example
+ * Calling the optimizers replaces this program
+ * by the following code snippet.
+ * @example
+ *     V1 := bat.new(:oid,:int);
+ *     V7 := bat.new(:oid,:int);
+ *     V10@verb{ { }rows=0@verb{ } } := bat.new(:int,:oid);
+ *     V11@verb{ { }rows=0@verb{ } } := bat.new(:oid,:int);
+ *     V12 := V7;
+ *     V16 := algebra.markH(V12);
+ *     V17 := algebra.join(V16,V7);
+ *     bat.append(V1,V17);
+ *
+ * @end example
+ * This block can be further optimized using alias propagation
+ * and dead code removal. The final block becomes:
+ * @example
+ *     V1 := bat.new(:oid,:int);
+ *     V7 := bat.new(:oid,:int);
+ *     V16 := algebra.markH(V7);
+ *     V17 := algebra.join(V16,V7);
+ *     bat.append(V1,V17);
+ * @end example
+ * During empty set propagation, new candidates may appear. For example,
+ * taking the intersection with an empty set creates a target variable
+ * that is empty too. It becomes an immediate target for optimization.
+ * The current implementation is conservative. A limited set of
+ * instructions is considered. Any addition to the MonetDB instruction
+ * set would call for assessment on their effect.
+ * @- SQL specifics
+ * The @code{bind} operations of SQL requires special care,
+ * because they refer to containers that might initially be empty,
+ * but aren't upon a second call of the query plan.
+ * This calls for a defensive approach, where a constraint check
+ * is left behind to detect a plan whose conditions are not met
+ * anymore. Of course, we can drop the constraint if we know that
+ * a plan is used onlye once (and not recursively).
+ * This can be marked by the SQL compiler, who is in control
+ * over the query cache.
+ * The implementation differs slightly from other optimizers in that
+ * we need first to collect the BAT variables that are designated as being empty
+ */
 @mal
 pattern optimizer.emptySet():str
 address OPTemptySet;
@@ -116,9 +119,10 @@ comment "Symbolic evaluation of empty BAT expressions";
 	if(getArgType(mb,p,0)== getArgType(mb,p,X)){\
 	setModuleId(p,NULL); setFunctionId(p,NULL); } \
 	else {actions++;setModuleId(p,NULL); setFunctionId(p,NULL); alias[getArg(p,0)]= getArg(p,1); } }
-@-
-Be aware to handle alias mapping.
-@c
+	/*
+	 * @-
+	 * Be aware to handle alias mapping.
+	 */
 
 static int
 ESevaluate(Client cntxt, MalBlkPtr mb, char *empty)
@@ -172,19 +176,21 @@ ESevaluate(Client cntxt, MalBlkPtr mb, char *empty)
 		}
 		for(j=0; j<p->argc; j++)
 			p->argv[j]= alias[getArg(p,j)];
-@-
-The bulk of the intelligence lies in inspecting calling
-sequences to filter and replace calls with empty arguments.
-@c
+ 		/*
+ 		 * @-
+ 		 * The bulk of the intelligence lies in inspecting calling
+ 		 * sequences to filter and replace calls with empty arguments.
+ 		 */
  		f = getFunctionId(p);
 		if (getModuleId(p) == sqlRef && 
 		    empty[getArg(p,0)] &&
 		   (f == bindRef || f == bindidxRef || f == binddbatRef)){
 			InstrPtr q;
-@-
-The emptyset assertion is only needed once for relational insertions.
-We assume here that string constants have been matched already.
-@c
+			/*
+			 * @-
+			 * The emptyset assertion is only needed once for relational insertions.
+			 * We assume here that string constants have been matched already.
+			 */
 			if( f == bindRef && runonce == FALSE) {
 				for( j=ctop-1; j>=0; j--){
 					q= constraints[j];
@@ -262,12 +268,13 @@ We assume here that string constants have been matched already.
 						empty[getArg(p, 0)]= 1;
 					}
 				}
-@-
-If the target variable is empty and the function does not
-have a side-effect, we can replace it with a construction
-of the empty set. The dead-code optimizer will take care
-of removal of superflous constructions.
-@c
+				/*
+				 * @-
+				 * If the target variable is empty and the function does not
+				 * have a side-effect, we can replace it with a construction
+				 * of the empty set. The dead-code optimizer will take care
+				 * of removal of superflous constructions.
+				 */
 				if( p->retc==1 && p->token == ASSIGNsymbol &&
 					!isLinearFlow(p) &&
 					isaBatType(getArgType(mb,p,0))){
@@ -298,11 +305,12 @@ of removal of superflous constructions.
 	GDKfree(alias);
 	return actions;
 }
-@-
-We first have to find all candidates for empty set removal.
-They are recognized by an estimated zero row count and they
-are not the target of an update.
-@c
+/*
+ * @-
+ * We first have to find all candidates for empty set removal.
+ * They are recognized by an estimated zero row count and they
+ * are not the target of an update.
+ */
 
 static int
 OPTemptySetImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
@@ -332,4 +340,3 @@ OPTemptySetImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(emptySet,OPT_CHECK_ALL)@
-@}

@@ -23,7 +23,6 @@
  */
 #ifndef _DCOPERATOR_
 #define _DCOPERATOR_
-#include "monetdb_config.h"
 #include "mal_interpreter.h"
 #include "basket.h"
 #include "algebra.h"

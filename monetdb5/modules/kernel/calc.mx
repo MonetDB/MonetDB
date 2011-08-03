@@ -18,71 +18,74 @@ All Rights Reserved.
 @
 
 @f calc
-@a N.J. Nes, P. Boncz, M. Kersten, A. de Vries
-@v 2.0
-@+ Basic arithmetic 
-This module is an extended version of the V4 arithmetic module.
-It implements the arithmetic operations on the built-in types,
-@emph{chr}, @emph{bte}, @emph{sht}, @emph{int}, @emph{flt}, @emph{dbl} and @emph{lng}.
-All combinations are implemented. Limited combinations are implemented
-for @emph{bit}, @emph{oid} and @emph{str}. 
 
-@table @code
-@item [binary operators]
-The implemented operators are first of all all comparison that return a 
-TRUE/FALSE value (@emph{bit} values), i.e. 
-@emph{<=}, @emph{<}, @emph{==}, @emph{!=}, @emph{>=}, and @emph{>=}.
-
-The module also implements the operators @emph{+}, @emph{-}, @emph{*} and @emph{/}. 
-The rules for the return types operators is as follows.
-If one of the input types is a floating point the result will be a
-floating point.  The largest type of the input types is taken. 
-
-The @emph{max} and @emph{min} functions return the maximum and minimum of 
-the two input parameters.
-
-@item [unary operators]
-This module also implements the unary @emph{abs}() function, which calculates 
-the absolute value of the given input parameter, as well as the @emph{-} unary
-operator. 
-
-The @emph{inv} unary operation calculates the inverse of the input value. 
-An error message is given when the input value is zero.
-
-@item [bitwise operators]
-For integers there are some additional operations. The @emph{%} operator
-implements the congruent modulo operation. The @emph{<<} and @emph{>>} 
-are the left and right bit shift. The @emph{or}, @emph{and}, @emph{xor} and 
-@emph{not} for integers are implemented as bitwise boolean operations. 
-
-@item [boolean operators]
-The @emph{or}, @emph{and}, @emph{xor} and @emph{not} for the bit atomic type 
-in MIL (this corresponds to what is normally called boolean)
-are implemented as the logic operations.
-
-@item [random numbers]
-This module also contains the rand and srand functions. The @emph{srand}() 
-function initializes the random number generator using a seed value. The 
-subsequent calls to @emph{rand}() are pseudo random numbers (with the same 
-seed the sequence can be repeated).
-@end table
-
-The general interpretation for the NIL value is "unknown".
-This semantics mean that any operation that receives at least one NIL 
-value, will produce a NIL value in the output for sure.
-
-The only exception to this rule are the "==" and "!=" equality 
-test routines (it would otherwise become rather difficult to test 
-whether a value is nil). 
-
-@{
-The collection of type conversion routines are included here as well.
-
-The definitions shown are limited to the Mx macros.
-This should be sufficient to understand the functionality
-at the cost of precision.
-In most situations the macros are expanded using the
-built-in type set (int,lng,sht,bit,oid,flt,...) 
+@c
+/*
+ * @a N.J. Nes, P. Boncz, M. Kersten, A. de Vries
+ * @v 2.0
+ * @+ Basic arithmetic
+ * This module is an extended version of the V4 arithmetic module.
+ * It implements the arithmetic operations on the built-in types,
+ * @emph{chr}, @emph{bte}, @emph{sht}, @emph{int}, @emph{flt}, @emph{dbl} and @emph{lng}.
+ * All combinations are implemented. Limited combinations are implemented
+ * for @emph{bit}, @emph{oid} and @emph{str}.
+ *
+ * @table @code
+ * @item [binary operators]
+ * The implemented operators are first of all all comparison that return a
+ * TRUE/FALSE value (@emph{bit} values), i.e.
+ * @emph{<=}, @emph{<}, @emph{==}, @emph{!=}, @emph{>=}, and @emph{>=}.
+ *
+ * The module also implements the operators @emph{+}, @emph{-}, @emph{*} and @emph{/}.
+ * The rules for the return types operators is as follows.
+ * If one of the input types is a floating point the result will be a
+ * floating point.  The largest type of the input types is taken.
+ *
+ * The @emph{max} and @emph{min} functions return the maximum and minimum of
+ * the two input parameters.
+ *
+ * @item [unary operators]
+ * This module also implements the unary @emph{abs}() function, which calculates
+ * the absolute value of the given input parameter, as well as the @emph{-} unary
+ * operator.
+ *
+ * The @emph{inv} unary operation calculates the inverse of the input value.
+ * An error message is given when the input value is zero.
+ *
+ * @item [bitwise operators]
+ * For integers there are some additional operations. The @emph{%} operator
+ * implements the congruent modulo operation. The @emph{<<} and @emph{>>}
+ * are the left and right bit shift. The @emph{or}, @emph{and}, @emph{xor} and
+ * @emph{not} for integers are implemented as bitwise boolean operations.
+ *
+ * @item [boolean operators]
+ * The @emph{or}, @emph{and}, @emph{xor} and @emph{not} for the bit atomic type
+ * in MIL (this corresponds to what is normally called boolean)
+ * are implemented as the logic operations.
+ *
+ * @item [random numbers]
+ * This module also contains the rand and srand functions. The @emph{srand}()
+ * function initializes the random number generator using a seed value. The
+ * subsequent calls to @emph{rand}() are pseudo random numbers (with the same
+ * seed the sequence can be repeated).
+ * @end table
+ *
+ * The general interpretation for the NIL value is "unknown".
+ * This semantics mean that any operation that receives at least one NIL
+ * value, will produce a NIL value in the output for sure.
+ *
+ * The only exception to this rule are the "==" and "!=" equality
+ * test routines (it would otherwise become rather difficult to test
+ * whether a value is nil).
+ *
+ * The collection of type conversion routines are included here as well.
+ *
+ * The definitions shown are limited to the Mx macros.
+ * This should be sufficient to understand the functionality
+ * at the cost of precision.
+ * In most situations the macros are expanded using the
+ * built-in type set (int,lng,sht,bit,oid,flt,...)
+ */
 @= mal_isnil
 	command isnil(v:@1) :bit 
 	address CALCisnil_@1
@@ -90,10 +93,10 @@ built-in type set (int,lng,sht,bit,oid,flt,...)
 	command isnotnil(v:@1) :bit 
 	address CALCisnotnil_@1
 	comment "is a value not equal to nil?";
-@-
-[Mx bug, space required here]
-
+@
 @mal
+# @-
+# [Mx bug, space required here]
 module calc;
 
 	@:mal_isnil(bit)@
@@ -114,14 +117,13 @@ comment "is a value nil?";
 command isnotnil(v:void) :bit 
 address CALCisnotnil_void
 comment "is a value not equal to nil?";
-@+ Comparison operations
-The @emph{eq_ops} and @emph{cmp_ops} Mx macro implements the interface to the
-arithmetic comparisons. Note that comparison operators with different
-operand types are already supported in the kernel, but are not nearly as fast,
-(because they have to convert values on the fly).  
-The code expansion is organized such that
-the least interesting one is pushed onto the symbol table stack first.
-
+# @+ Comparison operations
+# The @emph{eq_ops} and @emph{cmp_ops} Mx macro implements the interface to the
+# arithmetic comparisons. Note that comparison operators with different
+# operand types are already supported in the kernel, but are not nearly as fast,
+# (because they have to convert values on the fly).
+# The code expansion is organized such that
+# the least interesting one is pushed onto the symbol table stack first.
 @= eq_ops
 		command ==(left:@1, right:@2) :bit 
 		address CALCcompEQ@1@2;
@@ -140,6 +142,7 @@ the least interesting one is pushed onto the symbol table stack first.
 		address CALCcompGT@1@2;
 		command between(val:@1, low:@1, high:@1) :bit 
 		address CALCcompBetween@1;
+@
 @mal
 
 		@:cmp_ops(oid,oid)@
@@ -196,10 +199,9 @@ the least interesting one is pushed onto the symbol table stack first.
 		@:cmp_ops(lng,lng)@
 
 		@:cmp_ops(str,str)@
-@+ Arithmetic computation 
-The operators @{ +, -, *, /, % @} are handled here.
-The macro expects three parameters, two input atomic types and a result type. 
-@mal
+# @+ Arithmetic computation
+# The operators @{ +, -, *, /, % @} are handled here.
+# The macro expects three parameters, two input atomic types and a result type.
 command +(l:str,r:str):str
 address CALCstrConcat
 comment "Concatenate two strings";
@@ -220,9 +222,10 @@ comment "Concatenate two strings";
 		address CALCbinarycheckDIV@1@2;
 		command %(left:@1, right:@2) :@4 
 		address CALCbinarycheckMOD@1@2;
-@-
-The coercions described below ensure that there is never any information loss.
+@
 @mal
+# @-
+# The coercions described below ensure that there is never any information loss.
 @= calc_ops
 	@:@1_calc_ops(oid,oid,oid,oid)@
 
@@ -297,10 +300,11 @@ The coercions described below ensure that there is never any information loss.
 	@:@1_calc_ops(lng,lng,lng,lng)@
 	@:@1_calc_ops(lng,flt,dbl,flt)@
 	@:@1_calc_ops(lng,dbl,dbl,dbl)@
+@
 @mal
 @:calc_ops(mal)@
 
-@+ Binary  operations { max, min, }
+# @+ Binary  operations { max, min, }
 @= mal_binary_ops
 		command max(l:@1, r:@1) :@1 
 		address CALCbinaryMAX@2; 
@@ -310,8 +314,9 @@ The coercions described below ensure that there is never any information loss.
 		address CALCbinaryMAX_NO_NIL@2; 
 		command min_no_nil(ll:@1, r:@1) :@1 
 		address CALCbinaryMIN_NO_NIL@2;
-@-
+@
 @mal
+# @-
 	@:mal_binary_ops(bit,bit)@
 	@:mal_binary_ops(chr,chr)@
 	@:mal_binary_ops(bte,bte)@
@@ -322,8 +327,8 @@ The coercions described below ensure that there is never any information loss.
 	@:mal_binary_ops(flt,flt)@
 	@:mal_binary_ops(lng,lng)@
 	@:mal_binary_ops(dbl,dbl)@
-@+ Unary operations { abs, inv }
-The unary operators include coercion routines for built-in types
+	# @+ Unary operations { abs, inv }
+	# The unary operators include coercion routines for built-in types
 @= mal_unary_ops
 		command abs(x:@1) :@1 
 		address CALCunary@1ABS 
@@ -349,13 +354,14 @@ The unary operators include coercion routines for built-in types
 	@:@1_unary_ops(flt)@
 	@:@1_unary_ops(lng)@
 	@:@1_unary_ops(dbl)@
+@
 @mal
 @:unary_ops(mal)@
 
 	command length(x:str):int
 	address CALClengthstr;
-@-
-Coercion functions are typical used in multiplex calls.
+	# @-
+	# Coercion functions are typical used in multiplex calls.
 @= mal_coercion
 		command @1(x:@2):@1 
 		address CALC@22@1 
@@ -371,6 +377,7 @@ Coercion functions are typical used in multiplex calls.
 	@:mal_coercion(@1,lng)@
 	@:mal_coercion(@1,flt)@
 	@:mal_coercion(@1,dbl)@
+@
 @mal
 	@:scalar_coercion(bit)@
 	@:scalar_coercion(chr)@
@@ -423,8 +430,7 @@ Coercion functions are typical used in multiplex calls.
 	@:mal_coercion(bte,sht)@
 	@:mal_coercion(bte,int)@
 	@:mal_coercion(bte,lng)@
-@+ Boolean operations { or, xor, and, not }
-@mal
+# @+ Boolean operations { or, xor, and, not }
 command or(left:bit, right:bit) :bit 
 address CALCbinaryORbit;
 command and(left:bit, right:bit) :bit 
@@ -437,9 +443,9 @@ address CALCunarybitNOT ;
 pattern ifthenelse(b:bit,t:any_1,f:any_1):any_1 
 address CALCswitchbit;
 
-@+ Bitwise operations
-Cardinal numerical types (inclusing @emph{chr} can be regarded as a bit
-array. Specific operations work with this interpretation.
+# @+ Bitwise operations
+# Cardinal numerical types (inclusing @emph{chr} can be regarded as a bit
+# array. Specific operations work with this interpretation.
 @= mal_bitwise_ops
 		command or(left:@1, right:@1) :@1 
 		address CALCbinaryOR@1@1;
@@ -453,17 +459,17 @@ array. Specific operations work with this interpretation.
 		address CALCbinaryLSH@1int;
 		command >>(left:@1, right:int) :@1 
 		address CALCbinaryRSH@1int;
+@
 @mal
 	@:mal_bitwise_ops(chr)@
 	@:mal_bitwise_ops(bte)@
 	@:mal_bitwise_ops(sht)@
 	@:mal_bitwise_ops(int)@
 	@:mal_bitwise_ops(lng)@
-@+ Type coercions
-The Monet kernel contains a few built-in atomic types together
-with useful functions. 
-Those accessible at the MAL command level are introduced below.
-
+	# @+ Type coercions
+	# The Monet kernel contains a few built-in atomic types together
+	# with useful functions.
+	# Those accessible at the MAL command level are introduced below.
 @= convertCmd
 		command @1(v:str):@1 
 		address CALCstr2@1;
@@ -472,6 +478,7 @@ Those accessible at the MAL command level are introduced below.
 		command @1(v:void) :@1 
 		address CALCnil2@1;
 
+@
 @mal
 @:convertCmd(oid)@
 @:convertCmd(sht)@
@@ -492,12 +499,11 @@ address CALCbat2str;
 command bat(v:void) :bat[:any_1,:any_2] 
 address CALCnil2bat;
 
-@-
-command bat(b:bat):bat[:any_1,:any_2]
-address CALCBAT2bat;
-command bat(b:bat[:any_1,:any_2]):bat
-address CALCbat2BAT;
-@mal
+# @-
+# command bat(b:bat):bat[:any_1,:any_2]
+# address CALCBAT2bat;
+# command bat(b:bat[:any_1,:any_2]):bat
+# address CALCbat2BAT;
 
 command str(v:void) :str 
 address CALCnil2str;
@@ -527,12 +533,11 @@ command getBAT(b:bat):bat[:any_1,:any_2]
 address CALCbatid2bat
 comment "Coerce bat to BAT identifier";
 
-@-
-We should also deal with superflous operations, such as int(v:int).
-This is a noop operation that should ideally be filtered out with
-the code squeezer. [TODO]
-@+ OID utility functions
-@mal
+# @-
+# We should also deal with superflous operations, such as int(v:int).
+# This is a noop operation that should ideally be filtered out with
+# the code squeezer. [TODO]
+# @+ OID utility functions
 command newoid{unsafe}() :oid 
 address CALCnewoidBase
 comment "Generate a new oid. Equivalent to newoid(0,1)";
@@ -552,16 +557,18 @@ comment "Sets the oid range of consecutive unique OIDs; returns the
 command setoid{unsafe}() :oid 
 address CALCsetoidBase
 comment "Equivalent to setoid(1:oid).";
-@+ Implementation
-The implementation below differs from the pre-V5 implementation in
-that all strings and pointers are passed by reference, rather than
-by value. Since it is unclear in the module implementation whether
-such references are static or refer to dynamic allocated space,
-we have to be conservative. All deallocation calls should be prepared
-and handled by the environment.
-For this module this won't be a problem, because we do not change
-the string representations.
 @h
+/*
+ * @+ Implementation
+ * The implementation below differs from the pre-V5 implementation in
+ * that all strings and pointers are passed by reference, rather than
+ * by value. Since it is unclear in the module implementation whether
+ * such references are static or refer to dynamic allocated space,
+ * we have to be conservative. All deallocation calls should be prepared
+ * and handled by the environment.
+ * For this module this won't be a problem, because we do not change
+ * the string representations.
+ */
 #ifndef __calc_H__
 #define __calc_H__
 
@@ -606,6 +613,7 @@ str CALCsizeof@1(int *res , @1 *a ) {
    *res = sizeof(*a);
    return(MAL_SUCCEED);
 }
+@
 @c
 
 @= c_unary_ops
@@ -614,6 +622,7 @@ str CALCsizeof@1(int *res , @1 *a ) {
 @:calc_unop(NEG,calc_neg,@1)@
 @:calc_unop(SIGN,calc_sign,@1)@
 @:calc_length(@1)@
+@
 @c
 @:unary_ops(c)@
 
@@ -627,7 +636,9 @@ str CALClengthstr(int *res , str *a ) {
 @:any_binary_minmax_no_nil(MIN,<=)@
 @:any_binary_minmax_no_nil(MAX,>)@
 
-@-
+/*
+ * @-
+ */
 @= calc_macrobinop
 calc_export str CALCbinary@1@3(@3 *res , @3 *a, @3 *b );
 str CALCbinary@1@3(@3 *res , @3 *a, @3 *b ) {
@@ -641,8 +652,11 @@ str CALCbinary@1@3(@3 *res , @3 *a, @3 *b ) {
    }
    return(MAL_SUCCEED);
 }
+@
 @c
-@-
+/*
+ * @-
+ */
 @= calc_macrobinop_no_nil
 calc_export str CALCbinary@1_NO_NIL@3(@3 *res , @3 *a, @3 *b );
 str CALCbinary@1_NO_NIL@3(@3 *res , @3 *a, @3 *b ) {
@@ -652,6 +666,7 @@ str CALCbinary@1_NO_NIL@3(@3 *res , @3 *a, @3 *b ) {
    *res = @2 (*a,*b);
    return(MAL_SUCCEED);
 }
+@
 @c
 #define calc_max(s1,s2) ((s1)>(s2))?(s1):(s2)
 #define calc_min(s1,s2) ((s1)<(s2))?(s1):(s2)
@@ -659,6 +674,7 @@ str CALCbinary@1_NO_NIL@3(@3 *res , @3 *a, @3 *b ) {
 @= max_min_def
 #define calc_max_no_nil_@1(s1,s2) (s1==@1_nil)?(s2):(s2==@1_nil)?(s1):calc_max(s1,s2) 
 #define calc_min_no_nil_@1(s1,s2) (s1==@1_nil)?(s2):(s2==@1_nil)?(s1):calc_min(s1,s2) 
+@
 @c
 
 @= calc_min_max
@@ -667,6 +683,7 @@ str CALCbinary@1_NO_NIL@3(@3 *res , @3 *a, @3 *b ) {
 @:max_min_def(@1)@
 @:calc_macrobinop_no_nil(MAX,calc_max_no_nil_@1,@1)@
 @:calc_macrobinop_no_nil(MIN,calc_min_no_nil_@1,@1)@
+@
 @c
 
 @:calc_min_max(bit)@
@@ -844,10 +861,11 @@ CALCswitchbit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr P)
 }
 
 
-@-
-The @emph{c_comp} and @emph{c_comp_ops} macros implement the mil comparison 
-operations.
-
+/*
+ * @-
+ * The @emph{c_comp} and @emph{c_comp_ops} macros implement the mil comparison
+ * operations.
+ */
 @= any_binary_minmax
 calc_export str CALCbinary@1any(ptr ret, ptr v1, int t, ptr v2);
 str CALCbinary@1any(ptr ret, ptr v1, int t, ptr v2){
@@ -981,6 +999,7 @@ str CALCcomp@2any(bit *retval, ptr *v1, int tpe, ptr *v2){
 	}
 	return MAL_SUCCEED;
 }
+@
 @c
 @:c_between_op(chr)@
 @:c_between_op(bte)@
@@ -1050,6 +1069,7 @@ str CALCnil2@1(@1 *retval, ptr val){
 	memcpy(retval, ATOMnilptr(TYPE_@1), ATOMsize(TYPE_@1));
 	return MAL_SUCCEED;
 }
+@
 @c
 @:c_isnil(bit)@
 @:c_isnil(chr)@
@@ -1129,14 +1149,17 @@ str CALCcompBetween@1(bit *retval, @1 *v, @1 *low, @1 *high){
 	}
 	return MAL_SUCCEED;
 }
-@-
-The @emph{c_calc_ops} implement the arithmetic operations on the given type.
-The @emph{c_calc_ops} macro gets three arguments, two input types and a 
-result type. 
-
-/* these defines are used in the implementation of
-   *_checkbinary_{DIV,MOD} (see Mx macro check_binop) */
+@
 @c
+/*
+ * @-
+ * The @emph{c_calc_ops} implement the arithmetic operations on the given type.
+ * The @emph{c_calc_ops} macro gets three arguments, two input types and a
+ * result type.
+ *
+ * // these defines are used in the implementation of
+ *    *_checkbinary_{DIV,MOD} (see Mx macro check_binop)
+ */
 #define CMD_MOD 1
 #define CMD_DIV 0
 
@@ -1147,6 +1170,7 @@ result type.
 @:calc_binop(MUL,*,@1,@2,@3)@
 @:check_binop(DIV,/,@1,@2,@3,@3,"Division by zero")@
 @:check_binop(MOD,%,@1,@2,@3,@4,"Modulo zero is not possible")@
+@
 @c
 @:calc_ops(c)@
 
@@ -1164,7 +1188,6 @@ str CALCunary@3@1(@3 *res , @3 *a ) {
    return(MAL_SUCCEED);
 }
 @
-
 @= check_unop
 calc_export str CALCunarycheck@3@1(@3 *res , @3 *a );
 str CALCunarycheck@3@1(@3 *res , @3 *a ) {
@@ -1181,7 +1204,6 @@ str CALCunarycheck@3@1(@3 *res , @3 *a ) {
 	return(MAL_SUCCEED);
 }
 @
-
 @= calc_binop
 calc_export str CALCbinary@1@3@4(@5 *res, @3 *a, @4 *b );
 str CALCbinary@1@3@4(@5 *res, @3 *a, @4 *b ) {
@@ -1214,16 +1236,15 @@ str CALCbinary@1@3@4(@5 *res, @3 *a, @4 *b ) {
    return(MAL_SUCCEED);
 }
 @
-
-/*
-	1: function name suffix (_MOD,_DIV etc)
-	2: operator (%,/ etc)
-	3: type argument 1
-	4: type argument 2
-	5: result type 
-	6: intermediate type (sometimes the result is a smaller type (%))
-	7: Error message when something goes wrong.
-*/
+ * //
+ * 	1: function name suffix (_MOD,_DIV etc)
+ * 	2: operator (%,/ etc)
+ * 	3: type argument 1
+ * 	4: type argument 2
+ * 	5: result type
+ * 	6: intermediate type (sometimes the result is a smaller type (%))
+ * 	7: Error message when something goes wrong.
+ *
 @= check_binop
 calc_export str CALCbinarycheck@1@3@4(@5 *res, @3 *a, @4 *b );
 str CALCbinarycheck@1@3@4(@5 *res, @3 *a, @4 *b ) {
@@ -1257,8 +1278,6 @@ str CALCbinarycheck@1@3@4(@5 *res, @3 *a, @4 *b ) {
    return(MAL_SUCCEED);
 }
 @
-
-
 @= c_bitwise_ops
 @:calc_binop(OR,|,@1,@1,@1)@
 @:calc_binop(AND,&,@1,@1,@1)@
@@ -1269,9 +1288,10 @@ str CALCbinarycheck@1@3@4(@5 *res, @3 *a, @4 *b ) {
 @:calc_binop(LSH,<<,@1,int,@1)@
 @:calc_binop(RSH,>>,@1,int,@1)@
 
-@+ The Coercion implementation
-Coercions generally do not check on information loss
-@-
+@
+ * @+ The Coercion implementation
+ * Coercions generally do not check on information loss
+ * @-
 @= mal_coercion_impl
 calc_export str CALC@22@1(@1 *res, @2 *a);
 str CALC@22@1(@1 *res, @2 *a)
@@ -1287,8 +1307,11 @@ str CALC@22@1(@1 *res, @2 *a)
 	}
 	return MAL_SUCCEED;
 }
-@-
+@
 @c
+/*
+ * @-
+ */
 @:mal_coercion_impl(bit,bit, , *a != 0)@
 @:mal_coercion_impl(bit,oid, , *a != 0)@
 @:mal_coercion_impl(bit,chr, , *a != 0)@
@@ -1424,8 +1447,10 @@ str CALCBAT2bat(int *res, bat *bid){
 	*res= *bid;
 	return MAL_SUCCEED;
 }
-@-
-The conversion routines are relatively easy to define.
+/*
+ * @-
+ * The conversion routines are relatively easy to define.
+ */
 @= convertImpl
 
 calc_export str CALCstr2@1(@1 *ret, str *val);
@@ -1446,12 +1471,15 @@ str CALC@12str(str *ret, @1 *val){
 	}
 	return MAL_SUCCEED;
 }
-@-
-Strings have to be dealt with differently, because
-we recieve a pointer to the string directly.
-To make it work properly, we need a call be reference
-in those places where we leave a result behind.
+@
 @c
+/*
+ * @-
+ * Strings have to be dealt with differently, because
+ * we recieve a pointer to the string directly.
+ * To make it work properly, we need a call be reference
+ * in those places where we leave a result behind.
+ */
 calc_export str CALCnil2str(str *ret, void *val);
 str
 CALCnil2str(str *ret, void *val)
@@ -1588,7 +1616,9 @@ CALCbatid2bat(int *bid, int *ret)
 @:convertImpl(chr)@
 @:convertImpl(bte)@
 
-@-
+/*
+ * @-
+ */
 @= setoidCode
 calc_export str @1SetoidImpl(str *ret, @1 *v);
 str @1SetoidImpl(str *ret, @1 *v){
@@ -1596,20 +1626,23 @@ str @1SetoidImpl(str *ret, @1 *v){
 	OIDbase((oid) *v);
 	return MAL_SUCCEED;
 }
+@
 @c
 @:setoidCode(oid)@
 @:setoidCode(lng)@
 @:setoidCode(int)@
 
-@-
-Type conversion template. Only allowed then no information is lost.
-
+/*
+ * @-
+ * Type conversion template. Only allowed then no information is lost.
+ */
 @= coercionImpl
 calc_export str @1From@2Impl(@1 *res, @2 *val);
 str @1From@2Impl(@1 *res, @2 *val){
 	*res = (@1) *val;
 	return MAL_SUCCEED;
 }
+@
 @c
 @:coercionImpl(lng,oid)@
 @:coercionImpl(lng,int)@
@@ -1644,9 +1677,10 @@ shtFromintImpl(sht *res, int *val)
 	return MAL_SUCCEED;
 }
 
-@+ Value, Types and Variables
-The routines below implement the OID utility functions.
-@c
+/*
+ * @+ Value, Types and Variables
+ * The routines below implement the OID utility functions.
+ */
 calc_export str CALCnewoidBase(oid *res);
 str
 CALCnewoidBase(oid *res)
@@ -1694,4 +1728,3 @@ CALCsetoidInc(oid *res, oid *inc)
 	*res = OIDbase(*inc);
 	return MAL_SUCCEED;
 }
-@}

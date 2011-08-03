@@ -18,203 +18,206 @@ All Rights Reserved.
 @
 
 @f replication
-@a Martin Kersten
-@v 1.0
-@+ Database replication
-MonetDB supports a simple database replication scheme using a master-slave
-protocol. A master node keeps a log of all SQL updates for replay.
-Once a slave starts the master establishes
-a MAL-client connection to the slave and starts pumping the backlog
-of committed transactions.
-The master does not take any responsibility over the integrity of a slave.
-The master may, however, decide to suspend
-forwarding updates to prepare for e.g. administration or shutdown.
 
-It is the slave's responsibility to be resilient against duplicate 
-transmission of the MAL-update backlog. A transaction id
-can be given to catch up from transactions already replayed.
-Transaction ideas before the minimum available in the log
-directory leads to freezing the slave. Then rebuilding from
-scratch is required.
-
-The replication scheme does not support SQL scheme modifications.
-Instead, the slaves should be initialized with a complete copy
-of the master schema and the database.
-
-Turning an existing database into a master and creation of a single
-slave works as follows.
-
-step 1) Turn the database into a replication master by setting its
-"master" property to true using monetdb(1).  This property is translated
-by merovingian(1) into the database variable "replication_master" and is
-set upon database (re)start.  Note that this setting can not be added to a
-running database.
-
-step 2) Create a dump of the master database using the msqldump(1) tool.  
-
-step 3) To initiate a slave, simply load the master snapshot.
-
-step 4) Run monetdb(1) to turn the database into a slave by setting its "slave" property to the URI of the master. 
-The precise URI can be obtained issuing the command
-'mclient -lmal -dmaster -s"u := master.getURI(); io.printf(\"%s\n\", u);"' on the master.
-The slave property is translated by merovingian(1) into the database variable "replication_slave" 
-and is set upon database (re)start.  Note that this setting can not be added to a running database. 
-
-The slave starts synchronizing with the master automatically upon each session restart.
-A few SQL wrapper procedures and functions can be used to control it manually.
-For example, the slave can temporarily suspend receiving log replays using suspendSync()
-and reactive it afterwards with resumeSync().
-A resumeSync() is also needed if you create a relation already known by the master,
-for it could have sent updates already. Due to unavailability of the target
-table it closed the log stream.
-
-The function freezeSlaves() removes the log files and makes sure that all
-existing slaves won't be able to catch up other then by re-initializing the
-database using e.g. a checkpoint.
-@verbatim
-CREATE PROCEDURE suspendSync() EXTERNAL NAME slave."stop";
-CREATE PROCEDURE resumeSync() EXTERNAL NAME slave."sync";
-CREATE FUNCTION synchronizing() RETURNS boolean EXTERNAL NAME slave."synchronizing";
-
-CREATE PROCEDURE freezeSlaves() EXTERNAL NAME master."freeze";
-CREATE PROCEDURE suspendSlaves() EXTERNAL NAME master."stop";
-CREATE PROCEDURE resumeSlaves() EXTERNAL NAME master."start";
-CREATE FUNCTION master() RETURNS string EXTERNAL NAME master."getURI";
-CREATE FUNCTION cutOffTag() RETURNS string EXTERNAL NAME master."getCutOffTag";
-@end verbatim
-
-It is possible to make a slave database also a master for descendants.
-In such situation the database carries both a master and slave property.
-Creating such scheme allows to employ hierarchical replication, or to
-have additional tables available in the replication stream.  Note that
-at this point replication from multiple masters to e.g. combine a full
-set from a set of partitioned masters is not yet possible.
-
-Beware, turning off the "master" property leads to automatic removal of all
-left-over log files.  This renders the master database unusable for replication.
-The state of the slaves becomes frozen.
-To restore replication in such case, both master and
-slaves have to be reinitialised using the aforementioned steps.
-
-@- Behind the scene
-When the replication_master environment is set, an optimizer
-becomes active to look after updates on SQL tables and to prepare
-for producing the log files. The snippet below illustrates the
-modifications made to a query plan.
-
-@verbatim
-function query():void
-  master:= "mapi:monetdb://gio.ins.cwi.nl:50000/dbmaster";
-  fcnid:= master.open();
-  ...
-  sql.append("schema","table","col",b:[:oid,:int]);
-  master.append("schema","table","col",b,fcnid);
-  ...
-  t := mtime.current_timestamp();
-  master.close(fcnid,t);
-end query;
-@end verbatim
-
-At runtime this leads to buffers being filled with the statements
-required for the slaves to catch up. 
-Each query block is stored in its own buffer and sent at
-the end of the query block. This separates the concurrent 
-actions on the database at the master and leads to a serial
-execution of the replication operations within the slave.
-
-The log records are stored in a file "dbfarm/db/master/log%d-%d" with the 
-following structure:
-@verbatim
-function slave.tag1(transactionid:int,stamp:timestamp);
-  barrier doit:= slave.open(transactionid);
-    sql.transaction();
-    tag1_b := bat.new(:oid,:int);
-    ...
-    bat.insert(tag1_b,3:oid,232:int); #example update
-    ...
-    sql.append("schema","table","col",tag1_b,tag);
-    slave.close(transactionid,stamp);
-    sql.commit();
-  exit doit;
-end tag1;
-slave.tag_1(1,"2009-09-03 15:49:45.000":timestamp);
-slave.drop("tag1");
-@end verbatim
-
-The slave.open() simply checks the replica log administration table
-and ignores duplicate attempts to roll the database forward.
-
-The operations are executed in the serial order as on the master,
-which should lead to the same optimistic transactional behavior.
-All queries are considered running in auto-commit mode, because
-the SQL frontend does not provide the hook (yet) for better transaction
-boundary control.
-The transaction identifier is part of the call to the function
-with the transaction update details.
-@- Interaction protocol
-The master node simply waits for a slave to request the transmission of the missing log files.
-The request includes the URI of the slave and the user credentials needed to establish a connection.
-The last parameter is the last known transaction id successfully re-executed.
-The master forks a thread to start flushing the blacklog files.
-
-Grouping the operations in temporary MAL functions
-makes it easy to skip its execution when we detect
-that it has been executed before. 
-
-@- Log file management
-The log records are grouped into separate files. 
-They are the units for re-submission and the scheme is set up to be idempotent. 
-A slave always starts synchronizing using the maximal tag stored in the slave log.
-
-The log files ultimately pollute your database and have to
-be (re)moved. This is considered a responsibility for the DBA,
-for it involves making a checkpoint or securely storing the logs
-into an archive. It can be automated by asking all slaves
-for their last transaction id and purge all obsolete files.
-
-Any error recognized during the replay should freeze the slave,
-because the synchronization integrity might become compromised.
-
-Aside  from being limited to autocommit transactions, the current
-implementation scheme has a hole. The log record is written just
-before transaction commit, including the activation call.
-The call and the flush of the commit record to the SQL
-log should be one atomic action, which amounts to a commit
-sequence of two 'databases'. It can only be handled when
-the SQL commit becomes visible at the MAL layer.
-[ Or, inject the transaction approval record into the log file
-when the next query starts, checking for any transaction
-errors first.]
-
-COPY INTO commands cause the master to freeze the images of
-all slaves. For capturing the input file and forwarding it to
-the slaves seems overly complicated.
-
-The slaves invalidation scheme is rather crude. The log directory
-is emptied and a new log file is created. Subsequent attempts
-by the slaves to access transactions ID before the invalidation
-are flagged as errors.
-
-@- Wishlist
-After setting the slave property, it could initiate full synchronization
-by asking for a catalog dump and replaying the logs. Provided, they
-have been kept around since the start.
-Alternatively, we can use the infrastructure for Octopus to pull the data from the master.
-For both we need msqldump functionality in the SQL code base.
-
-A slave property can be set to a list of masters, which turns the
-the slave into a serving multiple sources. It calls for splitting
-the slavelog.
-
-The tables in the slave should be set read-only, otherwise we
-have to double check integrity and bail out replication on violation.
-One solution is to store the replicated database in its own
-schema and grant read access to all users.
-[show example how to set up ]
-
-A validation script (or database diff) might be helpful to
-asses the database content for possible integrity violations.
-@{
+@c
+/*
+ * @a Martin Kersten
+ * @v 1.0
+ * @+ Database replication
+ * MonetDB supports a simple database replication scheme using a master-slave
+ * protocol. A master node keeps a log of all SQL updates for replay.
+ * Once a slave starts the master establishes
+ * a MAL-client connection to the slave and starts pumping the backlog
+ * of committed transactions.
+ * The master does not take any responsibility over the integrity of a slave.
+ * The master may, however, decide to suspend
+ * forwarding updates to prepare for e.g. administration or shutdown.
+ *
+ * It is the slave's responsibility to be resilient against duplicate
+ * transmission of the MAL-update backlog. A transaction id
+ * can be given to catch up from transactions already replayed.
+ * Transaction ideas before the minimum available in the log
+ * directory leads to freezing the slave. Then rebuilding from
+ * scratch is required.
+ *
+ * The replication scheme does not support SQL scheme modifications.
+ * Instead, the slaves should be initialized with a complete copy
+ * of the master schema and the database.
+ *
+ * Turning an existing database into a master and creation of a single
+ * slave works as follows.
+ *
+ * step 1) Turn the database into a replication master by setting its
+ * "master" property to true using monetdb(1).  This property is translated
+ * by merovingian(1) into the database variable "replication_master" and is
+ * set upon database (re)start.  Note that this setting can not be added to a
+ * running database.
+ *
+ * step 2) Create a dump of the master database using the msqldump(1) tool.
+ *
+ * step 3) To initiate a slave, simply load the master snapshot.
+ *
+ * step 4) Run monetdb(1) to turn the database into a slave by setting its "slave" property to the URI of the master.
+ * The precise URI can be obtained issuing the command
+ * 'mclient -lmal -dmaster -s"u := master.getURI(); io.printf(\"%s\n\", u);"' on the master.
+ * The slave property is translated by merovingian(1) into the database variable "replication_slave"
+ * and is set upon database (re)start.  Note that this setting can not be added to a running database.
+ *
+ * The slave starts synchronizing with the master automatically upon each session restart.
+ * A few SQL wrapper procedures and functions can be used to control it manually.
+ * For example, the slave can temporarily suspend receiving log replays using suspendSync()
+ * and reactive it afterwards with resumeSync().
+ * A resumeSync() is also needed if you create a relation already known by the master,
+ * for it could have sent updates already. Due to unavailability of the target
+ * table it closed the log stream.
+ *
+ * The function freezeSlaves() removes the log files and makes sure that all
+ * existing slaves won't be able to catch up other then by re-initializing the
+ * database using e.g. a checkpoint.
+ * @verbatim
+ * CREATE PROCEDURE suspendSync() EXTERNAL NAME slave."stop";
+ * CREATE PROCEDURE resumeSync() EXTERNAL NAME slave."sync";
+ * CREATE FUNCTION synchronizing() RETURNS boolean EXTERNAL NAME slave."synchronizing";
+ *
+ * CREATE PROCEDURE freezeSlaves() EXTERNAL NAME master."freeze";
+ * CREATE PROCEDURE suspendSlaves() EXTERNAL NAME master."stop";
+ * CREATE PROCEDURE resumeSlaves() EXTERNAL NAME master."start";
+ * CREATE FUNCTION master() RETURNS string EXTERNAL NAME master."getURI";
+ * CREATE FUNCTION cutOffTag() RETURNS string EXTERNAL NAME master."getCutOffTag";
+ * @end verbatim
+ *
+ * It is possible to make a slave database also a master for descendants.
+ * In such situation the database carries both a master and slave property.
+ * Creating such scheme allows to employ hierarchical replication, or to
+ * have additional tables available in the replication stream.  Note that
+ * at this point replication from multiple masters to e.g. combine a full
+ * set from a set of partitioned masters is not yet possible.
+ *
+ * Beware, turning off the "master" property leads to automatic removal of all
+ * left-over log files.  This renders the master database unusable for replication.
+ * The state of the slaves becomes frozen.
+ * To restore replication in such case, both master and
+ * slaves have to be reinitialised using the aforementioned steps.
+ *
+ * @- Behind the scene
+ * When the replication_master environment is set, an optimizer
+ * becomes active to look after updates on SQL tables and to prepare
+ * for producing the log files. The snippet below illustrates the
+ * modifications made to a query plan.
+ *
+ * @verbatim
+ * function query():void
+ *   master:= "mapi:monetdb://gio.ins.cwi.nl:50000/dbmaster";
+ *   fcnid:= master.open();
+ *   ...
+ *   sql.append("schema","table","col",b:[:oid,:int]);
+ *   master.append("schema","table","col",b,fcnid);
+ *   ...
+ *   t := mtime.current_timestamp();
+ *   master.close(fcnid,t);
+ * end query;
+ * @end verbatim
+ *
+ * At runtime this leads to buffers being filled with the statements
+ * required for the slaves to catch up.
+ * Each query block is stored in its own buffer and sent at
+ * the end of the query block. This separates the concurrent
+ * actions on the database at the master and leads to a serial
+ * execution of the replication operations within the slave.
+ *
+ * The log records are stored in a file "dbfarm/db/master/log%d-%d" with the
+ * following structure:
+ * @verbatim
+ * function slave.tag1(transactionid:int,stamp:timestamp);
+ *   barrier doit:= slave.open(transactionid);
+ *     sql.transaction();
+ *     tag1_b := bat.new(:oid,:int);
+ *     ...
+ *     bat.insert(tag1_b,3:oid,232:int); #example update
+ *     ...
+ *     sql.append("schema","table","col",tag1_b,tag);
+ *     slave.close(transactionid,stamp);
+ *     sql.commit();
+ *   exit doit;
+ * end tag1;
+ * slave.tag_1(1,"2009-09-03 15:49:45.000":timestamp);
+ * slave.drop("tag1");
+ * @end verbatim
+ *
+ * The slave.open() simply checks the replica log administration table
+ * and ignores duplicate attempts to roll the database forward.
+ *
+ * The operations are executed in the serial order as on the master,
+ * which should lead to the same optimistic transactional behavior.
+ * All queries are considered running in auto-commit mode, because
+ * the SQL frontend does not provide the hook (yet) for better transaction
+ * boundary control.
+ * The transaction identifier is part of the call to the function
+ * with the transaction update details.
+ * @- Interaction protocol
+ * The master node simply waits for a slave to request the transmission of the missing log files.
+ * The request includes the URI of the slave and the user credentials needed to establish a connection.
+ * The last parameter is the last known transaction id successfully re-executed.
+ * The master forks a thread to start flushing the blacklog files.
+ *
+ * Grouping the operations in temporary MAL functions
+ * makes it easy to skip its execution when we detect
+ * that it has been executed before.
+ *
+ * @- Log file management
+ * The log records are grouped into separate files.
+ * They are the units for re-submission and the scheme is set up to be idempotent.
+ * A slave always starts synchronizing using the maximal tag stored in the slave log.
+ *
+ * The log files ultimately pollute your database and have to
+ * be (re)moved. This is considered a responsibility for the DBA,
+ * for it involves making a checkpoint or securely storing the logs
+ * into an archive. It can be automated by asking all slaves
+ * for their last transaction id and purge all obsolete files.
+ *
+ * Any error recognized during the replay should freeze the slave,
+ * because the synchronization integrity might become compromised.
+ *
+ * Aside  from being limited to autocommit transactions, the current
+ * implementation scheme has a hole. The log record is written just
+ * before transaction commit, including the activation call.
+ * The call and the flush of the commit record to the SQL
+ * log should be one atomic action, which amounts to a commit
+ * sequence of two 'databases'. It can only be handled when
+ * the SQL commit becomes visible at the MAL layer.
+ * [ Or, inject the transaction approval record into the log file
+ * when the next query starts, checking for any transaction
+ * errors first.]
+ *
+ * COPY INTO commands cause the master to freeze the images of
+ * all slaves. For capturing the input file and forwarding it to
+ * the slaves seems overly complicated.
+ *
+ * The slaves invalidation scheme is rather crude. The log directory
+ * is emptied and a new log file is created. Subsequent attempts
+ * by the slaves to access transactions ID before the invalidation
+ * are flagged as errors.
+ *
+ * @- Wishlist
+ * After setting the slave property, it could initiate full synchronization
+ * by asking for a catalog dump and replaying the logs. Provided, they
+ * have been kept around since the start.
+ * Alternatively, we can use the infrastructure for Octopus to pull the data from the master.
+ * For both we need msqldump functionality in the SQL code base.
+ *
+ * A slave property can be set to a list of masters, which turns the
+ * the slave into a serving multiple sources. It calls for splitting
+ * the slavelog.
+ *
+ * The tables in the slave should be set read-only, otherwise we
+ * have to double check integrity and bail out replication on violation.
+ * One solution is to store the replicated database in its own
+ * schema and grant read access to all users.
+ * [show example how to set up ]
+ *
+ * A validation script (or database diff) might be helpful to
+ * asses the database content for possible integrity violations.
+ */
 @mal
 module master;
 
@@ -321,9 +324,11 @@ comment "Prepare the server for the slave role.";
 
 master.prelude();
 slave.prelude();
-@-
-@+ Implementation code 
 @h
+/*
+ * @-
+ * @+ Implementation code
+ */
 #ifndef _REPLICATOR_H
 #define _REPLICATOR_H
 
@@ -390,13 +395,14 @@ replication_export BAT *SLAVEtable(void);
 #include <mal_sabaoth.h>
 #include <mtime.h>
 
-@-
-The start of the query is marked with a replica tag.
-It also designates the local buffer to collect the update
-requests before they are shipped to the log.
-The tag is returned for marking all related updates.
-The final code should contain a loop to determine the last replication tag.
-@c
+/*
+ * @-
+ * The start of the query is marked with a replica tag.
+ * It also designates the local buffer to collect the update
+ * requests before they are shipped to the log.
+ * The tag is returned for marking all related updates.
+ * The final code should contain a loop to determine the last replication tag.
+ */
 #define MASTER "master/"
 #define REPLICA "log"OIDFMT"-"OIDFMT
 #define REPLICABLOCK 20
@@ -1288,6 +1294,7 @@ The transaction identifier is used as an oid into this table.
 		printf("#created @1\n");
 #endif
 	}
+@
 @c
 
 str
@@ -1335,16 +1342,16 @@ SLAVEclose(int *ret, oid *tag, timestamp *valid)
 	return MAL_SUCCEED;
 }
 
-@-
-The slave status can be made visible through an SQL
-table producing function.
-@verbatim
-create function slavelog () 
-	returns table ("tid" int, "commit" timestamp, "valid" timestamp, "error" string)
-	external name sql.dump_slave;
-@end verbatim
-
-@c
+/*
+ * @-
+ * The slave status can be made visible through an SQL
+ * table producing function.
+ * @verbatim
+ * create function slavelog ()
+ * 	returns table ("tid" int, "commit" timestamp, "valid" timestamp, "error" string)
+ * 	external name sql.dump_slave;
+ * @end verbatim
+ */
 BAT *
 SLAVEtable(void)
 {
@@ -1480,4 +1487,3 @@ SLAVEsynchronizing(int *ret)
 	*ret = acceptLogs != 0;
 	return MAL_SUCCEED;
 }
-@}

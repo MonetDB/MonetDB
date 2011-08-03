@@ -1,0 +1,50 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://www.monetdb.org/Legal/MonetDBLicense
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2011 MonetDB B.V.
+# All Rights Reserved.
+
+module manual;
+
+pattern help(text:str)
+address MANUALhelp
+comment "Produces a list of all <module>.<function> that match
+	the text pattern. The wildcard '*' can be used for <module>
+and <function>. Using the '(' asks for signature information and
+using ')' asks for the complete help record.";
+pattern search(text:str)
+address MANUALsearch
+comment "Search the manual for command descriptions that match the
+regular expression 'text'";
+
+pattern createXML(mod:str):void
+address MANUALcreate1
+comment "Generate a synopsis of a module";
+pattern createXML():void
+address MANUALcreate0
+comment "Produces a XML-formatted manual over all modules loaded.";
+
+pattern section(mod:str):void
+address MANUALcreateSection
+comment "Generate a synopsis of a module for the reference manual";
+pattern index():void
+address MANUALcreateIndex
+comment "Produces an overview of all names grouped by module.";
+pattern summary():void
+address MANUALcreateSummary
+comment "Produces a manual with help lines grouped by module.";
+
+pattern completion(pat:str):bat[:int,:str]
+address MANUALcompletion
+comment "Produces the wordcompletion table.";

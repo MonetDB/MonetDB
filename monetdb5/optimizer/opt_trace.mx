@@ -18,27 +18,30 @@ All Rights Reserved.
 @
 
 @f opt_trace
-@- MAL Instruction Trace 
-Collection of runtime statistics on specific instructions
-is sometimes handy for post-session analysis. To accomplish
-this, you need a small optimizer that works its way through
-the MAL program and injects calls to your data collector.
 
-The example presented here can act as a template. It has
-been designed to gather runtime information over select()
-calls for a study on fragmentation. The collector code uses
-the target variable to link it with the instruction of interest.
-If optimizers decide to move things around, it can still be
-localized at runtime.
-@example
-_26@{rows=31:lng@} := algebra.uselect(_22,nil:sht,2,false,false);
-mdb.collect(_26);
-@end example
-
-The result is appended to the hardwired file /tmp/MALtrace.
-The mdb module is(should be) extended with signatures
-to set the trace file and manipulate the trace table.
-@{
+@c
+/*
+ * @- MAL Instruction Trace
+ * Collection of runtime statistics on specific instructions
+ * is sometimes handy for post-session analysis. To accomplish
+ * this, you need a small optimizer that works its way through
+ * the MAL program and injects calls to your data collector.
+ *
+ * The example presented here can act as a template. It has
+ * been designed to gather runtime information over select()
+ * calls for a study on fragmentation. The collector code uses
+ * the target variable to link it with the instruction of interest.
+ * If optimizers decide to move things around, it can still be
+ * localized at runtime.
+ * @example
+ * _26@{rows=31:lng@} := algebra.uselect(_22,nil:sht,2,false,false);
+ * mdb.collect(_26);
+ * @end example
+ *
+ * The result is appended to the hardwired file /tmp/MALtrace.
+ * The mdb module is(should be) extended with signatures
+ * to set the trace file and manipulate the trace table.
+ */
 @mal
 pattern optimizer.trace():str
 address OPTtrace;
@@ -159,4 +162,3 @@ OPTtraceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(trace,OPT_CHECK_ALL)@
-@}

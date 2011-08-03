@@ -18,16 +18,19 @@ All Rights Reserved.
 @
 
 @f crackers_sideways
-@a Martin Kersten, Stratos Idreos, Stefan Manegold
-@d March 2006 - July 2008
-@* Sideways Cracking
 
-
-@+ Interface
-
-
-@- Type expansion
-
+@c
+/*
+ * @a Martin Kersten, Stratos Idreos, Stefan Manegold
+ * @d March 2006 - July 2008
+ * @* Sideways Cracking
+ *
+ *
+ * @+ Interface
+ *
+ *
+ * @- Type expansion
+ */
 @= TypeSwitch_1
 @:@1(,int,simple,,int,@2)@
 @:@1(,lng,simple,,int,@2)@
@@ -37,13 +40,11 @@ All Rights Reserved.
 @:@1(,sht,simple,,dbl,@2)@
 @:@1(,date,atom,TYPE_,loc,@2)@
 @
-
 @= TypeSwitch_2
 @:@1(int,,simple,,int,@2)@
 @:@1(dbl,,simple,,dbl,@2)@
 @:@1(date,,atom,TYPE_,loc,@2)@
 @
-
 @= TypeSwitch_3
 /* TODO: add the rest of the type combinations once code is stable */
 @:@1(int,lng,simple,,int,@2)@
@@ -62,7 +63,6 @@ All Rights Reserved.
 @:@1(date,dbl,atom,TYPE_,loc,@2)@
 @:@1(date,date,atom,TYPE_,loc,@2)@
 @
-
 @= TypeSwitch_4
 /* TODO: add the rest of the type combinations once code is stable */
 @:@1(int,int,simple,,,@2)@
@@ -76,10 +76,10 @@ All Rights Reserved.
 @:@1(date,dbl,atom,TYPE_,,@2)@
 @:@1(date,date,atom,TYPE_,,@2)@
 @
-
-@- Header file
- 
 @h
+/*
+ * @- Header file
+ */
 #ifndef _CRACKERS_SIDEWAYS_H_
 #define _CRACKERS_SIDEWAYS_H_
 
@@ -97,27 +97,22 @@ All Rights Reserved.
 @:TypeSwitch_3(SidewaysFunctions_decl_3)@
 
 #endif /* _CRACKERS_SIDEWAYS_H */
-@
-
-@- Signatures shared within the crackers module/library
-
+/*
+ * @- Signatures shared within the crackers module/library
+ */
 @= SidewaysSharedFunctions_decl_0
 int existsCrackerIndexSideways(int bid, int pbid);
 @
-
 @= SidewaysSharedFunctions_decl_2
 int CreateTape_@1(int bid);
 str AddToTape_@1(int h, @1 low, @1 hgh, bit li, bit hi);
 int newCrackerIndexSideways_@1(int bid, int cbid, int pbid, int cid);
 @
-
 @= SidewaysSharedFunctions_decl_3
 str Sync_@1_@2(int m, int h);
 str selectMergeInsertionsPart_@1_@2_Sideways( @1 *low, bit *inclusiveLow, @1 *hgh, bit *inclusiveHgh, int position);
 @
-
-@- Exported signatures
- 
+ * @- Exported signatures
 @= SidewaysFunctions_decl_0
 crackers_export str CRKsizePendingInsertions(int *k, int *bid, int *pbid);
 crackers_export str CRKextendCrackerMap(int *k, int *bid, int *pbid, lng *positions);
@@ -131,13 +126,11 @@ crackers_export str CRKaddReferenceFullMaps(int* res, int *bid, int *pbid);
 crackers_export str CRKclearReferencesFullMaps(int* res);
 crackers_export str CRKremoveFullMap(int* res);
 @
-
 @= SidewaysFunctions_decl_1
 /* JoinSelectFunctionsSidewaysWithoutPivot */
 crackers_export str CRKjoinSelectSideways_@2(int *res, int *cpair, @2 *low, @2 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
 crackers_export str CRKjointhetaSelectSideways_@2(int *res, int *cpair, @2 *val, str *OP);
 @
-
 @= SidewaysFunctions_decl_3
 /* SelectFunctionsSideways */
 crackers_export str CRKcreateFullMap_@1_@2(int* res, int *bid, int *pbid);
@@ -159,13 +152,12 @@ crackers_export str CRKdProject_@1_@2(int *res, int *bid, int *pbid, int *pivot)
 crackers_export str CRKdProjectH_@1_@2(int *res, int *bid, int *pbid, int *pivot);
 crackers_export str CRKdPositionProject_@1_@2(int *res, int *bid, int *pbid, int *pivot);
 @
-
-@{
-@+ Implementation
- 
-@- C file
-
 @c
+/*
+ * @+ Implementation
+ *
+ * @- C file
+ */
 #include "monetdb_config.h"
 #include "crackers.h"
 
@@ -186,10 +178,9 @@ crackers_export str CRKdPositionProject_@1_@2(int *res, int *bid, int *pbid, int
 @:SidewaysFunctions_impl_0@
 @:TypeSwitch_1(SidewaysFunctions_impl_1)@
 @:TypeSwitch_3(SidewaysFunctions_impl_3)@
-@
-
-@- Exported functions
-
+/*
+ * @- Exported functions
+ */
 @= SidewaysFunctions_impl_0
 str
 CRKsizePendingInsertions(int *k, int *bid, int *pbid){
@@ -320,8 +311,6 @@ CRKsetStorageThreshold(int *k, oid *threshold){
         return MAL_SUCCEED;
 }
 @
-
-
 @= SidewaysFunctions_impl_1
 /* JoinSelectFunctionsSidewaysWithoutPivot */
 str                     
@@ -376,7 +365,6 @@ CRKjointhetaSelectSideways_@2(int *vid, int *bid, @2 *val, str *OP){
 }
 
 @
-
 @= SidewaysFunctions_impl_3
 /* SelectFunctionsSideways */
 
@@ -1171,9 +1159,7 @@ CRKdPositionProject_@1_@2(int *res, int *bid, int *pbid,int *pivot){
         return MAL_SUCCEED;
 }
 @
-
-@- Local support functions and macros
-
+ * @- Local support functions and macros
 @= JoinSelectOperationsSideways
 @:JoinSelectRSideways@6(@1,@2,LO,RE,GT,LE,@3,@4)@
 @:JoinSelectRSideways@6(@1,@2,LE,RE,GE,LE,@3,@4)@
@@ -1184,7 +1170,6 @@ CRKdPositionProject_@1_@2(int *res, int *bid, int *pbid,int *pivot){
 @:JoinSelectSideways@6(@1,@2,LO,GT,@3,@4)@
 @:JoinSelectSideways@6(@1,@2,LE,GE,@3,@4)@
 @
-
 @= basicFunctions
 int
 existsCrackerIndexSideways(int bid, int pbid){
@@ -1394,8 +1379,6 @@ heapfree(Heap *src, Heap *dst)
 
 
 @
-
-
 @= NewIndexSidewaysCracking_0
 int
 newCrackerIndexHistorySideways(int bid, int chid, int hiid){
@@ -1446,7 +1429,6 @@ newCrackerIndexHistorySideways(int bid, int chid, int hiid){
         return i;
 }
 @
-
 @= NewIndexSidewaysCracking_2
 int
 newCrackerIndexSideways_@1(int bid, int cbid, int pbid, int cid){
@@ -1500,7 +1482,6 @@ newCrackerIndexSideways_@1(int bid, int cbid, int pbid, int cid){
 	return i;
 }
 @
-
 @= crkTwoRTreeSideways
         /*CRACK in two pieces cl2-ch2 using <incHgh bound*/
         if (*inclusiveHgh == TRUE)
@@ -1518,7 +1499,6 @@ newCrackerIndexSideways_@1(int bid, int cbid, int pbid, int cid){
                 vh--;
         }
 @
-
 @= crkTwoLTreeSideways
         /*CRACK in two pieces cl1-ch1 using >incLow bound*/
         if (*inclusiveLow == TRUE)
@@ -1537,7 +1517,6 @@ newCrackerIndexSideways_@1(int bid, int cbid, int pbid, int cid){
         vl++; /* We need to take next position because the crack function always returns the last bun of the left piece.
                 Instead we want the first bun of the right piece*/
 @
-
 @= crkThreeTreeSideways
         if (*inclusiveLow == TRUE && *inclusiveHgh == TRUE)
                 CRKcrackUnorderedThreeSideways_LE_RE_@1_@2(b,*low,*hgh, @3, @4, &vl, &vh);
@@ -1555,7 +1534,6 @@ newCrackerIndexSideways_@1(int bid, int cbid, int pbid, int cid){
                 if (vh<@4) addCrackerIndex_@1(m,hgh,HBound,vh,c);
         }
 @
-
 @= printMacro
 
 /* @1: the type; e.g., chr bte sht int oid wrd flt dbl lng str */
@@ -1567,8 +1545,6 @@ newCrackerIndexSideways_@1(int bid, int cbid, int pbid, int cid){
         GDKfree(MyBuf);
 }
 @
-
-
 @= SyncOperation
 str
 Sync_@1_@2(int m, int h){
@@ -1720,7 +1696,6 @@ CRKcreateFullMap_@1_@2(int* res, int *bid, int *pbid){
         return MAL_SUCCEED;
 }
 @
-
 @= TapeOperations
 int
 CreateTape_@1(int bid){
@@ -1769,8 +1744,6 @@ AddToTape_@1(int h, @1 low, @1 hgh, bit li, bit hi){
         return MAL_SUCCEED;
 }
 @
-
-
 @= CreateResultSideways
 createView:
 	if (tail){
@@ -1806,7 +1779,6 @@ createView:
         *vid = view->batCacheid;
         BBPkeepref(*vid);
 @
-
 @= CreateCrackerMap
 		BAT *bo, *bp;
                 oid sizeM;
@@ -1928,7 +1900,6 @@ createView:
                 BBPunfix(bo->batCacheid);
                 BBPunfix(bp->batCacheid);
 @
-
 @= updatesSideways
 str
 selectMergeInsertionsPart_@1_@2_Sideways( @1 *low, bit *inclusiveLow, @1 *hgh, bit *inclusiveHgh, int position){
@@ -2010,7 +1981,6 @@ selectMergeInsertionsPart_@1_@2_Sideways( @1 *low, bit *inclusiveLow, @1 *hgh, b
 	return NULL;
 }
 @
-
 @= analyzeTailDisjunction
         for (j = 0; j<vl; j++){
                 if (@2_@4(pairt,low2,@3@1) && @2_@5(pairt,hgh2,@3@1))
@@ -2036,7 +2006,6 @@ selectMergeInsertionsPart_@1_@2_Sideways( @1 *low, bit *inclusiveLow, @1 *hgh, b
                 pivott ++;
         }
 @
-
 @= CreateDisjunctiveResultSideways
 createView:
 {
@@ -2077,7 +2046,6 @@ createView:
         *vid = p->batCacheid;
 }
 @
-
 @= RangeSelectBody
 	BAT *viewHead = NULL;
         BAT *b, *c, *view=NULL;
@@ -2210,7 +2178,6 @@ createView:
 	AddToTape_@1(h, *low, *hgh, *inclusiveLow, *inclusiveHgh );
 	CrackerIndex[m].nextCrack+=1;
 @
-
 @= RangeSelectBodyLeftNull
 	BAT *viewHead = NULL;
         BAT *b, *c, *view=NULL;
@@ -2303,7 +2270,6 @@ createView:
 	AddToTape_@1(h, *(@1*)ATOMnilptr(TYPE_@1), *hgh, *inclusiveLow, *inclusiveHgh );
 	CrackerIndex[m].nextCrack+=1;
 @
-
 @= RangeSelectBodyRightNull
 	BAT *viewHead = NULL;
         BAT *b, *c, *view=NULL;
@@ -2393,8 +2359,6 @@ createView:
 	AddToTape_@1(h, *low, *(@1*)ATOMnilptr(TYPE_@1), *inclusiveLow, *inclusiveHgh );
 	CrackerIndex[m].nextCrack+=1;
 @
-
-
 @= crackOperationsSideways
 static str
 CRKRangeSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, bit tail){
@@ -2440,7 +2404,6 @@ CRKdRangeSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *in
         return MAL_SUCCEED;
 }
 @
-
 @= JoinSelectBodySideways
         BAT *b, *p;     
         @2 *pairt;
@@ -2488,7 +2451,6 @@ CRKdRangeSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *in
 
 	return MAL_SUCCEED;
 @
-
 @= JoinSelectBodySidewaysWithPivot
         BAT *b, *p, *c, *slice;     
         @2 *pairt;
@@ -2566,7 +2528,6 @@ CRKdRangeSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *in
 	BBPunfix(slice->batCacheid);
 	return MAL_SUCCEED;
 @
-
 @= dJoinSelectBodySidewaysWithPivot
         BAT *b, *p, *c;     
         @2 *pairt;
@@ -2612,14 +2573,12 @@ CRKdRangeSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *in
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 @
-
 @= JoinSelectRSidewaysWithoutPivot
 static str
 JoinSelectRangeSideways_@3_@4_@2(int *res, int *cpair, @2 *low, @2 *hgh){
         @:JoinSelectBodySideways(,@2,@7_@5(pairt,low,@8@2) && @7_@6(pairt,hgh,@8@2))@
 }
 @
-
 @= JoinSelectRSideways
 static str
 JoinSelectRangeSideways_P_@3_@4_@1_@2(int *res, int *bid, int *pbid, int *pivot, @2 *low, @2 *hgh, @1 *low1, @1 *hgh1, bit *inclusiveLow1, bit *inclusiveHgh1){
@@ -2631,19 +2590,15 @@ dJoinSelectRangeSideways_P_@3_@4_@1_@2(int *res, int *bid, int *pbid, int *pivot
         @:dJoinSelectBodySidewaysWithPivot(@1,@2,@7_@5(pairt,low,@8@2) && @7_@6(pairt,hgh,@8@2))@
 }
 @
-
 @= JoinSelectSidewaysWithoutPivot
 static str
 JoinSelectSingleSideways_@3_@2(int *res, int *cpair, @2 *mid){
         @:JoinSelectBodySideways(,@2,@5_@4(pairt,mid,@6@2))@
 }
 @
-
 @= JoinSelectSideways
 static str
 JoinSelectSingleSideways_P_@3_@1_@2(int *res, int *bid, int *pbid, int *pivot, @2 *mid, @1 *low1, @1 *hgh1, bit *inclusiveLow1, bit *inclusiveHgh1){
         @:JoinSelectBodySidewaysWithPivot(@1,@2,@5_@4(pairt,mid,@6@2))@
 }
 @
-
-@}

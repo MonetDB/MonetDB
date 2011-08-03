@@ -18,18 +18,21 @@ All Rights Reserved.
 @
 
 @f status
-@a M.L. Kersten, P. Boncz, N.Nes
-@v 2.0
-@+ System state information 
-This document introduces a series of bats  and operations that provide access
-to information stored within the Monet Version 5 internal data structures.
-In all cases, pseudo BAT operation returns a transient BAT that
-should be garbage collected after being used.
 
-The main performance drain would be to use a pseudo BAT directly to
-successively access it components. This can be avoided by first assigning
-the pseudo BAT to a variable.
-@{
+@c
+/*
+ * @a M.L. Kersten, P. Boncz, N.Nes
+ * @v 2.0
+ * @+ System state information
+ * This document introduces a series of bats  and operations that provide access
+ * to information stored within the Monet Version 5 internal data structures.
+ * In all cases, pseudo BAT operation returns a transient BAT that
+ * should be garbage collected after being used.
+ *
+ * The main performance drain would be to use a pseudo BAT directly to
+ * successively access it components. This can be avoided by first assigning
+ * the pseudo BAT to a variable.
+ */
 @mal
 module status;
 
@@ -48,45 +51,44 @@ comment "Get a split-up of how much virtual memory blocks are in use";
 command memUsage(minsize:lng):bat[:str,:lng] 
 address SYSmem_usage
 comment "Get a split-up of how much memory blocks are in use";
-@-
-Some explanation of what mem_usage() and vm_usage() display:
-@verbatim
-> m:= status.memUsage(1024:lng); io.print(m);
-#------------------------------#
-# BAT:                 tmp_42  #
-# (str)                (lng)   #
-#------------------------------#
-[ "buns/car_category",  400012 ] 100.000 string offsets
-[ "buns/car_town",      400012 ] idem
-[ "buns/car_class",     400012 ] idem
-[ "tail/car_category",  266244 ] string tail heap
-[ "tail/car_town",      266244 ] idem
-[ "tail/car_class",     266244 ] idem
-[ "_tot/buns",         1322996 ] the three bun heaps
-[ "_tot/tail",          967762 ] the three tail heaps
-[ "_tot/head",           70984 ] negligable
-[ "_tot/bbp",            98866 ] BBP metadata structure
-[ "_tot/mil",           102400 ] MIL interpreter stack space
-[ "_tot/found",        2590144 ] buns+head+tail+bbp+mil
-[ "_tot/malloc_heap",  2956048 ] in malloc heap
-[ "_tot/malloc",       2956048 ] total consumed via malloc
-[ "_tot/valloc",        201266 ] total consumed via virtualalloc
-[ "_tot/mem",          3157314 ] total RAM+swap-file consumption
-
->
-> v:= status.vmStatistics(1024:lng); io.print(v);
-#------------------------------#
-# BAT:               tmp_42    #
-# (str)              (lng)     #
-#------------------------------#
-[ "_tot/bbp",        50331648  ] 50MB reserved (100KB claimed)
-[ "_tot/mil",        16777216  ] 16MB reserved (100KB claimed)
-[ "_tot/found",      67108864  ] bbp+mil
-[ "_tot/vm",         71244560  ] total address space consumption
->
-@end verbatim
-@+ MAL runtime status 
-@mal
+# @-
+# Some explanation of what mem_usage() and vm_usage() display:
+# @verbatim
+# > m:= status.memUsage(1024:lng); io.print(m);
+# #------------------------------#
+# # BAT:                 tmp_42  #
+# # (str)                (lng)   #
+# #------------------------------#
+# [ "buns/car_category",  400012 ] 100.000 string offsets
+# [ "buns/car_town",      400012 ] idem
+# [ "buns/car_class",     400012 ] idem
+# [ "tail/car_category",  266244 ] string tail heap
+# [ "tail/car_town",      266244 ] idem
+# [ "tail/car_class",     266244 ] idem
+# [ "_tot/buns",         1322996 ] the three bun heaps
+# [ "_tot/tail",          967762 ] the three tail heaps
+# [ "_tot/head",           70984 ] negligable
+# [ "_tot/bbp",            98866 ] BBP metadata structure
+# [ "_tot/mil",           102400 ] MIL interpreter stack space
+# [ "_tot/found",        2590144 ] buns+head+tail+bbp+mil
+# [ "_tot/malloc_heap",  2956048 ] in malloc heap
+# [ "_tot/malloc",       2956048 ] total consumed via malloc
+# [ "_tot/valloc",        201266 ] total consumed via virtualalloc
+# [ "_tot/mem",          3157314 ] total RAM+swap-file consumption
+#
+# >
+# > v:= status.vmStatistics(1024:lng); io.print(v);
+# #------------------------------#
+# # BAT:               tmp_42    #
+# # (str)              (lng)     #
+# #------------------------------#
+# [ "_tot/bbp",        50331648  ] 50MB reserved (100KB claimed)
+# [ "_tot/mil",        16777216  ] 16MB reserved (100KB claimed)
+# [ "_tot/found",      67108864  ] bbp+mil
+# [ "_tot/vm",         71244560  ] total address space consumption
+# >
+# @end verbatim
+# @+ MAL runtime status
 command batStatistics():bat[:str,:str] 
 address SYSgdkEnv
 comment "Show distribution of bats by kind";
@@ -118,8 +120,10 @@ command vm_maxsize(v:lng):void
 address SYSsetvm_maxsize
 comment "Set the maximum usable amount of physical swapspace in KB";
 
-@+ Implementation Code
 @h
+/*
+ * @+ Implementation Code
+ */
 #ifndef _SYS_H_
 #define _SYS_H_
 
@@ -135,8 +139,9 @@ comment "Set the maximum usable amount of physical swapspace in KB";
 
 
 #endif
-@-
-
+/*
+ * @-
+ */
 @include kprelude.mx
 @c
 #include "monetdb_config.h"
@@ -230,19 +235,20 @@ SYSsetvm_maxsize(lng *num)
 	return MAL_SUCCEED;
 }
 
-@- Performance
-To obtain a good impression of the Monet performance we need timing information.
-The most detailed information is best obtained with the system profiler.
-
-However, the direct approach is to enable the user to read the timers maintained
-internally. This is done with the CPU, IO, MEMORY, and BBP command which
-displays the elapsed time in seconds, user- and system-cpu time in milliseconds
-since its last invocation and the amount of space in use.  The process
-identifier is used to differentiate among the possible processes.
-
-Note that in multi threaded mode the routine prints the elapsed
-time since the beginning of each process.
-@c
+/*
+ * @- Performance
+ * To obtain a good impression of the Monet performance we need timing information.
+ * The most detailed information is best obtained with the system profiler.
+ *
+ * However, the direct approach is to enable the user to read the timers maintained
+ * internally. This is done with the CPU, IO, MEMORY, and BBP command which
+ * displays the elapsed time in seconds, user- and system-cpu time in milliseconds
+ * since its last invocation and the amount of space in use.  The process
+ * identifier is used to differentiate among the possible processes.
+ *
+ * Note that in multi threaded mode the routine prints the elapsed
+ * time since the beginning of each process.
+ */
 #ifdef HAVE_TIMES
 static time_t clk = 0;
 static struct tms state;
@@ -363,6 +369,7 @@ SYSmemStatistics(int *ret)
 		}
 		@4 += sz; tot += sz;
 	}
+@
 @c
 
 @h
@@ -526,39 +533,41 @@ SYSvm_usage(int *ret, lng *minsize)
 	return MAL_SUCCEED;
 }
 
-@-
-Additional information on the process utilization is given by
-the ioStatistics command. The following information is obtained.
-
-@T
-\begin{tabular}{| l| l|}\hline
-maxrss     &the maximum resident set size utilized (in kilobytes).\\
-minflt     &the number of page faults serviced without any I/O\\
-	 &activity; here I/O activity is avoided by "reclaiming" a\\
-
-	 &activity; here I/O activity is avoided by "reclaiming" a\\
-	 &page frame from the list of pages awaiting reallocation.\\
-majflt     &the number of page faults serviced that required I/O\\
-	 &activity.\\
-nswap      &the number of times a process was "swapped" out of main\\
-	 &memory\\
-inblock    &the number of times the file system had to perform input.\\
-oublock    &the number of times the file system had to perform output.\\
-nvcsw      &the number of times a context switch resulted due to a\\
-	 &process voluntarily giving up the processor before its\\
-	 &time slice was completed (usually to await availability of\\
-	 &a resource).\\
-nivcsw     &the number of times a context switch resulted due to a\\
-	 &higher priority process becoming runnable or because the\\
-	 &current process exceeded its time slice.\\
-\end{tabular}
-@
-The resource statistics are collected in a BAT. It can then
-be queried. A default listing is produced by the command @%usagecmd@.
-(which should be moved to Monet)
-
-The BAT grows. It should be compacted.
 @h
+/*
+ * @-
+ * Additional information on the process utilization is given by
+ * the ioStatistics command. The following information is obtained.
+ *
+ * @T
+ * \begin{tabular}{| l| l|}\hline
+ * maxrss     &the maximum resident set size utilized (in kilobytes).\\
+ * minflt     &the number of page faults serviced without any I/O\\
+ * 	 &activity; here I/O activity is avoided by "reclaiming" a\\
+ *
+ * 	 &activity; here I/O activity is avoided by "reclaiming" a\\
+ * 	 &page frame from the list of pages awaiting reallocation.\\
+ * majflt     &the number of page faults serviced that required I/O\\
+ * 	 &activity.\\
+ * nswap      &the number of times a process was "swapped" out of main\\
+ * 	 &memory\\
+ * inblock    &the number of times the file system had to perform input.\\
+ * oublock    &the number of times the file system had to perform output.\\
+ * nvcsw      &the number of times a context switch resulted due to a\\
+ * 	 &process voluntarily giving up the processor before its\\
+ * 	 &time slice was completed (usually to await availability of\\
+ * 	 &a resource).\\
+ * nivcsw     &the number of times a context switch resulted due to a\\
+ * 	 &higher priority process becoming runnable or because the\\
+ * 	 &current process exceeded its time slice.\\
+ * \end{tabular}
+ *
+ * The resource statistics are collected in a BAT. It can then
+ * be queried. A default listing is produced by the command usagecmd.
+ * (which should be moved to Monet)
+ *
+ * The BAT grows. It should be compacted.
+ */
 status_export str SYSioStatistics(int *ret);
 @c
 str
@@ -675,4 +684,3 @@ SYSgdkThread(int *ret)
 	@:Pseudo(gdk,thread)@
 	return MAL_SUCCEED;
 }
-@}

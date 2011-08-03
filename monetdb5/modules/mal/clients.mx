@@ -18,14 +18,18 @@ All Rights Reserved.
 @
 
 @f clients
-@a Martin Kersten, Fabian Groffen
-@v 0.2
-@+ Client Management
-Each online client is represented with an entry in the clients table.
-The client may inspect his record at run-time and partially change its
-properties.
-The administrator sees all client records and has the right to
-adjust global properties.
+
+@c
+/*
+ * @a Martin Kersten, Fabian Groffen
+ * @v 0.2
+ * @+ Client Management
+ * Each online client is represented with an entry in the clients table.
+ * The client may inspect his record at run-time and partially change its
+ * properties.
+ * The administrator sees all client records and has the right to
+ * adjust global properties.
+ */
 @mal
 module clients;
 
@@ -64,9 +68,8 @@ address CLTquit
 comment "Terminate the session for a single client using a soft error.
 It is the privilige of the console user.";
 
-@-
-Administrator operations
-@mal
+# @-
+# Administrator operations
 command getLogins( ):bat[:int,:str] 
 address CLTLogin
 comment "Pseudo bat of client login time.";
@@ -119,14 +122,15 @@ comment "Close all client connections. If forced=false the
 clients are moved into FINISHING mode, which means that
 the process stops at the next cycle of the scenario.
 If forced=true all client processes are immediately killed";
-@-
-@{
+# @-
 @include prelude.mx
-@+ Monet client data
-Portions of the client record can be directly obtained for
-backward compatibility. The routine clientInfo provides more
-detailed information.
 @h
+/*
+ * @+ Monet client data
+ * Portions of the client record can be directly obtained for
+ * backward compatibility. The routine clientInfo provides more
+ * detailed information.
+ */
 #ifndef _CLIENTS_H
 #define _CLIENTS_H
 #include "mal.h"
@@ -360,9 +364,10 @@ CLTTime(int *ret)
 	return MAL_SUCCEED;
 }
 
-@-
-Produce a list of clients currently logged in
-@c
+/*
+ * @-
+ * Produce a list of clients currently logged in
+ */
 str
 CLTusers(int *ret)
 {
@@ -476,11 +481,10 @@ CLTwakeup(int *ret, int *id)
     return MCawakeClient(*id);
 }
 
-@+ User administration
-These commands (except changePassword, changeUsername and
-checkPermission) can only be executed by the administrator.
-
 @mal
+# @+ User administration
+# These commands (except changePassword, changeUsername and
+# checkPermission) can only be executed by the administrator.
 command md5sum(pw:str):str
 address CLTmd5sum
 comment "Return hex string representation of the MD5 hash of the given string";
@@ -745,4 +749,3 @@ str CLTshutdown(int *ret, bit *forced) {
 }
 @h
 #endif /* _CLIENTS_H */
-@}

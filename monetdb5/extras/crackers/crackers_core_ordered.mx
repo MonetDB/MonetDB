@@ -18,16 +18,19 @@ All Rights Reserved.
 @
 
 @f crackers_core_ordered
-@a Martin Kersten, Stratos Idreos, Stefan Manegold
-@d March 2006 - July 2007
-@* Core cracking (ordered)
 
-
-@+ Interface
- 
-
-@- Type expansion
-
+@c
+/*
+ * @a Martin Kersten, Stratos Idreos, Stefan Manegold
+ * @d March 2006 - July 2007
+ * @* Core cracking (ordered)
+ *
+ *
+ * @+ Interface
+ *
+ *
+ * @- Type expansion
+ */
 @= TypeSwitch
 @:@1(chr,simple,)@
 @:@1(sht,simple,)@
@@ -37,11 +40,10 @@ All Rights Reserved.
 @:@1(dbl,simple,)@
 @:@1(date,atom,TYPE_)@
 @
-
-
-@- Header file
-
 @h
+/*
+ * @- Header file
+ */
 #ifndef _CRACKERS_CORE_ORDERED_H_
 #define _CRACKERS_CORE_ORDERED_H_
 
@@ -49,27 +51,21 @@ All Rights Reserved.
 @:TypeSwitch(CoreOrderedFunctions_decl)@
 
 #endif /* _CRACKERS_CORE_ORDERED_H */
-@
-
-
-@- Exported signatures
-
+/*
+ * @- Exported signatures
+ */
 @= CoreOrderedFunctions_decl
 crackers_export str CRKcrackOrderedZero_@1 (int *res, int *bid, @1 *mid);
 crackers_export str CRKcrackOrderedOne_@1 (int *res, int *bid, @1 *mid);
 crackers_export str CRKcrackOrderedThree_@1 (int *res, int *bid, @1 *low, @1 *hgh);
 @
-
-
-
-
-@{
-@+ Implementation
-
-
-@- C file
-
 @c
+/*
+ * @+ Implementation
+ *
+ *
+ * @- C file
+ */
 #include "monetdb_config.h"
 #include "crackers.h"
 
@@ -78,11 +74,9 @@ crackers_export str CRKcrackOrderedThree_@1 (int *res, int *bid, @1 *low, @1 *hg
 
 /* Exported functions */
 @:TypeSwitch(CoreOrderedFunctions_impl)@
-@
-
-
-@- Exported functions
-
+/*
+ * @- Exported functions
+ */
 @= CoreOrderedFunctions_impl
 str
 CRKcrackOrderedZero_@1 (int *res, int *bid, @1 *mid){
@@ -129,10 +123,7 @@ CRKcrackOrderedThree_@1 (int *res, int *bid, @1 *low, @1 *hgh){
 	return msg;
 }
 @
-
-
-@- Local support functions and macros
-
+ * @- Local support functions and macros
 @= operationsOrdered
 @:crackInTwoOrderedPieces(@1,LE,<=,>)@
 @(
@@ -153,7 +144,6 @@ CRKcrackOrderedThree_@1 (int *res, int *bid, @1 *low, @1 *hgh){
 @:crackInThreeOrderedPiecesL(@1,LE,RO,<,>=,<,>=)@
 @)
 @
-
 @= moveOrdered
 	while (@1 @6 ){
 		@2 @4= 1;
@@ -161,7 +151,6 @@ CRKcrackOrderedThree_@1 (int *res, int *bid, @1 *low, @1 *hgh){
 		@5
 	}
 @
-
 @= OThree
 	while (*tmpt @5){
 		tmpt @2= 1;
@@ -248,7 +237,6 @@ CRKcrackOrderedThree_@1 (int *res, int *bid, @1 *low, @1 *hgh){
 		tmpt @6= 1;
 	}
 @
-
 @= crackInThreeOrderedPieces
 static str
 CRKcrackOrderedThree_@2_@3_@1(BAT *b, @1 low, @1 hgh, oid idx_first, oid idx_last){
@@ -303,7 +291,6 @@ CRKcrackOrderedThree_@2_@3_@1(BAT *b, @1 low, @1 hgh, oid idx_first, oid idx_las
 	return MAL_SUCCEED;
 }
 @
-
 @= crackInThreeOrderedPiecesL
 static str
 CRKcrackOrderedThreeL_@2_@3_@1(BAT *b, @1 low, @1 hgh, oid idx_first, oid idx_last, oid *posl, oid *posh){
@@ -383,7 +370,6 @@ CRKcrackOrderedThreeL_@2_@3_@1(BAT *b, @1 low, @1 hgh, oid idx_first, oid idx_la
 	return MAL_SUCCEED;
 }
 @
-
 @= OThreeLateCopying
 {
 	@1 *tmp1, *tmp2;
@@ -541,7 +527,6 @@ CRKcrackOrderedThreeL_@2_@3_@1(BAT *b, @1 low, @1 hgh, oid idx_first, oid idx_la
         }
 }
 @
-
 @= OrderedZero
 		while (tmpt @3 ht){
 			while (*tmpt @4 mid){
@@ -673,7 +658,6 @@ CRKcrackOrderedThreeL_@2_@3_@1(BAT *b, @1 low, @1 hgh, oid idx_first, oid idx_la
 			}
 		}
 @
-
 @= crackInTwoOrderedPieces
 static str
 CRKcrackOrderedZero_@2_@1(BAT *b, @1 mid, oid idx_first, oid idx_last, oid *pos){
@@ -749,5 +733,3 @@ CRKcrackOrderedZero_@2_@1(BAT *b, @1 mid, oid idx_first, oid idx_last, oid *pos)
 	return MAL_SUCCEED;
 }
 @
-
-@]

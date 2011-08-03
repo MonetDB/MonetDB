@@ -1,0 +1,74 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://www.monetdb.org/Legal/MonetDBLicense
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2011 MonetDB B.V.
+# All Rights Reserved.
+
+module mkey;
+
+command rotate(v:wrd, nbits:int) :wrd
+address MKEYrotate
+comment "left-rotate an int by nbits";
+
+pattern hash(v:any):wrd
+address MKEYhash
+comment "compute a hash int number from any value";
+
+command hash(v:bit):wrd
+address MKEYhash_bit;
+command hash(v:chr):wrd
+address MKEYhash_chr;
+command hash(v:bte):wrd
+address MKEYhash_bte;
+command hash(v:sht):wrd
+address MKEYhash_sht;
+command hash(v:int):wrd
+address MKEYhash_int;
+command hash(v:flt):wrd
+address MKEYhash_flt;
+command hash(v:wrd):wrd
+address MKEYhash_wrd;
+command hash(v:dbl):wrd
+address MKEYhash_dbl;
+command hash(v:lng):wrd
+address MKEYhash_lng;
+command hash(v:str):wrd
+address MKEYhash_str;
+
+command hash( b:bat[:oid,:any_1] ) :bat[:oid,:wrd]
+address MKEYbathash
+comment "calculate a hash value";
+
+pattern bulk_rotate_xor_hash(h:wrd, nbits:int, v:any) :wrd
+address MKEYrotate_xor_hash
+comment "post: [:xor=]([:rotate=](h, nbits), [hash](b))";
+
+command bulk_rotate_xor_hash(h:wrd, nbits:int,b:bat[:oid,:any_1])
+	:bat[:oid,:wrd]
+address MKEYconstbulk_rotate_xor_hash
+comment "pre:  h and b should be synced on head
+         post: [:xor=]([:rotate=](h, nbits), [hash](b))";
+
+pattern bulk_rotate_xor_hash(h:bat[:oid,:wrd], nbits:int, v:any)
+	:bat[:oid,:wrd]
+address MKEYbulkconst_rotate_xor_hash
+comment "pre:  h and b should be synced on head
+         post: [:xor=]([:rotate=](h, nbits), [hash](b))";
+
+command bulk_rotate_xor_hash(h:bat[:oid,:wrd], nbits:int,b:bat[:oid,:any_1])
+	:bat[:oid,:wrd]
+address MKEYbulk_rotate_xor_hash
+comment "pre:  h and b should be synced on head
+         post: [:xor=]([:rotate=](h, nbits), [hash](b))";
+

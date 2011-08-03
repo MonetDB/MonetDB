@@ -18,13 +18,16 @@ All Rights Reserved.
 @
 
 @f gdk_utils
-@a M. L. Kersten, P. Boncz, N. Nes
 
-@* Utilities
-The utility section contains functions to initialize the Monet database
-system, memory allocation details, and a basic system logging scheme.
-@-
-@{
+@c
+/*
+ * @a M. L. Kersten, P. Boncz, N. Nes
+ *
+ * @* Utilities
+ * The utility section contains functions to initialize the Monet database
+ * system, memory allocation details, and a basic system logging scheme.
+ * @-
+ */
 @h
 #ifndef _GDK_UTILS_H_
 #define _GDK_UTILS_H_
@@ -84,22 +87,21 @@ BAT *GDKenv = NULL;
 
 static int GDKstopped = 1;
 
-@}
-@+ Monet configuration file
-Parse a possible MonetDB config file
-(if specified by command line option -c/--config)
-to extract pre-settings of system variables.
-Un-recognized parameters are simply skipped, because they  may be
-picked up by other components of the system.
-The consequence is that making a typing error in the configuration file
-may be unnoticed for a long time.
-Syntax errors are immediately flagged, though.
-
-Since the GDK kernel moves into the database directory, we need
-to keep the absolute path to the MonetDB config file for top-levels
-to access its information.
-@{
-@c
+/*
+ * @+ Monet configuration file
+ * Parse a possible MonetDB config file
+ * (if specified by command line option -c/--config)
+ * to extract pre-settings of system variables.
+ * Un-recognized parameters are simply skipped, because they  may be
+ * picked up by other components of the system.
+ * The consequence is that making a typing error in the configuration file
+ * may be unnoticed for a long time.
+ * Syntax errors are immediately flagged, though.
+ *
+ * Since the GDK kernel moves into the database directory, we need
+ * to keep the absolute path to the MonetDB config file for top-levels
+ * to access its information.
+ */
 
 static int
 GDKenvironment(str dbname, str dbfarm)
@@ -192,23 +194,22 @@ GDKsetenv(str name, str value)
 	BATfakeCommit(GDKenv);
 }
 
-@}
 
-@+ System logging
-Per database a log file can be maintained for collection
-of system management information. Its contents is driven
-by the upper layers, which encode information such as
-who logged on and how long the session went on.
-The lower layers merely store error information on the file.
-It should not be used for crash recovery, because this should be
-dealt with on a per client basis.
-
-@-
-A system log can be maintained in the database to keep track
-of session and crash information. It should regularly be
-refreshed to avoid disk overflow.
-@{
-@c
+/*
+ * @+ System logging
+ * Per database a log file can be maintained for collection
+ * of system management information. Its contents is driven
+ * by the upper layers, which encode information such as
+ * who logged on and how long the session went on.
+ * The lower layers merely store error information on the file.
+ * It should not be used for crash recovery, because this should be
+ * dealt with on a per client basis.
+ *
+ * @-
+ * A system log can be maintained in the database to keep track
+ * of session and crash information. It should regularly be
+ * refreshed to avoid disk overflow.
+ */
 #define GDKLOCK	".gdk_lock"
 
 static FILE *GDKlockFile = 0;
@@ -218,10 +219,11 @@ static FILE *GDKlockFile = 0;
 #define GDKLOGON	"LOGON"
 #define GDKCRASH	"CRASH"
 
-@-
-Single-lined comments can now be logged safely, together with process, thread
-and user ID, and the current time.
-@c
+/*
+ * @-
+ * Single-lined comments can now be logged safely, together with process, thread
+ * and user ID, and the current time.
+ */
 /* VARARGS */
 void
 GDKlog(const char *format, ...)
@@ -255,13 +257,12 @@ GDKlog(const char *format, ...)
 		GDKunlockHome();
 }
 
-@}
-@+ Interrupt handling
-The current version simply catches signals and prints a warning.
-It should be extended to cope with the specifics of the interrupt
-received.
-@{
-@c
+/*
+ * @+ Interrupt handling
+ * The current version simply catches signals and prints a warning.
+ * It should be extended to cope with the specifics of the interrupt
+ * received.
+ */
 #if 0				/* these are unused */
 static void
 BATSIGignore(int nr)
@@ -332,42 +333,42 @@ BATSIGinit(void)
 }
 #endif /* NATIVE_WIN32 */
 
-@}
-@+ Memory management
-Memory management in GDK mostly relies on the facilities offered by the
-underlying OS.  The below routines monitor the available memory resources
-which consist of physical swap space and logical vm space.
-There are three kinds of memory, that affect these two resources in different ways:
-@table @samp
-
-@item memory mapping
- which ask for a logical region of virtual memory space.
-In principal, no physical memory is needed to keep the system afloat here,
-as the memory mapped file is swapped onto a disk object that already exists.
-
-Actually, there are two kings of memory mapping used in GDK, namely
-read-only direct mapped and writable copy-on write. For the dirty
-pages, the latter actually also consumes physical memory resources,
-but that is ignored here for simplicity.
-
-@item anonymous virtual memory
-This is virtual memory that is mapped on the swap file. Hence, this consumes
-both logical VM space resources and physical memory space.
-
-@item malloced memory
-comes from the heap and directly consumes physical memory resources.
-@end table
-
-We check the resource consumption with preset target values, and if these
-are exceeded, the routine BBPtrim is called that will unload the
-least recently used BATs in order to decrease memory usage.
-
-The malloc routine checks the memory consumption every 1000 calls,
-or for calls larger that 50000 bytes. Consequently, at least every
-50MB increase, alloc memory is checked. The VM calls always check
-the memory consumption.
-@{
 @h
+/*
+ * @+ Memory management
+ * Memory management in GDK mostly relies on the facilities offered by the
+ * underlying OS.  The below routines monitor the available memory resources
+ * which consist of physical swap space and logical vm space.
+ * There are three kinds of memory, that affect these two resources in different ways:
+ * @table @samp
+ *
+ * @item memory mapping
+ *  which ask for a logical region of virtual memory space.
+ * In principal, no physical memory is needed to keep the system afloat here,
+ * as the memory mapped file is swapped onto a disk object that already exists.
+ *
+ * Actually, there are two kings of memory mapping used in GDK, namely
+ * read-only direct mapped and writable copy-on write. For the dirty
+ * pages, the latter actually also consumes physical memory resources,
+ * but that is ignored here for simplicity.
+ *
+ * @item anonymous virtual memory
+ * This is virtual memory that is mapped on the swap file. Hence, this consumes
+ * both logical VM space resources and physical memory space.
+ *
+ * @item malloced memory
+ * comes from the heap and directly consumes physical memory resources.
+ * @end table
+ *
+ * We check the resource consumption with preset target values, and if these
+ * are exceeded, the routine BBPtrim is called that will unload the
+ * least recently used BATs in order to decrease memory usage.
+ *
+ * The malloc routine checks the memory consumption every 1000 calls,
+ * or for calls larger that 50000 bytes. Consequently, at least every
+ * 50MB increase, alloc memory is checked. The VM calls always check
+ * the memory consumption.
+ */
 /* default setting to administer everything */
 #define GDK_MEM_NULLALLOWED
 
@@ -638,7 +639,9 @@ GDKmem_heapcheck(int t)
 	GDK_heapcheck_last = t;
 }
 
-@- heapinc(size_t _memdelta, void* _blk)
+/*
+ * @- heapinc(size_t _memdelta, void* _blk)
+ */
 @= heapinc
 	{
 		size_t _memdelta = (size_t) @1;
@@ -664,7 +667,8 @@ GDKmem_heapcheck(int t)
 #endif
 	}
 
-@- heapdec(size_t memdelta, void* _blk)
+@
+ * @- heapdec(size_t memdelta, void* _blk)
 @= heapdec
 	{
 		size_t _memdelta = (size_t) @1;
@@ -694,7 +698,8 @@ GDKmem_heapcheck(int t)
 #endif
 	}
 
-@- meminc(size_t memdelta, size_t vmdelta, str fcn)
+@
+ * @- meminc(size_t memdelta, size_t vmdelta, str fcn)
 @= meminc
 	{
 		ssize_t _memdelta = (ssize_t) @1;
@@ -714,7 +719,8 @@ GDKmem_heapcheck(int t)
 		gdk_unset_lock(GDKthreadLock, @3);
 	}
 
-@- memdec(size_t memdelta, size_t vmdelta, str nme)
+@
+ * @- memdec(size_t memdelta, size_t vmdelta, str nme)
 @= memdec
 	{
 		ssize_t _memdelta = (ssize_t) @1;
@@ -733,6 +739,7 @@ GDKmem_heapcheck(int t)
 		GDK_vm_cursize -= _vmdelta;
 		gdk_unset_lock(GDKthreadLock, @3);
 	}
+@
 @c
 static void
 GDKmemdump(void)
@@ -818,19 +825,18 @@ GDKmemchk(int memchk, int vmchk)
 	}
 }
 
-@}
 
-@+ Stack tracing
-
-Very simple malloc tracing implementation that allows to retain on which stack frame
-a malloc was done. This is code originally developed by DD, and
-is used only  by them.
-Two bats are used: stackBat and memBat.
-StackBat contains a DAG of all methods used for memory allocation.
-MemBat contains a mapping from allocated memory addresses to an index
-in the stackBat which indicates the place the memory is allocated.
-@{
-@c
+/*
+ * @+ Stack tracing
+ *
+ * Very simple malloc tracing implementation that allows to retain on which stack frame
+ * a malloc was done. This is code originally developed by DD, and
+ * is used only  by them.
+ * Two bats are used: stackBat and memBat.
+ * StackBat contains a DAG of all methods used for memory allocation.
+ * MemBat contains a mapping from allocated memory addresses to an index
+ * in the stackBat which indicates the place the memory is allocated.
+ */
 #ifdef GDK_MEM_TRACE
 
 static BAT *stackBat = NULL;
@@ -1042,59 +1048,58 @@ del_mem(BAT *b, mem_t mem)
 	printf("Free of unknown memory " PTRFMT ", size: " SSZFMT "\n", PTRFMTCAST(void *) mem, ((ssize_t *) mem)[-1]);
 }
 #endif
-@}
 
-@+ Malloc
-Malloc normally maps through directly to the OS provided malloc/free/realloc
-calls. Where possible, we want to use the -lmalloc library on Unix systems,
-because it allows to influence the memory allocation strategy. This can prevent
-fragmentation and greatly help enhance performance.
-
-The "added-value" of the GDKmalloc/GDKfree/GDKrealloc over the standard OS
-primitives is that the GDK versions try to do recovery from failure to malloc by
-initiating a BBPtrim. Also, big requests are redirected to anonymous virtual
-memory. Finally, additional information on block sizes is kept (helping efficient
-reallocations) as well as some debugging that guards against duplicate frees.
-
-A number of different strategies are available using different switches, however:
-@table @samp
-
-@item zero sized blocks
-Normally, GDK gives fatal errors on illegal block sizes.
-This can be overridden with  GDK_MEM_NULLALLOWED.
-
-@item resource tracking
-Many malloc interfaces lack a routine that tells the size of a block
-by the pointer. We need this information for correct malloc statistics.
-
-@item outstanding block histograms
-In order to solve the problem, we allocate extra memory in front of the
-returned block. With the resource tracking in place, we keep a total of
-allocated bytes.  Also, if GDK_MEM_KEEPHISTO is defined, we keep a histogram
-of the outstanding blocks on the log2 of the block size (similarly for virtual.
-memory blocks; define GDK_VM_KEEPHISTO).
-
-@item ensuring 8-byte alignment
-While doing the resource tracking, we can in one go solve the problem
-of 32-bit systems that return non-8 bytes aligned pointers. This is
-encoded by storing a size + 1 (we always normalize sizes to multiples of
-8, so this is easily recognized). This check only done if
-GDK_MEM_MISALIGN is @strong{not} enabled.
-
-@item redirection to anonymous VM
-Sometimes, fragmentation problems arise on mallocs that are not tunable.
-In that case, it makes sense to redirect large block requests (taken to be
-larger than GDK_mem_bigsize) to anonymous virtual memory. The seamless
-implementation of this stores the @strong{negative} block size in front of the
-pointer (as well as the VM maxsize), so the malloc primitives can recognize
-these redirected blocks.
-@end table
-
-64-bits update: Some 64-bit implementations (Linux) of mallinfo is severely broken, as they use int-s for memory sizes!!
-This causes corruption of mallinfo stats. As we depend on those, we should keep the
-malloc arena small. Thus, VM redirection is now quickly applied: for all mallocs > 1MB.
-@{
-@c
+/*
+ * @+ Malloc
+ * Malloc normally maps through directly to the OS provided malloc/free/realloc
+ * calls. Where possible, we want to use the -lmalloc library on Unix systems,
+ * because it allows to influence the memory allocation strategy. This can prevent
+ * fragmentation and greatly help enhance performance.
+ *
+ * The "added-value" of the GDKmalloc/GDKfree/GDKrealloc over the standard OS
+ * primitives is that the GDK versions try to do recovery from failure to malloc by
+ * initiating a BBPtrim. Also, big requests are redirected to anonymous virtual
+ * memory. Finally, additional information on block sizes is kept (helping efficient
+ * reallocations) as well as some debugging that guards against duplicate frees.
+ *
+ * A number of different strategies are available using different switches, however:
+ * @table @samp
+ *
+ * @item zero sized blocks
+ * Normally, GDK gives fatal errors on illegal block sizes.
+ * This can be overridden with  GDK_MEM_NULLALLOWED.
+ *
+ * @item resource tracking
+ * Many malloc interfaces lack a routine that tells the size of a block
+ * by the pointer. We need this information for correct malloc statistics.
+ *
+ * @item outstanding block histograms
+ * In order to solve the problem, we allocate extra memory in front of the
+ * returned block. With the resource tracking in place, we keep a total of
+ * allocated bytes.  Also, if GDK_MEM_KEEPHISTO is defined, we keep a histogram
+ * of the outstanding blocks on the log2 of the block size (similarly for virtual.
+ * memory blocks; define GDK_VM_KEEPHISTO).
+ *
+ * @item ensuring 8-byte alignment
+ * While doing the resource tracking, we can in one go solve the problem
+ * of 32-bit systems that return non-8 bytes aligned pointers. This is
+ * encoded by storing a size + 1 (we always normalize sizes to multiples of
+ * 8, so this is easily recognized). This check only done if
+ * GDK_MEM_MISALIGN is @strong{not} enabled.
+ *
+ * @item redirection to anonymous VM
+ * Sometimes, fragmentation problems arise on mallocs that are not tunable.
+ * In that case, it makes sense to redirect large block requests (taken to be
+ * larger than GDK_mem_bigsize) to anonymous virtual memory. The seamless
+ * implementation of this stores the @strong{negative} block size in front of the
+ * pointer (as well as the VM maxsize), so the malloc primitives can recognize
+ * these redirected blocks.
+ * @end table
+ *
+ * 64-bits update: Some 64-bit implementations (Linux) of mallinfo is severely broken, as they use int-s for memory sizes!!
+ * This causes corruption of mallinfo stats. As we depend on those, we should keep the
+ * malloc arena small. Thus, VM redirection is now quickly applied: for all mallocs > 1MB.
+ */
 static void
 GDKmemfail(str s, size_t len, size_t memtarget, size_t vmtarget)
 {
@@ -1166,10 +1171,11 @@ GDKmemfail(str s, size_t len, size_t memtarget, size_t vmtarget)
 #endif
 
 
-@-
-The emergency flag can be set to force a fatal error if needed.
-Otherwise, the caller is able to deal with the lack of memory.
-@c
+/*
+ * @-
+ * The emergency flag can be set to force a fatal error if needed.
+ * Otherwise, the caller is able to deal with the lack of memory.
+ */
 void *
 GDKmallocmax(size_t size, size_t *maxsize, int emergency)
 {
@@ -1408,9 +1414,10 @@ GDKstrdup(const char *s)
 }
 
 
-@- virtual memory
-allocations affect only the logical VM resources.
-@c
+/*
+ * @- virtual memory
+ * allocations affect only the logical VM resources.
+ */
 void
 GDKvminc(size_t len)
 {
@@ -1456,11 +1463,12 @@ GDKmunmap(void *addr, size_t size)
 }
 
 
-@- VM alloc
-this affects both physical and logical memory resources.
-The emergency flag can be set to force a fatal error if needed.
-Otherwise, the caller is able to deal with the lack of memory.
-@c
+/*
+ * @- VM alloc
+ * this affects both physical and logical memory resources.
+ * The emergency flag can be set to force a fatal error if needed.
+ * Otherwise, the caller is able to deal with the lack of memory.
+ */
 void *
 GDKvmalloc(size_t size, size_t *maxsize, int emergency)
 {
@@ -1524,27 +1532,27 @@ GDKvmfree(void *blk, size_t size, size_t maxsize)
 	@:memdec(size,maxsize,"GDKvmfree")@
 }
 
-@}
 
-@+ Session Initialization
-The parameter @emph{db} is followed by the database name relative to
-the environment variable dbfarm.
-The parameter @emph{monetrc} tells that the system variables setting
-should be overruled by the specification given in the file argument.
-This format is only necessary to temporarily experiment with variable settings,
-without disturbing a system/site default setting.
-
-The interface code to the operating system is highly dependent on
-the processing environment. It can be filtered away with compile-time flags.
-Suicide is necessary due to some system implementation errors.
-
-The kernel requires file descriptors for I/O with the user.
-They are thread specific and should be obtained by a function.
-
-The arguments relevant for the kernel are extracted from the list.
-Their value is turned into a blanc space.
-@{
 @h
+/*
+ * @+ Session Initialization
+ * The parameter @emph{db} is followed by the database name relative to
+ * the environment variable dbfarm.
+ * The parameter @emph{monetrc} tells that the system variables setting
+ * should be overruled by the specification given in the file argument.
+ * This format is only necessary to temporarily experiment with variable settings,
+ * without disturbing a system/site default setting.
+ *
+ * The interface code to the operating system is highly dependent on
+ * the processing environment. It can be filtered away with compile-time flags.
+ * Suicide is necessary due to some system implementation errors.
+ *
+ * The kernel requires file descriptors for I/O with the user.
+ * They are thread specific and should be obtained by a function.
+ *
+ * The arguments relevant for the kernel are extracted from the list.
+ * Their value is turned into a blanc space.
+ */
 gdk_export int GDKrecovery;
 
 @c
@@ -1784,11 +1792,13 @@ GDKinit(opt *set, int setlen)
 	return 1;
 }
 
-@-
-Upon closing the session, all persistent BATs should be saved and
-the transient BATs should be removed.
-The buffer pool manager takes care of this.
 @h
+/*
+ * @-
+ * Upon closing the session, all persistent BATs should be saved and
+ * the transient BATs should be removed.
+ * The buffer pool manager takes care of this.
+ */
 gdk_export int GDKnr_threads;
 
 @c
@@ -1838,10 +1848,10 @@ GDKexit(int status)
 	gdk_unset_lock(GDKthreadLock, "GDKexit");
 }
 
-@
-All semaphores used by the application should be mentioned here.
-They are initialized during system initialization.
-@c
+/*
+ * All semaphores used by the application should be mentioned here.
+ * They are initialized during system initialization.
+ */
 int GDKdebug = 0;
 int GDKembedded = 0;
 int GDKprotected = 0;
@@ -1854,29 +1864,29 @@ MT_Lock GDKunloadLock;
 MT_Lock GDKtmLock;
 MT_Cond GDKunloadCond;
 
-@}
 
-@+ Concurrency control
-Concurrency control requires actions at several levels of the system.
-First, it should be ensured that each database  is controlled by a single
-server process (group). Subsequent attempts should be stopped.
-This is regulated through file locking against ".gdk_lock".
-Furthermore, the server process is moved to the database directory
-for improved speed.
-@-
-Before the locks and threads are initiated, we cannot use the
-normal routines yet. So we have a local fatal here instead of GDKfatal.
-@{
-@c
+/*
+ * @+ Concurrency control
+ * Concurrency control requires actions at several levels of the system.
+ * First, it should be ensured that each database  is controlled by a single
+ * server process (group). Subsequent attempts should be stopped.
+ * This is regulated through file locking against ".gdk_lock".
+ * Furthermore, the server process is moved to the database directory
+ * for improved speed.
+ * @-
+ * Before the locks and threads are initiated, we cannot use the
+ * normal routines yet. So we have a local fatal here instead of GDKfatal.
+ */
 void
 GDKlockHome(void)
 {
 	char *p = 0, buf[1024], host[PATHLENGTH];
 	char GDKdirStr[PATHLENGTH];
 
-@-
-Go there and obtain the global database lock.
-@c
+	/*
+	 * @-
+	 * Go there and obtain the global database lock.
+	 */
 	/* The DIR_SEP at the end of the path is needed for a succesfull
 	   call to GDKcreatedir */
 
@@ -1907,22 +1917,25 @@ Go there and obtain the global database lock.
 		IODEBUG THRprintf(GDKout, "#GDKlockHome: ignoring empty or invalid %s.\n", GDKLOCK);
 		host[0] = 0;
 	}
-@-
-We have the lock, are the only process currently allowed in this section.
-@c
+	/*
+	 * @-
+	 * We have the lock, are the only process currently allowed in this section.
+	 */
 	MT_init();
 	OIDinit();
-@-
-Print the new process list in the global lock file.
-@c
+	/*
+	 * @-
+	 * Print the new process list in the global lock file.
+	 */
 	fseek(GDKlockFile, 0, SEEK_SET);
 	if (ftruncate(fileno(GDKlockFile), 0) < 0)
 		GDKfatal("GDKlockHome: Could not truncate %s\n", GDKLOCK);
 	fflush(GDKlockFile);
 	GDKlog(GDKLOGON);
-@-
-In shared mode, we allow more parties to join. Release the lock.
-@c
+	/*
+	 * @-
+	 * In shared mode, we allow more parties to join. Release the lock.
+	 */
 	GDKstopped = 0;
 }
 
@@ -1936,9 +1949,10 @@ GDKunlockHome(void)
 	}
 }
 
-@-
-Really really get the lock. Now!!
-@c
+/*
+ * @-
+ * Really really get the lock. Now!!
+ */
 int
 GDKgetHome(void)
 {
@@ -1955,24 +1969,23 @@ GDKgetHome(void)
 	return 1;
 }
 
-@}
 
-@+ Error handling
-Errors come in three flavors: warnings, non-fatal and fatal errors.
-A fatal error leaves a core dump behind after trying to
-safe the content of the relation.
-A non-fatal error returns a message to the user
-and aborts the current transaction.
-Fatal errors are also recorded on the system log for post-mortem
-analysis.
-In non-silent mode the errors are immediately sent to output,
-which makes it hard for upper layers to detect if an error
-was produced in the process. To facilitate such testing,
-a global error count is maintained on a thread basis,
-which can be read out by the function GDKerrorCount();
-Furthermore, threads may have set their private error buffer.
-@{
-@c
+/*
+ * @+ Error handling
+ * Errors come in three flavors: warnings, non-fatal and fatal errors.
+ * A fatal error leaves a core dump behind after trying to
+ * safe the content of the relation.
+ * A non-fatal error returns a message to the user
+ * and aborts the current transaction.
+ * Fatal errors are also recorded on the system log for post-mortem
+ * analysis.
+ * In non-silent mode the errors are immediately sent to output,
+ * which makes it hard for upper layers to detect if an error
+ * was produced in the process. To facilitate such testing,
+ * a global error count is maintained on a thread basis,
+ * which can be read out by the function GDKerrorCount();
+ * Furthermore, threads may have set their private error buffer.
+ */
 int GDKsilent = 0;
 static int THRerrorcount[THREADDATA];
 
@@ -2206,9 +2219,10 @@ GDKfatal(const char *format, ...)
 		fputs("\n", fd);
 		fflush(fd);
 	}
-@-
-Real errors should be saved in the lock file for post-crash inspection.
-@c
+	/*
+	 * @-
+	 * Real errors should be saved in the lock file for post-crash inspection.
+	 */
 	if (GDKstopped) {
 		fflush(stdout);
 		MT_exit_thread(1);
@@ -2224,23 +2238,22 @@ Real errors should be saved in the lock file for post-crash inspection.
 	return -1;
 }
 
-@}
 
-@+ Logical Thread management
-
-All semaphores used by the application should be mentioned here.
-They are initialized during system initialization.
-
-@-
-The first action upon thread creation is to add it to the pool
-of known threads. This should be done by the thread itself.
-Subsequently, the thread descriptor can be obtained using @%THRget@.
-Note that the users should have gained exclusive access already.
-A new entry is initialized automatically when not found.
-Its file descriptors are the same as for the server and should be
-subsequently reset.
-@{
-@c
+/*
+ * @+ Logical Thread management
+ *
+ * All semaphores used by the application should be mentioned here.
+ * They are initialized during system initialization.
+ *
+ * @-
+ * The first action upon thread creation is to add it to the pool
+ * of known threads. This should be done by the thread itself.
+ * Subsequently, the thread descriptor can be obtained using THRget.
+ * Note that the users should have gained exclusive access already.
+ * A new entry is initialized automatically when not found.
+ * Its file descriptors are the same as for the server and should be
+ * subsequently reset.
+ */
 int GDKnrofthreads;
 ThreadRec GDKthreads[THREADS];
 void *THRdata[THREADDATA] = { 0 };
@@ -2359,11 +2372,12 @@ THRhighwater(void)
 	return 0;
 }
 
-@-
-I/O is organized per thread, because users may gain access through
-the network.
-The code below should be improved to gain speed.
-@c
+/*
+ * @-
+ * I/O is organized per thread, because users may gain access through
+ * the network.
+ * The code below should be improved to gain speed.
+ */
 
 static int
 THRinit(void)
@@ -2440,6 +2454,7 @@ THRprintf(stream *s, const char *format, ...)
 	va_start(ap, format);
 	n = vsnprintf(p, bfsz-m, format, ap);
 	va_end(ap);
+@
 @c
 	@:THRprintf_va_vsnprintf@
 	if (n < 0)
@@ -2482,4 +2497,3 @@ GDKversion(void)
 
 @h
 #endif /* _GDK_UTILS_H_ */
-@}

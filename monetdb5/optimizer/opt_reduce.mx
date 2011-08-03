@@ -18,26 +18,29 @@ All Rights Reserved.
 @
 
 @f opt_reduce
-@a M. Kersten
-@- Stack Reduction
-The compilers producing MAL may generate an abundance of temporary variables
-to hold the result of expressions. This leads to a polution of the
-runtime stack space, because space should be allocated and garbage
-collection tests should be performed.
 
-
-The routine @sc{optimizer.reduce()} reduces the number of scratch
-variables to a minimum. All scratch variables of the same underlying
-type share the storage space. 
-The result of this optimizer can be seen using the MonetDB debugger,
-which marks unused variables explicitly.
-Experience with the SQL front-end shows, that this optimization
-step easily reduces the stack consumption by over 20%.
-
-This optimizer needs further testing. 
-Furthermore, the other optimizers should be careful in setting
-the isused property, or this property can again be easily derived.
-@{
+@c
+/*
+ * @a M. Kersten
+ * @- Stack Reduction
+ * The compilers producing MAL may generate an abundance of temporary variables
+ * to hold the result of expressions. This leads to a polution of the
+ * runtime stack space, because space should be allocated and garbage
+ * collection tests should be performed.
+ *
+ *
+ * The routine @sc{optimizer.reduce()} reduces the number of scratch
+ * variables to a minimum. All scratch variables of the same underlying
+ * type share the storage space.
+ * The result of this optimizer can be seen using the MonetDB debugger,
+ * which marks unused variables explicitly.
+ * Experience with the SQL front-end shows, that this optimization
+ * step easily reduces the stack consumption by over 20%.
+ *
+ * This optimizer needs further testing.
+ * Furthermore, the other optimizers should be careful in setting
+ * the isused property, or this property can again be easily derived.
+ */
 @mal
 pattern optimizer.reduce():str
 address OPTreduce;
@@ -80,4 +83,3 @@ OPTreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(reduce,OPT_CHECK_ALL)@
-@}

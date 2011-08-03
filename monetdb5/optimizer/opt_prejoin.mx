@@ -18,15 +18,18 @@ All Rights Reserved.
 @
 
 @f opt_prejoin
-@- Prejoin heuristics
-In out of memory situations the algorithms to implement e.g. joins
-are sup-optimal and should use a pre-sorting on the tail.
-There are several ways to inject this code into the kernel,
-e.g. replace the join by the radix joins.
 
-The simple solution chosen here is post-patch the MAL programs
-with the potentional blocking cluster operations.
-@{
+@c
+/*
+ * @- Prejoin heuristics
+ * In out of memory situations the algorithms to implement e.g. joins
+ * are sup-optimal and should use a pre-sorting on the tail.
+ * There are several ways to inject this code into the kernel,
+ * e.g. replace the join by the radix joins.
+ *
+ * The simple solution chosen here is post-patch the MAL programs
+ * with the potentional blocking cluster operations.
+ */
 @mal
 pattern optimizer.prejoin():str
 address OPTprejoin;
@@ -51,11 +54,12 @@ comment "Recluster the table to reduce random access behavior.";
 #include "monetdb_config.h"
 #include "opt_prejoin.h"
 #include "math.h"
-@-
-The prejoin implementation should only become active if we
-expect that we may end up with an IO access for each
-possible lookup.
-@c
+/*
+ * @-
+ * The prejoin implementation should only become active if we
+ * expect that we may end up with an IO access for each
+ * possible lookup.
+ */
 opt_export str ALGprejoin(int *rl, int *rr, int *l, int *r);
 str
 ALGprejoin(int *rl, int *rr, int *l, int *r){
@@ -138,4 +142,3 @@ OPTprejoinImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(prejoin,OPT_CHECK_ALL)@
-@}

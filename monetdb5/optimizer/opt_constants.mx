@@ -18,22 +18,26 @@ All Rights Reserved.
 @
 
 @f opt_constants
-@- Constant Duplicate Removal
-The compilers may generate an abundance of constants on
-the stack. This simple optimizer re-organizes performs a complete
-job to use constants only once.
-This makes it easier to search for statement duplicates 
-and alias their variables.
 
-@{
+@c
+/*
+ * @- Constant Duplicate Removal
+ * The compilers may generate an abundance of constants on
+ * the stack. This simple optimizer re-organizes performs a complete
+ * job to use constants only once.
+ * This makes it easier to search for statement duplicates
+ * and alias their variables.
+ */
 @mal
 pattern optimizer.constants():str
 address OPTconstants;
 pattern optimizer.constants(mod:str, fcn:str):str
 address OPTconstants
 comment "Duplicate constant removal optimizer";
-@-
 @h
+/*
+ * @-
+ */
 #ifndef _OPT_CONSTANTS_
 #define _OPT_CONSTANTS_
 #include "opt_prelude.h"
@@ -46,10 +50,12 @@ comment "Duplicate constant removal optimizer";
 
 
 #endif
-@-
-We have to keep an alias table to reorganize the program
-after the variable stack has changed.
 @c
+/*
+ * @-
+ * We have to keep an alias table to reorganize the program
+ * after the variable stack has changed.
+ */
 #include "monetdb_config.h"
 #include "opt_constants.h"
 
@@ -124,4 +130,3 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(constants,OPT_CHECK_ALL)@
-@}

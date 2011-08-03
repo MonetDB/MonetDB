@@ -18,102 +18,104 @@ All Rights Reserved.
 @
 
 @f crackers
-@a Martin Kersten, Stratos Idreos, Stefan Manegold
-@d March 2006 - July 2007
-@* Cracker index
 
-Database cracking aims at enhancing query processing by adapting the way 
-data is stored to the query workload. Adaptation happens through physical 
-reorganization of data. Each query reorganized the data in such a way that 
-future queries can be answered faster.
-
-For each BAT b, the system creates on demand a cracker column c, i.e., 
-the first time a select operator is fired on b. From there on all queries that 
-perform a select operator on b will physically reorganize (i.e., crack) the cracker column c 
-such that the result set is in a consecutive area in c. 
-The result of the select operator is a non materialized view on c.
-
-For each cracker column c, there exists a cracker index, that maintains knowledge 
-on the various pieces created while cracking c. The cracker index is an AVLt-tree
-data structure. Each select operator uses the appropriate cracker index to determine 
-which pieces it should crack, and updates the index afterwards.
-
-The more queries are fired on a bat b the more the cracker column c of b is cracked.
-This way the cracker index on c, is continuously enriched with information that helps speed up 
-future queries. This way query processing improves as more queries are answered by adapting to 
-the query and data workload.
-
-Initial performance shows an exptected gain of at least on order of magnitude, 
-due to analysing less data during the select operator and also due to non materializing 
-the select operator result set.
-
-The cracker index can be created for the time being on
-tail columns of type {int,lng,dbl,flt,time,date,sht}. The head
-is always of type @sc{oid}.
-
-In addition, the cracker index can be used to feed a generator
-for pieces satisfying a range constraint.
-A cracker partition is indicated by the index in the cidx
-table. It can be used to initialize a BATview to represent
-the partition during processing.
-
-Updates support for cracker columns happens again in a self-organizing way.
-Incoming updates (inserts,deletes or updates) are kept in separate columns for 
-each BAT as pending updates. While processing queries, if the crackers select 
-operator detects that some of the pending updates should be taken into account,
-then updates are "merged" into the cracker column on the fly by also updating the 
-cracker index accordingly.
-
-Since the cracker columns are physically reorganized the result of a select operator is not 
-ordered in the same way as the rest of the bats of the same relation. This has side-effects 
-during projection operations. We cannot use ordered fetch joins anymore. 
-This decrades performance significantly
-when multiple projections exist in a query plan.
-
-This problem is solved by the second generation cracing, i.e., 
-sideways cracking that uses cracker maps instead of cracker columns.
-A cracker map contains the values of two attributes of the same relation. 
-These are attributes used together in query plans. The main idea is that 
-cracking based on one of these attributes (the head of the map) is forwarded on the tail. 
-This way projections can be performed by performing simple cracking operations on maps.
-Multiple maps can exist for each attribute A as head consisting the map set of A. All maps in the same 
-map set S are aligned before used in a query plan. Aligment happens by keeping a history of all cracking 
-operations in maps of S and ensuring that the same cracks have been applied to all necessary maps 
-and in the same order. Sideways cracking maintains the advantage of cracking even 
-in the presence of multiple projection operations.
-
-Ongoing work.
-Multitable cracking.
-
-The cracker module should be prepared to deal with any of the base types.
-For strings this becomes an issue.
-
-The current implementation uses an unprotected cracker
-index. This limits the interface at slightly more overhead
-of searching the cracker index upon each call.
-
-Currently crakcer structures are in memory. They need to be stored in disk and become persistent.
-
-Repeated cracking leads to an ever growing index. This process
-can be stopped by setting the granule size,
-i.e.  the minimum number of tuples in each piece,
-or the maximum number of pieces.
-
-The implementation is geared at early experimentation
-without all the details to make the code robust and
-ultra fast.
-
-
-@+ Interface
-
-
-@- Type expansion
-
+@c
+/*
+ * @a Martin Kersten, Stratos Idreos, Stefan Manegold
+ * @d March 2006 - July 2007
+ * @* Cracker index
+ *
+ * Database cracking aims at enhancing query processing by adapting the way
+ * data is stored to the query workload. Adaptation happens through physical
+ * reorganization of data. Each query reorganized the data in such a way that
+ * future queries can be answered faster.
+ *
+ * For each BAT b, the system creates on demand a cracker column c, i.e.,
+ * the first time a select operator is fired on b. From there on all queries that
+ * perform a select operator on b will physically reorganize (i.e., crack) the cracker column c
+ * such that the result set is in a consecutive area in c.
+ * The result of the select operator is a non materialized view on c.
+ *
+ * For each cracker column c, there exists a cracker index, that maintains knowledge
+ * on the various pieces created while cracking c. The cracker index is an AVLt-tree
+ * data structure. Each select operator uses the appropriate cracker index to determine
+ * which pieces it should crack, and updates the index afterwards.
+ *
+ * The more queries are fired on a bat b the more the cracker column c of b is cracked.
+ * This way the cracker index on c, is continuously enriched with information that helps speed up
+ * future queries. This way query processing improves as more queries are answered by adapting to
+ * the query and data workload.
+ *
+ * Initial performance shows an exptected gain of at least on order of magnitude,
+ * due to analysing less data during the select operator and also due to non materializing
+ * the select operator result set.
+ *
+ * The cracker index can be created for the time being on
+ * tail columns of type {int,lng,dbl,flt,time,date,sht}. The head
+ * is always of type @sc{oid}.
+ *
+ * In addition, the cracker index can be used to feed a generator
+ * for pieces satisfying a range constraint.
+ * A cracker partition is indicated by the index in the cidx
+ * table. It can be used to initialize a BATview to represent
+ * the partition during processing.
+ *
+ * Updates support for cracker columns happens again in a self-organizing way.
+ * Incoming updates (inserts,deletes or updates) are kept in separate columns for
+ * each BAT as pending updates. While processing queries, if the crackers select
+ * operator detects that some of the pending updates should be taken into account,
+ * then updates are "merged" into the cracker column on the fly by also updating the
+ * cracker index accordingly.
+ *
+ * Since the cracker columns are physically reorganized the result of a select operator is not
+ * ordered in the same way as the rest of the bats of the same relation. This has side-effects
+ * during projection operations. We cannot use ordered fetch joins anymore.
+ * This decrades performance significantly
+ * when multiple projections exist in a query plan.
+ *
+ * This problem is solved by the second generation cracing, i.e.,
+ * sideways cracking that uses cracker maps instead of cracker columns.
+ * A cracker map contains the values of two attributes of the same relation.
+ * These are attributes used together in query plans. The main idea is that
+ * cracking based on one of these attributes (the head of the map) is forwarded on the tail.
+ * This way projections can be performed by performing simple cracking operations on maps.
+ * Multiple maps can exist for each attribute A as head consisting the map set of A. All maps in the same
+ * map set S are aligned before used in a query plan. Aligment happens by keeping a history of all cracking
+ * operations in maps of S and ensuring that the same cracks have been applied to all necessary maps
+ * and in the same order. Sideways cracking maintains the advantage of cracking even
+ * in the presence of multiple projection operations.
+ *
+ * Ongoing work.
+ * Multitable cracking.
+ *
+ * The cracker module should be prepared to deal with any of the base types.
+ * For strings this becomes an issue.
+ *
+ * The current implementation uses an unprotected cracker
+ * index. This limits the interface at slightly more overhead
+ * of searching the cracker index upon each call.
+ *
+ * Currently crakcer structures are in memory. They need to be stored in disk and become persistent.
+ *
+ * Repeated cracking leads to an ever growing index. This process
+ * can be stopped by setting the granule size,
+ * i.e.  the minimum number of tuples in each piece,
+ * or the maximum number of pieces.
+ *
+ * The implementation is geared at early experimentation
+ * without all the details to make the code robust and
+ * ultra fast.
+ *
+ *
+ * @+ Interface
+ *
+ *
+ * @- Type expansion
+ */
 @= TypeSwitch_temp2
 @:@1(@2,int)@
 @:@1(@2,date)@
 @
-
 @= TypeSwitch_1
 @:@1(@2,chr)@
 @:@1(@2,sht)@
@@ -123,7 +125,6 @@ ultra fast.
 @:@1(@2,dbl)@
 @:@1(@2,date)@
 @
-
 @= TypeSwitch_2
 @:TypeSwitch_temp2(@1,int)@
 @:TypeSwitch_temp2(@1,date)@
@@ -137,20 +138,15 @@ ultra fast.
 @:@1(dbl,dbl)@
 @:@1(int,lng)@
 @
-
 @= TypeSwitch_joins1
 @:@1(int,int)@
 @:@1(int,oid)@
 @
-
 @= TypeSwitch_joins2
 @:@1(int)@
 @
-
-
-@- MAL file
-
 @mal
+# @- MAL file
 module crackers;
 
 @:TypeSwitch_1(Select)@
@@ -185,8 +181,7 @@ command fmremoveMap():void
 address CRKremoveFullMap
 comment "clear all debugging map ";
 
-@
-
+#
 @= Select
 command select(b:bat[:oid,:@2],l:@2,h:@2):bat[:oid,:@2]
 address CRKselect_@2
@@ -249,7 +244,6 @@ command extsort2(b:bat[:oid,:@2], sliceSize:int):bat[:oid,:@2]
 address CRKExternalSort_@2
 comment "Slice and external sort";
 @
-
 @= JoinSelect
 command joinuselect( right:bat[:oid,:@2], l:@2, h:@2, li:bit, hi:bit, left:bat[:oid,:void] ):bat[:oid,:void]
 address CRKjoinSelectDefault_@2
@@ -290,7 +284,6 @@ comment "From cpair, only those BUNs qualify that satisfy the range-restriction 
 	For each tuple that qualifies in cpair, the respective position in the pivot is marked with a 1";
 
 @
-
 @= Updates
 command insertionsPartiallyForget(b:bat[:any_1,:@2], c:bat[:any_1,:@2]):void
 address CRKmergeInsertions_PartiallyForget_@2
@@ -356,7 +349,6 @@ command extendCrackerBAT(b:bat[:any_1,:@2], P:lng):void
 address CRKextendCrackerBAT
 comment "Extend the cracker column by P positions";
 @
-
 @= Index
 command printCrackerIndexBATpart(b:bat[:any_1,:@2]):void
 address CRKprintCrackerIndexBATpart
@@ -374,7 +366,6 @@ command printAVLTree_int(b:bat[:any_1,:@2]):void
 address CRKprintAVLTree_int
 comment "Print the AVL Tree of the cracker index (for debugging purposes)";
 @
-
 @= CoreOrdered
 command zcrackOrdered (b:bat[:oid,:@2], mid:@2) :bat[:oid,:@2]
 address CRKcrackOrderedZero_@2
@@ -394,7 +385,6 @@ comment "Break a BAT into three pieces with
 	 tail<=low, low<tail<=hgh, tail>hgh,
 	 respectively; maintaining the head-oid order within each piece.";
 @
-
 @= CoreUnordered
 command zcrackUnordered (b:bat[:oid,:@2], mid:@2) :bat[:oid,:@2]
 address CRKcrackUnorderedZero_@2
@@ -408,7 +398,6 @@ comment "Break a BAT into three pieces with
 	 tail<=low, low<tail<=hgh, tail>hgh,
 	 respectively.";
 @
-
 @= Validate
 @:crack_validate(@2,Ordered,; maintaining the head-oid order within each piece)@
 @:crack_validate(@2,Unordered,)@
@@ -417,7 +406,6 @@ command verifyCrackerIndex(b:bat[:any_1,:@2]):void
 address CRKverifyCrackerIndex_@2
 comment "Check the cracker index and column, whether each value is in the correct chunk";
 @
-
 @= crack_validate
 command zcrack@2_validate (b:bat[:oid,:@1], mid:@1) :bit
 address CRKcrack@2Zero_validate_@1
@@ -443,7 +431,6 @@ comment "Validate whether a BAT is correctly broken into three pieces with
 	 tail<=low, low<tail<=hgh, tail>hgh,
 	 respectively@3.";
 @
-
 @= Sideways
 command getMap( b:bat[:oid,:@1], bp:bat[:oid,:@2] ):bat[:@1,:@2]
 address getCrackerMap
@@ -571,7 +558,6 @@ command fmcreateMap(b:bat[:oid,:@1],bp:bat[:oid,:@2]):void
 address CRKcreateFullMap_@1_@2
 comment "make new map for debugging";
 @
-
 @= AVLindex
 command buildAVLIndex(b:bat[:any_1,:@2]):void
 address CRKmakeAVLIndex_@2
@@ -589,7 +575,6 @@ command deleteAVL(b:bat[:any_1,:@2],u:bat[:any_2,:@2]):void
 address CRKdeleteFromAVL_@2
 comment "Delete a collection of values from the index";
 @
-
 @= Joins1
 command simpleJoin(b1:bat[:oid,:@1],b2:bat[:oid,:@2],b3:bat[:oid,:@1],b4:bat[:oid,:@2]):bat[:oid,:oid]
 address CRKsimpleJoin_@1_@2
@@ -632,7 +617,6 @@ address CRKAlignJoin_@1_@2
 comment "Join and on the fly align a map with an intermediate result bat, i.e., not cracked";
 
 @
-
 @= Joins2
 
 command bandJoin(b1:bat[:oid,:@1],b2:bat[:oid,:@1],c1:@1,c2:@1,inclusiveLow:bit,inclusiveHgh:bit):bat[:oid,:oid]
@@ -650,10 +634,10 @@ address CRKmaterializeH
 comment "Materialize the head of BAT b";
 
 @
-
-@- Header file
-
 @h
+/*
+ * @- Header file
+ */
 #ifndef _CRACKERS_H_
 #define _CRACKERS_H_
 
@@ -699,12 +683,12 @@ extern struct storageManagement *StorageInfo;
 #endif /* _CRACKERS_H */
 
 
-@{
-@+ Implementation
-
-@- C file
-   
 @c
+/*
+ * @+ Implementation
+ *
+ * @- C file
+ */
 #include "monetdb_config.h"
 #include "crackers.h"
 
@@ -719,6 +703,3 @@ int IndexEntries = 20000000; /* Initial size used for the bat that stores index 
 /* Temp variables used to test the effect of stop updating the index, they operate only on one cracker bat */
 int IndexSize = 0;
 int IndexStop = 10000000;
-@
-
-@}

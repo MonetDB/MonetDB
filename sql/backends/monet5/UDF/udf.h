@@ -19,7 +19,6 @@
 
 #ifndef _SQL_UDF_H_
 #define _SQL_UDF_H_
-#include "monetdb_config.h"
 #include "sql.h"
 #include <string.h>
 

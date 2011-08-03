@@ -18,19 +18,22 @@ All Rights Reserved.
 @
 
 @f inspect
-@a Martin Kersten
-@v 1
-@+ Inspection 
-This module introduces a series of commands that provide access
-to information stored within the interpreter data structures.
-It's primary use is debugging.
-In all cases, the pseudo BAT operation is returned that
-should be garbage collected after being used.
 
-The main performance drain would be to use a pseudo BAT directly to
-successively access it components. This can be avoided by first assigning
-the pseudo BAT to a variable.
-
+@c
+/*
+ * @a Martin Kersten
+ * @v 1
+ * @+ Inspection
+ * This module introduces a series of commands that provide access
+ * to information stored within the interpreter data structures.
+ * It's primary use is debugging.
+ * In all cases, the pseudo BAT operation is returned that
+ * should be garbage collected after being used.
+ *
+ * The main performance drain would be to use a pseudo BAT directly to
+ * successively access it components. This can be avoided by first assigning
+ * the pseudo BAT to a variable.
+ */
 @mal
 module inspect;
 
@@ -111,9 +114,8 @@ comment "Collect a BAT with the atom sizes.";
 command getEnvironment():bat[:str,:str]
 address INSPECTgetEnvironment
 comment "Collect the environment variables.";
-@-
-@{
-@+ Implementation
+# @-
+# @+ Implementation
 @include prelude.mx
 @h
 #ifdef _INSPECT_H
@@ -168,13 +170,14 @@ inspect_export str INSPECTtypeName(Client cntxt, MalBlkPtr mb, MalStkPtr stk, In
 inspect_export str INSPECTtypeIndex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 inspect_export str INSPECTequalType(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-@+ Symbol table 
-Mal symbol table and environment analysis.
-
-Collect symbol table information in a series of BATs for analysis
-and display. Note, the elements are aligned using a counter,
-which makes it susceptable for intermediate updates
-@c
+/*
+ * @+ Symbol table
+ * Mal symbol table and environment analysis.
+ *
+ * Collect symbol table information in a series of BATs for analysis
+ * and display. Note, the elements are aligned using a counter,
+ * which makes it susceptable for intermediate updates
+ */
 
 str
 INSPECTgetAllFunctions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -740,8 +743,9 @@ INSPECTgetFunctionSize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*ret= INSPECTcalcSize(s->def);
 	return MAL_SUCCEED;
 }
-@+ Display routines
-@c
+/*
+ * @+ Display routines
+ */
 str
 INSPECTshowFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
@@ -828,4 +832,3 @@ INSPECTtypeName(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-@}

@@ -38,7 +38,7 @@ lib_kernel = {
 		aggr_bge_prod.mx \
 		aggr_bge_sum.mx \
 		aggr.mx \
-		alarm.mx \
+		alarm.c alarm.h \
 		algebra.mx \
 		array.mx \
 		bat5.mx \
@@ -50,27 +50,27 @@ lib_kernel = {
 		batmtime.mx \
 		batstr.mx \
 		calc.mx \
-		counters.mx \
+		counters.c counters.h \
 		group.mx \
-		lock.mx \
-		logger.mx \
-		microbenchmark.mx \
+		lock.c lock.h \
+		logger.c \
+		microbenchmark.c microbenchmark.h \
 		mmath.mx \
-		sema.mx \
+		sema.c \
 		status.mx \
-		unix.mx
+		unix.c
 }
 
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
-	SOURCES = calc.mx bat5.mx algebra.mx status.mx unix.mx \
-		mmath.mx lock.mx sema.mx alarm.mx batstr.mx batmtime.mx \
+	SOURCES = calc.mx bat5.mx algebra.mx status.mx unix.mal \
+		mmath.mx lock.mal sema.mal alarm.mal batstr.mx batmtime.mx \
 		batcolor.mx batifthen.mx batcast.mx batcalc.mx batmmath.mx \
 		group.mx aggr.mx array.mx \
-		counters.mx logger.mx microbenchmark.mx
+		counters.mal logger.mal microbenchmark.mal
 }
 
-EXTRA_DIST = aggr_ri.mx kprelude.mx
+EXTRA_DIST = aggr_ri.mx kprelude.mx alarm.mal counters.mal lock.mal logger.mal microbenchmark.mal sema.mal unix.mal
 
 EXTRA_DIST_DIR = Tests

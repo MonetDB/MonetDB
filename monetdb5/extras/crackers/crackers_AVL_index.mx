@@ -18,20 +18,23 @@ All Rights Reserved.
 @
 
 @f crackers_AVL_index
-@a Martin Kersten, Stratos Idreos, Stefan Manegold
-@d March 2006 - July 2007
-@* AVL Index
 
-Comparison with AVL-tree index
-
-Implement an AVL index on top of a BAT for comparison against cracking
-
-
-@+ Interface
- 
-
-@- Type expansion
-
+@c
+/*
+ * @a Martin Kersten, Stratos Idreos, Stefan Manegold
+ * @d March 2006 - July 2007
+ * @* AVL Index
+ *
+ * Comparison with AVL-tree index
+ *
+ * Implement an AVL index on top of a BAT for comparison against cracking
+ *
+ *
+ * @+ Interface
+ *
+ *
+ * @- Type expansion
+ */
 @= TypeSwitch
 @:@1(chr,simple,)@
 @:@1(sht,simple,)@
@@ -41,11 +44,10 @@ Implement an AVL index on top of a BAT for comparison against cracking
 @:@1(dbl,simple,)@
 @:@1(date,atom,TYPE_)@
 @
-
-
-@- Header file
-
 @h
+/*
+ * @- Header file
+ */
 #ifndef _CRACKERS_AVL_INDEX_H_
 #define _CRACKERS_AVL_INDEX_H_
 
@@ -53,26 +55,22 @@ Implement an AVL index on top of a BAT for comparison against cracking
 @:TypeSwitch(AVLindexFunctions_decl)@
 
 #endif /* _CRACKERS_AVL_INDEX_H */
-@
-
-
-@- Exported signatures
-
+/*
+ * @- Exported signatures
+ */
 @= AVLindexFunctions_decl
 crackers_export str CRKmakeAVLIndex_@1(int *k, int *bid);
 crackers_export str CRKInsertAVLIndex_@1(int *k, int *bid, int *uid);
 crackers_export str CRKAVLIndexSelectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
 crackers_export str CRKdeleteFromAVL_@1(int *k, int *bid, int *uid);
 @
-
-
-@{
-@+ Implementation
-
-
-@- C file
-
 @c
+/*
+ * @+ Implementation
+ *
+ *
+ * @- C file
+ */
 #include "monetdb_config.h"
 #include "crackers.h"
 
@@ -103,11 +101,9 @@ existsAVLIndex(int bid){
 
 /* Exported functions */
 @:TypeSwitch(AVLindexFunctions_impl)@
-@
-
-
-@- Exported functions
-
+/*
+ * @- Exported functions
+ */
 @= AVLindexFunctions_impl
 str
 CRKmakeAVLIndex_@1(int *k, int *bid){
@@ -244,10 +240,7 @@ CRKAVLIndexSelectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveL
 	return MAL_SUCCEED;
 }
 @
-
-
-@- Local support functions and macros
-
+ * @- Local support functions and macros
 @= NewAVLIndex
 static int
 newAVLIndex(int bid){
@@ -283,7 +276,6 @@ newAVLIndex(int bid){
         return i;
 }
 @
-
 @= AVLIndexOperations
 static struct Node *
 InsertAVLIndex_@1(int m, oid indexPosition, @1 value,  struct Node * current, BAT * b, BUN base){	
@@ -491,5 +483,3 @@ CRKdeleteFromAVL_@1(int *k, int *bid, int *uid){
 	return MAL_SUCCEED;
 }
 @
-
-@}

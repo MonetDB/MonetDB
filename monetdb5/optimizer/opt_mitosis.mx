@@ -18,34 +18,37 @@ All Rights Reserved.
 @
 
 @f opt_mitosis
-@a M. Kersten
-@- Mitosis
-The SQL plans are produced without knowledge of possible 
-benefits of parallel execution. It is the task of the mitosis
-optimizer to detect interesting cases and prepare the plan 
-where a large table is broken into pieces.
 
-There are two main directions to consider for mitosis.
-The first concerns parallel execution on a single machine using all the cores
-available. The second concerns using an MPP solution, where
-part of the plan is executed at remote sites.
-
-The former problem is addressed here. 
-It inspects the plan for SQL bind statements and localises
-the largest table involved. This table becomes the target
-for cheap partitioning based on the OID ranges.
-The pieces are conceptually glued together using a MAT structure
-and the mergetable optimizer expands the plan to be run.
-The effect of this step can be a sizeable MAL program.
-
-To avoid a program based on too small pieces,
-we issue a low-water mark. Its value should be
-preferrably dynamically identified. Experiments will tell
-us hopefully in the future.
-
-This optimizer should be called early in the
-optimizer pipeline, before the mergetable optimizer.
-@{
+@c
+/*
+ * @a M. Kersten
+ * @- Mitosis
+ * The SQL plans are produced without knowledge of possible
+ * benefits of parallel execution. It is the task of the mitosis
+ * optimizer to detect interesting cases and prepare the plan
+ * where a large table is broken into pieces.
+ *
+ * There are two main directions to consider for mitosis.
+ * The first concerns parallel execution on a single machine using all the cores
+ * available. The second concerns using an MPP solution, where
+ * part of the plan is executed at remote sites.
+ *
+ * The former problem is addressed here.
+ * It inspects the plan for SQL bind statements and localises
+ * the largest table involved. This table becomes the target
+ * for cheap partitioning based on the OID ranges.
+ * The pieces are conceptually glued together using a MAT structure
+ * and the mergetable optimizer expands the plan to be run.
+ * The effect of this step can be a sizeable MAL program.
+ *
+ * To avoid a program based on too small pieces,
+ * we issue a low-water mark. Its value should be
+ * preferrably dynamically identified. Experiments will tell
+ * us hopefully in the future.
+ *
+ * This optimizer should be called early in the
+ * optimizer pipeline, before the mergetable optimizer.
+ */
 @mal
 pattern optimizer.mitosis():str
 address OPTmitosis;
@@ -117,11 +120,12 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			continue;
 		if( q->argc > 6 )
 			continue; /* already partitioned */
-@-
-The SQL optimizer already collects the counts of the
-base table and passes them on as a row property.
-All pieces for a single subplan should ideally fit together.
-@c
+		/*
+		 * @-
+		 * The SQL optimizer already collects the counts of the
+		 * base table and passes them on as a row property.
+		 * All pieces for a single subplan should ideally fit together.
+		 */
 		r = getVarRows(mb, getArg(q, 0));
 		if (r >= rowcnt){
 			rowcnt = r;
@@ -132,17 +136,17 @@ All pieces for a single subplan should ideally fit together.
 	}
 	if (target == 0)
 		return 0;
-@-
-The number of pieces should be based on the footprint of the queryplan,
-such that preferrably it can be handled without swapping intermediates.
-For the time being we just go for small pieces compared to memory detected upon start.
-A fictive rowcount is derived based on TYPE_lng, such that all pieces
-would fit into memory conveniently for processing. We attempt to use
-at least all threads.
-Experience shows that the pieces should not be too small.
-To keep the threads working, we create more pieces than threads.
-
-@c
+	/*
+	 * @-
+	 * The number of pieces should be based on the footprint of the queryplan,
+	 * such that preferrably it can be handled without swapping intermediates.
+	 * For the time being we just go for small pieces compared to memory detected upon start.
+	 * A fictive rowcount is derived based on TYPE_lng, such that all pieces
+	 * would fit into memory conveniently for processing. We attempt to use
+	 * at least all threads.
+	 * Experience shows that the pieces should not be too small.
+	 * To keep the threads working, we create more pieces than threads.
+	 */
 	if ( (i = OPTlegAdviceInternal(mb,stk,p)) > 0 )
 		pieces = i;
 	else {
@@ -236,9 +240,10 @@ To keep the threads working, we create more pieces than threads.
 			k= getArg(q,0)= newTmpVariable(mb,tpe);
 			setVarUDFtype(mb,k);
 			setVarUsed(mb,k);
-@-
-The target variable should inherit file location and row count 
-@c
+			/*
+			 * @-
+			 * The target variable should inherit file location and row count
+			 */
 			loc = varGetProp(mb, getArg(p,0), fileProp);
 			if ( loc ){
 				memset((char*) &vr, 0, sizeof(vr));
@@ -270,4 +275,3 @@ The target variable should inherit file location and row count
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(mitosis,OPT_CHECK_ALL)@
-@}

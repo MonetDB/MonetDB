@@ -18,46 +18,50 @@ All Rights Reserved.
 @
 
 @f cluster
-@a Martin Kersten, Niels Nes
-@v 1.0
-@t Hash cluster Algorithms
 
-@* Introduction
-Hash structures in MonetDB are optimized to build in a single scan. 
-Also their use is limited to a single bat. Read optimized hashes (or clusters) 
-could be used in many algorithms, such as select, join, group by and 
-distinct checking. This calls for physical locality of elements
-hashing to the same element. Preferrable the elements in a collision
-list are physically close, as are the lists of subsequent lists.
-
-This module extends the built in hashing scheme with a method 
-to reorganize BATs based on their hash key. It is a linear-time,
-near-optimal N-way reclustering based on hash key ranges.
-
-We start with collecting all hash keys from the underlying 
-table into the table H[:oid,:oid].
-The next step is a reclustering step to bring
-elements together based on the hash key. This step is based
-on the assumption that values in the hash-key are uniformly
-distributed. We create as many buckets as we  consider
-justified in terms of the IO. The tuples are 'thrown' into
-their bucket until they become full or can be extended 
-by harvesting free space from its direct neighor buckets.
-If there is no free space left, we circularly look for a bucket
-with space, partly  polluting the clustering objective.
-
-The result is a void-oid table that represents an IO
-'optimal' sequence of tuples. IO optimal, because 
-with determining N we have 2N read/write pointers
-in the table. Tuples are reclustered amongst those
-using an ordinary join operation.
-The outerloop touches each tuple once, causing
-the order in the oid list to represent the IO
-activity too. This means we can use it directly
-as a driver for redistributing value columns.
-
-The remaining step is to perform this in parallel
-for all BATs comprising a relational table.
+@c
+/*
+ * @a Martin Kersten, Niels Nes
+ * @v 1.0
+ * @t Hash cluster Algorithms
+ *
+ * @* Introduction
+ * Hash structures in MonetDB are optimized to build in a single scan.
+ * Also their use is limited to a single bat. Read optimized hashes (or clusters)
+ * could be used in many algorithms, such as select, join, group by and
+ * distinct checking. This calls for physical locality of elements
+ * hashing to the same element. Preferrable the elements in a collision
+ * list are physically close, as are the lists of subsequent lists.
+ *
+ * This module extends the built in hashing scheme with a method
+ * to reorganize BATs based on their hash key. It is a linear-time,
+ * near-optimal N-way reclustering based on hash key ranges.
+ *
+ * We start with collecting all hash keys from the underlying
+ * table into the table H[:oid,:oid].
+ * The next step is a reclustering step to bring
+ * elements together based on the hash key. This step is based
+ * on the assumption that values in the hash-key are uniformly
+ * distributed. We create as many buckets as we  consider
+ * justified in terms of the IO. The tuples are 'thrown' into
+ * their bucket until they become full or can be extended
+ * by harvesting free space from its direct neighor buckets.
+ * If there is no free space left, we circularly look for a bucket
+ * with space, partly  polluting the clustering objective.
+ *
+ * The result is a void-oid table that represents an IO
+ * 'optimal' sequence of tuples. IO optimal, because
+ * with determining N we have 2N read/write pointers
+ * in the table. Tuples are reclustered amongst those
+ * using an ordinary join operation.
+ * The outerloop touches each tuple once, causing
+ * the order in the oid list to represent the IO
+ * activity too. This means we can use it directly
+ * as a driver for redistributing value columns.
+ *
+ * The remaining step is to perform this in parallel
+ * for all BATs comprising a relational table.
+ */
 @mal
 module cluster;
 
@@ -88,6 +92,7 @@ command new(b:bat[:oid,:@1], bits:int, offset:int, order:bit)
 	(psum:bat[:oid,:wrd], map:bat[:oid,:bte])
 address CLS_create2_@1
 comment "Compute the cluster map for bat b. A cluster map is a list of partition ids. The p(refix) sum is a by product which returns the prefix sum of the per partition frequency. Prefix sum and map can be use to 'cluster' related columns based on b. Incase the offset is non negative it is used to shift the key values. Offset together with the mask bits should make sure that the result of the partitioning can be used in a order by sequence. If this holds and the input is sorted we return a 'compressed' representation of the map, ie [:oid,:bte], the repeated values are not inserted. The order flag indicates that the clustering is used for ordering, ie partition keys aren't fixed so we can internaly optimize partition sizes.";
+@
 @mal
 
 @:mal_cls_new(bte)@
@@ -112,7 +117,6 @@ pattern split(clustered:bat[:oid,:any_1], psum:bat[:oid,:wrd]) :bat[:oid,:any_1]
 address CLS_split
 comment "split the clustered bat into parts";
 
-@{
 @h
 #ifndef _CLUSTER_H
 #define _CLUSTER_H
@@ -142,6 +146,7 @@ cluster_export str CLUSTER_table( Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 @= hdr_cls_new
 cluster_export str  CLS_create_@1(bat *rpsum, bat *rcmap, bat *b, unsigned int *bits, unsigned int *offset);
 cluster_export str  CLS_create2_@1(bat *rpsum, bat *rcmap, bat *b, unsigned int *bits, unsigned int *offset, bit *order);
+@
 @h
 @:hdr_cls_new(bte)@
 @:hdr_cls_new(chr)@
@@ -216,6 +221,7 @@ CLUSTER_column_@1(BAT *nb, BAT *b, BAT *cmap)
 }
 #endif
 
+@
 @c
 @:map_fixed(chr)@
 @:map_fixed(bte)@
@@ -297,9 +303,10 @@ CLUSTER_column_any(BAT *nb, BAT *b, BAT *cmap)
     BATpropcheck(nb, BATPROPS_QUICK);
 	return MAL_SUCCEED;
 }
-@-
-The hash key and the oid are materialized to prepare for reclustering.
-@c
+/*
+ * @-
+ * The hash key and the oid are materialized to prepare for reclustering.
+ */
 str
 CLUSTER_key( bat *M, bat *B){
 	BAT *map, *b;
@@ -339,16 +346,17 @@ CLUSTER_key( bat *M, bat *B){
 	BBPkeepref(*M = map->batCacheid);
 	return MAL_SUCCEED;
 }
-@-
-Recluster the hash <oid,oid> table into a number of buckets
-on the high order bits,
-If the baskets are full before we have moved everything
-in place, we seek forward for a bucket to dump the elements.
-
-The self-organizing version should determine the optimal
-number of buckets. Thereafter it can just call the
-remapping;
-@c
+/*
+ * @-
+ * Recluster the hash <oid,oid> table into a number of buckets
+ * on the high order bits,
+ * If the baskets are full before we have moved everything
+ * in place, we seek forward for a bucket to dump the elements.
+ *
+ * The self-organizing version should determine the optimal
+ * number of buckets. Thereafter it can just call the
+ * remapping;
+ */
 typedef struct{
 		BUN base,limit,nxt;
 } Basket;
@@ -383,16 +391,17 @@ CLUSTER_map(bat *RB, bat *B)
 	map->T->nonil = TRUE;
 	BATmax(b, (ptr) &rng); /* get the maximum hash key , could use mask !*/
 	rng++; 
-@-
-The key challenge is to determine the number of clusters.
-A large number of clusters benefits subsequent performance,
-but also challenges the prepare phase. The clustering should
-work both for relatively small tables and those that do not
-fit in memory.
-
-The bottomline is the number of elements that fit in a single
-diskblock.
-@c
+	/*
+	 * @-
+	 * The key challenge is to determine the number of clusters.
+	 * A large number of clusters benefits subsequent performance,
+	 * but also challenges the prepare phase. The clustering should
+	 * work both for relatively small tables and those that do not
+	 * fit in memory.
+	 *
+	 * The bottomline is the number of elements that fit in a single
+	 * diskblock.
+	 */
 	N= (BUN)MT_npages() /10;
 	bsize= (BUN) (MT_pagesize()/sizeof(lng));
 	if (N > (rng / bsize))
@@ -455,17 +464,18 @@ diskblock.
 	BBPkeepref(*RB= map->batCacheid);
 	return MAL_SUCCEED;
 }
-@-
-The order of the tuples in the cluster map
-represent the read/write order. Under the assumption
-that those read/writes are already localized, it becomes
-opportune to simply rebuild the clustered column by 
-probing. 
-
-Extend this operation to accept a sequence of BATs.
-We change the BAT in place using a temporary copy
-to guide the move.
-@c
+/*
+ * @-
+ * The order of the tuples in the cluster map
+ * represent the read/write order. Under the assumption
+ * that those read/writes are already localized, it becomes
+ * opportune to simply rebuild the clustered column by
+ * probing.
+ *
+ * Extend this operation to accept a sequence of BATs.
+ * We change the BAT in place using a temporary copy
+ * to guide the move.
+ */
 str 
 CLUSTER_apply(bat *bid, BAT *b, BAT *cmap)
 {
@@ -555,9 +565,7 @@ CLUSTER_table( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*res= mid;
 	return MAL_SUCCEED;
 }
-@}
 
-@c
 
 #include "cluster.h"
 #include <mal_exception.h>
@@ -638,6 +646,7 @@ CLS_create_@1( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int 
 	cmap = BATsetaccess(cmap, BAT_READ);
 	return MAL_SUCCEED;
 }
+@
 @c
 @:c_cls_new(bte)@
 @:c_cls_new(chr)@
@@ -766,6 +775,7 @@ CLS_create2_@1( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int
 	cmap = BATsetaccess(cmap, BAT_READ);
 	return MAL_SUCCEED;
 }
+@
 @c
 @:c_cls_new2(bte)@
 @:c_cls_new2(chr)@
@@ -796,6 +806,7 @@ CLS_map_@1(BAT *rb, BAT *cmap, BAT *b)
 	return MAL_SUCCEED;
 }
 
+@
 @c
 @:c_cls_map(bte)@
 @:c_cls_map(sht)@
@@ -823,13 +834,13 @@ CLS_map2_@1(BAT *rb, wrd *psum, BAT *cmap, BAT *b)
 	return MAL_SUCCEED;
 }
 
+@
 @c
 @:c_cls_map2(bte)@
 @:c_cls_map2(sht)@
 @:c_cls_map2(int)@
 @:c_cls_map2(lng)@
 
-@c
 str  
 CLS_map(bat *RB, bat *CMAP, bat *B)
 {

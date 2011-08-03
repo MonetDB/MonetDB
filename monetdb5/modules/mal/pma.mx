@@ -18,20 +18,23 @@ All Rights Reserved.
 @
 
 @f pma
-@a N.Tang and P.Boncz
-@+ PMA Organized BAT
-The database columns have high maintance cost for inserting/deleting items,
-while keeping some specific columns sorted. Basically, to insert/delete an
-item to a sorted column in size n will render O(n) items to move. With PMA,
-however, normal insertion/deletion have only O(log^n) amortized item movement.
-PMA leaves gaps between items, to ensure that to operate on a particular item,
-only a few items around the particular item are required to move.
 
-Different from traditional PMA, our PMA fnd function returns a range which
-may contains some items with equivalent values. This design is to facilitate
-the relational table sorting in multiple columns (i.e. attribute), e.g., to
-sort a table of students on age first, and then on their names.
-
+@c
+/*
+ * @a N.Tang and P.Boncz
+ * @+ PMA Organized BAT
+ * The database columns have high maintance cost for inserting/deleting items,
+ * while keeping some specific columns sorted. Basically, to insert/delete an
+ * item to a sorted column in size n will render O(n) items to move. With PMA,
+ * however, normal insertion/deletion have only O(log^n) amortized item movement.
+ * PMA leaves gaps between items, to ensure that to operate on a particular item,
+ * only a few items around the particular item are required to move.
+ *
+ * Different from traditional PMA, our PMA fnd function returns a range which
+ * may contains some items with equivalent values. This design is to facilitate
+ * the relational table sorting in multiple columns (i.e. attribute), e.g., to
+ * sort a table of students on age first, and then on their names.
+ */
 @mal
 module pma;
 
@@ -68,6 +71,7 @@ command testdel(b:bat[:oid,:@1]) :void
 address PMAtestdel_@1
 comment "test the function of deletion"
 
+@
 @mal
 @:pma_mal(chr)@
 @:pma_mal(bte)@
@@ -78,8 +82,10 @@ comment "test the function of deletion"
 @:pma_mal(flt)@
 @:pma_mal(dbl)@
 
-@+ PMA API
 @h
+/*
+ * @+ PMA API
+ */
 #ifndef _PMA_H_
 #define _PMA_H_
 
@@ -103,6 +109,7 @@ pma_export str PMAbulkdel_@1(void *dummy, bat *b, oid *lo, oid *hi);
 pma_export str PMAfnd_@1(oid *lo_res, oid *hi_res, bat *b, oid *lo, oid *hi, @1 *val);
 pma_export str PMAtestins_@1(void *dummy, bat *b, int *val);
 pma_export str PMAtestdel_@1(void *dummy, bat *b);
+@
 @h
 @:pma_decl(chr)@
 @:pma_decl(bte)@
@@ -114,8 +121,10 @@ pma_export str PMAtestdel_@1(void *dummy, bat *b);
 @:pma_decl(dbl)@
 #endif	/* _PMA_H_ */
 
-@+ PMA implementation
 @c
+/*
+ * @+ PMA implementation
+ */
 #include "monetdb_config.h"
 #include "mal_exception.h"
 #include "pma.h"
@@ -135,6 +144,7 @@ pma_export str PMAtestdel_@1(void *dummy, bat *b);
 	break;
 }
 
+@
 @c
 static str
 PMAnew(bat *res, int *tpe, BUN *sz) {
@@ -894,6 +904,7 @@ PMAtestdel_@1(void *dummy, bat *bid) {
 	}
 	return MAL_SUCCEED;
 }
+@
 @c
 @:pma_impl(chr)@
 @:pma_impl(bte)@

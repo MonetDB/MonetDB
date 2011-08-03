@@ -18,31 +18,34 @@ All Rights Reserved.
 @
 
 @f opt_dataflow
-@- The dataflow optimizer
-MAL programs are largely logical descriptions of an execution plan.
-At least as it concerns side-effect free operations.
-For these sub-plans the order of execution needs not to be a priori
-fixed and a dataflow driven evaluation is possible. Even using multiple
-cores to work their way through the dataflow graph.
 
-The dataflow optimizer analyses the code and wraps all instructions
-eligible for dataflow driven execution with a guarded block.
-Ofcourse, this is only necessary if you can upfront determine there are 
-multiple threads of execution possible.
-
-Upon execution, the interpreter instantiates multiple threads based on
-an the number of processor cores available.  Subsequently,
-the eligible instructions are queued and consumed by the interpreter
-threads.
-
-Dataflow blocks may not be nested. Therefore, any dataflow block produced for
-inlined code is removed first.
-
-Initial experiments on e.g. the RDF benchmark showed a speed up of
-20\% on average, with a peak of a factor 2 for individual queries.
-The main reason for this limited gain stems from the little 
-opportunities for parallel execution in the SQL code plans
-@{
+@c
+/*
+ * @- The dataflow optimizer
+ * MAL programs are largely logical descriptions of an execution plan.
+ * At least as it concerns side-effect free operations.
+ * For these sub-plans the order of execution needs not to be a priori
+ * fixed and a dataflow driven evaluation is possible. Even using multiple
+ * cores to work their way through the dataflow graph.
+ *
+ * The dataflow optimizer analyses the code and wraps all instructions
+ * eligible for dataflow driven execution with a guarded block.
+ * Ofcourse, this is only necessary if you can upfront determine there are
+ * multiple threads of execution possible.
+ *
+ * Upon execution, the interpreter instantiates multiple threads based on
+ * an the number of processor cores available.  Subsequently,
+ * the eligible instructions are queued and consumed by the interpreter
+ * threads.
+ *
+ * Dataflow blocks may not be nested. Therefore, any dataflow block produced for
+ * inlined code is removed first.
+ *
+ * Initial experiments on e.g. the RDF benchmark showed a speed up of
+ * 20\% on average, with a peak of a factor 2 for individual queries.
+ * The main reason for this limited gain stems from the little
+ * opportunities for parallel execution in the SQL code plans
+ */
 @mal
 pattern optimizer.dataflow():str
 address OPTdataflow;
@@ -59,8 +62,10 @@ comment "Dataflow bracket code injection";
 #define OPTDEBUGdataflow  if ( optDebug & (1 <<DEBUG_OPT_DATAFLOW) )
 opt_export void removeDataflow(InstrPtr *old, int limit);
 
-@-
-The statemens are all checked for being eligible for dataflow.
+/*
+ * @-
+ * The statemens are all checked for being eligible for dataflow.
+ */
 @= flowblock
 	/* close old flow block */
 	if (flowblock){
@@ -93,6 +98,7 @@ The statemens are all checked for being eligible for dataflow.
 		flowblock = 0;
 		actions++;
 	}
+@
 @c
 #include "monetdb_config.h"
 #include "opt_dataflow.h"
@@ -251,4 +257,3 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 #include "opt_statistics.h"
 
 @:wrapOptimizer(dataflow,OPT_CHECK_ALL)@
-@}

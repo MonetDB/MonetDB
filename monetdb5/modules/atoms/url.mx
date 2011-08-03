@@ -18,40 +18,43 @@ All Rights Reserved.
 @
 
 @f url
-@a M. Kersten
-@a Y. Zhang
-@v 1.3
-@* The URL module
-The URL module contains a collection of commands to manipulate
-Uniform Resource Locators - a resource on the World Wide Web-
-represented as a string in Monet. The URL can represent
-anything from a file, a directory or a complete movie.
-This module is geared towards manipulation of their name only.
-A complementary module can be used to gain access.[IOgate]
 
-The URL syntax is specified in RFC2396, Uniform Resource Identifiers
-(URI): Generic Syntax. The URL syntax is dependent upon the scheme.
-In general, a URL has the form <scheme>:<scheme-specific-part>.
-Thus, accepting a valid URL is a simple proccess, unless the scheme
-is known and schema-specific syntax is checked (e.g., http or ftp
-scheme). For the URL module implemented here, we assume some common
-fields of the <scheme-specific-part> that are shared among different
-schemes.
-
-The core of the extension involves several operators to extract
-portions of the URLs for further manipulation. In particular,
-the domain, the server, and the protocol, and the file extension
-can be extracted without copying the complete URL from the heap
-into a string variable first.
-
-The commands provided are based on the corresponding Java class.
-
-A future version should use a special atom, because this may save
-considerable space. Alternatively, break the URL strings into
-components and represent them with a bunch of BATs. An intermediate
-step would be to refine the atom STR, then it would be possible to
-redefine hashing.
-
+@c
+/*
+ * @a M. Kersten
+ * @a Y. Zhang
+ * @v 1.3
+ * @* The URL module
+ * The URL module contains a collection of commands to manipulate
+ * Uniform Resource Locators - a resource on the World Wide Web-
+ * represented as a string in Monet. The URL can represent
+ * anything from a file, a directory or a complete movie.
+ * This module is geared towards manipulation of their name only.
+ * A complementary module can be used to gain access.[IOgate]
+ *
+ * The URL syntax is specified in RFC2396, Uniform Resource Identifiers
+ * (URI): Generic Syntax. The URL syntax is dependent upon the scheme.
+ * In general, a URL has the form <scheme>:<scheme-specific-part>.
+ * Thus, accepting a valid URL is a simple proccess, unless the scheme
+ * is known and schema-specific syntax is checked (e.g., http or ftp
+ * scheme). For the URL module implemented here, we assume some common
+ * fields of the <scheme-specific-part> that are shared among different
+ * schemes.
+ *
+ * The core of the extension involves several operators to extract
+ * portions of the URLs for further manipulation. In particular,
+ * the domain, the server, and the protocol, and the file extension
+ * can be extracted without copying the complete URL from the heap
+ * into a string variable first.
+ *
+ * The commands provided are based on the corresponding Java class.
+ *
+ * A future version should use a special atom, because this may save
+ * considerable space. Alternatively, break the URL strings into
+ * components and represent them with a bunch of BATs. An intermediate
+ * step would be to refine the atom STR, then it would be possible to
+ * redefine hashing.
+ */
 @mal
 module url;
 
@@ -152,28 +155,30 @@ comment "Convert a string to an url. ";
 command tostr() :str
 address URLtoString
 comment "Convert url to string equivalent";
-@-
-@{
-@-
-In Monet 5 we have a different notion on how to administer BATs.
+# @-
+# @-
+# In Monet 5 we have a different notion on how to administer BATs.
 @= PseudoM5
 		/* BATrename(b,"@1_@2");*/
 		BATroles(b,"@1","@2");
 		BATmode(b,TRANSIENT);
 		*retval= b->batCacheid;
-@* Implementation Code
-The URLs are stored as strings without further optimization.
+@
+# @* Implementation Code
+# The URLs are stored as strings without further optimization.
 @= Pseudo
 		BATrename(b,"@1_@2");
 		BATroles(b,"@1","@2");
 		BATmode(b,TRANSIENT);
 		*retval= b;
-@-
-The key action is to break an url into its constituents.
-Parsing is done for each individual request, because this way we
-secure concurrent use from different threads.
-
+@
 @h
+/*
+ * @-
+ * The key action is to break an url into its constituents.
+ * Parsing is done for each individual request, because this way we
+ * secure concurrent use from different threads.
+ */
 #ifndef URL_H
 #define URL_H
 
@@ -866,8 +871,9 @@ url_new4(str *retval,   /* put string: pointer to char here. */
 }
 #endif
 
-@+ Utilities
-@c
+/*
+ * @+ Utilities
+ */
 
 #define LF 10
 #define CR 13
@@ -933,12 +939,11 @@ plustospace(char *str)
 }
 #endif
 
-@}
 
-@{
-@- Wrapping
-Here you find the wrappers around the V4 url library included above.
-@c
+/*
+ * @- Wrapping
+ * Here you find the wrappers around the V4 url library included above.
+ */
 
 int
 URLfromString(str src, int *len, str *url)
@@ -1141,4 +1146,3 @@ str URLnoop(str *url, str *val)
 	*url = GDKstrdup(*val);
 	return MAL_SUCCEED;
 }
-@}

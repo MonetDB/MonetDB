@@ -18,14 +18,17 @@ All Rights Reserved.
 @
 
 @f sql
-@t SQL Scenario implementation
-@a M Kersten 
-@v 0
-@* SQL support implementation
-This module contains the wrappers around the SQL 
-multi-version-catalog and support routines copied
-from the Version 4 code base.
 
+@c
+/*
+ * @t SQL Scenario implementation
+ * @a M Kersten
+ * @v 0
+ * @* SQL support implementation
+ * This module contains the wrappers around the SQL
+ * multi-version-catalog and support routines copied
+ * from the Version 4 code base.
+ */
 @mal
 module batsql;
 module sql;
@@ -117,19 +120,18 @@ comment "Generate an exception when b!=0";
 pattern assert(b:lng,msg:str):void
 address SQLassertLng
 comment "Generate an exception when b!=0";
-@- The SQL multi-version catalog
-This module also contains the definitions for managing an SQL database schema in
-version 5.  It is an adaptation of the original V4.3 code base. 
-A main difference is that the global catalog is obtained from
-the client record, rather then lookup the variable in a context stack.
-
-The MAL operations below are used in the SQL->MAL compiler and
-can be (sparingly) used to inspect it from a MIL console.
-The 'mvc_' header is removed, because all commands are already
-prepended by the 'sql.' module name.
-The original code is retained, because it makes it
-easier to later re-use part of the catalog code in a separately.
-@mal
+# @- The SQL multi-version catalog
+# This module also contains the definitions for managing an SQL database schema in
+# version 5.  It is an adaptation of the original V4.3 code base.
+# A main difference is that the global catalog is obtained from
+# the client record, rather then lookup the variable in a context stack.
+#
+# The MAL operations below are used in the SQL->MAL compiler and
+# can be (sparingly) used to inspect it from a MIL console.
+# The 'mvc_' header is removed, because all commands are already
+# prepended by the 'sql.' module name.
+# The original code is retained, because it makes it
+# easier to later re-use part of the catalog code in a separately.
 
 pattern setVariable(mvc:int, varname:str, value:any_1 ):int
 address setVariable
@@ -241,9 +243,8 @@ command columnBind(b:bat[:str,:bat], nme:str) :bat[:oid,:any_1]
 address mvc_bind_single_wrap
 comment "Bind the column bat into the focus ";
 
-@-
-The Monet 5 code generator uses several SQL specific wrapper functions.
-@mal
+# @-
+# The Monet 5 code generator uses several SQL specific wrapper functions.
 pattern resultSet{unsafe}( nr_cols:int, sep:str, rsep:str, ssep:str, ns:str, order:any_1 ) :int 
 address mvc_result_file_wrap
 comment "Prepare a file result set"; 
@@ -524,28 +525,26 @@ pattern storage():bat[:str,:bat]
 address sql_storage
 comment "return a table with storage information ";
 
-@- SQL function aliases
-The code generate should identify the precise module
-target for all functions. This creates quite some
-administration overhead and analysis at many places.
-The alternative is to extend modules with an alias.
-
-The routine below are added to the calc module to
-ease code generation.
-@mal
+# @- SQL function aliases
+# The code generate should identify the precise module
+# target for all functions. This creates quite some
+# administration overhead and analysis at many places.
+# The alternative is to extend modules with an alias.
+#
+# The routine below are added to the calc module to
+# ease code generation.
 pattern calc.hash( v:any ) :wrd address MKEYhash; 
 command batcalc.hash( b:bat[:oid,:any_1] ) :bat[:oid,:wrd] address MKEYbathash;
 pattern calc.rotate_xor_hash(h:wrd, nbits:int, v:any_1) :wrd address MKEYrotate_xor_hash;
 command batcalc.rotate_xor_hash(h:bat[:oid,:wrd], nbits:int, b:bat[:oid,:any_1]) :bat[:oid,:int] address MKEYbulk_rotate_xor_hash;
 
-@- SQL functions
-The SQL functions are all recognized by their module name.
-For some we need to provide a new implementation, others
-merely require a different address binding.
-
-The aggregate operations work on doubles by default.
-This calls for casting values around in the process.
-
+# @- SQL functions
+# The SQL functions are all recognized by their module name.
+# For some we need to provide a new implementation, others
+# merely require a different address binding.
+#
+# The aggregate operations work on doubles by default.
+# This calls for casting values around in the process.
 @= mal_round
 command sql.dec_round( v:@1, r:@1 ) :@1 
 address @1_dec_round_wrap
@@ -555,6 +554,7 @@ command sql.round( v:@1, d:int, s:int, r:bte) :@1
 address @1_round_wrap
 comment "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)";
 
+@
 @mal
 @:mal_round(bte)@
 @:mal_round(sht)@
@@ -574,6 +574,7 @@ command sql.ms_trunc( v:@1, r:int) :@1
 address @1_trunc_wrap
 comment "truncate the floating point v to r digits behind the dot (if r < 0, before the dot)";
 
+@
 @mal
 @:mal_fround(flt)@
 @:mal_fround(dbl)@
@@ -606,14 +607,13 @@ comment "cast to @1 and check for overflow";
 command batcalc.@1( v:bat[:oid,:str], digits:int, scale:int ) :bat[:oid,:@1] 
 address batstr_2dec_@1
 comment "cast to dec(@1) and check for overflow";
-@-
-@{
-address CALCstr2@1
-command calc.str( v:@1 ) :str
-address CALC@12str
-comment "Cast @1 to str";
-@}
+@
 @mal
+# @-
+# address CALCstr2@1
+# command calc.str( v:@1 ) :str
+# address CALC@12str
+# comment "Cast @1 to str";
 @:mal_cast(bte)@
 @:mal_cast(sht)@
 @:mal_cast(int)@
@@ -629,6 +629,7 @@ comment "cast to @1";
 command calc.str( v:@1 ) :str 
 address SQL@1_2_str
 comment "cast @1 to str";
+@
 @mal
 @:mal_castfromstr(wrd)@
 @:mal_castfromstr(flt)@
@@ -638,29 +639,27 @@ comment "cast @1 to str";
 @:mal_castfromstr(date)@
 @:mal_castfromstr(sqlblob)@
 
-@mal
 command calc.str( v:str) :str 
 address CALCstr2str
 comment "Idempotent cast of strings";
 
-@+ bit conversion (why?) 
-command calc.str( v:bit) :str 
-address CALCbit2str
-comment "Idempotent cast of strings";
-
-command calc.bte( v:bit) :bte 
-address CALCbit2bte
-comment "Cast bit to bte ";
-command calc.sht( v:bit) :sht 
-address CALCbit2sht
-comment "Cast bit to sht ";
-command calc.int( v:bit) :int 
-address CALCbit2int
-comment "Cast bit to int ";
-command calc.lng( v:bit) :lng 
-address CALCbit2lng
-comment "Cast bit to lng ";
-@mal
+# @+ bit conversion (why?)
+# command calc.str( v:bit) :str
+# address CALCbit2str
+# comment "Idempotent cast of strings";
+#
+# command calc.bte( v:bit) :bte
+# address CALCbit2bte
+# comment "Cast bit to bte ";
+# command calc.sht( v:bit) :sht
+# address CALCbit2sht
+# comment "Cast bit to sht ";
+# command calc.int( v:bit) :int
+# address CALCbit2int
+# comment "Cast bit to int ";
+# command calc.lng( v:bit) :lng
+# address CALCbit2lng
+# comment "Cast bit to lng ";
 
 pattern calc.str( eclass:int, d1:int, s1:int, has_tz:int, v:any_1, digits:int ) :str 
 address SQLstr_cast
@@ -689,6 +688,7 @@ comment "cast @2 to @1";
 command batcalc.@1( v:bat[:oid,:@2], digits:int, scale:int ) :bat[:oid,:@1] 
 address bat@2_num2dec_@1
 comment "cast number to decimal(@1) and check for overflow";
+@
 @mal
 @:mal_cast_2dec(bte,flt)@
 @:mal_cast_2dec(sht,flt)@
@@ -715,11 +715,13 @@ comment "cast decimal(@2) to @1 and check for overflow";
 command batcalc.@1( s1:int, v:bat[:oid,:@2], d2:int, s2:int ) :bat[:oid,:@1] 
 address bat@2_dec2dec_@1
 comment "cast decimal(@2) to decimal(@1) and check for overflow";
+@
 @mal
 
 @= mal_cast2
 @:mal_cast_2dec(@1,@2)@
 @:mal_cast_dec2(@1,@2)@
+@
 @mal
 @:mal_cast2(bte,bte)@
 @:mal_cast2(bte,sht)@
@@ -764,6 +766,7 @@ comment "cast @1 to a month_interval and check for overflow";
 command calc.second_interval( v:@1, ek:int, sk:int ) :lng
 address second_interval_@1
 comment "cast @1 to a second_interval and check for overflow";
+@
 @mal
 
 @:mal_interval(str)@
@@ -899,13 +902,12 @@ pattern gzexpand(sch:str, tbl:str):void
 address SQLexpand
 comment "Remove the compressed image";
 
-@-
-The distributed processing of queries requires the SQL runtime
-system to be able to deliver portions of the BATs in an efficient
-way. 
-It should be cast into a more efficient C procedure, which also
-takes care of NAS opportunities.
-@mal
+# @-
+# The distributed processing of queries requires the SQL runtime
+# system to be able to deliver portions of the BATs in an efficient
+# way.
+# It should be cast into a more efficient C procedure, which also
+# takes care of NAS opportunities.
 function octopus.bind(mvc:int, sch:str, tab:str,col:str,kind:int, 
 low:oid, hgh:oid, version:int):bat[:oid,:any_1];
 	b:bat[:oid,:any_1]:= sql.bind(mvc,sch,tab,col,kind,low,hgh);
@@ -1007,9 +1009,8 @@ function octopus.bind_idxbat(conn:str, sch:str, tab:str, index:str, access:int, 
 	b:bat[:oid,:oid]:= remote.get(conn,bh);
 	return bind_idxbat:= b;
 end octopus.bind_idxbat;
-@-
-Octopus.bind signatures adjusted to new mitosis sql.bind (part_nr, nr_parts)
-@mal
+# @-
+# Octopus.bind signatures adjusted to new mitosis sql.bind (part_nr, nr_parts)
 function octopus.bind(mvc:int, sch:str, tab:str,col:str,kind:int,
 		part_nr:int, nr_parts:int, version:int) :bat[:oid,:any_1];
 	b:bat[:oid,:any_1]:= sql.bind(mvc,sch,tab,col,kind,part_nr,nr_parts);
@@ -1134,16 +1135,17 @@ sql.prelude();
 
 #include <bat/bat_storage.h>
 
-@-
-The back-end structure collects the information needed to support
-compilation and execution of the SQL code against the Monet Version 5
-back end. Note that the back-end can be called upon by the front-end
-to handle specific tasks, such as catalog management (sql_mvc)
-and query execution (sql_qc). For this purpose, the front-end needs
-access to operations defined in the back-end, in particular for
-freeing the stack and code segment.
-@-
-@h
+/*
+ * @-
+ * The back-end structure collects the information needed to support
+ * compilation and execution of the SQL code against the Monet Version 5
+ * back end. Note that the back-end can be called upon by the front-end
+ * to handle specific tasks, such as catalog management (sql_mvc)
+ * and query execution (sql_qc). For this purpose, the front-end needs
+ * access to operations defined in the back-end, in particular for
+ * freeing the stack and code segment.
+ * @-
+ */
 typedef struct backend {
 	int console;
 	char language;		/* 'S' or 's' or 'X' */
@@ -1252,6 +1254,7 @@ sql5_export str str_2dec_@1( @1 *res, str *val, int *d, int *sc );
 sql5_export str str_2num_@1( @1 *res, str *v, int *len );
 sql5_export str batstr_2dec_@1( int *res, int *val, int *d, int *sc );
 sql5_export str batstr_2num_@1( int *res, int *v, int *len );
+@
 @h
 @:round_export(bte)@
 @:round_export(sht)@
@@ -1262,6 +1265,7 @@ sql5_export str batstr_2num_@1( int *res, int *v, int *len );
 sql5_export str str_2_@1( @3 *res, str *val );
 sql5_export str batstr_2_@1( int *res, int *val );
 sql5_export str SQL@1_2_str( str *res, @1 *val );
+@
 @h
 @:cast_export(bit,bitToStr,bit)@
 @:cast_export(oid,OIDtoStr,oid)@
@@ -1282,6 +1286,7 @@ sql5_export str SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 sql5_export str @1_dec_round_wrap( @1 *res, @1 *v, @1 *r );
 sql5_export str @1_round_wrap( @1 *res, @1 *v, bte *r );
 sql5_export str @1_trunc_wrap( @1 *res, @1 *v, int *r );
+@
 @h
 @:fround_export(flt)@
 @:fround_export(dbl)@
@@ -1292,6 +1297,7 @@ sql5_export str SQLbat_alpha(bat *res, bat *decl, dbl *theta);
 @= c_interval_export
 sql5_export str month_interval_@1( int *ret, @1 *s, int *ek, int *sk );
 sql5_export str second_interval_@1( lng *res, @1 *s, int *ek, int *sk );
+@
 @h
 @:c_interval_export(bte)@
 @:c_interval_export(sht)@
@@ -1313,6 +1319,7 @@ sql5_export str @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 );
 sql5_export str bat@2_dec2_@1( int *res, int *s1, int *v );
 sql5_export str bat@2_dec2dec_@1( int *res, int *S1, int *v, int *d2, int *S2 );
 sql5_export str bat@2_num2dec_@1( int *res, int *v, int *d2, int *s2 );
+@
 @h
 @:numcastup_export(bte,bte)@
 @:numcastup_export(sht,bte)@
@@ -1333,6 +1340,7 @@ sql5_export str bat@2_num2dec_@1( int *res, int *v, int *d2, int *s2 );
 @:simpledowncast_export(@1,@2)@
 sql5_export str @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 );
 sql5_export str bat@2_num2dec_@1( int *res, int *v, int *d2, int *s2 );
+@
 @h
 @:fnumcastdown_export(bte,flt)@
 @:fnumcastdown_export(sht,flt)@
@@ -1352,6 +1360,7 @@ sql5_export str @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 );
 sql5_export str bat@2_dec2_@1( int *res, int *s1, int *v );
 sql5_export str bat@2_dec2dec_@1( int *res, int *S1, int *v, int *d2, int *S2 );
 sql5_export str bat@2_num2dec_@1( int *res, int *v, int *d2, int *s2 );
+@
 @h
 @:fnumcastup_export(flt,bte)@
 @:fnumcastup_export(flt,sht)@
@@ -1371,6 +1380,7 @@ sql5_export str @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 );
 sql5_export str bat@2_dec2_@1( int *res, int *s1, int *v );
 sql5_export str bat@2_dec2dec_@1( int *res, int *S1, int *v, int *d2, int *S2 );
 sql5_export str bat@2_num2dec_@1( int *res, int *v, int *d2, int *s2 );
+@
 @h
 @:numcastdown_export(bte,sht)@
 @:numcastdown_export(bte,int)@
@@ -1389,9 +1399,11 @@ sql5_export void freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start)
 
 #endif /* _SQL_H */
 
-@-
-First introduce the routines to be called by the front-end.
 @c
+/*
+ * @-
+ * First introduce the routines to be called by the front-end.
+ */
 #include "monetdb_config.h"
 #include "sql.h"
 #include "sql_result.h"
@@ -1598,11 +1610,12 @@ sql_symbol2stmt(mvc *c, symbol *sym)
 	return s;
 }
 
-@-
-After the SQL statement has been executed, its data structures
-should be garbage collected. For successful actions we have to finish
-the transaction as well, e.g. commit or rollback.
-@c
+/*
+ * @-
+ * After the SQL statement has been executed, its data structures
+ * should be garbage collected. For successful actions we have to finish
+ * the transaction as well, e.g. commit or rollback.
+ */
 int
 sqlcleanup(mvc *c, int err)
 {
@@ -1633,12 +1646,12 @@ sqlcleanup(mvc *c, int err)
 	return err;
 }
 
-@-
-The internal administration of the SQL compilation and execution state
-is administered by a state descriptor accessible in each phase.
-Failure to find the state descriptor aborts the session.
-
-@c
+/*
+ * @-
+ * The internal administration of the SQL compilation and execution state
+ * is administered by a state descriptor accessible in each phase.
+ * Failure to find the state descriptor aborts the session.
+ */
 str 
 getContext(Client cntxt, MalBlkPtr mb, mvc **c, backend **b )
 {
@@ -2965,12 +2978,13 @@ mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-@-
-Monet 5 extension 
-@-
-The Mx macro below is used in many places throughout the code base to
-access the BAT descriptor.
-
+/*
+ * @-
+ * Monet 5 extension
+ * @-
+ * The Mx macro below is used in many places throughout the code base to
+ * access the BAT descriptor.
+ */
 @= chkIdentifier
 	/* generate exception if string is not an identifier */
 	if( isIdentifier(@1))
@@ -2983,6 +2997,7 @@ access the BAT descriptor.
 	BATfakeCommit(b);
 	*ret = b->batCacheid;
 
+@
 @c
 
 str
@@ -3824,11 +3839,13 @@ lng scales[20] = {
 	LL_CONSTANT(1000000000000000000)
 };
 
-@-
-The core modules of Monet provide just a limited set of
-mathematical operators. The extensions required to support
-SQL-99 are shown below. At some point they also should be
-moved to module code base.
+/*
+ * @-
+ * The core modules of Monet provide just a limited set of
+ * mathematical operators. The extensions required to support
+ * SQL-99 are shown below. At some point they also should be
+ * moved to module code base.
+ */
 @= round
 str 
 @1_dec_round_wrap( @1 *res, @1 *v, @1 *r )
@@ -4004,6 +4021,7 @@ batstr_2num_@1( int *res, int *bid, int *len )
 	BBPunfix(b->batCacheid);
 	return msg;
 }
+@
 @c
 
 @:round(bte)@
@@ -4070,6 +4088,7 @@ str
 	return MAL_SUCCEED;
 }
 
+@
 @c
 @:fround(flt)@
 @:fround(dbl)@
@@ -4210,6 +4229,7 @@ batstr_2_@1( int *res, int *bid )
 	BBPunfix(b->batCacheid);
 	return msg;
 }
+@
 @c
 @:cast(bit,bitToStr,bit, *res = *(bit*)p,&)@
 @:cast(oid,OIDtoStr,oid, *res = *(oid*)p,&)@
@@ -4388,6 +4408,7 @@ str bat@2_2_@1( int *res, int *bid )
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
+@
 @c
 
 @= simpledowncast
@@ -4482,9 +4503,10 @@ str bat@2_2_@1( int *res, int *bid )
 	BBPreleaseref(b->batCacheid);
 	return msg;
 }
-@-
-The simple cast up operations in some cases
-could re-use the storage space as well.
+@
+ * @-
+ * The simple cast up operations in some cases
+ * could re-use the storage space as well.
 @= numcastup
 @:simpleupcast(@1,@2)@
 
@@ -4676,6 +4698,7 @@ str bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 	return msg;
 }
 
+@
 @c
 @:numcastup(bte,bte)@
 @:numcastup(sht,bte)@
@@ -4763,6 +4786,7 @@ bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 	return msg;
 }
 
+@
 @c
 @:fnumcastdown(bte,flt)@
 @:fnumcastdown(sht,flt)@
@@ -4961,6 +4985,7 @@ str bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 }
 
 
+@
 @c
 @:fnumcastup(flt,bte)@
 @:fnumcastup(flt,sht)@
@@ -4973,7 +4998,6 @@ str bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 @:fnumcastup(dbl,wrd)@
 @:fnumcastup(dbl,lng)@
 
-@c
 @= numcastdown
 @:simpledowncast(@1,@2,lng,LLFMT)@
 
@@ -5193,6 +5217,7 @@ str bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 }
 
 
+@
 @c
 @:numcastdown(bte,sht)@
 @:numcastdown(bte,int)@
@@ -5268,6 +5293,7 @@ second_interval_@1( lng *res, @1 *s, int *d, int *sk ){
 	*res = r;
 	return MAL_SUCCEED;
 }
+@
 @c
 @:c_interval(bte)@
 @:c_interval(sht)@
@@ -5550,6 +5576,7 @@ sql_@1rank(bat *rid, bat *bid)
 	BBPkeepref(*rid = r->batCacheid);
 	return MAL_SUCCEED;
 }
+@
 @c
 @:rnk(,(void)c;nrank++,1)@
 @:rnk(dense_,nrank+=(c?1:0),2)@
@@ -5566,11 +5593,12 @@ str SQLargRecord(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	return MAL_SUCCEED;
 }
 
-@-
-The table is searched for all columns and they are
-re-clustered on the hash value over the  primary key. 
-Initially the first column
-@c
+/*
+ * @-
+ * The table is searched for all columns and they are
+ * re-clustered on the hash value over the  primary key.
+ * Initially the first column
+ */
 
 str SQLcluster1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str *sch = (str *) getArgReference(stk,pci,1);
@@ -5715,8 +5743,10 @@ SQLcluster2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	t->cleared = 1;
 	return MAL_SUCCEED;
 }
-@- Vacuum cleaning tables
-Shrinking and re-using space to vacuum clean the holes in the relations.
+/*
+ * @- Vacuum cleaning tables
+ * Shrinking and re-using space to vacuum clean the holes in the relations.
+ */
 @= vacuum
 str
 SQL@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -5831,14 +5861,16 @@ SQL@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	return MAL_SUCCEED;
 }
+@
 @c
 @:vacuum(shrink)@
 @:vacuum(reuse)@
 
-@-
-The vacuum operation inspects the table for ordered properties and will keep them.
-To avoid expensive shuffles, the reorganisation is balanced by the number of outstanding deletions.
-@c
+/*
+ * @-
+ * The vacuum operation inspects the table for ordered properties and will keep them.
+ * To avoid expensive shuffles, the reorganisation is balanced by the number of outstanding deletions.
+ */
 str
 SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -5899,9 +5931,10 @@ SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	return MAL_SUCCEED;
 }
-@-
-The drop_hash operation cleans up any hash indices on any of the tables columns.
-@c
+/*
+ * @-
+ * The drop_hash operation cleans up any hash indices on any of the tables columns.
+ */
 str
 SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -5936,8 +5969,10 @@ SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-@-
-Take a SQL table and compress its columns using the dictionary compression scheme.
+/*
+ * @-
+ * Take a SQL table and compress its columns using the dictionary compression scheme.
+ */
 @= compression
 	str *sch = (str *) getArgReference(stk,pci,1);
 	str *tbl = (str *) getArgReference(stk,pci,2);
@@ -5991,6 +6026,7 @@ Take a SQL table and compress its columns using the dictionary compression schem
 	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
 	t->base.rtime = s->base.rtime = tr->rtime = tr->stime;
 	return msg;
+@
 @c
 str SQLnewDictionary(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	@:compression(DICTcompress(&ret, &nme, &b->batCacheid))@
@@ -5998,8 +6034,10 @@ str SQLnewDictionary(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 str SQLdropDictionary(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	@:compression(DICTdecompress(&ret, &nme))@
 }
-@-
-LZ compression is inherited from the underlying stream implementation.
+/*
+ * @-
+ * LZ compression is inherited from the underlying stream implementation.
+ */
 @= gzcompression
 	str *sch = (str *) getArgReference(stk,pci,1);
 	str *tbl = (str *) getArgReference(stk,pci,2);
@@ -6037,6 +6075,7 @@ LZ compression is inherited from the underlying stream implementation.
 		}
 	}
 	return msg;
+@
 @c
 str SQLgzcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	@:gzcompression(CMDbbpcompress(&ret, &b->batCacheid,&sbuf),gzcompress)@
@@ -6050,21 +6089,22 @@ str SQLtruncate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 str SQLexpand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	@:gzcompression(CMDbbpexpand(&ret, &b->batCacheid,&sbuf),expand)@
 }
-@- Shredding RDF documents through SQL
-Wrapper around the RDF shredder of the rdf module of M5.
-
-An rdf file can be now shredded with SQL command:
-CALL rdf_shred('/path/to/location','graph name');
-
-The table rdf.graph will be updated with an entry of the form:
-[graph name, graph id] -> [gname,gid].
-
-In addition all permutation of SPO for the specific rdf document will be
-created. The name of the triple tables are rdf.pso$gid$, rdf.spo$gid$ etc.
-For example if gid = 3 then rdf.spo3 is the triple table ordered on subject,
-property, object. Finally, there is one more table called rdf.map$gid$ that
-maps oids to strings (i.e., the lexical representation).
-
+/*
+ * @- Shredding RDF documents through SQL
+ * Wrapper around the RDF shredder of the rdf module of M5.
+ *
+ * An rdf file can be now shredded with SQL command:
+ * CALL rdf_shred('/path/to/location','graph name');
+ *
+ * The table rdf.graph will be updated with an entry of the form:
+ * [graph name, graph id] -> [gname,gid].
+ *
+ * In addition all permutation of SPO for the specific rdf document will be
+ * created. The name of the triple tables are rdf.pso$gid$, rdf.spo$gid$ etc.
+ * For example if gid = 3 then rdf.spo3 is the triple table ordered on subject,
+ * property, object. Finally, there is one more table called rdf.map$gid$ that
+ * maps oids to strings (i.e., the lexical representation).
+ */
 @= crt_tbl
 sprintf(buff, "@2%d", @1);
 @2_tbl = mvc_create_table(m, sch, buff, tt_table, 0, SQL_PERSIST, 0, 3);
@@ -6087,6 +6127,7 @@ BBPunfix(p->batCacheid);
 BBPunfix(o->batCacheid);
 
 
+@
 @c
 str
 SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -6199,13 +6240,14 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif /* RDF */
 }
 
-@-
-Inspection of the actual storage footprint is a recurring question of users.
-This is modelled as a generic SQL table producing function.
-create function storage()
-returns table ("schema" string, "table" string, "column" string, location string, "count" bigint, capacity bigint, width int, size bigint, hashsize bigint)
-external name sql.storage;
-@c
+/*
+ * @-
+ * Inspection of the actual storage footprint is a recurring question of users.
+ * This is modelled as a generic SQL table producing function.
+ * create function storage()
+ * returns table ("schema" string, "table" string, "column" string, location string, "count" bigint, capacity bigint, width int, size bigint, hashsize bigint)
+ * external name sql.storage;
+ */
 str
 sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {

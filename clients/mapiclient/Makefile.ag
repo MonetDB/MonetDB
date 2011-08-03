@@ -24,7 +24,7 @@ lib_mcutil = {
 }
 
 bin_mclient = {
-	SOURCES = mclient.c ReadlineTools.c
+	SOURCES = mclient.c ReadlineTools.c ReadlineTools.h
 	LIBS = libmcutil ../mapilib/libmapi \
 		../../common/stream/libstream \
 		$(READLINE_LIBS) \
@@ -55,6 +55,6 @@ bin_mnc = {
 
 man_MANS = mclient.1 msqldump.1
 
-EXTRA_DIST = msqldump.h mprompt.h ReadlineTools.h $(man_MANS)
+EXTRA_DIST = msqldump.h mprompt.h $(man_MANS)
 
 EXTRA_DIST_DIR = Tests
