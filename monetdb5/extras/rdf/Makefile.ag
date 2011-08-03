@@ -27,6 +27,6 @@ MTSAFE
 lib_rdf = {
 	NOINST
 	DIR = libdir/monetdb5
-	SOURCES = rdf.c rdf_shredder.mx
+	SOURCES = rdf_shredder.mx
 }
 EXTRA_DIST = rdf.h
