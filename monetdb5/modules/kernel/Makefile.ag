@@ -38,7 +38,7 @@ lib_kernel = {
 		aggr_bge_prod.mx \
 		aggr_bge_sum.mx \
 		aggr.mx \
-		alarm.c \
+		alarm.c alarm.h \
 		algebra.mx \
 		array.mx \
 		bat5.mx \
@@ -50,11 +50,11 @@ lib_kernel = {
 		batmtime.mx \
 		batstr.mx \
 		calc.mx \
-		counters.c \
+		counters.c counters.h \
 		group.mx \
-		lock.c \
+		lock.c lock.h \
 		logger.c \
-		microbenchmark.c \
+		microbenchmark.c microbenchmark.h \
 		mmath.mx \
 		sema.c \
 		status.mx \
@@ -71,6 +71,6 @@ headers_mal = {
 		counters.mal logger.mal microbenchmark.mal
 }
 
-EXTRA_DIST = aggr_ri.mx kprelude.mx alarm.mal alarm.h counters.mal counters.h lock.mal lock.h logger.mal microbenchmark.mal microbenchmark.h sema.mal unix.mal
+EXTRA_DIST = aggr_ri.mx kprelude.mx alarm.mal counters.mal lock.mal logger.mal microbenchmark.mal sema.mal unix.mal
 
 EXTRA_DIST_DIR = Tests
