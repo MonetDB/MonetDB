@@ -1640,7 +1640,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			getArg(q, 0) = sql->mvc_var= newTmpVariable(mb,TYPE_int);
 			q = pushSchema(mb, q, i->t);
 			q = pushStr(mb, q, i->t->base.name);
-			q = pushStr(mb, q, i->base.name);
+			q = pushStr(mb, q, sa_strconcat(sql->mvc->sa, "%", i->base.name));
 			q = pushArgument(mb, q, r);
 			sql->mvc_var = s->nr = getDestVar(q);
 		} break;

@@ -2915,11 +2915,10 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL,"sql.append","Table missing");
 	if (tpe == TYPE_bat)
 		BATaccessBegin((BAT*)ins, USE_ALL, MMAP_SEQUENTIAL);	
-	c = mvc_bind_column(m, t, cname);
-	if (c) {
+	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
 		store_funcs.append_col(m->session->tr, c, ins, tpe);
-	} else {
-		sql_idx *i = mvc_bind_idx(m, s, cname);
+	} else if (cname[0] == '%') {
+		sql_idx *i = mvc_bind_idx(m, s, cname+1);
 		if (i)
 			store_funcs.append_idx(m->session->tr, i, ins, tpe);
 	}
@@ -2963,11 +2962,10 @@ mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL,"sql.update","Table missing");
 	if (tpe == TYPE_bat)
 		BATaccessBegin((BAT*)ins, USE_ALL, MMAP_SEQUENTIAL);	
-	c = mvc_bind_column(m, t, cname);
-	if (c) {
+	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
 		store_funcs.update_col(m->session->tr, c, ins, tpe, 0);
-	} else {
- 		sql_idx *i = mvc_bind_idx(m, s, cname);
+	} else if (cname[0] == '%') {
+ 		sql_idx *i = mvc_bind_idx(m, s, cname+1);
 		if (i)
 			store_funcs.update_idx(m->session->tr, i, ins, tpe);
 	}
