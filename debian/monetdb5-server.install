@@ -22,7 +22,6 @@ debian/tmp/usr/lib/monetdb5/batxml.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/bbp.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/blob.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/box.mal usr/lib/monetdb5
-debian/tmp/usr/lib/monetdb5/bpm.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/calc.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/chopper.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/clients.mal usr/lib/monetdb5
