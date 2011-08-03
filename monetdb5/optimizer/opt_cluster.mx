@@ -81,7 +81,7 @@ cluster_groupby(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i, j = 0;
 	InstrPtr q;
-	int *grp = (int*) alloca(sizeof(int) * MAX_STMTS);
+	int *grp = (int*) GDKzalloc(sizeof(int) * MAX_STMTS);
 	int state = GRP_NEW;
 	int h = 0, g = 0, cnts = 0, cntl = 0, cntr = 0;
 
@@ -156,6 +156,7 @@ cluster_groupby(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		/* lets cluster */
 	}
 #endif
+	GDKfree(grp);
 	return 1;
 }
 #endif
@@ -231,7 +232,7 @@ _cluster_orderby(MalBlkPtr mb, int *ord, int ol, int *prj, int pl)
 		s = pushArgument( mb, s, getArg(c, 0) ); /* psum */
 		
 		/* order these parts then pack2 */
-		no = (InstrPtr*)alloca(sizeof(InstrPtr)*nr_parts);
+		no = (InstrPtr*)GDKzalloc(sizeof(InstrPtr)*nr_parts);
 		o = old[ord[0]];
 		for (p = 0; p<nr_parts; p++) {
 			no[p] = copyInstruction(o);
@@ -319,6 +320,7 @@ _cluster_orderby(MalBlkPtr mb, int *ord, int ol, int *prj, int pl)
 			if (old[i]) 
 				freeInstruction(old[i]);
 		GDKfree(old);
+		GDKfree(no);
 	}
 	return 1;
 }
@@ -327,8 +329,8 @@ static int
 cluster_orderby(MalBlkPtr mb)
 {
 	int i, j = 0, k = 0, o = 0, state = ORDERBY_NONE, actions = 0;
-	int *ord = (int*) alloca(sizeof(int) * MAX_STMTS);
-	int *prj = (int*) alloca(sizeof(int) * MAX_STMTS);
+	int *ord = (int*) GDKzalloc(sizeof(int) * MAX_STMTS);
+	int *prj = (int*) GDKzalloc(sizeof(int) * MAX_STMTS);
 	InstrPtr q;
 
 	/* TODO only cluster on large inputs */
@@ -381,6 +383,8 @@ cluster_orderby(MalBlkPtr mb)
 	}
 	if (k && j && state == ORDERBY_JOIN) 
 		actions = _cluster_orderby(mb, ord, j, prj, k);
+	GDKfree(ord);
+	GDKfree(prj);
 	return actions;
 }
 
@@ -475,9 +479,9 @@ _cluster_join(MalBlkPtr mb, int *join, int jl, int *prj, int pjl)
 
 		/* join these parts */
 		njn0 = getArg(q, 0);
-		njn = (InstrPtr*)alloca(sizeof(InstrPtr)*nr_parts);
-		mr = (InstrPtr*)alloca(sizeof(InstrPtr)*nr_parts);
-		rmr = (InstrPtr*)alloca(sizeof(InstrPtr)*nr_parts);
+		njn = (InstrPtr*)GDKzalloc(sizeof(InstrPtr)*nr_parts);
+		mr = (InstrPtr*)GDKzalloc(sizeof(InstrPtr)*nr_parts);
+		rmr = (InstrPtr*)GDKzalloc(sizeof(InstrPtr)*nr_parts);
 		jn = old[join[0]];
 		for (p = 0; p<nr_parts; p++) {
 			InstrPtr r = newStmt2( mb, batRef, reverseRef);
@@ -575,6 +579,9 @@ _cluster_join(MalBlkPtr mb, int *join, int jl, int *prj, int pjl)
 			if (old[i]) 
 				freeInstruction(old[i]);
 		GDKfree(old);
+		GDKfree(njn);
+		GDKfree(mr);
+		GDKfree(rmr);
 	}
 	return 1;
 }
@@ -583,8 +590,8 @@ static int
 cluster_join(MalBlkPtr mb)
 {
 	int i, j = 0, k = 0, jn = 0, mr = -1, rmr = -1, state = JOIN_NONE, state_mr = JOIN_NONE, state_rmr = JOIN_NONE, actions = 0;
-	int *join = (int*) alloca(sizeof(int) * MAX_STMTS);
-	int *prj = (int*) alloca(sizeof(int) * MAX_STMTS);
+	int *join = (int*) GDKzallov(sizeof(int) * MAX_STMTS);
+	int *prj = (int*) GDKzallov(sizeof(int) * MAX_STMTS);
 	InstrPtr q;
 
 	/* locate the a sequence of group.new/derive statements */
@@ -657,6 +664,8 @@ cluster_join(MalBlkPtr mb)
 	}
 	if (k && j && (state_mr == JOIN_PRJ || state_rmr == JOIN_PRJ)) 
 		actions = _cluster_join(mb, join, j, prj, k);
+	GDKfree(join);
+	GDKfree(prj);
 	return actions;
 }
 
