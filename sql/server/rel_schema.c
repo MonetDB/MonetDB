@@ -19,6 +19,7 @@
 
 
 #include "monetdb_config.h"
+#include <math.h>
 #include "rel_trans.h"
 #include "rel_select.h"
 #include "rel_updates.h"
@@ -944,7 +945,8 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 		sql_table *t = mvc_create_table(sql, s, name, tt, 0, SQL_DECLARED_TABLE, commit_action, -1);
 		dnode *n;
 		dlist *columns = table_elements_or_subquery->data.lval;
-		sql_rel *res = NULL;
+		sql_exp *id_l = NULL, *id_r = NULL;
+		sql_rel *res = NULL, *joinl = NULL, *joinr = NULL;
 		list *rp = new_exp_list(sql->sa);
 		node *col = NULL;
 		int i = 0, j = 0, cnt = 0, *N, *M;
@@ -988,17 +990,17 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 				atom *a_sto = atom_general(sql->sa, &sc->type, sc->dim->stop);
 				switch(a_sto->data.vtype){
 				case TYPE_bte:
-					cnt = (*(bte *)VALget(&a_sto->data) - *(bte *)VALget(&a_sta->data)) / *(bte *)VALget(&a_ste->data); break;
+					cnt = ceil((*(bte *)VALget(&a_sto->data) * 1.0 - *(bte *)VALget(&a_sta->data)) / *(bte *)VALget(&a_ste->data)); break;
 				case TYPE_sht:
-					cnt = (*(sht *)VALget(&a_sto->data) - *(sht *)VALget(&a_sta->data)) / *(sht *)VALget(&a_ste->data); break;
+					cnt = ceil((*(sht *)VALget(&a_sto->data) * 1.0 - *(sht *)VALget(&a_sta->data)) / *(sht *)VALget(&a_ste->data)); break;
 				case TYPE_int:
-					cnt = (*(int *)VALget(&a_sto->data) - *(int *)VALget(&a_sta->data)) / *(int *)VALget(&a_ste->data); break;
+					cnt = ceil((*(int *)VALget(&a_sto->data) * 1.0 - *(int *)VALget(&a_sta->data)) / *(int *)VALget(&a_ste->data)); break;
 				case TYPE_flt:
-					cnt = (*(flt *)VALget(&a_sto->data) - *(flt *)VALget(&a_sta->data)) / *(flt *)VALget(&a_ste->data); break;
+					cnt = ceil((*(flt *)VALget(&a_sto->data) - *(flt *)VALget(&a_sta->data)) / *(flt *)VALget(&a_ste->data)); break;
 				case TYPE_dbl:
-					cnt = (*(dbl *)VALget(&a_sto->data) - *(dbl *)VALget(&a_sta->data)) / *(dbl *)VALget(&a_ste->data); break;
+					cnt = ceil((*(dbl *)VALget(&a_sto->data) - *(dbl *)VALget(&a_sta->data)) / *(dbl *)VALget(&a_ste->data)); break;
 				case TYPE_lng:
-					cnt = (*(lng *)VALget(&a_sto->data) - *(lng *)VALget(&a_sta->data)) / *(lng *)VALget(&a_ste->data); break;
+					cnt = ceil((*(lng *)VALget(&a_sto->data) * 1.0 - *(lng *)VALget(&a_sta->data)) / *(lng *)VALget(&a_ste->data)); break;
 				default: /* should not reach here */
 					GDKfree(N); GDKfree(M);
 					return sql_error(sql, 02, "CREATE ARRAY: unsupported data type \"%s\"", sc->type.type->sqlname);
@@ -1017,8 +1019,9 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 		/* create and fill all columns */
 		for (col = t->columns.set->h, i = 0; col; col = col->next){
 			sql_column *sc = (sql_column *) col->data;
-			list *args = new_exp_list(sql->sa);
-			sql_exp *e = NULL;
+			list *args = new_exp_list(sql->sa), *col_exps = new_exp_list(sql->sa);
+			sql_exp *e = NULL, *func_exp = NULL;
+			sql_subtype *oid_tpe = sql_bind_localtype("oid");
 
 			if (sc->dim){
 				/* TODO: can we avoid computing these 'atom_general' twice? */
@@ -1027,7 +1030,17 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 				append(args, exp_atom(sql->sa, atom_general(sql->sa, &sc->type, sc->dim->stop)));
 				append(args, exp_atom_int(sql->sa, N[i]));
 				append(args, exp_atom_int(sql->sa, M[i]));
-				append(rp, exp_op(sql->sa, args, sql_bind_func_(sql->sa, sql->session->schema, "array_series", exps_subtype(args))));
+				func_exp = exp_op(sql->sa, args, sql_bind_func_(sql->sa, sql->session->schema, "array_series", exps_subtype(args)));
+				/* TODO: what are the correct values for card and intern? */
+				if (!id_l) {
+					id_l = exp_column(sql->sa, sc->base.name, "id", oid_tpe, CARD_MULTI, (!sc->dim && !sc->def)?1:0, 0);
+					append(col_exps, id_l);
+				} else {
+					id_r = exp_column(sql->sa, sc->base.name, "id", oid_tpe, CARD_MULTI, (!sc->dim && !sc->def)?1:0, 0);
+					append(col_exps, id_r);
+				}
+				append(col_exps, exp_column(sql->sa, sc->base.name, "dimval", &sc->type, CARD_MULTI, (!sc->dim && !sc->def)?1:0, 0));
+				append(rp, exp_column(sql->sa, sc->base.name, "dimval", &sc->type, CARD_MULTI, (!sc->dim && !sc->def)?1:0, 0));
 				i++;
 			} else {
 				if (sc->def) {
@@ -1042,15 +1055,33 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 				}
 				append(args, exp_atom_lng(sql->sa, cntall));
 				append(args, e);
-				append(rp, exp_op(sql->sa, args, sql_bind_func_(sql->sa, sql->session->schema, "array_filler", exps_subtype(args))));
+				func_exp = exp_op(sql->sa, args, sql_bind_func_(sql->sa, sql->session->schema, "array_filler", exps_subtype(args)));
+				if (!id_l) {
+					id_l = exp_column(sql->sa, sc->base.name, "id", oid_tpe, CARD_MULTI, (!sc->dim && !sc->def)?1:0, 0);
+					append(col_exps, id_l);
+				} else {
+					id_r = exp_column(sql->sa, sc->base.name, "id", oid_tpe, CARD_MULTI, (!sc->dim && !sc->def)?1:0, 0);
+					append(col_exps, id_r);
+
+				}
+				append(col_exps, exp_column(sql->sa, sc->base.name, "cellval", &sc->type, CARD_MULTI, (!sc->dim && !sc->def)?1:0, 0));
+				append(rp, exp_column(sql->sa, sc->base.name, "cellval", &sc->type, CARD_MULTI, (!sc->dim && !sc->def)?1:0, 0));
 			}
+			if (!joinl) {
+				joinl = rel_table_func(sql->sa, NULL, func_exp, col_exps);
+			} else {
+				joinr = rel_table_func(sql->sa, NULL, func_exp, col_exps);
+				joinl = rel_crossproduct(sql->sa, joinl, joinr, op_join);
+				rel_join_add_exp(sql->sa, joinl, exp_compare(sql->sa, id_l, id_r, cmp_equal));
+			}
+
 		}
 		if (i != t->ndims) {
 			GDKfree(N); GDKfree(M);
 			return sql_error(sql, 02, "CREATE ARRAY: expected number of dimension columns (%d) does not match actual numbre of dimension columns (%d)", t->ndims, i);
 		}
 		res = rel_table(sql, DDL_CREATE_TABLE, sname, t, temp);
-		return rel_insert(sql, res, rel_project(sql->sa, NULL, rp));
+		return rel_insert(sql, res, rel_project(sql->sa, joinl, rp));
 	} else { /* [col name list] as subquery with or without data */
 		/* TODO: handle create_array_as_subquery??? */
 		sql_rel *sq = NULL, *res = NULL;

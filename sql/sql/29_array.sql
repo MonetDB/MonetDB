@@ -23,27 +23,28 @@
 
 -- TODO: DATE, TIME, TIMESTAMP, CHAR and VARCHAR not supported yet
 -- TODO: should we deal with TINYINT, SMALLINT separately?
-create function array_series("start" integer, step integer, stop integer, N integer, M integer) returns table (dim integer)
+create function array_series("start" integer, step integer, stop integer, N integer, M integer) returns table (id int, dimval integer)
 	external name "array".series;
-create function array_series("start" bigint, step bigint, stop bigint, N integer, M integer) returns table (dim bigint)
+create function array_series("start" bigint, step bigint, stop bigint, N integer, M integer) returns table (id bigint, dimval bigint)
 	external name "array".series;
-create function array_series("start" float, step float, stop float, N integer, M integer) returns table (dim float)
+create function array_series("start" float, step float, stop float, N integer, M integer) returns table (id bigint, dimval float)
 	external name "array".series;
 
-create function array_filler(cnt bigint, val integer) returns table (vals integer)
+create function array_filler(cnt bigint, val integer) returns table (id bigint, cellval integer)
 	external name "array".filler;
-create function array_filler(cnt bigint, val bigint) returns table (vals bigint)
+create function array_filler(cnt bigint, val bigint) returns table (id bigint, cellval bigint)
 	external name "array".filler;
-create function array_filler(cnt bigint, val float) returns table (vals float)
+create function array_filler(cnt bigint, val float) returns table (id bigint, cellval float)
 	external name "array".filler;
-create function array_filler(cnt bigint, val date) returns table (vals date)
-	external name "array".filler;
-create function array_filler(cnt bigint, val time) returns table (vals time)
-	external name "array".filler;
-create function array_filler(cnt bigint, val timestamp) returns table (vals timestamp)
-	external name "array".filler;
-create function array_filler(cnt bigint, val char(1024)) returns table (vals char(1024))
-	external name "array".filler;
-create function array_filler(cnt bigint, val varchar(1024)) returns table (vals varchar(1024))
-	external name "array".filler;
+
+--create function array_filler(cnt bigint, val date) returns table (vals date)
+--	external name "array".filler;
+--create function array_filler(cnt bigint, val time) returns table (vals time)
+--	external name "array".filler;
+--create function array_filler(cnt bigint, val timestamp) returns table (vals timestamp)
+--	external name "array".filler;
+--create function array_filler(cnt bigint, val char(1024)) returns table (vals char(1024))
+--	external name "array".filler;
+--create function array_filler(cnt bigint, val varchar(1024)) returns table (vals varchar(1024))
+--	external name "array".filler;
 

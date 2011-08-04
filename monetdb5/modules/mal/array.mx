@@ -41,10 +41,12 @@ address ARRAYseries_@1
 comment  "Generates a single series BAT based on range condition, repeating each value N times and repeat the process M times.";
 
 function series (start:@1, step:@1, stop:@1, N:int, M:int) :bat[:str,:bat];
-	b1 := bat.new(:str,:bat,1);
-	b2 := series_(start, step, stop, N, M);
-	b3 := bat.insert(b1, "dim", b2);
-	return series := b3;
+	b1 := bat.new(:str,:bat,2);
+	b2 := array.series_(start, step, stop, N, M);
+	b3 := bat.mirror(b2);
+	b4 := bat.insert(b1, "id", b3);
+	b5 := bat.insert(b4, "dimval", b2);
+	return series := b5;
 end series;
 
 @mal
@@ -71,10 +73,14 @@ address ARRAYfiller
 comment "Create an array value representation of CNT items and fill it with V";
 
 function filler(cnt:lng, v:any_2):bat[:str,:bat];
-	b1 := bat.new(:str,:bat,1);
-	b2 := filler_(cnt, v);
-	b3 := bat.insert(b1, "vals", b2);
-	return filler := b3;
+	b1 := bat.new(:str,:bat,2);
+	b2 := array.filler_(cnt, v);
+	# TODO: why is a markH necessary here, but no in array.series?
+	b3 := algebra.markH(b2, 0@0);
+	b4 := bat.mirror(b3);
+	b5 := bat.insert(b1, "id", b4);
+	b6 := bat.insert(b5, "cellval", b3);
+	return filler := b5;
 end filler;
 
 pattern map(dims:bat[:oid,:any]...):bat[:oid,:oid]
@@ -209,10 +215,10 @@ ARRAYseries_@1(int *ret, @1 *start, @1 *step, @1 *stop, int *group, int *series)
 	int s,g;
 
 	if ( *start < *stop && *step > 0) {
-		cnt =  (BUN) ((*stop - *start) / *step) * *group * *series ;
+		cnt =  (BUN) ceil(((*stop * 1.0 - *start) / *step)) * *group * *series ;
 	} else
 	if ( abs(*start) < abs(*stop) && abs(*step) > 0) {
-		cnt =  (BUN) ((-*stop + *start) / *step ) * *group * *series ;
+		cnt =  (BUN) ceil(((-*stop * 1.0 + *start) / *step)) * *group * *series ;
 	} else
 		throw(MAL, "array.series", "illegal range");
 	bn = BATnew(TYPE_void, TYPE_@1, cnt);
@@ -387,6 +393,7 @@ ARRAYfiller(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* TODO: why not TYPE_void? */
 	if(!(bn = BATnew(TYPE_oid, getArgType(mb,pci,2), cnt)))
 		throw(MAL, "array.filler", MAL_MALLOC_FAIL);
+	BATseqbase(bn, 0);
 
 	bi = bat_iterator(bn);
 	for (i = 0; i < cnt; i++)
