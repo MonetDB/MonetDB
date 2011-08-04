@@ -22,7 +22,7 @@ INCLUDES = ../../modules/atoms ../../mal \
 
 MTSAFE
 
-lib__compiler = {
+lib__mal_compiler = {
 	MODULE
 	DIR = libdir/monetdb5
 	SEP = _
