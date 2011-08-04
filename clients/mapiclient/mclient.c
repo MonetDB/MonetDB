@@ -1684,7 +1684,9 @@ showCommands(void)
 #ifdef HAVE_LIBREADLINE
 	mnstr_printf(toConsole, "\\h      - show the readline history\n");
 #endif
+#if 0
 	mnstr_printf(toConsole, "\\t      - toggle timer\n");
+#endif
 	if (mode == SQL) {
 		mnstr_printf(toConsole, "\\D table- dumps the table, or the complete database if none given.\n");
 		mnstr_printf(toConsole, "\\d[Stvsfn]+ [obj] - list database objects, or describe if obj given\n");
