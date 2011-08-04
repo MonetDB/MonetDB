@@ -1680,7 +1680,9 @@ showCommands(void)
 		mnstr_printf(toConsole, "?pat    - MAL function help. pat=[modnme[.fcnnme][(][)]] wildcard *\n");
 	mnstr_printf(toConsole, "\\<file  - read input from file\n");
 	mnstr_printf(toConsole, "\\>file  - save response in file, or stdout if no file is given\n");
+#ifdef HAVE_POPEN
 	mnstr_printf(toConsole, "\\|cmd   - pipe result to process, or stop when no command is given\n");
+#endif
 #ifdef HAVE_LIBREADLINE
 	mnstr_printf(toConsole, "\\h      - show the readline history\n");
 #endif
