@@ -1778,13 +1778,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					char *cn = column_name(sql->mvc->sa, c);
 					char *ntn = sql_escape_ident(tn);
 					char *nsn = sql_escape_ident(sn);
-					char *fqtn = alloca(sizeof(char) * (strlen(nsn) + 1 +
-								strlen(ntn) + 1));
+					char fqtn[512];
 
-					fqtn[0]=0;
-					strcat(fqtn, nsn);
-					strcat(fqtn, ".");
-					strcat(fqtn, ntn);
+					snprintf(fqtn, 512, "%s.%s", nsn, ntn);
 					q = newStmt2(mb, sqlRef, exportValueRef);
 					s->nr = getDestVar(q);
 					q = pushInt(mb, q, sql->mvc->type);
