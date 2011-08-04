@@ -848,23 +848,24 @@ static int
 OPTgatherArgs(Client cntxt, MalBlkPtr mb, InstrPtr p, int i, Slices *slices)
 {
 	MalBlkPtr gmb;
-	InstrPtr q, sig = getInstrPtr(mb,0);
+	InstrPtr q, sig2, sig = getInstrPtr(mb,0);
 	int hits = 0;
-	int j,k;
+	int j,k,n;
 
 	for ( j = p->retc; j < p->argc; j++)
 	if ( isaBatType(getArgType(mb,p,j)) ){
 		gmb = OPTgather(cntxt,mb,i, getArg(p,j), slices);
 		if ( gmb ) {
+			sig2= getInstrPtr(gmb,0);
 			q= newInstruction(mb, ASSIGNsymbol);
 			getModuleId(q) = userRef;
-			getFunctionId(q) = getFunctionId(getInstrPtr(gmb,0));
-			getArg(q,0) = getArg(p,j);
+			getFunctionId(q) = getFunctionId(sig2);
+			n = newTmpVariable(mb, getArgType(gmb, sig2, 0));
+			getArg(q,0) = n;
 			for ( k =sig->retc; k < sig->argc; k++)
 				q= pushArgument(mb,q, getArg(sig,k));
 			insertInstruction(mb,q,i);
-			k = newTmpVariable(mb, getArgType(mb,q,0));
-			remapVariable(mb, i, getArg(p,j), k);
+			remapVariable(mb, i, getArg(p,j), n);
 			hits++;
 		}
 	}
@@ -1040,15 +1041,16 @@ OPTpartitionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				continue;
 			}
 		}
-		if ( getModuleId(p) == aggrRef && p->argc == 4 ) {
+		if ( getModuleId(p) == aggrRef && p->argc == 4  && parallel) {
 			/* grouped aggregation */
 			i += OPTgatherArgs(cntxt,mb,p,i, &slices);
+			parallel = FALSE;
 			continue;
 		}
 		/* grouping for now is a blocking instruction */
 		if ( getModuleId(p) == groupRef && 
 			(getFunctionId(p) == doneRef || getFunctionId(p) == newRef) &&
-			alias[getArg(p,3)] == 0) {
+			alias[getArg(p,p->retc)] == 0) {
 			/* except consolidated input arguments */
 			if ( parallel ) 
 			{	/* database not yet consolidated */
