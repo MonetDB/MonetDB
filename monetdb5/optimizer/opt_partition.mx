@@ -616,6 +616,7 @@ OPTgather(Client cntxt, MalBlkPtr mb, int pc, int varid, Slices *slices)
 	return gmb;
 }
 
+/* run through a plan recursively to detect if it is already consolidating a partitioned database */
 static int
 OPTconsolidated(MalBlkPtr mb)
 {
@@ -623,15 +624,19 @@ OPTconsolidated(MalBlkPtr mb)
 	InstrPtr p;
 	for( i =1 ; i < mb->stop; i++) {
 		p = getInstrPtr(mb,i);
-		if ( getFunctionId(p) && strstr(getFunctionId(p),"_cntrl_") )
-			return 1;
+		if ( getFunctionId(p) ){
+			if ( strstr(getFunctionId(p),"_cntrl_")  ||
+				 strstr(getFunctionId(p),"_bag_") )
+				return 1;
+			if ( p->blk  && OPTconsolidated(p->blk))
+				return 1;
+		} 
 	}
-
 	return 0;
 }
 
 static InstrPtr
-OPTcodegen(Client cntxt, MalBlkPtr mb, int pc, Slices slices, int aggrflag)
+OPTparallelcode(Client cntxt, MalBlkPtr mb, int pc, Slices slices, int aggrflag)
 {
 	char *vec = 0;
 	int parallel = 0, last, i, k, limit;
@@ -844,6 +849,17 @@ remapVariable( MalBlkPtr mb, int i, int old, int new)
 	}
 }
 
+static void
+remapVariables(MalBlkPtr mb, InstrPtr p, int i)
+{
+	int j,k;
+	for ( k = 0; k < p->retc; k++) {
+		j = newTmpVariable(mb, getArgType(mb,p,k));
+		remapVariable(mb, i, getArg(p,k), j);
+		getArg(p,k) = j;
+	}
+}
+
 static int
 OPTgatherArgs(Client cntxt, MalBlkPtr mb, InstrPtr p, int i, Slices *slices)
 {
@@ -874,7 +890,7 @@ OPTgatherArgs(Client cntxt, MalBlkPtr mb, InstrPtr p, int i, Slices *slices)
 static int
 OPTpartitionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i,j,k,pc = 0;
+	int i,j,pc = 0;
 	wrd r = 0, rowcnt=0;	/* table should be sizeable to consider parallel execution*/
 	InstrPtr p,q, target= 0, rsset=0;
 	Slices slices;
@@ -970,9 +986,10 @@ OPTpartitionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		if ( getModuleId(p) == sqlRef && getFunctionId(p) == resultSetRef ) {
 			if ( parallel) {
 				mb->stmt[i]  = rsset;
-				q = OPTcodegen(cntxt, mb, i, slices, FALSE);
-				parallel = FALSE;
-			} else q = 0;
+				q = OPTparallelcode(cntxt, mb, i, slices, FALSE);
+				if ( q == 0)
+					i += OPTgatherArgs(cntxt,mb,p,i, &slices);
+			} else q = 0; 
 			if ( q ) {
 				clrFunction(rsset);
 #ifdef DEBUGDETAILS
@@ -990,41 +1007,39 @@ OPTpartitionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				for( j = q->retc; j < q->argc; j++)
 					mb->stmt[i] = pushArgument(mb, mb->stmt[i], getArg(q,j));
 				insertInstruction(mb,p,i+1);
-				/* remap the other result variables as well */
-				for ( k = 0; k < rsset->retc; k++) {
-					j = newTmpVariable(mb, getArgType(mb,rsset,k));
-					remapVariable(mb, i, getArg(rsset,k), j);
-					getArg(rsset,k) = j;
-				}
+				remapVariables(mb,rsset,i);
 				i++;
+				/* remove dead code asap */
 				msg = OPTdeadcode(cntxt, mb, 0, 0);
 				if ( msg )
-					mnstr_printf(cntxt->fdout,"codegen deadcode %s\n",msg);
+					mnstr_printf(cntxt->fdout,"#parallel deadcode %s\n",msg);
 			} else {
-				/* gather arguments */
 				mb->stmt[i] = p;
-				i += OPTgatherArgs(cntxt,mb,p,i, &slices);
 				freeInstruction(rsset);
 				rsset = NULL;
 			}
 			continue;
 		}
 
-		if ( getModuleId(p) == sqlRef && getFunctionId(p) == putName("exportValue",11)) {
-			q = OPTcodegen(cntxt, mb, i, slices, FALSE);
-			parallel = FALSE;
+		if ( getModuleId(p) == sqlRef && getFunctionId(p) == putName("exportValue",11) ) {
+			if ( parallel) {
+				q = OPTparallelcode(cntxt, mb, i, slices, FALSE);
+			} else q = 0;
 			if ( q ) {
 				getArg(p,8) = getArg(q,0);
 				freeInstruction(q);
+				remapVariables(mb,p,i);
 				msg = OPTdeadcode(cntxt, mb, 0, 0);
 				if ( msg )
 					mnstr_printf(cntxt->fdout,"codegen deadcode %s\n",msg);
-			}
+			}  else
+				i += OPTgatherArgs(cntxt,mb,p,i, &slices);
 			continue;
 		}
 
 		if ( getModuleId(p) == aggrRef && p->argc ==2 ) {
-			q = OPTcodegen(cntxt, mb, i, slices, TRUE);
+			/* simple aggregates don't break parallel processing */
+			q = OPTparallelcode(cntxt, mb, i, slices, TRUE);
 			if ( q ) {
 				clrFunction(p);
 				getModuleId(p) = userRef;
@@ -1035,28 +1050,31 @@ OPTpartitionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				q = getInstrPtr(mb,0);
 				for( j = q->retc; j < q->argc; j++)
 					mb->stmt[i] = pushArgument(mb, mb->stmt[i], getArg(q,j));
+				remapVariables(mb,p,i);
 				msg = OPTdeadcode(cntxt, mb, 0, 0);
 				if ( msg )
 					mnstr_printf(cntxt->fdout,"codegen deadcode %s\n",msg);
-				continue;
-			}
+			} else
+				i += OPTgatherArgs(cntxt,mb,p,i, &slices);
+			continue;
 		}
-		if ( getModuleId(p) == aggrRef && p->argc == 4  && parallel) {
-			/* grouped aggregation */
-			i += OPTgatherArgs(cntxt,mb,p,i, &slices);
-			parallel = FALSE;
+		if ( getModuleId(p) == aggrRef && p->argc == 4  ) {
+			/* grouped aggregation breaks parallelism */
+			if ( parallel)
+				i += OPTgatherArgs(cntxt,mb,p,i, &slices);
 			continue;
 		}
 		/* grouping for now is a blocking instruction */
 		if ( getModuleId(p) == groupRef && 
-			(getFunctionId(p) == doneRef || getFunctionId(p) == newRef) &&
-			alias[getArg(p,p->retc)] == 0) {
+			(getFunctionId(p) == doneRef || getFunctionId(p) == newRef) ) {
+/*&&
+			alias[getArg(p,p->retc)] == 0) { */
 			/* except consolidated input arguments */
 			if ( parallel ) 
 			{	/* database not yet consolidated */
-				q = OPTcodegen(cntxt, mb, i, slices, FALSE);
-				parallel = FALSE;
+				q = OPTparallelcode(cntxt, mb, i, slices, FALSE);
 				if ( q ) {
+					parallel = FALSE;
 					j = newTmpVariable(mb, getArgType(mb,q,0));
 					remapVariable(mb, i, getArg(p,p->retc), j);
 					alias[getArg(p,p->retc)] = j;
@@ -1071,10 +1089,10 @@ OPTpartitionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 					if ( msg )
 						mnstr_printf(cntxt->fdout,"codegen deadcode %s\n",msg);
 					i++;
-					continue;
-				}
-			} else 
-				i += OPTgatherArgs(cntxt,mb,p,i, &slices);
+				} else
+					i += OPTgatherArgs(cntxt,mb,p,i, &slices);
+			} 
+			continue;
 		}
 		if ( p->token == ENDsymbol)
 			pc = i -1;
