@@ -510,27 +510,27 @@ main(int argc, char **av)
 	{
 		/* unlock the vault, first see if we can find the file which
 		 * holds the secret */
-		char* secret = alloca(sizeof(char) * 1024);
+		char secret[1024];
 		FILE* secretf;
 		size_t len;
 		
 		if (GDKgetenv("monet_vault_key") == NULL) {
 			/* use a default (hard coded, non safe) key */
-			secret = "Xas632jsi2whjds8";
+			snprintf(secret, sizeof(secret), "%s", "Xas632jsi2whjds8");
 		} else {
 			if ((secretf = fopen(GDKgetenv("monet_vault_key"), "r")) == NULL) {
-				snprintf(secret, 1023, "unable to open vault_key_file %s: %s",
+				snprintf(secret, sizeof(secret),
+						"unable to open vault_key_file %s: %s",
 						GDKgetenv("monet_vault_key"), strerror(errno));
-				secret[1023] = '\0';
 				/* don't show this as a crash */
 				msab_registerStop();
 				GDKfatal("%s", secret);
 			}
-			len = fread(secret, 1, 1023, secretf);
+			len = fread(secret, 1, sizeof(secret), secretf);
 			secret[len] = '\0';
 			len = strlen(secret); /* secret can contain null-bytes */
 			if (len == 0) {
-				snprintf(secret, 1023, "vault key has zero-length!");
+				snprintf(secret, sizeof(secret), "vault key has zero-length!");
 				/* don't show this as a crash */
 				msab_registerStop();
 				GDKfatal("%s", secret);
@@ -540,7 +540,7 @@ main(int argc, char **av)
 			}
 			fclose(secretf);
 		}
-		if ((err = AUTHunlockVault(&secret)) != MAL_SUCCEED)
+		if ((err = AUTHunlockVault((char **)&secret)) != MAL_SUCCEED)
 			GDKfatal("%s", err);
 	}
 	/* make sure the authorisation BATs are loaded */
