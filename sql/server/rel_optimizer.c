@@ -661,8 +661,8 @@ order_join_expressions(sql_allocator *sa, list *dje, list *rels)
 	node *n = NULL;
 	int i, j, *keys, *pos, cnt = list_length(dje);
 
-	keys = (int*)alloca(cnt*sizeof(int));
-	pos = (int*)alloca(cnt*sizeof(int));
+	keys = (int*)malloc(cnt*sizeof(int));
+	pos = (int*)malloc(cnt*sizeof(int));
 	for (n = dje->h, i = 0; n; n = n->next, i++) {
 		sql_exp *e = n->data;
 
@@ -687,6 +687,8 @@ order_join_expressions(sql_allocator *sa, list *dje, list *rels)
 			;
 		list_append(res, n->data);
 	}
+	free(keys);
+	free(pos);
 	return res;
 }
 
