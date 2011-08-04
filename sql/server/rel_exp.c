@@ -539,10 +539,8 @@ exp_match_list( list *l, list *r)
 		return l == r;
 	if (list_length(l) != list_length(r))
 		return 0;
-	lu = alloca(list_length(l));
-	ru = alloca(list_length(r));
-	memset(lu, 0, list_length(l));
-	memset(ru, 0, list_length(r));
+	lu = calloc(list_length(l), sizeof(char));
+	ru = calloc(list_length(r), sizeof(char));
 	for (n = l->h, lc = 0; n; n = n->next, lc++) {
 		sql_exp *le = n->data;
 
@@ -562,6 +560,8 @@ exp_match_list( list *l, list *r)
 	for (n = r->h, rc = 0; n && match; n = n->next, rc++) 
 		if (!ru[rc])
 			match = 0;
+	free(lu);
+	free(ru);
 	return match;
 }
 
