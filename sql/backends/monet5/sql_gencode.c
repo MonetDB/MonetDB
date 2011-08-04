@@ -138,9 +138,10 @@ dump_header(mvc *sql, MalBlkPtr mb, stmt *s, list *l)
 		char *cn = column_name(sql->sa, c);
 		char *ntn = sql_escape_ident(tn);
 		char *nsn = sql_escape_ident(sn);
-		char fqtn[512];
+		size_t fqtnl = strlen(ntn) + 1 + strlen(nsn) + 1;
+		char *fqtn = NEW_ARRAY(char, fqtnl);
 
-		snprintf(fqtn,512,"%s.%s", nsn,ntn);
+		snprintf(fqtn, fqtnl, "%s.%s", nsn, ntn);
 
 		q = newStmt1(mb, sqlRef, "rsColumn");
 		q = pushArgument(mb, q, s->nr);
@@ -152,6 +153,7 @@ dump_header(mvc *sql, MalBlkPtr mb, stmt *s, list *l)
 		(void) pushArgument(mb, q, c->nr);
 		_DELETE(ntn);
 		_DELETE(nsn);
+		_DELETE(fqtn);
 	}
 }
 
@@ -1778,9 +1780,11 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					char *cn = column_name(sql->mvc->sa, c);
 					char *ntn = sql_escape_ident(tn);
 					char *nsn = sql_escape_ident(sn);
-					char fqtn[512];
+					size_t fqtnl = strlen(ntn) + 1 + strlen(nsn) + 1;
+					char *fqtn = NEW_ARRAY(char, fqtnl);
 
-					snprintf(fqtn, 512, "%s.%s", nsn, ntn);
+					snprintf(fqtn, fqtnl, "%s.%s", nsn, ntn);
+
 					q = newStmt2(mb, sqlRef, exportValueRef);
 					s->nr = getDestVar(q);
 					q = pushInt(mb, q, sql->mvc->type);
@@ -1794,6 +1798,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					(void) pushStr(mb, q, "");   /* warning */
 					_DELETE(ntn);
 					_DELETE(nsn);
+					_DELETE(fqtn);
 					break;
 				}
 				if (n) {
