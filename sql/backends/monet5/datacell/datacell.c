@@ -258,7 +258,7 @@ DCquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str def;
 	Symbol s = NULL;
 	MalBlkPtr qry;
-	str msg;
+	str msg = NULL;
 	InstrPtr p;
 	Module scope;
 	lng clk = GDKusec();
