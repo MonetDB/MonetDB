@@ -684,18 +684,18 @@ convert2str( mvc *m, int eclass, int d, int sc, int has_tz, ptr p, int mtype, ch
 	} else if (eclass == EC_DEC) {
 		l = dec_tostr((void *) (ptrdiff_t) sc, buf, &len, mtype, p);
 	} else if (eclass == EC_TIME) {
-		struct time_res *ts_res = alloca(sizeof(struct time_res));
-		ts_res->has_tz = has_tz;
-		ts_res->fraction = d?d-1:0;
-		ts_res->timezone = m->timezone;
-		l = sql_time_tostr( (void *) ts_res, buf, &len, mtype, p);
+		struct time_res ts_res;
+		ts_res.has_tz = has_tz;
+		ts_res.fraction = d?d-1:0;
+		ts_res.timezone = m->timezone;
+		l = sql_time_tostr( (void *) &ts_res, buf, &len, mtype, p);
 
 	} else if (eclass == EC_TIMESTAMP) {
-		struct time_res *ts_res = alloca(sizeof(struct time_res));
-		ts_res->has_tz = has_tz;
-		ts_res->fraction = d?d-1:0;
-		ts_res->timezone = m->timezone;
-		l = sql_timestamp_tostr((void *) ts_res, buf, &len, mtype, p);
+		struct time_res ts_res;
+		ts_res.has_tz = has_tz;
+		ts_res.fraction = d?d-1:0;
+		ts_res.timezone = m->timezone;
+		l = sql_timestamp_tostr((void *) &ts_res, buf, &len, mtype, p);
 	} else if (eclass == EC_BIT) {
 		bit b = *(bit*)p;
 		if (b == bit_nil) {
@@ -731,19 +731,19 @@ export_value( mvc *m, stream *s, int eclass, char *sqlname, int d, int sc, ptr p
 				  mtype, p);
 		ok = (mnstr_write(s, *buf, l, 1) == 1);
 	} else if (eclass == EC_TIME) {
-		struct time_res *ts_res = alloca(sizeof(struct time_res));
-		ts_res->has_tz = (strcmp(sqlname, "timetz") == 0);
-		ts_res->fraction = d?d-1:0;
-		ts_res->timezone = m->timezone;
-		l = sql_time_tostr( (void *) ts_res, buf, len, mtype, p);
+		struct time_res ts_res;
+		ts_res.has_tz = (strcmp(sqlname, "timetz") == 0);
+		ts_res.fraction = d?d-1:0;
+		ts_res.timezone = m->timezone;
+		l = sql_time_tostr( (void *) &ts_res, buf, len, mtype, p);
 
 		ok = (mnstr_write(s, *buf, l, 1) == 1);
 	} else if (eclass == EC_TIMESTAMP) {
-		struct time_res *ts_res = alloca(sizeof(struct time_res));
-		ts_res->has_tz = (strcmp(sqlname, "timestamptz") == 0);
-		ts_res->fraction = d?d-1:0;
-		ts_res->timezone = m->timezone;
-		l = sql_timestamp_tostr((void *) ts_res, buf, len, mtype, p);
+		struct time_res ts_res;
+		ts_res.has_tz = (strcmp(sqlname, "timestamptz") == 0);
+		ts_res.fraction = d?d-1:0;
+		ts_res.timezone = m->timezone;
+		l = sql_timestamp_tostr((void *) &ts_res, buf, len, mtype, p);
 
 		ok = (mnstr_write(s, *buf, l, 1) == 1);
 	} else {
@@ -810,6 +810,7 @@ mvc_export_table(mvc *m, stream *s, res_table *t, BAT *order, BUN offset, BUN nr
 	Tablet as;
 	Column *fmt;
 	int i;
+	struct time_res *tres;
 
 	if (!t)
 		return -1;
@@ -820,6 +821,7 @@ mvc_export_table(mvc *m, stream *s, res_table *t, BAT *order, BUN offset, BUN nr
 	as.nr = nr;
 	as.offset = offset;
 	fmt = as.format = (Column *) GDKmalloc(sizeof(Column) * (as.nr_attrs + 1));
+	tres = GDKmalloc(sizeof(struct time_res) * (as.nr_attrs));
 
 	memset(fmt, 0, (as.nr_attrs + 1) * sizeof(Column));
 
@@ -856,7 +858,7 @@ mvc_export_table(mvc *m, stream *s, res_table *t, BAT *order, BUN offset, BUN nr
 			fmt[i].frstr = &dec_frstr;
 			fmt[i].extra = (void *) (ptrdiff_t) c->type.scale;
 		} else if (c->type.type->eclass == EC_TIMESTAMP) {
-			struct time_res *ts_res = alloca(sizeof(struct time_res));
+			struct time_res *ts_res = tres + (i - 1);
 			ts_res->has_tz = (strcmp(c->type.type->sqlname, "timestamptz") == 0); 
 			ts_res->fraction = c->type.digits?c->type.digits-1:0;
 			ts_res->timezone = m->timezone;
@@ -865,7 +867,7 @@ mvc_export_table(mvc *m, stream *s, res_table *t, BAT *order, BUN offset, BUN nr
 			fmt[i].frstr = NULL;
 			fmt[i].extra = ts_res;
 		} else if (c->type.type->eclass == EC_TIME) {
-			struct time_res *ts_res = alloca(sizeof(struct time_res));
+			struct time_res *ts_res = tres + (i - 1);
 			ts_res->has_tz = (strcmp(c->type.type->sqlname, "timetz") == 0); 
 			ts_res->fraction = c->type.digits?c->type.digits-1:0;
 			ts_res->timezone = m->timezone;
@@ -881,6 +883,7 @@ mvc_export_table(mvc *m, stream *s, res_table *t, BAT *order, BUN offset, BUN nr
 		TABLEToutput_file(&as, order, s);
 	}
 	TABLETdestroy_format(&as);
+	GDKfree(tres);
 	if (mnstr_errnr(s))
 		return -1;
 	return 0;
