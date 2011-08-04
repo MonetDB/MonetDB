@@ -1187,7 +1187,7 @@ mat_pack_topn(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int mirror_mid)
 	mat_t *mirror = mat+mirror_mid;
 	int cur_topn = 0, k, i;
 	int cnt = topn_chain_list_length(mb, getArg(mirror->mi,1));
-	int *stmt = (int*) alloca( cnt * sizeof(int) * mirror->mi->argc );
+	int *stmt = (int*) GDKmalloc( cnt * sizeof(int) * mirror->mi->argc );
 
 	for(k=1; k < mirror->mi->argc; k++) 
 		topn_stmt(stmt+k*cnt, mb, getArg(mirror->mi, k));
@@ -1254,6 +1254,8 @@ mat_pack_topn(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int mirror_mid)
 	}
 	/* all topn's done, mirror keep in mm */
 	mirror->mm = bat_mirror(mb, cur_topn);
+
+	GDKfree(stmt);
 
 	/* now project */
 	return mat_pack_topn_project(mb, p, mat, mtop, mirror_mid);
@@ -1353,7 +1355,7 @@ mat_pack_sort(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int mirror_mid, in
 	mat_t *mirror = mat+mirror_mid;
 	int k, i;
 	int cnt = sort_chain_list_length(mb, getArg(mirror->mi,1), has_mirror);
-	int *stmt = (int*) alloca( cnt * sizeof(int) * mirror->mi->argc );
+	int *stmt = (int*) GDKmalloc( cnt * sizeof(int) * mirror->mi->argc );
 	InstrPtr cur_sort = NULL;
 
 	for(k=1; k < mirror->mi->argc; k++) 
@@ -1407,6 +1409,7 @@ mat_pack_sort(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int mirror_mid, in
 		pushInstruction(mb, pck);
 		cur_sort = pck;
 	}
+	GDKfree(stmt);
 	if (has_mirror) {
 		/* all sort's done, keep 'which bat order' in mm */
 		mirror->mm = cur_sort;
