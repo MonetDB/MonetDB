@@ -71,6 +71,8 @@ In general, event processing through multiple layers of continous queries is too
 Some general statistics about number of events handled per transition is maintained, as well as the processing time
 for each continous query step. This provides the information to re-design the event handling system.
  */
+
+#include "monetdb_config.h"
 #include "petrinet.h"
 #include "mal_builder.h"
 

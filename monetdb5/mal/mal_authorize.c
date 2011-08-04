@@ -1021,55 +1021,56 @@ AUTHBackendSum(str *ret, str *string, int *len) {
  */
 static str
 AUTHhashPassword(str *ret, str *algo, str *password, str *challenge) {
-	str tmp;
+	str tmp = MAL_SUCCEED;
 	int len = (int) (strlen(*password) + strlen(*challenge));
-	str key = alloca(sizeof(char) * (len + 1));
+	str key = GDKmalloc(sizeof(char) * (len + 1));
 	snprintf(key, len + 1, "%s%s", *password, *challenge);
 
 #ifdef HAVE_RIPEMD160
 	if (strcmp(*algo, "RIPEMD160") == 0) {
-		rethrow("hashPassword", tmp, AUTHRIPEMD160Sum(ret, &key, &len));
+		tmp = AUTHRIPEMD160Sum(ret, &key, &len);
 	} else
 #endif
 #ifdef HAVE_SHA512
 	if (strcmp(*algo, "SHA512") == 0) {
 		int bits = 512;
-		rethrow("hashPassword", tmp, AUTHSHA2Sum(ret, &key, &len, &bits));
+		tmp = AUTHSHA2Sum(ret, &key, &len, &bits);
 	} else
 #endif
 #ifdef HAVE_SHA384
 	if (strcmp(*algo, "SHA384") == 0) {
 		int bits = 384;
-		rethrow("hashPassword", tmp, AUTHSHA2Sum(ret, &key, &len, &bits));
+		tmp = AUTHSHA2Sum(ret, &key, &len, &bits);
 	} else
 #endif
 #ifdef HAVE_SHA256
 	if (strcmp(*algo, "SHA256") == 0) {
 		int bits = 256;
-		rethrow("hashPassword", tmp, AUTHSHA2Sum(ret, &key, &len, &bits));
+		tmp = AUTHSHA2Sum(ret, &key, &len, &bits);
 	} else
 #endif
 #ifdef HAVE_SHA224
 	if (strcmp(*algo, "SHA224") == 0) {
 		int bits = 224;
-		rethrow("hashPassword", tmp, AUTHSHA2Sum(ret, &key, &len, &bits));
+		tmp = AUTHSHA2Sum(ret, &key, &len, &bits);
 	} else
 #endif
 #ifdef HAVE_SHA1
 	if (strcmp(*algo, "SHA1") == 0) {
-		rethrow("hashPassword", tmp, AUTHSHA1Sum(ret, &key, &len));
+		tmp = AUTHSHA1Sum(ret, &key, &len);
 	} else
 #endif
 #ifdef HAVE_MS5
 	if (strcmp(*algo, "MD5") == 0) {
-		rethrow("hashPassword", tmp, AUTHMD5Sum(ret, &key, &len));
+		tmp = AUTHMD5Sum(ret, &key, &len);
 	} else
 #endif
 	{
 		throw(MAL, "hashPassword", "unsupported hash type: '%s'", *algo);
 	}
 
-	return(MAL_SUCCEED);
+	GDKfree(key);
+	return(tmp);
 }
 
 /**

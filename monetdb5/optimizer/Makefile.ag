@@ -59,9 +59,9 @@ lib_optimizer = {
 		opt_octopus.mx \
 		opt_origin.mx \
 		opt_peephole.mx \
-		opt_pipes.c \
+		opt_pipes.c opt_pipes.h \
 		opt_prejoin.mx \
-		opt_prelude.c \
+		opt_prelude.c opt_prelude.h \
 		opt_pushranges.mx \
 		opt_qep.mx \
 		opt_recycler.mx \
@@ -70,9 +70,9 @@ lib_optimizer = {
 		opt_remoteQueries.mx \
 		opt_reorder.mx \
 		opt_singleton.mx \
-		opt_statistics.c \
+		opt_statistics.c opt_statistics.h \
 		opt_strengthReduction.mx \
-		opt_support.c \
+		opt_support.c opt_support.h \
 		opt_partition.mx \
 		opt_trace.mx
 }
@@ -96,6 +96,6 @@ headers_mal = {
 		opt_mitosis.mx opt_octopus.mx opt_partition.mx opt_history.mx
 }
 
-EXTRA_DIST = optimizerWrapper.mx opt_pipes.h opt_prelude.h opt_statistics.mal opt_statistics.h opt_support.mal opt_support.h
+EXTRA_DIST = optimizerWrapper.mx opt_statistics.mal opt_support.mal
 
 EXTRA_DIST_DIR = Tests

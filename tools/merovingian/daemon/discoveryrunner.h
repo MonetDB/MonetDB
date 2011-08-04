@@ -20,7 +20,6 @@
 #ifndef _DISCOVERYRUNNER_H
 #define _DISCOVERYRUNNER_H 1
 
-#include "monetdb_config.h"
 #include <pthread.h>
 
 #include <msabaoth.h>

@@ -19,7 +19,6 @@
 
 #ifndef _SQL_UDF_H_
 #define _SQL_UDF_H_
-#include "monetdb_config.h"
 #include "sql.h"
 #define _USE_MATH_DEFINES	/* needed for WIN32 to define M_PI */
 #include <math.h>

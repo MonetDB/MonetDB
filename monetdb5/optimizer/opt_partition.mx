@@ -927,7 +927,7 @@ OPTpartitionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 	OPTDEBUGpartition
 		mnstr_printf(cntxt->fdout,"#opt_partition: target is %s.%s "
-			" with " BUNFMT " rows into %d peers\n",
+			" with " SSZFMT " rows into %d peers\n",
 				getVarConstant(mb, getArg(slices.target,2)).val.sval,
 				getVarConstant(mb, getArg(slices.target,3)).val.sval,
 				rowcnt, nrpeers);

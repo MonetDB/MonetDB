@@ -19,9 +19,7 @@
 
 MTSAFE
 
-EXTRA_DIST = mutils.h
-
 lib_mutils  =  {
 	NOINST
-	SOURCES = mutils.c
+	SOURCES = mutils.c mutils.h
 }

@@ -32,34 +32,23 @@ INCLUDES = .. \
 		   ../../../clients/mapilib \
 		   $(MSGCONTROL_FLAGS)
 
-EXTRA_DIST = $(man_MANS) .merovingian_properties \
-	merovingian.h \
-	argvcmds.h \
-	client.h \
-	connections.h \
-	controlrunner.h \
-	discoveryrunner.h \
-	forkmserver.h \
-	handlers.h \
-	multiplex-funnel.h \
-	peering.h \
-	proxy.h
+EXTRA_DIST = $(man_MANS) .merovingian_properties
 
 bin_monetdbd = {
 	# hack: include monetdbd.1.in and .merovingian_properties.in here to
 	#       get them expanded
 	SOURCES = monetdbd.1.in .merovingian_properties.in \
-			  merovingian.c \
-			  argvcmds.c \
-			  client.c \
-			  connections.c \
-			  controlrunner.c \
-			  discoveryrunner.c \
-			  forkmserver.c \
-			  handlers.c \
-			  multiplex-funnel.c \
-			  peering.c \
-			  proxy.c
+			  merovingian.c merovingian.h \
+			  argvcmds.c argvcmds.h \
+			  client.c client.h \
+			  connections.c connections.h \
+			  controlrunner.c controlrunner.h \
+			  discoveryrunner.c discoveryrunner.h \
+			  forkmserver.c forkmserver.h \
+			  handlers.c handlers.h \
+			  multiplex-funnel.c multiplex-funnel.h \
+			  peering.c peering.h \
+			  proxy.c proxy.h
 	LIBS = ../utils/libmeroutil \
 		   ../../../monetdb5/misc/libsabaoth \
 		   ../../../common/stream/libstream \

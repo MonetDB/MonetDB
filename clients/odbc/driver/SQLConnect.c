@@ -36,11 +36,10 @@
  *
  **********************************************************************/
 
-#include <monetdb_config.h>
-#include <monet_options.h>
 #include "ODBCGlobal.h"
 #include "ODBCDbc.h"
 #include "ODBCUtil.h"
+#include <monet_options.h>
 #ifdef HAVE_STRINGS_H
 #include <strings.h>
 #endif

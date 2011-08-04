@@ -449,9 +449,9 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 #if FAST
 	int stamp = -1;
 #endif
-	bat *backup = (bat*)alloca(mb->maxarg * sizeof(bat));
-	str *sbackup = (str*)alloca(mb->maxarg * sizeof(str));
-	int *garbage = (int*)alloca(mb->maxarg * sizeof(int));
+	bat *backup = (bat*)GDKzalloc(mb->maxarg * sizeof(bat));
+	str *sbackup = (str*)GDKzalloc(mb->maxarg * sizeof(str));
+	int *garbage = (int*)GDKzalloc(mb->maxarg * sizeof(int));
 	lng oldtimer = 0;
 	struct Mallinfo oldMemory;
 	int stkpc = 0;
@@ -545,6 +545,9 @@ workslow:
 		}
 	}
 	@:MALwrapup@
+	GDKfree(backup);
+	GDKfree(sbackup);
+	GDKfree(garbage);
 	return ret;
 }
 @h
@@ -921,9 +924,9 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 #if FAST
 	int stamp = -1;
 #endif
-	bat *backup = (bat*)alloca(fs->mb->maxarg * sizeof(bat));
-	str *sbackup = (str*)alloca(fs->mb->maxarg * sizeof(str));
-	int *garbage = (int*)alloca(fs->mb->maxarg * sizeof(int));
+	bat *backup = (bat*)GDKzalloc(fs->mb->maxarg * sizeof(bat));
+	str *sbackup = (str*)GDKzalloc(fs->mb->maxarg * sizeof(str));
+	int *garbage = (int*)GDKzalloc(fs->mb->maxarg * sizeof(int));
 	Client cntxt = fs->cntxt;
 	MalBlkPtr mb = fs->mb;
 	MalStkPtr stk = fs->stk;
@@ -966,6 +969,9 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 			/* need a way to skip */
 			stkpc = mb->stop;
 			fs->state = -1;
+			GDKfree(backup);
+			GDKfree(sbackup);
+			GDKfree(garbage);
 			return ret;
 		}
 		if (oldtimer) {
@@ -991,19 +997,19 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 		 */
 		switch (pci->token) {
 		case ASSIGNsymbol: 
-			@:assignStmt(FAST,fs->pc = -fs->pc; return ret,t)@ 
+			@:assignStmt(FAST,fs->pc = -fs->pc; GDKfree(backup); GDKfree(sbackup);GDKfree(garbage); return ret,t)@ 
 			break;
 		case PATcall: 
-			@:patterncall(FAST,fs->pc = -fs->pc; return ret,t)@ 
+			@:patterncall(FAST,fs->pc = -fs->pc; GDKfree(backup); GDKfree(sbackup);GDKfree(garbage); return ret,t)@ 
 			break;
 		case CMDcall: 
-			@:commandcall(FAST,fs->pc = -fs->pc; return ret,t)@ 
+			@:commandcall(FAST,fs->pc = -fs->pc; GDKfree(backup); GDKfree(sbackup);GDKfree(garbage); return ret,t)@ 
 			break;
 		case FACcall: 
-			@:factorycall(FAST,fs->pc = -fs->pc; return ret,t)@ 
+			@:factorycall(FAST,fs->pc = -fs->pc; GDKfree(backup); GDKfree(sbackup);GDKfree(garbage); return ret,t)@ 
 			break;
 		case FCNcall: 
-			@:functioncall(FAST,fs->pc = -fs->pc; return ret,t)@ 
+			@:functioncall(FAST,fs->pc = -fs->pc; GDKfree(backup); GDKfree(sbackup);GDKfree(garbage); return ret,t)@ 
 			break;
 		case NOOPsymbol:
 		case REMsymbol:
@@ -1020,6 +1026,9 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 	@:endProfile(t)@
 	if (ret)
 		fs->pc = -fs->pc;
+	GDKfree(backup);
+	GDKfree(sbackup);
+	GDKfree(garbage);
 	return ret;
 }
 

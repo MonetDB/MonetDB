@@ -18,6 +18,8 @@
  */
 
 #ifndef _MAL_XML_H
+#define _MAL_XML_H
+
 #include "mal.h"
 
 mal_export char *xmlChr(str s);

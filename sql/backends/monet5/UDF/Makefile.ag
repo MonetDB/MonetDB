@@ -33,7 +33,7 @@ INCLUDES = .. \
 lib__udf = {
 	MODULE
 	DIR = libdir/monetdb5
-	SOURCES = udf.c
+	SOURCES = udf.c udf.h
 	LIBS = ../../../../monetdb5/tools/libmonetdb5 \
 		   ../../../../gdk/libbat
 }
@@ -55,5 +55,3 @@ headers_autoload = {
 	DIR = libdir/monetdb5/autoload
 	SOURCES = 80_udf.mal
 }
-
-EXTRA_DIST = udf.h

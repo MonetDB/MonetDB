@@ -28,6 +28,8 @@
  * @+ Implementation
  * The implementation is inspired by the tablet module.
  */
+
+#include "monetdb_config.h"
 #include "dcsocket.h"
 
 str
