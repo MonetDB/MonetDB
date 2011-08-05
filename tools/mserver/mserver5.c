@@ -511,6 +511,7 @@ main(int argc, char **av)
 		/* unlock the vault, first see if we can find the file which
 		 * holds the secret */
 		char secret[1024];
+		char *secretp = secret;
 		FILE* secretf;
 		size_t len;
 		
@@ -540,7 +541,7 @@ main(int argc, char **av)
 			}
 			fclose(secretf);
 		}
-		if ((err = AUTHunlockVault((char **)&secret)) != MAL_SUCCEED)
+		if ((err = AUTHunlockVault(&secretp)) != MAL_SUCCEED)
 			GDKfatal("%s", err);
 	}
 	/* make sure the authorisation BATs are loaded */
