@@ -28,9 +28,14 @@ bl_preversion( int oldversion, int newversion)
 {
 #define CATALOG_FEB2010 50000
 #define CATALOG_OCT2010 51000
+#define CATALOG_APR2011 51100
 
 	(void)newversion;
 	if (oldversion == CATALOG_OCT2010) {
+		catalog_version = oldversion;
+		return 0;
+	}
+	if (oldversion == CATALOG_APR2011) {
 		catalog_version = oldversion;
 		return 0;
 	}
@@ -46,6 +51,14 @@ N( char *buf, char *pre, char *schema, char *post)
 		snprintf(buf, 64, "%s_%s", schema, post);
 	return buf;
 }
+
+static char *
+I( char *buf, char *schema, char *table, char *iname)
+{
+	snprintf(buf, 64, "%s_%s@%s", schema, table, iname);
+	return buf;
+}
+
 
 static void 
 bl_postversion( void *lg) 
@@ -119,6 +132,70 @@ bl_postversion( void *lg)
 			else
 				s = NULL;
 		}
+	}
+	if (catalog_version == CATALOG_APR2011) {
+		char n[64];
+		BAT *b, *b1, *b2, *iname, *tname, *sname;
+		BUN bs;
+		BATiter iiname, itname, isname;
+
+		fprintf(stdout, "# upgrading catalog from Apr2011\n");
+		fflush(stdout);
+
+		/* join 	sys.idxs(table_id, name), 
+		 * 		sys._tables(id,schema_id, name),
+		 * 		sys.schemas(id,name) */
+		iname = temp_descriptor(logger_find_bat(lg, N(n, "sys", "idxs", "name")));
+		bs = BATcount(iname);
+		b = temp_descriptor(logger_find_bat(lg, N(n, "sys", "idxs", "table_id")));
+		b1 = temp_descriptor(logger_find_bat(lg, N(n, "sys", "_tables", "id")));
+		b2 = BATleftjoin( b, BATmirror(b1), bs);
+		bat_destroy(b);
+		bat_destroy(b1); 
+		b = b2;
+
+		b1 = temp_descriptor(logger_find_bat(lg, N(n, "sys", "_tables", "name")));
+		b2 = temp_descriptor(logger_find_bat(lg, N(n, "sys", "_tables", "schema_id")));
+		tname = BATleftjoin( b, b1, bs );
+		bat_destroy(b1); 
+		b1 = BATleftjoin( b, b2, bs );
+		bat_destroy(b2); 
+		bat_destroy(b); 
+
+		b = temp_descriptor(logger_find_bat(lg, N(n, "sys", "schemas", "id")));
+		b2 = BATleftjoin( b1, BATmirror(b), bs);
+		bat_destroy(b1); 
+		bat_destroy(b); 
+		b = temp_descriptor(logger_find_bat(lg, N(n, "sys", "schemas", "name")));
+		sname = BATleftjoin( b2, b, bs);
+		bat_destroy(b2); 
+		bat_destroy(b); 
+
+		iiname = bat_iterator(iname);
+		itname = bat_iterator(tname);
+		isname = bat_iterator(sname);
+		/* rename idx bats */
+		for (bs = 0; bs < BATcount(iname); bs++) {
+			/* schema_name, table_name, index_name */
+			char *i = BUNtail(iiname, bs);
+			char *t = BUNtail(itname, bs);
+			char *s = BUNtail(isname, bs);
+
+			b = temp_descriptor(logger_find_bat(lg, N(n, s, t, i)));
+			if (!b) /* skip idxs without bats */
+				continue;
+			b1 = BATcopy(b, b->htype, b->ttype, 1);
+			if (!b1)
+				return;
+			b1 = BATsetaccess(b1, BAT_READ);
+			logger_del_bat(lg, b->batCacheid);
+			logger_add_bat(lg, b1, I(n, s, t, i));
+			bat_destroy(b);
+			bat_destroy(b1);
+		}
+		bat_destroy(iname);
+		bat_destroy(tname);
+		bat_destroy(sname);
 	}
 }
 
