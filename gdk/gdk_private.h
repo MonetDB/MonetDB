@@ -57,6 +57,7 @@ BUN SORTfndlast(BAT *b, ptr v);
 int GDKmunmap(void *addr, size_t len);
 void *GDKmallocmax(size_t size, size_t *maxsize, int emergency);
 void *GDKreallocmax(void *pold, size_t size, size_t *maxsize, int emergency);
+void *GDKvmalloc(size_t size, size_t * maxsize, int emergency);
 void *GDKvmrealloc(void *pold, size_t oldsize, size_t newsize, size_t oldmax, size_t *maxsize, int emergency);
 void GDKvmfree(void *blk, size_t size, size_t maxsize);
 void GDKaddbuf(const char *msg);
