@@ -473,14 +473,12 @@ OPTvarDependency(MalBlkPtr mb, int pc, int varid)
 
 /* prepare slicing a column  by addition over the target */
 static int
-OPTpreparePartition(MalBlkPtr nmb, InstrPtr p, Slices *slices)
+OPTpreparePartition(MalBlkPtr nmb, InstrPtr p, Slices *slices, int pc)
 {
 	InstrPtr q;
-	int parallel = 0;
+	int i,fnd,parallel = 0;
 
 	if ( slices->slice == 0){
-		if (strcmp(slices->column, getVarConstant(nmb, getArg(p,4)).val.sval) ) 
-			pushInstruction(nmb, p = copyInstruction(slices->target));
 		slices->slice = newTmpVariable(nmb, getVarType(nmb, getArg(slices->target,0)));
 		setVarUDFtype(nmb, slices->slice);
 		setVarUsed(nmb, slices->slice);
@@ -488,6 +486,15 @@ OPTpreparePartition(MalBlkPtr nmb, InstrPtr p, Slices *slices)
 		nmb->stmt[0] = pushArgument(nmb, nmb->stmt[0], slices->hslices);
 		parallel=2;	/* return number of arguments added for later disposal */
 	} 
+	/* check if the partition column instruction is already added */
+	fnd =0;
+	for ( i = pc -1; i-- > 0 && fnd == 0; i--){
+		q= getInstrPtr(nmb,i);
+		fnd = getFunctionId(q) && getModuleId(q) == sqlRef && getFunctionId(q) == bindRef &&
+			  strcmp(slices->column, getVarConstant(nmb, getArg(p,4)).val.sval) == 0;
+	}
+	if ( fnd == 0)
+		insertInstruction(nmb, p = copyInstruction(slices->target),pc);
 	q= newInstruction(nmb,ASSIGNsymbol);
 	/* add the slices->to the call */
 	q= pushArgument(nmb,q, getArg(p,0));
@@ -502,7 +509,7 @@ OPTpreparePartition(MalBlkPtr nmb, InstrPtr p, Slices *slices)
 }
 
 static int 
-OPTsliceColumn(Client cntxt, MalBlkPtr nmb, MalBlkPtr mb, InstrPtr p, Slices *slices)
+OPTsliceColumn(Client cntxt, MalBlkPtr nmb, MalBlkPtr mb, InstrPtr p, Slices *slices, int pc)
 {
 	int k, parallel = 0;
 	InstrPtr q;
@@ -516,7 +523,7 @@ OPTsliceColumn(Client cntxt, MalBlkPtr nmb, MalBlkPtr mb, InstrPtr p, Slices *sl
 		return 0;
 
 	if ( slices->slice == 0)
-		parallel =OPTpreparePartition(nmb, p, slices);
+		parallel =OPTpreparePartition(nmb, p, slices, pc);
 
 	if (strcmp(slices->column, getVarConstant(nmb, getArg(p,4)).val.sval) )   {
 		/* sideways projection the range selection */
@@ -531,12 +538,7 @@ OPTsliceColumn(Client cntxt, MalBlkPtr nmb, MalBlkPtr mb, InstrPtr p, Slices *sl
 		q= pushArgument(nmb,q, k);
 		q= pushArgument(nmb,q, slices->slice);
 		pushInstruction(nmb,q);
-	} else {
-		/* it is the target itself */
-		clrFunction(p);
-		getArg(p,1) = slices->slice;
-		p->argc =2;
-	}
+	} 
 	return parallel;
 } 
 
@@ -580,7 +582,7 @@ OPTgather(Client cntxt, MalBlkPtr mb, int pc, int varid, Slices *slices)
 		pushInstruction(gmb, p);
 		parallel = 0;
 		if (getModuleId(p) == sqlRef && (getFunctionId(p) == bindRef || getFunctionId(p) == bindidxRef))  
-			parallel = OPTsliceColumn(cntxt, gmb, mb, p, &newslices);
+			parallel = OPTsliceColumn(cntxt, gmb, mb, p, &newslices,i);
 	}
 
 	p = newInstruction(NULL,ASSIGNsymbol);
@@ -742,7 +744,7 @@ OPTparallelcode(Client cntxt, MalBlkPtr mb, int pc, Slices slices, int aggrflag)
 			} else  {
 				pushInstruction(nmb,p);
 				if (getModuleId(p) == sqlRef && (getFunctionId(p) == bindRef || getFunctionId(p) == bindidxRef))  
-					parallel += OPTsliceColumn(cntxt, nmb, mb, p, &slices);
+					parallel += OPTsliceColumn(cntxt, nmb, mb, p, &slices,nmb->stop-1);
 			}
 		} else
 		if ( p->token == ENDsymbol) {
@@ -989,7 +991,7 @@ OPTpartitionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				q = OPTparallelcode(cntxt, mb, i, slices, FALSE);
 				if ( q == 0)
 					i += OPTgatherArgs(cntxt,mb,p,i, &slices);
-			} else q = 0; 
+			} else q = 0;
 			if ( q ) {
 				clrFunction(rsset);
 #ifdef DEBUGDETAILS
@@ -1005,9 +1007,9 @@ OPTpartitionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				/* add original arguments to cntrl call */
 				q = getInstrPtr(mb,0);
 				for( j = q->retc; j < q->argc; j++)
-					mb->stmt[i] = pushArgument(mb, mb->stmt[i], getArg(q,j));
+					p = pushArgument(mb, p, getArg(q,j));
 				insertInstruction(mb,p,i+1);
-				remapVariables(mb,rsset,i);
+ 				remapVariables(mb,rsset,i);
 				i++;
 				/* remove dead code asap */
 				msg = OPTdeadcode(cntxt, mb, 0, 0);
