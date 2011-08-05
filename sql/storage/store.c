@@ -33,8 +33,8 @@
 #include <restrict/restrict_table.h>
 #include <restrict/restrict_logger.h>
 
-/* version 05.11.00 of catalog */
-#define CATALOG_VERSION 51100
+/* version 05.11.01 of catalog */
+#define CATALOG_VERSION 51101
 int catalog_version = 0;
 
 static MT_Lock bs_lock;
