@@ -57,7 +57,7 @@ lib__sql = {
 		   ../../../gdk/libbat \
 		   ../../../common/stream/libstream \
 		   $(READLINE_LIBS) $(PTHREAD_LIBS) \
-		   $(raptor_LIBS)
+		   $(raptor_LIBS) $(MATH_LIBS)
 }
 
 
