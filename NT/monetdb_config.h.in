@@ -594,8 +594,6 @@
 
 /* Define to 1 if you have the timezone and daylight variables. */
 #define HAVE_TIMEZONE 1
-#define timezone _timezone
-#define daylight _daylight
 
 /* Define to 1 if you have the `trunc' function. */
 /* #undef HAVE_TRUNC */
