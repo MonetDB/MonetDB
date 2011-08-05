@@ -2362,6 +2362,11 @@ static void
 set_timezone(Mapi mid)
 {
 #ifdef HAVE_TIMEZONE
+#ifdef _MSC_VER
+#define timezone _timezone
+#define daylight _daylight
+#define tzset _tzset
+#endif
 	char buf[128];
 	long tzone;
 	MapiHdl hdl;
