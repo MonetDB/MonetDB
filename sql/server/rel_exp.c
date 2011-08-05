@@ -390,7 +390,7 @@ list *
 exps_subtype( list *l )
 {
 	node *n;
-	list *t = list_create(l->sa);
+	list *t = list_create(l->destroy);
 
 	for (n = l->h; n; n = n->next) {
 		sql_exp *e = n->data;
