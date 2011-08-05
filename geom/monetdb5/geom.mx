@@ -494,6 +494,7 @@ mbrFromString(mbr **w, str *src)
 {
 	int len = 0;
 	char *errbuf;
+	str ex;
 
 	if (mbrFROMSTR(*src, &len, w))
 		return MAL_SUCCEED;
@@ -501,10 +502,16 @@ mbrFromString(mbr **w, str *src)
 	if (errbuf) {
 		if (strncmp(errbuf, "!ERROR: ", 8) == 0)
 			errbuf += 8;
-		errbuf = strcpy(alloca(strlen(errbuf) + 1), errbuf);
-		GDKerrbuf[0] = 0;
+	} else {
+		errbuf = "cannot parse string";
 	}
-	throw(MAL, "mbr.FromString", "%s", errbuf ? errbuf : "cannot parse string");
+	
+	ex = createException(MAL, "mbr.FromString", "%s", errbuf);
+
+	if (GDKerrbuf)
+		GDKerrbuf[0] = '\0';
+
+	return ex;
 }
 
 geom_export str mbrFromMBR(mbr **w, mbr **src);
@@ -634,6 +641,7 @@ wkbFromString(wkb **w, str *wkt)
 {
 	int len = 0;
 	char *errbuf;
+	str ex;
 
 	if (wkbFROMSTR(*wkt, &len, w))
 		return MAL_SUCCEED;
@@ -641,10 +649,16 @@ wkbFromString(wkb **w, str *wkt)
 	if (errbuf) {
 		if (strncmp(errbuf, "!ERROR: ", 8) == 0)
 			errbuf += 8;
-		errbuf = strcpy(alloca(strlen(errbuf) + 1), errbuf);
-		GDKerrbuf[0] = 0;
+	} else {
+		errbuf = "cannot parse string";
 	}
-	throw(MAL, "wkb.FromString", "%s", errbuf ? errbuf : "cannot parse string");
+
+	ex = createException(MAL, "wkb.FromString", "%s", errbuf);
+
+	if (GDKerrbuf)
+		GDKerrbuf[0] = '\0';
+
+	return ex;
 }
 
 geom_export str wkbFromWKB(wkb **w, wkb **src);
@@ -670,6 +684,7 @@ wkbFromText(wkb **w, str *wkt, int *tpe)
 {
 	int len = 0, te = *tpe;
 	char *errbuf;
+	str ex;
 
 	*w = NULL;
 	if (wkbFROMSTR(*wkt, &len, w) &&
@@ -685,10 +700,16 @@ wkbFromText(wkb **w, str *wkt, int *tpe)
 	if (errbuf) {
 		if (strncmp(errbuf, "!ERROR: ", 8) == 0)
 			errbuf += 8;
-		errbuf = strcpy(alloca(strlen(errbuf) + 1), errbuf);
-		GDKerrbuf[0] = 0;
+	} else {
+		errbuf = "cannot parse string";
 	}
-	throw(MAL, "wkb.FromText", "%s", errbuf ? errbuf : "cannot parse string");
+
+	ex = createException(MAL, "wkb.FromText", "%s", errbuf);
+
+	if (GDKerrbuf)
+		GDKerrbuf[0] = '\0';
+
+	return ex;
 }
 
 geom_export BUN wkbHASH(wkb *w);

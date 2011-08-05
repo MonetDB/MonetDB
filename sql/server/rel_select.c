@@ -3306,8 +3306,11 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, char *aggrstr, symbol *sym, int
 	sql_rel *groupby = *rel;
 
 	if (!groupby) {
-		return sql_error(sql, 02, "%s: missing group by",
-				toUpperCopy(alloca(strlen(aggrstr) + 1), aggrstr));
+		char *uaggrstr = malloc(strlen(aggrstr) + 1);
+		e = sql_error(sql, 02, "%s: missing group by",
+				toUpperCopy(uaggrstr, aggrstr));
+		free(uaggrstr);
+		return e;
 	}
 
 	if (f == sql_having && is_select(groupby->op))
@@ -3332,15 +3335,22 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, char *aggrstr, symbol *sym, int
 		return NULL;
 	}
 
-	if (f == sql_where)
-		return sql_error(sql, 02, "%s: not allowed in WHERE clause",
-				toUpperCopy(alloca(strlen(aggrstr) + 1), aggrstr));
+	if (f == sql_where) {
+		char *uaggrstr = malloc(strlen(aggrstr) + 1);
+		e = sql_error(sql, 02, "%s: not allowed in WHERE clause",
+				toUpperCopy(uaggrstr, aggrstr));
+		free(uaggrstr);
+		return e;
+	}
 	
 	if (!sym) {	/* count(*) case */
 
 		if (strcmp(aggrstr, "count") != 0) {
-			return sql_error(sql, 02, "%s: unable to perform '%s(*)'",
-					toUpperCopy(alloca(strlen(aggrstr) + 1), aggrstr), aggrstr);
+			char *uaggrstr = malloc(strlen(aggrstr) + 1);
+			e = sql_error(sql, 02, "%s: unable to perform '%s(*)'",
+					toUpperCopy(uaggrstr, aggrstr), aggrstr);
+			free(uaggrstr);
+			return e;
 		}
 		a = sql_bind_aggr(sql->sa, sql->session->schema, aggrstr, NULL);
 		/* add aggr expression to the groupby, and return a
@@ -3402,10 +3412,16 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, char *aggrstr, symbol *sym, int
 					(t->type->scale == SCALE_FIX));
 	} else {
 		char *type = "unknown";
+		char *uaggrstr = malloc(strlen(aggrstr) + 1);
 
 		if (e) 
 			type = exp_subtype(e)->type->sqlname;
-		return sql_error(sql, 02, "%s: no such operator '%s(%s)'", toUpperCopy(alloca(strlen(aggrstr) + 1), aggrstr), aggrstr, type);
+
+		e = sql_error(sql, 02, "%s: no such operator '%s(%s)'",
+				toUpperCopy(uaggrstr, aggrstr), aggrstr, type);
+
+		free(uaggrstr);
+		return e;
 	}
 }
 
@@ -3891,8 +3907,13 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		aggrstr = window_function->data.lval->h->data.sval;
 	}
 
-	if (f == sql_where)
-		return sql_error(sql, 02, "%s: not allowed in WHERE clause", toUpperCopy(alloca(strlen(aggrstr) + 1), aggrstr));
+	if (f == sql_where) {
+		char *uaggrstr = malloc(strlen(aggrstr) + 1);
+		e = sql_error(sql, 02, "%s: not allowed in WHERE clause",
+				toUpperCopy(uaggrstr, aggrstr));
+		free(uaggrstr);
+		return e;
+	}
 
 	/* window operations are only allowed in the projection */
 	if (r->op != op_project)

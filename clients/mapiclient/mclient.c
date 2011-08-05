@@ -1680,11 +1680,15 @@ showCommands(void)
 		mnstr_printf(toConsole, "?pat    - MAL function help. pat=[modnme[.fcnnme][(][)]] wildcard *\n");
 	mnstr_printf(toConsole, "\\<file  - read input from file\n");
 	mnstr_printf(toConsole, "\\>file  - save response in file, or stdout if no file is given\n");
+#ifdef HAVE_POPEN
 	mnstr_printf(toConsole, "\\|cmd   - pipe result to process, or stop when no command is given\n");
+#endif
 #ifdef HAVE_LIBREADLINE
 	mnstr_printf(toConsole, "\\h      - show the readline history\n");
 #endif
+#if 0
 	mnstr_printf(toConsole, "\\t      - toggle timer\n");
+#endif
 	if (mode == SQL) {
 		mnstr_printf(toConsole, "\\D table- dumps the table, or the complete database if none given.\n");
 		mnstr_printf(toConsole, "\\d[Stvsfn]+ [obj] - list database objects, or describe if obj given\n");
@@ -2354,6 +2358,36 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 	return errseen;
 }
 
+static void
+set_timezone(Mapi mid)
+{
+#ifdef HAVE_TIMEZONE
+	char buf[128];
+	long tzone;
+	MapiHdl hdl;
+
+	/* timezone and daylight are POSIX-defined variables */
+	tzset();
+	tzone = timezone - 3600 * daylight;
+	if (tzone < 0)
+		snprintf(buf, sizeof(buf),
+			 "SET TIME ZONE INTERVAL '+%02ld:%02ld' HOUR TO MINUTE",
+			 -tzone / 3600, (-tzone % 3600) / 60);
+	else
+		snprintf(buf, sizeof(buf),
+			 "SET TIME ZONE INTERVAL '-%02ld:%02ld' HOUR TO MINUTE",
+			 tzone / 3600, (tzone % 3600) / 60);
+	if ((hdl = mapi_query(mid, buf)) == NULL) {
+		mapi_explain(mid, stderr);
+		errseen = 1;
+		return;
+	}
+	mapi_close_handle(hdl);
+#else
+	(void) mid;
+#endif
+}
+
 static void usage(const char *prog, int xit)
 	__attribute__((__noreturn__));
 
@@ -2382,6 +2416,7 @@ usage(const char *prog, int xit)
 	fprintf(stderr, " -L logfile  | --log=logfile      save client/server interaction\n");
 	fprintf(stderr, " -s stmt     | --statement=stmt   run single statement\n");
 	fprintf(stderr, " -X          | --Xdebug           trace mapi network interaction\n");
+	fprintf(stderr, " -z          | --timezone         do not tell server our timezone\n");
 #ifdef HAVE_POPEN
 	fprintf(stderr, " -| cmd      | --pager=cmd        for pagination\n");
 #endif
@@ -2417,6 +2452,7 @@ main(int argc, char **argv)
 	int interactive = 0;
 	int has_fileargs = 0;
 	int option_index = 0;
+	int settz = 1;
 	struct stat statb;
 	stream *config = NULL;
 	char user_set_as_flag = 0;
@@ -2449,6 +2485,7 @@ main(int argc, char **argv)
 		{"version", 0, 0, 'v'},
 		{"width", 1, 0, 'w'},
 		{"Xdebug", 0, 0, 'X'},
+		{"timezone", 0, 0, 'z'},
 		{0, 0, 0, 0}
 	};
 
@@ -2578,7 +2615,7 @@ main(int argc, char **argv)
 #if 0
 				"t"
 #endif
-				"w:r:p:s:Xu:vH?",
+				"w:r:p:s:Xu:vzH?",
 				long_options, &option_index)) != -1) {
 		switch (c) {
 		case 0:
@@ -2684,6 +2721,9 @@ main(int argc, char **argv)
 					"support for command-line editing compiled-in\n");
 #endif
 			return(0);
+		case 'z':
+			settz = 0;
+			break;
 		case '?':
 			/* a bit of a hack: look at the option that the
 			   current `c' is based on and see if we recognize
@@ -2794,6 +2834,9 @@ main(int argc, char **argv)
 		if (mode == SQL)
 			mnstr_printf(toConsole, "auto commit mode: on\n");
 	}
+
+	if (mode == SQL && settz)
+		set_timezone(mid);
 
 	if (command != NULL) {
 #ifdef HAVE_ICONV

@@ -198,10 +198,10 @@ XMLstr2xml(xml *x, str *val)
 		return MAL_SUCCEED;
 	}
 	len = 6 * strlen(t) + 1;
-	buf = alloca(len + 1);
+	buf = GDKmalloc(len + 1);
 	buf[0] = 'C';
 	XMLquotestring(t, buf + 1, len);
-	*x = GDKstrdup(buf);
+	*x = buf;
 	return MAL_SUCCEED;
 }
 
@@ -231,7 +231,7 @@ XMLxmltext(str *s, xml *x)
 		str t = *x + 1;
 		str p;
 
-		p = content = alloca(strlen(*x) + 1);
+		p = content = GDKmalloc(strlen(*x) + 1);
 		while (*t) {
 			if (*t == '"' || *t == '\'') {
 				char q = *t++;
@@ -241,7 +241,6 @@ XMLxmltext(str *s, xml *x)
 			t++;
 		}
 		*p = 0;
-		content = GDKstrdup(content);
 	}
 	if (content == NULL)
 		*s = GDKstrdup("");
@@ -379,14 +378,16 @@ XMLpi(str *ret, str *target, str *value)
 	if (strNil(*value) || **value == 0) {
 		size_t n = 6 * strlen(*value) + 1;
 
-		val = alloca(n);
+		val = GDKmalloc(n);
 		len += XMLquotestring(*value, val, n) + 1;
 	}
 	buf = GDKmalloc(len);
-	if (val == NULL)
+	if (val == NULL) {
 		snprintf(buf, len, "C<?%s?>", *target);
-	else
+	} else {
 		snprintf(buf, len, "C<?%s %s?>", *target, val);
+		GDKfree(val);
+	}
 	*ret = buf;
 	return MAL_SUCCEED;
 }
@@ -449,11 +450,12 @@ XMLattribute(xml *x, str *name, str *val)
 	if (xmlValidateName((xmlChar *) *name, 0) != 0)
 		throw(MAL, "xml.attribute", "invalid attribute name");
 	len = 6 * strlen(t) + 1;
-	buf = alloca(len);
+	buf = GDKmalloc(len);
 	len = XMLquotestring(t, buf, len);
 	len += strlen(*name) + 5;
 	*x = GDKmalloc(len);
 	snprintf(*x, len, "A%s=\"%s\"", *name, buf);
+	GDKfree(buf);
 	return MAL_SUCCEED;
 }
 

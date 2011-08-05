@@ -401,7 +401,7 @@ doChallenge(stream *in, stream *out) {
 	Client cntxt= mal_clients;
 #endif
 	char *buf = (char *) GDKmalloc(BLOCK + 1);
-	char *challenge;
+	char challenge[13];
 	char *algos;
 	stream *fdin = block_stream(in);
 	stream *fdout = block_stream(out);
@@ -424,7 +424,6 @@ doChallenge(stream *in, stream *out) {
 	}
 
 	/* generate the challenge string */
-	challenge = alloca(sizeof(char) * (12 + 1));
 	generateChallenge(challenge, 8, 12);
 	if (AUTHgetHashAlgorithms(&algos) != MAL_SUCCEED) assert(0);
 	/* note that we claim to speak proto 9 here for hashed passwords */
@@ -632,19 +631,17 @@ error:
  */
 static void SERVERannounce(struct in_addr addr, int port, str usockfile) {
 	str buf;
-	str host = NULL;
+	char host[128];
 
 	if (port > 0) {
 		if (addr.s_addr == INADDR_ANY) {
-			host = alloca(sizeof(char) * (90 + 1));
-			gethostname(host, 90);
-			host[90] = '\0';
+			gethostname(host, sizeof(host));
+			host[sizeof(host) - 1] = '\0';
 		} else {
 			/* avoid doing this, it requires some includes that probably
 			 * give trouble on windowz
 			host = inet_ntoa(addr);
 			 */
-			host = alloca(sizeof(char) * ((3 + 1 + 3 + 1 + 3 + 1 + 3) + 1));
 			sprintf(host, "%u.%u.%u.%u",
 					(unsigned) ((ntohl(addr.s_addr) >> 24) & 0xff),
 					(unsigned) ((ntohl(addr.s_addr) >> 16) & 0xff),
@@ -952,37 +949,45 @@ SERVERexit(void){
  * then a starting !. They are all stripped here.
  */
 @= catchErrors
-{int rn = mapi_error(mid);
-	if ( ( rn == -4 && hdl && mapi_result_error(hdl))  || rn){
-		str err,newerr;
+{
+	int rn = mapi_error(mid);
+	if ((rn == -4 && hdl && mapi_result_error(hdl)) || rn) {
+		str err, newerr;
+		str ret;
 		size_t l;
-		char *e,*f;
+		char *e, *f;
 
-		if( hdl && mapi_result_error(hdl))
-			err= mapi_result_error(hdl);
-		else err= mapi_result_error(SERVERsessions[i].hdl);
+		if (hdl && mapi_result_error(hdl))
+			err = mapi_result_error(hdl);
+		else
+			err = mapi_result_error(SERVERsessions[i].hdl);
 
 		if (err == NULL)
 			err = "(no additional error message)";
-		
-		l= 2*strlen(err)+8192;
-		newerr= (str) alloca(l);
-		
-		f= newerr; 
+
+		l = 2 * strlen(err) + 8192;
+		newerr = (str) GDKmalloc(l);
+
+		f = newerr;
 		/* I think this code tries to deal with multiple errors, this
 		 * will fail this way if it does, since no ! is in the error
 		 * string, only newlines to separate them */
-		for( e=err; *e && l>1; e++)
-			if( *e== '!' && *(e-1)=='\n'){
-				snprintf(f,l,"MALException:@1:remote error:");
-				l-= strlen(f);
-				while(*f) f++;
-			} else{
+		for (e = err; *e && l > 1; e++) {
+			if (*e == '!' && *(e - 1) == '\n') {
+				snprintf(f, l, "MALException:@1:remote error:");
+				l -= strlen(f);
+				while (*f)
+					f++;
+			} else {
 				*f++ = *e;
 				l--;
 			}
-		*f=0;
-		throw(MAL, "@1", OPERATION_FAILED ": remote error: %s", newerr);
+		}
+
+		*f = 0;
+		ret = createException(MAL, "@1", OPERATION_FAILED ": remote error: %s", newerr);
+		GDKfree(newerr);
+		return ret;
 	}
 }
 @

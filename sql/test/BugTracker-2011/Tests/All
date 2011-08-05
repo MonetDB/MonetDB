@@ -29,3 +29,5 @@ blob-update-crash.Bug-2832
 select_value_insert_into.Bug-2845
 recursive_case.Bug-2838
 str_cast_exception.Bug-2847
+case-when-alias.Bug-2848
+multicolumn_constraints.Bug-2849

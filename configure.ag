@@ -2587,6 +2587,16 @@ AH_VERBATIM([__attribute__],
 #endif
 ])
 
+AC_MSG_CHECKING([if you have timezone and daylight variables])
+AC_COMPILE_IFELSE(
+	[AC_LANG_PROGRAM(
+		[[#include <time.h>]],
+		[[printf("%ld %d\n", timezone, daylight);]])],
+	AC_MSG_RESULT([yes])
+	AC_DEFINE([HAVE_TIMEZONE], 1,
+		[Define to 1 if you have the timezone and daylight variables.]),
+	AC_MSG_RESULT([no]))
+
 dnl     checks for library functions
 case $host in
 	*-darwin10*)

@@ -653,8 +653,12 @@ supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
 				rdigits = digits2bits(rdigits);
 		}
 	}
-	digits = sql_max(idigits - i->scale, rdigits - r->scale);
-	sql_find_subtype(super, tpe, digits+scale, scale);
+	if (scale == 0 && (idigits == 0 || rdigits == 0)) {
+		sql_find_subtype(super, tpe, 0, 0);
+	} else {
+		digits = sql_max(idigits - i->scale, rdigits - r->scale);
+		sql_find_subtype(super, tpe, digits+scale, scale);
+	}
 	return super;
 }
 
