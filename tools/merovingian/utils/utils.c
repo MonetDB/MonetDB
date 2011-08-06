@@ -328,8 +328,8 @@ generatePassphraseFile(char *path)
 {
 	int fd;
 	FILE *f;
-	unsigned int len = 48;
-	char buf[len];
+	char buf[48];
+	unsigned int len = sizeof(buf);
 
 	/* delete such that we are sure we recreate the file with restricted
 	 * permissions */
