@@ -841,8 +841,8 @@ main(int argc, char *argv[])
 	/* make sure we will be able to write our pid */
 	if ((pidfile = fopen(pidfilename, "w")) == NULL) {
 		Mfprintf(stderr, "unable to open '%s%s%s' for writing: %s\n",
-				pidfilename[0] == '/' ? dbfarm : "",
-				pidfilename[0] == '/' ? "/" : "",
+				pidfilename[0] != '/' ? dbfarm : "",
+				pidfilename[0] != '/' ? "/" : "",
 				pidfilename, strerror(errno));
 		MERO_EXIT(1);
 	}
