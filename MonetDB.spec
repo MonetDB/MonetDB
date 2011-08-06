@@ -432,7 +432,12 @@ use SQL with MonetDB, you will need to install this package.
 %{_bindir}/monetdb
 %{_bindir}/monetdbd
 %dir %attr(775,monetdb,monetdb) %{_localstatedir}/log/monetdb
+%if ! (0%{?fedora} > 14)
 %dir %attr(775,monetdb,monetdb) %{_localstatedir}/run/monetdb
+%exclude %{_sysconfdir}/tmpfiles.d/monetdbd.conf
+%else
+%{_sysconfdir}/tmpfiles.d/monetdbd.conf
+%endif
 %config(noreplace) %{_localstatedir}/monetdb5/dbfarm/.merovingian_properties
 %{_libdir}/monetdb5/autoload/*_sql.mal
 %{_libdir}/monetdb5/lib_sql.so
