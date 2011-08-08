@@ -228,21 +228,23 @@ mnstr_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 void
 mnstr_close(stream *s)
 {
+	if (s) {
 #ifdef STREAM_DEBUG
-	printf("close %s\n", s->name ? s->name : "<unnamed>");
+		printf("close %s\n", s->name ? s->name : "<unnamed>");
 #endif
-	if (s)
 		(*s->close) (s);
+	}
 }
 
 void
 mnstr_destroy(stream *s)
 {
+	if (s) {
 #ifdef STREAM_DEBUG
-	printf("destroy %s\n", s->name ? s->name : "<unnamed>");
+		printf("destroy %s\n", s->name ? s->name : "<unnamed>");
 #endif
-	if (s)
 		(*s->destroy) (s);
+	}
 }
 
 char *
@@ -272,11 +274,11 @@ mnstr_flush(stream *s)
 int
 mnstr_fsync(stream *s)
 {
+	if (!s)
+		return -1;
 #ifdef STREAM_DEBUG
 	printf("fsync %s (%d)\n", s->name ? s->name : "<unnamed>", s->errnr);
 #endif
-	if (!s)
-		return -1;
 	assert(s->access == ST_WRITE);
 	if (s->errnr)
 		return s->errnr;
@@ -288,11 +290,11 @@ mnstr_fsync(stream *s)
 int
 mnstr_fgetpos(stream *s, lng *p)
 {
+	if (!s)
+		return -1;
 #ifdef STREAM_DEBUG
 	printf("fgetpos %s\n", s->name ? s->name : "<unnamed>");
 #endif
-	if (!s)
-		return -1;
 	assert(s->access == ST_WRITE);
 	if (s->errnr)
 		return s->errnr;
@@ -304,11 +306,11 @@ mnstr_fgetpos(stream *s, lng *p)
 int
 mnstr_fsetpos(stream *s, lng p)
 {
+	if (!s)
+		return -1;
 #ifdef STREAM_DEBUG
 	printf("fsetpos %s\n", s->name ? s->name : "<unnamed>");
 #endif
-	if (!s)
-		return -1;
 	if (s->errnr)
 		return s->errnr;
 	if (s->fsetpos)
