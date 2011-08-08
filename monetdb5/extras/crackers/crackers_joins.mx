@@ -121,13 +121,17 @@ crackers_export str CRKsortBandJoin_@1(int *resid, int *bidL, int *bidR, @1 *c1,
 
 			_step = _lcount / (_slices -= SAMPLE_TRESHOLD_LOG);
 			_sample = _slices * SAMPLE_SLICE_SIZE;
-			_cnt = (BUN *) alloca(_slices * sizeof(BUN));
+			_cnt = GDKmalloc(_slices * sizeof(BUN));
+			if (_cnt == NULL)
+				return NULL;
 			for (_lo = 0; _idx < _slices; _lo += _step) {
 				BUN _size = 0, _hi = _lo + SAMPLE_SLICE_SIZE;
 
 				l = BATslice(_tmp1, _lo, _hi);	/* slice keeps all parent properties */
-				if (l == NULL)
+				if (l == NULL) {
+					GDKfree(_cnt);
 					return NULL;
+				}
 				_tmp2 = @2;	/* @2 = e.g. BATXjoin(l,r) */
 				if (_tmp2) {
 					_size = BATcount(_tmp2);
@@ -158,10 +162,13 @@ crackers_export str CRKsortBandJoin_@1(int *resid, int *bidL, int *bidR, @1 *c1,
 						}
 						BBPreclaim(_tmp2);
 					}
-					if (_tmp3 == NULL)
+					if (_tmp3 == NULL) {
+						GDKfree(_cnt);
 						return NULL;
+					}
 				}
 			}
+			GDKfree(_cnt);
 			/* overestimate always by 5% */
 			{
 				double _d = (double) (((lng) _tot) * ((lng) _lcount)) / (0.95 * (double) _sample);
