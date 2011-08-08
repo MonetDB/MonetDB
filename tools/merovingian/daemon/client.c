@@ -54,10 +54,11 @@ static err
 handleClient(int sock, char isusock)
 {
 	stream *fdin, *fout;
-	char *buf = alloca(sizeof(char) * 8096);
+	char buf[8096];
 	char *user = NULL, *algo = NULL, *passwd = NULL, *lang = NULL;
 	char *database = NULL, *s;
-	char *host = NULL;
+	char dbmod[64];
+	char host[128];
 	sabdb *top = NULL;
 	sabdb *stat = NULL;
 	struct sockaddr_in saddr;
@@ -81,28 +82,23 @@ handleClient(int sock, char isusock)
 	fout = block_stream(fout);
 
 	if (isusock) {
-		host = "(local)";
+		snprintf(host, sizeof(host), "(local)");
 	} else if (getpeername(sock, (struct sockaddr *)&saddr, &saddrlen) == -1) {
 		Mfprintf(stderr, "couldn't get peername of client: %s\n",
 				strerror(errno));
-		host = "(unknown)";
+		snprintf(host, sizeof(host), "(unknown)");
 	} else {
-		size_t len;
 		struct hostent *hoste = 
 			gethostbyaddr(&saddr.sin_addr.s_addr, 4, saddr.sin_family);
 		if (hoste == NULL) {
-			len = (3 + 1 + 3 + 1 + 3 + 1 + 3 + 1 + 5) + 1;
-			host = alloca(sizeof(char) * len);
-			snprintf(host, len, "%u.%u.%u.%u:%u",
+			snprintf(host, sizeof(host), "%u.%u.%u.%u:%u",
 					(unsigned) ((ntohl(saddr.sin_addr.s_addr) >> 24) & 0xff),
 					(unsigned) ((ntohl(saddr.sin_addr.s_addr) >> 16) & 0xff),
 					(unsigned) ((ntohl(saddr.sin_addr.s_addr) >> 8) & 0xff),
 					(unsigned) (ntohl(saddr.sin_addr.s_addr) & 0xff),
 					(unsigned) (ntohs(saddr.sin_port)));
 		} else {
-			len = strlen(hoste->h_name) + 1 + 5 + 1;
-			host = alloca(sizeof(char) * len);
-			snprintf(host, len, "%s:%u",
+			snprintf(host, sizeof(host), "%s:%u",
 					hoste->h_name, (unsigned) (ntohs(saddr.sin_port)));
 		}
 	}
@@ -121,7 +117,7 @@ handleClient(int sock, char isusock)
 
 	/* get response */
 	buf[0] = '\0';
-	if (mnstr_read_block(fdin, buf, 8095, 1) < 0) {
+	if (mnstr_read_block(fdin, buf, sizeof(buf) - 1, 1) < 0) {
 		/* we didn't get a terminated block :/ */
 		e = newErr("client %s sent challenge in incomplete block: %s",
 				host, buf);
@@ -132,7 +128,7 @@ handleClient(int sock, char isusock)
 		close_stream(fdin);
 		return(e);
 	}
-	buf[8095] = '\0';
+	buf[sizeof(buf) - 1] = '\0';
 
 	/* decode BIG/LIT:user:{cypher}passwordchal:lang:database: line */
 
@@ -285,9 +281,8 @@ handleClient(int sock, char isusock)
 				database[len - 2] != '/' &&
 				database[len - 1] != '*')
 		{
-			char *n = alloca(sizeof(char) * len + 2 + 1);
-			snprintf(n, len + 2 + 1, "%s/*", database);
-			database = n;
+			snprintf(dbmod, sizeof(dbmod), "%s/*", database);
+			database = dbmod;
 		}
 	}
 
