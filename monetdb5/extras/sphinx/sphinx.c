@@ -74,7 +74,7 @@ sphinx_searchIndexLimit(BAT **ret, /* put pointer to BAT[oid,int] record here. *
 	return MAL_SUCCEED;
 }
 
-static str
+str
 SPHINXsearchIndexLimit(int *ret, str *query, str *index, int *limit)
 {
 	BAT *b = NULL;
