@@ -150,6 +150,7 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 	char *property = NULL;
 	char *value;
 	char buf[512];
+	char vbuf[512];
 	confkeyval *kv;
 
 	if (argc < 2 || argc > 3) {
@@ -171,15 +172,17 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 	if (strcmp(property, "all") == 0) {
 		size_t off = 0;
 		kv = ckv;
-		property = alloca(sizeof(char) * 512);
+		property = vbuf;
 		/* hardwired read-only properties */
-		off += snprintf(property, 512, "hostname,dbfarm,status,mserver");
+		off += snprintf(property, sizeof(vbuf),
+				"hostname,dbfarm,status,mserver");
 		while (kv->key != NULL) {
-			off += snprintf(property + off, 512 - off, ",%s", kv->key);
+			off += snprintf(property + off, sizeof(vbuf) - off,
+					",%s", kv->key);
 			kv++;
 		}
 		/* deduced read-only properties */
-		off += snprintf(property + off, 512 - off,
+		off += snprintf(property + off, sizeof(vbuf) - off,
 				",mapisock,controlsock");
 	}
 
