@@ -1418,7 +1418,6 @@ sql5_export void freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start)
 #include <rel_exp.h>
 #include <rel_dump.h>
 #include <rel_bin.h>
-#include <math.h>
 #include <bbp.h>
 #include <cluster.h>
 #include <opt_dictionary.h>

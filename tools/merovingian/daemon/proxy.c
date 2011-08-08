@@ -116,9 +116,7 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 
 	/* quick 'n' dirty parsing */
 	if (strncmp(url, "mapi:monetdb://", sizeof("mapi:monetdb://") - 1) == 0) {
-		conn = alloca(sizeof(char) * (strlen(url) + 1));
-		memcpy(conn, url, strlen(url) + 1);
-		conn += sizeof("mapi:monetdb://") - 1;
+		conn = strdup(url + sizeof("mapi:monetdb://") - 1);
 		/* drop anything off after the hostname */
 		if ((port = strchr(conn, ':')) != NULL) {
 			*port = '\0';
@@ -128,6 +126,7 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 		} else if (stat(conn, &statbuf) != -1) {
 			ssock = 0;
 		} else {
+			free(conn);
 			return(newErr("can't find a port in redirect, "
 						"or is not a UNIX socket file: %s", url));
 		}
@@ -150,8 +149,10 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 		memset(&server, 0, sizeof(struct sockaddr_un));
 		server.sun_family = AF_UNIX;
 		strncpy(server.sun_path, conn, sizeof(server.sun_path) - 1);
-		if (connect(ssock, (SOCKPTR) &server, sizeof(struct sockaddr_un)))
+		if (connect(ssock, (SOCKPTR) &server, sizeof(struct sockaddr_un))) {
+			free(conn);
 			return(newErr("cannot connect: %s", strerror(errno)));
+		}
 
 		/* send first byte, nothing special to happen */
 		msg.msg_name = NULL;
@@ -189,12 +190,16 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 		close(psock);
 		close_stream(cfdin);
 		close_stream(cfout);
+		free(conn);
 		return(NO_ERR);
 	} else {
 		hp = gethostbyname(conn);
-		if (hp == NULL)
-			return(newErr("cannot get address for hostname '%s': %s",
-						conn, strerror(errno)));
+		if (hp == NULL) {
+			err x = newErr("cannot get address for hostname '%s': %s",
+						conn, strerror(errno));
+			free(conn);
+			return(x);
+		}
 
 		memset(&server, 0, sizeof(server));
 		memcpy(&server.sin_addr, hp->h_addr_list[0], hp->h_length);
@@ -204,12 +209,17 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 		servsize = sizeof(server);
 
 		ssock = socket(serv->sa_family, SOCK_STREAM, IPPROTO_TCP);
-		if (ssock == INVALID_SOCKET)
+		if (ssock == INVALID_SOCKET) {
+			free(conn);
 			return(newErr("cannot open socket: %s", strerror(errno)));
+		}
 
-		if (connect(ssock, serv, servsize) < 0)
+		if (connect(ssock, serv, servsize) < 0) {
+			free(conn);
 			return(newErr("cannot connect: %s", strerror(errno)));
+		}
 	}
+	free(conn);
 
 	sfdin = block_stream(socket_rastream(ssock, "merovingian<-server (proxy read)"));
 	sfout = block_stream(socket_wastream(ssock, "merovingian->server (proxy write)"));
@@ -276,7 +286,7 @@ static err
 handleMySQLClient(int sock)
 {
 	stream *fdin, *fout;
-	str buf = alloca(sizeof(char) * 8096);
+	str buf[8096];
 	str p;
 	int len;
 

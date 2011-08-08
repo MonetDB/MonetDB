@@ -1,6 +1,10 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
+* Sat Aug  6 2011 Fabian Groffen <fabian@cwi.nl>
+- Fix incorrect (misleading) path for pidfile in pidfile error message,
+  bug #2851
+
 * Fri Apr 29 2011 Fabian Groffen <fabian@cwi.nl>
 - added status property to get command
 
