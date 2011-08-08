@@ -266,7 +266,7 @@ printStatus(sabdb *stats, int mode, int twidth)
 		char *state;
 		char uptime[12];
 		char avg[8];
-		char *crash;
+		char crash[20];
 		char *dbname;
 
 		switch (stats->state) {
@@ -288,12 +288,11 @@ printStatus(sabdb *stats, int mode, int twidth)
 			state = "locked ";
 
 		if (uplog.lastcrash == -1) {
-			crash = "-";
+			snprintf(crash, sizeof(crash), "-");
 		} else {
 			struct tm *t;
-			crash = alloca(sizeof(char) * 20);
 			t = localtime(&uplog.lastcrash);
-			strftime(crash, 20, "%Y-%m-%d %H:%M:%S", t);
+			strftime(crash, sizeof(crash), "%Y-%m-%d %H:%M:%S", t);
 		}
 
 		if (stats->state != SABdbRunning) {
@@ -303,12 +302,13 @@ printStatus(sabdb *stats, int mode, int twidth)
 		}
 
 		/* cut too long database names */
-		dbname = alloca(sizeof(char) * (twidth + 1));
+		dbname = malloc(sizeof(char) * (twidth + 1));
 		abbreviateString(dbname, stats->dbname, twidth);
 		/* dbname | state | uptime | health */
 		secondsToString(avg, uplog.avguptime, 1);
-			printf("%-*s  %s %12s", twidth,
-					dbname, state, uptime);
+		printf("%-*s  %s %12s", twidth,
+				dbname, state, uptime);
+		free(dbname);
 		if (uplog.startcntr)
 			printf("  %3d%%, %3s  %s",
 					100 - (uplog.crashcntr * 100 / uplog.startcntr),
@@ -775,7 +775,7 @@ command_discover(int argc, char *argv[])
 	char *buf;
 	char *p, *q;
 	size_t twidth = TERMWIDTH;
-	char location[twidth + 1];
+	char *location;
 	char *match = NULL;
 	size_t numlocs = 50;
 	size_t posloc = 0;
@@ -809,6 +809,7 @@ command_discover(int argc, char *argv[])
 			fprintf(stderr, "%s: %s\n", argv[0], p);
 			exit(1);
 		}
+		location = malloc(twidth + 1);
 		while ((p = strtok(NULL, "\n")) != NULL) {
 			if ((q = strchr(p, '\t')) == NULL) {
 				/* doesn't look correct */
@@ -832,6 +833,7 @@ command_discover(int argc, char *argv[])
 					loclen = strlen(location);
 			}
 		}
+		free(location);
 	}
 
 	free(buf);
@@ -867,6 +869,7 @@ command_startstop(int argc, char *argv[], startstop mode)
 	char *type = NULL;
 	char *action = NULL;
 	char *p;
+	char *nargv[64];
 
 	switch (mode) {
 		case START:
@@ -930,7 +933,7 @@ command_startstop(int argc, char *argv[], startstop mode)
 		orig = stats;
 	}
 
-	argv = alloca(sizeof(char *) * 64);
+	argv = nargv;
 	i = 0;
 	argv[i++] = type;
 
@@ -1107,6 +1110,7 @@ command_get(int argc, char *argv[])
 	char doall = 1;
 	char *p;
 	char *property = NULL;
+	char vbuf[512];
 	char *buf;
 	char *e;
 	int i;
@@ -1153,11 +1157,12 @@ command_get(int argc, char *argv[])
 			argv[i] = NULL;
 			if (strcmp(property, "all") == 0) {
 				size_t off = 0;
-				property = alloca(sizeof(char) * 512);
+				property = vbuf;
 				kv = defprops;
-				off += snprintf(property, 512, "name");
+				off += snprintf(property, sizeof(vbuf), "name");
 				while (kv->key != NULL) {
-					off += snprintf(property + off, 512 - off, ",%s", kv->key);
+					off += snprintf(property + off, sizeof(vbuf) - off,
+							",%s", kv->key);
 					kv++;
 				}
 			}
@@ -1212,7 +1217,7 @@ command_get(int argc, char *argv[])
 	twidth -= 15 + 2 + 8 + 2 + 7 + 2;
 	if (twidth < 6)
 		twidth = 6;
-	value = alloca(sizeof(char) * twidth + 1);
+	value = malloc(sizeof(char) * twidth + 1);
 	printf("     name          prop     source           value\n");
 	while ((p = strtok(property, ",")) != NULL) {
 		property = NULL;
@@ -1259,6 +1264,7 @@ command_get(int argc, char *argv[])
 		}
 	}
 
+	free(value);
 	msab_freeStatus(&orig);
 	free(props);
 }
