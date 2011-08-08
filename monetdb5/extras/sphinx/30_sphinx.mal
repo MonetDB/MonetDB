@@ -15,30 +15,4 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-INCLUDES = ../../mal \
-		   ../../../common/options \
-		   ../../../common/stream \
-		   ../../../gdk \
-		   $(SPHINXCLIENT_CFLAGS)
-
-lib__sphinx = {
-	MODULE
-	DIR = libdir/monetdb5
-	SOURCES = sphinx.c sphinx.h
-
-	LIBS = ../../tools/libmonetdb5 $(SPHINXCLIENT_LIBS)
-}
-
-headers_sphinx_mal = {
-	HEADERS = mal
-	DIR = libdir/monetdb5
-	SOURCES = sphinx.mal
-}
-
-headers_autoload = {
-        HEADERS = mal
-        DIR = libdir/monetdb5/autoload
-        SOURCES = 30_sphinx.mal
-}
-
-EXTRA_DIST = sphinx.mal 30_sphinx.mal
+include sphinx;
