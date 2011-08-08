@@ -567,8 +567,8 @@ yes-*-*)
 		;;
 	esac
 	case "$CC-$gcc_ver" in
-	*clang*-*|*-4.[[3-9]].*|*-[[5-9]].*)
-		dnl this triggers a warning (-> error) with gcc < 4.3
+	*clang*-*|*-[[4-9]].*)
+		dnl gcc < 4 does not know these
 		X_CFLAGS="$X_CFLAGS -fstack-protector-all -Wstack-protector"
 		;;
 	esac
