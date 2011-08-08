@@ -624,7 +624,7 @@ mccBody(Client cntxt, stream *f, MalBlkPtr mb)
 	InstrPtr p;
 	int *catch, ctop = 0, errors = 0;
 
-	catch = (int *) alloca(mb->stop);
+	catch = (int *) GDKmalloc(mb->stop);
 
 	for (i = 1; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
@@ -676,6 +676,7 @@ mccBody(Client cntxt, stream *f, MalBlkPtr mb)
 		}
 		errors += mccInstruction(f, mb, p, i, catch, &ctop);
 	}
+	GDKfree(catch);
 	if (errors)
 		showErrors(cntxt);
 }

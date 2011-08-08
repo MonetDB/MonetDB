@@ -20,10 +20,9 @@ INCLUDES = ../../modules/atoms ../../mal \
 		   ../../../common/stream \
 		   ../../../gdk
 
-
 MTSAFE
 
-LIBS = {
+lib__mal_compiler = {
 	MODULE
 	DIR = libdir/monetdb5
 	SEP = _

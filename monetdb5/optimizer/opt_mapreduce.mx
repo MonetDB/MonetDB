@@ -193,9 +193,9 @@ MRdistributework(
 
 	assert(retc);
 
-	packs = (InstrPtr *)alloca(retc * sizeof(InstrPtr));
-	gets = (int *)alloca(n * retc * sizeof(int));
-	w = (int *)alloca(retc * sizeof(int));
+	packs = (InstrPtr *)GDKmalloc(retc * sizeof(InstrPtr));
+	gets = (int *)GDKmalloc(n * retc * sizeof(int));
+	w = (int *)GDKmalloc(retc * sizeof(int));
 
 	for (lcol = col, j = 0; lcol != NULL; lcol = lcol->next, j++) {
 		/* define and create the container bat for all results from the
@@ -356,6 +356,10 @@ MRdistributework(
 	printFunction(cntxt->fdout, reduce, 0, LIST_MAL_STMT | LIST_MAPI);
 #endif
 
+	GDKfree(packs);
+	GDKfree(gets);
+	GDKfree(w);
+
 	MRcleanCloud();
 }
 
@@ -475,7 +479,7 @@ trackstack_destroy(struct stack *stk)
 						lastcol->reduceid = getArg(oreduce[i], 1);
 						lastcol->type = getArgType(map, p, 1);
 						lastcol->postop = SUM;
-						lastcol = lastcol->next = alloca(sizeof(mapcol));
+						lastcol = lastcol->next = GDKmalloc(sizeof(mapcol));
 						lastcol->mapid = getArg(p, 2);
 						lastcol->reduceid = getArg(oreduce[i], 2);
 						lastcol->type = getArgType(map, p, 2);
@@ -694,7 +698,7 @@ OPTmapreduceImplementation(
 							/* this is a column reference, keep it */
 							MRaddDepInstrs(omap, limit, map, &instrp, p);
 							if (lastcol == NULL) {
-								col = lastcol = alloca(sizeof(mapcol));
+								col = lastcol = GDKmalloc(sizeof(mapcol));
 								/* this is the first one, leave a marker */
 								oreduce[i]->token = REMsymbol;
 								setModuleId(oreduce[i], mapreduceRef);
@@ -702,7 +706,7 @@ OPTmapreduceImplementation(
 								copy = LEAVE;
 							} else {
 								lastcol = lastcol->next =
-									alloca(sizeof(mapcol));
+									GDKmalloc(sizeof(mapcol));
 								/* push manually to get consistent
 								 * comment marking (after kdifference) */
 								pushInstruction(map, p);
@@ -989,6 +993,13 @@ OPTmapreduceImplementation(
 	chkProgram(cntxt->nspace, reduce);
 	printFunction(cntxt->fdout, reduce, 0, LIST_MAL_STMT | LIST_MAPI);
 #endif
+
+	lastcol = col;
+	while (lastcol != NULL) {
+		col = lastcol->next;
+		GDKfree(lastcol);
+		lastcol = col;
+	}
 
 	GDKfree(omap);
 	GDKfree(oreduce);

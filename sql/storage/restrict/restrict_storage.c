@@ -442,7 +442,7 @@ create_idx(sql_trans *tr, sql_idx *ni)
 	if (!bat)
 		ni->data = bat = ZNEW(sql_bat);
 	if (!bat->name) 
-		bat->name = sql_message("%s_%s_%s", ni->t->s->base.name, ni->t->base.name, ni->base.name);
+		bat->name = sql_message("%s_%s@%s", ni->t->s->base.name, ni->t->base.name, ni->base.name);
 
 
 

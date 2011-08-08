@@ -258,20 +258,21 @@ terminateProcess(void *p)
 	confkeyval *kv;
 	/* make local copies since d will disappear when killed */
 	pid_t pid = d->pid;
-	char *dbname = alloca(sizeof(char) * (strlen(d->dbname) + 1));
-	memcpy(dbname, d->dbname, strlen(d->dbname) + 1);
+	char *dbname = strdup(d->dbname);
 
 	er = msab_getStatus(&stats, dbname);
 	if (er != NULL) {
 		Mfprintf(stderr, "cannot terminate process " LLFMT ": %s\n",
 				(long long int)pid, er);
 		free(er);
+		free(dbname);
 		return;
 	}
 
 	if (stats == NULL) {
 		Mfprintf(stderr, "strange, process " LLFMT " serves database '%s' "
 				"which does not exist\n", (long long int)pid, dbname);
+		free(dbname);
 		return;
 	}
 
@@ -284,16 +285,19 @@ terminateProcess(void *p)
 					"(pid " LLFMT ") has crashed\n",
 					dbname, (long long int)pid);
 			msab_freeStatus(&stats);
+			free(dbname);
 			return;
 		case SABdbInactive:
 			Mfprintf(stdout, "database '%s' appears to have shut down already\n",
 					dbname);
 			fflush(stdout);
 			msab_freeStatus(&stats);
+			free(dbname);
 			return;
 		default:
 			Mfprintf(stderr, "unknown state: %d", (int)stats->state);
 			msab_freeStatus(&stats);
+			free(dbname);
 			return;
 	}
 
@@ -309,6 +313,7 @@ terminateProcess(void *p)
 		er = msab_getStatus(&stats, dbname);
 		if (er != NULL) {
 			Mfprintf(stderr, "unexpected problem: %s\n", er);
+			free(dbname);
 			free(er);
 			/* don't die, just continue, so we KILL in the end */
 		} else if (stats == NULL) {
@@ -323,11 +328,13 @@ terminateProcess(void *p)
 					Mfprintf (stderr, "database '%s' crashed after SIGTERM\n",
 							dbname);
 					msab_freeStatus(&stats);
+					free(dbname);
 					return;
 				case SABdbInactive:
 					Mfprintf(stdout, "database '%s' has shut down\n", dbname);
 					fflush(stdout);
 					msab_freeStatus(&stats);
+					free(dbname);
 					return;
 				default:
 					Mfprintf(stderr, "unknown state: %d", (int)stats->state);
@@ -339,6 +346,7 @@ terminateProcess(void *p)
 			" (database '%s') the KILL signal\n",
 			kv->val, (long long int)pid, dbname);
 	kill(pid, SIGKILL);
+	free(dbname);
 	return;
 }
 
@@ -417,13 +425,17 @@ main(int argc, char *argv[])
 {
 	err e;
 	int argp;
-	char *dbfarm = LOCALSTATEDIR "/monetdb5/dbfarm";
+	char dbfarm[1024];
 	char *pidfilename = NULL;
 	char *p;
 	FILE *pidfile = NULL;
 	char control_usock[1024];
 	char mapi_usock[1024];
 	dpair d = NULL;
+	struct _dpair dpcons;
+	struct _dpair dpmero;
+	struct _dpair dpdisc;
+	struct _dpair dpcont;
 	int pfd[2];
 	pthread_t tid = 0;
 	struct sigaction sa;
@@ -584,9 +596,21 @@ main(int argc, char *argv[])
 		} else if (strcmp(argv[1], "set") == 0) {
 			MERO_EXIT_CLEAN(command_set(ckv, argc - 1, &argv[1]));
 		} else if (strcmp(argv[1], "start") == 0) {
+			int len;
 			/* start without argument just means start hardwired dbfarm */
-			if (argc > 2)
-				dbfarm = argv[2];
+			if (argc > 2) {
+				len = snprintf(dbfarm, sizeof(dbfarm), "%s", argv[2]);
+			} else {
+				len = snprintf(dbfarm, sizeof(dbfarm),
+						LOCALSTATEDIR "/monetdb5/dbfarm");
+			}
+			
+			if (len > 0 && (size_t)len >= sizeof(dbfarm)) {
+				Mfprintf(stderr, "fatal: dbfarm exceeds allocated " \
+						"path length, please file a bug at " \
+						"http://bugs.monetdb.org\n");
+				MERO_EXIT_CLEAN(1);
+			}
 		} else if (strcmp(argv[1], "stop") == 0) {
 			MERO_EXIT_CLEAN(command_stop(ckv, argc - 1, &argv[1]));
 		} else {
@@ -610,11 +634,15 @@ main(int argc, char *argv[])
 		MERO_EXIT_CLEAN(1);
 	}
 	/* absolutise dbfarm if it isn't yet (we're in it now) */
-	if (*dbfarm != '/') {
-		dbfarm = alloca(1024);
-		if (getcwd(dbfarm, 1024) == NULL) {
-			Mfprintf(stderr, "could not get dbfarm working directory: %s\n",
-					strerror(errno));
+	if (dbfarm[0] != '/') {
+		if (getcwd(dbfarm, sizeof(dbfarm)) == NULL) {
+			if (errno == ERANGE) {
+				Mfprintf(stderr, "current path exceeds allocated path length" \
+						"please file a bug at http://bugs.monetdb.org\n");
+			} else {
+				Mfprintf(stderr, "could not get dbfarm working directory: %s\n",
+						strerror(errno));
+			}
 			MERO_EXIT(1);
 		}
 	}
@@ -702,7 +730,7 @@ main(int argc, char *argv[])
 		MERO_EXIT_CLEAN(1);
 	}
 
-	_mero_topdp = alloca(sizeof(struct _dpair));
+	_mero_topdp = &dpcons;
 	_mero_topdp->pid = 0;
 	_mero_topdp->dbname = NULL;
 
@@ -720,7 +748,7 @@ main(int argc, char *argv[])
 
 	_mero_logfile = fdopen(_mero_topdp->out, "a");
 
-	d = _mero_topdp->next = alloca(sizeof(struct _dpair));
+	d = _mero_topdp->next = &dpmero;
 
 	/* redirect stdout */
 	if (pipe(pfd) == -1) {
@@ -748,7 +776,7 @@ main(int argc, char *argv[])
 	d->dbname = "merovingian";
 
 	/* separate entry for the neighbour discovery service */
-	d = d->next = alloca(sizeof(struct _dpair));
+	d = d->next = &dpdisc;
 	if (pipe(pfd) == -1) {
 		Mfprintf(stderr, "unable to create pipe: %s\n",
 				strerror(errno));
@@ -768,7 +796,7 @@ main(int argc, char *argv[])
 	d->next = NULL;
 
 	/* separate entry for the control runner */
-	d = d->next = alloca(sizeof(struct _dpair));
+	d = d->next = &dpcont;
 	if (pipe(pfd) == -1) {
 		Mfprintf(stderr, "unable to create pipe: %s\n",
 				strerror(errno));
@@ -841,8 +869,8 @@ main(int argc, char *argv[])
 	/* make sure we will be able to write our pid */
 	if ((pidfile = fopen(pidfilename, "w")) == NULL) {
 		Mfprintf(stderr, "unable to open '%s%s%s' for writing: %s\n",
-				pidfilename[0] == '/' ? dbfarm : "",
-				pidfilename[0] == '/' ? "/" : "",
+				pidfilename[0] != '/' ? dbfarm : "",
+				pidfilename[0] != '/' ? "/" : "",
 				pidfilename, strerror(errno));
 		MERO_EXIT(1);
 	}

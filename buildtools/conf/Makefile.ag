@@ -50,4 +50,11 @@ headers_html = {
 	SOURCES = website.html
 }
 
+headers_systemd = {
+	COND = NOT_WIN32
+	HEADERS = conf
+	DIR = sysconfdir/tmpfiles.d
+	SOURCES = monetdbd.conf
+}
+
 EXTRA_DIST = rules.mk

@@ -195,12 +195,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_225FA2D3C59A41249F1164342918D68A"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_233C1F91A3B646DFA94BA3711DB3F93B"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -424,12 +418,6 @@
         "Entry"
         {
         "MsmKey" = "8:_5BE760C23081452FB5833C1E24D3E562"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_5C3288DC135C4F6AAF8612EF92F9154C"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -1078,12 +1066,6 @@
         "Entry"
         {
         "MsmKey" = "8:_F09DF7AC54A9428E915679DA83DB77E5"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_F7D25049940B46B682803C1B5BCE0BEB"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -1771,26 +1753,6 @@
             {
             "SourcePath" = "8:lib\\monetdb5\\clients.mal"
             "TargetName" = "8:clients.mal"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_225FA2D3C59A41249F1164342918D68A"
-            {
-            "SourcePath" = "8:lib\\monetdb5\\sql_bpm.mal"
-            "TargetName" = "8:sql_bpm.mal"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -2553,26 +2515,6 @@
             "TargetName" = "8:99_system.sql"
             "Tag" = "8:"
             "Folder" = "8:_7F962DDBDF894636B6CAFE6FE4887567"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_5C3288DC135C4F6AAF8612EF92F9154C"
-            {
-            "SourcePath" = "8:lib\\monetdb5\\bpm.mal"
-            "TargetName" = "8:bpm.mal"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -4711,26 +4653,6 @@
             {
             "SourcePath" = "8:lib\\monetdb5\\urlbox.mal"
             "TargetName" = "8:urlbox.mal"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_F7D25049940B46B682803C1B5BCE0BEB"
-            {
-            "SourcePath" = "8:lib\\monetdb5\\opt_partitions.mal"
-            "TargetName" = "8:opt_partitions.mal"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"

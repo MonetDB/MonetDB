@@ -285,7 +285,7 @@ list_keysort(list *l, int *keys, fdup dup)
 	node *n = NULL;
 	int i, j, *pos, cnt = list_length(l);
 
-	pos = (int*)alloca(cnt*sizeof(int));
+	pos = (int*)malloc(cnt*sizeof(int));
 	for (n = l->h, i = 0; n; n = n->next, i++) {
 		pos[i] = i;
 	}
@@ -296,6 +296,7 @@ list_keysort(list *l, int *keys, fdup dup)
 			assert(n);
 		list_append(res, dup?dup(n->data):n->data);
 	}
+	free(pos);
 	return res;
 }
 
@@ -306,8 +307,8 @@ list_sort(list *l, fkeyvalue key, fdup dup)
 	node *n = NULL;
 	int i, j, *keys, *pos, cnt = list_length(l);
 
-	keys = (int*)alloca(cnt*sizeof(int));
-	pos = (int*)alloca(cnt*sizeof(int));
+	keys = (int*)malloc(cnt*sizeof(int));
+	pos = (int*)malloc(cnt*sizeof(int));
 	for (n = l->h, i = 0; n; n = n->next, i++) {
 		keys[i] = key(n->data);
 		pos[i] = i;
@@ -319,6 +320,8 @@ list_sort(list *l, fkeyvalue key, fdup dup)
 			assert(n);
 		list_append(res, dup?dup(n->data):n->data);
 	}
+	free(keys);
+	free(pos);
 	return res;
 }
 

@@ -1032,9 +1032,9 @@ BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( buf == NULL)
 		throw(MAL, "xml.forest", MAL_MALLOC_FAIL);
 	
-	bi = alloca(sizeof(BATiter) * pci->argc);
-	p = alloca(sizeof(BUN) * pci->argc);
-	q = alloca(sizeof(BUN) * pci->argc);
+	bi = GDKmalloc(sizeof(BATiter) * pci->argc);
+	p = GDKmalloc(sizeof(BUN) * pci->argc);
+	q = GDKmalloc(sizeof(BUN) * pci->argc);
 
 	/* collect the admin for the xml elements */
 	for (i = pci->retc; i < pci->argc; i++) {
@@ -1048,6 +1048,9 @@ BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (i--; i >= pci->retc; i--)
 			if (bi[i].b)
 				BBPunfix(bi[i].b->batCacheid);
+		GDKfree(bi);
+		GDKfree(p);
+		GDKfree(q);
 		throw(MAL, "xml.forest", INTERNAL_BAT_ACCESS);
 	}
 
@@ -1101,14 +1104,20 @@ BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	GDKfree(buf);
 	finalizeResult(ret, bn, bi[pci->retc].b);
+	GDKfree(bi);
+	GDKfree(p);
+	GDKfree(q);
 	return MAL_SUCCEED;
-  bunins_failed:
+bunins_failed:
 	for (i = pci->retc; i < pci->argc; i++)
 		if (bi[i].b)
 			BBPreleaseref(bi[i].b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	if ( buf != NULL )
 		GDKfree(buf);
+	GDKfree(bi);
+	GDKfree(p);
+	GDKfree(q);
 	throw(MAL, "xml.forest", "%s", err);
 }
 

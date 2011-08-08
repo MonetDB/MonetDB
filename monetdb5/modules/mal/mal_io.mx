@@ -343,17 +343,30 @@ IOprompt_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 @= sprintf
 	if (width > adds) {
-		adds = width+10;
-		add = (str) alloca((int)adds);
+		str newadd;
+		newadd = GDKrealloc(add, width + 10);
+		if (newadd != NULL) {
+			adds = width + 10;
+			add = newadd;
+		}
 	}
-	n = snprintf( add, adds, meta, @1 );
+	n = snprintf(add, adds, meta, @1);
 	while (n < 0 || (size_t) n >= adds) {
-		if (n >= 0)	/* glibc 2.1 */
-			adds = n+1; /* precisely what is needed */
-		else		/* glibc 2.0 */
-			adds *= 2; /* twice the old size */
-		add = (str) alloca ((int)adds);
-		n = snprintf( add, adds, meta, @1 );
+		size_t newadds;
+		str newadd;
+
+		if (n >= 0)     /* glibc 2.1 */
+			newadds = n + 1;   /* precisely what is needed */
+		else            /* glibc 2.0 */
+			newadds = n * 2;     /* twice the old size */
+
+		newadd = GDKrealloc(add, newadds);
+		if (newadd == NULL)
+			break;
+
+		adds = newadds;
+		add = newadd;
+		n = snprintf(add, adds, meta, @1);
 	}
 @
 @c
@@ -362,7 +375,7 @@ static char format_error[80] = OPERATION_FAILED " Error in format before param %
 static char type_error[80] = OPERATION_FAILED " Illegal type in param %d.\n";
 
 #define return_error(x)\
-	GDKfree(buf); throw(MAL,"io.printf", x,argc);
+	GDKfree(buf); GDKfree(add); throw(MAL,"io.printf", x,argc);
 
 static char niltext[4] = "nil";
 
@@ -374,7 +387,7 @@ IOprintf_(str *res, str format, ...)
 
 	int prec = 0, dotseen = 0, escaped = 0, type, size, argc = 1;
 	size_t adds = 100, width = 0;
-	char addbuf[100], *add = addbuf, *dst, *buf, *cur, *paramseen = NULL;
+	char *add, *dst, *buf, *cur, *paramseen = NULL;
 	char *p;
 
 	if (format == NULL) {
@@ -387,6 +400,12 @@ IOprintf_(str *res, str format, ...)
 	if ( buf == NULL)
 		throw(MAL,"io.printf",MAL_MALLOC_FAIL);
 	*res = NULL;
+
+	add = GDKmalloc(adds);
+	if (add == NULL) {
+		GDKfree(buf);
+		throw(MAL,"io.printf",MAL_MALLOC_FAIL);
+	}
 
 	va_start(ap,format);
 	for (cur = format; *cur; cur++) {
@@ -581,6 +600,7 @@ IOprintf_(str *res, str format, ...)
 	@:writemem(1)@
 	*dst = 0;
 	*res = buf;
+	GDKfree(add);
 	return MAL_SUCCEED;
 }
 

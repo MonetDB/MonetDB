@@ -1,0 +1,66 @@
+stdout of test 'case-when-alias.Bug-2848` in directory 'test/BugTracker-2011` itself:
+
+
+# 15:35:59 >  
+# 15:35:59 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/ufs/sjoerd/Monet-candidate/var/MonetDB" --set mapi_open=true --set mapi_port=31386 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_test_BugTracker-2011" --set mal_listing=0 ; echo ; echo Over..
+# 15:35:59 >  
+
+# MonetDB 5 server v11.5.0
+# This is an unreleased version
+# Serving database 'mTests_test_BugTracker-2011', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://ottar.ins.cwi.nl:31386/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+
+Over..
+
+# 15:35:59 >  
+# 15:35:59 >  mclient -lsql -ftest -i -e --host=ottar --port=31386 
+# 15:35:59 >  
+
+#start transaction;
+#create table table2848 (id char(1));
+#insert into table2848 values ('a');
+[ 1	]
+#insert into table2848 values ('b');
+[ 1	]
+#insert into table2848 values ('c');
+[ 1	]
+#SELECT CASE WHEN id = 'a' THEN 'x' ELSE 'y' END AS id FROM table2848;
+% sys. # table_name
+% id # name
+% char # type
+% 1 # length
+[ "x"	]
+[ "y"	]
+[ "y"	]
+#select * from ( SELECT CASE WHEN id = 'a' THEN 'x' ELSE 'y' END AS othercolnamealias FROM table2848) as req;
+% sys.req # table_name
+% othercolnamealias # name
+% char # type
+% 1 # length
+[ "x"	]
+[ "y"	]
+[ "y"	]
+#select * from ( SELECT CASE WHEN id = 'a' THEN 'x' ELSE 'y' END AS id FROM table2848) as req;
+% sys.req # table_name
+% id # name
+% char # type
+% 1 # length
+[ "x"	]
+[ "y"	]
+[ "y"	]
+#rollback;
+
+# 15:35:59 >  
+# 15:35:59 >  Done.
+# 15:35:59 >  
+

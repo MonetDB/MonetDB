@@ -661,8 +661,8 @@ order_join_expressions(sql_allocator *sa, list *dje, list *rels)
 	node *n = NULL;
 	int i, j, *keys, *pos, cnt = list_length(dje);
 
-	keys = (int*)alloca(cnt*sizeof(int));
-	pos = (int*)alloca(cnt*sizeof(int));
+	keys = (int*)malloc(cnt*sizeof(int));
+	pos = (int*)malloc(cnt*sizeof(int));
 	for (n = dje->h, i = 0; n; n = n->next, i++) {
 		sql_exp *e = n->data;
 
@@ -687,6 +687,8 @@ order_join_expressions(sql_allocator *sa, list *dje, list *rels)
 			;
 		list_append(res, n->data);
 	}
+	free(keys);
+	free(pos);
 	return res;
 }
 
@@ -1951,10 +1953,8 @@ exps_cse( sql_allocator *sa, list *oexps, list *l, list *r )
 	}
 	r = nexps;
 
-	lu = alloca(list_length(l));
-	ru = alloca(list_length(r));
-	memset(lu, 0, list_length(l));
-	memset(ru, 0, list_length(r));
+	lu = calloc(list_length(l), sizeof(char));
+	ru = calloc(list_length(r), sizeof(char));
 	for (n = l->h, lc = 0; n; n = n->next, lc++) {
 		sql_exp *le = n->data;
 
@@ -1991,6 +1991,8 @@ exps_cse( sql_allocator *sa, list *oexps, list *l, list *r )
 		append(oexps, exp_or(sa, list_dup(l, (fdup)NULL), 
 				     list_dup(r, (fdup)NULL)));
 	}
+	free(lu);
+	free(ru);
 	return res;
 }
 
@@ -3100,13 +3102,14 @@ rel_groupby_order(int *changes, mvc *sql, sql_rel *rel)
 	(void)*changes;
 	if (is_groupby(rel->op) && list_length(gbe) > 1 && list_length(gbe)<9) {
 		node *n;
-		int i, *scores = alloca(sizeof(int) * list_length(gbe));
+		int i, *scores = calloc(list_length(gbe), sizeof(int));
 
-		memset(scores, 0, sizeof(int)*list_length(gbe));
 		for (i = 0, n = gbe->h; n; i++, n = n->next) {
 			scores[i] = score_gbe(sql, rel, n->data);
 		}
 		rel->r = list_keysort(gbe, scores, (fdup)NULL);
+
+		free(scores);
 	}
 	return rel;
 }
@@ -3126,15 +3129,15 @@ rel_reduce_groupby_exps(int *changes, mvc *sql, sql_rel *rel)
 	(void)sql;
 	if (is_groupby(rel->op) && list_length(gbe) > 1) {
 		node *n, *m;
-		signed char *scores = alloca(list_length(gbe));
+		signed char *scores = malloc(list_length(gbe));
 		int k, j, i;
 		sql_column *c;
 		sql_table **tbls;
 		sql_rel **bts, *bt = NULL;
 
 		gbe = rel->r;
-		tbls = (sql_table**)alloca(sizeof(sql_table*)*list_length(gbe));
-		bts = (sql_rel**)alloca(sizeof(sql_rel*)*list_length(gbe));
+		tbls = (sql_table**)malloc(sizeof(sql_table*)*list_length(gbe));
+		bts = (sql_rel**)malloc(sizeof(sql_rel*)*list_length(gbe));
 		for (k = 0, i = 0, n = gbe->h; n; n = n->next, k++) {
 			sql_exp *e = n->data;
 
@@ -3228,11 +3231,17 @@ rel_reduce_groupby_exps(int *changes, mvc *sql, sql_rel *rel)
 					rel->exps = lpje;
 					/* only one reduction at a time */
 					*changes = 1;
+					free(bts);
+					free(tbls);
+					free(scores);
 					return rel;
 				} 
 				gbe = rel->r;
 			}
 		}
+		free(bts);
+		free(tbls);
+		free(scores);
 	}
 	return rel;
 }
@@ -3557,7 +3566,7 @@ exps_mark_used(sql_rel *rel, sql_rel *subrel)
 	if (rel->exps) {
 		node *n;
 		int len = list_length(rel->exps), i;
-		sql_exp **exps = (sql_exp**)alloca(sizeof(sql_exp*) * len);
+		sql_exp **exps = (sql_exp**)malloc(sizeof(sql_exp*) * len);
 
 		for (n=rel->exps->h, i = 0; n; n = n->next, i++) 
 			exps[i] = n->data;
@@ -3571,6 +3580,7 @@ exps_mark_used(sql_rel *rel, sql_rel *subrel)
 				nr += exp_mark_used(subrel, e);
 			}
 		}
+		free(exps);
 	}
 	/* for count/rank we need atleast one column */
 	if (!nr && (is_project(subrel->op) || is_base(subrel->op)) && subrel->exps->h) {

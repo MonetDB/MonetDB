@@ -33,6 +33,7 @@ typedef struct _multiplex_database {
 	char *user;
 	char *pass;
 	char *database;
+	MapiHdl hdl;
 } multiplex_database;
 
 typedef struct _multiplex_client {

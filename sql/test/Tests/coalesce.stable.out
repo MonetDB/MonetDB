@@ -70,7 +70,7 @@ Over..
 % . # table_name
 % isnull_single_value # name
 % char # type
-% 1 # length
+% 0 # length
 [ "x"	]
 % sys.coalescetest,	sys.coalescetest,	sys.coalescetest # table_name
 % id,	name,	age  # name

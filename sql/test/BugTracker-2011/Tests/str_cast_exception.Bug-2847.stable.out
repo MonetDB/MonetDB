@@ -40,9 +40,9 @@ Over..
 #INSERT INTO "testschema"."test" VALUES ('OUTPUT','greet_person','3');
 [ 1	]
 #SELECT "output_min_time_value_1" FROM "testschema"."test" WHERE "type" = 'OUTPUT' AND "output" = 'greet_person' ;
-% . # table_name
+% testschema.test # table_name
 % output_min_time_value_1 # name
-% tinyint # type
+% bigint # type
 % 1 # length
 [ 3	]
 #ROLLBACK;

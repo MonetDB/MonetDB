@@ -47,6 +47,7 @@ openConnectionTCP(int *ret, unsigned short port, FILE *log)
 	int i = 0;
 	struct hostent *hoste;
 	char *host;
+	char hostip[24];
 #ifdef CONTROL_BINDADDR
 	char bindaddr[512];   /* eligable for configuration */
 #endif
@@ -82,12 +83,12 @@ openConnectionTCP(int *ret, unsigned short port, FILE *log)
 				strerror(errno)));
 	hoste = gethostbyaddr(&server.sin_addr.s_addr, 4, server.sin_family);
 	if (hoste == NULL) {
-		host = alloca(sizeof(char) * ((3 + 1 + 3 + 1 + 3 + 1 + 3) + 1));
-		sprintf(host, "%u.%u.%u.%u",
+		snprintf(hostip, sizeof(hostip), "%u.%u.%u.%u",
 				(unsigned) ((ntohl(server.sin_addr.s_addr) >> 24) & 0xff),
 				(unsigned) ((ntohl(server.sin_addr.s_addr) >> 16) & 0xff),
 				(unsigned) ((ntohl(server.sin_addr.s_addr) >> 8) & 0xff),
 				(unsigned) (ntohl(server.sin_addr.s_addr) & 0xff));
+		host = hostip;
 	} else {
 		host = hoste->h_name;
 	}
