@@ -55,7 +55,7 @@ forkMserver(char *database, sabdb** stats, int force)
 	int pfdo[2];
 	int pfde[2];
 	dpair dp;
-	char *vaultkey = NULL;
+	char vaultkey[512];
 	struct stat statbuf;
 	char upmin[8];
 	char upavg[8];
@@ -141,8 +141,7 @@ forkMserver(char *database, sabdb** stats, int force)
 
 	/* check if the vaultkey is there, otherwise abort early (value
 	 * lateron reused when server is started) */
-	vaultkey = alloca(sizeof(char) * 512);
-	snprintf(vaultkey, 511, "%s/.vaultkey", (*stats)->path);
+	snprintf(vaultkey, sizeof(vaultkey), "%s/.vaultkey", (*stats)->path);
 	if (stat(vaultkey, &statbuf) == -1) {
 		msab_freeStatus(stats);
 		return(newErr("cannot start database '%s': no .vaultkey found "
@@ -166,16 +165,16 @@ forkMserver(char *database, sabdb** stats, int force)
 	pid = fork();
 	if (pid == 0) {
 		char *sabdbfarm;
-		char *dbfarm = alloca(sizeof(char) * 1024);
-		char *dbname = alloca(sizeof(char) * 512);
-		char *port = alloca(sizeof(char) * 24);
-		char *muri = alloca(sizeof(char) * 512); /* possibly undersized */
-		char *usock = alloca(sizeof(char) * 512);
+		char dbfarm[1024];
+		char dbname[512];
+		char port[24];
+		char muri[512]; /* possibly undersized */
+		char usock[512];
 		char mydoproxy;
-		char *nthreads = NULL;
-		char *master = NULL;
-		char *slave = NULL;
-		char *pipeline = NULL;
+		char nthreads[24];
+		char master[512]; /* possibly undersized */
+		char slave[512]; /* possibly undersized */
+		char pipeline[512];
 		char *readonly = NULL;
 		char *argv[28];	/* for the exec arguments */
 		confkeyval *ckv, *kv;
@@ -193,32 +192,34 @@ forkMserver(char *database, sabdb** stats, int force)
 		if (kv->val == NULL)
 			kv = findConfKey(_mero_db_props, "nthreads");
 		if (kv->val != NULL) {
-			nthreads = alloca(sizeof(char) * 24);
-			snprintf(nthreads, 24, "gdk_nr_threads=%s", kv->val);
+			snprintf(nthreads, sizeof(nthreads), "gdk_nr_threads=%s", kv->val);
+		} else {
+			nthreads[0] = '\0';
 		}
 
 		kv = findConfKey(ckv, "optpipe");
 		if (kv->val == NULL)
 			kv = findConfKey(_mero_db_props, "optpipe");
 		if (kv->val != NULL) {
-			pipeline = alloca(sizeof(char) * 512);
-			snprintf(pipeline, 512, "sql_optimizer=%s", kv->val);
+			snprintf(pipeline, sizeof(pipeline), "sql_optimizer=%s", kv->val);
+		} else {
+			pipeline[0] = '\0';
 		}
 
 		kv = findConfKey(ckv, "master");
 		/* can't have master configured by default */
 		if (kv->val != NULL && strcmp(kv->val, "no") != 0) {
-			size_t len = 24 + strlen(kv->val);
-			master = alloca(sizeof(char) * len);
-			snprintf(master, len, "replication_master=%s", kv->val);
+			snprintf(master, sizeof(master), "replication_master=%s", kv->val);
+		} else {
+			master[0] = '\0';
 		}
 
 		kv = findConfKey(ckv, "slave");
 		/* can't have slave configured by default */
 		if (kv->val != NULL) {
-			size_t len = 24 + strlen(kv->val);
-			slave = alloca(sizeof(char) * len);
-			snprintf(slave, len, "replication_slave=%s", kv->val);
+			snprintf(slave, sizeof(slave), "replication_slave=%s", kv->val);
+		} else {
+			slave[0] = '\0';
 		}
 
 		kv = findConfKey(ckv, "readonly");
@@ -241,10 +242,14 @@ forkMserver(char *database, sabdb** stats, int force)
 		mport = (unsigned int)getConfNum(_mero_props, "port");
 
 		/* ok, now exec that mserver we want */
-		snprintf(dbfarm, 1024, "gdk_dbfarm=%s", sabdbfarm);
-		snprintf(dbname, 512, "--dbname=%s", database);
-		snprintf(vaultkey, 512, "monet_vault_key=%s/.vaultkey", (*stats)->path);
-		snprintf(muri, 512, "merovingian_uri=mapi:monetdb://%s:%u/%s",
+		snprintf(dbfarm, sizeof(dbfarm),
+				"gdk_dbfarm=%s", sabdbfarm);
+		snprintf(dbname, sizeof(dbname),
+				"--dbname=%s", database);
+		snprintf(vaultkey, sizeof(vaultkey),
+				"monet_vault_key=%s/.vaultkey", (*stats)->path);
+		snprintf(muri, sizeof(muri),
+				"merovingian_uri=mapi:monetdb://%s:%u/%s",
 				_mero_hostname, mport, database);
 		argv[c++] = _mero_mserver;
 		argv[c++] = "--set"; argv[c++] = dbfarm;
@@ -257,14 +262,14 @@ forkMserver(char *database, sabdb** stats, int force)
 			 * internally.  Before we hit our head, check if we can
 			 * actually use a UNIX socket (due to pathlength) */
 			if (strlen((*stats)->path) + 11 < sizeof(s.sun_path)) {
-				snprintf(port, 24, "mapi_port=0");
-				snprintf(usock, 512, "mapi_usock=%s/.mapi.sock",
+				snprintf(port, sizeof(port), "mapi_port=0");
+				snprintf(usock, sizeof(usock), "mapi_usock=%s/.mapi.sock",
 						(*stats)->path);
 			} else {
 				argv[c++] = "--set"; argv[c++] = "mapi_autosense=true";
 				/* for logic here, see comment below */
-				snprintf(port, 24, "mapi_port=%u", mport + 1);
-				snprintf(usock, 512, "mapi_usock=");
+				snprintf(port, sizeof(port), "mapi_port=%u", mport + 1);
+				snprintf(usock, sizeof(usock), "mapi_usock=");
 			}
 		} else {
 			argv[c++] = "--set"; argv[c++] = "mapi_open=true";
@@ -273,22 +278,22 @@ forkMserver(char *database, sabdb** stats, int force)
 			 * but on another interface, (INADDR_ANY ... sigh) causing
 			 * endless redirects since 0.0.0.0 is not a valid address to
 			 * connect to, and hence the hostname is advertised instead */
-			snprintf(port, 24, "mapi_port=%u", mport + 1);
-			snprintf(usock, 512, "mapi_usock=");
+			snprintf(port, sizeof(port), "mapi_port=%u", mport + 1);
+			snprintf(usock, sizeof(usock), "mapi_usock=");
 		}
 		argv[c++] = "--set"; argv[c++] = port;
 		argv[c++] = "--set"; argv[c++] = usock;
 		argv[c++] = "--set"; argv[c++] = vaultkey;
-		if (nthreads != NULL) {
+		if (nthreads[0] != '\0') {
 			argv[c++] = "--set"; argv[c++] = nthreads;
 		}
-		if (pipeline != NULL) {
+		if (pipeline[0] != '\0') {
 			argv[c++] = "--set"; argv[c++] = pipeline;
 		}
-		if (master != NULL) {
+		if (master[0] != '\0') {
 			argv[c++] = "--set"; argv[c++] = master;
 		}
-		if (slave != NULL) {
+		if (slave[0] != '\0') {
 			argv[c++] = "--set"; argv[c++] = slave;
 		}
 		if (readonly != NULL) {
