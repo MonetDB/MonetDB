@@ -568,7 +568,7 @@ yes-*-*)
 	esac
 	case "$CC-$gcc_ver" in
 	*clang*-*|*-[[4-9]].*)
-		dnl gcc < 4 does not know these
+		dnl gcc < 4 does not know these (unless 3.3+ propolice patches are in)
 		X_CFLAGS="$X_CFLAGS -fstack-protector-all -Wstack-protector"
 		;;
 	esac
