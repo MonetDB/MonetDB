@@ -36,7 +36,7 @@
  * TODO: implement this function and corresponding behavior in
  * SQLPrepare() and SQLExecute().
  *
- * Author: Martin van Dinther
+ * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 Aug 2002
  *
  **********************************************************************/

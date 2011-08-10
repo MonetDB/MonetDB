@@ -34,7 +34,7 @@
  * Note: catalogs are not supported, we ignore any value set for
  * szCatalogName.
  *
- * Author: Martin van Dinther
+ * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 aug 2002
  *
  **********************************************************************/

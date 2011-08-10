@@ -34,7 +34,7 @@
  * Note: this function is not implemented (it only sets an error),
  * because MonetDB SQL frontend does not support stored procedures.
  *
- * Author: Martin van Dinther
+ * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 aug 2002
  *
  **********************************************************************/

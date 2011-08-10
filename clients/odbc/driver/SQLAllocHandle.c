@@ -36,7 +36,7 @@
  * Those functions are simply mapped to this function.
  * All checks and allocation is done in this function.
  *
- * Author: Martin van Dinther
+ * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 Aug 2002
  *
  **********************************************************************/

@@ -31,7 +31,7 @@
  * SQLGetInfo()
  * CLI Compliance: ISO 92
  *
- * Author: Martin van Dinther
+ * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 Aug 2002
  *
  **********************************************************************/

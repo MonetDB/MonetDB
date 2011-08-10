@@ -32,7 +32,7 @@
  * CLI Compliance: deprecated in ODCB 2.0 (replaced by SQLBindParameter())
  * Provided here for old (pre ODBC 3.0) applications and driver managers.
  *
- * Author: Martin van Dinther
+ * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 aug 2002
  *
  ********************************************************************/

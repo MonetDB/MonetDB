@@ -34,7 +34,7 @@
  * Note: commit or rollback all open connections on a given environment
  * handle is currently NOT supported, see TODO below.
  *
- * Author: Martin van Dinther
+ * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 aug 2002
  *
  **********************************************************************/

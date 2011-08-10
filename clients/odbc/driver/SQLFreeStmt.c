@@ -34,7 +34,7 @@
  * Note: the option SQL_DROP is deprecated in ODBC 3.0 and replaced by
  * SQLFreeHandle(). It is provided here for old (pre ODBC 3.0) applications.
  *
- * Author: Martin van Dinther
+ * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 Aug 2002
  *
  **********************************************************************/
