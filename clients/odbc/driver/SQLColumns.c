@@ -88,14 +88,14 @@ static const char *columntypes[NCOLUMNS] = {
 
 static SQLRETURN
 SQLColumns_(ODBCStmt *stmt,
-	    SQLCHAR *szCatalogName,
-	    SQLSMALLINT nCatalogNameLength,
-	    SQLCHAR *szSchemaName,
-	    SQLSMALLINT nSchemaNameLength,
-	    SQLCHAR *szTableName,
-	    SQLSMALLINT nTableNameLength,
-	    SQLCHAR *szColumnName,
-	    SQLSMALLINT nColumnNameLength)
+	    SQLCHAR *CatalogName,
+	    SQLSMALLINT NameLength1,
+	    SQLCHAR *SchemaName,
+	    SQLSMALLINT NameLength2,
+	    SQLCHAR *TableName,
+	    SQLSMALLINT NameLength3,
+	    SQLCHAR *ColumnName,
+	    SQLSMALLINT NameLength4)
 {
 	RETCODE rc;
 
@@ -103,21 +103,25 @@ SQLColumns_(ODBCStmt *stmt,
 	char *query = NULL;
 	char *query_end = NULL;
 
-	fixODBCstring(szCatalogName, nCatalogNameLength, SQLSMALLINT, addStmtError, stmt, return SQL_ERROR);
-	fixODBCstring(szSchemaName, nSchemaNameLength, SQLSMALLINT, addStmtError, stmt, return SQL_ERROR);
-	fixODBCstring(szTableName, nTableNameLength, SQLSMALLINT, addStmtError, stmt, return SQL_ERROR);
-	fixODBCstring(szColumnName, nColumnNameLength, SQLSMALLINT, addStmtError, stmt, return SQL_ERROR);
+	fixODBCstring(CatalogName, NameLength1, SQLSMALLINT,
+		      addStmtError, stmt, return SQL_ERROR);
+	fixODBCstring(SchemaName, NameLength2, SQLSMALLINT,
+		      addStmtError, stmt, return SQL_ERROR);
+	fixODBCstring(TableName, NameLength3, SQLSMALLINT,
+		      addStmtError, stmt, return SQL_ERROR);
+	fixODBCstring(ColumnName, NameLength4, SQLSMALLINT,
+		      addStmtError, stmt, return SQL_ERROR);
 
 #ifdef ODBCDEBUG
 	ODBCLOG(" \"%.*s\" \"%.*s\" \"%.*s\" \"%.*s\"\n",
-		(int) nCatalogNameLength, (char *) szCatalogName,
-		(int) nSchemaNameLength, (char *) szSchemaName,
-		(int) nTableNameLength, (char *) szTableName,
-		(int) nColumnNameLength, (char *) szColumnName);
+		(int) NameLength1, (char *) CatalogName,
+		(int) NameLength2, (char *) SchemaName,
+		(int) NameLength3, (char *) TableName,
+		(int) NameLength4, (char *) ColumnName);
 #endif
 
 	/* construct the query now */
-	query = (char *) malloc(1200 + nSchemaNameLength + nTableNameLength + nColumnNameLength);
+	query = (char *) malloc(1200 + NameLength2 + NameLength3 + NameLength4);
 	assert(query);
 	query_end = query;
 
@@ -176,30 +180,36 @@ SQLColumns_(ODBCStmt *stmt,
 	   variable selection condition dynamically */
 
 	/* Construct the selection condition query part */
-	if (nSchemaNameLength > 0) {
+	if (NameLength2 > 0) {
 		/* filtering requested on schema name */
 		/* use LIKE when it contains a wildcard '%' or a '_' */
-		/* TODO: the wildcard may be escaped. Check it and may
-		   be convert it. */
-		sprintf(query_end, " and s.\"name\" %s '%.*s'", memchr(szSchemaName, '%', nSchemaNameLength) || memchr(szSchemaName, '_', nSchemaNameLength) ? "like" : "=", nSchemaNameLength, (char*)szSchemaName);
+		/* TODO: the wildcard may be escaped. Check it and
+		 * maybe convert it. */
+		sprintf(query_end, " and s.\"name\" %s '%.*s'",
+			memchr(SchemaName, '%', NameLength2) || memchr(SchemaName, '_', NameLength2) ? "like" : "=",
+			NameLength2, (char*)SchemaName);
 		query_end += strlen(query_end);
 	}
 
-	if (nTableNameLength > 0) {
+	if (NameLength3 > 0) {
 		/* filtering requested on table name */
 		/* use LIKE when it contains a wildcard '%' or a '_' */
 		/* TODO: the wildcard may be escaped.  Check it and
-		   may be convert it. */
-		sprintf(query_end, " and t.\"name\" %s '%.*s'", memchr(szTableName, '%', nTableNameLength) || memchr(szTableName, '_', nTableNameLength) ? "like" : "=", nTableNameLength, (char*)szTableName);
+		 * maybe convert it. */
+		sprintf(query_end, " and t.\"name\" %s '%.*s'",
+			memchr(TableName, '%', NameLength3) || memchr(TableName, '_', NameLength3) ? "like" : "=",
+			NameLength3, (char*)TableName);
 		query_end += strlen(query_end);
 	}
 
-	if (nColumnNameLength > 0) {
+	if (NameLength4 > 0) {
 		/* filtering requested on column name */
 		/* use LIKE when it contains a wildcard '%' or a '_' */
 		/* TODO: the wildcard may be escaped.  Check it and
-		   may be convert it. */
-		sprintf(query_end, " and c.\"name\" %s '%.*s'", memchr(szColumnName, '%', nColumnNameLength) || memchr(szColumnName, '_', nColumnNameLength) ? "like" : "=", nColumnNameLength, (char*)szColumnName);
+		 * maybe convert it. */
+		sprintf(query_end, " and c.\"name\" %s '%.*s'",
+			memchr(ColumnName, '%', NameLength4) || memchr(ColumnName, '_', NameLength4) ? "like" : "=",
+			NameLength4, (char*)ColumnName);
 		query_end += strlen(query_end);
 	}
 
@@ -208,10 +218,11 @@ SQLColumns_(ODBCStmt *stmt,
 	       " order by table_cat, table_schem, "
 	       "table_name, ordinal_position");
 	query_end += strlen(query_end);
-	assert(query_end - query < 1200 + nSchemaNameLength + nTableNameLength + nColumnNameLength);
+	assert(query_end - query < 1200 + NameLength2 + NameLength3 + NameLength4);
 
 	/* query the MonetDB data dictionary tables */
-	rc = SQLExecDirect_(stmt, (SQLCHAR *) query, (SQLINTEGER) (query_end - query));
+	rc = SQLExecDirect_(stmt, (SQLCHAR *) query,
+			    (SQLINTEGER) (query_end - query));
 
 	free(query);
 
@@ -372,7 +383,10 @@ SQLColumns_(ODBCStmt *stmt,
 				break;
 			}
 
-			tuples[i][5] = ODBCGetTypeInfo(concise_type, &data_type, &sql_data_type, &sql_datetime_sub);
+			tuples[i][5] = ODBCGetTypeInfo(concise_type,
+						       &data_type,
+						       &sql_data_type,
+						       &sql_datetime_sub);
 			if (tuples[i][5] != NULL) {
 				tuples[i][5] = strdup(tuples[i][5]);
 				data = malloc(7);
@@ -389,7 +403,9 @@ SQLColumns_(ODBCStmt *stmt,
 
 		ODBCResetStmt(stmt);
 
-		mapi_virtual_result(stmt->hdl, NCOLUMNS, columnnames, columntypes, columnlengths, (int) n, tuples);
+		mapi_virtual_result(stmt->hdl, NCOLUMNS, columnnames,
+				    columntypes, columnlengths,
+				    (int) n, tuples);
 
 		for (i = 0; i < n; i++) {
 			for (j = 0; j < NCOLUMNS; j++)
@@ -405,20 +421,20 @@ SQLColumns_(ODBCStmt *stmt,
 }
 
 SQLRETURN SQL_API
-SQLColumns(SQLHSTMT hStmt,
-	   SQLCHAR *szCatalogName,
-	   SQLSMALLINT nCatalogNameLength,
-	   SQLCHAR *szSchemaName,
-	   SQLSMALLINT nSchemaNameLength,
-	   SQLCHAR *szTableName,
-	   SQLSMALLINT nTableNameLength,
-	   SQLCHAR *szColumnName,
-	   SQLSMALLINT nColumnNameLength)
+SQLColumns(SQLHSTMT StatementHandle,
+	   SQLCHAR *CatalogName,
+	   SQLSMALLINT NameLength1,
+	   SQLCHAR *SchemaName,
+	   SQLSMALLINT NameLength2,
+	   SQLCHAR *TableName,
+	   SQLSMALLINT NameLength3,
+	   SQLCHAR *ColumnName,
+	   SQLSMALLINT NameLength4)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLColumns " PTRFMT, PTRFMTCAST hStmt);
+	ODBCLOG("SQLColumns " PTRFMT, PTRFMTCAST StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -426,41 +442,49 @@ SQLColumns(SQLHSTMT hStmt,
 
 	clearStmtErrors(stmt);
 
-	return SQLColumns_(stmt, szCatalogName, nCatalogNameLength, szSchemaName, nSchemaNameLength, szTableName, nTableNameLength, szColumnName, nColumnNameLength);
+	return SQLColumns_(stmt,
+			   CatalogName, NameLength1,
+			   SchemaName, NameLength2,
+			   TableName, NameLength3,
+			   ColumnName, NameLength4);
 }
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLColumnsA(SQLHSTMT hStmt,
-	    SQLCHAR *szCatalogName,
-	    SQLSMALLINT nCatalogNameLength,
-	    SQLCHAR *szSchemaName,
-	    SQLSMALLINT nSchemaNameLength,
-	    SQLCHAR *szTableName,
-	    SQLSMALLINT nTableNameLength,
-	    SQLCHAR *szColumnName,
-	    SQLSMALLINT nColumnNameLength)
+SQLColumnsA(SQLHSTMT StatementHandle,
+	    SQLCHAR *CatalogName,
+	    SQLSMALLINT NameLength1,
+	    SQLCHAR *SchemaName,
+	    SQLSMALLINT NameLength2,
+	    SQLCHAR *TableName,
+	    SQLSMALLINT NameLength3,
+	    SQLCHAR *ColumnName,
+	    SQLSMALLINT NameLength4)
 {
-	return SQLColumns(hStmt, szCatalogName, nCatalogNameLength, szSchemaName, nSchemaNameLength, szTableName, nTableNameLength, szColumnName, nColumnNameLength);
+	return SQLColumns(StatementHandle,
+			  CatalogName, NameLength1,
+			  SchemaName, NameLength2,
+			  TableName, NameLength3,
+			  ColumnName, NameLength4);
 }
 
 SQLRETURN SQL_API
-SQLColumnsW(SQLHSTMT hStmt,
-	    SQLWCHAR * szCatalogName,
-	    SQLSMALLINT nCatalogNameLength,
-	    SQLWCHAR * szSchemaName,
-	    SQLSMALLINT nSchemaNameLength,
-	    SQLWCHAR * szTableName,
-	    SQLSMALLINT nTableNameLength,
-	    SQLWCHAR * szColumnName,
-	    SQLSMALLINT nColumnNameLength)
+SQLColumnsW(SQLHSTMT StatementHandle,
+	    SQLWCHAR *CatalogName,
+	    SQLSMALLINT NameLength1,
+	    SQLWCHAR *SchemaName,
+	    SQLSMALLINT NameLength2,
+	    SQLWCHAR *TableName,
+	    SQLSMALLINT NameLength3,
+	    SQLWCHAR *ColumnName,
+	    SQLSMALLINT NameLength4)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 	SQLCHAR *catalog = NULL, *schema = NULL, *table = NULL, *column = NULL;
 	SQLRETURN rc = SQL_ERROR;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLColumnsW " PTRFMT, PTRFMTCAST hStmt);
+	ODBCLOG("SQLColumnsW " PTRFMT, PTRFMTCAST StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -468,12 +492,20 @@ SQLColumnsW(SQLHSTMT hStmt,
 
 	clearStmtErrors(stmt);
 
-	fixWcharIn(szCatalogName, nCatalogNameLength, SQLCHAR, catalog, addStmtError, stmt, goto exit);
-	fixWcharIn(szSchemaName, nSchemaNameLength, SQLCHAR, schema, addStmtError, stmt, goto exit);
-	fixWcharIn(szTableName, nTableNameLength, SQLCHAR, table, addStmtError, stmt, goto exit);
-	fixWcharIn(szColumnName, nColumnNameLength, SQLCHAR, column, addStmtError, stmt, goto exit);
+	fixWcharIn(CatalogName, NameLength1, SQLCHAR, catalog,
+		   addStmtError, stmt, goto exit);
+	fixWcharIn(SchemaName, NameLength2, SQLCHAR, schema,
+		   addStmtError, stmt, goto exit);
+	fixWcharIn(TableName, NameLength3, SQLCHAR, table,
+		   addStmtError, stmt, goto exit);
+	fixWcharIn(ColumnName, NameLength4, SQLCHAR, column,
+		   addStmtError, stmt, goto exit);
 
-	rc = SQLColumns_(stmt, catalog, SQL_NTS, schema, SQL_NTS, table, SQL_NTS, column, SQL_NTS);
+	rc = SQLColumns_(stmt,
+			 catalog, SQL_NTS,
+			 schema, SQL_NTS,
+			 table, SQL_NTS,
+			 column, SQL_NTS);
 
       exit:
 	if (catalog)

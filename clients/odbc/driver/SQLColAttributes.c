@@ -39,58 +39,58 @@
 
 static SQLRETURN
 SQLColAttributes_(ODBCStmt *stmt,
-		  SQLUSMALLINT nCol,
-		  SQLUSMALLINT nDescType,
-		  SQLPOINTER pszDesc,
-		  SQLSMALLINT nDescMax,
-		  SQLSMALLINT *pcbDesc,
-		  SQLLEN *pfDesc)
+		  SQLUSMALLINT ColumnNumber,
+		  SQLUSMALLINT FieldIdentifier,
+		  SQLPOINTER CharacterAttributePtr,
+		  SQLSMALLINT BufferLength,
+		  SQLSMALLINT *StringLengthPtr,
+		  SQLLEN *NumericAttributePtr)
 {
 	SQLRETURN rc;
 	SQLLEN value;
 
 	/* use mapping as described in ODBC 3 SDK Help file */
-	switch (nDescType) {
+	switch (FieldIdentifier) {
 	case SQL_COLUMN_NAME:
-		nDescType = SQL_DESC_NAME;
+		FieldIdentifier = SQL_DESC_NAME;
 		break;
 	case SQL_COLUMN_NULLABLE:
-		nDescType = SQL_DESC_NULLABLE;
+		FieldIdentifier = SQL_DESC_NULLABLE;
 		break;
 	case SQL_COLUMN_COUNT:
-		nDescType = SQL_DESC_COUNT;
+		FieldIdentifier = SQL_DESC_COUNT;
 		break;
 	}
-	rc = SQLColAttribute_(stmt, nCol, nDescType, pszDesc, nDescMax, pcbDesc, &value);
+	rc = SQLColAttribute_(stmt, ColumnNumber, FieldIdentifier, CharacterAttributePtr, BufferLength, StringLengthPtr, &value);
 
-	/* TODO: implement specials semantics for nDescTypes: SQL_COLUMN_TYPE,
-	   SQL_COLUMN_NAME, SQL_COLUMN_NULLABLE and SQL_COLUMN_COUNT.
-	   See ODBC 3 SDK Help file, SQLColAttributes Mapping.
-	 */
+	/* TODO: implement special semantics for FieldIdentifiers:
+	 * SQL_COLUMN_TYPE, SQL_COLUMN_NAME, SQL_COLUMN_NULLABLE and
+	 * SQL_COLUMN_COUNT.  See ODBC 3 SDK Help file,
+	 * SQLColAttributes Mapping. */
 /*
-	if (nDescType == SQL_COLUMN_TYPE && value == concise datetime type) {
+	if (FieldIdentifier == SQL_COLUMN_TYPE && value == concise datetime type) {
 		map return value for date, time, and timestamp codes;
 	}
 */
-	if (pfDesc)
-		*pfDesc = value;
+	if (NumericAttributePtr)
+		*NumericAttributePtr = value;
 	return rc;
 }
 
 SQLRETURN SQL_API
-SQLColAttributes(SQLHSTMT hStmt,
-		 SQLUSMALLINT nCol,
-		 SQLUSMALLINT nDescType,
-		 SQLPOINTER pszDesc,
-		 SQLSMALLINT nDescMax,
-		 SQLSMALLINT *pcbDesc,
-		 SQLLEN *pfDesc)
+SQLColAttributes(SQLHSTMT StatementHandle,
+		 SQLUSMALLINT ColumnNumber,
+		 SQLUSMALLINT FieldIdentifier,
+		 SQLPOINTER CharacterAttributePtr,
+		 SQLSMALLINT BufferLength,
+		 SQLSMALLINT *StringLengthPtr,
+		 SQLLEN *NumericAttributePtr)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLColAttributes " PTRFMT " %u %u\n", PTRFMTCAST hStmt,
-		(unsigned int) nCol, (unsigned int) nDescType);
+	ODBCLOG("SQLColAttributes " PTRFMT " %u %u\n", PTRFMTCAST StatementHandle,
+		(unsigned int) ColumnNumber, (unsigned int) FieldIdentifier);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -98,39 +98,52 @@ SQLColAttributes(SQLHSTMT hStmt,
 
 	clearStmtErrors(stmt);
 
-	return SQLColAttributes_(stmt, nCol, nDescType, pszDesc, nDescMax, pcbDesc, pfDesc);
+	return SQLColAttributes_(stmt,
+				 ColumnNumber,
+				 FieldIdentifier,
+				 CharacterAttributePtr,
+				 BufferLength,
+				 StringLengthPtr,
+				 NumericAttributePtr);
 }
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLColAttributesA(SQLHSTMT hStmt,
-		  SQLUSMALLINT nCol,
-		  SQLUSMALLINT nDescType,
-		  SQLPOINTER pszDesc,
-		  SQLSMALLINT nDescMax,
-		  SQLSMALLINT *pcbDesc,
-		  SQLLEN *pfDesc)
+SQLColAttributesA(SQLHSTMT StatementHandle,
+		  SQLUSMALLINT ColumnNumber,
+		  SQLUSMALLINT FieldIdentifier,
+		  SQLPOINTER CharacterAttributePtr,
+		  SQLSMALLINT BufferLength,
+		  SQLSMALLINT *StringLengthPtr,
+		  SQLLEN *NumericAttributePtr)
 {
-	return SQLColAttributes(hStmt, nCol, nDescType, pszDesc, nDescMax, pcbDesc, pfDesc);
+	return SQLColAttributes(StatementHandle,
+				ColumnNumber,
+				FieldIdentifier,
+				CharacterAttributePtr,
+				BufferLength,
+				StringLengthPtr,
+				NumericAttributePtr);
 }
 
 SQLRETURN SQL_API
-SQLColAttributesW(SQLHSTMT hStmt,
-		  SQLUSMALLINT nCol,
-		  SQLUSMALLINT nDescType,
-		  SQLPOINTER pszDesc,
-		  SQLSMALLINT nDescMax,
-		  SQLSMALLINT *pcbDesc,
-		  SQLLEN *pfDesc)
+SQLColAttributesW(SQLHSTMT StatementHandle,
+		  SQLUSMALLINT ColumnNumber,
+		  SQLUSMALLINT FieldIdentifier,
+		  SQLPOINTER CharacterAttributePtr,
+		  SQLSMALLINT BufferLength,
+		  SQLSMALLINT *StringLengthPtr,
+		  SQLLEN *NumericAttributePtr)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 	SQLPOINTER ptr;
 	SQLRETURN rc;
 	SQLSMALLINT n;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLColAttributesW " PTRFMT " %u %u\n", PTRFMTCAST hStmt,
-		(unsigned int) nCol, (unsigned int) nDescType);
+	ODBCLOG("SQLColAttributesW " PTRFMT " %u %u\n",
+		PTRFMTCAST StatementHandle,
+		(unsigned int) ColumnNumber, (unsigned int) FieldIdentifier);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -138,12 +151,12 @@ SQLColAttributesW(SQLHSTMT hStmt,
 
 	clearStmtErrors(stmt);
 
-	switch (nDescType) {
+	switch (FieldIdentifier) {
 	/* all string atributes */
 	case SQL_DESC_BASE_COLUMN_NAME:
 	case SQL_DESC_BASE_TABLE_NAME:
 	case SQL_DESC_CATALOG_NAME:	/* SQL_COLUMN_QUALIFIER_NAME */
-	case SQL_DESC_LABEL:	/* SQL_COLUMN_LABEL */
+	case SQL_DESC_LABEL:		/* SQL_COLUMN_LABEL */
 	case SQL_DESC_LITERAL_PREFIX:
 	case SQL_DESC_LITERAL_SUFFIX:
 	case SQL_DESC_LOCAL_TYPE_NAME:
@@ -151,7 +164,8 @@ SQLColAttributesW(SQLHSTMT hStmt,
 	case SQL_DESC_SCHEMA_NAME:	/* SQL_COLUMN_OWNER_NAME */
 	case SQL_DESC_TABLE_NAME:	/* SQL_COLUMN_TABLE_NAME */
 	case SQL_DESC_TYPE_NAME:	/* SQL_COLUMN_TYPE_NAME */
-		rc = SQLColAttributes_(stmt, nCol, nDescType, NULL, 0, &n, pfDesc);
+		rc = SQLColAttributes_(stmt, ColumnNumber, FieldIdentifier,
+				       NULL, 0, &n, NumericAttributePtr);
 		if (!SQL_SUCCEEDED(rc))
 			return rc;
 		clearStmtErrors(stmt);
@@ -159,17 +173,19 @@ SQLColAttributesW(SQLHSTMT hStmt,
 		ptr = (SQLPOINTER) malloc(n);
 		break;
 	default:
-		n = nDescMax;
-		ptr = pszDesc;
+		n = BufferLength;
+		ptr = CharacterAttributePtr;
 		break;
 	}
 
-	rc = SQLColAttributes_(stmt, nCol, nDescType, ptr, n, &n, pfDesc);
+	rc = SQLColAttributes_(stmt, ColumnNumber, FieldIdentifier, ptr,
+			       n, &n, NumericAttributePtr);
 
-	if (ptr != pszDesc)
-		fixWcharOut(rc, ptr, n, pszDesc, nDescMax, pcbDesc, 2, addStmtError, stmt);
-	else if (pcbDesc)
-		*pcbDesc = n;
+	if (ptr != CharacterAttributePtr)
+		fixWcharOut(rc, ptr, n, CharacterAttributePtr, BufferLength,
+			    StringLengthPtr, 2, addStmtError, stmt);
+	else if (StringLengthPtr)
+		*StringLengthPtr = n;
 
 	return rc;
 }

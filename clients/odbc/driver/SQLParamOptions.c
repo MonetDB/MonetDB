@@ -37,23 +37,24 @@
 #include "ODBCStmt.h"
 
 SQLRETURN SQL_API
-SQLParamOptions(SQLHSTMT hStmt,
-		SQLULEN nRow,
-		SQLULEN *pnRow)
+SQLParamOptions(SQLHSTMT StatementHandle,
+		SQLULEN RowNumber,
+		SQLULEN *RowNumberPtr)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 	RETCODE rc;
 
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLParamOptions " PTRFMT " " ULENFMT "\n",
-		PTRFMTCAST hStmt, ULENCAST nRow);
+		PTRFMTCAST StatementHandle, ULENCAST RowNumber);
 #endif
 
 	/* use mapping as described in ODBC 3 SDK Help file */
-	rc = SQLSetStmtAttr_(stmt, SQL_ATTR_PARAMSET_SIZE, &nRow, 0);
+	rc = SQLSetStmtAttr_(stmt, SQL_ATTR_PARAMSET_SIZE, &RowNumber, 0);
 
 	if (SQL_SUCCEEDED(rc)) {
-		rc = SQLSetStmtAttr_(stmt, SQL_ATTR_PARAMS_PROCESSED_PTR, pnRow, 0);
+		rc = SQLSetStmtAttr_(stmt, SQL_ATTR_PARAMS_PROCESSED_PTR,
+				     RowNumberPtr, 0);
 	}
 	return rc;
 }

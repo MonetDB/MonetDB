@@ -47,10 +47,14 @@
 SQLRETURN
 SQLBindParameter_(ODBCStmt *stmt,
 		  SQLUSMALLINT ParameterNumber,
-		  SQLSMALLINT InputOutputType, SQLSMALLINT ValueType,
-		  SQLSMALLINT ParameterType, SQLULEN ColumnSize,
-		  SQLSMALLINT DecimalDigits, SQLPOINTER ParameterValuePtr,
-		  SQLLEN BufferLength, SQLLEN *StrLen_or_IndPtr)
+		  SQLSMALLINT InputOutputType,
+		  SQLSMALLINT ValueType,
+		  SQLSMALLINT ParameterType,
+		  SQLULEN ColumnSize,
+		  SQLSMALLINT DecimalDigits,
+		  SQLPOINTER ParameterValuePtr,
+		  SQLLEN BufferLength,
+		  SQLLEN *StrLen_or_IndPtr)
 {
 	ODBCDesc *apd, *ipd;
 	ODBCDescRec *apdrec, *ipdrec;
@@ -248,19 +252,26 @@ SQLBindParameter_(ODBCStmt *stmt,
 }
 
 SQLRETURN SQL_API
-SQLBindParameter(SQLHSTMT hStmt,
+SQLBindParameter(SQLHSTMT StatementHandle,
 		 SQLUSMALLINT ParameterNumber,
-		 SQLSMALLINT InputOutputType, SQLSMALLINT ValueType,
-		 SQLSMALLINT ParameterType, SQLULEN ColumnSize,
-		 SQLSMALLINT DecimalDigits, SQLPOINTER ParameterValuePtr,
-		 SQLLEN BufferLength, SQLLEN *StrLen_or_IndPtr)
+		 SQLSMALLINT InputOutputType,
+		 SQLSMALLINT ValueType,
+		 SQLSMALLINT ParameterType,
+		 SQLULEN ColumnSize,
+		 SQLSMALLINT DecimalDigits,
+		 SQLPOINTER ParameterValuePtr,
+		 SQLLEN BufferLength,
+		 SQLLEN *StrLen_or_IndPtr)
 {
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLBindParameter " PTRFMT " %u %d %d %d " ULENFMT " %d\n",
-		PTRFMTCAST hStmt, (unsigned int) ParameterNumber,
+		PTRFMTCAST StatementHandle, (unsigned int) ParameterNumber,
 		(int) InputOutputType, (int) ValueType, (int) ParameterType,
 		ULENCAST ColumnSize, (int) DecimalDigits);
 #endif
 
-	return SQLBindParameter_((ODBCStmt *) hStmt, ParameterNumber, InputOutputType, ValueType, ParameterType, ColumnSize, DecimalDigits, ParameterValuePtr, BufferLength, StrLen_or_IndPtr);
+	return SQLBindParameter_((ODBCStmt *) StatementHandle, ParameterNumber,
+				 InputOutputType, ValueType, ParameterType,
+				 ColumnSize, DecimalDigits, ParameterValuePtr,
+				 BufferLength, StrLen_or_IndPtr);
 }

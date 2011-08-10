@@ -32,7 +32,7 @@
  * CLI Compliance: ODBC (Microsoft)
  *
  * Note: catalogs are not supported, we ignore any value set for
- * szPKCatalogName and szFKCatalogName.
+ * PKCatalogName and FKCatalogName.
  *
  * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 aug 2002
@@ -45,18 +45,18 @@
 
 static SQLRETURN
 SQLForeignKeys_(ODBCStmt *stmt,
-		SQLCHAR *szPKCatalogName,
-		SQLSMALLINT nPKCatalogNameLength,
-		SQLCHAR *szPKSchemaName,
-		SQLSMALLINT nPKSchemaNameLength,
-		SQLCHAR *szPKTableName,
-		SQLSMALLINT nPKTableNameLength,
-		SQLCHAR *szFKCatalogName,
-		SQLSMALLINT nFKCatalogNameLength,
-		SQLCHAR *szFKSchemaName,
-		SQLSMALLINT nFKSchemaNameLength,
-		SQLCHAR *szFKTableName,
-		SQLSMALLINT nFKTableNameLength)
+		SQLCHAR *PKCatalogName,
+		SQLSMALLINT NameLength1,
+		SQLCHAR *PKSchemaName,
+		SQLSMALLINT NameLength2,
+		SQLCHAR *PKTableName,
+		SQLSMALLINT NameLength3,
+		SQLCHAR *FKCatalogName,
+		SQLSMALLINT NameLength4,
+		SQLCHAR *FKSchemaName,
+		SQLSMALLINT NameLength5,
+		SQLCHAR *FKTableName,
+		SQLSMALLINT NameLength6)
 {
 	RETCODE rc;
 
@@ -65,34 +65,34 @@ SQLForeignKeys_(ODBCStmt *stmt,
 	char *query_end = NULL;	/* pointer to end of built-up query */
 
 	/* deal with SQL_NTS and SQL_NULL_DATA */
-	fixODBCstring(szPKCatalogName, nPKCatalogNameLength, SQLSMALLINT,
+	fixODBCstring(PKCatalogName, NameLength1, SQLSMALLINT,
 		      addStmtError, stmt, return SQL_ERROR);
-	fixODBCstring(szPKSchemaName, nPKSchemaNameLength, SQLSMALLINT,
+	fixODBCstring(PKSchemaName, NameLength2, SQLSMALLINT,
 		      addStmtError, stmt, return SQL_ERROR);
-	fixODBCstring(szPKTableName, nPKTableNameLength, SQLSMALLINT,
+	fixODBCstring(PKTableName, NameLength3, SQLSMALLINT,
 		      addStmtError, stmt, return SQL_ERROR);
-	fixODBCstring(szFKCatalogName, nFKCatalogNameLength, SQLSMALLINT,
+	fixODBCstring(FKCatalogName, NameLength4, SQLSMALLINT,
 		      addStmtError, stmt, return SQL_ERROR);
-	fixODBCstring(szFKSchemaName, nFKSchemaNameLength, SQLSMALLINT,
+	fixODBCstring(FKSchemaName, NameLength5, SQLSMALLINT,
 		      addStmtError, stmt, return SQL_ERROR);
-	fixODBCstring(szFKTableName, nFKTableNameLength, SQLSMALLINT,
+	fixODBCstring(FKTableName, NameLength6, SQLSMALLINT,
 		      addStmtError, stmt, return SQL_ERROR);
 
 #ifdef ODCBDEBUG
 	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\" \"%.*s\" \"%.*s\" \"%.*s\"\n",
-		(int) nPKCatalogNameLength, szPKCatalogName,
-		(int) nPKSchemaNameLength, szPKSchemaName,
-		(int) nPKTableNameLength, szPKTableName,
-		(int) nFKCatalogNameLength, szFKCatalogName,
-		(int) nFKSchemaNameLength, szFKSchemaName,
-		(int) nFKTableNameLength, szFKTableName);
+		(int) NameLength1, PKCatalogName,
+		(int) NameLength2, PKSchemaName,
+		(int) NameLength3, PKTableName,
+		(int) NameLength4, FKCatalogName,
+		(int) NameLength5, FKSchemaName,
+		(int) NameLength6, FKTableName);
 #endif
 	/* dependent on the input parameter values we must add a
 	   variable selection condition dynamically */
 
 	/* first create a string buffer (1200 extra bytes is plenty:
 	   we actually need just over 1000) */
-	query = (char *) malloc(1200 + nPKSchemaNameLength + nPKTableNameLength + nFKSchemaNameLength + nFKTableNameLength);
+	query = (char *) malloc(1200 + NameLength2 + NameLength3 + NameLength5 + NameLength6);
 	assert(query);
 	query_end = query;
 
@@ -145,35 +145,35 @@ SQLForeignKeys_(ODBCStmt *stmt,
 	query_end += strlen(query_end);
 
 	/* Construct the selection condition query part */
-	if (szPKSchemaName != NULL && nPKSchemaNameLength > 0) {
+	if (PKSchemaName != NULL && NameLength2 > 0) {
 		/* filtering requested on schema name */
 		/* search pattern is not allowed so use = and not LIKE */
 		sprintf(query_end, " and pks.\"name\" = '%.*s'",
-			nPKSchemaNameLength, (char*)szPKSchemaName);
+			NameLength2, (char*)PKSchemaName);
 		query_end += strlen(query_end);
 	}
 
-	if (szPKTableName != NULL && nPKTableNameLength > 0) {
+	if (PKTableName != NULL && NameLength3 > 0) {
 		/* filtering requested on table name */
 		/* search pattern is not allowed so use = and not LIKE */
 		sprintf(query_end, " and pkt.\"name\" = '%.*s'",
-			nPKTableNameLength, (char*)szPKTableName);
+			NameLength3, (char*)PKTableName);
 		query_end += strlen(query_end);
 	}
 
-	if (szFKSchemaName != NULL && nFKSchemaNameLength > 0) {
+	if (FKSchemaName != NULL && NameLength5 > 0) {
 		/* filtering requested on schema name */
 		/* search pattern is not allowed so use = and not LIKE */
 		sprintf(query_end, " and fks.\"name\" = '%.*s'",
-			nFKSchemaNameLength, (char*)szFKSchemaName);
+			NameLength5, (char*)FKSchemaName);
 		query_end += strlen(query_end);
 	}
 
-	if (szFKTableName != NULL && nFKTableNameLength > 0) {
+	if (FKTableName != NULL && NameLength6 > 0) {
 		/* filtering requested on table name */
 		/* search pattern is not allowed so use = and not LIKE */
 		sprintf(query_end, " and fkt.\"name\" = '%.*s'",
-			nFKTableNameLength, (char*)szFKTableName);
+			NameLength6, (char*)FKTableName);
 		query_end += strlen(query_end);
 	}
 
@@ -181,13 +181,13 @@ SQLForeignKeys_(ODBCStmt *stmt,
 /* TODO finish the FROM and WHERE clauses */
 
 	/* add the ordering */
-	/* if szPKTableName != NULL, selection on primary key, order
+	/* if PKTableName != NULL, selection on primary key, order
 	   on FK output columns, else order on PK output columns */
 	sprintf(query_end, " order by %stable_schem, %stable_name, key_seq",
-		szPKTableName != NULL ? "fk" : "pk",
-		szPKTableName != NULL ? "fk" : "pk");
+		PKTableName != NULL ? "fk" : "pk",
+		PKTableName != NULL ? "fk" : "pk");
 	query_end += strlen(query_end);
-	assert(query_end - query < 1200 + nPKSchemaNameLength + nPKTableNameLength + nFKSchemaNameLength + nFKTableNameLength);
+	assert(query_end - query < 1200 + NameLength2 + NameLength3 + NameLength5 + NameLength6);
 
 	/* query the MonetDB data dictionary tables */
 	rc = SQLExecDirect_(stmt, (SQLCHAR *) query,
@@ -199,24 +199,24 @@ SQLForeignKeys_(ODBCStmt *stmt,
 }
 
 SQLRETURN SQL_API
-SQLForeignKeys(SQLHSTMT hStmt,
-	       SQLCHAR *szPKCatalogName,
-	       SQLSMALLINT nPKCatalogNameLength,
-	       SQLCHAR *szPKSchemaName,
-	       SQLSMALLINT nPKSchemaNameLength,
-	       SQLCHAR *szPKTableName,
-	       SQLSMALLINT nPKTableNameLength,
-	       SQLCHAR *szFKCatalogName,
-	       SQLSMALLINT nFKCatalogNameLength,
-	       SQLCHAR *szFKSchemaName,
-	       SQLSMALLINT nFKSchemaNameLength,
-	       SQLCHAR *szFKTableName,
-	       SQLSMALLINT nFKTableNameLength)
+SQLForeignKeys(SQLHSTMT StatementHandle,
+	       SQLCHAR *PKCatalogName,
+	       SQLSMALLINT NameLength1,
+	       SQLCHAR *PKSchemaName,
+	       SQLSMALLINT NameLength2,
+	       SQLCHAR *PKTableName,
+	       SQLSMALLINT NameLength3,
+	       SQLCHAR *FKCatalogName,
+	       SQLSMALLINT NameLength4,
+	       SQLCHAR *FKSchemaName,
+	       SQLSMALLINT NameLength5,
+	       SQLCHAR *FKTableName,
+	       SQLSMALLINT NameLength6)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLForeignKeys " PTRFMT " ", PTRFMTCAST hStmt);
+	ODBCLOG("SQLForeignKeys " PTRFMT " ", PTRFMTCAST StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -224,60 +224,60 @@ SQLForeignKeys(SQLHSTMT hStmt,
 
 	clearStmtErrors(stmt);
 
-	return SQLForeignKeys_(stmt, szPKCatalogName, nPKCatalogNameLength,
-			       szPKSchemaName, nPKSchemaNameLength,
-			       szPKTableName, nPKTableNameLength,
-			       szFKCatalogName, nFKCatalogNameLength,
-			       szFKSchemaName, nFKSchemaNameLength,
-			       szFKTableName, nFKTableNameLength);
+	return SQLForeignKeys_(stmt, PKCatalogName, NameLength1,
+			       PKSchemaName, NameLength2,
+			       PKTableName, NameLength3,
+			       FKCatalogName, NameLength4,
+			       FKSchemaName, NameLength5,
+			       FKTableName, NameLength6);
 }
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLForeignKeysA(SQLHSTMT hStmt,
-		SQLCHAR *szPKCatalogName,
-		SQLSMALLINT nPKCatalogNameLength,
-		SQLCHAR *szPKSchemaName,
-		SQLSMALLINT nPKSchemaNameLength,
-		SQLCHAR *szPKTableName,
-		SQLSMALLINT nPKTableNameLength,
-		SQLCHAR *szFKCatalogName,
-		SQLSMALLINT nFKCatalogNameLength,
-		SQLCHAR *szFKSchemaName,
-		SQLSMALLINT nFKSchemaNameLength,
-		SQLCHAR *szFKTableName,
-		SQLSMALLINT nFKTableNameLength)
+SQLForeignKeysA(SQLHSTMT StatementHandle,
+		SQLCHAR *PKCatalogName,
+		SQLSMALLINT NameLength1,
+		SQLCHAR *PKSchemaName,
+		SQLSMALLINT NameLength2,
+		SQLCHAR *PKTableName,
+		SQLSMALLINT NameLength3,
+		SQLCHAR *FKCatalogName,
+		SQLSMALLINT NameLength4,
+		SQLCHAR *FKSchemaName,
+		SQLSMALLINT NameLength5,
+		SQLCHAR *FKTableName,
+		SQLSMALLINT NameLength6)
 {
-	return SQLForeignKeys(hStmt, szPKCatalogName, nPKCatalogNameLength,
-			      szPKSchemaName, nPKSchemaNameLength,
-			      szPKTableName, nPKTableNameLength,
-			      szFKCatalogName, nFKCatalogNameLength,
-			      szFKSchemaName, nFKSchemaNameLength,
-			      szFKTableName, nFKTableNameLength);
+	return SQLForeignKeys(StatementHandle, PKCatalogName, NameLength1,
+			      PKSchemaName, NameLength2,
+			      PKTableName, NameLength3,
+			      FKCatalogName, NameLength4,
+			      FKSchemaName, NameLength5,
+			      FKTableName, NameLength6);
 }
 
 SQLRETURN SQL_API
-SQLForeignKeysW(SQLHSTMT hStmt,
-		SQLWCHAR *szPKCatalogName,
-		SQLSMALLINT nPKCatalogNameLength,
-		SQLWCHAR *szPKSchemaName,
-		SQLSMALLINT nPKSchemaNameLength,
-		SQLWCHAR *szPKTableName,
-		SQLSMALLINT nPKTableNameLength,
-		SQLWCHAR *szFKCatalogName,
-		SQLSMALLINT nFKCatalogNameLength,
-		SQLWCHAR *szFKSchemaName,
-		SQLSMALLINT nFKSchemaNameLength,
-		SQLWCHAR *szFKTableName,
-		SQLSMALLINT nFKTableNameLength)
+SQLForeignKeysW(SQLHSTMT StatementHandle,
+		SQLWCHAR *PKCatalogName,
+		SQLSMALLINT NameLength1,
+		SQLWCHAR *PKSchemaName,
+		SQLSMALLINT NameLength2,
+		SQLWCHAR *PKTableName,
+		SQLSMALLINT NameLength3,
+		SQLWCHAR *FKCatalogName,
+		SQLSMALLINT NameLength4,
+		SQLWCHAR *FKSchemaName,
+		SQLSMALLINT NameLength5,
+		SQLWCHAR *FKTableName,
+		SQLSMALLINT NameLength6)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 	SQLCHAR *PKcatalog = NULL, *PKschema = NULL, *PKtable = NULL;
 	SQLCHAR *FKcatalog = NULL, *FKschema = NULL, *FKtable = NULL;
 	SQLRETURN rc = SQL_ERROR;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLForeignKeysW " PTRFMT " ", PTRFMTCAST hStmt);
+	ODBCLOG("SQLForeignKeysW " PTRFMT " ", PTRFMTCAST StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -285,17 +285,17 @@ SQLForeignKeysW(SQLHSTMT hStmt,
 
 	clearStmtErrors(stmt);
 
-	fixWcharIn(szPKCatalogName, nPKCatalogNameLength, SQLCHAR,
+	fixWcharIn(PKCatalogName, NameLength1, SQLCHAR,
 		   PKcatalog, addStmtError, stmt, goto exit);
-	fixWcharIn(szPKSchemaName, nPKSchemaNameLength, SQLCHAR,
+	fixWcharIn(PKSchemaName, NameLength2, SQLCHAR,
 		   PKschema, addStmtError, stmt, goto exit);
-	fixWcharIn(szPKTableName, nPKTableNameLength, SQLCHAR,
+	fixWcharIn(PKTableName, NameLength3, SQLCHAR,
 		   PKtable, addStmtError, stmt, goto exit);
-	fixWcharIn(szFKCatalogName, nFKCatalogNameLength, SQLCHAR,
+	fixWcharIn(FKCatalogName, NameLength4, SQLCHAR,
 		   FKcatalog, addStmtError, stmt, goto exit);
-	fixWcharIn(szFKSchemaName, nFKSchemaNameLength, SQLCHAR,
+	fixWcharIn(FKSchemaName, NameLength5, SQLCHAR,
 		   FKschema, addStmtError, stmt, goto exit);
-	fixWcharIn(szFKTableName, nFKTableNameLength, SQLCHAR,
+	fixWcharIn(FKTableName, NameLength6, SQLCHAR,
 		   FKtable, addStmtError, stmt, goto exit);
 
 	rc = SQLForeignKeys_(stmt, PKcatalog, SQL_NTS, PKschema, SQL_NTS,

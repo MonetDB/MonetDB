@@ -43,12 +43,12 @@
 
 static SQLRETURN
 SQLSetConnectOption_(ODBCDbc *dbc,
-		     SQLUSMALLINT nOption,
-		     SQLULEN vParam)
+		     SQLUSMALLINT Option,
+		     SQLULEN ValuePtr)
 {
 	/* use mapping as described in ODBC 3 SDK Help file */
-	switch (nOption) {
-		/* connection attributes (ODBC 1 and 2 only) */
+	switch (Option) {
+	/* connection attributes (ODBC 1 and 2 only) */
 	case SQL_ACCESS_MODE:
 	case SQL_AUTOCOMMIT:
 	case SQL_LOGIN_TIMEOUT:
@@ -58,16 +58,20 @@ SQLSetConnectOption_(ODBCDbc *dbc,
 	case SQL_TRANSLATE_OPTION:
 	case SQL_TXN_ISOLATION:
 		/* 32 bit integer argument */
-		return SQLSetConnectAttr_(dbc, nOption, (SQLPOINTER) (size_t) vParam, 0);
+		return SQLSetConnectAttr_(dbc, Option,
+					  (SQLPOINTER) (size_t) ValuePtr, 0);
 	case SQL_QUIET_MODE:
 		/* 32/64 bit integer argument */
-		return SQLSetConnectAttr_(dbc, nOption, (SQLPOINTER) (size_t) vParam, 0);
+		return SQLSetConnectAttr_(dbc, Option,
+					  (SQLPOINTER) (size_t) ValuePtr, 0);
 
 	case SQL_CURRENT_QUALIFIER:
 	case SQL_OPT_TRACEFILE:
 	case SQL_TRANSLATE_DLL:
 		/* null terminated string argument */
-		return SQLSetConnectAttr_(dbc, nOption, (SQLPOINTER) (size_t) vParam, SQL_NTS);
+		return SQLSetConnectAttr_(dbc, Option,
+					  (SQLPOINTER) (size_t) ValuePtr,
+					  SQL_NTS);
 
 	default:
 		/* other options (e.g. ODBC 3) are NOT valid */
@@ -80,15 +84,16 @@ SQLSetConnectOption_(ODBCDbc *dbc,
 }
 
 SQLRETURN SQL_API
-SQLSetConnectOption(SQLHDBC hDbc,
-		    SQLUSMALLINT nOption,
-		    SQLULEN vParam)
+SQLSetConnectOption(SQLHDBC ConnectionHandle,
+		    SQLUSMALLINT Option,
+		    SQLULEN ValuePtr)
 {
-	ODBCDbc *dbc = (ODBCDbc *) hDbc;
+	ODBCDbc *dbc = (ODBCDbc *) ConnectionHandle;
 
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLSetConnectOption " PTRFMT " %u " ULENFMT "\n",
-		PTRFMTCAST hDbc, (unsigned int) nOption, ULENCAST vParam);
+		PTRFMTCAST ConnectionHandle, (unsigned int) Option,
+		ULENCAST ValuePtr);
 #endif
 
 	if (!isValidDbc(dbc))
@@ -96,31 +101,32 @@ SQLSetConnectOption(SQLHDBC hDbc,
 
 	clearDbcErrors(dbc);
 
-	return SQLSetConnectOption_(dbc, nOption, vParam);
+	return SQLSetConnectOption_(dbc, Option, ValuePtr);
 }
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLSetConnectOptionA(SQLHDBC hDbc,
-		     SQLUSMALLINT nOption,
-		     SQLULEN vParam)
+SQLSetConnectOptionA(SQLHDBC ConnectionHandle,
+		     SQLUSMALLINT Option,
+		     SQLULEN ValuePtr)
 {
-	return SQLSetConnectOption(hDbc, nOption, vParam);
+	return SQLSetConnectOption(ConnectionHandle, Option, ValuePtr);
 }
 
 SQLRETURN SQL_API
-SQLSetConnectOptionW(SQLHDBC hDbc,
-		     SQLUSMALLINT nOption,
-		     SQLULEN vParam)
+SQLSetConnectOptionW(SQLHDBC ConnectionHandle,
+		     SQLUSMALLINT Option,
+		     SQLULEN ValuePtr)
 {
-	ODBCDbc *dbc = (ODBCDbc *) hDbc;
-	SQLPOINTER ptr = (SQLPOINTER) (size_t) vParam;
+	ODBCDbc *dbc = (ODBCDbc *) ConnectionHandle;
+	SQLPOINTER ptr = (SQLPOINTER) (size_t) ValuePtr;
 	SQLULEN p;
 	SQLRETURN rc;
 
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLSetConnectOptionW " PTRFMT " %u " ULENFMT "\n",
-		PTRFMTCAST hDbc, (unsigned int) nOption, ULENCAST vParam);
+		PTRFMTCAST ConnectionHandle, (unsigned int) Option,
+		ULENCAST ValuePtr);
 #endif
 
 	if (!isValidDbc(dbc))
@@ -128,21 +134,22 @@ SQLSetConnectOptionW(SQLHDBC hDbc,
 
 	clearDbcErrors(dbc);
 
-	switch (nOption) {
+	switch (Option) {
 	case SQL_ATTR_CURRENT_CATALOG:
 	case SQL_ATTR_TRACEFILE:
 	case SQL_ATTR_TRANSLATE_LIB:
-		fixWcharIn((SQLPOINTER) (size_t) vParam, SQL_NTS, SQLCHAR, ptr, addDbcError, dbc, return SQL_ERROR);
+		fixWcharIn((SQLPOINTER) (size_t) ValuePtr, SQL_NTS, SQLCHAR,
+			   ptr, addDbcError, dbc, return SQL_ERROR);
 		p = (SQLULEN) (size_t) ptr;
 		break;
 	default:
-		p = vParam;
+		p = ValuePtr;
 		break;
 	}
 
-	rc = SQLSetConnectOption_(dbc, nOption, p);
+	rc = SQLSetConnectOption_(dbc, Option, p);
 
-	if (ptr &&p != vParam)
+	if (ptr &&p != ValuePtr)
 		free(ptr);
 
 	return rc;

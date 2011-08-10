@@ -49,14 +49,16 @@ SQLFetchScroll_(ODBCStmt *stmt,
 {
 	assert(stmt->hdl);
 
-	if ((stmt->cursorType == SQL_CURSOR_FORWARD_ONLY || stmt->cursorScrollable == SQL_NONSCROLLABLE) && FetchOrientation != SQL_FETCH_NEXT) {
+	if ((stmt->cursorType == SQL_CURSOR_FORWARD_ONLY ||
+	     stmt->cursorScrollable == SQL_NONSCROLLABLE) &&
+	    FetchOrientation != SQL_FETCH_NEXT) {
 		/* Fetch type out of range */
 		addStmtError(stmt, "HY106", NULL, 0);
 		return SQL_ERROR;
 	}
 #define RowSetSize	(stmt->ApplRowDescr->sql_desc_array_size)
 	/* set currentRow to be the row number of the last row in the
-	   result set */
+	 * result set */
 	stmt->currentRow = stmt->startRow + stmt->rowSetSize;
 	stmt->rowSetSize = 0;
 
@@ -86,7 +88,7 @@ SQLFetchScroll_(ODBCStmt *stmt,
 		}
 		if (stmt->startRow < (SQLLEN) RowSetSize) {
 			/* Attempt to fetch before the result set
-			   returned the first rowset */
+			 * returned the first rowset */
 			addStmtError(stmt, "01S06", NULL, 0);
 			stmt->startRow = 0;
 		} else
@@ -94,7 +96,8 @@ SQLFetchScroll_(ODBCStmt *stmt,
 		break;
 	case SQL_FETCH_RELATIVE:
 		if ((stmt->currentRow != 0 || FetchOffset <= 0) &&
-		    (stmt->currentRow != (SQLLEN) stmt->rowcount || FetchOffset >= 0)) {
+		    (stmt->currentRow != (SQLLEN) stmt->rowcount ||
+		     FetchOffset >= 0)) {
 			if ((stmt->currentRow == 0 && FetchOffset <= 0) ||
 			    (stmt->startRow == 0 && FetchOffset < 0) ||
 			    (stmt->startRow > 0 &&
@@ -110,7 +113,7 @@ SQLFetchScroll_(ODBCStmt *stmt,
 				stmt->startRow = 0;
 
 				/* Attempt to fetch before the result
-				   set returned the first rowset */
+				 * set returned the first rowset */
 				addStmtError(stmt, "01S06", NULL, 0);
 				break;
 			}
@@ -167,15 +170,16 @@ SQLFetchScroll_(ODBCStmt *stmt,
 }
 
 SQLRETURN SQL_API
-SQLFetchScroll(SQLHSTMT hStmt,
+SQLFetchScroll(SQLHSTMT StatementHandle,
 	       SQLSMALLINT FetchOrientation,
 	       SQLLEN FetchOffset)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLFetchScroll " PTRFMT " %d " LENFMT "\n",
-		PTRFMTCAST hStmt, FetchOrientation, LENCAST FetchOffset);
+		PTRFMTCAST StatementHandle, FetchOrientation,
+		LENCAST FetchOffset);
 #endif
 
 	if (!isValidStmt(stmt))

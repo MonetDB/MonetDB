@@ -41,14 +41,14 @@
 
 
 SQLRETURN SQL_API
-SQLBulkOperations(SQLHSTMT hStmt,
-		  SQLSMALLINT nOperation)
+SQLBulkOperations(SQLHSTMT StatementHandle,
+		  SQLSMALLINT Operation)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLBulkOperations " PTRFMT " %d\n",
-		PTRFMTCAST hStmt, (int) nOperation);
+		PTRFMTCAST StatementHandle, (int) Operation);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -67,8 +67,8 @@ SQLBulkOperations(SQLHSTMT hStmt,
 		return SQL_ERROR;
 	}
 
-	/* check nOperation code */
-	switch (nOperation) {
+	/* check Operation code */
+	switch (Operation) {
 	case SQL_ADD:
 	case SQL_UPDATE_BY_BOOKMARK:
 	case SQL_DELETE_BY_BOOKMARK:

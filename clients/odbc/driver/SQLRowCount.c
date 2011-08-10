@@ -41,13 +41,13 @@
 
 
 SQLRETURN SQL_API
-SQLRowCount(SQLHSTMT hStmt,
-	    SQLLEN *pnRowCount)
+SQLRowCount(SQLHSTMT StatementHandle,
+	    SQLLEN *RowCountPtr)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLRowCount " PTRFMT "\n", PTRFMTCAST hStmt);
+	ODBCLOG("SQLRowCount " PTRFMT "\n", PTRFMTCAST StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -63,14 +63,14 @@ SQLRowCount(SQLHSTMT hStmt,
 	}
 
 	/* check output parameter */
-	if (pnRowCount == NULL) {
+	if (RowCountPtr == NULL) {
 		/* Invalid use of null pointer */
 		addStmtError(stmt, "HY009", NULL, 0);
 		return SQL_ERROR;
 	}
 
 	/* We can now set the "number of result set rows" value */
-	*pnRowCount = (SQLLEN) stmt->rowcount;
+	*RowCountPtr = (SQLLEN) stmt->rowcount;
 
 	return SQL_SUCCESS;
 }

@@ -41,12 +41,12 @@
 
 
 SQLRETURN SQL_API
-SQLMoreResults(SQLHSTMT hStmt)
+SQLMoreResults(SQLHSTMT StatementHandle)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLMoreResults " PTRFMT "\n", PTRFMTCAST hStmt);
+	ODBCLOG("SQLMoreResults " PTRFMT "\n", PTRFMTCAST StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))

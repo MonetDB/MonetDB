@@ -32,7 +32,7 @@
  * CLI Compliance: ODBC (Microsoft)
  *
  * Note: catalogs are not supported, we ignore any value set for
- * szCatalogName.
+ * CatalogName.
  *
  * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 aug 2002
@@ -45,12 +45,12 @@
 
 static SQLRETURN
 SQLPrimaryKeys_(ODBCStmt *stmt,
-		SQLCHAR *szCatalogName,
-		SQLSMALLINT nCatalogNameLength,
-		SQLCHAR *szSchemaName,
-		SQLSMALLINT nSchemaNameLength,
-		SQLCHAR *szTableName,
-		SQLSMALLINT nTableNameLength)
+		SQLCHAR *CatalogName,
+		SQLSMALLINT NameLength1,
+		SQLCHAR *SchemaName,
+		SQLSMALLINT NameLength2,
+		SQLCHAR *TableName,
+		SQLSMALLINT NameLength3)
 {
 	RETCODE rc;
 
@@ -59,25 +59,28 @@ SQLPrimaryKeys_(ODBCStmt *stmt,
 	char *query_end = NULL;	/* pointer to end of built-up query */
 
 	/* deal with SQL_NTS and SQL_NULL_DATA */
-	fixODBCstring(szCatalogName, nCatalogNameLength, SQLSMALLINT, addStmtError, stmt, return SQL_ERROR);
-	fixODBCstring(szSchemaName, nSchemaNameLength, SQLSMALLINT, addStmtError, stmt, return SQL_ERROR);
-	fixODBCstring(szTableName, nTableNameLength, SQLSMALLINT, addStmtError, stmt, return SQL_ERROR);
+	fixODBCstring(CatalogName, NameLength1, SQLSMALLINT,
+		      addStmtError, stmt, return SQL_ERROR);
+	fixODBCstring(SchemaName, NameLength2, SQLSMALLINT,
+		      addStmtError, stmt, return SQL_ERROR);
+	fixODBCstring(TableName, NameLength3, SQLSMALLINT,
+		      addStmtError, stmt, return SQL_ERROR);
 
 	/* check if a valid (non null, not empty) table name is supplied */
-	if (szTableName == NULL) {
+	if (TableName == NULL) {
 		/* Invalid use of null pointer */
 		addStmtError(stmt, "HY009", NULL, 0);
 		return SQL_ERROR;
 	}
 #ifdef ODBCDEBUG
 	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\"\n",
-		(int) nCatalogNameLength, (char *) szCatalogName,
-		(int) nSchemaNameLength, (char *) szSchemaName,
-		(int) nTableNameLength, (char *) szTableName);
+		(int) NameLength1, (char *) CatalogName,
+		(int) NameLength2, (char *) SchemaName,
+		(int) NameLength3, (char *) TableName);
 #endif
 
 	/* construct the query */
-	query = (char *) malloc(1000 + nTableNameLength + nSchemaNameLength);
+	query = (char *) malloc(1000 + NameLength3 + NameLength2);
 	assert(query);
 	query_end = query;
 
@@ -107,23 +110,27 @@ SQLPrimaryKeys_(ODBCStmt *stmt,
 
 	/* Construct the selection condition query part */
 	/* search pattern is not allowed for table name so use = and not LIKE */
-	sprintf(query_end, " and t.\"name\" = '%.*s'", nTableNameLength, (char*)szTableName);
+	sprintf(query_end, " and t.\"name\" = '%.*s'",
+		NameLength3, (char*)TableName);
 	query_end += strlen(query_end);
 
-	if (szSchemaName != NULL) {
+	if (SchemaName != NULL) {
 		/* filtering requested on schema name */
 		/* search pattern is not allowed so use = and not LIKE */
-		sprintf(query_end, " and s.\"name\" = '%.*s'", nSchemaNameLength, (char*)szSchemaName);
+		sprintf(query_end, " and s.\"name\" = '%.*s'",
+			NameLength2, (char*)SchemaName);
 		query_end += strlen(query_end);
 	}
 
 	/* add the ordering */
 	strcpy(query_end, " order by table_schem, table_name, key_seq");
 	query_end += strlen(query_end);
-	assert(query_end - query < 1000 + nTableNameLength + nSchemaNameLength);
+	assert(query_end - query < 1000 + NameLength3 + NameLength2);
 
 	/* query the MonetDB data dictionary tables */
-	rc = SQLExecDirect_(stmt, (SQLCHAR *) query, (SQLINTEGER) (query_end - query));
+	rc = SQLExecDirect_(stmt,
+			    (SQLCHAR *) query,
+			    (SQLINTEGER) (query_end - query));
 
 	free(query);
 
@@ -131,18 +138,18 @@ SQLPrimaryKeys_(ODBCStmt *stmt,
 }
 
 SQLRETURN SQL_API
-SQLPrimaryKeys(SQLHSTMT hStmt,
-	       SQLCHAR *szCatalogName,
-	       SQLSMALLINT nCatalogNameLength,
-	       SQLCHAR *szSchemaName,
-	       SQLSMALLINT nSchemaNameLength,
-	       SQLCHAR *szTableName,
-	       SQLSMALLINT nTableNameLength)
+SQLPrimaryKeys(SQLHSTMT StatementHandle,
+	       SQLCHAR *CatalogName,
+	       SQLSMALLINT NameLength1,
+	       SQLCHAR *SchemaName,
+	       SQLSMALLINT NameLength2,
+	       SQLCHAR *TableName,
+	       SQLSMALLINT NameLength3)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLPrimaryKeys " PTRFMT " ", PTRFMTCAST hStmt);
+	ODBCLOG("SQLPrimaryKeys " PTRFMT " ", PTRFMTCAST StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -150,37 +157,43 @@ SQLPrimaryKeys(SQLHSTMT hStmt,
 
 	clearStmtErrors(stmt);
 
-	return SQLPrimaryKeys_(stmt, szCatalogName, nCatalogNameLength, szSchemaName, nSchemaNameLength, szTableName, nTableNameLength);
+	return SQLPrimaryKeys_(stmt,
+			       CatalogName, NameLength1,
+			       SchemaName, NameLength2,
+			       TableName, NameLength3);
 }
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLPrimaryKeysA(SQLHSTMT hStmt,
-		SQLCHAR *szCatalogName,
-		SQLSMALLINT nCatalogNameLength,
-		SQLCHAR *szSchemaName,
-		SQLSMALLINT nSchemaNameLength,
-		SQLCHAR *szTableName,
-		SQLSMALLINT nTableNameLength)
+SQLPrimaryKeysA(SQLHSTMT StatementHandle,
+		SQLCHAR *CatalogName,
+		SQLSMALLINT NameLength1,
+		SQLCHAR *SchemaName,
+		SQLSMALLINT NameLength2,
+		SQLCHAR *TableName,
+		SQLSMALLINT NameLength3)
 {
-	return SQLPrimaryKeys(hStmt, szCatalogName, nCatalogNameLength, szSchemaName, nSchemaNameLength, szTableName, nTableNameLength);
+	return SQLPrimaryKeys(StatementHandle,
+			      CatalogName, NameLength1,
+			      SchemaName, NameLength2,
+			      TableName, NameLength3);
 }
 
 SQLRETURN SQL_API
-SQLPrimaryKeysW(SQLHSTMT hStmt,
-		SQLWCHAR * szCatalogName,
-		SQLSMALLINT nCatalogNameLength,
-		SQLWCHAR * szSchemaName,
-		SQLSMALLINT nSchemaNameLength,
-		SQLWCHAR * szTableName,
-		SQLSMALLINT nTableNameLength)
+SQLPrimaryKeysW(SQLHSTMT StatementHandle,
+		SQLWCHAR *CatalogName,
+		SQLSMALLINT NameLength1,
+		SQLWCHAR *SchemaName,
+		SQLSMALLINT NameLength2,
+		SQLWCHAR *TableName,
+		SQLSMALLINT NameLength3)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 	SQLRETURN rc = SQL_ERROR;
 	SQLCHAR *catalog = NULL, *schema = NULL, *table = NULL;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLPrimaryKeysW " PTRFMT " ", PTRFMTCAST hStmt);
+	ODBCLOG("SQLPrimaryKeysW " PTRFMT " ", PTRFMTCAST StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -188,11 +201,17 @@ SQLPrimaryKeysW(SQLHSTMT hStmt,
 
 	clearStmtErrors(stmt);
 
-	fixWcharIn(szCatalogName, nCatalogNameLength, SQLCHAR, catalog, addStmtError, stmt, goto exit);
-	fixWcharIn(szSchemaName, nSchemaNameLength, SQLCHAR, schema, addStmtError, stmt, goto exit);
-	fixWcharIn(szTableName, nTableNameLength, SQLCHAR, table, addStmtError, stmt, goto exit);
+	fixWcharIn(CatalogName, NameLength1, SQLCHAR, catalog,
+		   addStmtError, stmt, goto exit);
+	fixWcharIn(SchemaName, NameLength2, SQLCHAR, schema,
+		   addStmtError, stmt, goto exit);
+	fixWcharIn(TableName, NameLength3, SQLCHAR, table,
+		   addStmtError, stmt, goto exit);
 
-	rc = SQLPrimaryKeys_(stmt, catalog, SQL_NTS, schema, SQL_NTS, table, SQL_NTS);
+	rc = SQLPrimaryKeys_(stmt,
+			     catalog, SQL_NTS,
+			     schema, SQL_NTS,
+			     table, SQL_NTS);
 
       exit:
 	if (catalog)

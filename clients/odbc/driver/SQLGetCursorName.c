@@ -43,15 +43,16 @@
 
 static SQLRETURN
 SQLGetCursorName_(ODBCStmt *stmt,
-		  SQLCHAR *szCursor,
-		  SQLSMALLINT nCursorMaxLength,
-		  SQLSMALLINT *pnCursorLength)
+		  SQLCHAR *CursorName,
+		  SQLSMALLINT BufferLength,
+		  SQLSMALLINT *NameLengthPtr)
 {
-	(void) szCursor;	/* Stefan: unused!? */
-	(void) nCursorMaxLength;	/* Stefan: unused!? */
-	(void) pnCursorLength;	/* Stefan: unused!? */
+	(void) CursorName;
+	(void) BufferLength;
+	(void) NameLengthPtr;
 
-	/* TODO: implement the requested behavior when SQLSetCursorName() is implemented */
+	/* TODO: implement the requested behavior when
+	 * SQLSetCursorName() is implemented */
 
 	/* for now always return error */
 	/* No cursor name available */
@@ -61,15 +62,15 @@ SQLGetCursorName_(ODBCStmt *stmt,
 }
 
 SQLRETURN SQL_API
-SQLGetCursorName(SQLHSTMT hStmt,
-		 SQLCHAR *szCursor,
-		 SQLSMALLINT nCursorMaxLength,
-		 SQLSMALLINT *pnCursorLength)
+SQLGetCursorName(SQLHSTMT StatementHandle,
+		 SQLCHAR *CursorName,
+		 SQLSMALLINT BufferLength,
+		 SQLSMALLINT *NameLengthPtr)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetCursorName " PTRFMT "\n", PTRFMTCAST hStmt);
+	ODBCLOG("SQLGetCursorName " PTRFMT "\n", PTRFMTCAST StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -77,32 +78,35 @@ SQLGetCursorName(SQLHSTMT hStmt,
 
 	clearStmtErrors(stmt);
 
-	return SQLGetCursorName_(stmt, szCursor, nCursorMaxLength, pnCursorLength);
+	return SQLGetCursorName_(stmt, CursorName, BufferLength, NameLengthPtr);
 }
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLGetCursorNameA(SQLHSTMT hStmt,
-		  SQLCHAR *szCursor,
-		  SQLSMALLINT nCursorMaxLength,
-		  SQLSMALLINT *pnCursorLength)
+SQLGetCursorNameA(SQLHSTMT StatementHandle,
+		  SQLCHAR *CursorName,
+		  SQLSMALLINT BufferLength,
+		  SQLSMALLINT *NameLengthPtr)
 {
-	return SQLGetCursorName(hStmt, szCursor, nCursorMaxLength, pnCursorLength);
+	return SQLGetCursorName(StatementHandle,
+				CursorName,
+				BufferLength,
+				NameLengthPtr);
 }
 
 SQLRETURN SQL_API
-SQLGetCursorNameW(SQLHSTMT hStmt,
-		  SQLWCHAR * szCursor,
-		  SQLSMALLINT nCursorMaxLength,
-		  SQLSMALLINT *pnCursorLength)
+SQLGetCursorNameW(SQLHSTMT StatementHandle,
+		  SQLWCHAR *CursorName,
+		  SQLSMALLINT BufferLength,
+		  SQLSMALLINT *NameLengthPtr)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 	SQLRETURN rc;
 	SQLSMALLINT n;
 	SQLCHAR *cursor;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetCursorNameW " PTRFMT "\n", PTRFMTCAST hStmt);
+	ODBCLOG("SQLGetCursorNameW " PTRFMT "\n", PTRFMTCAST StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -116,8 +120,9 @@ SQLGetCursorNameW(SQLHSTMT hStmt,
 	clearStmtErrors(stmt);
 	n++;			/* account for NUL byte */
 	cursor = malloc(n);
-	rc = SQLGetCursorName_(stmt, cursor, nCursorMaxLength, &n);
-	fixWcharOut(rc, cursor, n, szCursor, nCursorMaxLength, pnCursorLength, 1, addStmtError, stmt);
+	rc = SQLGetCursorName_(stmt, cursor, BufferLength, &n);
+	fixWcharOut(rc, cursor, n, CursorName, BufferLength,
+		    NameLengthPtr, 1, addStmtError, stmt);
 
 	return rc;
 }

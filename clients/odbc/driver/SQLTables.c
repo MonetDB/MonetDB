@@ -43,32 +43,37 @@
 
 static SQLRETURN
 SQLTables_(ODBCStmt *stmt,
-	   SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
-	   SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
-	   SQLCHAR *szTableName, SQLSMALLINT nTableNameLength,
-	   SQLCHAR *szTableType, SQLSMALLINT nTableTypeLength)
+	   SQLCHAR *CatalogName, SQLSMALLINT NameLength1,
+	   SQLCHAR *SchemaName, SQLSMALLINT NameLength2,
+	   SQLCHAR *TableName, SQLSMALLINT NameLength3,
+	   SQLCHAR *TableType, SQLSMALLINT NameLength4)
 {
 	RETCODE rc;
 
 	/* buffer for the constructed query to do meta data retrieval */
 	char *query = NULL;
 
-	/* convert input string parameters to normal null terminated C strings */
-	fixODBCstring(szCatalogName, nCatalogNameLength, SQLSMALLINT, addStmtError, stmt, return SQL_ERROR);
-	fixODBCstring(szSchemaName, nSchemaNameLength, SQLSMALLINT, addStmtError, stmt, return SQL_ERROR);
-	fixODBCstring(szTableName, nTableNameLength, SQLSMALLINT, addStmtError, stmt, return SQL_ERROR);
-	fixODBCstring(szTableType, nTableTypeLength, SQLSMALLINT, addStmtError, stmt, return SQL_ERROR);
+	/* convert input string parameters to normal null terminated C
+	 * strings */
+	fixODBCstring(CatalogName, NameLength1, SQLSMALLINT,
+		      addStmtError, stmt, return SQL_ERROR);
+	fixODBCstring(SchemaName, NameLength2, SQLSMALLINT,
+		      addStmtError, stmt, return SQL_ERROR);
+	fixODBCstring(TableName, NameLength3, SQLSMALLINT,
+		      addStmtError, stmt, return SQL_ERROR);
+	fixODBCstring(TableType, NameLength4, SQLSMALLINT,
+		      addStmtError, stmt, return SQL_ERROR);
 
 #ifdef ODBCDEBUG
 	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\" \"%.*s\"\n",
-		(int) nCatalogNameLength,
-		szCatalogName ? (char *) szCatalogName : "",
-		(int) nSchemaNameLength,
-		szSchemaName ? (char *) szSchemaName : "",
-		(int) nTableNameLength,
-		szTableName ? (char *) szTableName : "",
-		(int) nTableTypeLength,
-		szTableType ? (char *) szTableType : "");
+		(int) NameLength1,
+		CatalogName ? (char *) CatalogName : "",
+		(int) NameLength2,
+		SchemaName ? (char *) SchemaName : "",
+		(int) NameLength3,
+		TableName ? (char *) TableName : "",
+		(int) NameLength4,
+		TableType ? (char *) TableType : "");
 #endif
 
 	/* SQLTables returns a table with the following columns:
@@ -80,10 +85,10 @@ SQLTables_(ODBCStmt *stmt,
 	 */
 
 	/* Check first on the special cases */
-	if (nSchemaNameLength == 0 &&
-	    nTableNameLength == 0 &&
-	    szCatalogName &&
-	    strcmp((char *) szCatalogName, SQL_ALL_CATALOGS) == 0) {
+	if (NameLength2 == 0 &&
+	    NameLength3 == 0 &&
+	    CatalogName &&
+	    strcmp((char *) CatalogName, SQL_ALL_CATALOGS) == 0) {
 		/* Special case query to fetch all Catalog names. */
 		/* Note: Catalogs are not supported so the result set
 		   will be empty. */
@@ -94,10 +99,10 @@ SQLTables_(ODBCStmt *stmt,
 			       "cast('' as varchar(1)) as table_type, "
 			       "cast('' as varchar(1)) as remarks "
 			       "where 0 = 1");
-	} else if (nCatalogNameLength == 0 &&
-		   nTableNameLength == 0 &&
-		   szSchemaName &&
-		   strcmp((char *) szSchemaName, SQL_ALL_SCHEMAS) == 0) {
+	} else if (NameLength1 == 0 &&
+		   NameLength3 == 0 &&
+		   SchemaName &&
+		   strcmp((char *) SchemaName, SQL_ALL_SCHEMAS) == 0) {
 		/* Special case query to fetch all Schema names. */
 		query = strdup("select cast(null as varchar(1)) as table_cat, "
 			       "name as table_schem, "
@@ -105,11 +110,11 @@ SQLTables_(ODBCStmt *stmt,
 			       "cast('' as varchar(1)) as table_type, "
 			       "cast('' as varchar(1)) as remarks "
 			       "from sys.\"schemas\" order by table_schem");
-	} else if (nCatalogNameLength == 0 &&
-		   nSchemaNameLength == 0 &&
-		   nTableNameLength == 0 &&
-		   szTableType &&
-		   strcmp((char *) szTableType, SQL_ALL_TABLE_TYPES) == 0) {
+	} else if (NameLength1 == 0 &&
+		   NameLength2 == 0 &&
+		   NameLength3 == 0 &&
+		   TableType &&
+		   strcmp((char *) TableType, SQL_ALL_TABLE_TYPES) == 0) {
 		/* Special case query to fetch all Table type names. */
 		query = strdup("select distinct "
 			       "cast(null as varchar(1)) as table_cat, "
@@ -127,7 +132,7 @@ SQLTables_(ODBCStmt *stmt,
 		char *query_end;
 
 		/* construct the query now */
-		query = (char *) malloc(1000 + nSchemaNameLength + nTableNameLength + ((nTableTypeLength + 1) / 5) * 67);
+		query = (char *) malloc(1000 + NameLength2 + NameLength3 + ((NameLength4 + 1) / 5) * 67);
 		assert(query);
 		query_end = query;
 
@@ -150,44 +155,44 @@ SQLTables_(ODBCStmt *stmt,
 		   variable selection condition dynamically */
 
 		/* Construct the selection condition query part */
-		if (nCatalogNameLength > 0) {
+		if (NameLength1 > 0) {
 			/* filtering requested on catalog name */
 			/* we do not support catalog names, so ignore it */
 		}
 
-		if (nSchemaNameLength > 0) {
+		if (NameLength2 > 0) {
 			/* filtering requested on schema name */
 			/* use LIKE when it contains a wildcard '%' or a '_' */
 			/* TODO: the wildcard may be escaped. Check it
 			   and maybe convert it. */
 			sprintf(query_end, " and s.\"name\" %s '%.*s'",
-				memchr(szSchemaName, '%', nSchemaNameLength) || memchr(szSchemaName, '_', nSchemaNameLength) ? "like" : "=",
-				nSchemaNameLength,
-				(char*)szSchemaName);
+				memchr(SchemaName, '%', NameLength2) || memchr(SchemaName, '_', NameLength2) ? "like" : "=",
+				NameLength2,
+				(char*)SchemaName);
 			query_end += strlen(query_end);
 		}
 
-		if (nTableNameLength > 0) {
+		if (NameLength3 > 0) {
 			/* filtering requested on table name */
 			/* use LIKE when it contains a wildcard '%' or a '_' */
 			/* TODO: the wildcard may be escaped.  Check
-			   it and may be convert it. */
+			 * it and may be convert it. */
 			sprintf(query_end, " and t.\"name\" %s '%.*s'",
-				memchr(szTableName, '%', nTableNameLength) || memchr(szTableName, '_', nTableNameLength) ? "like" : "=",
-				nTableNameLength,
-				(char*)szTableName);
+				memchr(TableName, '%', NameLength3) || memchr(TableName, '_', NameLength3) ? "like" : "=",
+				NameLength3,
+				(char*)TableName);
 			query_end += strlen(query_end);
 		}
 
-		if (nTableTypeLength > 0) {
+		if (NameLength4 > 0) {
 			/* filtering requested on table type */
 			char buf[17];	/* the longest string is "GLOBAL TEMPORARY" */
 			int i, j;
 
 			strcpy(query_end, " and (1 = 0");
 			query_end += strlen(query_end);
-			for (i = j = 0; i < nTableTypeLength + 1; i++) {
-				if (i == nTableTypeLength || szTableType[i] == ',') {
+			for (i = j = 0; i < NameLength4 + 1; i++) {
+				if (i == NameLength4 || TableType[i] == ',') {
 					if (j > 16 || j == 0) {
 						j = 0;
 						continue;
@@ -203,8 +208,8 @@ SQLTables_(ODBCStmt *stmt,
 						strcpy(query_end, " or (t.\"type\" = 0 and t.\"system\" = false and t.\"temporary\" = 1)");
 					query_end += strlen(query_end);
 					j = 0;
-				} else if (j < 17 && szTableType[i] != '\'' && (j > 0 || szTableType[i] != ' '))
-					buf[j++] = szTableType[i];
+				} else if (j < 17 && TableType[i] != '\'' && (j > 0 || TableType[i] != ' '))
+					buf[j++] = TableType[i];
 			}
 			strcpy(query_end, ")");
 			query_end += strlen(query_end);
@@ -214,7 +219,7 @@ SQLTables_(ODBCStmt *stmt,
 		strcpy(query_end,
 		       " order by table_type, table_schem, table_name");
 		query_end += strlen(query_end);
-		assert(query_end - query < 1000 + nSchemaNameLength + nTableNameLength + nTableTypeLength);
+		assert(query_end - query < 1000 + NameLength2 + NameLength3 + NameLength4);
 	}
 
 	/* query the MonetDB data dictionary tables */
@@ -227,16 +232,16 @@ SQLTables_(ODBCStmt *stmt,
 }
 
 SQLRETURN SQL_API
-SQLTables(SQLHSTMT hStmt,
-	  SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
-	  SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
-	  SQLCHAR *szTableName, SQLSMALLINT nTableNameLength,
-	  SQLCHAR *szTableType, SQLSMALLINT nTableTypeLength)
+SQLTables(SQLHSTMT StatementHandle,
+	  SQLCHAR *CatalogName, SQLSMALLINT NameLength1,
+	  SQLCHAR *SchemaName, SQLSMALLINT NameLength2,
+	  SQLCHAR *TableName, SQLSMALLINT NameLength3,
+	  SQLCHAR *TableType, SQLSMALLINT NameLength4)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLTables " PTRFMT " ", PTRFMTCAST hStmt);
+	ODBCLOG("SQLTables " PTRFMT " ", PTRFMTCAST StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -245,40 +250,40 @@ SQLTables(SQLHSTMT hStmt,
 	clearStmtErrors(stmt);
 
 	return SQLTables_(stmt,
-			  szCatalogName, nCatalogNameLength,
-			  szSchemaName, nSchemaNameLength,
-			  szTableName, nTableNameLength,
-			  szTableType, nTableTypeLength);
+			  CatalogName, NameLength1,
+			  SchemaName, NameLength2,
+			  TableName, NameLength3,
+			  TableType, NameLength4);
 }
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLTablesA(SQLHSTMT hStmt,
-	   SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
-	   SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
-	   SQLCHAR *szTableName, SQLSMALLINT nTableNameLength,
-	   SQLCHAR *szTableType, SQLSMALLINT nTableTypeLength)
+SQLTablesA(SQLHSTMT StatementHandle,
+	   SQLCHAR *CatalogName, SQLSMALLINT NameLength1,
+	   SQLCHAR *SchemaName, SQLSMALLINT NameLength2,
+	   SQLCHAR *TableName, SQLSMALLINT NameLength3,
+	   SQLCHAR *TableType, SQLSMALLINT NameLength4)
 {
-	return SQLTables(hStmt,
-			 szCatalogName, nCatalogNameLength,
-			 szSchemaName, nSchemaNameLength,
-			 szTableName, nTableNameLength,
-			 szTableType, nTableTypeLength);
+	return SQLTables(StatementHandle,
+			 CatalogName, NameLength1,
+			 SchemaName, NameLength2,
+			 TableName, NameLength3,
+			 TableType, NameLength4);
 }
 
 SQLRETURN SQL_API
-SQLTablesW(SQLHSTMT hStmt,
-	   SQLWCHAR * szCatalogName, SQLSMALLINT nCatalogNameLength,
-	   SQLWCHAR * szSchemaName, SQLSMALLINT nSchemaNameLength,
-	   SQLWCHAR * szTableName, SQLSMALLINT nTableNameLength,
-	   SQLWCHAR * szTableType, SQLSMALLINT nTableTypeLength)
+SQLTablesW(SQLHSTMT StatementHandle,
+	   SQLWCHAR *CatalogName, SQLSMALLINT NameLength1,
+	   SQLWCHAR *SchemaName, SQLSMALLINT NameLength2,
+	   SQLWCHAR *TableName, SQLSMALLINT NameLength3,
+	   SQLWCHAR *TableType, SQLSMALLINT NameLength4)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 	SQLRETURN rc = SQL_ERROR;
 	SQLCHAR *catalog = NULL, *schema = NULL, *table = NULL, *type = NULL;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLTablesW " PTRFMT " ", PTRFMTCAST hStmt);
+	ODBCLOG("SQLTablesW " PTRFMT " ", PTRFMTCAST StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -286,12 +291,20 @@ SQLTablesW(SQLHSTMT hStmt,
 
 	clearStmtErrors(stmt);
 
-	fixWcharIn(szCatalogName, nCatalogNameLength, SQLCHAR, catalog, addStmtError, stmt, goto exit);
-	fixWcharIn(szSchemaName, nSchemaNameLength, SQLCHAR, schema, addStmtError, stmt, goto exit);
-	fixWcharIn(szTableName, nTableNameLength, SQLCHAR, table, addStmtError, stmt, goto exit);
-	fixWcharIn(szTableType, nTableTypeLength, SQLCHAR, type, addStmtError, stmt, goto exit);
+	fixWcharIn(CatalogName, NameLength1, SQLCHAR, catalog,
+		   addStmtError, stmt, goto exit);
+	fixWcharIn(SchemaName, NameLength2, SQLCHAR, schema,
+		   addStmtError, stmt, goto exit);
+	fixWcharIn(TableName, NameLength3, SQLCHAR, table,
+		   addStmtError, stmt, goto exit);
+	fixWcharIn(TableType, NameLength4, SQLCHAR, type,
+		   addStmtError, stmt, goto exit);
 
-	rc = SQLTables_(stmt, catalog, SQL_NTS, schema, SQL_NTS, table, SQL_NTS, type, SQL_NTS);
+	rc = SQLTables_(stmt,
+			catalog, SQL_NTS,
+			schema, SQL_NTS,
+			table, SQL_NTS,
+			type, SQL_NTS);
 
       exit:
 	if (catalog)

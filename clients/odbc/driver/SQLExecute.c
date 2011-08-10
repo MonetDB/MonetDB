@@ -353,16 +353,16 @@ SQLExecute_(ODBCStmt *stmt)
 }
 
 SQLRETURN SQL_API
-SQLExecute(SQLHSTMT hStmt)
+SQLExecute(SQLHSTMT StatementHandle)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLExecute " PTRFMT "\n", PTRFMTCAST hStmt);
+	ODBCLOG("SQLExecute " PTRFMT "\n", PTRFMTCAST StatementHandle);
 #endif
 
-	if (!isValidStmt((ODBCStmt *) hStmt))
+	if (!isValidStmt((ODBCStmt *) StatementHandle))
 		return SQL_INVALID_HANDLE;
 
-	clearStmtErrors((ODBCStmt *) hStmt);
+	clearStmtErrors((ODBCStmt *) StatementHandle);
 
-	return SQLExecute_((ODBCStmt *) hStmt);
+	return SQLExecute_((ODBCStmt *) StatementHandle);
 }

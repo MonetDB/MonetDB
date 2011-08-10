@@ -114,7 +114,10 @@ SQLSetConnectAttr(SQLHDBC ConnectionHandle,
 
 	clearDbcErrors((ODBCDbc *) ConnectionHandle);
 
-	return SQLSetConnectAttr_((ODBCDbc *) ConnectionHandle, Attribute, ValuePtr, StringLength);
+	return SQLSetConnectAttr_((ODBCDbc *) ConnectionHandle,
+				  Attribute,
+				  ValuePtr,
+				  StringLength);
 }
 
 #ifdef WITH_WCHAR
@@ -124,7 +127,10 @@ SQLSetConnectAttrA(SQLHDBC ConnectionHandle,
 		   SQLPOINTER ValuePtr,
 		   SQLINTEGER StringLength)
 {
-	return SQLSetConnectAttr(ConnectionHandle, Attribute, ValuePtr, StringLength);
+	return SQLSetConnectAttr(ConnectionHandle,
+				 Attribute,
+				 ValuePtr,
+				 StringLength);
 }
 
 SQLRETURN SQL_API
@@ -154,7 +160,8 @@ SQLSetConnectAttrW(SQLHDBC ConnectionHandle,
 	case SQL_ATTR_TRANSLATE_LIB:
 		if (StringLength > 0)	/* convert from bytes to characters */
 			StringLength /= 2;
-		fixWcharIn(ValuePtr, StringLength, SQLCHAR, ptr, addDbcError, dbc, return SQL_ERROR);
+		fixWcharIn(ValuePtr, StringLength, SQLCHAR, ptr,
+			   addDbcError, dbc, return SQL_ERROR);
 		n = SQL_NTS;
 		break;
 	default:

@@ -41,12 +41,12 @@
 #include "ODBCStmt.h"
 
 SQLRETURN SQL_API
-SQLDisconnect(SQLHDBC hDbc)
+SQLDisconnect(SQLHDBC ConnectionHandle)
 {
-	ODBCDbc *dbc = (ODBCDbc *) hDbc;
+	ODBCDbc *dbc = (ODBCDbc *) ConnectionHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLDisconnect " PTRFMT "\n", PTRFMTCAST hDbc);
+	ODBCLOG("SQLDisconnect " PTRFMT "\n", PTRFMTCAST ConnectionHandle);
 #endif
 
 	if (!isValidDbc(dbc))

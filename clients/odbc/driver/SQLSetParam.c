@@ -41,7 +41,7 @@
 #include "ODBCStmt.h"
 
 SQLRETURN SQL_API
-SQLSetParam(SQLHSTMT hStmt,
+SQLSetParam(SQLHSTMT StatementHandle,
 	    SQLUSMALLINT ParameterNumber,
 	    SQLSMALLINT ValueType,
 	    SQLSMALLINT ParameterType,
@@ -52,11 +52,20 @@ SQLSetParam(SQLHSTMT hStmt,
 {
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLSetParam " PTRFMT " %u %d %d " ULENFMT " %d\n",
-		PTRFMTCAST hStmt, (unsigned int) ParameterNumber,
+		PTRFMTCAST StatementHandle, (unsigned int) ParameterNumber,
 		(int) ValueType, (int) ParameterType,
 		ULENCAST LengthPrecision, (int) ParameterScale);
 #endif
 
 	/* map this call to SQLBindParameter as described in ODBC 3.0 SDK help */
-	return SQLBindParameter_((ODBCStmt *) hStmt, ParameterNumber, SQL_PARAM_INPUT_OUTPUT, ValueType, ParameterType, LengthPrecision, ParameterScale, ParameterValue, SQL_SETPARAM_VALUE_MAX, StrLen_or_Ind);
+	return SQLBindParameter_((ODBCStmt *) StatementHandle,
+				 ParameterNumber,
+				 SQL_PARAM_INPUT_OUTPUT,
+				 ValueType,
+				 ParameterType,
+				 LengthPrecision,
+				 ParameterScale,
+				 ParameterValue,
+				 SQL_SETPARAM_VALUE_MAX,
+				 StrLen_or_Ind);
 }

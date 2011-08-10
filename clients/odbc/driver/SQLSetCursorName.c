@@ -43,13 +43,14 @@
 
 static SQLRETURN
 SQLSetCursorName_(ODBCStmt *stmt,
-		  SQLCHAR *szCursor,
-		  SQLSMALLINT nCursorLength)
+		  SQLCHAR *CursorName,
+		  SQLSMALLINT NameLength)
 {
-	fixODBCstring(szCursor, nCursorLength, SQLSMALLINT, addStmtError, stmt, return SQL_ERROR);
+	fixODBCstring(CursorName, NameLength, SQLSMALLINT,
+		      addStmtError, stmt, return SQL_ERROR);
 
 #ifdef ODBCDEBUG
-	ODBCLOG("\"%.*s\"\n", (int) nCursorLength, (char *) szCursor);
+	ODBCLOG("\"%.*s\"\n", (int) NameLength, (char *) CursorName);
 #endif
 
 	if (stmt->State >= EXECUTED0) {
@@ -59,8 +60,8 @@ SQLSetCursorName_(ODBCStmt *stmt,
 	}
 
 	/* TODO: implement the requested behavior */
-	/* Note: when cursor names are to be implemented the SQL parser &
-	   executor must also be able to use it. */
+	/* Note: when cursor names are to be implemented the SQL
+	 * parser & executor must also be able to use it. */
 
 	/* for now always return error */
 	/* Driver does not support this function */
@@ -70,14 +71,14 @@ SQLSetCursorName_(ODBCStmt *stmt,
 }
 
 SQLRETURN SQL_API
-SQLSetCursorName(SQLHSTMT hStmt,
-		 SQLCHAR *szCursor,
-		 SQLSMALLINT nCursorLength)
+SQLSetCursorName(SQLHSTMT StatementHandle,
+		 SQLCHAR *CursorName,
+		 SQLSMALLINT NameLength)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetCursorName " PTRFMT " ", PTRFMTCAST hStmt);
+	ODBCLOG("SQLSetCursorName " PTRFMT " ", PTRFMTCAST StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -85,29 +86,29 @@ SQLSetCursorName(SQLHSTMT hStmt,
 
 	clearStmtErrors(stmt);
 
-	return SQLSetCursorName_(stmt, szCursor, nCursorLength);
+	return SQLSetCursorName_(stmt, CursorName, NameLength);
 }
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLSetCursorNameA(SQLHSTMT hStmt,
-		  SQLCHAR *szCursor,
-		  SQLSMALLINT nCursorLength)
+SQLSetCursorNameA(SQLHSTMT StatementHandle,
+		  SQLCHAR *CursorName,
+		  SQLSMALLINT NameLength)
 {
-	return SQLSetCursorName(hStmt, szCursor, nCursorLength);
+	return SQLSetCursorName(StatementHandle, CursorName, NameLength);
 }
 
 SQLRETURN SQL_API
-SQLSetCursorNameW(SQLHSTMT hStmt,
-		  SQLWCHAR * szCursor,
-		  SQLSMALLINT nCursorLength)
+SQLSetCursorNameW(SQLHSTMT StatementHandle,
+		  SQLWCHAR *CursorName,
+		  SQLSMALLINT NameLength)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 	SQLRETURN rc;
 	SQLCHAR *cursor;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetCursorNameW " PTRFMT " ", PTRFMTCAST hStmt);
+	ODBCLOG("SQLSetCursorNameW " PTRFMT " ", PTRFMTCAST StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -115,7 +116,8 @@ SQLSetCursorNameW(SQLHSTMT hStmt,
 
 	clearStmtErrors(stmt);
 
-	fixWcharIn(szCursor, nCursorLength, SQLCHAR, cursor, addStmtError, stmt, return SQL_ERROR);
+	fixWcharIn(CursorName, NameLength, SQLCHAR, cursor,
+		   addStmtError, stmt, return SQL_ERROR);
 
 	rc = SQLSetCursorName_(stmt, cursor, SQL_NTS);
 

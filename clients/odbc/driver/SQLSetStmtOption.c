@@ -41,16 +41,16 @@
 #include "ODBCStmt.h"
 
 SQLRETURN SQL_API
-SQLSetStmtOption(SQLHSTMT hStmt,
-		 SQLUSMALLINT fOption,
-		 SQLULEN vParam)
+SQLSetStmtOption(SQLHSTMT StatementHandle,
+		 SQLUSMALLINT Option,
+		 SQLULEN ValuePtr)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLSetStmtOption " PTRFMT " %u %lx\n",
-		PTRFMTCAST hStmt, (unsigned int) fOption,
-		(unsigned long) vParam);
+		PTRFMTCAST StatementHandle, (unsigned int) Option,
+		(unsigned long) ValuePtr);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -58,10 +58,10 @@ SQLSetStmtOption(SQLHSTMT hStmt,
 
 	clearStmtErrors(stmt);
 
-	switch (fOption) {
+	switch (Option) {
 		/* only the ODBC 1.0 and ODBC 2.0 options */
 	case SQL_ROWSET_SIZE:
-		fOption = SQL_ATTR_ROW_ARRAY_SIZE;
+		Option = SQL_ATTR_ROW_ARRAY_SIZE;
 		/* fall through */
 	case SQL_QUERY_TIMEOUT:
 	case SQL_MAX_ROWS:
@@ -76,7 +76,10 @@ SQLSetStmtOption(SQLHSTMT hStmt,
 	case SQL_RETRIEVE_DATA:
 	case SQL_USE_BOOKMARKS:
 		/* use mapping as described in ODBC 3.0 SDK Help */
-		return SQLSetStmtAttr_(stmt, fOption, (SQLPOINTER) (size_t) vParam, SQL_NTS);
+		return SQLSetStmtAttr_(stmt,
+				       Option,
+				       (SQLPOINTER) (size_t) ValuePtr,
+				       SQL_NTS);
 	default:
 		/* Invalid attribute/option identifier */
 		addStmtError(stmt, "HY092", NULL, 0);

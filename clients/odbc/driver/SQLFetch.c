@@ -164,12 +164,12 @@ SQLFetch_(ODBCStmt *stmt)
 }
 
 SQLRETURN SQL_API
-SQLFetch(SQLHSTMT hStmt)
+SQLFetch(SQLHSTMT StatementHandle)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLFetch " PTRFMT "\n", PTRFMTCAST hStmt);
+	ODBCLOG("SQLFetch " PTRFMT "\n", PTRFMTCAST StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))

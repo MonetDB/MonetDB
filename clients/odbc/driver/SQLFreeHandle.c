@@ -78,7 +78,7 @@ ODBCFreeDbc_(ODBCDbc *dbc)
 	/* check if no associated statements are still active */
 	if (dbc->FirstStmt != NULL) {
 		/* There are allocated statements should be closed and
-		   freed first */
+		 * freed first */
 		/* Function sequence error */
 		addDbcError(dbc, "HY010", NULL, 0);
 		return SQL_ERROR;
@@ -112,13 +112,13 @@ ODBCFreeDesc_(ODBCDesc *desc)
 	/* check if descriptor is implicitly allocated */
 	if (desc->sql_desc_alloc_type == SQL_DESC_ALLOC_AUTO) {
 		/* Invalid use of an automatically allocated
-		   descriptor handle */
+		 * descriptor handle */
 		addDescError(desc, "HY017", NULL, 0);
 		return SQL_ERROR;
 	}
 
-	/* all statements using this handle revert to
-	   implicitly allocated descriptor handles */
+	/* all statements using this handle revert to implicitly
+	 * allocated descriptor handles */
 	for (stmt = desc->Dbc->FirstStmt; stmt; stmt = stmt->next) {
 		if (desc == stmt->ApplRowDescr)
 			stmt->ApplRowDescr = stmt->AutoApplRowDescr;
@@ -133,20 +133,20 @@ ODBCFreeDesc_(ODBCDesc *desc)
 }
 
 SQLRETURN
-SQLFreeHandle_(SQLSMALLINT handleType,
-	       SQLHANDLE handle)
+SQLFreeHandle_(SQLSMALLINT HandleType,
+	       SQLHANDLE Handle)
 {
 	/* Check parameter handle */
-	if (handle == NULL) {
+	if (Handle == NULL) {
 		/* can not set an error message because the handle is NULL */
 		return SQL_INVALID_HANDLE;
 	}
 
 
-	switch (handleType) {
+	switch (HandleType) {
 	case SQL_HANDLE_ENV:
 	{
-		ODBCEnv *env = (ODBCEnv *) handle;
+		ODBCEnv *env = (ODBCEnv *) Handle;
 
 		/* check it's validity */
 		if (!isValidEnv(env))
@@ -156,7 +156,7 @@ SQLFreeHandle_(SQLSMALLINT handleType,
 	}
 	case SQL_HANDLE_DBC:
 	{
-		ODBCDbc *dbc = (ODBCDbc *) handle;
+		ODBCDbc *dbc = (ODBCDbc *) Handle;
 
 		/* check it's validity */
 		if (!isValidDbc(dbc))
@@ -166,7 +166,7 @@ SQLFreeHandle_(SQLSMALLINT handleType,
 	}
 	case SQL_HANDLE_STMT:
 	{
-		ODBCStmt *stmt = (ODBCStmt *) handle;
+		ODBCStmt *stmt = (ODBCStmt *) Handle;
 
 		/* check it's validity */
 		if (!isValidStmt(stmt))
@@ -176,7 +176,7 @@ SQLFreeHandle_(SQLSMALLINT handleType,
 	}
 	case SQL_HANDLE_DESC:
 	{
-		ODBCDesc *desc = (ODBCDesc *) handle;
+		ODBCDesc *desc = (ODBCDesc *) Handle;
 
 		/* check it's validity */
 		if (!isValidDesc(desc))
@@ -192,12 +192,14 @@ SQLFreeHandle_(SQLSMALLINT handleType,
 }
 
 SQLRETURN SQL_API
-SQLFreeHandle(SQLSMALLINT handleType,
-	      SQLHANDLE handle)
+SQLFreeHandle(SQLSMALLINT HandleType,
+	      SQLHANDLE Handle)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLFreeHandle %s " PTRFMT "\n", handleType == SQL_HANDLE_ENV ? "Env" : handleType == SQL_HANDLE_DBC ? "Dbc" : handleType == SQL_HANDLE_STMT ? "Stmt" : "Desc", PTRFMTCAST handle);
+	ODBCLOG("SQLFreeHandle %s " PTRFMT "\n",
+		HandleType == SQL_HANDLE_ENV ? "Env" : HandleType == SQL_HANDLE_DBC ? "Dbc" : HandleType == SQL_HANDLE_STMT ? "Stmt" : "Desc",
+		PTRFMTCAST Handle);
 #endif
 
-	return SQLFreeHandle_(handleType, handle);
+	return SQLFreeHandle_(HandleType, Handle);
 }

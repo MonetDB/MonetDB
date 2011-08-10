@@ -40,13 +40,14 @@
 #include "ODBCGlobal.h"
 
 SQLRETURN SQL_API
-SQLAllocStmt(SQLHDBC hDbc,
-	     SQLHSTMT *phStmt)
+SQLAllocStmt(SQLHDBC ConnectionHandle,
+	     SQLHSTMT *OutputHandlePtr)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLAllocStmt " PTRFMT "\n", PTRFMTCAST hDbc);
+	ODBCLOG("SQLAllocStmt " PTRFMT "\n", PTRFMTCAST ConnectionHandle);
 #endif
 
 	/* use mapping as described in ODBC 3 SDK Help file */
-	return SQLAllocHandle_(SQL_HANDLE_STMT, (SQLHANDLE) hDbc, (SQLHANDLE *) phStmt);
+	return SQLAllocHandle_(SQL_HANDLE_STMT, (SQLHANDLE) ConnectionHandle,
+			       (SQLHANDLE *) OutputHandlePtr);
 }

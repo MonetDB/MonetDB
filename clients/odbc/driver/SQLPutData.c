@@ -43,18 +43,18 @@
 
 
 SQLRETURN SQL_API
-SQLPutData(SQLHSTMT hStmt,
-	   SQLPOINTER pData,
-	   SQLLEN nLengthOrIndicator)
+SQLPutData(SQLHSTMT StatementHandle,
+	   SQLPOINTER DataPtr,
+	   SQLLEN StrLen_or_Ind)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLPutData " PTRFMT "\n", PTRFMTCAST hStmt);
+	ODBCLOG("SQLPutData " PTRFMT "\n", PTRFMTCAST StatementHandle);
 #endif
 
-	(void) pData;		/* Stefan: unused!? */
-	(void) nLengthOrIndicator;	/* Stefan: unused!? */
+	(void) DataPtr;		/* Stefan: unused!? */
+	(void) StrLen_or_Ind;	/* Stefan: unused!? */
 
 	if (!isValidStmt(stmt))
 		 return SQL_INVALID_HANDLE;

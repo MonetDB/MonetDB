@@ -48,106 +48,103 @@
 #include "ODBCError.h"
 
 static SQLRETURN
-SQLAllocEnv_(SQLHANDLE *pnOutputHandle)
+SQLAllocEnv_(SQLHANDLE *OutputHandlePtr)
 {
-	if (pnOutputHandle == NULL) {
+	if (OutputHandlePtr == NULL) {
 		return SQL_INVALID_HANDLE;
 	}
-	*pnOutputHandle = (SQLHANDLE *) newODBCEnv();
+	*OutputHandlePtr = (SQLHANDLE *) newODBCEnv();
 #ifdef ODBCDEBUG
-	ODBCLOG("new env " PTRFMT "\n", PTRFMTCAST *pnOutputHandle);
+	ODBCLOG("new env " PTRFMT "\n", PTRFMTCAST *OutputHandlePtr);
 #endif
-	return *pnOutputHandle == NULL ? SQL_ERROR : SQL_SUCCESS;
+	return *OutputHandlePtr == NULL ? SQL_ERROR : SQL_SUCCESS;
 }
 
 static SQLRETURN
-SQLAllocDbc_(ODBCEnv *env,
-	     SQLHANDLE *pnOutputHandle)
+SQLAllocDbc_(ODBCEnv *env, SQLHANDLE *OutputHandlePtr)
 {
 	if (env->sql_attr_odbc_version == 0) {
 		/* Function sequence error */
 		addEnvError(env, "HY010", NULL, 0);
 		return SQL_ERROR;
 	}
-	if (pnOutputHandle == NULL) {
+	if (OutputHandlePtr == NULL) {
 		/* Invalid use of null pointer */
 		addEnvError(env, "HY009", NULL, 0);
 		return SQL_ERROR;
 	}
-	*pnOutputHandle = (SQLHANDLE *) newODBCDbc(env);
+	*OutputHandlePtr = (SQLHANDLE *) newODBCDbc(env);
 #ifdef ODBCDEBUG
-	ODBCLOG("new dbc " PTRFMT "\n", PTRFMTCAST *pnOutputHandle);
+	ODBCLOG("new dbc " PTRFMT "\n", PTRFMTCAST *OutputHandlePtr);
 #endif
-	return *pnOutputHandle == NULL ? SQL_ERROR : SQL_SUCCESS;
+	return *OutputHandlePtr == NULL ? SQL_ERROR : SQL_SUCCESS;
 }
 
 SQLRETURN
-SQLAllocStmt_(ODBCDbc *dbc,
-	      SQLHANDLE *pnOutputHandle)
+SQLAllocStmt_(ODBCDbc *dbc, SQLHANDLE *OutputHandlePtr)
 {
 	if (!dbc->Connected) {
 		/* Connection does not exist */
 		addDbcError(dbc, "08003", NULL, 0);
 		return SQL_ERROR;
 	}
-	if (pnOutputHandle == NULL) {
+	if (OutputHandlePtr == NULL) {
 		/* Invalid use of null pointer */
 		addDbcError(dbc, "HY009", NULL, 0);
 		return SQL_ERROR;
 	}
-	*pnOutputHandle = (SQLHANDLE *) newODBCStmt(dbc);
+	*OutputHandlePtr = (SQLHANDLE *) newODBCStmt(dbc);
 #ifdef ODBCDEBUG
-	ODBCLOG("new stmt " PTRFMT "\n", PTRFMTCAST *pnOutputHandle);
+	ODBCLOG("new stmt " PTRFMT "\n", PTRFMTCAST *OutputHandlePtr);
 #endif
-	return *pnOutputHandle == NULL ? SQL_ERROR : SQL_SUCCESS;
+	return *OutputHandlePtr == NULL ? SQL_ERROR : SQL_SUCCESS;
 }
 
 static SQLRETURN
-SQLAllocDesc_(ODBCDbc *dbc,
-	      SQLHANDLE *pnOutputHandle)
+SQLAllocDesc_(ODBCDbc *dbc, SQLHANDLE *OutputHandlePtr)
 {
 	if (!dbc->Connected) {
 		/* Connection does not exist */
 		addDbcError(dbc, "08003", NULL, 0);
 		return SQL_ERROR;
 	}
-	if (pnOutputHandle == NULL) {
+	if (OutputHandlePtr == NULL) {
 		/* Invalid use of null pointer */
 		addDbcError(dbc, "HY009", NULL, 0);
 		return SQL_ERROR;
 	}
-	*pnOutputHandle = (SQLHANDLE *) newODBCDesc(dbc);
+	*OutputHandlePtr = (SQLHANDLE *) newODBCDesc(dbc);
 #ifdef ODBCDEBUG
-	ODBCLOG("new desc " PTRFMT "\n", PTRFMTCAST *pnOutputHandle);
+	ODBCLOG("new desc " PTRFMT "\n", PTRFMTCAST *OutputHandlePtr);
 #endif
-	return *pnOutputHandle == NULL ? SQL_ERROR : SQL_SUCCESS;
+	return *OutputHandlePtr == NULL ? SQL_ERROR : SQL_SUCCESS;
 }
 
 SQLRETURN
-SQLAllocHandle_(SQLSMALLINT nHandleType,
-		SQLHANDLE nInputHandle,
-		SQLHANDLE *pnOutputHandle)
+SQLAllocHandle_(SQLSMALLINT HandleType,
+		SQLHANDLE InputHandle,
+		SQLHANDLE *OutputHandlePtr)
 {
-	switch (nHandleType) {
+	switch (HandleType) {
 	case SQL_HANDLE_ENV:
-		if (nInputHandle != NULL)
+		if (InputHandle != NULL)
 			return SQL_INVALID_HANDLE;
-		return SQLAllocEnv_(pnOutputHandle);
+		return SQLAllocEnv_(OutputHandlePtr);
 	case SQL_HANDLE_DBC:
-		if (!isValidEnv((ODBCEnv *) nInputHandle))
+		if (!isValidEnv((ODBCEnv *) InputHandle))
 			return SQL_INVALID_HANDLE;
-		clearEnvErrors((ODBCEnv *) nInputHandle);
-		return SQLAllocDbc_((ODBCEnv *) nInputHandle, pnOutputHandle);
+		clearEnvErrors((ODBCEnv *) InputHandle);
+		return SQLAllocDbc_((ODBCEnv *) InputHandle, OutputHandlePtr);
 	case SQL_HANDLE_STMT:
-		if (!isValidDbc((ODBCDbc *) nInputHandle))
+		if (!isValidDbc((ODBCDbc *) InputHandle))
 			return SQL_INVALID_HANDLE;
-		clearDbcErrors((ODBCDbc *) nInputHandle);
-		return SQLAllocStmt_((ODBCDbc *) nInputHandle, pnOutputHandle);
+		clearDbcErrors((ODBCDbc *) InputHandle);
+		return SQLAllocStmt_((ODBCDbc *) InputHandle, OutputHandlePtr);
 	case SQL_HANDLE_DESC:
-		if (!isValidDbc((ODBCDbc *) nInputHandle))
+		if (!isValidDbc((ODBCDbc *) InputHandle))
 			return SQL_INVALID_HANDLE;
-		clearDbcErrors((ODBCDbc *) nInputHandle);
-		return SQLAllocDesc_((ODBCDbc *) nInputHandle, pnOutputHandle);
+		clearDbcErrors((ODBCDbc *) InputHandle);
+		return SQLAllocDesc_((ODBCDbc *) InputHandle, OutputHandlePtr);
 	default:
 		/* we cannot set an error because we do not know
 		   the handle type of the possibly non-null handle */
@@ -156,13 +153,17 @@ SQLAllocHandle_(SQLSMALLINT nHandleType,
 }
 
 SQLRETURN SQL_API
-SQLAllocHandle(SQLSMALLINT nHandleType,	/* type to be allocated */
-	       SQLHANDLE nInputHandle,	/* context for new handle */
-	       SQLHANDLE *pnOutputHandle)
-{				/* ptr for allocated handle struct */
+SQLAllocHandle(SQLSMALLINT HandleType,	/* type to be allocated */
+	       SQLHANDLE InputHandle,	/* context for new handle */
+	       SQLHANDLE *OutputHandlePtr) /* ptr for allocated handle struct */
+{
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLAllocHandle %s " PTRFMT "\n", nHandleType == SQL_HANDLE_ENV ? "Env" : nHandleType == SQL_HANDLE_DBC ? "Dbc" : nHandleType == SQL_HANDLE_STMT ? "Stmt" : "Desc", PTRFMTCAST nInputHandle);
+	ODBCLOG("SQLAllocHandle %s " PTRFMT "\n",
+		HandleType == SQL_HANDLE_ENV ? "Env" :
+		    HandleType == SQL_HANDLE_DBC ? "Dbc" :
+		    HandleType == SQL_HANDLE_STMT ? "Stmt" : "Desc",
+		PTRFMTCAST InputHandle);
 #endif
 
-	return SQLAllocHandle_(nHandleType, nInputHandle, pnOutputHandle);
+	return SQLAllocHandle_(HandleType, InputHandle, OutputHandlePtr);
 }

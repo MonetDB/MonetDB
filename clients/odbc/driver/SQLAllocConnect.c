@@ -40,13 +40,14 @@
 #include "ODBCGlobal.h"
 
 SQLRETURN SQL_API
-SQLAllocConnect(SQLHENV hEnv,
-		SQLHDBC *phDbc)
+SQLAllocConnect(SQLHENV EnvironmentHandle,
+		SQLHDBC *OutputHandlePtr)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLAllocConnect " PTRFMT "\n", PTRFMTCAST hEnv);
+	ODBCLOG("SQLAllocConnect " PTRFMT "\n", PTRFMTCAST EnvironmentHandle);
 #endif
 
 	/* use mapping as described in ODBC 3 SDK Help file */
-	return SQLAllocHandle_(SQL_HANDLE_DBC, (SQLHANDLE) hEnv, (SQLHANDLE *) phDbc);
+	return SQLAllocHandle_(SQL_HANDLE_DBC, (SQLHANDLE) EnvironmentHandle,
+			       (SQLHANDLE *) OutputHandlePtr);
 }

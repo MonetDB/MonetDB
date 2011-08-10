@@ -41,15 +41,15 @@
 #include "ODBCStmt.h"
 
 SQLRETURN SQL_API
-SQLGetStmtOption(SQLHSTMT hStmt,
-		 SQLUSMALLINT fOption,
-		 SQLPOINTER pvParam)
+SQLGetStmtOption(SQLHSTMT StatementHandle,
+		 SQLUSMALLINT Option,
+		 SQLPOINTER ValuePtr)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLGetStmtOption " PTRFMT " %u\n",
-		PTRFMTCAST hStmt, (unsigned int) fOption);
+		PTRFMTCAST StatementHandle, (unsigned int) Option);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -57,7 +57,7 @@ SQLGetStmtOption(SQLHSTMT hStmt,
 
 	clearStmtErrors(stmt);
 
-	switch (fOption) {
+	switch (Option) {
 		/* only the ODBC 1.0 and ODBC 2.0 options */
 	case SQL_QUERY_TIMEOUT:
 	case SQL_MAX_ROWS:
@@ -75,7 +75,7 @@ SQLGetStmtOption(SQLHSTMT hStmt,
 /*		case SQL_GET_BOOKMARKS:	is deprecated in ODBC 3.0+ */
 	case SQL_ROW_NUMBER:
 		/* use mapping as described in ODBC 3.0 SDK Help */
-		return SQLGetStmtAttr_(stmt, fOption, pvParam, 0, NULL);
+		return SQLGetStmtAttr_(stmt, Option, ValuePtr, 0, NULL);
 	default:
 		/* Invalid attribute/option identifier */
 		addStmtError(stmt, "HY092", NULL, 0);

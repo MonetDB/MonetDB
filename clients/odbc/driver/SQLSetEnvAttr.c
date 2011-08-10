@@ -46,7 +46,7 @@
 SQLRETURN SQL_API
 SQLSetEnvAttr(SQLHENV EnvironmentHandle,
 	      SQLINTEGER Attribute,
-	      SQLPOINTER Value,
+	      SQLPOINTER ValuePtr,
 	      SQLINTEGER StringLength)
 {
 	ODBCEnv *env = (ODBCEnv *) EnvironmentHandle;
@@ -54,14 +54,14 @@ SQLSetEnvAttr(SQLHENV EnvironmentHandle,
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLSetEnvAttr " PTRFMT " %d %lx\n",
 		PTRFMTCAST EnvironmentHandle, (int) Attribute,
-		(unsigned long) (size_t) Value);
+		(unsigned long) (size_t) ValuePtr);
 #endif
 
 	(void) StringLength;	/* Stefan: unused!? */
 
 	/* global attribute */
 	if (Attribute == SQL_ATTR_CONNECTION_POOLING && env == NULL) {
-		switch ((SQLUINTEGER) (size_t) Value) {
+		switch ((SQLUINTEGER) (size_t) ValuePtr) {
 		case SQL_CP_OFF:
 		case SQL_CP_ONE_PER_DRIVER:
 		case SQL_CP_ONE_PER_HENV:
@@ -87,10 +87,10 @@ SQLSetEnvAttr(SQLHENV EnvironmentHandle,
 
 	switch (Attribute) {
 	case SQL_ATTR_ODBC_VERSION:
-		switch ((SQLINTEGER) (ssize_t) Value) {
+		switch ((SQLINTEGER) (ssize_t) ValuePtr) {
 		case SQL_OV_ODBC3:
 		case SQL_OV_ODBC2:
-			env->sql_attr_odbc_version = (SQLINTEGER) (ssize_t) Value;
+			env->sql_attr_odbc_version = (SQLINTEGER) (ssize_t) ValuePtr;
 			break;
 		default:
 			/* Invalid attribute value */
@@ -99,7 +99,7 @@ SQLSetEnvAttr(SQLHENV EnvironmentHandle,
 		}
 		break;
 	case SQL_ATTR_OUTPUT_NTS:
-		switch ((SQLINTEGER) (ssize_t) Value) {
+		switch ((SQLINTEGER) (ssize_t) ValuePtr) {
 		case SQL_TRUE:
 			break;
 		case SQL_FALSE:

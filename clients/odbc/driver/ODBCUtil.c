@@ -182,7 +182,7 @@ ODBCwchar2utf8(const SQLWCHAR *s, SQLLEN length, char **errmsg)
 char *
 ODBCutf82wchar(const SQLCHAR *s,
 	       SQLINTEGER length,
-	       SQLWCHAR * buf,
+	       SQLWCHAR *buf,
 	       SQLLEN buflen,
 	       SQLSMALLINT *buflenout)
 {

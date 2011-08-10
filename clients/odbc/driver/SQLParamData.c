@@ -43,16 +43,16 @@
 
 
 SQLRETURN SQL_API
-SQLParamData(SQLHSTMT hStmt,
-	     SQLPOINTER *pValue)
+SQLParamData(SQLHSTMT StatementHandle,
+	     SQLPOINTER *ValuePtrPtr)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLParamData " PTRFMT "\n", PTRFMTCAST hStmt);
+	ODBCLOG("SQLParamData " PTRFMT "\n", PTRFMTCAST StatementHandle);
 #endif
 
-	(void) pValue;		/* Stefan: unused!? */
+	(void) ValuePtrPtr;		/* Stefan: unused!? */
 
 	if (!isValidStmt(stmt))
 		 return SQL_INVALID_HANDLE;

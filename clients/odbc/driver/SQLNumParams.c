@@ -43,13 +43,13 @@
 
 
 SQLRETURN SQL_API
-SQLNumParams(SQLHSTMT hStmt,
-	     SQLSMALLINT *pnParamCount)
+SQLNumParams(SQLHSTMT StatementHandle,
+	     SQLSMALLINT *ParameterCountPtr)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLNumParams " PTRFMT "\n", PTRFMTCAST hStmt);
+	ODBCLOG("SQLNumParams " PTRFMT "\n", PTRFMTCAST StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -64,6 +64,6 @@ SQLNumParams(SQLHSTMT hStmt,
 		return SQL_ERROR;
 	}
 
-	*pnParamCount = stmt->ImplParamDescr->sql_desc_count;
+	*ParameterCountPtr = stmt->ImplParamDescr->sql_desc_count;
 	return SQL_SUCCESS;
 }

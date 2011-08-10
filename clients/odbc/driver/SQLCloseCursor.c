@@ -40,12 +40,12 @@
 #include "ODBCStmt.h"
 
 SQLRETURN SQL_API
-SQLCloseCursor(SQLHSTMT hStmt)
+SQLCloseCursor(SQLHSTMT StatementHandle)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLCloseCursor " PTRFMT "\n", PTRFMTCAST hStmt);
+	ODBCLOG("SQLCloseCursor " PTRFMT "\n", PTRFMTCAST StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))

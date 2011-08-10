@@ -46,14 +46,14 @@
 
 static SQLRETURN
 SQLStatistics_(ODBCStmt *stmt,
-	       SQLCHAR *szCatalogName,
-	       SQLSMALLINT nCatalogNameLength,
-	       SQLCHAR *szSchemaName,
-	       SQLSMALLINT nSchemaNameLength,
-	       SQLCHAR *szTableName,
-	       SQLSMALLINT nTableNameLength,
-	       SQLUSMALLINT nUnique,
-	       SQLUSMALLINT nReserved)
+	       SQLCHAR *CatalogName,
+	       SQLSMALLINT NameLength1,
+	       SQLCHAR *SchemaName,
+	       SQLSMALLINT NameLength2,
+	       SQLCHAR *TableName,
+	       SQLSMALLINT NameLength3,
+	       SQLUSMALLINT Unique,
+	       SQLUSMALLINT Reserved)
 {
 	RETCODE rc;
 
@@ -61,20 +61,23 @@ SQLStatistics_(ODBCStmt *stmt,
 	char *query = NULL;
 	char *query_end = NULL;
 
-	fixODBCstring(szTableName, nTableNameLength, SQLSMALLINT, addStmtError, stmt, return SQL_ERROR);
-	fixODBCstring(szSchemaName, nSchemaNameLength, SQLSMALLINT, addStmtError, stmt, return SQL_ERROR);
-	fixODBCstring(szCatalogName, nCatalogNameLength, SQLSMALLINT, addStmtError, stmt, return SQL_ERROR);
+	fixODBCstring(TableName, NameLength3, SQLSMALLINT,
+		      addStmtError, stmt, return SQL_ERROR);
+	fixODBCstring(SchemaName, NameLength2, SQLSMALLINT,
+		      addStmtError, stmt, return SQL_ERROR);
+	fixODBCstring(CatalogName, NameLength1, SQLSMALLINT,
+		      addStmtError, stmt, return SQL_ERROR);
 
 #ifdef ODBCDEBUG
 	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\" %u %u\n",
-		(int) nCatalogNameLength, (char *) szCatalogName,
-		(int) nSchemaNameLength, (char *) szSchemaName,
-		(int) nTableNameLength, (char *) szTableName,
-		(unsigned int) nUnique, (unsigned int) nReserved);
+		(int) NameLength1, (char *) CatalogName,
+		(int) NameLength2, (char *) SchemaName,
+		(int) NameLength3, (char *) TableName,
+		(unsigned int) Unique, (unsigned int) Reserved);
 #endif
 
 	/* check for valid Unique argument */
-	switch (nUnique) {
+	switch (Unique) {
 	case SQL_INDEX_ALL:
 	case SQL_INDEX_UNIQUE:
 		break;
@@ -85,7 +88,7 @@ SQLStatistics_(ODBCStmt *stmt,
 	}
 
 	/* check for valid Reserved argument */
-	switch (nReserved) {
+	switch (Reserved) {
 	case SQL_ENSURE:
 	case SQL_QUICK:
 		break;
@@ -97,19 +100,19 @@ SQLStatistics_(ODBCStmt *stmt,
 
 
 	/* check if a valid (non null, not empty) table name is supplied */
-	if (szTableName == NULL) {
+	if (TableName == NULL) {
 		/* Invalid use of null pointer */
 		addStmtError(stmt, "HY009", NULL, 0);
 		return SQL_ERROR;
 	}
-	if (nTableNameLength == 0) {
+	if (NameLength3 == 0) {
 		/* Invalid string or buffer length */
 		addStmtError(stmt, "HY090", NULL, 0);
 		return SQL_ERROR;
 	}
 
 	/* construct the query now */
-	query = (char *) malloc(1200 + nTableNameLength + nSchemaNameLength);
+	query = (char *) malloc(1200 + NameLength3 + NameLength2);
 	assert(query);
 	query_end = query;
 
@@ -159,13 +162,15 @@ SQLStatistics_(ODBCStmt *stmt,
 
 	/* Construct the selection condition query part */
 	/* search pattern is not allowed for table name so use = and not LIKE */
-	sprintf(query_end, " and t.\"name\" = '%.*s'", nTableNameLength, (char*)szTableName);
+	sprintf(query_end, " and t.\"name\" = '%.*s'",
+		NameLength3, (char*)TableName);
 	query_end += strlen(query_end);
 
-	if (szSchemaName != NULL) {
+	if (SchemaName != NULL) {
 		/* filtering requested on schema name */
 		/* search pattern is not allowed so use = and not LIKE */
-		sprintf(query_end, " and s.\"name\" = '%.*s'", nSchemaNameLength, (char*)szSchemaName);
+		sprintf(query_end, " and s.\"name\" = '%.*s'",
+			NameLength2, (char*)SchemaName);
 		query_end += strlen(query_end);
 	}
 
@@ -174,10 +179,12 @@ SQLStatistics_(ODBCStmt *stmt,
 	       " order by non_unique, type, index_qualifier, index_name, "
 	       "ordinal_position");
 	query_end += strlen(query_end);
-	assert(query_end - query < 1200 + nTableNameLength + nSchemaNameLength);
+	assert(query_end - query < 1200 + NameLength3 + NameLength2);
 
 	/* query the MonetDB data dictionary tables */
-	rc = SQLExecDirect_(stmt, (SQLCHAR *) query, (SQLINTEGER) (query_end - query));
+	rc = SQLExecDirect_(stmt,
+			    (SQLCHAR *) query,
+			    (SQLINTEGER) (query_end - query));
 
 	free(query);
 
@@ -185,20 +192,20 @@ SQLStatistics_(ODBCStmt *stmt,
 }
 
 SQLRETURN SQL_API
-SQLStatistics(SQLHSTMT hStmt,
-	      SQLCHAR *szCatalogName,
-	      SQLSMALLINT nCatalogNameLength,
-	      SQLCHAR *szSchemaName,
-	      SQLSMALLINT nSchemaNameLength,
-	      SQLCHAR *szTableName,
-	      SQLSMALLINT nTableNameLength,
-	      SQLUSMALLINT nUnique,
-	      SQLUSMALLINT nReserved)
+SQLStatistics(SQLHSTMT StatementHandle,
+	      SQLCHAR *CatalogName,
+	      SQLSMALLINT NameLength1,
+	      SQLCHAR *SchemaName,
+	      SQLSMALLINT NameLength2,
+	      SQLCHAR *TableName,
+	      SQLSMALLINT NameLength3,
+	      SQLUSMALLINT Unique,
+	      SQLUSMALLINT Reserved)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLStatistics " PTRFMT " ", PTRFMTCAST hStmt);
+	ODBCLOG("SQLStatistics " PTRFMT " ", PTRFMTCAST StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -206,41 +213,51 @@ SQLStatistics(SQLHSTMT hStmt,
 
 	clearStmtErrors(stmt);
 
-	return SQLStatistics_(stmt, szCatalogName, nCatalogNameLength, szSchemaName, nSchemaNameLength, szTableName, nTableNameLength, nUnique, nReserved);
+	return SQLStatistics_(stmt,
+			      CatalogName, NameLength1,
+			      SchemaName, NameLength2,
+			      TableName, NameLength3,
+			      Unique,
+			      Reserved);
 }
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLStatisticsA(SQLHSTMT hStmt,
-	       SQLCHAR *szCatalogName,
-	       SQLSMALLINT nCatalogNameLength,
-	       SQLCHAR *szSchemaName,
-	       SQLSMALLINT nSchemaNameLength,
-	       SQLCHAR *szTableName,
-	       SQLSMALLINT nTableNameLength,
-	       SQLUSMALLINT nUnique,
-	       SQLUSMALLINT nReserved)
+SQLStatisticsA(SQLHSTMT StatementHandle,
+	       SQLCHAR *CatalogName,
+	       SQLSMALLINT NameLength1,
+	       SQLCHAR *SchemaName,
+	       SQLSMALLINT NameLength2,
+	       SQLCHAR *TableName,
+	       SQLSMALLINT NameLength3,
+	       SQLUSMALLINT Unique,
+	       SQLUSMALLINT Reserved)
 {
-	return SQLStatistics(hStmt, szCatalogName, nCatalogNameLength, szSchemaName, nSchemaNameLength, szTableName, nTableNameLength, nUnique, nReserved);
+	return SQLStatistics(StatementHandle,
+			     CatalogName, NameLength1,
+			     SchemaName, NameLength2,
+			     TableName, NameLength3,
+			     Unique,
+			     Reserved);
 }
 
 SQLRETURN SQL_API
-SQLStatisticsW(SQLHSTMT hStmt,
-	       SQLWCHAR * szCatalogName,
-	       SQLSMALLINT nCatalogNameLength,
-	       SQLWCHAR * szSchemaName,
-	       SQLSMALLINT nSchemaNameLength,
-	       SQLWCHAR * szTableName,
-	       SQLSMALLINT nTableNameLength,
-	       SQLUSMALLINT nUnique,
-	       SQLUSMALLINT nReserved)
+SQLStatisticsW(SQLHSTMT StatementHandle,
+	       SQLWCHAR *CatalogName,
+	       SQLSMALLINT NameLength1,
+	       SQLWCHAR *SchemaName,
+	       SQLSMALLINT NameLength2,
+	       SQLWCHAR *TableName,
+	       SQLSMALLINT NameLength3,
+	       SQLUSMALLINT Unique,
+	       SQLUSMALLINT Reserved)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 	SQLRETURN rc = SQL_ERROR;
 	SQLCHAR *catalog = NULL, *schema = NULL, *table = NULL;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLStatisticsW " PTRFMT " ", PTRFMTCAST hStmt);
+	ODBCLOG("SQLStatisticsW " PTRFMT " ", PTRFMTCAST StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -248,11 +265,19 @@ SQLStatisticsW(SQLHSTMT hStmt,
 
 	clearStmtErrors(stmt);
 
-	fixWcharIn(szCatalogName, nCatalogNameLength, SQLCHAR, catalog, addStmtError, stmt, goto exit);
-	fixWcharIn(szSchemaName, nSchemaNameLength, SQLCHAR, schema, addStmtError, stmt, goto exit);
-	fixWcharIn(szTableName, nTableNameLength, SQLCHAR, table, addStmtError, stmt, goto exit);
+	fixWcharIn(CatalogName, NameLength1, SQLCHAR, catalog,
+		   addStmtError, stmt, goto exit);
+	fixWcharIn(SchemaName, NameLength2, SQLCHAR, schema,
+		   addStmtError, stmt, goto exit);
+	fixWcharIn(TableName, NameLength3, SQLCHAR, table,
+		   addStmtError, stmt, goto exit);
 
-	rc = SQLStatistics_(stmt, catalog, SQL_NTS, schema, SQL_NTS, table, SQL_NTS, nUnique, nReserved);
+	rc = SQLStatistics_(stmt,
+			    catalog, SQL_NTS,
+			    schema, SQL_NTS,
+			    table, SQL_NTS,
+			    Unique,
+			    Reserved);
 
       exit:
 	if (catalog)

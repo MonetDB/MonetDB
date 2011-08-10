@@ -43,15 +43,15 @@
 
 
 SQLRETURN SQL_API
-SQLCopyDesc(SQLHDESC hSourceDescHandle,
-	    SQLHDESC hTargetDescHandle)
+SQLCopyDesc(SQLHDESC SourceDescHandle,
+	    SQLHDESC TargetDescHandle)
 {
-	ODBCDesc *src = (ODBCDesc *) hSourceDescHandle;
-	ODBCDesc *dst = (ODBCDesc *) hTargetDescHandle;
+	ODBCDesc *src = (ODBCDesc *) SourceDescHandle;
+	ODBCDesc *dst = (ODBCDesc *) TargetDescHandle;
 
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLCopyDesc " PTRFMT " " PTRFMT "\n",
-		PTRFMTCAST hSourceDescHandle, PTRFMTCAST hTargetDescHandle);
+		PTRFMTCAST SourceDescHandle, PTRFMTCAST TargetDescHandle);
 #endif
 
 	if (!isValidDesc(src))
@@ -74,7 +74,8 @@ SQLCopyDesc(SQLHDESC hSourceDescHandle,
 			addDescError(src, "HY007", NULL, 0);
 			return SQL_ERROR;
 		}
-		if (src->Stmt->State == PREPARED0 || src->Stmt->State == EXECUTED0) {
+		if (src->Stmt->State == PREPARED0 ||
+		    src->Stmt->State == EXECUTED0) {
 			/* Invalid cursor state */
 			addDescError(src, "24000", NULL, 0);
 			return SQL_ERROR;
@@ -91,7 +92,8 @@ SQLCopyDesc(SQLHDESC hSourceDescHandle,
 	dst->sql_desc_bind_type = src->sql_desc_bind_type;
 	dst->sql_desc_rows_processed_ptr = src->sql_desc_rows_processed_ptr;
 	if (src->descRec)
-		memcpy(dst->descRec, src->descRec, src->sql_desc_count * sizeof(*src->descRec));
+		memcpy(dst->descRec, src->descRec,
+		       src->sql_desc_count * sizeof(*src->descRec));
 
 	return SQL_SUCCESS;
 }

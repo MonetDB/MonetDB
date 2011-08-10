@@ -54,11 +54,11 @@
 
 static SQLRETURN
 SQLBrowseConnect_(ODBCDbc *dbc,
-		  SQLCHAR *szConnStrIn,
-		  SQLSMALLINT cbConnStrIn,
-		  SQLCHAR *szConnStrOut,
-		  SQLSMALLINT cbConnStrOutMax,
-		  SQLSMALLINT *pcbConnStrOut)
+		  SQLCHAR *InConnectionString,
+		  SQLSMALLINT StringLength1,
+		  SQLCHAR *OutConnectionString,
+		  SQLSMALLINT BufferLength,
+		  SQLSMALLINT *StringLength2Ptr)
 {
 	char *key, *attr;
 	char *dsn, *uid, *pwd, *host, *dbname;
@@ -69,10 +69,10 @@ SQLBrowseConnect_(ODBCDbc *dbc,
 	int allocated = 0;
 	SQLRETURN rc;
 
-	fixODBCstring(szConnStrIn, cbConnStrIn, SQLSMALLINT, addDbcError, dbc, return SQL_ERROR);
+	fixODBCstring(InConnectionString, StringLength1, SQLSMALLINT, addDbcError, dbc, return SQL_ERROR);
 
 #ifdef ODBCDEBUG
-	ODBCLOG(" \"%.*s\"\n", (int) cbConnStrIn, (char*) szConnStrIn);
+	ODBCLOG(" \"%.*s\"\n", (int) StringLength1, (char*) InConnectionString);
 #endif
 
 	/* check connection state, should not be connected */
@@ -89,7 +89,7 @@ SQLBrowseConnect_(ODBCDbc *dbc,
 	port = dbc->port;
 	dbname = dbc->dbname;
 
-	while (ODBCGetKeyAttr(&szConnStrIn, &cbConnStrIn, &key, &attr)) {
+	while (ODBCGetKeyAttr(&InConnectionString, &StringLength1, &key, &attr)) {
 		if (strcasecmp(key, "dsn") == 0 && dsn == NULL) {
 			dsn = attr;
 			allocated |= 1;
@@ -154,43 +154,43 @@ SQLBrowseConnect_(ODBCDbc *dbc,
 		rc = SQLConnect_(dbc, (SQLCHAR *) dsn, SQL_NTS, (SQLCHAR *) uid, SQL_NTS, (SQLCHAR *) pwd, SQL_NTS, host, port, dbname);
 	} else {
 		if (uid == NULL) {
-			if (cbConnStrOutMax > 0)
-				strncpy((char *) szConnStrOut, "UID:Login ID=?;", cbConnStrOutMax);
+			if (BufferLength > 0)
+				strncpy((char *) OutConnectionString, "UID:Login ID=?;", BufferLength);
 			len += 15;
-			szConnStrOut += 15;
-			cbConnStrOutMax -= 15;
+			OutConnectionString += 15;
+			BufferLength -= 15;
 		}
 		if (pwd == NULL) {
-			if (cbConnStrOutMax > 0)
-				strncpy((char *) szConnStrOut, "PWD:Password=?;", cbConnStrOutMax);
+			if (BufferLength > 0)
+				strncpy((char *) OutConnectionString, "PWD:Password=?;", BufferLength);
 			len += 15;
-			szConnStrOut += 15;
-			cbConnStrOutMax -= 15;
+			OutConnectionString += 15;
+			BufferLength -= 15;
 		}
 		if (host == NULL) {
-			if (cbConnStrOutMax > 0)
-				strncpy((char *) szConnStrOut, "*HOST:Server=?;", cbConnStrOutMax);
+			if (BufferLength > 0)
+				strncpy((char *) OutConnectionString, "*HOST:Server=?;", BufferLength);
 			len += 15;
-			szConnStrOut += 15;
-			cbConnStrOutMax -= 15;
+			OutConnectionString += 15;
+			BufferLength -= 15;
 		}
 		if (port == 0) {
-			if (cbConnStrOutMax > 0)
-				strncpy((char *) szConnStrOut, "*PORT:Port=?;", cbConnStrOutMax);
+			if (BufferLength > 0)
+				strncpy((char *) OutConnectionString, "*PORT:Port=?;", BufferLength);
 			len += 13;
-			szConnStrOut += 13;
-			cbConnStrOutMax -= 13;
+			OutConnectionString += 13;
+			BufferLength -= 13;
 		}
 		if (dbname == NULL) {
-			if (cbConnStrOutMax > 0)
-				strncpy((char *) szConnStrOut, "*DATABASE:Database=?;", cbConnStrOutMax);
+			if (BufferLength > 0)
+				strncpy((char *) OutConnectionString, "*DATABASE:Database=?;", BufferLength);
 			len += 21;
-			szConnStrOut += 21;
-			cbConnStrOutMax -= 21;
+			OutConnectionString += 21;
+			BufferLength -= 21;
 		}
 
-		if (pcbConnStrOut)
-			*pcbConnStrOut = len;
+		if (StringLength2Ptr)
+			*StringLength2Ptr = len;
 
 		rc = SQL_NEED_DATA;
 	}
@@ -209,17 +209,17 @@ SQLBrowseConnect_(ODBCDbc *dbc,
 }
 
 SQLRETURN SQL_API
-SQLBrowseConnect(SQLHDBC hDbc,
-		 SQLCHAR *szConnStrIn,
-		 SQLSMALLINT cbConnStrIn,
-		 SQLCHAR *szConnStrOut,
-		 SQLSMALLINT cbConnStrOutMax,
-		 SQLSMALLINT *pcbConnStrOut)
+SQLBrowseConnect(SQLHDBC ConnectionHandle,
+		 SQLCHAR *InConnectionString,
+		 SQLSMALLINT StringLength1,
+		 SQLCHAR *OutConnectionString,
+		 SQLSMALLINT BufferLength,
+		 SQLSMALLINT *StringLength2Ptr)
 {
-	ODBCDbc *dbc = (ODBCDbc *) hDbc;
+	ODBCDbc *dbc = (ODBCDbc *) ConnectionHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLBrowseConnect " PTRFMT, PTRFMTCAST hDbc);
+	ODBCLOG("SQLBrowseConnect " PTRFMT, PTRFMTCAST ConnectionHandle);
 #endif
 
 	if (!isValidDbc(dbc))
@@ -227,36 +227,36 @@ SQLBrowseConnect(SQLHDBC hDbc,
 
 	clearDbcErrors(dbc);
 
-	return SQLBrowseConnect_(dbc, szConnStrIn, cbConnStrIn, szConnStrOut, cbConnStrOutMax, pcbConnStrOut);
+	return SQLBrowseConnect_(dbc, InConnectionString, StringLength1, OutConnectionString, BufferLength, StringLength2Ptr);
 }
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLBrowseConnectA(SQLHDBC hDbc,
-		  SQLCHAR *szConnStrIn,
-		  SQLSMALLINT cbConnStrIn,
-		  SQLCHAR *szConnStrOut,
-		  SQLSMALLINT cbConnStrOutMax,
-		  SQLSMALLINT *pcbConnStrOut)
+SQLBrowseConnectA(SQLHDBC ConnectionHandle,
+		  SQLCHAR *InConnectionString,
+		  SQLSMALLINT StringLength1,
+		  SQLCHAR *OutConnectionString,
+		  SQLSMALLINT BufferLength,
+		  SQLSMALLINT *StringLength2Ptr)
 {
-	return SQLBrowseConnect(hDbc, szConnStrIn, cbConnStrIn, szConnStrOut, cbConnStrOutMax, pcbConnStrOut);
+	return SQLBrowseConnect(ConnectionHandle, InConnectionString, StringLength1, OutConnectionString, BufferLength, StringLength2Ptr);
 }
 
 SQLRETURN SQL_API
-SQLBrowseConnectW(SQLHDBC hDbc,
-		  SQLWCHAR * szConnStrIn,
-		  SQLSMALLINT cbConnStrIn,
-		  SQLWCHAR * szConnStrOut,
-		  SQLSMALLINT cbConnStrOutMax,
-		  SQLSMALLINT *pcbConnStrOut)
+SQLBrowseConnectW(SQLHDBC ConnectionHandle,
+		  SQLWCHAR *InConnectionString,
+		  SQLSMALLINT StringLength1,
+		  SQLWCHAR *OutConnectionString,
+		  SQLSMALLINT BufferLength,
+		  SQLSMALLINT *StringLength2Ptr)
 {
-	ODBCDbc *dbc = (ODBCDbc *) hDbc;
+	ODBCDbc *dbc = (ODBCDbc *) ConnectionHandle;
 	SQLCHAR *in = NULL, *out;
 	SQLSMALLINT n;
 	SQLRETURN rc;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLBrowseConnectW " PTRFMT, PTRFMTCAST hDbc);
+	ODBCLOG("SQLBrowseConnectW " PTRFMT, PTRFMTCAST ConnectionHandle);
 #endif
 
 	if (!isValidDbc(dbc))
@@ -264,10 +264,10 @@ SQLBrowseConnectW(SQLHDBC hDbc,
 
 	clearDbcErrors(dbc);
 
-	fixWcharIn(szConnStrIn, cbConnStrIn, SQLCHAR, in, addDbcError, dbc, return SQL_ERROR);
+	fixWcharIn(InConnectionString, StringLength1, SQLCHAR, in, addDbcError, dbc, return SQL_ERROR);
 	out = malloc(100);	/* max 80 needed */
 	rc = SQLBrowseConnect_(dbc, in, SQL_NTS, out, 100, &n);
-	fixWcharOut(rc, out, n, szConnStrOut, cbConnStrOutMax, pcbConnStrOut, 1, addDbcError, dbc);
+	fixWcharOut(rc, out, n, OutConnectionString, BufferLength, StringLength2Ptr, 1, addDbcError, dbc);
 	if (in)
 		free(in);
 	return rc;
