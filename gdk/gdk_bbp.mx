@@ -892,6 +892,14 @@ BBPreadEntries(FILE *fp, char *src, int *min_stamp, int *max_stamp, int oidsize)
 		unsigned short map_head, map_tail, map_hheap, map_theap;
 		int Hhashash, Thashash;
 
+		if ((s = strchr(buf, '\r')) != NULL) {
+			/* convert \r\n into just \n */
+			if (s[1] != '\n')
+				GDKfatal("BBPinit: invalid format for BBP.dir");
+			*s++ = '\n';
+			*s = 0;
+		}
+
 		if (sscanf(buf,
 			   "%lld %hu %128s %128s %128s %d %u %lld %lld %lld %lld %lld %hu %hu %hu %hu"
 			   "%n",
@@ -901,6 +909,18 @@ BBPreadEntries(FILE *fp, char *src, int *min_stamp, int *max_stamp, int oidsize)
 			   &map_theap,
 			   &nread) < 16)
 			GDKfatal("BBPinit: invalid format for BBP.dir%s", buf);
+
+		/* convert both / and \ path separators to our own DIR_SEP */
+#if DIR_SEP != '/'
+		s = filename;
+		while ((s = strchr(s, '/')) != NULL)
+			*s++ = DIR_SEP;
+#endif
+#if DIR_SEP != '\\'
+		s = filename;
+		while ((s = strchr(s, '\\')) != NULL)
+			*s++ = DIR_SEP;
+#endif
 
 		if (src && strcmp(src, filename) != 0)
 			continue;
