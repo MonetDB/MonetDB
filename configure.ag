@@ -574,8 +574,21 @@ yes-*-*)
 	MCHECK_ADD_FLAG([-Wsync-nand])
 	MCHECK_ADD_FLAG([-Wjump-misses-init])
 	MCHECK_ADD_FLAG([-Wmissing-include-dirs])
-	MCHECK_ADD_FLAG([-Wunreachable-code])
 	MCHECK_ADD_FLAG([-Wlogical-op])
+
+	dnl  With clang 2.8 (no other tested) and gcc < 4.5 (tested
+	dnl  3.4.6, 4.2.1, 4.3.2, 4.4.4, 4.4.5, 4.5.1, 4.5.2),
+	dnl  "-Wunreachable-code" triggers numerous "will never be
+	dnl  executed" (at least) in our Mx and stream code, mostly (if
+	dnl  not all) false positives, though; thus, we do not use
+	dnl  "-Wunreachable-code" with clang 2.8 and gcc < 4.5 .
+	case "$CC-$gcc_ver" in
+	*clang*-2.8|*gcc*-[[0-3]].*|*gcc*-4.[[0-4]].*)
+		;;
+	*)
+		MCHECK_ADD_FLAG([-Wunreachable-code])
+		;;
+	esac
 
 	# The default configure invocation when doing an rpmbuild also uses this
 	MCHECK_ADD_FLAG([-Wp,-D_FORTIFY_SOURCE=2])
