@@ -31,7 +31,7 @@
  * SQLDescribeCol()
  * CLI Compliance: ISO 92
  *
- * Author: Martin van Dinther
+ * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 aug 2002
  *
  **********************************************************************/
@@ -43,14 +43,14 @@
 
 static SQLRETURN
 SQLDescribeCol_(ODBCStmt *stmt,
-		SQLUSMALLINT nCol,
-		SQLCHAR *szColName,
-		SQLSMALLINT nColNameMax,
-		SQLSMALLINT *pnColNameLength,
-		SQLSMALLINT *pnSQLDataType,
-		SQLULEN *pnColSize,
-		SQLSMALLINT *pnDecDigits,
-		SQLSMALLINT *pnNullable)
+		SQLUSMALLINT ColumnNumber,
+		SQLCHAR *ColumnName,
+		SQLSMALLINT BufferLength,
+		SQLSMALLINT *NameLengthPtr,
+		SQLSMALLINT *DataTypePtr,
+		SQLULEN *ColumnSizePtr,
+		SQLSMALLINT *DecimalDigitsPtr,
+		SQLSMALLINT *NullablePtr)
 {
 	ODBCDescRec *rec = NULL;
 
@@ -71,37 +71,40 @@ SQLDescribeCol_(ODBCStmt *stmt,
 		return SQL_ERROR;
 	}
 
-	if (nCol < 1 || nCol > stmt->ImplRowDescr->sql_desc_count) {
+	if (ColumnNumber < 1 ||
+	    ColumnNumber > stmt->ImplRowDescr->sql_desc_count) {
 		/* Invalid descriptor index */
 		addStmtError(stmt, "07009", NULL, 0);
 		return SQL_ERROR;
 	}
 
-	rec = stmt->ImplRowDescr->descRec + nCol;
+	rec = stmt->ImplRowDescr->descRec + ColumnNumber;
 
 	/* now copy the data */
-	copyString(rec->sql_desc_name, strlen((char *) rec->sql_desc_name), szColName, nColNameMax, pnColNameLength, SQLSMALLINT, addStmtError, stmt, return SQL_ERROR);
+	copyString(rec->sql_desc_name, strlen((char *) rec->sql_desc_name),
+		   ColumnName, BufferLength, NameLengthPtr, SQLSMALLINT,
+		   addStmtError, stmt, return SQL_ERROR);
 
-	if (pnSQLDataType)
-		*pnSQLDataType = rec->sql_desc_concise_type;
-
-	/* also see SQLDescribeParam */
-	if (pnColSize)
-		*pnColSize = ODBCDisplaySize(rec);
+	if (DataTypePtr)
+		*DataTypePtr = rec->sql_desc_concise_type;
 
 	/* also see SQLDescribeParam */
-	if (pnDecDigits) {
+	if (ColumnSizePtr)
+		*ColumnSizePtr = ODBCLength(rec, 0);
+
+	/* also see SQLDescribeParam */
+	if (DecimalDigitsPtr) {
 		switch (rec->sql_desc_concise_type) {
 		case SQL_DECIMAL:
 		case SQL_NUMERIC:
-			*pnDecDigits = rec->sql_desc_scale;
+			*DecimalDigitsPtr = rec->sql_desc_scale;
 			break;
 		case SQL_BIT:
 		case SQL_TINYINT:
 		case SQL_SMALLINT:
 		case SQL_INTEGER:
 		case SQL_BIGINT:
-			*pnDecDigits = 0;
+			*DecimalDigitsPtr = 0;
 			break;
 		case SQL_TYPE_TIME:
 		case SQL_TYPE_TIMESTAMP:
@@ -109,33 +112,33 @@ SQLDescribeCol_(ODBCStmt *stmt,
 		case SQL_INTERVAL_DAY_TO_SECOND:
 		case SQL_INTERVAL_HOUR_TO_SECOND:
 		case SQL_INTERVAL_MINUTE_TO_SECOND:
-			*pnDecDigits = rec->sql_desc_precision;
+			*DecimalDigitsPtr = rec->sql_desc_precision;
 			break;
 		}
 	}
 
-	if (pnNullable)
-		*pnNullable = rec->sql_desc_nullable;
+	if (NullablePtr)
+		*NullablePtr = rec->sql_desc_nullable;
 
 	return stmt->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 }
 
 SQLRETURN SQL_API
-SQLDescribeCol(SQLHSTMT hStmt,
-	       SQLUSMALLINT nCol,
-	       SQLCHAR *szColName,
-	       SQLSMALLINT nColNameMax,
-	       SQLSMALLINT *pnColNameLength,
-	       SQLSMALLINT *pnSQLDataType,
-	       SQLULEN *pnColSize,
-	       SQLSMALLINT *pnDecDigits,
-	       SQLSMALLINT *pnNullable)
+SQLDescribeCol(SQLHSTMT StatementHandle,
+	       SQLUSMALLINT ColumnNumber,
+	       SQLCHAR *ColumnName,
+	       SQLSMALLINT BufferLength,
+	       SQLSMALLINT *NameLengthPtr,
+	       SQLSMALLINT *DataTypePtr,
+	       SQLULEN *ColumnSizePtr,
+	       SQLSMALLINT *DecimalDigitsPtr,
+	       SQLSMALLINT *NullablePtr)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLDescribeCol " PTRFMT " %u\n",
-		PTRFMTCAST hStmt, (unsigned int) nCol);
+		PTRFMTCAST StatementHandle, (unsigned int) ColumnNumber);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -143,43 +146,59 @@ SQLDescribeCol(SQLHSTMT hStmt,
 
 	clearStmtErrors(stmt);
 
-	return SQLDescribeCol_(stmt, nCol, szColName, nColNameMax, pnColNameLength, pnSQLDataType, pnColSize, pnDecDigits, pnNullable);
+	return SQLDescribeCol_(stmt,
+			       ColumnNumber,
+			       ColumnName,
+			       BufferLength,
+			       NameLengthPtr,
+			       DataTypePtr,
+			       ColumnSizePtr,
+			       DecimalDigitsPtr,
+			       NullablePtr);
 }
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLDescribeColA(SQLHSTMT hStmt,
-		SQLUSMALLINT nCol,
-		SQLCHAR *szColName,
-		SQLSMALLINT nColNameMax,
-		SQLSMALLINT *pnColNameLength,
-		SQLSMALLINT *pnSQLDataType,
-		SQLULEN *pnColSize,
-		SQLSMALLINT *pnDecDigits,
-		SQLSMALLINT *pnNullable)
+SQLDescribeColA(SQLHSTMT StatementHandle,
+		SQLUSMALLINT ColumnNumber,
+		SQLCHAR *ColumnName,
+		SQLSMALLINT BufferLength,
+		SQLSMALLINT *NameLengthPtr,
+		SQLSMALLINT *DataTypePtr,
+		SQLULEN *ColumnSizePtr,
+		SQLSMALLINT *DecimalDigitsPtr,
+		SQLSMALLINT *NullablePtr)
 {
-	return SQLDescribeCol(hStmt, nCol, szColName, nColNameMax, pnColNameLength, pnSQLDataType, pnColSize, pnDecDigits, pnNullable);
+	return SQLDescribeCol(StatementHandle,
+			      ColumnNumber,
+			      ColumnName,
+			      BufferLength,
+			      NameLengthPtr,
+			      DataTypePtr,
+			      ColumnSizePtr,
+			      DecimalDigitsPtr,
+			      NullablePtr);
 }
 
 SQLRETURN SQL_API
-SQLDescribeColW(SQLHSTMT hStmt,
-		SQLUSMALLINT nCol,
-		SQLWCHAR * szColName,
-		SQLSMALLINT nColNameMax,
-		SQLSMALLINT *pnColNameLength,
-		SQLSMALLINT *pnSQLDataType,
-		SQLULEN *pnColSize,
-		SQLSMALLINT *pnDecDigits,
-		SQLSMALLINT *pnNullable)
+SQLDescribeColW(SQLHSTMT StatementHandle,
+		SQLUSMALLINT ColumnNumber,
+		SQLWCHAR *ColumnName,
+		SQLSMALLINT BufferLength,
+		SQLSMALLINT *NameLengthPtr,
+		SQLSMALLINT *DataTypePtr,
+		SQLULEN *ColumnSizePtr,
+		SQLSMALLINT *DecimalDigitsPtr,
+		SQLSMALLINT *NullablePtr)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 	SQLCHAR *colname;
 	SQLSMALLINT n;
 	SQLRETURN rc = SQL_ERROR;
 
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLDescribeColW " PTRFMT " %u\n",
-		PTRFMTCAST hStmt, (unsigned int) nCol);
+		PTRFMTCAST StatementHandle, (unsigned int) ColumnNumber);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -187,14 +206,24 @@ SQLDescribeColW(SQLHSTMT hStmt,
 
 	clearStmtErrors(stmt);
 
-	rc = SQLDescribeCol_(stmt, nCol, NULL, 0, &n, pnSQLDataType, pnColSize, pnDecDigits, pnNullable);
+	rc = SQLDescribeCol_(stmt, ColumnNumber, NULL, 0, &n, DataTypePtr,
+			     ColumnSizePtr, DecimalDigitsPtr, NullablePtr);
 	if (!SQL_SUCCEEDED(rc))
 		return rc;
 	clearStmtErrors(stmt);
 	n++;			/* account for NUL byte */
 	colname = malloc(n);
-	rc = SQLDescribeCol_(stmt, nCol, colname, n, &n, pnSQLDataType, pnColSize, pnDecDigits, pnNullable);
-	fixWcharOut(rc, colname, n, szColName, nColNameMax, pnColNameLength, 1, addStmtError, stmt);
+	rc = SQLDescribeCol_(stmt,
+			     ColumnNumber,
+			     colname,
+			     n,
+			     &n,
+			     DataTypePtr,
+			     ColumnSizePtr,
+			     DecimalDigitsPtr,
+			     NullablePtr);
+	fixWcharOut(rc, colname, n, ColumnName, BufferLength, NameLengthPtr,
+		    1, addStmtError, stmt);
 
 	return rc;
 }

@@ -33,7 +33,7 @@
  *
  * Note: this function is not supported (yet), it returns an error.
  *
- * Author: Martin van Dinther
+ * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 aug 2002
  *
  **********************************************************************/
@@ -43,18 +43,18 @@
 
 
 SQLRETURN SQL_API
-SQLPutData(SQLHSTMT hStmt,
-	   SQLPOINTER pData,
-	   SQLLEN nLengthOrIndicator)
+SQLPutData(SQLHSTMT StatementHandle,
+	   SQLPOINTER DataPtr,
+	   SQLLEN StrLen_or_Ind)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLPutData " PTRFMT "\n", PTRFMTCAST hStmt);
+	ODBCLOG("SQLPutData " PTRFMT "\n", PTRFMTCAST StatementHandle);
 #endif
 
-	(void) pData;		/* Stefan: unused!? */
-	(void) nLengthOrIndicator;	/* Stefan: unused!? */
+	(void) DataPtr;		/* Stefan: unused!? */
+	(void) StrLen_or_Ind;	/* Stefan: unused!? */
 
 	if (!isValidStmt(stmt))
 		 return SQL_INVALID_HANDLE;

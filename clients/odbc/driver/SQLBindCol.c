@@ -31,7 +31,7 @@
  * SQLBindCol()
  * CLI Compliance: ISO 92
  *
- * Author: Martin van Dinther
+ * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 Aug 2002
  *
  **********************************************************************/
@@ -41,20 +41,20 @@
 
 
 SQLRETURN SQL_API
-SQLBindCol(SQLHSTMT hStmt,
-	   SQLUSMALLINT nCol,
-	   SQLSMALLINT nTargetType,
-	   SQLPOINTER pTargetValue,
-	   SQLLEN nTargetValueMax,
-	   SQLLEN *pnLengthOrIndicator)
+SQLBindCol(SQLHSTMT StatementHandle,
+	   SQLUSMALLINT ColumnNumber,
+	   SQLSMALLINT TargetType,
+	   SQLPOINTER TargetValuePtr,
+	   SQLLEN BufferLength,
+	   SQLLEN *StrLen_or_Ind)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 	ODBCDesc *desc;		/* Application Row Descriptor */
 
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLBindCol " PTRFMT " %d %d " LENFMT "\n",
-		PTRFMTCAST hStmt, nCol, (int) nTargetType,
-		LENCAST nTargetValueMax);
+		PTRFMTCAST StatementHandle, ColumnNumber, (int) TargetType,
+		LENCAST BufferLength);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -66,8 +66,8 @@ SQLBindCol(SQLHSTMT hStmt,
 
 	/* check input parameters */
 	/* column number 0 (Bookmark column) is not supported */
-	if (nCol == 0) {
-		if (nTargetType == SQL_C_BOOKMARK || nTargetType == SQL_C_VARBOOKMARK) {
+	if (ColumnNumber == 0) {
+		if (TargetType == SQL_C_BOOKMARK || TargetType == SQL_C_VARBOOKMARK) {
 			/* Optional feature not implemented */
 			addStmtError(stmt, "HYC00", NULL, 0);
 		} else {
@@ -76,14 +76,14 @@ SQLBindCol(SQLHSTMT hStmt,
 		}
 		return SQL_ERROR;
 	}
-	if (stmt->State >= EXECUTED1 && nCol > stmt->ImplRowDescr->sql_desc_count) {
+	if (stmt->State >= EXECUTED1 && ColumnNumber > stmt->ImplRowDescr->sql_desc_count) {
 		/* Invalid descriptor index */
 		addStmtError(stmt, "07009", NULL, 0);
 		return SQL_ERROR;
 	}
 
 	/* For safety: limit the maximum number of columns to bind */
-	if (nCol > MONETDB_MAX_BIND_COLS) {
+	if (ColumnNumber > MONETDB_MAX_BIND_COLS) {
 		/* General error */
 		addStmtError(stmt, "HY000", "Maximum number of bind columns (8192) exceeded", 0);
 		return SQL_ERROR;
@@ -91,7 +91,7 @@ SQLBindCol(SQLHSTMT hStmt,
 
 	/* can't let SQLSetDescField below do this check since it
 	   returns the wrong error code if the type is incorrect */
-	switch (nTargetType) {
+	switch (TargetType) {
 	case SQL_C_CHAR:
 	case SQL_C_WCHAR:
 	case SQL_C_BINARY:
@@ -135,7 +135,7 @@ SQLBindCol(SQLHSTMT hStmt,
 		return SQL_ERROR;
 	}
 
-	if (nTargetValueMax < 0) {
+	if (BufferLength < 0) {
 		/* Invalid string or buffer length */
 		addStmtError(stmt, "HY090", NULL, 0);
 		return SQL_ERROR;
@@ -143,7 +143,7 @@ SQLBindCol(SQLHSTMT hStmt,
 
 	desc = stmt->ApplRowDescr;
 
-	if (pTargetValue == NULL && nCol == desc->sql_desc_count) {
+	if (TargetValuePtr == NULL && ColumnNumber == desc->sql_desc_count) {
 		int i = desc->sql_desc_count - 1;
 
 		while (i > 0 && desc->descRec[i].sql_desc_data_ptr == NULL)
@@ -153,16 +153,16 @@ SQLBindCol(SQLHSTMT hStmt,
 		ODBCDescRec *rec;
 		SQLRETURN rc;
 
-		if (nCol > desc->sql_desc_count)
-			setODBCDescRecCount(desc, nCol);
-		rc = SQLSetDescField_(desc, nCol, SQL_DESC_CONCISE_TYPE, (SQLPOINTER) (ssize_t) nTargetType, 0);
+		if (ColumnNumber > desc->sql_desc_count)
+			setODBCDescRecCount(desc, ColumnNumber);
+		rc = SQLSetDescField_(desc, ColumnNumber, SQL_DESC_CONCISE_TYPE, (SQLPOINTER) (ssize_t) TargetType, 0);
 		if (!SQL_SUCCEEDED(rc))
 			return rc;
-		rec = &desc->descRec[nCol];
-		rec->sql_desc_octet_length = nTargetValueMax;
-		rec->sql_desc_data_ptr = pTargetValue;
-		rec->sql_desc_indicator_ptr = pnLengthOrIndicator;
-		rec->sql_desc_octet_length_ptr = pnLengthOrIndicator;
+		rec = &desc->descRec[ColumnNumber];
+		rec->sql_desc_octet_length = BufferLength;
+		rec->sql_desc_data_ptr = TargetValuePtr;
+		rec->sql_desc_indicator_ptr = StrLen_or_Ind;
+		rec->sql_desc_octet_length_ptr = StrLen_or_Ind;
 	}
 
 	return SQL_SUCCESS;

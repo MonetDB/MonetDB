@@ -31,7 +31,7 @@
  * SQLGetTypeInfo()
  * CLI Compliance: ISO 92
  *
- * Author: Martin van Dinther
+ * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 aug 2002
  *
  **********************************************************************/
@@ -911,13 +911,13 @@ ODBCGetTypeInfo(int concise_type,
 
 static SQLRETURN
 SQLGetTypeInfo_(ODBCStmt *stmt,
-		SQLSMALLINT nSqlDataType)
+		SQLSMALLINT DataType)
 {
 	const char **tuples[sizeof(types) / sizeof(types[0])];
 	struct types *t;
 	int i;
 
-	switch (nSqlDataType) {
+	switch (DataType) {
 	case SQL_ALL_TYPES:
 	case SQL_CHAR:
 	case SQL_NUMERIC:
@@ -960,56 +960,56 @@ SQLGetTypeInfo_(ODBCStmt *stmt,
 	case SQL_INTERVAL_MINUTE_TO_SECOND:
 		break;
 
-		/* some pre ODBC 3.0 data types which can be mapped to ODBC
-		   3.0 data types */
+	/* some pre ODBC 3.0 data types which can be mapped to ODBC
+	 * 3.0 data types */
 	case -80:		/* SQL_INTERVAL_YEAR */
-		nSqlDataType = SQL_INTERVAL_YEAR;
+		DataType = SQL_INTERVAL_YEAR;
 		break;
 	case -81:		/* SQL_INTERVAL_YEAR_TO_MONTH */
-		nSqlDataType = SQL_INTERVAL_YEAR_TO_MONTH;
+		DataType = SQL_INTERVAL_YEAR_TO_MONTH;
 		break;
 	case -82:		/* SQL_INTERVAL_MONTH */
-		nSqlDataType = SQL_INTERVAL_MONTH;
+		DataType = SQL_INTERVAL_MONTH;
 		break;
 	case -83:		/* SQL_INTERVAL_DAY */
-		nSqlDataType = SQL_INTERVAL_DAY;
+		DataType = SQL_INTERVAL_DAY;
 		break;
 	case -84:		/* SQL_INTERVAL_HOUR */
-		nSqlDataType = SQL_INTERVAL_HOUR;
+		DataType = SQL_INTERVAL_HOUR;
 		break;
 	case -85:		/* SQL_INTERVAL_MINUTE */
-		nSqlDataType = SQL_INTERVAL_MINUTE;
+		DataType = SQL_INTERVAL_MINUTE;
 		break;
 	case -86:		/* SQL_INTERVAL_SECOND */
-		nSqlDataType = SQL_INTERVAL_SECOND;
+		DataType = SQL_INTERVAL_SECOND;
 		break;
 	case -87:		/* SQL_INTERVAL_DAY_TO_HOUR */
-		nSqlDataType = SQL_INTERVAL_DAY_TO_HOUR;
+		DataType = SQL_INTERVAL_DAY_TO_HOUR;
 		break;
 	case -88:		/* SQL_INTERVAL_DAY_TO_MINUTE */
-		nSqlDataType = SQL_INTERVAL_DAY_TO_MINUTE;
+		DataType = SQL_INTERVAL_DAY_TO_MINUTE;
 		break;
 	case -89:		/* SQL_INTERVAL_DAY_TO_SECOND */
-		nSqlDataType = SQL_INTERVAL_DAY_TO_SECOND;
+		DataType = SQL_INTERVAL_DAY_TO_SECOND;
 		break;
 	case -90:		/* SQL_INTERVAL_HOUR_TO_MINUTE */
-		nSqlDataType = SQL_INTERVAL_HOUR_TO_MINUTE;
+		DataType = SQL_INTERVAL_HOUR_TO_MINUTE;
 		break;
 	case -91:		/* SQL_INTERVAL_HOUR_TO_SECOND */
-		nSqlDataType = SQL_INTERVAL_HOUR_TO_SECOND;
+		DataType = SQL_INTERVAL_HOUR_TO_SECOND;
 		break;
 	case -92:		/* SQL_INTERVAL_MINUTE_TO_SECOND */
-		nSqlDataType = SQL_INTERVAL_MINUTE_TO_SECOND;
+		DataType = SQL_INTERVAL_MINUTE_TO_SECOND;
 		break;
 
 	case -95:		/* SQL_UNICODE_CHAR and SQL_UNICODE */
-		nSqlDataType = SQL_WCHAR;
+		DataType = SQL_WCHAR;
 		break;
 	case -96:		/* SQL_UNICODE_VARCHAR */
-		nSqlDataType = SQL_WVARCHAR;
+		DataType = SQL_WVARCHAR;
 		break;
 	case -97:		/* SQL_UNICODE_LONGVARCHAR */
-		nSqlDataType = SQL_WLONGVARCHAR;
+		DataType = SQL_WLONGVARCHAR;
 		break;
 	default:
 		/* Invalid SQL data type */
@@ -1018,7 +1018,7 @@ SQLGetTypeInfo_(ODBCStmt *stmt,
 	}
 
 	for (t = types, i = 0; t < &types[sizeof(types) / sizeof(types[0])]; t++) {
-		if (nSqlDataType == SQL_ALL_TYPES || nSqlDataType == t->data_type) {
+		if (DataType == SQL_ALL_TYPES || DataType == t->data_type) {
 			if (t->tuple == NULL) {
 				char buf[32];
 
@@ -1032,7 +1032,8 @@ SQLGetTypeInfo_(ODBCStmt *stmt,
 					t->tuple[2] = NULL;
 
 				else {
-					snprintf(buf, sizeof(buf), "%d", t->column_size);
+					snprintf(buf, sizeof(buf),
+						 "%d", t->column_size);
 					t->tuple[2] = strdup(buf);
 				}
 				t->tuple[3] = t->literal_prefix;
@@ -1042,7 +1043,8 @@ SQLGetTypeInfo_(ODBCStmt *stmt,
 				snprintf(buf, sizeof(buf), "%d", t->nullable);
 				t->tuple[6] = strdup(buf);
 
-				snprintf(buf, sizeof(buf), "%d", t->case_sensitive);
+				snprintf(buf, sizeof(buf),
+					 "%d", t->case_sensitive);
 				t->tuple[7] = strdup(buf);
 
 				snprintf(buf, sizeof(buf), "%d", t->searchable);
@@ -1052,17 +1054,20 @@ SQLGetTypeInfo_(ODBCStmt *stmt,
 					t->tuple[9] = NULL;
 
 				else {
-					snprintf(buf, sizeof(buf), "%d", t->unsigned_attribute);
+					snprintf(buf, sizeof(buf),
+						 "%d", t->unsigned_attribute);
 					t->tuple[9] = strdup(buf);
 				}
-				snprintf(buf, sizeof(buf), "%d", t->fixed_prec_scale);
+				snprintf(buf, sizeof(buf),
+					 "%d", t->fixed_prec_scale);
 				t->tuple[10] = strdup(buf);
 
 				if (t->auto_unique_value == -1)
 					t->tuple[11] = NULL;
 
 				else {
-					snprintf(buf, sizeof(buf), "%d", t->auto_unique_value);
+					snprintf(buf, sizeof(buf),
+						 "%d", t->auto_unique_value);
 					t->tuple[11] = strdup(buf);
 				}
 				t->tuple[12] = t->local_type_name;
@@ -1071,38 +1076,44 @@ SQLGetTypeInfo_(ODBCStmt *stmt,
 					t->tuple[13] = NULL;
 
 				else {
-					snprintf(buf, sizeof(buf), "%d", t->minimum_scale);
+					snprintf(buf, sizeof(buf),
+						 "%d", t->minimum_scale);
 					t->tuple[13] = strdup(buf);
 				}
 				if (t->maximum_scale == -1)
 					t->tuple[14] = NULL;
 
 				else {
-					snprintf(buf, sizeof(buf), "%d", t->maximum_scale);
+					snprintf(buf, sizeof(buf),
+						 "%d", t->maximum_scale);
 					t->tuple[14] = strdup(buf);
 				}
-				snprintf(buf, sizeof(buf), "%d", t->sql_data_type);
+				snprintf(buf, sizeof(buf),
+					 "%d", t->sql_data_type);
 				t->tuple[15] = strdup(buf);
 
 				if (t->sql_datetime_sub == -1)
 					t->tuple[16] = NULL;
 
 				else {
-					snprintf(buf, sizeof(buf), "%d", t->sql_datetime_sub);
+					snprintf(buf, sizeof(buf),
+						 "%d", t->sql_datetime_sub);
 					t->tuple[16] = strdup(buf);
 				}
 				if (t->num_prec_radix == -1)
 					t->tuple[17] = NULL;
 
 				else {
-					snprintf(buf, sizeof(buf), "%d", t->num_prec_radix);
+					snprintf(buf, sizeof(buf),
+						 "%d", t->num_prec_radix);
 					t->tuple[17] = strdup(buf);
 				}
 				if (t->interval_precision == -1)
 					t->tuple[18] = NULL;
 
 				else {
-					snprintf(buf, sizeof(buf), "%d", t->interval_precision);
+					snprintf(buf, sizeof(buf),
+						 "%d", t->interval_precision);
 					t->tuple[18] = strdup(buf);
 				}
 			}
@@ -1110,20 +1121,21 @@ SQLGetTypeInfo_(ODBCStmt *stmt,
 		}
 	}
 
-	mapi_virtual_result(stmt->hdl, NCOLUMNS, columnnames, columntypes, columnlengths, i, tuples);
+	mapi_virtual_result(stmt->hdl, NCOLUMNS, columnnames,
+			    columntypes, columnlengths, i, tuples);
 
 	return ODBCInitResult(stmt);
 }
 
 SQLRETURN SQL_API
-SQLGetTypeInfo(SQLHSTMT hStmt,
-	       SQLSMALLINT nSqlDataType)
+SQLGetTypeInfo(SQLHSTMT StatementHandle,
+	       SQLSMALLINT DataType)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLGetTypeInfo " PTRFMT " %d\n",
-		PTRFMTCAST hStmt, (int) nSqlDataType);
+		PTRFMTCAST StatementHandle, (int) DataType);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -1131,26 +1143,26 @@ SQLGetTypeInfo(SQLHSTMT hStmt,
 
 	clearStmtErrors(stmt);
 
-	return SQLGetTypeInfo_(stmt, nSqlDataType);
+	return SQLGetTypeInfo_(stmt, DataType);
 }
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLGetTypeInfoA(SQLHSTMT hStmt,
-		SQLSMALLINT nSqlDataType)
+SQLGetTypeInfoA(SQLHSTMT StatementHandle,
+		SQLSMALLINT DataType)
 {
-	return SQLGetTypeInfo(hStmt, nSqlDataType);
+	return SQLGetTypeInfo(StatementHandle, DataType);
 }
 
 SQLRETURN SQL_API
-SQLGetTypeInfoW(SQLHSTMT hStmt,
-		SQLSMALLINT nSqlDataType)
+SQLGetTypeInfoW(SQLHSTMT StatementHandle,
+		SQLSMALLINT DataType)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLGetTypeInfoW " PTRFMT " %d\n",
-		PTRFMTCAST hStmt, (int) nSqlDataType);
+		PTRFMTCAST StatementHandle, (int) DataType);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -1158,6 +1170,6 @@ SQLGetTypeInfoW(SQLHSTMT hStmt,
 
 	clearStmtErrors(stmt);
 
-	return SQLGetTypeInfo_(stmt, nSqlDataType);
+	return SQLGetTypeInfo_(stmt, DataType);
 }
 #endif /* WITH_WCHAR */

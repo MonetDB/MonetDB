@@ -33,7 +33,7 @@
  *
  * Note: this function is not supported (yet), it returns an error.
  *
- * Author: Martin van Dinther
+ * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 aug 2002
  *
  **********************************************************************/
@@ -45,9 +45,9 @@
 SQLRETURN SQL_API
 SQLGetEnvAttr(SQLHENV EnvironmentHandle,
 	      SQLINTEGER Attribute,
-	      SQLPOINTER Value,
+	      SQLPOINTER ValuePtr,
 	      SQLINTEGER BufferLength,
-	      SQLINTEGER *StringLength)
+	      SQLINTEGER *StringLengthPtr)
 {
 	ODBCEnv *env = (ODBCEnv *) EnvironmentHandle;
 
@@ -57,7 +57,7 @@ SQLGetEnvAttr(SQLHENV EnvironmentHandle,
 #endif
 
 	(void) BufferLength;	/* Stefan: unused!? */
-	(void) StringLength;	/* Stefan: unused!? */
+	(void) StringLengthPtr;	/* Stefan: unused!? */
 
 	if (!isValidEnv(env))
 		return SQL_INVALID_HANDLE;
@@ -66,13 +66,13 @@ SQLGetEnvAttr(SQLHENV EnvironmentHandle,
 
 	switch (Attribute) {
 	case SQL_ATTR_ODBC_VERSION:
-		*(SQLINTEGER *) Value = env->sql_attr_odbc_version;
+		*(SQLINTEGER *) ValuePtr = env->sql_attr_odbc_version;
 		break;
 	case SQL_ATTR_OUTPUT_NTS:
-		*(SQLINTEGER *) Value = SQL_TRUE;
+		*(SQLINTEGER *) ValuePtr = SQL_TRUE;
 		break;
 	case SQL_ATTR_CONNECTION_POOLING:
-		*(SQLUINTEGER *) Value = SQL_CP_OFF;
+		*(SQLUINTEGER *) ValuePtr = SQL_CP_OFF;
 		break;
 	case SQL_ATTR_CP_MATCH:
 		/* TODO: implement this function and corresponding behavior */

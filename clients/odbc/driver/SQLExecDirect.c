@@ -31,7 +31,7 @@
  * SQLExecDirect()
  * CLI Compliance: ISO 92
  *
- * Author: Martin van Dinther
+ * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 Aug 2002
  *
  **********************************************************************/
@@ -58,7 +58,7 @@ static struct errors {
 };
 
 static SQLRETURN
-ODBCExecDirect(ODBCStmt *stmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStr)
+ODBCExecDirect(ODBCStmt *stmt, SQLCHAR *StatementText, SQLINTEGER TextLength)
 {
 	char *query;
 	MapiMsg ret;
@@ -66,16 +66,19 @@ ODBCExecDirect(ODBCStmt *stmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStr)
 
 	hdl = stmt->hdl;
 
-	if (stmt->State >= EXECUTED1 || (stmt->State == EXECUTED0 && mapi_more_results(hdl))) {
+	if (stmt->State >= EXECUTED1 ||
+	    (stmt->State == EXECUTED0 && mapi_more_results(hdl))) {
 		/* Invalid cursor state */
 		addStmtError(stmt, "24000", NULL, 0);
 		return SQL_ERROR;
 	}
 
-	/* TODO: convert ODBC escape sequences ( {d 'value'} or {t 'value'} or
-	   {ts 'value'} or {escape 'e-char'} or {oj outer-join} or
-	   {fn scalar-function} etc. ) to MonetDB SQL syntax */
-	query = ODBCTranslateSQL(szSqlStr, (size_t) nSqlStr, stmt->noScan);
+	/* TODO: convert ODBC escape sequences ( {d 'value'} or {t
+	 * 'value'} or {ts 'value'} or {escape 'e-char'} or {oj
+	 * outer-join} or {fn scalar-function} etc. ) to MonetDB SQL
+	 * syntax */
+	query = ODBCTranslateSQL(StatementText, (size_t) TextLength,
+				 stmt->noScan);
 
 	ODBCResetStmt(stmt);
 
@@ -83,7 +86,9 @@ ODBCExecDirect(ODBCStmt *stmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStr)
 	ODBCLOG("SQLExecDirect: \"%s\"\n", query);
 #endif
 
-	if (stmt->next == NULL && stmt->Dbc->FirstStmt == stmt && stmt->cursorType == SQL_CURSOR_FORWARD_ONLY) {
+	if (stmt->next == NULL &&
+	    stmt->Dbc->FirstStmt == stmt &&
+	    stmt->cursorType == SQL_CURSOR_FORWARD_ONLY) {
 		/* we're the only Stmt handle, and we're only going forward */
 		if (stmt->Dbc->cachelimit != 10000)
 			mapi_cache_limit(stmt->Dbc->mid, 10000);
@@ -121,77 +126,81 @@ ODBCExecDirect(ODBCStmt *stmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStr)
 		return SQL_ERROR;
 	}
 
-	/* now get the result data and store it to our internal data structure */
+	/* now get the result data and store it to our internal data
+	 * structure */
 
 	return ODBCInitResult(stmt);
 }
 
 SQLRETURN
 SQLExecDirect_(ODBCStmt *stmt,
-	       SQLCHAR *szSqlStr,
-	       SQLINTEGER nSqlStr)
+	       SQLCHAR *StatementText,
+	       SQLINTEGER TextLength)
 {
 	SQLRETURN ret;
 	SQLINTEGER i;
 
 	/* check input parameter */
-	if (szSqlStr == NULL) {
+	if (StatementText == NULL) {
 		/* Invalid use of null pointer */
 		addStmtError(stmt, "HY009", NULL, 0);
 		return SQL_ERROR;
 	}
 
-	fixODBCstring(szSqlStr, nSqlStr, SQLINTEGER, addStmtError, stmt, return SQL_ERROR);
-	for (i = 0; i < nSqlStr; i++)
-		if (szSqlStr[i] == '?') {
+	fixODBCstring(StatementText, TextLength, SQLINTEGER,
+		      addStmtError, stmt, return SQL_ERROR);
+	for (i = 0; i < TextLength; i++)
+		if (StatementText[i] == '?') {
 			/* query may have parameters, take the long route */
-			ret = SQLPrepare_(stmt, szSqlStr, nSqlStr);
+			ret = SQLPrepare_(stmt, StatementText, TextLength);
 			if (ret == SQL_SUCCESS)
 				ret = SQLExecute_(stmt);
 			return ret;
 		}
 
 	/* no parameters, take the direct route */
-	return ODBCExecDirect(stmt, szSqlStr, nSqlStr);
+	return ODBCExecDirect(stmt, StatementText, TextLength);
 }
 
 SQLRETURN SQL_API
-SQLExecDirect(SQLHSTMT hStmt,
-	      SQLCHAR *szSqlStr,
-	      SQLINTEGER nSqlStr)
+SQLExecDirect(SQLHSTMT StatementHandle,
+	      SQLCHAR *StatementText,
+	      SQLINTEGER TextLength)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLExecDirect " PTRFMT "\n", PTRFMTCAST hStmt);
+	ODBCLOG("SQLExecDirect " PTRFMT "\n", PTRFMTCAST StatementHandle);
 #endif
 
-	if (!isValidStmt((ODBCStmt *) hStmt))
+	if (!isValidStmt((ODBCStmt *) StatementHandle))
 		return SQL_INVALID_HANDLE;
 
-	clearStmtErrors((ODBCStmt *) hStmt);
+	clearStmtErrors((ODBCStmt *) StatementHandle);
 
-	return SQLExecDirect_((ODBCStmt *) hStmt, szSqlStr, nSqlStr);
+	return SQLExecDirect_((ODBCStmt *) StatementHandle,
+			      StatementText,
+			      TextLength);
 }
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLExecDirectA(SQLHSTMT hStmt,
-	       SQLCHAR *szSqlStr,
-	       SQLINTEGER nSqlStr)
+SQLExecDirectA(SQLHSTMT StatementHandle,
+	       SQLCHAR *StatementText,
+	       SQLINTEGER TextLength)
 {
-	return SQLExecDirect(hStmt, szSqlStr, nSqlStr);
+	return SQLExecDirect(StatementHandle, StatementText, TextLength);
 }
 
 SQLRETURN SQL_API
-SQLExecDirectW(SQLHSTMT hStmt,
-	       SQLWCHAR * szSqlStr,
-	       SQLINTEGER nSqlStr)
+SQLExecDirectW(SQLHSTMT StatementHandle,
+	       SQLWCHAR *StatementText,
+	       SQLINTEGER TextLength)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 	SQLRETURN rc;
 	SQLCHAR *sql;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLExecDirectW " PTRFMT "\n", PTRFMTCAST hStmt);
+	ODBCLOG("SQLExecDirectW " PTRFMT "\n", PTRFMTCAST StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -199,9 +208,10 @@ SQLExecDirectW(SQLHSTMT hStmt,
 
 	clearStmtErrors(stmt);
 
-	fixWcharIn(szSqlStr, nSqlStr, SQLCHAR, sql, addStmtError, stmt, return SQL_ERROR);
+	fixWcharIn(StatementText, TextLength, SQLCHAR, sql,
+		   addStmtError, stmt, return SQL_ERROR);
 
-	rc = SQLExecDirect_((ODBCStmt *) hStmt, sql, SQL_NTS);
+	rc = SQLExecDirect_((ODBCStmt *) StatementHandle, sql, SQL_NTS);
 
 	if (sql)
 		free(sql);

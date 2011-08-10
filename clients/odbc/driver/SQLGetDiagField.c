@@ -59,9 +59,9 @@ SQLGetDiagField_(SQLSMALLINT HandleType,
 		 SQLHANDLE Handle,
 		 SQLSMALLINT RecNumber,
 		 SQLSMALLINT DiagIdentifier,
-		 SQLPOINTER DiagInfo,
+		 SQLPOINTER DiagInfoPtr,
 		 SQLSMALLINT BufferLength,
-		 SQLSMALLINT *StringLength)
+		 SQLSMALLINT *StringLengthPtr)
 {
 	ODBCError *err;
 	ODBCDbc *dbc = NULL;
@@ -105,28 +105,28 @@ SQLGetDiagField_(SQLSMALLINT HandleType,
 	case SQL_DIAG_CURSOR_ROW_COUNT:
 		if (HandleType != SQL_HANDLE_STMT)
 			return SQL_ERROR;
-		*(SQLLEN *) DiagInfo = (SQLLEN) ((ODBCStmt *) Handle)->rowSetSize;
+		*(SQLLEN *) DiagInfoPtr = (SQLLEN) ((ODBCStmt *) Handle)->rowSetSize;
 		return SQL_SUCCESS;
 	case SQL_DIAG_DYNAMIC_FUNCTION:
 		if (HandleType != SQL_HANDLE_STMT)
 			return SQL_ERROR;
-		copyDiagString("", DiagInfo, BufferLength, StringLength);
+		copyDiagString("", DiagInfoPtr, BufferLength, StringLengthPtr);
 		return SQL_SUCCESS;
 	case SQL_DIAG_DYNAMIC_FUNCTION_CODE:
 		if (HandleType != SQL_HANDLE_STMT)
 			return SQL_ERROR;
-		*(SQLINTEGER *) DiagInfo = SQL_DIAG_UNKNOWN_STATEMENT;
+		*(SQLINTEGER *) DiagInfoPtr = SQL_DIAG_UNKNOWN_STATEMENT;
 		return SQL_SUCCESS;
 	case SQL_DIAG_NUMBER:
-		*(SQLINTEGER *) DiagInfo = getErrorRecCount(err);
+		*(SQLINTEGER *) DiagInfoPtr = getErrorRecCount(err);
 		return SQL_SUCCESS;
 	case SQL_DIAG_RETURNCODE:
-		*(SQLRETURN *) DiagInfo = SQL_SUCCESS;
+		*(SQLRETURN *) DiagInfoPtr = SQL_SUCCESS;
 		return SQL_SUCCESS;
 	case SQL_DIAG_ROW_COUNT:
 		if (HandleType != SQL_HANDLE_STMT || ((ODBCStmt *) Handle)->State < EXECUTED0)
 			return SQL_ERROR;
-		*(SQLLEN *) DiagInfo = (SQLLEN) ((ODBCStmt *) Handle)->rowcount;
+		*(SQLLEN *) DiagInfoPtr = (SQLLEN) ((ODBCStmt *) Handle)->rowcount;
 		return SQL_SUCCESS;
 	}
 
@@ -142,30 +142,30 @@ SQLGetDiagField_(SQLSMALLINT HandleType,
 	case SQL_DIAG_CLASS_ORIGIN:{
 		char *msg = strncmp(getSqlState(err), "IM", 2) == 0 ? "ODBC 3.0" : "ISO 9075";
 
-		copyDiagString(msg, DiagInfo, BufferLength, StringLength);
+		copyDiagString(msg, DiagInfoPtr, BufferLength, StringLengthPtr);
 		return SQL_SUCCESS;
 	}
 	case SQL_DIAG_COLUMN_NUMBER:
 		if (HandleType != SQL_HANDLE_STMT)
 			return SQL_ERROR;
-		*(SQLINTEGER *) DiagInfo = SQL_COLUMN_NUMBER_UNKNOWN;
+		*(SQLINTEGER *) DiagInfoPtr = SQL_COLUMN_NUMBER_UNKNOWN;
 		return SQL_SUCCESS;
 	case SQL_DIAG_CONNECTION_NAME:{
 		char *msg = "MonetDB ODBC/Mapi";
 
-		copyDiagString(msg, DiagInfo, BufferLength, StringLength);
+		copyDiagString(msg, DiagInfoPtr, BufferLength, StringLengthPtr);
 		return SQL_SUCCESS;
 	}
 	case SQL_DIAG_SERVER_NAME:{
 		char *msg = dbc && dbc->Connected && dbc->dsn ? dbc->dsn : "";
 
-		copyDiagString(msg, DiagInfo, BufferLength, StringLength);
+		copyDiagString(msg, DiagInfoPtr, BufferLength, StringLengthPtr);
 		return SQL_SUCCESS;
 	}
 	case SQL_DIAG_SQLSTATE:{
 		char *msg = getSqlState(err);
 
-		copyDiagString(msg, DiagInfo, BufferLength, StringLength);
+		copyDiagString(msg, DiagInfoPtr, BufferLength, StringLengthPtr);
 		return SQL_SUCCESS;
 	}
 	case SQL_DIAG_SUBCLASS_ORIGIN:{
@@ -218,7 +218,7 @@ SQLGetDiagField_(SQLSMALLINT HandleType,
 		else
 			msg = "ISO 9075";
 
-		copyDiagString(msg, DiagInfo, BufferLength, StringLength);
+		copyDiagString(msg, DiagInfoPtr, BufferLength, StringLengthPtr);
 		return SQL_SUCCESS;
 	}
 	}
@@ -233,9 +233,9 @@ SQLGetDiagField(SQLSMALLINT HandleType,
 		SQLHANDLE Handle,
 		SQLSMALLINT RecNumber,
 		SQLSMALLINT DiagIdentifier,
-		SQLPOINTER DiagInfo,
+		SQLPOINTER DiagInfoPtr,
 		SQLSMALLINT BufferLength,
-		SQLSMALLINT *StringLength)
+		SQLSMALLINT *StringLengthPtr)
 {
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLGetDiagField %s " PTRFMT " %d %d %d\n",
@@ -244,7 +244,13 @@ SQLGetDiagField(SQLSMALLINT HandleType,
 		(int) BufferLength);
 #endif
 
-	return SQLGetDiagField_(HandleType, Handle, RecNumber, DiagIdentifier, DiagInfo, BufferLength, StringLength);
+	return SQLGetDiagField_(HandleType,
+				Handle,
+				RecNumber,
+				DiagIdentifier,
+				DiagInfoPtr,
+				BufferLength,
+				StringLengthPtr);
 }
 
 #ifdef WITH_WCHAR
@@ -253,11 +259,17 @@ SQLGetDiagFieldA(SQLSMALLINT HandleType,
 		 SQLHANDLE Handle,
 		 SQLSMALLINT RecNumber,
 		 SQLSMALLINT DiagIdentifier,
-		 SQLPOINTER DiagInfo,
+		 SQLPOINTER DiagInfoPtr,
 		 SQLSMALLINT BufferLength,
-		 SQLSMALLINT *StringLength)
+		 SQLSMALLINT *StringLengthPtr)
 {
-	return SQLGetDiagField(HandleType, Handle, RecNumber, DiagIdentifier, DiagInfo, BufferLength, StringLength);
+	return SQLGetDiagField(HandleType,
+			       Handle,
+			       RecNumber,
+			       DiagIdentifier,
+			       DiagInfoPtr,
+			       BufferLength,
+			       StringLengthPtr);
 }
 
 SQLRETURN SQL_API
@@ -265,9 +277,9 @@ SQLGetDiagFieldW(SQLSMALLINT HandleType,
 		 SQLHANDLE Handle,
 		 SQLSMALLINT RecNumber,
 		 SQLSMALLINT DiagIdentifier,
-		 SQLPOINTER DiagInfo,
+		 SQLPOINTER DiagInfoPtr,
 		 SQLSMALLINT BufferLength,
-		 SQLSMALLINT *StringLength)
+		 SQLSMALLINT *StringLengthPtr)
 {
 	SQLRETURN rc;
 	SQLPOINTER ptr = NULL;
@@ -289,7 +301,8 @@ SQLGetDiagFieldW(SQLSMALLINT HandleType,
 	case SQL_DIAG_SERVER_NAME:
 	case SQL_DIAG_SQLSTATE:
 	case SQL_DIAG_SUBCLASS_ORIGIN:
-		rc = SQLGetDiagField_(HandleType, Handle, RecNumber, DiagIdentifier, NULL, 0, &n);
+		rc = SQLGetDiagField_(HandleType, Handle, RecNumber,
+				      DiagIdentifier, NULL, 0, &n);
 		if (!SQL_SUCCEEDED(rc))
 			return rc;
 		n++;		/* account for NUL byte */
@@ -297,24 +310,26 @@ SQLGetDiagFieldW(SQLSMALLINT HandleType,
 		break;
 	default:
 		n = BufferLength;
-		ptr = DiagInfo;
+		ptr = DiagInfoPtr;
 		break;
 	}
 
-	rc = SQLGetDiagField_(HandleType, Handle, RecNumber, DiagIdentifier, ptr, n, &n);
+	rc = SQLGetDiagField_(HandleType, Handle, RecNumber,
+			      DiagIdentifier, ptr, n, &n);
 #ifdef ODBCDEBUG
-	if (ptr != DiagInfo)
+	if (ptr != DiagInfoPtr)
 		ODBCLOG("SQLGetDiagFieldW: %s\n", (char *) ptr);
 #endif
 
-	if (ptr != DiagInfo) {
+	if (ptr != DiagInfoPtr) {
 		if (SQL_SUCCEEDED(rc)) {
-			char *e = ODBCutf82wchar(ptr, n, DiagInfo, BufferLength / 2, &n);
+			char *e = ODBCutf82wchar(ptr, n, DiagInfoPtr,
+						 BufferLength / 2, &n);
 
 			if (e)
 				rc = SQL_ERROR;
-			if (StringLength)
-				*StringLength = n * 2;
+			if (StringLengthPtr)
+				*StringLengthPtr = n * 2;
 		}
 		free(ptr);
 	}

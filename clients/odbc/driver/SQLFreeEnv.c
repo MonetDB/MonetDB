@@ -36,12 +36,12 @@
 #include "ODBCGlobal.h"
 
 SQLRETURN SQL_API
-SQLFreeEnv(SQLHENV hDrvEnv)
+SQLFreeEnv(SQLHENV EnvironmentHandle)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLFreeEnv " PTRFMT "\n", PTRFMTCAST hDrvEnv);
+	ODBCLOG("SQLFreeEnv " PTRFMT "\n", PTRFMTCAST EnvironmentHandle);
 #endif
 
 	/* use mapping as described in ODBC 3 SDK Help file */
-	return SQLFreeHandle_(SQL_HANDLE_ENV, (SQLHANDLE) hDrvEnv);
+	return SQLFreeHandle_(SQL_HANDLE_ENV, (SQLHANDLE) EnvironmentHandle);
 }

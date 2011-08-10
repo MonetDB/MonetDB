@@ -33,26 +33,30 @@
 #include "gdk_tm.h"
 
 /*
- * @-
- * The physical (disk) commit protocol is handled mostly by BBPsync. Once a commit
- * succeeded, there is the task of removing ex-persistent bats (those that still
- * were persistent in the previous commit, but were made transient in this transaction).
- * Notice that such ex- (i.e. non-) persistent bats are not backed up by the BBPsync
- * protocol, so we cannot start deleting after we know the commit will succeed.
+ * The physical (disk) commit protocol is handled mostly by
+ * BBPsync. Once a commit succeeded, there is the task of removing
+ * ex-persistent bats (those that still were persistent in the
+ * previous commit, but were made transient in this transaction).
+ * Notice that such ex- (i.e. non-) persistent bats are not backed up
+ * by the BBPsync protocol, so we cannot start deleting after we know
+ * the commit will succeed.
  *
- * Another hairy issue are the delta statuses in BATs. These provide a fast way
- * to perform a transaction abort (HOT-abort, instead of COLD-abort, which is achieved
- * by the BBP recovery in a database restart). Hot-abort functionality has not been
- * important in MonetDB for now, so it is not well-tested. The problem here is that
- * if a commit fails in the physical part (BBPsync), we have not sufficient information
- * to roll back the delta statuses.
+ * Another hairy issue are the delta statuses in BATs. These provide a
+ * fast way to perform a transaction abort (HOT-abort, instead of
+ * COLD-abort, which is achieved by the BBP recovery in a database
+ * restart). Hot-abort functionality has not been important in MonetDB
+ * for now, so it is not well-tested. The problem here is that if a
+ * commit fails in the physical part (BBPsync), we have not sufficient
+ * information to roll back the delta statuses.
  *
- * So a 'feature' of the abort is that after a failed commit, in-memory we
- * *will* commit the transaction. Subsequent commits can retry to achieve a physical
- * commit. The only way to abort in such a situation is COLD-abort: quit the server and
- * restart, so you get the recovered disk images.
+ * So a 'feature' of the abort is that after a failed commit,
+ * in-memory we *will* commit the transaction. Subsequent commits can
+ * retry to achieve a physical commit. The only way to abort in such a
+ * situation is COLD-abort: quit the server and restart, so you get
+ * the recovered disk images.
  */
-/* in the commit prelude, the delta status in the memory image of all bats is commited */
+/* in the commit prelude, the delta status in the memory image of all
+ * bats is commited */
 static int
 prelude(int cnt, bat *subcommit)
 {
@@ -78,8 +82,10 @@ prelude(int cnt, bat *subcommit)
 	return 0;
 }
 
-/* in the commit epilogue, the BBP-status of the bats is changed to reflect their presence in the succeeded checkpoint.
- * Also bats from the previous checkpoint that were deleted now are physically destroyed.
+/* in the commit epilogue, the BBP-status of the bats is changed to
+ * reflect their presence in the succeeded checkpoint.  Also bats from
+ * the previous checkpoint that were deleted now are physically
+ * destroyed.
  */
 static int
 epilogue(int cnt, bat *subcommit)
@@ -92,11 +98,15 @@ epilogue(int cnt, bat *subcommit)
 		if (BBP_status(bid) & BBPPERSISTENT) {
 			BBP_status_on(bid, BBPEXISTING, subcommit ? "TMsubcommit" : "TMcommit");
 		} else if (BBP_status(bid) & BBPDELETED) {
-			/* check mmap modes of bats that are now transient. this has to be done
-			 * after the commit succeeded, because the mmap modes allowed on transient bats
-			 * would be dangerous on persistent bats. If the commit failed, the already
-			 * processed bats that would become transient after the commit, but didn't
-			 * due to the failure, would be a consistency risk.
+			/* check mmap modes of bats that are now
+			 * transient. this has to be done after the
+			 * commit succeeded, because the mmap modes
+			 * allowed on transient bats would be
+			 * dangerous on persistent bats. If the commit
+			 * failed, the already processed bats that
+			 * would become transient after the commit,
+			 * but didn't due to the failure, would be a
+			 * consistency risk.
 			 */
 			BAT *b = BBP_cache(bid);
 			if (b)
@@ -105,11 +115,14 @@ epilogue(int cnt, bat *subcommit)
 		if ((BBP_status(bid) & BBPDELETED) && BBP_refs(bid) <= 0 && BBP_lrefs(bid) <= 0) {
 			BAT *b = BBPquickdesc(bid, TRUE);
 
-			/* the unloaded ones are deleted without loading deleted disk images */
+			/* the unloaded ones are deleted without
+			 * loading deleted disk images */
 			if (b) {
 				BATdelete(b);
 				if (BBP_cache(bid)) {
-					/* those that quickdesc decides to load => free memory */
+					/* those that quickdesc
+					 * decides to load => free
+					 * memory */
 					BATfree(b);
 				}
 			}
@@ -122,8 +135,8 @@ epilogue(int cnt, bat *subcommit)
 
 /*
  * @- TMcommit
- * global commit without any multi-threaded access assumptions, thus taking all BBP locks.
- * It creates a new database checkpoint.
+ * global commit without any multi-threaded access assumptions, thus
+ * taking all BBP locks.  It creates a new database checkpoint.
  */
 int
 TMcommit(void)
@@ -142,24 +155,28 @@ TMcommit(void)
 /*
  * @- TMsubcommit
  *
- * Create a new checkpoint that is equal to the previous, with the expection that
- * for the passed list of batnames, the current state will be reflected in the
- * new checkpoint.
+ * Create a new checkpoint that is equal to the previous, with the
+ * expection that for the passed list of batnames, the current state
+ * will be reflected in the new checkpoint.
  *
- * On the bats in this list we assume exclusive access during the operation.
+ * On the bats in this list we assume exclusive access during the
+ * operation.
  *
- * This operation is useful for e.g. adding a new XQuery document or SQL
- * table to the committed state (after bulk-load). Or for dropping a table or doc,
- * without forcing the total database to be clean, which may require a lot of I/O.
+ * This operation is useful for e.g. adding a new XQuery document or
+ * SQL table to the committed state (after bulk-load). Or for dropping
+ * a table or doc, without forcing the total database to be clean,
+ * which may require a lot of I/O.
  *
- * We expect the globally locked phase (BBPsync) to take little time (<100ms)
- * as only the BBP.dir is written out; and for the existing bats that were
- * modified, only some heap moves are done (moved from BAKDIR to SUBDIR).
- * The atomic commit for sub-commit is the rename of SUBDIR to DELDIR.
+ * We expect the globally locked phase (BBPsync) to take little time
+ * (<100ms) as only the BBP.dir is written out; and for the existing
+ * bats that were modified, only some heap moves are done (moved from
+ * BAKDIR to SUBDIR).  The atomic commit for sub-commit is the rename
+ * of SUBDIR to DELDIR.
  *
- * As it does not take the BBP-locks (thanks to the assumption that access
- * is exclusive), the concurrency impact of subcommit is also much lighter to
- * ongoing concurrent query and update facilities than a real global TMcommit.
+ * As it does not take the BBP-locks (thanks to the assumption that
+ * access is exclusive), the concurrency impact of subcommit is also
+ * much lighter to ongoing concurrent query and update facilities than
+ * a real global TMcommit.
  */
 int
 TMsubcommit_list(bat *subcommit, int cnt)
@@ -174,7 +191,8 @@ TMsubcommit_list(bat *subcommit, int cnt)
 
 	assert(cnt == 1 || subcommit[1] > 0);  /* all values > 0 */
 	if (prelude(cnt, subcommit) == 0) {	/* save the new bats outside the lock */
-		/* lock just prevents BBPtrims, and other global (sub-)commits */
+		/* lock just prevents BBPtrims, and other global
+		 * (sub-)commits */
 		for (xx = 0; xx <= BBP_THREADMASK; xx++)
 			gdk_set_lock(GDKtrimLock(xx), "TMsubcommit");
 		if (BBPsync(cnt, subcommit) == 0) {	/* write BBP.dir (++) */
@@ -200,7 +218,8 @@ TMsubcommit(BAT *b)
 		return -1;
 
 	subcommit[0] = 0;	/* BBP artifact: slot 0 in the array will be ignored */
-	/* collect the list and save the new bats outside any locking */
+	/* collect the list and save the new bats outside any
+	 * locking */
 	BATloop(b, p, q) {
 		bat bid = BBPindex((str) BUNtail(bi, p));
 
@@ -217,11 +236,10 @@ TMsubcommit(BAT *b)
 
 /*
  * @- TMabort
- * Transaction abort is cheap. We use the delta statuses
- * to go back to the previous version of each BAT. Also
- * for BATs that are currently swapped out. Persistent BATs
- * that were made transient in this transaction become
- * persistent again.
+ * Transaction abort is cheap. We use the delta statuses to go back to
+ * the previous version of each BAT. Also for BATs that are currently
+ * swapped out. Persistent BATs that were made transient in this
+ * transaction become persistent again.
  */
 int
 TMabort(void)
@@ -252,17 +270,19 @@ TMabort(void)
 			if (BATdirty(b) || DELTAdirty(b)) {
 				/* BUN move-backes need a real BAT! */
 				/* Stefan:
-				 * Actually, in case DELTAdirty(b), i.e., a
-				 * BAT with differences that is
-				 * saved/swapped-out but not yet committed,
-				 * we (AFAIK) don't have to load the BAT and
-				 * apply the undo, but rather could simply
-				 * discard the delta and revive the backup;
-				 * however, I don't know how to do this
-				 * (yet), hence we stick with this solution
-				 * for the time being --- it should be
-				 * correct though it might not be the most
-				 * efficient way...
+				 * Actually, in case DELTAdirty(b),
+				 * i.e., a BAT with differences that
+				 * is saved/swapped-out but not yet
+				 * committed, we (AFAIK) don't have to
+				 * load the BAT and apply the undo,
+				 * but rather could simply discard the
+				 * delta and revive the backup;
+				 * however, I don't know how to do
+				 * this (yet), hence we stick with
+				 * this solution for the time being
+				 * --- it should be correct though it
+				 * might not be the most efficient
+				 * way...
 				 */
 				b = BBPdescriptor(i);
 				BATundo(b);
