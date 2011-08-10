@@ -86,7 +86,7 @@ SQLDescribeParam(SQLHSTMT StatementHandle,
 
 	/* also see SQLDescribeCol */
 	if (ParameterSizePtr)
-		*ParameterSizePtr = ODBCDisplaySize(rec);
+		*ParameterSizePtr = ODBCLength(rec, 0);
 
 	/* also see SQLDescribeCol */
 	if (DecimalDigitsPtr) {
