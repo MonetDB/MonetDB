@@ -73,6 +73,7 @@ opt_export void removeDataflow(InstrPtr *old, int limit);
 @= flowblock
 	/* close old flow block */
 	if (flowblock){
+		int sf = simpleFlow(old,start,i);
 		if (entries > 1){
 			for( j=start ; j<i; j++)
 			if (old[j]) 
@@ -83,17 +84,19 @@ opt_export void removeDataflow(InstrPtr *old, int limit);
 					pushNil(mb,r,getArgType(mb,old[j],k));
 					init[getArg(old[j],k)]=1;
 				}
-			q= newFcnCall(mb,languageRef,dataflowRef);
-			q->barrier= BARRIERsymbol;
-			getArg(q,0)= flowblock;
-			/* dataflow blocks are transparent, because they are always
-			   executed, either sequentially or in parallell */
-			varSetProperty(mb, getArg(q,0), "transparent",0,0);
+			if ( !sf) {
+				q= newFcnCall(mb,languageRef,dataflowRef);
+				q->barrier= BARRIERsymbol;
+				getArg(q,0)= flowblock;
+				/* dataflow blocks are transparent, because they are always
+				   executed, either sequentially or in parallell */
+				varSetProperty(mb, getArg(q,0), "transparent",0,0);
+			}
 		}
 		for( j=start ; j<i; j++)
 			if (old[j])
 				pushInstruction(mb,old[j]);
-		if (entries>1){
+		if (!sf && entries>1){
 			q= newAssignment(mb);
 			q->barrier= EXITsymbol;
 			getArg(q,0) = flowblock;
@@ -108,6 +111,27 @@ opt_export void removeDataflow(InstrPtr *old, int limit);
 #include "opt_dataflow.h"
 #include "mal_instruction.h"
 #include "mal_interpreter.h"
+
+static int
+simpleFlow(InstrPtr *old, int start, int last)
+{
+	int i, j, simple;
+	InstrPtr p,q;
+
+	p= old[start];
+	for( i = start+1; i < last; i++) 
+	if ( old[i]) {
+		q= old[i];
+		simple = FALSE;
+		for( j= q->retc; j<q->argc; j++)
+			if( getArg(p,0) == getArg(q,j))
+				simple= TRUE;
+		if( !simple)
+			return 0;
+		p = q;
+	}
+	return 1;
+}
 
 void removeDataflow(InstrPtr *old, int limit)
 {
