@@ -2031,7 +2031,7 @@ variable to hold the result instead.
 	if (p->argv[0] < 0)
 		p->argv[0] = newTmpVariable(mb, TYPE_any);
 */
-	assert(p->argv[0]>=0);
+	assert(p->argc == 0 || p->argv[0]>=0);
 	if (mb->stmt[i]) {
 		/* if( getModuleId(mb->stmt[i] ) )
 		   printf("Garbage collect statement %s.%s\n",
