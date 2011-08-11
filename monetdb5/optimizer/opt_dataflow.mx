@@ -74,7 +74,7 @@ opt_export void removeDataflow(InstrPtr *old, int limit);
 	/* close old flow block */
 	if (flowblock){
 		int sf = simpleFlow(old,start,i);
-		if (entries > 1){
+		if (!sf && entries > 1){
 			for( j=start ; j<i; j++)
 			if (old[j]) 
 				for( k=0; k<old[j]->retc; k++)
@@ -84,14 +84,12 @@ opt_export void removeDataflow(InstrPtr *old, int limit);
 					pushNil(mb,r,getArgType(mb,old[j],k));
 					init[getArg(old[j],k)]=1;
 				}
-			if ( !sf) {
-				q= newFcnCall(mb,languageRef,dataflowRef);
-				q->barrier= BARRIERsymbol;
-				getArg(q,0)= flowblock;
-				/* dataflow blocks are transparent, because they are always
-				   executed, either sequentially or in parallell */
-				varSetProperty(mb, getArg(q,0), "transparent",0,0);
-			}
+			q= newFcnCall(mb,languageRef,dataflowRef);
+			q->barrier= BARRIERsymbol;
+			getArg(q,0)= flowblock;
+			/* dataflow blocks are transparent, because they are always
+			   executed, either sequentially or in parallell */
+			varSetProperty(mb, getArg(q,0), "transparent",0,0);
 		}
 		for( j=start ; j<i; j++)
 			if (old[j])
