@@ -1290,11 +1290,15 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 				/* its argument is the optimizer level followed by filename*/
 				MalBlkPtr mdot;
 				char fname[2*PATHLENGTH]="";
-				char name[PATHLENGTH];
+				char name[PATHLENGTH], *nme;
 
 				skipWord(cntxt, b);
-				mdot= mdbLocateMalBlk(cntxt,mb,b,out);
+				nme = b;
 				skipNonBlanc(cntxt, b);
+				strncpy(name,nme, PATHLENGTH-1);
+				if( b - nme  < PATHLENGTH)
+					name[ b - nme] = 0;
+				mdot= mdbLocateMalBlk(cntxt,mb,name,out);
 				skipBlanc(cntxt, b);
 				if( mdot == NULL)
 					mdot= mb;
