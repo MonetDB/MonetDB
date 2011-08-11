@@ -1365,7 +1365,11 @@ sqltypeinit(void)
 			sql_create_func("scale_up", "calc", "*", *u, *t, *t, SCALE_NONE);
 	}
 
-	for (t = dates-1; t >= floats; t--) {
+	/* initial assignment to t is on purpose like this, such that the
+	 * compiler (as of gcc-4.6) "sees" that we never go below the
+	 * initial pointer, and hence don't get a
+	 * error: array subscript is below array bounds */
+	for (t = floats + (dates - floats - 1); t >= floats; t--) {
 		sql_create_func("power", "mmath", "pow", *t, *t, *t, SCALE_FIX);
 		sql_create_func("floor", "mmath", "floor", *t, NULL, *t, SCALE_FIX);
 		sql_create_func("ceil", "mmath", "ceil", *t, NULL, *t, SCALE_FIX);

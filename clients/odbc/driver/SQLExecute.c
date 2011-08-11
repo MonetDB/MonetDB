@@ -61,7 +61,7 @@ static struct msql_types {
 	{"table", 0},
 	{"time", SQL_TYPE_TIME},
 	{"timestamp", SQL_TYPE_TIMESTAMP},
-/* 	{"tinyint", SQL_TINYINT}, */
+	{"tinyint", SQL_TINYINT},
 /* 	{"ubyte", SQL_TINYINT}, */
 	{"varchar", SQL_VARCHAR},
 	{"wrd", SQL_BIGINT},

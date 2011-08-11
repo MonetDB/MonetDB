@@ -200,7 +200,7 @@ SQLBindParameter_(ODBCStmt *stmt,
 /* 	case SQL_WVARCHAR: */
 /* 	case SQL_WLONGVARCHAR: */
 	case SQL_BIT:
-/* 	case SQL_TINYINT: */
+	case SQL_TINYINT:
 	case SQL_SMALLINT:
 	case SQL_INTEGER:
 	case SQL_BIGINT:
@@ -229,7 +229,6 @@ SQLBindParameter_(ODBCStmt *stmt,
 	case SQL_WCHAR:
 	case SQL_WVARCHAR:
 	case SQL_WLONGVARCHAR:
-	case SQL_TINYINT:
 	case SQL_GUID:
 		/* Optional feature not implemented */
 		addStmtError(stmt, "HYC00", NULL, 0);
