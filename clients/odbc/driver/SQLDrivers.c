@@ -37,7 +37,8 @@ SQLDrivers(SQLHENV EnvironmentHandle,
 	(void) DriverAttributes;
 	(void) BufferLength2;
 	(void) AttributesLengthPtr;
-	addEnvError((ODBCEnv *) EnvironmentHandle, "HY000", "Driver Manager only function", 0);
+	addEnvError((ODBCEnv *) EnvironmentHandle, "HY000",
+		    "Driver Manager only function", 0);
 	return SQL_ERROR;
 }
 
@@ -52,16 +53,23 @@ SQLDriversA(SQLHENV EnvironmentHandle,
 	    SQLSMALLINT BufferLength2,
 	    SQLSMALLINT *AttributesLengthPtr)
 {
-	return SQLDrivers(EnvironmentHandle, Direction, DriverDescription, BufferLength1, DescriptionLengthPtr, DriverAttributes, BufferLength2, AttributesLengthPtr);
+	return SQLDrivers(EnvironmentHandle,
+			  Direction,
+			  DriverDescription,
+			  BufferLength1,
+			  DescriptionLengthPtr,
+			  DriverAttributes,
+			  BufferLength2,
+			  AttributesLengthPtr);
 }
 
 SQLRETURN SQL_API
 SQLDriversW(SQLHENV EnvironmentHandle,
 	    SQLUSMALLINT Direction,
-	    SQLWCHAR * DriverDescription,
+	    SQLWCHAR *DriverDescription,
 	    SQLSMALLINT BufferLength1,
 	    SQLSMALLINT *DescriptionLengthPtr,
-	    SQLWCHAR * DriverAttributes,
+	    SQLWCHAR *DriverAttributes,
 	    SQLSMALLINT BufferLength2,
 	    SQLSMALLINT *AttributesLengthPtr)
 {
@@ -72,7 +80,8 @@ SQLDriversW(SQLHENV EnvironmentHandle,
 	(void) DriverAttributes;
 	(void) BufferLength2;
 	(void) AttributesLengthPtr;
-	addEnvError((ODBCEnv *) EnvironmentHandle, "HY000", "Driver Manager only function", 0);
+	addEnvError((ODBCEnv *) EnvironmentHandle, "HY000",
+		    "Driver Manager only function", 0);
 	return SQL_ERROR;
 }
 #endif /* WITH_WCHAR */

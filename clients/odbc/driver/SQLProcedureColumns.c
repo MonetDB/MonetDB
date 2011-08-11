@@ -34,7 +34,7 @@
  * Note: this function is not implemented (it only sets an error),
  * because MonetDB SQL frontend does not support stored procedures.
  *
- * Author: Martin van Dinther
+ * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 aug 2002
  *
  **********************************************************************/
@@ -46,26 +46,30 @@
 
 static SQLRETURN
 SQLProcedureColumns_(ODBCStmt *stmt,
-		     SQLCHAR *szCatalogName,
-		     SQLSMALLINT nCatalogNameLength,
-		     SQLCHAR *szSchemaName,
-		     SQLSMALLINT nSchemaNameLength,
-		     SQLCHAR *szProcName,
-		     SQLSMALLINT nProcNameLength,
-		     SQLCHAR *szColumnName,
-		     SQLSMALLINT nColumnNameLength)
+		     SQLCHAR *CatalogName,
+		     SQLSMALLINT NameLength1,
+		     SQLCHAR *SchemaName,
+		     SQLSMALLINT NameLength2,
+		     SQLCHAR *ProcName,
+		     SQLSMALLINT NameLength3,
+		     SQLCHAR *ColumnName,
+		     SQLSMALLINT NameLength4)
 {
-	fixODBCstring(szCatalogName, nCatalogNameLength, SQLSMALLINT, addStmtError, stmt, return SQL_ERROR);
-	fixODBCstring(szSchemaName, nSchemaNameLength, SQLSMALLINT, addStmtError, stmt, return SQL_ERROR);
-	fixODBCstring(szProcName, nProcNameLength, SQLSMALLINT, addStmtError, stmt, return SQL_ERROR);
-	fixODBCstring(szColumnName, nColumnNameLength, SQLSMALLINT, addStmtError, stmt, return SQL_ERROR);
+	fixODBCstring(CatalogName, NameLength1, SQLSMALLINT,
+		      addStmtError, stmt, return SQL_ERROR);
+	fixODBCstring(SchemaName, NameLength2, SQLSMALLINT,
+		      addStmtError, stmt, return SQL_ERROR);
+	fixODBCstring(ProcName, NameLength3, SQLSMALLINT,
+		      addStmtError, stmt, return SQL_ERROR);
+	fixODBCstring(ColumnName, NameLength4, SQLSMALLINT,
+		      addStmtError, stmt, return SQL_ERROR);
 
 #ifdef ODBCDEBUG
 	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\" \"%.*s\"\n",
-		(int) nCatalogNameLength, (char *) szCatalogName,
-		(int) nSchemaNameLength, (char *) szSchemaName,
-		(int) nProcNameLength, (char *) szProcName,
-		(int) nColumnNameLength, (char *) szColumnName);
+		(int) NameLength1, (char *) CatalogName,
+		(int) NameLength2, (char *) SchemaName,
+		(int) NameLength3, (char *) ProcName,
+		(int) NameLength4, (char *) ColumnName);
 #endif
 
 	/* SQLProcedureColumns returns a table with the following columns:
@@ -97,20 +101,20 @@ SQLProcedureColumns_(ODBCStmt *stmt,
 }
 
 SQLRETURN SQL_API
-SQLProcedureColumns(SQLHSTMT hStmt,
-		    SQLCHAR *szCatalogName,
-		    SQLSMALLINT nCatalogNameLength,
-		    SQLCHAR *szSchemaName,
-		    SQLSMALLINT nSchemaNameLength,
-		    SQLCHAR *szProcName,
-		    SQLSMALLINT nProcNameLength,
-		    SQLCHAR *szColumnName,
-		    SQLSMALLINT nColumnNameLength)
+SQLProcedureColumns(SQLHSTMT StatementHandle,
+		    SQLCHAR *CatalogName,
+		    SQLSMALLINT NameLength1,
+		    SQLCHAR *SchemaName,
+		    SQLSMALLINT NameLength2,
+		    SQLCHAR *ProcName,
+		    SQLSMALLINT NameLength3,
+		    SQLCHAR *ColumnName,
+		    SQLSMALLINT NameLength4)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLProcedureColumns " PTRFMT " ", PTRFMTCAST hStmt);
+	ODBCLOG("SQLProcedureColumns " PTRFMT " ", PTRFMTCAST StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -118,41 +122,49 @@ SQLProcedureColumns(SQLHSTMT hStmt,
 
 	clearStmtErrors(stmt);
 
-	return SQLProcedureColumns_(stmt, szCatalogName, nCatalogNameLength, szSchemaName, nSchemaNameLength, szProcName, nProcNameLength, szColumnName, nColumnNameLength);
+	return SQLProcedureColumns_(stmt,
+				    CatalogName, NameLength1,
+				    SchemaName, NameLength2,
+				    ProcName, NameLength3,
+				    ColumnName, NameLength4);
 }
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLProcedureColumnsA(SQLHSTMT hStmt,
-		     SQLCHAR *szCatalogName,
-		     SQLSMALLINT nCatalogNameLength,
-		     SQLCHAR *szSchemaName,
-		     SQLSMALLINT nSchemaNameLength,
-		     SQLCHAR *szProcName,
-		     SQLSMALLINT nProcNameLength,
-		     SQLCHAR *szColumnName,
-		     SQLSMALLINT nColumnNameLength)
+SQLProcedureColumnsA(SQLHSTMT StatementHandle,
+		     SQLCHAR *CatalogName,
+		     SQLSMALLINT NameLength1,
+		     SQLCHAR *SchemaName,
+		     SQLSMALLINT NameLength2,
+		     SQLCHAR *ProcName,
+		     SQLSMALLINT NameLength3,
+		     SQLCHAR *ColumnName,
+		     SQLSMALLINT NameLength4)
 {
-	return SQLProcedureColumns(hStmt, szCatalogName, nCatalogNameLength, szSchemaName, nSchemaNameLength, szProcName, nProcNameLength, szColumnName, nColumnNameLength);
+	return SQLProcedureColumns(StatementHandle,
+				   CatalogName, NameLength1,
+				   SchemaName, NameLength2,
+				   ProcName, NameLength3,
+				   ColumnName, NameLength4);
 }
 
 SQLRETURN SQL_API
-SQLProcedureColumnsW(SQLHSTMT hStmt,
-		     SQLWCHAR * szCatalogName,
-		     SQLSMALLINT nCatalogNameLength,
-		     SQLWCHAR * szSchemaName,
-		     SQLSMALLINT nSchemaNameLength,
-		     SQLWCHAR * szProcName,
-		     SQLSMALLINT nProcNameLength,
-		     SQLWCHAR * szColumnName,
-		     SQLSMALLINT nColumnNameLength)
+SQLProcedureColumnsW(SQLHSTMT StatementHandle,
+		     SQLWCHAR *CatalogName,
+		     SQLSMALLINT NameLength1,
+		     SQLWCHAR *SchemaName,
+		     SQLSMALLINT NameLength2,
+		     SQLWCHAR *ProcName,
+		     SQLSMALLINT NameLength3,
+		     SQLWCHAR *ColumnName,
+		     SQLSMALLINT NameLength4)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 	SQLRETURN rc = SQL_ERROR;
 	SQLCHAR *catalog = NULL, *schema = NULL, *proc = NULL, *column = NULL;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLProcedureColumnsW " PTRFMT " ", PTRFMTCAST hStmt);
+	ODBCLOG("SQLProcedureColumnsW " PTRFMT " ", PTRFMTCAST StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -160,12 +172,20 @@ SQLProcedureColumnsW(SQLHSTMT hStmt,
 
 	clearStmtErrors(stmt);
 
-	fixWcharIn(szCatalogName, nCatalogNameLength, SQLCHAR, catalog, addStmtError, stmt, goto exit);
-	fixWcharIn(szSchemaName, nSchemaNameLength, SQLCHAR, schema, addStmtError, stmt, goto exit);
-	fixWcharIn(szProcName, nProcNameLength, SQLCHAR, proc, addStmtError, stmt, goto exit);
-	fixWcharIn(szColumnName, nColumnNameLength, SQLCHAR, column, addStmtError, stmt, goto exit);
+	fixWcharIn(CatalogName, NameLength1, SQLCHAR, catalog,
+		   addStmtError, stmt, goto exit);
+	fixWcharIn(SchemaName, NameLength2, SQLCHAR, schema,
+		   addStmtError, stmt, goto exit);
+	fixWcharIn(ProcName, NameLength3, SQLCHAR, proc,
+		   addStmtError, stmt, goto exit);
+	fixWcharIn(ColumnName, NameLength4, SQLCHAR, column,
+		   addStmtError, stmt, goto exit);
 
-	rc = SQLProcedureColumns_(stmt, catalog, SQL_NTS, schema, SQL_NTS, proc, SQL_NTS, column, SQL_NTS);
+	rc = SQLProcedureColumns_(stmt,
+				  catalog, SQL_NTS,
+				  schema, SQL_NTS,
+				  proc, SQL_NTS,
+				  column, SQL_NTS);
 
       exit:
 	if (catalog)

@@ -39,11 +39,11 @@
 
 static SQLRETURN
 SQLGetConnectOption_(ODBCDbc *dbc,
-		     SQLUSMALLINT nOption,
-		     SQLPOINTER pvParam)
+		     SQLUSMALLINT Option,
+		     SQLPOINTER ValuePtr)
 {
 	/* use mapping as described in ODBC 3 SDK Help file */
-	switch (nOption) {
+	switch (Option) {
 		/* connection attributes (ODBC 1 and 2 only) */
 	case SQL_ACCESS_MODE:
 	case SQL_AUTOCOMMIT:
@@ -54,15 +54,16 @@ SQLGetConnectOption_(ODBCDbc *dbc,
 	case SQL_TRANSLATE_OPTION:
 	case SQL_TXN_ISOLATION:
 		/* 32 bit integer argument */
-		return SQLGetConnectAttr_(dbc, nOption, pvParam, 0, NULL);
+		return SQLGetConnectAttr_(dbc, Option, ValuePtr, 0, NULL);
 	case SQL_QUIET_MODE:
 		/* 32/64 bit integer argument */
-		return SQLGetConnectAttr_(dbc, nOption, pvParam, 0, NULL);
+		return SQLGetConnectAttr_(dbc, Option, ValuePtr, 0, NULL);
 	case SQL_CURRENT_QUALIFIER:
 	case SQL_OPT_TRACEFILE:
 	case SQL_TRANSLATE_DLL:
 		/* null terminated string argument */
-		return SQLGetConnectAttr_(dbc, nOption, pvParam, SQL_MAX_OPTION_STRING_LENGTH, NULL);
+		return SQLGetConnectAttr_(dbc, Option, ValuePtr,
+					  SQL_MAX_OPTION_STRING_LENGTH, NULL);
 	default:
 		/* Invalid attribute/option identifier */
 		addDbcError(dbc, "HY092", NULL, 0);
@@ -73,45 +74,45 @@ SQLGetConnectOption_(ODBCDbc *dbc,
 }
 
 SQLRETURN SQL_API
-SQLGetConnectOption(SQLHDBC hDbc,
-		    SQLUSMALLINT nOption,
-		    SQLPOINTER pvParam)
+SQLGetConnectOption(SQLHDBC ConnectionHandle,
+		    SQLUSMALLINT Option,
+		    SQLPOINTER ValuePtr)
 {
-	ODBCDbc *dbc = (ODBCDbc *) hDbc;
+	ODBCDbc *dbc = (ODBCDbc *) ConnectionHandle;
 
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLGetConnectOption " PTRFMT " %u\n",
-		PTRFMTCAST hDbc, (unsigned int) nOption);
+		PTRFMTCAST ConnectionHandle, (unsigned int) Option);
 #endif
 
 	if (!isValidDbc(dbc))
 		return SQL_INVALID_HANDLE;
 	clearDbcErrors(dbc);
 
-	return SQLGetConnectOption_(dbc, nOption, pvParam);
+	return SQLGetConnectOption_(dbc, Option, ValuePtr);
 }
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLGetConnectOptionA(SQLHDBC hDbc,
-		     SQLUSMALLINT nOption,
-		     SQLPOINTER pvParam)
+SQLGetConnectOptionA(SQLHDBC ConnectionHandle,
+		     SQLUSMALLINT Option,
+		     SQLPOINTER ValuePtr)
 {
-	return SQLGetConnectOption(hDbc, nOption, pvParam);
+	return SQLGetConnectOption(ConnectionHandle, Option, ValuePtr);
 }
 
 SQLRETURN SQL_API
-SQLGetConnectOptionW(SQLHDBC hDbc,
-		     SQLUSMALLINT nOption,
-		     SQLPOINTER pvParam)
+SQLGetConnectOptionW(SQLHDBC ConnectionHandle,
+		     SQLUSMALLINT Option,
+		     SQLPOINTER ValuePtr)
 {
-	ODBCDbc *dbc = (ODBCDbc *) hDbc;
+	ODBCDbc *dbc = (ODBCDbc *) ConnectionHandle;
 	SQLRETURN rc;
 	SQLPOINTER ptr;
 
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLGetConnectOptionW " PTRFMT " %u\n",
-		PTRFMTCAST hDbc, (unsigned int) nOption);
+		PTRFMTCAST ConnectionHandle, (unsigned int) Option);
 #endif
 
 	if (!isValidDbc(dbc))
@@ -119,7 +120,7 @@ SQLGetConnectOptionW(SQLHDBC hDbc,
 
 	clearDbcErrors(dbc);
 
-	switch (nOption) {
+	switch (Option) {
 	/* all string attributes */
 	case SQL_CURRENT_QUALIFIER:
 	case SQL_OPT_TRACEFILE:
@@ -127,17 +128,18 @@ SQLGetConnectOptionW(SQLHDBC hDbc,
 		ptr = (SQLPOINTER) malloc(SQL_MAX_OPTION_STRING_LENGTH);
 		break;
 	default:
-		ptr = pvParam;
+		ptr = ValuePtr;
 		break;
 	}
 
-	rc = SQLGetConnectOption_(dbc, nOption, ptr);
+	rc = SQLGetConnectOption_(dbc, Option, ptr);
 
-	if (ptr != pvParam) {
+	if (ptr != ValuePtr) {
 		SQLSMALLINT n = (SQLSMALLINT) strlen((char *) ptr);
 		SQLSMALLINT *nullp = NULL;
 
-		fixWcharOut(rc, ptr, n, pvParam, SQL_MAX_OPTION_STRING_LENGTH, nullp, 2, addDbcError, dbc);
+		fixWcharOut(rc, ptr, n, ValuePtr, SQL_MAX_OPTION_STRING_LENGTH,
+			    nullp, 2, addDbcError, dbc);
 	}
 
 	return rc;

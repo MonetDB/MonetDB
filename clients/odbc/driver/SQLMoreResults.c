@@ -31,7 +31,7 @@
  * SQLMoreResults()
  * CLI Compliance: ODBC (Microsoft)
  *
- * Author: Martin van Dinther
+ * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 aug 2002
  *
  **********************************************************************/
@@ -41,12 +41,12 @@
 
 
 SQLRETURN SQL_API
-SQLMoreResults(SQLHSTMT hStmt)
+SQLMoreResults(SQLHSTMT StatementHandle)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLMoreResults " PTRFMT "\n", PTRFMTCAST hStmt);
+	ODBCLOG("SQLMoreResults " PTRFMT "\n", PTRFMTCAST StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))

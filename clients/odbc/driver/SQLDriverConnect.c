@@ -31,7 +31,7 @@
  * SQLDriverConnect()
  * CLI Compliance: ODBC (Microsoft)
  *
- * Author: Martin van Dinther
+ * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 aug 2002
  *
  **********************************************************************/
@@ -104,13 +104,13 @@ ODBCGetKeyAttr(SQLCHAR **conn, SQLSMALLINT *nconn, char **key, char **attr)
 
 static SQLRETURN
 SQLDriverConnect_(ODBCDbc *dbc,
-		  SQLHWND hWnd,
-		  SQLCHAR *szConnStrIn,
-		  SQLSMALLINT nConnStrIn,
-		  SQLCHAR *szConnStrOut,
-		  SQLSMALLINT cbConnStrOutMax,
-		  SQLSMALLINT *pnConnStrOut,
-		  SQLUSMALLINT nDriverCompletion,
+		  SQLHWND WindowHandle,
+		  SQLCHAR *InConnectionString,
+		  SQLSMALLINT StringLength1,
+		  SQLCHAR *OutConnectionString,
+		  SQLSMALLINT BufferLength,
+		  SQLSMALLINT *StringLength2Ptr,
+		  SQLUSMALLINT DriverCompletion,
 		  int tryOnly)
 {
 	char *key, *attr;
@@ -118,7 +118,7 @@ SQLDriverConnect_(ODBCDbc *dbc,
 	int port = 0;
 	SQLRETURN rc;
 
-	(void) hWnd;		/* Stefan: unused!? */
+	(void) WindowHandle;		/* Stefan: unused!? */
 
 	/* check connection state, should not be connected */
 	if (dbc->Connected) {
@@ -128,15 +128,16 @@ SQLDriverConnect_(ODBCDbc *dbc,
 	}
 	assert(!dbc->Connected);
 
-	fixODBCstring(szConnStrIn, nConnStrIn, SQLSMALLINT, addDbcError, dbc, return SQL_ERROR);
+	fixODBCstring(InConnectionString, StringLength1, SQLSMALLINT,
+		      addDbcError, dbc, return SQL_ERROR);
 
 #ifdef ODBCDEBUG
-	ODBCLOG("\"%.*s\" %u\n", nConnStrIn,
-		(char *) szConnStrIn, (unsigned int) nDriverCompletion);
+	ODBCLOG("\"%.*s\" %u\n", StringLength1,
+		(char *) InConnectionString, (unsigned int) DriverCompletion);
 #endif
 
 	/* check input arguments */
-	switch (nDriverCompletion) {
+	switch (DriverCompletion) {
 	case SQL_DRIVER_PROMPT:
 	case SQL_DRIVER_COMPLETE:
 	case SQL_DRIVER_COMPLETE_REQUIRED:
@@ -148,7 +149,7 @@ SQLDriverConnect_(ODBCDbc *dbc,
 		return SQL_ERROR;
 	}
 
-	while (ODBCGetKeyAttr(&szConnStrIn, &nConnStrIn, &key, &attr)) {
+	while (ODBCGetKeyAttr(&InConnectionString, &StringLength1, &key, &attr)) {
 		if (strcasecmp(key, "dsn") == 0 && dsn == NULL)
 			dsn = attr;
 		else if (strcasecmp(key, "uid") == 0 && uid == NULL)
@@ -183,80 +184,87 @@ SQLDriverConnect_(ODBCDbc *dbc,
 	if (SQL_SUCCEEDED(rc)) {
 		int n;
 
-		if (szConnStrOut == NULL)
-			cbConnStrOutMax = -1;
-		if (cbConnStrOutMax > 0) {
-			n = snprintf((char *) szConnStrOut, cbConnStrOutMax, "DSN=%s;", dsn ? dsn : "DEFAULT");
+		if (OutConnectionString == NULL)
+			BufferLength = -1;
+		if (BufferLength > 0) {
+			n = snprintf((char *) OutConnectionString, BufferLength,
+				     "DSN=%s;", dsn ? dsn : "DEFAULT");
 			/* some snprintf's return -1 if buffer too small */
 			if (n < 0)
-				n = cbConnStrOutMax + 1;	/* make sure it becomes < 0 */
-			cbConnStrOutMax -= n;
-			szConnStrOut += n;
+				n = BufferLength + 1;	/* make sure it becomes < 0 */
+			BufferLength -= n;
+			OutConnectionString += n;
 		} else {
-			cbConnStrOutMax = -1;
+			BufferLength = -1;
 		}
 		if (uid) {
-			if (cbConnStrOutMax > 0) {
-				n = snprintf((char *) szConnStrOut, cbConnStrOutMax, "UID=%s;", uid);
+			if (BufferLength > 0) {
+				n = snprintf((char *) OutConnectionString,
+					     BufferLength, "UID=%s;", uid);
 				if (n < 0)
-					n = cbConnStrOutMax + 1;
-				cbConnStrOutMax -= n;
-				szConnStrOut += n;
+					n = BufferLength + 1;
+				BufferLength -= n;
+				OutConnectionString += n;
 			} else {
-				cbConnStrOutMax = -1;
+				BufferLength = -1;
 			}
 		}
 		if (pwd) {
-			if (cbConnStrOutMax > 0) {
-				n = snprintf((char *) szConnStrOut, cbConnStrOutMax, "PWD=%s;", pwd);
+			if (BufferLength > 0) {
+				n = snprintf((char *) OutConnectionString,
+					     BufferLength, "PWD=%s;", pwd);
 				if (n < 0)
-					n = cbConnStrOutMax + 1;
-				cbConnStrOutMax -= n;
-				szConnStrOut += n;
+					n = BufferLength + 1;
+				BufferLength -= n;
+				OutConnectionString += n;
 			} else {
-				cbConnStrOutMax = -1;
+				BufferLength = -1;
 			}
 		}
 		if (host) {
-			if (cbConnStrOutMax > 0) {
-				n = snprintf((char *) szConnStrOut, cbConnStrOutMax, "HOST=%s;", host);
+			if (BufferLength > 0) {
+				n = snprintf((char *) OutConnectionString,
+					     BufferLength, "HOST=%s;", host);
 				if (n < 0)
-					n = cbConnStrOutMax + 1;
-				cbConnStrOutMax -= n;
-				szConnStrOut += n;
+					n = BufferLength + 1;
+				BufferLength -= n;
+				OutConnectionString += n;
 			} else {
-				cbConnStrOutMax = -1;
+				BufferLength = -1;
 			}
 		}
 		if (port) {
 			char portbuf[10];
 
-			if (cbConnStrOutMax > 0) {
-				n = snprintf((char *) szConnStrOut, cbConnStrOutMax, "PORT=%d;", port);
+			if (BufferLength > 0) {
+				n = snprintf((char *) OutConnectionString,
+					     BufferLength, "PORT=%d;", port);
 				if (n < 0)
-					n = cbConnStrOutMax + 1;
-				cbConnStrOutMax -= n;
-				szConnStrOut += n;
+					n = BufferLength + 1;
+				BufferLength -= n;
+				OutConnectionString += n;
 			} else {
-				cbConnStrOutMax = -1;
+				BufferLength = -1;
 			}
 			port = snprintf(portbuf, sizeof(portbuf), "%d", port);
 		}
 		if (database) {
-			if (cbConnStrOutMax > 0) {
-				n = snprintf((char *) szConnStrOut, cbConnStrOutMax, "DATABASE=%s;", database);
+			if (BufferLength > 0) {
+				n = snprintf((char *) OutConnectionString,
+					     BufferLength,
+					     "DATABASE=%s;", database);
 				if (n < 0)
-					n = cbConnStrOutMax + 1;
-				cbConnStrOutMax -= n;
-				szConnStrOut += n;
+					n = BufferLength + 1;
+				BufferLength -= n;
+				OutConnectionString += n;
 			} else {
-				cbConnStrOutMax = -1;
+				BufferLength = -1;
 			}
 		}
 
 		/* calculate how much space was needed */
-		if (pnConnStrOut)
-			*pnConnStrOut = (int) (strlen(dsn ? dsn : "DEFAULT") + 5 +
+		if (StringLength2Ptr)
+			*StringLength2Ptr = (int) (strlen(dsn ? dsn : "DEFAULT") + 5 +
 					       (uid ? strlen(uid) + 5 : 0) +
 					       (pwd ? strlen(pwd) + 5 : 0) +
 					       (host ? strlen(host) + 6 : 0) +
@@ -264,7 +272,7 @@ SQLDriverConnect_(ODBCDbc *dbc,
 					       (database ? strlen(database) + 10 : 0));
 
 		/* if it didn't fit, say so */
-		if (cbConnStrOutMax < 0) {
+		if (BufferLength < 0) {
 			/* String data, right-truncated */
 			addDbcError(dbc, "01004", NULL, 0);
 			rc = SQL_SUCCESS_WITH_INFO;
@@ -284,19 +292,19 @@ SQLDriverConnect_(ODBCDbc *dbc,
 }
 
 SQLRETURN SQL_API
-SQLDriverConnect(SQLHDBC hDbc,
-		 SQLHWND hWnd,
-		 SQLCHAR *szConnStrIn,
-		 SQLSMALLINT nConnStrIn,
-		 SQLCHAR *szConnStrOut,
-		 SQLSMALLINT cbConnStrOutMax,
-		 SQLSMALLINT *pnConnStrOut,
-		 SQLUSMALLINT nDriverCompletion)
+SQLDriverConnect(SQLHDBC ConnectionHandle,
+		 SQLHWND WindowHandle,
+		 SQLCHAR *InConnectionString,
+		 SQLSMALLINT StringLength1,
+		 SQLCHAR *OutConnectionString,
+		 SQLSMALLINT BufferLength,
+		 SQLSMALLINT *StringLength2Ptr,
+		 SQLUSMALLINT DriverCompletion)
 {
-	ODBCDbc *dbc = (ODBCDbc *) hDbc;
+	ODBCDbc *dbc = (ODBCDbc *) ConnectionHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLDriverConnect " PTRFMT " ", PTRFMTCAST hDbc);
+	ODBCLOG("SQLDriverConnect " PTRFMT " ", PTRFMTCAST ConnectionHandle);
 #endif
 
 	if (!isValidDbc(dbc))
@@ -304,45 +312,55 @@ SQLDriverConnect(SQLHDBC hDbc,
 
 	clearDbcErrors(dbc);
 
-	return SQLDriverConnect_(dbc, hWnd,
-				 szConnStrIn, nConnStrIn, szConnStrOut,
-				 cbConnStrOutMax, pnConnStrOut,
-				 nDriverCompletion, 0);
+	return SQLDriverConnect_(dbc,
+				 WindowHandle,
+				 InConnectionString,
+				 StringLength1,
+				 OutConnectionString,
+				 BufferLength,
+				 StringLength2Ptr,
+				 DriverCompletion,
+				 0);
 }
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLDriverConnectA(SQLHDBC hDbc,
-		  SQLHWND hWnd,
-		  SQLCHAR *szConnStrIn,
-		  SQLSMALLINT nConnStrIn,
-		  SQLCHAR *szConnStrOut,
-		  SQLSMALLINT cbConnStrOutMax,
-		  SQLSMALLINT *pnConnStrOut,
-		  SQLUSMALLINT nDriverCompletion)
+SQLDriverConnectA(SQLHDBC ConnectionHandle,
+		  SQLHWND WindowHandle,
+		  SQLCHAR *InConnectionString,
+		  SQLSMALLINT StringLength1,
+		  SQLCHAR *OutConnectionString,
+		  SQLSMALLINT BufferLength,
+		  SQLSMALLINT *StringLength2Ptr,
+		  SQLUSMALLINT DriverCompletion)
 {
-	return SQLDriverConnect(hDbc, hWnd, szConnStrIn, nConnStrIn,
-				szConnStrOut, cbConnStrOutMax, pnConnStrOut,
-				nDriverCompletion);
+	return SQLDriverConnect(ConnectionHandle,
+				WindowHandle,
+				InConnectionString,
+				StringLength1,
+				OutConnectionString,
+				BufferLength,
+				StringLength2Ptr,
+				DriverCompletion);
 }
 
 SQLRETURN SQL_API
-SQLDriverConnectW(SQLHDBC hDbc,
-		  SQLHWND hWnd,
-		  SQLWCHAR * szConnStrIn,
-		  SQLSMALLINT nConnStrIn,
-		  SQLWCHAR * szConnStrOut,
-		  SQLSMALLINT cbConnStrOutMax,
-		  SQLSMALLINT *pnConnStrOut,
-		  SQLUSMALLINT nDriverCompletion)
+SQLDriverConnectW(SQLHDBC ConnectionHandle,
+		  SQLHWND WindowHandle,
+		  SQLWCHAR *InConnectionString,
+		  SQLSMALLINT StringLength1,
+		  SQLWCHAR *OutConnectionString,
+		  SQLSMALLINT BufferLength,
+		  SQLSMALLINT *StringLength2Ptr,
+		  SQLUSMALLINT DriverCompletion)
 {
-	ODBCDbc *dbc = (ODBCDbc *) hDbc;
+	ODBCDbc *dbc = (ODBCDbc *) ConnectionHandle;
 	SQLCHAR *in = NULL, *out;
 	SQLSMALLINT n;
 	SQLRETURN rc;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLDriverConnectW " PTRFMT " ", PTRFMTCAST hDbc);
+	ODBCLOG("SQLDriverConnectW " PTRFMT " ", PTRFMTCAST ConnectionHandle);
 #endif
 
 	if (!isValidDbc(dbc))
@@ -350,18 +368,20 @@ SQLDriverConnectW(SQLHDBC hDbc,
 
 	clearDbcErrors(dbc);
 
-	fixWcharIn(szConnStrIn, nConnStrIn, SQLCHAR, in, addDbcError, dbc, return SQL_ERROR);
+	fixWcharIn(InConnectionString, StringLength1, SQLCHAR, in,
+		   addDbcError, dbc, return SQL_ERROR);
 
-	rc = SQLDriverConnect_(dbc, hWnd, in, SQL_NTS, NULL, 0, &n,
-			       nDriverCompletion, 1);
+	rc = SQLDriverConnect_(dbc, WindowHandle, in, SQL_NTS, NULL, 0, &n,
+			       DriverCompletion, 1);
 	if (!SQL_SUCCEEDED(rc))
 		return rc;
 	clearDbcErrors(dbc);
 	n++;			/* account for NUL byte */
 	out = malloc(n);
-	rc = SQLDriverConnect_(dbc, hWnd, in, SQL_NTS, out, n, &n,
-			       nDriverCompletion, 0);
-	fixWcharOut(rc, out, n, szConnStrOut, cbConnStrOutMax, pnConnStrOut, 1, addDbcError, dbc);
+	rc = SQLDriverConnect_(dbc, WindowHandle, in, SQL_NTS, out, n, &n,
+			       DriverCompletion, 0);
+	fixWcharOut(rc, out, n, OutConnectionString, BufferLength,
+		    StringLength2Ptr, 1, addDbcError, dbc);
 	if (in)
 		free(in);
 	return rc;

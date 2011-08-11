@@ -36,12 +36,12 @@
 #include "ODBCGlobal.h"
 
 SQLRETURN SQL_API
-SQLFreeConnect(SQLHDBC hDrvDbc)
+SQLFreeConnect(SQLHDBC ConnectionHandle)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLFreeConnect " PTRFMT "\n", PTRFMTCAST hDrvDbc);
+	ODBCLOG("SQLFreeConnect " PTRFMT "\n", PTRFMTCAST ConnectionHandle);
 #endif
 
 	/* use mapping as described in ODBC 3 SDK Help file */
-	return SQLFreeHandle_(SQL_HANDLE_DBC, (SQLHANDLE) hDrvDbc);
+	return SQLFreeHandle_(SQL_HANDLE_DBC, (SQLHANDLE) ConnectionHandle);
 }

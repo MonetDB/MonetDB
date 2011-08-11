@@ -33,7 +33,7 @@
  * Description:
  * This file contains ODBC driver utility function prototypes.
  *
- * Author: Martin van Dinther
+ * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 aug 2002
  *
  **********************************************/
@@ -145,10 +145,10 @@ extern char *ODBCutf82wchar(const SQLCHAR *s, SQLINTEGER length, SQLWCHAR *buf, 
 #endif /* WITH_WCHAR */
 
 /* SQL_DESC_CONCISE_TYPE, SQL_DESC_DATETIME_INTERVAL_CODE, and
-   SQL_DESC_TYPE are interdependent and setting one affects the other.
-   Also, setting them affect other fields.  This is all encoded in
-   this table.  If a field is equal to UNAFFECTED, it is (you guessed
-   it) not affected. */
+ * SQL_DESC_TYPE are interdependent and setting one affects the other.
+ * Also, setting them affect other fields.  This is all encoded in
+ * this table.  If a field is equal to UNAFFECTED, it is (you guessed
+ * it) not affected. */
 #define UNAFFECTED	(-1)
 
 struct sql_types {

@@ -34,7 +34,7 @@
  * The global MonetDB ODBC include file which
  * includes all needed external include files.
  *
- * Author: Martin van Dinther
+ * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 aug 2002
  *
  **********************************************/

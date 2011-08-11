@@ -34,7 +34,7 @@
  * This file contains the functions which operate on
  * ODBC statement structures/objects (see ODBCStmt.h).
  *
- * Author: Martin van Dinther
+ * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 aug 2002
  *
  **********************************************/
