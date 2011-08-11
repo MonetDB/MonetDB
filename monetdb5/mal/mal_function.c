@@ -165,6 +165,10 @@ void chkFlow(MalBlkPtr mb)
 	lastInstruction = mb->stop-1;
 	for(i= 0; i<mb->stop; i++){
 		p= getInstrPtr(mb,i);
+		/* we have to keep track on the maximal arguments/block
+		  because it is needed by the interpreter */
+		if( mb->maxarg < p->maxarg)
+			mb->maxarg= p->maxarg;
 		switch( p->barrier){
 		case BARRIERsymbol:
 		case CATCHsymbol:
