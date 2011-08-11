@@ -254,9 +254,9 @@ SQLPrepare_(ODBCStmt *stmt,
 
 		/* this must come after other fields have been
 		 * initialized */
-		rec->sql_desc_length = ODBCLength(rec, ColumnSize);
-		rec->sql_desc_display_size = ODBCLength(rec, DisplaySize);
-		rec->sql_desc_octet_length = ODBCLength(rec, OctetLength);
+		rec->sql_desc_length = ODBCLength(rec, SQL_DESC_LENGTH);
+		rec->sql_desc_display_size = ODBCLength(rec, SQL_DESC_DISPLAY_SIZE);
+		rec->sql_desc_octet_length = ODBCLength(rec, SQL_DESC_OCTET_LENGTH);
 	}
 
 	/* update the internal state */

@@ -233,13 +233,13 @@ addODBCDescRec(ODBCDesc *desc, SQLSMALLINT recno)
 
 /* Return either the column size or display size for a column or parameter. */
 SQLULEN
-ODBCLength(ODBCDescRec *rec, enum ODBCLengthType lengthtype)
+ODBCLength(ODBCDescRec *rec, int lengthtype)
 {
 	switch (rec->sql_desc_concise_type) {
 	case SQL_CHAR:
 	case SQL_VARCHAR:
 	case SQL_LONGVARCHAR:
-		if (lengthtype == OctetLength)
+		if (lengthtype == SQL_DESC_OCTET_LENGTH)
 			return rec->sql_desc_length * 6;
 		else
 			return rec->sql_desc_length;
@@ -252,95 +252,95 @@ ODBCLength(ODBCDescRec *rec, enum ODBCLengthType lengthtype)
 		return rec->sql_desc_length;
 	case SQL_DECIMAL:
 	case SQL_NUMERIC:
-		return rec->sql_desc_length + (lengthtype == ColumnSize ? 0 : 2);
+		return rec->sql_desc_length + (lengthtype == SQL_DESC_LENGTH ? 0 : 2);
 	case SQL_BIT:
 		return 1;
 	case SQL_TINYINT:
 		switch (lengthtype) {
-		case ColumnSize:
+		case SQL_DESC_LENGTH:
 			return 3;
-		case DisplaySize:
+		case SQL_DESC_DISPLAY_SIZE:
 			return 4;
-		case OctetLength:
+		case SQL_DESC_OCTET_LENGTH:
 			return 1;
 		}
 		break;
 	case SQL_SMALLINT:
 		switch (lengthtype) {
-		case ColumnSize:
+		case SQL_DESC_LENGTH:
 			return 5;
-		case DisplaySize:
+		case SQL_DESC_DISPLAY_SIZE:
 			return 5 + !rec->sql_desc_unsigned;
-		case OctetLength:
+		case SQL_DESC_OCTET_LENGTH:
 			return 2;
 		}
 		break;
 	case SQL_INTEGER:
 		switch (lengthtype) {
-		case ColumnSize:
+		case SQL_DESC_LENGTH:
 			return 10;
-		case DisplaySize:
+		case SQL_DESC_DISPLAY_SIZE:
 			return 10 + !rec->sql_desc_unsigned;
-		case OctetLength:
+		case SQL_DESC_OCTET_LENGTH:
 			return 4;
 		}
 		break;
 	case SQL_BIGINT:
 		switch (lengthtype) {
-		case ColumnSize:
+		case SQL_DESC_LENGTH:
 			return 19 + (rec->sql_desc_unsigned != 0);
-		case DisplaySize:
+		case SQL_DESC_DISPLAY_SIZE:
 			return 20;
-		case OctetLength:
+		case SQL_DESC_OCTET_LENGTH:
 			return 20;
 		}
 		break;
 	case SQL_REAL:
 		switch (lengthtype) {
-		case ColumnSize:
+		case SQL_DESC_LENGTH:
 			return 7;
-		case DisplaySize:
+		case SQL_DESC_DISPLAY_SIZE:
 			/* sign, 7 digits, decimal point, E, sign, 2 digits */
 			return 14;
-		case OctetLength:
+		case SQL_DESC_OCTET_LENGTH:
 			return 4;
 		}
 		break;
 	case SQL_FLOAT:
 	case SQL_DOUBLE:
 		switch (lengthtype) {
-		case ColumnSize:
+		case SQL_DESC_LENGTH:
 			return 15;
-		case DisplaySize:
+		case SQL_DESC_DISPLAY_SIZE:
 			/* sign, 15 digits, decimal point, E, sign, 3 digits */
 			return 24;
-		case OctetLength:
+		case SQL_DESC_OCTET_LENGTH:
 			return 8;
 		}
 		break;
 	case SQL_TYPE_DATE:
-		if (lengthtype == OctetLength)
+		if (lengthtype == SQL_DESC_OCTET_LENGTH)
 			return 6;
 		else {
 			/* strlen("yyyy-mm-dd") */
 			return 10;
 		}
 	case SQL_TYPE_TIME:
-		if (lengthtype == OctetLength)
+		if (lengthtype == SQL_DESC_OCTET_LENGTH)
 			return 6;
 		else {
 			/* strlen("hh:mm:ss.fff") */
 			return 12;
 		}
 	case SQL_TYPE_TIMESTAMP:
-		if (lengthtype == OctetLength)
+		if (lengthtype == SQL_DESC_OCTET_LENGTH)
 			return 16;
 		else {
 			/* strlen("yyyy-mm-dd hh:mm:ss.fff") */
 			return 23;
 		}
 	case SQL_INTERVAL_SECOND:
-		if (lengthtype == OctetLength)
+		if (lengthtype == SQL_DESC_OCTET_LENGTH)
 			return 34;
 		/* strlen("INTERVAL -'sss[.fff]' SECOND(p,q)") */
 		return 11 + 13 +
@@ -351,7 +351,7 @@ ODBCLength(ODBCDescRec *rec, enum ODBCLengthType lengthtype)
 			 rec->sql_desc_precision + 1 :
 			 0);
 	case SQL_INTERVAL_DAY_TO_SECOND:
-		if (lengthtype == OctetLength)
+		if (lengthtype == SQL_DESC_OCTET_LENGTH)
 			return 34;
 		/* strlen("INTERVAL -'ddd hh:mm:ss[.fff]' DAY(p) TO SECOND(q)") */
 		return 11 + 21 +
@@ -363,7 +363,7 @@ ODBCLength(ODBCDescRec *rec, enum ODBCLengthType lengthtype)
 			 rec->sql_desc_precision + 1 :
 			 0);
 	case SQL_INTERVAL_HOUR_TO_SECOND:
-		if (lengthtype == OctetLength)
+		if (lengthtype == SQL_DESC_OCTET_LENGTH)
 			return 34;
 		/* strlen("INTERVAL -'hhh:mm:ss[.fff]' HOUR(p) TO SECOND(q)") */
 		return 11 + 22 +
@@ -375,7 +375,7 @@ ODBCLength(ODBCDescRec *rec, enum ODBCLengthType lengthtype)
 			 rec->sql_desc_precision + 1 :
 			 0);
 	case SQL_INTERVAL_MINUTE_TO_SECOND:
-		if (lengthtype == OctetLength)
+		if (lengthtype == SQL_DESC_OCTET_LENGTH)
 			return 34;
 		/* strlen("INTERVAL -'mmm:ss[.fff]' MINUTE(p) TO SECOND(q)") */
 		return 11 + 24 +
@@ -387,42 +387,42 @@ ODBCLength(ODBCDescRec *rec, enum ODBCLengthType lengthtype)
 			 rec->sql_desc_precision + 1 :
 			 0);
 	case SQL_INTERVAL_YEAR:
-		if (lengthtype == OctetLength)
+		if (lengthtype == SQL_DESC_OCTET_LENGTH)
 			return 34;
 		/* strlen("INTERVAL -'yyy' YEAR(p)") */
 		return 11 + 9 +
 			(rec->sql_desc_datetime_interval_precision > 10) +
 			rec->sql_desc_datetime_interval_precision;
 	case SQL_INTERVAL_MONTH:
-		if (lengthtype == OctetLength)
+		if (lengthtype == SQL_DESC_OCTET_LENGTH)
 			return 34;
 		/* strlen("INTERVAL -'yyy' MONTH(p)") */
 		return 11 + 10 +
 			(rec->sql_desc_datetime_interval_precision > 10) +
 			rec->sql_desc_datetime_interval_precision;
 	case SQL_INTERVAL_DAY:
-		if (lengthtype == OctetLength)
+		if (lengthtype == SQL_DESC_OCTET_LENGTH)
 			return 34;
 		/* strlen("INTERVAL -'yyy' DAY(p)") */
 		return 11 + 8 +
 			(rec->sql_desc_datetime_interval_precision > 10) +
 			rec->sql_desc_datetime_interval_precision;
 	case SQL_INTERVAL_HOUR:
-		if (lengthtype == OctetLength)
+		if (lengthtype == SQL_DESC_OCTET_LENGTH)
 			return 34;
 		/* strlen("INTERVAL -'yyy' HOUR(p)") */
 		return 11 + 9 +
 			(rec->sql_desc_datetime_interval_precision > 10) +
 			rec->sql_desc_datetime_interval_precision;
 	case SQL_INTERVAL_MINUTE:
-		if (lengthtype == OctetLength)
+		if (lengthtype == SQL_DESC_OCTET_LENGTH)
 			return 34;
 		/* strlen("INTERVAL -'yyy' MINUTE(p)") */
 		return 11 + 11 +
 			(rec->sql_desc_datetime_interval_precision > 10) +
 			rec->sql_desc_datetime_interval_precision;
 	case SQL_INTERVAL_YEAR_TO_MONTH:
-		if (lengthtype == OctetLength)
+		if (lengthtype == SQL_DESC_OCTET_LENGTH)
 			return 34;
 		/* strlen("INTERVAL -'yyy' YEAR(p) TO MONTH") */
 		return 11 + 18 +
@@ -430,7 +430,7 @@ ODBCLength(ODBCDescRec *rec, enum ODBCLengthType lengthtype)
 			rec->sql_desc_datetime_interval_precision +
 			3;
 	case SQL_INTERVAL_DAY_TO_HOUR:
-		if (lengthtype == OctetLength)
+		if (lengthtype == SQL_DESC_OCTET_LENGTH)
 			return 34;
 		/* strlen("INTERVAL -'yyy' DAY(p) TO HOUR") */
 		return 11 + 16 +
@@ -438,7 +438,7 @@ ODBCLength(ODBCDescRec *rec, enum ODBCLengthType lengthtype)
 			rec->sql_desc_datetime_interval_precision +
 			3;
 	case SQL_INTERVAL_HOUR_TO_MINUTE:
-		if (lengthtype == OctetLength)
+		if (lengthtype == SQL_DESC_OCTET_LENGTH)
 			return 34;
 		/* strlen("INTERVAL -'yyy' HOUR(p) TO MINUTE") */
 		return 11 + 19 +
@@ -446,7 +446,7 @@ ODBCLength(ODBCDescRec *rec, enum ODBCLengthType lengthtype)
 			rec->sql_desc_datetime_interval_precision +
 			3;
 	case SQL_INTERVAL_DAY_TO_MINUTE:
-		if (lengthtype == OctetLength)
+		if (lengthtype == SQL_DESC_OCTET_LENGTH)
 			return 34;
 		/* strlen("INTERVAL -'yyy' DAY(p) TO MINUTE") */
 		return 11 + 18 +
@@ -454,7 +454,7 @@ ODBCLength(ODBCDescRec *rec, enum ODBCLengthType lengthtype)
 			rec->sql_desc_datetime_interval_precision +
 			6;
 	case SQL_GUID:
-		if (lengthtype == OctetLength)
+		if (lengthtype == SQL_DESC_OCTET_LENGTH)
 			return 16;
 		/* strlen("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee") */
 		return 36;

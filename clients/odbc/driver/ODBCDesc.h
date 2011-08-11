@@ -100,12 +100,7 @@ void destroyODBCDesc(ODBCDesc *desc);
 void setODBCDescRecCount(ODBCDesc *desc, int count);
 ODBCDescRec *addODBCDescRec(ODBCDesc *desc, SQLSMALLINT recno);
 
-enum ODBCLengthType {
-	ColumnSize,
-	DisplaySize,
-	OctetLength
-};
-SQLULEN ODBCLength(ODBCDescRec *rec, enum ODBCLengthType lengthtype);
+SQLULEN ODBCLength(ODBCDescRec *rec, int lengthtype);
 
 SQLRETURN SQLGetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber, SQLSMALLINT FieldIdentifier, SQLPOINTER Value, SQLINTEGER BufferLength, SQLINTEGER *StringLength);
 SQLRETURN SQLSetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber, SQLSMALLINT FieldIdentifier, SQLPOINTER Value, SQLINTEGER BufferLength);
