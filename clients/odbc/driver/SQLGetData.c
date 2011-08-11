@@ -31,7 +31,7 @@
  * SQLGetData()
  * CLI Compliance: ISO 92
  *
- * Author: Martin van Dinther
+ * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 aug 2002
  *
  **********************************************************************/
@@ -41,18 +41,18 @@
 #include "ODBCUtil.h"
 
 SQLRETURN SQL_API
-SQLGetData(SQLHSTMT hStmt,
-	   SQLUSMALLINT nCol,
-	   SQLSMALLINT nTargetType,
-	   SQLPOINTER pTarget,
-	   SQLLEN nTargetLength,
-	   SQLLEN *pnLengthOrIndicator)
+SQLGetData(SQLHSTMT StatementHandle,
+	   SQLUSMALLINT Col_or_Param_Num,
+	   SQLSMALLINT TargetType,
+	   SQLPOINTER TargetValuePtr,
+	   SQLLEN BufferLength,
+	   SQLLEN *StrLen_or_IndPtr)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetData " PTRFMT " %u %d\n", PTRFMTCAST hStmt,
-		(unsigned int) nCol, (int) nTargetType);
+	ODBCLOG("SQLGetData " PTRFMT " %u %d\n", PTRFMTCAST StatementHandle,
+		(unsigned int) Col_or_Param_Num, (int) TargetType);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -81,33 +81,35 @@ SQLGetData(SQLHSTMT hStmt,
 		addStmtError(stmt, "HY000", NULL, 0);
 		return SQL_ERROR;
 	}
-	if (stmt->rowSetSize > 1 && stmt->cursorType == SQL_CURSOR_FORWARD_ONLY) {
+	if (stmt->rowSetSize > 1 &&
+	    stmt->cursorType == SQL_CURSOR_FORWARD_ONLY) {
 		/* Invalid cursor position */
 		addStmtError(stmt, "HY109", NULL, 0);
 		return SQL_ERROR;
 	}
-	if (nCol <= 0 || nCol > stmt->ImplRowDescr->sql_desc_count) {
+	if (Col_or_Param_Num <= 0 ||
+	    Col_or_Param_Num > stmt->ImplRowDescr->sql_desc_count) {
 		/* Invalid descriptor index */
 		addStmtError(stmt, "07009", NULL, 0);
 		return SQL_ERROR;
 	}
 
-	if (nCol != stmt->currentCol)
+	if (Col_or_Param_Num != stmt->currentCol)
 		stmt->retrieved = 0;
-	stmt->currentCol = nCol;
+	stmt->currentCol = Col_or_Param_Num;
 
-	if (nTargetType == SQL_ARD_TYPE) {
+	if (TargetType == SQL_ARD_TYPE) {
 		ODBCDesc *desc = stmt->ApplRowDescr;
 
-		if (nCol > desc->sql_desc_count) {
+		if (Col_or_Param_Num > desc->sql_desc_count) {
 			/* Invalid descriptor index */
 			addStmtError(stmt, "07009", NULL, 0);
 			return SQL_ERROR;
 		}
-		nTargetType = desc->descRec[nCol].sql_desc_concise_type;
+		TargetType = desc->descRec[Col_or_Param_Num].sql_desc_concise_type;
 	}
 
-	return ODBCFetch(stmt, nCol, nTargetType, pTarget, nTargetLength,
-			 pnLengthOrIndicator, pnLengthOrIndicator, UNAFFECTED,
-			 UNAFFECTED, UNAFFECTED, 0, 0);
+	return ODBCFetch(stmt, Col_or_Param_Num, TargetType, TargetValuePtr,
+			 BufferLength, StrLen_or_IndPtr, StrLen_or_IndPtr,
+			 UNAFFECTED, UNAFFECTED, UNAFFECTED, 0, 0);
 }

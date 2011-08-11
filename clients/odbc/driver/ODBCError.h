@@ -39,7 +39,7 @@
  * can result in multiple ODBC errors. These are stored
  * as a linked list.
  *
- * Author: Martin van Dinther
+ * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 aug 2002
  *
  **********************************************/

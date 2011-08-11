@@ -32,7 +32,7 @@
  * CLI Compliance: deprecated in ODBC 3.0 (replaced by SQLEndTran())
  * Provided here for old (pre ODBC 3.0) applications and driver managers.
  *
- * Author: Martin van Dinther
+ * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 aug 2002
  *
  ********************************************************************/
@@ -40,18 +40,23 @@
 #include "ODBCGlobal.h"
 
 SQLRETURN SQL_API
-SQLTransact(SQLHENV hEnv,
-	    SQLHDBC hDbc,
-	    UWORD fType)
+SQLTransact(SQLHENV EnvironmentHandle,
+	    SQLHDBC ConnectionHandle,
+	    UWORD CompletionType)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLTransact " PTRFMT " " PTRFMT " %u\n", PTRFMTCAST hEnv,
-		PTRFMTCAST hDbc, (unsigned int) fType);
+	ODBCLOG("SQLTransact " PTRFMT " " PTRFMT " %u\n",
+		PTRFMTCAST EnvironmentHandle, PTRFMTCAST ConnectionHandle,
+		(unsigned int) CompletionType);
 #endif
 
 	/* use mapping as described in ODBC 3 SDK Help */
-	if (hDbc != SQL_NULL_HDBC)
-		return SQLEndTran_(SQL_HANDLE_DBC, hDbc, fType);
+	if (ConnectionHandle != SQL_NULL_HDBC)
+		return SQLEndTran_(SQL_HANDLE_DBC,
+				   ConnectionHandle,
+				   CompletionType);
 	else
-		return SQLEndTran_(SQL_HANDLE_ENV, hEnv, fType);
+		return SQLEndTran_(SQL_HANDLE_ENV,
+				   EnvironmentHandle,
+				   CompletionType);
 }

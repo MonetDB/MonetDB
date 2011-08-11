@@ -503,6 +503,41 @@ case "$host_os" in
 esac
 AC_SUBST(LINUX_DIST)
 
+AC_DEFUN([MCHECK_ADD_FLAG],
+[
+    cache_var=AS_TR_SH([m_cv_cc_has_$1])
+	AC_CACHE_CHECK([whether ${CC} supports $1], [${cache_var}],
+	[
+	SAVE_FLAGS="${CFLAGS}"
+	# compile a small program that has enough challenges to trigger
+	# the compiler to actually do something, such that it needs to
+	# actually look at the flags given
+	CFLAGS="${SAVE_FLAGS} ${X_CFLAGS} $1"
+	dnl do not use AC_LANG_PROGRAM here, because it generates a program
+	dnl with "int main() {" function, which triggers
+	dnl old-style-definition warnings
+	AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+#include <stdio.h>
+#include <stdlib.h>
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
+
+int main(int argc, char **av) {
+	char buf[24];
+	double d = atof("4.2");
+	if (argc == 0 || strchr(av[0], av[0][0]) != NULL)
+		snprintf(buf, sizeof(buf), "%f", d);
+	return 0;
+}
+					  ]])],
+					  [eval ${cache_var}=yes],
+					  [eval ${cache_var}=no])
+	CFLAGS="${SAVE_FLAGS}"
+	])
+	eval "test \"x\$${cache_var}\" = xyes && X_CFLAGS=\"${X_CFLAGS} $1\""
+])
+
 dnl --enable-strict
 AC_ARG_ENABLE(strict,
 	AS_HELP_STRING([--enable-strict],
@@ -515,178 +550,87 @@ dnl  *all* warnings and make them errors. This should help keep the code
 dnl  as clean and portable as possible.
 dnl  It turned out, though, that this, especially turning all warnings into 
 dnl  errors, is a bit too ambitious for configure/autoconf. Hence, we set
-dnl  the standard CFLAGS to what configure/autoconf can cope with
-dnl  (basically everything except "-Werror"). For "-Werror" and some
-dnl  switches that disable selected warnings that haven't been sorted out
-dnl  yet, we set X_CFLAGS, which are added to the standard
-dnl  CFLAGS once configure/autoconf are done with their job,
+dnl  all flags that enable specific warnings and those that make the
+dnl  compiler die on them (-Werror) in X_CFLAGS, which are added to the
+dnl  standard CFLAGS once configure/autoconf are done with their job,
 dnl  i.e., at the end of this configure[.ag] script.
 dnl  Only GNU (gcc) and Intel ([ie]cc/[ie]cpc on Linux) are done so far.
 : ${X_CFLAGS=} # initialize to empty if not set
 if test "x$enable_strict" = xyes; then
 case "$GCC-$CC-$host_os" in
 yes-*-*)
-	dnl  GNU (gcc/g++)
-	case "$host_os" in
-	cygwin*)
-		LDFLAGS="$LDFLAGS -no-undefined"
-		;;
-	mingw*)
-		dnl  On MinGW we need the -Wno-format flag since gcc
-		dnl  doesn't know about the %I64d format string for
-		dnl  long long
-		X_CFLAGS="$X_CFLAGS -Wno-format"
-		LDFLAGS="$LDFLAGS -no-undefined -L/usr/lib/w32api"
-		;;
-	esac
-	dnl  Be picky; "-Werror" seems to be too rigid for autoconf...
-	CFLAGS="$CFLAGS -Wall"
-	case "$CC-$gcc_ver" in
-	*clang*-*|*-3.[[4-9]].*|*-[[4-9]].*)
-		CFLAGS="$CFLAGS -Wextra";;
-	*-*)
-		CFLAGS="$CFLAGS -W";;
-	esac
-	dnl  Be rigid; MonetDB code is supposed to adhere to this... ;-)
-	    X_CFLAGS="$X_CFLAGS -Werror-implicit-function-declaration"
-	    X_CFLAGS="$X_CFLAGS -Werror"
-	dnl  Make sure that gcc is as strict as icc, MSVC++, etc.:
-	    X_CFLAGS="$X_CFLAGS -Wpointer-arith"
-	case "$CC-$gcc_ver" in
-	*clang*-*|*-3.[[4-9]].*|*-[[4-9]].*)
-	    X_CFLAGS="$X_CFLAGS -Wdeclaration-after-statement";;
-	esac
-	X_CFLAGS="$X_CFLAGS -Wundef"
+	MCHECK_ADD_FLAG([-Werror])  dnl keep this one first
+	MCHECK_ADD_FLAG([-Wall])
+	MCHECK_ADD_FLAG([-Wextra])
+	MCHECK_ADD_FLAG([-W])
+	MCHECK_ADD_FLAG([-Werror-implicit-function-declaration])
 
-	X_CFLAGS="$X_CFLAGS -Wformat=2 -Wno-format-nonliteral"
-	X_CFLAGS="$X_CFLAGS -Winit-self"
-	X_CFLAGS="$X_CFLAGS -Winvalid-pch"
-	X_CFLAGS="$X_CFLAGS -Wmissing-declarations"
-	X_CFLAGS="$X_CFLAGS -Wmissing-format-attribute"
-	X_CFLAGS="$X_CFLAGS -Wmissing-prototypes"
-	X_CFLAGS="$X_CFLAGS -Wold-style-definition"
-	X_CFLAGS="$X_CFLAGS -Wpacked"
-	X_CFLAGS="$X_CFLAGS -Wunknown-pragmas"
+	MCHECK_ADD_FLAG([-Wpointer-arith])
+	MCHECK_ADD_FLAG([-Wdeclaration-after-statement])
+	MCHECK_ADD_FLAG([-Wundef])
+	MCHECK_ADD_FLAG([-Wformat=2])
+	MCHECK_ADD_FLAG([-Wno-format-nonliteral])
+	MCHECK_ADD_FLAG([-Winit-self])
+	MCHECK_ADD_FLAG([-Winvalid-pch])
+	MCHECK_ADD_FLAG([-Wmissing-declarations])
+	MCHECK_ADD_FLAG([-Wmissing-format-attribute])
+	MCHECK_ADD_FLAG([-Wmissing-prototypes])
+	MCHECK_ADD_FLAG([-Wold-style-definition])
+	MCHECK_ADD_FLAG([-Wpacked])
+	MCHECK_ADD_FLAG([-Wunknown-pragmas])
+	MCHECK_ADD_FLAG([-Wvariadic-macros])
+	MCHECK_ADD_FLAG([-fstack-protector-all])
+	MCHECK_ADD_FLAG([-Wstack-protector])
+	MCHECK_ADD_FLAG([-Wpacked-bitfield-compat])
+	MCHECK_ADD_FLAG([-Wsync-nand])
+	MCHECK_ADD_FLAG([-Wjump-misses-init])
+	MCHECK_ADD_FLAG([-Wmissing-include-dirs])
+	MCHECK_ADD_FLAG([-Wlogical-op])
+
+	dnl  With clang 2.8 (no other tested) and gcc < 4.5 (tested
+	dnl  3.4.6, 4.2.1, 4.3.2, 4.4.4, 4.4.5, 4.5.1, 4.5.2),
+	dnl  "-Wunreachable-code" triggers numerous "will never be
+	dnl  executed" (at least) in our Mx and stream code, mostly (if
+	dnl  not all) false positives, though; thus, we do not use
+	dnl  "-Wunreachable-code" with clang 2.8 and gcc < 4.5 .
 	case "$CC-$gcc_ver" in
-	*clang*-*|*-4.[[4-9]].*|*-[[5-9]].*)
-		dnl these trigger a warning (-> error) with gcc < 4.4
-		X_CFLAGS="$X_CFLAGS -Wmissing-include-dirs"
-		;;
-	esac
-	case "$CC-$gcc_ver" in
-	*clang*-*|*-4.[[3-9]].*|*-[[5-9]].*)
-		dnl this triggers a warning (-> error) with gcc < 4.3
-		X_CFLAGS="$X_CFLAGS -Wstack-protector"
-		;;
-	esac
-	case "$CC-$gcc_ver" in
-	*clang*-*|*-3.[[5-9]].*|*-[[4-9]].*)
-		dnl gcc < 3.5 does not know these
-		X_CFLAGS="$X_CFLAGS -Wvariadic-macros"
-		;;
-	esac
-	case "$CC" in
-	*clang*)
+	*clang*-2.8|*gcc*-[[0-3]].*|*gcc*-4.[[0-4]].*)
 		;;
 	*)
-		case "$gcc_ver" in
-		[[0-2]].*|3.[[0-4]].*)
-			dnl gcc < 3.5 triggers a warning (-> error) without this
-			X_CFLAGS="$X_CFLAGS -Wno-uninitialized"
-			;;
-		4.[[4-9]].*|[[5-9]].*)
-			dnl clang (2.8) & gcc < 4.4 do not know these
-			X_CFLAGS="$X_CFLAGS -Wpacked-bitfield-compat"
-			X_CFLAGS="$X_CFLAGS -Wsync-nand"
-			case "$gcc_ver" in
-			4.[[5-9]].*|[[5-9]].*)
-				dnl clang (2.8) & gcc < 4.5 do not know these
-				X_CFLAGS="$X_CFLAGS -Wjump-misses-init"
-				dnl these trigger a warning (-> error) with clang (2.8) & gcc < 4.5
-				X_CFLAGS="$X_CFLAGS -Wunreachable-code"
-				dnl clang (2.8) & gcc < 4.3 do not know these
-				dnl these trigger a warning (-> error) with gcc < 4.5
-				X_CFLAGS="$X_CFLAGS -Wlogical-op"
-				;;
-			esac
-			;;
-		esac
-		case "$host" in
-		sparc*)
-			;;
-		*)
-			dnl these trigger a warning (-> error) with clang (2.8) and on sparc
-			X_CFLAGS="$X_CFLAGS -Wcast-align"
-			;;
-		esac
+		MCHECK_ADD_FLAG([-Wunreachable-code])
 		;;
 	esac
+
+	# The default configure invocation when doing an rpmbuild also uses this
+	MCHECK_ADD_FLAG([-Wp,-D_FORTIFY_SOURCE=2])
 
 	dnl  Our code is not (yet?) up to these:
-	dnl X_CFLAGS="$X_CFLAGS -pedantic-errors -Wno-long-long"
-	dnl X_CFLAGS="$X_CFLAGS -Waggregate-return"
-	dnl X_CFLAGS="$X_CFLAGS -Wbad-function-cast"
-	dnl X_CFLAGS="$X_CFLAGS -Wcast-qual"
-	dnl X_CFLAGS="$X_CFLAGS -Wconversion"
-	dnl X_CFLAGS="$X_CFLAGS -Wdisabled-optimization"
-	dnl X_CFLAGS="$X_CFLAGS -Wfloat-equal"
-	dnl X_CFLAGS="$X_CFLAGS -Winline"
-	dnl X_CFLAGS="$X_CFLAGS -Wmissing-noreturn"
-	dnl X_CFLAGS="$X_CFLAGS -Wnested-externs"
-	dnl X_CFLAGS="$X_CFLAGS -Wpadded"
-	dnl X_CFLAGS="$X_CFLAGS -Wredundant-decls"
-	dnl X_CFLAGS="$X_CFLAGS -Wshadow"
-	dnl X_CFLAGS="$X_CFLAGS -Wstrict-prototypes"
-	dnl X_CFLAGS="$X_CFLAGS -Wswitch-default"
-	dnl X_CFLAGS="$X_CFLAGS -Wswitch-enum"
-	dnl X_CFLAGS="$X_CFLAGS -Wtraditional"
-	dnl X_CFLAGS="$X_CFLAGS -Wtraditional-conversion"
-	dnl X_CFLAGS="$X_CFLAGS -Wwrite-strings"
-	dnl case "$CC-$gcc_ver" in
-	dnl *clang*-*|*-3.[[5-9]].*|*-[[4-9]].*)
-	dnl 	dnl gcc < 3.5 does not know these
-	dnl 	X_CFLAGS="$X_CFLAGS -Wc++-compat"
-	dnl 	X_CFLAGS="$X_CFLAGS -Woverlength-strings"
-	dnl 	X_CFLAGS="$X_CFLAGS -Wsign-conversion"
-	dnl 	X_CFLAGS="$X_CFLAGS -Wstrict-overflow=5"
-	dnl 	X_CFLAGS="$X_CFLAGS -Wvla"
-	dnl 	case "$gcc_ver" in
-	dnl 	4.[[5-9]].*|[[5-9]].*)
-	dnl 		dnl gcc < 4.5 does not know this
-	dnl 		X_CFLAGS="$X_CFLAGS -Wunsuffixed-float-constants"
-	dnl 		;;
-	dnl 	esac
-	dnl 	;;
-	dnl esac
-
-	dnl  The default configure invocation when doing an rpmbuild also uses this
-	case "$CC-$gcc_ver" in
-	*clang*-*|*-4.[[1-9]].*|*-[[5-9]].*)
-		dnl _FORTIFY_SOURCE supported only with GCC 4.1 and later
-		X_CFLAGS="$X_CFLAGS -Wp,-D_FORTIFY_SOURCE=2"
-		;;
-	esac
-
-	case $host_os in
-	solaris*|aix*)
-		dnl  In some cases, there is a (possibly) uninitialized
-		dnl  variable in bison.simple ... |-(
-		X_CFLAGS="$X_CFLAGS -Wno-uninitialized"
-		;;
-	esac
-
-	dnl  GNU's gcc version 4.4 has very strict aliasing rules
-	dnl  which we fall foul of.  The problem has to do with thing
-	dnl  like
-	dnl  oid v; * (lng *) &v = whatever
-	dnl  which we do *a lot*.
-	dnl  So, switch off this possible optimization until we fixed
-	dnl  our code.
-	case "$gcc_ver" in
-	4.4.*)
-		CFLAGS="$CFLAGS -fno-strict-aliasing"
-		;;
-	esac
+	dnl MCHECK_ADD_FLAG([-pedantic-errors])
+	dnl MCHECK_ADD_FLAG([-Wno-long-long])
+	dnl MCHECK_ADD_FLAG([-Waggregate-return])
+	dnl MCHECK_ADD_FLAG([-Wbad-function-cast])
+	dnl MCHECK_ADD_FLAG([-Wcast-qual])
+	dnl MCHECK_ADD_FLAG([-Wconversion])
+	dnl MCHECK_ADD_FLAG([-Wdisabled-optimization])
+	dnl MCHECK_ADD_FLAG([-Wfloat-equal])
+	dnl MCHECK_ADD_FLAG([-Winline])
+	dnl MCHECK_ADD_FLAG([-Wmissing-noreturn])
+	dnl MCHECK_ADD_FLAG([-Wnested-externs])
+	dnl MCHECK_ADD_FLAG([-Wpadded])
+	dnl MCHECK_ADD_FLAG([-Wredundant-decls])
+	dnl MCHECK_ADD_FLAG([-Wshadow])
+	dnl MCHECK_ADD_FLAG([-Wstrict-prototypes])
+	dnl MCHECK_ADD_FLAG([-Wswitch-default])
+	dnl MCHECK_ADD_FLAG([-Wswitch-enum])
+	dnl MCHECK_ADD_FLAG([-Wtraditional])
+	dnl MCHECK_ADD_FLAG([-Wtraditional-conversion])
+	dnl MCHECK_ADD_FLAG([-Wwrite-strings])
+	dnl MCHECK_ADD_FLAG([-Wc++-compat])
+	dnl MCHECK_ADD_FLAG([-Woverlength-strings])
+	dnl MCHECK_ADD_FLAG([-Wsign-conversion])
+	dnl MCHECK_ADD_FLAG([-Wstrict-overflow=5])
+	dnl MCHECK_ADD_FLAG([-Wvla])
+	dnl MCHECK_ADD_FLAG([-Wunsuffixed-float-constants])
 	;;
 -*icc*-linux*|-*ecc*-linux*)
 	dnl  Intel ([ie]cc/[ie]cpc on Linux)
@@ -749,22 +693,6 @@ yes-*-*)
 	dnl  #1572: floating-point equality and inequality comparisons are unreliable
 	dnl  #1599: declaration hides variable 
 	dnl  #2259: non-pointer conversion from "." to "." may lose significant bits
-	;;
--*pgcc*-linux*)
-	dnl  Portland Group (PGI) (pgcc/pgCC on Linux)
-	dnl  required for "scale" in module "decimal"
-	CFLAGS="$CFLAGS -Msignextend"
-	CC="$CC -fPIC"
-	;;
--*-irix*)
-	dnl  MIPS compiler on IRIX64
-	dnl  treat warnings as errors
-	X_CFLAGS="$X_CFLAGS -w2"
-	;;
--*-solaris*)
-	dnl  Sun compiler on Solaris
-	dnl  treat warnings as errors
-	X_CFLAGS="$X_CFLAGS -errwarn=%all"
 	;;
 esac
 fi

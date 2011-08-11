@@ -134,7 +134,7 @@ controlRunner(void *d)
 	size_t len;
 	err e;
 	int maxsock;
-	char *origin;
+	char origin[128];
 
 	if (usock > tsock) {
 		maxsock = usock + 1;
@@ -184,7 +184,7 @@ controlRunner(void *d)
 			continue;
 		}
 
-		origin = "(local)";
+		snprintf(origin, sizeof(origin), "(local)");
 
 		/* do password ritual for TCP connections */
 		if (sock == tsock) {
@@ -198,7 +198,7 @@ controlRunner(void *d)
 			{
 				Mfprintf(_mero_ctlerr, "couldn't get peername of client: %s\n",
 						strerror(errno));
-				origin = "(unknown)";
+				snprintf(origin, sizeof(origin), "(unknown)");
 			} else {
 				/* avoid doing this, it requires some includes that probably
 				 * give trouble on windowz
@@ -207,18 +207,14 @@ controlRunner(void *d)
 				struct hostent *hoste = 
 					gethostbyaddr(&saddr.sin_addr.s_addr, 4, saddr.sin_family);
 				if (hoste == NULL) {
-					origin = alloca(sizeof(char) *
-							((3 + 1 + 3 + 1 + 3 + 1 + 3) + 1));
-					sprintf(origin, "%u.%u.%u.%u:%u",
+					snprintf(origin, sizeof(origin), "%u.%u.%u.%u:%u",
 							(unsigned)((ntohl(saddr.sin_addr.s_addr) >> 24) & 0xff),
 							(unsigned)((ntohl(saddr.sin_addr.s_addr) >> 16) & 0xff),
 							(unsigned)((ntohl(saddr.sin_addr.s_addr) >> 8) & 0xff),
 							(unsigned)(ntohl(saddr.sin_addr.s_addr) & 0xff),
 							(unsigned)(ntohs(saddr.sin_port)));
 				} else {
-					origin = alloca(sizeof(char) *
-							(strlen(hoste->h_name) + 1 + 5 + 1));
-					sprintf(origin, "%s:%u",
+					snprintf(origin, sizeof(origin), "%s:%u",
 							hoste->h_name, (unsigned)(ntohs(saddr.sin_port)));
 				}
 			}

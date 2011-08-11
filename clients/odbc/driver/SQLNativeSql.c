@@ -31,7 +31,7 @@
  * SQLNativeSql()
  * CLI Compliance: ODBC (Microsoft)
  *
- * Author: Martin van Dinther
+ * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 aug 2002
  *
  **********************************************************************/
@@ -42,44 +42,48 @@
 
 static SQLRETURN
 SQLNativeSql_(ODBCStmt *stmt,
-	      SQLCHAR *szSqlStrIn,
-	      SQLINTEGER cbSqlStrIn,
-	      SQLCHAR *szSqlStr,
-	      SQLINTEGER cbSqlStrMax,
-	      SQLINTEGER *pcbSqlStr)
+	      SQLCHAR *InStatementText,
+	      SQLINTEGER TextLength1,
+	      SQLCHAR *OutStatementText,
+	      SQLINTEGER BufferLength,
+	      SQLINTEGER *TextLength2Ptr)
 {
 	char *query;
 
-	fixODBCstring(szSqlStrIn, cbSqlStrIn, SQLINTEGER, addStmtError, stmt, return SQL_ERROR);
+	fixODBCstring(InStatementText, TextLength1, SQLINTEGER,
+		      addStmtError, stmt, return SQL_ERROR);
 
-	if (szSqlStrIn == NULL) {
+	if (InStatementText == NULL) {
 		/* Invalid use of null pointer */
 		addStmtError(stmt, "HY009", NULL, 0);
 		return SQL_ERROR;
 	}
 #ifdef ODBCDEBUG
-	ODBCLOG("\"%.*s\"\n", (int) cbSqlStrIn, (char *) szSqlStrIn);
+	ODBCLOG("\"%.*s\"\n", (int) TextLength1, (char *) InStatementText);
 #endif
 
-	query = ODBCTranslateSQL(szSqlStrIn, (size_t) cbSqlStrIn, stmt->noScan);
-	copyString(query, strlen(query), szSqlStr, cbSqlStrMax, pcbSqlStr, SQLINTEGER, addStmtError, stmt, free(query); return SQL_ERROR);
+	query = ODBCTranslateSQL(InStatementText, (size_t) TextLength1,
+				 stmt->noScan);
+	copyString(query, strlen(query), OutStatementText, BufferLength,
+		   TextLength2Ptr, SQLINTEGER, addStmtError, stmt,
+		   free(query); return SQL_ERROR);
 	free(query);
 
 	return stmt->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 }
 
 SQLRETURN SQL_API
-SQLNativeSql(SQLHSTMT hStmt,
-	     SQLCHAR *szSqlStrIn,
-	     SQLINTEGER cbSqlStrIn,
-	     SQLCHAR *szSqlStr,
-	     SQLINTEGER cbSqlStrMax,
-	     SQLINTEGER *pcbSqlStr)
+SQLNativeSql(SQLHSTMT StatementHandle,
+	     SQLCHAR *InStatementText,
+	     SQLINTEGER TextLength1,
+	     SQLCHAR *OutStatementText,
+	     SQLINTEGER BufferLength,
+	     SQLINTEGER *TextLength2Ptr)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLNativeSql " PTRFMT " ", PTRFMTCAST hStmt);
+	ODBCLOG("SQLNativeSql " PTRFMT " ", PTRFMTCAST StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -87,37 +91,47 @@ SQLNativeSql(SQLHSTMT hStmt,
 
 	clearStmtErrors(stmt);
 
-	return SQLNativeSql_(stmt, szSqlStrIn, cbSqlStrIn, szSqlStr, cbSqlStrMax, pcbSqlStr);
+	return SQLNativeSql_(stmt,
+			     InStatementText,
+			     TextLength1,
+			     OutStatementText,
+			     BufferLength,
+			     TextLength2Ptr);
 }
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLNativeSqlA(SQLHSTMT hStmt,
-	      SQLCHAR *szSqlStrIn,
-	      SQLINTEGER cbSqlStrIn,
-	      SQLCHAR *szSqlStr,
-	      SQLINTEGER cbSqlStrMax,
-	      SQLINTEGER *pcbSqlStr)
+SQLNativeSqlA(SQLHSTMT StatementHandle,
+	      SQLCHAR *InStatementText,
+	      SQLINTEGER TextLength1,
+	      SQLCHAR *OutStatementText,
+	      SQLINTEGER BufferLength,
+	      SQLINTEGER *TextLength2Ptr)
 {
-	return SQLNativeSql(hStmt, szSqlStrIn, cbSqlStrIn, szSqlStr, cbSqlStrMax, pcbSqlStr);
+	return SQLNativeSql(StatementHandle,
+			    InStatementText,
+			    TextLength1,
+			    OutStatementText,
+			    BufferLength,
+			    TextLength2Ptr);
 }
 
 SQLRETURN SQL_API
-SQLNativeSqlW(SQLHSTMT hStmt,
-	      SQLWCHAR * szSqlStrIn,
-	      SQLINTEGER cbSqlStrIn,
-	      SQLWCHAR * szSqlStr,
-	      SQLINTEGER cbSqlStrMax,
-	      SQLINTEGER *pcbSqlStr)
+SQLNativeSqlW(SQLHSTMT StatementHandle,
+	      SQLWCHAR *InStatementText,
+	      SQLINTEGER TextLength1,
+	      SQLWCHAR *OutStatementText,
+	      SQLINTEGER BufferLength,
+	      SQLINTEGER *TextLength2Ptr)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 	SQLRETURN rc;
 	SQLINTEGER n;
 	SQLSMALLINT nn;
 	SQLCHAR *sqlin, *sqlout;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLNativeSqlW " PTRFMT " ", PTRFMTCAST hStmt);
+	ODBCLOG("SQLNativeSqlW " PTRFMT " ", PTRFMTCAST StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -125,7 +139,8 @@ SQLNativeSqlW(SQLHSTMT hStmt,
 
 	clearStmtErrors(stmt);
 
-	fixWcharIn(szSqlStrIn, cbSqlStrIn, SQLCHAR, sqlin, addStmtError, stmt, return SQL_ERROR);
+	fixWcharIn(InStatementText, TextLength1, SQLCHAR, sqlin,
+		   addStmtError, stmt, return SQL_ERROR);
 
 	rc = SQLNativeSql_(stmt, sqlin, SQL_NTS, NULL, 0, &n);
 	if (!SQL_SUCCEEDED(rc))
@@ -135,7 +150,8 @@ SQLNativeSqlW(SQLHSTMT hStmt,
 	sqlout = malloc(n);
 	rc = SQLNativeSql_(stmt, sqlin, SQL_NTS, sqlout, n, &n);
 	nn = (SQLSMALLINT) n;
-	fixWcharOut(rc, sqlout, nn, szSqlStr, cbSqlStrMax, pcbSqlStr, 1, addStmtError, stmt);
+	fixWcharOut(rc, sqlout, nn, OutStatementText, BufferLength,
+		    TextLength2Ptr, 1, addStmtError, stmt);
 
 	return rc;
 }

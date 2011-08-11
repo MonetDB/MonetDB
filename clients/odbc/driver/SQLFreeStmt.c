@@ -34,7 +34,7 @@
  * Note: the option SQL_DROP is deprecated in ODBC 3.0 and replaced by
  * SQLFreeHandle(). It is provided here for old (pre ODBC 3.0) applications.
  *
- * Author: Martin van Dinther
+ * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 Aug 2002
  *
  **********************************************************************/
@@ -44,12 +44,13 @@
 
 SQLRETURN
 SQLFreeStmt_(ODBCStmt *stmt,
-	     SQLUSMALLINT option)
+	     SQLUSMALLINT Option)
 {
-	switch (option) {
+	switch (Option) {
 	case SQL_CLOSE:
-		/* Note: this option is also called from SQLCancel() and
-		   SQLCloseCursor(), so be careful when changing the code */
+		/* Note: this option is also called from SQLCancel()
+		 * and SQLCloseCursor(), so be careful when changing
+		 * the code */
 		/* close cursor, discard result set, set to prepared */
 		setODBCDescRecCount(stmt->ImplRowDescr, 0);
 		stmt->currentRow = 0;
@@ -83,18 +84,18 @@ SQLFreeStmt_(ODBCStmt *stmt,
 }
 
 SQLRETURN SQL_API
-SQLFreeStmt(SQLHSTMT handle,
-	    SQLUSMALLINT option)
+SQLFreeStmt(SQLHSTMT StatementHandle,
+	    SQLUSMALLINT Option)
 {
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLFreeStmt " PTRFMT " %u\n",
-		PTRFMTCAST handle, (unsigned int) option);
+		PTRFMTCAST StatementHandle, (unsigned int) Option);
 #endif
 
-	if (!isValidStmt((ODBCStmt *) handle))
+	if (!isValidStmt((ODBCStmt *) StatementHandle))
 		return SQL_INVALID_HANDLE;
 
-	clearStmtErrors((ODBCStmt *) handle);
+	clearStmtErrors((ODBCStmt *) StatementHandle);
 
-	return SQLFreeStmt_((ODBCStmt *) handle, option);
+	return SQLFreeStmt_((ODBCStmt *) StatementHandle, Option);
 }

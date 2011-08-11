@@ -36,44 +36,53 @@
 #include "ODBCStmt.h"
 
 SQLRETURN SQL_API
-SQLSetDescRec(SQLHDESC hDescriptorHandle,
-	      SQLSMALLINT nRecordNumber,
-	      SQLSMALLINT nType,
-	      SQLSMALLINT nSubType,
-	      SQLLEN nLength,
-	      SQLSMALLINT nPrecision,
-	      SQLSMALLINT nScale,
-	      SQLPOINTER pData,
-	      SQLLEN *pnStringLength,
-	      SQLLEN *pnIndicator)
+SQLSetDescRec(SQLHDESC DescriptorHandle,
+	      SQLSMALLINT RecNumber,
+	      SQLSMALLINT Type,
+	      SQLSMALLINT SubType,
+	      SQLLEN Length,
+	      SQLSMALLINT Precision,
+	      SQLSMALLINT Scale,
+	      SQLPOINTER DataPtr,
+	      SQLLEN *StringLengthPtr,
+	      SQLLEN *IndicatorPtr)
 {
-	ODBCDesc *desc = (ODBCDesc *) hDescriptorHandle;
+	ODBCDesc *desc = (ODBCDesc *) DescriptorHandle;
 
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLSetDescRec " PTRFMT " %d %d %d " LENFMT " %d %d\n",
-		PTRFMTCAST hDescriptorHandle, (int) nRecordNumber,
-		(int) nType, (int) nSubType, LENCAST nLength,
-		(int) nPrecision, (int) nScale);
+		PTRFMTCAST DescriptorHandle, (int) RecNumber,
+		(int) Type, (int) SubType, LENCAST Length,
+		(int) Precision, (int) Scale);
 #endif
 
 	if (!isValidDesc(desc))
 		return SQL_INVALID_HANDLE;
 
-	if (SQLSetDescField_(desc, nRecordNumber, SQL_DESC_TYPE, (SQLPOINTER) (ssize_t) nType, 0) == SQL_ERROR)
+	if (SQLSetDescField_(desc, RecNumber, SQL_DESC_TYPE,
+			     (SQLPOINTER) (ssize_t) Type, 0) == SQL_ERROR)
 		return SQL_ERROR;
-	if ((nType == SQL_DATETIME || nType == SQL_INTERVAL) && SQLSetDescField_(desc, nRecordNumber, SQL_DESC_DATETIME_INTERVAL_CODE, (SQLPOINTER) (ssize_t) nSubType, 0) == SQL_ERROR)
+	if ((Type == SQL_DATETIME || Type == SQL_INTERVAL) &&
+	    SQLSetDescField_(desc, RecNumber, SQL_DESC_DATETIME_INTERVAL_CODE,
+			     (SQLPOINTER) (ssize_t) SubType, 0) == SQL_ERROR)
 		return SQL_ERROR;
-	if (SQLSetDescField_(desc, nRecordNumber, SQL_DESC_OCTET_LENGTH, (SQLPOINTER) (ssize_t) nLength, 0) == SQL_ERROR)
+	if (SQLSetDescField_(desc, RecNumber, SQL_DESC_OCTET_LENGTH,
+			     (SQLPOINTER) (ssize_t) Length, 0) == SQL_ERROR)
 		return SQL_ERROR;
-	if (SQLSetDescField_(desc, nRecordNumber, SQL_DESC_PRECISION, (SQLPOINTER) (ssize_t) nPrecision, 0) == SQL_ERROR)
+	if (SQLSetDescField_(desc, RecNumber, SQL_DESC_PRECISION,
+			     (SQLPOINTER) (ssize_t) Precision, 0) == SQL_ERROR)
 		return SQL_ERROR;
-	if (SQLSetDescField_(desc, nRecordNumber, SQL_DESC_SCALE, (SQLPOINTER) (ssize_t) nScale, 0) == SQL_ERROR)
+	if (SQLSetDescField_(desc, RecNumber, SQL_DESC_SCALE,
+			     (SQLPOINTER) (ssize_t) Scale, 0) == SQL_ERROR)
 		return SQL_ERROR;
-	if (SQLSetDescField_(desc, nRecordNumber, SQL_DESC_OCTET_LENGTH_PTR, (SQLPOINTER) pnStringLength, 0) == SQL_ERROR)
+	if (SQLSetDescField_(desc, RecNumber, SQL_DESC_OCTET_LENGTH_PTR,
+			     (SQLPOINTER) StringLengthPtr, 0) == SQL_ERROR)
 		return SQL_ERROR;
-	if (SQLSetDescField_(desc, nRecordNumber, SQL_DESC_INDICATOR_PTR, (SQLPOINTER) pnIndicator, 0) == SQL_ERROR)
+	if (SQLSetDescField_(desc, RecNumber, SQL_DESC_INDICATOR_PTR,
+			     (SQLPOINTER) IndicatorPtr, 0) == SQL_ERROR)
 		return SQL_ERROR;
-	if (SQLSetDescField_(desc, nRecordNumber, SQL_DESC_DATA_PTR, (SQLPOINTER) pData, 0) == SQL_ERROR)
+	if (SQLSetDescField_(desc, RecNumber, SQL_DESC_DATA_PTR,
+			     (SQLPOINTER) DataPtr, 0) == SQL_ERROR)
 		return SQL_ERROR;
 	return desc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 }

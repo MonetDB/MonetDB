@@ -34,7 +34,7 @@
  * This file contains utility functions for
  * the ODBC driver implementation.
  *
- * Author: Martin van Dinther
+ * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 aug 2002
  *
  **********************************************/
@@ -182,7 +182,7 @@ ODBCwchar2utf8(const SQLWCHAR *s, SQLLEN length, char **errmsg)
 char *
 ODBCutf82wchar(const SQLCHAR *s,
 	       SQLINTEGER length,
-	       SQLWCHAR * buf,
+	       SQLWCHAR *buf,
 	       SQLLEN buflen,
 	       SQLSMALLINT *buflenout)
 {

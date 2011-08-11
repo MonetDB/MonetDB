@@ -31,7 +31,7 @@
  * SQLGetInfo()
  * CLI Compliance: ISO 92
  *
- * Author: Martin van Dinther
+ * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 Aug 2002
  *
  **********************************************************************/
@@ -43,10 +43,10 @@
 
 static SQLRETURN
 SQLGetInfo_(ODBCDbc *dbc,
-	    SQLUSMALLINT nInfoType,
-	    SQLPOINTER pInfoValue,
-	    SQLSMALLINT nInfoValueMax,
-	    SQLSMALLINT *pnLength)
+	    SQLUSMALLINT InfoType,
+	    SQLPOINTER InfoValuePtr,
+	    SQLSMALLINT BufferLength,
+	    SQLSMALLINT *StringLengthPtr)
 {
 	int nValue = 0;
 	const char *sValue = NULL;	/* iff non-NULL, return string value */
@@ -54,16 +54,16 @@ SQLGetInfo_(ODBCDbc *dbc,
 
 	/* For some info types an active connection is needed */
 	if (!dbc->Connected &&
-	    (nInfoType == SQL_DATA_SOURCE_NAME ||
-	     nInfoType == SQL_SERVER_NAME ||
-	     nInfoType == SQL_DATABASE_NAME ||
-	     nInfoType == SQL_USER_NAME)) {
+	    (InfoType == SQL_DATA_SOURCE_NAME ||
+	     InfoType == SQL_SERVER_NAME ||
+	     InfoType == SQL_DATABASE_NAME ||
+	     InfoType == SQL_USER_NAME)) {
 		/* Connection does not exist */
 		addDbcError(dbc, "08003", NULL, 0);
 		return SQL_ERROR;
 	}
 
-	switch (nInfoType) {
+	switch (InfoType) {
 	case SQL_ACCESSIBLE_PROCEDURES:
 		sValue = "Y";
 		break;
@@ -87,14 +87,14 @@ SQLGetInfo_(ODBCDbc *dbc,
 	case SQL_ALTER_DOMAIN:
 		nValue = 0;
 		/* SQL_AD_ADD_CONSTRAINT_DEFERRABLE |
-		   SQL_AD_ADD_CONSTRAINT_INITIALLY_DEFERRED |
-		   SQL_AD_ADD_CONSTRAINT_INITIALLY_IMMEDIATE |
-		   SQL_AD_ADD_CONSTRAINT_NON_DEFERRABLE |
-		   SQL_AD_ADD_DOMAIN_CONSTRAINT |
-		   SQL_AD_ADD_DOMAIN_DEFAULT |
-		   SQL_AD_CONSTRAINT_NAME_DEFINITION |
-		   SQL_AD_DROP_DOMAIN_CONSTRAINT |
-		   SQL_AD_DROP_DOMAIN_DEFAULT */
+		 * SQL_AD_ADD_CONSTRAINT_INITIALLY_DEFERRED |
+		 * SQL_AD_ADD_CONSTRAINT_INITIALLY_IMMEDIATE |
+		 * SQL_AD_ADD_CONSTRAINT_NON_DEFERRABLE |
+		 * SQL_AD_ADD_DOMAIN_CONSTRAINT |
+		 * SQL_AD_ADD_DOMAIN_DEFAULT |
+		 * SQL_AD_CONSTRAINT_NAME_DEFINITION |
+		 * SQL_AD_DROP_DOMAIN_CONSTRAINT |
+		 * SQL_AD_DROP_DOMAIN_DEFAULT */
 		len = sizeof(SQLUINTEGER);
 		break;
 	case SQL_ALTER_TABLE:
@@ -107,21 +107,21 @@ SQLGetInfo_(ODBCDbc *dbc,
 			SQL_AT_DROP_TABLE_CONSTRAINT_RESTRICT |
 			SQL_AT_SET_COLUMN_DEFAULT;
 		/* SQL_AT_ADD_COLUMN_SINGLE |
-		   SQL_AT_ADD_COLUMN_COLLATION |
-		   SQL_AT_ADD_COLUMN_DEFAULT |
-		   SQL_AT_ADD_TABLE_CONSTRAINT |
-		   SQL_AT_ADD_TABLE_CONSTRAINT |
-		   SQL_AT_CONSTRAINT_DEFERRABLE |
-		   SQL_AT_CONSTRAINT_INITIALLY_DEFERRED |
-		   SQL_AT_CONSTRAINT_INITIALLY_IMMEDIATE |
-		   SQL_AT_CONSTRAINT_NAME_DEFINITION |
-		   SQL_AT_DROP_COLUMN_CASCADE |
-		   SQL_AT_DROP_COLUMN_DEFAULT |
-		   SQL_AT_DROP_COLUMN_RESTRICT |
-		   SQL_AT_DROP_TABLE_CONSTRAINT_CASCADE |
-		   SQL_AT_DROP_TABLE_CONSTRAINT_RESTRICT |
-		   SQL_AT_SET_COLUMN_DEFAULT |
-		   SQL_AT_CONSTRAINT_NON_DEFERRABLE */
+		 * SQL_AT_ADD_COLUMN_COLLATION |
+		 * SQL_AT_ADD_COLUMN_DEFAULT |
+		 * SQL_AT_ADD_TABLE_CONSTRAINT |
+		 * SQL_AT_ADD_TABLE_CONSTRAINT |
+		 * SQL_AT_CONSTRAINT_DEFERRABLE |
+		 * SQL_AT_CONSTRAINT_INITIALLY_DEFERRED |
+		 * SQL_AT_CONSTRAINT_INITIALLY_IMMEDIATE |
+		 * SQL_AT_CONSTRAINT_NAME_DEFINITION |
+		 * SQL_AT_DROP_COLUMN_CASCADE |
+		 * SQL_AT_DROP_COLUMN_DEFAULT |
+		 * SQL_AT_DROP_COLUMN_RESTRICT |
+		 * SQL_AT_DROP_TABLE_CONSTRAINT_CASCADE |
+		 * SQL_AT_DROP_TABLE_CONSTRAINT_RESTRICT |
+		 * SQL_AT_SET_COLUMN_DEFAULT |
+		 * SQL_AT_CONSTRAINT_NON_DEFERRABLE */
 		len = sizeof(SQLUINTEGER);
 		break;
 	case SQL_ASYNC_MODE:
@@ -137,17 +137,17 @@ SQLGetInfo_(ODBCDbc *dbc,
 	case SQL_BATCH_SUPPORT:
 		nValue = SQL_BS_ROW_COUNT_EXPLICIT | SQL_BS_SELECT_EXPLICIT;
 		/* SQL_BS_ROW_COUNT_PROC |
-		   SQL_BS_SELECT_PROC */
+		 * SQL_BS_SELECT_PROC */
 		len = sizeof(SQLUINTEGER);
 		break;
 	case SQL_BOOKMARK_PERSISTENCE:
 		nValue = 0;	/* bookmarks not supported */
 		/* SQL_BP_CLOSE |
-		   SQL_BP_DELETE |
-		   SQL_BP_DROP |
-		   SQL_BP_OTHER_HSTMT |
-		   SQL_BP_TRANSACTION |
-		   SQL_BP_UPDATE */
+		 * SQL_BP_DELETE |
+		 * SQL_BP_DROP |
+		 * SQL_BP_OTHER_HSTMT |
+		 * SQL_BP_TRANSACTION |
+		 * SQL_BP_UPDATE */
 		len = sizeof(SQLUINTEGER);
 		break;
 	case SQL_CATALOG_LOCATION:
@@ -165,10 +165,10 @@ SQLGetInfo_(ODBCDbc *dbc,
 	case SQL_CATALOG_USAGE:
 		nValue = 0;
 		/* SQL_CU_DML_STATEMENTS |
-		   SQL_CU_INDEX_DEFINITION |
-		   SQL_CU_PRIVILEGE_DEFINITION |
-		   SQL_CU_PROCEDURE_INVOCATION |
-		   SQL_CU_TABLE_DEFINITION */
+		 * SQL_CU_INDEX_DEFINITION |
+		 * SQL_CU_PRIVILEGE_DEFINITION |
+		 * SQL_CU_PROCEDURE_INVOCATION |
+		 * SQL_CU_TABLE_DEFINITION */
 		len = sizeof(SQLUINTEGER);
 		break;
 	case SQL_COLLATION_SEQ:
@@ -239,26 +239,26 @@ SQLGetInfo_(ODBCDbc *dbc,
 		break;
 	case SQL_CREATE_ASSERTION:
 		/* SQL_CA_CREATE_ASSERTION |
-		   SQL_CA_CONSTRAINT_DEFERRABLE |
-		   SQL_CA_CONSTRAINT_INITIALLY_DEFERRED |
-		   SQL_CA_CONSTRAINT_INITIALLY_IMMEDIATE |
-		   SQL_CA_CONSTRAINT_NON_DEFERRABLE */
+		 * SQL_CA_CONSTRAINT_DEFERRABLE |
+		 * SQL_CA_CONSTRAINT_INITIALLY_DEFERRED |
+		 * SQL_CA_CONSTRAINT_INITIALLY_IMMEDIATE |
+		 * SQL_CA_CONSTRAINT_NON_DEFERRABLE */
 	case SQL_CREATE_CHARACTER_SET:
 		/* SQL_CCS_CREATE_CHARACTER_SET |
-		   SQL_CCS_COLLATE_CLAUSE |
-		   SQL_CCS_LIMITED_COLLATION */
+		 * SQL_CCS_COLLATE_CLAUSE |
+		 * SQL_CCS_LIMITED_COLLATION */
 	case SQL_CREATE_COLLATION:
 		/* SQL_CCOL_CREATE_COLLATION */
 	case SQL_CREATE_DOMAIN:
 		/* SQL_CDO_CREATE_DOMAIN |
-		   SQL_CDO_CONSTRAINT_NAME_DEFINITION |
-		   SQL_CDO_DEFAULT |
-		   SQL_CDO_CONSTRAINT |
-		   SQL_CDO_COLLATION |
-		   SQL_CDO_CONSTRAINT_DEFERRABLE |
-		   SQL_CDO_CONSTRAINT_INITIALLY_DEFERRED |
-		   SQL_CDO_CONSTRAINT_INITIALLY_IMMEDIATE |
-		   SQL_CDO_CONSTRAINT_NON_DEFERRABLE */
+		 * SQL_CDO_CONSTRAINT_NAME_DEFINITION |
+		 * SQL_CDO_DEFAULT |
+		 * SQL_CDO_CONSTRAINT |
+		 * SQL_CDO_COLLATION |
+		 * SQL_CDO_CONSTRAINT_DEFERRABLE |
+		 * SQL_CDO_CONSTRAINT_INITIALLY_DEFERRED |
+		 * SQL_CDO_CONSTRAINT_INITIALLY_IMMEDIATE |
+		 * SQL_CDO_CONSTRAINT_NON_DEFERRABLE */
 	case SQL_CREATE_TRANSLATION:
 		/* SQL_CTR_CREATE_TRANSLATION */
 		nValue = 0;
@@ -279,11 +279,11 @@ SQLGetInfo_(ODBCDbc *dbc,
 			SQL_CT_LOCAL_TEMPORARY |
 			SQL_CT_TABLE_CONSTRAINT;
 		/* SQL_CT_COLUMN_COLLATION |
-		   SQL_CT_COMMIT_DELETE |
-		   SQL_CT_CONSTRAINT_DEFERRABLE |
-		   SQL_CT_CONSTRAINT_INITIALLY_DEFERRED |
-		   SQL_CT_CONSTRAINT_INITIALLY_IMMEDIATE |
-		   SQL_CT_CONSTRAINT_NON_DEFERRABLE */
+		 * SQL_CT_COMMIT_DELETE |
+		 * SQL_CT_CONSTRAINT_DEFERRABLE |
+		 * SQL_CT_CONSTRAINT_INITIALLY_DEFERRED |
+		 * SQL_CT_CONSTRAINT_INITIALLY_IMMEDIATE |
+		 * SQL_CT_CONSTRAINT_NON_DEFERRABLE */
 		len = sizeof(SQLUINTEGER);
 		break;
 	case SQL_CREATE_VIEW:
@@ -317,9 +317,9 @@ SQLGetInfo_(ODBCDbc *dbc,
 	case SQL_SCROLL_OPTIONS:
 		nValue = SQL_SO_STATIC;
 		/* SQL_SO_DYNAMIC,
-		   SQL_SO_FORWARD_ONLY,
-		   SQL_SO_KEYSET_DRIVEN,
-		   SQL_SO_MIXED */
+		 * SQL_SO_FORWARD_ONLY,
+		 * SQL_SO_KEYSET_DRIVEN,
+		 * SQL_SO_MIXED */
 		len = sizeof(SQLUINTEGER);
 		break;
 	case SQL_DYNAMIC_CURSOR_ATTRIBUTES1:
@@ -335,39 +335,39 @@ SQLGetInfo_(ODBCDbc *dbc,
 
 	case SQL_STATIC_CURSOR_ATTRIBUTES1:
 		/* SQL_CA1_BOOKMARK |
-		   SQL_CA1_BULK_ADD |
-		   SQL_CA1_BULK_DELETE_BY_BOOKMARK |
-		   SQL_CA1_BULK_FETCH_BY_BOOKMARK |
-		   SQL_CA1_BULK_UPDATE_BY_BOOKMARK |
-		   SQL_CA1_LOCK_EXCLUSIVE |
-		   SQL_CA1_LOCK_UNLOCK |
-		   SQL_CA1_POS_DELETE |
-		   SQL_CA1_POSITIONED_DELETE |
-		   SQL_CA1_POSITIONED_UPDATE |
-		   SQL_CA1_POS_REFRESH |
-		   SQL_CA1_POS_UPDATE |
-		   SQL_CA1_SELECT_FOR_UPDATE */
+		 * SQL_CA1_BULK_ADD |
+		 * SQL_CA1_BULK_DELETE_BY_BOOKMARK |
+		 * SQL_CA1_BULK_FETCH_BY_BOOKMARK |
+		 * SQL_CA1_BULK_UPDATE_BY_BOOKMARK |
+		 * SQL_CA1_LOCK_EXCLUSIVE |
+		 * SQL_CA1_LOCK_UNLOCK |
+		 * SQL_CA1_POS_DELETE |
+		 * SQL_CA1_POSITIONED_DELETE |
+		 * SQL_CA1_POSITIONED_UPDATE |
+		 * SQL_CA1_POS_REFRESH |
+		 * SQL_CA1_POS_UPDATE |
+		 * SQL_CA1_SELECT_FOR_UPDATE */
 		nValue = SQL_CA1_ABSOLUTE | SQL_CA1_LOCK_NO_CHANGE | SQL_CA1_NEXT | SQL_CA1_POS_POSITION | SQL_CA1_RELATIVE;
 		len = sizeof(SQLUINTEGER);
 		break;
 	case SQL_STATIC_CURSOR_ATTRIBUTES2:
 		/* SQL_CA2_CRC_APPROXIMATE |
-		   SQL_CA2_LOCK_CONCURRENCY |
-		   SQL_CA2_MAX_ROWS_AFFECTS_ALL |
-		   SQL_CA2_MAX_ROWS_CATALOG |
-		   SQL_CA2_MAX_ROWS_DELETE |
-		   SQL_CA2_MAX_ROWS_INSERT |
-		   SQL_CA2_MAX_ROWS_SELECT |
-		   SQL_CA2_MAX_ROWS_UPDATE |
-		   SQL_CA2_OPT_ROWVER_CONCURRENCY |
-		   SQL_CA2_OPT_VALUES_CONCURRENCY |
-		   SQL_CA2_READ_ONLY_CONCURRENCY |
-		   SQL_CA2_SENSITIVITY_ADDITIONS |
-		   SQL_CA2_SENSITIVITY_DELETIONS |
-		   SQL_CA2_SENSITIVITY_UPDATES |
-		   SQL_CA2_SIMULATE_NON_UNIQUE |
-		   SQL_CA2_SIMULATE_TRY_UNIQUE |
-		   SQL_CA2_SIMULATE_UNIQUE */
+		 * SQL_CA2_LOCK_CONCURRENCY |
+		 * SQL_CA2_MAX_ROWS_AFFECTS_ALL |
+		 * SQL_CA2_MAX_ROWS_CATALOG |
+		 * SQL_CA2_MAX_ROWS_DELETE |
+		 * SQL_CA2_MAX_ROWS_INSERT |
+		 * SQL_CA2_MAX_ROWS_SELECT |
+		 * SQL_CA2_MAX_ROWS_UPDATE |
+		 * SQL_CA2_OPT_ROWVER_CONCURRENCY |
+		 * SQL_CA2_OPT_VALUES_CONCURRENCY |
+		 * SQL_CA2_READ_ONLY_CONCURRENCY |
+		 * SQL_CA2_SENSITIVITY_ADDITIONS |
+		 * SQL_CA2_SENSITIVITY_DELETIONS |
+		 * SQL_CA2_SENSITIVITY_UPDATES |
+		 * SQL_CA2_SIMULATE_NON_UNIQUE |
+		 * SQL_CA2_SIMULATE_TRY_UNIQUE |
+		 * SQL_CA2_SIMULATE_UNIQUE */
 		nValue = SQL_CA2_CRC_EXACT;
 		len = sizeof(SQLUINTEGER);
 		break;
@@ -446,7 +446,7 @@ SQLGetInfo_(ODBCDbc *dbc,
 	case SQL_MAX_SCHEMA_NAME_LEN:
 	case SQL_MAX_CATALOG_NAME_LEN:
 		/* in monet strings can be very long, but limit it
-		   here to 255 which should be enough in most cases */
+		 * here to 255 which should be enough in most cases */
 		nValue = 255;
 		len = sizeof(SQLUSMALLINT);
 		break;
@@ -725,33 +725,33 @@ SQLGetInfo_(ODBCDbc *dbc,
 
 	/* copy the data to the supplied output parameters */
 	if (sValue) {
-		copyString(sValue, strlen(sValue), pInfoValue, nInfoValueMax, pnLength, SQLSMALLINT, addDbcError, dbc, return SQL_ERROR);
-	} else if (pInfoValue) {
+		copyString(sValue, strlen(sValue), InfoValuePtr, BufferLength, StringLengthPtr, SQLSMALLINT, addDbcError, dbc, return SQL_ERROR);
+	} else if (InfoValuePtr) {
 		if (len == sizeof(SQLULEN))
-			*(SQLULEN *) pInfoValue = (SQLULEN) nValue;
+			*(SQLULEN *) InfoValuePtr = (SQLULEN) nValue;
 		else if (len == sizeof(SQLUINTEGER))
-			*(SQLUINTEGER *) pInfoValue = (SQLUINTEGER) nValue;
+			*(SQLUINTEGER *) InfoValuePtr = (SQLUINTEGER) nValue;
 		else if (len == sizeof(SQLUSMALLINT))
-			*(SQLUSMALLINT *) pInfoValue = (SQLUSMALLINT) nValue;
-		if (pnLength)
-			*pnLength = len;
+			*(SQLUSMALLINT *) InfoValuePtr = (SQLUSMALLINT) nValue;
+		if (StringLengthPtr)
+			*StringLengthPtr = len;
 	}
 
 	return dbc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 }
 
 SQLRETURN SQL_API
-SQLGetInfo(SQLHDBC hDbc,
-	   SQLUSMALLINT nInfoType,
-	   SQLPOINTER pInfoValue,
-	   SQLSMALLINT nInfoValueMax,
-	   SQLSMALLINT *pnLength)
+SQLGetInfo(SQLHDBC ConnectionHandle,
+	   SQLUSMALLINT InfoType,
+	   SQLPOINTER InfoValuePtr,
+	   SQLSMALLINT BufferLength,
+	   SQLSMALLINT *StringLengthPtr)
 {
-	ODBCDbc *dbc = (ODBCDbc *) hDbc;
+	ODBCDbc *dbc = (ODBCDbc *) ConnectionHandle;
 
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLGetInfo " PTRFMT " %u\n",
-		PTRFMTCAST hDbc, (unsigned int) nInfoType);
+		PTRFMTCAST ConnectionHandle, (unsigned int) InfoType);
 #endif
 
 	if (!isValidDbc(dbc))
@@ -759,35 +759,43 @@ SQLGetInfo(SQLHDBC hDbc,
 
 	clearDbcErrors(dbc);
 
-	return SQLGetInfo_(dbc, nInfoType, pInfoValue, nInfoValueMax, pnLength);
+	return SQLGetInfo_(dbc,
+			   InfoType,
+			   InfoValuePtr,
+			   BufferLength,
+			   StringLengthPtr);
 }
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLGetInfoA(SQLHDBC hDbc,
-	    SQLUSMALLINT nInfoType,
-	    SQLPOINTER pInfoValue,
-	    SQLSMALLINT nInfoValueMax,
-	    SQLSMALLINT *pnLength)
+SQLGetInfoA(SQLHDBC ConnectionHandle,
+	    SQLUSMALLINT InfoType,
+	    SQLPOINTER InfoValuePtr,
+	    SQLSMALLINT BufferLength,
+	    SQLSMALLINT *StringLengthPtr)
 {
-	return SQLGetInfo(hDbc, nInfoType, pInfoValue, nInfoValueMax, pnLength);
+	return SQLGetInfo(ConnectionHandle,
+			  InfoType,
+			  InfoValuePtr,
+			  BufferLength,
+			  StringLengthPtr);
 }
 
 SQLRETURN SQL_API
-SQLGetInfoW(SQLHDBC hDbc,
-	    SQLUSMALLINT nInfoType,
-	    SQLPOINTER pInfoValue,
-	    SQLSMALLINT nInfoValueMax,
-	    SQLSMALLINT *pnLength)
+SQLGetInfoW(SQLHDBC ConnectionHandle,
+	    SQLUSMALLINT InfoType,
+	    SQLPOINTER InfoValuePtr,
+	    SQLSMALLINT BufferLength,
+	    SQLSMALLINT *StringLengthPtr)
 {
-	ODBCDbc *dbc = (ODBCDbc *) hDbc;
+	ODBCDbc *dbc = (ODBCDbc *) ConnectionHandle;
 	SQLRETURN rc;
 	SQLPOINTER ptr;
 	SQLSMALLINT n;
 
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLGetInfoW " PTRFMT " %u\n",
-		PTRFMTCAST hDbc, (unsigned int) nInfoType);
+		PTRFMTCAST ConnectionHandle, (unsigned int) InfoType);
 #endif
 
 	if (!isValidDbc(dbc))
@@ -795,7 +803,7 @@ SQLGetInfoW(SQLHDBC hDbc,
 
 	clearDbcErrors(dbc);
 
-	switch (nInfoType) {
+	switch (InfoType) {
 	/* all string attributes */
 	case SQL_ACCESSIBLE_PROCEDURES:
 	case SQL_ACCESSIBLE_TABLES:
@@ -836,7 +844,7 @@ SQLGetInfoW(SQLHDBC hDbc,
 	case SQL_TABLE_TERM:
 	case SQL_USER_NAME:
 	case SQL_XOPEN_CLI_YEAR:
-		rc = SQLGetInfo_(dbc, nInfoType, NULL, 0, &n);
+		rc = SQLGetInfo_(dbc, InfoType, NULL, 0, &n);
 		if (!SQL_SUCCEEDED(rc))
 			return rc;
 		clearDbcErrors(dbc);
@@ -844,17 +852,18 @@ SQLGetInfoW(SQLHDBC hDbc,
 		ptr = (SQLPOINTER) malloc(n);
 		break;
 	default:
-		n = nInfoValueMax;
-		ptr = pInfoValue;
+		n = BufferLength;
+		ptr = InfoValuePtr;
 		break;
 	}
 
-	rc = SQLGetInfo_(dbc, nInfoType, ptr, n, &n);
+	rc = SQLGetInfo_(dbc, InfoType, ptr, n, &n);
 
-	if (ptr != pInfoValue)
-		fixWcharOut(rc, ptr, n, pInfoValue, nInfoValueMax, pnLength, 2, addDbcError, dbc);
-	else if (pnLength)
-		*pnLength = n;
+	if (ptr != InfoValuePtr)
+		fixWcharOut(rc, ptr, n, InfoValuePtr, BufferLength,
+			    StringLengthPtr, 2, addDbcError, dbc);
+	else if (StringLengthPtr)
+		*StringLengthPtr = n;
 
 	return rc;
 }

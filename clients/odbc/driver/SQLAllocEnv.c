@@ -32,7 +32,7 @@
  * CLI Compliance: deprecated in ODBC 3.0 (replaced by SQLAllocHandle())
  * Provided here for old (pre ODBC 3.0) applications and driver managers.
  *
- * Author: Martin van Dinther
+ * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 Aug 2002
  *
  **********************************************************************/
@@ -40,12 +40,13 @@
 #include "ODBCGlobal.h"
 
 SQLRETURN SQL_API
-SQLAllocEnv(SQLHENV *phEnv)
+SQLAllocEnv(SQLHENV *OutputHandlePtr)
 {
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLAllocEnv\n");
 #endif
 
 	/* use mapping as described in ODBC 3 SDK Help file */
-	return SQLAllocHandle_(SQL_HANDLE_ENV, SQL_NULL_HANDLE, (SQLHANDLE *) phEnv);
+	return SQLAllocHandle_(SQL_HANDLE_ENV, SQL_NULL_HANDLE,
+			       (SQLHANDLE *) OutputHandlePtr);
 }

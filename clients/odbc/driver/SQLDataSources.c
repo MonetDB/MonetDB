@@ -94,7 +94,9 @@ SQLDataSources(SQLHENV EnvironmentHandle,
 
 	clearEnvErrors(env);
 
-	return SQLDataSources_(env, Direction, ServerName, BufferLength1, NameLength1, Description, BufferLength2, NameLength2);
+	return SQLDataSources_(env, Direction,
+			       ServerName, BufferLength1, NameLength1,
+			       Description, BufferLength2, NameLength2);
 }
 
 #ifdef WITH_WCHAR
@@ -108,16 +110,18 @@ SQLDataSourcesA(SQLHENV EnvironmentHandle,
 		SQLSMALLINT BufferLength2,
 		SQLSMALLINT *NameLength2)
 {
-	return SQLDataSources(EnvironmentHandle, Direction, ServerName, BufferLength1, NameLength1, Description, BufferLength2, NameLength2);
+	return SQLDataSources(EnvironmentHandle, Direction,
+			      ServerName, BufferLength1, NameLength1,
+			      Description, BufferLength2, NameLength2);
 }
 
 SQLRETURN SQL_API
 SQLDataSourcesW(SQLHENV EnvironmentHandle,
 		SQLUSMALLINT Direction,
-		SQLWCHAR * ServerName,
+		SQLWCHAR *ServerName,
 		SQLSMALLINT BufferLength1,
 		SQLSMALLINT *NameLength1,
-		SQLWCHAR * Description,
+		SQLWCHAR *Description,
 		SQLSMALLINT BufferLength2,
 		SQLSMALLINT *NameLength2)
 {
@@ -139,10 +143,16 @@ SQLDataSourcesW(SQLHENV EnvironmentHandle,
 	server = malloc(100);
 	descr = malloc(100);
 
-	rc = SQLDataSources_(env, Direction, server, 100, &length1, descr, 100, &length2);
+	rc = SQLDataSources_(env, Direction,
+			     server, 100, &length1,
+			     descr, 100, &length2);
 
-	fixWcharOut(rc, server, length1, ServerName, BufferLength1, NameLength1, 1, addEnvError, env);
-	fixWcharOut(rc, descr, length2, Description, BufferLength2, NameLength2, 1, addEnvError, env);
+	fixWcharOut(rc, server, length1,
+		    ServerName, BufferLength1, NameLength1,
+		    1, addEnvError, env);
+	fixWcharOut(rc, descr, length2,
+		    Description, BufferLength2, NameLength2,
+		    1, addEnvError, env);
 
 	return rc;
 }

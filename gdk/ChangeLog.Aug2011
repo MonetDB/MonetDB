@@ -1,6 +1,11 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Wed Aug 10 2011 Sjoerd Mullender <sjoerd@acm.org>
+- On Windows and Linux/Unix we can now read databases built on the other
+  O/S, as long as the hardware-related architecture (bit size, floating
+  point format, etc.) is identical.
+
 * Wed May 11 2011 Sjoerd Mullender <sjoerd@acm.org>
 - Implemented automatic conversion of a 64-bit database with 32-bit OIDs
   to one with 64-bit OIDs.

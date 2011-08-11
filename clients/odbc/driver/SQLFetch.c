@@ -31,7 +31,7 @@
  * SQLFetch()
  * CLI Compliance: ISO 92
  *
- * Author: Martin van Dinther
+ * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 aug 2002
  *
  **********************************************************************/
@@ -164,12 +164,12 @@ SQLFetch_(ODBCStmt *stmt)
 }
 
 SQLRETURN SQL_API
-SQLFetch(SQLHSTMT hStmt)
+SQLFetch(SQLHSTMT StatementHandle)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLFetch " PTRFMT "\n", PTRFMTCAST hStmt);
+	ODBCLOG("SQLFetch " PTRFMT "\n", PTRFMTCAST StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))

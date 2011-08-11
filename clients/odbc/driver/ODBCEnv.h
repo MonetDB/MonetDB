@@ -34,7 +34,7 @@
  * This file contains the ODBC environment structure
  * and function prototypes on this structure.
  *
- * Author: Martin van Dinther
+ * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 aug 2002
  *
  **********************************************/

@@ -32,7 +32,7 @@
  * CLI Compliance: deprecated in ODBC 3.0 (replaced by SQLSetStmtAttr()
  * Provided here for old (pre ODBC 3.0) applications and driver managers.
  *
- * Author: Martin van Dinther
+ * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 aug 2002
  *
  ********************************************************************/
@@ -41,14 +41,14 @@
 #include "ODBCStmt.h"
 
 SQLRETURN SQL_API
-SQLSetScrollOptions(SQLHSTMT hStmt,
+SQLSetScrollOptions(SQLHSTMT StatementHandle,
 		    SQLUSMALLINT fConcurrency,
 		    SQLLEN crowKeyset,
 		    SQLUSMALLINT crowRowset)
 {
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLSetScrollOptions " PTRFMT " %u " LENFMT " %u\n",
-		PTRFMTCAST hStmt, (unsigned int) fConcurrency,
+		PTRFMTCAST StatementHandle, (unsigned int) fConcurrency,
 		LENCAST crowKeyset, (unsigned int) crowRowset);
 #endif
 
@@ -56,16 +56,16 @@ SQLSetScrollOptions(SQLHSTMT hStmt,
 	(void) crowKeyset;	/* Stefan: unused!? */
 	(void) crowRowset;	/* Stefan: unused!? */
 
-	if (!isValidStmt((ODBCStmt *) hStmt))
+	if (!isValidStmt((ODBCStmt *) StatementHandle))
 		return SQL_INVALID_HANDLE;
 
-	clearStmtErrors((ODBCStmt *) hStmt);
+	clearStmtErrors((ODBCStmt *) StatementHandle);
 
 	/* TODO: implement the mapping to multiple SQLSetStmtAttr() calls */
 	/* See ODBC 3.5 SDK Help file for details */
 
 	/* for now return error */
 	/* Driver does not support this function */
-	addStmtError((ODBCStmt *) hStmt, "IM001", NULL, 0);
+	addStmtError((ODBCStmt *) StatementHandle, "IM001", NULL, 0);
 	return SQL_ERROR;
 }

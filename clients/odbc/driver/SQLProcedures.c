@@ -34,7 +34,7 @@
  * Note: this function is not implemented (it only sets an error),
  * because MonetDB SQL frontend does not support stored procedures.
  *
- * Author: Martin van Dinther
+ * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 aug 2002
  *
  **********************************************************************/
@@ -46,9 +46,12 @@
 
 static SQLRETURN
 SQLProcedures_(ODBCStmt *stmt,
-	       SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
-	       SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
-	       SQLCHAR *szProcName, SQLSMALLINT nProcNameLength)
+	       SQLCHAR *CatalogName,
+	       SQLSMALLINT NameLength1,
+	       SQLCHAR *SchemaName,
+	       SQLSMALLINT NameLength2,
+	       SQLCHAR *ProcName,
+	       SQLSMALLINT NameLength3)
 {
 	RETCODE rc;
 
@@ -57,15 +60,18 @@ SQLProcedures_(ODBCStmt *stmt,
 	char *query_end;
 
 	/* convert input string parameters to normal null terminated C strings */
-	fixODBCstring(szCatalogName, nCatalogNameLength, SQLSMALLINT, addStmtError, stmt, return SQL_ERROR);
-	fixODBCstring(szSchemaName, nSchemaNameLength, SQLSMALLINT, addStmtError, stmt, return SQL_ERROR);
-	fixODBCstring(szProcName, nProcNameLength, SQLSMALLINT, addStmtError, stmt, return SQL_ERROR);
+	fixODBCstring(CatalogName, NameLength1, SQLSMALLINT,
+		      addStmtError, stmt, return SQL_ERROR);
+	fixODBCstring(SchemaName, NameLength2, SQLSMALLINT,
+		      addStmtError, stmt, return SQL_ERROR);
+	fixODBCstring(ProcName, NameLength3, SQLSMALLINT,
+		      addStmtError, stmt, return SQL_ERROR);
 
 #ifdef ODBCDEBUG
 	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\"\n",
-		(int) nCatalogNameLength, (char *) szCatalogName,
-		(int) nSchemaNameLength, (char *) szSchemaName,
-		(int) nProcNameLength, (char *) szProcName);
+		(int) NameLength1, (char *) CatalogName,
+		(int) NameLength2, (char *) SchemaName,
+		(int) NameLength3, (char *) ProcName);
 #endif
 
 	/* SQLProcedures returns a table with the following columns:
@@ -79,7 +85,7 @@ SQLProcedures_(ODBCStmt *stmt,
 	   SMALLINT     procedure_type
 	 */
 
-	query = (char *) malloc(1000 + nSchemaNameLength + nProcNameLength);
+	query = (char *) malloc(1000 + NameLength2 + NameLength3);
 	assert(query);
 	query_end = query;
 
@@ -100,30 +106,30 @@ SQLProcedures_(ODBCStmt *stmt,
 	query_end += strlen(query_end);
 
 	/* Construct the selection condition query part */
-	if (nCatalogNameLength > 0) {
+	if (NameLength1 > 0) {
 		/* filtering requested on catalog name */
 		/* we do not support catalog names, so ignore it */
 	}
 
-	if (nSchemaNameLength > 0) {
+	if (NameLength2 > 0) {
 		/* filtering requested on schema name */
 		/* use LIKE when it contains a wildcard '%' or a '_' */
 		/* TODO: the wildcard may be escaped. Check it
 		   and maybe convert it. */
 		sprintf(query_end, "and \"s\".\"name\" %s '%.*s' ",
-			memchr(szSchemaName, '%', nSchemaNameLength) || memchr(szSchemaName, '_', nSchemaNameLength) ? "like" : "=",
-			nSchemaNameLength, (char*)szSchemaName);
+			memchr(SchemaName, '%', NameLength2) || memchr(SchemaName, '_', NameLength2) ? "like" : "=",
+			NameLength2, (char*)SchemaName);
 		query_end += strlen(query_end);
 	}
 
-	if (nProcNameLength > 0) {
+	if (NameLength3 > 0) {
 		/* filtering requested on procedure name */
 		/* use LIKE when it contains a wildcard '%' or a '_' */
 		/* TODO: the wildcard may be escaped.  Check
 		   it and may be convert it. */
 		sprintf(query_end, "and \"p\".\"name\" %s '%.*s' ",
-			memchr(szProcName, '%', nProcNameLength) || memchr(szProcName, '_', nProcNameLength) ? "like" : "=",
-			nProcNameLength, (char*)szProcName);
+			memchr(ProcName, '%', NameLength3) || memchr(ProcName, '_', NameLength3) ? "like" : "=",
+			NameLength3, (char*)ProcName);
 		query_end += strlen(query_end);
 	}
 
@@ -142,15 +148,18 @@ SQLProcedures_(ODBCStmt *stmt,
 }
 
 SQLRETURN SQL_API
-SQLProcedures(SQLHSTMT hStmt,
-	      SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
-	      SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
-	      SQLCHAR *szProcName, SQLSMALLINT nProcNameLength)
+SQLProcedures(SQLHSTMT StatementHandle,
+	      SQLCHAR *CatalogName,
+	      SQLSMALLINT NameLength1,
+	      SQLCHAR *SchemaName,
+	      SQLSMALLINT NameLength2,
+	      SQLCHAR *ProcName,
+	      SQLSMALLINT NameLength3)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLProcedures " PTRFMT " ", PTRFMTCAST hStmt);
+	ODBCLOG("SQLProcedures " PTRFMT " ", PTRFMTCAST StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -159,36 +168,39 @@ SQLProcedures(SQLHSTMT hStmt,
 	clearStmtErrors(stmt);
 
 	return SQLProcedures_(stmt,
-			      szCatalogName, nCatalogNameLength,
-			      szSchemaName, nSchemaNameLength,
-			      szProcName, nProcNameLength);
+			      CatalogName, NameLength1,
+			      SchemaName, NameLength2,
+			      ProcName, NameLength3);
 }
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLProceduresA(SQLHSTMT hStmt,
-	       SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
-	       SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
-	       SQLCHAR *szProcName, SQLSMALLINT nProcNameLength)
+SQLProceduresA(SQLHSTMT StatementHandle,
+	       SQLCHAR *CatalogName,
+	       SQLSMALLINT NameLength1,
+	       SQLCHAR *SchemaName,
+	       SQLSMALLINT NameLength2,
+	       SQLCHAR *ProcName,
+	       SQLSMALLINT NameLength3)
 {
-	return SQLProcedures(hStmt,
-			     szCatalogName, nCatalogNameLength,
-			     szSchemaName, nSchemaNameLength,
-			     szProcName, nProcNameLength);
+	return SQLProcedures(StatementHandle,
+			     CatalogName, NameLength1,
+			     SchemaName, NameLength2,
+			     ProcName, NameLength3);
 }
 
 SQLRETURN SQL_API
-SQLProceduresW(SQLHSTMT hStmt,
-	       SQLWCHAR * szCatalogName, SQLSMALLINT nCatalogNameLength,
-	       SQLWCHAR * szSchemaName, SQLSMALLINT nSchemaNameLength,
-	       SQLWCHAR * szProcName, SQLSMALLINT nProcNameLength)
+SQLProceduresW(SQLHSTMT StatementHandle,
+	       SQLWCHAR *CatalogName, SQLSMALLINT NameLength1,
+	       SQLWCHAR *SchemaName, SQLSMALLINT NameLength2,
+	       SQLWCHAR *ProcName, SQLSMALLINT NameLength3)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 	SQLRETURN rc = SQL_ERROR;
 	SQLCHAR *catalog = NULL, *schema = NULL, *proc = NULL;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLProceduresW " PTRFMT " ", PTRFMTCAST hStmt);
+	ODBCLOG("SQLProceduresW " PTRFMT " ", PTRFMTCAST StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -196,11 +208,17 @@ SQLProceduresW(SQLHSTMT hStmt,
 
 	clearStmtErrors(stmt);
 
-	fixWcharIn(szCatalogName, nCatalogNameLength, SQLCHAR, catalog, addStmtError, stmt, goto exit);
-	fixWcharIn(szSchemaName, nSchemaNameLength, SQLCHAR, schema, addStmtError, stmt, goto exit);
-	fixWcharIn(szProcName, nProcNameLength, SQLCHAR, proc, addStmtError, stmt, goto exit);
+	fixWcharIn(CatalogName, NameLength1, SQLCHAR, catalog,
+		   addStmtError, stmt, goto exit);
+	fixWcharIn(SchemaName, NameLength2, SQLCHAR, schema,
+		   addStmtError, stmt, goto exit);
+	fixWcharIn(ProcName, NameLength3, SQLCHAR, proc,
+		   addStmtError, stmt, goto exit);
 
-	rc = SQLProcedures_(stmt, catalog, SQL_NTS, schema, SQL_NTS, proc, SQL_NTS);
+	rc = SQLProcedures_(stmt,
+			    catalog, SQL_NTS,
+			    schema, SQL_NTS,
+			    proc, SQL_NTS);
 
       exit:
 	if (catalog)
