@@ -2854,11 +2854,12 @@ static VarRecord varTrue;
 VarPtr
 varGetProp( MalBlkPtr mb, int var, int prop )
 {
-	VarPtr v = getVar(mb, var);
+	VarPtr v;
 	int i;
 
-	if ( mb->prps == NULL)
+	if ( mb->prps == NULL || var < 0)
 		return NULL;
+	v = getVar(mb, var);
 	for(i=0; i<v->propc; i++){
 		MalProp *p = mb->prps+v->prps[i];
 
