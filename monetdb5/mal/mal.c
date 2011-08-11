@@ -206,6 +206,7 @@ MT_Lock     mal_copyLock;
 static
 void tstAligned(void)
 {
+#ifdef STRUCT_ALIGNED
 	int allAligned=0;
 	ValRecord v;
 	ptr val, base;
@@ -221,7 +222,6 @@ void tstAligned(void)
 	val= (ptr) & v.val.dval; if(val != base){ allAligned = -1; }
 	val= (ptr) & v.val.lval; if(val != base){ allAligned = -1; }
 	val= (ptr) & v.val.sval; if(val != base){ allAligned = -1; }
-#ifdef STRUCT_ALIGNED
 	if(allAligned<0)
 	    GDKfatal("Recompile with STRUCT_ALIGNED flag disabled\n");
 #endif
