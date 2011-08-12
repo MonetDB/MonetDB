@@ -260,9 +260,9 @@ ODBCLength(ODBCDescRec *rec, int lengthtype)
 		case SQL_DESC_LENGTH:
 			return 3;
 		case SQL_DESC_DISPLAY_SIZE:
-			return 4;
+			return 3 + !rec->sql_desc_unsigned;
 		case SQL_DESC_OCTET_LENGTH:
-			return 1;
+			return (int) sizeof(char);
 		}
 		break;
 	case SQL_SMALLINT:
@@ -272,7 +272,7 @@ ODBCLength(ODBCDescRec *rec, int lengthtype)
 		case SQL_DESC_DISPLAY_SIZE:
 			return 5 + !rec->sql_desc_unsigned;
 		case SQL_DESC_OCTET_LENGTH:
-			return 2;
+			return (int) sizeof(short);
 		}
 		break;
 	case SQL_INTEGER:
@@ -282,7 +282,7 @@ ODBCLength(ODBCDescRec *rec, int lengthtype)
 		case SQL_DESC_DISPLAY_SIZE:
 			return 10 + !rec->sql_desc_unsigned;
 		case SQL_DESC_OCTET_LENGTH:
-			return 4;
+			return (int) sizeof(int);
 		}
 		break;
 	case SQL_BIGINT:
@@ -290,7 +290,6 @@ ODBCLength(ODBCDescRec *rec, int lengthtype)
 		case SQL_DESC_LENGTH:
 			return 19 + (rec->sql_desc_unsigned != 0);
 		case SQL_DESC_DISPLAY_SIZE:
-			return 20;
 		case SQL_DESC_OCTET_LENGTH:
 			return 20;
 		}
@@ -303,7 +302,7 @@ ODBCLength(ODBCDescRec *rec, int lengthtype)
 			/* sign, 7 digits, decimal point, E, sign, 2 digits */
 			return 14;
 		case SQL_DESC_OCTET_LENGTH:
-			return 4;
+			return (int) sizeof(float);
 		}
 		break;
 	case SQL_FLOAT:
@@ -315,33 +314,33 @@ ODBCLength(ODBCDescRec *rec, int lengthtype)
 			/* sign, 15 digits, decimal point, E, sign, 3 digits */
 			return 24;
 		case SQL_DESC_OCTET_LENGTH:
-			return 8;
+			return (int) sizeof(double);
 		}
 		break;
 	case SQL_TYPE_DATE:
 		if (lengthtype == SQL_DESC_OCTET_LENGTH)
-			return 6;
+			return (int) sizeof(SQL_DATE_STRUCT);
 		else {
 			/* strlen("yyyy-mm-dd") */
 			return 10;
 		}
 	case SQL_TYPE_TIME:
 		if (lengthtype == SQL_DESC_OCTET_LENGTH)
-			return 6;
+			return (int) sizeof(SQL_TIME_STRUCT);
 		else {
 			/* strlen("hh:mm:ss.fff") */
 			return 12;
 		}
 	case SQL_TYPE_TIMESTAMP:
 		if (lengthtype == SQL_DESC_OCTET_LENGTH)
-			return 16;
+			return (int) sizeof(SQL_TIMESTAMP_STRUCT);
 		else {
 			/* strlen("yyyy-mm-dd hh:mm:ss.fff") */
 			return 23;
 		}
 	case SQL_INTERVAL_SECOND:
 		if (lengthtype == SQL_DESC_OCTET_LENGTH)
-			return 34;
+			return (int) sizeof(SQL_INTERVAL_STRUCT);
 		/* strlen("INTERVAL -'sss[.fff]' SECOND(p,q)") */
 		return 11 + 13 +
 			(rec->sql_desc_datetime_interval_precision > 10) +
@@ -352,7 +351,7 @@ ODBCLength(ODBCDescRec *rec, int lengthtype)
 			 0);
 	case SQL_INTERVAL_DAY_TO_SECOND:
 		if (lengthtype == SQL_DESC_OCTET_LENGTH)
-			return 34;
+			return (int) sizeof(SQL_INTERVAL_STRUCT);
 		/* strlen("INTERVAL -'ddd hh:mm:ss[.fff]' DAY(p) TO SECOND(q)") */
 		return 11 + 21 +
 			(rec->sql_desc_datetime_interval_precision > 10) +
@@ -364,7 +363,7 @@ ODBCLength(ODBCDescRec *rec, int lengthtype)
 			 0);
 	case SQL_INTERVAL_HOUR_TO_SECOND:
 		if (lengthtype == SQL_DESC_OCTET_LENGTH)
-			return 34;
+			return (int) sizeof(SQL_INTERVAL_STRUCT);
 		/* strlen("INTERVAL -'hhh:mm:ss[.fff]' HOUR(p) TO SECOND(q)") */
 		return 11 + 22 +
 			(rec->sql_desc_datetime_interval_precision > 10) +
@@ -376,7 +375,7 @@ ODBCLength(ODBCDescRec *rec, int lengthtype)
 			 0);
 	case SQL_INTERVAL_MINUTE_TO_SECOND:
 		if (lengthtype == SQL_DESC_OCTET_LENGTH)
-			return 34;
+			return (int) sizeof(SQL_INTERVAL_STRUCT);
 		/* strlen("INTERVAL -'mmm:ss[.fff]' MINUTE(p) TO SECOND(q)") */
 		return 11 + 24 +
 			(rec->sql_desc_datetime_interval_precision > 10) +
@@ -388,42 +387,42 @@ ODBCLength(ODBCDescRec *rec, int lengthtype)
 			 0);
 	case SQL_INTERVAL_YEAR:
 		if (lengthtype == SQL_DESC_OCTET_LENGTH)
-			return 34;
+			return (int) sizeof(SQL_INTERVAL_STRUCT);
 		/* strlen("INTERVAL -'yyy' YEAR(p)") */
 		return 11 + 9 +
 			(rec->sql_desc_datetime_interval_precision > 10) +
 			rec->sql_desc_datetime_interval_precision;
 	case SQL_INTERVAL_MONTH:
 		if (lengthtype == SQL_DESC_OCTET_LENGTH)
-			return 34;
+			return (int) sizeof(SQL_INTERVAL_STRUCT);
 		/* strlen("INTERVAL -'yyy' MONTH(p)") */
 		return 11 + 10 +
 			(rec->sql_desc_datetime_interval_precision > 10) +
 			rec->sql_desc_datetime_interval_precision;
 	case SQL_INTERVAL_DAY:
 		if (lengthtype == SQL_DESC_OCTET_LENGTH)
-			return 34;
+			return (int) sizeof(SQL_INTERVAL_STRUCT);
 		/* strlen("INTERVAL -'yyy' DAY(p)") */
 		return 11 + 8 +
 			(rec->sql_desc_datetime_interval_precision > 10) +
 			rec->sql_desc_datetime_interval_precision;
 	case SQL_INTERVAL_HOUR:
 		if (lengthtype == SQL_DESC_OCTET_LENGTH)
-			return 34;
+			return (int) sizeof(SQL_INTERVAL_STRUCT);
 		/* strlen("INTERVAL -'yyy' HOUR(p)") */
 		return 11 + 9 +
 			(rec->sql_desc_datetime_interval_precision > 10) +
 			rec->sql_desc_datetime_interval_precision;
 	case SQL_INTERVAL_MINUTE:
 		if (lengthtype == SQL_DESC_OCTET_LENGTH)
-			return 34;
+			return (int) sizeof(SQL_INTERVAL_STRUCT);
 		/* strlen("INTERVAL -'yyy' MINUTE(p)") */
 		return 11 + 11 +
 			(rec->sql_desc_datetime_interval_precision > 10) +
 			rec->sql_desc_datetime_interval_precision;
 	case SQL_INTERVAL_YEAR_TO_MONTH:
 		if (lengthtype == SQL_DESC_OCTET_LENGTH)
-			return 34;
+			return (int) sizeof(SQL_INTERVAL_STRUCT);
 		/* strlen("INTERVAL -'yyy' YEAR(p) TO MONTH") */
 		return 11 + 18 +
 			(rec->sql_desc_datetime_interval_precision > 10) +
@@ -431,7 +430,7 @@ ODBCLength(ODBCDescRec *rec, int lengthtype)
 			3;
 	case SQL_INTERVAL_DAY_TO_HOUR:
 		if (lengthtype == SQL_DESC_OCTET_LENGTH)
-			return 34;
+			return (int) sizeof(SQL_INTERVAL_STRUCT);
 		/* strlen("INTERVAL -'yyy' DAY(p) TO HOUR") */
 		return 11 + 16 +
 			(rec->sql_desc_datetime_interval_precision > 10) +
@@ -439,7 +438,7 @@ ODBCLength(ODBCDescRec *rec, int lengthtype)
 			3;
 	case SQL_INTERVAL_HOUR_TO_MINUTE:
 		if (lengthtype == SQL_DESC_OCTET_LENGTH)
-			return 34;
+			return (int) sizeof(SQL_INTERVAL_STRUCT);
 		/* strlen("INTERVAL -'yyy' HOUR(p) TO MINUTE") */
 		return 11 + 19 +
 			(rec->sql_desc_datetime_interval_precision > 10) +
@@ -447,7 +446,7 @@ ODBCLength(ODBCDescRec *rec, int lengthtype)
 			3;
 	case SQL_INTERVAL_DAY_TO_MINUTE:
 		if (lengthtype == SQL_DESC_OCTET_LENGTH)
-			return 34;
+			return (int) sizeof(SQL_INTERVAL_STRUCT);
 		/* strlen("INTERVAL -'yyy' DAY(p) TO MINUTE") */
 		return 11 + 18 +
 			(rec->sql_desc_datetime_interval_precision > 10) +
