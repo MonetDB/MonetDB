@@ -82,127 +82,21 @@ typedef	struct{
 	ValRecord bounds[MAXSITES];
 } Slices;
 
-static int
-OPTinitcode(Client cntxt, MalBlkPtr mb){
-    InstrPtr p;
-    str s;
-    str l = NULL;
-
-    (void) cntxt;
-
-    /* _x := remote.connect(uri,"monetdb","monetdb","msql"); */
-    p = newStmt(mb, remoteRef,connectRef);
-    s = GDKgetenv("merovingian_uri");
-    if (s == NULL)  /* aparently not under Merovingian control, fall back to local only */
-		s= "dummyconnection";
-        /* SABAOTHgetLocalConnection(&l);*/
-    p= pushStr(mb,p, s == NULL ? l : s);
-    p= pushStr(mb,p,"monetdb");
-    p= pushStr(mb,p,"monetdb");
-    p= pushStr(mb,p,"msql");
-    if (l)
-        GDKfree(l);
-    return getArg(p,0);
-}
-
 static MalBlkPtr
-OPTpartitionStub(Client cntxt, MalBlkPtr mb, int pc, MalBlkPtr pmb, Slices *slices)
-{
-	MalBlkPtr smb = 0;
-	Symbol s;
-	InstrPtr sig, q, ret;
-	int j,k,conn, *arg;
-	char nme[BUFSIZ];
-
-	(void) slices;
-	/* define the sub query stub for remote processing */
-	snprintf(nme,BUFSIZ,"%s_stub%d",getFunctionId( getInstrPtr(mb,0)), pc);
-	s = newFunction(userRef, putName(nme, strlen(nme)),FUNCTIONsymbol);
-	if ( s == NULL)
-		return 0;
-	freeMalBlk(s->def);
-	s->def = copyMalBlk(pmb);	/* get variables */
-	smb = s->def;
-	if ( newMalBlkStmt(smb,smb->ssize) < 0 )
-		return 0;
-	pushInstruction(smb, copyInstruction(pmb->stmt[0]));
-	getFunctionId( getInstrPtr(smb,0)) = putName(nme,strlen(nme));
-	insertSymbol(cntxt->nspace,s);
-
-	conn = OPTinitcode(cntxt,smb);
-	sig = getInstrPtr(smb,0);
-	arg = (int*) GDKzalloc(sizeof(int) * sig->argc);
-	/* k:= remote.put(conn,kvar) */
-	for (j= sig->retc; j < sig->argc; j++) {
-		q= newFcnCall(smb,remoteRef,putRef);
-		setVarType(smb, getArg(q,0), TYPE_str);
-		setVarUDFtype(smb, getArg(q,0));
-		q= pushArgument(smb,q,conn);
-		q= pushArgument(smb,q,getArg(sig,j));
-		arg[j]= getArg(q,0);
-	}
-
-	/* (k1,...kn):= remote.exec(conn,slicing,qry,version....) */
-	snprintf(nme,BUFSIZ,"%s_qry_%d",getFunctionId( getInstrPtr(mb,0)),pc);
-	q = newInstruction(smb,ASSIGNsymbol);
-	getModuleId(q) = remoteRef;
-	getFunctionId(q) = execRef;
-	q->retc=  q->argc= 0;
-	for (j=0; j < sig->retc; j++){
-		arg[j]= newTmpVariable(smb,TYPE_str);
-		q = pushReturn(smb,q,arg[j]);
-	}
-	q= pushArgument(smb,q,conn);
-	q= pushStr(smb,q,userRef);
-	q= pushStr(smb,q,putName(nme,strlen(nme)));
-	/* deal with all arguments ! */
-	for (j=sig->retc; j < sig->argc; j++)
-		q = pushArgument(smb,q,arg[j]);
-	pushInstruction(smb,q);
-
-	/* return exec_qry; */
-	ret = newInstruction(smb, ASSIGNsymbol);
-	ret->barrier= RETURNsymbol;
-	ret->argc = ret->retc = 0;
-	/* l:=remote.get(conn,k) */
-	for ( j=0; j< sig->retc; j++){
-		q= newFcnCall(smb,remoteRef,getRef);
-		q= pushArgument(smb,q,conn);
-		q= pushArgument(smb,q,arg[j]);
-		k= getArg(q,0);
-		setVarType(smb,k, getArgType(smb,sig,j));
-		setVarUDFtype(smb, k);
-		ret = pushArgument(smb,ret,k);
-		ret = pushReturn(smb,ret,getArg(sig,j));
-	}
-
-    newCatchStmt(smb, "ANYexception");
-    q = newStmt(smb, remoteRef, disconnectRef);
-    pushArgument(smb, q, conn);
-    newRaiseStmt(smb, "ANYexception");   /* pass to caller */
-    newExitStmt(smb, "ANYexception");
-
-    q = newStmt(smb, remoteRef, disconnectRef);
-    pushArgument(smb, q, conn);
-	if ( sig->retc)
-		pushInstruction(smb,ret);
-    pushEndInstruction(smb);
-
-	GDKfree(arg);
-	return smb;
-}
-
-static MalBlkPtr
-OPTpartitionCntrl(Client cntxt, MalBlkPtr mb, int pc, MalBlkPtr pmb, Slices *slices)
+OPTplanCntrl(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices)
 {
 	MalBlkPtr cmb;
 	Symbol s;
 	char nme[BUFSIZ];
 	int x, i, j, k, *alias, nrpack;
-	InstrPtr call, ret, p, q, *pack;
+	InstrPtr ret, p, q, *pack;
 
+#ifdef _DEBUG_OPT_PARTITION_
+	mnstr_printf(cntxt->fdout,"#original plan \n");
+	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
+#endif
 	/* define the query controller */
-	snprintf(nme,BUFSIZ,"%s_cntrl_%d",getFunctionId( getInstrPtr(mb,0)),pc);
+	snprintf(nme,BUFSIZ,"%s_cntrl",getFunctionId( getInstrPtr(mb,0)));
 	s = newFunction(userRef, putName(nme, strlen(nme)),FUNCTIONsymbol);
 	if ( s == NULL)
 		return 0;
@@ -211,12 +105,9 @@ OPTpartitionCntrl(Client cntxt, MalBlkPtr mb, int pc, MalBlkPtr pmb, Slices *sli
 	cmb = s->def;
 	if ( newMalBlkStmt(cmb,cmb->ssize) < 0 )
 		return 0;
-	q= getInstrPtr(mb,pc);
-	assert(q->token == ASSIGNsymbol);
-	nrpack = q->retc;
+	nrpack= getInstrPtr(pmb,0)->retc;
 	pack = (InstrPtr *) GDKzalloc(sizeof(InstrPtr) * nrpack);
 	pushInstruction(cmb, copyInstruction(pmb->stmt[0]));
-	call = copyInstruction(getInstrPtr(mb,0));
 	getFunctionId( getInstrPtr(cmb,0)) = putName(nme,strlen(nme));
 	insertSymbol(cntxt->nspace,s);
 
@@ -248,7 +139,7 @@ OPTpartitionCntrl(Client cntxt, MalBlkPtr mb, int pc, MalBlkPtr pmb, Slices *sli
 		}
 		pushInstruction(cmb,q);
 	}
-	/* dataflow */
+	/* pack[i] := mat.pack(x1,...xn) */
 	if ( slices->column) {
 		p = getInstrPtr(pmb,0);
 		for ( k=0  ;k < nrpack ; k++){
@@ -259,27 +150,25 @@ OPTpartitionCntrl(Client cntxt, MalBlkPtr mb, int pc, MalBlkPtr pmb, Slices *sli
 		}
 	}
 
-	if ( slicingLocal == 0){
-		/* under dataflow control, initialize the variables */
-		for ( k=0 ; k < nrpack ; k++){
-			q = newInstruction(cmb,ASSIGNsymbol);
-			getArg(q,0) = getArg(pack[k],0);
-			pushNil(cmb,q, getArgType(cmb,pack[k],0));
-			pushInstruction(cmb,q);
-		}
-
-		/* mark start of dataflow block */
-		q= newFcnCall(cmb,languageRef,dataflowRef);
-		q->barrier= BARRIERsymbol;
-		x = getArg(q,0);
-		setVarType(cmb,x,TYPE_int);
+	/* under dataflow control, initialize the variables */
+	for ( k=0 ; k < nrpack ; k++){
+		q = newInstruction(cmb,ASSIGNsymbol);
+		getArg(q,0) = getArg(pack[k],0);
+		pushNil(cmb,q, getArgType(cmb,pack[k],0));
+		pushInstruction(cmb,q);
 	}
+
+	/* mark start of dataflow block */
+	q= newFcnCall(cmb,languageRef,dataflowRef);
+	q->barrier= BARRIERsymbol;
+	x = getArg(q,0);
+	setVarType(cmb,x,TYPE_int);
 
 	for ( i = 0; i < nrpeers ; i++) {
 		q= copyInstruction(getInstrPtr(pmb,0));
-		q->argc = call->argc- call->retc + pmb->stmt[0]->retc;;
 		q->token = ASSIGNsymbol;
 		q->barrier = 0;
+		q->argc -= 2; /* remove the bounds */
 		for ( k=0 ; k < q->retc; k++) {
 			getArg(q,k) = newTmpVariable(cmb, getArgType(pmb,q,k));
 			pack[k] = pushArgument(cmb,pack[k], getArg(q,k));
@@ -295,86 +184,36 @@ OPTpartitionCntrl(Client cntxt, MalBlkPtr mb, int pc, MalBlkPtr pmb, Slices *sli
 	/* put all mat.pack instructions into the program
 	  and make sure that they have contiguous void headed columns 
 	*/
+	p = getInstrPtr(pmb,0);
 	if ( slices->column) 
 	for ( k=0 ; k < nrpack; k++) {
 		pushInstruction(cmb, pack[k]);
-		j = newTmpVariable(cmb,getArgType(cmb,pack[k],0));
 		q= newFcnCall(cmb,partitionRef,markHRef);
-		getArg(q,0) = getArg(pack[k],0);
-		q= pushArgument(cmb,q, j);
-		getArg(pack[k],0) = j;
-		pack[k] = q;
+		getArg(q,0) = getArg(p,k); 
+		q= pushArgument(cmb,q, getArg(pack[k],0));
 	}
 
 	/* finalize the dataflow block */
-	if ( slicingLocal == 0){
-		q= newAssignment(cmb);
-		q->barrier = EXITsymbol;
-		getArg(q,0) = x;
-	}
+	q= newAssignment(cmb);
+	q->barrier = EXITsymbol;
+	getArg(q,0) = x;
 
 	/* consolidate the result */
-	p= getInstrPtr(mb,pc);
-	q= getInstrPtr(cmb,0);
-	while(q->retc > 0)
-		delArgument(q,0);
-	ret = newInstruction(NULL,ASSIGNsymbol);
+	ret = copyInstruction(getInstrPtr(cmb,0));
+	clrFunction(ret);
 	ret->barrier = RETURNsymbol;
-	for( i = 0 ; i< p->retc; i++){
-		cmb->stmt[0] = pushReturn(cmb, cmb->stmt[0], getArg(p,i));
-		ret = pushReturn(cmb, ret, getArg(p,i));
-		ret = pushArgument(cmb, ret, getArg(pack[i],0));
-	}
-	/* remove the splitter arguments */
-	if ( slices->column){
-		delArgument(q,q->argc-1);
-		delArgument(q,q->argc-1);
-	}
+	ret->argc = ret->retc;
+	/* make it a correct assignment to ensure ref counts */
+	for( k= 0; k< ret->retc; k++)
+		ret = pushArgument(cmb,ret,getArg(ret,k));
 	pushInstruction(cmb,ret);
+	getInstrPtr(cmb,0)->argc -= 2;
 
 	pushEndInstruction(cmb);
 	GDKfree(alias);
 	GDKfree(pack);
 
 	return cmb;
-}
-
-static char *
-OPTsliceDependency(MalBlkPtr mb, int pc)
-{
-	char *vec;
-	char *var;
-	int i, j, fnd;
-	InstrPtr p;
-
-	vec= (char*) GDKzalloc(mb->ssize * 2);
-	if( vec == 0)
-		return 0;
-	var= (char*) GDKzalloc(mb->vsize * 2);
-	if ( var == 0)
-		return 0;
-
-	vec[0]= 1;
-	p= getInstrPtr(mb,0);
-	for ( i = p->retc; i < p->argc; i++)
-		var[getArg(p,i)] = 1;
-	p= getInstrPtr(mb,pc);
-	for ( i = p->retc; i < p->argc; i++)
-		var[getArg(p,i)] = 1;
-	vec[pc] = 1;
-	for ( i = pc -1; i >= 0; i--){
-		p = getInstrPtr(mb,i);
-		fnd = 0;
-		for ( j = 0; j < p->argc; j++)
-			fnd += var[getArg(p,j)];
-		if ( fnd){
-			vec[i] = 1;
-			for( j = 0; j< p->argc; j++)
-				var[getArg(p,j)] = 1;
-		}
-	}
-	GDKfree(var);
-	return vec;
 }
 
 /* prepare slicing a column  by addition over the target */
@@ -448,205 +287,6 @@ OPTsliceColumn(Client cntxt, MalBlkPtr nmb, MalBlkPtr mb, InstrPtr p, Slices *sl
 	return parallel;
 } 
 
-/* run through a plan recursively to detect if it is already consolidating a partitioned database */
-static int
-OPTconsolidated(MalBlkPtr mb)
-{
-	int i;
-	InstrPtr p;
-	for( i =1 ; i < mb->stop; i++) {
-		p = getInstrPtr(mb,i);
-		if ( getFunctionId(p) ){
-			if ( strstr(getFunctionId(p),"_cntrl_")  ||
-				 strstr(getFunctionId(p),"_bag_") )
-				return 1;
-			if ( p->blk  && OPTconsolidated(p->blk))
-				return 1;
-		} 
-	}
-	return 0;
-}
-
-/*
- * The multi-assignment pointed at is turned into separate function to gather
- * all arguments
-*/
-static int
-OPTparallelcode(Client cntxt, MalBlkPtr mb, int pc, Slices *slices)
-{
-	char *vec = 0;
-	int parallel = 0, i, k, limit;
-	MalBlkPtr nmb = 0, smb = 0 , cmb = 0 ;
-	InstrPtr p, q, *old;
-	Symbol s;
-	char nme[BUFSIZ];
-	str msg= MAL_SUCCEED;
-	
-	assert(getInstrPtr(mb,pc)->token == ASSIGNsymbol);
-	/* define the sub query as part of the user space */
-	snprintf(nme,BUFSIZ,"%s_qry_%d",getFunctionId( getInstrPtr(mb,0)), pc);
-	s = newFunction(userRef, putName(nme, strlen(nme)),FUNCTIONsymbol);
-	if ( s == NULL)
-		return 0;
-	freeMalBlk(s->def);
-	s->def = copyMalBlk(mb);
-	nmb = s->def;
-	getFunctionId( getInstrPtr(nmb,0)) = putName(nme,strlen(nme));
-	/* slices variables should be reset. */
-	slices->slice = 0;
-
-	limit = nmb->stop;
-	old = nmb->stmt;
-	if ( newMalBlkStmt(nmb,nmb->ssize) < 0 )
-		return 0;
-
-	vec = OPTsliceDependency(mb, pc);
-
-	for ( i = 0; i < limit; i++) {
-		p = old[i];
-		if ( vec[i]) {
-			if ( i == pc) {
-				/* return the result of this multi-assignment */
-				/* adjust the signature */
-				pushInstruction(nmb,p);
-				p->barrier = RETURNsymbol;
-				continue;
-			} else  {
-				pushInstruction(nmb,p);
-				if (getModuleId(p) == sqlRef && (getFunctionId(p) == bindRef || getFunctionId(p) == bindidxRef))  
-					parallel += OPTsliceColumn(cntxt, nmb, mb, p, slices,nmb->stop-1);
-			}
-		} else
-		if ( p->token == ENDsymbol) {
-			pushEndInstruction(nmb);
-			continue;
-		}
-		else if ( getModuleId(p) == optimizerRef)
-			pushInstruction(nmb,old[i]);
-		else {
-			freeInstruction(old[i]);
-			old[i] = 0;
-		}
-	}
-
-	if ( parallel == 0 || (0 && OPTconsolidated(nmb)) ){
-		/* no partitioned column used or portions are already consolidated */
-		if (vec) GDKfree(vec);
-		freeMalBlk(nmb);
-		return 0;
-	}
-	insertSymbol(cntxt->nspace,s);
-
-	p= getInstrPtr(mb,pc);
-	while(getInstrPtr(nmb,0)->retc > 0)
-		delArgument(getInstrPtr(nmb,0),0);
-	for ( k = 0; k < p->retc; k++) 
-		nmb->stmt[0] =  pushReturn(nmb, nmb->stmt[0], getArg(p,k));
-
-#ifdef DEBUG_DETAIL
-	mnstr_printf(cntxt->fdout,"#nmb, CODEGEN BEFORE SUBS? %d\n", nmb->errors);
-	if ( nmb)
-		printFunction(cntxt->fdout, nmb, 0, LIST_MAL_STMT);
-#endif
-	/* supportive routines */
-	smb = OPTpartitionStub(cntxt, mb, pc,  nmb, slices);
-#ifdef DEBUG_DETAIL
-	mnstr_printf(cntxt->fdout,"#smb,BEFORE test? %d\n", smb->errors);
-	if ( smb)
-		printFunction(cntxt->fdout, smb, 0, LIST_MAL_STMT);
-#endif
-	msg = OPTdeadcode(cntxt, smb, 0, 0);
-	if ( msg)
-		goto wrapup;
-
-	cmb = OPTpartitionCntrl(cntxt,mb,pc,nmb, slices);
-	chkProgram(cntxt->nspace, cmb);
-#ifdef DEBUG_DETAIL
-	mnstr_printf(cntxt->fdout,"#cntrl,AFTER test? %d\n", cmb->errors);
-	if ( cmb)
-		printFunction(cntxt->fdout, cmb, 0, LIST_MAL_STMT);
-#endif
-	if ( cmb->errors)
-		goto wrapup;
-
-	msg = OPTdeadcode(cntxt, nmb, 0, 0);
-	if ( msg)
-		goto wrapup;
-
-#ifdef DEBUG_DETAIL
-	mnstr_printf(cntxt->fdout,"#nmb,BEFORE test? %d\n", nmb->errors);
-	if ( nmb)
-		printFunction(cntxt->fdout, nmb, 0, LIST_MAL_STMT);
-#endif
-	chkProgram(cntxt->nspace, nmb);
-	if ( nmb->errors)
-		goto wrapup;
-	/* beware, optimizer may reorder/relabel variables */
-	msg= optimizeMALBlock(cntxt, nmb);
-	if ( msg)
-		goto wrapup;
-
-	/* correct the caller and the callees */
-	p= getInstrPtr(mb,pc);
-	getFunctionId(p) = getFunctionId(getInstrPtr(cmb,0));
-	getModuleId(p) = userRef;
-	p->argc= p->retc;
-	q= getInstrPtr(cmb,0);
-	for( i = q->retc; i < q->argc; i++)
-		mb->stmt[pc] = pushArgument(mb, mb->stmt[pc], getArg(q,i));
-	
-wrapup:
-#ifdef _DEBUG_OPT_PARTITION_
-	mnstr_printf(cntxt->fdout,"#Grabbed part, nmb error ? %d\n",nmb->errors);
-	if ( nmb)
-		printFunction(cntxt->fdout, nmb, 0, LIST_MAL_STMT);
-	mnstr_printf(cntxt->fdout,"#stub, smb error ? %d\n", smb->errors);
-	if ( smb)
-		printFunction(cntxt->fdout, smb, 0, LIST_MAL_STMT);
-	mnstr_printf(cntxt->fdout,"#cntrl, cmb error? %d\n", cmb->errors);
-	if ( cmb)
-		printFunction(cntxt->fdout, cmb, 0, LIST_MAL_STMT);
-#endif
-
-	if (vec) GDKfree(vec);
-	return 1;
-}
-
-static void
-remapVariable( MalBlkPtr mb, int i, int old, int new)
-{
-	InstrPtr p;
-	int k;
-
-	for( ; i< mb->stop; i++){
-		p= getInstrPtr(mb,i);
-		for ( k = 0; k < p->argc; k++)
-		if ( getArg(p,k) == old)
-			getArg(p,k) = new;
-	}
-}
-
-/* 
- * take a multi-assignement for a specific instruction and resolve the distributed plan
- * for all right-hand arguments.
- * But first determine all instructions that might be needed afterwards and retain them
-*/
-static int
-OPTcollect(Client cntxt, MalBlkPtr mb, int pc, Slices *slices)
-{
-	InstrPtr p;
-	int  parallel;
-	Lifespan span = setLifespan(mb);
-
-	p = getInstrPtr(mb, pc);
-	assert(p->token == ASSIGNsymbol);
-	/* locate all variables used beyond this point but introduced before */
-	if( (parallel = OPTparallelcode(cntxt, mb, pc, slices) ) ) {
-	} /* else no parallelism, just a multi-assignment */
-	GDKfree(span);
-	return parallel;
-} 
-
 /* 
  * The plan is analysed for the maximal subplan that involves a partitioned table
  * and that does not require data exchanges.
@@ -661,9 +301,9 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 {
 	char *plan,*vars;
 	int i, j, k, limit, last;
-	InstrPtr ret, p, *old;
+	InstrPtr ret, call, p, *old;
 	Symbol s;
-	MalBlkPtr nmb;
+	MalBlkPtr nmb, cmb;
 	str msg;
 	char nme[BUFSIZ];
 
@@ -777,33 +417,60 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 		}
 	}
 
-	/* Phase 4: Back a new function that produces them */
+	/* Phase 4: Bake a new function that produces them */
+	plan[0] = REQUIRED;
 	for ( i = 0; i < limit ; i++) 
 	if( plan[i] == REQUIRED ) {
 		p = copyInstruction(getInstrPtr(mb, i));
-		if ( old[i]->token == ENDsymbol)
+		if ( old[i]->token == ENDsymbol) {
+			getFunctionId(nmb->stmt[0]) = putName(nme,strlen(nme));
 			pushInstruction(nmb,ret);
-		pushInstruction(nmb,p);
+			pushEndInstruction(nmb);
+		} else
+			pushInstruction(nmb,p);
 		if (getModuleId(p) == sqlRef && (getFunctionId(p) == bindRef || getFunctionId(p) == bindidxRef))  
 			OPTsliceColumn(cntxt, nmb, mb, p, slices, nmb->stop-1);
 	}
 
-	/* fix the signature */
+	/* fix the signature and modify the underlying plan */
 	while ( nmb->stmt[0]->retc )
 		delArgument(nmb->stmt[0],0);
-	for( i =0; i< ret->retc; i++)
+	for( i =0; i< ret->retc; i++) {
 		nmb->stmt[0]= pushReturn(nmb, nmb->stmt[0], getArg(ret,i));
+		for( j = 0; j< mb->stop; j++) {
+			p = getInstrPtr(mb,j);
+			for ( k = 0; k< p->retc; k++)
+			if( getArg(p,k) == getArg(ret,i)){
+				mnstr_printf(cntxt->fdout,"#adjust instruction %d\n",j);
+				getArg(p,k) = newTmpVariable(mb, getArgType(mb,p,k));
+			}
+		}
+	}
+
+	insertSymbol(cntxt->nspace,s);
+	/* construct the control plan */
+	cmb = OPTplanCntrl(cntxt,mb,nmb, slices);
+	msg= optimizeMALBlock(cntxt, cmb);
+	if ( cmb) 
+		chkProgram(cntxt->nspace, cmb);
+#ifdef _DEBUG_OPT_PARTITION_
+	mnstr_printf(cntxt->fdout,"#control plan errors %d %s \n",cmb->errors,msg?msg:"");
+	printFunction(cntxt->fdout, cmb, 0, LIST_MAL_STMT);
+#endif
+
+	call = copyInstruction(getInstrPtr(nmb,0));
+	call->barrier = 0;
+	call->token = ASSIGNsymbol;
+	call->argc -= 2; /* bounds are removed */
+	getFunctionId(call) = getFunctionId(getInstrPtr(cmb,0));
+	insertInstruction(mb,call, 1);
 
 #ifdef _DEBUG_OPT_PARTITION_
-	mnstr_printf(cntxt->fdout,"#Remote plan framework\n");
-	printFunction(cntxt->fdout, nmb, 0, LIST_MAL_STMT);
 	msg= optimizeMALBlock(cntxt, nmb);
 	chkProgram(cntxt->nspace, nmb);
 	mnstr_printf(cntxt->fdout,"#partition error %d %s\n", nmb->errors, msg?msg:"");
 	printFunction(cntxt->fdout, nmb, 0, LIST_MAL_STMT);
 #endif
-	if ( nmb->errors == 0)
-		insertSymbol(cntxt->nspace,s);
 	GDKfree(plan);
 	GDKfree(vars);
 	return 0;
@@ -819,9 +486,9 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 static int
 OPTpartitionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i,j,k,pc = 0;
+	int i;
 	wrd r = 0, rowcnt=0;	/* table should be sizeable to consider parallel execution*/
-	InstrPtr p,q, target= 0, rsset=0;
+	InstrPtr q, target= 0;
 	Slices slices;
 	str msg = NULL;
 	MalBlkPtr  omb;
@@ -833,7 +500,7 @@ OPTpartitionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	msg = GDKgetenv("gdk_readonly");
 	if( msg == 0 || strcmp(msg,"yes"))
 		mnstr_printf(cntxt->fdout,"#WARNING centipede only works for readonly databases\n");
-    /* nrpeers = GDKnr_threads ? GDKnr_threads:1;*/
+	/* nrpeers = GDKnr_threads ? GDKnr_threads:1;*/
 	/* to ease debugging now */
 	nrpeers = 2;
 	slicingLocal = 1;
@@ -880,71 +547,7 @@ OPTpartitionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	/* derive a local plan based on forward flow reasoning */
 	if( OPTplanFragment(cntxt, mb, &slices)== 0) {
 		/* bake the controller function */
-	} else
-	for(i=0; i < mb->stop; i++){
-		p= getInstrPtr(mb,i);
-
-		if ( getModuleId(p) == sqlRef && getFunctionId(p) == resultSetRef ) {
-			/* for result sets we have to collect the arguments of the rsColumn */
-			/* gather all columns into the resultSet constructor to ease code generation */
-			rsset= newInstruction(mb,ASSIGNsymbol);
-			for (j= i+1; j< mb->stop; j++){
-				q= getInstrPtr(mb,j);
-				if ( getModuleId(q) == sqlRef) {
-					if ( getFunctionId(q) == rsColumnRef) {
-						k = newTmpVariable(mb, getArgType(mb,q,7));
-						rsset= pushReturn(mb,rsset, k); 
-						rsset= pushArgument(mb,rsset, getArg(q,7));
-						getArg(q,7) = k;
-					}
-				}
-			}
-			/* be aware that the resultSet already has a column argument */
-			getArg(p,3) = getArg(rsset,0);
-			insertInstruction(mb,rsset,i);
-			OPTcollect(cntxt,mb,i, &slices);
-			i++;
-			continue;
-		}
-
-		if ( getModuleId(p) == sqlRef && getFunctionId(p) == putName("exportValue",11) &&
-				isaBatType(getArgType(mb,p,8)) ){
-			rsset= newInstruction(mb,ASSIGNsymbol);
-			getArg(rsset,0) = newTmpVariable(mb, getArgType(mb,p,8));
-			rsset= pushArgument(mb,rsset, getArg(p,8));
-			getArg(p,8) = getArg(rsset,0);
-			insertInstruction(mb,rsset,i);
-			OPTcollect(cntxt,mb,i, &slices);
-			i++;
-			continue;
-		}
-
-		/* grouping and aggregation are blocking instruction for the time being */
-		if (  (getModuleId(p) == groupRef && (getFunctionId(p) == doneRef || getFunctionId(p) == newRef ||getFunctionId(p) == deriveRef) )  ||
-				getModuleId(p) == pqueueRef || getModuleId(p) == aggrRef ||
-				(getModuleId(p) == algebraRef &&(getFunctionId(p) == sliceRef || getFunctionId(p) == joinRef)) ) {
-			rsset= newInstruction(mb,ASSIGNsymbol);
-			for ( j = p->retc; j < p->argc; j++)  {
-				for ( k = p->retc; k < j; k++)
-					if( getArg(p,j) == getArg(p,k))
-						break;
-				if ( k == j && isaBatType(getArgType(mb,p,j)) ){
-					k = newTmpVariable(mb, getArgType(mb,p,j));
-					rsset= pushReturn(mb,rsset, k); 
-					rsset= pushArgument(mb,rsset, getArg(p,j));
-					remapVariable(mb, i, getArg(p,j), k);
-				}
-			}
-			if ( rsset->argc ) {
-				insertInstruction(mb,rsset,i);
-				OPTcollect(cntxt,mb,i, &slices);
-				i++;
-			}
-			continue;
-		}
-		if ( p->token == ENDsymbol)
-			pc = i -1;
-	}
+	} 
 #ifdef DEBUG_DETAIL
 	mnstr_printf(cntxt->fdout,"#orig BEFORE optimizer test\n");
 	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
