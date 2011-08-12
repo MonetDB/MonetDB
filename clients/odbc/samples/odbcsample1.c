@@ -157,7 +157,7 @@ main(int argc, char **argv)
 			check(ret, SQL_HANDLE_STMT, stmt, "SQLFetch");
 			switch (colno) {
 			case 1:
-				SQLBindParameter(stmt, 1, SQL_PARAM_INPUT, SQL_C_SSHORT, coltype, 0, 0, &f1, sizeof(f1), NULL);
+				ret = SQLBindParameter(stmt, 1, SQL_PARAM_INPUT, SQL_C_SSHORT, coltype, 0, 0, &f1, sizeof(f1), NULL);
 				check(ret, SQL_HANDLE_STMT, stmt, "SQLBindParameter 1");
 				break;
 			case 2:

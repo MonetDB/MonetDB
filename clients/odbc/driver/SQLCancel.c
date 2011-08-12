@@ -38,12 +38,12 @@
 #include "ODBCEnv.h"
 
 SQLRETURN SQL_API
-SQLCancel(SQLHSTMT hStmt)
+SQLCancel(SQLHSTMT StatementHandle)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLCancel " PTRFMT "\n", PTRFMTCAST hStmt);
+	ODBCLOG("SQLCancel " PTRFMT "\n", PTRFMTCAST StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))

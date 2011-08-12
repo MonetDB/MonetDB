@@ -31,7 +31,7 @@
  * SQLNumResultCols()
  * CLI Compliance: ISO 92
  *
- * Author: Martin van Dinther
+ * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 aug 2002
  *
  **********************************************************************/
@@ -41,13 +41,13 @@
 
 
 SQLRETURN SQL_API
-SQLNumResultCols(SQLHSTMT hStmt,
-		 SQLSMALLINT *pnColumnCount)
+SQLNumResultCols(SQLHSTMT StatementHandle,
+		 SQLSMALLINT *ColumnCountPtr)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLNumResultCols " PTRFMT "\n", PTRFMTCAST hStmt);
+	ODBCLOG("SQLNumResultCols " PTRFMT "\n", PTRFMTCAST StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -63,7 +63,7 @@ SQLNumResultCols(SQLHSTMT hStmt,
 	}
 
 	/* check output parameter */
-	if (pnColumnCount == NULL) {
+	if (ColumnCountPtr == NULL) {
 		/* Invalid use of null pointer */
 		addStmtError(stmt, "HY009", NULL, 0);
 		return SQL_ERROR;
@@ -81,7 +81,7 @@ SQLNumResultCols(SQLHSTMT hStmt,
 
 	/* We can now set the "number of output columns" value */
 	/* Note: row count can be 0 (for non SELECT queries) */
-	*pnColumnCount = stmt->ImplRowDescr->sql_desc_count;
+	*ColumnCountPtr = stmt->ImplRowDescr->sql_desc_count;
 
 	return SQL_SUCCESS;
 }

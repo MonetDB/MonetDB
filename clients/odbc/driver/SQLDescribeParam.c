@@ -33,7 +33,7 @@
  *
  * Note: this function is not supported (yet), it returns an error.
  *
- * Author: Martin van Dinther
+ * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 aug 2002
  *
  **********************************************************************/
@@ -42,19 +42,19 @@
 #include "ODBCStmt.h"
 
 SQLRETURN SQL_API
-SQLDescribeParam(SQLHSTMT hStmt,
-		 SQLUSMALLINT nParmNumber,
-		 SQLSMALLINT *pnDataType,
-		 SQLULEN *pnSize,
-		 SQLSMALLINT *pnDecDigits,
-		 SQLSMALLINT *pnNullable)
+SQLDescribeParam(SQLHSTMT StatementHandle,
+		 SQLUSMALLINT ParameterNumber,
+		 SQLSMALLINT *DataTypePtr,
+		 SQLULEN *ParameterSizePtr,
+		 SQLSMALLINT *DecimalDigitsPtr,
+		 SQLSMALLINT *NullablePtr)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 	ODBCDescRec *rec;
 
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLDescribeParam " PTRFMT " %u\n",
-		PTRFMTCAST hStmt, (unsigned int) nParmNumber);
+		PTRFMTCAST StatementHandle, (unsigned int) ParameterNumber);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -69,37 +69,38 @@ SQLDescribeParam(SQLHSTMT hStmt,
 		return SQL_ERROR;
 	}
 
-	if (nParmNumber < 1 || nParmNumber > stmt->ImplParamDescr->sql_desc_count) {
+	if (ParameterNumber < 1 ||
+	    ParameterNumber > stmt->ImplParamDescr->sql_desc_count) {
 		/* Invalid descriptor index */
 		addStmtError(stmt, "07009", NULL, 0);
 		return SQL_ERROR;
 	}
 
-	rec = &stmt->ImplParamDescr->descRec[nParmNumber];
+	rec = &stmt->ImplParamDescr->descRec[ParameterNumber];
 
-	if (pnDataType)
-		*pnDataType = rec->sql_desc_concise_type;
+	if (DataTypePtr)
+		*DataTypePtr = rec->sql_desc_concise_type;
 
-	if (pnNullable)
-		*pnNullable = rec->sql_desc_nullable;
-
-	/* also see SQLDescribeCol */
-	if (pnSize)
-		*pnSize = ODBCDisplaySize(rec);
+	if (NullablePtr)
+		*NullablePtr = rec->sql_desc_nullable;
 
 	/* also see SQLDescribeCol */
-	if (pnDecDigits) {
+	if (ParameterSizePtr)
+		*ParameterSizePtr = ODBCLength(rec, SQL_DESC_LENGTH);
+
+	/* also see SQLDescribeCol */
+	if (DecimalDigitsPtr) {
 		switch (rec->sql_desc_concise_type) {
 		case SQL_DECIMAL:
 		case SQL_NUMERIC:
-			*pnDecDigits = rec->sql_desc_scale;
+			*DecimalDigitsPtr = rec->sql_desc_scale;
 			break;
 		case SQL_BIT:
 		case SQL_TINYINT:
 		case SQL_SMALLINT:
 		case SQL_INTEGER:
 		case SQL_BIGINT:
-			*pnDecDigits = 0;
+			*DecimalDigitsPtr = 0;
 			break;
 		case SQL_TYPE_TIME:
 		case SQL_TYPE_TIMESTAMP:
@@ -107,7 +108,7 @@ SQLDescribeParam(SQLHSTMT hStmt,
 		case SQL_INTERVAL_DAY_TO_SECOND:
 		case SQL_INTERVAL_HOUR_TO_SECOND:
 		case SQL_INTERVAL_MINUTE_TO_SECOND:
-			*pnDecDigits = rec->sql_desc_precision;
+			*DecimalDigitsPtr = rec->sql_desc_precision;
 			break;
 		}
 	}

@@ -31,7 +31,7 @@
  * SQLPrepare
  * CLI Compliance: ISO 92
  *
- * Author: Martin van Dinther
+ * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 aug 2002
  *
  **********************************************************************/
@@ -54,8 +54,8 @@ ODBCResetStmt(ODBCStmt *stmt)
 
 SQLRETURN
 SQLPrepare_(ODBCStmt *stmt,
-	    SQLCHAR *szSqlStr,
-	    SQLINTEGER nSqlStrLength)
+	    SQLCHAR *StatementText,
+	    SQLINTEGER TextLength)
 {
 	char *query, *s;
 	MapiMsg ret;
@@ -66,24 +66,27 @@ SQLPrepare_(ODBCStmt *stmt,
 
 	hdl = stmt->hdl;
 
-	if (stmt->State >= EXECUTED1 || (stmt->State == EXECUTED0 && mapi_more_results(hdl))) {
+	if (stmt->State >= EXECUTED1 ||
+	    (stmt->State == EXECUTED0 && mapi_more_results(hdl))) {
 		/* Invalid cursor state */
 		addStmtError(stmt, "24000", NULL, 0);
 		return SQL_ERROR;
 	}
 
 	/* check input parameter */
-	if (szSqlStr == NULL) {
+	if (StatementText == NULL) {
 		/* Invalid use of null pointer */
 		addStmtError(stmt, "HY009", NULL, 0);
 		return SQL_ERROR;
 	}
 
-	fixODBCstring(szSqlStr, nSqlStrLength, SQLINTEGER, addStmtError, stmt, return SQL_ERROR);
-	/* TODO: convert ODBC escape sequences ( {d 'value'} or {t 'value'} or
-	   {ts 'value'} or {escape 'e-char'} or {oj outer-join} or
-	   {fn scalar-function} etc. ) to MonetDB SQL syntax */
-	query = ODBCTranslateSQL(szSqlStr, (size_t) nSqlStrLength, stmt->noScan);
+	fixODBCstring(StatementText, TextLength, SQLINTEGER, addStmtError, stmt, return SQL_ERROR);
+	/* TODO: convert ODBC escape sequences ( {d 'value'} or {t
+	 * 'value'} or {ts 'value'} or {escape 'e-char'} or {oj
+	 * outer-join} or {fn scalar-function} etc. ) to MonetDB SQL
+	 * syntax */
+	query = ODBCTranslateSQL(StatementText, (size_t) TextLength,
+				 stmt->noScan);
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLPrepare: \"%s\"\n", query);
 #endif
@@ -251,18 +254,9 @@ SQLPrepare_(ODBCStmt *stmt,
 
 		/* this must come after other fields have been
 		 * initialized */
-		rec->sql_desc_length = ODBCDisplaySize(rec);
-		rec->sql_desc_display_size = rec->sql_desc_length;
-		if (rec->sql_desc_concise_type == SQL_CHAR ||
-		    rec->sql_desc_concise_type == SQL_VARCHAR ||
-		    rec->sql_desc_concise_type == SQL_LONGVARCHAR) {
-			/* in theory, each character (really: Unicode
-			 * code point) could need 6 bytes in the UTF-8
-			 * encoding, plus we need a byte for the
-			 * terminating NUL byte */
-			rec->sql_desc_octet_length = 6 * rec->sql_desc_length + 1;
-		} else
-			rec->sql_desc_octet_length = rec->sql_desc_length;
+		rec->sql_desc_length = ODBCLength(rec, SQL_DESC_LENGTH);
+		rec->sql_desc_display_size = ODBCLength(rec, SQL_DESC_DISPLAY_SIZE);
+		rec->sql_desc_octet_length = ODBCLength(rec, SQL_DESC_OCTET_LENGTH);
 	}
 
 	/* update the internal state */
@@ -274,42 +268,44 @@ SQLPrepare_(ODBCStmt *stmt,
 }
 
 SQLRETURN SQL_API
-SQLPrepare(SQLHSTMT hStmt,
-	   SQLCHAR *szSqlStr,
-	   SQLINTEGER nSqlStrLength)
+SQLPrepare(SQLHSTMT StatementHandle,
+	   SQLCHAR *StatementText,
+	   SQLINTEGER TextLength)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLPrepare " PTRFMT "\n", PTRFMTCAST hStmt);
+	ODBCLOG("SQLPrepare " PTRFMT "\n", PTRFMTCAST StatementHandle);
 #endif
 
-	if (!isValidStmt((ODBCStmt *) hStmt))
+	if (!isValidStmt((ODBCStmt *) StatementHandle))
 		return SQL_INVALID_HANDLE;
 
-	clearStmtErrors((ODBCStmt *) hStmt);
+	clearStmtErrors((ODBCStmt *) StatementHandle);
 
-	return SQLPrepare_((ODBCStmt *) hStmt, szSqlStr, nSqlStrLength);
+	return SQLPrepare_((ODBCStmt *) StatementHandle,
+			   StatementText,
+			   TextLength);
 }
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLPrepareA(SQLHSTMT hStmt,
-	    SQLCHAR *szSqlStr,
-	    SQLINTEGER nSqlStrLength)
+SQLPrepareA(SQLHSTMT StatementHandle,
+	    SQLCHAR *StatementText,
+	    SQLINTEGER TextLength)
 {
-	return SQLPrepare(hStmt, szSqlStr, nSqlStrLength);
+	return SQLPrepare(StatementHandle, StatementText, TextLength);
 }
 
 SQLRETURN SQL_API
-SQLPrepareW(SQLHSTMT hStmt,
-	    SQLWCHAR * szSqlStr,
-	    SQLINTEGER nSqlStrLength)
+SQLPrepareW(SQLHSTMT StatementHandle,
+	    SQLWCHAR *StatementText,
+	    SQLINTEGER TextLength)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 	SQLCHAR *sql;
 	SQLRETURN rc;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLPrepareW " PTRFMT "\n", PTRFMTCAST hStmt);
+	ODBCLOG("SQLPrepareW " PTRFMT "\n", PTRFMTCAST StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -317,7 +313,8 @@ SQLPrepareW(SQLHSTMT hStmt,
 
 	clearStmtErrors(stmt);
 
-	fixWcharIn(szSqlStr, nSqlStrLength, SQLCHAR, sql, addStmtError, stmt, return SQL_ERROR);
+	fixWcharIn(StatementText, TextLength, SQLCHAR, sql,
+		   addStmtError, stmt, return SQL_ERROR);
 
 	rc = SQLPrepare_(stmt, sql, SQL_NTS);
 

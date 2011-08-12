@@ -31,7 +31,7 @@
  * SQLSetPos()
  * CLI Compliance: ODBC
  *
- * Author: Martin van Dinther
+ * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 aug 2002
  *
  ********************************************************************/
@@ -40,17 +40,17 @@
 #include "ODBCStmt.h"
 
 SQLRETURN SQL_API
-SQLSetPos(SQLHSTMT hStmt,
-	  SQLSETPOSIROW nRow,
-	  SQLUSMALLINT nOperation,
-	  SQLUSMALLINT nLockType)
+SQLSetPos(SQLHSTMT StatementHandle,
+	  SQLSETPOSIROW RowNumber,
+	  SQLUSMALLINT Operation,
+	  SQLUSMALLINT LockType)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLSetPos " PTRFMT " " ULENFMT " %u %u\n",
-		PTRFMTCAST hStmt, ULENCAST nRow,
-		(unsigned int) nOperation, (unsigned int) nLockType);
+		PTRFMTCAST StatementHandle, ULENCAST RowNumber,
+		(unsigned int) Operation, (unsigned int) LockType);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -71,7 +71,7 @@ SQLSetPos(SQLHSTMT hStmt,
 		return SQL_ERROR;
 	}
 
-	if (nRow > (SQLSETPOSIROW) stmt->rowSetSize) {
+	if (RowNumber > (SQLSETPOSIROW) stmt->rowSetSize) {
 		/* Row value out of range */
 		addStmtError(stmt, "HY107", NULL, 0);
 		return SQL_ERROR;
@@ -83,7 +83,7 @@ SQLSetPos(SQLHSTMT hStmt,
 		return SQL_ERROR;
 	}
 
-	switch (nLockType) {
+	switch (LockType) {
 	case SQL_LOCK_NO_CHANGE:
 		/* the only value that we support */
 		break;
@@ -98,19 +98,20 @@ SQLSetPos(SQLHSTMT hStmt,
 		return SQL_ERROR;
 	}
 
-	switch (nOperation) {
+	switch (Operation) {
 	case SQL_POSITION:
-		if (nRow == 0) {
+		if (RowNumber == 0) {
 			/* Invalid cursor position */
 			addStmtError(stmt, "HY109", NULL, 0);
 			return SQL_ERROR;
 		}
-		if (mapi_seek_row(stmt->hdl, stmt->startRow + nRow - 1, MAPI_SEEK_SET) != MOK) {
+		if (mapi_seek_row(stmt->hdl, stmt->startRow + RowNumber - 1,
+				  MAPI_SEEK_SET) != MOK) {
 			/* Invalid cursor position */
 			addStmtError(stmt, "HY109", NULL, 0);
 			return SQL_ERROR;
 		}
-		stmt->currentRow = stmt->startRow + nRow - 1;
+		stmt->currentRow = stmt->startRow + RowNumber - 1;
 		switch (mapi_fetch_row(stmt->hdl)) {
 		case MOK:
 			break;

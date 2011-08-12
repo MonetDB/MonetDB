@@ -31,7 +31,7 @@
  * SQLExecute()
  * CLI Compliance: ISO 92
  *
- * Author: Martin van Dinther
+ * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 Aug 2002
  *
  **********************************************************************/
@@ -61,7 +61,7 @@ static struct msql_types {
 	{"table", 0},
 	{"time", SQL_TYPE_TIME},
 	{"timestamp", SQL_TYPE_TIMESTAMP},
-/* 	{"tinyint", SQL_TINYINT}, */
+	{"tinyint", SQL_TINYINT},
 /* 	{"ubyte", SQL_TINYINT}, */
 	{"varchar", SQL_VARCHAR},
 	{"wrd", SQL_BIGINT},
@@ -230,18 +230,9 @@ ODBCInitResult(ODBCStmt *stmt)
 
 		/* this must come after other fields have been
 		 * initialized */
-		rec->sql_desc_length = ODBCDisplaySize(rec);
-		rec->sql_desc_display_size = rec->sql_desc_length;
-		if (rec->sql_desc_concise_type == SQL_CHAR ||
-		    rec->sql_desc_concise_type == SQL_VARCHAR ||
-		    rec->sql_desc_concise_type == SQL_LONGVARCHAR) {
-			/* in theory, each character (really: Unicode
-			 * code point) could need 6 bytes in the UTF-8
-			 * encoding, plus we need a byte for the
-			 * terminating NUL byte */
-			rec->sql_desc_octet_length = 6 * rec->sql_desc_length + 1;
-		} else
-			rec->sql_desc_octet_length = rec->sql_desc_length;
+		rec->sql_desc_length = ODBCLength(rec, SQL_DESC_LENGTH);
+		rec->sql_desc_display_size = ODBCLength(rec, SQL_DESC_DISPLAY_SIZE);
+		rec->sql_desc_octet_length = ODBCLength(rec, SQL_DESC_OCTET_LENGTH);
 
 		rec++;
 	}
@@ -353,16 +344,16 @@ SQLExecute_(ODBCStmt *stmt)
 }
 
 SQLRETURN SQL_API
-SQLExecute(SQLHSTMT hStmt)
+SQLExecute(SQLHSTMT StatementHandle)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLExecute " PTRFMT "\n", PTRFMTCAST hStmt);
+	ODBCLOG("SQLExecute " PTRFMT "\n", PTRFMTCAST StatementHandle);
 #endif
 
-	if (!isValidStmt((ODBCStmt *) hStmt))
+	if (!isValidStmt((ODBCStmt *) StatementHandle))
 		return SQL_INVALID_HANDLE;
 
-	clearStmtErrors((ODBCStmt *) hStmt);
+	clearStmtErrors((ODBCStmt *) StatementHandle);
 
-	return SQLExecute_((ODBCStmt *) hStmt);
+	return SQLExecute_((ODBCStmt *) StatementHandle);
 }

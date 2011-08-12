@@ -383,8 +383,8 @@ static void
 multiplexQuery(multiplex *m, char *buf, stream *fout)
 {
 	int i;
-	MapiHdl hdl[m->dbcc];
 	char *t;
+	MapiHdl h;
 	mapi_int64 rlen;
 	int fcnt;
 	char emptyres, isempty;
@@ -415,7 +415,7 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 			mapi_cache_limit(m->dbcv[i]->conn, -1); /* don't page */
 		}
 
-		hdl[i] = mapi_send(m->dbcv[i]->conn, buf);
+		m->dbcv[i]->hdl = mapi_send(m->dbcv[i]->conn, buf);
 	}
 	/* fail as soon as one of the servers fails */
 	t = NULL;
@@ -423,15 +423,16 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 	fcnt = -1;
 	emptyres = 0;
 	for (i = 0; i < m->dbcc; i++) {
-		if (mapi_read_response(hdl[i]) != MOK) {
-			t = mapi_result_error(hdl[i]);
+		h = m->dbcv[i]->hdl;
+		if (mapi_read_response(h) != MOK) {
+			t = mapi_result_error(h);
 			mnstr_printf(fout, "!node %s failed: %s\n",
 					m->dbcv[i]->database, t ? t : "no response");
 			Mfprintf(stderr, "mapi_read_response for %s failed: %s\n",
 					m->dbcv[i]->database, t ? t : "(no error)");
 			break;
 		}
-		if ((t = mapi_result_error(hdl[i])) != NULL) {
+		if ((t = mapi_result_error(h)) != NULL) {
 			mnstr_printf(fout, "!node %s failed: %s\n",
 					m->dbcv[i]->database, t);
 			Mfprintf(stderr, "mapi_result_error for %s: %s\n",
@@ -440,7 +441,7 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 		}
 		isempty = 0;
 		/* mapi return Q_PARSE for empty results */
-		if (mapi_get_querytype(hdl[i]) == Q_PARSE)
+		if (mapi_get_querytype(h) == Q_PARSE)
 			emptyres = isempty = 1;
 		if (emptyres && !isempty) {
 			t = "err"; /* for cleanup code below */
@@ -453,26 +454,26 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 		if (isempty)
 			continue;
 		/* only support Q_TABLE, because appending is easy */
-		if (mapi_get_querytype(hdl[i]) != Q_TABLE) {
+		if (mapi_get_querytype(h) != Q_TABLE) {
 			t = "err"; /* for cleanup code below */
 			mnstr_printf(fout, "!node %s returned a non-table result\n",
 					m->dbcv[i]->database);
 			Mfprintf(stderr, "querytype != Q_TABLE for %s: %d\n",
-					m->dbcv[i]->database, mapi_get_querytype(hdl[i]));
+					m->dbcv[i]->database, mapi_get_querytype(h));
 			break;
 		}
-		rlen += mapi_get_row_count(hdl[i]);
+		rlen += mapi_get_row_count(h);
 		if (fcnt == -1) {
-			fcnt = mapi_get_field_count(hdl[i]);
+			fcnt = mapi_get_field_count(h);
 		} else {
-			if (mapi_get_field_count(hdl[i]) != fcnt) {
+			if (mapi_get_field_count(h) != fcnt) {
 				t = "err"; /* for cleanup code below */
 				mnstr_printf(fout, "!node %s has mismatch in result fields\n",
 						m->dbcv[i]->database);
 				Mfprintf(stderr, "mapi_get_field_count inconsistent for %s: "
 						"got %d, expected %d\n",
 						m->dbcv[i]->database,
-						mapi_get_field_count(hdl[i]), fcnt);
+						mapi_get_field_count(h), fcnt);
 				break;
 			}
 		}
@@ -480,7 +481,7 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 	if (t != NULL || emptyres) {
 		mnstr_flush(fout);
 		for (i = 0; i < m->dbcc; i++)
-			mapi_close_handle(hdl[i]);
+			mapi_close_handle(m->dbcv[i]->hdl);
 		return;
 	}
 	/* Compose the header.  For the table id, we just send 0, such that
@@ -488,14 +489,15 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 	mnstr_printf(fout, "&%d 0 " LLFMT " %d " LLFMT "\n", Q_TABLE, rlen, fcnt, rlen);
 	/* now read the answers, and write them directly to the client */
 	for (i = 0; i < m->dbcc; i++) {
-		while ((t = mapi_fetch_line(hdl[i])) != NULL)
+		h = m->dbcv[i]->hdl;
+		while ((t = mapi_fetch_line(h)) != NULL)
 			if (i == 0 || *t != '%') /* skip other server's headers */
 				mnstr_printf(fout, "%s\n", t);
 	}
 	mnstr_flush(fout);
 	/* finish up */
 	for (i = 0; i < m->dbcc; i++)
-		mapi_close_handle(hdl[i]);
+		mapi_close_handle(m->dbcv[i]->hdl);
 }
 
 void

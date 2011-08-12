@@ -31,7 +31,7 @@
  * SQLConnect()
  * CLI Compliance: ISO 92
  *
- * Author: Martin van Dinther
+ * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 aug 2002
  *
  **********************************************************************/
@@ -54,12 +54,12 @@
 
 SQLRETURN
 SQLConnect_(ODBCDbc *dbc,
-	    SQLCHAR *szDataSource,
-	    SQLSMALLINT nDataSourceLength,
-	    SQLCHAR *szUID,
-	    SQLSMALLINT nUIDLength,
-	    SQLCHAR *szPWD,
-	    SQLSMALLINT nPWDLength,
+	    SQLCHAR *ServerName,
+	    SQLSMALLINT NameLength1,
+	    SQLCHAR *UserName,
+	    SQLSMALLINT NameLength2,
+	    SQLCHAR *Authentication,
+	    SQLSMALLINT NameLength3,
 	    char *host,
 	    int port,
 	    char *schema)
@@ -82,50 +82,56 @@ SQLConnect_(ODBCDbc *dbc,
 	}
 
 	/* convert input string parameters to normal null terminated C strings */
-	fixODBCstring(szDataSource, nDataSourceLength, SQLSMALLINT, addDbcError, dbc, return SQL_ERROR);
-	if (nDataSourceLength > 0)
-		dsn = dupODBCstring(szDataSource, (size_t) nDataSourceLength);
+	fixODBCstring(ServerName, NameLength1, SQLSMALLINT,
+		      addDbcError, dbc, return SQL_ERROR);
+	if (NameLength1 > 0)
+		dsn = dupODBCstring(ServerName, (size_t) NameLength1);
 
 	if (dsn && *dsn)
-		n = SQLGetPrivateProfileString(dsn, "uid", "monetdb", uid, sizeof(uid), "odbc.ini");
+		n = SQLGetPrivateProfileString(dsn, "uid", "monetdb",
+					       uid, sizeof(uid), "odbc.ini");
 	else
 		n = 0;
-	fixODBCstring(szUID, nUIDLength, SQLSMALLINT, addDbcError, dbc, if (dsn) free(dsn); return SQL_ERROR);
-	if (n == 0 && nUIDLength == 0) {
+	fixODBCstring(UserName, NameLength2, SQLSMALLINT,
+		      addDbcError, dbc, if (dsn) free(dsn); return SQL_ERROR);
+	if (n == 0 && NameLength2 == 0) {
 		if (dsn)
 			free(dsn);
 		/* Invalid authorization specification */
 		addDbcError(dbc, "28000", NULL, 0);
 		return SQL_ERROR;
 	}
-	if (nUIDLength > 0) {
-		if ((size_t)nUIDLength >= sizeof(uid))
-			nUIDLength = sizeof(uid) - 1;
-		strncpy(uid, (char *) szUID, nUIDLength);
-		uid[nUIDLength] = 0;
+	if (NameLength2 > 0) {
+		if ((size_t)NameLength2 >= sizeof(uid))
+			NameLength2 = sizeof(uid) - 1;
+		strncpy(uid, (char *) UserName, NameLength2);
+		uid[NameLength2] = 0;
 	}
 	if (dsn && *dsn)
-		n = SQLGetPrivateProfileString(dsn, "pwd", "monetdb", pwd, sizeof(pwd), "odbc.ini");
+		n = SQLGetPrivateProfileString(dsn, "pwd", "monetdb",
+					       pwd, sizeof(pwd), "odbc.ini");
 	else
 		n = 0;
-	fixODBCstring(szPWD, nPWDLength, SQLSMALLINT, addDbcError, dbc, if (dsn) free(dsn); return SQL_ERROR);
-	if (n == 0 && nPWDLength == 0) {
+	fixODBCstring(Authentication, NameLength3, SQLSMALLINT,
+		      addDbcError, dbc, if (dsn) free(dsn); return SQL_ERROR);
+	if (n == 0 && NameLength3 == 0) {
 		if (dsn)
 			free(dsn);
 		/* Invalid authorization specification */
 		addDbcError(dbc, "28000", NULL, 0);
 		return SQL_ERROR;
 	}
-	if (nPWDLength > 0) {
-		if ((size_t)nPWDLength >= sizeof(pwd))
-			nPWDLength = sizeof(pwd) - 1;
-		strncpy(pwd, (char *) szPWD, nPWDLength);
-		pwd[nPWDLength] = 0;
+	if (NameLength3 > 0) {
+		if ((size_t)NameLength3 >= sizeof(pwd))
+			NameLength3 = sizeof(pwd) - 1;
+		strncpy(pwd, (char *) Authentication, NameLength3);
+		pwd[NameLength3] = 0;
 	}
 
 	if (schema == NULL || *schema == 0) {
 		if (dsn && *dsn) {
-			n = SQLGetPrivateProfileString(dsn, "database", "", db, sizeof(db), "odbc.ini");
+			n = SQLGetPrivateProfileString(dsn, "database", "", db,
+						       sizeof(db), "odbc.ini");
 			if (n > 0)
 				schema = db;
 		}
@@ -136,7 +142,8 @@ SQLConnect_(ODBCDbc *dbc,
 	if (port == 0 && (s = getenv("MAPIPORT")) != NULL)
 		port = atoi(s);
 	if (port == 0 && dsn && *dsn) {
-		n = SQLGetPrivateProfileString(dsn, "port", "50000", buf, sizeof(buf), "odbc.ini");
+		n = SQLGetPrivateProfileString(dsn, "port", "50000",
+					       buf, sizeof(buf), "odbc.ini");
 		if (n > 0)
 			port = atoi(buf);
 	}
@@ -146,7 +153,9 @@ SQLConnect_(ODBCDbc *dbc,
 	if (host == NULL || *host == 0) {
 		host = "localhost";
 		if (dsn && *dsn) {
-			n = SQLGetPrivateProfileString(dsn, "host", "localhost", buf, sizeof(buf), "odbc.ini");
+			n = SQLGetPrivateProfileString(dsn, "host", "localhost",
+						       buf, sizeof(buf),
+						       "odbc.ini");
 			if (n > 0)
 				host = buf;
 		}
@@ -196,54 +205,61 @@ SQLConnect_(ODBCDbc *dbc,
 }
 
 SQLRETURN SQL_API
-SQLConnect(SQLHDBC hDbc,
-	   SQLCHAR *szDataSource,
-	   SQLSMALLINT nDataSourceLength,
-	   SQLCHAR *szUID,
-	   SQLSMALLINT nUIDLength,
-	   SQLCHAR *szPWD,
-	   SQLSMALLINT nPWDLength)
+SQLConnect(SQLHDBC ConnectionHandle,
+	   SQLCHAR *ServerName,
+	   SQLSMALLINT NameLength1,
+	   SQLCHAR *UserName,
+	   SQLSMALLINT NameLength2,
+	   SQLCHAR *Authentication,
+	   SQLSMALLINT NameLength3)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLConnect " PTRFMT "\n", PTRFMTCAST hDbc);
+	ODBCLOG("SQLConnect " PTRFMT "\n", PTRFMTCAST ConnectionHandle);
 #endif
 
-	if (!isValidDbc((ODBCDbc *) hDbc))
+	if (!isValidDbc((ODBCDbc *) ConnectionHandle))
 		return SQL_INVALID_HANDLE;
 
-	clearDbcErrors((ODBCDbc *) hDbc);
+	clearDbcErrors((ODBCDbc *) ConnectionHandle);
 
-	return SQLConnect_((ODBCDbc *) hDbc, szDataSource, nDataSourceLength, szUID, nUIDLength, szPWD, nPWDLength, NULL, 0, NULL);
+	return SQLConnect_((ODBCDbc *) ConnectionHandle,
+			   ServerName, NameLength1,
+			   UserName, NameLength2,
+			   Authentication, NameLength3,
+			   NULL, 0, NULL);
 }
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLConnectA(SQLHDBC hDbc,
-	    SQLCHAR *szDataSource,
-	    SQLSMALLINT nDataSourceLength,
-	    SQLCHAR *szUID,
-	    SQLSMALLINT nUIDLength,
-	    SQLCHAR *szPWD,
-	    SQLSMALLINT nPWDLength)
+SQLConnectA(SQLHDBC ConnectionHandle,
+	    SQLCHAR *ServerName,
+	    SQLSMALLINT NameLength1,
+	    SQLCHAR *UserName,
+	    SQLSMALLINT NameLength2,
+	    SQLCHAR *Authentication,
+	    SQLSMALLINT NameLength3)
 {
-	return SQLConnect(hDbc, szDataSource, nDataSourceLength, szUID, nUIDLength, szPWD, nPWDLength);
+	return SQLConnect(ConnectionHandle,
+			  ServerName, NameLength1,
+			  UserName, NameLength2,
+			  Authentication, NameLength3);
 }
 
 SQLRETURN SQL_API
-SQLConnectW(SQLHDBC hDbc,
-	    SQLWCHAR * szDataSource,
-	    SQLSMALLINT nDataSourceLength,
-	    SQLWCHAR * szUID,
-	    SQLSMALLINT nUIDLength,
-	    SQLWCHAR * szPWD,
-	    SQLSMALLINT nPWDLength)
+SQLConnectW(SQLHDBC ConnectionHandle,
+	    SQLWCHAR *ServerName,
+	    SQLSMALLINT NameLength1,
+	    SQLWCHAR *UserName,
+	    SQLSMALLINT NameLength2,
+	    SQLWCHAR *Authentication,
+	    SQLSMALLINT NameLength3)
 {
 	SQLCHAR *ds = NULL, *uid = NULL, *pwd = NULL;
 	SQLRETURN rc = SQL_ERROR;
-	ODBCDbc *dbc = (ODBCDbc *) hDbc;
+	ODBCDbc *dbc = (ODBCDbc *) ConnectionHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLConnectW " PTRFMT "\n", PTRFMTCAST hDbc);
+	ODBCLOG("SQLConnectW " PTRFMT "\n", PTRFMTCAST ConnectionHandle);
 #endif
 
 	if (!isValidDbc(dbc))
@@ -251,11 +267,18 @@ SQLConnectW(SQLHDBC hDbc,
 
 	clearDbcErrors(dbc);
 
-	fixWcharIn(szDataSource, nDataSourceLength, SQLCHAR, ds, addDbcError, dbc, goto exit);
-	fixWcharIn(szUID, nUIDLength, SQLCHAR, uid, addDbcError, dbc, goto exit);
-	fixWcharIn(szPWD, nPWDLength, SQLCHAR, pwd, addDbcError, dbc, goto exit);
+	fixWcharIn(ServerName, NameLength1, SQLCHAR, ds,
+		   addDbcError, dbc, goto exit);
+	fixWcharIn(UserName, NameLength2, SQLCHAR, uid,
+		   addDbcError, dbc, goto exit);
+	fixWcharIn(Authentication, NameLength3, SQLCHAR, pwd,
+		   addDbcError, dbc, goto exit);
 
-	rc = SQLConnect_(dbc, ds, SQL_NTS, uid, SQL_NTS, pwd, SQL_NTS, NULL, 0, NULL);
+	rc = SQLConnect_(dbc,
+			 ds, SQL_NTS,
+			 uid, SQL_NTS,
+			 pwd, SQL_NTS,
+			 NULL, 0, NULL);
 
       exit:
 	if (ds)

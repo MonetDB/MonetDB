@@ -99,7 +99,8 @@ ODBCError *getDescError(ODBCDesc *desc);
 void destroyODBCDesc(ODBCDesc *desc);
 void setODBCDescRecCount(ODBCDesc *desc, int count);
 ODBCDescRec *addODBCDescRec(ODBCDesc *desc, SQLSMALLINT recno);
-SQLULEN ODBCDisplaySize(ODBCDescRec *rec);
+
+SQLULEN ODBCLength(ODBCDescRec *rec, int lengthtype);
 
 SQLRETURN SQLGetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber, SQLSMALLINT FieldIdentifier, SQLPOINTER Value, SQLINTEGER BufferLength, SQLINTEGER *StringLength);
 SQLRETURN SQLSetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber, SQLSMALLINT FieldIdentifier, SQLPOINTER Value, SQLINTEGER BufferLength);

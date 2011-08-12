@@ -34,7 +34,7 @@
  * This file contains the functions which operate on
  * ODBC error structures/objects (see ODBCError.h)
  *
- * Author: Martin van Dinther
+ * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 aug 2002
  *
  **********************************************/

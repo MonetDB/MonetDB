@@ -178,15 +178,15 @@ static UWORD FuncImplemented[] = {
 static UWORD FuncExistMap[SQL_API_ODBC3_ALL_FUNCTIONS_SIZE];
 
 SQLRETURN SQL_API
-SQLGetFunctions(SQLHDBC hDbc,
+SQLGetFunctions(SQLHDBC ConnectionHandle,
 		SQLUSMALLINT FunctionId,
-		SQLUSMALLINT *Supported)
+		SQLUSMALLINT *SupportedPtr)
 {
-	ODBCDbc *dbc = (ODBCDbc *) hDbc;
+	ODBCDbc *dbc = (ODBCDbc *) ConnectionHandle;
 
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLGetFunctions " PTRFMT " %u\n",
-		PTRFMTCAST hDbc, (unsigned int) FunctionId);
+		PTRFMTCAST ConnectionHandle, (unsigned int) FunctionId);
 #endif
 
 	if (!isValidDbc(dbc))
@@ -203,12 +203,13 @@ SQLGetFunctions(SQLHDBC hDbc,
 	}
 
 	if (FunctionId == SQL_API_ODBC3_ALL_FUNCTIONS) {
-		memcpy(Supported, FuncExistMap, SQL_API_ODBC3_ALL_FUNCTIONS_SIZE * sizeof(FuncExistMap[0]));
+		memcpy(SupportedPtr, FuncExistMap,
+		       SQL_API_ODBC3_ALL_FUNCTIONS_SIZE * sizeof(FuncExistMap[0]));
 		return SQL_SUCCESS;
 	}
 
 	if (FunctionId < SQL_API_ODBC3_ALL_FUNCTIONS_SIZE * 16) {
-		*Supported = SQL_FUNC_EXISTS(FuncExistMap, FunctionId);
+		*SupportedPtr = SQL_FUNC_EXISTS(FuncExistMap, FunctionId);
 		return SQL_SUCCESS;
 	}
 

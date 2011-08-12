@@ -782,45 +782,45 @@ ATOMnil(int t)
 	} while (0)
 
 #define ATOMreplace(type, heap, dst, src)				\
-do {									\
-	int t_ = (type);						\
-	ptr d_ = (ptr) (dst);						\
-	ptr s_ = (ptr) (src);						\
+	do {								\
+		int t_ = (type);					\
+		ptr d_ = (ptr) (dst);					\
+		ptr s_ = (ptr) (src);					\
 									\
-	if (BATatoms[t_].atomPut) {					\
-		var_t loc_ = * (var_t *) d_;				\
-		Heap *h_ = (heap);					\
+		if (BATatoms[t_].atomPut) {				\
+			var_t loc_ = * (var_t *) d_;			\
+			Heap *h_ = (heap);				\
 									\
-		if ((*BATatoms[t_].atomPut)(h_, &loc_, s_) == 0)	\
-			goto bunins_failed;				\
-		ATOMunfix(t_, d_);					\
-		ATOMdel(t_, h_, d_);					\
-		* (var_t *) d_ = loc_;					\
-		ATOMfix(t_, s_);					\
-	} else {							\
-		ATOMfix(t_, s_);					\
-		ATOMunfix(t_, d_);					\
-		switch (BATatoms[t_].size) {				\
-		case 0:		/* void */				\
-			break;						\
-		case 1:							\
-			* (bte *) d_ = * (bte *) s_;			\
-			break;						\
-		case 2:							\
-			* (sht *) d_ = * (sht *) s_;			\
-			break;						\
-		case 4:							\
-			* (int *) d_ = * (int *) s_;			\
-			break;						\
-		case 8:							\
-			* (lng *) d_ = * (lng *) s_;			\
-			break;						\
-		default:						\
-			memcpy(d_, s_, (size_t) BATatoms[t_].size);	\
-			break;						\
+			if ((*BATatoms[t_].atomPut)(h_, &loc_, s_) == 0) \
+				goto bunins_failed;			\
+			ATOMunfix(t_, d_);				\
+			ATOMdel(t_, h_, d_);				\
+			* (var_t *) d_ = loc_;				\
+			ATOMfix(t_, s_);				\
+		} else {						\
+			ATOMfix(t_, s_);				\
+			ATOMunfix(t_, d_);				\
+			switch (BATatoms[t_].size) {			\
+			case 0:		/* void */			\
+				break;					\
+			case 1:						\
+				* (bte *) d_ = * (bte *) s_;		\
+				break;					\
+			case 2:						\
+				* (sht *) d_ = * (sht *) s_;		\
+				break;					\
+			case 4:						\
+				* (int *) d_ = * (int *) s_;		\
+				break;					\
+			case 8:						\
+				* (lng *) d_ = * (lng *) s_;		\
+				break;					\
+			default:					\
+				memcpy(d_, s_, (size_t) BATatoms[t_].size); \
+				break;					\
+			}						\
 		}							\
-	}								\
-} while (0)
+	} while (0)
 
 /* string heaps:
  * - strings are 8 byte aligned

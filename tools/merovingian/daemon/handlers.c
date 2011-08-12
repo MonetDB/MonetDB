@@ -174,9 +174,10 @@ childhandler(int sig, siginfo_t *si, void *unused)
 						(long long int)p->pid, si->si_status);
 			} else if (si->si_code == CLD_KILLED) {
 				char *sigstr = sigtostr(si->si_status);
+				char signum[8];
 				if (sigstr == NULL) {
-					sigstr = alloca(sizeof(char) * 8);
-					snprintf(sigstr, 8, "%d", si->si_status);
+					snprintf(signum, 8, "%d", si->si_status);
+					sigstr = signum;
 				}
 				Mfprintf(stdout, "database '%s' (%lld) was killed by signal "
 						"%s\n", p->dbname,

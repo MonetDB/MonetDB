@@ -31,7 +31,7 @@
  * SQLGetDiagRec()
  * CLI Compliance: ISO 92
  *
- * Author: Martin van Dinther
+ * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 aug 2002
  *
  **********************************************************************/
@@ -44,54 +44,54 @@
 #include "ODBCUtil.h"
 
 SQLRETURN
-SQLGetDiagRec_(SQLSMALLINT handleType,
-	       SQLHANDLE handle,
-	       SQLSMALLINT recNumber,
-	       SQLCHAR *sqlState,
-	       SQLINTEGER *nativeErrorPtr,
-	       SQLCHAR *messageText,
-	       SQLSMALLINT bufferLength,
-	       SQLSMALLINT *textLengthPtr)
+SQLGetDiagRec_(SQLSMALLINT HandleType,
+	       SQLHANDLE Handle,
+	       SQLSMALLINT RecNumber,
+	       SQLCHAR *SQLState,
+	       SQLINTEGER *NativeErrorPtr,
+	       SQLCHAR *MessageText,
+	       SQLSMALLINT BufferLength,
+	       SQLSMALLINT *TextLengthPtr)
 {
 	ODBCError *err;
 	SQLRETURN retCode;
 	char *msg;
 	SQLSMALLINT msgLen;
 
-	switch (handleType) {
+	switch (HandleType) {
 	case SQL_HANDLE_ENV:
 		/* Check if this struct is still valid/alive */
-		if (!isValidEnv((ODBCEnv *) handle))
+		if (!isValidEnv((ODBCEnv *) Handle))
 			return SQL_INVALID_HANDLE;
-		err = getEnvError((ODBCEnv *) handle);
+		err = getEnvError((ODBCEnv *) Handle);
 		break;
 	case SQL_HANDLE_DBC:
 		/* Check if this struct is still valid/alive */
-		if (!isValidDbc((ODBCDbc *) handle))
+		if (!isValidDbc((ODBCDbc *) Handle))
 			return SQL_INVALID_HANDLE;
-		err = getDbcError((ODBCDbc *) handle);
+		err = getDbcError((ODBCDbc *) Handle);
 		break;
 	case SQL_HANDLE_STMT:
 		/* Check if this struct is still valid/alive */
-		if (!isValidStmt((ODBCStmt *) handle))
+		if (!isValidStmt((ODBCStmt *) Handle))
 			return SQL_INVALID_HANDLE;
-		err = getStmtError((ODBCStmt *) handle);
+		err = getStmtError((ODBCStmt *) Handle);
 		break;
 	case SQL_HANDLE_DESC:
 		/* not yet supported */
-		return handle ? SQL_NO_DATA : SQL_INVALID_HANDLE;
+		return Handle ? SQL_NO_DATA : SQL_INVALID_HANDLE;
 	default:
 		return SQL_INVALID_HANDLE;
 	}
 
-	/* Note: bufferLength may be 0 !! */
-	if (bufferLength < 0)
+	/* Note: BufferLength may be 0 !! */
+	if (BufferLength < 0)
 		return SQL_ERROR;
 
-	if (recNumber <= 0)
+	if (RecNumber <= 0)
 		return SQL_ERROR;
 
-	err = getErrorRec(err, recNumber);
+	err = getErrorRec(err, RecNumber);
 
 	/* Check the error object from the handle, it may be NULL when
 	 * no (more) errors are available
@@ -100,50 +100,50 @@ SQLGetDiagRec_(SQLSMALLINT handleType,
 		return SQL_NO_DATA;
 
 	/* Now fill the output parameters where possible */
-	if (sqlState) {
+	if (SQLState) {
 		char *state = getSqlState(err);
 
 		assert(state);
 		/* copy only the first SQL_SQLSTATE_SIZE (5) chars in
 		 * the buffer and make it null terminated
 		 */
-		strncpy((char *) sqlState, state, SQL_SQLSTATE_SIZE);
-		sqlState[SQL_SQLSTATE_SIZE] = 0;
+		strncpy((char *) SQLState, state, SQL_SQLSTATE_SIZE);
+		SQLState[SQL_SQLSTATE_SIZE] = 0;
 	}
 
-	if (nativeErrorPtr)
-		*nativeErrorPtr = getNativeErrorCode(err);
+	if (NativeErrorPtr)
+		*NativeErrorPtr = getNativeErrorCode(err);
 
 	msg = getMessage(err);
 	msgLen = msg ? (SQLSMALLINT) strlen(msg) : 0;
 	retCode = SQL_SUCCESS;
 
-	if (messageText && bufferLength > 0) {
-		bufferLength--;	/* reserve space for term NULL byte */
-		messageText[bufferLength] = 0;	/* write it already */
+	if (MessageText && BufferLength > 0) {
+		BufferLength--;	/* reserve space for term NULL byte */
+		MessageText[BufferLength] = 0;	/* write it already */
 
 		/* first write the error message prefix text:
 		 * [MonetDB][ODBC driver 1.0]; this is
 		 * required by the ODBC spec and used to
 		 * determine where the error originated
 		 */
-		if (bufferLength > 0)
-			strncpy((char *) messageText, ODBCErrorMsgPrefix, bufferLength);
-		bufferLength -= ODBCErrorMsgPrefixLength;
-		messageText += ODBCErrorMsgPrefixLength;
+		if (BufferLength > 0)
+			strncpy((char *) MessageText, ODBCErrorMsgPrefix, BufferLength);
+		BufferLength -= ODBCErrorMsgPrefixLength;
+		MessageText += ODBCErrorMsgPrefixLength;
 
 		/* next append the error msg itself */
-		if (msg && bufferLength > 0) {
-			strncpy((char *) messageText, msg, bufferLength);
-			bufferLength -= msgLen;
+		if (msg && BufferLength > 0) {
+			strncpy((char *) MessageText, msg, BufferLength);
+			BufferLength -= msgLen;
 		}
 
-		if (bufferLength < 0) {
+		if (BufferLength < 0) {
 			/* it didn't fit */
 			retCode = SQL_SUCCESS_WITH_INFO;
 		}
 	} else {
-		/* There is no valid messageText buffer or its
+		/* There is no valid MessageText buffer or its
 		 * buffer size is 0.  In these cases we cannot
 		 * write the prefix and message.  We just set
 		 * the return code.
@@ -151,54 +151,68 @@ SQLGetDiagRec_(SQLSMALLINT handleType,
 		retCode = SQL_SUCCESS_WITH_INFO;
 	}
 
-	if (textLengthPtr)
-		*textLengthPtr = (SQLSMALLINT) (msgLen + ODBCErrorMsgPrefixLength);
+	if (TextLengthPtr)
+		*TextLengthPtr = (SQLSMALLINT) (msgLen + ODBCErrorMsgPrefixLength);
 
 	return retCode;
 }
 
 SQLRETURN SQL_API
-SQLGetDiagRec(SQLSMALLINT handleType,
-	      SQLHANDLE handle,
-	      SQLSMALLINT recNumber,
-	      SQLCHAR *sqlState,
-	      SQLINTEGER *nativeErrorPtr,
-	      SQLCHAR *messageText,
-	      SQLSMALLINT bufferLength,
-	      SQLSMALLINT *textLengthPtr)
+SQLGetDiagRec(SQLSMALLINT HandleType,
+	      SQLHANDLE Handle,
+	      SQLSMALLINT RecNumber,
+	      SQLCHAR *SQLState,
+	      SQLINTEGER *NativeErrorPtr,
+	      SQLCHAR *MessageText,
+	      SQLSMALLINT BufferLength,
+	      SQLSMALLINT *TextLengthPtr)
 {
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLGetDiagRec %s " PTRFMT " %d %d\n",
-		handleType == SQL_HANDLE_ENV ? "Env" : handleType == SQL_HANDLE_DBC ? "Dbc" : handleType == SQL_HANDLE_STMT ? "Stmt" : "Desc",
-		PTRFMTCAST handle, (int) recNumber, (int) bufferLength);
+		HandleType == SQL_HANDLE_ENV ? "Env" : HandleType == SQL_HANDLE_DBC ? "Dbc" : HandleType == SQL_HANDLE_STMT ? "Stmt" : "Desc",
+		PTRFMTCAST Handle, (int) RecNumber, (int) BufferLength);
 #endif
 
-	return SQLGetDiagRec_(handleType, handle, recNumber, sqlState, nativeErrorPtr, messageText, bufferLength, textLengthPtr);
+	return SQLGetDiagRec_(HandleType,
+			      Handle,
+			      RecNumber,
+			      SQLState,
+			      NativeErrorPtr,
+			      MessageText,
+			      BufferLength,
+			      TextLengthPtr);
 }
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLGetDiagRecA(SQLSMALLINT handleType,
-	       SQLHANDLE handle,
-	       SQLSMALLINT recNumber,
-	       SQLCHAR *sqlState,
-	       SQLINTEGER *nativeErrorPtr,
-	       SQLCHAR *messageText,
-	       SQLSMALLINT bufferLength,
-	       SQLSMALLINT *textLengthPtr)
+SQLGetDiagRecA(SQLSMALLINT HandleType,
+	       SQLHANDLE Handle,
+	       SQLSMALLINT RecNumber,
+	       SQLCHAR *SQLState,
+	       SQLINTEGER *NativeErrorPtr,
+	       SQLCHAR *MessageText,
+	       SQLSMALLINT BufferLength,
+	       SQLSMALLINT *TextLengthPtr)
 {
-	return SQLGetDiagRec(handleType, handle, recNumber, sqlState, nativeErrorPtr, messageText, bufferLength, textLengthPtr);
+	return SQLGetDiagRec(HandleType,
+			     Handle,
+			     RecNumber,
+			     SQLState,
+			     NativeErrorPtr,
+			     MessageText,
+			     BufferLength,
+			     TextLengthPtr);
 }
 
 SQLRETURN SQL_API
-SQLGetDiagRecW(SQLSMALLINT handleType,
-	       SQLHANDLE handle,
-	       SQLSMALLINT recNumber,
-	       SQLWCHAR * sqlState,
-	       SQLINTEGER *nativeErrorPtr,
-	       SQLWCHAR * messageText,
-	       SQLSMALLINT bufferLength,
-	       SQLSMALLINT *textLengthPtr)
+SQLGetDiagRecW(SQLSMALLINT HandleType,
+	       SQLHANDLE Handle,
+	       SQLSMALLINT RecNumber,
+	       SQLWCHAR *SQLState,
+	       SQLINTEGER *NativeErrorPtr,
+	       SQLWCHAR *MessageText,
+	       SQLSMALLINT BufferLength,
+	       SQLSMALLINT *TextLengthPtr)
 {
 	SQLRETURN rc;
 	SQLCHAR state[6];
@@ -206,37 +220,40 @@ SQLGetDiagRecW(SQLSMALLINT handleType,
 
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLGetDiagRecW %s " PTRFMT " %d %d\n",
-		handleType == SQL_HANDLE_ENV ? "Env" : handleType == SQL_HANDLE_DBC ? "Dbc" : handleType == SQL_HANDLE_STMT ? "Stmt" : "Desc",
-		PTRFMTCAST handle, (int) recNumber, (int) bufferLength);
+		HandleType == SQL_HANDLE_ENV ? "Env" : HandleType == SQL_HANDLE_DBC ? "Dbc" : HandleType == SQL_HANDLE_STMT ? "Stmt" : "Desc",
+		PTRFMTCAST Handle, (int) RecNumber, (int) BufferLength);
 #endif
 
 	/* figure out how much space we need */
-	rc = SQLGetDiagRec_(handleType, handle, recNumber, state, nativeErrorPtr, NULL, 0, &n);
+	rc = SQLGetDiagRec_(HandleType, Handle, RecNumber, state,
+			    NativeErrorPtr, NULL, 0, &n);
 
 	if (SQL_SUCCEEDED(rc)) {
 		SQLCHAR *msg;
 
 		/* then try for real */
 		msg = (SQLCHAR *) malloc(n + 1);
-		rc = SQLGetDiagRec_(handleType, handle, recNumber, state, nativeErrorPtr, msg, n + 1, &n);
+		rc = SQLGetDiagRec_(HandleType, Handle, RecNumber, state,
+				    NativeErrorPtr, msg, n + 1, &n);
 #ifdef ODBCDEBUG
 		ODBCLOG("SQLGetDiagRecW: %s\n", (char *) msg);
 #endif
 
 		if (SQL_SUCCEEDED(rc)) {
-			char *e = ODBCutf82wchar(state, 5, sqlState, 6, NULL);
+			char *e = ODBCutf82wchar(state, 5, SQLState, 6, NULL);
 
 			if (e)
 				rc = SQL_ERROR;
 		}
 
 		if (SQL_SUCCEEDED(rc)) {
-			char *e = ODBCutf82wchar(msg, n, messageText, bufferLength, &n);
+			char *e = ODBCutf82wchar(msg, n, MessageText,
+						 BufferLength, &n);
 
 			if (e)
 				rc = SQL_ERROR;
-			if (textLengthPtr)
-				*textLengthPtr = n;
+			if (TextLengthPtr)
+				*TextLengthPtr = n;
 		}
 		free(msg);
 	}
