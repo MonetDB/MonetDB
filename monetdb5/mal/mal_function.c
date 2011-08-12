@@ -165,6 +165,10 @@ void chkFlow(MalBlkPtr mb)
 	lastInstruction = mb->stop-1;
 	for(i= 0; i<mb->stop; i++){
 		p= getInstrPtr(mb,i);
+		/* we have to keep track on the maximal arguments/block
+		  because it is needed by the interpreter */
+		if( mb->maxarg < p->maxarg)
+			mb->maxarg= p->maxarg;
 		switch( p->barrier){
 		case BARRIERsymbol:
 		case CATCHsymbol:
@@ -272,7 +276,8 @@ void chkFlow(MalBlkPtr mb)
 					showScriptException(mb, i, SYNTAX,
 							"invalid return target!");
 					mb->errors++;
-				} else if (ps->typechk == TYPE_RESOLVED)
+				} else 
+				if (ps->typechk == TYPE_RESOLVED)
 					for (e = 0; e < p->retc; e++) {
 						if (resolveType(getArgType(mb, ps, e), getArgType(mb, p, e)) < 0) {
 							str tpname = getTypeName(getArgType(mb, p, e));
