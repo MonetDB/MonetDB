@@ -2559,7 +2559,7 @@ void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid)
 				mb->profiler[ppc].ticks = 0;
 				mb->profiler[ppc].clock = stk->clock;
 				/* emit the instruction upon start as well */
-				if (@2)
+				if (@2 && malProfileMode)
 					profilerEvent(cntxt->idx, mb, stk, stkpc);
 #ifdef HAVE_TIMES
 				times(&stk->timer);

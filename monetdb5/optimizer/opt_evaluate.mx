@@ -156,6 +156,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	InstrPtr p;
 	int i, k, limit, *alias, barrier;
 	MalStkPtr env = NULL;
+	int profiler;
 	str msg;
 	int debugstate = cntxt->itrace, actions = 0;
 	Lifespan span;
@@ -194,7 +195,10 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			actions++;
 			barrier = p->barrier;
 			p->barrier = 0;
+			profiler = malProfileMode;	/* we don't trace it */
+			malProfileMode = 0;
 			msg = reenterMAL(cntxt, mb, i, i + 1, env, 0, 0);
+			malProfileMode= profiler;
 			p->barrier = barrier;
 			OPTDEBUGevaluate {
 				mnstr_printf(cntxt->fdout, "#retc var %s\n", getVarName(mb, getArg(p, 0)));
