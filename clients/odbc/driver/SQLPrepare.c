@@ -257,6 +257,11 @@ SQLPrepare_(ODBCStmt *stmt,
 		rec->sql_desc_length = ODBCLength(rec, SQL_DESC_LENGTH);
 		rec->sql_desc_display_size = ODBCLength(rec, SQL_DESC_DISPLAY_SIZE);
 		rec->sql_desc_octet_length = ODBCLength(rec, SQL_DESC_OCTET_LENGTH);
+		if (rec->sql_desc_length == 0) {
+			rec->sql_desc_length = SQL_NO_TOTAL;
+			rec->sql_desc_display_size = SQL_NO_TOTAL;
+			rec->sql_desc_octet_length = SQL_NO_TOTAL;
+		}
 	}
 
 	/* update the internal state */

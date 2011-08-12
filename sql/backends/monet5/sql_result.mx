@@ -1199,6 +1199,23 @@ mvc_export_head(mvc *m, stream *s, int res_id, int only_header)
 	if (mnstr_write(s, " # length\n", 10, 1) != 1)
 		return export_error(order);
 
+	if (m->sizeheader) {
+		if (mnstr_write(s, "% ", 2, 1) != 1)
+			return export_error(order);
+		for (i = 0; i < t->nr_cols; i++) {
+			res_col *c = t->cols + i;
+
+			if (mnstr_printf(s, "%u %u",
+					 c->type.digits, c->type.scale) < 0)
+				return export_error(order);
+			if (i + 1 < t->nr_cols &&
+			    mnstr_write(s, ",\t", 2, 1) != 1)
+				return export_error(order);
+		}
+		if (mnstr_write(s, " # typesizes\n", 13, 1) != 1)
+			return export_error(order);
+	}
+
 	if ( order)
 		BBPunfix(order->batCacheid);
 	return res;
