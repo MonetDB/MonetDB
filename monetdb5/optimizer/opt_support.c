@@ -605,7 +605,7 @@ struct OPTcatalog {
 {"singleton",	0,	0,	0,	DEBUG_OPT_SINGLETON},
 {"strengthreduction",	0,	0,	0,	DEBUG_OPT_STRENGTHREDUCTION},
 {"trace",		0,	0,	0,	DEBUG_OPT_TRACE},
-{"slicing",	0,	0,	0,	DEBUG_OPT_PARTITION},
+{"partition",	0,	0,	0,	DEBUG_OPT_PARTITION},
 { 0,	0,	0,	0,	0}
 };
 
