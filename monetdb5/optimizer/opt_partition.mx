@@ -72,7 +72,6 @@ opt_export str OPTmarkHead(int *result, int *bid);
 #include "mal_interpreter.h"
 
 static int nrpeers;				/* peers active in sliced processing */
-static bte slicingLocal;		/* only use local node without remote calls*/
 
 typedef	struct{
 	InstrPtr target;
@@ -188,9 +187,12 @@ OPTplanCntrl(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices)
 	if ( slices->column) 
 	for ( k=0 ; k < nrpack; k++) {
 		pushInstruction(cmb, pack[k]);
+		getArg(pack[k],0)= getArg(p,k);
+/*
 		q= newFcnCall(cmb,partitionRef,markHRef);
 		getArg(q,0) = getArg(p,k); 
 		q= pushArgument(cmb,q, getArg(pack[k],0));
+*/
 	}
 
 	/* finalize the dataflow block */
@@ -233,13 +235,14 @@ OPTpreparePartition(MalBlkPtr nmb, InstrPtr p, Slices *slices, int pc)
 	} 
 	/* check if the partition column instruction is already added */
 	fnd =0;
-	for ( i = pc -1; i-- > 0 && fnd == 0; i--){
+	for ( i = pc -1; i > 0 && fnd == 0; i--){
 		q= getInstrPtr(nmb,i);
 		fnd = getFunctionId(q) && getModuleId(q) == sqlRef && getFunctionId(q) == bindRef &&
-			  strcmp(slices->column, getVarConstant(nmb, getArg(p,4)).val.sval) == 0;
+			  strcmp(slices->column, getVarConstant(nmb, getArg(p,2)).val.sval) == 0 &&
+			  strcmp(slices->column, getVarConstant(nmb, getArg(p,3)).val.sval) == 0;
 	}
 	if ( fnd == 0)
-		insertInstruction(nmb, p = copyInstruction(slices->target),pc);
+		pushInstruction(nmb, p = copyInstruction(slices->target));
 	q= newInstruction(nmb,ASSIGNsymbol);
 	/* add the slices->to the call */
 	q= pushArgument(nmb,q, getArg(p,0));
@@ -261,17 +264,22 @@ OPTsliceColumn(Client cntxt, MalBlkPtr nmb, MalBlkPtr mb, InstrPtr p, Slices *sl
 
 	(void) cntxt;
 	if ( ! (getModuleId(p) == sqlRef && getFunctionId(p) == bindRef )  &&
-		 ! (getModuleId(p) == sqlRef && getFunctionId(p) == bindidxRef ) )
+		 ! (getModuleId(p) == sqlRef && getFunctionId(p) == bindidxRef ) ) {
+		pushInstruction(nmb,p);
 		return 0;
+	}
 	if ( ! (strcmp(slices->schema, getVarConstant(mb, getArg(p,2)).val.sval) == 0 &&
-		strcmp(slices->table, getVarConstant(mb, getArg(p,3)).val.sval) == 0) )
+		strcmp(slices->table, getVarConstant(mb, getArg(p,3)).val.sval) == 0) ) {
+		pushInstruction(nmb,p);
 		return 0;
+	}
 
 	if ( slices->slice == 0)
 		parallel =OPTpreparePartition(nmb, p, slices, pc);
 
 	if (strcmp(slices->column, getVarConstant(nmb, getArg(p,4)).val.sval) )   {
 		/* sideways projection the range selection */
+		pushInstruction(nmb,p);
 		q= newInstruction(nmb,ASSIGNsymbol);
 		setModuleId(q,algebraRef);
 		setFunctionId(q,semijoinRef);
@@ -283,7 +291,16 @@ OPTsliceColumn(Client cntxt, MalBlkPtr nmb, MalBlkPtr mb, InstrPtr p, Slices *sl
 		q= pushArgument(nmb,q, k);
 		q= pushArgument(nmb,q, slices->slice);
 		pushInstruction(nmb,q);
-	} 
+	} else {
+		q= newInstruction(nmb,ASSIGNsymbol);
+		k = newTmpVariable(nmb, getVarType(mb, getArg(p,0)));
+		setVarUDFtype(nmb,k);
+		setVarUsed(nmb,k);
+		getArg(q,0)= getArg(p,0);
+		getArg(p,0)= k;
+		q= pushArgument(nmb,q, slices->slice);
+		pushInstruction(nmb,q);
+	}
 	return parallel;
 } 
 
@@ -366,7 +383,7 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 		if (    (getModuleId(p) == groupRef && (getFunctionId(p) == doneRef || getFunctionId(p) == newRef ||getFunctionId(p) == deriveRef) )  ||
 				getModuleId(p) == pqueueRef || getModuleId(p) == aggrRef || getModuleId(p) == ioRef ||
 				(getModuleId(p) == sqlRef && (getFunctionId(p) == resultSetRef || getFunctionId(p) == putName("exportValue",11) )) ||
-				(getModuleId(p) == algebraRef &&(getFunctionId(p) == sliceRef || getFunctionId(p) == joinRef)) )  {
+				(getModuleId(p) == algebraRef &&(getFunctionId(p) == sliceRef || getFunctionId(p) == joinRef || getFunctionId(p)==markTRef)) )  {
 			/* add the targets of its argument to the output */
 			plan[i] = BLOCKED;
 		}
@@ -427,9 +444,10 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 			pushInstruction(nmb,ret);
 			pushEndInstruction(nmb);
 		} else
-			pushInstruction(nmb,p);
 		if (getModuleId(p) == sqlRef && (getFunctionId(p) == bindRef || getFunctionId(p) == bindidxRef))  
-			OPTsliceColumn(cntxt, nmb, mb, p, slices, nmb->stop-1);
+			OPTsliceColumn(cntxt, nmb, mb, p, slices, nmb->stop);
+		else
+			pushInstruction(nmb,p);
 	}
 
 	/* fix the signature and modify the underlying plan */
@@ -448,6 +466,11 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 	}
 
 	insertSymbol(cntxt->nspace,s);
+#ifdef _DEBUG_OPT_PARTITION_
+	mnstr_printf(cntxt->fdout,"#rough plan errors %d \n", nmb->errors);
+	printFunction(cntxt->fdout, nmb, 0, LIST_MAL_STMT);
+#endif
+
 	/* construct the control plan */
 	cmb = OPTplanCntrl(cntxt,mb,nmb, slices);
 	msg= optimizeMALBlock(cntxt, cmb);
@@ -503,7 +526,6 @@ OPTpartitionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	/* nrpeers = GDKnr_threads ? GDKnr_threads:1;*/
 	/* to ease debugging now */
 	nrpeers = 2;
-	slicingLocal = 1;
 
 	/* modify the block as we go */
 	omb= copyMalBlk(mb);
