@@ -60,7 +60,9 @@ static struct msql_types {
 	{"smallint", SQL_SMALLINT},
 	{"table", 0},
 	{"time", SQL_TYPE_TIME},
+	{"timetz", SQL_TYPE_TIME},
 	{"timestamp", SQL_TYPE_TIMESTAMP},
+	{"timestamptz", SQL_TYPE_TIMESTAMP},
 	{"tinyint", SQL_TINYINT},
 /* 	{"ubyte", SQL_TINYINT}, */
 	{"varchar", SQL_VARCHAR},
@@ -214,7 +216,8 @@ ODBCInitResult(ODBCStmt *stmt)
 		rec->sql_desc_base_table_name = (SQLCHAR *) strdup(s ? s : "");
 		rec->sql_desc_table_name = (SQLCHAR *) strdup(s ? s : "");
 
-		rec->sql_desc_length = mapi_get_len(hdl, i);
+		if ((rec->sql_desc_length = mapi_get_digits(hdl, i)) == 0)
+			rec->sql_desc_length = mapi_get_len(hdl, i);
 
 		rec->sql_desc_local_type_name = (SQLCHAR *) strdup("");
 		rec->sql_desc_catalog_name = (SQLCHAR *) strdup("");
@@ -233,6 +236,11 @@ ODBCInitResult(ODBCStmt *stmt)
 		rec->sql_desc_length = ODBCLength(rec, SQL_DESC_LENGTH);
 		rec->sql_desc_display_size = ODBCLength(rec, SQL_DESC_DISPLAY_SIZE);
 		rec->sql_desc_octet_length = ODBCLength(rec, SQL_DESC_OCTET_LENGTH);
+		if (rec->sql_desc_length == 0) {
+			rec->sql_desc_length = SQL_NO_TOTAL;
+			rec->sql_desc_display_size = SQL_NO_TOTAL;
+			rec->sql_desc_octet_length = SQL_NO_TOTAL;
+		}
 
 		rec++;
 	}

@@ -44,7 +44,7 @@
 # define O_ULLCAST	(unsigned __int64)
 #endif
 
-#define MAXBIGNUM10	ULL_CONSTANT(1844674407370955161)	/* (2**64-1)/10 */
+#define MAXBIGNUM10	ULL_CONSTANT(1844674407370955161) /* (2**64-1)/10 */
 #define MAXBIGNUMLAST	'5'	/* (2**64-1)%10 */
 
 #define space(c)	((c) == ' ' || (c) == '\t')
@@ -52,9 +52,9 @@
 typedef struct {
 	unsigned char precision; /* total number of digits */
 	signed char scale;	/* how far to shift decimal point (>
-				   0: shift left, i.e. number has
-				   fraction; < 0: shift right,
-				   i.e. multiply with power of 10) */
+				 * 0: shift left, i.e. number has
+				 * fraction; < 0: shift right,
+				 * i.e. multiply with power of 10) */
 	unsigned char sign;	/* 1 pos, 0 neg */
 	SQLUBIGINT val;		/* the value */
 } bignum_t;
@@ -81,9 +81,9 @@ strncasecmp(const char *s1, const char *s2, size_t n)
 #endif
 
 /* Parse a number and store in a bignum_t.
-   1 is returned if all is well;
-   2 is returned if there is loss of precision (i.e. overflow of the value);
-   0 is returned if the string is not a number, or if scale doesn't fit.
+ * 1 is returned if all is well;
+ * 2 is returned if there is loss of precision (i.e. overflow of the value);
+ * 0 is returned if the string is not a number, or if scale doesn't fit.
 */
 static int
 parseint(const char *data, bignum_t *nval)
@@ -109,7 +109,10 @@ parseint(const char *data, bignum_t *nval)
 		if (*data == '.')
 			fraction = 1;
 		else if ('0' <= *data && *data <= '9') {
-			if (overflow || nval->val > MAXBIGNUM10 || (nval->val == MAXBIGNUM10 && *data > MAXBIGNUMLAST)) {
+			if (overflow ||
+			    nval->val > MAXBIGNUM10 ||
+			    (nval->val == MAXBIGNUM10 &&
+			     *data > MAXBIGNUMLAST)) {
 				overflow = 1;
 				if (!fraction)
 					scale--;
@@ -258,8 +261,10 @@ parsedate(const char *data, DATE_STRUCT *dval)
 
 	while (space(*data))
 		data++;
-	if (sscanf(data, "{d '%hd-%hu-%hu'}%n", &dval->year, &dval->month, &dval->day, &n) < 3 &&
-	    sscanf(data, "%hd-%hu-%hu%n", &dval->year, &dval->month, &dval->day, &n) < 3)
+	if (sscanf(data, "{d '%hd-%hu-%hu'}%n",
+		   &dval->year, &dval->month, &dval->day, &n) < 3 &&
+	    sscanf(data, "%hd-%hu-%hu%n",
+		   &dval->year, &dval->month, &dval->day, &n) < 3)
 		return 0;
 	if (dval->month == 0 || dval->month > 12 ||
 	    dval->day == 0 || dval->day > monthlengths[dval->month] ||
@@ -281,8 +286,10 @@ parsetime(const char *data, TIME_STRUCT *tval)
 
 	while (space(*data))
 		data++;
-	if (sscanf(data, "{t '%hu:%hu:%hu%n", &tval->hour, &tval->minute, &tval->second, &n) < 3 &&
-	    sscanf(data, "%hu:%hu:%hu%n", &tval->hour, &tval->minute, &tval->second, &n) < 3)
+	if (sscanf(data, "{t '%hu:%hu:%hu%n",
+		   &tval->hour, &tval->minute, &tval->second, &n) < 3 &&
+	    sscanf(data, "%hu:%hu:%hu%n",
+		   &tval->hour, &tval->minute, &tval->second, &n) < 3)
 		return 0;
 	/* seconds can go up to 61(!) because of leap seconds */
 	if (tval->hour > 23 || tval->minute > 59 || tval->second > 61)
@@ -294,6 +301,18 @@ parsetime(const char *data, TIME_STRUCT *tval)
 		while (*++data && '0' <= *data && *data <= '9')
 			;
 		n = 2;		/* indicate loss of precision */
+	}
+	if (*data == '+' || *data == '-') {
+		/* time zone (which we ignore) */
+		short tzhour, tzmin;
+		int i;
+
+		if (sscanf(data, "%hd:%hd%n", &tzhour, &tzmin, &i) < 2)
+			return 0;
+		data += i;
+		tzmin = tzhour < 0 ? tzhour * 60 - tzmin : tzhour * 60 + tzmin;
+		(void) tzhour;
+		(void) tzmin;
 	}
 	if (braces && *data++ != '\'' && *data++ != '}')
 		return 0;
@@ -312,8 +331,12 @@ parsetimestamp(const char *data, TIMESTAMP_STRUCT *tsval)
 
 	while (space(*data))
 		data++;
-	if (sscanf(data, "{TS '%hd-%hu-%hu %hu:%hu:%hu%n", &tsval->year, &tsval->month, &tsval->day, &tsval->hour, &tsval->minute, &tsval->second, &n) < 6 &&
-	    sscanf(data, "%hd-%hu-%hu %hu:%hu:%hu%n", &tsval->year, &tsval->month, &tsval->day, &tsval->hour, &tsval->minute, &tsval->second, &n) < 6)
+	if (sscanf(data, "{TS '%hd-%hu-%hu %hu:%hu:%hu%n",
+		   &tsval->year, &tsval->month, &tsval->day,
+		   &tsval->hour, &tsval->minute, &tsval->second, &n) < 6 &&
+	    sscanf(data, "%hd-%hu-%hu %hu:%hu:%hu%n",
+		   &tsval->year, &tsval->month, &tsval->day,
+		   &tsval->hour, &tsval->minute, &tsval->second, &n) < 6)
 		return 0;
 	if (tsval->month == 0 || tsval->month > 12 ||
 	    tsval->day == 0 || tsval->day > monthlengths[tsval->month] ||
@@ -329,6 +352,18 @@ parsetimestamp(const char *data, TIMESTAMP_STRUCT *tsval)
 			n /= 10;
 			tsval->fraction += (*data - '0') * n;
 		}
+	}
+	if (*data == '+' || *data == '-') {
+		/* time zone (which we ignore) */
+		short tzhour, tzmin;
+		int i;
+
+		if (sscanf(data, "%hd:%hd%n", &tzhour, &tzmin, &i) < 2)
+			return 0;
+		data += i;
+		tzmin = tzhour < 0 ? tzhour * 60 - tzmin : tzhour * 60 + tzmin;
+		(void) tzhour;
+		(void) tzmin;
 	}
 	if (braces && *data++ != '\'' && *data++ != '}')
 		return 0;
@@ -458,7 +493,7 @@ parseoptionalbracketednumber(char **svalp,
 		sval++;
 	}
 	/* make sure there is a closing parenthesis in the string:
-	   this makes the calls to strtol safe */
+	 * this makes the calls to strtol safe */
 	{
 		SQLLEN i;
 
@@ -537,7 +572,7 @@ parsemonthintervalstring(char **svalp,
 	slen--;
 	sval++;
 	/* make sure there is another quote in the string: this makes
-	   the calls to strtol safe */
+	 * the calls to strtol safe */
 	for (eptr = sval, leadingprecision = slen;
 	     leadingprecision > 0 && *eptr != '\'';
 	     leadingprecision--, eptr++)
@@ -694,7 +729,7 @@ parsesecondintervalstring(char **svalp,
 	slen--;
 	sval++;
 	/* make sure there is another quote in the string: this makes
-	   the calls to sscanf safe */
+	 * the calls to sscanf safe */
 	for (eptr = sval, leadingprecision = slen;
 	     leadingprecision > 0 && *eptr != '\'';
 	     leadingprecision--, eptr++)
@@ -704,8 +739,8 @@ parsesecondintervalstring(char **svalp,
 	if (*sval == '+' || *sval == '-')
 		return SQL_ERROR;
 	/* note that the first bit is a bogus comparison (sval does
-	   not start with '-', so is not negative) but this keeps the
-	   compiler happy */
+	 * not start with '-', so is not negative) but this keeps the
+	 * compiler happy */
 	if (strtol(sval, &eptr, 10) < 0 || /* we parse the actual value again later */
 	    eptr == sval)
 		return SQL_ERROR;
@@ -1007,9 +1042,9 @@ ODBCFetch(ODBCStmt *stmt,
 
 	/* translate default type */
 	/* note, type can't be SQL_ARD_TYPE since when this function
-	   is called from SQLFetch, type is already the ARD concise
-	   type, and when it is called from SQLGetData, it has already
-	   been translated */
+	 * is called from SQLFetch, type is already the ARD concise
+	 * type, and when it is called from SQLGetData, it has already
+	 * been translated */
 
 	if (type == SQL_C_DEFAULT)
 		type = ODBCDefaultType(irdrec);
@@ -1071,15 +1106,15 @@ ODBCFetch(ODBCStmt *stmt,
 	case SQL_INTERVAL_SECOND:
 		if (!parseint(data, &nval)) {
 			/* shouldn't happen: getting here means SQL
-			   server told us a value was of a certain
-			   type, but in reality it wasn't. */
+			 * server told us a value was of a certain
+			 * type, but in reality it wasn't. */
 			/* Invalid character value for cast specification */
 			addStmtError(stmt, "22018", NULL, 0);
 			return SQL_ERROR;
 		}
 
 		/* interval types are transferred as ints but need to
-		   be converted to the internal interval formats */
+		 * be converted to the internal interval formats */
 		if (sql_type == SQL_INTERVAL_SECOND)
 			ivalprec = parsesecondinterval(&nval, &ival, sql_type);
 		else if (sql_type == SQL_INTERVAL_MONTH)
@@ -1293,7 +1328,7 @@ ODBCFetch(ODBCStmt *stmt,
 					data[buflen - 1] = 0;
 					if (i == 0) {
 						/* Numeric value out
-						   of range */
+						 * of range */
 						addStmtError(stmt, "22003", NULL, 0);
 
 #ifdef WITH_WCHAR
@@ -1303,10 +1338,10 @@ ODBCFetch(ODBCStmt *stmt,
 						return SQL_ERROR;
 					}
 					/* current precision (i) doesn't fit,
-					   but previous did, so use that */
+					 * but previous did, so use that */
 					snprintf(data, buflen, "%.*g", i - 1, fval);
 					/* max space that would have
-					   been needed */
+					 * been needed */
 					sz = (SQLLEN) strlen(data) + 17 - i;
 					/* String data, right-truncated */
 					addStmtError(stmt, "01004", NULL, 0);
@@ -1650,7 +1685,7 @@ ODBCFetch(ODBCStmt *stmt,
 			/* reparse double and float, parse char */
 			if (!parseint(data, &nval)) {
 				/* Invalid character value for cast
-				   specification */
+				 * specification */
 				addStmtError(stmt, "22018", NULL, 0);
 				return SQL_ERROR;
 			}
@@ -1664,7 +1699,7 @@ ODBCFetch(ODBCStmt *stmt,
 			int truncated = nval.scale > 0;
 
 			/* scale is normalized, so if negative, number
-			   is too large even for SQLUBIGINT */
+			 * is too large even for SQLUBIGINT */
 			while (nval.scale > 0) {
 				nval.val /= 10;
 				nval.scale--;
@@ -1748,7 +1783,7 @@ ODBCFetch(ODBCStmt *stmt,
 			/* reparse double and float, parse char */
 			if (!parseint(data, &nval)) {
 				/* Invalid character value for cast
-				   specification */
+				 * specification */
 				addStmtError(stmt, "22018", NULL, 0);
 				return SQL_ERROR;
 			}
@@ -1762,7 +1797,7 @@ ODBCFetch(ODBCStmt *stmt,
 			int truncated = nval.scale > 0;
 
 			/* scale is normalized, so if negative, number
-			   is too large even for SQLUBIGINT */
+			 * is too large even for SQLUBIGINT */
 			while (nval.scale > 0) {
 				nval.val /= 10;
 				nval.scale--;
@@ -1811,7 +1846,7 @@ ODBCFetch(ODBCStmt *stmt,
 			/* reparse double and float, parse char */
 			if (!(i = parseint(data, &nval))) {
 				/* Invalid character value for cast
-				   specification */
+				 * specification */
 				addStmtError(stmt, "22018", NULL, 0);
 				return SQL_ERROR;
 			}
@@ -1863,7 +1898,7 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_CHAR:
 			if (!parsedouble(data, &fval)) {
 				/* Invalid character value for cast
-				   specification */
+				 * specification */
 				addStmtError(stmt, "22018", NULL, 0);
 				return SQL_ERROR;
 			}
@@ -1939,7 +1974,7 @@ ODBCFetch(ODBCStmt *stmt,
 				dval.day = tsval.day;
 			} else if (!parsedate(data, &dval)) {
 				/* Invalid character value for cast
-				   specification */
+				 * specification */
 				addStmtError(stmt, "22018", NULL, 0);
 				return SQL_ERROR;
 			}
@@ -1975,7 +2010,7 @@ ODBCFetch(ODBCStmt *stmt,
 				tval.second = tsval.second;
 			} else if (!parsetime(data, &tval)) {
 				/* Invalid character value for cast
-				   specification */
+				 * specification */
 				addStmtError(stmt, "22018", NULL, 0);
 				return SQL_ERROR;
 			}
@@ -2032,8 +2067,8 @@ ODBCFetch(ODBCStmt *stmt,
 						tsval.fraction = 0;
 					} else {
 						/* Invalid character
-						   value for cast
-						   specification */
+						 * value for cast
+						 * specification */
 						addStmtError(stmt, "22018", NULL, 0);
 						return SQL_ERROR;
 					}
@@ -2061,7 +2096,7 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_CHAR:
 			if (parsemonthintervalstring(&data, NULL, &ival) == SQL_ERROR) {
 				/* Invalid character value for cast
-				   specification */
+				 * specification */
 				addStmtError(stmt, "22018", NULL, 0);
 				return SQL_ERROR;
 			}
@@ -2136,7 +2171,7 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_CHAR:
 			if (parsesecondintervalstring(&data, NULL, &ival, &ivalprec) == SQL_ERROR) {
 				/* Invalid character value for cast
-				   specification */
+				 * specification */
 				addStmtError(stmt, "22018", NULL, 0);
 				return SQL_ERROR;
 			}
@@ -2856,7 +2891,7 @@ ODBCStore(ODBCStmt *stmt,
 				dval.day = tsval.day;
 			} else if (!parsedate(sval, &dval)) {
 				/* Invalid character value for cast
-				   specification */
+				 * specification */
 				addStmtError(stmt, "22018", NULL, 0);
 				return SQL_ERROR;
 			}
@@ -2895,7 +2930,7 @@ ODBCStore(ODBCStmt *stmt,
 				tval.second = tsval.second;
 			} else if (!parsetime(sval, &tval)) {
 				/* Invalid character value for cast
-				   specification */
+				 * specification */
 				addStmtError(stmt, "22018", NULL, 0);
 				return SQL_ERROR;
 			}
@@ -2954,8 +2989,8 @@ ODBCStore(ODBCStmt *stmt,
 						tsval.fraction = 0;
 					} else {
 						/* Invalid character
-						   value for cast
-						   specification */
+						 * value for cast
+						 * specification */
 						addStmtError(stmt, "22018", NULL, 0);
 						return SQL_ERROR;
 					}
@@ -3115,10 +3150,10 @@ ODBCStore(ODBCStmt *stmt,
 #endif
 		case SQL_C_BINARY:
 			/* parse character data, reparse floating
-			   point number */
+			 * point number */
 			if (!parseint(sval, &nval)) {
 				/* Invalid character value for cast
-				   specification */
+				 * specification */
 				addStmtError(stmt, "22018", NULL, 0);
 				return SQL_ERROR;
 			}

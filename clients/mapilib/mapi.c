@@ -846,6 +846,8 @@ struct MapiColumn {
 	char *columnname;
 	char *columntype;
 	int columnlength;
+	int digits;
+	int scale;
 };
 
 /* information about bound columns */
@@ -3498,6 +3500,19 @@ mapi_setAutocommit(Mapi mid, int autocommit)
 }
 
 MapiMsg
+mapi_set_size_header(Mapi mid, int value)
+{
+	if (mid->languageId != LANG_SQL) {
+		mapi_setError(mid, "size header only supported in SQL", "mapi_toggle_size_header", MERROR);
+		return MERROR;
+	}
+	if (value)
+		return mapi_Xcommand(mid, "sizeheader", "1");
+	else
+		return mapi_Xcommand(mid, "sizeheader", "0");
+}
+
+MapiMsg
 mapi_trace(Mapi mid, int flag)
 {
 	mapi_clrError(mid);
@@ -3802,6 +3817,16 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 					free(result->fields[i].tablename);
 				result->fields[i].tablename = anchors[i];
 				anchors[i] = NULL;
+			}
+		}
+	} else if (strcmp(tag, "typesizes") == 0) {
+		for (i = 0; i < n; i++) {
+			if (anchors[i]) {
+				char *p;
+				result->fields[i].digits = atoi(anchors[i]);
+				p = strchr(anchors[i], ' ');
+				if (p)
+					result->fields[i].scale = atoi(p + 1);
 			}
 		}
 	}
@@ -5264,6 +5289,30 @@ mapi_get_len(MapiHdl hdl, int fnr)
 	if ((result = hdl->result) != 0 && fnr >= 0 && fnr < result->fieldcnt)
 		return result->fields[fnr].columnlength;
 	mapi_setError(hdl->mid, "Illegal field number", "mapi_get_len", MERROR);
+	return 0;
+}
+
+int
+mapi_get_digits(MapiHdl hdl, int fnr)
+{
+	struct MapiResultSet *result;
+
+	mapi_hdl_check0(hdl, "mapi_get_digits");
+	if ((result = hdl->result) != 0 && fnr >= 0 && fnr < result->fieldcnt)
+		return result->fields[fnr].digits;
+	mapi_setError(hdl->mid, "Illegal field number", "mapi_get_digits", MERROR);
+	return 0;
+}
+
+int
+mapi_get_scale(MapiHdl hdl, int fnr)
+{
+	struct MapiResultSet *result;
+
+	mapi_hdl_check0(hdl, "mapi_get_scale");
+	if ((result = hdl->result) != 0 && fnr >= 0 && fnr < result->fieldcnt)
+		return result->fields[fnr].scale;
+	mapi_setError(hdl->mid, "Illegal field number", "mapi_get_scale", MERROR);
 	return 0;
 }
 
