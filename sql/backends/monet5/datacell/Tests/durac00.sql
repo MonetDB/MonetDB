@@ -42,7 +42,7 @@ begin
 		and datacell.temperature.area = datacell.alarm.area );
 
 	-- notify the emergency room
-	insert into datacell.emergency values (now(), avgtemp,  value from datacell.alarm));
+	insert into datacell.emergency select now(), avgtemp,  value from datacell.alarm;
 
 	-- keep only the last 2 minutes for the future
 	insert into datacell.temperature select * from datacell.temperature where tag > now() - interval '2' minute;
