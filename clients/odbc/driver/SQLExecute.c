@@ -230,18 +230,9 @@ ODBCInitResult(ODBCStmt *stmt)
 
 		/* this must come after other fields have been
 		 * initialized */
-		rec->sql_desc_length = ODBCLength(rec, 0);
-		rec->sql_desc_display_size = ODBCLength(rec, 1);
-		if (rec->sql_desc_concise_type == SQL_CHAR ||
-		    rec->sql_desc_concise_type == SQL_VARCHAR ||
-		    rec->sql_desc_concise_type == SQL_LONGVARCHAR) {
-			/* in theory, each character (really: Unicode
-			 * code point) could need 6 bytes in the UTF-8
-			 * encoding; don't include the terminating
-			 * NULL byte */
-			rec->sql_desc_octet_length = 6 * rec->sql_desc_length;
-		} else
-			rec->sql_desc_octet_length = rec->sql_desc_length;
+		rec->sql_desc_length = ODBCLength(rec, SQL_DESC_LENGTH);
+		rec->sql_desc_display_size = ODBCLength(rec, SQL_DESC_DISPLAY_SIZE);
+		rec->sql_desc_octet_length = ODBCLength(rec, SQL_DESC_OCTET_LENGTH);
 
 		rec++;
 	}

@@ -90,7 +90,7 @@ SQLDescribeCol_(ODBCStmt *stmt,
 
 	/* also see SQLDescribeParam */
 	if (ColumnSizePtr)
-		*ColumnSizePtr = ODBCLength(rec, 0);
+		*ColumnSizePtr = ODBCLength(rec, SQL_DESC_LENGTH);
 
 	/* also see SQLDescribeParam */
 	if (DecimalDigitsPtr) {
