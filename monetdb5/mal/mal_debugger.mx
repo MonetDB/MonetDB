@@ -878,7 +878,7 @@ mdbLocateMalBlk(Client cntxt, MalBlkPtr mb, str b, stream *out){
 			return NULL;
 		}
 		m= fsym->def;
-		return getMalBlkHistory(m,idx);
+		return getMalBlkHistory(m, h? idx:-1);
 	} 
 	return getMalBlkHistory(mb,-1);
 }

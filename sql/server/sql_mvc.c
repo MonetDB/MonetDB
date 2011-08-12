@@ -61,6 +61,8 @@ mvc_init(char *dbname, int debug, store_type store, backend_stack stk)
 		m->caching = 0;
 		/* disable history */
 		m->history = 0;
+		/* disable size header */
+		m->sizeheader = 0;
 		mvc_trans(m);
 		s = m->session->schema = mvc_bind_schema(m, "sys");
 		assert(m->session->schema != NULL);

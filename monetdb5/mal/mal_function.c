@@ -276,7 +276,8 @@ void chkFlow(MalBlkPtr mb)
 					showScriptException(mb, i, SYNTAX,
 							"invalid return target!");
 					mb->errors++;
-				} else if (ps->typechk == TYPE_RESOLVED)
+				} else 
+				if (ps->typechk == TYPE_RESOLVED)
 					for (e = 0; e < p->retc; e++) {
 						if (resolveType(getArgType(mb, ps, e), getArgType(mb, p, e)) < 0) {
 							str tpname = getTypeName(getArgType(mb, p, e));

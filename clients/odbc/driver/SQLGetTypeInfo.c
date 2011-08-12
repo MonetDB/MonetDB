@@ -125,7 +125,7 @@ static struct types {
 	const int unsigned_attribute;	/* SQL_FALSE, SQL_TRUE, NULL */
 	const int fixed_prec_scale;	/* SQL_FALSE, SQL_TRUE */
 	const int auto_unique_value;	/* SQL_FALSE, SQL_TRUE, NULL */
-	const char *local_type_name;
+	const char *local_type_name;	/* localized version of type_name */
 	const int minimum_scale;
 	const int maximum_scale;
 	const int sql_data_type;
@@ -633,7 +633,7 @@ static struct types {
 		-1,		       /* unsigned_attribute */
 		SQL_FALSE,	       /* fixed_prec_scale */
 		-1,		       /* auto_unique_value */
-		"month_interval",      /* local_type_name */
+		NULL,		       /* local_type_name */
 		0,		       /* minimum_scale */
 		0,		       /* maximum_scale */
 		SQL_INTERVAL,	       /* sql_data_type */
@@ -721,7 +721,7 @@ static struct types {
 		-1,		       /* unsigned_attribute */
 		SQL_FALSE,	       /* fixed_prec_scale */
 		-1,		       /* auto_unique_value */
-		"sec_interval",	       /* local_type_name */
+		NULL,		       /* local_type_name */
 		0,		       /* minimum_scale */
 		0,		       /* maximum_scale */
 		SQL_INTERVAL,	       /* sql_data_type */

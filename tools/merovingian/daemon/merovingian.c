@@ -576,6 +576,13 @@ main(int argc, char *argv[])
 
 	/* in case of no arguments, we act backwards compatible: start
 	 * merovingian in the hardwired dbfarm location */
+	if (sizeof(LOCALSTATEDIR "/monetdb5/dbfarm") >= sizeof(dbfarm)) {
+		Mfprintf(stderr, "fatal: compiled in dbfarm location exceeds " \
+				"allocated path length, please file a bug at " \
+				"http://bugs.monetdb.org/\n");
+		MERO_EXIT_CLEAN(1);
+	}
+	snprintf(dbfarm, sizeof(dbfarm), "%s", LOCALSTATEDIR "/monetdb5/dbfarm");
 	if (argc > 1) {
 		/* future: support -v or something like monetdb(1), for now we
 		 * just don't */
@@ -596,20 +603,17 @@ main(int argc, char *argv[])
 		} else if (strcmp(argv[1], "set") == 0) {
 			MERO_EXIT_CLEAN(command_set(ckv, argc - 1, &argv[1]));
 		} else if (strcmp(argv[1], "start") == 0) {
-			int len;
 			/* start without argument just means start hardwired dbfarm */
 			if (argc > 2) {
+				int len;
 				len = snprintf(dbfarm, sizeof(dbfarm), "%s", argv[2]);
-			} else {
-				len = snprintf(dbfarm, sizeof(dbfarm),
-						LOCALSTATEDIR "/monetdb5/dbfarm");
-			}
 			
-			if (len > 0 && (size_t)len >= sizeof(dbfarm)) {
-				Mfprintf(stderr, "fatal: dbfarm exceeds allocated " \
-						"path length, please file a bug at " \
-						"http://bugs.monetdb.org\n");
-				MERO_EXIT_CLEAN(1);
+				if (len > 0 && (size_t)len >= sizeof(dbfarm)) {
+					Mfprintf(stderr, "fatal: dbfarm exceeds allocated " \
+							"path length, please file a bug at " \
+							"http://bugs.monetdb.org/\n");
+					MERO_EXIT_CLEAN(1);
+				}
 			}
 		} else if (strcmp(argv[1], "stop") == 0) {
 			MERO_EXIT_CLEAN(command_stop(ckv, argc - 1, &argv[1]));
