@@ -43,6 +43,9 @@
 #ifdef HAVE_STRINGS_H
 #include <strings.h>
 #endif
+#ifdef HAVE_TIME_H
+#include <time.h>
+#endif
 
 #ifdef HAVE_ODBCINST_H
 #include <odbcinst.h>
@@ -51,6 +54,37 @@
 #ifndef HAVE_SQLGETPRIVATEPROFILESTRING
 #define SQLGetPrivateProfileString(section,entry,default,buffer,bufferlen,filename)	(strncpy(buffer,default,bufferlen), buffer[bufferlen-1]=0, strlen(buffer))
 #endif
+
+static void
+set_timezone(Mapi mid)
+{
+#ifdef HAVE_TIMEZONE
+#ifdef _MSC_VER
+#define timezone _timezone
+#define daylight _daylight
+#define tzset _tzset
+#endif
+	char buf[128];
+	long tzone;
+	MapiHdl hdl;
+
+	/* timezone and daylight are POSIX-defined variables */
+	tzset();
+	tzone = timezone - 3600 * daylight;
+	if (tzone < 0)
+		snprintf(buf, sizeof(buf),
+			 "SET TIME ZONE INTERVAL '+%02ld:%02ld' HOUR TO MINUTE",
+			 -tzone / 3600, (-tzone % 3600) / 60);
+	else
+		snprintf(buf, sizeof(buf),
+			 "SET TIME ZONE INTERVAL '-%02ld:%02ld' HOUR TO MINUTE",
+			 tzone / 3600, (tzone % 3600) / 60);
+	if ((hdl = mapi_query(mid, buf)) != NULL)
+		mapi_close_handle(hdl);
+#else
+	(void) mid;
+#endif
+}
 
 SQLRETURN
 SQLConnect_(ODBCDbc *dbc,
@@ -199,6 +233,7 @@ SQLConnect_(ODBCDbc *dbc,
 			free(dbc->dbname);
 		dbc->dbname = schema ? strdup(schema) : NULL;
 		mapi_setAutocommit(mid, dbc->sql_attr_autocommit == SQL_AUTOCOMMIT_ON);
+		set_timezone(mid);
 	}
 
 	return rc;
