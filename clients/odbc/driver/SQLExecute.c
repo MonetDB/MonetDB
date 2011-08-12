@@ -60,7 +60,9 @@ static struct msql_types {
 	{"smallint", SQL_SMALLINT},
 	{"table", 0},
 	{"time", SQL_TYPE_TIME},
+	{"timetz", SQL_TYPE_TIME},
 	{"timestamp", SQL_TYPE_TIMESTAMP},
+	{"timestamptz", SQL_TYPE_TIMESTAMP},
 	{"tinyint", SQL_TINYINT},
 /* 	{"ubyte", SQL_TINYINT}, */
 	{"varchar", SQL_VARCHAR},

@@ -302,6 +302,18 @@ parsetime(const char *data, TIME_STRUCT *tval)
 			;
 		n = 2;		/* indicate loss of precision */
 	}
+	if (*data == '+' || *data == '-') {
+		/* time zone (which we ignore) */
+		short tzhour, tzmin;
+		int i;
+
+		if (sscanf(data, "%hd:%hd%n", &tzhour, &tzmin, &i) < 2)
+			return 0;
+		data += i;
+		tzmin = tzhour < 0 ? tzhour * 60 - tzmin : tzhour * 60 + tzmin;
+		(void) tzhour;
+		(void) tzmin;
+	}
 	if (braces && *data++ != '\'' && *data++ != '}')
 		return 0;
 	while (space(*data))
@@ -340,6 +352,18 @@ parsetimestamp(const char *data, TIMESTAMP_STRUCT *tsval)
 			n /= 10;
 			tsval->fraction += (*data - '0') * n;
 		}
+	}
+	if (*data == '+' || *data == '-') {
+		/* time zone (which we ignore) */
+		short tzhour, tzmin;
+		int i;
+
+		if (sscanf(data, "%hd:%hd%n", &tzhour, &tzmin, &i) < 2)
+			return 0;
+		data += i;
+		tzmin = tzhour < 0 ? tzhour * 60 - tzmin : tzhour * 60 + tzmin;
+		(void) tzhour;
+		(void) tzmin;
 	}
 	if (braces && *data++ != '\'' && *data++ != '}')
 		return 0;
