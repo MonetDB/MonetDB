@@ -634,12 +634,10 @@ remapVariable( MalBlkPtr mb, int i, int old, int new)
 static int
 OPTcollect(Client cntxt, MalBlkPtr mb, int pc, Slices *slices)
 {
-	InstrPtr p;
 	int  parallel;
 	Lifespan span = setLifespan(mb);
 
-	p = getInstrPtr(mb, pc);
-	assert(p->token == ASSIGNsymbol);
+	assert(getInstrPtr(mb,pc)->token == ASSIGNsymbol);
 	/* locate all variables used beyond this point but introduced before */
 	if( (parallel = OPTparallelcode(cntxt, mb, pc, slices) ) ) {
 	} /* else no parallelism, just a multi-assignment */
@@ -819,7 +817,7 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 static int
 OPTpartitionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i,j,k,pc = 0;
+	int i,j,k;
 	wrd r = 0, rowcnt=0;	/* table should be sizeable to consider parallel execution*/
 	InstrPtr p,q, target= 0, rsset=0;
 	Slices slices;
@@ -942,8 +940,6 @@ OPTpartitionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			}
 			continue;
 		}
-		if ( p->token == ENDsymbol)
-			pc = i -1;
 	}
 #ifdef DEBUG_DETAIL
 	mnstr_printf(cntxt->fdout,"#orig BEFORE optimizer test\n");
