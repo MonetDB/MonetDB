@@ -234,6 +234,7 @@ SQLConnect_(ODBCDbc *dbc,
 		dbc->dbname = schema ? strdup(schema) : NULL;
 		mapi_setAutocommit(mid, dbc->sql_attr_autocommit == SQL_AUTOCOMMIT_ON);
 		set_timezone(mid);
+		mapi_set_size_header(mid, 1);
 	}
 
 	return rc;

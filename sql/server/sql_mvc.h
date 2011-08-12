@@ -105,6 +105,7 @@ typedef struct mvc {
 	int caching;		/* cache current query ? */
 	int history;		/* queries statistics are kept  */
 	int reply_size;		/* reply size */
+	int sizeheader;		/* print size header in result set */
 	int debug;
 
 	char emode;		/* execution mode */

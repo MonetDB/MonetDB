@@ -1208,6 +1208,12 @@ SQLparser(Client c)
 			in->pos = in->len;	/* HACK: should use parsed lenght */
 			return NULL;
 		}
+		if (strncmp(in->buf + in->pos, "sizeheader", 10) == 0) {
+			v = (int) strtol(in->buf + in->pos + 10, NULL, 10);
+			m->sizeheader = v != 0;
+			in->pos = in->len;	/* HACK: should use parsed lenght */
+			return NULL;
+		}
 		if( strncmp(in->buf + in->pos,"quit",4)==0 ) {
 			c->mode = FINISHING;
 			return NULL;
