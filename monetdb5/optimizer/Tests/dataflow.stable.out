@@ -30,8 +30,8 @@ function user.tst():void;
     s := user.slow();
     l := aggr.min(s);
     h := l;
-    mdb.setTimer(true);
-    mdb.setThread(true);
+#mdb.setTimer(true); 
+#mdb.setThread(true); 
     z := nil:bat[:oid,:lng];
 barrier go := language.dataflow();
     t1 := algebra.select(s,l,h);
@@ -58,9 +58,9 @@ function user.tst():void;               #  0 tst:void := user.tst() {G}
     s := user.slow();                   #  1 s:bat[:oid,:lng] := user.slow() {G}
     l := aggr.min(s);                   #  2 l:lng := ALGmin_lng(s:bat[:oid,:lng]) {G}
     h := l;                             #  3 h:lng := l:lng 
-    mdb.setTimer(true);                 #  4 _4:void := MDBsetTimer(_5:bit) 
-    mdb.setThread(true);                #  5 _6:void := MDBsetThread(_5:bit) 
-    z := nil:bat[:oid,:lng];            #  6 z:bat[:oid,:lng] := _8:bat[:oid,:lng] {G}
+#mdb.setTimer(true); 
+#mdb.setThread(true); 
+    z := nil:bat[:oid,:lng];            #  6 z:bat[:oid,:lng] := _7:bat[:oid,:lng] {G}
 barrier go := language.dataflow();      #  7 go:int := MALstartDataflow() {J17}
     t1 := algebra.select(s,l,h);        #  8 t1:bat[:oid,:lng] := ALGselect(s:bat[:oid,:lng], l:lng, h:lng) {G}
     t2 := algebra.select(s,l,h);        #  9 t2:bat[:oid,:lng] := ALGselect(s:bat[:oid,:lng], l:lng, h:lng) {G}
@@ -72,11 +72,11 @@ barrier go := language.dataflow();      #  7 go:int := MALstartDataflow() {J17}
     t8 := algebra.select(s,l,h);        # 15 t8:bat[:oid,:lng] := ALGselect(s:bat[:oid,:lng], l:lng, h:lng) {G}
     z := mat.pack(t1,t2,t3,t4,t5,t6,t7,t8);# 16 z:bat[:oid,:lng] := MATpack(t1:bat[:oid,:lng], t2:bat[:oid,:lng], t3:bat[:oid,:lng], t4:bat[:oid,:lng], t5:bat[:oid,:lng], t6:bat[:oid,:lng], t7:bat[:oid,:lng], t8:bat[:oid,:lng]) {G}
 exit go;                                # 17 go:int 
-    s := nil:BAT;                       # 18 s:bat[:oid,:lng] := _24:BAT {G}
-    mdb.var();                          # 19 _18:void := MDBvar() 
+    s := nil:BAT;                       # 18 s:bat[:oid,:lng] := _23:BAT {G}
+    mdb.var();                          # 19 _17:void := MDBvar() 
     c := aggr.count(z);                 # 20 c:wrd := ALGcount_bat(z:bat[:oid,:lng]) {G}
-    io.print(c);                        # 21 _20:void := IOprint_val(c:wrd) 
-    io.print("done");                   # 22 _21:void := IOprint_val(_22:str) {G}
+    io.print(c);                        # 21 _19:void := IOprint_val(c:wrd) 
+    io.print("done");                   # 22 _20:void := IOprint_val(_21:str) {G}
 end tst;                                # 23  
 
 
