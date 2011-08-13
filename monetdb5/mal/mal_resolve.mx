@@ -162,6 +162,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 	if (s == 0) return -1;
 
 	returntype= (int*) GDKzalloc(p->retc * sizeof(int));
+	if ( returntype == 0) return -1;
 
 	while (s != NULL) {  /* single scope element check */
 		if (getFunctionId(p) != s->name) {
