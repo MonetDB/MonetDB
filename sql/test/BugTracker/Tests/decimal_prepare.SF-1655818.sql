@@ -10,6 +10,6 @@ create table P1655818 (
 
 PREPARE insert into P1655818 (time,x,y) values (?,?,?);
 
-exec 1(timestamp '2003-01-30 18:03:35.0', 71.91, 71.98);
+exec 2(timestamp '2003-01-30 18:03:35.0', 71.91, 71.98);
 
 ROLLBACK;
