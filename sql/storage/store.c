@@ -530,6 +530,7 @@ load_merge_table_parts(sql_trans *tr, sql_table *t, oid rid)
 
 	assert(tp);
 	cs_add(&t->tables, tp, TR_OLD);
+	tp->p = t;
 }
 
 static void
@@ -1984,8 +1985,10 @@ table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 	if (ot->tables.set) {
 		for (n = ot->tables.set->h; n; n = n->next) {
 			sql_table *pt = n->data;
+			sql_table *npt = schema_table_find(s, pt);
 
-			cs_add(&t->tables, schema_table_find(s, pt), tr_flag(&pt->base, flag));
+			cs_add(&t->tables, npt, tr_flag(&pt->base, flag));
+			npt->p = t;
 		}
 		ot->tables.nelm = NULL;
 	}
@@ -2097,8 +2100,9 @@ merge_table_dup(sql_table *omt, sql_schema *s, int flag)
 	if (omt->tables.set) {
 		for (n = omt->tables.set->h; n; n = n->next) {
 			sql_table *pt = n->data;
-
-			cs_add(&mt->tables, schema_table_find(s, pt), tr_flag(&pt->base, flag));
+			sql_table *npt = schema_table_find(s, pt);
+			cs_add(&mt->tables, npt, tr_flag(&pt->base, flag));
+			npt->p = mt;
 		}
 		mt->tables.nelm = NULL;
 	}
@@ -3769,6 +3773,7 @@ sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt)
 
 	/* TODO add dependency betweem mt/pt */
 	cs_add(&mt->tables, pt, TR_NEW);
+	pt->p = mt;
 	mt->s->base.wtime = mt->base.wtime = tr->wtime = tr->stime;
 	table_funcs.table_insert(tr, sysobj, &mt->base.id, pt->base.name, &nr);
 	return mt;

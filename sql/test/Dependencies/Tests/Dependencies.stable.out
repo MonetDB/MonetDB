@@ -120,8 +120,8 @@ Dependencies between database objects
 [ "t2",	"trigger_test",	"DEP_TRIGGER"	]
 [ "t3",	"trigger_test_4",	"DEP_TRIGGER"	]
 #SELECT t.name, fk.name, 'DEP_FKEY' from tables as t, keys as k, keys as fk where fk.rkey = k.id and k.table_id = t.id;
-% .t,	.fk,	. # table_name
-% name,	name,	single_value # name
+% .t,	.fk,	.L13 # table_name
+% name,	name,	L13 # name
 % varchar,	varchar,	char # type
 % 12,	19,	8 # length
 [ "queryhistory",	"callhistory_id_fkey",	"DEP_FKEY"	]
@@ -187,8 +187,8 @@ Dependencies between database objects
 [ "name",	"v1",	"DEP_VIEW"	]
 [ "age",	"v1",	"DEP_VIEW"	]
 #SELECT c.name, k.name, 'DEP_KEY' from columns as c, objects as kc, keys as k where kc."name" = c.name AND kc.id = k.id AND k.table_id = c.table_id AND k.rkey = -1;
-% .c,	.k,	. # table_name
-% name,	name,	single_value # name
+% .c,	.k,	.L14 # table_name
+% name,	name,	L14 # name
 % varchar,	varchar,	char # type
 % 2,	20,	7 # length
 [ "id",	"queryhistory_id_pkey",	"DEP_KEY"	]
@@ -200,8 +200,8 @@ Dependencies between database objects
 % 2,	8,	9 # length
 [ "id",	"id_index",	"DEP_INDEX"	]
 #SELECT c.name, f.name,'DEP_FUNC' from functions as f, columns as c, dependencies as dep where c.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7;
-% .c,	.f,	. # table_name
-% name,	name,	single_value # name
+% .c,	.f,	.L20 # table_name
+% name,	name,	L20 # name
 % varchar,	varchar,	char # type
 % 11,	35,	8 # length
 [ "id",	"dependencies_owners_on_schemas",	"DEP_FUNC"	]
@@ -286,8 +286,8 @@ Dependencies between database objects
 [ "id",	"f2",	"DEP_FUNC"	]
 [ "name",	"f2",	"DEP_FUNC"	]
 #SELECT c.name, tri.name, 'DEP_TRIGGER' from columns as c, triggers as tri, dependencies as dep where dep.id = c.id AND dep.depend_id =tri.id AND dep.depend_type = 8;
-% .c,	.tri,	. # table_name
-% name,	name,	single_value # name
+% .c,	.tri,	.L21 # table_name
+% name,	name,	L21 # name
 % varchar,	varchar,	char # type
 % 6,	14,	11 # length
 [ "id",	"trigger_test",	"DEP_TRIGGER"	]
@@ -320,8 +320,8 @@ Dependencies between database objects
 % varchar,	varchar,	char # type
 % 0,	0,	9 # length
 #SELECT v.name, tri.name, 'DEP_TRIGGER' from tables as v, triggers as tri, dependencies as dep where dep.id = v.id AND dep.depend_id =tri.id AND dep.depend_type = 8 AND v.type = 1;
-% .v,	.tri,	. # table_name
-% name,	name,	single_value # name
+% .v,	.tri,	.L25 # table_name
+% name,	name,	L25 # name
 % varchar,	varchar,	char # type
 % 0,	0,	11 # length
 % sys.f1,	sys.f2,	. # table_name
@@ -459,8 +459,8 @@ Cleanup
 % varchar,	varchar,	char # type
 % 0,	0,	11 # length
 #SELECT t.name, fk.name, 'DEP_FKEY' from tables as t, keys as k, keys as fk where fk.rkey = k.id and k.table_id = t.id;
-% .t,	.fk,	. # table_name
-% name,	name,	single_value # name
+% .t,	.fk,	.L6 # table_name
+% name,	name,	L6 # name
 % varchar,	varchar,	char # type
 % 12,	19,	8 # length
 [ "queryhistory",	"callhistory_id_fkey",	"DEP_FKEY"	]
@@ -522,8 +522,8 @@ Cleanup
 [ "inblock",	"querylog",	"DEP_VIEW"	]
 [ "oublock",	"querylog",	"DEP_VIEW"	]
 #SELECT c.name, k.name, 'DEP_KEY' from columns as c, objects as kc, keys as k where kc."name" = c.name AND kc.id = k.id AND k.table_id = c.table_id AND k.rkey = -1;
-% .c,	.k,	. # table_name
-% name,	name,	single_value # name
+% .c,	.k,	.L7 # table_name
+% name,	name,	L7 # name
 % varchar,	varchar,	char # type
 % 2,	20,	7 # length
 [ "id",	"queryhistory_id_pkey",	"DEP_KEY"	]
@@ -533,8 +533,8 @@ Cleanup
 % varchar,	varchar,	char # type
 % 0,	0,	9 # length
 #SELECT c.name, f.name,'DEP_FUNC' from functions as f, columns as c, dependencies as dep where c.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7;
-% .c,	.f,	. # table_name
-% name,	name,	single_value # name
+% .c,	.f,	.L13 # table_name
+% name,	name,	L13 # name
 % varchar,	varchar,	char # type
 % 11,	35,	8 # length
 [ "id",	"dependencies_owners_on_schemas",	"DEP_FUNC"	]
@@ -617,8 +617,8 @@ Cleanup
 [ "id",	"dependencies_owners_on_schemas",	"DEP_FUNC"	]
 [ "name",	"dependencies_owners_on_schemas",	"DEP_FUNC"	]
 #SELECT c.name, tri.name, 'DEP_TRIGGER' from columns as c, triggers as tri, dependencies as dep where dep.id = c.id AND dep.depend_id =tri.id AND dep.depend_type = 8;
-% .c,	.tri,	. # table_name
-% name,	name,	single_value # name
+% .c,	.tri,	.L14 # table_name
+% name,	name,	L14 # name
 % varchar,	varchar,	char # type
 % 0,	0,	11 # length
 #SELECT v.name, f.name, 'DEP_FUNC' from functions as f, tables as v, dependencies as dep where v.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 AND v.type = 1 ORDER BY v.name, f.name;
@@ -646,8 +646,8 @@ Cleanup
 % varchar,	varchar,	char # type
 % 0,	0,	9 # length
 #SELECT v.name, tri.name, 'DEP_TRIGGER' from tables as v, triggers as tri, dependencies as dep where dep.id = v.id AND dep.depend_id =tri.id AND dep.depend_type = 8 AND v.type = 1;
-% .v,	.tri,	. # table_name
-% name,	name,	single_value # name
+% .v,	.tri,	.L20 # table_name
+% name,	name,	L20 # name
 % varchar,	varchar,	char # type
 % 0,	0,	11 # length
 % sys.f1,	sys.f2,	. # table_name

@@ -390,6 +390,7 @@ typedef struct sql_table {
 	int cleared;		/* cleared in the current transaction */
 	void *data;
 	struct sql_schema *s;
+	struct sql_table *p;
 } sql_table;
 
 typedef struct res_col {

@@ -78,11 +78,11 @@ propvalue2string( prop *p)
 	if (p->value) {
 		switch(p->kind) {
 		case PROP_JOINIDX: {
-					   sql_idx *i = p->value;
+			   sql_idx *i = p->value;
 
-					   snprintf(buf, BUFSIZ, "%s.%s.%s", i->t->s->base.name, i->t->base.name, i->base.name);
-					   return _strdup(buf);
-				   }
+			   snprintf(buf, BUFSIZ, "%s.%s.%s", i->t->s->base.name, i->t->base.name, i->base.name);
+			   return _strdup(buf);
+			}
 			break;
 		default:
 			break;

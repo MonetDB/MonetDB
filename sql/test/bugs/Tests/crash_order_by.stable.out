@@ -21,12 +21,13 @@ Ready.
 
 Over..
 
-# 23:16:56 >  
-# 23:16:56 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=38180 
-# 23:16:56 >  
+# 12:49:59 >  
+# 12:49:59 >  mclient -lsql -ftest -i -e --host=alf --port=39000 
+# 12:49:59 >  
 
-% .,	. # table_name
-% row,	single_value # name
+#select row_number() over (order by name) as row, '1' from tables limit 10;
+% .,	.L1 # table_name
+% row,	L1 # name
 % int,	char # type
 % 2,	1 # length
 [ 1,	"1"	]

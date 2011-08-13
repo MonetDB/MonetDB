@@ -165,6 +165,8 @@ rel_label( mvc *sql, sql_rel *r)
 static sql_exp *
 exp_alias_or_copy( mvc *sql, char *tname, char *cname, sql_rel *orel, sql_exp *old, int settname)
 {
+	sql_exp *ne = NULL;
+
 	if (settname && !tname)
 		tname = old->rname;
 
@@ -176,11 +178,15 @@ exp_alias_or_copy( mvc *sql, char *tname, char *cname, sql_rel *orel, sql_exp *o
 		nme = number2name(name, 16, ++sql->label);
 
 		exp_setname(sql->sa, old, nme, nme);
-		return exp_column(sql->sa, nme, nme, exp_subtype(old), orel->card, has_nil(old), is_intern(old));
+		ne = exp_column(sql->sa, nme, nme, exp_subtype(old), orel->card, has_nil(old), is_intern(old));
+		ne->p = prop_copy(sql->sa, old->p);
+		return ne;
 	} else if (cname && !old->name) {
 		exp_setname(sql->sa, old, tname, cname);
 	}
-	return exp_column(sql->sa, tname, cname, exp_subtype(old), orel->card, has_nil(old), is_intern(old));
+	ne = exp_column(sql->sa, tname, cname, exp_subtype(old), orel->card, has_nil(old), is_intern(old));
+	ne->p = prop_copy(sql->sa, old->p);
+	return ne;
 }
 
 /* return all expressions, with table name == tname */
@@ -438,8 +444,11 @@ _rel_basetable(sql_allocator *sa, sql_table *t, char *atname)
 
 	for (cn = t->columns.set->h; cn; cn = cn->next) {
 		sql_column *c = cn->data;
+		sql_exp *e = exp_alias(sa, atname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0);
 
-		append(rel->exps, exp_alias(sa, atname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0));
+		if (c->t->pkey && ((sql_kc*)c->t->pkey->k.columns->h->data)->c == c)
+			e->p = prop_create(sa, PROP_HASHIDX, e->p);
+		append(rel->exps, e);
 	}
 	append(rel->exps, exp_alias(sa, atname, "%TID%", tname, "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
 
@@ -540,6 +549,22 @@ rel_setop(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type setop)
 }
 
 sql_rel *
+rel_inplace_setop(sql_rel *rel, sql_rel *l, sql_rel *r, operator_type setop, list *exps)
+{
+	rel_destroy_(rel);
+	rel->l = l;
+	rel->r = r;
+	rel->op = setop;
+	rel->exps = NULL;
+	rel->card = CARD_MULTI;
+	rel->flag = 0;
+	if (l && r)
+		rel->nrcols = l->nrcols + r->nrcols;
+	rel->exps = exps;
+	return rel;
+}
+
+sql_rel *
 rel_crossproduct(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type join)
 {
 	sql_rel *rel = rel_create(sa);
@@ -590,6 +615,39 @@ rel_project(sql_allocator *sa, sql_rel *l, list *e)
 	}
 	return rel;
 }
+
+sql_rel *
+rel_inplace_project(sql_allocator *sa, sql_rel *rel, sql_rel *l, list *e)
+{
+	if (!l) {
+		l = rel_create(sa);
+
+		l->op = rel->op;
+		l->l = rel->l;
+		l->r = rel->r;
+		l->exps = rel->exps;
+		l->nrcols = rel->nrcols;
+		l->flag = rel->flag;
+		l->card = rel->card;
+	} else {
+		rel_destroy_(rel);
+	}
+	set_processed(rel);
+
+	rel->l = l;
+	rel->r = NULL;
+	rel->op = op_project;
+	rel->exps = e;
+	rel->card = CARD_MULTI;
+	rel->flag = 0;
+	if (l) {
+		rel->card = l->card;
+		rel->nrcols = l->nrcols;
+		assert (exps_card(rel->exps) <= rel->card);
+	}
+	return rel;
+}
+
 
 static sql_rel*
 rel_project_exp(sql_allocator *sa, sql_exp *e)
@@ -780,7 +838,7 @@ rel_select_copy(sql_allocator *sa, sql_rel *l, list *exps)
 	rel->l = l;
 	rel->r = NULL;
 	rel->op = op_select;
-	rel->exps = list_dup(exps, (fdup)NULL);
+	rel->exps = exps?list_dup(exps, (fdup)NULL):NULL;
 	rel->card = CARD_ATOM; /* no relation */
 	if (l) {
 		rel->card = l->card;
@@ -839,6 +897,22 @@ rel_groupby(sql_allocator *sa, sql_rel *l, list *groupbyexps )
 	rel->exps = aggrs;
 	rel->nrcols = l->nrcols;
 	rel->op = op_groupby;
+	return rel;
+}
+
+sql_rel *
+rel_inplace_groupby(sql_rel *rel, sql_rel *l, list *groupbyexps, list *exps )
+{
+	rel_destroy_(rel);
+	rel->card = CARD_ATOM;
+	if (groupbyexps) 
+		rel->card = CARD_AGGR;
+	rel->l = l;
+	rel->r = groupbyexps;
+	rel->exps = exps;
+	rel->nrcols = l->nrcols;
+	rel->op = op_groupby;
+	rel->flag = 0;
 	return rel;
 }
 

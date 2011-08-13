@@ -655,6 +655,8 @@ stmt_rename(mvc *sql, sql_rel *rel, sql_exp *exp, stmt *s )
 	char *rname = exp->rname;
 
 	(void)rel;
+	if (!name && exp->type == e_column && exp->r)
+		name = exp->r;
 	if (!name)
 		name = column_name(sql->sa, s);
 	else
