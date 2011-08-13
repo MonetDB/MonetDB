@@ -130,7 +130,7 @@ simpleFlow(InstrPtr *old, int start, int last)
 			if( getArg(p,0) == getArg(q,j))
 				simple= TRUE;
 		if( !simple)
-			simple = !(getModuleId(p) == calcRef || getModuleId(p) == mtimeRef || getModuleId(p) == strRef || getModuleId(p)== mmathRef);
+			simple = getModuleId(p) == calcRef || getModuleId(p) == mtimeRef || getModuleId(p) == strRef || getModuleId(p)== mmathRef;
 		if( !simple)
 			return 0;
 		p = q;
