@@ -136,7 +136,7 @@ norm_in  = re.compile('(?:'+')|(?:'.join([
     r'^(!.*Exception:remote\.[^:]*:\(mapi:monetdb://monetdb@)([^/]*)(/mTests_.*\).*)\n',                                                        # 25: 3
 ##  r'^(ERROR = !sql_stmt symbol\()(.*)(\)->token = CREATE_SCHEMA)\n',                                                                          # 26: 3
 #   r'^(ERROR = !IOException:mapi.connect:Could not connect: getaddrinfo failed: )(No .* is|.* not)( known[\. ]*)\n',                           # 27: 3
-    r'^(ERROR REPORTED: DBD::.+ at )([\./].+)(/[^/]+\.pm line [0-9]+\.)\n',                                                                     # 28: 3
+    r'^(ERROR REPORTED: DBD:|SyntaxException:parseError)(:.+ at )([\./].+)(/[^/]+\.pm line [0-9]+\.)\n',                                        # 28: 4
 ##  r'^(ERROR =|       )( !ERROR: | !SQLException:assert:| !SQLException:sql: | !SQLException:| !MALException:)([^:]+)(: *)([^ ].*)\n',         # 90: 5
 #   r'^(.*: at )(\([0-9]+,[0-9]+\-[0-9]+,[0-9]+\))(: .*)\n',                                                                                    # 91: 3
 ##  r'^(fatal error|ERROR)(: err:FORG0005, fn:exactly-one called with a sequence containing zero or more than one item..*)()\n',                # 99: 3
@@ -170,7 +170,7 @@ norm_out = (
     None, 'localhost', None,                                                                            # 25: 3
 ##  None, '...', None,                                                                                  # 26: 3
 #   None, 'un', 'known',                                                                                # 27: 3
-    None, '', None,                                                                                     # 28: 3
+    None, ,None, '', None,                                                                              # 28: 3
 ##  None, ' !ERROR', '', ': ', None,                                                                    # 90: 5
 #   None, '...', None,                                                                                  # 91: 3
 ##  '=ERROR', None, '\n#',                                                                              # 99: 3
