@@ -170,7 +170,7 @@ norm_out = (
     None, 'localhost', None,                                                                            # 25: 3
 ##  None, '...', None,                                                                                  # 26: 3
 #   None, 'un', 'known',                                                                                # 27: 3
-    None, ,None, '', None,                                                                              # 28: 3
+    None, None, '', None,                                                                               # 28: 3
 ##  None, ' !ERROR', '', ': ', None,                                                                    # 90: 5
 #   None, '...', None,                                                                                  # 91: 3
 ##  '=ERROR', None, '\n#',                                                                              # 99: 3
