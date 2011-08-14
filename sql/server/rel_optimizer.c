@@ -4955,8 +4955,8 @@ rel_rewrite_semijoin(int *changes, mvc *sql, sql_rel *rel)
 			/* are the join conditions equal */
 			for (n = rel->exps->h, m = r->exps->h;
 			     n && m; n = n->next, m = m->next) {
-				sql_exp *le, *oe = n->data;
-				sql_exp *re, *ne = m->data;
+				sql_exp *le = NULL, *oe = n->data;
+				sql_exp *re = NULL, *ne = m->data;
 				sql_column *cl;  
 				
 				if (oe->type != e_cmp || ne->type != e_cmp ||
