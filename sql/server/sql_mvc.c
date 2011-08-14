@@ -991,6 +991,24 @@ mvc_create_view(mvc *m, sql_schema *s, char *name, int persistence, char *sql, b
 }
 
 sql_table *
+mvc_create_remote(mvc *m, sql_schema *s, char *name, int persistence, char *loc)
+{
+	sql_table *t = NULL;
+
+	if (mvc_debug)
+		fprintf(stderr, "#mvc_create_remote %s %s %s\n", s->base.name, name, loc);
+
+	if (persistence == SQL_DECLARED_TABLE) {
+		t = create_sql_table(m->sa, name, tt_remote, 0, persistence, 0);
+		t->s = s;
+		t->query = sa_strdup(m->sa, loc);
+	} else {
+		t = sql_trans_create_table(m->session->tr, s, name, loc, tt_remote, 0, SQL_REMOTE, 0, 0);
+	}
+	return t;
+}
+
+sql_table *
 mvc_create_generated(mvc *m, sql_schema *s, char *name, char *sql, bit system)
 {
 	sql_table *t = NULL;

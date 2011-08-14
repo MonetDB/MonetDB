@@ -643,44 +643,68 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		case st_bat: {
 			int ht = TYPE_oid;
 			int tt = s->op4.cval->type.type->localtype;
+			sql_table *t = s->op4.cval->t;
+			str mod = isRemote(t)?octopusRef:sqlRef;
 
-			q = newStmt2(mb, sqlRef, bindRef);
+			q = newStmt2(mb, mod, bindRef);
 			setVarType(mb, getArg(q, 0), newBatType(ht, tt));
 			setVarUDFtype(mb,getArg(q,0));
-			q = pushArgument(mb, q, sql->mvc_var);
-			q = pushSchema(mb, q, s->op4.cval->t);
-			q = pushStr(mb, q, s->op4.cval->t->base.name);
+			if (isRemote(t))
+				q = pushStr(mb, q, t->query);
+			else
+				q = pushArgument(mb, q, sql->mvc_var);
+			q = pushSchema(mb, q, t);
+			q = pushStr(mb, q, t->base.name);
 			q = pushStr(mb, q, s->op4.cval->base.name);
 			q = pushInt(mb, q, s->flag);
+			/* dummy version */
+			if (isRemote(t))
+				q = pushInt(mb, q, s->flag);
 			s->nr = getDestVar(q);
 		}
 			break;
 		case st_dbat:{
 			int ht = TYPE_oid;
+			sql_table *t = s->op4.tval;
+			str mod = isRemote(t)?octopusRef:sqlRef;
 
-			q = newStmt2(mb, sqlRef, binddbatRef);
+			q = newStmt2(mb, mod, binddbatRef);
 			setVarType(mb, getArg(q,0), newBatType(ht,TYPE_oid));
 			setVarUDFtype(mb,getArg(q,0));
-			q = pushArgument(mb, q, sql->mvc_var);
-			q = pushSchema(mb, q, s->op4.tval);
-			q = pushStr(mb, q, s->op4.tval->base.name);
+			if (isRemote(t))
+				q = pushStr(mb, q, t->query);
+			else
+				q = pushArgument(mb, q, sql->mvc_var);
+			q = pushSchema(mb, q, t);
+			q = pushStr(mb, q, t->base.name);
 			q = pushInt(mb, q, s->flag);
+			/* dummy version */
+			if (isRemote(t))
+				q = pushInt(mb, q, s->flag);
 			s->nr = getDestVar(q);
 		}
 			break;
 		case st_idxbat:{
 			int tt;
 			int ht = TYPE_oid;
+			sql_table *t = s->op4.idxval->t;
+			str mod = isRemote(t)?octopusRef:sqlRef;
 
-			q = newStmt2(mb, sqlRef, bindidxRef);
+			q = newStmt2(mb, mod, bindidxRef);
 			tt = tail_type(s)->type->localtype;
 			setVarType(mb, getArg(q, 0), newBatType(ht, tt));
 			setVarUDFtype(mb,getArg(q,0));
-			q = pushArgument(mb, q, sql->mvc_var);
-			q = pushSchema(mb, q, s->op4.idxval->t);
-			q = pushStr(mb, q, s->op4.idxval->t->base.name);
+			if (isRemote(t))
+				q = pushStr(mb, q, t->query);
+			else
+				q = pushArgument(mb, q, sql->mvc_var);
+			q = pushSchema(mb, q, t);
+			q = pushStr(mb, q, t->base.name);
 			q = pushStr(mb, q, s->op4.idxval->base.name);
 			q = pushInt(mb, q, s->flag);
+			/* dummy version */
+			if (isRemote(t))
+				q = pushInt(mb, q, s->flag);
 			s->nr = getDestVar(q);
 		}
 			break;
@@ -1649,8 +1673,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		case st_delete:{
 			int r = _dumpstmt(sql, mb, s->op1);
 			sql_table *t = s->op4.tval;
+			str mod = isRemote(t)?octopusRef:sqlRef;
 
-			q = newStmt1(mb, sqlRef, "delete");
+			q = newStmt1(mb, mod, "delete");
 			q = pushArgument(mb, q, sql->mvc_var);
 			getArg(q, 0) = sql->mvc_var= newTmpVariable(mb,TYPE_int);
 			q = pushSchema(mb, q, t);
@@ -1660,8 +1685,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		} break;
 		case st_table_clear:{
 			sql_table *t = s->op4.tval;
+			str mod = isRemote(t)?octopusRef:sqlRef;
 
-			q = newStmt1(mb, sqlRef, "clear_table");
+			q = newStmt1(mb, mod, "clear_table");
 			q = pushSchema(mb, q, t);
 			q = pushStr(mb, q, t->base.name);
 			s->nr = getDestVar(q);

@@ -526,7 +526,7 @@ CONTINUE CURRENT CURSOR FOUND GOTO GO LANGUAGE
 SQLCODE SQLERROR UNDER WHENEVER
 */
 
-%token TEMPORARY STREAM MERGE
+%token TEMPORARY STREAM MERGE REMOTE
 %token<sval> ASC DESC AUTHORIZATION
 %token CHECK CONSTRAINT CREATE
 %token TYPE PROCEDURE FUNCTION AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
@@ -1276,25 +1276,65 @@ opt_encrypted:
  ;
 
 table_def:
-    opt_temp TABLE qname table_content_source opt_on_commit 
+    TABLE qname table_content_source 
 	{ int commit_action = CA_COMMIT;
 	  dlist *l = L();
+
+	  append_int(l, SQL_PERSIST);
+	  append_list(l, $2);
+	  append_symbol(l, $3);
+	  append_int(l, commit_action);
+	  append_string(l, NULL);
+	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
+ |  STREAM TABLE qname table_content_source 
+	{ int commit_action = CA_COMMIT, tpe = SQL_STREAM;
+	  dlist *l = L();
+
+	  append_int(l, tpe);
+	  append_list(l, $3);
+	  append_symbol(l, $4);
+	  append_int(l, commit_action);
+	  append_string(l, NULL);
+	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
+ |  MERGE TABLE qname table_content_source 
+	{ int commit_action = CA_COMMIT, tpe = SQL_MERGE_TABLE;
+	  dlist *l = L();
+
+	  append_int(l, tpe);
+	  append_list(l, $3);
+	  append_symbol(l, $4);
+	  append_int(l, commit_action);
+	  append_string(l, NULL);
+	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
+ /* mapi:monetdb://host:port/database (assumed monetdb/monetdb) */
+ |  REMOTE TABLE qname table_content_source ON STRING
+	{ int commit_action = CA_COMMIT, tpe = SQL_REMOTE;
+	  dlist *l = L();
+
+	  append_int(l, tpe);
+	  append_list(l, $3);
+	  append_symbol(l, $4);
+	  append_int(l, commit_action);
+	  append_string(l, $6);
+	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
+  | opt_temp TABLE qname table_content_source opt_on_commit 
+	{ int commit_action = CA_COMMIT;
+	  dlist *l = L();
+
 	  append_int(l, $1);
 	  append_list(l, $3);
 	  append_symbol(l, $4);
 	  if ($1 != SQL_PERSIST)
 		commit_action = $5;
 	  append_int(l, commit_action);
+	  append_string(l, NULL);
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
  ;
 
 opt_temp:
-    /* empty */		{ $$ = SQL_PERSIST; }
- |  TEMPORARY		{ $$ = SQL_LOCAL_TEMP; }
+    TEMPORARY		{ $$ = SQL_LOCAL_TEMP; }
  |  LOCAL TEMPORARY	{ $$ = SQL_LOCAL_TEMP; }
  |  GLOBAL TEMPORARY	{ $$ = SQL_GLOBAL_TEMP; }
- |  STREAM		{ $$ = SQL_STREAM; }
- |  MERGE		{ $$ = SQL_MERGE_TABLE; }
  ;
 
 opt_on_commit: /* only for temporary tables */

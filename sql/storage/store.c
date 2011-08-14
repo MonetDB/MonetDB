@@ -597,6 +597,8 @@ load_table(sql_trans *tr, sql_schema *s, oid rid)
 		t->persistence = SQL_GLOBAL_TEMP;
 	if (isStream(t))
 		t->persistence = SQL_STREAM;
+	if (isRemote(t))
+		t->persistence = SQL_REMOTE;
 	t->cleared = 0;
 	v = table_funcs.column_find_value(tr, find_sql_column(tables, "readonly"),rid);
 	t->readonly = *(bit *)v;	_DELETE(v);
@@ -3804,10 +3806,10 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, char *sql, int 
 	sql_table *systable = find_sql_table(syss, "_tables");
 	sht ca;
 
-	/* temps all belong to a special tmp schema and only views
+	/* temps all belong to a special tmp schema and only views/remote
 	   have a query */
 	assert( (isTable(t) ||
-		(!isTempTable(t) || (strcmp(s->base.name, "tmp") == 0) || isDeclaredTable(t))) || (isView(t) && !sql) || isStream(t));
+		(!isTempTable(t) || (strcmp(s->base.name, "tmp") == 0) || isDeclaredTable(t))) || (isView(t) && !sql) || isStream(t) || (isRemote(t) && !sql));
 
 	t->query = sql ? _strdup(sql) : NULL;
 	t->s = s;
@@ -3815,6 +3817,10 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, char *sql, int 
 	if (sz < 0)
 		t->sz = COLSIZE;
 	cs_add(&s->tables, t, TR_NEW);
+	if (isStream(t))
+		t->persistence = SQL_STREAM;
+	if (isRemote(t))
+		t->persistence = SQL_REMOTE;
 
 	if (isTable(t))
 		store_funcs.create_del(tr, t);

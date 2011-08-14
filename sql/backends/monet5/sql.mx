@@ -1076,6 +1076,54 @@ exit remotewrk;
     return getBid:lng := res;
 end getBid;
 
+function remote.bind{inline}(dbconn:str, sch:str, tab:str,col:str,kind:int, 
+version:int):bat[:oid,:any_1];
+	b:bat[:oid,:any_1] := nil:bat[:oid,:any_1];
+	m := nil:int;
+	conn := remote.connect(dbconn, "monetdb", "monetdb", "msql");
+	rm := remote.put(conn,m);
+	rm := remote.exec(conn,"sql","mvc");
+	s := remote.put(conn,sch);
+	t := remote.put(conn,tab);
+	c := remote.put(conn,col);
+	k := remote.put(conn,kind);
+	bh:= remote.put(conn,b);
+	bh:= remote.exec(conn,"sql","bind",rm,s,t,c,k);
+	b:bat[:oid,:any_1]:= remote.get(conn,bh);
+	return bind:= b;
+end remote.bind;
+
+function remote.bind_idxbat{inline}(dbconn:str, sch:str, tab:str, index:str, access:int, version:int):bat[:oid,:oid];
+	b:bat[:oid,:oid] := nil:bat[:oid,:oid];
+	m := nil:int;
+	conn := remote.connect(dbconn, "monetdb", "monetdb", "msql");
+	rm := remote.put(conn,m);
+	rm := remote.exec(conn,"sql","mvc");
+	s := remote.put(conn,sch);
+	t := remote.put(conn,tab);
+	i := remote.put(conn,index);
+	a := remote.put(conn,access);
+	bh:= remote.put(conn,b);
+	bh:= remote.exec(conn,"sql","bind_idxbat",rm,s,t,i,a);
+	b:bat[:oid,:oid]:= remote.get(conn,bh);
+	return bind_idxbat:= b;
+end remote.bind_idxbat;
+
+function remote.bind_dbat{inline}(dbconn:str, sch:str, tab:str, access:int, version:int):bat[:oid,:oid];
+	b:bat[:oid,:any_1] := nil:bat[:oid,:any_1];
+	m := nil:int;
+	conn := remote.connect(dbconn, "monetdb", "monetdb", "msql");
+	rm := remote.put(conn,m);
+	rm := remote.exec(conn,"sql","mvc");
+	s := remote.put(conn,sch);
+	t := remote.put(conn,tab);
+	a := remote.put(conn,access);
+	bh:= remote.put(conn,b);
+	bh:= remote.exec(conn,"sql","bind_dbat",rm,s,t,a);
+	b:bat[:oid,:oid]:= remote.get(conn,bh);
+	return bind_dbat:= b;
+end remote.bind_dbat;
+
 pattern rdfshred (location:str, gname:str, schema:str)
 address SQLrdfShred
 comment "Procedure that wraps around the shredder of the rdf module in MAL. 
@@ -1843,7 +1891,7 @@ create_table_or_view( mvc *sql, char *sname, sql_table *t, int temp)
 	}
 	/* TODO copy triggers */
 	/* also create dependencies */
-	if (t->query) {
+	if (t->query && isView(t)) {
 		sql_rel *r = NULL;
 		sql->sa = sa_create();
 		r = rel_parse(sql, t->query, m_deps); 
@@ -1991,7 +2039,7 @@ drop_table(mvc *sql, char *sname, char *tname, int drop_action)
 	}
 	if (!t) { 
 		return sql_message("DROP TABLE: no such table '%s'", tname);
-	} else if (!isTable(t)) {
+	} else if (!isTable(t) && !isStream(t) && !isRemote(t)) {
 		return sql_message("DROP TABLE: cannot drop VIEW '%s'", tname);
 	} else if (t->system) {
 		return sql_message("DROP TABLE: cannot drop system table '%s'", tname);

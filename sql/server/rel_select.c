@@ -329,7 +329,6 @@ rel_bind_path(sql_rel *rel, sql_exp *e )
 	return path;
 }
 
-
 list *
 rel_projections(mvc *sql, sql_rel *rel, char *tname, int settname, int intern )
 {

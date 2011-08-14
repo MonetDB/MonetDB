@@ -178,6 +178,7 @@ extern void mvc_drop_table(mvc *c, sql_schema *s, sql_table * t, int drop_action
 extern sql_table *mvc_create_table(mvc *c, sql_schema *s, char *name, int tt, bit system, int persistence, int commit_action, int sz);
 extern sql_table *mvc_create_view(mvc *c, sql_schema *s, char *name, int persistence, char *sql, bit system);
 extern sql_table *mvc_create_generated(mvc *c, sql_schema *s, char *name, char *sql, bit system);
+extern sql_table *mvc_create_remote(mvc *c, sql_schema *s, char *name, int persistence, char *loc);
 
 extern void mvc_drop_column(mvc *c, sql_table *t, sql_column *col, int drop_action);
 extern sql_column *mvc_create_column(mvc *c, sql_table *t, char *name, sql_subtype *type);
