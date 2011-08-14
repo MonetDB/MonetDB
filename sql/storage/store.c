@@ -628,7 +628,7 @@ load_table(sql_trans *tr, sql_schema *s, oid rid)
 		cs_add(&t->columns, load_column(tr, t, rid), TR_OLD);
 	table_funcs.rids_destroy(rs);
 
-	if (!isTable(t) && !isMergeTable(t)) 
+	if (!isTable(t) && !isMergeTable(t) && !isRemote(t)) 
 		return t;
 
 	/* load idx's first as the may be needed by the keys */

@@ -644,7 +644,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int ht = TYPE_oid;
 			int tt = s->op4.cval->type.type->localtype;
 			sql_table *t = s->op4.cval->t;
-			str mod = isRemote(t)?octopusRef:sqlRef;
+			str mod = isRemote(t)?remoteRef:sqlRef;
 
 			q = newStmt2(mb, mod, bindRef);
 			setVarType(mb, getArg(q, 0), newBatType(ht, tt));
@@ -666,7 +666,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		case st_dbat:{
 			int ht = TYPE_oid;
 			sql_table *t = s->op4.tval;
-			str mod = isRemote(t)?octopusRef:sqlRef;
+			str mod = isRemote(t)?remoteRef:sqlRef;
 
 			q = newStmt2(mb, mod, binddbatRef);
 			setVarType(mb, getArg(q,0), newBatType(ht,TYPE_oid));
@@ -688,7 +688,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int tt;
 			int ht = TYPE_oid;
 			sql_table *t = s->op4.idxval->t;
-			str mod = isRemote(t)?octopusRef:sqlRef;
+			str mod = isRemote(t)?remoteRef:sqlRef;
 
 			q = newStmt2(mb, mod, bindidxRef);
 			tt = tail_type(s)->type->localtype;
@@ -1673,7 +1673,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		case st_delete:{
 			int r = _dumpstmt(sql, mb, s->op1);
 			sql_table *t = s->op4.tval;
-			str mod = isRemote(t)?octopusRef:sqlRef;
+			str mod = isRemote(t)?remoteRef:sqlRef;
 
 			q = newStmt1(mb, mod, "delete");
 			q = pushArgument(mb, q, sql->mvc_var);
@@ -1685,7 +1685,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		} break;
 		case st_table_clear:{
 			sql_table *t = s->op4.tval;
-			str mod = isRemote(t)?octopusRef:sqlRef;
+			str mod = isRemote(t)?remoteRef:sqlRef;
 
 			q = newStmt1(mb, mod, "clear_table");
 			q = pushSchema(mb, q, t);
