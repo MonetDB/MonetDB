@@ -213,6 +213,116 @@ OPTplanCntrl(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices)
 	return cmb;
 }
 
+static int
+OPTinitcode(Client cntxt, MalBlkPtr mb)
+{
+    InstrPtr p;
+    str s;
+    str l = NULL;
+
+    (void) cntxt;
+
+    /* _x := remote.connect(uri,"monetdb","monetdb","msql"); */
+    p = newStmt(mb, remoteRef,connectRef);
+    s = GDKgetenv("merovingian_uri");
+    if (s == NULL)  /* aparently not under Merovingian control, fall back to local only */
+		s= "dummyconnection";
+        /* SABAOTHgetLocalConnection(&l);*/
+    p= pushStr(mb,p, s == NULL ? l : s);
+    p= pushStr(mb,p,"monetdb");
+    p= pushStr(mb,p,"monetdb");
+    p= pushStr(mb,p,"msql");
+    if (l)
+        GDKfree(l);
+    return getArg(p,0);
+}
+
+static MalBlkPtr
+OPTpartitionStub(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb)
+{
+	MalBlkPtr smb = 0;
+	Symbol s;
+	InstrPtr sig, q, ret;
+	int j,k,conn, *arg;
+	char nme[BUFSIZ];
+
+	/* define the sub query stub for remote processing */
+	snprintf(nme,BUFSIZ,"%s_stub",getFunctionId( getInstrPtr(mb,0)));
+	s = newFunction(userRef, putName(nme, strlen(nme)),FUNCTIONsymbol);
+	if ( s == NULL)
+		return 0;
+	freeMalBlk(s->def);
+	s->def = copyMalBlk(pmb);	/* get variables */
+	smb = s->def;
+	if ( newMalBlkStmt(smb,smb->ssize) < 0 )
+		return 0;
+	pushInstruction(smb, copyInstruction(pmb->stmt[0]));
+	getFunctionId( getInstrPtr(smb,0)) = putName(nme,strlen(nme));
+	insertSymbol(cntxt->nspace,s);
+
+	conn = OPTinitcode(cntxt,smb);
+	sig = getInstrPtr(smb,0);
+	arg = (int*) GDKzalloc(sizeof(int) * sig->argc);
+	/* k:= remote.put(conn,kvar) */
+	for (j= sig->retc; j < sig->argc; j++) {
+		q= newFcnCall(smb,remoteRef,putRef);
+		setVarType(smb, getArg(q,0), TYPE_str);
+		setVarUDFtype(smb, getArg(q,0));
+		q= pushArgument(smb,q,conn);
+		q= pushArgument(smb,q,getArg(sig,j));
+		arg[j]= getArg(q,0);
+	}
+
+	/* (k1,...kn):= remote.exec(conn,slicing,qry,version....) */
+	snprintf(nme,BUFSIZ,"%s_plan",getFunctionId( getInstrPtr(mb,0)));
+	q = newInstruction(smb,ASSIGNsymbol);
+	getModuleId(q) = remoteRef;
+	getFunctionId(q) = execRef;
+	q->retc=  q->argc= 0;
+	for (j=0; j < sig->retc; j++){
+		arg[j]= newTmpVariable(smb,TYPE_str);
+		q = pushReturn(smb,q,arg[j]);
+	}
+	q= pushArgument(smb,q,conn);
+	q= pushStr(smb,q,userRef);
+	q= pushStr(smb,q,putName(nme,strlen(nme)));
+	/* deal with all arguments ! */
+	for (j=sig->retc; j < sig->argc; j++)
+		q = pushArgument(smb,q,arg[j]);
+	pushInstruction(smb,q);
+
+	/* return exec_qry; */
+	ret = newInstruction(smb, ASSIGNsymbol);
+	ret->barrier= RETURNsymbol;
+	ret->argc = ret->retc = 0;
+	/* l:=remote.get(conn,k) */
+	for ( j=0; j< sig->retc; j++){
+		q= newFcnCall(smb,remoteRef,getRef);
+		q= pushArgument(smb,q,conn);
+		q= pushArgument(smb,q,arg[j]);
+		k= getArg(q,0);
+		setVarType(smb,k, getArgType(smb,sig,j));
+		setVarUDFtype(smb, k);
+		ret = pushArgument(smb,ret,k);
+		ret = pushReturn(smb,ret,getArg(sig,j));
+	}
+
+    newCatchStmt(smb, "ANYexception");
+    q = newStmt(smb, remoteRef, disconnectRef);
+    pushArgument(smb, q, conn);
+    newRaiseStmt(smb, "ANYexception");   /* pass to caller */
+    newExitStmt(smb, "ANYexception");
+
+    q = newStmt(smb, remoteRef, disconnectRef);
+    pushArgument(smb, q, conn);
+	if ( sig->retc)
+		pushInstruction(smb,ret);
+    pushEndInstruction(smb);
+
+	GDKfree(arg);
+	return smb;
+}
+
 /* prepare access to partitions by injection of the materialize instructions */
 static int
 OPTpreparePartition(MalBlkPtr nmb, InstrPtr p, Slices *slices, int pc)
@@ -313,22 +423,28 @@ OPTsliceColumn(Client cntxt, MalBlkPtr nmb, MalBlkPtr mb, InstrPtr p, Slices *sl
 #define BLOCKED 1
 #define REQUIRED 2
 #define SUPPORTIVE 3
+#define EXPORTED 4
+#define KEEPLOCAL 5
+
+#ifdef _DEBUG_OPT_PARTITION_ 
+static char *status[6]= {"", "blocked  ", "required ", "supportive ", "exported ", "keeplocal "};
+#endif
 
 static int 
 OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 {
-	char *plan,*vars;
+	int *plan,*vars;
 	int i, j, k, limit, last;
 	InstrPtr ret, call, p, *old;
 	Symbol s;
-	MalBlkPtr nmb, cmb;
+	MalBlkPtr nmb, cmb, smb;
 	str msg;
 	char nme[BUFSIZ];
 
-	plan = GDKzalloc(mb->ssize);
+	plan = GDKzalloc(mb->ssize * sizeof(int));
 	if( plan == 0)
 		return 0;
-	vars = GDKzalloc(mb->vsize);
+	vars = GDKzalloc(mb->vsize * sizeof(int));
 	if( vars == 0){
 		GDKfree(plan);
 		return 0;
@@ -361,7 +477,7 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 
 	/* Phase 1: determine all variables/instructions indirectly dependent on a fragmented column */
 	last = limit;
-	for ( i = 0; i < limit ; i++) {
+	for ( i = 1; i < limit ; i++) {
 		p = old[i];
 		if ( p->token == ENDsymbol || i > last) {
 			plan[i] = REQUIRED;
@@ -370,59 +486,55 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 		if ( getModuleId(p) == sqlRef && (getFunctionId(p) == bindRef || getFunctionId(p) == bindidxRef) &&
 			strcmp(slices->schema, getVarConstant(mb, getArg(p,2)).val.sval) == 0 &&
 			strcmp(slices->table, getVarConstant(mb, getArg(p,3)).val.sval) == 0 ) {
-			vars[getArg(p,0)] = REQUIRED;
 			plan[i] = REQUIRED;
-		} else
-		/* all arguments should be free to use in distributed setting */
-		for( j = p->retc; j < p->argc; j++)
-		if (vars[getArg(p,j)] == BLOCKED) 
-			plan[i] = BLOCKED;
+		} 
 
 		/* blocking instructions are those that require data exchange or total view */
 		if (    getModuleId(p) == algebraRef && getFunctionId(p) == joinRef ) {
-			if (vars[getArg(p,1)] == REQUIRED && vars[getArg(p,2)] == REQUIRED)  {
-				/* not possible to delegate */
-				plan[i] = BLOCKED;
-			} else {
-				/* other variable is supportive */
-				if (vars[getArg(p,1)] != REQUIRED) 
-					vars[getArg(p,1)] = SUPPORTIVE; 
-				if (vars[getArg(p,2)] != REQUIRED) 
-					vars[getArg(p,2)] = SUPPORTIVE; 
+			/* be aware that supportive subqueries may produce pivot sets */
+			/* this means we have to enforce the following */
+			if ( vars[getArg(p,1)] == REQUIRED && vars[getArg(p,2)] != REQUIRED  )
 				plan[i] = SUPPORTIVE;
-			}
 		} else
 		if (    (getModuleId(p) == groupRef && (getFunctionId(p) == doneRef || getFunctionId(p) == newRef ||getFunctionId(p) == deriveRef) )  ||
 				getModuleId(p) == pqueueRef || getModuleId(p) == aggrRef || getModuleId(p) == ioRef ||
-				(getModuleId(p) == sqlRef && (getFunctionId(p) == resultSetRef || getFunctionId(p) == putName("exportValue",11) )) ||
-				(getModuleId(p) == algebraRef &&(getFunctionId(p) == sliceRef || getFunctionId(p)==markTRef)) )  {
-			/* add the targets of its argument to the output */
+				(getModuleId(p) == algebraRef &&(getFunctionId(p) == sliceRef || getFunctionId(p)==markTRef ||getFunctionId(p) ==markHRef)) )  {
+			/* this is blocking for partitioned columns, this can be achieved by propagating the REQUIRED property over variables */
+			for( j = p->retc; j < p->argc; j++)
+			if (vars[getArg(p,j)] == REQUIRED )
+				break;
+			if ( j != p->argc)
+				plan[i] = BLOCKED;
+		} else
+		if (    (getModuleId(p) == sqlRef && (getFunctionId(p) == resultSetRef || getFunctionId(p) == putName("exportValue",11) ) )  ||
+				getModuleId(p) == ioRef )
 			plan[i] = BLOCKED;
-		}
 
 		if( plan[i] == BLOCKED){
 			for ( j= 0; j< p->retc; j++)
 				vars[getArg(p,j)] = BLOCKED;
 		} else {
-			for( j = 0; j < p->argc; j++)
-			if (vars[getArg(p,j)] == REQUIRED ) 
+			/* one blocking argument blocks the instruction */
+			for( j = p->retc; j < p->argc; j++)
+			if (vars[getArg(p,j)] == BLOCKED ) 
 				break;
-			if ( j != p->argc)
+			if ( j != p->argc )
+				plan[i]= BLOCKED;
+
+			/* one required then instruction is needed */
+			k = 0;
+			for( j = p->retc; j < p->argc; j++)
+			if (vars[getArg(p,j)] == REQUIRED )
+				k++;
+			if (k && k == p->argc-p->retc && plan[i] != BLOCKED )
 				plan[i]= REQUIRED;
+			else
+			if ( k  && plan[i] != BLOCKED )
+				plan[i] = REQUIRED;
 
-			for( j = 0; j < p->argc; j++)
-			if (vars[getArg(p,j)] == SUPPORTIVE ) 
-				break;
-			if ( j != p->argc && plan[i] != REQUIRED)
-				plan[i]= SUPPORTIVE;
-
-			if ( plan[i] == REQUIRED)
-				for ( j= 0; j< p->argc; j++)
-					vars[getArg(p,j)] = REQUIRED;
-			if ( plan[i] == SUPPORTIVE)
-				for ( j= 0; j< p->argc; j++)
-				if ( vars[getArg(p,j)] == 0)
-					vars[getArg(p,j)] = SUPPORTIVE;
+			for ( j= 0; j< p->retc; j++)
+			if ( vars[getArg(p,j)] == 0)
+				vars[getArg(p,j)] = plan[i];
 		}
 	}
 
@@ -430,103 +542,118 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 	mnstr_printf(cntxt->fdout,"\n#phase 1\n");
 	for( i= 0; i< limit; i++)
 	if (plan[i] ) {
-		switch (plan[i]) {
-		case BLOCKED:
-			mnstr_printf(cntxt->fdout,"#blocked  ");
-			break;
-		case REQUIRED:
-			mnstr_printf(cntxt->fdout,"#required ");
-			break;
-		case SUPPORTIVE:
-			mnstr_printf(cntxt->fdout,"#support  ");
-		}
+		mnstr_printf(cntxt->fdout,"%s ",status[plan[i]]);
 		if( old[i])
 			printInstruction(cntxt->fdout, mb,0,old[i],LIST_MAL_STMT);
 	}
 #endif
 
-	/* Phase 2: determine all variables/instructions contributing 
-	   instructions based on supportive variables remain marked as supportive
-	   because we have to avoid common ancestor dependency on partitioned variables
+	/* Phase 2: extend the set of supportive instructions.
+	   we have to avoid common ancestor dependency on partitioned variables
 	*/
 	for ( i = limit -1; i >= 0 ; i--)
 	if ( plan[i] != BLOCKED ){
 		p = old[i];
-		for( j = 0; j < p->argc; j++)
-		if (vars[getArg(p,j)] == REQUIRED) 
-			plan[i] = REQUIRED;
 
-		if ( plan[i] == 0)
 		for( j = 0; j < p->argc; j++)
-		if (vars[getArg(p,j)] == SUPPORTIVE) 
-			plan[i] = SUPPORTIVE;
+		if ( vars[getArg(p,j)] == SUPPORTIVE || vars[getArg(p,j)] == REQUIRED)  
+			break;
 
-		if( plan[i]== REQUIRED )
-			for ( j= 0; j< p->argc; j++)
-				vars[getArg(p,j)] = REQUIRED;
+		if( j< p->argc) {
+			for ( j= p->retc; j< p->argc; j++)
+			if ( vars[getArg(p,j)] != REQUIRED)
+				vars[getArg(p,j)] = SUPPORTIVE;
+			if ( plan[i] != REQUIRED)
+				plan[i] = SUPPORTIVE;
+		}
+		/* be careful in adding operations that require exchange or full view */
+		if (    (getModuleId(p) == groupRef && (getFunctionId(p) == doneRef || getFunctionId(p) == newRef ||getFunctionId(p) == deriveRef) )  ||
+				getModuleId(p) == pqueueRef || getModuleId(p) == aggrRef || getModuleId(p) == ioRef ||
+				(getModuleId(p) == algebraRef && getFunctionId(p) == joinRef )  ||
+				(getModuleId(p) == algebraRef &&(getFunctionId(p) == sliceRef || getFunctionId(p)==markTRef ||getFunctionId(p) ==markHRef)) )  {
+			/* this is blocking for partitioned columns, this can be achieved by propagating the REQUIRED property over variables */
+			for( j = p->retc; j < p->argc; j++)
+			if (vars[getArg(p,j)] == REQUIRED )
+				break;
+			if ( j != p->argc)
+				plan[i] = BLOCKED;
+		}
 	}
 #ifdef _DEBUG_OPT_PARTITION_ 
 	mnstr_printf(cntxt->fdout,"\n#phase 2\n");
 	for( i= 0; i< limit; i++)
 	if (plan[i] ) {
-		switch (plan[i]) {
-		case BLOCKED:
-			mnstr_printf(cntxt->fdout,"#blocked  ");
-			break;
-		case REQUIRED:
-			mnstr_printf(cntxt->fdout,"#required ");
-			break;
-		case SUPPORTIVE:
-			mnstr_printf(cntxt->fdout,"#support  ");
-		}
+		mnstr_printf(cntxt->fdout,"%s ",status[plan[i]]);
 		if( old[i])
 			printInstruction(cntxt->fdout, mb,0,old[i],LIST_MAL_STMT);
 	}
 #endif
-	/* Phase 3: turn all supportive instructions into required ones 
-	   if it helps to produce the required intermediate
+	/* Phase 3: check all instructions for blocked arguments.
+	   The variable may not be produced by a blocked instruction
+	   and all arguments must be required/supportive/constant
+	   (not blocked)
 	*/
 	for ( i = 0; i < limit; i++) 
-	if( plan[i] == SUPPORTIVE){
+	if( plan[i] != 0){
 		p = old[i];
 		for( j = 0; j < p->argc; j++)
-		if (vars[getArg(p,j)] == SUPPORTIVE) 
+		if (vars[getArg(p,j)] == BLOCKED)
 			break;
-		if( j == p->argc)
-			plan[i] = REQUIRED;
-		else
+		if( j != p->argc || plan[i] == BLOCKED) {
 			plan[i] = BLOCKED;
+			for( j = 0; j < p->retc; j++)
+				vars[getArg(p,j)] = BLOCKED;
+
+		}
+		for( j = 0; j < p->argc; j++)
+		if (vars[getArg(p,j)] == REQUIRED)
+			break;
+		if( j != p->argc && plan[i] != BLOCKED ) 
+			for( j = 0; j < p->retc; j++)
+				vars[getArg(p,j)] = REQUIRED;
+
 	}
 #ifdef _DEBUG_OPT_PARTITION_ 
 	mnstr_printf(cntxt->fdout,"\n#phase 3\n");
 	for( i= 0; i< limit; i++)
 	if (plan[i] ) {
-		switch (plan[i]) {
-		case BLOCKED:
-			mnstr_printf(cntxt->fdout,"#blocked  ");
-			break;
-		case REQUIRED:
-			mnstr_printf(cntxt->fdout,"#required ");
-			break;
-		case SUPPORTIVE:
-			mnstr_printf(cntxt->fdout,"#support  ");
-		}
+		mnstr_printf(cntxt->fdout,"%s ",status[plan[i]]);
 		if( old[i])
 			printInstruction(cntxt->fdout, mb,0,old[i],LIST_MAL_STMT);
 	}
 #endif
 	/* Phase 4: determine all variables to be exported 
-	   this is limited to the partitioned fragments
-	   supported variables remain local
+	   this is limited to all variables produced but not consumed
 	*/
 	ret= newInstruction(nmb,ASSIGNsymbol);
 	ret->barrier = RETURNsymbol;
 	ret->argc= ret->retc = 0;
-	for ( i = 0; i < limit ; i++)
-	if ( plan[i] != REQUIRED ){
+	for ( i = limit-1; i >= 0 ; i--)
+	if ( plan[i] == REQUIRED || plan[i] == SUPPORTIVE ){
+		p = old[i];
+		for ( j=0; j < p->retc; j++)
+		if ( vars[getArg(p,j)] == REQUIRED  && isaBatType(getArgType(nmb,p,j)) )
+			vars[getArg(p,j)] = EXPORTED;
+		else
+		if ( vars[getArg(p,j)] != 0 && vars[getArg(p,j)] != KEEPLOCAL  && vars[getArg(p,j)] != SUPPORTIVE && isaBatType(getArgType(nmb,p,j)) ) {
+			/* limit the number of returned BATs to those that are expensive */
+			if ( (getModuleId(p) == algebraRef && (getFunctionId(p) == markHRef || getFunctionId(p) == markTRef)) ||
+				 (getModuleId(p) == batRef && (getFunctionId(p) == reverseRef || getFunctionId(p) == mirrorRef )) )
+				continue;
+#ifdef _DEBUG_OPT_PARTITION_ 
+		mnstr_printf(cntxt->fdout,"#phase 4 export %d\n", getArg(p,j));
+#endif
+			vars[getArg(p,j)] = EXPORTED;
+		}
+		for ( j=p->retc; j< p->argc; j++)
+		if ( vars[getArg(p,j)] != EXPORTED)
+			vars[getArg(p,j)] = KEEPLOCAL;
+	}
+	for ( i = 0; i< limit; i++)
+	{
 		p = old[i];
 		for( j = p->retc; j < p->argc; j++)
-		if ( vars[getArg(p,j)] == REQUIRED && isaBatType(getArgType(nmb,p,j)) ) {
+		if ( vars[getArg(p,j)] == EXPORTED ){
 			for ( k = 0; k < ret->retc; k++)
 			if (getArg(ret,k) == getArg(p,j))
 				break;
@@ -538,7 +665,7 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 	/* Phase 4: Bake a new function that produces them */
 	plan[0] = REQUIRED;
 	for ( i = 0; i < limit ; i++) 
-	if( plan[i] == REQUIRED ) {
+	if( plan[i] == REQUIRED || plan[i] == SUPPORTIVE ) {
 		p = copyInstruction(getInstrPtr(mb, i));
 		if ( old[i]->token == ENDsymbol) {
 			getFunctionId(nmb->stmt[0]) = putName(nme,strlen(nme));
@@ -578,6 +705,16 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 #ifdef _DEBUG_OPT_PARTITION_
 	mnstr_printf(cntxt->fdout,"#control plan errors %d %s \n",cmb->errors,msg?msg:"");
 	printFunction(cntxt->fdout, cmb, 0, LIST_MAL_STMT);
+#endif
+
+	/* construct the remote stub plan */
+	smb = OPTpartitionStub(cntxt, mb, nmb);
+	msg= optimizeMALBlock(cntxt, smb);
+	if ( smb) 
+		chkProgram(cntxt->nspace, smb);
+#ifdef _DEBUG_OPT_PARTITION_
+	mnstr_printf(cntxt->fdout,"#remote plan errors %d %s \n",smb->errors,msg?msg:"");
+	printFunction(cntxt->fdout, smb, 0, LIST_MAL_STMT);
 #endif
 
 	call = copyInstruction(getInstrPtr(nmb,0));
