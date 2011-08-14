@@ -1726,11 +1726,14 @@ exps_case_fixup( mvc *sql, list *exps, sql_exp *cond, int lr )
 			if (e->type == e_func && e->l && !is_rank_op(e) ) {
 				sql_subfunc *f = e->f;
 
-				if (!f->func->s && !strcmp(f->func->base.name, "sql_div")) 
+				if (!f->func->s && !strcmp(f->func->base.name, "sql_div")) {
 					e = sql_div_fixup(sql, e, cond, lr);
-				else 
-					e->l = exps_case_fixup(sql, e->l, cond, lr);
-
+				} else {
+					list *l = exps_case_fixup(sql, e->l, cond, lr);
+					sql_exp *ne = exp_op(sql->sa, l, f);
+					exp_setname(sql->sa, ne, e->rname, e->name );
+					e = ne;
+				}
 			}
 			append(nexps, e);
 		}
@@ -4778,7 +4781,8 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 	/* simple merging of projects */
 	if (gp.cnt[op_project]) {
 		rel = rewrite(sql, rel, &rel_merge_projects, &changes);
-		rel = rewrite(sql, rel, &rel_case_fixup, &changes);
+		if (level <= 0)
+			rel = rewrite(sql, rel, &rel_case_fixup, &changes);
 	}
 
 	if (gp.cnt[op_join] || 
