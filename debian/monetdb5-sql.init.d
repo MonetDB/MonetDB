@@ -19,7 +19,7 @@ test -x $DAEMON || exit 0
 umask 022
 
 LOGDIR=/var/log/monetdb
-PIDFILE=/var/run/monetdb/$NAME.pid
+PIDFILE=/var/run/monetdb/merovingian.pid
 
 # Include monetdb5-sql defaults if available
 if [ -f /etc/default/monetdb5-sql ] ; then

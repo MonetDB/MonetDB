@@ -41,8 +41,6 @@ subs = [("@exec_prefix@", r'%prefix%'),
         ("@pkgincludedir@", r'%prefix%\include\@PACKAGE@'),
         ("@DIRSEP@", '\\'),
         ("@CROSS_COMPILING_FALSE@", ''),
-        ("@HAVE_CLIENTS_FALSE@", '#'),
-        ("@HAVE_MONETDB_FALSE@", '#'),
         ("@NATIVE_WIN32_FALSE@", '#'),
         ("@NOT_WIN32_FALSE@", ''),
         ("@PATHSEP@", ';')]
