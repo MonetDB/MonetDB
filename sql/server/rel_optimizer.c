@@ -4944,17 +4944,19 @@ rel_rewrite_semijoin(int *changes, mvc *sql, sql_rel *rel)
 
 		if (l && r && rl && 
 		    is_basetable(l->op) && is_basetable(rl->op) &&
-		    is_join(r->op) && l->l == rl->l) {
+		    is_join(r->op) && l->l == rl->l)
+		{
+			node *n, *m;
 
 			if (!rel->exps || !r->exps ||
 		       	    list_length(rel->exps) != list_length(r->exps)) 
 				return rel;
-			node *n, *m;
 			list *exps = new_exp_list(sql->sa);
 
 			/* are the join conditions equal */
 			for (n = rel->exps->h, m = r->exps->h;
-			     n && m; n = n->next, m = m->next) {
+			     n && m; n = n->next, m = m->next)
+			{
 				sql_exp *le = NULL, *oe = n->data;
 				sql_exp *re = NULL, *ne = m->data;
 				sql_column *cl;  
