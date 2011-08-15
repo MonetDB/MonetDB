@@ -427,15 +427,11 @@ SQLGetInfo_(ODBCDbc *dbc,
 	case SQL_DBMS_NAME:
 		sValue = PACKAGE_NAME;
 		break;
-	case SQL_DBMS_VER: {
-		int maj = 0, min = 0, pat = 0;
-		/* should be the server's version, not the client's */
-		sscanf(PACKAGE_VERSION, "%d.%d.%d", &maj, &min, &pat);
-		snprintf(buf, sizeof(buf), "%02d.%02d.%04d %s", maj, min, pat,
-			 MONETDB_RELEASE);
+	case SQL_DBMS_VER:
+		snprintf(buf, sizeof(buf), "%02d.%02d.%04d",
+			 dbc->major, dbc->minor, dbc->patch);
 		sValue = buf;
 		break;
-	}
 	case SQL_PROCEDURES:
 		sValue = "N";
 		break;
