@@ -4950,11 +4950,12 @@ rel_rewrite_semijoin(int *changes, mvc *sql, sql_rel *rel)
 		    is_join(r->op) && l->l == rl->l)
 		{
 			node *n, *m;
+			list *exps;
 
 			if (!rel->exps || !r->exps ||
 		       	    list_length(rel->exps) != list_length(r->exps)) 
 				return rel;
-			list *exps = new_exp_list(sql->sa);
+			exps = new_exp_list(sql->sa);
 
 			/* are the join conditions equal */
 			for (n = rel->exps->h, m = r->exps->h;
