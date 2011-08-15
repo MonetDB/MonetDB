@@ -24,7 +24,7 @@ lib_mapi = {
 	VERSION = $(MAPI_VERSION)
 	SOURCES = mapi.c mapi.rc
 	LIBS = $(SOCKET_LIBS) ../../common/stream/libstream \
-		../../common/options/libmoptions $(openssl_LIBS)
+		../../common/options/libmoptions $(openssl_LIBS) $(CRYPT_LIBS)
 }
 
 headers_mapi = {

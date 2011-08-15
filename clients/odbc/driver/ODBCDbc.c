@@ -80,6 +80,9 @@ newODBCDbc(ODBCEnv *env)
 	dbc->Connected = 0;
 	dbc->sql_attr_autocommit = SQL_AUTOCOMMIT_ON;	/* default is autocommit */
 	dbc->mid = NULL;
+	dbc->major = 0;
+	dbc->minor = 0;
+	dbc->patch = 0;
 	dbc->cachelimit = 0;
 	dbc->Mdebug = 0;
 
