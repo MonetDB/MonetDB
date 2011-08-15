@@ -1,0 +1,363 @@
+
+This is the documentation of the MonetDB regression testing environment.
+
+For futher information about the automatic nightly multi-platform regression
+testing of MonetDB, please also see
+http://monetdb.cwi.nl/Development/TestWeb/index.html
+
+
+- The testing environment consists of the following tools:
+  + Mtest.py	a python script to run tests
+  + Mfilter.py	a python script to filter the test output before running Mdiff 
+		(see below)
+  + Mdiff	a C program to show the differences of two files as HTML document
+  + Mapprove.py	a python script to approve recent test output (see below)
+  + Mtimeout	a C program to limit the resouces of a program
+		(thanks to Tim Ruhl, tim@ddi.nl)
+  + MkillUsers	a bash script to kill test processes that are orphaned
+		(used "fuser" to detect such processes)
+  (Mtimeout and MkillUsers are currently available on Unix, only)
+
+  When called with command-line option "--help", each of these tools
+  provides the respective usage information.
+
+
+- In each directory of all MonetDB-related source trees, tests may be
+  provided in a subdirectory called "Tests". Of course, the tests should
+  deal with the part/modules where they are located and they should be
+  provided and maintained by the respective developer (see also below).
+
+
+- Each "Tests" directory must contain a file "All" that contains the names
+  of all tests in that directory (one name per line).
+
+
+- Each test named TST consists of
+  + a test script which is ONE of the following:
+    * an arbitrary executable (e.g., a shell script)        (TST.sh)        (~,^)
+       on Windows, executables must be ".(exe|com)"         (TST.(exe|com)) (~,^)
+                   and scripts must be ".(bat|cmd)"         (TST.(bat|cmd)) (~,^)
+    * a Python script                                       (TST.py)        (~,^)
+    * a MAL script to be executed by mserver5               (TST.mal)  (',^,`)
+    * a MIL script to be executed by Mserver                (TST.milS) (',^,`)
+    * a MIL script to be executed by mclient -lmil          (TST.milC) (",^,`)
+    * a MAL script to be executed by mclient -lmal          (TST.malC) (",^,`)
+    * a SQL script to be executed by mclient -lsql          (TST.sql)  (",^,`)
+    * a XQUERY script to be executed by mclient -lxquery    (TST.xq)   (",^,`)
+   (~) In case the name of an arbitrary executable or Python script is
+        suffixed with ".MIL" (i.e., TST.MIL[.(sh|exe|com|bat|cmd|py)]),
+        Mtest.py starts an Mserver with a MIL-listerner on MAPIPORT
+        in the background before executing the test. The test can then
+        connect via MAPI (on MAPIPORT) to that Mserver.
+       Similar,
+       with suffix ".MAL", an mserver5 with a MAL-listener on
+        MAPIPORT is started;
+       with suffix ".SQL", an Mserver/mserver5 with an SQL-listener on
+        MAPIPORT is started;
+       with suffix ".XQUERY", an Mserver with an XQUERY-listener on
+        MAPIPORT is started.
+       In both cases, Mtest.py stops the Mserver again, once the test has
+        finished.
+   (') For Mserver/mserver5, if several files are present named
+        TST_sXX.(milS|mal) (XX={00,01,...,99})
+        these are executed by subsequently calling Mserver/mserver5
+   (") For mclient, if several files are present named
+        (1) TST_sXX.(milC|malC|sql|xq) (XX={00,01,...,99})
+            these are executed subsequently using the same Mserver/mserver5
+        (2) TST_pXX.(milC|malC|sql|xq) (XX={00,01,...,99})
+            these are executed concurrently using the same Mserver/mserver5
+   (^) For each test file TST[.*] involved,
+        if a file called
+	TST[.*].src  exists instead of  TST[.*],
+	TST[.*].src  is expected to contain a single line
+	giving the original location of the test file to be used.
+   (`) For each test file TST.* involved,
+        if a file called
+	TST.*.in  exists instead of  TST.*,  all environment variables in
+	TST.*.in  are replaced by their current value
+	when copying  $TSTSRCDIR/TST.*.in  to  $TSTTRGDIR/TST.* .
+  + a MIL script to be used as prelude for Mserver
+     (optional)                                             (TST.prelude)  (^,`)
+  + a MAL script to be used as prelude for mserver5
+     (optional)                                             (TST.prelude5) (^,`)
+  + for frontend tests with MonetDB4 (Mserver), a MIL script to be executed
+     by the server before stating the frontend
+     (optional)                                             (TST.dbinit) (^,`)
+  + for frontend tests with MonetDB5 (mserver5), a MAL script to be executed
+     by the server before stating the frontend
+     (optional)                                             (TST.dbinit5) (^,`)
+  + for mclient tests, a MIL script to be used as
+     prologue for Mserver, i.e., a script that is executed by Mserver after
+     dbinit is executed, but before (the first) mclient connects to Mserver
+     (optional)                                             (TST.prologue) (^,`)
+  + for mclient tests, a MAL script to be used as
+     prologue for mserver5, i.e., a script that is executed by mserver5 after
+     dbinit is executed, but before (the first) mclient connects to mserver5
+     (optional)                                             (TST.prologue5)(^,`)
+  + for mclient tests, a MIL script to be used as
+     epilogue for Mserver, i.e., a script that is executed by Mserver after
+     (all) mclient(s) have finished
+     (optional)                                             (TST.epilogue) (^,`)
+  + for mclient tests, a MAL script to be used as
+     epilogue for mserver5, i.e., a script that is executed by mserver5 after
+     (all) mclient(s) have finished
+     (optional)                                             (TST.epilogue5)(^,`)
+  + a file that contains a list of modules (one per line)
+     required by the test  (optional)                       (TST.modules)  (^,`)
+  + a file that contains a list of BATs (one per line)
+     (created by previous tests within the same directory)
+     required by the test  (optional; MonetDB4, only)       (TST.BATs)     (^,`)
+  + a file that contains a list of tests (one per line) that must
+     have run successfully prior to the test (optional)     (TST.reqtests)
+  + a set of files used by the arbitrary executable
+     (optinal)                                              (TST.*)        (^,`)
+  + stable (i.e. correct) versions of stdout and stderr
+     of the test                                            (TST.stable.{out,err})
+    operating system (OS) specific stable output can be 
+    provided by adding the suffix ".<OSname>" (".`uname`"),
+    ".<OSname><OSversion>" (".`uanme``uname -r`"), or
+    ".<OSname><OSversion>.(64|32)bit" 
+    to the respective filename
+  + a file that contains a single integer number which is used as a factor
+    to extend the default TIMEOUT for this test, only.      (TST.timeout)
+
+  Using this naming conventions, the test environment can automatically
+  decide what to do when called as "Mtest.py TST" (see below), i.e. execute
+  one of the following:
+  * TST[.sh|.exe|.com|.bat|.cmd] TST [TST.prelude]
+  * python TST.py [TST.prelude]
+  * Mserver --dbname=TSTDB [TST.prelude] < TST.milS
+  * mserver5 --dbname=TSTDB [TST.prelude] < TST.mal
+  * Mserver --dbname=TSTDB --set mapi_port=$MAPIPORT --set xrpc_port=$XRPCPORT --dbinit="[<TST.dbinit] module(mapi); mil_start();" [TST.prologue] &
+         mclient -lmil < TST[_(s|p)XX].milC
+     or  TST.MIL.(sh|exe|com|bat|cmd) TST [TST.prelude]
+     or  python TST.MIL.py [TST.prelude]
+  * mserver5 --dbname=TSTDB --set mapi_port=$MAPIPORT --set xrpc_port=$XRPCPORT --dbinit="[<TST.dbinit5]" [TST.prologue5] &
+         mclient -lmal < TST[_(s|p)XX].malC
+     or  TST.MAL.(sh|exe|com|bat|cmd) TST
+     or  python TST.MAL.py
+  * Mserver --dbname=TSTDB --set mapi_port=$MAPIPORT --set xrpc_port=$XRPCPORT --dbinit="[<TST.dbinit] module(sql_server);" [TST.prologue] &
+         mclient -lsql < TST[_(s|p)XX].sql
+     or  TST.SQL.(sh|exe|com|bat|cmd) TST
+     or  python TST.SQL.py
+  * mserver5 --dbname=TSTDB --set mapi_port=$MAPIPORT --set xrpc_port=$XRPCPORT --dbinit="[<TST.dbinit5]" [TST.prologue5] &
+         mclient -lsql < TST[_(s|p)XX].sql
+     or  TST.SQL.(sh|exe|com|bat|cmd) TST
+     or  python TST..SQL.py
+  * Mserver --dbname=TSTDB --set mapi_port=$MAPIPORT --set xrpc_port=$XRPCPORT --dbinit="[<TST.dbinit] module(pathfinder);" [TST.prologue] &
+         mclient -lxquery -fxml < TST[_(s|p)XX].xq
+     or  TST.XQUERY.(sh|exe|com|bat|cmd) TST
+     or  python TST.XQUERY.py
+
+  (On Unix, all M<tool>'s are started with "Mtimeout -timeout TIMEOUT
+   M<tool> ..." to kill (probably) hanging M<tool>'s after a certain
+   timeout. The default TIMEOUT value is 60 seconds, i.e. 1 minute.
+   The TIMEOUT can be changed globally using Mtest.py's "-t" option.
+   The TIMEOUT for a single test can be extended be a factor provided
+   in a file TST.timeout (see above).
+   Additionally, MkillUsers is scheduled as at-job to kill orphaned
+   processes that Mtimeout cannot reach any more.)
+
+  (Mserver is called with "--config=$MONETDB_CONF --debug=$GDK_DEBUG $setMONETDB_MOD_PATH --set monet_prompt=".
+   See below and "Mserver --help" for details.)
+
+  (mclient is called with "--port=$MAPIPORT".
+   See "mclient --help" for details.)
+
+
+- Mtest.py uses two directory trees based at TSTSRCBASE and TSTTRGBASE,
+  respectively. These trees have similar purpose as the SOURCE and PREFIX
+  trees when configuring and compiling MonetDB: the original tests are found
+  in TSTSRCBASE and Mtest.py writes the test output to TSTTRGBASE.
+  The default settings are as follows:
+	TSTSRCBASE=`<PACKAGE>-config --source`  (where you checked out <PACKAGE>'s source tree)
+	TSTTRGBASE=`<PACKAGE>-config --prefix`  (where you told configure to install <PACKAGE>)
+  You can over rule any of these defaults by setting the respective
+  environment variable, or by giving, e.g., --TSTTRGBASE=/tmp as command
+  line option to Mtest.py. 
+
+  IMPORTANT NOTE:
+
+  In any case, all directories must be given as ABSOLUTE PHYSICAL PATHS,
+  i.e., starting with "/" on Unix (or "[<drive-letter>:]\" on Windows, and
+  not containing any symbolic link(s). 
+  The latter is a restiction that might be released in the future, but for
+  the time being, using paths that contain symbolic links will cause
+  problems with Mtest.py.
+  Hence, if you compiled MonetDB in a path that contains a symbolic link,
+  e.g., ~/dev/monet -> /net/myhost/export/scratch1/myname/monet, you should
+  overrule the default settings of TSTSRCBASE and TSTTRGBASE (e.g.) as
+  follows
+	TSTSRCBASE=/net/myhost/export/scratch1/myname/monet
+	TSTTRGBASE=/net/myhost/export/scratch1/myname/monet/$SYSTVER
+  either by setting the repective environment variables or by using the
+  respective command line options to Mtest.py (see above).
+
+
+- Each test is identified by its name and its directory path relative to
+  TSTSRCBASE, but without the trailing "/Tests".
+
+
+- Running one or several tests is done by simply calling
+  + "Mtest.py <names...>" to run tests <names...> in
+                          a) ".",       if "." is a "Tests"-directory and
+                                           there is an "All"-file in "."
+                          b) "./Tests", if "./Tests/All" exists
+  + "Mtest.py -r"         to run all tests found in any subdirectory of "."
+
+  If Mtest.py is not called in (a subdirectory of) $TSTSRCBASE, Mtest.py
+  changes ("cd's") to $TSTSRCBASE before starting its work.
+  For more details call "Mtest.py --help".
+
+
+- Environment variables:
+  + Mtest.py doesn't need any special environment variables to be set.
+  + However, the following environment variables can be set to overrule the
+    default settings:
+	name		default					description
+	----		-------					-----------
+	TSTSRCBASE	`<PACKAGE>-config --source`		base of test source tree
+	TSTTRGBASE	`<PACKAGE>-config --prefix`		base for test output
+	MILCLIENT	mclient	-lmil				mil-client program	`)
+	MALCLIENT	mclient -lmal				mal-client program	`)
+	SQLCLIENT	mclient -lsql				sql-client program	`)
+	SQLDUMP	        msqldump				sql-dump program	`)
+	XQUERYCLIENT	mclient -lxquery -fxml			xquery-client program	`)
+	PF		pf (or pf -M if using MPS)		xquery stand-alone compiler
+
+    `) Alternative MIL-, MAL-, SQL-, & XQUERY- client programs need to accept (or ignore)
+       "--config=", "--host=", & "--port=" options.
+
+    The following variables are currently still used legacy, but they will disappear soon...
+	MONETDB_MOD_PATH	`<PACKAGE>-config --modpath([45])`
+
+    The setting of all these environment variables maybe overruled
+    by commandline options with the same names, e.g., "--MILCLIENT=mclient.py".
+
+    NOTE: 
+    All paths must be given as ABSOLUTE PHYSICAL PATHS (see "IMPORTANT NOTE"
+    above).
+
+  + Further environment variables that Mtest.py exports (to be used in test
+    scripts) are:
+  	name		description
+	----		-----------
+	HOST		hostname
+	SYST		`uname`
+	SYSTVER		`uname``uname -r`
+	MTIMEOUT	"Mtimeout -timeout $TIMEOUT"
+	MDIFF		"$MTIMEOUT Mdiff"
+	MSERVER		"$MTIMEOUT Mserver --config=$MONETDB_CONF --debug=$GDK_DEBUG $setMONETDB_MOD_PATH $setGDK_DBFARM --set mapi_port=$MAPIPORT --set xrpc_port=$XRPCPORT --set monet_prompt= --trace"
+	MIL_CLIENT	"$MTIMEOUT $MILCLIENT --config=$MONETDB_CONF --host=$HOST --port=$MAPIPORT"
+	MAL_CLIENT	"$MTIMEOUT $MALCLIENT --config=$MONETDB_CONF --host=$HOST --port=$MAPIPORT"
+	SQL_CLIENT	"$MTIMEOUT $SQLCLIENT -u monetdb -P monetdb --host=$HOST --port=$MAPIPORT --trace"
+	SQL_DUMP	"$MTIMEOUT $SQLDUMP -u monetdb -P monetdb --host=$HOST --port=$MAPIPORT --trace"
+	XQUERY_CLIENT	"$MTIMEOUT $XQUERYCLIENT -u monetdb -P monetdb --host=$HOST --port=$MAPIPORT"
+	MAPIPORT	the MAPI   port (random number between 30000 and 39999)
+	XRPCPORT	the XRPC   port (random number between 40000 and 49999)
+	TST		name of the current test
+  	TSTDB		name of default test database, unique for each directory
+	TSTDIR		current test directory without $TSTSRCBASE/ & /Tests
+	TSTSRCDIR	$TSTSRCBASE/$TSTDIR/Tests
+	TSTTRGDIR	$TSTTRGBASE/mTests/$TSTDIR
+	MONETDB_CONF	location of MonetDB.conf (default: `monetdb4-config --sysconfdir`/MonetDB.conf)
+	GDK_DBFARM	as read from $MONETDB_CONF or set by --dbfarm=<path>
+	GDK_DEBUG	debug bitmask for Mserver (default: 10)
+	MONETDB_MOD_PATH	new module search path of Mserver (if set via --monet_mod_path=<pathlist>)
+	setMONETDB_MOD_PATH	"--set monet_mod_path=$MONETDB_MOD_PATH"	(if --monet_mod_path=<pathlist> is used)
+	setGDK_DBFARM	"--set gdk_dbfarm=$GDK_DBFARM"	(if --dbfarm=<path> is used)
+
+
+- For each directory, Mtest.py creates a database $TSTDB in $GDK_DBFARM
+  before running any test.
+
+
+- A test is skipped (i.e. not executed), 
+  if $TST.modules exists and contains modules that are not available, or
+  if $TST.BATs exists and contains BATs that are not available in the
+  current database $TSTDB.
+
+
+- While executing test "$TSTSRCDIR/TST", Mtest.py uses $TSTTRGDIR as working
+  directory; for convenience, all files "$TSTSRCDIR/TST*" are copied to
+  $TSTTRGDIR.
+
+
+- Mtest.py stores the output of test "$TSTSRCDIR/TST" in
+  $TSTTRGDIR/TST.test.{out,err} and checks it against
+  $TSTSRCDIR/TST.stable.{out,err}. If system specific stable output files
+  ($TSTSRCDIR/TST.stable.{out,err}[.($SYST|$SYSTVER)][.(64|32)bit][.oid(32|64)][.Five][.STATIC])
+  exist, the most specific stable output is used. Mtest.py stores the
+  respective Mdiff results in $TSTTRGDIR/TST.{out,err}.diff.html.
+  For each test directory, a common entry point to the test results is
+  created as $TSTTRGDIR/.index.html.  
+  For the whole test run, a global entry point to the test results is
+  created as $TSTTRGBASE/mTests/index.html.
+
+  
+- Mfilter.py is used to filter out variable date form the test output to
+  avoid no-error differences when running Mdiff. Mfilter.py prefixes all
+  lines enclosed in two line containing only "#~BeginVariableOutput~#" and
+  "#~EndVariableOutput~#", respectively, with "#~". These lines are then
+  ignored during Mdiff.
+  
+  MIL Example:
+	printf("#~BeginVariableOutput~#\n"); cpu.print(); printf("#~EndVariableOutput~#\n);
+
+
+- A tool Mapprove.py is provided to copy the recent output from
+  $TSTTRGDIR/TST.test.{out,err} to $TSTSRCDIR/TST.stable.{out,err}. Lines
+  starting with a '!' (i.e. error messages) are eliminated during copying. 
+  Of course, $TSTTRGDIR/TST.test.{out,err} have to be checked and claimed
+  correct before being approved!
+  See "Mapprove.py -?" for command-line options.
+
+
+- A development session is then supposed to proceed as follows:
+  (assuming TSTSRCBASE=`<PACKAGE>-config --source`)
+
+	cd $TSTSRCBASE
+	run  hg pull --update
+	loop
+		loop
+			loop
+				# write & compile your code
+				cd $TSTSRCBASE/$TSTDIR
+				edit source
+				cd `<PACKAGE>-config --build`/$TSTDIR
+				[g]make
+				[g]make install
+			endloop
+			loop
+				# write, adapt, run your tests ...
+				cd $TSTSRCBASE/$TSTDIR
+				edit/create  Tests/All
+				edit/create  Tests/<names...>.*
+				run  Mtest.py <names...>
+				# ... and check their results
+				check 	$TSTTRGDIR/<names...>.test.{out,err}
+					$TSTTRGDIR/<names...>.{out,err}.diff.html
+					(cf. $TSTTRGBASE/mTests/index.html)
+			endloop
+			# approve new/modified correct output of your tests
+			run  Mapprove.py <names...>
+		endloop
+		# run all MonetDB tests...
+		cd $TSTSRCBASE
+		run  Mtest.py -r
+		# ... and check their results
+		check $TSTTRGBASE/mTests/index.html
+	endloop
+	# approve "intended" impact of your changes on other tests' output
+	run  Mapprove.py <names...>
+	# checkin all correct new stuff to hg
+	run  hg commit
+	run  hg push
+
+
+--
+| Stefan Manegold     | mailto:Stefan.Manegold@cwi.nl |
+| CWI,  P.O.Box 94079 | http://www.cwi.nl/~manegold/  |
+| 1090 GB Amsterdam   | Tel.: +31 (20) 592-4212       |
+| The Netherlands     | Fax : +31 (20) 592-4312       |
+
