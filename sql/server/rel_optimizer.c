@@ -4934,7 +4934,7 @@ rel_rewrite_semijoin(int *changes, mvc *sql, sql_rel *rel)
 		}
 	}
 	if (is_semi(rel->op)) {
-		sql_rel *l = rel->l, *rl;
+		sql_rel *l = rel->l, *rl = NULL;
 		sql_rel *r = rel->r, *or = r;
 
 		if (r)
