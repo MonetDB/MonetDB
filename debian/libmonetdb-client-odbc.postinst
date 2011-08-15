@@ -7,6 +7,7 @@ if [ "$1" = configure ]; then
     if [ ! "$2" ] || ! [ ! "`odbcinst -d -q | grep MonetDB`" ]; then
 	odbcinst -i -d -r <<EOF
 [MonetDB]
+Description = ODBC for MonetDB
 Driver = /usr/lib/libMonetODBC.so
 Setup = /usr/lib/libMonetODBCs.so
 EOF
