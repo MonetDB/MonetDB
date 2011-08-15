@@ -59,7 +59,6 @@
 /* some general defines */
 #define MONETDB_ODBC_VER     "03.52"	/* must be synchronous with ODBCVER */
 #define MONETDB_DRIVER_NAME  "MonetDBODBClib"
-#define MONETDB_DRIVER_VER   "1.00"
 #define MONETDB_PRODUCT_NAME "MonetDB ODBC driver"
 #define MONETDB_SERVER_NAME  "MonetDB"
 

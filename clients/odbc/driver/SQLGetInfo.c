@@ -49,6 +49,7 @@ SQLGetInfo_(ODBCDbc *dbc,
 	    SQLSMALLINT *StringLengthPtr)
 {
 	int nValue = 0;
+	char buf[64];
 	const char *sValue = NULL;	/* iff non-NULL, return string value */
 	int len = 0;
 
@@ -386,9 +387,14 @@ SQLGetInfo_(ODBCDbc *dbc,
 	case SQL_DRIVER_NAME:
 		sValue = MONETDB_DRIVER_NAME;
 		break;
-	case SQL_DRIVER_VER:
-		sValue = MONETDB_DRIVER_VER;
+	case SQL_DRIVER_VER: {
+		int maj = 0, min = 0, pat = 0;
+		sscanf(PACKAGE_VERSION, "%d.%d.%d", &maj, &min, &pat);
+		snprintf(buf, sizeof(buf), "%02d.%02d.%04d %s", maj, min, pat,
+			 MONETDB_RELEASE);
+		sValue = buf;
 		break;
+	}
 	case SQL_FETCH_DIRECTION:
 		nValue = SQL_FD_FETCH_NEXT;
 		len = sizeof(SQLUSMALLINT);
@@ -419,11 +425,17 @@ SQLGetInfo_(ODBCDbc *dbc,
 		len = sizeof(SQLUSMALLINT);
 		break;
 	case SQL_DBMS_NAME:
-		sValue = MONETDB_PRODUCT_NAME;
+		sValue = PACKAGE_NAME;
 		break;
-	case SQL_DBMS_VER:
-		sValue = MONETDB_DRIVER_VER;
+	case SQL_DBMS_VER: {
+		int maj = 0, min = 0, pat = 0;
+		/* should be the server's version, not the client's */
+		sscanf(PACKAGE_VERSION, "%d.%d.%d", &maj, &min, &pat);
+		snprintf(buf, sizeof(buf), "%02d.%02d.%04d %s", maj, min, pat,
+			 MONETDB_RELEASE);
+		sValue = buf;
 		break;
+	}
 	case SQL_PROCEDURES:
 		sValue = "N";
 		break;
