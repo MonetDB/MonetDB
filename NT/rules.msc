@@ -72,7 +72,7 @@ PTHREAD_LIBS =
 !ENDIF
 
 ODBCINST_LIBS = odbccp32.lib user32.lib
-ODBC_LIBS = odbc.lib
+ODBC_LIBS = odbc32.lib
 
 !IFNDEF PYTHONBASE
 PYTHONBASE=C:\Python27

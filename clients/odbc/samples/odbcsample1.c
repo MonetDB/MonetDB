@@ -17,6 +17,9 @@
  * All Rights Reserved.
  */
 
+#ifdef _MSC_VER
+#include <WTypes.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <sql.h>
