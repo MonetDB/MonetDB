@@ -2095,6 +2095,7 @@ AM_CONDITIONAL(HAVE_SPHINXCLIENT, test x"$have_sphinxclient" != xno)
 if test "x$enable_odbc" != xno; then
 	have_unixodbc=auto
 	ODBC_INCS=''
+	ODBCINST_LIBS=''
 	ODBC_LIBS=''
 	AC_ARG_WITH(unixodbc,
 		AS_HELP_STRING([--with-unixodbc=DIR],
@@ -2106,6 +2107,7 @@ if test "x$enable_odbc" != xno; then
 			;;
 		*)
 			ODBC_INCS="-I$have_unixodbc/include"
+			ODBCINST_LIBS="-L$have_unixodbc/lib"
 			ODBC_LIBS="-L$have_unixodbc/lib"
 			;;
 		esac
@@ -2118,14 +2120,23 @@ if test "x$enable_odbc" != xno; then
 	fi
 	if test "x$have_unixodbc" != xno; then
 		save_LIBS="$LIBS"
-		LIBS="$LIBS $ODBC_LIBS"
+		LIBS="$LIBS $ODBCINST_LIBS"
 		AC_CHECK_LIB(odbcinst,
 			SQLGetPrivateProfileString, :,
 			[if test "x$have_unixodbc" != xauto; then AC_MSG_ERROR([-lodbcinst not found]); fi; have_unixodbc=no])
 		LIBS="$save_LIBS"
 	fi
 	if test "x$have_unixodbc" != xno; then
-		ODBC_LIBS="$ODBC_LIBS -lodbcinst"
+		save_LIBS="$LIBS"
+		LIBS="$LIBS $ODBC_LIBS"
+		AC_CHECK_LIB(odbc,
+			SQLGetDiagRec, :,
+			[if test "x$have_unixodbc" != xauto; then AC_MSG_ERROR([-lodbc not found]); fi; have_unixodbc=no])
+		LIBS="$save_LIBS"
+	fi
+	if test "x$have_unixodbc" != xno; then
+		ODBCINST_LIBS="$ODBCINST_LIBS -lodbcinst"
+		ODBC_LIBS="$ODBC_LIBS -lodbc"
 		AC_DEFINE(HAVE_SQLGETPRIVATEPROFILESTRING, 1,
 			[Define if you have the SQLGetPrivateProfileString function])
 	fi
@@ -2152,6 +2163,7 @@ if test "x$enable_odbc" != xno; then
 			[Define as SQLLEN * or SQLPOINTER depending on the include file])
 	fi
 	AC_SUBST(ODBC_INCS)
+	AC_SUBST(ODBCINST_LIBS)
 	AC_SUBST(ODBC_LIBS)
 	case "x${enable_odbc}x${have_unixodbc}" in
 		xautoxno)
