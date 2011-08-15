@@ -2545,7 +2545,12 @@ AC_CHECK_FUNCS([\
 				uname \
 				])
 LIBS="$save_LIBS"
+save_LIBS="$LIBS"
+LIBS=
 AC_SEARCH_LIBS(crypt, crypt, AC_DEFINE(HAVE_CRYPT, 1, [crypt]))
+CRYPT_LIBS="$LIBS"
+LIBS="$save_LIBS"
+AC_SUBST(CRYPT_LIBS)
 
 dnl check for getopt in standard library
 AC_CHECK_HEADERS([getopt.h])
