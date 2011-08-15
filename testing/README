@@ -1,18 +1,18 @@
 
 This is the documentation of the MonetDB regression testing environment.
 
-For futher information about the automatic nightly multi-platform regression
+For further information about the automatic nightly multi-platform regression
 testing of MonetDB, please also see
 http://monetdb.cwi.nl/Development/TestWeb/index.html
 
 
 - The testing environment consists of the following tools:
   + Mtest.py	a python script to run tests
-  + Mfilter.py	a python script to filter the test output before running Mdiff 
+  + Mfilter.py	a python script to filter the test output before running Mdiff
 		(see below)
   + Mdiff	a C program to show the differences of two files as HTML document
   + Mapprove.py	a python script to approve recent test output (see below)
-  + Mtimeout	a C program to limit the resouces of a program
+  + Mtimeout	a C program to limit the resources of a program
 		(thanks to Tim Ruhl, tim@ddi.nl)
   + MkillUsers	a bash script to kill test processes that are orphaned
 		(used "fuser" to detect such processes)
@@ -110,13 +110,13 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
   + a file that contains a list of tests (one per line) that must
      have run successfully prior to the test (optional)     (TST.reqtests)
   + a set of files used by the arbitrary executable
-     (optinal)                                              (TST.*)        (^,`)
+     (optional)                                              (TST.*)        (^,`)
   + stable (i.e. correct) versions of stdout and stderr
      of the test                                            (TST.stable.{out,err})
-    operating system (OS) specific stable output can be 
+    operating system (OS) specific stable output can be
     provided by adding the suffix ".<OSname>" (".`uname`"),
     ".<OSname><OSversion>" (".`uanme``uname -r`"), or
-    ".<OSname><OSversion>.(64|32)bit" 
+    ".<OSname><OSversion>.(64|32)bit"
     to the respective filename
   + a file that contains a single integer number which is used as a factor
     to extend the default TIMEOUT for this test, only.      (TST.timeout)
@@ -174,14 +174,14 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
 	TSTTRGBASE=`<PACKAGE>-config --prefix`  (where you told configure to install <PACKAGE>)
   You can over rule any of these defaults by setting the respective
   environment variable, or by giving, e.g., --TSTTRGBASE=/tmp as command
-  line option to Mtest.py. 
+  line option to Mtest.py.
 
   IMPORTANT NOTE:
 
   In any case, all directories must be given as ABSOLUTE PHYSICAL PATHS,
   i.e., starting with "/" on Unix (or "[<drive-letter>:]\" on Windows, and
-  not containing any symbolic link(s). 
-  The latter is a restiction that might be released in the future, but for
+  not containing any symbolic link(s).
+  The latter is a restriction that might be released in the future, but for
   the time being, using paths that contain symbolic links will cause
   problems with Mtest.py.
   Hence, if you compiled MonetDB in a path that contains a symbolic link,
@@ -190,7 +190,7 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
   follows
 	TSTSRCBASE=/net/myhost/export/scratch1/myname/monet
 	TSTTRGBASE=/net/myhost/export/scratch1/myname/monet/$SYSTVER
-  either by setting the repective environment variables or by using the
+  either by setting the respective environment variables or by using the
   respective command line options to Mtest.py (see above).
 
 
@@ -234,7 +234,7 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
     The setting of all these environment variables maybe overruled
     by commandline options with the same names, e.g., "--MILCLIENT=mclient.py".
 
-    NOTE: 
+    NOTE:
     All paths must be given as ABSOLUTE PHYSICAL PATHS (see "IMPORTANT NOTE"
     above).
 
@@ -272,7 +272,7 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
   before running any test.
 
 
-- A test is skipped (i.e. not executed), 
+- A test is skipped (i.e. not executed),
   if $TST.modules exists and contains modules that are not available, or
   if $TST.BATs exists and contains BATs that are not available in the
   current database $TSTDB.
@@ -290,24 +290,24 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
   exist, the most specific stable output is used. Mtest.py stores the
   respective Mdiff results in $TSTTRGDIR/TST.{out,err}.diff.html.
   For each test directory, a common entry point to the test results is
-  created as $TSTTRGDIR/.index.html.  
+  created as $TSTTRGDIR/.index.html.
   For the whole test run, a global entry point to the test results is
   created as $TSTTRGBASE/mTests/index.html.
 
-  
+
 - Mfilter.py is used to filter out variable date form the test output to
   avoid no-error differences when running Mdiff. Mfilter.py prefixes all
   lines enclosed in two line containing only "#~BeginVariableOutput~#" and
   "#~EndVariableOutput~#", respectively, with "#~". These lines are then
   ignored during Mdiff.
-  
+
   MIL Example:
 	printf("#~BeginVariableOutput~#\n"); cpu.print(); printf("#~EndVariableOutput~#\n);
 
 
 - A tool Mapprove.py is provided to copy the recent output from
   $TSTTRGDIR/TST.test.{out,err} to $TSTSRCDIR/TST.stable.{out,err}. Lines
-  starting with a '!' (i.e. error messages) are eliminated during copying. 
+  starting with a '!' (i.e. error messages) are eliminated during copying.
   Of course, $TSTTRGDIR/TST.test.{out,err} have to be checked and claimed
   correct before being approved!
   See "Mapprove.py -?" for command-line options.
