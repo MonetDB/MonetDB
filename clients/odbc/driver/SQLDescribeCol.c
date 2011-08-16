@@ -114,6 +114,9 @@ SQLDescribeCol_(ODBCStmt *stmt,
 		case SQL_INTERVAL_MINUTE_TO_SECOND:
 			*DecimalDigitsPtr = rec->sql_desc_precision;
 			break;
+		default:
+			*DecimalDigitsPtr = 0;
+			break;
 		}
 	}
 
