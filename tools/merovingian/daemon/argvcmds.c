@@ -52,9 +52,10 @@ command_help(int argc, char *argv[])
 		printf("  must be a path in the filesystem where a directory can be\n");
 		printf("  created, or a directory that is writable that already exists.\n");
 	} else if (strcmp(argv[1], "start") == 0) {
-		printf("usage: monetdbd start [dbfarm]\n");
+		printf("usage: monetdbd start [-n] [dbfarm]\n");
 		printf("  Starts the monetdbd deamon.  When no dbfarm given, it starts\n");
 		printf("  in the default dbfarm (%s).\n", LOCALSTATEDIR "/monetdb5/dbfarm");
+		printf("  When -n is given, monetdbd will not fork into the background.");
 	} else if (strcmp(argv[1], "stop") == 0) {
 		printf("usage: monetdbd stop [dbfarm]\n");
 		printf("  Stops a running monetdbd deamon for the given dbfarm, or\n");

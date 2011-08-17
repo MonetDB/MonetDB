@@ -1,7 +1,7 @@
 .\" Process this file with
 .\" groff -man -Tascii foo.1
 .\"
-.TH MONETDBD 1 "APRIL 2011" MonetDB "MonetDB Applications"
+.TH MONETDBD 1 "AUGUST 2011" MonetDB "MonetDB Applications"
 .SH NAME
 monetdbd \- the MonetDB Database Server daemon
 .SH SYNOPSIS
@@ -57,7 +57,7 @@ database process, started on the fly when necessary.
 .P
 When started,
 .B monetdbd
-runs in the background, sending log messages to
+runs by default in the background, sending log messages to
 .IR merovingian.log ,
 until being sent a stop, terminate or interrupt signal, possibly using
 the stop command of
@@ -91,11 +91,16 @@ be created, and an initial properties file is created in the directory
 itself.
 .I dbfarm
 must be a location addressable in the local filesystem hierarchy.
-.IP "start [dbfarm]"
+.IP "start [-n] [dbfarm]"
 Starts
 .BR monetdbd ,
 the MonetDB Database Server, on the given dbfarm, or its default, the
-system-wide location @Elocalstatedir@/monetdb5/dbfarm.
+system-wide location @Elocalstatedir@/monetdb5/dbfarm.  When the
+.I -n
+flag is given,
+.B monetdbd
+will not fork into the background, but instead remain attached to the
+calling environment, until given a stop signal.
 .IP "stop [dbfarm]"
 Sends a stop signal to the
 .B monetdbd

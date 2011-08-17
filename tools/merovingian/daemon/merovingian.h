@@ -26,7 +26,7 @@
 
 #include "utils/utils.h" /* confkeyval */
 
-#define MERO_VERSION   "1.4"
+#define MERO_VERSION   "1.5"
 #define MERO_PORT      "50000"
 #define CONTROL_PORT   "50001"
 #define MERO_SOCK      ".s.monetdb."

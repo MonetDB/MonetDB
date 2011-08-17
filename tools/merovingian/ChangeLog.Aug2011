@@ -1,6 +1,10 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
+* Wed Aug 17 2011 Fabian Groffen <fabian@cwi.nl>
+- Added -n option to monetdbd start command, which prevents monetdbd
+  from forking into the background.
+
 * Sat Aug  6 2011 Fabian Groffen <fabian@cwi.nl>
 - Fix incorrect (misleading) path for pidfile in pidfile error message,
   bug #2851
