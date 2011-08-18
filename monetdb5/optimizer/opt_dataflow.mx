@@ -118,22 +118,27 @@ opt_export void removeDataflow(InstrPtr *old, int limit);
 static int
 simpleFlow(InstrPtr *old, int start, int last)
 {
-	int i, j, simple;
+	int i, j, simple = TRUE;
 	InstrPtr p,q;
 
-	p= old[start];
-	for( i = start+1; i < last; i++) 
+	/* skip simple first */
+	for( ; simple && start < last; start++)  {
+		p= old[start];
+		simple = getModuleId(p) == calcRef || getModuleId(p) == mtimeRef || getModuleId(p) == strRef || getModuleId(p)== mmathRef;
+	}
+	for( i = start; i < last; i++) 
 	if ( old[i]) {
 		q= old[i];
-		simple = FALSE;
-		for( j= q->retc; j<q->argc; j++)
-			if( getArg(p,0) == getArg(q,j))
-				simple= TRUE;
-		if( !simple)
-			simple = getModuleId(q) == calcRef || getModuleId(q) == mtimeRef || getModuleId(q) == strRef || getModuleId(q)== mmathRef;
-		else p = q;
-		if( !simple)
-			return 0;
+		simple = getModuleId(q) == calcRef || getModuleId(q) == mtimeRef || getModuleId(q) == strRef || getModuleId(q)== mmathRef;
+		if( !simple)  {
+			simple = FALSE;
+			for( j= q->retc; j < q->argc; j++)
+				if( getArg(p,0) == getArg(q,j))
+					simple= TRUE;
+			if( !simple)
+				return 0;
+			p = q;
+		}
 	}
 	return 1;
 }
@@ -252,8 +257,8 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		/* this should be a function call with multiple arguments */
 		cnt = 0;
 		if (getFunctionId(p))
-			for(j=p->retc; j<p->argc; j++)
-				if (getLastUpdate(span, getArg(p,j)) <= start)
+			for(j=p->retc; j<p->argc; j++) 
+				if ( isVarConstant(mb, getArg(p,j)) || getLastUpdate(span, getArg(p,j)) <= start)
 					cnt++;
 		if (cnt && dflowAssignTest(span,p,i))
 			cnt = 0;
