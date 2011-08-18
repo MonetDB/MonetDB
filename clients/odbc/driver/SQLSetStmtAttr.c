@@ -222,6 +222,18 @@ SQLSetStmtAttr_(ODBCStmt *stmt,
 		return SQLSetDescField_(stmt->ImplRowDescr, 0,
 					SQL_DESC_ROWS_PROCESSED_PTR, ValuePtr,
 					StringLength);
+	case SQL_ATTR_METADATA_ID:
+		switch ((SQLUINTEGER) (size_t) ValuePtr) {
+		case SQL_TRUE:
+		case SQL_FALSE:
+			break;
+		default:
+			/* Invalid attribute value */
+			addStmtError(stmt, "HY024", NULL, 0);
+			return SQL_ERROR;
+		}
+		stmt->Dbc->sql_attr_metadata_id = (SQLUINTEGER) (size_t) ValuePtr;
+		break;
 
 		/* TODO: implement requested behavior */
 	case SQL_ATTR_ASYNC_ENABLE:
@@ -232,7 +244,6 @@ SQLSetStmtAttr_(ODBCStmt *stmt,
 	case SQL_ATTR_KEYSET_SIZE:
 	case SQL_ATTR_MAX_LENGTH:
 	case SQL_ATTR_MAX_ROWS:
-	case SQL_ATTR_METADATA_ID:
 	case SQL_ATTR_QUERY_TIMEOUT:
 	case SQL_ATTR_ROW_NUMBER:
 	case SQL_ATTR_SIMULATE_CURSOR:

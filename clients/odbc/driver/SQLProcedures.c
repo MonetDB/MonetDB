@@ -111,26 +111,66 @@ SQLProcedures_(ODBCStmt *stmt,
 		/* we do not support catalog names, so ignore it */
 	}
 
-	if (NameLength2 > 0) {
-		/* filtering requested on schema name */
-		/* use LIKE when it contains a wildcard '%' or a '_' */
-		/* TODO: the wildcard may be escaped. Check it
-		   and maybe convert it. */
-		sprintf(query_end, "and \"s\".\"name\" %s '%.*s' ",
-			memchr(SchemaName, '%', NameLength2) || memchr(SchemaName, '_', NameLength2) ? "like" : "=",
-			NameLength2, (char*)SchemaName);
-		query_end += strlen(query_end);
-	}
-
-	if (NameLength3 > 0) {
-		/* filtering requested on procedure name */
-		/* use LIKE when it contains a wildcard '%' or a '_' */
-		/* TODO: the wildcard may be escaped.  Check
-		   it and may be convert it. */
-		sprintf(query_end, "and \"p\".\"name\" %s '%.*s' ",
-			memchr(ProcName, '%', NameLength3) || memchr(ProcName, '_', NameLength3) ? "like" : "=",
-			NameLength3, (char*)ProcName);
-		query_end += strlen(query_end);
+	/* Construct the selection condition query part */
+	if (stmt->Dbc->sql_attr_metadata_id == SQL_TRUE) {
+		/* treat arguments as identifiers */
+		/* remove trailing blanks */
+		while (NameLength2 > 0 &&
+		       isspace((int) SchemaName[NameLength2 - 1]))
+			NameLength2--;
+		while (NameLength3 > 0 &&
+		       isspace((int) ProcName[NameLength3 - 1]))
+			NameLength3--;
+		if (NameLength2 > 0) {
+			sprintf(query_end, " and s.\"name\" = '");
+			query_end += strlen(query_end);
+			while (NameLength2-- > 0)
+				*query_end++ = tolower(*SchemaName++);
+			*query_end++ = '\'';
+		}
+		if (NameLength3 > 0) {
+			sprintf(query_end, " and p.\"name\" = '");
+			query_end += strlen(query_end);
+			while (NameLength3-- > 0)
+				*query_end++ = tolower(*ProcName++);
+			*query_end++ = '\'';
+		}
+	} else {
+		int escape;
+		if (NameLength2 > 0) {
+			escape = 0;
+			sprintf(query_end, " and s.\"name\" like '");
+			query_end += strlen(query_end);
+			while (NameLength2-- > 0) {
+				if (*SchemaName == '\\') {
+					escape = 1;
+					*query_end++ = '\\';
+				}
+				*query_end++ = *SchemaName++;
+			}
+			*query_end++ = '\'';
+			if (escape) {
+				sprintf(query_end, " escape '\\\\'");
+				query_end += strlen(query_end);
+			}
+		}
+		if (NameLength3 > 0) {
+			escape = 0;
+			sprintf(query_end, " and p.\"name\" like '");
+			query_end += strlen(query_end);
+			while (NameLength3-- > 0) {
+				if (*ProcName == '\\') {
+					escape = 1;
+					*query_end++ = '\\';
+				}
+				*query_end++ = *ProcName++;
+			}
+			*query_end++ = '\'';
+			if (escape) {
+				sprintf(query_end, " escape '\\\\'");
+				query_end += strlen(query_end);
+			}
+		}
 	}
 
 	/* add the ordering */

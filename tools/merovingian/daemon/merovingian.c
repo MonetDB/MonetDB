@@ -452,6 +452,7 @@ main(int argc, char *argv[])
 	FILE *oerr = NULL;
 	pthread_mutexattr_t mta;
 	int thret;
+	char merodontfork = 0;
 	confkeyval ckv[] = {
 		{"logfile",       strdup("merovingian.log"), 0,                STR},
 		{"pidfile",       strdup("merovingian.pid"), 0,                STR},
@@ -469,77 +470,7 @@ main(int argc, char *argv[])
 		{ NULL,           NULL,                    0,                  INVALID}
 	};
 	confkeyval *kv;
-#ifndef MERO_DONTFORK
-	char buf[4];
 	int retfd = -1;
-
-	/* Fork into the background immediately.  By doing this our child
-	 * can simply do everything it needs to do itself.  Via a pipe it
-	 * will tell us if it is happy or not. */
-	if (pipe(pfd) == -1) {
-		Mfprintf(stderr, "unable to create pipe: %s\n", strerror(errno));
-		return(1);
-	}
-	switch (fork()) {
-		case -1:
-			/* oops, forking went wrong! */
-			Mfprintf(stderr, "unable to fork into background: %s\n",
-					strerror(errno));
-			return(1);
-		case 0:
-			/* detach client from controlling tty, we only write to the
-			 * pipe to daddy */
-			if (setsid() < 0)
-				Mfprintf(stderr, "hmmm, can't detach from controlling tty, "
-						"continuing anyway\n");
-			retfd = open("/dev/null", O_RDONLY);
-			dup2(retfd, 0);
-			close(retfd);
-			close(pfd[0]); /* close unused read end */
-			retfd = pfd[1]; /* store the write end */
-		break;
-		default:
-			/* the parent, we want it to die, after we know the child
-			 * has a good time */
-			close(pfd[1]); /* close unused write end */
-			if (read(pfd[0], &buf, 1) != 1) {
-				Mfprintf(stderr, "unable to retrieve startup status\n");
-				return(1);
-			}
-			close(pfd[0]);
-			return(buf[0]); /* whatever the child returned, we return */
-	}
-
-/* use after the logger thread has started */
-#define MERO_EXIT(status) { \
-		char s = status; \
-		if (write(retfd, &s, 1) != 1 || close(retfd) != 0) { \
-			Mfprintf(stderr, "could not write to parent\n"); \
-		} \
-		if (status != 0) { \
-			Mfprintf(stderr, "fatal startup condition encountered, " \
-					"aborting startup\n"); \
-			goto shutdown; \
-		} \
-	}
-/* use before logger thread has started */
-#define MERO_EXIT_CLEAN(status) { \
-		char s = status; \
-		if (write(retfd, &s, 1) != 1 || close(retfd) != 0) { \
-			Mfprintf(stderr, "could not write to parent\n"); \
-		} \
-		exit(s); \
-	}
-#else
-#define MERO_EXIT(status) \
-	if (status != 0) { \
-		Mfprintf(stderr, "fatal startup condition encountered, " \
-				"aborting startup\n"); \
-		goto shutdown; \
-	}
-#define MERO_EXIT_CLEAN(status) \
-		exit(status);
-#endif
 
 	/* seed the randomiser for when we create a database, send responses
 	 * to HELO, etc */
@@ -580,48 +511,120 @@ main(int argc, char *argv[])
 		Mfprintf(stderr, "fatal: compiled in dbfarm location exceeds " \
 				"allocated path length, please file a bug at " \
 				"http://bugs.monetdb.org/\n");
-		MERO_EXIT_CLEAN(1);
+		exit(1);
 	}
 	snprintf(dbfarm, sizeof(dbfarm), "%s", LOCALSTATEDIR "/monetdb5/dbfarm");
 	if (argc > 1) {
-		/* future: support -v or something like monetdb(1), for now we
-		 * just don't */
 		if (strcmp(argv[1], "--help") == 0 ||
 				strcmp(argv[1], "-h") == 0 ||
 				strcmp(argv[1], "help") == 0)
 		{
-			MERO_EXIT_CLEAN(command_help(argc - 1, &argv[1]));
+			exit(command_help(argc - 1, &argv[1]));
 		} else if (strcmp(argv[1], "--version") == 0 ||
 				strcmp(argv[1], "-v") == 0 ||
 				strcmp(argv[1], "version") == 0)
 		{
-			MERO_EXIT_CLEAN(command_version());
+			exit(command_version());
 		} else if (strcmp(argv[1], "create") == 0) {
-			MERO_EXIT_CLEAN(command_create(argc - 1, &argv[1]));
+			exit(command_create(argc - 1, &argv[1]));
 		} else if (strcmp(argv[1], "get") == 0) {
-			MERO_EXIT_CLEAN(command_get(ckv, argc - 1, &argv[1]));
+			exit(command_get(ckv, argc - 1, &argv[1]));
 		} else if (strcmp(argv[1], "set") == 0) {
-			MERO_EXIT_CLEAN(command_set(ckv, argc - 1, &argv[1]));
+			exit(command_set(ckv, argc - 1, &argv[1]));
 		} else if (strcmp(argv[1], "start") == 0) {
-			/* start without argument just means start hardwired dbfarm */
-			if (argc > 2) {
+			/* start without path argument just means start hardwired dbfarm */
+			if (argc > 2 && strcmp(argv[2], "-n") == 0)
+					merodontfork = 1;
+			if (argc > 2 + merodontfork) {
 				int len;
-				len = snprintf(dbfarm, sizeof(dbfarm), "%s", argv[2]);
+				len = snprintf(dbfarm, sizeof(dbfarm), "%s",
+						argv[2 + merodontfork]);
 			
 				if (len > 0 && (size_t)len >= sizeof(dbfarm)) {
 					Mfprintf(stderr, "fatal: dbfarm exceeds allocated " \
 							"path length, please file a bug at " \
 							"http://bugs.monetdb.org/\n");
-					MERO_EXIT_CLEAN(1);
+					exit(1);
 				}
 			}
 		} else if (strcmp(argv[1], "stop") == 0) {
-			MERO_EXIT_CLEAN(command_stop(ckv, argc - 1, &argv[1]));
+			exit(command_stop(ckv, argc - 1, &argv[1]));
 		} else {
 			fprintf(stderr, "monetdbd: unknown command: %s\n", argv[1]);
 			command_help(0, NULL);
-			MERO_EXIT_CLEAN(1);
+			exit(1);
 		}
+	}
+
+	/* fork into background before doing anything more */
+	if (!merodontfork) {
+		char buf[4];
+
+		/* Fork into the background immediately.  By doing this our child
+		 * can simply do everything it needs to do itself.  Via a pipe it
+		 * will tell us if it is happy or not. */
+		if (pipe(pfd) == -1) {
+			Mfprintf(stderr, "unable to create pipe: %s\n", strerror(errno));
+			return(1);
+		}
+		switch (fork()) {
+			case -1:
+				/* oops, forking went wrong! */
+				Mfprintf(stderr, "unable to fork into background: %s\n",
+						strerror(errno));
+				return(1);
+			case 0:
+				/* detach client from controlling tty, we only write to the
+				 * pipe to daddy */
+				if (setsid() < 0)
+					Mfprintf(stderr, "hmmm, can't detach from controlling tty, "
+							"continuing anyway\n");
+				retfd = open("/dev/null", O_RDONLY);
+				dup2(retfd, 0);
+				close(retfd);
+				close(pfd[0]); /* close unused read end */
+				retfd = pfd[1]; /* store the write end */
+			break;
+			default:
+				/* the parent, we want it to die, after we know the child
+				 * has a good time */
+				close(pfd[1]); /* close unused write end */
+				if (read(pfd[0], &buf, 1) != 1) {
+					Mfprintf(stderr, "unable to retrieve startup status\n");
+					return(1);
+				}
+				close(pfd[0]);
+				return(buf[0]); /* whatever the child returned, we return */
+		}
+	}
+
+/* use after the logger thread has started */
+#define MERO_EXIT(status) if (!merodontfork) { \
+		char s = status; \
+		if (write(retfd, &s, 1) != 1 || close(retfd) != 0) { \
+			Mfprintf(stderr, "could not write to parent\n"); \
+		} \
+		if (status != 0) { \
+			Mfprintf(stderr, "fatal startup condition encountered, " \
+					"aborting startup\n"); \
+			goto shutdown; \
+		} \
+	} else { \
+		if (status != 0) { \
+			Mfprintf(stderr, "fatal startup condition encountered, " \
+					"aborting startup\n"); \
+			goto shutdown; \
+		} \
+	}
+/* use before logger thread has started */
+#define MERO_EXIT_CLEAN(status) if (!merodontfork) { \
+		char s = status; \
+		if (write(retfd, &s, 1) != 1 || close(retfd) != 0) { \
+			Mfprintf(stderr, "could not write to parent\n"); \
+		} \
+		exit(s); \
+	} else { \
+		exit(status); \
 	}
 
 	/* check if dbfarm actually exists */

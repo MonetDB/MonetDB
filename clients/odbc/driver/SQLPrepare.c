@@ -229,7 +229,7 @@ SQLPrepare_(ODBCStmt *stmt,
 		else
 			rec->sql_desc_case_sensitive = SQL_FALSE;
 
-		rec->sql_desc_local_type_name = (SQLCHAR *) strdup("");
+		rec->sql_desc_local_type_name = NULL;
 		rec->sql_desc_nullable = SQL_NULLABLE;
 		rec->sql_desc_parameter_type = SQL_PARAM_INPUT;
 		rec->sql_desc_rowver = SQL_FALSE;
