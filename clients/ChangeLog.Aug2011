@@ -1,6 +1,9 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Thu Aug 18 2011 Sjoerd Mullender <sjoerd@acm.org>
+- Implemented SQLTablePrivileges in the ODBC driver.
+
 * Fri Aug  5 2011 Sjoerd Mullender <sjoerd@acm.org>
 - mclient now automatically sets the SQL `TIME ZONE' variable to its
   (the client's) time zone.

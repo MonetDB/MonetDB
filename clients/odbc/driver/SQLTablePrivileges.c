@@ -53,6 +53,10 @@ SQLTablePrivileges_(ODBCStmt *stmt,
 		    SQLCHAR *TableName,
 		    SQLSMALLINT NameLength3)
 {
+	RETCODE rc;
+	char *query = NULL;
+	char *query_end = NULL;
+
 	fixODBCstring(CatalogName, NameLength1, SQLSMALLINT,
 		      addStmtError, stmt, return SQL_ERROR);
 	fixODBCstring(SchemaName, NameLength2, SQLSMALLINT,
@@ -67,6 +71,10 @@ SQLTablePrivileges_(ODBCStmt *stmt,
 		(int) NameLength3, (char *) TableName);
 #endif
 
+	/* construct the query now */
+	query = malloc(1200 + NameLength2 + NameLength3);
+	query_end = query;
+
 	/* SQLTablePrivileges returns a table with the following columns:
 	   VARCHAR      table_cat
 	   VARCHAR      table_schem
@@ -77,10 +85,111 @@ SQLTablePrivileges_(ODBCStmt *stmt,
 	   VARCHAR      is_grantable
 	 */
 
-	/* Driver does not support this function */
-	addStmtError(stmt, "IM001", NULL, 0);
+	sprintf(query_end,
+		"select"
+		" cast(NULL as varchar(1)) as table_cat,"
+		" s.name as table_schem,"
+		" t.name as table_name,"
+		" g.name as grantor,"
+		" a.name as grantee,"
+		" case p.privileges"
+		"      when 1 then 'SELECT'"
+		"      when 2 then 'UPDATE'"
+		"      when 4 then 'INSERT'"
+		"      when 8 then 'DELETE'"
+		"      when 16 then 'EXECUTE'"
+		"      when 32 then 'GRANT'"
+		"      end as privilege,"
+		" case p.grantable"
+		"      when 1 then 'YES'"
+		"      when 0 then 'NO'"
+		"      end as grantable "
+		"from schemas s,"
+		" tables t,"
+		" auths a,"
+		" privileges p,"
+		" auths g "
+		"where p.obj_id = t.id"
+		" and p.auth_id = a.id"
+		" and t.schema_id = s.id"
+		" and t.system = false"
+		" and p.grantor = g.id");
+	query_end += strlen(query_end);
 
-	return SQL_ERROR;
+	/* Construct the selection condition query part */
+	if (stmt->Dbc->sql_attr_metadata_id == SQL_TRUE) {
+		/* treat arguments as identifiers */
+		/* remove trailing blanks */
+		while (NameLength2 > 0 &&
+		       isspace((int) SchemaName[NameLength2 - 1]))
+			NameLength2--;
+		while (NameLength3 > 0 &&
+		       isspace((int) TableName[NameLength3 - 1]))
+			NameLength3--;
+		if (NameLength2 > 0) {
+			sprintf(query_end, " and s.\"name\" = '");
+			query_end += strlen(query_end);
+			while (NameLength2-- > 0)
+				*query_end++ = tolower(*SchemaName++);
+			*query_end++ = '\'';
+		}
+		if (NameLength3 > 0) {
+			sprintf(query_end, " and t.\"name\" = '");
+			query_end += strlen(query_end);
+			while (NameLength3-- > 0)
+				*query_end++ = tolower(*TableName++);
+			*query_end++ = '\'';
+		}
+	} else {
+		int escape;
+		if (NameLength2 > 0) {
+			escape = 0;
+			sprintf(query_end, " and s.\"name\" like '");
+			query_end += strlen(query_end);
+			while (NameLength2-- > 0) {
+				if (*SchemaName == '\\') {
+					escape = 1;
+					*query_end++ = '\\';
+				}
+				*query_end++ = *SchemaName++;
+			}
+			*query_end++ = '\'';
+			if (escape) {
+				sprintf(query_end, " escape '\\\\'");
+				query_end += strlen(query_end);
+			}
+		}
+		if (NameLength3 > 0) {
+			escape = 0;
+			sprintf(query_end, " and t.\"name\" like '");
+			query_end += strlen(query_end);
+			while (NameLength3-- > 0) {
+				if (*TableName == '\\') {
+					escape = 1;
+					*query_end++ = '\\';
+				}
+				*query_end++ = *TableName++;
+			}
+			*query_end++ = '\'';
+			if (escape) {
+				sprintf(query_end, " escape '\\\\'");
+				query_end += strlen(query_end);
+			}
+		}
+	}
+
+	/* add the ordering */
+	strcpy(query_end,
+	       " order by table_cat, table_schem, table_name, privilege, grantee");
+	query_end += strlen(query_end);
+
+	/* query the MonetDB data dictionary tables */
+        rc = SQLExecDirect_(stmt, (SQLCHAR *) query,
+			    (SQLINTEGER) (query_end - query));
+
+	free(query);
+
+	return rc;
 }
 
 SQLRETURN SQL_API
