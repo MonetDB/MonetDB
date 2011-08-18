@@ -46,7 +46,7 @@ SQLGetConnectAttr_(ODBCDbc *dbc,
 		   SQLINTEGER Attribute,
 		   SQLPOINTER ValuePtr,
 		   SQLINTEGER BufferLength,
-		   SQLINTEGER *StringLength)
+		   SQLINTEGER *StringLengthPtr)
 {
 	/* check input parameters */
 	if (ValuePtr == NULL) {
@@ -90,7 +90,7 @@ SQLGetConnectAttr_(ODBCDbc *dbc,
 		break;
 	case SQL_ATTR_CURRENT_CATALOG:
 		copyString(dbc->dbname, strlen(dbc->dbname), ValuePtr,
-			   BufferLength, StringLength, SQLINTEGER,
+			   BufferLength, StringLengthPtr, SQLINTEGER,
 			   addDbcError, dbc, return SQL_ERROR);
 		break;
 
@@ -121,7 +121,7 @@ SQLGetConnectAttr(SQLHDBC ConnectionHandle,
 		  SQLINTEGER Attribute,
 		  SQLPOINTER ValuePtr,
 		  SQLINTEGER BufferLength,
-		  SQLINTEGER *StringLength)
+		  SQLINTEGER *StringLengthPtr)
 {
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLGetConnectAttr " PTRFMT " %d\n",
@@ -137,7 +137,7 @@ SQLGetConnectAttr(SQLHDBC ConnectionHandle,
 				  Attribute,
 				  ValuePtr,
 				  BufferLength,
-				  StringLength);
+				  StringLengthPtr);
 }
 
 #ifdef WITH_WCHAR
@@ -146,13 +146,13 @@ SQLGetConnectAttrA(SQLHDBC ConnectionHandle,
 		   SQLINTEGER Attribute,
 		   SQLPOINTER ValuePtr,
 		   SQLINTEGER BufferLength,
-		   SQLINTEGER *StringLength)
+		   SQLINTEGER *StringLengthPtr)
 {
 	return SQLGetConnectAttr(ConnectionHandle,
 				 Attribute,
 				 ValuePtr,
 				 BufferLength,
-				 StringLength);
+				 StringLengthPtr);
 }
 
 SQLRETURN SQL_API
@@ -160,7 +160,7 @@ SQLGetConnectAttrW(SQLHDBC ConnectionHandle,
 		   SQLINTEGER Attribute,
 		   SQLPOINTER ValuePtr,
 		   SQLINTEGER BufferLength,
-		   SQLINTEGER *StringLength)
+		   SQLINTEGER *StringLengthPtr)
 {
 	ODBCDbc *dbc = (ODBCDbc *) ConnectionHandle;
 	SQLRETURN rc;
@@ -199,9 +199,9 @@ SQLGetConnectAttrW(SQLHDBC ConnectionHandle,
 		SQLSMALLINT nn = (SQLSMALLINT) n;
 
 		fixWcharOut(rc, ptr, nn, ValuePtr, BufferLength,
-			    StringLength, 2, addDbcError, dbc);
-	} else if (StringLength)
-		*StringLength = n;
+			    StringLengthPtr, 2, addDbcError, dbc);
+	} else if (StringLengthPtr)
+		*StringLengthPtr = n;
 
 	return rc;
 }
