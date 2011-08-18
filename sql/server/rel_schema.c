@@ -654,7 +654,7 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 
 								cs->dim->start = GDKstrdup("0");
 								cs->dim->step = GDKstrdup("1");
-								cs->dim->step = GDKstrdup(atom2string(sql->sa, ((AtomNode*)dim->h->data.lval->h->data.sym)->a));
+								cs->dim->stop = atom2string(sql->sa, ((AtomNode*)dim->h->data.lval->h->data.sym)->a);
 							} else {									/* the case [*]: nothing to do */
 								/* TODO: check */
 							}
@@ -671,7 +671,7 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 							cs->dim->start = GDKstrdup("0");
 							cs->dim->step = GDKstrdup("-1");
 							atom_neg( ((AtomNode *) dim->h->data.lval->h->next->data.sym)->a );
-							cs->dim->step = GDKstrdup(atom2string(sql->sa, ((AtomNode*)dim->h->data.lval->h->next->data.sym)->a));
+							cs->dim->stop = atom2string(sql->sa, ((AtomNode*)dim->h->data.lval->h->next->data.sym)->a);
 						}
 					} break;
 					case 2: /* [start:stop] */
