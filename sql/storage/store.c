@@ -1904,6 +1904,7 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c )
 {
 	sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
 	sql_table *syscolumn = find_sql_table(syss, "_columns");
+	sql_table *sysdim = find_sql_table(syss, "_dimensions");
 	sql_column *col = ZNEW(sql_column);
 
 	base_init(NULL, &col->base, c->base.id, TR_NEW, c->base.name);
@@ -1923,8 +1924,11 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c )
 
 	if (isTable(t) || isArray(t))
 		store_funcs.create_col(tr, col);
-	if (!isDeclaredTable(t))
+	if (!isDeclaredTable(t)) {
 		table_funcs.table_insert(tr, syscolumn, &col->base.id, col->base.name, col->type.type->sqlname, &col->type.digits, &col->type.scale, &t->base.id, (col->def) ? col->def : ATOMnilptr(TYPE_str), &col->null, &col->colnr, (col->storage_type) ? col->storage_type : ATOMnilptr(TYPE_str));
+		if (c->dim)
+			table_funcs.table_insert(tr, sysdim, &col->base.id, c->dim->start, c->dim->step, c->dim->stop);
+	}
 	col->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
 	if (isGlobal(t)) 
 		tr->schema_updates ++;
