@@ -180,14 +180,9 @@ db_users_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *r = (bat *)getArgReference(stk, pci, 0);
 	BAT *b = db_users(cntxt);
-	BAT *t = BATnew(TYPE_str, TYPE_bat, 1);
-	if(t == NULL)
-		throw(SQL,"sql.users_wrap", MAL_MALLOC_FAIL);
-	(void)mb;
 
-	BUNins(t, "name", &b->batCacheid, FALSE);
-	BBPunfix(b->batCacheid);
-	*r = t->batCacheid;
+	(void)mb;
+	*r = b->batCacheid;
 	BBPkeepref(*r);
 	return MAL_SUCCEED;
 }

@@ -34,13 +34,13 @@ Over..
 % 3,	3,	4 # length
 [ "int",	"int",	16	]
 [ "int",	"lng",	2	]
+[ "int",	"str",	0	]
 [ "int",	"str",	142	]
 [ "oid",	"bit",	1149	]
 [ "oid",	"bit",	1149	]
 [ "oid",	"bit",	1149	]
 [ "oid",	"int",	19	]
 [ "oid",	"int",	19	]
-[ "oid",	"int",	1149	]
 [ "oid",	"int",	1149	]
 [ "oid",	"int",	1149	]
 [ "oid",	"int",	3157	]
@@ -68,7 +68,7 @@ Over..
 % L3,	L4 # name
 % char,	wrd # type
 % 10,	2 # length
-[ "persistent",	25	]
+[ "persistent",	24	]
 
 # 22:02:15 >  
 # 22:02:15 >  Done.

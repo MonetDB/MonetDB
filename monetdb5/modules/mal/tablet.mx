@@ -480,8 +480,9 @@ tablet_export int TABLETcreate_bats(Tablet * as, BUN est);
 tablet_export BUN TABLETassign_BATs(Tablet * as, BAT *bats);
 tablet_export BUN TABLETload_file(Tablet * as, bstream *b, stream *out);
 tablet_export BUN SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char quote, lng skip, lng maxrow);
+tablet_export BAT **TABLETcollect(Tablet * as);
 tablet_export BAT *TABLETcollect_bats(Tablet * as);
-tablet_export BAT *TABLETcollect_parts(Tablet * as, BUN offset);
+tablet_export BAT **TABLETcollect_parts(Tablet * as, BUN offset);
 tablet_export void TABLETdestroy_format(Tablet * as);
 tablet_export int TABLEToutput_file(Tablet * as, BAT *order, stream *s);
 
@@ -1344,10 +1345,43 @@ TABLETcollect_bats(Tablet * as)
 	return bats;
 }
 
-BAT *
+BAT **
+TABLETcollect(Tablet * as)
+{
+	BAT **bats = GDKmalloc(sizeof(BAT*) * as->nr_attrs);
+	Column *fmt = as->format;
+	BUN i;
+	BUN cnt = BATcount(fmt[0].c[0]);
+
+	if (bats == NULL)
+		return NULL;
+	for (i = 0; i < as->nr_attrs; i++) {
+		bats[i] = fmt[i].c[0];
+		BBPincref(bats[i]->batCacheid, FALSE);
+		BATsetaccess(fmt[i].c[0], BAT_READ);
+		BATaccessBegin(fmt[i].c[0], USE_ALL, MMAP_WILLNEED);
+		BATpropcheck(fmt[i].c[0], BATPROPS_ALL);
+		/* drop the hashes, we don't need them now  and they consume space */
+		HASHremove(fmt[i].c[0]);
+
+		BATpropcheck(BATmirror(fmt[i].c[0]), BATPROPS_ALL);
+		/* drop the hashes, we don't need them now  and they consume space */
+		HASHremove(BATmirror(fmt[i].c[0]));
+		BATaccessEnd(fmt[i].c[0], USE_ALL, MMAP_WILLNEED);
+
+		if (cnt != BATcount(fmt[i].c[0])) {
+			if ( as->error == 0) /* a new error */
+				GDKerror("Error: column " BUNFMT "  count " BUNFMT " differs from " BUNFMT "\n",i,BATcount(fmt[i].c[0]),cnt);
+			return NULL;
+		}
+	}
+	return bats;
+}
+
+BAT **
 TABLETcollect_parts(Tablet * as, BUN offset)
 {
-	BAT *bats = BATnew(TYPE_str, TYPE_bat, as->nr_attrs);
+	BAT **bats = GDKmalloc(sizeof(BAT*) * as->nr_attrs);
 	Column *fmt = as->format;
 	BUN i;
 	BUN cnt = BATcount(fmt[0].c[0]);
@@ -1361,7 +1395,7 @@ TABLETcollect_parts(Tablet * as, BUN offset)
 
 		BATsetaccess(b, BAT_READ);
 		bv = BATslice(b, offset, BATcount(b));
-		BUNins(bats, (ptr) fmt[i].name, (ptr) &bv->batCacheid, FALSE);
+		bats[i] = bv;
 		/* we "mis"use BATpropcheck to set rather than verify properties on 
 		 * the newly loaded slice; hence, we locally disable property errors */
 		GDKdebug &= ~PROPMASK;
@@ -1391,10 +1425,8 @@ TABLETcollect_parts(Tablet * as, BUN offset)
 		if (cnt != BATcount(b)) {
 			if ( as->error == 0) /* a new error */
 				GDKerror("Error: column " BUNFMT "  count " BUNFMT " differs from " BUNFMT "\n",i,BATcount(b),cnt);
-			BBPunfix(bats->batCacheid);
 			return NULL;
 		}
-		BBPunfix(bv->batCacheid);
 	}
 	return bats;
 }

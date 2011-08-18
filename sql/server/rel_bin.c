@@ -417,13 +417,8 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 	case e_column: {
 		if (right) /* check relation names */
 			s = bin_find_column(sql->sa, right, e->l, e->r);
-		if (!s && left) {
-			if (left->type == st_Nop && tail_type(left)->comp_type ) { /* table function */
-				s = stmt_rs_column(sql->sa, left, stmt_atom_string(sql->sa, sa_strdup(sql->sa, e->r)), &e->tpe);
-			} else {
-				s = bin_find_column(sql->sa, left, e->l, e->r);
-			}
-		}
+		if (!s && left) 
+			s = bin_find_column(sql->sa, left, e->l, e->r);
 		if (s && grp)
 			s = stmt_join(sql->sa, grp->ext, s, cmp_equal);
 		if (!s && right) {
@@ -779,20 +774,45 @@ rel2bin_table( mvc *sql, sql_rel *rel, list *refs)
 {
 	list *l; 
 	stmt *sub = NULL;
-	node *en;
+	node *en, *n;
+	int i;
+	sql_exp *op = rel->r;
+	sql_subfunc *f = op->f;
+	sql_table *t = f->res.comp_type;
 			
+	if (!t)
+		t = f->func->res.comp_type;
 	if (rel->l)
 		sub = subrel_bin(sql, rel->l, refs);
 	sub = exp_bin(sql, rel->r, sub, NULL, NULL, NULL); /* table function */
-	if (!sub) { 
+	if (!sub || !t) { 
 		assert(0);
 		return NULL;	
 	}
+
+	l = list_new(sql->sa);
+	for(i = 0, n = t->columns.set->h; n; n = n->next, i++ ) {
+		sql_column *c = n->data;
+		stmt *s = stmt_rs_column(sql->sa, sub, i, &c->type); 
+		char *nme = c->base.name;
+		char *rnme = exp_find_rel_name(op);
+
+		rnme = (rnme)?sa_strdup(sql->sa, rnme):NULL;
+		s = stmt_alias(sql->sa, s, rnme, sa_strdup(sql->sa, nme));
+		list_append(l, s);
+	}
+	sub = stmt_list(sql->sa, l);
+
 	l = list_new(sql->sa);
 	for( en = rel->exps->h; en; en = en->next ) {
 		sql_exp *exp = en->data;
-		stmt *s = exp_bin(sql, exp, sub, NULL, NULL, NULL);
 		char *rnme = exp->rname?exp->rname:exp->l;
+		stmt *s;
+	       
+		/* no relation names */
+		if (exp->l)
+			exp->l = NULL;
+		s = exp_bin(sql, exp, sub, NULL, NULL, NULL);
 
 		if (!s) {
 			assert(0);

@@ -43,7 +43,7 @@ extern int mvc_export_head(mvc *c, stream *s, int res_id, int only_header);
 extern int mvc_export_prepare(mvc *c, stream *s, cq *q, str w);
 extern int mvc_export_chunk(mvc *m, stream *s, int res_id, BUN offset, BUN nr);
 
-extern BAT *mvc_import_table(Client cntxt, mvc *c, bstream *s, char *sname, char *tname, char *sep, char *rsep, char *ssep, char *ns, lng nr, lng offset, int locked);
+extern BAT **mvc_import_table(Client cntxt, mvc *c, bstream *s, char *sname, char *tname, char *sep, char *rsep, char *ssep, char *ns, lng nr, lng offset, int locked);
 extern int mvc_result_table(mvc *m, int nr_cols, int type, BAT *order);
 
 extern int mvc_result_column(mvc *m, char *tn, char *name, char *typename, int digits, int scale, BAT *b);
@@ -438,17 +438,17 @@ _ASCIIadt_toStr(void *extra, char **buf, int *len, int type, ptr a)
 }
 
 
-BAT *
+BAT **
 mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, char *sep, char *rsep, char *ssep, char *ns, lng sz, lng offset, int locked)
 {
 	int i = 0;
 	sql_schema *s = mvc_bind_schema(m, sname);
 	sql_table *t = mvc_bind_table(m, s, tname);
 	node *n;
-	BAT *bats = NULL;
 	Tablet as;
 	Column *fmt;
 	size_t cnt = 0;
+	BAT **bats = NULL;
 
 	if (!t) {
 		sql_error(m, 500, "table %s not found", tname);
@@ -546,7 +546,7 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 				if (locked) 
 					bats = TABLETcollect_parts(&as, cnt);
 				else
-					bats = TABLETcollect_bats(&as);
+					bats = TABLETcollect(&as);
 			} else if (locked) { /* restore old counts */
 				for (n = t->columns.set->h, i = 0; n; n = n->next, i++) {
 					sql_column *col = n->data;

@@ -271,7 +271,7 @@ mal_export int malProfileMode;
 mal_export void clearTrace(void);
 mal_export BAT *getTrace(str ev);
 mal_export int getTraceType(str nme);
-mal_export BAT * TRACEtable(void);
+mal_export void TRACEtable(BAT **r);
 
 mal_export lng getDiskSpace(void);
 mal_export lng getDiskReads(void);
@@ -1007,31 +1007,25 @@ static BAT *TRACE_id_writes = 0;
 static BAT *TRACE_id_thread = 0;
 static BAT *TRACE_id_user = 0;
 
-BAT *
-TRACEtable(void)
+void
+TRACEtable(BAT **r)
 {
-	BAT *t;
-
 	if (initTrace())
-		return NULL;
-	t = BATnew(TYPE_str, TYPE_bat, 9);
-	if (t == NULL)
-		return NULL;
+		return ;
 	mal_set_lock(mal_profileLock, "profileLock");
-	BUNins(t, "event", &TRACE_id_event->batCacheid, FALSE);
-	BUNins(t, "clk", &TRACE_id_time->batCacheid, FALSE);
-	BUNins(t, "pc", &TRACE_id_pc->batCacheid, FALSE);
-	BUNins(t, "thread", &TRACE_id_thread->batCacheid, FALSE);
-	BUNins(t, "user", &TRACE_id_user->batCacheid, FALSE);
-	BUNins(t, "ticks", &TRACE_id_ticks->batCacheid, FALSE);
-	BUNins(t, "reads", &TRACE_id_reads->batCacheid, FALSE);
-	BUNins(t, "writes", &TRACE_id_writes->batCacheid, FALSE);
-	BUNins(t, "rbytes", &TRACE_id_rbytes->batCacheid, FALSE);
-	BUNins(t, "wbytes", &TRACE_id_wbytes->batCacheid, FALSE);
-	BUNins(t, "type", &TRACE_id_type->batCacheid, FALSE);
-	BUNins(t, "stmt", &TRACE_id_stmt->batCacheid, FALSE);
+	r[0] = TRACE_id_event;
+	r[1] = TRACE_id_time;
+	r[2] = TRACE_id_pc;
+	r[3] = TRACE_id_thread;
+	r[4] = TRACE_id_user;
+	r[5] = TRACE_id_ticks;
+	r[6] = TRACE_id_reads;
+	r[7] = TRACE_id_writes;
+	r[8] = TRACE_id_rbytes;
+	r[9] = TRACE_id_wbytes;
+	r[10] = TRACE_id_type;
+	r[11] = TRACE_id_stmt;
 	mal_unset_lock(mal_profileLock, "profileLock");
-	return t;
 }
 
 static BAT *

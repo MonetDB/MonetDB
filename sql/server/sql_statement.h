@@ -196,7 +196,7 @@ extern stmt *stmt_basetable(sql_allocator *sa, sql_table *t, char *tname);
 #define isbasetable(s) (s->type == st_basetable && isTable(s->op1.tval))
 #define basetable_table(s) s->op1.tval
 
-extern stmt *stmt_rs_column(sql_allocator *sa, stmt *result_set, stmt *v, sql_subtype *tpe);
+extern stmt *stmt_rs_column(sql_allocator *sa, stmt *result_set, int i, sql_subtype *tpe);
 
 extern stmt *stmt_bat(sql_allocator *sa, sql_column *c, stmt *basetable, int access );
 extern stmt *stmt_delta_table_bat(sql_allocator *sa, sql_column *c, stmt *basetable, int access );

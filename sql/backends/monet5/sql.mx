@@ -239,10 +239,6 @@ pattern delete{unsafe}(mvc:int, sname:str, tname:str, b:any):int
 address mvc_delete_wrap
 comment "delete from table";
 
-command columnBind(b:bat[:str,:bat], nme:str) :bat[:oid,:any_1]
-address mvc_bind_single_wrap
-comment "Bind the column bat into the focus ";
-
 # @-
 # The Monet 5 code generator uses several SQL specific wrapper functions.
 pattern resultSet{unsafe}( nr_cols:int, sep:str, rsep:str, ssep:str, ns:str, order:any_1 ) :int 
@@ -312,9 +308,15 @@ pattern exportValue{unsafe}(qtype:int, tname:str, name:str, typename:str, digits
 address mvc_export_value_wrap 
 comment "export a single value onto the stream s";
 
-pattern importTable{unsafe}( s:bstream, sname:str, tname:str, 
-	sep:str, rsep:str, ssep:str, ns:str, nr:lng, offset:lng, locked:int) :bat[:str,:bat]
+pattern copy_from{unsafe}( sname:str, tname:str, 
+	sep:str, rsep:str, ssep:str, ns:str, fname:str, nr:lng, offset:lng, locked:int)(:bat[:oid,:any]...)
 address mvc_import_table_wrap
+comment "Import a table from bstream s with the 
+	given tuple and seperators (sep/rsep)";
+
+pattern copyfrom{unsafe}( sname:str, tname:str, 
+	sep:str, rsep:str, ssep:str, ns:str, nr:lng, offset:lng, locked:int)(:bat[:oid,:any]...)
+address mvc_import_table_stdin
 comment "Import a table from bstream s with the 
 	given tuple and seperators (sep/rsep)";
 
@@ -324,51 +326,9 @@ function single(x:any_2):bat[:oid,:any_2];
 	return c;
 end single;
 
-function copy_from(
-	sname:str,
-	tname:str,
-	tsep:str,
-	rsep:str,
-	ssep:str,
-	ns:str,
-	fname:str,
-	nr:lng,
-	offset:lng,
-	locked:int
-):bat[:str,:bat];
-	cs := str.codeset();
-	f  := str.iconv(fname, "UTF-8", cs);
-	s  := streams.openRead(f);
-	#bs := bstream.create(s, 1048576);
-	#bs := bstream.create(s, 8388608);
-	bs := bstream.create(s, 33554432);
-	#bs := bstream.create(s, 67108864);
-
-	res := sql.importTable(bs, sname, tname, tsep, rsep, ssep, ns, nr, offset, locked);
-	bstream.destroy(bs);
-	return res;
-end copy_from;
-
-function copyfrom(
-	sname:str,
-	tname:str,
-	tsep:str,
-	rsep:str,
-	ssep:str,
-	ns:str,
-	nr:lng,
-	offset:lng,
-	locked:int
-):bat[:str,:bat];
-	in := io.stdin();
-	res := sql.importTable(in, sname, tname, tsep, rsep, ssep, ns, nr, offset, locked);
-	return res;
-end copyfrom;
-
-pattern importTable{unsafe}( sname:str, tname:str, fname:str... ) :bat[:str,:bat]
+pattern importTable{unsafe}( sname:str, tname:str, fname:str... )(:bat[:oid,:any]...)
 address mvc_bin_import_table_wrap
 comment "Import a table from the files (fname)";
-
 
 command zero_or_one( col:bat[:any_2,:any_1]) :any_1
 address zero_or_one
@@ -430,78 +390,61 @@ pattern argRecord(a:any...):str
 address SQLargRecord
 comment "Glue together the calling sequence";
 
-function sql_environment{inline}():bat[:str,:bat];
-	b := bat.new(:str,:bat,2);
+function sql_environment{inline}()(name:bat[:oid,:str],value:bat[:oid,:str]);
 	e := inspect.getEnvironment();
 	n := algebra.markT(e, 0:oid);
 	r := bat.reverse(n);
 	v := algebra.markH(e, 0:oid);
-	b1:= bat.insert(b, "name", r);
-	b2:= bat.insert(b1, "value", v);
-	return sql_environment := b2;
+	return (r,v);
 end sql_environment;
 
-function clients{inline}():bat[:str,:bat];
-	b := bat.new(:str,:bat,5);
-	u:= clients.getUsers();
-	b1:= bat.insert(b,"user",u);
-	l:= clients.getLogins();
-	b2:= bat.insert(b1,"login",l);
-	c:= clients.getLastCommand();
-	b3:= bat.insert(b2,"lastcommand",c);
-	a:= clients.getActions();
-	b4:= bat.insert(b3,"actions",a);
-	t:= clients.getTime();
-	b5:= bat.insert(b4,"seconds",t);
-	return clients := b5;
+function clients{inline}()( user:bat[:oid,:str], login:bat[:oid,:str], lastcommand:bat[:oid,:str], actions:bat[:oid,:int], seconds:bat[:oid,:lng]);
+	U:= clients.getUsers();
+	u:= algebra.markH(U);
+	L:= clients.getLogins();
+	l:= algebra.markH(L);
+	C:= clients.getLastCommand();
+	c:= algebra.markH(C);
+	A:= clients.getActions();
+	a:= algebra.markH(A);
+	T:= clients.getTime();
+	t:= algebra.markH(T);
+	return (u,l,c,a,t);
 end clients;
 
-function bbp{inline}():bat[:str,:bat];
-	b := bat.new(:str,:bat,12);
+function bbp{inline}()( id:bat[:oid,:int], name:bat[:oid,:str], htype:bat[:oid,:str], ttype:bat[:oid,:str], count:bat[:oid,:lng], refcnt:bat[:oid,:int], lrefcnt:bat[:oid,:int], location:bat[:oid,:str], heat:bat[:oid,:int], dirty:bat[:oid,:str], status:bat[:oid,:str], kind:bat[:oid,:str]);
 	ns := bbp.getNames();
 	ri := algebra.markT(ns, 0:oid);
 	i := bat.reverse(ri);
 	n := algebra.markH(ns, 0:oid);
-	b1:= bat.insert(b, "id", i);
-	b2:= bat.insert(b1, "name", n);
 	iht := bbp.getHeadType();
 	ht := algebra.markH(iht, 0:oid);
-	b3:= bat.insert(b2, "htype", ht);
 	itt := bbp.getTailType();
 	tt := algebra.markH(itt, 0:oid);
-	b4:= bat.insert(b3, "ttype", tt);
 	icnt := bbp.getCount();
 	cnt := algebra.markH(icnt, 0:oid);
-	b5:= bat.insert(b4, "count", cnt);
 	irefcnt := bbp.getRefCount();
 	refcnt := algebra.markH(irefcnt, 0:oid);
-	b6:= bat.insert(b5, "refcnt", refcnt);
 	ilrefcnt := bbp.getLRefCount();
 	lrefcnt := algebra.markH(ilrefcnt, 0:oid);
-	b7:= bat.insert(b6, "lrefcnt", lrefcnt);
 	ilocation := bbp.getLocation();
 	location := algebra.markH(ilocation, 0:oid);
-	b8:= bat.insert(b7, "location", location);
 	iheat := bbp.getHeat();
 	heat := algebra.markH(iheat, 0:oid);
-	b9:= bat.insert(b8, "heat", heat);
 	idirty := bbp.getDirty();
 	dirty := algebra.markH(idirty, 0:oid);
-	b10:= bat.insert(b9, "dirty", dirty);
 	istatus := bbp.getStatus();
 	status := algebra.markH(istatus, 0:oid);
-	b11:= bat.insert(b10, "status", status);
 	ikind := bbp.getKind();
 	kind := algebra.markH(ikind, 0:oid);
-	b12:= bat.insert(b11, "kind", kind);
-	return bbp := b12;
+	return (i,n,ht,tt,cnt,refcnt,lrefcnt,location,heat,dirty,status,kind);
 end bbp;
 
-pattern sql_variables():bat[:str,:bat]
+pattern sql_variables():bat[:oid,:str]
 address sql_variables
 comment "return the table with session variables";
 
-pattern db_users() :bat[:str,:bat]
+pattern db_users() :bat[:oid,:str]
 address db_users_wrap
 comment "return table of users with sql scenario";
 
@@ -509,19 +452,40 @@ pattern password(user:str) :str
 address db_password_wrap
 comment "return password hash of user";
 
-pattern dump_cache() :bat[:str,:bat]
+pattern dump_cache()(query:bat[:oid,:str],count:bat[:oid,:int])
 address dump_cache
 comment "dump the content of the query cache";
 
-pattern dump_opt_stats() :bat[:str,:bat]
+pattern dump_opt_stats()(rewrite:bat[:oid,:str],count:bat[:oid,:int])
 address dump_opt_stats
 comment "dump the optimizer rewrite statistics";
 
-pattern dump_trace() :bat[:str,:bat]
+pattern dump_trace()(
+	event:bat[:oid,:int],
+	clk:bat[:oid,:str],
+	pc:bat[:oid,:str],
+	thread:bat[:oid,:int],
+	user:bat[:oid,:int],
+	ticks:bat[:oid,:lng],
+	reads:bat[:oid,:lng],
+	writes:bat[:oid,:lng],
+	rbytes:bat[:oid,:lng],
+	wbytes:bat[:oid,:lng],
+	type:bat[:oid,:str],
+	stmt:bat[:oid,:str])
 address dump_trace
 comment "dump the trace statistics";
 
-pattern storage():bat[:str,:bat]
+pattern storage()(
+	schema:bat[:oid,:str],
+	table:bat[:oid,:str],
+	column:bat[:oid,:str],
+	location:bat[:oid,:str],
+	count:bat[:oid,:lng],
+	capacity:bat[:oid,:lng],
+	width:bat[:oid,:int],
+	size:bat[:oid,:lng],
+	hashsize:bat[:oid,:lng])
 address sql_storage
 comment "return a table with storage information ";
 
@@ -1229,7 +1193,6 @@ sql5_export str SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 sql5_export str mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str mvc_bind_single_wrap(int *ret, int *bid, str *name);
 sql5_export str mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_bind_dbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -1253,6 +1216,7 @@ sql5_export str mvc_export_chunk_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 sql5_export str mvc_export_operation_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_export_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_import_table_stdin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str getVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -2512,7 +2476,7 @@ sql_variables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
 	mvc *m = NULL;
-	BAT *vars, *r; 
+	BAT *vars; 
 	str msg = getContext(cntxt,mb, &m, NULL);
 	int *res = (int *) getArgReference(stk, pci, 0);
 
@@ -2525,15 +2489,8 @@ sql_variables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATseqbase(vars, 0);
 	for (i=0; i<m->topvars && m->vars[i].s; i++) 
 		BUNappend(vars, m->vars[i].name, FALSE);
-	r = BATnew(TYPE_str,TYPE_bat,1);
-	if( r == NULL){
-		BBPreleaseref(vars->batCacheid);
-		throw(SQL, "sql.variables", MAL_MALLOC_FAIL);
-	}
-	BUNins(r, "name", &vars->batCacheid, FALSE);
-	BBPunfix(vars->batCacheid);
-	*res = r->batCacheid;
-	BBPkeepref(r->batCacheid);
+	*res = vars->batCacheid;
+	BBPkeepref(vars->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -3045,27 +3002,6 @@ mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 @
 @c
 
-str
-mvc_bind_single_wrap(int *ret, int *bid, str *name)
-{
-	BAT *b, *bn;
-	int r;
-	BUN p;
-	BATiter bni;
-
-	if( (bn= BATdescriptor(*bid)) == NULL)
-		throw(SQL, "sql.bind","Cannot access descriptor");
-
-	p = BUNfnd(bn, *name);
-	bni = bat_iterator(bn);
-	r = *(int *) BUNtail(bni, p);
-	if( (b= BATdescriptor(r)) == NULL)
-		throw(SQL, "sql.bind","Cannot access descriptor");
-	BBPkeepref(*ret= b->batCacheid);
-	BBPunfix( bn->batCacheid);
-	return MAL_SUCCEED;
-}
-
 /* str mvc_bind_dbat_wrap(int *ret, str *sname, str *tname, int *access); */
 str
 mvc_bind_dbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -3568,26 +3504,100 @@ mvc_export_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-/* str mvc_import_table_wrap(int *res, bstream **s, str *sname, str *tname, unsigned char* *T, unsigned char* *R, unsigned char* *S, unsigned char* *N, lng *sz, lng *offset); */
+static void
+bat2return(MalStkPtr stk, InstrPtr pci, BAT **b)
+{
+	int i;
+
+	for(i = 0; i<pci->retc; i++) {
+		*(int*)getArgReference(stk, pci, i) = b[i]->batCacheid;
+		BBPkeepref(b[i]->batCacheid);
+	}
+}
+
+/* str mvc_import_table_wrap(int *res, str *sname, str *tname, unsigned char* *T, unsigned char* *R, unsigned char* *S, unsigned char* *N, str *fname, lng *sz, lng *offset); */
 str
 mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *b;
+	BAT **b = NULL;
 	mvc *m = NULL;
 	str msg = getContext(cntxt,mb, &m, NULL);
 	unsigned char *tsep = NULL, *rsep = NULL, *ssep = NULL, *ns = NULL;
 	ssize_t len = 0;
-	int *res = (int *) getArgReference(stk, pci, 0);
-	bstream **s = (bstream **) getArgReference(stk, pci, 1);
-	str *sname = (str *) getArgReference(stk, pci, 2);
-	str *tname = (str *) getArgReference(stk, pci, 3);
-	unsigned char **T = (unsigned char **) getArgReference(stk, pci, 4);
-	unsigned char **R = (unsigned char **) getArgReference(stk, pci, 5);
-	unsigned char **S = (unsigned char **) getArgReference(stk, pci, 6);
-	unsigned char **N = (unsigned char **) getArgReference(stk, pci, 7);
-	lng *sz = (lng *) getArgReference(stk, pci, 8);
-	lng *offset = (lng *) getArgReference(stk, pci, 9);
-	int *locked = (int *) getArgReference(stk, pci, 10);
+	str filename, cs;
+	str *sname = (str *) getArgReference(stk, pci, pci->retc+0);
+	str *tname = (str *) getArgReference(stk, pci, pci->retc+1);
+	unsigned char **T = (unsigned char **) getArgReference(stk, pci, pci->retc+2);
+	unsigned char **R = (unsigned char **) getArgReference(stk, pci, pci->retc+3);
+	unsigned char **S = (unsigned char **) getArgReference(stk, pci, pci->retc+4);
+	unsigned char **N = (unsigned char **) getArgReference(stk, pci, pci->retc+5);
+	str *fname = (str *) getArgReference(stk, pci, pci->retc+6);
+	lng *sz = (lng *) getArgReference(stk, pci, pci->retc+7);
+	lng *offset = (lng *) getArgReference(stk, pci, pci->retc+8);
+	int *locked = (int *) getArgReference(stk, pci, pci->retc+9);
+	bstream *s;
+	stream *ss;
+
+	if (msg)
+		return msg;
+	len = strlen((char*)(*T));
+	GDKstrFromStr(tsep=GDKmalloc(len+1), *T, len); len = 0;
+	len = strlen((char*)(*R));
+	GDKstrFromStr(rsep=GDKmalloc(len+1), *R, len); len = 0;
+	if (*S && strcmp(str_nil,*(char**)S)) {
+		len = strlen((char*)(*S));
+		GDKstrFromStr(ssep=GDKmalloc(len+1), *S, len); 
+		len = 0;
+	}
+
+	codeset(&cs);
+	strIconv(&filename, *fname, "UTF-8", cs);
+	len = strlen((char*)(*N));
+	GDKstrFromStr(ns=GDKmalloc(len+1), *N, len); len = 0;
+	ss = open_rastream(filename);
+	if (!ss || mnstr_errnr(ss)){
+		int errnr = mnstr_errnr(ss);
+		if (ss)
+			mnstr_destroy(ss);
+		throw(IO, "streams.open", "could not open file '%s': %s",
+				filename, strerror(errnr));
+	}
+	s = bstream_create(ss, 33554432);
+	if (!s)
+		throw(IO, "bstreams.create", "failed to create block stream");
+	b = mvc_import_table(cntxt, m, s, *sname, *tname, (char*)tsep, (char*)rsep, (char*)ssep, (char*)ns, *sz, *offset, *locked);
+	bstream_destroy(s);
+	GDKfree(filename);
+	GDKfree(tsep);
+	GDKfree(rsep);
+	if(ssep)
+		GDKfree(ssep);
+	GDKfree(ns);
+	if (!b)
+		throw(SQL, "importTable", "%sfailed to import table", m->errstr);
+	bat2return(stk, pci, b);
+	GDKfree(b);
+	return MAL_SUCCEED;
+}
+
+/* str mvc_import_table_stdin(int *res, str *sname, str *tname, unsigned char* *T, unsigned char* *R, unsigned char* *S, unsigned char* *N, lng *sz, lng *offset); */
+str
+mvc_import_table_stdin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT **b = NULL;
+	mvc *m = NULL;
+	str msg = getContext(cntxt,mb, &m, NULL);
+	unsigned char *tsep = NULL, *rsep = NULL, *ssep = NULL, *ns = NULL;
+	ssize_t len = 0;
+	str *sname = (str *) getArgReference(stk, pci, pci->retc+0);
+	str *tname = (str *) getArgReference(stk, pci, pci->retc+1);
+	unsigned char **T = (unsigned char **) getArgReference(stk, pci, pci->retc+2);
+	unsigned char **R = (unsigned char **) getArgReference(stk, pci, pci->retc+3);
+	unsigned char **S = (unsigned char **) getArgReference(stk, pci, pci->retc+4);
+	unsigned char **N = (unsigned char **) getArgReference(stk, pci, pci->retc+5);
+	lng *sz = (lng *) getArgReference(stk, pci, pci->retc+6);
+	lng *offset = (lng *) getArgReference(stk, pci, pci->retc+7);
+	int *locked = (int *) getArgReference(stk, pci, pci->retc+8);
 
 	if (msg)
 		return msg;
@@ -3602,7 +3612,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	len = strlen((char*)(*N));
 	GDKstrFromStr(ns=GDKmalloc(len+1), *N, len); len = 0;
-	b = mvc_import_table(cntxt, m, *s, *sname, *tname, (char*)tsep, (char*)rsep, (char*)ssep, (char*)ns, *sz, *offset, *locked);
+	b = mvc_import_table(cntxt, m, m->scanner.rs, *sname, *tname, (char*)tsep, (char*)rsep, (char*)ssep, (char*)ns, *sz, *offset, *locked);
 	GDKfree(tsep);
 	GDKfree(rsep);
 	if(ssep)
@@ -3610,23 +3620,21 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	GDKfree(ns);
 	if (!b)
 		throw(SQL, "importTable", "%sfailed to import table", m->errstr);
-	*res = b->batCacheid;
-	BBPincref( *res, TRUE);
-	BBPunfix(*res);
+	bat2return(stk, pci, b);
+	GDKfree(b);
 	return MAL_SUCCEED;
 }
 
-/* str mvc_bin_import_table_wrap(int *res, str *sname, str *tname, str *fname..); */
+/* str mvc_bin_import_table_wrap(.., str *sname, str *tname, str *fname..); */
 str
 mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *b;
 	mvc *m = NULL;
 	str msg = getContext(cntxt, mb, &m, NULL);
 	BUN cnt = 0;
-	int i, *res = (int *) getArgReference(stk, pci, 0);
-	str sname = *(str *) getArgReference(stk, pci, 1);
-	str tname = *(str *) getArgReference(stk, pci, 2);
+	int i;
+	str sname = *(str *) getArgReference(stk, pci, 0 + pci->retc);
+	str tname = *(str *) getArgReference(stk, pci, 1 + pci->retc);
 	sql_schema *s = mvc_bind_schema(m, sname);
 	sql_table *t;
 	node *n;
@@ -3639,10 +3647,10 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	t = mvc_bind_table(m, s, tname);
 	if (!t) 
 		throw(SQL,"sql", "table %s not found", tname);
-	if (list_length(t->columns.set) != (pci->argc-3))
+	if (list_length(t->columns.set) != (pci->argc-(2+pci->retc)))
 		throw(SQL,"sql", "Not enough columns in found");
 
-	for (i = 3, n = t->columns.set->h; i<pci->argc && n; i++, n = n->next) {
+	for (i = pci->retc + 2, n = t->columns.set->h; i<pci->argc && n; i++, n = n->next) {
 		sql_column *col = n->data;
 
 		if (ATOMvarsized(col->type.type->localtype )) 
@@ -3650,35 +3658,24 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			      *(str*)getArgReference(stk, pci, i));
 	}
 
-	b = BATnew(TYPE_str, TYPE_bat, pci->argc-3);
-	if( b == NULL)
-		throw(SQL, "sql.import", MAL_MALLOC_FAIL);
-
-	for (i = 3, n = t->columns.set->h; i<pci->argc && n; i++, n = n->next) {
+	for (i = pci->retc + 2, n = t->columns.set->h; i<pci->argc && n; i++, n = n->next) {
 		sql_column *col = n->data;
 		BAT *c;
 
 		c = BATattach(col->type.type->localtype, *(str*)getArgReference(stk, pci, i));
-		if (c == NULL) {
-			BBPunfix(b->batCacheid);
+		if (c == NULL) 
 			throw(SQL, "sql", "failed to attach file %s",
 			      *(str*)getArgReference(stk, pci, i));
-		}
 
 		BATsetaccess(c, BAT_READ);
 		BATpropcheck(c, BATPROPS_ALL);
 		BATpropcheck(BATmirror(c), BATPROPS_ALL);
-		if (i!=3 && cnt != BATcount(c)) {
-			BBPunfix(b->batCacheid);
+		if (i!=(pci->retc + 2) && cnt != BATcount(c)) 
 			throw(SQL, "sql", "table %s not found", tname);
-		}
 		cnt = BATcount(c);
-		BUNins(b, (ptr)col->base.name, (ptr)&c->batCacheid, FALSE);
-		BBPunfix( c->batCacheid );
+		*(int*)getArgReference(stk, pci, i-(2+pci->retc)) = c->batCacheid;
+		BBPkeepref(c->batCacheid);
 	}
-	*res = b->batCacheid;
-	BBPincref( *res, TRUE);
-	BBPunfix(*res);
 	return MAL_SUCCEED;
 }
 
@@ -5387,32 +5384,25 @@ dump_cache(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mvc *m = NULL;
 	str msg = getContext(cntxt,mb, &m, NULL);
 	int cnt; 
-	BAT *t, *query, *count;
 	cq *q = NULL;
-	int *r = (int *) getArgReference(stk, pci, 0);
+	BAT *query, *count;
+	int *rquery = (int *) getArgReference(stk, pci, 0);
+	int *rcount = (int *) getArgReference(stk, pci, 1);
 
 	(void) cntxt;
 	if (msg)
 		return msg;
 	cnt = m->qc->id; 
- 	t = BATnew(TYPE_str, TYPE_bat, 1);
-	if( t == NULL)
-		throw(SQL, "sql.dumpcache", MAL_MALLOC_FAIL);
 	query = BATnew(TYPE_void, TYPE_str, cnt);
-	if( query == NULL){
-		BBPreleaseref(t->batCacheid);
+	if( query == NULL)
 		throw(SQL, "sql.dumpcache", MAL_MALLOC_FAIL);
-	}
 	BATseqbase(query, 0);
 	count = BATnew(TYPE_void, TYPE_int, cnt);
 	if( count == NULL){
-		BBPreleaseref(t->batCacheid);
 		BBPreleaseref(query->batCacheid);
 		throw(SQL, "sql.dumpcache", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(count, 0);
-	BUNins(t, "query", &query->batCacheid, FALSE);
-	BUNins(t, "count", &count->batCacheid, FALSE);
 
 	for(q = m->qc->q; q; q = q->next) {
 		if (q->type != Q_PREPARE) {
@@ -5420,11 +5410,10 @@ dump_cache(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BUNappend(count, &q->count, FALSE);
 		}
 	}
-
-	BBPunfix(query->batCacheid);
-	BBPunfix(count->batCacheid);
-	*r = t->batCacheid;
-	BBPkeepref(*r);
+	*rquery = query->batCacheid;
+	*rcount = count->batCacheid;
+	BBPkeepref(*rquery);
+	BBPkeepref(*rcount);
 	return MAL_SUCCEED;
 }
 
@@ -5435,37 +5424,31 @@ dump_opt_stats(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mvc *m = NULL;
 	str msg = getContext(cntxt,mb, &m, NULL);
 	int cnt; 
-	BAT *t, *rewrite, *count;
-	int *r = (int *) getArgReference(stk, pci, 0);
+	BAT *rewrite, *count;
+	int *rrewrite = (int *) getArgReference(stk, pci, 0);
+	int *rcount = (int *) getArgReference(stk, pci, 1);
 
 	(void) cntxt;
 	if (msg)
 		return msg;
 	cnt = m->qc->id; 
- 	t = BATnew(TYPE_str, TYPE_bat, 1);
-	if( t == NULL)
-		throw(SQL, "sql.optstats", MAL_MALLOC_FAIL);
 	rewrite = BATnew(TYPE_void, TYPE_str, cnt);
 	if( rewrite == NULL)
 		throw(SQL, "sql.optstats", MAL_MALLOC_FAIL);
 	BATseqbase(rewrite, 0);
 	count = BATnew(TYPE_void, TYPE_int, cnt);
-	if( count == NULL){
-		BBPreleaseref(t->batCacheid);
+	if( count == NULL)
 		throw(SQL, "sql.optstats", MAL_MALLOC_FAIL);
-	}
 	BATseqbase(count, 0);
-	BUNins(t, "rewrite", &rewrite->batCacheid, FALSE);
-	BUNins(t, "count", &count->batCacheid, FALSE);
 
 	BUNappend(rewrite, "joinidx", FALSE);
 	BUNappend(count, &m->opt_stats[0], FALSE);
 	/* TODO add other rewrites */
 
-	BBPunfix(rewrite->batCacheid);
-	BBPunfix(count->batCacheid);
-	*r = t->batCacheid;
-	BBPkeepref(*r);
+	*rrewrite = rewrite->batCacheid;
+	*rcount = count->batCacheid;
+	BBPkeepref(*rrewrite);
+	BBPkeepref(*rcount);
 	return MAL_SUCCEED;
 }
 
@@ -5473,16 +5456,17 @@ dump_opt_stats(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	mvc *m = NULL;
-	str msg = getContext(cntxt,mb, &m, NULL);
-	BAT *t;
-	int *r = (int *) getArgReference(stk, pci, 0);
+	int i;
+	BAT *t[12];
 
-	if (msg)
-		return msg;
-	t= TRACEtable();
-	*r = t->batCacheid;
-	BBPkeepref(*r);
+	(void)cntxt; (void)mb;
+	TRACEtable(t);
+	for (i = 0; i < 12; i++) {
+		int id = t[i]->batCacheid;
+
+		*(int *) getArgReference(stk, pci, i) = id;
+		BBPincref(id, TRUE);
+	}
 	return MAL_SUCCEED;
 }
 
@@ -6296,13 +6280,21 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *res = (int*) getArgReference(stk,pci,0);
-	BAT *sch, *tab, *col, *loc, *cnt, *cap, *atom, *size, *aux, *r;
+	BAT *sch, *tab, *col, *loc, *cnt, *cap, *atom, *size, *aux;
 	mvc *m = NULL;
 	str msg = getContext(cntxt,mb, &m, NULL);
 	sql_trans *tr = m->session->tr;
 	node *nsch, *ntab, *ncol;
 	int w;
+	int *rsch = (int*) getArgReference(stk,pci,0);
+	int *rtab = (int*) getArgReference(stk,pci,1);
+	int *rcol = (int*) getArgReference(stk,pci,2);
+	int *rloc = (int*) getArgReference(stk,pci,3);
+	int *rcnt = (int*) getArgReference(stk,pci,4);
+	int *rcap = (int*) getArgReference(stk,pci,5);
+	int *ratom = (int*) getArgReference(stk,pci,6);
+	int *rsize = (int*) getArgReference(stk,pci,7);
+	int *raux = (int*) getArgReference(stk,pci,8);
 
 	if (msg)
 		return msg;
@@ -6425,38 +6417,15 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 
-	r = BATnew(TYPE_str,TYPE_bat,1);
-	if( r == NULL){
-		BBPreleaseref(sch->batCacheid);
-		BBPreleaseref(tab->batCacheid);
-		BBPreleaseref(col->batCacheid);
-		BBPreleaseref(loc->batCacheid);
-		BBPreleaseref(cnt->batCacheid);
-		BBPreleaseref(cap->batCacheid);
-		BBPreleaseref(atom->batCacheid);
-		BBPreleaseref(size->batCacheid);
-		BBPreleaseref(aux->batCacheid);
-		throw(SQL, "sql.storage", MAL_MALLOC_FAIL);
-	}
-	BUNins(r, "schema", &sch->batCacheid, FALSE);
-	BUNins(r, "table", &tab->batCacheid, FALSE);
-	BUNins(r, "column", &col->batCacheid, FALSE);
-	BUNins(r, "location", &loc->batCacheid, FALSE);
-	BUNins(r, "count", &cnt->batCacheid, FALSE);
-	BUNins(r, "capacity", &cap->batCacheid, FALSE);
-	BUNins(r, "width", &atom->batCacheid, FALSE);
-	BUNins(r, "size", &size->batCacheid, FALSE);
-	BUNins(r, "hashsize", &aux->batCacheid, FALSE);
-	BBPunfix(sch->batCacheid);
-	BBPunfix(tab->batCacheid);
-	BBPunfix(col->batCacheid);
-	BBPunfix(loc->batCacheid);
-	BBPunfix(cnt->batCacheid);
-	BBPunfix(cap->batCacheid);
-	BBPunfix(atom->batCacheid);
-	BBPunfix(size->batCacheid);
-	BBPunfix(aux->batCacheid);
-	BBPkeepref(*res = r->batCacheid);
+	BBPkeepref(*rsch = sch->batCacheid);
+	BBPkeepref(*rtab = tab->batCacheid);
+	BBPkeepref(*rcol = col->batCacheid);
+	BBPkeepref(*rloc = loc->batCacheid);
+	BBPkeepref(*rcnt = cnt->batCacheid);
+	BBPkeepref(*rcap = cap->batCacheid);
+	BBPkeepref(*ratom = atom->batCacheid);
+	BBPkeepref(*rsize = size->batCacheid);
+	BBPkeepref(*raux = aux->batCacheid);
 	return MAL_SUCCEED;
 }
 
