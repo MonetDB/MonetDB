@@ -80,7 +80,7 @@ SQLGetConnectAttr_(ODBCDbc *dbc,
 		*(SQLUINTEGER *) ValuePtr = 0;	/* no timeout */
 		break;
 	case SQL_ATTR_METADATA_ID:
-		*(SQLUINTEGER *) ValuePtr = SQL_FALSE;
+		*(SQLUINTEGER *) ValuePtr = dbc->sql_attr_metadata_id;
 		break;
 	case SQL_ATTR_ODBC_CURSORS:
 		*(SQLUINTEGER *) ValuePtr = SQL_CUR_USE_IF_NEEDED;

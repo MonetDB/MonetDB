@@ -147,12 +147,14 @@ SQLGetStmtAttr_(ODBCStmt *stmt,
 		return SQLGetDescField_(stmt->ImplRowDescr, 0,
 					SQL_DESC_ROWS_PROCESSED_PTR, ValuePtr,
 					BufferLength, StringLengthPtr);
+	case SQL_ATTR_METADATA_ID:
+		*(SQLUINTEGER *) ValuePtr = stmt->Dbc->sql_attr_metadata_id;
+		break;
 
 		/* TODO: implement requested behavior */
 	case SQL_ATTR_ENABLE_AUTO_IPD:
 	case SQL_ATTR_FETCH_BOOKMARK_PTR:
 	case SQL_ATTR_KEYSET_SIZE:
-	case SQL_ATTR_METADATA_ID:
 	case SQL_ATTR_QUERY_TIMEOUT:
 	case SQL_ATTR_SIMULATE_CURSOR:
 	case SQL_ATTR_USE_BOOKMARKS:

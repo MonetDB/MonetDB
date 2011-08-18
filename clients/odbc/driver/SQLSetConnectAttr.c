@@ -68,6 +68,22 @@ SQLSetConnectAttr_(ODBCDbc *dbc,
 			return SQL_ERROR;
 		}
 		return SQL_SUCCESS;
+	case SQL_ATTR_METADATA_ID:
+		switch ((SQLUINTEGER) (size_t) ValuePtr) {
+		case SQL_TRUE:
+		case SQL_FALSE:
+			dbc->sql_attr_metadata_id = (SQLUINTEGER) (size_t) ValuePtr;
+#ifdef ODBCDEBUG
+			ODBCLOG("SQLSetConnectAttr set metadata_id %s\n",
+				dbc->sql_attr_metadata_id == SQL_TRUE ? "true" : "false");
+#endif
+			break;
+		default:
+			/* Invalid attribute value */
+			addDbcError(dbc, "HY024", NULL, 0);
+			return SQL_ERROR;
+		}
+		return SQL_SUCCESS;
 
 		/* TODO: implement connection attribute behavior */
 	case SQL_ATTR_ACCESS_MODE:
@@ -75,7 +91,6 @@ SQLSetConnectAttr_(ODBCDbc *dbc,
 	case SQL_ATTR_CONNECTION_TIMEOUT:
 	case SQL_ATTR_CURRENT_CATALOG:
 	case SQL_ATTR_LOGIN_TIMEOUT:
-	case SQL_ATTR_METADATA_ID:
 	case SQL_ATTR_ODBC_CURSORS:
 	case SQL_ATTR_PACKET_SIZE:
 	case SQL_ATTR_QUIET_MODE:
