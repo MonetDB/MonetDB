@@ -123,7 +123,7 @@ SQLGetDiagRec_(SQLSMALLINT HandleType,
 		MessageText[BufferLength] = 0;	/* write it already */
 
 		/* first write the error message prefix text:
-		 * [MonetDB][ODBC driver 1.0]; this is
+		 * [MonetDB][ODBC driver VERSION]; this is
 		 * required by the ODBC spec and used to
 		 * determine where the error originated
 		 */
