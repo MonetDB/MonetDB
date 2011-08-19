@@ -201,6 +201,8 @@ CONDITIONALS = {
     # X == true   =>  @X_TRUE@='',  @X_FALSE@='#'
     # X == false  =>  @X_TRUE@='#', @X_FALSE@=''
     # from configure.ag:
+    # These should cover all AM_CONDITIONALS defined in configure.ag, i.e.,
+    # `grep AM_CONDITIONAL configure.ag | sed 's|^AM_CONDITIONAL(\([^,]*\),.*$|\1|' | sort -u`
     'BITS32'               : "@BITS32_FALSE@",
     'BITS64'               : "@BITS64_FALSE@",
     'CROSS_COMPILING'      : "@CROSS_COMPILING_FALSE@",
