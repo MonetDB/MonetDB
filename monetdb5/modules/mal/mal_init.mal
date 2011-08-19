@@ -166,6 +166,7 @@ include transaction;
 include run_isolate;
 include run_memo;
 include run_octopus;
+include srvpool;
 
 # @-
 # library crackers;
