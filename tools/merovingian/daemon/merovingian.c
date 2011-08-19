@@ -485,6 +485,7 @@ main(int argc, char *argv[])
 	int socku = -1;
 	unsigned short port = 0;
 	unsigned short controlport = 0;
+	char discovery = 0;
 	struct stat sb;
 	FILE *oerr = NULL;
 	pthread_mutexattr_t mta;
@@ -751,6 +752,9 @@ main(int argc, char *argv[])
 		writeProps(_mero_props, ".");
 	}
 	controlport = (unsigned short)kv->ival;
+
+	kv = findConfKey(_mero_props, "discovery");
+	discovery = kv->ival;
 
 	/* set up UNIX socket paths for control and mapi */
 	p = getConfVal(_mero_props, "sockdir");
