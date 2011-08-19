@@ -1975,14 +1975,14 @@ alter_table( mvc *sql, char *sname, sql_table *t)
 
 
 static char *
-drop_table(mvc *sql, char *sname, char *tname, int drop_action)
+drop_table(mvc *sql, char *sname, char *tname, int drop_action, char *tOrA)
 {
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
 	node *n; 
 
 	if (sname && !(s=mvc_bind_schema(sql, sname))) 
-		return sql_message("DROP TABLE: no such schema '%s'", sname);
+		return sql_message("DROP %s: no such schema '%s'", tOrA, sname);
 	if (!s)
 		s = cur_schema(sql);
 	t = mvc_bind_table(sql, s, tname);
@@ -1991,13 +1991,13 @@ drop_table(mvc *sql, char *sname, char *tname, int drop_action)
 		t = mvc_bind_table(sql, s, tname);
 	}
 	if (!t) { 
-		return sql_message("DROP TABLE: no such table '%s'", tname);
-	} else if (!isTable(t)) {
-		return sql_message("DROP TABLE: cannot drop VIEW '%s'", tname);
+		return sql_message("DROP %s: no such table '%s'", tOrA, tname);
+	} else if (!isTableOrArray(t)) {
+		return sql_message("DROP %s: cannot drop VIEW '%s'", tOrA, tname);
 	} else if (t->system) {
-		return sql_message("DROP TABLE: cannot drop system table '%s'", tname);
+		return sql_message("DROP %s: cannot drop system table '%s'", tOrA, tname);
 	} else if (!schema_privs(sql->role_id, s)) {
-		return sql_message("DROP TABLE: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
+		return sql_message("DROP %s: access denied for %s to schema ;'%s'", tOrA, stack_get_string(sql, "current_user"), s->base.name);
 	}
 	if ( !drop_action && t->keys.set) {
 		for (n = t->keys.set->h; n; n = n->next) {
@@ -2013,7 +2013,7 @@ drop_table(mvc *sql, char *sname, char *tname, int drop_action)
 						k = l->data;
 						/* make sure it is not a self referencing key */
 						if (k->t != t) 
-							return sql_message("DROP TABLE: FOREIGN KEY %s.%s depends on %s", k->t->base.name, k->base.name, tname);
+							return sql_message("DROP %s: FOREIGN KEY %s.%s depends on %s", tOrA, k->t->base.name, k->base.name, tname);
 					}
 				}
 			}
@@ -2021,7 +2021,7 @@ drop_table(mvc *sql, char *sname, char *tname, int drop_action)
 	}
 
 	if (!drop_action && mvc_check_dependency(sql, t->base.id, TABLE_DEPENDENCY, NULL))
-		return sql_message("DROP TABLE: unable to drop table %s (there are database objects which depend on it)\n", t->base.name);
+		return sql_message("DROP %s: unable to drop table %s (there are database objects which depend on it)\n", tOrA, t->base.name);
 	
 	mvc_drop_table(sql, s, t, drop_action);
 	return MAL_SUCCEED;
@@ -2285,18 +2285,19 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} 	break;
 	case DDL_CREATE_TABLE: 
 	case DDL_CREATE_VIEW: 
-	case DDL_CREATE_ARRAY:
+	case DDL_CREATE_ARRAY: /* TODO: if really not used, remove it later */
 	{
 		sql_table *t = *(sql_table**) getArgReference(stk, pci, 3);
 		int temp = *(int*) getArgReference(stk, pci, 4);
 
 		msg = create_table_or_view(sql, sname, t, temp);
 	} 	break;
+	case DDL_DROP_ARRAY:
 	case DDL_DROP_TABLE: {
 		int action = *(int*) getArgReference(stk, pci, 4);
 		str name = *(str*) getArgReference(stk, pci, 3);
 
-		msg = drop_table( sql, sname, name, action);
+		msg = drop_table( sql, sname, name, action, (type==DDL_DROP_TABLE)?"TABLE":"ARRAY");
 	} 	break;
 	case DDL_DROP_VIEW: {
 		int action = *(int*) getArgReference(stk, pci, 4);
@@ -6299,7 +6300,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for(ntab= (s)->tables.set->h ;ntab; ntab= ntab->next){
 			sql_base *bt= ntab->data;
 			sql_table *t= (sql_table*) bt;
-			if (isTable(t))
+			if (isTableOrArray(t))
 			for (ncol= (t)->columns.set->h; ncol; ncol= ncol->next){
 				sql_base *bc = ncol->data;
 				sql_column *c= (sql_column *) ncol->data;
@@ -6336,7 +6337,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BBPunfix(bn->batCacheid);
 			}
 
-			if (isTable(t))
+			if (isTableOrArray(t))
 				if(t->idxs.set)
 					for (ncol= (t)->idxs.set->h; ncol; ncol= ncol->next){
 						sql_base *bc = ncol->data;

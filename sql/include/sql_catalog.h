@@ -373,6 +373,7 @@ typedef enum table_types {
 #define isMergeTable(x) (x->type==tt_merge_table)
 #define isStream(x)  	(x->type==tt_stream)
 #define isArray(x)  	(x->type==tt_array)
+#define isTableOrArray(x)(x->type==tt_array || x->type==tt_table)
 #define isFixedDim(x)   (x->start && x->step && x->stop)
 
 typedef struct sql_table {

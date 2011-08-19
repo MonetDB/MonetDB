@@ -1208,7 +1208,7 @@ _gtr_update( sql_trans *tr, gtr_update_table_fptr gtr_update_table_f )
 			for (n = s->tables.set->h; n && ok == LOG_OK; n = n->next) {
 				sql_table *t = n->data;
 
-				if (isTable(t) && isGlobal(t))
+				if (isTableOrArray(t) && isGlobal(t))
 					ok = gtr_update_table_f(tr, t);
 			}
 		}

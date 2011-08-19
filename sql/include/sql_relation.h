@@ -91,13 +91,14 @@ typedef struct expression {
 #define DDL_CREATE_VIEW  26
 #define DDL_DROP_VIEW    27
 #define DDL_DROP_CONSTRAINT    28
-#define DDL_ALTER_TABLE  29
+#define DDL_DROP_ARRAY 29
+#define DDL_ALTER_TABLE  30
 
-#define DDL_CREATE_TYPE 30 
-#define DDL_DROP_TYPE   31 
+#define DDL_CREATE_TYPE 31 
+#define DDL_DROP_TYPE   32 
 
-#define DDL_CREATE_INDEX  32
-#define DDL_DROP_INDEX    33
+#define DDL_CREATE_INDEX  33
+#define DDL_DROP_INDEX    34
 
 #define DDL_CREATE_FUNCTION 41 
 #define DDL_DROP_FUNCTION   42 
@@ -119,7 +120,6 @@ typedef struct expression {
 #define DDL_DISCONNECT 	62
 
 #define DDL_CREATE_ARRAY 63
-#define DDL_DROP_ARRAY 64
 #define DDL_CREATE_VIEW_ARRAY 65
 
 #define MAXOPS 20

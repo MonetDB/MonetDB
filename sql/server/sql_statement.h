@@ -193,7 +193,7 @@ extern stmt *stmt_varnr(sql_allocator *sa, int nr, sql_subtype *t);
 extern stmt *stmt_table(sql_allocator *sa, stmt *cols, int temp);
 extern stmt *stmt_basetable(sql_allocator *sa, sql_table *t, char *tname);
 
-#define isbasetable(s) (s->type == st_basetable && isTable(s->op1.tval))
+#define isbasetable(s) (s->type == st_basetable && isTableOrArray(s->op1.tval))
 #define basetable_table(s) s->op1.tval
 
 extern stmt *stmt_rs_column(sql_allocator *sa, stmt *result_set, stmt *v, sql_subtype *tpe);

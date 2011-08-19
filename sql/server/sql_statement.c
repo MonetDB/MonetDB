@@ -412,7 +412,7 @@ stmt_deps(list *dep_list, stmt *s, int depend_type, int dir)
 		case st_append_col:
 		case st_update_col:
 			if (depend_type == COLUMN_DEPENDENCY) { 
-			    	if (isTable(s->op4.cval->t)) 
+			    	if (isTableOrArray(s->op4.cval->t)) 
 					dep_list = cond_append(dep_list, &s->op4.cval->base.id);
 				dep_list = cond_append(dep_list, &s->op4.cval->t->base.id);
 			}
@@ -576,7 +576,7 @@ stmt_delta_table_bat(sql_allocator *sa, sql_column *c, stmt *basetable, int acce
 	if (c->t->readonly)
 		return s;
 
-	if (isTable(c->t) &&
+	if (isTableOrArray(c->t) &&
 	   (c->base.flag != TR_NEW || c->t->base.flag != TR_NEW /* alter */) &&
 	    access == RDONLY && c->t->persistence == SQL_PERSIST && !c->t->commit_action) {
 		stmt *i = stmt_bat(sa, c, basetable, RD_INS );
@@ -587,7 +587,7 @@ stmt_delta_table_bat(sql_allocator *sa, sql_column *c, stmt *basetable, int acce
 		s = stmt_union(sa, s, i);
 	} 
 	/* even temp tables have deletes because we like to keep void heads */
-	if (access == RDONLY && isTable(c->t)) {
+	if (access == RDONLY && isTableOrArray(c->t)) {
 		stmt *d = stmt_tbat(sa, c->t, RD_INS);
 		s = stmt_diff(sa, s, stmt_reverse(sa, d));
 	}
@@ -613,7 +613,7 @@ stmt_delta_table_idxbat(sql_allocator *sa, sql_idx * idx, int access)
 	if (idx->t->readonly)
 		return s;
 
-	if (isTable(idx->t) &&
+	if (isTableOrArray(idx->t) &&
 	   (idx->base.flag != TR_NEW || idx->t->base.flag != TR_NEW /* alter */) && 
 	    access == RDONLY && idx->t->persistence == SQL_PERSIST && !idx->t->commit_action) {
 		stmt *i = stmt_idxbat(sa, idx, RD_INS);
@@ -624,7 +624,7 @@ stmt_delta_table_idxbat(sql_allocator *sa, sql_idx * idx, int access)
 		s = stmt_union(sa, s, i);
 	} 
 	/* even temp tables have deletes because we like to keep void heads */
-	if (access == RDONLY && isTable(idx->t)) {
+	if (access == RDONLY && isTableOrArray(idx->t)) {
 		stmt *d = stmt_tbat(sa, idx->t, RD_INS);
 		s = stmt_diff(sa, s, stmt_reverse(sa, d));
 	}

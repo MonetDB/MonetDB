@@ -591,7 +591,7 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 	int res = SQL_OK;
 
 (void)ss;
-	if (alter && !isTable(t) && !isArray(t)) {
+	if (alter && !isTableOrArray(t)) {
 		sql_error(sql, 02, "ALTER %s: cannot add column to VIEW '%s'\n", isTable(t)?"TABLE":"ARRAY", t->base.name);
 		return SQL_ERR;
 	}
@@ -741,6 +741,9 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 			break;
 		case SQL_DROP_TABLE:
 			msg = "drop table from"; 
+			break;
+		case SQL_DROP_ARRAY:
+			msg = "drop array from"; 
 			break;
 		case SQL_DROP_COLUMN:
 			msg = "drop column from"; 
@@ -919,7 +922,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, "CREATE %s: no such schema '%s'", t_a, sname);
 
-	if (temp != SQL_PERSIST && (tt == tt_table || tt == tt_array) && 
+	if (temp != SQL_PERSIST && tt == tt_table && 
 			commit_action == CA_COMMIT)
 		commit_action = CA_DELETE;
 	
@@ -962,7 +965,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 		if (tt == tt_array && t->ndims == 0) 
 			return sql_error(sql, 02, "CREATE ARRAY: an array must have at least one dimension");
 
-		temp = (tt == tt_table || tt == tt_array)?temp:SQL_PERSIST;
+		temp = (tt == tt_table)?temp:SQL_PERSIST;
 		/* For tables and unbounded arrays we are done */
 		if ((tt == tt_table) || (tt == tt_array && !t->fixed)) {
 			/* TODO: DDL_CREATE_TABLE looks sufficient for arrays for now */
@@ -1103,7 +1106,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 		}
 
 		/* insert query result into this table */
-		temp = (tt == tt_table || tt == tt_array)?temp:SQL_PERSIST;
+		temp = (tt == tt_table)?temp:SQL_PERSIST;
 		res = rel_table(sql, DDL_CREATE_TABLE, sname, t, temp);
 		if (with_data) {
 			res = rel_insert(sql, res, sq);
@@ -1828,6 +1831,7 @@ rel_schemas(mvc *sql, symbol *s)
 		ret = rel_create_view(sql, NULL, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.i_val, l->h->next->next->next->next->data.i_val);
 	} 	break;
 	case SQL_DROP_TABLE:
+	case SQL_DROP_ARRAY:
 	{
 		dlist *l = s->data.lval;
 		char *sname = qname_schema(l->h->data.lval);
@@ -1835,7 +1839,7 @@ rel_schemas(mvc *sql, symbol *s)
 
 		assert(l->h->next->type == type_int);
 		sname = get_schema_name(sql, sname, tname);
-		ret = rel_schema(sql->sa, DDL_DROP_TABLE, sname, tname, l->h->next->data.i_val);
+		ret = rel_schema(sql->sa, (s->token == SQL_DROP_TABLE)?DDL_DROP_TABLE:DDL_DROP_ARRAY, sname, tname, l->h->next->data.i_val);
 	} 	break;
 	case SQL_DROP_VIEW:
 	{
