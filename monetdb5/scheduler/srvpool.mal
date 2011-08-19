@@ -16,7 +16,7 @@
 # All Rights Reserved.
 
 module srvpool;
-pattern scheduler.srvpool(plan:str):int
+pattern scheduler.srvpool():int
 address SRVPOOLscheduler
 comment "Run a program block in parallel.";
 

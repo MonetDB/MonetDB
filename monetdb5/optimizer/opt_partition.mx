@@ -175,7 +175,6 @@ OPTplanCntrl(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices)
 	q= newFcnCall(cmb,schedulerRef,srvpoolRef);
 	q->barrier= BARRIERsymbol;
 	barrier = getArg(q,0);
-	q= pushStr(cmb,q, plan);
 	setVarType(cmb,x,TYPE_int);
 
 	/* get servers to execute the query */

@@ -242,7 +242,9 @@ SRVPOOLdiscover(Client cntxt, str pattern, int minservers)
 	} 
 	if( msg) {
 		/* ignore merovingian complaints */
+#ifdef DEBUG_RUN_SRVPOOL
 		mnstr_printf(cntxt->fdout,"#%s\n", msg);
+#endif
 		GDKfree(msg);
 	}
 
@@ -340,11 +342,7 @@ str
 SRVPOOLscheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *res = (int*) getArgReference(stk,pci,0);
-	str plan = *(str*) getArgReference(stk,pci,1);
-	str msg = MAL_SUCCEED;
-	int i;
 
-	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;
@@ -354,13 +352,6 @@ SRVPOOLscheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else {
 		if (nrservers == 0)
 			SRVPOOLdiscover(cntxt,"srvpool", 2);
-		for ( i = 0; i < nrservers; i++ ) {
-			msg = SRVPOOLregisterInternal(cntxt, servers[i].name, plan);
-			if ( msg) {
-				mnstr_printf(cntxt->fdout,"#failed to register at %d\n",i);
-				GDKfree(msg);
-			}
-		}
 		*res = localExecution;
 	}
 	return MAL_SUCCEED;
@@ -371,18 +362,35 @@ SRVPOOLserver(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i,j, fnd =0;
 	str plan = *(str*) getArgReference(stk,pci,pci->retc);
+	str msg = MAL_SUCCEED;
+
 	(void) cntxt;
 	(void) mb;
 
 	for ( j= i=0; i < pci->retc && j < nrservers; j++)  {
-		if ( servers[j].conn && SRVPOOLfind(j, plan)) {
-			*(str*) getArgReference(stk,pci,i++) = GDKstrdup(servers[j].conn);
-			mnstr_printf(cntxt->fdout,"#found it %d\n",j);
-			fnd ++;
+		if ( servers[j].conn ) {
+			if ( !SRVPOOLfind(j,plan) ){
+				msg = SRVPOOLregisterInternal(cntxt, servers[i].name, plan);
+				if ( msg) {
+#ifdef DEBUG_RUN_SRVPOOL
+					mnstr_printf(cntxt->fdout,"#failed to register at %d\n",i);
+#endif
+					GDKfree(msg);
+				}
+			}
+			if ( SRVPOOLfind(j,plan) ){
+				*(str*) getArgReference(stk,pci,i++) = GDKstrdup(servers[j].conn);
+#ifdef DEBUG_RUN_SRVPOOL
+				mnstr_printf(cntxt->fdout,"#found it %d\n",j);
+#endif
+				fnd ++;
+			}
 		}
+#ifdef DEBUG_RUN_SRVPOOL
 		mnstr_printf(cntxt->fdout,"#server %d uri %s conn %s\n", j,
 			(servers[j].uri?servers[j].uri:"null"),
 			(servers[j].conn?servers[j].conn:"null"));
+#endif
 	}
 	if ( fnd != pci->retc)
 		throw(MAL,"srvpool.server","Not enough connections");
