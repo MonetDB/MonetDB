@@ -365,7 +365,7 @@ typedef enum table_types {
 	tt_generated = 2,	/* generated (functions can be sql or c-code) */
 	tt_merge_table = 3,	/* multiple tables form one table */
 	tt_stream = 4,		/* stream */
-	tt_remote = 5		/* stored on a remote server */
+	tt_remote = 5,		/* stored on a remote server */
 	tt_array = 6		/* arrays */
 } table_types;
 
