@@ -5354,6 +5354,7 @@ char *token2string(int token)
 #define SQL(TYPE) case SQL_##TYPE : return #TYPE
 	SQL(CREATE_SCHEMA);
 	SQL(CREATE_TABLE);
+	SQL(CREATE_ARRAY);
 	SQL(CREATE_VIEW);
 	SQL(CREATE_INDEX);
 	SQL(CREATE_ROLE);
@@ -5365,6 +5366,7 @@ char *token2string(int token)
 	SQL(CREATE_TRIGGER);
 	SQL(DROP_SCHEMA);
 	SQL(DROP_TABLE);
+	SQL(DROP_ARRAY);
 	SQL(DROP_VIEW);
 	SQL(DROP_INDEX);
 	SQL(DROP_ROLE);
@@ -5375,6 +5377,7 @@ char *token2string(int token)
 	SQL(DROP_SEQ);
 	SQL(DROP_TRIGGER);
 	SQL(ALTER_TABLE);
+	SQL(ALTER_ARRAY);
 	SQL(ALTER_SEQ);
 	SQL(ALTER_USER);
 	SQL(DROP_COLUMN);
@@ -5491,6 +5494,7 @@ char *token2string(int token)
 	SQL(XMLVALIDATE);
 	SQL(XMLNAMESPACES);
 	SQL(ARRAY);
+	SQL(ARRAY_INDEX);
 	SQL(DIMENSION);
 	}
 	return "unknown";	/* just needed for broken compilers ! */
