@@ -1,3 +1,8 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
+* Fri Aug 19 2011 Fabian Groffen <fabian@cwi.nl>
+- The monetdbd discoveryport option has been removed in favour of a
+  boolean discovery option.  On upgrade, when discoveryport was set to
+  a non-zero value, discovery is set to true, or false otherwise.
+

@@ -420,6 +420,44 @@ autoUpgradePassphraseMar2011Apr2011(confkeyval *ckv)
 	return(0);
 }
 
+/**
+ * Explicitly pulled out functionality that is just implemented to
+ * obtain an automatic upgrade path.
+ *
+ * Starting from the Jan2012? release, the discoveryport setting has
+ * disappeared.  Instead, a boolean discovery is available to enable or
+ * disable the service.  It always uses the same port as the connections
+ * are on.
+ *
+ * This function sets discovery to true if discoveryport is set to a
+ * non-zero positive value in port range, false otherwise.
+ *
+ * Returns 0 if discoveryport is not set (and upgrade probably already
+ * took place).
+ */
+static char
+autoUpgradeDiscoveryPortAug2011Jan2012(confkeyval *mckv)
+{
+	confkeyval *kv;
+	confkeyval ckv[] = {
+		{"discoveryport", NULL, 0,     INT},
+		{ NULL,           NULL, 0, INVALID}
+	};
+
+	readProps(ckv, ".");
+
+	kv = findConfKey(ckv, "discoveryport");
+	if (kv->val == NULL)
+		return 0;
+
+	if (kv->ival <= 0 || kv->ival > 65535) {
+		kv = findConfKey(mckv, "discovery");
+		setConfVal(kv, "false");
+	}
+
+	return 1;
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -446,7 +484,6 @@ main(int argc, char *argv[])
 	int csock = -1;
 	int socku = -1;
 	unsigned short port = 0;
-	unsigned short discoveryport = 0;
 	unsigned short controlport = 0;
 	struct stat sb;
 	FILE *oerr = NULL;
@@ -460,10 +497,10 @@ main(int argc, char *argv[])
 		{"sockdir",       strdup("/tmp"),          0,                  STR},
 		{"port",          strdup(MERO_PORT),       atoi(MERO_PORT),    INT},
 		{"controlport",   strdup(CONTROL_PORT),    atoi(CONTROL_PORT), INT},
-		{"discoveryport", strdup(MERO_PORT),       atoi(MERO_PORT),    INT},
 
 		{"exittimeout",   strdup("60"),            60,                 INT},
 		{"forward",       strdup("proxy"),         0,                  OTHER},
+		{"discovery",     strdup("true"),          1,                  BOOLEAN},
 		{"discoveryttl",  strdup("600"),           600,                INT},
 
 		{"passphrase",    NULL,                    0,                  STR},
@@ -668,6 +705,23 @@ main(int argc, char *argv[])
 	readProps(ckv, ".");
 	_mero_props = ckv;
 
+	/* upgrades to conf-file in place */
+	kv = findConfKey(_mero_props, "passphrase");
+	if (kv->val == NULL || strlen(kv->val) == 0) {
+		if (!autoUpgradePassphraseMar2011Apr2011(_mero_props)) {
+			char phrase[128];
+			Mfprintf(stderr, "control passphrase unset or has zero-length, "
+					"generating one\n");
+			generateSalt(phrase, sizeof(phrase));
+			setConfVal(kv, phrase);
+		}
+		writeProps(_mero_props, ".");
+	}
+
+	if (autoUpgradeDiscoveryPortAug2011Jan2012(_mero_props) != 0)
+		writeProps(_mero_props, ".");
+	/* end upgrades to conf-file in place */
+
 	kv = findConfKey(_mero_props, "pidfile");
 	pidfilename = kv->val;
 
@@ -681,18 +735,6 @@ main(int argc, char *argv[])
 		writeProps(_mero_props, ".");
 	}
 
-	kv = findConfKey(_mero_props, "passphrase");
-	if (kv->val == NULL || strlen(kv->val) == 0) {
-		if (!autoUpgradePassphraseMar2011Apr2011(_mero_props)) {
-			char phrase[128];
-			Mfprintf(stderr, "control passphrase unset or has zero-length, "
-					"generating one\n");
-			generateSalt(phrase, sizeof(phrase));
-			setConfVal(kv, phrase);
-		}
-		writeProps(_mero_props, ".");
-	}
-
 	kv = findConfKey(_mero_props, "port");
 	if (kv->ival <= 0 || kv->ival > 65535) {
 		Mfprintf(stderr, "invalid port number: %s, defaulting to %s\n",
@@ -701,14 +743,6 @@ main(int argc, char *argv[])
 		writeProps(_mero_props, ".");
 	}
 	port = (unsigned short)kv->ival;
-	kv = findConfKey(_mero_props, "discoveryport");
-	if (kv->ival < 0 || kv->ival > 65535) {
-		Mfprintf(stderr, "invalid discovery port number: %s, defaulting to %s\n",
-				kv->val, MERO_PORT);
-		setConfVal(kv, MERO_PORT);
-		writeProps(_mero_props, ".");
-	}
-	discoveryport = (unsigned int)kv->ival;
 	kv = findConfKey(_mero_props, "controlport");
 	if (kv->ival <= 0 || kv->ival > 65535) {
 		Mfprintf(stderr, "invalid control port number: %s, defaulting to %s\n",
@@ -899,7 +933,7 @@ main(int argc, char *argv[])
 	if (
 			(e = openConnectionTCP(&sock, port, stdout)) == NO_ERR &&
 			(e = openConnectionUNIX(&socku, mapi_usock, 0, stdout)) == NO_ERR &&
-			(e = openConnectionUDP(&usock, discoveryport)) == NO_ERR &&
+			(discovery == 1 && (e = openConnectionUDP(&usock, port)) == NO_ERR) &&
 			(e = openConnectionUNIX(&unsock, control_usock, S_IRWXO, _mero_ctlout)) == NO_ERR &&
 			(controlport == 0 || (e = openConnectionTCP(&csock, controlport, _mero_ctlout)) == NO_ERR)
 	   )
@@ -908,7 +942,7 @@ main(int argc, char *argv[])
 		pthread_t dtid = 0;
 		int csocks[2];
 
-		if (discoveryport > 0) {
+		if (discovery == 1) {
 			_mero_broadcastsock = socket(AF_INET, SOCK_DGRAM, 0);
 			ret = 1;
 			if ((setsockopt(_mero_broadcastsock,
@@ -924,7 +958,7 @@ main(int argc, char *argv[])
 			_mero_broadcastaddr.sin_addr.s_addr = htonl(INADDR_BROADCAST);
 			/* the target port is our configured port, not elegant, but how
 			 * else can we do it? can't broadcast to all ports or something */
-			_mero_broadcastaddr.sin_port = htons(discoveryport);
+			_mero_broadcastaddr.sin_port = htons(port);
 		}
 
 		/* From this point merovingian considers itself to be in position to
