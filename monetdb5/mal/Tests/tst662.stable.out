@@ -14,7 +14,7 @@ stdout of test 'tst662` in directory 'mal` itself:
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:39370/
 pattern user.makeSchedule(i:int,l:lng...):bte... address MDBdummy;
-pattern user.makeScheduleB(i:int,l:lng...) (_3:int,_4:bte...) address MDBdummy;
+pattern user.makeScheduleB(i:int,l:lng...) (X_3:int,X_4:bte...) address MDBdummy;
 pattern user.makeScheduleC(i:int,l:lng...):any_1... address MDBdummy;
 pattern user.makeScheduleD(i:int,l:lng...):any... address MDBdummy;
 function user.tst():void;
