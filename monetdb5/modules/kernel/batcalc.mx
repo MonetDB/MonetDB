@@ -1076,6 +1076,9 @@ str CMDbataccum@2cst_@3_@4_@5(int *ret, int *l, void *cst, bit *lflag, bit *rfla
 
 	@:accumCst(@1,@3,@4,@5)@
 
+	bn->tsorted = 0;
+	BATkey(BATmirror(bn),FALSE);
+
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
 
 	BBPkeepref(*ret = bn->batCacheid);
