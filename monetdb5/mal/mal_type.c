@@ -243,7 +243,7 @@ newTmpName(char tag, int i)
 inline int
 isTmpName(str n)
 {
-	return n && (*n == TMPMARKER || (n[1] == TMPMARKER && n[0]=='X'));
+	return n && *n == TMPMARKER ;
 }
 
 int
