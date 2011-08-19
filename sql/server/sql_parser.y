@@ -1325,6 +1325,16 @@ table_def:
 	  append_int(l, commit_action);
 	  append_string(l, NULL);
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
+ |  ARRAY qname table_content_source 
+	{ int commit_action = CA_COMMIT, tpe = SQL_ARRAY;
+	  dlist *l = L();
+
+	  append_int(l, tpe);
+	  append_list(l, $2);
+	  append_symbol(l, $3);
+	  append_int(l, commit_action);
+	  append_string(l, NULL);
+	  $$ = _symbol_create_list( SQL_CREATE_ARRAY, l ); }
  |  STREAM TABLE qname table_content_source 
 	{ int commit_action = CA_COMMIT, tpe = SQL_STREAM;
 	  dlist *l = L();
@@ -1356,28 +1366,18 @@ table_def:
 	  append_int(l, commit_action);
 	  append_string(l, $6);
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
-  | opt_temp table_or_array qname table_content_source opt_on_commit 
+  | opt_temp TABLE qname table_content_source opt_on_commit 
 	{ int commit_action = CA_COMMIT;
 	  dlist *l = L();
 
-	  /* HACK: since table_content_source cannot distinguish a CREATE ARRAY
-	   * from a CREATE TABLE, we (mis)use the value holding opt_temp to
-	   * annotate that this is an ARRAY */
-	  if ($2 == SQL_TABLE)
-	  	append_int(l, $1);
-	  else /* $2 == SQL_ARRAY */
-	  	append_int(l, $2);
+	  append_int(l, $1);
 	  append_list(l, $3);
 	  append_symbol(l, $4);
 	  if ($1 != SQL_PERSIST)
 		commit_action = $5;
 	  append_int(l, commit_action);
 	  append_string(l, NULL);
-	  if ($2 == SQL_TABLE)
-	    $$ = _symbol_create_list(SQL_CREATE_TABLE, l );
-	  else /* $2 == SQL_ARRAY */
-	    $$ = _symbol_create_list(SQL_CREATE_ARRAY, l );
-	}
+	  $$ = _symbol_create_list(SQL_CREATE_TABLE, l ); }
  ;
 
 table_or_array:
