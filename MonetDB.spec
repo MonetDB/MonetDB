@@ -184,6 +184,7 @@ This package contains the MonetDB ODBC driver.
 if [ "$1" -eq 1 ] || ! grep -q MonetDB /etc/odbcinst.ini; then
 odbcinst -i -d -r <<EOF
 [MonetDB]
+Description = ODBC for MonetDB
 Driver = %{_exec_prefix}/lib/libMonetODBC.so
 Setup = %{_exec_prefix}/lib/libMonetODBCs.so
 Driver64 = %{_exec_prefix}/lib64/libMonetODBC.so

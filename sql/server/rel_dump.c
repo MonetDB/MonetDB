@@ -212,15 +212,13 @@ exps_print(mvc *sql, stream *fout, list *exps, int depth, int alias, int bracket
 {
 	node *en;
 
-	if (!exps)
-		return;
-
 	if (brackets)
 		mnstr_printf(fout, "(");
 	else
 		mnstr_printf(fout, " [ ");
-	for (en = exps->h; en; en = en->next) 
-		exp_print(sql, fout, en->data, depth+1, (en->next!=NULL), alias);
+	if (exps)
+		for (en = exps->h; en; en = en->next) 
+			exp_print(sql, fout, en->data, depth+1, (en->next!=NULL), alias);
 	if (brackets)
 		mnstr_printf(fout, ")");
 	else
@@ -362,13 +360,15 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs)
 		mnstr_printf(fout, "%s (", r);
 		if (rel_is_ref(rel->l)) {
 			int nr = find_ref(refs, rel->l);
-			mnstr_printf(fout, " & REF %d ", nr);
+			print_indent(sql, fout, depth+1);
+			mnstr_printf(fout, "& REF %d ", nr);
 		} else
 			rel_print_(sql, fout, rel->l, depth+1, refs);
 		mnstr_printf(fout, ",");
 		if (rel_is_ref(rel->r)) {
 			int nr = find_ref(refs, rel->r);
-			mnstr_printf(fout, " & REF %d  ", nr);
+			print_indent(sql, fout, depth+1);
+			mnstr_printf(fout, "& REF %d  ", nr);
 		} else
 			rel_print_(sql, fout, rel->r, depth+1, refs);
 		print_indent(sql, fout, depth);
@@ -395,13 +395,14 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs)
 			mnstr_printf(fout, "%s (", r);
 			if (rel_is_ref(rel->l)) {
 				int nr = find_ref(refs, rel->l);
-				mnstr_printf(fout, " & REF %d ", nr);
+				print_indent(sql, fout, depth+1);
+				mnstr_printf(fout, "& REF %d ", nr);
 			} else
 				rel_print_(sql, fout, rel->l, depth+1, refs);
 			print_indent(sql, fout, depth);
 			mnstr_printf(fout, ")");
 		}
-		if (rel->r && rel->op == op_groupby)  /* group by columns */
+		if (rel->op == op_groupby)  /* group by columns */
 			exps_print(sql, fout, rel->r, depth, 1, 0);
 		exps_print(sql, fout, rel->exps, depth, 1, 0);
 		if (rel->r && rel->op == op_project) /* order by columns */
@@ -421,14 +422,16 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs)
 
 		if (rel_is_ref(rel->l)) {
 			int nr = find_ref(refs, rel->l);
-			mnstr_printf(fout, " & REF %d ", nr);
+			print_indent(sql, fout, depth+1);
+			mnstr_printf(fout, "& REF %d ", nr);
 		} else
 			rel_print_(sql, fout, rel->l, depth+1, refs);
 
 		if (rel->r) {
 			if (rel_is_ref(rel->r)) {
 				int nr = find_ref(refs, rel->r);
-				mnstr_printf(fout, " & REF %d ", nr);
+				print_indent(sql, fout, depth+1);
+				mnstr_printf(fout, "& REF %d ", nr);
 			} else
 				rel_print_(sql, fout, rel->r, depth+1, refs);
 		}
@@ -838,6 +841,16 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, char *r, int *pos, int grp)
 		if (not)
 			set_has_no_nil(exp);
 	}
+	if (strncmp(r+*pos, "HASHIDX",  strlen("HASHIDX")) == 0) {
+		(*pos)+= strlen("HASHIDX");
+		exp->p = prop_create(sql->sa, PROP_HASHIDX, exp->p);
+		skipWS(r,pos);
+	}
+	if (strncmp(r+*pos, "FETCH",  strlen("FETCH")) == 0) {
+		(*pos)+= strlen("FETCH");
+		exp->p = prop_create(sql->sa, PROP_FETCH, exp->p);
+		skipWS(r,pos);
+	}
 
 	/* as alias */
 	if (strncmp(r+*pos, "as", 2) == 0) {
@@ -867,6 +880,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, char *r, int *pos, int grp)
 			*e = old;
 		}
 	}
+	skipWS(r, pos);
 	switch(r[*pos]) {
 	case '=': 
 		f = cmp_equal;
@@ -1048,11 +1062,11 @@ rel_read(mvc *sql, char *r, int *pos)
 			rel = rel_select_copy(sql->sa, nrel, exps);
 			return rel;
 			// semijoin or antijoin
-		} else if (r[*pos+2] == 'l' || r[*pos+1] == 'n') {
+		} else if (r[*pos+1] == 'e' || r[*pos+1] == 'n') {
 			j = op_semi;
 
 			if (r[*pos+1] == 'n') 
-				j = op_semi;
+				j = op_anti;
 
 			*pos += strlen("semijoin");
 			skipWS(r, pos);

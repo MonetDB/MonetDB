@@ -161,7 +161,8 @@ sql_table *
 mvc_create_table_as_subquery( mvc *sql, sql_rel *sq, sql_schema *s, char *tname, dlist *column_spec, int temp, int commit_action )
 {
 	char *n;
-	int tt = (temp == SQL_STREAM)?tt_stream:
+	int tt =(temp == SQL_REMOTE)?tt_remote:
+		(temp == SQL_STREAM)?tt_stream:
 	         ((temp == SQL_MERGE_TABLE)?tt_merge_table:tt_table);
 
 	sql_table *t = mvc_create_table(sql, s, tname, tt, 0, SQL_DECLARED_TABLE, commit_action, -1);
@@ -906,14 +907,15 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 }
 
 sql_rel *
-rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, symbol *table_elements_or_subquery, int commit_action)
+rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, symbol *table_elements_or_subquery, int commit_action, char *loc)
 {
 	sql_schema *s = NULL;
 
 	int instantiate = (sql->emode == m_instantiate);
 	int deps = (sql->emode == m_deps);
 	int create = (!instantiate && !deps);
-	int tt = (temp == SQL_STREAM)?tt_stream:
+	int tt = (temp == SQL_REMOTE)?tt_remote:
+		 (temp == SQL_STREAM)?tt_stream:
 	         ((temp == SQL_MERGE_TABLE)?tt_merge_table:
 			  ((temp == SQL_ARRAY)? tt_array:tt_table));
 	char *t_a = (tt == tt_array)?"ARRAY":"TABLE";
@@ -942,10 +944,12 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 		return sql_error(sql, 02, "%s %s: name '%s' already in use", cd, t_a, name);
 	} else if (temp != SQL_DECLARED_TABLE &&!schema_privs(sql->role_id, s)){
 		return sql_error(sql, 02, "CREATE %s: insufficient privileges for user '%s' in schema '%s'", t_a, stack_get_string(sql, "current_user"), s->base.name);
-	} else if (table_elements_or_subquery->token == SQL_CREATE_TABLE) {
+	} else if (table_elements_or_subquery->token == SQL_CREATE_TABLE) { 
 		/* table or array element list, value of 'tt' separates ARRAY from TABLE */
 		/* reuse SQL_DECLARED_TABLE for temp arrays as well. actual type is in 'tt' */
-		sql_table *t = mvc_create_table(sql, s, name, tt, 0, SQL_DECLARED_TABLE, commit_action, -1);
+		sql_table *t = (tt == tt_remote)?
+			mvc_create_remote(sql, s, name, SQL_DECLARED_TABLE, loc):
+			mvc_create_table(sql, s, name, tt, 0, SQL_DECLARED_TABLE, commit_action, -1);
 		dnode *n;
 		dlist *columns = table_elements_or_subquery->data.lval;
 		sql_exp *id_l = NULL, *id_r = NULL;
@@ -1820,7 +1824,7 @@ rel_schemas(mvc *sql, symbol *s)
 
 		assert(l->h->type == type_int);
 		assert(l->h->next->next->next->type == type_int);
-		ret = rel_create_table(sql, cur_schema(sql), temp, sname, name, l->h->next->next->data.sym, l->h->next->next->next->data.i_val);
+		ret = rel_create_table(sql, cur_schema(sql), temp, sname, name, l->h->next->next->data.sym, l->h->next->next->next->data.i_val, l->h->next->next->next->next->data.sval);
 	} 	break;
 	case SQL_CREATE_VIEW:
 	{

@@ -33,8 +33,8 @@
 #include <restrict/restrict_table.h>
 #include <restrict/restrict_logger.h>
 
-/* version 05.12.00 of catalog */
-#define CATALOG_VERSION 51200
+/* version 05.11.01 of catalog */
+#define CATALOG_VERSION 51101
 int catalog_version = 0;
 
 static MT_Lock bs_lock;
@@ -544,6 +544,7 @@ load_merge_table_parts(sql_trans *tr, sql_table *t, oid rid)
 
 	assert(tp);
 	cs_add(&t->tables, tp, TR_OLD);
+	tp->p = t;
 }
 
 static void
@@ -610,6 +611,8 @@ load_table(sql_trans *tr, sql_schema *s, oid rid)
 		t->persistence = SQL_GLOBAL_TEMP;
 	if (isStream(t))
 		t->persistence = SQL_STREAM;
+	if (isRemote(t))
+		t->persistence = SQL_REMOTE;
 	t->cleared = 0;
 	v = table_funcs.column_find_value(tr, find_sql_column(tables, "readonly"),rid);
 	t->readonly = *(bit *)v;	_DELETE(v);
@@ -639,7 +642,7 @@ load_table(sql_trans *tr, sql_schema *s, oid rid)
 		cs_add(&t->columns, load_column(tr, t, rid), TR_OLD);
 	table_funcs.rids_destroy(rs);
 
-	if (!isTableOrArray(t) && !isMergeTable(t)) 
+	if (!isTableOrArray(t) && !isMergeTable(t) && !isRemote(t)) 
 		return t;
 
 	/* load idx's first as they may be needed by the keys */
@@ -2033,8 +2036,10 @@ table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 	if (ot->tables.set) {
 		for (n = ot->tables.set->h; n; n = n->next) {
 			sql_table *pt = n->data;
+			sql_table *npt = schema_table_find(s, pt);
 
-			cs_add(&t->tables, schema_table_find(s, pt), tr_flag(&pt->base, flag));
+			cs_add(&t->tables, npt, tr_flag(&pt->base, flag));
+			npt->p = t;
 		}
 		ot->tables.nelm = NULL;
 	}
@@ -2146,8 +2151,9 @@ merge_table_dup(sql_table *omt, sql_schema *s, int flag)
 	if (omt->tables.set) {
 		for (n = omt->tables.set->h; n; n = n->next) {
 			sql_table *pt = n->data;
-
-			cs_add(&mt->tables, schema_table_find(s, pt), tr_flag(&pt->base, flag));
+			sql_table *npt = schema_table_find(s, pt);
+			cs_add(&mt->tables, npt, tr_flag(&pt->base, flag));
+			npt->p = mt;
 		}
 		mt->tables.nelm = NULL;
 	}
@@ -3828,6 +3834,7 @@ sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt)
 
 	/* TODO add dependency betweem mt/pt */
 	cs_add(&mt->tables, pt, TR_NEW);
+	pt->p = mt;
 	mt->s->base.wtime = mt->base.wtime = tr->wtime = tr->stime;
 	table_funcs.table_insert(tr, sysobj, &mt->base.id, pt->base.name, &nr);
 	return mt;
@@ -3858,10 +3865,10 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, char *sql, int 
 	sql_table *systable = find_sql_table(syss, "_tables");
 	sht ca;
 
-	/* temps all belong to a special tmp schema and only views
+	/* temps all belong to a special tmp schema and only views/remote
 	   have a query */
 	assert( (isTableOrArray(t) || 
-		(!isTempTable(t) || (strcmp(s->base.name, "tmp") == 0) || isDeclaredTable(t))) || (isView(t) && !sql) || isStream(t));
+		(!isTempTable(t) || (strcmp(s->base.name, "tmp") == 0) || isDeclaredTable(t))) || (isView(t) && !sql) || isStream(t) || (isRemote(t) && !sql));
 
 	t->query = sql ? _strdup(sql) : NULL;
 	t->s = s;
@@ -3869,6 +3876,10 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, char *sql, int 
 	if (sz < 0)
 		t->sz = COLSIZE;
 	cs_add(&s->tables, t, TR_NEW);
+	if (isStream(t))
+		t->persistence = SQL_STREAM;
+	if (isRemote(t))
+		t->persistence = SQL_REMOTE;
 
 	if (isTableOrArray(t))
 		store_funcs.create_del(tr, t);

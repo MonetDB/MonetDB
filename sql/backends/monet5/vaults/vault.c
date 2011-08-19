@@ -116,6 +116,13 @@
  */
 #include "monetdb_config.h"
 #include "vault.h"
+#include "mal_client.h"
+#include "mal_interpreter.h"
+
+#ifdef HAVE_CURL
+#include <curl/curl.h>
+#endif
+
 
 char vaultpath[BUFSIZ];
 /*

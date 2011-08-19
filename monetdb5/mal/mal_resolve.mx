@@ -160,6 +160,10 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 	m = scope;
 	s = m->subscope[(int)(getSubScope(getFunctionId(p)))];
 	if (s == 0) return -1;
+
+	returntype= (int*) GDKzalloc(p->retc * sizeof(int));
+	if ( returntype == 0) return -1;
+
 	while (s != NULL) {  /* single scope element check */
 		if (getFunctionId(p) != s->name) {
 			s = s->skip; continue;
@@ -357,7 +361,6 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 		 * the resulting type can not be determined.
 		 */
 		s1 = 0;
-		returntype= (int*) GDKzalloc(p->retc * sizeof(int));
 		if (sig->polymorphic)
 			for (k = i = 0; i < p->retc; k++, i++) {
 				int actual = getArgType(mb, p, i);

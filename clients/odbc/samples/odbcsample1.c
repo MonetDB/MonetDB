@@ -17,7 +17,9 @@
  * All Rights Reserved.
  */
 
-#include "monetdb_config.h"	/* we need SIZEOF_INT and SIZEOF_LONG for sql.h */
+#ifdef _MSC_VER
+#include <WTypes.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <sql.h>

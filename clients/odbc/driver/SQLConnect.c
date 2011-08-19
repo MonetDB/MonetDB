@@ -86,6 +86,21 @@ set_timezone(Mapi mid)
 #endif
 }
 
+static void
+get_serverversion(ODBCDbc *dbc)
+{
+	MapiHdl hdl;
+	char *v;
+
+	if ((hdl = mapi_query(dbc->mid, "select value from env() where name = 'monet_version'")) == NULL)
+		return;
+	while (mapi_fetch_row(hdl)) {
+		v = mapi_fetch_field(hdl, 0);
+		sscanf(v, "%hd.%hd.%hd", &dbc->major, &dbc->minor, &dbc->patch);
+	}
+	mapi_close_handle(hdl);
+}
+
 SQLRETURN
 SQLConnect_(ODBCDbc *dbc,
 	    SQLCHAR *ServerName,
@@ -234,7 +249,10 @@ SQLConnect_(ODBCDbc *dbc,
 		dbc->dbname = schema ? strdup(schema) : NULL;
 		mapi_setAutocommit(mid, dbc->sql_attr_autocommit == SQL_AUTOCOMMIT_ON);
 		set_timezone(mid);
-		mapi_set_size_header(mid, 1);
+		get_serverversion(dbc);
+		if (dbc->major > 11 ||
+		    (dbc->major == 11 && dbc->minor >= 5))
+			mapi_set_size_header(mid, 1);
 	}
 
 	return rc;

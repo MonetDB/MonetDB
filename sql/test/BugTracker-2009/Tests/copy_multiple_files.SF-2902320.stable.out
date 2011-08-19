@@ -35,7 +35,7 @@ insert(
 | union (
 | | table sys.copyfrom(varchar "sys", varchar "cm_tmp", varchar "|", varchar "\n", varchar "NULL", varchar "null", varchar "/file1", bigint "-1", bigint "0", int "0"),  [ cm_tmp.i ],
 | | table sys.copyfrom(varchar "sys", varchar "cm_tmp", varchar "|", varchar "\n", varchar "NULL", varchar "null", varchar "/file2", bigint "-1", bigint "0", int "0"),  [ cm_tmp.i ]
-| )
+| ) [  ]
 )
 
 # 08:59:53 >  

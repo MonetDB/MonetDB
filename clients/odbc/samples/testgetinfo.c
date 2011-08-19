@@ -17,7 +17,9 @@
  * All Rights Reserved.
  */
 
-#include "monetdb_config.h"	/* we need SIZEOF_INT and SIZEOF_LONG for sql.h */
+#ifdef _MSC_VER
+#include <WTypes.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <sql.h>
@@ -91,7 +93,6 @@ main(int argc, char **argv)
 	SQLSMALLINT resultlen;
 	SQLUSMALLINT si;
 	SQLUINTEGER i;
-	SQLULEN li;
 
 	if (argc > 1)
 		dsn = argv[1];
@@ -345,10 +346,6 @@ main(int argc, char **argv)
 	ret = SQLGetInfo(dbc, SQL_DM_VER, str, sizeof(str), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
 	printf("SQL_DM_VER: %.*s\n", resultlen, str);
-
-	ret = SQLGetInfo(dbc, SQL_DRIVER_HDESC, &li, sizeof(li), &resultlen);
-	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_DRIVER_HDESC: %lu\n", (unsigned long) li);
 
 	ret = SQLGetInfo(dbc, SQL_DRIVER_NAME, str, sizeof(str), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");

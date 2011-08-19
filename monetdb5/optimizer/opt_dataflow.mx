@@ -110,6 +110,11 @@ opt_export void removeDataflow(InstrPtr *old, int limit);
 #include "mal_instruction.h"
 #include "mal_interpreter.h"
 
+/*
+ * dataflow processing incurs overhead and is only
+ * relevant if multiple tasks kan be handled at the same time.
+ * Also simple expressions dont had to be done in parallel.
+*/
 static int
 simpleFlow(InstrPtr *old, int start, int last)
 {
@@ -125,8 +130,10 @@ simpleFlow(InstrPtr *old, int start, int last)
 			if( getArg(p,0) == getArg(q,j))
 				simple= TRUE;
 		if( !simple)
+			simple = getModuleId(q) == calcRef || getModuleId(q) == mtimeRef || getModuleId(q) == strRef || getModuleId(q)== mmathRef;
+		else p = q;
+		if( !simple)
 			return 0;
-		p = q;
 	}
 	return 1;
 }
