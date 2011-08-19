@@ -1,6 +1,14 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
+* Fri Aug 19 2011 Fabian Groffen <fabian@cwi.nl>
+- The path to the mserver5 binary is no longer returned for the mserver
+  property with monetdbd get for a dbfarm which is currently served by
+  a monetdbd.  Since the called monetdbd needs not to be the same as
+  the running monetdbd, the reported mserver5 binary may be incorrect,
+  and obviously lead to confusing situations.  Refer to the running
+  monetdbd's logfile to determine the mserver5 binary location instead.
+
 * Wed Aug 17 2011 Fabian Groffen <fabian@cwi.nl>
 - Added -n option to monetdbd start command, which prevents monetdbd
   from forking into the background.
