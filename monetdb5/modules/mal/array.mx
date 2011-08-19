@@ -40,13 +40,10 @@ command series_(start:@1, step:@1, stop:@1, N:int, M:int) :bat[:oid,:@1]
 address ARRAYseries_@1
 comment  "Generates a single series BAT based on range condition, repeating each value N times and repeat the process M times.";
 
-function series (start:@1, step:@1, stop:@1, N:int, M:int) :bat[:str,:bat];
-	b1 := bat.new(:str,:bat,2);
-	b2 := array.series_(start, step, stop, N, M);
-	b3 := bat.mirror(b2);
-	b4 := bat.insert(b1, "id", b3);
-	b5 := bat.insert(b4, "dimval", b2);
-	return series := b5;
+function series (start:@1, step:@1, stop:@1, N:int, M:int) (id:bat[:oid,:oid], dimval:bat[:oid,:@1]);
+	b1 := array.series_(start, step, stop, N, M);
+	b2 := bat.mirror(b1);
+	return (b2,b1);
 end series;
 
 @mal
@@ -68,19 +65,16 @@ pattern filler_(idx:bat[:oid,:any_1], v:any_2):bat[:oid,:any_2]
 address ARRAYfiller_bat
 comment "Create an array value representation described by a series column and fill it with V";
 
-pattern filler_(cnt:lng, v:any_2):bat[:oid,:any_2]
+pattern filler_(cnt:lng, v:any_1):bat[:oid,:any_1]
 address ARRAYfiller
 comment "Create an array value representation of CNT items and fill it with V";
 
-function filler(cnt:lng, v:any_2):bat[:str,:bat];
-	b1 := bat.new(:str,:bat,2);
-	b2 := array.filler_(cnt, v);
+function filler(cnt:lng, v:any_1)(id:bat[:oid,:oid], cellval:bat[:oid,:any_1]);
+	b1 := array.filler_(cnt, v);
 	# TODO: why is a markH necessary here, but no in array.series?
-	b3 := algebra.markH(b2, 0@0);
-	b4 := bat.mirror(b3);
-	b5 := bat.insert(b1, "id", b4);
-	b6 := bat.insert(b5, "cellval", b3);
-	return filler := b5;
+	b2 := algebra.markH(b1, 0@0);
+	b3 := bat.mirror(b2);
+	return (b3,b2);
 end filler;
 
 pattern map(dims:bat[:oid,:any]...):bat[:oid,:oid]
