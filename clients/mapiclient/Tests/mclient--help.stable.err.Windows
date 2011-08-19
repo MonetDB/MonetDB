@@ -26,6 +26,7 @@ Options are:
  -L logfile  | --log=logfile     save client/server interaction
  -s stmt     | --statement=stmt  run single statement
  -X          | --Xdebug          trace mapi network interaction
+ -z          | --timezone         do not tell server our timezone
  -?          | --help             show this usage message
 
 SQL specific opions 
