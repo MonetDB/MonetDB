@@ -90,19 +90,20 @@ SQLProcedures_(ODBCStmt *stmt,
 	query_end = query;
 
 	snprintf(query_end, 1000,
-		 "select "
-		 "cast(null as varchar(1)) as \"procedure_cat\", "
-		 "\"s\".\"name\" as \"procedure_schem\", "
-		 "\"p\".\"name\" as \"procedure_name\", "
-		 "0 as \"num_input_params\", "
-		 "0 as \"num_output_params\", "
-		 "0 as \"num_result_sets\", "
-		 "cast('' as varchar(1)) as \"remarks\", "
-		 "cast(%d as smallint) as \"procedure_type\" "
-		 "from sys.\"functions\" as \"p\", sys.\"schemas\" as \"s\" "
-		 "where \"p\".\"schema_id\" = \"s\".\"id\" "
-		 "and \"p\".\"sql\" = true ",
-		 SQL_PT_UNKNOWN);
+		 "select cast(null as varchar(1)) as \"procedure_cat\","
+		 "       \"s\".\"name\" as \"procedure_schem\","
+		 "       \"p\".\"name\" as \"procedure_name\","
+		 "       0 as \"num_input_params\","
+		 "       0 as \"num_output_params\","
+		 "       0 as \"num_result_sets\","
+		 "       cast('' as varchar(1)) as \"remarks\","
+		 "       cast(case when \"a\".\"name\" is null then %d else %d end as smallint) as \"procedure_type\""
+		 "from \"sys\".\"schemas\" as \"s\","
+		 "     \"sys\".\"functions\" as \"p\" left outer join \"sys\".\"args\" as \"a\""
+		 "     	       on \"p\".\"id\" = \"a\".\"func_id\" and \"a\".\"name\" = 'result'"
+		 "where \"p\".\"schema_id\" = \"s\".\"id\" and"
+		 "      \"p\".\"sql\" = true",
+		 SQL_PT_PROCEDURE, SQL_PT_FUNCTION);
 	query_end += strlen(query_end);
 
 	/* Construct the selection condition query part */
@@ -175,7 +176,7 @@ SQLProcedures_(ODBCStmt *stmt,
 
 	/* add the ordering */
 	strcpy(query_end,
-	       "order by \"procedure_cat\", \"procedure_schem\", \"procedure_name\"");
+	       " order by \"procedure_cat\", \"procedure_schem\", \"procedure_name\"");
 	query_end += strlen(query_end);
 
 	/* query the MonetDB data dictionary tables */
