@@ -2203,7 +2203,9 @@ beginning of each line.
 		pstring = varGetPropStr(mb, getArg(p,i));
 	else pstring = 0;
 	advance(t,base,len);
-	snprintf(t,(len-(t-base)),"%s:%s%s",getArgName(mb,p,i),tpe, (pstring?pstring:""));
+	snprintf(t,(len-(t-base)),"%s%s", (*getArgName(mb,p,i) == TMPMARKER?"X":""), getArgName(mb, p, i));
+	advance(t,base,len);
+	snprintf(t,(len-(t-base)),":%s%s",tpe, (pstring?pstring:""));
 	advance(t,base,len);
 	if( i<p->@1-1) sprintf(t,",");
 	if(pstring) { GDKfree(pstring); pstring=0;}
