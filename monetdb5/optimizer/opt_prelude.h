@@ -48,6 +48,7 @@ opt_export  str bpmRef;
 opt_export  str bstreamRef;
 opt_export  str calcRef;
 opt_export  str catalogRef;
+opt_export  str centipedeRef;
 opt_export  str clear_tableRef;
 opt_export  str closeRef;
 opt_export  str compressRef;

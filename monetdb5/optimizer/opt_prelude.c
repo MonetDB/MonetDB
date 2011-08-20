@@ -49,6 +49,7 @@ str bpmRef;
 str bstreamRef;
 str calcRef;
 str catalogRef;
+str centipedeRef;
 str clear_tableRef;
 str closeRef;
 str compressRef;
@@ -268,6 +269,7 @@ void optimizerInit(void){
 		bstreamRef = putName("bstream",7);
 		calcRef = putName("calc",4);
 		catalogRef = putName("catalog",7);
+		centipedeRef = putName("centipede",9);
 		clear_tableRef = putName("clear_table",11);
 		closeRef = putName("close",5);
 		compressRef = putName("compress",8);

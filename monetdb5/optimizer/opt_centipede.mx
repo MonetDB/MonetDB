@@ -19,48 +19,48 @@ All Rights Reserved.
 
 @c
 /*
- * @f opt_partition
+ * @f opt_centipede
  * @a M. Kersten
- * @- Partitioning
+ * @- Centipede
  * Documentation in accompanying paper.
  */
 @mal
-module partition;
-pattern optimizer.partition():str
-address OPTpartition;
-pattern optimizer.partition(mod:str, fcn:str):str
-address OPTpartition
+module centipede;
+pattern optimizer.centipede():str
+address OPTcentipede;
+pattern optimizer.centipede(mod:str, fcn:str):str
+address OPTcentipede
 comment "Modify the plan to exploit parallel processing on multiple cores";
 
-command partition.materialize(b:bat[:any_1,:any_2], low:any_2, high:any_2) :bat[:any_1,:any_2]
-address OPTpartitionMaterialize
-comment "Implement the partition operation. Throw an exception if the partition was empty, 
+command centipede.materialize(b:bat[:any_1,:any_2], low:any_2, high:any_2) :bat[:any_1,:any_2]
+address OPTcentipedeMaterialize
+comment "Implement the centipede partition operation. Throw an exception if the partition was empty, 
 because then the subquery should produce a NIL ";
 
-pattern partition.vector(b:bat[:oid,:any_1]) :any_1...
+pattern centipede.vector(b:bat[:oid,:any_1]) :any_1...
 address OPTvector
 comment "Derive a series of slices values based on sampling";
 
 @h
-#ifndef _OPT_SLICING_
-#define _OPT_SLICING_
+#ifndef _OPT_CENTIPEDE_
+#define _OPT_CENTIPEDE_
 #include "opt_prelude.h"
 #include "opt_support.h"
 
 #define MAXSITES 4		/* to be refined */
-@:exportOptimizer(partition)@
+@:exportOptimizer(centipede)@
 
 opt_export str OPTvector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-opt_export str OPTpartitionMaterialize(int *result, int *bid, ptr low, ptr high);
+opt_export str OPTcentipedeMaterialize(int *result, int *bid, ptr low, ptr high);
 opt_export str OPTpeers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 /* #define DEBUG_DETAIL*/
-#define _DEBUG_OPT_PARTITION_ 
-#define OPTDEBUGpartition  if ( optDebug & ((lng)1 <<DEBUG_OPT_PARTITION) )
+#define _DEBUG_OPT_CENTIPEDE_ 
+#define OPTDEBUGcentipede  if ( optDebug & ((lng)1 <<DEBUG_OPT_CENTIPEDE) )
 #endif
 @c
 #include "monetdb_config.h"
-#include "opt_partition.h"
+#include "opt_centipede.h"
 #include "opt_deadcode.h"
 #include "mal_builder.h"
 #include "mal_recycle.h"
@@ -88,7 +88,7 @@ OPTplanCntrl(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices)
 	int base, barrier, x, i, j, k, *alias, nrpack;
 	InstrPtr ret, p, q, *pack;
 
-#ifdef _DEBUG_OPT_PARTITION_
+#ifdef _DEBUG_OPT_CENTIPEDE_
 	mnstr_printf(cntxt->fdout,"#original plan \n");
 	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
 #endif
@@ -132,7 +132,7 @@ OPTplanCntrl(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices)
 		pushInstruction(cmb,q);
 
 		q= newInstruction(cmb, ASSIGNsymbol);
-		getModuleId(q) = partitionRef;
+		getModuleId(q) = centipedeRef;
 		getFunctionId(q) = vectorRef;
 		q = pushArgument(cmb, q, j);
 		for ( j = 0; j < nrservers +1; j++) {
@@ -259,7 +259,7 @@ OPTplanCntrl(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices)
 }
 
 static MalBlkPtr
-OPTpartitionStub(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb)
+OPTplanStub(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb)
 {
 	MalBlkPtr smb = 0;
 	Symbol s;
@@ -394,7 +394,7 @@ OPTpreparePartition(MalBlkPtr nmb, InstrPtr p, Slices *slices, int pc)
 	q= pushArgument(nmb,q, getArg(p,0));
 	q= pushArgument(nmb,q, slices->lslices);
 	q= pushArgument(nmb,q, slices->hslices);
-	setModuleId(q,partitionRef);
+	setModuleId(q,centipedeRef);
 	setFunctionId(q,materializeRef);
 	getArg(q,0)= slices->slice;
 	getArg(q,1) = getArg(p,0);
@@ -467,7 +467,7 @@ OPTsliceColumn(Client cntxt, MalBlkPtr nmb, MalBlkPtr mb, InstrPtr p, Slices *sl
 #define EXPORTED 4
 #define KEEPLOCAL 5
 
-#ifdef _DEBUG_OPT_PARTITION_ 
+#ifdef _DEBUG_OPT_CENTIPEDE_ 
 static char *status[6]= {"", "blocked  ", "required ", "supportive ", "exported ", "keeplocal "};
 #endif
 
@@ -504,7 +504,7 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 	if ( newMalBlkStmt(nmb,nmb->ssize) < 0 )
 		return 0;
 
-#ifdef _DEBUG_OPT_PARTITION_
+#ifdef _DEBUG_OPT_CENTIPEDE_
 	mnstr_printf(cntxt->fdout,"#Remote plan framework\n");
 	mnstr_printf(cntxt->fdout,"#partition %s.%s.%s type %d\n",
 		slices->schema,
@@ -578,7 +578,7 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 		}
 	}
 
-#ifdef _DEBUG_OPT_PARTITION_ 
+#ifdef _DEBUG_OPT_CENTIPEDE_ 
 	mnstr_printf(cntxt->fdout,"\n#phase 1\n");
 	for( i= 0; i< limit; i++)
 	if (plan[i] ) {
@@ -619,7 +619,7 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 				plan[i] = BLOCKED;
 		}
 	}
-#ifdef _DEBUG_OPT_PARTITION_ 
+#ifdef _DEBUG_OPT_CENTIPEDE_ 
 	mnstr_printf(cntxt->fdout,"\n#phase 2\n");
 	for( i= 0; i< limit; i++)
 	if (plan[i] ) {
@@ -653,7 +653,7 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 				vars[getArg(p,j)] = REQUIRED;
 
 	}
-#ifdef _DEBUG_OPT_PARTITION_ 
+#ifdef _DEBUG_OPT_CENTIPEDE_ 
 	mnstr_printf(cntxt->fdout,"\n#phase 3\n");
 	for( i= 0; i< limit; i++)
 	if (plan[i] ) {
@@ -681,7 +681,7 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 			if ( (getModuleId(p) == algebraRef && (getFunctionId(p) == markHRef || getFunctionId(p) == markTRef)) ||
 				 (getModuleId(p) == batRef && (getFunctionId(p) == reverseRef || getFunctionId(p) == mirrorRef )) )
 				continue;
-#ifdef _DEBUG_OPT_PARTITION_ 
+#ifdef _DEBUG_OPT_CENTIPEDE_ 
 		mnstr_printf(cntxt->fdout,"#phase 4 export %d\n", getArg(p,j));
 #endif
 			vars[getArg(p,j)] = EXPORTED;
@@ -737,17 +737,17 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 	}
 
 	insertSymbol(cntxt->nspace,s);
-#ifdef _DEBUG_OPT_PARTITION_
+#ifdef _DEBUG_OPT_CENTIPEDE_
 	mnstr_printf(cntxt->fdout,"#rough plan errors %d \n", nmb->errors);
 	printFunction(cntxt->fdout, nmb, 0, LIST_MAL_STMT);
 #endif
 
 	/* construct the remote stub plan */
-	smb = OPTpartitionStub(cntxt, mb, nmb);
+	smb = OPTplanStub(cntxt, mb, nmb);
 	msg= optimizeMALBlock(cntxt, smb);
 	if ( smb) 
 		chkProgram(cntxt->nspace, smb);
-#ifdef _DEBUG_OPT_PARTITION_
+#ifdef _DEBUG_OPT_CENTIPEDE_
 	mnstr_printf(cntxt->fdout,"#remote plan errors %d %s \n",smb->errors,msg?msg:"");
 	printFunction(cntxt->fdout, smb, 0, LIST_MAL_STMT);
 #endif
@@ -757,7 +757,7 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 	msg= optimizeMALBlock(cntxt, cmb);
 	if ( cmb) 
 		chkProgram(cntxt->nspace, cmb);
-#ifdef _DEBUG_OPT_PARTITION_
+#ifdef _DEBUG_OPT_CENTIPEDE_
 	mnstr_printf(cntxt->fdout,"#control plan errors %d %s \n",cmb->errors,msg?msg:"");
 	printFunction(cntxt->fdout, cmb, 0, LIST_MAL_STMT);
 #endif
@@ -769,7 +769,7 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 	getFunctionId(call) = getFunctionId(getInstrPtr(cmb,0));
 	insertInstruction(mb,call, 1);
 
-#ifdef _DEBUG_OPT_PARTITION_
+#ifdef _DEBUG_OPT_CENTIPEDE_
 	msg= optimizeMALBlock(cntxt, nmb);
 	chkProgram(cntxt->nspace, nmb);
 	mnstr_printf(cntxt->fdout,"#partition error %d %s\n", nmb->errors, msg?msg:"");
@@ -788,7 +788,7 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
  * portions are needed.
 */
 static int
-OPTpartitionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTcentipedeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
 	wrd r = 0, rowcnt=0;	/* table should be sizeable to consider parallel execution*/
@@ -839,8 +839,8 @@ OPTpartitionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	slices.column = GDKstrdup(getVarConstant(mb,getArg(target,4)).val.sval);
 	slices.slice = 0;
 
-	OPTDEBUGpartition
-		mnstr_printf(cntxt->fdout,"#opt_partition: target is %s.%s "
+	OPTDEBUGcentipede
+		mnstr_printf(cntxt->fdout,"#opt_centipede: target is %s.%s "
 			" with " SSZFMT " rows into %d servers\n",
 				getVarConstant(mb, getArg(slices.target,2)).val.sval,
 				getVarConstant(mb, getArg(slices.target,3)).val.sval,
@@ -854,7 +854,7 @@ OPTpartitionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	mnstr_printf(cntxt->fdout,"#orig BEFORE optimizer test\n");
 	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
 #endif
-#ifdef _DEBUG_OPT_PARTITION_
+#ifdef _DEBUG_OPT_CENTIPEDE_
 	msg= optimizeMALBlock(cntxt, mb);
 	chkProgram(cntxt->nspace, mb);
 	mnstr_printf(cntxt->fdout,"#partition %s.%s.%s type %d %s\n",
@@ -880,7 +880,7 @@ OPTpartitionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 @c
 #include "opt_statistics.h"
 #include "algebra.h"
-@:wrapOptimizer(partition,OPT_CHECK_ALL)@
+@:wrapOptimizer(centipede,OPT_CHECK_ALL)@
 
 /*
  * @-
@@ -922,10 +922,10 @@ OPTvector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 	if ( pci->retc < 2)
-		throw(SQL,"sql.partition","Not enough slices");
+		throw(SQL,"centipede.vector","Not enough slices");
 	b = BATdescriptor(bid);
 	if (b == NULL)
-		throw(SQL,"sql.partition","Can not access BAT");
+		throw(SQL,"centipede.vector","Can not access BAT");
     switch ( ATOMtype(b->ttype)) {
     case TYPE_bit: @:histo(bit,cval[0])@ break;
     case TYPE_chr: @:histo(chr,cval[0])@ break;
@@ -949,14 +949,14 @@ OPTvector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		break;
 	default:
-		throw(SQL,"sql.slices","Can not slice column ");
+		throw(SQL,"sql.centipede","Can not slice column ");
     }
 
 	BBPreleaseref(bid);
 	return MAL_SUCCEED;
 }
 
-str OPTpartitionMaterialize(int *result, int *bid, ptr low, ptr high)
+str OPTcentipedeMaterialize(int *result, int *bid, ptr low, ptr high)
 {
 	bit bitlow=TRUE, bithigh= FALSE;
 

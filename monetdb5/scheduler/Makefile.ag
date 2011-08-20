@@ -42,4 +42,4 @@ headers_mal = {
 }
 
 EXTRA_DIST_DIR = Tests
-EXTRA_DIST = run_adder.mal run_centipede.mal run_centipede.h run_isolate.mal run_memo.mal run_octopus.mal srvpool.mal
+EXTRA_DIST = run_adder.mal run_isolate.mal run_memo.mal run_octopus.mal srvpool.mal
