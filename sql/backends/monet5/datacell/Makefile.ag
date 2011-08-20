@@ -90,3 +90,4 @@ headers_datacellautoload = {
 }
 
 EXTRA_DIST = 50_datacell.mal 50_datacell.sql basket.mal basket.h datacell.mal datacell.h dcoperator.mal dcoperator.h dcsocket.h emitter.mal emitter.h opt_datacell.mal opt_datacell.h petrinet.mal petrinet.h receptor.mal receptor.h
+EXTRA_DIST_DIR = Tests

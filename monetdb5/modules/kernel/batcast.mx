@@ -128,6 +128,9 @@ All Rights Reserved.
 	@:coercion(str,bit)@
 
 	@:coercion(str,int)@
+
+	@:coercion(int,str)@
+	@:coercion(lng,str)@
 	# @-
 @include kprelude.mx
 @h

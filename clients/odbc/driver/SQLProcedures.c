@@ -90,19 +90,20 @@ SQLProcedures_(ODBCStmt *stmt,
 	query_end = query;
 
 	snprintf(query_end, 1000,
-		 "select "
-		 "cast(null as varchar(1)) as \"procedure_cat\", "
-		 "\"s\".\"name\" as \"procedure_schem\", "
-		 "\"p\".\"name\" as \"procedure_name\", "
-		 "0 as \"num_input_params\", "
-		 "0 as \"num_output_params\", "
-		 "0 as \"num_result_sets\", "
-		 "cast('' as varchar(1)) as \"remarks\", "
-		 "cast(%d as smallint) as \"procedure_type\" "
-		 "from sys.\"functions\" as \"p\", sys.\"schemas\" as \"s\" "
-		 "where \"p\".\"schema_id\" = \"s\".\"id\" "
-		 "and \"p\".\"sql\" = true ",
-		 SQL_PT_UNKNOWN);
+		 "select cast(null as varchar(1)) as \"procedure_cat\","
+		 "       \"s\".\"name\" as \"procedure_schem\","
+		 "       \"p\".\"name\" as \"procedure_name\","
+		 "       0 as \"num_input_params\","
+		 "       0 as \"num_output_params\","
+		 "       0 as \"num_result_sets\","
+		 "       cast('' as varchar(1)) as \"remarks\","
+		 "       cast(case when \"a\".\"name\" is null then %d else %d end as smallint) as \"procedure_type\""
+		 "from \"sys\".\"schemas\" as \"s\","
+		 "     \"sys\".\"functions\" as \"p\" left outer join \"sys\".\"args\" as \"a\""
+		 "     	       on \"p\".\"id\" = \"a\".\"func_id\" and \"a\".\"name\" = 'result'"
+		 "where \"p\".\"schema_id\" = \"s\".\"id\" and"
+		 "      \"p\".\"sql\" = true",
+		 SQL_PT_PROCEDURE, SQL_PT_FUNCTION);
 	query_end += strlen(query_end);
 
 	/* Construct the selection condition query part */
@@ -111,31 +112,71 @@ SQLProcedures_(ODBCStmt *stmt,
 		/* we do not support catalog names, so ignore it */
 	}
 
-	if (NameLength2 > 0) {
-		/* filtering requested on schema name */
-		/* use LIKE when it contains a wildcard '%' or a '_' */
-		/* TODO: the wildcard may be escaped. Check it
-		   and maybe convert it. */
-		sprintf(query_end, "and \"s\".\"name\" %s '%.*s' ",
-			memchr(SchemaName, '%', NameLength2) || memchr(SchemaName, '_', NameLength2) ? "like" : "=",
-			NameLength2, (char*)SchemaName);
-		query_end += strlen(query_end);
-	}
-
-	if (NameLength3 > 0) {
-		/* filtering requested on procedure name */
-		/* use LIKE when it contains a wildcard '%' or a '_' */
-		/* TODO: the wildcard may be escaped.  Check
-		   it and may be convert it. */
-		sprintf(query_end, "and \"p\".\"name\" %s '%.*s' ",
-			memchr(ProcName, '%', NameLength3) || memchr(ProcName, '_', NameLength3) ? "like" : "=",
-			NameLength3, (char*)ProcName);
-		query_end += strlen(query_end);
+	/* Construct the selection condition query part */
+	if (stmt->Dbc->sql_attr_metadata_id == SQL_TRUE) {
+		/* treat arguments as identifiers */
+		/* remove trailing blanks */
+		while (NameLength2 > 0 &&
+		       isspace((int) SchemaName[NameLength2 - 1]))
+			NameLength2--;
+		while (NameLength3 > 0 &&
+		       isspace((int) ProcName[NameLength3 - 1]))
+			NameLength3--;
+		if (NameLength2 > 0) {
+			sprintf(query_end, " and s.\"name\" = '");
+			query_end += strlen(query_end);
+			while (NameLength2-- > 0)
+				*query_end++ = tolower(*SchemaName++);
+			*query_end++ = '\'';
+		}
+		if (NameLength3 > 0) {
+			sprintf(query_end, " and p.\"name\" = '");
+			query_end += strlen(query_end);
+			while (NameLength3-- > 0)
+				*query_end++ = tolower(*ProcName++);
+			*query_end++ = '\'';
+		}
+	} else {
+		int escape;
+		if (NameLength2 > 0) {
+			escape = 0;
+			sprintf(query_end, " and s.\"name\" like '");
+			query_end += strlen(query_end);
+			while (NameLength2-- > 0) {
+				if (*SchemaName == '\\') {
+					escape = 1;
+					*query_end++ = '\\';
+				}
+				*query_end++ = *SchemaName++;
+			}
+			*query_end++ = '\'';
+			if (escape) {
+				sprintf(query_end, " escape '\\\\'");
+				query_end += strlen(query_end);
+			}
+		}
+		if (NameLength3 > 0) {
+			escape = 0;
+			sprintf(query_end, " and p.\"name\" like '");
+			query_end += strlen(query_end);
+			while (NameLength3-- > 0) {
+				if (*ProcName == '\\') {
+					escape = 1;
+					*query_end++ = '\\';
+				}
+				*query_end++ = *ProcName++;
+			}
+			*query_end++ = '\'';
+			if (escape) {
+				sprintf(query_end, " escape '\\\\'");
+				query_end += strlen(query_end);
+			}
+		}
 	}
 
 	/* add the ordering */
 	strcpy(query_end,
-	       "order by \"procedure_cat\", \"procedure_schem\", \"procedure_name\"");
+	       " order by \"procedure_cat\", \"procedure_schem\", \"procedure_name\"");
 	query_end += strlen(query_end);
 
 	/* query the MonetDB data dictionary tables */

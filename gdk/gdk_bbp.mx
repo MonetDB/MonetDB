@@ -649,6 +649,7 @@ fixoidheap(void)
 	str nme, bnme;
 	long_str filename;
 	int ht, tt;
+	char hs, hvs, ts, tvs;	/* saved storage types */
 
 	fprintf(stderr,
 		"# upgrading database from 32 bit OIDs to 64 bit OIDs\n");
@@ -729,8 +730,30 @@ fixoidheap(void)
 			if (b->T->type == TYPE_str)
 				b->T->vheap->dirty = TRUE;
 		}
+		/* temporarily set storage to STORE_MEM to force move
+		 * into BACKUP dir */
+		hs = b->H->heap.storage;
+		b->H->heap.storage = STORE_MEM;
+		ts = b->T->heap.storage;
+		b->T->heap.storage = STORE_MEM;
+		if (b->H->vheap) {
+			hvs = b->H->vheap->storage;
+			b->H->vheap->storage = STORE_MEM;
+		}
+		if (b->T->vheap) {
+			tvs = b->T->vheap->storage;
+			b->T->vheap->storage = STORE_MEM;
+		}
 		if (BBPsave(b))
 			GDKfatal("fixoidheap: creating backup for BAT %d failed\n", bid);
+		/* reset storage */
+		b->H->heap.storage = hs;
+		b->T->heap.storage = ts;
+		if (b->H->vheap)
+			b->H->vheap->storage = hvs;
+		if (b->T->vheap)
+			b->T->vheap->storage = tvs;
+
 		fixoidheapcolumn(b, nme, filename, "head", "hheap");
 		fixoidheapcolumn(BATmirror(b), nme, filename, "tail", "theap");
 

@@ -80,12 +80,7 @@ function user.welcome4(lim:int) (w:str,i:int);
     return (w,i) := "hello";
 #illegal return statement 
 end welcome4;
-#
-#function welcome5(lim:int)(:str,:int);
-#    i:= 2;
-#    return (w,i):=("hello",2); 
-#end welcome5;
-function user.welcome5(lim:int) (_2:str,_3:int);
+function user.welcome5(lim:int) (X_2:str,X_3:int);
     i := 2;
     return (w,i) := ("hello",2);
 end welcome5;

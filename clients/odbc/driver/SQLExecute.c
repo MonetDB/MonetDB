@@ -174,15 +174,14 @@ ODBCInitResult(ODBCStmt *stmt)
 			s = "";
 		if (*s) {
 			rec->sql_desc_unnamed = SQL_NAMED;
-			rec->sql_desc_base_column_name = (SQLCHAR *) strdup(s);
 			rec->sql_desc_label = (SQLCHAR *) strdup(s);
 			rec->sql_desc_name = (SQLCHAR *) strdup(s);
 		} else {
 			rec->sql_desc_unnamed = SQL_UNNAMED;
-			rec->sql_desc_base_column_name = NULL;
 			rec->sql_desc_label = NULL;
 			rec->sql_desc_name = NULL;
 		}
+		rec->sql_desc_base_column_name = NULL; /* see below */
 
 		s = mapi_get_type(hdl, i);
 		if (s == NULL)	/* shouldn't happen */
@@ -213,17 +212,31 @@ ODBCInitResult(ODBCStmt *stmt)
 			rec->sql_desc_case_sensitive = SQL_FALSE;
 
 		s = mapi_get_table(hdl, i);
-		rec->sql_desc_base_table_name = (SQLCHAR *) strdup(s ? s : "");
-		rec->sql_desc_table_name = (SQLCHAR *) strdup(s ? s : "");
+		if (s) {
+			char *p = strchr(s, '.');
+			if (p) {
+				rec->sql_desc_schema_name = (SQLCHAR *) dupODBCstring((SQLCHAR *) s, p - s);
+				rec->sql_desc_table_name = (SQLCHAR *) strdup(p + 1);
+				if (p != s) {
+					/* base table name and base
+					 * column name exist if there
+					 * is a schema name */
+					rec->sql_desc_base_table_name = (SQLCHAR *) strdup(p + 1);
+					if (rec->sql_desc_name)
+						rec->sql_desc_base_column_name = (SQLCHAR *) strdup((char *) rec->sql_desc_name);
+				}
+			} else {
+				rec->sql_desc_table_name = (SQLCHAR *) strdup(s);
+			}
+		}
 
 		if ((rec->sql_desc_length = mapi_get_digits(hdl, i)) == 0)
 			rec->sql_desc_length = mapi_get_len(hdl, i);
 
-		rec->sql_desc_local_type_name = (SQLCHAR *) strdup("");
-		rec->sql_desc_catalog_name = (SQLCHAR *) strdup("");
-		rec->sql_desc_literal_prefix = (SQLCHAR *) strdup("");
-		rec->sql_desc_literal_suffix = (SQLCHAR *) strdup("");
-		rec->sql_desc_schema_name = (SQLCHAR *) strdup("");
+		rec->sql_desc_local_type_name = NULL;
+		rec->sql_desc_catalog_name = NULL;
+		rec->sql_desc_literal_prefix = NULL;
+		rec->sql_desc_literal_suffix = NULL;
 
 		/* unused fields */
 		rec->sql_desc_data_ptr = NULL;

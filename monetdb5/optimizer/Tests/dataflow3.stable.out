@@ -109,11 +109,8 @@ function user.s1_0{autoCommit=true}():void;
     bat.insert(X17,X56);
     bat.insert(X17,X57);
     io.print(X17);
-    X19 := nil:dbl;
-barrier X_43 := language.dataflow();
     X17 := algebra.markH(X17);
     X19 := aggr.sum(X17);
-exit X_43;
     io.print(X19);
 end s1_0;
 

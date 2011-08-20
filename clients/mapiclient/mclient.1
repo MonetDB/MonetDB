@@ -123,13 +123,17 @@ platforms where these are supported.
 \fB\-\-port=\fP\fIportnr\fP (\fB\-p\fP \fIportnr\fP)
 Specify the portnumber of the server (default: 50000).
 .TP
-\fB\-\-interactive\fP (\fB\-i\fP)
+\fB\-\-interactive[=\fP\fItimermode\fP\fB]\fP (\fB\-i[\fP\fItimermode\fP\fB]\fP)
 After executing the queries from the
 .B \-\-statement
-option and any file specified on the command
+option (if given) and any file specified on the command
 line, read queries from standard input.  When this option is set, all
 files are read line by line, like if it were entered on mclient's
-console.
+console.  The optional \fItimermode\fP argument controls the
+format of the time reported for queries.  The default mode is
+\fBhuman\fP which adjusts the time precision to the measured value.  The
+modes \fBms\fP, \fBs\fP and \fBm\fP force millisecond, second and minute
++ second precision respectively.
 .TP
 \fB\-\-user\fP\fB=\fP\fIuser\fP (\fB\-u\fP \fIuser\fP)
 Specify the user to connect as.  If this flag is absent, the client will

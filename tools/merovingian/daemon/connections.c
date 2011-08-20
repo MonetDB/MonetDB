@@ -112,13 +112,6 @@ openConnectionUDP(int *ret, unsigned short port)
 	char sport[10];
 	char host[512];
 
-	if (port == 0) {
-		Mfprintf(_mero_discout, "neighbour discovery service disabled "
-				"by configuration\n");
-		*ret = -1;
-		return(NO_ERR);
-	}
-
 	memset(&hints, 0, sizeof(struct addrinfo));
 	hints.ai_family = AF_INET;      /* Allow IPv4 only (broadcasting) */
 	hints.ai_socktype = SOCK_DGRAM; /* Datagram socket */

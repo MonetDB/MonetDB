@@ -194,30 +194,39 @@ drop_table(MalBlkPtr mb, str n)
 	return nr;
 }
 
-/*
- * @-
- * The dump_cols produces a sequence of instructions for
- * the front-end to prepare presentation of a result table (bat).
- */
-static int
-dump_cols(mvc *sql, MalBlkPtr mb, list *l, int result_set)
+static InstrPtr
+dump_cols(MalBlkPtr mb, list *l, InstrPtr q)
+{
+	int i;
+	node *n;
+
+	q->retc=q->argc=0;
+	for (i = 0, n = l->h; n; n = n->next, i++) {
+		stmt *c = n->data;
+
+		q = pushArgument(mb, q, c->nr);
+	}
+	q->retc = q->argc;
+	return q;
+}
+
+static InstrPtr
+table_func_create_result( MalBlkPtr mb, InstrPtr q, sql_table *f)
 {
 	node *n;
-	InstrPtr q;
+	int i;
 
-	for (n = l->h; n; n = n->next) {
-		stmt *c = n->data;
-		char *cn = column_name(sql->sa, c);
-		char *ncn = sql_escape_ident(cn);
+	for (i = 0, n = f->columns.set->h; n; n = n->next, i++ ) {
+		sql_column *c = n->data;
+		int type = c->type.type->localtype;
 
-		q = newStmt2(mb, batRef, insertRef);
-		q = pushArgument(mb, q, result_set);
-		q = pushStr(mb, q, ncn);
-		q = pushArgument(mb, q, c->nr);
-		result_set = c->nr = getDestVar(q);
-		_DELETE(ncn);
+		type = newBatType(TYPE_oid,type);
+		if (i)
+			q = pushReturn(mb, q, newTmpVariable(mb, type));
+		else
+			setVarType(mb,getArg(q,0), type);
 	}
-	return result_set;
+	return q;
 }
 
 /*
@@ -1526,31 +1535,37 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			char *mod, *fimp;
 			sql_subtype *tpe = NULL;
 			int special = 0;
+			sql_subfunc *f = s->op4.funcval;
 			node *n;
 			/* dump operands */
 			_dumpstmt(sql, mb, s->op1);
 
-			backend_create_func(sql, s->op4.funcval->func);
-			mod = sql_func_mod(s->op4.funcval->func);
-			fimp = sql_func_imp(s->op4.funcval->func);
+			backend_create_func(sql, f->func);
+			mod = sql_func_mod(f->func);
+			fimp = sql_func_imp(f->func);
 			if (s->nrcols) {
 				fimp = convertMultiplexFcn(fimp);
 				q = multiplexN(mb,mod,fimp);
 				if (!q) {
 					q = newStmt(mb, "mal","multiplex");
 					setVarType(mb,getArg(q,0),
-						newBatType(TYPE_oid,s->op4.funcval->res.type->localtype));
+						newBatType(TYPE_oid,f->res.type->localtype));
 					setVarUDFtype(mb,getArg(q,0));
 					q = pushStr(mb, q, mod);
 					q = pushStr(mb, q, fimp);
 				} else {
 					setVarType(mb,getArg(q,0),
-						newBatType(TYPE_any,s->op4.funcval->res.type->localtype));
+						newBatType(TYPE_any,f->res.type->localtype));
 					setVarUDFtype(mb,getArg(q,0));
 				}
 			} else {
 				fimp = convertOperator(fimp);
 				q = newStmt(mb, mod, fimp);
+				/* first dynamic output of copy* functions */
+				if (f->res.comp_type) 
+					q = table_func_create_result(mb, q, f->res.comp_type);
+				else if (f->func->res.comp_type) 
+					q = table_func_create_result(mb, q, f->func->res.comp_type);
 			}
 			if (list_length(s->op1->op4.lval))
 				tpe = tail_type(s->op1->op4.lval->h->data);
@@ -1569,6 +1584,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				special = 0;
 			}
 			s->nr = getDestVar(q);
+			/* keep reference to instruction */
+			s->rewritten = (void*)q;
 		} break;
 		case st_aggr:{
 			int l = _dumpstmt(sql, mb, s->op1);
@@ -1743,17 +1760,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			s->nr = 1;
 			break;
 		case st_rs_column:{
-			/* this command is called to fetch a BAT from an import */
-			int o1 = _dumpstmt(sql, mb, s->op1);
-			int o2 = _dumpstmt(sql, mb, s->op2);
-
-			q = newStmt1(mb, sqlRef, "columnBind");
-			/* adjust destination type */
-			setVarType(mb,getArg(q,0), newBatType( TYPE_oid,s->op4.typeval.type->localtype));
-			setVarUDFtype(mb,getArg(q,0));
-			q = pushArgument(mb, q, o1);
-			q = pushArgument(mb, q, o2);
-			s->nr = getDestVar(q);
+			_dumpstmt(sql, mb, s->op1);
+			q = (void*)s->op1->rewritten;
+			s->nr = getArg(q,s->flag);
 		} break;
 		case st_ordered:{
 			int l = _dumpstmt(sql, mb, s->op1);
@@ -1908,19 +1917,11 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			_dumpstmt(sql, mb, lst);
 
-			if (lst->type == st_list) {
-				list *l = lst->op4.lval;
-
-				q = newStmt1(mb, batRef, "new");
-				s->nr = getDestVar(q);
-				q = pushType(mb, q, TYPE_str);
-				(void) pushType(mb, q, TYPE_bat);
-				s->nr = dump_cols(sql->mvc, mb, l, s->nr);
-			} else {
+			if (lst->type != st_list) {
 				q = newStmt1(mb, sqlRef, "print");
 				(void) pushStr(mb, q, "not a valid output list\n");
-				s->nr = 1;
 			}
+			s->nr = 1;
 		}
 			break;
 
@@ -1976,8 +1977,14 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				(void) pushInt(mb, k, s->flag);
 			}
 			q = newInstruction(mb,RETURNsymbol);
-			getArg(q,0) = getArg(getInstrPtr(mb,0),0);
-			pushArgument(mb,q,c);
+			if (s->op1->type == st_table) {
+				list *l = s->op1->op1->op4.lval;
+
+				q = dump_cols(mb, l, q);
+			} else {
+				getArg(q,0) = getArg(getInstrPtr(mb,0),0);
+				q = pushArgument(mb,q,c);
+			}
 			pushInstruction(mb, q);
 			s->nr = 1;
 		}	break;
@@ -2309,7 +2316,7 @@ monet5_create_table_function(ptr M, char *name, sql_rel *rel, sql_table *t)
 	curBlk = c->curprg->def;
 	curInstr = getInstrPtr(curBlk, 0);
 
-	setVarType(curBlk, 0, newBatType(TYPE_str, TYPE_bat));
+	curInstr = table_func_create_result(curBlk, curInstr, t);
 	setVarUDFtype(curBlk,0);
 
 	/* no ops */
@@ -2408,8 +2415,8 @@ backend_create_func(backend *be, sql_func *f)
 	curInstr = getInstrPtr(curBlk, 0);
 
 	if (f->res.type) {
-		if (f->res.type->localtype == TYPE_bat)
-			setVarType(curBlk, 0, newBatType(TYPE_str, TYPE_bat));
+		if (f->res.comp_type)
+			curInstr = table_func_create_result(curBlk, curInstr, f->res.comp_type);
 		else
 			setVarType(curBlk, 0, f->res.type->localtype);
 	} else {

@@ -1265,13 +1265,13 @@ stmt_union(sql_allocator *sa, stmt *op1, stmt *op2)
 }
 
 stmt *
-stmt_rs_column(sql_allocator *sa, stmt *rs, stmt *name, sql_subtype *tpe)
+stmt_rs_column(sql_allocator *sa, stmt *rs, int i, sql_subtype *tpe)
 {
 	stmt *s = stmt_create(sa, st_rs_column);
 
 	s->op1 = rs;
-	s->op2 = name;
 	s->op4.typeval = *tpe;
+	s->flag = i;
 	s->nrcols = 1;
 	s->key = 0;
 	s->h = NULL;
@@ -1833,7 +1833,6 @@ column_name(sql_allocator *sa, stmt *st)
 	case st_joinN:
 	case st_outerjoin:
 	case st_derive:
-	case st_rs_column:
 		return column_name(sa, st->op2);
 
 	case st_mirror:
@@ -1888,6 +1887,7 @@ column_name(sql_allocator *sa, stmt *st)
 	case st_list:
 		if (list_length(st->op4.lval))
 			return column_name(sa, st->op4.lval->h->data);
+	case st_rs_column:
 		return NULL;
 	default:
 		fprintf(stderr, "missing column name %u: %s\n", st->type, st_type2string(st->type));

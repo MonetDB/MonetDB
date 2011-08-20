@@ -292,7 +292,7 @@ developer.
 
 %files client-tests
 %defattr(-,root,root)
-# %{_bindir}/odbcsample1
+%{_bindir}/odbcsample1
 %{_bindir}/sample0
 %{_bindir}/sample1
 %{_bindir}/sample2
@@ -300,7 +300,7 @@ developer.
 %{_bindir}/sample4
 %{_bindir}/smack00
 %{_bindir}/smack01
-# %{_bindir}/testgetinfo
+%{_bindir}/testgetinfo
 %{_bindir}/malsample.pl
 %{_bindir}/sqlsample.php
 %{_bindir}/sqlsample.pl

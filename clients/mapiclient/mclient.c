@@ -288,6 +288,13 @@ timerHumanStop(void)
 	th = gettime();
 }
 
+static enum itimers {
+	T_HUMAN = 0,
+	T_MILLIS,
+	T_SECS,
+	T_MINSECS
+} itimemode = T_HUMAN;
+
 static char htimbuf[32];
 static char *
 timerHuman(void)
@@ -296,17 +303,18 @@ timerHuman(void)
 
 	assert(th >= t0);
 
-	if (t / 1000 < 950) {
+	if (itimemode == T_MILLIS || (itimemode == T_HUMAN && t / 1000 < 950)) {
 		snprintf(htimbuf, 32, "%ld.%03ldms", (long) (t / 1000), (long) (t % 1000));
 		return(htimbuf);
 	}
 	t /= 1000;
-	if (t / 1000 < 60) {
+	if (itimemode == T_SECS || (itimemode == T_HUMAN && t / 1000 < 60)) {
 		snprintf(htimbuf, 32, "%ld.%lds", (long) (t / 1000),
 				(long) ((t % 1000) / 100));
 		return(htimbuf);
 	}
 	t /= 1000;
+	/* itimemode == T_MINSECS || itimemode == T_HUMAN */
 	snprintf(htimbuf, 32, "%ldm %lds", (long) (t / 60), (long) (t % 60));
 	return(htimbuf);
 }
@@ -2416,7 +2424,7 @@ usage(const char *prog, int xit)
 #endif
 	fprintf(stderr, " -f kind     | --format=kind      specify output format {csv,tab,raw,sql,xml}\n");
 	fprintf(stderr, " -H          | --history          load/save cmdline history (default off)\n");
-	fprintf(stderr, " -i          | --interactive      read stdin after command line args\n");
+	fprintf(stderr, " -i          | --interactive[=tm] read stdin after command line args, use time formatting {ms,s,m}\n");
 	fprintf(stderr, " -l language | --language=lang    {sql,mal}\n");
 	fprintf(stderr, " -L logfile  | --log=logfile      save client/server interaction\n");
 	fprintf(stderr, " -s stmt     | --statement=stmt   run single statement\n");
@@ -2473,7 +2481,7 @@ main(int argc, char **argv)
 		{"help", 0, 0, '?'},
 		{"history", 0, 0, 'H'},
 		{"host", 1, 0, 'h'},
-		{"interactive", 0, 0, 'i'},
+		{"interactive", 2, 0, 'i'},
 		{"language", 1, 0, 'l'},
 		{"log", 1, 0, 'L'},
 		{"null", 1, 0, 'n'},
@@ -2613,7 +2621,7 @@ main(int argc, char **argv)
 #ifdef HAVE_ICONV
 				"E:"
 #endif
-				"f:h:iL:l:n:"
+				"f:h:i::L:l:n:"
 #ifdef HAVE_POPEN
 				"|:"
 #endif
@@ -2675,6 +2683,15 @@ main(int argc, char **argv)
 			break;
 		case 'i':
 			interactive = 1;
+			if (optarg != NULL) {
+				if (strcmp(optarg, "ms") == 0) {
+					itimemode = T_MILLIS;
+				} else if (strcmp(optarg, "s") == 0) {
+					itimemode = T_SECS;
+				} else if (strcmp(optarg, "m") == 0) {
+					itimemode = T_MINSECS;
+				} /* else: fall back to default (human) */
+			}
 			break;
 		case 'h':
 			host = optarg;

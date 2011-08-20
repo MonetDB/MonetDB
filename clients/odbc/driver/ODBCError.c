@@ -50,7 +50,7 @@ struct tODBCError {
 	struct tODBCError *next;	/* pointer to the next Error object or NULL */
 };
 
-const char ODBCErrorMsgPrefix[] = "[MonetDB][ODBC Driver 1.0]";
+const char ODBCErrorMsgPrefix[] = "[MonetDB][ODBC Driver " PACKAGE_VERSION "]";
 const int ODBCErrorMsgPrefixLength = (int) sizeof(ODBCErrorMsgPrefix) - 1;
 
 /*

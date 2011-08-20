@@ -46,11 +46,12 @@ create function GetTrace()
 		clk varchar(20), 	-- wallclock, no mtime in kernel
 		pc varchar(50), 	-- module.function[nr]
 		thread int, 		-- thread identifier
-		ticks integer, 		-- time in microseconds
-		reads integer, 		-- number of blocks read
-		writes integer, 	-- number of blocks written
-		rbytes integer,		-- amount of bytes touched
-		wbytes integer,		-- amount of bytes written
+		"user" int, 		-- user identifier
+		ticks bigint, 		-- time in microseconds
+		reads bigint, 		-- number of blocks read
+		writes bigint, 	-- number of blocks written
+		rbytes bigint,		-- amount of bytes touched
+		wbytes bigint,		-- amount of bytes written
 		type string,		-- return types
 		stmt string			-- actual statement executed
 	)
