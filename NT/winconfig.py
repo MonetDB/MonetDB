@@ -40,10 +40,15 @@ subs = [("@exec_prefix@", r'%prefix%'),
         ("@pkglibdir@", r'%exec_prefix%\lib\@PACKAGE@'),
         ("@pkgincludedir@", r'%prefix%\include\@PACKAGE@'),
         ("@DIRSEP@", '\\'),
-        ("@CROSS_COMPILING_FALSE@", ''),
-        ("@NATIVE_WIN32_FALSE@", '#'),
-        ("@NOT_WIN32_FALSE@", ''),
         ("@PATHSEP@", ';')]
+
+if len(sys.argv) > 1 and sys.argv[1][-19:] == '\\winconfig_conds.py':
+    conds = {}
+    for line in fileinput.input(sys.argv[1]):
+        exec(line, None, conds)
+    for k in conds.keys():
+        subs.append(('@'+k+'@', conds[k]))
+    del sys.argv[1]
 
 while len(sys.argv) > 2 and '=' in sys.argv[1]:
     arg = sys.argv[1]

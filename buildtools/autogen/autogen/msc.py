@@ -336,7 +336,7 @@ def msc_dep(fd, tar, deplist, msc):
     for x, y in _in:
         # TODO
         # replace this hack by something like configure ...
-        fd.write('%s: "%s"\n' % (x, y))
+        fd.write('%s: "$(TOPDIR)\\winconfig_conds.py" "%s"\n' % (x, y))
         fd.write('\t$(CONFIGURE) "%s" > "%s"\n' % (y, x))
         msc['_IN'].append(y)
     getsrc = ""
@@ -411,7 +411,7 @@ def msc_scripts(fd, var, scripts, msc):
             if inf not in msc['_IN']:
                 # TODO
                 # replace this hack by something like configure ...
-                fd.write('%s: "%s"\n' % (script, inf))
+                fd.write('%s: "$(TOPDIR)\\winconfig_conds.py" "%s"\n' % (script, inf))
                 fd.write('\t$(CONFIGURE) "%s" > "%s"\n' % (inf, script))
                 msc['_IN'].append(inf)
         elif os.path.isfile(os.path.join(msc['cwd'], script)):
@@ -468,7 +468,7 @@ def msc_headers(fd, var, headers, msc):
                 if inf not in msc['_IN']:
                     # TODO
                     # replace this hack by something like configure ...
-                    fd.write('%s: "%s"\n' % (header, inf))
+                    fd.write('%s: "$(TOPDIR)\\winconfig_conds.py" "%s"\n' % (header, inf))
                     fd.write('\t$(CONFIGURE) "%s" > "%s"\n' % (inf, header))
                     msc['_IN'].append(inf)
             elif os.path.isfile(os.path.join(msc['cwd'], header)):
@@ -508,7 +508,7 @@ def msc_binary(fd, var, binmap, msc):
                 if os.path.isfile(os.path.join(msc['cwd'], i+'.in')):
                     # TODO
                     # replace this hack by something like configure ...
-                    fd.write('%s: "$(srcdir)\\%s.in"\n' % (i, i))
+                    fd.write('%s: "$(TOPDIR)\\winconfig_conds.py" "$(srcdir)\\%s.in"\n' % (i, i))
                     fd.write('\t$(CONFIGURE) "$(srcdir)\\%s.in" > "%s"\n' % (i, i))
                 elif os.path.isfile(os.path.join(msc['cwd'], i)):
                     fd.write('%s: "$(srcdir)\\%s"\n' % (i, i))

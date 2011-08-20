@@ -244,132 +244,183 @@ NATIVE_WIN32 = 1
 FILTER=findstr /v /l
 FILTERPREF=/c:
 
-# These should cover all AM_CONDITIONALS defined in configure.ag, i.e.,
-# `grep AM_CONDITIONAL configure.ag | sed 's|^AM_CONDITIONAL(\([^,]*\),.*$|\1|' | sort -u`
+# To avoid a too long commandline when calling winconfig.py ($(CONFIGURE)),
+# we called the settings for AM_CONDITIONALS defined in configure.ag into
+# a file ($(TOPDIR)\winconfig_conds.py) where winconfig.py reads these
+# settings from, and make each call of winconfig.py (via $(CONFIGURE))
+# depend on this file.
+# To avoid unnecessary identical re-creation of $(TOPDIR)\winconfig_conds.py
+# (and thus unnecessary identical re-conversion of *.in files by winconfig.py,
+#  and thus unnecessary re-compilation of the resulting code files),
+# we first create a temporary $(TOPDIR)\winconfig_conds_new.py with each
+# nmake call, and then update the actual $(TOPDIR)\winconfig_conds.py
+# only if the new $(TOPDIR)\winconfig_conds_new.py is different.
+
+create_winconfig_conds_new_py:
+	$(ECHO) > "$(TOPDIR)\winconfig_conds_new.py"
+	# These should cover all AM_CONDITIONALS defined in configure.ag, i.e.,
+	# `grep AM_CONDITIONAL configure.ag | sed 's|^AM_CONDITIONAL(\([^,]*\),.*$|\1|' | sort -u`
 !IFDEF BITS32
-BITS32_FALSE=^#
+	$(ECHO) "BITS32_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) "BITS32_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF BITS64
-BITS64_FALSE=^#
+	$(ECHO) "BITS64_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) "BITS64_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF CROSS_COMPILING
-CROSS_COMPILING_FALSE=^#
+	$(ECHO) "CROSS_COMPILING_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) "CROSS_COMPILING_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF DOCTOOLS
-DOCTOOLS_FALSE=^#
+	$(ECHO) "DOCTOOLS_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) "DOCTOOLS_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF ENABLE_CRACKERS
-ENABLE_CRACKERS_FALSE=^#
+	$(ECHO) "ENABLE_CRACKERS_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) "ENABLE_CRACKERS_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF ENABLE_DATACELL
-ENABLE_DATACELL_FALSE=^#
+	$(ECHO) "ENABLE_DATACELL_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) "ENABLE_DATACELL_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_ANT
-HAVE_ANT_FALSE=^#
+	$(ECHO) "HAVE_ANT_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) "HAVE_ANT_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_DEVELOPER
-HAVE_DEVELOPER_FALSE=^#
+	$(ECHO) "HAVE_DEVELOPER_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) "HAVE_DEVELOPER_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_GDK
-HAVE_GDK_FALSE=^#
+	$(ECHO) "HAVE_GDK_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) "HAVE_GDK_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_GEOM
-HAVE_GEOM_FALSE=^#
+	$(ECHO) "HAVE_GEOM_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) "HAVE_GEOM_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_JAVA
-HAVE_JAVA_FALSE=^#
-!ENDIF
+	$(ECHO) "HAVE_JAVA_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
 !IFDEF HAVE_JAVAJDBC
-HAVE_JAVAJDBC_FALSE=^#
+	$(ECHO) "HAVE_JAVAJDBC_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) "HAVE_JAVAJDBC_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_JAVAMEROCONTROL
-HAVE_JAVAMEROCONTROL_FALSE=^#
+	$(ECHO) "HAVE_JAVAMEROCONTROL_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) "HAVE_JAVAMEROCONTROL_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
+!ELSE
+	$(ECHO) "HAVE_JAVA_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) "HAVE_JAVAJDBC_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) "HAVE_JAVAMEROCONTROL_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_LIBBZ2
-HAVE_LIBBZ2_FALSE=^#
+	$(ECHO) "HAVE_LIBBZ2_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) "HAVE_LIBBZ2_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_LIBXML2
-HAVE_LIBXML2_FALSE=^#
+	$(ECHO) "HAVE_LIBXML2_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) "HAVE_LIBXML2_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_LIBZ
-HAVE_LIBZ_FALSE=^#
+	$(ECHO) "HAVE_LIBZ_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) "HAVE_LIBZ_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_MONETDB5
-HAVE_MONETDB5_FALSE=^#
+	$(ECHO) "HAVE_MONETDB5_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) "HAVE_MONETDB5_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_ODBC
-HAVE_ODBC_FALSE=^#
+	$(ECHO) "HAVE_ODBC_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) "HAVE_ODBC_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_PCRE
-HAVE_PCRE_FALSE=^#
+	$(ECHO) "HAVE_PCRE_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) "HAVE_PCRE_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_PERL
-HAVE_PERL_FALSE=^#
+	$(ECHO) "HAVE_PERL_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) "HAVE_PERL_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_PHP
-HAVE_PHP_FALSE=^#
+	$(ECHO) "HAVE_PHP_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) "HAVE_PHP_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_PYTHON
-HAVE_PYTHON_FALSE=^#
+	$(ECHO) "HAVE_PYTHON_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) "HAVE_PYTHON_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_RAPTOR
-HAVE_RAPTOR_FALSE=^#
+	$(ECHO) "HAVE_RAPTOR_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) "HAVE_RAPTOR_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_RUBYGEM
-HAVE_RUBYGEM_FALSE=^#
+	$(ECHO) "HAVE_RUBYGEM_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) "HAVE_RUBYGEM_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_HAVE_SPHINXCLIENT
-HAVE_HAVE_SPHINXCLIENT_FALSE=^#
+	$(ECHO) "HAVE_HAVE_SPHINXCLIENT_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) "HAVE_HAVE_SPHINXCLIENT_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_HAVE_SQL
-HAVE_HAVE_SQL_FALSE=^#
+	$(ECHO) "HAVE_HAVE_SQL_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) "HAVE_HAVE_SQL_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_HAVE_TESTING
-HAVE_HAVE_TESTING_FALSE=^#
+	$(ECHO) "HAVE_HAVE_TESTING_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) "HAVE_HAVE_TESTING_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_NATIVE_WIN32
-HAVE_NATIVE_WIN32_FALSE=^#
+	$(ECHO) "HAVE_NATIVE_WIN32_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) "HAVE_NATIVE_WIN32_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_NOT_WIN32
-HAVE_NOT_WIN32_FALSE=^#
+	$(ECHO) "HAVE_NOT_WIN32_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) "HAVE_NOT_WIN32_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF PROFILING
-PROFILING_FALSE=^#
+	$(ECHO) "PROFILING_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) "PROFILING_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 
-CONFIGURE=$(PYTHON) $(CONFIGURE_PY) \
+update_winconfig_conds_py: create_winconfig_conds_new_py
+	if not exist "$(TOPDIR)\winconfig_conds.py" $(CP) "$(TOPDIR)\winconfig_conds_new.py" "$(TOPDIR)\winconfig_conds.py"
+	C:\cygwin\bin\cmp.exe -s "$(TOPDIR)\winconfig_conds_new.py" "$(TOPDIR)\winconfig_conds.py"
+	if ERRORLEVEL 1 $(CP) "$(TOPDIR)\winconfig_conds_new.py" "$(TOPDIR)\winconfig_conds.py"
+
+CONFIGURE=$(PYTHON) $(CONFIGURE_PY) 
+	"$(TOPDIR)\winconfig_conds.py" \
 	"prefix=$(prefix)" \
-	"BITS32_FALSE=$(BITS32_FALSE)" \
-	"BITS64_FALSE=$(BITS64_FALSE)" \
-	"CROSS_COMPILING_FALSE=$(CROSS_COMPILING_FALSE)" \
-	"DOCTOOLS_FALSE=$(DOCTOOLS_FALSE)" \
-	"ENABLE_CRACKERS_FALSE=$(ENABLE_CRACKERS_FALSE)" \
-	"ENABLE_DATACELL_FALSE=$(ENABLE_DATACELL_FALSE)" \
-	"HAVE_ANT_FALSE=$(HAVE_ANT_FALSE)" \
-	"HAVE_DEVELOPER_FALSE=$(HAVE_DEVELOPER_FALSE)" \
-	"HAVE_GDK_FALSE=$(HAVE_GDK_FALSE)" \
-	"HAVE_GEOM_FALSE=$(HAVE_GEOM_FALSE)" \
-	"HAVE_JAVA_FALSE=$(HAVE_JAVA_FALSE)" \
-	"HAVE_JAVAJDBC_FALSE=$(HAVE_JAVAJDBC_FALSE)" \
-	"HAVE_JAVAMEROCONTROL_FALSE=$(HAVE_JAVAMEROCONTROL_FALSE)" \
-	"HAVE_LIBBZ2_FALSE=$(HAVE_LIBBZ2_FALSE)" \
-	"HAVE_LIBXML2_FALSE=$(HAVE_LIBXML2_FALSE)" \
-	"HAVE_LIBZ_FALSE=$(HAVE_LIBZ_FALSE)" \
-	"HAVE_MONETDB5_FALSE=$(HAVE_MONETDB5_FALSE)" \
-	"HAVE_ODBC_FALSE=$(HAVE_ODBC_FALSE)" \
-	"HAVE_OPENSSL_FALSE=$(HAVE_OPENSSL_FALSE)" \
-	"HAVE_PCRE_FALSE=$(HAVE_PCRE_FALSE)" \
-	"HAVE_PERL_FALSE=$(HAVE_PERL_FALSE)" \
-	"HAVE_PHP_FALSE=$(HAVE_PHP_FALSE)" \
-	"HAVE_PYTHON_FALSE=$(HAVE_PYTHON_FALSE)" \
-	"HAVE_RAPTOR_FALSE=$(HAVE_RAPTOR_FALSE)" \
-	"HAVE_RUBYGEM_FALSE=$(HAVE_RUBYGEM_FALSE)" \
-	"HAVE_HAVE_SPHINXCLIENT_FALSE=$(HAVE_HAVE_SPHINXCLIENT_FALSE)" \
-	"HAVE_HAVE_SQL_FALSE=$(HAVE_HAVE_SQL_FALSE)" \
-	"HAVE_HAVE_TESTING_FALSE=$(HAVE_HAVE_TESTING_FALSE)" \
-	"HAVE_NATIVE_WIN32_FALSE=$(HAVE_NATIVE_WIN32_FALSE)" \
-	"HAVE_NOT_WIN32_FALSE=$(HAVE_NOT_WIN32_FALSE)" \
-	"PROFILING_FALSE=$(PROFILING_FALSE)" \
 	"JDBCCLIENT_JAR=$(JDBCCLIENT_JAR)" \
 	"LIBICONV=$(LIBICONV)" \
 	"LIBXML2=$(LIBXML2)" \
