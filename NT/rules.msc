@@ -254,10 +254,10 @@ FILTERPREF=/c:
 # nmake call, and then update the actual $(TOPDIR)\winconfig_conds.py
 # only if the new $(TOPDIR)\winconfig_conds_new.py is different.
 
+# These should cover all AM_CONDITIONALS defined in configure.ag, i.e.,
+# `grep AM_CONDITIONAL configure.ag | sed 's|^AM_CONDITIONAL(\([^,]*\),.*$|\1|' | sort -u`
 create_winconfig_conds_new_py:
 	$(ECHO) > "$(TOPDIR)\winconfig_conds_new.py"
-	# These should cover all AM_CONDITIONALS defined in configure.ag, i.e.,
-	# `grep AM_CONDITIONAL configure.ag | sed 's|^AM_CONDITIONAL(\([^,]*\),.*$|\1|' | sort -u`
 !IFDEF BITS32
 	$(ECHO) "BITS32_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
