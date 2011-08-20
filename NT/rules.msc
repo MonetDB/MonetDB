@@ -375,30 +375,30 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) "HAVE_RUBYGEM_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF HAVE_HAVE_SPHINXCLIENT
-	$(ECHO) "HAVE_HAVE_SPHINXCLIENT_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+!IFDEF HAVE_SPHINXCLIENT
+	$(ECHO) "HAVE_SPHINXCLIENT_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) "HAVE_HAVE_SPHINXCLIENT_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) "HAVE_SPHINXCLIENT_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF HAVE_HAVE_SQL
-	$(ECHO) "HAVE_HAVE_SQL_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+!IFDEF HAVE_SQL
+	$(ECHO) "HAVE_SQL_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) "HAVE_HAVE_SQL_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) "HAVE_SQL_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF HAVE_HAVE_TESTING
-	$(ECHO) "HAVE_HAVE_TESTING_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+!IFDEF HAVE_TESTING
+	$(ECHO) "HAVE_TESTING_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) "HAVE_HAVE_TESTING_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) "HAVE_TESTING_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF HAVE_NATIVE_WIN32
-	$(ECHO) "HAVE_NATIVE_WIN32_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+!IFDEF NATIVE_WIN32
+	$(ECHO) "NATIVE_WIN32_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) "HAVE_NATIVE_WIN32_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) "NATIVE_WIN32_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF HAVE_NOT_WIN32
-	$(ECHO) "HAVE_NOT_WIN32_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+!IFDEF NOT_WIN32
+	$(ECHO) "NOT_WIN32_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) "HAVE_NOT_WIN32_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) "NOT_WIN32_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF PROFILING
 	$(ECHO) "PROFILING_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
