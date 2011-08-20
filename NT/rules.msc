@@ -416,7 +416,7 @@ update_winconfig_conds_py: create_winconfig_conds_new_py
 	C:\cygwin\bin\cmp.exe -s "$(TOPDIR)\winconfig_conds_new.py" "$(TOPDIR)\winconfig_conds.py"
 	if ERRORLEVEL 1 $(CP) "$(TOPDIR)\winconfig_conds_new.py" "$(TOPDIR)\winconfig_conds.py"
 
-CONFIGURE=$(PYTHON) $(CONFIGURE_PY) 
+CONFIGURE=$(PYTHON) $(CONFIGURE_PY) \
 	"$(TOPDIR)\winconfig_conds.py" \
 	"prefix=$(prefix)" \
 	"JDBCCLIENT_JAR=$(JDBCCLIENT_JAR)" \
