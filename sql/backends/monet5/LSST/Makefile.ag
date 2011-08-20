@@ -58,3 +58,4 @@ headers_lsstautoload = {
 }
 
 EXTRA_DIST = lsst.h
+EXTRA_DIST_DIR = Tests
