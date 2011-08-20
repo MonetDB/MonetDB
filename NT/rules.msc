@@ -146,14 +146,12 @@ BZ_LIBS = "$(LIBBZIP2)\lib\libbz2$(DEBUGLIB).lib"
 BZ_CFLAGS = -DHAVE_LIBBZ2 "-I$(LIBBZIP2)\include"
 !ENDIF
 
-!IFDEF HAVE_LIBXML2
 # This is the location of the libxml2 library
 !IFNDEF LIBXML2
 LIBXML2 = C:\libxml2-2.6.30.win$(bits)
 !ENDIF
-libxml2_CFLAGS = -DHAVE_LIBXML2 "-I$(LIBXML2)\include" $(zlib_CFLAGS) $(ICONV_CFLAGS)
+libxml2_CFLAGS = "-I$(LIBXML2)\include" $(zlib_CFLAGS) $(ICONV_CFLAGS)
 libxml2_LIBS = "$(LIBXML2)\lib\libxml2$(DEBUGLIB).lib" $(zlib_LIBS) $(ICONV_LIBS)
-!ENDIF
 
 !IFNDEF LIBGEOS
 LIBGEOS = C:\geos-3.0.win$(bits)
@@ -337,11 +335,6 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) "HAVE_LIBBZ2_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF HAVE_LIBXML2
-	$(ECHO) "HAVE_LIBXML2_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) "HAVE_LIBXML2_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
 !IFDEF HAVE_LIBZ
 	$(ECHO) "HAVE_LIBZ_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
@@ -372,11 +365,6 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) "HAVE_PERL_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF HAVE_PHP
-	$(ECHO) "HAVE_PHP_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) "HAVE_PHP_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
 !IFDEF HAVE_PYTHON
 	$(ECHO) "HAVE_PYTHON_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
@@ -392,30 +380,30 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) "HAVE_RUBYGEM_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF HAVE_HAVE_SPHINXCLIENT
-	$(ECHO) "HAVE_HAVE_SPHINXCLIENT_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+!IFDEF HAVE_SPHINXCLIENT
+	$(ECHO) "HAVE_SPHINXCLIENT_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) "HAVE_HAVE_SPHINXCLIENT_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) "HAVE_SPHINXCLIENT_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF HAVE_HAVE_SQL
-	$(ECHO) "HAVE_HAVE_SQL_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+!IFDEF HAVE_SQL
+	$(ECHO) "HAVE_SQL_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) "HAVE_HAVE_SQL_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) "HAVE_SQL_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF HAVE_HAVE_TESTING
-	$(ECHO) "HAVE_HAVE_TESTING_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+!IFDEF HAVE_TESTING
+	$(ECHO) "HAVE_TESTING_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) "HAVE_HAVE_TESTING_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) "HAVE_TESTING_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF HAVE_NATIVE_WIN32
-	$(ECHO) "HAVE_NATIVE_WIN32_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+!IFDEF NATIVE_WIN32
+	$(ECHO) "NATIVE_WIN32_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) "HAVE_NATIVE_WIN32_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) "NATIVE_WIN32_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF HAVE_NOT_WIN32
-	$(ECHO) "HAVE_NOT_WIN32_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+!IFDEF NOT_WIN32
+	$(ECHO) "NOT_WIN32_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) "HAVE_NOT_WIN32_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) "NOT_WIN32_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF PROFILING
 	$(ECHO) "PROFILING_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"

@@ -737,11 +737,9 @@ possible:
 - ``HAVE_TESTING=1`` - include the testing component;
 - ``HAVE_PYTHON=1`` - include the python component;
 - ``HAVE_ICONV=1`` - the iconv library is available;
-- ``HAVE_LIBXML2=1`` - the libxml2 library is available;
 - ``HAVE_RAPTOR=1`` - the raptor library is available;
 - ``HAVE_OPENSSL=1`` - the OpenSSL library is available;
-- ``HAVE_PERL=1`` - Perl is available;
-- ``HAVE_PHP=1`` - PHP is available.
+- ``HAVE_PERL=1`` - Perl is available.
 
 In addition, you can add a parameter which points to a file with extra
 definitions for ``nmake``.  This is very convenient to define where
