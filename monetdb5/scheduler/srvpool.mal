@@ -35,3 +35,11 @@ comment "Clear the server cache";
 pattern srvpool.server():str...
 address SRVPOOLserver
 comment "Allocate a list of servers for query execution";
+
+pattern scheduler.pattern( pat:str)
+address SRVsetServers
+comment "Activate the peers matching the pattern and return number found.";
+
+pattern scheduler.peers( N:int)
+address SRVsetServers
+comment "Simulate N peers";

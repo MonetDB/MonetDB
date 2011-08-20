@@ -23,7 +23,6 @@ All Rights Reserved.
  * @a M. Kersten
  * @- Partitioning
  * Documentation in accompanying paper.
- * Partition optimizer should be followed by the aliases optimizer.
  */
 @mal
 module partition;
@@ -41,14 +40,6 @@ because then the subquery should produce a NIL ";
 pattern partition.vector(b:bat[:oid,:any_1]) :any_1...
 address OPTvector
 comment "Derive a series of slices values based on sampling";
-
-pattern partition.peers( pat:str):int
-address OPTpeers
-comment "Activate the peers matching the pattern and return number found.";
-
-pattern partition.peers( N:int):int
-address OPTpeers
-comment "Consider N peers";
 
 @h
 #ifndef _OPT_SLICING_
@@ -74,8 +65,6 @@ opt_export str OPTpeers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #include "mal_builder.h"
 #include "mal_recycle.h"
 #include "mal_interpreter.h"
-
-static int nrpeers;				/* peers active in sliced processing */
 
 typedef	struct{
 	InstrPtr target;
@@ -127,7 +116,7 @@ OPTplanCntrl(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices)
 	/* initialize binds and histograms */
 	q= newFcnCall(cmb, sqlRef, mvcRef);
 	x= getArg(q,0);
-	alias = (int*) GDKzalloc(nrpeers * sizeof(int));
+	alias = (int*) GDKzalloc(nrservers * sizeof(int));
 	if( slices->column) {
 		q= newInstruction(cmb, ASSIGNsymbol);
 		getModuleId(q) = sqlRef;
@@ -146,7 +135,7 @@ OPTplanCntrl(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices)
 		getModuleId(q) = partitionRef;
 		getFunctionId(q) = vectorRef;
 		q = pushArgument(cmb, q, j);
-		for ( j = 0; j < nrpeers +1; j++) {
+		for ( j = 0; j < nrservers +1; j++) {
 			k = alias[j] = newTmpVariable(cmb, slices->type);
 			q= pushReturn(cmb,q, k);
 		}
@@ -163,13 +152,15 @@ OPTplanCntrl(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices)
 		}
 	}
 
-	/* under dataflow control, initialize the variables */
+	/* under dataflow control, initialize the variables 
+	   Arguments are considered defined already
 	for ( k=0 ; k < nrpack ; k++){
 		q = newInstruction(cmb,ASSIGNsymbol);
 		getArg(q,0) = getArg(pack[k],0);
 		pushNil(cmb,q, getArgType(cmb,pack[k],0));
 		pushInstruction(cmb,q);
 	}
+	*/
 
 	/* PHASE 1: dont run in distributed  mode */
 	q= newFcnCall(cmb,schedulerRef,srvpoolRef);
@@ -180,13 +171,13 @@ OPTplanCntrl(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices)
 	/* get servers to execute the query */
 	q= newStmt(cmb,srvpoolRef,putName("server",6));
 	q->retc= q->argc = 0;
-	for( i = 0; i < nrpeers; i++)
+	for( i = 0; i < nrservers; i++)
 		q= pushReturn(cmb,q, newTmpVariable(cmb,TYPE_str));
 	q= pushStr(cmb,q,plan);
 	p= q;
 
 	base = cmb->stop;
-	for ( i = 0; i < nrpeers ; i++) {
+	for ( i = 0; i < nrservers ; i++) {
 		q= copyInstruction(getInstrPtr(pmb,0));
 		q->token = ASSIGNsymbol;
 		q->barrier = 0;
@@ -229,7 +220,7 @@ OPTplanCntrl(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices)
 	setVarType(cmb,x,TYPE_int);
 
 	/* re-use instructions, injecting missing server selections */
-	for ( i = 0; i < nrpeers ; i++) {
+	for ( i = 0; i < nrservers ; i++) {
 		q= copyInstruction(getInstrPtr(cmb,base + i));
 		getFunctionId(q) = plan;
 		delArgument(q,q->retc);
@@ -813,9 +804,8 @@ OPTpartitionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	msg = GDKgetenv("gdk_readonly");
 	if( msg == 0 || strcmp(msg,"yes"))
 		mnstr_printf(cntxt->fdout,"#WARNING centipede only works for readonly databases\n");
-	/* nrpeers = GDKnr_threads ? GDKnr_threads:1;*/
-	/* to ease debugging now */
-	nrpeers = 2;
+	if ( nrservers == 0)
+		nrservers = 2; /* to ease debugging now */
 
 	/* modify the block as we go */
 	omb= copyMalBlk(mb);
@@ -851,10 +841,10 @@ OPTpartitionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 	OPTDEBUGpartition
 		mnstr_printf(cntxt->fdout,"#opt_partition: target is %s.%s "
-			" with " SSZFMT " rows into %d peers\n",
+			" with " SSZFMT " rows into %d servers\n",
 				getVarConstant(mb, getArg(slices.target,2)).val.sval,
 				getVarConstant(mb, getArg(slices.target,3)).val.sval,
-				rowcnt, nrpeers);
+				rowcnt, nrservers);
 
 	/* derive a local plan based on forward flow reasoning */
 	if( OPTplanFragment(cntxt, mb, &slices)== 0) {
@@ -917,34 +907,6 @@ OPTpartitionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	}
 @
 @c
-/* 
- * The partition optimizer requires the number of peers.
- * This information ideally comes from the centipede scheduler,
- * which maintains the collection of remote servers involved
- * in query processing.
- * A direct call is also provided for testing.
- * A local catalog of partitioned BATs is kept around to further
- * improve remote processing.
-*/
-str OPTpeers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int n;
-	int *ret = (int*) getArgReference(stk,pci,0);
-
-	(void) cntxt;
-	if( getArgType(mb,pci,1) == TYPE_int) {
-		n = *(int*) getArgReference(stk,pci,1);
-	} else
-	if( getArgType(mb,pci,1) == TYPE_str) {
-		n = 2;
-	}
-	if ( n <= 0)
-		throw(MAL,"optimizer.peers","Illegal number of peers");
-	/* inform the centipede scheduler */
-
-	*ret = n;
-	return MAL_SUCCEED;
-}
 
 /* the min/max bounds are null values */
 /* It is the heart of the approach and requires experimentation */

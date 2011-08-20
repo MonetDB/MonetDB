@@ -80,14 +80,43 @@ typedef struct {
 
 #define MAXSITES 2048	/* should become dynamic at some point */
 static Server servers[MAXSITES];	/* registry of servers */
-static int nrservers=0;
+static int srvtop = 0;
+static int srvbaseline= 0;
+static str srvpattern = NULL;
 static int localExecution= FALSE;
+
+/* 
+ * The partition optimizer requires the number of peers.
+ * This information ideally comes from the centipede scheduler,
+ * which maintains the collection of remote servers involved
+ * in query processing.
+ * A direct call is also provided for testing.
+ * A local catalog of partitioned BATs is kept around to further
+ * improve remote processing.
+*/
+str SRVsetServers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	if( getArgType(mb,pci,1) == TYPE_int) {
+		srvbaseline = *(int*) getArgReference(stk,pci,1);
+		if ( srvbaseline <= 0) {
+			srvbaseline = 0 ;
+			throw(MAL,"scheduler.setServers","Illegal number of servers");
+		}
+	} else
+	if( getArgType(mb,pci,1) == TYPE_str) {
+		if ( srvpattern)
+			GDKfree(srvpattern);
+		srvpattern = GDKstrdup(*(str*) getArgReference(stk,pci,1));
+	}
+	return MAL_SUCCEED;
+}
 
 static int
 SRVPOOLfindServer(str dbalias)
 {
 	int i;
-	for (i=0; i<nrservers; i++)
+	for (i=0; i<srvtop; i++)
 		if ( strcmp(dbalias, servers[i].name) == 0 )
 			return i;
 	return -1;
@@ -102,7 +131,7 @@ SRVPOOLnewServer(str uri)
 	int i;
 	char buf[BUFSIZ];
 
-	i = nrservers;
+	i = srvtop;
 	/* use default settings */
 	snprintf(buf,BUFSIZ,"srv_%d",serverid++);
 	servers[i].name = GDKstrdup(buf);
@@ -111,7 +140,7 @@ SRVPOOLnewServer(str uri)
 	servers[i].pwd = GDKstrdup("monetdb");
 	servers[i].active = 1;
 	servers[i].nxt = NULL;
-	nrservers++;
+	srvtop++;
 	return i;
 }
 
@@ -120,7 +149,7 @@ SRVPOOLgetServer(str uri)
 {
 	int i;
 
-	for (i=0; i<nrservers; i++)
+	for (i=0; i<srvtop; i++)
 	if ( strcmp(uri, servers[i].name) == 0 || strcmp(uri, servers[i].uri) == 0 )
 		return i;
 
@@ -149,7 +178,7 @@ SRVPOOLdisconnect(void)
 	int i, ret;
 	str msg = MAL_SUCCEED;
 
-	for ( i=0; i< nrservers; i++)
+	for ( i=0; i< srvtop; i++)
 	if ( servers[i].active && servers[i].conn != NULL ) {
 		msg = RMTdisconnect(&ret,&servers[i].conn);
 		GDKfree(servers[i].conn);
@@ -165,12 +194,12 @@ str SRVPOOLreset(int *ret)
 
 	(void) ret;
 	msg = SRVPOOLdisconnect();
-	for ( i=0; i< nrservers; i++){
+	for ( i=0; i< srvtop; i++){
 		SRVPOOLcleanup(i);
 		GDKfree(servers[i].name);
 	}
-	memset((char*)servers, 0, sizeof(Server) * nrservers);
-	nrservers = 0;
+	memset((char*)servers, 0, sizeof(Server) * srvtop);
+	srvtop = 0;
 	return msg;
 }
 
@@ -185,10 +214,10 @@ SRVPOOLconnect(str *c, str *uri)
 	*c = NULL;
 	i = SRVPOOLfindServer(*uri);
 	if ( i < 0 ){
-		for ( i =0; i < nrservers; i++)
+		for ( i =0; i < srvtop; i++)
 		if ( strcmp(*uri, servers[i].uri) == 0)
 			break;
-		if ( i == nrservers) 
+		if ( i == srvtop) 
 			return createException(MAL, "srvpool.connect", "Server %s is not registered", *uri);
 	}
 
@@ -206,7 +235,7 @@ SRVPOOLconnect(str *c, str *uri)
 
 /* Look up the servers available for processing , guarantee a minimum number of servers */
 static str
-SRVPOOLdiscover(Client cntxt, str pattern, int minservers)
+SRVPOOLdiscover(Client cntxt)
 {
 	bat bid = 0;
 	BAT *b;
@@ -216,39 +245,43 @@ SRVPOOLdiscover(Client cntxt, str pattern, int minservers)
 	int i = 0, j;
 	char buf[BUFSIZ], *s= buf;
 
-	strncpy(buf,pattern, BUFSIZ-1);
 
-	msg = RMTresolve(&bid,&s);
-	if ( msg == MAL_SUCCEED) {
-		b = BATdescriptor(bid);
-		if ( b != NULL && BATcount(b) > 0 ) {
-			bi = bat_iterator(b);
-			BATloop(b,p,q){
-				str t= (str) BUNtail(bi,p);
+	if ( srvpattern) {
+		strncpy(buf,srvpattern, BUFSIZ-1);
+		msg = RMTresolve(&bid,&s);
+		if ( msg == MAL_SUCCEED) {
+			b = BATdescriptor(bid);
+			if ( b != NULL && BATcount(b) > 0 ) {
+				bi = bat_iterator(b);
+				BATloop(b,p,q){
+					str t= (str) BUNtail(bi,p);
 
-				j = SRVPOOLgetServer(t); 
-				msg = RMTconnectScen(&conn, &servers[j].uri, &servers[j].usr, &servers[j].pwd, &scen);
-				if ( msg == MAL_SUCCEED )
-					servers[j].conn = GDKstrdup(conn);
-				else  GDKfree(msg);	/* ignore failure */
+					j = SRVPOOLgetServer(t); 
+					msg = RMTconnectScen(&conn, &servers[j].uri, &servers[j].usr, &servers[j].pwd, &scen);
+					if ( msg == MAL_SUCCEED )
+						servers[j].conn = GDKstrdup(conn);
+					else  GDKfree(msg);	/* ignore failure */
 
 #ifdef DEBUG_RUN_SRVPOOL
-				mnstr_printf(cntxt->fdout,"#Worker site %d alias %s %s\n", i, (conn?conn:""), t);
+					mnstr_printf(cntxt->fdout,"#Worker site %d alias %s %s\n", i, (conn?conn:""), t);
 #endif
-				assert(i <MAXSITES);
+					assert(i <MAXSITES);
+				}
 			}
-		}
-		BBPreleaseref(bid);
-	} 
-	if( msg) {
-		/* ignore merovingian complaints */
+			BBPreleaseref(bid);
+		} 
+		if( msg) {
+			/* ignore merovingian complaints */
 #ifdef DEBUG_RUN_SRVPOOL
-		mnstr_printf(cntxt->fdout,"#%s\n", msg);
+			mnstr_printf(cntxt->fdout,"#%s\n", msg);
 #endif
-		GDKfree(msg);
+			GDKfree(msg);
+		}
 	}
+	if ( srvbaseline == 0)
+		srvbaseline = 2;
 
-	while (i < minservers) {
+	while (i < srvbaseline) {
 	 	/* there is a last resort, use local execution */
 		/* make sure you have enough connections */
 		SABAOTHgetLocalConnection(&s);
@@ -263,6 +296,8 @@ SRVPOOLdiscover(Client cntxt, str pattern, int minservers)
 #endif
 		i++;
 	}
+	/* announce it for public use. */
+	nrservers = i;
 
 #ifdef DEBUG_RUN_SRVPOOL
 	mnstr_printf(cntxt->fdout,"#Servers available %d\n", nrservers);
@@ -350,8 +385,7 @@ SRVPOOLscheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( localExecution) {
 		*res = -1; /* skip this one */
 	} else {
-		if (nrservers == 0)
-			SRVPOOLdiscover(cntxt,"srvpool", 2);
+		SRVPOOLdiscover(cntxt);
 		*res = localExecution;
 	}
 	return MAL_SUCCEED;

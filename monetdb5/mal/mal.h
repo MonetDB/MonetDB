@@ -51,6 +51,7 @@ mal_export int             monet_welcome;
 mal_export str             *monet_script;
 mal_export int 				monet_daemon;
 mal_export size_t			monet_memory;
+mal_export int				nrservers;
 
 #define mal_set_lock(X,Y) if(GDKprotected) MT_lock_set(&X,Y)
 #define mal_unset_lock(X,Y) if(GDKprotected) MT_lock_unset(&X,Y)
