@@ -146,14 +146,12 @@ BZ_LIBS = "$(LIBBZIP2)\lib\libbz2$(DEBUGLIB).lib"
 BZ_CFLAGS = -DHAVE_LIBBZ2 "-I$(LIBBZIP2)\include"
 !ENDIF
 
-!IFDEF HAVE_LIBXML2
 # This is the location of the libxml2 library
 !IFNDEF LIBXML2
 LIBXML2 = C:\libxml2-2.6.30.win$(bits)
 !ENDIF
-libxml2_CFLAGS = -DHAVE_LIBXML2 "-I$(LIBXML2)\include" $(zlib_CFLAGS) $(ICONV_CFLAGS)
+libxml2_CFLAGS = "-I$(LIBXML2)\include" $(zlib_CFLAGS) $(ICONV_CFLAGS)
 libxml2_LIBS = "$(LIBXML2)\lib\libxml2$(DEBUGLIB).lib" $(zlib_LIBS) $(ICONV_LIBS)
-!ENDIF
 
 !IFNDEF LIBGEOS
 LIBGEOS = C:\geos-3.0.win$(bits)
@@ -331,11 +329,6 @@ create_winconfig_conds_new_py:
 	$(ECHO) "HAVE_LIBBZ2_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
 	$(ECHO) "HAVE_LIBBZ2_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
-!IFDEF HAVE_LIBXML2
-	$(ECHO) "HAVE_LIBXML2_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) "HAVE_LIBXML2_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_LIBZ
 	$(ECHO) "HAVE_LIBZ_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"

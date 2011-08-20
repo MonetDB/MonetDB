@@ -261,9 +261,6 @@
 /* Define if you have the readline library */
 /* #undef HAVE_LIBREADLINE */
 
-/* Define if you have the libxml2 library */
-/* #undef HAVE_LIBXML2 */
-
 /* Define if you have the z library */
 /* #undef HAVE_LIBZ */
 
@@ -394,11 +391,6 @@
 
 /* Define to 1 if you have the `round' function. */
 /* #undef HAVE_ROUND */
-
-/* Define if you have SAX2 support in libxml2. */
-#ifdef HAVE_LIBXML2
-#define HAVE_SAX2 1
-#endif
 
 /* Define to 1 if you have the `sbrk' function. */
 /* #undef HAVE_SBRK */
