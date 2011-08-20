@@ -1728,6 +1728,9 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case YIELDsymbol:     /* to be defined */
 		if (oldtimer)
 			cntxt->timer = oldtimer;
+		GDKfree(backup);
+		GDKfree(sbackup);
+		GDKfree(garbage);
 		return yieldFactory(mb, pci, stkpc);
 	case RETURNsymbol:
 		/* Return from factory involves cleanup */
