@@ -566,10 +566,13 @@ rel_update_hash_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 static sql_rel *
 rel_update_join_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 {
+	int nr = ++sql->label;
+	char name[16], *nme = number2name(name, 16, nr);
+
 	int need_nulls = 0;
 	node *m, *o;
 	sql_key *rk = &((sql_fkey *) i->key)->rkey->k;
-	sql_rel *rt = rel_basetable(sql, rk->t, rk->t->base.name);
+	sql_rel *rt = rel_basetable(sql, rk->t, nme);
 
 	sql_subtype *bt = sql_bind_localtype("bit");
 	sql_subfunc *or = sql_bind_func_result(sql->sa, sql->session->schema, "or", bt, bt, bt);
