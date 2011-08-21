@@ -649,7 +649,7 @@ fixoidheap(void)
 	str nme, bnme;
 	long_str filename;
 	int ht, tt;
-	char hs, hvs, ts, tvs;	/* saved storage types */
+	char hs, hvs = '\0', ts, tvs = '\0';	/* saved storage types */
 
 	fprintf(stderr,
 		"# upgrading database from 32 bit OIDs to 64 bit OIDs\n");
