@@ -1230,6 +1230,8 @@ TABLETdestroy_format(Tablet * as)
 			GDKfree(fmt[p].batfile);
 		if (fmt[p].rawfile)
 			GDKfree(fmt[p].rawfile);
+		if (fmt[p].type)
+			GDKfree(fmt[p].type);
 	}
 	GDKfree(fmt);
 }
