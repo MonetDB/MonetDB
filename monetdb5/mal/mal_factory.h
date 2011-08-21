@@ -38,7 +38,7 @@ mal_export str runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStk
 mal_export int yieldResult(MalBlkPtr mb, InstrPtr p, int pc);
 mal_export str yieldFactory(MalBlkPtr mb, InstrPtr p, int pc);
 mal_export str finishFactory(Client cntxt, MalBlkPtr mb, InstrPtr pp, int pc);
-mal_export str shutdownFactory(Client cntxt, MalBlkPtr mb, bit force);
+mal_export str shutdownFactory(Client cntxt, MalBlkPtr mb);
 mal_export str shutdownFactoryByName(Client cntxt, Module m,str nme);
 mal_export str callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[],char flag);
 mal_export int factoryHasFreeSpace(void);

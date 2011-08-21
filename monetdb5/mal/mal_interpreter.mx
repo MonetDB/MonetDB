@@ -1600,7 +1600,7 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		break;
 	case ENDsymbol:
 		if (getInstrPtr(mb, 0)->token == FACTORYsymbol)
-			ret = shutdownFactory(cntxt, mb, 0);
+			ret = shutdownFactory(cntxt, mb);
 #if @1
 		if (oldtimer)
 			cntxt->timer = oldtimer;
@@ -1737,7 +1737,7 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		if (getInstrPtr(mb, 0)->token == FACTORYsymbol) {
 			yieldResult(mb, pci, stkpc);
-			shutdownFactory(cntxt, mb, TRUE);
+			shutdownFactory(cntxt, mb);
 		} else
 		/* a fake multi-assignment */
 		if (env != NULL && pcicaller != NULL) {
