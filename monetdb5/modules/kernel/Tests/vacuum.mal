@@ -3,9 +3,10 @@
 b:= bat.new(:oid,:int);
 c:= bat.new(:oid,:oid);
 
+k:= 0;
 barrier (go,i):= language.newRange(0:lng);
-	k:= mmath.rand();
-	barrier t:= k < 1000000;
+	k:= k +1;
+	barrier t:= k <= 1000;
 		o:= calc.oid(i);
 		bat.append(c,o);
 	exit t;

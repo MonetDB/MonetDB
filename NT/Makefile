@@ -24,7 +24,7 @@ prefix = $(MAKEDIR)
 
 !INCLUDE "$(TOPDIR)\..\NT\rules.msc"
 
-all: "$(srcdir)\Makefile.msc" monetdb_config.h unistd.h inttypes.h .monetdb update_winconfig_conds_py
+all: update_winconfig_conds_py "$(srcdir)\Makefile.msc" monetdb_config.h unistd.h inttypes.h .monetdb
 	$(MAKE) /nologo /f "$(srcdir)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" all
 
 install: targetdirs all
@@ -38,7 +38,7 @@ install: targetdirs all
 $(srcdir)\Makefile.msc: "$(srcdir)\Makefile.ag"
         cd "$(srcdir)"&&set PYTHONPATH=buildtools\autogen&&python buildtools\autogen\autogen.py
 
-monetdb_config.h: "$(srcdir)\NT\monetdb_config.h.in"
+monetdb_config.h: "$(TOPDIR)\winconfig_conds.py" "$(srcdir)\NT\monetdb_config.h.in"
 	$(CONFIGURE) "$(srcdir)\NT\monetdb_config.h.in" > monetdb_config.h
 
 unistd.h:
