@@ -288,7 +288,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 		sql_subtype *to = tps->h->next->data;
 		if (!l) 
 			return NULL;
-		s = stmt_convert(sql->sa, l, from, to, 0);
+		s = stmt_convert(sql->sa, l, from, to);
 	} 	break;
 	case e_func: {
 		node *en;
@@ -3088,14 +3088,17 @@ rel2bin_update( mvc *sql, sql_rel *rel, list *refs)
 	}
 
 /* before */
-	if (!sql_update_triggers(sql, t, l, 0)) 
+	if (!sql_update_triggers(sql, t, l, 0)) {
+		_DELETE(updates);
 		return sql_error(sql, 02, "UPDATE: triggers failed for table '%s'", t->base.name);
+	}
 
 /* apply updates */
 	list_merge(l, idx_updates, NULL);
 	for (i = 0; i < nr_cols; i++) 
 		if (updates[i])
 			list_append(l, updates[i]);
+	_DELETE(updates);
 
 /* after */
 	if (!sql_update_triggers(sql, t, l, 1)) 

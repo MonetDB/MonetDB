@@ -302,9 +302,9 @@ rel_bind_path_(sql_rel *rel, sql_exp *e, list *path )
 }
 
 static list *
-rel_bind_path(sql_rel *rel, sql_exp *e )
+rel_bind_path(sql_allocator *sa, sql_rel *rel, sql_exp *e )
 {
-	list *path = new_rel_list();
+	list *path = new_rel_list(sa);
 
 	if (e->type == e_convert)
 		e = e->l;
@@ -312,7 +312,6 @@ rel_bind_path(sql_rel *rel, sql_exp *e )
 		if (rel) {
 			if (!rel_bind_path_(rel, e, path)) {
 				/* something is wrong */
-				list_destroy(path);
 				return NULL;
 			}
 		}
@@ -330,7 +329,7 @@ rel_projections(mvc *sql, sql_rel *rel, char *tname, int settname, int intern )
 	list *rexps, *exps ;
 
 	if (is_subquery(rel) && is_project(rel->op))
-		return list_create(NULL);
+		return new_exp_list(sql->sa);
 
 	switch(rel->op) {
 	case op_join:
@@ -897,7 +896,7 @@ static char * rel_get_name( sql_rel *rel )
 sql_rel *
 rel_push_select(sql_allocator *sa, sql_rel *rel, sql_exp *ls, sql_exp *e)
 {
-	list *l = rel_bind_path(rel, ls);
+	list *l = rel_bind_path(sa, rel, ls);
 	node *n;
 	sql_rel *lrel = NULL, *p = NULL;
 
@@ -959,18 +958,13 @@ rel_push_select(sql_allocator *sa, sql_rel *rel, sql_exp *ls, sql_exp *e)
 sql_rel *
 rel_push_join(sql_allocator *sa, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *e)
 {
-	list *l = rel_bind_path(rel, ls);
-	list *r = rel_bind_path(rel, rs);
+	list *l = rel_bind_path(sa, rel, ls);
+	list *r = rel_bind_path(sa, rel, rs);
 	node *ln, *rn;
 	sql_rel *lrel = NULL, *rrel = NULL, *p = NULL;
 
-	if (!l || !r) {
-		if (l)
-			list_destroy(l);
-		if (r)
-			list_destroy(r);
+	if (!l || !r) 
 		return NULL;
-	}
 
 	p = rel;
 	for (ln = l->h, rn = r->h; ln && rn; ln = ln->next, rn = rn->next ) {
@@ -995,8 +989,6 @@ rel_push_join(sql_allocator *sa, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp
 			break;
 		p = lrel;
 	}
-	list_destroy(l);
-	list_destroy(r);
 	if (!lrel || !rrel)
 		return NULL;
 

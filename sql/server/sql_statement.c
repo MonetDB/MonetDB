@@ -1451,16 +1451,32 @@ dup_subtype(sql_allocator *sa, sql_subtype *st)
 	return res;
 }
 
+static sql_subfunc*
+dup_subfunc(sql_allocator *sa, sql_subfunc *f)
+{
+	sql_subfunc *res = SA_NEW(sa, sql_subfunc);
+
+	*res = *f;
+	return res;
+}
+
+static sql_subaggr*
+dup_subaggr(sql_allocator *sa, sql_subaggr *f)
+{
+	sql_subaggr *res = SA_NEW(sa, sql_subaggr);
+
+	*res = *f;
+	return res;
+}
+
 stmt *
-stmt_convert(sql_allocator *sa, stmt *v, sql_subtype *from, sql_subtype *to, int dup)
+stmt_convert(sql_allocator *sa, stmt *v, sql_subtype *from, sql_subtype *to)
 {
 	stmt *s = stmt_create(sa, st_convert);
 	list *l = list_new(sa);
 
-	if (dup) {
-		from = dup_subtype(sa, from);
-		to = dup_subtype(sa, to);
-	}
+	from = dup_subtype(sa, from);
+	to = dup_subtype(sa, to);
 	list_append(l, from);
 	list_append(l, to);
 	s->op1 = v;
@@ -1522,7 +1538,7 @@ stmt_Nop(sql_allocator *sa, stmt *ops, sql_subfunc *op)
 
 	s->op1 = ops;
 	assert(op);
-	s->op4.funcval = op;
+	s->op4.funcval = dup_subfunc(sa, op);
 	if (list_length(ops->op4.lval)) {
 		for (n = ops->op4.lval->h, o = n->data; n; n = n->next) {
 			stmt *c = n->data;
@@ -1562,7 +1578,7 @@ stmt_aggr(sql_allocator *sa, stmt *op1, group *grp, sql_subaggr *op, int reduce)
 	}
 	s->key = reduce;
 	s->aggr = reduce;
-	s->op4.aggrval = op;
+	s->op4.aggrval = dup_subaggr(sa, op);
 	s->flag = 0;
 	return s;
 }

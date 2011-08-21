@@ -1568,10 +1568,15 @@ sql_symbol2stmt(mvc *c, symbol *sym)
 	stmt *s = NULL;
 	int status;
 	sql_rel *r;
+	sql_allocator *osa = c->sa, *nsa;
 
+	nsa = c->sa = sa_create();
 	status = c->session->status;
 	r = rel_semantic(c, sym);
+
 	if (!r) {
+		c->sa = osa;
+		sa_destroy(nsa);
 		if (c->errstr[0]) {
 			return NULL;
 		} else {
@@ -1587,12 +1592,14 @@ sql_symbol2stmt(mvc *c, symbol *sym)
 		if (!pq)
 			pq = rel_need_distinct_query(r);
 
+		c->sa = osa;
 		if (c->emode == m_plan) {
 			rel_print(c, r, 0);
 		} else {
 			s = output_rel_bin(c, r);
 		}
 		rel_destroy(r);
+		sa_destroy(nsa);
 		if (s) {
 			/* only needed for delta tables */
 			s = rel2bin(c, s); 	

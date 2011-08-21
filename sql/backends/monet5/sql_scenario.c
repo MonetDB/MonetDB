@@ -1271,9 +1271,7 @@ SQLparser(Client c)
 			m->emode = m_inplace;
 		scanner_query_processed(&(m->scanner));
 	} else {
-		stmt *s;
-
-		s = sql_symbol2stmt(m, m->sym);
+		stmt *s = sql_symbol2stmt(m, m->sym);
 
 		if (s==0 || (err = mvc_status(m) && m->type != Q_TRANS)) {
 			msg = createException(PARSE, "SQLparser", "%s", m->errstr);
