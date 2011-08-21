@@ -52,11 +52,11 @@ exit (go,i);
     io.print(cnt);
 end main;
 [ 1000000 ]
-[ 471 ]
-#bat.shrink() 9138
-[ 999529 ]
-#bat.reuse() 7587
-[ 999529 ]
+[ 481 ]
+#bat.shrink() 9344
+[ 999519 ]
+#bat.reuse() 7795
+[ 999519 ]
 
 # 12:11:52 >  
 # 12:11:52 >  Done.
