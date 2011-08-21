@@ -259,146 +259,146 @@ FILTERPREF=/c:
 create_winconfig_conds_new_py:
 	$(ECHO) > "$(TOPDIR)\winconfig_conds_new.py"
 !IFDEF BITS32
-	$(ECHO) "BITS32_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) BITS32_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) "BITS32_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) BITS32_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF BITS64
-	$(ECHO) "BITS64_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) BITS64_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) "BITS64_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) BITS64_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF CROSS_COMPILING
-	$(ECHO) "CROSS_COMPILING_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) CROSS_COMPILING_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) "CROSS_COMPILING_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) CROSS_COMPILING_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF DOCTOOLS
-	$(ECHO) "DOCTOOLS_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) DOCTOOLS_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) "DOCTOOLS_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) DOCTOOLS_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF ENABLE_CRACKERS
-	$(ECHO) "ENABLE_CRACKERS_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) ENABLE_CRACKERS_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) "ENABLE_CRACKERS_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) ENABLE_CRACKERS_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF ENABLE_DATACELL
-	$(ECHO) "ENABLE_DATACELL_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) ENABLE_DATACELL_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) "ENABLE_DATACELL_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) ENABLE_DATACELL_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_ANT
-	$(ECHO) "HAVE_ANT_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_ANT_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) "HAVE_ANT_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_ANT_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_DEVELOPER
-	$(ECHO) "HAVE_DEVELOPER_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_DEVELOPER_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) "HAVE_DEVELOPER_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_DEVELOPER_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_GDK
-	$(ECHO) "HAVE_GDK_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_GDK_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) "HAVE_GDK_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_GDK_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_GEOM
-	$(ECHO) "HAVE_GEOM_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_GEOM_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) "HAVE_GEOM_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_GEOM_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_JAVA
-	$(ECHO) "HAVE_JAVA_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_JAVA_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !IFDEF HAVE_JAVAJDBC
-	$(ECHO) "HAVE_JAVAJDBC_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_JAVAJDBC_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) "HAVE_JAVAJDBC_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_JAVAJDBC_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_JAVAMEROCONTROL
-	$(ECHO) "HAVE_JAVAMEROCONTROL_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_JAVAMEROCONTROL_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) "HAVE_JAVAMEROCONTROL_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_JAVAMEROCONTROL_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !ELSE
-	$(ECHO) "HAVE_JAVA_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
-	$(ECHO) "HAVE_JAVAJDBC_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
-	$(ECHO) "HAVE_JAVAMEROCONTROL_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_JAVA_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_JAVAJDBC_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_JAVAMEROCONTROL_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_LIBBZ2
-	$(ECHO) "HAVE_LIBBZ2_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_LIBBZ2_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) "HAVE_LIBBZ2_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_LIBBZ2_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_LIBZ
-	$(ECHO) "HAVE_LIBZ_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_LIBZ_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) "HAVE_LIBZ_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_LIBZ_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_MONETDB5
-	$(ECHO) "HAVE_MONETDB5_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_MONETDB5_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) "HAVE_MONETDB5_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_MONETDB5_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_ODBC
-	$(ECHO) "HAVE_ODBC_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_ODBC_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) "HAVE_ODBC_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_ODBC_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_PCRE
-	$(ECHO) "HAVE_PCRE_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_PCRE_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) "HAVE_PCRE_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_PCRE_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_PERL
-	$(ECHO) "HAVE_PERL_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_PERL_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) "HAVE_PERL_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_PERL_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_PYTHON
-	$(ECHO) "HAVE_PYTHON_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_PYTHON_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) "HAVE_PYTHON_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_PYTHON_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_RAPTOR
-	$(ECHO) "HAVE_RAPTOR_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_RAPTOR_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) "HAVE_RAPTOR_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_RAPTOR_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_RUBYGEM
-	$(ECHO) "HAVE_RUBYGEM_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_RUBYGEM_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) "HAVE_RUBYGEM_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_RUBYGEM_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_SPHINXCLIENT
-	$(ECHO) "HAVE_SPHINXCLIENT_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_SPHINXCLIENT_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) "HAVE_SPHINXCLIENT_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_SPHINXCLIENT_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_SQL
-	$(ECHO) "HAVE_SQL_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_SQL_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) "HAVE_SQL_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_SQL_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_TESTING
-	$(ECHO) "HAVE_TESTING_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_TESTING_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) "HAVE_TESTING_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_TESTING_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF NATIVE_WIN32
-	$(ECHO) "NATIVE_WIN32_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) NATIVE_WIN32_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) "NATIVE_WIN32_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) NATIVE_WIN32_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF NOT_WIN32
-	$(ECHO) "NOT_WIN32_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) NOT_WIN32_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) "NOT_WIN32_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) NOT_WIN32_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF PROFILING
-	$(ECHO) "PROFILING_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) PROFILING_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) "PROFILING_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) PROFILING_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 
 update_winconfig_conds_py: create_winconfig_conds_new_py
