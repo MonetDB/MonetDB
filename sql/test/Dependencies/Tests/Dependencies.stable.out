@@ -111,8 +111,8 @@ Dependencies between database objects
 % 2,	8,	9 # length
 [ "t1",	"id_index",	"DEP_INDEX"	]
 #(SELECT t.name as name, tri.name as trigname, 'DEP_TRIGGER' from tables as t, triggers as tri where tri.table_id = t.id) UNION (SELECT t.name as name, tri.name as trigname, 'DEP_TRIGGER' from triggers tri, tables t, dependencies dep where dep.id = t.id AND dep.depend_id =tri.id AND dep.depend_type = 8);
-% .t,	.tri,	.L11 # table_name
-% name,	trigname,	L11 # name
+% .t,	.tri,	.L12 # table_name
+% name,	trigname,	L12 # name
 % varchar,	varchar,	char # type
 % 2,	14,	11 # length
 [ "t1",	"trigger_test",	"DEP_TRIGGER"	]
