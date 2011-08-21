@@ -20,9 +20,10 @@ function user.main():void;
 #building blocks for SQL vacuum actions 
     b := bat.new(:oid,:int);
     c := bat.new(:oid,:oid);
+    k := 0;
 barrier (go,i) := language.newRange(0:lng);
-    k := mmath.rand();
-barrier t := calc.<(k,1000000);
+    k := calc.+(k,1);
+barrier t := calc.<=(k,1000);
     o := calc.oid(i);
     bat.append(c,o);
 exit t;
@@ -52,11 +53,11 @@ exit (go,i);
     io.print(cnt);
 end main;
 [ 1000000 ]
-[ 481 ]
-#bat.shrink() 9344
-[ 999519 ]
-#bat.reuse() 7795
-[ 999519 ]
+[ 1000 ]
+#bat.shrink() 7697
+[ 999000 ]
+#bat.reuse() 7789
+[ 999000 ]
 
 # 12:11:52 >  
 # 12:11:52 >  Done.
