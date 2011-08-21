@@ -1602,7 +1602,7 @@ GDKvmtrim(void *limit)
 
 	if (membits == 0) {
 		/* compute rounded down log2 of memsize / nr_threads */
-		size_t s = GDK_mem_maxsize_max / GDKnr_threads;
+		size_t s = GDK_mem_maxsize_max / (GDKnr_threads? GDKnr_threads:1);
 		while ((s >>= 1) > 0)
 			membits++;
 		membits = (MAX(0, membits - MT_MMAP_LOG)) / 4;
@@ -1779,7 +1779,7 @@ GDKinit(opt *set, int setlen)
 		GDKnr_threads = MT_check_nr_cores();
 #ifdef NATIVE_WIN32
 	if (GDKnr_threads)
-		GDK_mmap_minsize /= GDKnr_threads;
+		GDK_mmap_minsize /= (GDKnr_threads? GDKnr_threads: 1);
 #else
 	GDK_mmap_minsize = 256 * 1024 * 1024;
 #endif
