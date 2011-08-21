@@ -24,7 +24,7 @@ prefix = $(MAKEDIR)
 
 !INCLUDE "$(TOPDIR)\..\NT\rules.msc"
 
-all: "$(srcdir)\Makefile.msc" monetdb_config.h unistd.h inttypes.h .monetdb update_winconfig_conds_py
+all: update_winconfig_conds_py "$(srcdir)\Makefile.msc" monetdb_config.h unistd.h inttypes.h .monetdb
 	$(MAKE) /nologo /f "$(srcdir)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" all
 
 install: targetdirs all
