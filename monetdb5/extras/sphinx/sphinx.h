@@ -37,7 +37,6 @@
 #endif
 
 sphinx_export str SPHINXsearchIndexLimit(int *ret, str *query, str *index, int *limit);
-sphinx_export str SPHINXsearchIndexLimitWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* SPHINX_H */
 
