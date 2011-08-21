@@ -281,6 +281,7 @@ str runMAL(Client cntxt, MalBlkPtr mb, int startpc, MalBlkPtr mbcaller,
 		if (env) {
 			stk->stkdepth = stk->stksize + env->stkdepth;
 			stk->calldepth = env->calldepth + 1;
+			stk->up = env;
 			if (stk->calldepth > 256)
 				throw(MAL, "mal.interpreter", MAL_CALLDEPTH_FAIL);
 			if ((unsigned)stk->stkdepth > THREAD_STACK_SIZE / sizeof(mb->var[0]) / 4 && THRhighwater())
@@ -2088,6 +2089,7 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/*safeguardStack*/
 	nstk->stkdepth = nstk->stksize + stk->stkdepth;
 	nstk->calldepth = stk->calldepth + 1;
+	nstk->up = stk;
 	if (nstk->calldepth > 256)
 		throw(MAL, "mal.interpreter", MAL_CALLDEPTH_FAIL);
 	if ((unsigned)nstk->stkdepth > THREAD_STACK_SIZE / sizeof(mb->var[0]) / 4 && THRhighwater())
