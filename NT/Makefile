@@ -38,7 +38,7 @@ install: targetdirs all
 $(srcdir)\Makefile.msc: "$(srcdir)\Makefile.ag"
         cd "$(srcdir)"&&set PYTHONPATH=buildtools\autogen&&python buildtools\autogen\autogen.py
 
-monetdb_config.h: "$(srcdir)\NT\monetdb_config.h.in"
+monetdb_config.h: "$(TOPDIR)\winconfig_conds.py" "$(srcdir)\NT\monetdb_config.h.in"
 	$(CONFIGURE) "$(srcdir)\NT\monetdb_config.h.in" > monetdb_config.h
 
 unistd.h:
