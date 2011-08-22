@@ -23,7 +23,7 @@
 
 -- TODO: DATE, TIME, TIMESTAMP, CHAR and VARCHAR not supported yet
 -- TODO: should we deal with TINYINT, SMALLINT separately?
-create function array_series("start" integer, step integer, stop integer, N integer, M integer) returns table (id int, dimval integer)
+create function array_series("start" integer, step integer, stop integer, N integer, M integer) returns table (id bigint, dimval integer)
 	external name "array".series;
 create function array_series("start" bigint, step bigint, stop bigint, N integer, M integer) returns table (id bigint, dimval bigint)
 	external name "array".series;
