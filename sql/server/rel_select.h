@@ -73,7 +73,7 @@ extern sql_rel *rel_dup(sql_rel *r);
 extern sql_rel *rel_copy(sql_allocator *sa, sql_rel *r);
 extern void rel_destroy(sql_rel *rel);
 
-#define new_rel_list() list_create((fdestroy)NULL)
+#define new_rel_list(sa) list_new(sa)
 
 /* TODO shouldn't be needed (isn't save) ! */
 extern char * rel_name( sql_rel *r );

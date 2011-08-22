@@ -167,6 +167,7 @@ typedef struct mat {
 	InstrPtr mm;	/* mat merge statement (needed for group/order by's and topn ) */
 	int mv;		/* mat variable */
 	int mv1;	/* second result variable */
+	int pushed;
 	mat_type type;	/* type of operation */
 } mat_t;
 
@@ -461,23 +462,14 @@ MATpackAll2(MalBlkPtr mb, InstrPtr mi, mat_t *mat, int m, int *mtop)
 	return 0;
 }
 
-/*
-static int
-pack_all_mats(mat_t *mat, int mtop, MalBlkPtr mb )
-{
-	while(mtop > 0) 
-		(void)MATpackAll(mb, NULL, mat, 0, &mtop);
-	return 0;
-}
-*/
-
 inline static int
-mat_add(mat_t *mat, int mtop, InstrPtr q, InstrPtr r, mat_type type) 
+mat_add(mat_t *mat, int mtop, InstrPtr q, InstrPtr r, mat_type type, int pushed) 
 {
 	mat[mtop].mi = q;
 	mat[mtop].mi1 = r;
 	mat[mtop].mv = getArg(q,0);
 	mat[mtop].mv1 = -1;
+	mat[mtop].pushed = pushed;
 	if (r)
 		mat[mtop].mv1 = getArg(r,0);
 	mat[mtop].type = type;
@@ -618,8 +610,8 @@ disjoint(mat_t *mat, int *mtop, int m, MalBlkPtr mb)
 			r = pushArgument(mb, r, vj);
 		}
 	}
-	pushInstruction(mb,r);
-	*mtop = mat_add(mat, *mtop, r, NULL, mat_none);
+	//pushInstruction(mb,r);
+	*mtop = mat_add(mat, *mtop, r, NULL, mat_none, 0);
 	GDKfree(used);
 	return *mtop -1;
 }
@@ -773,7 +765,7 @@ mat_map(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop)
 		r = pushArgument(mb,r,getArg(q,0));
 	}
 	if (reuse < 0)
-		mtop = mat_add(mat, mtop, r, NULL, mat_none );
+		mtop = mat_add(mat, mtop, r, NULL, mat_none, 0 );
 	return mtop;
 }
 
@@ -912,7 +904,7 @@ mat_join(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m, int n)
 	}
 	if (r && r->argc <= 1) 
 		return -1;
-	mtop = mat_add(mat, mtop, r, NULL, (m>=0)?useMatType(mat, m):mat_none);
+	mtop = mat_add(mat, mtop, r, NULL, (m>=0)?useMatType(mat, m):mat_none, 0);
 	if (m >= 0 && mat[m].type == mat_ext)
 		(void)MATpackAll2(mb, NULL, mat, mtop-1, &mtop); 
 	return mtop;
@@ -1549,7 +1541,7 @@ mat_group_new(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m)
 		r0 = pushArgument(mb,r0,getArg(q,0));
 		r1 = pushArgument(mb,r1,getArg(q,1));
 	}
-	mtop = mat_add(mat, mtop, r0, r1, mat_grp);
+	mtop = mat_add(mat, mtop, r0, r1, mat_grp, 0);
 	if (getFunctionId(p) == doneRef)
 		mat_pack_group(mb, mat, mtop-1, mtop-1);
 	return mtop;
@@ -1595,7 +1587,7 @@ mat_group_derive(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int ext, int gr
 		}
 	    }
 	}
-	mtop = mat_add(mat, mtop, r0, r1, mat_grp);
+	mtop = mat_add(mat, mtop, r0, r1, mat_grp, 0);
 	if (getFunctionId(p) == doneRef)
 		mat_pack_group(mb, mat, mtop-1, mtop-1);
 	return mtop;
@@ -1623,7 +1615,7 @@ mat_topn(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m)
 		propagateProp(mb, q, getArg(q,1));
 		pck = pushArgument(mb,pck,getArg(q,0));
 	}
-	return mat_add(mat, mtop, pck, NULL, isSlice(p)?mat_slc:mat_tpn);
+	return mat_add(mat, mtop, pck, NULL, isSlice(p)?mat_slc:mat_tpn, 0);
 }
 
 static int
@@ -1649,7 +1641,7 @@ mat_topn2(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m, int n)
 		propagateProp(mb, q, getArg(q,1));
 		pck = pushArgument(mb,pck,getArg(q,0));
 	}
-	return mat_add(mat, mtop, pck, NULL, mat_tpn);
+	return mat_add(mat, mtop, pck, NULL, mat_tpn, 0);
 }
 
 static int
@@ -1673,7 +1665,7 @@ mat_sort(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m)
 		propagateProp(mb, q, getArg(q,1));
 		pck = pushArgument(mb,pck,getArg(q,0));
 	}
-	return mat_add(mat, mtop, pck, NULL, mat_rdr);
+	return mat_add(mat, mtop, pck, NULL, mat_rdr, 0);
 }
 
 static int
@@ -1699,7 +1691,7 @@ mat_sort2(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m, int n)
 		propagateProp(mb, q, getArg(q,1));
 		pck = pushArgument(mb,pck,getArg(q,0));
 	}
-	return mat_add(mat, mtop, pck, NULL, mat_rdr);
+	return mat_add(mat, mtop, pck, NULL, mat_rdr, 0);
 }
 
 static int
@@ -1756,7 +1748,7 @@ mat_union(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m, int n)
 			r = pushArgument(mb, r, getArg(p,2));
 		}
 	}
-	return mat_add(mat, mtop, r, NULL, mat_none);
+	return mat_add(mat, mtop, r, NULL, mat_none, 0);
 }
 
 #if 0
@@ -1894,7 +1886,7 @@ mat_setop(MalBlkPtr mb, InstrPtr p, mat_t *mat, int *Mtop )
 	m = isMATalias(getArg(p,1), mat, mtop);
 	n = isMATalias(getArg(p,2), mat, mtop);
 	if ((bc = mat_apply(mb, p, mat, Mtop, m, n, 0)) != NULL) 
-		*Mtop = mat_add(mat, *Mtop, bc, NULL, useMatType(mat, n) );
+		*Mtop = mat_add(mat, *Mtop, bc, NULL, useMatType(mat, n), 0 );
 	return 0;
 }
 
@@ -1944,7 +1936,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		p = old[i];
 		if (getModuleId(p) == matRef && 
 		   (getFunctionId(p) == newRef || getFunctionId(p) == packRef)){
-			mtop = mat_add(mat, mtop, p, NULL, mat_none);
+			mtop = mat_add(mat, mtop, p, NULL, mat_none, 1);
 			continue;
 		}
 
@@ -2019,7 +2011,6 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			if ((m = mat_join(mb, p, mat, mtop, m, n)) < 0) {
 				error++;
 				goto fail;
-				/*mtop = pack_all_mats(mat, mtop, mb);*/
 			} else
 				mtop = m;
 			/* after topn projection we should merge */
@@ -2233,7 +2224,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 			m = isMATalias(getArg(p,1), mat, mtop);
  			mark = mat_mark(mb, p, mat, m);
-			mtop = mat_add(mat, mtop, mark, NULL, useMatType(mat, m));
+			mtop = mat_add(mat, mtop, mark, NULL, useMatType(mat, m), 0);
 			actions++;
 			continue;
 		}
@@ -2257,7 +2248,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			InstrPtr r;
 
 			if ((r = mat_apply1(mb, p, mat, m, fm, 0)) != NULL)
-				mtop = mat_add(mat, mtop, r, NULL, mat_none);
+				mtop = mat_add(mat, mtop, r, NULL, mat_none, 0);
 			actions++;
 			continue;
 		}
@@ -2288,7 +2279,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			}
 
 			if ((r = mat_apply1(mb, p, mat, m, fm, 0)) != NULL)
-				mtop = mat_add(mat, mtop, r, NULL, useMatType(mat, m));
+				mtop = mat_add(mat, mtop, r, NULL, useMatType(mat, m), 0);
 
 			/* packed group should include the mirror statement */
 			if (pack_mirror) {
@@ -2371,6 +2362,14 @@ fail:
 	}
 	DEBUGoptimizers
 		mnstr_printf(cntxt->fdout,"#opt_mergetable: %d merge actions\n",actions);
+	for (i =0; i<mtop; i++) {
+		if (mat[i].pushed == 1)
+			continue;
+		if (mat[i].mi && mat[i].mi->token != NOOPsymbol)
+			freeInstruction(mat[i].mi);
+		if (mat[i].mi1 && mat[i].mi1->token != NOOPsymbol)
+			freeInstruction(mat[i].mi1);
+	}
 	GDKfree(mat);
 	return actions;
 }

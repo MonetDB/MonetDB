@@ -285,7 +285,7 @@ extern stmt *stmt_limit2(sql_allocator *sa, stmt *s, stmt *sb, stmt *offset, stm
 extern stmt *stmt_order(sql_allocator *sa, stmt *s, int direction);
 extern stmt *stmt_reorder(sql_allocator *sa, stmt *s, stmt *t, int direction);
 
-extern stmt *stmt_convert(sql_allocator *sa, stmt *v, sql_subtype *from, sql_subtype *to, int dup);
+extern stmt *stmt_convert(sql_allocator *sa, stmt *v, sql_subtype *from, sql_subtype *to);
 extern stmt *stmt_unop(sql_allocator *sa, stmt *op1, sql_subfunc *op);
 extern stmt *stmt_binop(sql_allocator *sa, stmt *op1, stmt *op2, sql_subfunc *op);
 extern stmt *stmt_Nop(sql_allocator *sa, stmt *ops, sql_subfunc *op);

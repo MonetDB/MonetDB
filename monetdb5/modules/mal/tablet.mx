@@ -1142,7 +1142,7 @@ create_loadformat(Tablet * as, BAT *names, BAT *seps, BAT *types)
 		fmt[p].name = (char *) bun_tail(names, p);
 		fmt[p].sep = sep_dup((char *) bun_tail(seps, p));
 		fmt[p].seplen = (int) strlen(fmt[p].sep);
-		fmt[p].type = (char *) bun_tail(types, p);
+		fmt[p].type = GDKstrdup((char *) bun_tail(types, p));
 		fmt[p].adt = ATOMindex(fmt[p].type);
 		if (fmt[p].adt <= 0) {
 			GDKerror("create_loadformat: %s has unknown type %s (using str instead).\n", fmt[p].name, fmt[p].name);
@@ -1196,7 +1196,7 @@ create_dumpformat(Tablet * as, BAT *names, BAT *seps, BAT *bats)
 			fmt[p].name = (char *) bun_tail(names, p);
 		fmt[p].sep = sep_dup((char *) bun_tail(seps, p));
 		fmt[p].seplen = (int) strlen(fmt[p].sep);
-		fmt[p].type = ATOMname(b->ttype);
+		fmt[p].type = GDKstrdup(ATOMname(b->ttype));
 		fmt[p].adt = (b)->ttype;
 		fmt[p].tostr = &TABLETadt_toStr;
 		fmt[p].frstr = &TABLETadt_frStr;
@@ -1231,6 +1231,8 @@ TABLETdestroy_format(Tablet * as)
 			GDKfree(fmt[p].batfile);
 		if (fmt[p].rawfile)
 			GDKfree(fmt[p].rawfile);
+		if (fmt[p].type)
+			GDKfree(fmt[p].type);
 	}
 	GDKfree(fmt);
 }

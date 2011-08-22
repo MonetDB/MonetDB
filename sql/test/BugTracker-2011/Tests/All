@@ -1,3 +1,4 @@
+mclient-lsql-d.Bug-2861
 count-count-distinct.Bug-2808
 copy-into-file-error.Bug-2722
 bulk_rotate_xor_hash-error.Bug-2734
@@ -31,3 +32,5 @@ recursive_case.Bug-2838
 str_cast_exception.Bug-2847
 case-when-alias.Bug-2848
 multicolumn_constraints.Bug-2849
+CASE_nested_functions.Bug-2852
+FK_self_reference.Bug-2862

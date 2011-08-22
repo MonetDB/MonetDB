@@ -182,7 +182,7 @@ DCreceptorNew(int *ret, str *tbl, str *host, int *port )
 		fmt[j].name = GDKstrdup(baskets[idx].cols[i]);
 		fmt[j].sep = GDKstrdup(",");
 		fmt[j].seplen = 1;
-		fmt[j].type = ATOMname(b->ttype);
+		fmt[j].type = GDKstrdup(ATOMname(b->ttype));
 		fmt[j].adt = (b)->ttype;
 		fmt[j].tostr = &TABLETadt_toStr;
 		fmt[j].frstr = &TABLETadt_frStr;
