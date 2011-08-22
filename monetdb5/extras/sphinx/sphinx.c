@@ -87,27 +87,3 @@ SPHINXsearchIndexLimit(int *ret, str *query, str *index, int *limit)
 	return msg;
 }
 
-/* str sphinx_searchIndexLimit(int *ret, str *query, str *index, int *limit); */
-str
-SPHINXsearchIndexLimitWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	bat ret;
-	BAT *t;
-	int *r = (int *) getArgReference(stk, pci, 0);
-	str *query = (str *) getArgReference(stk, pci, 1);
-	str *index = (str *) getArgReference(stk, pci, 2);
-	int *limit = (int *) getArgReference(stk, pci, 3);
-
-	(void) cntxt;
-	(void) mb;
-	SPHINXsearchIndexLimit(&ret, query, index, limit);
-
-	t = BATnew(TYPE_str, TYPE_bat, 1);
-	BUNins(t, "id", &ret, FALSE);
-
-	BBPdecref(ret, TRUE);
-	*r = t->batCacheid;
-	BBPkeepref(*r);
-	return MAL_SUCCEED;
-}
-

@@ -585,8 +585,8 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 	BUN i;
 	size_t rseplen;
 	READERtask *task= (READERtask*) GDKzalloc(sizeof(READERtask));
-	READERtask ptask[16];
-	int threads= GDKnr_threads < 16? GDKnr_threads: 16;
+	READERtask ptask[128];
+	int threads= GDKnr_threads < MT_check_nr_cores()? GDKnr_threads: MT_check_nr_cores();
 	lng t0, total=0;
 	int askmore = 0;
 	int vmtrim = GDK_vm_trim;
@@ -595,6 +595,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 	/* on sf10 experiments it should a slowdown of a factor 2 on */
 	/* large tables. Instead rely on madvise */
 	GDK_vm_trim = 0;
+	assert(GDKnr_threads <128);
 
 	assert(rsep);
 	assert(csep);

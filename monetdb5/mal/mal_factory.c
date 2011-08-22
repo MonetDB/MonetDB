@@ -558,7 +558,7 @@ yieldFactory(MalBlkPtr mb, InstrPtr p, int pc)
  */
 
 str
-shutdownFactory(Client cntxt, MalBlkPtr mb, bit force)
+shutdownFactory(Client cntxt, MalBlkPtr mb)
 {
 	Plant pl, plim;
 
@@ -571,7 +571,7 @@ shutdownFactory(Client cntxt, MalBlkPtr mb, bit force)
 			pl->factory = 0;
 			if (pl->stk)
 				pl->stk->keepAlive = FALSE;
-			if ( force && pl->stk) {
+			if ( pl->stk) {
 				garbageCollector(cntxt, mb, pl->stk,TRUE);
 				GDKfree(pl->stk);
 			}
@@ -611,7 +611,7 @@ shutdownFactoryByName(Client cntxt, Module m, str nme){
 			}
 			stk = pl->stk;
 			MSresetVariables(cntxt, pl->factory, stk, 0);
-			shutdownFactory(cntxt, pl->factory, 0);
+			shutdownFactory(cntxt, pl->factory);
 			freeStack(stk);
 			deleteSymbol(m,s);
 			return MAL_SUCCEED;
@@ -623,7 +623,7 @@ finishFactory(Client cntxt, MalBlkPtr mb, InstrPtr pp, int pc)
 {
 	(void) pp;
 	(void) pc;
-	return shutdownFactory(cntxt, mb,TRUE);
+	return shutdownFactory(cntxt, mb);
 }
 
 /*

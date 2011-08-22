@@ -281,6 +281,7 @@ str runMAL(Client cntxt, MalBlkPtr mb, int startpc, MalBlkPtr mbcaller,
 		if (env) {
 			stk->stkdepth = stk->stksize + env->stkdepth;
 			stk->calldepth = env->calldepth + 1;
+			stk->up = env;
 			if (stk->calldepth > 256)
 				throw(MAL, "mal.interpreter", MAL_CALLDEPTH_FAIL);
 			if ((unsigned)stk->stkdepth > THREAD_STACK_SIZE / sizeof(mb->var[0]) / 4 && THRhighwater())
@@ -1595,7 +1596,7 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		break;
 	case ENDsymbol:
 		if (getInstrPtr(mb, 0)->token == FACTORYsymbol)
-			ret = shutdownFactory(cntxt, mb, 0);
+			ret = shutdownFactory(cntxt, mb);
 #if @1
 		if (oldtimer)
 			cntxt->timer = oldtimer;
@@ -1723,13 +1724,16 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case YIELDsymbol:     /* to be defined */
 		if (oldtimer)
 			cntxt->timer = oldtimer;
+		GDKfree(backup);
+		GDKfree(sbackup);
+		GDKfree(garbage);
 		return yieldFactory(mb, pci, stkpc);
 	case RETURNsymbol:
 		/* Return from factory involves cleanup */
 
 		if (getInstrPtr(mb, 0)->token == FACTORYsymbol) {
 			yieldResult(mb, pci, stkpc);
-			shutdownFactory(cntxt, mb, TRUE);
+			shutdownFactory(cntxt, mb);
 		} else
 		/* a fake multi-assignment */
 		if (env != NULL && pcicaller != NULL) {
@@ -2080,6 +2084,7 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/*safeguardStack*/
 	nstk->stkdepth = nstk->stksize + stk->stkdepth;
 	nstk->calldepth = stk->calldepth + 1;
+	nstk->up = stk;
 	if (nstk->calldepth > 256)
 		throw(MAL, "mal.interpreter", MAL_CALLDEPTH_FAIL);
 	if ((unsigned)nstk->stkdepth > THREAD_STACK_SIZE / sizeof(mb->var[0]) / 4 && THRhighwater())

@@ -36,12 +36,12 @@ function user.qry():void;               #  0 qry:void := user.qry() {G}
     X_15 := mmath.rand();               #  4 _15:int := MATHrandint() 
 # 
     X_14 := batcalc.*(X_14,X_15);       #  6 _14:bat[:oid,:int] := CMDbatMULcst_int_int_int(_14:bat[:oid,:int], _15:int) {G}
-    z:bat[:oid,:int]  := X_14;          #  7 z:bat[:oid,:int] := _14:bat[:oid,:int] {G}
+    z:bat[:oid,:int] {inline} := X_14;  #  7 z:bat[:oid,:int] := _14:bat[:oid,:int] {G}
     X_20 := batcalc.+(b,2);             #  8 _20:bat[:oid,:int] := CMDbatADDcst_int_int_int(b:bat[:oid,:int], _10:int) {G}
     X_21 := mmath.rand();               #  9 _21:int := MATHrandint() 
 # 
     X_20 := batcalc.*(X_20,X_21);       # 11 _20:bat[:oid,:int] := CMDbatMULcst_int_int_int(_20:bat[:oid,:int], _21:int) {G}
-    z:bat[:oid,:int]  := X_20;          # 12 z:bat[:oid,:int] := _20:bat[:oid,:int] {G}
+    z:bat[:oid,:int] {inline} := X_20;  # 12 z:bat[:oid,:int] := _20:bat[:oid,:int] {G}
 end qry;                                # 13  
 
 # 18:00:44 >  

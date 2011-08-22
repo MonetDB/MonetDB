@@ -35,9 +35,9 @@ function user.qry():void;               #  0 qry:void := user.qry() {G}
     zz := X_16;                         #  4 zz:int := _16:int 
 # base line test for inlining 
     X_20 := batcalc.+(b,b);             #  6 _20:bat[:oid,:int] := CMDbatADD_int_int_int(b:bat[:oid,:int], b:bat[:oid,:int]) {G}
-    z:bat[:oid,:int]  := X_20;          #  7 z:bat[:oid,:int] := _20:bat[:oid,:int] {G}
+    z:bat[:oid,:int] {inline} := X_20;  #  7 z:bat[:oid,:int] := _20:bat[:oid,:int] {G}
     X_24 := batcalc.+(b,2);             #  8 _24:bat[:oid,:int] := CMDbatADDcst_int_int_int(b:bat[:oid,:int], _8:int) {G}
-    z:bat[:oid,:int]  := X_24;          #  9 z:bat[:oid,:int] := _24:bat[:oid,:int] {G}
+    z:bat[:oid,:int] {inline} := X_24;  #  9 z:bat[:oid,:int] := _24:bat[:oid,:int] {G}
 end qry;                                # 10  
 
 # 18:00:43 >  

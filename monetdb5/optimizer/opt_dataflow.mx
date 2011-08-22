@@ -119,7 +119,7 @@ static int
 simpleFlow(InstrPtr *old, int start, int last)
 {
 	int i, j, simple = TRUE;
-	InstrPtr p,q;
+	InstrPtr p = NULL, q;
 
 	/* skip simple first */
 	for( ; simple && start < last; start++)  {
