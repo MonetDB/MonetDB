@@ -1,3 +1,4 @@
+mclient-lsql-d.Bug-2861
 count-count-distinct.Bug-2808
 copy-into-file-error.Bug-2722
 bulk_rotate_xor_hash-error.Bug-2734
