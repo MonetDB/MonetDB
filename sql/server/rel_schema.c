@@ -577,7 +577,7 @@ get_dim_constraints(mvc *sql, sql_subtype *ctype, dlist *lst, char **dimcstr, in
 	if (!(exp = rel_check_type(sql, ctype, exp, type_equal)))
 		return SQL_ERR;
 	/* TODO: do we want to convert the atom? */
-	*dimcstr = GDKstrdup(atom2string(sql->sa, a));
+	*dimcstr = atom2string(sql->sa, a);
 	return SQL_OK;
 }
 
@@ -680,6 +680,7 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 							return res;
 						if((res = get_dim_constraints(sql, ctype, dim->h->next->data.lval, &cs->dim->stop, 0)) != SQL_OK)
 							return res;
+						cs->dim->step = GDKstrdup("");
 						break;
 					case 3: /* [start:step:stop] */
 						if((res = get_dim_constraints(sql, ctype, dim->h->data.lval, &cs->dim->start, 0)) != SQL_OK)
@@ -696,7 +697,12 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 			} else if (dim && dim->h->next) {
 				sql_error(sql, 02, "%s ARRAY: dimension '%s' constraint with syntax 'ARRAY dim_range_list' not implemented yet\n", (alter)?"ALTER":"CREATE", cname);
 				return SQL_ERR;
-			} /* else "DIMENSION" case: nothing to do */
+			} else { /* "DIMENSION" case: only allocate space for empty [start:step:stop] */
+				cs->dim = ZNEW(sql_dimspec);
+				cs->dim->start = GDKstrdup("");
+				cs->dim->step = GDKstrdup("");
+				cs->dim->st0p = GDKstrdup("");
+			}
 			t->fixed = isFixedDim(cs->dim);
 			/* TODO: the case "ARRAY dim_range_list" is not dealt with */
 		}

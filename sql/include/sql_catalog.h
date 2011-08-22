@@ -377,7 +377,7 @@ typedef enum table_types {
 #define isRemote(x)  	(x->type==tt_remote)
 #define isArray(x)  	(x->type==tt_array)
 #define isTableOrArray(x)(x->type==tt_array || x->type==tt_table)
-#define isFixedDim(x)   (x->start && x->step && x->stop)
+#define isFixedDim(x)   (x->start && x->step && x->stop && x->start != "" && x->step != "" && x->stop != "")
 
 typedef struct sql_table {
 	sql_base base;

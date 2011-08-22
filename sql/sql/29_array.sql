@@ -23,6 +23,10 @@
 
 -- TODO: DATE, TIME, TIMESTAMP, CHAR and VARCHAR not supported yet
 -- TODO: should we deal with TINYINT, SMALLINT separately?
+create function array_series("start" tinyint, step tinyint, stop tinyint, N integer, M integer) returns table (id bigint, dimval integer)
+	external name "array".series;
+create function array_series("start" smallint, step smallint, stop smallint, N integer, M integer) returns table (id bigint, dimval integer)
+	external name "array".series;
 create function array_series("start" integer, step integer, stop integer, N integer, M integer) returns table (id bigint, dimval integer)
 	external name "array".series;
 create function array_series("start" bigint, step bigint, stop bigint, N integer, M integer) returns table (id bigint, dimval bigint)
@@ -30,13 +34,18 @@ create function array_series("start" bigint, step bigint, stop bigint, N integer
 create function array_series("start" float, step float, stop float, N integer, M integer) returns table (id bigint, dimval float)
 	external name "array".series;
 
+create function array_filler(cnt bigint, val tinyint) returns table (id bigint, cellval tinyint)
+	external name "array".filler;
+create function array_filler(cnt bigint, val smallint) returns table (id bigint, cellval smallint)
+	external name "array".filler;
 create function array_filler(cnt bigint, val integer) returns table (id bigint, cellval integer)
 	external name "array".filler;
 create function array_filler(cnt bigint, val bigint) returns table (id bigint, cellval bigint)
 	external name "array".filler;
-create function array_filler(cnt bigint, val float) returns table (id bigint, cellval float)
+create function array_filler(cnt bigint, val real) returns table (id bigint, cellval real)
 	external name "array".filler;
-
+create function array_filler(cnt bigint, val double) returns table (id bigint, cellval double)
+	external name "array".filler;
 --create function array_filler(cnt bigint, val date) returns table (vals date)
 --	external name "array".filler;
 --create function array_filler(cnt bigint, val time) returns table (vals time)
