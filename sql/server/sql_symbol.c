@@ -374,6 +374,8 @@ AtomNodeCmp(AtomNode *a1, AtomNode *a2)
 		return 0;
 	if (!a1 || !a2)
 		return -1;
+	if (a1->a && a2->a)
+		return atom_cmp(a1->a, a2->a);
 
 	return -1;
 }

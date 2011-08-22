@@ -842,7 +842,7 @@ mvc_export_table(mvc *m, stream *s, res_table *t, BAT *order, BUN offset, BUN nr
 		fmt[i].name = NULL;
 		fmt[i].sep = ((i - 1) < (t->nr_cols - 1)) ? _strdup(sep) : _strdup(rsep);
 		fmt[i].seplen = _strlen(fmt[i].sep);
-		fmt[i].type = ATOMname(fmt[i].c[0]->ttype);
+		fmt[i].type = _strdup(ATOMname(fmt[i].c[0]->ttype));
 		fmt[i].adt = fmt[i].c[0]->ttype;
 		fmt[i].tostr = &_ASCIIadt_toStr;
 		fmt[i].frstr = &_ASCIIadt_frStr;
