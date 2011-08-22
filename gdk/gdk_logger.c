@@ -1195,7 +1195,8 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version, prevers
 			/* read the current log id without disturbing
 			 * the file pointer */
 			off = ftell(fp);
-			fscanf(fp, "%d", &curid);
+			if (fscanf(fp, "%d", &curid) != 1)
+				curid = -1; /* shouldn't happen? */
 			fseek(fp, off, SEEK_SET);
 
 			if ((fp1 = fopen(bak, "r")) != NULL) {
