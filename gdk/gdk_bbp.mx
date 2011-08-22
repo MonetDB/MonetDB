@@ -507,7 +507,18 @@ static int BBPdiskscan(const char *);
  * conversion are fatal.  This function is "safe" in the sense that
  * when it is interrupted, recovery will just start over.  No
  * permanent changes are made to the database until all string heaps
- * have been converted, and then the changes are made atomically. */
+ * have been converted, and then the changes are made atomically.
+ *
+ * In addition to doing the conversion to all BATs with OID or STR
+ * columns (the latter since the format of the string heap is
+ * different for 64/32 and 64/64 configurations), we also look out for
+ * the *_catalog BATs that are used by gdk_logger.  If we encounter
+ * such a BAT, we create a file based on the name of that BAT
+ * (i.e. using the first part of the name) to inform the logger that
+ * it too needs to convert 32 bit OIDs to 64 bits.  If the process
+ * here gets interrupted, the logger is never called, and if we get
+ * then restarted, we just create the file again, so this process is
+ * safe. */
 
 static void
 fixoidheapcolumn(BAT *b, const char *nme, const char *filename,
@@ -650,6 +661,7 @@ fixoidheap(void)
 	long_str filename;
 	int ht, tt;
 	char hs, hvs = '\0', ts, tvs = '\0';	/* saved storage types */
+	size_t len;
 
 	fprintf(stderr,
 		"# upgrading database from 32 bit OIDs to 64 bit OIDs\n");
@@ -658,6 +670,20 @@ fixoidheap(void)
 	for (bid = 1; bid < BBPsize; bid++) {
 		if ((bs = BBP[bid].cache) == NULL)
 			continue;	/* not a valid BAT */
+		if (BBP[bid].nme[0] &&
+		    (len = strlen(BBP[bid].nme[0])) > 8 &&
+		    strcmp(BBP[bid].nme[0] + len - 8, "_catalog") == 0) {
+			/* this is one of the files used by the
+			 * logger.  We need to communicate to the
+			 * logger that it also needs to do a
+			 * conversion.  That is done by creating a
+			 * file here based on the name of this BAT. */
+			snprintf(filename, sizeof(filename),
+				 "%.*s_32-64-convert",
+				 (int) (len - 8), BBP[bid].nme[0]);
+			fclose(fopen(filename, "w"));
+		}
+
 		/* OID and (non-void) varsized columns have to be rewritten */
 		if (bs->H.type != TYPE_oid &&
 		    (bs->H.type == TYPE_void || !bs->H.varsized) &&
