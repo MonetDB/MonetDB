@@ -32,3 +32,5 @@ recursive_case.Bug-2838
 str_cast_exception.Bug-2847
 case-when-alias.Bug-2848
 multicolumn_constraints.Bug-2849
+CASE_nested_functions.Bug-2852
+FK_self_reference.Bug-2862
