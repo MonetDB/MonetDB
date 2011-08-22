@@ -152,14 +152,24 @@ ESevaluate(Client cntxt, MalBlkPtr mb, char *empty)
 	if ( newMalBlkStmt(mb, mb->ssize) < 0)
 		return 0;
 	constraints= (InstrPtr *) GDKmalloc(sizeof(InstrPtr)*slimit);
-	if ( constraints == NULL)
+	if ( constraints == NULL) {
+		GDKfree(mb->stmt);
+		mb->stmt = old;
+		mb->stop = limit;
+		mb->ssize = slimit;
 		return 0;
+	}
 	alias = (int*) GDKmalloc(sizeof(int)*mb->vtop);
 	if( alias == NULL){
+		GDKfree(mb->stmt);
+		mb->stmt = old;
+		mb->stop = limit;
+		mb->ssize = slimit;
 		GDKfree(constraints);
 		return 0;
 	}
-	for(i=0;i<mb->vtop; i++) alias[i]=i;
+	for(i=0;i<mb->vtop; i++) 
+		alias[i]=i;
 
 	/* Symbolic evaluation of the empty BAT variables */
 	/* by looking at empty BAT arguments */
@@ -168,14 +178,14 @@ ESevaluate(Client cntxt, MalBlkPtr mb, char *empty)
 		p = old[i];
 
 		pushInstruction(mb,p);
-		if( p->token == ENDsymbol){
+		if (p->token == ENDsymbol){
 			for(i++; i<limit; i++)
-			if( old[i])
-				pushInstruction(mb,old[i]);
+				if (old[i])
+					pushInstruction(mb,old[i]);
 			break;
 		}
 		for(j=0; j<p->argc; j++)
-			p->argv[j]= alias[getArg(p,j)];
+			p->argv[j] = alias[getArg(p,j)];
  		/*
  		 * @-
  		 * The bulk of the intelligence lies in inspecting calling
@@ -293,10 +303,10 @@ ESevaluate(Client cntxt, MalBlkPtr mb, char *empty)
 		}
 	}
 	for(; i<slimit; i++)
-	if( old[i])
-		freeInstruction(old[i]);
+		if (old[i])
+			freeInstruction(old[i]);
 	GDKfree(old);
-	if( actions) {
+	if (actions) {
 		DEBUGoptimizers
 		mnstr_printf(cntxt->fdout,"#opt_emptyset: %d empty sets statements removed\n",actions);
 		clrAllTypes(mb);	 /* force a complete resolve */

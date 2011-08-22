@@ -29,6 +29,9 @@
 #include "rel_updates.h"
 #include "sql_env.h"
 
+#define new_func_list(sa) list_new(sa)
+#define new_col_list(sa) list_new(sa)
+
 typedef struct global_props {
 	int cnt[MAXOPS];
 } global_props;
@@ -214,10 +217,10 @@ kc_column_cmp(sql_kc *kc, sql_column *c)
 }
 
 static int
-join_properties(sql_rel *rel) 
+join_properties(mvc *sql, sql_rel *rel) 
 {
 	if (rel->exps) {
-		list *join_cols = list_create(NULL);
+		list *join_cols = new_col_list(sql->sa);
 		node *en;
 
 		/* simply using the expressions should also work ! */
@@ -234,7 +237,6 @@ join_properties(sql_rel *rel)
 				}
 			}
 		}
-		list_destroy(join_cols);
 	}
 	return 0;
 }
@@ -283,7 +285,7 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 		rel->p = prop_create(sql->sa, PROP_COUNT, rel->p);
 		break;
 	case op_join: 
-		join_properties(rel);
+		join_properties(sql, rel);
 		break;
 	case op_left: 
 	case op_right: 
@@ -601,7 +603,7 @@ exp_joins_rels(sql_exp *e, list *rels)
 }
 
 static list *
-matching_joins(list *rels, list *exps, sql_exp *je) 
+matching_joins(sql_allocator *sa, list *rels, list *exps, sql_exp *je) 
 {
 	sql_rel *l, *r;
 
@@ -611,15 +613,14 @@ matching_joins(list *rels, list *exps, sql_exp *je)
 	r = find_rel(rels, je->r);
 	if (l && r) {
 		list *res;
-		list *n_rels = list_create(NULL);	
+		list *n_rels = new_rel_list(sa);	
 
 		append(n_rels, l);
 		append(n_rels, r);
 		res = list_select(exps, n_rels, (fcmp) &exp_joins_rels, (fdup)NULL);
-		list_destroy(n_rels);
 		return res; 
 	}
-	return list_create(NULL);
+	return new_rel_list(sa);
 }
 
 static int
@@ -721,7 +722,7 @@ find_fk(sql_allocator *sa, list *rels, list *exps)
 
 		if (!find_prop(je->p, PROP_JOINIDX)) {
 			int swapped = 0;
-			list *aaje = matching_joins(rels, aje, je);
+			list *aaje = matching_joins(sa, rels, aje, je);
 			list *eje = list_select(aaje, (void*)1, (fcmp) &exp_is_eqjoin, (fdup)NULL);
 			sql_rel *lr = find_rel(rels, le);
 			sql_rel *rr = find_rel(rels, re);
@@ -785,7 +786,7 @@ order_joins(mvc *sql, list *rels, list *exps)
 	sql_rel *top = NULL, *l = NULL, *r = NULL;
 	sql_exp *cje;
 	node *djn;
-	list *sdje, *n_rels = list_create(NULL);
+	list *sdje, *n_rels = new_rel_list(sql->sa);
 	int fnd = 0;
 
 	/* find foreign keys and reorder the expressions on reducing quality */
@@ -888,7 +889,6 @@ order_joins(mvc *sql, list *rels, list *exps)
 			}
 		}
 	}
-	list_destroy(n_rels);
 	if (list_length(rels)) { /* more relations */
 		node *n;
 		for(n=rels->h; n; n = n->next) {
@@ -995,11 +995,10 @@ reorder_join(mvc *sql, sql_rel *rel)
 	list *exps = rel->exps;
 	list *rels;
 
-	(void)sql;
 	if (!exps) /* crosstable, ie order not important */
 		return rel;
 	rel->exps = NULL; /* should be all crosstables by now */
- 	rels = list_create(NULL);
+ 	rels = new_rel_list(sql->sa);
 	if (is_outerjoin(rel->op)) {
 		int cnt = 0;
 		/* try to use an join index also for outer joins */
@@ -1020,7 +1019,6 @@ reorder_join(mvc *sql, sql_rel *rel)
 			exps = NULL;
 		}
 	}
-	list_destroy(rels);
 	return rel;
 }
 
@@ -1779,7 +1777,7 @@ rel_merge_projects(int *changes, mvc *sql, sql_rel *rel)
 static sql_subfunc *
 find_func( mvc *sql, char *name, list *exps )
 {
-	list * l = list_create(NULL); 
+	list * l = new_func_list(sql->sa); 
 	node *n;
 
 	for(n = exps->h; n; n = n->next)
@@ -5035,7 +5033,7 @@ rel_semijoin_use_fk(int *changes, mvc *sql, sql_rel *rel)
 	(void)changes;
 	if (is_semi(rel->op) && rel->exps) {
 		list *exps = rel->exps;
-		list *rels = rels = list_create(NULL);
+		list *rels = rels = new_rel_list(sql->sa);
 
 		rel->exps = NULL;
 		append(rels, rel->l);

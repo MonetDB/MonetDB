@@ -1583,6 +1583,7 @@ sql_symbol2stmt(mvc *c, symbol *sym)
 
 	status = c->session->status;
 	r = rel_semantic(c, sym);
+
 	if (!r) {
 		if (c->errstr[0]) {
 			return NULL;

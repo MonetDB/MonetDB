@@ -32,8 +32,7 @@ end main;
 #result of inline
 function user.tst():void;
     b := bat.new(:oid,:int);
-    X_11 := batcalc.+(b,1);
-    z:bat[:oid,:int]  := X_11;
+    z:bat[:oid,:int]  := mal.multiplex("user","my",b,1);
 end tst;
 function user.my{inline}(A:int,B:int):int;
     X3 := calc.+(A,B);

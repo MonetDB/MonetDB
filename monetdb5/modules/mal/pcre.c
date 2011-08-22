@@ -447,6 +447,7 @@ pcre_uselect(BAT **res, str pattern, BAT *strs, bit insensitive)
 	r->tsorted = FALSE;
 
 	my_pcre_free(re);
+	my_pcre_free(pe);
 	if (!(r->batDirty&2)) r = BATsetaccess(r, BAT_READ);
 	*res = r;
 	return MAL_SUCCEED;

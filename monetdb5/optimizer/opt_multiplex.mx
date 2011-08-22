@@ -139,7 +139,8 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	fcn = VALget(&getVar(mb, getArg(pci, 2))->value);
 	fcn = putName(fcn,strlen(fcn));
 
-	/* search the iterator bat */
+	/* search the iterator bat after type checking first */
+	chkProgram(cntxt->nspace,mb);
 	for (i = 3; i < pci->argc; i++)
 		if (isaBatType(getArgType(mb, pci, i))) {
 			iter = getArg(pci, i);
