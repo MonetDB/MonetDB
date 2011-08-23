@@ -1,3 +1,4 @@
-NOT_WIN32?squid
-NOT_WIN32?squid00
-NOT_WIN32?squid01
+# Octopus it not supported in Aug2011
+#NOT_WIN32?squid
+#NOT_WIN32?squid00
+#NOT_WIN32?squid01
