@@ -701,7 +701,7 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 				cs->dim = ZNEW(sql_dimspec);
 				cs->dim->start = GDKstrdup("");
 				cs->dim->step = GDKstrdup("");
-				cs->dim->st0p = GDKstrdup("");
+				cs->dim->stop = GDKstrdup("");
 			}
 			t->fixed = isFixedDim(cs->dim);
 			/* TODO: the case "ARRAY dim_range_list" is not dealt with */
