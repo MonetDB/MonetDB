@@ -32,7 +32,7 @@ command srvpool.reset(dbname:str):str
 address SRVPOOLreset
 comment "Clear the server cache";
 
-pattern srvpool.server():str...
+pattern srvpool.server(plan:str):str...
 address SRVPOOLserver
 comment "Allocate a list of servers for query execution";
 

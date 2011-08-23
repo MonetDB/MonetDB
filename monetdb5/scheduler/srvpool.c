@@ -246,37 +246,38 @@ SRVPOOLdiscover(Client cntxt)
 	char buf[BUFSIZ], *s= buf;
 
 
-	if ( srvpattern) {
-		strncpy(buf,srvpattern, BUFSIZ-1);
-		msg = RMTresolve(&bid,&s);
-		if ( msg == MAL_SUCCEED) {
-			b = BATdescriptor(bid);
-			if ( b != NULL && BATcount(b) > 0 ) {
-				bi = bat_iterator(b);
-				BATloop(b,p,q){
-					str t= (str) BUNtail(bi,p);
+	if ( srvpattern == 0)
+		/* use default pattern */
+		srvpattern = GDKstrdup("srvpool/*");
+	strncpy(buf,srvpattern, BUFSIZ-1);
+	msg = RMTresolve(&bid,&s);
+	if ( msg == MAL_SUCCEED) {
+		b = BATdescriptor(bid);
+		if ( b != NULL && BATcount(b) > 0 ) {
+			bi = bat_iterator(b);
+			BATloop(b,p,q){
+				str t= (str) BUNtail(bi,p);
 
-					j = SRVPOOLgetServer(t); 
-					msg = RMTconnectScen(&conn, &servers[j].uri, &servers[j].usr, &servers[j].pwd, &scen);
-					if ( msg == MAL_SUCCEED )
-						servers[j].conn = GDKstrdup(conn);
-					else  GDKfree(msg);	/* ignore failure */
+				j = SRVPOOLgetServer(t); 
+				msg = RMTconnectScen(&conn, &servers[j].uri, &servers[j].usr, &servers[j].pwd, &scen);
+				if ( msg == MAL_SUCCEED )
+					servers[j].conn = GDKstrdup(conn);
+				else  GDKfree(msg);	/* ignore failure */
 
 #ifdef DEBUG_RUN_SRVPOOL
-					mnstr_printf(cntxt->fdout,"#Worker site %d alias %s %s\n", i, (conn?conn:""), t);
+				mnstr_printf(cntxt->fdout,"#Worker site %d alias %s %s\n", i, (conn?conn:""), t);
 #endif
-					assert(i <MAXSITES);
-				}
+				assert(i <MAXSITES);
 			}
-			BBPreleaseref(bid);
-		} 
-		if( msg) {
-			/* ignore merovingian complaints */
-#ifdef DEBUG_RUN_SRVPOOL
-			mnstr_printf(cntxt->fdout,"#%s\n", msg);
-#endif
-			GDKfree(msg);
 		}
+		BBPreleaseref(bid);
+	} 
+	if( msg) {
+		/* ignore merovingian complaints */
+#ifdef DEBUG_RUN_SRVPOOL
+		mnstr_printf(cntxt->fdout,"#%s\n", msg);
+#endif
+		GDKfree(msg);
 	}
 	if ( srvbaseline == 0)
 		srvbaseline = 2;
