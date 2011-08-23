@@ -534,6 +534,12 @@ Client MCinitClient(oid user, bstream *fin, stream *fout)
 	c->curprg = c->backup = 0;
 	c->glb = 0;
 
+	/* remove garbage from previous connection */
+	if( c->nspace) {
+		freeModule(c->nspace);
+		c->nspace=0;
+	}
+
 	c->father = NULL;
 	c->login = c->lastcmd= time(0);
 	c->delay= TIMEOUT;
