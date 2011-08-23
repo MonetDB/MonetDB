@@ -339,12 +339,6 @@ command_set(confkeyval *ckv, int argc, char *argv[])
 			free(e);
 			return(1);
 		}
-		kv = findConfKey(ckv, "discoveryport");
-		if (kv != NULL && kv->ival == oport && (e = setConfVal(kv, p)) != NULL) {
-			fprintf(stderr, "set: failed to set property discoveryport: %s\n", e);
-			free(e);
-			return(1);
-		}
 		kv = findConfKey(ckv, "controlport");
 		if (kv != NULL && kv->ival == oport + 1) {
 			oport = atoi(p);
