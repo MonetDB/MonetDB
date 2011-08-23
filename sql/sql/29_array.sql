@@ -22,9 +22,9 @@
 -- and re-established after the cluster operation.
 
 -- TODO: DATE, TIME, TIMESTAMP, CHAR and VARCHAR not supported yet
-create function array_series("start" tinyint, step tinyint, stop tinyint, N integer, M integer) returns table (id bigint, dimval integer)
+create function array_series("start" tinyint, step tinyint, stop tinyint, N integer, M integer) returns table (id bigint, dimval tinyint)
 	external name "array".series;
-create function array_series("start" smallint, step smallint, stop smallint, N integer, M integer) returns table (id bigint, dimval integer)
+create function array_series("start" smallint, step smallint, stop smallint, N integer, M integer) returns table (id bigint, dimval smallint)
 	external name "array".series;
 create function array_series("start" integer, step integer, stop integer, N integer, M integer) returns table (id bigint, dimval integer)
 	external name "array".series;
