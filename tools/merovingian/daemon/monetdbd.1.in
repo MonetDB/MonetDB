@@ -158,9 +158,8 @@ setting should not be changed.
 This property specifies which TCP port
 .B monetdbd
 should listen to for regular database connection requests.  Defaults to
-50000.  When this value is changed, discoveryport and controlport are
-changed also, when their values are port and port + 1 for discoveryport
-and controlport respectively.  This allows to easily make monetdbd run
+50000.  When this value is changed, controlport is also changed when its
+value is port + 1.  This allows to easily make monetdbd run
 on another port with a single command.
 .IP controlport
 For remote management of
@@ -170,11 +169,10 @@ the
 property specifies the TCP port that is opened up for listening.  Note
 that for these connections, a passphrase is required, see below.
 Defaults to 50001
-.IP discoveryport
-Neighbour discovery is done using UDP broadcasts on the port set by
-.IR discoveryport .
-Setting this property to 0 disables the
-neighbour discovery service entirely.  Defaults to 50000.
+.IP discovery
+Specifies whether neighbour discovery is to be enabled using UDP
+broadcasts or not.  The broadcasts are done on the same portnumber as
+the port setting.
 .IP discoveryttl
 .B monetdbd
 publishes locally available databases to others periodically.  The

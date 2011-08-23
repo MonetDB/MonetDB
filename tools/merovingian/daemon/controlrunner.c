@@ -570,7 +570,7 @@ controlRunner(void *d)
 						confkeyval *kv;
 
 						/* bail out if we don't do discovery at all */
-						kv = findConfKey(_mero_props, "discoveryport");
+						kv = findConfKey(_mero_props, "discovery");
 						if (kv->ival == 0) {
 							/* can't do much */
 							len = snprintf(buf2, sizeof(buf2),
