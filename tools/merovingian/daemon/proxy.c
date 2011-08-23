@@ -196,7 +196,7 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 		hp = gethostbyname(conn);
 		if (hp == NULL) {
 			err x = newErr("cannot get address for hostname '%s': %s",
-						conn, strerror(errno));
+						conn, hstrerror(h_errno));
 			free(conn);
 			return(x);
 		}

@@ -85,7 +85,7 @@ char* control_send(
 		hp = gethostbyname(host);
 		if (hp == NULL) {
 			snprintf(sbuf, sizeof(sbuf), "cannot lookup hostname: %s",
-					strerror(errno));
+					hstrerror(h_errno));
 			return(strdup(sbuf));
 		}
 		memset(&server, 0, sizeof(struct sockaddr_in));

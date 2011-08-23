@@ -1,6 +1,10 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
+* Tue Aug 23 2011 Fabian Groffen <fabian@cwi.nl>
+- Fixed confusing 'Success' error message for monetdb commands where an
+  invalid hostname was given
+
 * Fri Aug 19 2011 Fabian Groffen <fabian@cwi.nl>
 - The path to the mserver5 binary is no longer returned for the mserver
   property with monetdbd get for a dbfarm which is currently served by

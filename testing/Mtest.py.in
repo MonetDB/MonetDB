@@ -1263,12 +1263,12 @@ def expandvars(path, environ = os.environ):
             i = j
     return path
 
-def GetBitsAndOIDsAndModsAndStatic(env) :
+def GetBitsAndOIDsAndModsAndStaticAndThreads(env) :
     rtrn = 0
     TSTPREF = env['TSTPREF']
     cmd = '%s --dbname=%s' % (env['exe']['Mserver'][1], TSTPREF)
     if verbose:
-        print 'GetBitsAndOIDsAndModsAndStatic: starting process "%s" (inpipe, outpipe, errpipe)\n' % cmd
+        print 'GetBitsAndOIDsAndModsAndStaticAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % cmd
     proc = subprocess.Popen(cmd, shell = True, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True)
     t = Timer(float(par['TIMEOUT']), killProc, args = [proc, proc.stderr, cmd])
     try:
@@ -1295,31 +1295,37 @@ def GetBitsAndOIDsAndModsAndStatic(env) :
         qOut, qErr = proc.communicate(input = input)
         t.cancel()
         if verbose:
-            print 'GetBitsAndOIDsAndModsAndStatic: process exited "%s" (%s)\n' % (cmd, proc.returncode)
+            print 'GetBitsAndOIDsAndModsAndStaticAndThreads: process exited "%s" (%s)\n' % (cmd, proc.returncode)
     except KeyboardInterrupt:
         t.cancel()
         killProc(proc, proc.stderr, cmd)
         if verbose:
-            print 'GetBitsAndOIDsAndModsAndStatic: process killed "%s"\n' % cmd
+            print 'GetBitsAndOIDsAndModsAndStaticAndThreads: process killed "%s"\n' % cmd
         raise
     env['TST_MODS'] = []
     env['TST_BITS'] = ""
     env['TST_OIDS'] = ""
     env['TST_STATIC'] = ""
+    env['TST_SINGLE'] = ""
     if qOut:
-        tbs = re.compile("^# Compiled for .*/([63][42]bit) with ([63][42])bit OIDs;? (.*) linked", re.MULTILINE)
+        tbos = re.compile("^# Compiled for .*/([63][42]bit) with ([63][42])bit OIDs;? (.*) linked", re.MULTILINE)
+        tt = re.compile("^# Serving database .*, using ([0-9]+) threads?", re.MULTILINE)
         tm = re.compile("^Modules: (.+)$", re.MULTILINE)
         #ts = re.compile("^!ERROR: DL_open: library not found \(STATIC\).$", re.MULTILINE)
         for l in qOut.split('\n'):
-            bs = tbs.match(l)
-            if bs:
-                env['TST_BITS'] = bs.group(1)
+            obs = tbos.match(l)
+            if obs:
+                env['TST_BITS'] = obs.group(1)
                 os.environ['TST_BITS'] = env['TST_BITS']
-                env['TST_OIDS'] = "oid" + bs.group(2)
+                env['TST_OIDS'] = "oid" + obs.group(2)
                 os.environ['TST_OIDS'] = env['TST_OIDS']
-                if bs.group(3) == "statically":
+                if obs.group(3) == "statically":
                     env['TST_STATIC'] = "STATIC"
                     os.environ['TST_STATIC'] = env['TST_STATIC']
+            t = tt.match(l)
+            if t and t.group(1) == "1":
+                env['TST_SINGLE'] = "single"
+                os.environ['TST_SINGLE'] = env['TST_SINGLE']
             m = tm.match(l)
             if m:
                 env['TST_MODS'] = eval(m.group(1))
@@ -1343,7 +1349,7 @@ def GetBitsAndOIDsAndModsAndStatic(env) :
             rtrn = 1
     else:
         rtrn = 1
-        ErrMsg("No output from Mserver/mserver5 when checking for Bits, OIDs & Modules!?")
+        ErrMsg("No output from Mserver/mserver5 when checking for Bits, OIDs, Modules & Threads!?")
         if qErr:
             STDERR.write(cmd + "\n\n")
             STDERR.write(qErr)
@@ -1351,7 +1357,7 @@ def GetBitsAndOIDsAndModsAndStatic(env) :
             STDERR.flush()
     os.environ['TST_MODS'] = str(env['TST_MODS'])
     return rtrn
-### GetBitsAndOIDsAndModsAndStatic(env) #
+### GetBitsAndOIDsAndModsAndStaticAndThreads(env) #
 
 def CheckMods(env, TST, SERVER, CALL) :
     missing = []
@@ -1476,11 +1482,14 @@ def StopAt(ATJOB,ME) :
 def StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION) :
     BITS = env['TST_BITS']
     OIDS = env['TST_OIDS']
+    SINGLE = env['TST_SINGLE']
+    if SINGLE:
+        SINGLE = "(\.single)?"
     STATIC = env['TST_STATIC']
     if STATIC:
         STATIC = "(\.STATIC)?"
     dir,file = os.path.split(TST)
-    outre = re.compile('^'+re.escape(file)+'\.stable\.(?P<tp>out|err)(\.(%s(%s)?|%s(%s)?))?(\.%s)?(\.%s)?%s$' % (re.escape(SYST), re.escape(RELEASE), re.escape(DIST), re.escape(VERSION), BITS, OIDS, STATIC))
+    outre = re.compile('^'+re.escape(file)+'\.stable\.(?P<tp>out|err)(\.(%s(%s)?|%s(%s)?))?(\.%s)?(\.%s)?%s%s$' % (re.escape(SYST), re.escape(RELEASE), re.escape(DIST), re.escape(VERSION), BITS, OIDS, SINGLE, STATIC))
     bestout = besterr = ''
     for f in os.listdir(dir or os.curdir):
         res = outre.match(f)
@@ -2495,7 +2504,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
 
     segfaulted = False
     # Try to detect segfaults and the like
-    TO = re.compile("(^|^[^#]*[\t ])(Memory [Ff]ault|Segmentation [Ff]ault|Bus [Ee]rror|Abort(|ed)|Assertion failed:|!FATAL: BATSIGabort:)([ \t]|$)", re.MULTILINE)
+    TO = re.compile("((^|^[^#]*[\t ])(Memory [Ff]ault|Segmentation [Ff]ault|Bus [Ee]rror|Abort(|ed)|Assertion failed:|!FATAL: BATSIGabort:)([ \t]|$)|(^ERROR = !Connection terminated$))", re.MULTILINE)
     # FIXME: this begs for a much nicer solution (100% copy of below)
     if os.path.isfile(TestErrFile):
         for l in open(TestErrFile):
@@ -2678,6 +2687,7 @@ def ReadMapproveRc(f) :
     v['VERSION'] = VERSION
     v['BITS'] = ''
     v['OIDS'] = ''
+    v['SINGLE'] = ''
     v['STATIC'] = ''
     if os.path.isfile(f):
         r = re.compile('^([A-Z]+) = "(.*)".*$')
@@ -2987,7 +2997,7 @@ def main(argv) :
     elif THISFILE == 'Mapprove.py':
         f = _configure(os.path.join('@QXprefix@',dftTSTPREF,'.Mapprove.rc'))
         v = ReadMapproveRc(f)
-        for i in 'BITS', 'OIDS', 'STATIC':
+        for i in 'BITS', 'OIDS', 'SINGLE', 'STATIC':
             if v[i]:
                 v[i] = '[.%s]' % v[i]
         options = cmd_options + [
@@ -2996,9 +3006,9 @@ def main(argv) :
              "(default: <ext> = 'out' & 'err')"),
             (None, 'S', 'sys', '<sys>',
              "approve specific output *.<ext><sys>\n"
-             "(<sys> = '[.(<SYST>[<RELEASE>]|<DIST>[<VERSION>])][.(32|64)bit][.oid(32|64)][.STATIC]',\n"
-             "(default: longest match for <sys> = '[.(%s[%s]|%s[%s])]%s%s%s')"
-              % (v['SYST'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['OIDS'], v['STATIC'])),
+             "(<sys> = '[.(<SYST>[<RELEASE>]|<DIST>[<VERSION>])][.(32|64)bit][.oid(32|64)][.single][.STATIC]',\n"
+             "(default: longest match for <sys> = '[.(%s[%s]|%s[%s])]%s%s%s%s')"
+              % (v['SYST'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['OIDS'], v['SINGLE'], v['STATIC'])),
             (None, 'f', 'force', None,
              "force approval of error messages (i.e., lines starting with '!')"),
             ]
@@ -3189,17 +3199,17 @@ def main(argv) :
         os.environ['DISTVER'] = DISTVER
         os.environ['VERSION'] = VERSION
         w = {}
-        for i in 'SYST', 'RELEASE', 'DIST', 'VERSION', 'BITS', 'OIDS', 'STATIC':
+        for i in 'SYST', 'RELEASE', 'DIST', 'VERSION', 'BITS', 'OIDS', 'SINGLE', 'STATIC':
             w[i] = re.escape(v[i])
-        for i in 'BITS', 'OIDS', 'STATIC':
+        for i in 'BITS', 'OIDS', 'SINGLE', 'STATIC':
             j = 'TST_'+i
             env[j] = v[i]
             os.environ[j] = v[i]
             if v[i]:
                 v[i] = '(.%s)?' % v[i]
                 w[i] = '(\.%s)?' % w[i]
-        sv = '^(.(%s(%s)?|%s(%s)?))?%s%s%s$' % (v['SYST'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['OIDS'], v['STATIC'])
-        sw = '^(\.(%s(%s)?|%s(%s)?))?%s%s%s$' % (w['SYST'], w['RELEASE'], w['DIST'], w['VERSION'], w['BITS'], w['OIDS'], w['STATIC'])
+        sv = '^(.(%s(%s)?|%s(%s)?))?%s%s%s%s$' % (v['SYST'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['OIDS'], v['SINGLE'], v['STATIC'])
+        sw = '^(\.(%s(%s)?|%s(%s)?))?%s%s%s%s$' % (w['SYST'], w['RELEASE'], w['DIST'], w['VERSION'], w['BITS'], w['OIDS'], w['SINGLE'], w['STATIC'])
         r = re.compile(sw)
         if not r.match(par['SYSTEM']):
             ErrXit("System (-S) must match '"+sv+"' !")
@@ -3446,6 +3456,7 @@ def main(argv) :
         env['TST_MODS'] = []
         env['TST_BITS'] = ""
         env['TST_OIDS'] = ""
+        env['TST_SINGLE'] = ""
         env['TST_STATIC'] = ""
         if par['PACKAGE'] in ('common', 'clients', 'gdk', 'java'):
             if   CONDITIONALS.has_key('BITS32') and CONDITIONALS['BITS32']:
@@ -3455,7 +3466,7 @@ def main(argv) :
         else:
             if Check('%s --dbname=%s' % (env['exe']['Mserver'][1], TSTPREF), QUIT):
                 sys.exit(1)
-            if GetBitsAndOIDsAndModsAndStatic(env):
+            if GetBitsAndOIDsAndModsAndStaticAndThreads(env):
                 sys.exit(1)
         STDERR.flush()
         if not quiet:
@@ -3497,7 +3508,7 @@ def main(argv) :
         env['VERSION'] = os.environ['VERSION']
         n = os.path.join(env['TSTTRGBASE'],TSTPREF,'.Mapprove.rc')
         f = open(n, 'w')
-        for v in 'SYST', 'RELEASE', 'DIST', 'VERSION', 'TST_BITS', 'TST_OIDS', 'TST_STATIC':
+        for v in 'SYST', 'RELEASE', 'DIST', 'VERSION', 'TST_BITS', 'TST_OIDS', 'TST_SINGLE', 'TST_STATIC':
             w = v.replace('TST_','')
             f.write('%s = "%s"\n' % (w, env[v]))
         f.close()
@@ -3564,6 +3575,11 @@ def main(argv) :
         except ImportError:
             now = 'now()'
 
+        if env['TST_SINGLE'] != '':
+            isSingle = 'true'
+        else:
+            isSingle = 'false'
+
         if env['TST_STATIC'] != '':
             isStatic = 'true'
         else:
@@ -3597,15 +3613,15 @@ def main(argv) :
                 # target is a platform and compilation options etc
                 sql = """
 INSERT INTO mtest (\"date\", \"machine\", \"os\", \"release\",
-    \"compiler\", \"compiler_opts\", \"bits\", \"oid\", \"static\",
+    \"compiler\", \"compiler_opts\", \"bits\", \"oid\", \"single\", \"static\",
     \"product\", \"dir\", \"test\",
     \"time\", \"stdout\", \"stderr\")
 VALUES (%s, '%s', '%s', '%s',
-    '%s', '%s', %s, %s, %s,
+    '%s', '%s', %s, %s, %s, %s,
     '%s', '%s', '%s',
     %s, '%s', '%s');
 """ %(now, host, env['SYST'], env['RELEASE'],
-        ccname, ccopts, bits, oids, isStatic,
+        ccname, ccopts, bits, oids, isSingle, isStatic,
         product, TSTDIR, TST,
         tms, Fcodes[FtOut], Fcodes[FtErr])
                 fl.write(sql)
