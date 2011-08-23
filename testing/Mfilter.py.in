@@ -65,8 +65,11 @@ test = (
                  #  r'^! /.*/bin/[Mm](?:(?:server5?|apiClient|timeout|diff):e+|log:)$',
                  #  r'^! /usr/bin/mserver5:  m$',
                  ])+')',  re.MULTILINE),
-        # differences due to property-checking, which we want to treat as "minor differences"
+        # differences (e.g., due to property-checking), which we want to treat as "minor differences"
         re.compile('(?:'+')|(?:'.join([
+                # varying variable names in dataflow barriers
+                    r'^barrier X_[0-9]+ := language.dataflow\(\);$',
+                    r'^exit X_[0-9]+;$',
                 # src/modules/plain/aggr[X3]:
                  #  r'^\[ .*(?:,\t* ? "?2\.562203[64]3e\+0?13"?)+\t* ? \]$',
                  #  r'^\[ .*(?:,\t* ? "?7\.65432(?:119|072)"?)+\t* ? \]$',
@@ -223,7 +226,7 @@ def mFilter (FILE, IGNORE) :
             # potential differences, which we want to ignore; see above
             oline = "#~ " + iline
         elif test[1].match(iline):
-            # differences due to property-checking, which we want to treat as "minor differences"; see above
+            # differences (e.g., due to property-checking), which we want to treat as "minor differences"; see above
             oline = "=" + iline
         elif bbp_dir.match(iline):
             l = iline.split(' ')
