@@ -1,0 +1,56 @@
+stdout of test '01_create_16` in directory 'test/sciql` itself:
+
+
+# 13:13:44 >  
+# 13:13:44 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/export/scratch0/zhang/monet-install/sciql/debug/var/MonetDB" --set mapi_open=true --set mapi_port=33096 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_test_sciql" --set mal_listing=0 ; echo ; echo Over..
+# 13:13:44 >  
+
+# MonetDB 5 server v11.6.0
+# This is an unreleased version
+# Serving database 'mTests_test_sciql', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://jarl.ins.cwi.nl:33096/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+
+Over..
+
+# 13:13:44 >  
+# 13:13:44 >  mclient -lsql -ftest -i -e --host=jarl --port=33096 
+# 13:13:44 >  
+
+#CREATE ARRAY sparse( x integer DIMENSION[4], y integer DIMENSION[4], v float DEFAULT 0.0 CHECK(v>=0.0));
+#SELECT * FROM sparse;
+% sys.sparse,	sys.sparse,	sys.sparse # table_name
+% x,	y,	v # name
+% int,	int,	double # type
+% 1,	1,	22 # length
+[ 0,	0,	0	]
+[ 0,	1,	0	]
+[ 0,	2,	0	]
+[ 0,	3,	0	]
+[ 1,	0,	0	]
+[ 1,	1,	0	]
+[ 1,	2,	0	]
+[ 1,	3,	0	]
+[ 2,	0,	0	]
+[ 2,	1,	0	]
+[ 2,	2,	0	]
+[ 2,	3,	0	]
+[ 3,	0,	0	]
+[ 3,	1,	0	]
+[ 3,	2,	0	]
+[ 3,	3,	0	]
+#DROP ARRAY sparse;
+
+# 13:13:44 >  
+# 13:13:44 >  Done.
+# 13:13:44 >  
+
