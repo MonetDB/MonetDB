@@ -653,8 +653,10 @@ trimexpand(MalBlkPtr mb, int varsize, int stmtsize)
 
 	memcpy((str) stmt, (str) mb->stmt, sizeof(InstrPtr) * mb->stop);
 	for (i=mb->stop; i< mb->ssize; i++) {
-		if (mb->stmt[i])
+		if (mb->stmt[i]) {
 			freeInstruction(mb->stmt[i]);
+			mb->stmt[i] = NULL;
+		}
 	}
 	GDKfree(mb->stmt);
 	mb->stmt = stmt;
