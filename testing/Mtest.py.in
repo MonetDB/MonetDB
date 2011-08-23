@@ -3456,7 +3456,7 @@ def main(argv) :
         env['TST_MODS'] = []
         env['TST_BITS'] = ""
         env['TST_OIDS'] = ""
-        env['TST_SINGKE'] = ""
+        env['TST_SINGLE'] = ""
         env['TST_STATIC'] = ""
         if par['PACKAGE'] in ('common', 'clients', 'gdk', 'java'):
             if   CONDITIONALS.has_key('BITS32') and CONDITIONALS['BITS32']:
