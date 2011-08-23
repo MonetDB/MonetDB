@@ -1337,9 +1337,7 @@ def GetBitsAndOIDsAndModsAndStaticAndThreads(env) :
             ErrMsg("Checking for OIDs failed!")
         if not env['TST_MODS']:
             ErrMsg("Checking for Modules failed!")
-        if not env['TST_SINGLE']:
-            ErrMsg("Checking for Threads failed!")
-        if not env['TST_BITS'] or not env['TST_OIDS'] or not env['TST_MODS'] or not env['TST_SINGLE']:
+        if not env['TST_BITS'] or not env['TST_OIDS'] or not env['TST_MODS']:
             STDERR.write(cmd + "\n\n")
             STDERR.write(qOut)
             STDERR.write("\n")
