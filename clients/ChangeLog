@@ -1,6 +1,10 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Tue Aug 23 2011 Fabian Groffen <fabian@cwi.nl>
+- Report full URI to database instead of just database when available
+  in mclient.
+
 * Thu Aug 18 2011 Fabian Groffen <fabian@cwi.nl>
 - The time format of the timer output can now be controlled with an
   optional argument to the -i option.  ms, s and m force the time to be
