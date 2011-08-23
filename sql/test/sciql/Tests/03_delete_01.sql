@@ -1,4 +1,8 @@
 CREATE ARRAY matrix (x INT DIMENSION[4], y INT DIMENSION[4], v FLOAT DEFAULT 0.0);
 SELECT * FROM matrix;
+
 DELETE FROM matrix WHERE x = 2;
 SELECT * FROM matrix;
+
+DROP ARRAY matrix;
+

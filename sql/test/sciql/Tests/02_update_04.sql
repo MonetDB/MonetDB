@@ -1,7 +1,7 @@
 CREATE ARRAY matrix (x INT DIMENSION[4], y INT DIMENSION[4], v FLOAT DEFAULT 0.0);
-SELECT * FROM matrix;
 
-UPDATE matrix SET v = CASE WHEN x>y THEN x + y WHEN x<y THEN x - y ELSE 0 END;
+-- FIXME: do these queries update all 'v'-s in a row/column?
+UPDATE matrix SET matrix[0:2].v = v * 1.19;
 SELECT * FROM matrix;
 
 DROP ARRAY matrix;

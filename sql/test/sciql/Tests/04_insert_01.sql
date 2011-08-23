@@ -1,4 +1,4 @@
-CREATE ARRAY matrix (x INT DIMENSION[4], y INT DIMENSION[4], v FLOAT DEFAULT 0);
+CREATE ARRAY matrix (x INT DIMENSION[4], y INT DIMENSION[4], v FLOAT DEFAULT 0.0);
 SELECT * FROM matrix;
 -- this update is necessary because 'v FLOAT DEFAULT (x + y) * 100' is not implemented yet.
 UPDATE matrix SET v = (x + y) * 100;
