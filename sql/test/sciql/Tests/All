@@ -1,3 +1,9 @@
+00_syntax_error_01
+00_syntax_error_02
+00_syntax_error_03
+00_syntax_error_04
+00_syntax_error_05
+
 01_create_01
 01_create_02
 01_create_03
@@ -15,8 +21,8 @@
 01_create_15
 01_create_16
 01_create_17
-#sciql00
-#sciql01
+01_create_18
+
 #sciql02
 #sciql03
 #sciql04
