@@ -30,7 +30,6 @@ stderr of test '04_insert_04` in directory 'test/sciql` itself:
 # 15:21:58 >  mclient -lsql -ftest -i -e --host=jarl --port=38045 
 # 15:21:58 >  
 
-
 # 15:21:58 >  
 # 15:21:58 >  Done.
 # 15:21:58 >  

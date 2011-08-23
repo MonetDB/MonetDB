@@ -22,10 +22,16 @@
 01_create_16
 01_create_17
 01_create_18
+01_create_19
+01_create_20
+01_create_21
+01_create_22
 
 02_update_01
 02_update_02
 02_update_03
+02_update_04
+02_update_05
 
 03_delete_01
 
@@ -33,6 +39,12 @@
 04_insert_02
 04_insert_03
 04_insert_04
+04_insert_05
+
+05_select_01
+05_select_02
+
+06_slice_01
 
 #texture
 #smooth

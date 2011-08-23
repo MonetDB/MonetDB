@@ -1,0 +1,39 @@
+stdout of test '01_create_20` in directory 'test/sciql` itself:
+
+
+# 17:53:49 >  
+# 17:53:49 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/export/scratch0/zhang/monet-install/sciql/debug/var/MonetDB" --set mapi_open=true --set mapi_port=39586 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_test_sciql" --set mal_listing=0 ; echo ; echo Over..
+# 17:53:49 >  
+
+# MonetDB 5 server v11.6.0
+# This is an unreleased version
+# Serving database 'mTests_test_sciql', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://jarl.ins.cwi.nl:39586/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+Over..
+
+# 17:53:50 >  
+# 17:53:50 >  mclient -lsql -ftest -i -e --host=jarl --port=39586 
+# 17:53:50 >  
+
+#CREATE ARRAY timeseries (tick TIMESTAMP DIMENSION, payload FLOAT DEFAULT 0.0 );
+#SELECT * FROM timeseries;
+% sys.timeseries,	sys.timeseries # table_name
+% tick,	payload # name
+% timestamp,	double # type
+% 26,	22 # length
+#DROP ARRAY timeseries;
+
+# 17:53:50 >  
+# 17:53:50 >  Done.
+# 17:53:50 >  
+

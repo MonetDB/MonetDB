@@ -74,7 +74,6 @@ stderr of test '01_create_17` in directory 'test/sciql` itself:
 # 15:51:48 >  mclient -lsql -ftest -i -e --host=eir --port=36638 
 # 15:51:48 >  
 
-
 # 15:51:48 >  
 # 15:51:48 >  Done.
 # 15:51:48 >  

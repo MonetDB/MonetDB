@@ -30,7 +30,6 @@ stderr of test '03_delete_01` in directory 'test/sciql` itself:
 # 14:58:15 >  mclient -lsql -ftest -i -e --host=jarl --port=34170 
 # 14:58:15 >  
 
-
 # 14:58:15 >  
 # 14:58:15 >  Done.
 # 14:58:15 >  

@@ -30,8 +30,6 @@ stderr of test '02_update_03` in directory 'test/sciql` itself:
 # 14:47:30 >  mclient -lsql -ftest -i -e --host=jarl --port=32129 
 # 14:47:30 >  
 
-
-
 # 14:47:30 >  
 # 14:47:30 >  Done.
 # 14:47:30 >  
