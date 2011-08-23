@@ -50,6 +50,7 @@ end series;
 @mal
 module array;
 @:array_mdefs(oid)@
+@:array_mdefs(bte)@
 @:array_mdefs(sht)@
 @:array_mdefs(int)@
 @:array_mdefs(lng)@
@@ -173,6 +174,7 @@ array_export str ARRAYseries_@1(int *ret, @1 *start, @1 *step, @1 *stop, int *gr
 array_export str ARRAYtilesSum_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @h
 @:array_defs(oid)@
+@:array_defs(bte)@
 @:array_defs(sht)@
 @:array_defs(int)@
 @:array_defs(lng)@
@@ -214,7 +216,7 @@ ARRAYseries_@1(int *ret, @1 *start, @1 *step, @1 *stop, int *group, int *series)
 		cnt =  (BUN) ceil(((*stop * 1.0 - *start) / *step)) * *group * *series ;
 	} else
 	if ( abs(*start) < abs(*stop) && abs(*step) > 0) {
-		cnt =  (BUN) ceil(((-*stop * 1.0 + *start) / *step)) * *group * *series ;
+		cnt =  (BUN) ceil(((*stop * 1.0 + *start) / *step)) * *group * *series ;
 	} else
 		throw(MAL, "array.series", "illegal range");
 	bn = BATnew(TYPE_void, TYPE_@1, cnt);
@@ -251,6 +253,7 @@ ARRAYseries_@1(int *ret, @1 *start, @1 *step, @1 *stop, int *group, int *series)
 
 @c
 @:dim_wrapper_impl(oid)@
+@:dim_wrapper_impl(bte)@
 @:dim_wrapper_impl(sht)@
 @:dim_wrapper_impl(int)@
 @:dim_wrapper_impl(lng)@
