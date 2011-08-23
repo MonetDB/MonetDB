@@ -557,8 +557,10 @@ get_dim_constraints(mvc *sql, sql_subtype *ctype, dlist *lst, char **dimcstr, in
 
 	assert(lst->h->type == type_string || lst->h->type == type_symbol);
 
-	if(lst->h->type == type_symbol && !lst->h->data.sym)
-		return SQL_OK; /* '*' case: nothing to do */
+	if(lst->h->type == type_symbol && !lst->h->data.sym) { /* case: [*] */
+		*dimcstr = GDKstrdup("");
+		return SQL_OK;
+	}
 
 	if (isStep && (strcmp(ctype->type->base.name, "str") == 0 || strcmp(ctype->type->base.name, "date") == 0 || strcmp(ctype->type->base.name, "daytime") == 0 || strcmp(ctype->type->base.name, "timestamp") == 0 ))
 	{
@@ -656,8 +658,10 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 								cs->dim->start = GDKstrdup("0");
 								cs->dim->step = GDKstrdup("1");
 								cs->dim->stop = atom2string(sql->sa, ((AtomNode*)dim->h->data.lval->h->data.sym)->a);
-							} else {									/* the case [*]: nothing to do */
-								/* TODO: check */
+							} else {									/* the case: [*] */
+								cs->dim->start = GDKstrdup("");
+								cs->dim->step = GDKstrdup("");
+								cs->dim->stop = GDKstrdup("");
 							}
 						} else { 										/* the case: [-size] */
 							assert(dim->h->data.lval->h->type == type_string && strcmp(dim->h->data.lval->h->data.sval, "sql_neg")==0);
