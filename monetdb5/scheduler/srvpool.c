@@ -248,7 +248,7 @@ SRVPOOLdiscover(Client cntxt)
 
 	if ( srvpattern == 0)
 		/* use default pattern */
-		srvpattern = GDKstrdup("srvpool/*");
+		srvpattern = GDKstrdup("*/srvpool");
 	strncpy(buf,srvpattern, BUFSIZ-1);
 	msg = RMTresolve(&bid,&s);
 	if ( msg == MAL_SUCCEED) {
