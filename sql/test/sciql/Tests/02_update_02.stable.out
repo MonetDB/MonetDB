@@ -1,0 +1,55 @@
+stdout of test '02_update_02` in directory 'test/sciql` itself:
+
+
+# 14:44:33 >  
+# 14:44:33 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/export/scratch0/zhang/monet-install/sciql/debug/var/MonetDB" --set mapi_open=true --set mapi_port=38396 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_test_sciql" --set mal_listing=0 ; echo ; echo Over..
+# 14:44:33 >  
+
+# MonetDB 5 server v11.6.0
+# This is an unreleased version
+# Serving database 'mTests_test_sciql', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://jarl.ins.cwi.nl:38396/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+
+Over..
+
+# 14:44:33 >  
+# 14:44:33 >  mclient -lsql -ftest -i -e --host=jarl --port=38396 
+# 14:44:33 >  
+
+#CREATE ARRAY diagonal(x INTEGER DIMENSION[4], y INTEGER DIMENSION[4] CHECK(x = y), v FLOAT DEFAULT 0.0);
+#SELECT * FROM diagonal;
+% sys.diagonal,	sys.diagonal,	sys.diagonal # table_name
+% x,	y,	v # name
+% int,	int,	double # type
+% 1,	1,	22 # length
+[ 0,	0,	0	]
+[ 1,	1,	0	]
+[ 2,	2,	0	]
+[ 3,	3,	0	]
+#UPDATE diagonal SET v = x +y;
+[ 16	]
+#SELECT * FROM diagonal;
+% sys.diagonal,	sys.diagonal,	sys.diagonal # table_name
+% x,	y,	v # name
+% int,	int,	double # type
+% 1,	1,	22 # length
+[ 0,	0,	0	]
+[ 1,	1,	2	]
+[ 2,	2,	4	]
+[ 3,	3,	6	]
+#DROP ARRAY diagonal;
+
+# 14:44:33 >  
+# 14:44:33 >  Done.
+# 14:44:33 >  
+

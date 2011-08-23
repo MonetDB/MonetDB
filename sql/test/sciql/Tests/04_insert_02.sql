@@ -1,0 +1,6 @@
+CREATE ARRAY matrix (x INT DIMENSION[4], y INT DIMENSION[4], v FLOAT DEFAULT 0.0);
+SELECT * FROM matrix;
+INSERT INTO matrix SELECT x, y, 3.3 FROM matrix WHERE x = 3;
+SELECT * FROM matrix;
+DROP ARRAY matrix;
+
