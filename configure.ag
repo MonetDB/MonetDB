@@ -2325,6 +2325,8 @@ case "$host_os" in
 		AC_CHECK_FUNC(gethostbyname_r, [], [
 		  AC_CHECK_LIB(nsl_r, gethostbyname_r, [ SOCKET_LIBS="-lnsl_r" ],
 			AC_CHECK_LIB(nsl, gethostbyname_r, [ SOCKET_LIBS="-lnsl"   ] ))])
+		AC_CHECK_FUNC(hstrerror, [], [
+		  AC_CHECK_LIB(resolv, hstrerror, [ SOCKET_LIBS="$SOCKET_LIBS -lresolv" ])])
 		;;
 esac
 
