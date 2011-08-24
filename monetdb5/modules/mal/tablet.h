@@ -18,9 +18,6 @@
  */
 
 /*
- * @include prelude.mx
- */
-/*
  * @+ Implementation
  * The implementation needs the stream abstraction, which also provides
  * primitives to compress/decompress files on the fly.
@@ -56,7 +53,8 @@
 
 struct Column_t;
 typedef ptr *(*frStr) (struct Column_t *fmt, int type, char *s, char *e, char quote);
-/* as toString functions are also used outside tablet we don't pas the column here */
+/* as toString functions are also used outside tablet we don't pass
+ * the column here */
 typedef int (*toStr) (void *extra, char **buf, int *len, int type, ptr a);
 
 typedef struct Column_t {
@@ -95,7 +93,6 @@ typedef struct Column_t {
 } Column;
 
 /*
- * @-
  * All table printing is based on building a report structure first.
  * This table structure is private to a client, which made us to
  * keep it in an ADT.
