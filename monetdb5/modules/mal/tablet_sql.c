@@ -502,6 +502,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	task->cols = (int *) GDKzalloc(as->nr_attrs * sizeof(int));
 	task->time = (lng *) GDKzalloc(as->nr_attrs * sizeof(lng));
 	task->base = GDKzalloc(b->size + 2);
+	task->basesize = b->size + 2;
 
 	if (task->fields == 0 || task->cols == 0 || task->time == 0 || task->base == 0) {
 		as->error = M5OutOfMemory;
@@ -515,7 +516,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	task->rsep = rsep;
 	task->rseplen = strlen(rsep);
 	task->errbuf = cntxt->errbuf;
-	task->basesize = b->size + 2;
 	task->input = task->base + 1;	/* wrap the buffer with null bytes */
 	task->base[b->size + 1] = 0;
 
@@ -598,10 +598,21 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 			}
 		}
 
-		if (task->basesize <= task->b->size) {
-			/* end of record not found within 32M */
-			/* most likely wrong delimiter */
-			break;
+		if (b->size + 2 > task->basesize) {
+			/* b's buffer has grown */
+			if (task->basesize >= 32*1024*1024) {
+				/* end of record not found within 32M; most likely
+				 * wrong delimiter */
+				break;
+			}
+			GDKfree(task->base); /* no need to copy data, so no realloc */
+			if ((task->base = GDKmalloc(b->size + 2)) == NULL) {
+				/* alloc failure */
+				break;
+			}
+			task->basesize = b->size + 2;
+			task->input = task->base + 1;
+			*task->base = 0;
 		}
 		memcpy(task->input, task->b->buf, task->b->size);
 
