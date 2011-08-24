@@ -1,5 +1,6 @@
 # the multiplex code blocks.
 
+r:= mmath.srand(0);
 t0:= alarm.usec();
 b:= bat.new(:oid,:lng);
 barrier (go,i):= language.newRange(0:lng);
