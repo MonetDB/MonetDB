@@ -1098,9 +1098,9 @@ TABLETcollect_bats(Tablet *as)
 }
 
 BAT **
-TABLETcollect(Tablet * as)
+TABLETcollect(Tablet *as)
 {
-	BAT **bats = GDKmalloc(sizeof(BAT*) * as->nr_attrs);
+	BAT **bats = GDKmalloc(sizeof(BAT *) * as->nr_attrs);
 	Column *fmt = as->format;
 	BUN i;
 	BUN cnt = BATcount(fmt[0].c[0]);
@@ -1122,8 +1122,8 @@ TABLETcollect(Tablet * as)
 		BATaccessEnd(fmt[i].c[0], USE_ALL, MMAP_WILLNEED);
 
 		if (cnt != BATcount(fmt[i].c[0])) {
-			if ( as->error == 0) /* a new error */
-				GDKerror("Error: column " BUNFMT "  count " BUNFMT " differs from " BUNFMT "\n",i,BATcount(fmt[i].c[0]),cnt);
+			if (as->error == 0)	/* a new error */
+				GDKerror("Error: column " BUNFMT "  count " BUNFMT " differs from " BUNFMT "\n", i, BATcount(fmt[i].c[0]), cnt);
 			return NULL;
 		}
 	}
@@ -1131,9 +1131,9 @@ TABLETcollect(Tablet * as)
 }
 
 BAT **
-TABLETcollect_parts(Tablet * as, BUN offset)
+TABLETcollect_parts(Tablet *as, BUN offset)
 {
-	BAT **bats = GDKmalloc(sizeof(BAT*) * as->nr_attrs);
+	BAT **bats = GDKmalloc(sizeof(BAT *) * as->nr_attrs);
 	Column *fmt = as->format;
 	BUN i;
 	BUN cnt = BATcount(fmt[0].c[0]);
@@ -1175,8 +1175,8 @@ TABLETcollect_parts(Tablet * as, BUN offset)
 		b->batDirty = TRUE;
 
 		if (cnt != BATcount(b)) {
-			if ( as->error == 0) /* a new error */
-				GDKerror("Error: column " BUNFMT "  count " BUNFMT " differs from " BUNFMT "\n",i,BATcount(b),cnt);
+			if (as->error == 0)	/* a new error */
+				GDKerror("Error: column " BUNFMT "  count " BUNFMT " differs from " BUNFMT "\n", i, BATcount(b), cnt);
 			return NULL;
 		}
 	}
