@@ -243,7 +243,6 @@
 #include <ctype.h>
 
 #define CLEAR(X) if(X) {GDKfree(X);X = NULL;}
-#define isScalar(C)  C->adt != TYPE_bat
 
 #ifdef _MSC_VER
 #define getcwd _getcwd
@@ -2288,7 +2287,7 @@ TABshowHeader(Tablet *t)
 				prop = c->name;
 			else if (strcmp(p, "type") == 0)
 				prop = c->type;
-			else if (!isScalar(c) && c->c[0]) {
+			else if (c->c[0]) {
 				if (strcmp(p, "bat") == 0) {
 					prop = BBPname(c->c[0]->batCacheid);
 				}
