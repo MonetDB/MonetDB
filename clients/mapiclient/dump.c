@@ -1896,13 +1896,13 @@ void
 dump_version(Mapi mid, stream *toConsole, const char *prefix)
 {
 	MapiHdl hdl;
-	char *dbname = NULL, m5ver[24];
+	char *dbname = NULL, *uri = NULL, m5ver[24];
 	char *name, *val;
 
 	if ((hdl = mapi_query(mid,
 			      "SELECT \"name\", \"value\" "
 			      "FROM sys.env() AS env "
-			      "WHERE \"name\" IN ('gdk_dbname', 'monet_version')")) == NULL ||
+			      "WHERE \"name\" IN ('gdk_dbname', 'monet_version', 'merovingian_uri')")) == NULL ||
 	    mapi_error(mid))
 		goto cleanup;
 
@@ -1919,7 +1919,14 @@ dump_version(Mapi mid, stream *toConsole, const char *prefix)
 				dbname = strdup(val);
 			else if (strcmp(name, "monet_version") == 0)
 				snprintf(m5ver, sizeof(m5ver), "%s", val);
+			else if (strcmp(name, "merovingian_uri") == 0)
+				uri = strdup(val);
 		}
+	}
+	if (uri != NULL) {
+		if (dbname != NULL)
+			free(dbname);
+		dbname = uri;
 	}
 	if (dbname != NULL && *dbname != '\0' && m5ver[0] != '\0')
 		mnstr_printf(toConsole, "%s MonetDB v%s, '%s'\n",

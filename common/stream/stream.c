@@ -2434,10 +2434,9 @@ bs_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 		short blksize = 0;
 
 		if (s->nr) {
-			/* We read the closing block but hadn't returned that yet.
-			   Return it now, and note that we did by setting s->nr to
-			   0.
-			 */
+			/* We read the closing block but hadn't
+			 * returned that yet. Return it now, and note
+			 * that we did by setting s->nr to 0. */
 			assert(s->nr == 1);
 			s->nr = 0;
 			return 0;
@@ -2446,7 +2445,7 @@ bs_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 		assert(s->nr == 0);
 
 		/* There is nothing more to read in the current block,
-		   so read the count for the next block */
+		 * so read the count for the next block */
 		if (!mnstr_readSht(s->s, &blksize) || blksize < 0) {
 			ss->errnr = MNSTR_READ_ERROR;
 			return -1;
@@ -2465,8 +2464,8 @@ bs_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 	/* Fill the caller's buffer. */
 	cnt = 0;		/* count how much we put into the buffer */
 	while (todo > 0) {
-		/* there is more data waiting in the current block,
-		   so read it */
+		/* there is more data waiting in the current block, so
+		 * read it */
 		n = todo < s->itotal ? todo : s->itotal;
 		while (n > 0) {
 			ssize_t m = s->s->read(s->s, buf, 1, n);
@@ -2499,8 +2498,8 @@ bs_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 			short blksize = 0;
 
 			/* The current block has been completely read,
-			   so read the count for the next block, only if the
-			   previous was not the last one */
+			 * so read the count for the next block, only
+			 * if the previous was not the last one */
 			if (s->nr) {
 				break;
 			} else if (!mnstr_readSht(s->s, &blksize) || blksize < 0) {
@@ -2520,9 +2519,9 @@ bs_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 		}
 	}
 	/* if we got an empty block with the end-of-sequence marker
-	   set (low-order bit) we must only return an empty read once, so
-	   we must squash the flag that we still have to return an empty
-	   read */
+	 * set (low-order bit) we must only return an empty read once,
+	 * so we must squash the flag that we still have to return an
+	 * empty read */
 	if (todo > 0 && cnt == 0)
 		s->nr = 0;
 	return (ssize_t) (cnt / elmsize);

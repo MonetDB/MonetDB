@@ -429,7 +429,7 @@ sequential_block (mvc *sql, sql_subtype *restype, dlist *blk, char *opt_label, i
 }
 
 static sql_subtype *
-result_type(mvc *sql, char *fname, symbol *res, int instantiate ) 
+result_type(mvc *sql, sql_subfunc *f, char *fname, symbol *res) 
 {
 	if (res->token == SQL_TYPE) {
 		return &res->data.lval->h->data.typeval;
@@ -442,9 +442,8 @@ result_type(mvc *sql, char *fname, symbol *res, int instantiate )
 
 		tnme[0] = '#';
 		strcpy(tnme+1, fname);
-		if (instantiate) {
-
-			tbl = mvc_bind_table(sql, sys, tnme);
+		if (f && f->res.digits) {
+			tbl = find_sql_table_id(sys, f->res.digits);
 			_DELETE(tnme);
 			if (!tbl)
 				return NULL;
@@ -515,9 +514,6 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 	if (s == NULL)
 		s = cur_schema(sql);
 
-	if (res)
-		restype = result_type(sql, fname, res, instantiate);
-
 	type_list = create_type_list(params, 1);
 	
 	if ((sf = sql_bind_func_(sql->sa, s, fname, type_list)) != NULL && create) {
@@ -567,6 +563,9 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 				l = list_new(sql->sa);
 			l->sa = NULL;
 			l->destroy = (fdestroy)arg_destroy;
+			if (res)
+				restype = result_type(sql, sf, fname, res);
+
 		 	if (body) {		/* sql func */
 				char emode = sql->emode;
 				stmt *b = NULL;

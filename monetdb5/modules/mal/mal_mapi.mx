@@ -250,9 +250,6 @@ comment "Bind a remote variable to a local one.";
 
 mapi.listen();
 @h
-/*
- * @-
- */
 #ifndef SERVER_H
 #define SERVER_H
 /* #define DEBUG_SERVER */
@@ -263,6 +260,7 @@ mapi.listen();
 #include "mal_interpreter.h"
 #include "mal_authorize.h"
 #include "msabaoth.h"
+#include "mcrypt.h"
 #include <stream.h>
 
 #ifdef WIN32
@@ -425,7 +423,7 @@ doChallenge(stream *in, stream *out) {
 
 	/* generate the challenge string */
 	generateChallenge(challenge, 8, 12);
-	if (AUTHgetHashAlgorithms(&algos) != MAL_SUCCEED) assert(0);
+	algos = mcrypt_getHashAlgorithms();
 	/* note that we claim to speak proto 9 here for hashed passwords */
 	mnstr_printf(fdout, "%s:mserver:9:%s:%s:%s:",
 			challenge,
@@ -437,7 +435,7 @@ doChallenge(stream *in, stream *out) {
 #endif
 			MONETDB5_PASSWDHASH
 			);
-	GDKfree(algos);
+	free(algos);
 	mnstr_flush(fdout);
 	/* get response */
 	if ((len = (int) mnstr_read_block(fdin, buf, 1, BLOCK)) < 0 || 

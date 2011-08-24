@@ -1,0 +1,136 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://www.monetdb.org/Legal/MonetDBLicense
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2011 MonetDB B.V.
+# All Rights Reserved.
+
+module tablet;
+
+command load( names:bat[:oid,:str], seps:bat[:oid,:str],
+		types:bat[:oid,:str], datafile:str, nr:int ) :bat[:str,:bat]
+address CMDtablet_load
+comment "Load a bat using specific format.";
+
+command input( names:bat[:oid,:str], seps:bat[:oid,:str],
+		types:bat[:oid,:str], s:streams, nr:int ) :bat[:str,:bat]
+address CMDtablet_input
+comment "Load a bat using specific format.";
+
+command dump(names:bat[:oid,:str], seps:bat[:oid,:str],
+		bats:bat[:oid,:bat], datafile:str, nr:int) :void
+address CMDtablet_dump
+comment "Dump the bat in ASCII format";
+
+command output(order:bat[:any_1,:any_2], seps:bat[:oid,:str],
+		bats:bat[:oid,:bat], s:streams) :void
+address CMDtablet_output
+comment "Send the bat to an output stream.";
+
+pattern display(v:any...):int
+address TABdisplayRow
+comment "Display a formatted row";
+pattern display(v:bat[:any_1,:any]...):int
+address TABdisplayTable
+comment "Display a formatted table";
+
+pattern page(b:bat[:any_1,:any]...):int
+address TABpage
+comment "Display all pages at once without header";
+pattern header(b:any...):int
+address TABheader
+comment "Display the minimal header for the table";
+pattern setProperties(prop:str):int
+address TABsetProperties
+comment "Define the set of properties";
+pattern dump(s:streams,b:bat[:any,:any]...):int
+address TABdump
+comment "Print all pages with header to a stream";
+
+pattern setFormat(b:any...):void
+address TABsetFormat
+comment "Initialize a new reporting structure.";
+pattern finish():void
+address TABfinishReport
+comment "Free the storage space of the report descriptor";
+pattern setStream(s:streams):void
+address TABsetStream
+comment "Redirect the output to a stream.";
+pattern setPivot(b:bat[:void,:oid]) :void
+address TABsetPivot
+comment "The pivot bat identifies the tuples of interest. The only requirement
+	    is that all keys mentioned in the pivot tail exist in all BAT parameters
+	    of the print comment. The pivot also provides control over the order
+	    in which the tuples are produced.";
+pattern setDelimiter(sep:str):void
+address TABsetDelimiter
+comment "Set the column separator.";
+pattern setTableBracket(lbrk:str,rbrk:str)
+address TABsetTableBracket
+comment "Format the brackets around a table";
+pattern setRowBracket(lbrk:str,rbrk:str)
+address TABsetRowBracket
+comment "Format the brackets around a row";
+
+# @-
+# Set the column properties
+pattern setColumn(idx:int, v:any_1)
+address TABsetColumn
+comment "Bind i-th output column to a variable";
+pattern setName(idx:int, nme:str)
+address TABsetColumnName
+comment "Set the display name for a given column";
+pattern setBracket(idx:int,lbrk:str,rbrk:str)
+address TABsetColumnBracket
+comment "Format the brackets around a field";
+pattern setNull(idx:int, fmt:str)
+address TABsetColumnNull
+comment "Set the display format for a null value for a given column";
+pattern setWidth(idx:int, maxwidth:int)
+address TABsetColumnWidth
+comment "Set the maximal display witdh for a given column. All values exceeding
+	the length are simple shortened without any notice.";
+pattern setPosition(idx:int,f:int,i:int)
+address TABsetColumnPosition
+comment "Set the character position to use for this field when loading according to
+	fixed (punch-card) layout.";
+pattern setDecimal(idx:int,s:int,p:int)
+address TABsetColumnDecimal
+comment "Set the scale and precision for numeric values";
+
+pattern setTryAll()
+address TABsetTryAll
+comment "Skip error lines and assemble an error report";
+pattern setComplaints(b:bat[:oid,:str]) :void
+address TABsetComplaints
+comment "The comlaints bat identifies all erroneous lines encountered ";
+
+command firstPage():void
+address TABfirstPage
+comment "Produce the first page of output";
+command lastPage():void
+address TABlastPage
+comment "Produce the last page of output";
+command nextPage():void
+address TABnextPage
+comment "Produce the next page of output";
+command prevPage():void
+address TABprevPage
+comment "Produce the prev page of output";
+command getPageCnt():void
+address TABgetPageCnt
+comment "Return the size in number of pages";
+command getPage(i:int):void
+address TABgetPage
+comment "Produce the i-th page of output";
+# @-

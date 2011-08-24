@@ -96,6 +96,7 @@ function user.main():void;
     dbgmsk_keep := calc.xor(INT_MAX,dbgmsk_unset);
     dbgmsk_set := calc.and(dbgmsk_restore,dbgmsk_keep);
     mdb.setDebug(dbgmsk_set);
+    r := mmath.srand(0);
 barrier (go,i) := language.newRange(0:lng);
     k := mmath.rand();
     l := calc.lng(k);

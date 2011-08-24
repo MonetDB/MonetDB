@@ -72,7 +72,7 @@ QUERY = select cast(power(2,63) as bigint);
 ERROR = !SQLException:convert:value (9223372036854775800.000000) exceeds limits of type lng
 MAPI  = monetdb@alf:35561
 QUERY = select cast(power(2,64) as bigint);
-ERROR = !SQLException:convert:value (18446744073709551616.000000) exceeds limits of type lng
+ERROR = !SQLException:convert:value (18446744073709552000.000000) exceeds limits of type lng
 
 # 22:26:13 >  
 # 22:26:13 >  Done.

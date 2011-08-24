@@ -22,3 +22,4 @@ debian/tmp/usr/lib/monetdb5/createdb/24_zorder.sql usr/lib/monetdb5/createdb
 debian/tmp/usr/lib/monetdb5/createdb/25_debug.sql usr/lib/monetdb5/createdb
 debian/tmp/usr/lib/monetdb5/createdb/80_udf.sql usr/lib/monetdb5/createdb
 debian/tmp/usr/lib/monetdb5/createdb/99_system.sql usr/lib/monetdb5/createdb
+debian/tmp/var/monetdb5/dbfarm/.merovingian_properties var/monetdb5/dbfarm

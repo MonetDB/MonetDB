@@ -74,7 +74,6 @@ typedef struct {
 	str usr;	/* user credentials for using the server */
 	str pwd;
 	Registry nxt; /* list of registered mal functions */
-	bte active;	/* flag set when the servers is active */
 	str conn;	/* remote handle */
 } Server;
 
@@ -138,7 +137,6 @@ SRVPOOLnewServer(str uri)
 	servers[i].usr = GDKstrdup("monetdb");
 	servers[i].uri = GDKstrdup(uri);
 	servers[i].pwd = GDKstrdup("monetdb");
-	servers[i].active = 1;
 	servers[i].nxt = NULL;
 	srvtop++;
 	return i;
@@ -179,7 +177,7 @@ SRVPOOLdisconnect(void)
 	str msg = MAL_SUCCEED;
 
 	for ( i=0; i< srvtop; i++)
-	if ( servers[i].active && servers[i].conn != NULL ) {
+	if ( servers[i].conn != NULL ) {
 		msg = RMTdisconnect(&ret,&servers[i].conn);
 		GDKfree(servers[i].conn);
 		servers[i].conn = NULL;
@@ -246,37 +244,44 @@ SRVPOOLdiscover(Client cntxt)
 	char buf[BUFSIZ], *s= buf;
 
 
-	if ( srvpattern) {
-		strncpy(buf,srvpattern, BUFSIZ-1);
-		msg = RMTresolve(&bid,&s);
-		if ( msg == MAL_SUCCEED) {
-			b = BATdescriptor(bid);
-			if ( b != NULL && BATcount(b) > 0 ) {
-				bi = bat_iterator(b);
-				BATloop(b,p,q){
-					str t= (str) BUNtail(bi,p);
+	if ( srvpattern == 0)
+		/* use default pattern */
+		srvpattern = GDKstrdup("*/srvpool");
+	strncpy(buf,srvpattern, BUFSIZ-1);
+	msg = RMTresolve(&bid,&s);
+	if ( msg == MAL_SUCCEED) {
+		b = BATdescriptor(bid);
+		if ( b != NULL && BATcount(b) > 0 ) {
+			bi = bat_iterator(b);
+			BATloop(b,p,q){
+				str t= (str) BUNtail(bi,p);
 
-					j = SRVPOOLgetServer(t); 
-					msg = RMTconnectScen(&conn, &servers[j].uri, &servers[j].usr, &servers[j].pwd, &scen);
-					if ( msg == MAL_SUCCEED )
-						servers[j].conn = GDKstrdup(conn);
-					else  GDKfree(msg);	/* ignore failure */
-
+				j = SRVPOOLgetServer(t); 
+				msg = RMTconnectScen(&conn, &servers[j].uri, &servers[j].usr, &servers[j].pwd, &scen);
+				if ( msg == MAL_SUCCEED ) {
+					servers[j].conn = GDKstrdup(conn);
+					i++;
+				} else {
 #ifdef DEBUG_RUN_SRVPOOL
-					mnstr_printf(cntxt->fdout,"#Worker site %d alias %s %s\n", i, (conn?conn:""), t);
+					mnstr_printf(cntxt->fdout,"#Worker site %d reports %s \n", j, msg);
 #endif
-					assert(i <MAXSITES);
+					GDKfree(msg);	/* ignore failure */
 				}
-			}
-			BBPreleaseref(bid);
-		} 
-		if( msg) {
-			/* ignore merovingian complaints */
+
 #ifdef DEBUG_RUN_SRVPOOL
-			mnstr_printf(cntxt->fdout,"#%s\n", msg);
+				mnstr_printf(cntxt->fdout,"#Worker site %d alias %s %s\n", j, (servers[j].conn?servers[j].conn:""), t);
 #endif
-			GDKfree(msg);
+				assert(i <MAXSITES);
+			}
 		}
+		BBPreleaseref(bid);
+	} 
+	if( msg) {
+		/* ignore merovingian complaints */
+#ifdef DEBUG_RUN_SRVPOOL
+		mnstr_printf(cntxt->fdout,"#%s\n", msg);
+#endif
+		GDKfree(msg);
 	}
 	if ( srvbaseline == 0)
 		srvbaseline = 2;
@@ -328,14 +333,14 @@ SRVPOOLregisterInternal(Client cntxt, str dbalias, str fname)
 	str msg = MAL_SUCCEED, con;
 	Registry r;
 
-#ifdef DEBUG_RUN_SRVPOOL
-		mnstr_printf(GDKout,"#register %s at site %s\n", fname, dbalias);
-#else
-	(void) cntxt;
-#endif
 	srv =	SRVPOOLgetServer(dbalias);
 	if ( srv < 0)
 		throw(MAL,"srvpool.register","Server not registered");
+#ifdef DEBUG_RUN_SRVPOOL
+		mnstr_printf(GDKout,"#register %s at site %s\n", fname, servers[srv].conn);
+#else
+	(void) cntxt;
+#endif
 	msg = SRVPOOLconnect(&con, &dbalias);
 	if ( msg)
 		return msg;
@@ -408,6 +413,7 @@ SRVPOOLserver(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if ( msg) {
 #ifdef DEBUG_RUN_SRVPOOL
 					mnstr_printf(cntxt->fdout,"#failed to register at %d\n",i);
+					mnstr_printf(cntxt->fdout,"#%s\n",msg);
 #endif
 					GDKfree(msg);
 				}
@@ -415,7 +421,7 @@ SRVPOOLserver(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if ( SRVPOOLfind(j,plan) ){
 				*(str*) getArgReference(stk,pci,i++) = GDKstrdup(servers[j].conn);
 #ifdef DEBUG_RUN_SRVPOOL
-				mnstr_printf(cntxt->fdout,"#found it %d\n",j);
+				mnstr_printf(cntxt->fdout,"#found it on server %d\n",j);
 #endif
 				fnd ++;
 			}

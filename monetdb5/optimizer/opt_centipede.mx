@@ -232,7 +232,7 @@ OPTplanCntrl(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices)
 	p = getInstrPtr(pmb,0);
 	if ( slices->column) 
 	for ( k=0 ; k < nrpack; k++) {
-		pushInstruction(cmb, pack[k]);
+		pushInstruction(cmb, copyInstruction(pack[k]));
 		getArg(pack[k],0)= getArg(p,k);
 	}
 	/* finalize the second dataflow block */

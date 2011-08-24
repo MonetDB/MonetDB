@@ -49,40 +49,12 @@ test = (
         re.compile('(?:'+')|(?:'.join([
                 # MAPI port numbers
                     r"^MAPI  = .*@.*:[0-9]*$",
-                 #  r'^QUERY = execute at { ".*:[0-9]*" }$',
-                # Tokens depend on flex/bison
-                 #  r'^\[ "TOK_[A-Z]+",\t* +"int",\t* +"frozen",\t* +"constant",\t* +"[0-9]+"\t* +\]',
-                # ignore big- vs. little-endian byte-orders in test tests/BugDay_2005-10-06_4.8/Tests/print_CTgroup.SF-1315791.*:
-                 #  r"^\[ .?\\000\\000\\000.?\\000\\000\\000.?.\]$",
-                # ignore compile date/time in helps messages:
-                 #  r"^COMPILED:  by adm on .*$",
-                # ignore varying BAT IDs in error message (test leftfetchjoin_crash.SF-1705726)
-                 #  r"^!ERROR: BATfetchjoin\(tmp_[0-9]+,tmp_[0-9]+\) does not hit always \(\|bn\|=0 != 2=\|l\|\) => can't use fetchjoin.$",
-                # `fuser` (in MkillUsers) triggers these errors on Gentoo with "hardened" kernel
-                 #  r'^! Cannot open /proc/net/unix: Permission denied$',
-                 #  r'^! Cannot stat file /proc/[0-9]+/fd/[0-9]+: (?:No such file or directory|Permission denied)$',
-                # suspicious output/messages/errors? most probably triggered by MkillUsers, but apparently not causing any harm:
-                 #  r'^! /.*/bin/[Mm](?:(?:server5?|apiClient|timeout|diff):e+|log:)$',
-                 #  r'^! /usr/bin/mserver5:  m$',
                  ])+')',  re.MULTILINE),
-        # differences due to property-checking, which we want to treat as "minor differences"
+        # differences (e.g., due to property-checking), which we want to treat as "minor differences"
         re.compile('(?:'+')|(?:'.join([
-                # src/modules/plain/aggr[X3]:
-                 #  r'^\[ .*(?:,\t* ? "?2\.562203[64]3e\+0?13"?)+\t* ? \]$',
-                 #  r'^\[ .*(?:,\t* ? "?7\.65432(?:119|072)"?)+\t* ? \]$',
-                 #  r'^\[ .*(?:,\t* ? "?7\.6543209876543(?:2(?:[13]2?|21)|195)"?)+\t* ? \]$',
-                 #  r'^\[ .*(?:,\t* ? "?6\.6666666666666(?:572|67)"?)+\t* ? \]$',
-                 #  r'^\[ .*(?:,\t* ? "?6\.6666666666666(?:288|67)"?)+\t* ? \]$',
-                 #  r'^\[ .*(?:,\t* ? "?6\.6666666666666(?:128|67)"?)+\t* ? \]$',
-                 #  r'^\[ .*(?:,\t* ? "?158\.765432098765(?:22|36?|44|59|64)"?)+\t* ? \]$',
-                # src/gdk/cast:
-                 #  r'^\[ (?:\-|)0 \]$',
-                # src/monet/modrefcnt1 & tests/BugDay_2005-11-09_4.9.3/double_load_double_drop.SF-1082293 (on Itanium)
-                 #  r"^!ERROR: DESCload: atom 'lock' unknown, in BAT '[0-9]+'.$",
-                # Broken sql error messages:
-                 #  r'^QUERY = (?:\-\-|select|insert|INSERT) ',
-                # Debugging "strange" errors on Solaris x86:
-                    "^!ERROR: interpret: no matching MIL operator to '\xdb\xdb\xdb\xdb\xdb\xdb\xdb\xdb\xdb\xdb\xdb\xdb\xdb\xdb\xdb\xdb.*$",
+                # varying variable names in dataflow barriers
+                    r'^barrier X_[0-9]+ := language.dataflow\(\);$',
+                    r'^exit X_[0-9]+;$',
                  ])+')',  re.MULTILINE),
         # warnings and messages that should be treated as errors:
         re.compile('(?:'+')|(?:'.join([
@@ -111,78 +83,19 @@ bbp_dir = re.compile('^(-?[0-9]+) (-?[0-9]+) ([^ ]+) ([^ ]+) ([^ ]+) (-?[0-9]+) 
 norm_in  = re.compile('(?:'+')|(?:'.join([
 ### r'^(ERROR = !| *!|)(syntax|parse|parse error: syntax)( error, )(unexpected .* on line |unexpected .* in: )?(.*)\n',                         # 01: 5
     r'^(ERROR = !| *!|)(syntax|parse|parse error: syntax)( error, )(?:unexpected .* on line |unexpected .* in: )?(?:.*)\n',                     # 01: 3
-#   r'^(!ERROR: .*: [0-9]+ times inserted nil due to errors at tuples )([0-9]+)(\..*)\n',                                                       # 02: 3
-##  r'^( *!ERROR: shred: cannot stat .*: )(No such file or directory|Error 0)\n',                                                               # 03: 2
-##  r'^(Connection warning:.*\()(mserver_mal|mserver_sql)(\).*)\n',                                                                             # 04: 3
-##  r'^(ERROR: I/O warning : failed to load external entity ")(.*)(".*)\n',                                                                     # 05: 3
-##  r'^(ERROR: shred:mainSHREDDER: xmlCreateURLParserCtxt\(")(.*)("\) failed.*)\n',                                                             # 06: 3
-##  r'^(ERROR: err:FORG0001: could not cast value)( from )?(.*)( to )(.*)(\..*)\n',                                                             # 07: 6
-##  r"^(type error: can't cast type ')(.*)(' to type ')(.*)('.*)\n",                                                                            # 08: 5
-##  r'^(type error: no variant of function )(.*)( accepts the given argument type\(s\): )(?:.*)\n',                                             # 09: 3
-##  r'^(type error: illegal arguments for function )(?:.*)\n',                                                                                  # 10: 1
-##  r"^(ERROR: pcre_replace: .flags. contains invalid character ')(.*)('.*)\n",                                                                 # 11: 3
-##  r"^(ERROR: err:XPTY0004: illegal qname ')(.*)('.*)\n",                                                                                      # 12: 3
-##  r'^(ERROR: err:XQDY0025: attribute names are not unique )(in constructed element )?(?:.*)\n',                                               # 13: 2
-##  r"^(error in function application: at )(.*)(: wrong number of arguments for function `)(.*)(' \(expected )(.*)(, got )(.*)(\).*)\n",        # 14: 9
-##  r'^(error in function application: at )(.*)(?:: )(?:.*)(?: expects at least .* arguments? \(got .*\).*)\n',                                 # 15: 2
-##  r'^(ERROR: err:FOER0000)(?:.*)\n',                                                                                                          # 16: 1
-##  r"^(illegal reference to context node: at )(.*)(: )(``.'' is unbound|position information not available)(.*)\n",                            # 17: 5
-##  r'^(variable\(s\) out of scope or unknown: at )(?:.*)\n',                                                                                   # 18: 1
-##  r'^(bad usage of XML namespaces: at )(?:.*)\n',                                                                                             # 19: 1
     r"^(QUERY|ERROR)( =.* connect)( to|)( ')(localhost)(' port )([0-9]+)( .*)\n",                                                               # 21: 8
-    r"^([Uu]sage: )(/.*/\.libs/|/.*/lt-|)([A-Za-z0-9_]+:?[ \t].*)\n",                                                                          # 22: 3
-##  r'^(.*: )(illegal|invalid)( option -- .*)\n',                                                                                               # 23: 3
-#   r'^(01/Jan/1970 01:00:00 shttpd_open_port: bind\(|!ERROR: MAPIlisten:binding to stream socket \()([0-9]+)(\): Address already in use|\) failed)\n', # 24: 3
+    r"^([Uu]sage: )(/.*/\.libs/|/.*/lt-|)([A-Za-z0-9_]+:?[ \t].*)\n",                                                                           # 22: 3
     r'^(!.*Exception:remote\.[^:]*:\(mapi:monetdb://monetdb@)([^/]*)(/mTests_.*\).*)\n',                                                        # 25: 3
-##  r'^(ERROR = !sql_stmt symbol\()(.*)(\)->token = CREATE_SCHEMA)\n',                                                                          # 26: 3
-#   r'^(ERROR = !IOException:mapi.connect:Could not connect: getaddrinfo failed: )(No .* is|.* not)( known[\. ]*)\n',                           # 27: 3
-    r'^(ERROR REPORTED: DBD:|SyntaxException:parseError)(:.+ at )([\./].+)(/[^/]+\.pm line [0-9]+\.)\n',                                        # 28: 4
-##  r'^(ERROR =|       )( !ERROR: | !SQLException:assert:| !SQLException:sql: | !SQLException:| !MALException:)([^:]+)(: *)([^ ].*)\n',         # 90: 5
-#   r'^(.*: at )(\([0-9]+,[0-9]+\-[0-9]+,[0-9]+\))(: .*)\n',                                                                                    # 91: 3
-##  r'^(fatal error|ERROR)(: err:FORG0005, fn:exactly-one called with a sequence containing zero or more than one item..*)()\n',                # 99: 3
+    r'^(ERROR REPORTED: DBD:|SyntaxException:parseError)(:.+ at )([\./].+|[A-Z]:\\.+)(/[^/]+\.pm line [0-9]+\.)\n',                             # 28: 4
 ])+')',  re.MULTILINE)
 norm_hint = '# the original non-normalized output was: '
 norm_out = (
 ### None, 'syntax/parse', None, 'unexpected ... on line/in: ', None,                                    # 01: 5
     None, 'syntax/parse', None,                                                                         # 01: 3
-#   None, '...', None,                                                                                  # 02: 3
-##  None, 'No such file or directory',                                                                  # 03: 2
-##  None, 'mserver_sql', None,                                                                          # 04: 3
-##  None, '...', None,                                                                                  # 05: 3
-##  None, '...', None,                                                                                  # 06: 3
-##  None, None, '...', None, '...', None,                                                               # 07: 6
-##  None, '...', None, '...', None,                                                                     # 08: 5
-##  None, '...', None,                                                                                  # 09: 3
-##  None,                                                                                               # 10: 1
-##  None, '...', None,                                                                                  # 11: 3
-##  None, '...', None,                                                                                  # 12: 3
-##  None, None,                                                                                         # 13: 2
-##  None, '...', None, '...', None, '...', None, '...', None,                                           # 14: 9
-##  None, "...: wrong number of arguments for function `...' (expected ..., got ...)",                  # 15: 2
-##  None,                                                                                               # 16: 1
-##  None, '...', None, '...', None,                                                                     # 17: 5
-##  None,                                                                                               # 18: 1
-##  None,                                                                                               # 19: 1
     None, None, None, None, '<HOST>', None, '<MAPIPORT>', None,                                         # 21: 8
     None, '', None,                                                                                     # 22: 3
-##  None, 'invalid', None,                                                                              # 23: 3
-#   None, '...', None,                                                                                  # 24: 3
     None, 'localhost', None,                                                                            # 25: 3
-##  None, '...', None,                                                                                  # 26: 3
-#   None, 'un', 'known',                                                                                # 27: 3
-    None, None, '', None,                                                                               # 28: 3
-##  None, ' !ERROR', '', ': ', None,                                                                    # 90: 5
-#   None, '...', None,                                                                                  # 91: 3
-##  '=ERROR', None, '\n#',                                                                              # 99: 3
-###   '=ERROR', None, '''
-###type error: no variant of function ... accepts the given argument type(s): ... %s
-####type error: no variant of function fn:exactly-one accepts the given argument type(s): ...
-###type error: maybe you meant:
-###=type error:   fn:exactly-one (node*) as node %s
-####type error:   fn:exactly-one (node*) as node
-###type error: illegal arguments for function ... %s
-####type error: illegal arguments for function fn:exactly-one
-####''' % (norm_hint[:-1], norm_hint[:-1], norm_hint[:-1]),                                                # 99: 3
+    None, None, '...', None,                                                                            # 28: 3
 )
 
 
@@ -223,7 +136,7 @@ def mFilter (FILE, IGNORE) :
             # potential differences, which we want to ignore; see above
             oline = "#~ " + iline
         elif test[1].match(iline):
-            # differences due to property-checking, which we want to treat as "minor differences"; see above
+            # differences (e.g., due to property-checking), which we want to treat as "minor differences"; see above
             oline = "=" + iline
         elif bbp_dir.match(iline):
             l = iline.split(' ')

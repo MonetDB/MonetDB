@@ -17,6 +17,7 @@ stdout of test 'dataflow` in directory 'optimizer` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 function user.slow():bat[:oid,:lng];
+    r := mmath.srand(0);
     b := bat.new(:oid,:lng);
 barrier (go,i) := language.newRange(0:lng);
     k := mmath.rand();

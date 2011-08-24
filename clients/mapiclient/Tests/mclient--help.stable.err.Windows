@@ -21,7 +21,7 @@ Options are:
  -E charset  | --encoding=charset specify encoding (character set) of the terminal
  -f kind     | --format=kind      specify output format {csv,tab,raw,sql,xml}
  -H          | --history         load/save cmdline history (default off)
- -i          | --interactive     read stdin after command line args
+ -i          | --interactive[=tm] read stdin after command line args, use time formatting {ms,s,m}
  -l language | --language=lang    {sql,mal}
  -L logfile  | --log=logfile     save client/server interaction
  -s stmt     | --statement=stmt  run single statement

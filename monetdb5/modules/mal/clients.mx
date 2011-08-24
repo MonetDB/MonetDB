@@ -168,6 +168,7 @@ clients_export str CLTshutdown(int *ret, bit *forced);
 @c
 #include "monetdb_config.h"
 #include "clients.h"
+#include "mcrypt.h"
 #include "mal_scenario.h"
 #include "mal_instruction.h"
 #include "mal_client.h"
@@ -492,9 +493,10 @@ comment "Return hex string representation of the MD5 hash of the given string";
 clients_export str CLTmd5sum(str *ret, str *pw);
 @c
 str CLTmd5sum(str *ret, str *pw) {
-	int len = (int) strlen(*pw);
-	
-	return AUTHMD5Sum(ret, pw, &len);
+	char *mret = mcrypt_MD5Sum(*pw, strlen(*pw));
+	*ret = GDKstrdup(mret);
+	free(mret);
+	return MAL_SUCCEED;
 }
 
 @mal
@@ -505,9 +507,10 @@ comment "Return hex string representation of the SHA-1 hash of the given string"
 clients_export str CLTsha1sum(str *ret, str *pw);
 @c
 str CLTsha1sum(str *ret, str *pw) {
-	int len = (int) strlen(*pw);
-	
-	return AUTHSHA1Sum(ret, pw, &len);
+	char *mret = mcrypt_SHA1Sum(*pw, strlen(*pw));
+	*ret = GDKstrdup(mret);
+	free(mret);
+	return MAL_SUCCEED;
 }
 
 @mal
@@ -518,9 +521,10 @@ comment "Return hex string representation of the RIPEMD160 hash of the given str
 clients_export str CLTripemd160sum(str *ret, str *pw);
 @c
 str CLTripemd160sum(str *ret, str *pw) {
-	int len = (int) strlen(*pw);
-	
-	return AUTHRIPEMD160Sum(ret, pw, &len);
+	char *mret = mcrypt_RIPEMD160Sum(*pw, strlen(*pw));
+	*ret = GDKstrdup(mret);
+	free(mret);
+	return MAL_SUCCEED;
 }
 
 @mal
@@ -531,9 +535,27 @@ comment "Return hex string representation of the SHA-2 hash with bits of the giv
 clients_export str CLTsha2sum(str *ret, str *pw, int *bits);
 @c
 str CLTsha2sum(str *ret, str *pw, int *bits) {
-	int len = (int) strlen(*pw);
-	
-	return AUTHSHA2Sum(ret, pw, &len, bits);
+	char *mret;
+	switch (*bits) {
+		case 512:
+			mret = mcrypt_SHA512Sum(*pw, strlen(*pw));
+			break;
+		case 384:
+			mret = mcrypt_SHA384Sum(*pw, strlen(*pw));
+			break;
+		case 256:
+			mret = mcrypt_SHA256Sum(*pw, strlen(*pw));
+			break;
+		case 224:
+			mret = mcrypt_SHA224Sum(*pw, strlen(*pw));
+			break;
+		default:
+			throw(ILLARG, "clients.sha2sum", "wrong number of bits "
+					"for SHA2 sum: %d", *bits);
+	}
+	*ret = GDKstrdup(mret);
+	free(mret);
+	return MAL_SUCCEED;
 }
 
 @mal
@@ -544,9 +566,10 @@ comment "Return hex string representation of the currently used hash of the give
 clients_export str CLTbackendsum(str *ret, str *pw);
 @c
 str CLTbackendsum(str *ret, str *pw) {
-	int len = (int) strlen(*pw);
-	
-	return AUTHBackendSum(ret, pw, &len);
+	char *mret = mcrypt_BackendSum(*pw, strlen(*pw));
+	*ret = GDKstrdup(mret);
+	free(mret);
+	return MAL_SUCCEED;
 }
 
 @mal
@@ -676,15 +699,12 @@ str CLTcheckPermission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 	str algo = "SHA1";
 	oid id;
 	str pwd,msg;
-	int len = (int) strlen(*pw);
 
 	(void)mb;
 
-	msg =AUTHSHA1Sum(&pwd, pw, &len);
-	if (msg == MAL_SUCCEED ) {
-		msg =AUTHcheckCredentials(&id, &cntxt, usr, &pwd, &ch, &algo, sc);
-		GDKfree(pwd);
-	}
+	pwd = mcrypt_SHA1Sum(*pw, strlen(*pw));
+	msg = AUTHcheckCredentials(&id, &cntxt, usr, &pwd, &ch, &algo, sc);
+	free(pwd);
 	return msg;
 }
 

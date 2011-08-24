@@ -47,18 +47,11 @@ monet_version(void)
 	printf("Copyright (c) 1993-July 2008 CWI\n"
 			"Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved\n");
 	printf("Visit http://www.monetdb.org/ for further information\n");
-#ifdef WIN32
-	/* Detection of cpus is fine on windows, but multithreading doesn't
-	 * work, so it's forced to 1.  Don't suggest we misdetect #cpus.
-	 * See: gdk/gdk_system.mx */
-	printf("Found %.1fGiB available memory\n", sz_mem_gb);
-#else
 	printf("Found %.1fGiB available memory, %d available cpu core%s\n",
 			sz_mem_gb, cores, cores != 1 ? "s" : "");
 	/* don't want to GDKinit just for this
 			"using %d thread%s\n",
 			GDKnr_threads, GDKnr_threads != 1 ? "s" : ""); */
-#endif
 	printf("Libraries:\n");
 	{
 		char pcreversion[] = "@pcreversion@";
