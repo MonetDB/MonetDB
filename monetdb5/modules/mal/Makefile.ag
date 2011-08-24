@@ -57,7 +57,7 @@ lib_mal = {
 		remote.c remote.h \
 		sabaoth.c sabaoth.h \
 		statistics.mx \
-		tablet.mx \
+		tablet.c tablet.h \
 		tablet_sql.c \
 		tokenizer.mx \
 		trader.c trader.h \
@@ -74,7 +74,7 @@ headers_mal = {
 		profiler.mal const.mx attach.mal batExtensions.mal algebraExtensions.mal \
 		inspect.mx manual.mal mal_io.mx pqueue.mx mkey.mal \
 		chopper.mal clients.mx \
-		factories.mx groupby.mal mdb.mx pcre.mal  tablet.mx mat.mx \
+		factories.mx groupby.mal mdb.mx pcre.mal tablet.mal mat.mx \
 		urlbox.mx statistics.mx transaction.mal \
 		mal_mapi.mx sabaoth.mal remote.mal  \
 		txtsim.mal recycle.mal \
@@ -82,6 +82,6 @@ headers_mal = {
 		tokenizer.mx zorder.mx
 }
 
-EXTRA_DIST = prelude.mx algebraExtensions.mal attach.mal batExtensions.mal chopper.mal constraints.mal groupby.mal histogram.mal mal_init.mal manual.mal mkey.mal pcre.mal profiler.mal recycle.mal remote.mal sabaoth.mal trader.mal transaction.mal txtsim.mal
+EXTRA_DIST = prelude.mx algebraExtensions.mal attach.mal batExtensions.mal chopper.mal constraints.mal groupby.mal histogram.mal mal_init.mal manual.mal mkey.mal pcre.mal profiler.mal recycle.mal remote.mal sabaoth.mal trader.mal transaction.mal txtsim.mal tablet.mal tablet.h
 
 EXTRA_DIST_DIR = Tests

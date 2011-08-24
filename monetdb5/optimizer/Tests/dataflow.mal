@@ -1,6 +1,7 @@
 # a simple dataflow test
 
 function slow():bat[:oid,:lng];
+r:= mmath.srand(0);
 b:= bat.new(:oid,:lng);
 barrier (go,i):= language.newRange(0:lng);
 	k:= mmath.rand();

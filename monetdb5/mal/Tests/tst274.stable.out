@@ -18,6 +18,7 @@ stdout of test 'tst274` in directory 'mal` itself:
 function user.main():void;
 # the multiplex code blocks. 
 #watch out, the random generator on SUN has a limited range. 
+    r := mmath.srand(0);
     t0 := alarm.usec();
     b := bat.new(:oid,:lng);
 barrier (go,i) := language.newRange(0:lng);
