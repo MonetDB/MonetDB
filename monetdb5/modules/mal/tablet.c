@@ -18,10 +18,6 @@
  */
 
 /*
- * @f tablet
- *
- */
-/*
  * @a Niels Nes, Martin Kersten
  * @d 29/07/2003
  * @+ The table interface
@@ -42,7 +38,7 @@
  * [ "Maril Streep",	23,	'F',	"Church 5",	"12-07-1980" ]
  * [ "Mr. Smith",		53,	'M',	"Church 1",	"03-01-1950" ]
  * @end verbatim
- * @-
+ *
  * The lines contain the representation of a list in Monet tuple format.
  * This format has been chosen to ease parsing by any front-end. The scalar values
  * are represented according to their type. For visual display, the columns
@@ -58,7 +54,7 @@
  * Printing both columns of a single bat is handled by tablet as a
  * print of two columns. This slight inconvenience is catch-ed by
  * the io.print(b) command, which resolves most back-ward compatibility issues.
- * @-
+ *
  * In many cases, this output would suffice for communication with a front-end.
  * However, for visual inspection the user should be provided also some meta
  * information derived from the database schema. Likewise, when reading a
@@ -76,7 +72,6 @@
  * [ "Maril Streep",  23, 'F', "Church 5",   "12-07-1980" ]
  * [ "Mr. Smith",     53, 'M', "Church 1",   "03-01-1950" ]
  * @end verbatim
- * @-
  *
  * The command tablet.display(B1,...,Bn) is a contraction of tablet.header();
  * tablet.page().
@@ -128,7 +123,6 @@
  * 	tablet.SQLfooter(count(B1),cpuTicks);
  * @end verbatim
  *
- * @-
  * This table is printed with tab separator(s) between elements
  * and the bar (|) to mark begin and end of the string.
  * The column parameters give a new title,
@@ -186,7 +180,6 @@
  * [ 0.2,	0.198669 ]
  * #----------------#
  * @end verbatim
- * @-
  *
  * All other formatted printing should be done with the printf() operations
  * contained in the module @sc{io}.
@@ -250,7 +243,6 @@
 #include <ctype.h>
 
 #define CLEAR(X) if(X) {GDKfree(X);X = NULL;}
-#define isScalar(C)  C->adt != TYPE_bat
 
 #ifdef _MSC_VER
 #define getcwd _getcwd
@@ -855,7 +847,7 @@ TABLETadt_toStr(void *extra, char **buf, int *len, int type, ptr a)
 	}
 }
 
-#define myisspace(s)  ( s<=' ' && (s == ' ' || s == '\t'))
+#define myisspace(s)  ((s) == ' ' || (s) == '\t')
 
 int
 has_whitespace(char *sep)
@@ -1556,8 +1548,7 @@ tablet_read_more(bstream *in, stream *out, size_t n)
 }
 
 /*
- * @-
- * @-Fast Load
+ * @- Fast Load
  * To speedup the CPU intensive loading of files we have to break
  * the file into pieces and perform parallel analysis. Experimentation
  * against lineitem SF1 showed that half of the time goes into very
@@ -1706,7 +1697,6 @@ TABLETload_bulk(Tablet *as, bstream *b, stream *out, BUN col1, BUN col2, int sta
 }
 
 /*
- * @-
  * To speed up loading ascii files we have to determine the number of blocks.
  * This depends on the number of cores available.
  * For the time being we hardwire this decision based on our own
@@ -1830,7 +1820,6 @@ output_file_ordered(Tablet *as, BAT *order, stream *fd, oid base)
 }
 
 /*
- * @-
  * Estimate the size of a BAT to avoid multiple extends.
  */
 static BUN
@@ -2174,7 +2163,6 @@ clearTable(Tablet *t)
 }
 
 /*
- * @-
  * Expansion of a table report descriptor should not
  * mean loosing its content.
  */
@@ -2203,7 +2191,6 @@ makeTableSpace(int rnr, unsigned int acnt)
 }
 
 /*
- * @-
  * Binding variables also involves setting the default
  * formatting scheme. These are based on the storage type only
  * at this point. The variables should be either all BATs
@@ -2331,7 +2318,7 @@ TABshowHeader(Tablet *t)
 				prop = c->name;
 			else if (strcmp(p, "type") == 0)
 				prop = c->type;
-			else if (!isScalar(c) && c->c[0]) {
+			else if (c->c[0]) {
 				if (strcmp(p, "bat") == 0) {
 					prop = BBPname(c->c[0]->batCacheid);
 				}

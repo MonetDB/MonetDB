@@ -614,7 +614,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 			task->input = task->base + 1;
 			*task->base = 0;
 		}
-		memcpy(task->input, task->b->buf + task->b->pos, task->b->len - task->b->pos);
+		memcpy(task->input, task->b->buf, task->b->size);
 
 #ifdef _DEBUG_TABLET_
 		mnstr_printf(GDKout, "read pos=" SZFMT " len=" SZFMT " size=" SZFMT " eof=%d \n", task->b->pos, task->b->len, task->b->size, task->b->eof);
@@ -624,8 +624,8 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 		/* skipping tuples as needed */
 		task->next = 0;
 
-		end = task->input + task->b->len - task->b->pos;
-		s = task->input;
+		end = task->input + task->b->len;
+		s = task->input + task->b->pos;
 		*end = '\0';			/* this is safe, as the stream ensures an extra byte */
 		/* Note that we rescan from the start of a record (the last
 		 * partial buffer from the previous iteration), even if in the
@@ -709,7 +709,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 				}
 				s = e + rseplen;
 				e = s;
-				task->b->pos += (size_t) (s - task->input);
+				task->b->pos = (size_t) (s - task->input);
 			} else {
 				/* no (unquoted) record separator found, read more data */
 				break;
