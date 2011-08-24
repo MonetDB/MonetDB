@@ -1,25 +1,26 @@
-@/
-The contents of this file are subject to the MonetDB Public License
-Version 1.1 (the "License"); you may not use this file except in
-compliance with the License. You may obtain a copy of the License at
-http://www.monetdb.org/Legal/MonetDBLicense
+/*
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.monetdb.org/Legal/MonetDBLicense
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * The Original Code is the MonetDB Database System.
+ *
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2011 MonetDB B.V.
+ * All Rights Reserved.
+ */
 
-Software distributed under the License is distributed on an "AS IS"
-basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-License for the specific language governing rights and limitations
-under the License.
-
-The Original Code is the MonetDB Database System.
-
-The Initial Developer of the Original Code is CWI.
-Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2011 MonetDB B.V.
-All Rights Reserved.
-@
-
-@f tablet
-
-@c
+/*
+ * @f tablet
+ *
+ */
 /*
  * @a Niels Nes, Martin Kersten
  * @d 29/07/2003
@@ -241,265 +242,6 @@ All Rights Reserved.
  * The dump_format scripts dump a format file for a given set of
  * to be dumped bats. These bats can be dumped with dump_data.
  */
-@mal
-module tablet;
-
-command load( names:bat[:oid,:str], seps:bat[:oid,:str], 
-		types:bat[:oid,:str], datafile:str, nr:int ) :bat[:str,:bat] 
-address CMDtablet_load
-comment "Load a bat using specific format.";
-
-command input( names:bat[:oid,:str], seps:bat[:oid,:str], 
-		types:bat[:oid,:str], s:streams, nr:int ) :bat[:str,:bat] 
-address CMDtablet_input
-comment "Load a bat using specific format.";
-
-command dump(names:bat[:oid,:str], seps:bat[:oid,:str], 
-		bats:bat[:oid,:bat], datafile:str, nr:int) :void 
-address CMDtablet_dump 
-comment "Dump the bat in ASCII format";
-
-command output(order:bat[:any_1,:any_2], seps:bat[:oid,:str], 
-		bats:bat[:oid,:bat], s:streams) :void 
-address CMDtablet_output 
-comment "Send the bat to an output stream.";
-
-pattern display(v:any...):int 
-address TABdisplayRow
-comment "Display a formatted row";
-pattern display(v:bat[:any_1,:any]...):int 
-address TABdisplayTable
-comment "Display a formatted table";
-
-pattern page(b:bat[:any_1,:any]...):int 
-address TABpage
-comment "Display all pages at once without header";
-pattern header(b:any...):int 
-address TABheader
-comment "Display the minimal header for the table";
-pattern setProperties(prop:str):int 
-address TABsetProperties
-comment "Define the set of properties";
-pattern dump(s:streams,b:bat[:any,:any]...):int 
-address TABdump
-comment "Print all pages with header to a stream";
-
-pattern setFormat(b:any...):void 
-address TABsetFormat
-comment "Initialize a new reporting structure.";
-pattern finish():void 
-address TABfinishReport
-comment "Free the storage space of the report descriptor";
-pattern setStream(s:streams):void 
-address TABsetStream
-comment "Redirect the output to a stream.";
-pattern setPivot(b:bat[:void,:oid]) :void
-address TABsetPivot
-comment "The pivot bat identifies the tuples of interest. The only requirement 
-	    is that all keys mentioned in the pivot tail exist in all BAT parameters 
-	    of the print comment. The pivot also provides control over the order 
-	    in which the tuples are produced.";
-pattern setDelimiter(sep:str):void 
-address TABsetDelimiter
-comment "Set the column separator.";
-pattern setTableBracket(lbrk:str,rbrk:str)
-address TABsetTableBracket
-comment "Format the brackets around a table";
-pattern setRowBracket(lbrk:str,rbrk:str)
-address TABsetRowBracket
-comment "Format the brackets around a row";
-
-# @-
-# Set the column properties
-pattern setColumn(idx:int, v:any_1)
-address TABsetColumn
-comment "Bind i-th output column to a variable";
-pattern setName(idx:int, nme:str)
-address TABsetColumnName
-comment "Set the display name for a given column";
-pattern setBracket(idx:int,lbrk:str,rbrk:str)
-address TABsetColumnBracket
-comment "Format the brackets around a field";
-pattern setNull(idx:int, fmt:str)
-address TABsetColumnNull
-comment "Set the display format for a null value for a given column";
-pattern setWidth(idx:int, maxwidth:int)
-address TABsetColumnWidth
-comment "Set the maximal display witdh for a given column. All values exceeding 
-	the length are simple shortened without any notice.";
-pattern setPosition(idx:int,f:int,i:int)
-address TABsetColumnPosition
-comment "Set the character position to use for this field when loading according to 
-	fixed (punch-card) layout.";
-pattern setDecimal(idx:int,s:int,p:int)
-address TABsetColumnDecimal
-comment "Set the scale and precision for numeric values";
-
-pattern setTryAll()
-address TABsetTryAll
-comment "Skip error lines and assemble an error report";
-pattern setComplaints(b:bat[:oid,:str]) :void
-address TABsetComplaints
-comment "The comlaints bat identifies all erroneous lines encountered ";
-
-command firstPage():void 
-address TABfirstPage
-comment "Produce the first page of output";
-command lastPage():void 
-address TABlastPage
-comment "Produce the last page of output";
-command nextPage():void 
-address TABnextPage
-comment "Produce the next page of output";
-command prevPage():void 
-address TABprevPage
-comment "Produce the prev page of output";
-command getPageCnt():void 
-address TABgetPageCnt
-comment "Return the size in number of pages";
-command getPage(i:int):void 
-address TABgetPage
-comment "Produce the i-th page of output";
-# @-
-@include prelude.mx
-@h
-/*
- * @+ Implementation
- * The implementation needs the stream abstraction, which also provides
- * primitives to compress/decompress files on the fly.
- * The file can plain ASCII, gzipped or bzipped, decided by the extention
- * (none, gz or bz2). The default is plain ASCII, which is formatted to
- * pre presented on the screen directly.
- */
-#ifndef _TABLET_IO2_H_
-#define _TABLET_IO2_H_
-
-/* #define _DEBUG_TABLET_ */
-
-#include <gdk.h>
-#include "streams.h"
-#include <mal_exception.h>
-#include <mal_client.h>
-#include <mal_interpreter.h>
-#include <mapi.h> /* for PROMPT1, PROMPT2 */
-
-#ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define tablet_export extern __declspec(dllimport)
-#else
-#define tablet_export extern __declspec(dllexport)
-#endif
-#else
-#define tablet_export extern
-#endif
-
-#define SIZE 1*1024*1024
-#define SLICES 2
-#define BINS 100
-
-struct Column_t;
-typedef ptr *(*frStr) (struct Column_t *fmt, int type, char *s, char *e, char quote);
-/* as toString functions are also used outside tablet we don't pas the column here */
-typedef int (*toStr) (void *extra, char **buf, int *len, int type, ptr a);
-
-typedef struct Column_t {
-	char *batname;
-	char *name;		/* column title */
-	char *sep;
-	int seplen;
-	char *type;
-	int adt;		/* type index */
-	BAT *c[SLICES];			/* set to NULL when scalar is meant */
-	BATiter ci[SLICES];
-	BAT *bin[BINS];
-	BUN p;
-	unsigned int tabs;	/* field size in tab positions */
-	str lbrk, rbrk;		/* column brackets */
-	str nullstr;		/* null representation */
-	size_t null_length; /* its length */
-	unsigned int width;	/* actual column width */
-	unsigned int maxwidth;	/* permissible width */
-	int fieldstart;		/* Fixed character field load positions */
-	int fieldwidth;
-	int scale, precision;
-	toStr tostr;
-	frStr frstr;
-	void *extra;
-	void *data;
-	int len;
-	int nillen;
-	bit ws; 	/* if set we need to skip white space */
-	bit quote; 	/* if set use this character for string quotes */
-	void *nildata;
-	str		batfile;	/* what is the BAT to be replaced */
-	str		rawfile;	/* where to find the raw file */
-	stream  *raw;	/* this column should be stored directly on stream*/
-	int	size;
-} Column; 
-
-/*
- * @-
- * All table printing is based on building a report structure first.
- * This table structure is private to a client, which made us to
- * keep it in an ADT.
- */
-
-typedef struct Table_t {
-	char *sep;		/* default separator */
-	str ttopbrk, tbotbrk;	/* table brackets */
-	str rlbrk, rrbrk;	/* row brackets */
-	str properties;		/* of header to display */
-	str title, footer;	/* alternatives */
-	BUN offset;
-	BUN nr;		/* allocated space for table loads */
-	size_t pageLimit;
-	size_t firstrow, lastrow;	/* last window to print */
-	BUN nr_attrs;	/* attributes found sofar */
-	size_t max_attrs;
-	Column *format;		/* remove later */
-	stream *fd;
-	BAT *pivot;
-	str error;		/* last error */
-	int tryall;		/* skip erroneous lines */
-	BAT *complaints;	/* lines that did not match the required input */
-	unsigned int rowwidth;	/* sum of columns used for mallocs */
-	bstream *input;		/* where to get the data from */
-	stream *output;		/* where to leave immediate output */
-	lng bytes;		/* required bytes to load (round up to end of record) */
-	MT_Id tid;		/* Thread id for parallel loads only */
-	int partid;		/* partition number */
-	Column columns[1];	/* at least one column, enlarged upon need */
-} Tablet;
-
-tablet_export BAT *TABLETload(Tablet *as, char *datafile);
-tablet_export BUN TABLEToutput(BAT *order, BAT *seps, BAT *bats, stream *s);
-tablet_export void TABLETdump(BAT *names, BAT *seps, BAT *bats, char *datafile, BUN nr);
-
-/* The low level routines are primarilly used by the SQL front-end.*/
-tablet_export int TABLETcreate_bats(Tablet * as, BUN est);
-tablet_export BUN TABLETassign_BATs(Tablet * as, BAT *bats);
-tablet_export BUN TABLETload_file(Tablet * as, bstream *b, stream *out);
-tablet_export BUN SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char quote, lng skip, lng maxrow);
-tablet_export BAT *TABLETcollect_bats(Tablet * as);
-tablet_export BAT *TABLETcollect_parts(Tablet * as, BUN offset);
-tablet_export void TABLETdestroy_format(Tablet * as);
-tablet_export int TABLEToutput_file(Tablet * as, BAT *order, stream *s);
-
-tablet_export ptr *TABLETstrFrStr(Column *c, char *s, char *e);
-tablet_export ptr *TABLETadt_frStr(Column *c, int type, char *s, char *e, char quote);
-tablet_export int TABLETadt_toStr(void *extra, char **buf, int *len, int type, ptr a);
-tablet_export int insert_line(Tablet * as, char *line, ptr key, BUN col1, BUN col2 );
-tablet_export int output_file_dense(Tablet * as, stream *fd);
-tablet_export int has_whitespace(char *sep);
-
-#ifdef LIBMAL
-/* not exported since only used within library */
-extern int tablet_read_more(bstream *in, stream *out, size_t n);
-extern char *tablet_skip_string(char *s, char quote);
-#endif
-
-#endif
-@c
 #include "monetdb_config.h"
 #include "tablet.h"
 #include "algebra.h"
@@ -1051,7 +793,7 @@ TABLETstrFrStr(Column *c, char *s, char *e)
 
 	if (c->len < len){
 		c->len = len;
-		c->data = GDKrealloc(c->data,len); 
+		c->data = GDKrealloc(c->data,len);
 	}
 
 	if (s == e) {
@@ -1110,12 +852,12 @@ has_whitespace(char *sep)
 {
 	char *s = sep;
 
-	if (myisspace(*s)) 
+	if (myisspace(*s))
 		return 1;
-	while(*s) 
+	while(*s)
 		s++;
 	s--;
-	if (myisspace(*s)) 
+	if (myisspace(*s))
 		return 1;
 	return 0;
 }
@@ -1150,7 +892,7 @@ create_loadformat(Tablet * as, BAT *names, BAT *seps, BAT *types)
 		fmt[p].tostr = &TABLETadt_toStr;
 		fmt[p].frstr = &TABLETadt_frStr;
 		fmt[p].extra = NULL;
-		fmt[p].len = fmt[p].nillen = 
+		fmt[p].len = fmt[p].nillen =
 			ATOMlen(fmt[p].adt, ATOMnilptr(fmt[p].adt));
 		fmt[p].ws = !(has_whitespace(fmt[p].sep));
 		fmt[p].quote = '"';
@@ -1364,7 +1106,7 @@ TABLETcollect_parts(Tablet * as, BUN offset)
 		BATsetaccess(b, BAT_READ);
 		bv = BATslice(b, offset, BATcount(b));
 		BUNins(bats, (ptr) fmt[i].name, (ptr) &bv->batCacheid, FALSE);
-		/* we "mis"use BATpropcheck to set rather than verify properties on 
+		/* we "mis"use BATpropcheck to set rather than verify properties on
 		 * the newly loaded slice; hence, we locally disable property errors */
 		GDKdebug &= ~PROPMASK;
 		BATaccessBegin(bv, USE_ALL, MMAP_WILLNEED);
@@ -1418,7 +1160,7 @@ static inline char *
 rstrip(char *s, char *e)
 {
 	e--;
-	while (myisspace((int) *e) && e>=s) 
+	while (myisspace((int) *e) && e>=s)
 		e--;
 	e++;
 	*e = 0;
@@ -1463,7 +1205,7 @@ insert_val(Column * fmt, char *s, char *e, char quote, ptr key, str *err, int c)
 			*e = 0;
 		}
 		if ((s == e && fmt->nullstr[0] == 0) ||
-			(quote == fmt->nullstr[0] && e > s && 
+			(quote == fmt->nullstr[0] && e > s &&
 			 strncasecmp(s, fmt->nullstr+1, fmt->nillen) == 0 &&
 			 quote == fmt->nullstr[fmt->nillen-1])) {
 			adt = fmt->nildata;
@@ -1477,14 +1219,14 @@ insert_val(Column * fmt, char *s, char *e, char quote, ptr key, str *err, int c)
 			bak = *e;
 			*e = 0;
 		}
-	
+
 		if ((s == e && fmt->nullstr[0] == 0) ||
 			(e > s && strcasecmp(s, fmt->nullstr) == 0 ) ) {
 			adt = fmt->nildata;
 			fmt->c[0]->T->nonil = 0;
 		} else
 			adt = fmt->frstr(fmt, fmt->adt, s, e, quote);
-		if ( bak) 
+		if ( bak)
 			*e = bak;
 	}
 
@@ -1547,13 +1289,13 @@ insert_line(Tablet * as, char *line, ptr key, BUN col1, BUN col2 )
 		e = 0;
 
 		/* skip leading spaces */
-		if (fmt[i].ws) 
+		if (fmt[i].ws)
 			while (myisspace((int) (*line)))
 				line++;
 		s = line;
 
 		/* recognize fields starting with a quote */
-		if ( *line && *line == fmt[i].quote && 
+		if ( *line && *line == fmt[i].quote &&
 	             (line == s || *(line - 1) != '\\')) {
 			quote = *line;
 			line++;
@@ -1566,7 +1308,7 @@ insert_line(Tablet * as, char *line, ptr key, BUN col1, BUN col2 )
 					return -1;
 				BUNins(as->complaints, NULL, as->error, TRUE);
 			}
-		} 
+		}
 
 		/* skip until separator */
 		seperator=fmt[i].sep[0];
@@ -1601,7 +1343,7 @@ insert_line(Tablet * as, char *line, ptr key, BUN col1, BUN col2 )
 				BUNins(as->complaints, NULL, as->error, TRUE);
 			}
 		} else {
-			snprintf(errmsg,BUFSIZ, "missing separator '%s' line " BUNFMT " field " BUNFMT "\n", 
+			snprintf(errmsg,BUFSIZ, "missing separator '%s' line " BUNFMT " field " BUNFMT "\n",
 				fmt->sep, BATcount(fmt->c[0]), i);
 			as->error = GDKstrdup(errmsg);
 			if (!as->tryall)
@@ -1833,7 +1575,7 @@ TABLETload_bulk(Tablet * as, bstream *b, stream *out, BUN col1, BUN col2, int st
 
 		if (b->pos >= b->len && tablet_read_more(b, out, b->size - (b->len - b->pos)) == EOF) {
 			if (nr != BUN_NONE && i < nr) {
-				res = 1; 
+				res = 1;
 				if (b->len > b->pos) {
 					GDKerror("TABLETload_bulk: read error (after loading " BUNFMT " records)\n", BATcount(as->format[0].c[0]));
 					res = -1;
@@ -1876,7 +1618,7 @@ TABLETload_bulk(Tablet * as, bstream *b, stream *out, BUN col1, BUN col2, int st
 						size <<= 4;
 					if (tablet_read_more(b, out, size) == EOF) {
 						/* some data left? */
-						res = 1; 
+						res = 1;
 						if (b->len > b->pos &&
 						    i>=offset &&
 						    insert_line(as, s, NULL, col1,col2) < 0 && !as->tryall ) {
@@ -2075,7 +1817,7 @@ estimator(char *datafile){
 	fseek(f,0L,SEEK_END);
 	size= ftell(f);
 	fclose(f);
-	if( nr == 0) 
+	if( nr == 0)
 		return (BUN) (size/40);  /* some handhaving for stream input*/
 	return (BUN) (((size/BUFSIZ+1)/nr)*1.3); /* take some slack and take reduction */
 }
@@ -2296,7 +2038,7 @@ CMDtablet_input(int *ret, int *nameid, int *sepid, int *typeid, stream *s, int *
 
 	bs = bstream_create(*(stream **) s,SIZE);
 	if ( bs ){
-		if (create_loadformat(&as, names, seps, types) != BUN_NONE && 
+		if (create_loadformat(&as, names, seps, types) != BUN_NONE &&
 			TABLETcreate_bats(&as, (BUN) 0) == 0  &&
 			TABLETload_file(&as, bs, NULL) != BUN_NONE)
 				bn = TABLETcollect_bats(&as);
@@ -2541,6 +2283,7 @@ TABshowHeader(Tablet * t)
 			unsigned int len;
 			str prop = 0;
 			int u = 0, v = 0;
+			char buf[32];
 
 			if (strcmp(p, "name") == 0)
 				prop = c->name;
@@ -2554,9 +2297,7 @@ TABshowHeader(Tablet * t)
 					prop = GDKstrdup(c->c[0]->tident);
 				}
 				if (strcmp(p, "base") == 0) {
-					char buf[BUFSIZ];
-
-					sprintf(buf, OIDFMT, c->c[0]->hseqbase);
+					snprintf(buf, sizeof(buf), OIDFMT, c->c[0]->hseqbase);
 					prop = GDKstrdup(buf);
 				}
 				if (strcmp(p, "sorted") == 0) {
@@ -2578,37 +2319,69 @@ TABshowHeader(Tablet * t)
 						prop = GDKstrdup("false");
 				}
 				if (strcmp(p, "min") == 0) {
-				/*
-				 * @-
-				 */
-@= setAggr
-case TYPE_@1: {
-	@1 m;
-	char buf[BUFSIZ];
-	BAT@2(c->c[0],&m);
-	sprintf(buf,@3,m);
-	prop= GDKstrdup(buf);
-}
-break;
-@
-@c
 					switch (c->adt) {
-						@:setAggr(int,min,"%d")@
-						@:setAggr(lng,min,LLFMT)@
-						@:setAggr(sht,min,"%d")@
-						@:setAggr(dbl,min,"%f")@
-
+					case TYPE_int: {
+						int m;
+						BATmin(c->c[0],&m);
+						snprintf(buf, sizeof(buf),"%d",m);
+						prop= GDKstrdup(buf);
+						break;
+					}
+					case TYPE_lng: {
+						lng m;
+						BATmin(c->c[0],&m);
+						snprintf(buf, sizeof(buf),LLFMT,m);
+						prop= GDKstrdup(buf);
+						break;
+					}
+					case TYPE_sht: {
+						sht m;
+						BATmin(c->c[0],&m);
+						snprintf(buf, sizeof(buf),"%d",m);
+						prop= GDKstrdup(buf);
+						break;
+					}
+					case TYPE_dbl: {
+						dbl m;
+						BATmin(c->c[0],&m);
+						snprintf(buf, sizeof(buf),"%f",m);
+						prop= GDKstrdup(buf);
+						break;
+					}
 					default:
 						prop = GDKstrdup("");
 					}
 				}
 				if (strcmp(p, "max") == 0) {
 					switch (c->adt) {
-						@:setAggr(int,max,"%d")@
-						@:setAggr(lng,max,LLFMT)@
-						@:setAggr(sht,max,"%d")@
-						@:setAggr(dbl,max,"%f")@
-
+					case TYPE_int: {
+						int m;
+						BATmax(c->c[0],&m);
+						snprintf(buf, sizeof(buf),"%d",m);
+						prop= GDKstrdup(buf);
+						break;
+					}
+					case TYPE_lng: {
+						lng m;
+						BATmax(c->c[0],&m);
+						snprintf(buf, sizeof(buf),LLFMT,m);
+						prop= GDKstrdup(buf);
+						break;
+					}
+					case TYPE_sht: {
+						sht m;
+						BATmax(c->c[0],&m);
+						snprintf(buf, sizeof(buf),"%d",m);
+						prop= GDKstrdup(buf);
+						break;
+					}
+					case TYPE_dbl: {
+						dbl m;
+						BATmax(c->c[0],&m);
+						snprintf(buf, sizeof(buf),"%f",m);
+						prop= GDKstrdup(buf);
+						break;
+					}
 					default:
 						prop = GDKstrdup("");
 					}
@@ -2771,7 +2544,7 @@ print_nil(char **dst, int *len, ptr dummy)
 			GDKfree(*dst);
 		*dst = (char *) GDKmalloc(*len = 40);
 	}
-	if ( *dst) 
+	if ( *dst)
 		strcpy(*dst, "nil");
 	return 3;
 }
