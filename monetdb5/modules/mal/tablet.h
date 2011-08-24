@@ -47,7 +47,7 @@
 #define tablet_export extern
 #endif
 
-#define SIZE 1*1024*1024
+#define SIZE (1*1024*1024)
 #define SLICES 2
 #define BINS 100
 

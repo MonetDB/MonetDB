@@ -848,7 +848,7 @@ TABLETadt_toStr(void *extra, char **buf, int *len, int type, ptr a)
 	}
 }
 
-#define myisspace(s)  ( s<=' ' && (s == ' ' || s == '\t'))
+#define myisspace(s)  ((s) == ' ' || (s) == '\t')
 
 int
 has_whitespace(char *sep)
