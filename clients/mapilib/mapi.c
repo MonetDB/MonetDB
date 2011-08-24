@@ -774,6 +774,7 @@
 #include <stream.h>		/* include before mapi.h */
 #include <stream_socket.h>
 #include "mapi.h"
+#include "mcrypt.h"
 
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
@@ -2469,100 +2470,50 @@ mapi_start_talking(Mapi mid)
 			hash = NULL;
 			/* hash password, if not already */
 			if (mid->password[0] != '\1') {
-				unsigned char md[64];	/* should be SHA512_DIGEST_LENGTH */
-				size_t n = strlen(mid->password);
-				char *key = mid->password;
-				int len;
-
-#ifdef HAVE_RIPEMD160
+				char *pwdhash = NULL;
 				if (strcmp(serverhash, "RIPEMD160") == 0) {
-					RIPEMD160((unsigned char *) key, n, md);
-					len = 40;
-				} else
-#endif
-#ifdef HAVE_SHA512
-				if (strcmp(serverhash, "SHA512") == 0) {
-					SHA512((unsigned char *) key, n, md);
-					len = 128;
-				} else
-#endif
-#ifdef HAVE_SHA384
-				if (strcmp(serverhash, "SHA384") == 0) {
-					SHA384((unsigned char *) key, n, md);
-					len = 96;
-				} else
-#endif
-#ifdef HAVE_SHA256
-				if (strcmp(serverhash, "SHA256") == 0) {
-					SHA256((unsigned char *) key, n, md);
-					len = 64;
-				} else
-#endif
-#ifdef HAVE_SHA224
-				if (strcmp(serverhash, "SHA224") == 0) {
-					SHA224((unsigned char *) key, n, md);
-					len = 56;
-				} else
-#endif
-#ifdef HAVE_SHA1
-				if (strcmp(serverhash, "SHA1") == 0) {
-					SHA1((unsigned char *) key, n, md);
-					len = 40;
-				} else
-#endif
-#ifdef HAVE_MD5
-				if (strcmp(serverhash, "MD5") == 0) {
-					MD5((unsigned char *) key, n, md);
-					len = 32;
-				} else
-#endif
-				{
+					pwdhash = mcrypt_RIPEMD160Sum(mid->password,
+							strlen(mid->password));
+				} else if (strcmp(serverhash, "SHA512") == 0) {
+					pwdhash = mcrypt_SHA512Sum(mid->password,
+							strlen(mid->password));
+				} else if (strcmp(serverhash, "SHA384") == 0) {
+					pwdhash = mcrypt_SHA384Sum(mid->password,
+							strlen(mid->password));
+				} else if (strcmp(serverhash, "SHA256") == 0) {
+					pwdhash = mcrypt_SHA256Sum(mid->password,
+							strlen(mid->password));
+				} else if (strcmp(serverhash, "SHA224") == 0) {
+					pwdhash = mcrypt_SHA224Sum(mid->password,
+							strlen(mid->password));
+				} else if (strcmp(serverhash, "SHA1") == 0) {
+					pwdhash = mcrypt_SHA1Sum(mid->password,
+							strlen(mid->password));
+				} else if (strcmp(serverhash, "MD5") == 0) {
+					pwdhash = mcrypt_MD5Sum(mid->password,
+							strlen(mid->password));
+				} else {
 					snprintf(buf, BLOCK, "server requires unknown hash '%s'", serverhash);
 					close_connection(mid);
 					return mapi_setError(mid, buf, "mapi_start_talking", MERROR);
 				}
 
 				free(mid->password);
-				mid->password = malloc(sizeof(char) * (1 + 64 * 2 + 1));
-				sprintf(mid->password,
-					"\1%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-					"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-					"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-					"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-					"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-					"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-					"%02x%02x%02x%02x",
-					md[0], md[1], md[2], md[3],
-					md[4], md[5], md[6], md[7],
-					md[8], md[9], md[10], md[11],
-					md[12], md[13], md[14], md[15],
-					md[16], md[17], md[18], md[19],
-					md[20], md[21], md[22], md[23],
-					md[24], md[25], md[26], md[27],
-					md[28], md[29], md[30], md[31],
-					md[32], md[33], md[34], md[35],
-					md[36], md[37], md[38], md[39],
-					md[40], md[41], md[42], md[43],
-					md[44], md[45], md[46], md[47],
-					md[48], md[49], md[50], md[51],
-					md[52], md[53], md[54], md[55],
-					md[56], md[57], md[58], md[59],
-					md[60], md[61], md[62], md[63]);
-				mid->password[1 + len] = '\0';
+				mid->password = malloc(sizeof(char) * (1 + strlen(pwdhash) + 1));
+				sprintf(mid->password, "\1%s", pwdhash);
+				free(pwdhash);
 			}
 		}
 
-		/* TODO: make this actually obey the separation by commas, and
-		 * only allow full matches */
-#ifdef HAVE_RIPEMD160
-		if (strstr(hashes, "RIPEMD160") != NULL) {
-			/* The RIPEMD160 hash algorithm is a 160 bit hash.  In order to
-			 * use in a string, a hexadecimal representation of the bit
-			 * sequence is used.
-			 */
-			unsigned char md[20];	/* should be RIPEMD160_DIGEST_LENGTH */
+		{
+			char *algsv[] = {
+				"RIPEMD160",
+				"SHA1",
+				"MD5",
+				NULL
+			};
+			char **algs = algsv;
 			char *p;
-			RIPEMD160_CTX c;
 
 			if (pversion == 9) {
 				p = mid->password + 1;
@@ -2570,84 +2521,24 @@ mapi_start_talking(Mapi mid)
 				p = mid->password;
 			}
 
-			RIPEMD160_Init(&c);
-			RIPEMD160_Update(&c, p, strlen(p));
-			RIPEMD160_Update(&c, chal, strlen(chal));
-			RIPEMD160_Final(md, &c);
-
-			hash = malloc(sizeof(char) * ( /*{RIPEMD160} */ 11 + 20 * 2 + 1));
-			sprintf(hash, "{RIPEMD160}%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-				"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
-				md[0], md[1], md[2], md[3],
-				md[4], md[5], md[6], md[7],
-				md[8], md[9], md[10], md[11],
-				md[12], md[13], md[14], md[15],
-				md[16], md[17], md[18], md[19]);
-		} else
-#endif
-#ifdef HAVE_SHA1
-		if (strstr(hashes, "SHA1") != NULL) {
-			/* The SHA-1 RSA hash algorithm is a 160 bit hash.  In order to
-			 * use in a string, a hexadecimal representation of the bit
-			 * sequence is used.
-			 */
-			unsigned char md[20];	/* should be SHA_DIGEST_LENGTH */
-			char *p;
-			SHA_CTX c;
-
-			if (pversion == 9) {
-				p = mid->password + 1;
-			} else {
-				p = mid->password;
+			for (; *algs != NULL; algs++) {
+				/* TODO: make this actually obey the separation by
+				 * commas, and only allow full matches */
+				if (strstr(hashes, *algs) != NULL) {
+					char *pwh = mcrypt_hashPassword(*algs, p, chal);
+					int len;
+					if (pwh == NULL)
+						continue;
+					len = strlen(pwh) + 11 /* {RIPEMD160} */ + 1;
+					hash = malloc(sizeof(char) * len);
+					snprintf(hash, len, "{%s}%s", *algs, pwh);
+					free(pwh);
+					break;
+				}
 			}
-
-			SHA1_Init(&c);
-			SHA1_Update(&c, p, strlen(p));
-			SHA1_Update(&c, chal, strlen(chal));
-			SHA1_Final(md, &c);
-
-			hash = malloc(sizeof(char) * ( /*{SHA1} */ 6 + 20 * 2 + 1));
-			sprintf(hash, "{SHA1}%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-				"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
-				md[0], md[1], md[2], md[3],
-				md[4], md[5], md[6], md[7],
-				md[8], md[9], md[10], md[11],
-				md[12], md[13], md[14], md[15],
-				md[16], md[17], md[18], md[19]);
-		} else
-#endif
-#ifdef HAVE_MD5
-		if (strstr(hashes, "MD5") != NULL) {
-			/* The MD5 hash algorithm is a 128 bit hash.  In order to
-			 * use in a string, a hexadecimal representation of the bit
-			 * sequence is used.
-			 */
-			unsigned char md[16];	/* should be MD5_DIGEST_LENGTH */
-			char *p;
-			MD5_CTX c;
-
-			if (pversion == 9) {
-				p = mid->password + 1;
-			} else {
-				p = mid->password;
-			}
-
-			MD5_Init(&c);
-			MD5_Update(&c, p, strlen(p));
-			MD5_Update(&c, chal, strlen(chal));
-			MD5_Final(md, &c);
-
-			hash = malloc(sizeof(char) * ( /*{MD5} */ 5 + 16 * 2 + 1));
-			sprintf(hash, "{MD5}%02x%02x%02x%02x%02x%02x%02x%02x"
-				"%02x%02x%02x%02x%02x%02x%02x%02x",
-				md[0], md[1], md[2], md[3],
-				md[4], md[5], md[6], md[7],
-				md[8], md[9], md[10], md[11],
-				md[12], md[13], md[14], md[15]);
-		} else
-#endif
+		}
 #ifdef HAVE_CRYPT
-		if (pversion == 8 && strstr(hashes, "crypt") != NULL) {
+		if (pversion == 8 && hash == NULL && strstr(hashes, "crypt") != NULL) {
 			/* The crypt hash algorithm uses UNIX crypt, a modification of
 			 * DES which uses a 2-char wide salt.  Because crypt only cares
 			 * about the first eight characters of the given password, the
@@ -2682,7 +2573,7 @@ mapi_start_talking(Mapi mid)
 			sprintf(hash, "{crypt}%s", cr);
 		} else
 #endif
-		if (pversion == 8 && strstr(hashes, "plain") != NULL) {
+		if (pversion == 8 && hash == NULL && strstr(hashes, "plain") != NULL) {
 			/* The plain text algorithm, doesn't really hash at all.  It's
 			 * the easiest algorithm, as it just appends the challenge to
 			 * the password and returns it.
@@ -2697,11 +2588,8 @@ mapi_start_talking(Mapi mid)
 		}
 		/* could use else here, but below looks cleaner */
 		if (hash == NULL) {
-			char *algo = strdup(hashes);
-
-			/* the server doesn't support what we do (no plain?!?) */
-			snprintf(buf, BLOCK, "unsupported hash algorithms: %s", algo);
-			free(algo);
+			/* the server doesn't support what we can */
+			snprintf(buf, BLOCK, "unsupported hash algorithms: %s", hashes);
 			close_connection(mid);
 			return mapi_setError(mid, buf, "mapi_start_talking", MERROR);
 		}

@@ -23,3 +23,8 @@ lib_mutils  =  {
 	NOINST
 	SOURCES = mutils.c mutils.h
 }
+
+lib_mcrypt = {
+	NOINST
+	SOURCES = mcrypt.h mcrypt.c
+}

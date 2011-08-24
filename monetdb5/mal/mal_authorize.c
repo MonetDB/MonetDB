@@ -36,17 +36,14 @@
  */
 #include "monetdb_config.h"
 #include "mal_authorize.h"
+#include "mcrypt.h"
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#include <openssl/md5.h>
-#include <openssl/sha.h>
-#include <openssl/ripemd.h>
 
 
 static str AUTHdecypherValue(str *ret, str *value);
 static str AUTHcypherValue(str *ret, str *value);
-static str AUTHhashPassword(str *ret, str *algo, str *passwd, str *challenge);
 static str AUTHverifyPassword(int *ret, str *passwd);
 
 static BAT *user = NULL;
@@ -179,13 +176,12 @@ AUTHinitTables(void) {
 		str pw; /* will become the right hash for "monetdb" */
 		int len = (int) strlen(user);
 		bat b = 0;
-		str tmp;
 		oid uid;
 		Client c = &mal_clients[0];
 
-		rethrow("initTables", tmp, AUTHBackendSum(&pw, &user /* because user == pass */, &len));
+		pw = mcrypt_BackendSum(user /* because user == pass */, len);
 		msg = AUTHaddUser(&uid, &c, &user, &pw, &b);
-		GDKfree(pw);
+		free(pw);
 		if (msg)
 			return msg;
 		if (uid != 0)
@@ -212,7 +208,7 @@ AUTHcheckCredentials(
 		str *algo,
 		str *scenario)
 {
-	str tmp, msg= MAL_SUCCEED;
+	str tmp;
 	str pwd = NULL;
 	str hash = NULL;
 	BUN p, q;
@@ -251,19 +247,15 @@ AUTHcheckCredentials(
 	/* decypher the password (we lose the original tmp here) */
 	rethrow("checkCredentials", tmp, AUTHdecypherValue(&pwd, &tmp));
 	/* generate the hash as the client should have done */
-	msg = AUTHhashPassword(&hash, algo, &pwd, challenge);
-	if (msg ){
-		GDKfree(pwd);
-		return msg;
-	}
+	hash = mcrypt_hashPassword(*algo, pwd, *challenge);
 	GDKfree(pwd);
 	/* and now we have it, compare it to what was given to us */
 	if (strcmp(*passwd, hash) != 0) {
 		/* of course we DO NOT print the password here */
-		GDKfree(hash);
+		free(hash);
 		throw(INVCRED, "checkCredentials", INVCRED_INVALID_USER " '%s'", *username);
 	}
-	GDKfree(hash);
+	free(hash);
 
 	/* scenario restrictions are legacy from the past, we don't check
 	 * this any more, so all is good */
@@ -764,313 +756,6 @@ AUTHcypherValue(str *ret, str *value) {
 
 	*ret = r;
 	return(MAL_SUCCEED);
-}
-
-/**
- * Returns a comma separated list of supported hash algorithms.  The
- * returned string is GDKmalloced and should be GDKfreed.
- */
-str
-AUTHgetHashAlgorithms(str *ret) {
-	/* Currently, four "hashes" are available, RIPEMD160, SHA-2, SHA-1
-	 * and MD5.  Previous versions supported UNIX crypt and plain text
-	 * login, but those were removed when SHA-1 became mandatory for
-	 * hashing the plain password in wire protocol version 9.
-	 * Better/stronger/faster algorithms can be added in the future upon
-	 * desire.
-	 */
-	*ret = GDKstrdup("RIPEMD160,SHA256,SHA1,MD5");
-	return(MAL_SUCCEED);
-}
-
-#ifdef HAVE_MD5
-/**
- * Returns a GDKmalloced string representing the hex representation of
- * the MD5 hash of the given string.
- */
-str
-AUTHMD5Sum(str *ret, str *string, int *len) {
-	unsigned char md[16]; /* should be MD5_DIGEST_LENGTH */
-
-	MD5((unsigned char*)*string, *len, md);
-	*ret = GDKmalloc(sizeof(char) * (16 * 2 + 1));
-	sprintf(*ret, "%02x%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x%02x%02x%02x%02x%02x%02x",
-			md[0], md[1], md[2], md[3],
-			md[4], md[5], md[6], md[7],
-			md[8], md[9], md[10], md[11],
-			md[12], md[13], md[14], md[15]
-		   );
-
-	return(MAL_SUCCEED);
-}
-#endif
-
-#ifdef HAVE_SHA1
-/**
- * Returns a GDKmalloced string representing the hex representation of
- * the SHA-1 hash of the given string.
- */
-str
-AUTHSHA1Sum(str *ret, str *string, int *len) {
-	unsigned char md[20]; /* should be SHA_DIGEST_LENGTH */
-
-	SHA1((unsigned char*)*string, *len, md);
-	*ret = GDKmalloc(sizeof(char) * (20 * 2 + 1));
-	sprintf(*ret, "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
-			md[0], md[1], md[2], md[3], md[4],
-			md[5], md[6], md[7], md[8], md[9],
-			md[10], md[11], md[12], md[13], md[14],
-			md[15], md[16], md[17], md[18], md[19]
-		   );
-
-	return(MAL_SUCCEED);
-}
-#endif
-
-#if defined(HAVE_SHA224) || defined(HAVE_SHA256) || defined(HAVE_SHA384) || defined(HAVE_SHA512)
-/**
- * Returns a GDKmalloced string representing the hex representation of
- * the SHA-2 hash with number of bits of the given string.
- */
-str
-AUTHSHA2Sum(str *ret, str *string, int *len, int *number) {
-	unsigned char md[64]; /* should be SHA512_DIGEST_LENGTH */
-
-	switch (*number) {
-#ifdef HAVE_SHA224
-		case 224:
-			SHA224((unsigned char*)*string, *len, md);
-			*ret = GDKmalloc(sizeof(char) * (28 * 2 + 1));
-			sprintf(*ret,
-					"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-					"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-					"%02x%02x%02x%02x%02x%02x%02x%02x",
-					md[0], md[1], md[2], md[3], md[4],
-					md[5], md[6], md[7], md[8], md[9],
-					md[10], md[11], md[12], md[13], md[14],
-					md[15], md[16], md[17], md[18], md[19],
-					md[20], md[21], md[22], md[23], md[24],
-					md[25], md[26], md[27]
-				   );
-		break;
-#endif
-#ifdef HAVE_SHA256
-		case 256:
-			SHA256((unsigned char*)*string, *len, md);
-			*ret = GDKmalloc(sizeof(char) * (32 * 2 + 1));
-			sprintf(*ret,
-					"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-					"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-					"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-					"%02x%02x",
-					md[0], md[1], md[2], md[3], md[4],
-					md[5], md[6], md[7], md[8], md[9],
-					md[10], md[11], md[12], md[13], md[14],
-					md[15], md[16], md[17], md[18], md[19],
-					md[20], md[21], md[22], md[23], md[24],
-					md[25], md[26], md[27], md[28], md[29],
-					md[30], md[31]
-				   );
-		break;
-#endif
-#ifdef HAVE_SHA384
-		case 384:
-			SHA384((unsigned char*)*string, *len, md);
-			*ret = GDKmalloc(sizeof(char) * (48 * 2 + 1));
-			sprintf(*ret,
-					"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-					"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-					"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-					"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-					"%02x%02x%02x%02x%02x%02x%02x%02x",
-					md[0], md[1], md[2], md[3], md[4],
-					md[5], md[6], md[7], md[8], md[9],
-					md[10], md[11], md[12], md[13], md[14],
-					md[15], md[16], md[17], md[18], md[19],
-					md[20], md[21], md[22], md[23], md[24],
-					md[25], md[26], md[27], md[28], md[29],
-					md[30], md[31], md[32], md[33], md[34],
-					md[35], md[36], md[37], md[38], md[39],
-					md[40], md[41], md[42], md[43], md[44],
-					md[45], md[46], md[47]
-				   );
-		break;
-#endif
-#ifdef HAVE_SHA512
-		case 512:
-			SHA512((unsigned char*)*string, *len, md);
-			*ret = GDKmalloc(sizeof(char) * (64 * 2 + 1));
-			sprintf(*ret,
-					"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-					"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-					"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-					"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-					"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-					"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-					"%02x%02x%02x%02x",
-					md[0], md[1], md[2], md[3], md[4],
-					md[5], md[6], md[7], md[8], md[9],
-					md[10], md[11], md[12], md[13], md[14],
-					md[15], md[16], md[17], md[18], md[19],
-					md[20], md[21], md[22], md[23], md[24],
-					md[25], md[26], md[27], md[28], md[29],
-					md[30], md[31], md[32], md[33], md[34],
-					md[35], md[36], md[37], md[38], md[39],
-					md[40], md[41], md[42], md[43], md[44],
-					md[45], md[46], md[47], md[48], md[49],
-					md[50], md[51], md[52], md[53], md[54],
-					md[55], md[56], md[57], md[58], md[59],
-					md[60], md[61], md[62], md[63]
-				   );
-		break;
-#endif
-		default:
-			throw(MAL, "AUTHSHA2Sum", "%d is not a valid bit length, "
-					"choose one of 224, 256, 384 or 512", *number);
-	}
-
-
-	return(MAL_SUCCEED);
-}
-#endif
-
-#ifdef HAVE_RIPEMD160
-/**
- * Returns a GDKmalloced string representing the hex representation of
- * the RIPEMD-160 hash of the given string.
- */
-str
-AUTHRIPEMD160Sum(str *ret, str *string, int *len) {
-	unsigned char md[20]; /* should be RIPEMD160_DIGEST_LENGTH */
-
-	RIPEMD160((unsigned char*)*string, *len, md);
-	*ret = GDKmalloc(sizeof(char) * (20 * 2 + 1));
-	sprintf(*ret, "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
-			md[0], md[1], md[2], md[3], md[4],
-			md[5], md[6], md[7], md[8], md[9],
-			md[10], md[11], md[12], md[13], md[14],
-			md[15], md[16], md[17], md[18], md[19]
-		   );
-
-	return(MAL_SUCCEED);
-}
-#endif
-
-/**
- * Returns a GDKmalloced string representing the hex representation of
- * the by the backend used hash of the given string.
- */
-str
-AUTHBackendSum(str *ret, str *string, int *len) {
-	int bits;
-#ifdef HAVE_RIPEMD160
-	if (strcmp(MONETDB5_PASSWDHASH, "RIPEMD160") == 0) {
-		AUTHRIPEMD160Sum(ret, string, len);
-	} else
-#endif
-#ifdef HAVE_SHA512
-	if (strcmp(MONETDB5_PASSWDHASH, "SHA512") == 0) {
-		bits = 512;
-		AUTHSHA2Sum(ret, string, len, &bits);
-	} else
-#endif
-#ifdef HAVE_SHA384
-	if (strcmp(MONETDB5_PASSWDHASH, "SHA384") == 0) {
-		bits = 384;
-		AUTHSHA2Sum(ret, string, len, &bits);
-	} else
-#endif
-#ifdef HAVE_SHA256
-	if (strcmp(MONETDB5_PASSWDHASH, "SHA256") == 0) {
-		bits = 256;
-		AUTHSHA2Sum(ret, string, len, &bits);
-	} else
-#endif
-#ifdef HAVE_SHA224
-	if (strcmp(MONETDB5_PASSWDHASH, "SHA224") == 0) {
-		bits = 224;
-		AUTHSHA2Sum(ret, string, len, &bits);
-	} else
-#endif
-#ifdef HAVE_SHA1
-	if (strcmp(MONETDB5_PASSWDHASH, "SHA1") == 0) {
-		AUTHSHA1Sum(ret, string, len);
-	} else
-#endif
-#ifdef HAVE_MD5
-	if (strcmp(MONETDB5_PASSWDHASH, "MD5") == 0) {
-		AUTHMD5Sum(ret, string, len);
-	} else
-#endif
-	{
-		throw(MAL, "BackendSum", "Unknown backend hash algorithm: %s",
-				MONETDB5_PASSWDHASH);
-	}
-	return(MAL_SUCCEED);
-}
-
-/**
- * Returns the hash for the given password, challenge and algorithm.
- * The hash calculated using the given algorithm over the password
- * concatenated with the challenge.  The returned string is allocated
- * using GDKmalloc, and hence should be freed with GDKfree by the
- * caller.
- */
-static str
-AUTHhashPassword(str *ret, str *algo, str *password, str *challenge) {
-	str tmp = MAL_SUCCEED;
-	int len = (int) (strlen(*password) + strlen(*challenge));
-	str key = GDKmalloc(sizeof(char) * (len + 1));
-	snprintf(key, len + 1, "%s%s", *password, *challenge);
-
-#ifdef HAVE_RIPEMD160
-	if (strcmp(*algo, "RIPEMD160") == 0) {
-		tmp = AUTHRIPEMD160Sum(ret, &key, &len);
-	} else
-#endif
-#ifdef HAVE_SHA512
-	if (strcmp(*algo, "SHA512") == 0) {
-		int bits = 512;
-		tmp = AUTHSHA2Sum(ret, &key, &len, &bits);
-	} else
-#endif
-#ifdef HAVE_SHA384
-	if (strcmp(*algo, "SHA384") == 0) {
-		int bits = 384;
-		tmp = AUTHSHA2Sum(ret, &key, &len, &bits);
-	} else
-#endif
-#ifdef HAVE_SHA256
-	if (strcmp(*algo, "SHA256") == 0) {
-		int bits = 256;
-		tmp = AUTHSHA2Sum(ret, &key, &len, &bits);
-	} else
-#endif
-#ifdef HAVE_SHA224
-	if (strcmp(*algo, "SHA224") == 0) {
-		int bits = 224;
-		tmp = AUTHSHA2Sum(ret, &key, &len, &bits);
-	} else
-#endif
-#ifdef HAVE_SHA1
-	if (strcmp(*algo, "SHA1") == 0) {
-		tmp = AUTHSHA1Sum(ret, &key, &len);
-	} else
-#endif
-#ifdef HAVE_MS5
-	if (strcmp(*algo, "MD5") == 0) {
-		tmp = AUTHMD5Sum(ret, &key, &len);
-	} else
-#endif
-	{
-		throw(MAL, "hashPassword", "unsupported hash type: '%s'", *algo);
-	}
-
-	GDKfree(key);
-	return(tmp);
 }
 
 /**
