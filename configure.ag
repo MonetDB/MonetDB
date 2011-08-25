@@ -523,6 +523,9 @@ AC_DEFUN([MCHECK_ADD_FLAG],
 #include <string.h>
 #endif
 
+#if -_LARGEFILE64_SOURCE - -1 == 1
+#include <stdio.h>
+#endif
 int main(int argc, char **av) {
 	char buf[24];
 	double d = atof("4.2");
