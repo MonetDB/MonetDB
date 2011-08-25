@@ -4014,7 +4014,7 @@ file_move(const char *srcdir, const char *dstdir, const char *name, const char *
 
 /* returns 1 if the file exists */
 static int
-file_exists(str dir, str name, str ext)
+file_exists(const char *dir, const char *name, const char *ext)
 {
 	long_str path;
 	struct stat st;
@@ -4027,7 +4027,7 @@ file_exists(str dir, str name, str ext)
 }
 
 static int
-heap_move(Heap *hp, str srcdir, str dstdir, str nme, str ext)
+heap_move(Heap *hp, const char *srcdir, const char *dstdir, const char *nme, const char *ext)
 {
 	/* see doc at BATsetaccess()/gdk_bat.mx for an expose on mmap
 	 * heap modes */
@@ -4130,12 +4130,71 @@ BBPprepare(bit subcommit)
 	return ret ? -1 : 0;
 }
 
+static int
+do_backup(const char *srcdir, const char *nme, const char *extbase,
+	  Heap *h, int tp, int dirty, bit subcommit)
+{
+	int ret = 0;
+
+	 /* direct mmap is unprotected (readonly usage, or has WAL
+	  * protection)  */
+	if (h->storage != STORE_MMAP) {
+		/* STORE_PRIV saves into X.new files. Two cases could
+		 * happen. The first is when a valid X.new exists
+		 * because of an access change or a previous
+		 * commit. This X.new should be backed up as
+		 * usual. The second case is when X.new doesn't
+		 * exist. In that case we could have half written
+		 * X.new files (after a crash). To protect against
+		 * these we write X.new.kill files in the backup
+		 * directory (see heap_move). */
+		char ext[16];
+   		int mvret = 0;
+
+		if (h->filename && h->newstorage == STORE_PRIV)
+			snprintf(ext, sizeof(ext), "%s.new", extbase);
+		else
+			snprintf(ext, sizeof(ext), "%s", extbase);
+		if (tp && dirty && !file_exists(BAKDIR, nme, ext)) {
+                	/* file will be saved (is dirty), move the old
+			 * image into backup */
+		        mvret = heap_move(h, srcdir, subcommit ? SUBDIR : BAKDIR, nme, ext);
+       		} else if (subcommit && tp &&
+			   (dirty || file_exists(BAKDIR, nme, ext))) {
+                	/* file is clean. move the backup into the
+			 * subcommit dir (commit should eliminate
+			 * backup) */
+			mvret = file_move(BAKDIR, SUBDIR, nme, ext);
+		}
+		/* there is a situation where the move may fail,
+                 * namely if this heap was not supposed to be existing
+                 * before, i.e. after a BATmaterialize on a persistent
+                 * bat as a workaround, do not complain about move
+                 * failure if the source file is nonexistent
+ 		 */
+		if (mvret && file_exists(srcdir, nme, ext)) {
+			ret |= mvret;
+		}
+       		if (subcommit &&
+		    (h->storage == STORE_PRIV || h->newstorage == STORE_PRIV)) {
+			long_str kill_ext;
+
+			snprintf(kill_ext, sizeof(kill_ext), "%s.new.kill", ext);
+			if (file_exists(BAKDIR, nme, kill_ext)) {
+				ret |= file_move(BAKDIR, SUBDIR, nme, kill_ext);
+			}
+		}
+		if (ret)
+			return -1;
+	}
+	return 0;
+}
+
 int
 BBPbackup(BAT *b, bit subcommit)
 {
 	long_str srcdir, nme;
 	str s = BBP_physical(b->batCacheid);
-	int ret = 0;
 
 	if (BBPprepare(subcommit)) {
 		return -1;
@@ -4152,53 +4211,22 @@ BBPbackup(BAT *b, bit subcommit)
 	nme[sizeof(nme) - 1] = 0;
 	srcdir[s - srcdir] = 0;
 
-@= backup
-	if (@2 && @2->storage != STORE_MMAP) { /* direct mmap is unprotected (readonly usage, or has WAL protection)  */
-		/* STORE_PRIV saves into X.new files. Two cases could
-		 * happen. The first is when a valid X.new exists
-		 * because of an access change or a previous
-		 * commit. This X.new should be backed up as
-		 * usual. The second case is when X.new doesn't
-		 * exist. In that case we could have half written
-		 * X.new files (after a crash). To protect against
-		 * these we write X.new.kill files in the backup
-		 * directory (see heap_move). */
-		str ext = (@2->filename && @2->newstorage == STORE_PRIV) ? "@1.new" : "@1";
-   		int mvret = 0;
-		if (@3 && @4 && !file_exists(BAKDIR, nme, ext)) {
-                	/* file will be saved (is dirty), move the old
-			 * image into backup */
-		        mvret = heap_move(@2, srcdir, subcommit ? SUBDIR : BAKDIR, nme, ext);
-       		} else if (subcommit && @3 && (@4 || file_exists(BAKDIR, nme, ext))) {
-                	/* file is clean. move the backup into the
-			 * subcommit dir (commit should eliminate
-			 * backup) */
-			mvret = file_move(BAKDIR, SUBDIR, nme, ext);
-		}
-		/* there is a situation where the move may fail,
-                 * namely if this heap was not supposed to be existing
-                 * before, i.e. after a BATmaterialize on a persistent
-                 * bat as a workaround, do not complain about move
-                 * failure if the source file is nonexistent
- 		 */
-		if (mvret && file_exists(srcdir, nme, ext)) {
-			ret |= mvret;
-		}
-       		if (subcommit && (@2->storage == STORE_PRIV || @2->newstorage == STORE_PRIV)) {
-			long_str kill_ext;
-			snprintf(kill_ext, sizeof(kill_ext), "%s.new.kill", ext);
-			if (file_exists(BAKDIR, nme, kill_ext)) {
-				ret |= file_move(BAKDIR, SUBDIR, nme, kill_ext);
-			}
-		}
-		if (ret) return -1;
-	}
-@
-@c
-	@:backup(head,(&b->H->heap), b->htype, (b->batDirty || b->H->heap.dirty))@
-	@:backup(tail,(&b->T->heap), b->ttype, (b->batDirty || b->T->heap.dirty))@
-	@:backup(hheap,b->H->vheap, b->htype && b->hvarsized, (b->batDirty || (b->H->vheap && b->H->vheap->dirty)))@
-	@:backup(theap,b->T->vheap, b->ttype && b->tvarsized, (b->batDirty || (b->T->vheap && b->T->vheap->dirty)))@
+	if (do_backup(srcdir, nme, "head", &b->H->heap, b->htype,
+		      b->batDirty || b->H->heap.dirty, subcommit) < 0)
+		return -1;
+	if (do_backup(srcdir, nme, "tail", &b->T->heap, b->ttype,
+		      b->batDirty || b->T->heap.dirty, subcommit) < 0)
+		return -1;
+	if (b->H->vheap &&
+	    do_backup(srcdir, nme, "hheap", b->H->vheap,
+		      b->htype && b->hvarsized,
+		      b->batDirty || b->H->vheap->dirty, subcommit) < 0)
+		return -1;
+	if (b->T->vheap &&
+	    do_backup(srcdir, nme, "theap", b->T->vheap,
+		      b->ttype && b->tvarsized,
+		      b->batDirty || b->T->vheap->dirty, subcommit) < 0)
+		return -1;
 	return 0;
 }
 
