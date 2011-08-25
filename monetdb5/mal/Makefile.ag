@@ -21,7 +21,7 @@ INCLUDES = ../misc \
 		   ../../common/utils \
 		   ../../clients/mapilib \
 		   ../../gdk \
-		   $(READLINE_INCS) $(openssl_CFLAGS)
+		   $(READLINE_INCS)
 MTSAFE
 
 lib_mal = {
