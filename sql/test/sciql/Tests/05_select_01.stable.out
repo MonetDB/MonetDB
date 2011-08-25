@@ -1,0 +1,54 @@
+stdout of test '05_select_01` in directory 'test/sciql` itself:
+
+
+# 18:09:08 >  
+# 18:09:08 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/export/scratch0/zhang/monet-install/sciql/debug/var/MonetDB" --set mapi_open=true --set mapi_port=37218 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_test_sciql" --set mal_listing=0 ; echo ; echo Over..
+# 18:09:08 >  
+
+# MonetDB 5 server v11.6.0
+# This is an unreleased version
+# Serving database 'mTests_test_sciql', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://jarl.ins.cwi.nl:37218/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+Over..
+
+# 18:09:08 >  
+# 18:09:08 >  mclient -lsql -ftest -i -e --host=jarl --port=37218 
+# 18:09:08 >  
+
+#CREATE ARRAY matrix (x INT DIMENSION[4], y INT DIMENSION[4], v FLOAT DEFAULT 0.0);
+#UPDATE matrix SET v = CASE WHEN x>y THEN x + y WHEN x<y THEN x - y ELSE 0 END;
+[ 16	]
+#SELECT x, y, v FROM matrix WHERE v >2; 
+% sys.matrix,	sys.matrix,	sys.matrix # table_name
+% x,	y,	v # name
+% int,	int,	double # type
+% 1,	1,	22 # length
+[ 2,	1,	3	]
+[ 3,	0,	3	]
+[ 3,	1,	4	]
+[ 3,	2,	5	]
+#SELECT [x], [y], v FROM matrix WHERE v >2; 
+% sys.matrix,	sys.matrix,	sys.matrix # table_name
+% x,	y,	v # name
+% int,	int,	double # type
+% 1,	1,	22 # length
+[ 2,	1,	3	]
+[ 3,	0,	3	]
+[ 3,	1,	4	]
+[ 3,	2,	5	]
+#DROP ARRAY matrix;
+
+# 18:09:08 >  
+# 18:09:08 >  Done.
+# 18:09:08 >  
+

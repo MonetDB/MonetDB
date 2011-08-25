@@ -1,0 +1,51 @@
+stdout of test '05_select_02` in directory 'test/sciql` itself:
+
+
+# 18:09:08 >  
+# 18:09:08 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/export/scratch0/zhang/monet-install/sciql/debug/var/MonetDB" --set mapi_open=true --set mapi_port=37218 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_test_sciql" --set mal_listing=0 ; echo ; echo Over..
+# 18:09:08 >  
+
+# MonetDB 5 server v11.6.0
+# This is an unreleased version
+# Serving database 'mTests_test_sciql', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://jarl.ins.cwi.nl:37218/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+Over..
+
+# 18:09:08 >  
+# 18:09:08 >  mclient -lsql -ftest -i -e --host=jarl --port=37218 
+# 18:09:08 >  
+
+#CREATE ARRAY matrix (x INT DIMENSION[4], y INT DIMENSION[4], v FLOAT DEFAULT 0.0);
+#CREATE TABLE tbl (i int, k int);
+#INSERT INTO tbl VALUES (2, 11), (2, 12), (3, 11), (3, 12);
+[ 4	]
+#SELECT [tbl.k], [y], v FROM matrix JOIN tbl ON matrix.x = tbl.i;
+% sys.tbl,	sys.matrix,	sys.matrix # table_name
+% k,	y,	x # name
+% int,	int,	int # type
+% 2,	1,	1 # length
+[ 11,	0,	3	]
+[ 11,	1,	3	]
+[ 11,	2,	3	]
+[ 11,	3,	3	]
+[ 12,	0,	3	]
+[ 12,	1,	3	]
+[ 12,	2,	3	]
+[ 12,	3,	3	]
+#DROP ARRAY matrix;
+#DROP TABLE tbl;
+
+# 18:09:08 >  
+# 18:09:08 >  Done.
+# 18:09:08 >  
+

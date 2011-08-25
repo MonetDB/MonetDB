@@ -3785,8 +3785,21 @@ column_exp:
   		  append_symbol(l, $1);
   		  append_string(l, $2);
   		  $$ = _symbol_create_list( SQL_COLUMN, l ); }
- | '[' scalar_exp ']'
- 		{ $$ = _symbol_create_symbol( SQL_COLUMN, $2 ); }
+ |  '[' '*' ']'
+		{ dlist *l = L();
+  		  append_string(l, NULL);
+  		  append_string(l, NULL);
+  		  $$ = _symbol_create_list( SQL_TABLE, l ); }
+ |  '[' ident '.' '*' ']'
+		{ dlist *l = L();
+  		  append_string(l, $2);
+  		  append_string(l, NULL);
+  		  $$ = _symbol_create_list( SQL_TABLE, l ); }
+ |  '[' search_condition ']' opt_alias_name
+		{ dlist *l = L();
+  		  append_symbol(l, $2);
+  		  append_string(l, $4);
+  		  $$ = _symbol_create_list( SQL_COLUMN, l ); }
  ;
 
 opt_alias_name:
