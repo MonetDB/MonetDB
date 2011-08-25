@@ -2488,7 +2488,7 @@ AC_COMPILE_IFELSE(
 
 dnl     checks for library functions
 case $host in
-	*-darwin1[01234]*)
+	*-darwin1[[01234]]*)
 		# OSX 10.6 (Snow Leopard) and up somehow makes configure believe
 		# that fdatasync exists, in reality however, it does not on this
 		# platform.
