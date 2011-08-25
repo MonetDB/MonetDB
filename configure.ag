@@ -903,7 +903,6 @@ dnl                 deb  ass  opt  war  pro  ins
 dnl   debug          \    C    X    C    C    C
 dnl   assert         C    \    C    C    C    C
 dnl   optimize       X    C    \    C    X    X
-dnl   warnings       C    C    C    \    C    C
 dnl   profile        C    C    X    C    \    C
 dnl   instrument     C    C    X    C    C    \
 
