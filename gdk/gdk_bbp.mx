@@ -801,116 +801,6 @@ fixoidheap(void)
 }
 #endif
 
-#if GDK_VARSHIFT != 0
-/* Convert the old-style string heap to the new style.
- * This function must be called at the end of BBPinit(), just before
- * "normal processing" starts.  All errors that happen during the
- * conversion are fatal.  This function is "safe" in the sense that
- * when it is interrupted, recovery will just start over.  No
- * permanent changes are made to the database until all string heaps
- * have been converted, and then the changes are made atomically. */
-
-static void
-fixstrheap(void)
-{
-	bat bid;
-	BATstore *bs;
-	Heap h;
-	str nme, bnme;
-	long_str filename;
-	BAT *b;
-	BATiter bi;
-	BUN p, q;
-	str s;
-	var_t loc;
-
-	fprintf(stderr, "# upgrading string heaps to new storage scheme\n");
-	fflush(stderr);
-
-	for (bid = 1; bid < BBPsize; bid++) {
-		if ((bs = BBP[bid].cache) == NULL)
-			continue;	/* not a valid BAT */
-		if (bs->H.type != TYPE_str && bs->T.type != TYPE_str)
-			continue;	/* no string heaps */
-		nme = BBP_physical(bid);
-		if ((bnme = strrchr(nme, DIR_SEP)) == NULL)
-			bnme = nme;
-		else
-			bnme++;
-		sprintf(filename, "BACKUP%c%s", DIR_SEP, bnme);
-		BBPfix(bid);
-		b = BBPdescriptor(bid);
-		if (b == NULL)
-			GDKfatal("fixstrheap: BBPdescriptor(%d) failed\n", bid);
-		bi = bat_iterator(b);
-
-		/* make backup copy */
-		if (b->H->type == TYPE_str) {
-			b->H->heap.dirty = TRUE;
-			b->H->vheap->dirty = TRUE;
-		}
-		if (b->T->type == TYPE_str) {
-			b->T->heap.dirty = TRUE;
-			b->T->vheap->dirty = TRUE;
-		}
-		if (BBPsave(b))
-			GDKfatal("fixstrheap: creating backup for BAT %d failed\n", bid);
-
-@= fixstrheap
-		if (b->@1->type == TYPE_str) {
-			h = *b->@1->vheap;
-			h.filename = NULL;
-			h.base = NULL;
-			h.dirty = 0;
-			h.parentid = 0;
-
-			/* load old string heap */
-			if (HEAPload(&h, filename, "@2heap", 0) < 0)
-				GDKfatal("fixstrheap: loading old string heap for BAT %d failed\n", bid);
-
-			/* create new string heap */
-			if (HEAPdelete(b->@1->vheap, nme, "@2heap"))
-				GDKfatal("fixstrheap: deleting string heap for BAT %d failed\n", bid);
-			memset(b->@1->vheap, 0, sizeof(Heap));
-			b->@1->vheap->filename = GDKmalloc(strlen(nme) + 12);
-			if (b->@1->vheap->filename == NULL)
-				GDKfatal("fixstrheap: GDKmalloc failed\n");
-			GDKfilepath(b->@1->vheap->filename, NULL, nme, "@2heap");
-			if (ATOMheap(TYPE_str, b->@1->vheap, b->U->capacity))
-				GDKfatal("fixstrheap: initializing new string heap failed\n");
-			b->@1->vheap->parentid = b->batCacheid;
-
-			/* do the conversion */
-			b->@1->heap.dirty = TRUE;
-			b->@1->vheap->dirty = TRUE;
-			BATloop(b, p, q) {
-				loc = * (var_t *) BUN@2loc(bi, p);
-				s = h.base + loc;
-				if (strPut(b->@1->vheap, &loc, s) == 0)
-					GDKfatal("fixstrheap: strPut failed\n");
-				* (var_t *) BUN@2loc(bi, p) = loc;
-			}
-			HEAPfree(&h);
-		}
-@
-@c
-		@:fixstrheap(H,h)@
-		@:fixstrheap(T,t)@
-
-		BBPunfix(bid);
-		BBP_unload_inc(i, "fixstrheap");
-		if (BBPfree(b, "fixstrheap"))
-			GDKfatal("fixstrheap: BBPfree failed\n");
-		b = NULL;
-
-	}
-
-	/* make permanent */
-	if (TMcommit())
-		GDKfatal("fixstrheap: commit failed\n");
-}
-#endif
-
 /*
  * A read only BAT can be shared in a file system by reading its
  * descriptor separately.  The default src=0 is to read the full
@@ -1178,8 +1068,7 @@ BBPheader(FILE *fp, int *BBPlimit, oid *BBPoid, int *OIDsize, int silent)
 		exit(1);
 	}
 	if (bbpversion != GDKLIBRARY &&
-	    bbpversion != GDKLIBRARY_PRE_VARWIDTH &&
-	    bbpversion != GDKLIBRARY_PRE_VARSHIFT) {
+	    bbpversion != GDKLIBRARY_PRE_VARWIDTH) {
 		if (silent) {
 			GDKerror("BBPinit: incompatible BBP version: expected 0%o, got 0%o.", GDKLIBRARY, bbpversion);
 			return -1;
@@ -1486,12 +1375,7 @@ BBPinit(void)
 #else
 	(void) oidsize;
 #endif
-#if GDK_VARSHIFT != 0
-	if (bbpversion == GDKLIBRARY_PRE_VARSHIFT)
-		fixstrheap();
-#else
 	(void) bbpversion;
-#endif
 
 	return;
 
