@@ -523,6 +523,9 @@ AC_DEFUN([MCHECK_ADD_FLAG],
 #include <string.h>
 #endif
 
+#if -_LARGEFILE64_SOURCE - -1 == 1
+#include <stdio.h>
+#endif
 int main(int argc, char **av) {
 	char buf[24];
 	double d = atof("4.2");
@@ -903,7 +906,6 @@ dnl                 deb  ass  opt  war  pro  ins
 dnl   debug          \    C    X    C    C    C
 dnl   assert         C    \    C    C    C    C
 dnl   optimize       X    C    \    C    X    X
-dnl   warnings       C    C    C    \    C    C
 dnl   profile        C    C    X    C    \    C
 dnl   instrument     C    C    X    C    C    \
 
@@ -2541,7 +2543,7 @@ AC_COMPILE_IFELSE(
 
 dnl     checks for library functions
 case $host in
-	*-darwin1[01234]*)
+	*-darwin1[[01234]]*)
 		# OSX 10.6 (Snow Leopard) and up somehow makes configure believe
 		# that fdatasync exists, in reality however, it does not on this
 		# platform.

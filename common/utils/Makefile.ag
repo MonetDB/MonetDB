@@ -19,6 +19,8 @@
 
 MTSAFE
 
+INCLUDES = $(openssl_CFLAGS)
+
 lib_mutils  =  {
 	NOINST
 	SOURCES = mutils.c mutils.h
