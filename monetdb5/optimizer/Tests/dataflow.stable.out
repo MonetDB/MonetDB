@@ -16,14 +16,15 @@ stdout of test 'dataflow` in directory 'optimizer` itself:
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32759/
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
-function user.slow():bat[:oid,:lng];
-    r := mmath.srand(0);
-    b := bat.new(:oid,:lng);
+# MonetDB/DataCell module not loaded
+# SQLException:mvc:SQL module not initialized
+function user.slow():bat[:oid,:dbl];
+    b := bat.new(:oid,:dbl);
 barrier (go,i) := language.newRange(0:lng);
-    k := mmath.rand();
-    l := calc.lng(k);
-    bat.insert(b,nil:oid,l);
-    redo (go,i) := language.nextElement(1:lng,1000000:lng);
+    f := calc.dbl(i);
+    k := mmath.sin(f);
+    bat.insert(b,nil:oid,k);
+    redo (go,i) := language.nextElement(1:lng,10000000:lng);
 exit (go,i);
     return slow := b;
 end slow;
@@ -33,7 +34,7 @@ function user.tst():void;
     h := l;
 #mdb.setTimer(true); 
 #mdb.setThread(true); 
-    z := nil:bat[:oid,:lng];
+    z := nil:bat[:oid,:dbl];
 barrier go := language.dataflow();
     t1 := algebra.select(s,l,h);
     t2 := algebra.select(s,l,h);
@@ -56,26 +57,26 @@ function user.main():void;
     user.tst();
 end main;
 function user.tst():void;               #  0 tst:void := user.tst() {G}
-    s := user.slow();                   #  1 s:bat[:oid,:lng] := user.slow() {G}
-    l := aggr.min(s);                   #  2 l:lng := ALGmin_lng(s:bat[:oid,:lng]) {G}
-    h := l;                             #  3 h:lng := l:lng 
+    s := user.slow();                   #  1 s:bat[:oid,:dbl] := user.slow() {G}
+    l := aggr.min(s);                   #  2 l:dbl := ALGmin_dbl(s:bat[:oid,:dbl]) {G}
+    h := l;                             #  3 h:dbl := l:dbl 
 #mdb.setTimer(true); 
 #mdb.setThread(true); 
-    z := nil:bat[:oid,:lng];            #  6 z:bat[:oid,:lng] := _7:bat[:oid,:lng] {G}
+    z := nil:bat[:oid,:dbl];            #  6 z:bat[:oid,:dbl] := _7:bat[:oid,:dbl] {G}
 barrier go := language.dataflow();      #  7 go:int := MALstartDataflow() {J17}
-    t1 := algebra.select(s,l,h);        #  8 t1:bat[:oid,:lng] := ALGselect(s:bat[:oid,:lng], l:lng, h:lng) {G}
-    t2 := algebra.select(s,l,h);        #  9 t2:bat[:oid,:lng] := ALGselect(s:bat[:oid,:lng], l:lng, h:lng) {G}
-    t3 := algebra.select(s,l,h);        # 10 t3:bat[:oid,:lng] := ALGselect(s:bat[:oid,:lng], l:lng, h:lng) {G}
-    t4 := algebra.select(s,l,h);        # 11 t4:bat[:oid,:lng] := ALGselect(s:bat[:oid,:lng], l:lng, h:lng) {G}
-    t5 := algebra.select(s,l,h);        # 12 t5:bat[:oid,:lng] := ALGselect(s:bat[:oid,:lng], l:lng, h:lng) {G}
-    t6 := algebra.select(s,l,h);        # 13 t6:bat[:oid,:lng] := ALGselect(s:bat[:oid,:lng], l:lng, h:lng) {G}
-    t7 := algebra.select(s,l,h);        # 14 t7:bat[:oid,:lng] := ALGselect(s:bat[:oid,:lng], l:lng, h:lng) {G}
-    t8 := algebra.select(s,l,h);        # 15 t8:bat[:oid,:lng] := ALGselect(s:bat[:oid,:lng], l:lng, h:lng) {G}
-    z := mat.pack(t1,t2,t3,t4,t5,t6,t7,t8);# 16 z:bat[:oid,:lng] := MATpack(t1:bat[:oid,:lng], t2:bat[:oid,:lng], t3:bat[:oid,:lng], t4:bat[:oid,:lng], t5:bat[:oid,:lng], t6:bat[:oid,:lng], t7:bat[:oid,:lng], t8:bat[:oid,:lng]) {G}
+    t1 := algebra.select(s,l,h);        #  8 t1:bat[:oid,:dbl] := ALGselect(s:bat[:oid,:dbl], l:dbl, h:dbl) {G}
+    t2 := algebra.select(s,l,h);        #  9 t2:bat[:oid,:dbl] := ALGselect(s:bat[:oid,:dbl], l:dbl, h:dbl) {G}
+    t3 := algebra.select(s,l,h);        # 10 t3:bat[:oid,:dbl] := ALGselect(s:bat[:oid,:dbl], l:dbl, h:dbl) {G}
+    t4 := algebra.select(s,l,h);        # 11 t4:bat[:oid,:dbl] := ALGselect(s:bat[:oid,:dbl], l:dbl, h:dbl) {G}
+    t5 := algebra.select(s,l,h);        # 12 t5:bat[:oid,:dbl] := ALGselect(s:bat[:oid,:dbl], l:dbl, h:dbl) {G}
+    t6 := algebra.select(s,l,h);        # 13 t6:bat[:oid,:dbl] := ALGselect(s:bat[:oid,:dbl], l:dbl, h:dbl) {G}
+    t7 := algebra.select(s,l,h);        # 14 t7:bat[:oid,:dbl] := ALGselect(s:bat[:oid,:dbl], l:dbl, h:dbl) {G}
+    t8 := algebra.select(s,l,h);        # 15 t8:bat[:oid,:dbl] := ALGselect(s:bat[:oid,:dbl], l:dbl, h:dbl) {G}
+    z := mat.pack(t1,t2,t3,t4,t5,t6,t7,t8);# 16 z:bat[:oid,:dbl] := MATpack(t1:bat[:oid,:dbl], t2:bat[:oid,:dbl], t3:bat[:oid,:dbl], t4:bat[:oid,:dbl], t5:bat[:oid,:dbl], t6:bat[:oid,:dbl], t7:bat[:oid,:dbl], t8:bat[:oid,:dbl]) {G}
 exit go;                                # 17 go:int 
-    s := nil:BAT;                       # 18 s:bat[:oid,:lng] := _23:BAT {G}
+    s := nil:BAT;                       # 18 s:bat[:oid,:dbl] := _23:BAT {G}
     mdb.var();                          # 19 _17:void := MDBvar() 
-    c := aggr.count(z);                 # 20 c:wrd := ALGcount_bat(z:bat[:oid,:lng]) {G}
+    c := aggr.count(z);                 # 20 c:wrd := ALGcount_bat(z:bat[:oid,:dbl]) {G}
     io.print(c);                        # 21 _19:void := IOprint_val(c:wrd) 
     io.print("done");                   # 22 _20:void := IOprint_val(_21:str) {G}
 end tst;                                # 23  
