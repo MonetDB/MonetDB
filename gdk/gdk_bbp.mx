@@ -521,8 +521,9 @@ static int BBPdiskscan(const char *);
  * safe. */
 
 static void
-fixoidheapcolumn(BAT *b, const char *nme, const char *filename,
-		 const char *headtail, const char *htheap)
+fixoidheapcolumn(BAT *b, const char *srcdir, const char *nme,
+		 const char *filename, const char *headtail,
+		 const char *htheap)
 {
 	bat bid = ABS(b->batCacheid);
 	Heap h1, h2;
@@ -531,8 +532,36 @@ fixoidheapcolumn(BAT *b, const char *nme, const char *filename,
 	BUN i;
 	char *s;
 	unsigned short w;
+	const char *bnme;
+	int ht;
+
+	if ((bnme = strrchr(nme, DIR_SEP)) != NULL)
+		bnme++;
+	else
+		bnme = nme;
+
+	if (GDKmove(srcdir, bnme, headtail, BAKDIR, bnme, headtail) != 0)
+		GDKfatal("fixoidheap: cannot make backup of %s.%s\n", nme, headtail);
+
+	if ((ht = b->H->type) < 0) {
+		const char *anme;
+
+		/* as yet unknown head column type */
+		anme = ATOMunknown_name(ht);
+		if (strcmp(anme, "url") == 0)
+			b->H->type = TYPE_str;
+		else if (strcmp(anme, "sqlblob") == 0 ||
+			 strcmp(anme, "wkb") == 0)
+			b->H->type = TYPE_int;
+		else
+			GDKfatal("fixoidheap: unrecognized column "
+				 "type %s for BAT %d\n", anme, bid);
+	}
 
 	if (b->H->type == TYPE_str) {
+		if (GDKmove(srcdir, bnme, htheap, BAKDIR, bnme, htheap) != 0)
+			GDKfatal("fixoidheap: cannot make backup of %s.%s\n", nme, htheap);
+
 		h1 = b->H->heap;
 		h1.filename = NULL;
 		h1.base = NULL;
@@ -553,9 +582,6 @@ fixoidheapcolumn(BAT *b, const char *nme, const char *filename,
 				 "for BAT %d failed\n", bid);
 
 		/* create new string heap */
-		if (HEAPdelete(&b->H->heap, nme, headtail))
-			GDKfatal("fixoidheap: deleting %s heap "
-				 "for BAT %d failed\n", headtail, bid);
 		b->H->heap.filename = GDKmalloc(strlen(nme) + 12);
 		if (b->H->heap.filename == NULL)
 			GDKfatal("fixoidheap: GDKmalloc failed\n");
@@ -568,9 +594,6 @@ fixoidheapcolumn(BAT *b, const char *nme, const char *filename,
 				 "for BAT %d failed\n", headtail, bid);
 
 		b->H->heap.dirty = TRUE;
-		if (HEAPdelete(b->H->vheap, nme, htheap))
-			GDKfatal("fixoidheap: deleting string heap "
-				 "for BAT %d failed\n", bid);
 		b->H->vheap->filename = GDKmalloc(strlen(nme) + 12);
 		if (b->H->vheap->filename == NULL)
 			GDKfatal("fixoidheap: GDKmalloc failed\n");
@@ -605,8 +628,11 @@ fixoidheapcolumn(BAT *b, const char *nme, const char *filename,
 		}
 		HEAPfree(&h1);
 		HEAPfree(&h2);
-	} else if (b->H->type == TYPE_oid ||
-		   (b->H->type != TYPE_void && b->H->varsized)) {
+		HEAPsave(b->H->vheap, nme, htheap);
+		HEAPfree(b->H->vheap);
+	} else {
+		assert(b->H->type == TYPE_oid ||
+		       (b->H->type != TYPE_void && b->H->varsized));
 		h1 = b->H->heap;
 		h1.filename = NULL;
 		h1.base = NULL;
@@ -619,9 +645,6 @@ fixoidheapcolumn(BAT *b, const char *nme, const char *filename,
 				 "for BAT %d failed\n", headtail, bid);
 
 		/* create new heap */
-		if (HEAPdelete(&b->H->heap, nme, headtail))
-			GDKfatal("fixoidheap: deleting %s heap "
-				 "for BAT %d failed\n", headtail, bid);
 		b->H->heap.filename = GDKmalloc(strlen(nme) + 12);
 		if (b->H->heap.filename == NULL)
 			GDKfatal("fixoidheap: GDKmalloc failed\n");
@@ -645,6 +668,12 @@ fixoidheapcolumn(BAT *b, const char *nme, const char *filename,
 		b->H->heap.free = h1.free << 1;
 		HEAPfree(&h1);
 	}
+	HEAPsave(&b->H->heap, nme, headtail);
+	HEAPfree(&b->H->heap);
+
+	if (ht < 0)
+		b->H->type = ht;
+
 	return;
 
   bunins_failed:
@@ -656,12 +685,11 @@ fixoidheap(void)
 {
 	bat bid;
 	BATstore *bs;
-	BAT *b;
 	str nme, bnme;
+	long_str srcdir;
 	long_str filename;
-	int ht, tt;
-	char hs, hvs = '\0', ts, tvs = '\0';	/* saved storage types */
 	size_t len;
+	FILE *fp;
 
 	fprintf(stderr,
 		"# upgrading database from 32 bit OIDs to 64 bit OIDs\n");
@@ -681,7 +709,11 @@ fixoidheap(void)
 			snprintf(filename, sizeof(filename),
 				 "%.*s_32-64-convert",
 				 (int) (len - 8), BBP[bid].nme[0]);
-			fclose(fopen(filename, "w"));
+			fp = fopen(filename, "w");
+			if (fp == NULL)
+				GDKfatal("fixoidheap: cannot create file %s\n",
+					 filename);
+			fclose(fp);
 		}
 
 		/* OID and (non-void) varsized columns have to be rewritten */
@@ -690,49 +722,6 @@ fixoidheap(void)
 		    bs->T.type != TYPE_oid &&
 		    (bs->T.type == TYPE_void || !bs->T.varsized))
 			continue; /* nothing to do for this BAT */
-		if ((ht = bs->H.type) < 0) {
-			/* as yet unknown head column type */
-			nme = ATOMunknown_name(ht);
-			if (strcmp(nme, "url") == 0)
-				bs->H.type = TYPE_str;
-			else if (strcmp(nme, "sqlblob") == 0 ||
-				 strcmp(nme, "wkb") == 0)
-				bs->H.type = TYPE_int;
-			else if (bs->H.varsized)
-				GDKfatal("fixoidheap: unrecognized column "
-					 "type %s for BAT %d\n", nme, bid);
-			else if (bs->H.width == 1)
-				bs->H.type = TYPE_bte;
-			else if (bs->H.width == 2)
-				bs->H.type = TYPE_sht;
-			else if (bs->H.width == 4)
-				bs->H.type = TYPE_int;
-			else
-				bs->H.type = TYPE_lng;
-		}
-		if ((tt = bs->T.type) < 0) {
-			nme = ATOMunknown_name(tt);
-			if (strcmp(nme, "url") == 0)
-				bs->T.type = TYPE_str;
-			else if (strcmp(nme, "sqlblob") == 0 ||
-				 strcmp(nme, "wkb") == 0)
-				bs->T.type = TYPE_int;
-			else if (bs->H.varsized)
-				GDKfatal("fixoidheap: unrecognized column "
-					 "type %s for BAT %d\n", nme, bid);
-			else if (bs->H.width == 1)
-				bs->H.type = TYPE_bte;
-			else if (bs->H.width == 2)
-				bs->H.type = TYPE_sht;
-			else if (bs->H.width == 4)
-				bs->H.type = TYPE_int;
-			else
-				bs->H.type = TYPE_lng;
-		}
-		BBPfix(bid);
-		b = BBPdescriptor(bid);
-		if (b == NULL)
-			GDKfatal("fixoidheap: BBPdescriptor(%d) failed\n", bid);
 
 		nme = BBP_physical(bid);
 		if ((bnme = strrchr(nme, DIR_SEP)) == NULL)
@@ -740,59 +729,19 @@ fixoidheap(void)
 		else
 			bnme++;
 		sprintf(filename, "BACKUP%c%s", DIR_SEP, bnme);
+		GDKfilepath(srcdir, BATDIR, nme, NULL);
+		*strrchr(srcdir, DIR_SEP) = 0;
 
-		/* make backup copy */
-		if (b->H->type == TYPE_oid ||
-		    (b->H->varsized && b->H->type != TYPE_void)) {
-			assert(b->H->type != TYPE_oid || b->H->width == 4);
-			b->H->heap.dirty = TRUE;
-			if (b->H->type == TYPE_str)
-				b->H->vheap->dirty = TRUE;
+		if (bs->H.type == TYPE_oid ||
+		    (bs->H.varsized && bs->H.type != TYPE_void)) {
+			assert(bs->H.type != TYPE_oid || bs->H.width == 4);
+			fixoidheapcolumn(&bs->B, srcdir, nme, filename, "head", "hheap");
 		}
-		if (b->T->type == TYPE_oid ||
-		    (b->T->varsized && b->T->type != TYPE_void)) {
-			assert(b->T->type != TYPE_oid || b->T->width == 4);
-			b->T->heap.dirty = TRUE;
-			if (b->T->type == TYPE_str)
-				b->T->vheap->dirty = TRUE;
+		if (bs->T.type == TYPE_oid ||
+		    (bs->T.varsized && bs->T.type != TYPE_void)) {
+			assert(bs->T.type != TYPE_oid || bs->T.width == 4);
+			fixoidheapcolumn(&bs->BM, srcdir, nme, filename, "tail", "theap");
 		}
-		/* temporarily set storage to STORE_MEM to force move
-		 * into BACKUP dir */
-		hs = b->H->heap.storage;
-		b->H->heap.storage = STORE_MEM;
-		ts = b->T->heap.storage;
-		b->T->heap.storage = STORE_MEM;
-		if (b->H->vheap) {
-			hvs = b->H->vheap->storage;
-			b->H->vheap->storage = STORE_MEM;
-		}
-		if (b->T->vheap) {
-			tvs = b->T->vheap->storage;
-			b->T->vheap->storage = STORE_MEM;
-		}
-		if (BBPsave(b))
-			GDKfatal("fixoidheap: creating backup for BAT %d failed\n", bid);
-		/* reset storage */
-		b->H->heap.storage = hs;
-		b->T->heap.storage = ts;
-		if (b->H->vheap)
-			b->H->vheap->storage = hvs;
-		if (b->T->vheap)
-			b->T->vheap->storage = tvs;
-
-		fixoidheapcolumn(b, nme, filename, "head", "hheap");
-		fixoidheapcolumn(BATmirror(b), nme, filename, "tail", "theap");
-
-		if (ht < 0)
-			bs->H.type = ht;
-		if (tt < 0)
-			bs->T.type = tt;
-
-		BBPunfix(bid);
-		BBP_unload_inc(bid, "fixoidheap");
-		if (BBPfree(b, "fixoidheap"))
-			GDKfatal("fixoidheap: BBPfree failed\n");
-		b = NULL;
 	}
 
 	/* make permanent */
