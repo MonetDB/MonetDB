@@ -31,6 +31,7 @@
 #include "sql_mvc.h"
 #include "bat5.h"
 #include "mal_authorize.h"
+#include "mcrypt.h"
 
 #if 0
 int
@@ -111,10 +112,10 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 	BUNins(scens, "sql", 0, FALSE);
 	bid = BBPcacheid(scens);
 	if (!enc) {
-		int len = (int) strlen(passwd);
-		if ((ret = AUTHBackendSum(&pwd, &passwd, &len)) != MAL_SUCCEED) {
+		pwd = mcrypt_BackendSum(passwd, strlen(passwd));
+		if (pwd != NULL) {
 			BBPunfix(bid);
-			return ret;
+			throw(MAL, "sql.create_user", "crypt backend hash not found");
 		}
 	} else {
 		pwd = passwd;
@@ -277,19 +278,15 @@ monet5_alter_user(ptr _mvc, str user, str passwd, char enc,
 		str pwd = NULL;
 		str opwd = NULL;
 		if (!enc) {
-			int len = (int) strlen(passwd);
-			if ((err = AUTHBackendSum(&pwd, &passwd, &len)) != MAL_SUCCEED) {
-				(void)sql_error(m, 02, "ALTER USER: %s", err);
-				GDKfree(err);
+			pwd = mcrypt_BackendSum(passwd, strlen(passwd));
+			if (pwd == NULL) {
+				(void)sql_error(m, 02, "ALTER USER: crypt backend hash not found");
 				return FALSE;
 			}
 			if (oldpasswd != NULL) {
-				len = (int)strlen(oldpasswd);
-				if ((err = AUTHBackendSum(&opwd, &oldpasswd, &len))
-						!= MAL_SUCCEED)
-				{
-					(void)sql_error(m, 02, "ALTER USER: %s", err);
-					GDKfree(err);
+				opwd = mcrypt_BackendSum(oldpasswd, strlen(oldpasswd));
+				if (opwd == NULL) {
+					(void)sql_error(m, 02, "ALTER USER: crypt backend hash not found");
 					return FALSE;
 				}
 			}

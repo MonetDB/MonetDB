@@ -31,6 +31,7 @@ INCLUDES = ../../include ../../common ../../storage ../../server \
 		   ../../../clients/mapilib \
 		   ../../../common/options \
 		   ../../../common/stream \
+		   ../../../common/utils \
 		   ../../../gdk \
 		   $(RDF_INC) \
 		   $(READLINE_INCS)
