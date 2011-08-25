@@ -32,9 +32,9 @@
  * partition. This simplistic assumption should be replaced in the near
  * future by a multi-volume version. The intension is to use several
  * BAT home locations.
- * The files should be owned by the database server. Otherwise, IO operations are
- * likely to fail. This is accomplished by setting the GID and UID upon
- * system start.
+ * The files should be owned by the database server. Otherwise, IO
+ * operations are likely to fail. This is accomplished by setting the
+ * GID and UID upon system start.
  */
 #include "monetdb_config.h"
 #include "gdk.h"
@@ -185,7 +185,6 @@ GDKfilelocate(const char *nme, const char *mode, const char *extension)
 
 
 /*
- * @-
  * Unlink the file.
  */
 int
@@ -207,7 +206,6 @@ GDKunlink(const char *dir, const char *nme, const char *ext)
 }
 
 /*
- * @-
  * A move routine is overloaded to deal with extensions.
  */
 int
@@ -250,15 +248,17 @@ GDKsave(const char *nme, const char *ext, void *buf, size_t size, int mode)
 
 	if (mode == STORE_MMAP) {
 		/*
-		 * @-
-		 * Only dirty pages must be written to disk. Unchanged block will still be mapped
-		 * on the file, reading those will be cheap.  Only the changed blocks are now
-		 * mapped to swap space. PUSHED OUT: due to rather horrendous performance
-		 * caused by updating the image on disk.
+		 * Only dirty pages must be written to disk.
+		 * Unchanged block will still be mapped on the file,
+		 * reading those will be cheap.  Only the changed
+		 * blocks are now mapped to swap space.  PUSHED OUT:
+		 * due to rather horrendous performance caused by
+		 * updating the image on disk.
 		 *
-		 * Maybe it is better to make use of @%MT_msync()@. But then, we would need to
-		 * bring in a backup mechanism, in which stable images of the BATs are created
-		 * at commit-time.
+		 * Maybe it is better to make use of MT_msync().  But
+		 * then, we would need to bring in a backup mechanism,
+		 * in which stable images of the BATs are created at
+		 * commit-time.
 		 */
 		if (size)
 			err = MT_msync(buf, 0, size, MMAP_SYNC);
@@ -267,8 +267,9 @@ GDKsave(const char *nme, const char *ext, void *buf, size_t size, int mode)
 		IODEBUG THRprintf(GDKout, "#MT_msync(buf " PTRFMT ", size " SZFMT ", MMAP_SYNC) = %d\n", PTRFMTCAST buf, size, err);
 	} else {
 		if ((fd = GDKfdlocate(nme, "wb", ext)) >= 0) {
-			/* write() on 64-bits Redhat for IA64 returns 32-bits signed result (= OS BUG)!
-			   write() on Windows only takes int as size */
+			/* write() on 64-bits Redhat for IA64 returns
+			 * 32-bits signed result (= OS BUG)! write()
+			 * on Windows only takes int as size */
 			while (size > 0) {
 				/* circumvent problems by writing huge buffers in chunks <= 1GB */
 				ssize_t ret = write(fd, buf, (unsigned) MIN(1 << 30, size));
@@ -289,7 +290,8 @@ GDKsave(const char *nme, const char *ext, void *buf, size_t size, int mode)
 	if (fd >= 0) {
 		err |= close(fd);
 		if (err && GDKunlink(BATDIR, nme, ext)) {
-			/* do not tolerate corrupt heap images (BBPrecover on restart will kill them) */
+			/* do not tolerate corrupt heap images
+			 * (BBPrecover on restart will kill them) */
 			GDKfatal("GDKsave: could not open: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", mode);
 		}
 	} else if (mode != STORE_MMAP) {
@@ -299,7 +301,6 @@ GDKsave(const char *nme, const char *ext, void *buf, size_t size, int mode)
 }
 
 /*
- * @-
  * Space for the load is directly allocated and the heaps are mapped.
  * Further initialization of the atom heaps require a separate action
  * defined in their implementation.
@@ -320,8 +321,9 @@ GDKload(const char *nme, const char *ext, size_t size, size_t maxsize, int mode)
 			ssize_t n_expected, n = 0;
 
 			if (ret) {
-				/* read in chunks, some OSs do not give you all at once
-				   and Windows only accepts int */
+				/* read in chunks, some OSs do not
+				 * give you all at once and Windows
+				 * only accepts int */
 				for (n_expected = (ssize_t) size; n_expected > 0; n_expected -= n) {
 					n = read(fd, dst, (unsigned) MIN(1 << 30, n_expected));
 					IODEBUG THRprintf(GDKout, "#read(dst " PTRFMT ", n_expected " SSZFMT ", fd %d) = " SSZFMT "\n", PTRFMTCAST(void *)dst, n_expected, fd, n);
@@ -337,7 +339,7 @@ GDKload(const char *nme, const char *ext, size_t size, size_t maxsize, int mode)
 				}
 #ifndef NDEBUG
 				/* just to make valgrind happy, we
-				   initialize the whole thing */
+				 * initialize the whole thing */
 				if (ret && maxsize > size)
 					memset(ret + size, 0, maxsize - size);
 #endif
@@ -385,9 +387,9 @@ GDKload(const char *nme, const char *ext, size_t size, size_t maxsize, int mode)
 /*
  * @+ BAT disk storage
  *
- * Between sessions the BATs comprising the database are saved on disk.
- * To simplify code, we assume a UNIX directory called its  physical @%home@
- * where they are to be located.
+ * Between sessions the BATs comprising the database are saved on
+ * disk.  To simplify code, we assume a UNIX directory called its
+ * physical @%home@ where they are to be located.
  * The subdirectories BAT and PRG contain what its name says.
  *
  * A BAT created by @%BATnew@ is considered temporary until one calls
@@ -430,7 +432,8 @@ DESCload(int i)
 	if (b->batStamp > 0)
 		b->batStamp = -b->batStamp;
 
-	/* reconstruct mode from BBP status (BATmode doesn't flush descriptor, so loaded mode may be stale) */
+	/* reconstruct mode from BBP status (BATmode doesn't flush
+	 * descriptor, so loaded mode may be stale) */
 	b->batPersistence = (BBP_status(b->batCacheid) & BBPTMP) ? TRANSIENT : (BBP_status(b->batCacheid) & (BBPNEW | BBPPERSISTENT)) ? PERSISTENT : SESSION;
 	b->batCopiedtodisk = 1;
 	DESCclean(b);
@@ -495,7 +498,7 @@ BATsave(BAT *bd)
 	BATcheck(b, "BATsave");
 
 	/* views cannot be saved, but make an exception for
-	   force-remapped views */
+	 * force-remapped views */
 	if (isVIEW(b) &&
 	    !(b->H->heap.copied && b->H->heap.storage == STORE_MMAP) &&
 	    !(b->T->heap.copied && b->T->heap.storage == STORE_MMAP)) {
@@ -516,8 +519,8 @@ BATsave(BAT *bd)
 		b->talign = OIDnew(1);
 
 	/* copy the descriptor to a local variable in order to let our
-	   messing in the BAT descriptor not affect other threads that
-	   only read it. */
+	 * messing in the BAT descriptor not affect other threads that
+	 * only read it. */
 	bs = *BBP_desc(b->batCacheid);
 	/* fix up internal pointers */
 	b = &bs.BM;		/* first the mirror */
@@ -579,7 +582,6 @@ BATsave(BAT *bd)
 
 
 /*
- * @-
  * TODO: move to gdk_bbp.mx
  */
 BAT *
@@ -684,8 +686,9 @@ BATload_intern(bat i, int lock)
 
 /*
  * @- BAT preload
- * To avoid random disk access to large (memory-mapped) BATs it may help to issue a preload request.
- * Of course, it does not make sense to touch more then we can physically accomodate (budget).
+ * To avoid random disk access to large (memory-mapped) BATs it may
+ * help to issue a preload request.  Of course, it does not make sense
+ * to touch more then we can physically accomodate (budget).
  */
 /* quick and probabilistic test for a sequentially correlated heap */
 static int
@@ -711,8 +714,9 @@ heap_sequential(BAT *b)
  * changes have been going on in 2009, towards true readahead
  * http://tomoyo.sourceforge.jp/cgi-bin/lxr/source/mm/readahead.c
  *
- * Peter Feb2010: I tried to do prefetches further apart, to trigger multiple readahead
- *                units in parallel, but it does improve performance visibly
+ * Peter Feb2010: I tried to do prefetches further apart, to trigger
+ * multiple readahead units in parallel, but it does improve
+ * performance visibly
  */
 static size_t
 access_heap(str id, str hp, Heap *h, char *base, size_t sz, size_t touch, int preload, int adv)
@@ -742,8 +746,8 @@ access_heap(str id, str hp, Heap *h, char *base, size_t sz, size_t touch, int pr
 	}
 	if (touch && preload > 0 && adv != MMAP_DONTNEED) {
 		/* we need to ensure alignment, here, as b might be a
-		   view and heap.base of views are not necessarily
-		   aligned */
+		 * view and heap.base of views are not necessarily
+		 * aligned */
 		size_t *lo = (size_t *) (((size_t) base + sizeof(size_t) - 1) & (~(sizeof(size_t) - 1)));
 		size_t *hi = (size_t *) (base + touch), *hi8 = NULL, *hi1 = NULL;
 		/* page size: [bytes] -> [sizeof(size_t)]
@@ -755,8 +759,8 @@ access_heap(str id, str hp, Heap *h, char *base, size_t sz, size_t touch, int pr
 		/* detect address underrun */
 		if (hi8 < hi)
 			for (; lo <= hi8; lo += 8 * page) {
-				/* try to trigger loading of multiple pages
-				   without blocking */
+				/* try to trigger loading of multiple
+				 * pages without blocking */
 				v0 += lo[0 * page];
 				v1 += lo[1 * page];
 				v2 += lo[2 * page];
@@ -791,8 +795,8 @@ BATaccess(BAT *b, int what, int advice, int preload)
 		return 0;
 
 	/* HASH indices (inherent random access). handle first as they
-	   *will* be access randomly (one can always hope for locality
-	   on the other heaps) */
+	 * *will* be access randomly (one can always hope for locality
+	 * on the other heaps) */
 	if (what & USE_HHASH || what & USE_THASH) {
 		gdk_set_lock(GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BATaccess");
 		if (what & USE_HHASH &&
@@ -809,7 +813,7 @@ BATaccess(BAT *b, int what, int advice, int preload)
 	}
 
 	/* vheaps next, as shared vheaps are not seq-correlated
-	   needing WILLNEED (use prefetch budget for this first) */
+	 * needing WILLNEED (use prefetch budget for this first) */
 	if (what & USE_HEAD) {
 		if (b->H->vheap && b->H->vheap->base && b->H->heap.base) {
 			char *lo = BUNhead(bi, BUNfirst(b)), *hi = BUNhead(bi, BUNlast(b) - 1);
@@ -870,16 +874,18 @@ BATaccess(BAT *b, int what, int advice, int preload)
 
 /*
  * @- BATdelete
- * The new behavior is to let the routine produce warnings but always succeed.
- * rationale: on a delete, we must get rid of *all* the files. We do not have to care
- * about preserving them or be too much concerned if a file that had to be deleted was
- * not found (end result is still that it does not exist). The past behavior to delete
- * some files and then fail was erroneous. The BAT would continue to exist with an
- * incorrect disk status, causing havoc later on.
+ * The new behavior is to let the routine produce warnings but always
+ * succeed.  rationale: on a delete, we must get rid of *all* the
+ * files. We do not have to care about preserving them or be too much
+ * concerned if a file that had to be deleted was not found (end
+ * result is still that it does not exist). The past behavior to
+ * delete some files and then fail was erroneous. The BAT would
+ * continue to exist with an incorrect disk status, causing havoc
+ * later on.
  *
- * NT forces us to close all files before deleting them; in case of memory mapped
- * files this means that we have to unload the BATs before deleting. This is
- * enforced now.
+ * NT forces us to close all files before deleting them; in case of
+ * memory mapped files this means that we have to unload the BATs
+ * before deleting. This is enforced now.
  */
 int
 BATdelete(BAT *b)
@@ -1148,7 +1154,6 @@ print_header(int argc, col_format_t *argv, stream *s)
 }
 
 /*
- * @-
  * The simple BAT printing routines make use of the complex case.
  */
 int
@@ -1200,14 +1205,12 @@ BATmultiprintf(stream *s,	/* output stream */
 	}
 
 	/*
-	 * @-
 	 * Init the column descriptor of the head column.
 	 */
 	cp[argc] = NULL;	/* terminator */
 	cp[0] = c;
 	memset(c, 0, (argc--) * sizeof(col_format_t));
 	/*
-	 * @-
 	 * Init the column descriptors of the tail columns.
 	 */
 	value_fcn[0] = (ColFcn) print_format;
@@ -1228,7 +1231,6 @@ BATmultiprintf(stream *s,	/* output stream */
 	}
 	total = 2 + (total * 8);
 	/*
-	 * @-
 	 * Print the table header and then the multijoin.
 	 */
 	ret = -1;
@@ -1260,7 +1262,6 @@ BATmultiprintf(stream *s,	/* output stream */
 		ret = BATmultijoin(argc, argv, (RowFcn) print_line, (void *) s, value_fcn, (void **) cp, order);
 	}
       /*
-       * @-
        * Cleanup.
        */
 cleanup:
