@@ -831,10 +831,6 @@ _CRTIMP char *__cdecl crypt(const char *key, const char *salt);
 # endif
 #endif
 
-#include <openssl/md5.h>
-#include <openssl/sha.h>
-#include <openssl/ripemd.h>
-
 #ifndef INVALID_SOCKET
 #define INVALID_SOCKET (-1)
 #endif
