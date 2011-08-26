@@ -21,14 +21,14 @@
 #define _SEEN_MCRYPT_H 1
 
 char *mcrypt_getHashAlgorithms(void);
-char *mcrypt_MD5Sum(const char *string, const int len);
-char *mcrypt_SHA1Sum(const char *string, const int len);
-char *mcrypt_SHA224Sum(const char *string, const int len);
-char *mcrypt_SHA256Sum(const char *string, const int len);
-char *mcrypt_SHA384Sum(const char *string, const int len);
-char *mcrypt_SHA512Sum(const char *string, const int len);
-char *mcrypt_RIPEMD160Sum(const char *string, const int len);
-char *mcrypt_BackendSum(const char *string, const int len);
+char *mcrypt_MD5Sum(const char *string, size_t len);
+char *mcrypt_SHA1Sum(const char *string, size_t len);
+char *mcrypt_SHA224Sum(const char *string, size_t len);
+char *mcrypt_SHA256Sum(const char *string, size_t len);
+char *mcrypt_SHA384Sum(const char *string, size_t len);
+char *mcrypt_SHA512Sum(const char *string, size_t len);
+char *mcrypt_RIPEMD160Sum(const char *string, size_t len);
+char *mcrypt_BackendSum(const char *string, size_t len);
 char *mcrypt_hashPassword(const char *algo, const char *password, const char *challenge);
 
 #endif

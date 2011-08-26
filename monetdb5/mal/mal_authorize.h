@@ -43,11 +43,6 @@ mal_export str AUTHrequireAdmin(Client *c);
 mal_export str AUTHrequireAdminOrUser(Client *c, str *username);
 mal_export str AUTHinitTables(void);
 
-mal_export str AUTHMD5Sum(str *ret, str *string, int *len);
-mal_export str AUTHSHA1Sum(str *ret, str *string, int *len);
-mal_export str AUTHRIPEMD160Sum(str *ret, str *string, int *len);
-mal_export str AUTHSHA2Sum(str *ret, str *string, int *len, int *number);
-mal_export str AUTHBackendSum(str *ret, str *string, int *len);
 
 /*
  * @-
@@ -62,18 +57,5 @@ mal_export str AUTHBackendSum(str *ret, str *string, int *len);
  * vault needs to be unlocked as part of the server startup ritual.
  */
 mal_export str AUTHunlockVault(str *password);
-
-/*
- * @-
- * To avoid the password hashes from being sent over the wire in their
- * original format (and allowing repeatability attacks), MAPI starts with
- * sending a challenge with salt.  This salt should be appended to the
- * password hash before it is hashed again in order to make the password
- * unreadable for eavesdroppers.  The hash algorithm used is specified by
- * the client, and can be chosen from a comma separated list offered by the
- * server through the challenge (protocol >=6).  As of protocol version 9
- * the crypt algorithm has been removed.
- */
-mal_export str AUTHgetHashAlgorithms(str *ret);
 
 #endif /* _MAL_AUTHORIZE_H */

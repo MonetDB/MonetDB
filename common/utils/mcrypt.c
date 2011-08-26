@@ -52,7 +52,7 @@ mcrypt_getHashAlgorithms(void)
  * the MD5 hash of the given string.
  */
 char *
-mcrypt_MD5Sum(const char *string, const int len)
+mcrypt_MD5Sum(const char *string, size_t len)
 {
 	unsigned char md[16]; /* should be MD5_DIGEST_LENGTH */
 	char *ret;
@@ -75,7 +75,7 @@ mcrypt_MD5Sum(const char *string, const int len)
  * the SHA-1 hash of the given string.
  */
 char *
-mcrypt_SHA1Sum(const char *string, const int len)
+mcrypt_SHA1Sum(const char *string, size_t len)
 {
 	unsigned char md[20]; /* should be SHA_DIGEST_LENGTH */
 	char *ret;
@@ -98,7 +98,7 @@ mcrypt_SHA1Sum(const char *string, const int len)
  * the SHA-224 hash of the given string.
  */
 char *
-mcrypt_SHA224Sum(const char *string, const int len)
+mcrypt_SHA224Sum(const char *string, size_t len)
 {
 	unsigned char md[28];
 	char *ret;
@@ -125,7 +125,7 @@ mcrypt_SHA224Sum(const char *string, const int len)
  * the SHA-256 hash of the given string.
  */
 char *
-mcrypt_SHA256Sum(const char *string, const int len)
+mcrypt_SHA256Sum(const char *string, size_t len)
 {
 	unsigned char md[32];
 	char *ret;
@@ -154,7 +154,7 @@ mcrypt_SHA256Sum(const char *string, const int len)
  * the SHA-384 hash of the given string.
  */
 char *
-mcrypt_SHA384Sum(const char *string, const int len)
+mcrypt_SHA384Sum(const char *string, size_t len)
 {
 	unsigned char md[48];
 	char *ret;
@@ -187,7 +187,7 @@ mcrypt_SHA384Sum(const char *string, const int len)
  * the SHA-512 hash of the given string.
  */
 char *
-mcrypt_SHA512Sum(const char *string, const int len)
+mcrypt_SHA512Sum(const char *string, size_t len)
 {
 	unsigned char md[64];
 	char *ret;
@@ -225,7 +225,7 @@ mcrypt_SHA512Sum(const char *string, const int len)
  * the RIPEMD-160 hash of the given string.
  */
 char *
-mcrypt_RIPEMD160Sum(const char *string, const int len)
+mcrypt_RIPEMD160Sum(const char *string, size_t len)
 {
 	unsigned char md[20]; /* should be RIPEMD160_DIGEST_LENGTH */
 	char *ret;
@@ -248,7 +248,7 @@ mcrypt_RIPEMD160Sum(const char *string, const int len)
  * the by the backend used hash of the given string.
  */
 char *
-mcrypt_BackendSum(const char *string, const int len)
+mcrypt_BackendSum(const char *string, size_t len)
 {
 	if (strcmp(MONETDB5_PASSWDHASH, "RIPEMD160") == 0)
 		return mcrypt_RIPEMD160Sum(string, len);
