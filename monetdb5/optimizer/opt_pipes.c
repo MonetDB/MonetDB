@@ -100,8 +100,10 @@ struct PIPELINES{
 /* The default + compression */
 {"compression_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,compression,dataflow,history,multiplex,garbageCollector"},
 
-/* value-based fragmentation */
-{"slicing_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,slicing,constants,commonTerms,joinPath,deadcode,recycle,reduce,dataflow,history,multiplex,garbageCollector"}
+/* 
+ * The centipede pipe line aims at a map-reduce style of query processing
+*/
+{ "centipede_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,centipede,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,accumulators,garbageCollector" }
 
 };
 /*
