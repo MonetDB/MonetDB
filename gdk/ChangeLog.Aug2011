@@ -1,6 +1,10 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Thu Aug 25 2011 Sjoerd Mullender <sjoerd@acm.org>
+- Removed conversion code for databases that still used the (more than
+  two year) old format of "string heaps".
+
 * Wed Aug 10 2011 Sjoerd Mullender <sjoerd@acm.org>
 - On Windows and Linux/Unix we can now read databases built on the other
   O/S, as long as the hardware-related architecture (bit size, floating
