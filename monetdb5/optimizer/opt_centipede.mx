@@ -281,15 +281,6 @@ OPTplanStub(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb)
 	getFunctionId( getInstrPtr(smb,0)) = putName(nme,strlen(nme));
 	insertSymbol(cntxt->nspace,s);
 
-    /* _x := remote.connect(uri,"monetdb","monetdb","msql"); 
-	conn = newTmpVariable(smb, TYPE_str);
-    q = newStmt(smb, remoteRef,connectRef);
-	q = pushArgument(smb,q,conn);
-    q= pushStr(smb,q,"monetdb");
-    q= pushStr(smb,q,"monetdb");
-    q= pushStr(smb,q,"msql");
-	*/
-
 	conn = newTmpVariable(smb, TYPE_str);
 	setArgument(smb,getInstrPtr(smb,0), getInstrPtr(smb,0)->retc, conn);
 	/* conn = getArg(q,0);*/
@@ -468,7 +459,7 @@ OPTsliceColumn(Client cntxt, MalBlkPtr nmb, MalBlkPtr mb, InstrPtr p, Slices *sl
 #define KEEPLOCAL 5
 
 #ifdef _DEBUG_OPT_CENTIPEDE_ 
-static char *status[6]= {"", "blocked  ", "required ", "supportive ", "exported ", "keeplocal "};
+static char *status[6]= {"", "blocked  ", "required ", "support  ", "exported ", "keeplocal "};
 #endif
 
 static int 
@@ -481,6 +472,7 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 	MalBlkPtr nmb, cmb, smb;
 	str msg;
 	char nme[BUFSIZ];
+	char *head, *tail; /* oid reference to target table*/
 
 	plan = GDKzalloc(mb->ssize * sizeof(int));
 	if( plan == 0)
@@ -503,6 +495,8 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 	old = nmb->stmt;
 	if ( newMalBlkStmt(nmb,nmb->ssize) < 0 )
 		return 0;
+	head = GDKzalloc(mb->vsize);
+	tail = GDKzalloc(mb->vsize);
 
 #ifdef _DEBUG_OPT_CENTIPEDE_
 	mnstr_printf(cntxt->fdout,"#Remote plan framework\n");
@@ -527,28 +521,49 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 			strcmp(slices->schema, getVarConstant(mb, getArg(p,2)).val.sval) == 0 &&
 			strcmp(slices->table, getVarConstant(mb, getArg(p,3)).val.sval) == 0 ) {
 			plan[i] = REQUIRED;
+			head[getArg(p,0)] = 1;
+			tail[getArg(p,0)] = getFunctionId(p) != bindidxRef;
 		} 
 
 		/* blocking instructions are those that require data exchange or total view */
 		if (    getModuleId(p) == algebraRef && getFunctionId(p) == joinRef ) {
 			/* be aware that supportive subqueries may produce pivot sets */
 			/* this means we have to enforce the following */
-			if ( vars[getArg(p,1)] == REQUIRED && vars[getArg(p,2)] != REQUIRED  )
+			if ( vars[getArg(p,1)] == REQUIRED && vars[getArg(p,2)] != REQUIRED  ) {
 				plan[i] = SUPPORTIVE;
+				head[getArg(p,0)] = 1;
+			}
 		} else
-		if (    (getModuleId(p) == groupRef && (getFunctionId(p) == doneRef || getFunctionId(p) == newRef ||getFunctionId(p) == deriveRef) )  ||
-				getModuleId(p) == pqueueRef || getModuleId(p) == aggrRef || getModuleId(p) == ioRef ||
-				(getModuleId(p) == algebraRef &&(getFunctionId(p) == sliceRef || getFunctionId(p)==markTRef ||getFunctionId(p) ==markHRef)) )  {
+		if (    getModuleId(p) == algebraRef && getFunctionId(p) == leftjoinRef ) {
+				head[getArg(p,0)] = head[getArg(p,1)];
+				tail[getArg(p,0)] = tail[getArg(p,1)];
+				if ( head[getArg(p,0)] + tail[getArg(p,0)])
+					plan[i] = REQUIRED;
+		} else
+		if (    getModuleId(p) == algebraRef && (getFunctionId(p)==markTRef || getFunctionId(p)== thetauselectRef) )  {
+			if (vars[getArg(p,p->retc)] == REQUIRED ) {
+				head[getArg(p,0)] = 1;
+				plan[i] = REQUIRED;
+			} 
+		} else
+		if (    getModuleId(p) == algebraRef && getFunctionId(p)==markHRef )  {
+			if (vars[getArg(p,p->retc)] == REQUIRED )
+				tail[getArg(p,0)] = 1;
+		} else
+		if (    getModuleId(p) == batRef && getFunctionId(p)==reverseRef )  {
+			if (vars[getArg(p,p->retc)] == REQUIRED ){
+				head[getArg(p,0)] = tail[getArg(p,p->retc)];
+				tail[getArg(p,0)] = head[getArg(p,p->retc)];
+				plan[i] = REQUIRED;
+			}
+		} else
+		if (   (getModuleId(p) == groupRef && (getFunctionId(p) == doneRef || getFunctionId(p) == newRef ||getFunctionId(p) == deriveRef) )  ||
+				getModuleId(p) == pqueueRef || getModuleId(p) == aggrRef ){
 			/* this is blocking for partitioned columns, this can be achieved by propagating the REQUIRED property over variables */
 			for( j = p->retc; j < p->argc; j++)
 			if (vars[getArg(p,j)] == REQUIRED )
 				break;
-			if ( j != p->argc)
-				plan[i] = BLOCKED;
-		} else
-		if (    (getModuleId(p) == sqlRef && (getFunctionId(p) == resultSetRef || getFunctionId(p) == putName("exportValue",11) ) )  ||
-				getModuleId(p) == ioRef )
-			plan[i] = BLOCKED;
+		} 
 
 		if( plan[i] == BLOCKED){
 			for ( j= 0; j< p->retc; j++)
@@ -582,7 +597,8 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 	mnstr_printf(cntxt->fdout,"\n#phase 1\n");
 	for( i= 0; i< limit; i++)
 	if (plan[i] ) {
-		mnstr_printf(cntxt->fdout,"%s ",status[plan[i]]);
+		int x = old[i]->argv[0];
+		mnstr_printf(cntxt->fdout,"%s %c%c ",status[plan[i]], head[x]+'0', tail[x]+'0');
 		if( old[i])
 			printInstruction(cntxt->fdout, mb,0,old[i],LIST_MAL_STMT);
 	}
@@ -607,10 +623,16 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 				plan[i] = SUPPORTIVE;
 		}
 		/* be careful in adding operations that require exchange or full view */
+		if (    (getModuleId(p) == sqlRef && (getFunctionId(p) == resultSetRef || getFunctionId(p) == putName("exportValue",11) ) )  ||
+				getModuleId(p) == ioRef )
+			plan[i] = BLOCKED;
+		if (getModuleId(p) == algebraRef && getFunctionId(p) == joinRef )  {
+			/* if we produce an oid/oid based on the target, then we need an exchange */
+			if ( head[getArg(p,1)] && tail[getArg(p,2)] )
+				plan[i] = BLOCKED;
+		}
 		if (    (getModuleId(p) == groupRef && (getFunctionId(p) == doneRef || getFunctionId(p) == newRef ||getFunctionId(p) == deriveRef) )  ||
-				getModuleId(p) == pqueueRef || getModuleId(p) == aggrRef || getModuleId(p) == ioRef ||
-				(getModuleId(p) == algebraRef && getFunctionId(p) == joinRef )  ||
-				(getModuleId(p) == algebraRef &&(getFunctionId(p) == sliceRef || getFunctionId(p)==markTRef ||getFunctionId(p) ==markHRef)) )  {
+				getModuleId(p) == pqueueRef || getModuleId(p) == aggrRef || getModuleId(p) == ioRef ) {
 			/* this is blocking for partitioned columns, this can be achieved by propagating the REQUIRED property over variables */
 			for( j = p->retc; j < p->argc; j++)
 			if (vars[getArg(p,j)] == REQUIRED )
@@ -623,7 +645,8 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 	mnstr_printf(cntxt->fdout,"\n#phase 2\n");
 	for( i= 0; i< limit; i++)
 	if (plan[i] ) {
-		mnstr_printf(cntxt->fdout,"%s ",status[plan[i]]);
+		int x = old[i]->argv[0];
+		mnstr_printf(cntxt->fdout,"%s %c%c ",status[plan[i]], head[x]+'0', tail[x]+'0');
 		if( old[i])
 			printInstruction(cntxt->fdout, mb,0,old[i],LIST_MAL_STMT);
 	}
@@ -657,13 +680,15 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 	mnstr_printf(cntxt->fdout,"\n#phase 3\n");
 	for( i= 0; i< limit; i++)
 	if (plan[i] ) {
-		mnstr_printf(cntxt->fdout,"%s ",status[plan[i]]);
+		int x = old[i]->argv[0];
+		mnstr_printf(cntxt->fdout,"%s %c%c ",status[plan[i]], head[x]+'0', tail[x]+'0');
 		if( old[i])
 			printInstruction(cntxt->fdout, mb,0,old[i],LIST_MAL_STMT);
 	}
 #endif
 	/* Phase 4: determine all variables to be exported 
 	   this is limited to all variables produced but not consumed
+	   and only those that have an oid of the target
 	*/
 	ret= newInstruction(nmb,ASSIGNsymbol);
 	ret->barrier = RETURNsymbol;
@@ -674,7 +699,7 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 		p = old[i];
 		for ( j=0; j < p->retc; j++)
 		if ( vars[getArg(p,j)] == REQUIRED  && isaBatType(getArgType(nmb,p,j)) )
-			vars[getArg(p,j)] = EXPORTED;
+				vars[getArg(p,j)] = EXPORTED;
 		else
 		if ( vars[getArg(p,j)] != 0 && vars[getArg(p,j)] != KEEPLOCAL  && vars[getArg(p,j)] != SUPPORTIVE && isaBatType(getArgType(nmb,p,j)) ) {
 			/* limit the number of returned BATs to those that are expensive */
@@ -820,7 +845,7 @@ OPTcentipedeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		if (getVarConstant(mb, getArg(q,5)).val.ival != 0 )
 			continue;
 		r = getVarRows(mb, getArg(q, 0));
-		if (r >= rowcnt && getTailType( getArgType(mb,q,0)) <= TYPE_str){
+		if (r > rowcnt && getTailType( getArgType(mb,q,0)) <= TYPE_str){
 			rowcnt = r;
 			target = q;
 			r = 0;
@@ -829,14 +854,15 @@ OPTcentipedeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	if (target == 0)
 		return 0;
 
-	/* for the time being assume one target colum */
+	/* the target becomes the table against which we break the query */
+	/* for the time being assume we use the first column of the target*/
 	slices.target = target;
 	slices.schema = GDKstrdup(getVarConstant(mb, getArg(target,2)).val.sval);
 	slices.table = GDKstrdup(getVarConstant(mb, getArg(target,3)).val.sval);
+	slices.column = GDKstrdup(getVarConstant(mb,getArg(target,4)).val.sval);
 	slices.type = getTailType(getVarType(mb,getArg(target,0)));
 	slices.lslices=  newTmpVariable(mb, slices.type);
 	slices.hslices=  newTmpVariable(mb, slices.type);
-	slices.column = GDKstrdup(getVarConstant(mb,getArg(target,4)).val.sval);
 	slices.slice = 0;
 
 	OPTDEBUGcentipede
