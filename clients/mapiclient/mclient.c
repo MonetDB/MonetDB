@@ -1365,8 +1365,9 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 	do {
 		/* handle errors first */
 		if ((reply = mapi_result_error(hdl)) != NULL) {
+			mnstr_flush(toConsole);
 			if (formatter == TABLEformatter) {
-				mnstr_printf(toConsole, "%s", reply);
+				fprintf(stderr, "%s", reply);
 			} else {
 				mapi_explain_result(hdl, stderr);
 			}

@@ -1,6 +1,10 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Fri Aug 26 2011 Fabian Groffen <fabian@cwi.nl>
+- Made error messages from the server in mclient go to stderr, instead
+  of stdout.
+
 * Thu Aug 18 2011 Sjoerd Mullender <sjoerd@acm.org>
 - Implemented SQL_ATTR_METADATA_ID attribute.  The attribute is used
   in SQLColumns, SQLProcedures, and SQLTablePrivileges.
