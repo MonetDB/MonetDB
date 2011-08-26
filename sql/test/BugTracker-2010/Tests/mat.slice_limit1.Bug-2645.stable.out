@@ -109,10 +109,10 @@ Over..
 #( SELECT count(*) AS mat_slice FROM GetTrace() WHERE stmt LIKE '% := mat.slice(%' ) as ms
 #WHERE ( mat = 0 AND mat_slice = 0 ) OR ( mat > 0 AND mat_slice > 0 );
 % .m # table_name
-% L6 # name
+% L7 # name
 % wrd # type
 % 1 # length
-[ 0	]
+[ 1	]
 #TRACE select cast(x as string)||'-bla-'||cast(y as string) from slice_test limit 1;
 % sys. # table_name
 % concat_concat_x # name
@@ -124,10 +124,10 @@ Over..
 #( SELECT count(*) AS mat_slice FROM GetTrace() WHERE stmt LIKE '% := mat.slice(%' ) as ms
 #WHERE ( mat = 0 AND mat_slice = 0 ) OR ( mat > 0 AND mat_slice > 0 );
 % .m # table_name
-% L6 # name
+% L7 # name
 % wrd # type
 % 1 # length
-[ 0	]
+[ 1	]
 #drop function GetTrace;
 #drop table slice_test;
 
