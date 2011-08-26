@@ -297,11 +297,25 @@ SRVPOOLdiscover(Client cntxt)
  * a list of those already sent.
  */
 static int
-SRVPOOLfind(int srv, str qry){
-	Registry r;
+SRVPOOLfind(Client cntxt, int srv, str qry){
+	Registry r, garbage;
+	Symbol sym;
+
 	for ( r= servers[srv].nxt; r; r= r->nxt)
-	if ( strcmp(qry, r->fcn)==0)
+	if ( strcmp(qry, r->fcn)==0) {
+		/* double check on local user module as well */
+		sym = findSymbol(cntxt->nspace, userRef, putName(qry, strlen(qry)));
+		if (sym == NULL) {
+			/* remove garbage */
+			if ( r->nxt) {
+				garbage = r->nxt;
+				*r = *r->nxt;
+				GDKfree(garbage);
+			}
+			continue;
+		}
 		return 1;
+	}
 	return 0;
 }
 
@@ -327,7 +341,7 @@ SRVPOOLregisterInternal(Client cntxt, str uri, str fname)
 	if ( con) GDKfree(con);
 		
 
-	if( !SRVPOOLfind(srv, fname) ){
+	if( !SRVPOOLfind(cntxt, srv, fname) ){
 		if ( servers[srv].conn ) {
 			if ( nrservers > 1) /* register remotely */
 				msg = RMTregisterInternal(cntxt, servers[srv].conn, userRef, fname);
@@ -388,20 +402,20 @@ SRVPOOLserver(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	for ( j= i=0; i < pci->retc && j < nrservers; j++)  {
 		if ( servers[j].conn ) {
-			if ( !SRVPOOLfind(j,plan) ){
+			if ( !SRVPOOLfind(cntxt, j,plan) ){
 				msg = SRVPOOLregisterInternal(cntxt, servers[i].uri, plan);
 				if ( msg) {
 #ifdef DEBUG_RUN_SRVPOOL
-					mnstr_printf(cntxt->fdout,"#failed to register at %d\n",i);
+					mnstr_printf(cntxt->fdout,"#failed to register %s at %d\n",plan,i);
 					mnstr_printf(cntxt->fdout,"#%s\n",msg);
 #endif
 					GDKfree(msg);
 				}
 			}
-			if ( SRVPOOLfind(j,plan) ){
+			if ( SRVPOOLfind(cntxt, j,plan) ){
 				*(str*) getArgReference(stk,pci,i++) = GDKstrdup(servers[j].conn);
 #ifdef DEBUG_RUN_SRVPOOL
-				mnstr_printf(cntxt->fdout,"#found it on server %d\n",j);
+				mnstr_printf(cntxt->fdout,"#found %s on server %d\n",plan,j);
 #endif
 				fnd ++;
 			}
