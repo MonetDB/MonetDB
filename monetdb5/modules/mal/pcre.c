@@ -319,8 +319,11 @@ my_pcre_malloc(size_t s)
 static void
 my_pcre_free(void *blk)
 {
-	size_t *sz = (size_t *) blk;
+	size_t *sz;
 
+	if (blk == NULL)
+		return;
+	sz = (size_t *) blk;
 	sz -= 1;
 	GDKfree(sz);
 }
