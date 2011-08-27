@@ -41,9 +41,9 @@ fi
 
 # take the local database down
 # we don't care if the database is already locked
-monetdb lock $dbname || true
+monetdb lock $dbname 
 # and if it's already stopped it's fine too
-monetdb stop $dbname || true
+monetdb stop $dbname
 lpath=$(monetdb status -l $dbname | grep "location:" | cut -d: -f2)
 
 for host in ${hostlist} ; do
