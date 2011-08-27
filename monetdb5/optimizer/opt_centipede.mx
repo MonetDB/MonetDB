@@ -945,6 +945,7 @@ OPTvector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i, j;
 	ptr vx,vm;
 
+	VALclear(&step);
 	(void) cntxt;
 	(void) mb;
 	if ( pci->retc < 2)
