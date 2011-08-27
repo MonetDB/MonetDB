@@ -4718,10 +4718,11 @@ reduce_scale(atom *a)
 		lng v = a->data.val.lval;
 		int i = 0;
 
-		while( (v/10)*10 == v ) {
-			i++;
-			v /= 10;
-		}
+		if (v != 0) 
+                        while( (v/10)*10 == v ) {
+                                i++;
+                                v /= 10;
+                        }
 		a->data.val.lval = v;
 		return i;
 	}
@@ -4729,22 +4730,24 @@ reduce_scale(atom *a)
 		int v = a->data.val.ival;
 		int i = 0;
 
-		while( (v/10)*10 == v ) {
-			i++;
-			v /= 10;
-		}
-		a->data.val.lval = v;
+		if (v != 0) 
+                        while( (v/10)*10 == v ) {
+                                i++;
+                                v /= 10;
+                        }
+		a->data.val.ival = v;
 		return i;
 	}
 	if (a->data.vtype == TYPE_sht) {
 		sht v = a->data.val.shval;
 		int i = 0;
 
-		while( (v/10)*10 == v ) {
-			i++;
-			v /= 10;
-		}
-		a->data.val.lval = v;
+		if (v != 0) 
+                        while( (v/10)*10 == v ) {
+                                i++;
+                                v /= 10;
+                        }
+		a->data.val.shval = v;
 		return i;
 	}
 	return 0;

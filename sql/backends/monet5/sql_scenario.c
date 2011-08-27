@@ -443,6 +443,7 @@ SQLinitClient(Client c)
 				p = strchr(filename, PATH_SEP);
 				if (p)
 					*p = '\0';
+				fprintf(stdout, "# SQL loading sql scripts %s\n",filename);
 				fd = open_rastream(filename);
 				if (p)
 					filename = p + 1;
