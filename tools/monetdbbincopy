@@ -1,5 +1,22 @@
 #!/usr/bin/env bash
 
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://www.monetdb.org/Legal/MonetDBLicense
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2011 MonetDB B.V.
+# All Rights Reserved.
+
 # Make a clone from a local database on a remote server.
 # usage: monetdbbincopy <dbname> <passphrase> <host-list> 
 # copies <dbname> to <host> 
@@ -11,8 +28,7 @@ passphrase=$2
 shift 2 
 hostlist=$*
 
-if [ ${dbname}"x" = "x"  -o ${passphrase}"x" = "x" ]
-then
+if [[ -z ${dbname} || -z ${passphrase} ]] ; then
 	echo "usage: monetdbbincopy <dbname> <passphrase> <host-list>"
 	exit 1
 fi
@@ -38,8 +54,7 @@ lpath=$(monetdb status -l $dbname | grep "location:" | cut -d: -f2)
 #tar -C ${lpath} -jcf - . | nc $host 56789
 #wait $there
 
-for host in ${hostlist}
-do
+for host in ${hostlist} ; do
 	echo `date +%D:%H:%M`"start the copy to ${host}"
 	monetdb -h$host -P$passphrase create $dbname 
 	rpath=$(monetdb -h$host -P$passphrase status -l $dbname | grep "location:" | cut -d: -f2)
