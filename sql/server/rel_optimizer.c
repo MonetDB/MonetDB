@@ -4360,7 +4360,7 @@ reduce_scale(atom *a)
 			i++;
 			v /= 10;
 		}
-		a->data.val.lval = v;
+		a->data.val.ival = v;
 		return i;
 	}
 	if (a->data.vtype == TYPE_sht) {
@@ -4371,7 +4371,7 @@ reduce_scale(atom *a)
 			i++;
 			v /= 10;
 		}
-		a->data.val.lval = v;
+		a->data.val.shval = v;
 		return i;
 	}
 	return 0;
