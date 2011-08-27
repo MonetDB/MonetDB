@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+
+# Make a clone from a local database on a remote server.
+# usage: monetdbbincopy <dbname> <passphrase> <host-list> 
+# copies <dbname> to <host> 
+
+# The passphrase should be sent as well for remote servers
+
+dbname=$1
+passphrase=$2
+shift 2 
+hostlist=$*
+
+if [ ${dbname}"x" = "x"  -o ${passphrase}"x" = "x" ]
+then
+	echo "usage: monetdbbincopy <dbname> <passphrase> <host-list>"
+	exit 1
+fi
+
+# we presume monetdb, mclient, etc. are in PATH
+
+# check if the database exists at the remote site
+#monetdb -h$host -P$passphrase create $dbname || exit 1
+#rpath=$(monetdb -h$host -P$passphrase status -l $dbname | grep "location:" | cut -d: -f2)
+
+# take the local database down
+# we don't care if the database is already locked
+monetdb lock $dbname || true
+# and if it's already stopped it's fine too
+monetdb stop $dbname || true
+lpath=$(monetdb status -l $dbname | grep "location:" | cut -d: -f2)
+
+# we can't use netcat (nc) it seems to be too stupid to do something
+# useful (on Fedora) -- it terminates after it has read a NULL-byte
+#ssh -n $host "nc -l 56789 | tar -C $rpath -jxf -" &
+#there=$!
+
+#tar -C ${lpath} -jcf - . | nc $host 56789
+#wait $there
+
+for host in ${hostlist}
+do
+	echo `date +%D:%H:%M`"start the copy to ${host}"
+	monetdb -h$host -P$passphrase create $dbname 
+	rpath=$(monetdb -h$host -P$passphrase status -l $dbname | grep "location:" | cut -d: -f2)
+	tar -C ${lpath} -jcf - . | ssh $host "tar -C $rpath -jxf -"
+	monetdb -h$host -P$passphrase release $dbname
+done
+echo `date +%D:%H:%M`"done"
+monetdb release $dbname
