@@ -54,11 +54,13 @@ for host in ${hostlist} ; do
 	monetdb -q ${RMONETDB_EXTRA_OPTS} -h$host -P$passphrase create $dbname || continue
 	rpath=$(monetdb ${RMONETDB_EXTRA_OPTS} -h$host -P$passphrase status -l $dbname | \
 		grep "location:" | cut -d: -f2)
-	ssh -n $host "mnc -l -B $host 54321 | tar -C $rpath -jxf -" &
-	there=$!
-	sleep 1
-	tar -C ${lpath} --exclude=.mapi.sock -jcf - . | mnc -B $host 54321
-	wait $there
+#	ssh -n $host "mnc -l -B $host 54321 | tar -C $rpath -jxf -" &
+#	there=$!
+#	sleep 1
+#	tar -C ${lpath} --exclude=.mapi.sock -jcf - . | mnc -B $host 54321
+#	wait $there
+	tar -C ${lpath} --exclude=.mapi.sock -cf - . | xz -0 -c - | \
+		ssh $host "xzcat - | tar -C $rpath -xf -"
 	monetdb -q ${RMONETDB_EXTRA_OPTS} -h$host -P$passphrase release $dbname
 done
 echo "$(date +%D:%H:%M): done"
