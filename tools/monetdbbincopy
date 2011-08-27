@@ -46,19 +46,14 @@ monetdb lock $dbname || true
 monetdb stop $dbname || true
 lpath=$(monetdb status -l $dbname | grep "location:" | cut -d: -f2)
 
-# we can't use netcat (nc) it seems to be too stupid to do something
-# useful (on Fedora) -- it terminates after it has read a NULL-byte
-#ssh -n $host "nc -l 56789 | tar -C $rpath -jxf -" &
-#there=$!
-
-#tar -C ${lpath} -jcf - . | nc $host 56789
-#wait $there
-
 for host in ${hostlist} ; do
 	echo `date +%D:%H:%M`"start the copy to ${host}"
 	monetdb -h$host -P$passphrase create $dbname 
 	rpath=$(monetdb -h$host -P$passphrase status -l $dbname | grep "location:" | cut -d: -f2)
-	tar -C ${lpath} -jcf - . | ssh $host "tar -C $rpath -jxf -"
+	ssh -n $host "mnc -l -B $host 54321 | tar -C $rpath -jxf -" &
+	there=$!
+	tar -C ${lpath} --exclude=.mapi.sock -jcf - . | mnc -B $host 54321
+	wait $there
 	monetdb -h$host -P$passphrase release $dbname
 done
 echo `date +%D:%H:%M`"done"
