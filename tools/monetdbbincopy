@@ -22,6 +22,11 @@
 # copies <dbname> to <host-list> 
 # The passphrase should be sent as well for remote servers
 # We presume monetdb, mclient, mnc are in PATH!
+#
+# If you need anything special (such as a port number) on the local or
+# remote host to be passed onto monetdb, you can set the
+# MONETDB_EXTRA_OPTS and RMONETDB_EXTRA_OPTS variables in the
+# environment.
 
 dbname=$1
 passphrase=$2
@@ -35,23 +40,25 @@ fi
 
 # take the local database down
 # we don't care if the database is already locked
-monetdb -q lock $dbname 
+monetdb -q ${MONETDB_EXTRA_OPTS} lock $dbname 
 # and if it's already stopped it's fine too
-monetdb -q stop $dbname
-lpath=$(monetdb status -l $dbname | grep "location:" | cut -d: -f2)
+monetdb -q ${MONETDB_EXTRA_OPTS} stop $dbname
+lpath=$(monetdb ${MONETDB_EXTRA_OPTS} status -l $dbname | \
+	grep "location:" | cut -d: -f2)
 # if we have no lpath, $dbname probably doesn't exist
 [[ -z ${lpath} ]] && exit 1
 
 for host in ${hostlist} ; do
 	echo "$(date +%D:%H:%M): start the copy to ${host}"
 	# skip doing anything if creation fails
-	monetdb -h$host -P$passphrase create $dbname || continue
-	rpath=$(monetdb -h$host -P$passphrase status -l $dbname | grep "location:" | cut -d: -f2)
+	monetdb -q ${RMONETDB_EXTRA_OPTS} -h$host -P$passphrase create $dbname || continue
+	rpath=$(monetdb ${RMONETDB_EXTRA_OPTS} -h$host -P$passphrase status -l $dbname | \
+		grep "location:" | cut -d: -f2)
 	ssh -n $host "mnc -l -B $host 54321 | tar -C $rpath -jxf -" &
 	there=$!
 	tar -C ${lpath} --exclude=.mapi.sock -jcf - . | mnc -B $host 54321
 	wait $there
-	monetdb -h$host -P$passphrase release $dbname
+	monetdb -q ${RMONETDB_EXTRA_OPTS} -h$host -P$passphrase release $dbname
 done
 echo "$(date +%D:%H:%M): done"
-monetdb release $dbname
+monetdb -q ${MONETDB_EXTRA_OPTS} release $dbname
