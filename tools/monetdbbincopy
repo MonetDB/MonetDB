@@ -19,9 +19,9 @@
 
 # Make a clone from a local database on a remote server.
 # usage: monetdbbincopy <dbname> <passphrase> <host-list> 
-# copies <dbname> to <host> 
-
+# copies <dbname> to <host-list> 
 # The passphrase should be sent as well for remote servers
+# We presume monetdb, mclient, mnc are in PATH!
 
 dbname=$1
 passphrase=$2
@@ -33,22 +33,19 @@ if [[ -z ${dbname} || -z ${passphrase} ]] ; then
 	exit 1
 fi
 
-# we presume monetdb, mclient, etc. are in PATH
-
-# check if the database exists at the remote site
-#monetdb -h$host -P$passphrase create $dbname || exit 1
-#rpath=$(monetdb -h$host -P$passphrase status -l $dbname | grep "location:" | cut -d: -f2)
-
 # take the local database down
 # we don't care if the database is already locked
-monetdb lock $dbname 
+monetdb -q lock $dbname 
 # and if it's already stopped it's fine too
-monetdb stop $dbname
+monetdb -q stop $dbname
 lpath=$(monetdb status -l $dbname | grep "location:" | cut -d: -f2)
+# if we have no lpath, $dbname probably doesn't exist
+[[ -z ${lpath} ]] && exit 1
 
 for host in ${hostlist} ; do
-	echo `date +%D:%H:%M`"start the copy to ${host}"
-	monetdb -h$host -P$passphrase create $dbname 
+	echo "$(date +%D:%H:%M): start the copy to ${host}"
+	# skip doing anything if creation fails
+	monetdb -h$host -P$passphrase create $dbname || continue
 	rpath=$(monetdb -h$host -P$passphrase status -l $dbname | grep "location:" | cut -d: -f2)
 	ssh -n $host "mnc -l -B $host 54321 | tar -C $rpath -jxf -" &
 	there=$!
@@ -56,5 +53,5 @@ for host in ${hostlist} ; do
 	wait $there
 	monetdb -h$host -P$passphrase release $dbname
 done
-echo `date +%D:%H:%M`"done"
+echo "$(date +%D:%H:%M): done"
 monetdb release $dbname
