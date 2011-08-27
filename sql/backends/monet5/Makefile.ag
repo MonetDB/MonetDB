@@ -57,6 +57,7 @@ lib__sql = {
 		   ../../../monetdb5/tools/libmonetdb5 \
 		   ../../../gdk/libbat \
 		   ../../../common/stream/libstream \
+		   ../../../common/utils/libmcrypt \
 		   $(READLINE_LIBS) $(PTHREAD_LIBS) \
 		   $(raptor_LIBS) $(MATH_LIBS)
 }
