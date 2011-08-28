@@ -6,6 +6,8 @@ a:str := "Fabian!";
 b:flt := 4.3;
 c:int := 12;
 d:bat[:str,:int] := bat.new(:str, :int);
+e := nil:BAT;
+
 bat.insert(d, "bla", 1);
 bat.insert(d, nil:str, 2);
 bat.insert(d, "boe", nil:int);
@@ -15,18 +17,21 @@ i:str := remote.put(conn, a);
 j:str := remote.put(conn, b);
 k:str := remote.put(conn, c);
 l:str := remote.put(conn, d);
+m:str := remote.put(conn, e);
 
 # retrieve the values
 r:str := remote.get(conn, i);
 s:flt := remote.get(conn, j);
 t:int := remote.get(conn, k);
 u:bat[:str,:int] := remote.get(conn, l);
+v:BAT := remote.get(conn,m);
 
 # see if it really is here
 io.print(r);
 io.print(s);
 io.print(t);
 io.print(u);
+io.print(v);
 
 # help testweb a bit, since currently no cleanup is done on server
 # shutdown
