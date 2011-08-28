@@ -355,13 +355,21 @@ SRVPOOLregisterInternal(Client cntxt, str uri, str fname)
 		if ( servers[srv].conn ) {
 			if ( srvtop > 1) /* register remotely */
 				msg = RMTregisterInternal(cntxt, servers[srv].conn, userRef, fname);
+#ifdef DEBUG_RUN_SRVPOOL
+				if ( msg) {
+					mnstr_printf(cntxt->fdout,"#Failed to register\n");
+					printFunction(cntxt->fdout, findSymbol(cntxt->nspace, userRef,putName(fname,strlen(fname)))->def, 0, LIST_MAL_DEBUG);
+				}
+#endif
 		} else
 			throw(MAL,"srvpool.register","Site not reachable, connection missing");
 
-		r= (Registry) GDKzalloc(sizeof(struct REGMAL));
-		r->fcn = GDKstrdup(fname);
-		r->nxt = servers[srv].nxt;
-		servers[srv].nxt = r;
+		if ( msg == MAL_SUCCEED) {
+			r= (Registry) GDKzalloc(sizeof(struct REGMAL));
+			r->fcn = GDKstrdup(fname);
+			r->nxt = servers[srv].nxt;
+			servers[srv].nxt = r;
+		}
 	}
 	return msg;
 }
