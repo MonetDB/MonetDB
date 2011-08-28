@@ -220,14 +220,22 @@ SRVPOOLdiscover(Client cntxt)
 	BUN p,q;
 	str msg = MAL_SUCCEED, conn, scen = "msql";
 	BATiter bi;
-	int i = 0, j;
-	char buf[BUFSIZ], *s= buf;
+	int j;
+	char buf[BUFSIZ], *s= buf, *dbname;
 
 
+	if ( srvbaseline == 0)
+		srvbaseline = 2; /* for debugging */
+
+	dbname= GDKgetenv("gdk_dbname");
+	snprintf(buf,BUFSIZ,"*/srvpool/%s",dbname);
 	if ( srvpattern == 0)
-		/* use default pattern */
-		srvpattern = GDKstrdup("*/srvpool");
-	strncpy(buf,srvpattern, BUFSIZ-1);
+		/* set default pattern */
+		srvpattern = GDKstrdup(buf);
+
+	/* first check the validity of the connections */
+
+	/* discover any new servers */
 	msg = RMTresolve(&bid,&s);
 	if ( msg == MAL_SUCCEED) {
 		b = BATdescriptor(bid);
@@ -236,22 +244,26 @@ SRVPOOLdiscover(Client cntxt)
 			BATloop(b,p,q){
 				str t= (str) BUNtail(bi,p);
 
-				j = SRVPOOLgetServer(t); 
-				msg = RMTconnectScen(&conn, &servers[j].uri, &servers[j].usr, &servers[j].pwd, &scen);
-				if ( msg == MAL_SUCCEED ) {
-					servers[j].conn = GDKstrdup(conn);
-					i++;
-				} else {
+				for( j = 0; j < srvtop; j++)
+				if ( strcmp(servers[j].uri, t) == 0) 
+					break;
+				if ( servers[j].conn == NULL) {
+					j = SRVPOOLnewServer(t); 
+					msg = RMTconnectScen(&conn, &servers[j].uri, &servers[j].usr, &servers[j].pwd, &scen);
+					if ( msg == MAL_SUCCEED )
+						servers[j].conn = GDKstrdup(conn);
+					else {
 #ifdef DEBUG_RUN_SRVPOOL
-					mnstr_printf(cntxt->fdout,"#Worker site %d reports %s \n", j, msg);
+						mnstr_printf(cntxt->fdout,"#Worker site %d reports %s \n", j, msg);
 #endif
-					GDKfree(msg);	/* ignore failure */
+						GDKfree(msg);	/* ignore failure */
+					}
 				}
 
 #ifdef DEBUG_RUN_SRVPOOL
 				mnstr_printf(cntxt->fdout,"#Worker site %d alias %s %s\n", j, (servers[j].conn?servers[j].conn:""), t);
 #endif
-				assert(i <MAXSITES);
+				assert(srvtop <MAXSITES);
 			}
 		}
 		BBPreleaseref(bid);
@@ -263,10 +275,8 @@ SRVPOOLdiscover(Client cntxt)
 #endif
 		GDKfree(msg);
 	}
-	if ( srvbaseline == 0)
-		srvbaseline = 2;
 
-	while (i < srvbaseline) {
+	while (srvtop < srvbaseline) {
 	 	/* there is a last resort, use local execution */
 		/* make sure you have enough connections */
 		SABAOTHgetLocalConnection(&s);
@@ -277,15 +287,12 @@ SRVPOOLdiscover(Client cntxt)
 			servers[j].conn = GDKstrdup(conn);
 		else  GDKfree(msg);
 #ifdef DEBUG_RUN_SRVPOOL
-		mnstr_printf(cntxt->fdout,"#Worker site %d %s\n", j, s);
+		mnstr_printf(cntxt->fdout,"#Worker site %d connection %s %s\n", j, servers[j].conn, s);
 #endif
-		i++;
 	}
-	/* announce it for public use. */
-	nrservers = i;
 
 #ifdef DEBUG_RUN_SRVPOOL
-	mnstr_printf(cntxt->fdout,"#Servers available %d\n", nrservers);
+	mnstr_printf(cntxt->fdout,"#Servers available %d\n", srvtop);
 #else
 		(void) cntxt;
 #endif
@@ -343,7 +350,7 @@ SRVPOOLregisterInternal(Client cntxt, str uri, str fname)
 
 	if( !SRVPOOLfind(cntxt, srv, fname) ){
 		if ( servers[srv].conn ) {
-			if ( nrservers > 1) /* register remotely */
+			if ( srvtop > 1) /* register remotely */
 				msg = RMTregisterInternal(cntxt, servers[srv].conn, userRef, fname);
 		} else
 			throw(MAL,"srvpool.register","Site not reachable, connection missing");
@@ -400,7 +407,9 @@ SRVPOOLserver(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	for ( j= i=0; i < pci->retc && j < nrservers; j++)  {
+	if ( pci->retc > srvtop )
+		throw(MAL,"srvpool.server","Not enough servers");
+	for ( j= i=0; i < pci->retc && j < srvtop; j++)  {
 		if ( servers[j].conn ) {
 			if ( !SRVPOOLfind(cntxt, j,plan) ){
 				msg = SRVPOOLregisterInternal(cntxt, servers[i].uri, plan);
@@ -427,7 +436,7 @@ SRVPOOLserver(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 	}
 	if ( fnd != pci->retc)
-		throw(MAL,"srvpool.server","Not enough connections");
+		throw(MAL,"srvpool.server","Not enough alife connections");
 	return MAL_SUCCEED;
 }
 
