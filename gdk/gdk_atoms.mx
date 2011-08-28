@@ -1367,7 +1367,7 @@ batFromStr(char *src, int *len, bat **dst)
 		t++;
 
 	if (strcmp(r,"nil")== 0 ){
-		**dst = bat_nil;
+		**dst = 0;
 		return (int) (t + (c == '>') - src);
 	}
 
