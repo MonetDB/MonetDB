@@ -154,27 +154,29 @@ static void SRVPOOLcleanup(int i)
 
 /* logically disconnect from all servers */
 static str
-SRVPOOLdisconnect(void)
+SRVPOOLdisconnect(Client cntxt)
 {
 	int i, ret;
 	str msg = MAL_SUCCEED;
 
 	for ( i=0; i< srvtop; i++)
 	if ( servers[i].conn != NULL ) {
-		msg = RMTdisconnect(&ret,&servers[i].conn);
+		msg = RMTdisconnect(cntxt,&ret,&servers[i].conn);
 		GDKfree(servers[i].conn);
 		servers[i].conn = NULL;
 	}
 	return msg;
 }
 /* restart server pool */
-str SRVPOOLreset(int *ret)
+str SRVPOOLreset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
 	str msg;
 
-	(void) ret;
-	msg = SRVPOOLdisconnect();
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	msg = SRVPOOLdisconnect(cntxt);
 	for ( i=0; i< srvtop; i++){
 		SRVPOOLcleanup(i);
 		GDKfree(servers[i].uri);
@@ -256,7 +258,7 @@ SRVPOOLdiscover(Client cntxt)
 #ifdef DEBUG_RUN_SRVPOOL
 						mnstr_printf(cntxt->fdout,"#Worker site %d reports %s \n", j, msg);
 #endif
-						GDKfree(msg);	/* ignore failure */
+						break;
 					}
 				}
 
@@ -274,6 +276,7 @@ SRVPOOLdiscover(Client cntxt)
 		mnstr_printf(cntxt->fdout,"#%s\n", msg);
 #endif
 		GDKfree(msg);
+		msg = MAL_SUCCEED;
 	}
 
 	while (srvtop < srvbaseline) {
@@ -414,11 +417,12 @@ SRVPOOLserver(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if ( !SRVPOOLfind(cntxt, j,plan) ){
 				msg = SRVPOOLregisterInternal(cntxt, servers[i].uri, plan);
 				if ( msg) {
+					/* registration should succeed on all hots */
 #ifdef DEBUG_RUN_SRVPOOL
 					mnstr_printf(cntxt->fdout,"#failed to register %s at %d\n",plan,i);
 					mnstr_printf(cntxt->fdout,"#%s\n",msg);
 #endif
-					GDKfree(msg);
+					break;
 				}
 			}
 			if ( SRVPOOLfind(cntxt, j,plan) ){
@@ -435,9 +439,9 @@ SRVPOOLserver(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			(servers[j].conn?servers[j].conn:"null"));
 #endif
 	}
-	if ( fnd != pci->retc)
+	if (msg == MAL_SUCCEED && fnd != pci->retc)
 		throw(MAL,"srvpool.server","Not enough alife connections");
-	return MAL_SUCCEED;
+	return msg;
 }
 
 /*
