@@ -593,17 +593,6 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 		}
 	}
 
-#ifdef _DEBUG_OPT_CENTIPEDE_ 
-	mnstr_printf(cntxt->fdout,"\n#phase 1\n");
-	for( i= 0; i< limit; i++)
-	if (plan[i] ) {
-		int x = old[i]->argv[0];
-		mnstr_printf(cntxt->fdout,"%s %c%c ",status[plan[i]], head[x]+'0', tail[x]+'0');
-		if( old[i])
-			printInstruction(cntxt->fdout, mb,0,old[i],LIST_MAL_STMT);
-	}
-#endif
-
 	/* Phase 2: extend the set of supportive instructions.
 	   we have to avoid common ancestor dependency on partitioned variables
 	*/
@@ -641,16 +630,6 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 				plan[i] = BLOCKED;
 		}
 	}
-#ifdef _DEBUG_OPT_CENTIPEDE_ 
-	mnstr_printf(cntxt->fdout,"\n#phase 2\n");
-	for( i= 0; i< limit; i++)
-	if (plan[i] ) {
-		int x = old[i]->argv[0];
-		mnstr_printf(cntxt->fdout,"%s %c%c ",status[plan[i]], head[x]+'0', tail[x]+'0');
-		if( old[i])
-			printInstruction(cntxt->fdout, mb,0,old[i],LIST_MAL_STMT);
-	}
-#endif
 	/* Phase 3: check all instructions for blocked arguments.
 	   The variable may not be produced by a blocked instruction
 	   and all arguments must be required/supportive/constant
@@ -945,7 +924,7 @@ OPTvector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i, j;
 	ptr vx,vm;
 
-	VALclear(&step);
+	memset( (char*) &step, 0, sizeof(step));
 	(void) cntxt;
 	(void) mb;
 	if ( pci->retc < 2)
