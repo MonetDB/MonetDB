@@ -47,7 +47,7 @@ struct PIPELINES{
  * The default pipe line contains as of Feb2010 mitosis-mergetable-reorder,
  * aimed at large tables and improved access locality
 */
-{ "default_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,accumulators,garbageCollector" },
+{ "default_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector" },
 
 /*
  * The no_mitosis pipe line is (and should be kept!) identical to the default pipeline,
@@ -103,7 +103,7 @@ struct PIPELINES{
 /* 
  * The centipede pipe line aims at a map-reduce style of query processing
 */
-{ "centipede",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,centipede,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,accumulators,garbageCollector" }
+{ "centipede",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,centipede,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector" }
 
 };
 /*
