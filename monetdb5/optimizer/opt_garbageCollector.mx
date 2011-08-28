@@ -217,6 +217,8 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 					varGetProp(mb, k, keepProp) == NULL){
 						q= newAssignment(mb);
 						getArg(q,0) = k;
+						setVarUDFtype(mb,k);
+						setVarFixed(mb,k);
 						q= pushNil(mb,q, TYPE_bat);
 						q->gc |= GARBAGECONTROL;
 						mb->var[k]->eolife = mb->stop-1;
