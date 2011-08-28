@@ -637,14 +637,14 @@ OCTOPUSmakeSchedule(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-OCTOPUSdisconnect(void)
+OCTOPUSdisconnect(Client cntxt)
 {
 	int i, ret;
 	str msg = MAL_SUCCEED;
 
 	for ( i=0; i< nrpeers; i++)
 		if ( peers[i].active && peers[i].conn != NULL ) {
-		msg = RMTdisconnect(&ret,&peers[i].conn);
+		msg = RMTdisconnect(cntxt,&ret,&peers[i].conn);
 		GDKfree(peers[i].conn);
 		peers[i].conn = NULL;
 	}
@@ -674,7 +674,7 @@ OCTOPUSrun(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	stk->wrapup = NULL;
 
 	*res = 0; 	/* skip to the exit */
-	OCTOPUSdisconnect();
+	OCTOPUSdisconnect(cntxt);
 	return msg;
 
 }
