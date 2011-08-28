@@ -1365,6 +1365,12 @@ batFromStr(char *src, int *len, bat **dst)
 	t = r;
 	while ((c = *t) && (c == '_' || GDKisalnum(c)))
 		t++;
+
+	if (strcmp(r,"nil")== 0 ){
+		**dst = bat_nil;
+		return (int) (t + (c == '>') - src);
+	}
+
 	s = GDKmalloc((unsigned) (1 + t - r));
 	if (s != NULL) {
 		strncpy(s, r, t - r);
