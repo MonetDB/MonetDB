@@ -97,6 +97,8 @@ can be used to issue a safe, but blocking get/put/exec/register request.
  * @- Implementation
  */
 
+/* #define _DEBUG_REMOTE*/
+
 #define RMTT_L_ENDIAN   0<<1
 #define RMTT_B_ENDIAN   1<<1
 #define RMTT_32_BITS    0<<2
@@ -281,7 +283,7 @@ str RMTconnect(
  * system, it only needs to exist for the client (i.e. it was once
  * created).
  */
-str RMTdisconnect(int *ret, str *conn) {
+str RMTdisconnect(Client cntxt, int *ret, str *conn) {
 	connection c, t;
 
 	if (conn == NULL || *conn == NULL || strcmp(*conn, (str)str_nil) == 0)
@@ -293,6 +295,8 @@ str RMTdisconnect(int *ret, str *conn) {
 	*ret = 0;
 #ifdef _DEBUG_REMOTE
 	mnstr_printf(cntxt->fdout, "#disconnect link %s\n", *conn);
+#else
+	(void) cntxt;
 #endif
 
 	/* we need a lock because the same user can be handled by multiple
