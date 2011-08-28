@@ -59,7 +59,7 @@ lib__sql = {
 		   ../../../common/stream/libstream \
 		   ../../../common/utils/libmcrypt \
 		   $(READLINE_LIBS) $(PTHREAD_LIBS) \
-		   $(raptor_LIBS) $(MATH_LIBS)
+		   $(openssl_LIBS) $(raptor_LIBS) $(MATH_LIBS)
 }
 
 
