@@ -49,7 +49,7 @@ remote_export str RMTconnect(
 		str *uri,
 		str *user,
 		str *passwd);
-remote_export str RMTdisconnect(int *ret, str *conn);
+remote_export str RMTdisconnect(Client cntxt, int *ret, str *conn);
 remote_export str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 remote_export str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 remote_export str RMTregisterInternal(Client cntxt, str conn, str mod, str fcn);
