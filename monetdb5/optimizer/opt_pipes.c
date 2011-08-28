@@ -47,7 +47,7 @@ struct PIPELINES{
  * The default pipe line contains as of Feb2010 mitosis-mergetable-reorder,
  * aimed at large tables and improved access locality
 */
-{ "default_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector" },
+{ "default_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,accumulators,garbageCollector" },
 
 /*
  * The no_mitosis pipe line is (and should be kept!) identical to the default pipeline,
@@ -72,7 +72,7 @@ struct PIPELINES{
 */
 {"replication_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,replication,multiplex,garbageCollector" },
 
-{"accumulator_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,accumulators,dataflow,history,multiplex,garbageCollector"},
+{"accumulator_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,multiplex,accumulators,garbageCollector"},
 
 {"recycler_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,deadcode,constants,commonTerms,joinPath,deadcode,recycle,reduce,dataflow,history,multiplex,garbageCollector"},
 
@@ -103,7 +103,7 @@ struct PIPELINES{
 /* 
  * The centipede pipe line aims at a map-reduce style of query processing
 */
-{ "centipede",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,centipede,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector" }
+{ "centipede",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,centipede,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,accumulators,garbageCollector" }
 
 };
 /*
