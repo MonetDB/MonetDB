@@ -596,6 +596,10 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		 * the server */
 		sout = mapi_get_to(c->mconn);
 		sin = mapi_get_from(c->mconn);
+		if ( sin == NULL || sout == NULL) {
+			mal_unset_lock(c->lock, "remote.get");
+			throw(MAL, "remote.get", "Connection lost");
+		}
 
 		/* call our remote helper to do this more efficiently */
 		mnstr_printf(sout, "remote.batbincopy(%s);\n", ident);
