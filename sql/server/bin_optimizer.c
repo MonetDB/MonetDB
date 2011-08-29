@@ -444,6 +444,7 @@ _bin_optimizer(mvc *c, stmt *s)
 	case st_reorder:
 	case st_ordered:
 	case st_limit2:
+	case st_sample:
 
 	case st_alias:
 	case st_append:

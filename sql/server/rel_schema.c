@@ -122,7 +122,7 @@ as_subquery( mvc *sql, sql_table *t, sql_rel *sq, dlist *column_spec )
 	if (!r)
 		return NULL;
 
-        if (is_topn(r->op))
+        if (is_topn(r->op) || is_sample(r->op))
                 r = sq->l;
 
 	if (column_spec) {

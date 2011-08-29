@@ -60,6 +60,7 @@ typedef enum stmt_type {
 
 	st_limit,
 	st_limit2,
+	st_sample,
 	st_order,
 	st_reorder,
 
@@ -282,6 +283,7 @@ extern stmt *stmt_mirror(sql_allocator *sa, stmt *s);
 		(dir<<2)+(before_project<<1)+(order)
 extern stmt *stmt_limit(sql_allocator *sa, stmt *s, stmt *offset, stmt *limit, int direction);
 extern stmt *stmt_limit2(sql_allocator *sa, stmt *s, stmt *sb, stmt *offset, stmt *limit, int direction);
+extern stmt *stmt_sample(sql_allocator *sa, stmt *s, stmt *sample);
 extern stmt *stmt_order(sql_allocator *sa, stmt *s, int direction);
 extern stmt *stmt_reorder(sql_allocator *sa, stmt *s, stmt *t, int direction);
 

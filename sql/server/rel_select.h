@@ -67,6 +67,7 @@ extern sql_exp *rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s, char
 extern sql_exp *rel_nop_(mvc *sql, sql_exp *l, sql_exp *r, sql_exp *r2, sql_exp *r3, sql_schema *s, char *fname, int card);
 
 extern sql_rel *rel_topn(sql_allocator *sa, sql_rel *l, list *exps );
+extern sql_rel *rel_sample(sql_allocator *sa, sql_rel *l, list *exps );
 extern sql_rel *rel_orderby(mvc *sql, sql_rel *l, list *orderbyexps);
 
 extern sql_rel *rel_dup(sql_rel *r);

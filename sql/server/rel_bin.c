@@ -1900,6 +1900,50 @@ rel2bin_topn( mvc *sql, sql_rel *rel, list *refs)
 }
 
 static stmt *
+rel2bin_sample( mvc *sql, sql_rel *rel, list *refs)
+{
+	list *newl;
+	stmt *sub = NULL, *s = NULL, *sample = NULL;
+	node *n;
+
+	if (rel->l) { /* first construct the sub relation */
+		sub = subrel_bin(sql, rel->l, refs);
+		if (!sub)
+			return NULL;
+	}
+
+	n = sub->op4.lval->h;
+	newl = list_new(sql->sa);
+
+	if (n) {
+		stmt *sc = n->data;
+		char *cname = column_name(sql->sa, sc);
+		char *tname = table_name(sql->sa, sc);
+
+		s = exp_bin(sql, rel->exps->h->data, NULL, NULL, NULL, NULL);
+
+		if (!s)
+			s = stmt_atom_wrd_nil(sql->sa);
+
+		sc = column(sql->sa, sc);
+		sample = stmt_sample(sql->sa, stmt_alias(sql->sa, sc, tname, cname),s);
+
+		sample = stmt_mirror(sql->sa, sample);
+		for ( ; n; n = n->next) {
+			stmt *sc = n->data;
+			char *cname = column_name(sql->sa, sc);
+			char *tname = table_name(sql->sa, sc);
+		
+			sc = column(sql->sa, sc);
+			sc = stmt_project(sql->sa, sample, sc);
+			list_append(newl, stmt_alias(sql->sa, sc, tname, cname));
+		}
+	}
+	sub = stmt_list(sql->sa, newl);
+	return sub;
+}
+
+static stmt *
 nth( list *l, int n)
 {
 	int i;
@@ -3569,6 +3613,10 @@ subrel_bin(mvc *sql, sql_rel *rel, list *refs)
 		break;
 	case op_topn: 
 		s = rel2bin_topn(sql, rel, refs);
+		sql->type = Q_TABLE;
+		break;
+	case op_sample:
+		s = rel2bin_sample(sql, rel, refs);
 		sql->type = Q_TABLE;
 		break;
 	case op_insert: 

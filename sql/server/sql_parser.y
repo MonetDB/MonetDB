@@ -209,6 +209,7 @@ int yydebug=1;
 	table_ref
 	opt_limit
 	opt_offset
+	opt_sample
 	param
 	case_exp
 	case_scalar_exp
@@ -543,7 +544,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token ALTER ADD TABLE COLUMN TO UNIQUE VALUES VIEW WHERE WITH
 %token<sval> sqlDATE TIME TIMESTAMP INTERVAL
 %token YEAR MONTH DAY HOUR MINUTE SECOND ZONE
-%token LIMIT OFFSET
+%token LIMIT OFFSET SAMPLE
 
 %token CASE WHEN THEN ELSE NULLIF COALESCE IF ELSEIF WHILE DO
 %token ATOMIC BEGIN END
@@ -2771,7 +2772,7 @@ simple_select:
 		$4->h->next->data.sym,
 		$4->h->next->next->data.sym,
 		$4->h->next->next->next->data.sym,
-		NULL, NULL, NULL, NULL);
+		NULL, NULL, NULL, NULL, NULL);
 	}
     ;
 
@@ -2782,15 +2783,15 @@ select_statement_single_row:
 		$6->h->next->data.sym,
 		$6->h->next->next->data.sym,
 		$6->h->next->next->next->data.sym,
-		NULL, NULL, NULL, NULL);
+		NULL, NULL, NULL, NULL, NULL);
 	}
     ;
 
 select_no_parens_orderby:
-     select_no_parens opt_order_by_clause opt_limit opt_offset
+     select_no_parens opt_order_by_clause opt_limit opt_offset opt_sample
 	 { 
 	  $$ = $1;
-	  if ($2 || $3 || $4) {
+	  if ($2 || $3 || $4 || $5) {
 	  	if ($1 != NULL &&
 		    ($1->token == SQL_SELECT ||
 		     $1->token == SQL_UNION  ||
@@ -2802,11 +2803,12 @@ select_no_parens_orderby:
 	  			s -> orderby = $2;
 	  			s -> limit = $3;
 	  			s -> offset = $4;
+	  			s -> sample = $5;
 			} else { /* Add extra select * from .. in case of UNION, EXCEPT, INTERSECT */
 				$$ = newSelectNode( 
 					SA, 0, 
 					append_symbol(L(), _symbol_create_list(SQL_TABLE, append_string(append_string(L(),NULL),NULL))), NULL,
-					_symbol_create_list( SQL_FROM, append_symbol(L(), $1)), NULL, NULL, NULL, $2, _symbol_create_list(SQL_NAME, append_list(append_string(L(),"inner"),NULL)), $3, $4);
+					_symbol_create_list( SQL_FROM, append_symbol(L(), $1)), NULL, NULL, NULL, $2, _symbol_create_list(SQL_NAME, append_list(append_string(L(),"inner"),NULL)), $3, $4, $5);
 			}
 	  	} else {
 			yyerror("ORDER BY: missing select operator");
@@ -3051,6 +3053,15 @@ opt_offset:
 			  $$ = _newAtomNode( atom_int(SA, t, (lng)$2)); 
 			}
  |  OFFSET param	{ $$ = $2; }
+ ;
+
+opt_sample:
+	/* empty */	{ $$ = NULL; }
+ |  SAMPLE poswrd	{ 
+		  	  sql_subtype *t = sql_bind_localtype("wrd");
+			  $$ = _newAtomNode( atom_int(SA, t, (lng)$2)); 
+			}
+ |  SAMPLE param	{ $$ = $2; }
  ;
 
 sort_specification_list:

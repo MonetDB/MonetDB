@@ -142,6 +142,7 @@ scanner_init_keywords(void)
 	keywords_insert("LEFT", LEFT);
 	keywords_insert("LIKE", LIKE);
 	keywords_insert("LIMIT", LIMIT);
+	keywords_insert("SAMPLE", SAMPLE);
 	keywords_insert("LOCAL", LOCAL);
 	keywords_insert("LOCKED", LOCKED);
 	keywords_insert("NATURAL", NATURAL);

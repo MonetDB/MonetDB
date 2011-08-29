@@ -50,7 +50,8 @@ rel_destroy_(sql_rel *rel)
 	    is_semi(rel->op) ||
 	    is_select(rel->op) ||
 	    is_set(rel->op) ||
-	    rel->op == op_topn) {
+	    rel->op == op_topn ||
+		rel->op == op_sample) {
 		if (rel->l)
 			rel_destroy(rel->l);
 		if (rel->r)
@@ -220,6 +221,7 @@ rel_table_projections( mvc *sql, sql_rel *rel, char *tname )
 		return rel_table_projections( sql, rel->l, tname);
 
 	case op_topn:
+	case op_sample:
 	case op_groupby:
 	case op_union:
 	case op_except:
@@ -273,6 +275,7 @@ rel_bind_path_(sql_rel *rel, sql_exp *e, list *path )
 
 	case op_select:
 	case op_topn:
+	case op_sample:
 		found = rel_bind_path_(rel->l, e, path);
 		break;
 
@@ -380,6 +383,7 @@ rel_projections(mvc *sql, sql_rel *rel, char *tname, int settname, int intern )
 
 	case op_select:
 	case op_topn:
+	case op_sample:
 		return rel_projections(sql, rel->l, tname, settname, intern );
 	default:
 		return NULL;
@@ -764,7 +768,7 @@ rel_project_add_exp( mvc *sql, sql_rel *rel, sql_exp *e)
 static sql_rel*
 rel_parent( sql_rel *rel )
 {
-	if (is_project(rel->op) || rel->op == op_topn) {
+	if (is_project(rel->op) || rel->op == op_topn || rel->op == op_sample) {
 		sql_rel *l = rel->l;
 		if (is_project(l->op))
 			return l;
@@ -941,6 +945,20 @@ rel_topn(sql_allocator *sa, sql_rel *l, list *exps )
 	rel->l = l;
 	rel->r = NULL;
 	rel->op = op_topn;	
+	rel->exps = exps;
+	rel->card = l->card;
+	rel->nrcols = l->nrcols;
+	return rel;
+}
+
+sql_rel *
+rel_sample(sql_allocator *sa, sql_rel *l, list *exps )
+{
+	sql_rel *rel = rel_create(sa);
+
+	rel->l = l;
+	rel->r = NULL;
+	rel->op = op_sample;
 	rel->exps = exps;
 	rel->card = l->card;
 	rel->nrcols = l->nrcols;
@@ -1252,6 +1270,7 @@ rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, char *cname )
 
 	case op_select:
 	case op_topn:
+	case op_sample:
 		*p = rel;
 		return rel_bind_column_(sql, p, rel->l, cname);
 	default:
@@ -4668,6 +4687,17 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 		}
 		rel = rel_topn(sql->sa, rel, exps);
 	}
+
+	if (sn->sample) {
+		sql_subtype *wrd = sql_bind_localtype("wrd");
+		list *exps = new_exp_list(sql->sa);
+		sql_exp *o = rel_value_exp( sql, NULL, sn->sample, 0, ek);
+		if (!o || !(o=rel_check_type(sql, wrd, o, type_equal)))
+			return NULL;
+		append(exps, o);
+		rel = rel_sample(sql->sa, rel, exps);
+	}
+
 	return rel;
 }
 

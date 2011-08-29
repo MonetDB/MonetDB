@@ -51,6 +51,7 @@ st_type2string(st_type type)
 
 		ST(limit);
 		ST(limit2);
+		ST(sample);
 		ST(order);
 		ST(reorder);
 
@@ -372,6 +373,7 @@ stmt_deps(list *dep_list, stmt *s, int depend_type, int dir)
 		case st_mirror:
 		case st_limit:
 		case st_limit2:
+		case st_sample:
 		case st_order:
 		case st_reorder:
 		case st_ordered:
@@ -899,6 +901,22 @@ stmt_limit2(sql_allocator *sa, stmt *a, stmt *b, stmt *offset, stmt *limit, int 
 	ns->flag = direction;
 	return ns;
 }
+
+stmt *
+stmt_sample(sql_allocator *sa, stmt *s, stmt *sample)
+{
+	stmt *ns = stmt_create(sa, st_sample);
+
+	ns->op1 = s;
+	ns->op2 = sample;
+	ns->nrcols = s->nrcols;
+	ns->key = s->key;
+	ns->aggr = s->aggr;
+	ns->t = s->t;
+	ns->flag = 0;
+	return ns;
+}
+
 
 stmt *
 stmt_order(sql_allocator *sa, stmt *s, int direction)
@@ -1649,6 +1667,7 @@ tail_type(stmt *st)
 	case st_uselectN:
 	case st_limit:
 	case st_limit2:
+	case st_sample:
 	case st_semijoin:
 	case st_unique:
 	case st_union:
@@ -1866,6 +1885,7 @@ column_name(sql_allocator *sa, stmt *st)
 	case st_uselectN:
 	case st_limit:
 	case st_limit2:
+	case st_sample:
 	case st_semijoin:
 	case st_diff:
 	case st_unique:
@@ -1939,6 +1959,7 @@ table_name(sql_allocator *sa, stmt *st)
 	case st_uselectN:
 	case st_limit:
 	case st_limit2:
+	case st_sample:
 	case st_semijoin:
 	case st_diff:
 	case st_aggr:
@@ -2001,6 +2022,7 @@ schema_name(sql_allocator *sa, stmt *st)
 	case st_uselectN:
 	case st_limit:
 	case st_limit2:
+	case st_sample:
 	case st_semijoin:
 	case st_diff:
 	case st_unique:

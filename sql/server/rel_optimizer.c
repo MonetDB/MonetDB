@@ -105,12 +105,13 @@ name_find_column( sql_rel *rel, char *rname, char *name, int pnr, sql_rel **bt )
 		if (!c) 
 			c = name_find_column( rel->l, rname, name, pnr, bt);
 		return c;
-	case op_select: 
-	case op_topn: 
+	case op_select:
+	case op_topn:
+	case op_sample:
 		return name_find_column( rel->l, rname, name, pnr, bt);
-	case op_union: 
-	case op_inter: 
-	case op_except: 
+	case op_union:
+	case op_inter:
+	case op_except:
 
 		if (pnr >= 0 || pnr == -2) {
 			/* first right (possible subquery) */
@@ -264,11 +265,12 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 		rel_properties(sql, gp, rel->r);
 		break;
 	case op_project:
-	case op_select: 
-	case op_groupby: 
-	case op_topn: 
+	case op_select:
+	case op_groupby:
+	case op_topn:
+	case op_sample:
 	case op_ddl:
-		if (rel->l) 
+		if (rel->l)
 			rel_properties(sql, gp, rel->l);
 		break;
 	case op_insert:
@@ -300,9 +302,10 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 		break;
 
 	case op_project:
-	case op_groupby: 
-	case op_topn: 
-	case op_select: 
+	case op_groupby:
+	case op_topn:
+	case op_sample:
+	case op_select:
 		break;
 
 	case op_insert:
@@ -2642,7 +2645,7 @@ rel_remove_empty_select(int *changes, mvc *sql, sql_rel *rel)
 {
 	(void)sql;
 
-	if ((is_join(rel->op) || is_semi(rel->op) || is_select(rel->op) || is_project(rel->op) || rel->op == op_topn) && rel->l) {
+	if ((is_join(rel->op) || is_semi(rel->op) || is_select(rel->op) || is_project(rel->op) || is_topn(rel->op) || is_sample(rel->op)) && rel->l) {
 		sql_rel *l = rel->l;
 		if (is_select(l->op) && !(rel_is_ref(l)) &&
 		   (!l->exps || list_length(l->exps) == 0)) {
@@ -3118,7 +3121,8 @@ rel_remove_empty_join(mvc *sql, sql_rel *rel, int *changes)
 			(*changes)++;
 			return rel_inplace_project(sql->sa, rel, rel_dup(l), rel->exps);
 		}
-	} else if ((is_project(rel->op) || is_topn(rel->op) || is_select(rel->op)) && rel->l) {
+	} else if ((is_project(rel->op) || is_topn(rel->op) || is_select(rel->op)
+				|| is_sample(rel->op)) && rel->l) {
 		rel->l = rel_remove_empty_join(sql, rel->l, changes);
 	} else if (is_join(rel->op)) {
 		rel->l = rel_remove_empty_join(sql, rel->l, changes);
@@ -3915,7 +3919,7 @@ positional_exps_mark_used( sql_rel *rel, sql_rel *subrel )
 	if (!rel->exps) 
 		assert(0);
 
-	if (is_topn(subrel->op) && subrel->l)
+	if ((is_topn(subrel->op) || is_sample(subrel->op)) && subrel->l)
 		subrel = subrel->l;
 	if (rel->exps && subrel->exps) {
 		node *n, *m;
@@ -3994,7 +3998,7 @@ rel_used(sql_rel *rel)
 			rel_used(rel->l);
 		if (rel->r) 
 			rel_used(rel->r);
-	} else if (is_topn(rel->op) || is_select(rel->op)) {
+	} else if (is_topn(rel->op) || is_select(rel->op) || is_sample(rel->op)) {
 		rel_used(rel->l);
 		rel = rel->l;
 	}
@@ -4018,7 +4022,8 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 	case op_table:
 		break;
 
-	case op_topn: 
+	case op_topn:
+	case op_sample:
 		if (proj) {
 			rel = rel ->l;
 			rel_mark_used(sql, rel, proj);
@@ -4037,7 +4042,7 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 	case op_ddl:
 		break;
 
-	case op_select: 
+	case op_select:
 		if (rel->l) {
 			exps_mark_used(rel, rel->l);
 			rel_mark_used(sql, rel->l, 0);
@@ -4119,7 +4124,8 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 		}
 		return rel;
 
-	case op_topn: 
+	case op_topn:
+	case op_sample:
 
 		if (rel->l)
 			rel->l = rel_remove_unused(sql, rel->l);
@@ -4190,11 +4196,12 @@ rel_dce_down(mvc *sql, sql_rel *rel, int skip_proj)
 		return rel;
 
 	case op_topn: 
+	case op_sample: 
 	case op_project:
 	case op_groupby: 
 
 		if (skip_proj && rel->l)
-			rel->l = rel_dce_down(sql, rel->l, is_topn(rel->op));
+			rel->l = rel_dce_down(sql, rel->l, is_topn(rel->op) || is_sample(rel->op));
 		if (!skip_proj)
 			rel_dce_sub(sql, rel);
 		return rel;
@@ -4299,6 +4306,7 @@ rel_add_projects(mvc *sql, sql_rel *rel)
 		return rel;
 
 	case op_topn: 
+	case op_sample: 
 	case op_project:
 	case op_groupby: 
 	case op_select: 
@@ -5135,6 +5143,7 @@ rewrite(mvc *sql, sql_rel *rel, rewrite_fptr rewriter, int *has_changes)
 	case op_select: 
 	case op_groupby: 
 	case op_topn: 
+	case op_sample: 
 		rel->l = rewrite(sql, rel->l, rewriter, has_changes);
 		break;
 	case op_ddl: 
@@ -5198,6 +5207,7 @@ rewrite_topdown(mvc *sql, sql_rel *rel, rewrite_fptr rewriter, int *has_changes)
 	case op_select: 
 	case op_groupby: 
 	case op_topn: 
+	case op_sample: 
 		rel->l = rewrite_topdown(sql, rel->l, rewriter, has_changes);
 		break;
 	case op_ddl: 

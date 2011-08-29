@@ -137,6 +137,7 @@ typedef enum operator_type {
 	op_except,
 	op_groupby,	
 	op_topn,
+	op_sample,
 	op_insert, 	/* insert(l=table, r insert expressions) */ 
 	op_update, 	/* update(l=table, r update expressions) */
 	op_delete 	/* delete(l=table, r delete expression) */
@@ -182,6 +183,8 @@ typedef enum operator_type {
 	(op == op_topn)
 #define is_modify(op) \
 	(op == op_insert || op == op_update || op == op_delete)
+#define is_sample(op) \
+	(op == op_sample)
 
 /* NO NIL semantics of aggr operations */
 #define need_no_nil(e) \
