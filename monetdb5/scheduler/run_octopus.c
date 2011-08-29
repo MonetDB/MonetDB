@@ -644,7 +644,7 @@ OCTOPUSdisconnect(Client cntxt)
 
 	for ( i=0; i< nrpeers; i++)
 		if ( peers[i].active && peers[i].conn != NULL ) {
-		msg = RMTdisconnect(cntxt,&ret,&peers[i].conn);
+		msg = RMTdisconnect(cntxt,&peers[i].conn);
 		GDKfree(peers[i].conn);
 		peers[i].conn = NULL;
 	}

@@ -49,7 +49,7 @@ remote_export str RMTconnect(
 		str *uri,
 		str *user,
 		str *passwd);
-remote_export str RMTdisconnect(Client cntxt, int *ret, str *conn);
+remote_export str RMTdisconnect(Client cntxt, str *conn);
 remote_export str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 remote_export str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 remote_export str RMTregisterInternal(Client cntxt, str conn, str mod, str fcn);
@@ -59,4 +59,5 @@ remote_export str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 remote_export str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 remote_export str RMTbincopyfrom(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 remote_export str RMTbintype(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+remote_export str RMTisalive(int *ret, str *conn);
 #endif /* _REMOTE_DEF */

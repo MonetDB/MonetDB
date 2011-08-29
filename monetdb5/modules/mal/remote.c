@@ -279,7 +279,7 @@ str RMTconnect(
  * system, it only needs to exist for the client (i.e. it was once
  * created).
  */
-str RMTdisconnect(Client cntxt, int *ret, str *conn) {
+str RMTdisconnect(Client cntxt, str *conn) {
 	connection c, t;
 
 	if (conn == NULL || *conn == NULL || strcmp(*conn, (str)str_nil) == 0)
@@ -287,8 +287,7 @@ str RMTdisconnect(Client cntxt, int *ret, str *conn) {
 				"is NULL or nil");
 
 
-	/* just make sure the return isn't garbage */
-	*ret = 0;
+	/* The return is obfuscated by the debug cntxt argument */
 #ifdef _DEBUG_REMOTE
 	mnstr_printf(cntxt->fdout, "#disconnect link %s\n", *conn);
 #else
@@ -1349,3 +1348,27 @@ str RMTbintype(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	return(MAL_SUCCEED);
 }
 
+/**
+ * Returns whether the underlying connection is still connected or not.
+ * Best effort implementation on top of mapi using a ping.
+ */
+str
+RMTisalive(int *ret, str *conn)
+{
+	str tmp;
+	connection c;
+
+	(void)mb;
+
+	if (conn == NULL || strcmp(conn, (str)str_nil) == 0)
+		throw(ILLARG, "remote.get", ILLEGAL_ARGUMENT ": connection name is NULL or nil");
+
+	/* lookup conn, set c if valid */
+	rethrow("remote.get", tmp, RMTfindconn(&c, conn));
+
+	*ret = 0;
+	if (mapi_is_connected(conn->mconn) != 0 && mapi_ping(conn->mconn) == MOK)
+		*ret = 1;
+
+	return MAL_SUCCEED;
+}
