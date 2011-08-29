@@ -82,19 +82,15 @@
 #include <unistd.h> /* gethostname */
 
 /*
-Technically, these methods need to be serialised per connection,
-hence a scheduler that interleaves e.g. multiple get calls,
-simply violates this constraint.  If parallelism to the same site
-is desired, a user could create a second connection.
-This is not always easy to generate at the proper place, e.g.
-overloading the dataflow optimizer to patch connections structures
-is not acceptable.
-
-Instead, we maintain a simple lock with each connection, which
-can be used to issue a safe, but blocking get/put/exec/register request.
-*/
-/*
- * @- Implementation
+ * Technically, these methods need to be serialised per connection,
+ * hence a scheduler that interleaves e.g. multiple get calls, simply
+ * violates this constraint.  If parallelism to the same site is
+ * desired, a user could create a second connection.  This is not always
+ * easy to generate at the proper place, e.g. overloading the dataflow
+ * optimizer to patch connections structures is not acceptable.
+ *
+ * Instead, we maintain a simple lock with each connection, which can be
+ * used to issue a safe, but blocking get/put/exec/register request.
  */
 
 /* #define _DEBUG_REMOTE*/
@@ -600,7 +596,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		 * the server */
 		sout = mapi_get_to(c->mconn);
 		sin = mapi_get_from(c->mconn);
-		if ( sin == NULL || sout == NULL) {
+		if (sin == NULL || sout == NULL) {
 			mal_unset_lock(c->lock, "remote.get");
 			throw(MAL, "remote.get", "Connection lost");
 		}
