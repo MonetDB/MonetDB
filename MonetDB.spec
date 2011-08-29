@@ -63,7 +63,7 @@ Obsoletes: %{name}-devel
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accelerators, SQL- and XML- frontends.
+accelerators.  It also has an SQL frontend.
 
 This package contains the core components of MonetDB in the form of a
 single shared library.  If you want to use MonetDB, you will certainly
@@ -81,7 +81,7 @@ Group: Applications/Databases
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accelerators, SQL- and XML- frontends.
+accelerators.  It also has an SQL frontend.
 
 This package contains a shared library (libstream) which is needed by
 various other components.
@@ -102,7 +102,7 @@ Requires: zlib-devel
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accelerators, SQL- and XML- frontends.
+accelerators.  It also has an SQL frontend.
 
 This package contains the files to develop with the %{name}-stream
 library.
@@ -124,7 +124,7 @@ Group: Applications/Databases
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accelerators, SQL- and XML- frontends.
+accelerators.  It also has an SQL frontend.
 
 This package contains mclient, the main client program to communicate
 with the database server, and msqldump, a program to dump the SQL
@@ -151,7 +151,7 @@ Requires: openssl-devel
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accelerators, SQL- and XML- frontends.
+accelerators.  It also has an SQL frontend.
 
 This package contains the files needed to develop with the
 %{name}-client package.
@@ -174,7 +174,7 @@ Requires(pre): unixODBC
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accelerators, SQL- and XML- frontends.
+accelerators.  It also has an SQL frontend.
 
 This package contains the MonetDB ODBC driver.
 
@@ -211,7 +211,7 @@ BuildArch: noarch
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accelerators, SQL- and XML- frontends.
+accelerators.  It also has an SQL frontend.
 
 This package contains the files needed to use MonetDB from a PHP
 program.
@@ -231,7 +231,7 @@ Requires: perl
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accelerators, SQL- and XML- frontends.
+accelerators.  It also has an SQL frontend.
 
 This package contains the files needed to use MonetDB from a Perl
 program.
@@ -250,7 +250,7 @@ BuildArch: noarch
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accelerators, SQL- and XML- frontends.
+accelerators.  It also has an SQL frontend.
 
 This package contains the files needed to use MonetDB from a Ruby
 program.
@@ -283,7 +283,7 @@ Requires: python-monetdb = %{version}-%{release}
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accelerators, SQL- and XML- frontends.
+accelerators.  It also has an SQL frontend.
 
 This package contains the sample MAPI programs used for testing other
 MonetDB packages.  You probably don't need this, unless you are a
@@ -317,7 +317,7 @@ Obsoletes: %{name}-geom-devel
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accelerators, SQL- and XML- frontends.
+accelerators.  It also has an SQL frontend.
 
 This package contains the GIS (Geographic Information System)
 extensions for MonetDB-SQL-server5.
@@ -342,7 +342,7 @@ Obsoletes: MonetDB5-server-rdf
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accelerators, SQL- and XML- frontends.
+accelerators.  It also has an SQL frontend.
 
 This package contains the MonetDB5 server component.  You need this
 package if you want to work using the MAL language, or if you want to
@@ -401,7 +401,7 @@ fi
 # MonetDB is a database management system that is developed from a
 # main-memory perspective with use of a fully decomposed storage model,
 # automatic index management, extensibility of data types and search
-# accelerators, SQL- and XML- frontends.
+# accelerators.  It also has an SQL frontend.
 
 # This package contains the MonetDB5 RDF module.
 
@@ -427,7 +427,7 @@ Obsoletes: %{name}-SQL
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accelerators, SQL- and XML- frontends.
+accelerators.  It also has an SQL frontend.
 
 This package contains the SQL frontend for MonetDB5.  If you want to
 use SQL with MonetDB, you will need to install this package.
@@ -477,7 +477,7 @@ Obsoletes: MonetDB-client-python
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accelerators, SQL- and XQuery- frontends.
+accelerators.  It also has an SQL frontend.
 
 This package contains the files needed to use MonetDB from a Python
 program.
@@ -498,7 +498,7 @@ Obsoletes: MonetDB-python
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accelerators, SQL- and XML- frontends.
+accelerators.  It also has an SQL frontend.
 
 This package contains the programs and files needed for testing the
 MonetDB packages.  You probably don't need this, unless you are a
@@ -523,7 +523,7 @@ BuildArch: noarch
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accelerators, SQL- and XML- frontends.
+accelerators.  It also has an SQL frontend.
 
 This package contains the Python programs and files needed for testing
 the MonetDB packages.  You probably don't need this, unless you are a
