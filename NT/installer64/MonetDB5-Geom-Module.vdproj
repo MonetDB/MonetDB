@@ -231,7 +231,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_6C07D912740F414490DD35D5A179D268"
             {
-            "SourcePath" = "8:C:\\Libraries\\geos-3.2.2.win64-vs10\\bin\\geos_c.dll"
+            "SourcePath" = "8:C:\\Libraries\\geos-3.3.0.win64-vs10\\bin\\geos_c.dll"
             "TargetName" = "8:geos_c.dll"
             "Tag" = "8:"
             "Folder" = "8:_4D9CE65EDD774551869CFD46B59B4F9E"
