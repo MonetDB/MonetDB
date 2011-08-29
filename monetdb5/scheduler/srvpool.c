@@ -156,12 +156,12 @@ static void SRVPOOLcleanup(int i)
 static str
 SRVPOOLdisconnect(Client cntxt)
 {
-	int i, ret;
+	int i;
 	str msg = MAL_SUCCEED;
 
 	for ( i=0; i< srvtop; i++)
 	if ( servers[i].conn != NULL ) {
-		msg = RMTdisconnect(cntxt,&ret,&servers[i].conn);
+		msg = RMTdisconnect(cntxt,&servers[i].conn);
 		GDKfree(servers[i].conn);
 		servers[i].conn = NULL;
 	}
