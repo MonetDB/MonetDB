@@ -639,7 +639,7 @@ OCTOPUSmakeSchedule(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 OCTOPUSdisconnect(Client cntxt)
 {
-	int i, ret;
+	int i;
 	str msg = MAL_SUCCEED;
 
 	for ( i=0; i< nrpeers; i++)
