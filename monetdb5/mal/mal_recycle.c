@@ -233,11 +233,11 @@ static void extendQPat(void)
 	QryStatPtr *old;
 
 	if (recycleQPat == NULL)
-		RECYCLEinitQPat(20);
+		RECYCLEinitQPat(1024);
 	if (recycleQPat->cnt < recycleQPat->sz)
 		return;
 	old = recycleQPat->ptrn;
-	s = recycleQPat->sz * 2;
+	s = recycleQPat->sz +1024;	/* lineare growth is enough */
 	recycleQPat->ptrn = (QryStatPtr *) GDKzalloc(s * sizeof(QryStatPtr));
 	for( i=0; i< recycleQPat->cnt; i++)
 		 recycleQPat->ptrn[i] = old[i];

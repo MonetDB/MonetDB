@@ -385,10 +385,12 @@ OPTpreparePartition(MalBlkPtr nmb, InstrPtr p, Slices *slices, int pc)
 	q= pushArgument(nmb,q, getArg(p,0));
 	q= pushArgument(nmb,q, slices->lslices);
 	q= pushArgument(nmb,q, slices->hslices);
-	setModuleId(q,centipedeRef);
-	setFunctionId(q,materializeRef);
+	setModuleId(q,algebraRef);
+	setFunctionId(q,selectRef);
 	getArg(q,0)= slices->slice;
 	getArg(q,1) = getArg(p,0);
+	q= pushBit(nmb,q,TRUE);
+	q= pushBit(nmb,q,FALSE);
 	pushInstruction(nmb,q);
 	return parallel;
 }

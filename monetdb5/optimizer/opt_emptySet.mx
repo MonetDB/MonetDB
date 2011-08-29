@@ -129,7 +129,6 @@ ESevaluate(Client cntxt, MalBlkPtr mb, char *empty)
 {
 	int i, j, actions = 0;
 	InstrPtr p;
-	str likeRef = putName("like", 4);
 	str existRef = putName("exist", 5);
 	str uniqueRef = putName("unique", 6);
 	str suniqueRef = putName("sunique", 7);
