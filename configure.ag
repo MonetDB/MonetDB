@@ -1516,7 +1516,6 @@ no)	;;
 	;;
 esac
 AC_SUBST(ANT)
-AM_CONDITIONAL(HAVE_ANT, test x"$ANT" != xno)
 
 dnl  default javac flags
 JAVACFLAGS="$JAVACFLAGS -g:none -O"

@@ -288,11 +288,6 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) ENABLE_DATACELL_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF HAVE_ANT
-	$(ECHO) HAVE_ANT_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) HAVE_ANT_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
 !IFDEF HAVE_DEVELOPER
 	$(ECHO) HAVE_DEVELOPER_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
