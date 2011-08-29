@@ -1358,16 +1358,14 @@ RMTisalive(int *ret, str *conn)
 	str tmp;
 	connection c;
 
-	(void)mb;
-
-	if (conn == NULL || strcmp(conn, (str)str_nil) == 0)
+	if (*conn == NULL || strcmp(*conn, (str)str_nil) == 0)
 		throw(ILLARG, "remote.get", ILLEGAL_ARGUMENT ": connection name is NULL or nil");
 
 	/* lookup conn, set c if valid */
-	rethrow("remote.get", tmp, RMTfindconn(&c, conn));
+	rethrow("remote.get", tmp, RMTfindconn(&c, *conn));
 
 	*ret = 0;
-	if (mapi_is_connected(conn->mconn) != 0 && mapi_ping(conn->mconn) == MOK)
+	if (mapi_is_connected(c->mconn) != 0 && mapi_ping(c->mconn) == MOK)
 		*ret = 1;
 
 	return MAL_SUCCEED;
