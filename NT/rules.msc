@@ -398,8 +398,8 @@ create_winconfig_conds_new_py:
 
 update_winconfig_conds_py: create_winconfig_conds_new_py
 	if not exist "$(TOPDIR)\winconfig_conds.py" $(CP) "$(TOPDIR)\winconfig_conds_new.py" "$(TOPDIR)\winconfig_conds.py"
-	C:\cygwin\bin\cmp.exe -s "$(TOPDIR)\winconfig_conds_new.py" "$(TOPDIR)\winconfig_conds.py"
-	if ERRORLEVEL 1 $(CP) "$(TOPDIR)\winconfig_conds_new.py" "$(TOPDIR)\winconfig_conds.py"
+	C:\cygwin\bin\cmp.exe -s "$(TOPDIR)\winconfig_conds_new.py" "$(TOPDIR)\winconfig_conds.py" || \
+	$(CP) "$(TOPDIR)\winconfig_conds_new.py" "$(TOPDIR)\winconfig_conds.py"
 
 CONFIGURE=$(PYTHON) $(CONFIGURE_PY) \
 	"$(TOPDIR)\winconfig_conds.py" \
