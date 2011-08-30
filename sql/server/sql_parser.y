@@ -952,8 +952,13 @@ alter_statement:
 	  else /* $2 == SQL_ARRAY */
 	  	$$ = _symbol_create_list( SQL_ALTER_ARRAY, l );
 	}
- | ALTER TABLE qname ADD TABLE qname
-	{ dlist *l = L();
+ | ALTER table_or_array qname ADD TABLE qname
+	{ if ($2 == SQL_ARRAY) {
+			$$ = NULL;
+			yyerror("\"ADD TABLE\" to an array not allowed");
+			YYABORT;
+	  }
+	  dlist *l = L();
 	  append_list(l, $3);
 	  append_symbol(l, _symbol_create_list( SQL_TABLE, $6));
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
