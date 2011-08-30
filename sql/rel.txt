@@ -57,6 +57,11 @@ TOPN	(card ATOM, AGGR, or MULTI (same card as lower relation))
 	-> l		is relation
 	-> flag 	(bounds for limit can be including (1) or excluding (0) (ie later just returns the topN, including will return atleast N)
 
+SAMPLE	(card ATOM, AGGR, or MULTI (same card as lower relation))
+	-> exps		int rownumbers, (todo: double between [0,1] for percentage)
+	-> l		is relation
+	-> flag		(0) no flags
+
 INSERT|DELETE|UPDATE 	(card MULTI)
 	-> l 		is relation to modify
 	-> r		to be inserted/deleted/updated relation
