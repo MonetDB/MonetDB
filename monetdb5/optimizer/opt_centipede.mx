@@ -80,7 +80,7 @@ typedef	struct{
  * TODO pack is expensive, move to mat.new
 */
 static MalBlkPtr
-OPTplanCntrl(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices)
+OPTplanCntrl(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices, oid plantag)
 {
 	MalBlkPtr cmb;
 	Symbol s;
@@ -93,7 +93,7 @@ OPTplanCntrl(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices)
 	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
 #endif
 	/* define the query controller */
-	snprintf(nme,BUFSIZ,"%s_plan",getFunctionId( getInstrPtr(mb,0)));
+	snprintf(nme, BUFSIZ, "%s_plan"OIDFMT, getFunctionId( getInstrPtr(mb,0)), plantag);
 	plan = putName(nme, strlen(nme));
 	snprintf(nme,BUFSIZ,"%s_stub",getFunctionId( getInstrPtr(mb,0)));
 	stub = putName(nme, strlen(nme));
@@ -259,7 +259,7 @@ OPTplanCntrl(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices)
 }
 
 static MalBlkPtr
-OPTplanStub(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb)
+OPTplanStub(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, oid plantag)
 {
 	MalBlkPtr smb = 0;
 	Symbol s;
@@ -306,7 +306,7 @@ OPTplanStub(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb)
 	}
 
 	/* (k1,...kn):= remote.exec(conn,srvpool,qry,version....) */
-	snprintf(nme,BUFSIZ,"%s_plan",getFunctionId( getInstrPtr(mb,0)));
+	snprintf(nme, BUFSIZ, "%s_plan"OIDFMT, getFunctionId( getInstrPtr(mb,0)), plantag);
 	q = newInstruction(smb,ASSIGNsymbol);
 	getModuleId(q) = remoteRef;
 	getFunctionId(q) = execRef;
@@ -453,6 +453,8 @@ OPTsliceColumn(Client cntxt, MalBlkPtr nmb, MalBlkPtr mb, InstrPtr p, Slices *sl
  * For example join(A,B) where A is fragmented and B is not can be done elsewhere.
  * In all cases we should ensure that the result of the remote execution can be
  * simply unioned together.
+ * All plans should be uniquely tagged, because we have to avoid potential conflicts
+ * when a connection is re-used by different client sessions.
 */
 #define BLOCKED 1
 #define REQUIRED 2
@@ -475,6 +477,7 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 	str msg;
 	char nme[BUFSIZ];
 	char *head, *tail; /* oid reference to target table*/
+	oid plantag= OIDnew(1);
 
 	plan = GDKzalloc(mb->ssize * sizeof(int));
 	if( plan == 0)
@@ -485,7 +488,7 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 		return 0;
 	}
 
-	snprintf(nme,BUFSIZ,"%s_plan",getFunctionId( getInstrPtr(mb,0)));
+	snprintf(nme,BUFSIZ,"%s_plan"OIDFMT,getFunctionId( getInstrPtr(mb,0)), plantag);
 	s = newFunction(userRef, putName(nme, strlen(nme)),FUNCTIONsymbol);
 	if ( s == NULL)
 		return 0;
@@ -749,7 +752,7 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 #endif
 
 	/* construct the remote stub plan */
-	smb = OPTplanStub(cntxt, mb, nmb);
+	smb = OPTplanStub(cntxt, mb, nmb, plantag);
 	msg= optimizeMALBlock(cntxt, smb);
 	if ( smb) 
 		chkProgram(cntxt->nspace, smb);
@@ -759,7 +762,7 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 #endif
 
 	/* construct the control plan for local/remote execution */
-	cmb = OPTplanCntrl(cntxt,mb,nmb, slices);
+	cmb = OPTplanCntrl(cntxt,mb,nmb, slices, plantag);
 	msg= optimizeMALBlock(cntxt, cmb);
 	if ( cmb) 
 		chkProgram(cntxt->nspace, cmb);
