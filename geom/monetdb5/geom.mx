@@ -569,7 +569,7 @@ wkbTOSTR(char **dst,		/* INOUT: dst charbuffer [maybe 0, may need realloc] */
 
 	if (wkt) {
 		snprintf(*dst, *len, "\"%s\"", wkt);
-		free(wkt);
+		GEOSFree(wkt);
 	} else {
 		strcpy(*dst, "nil");
 	}
@@ -619,7 +619,7 @@ wkbFROMSTR(char *src,		/* IN: to-be-parsed string. */
 		assert(wkbLen <= GDK_int_max);
 		(*atom)->len = (int) wkbLen;
 		memcpy(&(*atom)->data, wkbSer, wkbLen);
-		free(wkbSer);
+		GEOSFree(wkbSer);
 	}
 	wkbLen = strlen(src);
 	assert(wkbLen <= GDK_int_max);
@@ -933,7 +933,7 @@ geos2wkb(GEOSGeom geosGeometry)
 		assert(wkbLen <= GDK_int_max);
 		atom->len = (int) wkbLen;
 		memcpy(&atom->data, w, wkbLen);
-		free(w);
+		GEOSFree(w);
 	}
 	return atom;
 }
