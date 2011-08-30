@@ -3538,6 +3538,8 @@ array_dim_ref:
 		}
 ;
 
+/* TODO: haven't all uses of this syntax been replaced with:
+ * SELECT <ident> FROM <array_dim_ref>? */
 array_cell_ref:
 	array_dim_ref '.' ident { 
 		dlist *l = L();
