@@ -2811,7 +2811,7 @@ select_no_parens_orderby:
 					_symbol_create_list( SQL_FROM, append_symbol(L(), $1)), NULL, NULL, NULL, $2, _symbol_create_list(SQL_NAME, append_list(append_string(L(),"inner"),NULL)), $3, $4, $5);
 			}
 	  	} else {
-			yyerror("ORDER BY: missing select operator");
+			yyerror("Missing select operator");
 			YYABORT;
 	  	}
 	 } 
