@@ -838,7 +838,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		case st_sample:{
 			int l = _dumpstmt(sql, mb, s->op1);
 			int r = _dumpstmt(sql, mb, s->op2);
-			q = newStmt1(mb, "sample", "uniform");
+			q = newStmt(mb, "sample", "uniform");
 			q = pushArgument(mb, q, l);
 			q = pushArgument(mb, q, r);
 			s->nr = getDestVar(q);
