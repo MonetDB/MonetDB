@@ -1104,10 +1104,8 @@ wkb@1( @2 *out, wkb **geom)
 
 	GEOSGeom_destroy(geosGeometry);
 
-#if @6
-	if (*out == @5)
+	if (GDKerrbuf && GDKerrbuf[0])
 		throw(MAL, "geom.@1", "@3 failed");
-#endif
 	return MAL_SUCCEED;
 
 }
