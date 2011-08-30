@@ -782,7 +782,7 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 	msg= optimizeMALBlock(cntxt, nmb);
 	chkProgram(cntxt->nspace, nmb);
 	mnstr_printf(cntxt->fdout,"#remote plan error %d %s\n", nmb->errors, msg?msg:"");
-	printFunction(cntxt->fdout, nmb, 0, LIST_MAL_ALL);
+	printFunction(cntxt->fdout, nmb, 0, LIST_MAL_STMT);
 #endif
 	GDKfree(plan);
 	GDKfree(vars);

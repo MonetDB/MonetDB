@@ -93,7 +93,7 @@
  * used to issue a safe, but blocking get/put/exec/register request.
  */
 
-#define _DEBUG_REMOTE
+/* #define _DEBUG_REMOTE */
 
 #define RMTT_L_ENDIAN   0<<1
 #define RMTT_B_ENDIAN   1<<1
