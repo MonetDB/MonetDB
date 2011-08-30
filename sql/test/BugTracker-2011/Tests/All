@@ -28,3 +28,5 @@ with-scope.Bug-2058
 blob-update-crash.Bug-2832
 select_value_insert_into.Bug-2845
 recursive_case.Bug-2838
+time_precision.Bug-2873
+
