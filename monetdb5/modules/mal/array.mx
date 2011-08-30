@@ -362,16 +362,17 @@ ARRAYfiller_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *ret = (int*) getArgReference(stk,pci,0);
 	int bid = *(int*) getArgReference(stk,pci,1);
 	void *val = (void*) getArgReference(stk,pci,2);
+	int type = getArgType(mb,pci,2);
 
 	if ((b = BATdescriptor(bid)) == NULL) 
 		throw(MAL, "array.filler", RUNTIME_OBJECT_MISSING);
 	
-	bn = BATnew(b->htype, getArgType(mb,pci,2), BATcount(b));
+	bn = BATnew(b->htype, type, BATcount(b));
 	BATseqbase(bn,0);
 
 	bi = bat_iterator(b);
 	BATloop(b,p,q){
-		BUNfastins(bn, BUNhead(bi, p), val);
+		BUNfastins(bn, BUNhead(bi, p), ATOMvarsized(type)?*(str *)val:val);
 	}
 	(void) cntxt;
 	BBPkeepref(*ret = bn->batCacheid);
@@ -386,17 +387,18 @@ ARRAYfiller(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *ret = (int*) getArgReference(stk,pci,0);
 	lng i = 0, cnt = *(lng *) getArgReference(stk,pci,1);
 	void *val = (void*) getArgReference(stk,pci,2);
+	int type = getArgType(mb,pci,2);
 
 	(void) cntxt;
 
 	/* TODO: why not TYPE_void? */
-	if(!(bn = BATnew(TYPE_oid, getArgType(mb,pci,2), cnt)))
+	if(!(bn = BATnew(TYPE_oid, type, cnt)))
 		throw(MAL, "array.filler", MAL_MALLOC_FAIL);
 	BATseqbase(bn, 0);
 
 	bi = bat_iterator(bn);
 	for (i = 0; i < cnt; i++)
-		BUNfastins(bn, BUNhead(bi, i), val);
+		BUNfastins(bn, BUNhead(bi, i), ATOMvarsized(type)?*(str *)val:val);
 
 	BATsetcount(bn, cnt);
 	bn->tsorted = 1;

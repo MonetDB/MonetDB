@@ -45,14 +45,18 @@ create function array_filler(cnt bigint, val real) returns table (id bigint, cel
 	external name "array".filler;
 create function array_filler(cnt bigint, val double) returns table (id bigint, cellval double)
 	external name "array".filler;
---create function array_filler(cnt bigint, val date) returns table (vals date)
---	external name "array".filler;
---create function array_filler(cnt bigint, val time) returns table (vals time)
---	external name "array".filler;
---create function array_filler(cnt bigint, val timestamp) returns table (vals timestamp)
---	external name "array".filler;
---create function array_filler(cnt bigint, val char(1024)) returns table (vals char(1024))
---	external name "array".filler;
---create function array_filler(cnt bigint, val varchar(1024)) returns table (vals varchar(1024))
---	external name "array".filler;
+create function array_filler(cnt bigint, val date) returns table (id bigint, vals date)
+	external name "array".filler;
+create function array_filler(cnt bigint, val time) returns table (id bigint, vals time)
+	external name "array".filler;
+create function array_filler(cnt bigint, val timestamp) returns table (id bigint, vals timestamp)
+	external name "array".filler;
+create function array_filler(cnt bigint, val char(2048)) returns table (id bigint, vals char(2048))
+	external name "array".filler;
+create function array_filler(cnt bigint, val varchar(2048)) returns table (id bigint, vals varchar(2048))
+	external name "array".filler;
+create function array_filler(cnt bigint, val blob) returns table (id bigint, vals blob)
+	external name "array".filler;
+create function array_filler(cnt bigint, val clob) returns table (id bigint, vals clob)
+	external name "array".filler;
 
