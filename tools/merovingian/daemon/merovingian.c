@@ -447,14 +447,17 @@ autoUpgradeDiscoveryPortAug2011Jan2012(confkeyval *mckv)
 	readProps(ckv, ".");
 
 	kv = findConfKey(ckv, "discoveryport");
-	if (kv->val == NULL)
+	if (kv->val == NULL) {
+		freeConfFile(ckv);
 		return 0;
+	}
 
 	if (kv->ival <= 0 || kv->ival > 65535) {
 		kv = findConfKey(mckv, "discovery");
 		setConfVal(kv, "false");
 	}
 
+	freeConfFile(ckv);
 	return 1;
 }
 

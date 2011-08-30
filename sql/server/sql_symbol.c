@@ -275,7 +275,7 @@ dlist_append_type(sql_allocator *sa, dlist *l, sql_subtype *data)
 }
 
 symbol *
-newSelectNode(sql_allocator *sa, int distinct, struct dlist *selection, struct dlist *into, symbol *from, symbol *where, symbol *groupby, symbol *having, symbol *orderby, symbol *name, symbol *limit, symbol *offset)
+newSelectNode(sql_allocator *sa, int distinct, struct dlist *selection, struct dlist *into, symbol *from, symbol *where, symbol *groupby, symbol *having, symbol *orderby, symbol *name, symbol *limit, symbol *offset, symbol *sample)
 {
 	SelectNode *sn = SA_NEW(sa, SelectNode);
 	symbol *s = (symbol *) sn;
@@ -285,6 +285,7 @@ newSelectNode(sql_allocator *sa, int distinct, struct dlist *selection, struct d
 		sn->distinct = distinct;
 		sn->limit = limit;
 		sn->offset = offset;
+		sn->sample = sample;
 		sn->selection = selection;
 		sn->into = into;
 		sn->from = from;
@@ -388,8 +389,17 @@ SelectNodeCmp(SelectNode *s1, SelectNode *s2)
 	if (!s1 || !s2)
 		return -1;
 
-	if (symbol_cmp(s1->limit, s2->limit) == 0 && symbol_cmp(s1->offset, s2->offset) == 0 && s1->distinct == s2->distinct && symbol_cmp(s1->name, s2->name) == 0 && symbol_cmp(s1->orderby, s2->orderby) == 0 && symbol_cmp(s1->having, s2->having) == 0 &&
-	    symbol_cmp(s1->groupby, s2->groupby) == 0 && symbol_cmp(s1->where, s2->where) == 0 && symbol_cmp(s1->from, s2->from) == 0 && dlist_cmp(s1->selection, s2->selection) == 0)
+	if (symbol_cmp(s1->limit, s2->limit) == 0 &&
+			symbol_cmp(s1->offset, s2->offset) == 0 &&
+			symbol_cmp(s1->sample, s2->sample) == 0 &&
+			s1->distinct == s2->distinct &&
+			symbol_cmp(s1->name, s2->name) == 0 &&
+			symbol_cmp(s1->orderby, s2->orderby) == 0 &&
+			symbol_cmp(s1->having, s2->having) == 0 &&
+			symbol_cmp(s1->groupby, s2->groupby) == 0 &&
+			symbol_cmp(s1->where, s2->where) == 0 &&
+			symbol_cmp(s1->from, s2->from) == 0 &&
+			dlist_cmp(s1->selection, s2->selection) == 0)
 		return 0;
 	return -1;
 }

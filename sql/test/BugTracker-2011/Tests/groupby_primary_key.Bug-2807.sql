@@ -43,13 +43,15 @@ select b.name, c.id, c.name from facts left join a
 		on b_id = b.id 
 		left join c 
 		on c_id = c.id 
-group by b.name, c.name, c.id;
+group by b.name, c.name, c.id
+order by b.name, c.id, c.name;
 
 alter table c drop constraint c_id_pkey;
 
 -- produces correct result:
 select b.name, c.id, c.name from facts left join a on a_id = a.id left join b
-on b_id = b.id left join c on c_id = c.id group by b.name, c.name, c.id;
+on b_id = b.id left join c on c_id = c.id group by b.name, c.name, c.id
+order by b.name, c.id, c.name;
 
 drop table facts;
 drop table a;

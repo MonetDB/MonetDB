@@ -18,6 +18,9 @@
  */
 
 #ifdef _MSC_VER
+/* suppress deprecation warning for snprintf */
+#define _CRT_SECURE_NO_WARNINGS
+
 #include <WTypes.h>
 #endif
 #include <stdio.h>

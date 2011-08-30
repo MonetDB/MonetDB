@@ -28,7 +28,7 @@ command srvpool.connect(dbname:str):str
 address SRVPOOLconnect
 comment "Returns the connection to the server dbname.";
 
-command srvpool.reset(dbname:str):str
+pattern srvpool.reset(dbname:str):str
 address SRVPOOLreset
 comment "Clear the server cache";
 

@@ -46,7 +46,6 @@ bin_stethoscope = {
 }
 
 bin_mnc = {
-	NOINST
 	SOURCES = mnc.c
 	LIBS = ../../common/stream/libstream \
 		../mapilib/libmapi \

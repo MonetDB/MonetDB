@@ -250,7 +250,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_2E74F1B1BDE548A7922BAD968E690A3A"
             {
-            "SourcePath" = "8:C:\\Libraries\\bzip2-1.0.5.win64-vs10\\bin\\libbz2.dll"
+            "SourcePath" = "8:C:\\Libraries\\bzip2-1.0.6.win64-vs10\\bin\\libbz2.dll"
             "TargetName" = "8:libbz2.dll"
             "Tag" = "8:"
             "Folder" = "8:_376EC0506E4F452CA2C78ACE11515435"
@@ -330,7 +330,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_84999A6BF369454381F5ACB44DAAD420"
             {
-            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.0a.win64-vs10\\bin\\libeay32.dll"
+            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.0d.win64-vs10\\bin\\libeay32.dll"
             "TargetName" = "8:libeay32.dll"
             "Tag" = "8:"
             "Folder" = "8:_376EC0506E4F452CA2C78ACE11515435"
@@ -370,7 +370,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_B4FE8AF57D0147A5926576F3D73B9B3B"
             {
-            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.0a.win64-vs10\\bin\\ssleay32.dll"
+            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.0d.win64-vs10\\bin\\ssleay32.dll"
             "TargetName" = "8:ssleay32.dll"
             "Tag" = "8:"
             "Folder" = "8:_376EC0506E4F452CA2C78ACE11515435"

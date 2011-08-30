@@ -209,7 +209,6 @@ CONDITIONALS = {
     'DOCTOOLS'             : "@DOCTOOLS_FALSE@",
     'ENABLE_CRACKERS'      : "@ENABLE_CRACKERS_FALSE@",
     'ENABLE_DATACELL'      : "@ENABLE_DATACELL_FALSE@",
-    'HAVE_ANT'             : "@HAVE_ANT_FALSE@",
     'HAVE_CFITSIO'         : "@HAVE_CFITSIO_FALSE@",
     'HAVE_DEVELOPER'       : "@HAVE_DEVELOPER_FALSE@",
     'HAVE_GDK'             : "@HAVE_GDK_FALSE@",

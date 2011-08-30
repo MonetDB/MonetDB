@@ -75,6 +75,9 @@ comment "remotely executes <mod>.<func> using the argument list of remote object
 pattern exec(conn:str, mod:str, func:str, :str...):str...
 address RMTexec
 comment "remotely executes <mod>.<func> using the argument list of remote objects and returns the handle to its result";
+command isalive(conn:str):int
+address RMTisalive
+comment "check if conn is still valid and connected";
 
 
 # helper functions not primilarily intended for normal use

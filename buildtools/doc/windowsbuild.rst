@@ -15,18 +15,20 @@
 .. Copyright August 2008-2011 MonetDB B.V.
 .. All Rights Reserved.
 
-Building MonetDB On Windows
-+++++++++++++++++++++++++++
-
 .. This document is written in reStructuredText (see
    http://docutils.sourceforge.net/ for more information).
    Use ``rst2html.py`` to convert this file to HTML.
 
+Building MonetDB On Windows
++++++++++++++++++++++++++++
+
 In this document we describe how to build the MonetDB suite of
 programs on Windows using the sources from our source repository at
 `our server`__.  This document is mainly targeted at building on
-Windows XP on a 32-bit architecture, but there are notes throughout
-about building on Windows XP x64 which is indicated with Windows64.
+Windows on a 32-bit architecture, but there are notes throughout about
+building on Windows on a 64-bit architecture which is indicated with
+Windows64.  We have successfully built on Windows XP, Windows Server,
+and Windows 7.
 
 __ http://dev.monetdb.org/hg/MonetDB/
 
@@ -39,7 +41,8 @@ top-level folders in the Mercurial clone.
 
 Note that in branches up to and including Oct2010 the build process
 was different.  This document describes the build process for the
-branch this document is part of.
+branch this document is part of.  Use the command ``hg branch`` to
+find out the name of the branch.
 
 buildtools
 ----------
@@ -58,7 +61,7 @@ gdk
 ---
 
 Also known as the Goblin Database Kernel contains the database kernel,
-i.e. the heart of MonetDB This component is required.
+i.e. the heart of MonetDB.  This component is required.
 
 clients
 -------
@@ -75,16 +78,22 @@ be built.  This component is required.
 monetdb5
 --------
 
-The MonetDB5 Server component is the new database server.  It uses MAL
+The MonetDB5 Server component is the database server.  It uses MAL
 (the MonetDB Algebra Language) as programming interface.  This
-component is required if you need MAL or if you need the MonetDB SQL
-component.
+component is required.
 
 sql
 ---
 
 Also known as MonetDB SQL, this component provides an SQL frontend to
 MonetDB5.  This component is required if you need SQL support.
+
+tools
+-----
+
+The tools component contains two parts.  The mserver part is the
+actual database server binary and is required.  The merovingian part
+is not used on Windows.
 
 geom
 ----
@@ -149,6 +158,7 @@ The suite can be compiled using one of the following compilers:
 - Microsoft Visual Studio .NET 2003 (also known as Microsoft Visual Studio 7);
 - Microsoft Visual Studio 2005 (also known as Microsoft Visual Studio 8);
 - Microsoft Visual Studio 2008 (also known as Microsoft Visual Studio 9.0);
+- Microsoft Visual Studio 2010 (also known as Microsoft Visual Studio 10.0);
 - Intel(R) C++ Compiler 9.1 (which actually needs one of the above);
 - Intel(R) C++ Compiler 10.1 (which also needs one of the Microsoft compilers);
 - Intel(R) C++ Compiler 11.1 (which also needs one of the Microsoft compilers).
@@ -157,10 +167,13 @@ Not supported anymore (but probably still possible) are the GNU C
 Compiler gcc under Cygwin__.  Using that, it (probably still) is
 possible to build a version that runs using the Cygwin DLLs, but also
 a version that uses the MinGW__ (Minimalist GNU for Windows) package.
-This is not supported and not further described here.
+This is not supported and not further described here (in either case,
+the build process would be much more like Unix than what is described
+here).
 
-We currently use Microsoft Visual Studio 2008 and Intel(R) C++
-Compiler Professional 11.1.046.
+We currently use Microsoft Visual Studio 2010 and Intel(R) C++
+Compiler Professional 11.1.046, the latter using Microsoft Visual
+Studio 9.0.
 
 __ http://www.cygwin.com/
 __ http://www.mingw.org/
@@ -237,7 +250,7 @@ PCRE (Perl Compatible Regular Expressions)
 ------------------------------------------
 
 The PCRE__ library is used to extend the string matching capabilities
-of MonetDB.  The PCRE library is required for the MonetDB5 component.
+of MonetDB.  The PCRE library is required for the monetdb5 component.
 
 Download the source from http://www.pcre.org/.  In order to build the
 library, you will need a program called ``cmake`` which you can
@@ -253,10 +266,10 @@ for Unicode properties.  When you're satisfied with the options, click
 on Configure, and then on Generate.  Then in the build folder you've
 chosen, open the PCRE.sln file with Visual Studio, and build and
 install.  Make sure you set the Solution Configuration to Release if
-you want to build a releasable version of the MonetDB suite.  The
-library will be installed in ``C:\Program Files\PCRE``.
+you want to build a releasable version of the MonetDB suite.  By
+default the library will be installed in ``C:\Program Files\PCRE``.
 
-For Windows64, select the correct compiler (``Visual Studio 9 2008
+For Windows64, select the correct compiler (``Visual Studio 9 2010
 Win64``) and proceed normally.  When building the 32 bit version on
 Windows64, choose ``C:/Program Files (x86)/PCRE`` for the
 ``CMAKE_INSTALL_PREFIX`` value, otherwise choose ``C:/Program Files/PCRE``.
@@ -272,26 +285,28 @@ required for the MonetDB5 component, and hence implicitly required for
 the clients component when it needs to talk to a MonetDB5 server.
 
 Download the source from http://www.openssl.org/.  We used the latest
-stable version (1.0.0a).  Follow the instructions in the file
+stable version (1.0.0d).  Follow the instructions in the file
 ``INSTALL.W32`` or ``INSTALL.W64``.  We used the option
 ``enable-static-engine`` as described in the instructions.
 
 .. The actual commands used were::
-   perl Configure VC-WIN32 no-asm --prefix=C:\Libraries\openssl-1.0.0a.win32
+   perl Configure VC-WIN32 no-asm enable-static-engine --prefix=C:\Libraries\openssl-1.0.0d.win32
    ms\do_ms.bat
    nmake /f ms\ntdll.mak
    nmake /f ms\ntdll.mak install
    and::
-   perl Configure VC-WIN64A --prefix=C:\Libraries\openssl-1.0.0a.win64
+   perl Configure VC-WIN64A enable-static-engine --prefix=C:\Libraries\openssl-1.0.0d.win64
    ms\do_win64a
    nmake /f ms\ntdll.mak
    nmake /f ms\ntdll.mak install
-   For the debug versions, use debug-VC-WIN32 and VC-WIN64A and edit
-   the file ``ms/ntdll.mak`` before building.
+   For the debug versions, use debug-VC-WIN32 and debug-VC-WIN64A and
+   edit the file ``ms/ntdll.mak`` to add a ``d`` to the definitions of
+   ``O_SSL``, ``O_CRYPTO``, ``L_SSL``, and ``L_CRYPTO`` before
+   building.
 
-Fix the ``OPENSSL`` definitions in ``buildtools\conf\winrules.msc`` so
-that they refer to the location where you installed the library and
-call ``nmake`` with the extra parameter ``HAVE_OPENSSL=1``.
+Fix the ``LIBOPENSSL`` definition in ``NT\winrules.msc`` so that it
+refers to the location where you installed the library and call
+``nmake`` with the extra parameter ``HAVE_OPENSSL=1``.
 
 __ http://www.openssl.org/
 
@@ -314,16 +329,24 @@ optional prerequisites iconv_ and zlib_, for which see below).
 Run the following commands in the ``win32`` subfolder, substituting
 the correct locations for the iconv and zlib libraries::
 
- cscript configure.js compiler=msvc prefix=C:\libxml2-2.7.7.win64 ^
+ cscript configure.js compiler=msvc prefix=C:\libxml2-2.7.8.win64 ^
   include=C:\iconv-1.11.win64\include;C:\zlib-1.2.5.win64\include ^
-  lib=C:\iconv-1.11.win64\lib;C:\zlib-1.2.5.win64\lib iconv=yes zlib=yes
+  lib=C:\iconv-1.11.win64\lib;C:\zlib-1.2.5.win64\lib iconv=yes zlib=yes ^
+  vcmanifest=yes
  nmake /f Makefile.msvc
  nmake /f Makefile.msvc install
 
-.. Before the install, run the commands::
-   cd bin.msvc
-   mt -nologo -manifest libxml2.dll.manifest -outputresource:libxml2.dll;2
-   cd ..
+Note that there are a few minor problems with the 2.7.8 distribution.
+Edit the file ``win32\Makefile.msvc`` and remove the ``+`` from the
+start of the three lines that contain one.  Also, unless you use an
+older compiler, remove the line that contains ``/OPT:NOWIN98``.
+Visual Studio 2010 will give an error with this option, and Visual
+Studio 2008 a warning.
+
+.. For a debug version, add ``debug=yes cruntime=/MDd`` to the
+   ``cscript`` command and edit the file ``Makefile.msvc`` to add a
+   ``d`` to the definitions of ``XML_SO``, ``XML_IMP``, ``XML_A``, and
+   ``XML_A_DLL``.
 
 After this, you may want to move the file ``libxml2.dll`` from the
 ``lib`` folder to the ``bin`` folder.
@@ -344,31 +367,26 @@ yourself.
 Get the source tar ball from http://trac.osgeo.org/geos/#Download and
 extract somewhere.  You can follow the instructions in e.g. `Building
 on Windows with NMake`__.  I did find one problem with this procedure:
-you will need to remove the file ``source/headers/geos/platform.h``
-before starting the build so that it gets created from the correct
-(Windows) source.
+you will need to run the ``autogen.bat`` script despite what it says
+in the instructions.
 
 .. The actual commands were::
    autogen.bat
    nmake /f makefile.vc MSCV_VER=1600
-   The logic having to do with finding out which compiler is being
-   used in ``nmake.opt`` uses an older version number for ``nmake``
-   for Visual Studio 10.  I fixed the last conditional checking
-   ``_NMAKE_VER`` to also include ``|| "$(_NMAKE_VER)" == "10.00.30319.01"``.
 
 After this, install the library somewhere, e.g. in
-``C:\geos-3.2.2.win32``::
+``C:\geos-3.3.0.win32``::
 
- mkdir C:\geos-3.2.2.win32
- mkdir C:\geos-3.2.2.win32\lib
- mkdir C:\geos-3.2.2.win32\bin
- mkdir C:\geos-3.2.2.win32\include
- mkdir C:\geos-3.2.2.win32\include\geos
- copy source\geos_c_i.lib C:\geos-3.2.2.win32\lib
- copy source\geos_c.dll C:\geos-3.2.2.win32\bin
- copy source\headers C:\geos-3.2.2.win32\include
- copy source\headers\geos C:\geos-3.2.2.win32\include\geos
- copy capi\geos_c.h C:\geos-3.2.2.win32\include
+ mkdir C:\geos-3.3.0.win32
+ mkdir C:\geos-3.3.0.win32\lib
+ mkdir C:\geos-3.3.0.win32\bin
+ mkdir C:\geos-3.3.0.win32\include
+ mkdir C:\geos-3.3.0.win32\include\geos
+ copy src\geos_c_i.lib C:\geos-3.3.0.win32\lib
+ copy src\geos_c.dll C:\geos-3.3.0.win32\bin
+ copy src\include C:\geos-3.3.0.win32\include
+ copy src\include\geos C:\geos-3.3.0.win32\include\geos
+ copy capi\geos_c.h C:\geos-3.3.0.win32\include
 
 __ http://geos.refractions.net/
 __ http://trac.osgeo.org/geos/wiki/BuildingOnWindowsWithNMake
@@ -400,14 +418,14 @@ release.
 
 Build using the commands::
 
- nmake -f Makefile.msvc NO_NLS=1 DLL=1 MFLAGS=-MD PREFIX=C:\iconv-1.11.win64
- nmake -f Makefile.msvc NO_NLS=1 DLL=1 MFLAGS=-MD PREFIX=C:\iconv-1.11.win64 install
+ nmake /f Makefile.msvc NO_NLS=1 DLL=1 MFLAGS=-MD PREFIX=C:\iconv-1.11.win64
+ nmake /f Makefile.msvc NO_NLS=1 DLL=1 MFLAGS=-MD PREFIX=C:\iconv-1.11.win64 install
 
 .. Before the install, run the commands::
    cd lib
-   mt -nologo -manifest iconv.dll.manifest -outputresource:iconv.dll;2
+   mt /nologo /manifest iconv.dll.manifest /outputresource:iconv.dll;2
    cd ..\libcharset\lib
-   mt -nologo -manifest charset.dll.manifest -outputresource:charset.dll;2
+   mt /nologo /manifest charset.dll.manifest /outputresource:charset.dll;2
    cd ..\..
 
 Fix the ``ICONV`` definitions in ``buildtools\conf\winrules.msc`` so
@@ -514,13 +532,18 @@ the following patches to the files ``makefile.msc`` and ``bzlib.h``
   #else
   #   define BZ_API(func) func
 
-After this, compile using ``nmake -f makefile.msc`` and copy the files
+After this, compile using ``nmake /f makefile.msc`` and copy the files
 ``bzlib.h``, ``libbz2.dll``, and ``libbz2.lib`` to a location where
 the MonetDB build process can find them,
 e.g. ``C:\bzip2-1.0.5.win32``.
 
 .. Before copying the files, run the command::
-   mt -nologo -manifest libbz2.dll.manifest -outputresource:libbz2.dll;2
+   mt /nologo /manifest libbz2.dll.manifest /Outputresource:libbz2.dll;2
+
+.. For a debug build, change the definition of CFLAGS to contain
+.. ``-MDd -D_DEBUG -Od`` instead of ``-MD -Ox``, and change all
+.. occurences of ``libbz2.dll`` and ``libbz2.lib`` to ``libbz2d.dll``
+.. and ``libbz2d.lib``.
 
 Fix the ``LIBBZ2`` definitions in ``buildtools\conf\winrules.msc`` so
 that they refer to the location where you installed the library and
@@ -531,12 +554,14 @@ __ http://www.bzip.org/
 Perl
 ----
 
-Perl__ is only needed to create an interface that can be used from a
-Perl program to communicate with a MonetDB server.
+There is a Perl__ interface that can be used from a Perl program to
+communicate with a MonetDB server.  This interface is written
+completely in Perl, so there is no compilation involved.  This means
+that no installation of Perl is required for building, but only for
+testing.
 
 We have used ActiveState__'s ActivePerl__ distribution (release
-5.12.1.1201).  Just install the 32 or 64 bit version and compile the
-clients component with the additional ``nmake`` flags ``HAVE_PERL=1``.
+5.12.1.1201).  Just install the 32 or 64 bit version.
 
 __ http://www.perl.org/
 __ http://www.activestate.com/
@@ -593,9 +618,9 @@ directory that you create inside the top level of the source tree.
 This means that all intermediate files will also be located on the
 same drive.
 
-Currently, the sources take up about 1.1 MB, the build takes up
-another 0.2 to 0.6 MB (depending on compiler and compiler options),
-and the installation takes up between 30 kB and 0.1 MB (again,
+Currently, the sources take up about 1.1 GB, the build takes up
+another 0.2 to 0.6 GB (depending on compiler and compiler options),
+and the installation takes up between 30 MB and 0.1 GB (again,
 depending on compiler and compiler options).  The installation can be
 on a different drive than sources and build.
 
@@ -619,6 +644,12 @@ where other parts of the suite can be found, and to tell the build
 process where to install the finished bits.
 
 In addition, you may need to edit some of the ``NT\rules.msc`` file.
+(We actually override the values in ``NT\rules.msc`` using
+command-line options to ``nmake``, including an option
+``MAKE_INCLUDEFILE=...`` where ``...`` is the name of a file which
+contains further assignments to ``nmake`` variables.  See below__.)
+
+__ make_includefile_
 
 Environment Variables
 ---------------------
@@ -628,30 +659,12 @@ Compiler
 
 Make sure that the environment variables that your chosen compiler
 needs are set.  A convenient way of doing that is to use the batch
-files that are provided by the compilers:
-
-- Microsoft Visual Studio .NET 2003 (also known as Microsoft Visual
-  Studio 7)::
-
-   call "%ProgramFiles%\Microsoft Visual Studio .NET 2003\Common7\Tools\vsvars32.bat"
-
-- Microsoft Visual Studio 2005 (also known as Microsoft Visual Studio
-  8)::
-
-   call "%ProgramFiles%\Microsoft Visual Studio 8\Common7\Tools\vsvars32.bat"
-
-- Microsoft Visual Studio 2008 (also known as Microsoft Visual Studio
-  9.0)::
-
-   call "%ProgramFiles%\Microsoft Visual Studio 8\Common7\Tools\vsvars32.bat"
-
-- Intel(R) C++ Compiler 10.1.013::
-
-   call "%ProgramFiles%\Intel\Compiler\C++\10.1.013\IA32\Bin\iclvars.bat"
-
-- Intel(R) C++ Compiler 11.1.046::
-
-   call "%ProgramFiles%\Intel\Compiler\11.1\046\bin\ia32\iclvars_ia32.bat"
+files that are provided by the compilers.  This is most easily done by
+using the appropriate entry from the Start Menu, e.g. ``Start Menu``
+-> ``All Programs`` -> ``Microsoft Visual Studio 2010`` -> ``Visual
+Studio Tools`` -> ``Visual Studio x64 Win64 Command Prompt (2010)``
+(this is for a 64-bit build on a 64-bit version of the operating
+system).
 
 When using the Intel compiler, you also need to set the ``CC`` and
 ``CXX`` variables::
@@ -735,16 +748,18 @@ possible:
 - ``HAVE_JAVA=1`` - include the java component (only use if Java and
   Apache Ant are both available);
 - ``HAVE_TESTING=1`` - include the testing component;
-- ``HAVE_PYTHON=1`` - include the python component;
+- ``HAVE_PYTHON=1`` - include the Python component;
 - ``HAVE_ICONV=1`` - the iconv library is available;
 - ``HAVE_RAPTOR=1`` - the raptor library is available;
 - ``HAVE_OPENSSL=1`` - the OpenSSL library is available;
-- ``HAVE_PERL=1`` - Perl is available.
+- ``HAVE_PERL=1`` - include the Perl component.
 
 In addition, you can add a parameter which points to a file with extra
 definitions for ``nmake``.  This is very convenient to define where
 all packages were installed that the build process depends on since
 you then don't have to edit the ``rules.msc`` file in the source tree:
+
+.. _make_includefile:
 
 - ``"MAKE_INCLUDEFILE=..."`` - file with extra ``nmake`` definitions.
 
@@ -760,7 +775,7 @@ parameter may contain something like::
  LIBPCRE=C:\Program Files\PCRE
  LIBICONV=C:\iconv-1.11.win32
  LIBZLIB=C:\zlib-1.2.5.win32
- LIBXML2=C:\libxml2-2.7.7.win32
+ LIBXML2=C:\libxml2-2.7.8.win32
 
 Building Installers
 ~~~~~~~~~~~~~~~~~~~

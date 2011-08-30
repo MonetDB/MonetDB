@@ -51,6 +51,7 @@ tail_column(stmt *st)
 	case st_semijoin:
 	case st_limit:
 	case st_limit2:
+	case st_sample:
 
 	case st_diff:
 	case st_union:
@@ -127,6 +128,7 @@ head_column(stmt *st)
 	case st_semijoin:
 	case st_limit:
 	case st_limit2:
+	case st_sample:
 
 	case st_join:
 	case st_join2:
@@ -1132,6 +1134,7 @@ rel2bin(mvc *c, stmt *s)
 	}
 	case st_limit: 
 	case st_limit2: 
+	case st_sample: 
 	case st_join:
 	case st_join2:
 	case st_joinN:

@@ -91,6 +91,11 @@ GDKcreatedir(const char *dir)
 			GDKcreatedir(path);
 			ret = mkdir(path, 0755);
 			IODEBUG THRprintf(GDKout, "#mkdir %s = %d\n", path, ret);
+			if (ret < 0 && (dirp = opendir(path)) != NULL) {
+				/* resolve race */
+				ret = 0;
+				closedir(dirp);
+			}
 		}
 		*r = DIR_SEP;
 	}

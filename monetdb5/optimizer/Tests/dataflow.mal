@@ -1,23 +1,14 @@
 # a simple dataflow test
 
-function slow():bat[:oid,:dbl];
-b:= bat.new(:oid,:dbl);
-barrier (go,i):= language.newRange(0:lng);
-	f:= calc.dbl(i);
-	k:= mmath.sin(f);
-	bat.insert(b,nil:oid,k);
-	redo (go,i):= language.nextElement(1:lng,10000000:lng);
-exit (go,i);
-	return b;
-end slow;
+include microbenchmark;
 
 function tst();
-s:= slow();
+s:= microbenchmark.uniform(0:oid, 10000000, 10000000);
 l:= aggr.min(s);
 h:= l;
 #mdb.setTimer(true);
 #mdb.setThread(true);
-z:= nil:bat[:oid,:dbl];
+z:= nil:bat[:oid,:int];
 barrier go:= language.dataflow();
 	t1:= algebra.select(s,l,h);
 	t2:= algebra.select(s,l,h);

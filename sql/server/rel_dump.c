@@ -256,6 +256,8 @@ op2string(operator_type op)
 		return "group by";
 	case op_topn: 
 		return "topn";
+	case op_sample:
+		return "sample";
 	case op_insert: 
 	case op_update: 
 	case op_delete: 
@@ -379,6 +381,7 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs)
 	case op_select: 
 	case op_groupby: 
 	case op_topn: 
+	case op_sample: 
 		r = "project";
 		if (rel->op == op_select)
 			r = "select";
@@ -386,6 +389,8 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs)
 			r = "group by";
 		if (rel->op == op_topn)
 			r = "top N";
+		if (rel->op == op_sample)
+			r = "sample";
 		print_indent(sql, fout, depth);
 		if (rel->l) {
 			if (need_distinct(rel))
@@ -479,6 +484,7 @@ rel_print_refs(mvc *sql, stream* fout, sql_rel *rel, int depth, list *refs)
 	case op_select: 
 	case op_groupby: 
 	case op_topn: 
+	case op_sample: 
 		rel_print_refs(sql, fout, rel->l, depth, refs);
 		if (rel->l && rel_is_ref(rel->l) && !find_ref(refs, rel->l)) {
 			rel_print_(sql, fout, rel->l, depth, refs);
@@ -988,7 +994,7 @@ rel_read(mvc *sql, char *r, int *pos)
 			skipWS(r, pos);
 			nrel = rel_read(sql, r, pos);
 			if (r[*pos] != ')') 
-				return sql_error(sql, -1, "project: missing ')'\n");
+				return sql_error(sql, -1, "top N: missing ')'\n");
 			(*pos)++;
 			skipWS(r, pos);
 			exps = read_exps(sql, nrel, NULL, r, pos, '[', 0);
@@ -1043,6 +1049,20 @@ rel_read(mvc *sql, char *r, int *pos)
 		rel->exps = exps;
 		return rel;
 	case 's':
+		*pos += strlen("sample");
+		skipWS(r, pos);
+		if (r[*pos] != '(') 
+			return sql_error(sql, -1, "sample: missing '('\n");
+		(*pos)++;
+		skipWS(r, pos);
+		nrel = rel_read(sql, r, pos);
+		if (r[*pos] != ')') 
+			return sql_error(sql, -1, "sample: missing ')'\n");
+		(*pos)++;
+		skipWS(r, pos);
+		exps = read_exps(sql, nrel, NULL, r, pos, '[', 0);
+		rel = rel_sample(sql->sa, nrel, exps);
+		return rel;
 	case 'a':
 		if (r[*pos+2] == 'l') {
 			*pos += strlen("select");

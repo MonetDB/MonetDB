@@ -6,6 +6,7 @@ a:str := "Fabian!";
 b:flt := 4.3;
 c:int := 12;
 d:bat[:str,:int] := bat.new(:str, :int);
+
 bat.insert(d, "bla", 1);
 bat.insert(d, nil:str, 2);
 bat.insert(d, "boe", nil:int);

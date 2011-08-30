@@ -135,6 +135,7 @@ MonetDB, you will very likely need this package.
 %files client
 %defattr(-,root,root)
 %{_bindir}/mclient
+%{_bindir}/mnc
 %{_bindir}/msqldump
 %{_bindir}/stethoscope
 %{_libdir}/libmapi.so.*
