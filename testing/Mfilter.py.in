@@ -87,6 +87,8 @@ norm_in  = re.compile('(?:'+')|(?:'.join([
     r"^([Uu]sage: )(/.*/\.libs/|/.*/lt-|)([A-Za-z0-9_]+:?[ \t].*)\n",                                                                           # 22: 3
     r'^(!.*Exception:remote\.[^:]*:\(mapi:monetdb://monetdb@)([^/]*)(/mTests_.*\).*)\n',                                                        # 25: 3
     r'^(ERROR REPORTED: DBD:|SyntaxException:parseError)(:.+ at )([\./].+|[A-Z]:\\.+)(/[^/]+\.pm line [0-9]+\.)\n',                             # 28: 4
+# filter for geos 3.3 vs. geos 3.2, can be removed if we have 3.3 everywhere
+    r"^(ERROR = !MALException:wkb.FromText:ParseException: Expected )('EMPTY' or '\(')( but encountered : '\)')\n",                             # 29: 3
 ])+')',  re.MULTILINE)
 norm_hint = '# the original non-normalized output was: '
 norm_out = (
@@ -96,6 +98,7 @@ norm_out = (
     None, '', None,                                                                                     # 22: 3
     None, 'localhost', None,                                                                            # 25: 3
     None, None, '...', None,                                                                            # 28: 3
+    None, "'Z', 'M', 'ZM', 'EMPTY' or '('", None,                                                       # 29: 3
 )
 
 
