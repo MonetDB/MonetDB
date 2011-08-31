@@ -19,7 +19,7 @@ create table t2 (a int);
 '''
 
 def main():
-    s = process.server('sql', args = ["--set", "gdk_readonly=yes"],
+    s = process.server(args = ["--set", "gdk_readonly=yes"],
                        stdin = process.PIPE,
                        stdout = process.PIPE,
                        stderr = process.PIPE)

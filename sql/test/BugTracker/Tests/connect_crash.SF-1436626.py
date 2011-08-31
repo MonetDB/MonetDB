@@ -4,7 +4,7 @@ try:
 except ImportError:
     import process
 
-srv = process.server('sql', stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
+srv = process.server(stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 
 clt = process.client('sql', stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 out, err = clt.communicate('select 1;\n')
