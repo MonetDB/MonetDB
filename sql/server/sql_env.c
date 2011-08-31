@@ -84,7 +84,7 @@ sql_update_var(mvc *m, char *name)
 			return sql_message( "Role (%s) missing\n", role);
 		}
 	} else if (strcmp(name, "current_timezone") == 0) {
-		sgn = stack_get_number(m, "current_timezone") / 60;
+		sgn = stack_get_number(m, "current_timezone");
 		assert((lng) GDK_int_min <= sgn && sgn <= (lng) GDK_int_max);
 		m->timezone = (int) sgn;
 	} else if (strcmp(name, "cache") == 0) {

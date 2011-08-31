@@ -1404,24 +1404,24 @@ sqltypeinit(void)
 	sql_create_func("localtime", "mtime", "current_time", NULL, NULL, TME, SCALE_NONE);
 	sql_create_func("localtimestamp", "mtime", "current_timestamp", NULL, NULL, TMESTAMP, SCALE_NONE);
 
-	sql_create_func("sql_sub", "mtime", "date_sub_sec_interval", DTE, SECINT, DTE, SCALE_FIX);
+	sql_create_func("sql_sub", "mtime", "date_sub_msec_interval", DTE, SECINT, DTE, SCALE_FIX);
 	sql_create_func("sql_sub", "mtime", "date_sub_month_interval", DTE, MONINT, DTE, SCALE_FIX);
-	sql_create_func("sql_sub", "mtime", "timestamp_sub_sec_interval", TMESTAMP, SECINT, TMESTAMP, SCALE_FIX);
+	sql_create_func("sql_sub", "mtime", "timestamp_sub_msec_interval", TMESTAMP, SECINT, TMESTAMP, SCALE_FIX);
 	sql_create_func("sql_sub", "mtime", "timestamp_sub_month_interval", TMESTAMP, MONINT, TMESTAMP, SCALE_FIX);
-	sql_create_func("sql_sub", "mtime", "timestamp_sub_sec_interval", TMESTAMPTZ, SECINT, TMESTAMPTZ, SCALE_FIX);
+	sql_create_func("sql_sub", "mtime", "timestamp_sub_msec_interval", TMESTAMPTZ, SECINT, TMESTAMPTZ, SCALE_FIX);
 	sql_create_func("sql_sub", "mtime", "timestamp_sub_month_interval", TMESTAMPTZ, MONINT, TMESTAMPTZ, SCALE_FIX);
-	sql_create_func("sql_sub", "mtime", "time_sub_sec_interval", TME, SECINT, TME, SCALE_FIX);
+	sql_create_func("sql_sub", "mtime", "time_sub_msec_interval", TME, SECINT, TME, SCALE_FIX);
 
 	sql_create_func("sql_sub", "mtime", "diff", DTE, DTE, INT, SCALE_FIX);
 	sql_create_func("sql_sub", "mtime", "diff", TMESTAMP, TMESTAMP, LNG, SCALE_FIX);
 
-	sql_create_func("sql_add", "mtime", "date_add_sec_interval", DTE, SECINT, DTE, SCALE_NONE);
+	sql_create_func("sql_add", "mtime", "date_add_msec_interval", DTE, SECINT, DTE, SCALE_NONE);
 	sql_create_func("sql_add", "mtime", "addmonths", DTE, MONINT, DTE, SCALE_NONE);
-	sql_create_func("sql_add", "mtime", "timestamp_add_sec_interval", TMESTAMP, SECINT, TMESTAMP, SCALE_NONE);
+	sql_create_func("sql_add", "mtime", "timestamp_add_msec_interval", TMESTAMP, SECINT, TMESTAMP, SCALE_NONE);
 	sql_create_func("sql_add", "mtime", "timestamp_add_month_interval", TMESTAMP, MONINT, TMESTAMP, SCALE_NONE);
-	sql_create_func("sql_add", "mtime", "timestamp_add_sec_interval", TMESTAMPTZ, SECINT, TMESTAMPTZ, SCALE_NONE);
+	sql_create_func("sql_add", "mtime", "timestamp_add_msec_interval", TMESTAMPTZ, SECINT, TMESTAMPTZ, SCALE_NONE);
 	sql_create_func("sql_add", "mtime", "timestamp_add_month_interval", TMESTAMPTZ, MONINT, TMESTAMPTZ, SCALE_NONE);
-	sql_create_func("sql_add", "mtime", "time_add_sec_interval", TME, SECINT, TME, SCALE_NONE);
+	sql_create_func("sql_add", "mtime", "time_add_msec_interval", TME, SECINT, TME, SCALE_NONE);
 	sql_create_func("local_timezone", "mtime", "local_timezone", NULL, NULL, SECINT, SCALE_FIX);
 
 	sql_create_func("year", "mtime", "year", DTE, NULL, INT, SCALE_FIX);

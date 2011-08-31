@@ -1345,10 +1345,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			/* convert types and make sure they are rounded up correctly */
 			int l = _dumpstmt(sql, mb, s->op1);
 
-			if (t->type->localtype ==
-			    f->type->localtype &&
-			    t->type->eclass ==
-			    f->type->eclass &&
+			if (t->type->localtype == f->type->localtype &&
+			    t->type->eclass == f->type->eclass &&
 			    f->type->eclass != EC_INTERVAL &&
 			    f->type->eclass != EC_DEC &&
 			    (t->digits == 0 ||
@@ -1409,10 +1407,12 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = pushArgument(mb, q, l);
 
 			if (t->type->eclass == EC_DEC ||
+			    EC_TEMP_FRAC(t->type->eclass) ||
 			    t->type->eclass == EC_INTERVAL) {
 				/* digits, scale of the result decimal */
 				q = pushInt(mb, q, t->digits);
-				q = pushInt(mb, q, t->scale);
+				if (!EC_TEMP_FRAC(t->type->eclass))
+					q = pushInt(mb, q, t->scale);
 			}
 			/* convert to string, give error on to large strings */
 			if (EC_VARCHAR(t->type->eclass) &&
@@ -1597,6 +1597,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				k = constantAtom(sql, mb, a);
 				q = pushArgument(mb, q, k);
 			}
+			/* digits of the result timestamp/daytime */
+			if (EC_TEMP_FRAC(atom_type(a)->type->eclass)) 
+				q = pushInt(mb, q, atom_type(a)->digits);
 			s->nr = getDestVar(q);
 		}
 			break;
