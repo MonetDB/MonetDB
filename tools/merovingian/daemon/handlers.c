@@ -94,11 +94,29 @@ huphandler(int sig)
 	struct tm *tmp = localtime(&now);
 	char mytime[20];
 	char *f;
+	confkeyval *kv;
 
 	(void)sig;
 
 	/* re-read properties, we're in our dbfarm */
 	readProps(_mero_props, ".");
+
+	/* check and trim the hash-algo from the passphrase for easy use
+	 * lateron */
+	kv = findConfKey(_mero_props, "passphrase");
+	if (kv->val != NULL) {
+		char *h = kv->val + 1;
+		if ((f = strchr(h, '}')) == NULL) {
+			setConfVal(kv, NULL);
+		} else {
+			*f = '\0';
+			if (strcmp(h, MONETDB5_PASSWDHASH) != 0) {
+				setConfVal(kv, NULL);
+			} else {
+				setConfVal(kv, f + 1);
+			}
+		}
+	}
 
 	/* have to make sure the logger is not logging anything */
 	pthread_mutex_lock(&_mero_topdp_lock);

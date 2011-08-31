@@ -32,6 +32,7 @@
 #endif
 
 #include <msabaoth.h>
+#include <mcrypt.h>
 #include <stream.h>
 #include <stream_socket.h>
 #include <utils/utils.h> /* freeConfFile */
@@ -41,6 +42,7 @@
 #include "forkmserver.h"
 #include "proxy.h"
 #include "multiplex-funnel.h"
+#include "controlrunner.h"
 #include "client.h"
 
 typedef struct _mplist {
@@ -55,6 +57,7 @@ handleClient(int sock, char isusock)
 {
 	stream *fdin, *fout;
 	char buf[8096];
+	char chal[32];
 	char *user = NULL, *algo = NULL, *passwd = NULL, *lang = NULL;
 	char *database = NULL, *s;
 	char dbmod[64];
@@ -68,6 +71,7 @@ handleClient(int sock, char isusock)
 	char mydoproxy;
 	sabdb redirs[24];  /* do we need more? */
 	int r = 0;
+	char *algos;
 
 	fdin = socket_rastream(sock, "merovingian<-client (read)");
 	if (fdin == 0)
@@ -103,17 +107,22 @@ handleClient(int sock, char isusock)
 		}
 	}
 
-	/* note that we claim to speak proto 8 here */
-	mnstr_printf(fout, "%s:merovingian:8:%s:%s:",
-			"void",  /* some bs */
-			"md5,plain", /* we actually don't look at the password */
+	/* note: since Jan2012 we speak proto 9 for control connections */
+	chal[31] = '\0';
+	generateSalt(chal, 31);
+	algos = mcrypt_getHashAlgorithms();
+	mnstr_printf(fout, "%s:merovingian:9:%s:%s:%s:",
+			chal,
+			algos,
 #ifdef WORDS_BIGENDIAN
-			"BIG"
+			"BIG",
 #else
-			"LIT"
+			"LIT",
 #endif
+			MONETDB5_PASSWDHASH
 			);
 	mnstr_flush(fout);
+	free(algos);
 
 	/* get response */
 	buf[0] = '\0';
@@ -267,6 +276,15 @@ handleClient(int sock, char isusock)
 		}
 		multiplexAddClient(w->mpf, sock, fout, fdin, host);
 
+		return(NO_ERR);
+	}
+
+	if (strcmp(lang, "control") == 0) {
+		/* handle control client */
+		if (control_authorise(host, chal, algo, passwd, sock))
+			control_handleclient(sock, host);
+		close_stream(fout);
+		close_stream(fdin);
 		return(NO_ERR);
 	}
 

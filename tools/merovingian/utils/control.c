@@ -31,6 +31,8 @@
 #include <netinet/in.h>
 #include <errno.h>
 
+#include "mcrypt.h"
+
 #define SOCKPTR struct sockaddr *
 
 /* Sends command for database to merovingian listening at host and port.
@@ -74,7 +76,8 @@ char* control_send(
 	} else {
 		struct sockaddr_in server;
 		struct hostent *hp;
-		char ver = '\0';
+		char ver = 0;
+		char *p;
 
 		/* TCP socket connect */
 		if ((sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
@@ -102,49 +105,183 @@ char* control_send(
 			snprintf(sbuf, sizeof(sbuf), "no response from merovingian");
 			return(strdup(sbuf));
 		}
-		/* we only understand merovingian:1 and :2 */
-		if (strncmp(sbuf, "merovingian:1:", strlen("merovingian:1:")) != 0 &&
-				strncmp(sbuf, "merovingian:2:", strlen("merovingian:2:")) != 0)
-		{
+		/* we only understand merovingian:1 and :2 (backwards compat
+		 * <=Aug2011) and mapi v9 on merovingian */
+		if (strncmp(sbuf, "merovingian:1:", strlen("merovingian:1:")) == 0) {
+			buf = sbuf + strlen("merovingian:1:");
+			ver = 1;
+		} else if (strncmp(sbuf, "merovingian:2:", strlen("merovingian:2:")) == 0) {
+			buf = sbuf + strlen("merovingian:2:");
+			ver = 2;
+		} else if (strstr(sbuf + 2, ":merovingian:9:") != NULL) {
+			buf = sbuf + 2;
+			ver = 9;
+		} else {
 			if (len > 2 &&
 					(strstr(sbuf + 2, ":BIG:") != NULL ||
 					 strstr(sbuf + 2, ":LIT:") != NULL))
 			{
 				snprintf(sbuf, sizeof(sbuf), "cannot connect: "
 						"server looks like a mapi server, "
-						"are you using monetdbd's mapi port (default 50000) "
-						"instead of its control port (default 50001)?");
+						"are you connecting to an mserver directly "
+						"instead of monetdbd?");
 			} else {
 				snprintf(sbuf, sizeof(sbuf), "cannot connect: "
 						"unsupported merovingian server");
 			}
 			return(strdup(sbuf));
 		}
-		buf = strchr(sbuf + strlen("merovingian:1:"), ':');
-		if (buf != NULL)
-			*buf = '\0';
-		buf = sbuf + strlen("merovingian:1:");
-		ver = buf[-2]; /* store the version for later */
-
-		buf = control_hash(pass, buf);
 
 		switch (ver) {
-			case '1':
-				len = snprintf(sbuf, sizeof(sbuf), "%s\n", buf);
-			break;
-			case '2':
-				/* in the library we only support control mode for now */
-				len = snprintf(sbuf, sizeof(sbuf), "%s:control\n", buf);
-			break;
+			case 1:
+			case 2:  /* we never really used the mode specifier of v2 */
+				p = strchr(buf, ':');
+				if (p != NULL)
+					*p = '\0';
+				p = control_hash(pass, buf);
+				len = snprintf(sbuf, sizeof(sbuf), "%s%s\n",
+						p, ver == 2 ? ":control" : "");
+				free(p);
+				break;
+			case 9:
+			{
+				char *chal = NULL;
+				char *algos = NULL;
+				char *shash = NULL;
+				char *phash = NULL;
+				char *algsv[] = {
+					"RIPEMD160",
+					"SHA1",
+					"MD5",
+					NULL
+				};
+				char **algs = algsv;
+
+				/* buf at this point looks like
+				 * "challenge:servertype:protover:algos:endian:hash:" */
+				chal = buf; /* chal */
+				p = strchr(chal, ':');
+				if (p == NULL) {
+					snprintf(sbuf, sizeof(sbuf), "cannot connect: "
+							"invalid challenge from merovingian server");
+					return(strdup(sbuf));
+				}
+				*p++ = '\0'; /* servertype */
+				p = strchr(p, ':');
+				if (p == NULL) {
+					snprintf(sbuf, sizeof(sbuf), "cannot connect: "
+							"invalid challenge from merovingian server");
+					return(strdup(sbuf));
+				}
+				*p++ = '\0'; /* protover */
+				p = strchr(p, ':');
+				if (p == NULL) {
+					snprintf(sbuf, sizeof(sbuf), "cannot connect: "
+							"invalid challenge from merovingian server");
+					return(strdup(sbuf));
+				}
+				*p++ = '\0'; /* algos */
+				algos = p;
+				p = strchr(p, ':');
+				if (p == NULL) {
+					snprintf(sbuf, sizeof(sbuf), "cannot connect: "
+							"invalid challenge from merovingian server");
+					return(strdup(sbuf));
+				}
+				*p++ = '\0'; /* endian */
+				p = strchr(p, ':');
+				if (p == NULL) {
+					snprintf(sbuf, sizeof(sbuf), "cannot connect: "
+							"invalid challenge from merovingian server");
+					return(strdup(sbuf));
+				}
+				*p++ = '\0'; /* hash */
+				shash = p;
+				p = strchr(p, ':');
+				if (p == NULL) {
+					snprintf(sbuf, sizeof(sbuf), "cannot connect: "
+							"invalid challenge from merovingian server");
+					return(strdup(sbuf));
+				}
+				*p = '\0';
+
+				/* we first need to hash our password in the form the
+				 * server stores it too */
+				if (strcmp(shash, "RIPEMD160") == 0) {
+					phash = mcrypt_RIPEMD160Sum(pass, strlen(pass));
+				} else if (strcmp(shash, "SHA512") == 0) {
+					phash = mcrypt_SHA512Sum(pass, strlen(pass));
+				} else if (strcmp(shash, "SHA384") == 0) {
+					phash = mcrypt_SHA384Sum(pass, strlen(pass));
+				} else if (strcmp(shash, "SHA256") == 0) {
+					phash = mcrypt_SHA256Sum(pass, strlen(pass));
+				} else if (strcmp(shash, "SHA224") == 0) {
+					phash = mcrypt_SHA224Sum(pass, strlen(pass));
+				} else if (strcmp(shash, "SHA1") == 0) {
+					phash = mcrypt_SHA1Sum(pass, strlen(pass));
+				} else if (strcmp(shash, "MD5") == 0) {
+					phash = mcrypt_MD5Sum(pass, strlen(pass));
+				} else {
+					snprintf(sbuf, sizeof(sbuf), "cannot connect: "
+							"server requires unknown hash '%s'", shash);
+					return(strdup(sbuf));
+				}
+
+				/* now hash the password hash with the provided
+				 * challenge */
+				for (; *algs != NULL; algs++) {
+					/* TODO: make this actually obey the separation by
+					 * commas, and only allow full matches */
+					if (strstr(algos, *algs) != NULL) {
+						unsigned short blksize;
+						p = mcrypt_hashPassword(*algs, phash, chal);
+						if (p == NULL)
+							continue;
+						len = snprintf(sbuf, sizeof(sbuf),
+								"XXBIG:monetdb:{%s}%s:control:merovingian:\n",
+								*algs, p);
+						free(p);
+						/* server wants blockmode, we need to fake it */
+						blksize = (unsigned short) strlen(sbuf) - 2;
+						/* the last bit tells whether this is all the
+						 * server gets */
+						blksize <<= 1;
+						blksize |= 1;
+#ifdef WORDS_BIGENDIAN
+						sbuf[0] = blksize >> 8 & 0xFF;
+						sbuf[1] = blksize & 0xFF;
+#else
+						sbuf[0] = blksize & 0xFF;
+						sbuf[1] = blksize >> 8 & 0xFF;
+#endif
+						break;
+					}
+				}
+				if (p == NULL) {
+					/* the server doesn't support what we can */
+					snprintf(sbuf, sizeof(sbuf), "cannot connect: "
+							"unsupported hash algoritms: %s", algos);
+					return(strdup(sbuf));
+				}
+			}
 		}
-		free(buf);
+
 		send(sock, sbuf, len, 0);
 
-		if ((len = recv(sock, sbuf, sizeof(sbuf), 0)) <= 0)
+		len = recv(sock, sbuf, sizeof(sbuf), 0);
+		if (len <= 0)
 			return(strdup("no response from merovingian"));
+		if (len == 2) /* blockmode bytes? try reading more */
+			len += recv(sock, sbuf + 2, sizeof(sbuf) - 2, 0);
 		sbuf[len - 1] = '\0';
-		if (strcmp(sbuf, "OK") != 0)
-			return(strdup(sbuf));
+		if (strcmp(sbuf, "OK") != 0) {
+			buf = sbuf;
+			if (len > 2 && (buf[0] < ' ' || buf[1] < ' '))
+				buf += 2;  /* blockmode length */
+			if (*buf == '!')
+				buf++;
+			return(strdup(buf));
+		}
 	}
 
 	len = snprintf(sbuf, sizeof(sbuf), "%s %s\n", database, command);
@@ -187,6 +324,9 @@ char* control_send(
 /**
  * Returns a hash for pass and salt, to use when logging in on a remote
  * merovingian.  The result is a malloced string.
+ * DEPRECATED
+ * This function is deprecated, and only used for authorisation to v1
+ * and v2 protocol merovingians (<=Aug2011).
  */
 char *
 control_hash(char *pass, char *salt) {

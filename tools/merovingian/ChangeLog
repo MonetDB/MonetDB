@@ -1,6 +1,16 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
+* Wed Aug 31 2011 Fabian Groffen <fabian@cwi.nl>
+- The control passphrase has been turned into a hash of the password, for
+  a more stronger authorisation model as used by mclients.  On upgrade,
+  any existing passphrase is converted to the hashed version of the
+  passphrase.
+- The monetdbd controlport option has been removed in favour of a
+  boolean control option.  On upgrade, when controlport was set to
+  a non-zero value and a passphrase was set, control is set to true,
+  or false otherwise.
+
 * Fri Aug 19 2011 Fabian Groffen <fabian@cwi.nl>
 - The monetdbd discoveryport option has been removed in favour of a
   boolean discovery option.  On upgrade, when discoveryport was set to

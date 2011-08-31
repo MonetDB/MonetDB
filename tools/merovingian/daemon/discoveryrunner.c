@@ -303,7 +303,6 @@ discoveryRunner(void *d)
 	remotedb rdb;
 	remotedb prv;
 	char *val;
-	unsigned int controlport;
 
 	ssize_t nread;
 	char buf[512]; /* our packages should be pretty small */
@@ -357,11 +356,10 @@ discoveryRunner(void *d)
 			if (orig != NULL)
 				msab_freeStatus(&orig);
 
-			controlport = (unsigned int)getConfNum(_mero_props, "controlport");
-			if (controlport != 0) {
+			if (getConfNum(_mero_props, "control") != 0) {
 				/* announce control port */
 				snprintf(buf, 512, "ANNC * %s:%u %d",
-						_mero_hostname, controlport,
+						_mero_hostname, (unsigned int)getConfNum(_mero_props, "port"),
 						discttl->ival + 60);
 				broadcast(buf);
 			}
@@ -528,10 +526,9 @@ discoveryRunner(void *d)
 		msab_freeStatus(&orig);
 
 	/* deregister this merovingian, so it doesn't remain a stale entry */
-	controlport = (unsigned int)getConfNum(_mero_props, "controlport");
-	if (controlport != 0) {
+	if (getConfNum(_mero_props, "control") != 0) {
 		snprintf(buf, 512, "LEAV * %s:%u",
-				_mero_hostname, controlport);
+				_mero_hostname, (unsigned int)getConfNum(_mero_props, "port"));
 		broadcast(buf);
 	}
 

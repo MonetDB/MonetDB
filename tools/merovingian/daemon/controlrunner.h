@@ -20,6 +20,8 @@
 #ifndef _CONTROLRUNNER_H
 #define _CONTROLRUNNER_H 1
 
+char control_authorise(const char *host, const char *chal, const char *algo, const char *passwd, int sock);
+void control_handleclient(int sock, const char *host);
 void controlRunner(void *d);
 
 #endif

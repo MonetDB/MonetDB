@@ -27,6 +27,7 @@
 #include <signal.h> /* kill */
 
 #include <mutils.h> /* MT_lockf */
+#include <mcrypt.h> /* mcrypt_BackendSum */
 #include <utils/utils.h>
 #include <utils/properties.h>
 
@@ -89,7 +90,6 @@ int
 command_create(int argc, char *argv[])
 {
 	char path[2048];
-	char buf[48];
 	char *p;
 	char *dbfarm;
 	struct stat sb;
@@ -130,9 +130,8 @@ command_create(int argc, char *argv[])
 		return(1);
 	}
 
-	generateSalt(buf, sizeof(buf));
 	phrase[0].key = "passphrase";
-	phrase[0].val = buf;
+	phrase[0].val = NULL;
 	phrase[1].key = NULL;
 	if (writeProps(phrase, dbfarm) != 0) {
 		fprintf(stderr, "unable to create file in directory '%s': %s\n",
@@ -241,7 +240,7 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 		} else if (strcmp(p, "controlsock") == 0) {
 			kv = findConfKey(ckv, "sockdir");
 			value = kv->val;
-			kv = findConfKey(ckv, "controlport");
+			kv = findConfKey(ckv, "port");
 			snprintf(buf, sizeof(buf), "%s/" CONTROL_SOCK "%d",
 					value, kv->ival);
 			value = buf;
@@ -278,6 +277,7 @@ int
 command_set(confkeyval *ckv, int argc, char *argv[])
 {
 	char *p = NULL;
+	char h[256];
 	char *property;
 	char *dbfarm = LOCALSTATEDIR "/monetdb5/dbfarm";
 	confkeyval *kv;
@@ -321,7 +321,7 @@ command_set(confkeyval *ckv, int argc, char *argv[])
 			strcmp(property, "controlsock") == 0)
 	{
 		fprintf(stderr, "set: mapisock and controlsock are deduced from "
-				"sockdir, port and controlport, change those instead\n");
+				"sockdir and port, change those instead\n");
 		return(1);
 	}
 
@@ -329,22 +329,28 @@ command_set(confkeyval *ckv, int argc, char *argv[])
 		fprintf(stderr, "set: no such property: %s\n", property);
 		return(1);
 	}
-	/* special trick to make it easy to use a different port with one
-	 * command */
-	if (strcmp(property, "port") == 0) {
-		int oport = kv->ival;
-		char *e;
-		if ((e = setConfVal(kv, p)) != NULL) {
-			fprintf(stderr, "set: failed to set property port: %s\n", e);
-			free(e);
-			return(1);
+	if (strcmp(property, "passphrase") == 0) {
+		char dohash = 1;
+		/* allow to either set a hash ({X}xxx), or convert the given
+		 * string to its hash */
+		if (*p == '{') {
+			char *q;
+			if ((q = strchr(p + 1, '}')) != NULL) {
+				*q = '\0';
+				if (strcmp(p + 1, MONETDB5_PASSWDHASH) != 0) {
+					fprintf(stderr, "set: passphrase hash '%s' incompatible, "
+							"expected '%s'\n",
+							h, MONETDB5_PASSWDHASH);
+					return(1);
+				}
+				*q = '}';
+				dohash = 0;
+			}
 		}
-		kv = findConfKey(ckv, "controlport");
-		if (kv != NULL && kv->ival == oport + 1) {
-			oport = atoi(p);
-			snprintf(buf, sizeof(buf), "%d", oport + 1);
-			property = "controlport";
-			p = buf;
+		if (dohash == 1) {
+			p = mcrypt_BackendSum(p, strlen(p));
+			snprintf(h, sizeof(h), "{%s}%s", MONETDB5_PASSWDHASH, p);
+			p = h;
 		}
 	}
 	if ((p = setConfVal(kv, p)) != NULL) {

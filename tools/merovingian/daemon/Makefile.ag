@@ -54,6 +54,7 @@ bin_monetdbd = {
 		   ../../../common/stream/libstream \
 		   ../../../clients/mapilib/libmapi \
 		   ../../../common/utils/libmutils \
+		   ../../../common/utils/libmcrypt \
 		   $(UUID_LIBS) \
 		   $(curl_LIBS) \
 		   $(SOCKET_LIBS) \

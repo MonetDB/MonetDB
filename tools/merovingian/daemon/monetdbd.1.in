@@ -80,8 +80,7 @@ section below.
 The commands for
 .B monetdbd
 are
-.BR create ", " start ", " stop ", " get ", " set ", " version ", and "
-help .
+.BR create ", " start ", " stop ", " get ", " set ", " version ", and " help .
 The commands facilitate initialising a dbfarm, starting and stopping the
 MonetDB Database Server, and retrieving or setting options.
 .IP "create dbfarm"
@@ -138,7 +137,8 @@ command.  The following properties can be set:
 .IP logfile
 This property points to the file where all log messages are written to.
 It is relative to the dbfarm directory, but can be absolute to point to
-e.g. another medium.
+e.g. another medium.  Changing this property takes effect immediately at
+runtime.
 .IP pidfile
 .B monetdbd
 stores the process ID of the background server in the file pointed to by
@@ -157,18 +157,26 @@ setting should not be changed.
 .IP port
 This property specifies which TCP port
 .B monetdbd
-should listen to for regular database connection requests.  Defaults to
-50000.  When this value is changed, controlport is also changed when its
-value is port + 1.  This allows to easily make monetdbd run
-on another port with a single command.
-.IP controlport
+should listen to for connection requests.  Defaults to 50000.
+.IP control
 For remote management of
 .BR monetdbd,
 the
-.I controlport
-property specifies the TCP port that is opened up for listening.  Note
-that for these connections, a passphrase is required, see below.
-Defaults to 50001
+.I control
+property specifies whether or not to enable remote management.  Note
+that for remote management, a passphrase is required, see below.  It
+defaults to false for security reasons.  Changing this property takes
+effect immediately at runtime.
+.IP passphrase
+To control
+.B monetdbd
+from a remote machine, a passphrase is necessary, to be given to
+.BR monetdb (1).
+The passphrase can be either given as hashed value prefixed by the hash
+type in curly braces (e.g. {SHA512}xxx...) or as plain text value which
+will be hashed automatically.  Note that the only hash accepted is the
+one specified at configure time, which is @MONETDB5_PASSWDHASH@.
+Changing this property takes effect immediately at runtime.
 .IP discovery
 Specifies whether neighbour discovery is to be enabled using UDP
 broadcasts or not.  The broadcasts are done on the same portnumber as
@@ -199,7 +207,8 @@ has shut down.  Note that this particular configuration is extremely
 inconvenient.  The default time-out is 60 seconds.  If your databases
 are rather large and find your databases consistently being killed by
 .B monetdbd
-upon shutdown, you may want to increase this time-out.
+upon shutdown, you may want to increase this time-out.  Changing this
+property takes effect immediately at runtime.
 .IP forward
 .B monetdbd
 has two ways in which it can "attach" a connecting client to the target
@@ -230,14 +239,8 @@ local mserver.  This effectively is as efficient as the
 approach, but still hides away the mservers properly behind
 .BR monetdbd .
 Hence, in practice it is only relevant for connections to remote
-databases to use redirects instead of proxies.
-.IP passphrase
-To control
-.B monetdbd
-from a remote machine, a passphrase is necessary, to be given to
-.BR monetdb (1).
-This passphrase is setup for each newly created dbfarm.  It is
-recommended to keep this value long and non-trivial.
+databases to use redirects instead of proxies.  Changing this property
+takes effect immediately at runtime.
 .SH "REMOTE DATABASES"
 The neighbour discovery capabilities of
 .B monetdbd
