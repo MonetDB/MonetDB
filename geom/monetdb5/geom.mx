@@ -256,7 +256,7 @@ end @2;
 @:ctypes(MultiSurface,multisurface,6)@
 @:ctypes(MultiPoly,multipolygon,6)@
 @:ctypes(Geom,geometry,7)@
-@:ctypes(GeomCollection,geometrycollection,7)@
+@:ctypes(GeomCollection,geomcollection,7)@
 
 module geom;
 command calc.isnil(v:wkb):bit
