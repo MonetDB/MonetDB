@@ -293,7 +293,7 @@ def client(lang, args = [], stdin = None, stdout = None, stderr = None,
         p.stderr = _BufferedPipe(p.stderr)
     return p
 
-def server(lang, args = [], stdin = None, stdout = None, stderr = None,
+def server(args = [], stdin = None, stdout = None, stderr = None,
            mapiport = None, dbname = os.getenv('TSTDB'), dbfarm = None,
            dbinit = None, bufsize = 0, log = False, notrace = False):
     '''Start a server process.'''

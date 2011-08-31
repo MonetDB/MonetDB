@@ -7,7 +7,7 @@ except ImportError:
 def server_start(args):
     sys.stderr.write('#mserver: "%s"\n' % ' '.join(args))
     sys.stderr.flush()
-    srv = process.server('sql', args = args, stdin = process.PIPE,
+    srv = process.server(args = args, stdin = process.PIPE,
                          stdout = process.PIPE, stderr = process.PIPE)
     return srv
 

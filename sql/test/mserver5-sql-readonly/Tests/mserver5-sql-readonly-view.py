@@ -67,7 +67,7 @@ delete from v1 where a = 3;
 '''
 
 def main():
-    s = process.server('sql', args = [],
+    s = process.server(args = [],
                        stdin = process.PIPE,
                        stdout = process.PIPE,
                        stderr = process.PIPE)
@@ -79,7 +79,7 @@ def main():
     client(script11)
     client(script12)
     server_stop(s)
-    s = process.server('sql', args = ["--readonly"],
+    s = process.server(args = ["--readonly"],
                        stdin = process.PIPE,
                        stdout = process.PIPE,
                        stderr = process.PIPE)
