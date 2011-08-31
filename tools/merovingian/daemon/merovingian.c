@@ -497,8 +497,6 @@ autoUpgradeControlPortAug2011Jan2012(confkeyval *mckv)
 	kv = findConfKey(ckv, "controlport");
 	if (kv->val == NULL) {
 		freeConfFile(ckv);
-		kv = findConfKey(mckv, "passphrase");
-		setConfVal(kv, NULL);
 		return 0;
 	}
 
