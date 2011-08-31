@@ -5,6 +5,8 @@ msqldump \- dump a MonetDB/SQL database
 .B msqldump
 [
 .I options
+] [
+.I dbname
 ]
 .SH DESCRIPTION
 MonetDB is a database management system that is developed from a
@@ -22,6 +24,9 @@ Print usage information and exit.
 .TP
 \fB\-\-database=\fP\fIdatabase\fP (\fB\-d\fP \fIdatabase\fP)
 Specify the name of the database to connect to.
+The
+.B \-d
+can be omitted if it is the last option.
 .TP
 \fB\-\-host=\fP\fIhostname\fP (\fB\-h\fP \fIhostname\fP)
 Specify the name of the host on which the server runs (default:

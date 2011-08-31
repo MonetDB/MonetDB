@@ -58,7 +58,11 @@ int
 main(int argc, char **argv)
 {
 	char EMPTY[] = "";
+#ifdef NATIVE_WIN32
+	char DEFAULT[] = "\"-I^#\"";
+#else
 	char DEFAULT[] = "-I'^#'";
+#endif
 	char ignoreWHITE[] = " -b -B";
 	char *old_fn, *new_fn, *html_fn, *caption = EMPTY, *revision = EMPTY, *ignoreEXP = DEFAULT, *ignore, *function = "";
 	int LWC = 1, context = 1, option, mindiff = 0, quiet = 0;
@@ -78,24 +82,28 @@ main(int argc, char **argv)
 		case 'I':
 			ignoreEXP = (char *) malloc(strlen(optarg) + 6);
 #ifdef NATIVE_WIN32
-			strcpy(ignoreEXP, "-I");
+			strcpy(ignoreEXP, "\"-I");
 #else
 			strcpy(ignoreEXP, "'-I");
 #endif
 			strcat(ignoreEXP, optarg);
-#ifndef NATIVE_WIN32
+#ifdef NATIVE_WIN32
+			strcat(ignoreEXP, "\"");
+#else
 			strcat(ignoreEXP, "'");
 #endif
 			break;
 		case 'F':
 			function = malloc(strlen(optarg) + 6);
 #ifdef NATIVE_WIN32
-			strcpy(function, "-F");
+			strcpy(function, "\"-F");
 #else
 			strcpy(function, "'-F");
 #endif
 			strcat(function, optarg);
-#ifndef NATIVE_WIN32
+#ifdef NATIVE_WIN32
+			strcat(function, "\"");
+#else
 			strcat(function, "'");
 #endif
 			break;
