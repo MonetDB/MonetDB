@@ -279,9 +279,13 @@ def client(lang, args = [], stdin = None, stdout = None, stderr = None,
     if stdin is None:
         # if no input provided, use /dev/null as input
         stdin = open(os.devnull)
+    if stdout == 'PIPE':
+        out = PIPE
+    else:
+        out = stdout
     p = Popen(cmd + args,
               stdin = stdin,
-              stdout = stdout,
+              stdout = out,
               stderr = stderr,
               shell = False,
               env = env,
