@@ -615,15 +615,7 @@ main(int argc, char *argv[])
 	kv = findConfKey(_mero_db_props, "readonly");
 	kv->val = strdup("no");
 
-	/* in case of no arguments, we act backwards compatible: start
-	 * merovingian in the hardwired dbfarm location */
-	if (sizeof(LOCALSTATEDIR "/monetdb5/dbfarm") >= sizeof(dbfarm)) {
-		Mfprintf(stderr, "fatal: compiled in dbfarm location exceeds " \
-				"allocated path length, please file a bug at " \
-				"http://bugs.monetdb.org/\n");
-		exit(1);
-	}
-	snprintf(dbfarm, sizeof(dbfarm), "%s", LOCALSTATEDIR "/monetdb5/dbfarm");
+	*dbfarm = '\0';
 	if (argc > 1) {
 		if (strcmp(argv[1], "--help") == 0 ||
 				strcmp(argv[1], "-h") == 0 ||
@@ -642,10 +634,9 @@ main(int argc, char *argv[])
 		} else if (strcmp(argv[1], "set") == 0) {
 			exit(command_set(ckv, argc - 1, &argv[1]));
 		} else if (strcmp(argv[1], "start") == 0) {
-			/* start without path argument just means start hardwired dbfarm */
-			if (argc > 2 && strcmp(argv[2], "-n") == 0)
+			if (argc > 3 && strcmp(argv[2], "-n") == 0)
 					merodontfork = 1;
-			if (argc > 2 + merodontfork) {
+			if (argc == 3 + merodontfork) {
 				int len;
 				len = snprintf(dbfarm, sizeof(dbfarm), "%s",
 						argv[2 + merodontfork]);
@@ -656,6 +647,9 @@ main(int argc, char *argv[])
 							"http://bugs.monetdb.org/\n");
 					exit(1);
 				}
+			} else {
+				command_help(argc, argv);
+				exit(1);
 			}
 		} else if (strcmp(argv[1], "stop") == 0) {
 			exit(command_stop(ckv, argc - 1, &argv[1]));
@@ -664,7 +658,12 @@ main(int argc, char *argv[])
 			command_help(0, NULL);
 			exit(1);
 		}
+	} else {
+		command_help(0, NULL);
+		exit(1);
 	}
+
+	assert(*dbfarm != '\0');
 
 	/* fork into background before doing anything more */
 	if (!merodontfork) {

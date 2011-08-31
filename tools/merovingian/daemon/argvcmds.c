@@ -53,23 +53,20 @@ command_help(int argc, char *argv[])
 		printf("  must be a path in the filesystem where a directory can be\n");
 		printf("  created, or a directory that is writable that already exists.\n");
 	} else if (strcmp(argv[1], "start") == 0) {
-		printf("usage: monetdbd start [-n] [dbfarm]\n");
-		printf("  Starts the monetdbd deamon.  When no dbfarm given, it starts\n");
-		printf("  in the default dbfarm (%s).\n", LOCALSTATEDIR "/monetdb5/dbfarm");
+		printf("usage: monetdbd start [-n] <dbfarm>\n");
+		printf("  Starts the monetdbd deamon for the given dbfarm.\n");
 		printf("  When -n is given, monetdbd will not fork into the background.");
 	} else if (strcmp(argv[1], "stop") == 0) {
-		printf("usage: monetdbd stop [dbfarm]\n");
-		printf("  Stops a running monetdbd deamon for the given dbfarm, or\n");
-		printf("  when none given, the default one (%s).\n", LOCALSTATEDIR "/monetdb5/dbfarm");
+		printf("usage: monetdbd stop <dbfarm>\n");
+		printf("  Stops a running monetdbd deamon for the given dbfarm.\n");
 	} else if (strcmp(argv[1], "set") == 0) {
-		printf("usage: monetdbd set property=value [dbfarm]\n");
-		printf("  Sets property to value for the given dbfarm, or when\n");
-		printf("  absent, the default (%s).\n", LOCALSTATEDIR "/monetdb5/dbfarm");
+		printf("usage: monetdbd set property=value <dbfarm>\n");
+		printf("  Sets property to value for the given dbfarm.\n");
 		printf("  For a list of properties, use `monetdbd get all`\n");
 	} else if (strcmp(argv[1], "get") == 0) {
-		printf("usage: monetdbd get <\"all\" | property,...> [dbfarm]\n");
+		printf("usage: monetdbd get <\"all\" | property,...> <dbfarm>\n");
 		printf("  Gets value for property for the given dbfarm, or\n");
-		printf("  retrieves all properties for the given dbfarm\n");
+		printf("  retrieves all properties.\n");
 	} else {
 		printf("help: unknown command: %s\n", argv[1]);
 		exitcode = 1;
@@ -130,8 +127,8 @@ command_create(int argc, char *argv[])
 		return(1);
 	}
 
-	phrase[0].key = "passphrase";
-	phrase[0].val = NULL;
+	phrase[0].key = "control";
+	phrase[0].val = "false";
 	phrase[1].key = NULL;
 	if (writeProps(phrase, dbfarm) != 0) {
 		fprintf(stderr, "unable to create file in directory '%s': %s\n",
@@ -146,7 +143,7 @@ int
 command_get(confkeyval *ckv, int argc, char *argv[])
 {
 	char *p;
-	char *dbfarm = LOCALSTATEDIR "/monetdb5/dbfarm";
+	char *dbfarm;
 	char *property = NULL;
 	char *value;
 	char buf[512];
@@ -154,13 +151,12 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 	confkeyval *kv;
 	int meropid = -1;
 
-	if (argc < 2 || argc > 3) {
+	if (argc != 3) {
 		command_help(2, &argv[-1]);
 		return(1);
 	}
 
-	if (argc == 3)
-		dbfarm = argv[2];
+	dbfarm = argv[2];
 
 	/* read the merovingian properties from the dbfarm */
 	if (readProps(ckv, dbfarm) != 0) {
@@ -279,19 +275,18 @@ command_set(confkeyval *ckv, int argc, char *argv[])
 	char *p = NULL;
 	char h[256];
 	char *property;
-	char *dbfarm = LOCALSTATEDIR "/monetdb5/dbfarm";
+	char *dbfarm;
 	confkeyval *kv;
 	FILE *pfile = NULL;
 	char buf[8];
 	pid_t meropid;
 
-	if (argc < 2 || argc > 3) {
+	if (argc != 3) {
 		command_help(2, &argv[-1]);
 		return(1);
 	}
 
-	if (argc == 3)
-		dbfarm = argv[2];
+	dbfarm = argv[2];
 
 	/* read the merovingian properties from the dbfarm */
 	if (readProps(ckv, dbfarm) != 0) {
@@ -394,19 +389,18 @@ command_set(confkeyval *ckv, int argc, char *argv[])
 int
 command_stop(confkeyval *ckv, int argc, char *argv[])
 {
-	char *dbfarm = LOCALSTATEDIR "/monetdb5/dbfarm";
+	char *dbfarm;
 	char *pidfilename = NULL;
 	FILE *pfile = NULL;
 	char buf[8];
 	pid_t daemon;
 
-	if (argc > 2) {
+	if (argc != 2) {
 		command_help(2, &argv[-1]);
 		return(1);
 	}
 
-	if (argc == 2)
-		dbfarm = argv[1];
+	dbfarm = argv[1];
 
 	/* read the merovingian properties from the dbfarm */
 	if (readProps(ckv, dbfarm) != 0) {

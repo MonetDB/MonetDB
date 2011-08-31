@@ -2,6 +2,8 @@
 # This file is updated with mchangelog
 
 * Wed Aug 31 2011 Fabian Groffen <fabian@cwi.nl>
+- Starting monetdbd without any arguments or without dbfarm is no longer
+  supported.  A dbfarm now must be provided for each command.
 - The control passphrase has been turned into a hash of the password, for
   a more stronger authorisation model as used by mclients.  On upgrade,
   any existing passphrase is converted to the hashed version of the

@@ -6,7 +6,7 @@
 monetdbd \- the MonetDB Database Server daemon
 .SH SYNOPSIS
 .B monetdbd
-[command [command_args] [dbfarm]]
+command [command_args] dbfarm
 .SH DESCRIPTION
 .B monetdbd
 is the MonetDB Database Server daemon.  The program is mainly meant to
@@ -39,11 +39,9 @@ A
 instance manages one local cluster based, which is a directory in the
 system, referred to as the
 .IR dbfarm .
-Nowadays, it is preferred to always give the dbfarm location as argument
+Nowadays, the dbfarm location always has to be given as argument
 to
 .BR monetdbd .
-For system-wide installs, the default dbfarm location is set to
-@Elocalstatedir@/monetdb5/dbfarm.
 .P
 Within its local cluster
 .B monetdbd
@@ -90,33 +88,32 @@ be created, and an initial properties file is created in the directory
 itself.
 .I dbfarm
 must be a location addressable in the local filesystem hierarchy.
-.IP "start [-n] [dbfarm]"
+.IP "start [-n] <dbfarm>"
 Starts
 .BR monetdbd ,
-the MonetDB Database Server, on the given dbfarm, or its default, the
-system-wide location @Elocalstatedir@/monetdb5/dbfarm.  When the
+the MonetDB Database Server, on the given dbfarm.  When the
 .I -n
 flag is given,
 .B monetdbd
 will not fork into the background, but instead remain attached to the
 calling environment, until given a stop signal.
-.IP "stop [dbfarm]"
+.IP "stop <dbfarm>"
 Sends a stop signal to the
 .B monetdbd
-process responsible for the given dbfarm, or the default system-wide
-location @Elocalstatedir@/monetdb5/dbfarm.
-.IP "get <all | property[,property[,..]]> [dbfarm]"
+process responsible for the given dbfarm.
+.IP "get <all | property[,property[,..]]> <dbfarm>"
 Prints the requested properties, or all known properties, for the given
-database.  For each property and its value are printed.  Some properties
+dbfarm.  For each property, its value is printed.  Some properties
 are virtual, and given for information purposes only, they cannot be
 modified using the
 .I set
 command.
-.IP "set property=value [dbfarm]"
+.IP "set property=value <dbfarm>"
 Sets property to value for the given database.  For a list of
 properties, run
 .BR "monetdbd get all" .
-Most properties require a restart of the MonetDB Database Server.  The
+Some properties require a restart of the MonetDB Database Server in
+order to take effect.  The
 .I set
 command, will however always write the property, and tell the running
 .B monetdbd
