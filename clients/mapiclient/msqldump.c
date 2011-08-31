@@ -56,7 +56,7 @@ static void usage(const char *prog, int xit)
 static void
 usage(const char *prog, int xit)
 {
-	fprintf(stderr, "Usage: %s [ options ]\n", prog);
+	fprintf(stderr, "Usage: %s [ options ] [ dbname ]\n", prog);
 	fprintf(stderr, "\nOptions are:\n");
 	fprintf(stderr, " -h hostname | --host=hostname    host to connect to\n");
 	fprintf(stderr, " -p portnr   | --port=portnr      port to connect to\n");
@@ -207,6 +207,11 @@ main(int argc, char **argv)
 			usage(argv[0], -1);
 		}
 	}
+
+	if (optind == argc - 1)
+		dbname = argv[optind];
+	else if (optind != argc)
+		usage(argv[0], -1);
 
 	/* when config file would provide defaults */
 	if (user_set_as_flag)
