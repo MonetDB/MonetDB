@@ -659,7 +659,6 @@ controlRunner(void *d)
 	fd_set fds;
 	struct timeval tv;
 	int msgsock;
-	err e;
 	char origin[128];
 
 	do {
@@ -677,10 +676,6 @@ controlRunner(void *d)
 		if (retval < 0) {
 			if (_mero_keep_listening == 0)
 				break;
-			if (errno != EINTR) {
-				e = newErr("control runner: error during select: %s",
-						strerror(errno));
-			}
 			continue;
 		}
 
@@ -694,7 +689,7 @@ controlRunner(void *d)
 			if (_mero_keep_listening == 0)
 				break;
 			if (errno != EINTR) {
-				e = newErr("control runner: error during accept: %s",
+				Mfprintf(_mero_ctlerr, "error during accept: %s",
 						strerror(errno));
 			}
 			continue;
