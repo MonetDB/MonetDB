@@ -97,7 +97,6 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 	mvc *m = (mvc *)_mvc;
 	oid uid = 0;
 	bat bid = 0;
-	BAT *scens;
 	str ret;
 	int user_id;
 	str pwd;
@@ -105,12 +104,6 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 	sql_table *db_user_info, *auths;
 	Client c = MCgetClient(m->clientid);
 
-	/* prepare the scens BAT: it should contain the sql scenario */
-	scens = BATnew(TYPE_str, TYPE_void, 1);
-	if(scens == NULL)
-		throw(SQL,"sql.create_user", MAL_MALLOC_FAIL);
-	BUNins(scens, "sql", 0, FALSE);
-	bid = BBPcacheid(scens);
 	if (!enc) {
 		pwd = mcrypt_BackendSum(passwd, strlen(passwd));
 		if (pwd != NULL) {
@@ -121,11 +114,8 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 		pwd = passwd;
 	}
 	/* add the user to the M5 authorisation administration */
-	if ((ret = AUTHaddUser(&uid, &c, &user, &pwd, &bid)) != MAL_SUCCEED) {
-		BBPunfix(bid);
+	if ((ret = AUTHaddUser(&uid, &c, &user, &pwd)) != MAL_SUCCEED)
 		return ret;
-	}
-	BBPunfix(bid);
 	if (!enc)
 		GDKfree(pwd);
 
@@ -143,18 +133,10 @@ db_users(Client c)
 	BAT *b;
 	str tmp;
 
-	/* prepare the scens BAT: it should contain the sql scenario */
-	BAT *scens = BATnew(TYPE_str, TYPE_void, 1);
-	if(scens == NULL)
-		return NULL;
-
-	BUNins(scens, "sql", 0, FALSE);
-	if ((tmp = AUTHgetUsers(&b, &c, &scens->batCacheid)) != MAL_SUCCEED) {
-		BBPunfix(scens->batCacheid);
+	if ((tmp = AUTHgetUsers(&b, &c)) != MAL_SUCCEED) {
 		GDKfree(tmp);
 		return(NULL);
 	}
-	BBPunfix(scens->batCacheid);
 	return b;
 }
 
