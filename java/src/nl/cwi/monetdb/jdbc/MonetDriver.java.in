@@ -289,7 +289,7 @@ final public class MonetDriver implements Driver {
 		typeMap.put("month_interval", new Integer(Types.INTEGER));
 		typeMap.put("oid", new Integer(Types.OTHER));
 		typeMap.put("real", new Integer(Types.REAL));
-		typeMap.put("sec_interval", new Integer(Types.BIGINT));
+		typeMap.put("sec_interval", new Integer(Types.DECIMAL));
 		typeMap.put("smallint", new Integer(Types.SMALLINT));
 		typeMap.put("table", new Integer(Types.ARRAY));
 		typeMap.put("time", new Integer(Types.TIME));
