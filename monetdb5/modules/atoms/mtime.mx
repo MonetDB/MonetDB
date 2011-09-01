@@ -417,19 +417,19 @@ module mtime;
 command date_sub_sec_interval(t:date,s:int):date 
 address MTIMEdate_sub_sec_interval_wrap
 comment "Subtract seconds from a date";
-command date_sub_msec_interval(t:date,ms:lng):date 
-address MTIMEdate_sub_msec_interval_lng_wrap;
+command date_sub_sec_interval(t:date,s:lng):date 
+address MTIMEdate_sub_sec_interval_lng_wrap;
 
 command date_add_sec_interval(t:date,s:int):date 
 address MTIMEdate_add_sec_interval_wrap
 comment "Add seconds to a date";
-command date_add_msec_interval(t:date,ms:lng):date 
-address MTIMEdate_add_msec_interval_lng_wrap;
+command date_add_sec_interval(t:date,s:lng):date 
+address MTIMEdate_add_sec_interval_lng_wrap;
 
-command timestamp_sub_msec_interval(t:timestamp,ms:lng):timestamp 
-address MTIMEtimestamp_sub_msec_interval_lng_wrap;
-command timestamp_add_msec_interval(t:timestamp,ms:lng):timestamp 
-address MTIMEtimestamp_add_msec_interval_lng_wrap;
+command timestamp_sub_sec_interval(t:timestamp,s:lng):timestamp 
+address MTIMEtimestamp_sub_sec_interval_lng_wrap;
+command timestamp_add_sec_interval(t:timestamp,s:lng):timestamp 
+address MTIMEtimestamp_add_sec_interval_lng_wrap;
 
 command timestamp_sub_month_interval(t:timestamp,s:int):timestamp 
 address MTIMEtimestamp_sub_month_interval_wrap
@@ -440,11 +440,11 @@ comment "Add months to a timestamp";
 command timestamp(t:timestamp):timestamp
 address MTIMEtimestamp2timestamp;
 
-command time_sub_msec_interval(t:daytime,ms:lng):daytime 
-address MTIMEtime_sub_msec_interval_wrap
+command time_sub_sec_interval(t:daytime,s:lng):daytime 
+address MTIMEtime_sub_sec_interval_wrap
 comment "Subtract seconds from a time";
-command time_add_msec_interval(t:daytime,ms:lng):daytime 
-address MTIMEtime_add_msec_interval_wrap
+command time_add_sec_interval(t:daytime,s:lng):daytime 
+address MTIMEtime_add_sec_interval_wrap
 comment "Add seconds to a time";
 
 command date_add_month_interval(t:date,s:int):date 
@@ -774,13 +774,13 @@ command year(months:int):int
 address MTIMEsql_year;
 command month(months:int):int
 address MTIMEsql_month;
-command day(msecs:lng):lng
+command day(secs:lng):lng
 address MTIMEsql_day;
-command hours(msecs:lng):int
+command hours(secs:lng):int
 address MTIMEsql_hours;
-command minutes(msecs:lng):int
+command minutes(secs:lng):int
 address MTIMEsql_minutes;
-command seconds(msecs:lng):int
+command seconds(secs:lng):int
 address MTIMEsql_seconds;
 
 command msec{unsafe}():lng 
@@ -1044,16 +1044,16 @@ mtime_export str MTIMEtzone_extract_start(rule *ret, tzone *t);
 mtime_export str MTIMEtzone_extract_end(rule *ret, tzone *t);
 mtime_export str MTIMEtzone_extract_minutes(int *ret, tzone *t);
 mtime_export str MTIMEdate_sub_sec_interval_wrap(date *ret, date *t, int *sec);
-mtime_export str MTIMEdate_sub_msec_interval_lng_wrap(date *ret, date *t, lng *msec);
+mtime_export str MTIMEdate_sub_sec_interval_lng_wrap(date *ret, date *t, lng *sec);
 mtime_export str MTIMEdate_add_sec_interval_wrap(date *ret, date *t, int *sec);
-mtime_export str MTIMEdate_add_msec_interval_lng_wrap(date *ret, date *t, lng *msec);
+mtime_export str MTIMEdate_add_sec_interval_lng_wrap(date *ret, date *t, lng *sec);
 mtime_export str MTIMEdate_add_month_interval_wrap(date *ret, date *t, int *months);
-mtime_export str MTIMEtimestamp_add_msec_interval_lng_wrap(timestamp *ret, timestamp *t, lng *msec);
-mtime_export str MTIMEtimestamp_sub_msec_interval_lng_wrap(timestamp *ret, timestamp *t, lng *msec);
+mtime_export str MTIMEtimestamp_add_sec_interval_lng_wrap(timestamp *ret, timestamp *t, lng *sec);
+mtime_export str MTIMEtimestamp_sub_sec_interval_lng_wrap(timestamp *ret, timestamp *t, lng *sec);
 mtime_export str MTIMEtimestamp_sub_month_interval_wrap(timestamp *ret, timestamp *t, int *months);
 mtime_export str MTIMEtimestamp_add_month_interval_wrap(timestamp *ret, timestamp *t, int *months);
-mtime_export str MTIMEtime_sub_msec_interval_wrap(daytime *ret, daytime *t, lng *msec);
-mtime_export str MTIMEtime_add_msec_interval_wrap(daytime *ret, daytime *t, lng *msec);
+mtime_export str MTIMEtime_sub_sec_interval_wrap(daytime *ret, daytime *t, lng *sec);
+mtime_export str MTIMEtime_add_sec_interval_wrap(daytime *ret, daytime *t, lng *sec);
 mtime_export str MTIMEcompute_rule_foryear(date *ret, rule *val, int *year);
 mtime_export str MTIMEtzone_tostr(str *s, tzone *ret);
 mtime_export str MTIMEtzone_fromstr(tzone *ret, str *s);
@@ -2663,10 +2663,10 @@ date_sub_sec_interval_wrap(date *ret, date *t, int *sec)
 	return GDK_SUCCEED;
 }
 static inline int
-date_sub_msec_interval_lng_wrap(date *ret, date *t, lng *msec)
+date_sub_sec_interval_lng_wrap(date *ret, date *t, lng *sec)
 {
-	if (*msec > 0) {
-		int delta = (int) -(*msec / 86400000);
+	if (*sec > 0) {
+		int delta = (int) -(*sec / 86400);
 
 		return date_adddays(ret, t, &delta);
 	}
@@ -2686,10 +2686,10 @@ date_add_sec_interval_wrap(date *ret, date *t, int *sec)
 	return GDK_SUCCEED;
 }
 static inline int
-date_add_msec_interval_lng_wrap(date *ret, date *t, lng *msec)
+date_add_sec_interval_lng_wrap(date *ret, date *t, lng *sec)
 {
-	if (*msec > 0) {
-		int delta = (int) (*msec / 86400000);
+	if (*sec > 0) {
+		int delta = (int) (*sec / 86400);
 
 		return date_adddays(ret, t, &delta);
 	}
@@ -3628,9 +3628,9 @@ MTIMEdate_sub_sec_interval_wrap(date *ret, date *t, int *sec)
 	return MAL_SUCCEED;
 }
 str
-MTIMEdate_sub_msec_interval_lng_wrap(date *ret, date *t, lng *msec)
+MTIMEdate_sub_sec_interval_lng_wrap(date *ret, date *t, lng *sec)
 {
-	date_sub_msec_interval_lng_wrap(ret, t, msec);
+	date_sub_sec_interval_lng_wrap(ret, t, sec);
 	return MAL_SUCCEED;
 }
 
@@ -3641,23 +3641,24 @@ MTIMEdate_add_sec_interval_wrap(date *ret, date *t, int *sec)
 	return MAL_SUCCEED;
 }
 str
-MTIMEdate_add_msec_interval_lng_wrap(date *ret, date *t, lng *msec)
+MTIMEdate_add_sec_interval_lng_wrap(date *ret, date *t, lng *sec)
 {
-	date_add_msec_interval_lng_wrap(ret, t, msec);
+	date_add_sec_interval_lng_wrap(ret, t, sec);
 	return MAL_SUCCEED;
 }
 
 str
-MTIMEtimestamp_add_msec_interval_lng_wrap(timestamp *ret, timestamp *t, lng *msec)
+MTIMEtimestamp_add_sec_interval_lng_wrap(timestamp *ret, timestamp *t, lng *sec)
 {
-	timestamp_add(ret, t, msec);
+	lng msec= *sec *1000;
+	timestamp_add(ret, t, &msec);
 	return MAL_SUCCEED;
 }
 str
-MTIMEtimestamp_sub_msec_interval_lng_wrap(timestamp *ret, timestamp *t, lng *msec)
+MTIMEtimestamp_sub_sec_interval_lng_wrap(timestamp *ret, timestamp *t, lng *sec)
 {
-	lng Msec= *msec * -1;
-	timestamp_add(ret, t, &Msec);
+	lng msec= *sec * -1000;
+	timestamp_add(ret, t, &msec);
 	return MAL_SUCCEED;
 }
 str
@@ -3685,16 +3686,16 @@ MTIMEtimestamp_sub_month_interval_wrap(timestamp *ret, timestamp *v, int *months
 }
 
 str
-MTIMEtime_add_msec_interval_wrap(daytime *ret, daytime *t, lng *mseconds)
+MTIMEtime_add_sec_interval_wrap(daytime *ret, daytime *t, lng *seconds)
 {
-	lng s= *mseconds;
+	lng s= 1000 * *seconds;
 	daytime_add(ret, t, &s);
 	return MAL_SUCCEED;
 }
 str
-MTIMEtime_sub_msec_interval_wrap(daytime *ret, daytime *t, lng *mseconds)
+MTIMEtime_sub_sec_interval_wrap(daytime *ret, daytime *t, lng *seconds)
 {
-	lng s= -1 * *mseconds;
+	lng s= -1000 * *seconds;
 	daytime_add(ret, t, &s);
 	return MAL_SUCCEED;
 }
@@ -3994,25 +3995,25 @@ MTIMEsql_month(int *ret, int *t)
 str
 MTIMEsql_day(lng *ret, lng *t)
 {
-	*ret= (*t/86400000);
+	*ret= (*t/86400);
 	return MAL_SUCCEED;
 }
 str
 MTIMEsql_hours(int *ret, lng *t)
 {
-	*ret= (int)( (*t % 86400000)/3600000);
+	*ret= (int)( (*t % 86400)/3600);
 	return MAL_SUCCEED;
 }
 str
 MTIMEsql_minutes(int *ret, lng *t)
 {
-	*ret= (int)( (*t %3600000)/60000);
+	*ret= (int)( (*t %3600)/60);
 	return MAL_SUCCEED;
 }
 str
 MTIMEsql_seconds(int *ret, lng *t)
 {
-	*ret= (int)( (*t %60000)/1000);
+	*ret= (int)(*t %60);
 	return MAL_SUCCEED;
 }
 

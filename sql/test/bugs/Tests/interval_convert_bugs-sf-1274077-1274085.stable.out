@@ -33,7 +33,7 @@ Over..
 % single_value # name
 % sec_interval # type
 % 0 # length
-[ 86400000	]
+[ 86400	]
 
 # 12:57:23 >  
 # 12:57:23 >  Done.

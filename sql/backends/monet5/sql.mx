@@ -619,31 +619,6 @@ comment "cast to dec(@1) and check for overflow";
 @:mal_cast(int)@
 @:mal_cast(lng)@
 
-@= mal_casttime
-command calc.@1( v:str ) :@1 
-address str_2_@1
-comment "Cast to @1";
-command calc.@1( v:str, digits:int ) :@1 
-address str_2time_@1
-comment "cast to @1 and check for overflow";
-command calc.@1( v:@1, digits:int ) :@1 
-address @1_2time_@1
-comment "cast @1 to @1 and check for overflow";
-
-command batcalc.@1( v:bat[:oid,:str] ) :bat[:oid,:@1] 
-address batstr_2_@1
-comment "Cast to @1";
-command batcalc.@1( v:bat[:oid,:str], digits:int ) :bat[:oid,:@1] 
-address batstr_2time_@1
-comment "cast to @1 and check for overflow";
-command batcalc.@1( v:bat[:oid,:@1], digits:int ) :bat[:oid,:@1] 
-address bat@1_2time_@1
-comment "cast @1 to @1 and check for overflow";
-@
-@mal
-@:mal_casttime(timestamp)@
-@:mal_casttime(daytime)@
-
 @= mal_castfromstr
 command calc.@1( v:str ) :@1 
 address str_2_@1
@@ -659,6 +634,8 @@ comment "cast @1 to str";
 @:mal_castfromstr(wrd)@
 @:mal_castfromstr(flt)@
 @:mal_castfromstr(dbl)@
+@:mal_castfromstr(timestamp)@
+@:mal_castfromstr(daytime)@
 @:mal_castfromstr(date)@
 @:mal_castfromstr(sqlblob)@
 
@@ -1284,16 +1261,6 @@ sql5_export str batstr_2num_@1( int *res, int *v, int *len );
 @:round_export(int)@
 @:round_export(wrd)@
 @:round_export(lng)@
-
-@= cast_time
-sql5_export str str_2time_@1( @1 *res, str *v, int *len );
-sql5_export str batstr_2time_@1( int *res, int *v, int *len );
-sql5_export str @1_2time_@1( @1 *res, @1 *v, int *len );
-sql5_export str bat@1_2time_@1( int *res, int *v, int *len );
-@
-@h
-@:cast_time(timestamp)@
-@:cast_time(daytime)@
 @= cast_export
 sql5_export str str_2_@1( @3 *res, str *val );
 sql5_export str batstr_2_@1( int *res, int *val );
@@ -1338,7 +1305,6 @@ sql5_export str second_interval_@1( lng *res, @1 *s, int *ek, int *sk );
 @:c_interval_export(wrd)@
 @:c_interval_export(lng)@
 @:c_interval_export(daytime)@
-sql5_export str second_interval_2_daytime( daytime *res, lng *s, int *d);
 @= simpleupcast_export
 sql5_export str @2_2_@1( @1 *res, @2 *v );
 sql5_export str bat@2_2_@1( int *res, int *v );
@@ -4062,114 +4028,6 @@ batstr_2num_@1( int *res, int *bid, int *len )
 @:round(wrd)@
 @:round(lng)@
 
-str
-daytime_2time_daytime( daytime *res, daytime *v, int *digits )
-{
-	int d = (*digits)?*digits-1:0;
-
-	/* correct fraction */
-	*res = *v;
-	if (d < 3) {
-		*res /= scales[3-d];
-		*res *= scales[3-d];
-	}
-	return MAL_SUCCEED;
-}
-
-str
-second_interval_2_daytime( daytime *res, lng *s, int *digits )
-{
-	*res = (daytime)*s;
-	return daytime_2time_daytime( res, res, digits);
-}
-
-str
-str_2time_daytime( daytime *res, str *v, int *digits )
-{
-	int len = sizeof(daytime), pos;
-
-	if (!*v || strcmp(str_nil,*v) == 0) {
-		*res = daytime_nil;
-		return MAL_SUCCEED;
-	}
-	pos = daytime_fromstr(*v, &len, &res);
-	if (!pos)
-		throw(SQL,"daytime", "daytime (%s) has incorrect format", *v);
-	return daytime_2time_daytime( res, res, digits);
-}
-
-str
-timestamp_2time_timestamp( timestamp *res, timestamp *v, int *digits )
-{
-	int d = (*digits)?*digits-1:0;
-
-	*res = *v;
-	/* correct fraction */
-	if (d < 3) {
-		int msec = res->msecs;
-		if (msec) {
-			msec /= scales[3-d];
-			msec *= scales[3-d];
-		}
-		res->msecs = msec;
-	}
-	return MAL_SUCCEED;
-}
-
-str
-str_2time_timestamp( timestamp *res, str *v, int *digits )
-{
-	int len = sizeof(timestamp), pos;
-
-	if (!*v || strcmp(str_nil,*v) == 0) {
-		*res = *timestamp_nil;
-		return MAL_SUCCEED;
-	}
-	pos = timestamp_fromstr(*v, &len, &res);
-	if (!pos)
-		throw(SQL,"timestamp", "timestamp (%s) has incorrect format", *v);
-	return timestamp_2time_timestamp( res, res, digits);
-}
-
-@= bat2time
-str
-bat@2_2time_@1( int *res, int *bid, int *digits )
-{
-	BAT *b, *dst;
-	BATiter bi;
-	BUN p,q;
-	char *msg = NULL;
-
-	if( (b = BATdescriptor(*bid)) == NULL ){
-		throw(SQL, "batcalc.@2_2time_@1", "Cannot access descriptor");
-	}
-	bi = bat_iterator(b);
-	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
-	if( dst == NULL){
-		BBPreleaseref(b->batCacheid);
-		throw(SQL, "sql.@1", MAL_MALLOC_FAIL);
-	}
-	BATseqbase(dst, b->hseqbase);
-	BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
-	BATloop(b,p,q) {
-		@3 *v = (@3*)BUNtail(bi,p);
-		@1 r;
-		msg = @2_2time_@1( &r, @4, digits );
-		if (msg)
-			break;
-		BUNins(dst, BUNhead(bi,p), &r, FALSE);
-	}
-	BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
-	BBPkeepref( *res = dst->batCacheid);
-	BBPunfix(b->batCacheid);
-	return msg;
-}
-@c
-@:bat2time(timestamp,str,char,&v)@
-@:bat2time(timestamp,timestamp,timestamp,v)@
-@:bat2time(daytime,str,char,&v)@
-@:bat2time(daytime,daytime,daytime,v)@
-
 @= fround
 str 
 @1_dec_round_wrap( @1 *res, @1 *v, @1 *r )
@@ -5375,7 +5233,8 @@ month_interval_str( int *ret, str *s, int *d, int *sk )
 {
 	lng res;
 
-	if (interval_from_str( *s, *d, *sk, &res ) < 0)
+	(void)sk;
+	if (interval_from_str( *s, *d, &res ) < 0)
 		throw(SQL, "calc.month_interval",
 			"wrong format (%s)", *s);
 	assert((lng) GDK_int_min <= res && res <= (lng) GDK_int_max);
@@ -5386,7 +5245,8 @@ month_interval_str( int *ret, str *s, int *d, int *sk )
 str 
 second_interval_str( lng *res, str *s, int *d, int *sk )
 {
-	if (interval_from_str( *s, *d, *sk, res ) < 0)
+	(void)sk;
+	if (interval_from_str( *s, *d, res ) < 0)
 		throw(SQL, "calc.second_interval",
 			"wrong format (%s)", *s);
 	return MAL_SUCCEED;
@@ -5422,7 +5282,7 @@ second_interval_@1( lng *res, @1 *s, int *d, int *sk ){
 	case ihour:
 		r *= 60;
 	case imin:
-		r *= 60000;
+		r *= 60;
 	case isec:
 		break;
 	default:
@@ -5443,10 +5303,6 @@ second_interval_@1( lng *res, @1 *s, int *d, int *sk ){
 command calc.second_interval( v:daytime, ek:int, sk:int ) :lng
 address second_interval_daytime
 comment "cast daytime to a second_interval and check for overflow";
-
-command calc.daytime( v:lng, d:int) :daytime
-address second_interval_2_daytime
-comment "cast second_interval to a daytime and check for overflow";
 @h
 sql5_export str second_interval_daytime( lng *res, daytime *s, int *ek, int *sk );
 @c
@@ -5459,18 +5315,16 @@ second_interval_daytime( lng *res, daytime *s, int *d, int *sk )
 	(void)sk;
 	switch(k) {
 	case isec:
+		r /= 1000;
 		break;
 	case imin:
 		r /= 60000;
-		r *= 60000;
 		break;
 	case ihour:
 		r /= 3600000;
-		r *= 3600000;
 		break;
 	case iday: 	
 		r /= (24*3600000);
-		r *= (24*3600000);
 		break;
 	default:
 		throw(ILLARG, "calc.second_interval","illegal argument");

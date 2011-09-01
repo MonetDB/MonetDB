@@ -23,7 +23,7 @@
 #include <stdlib.h>
 
 int
-parse_interval_qualifier(mvc *sql, struct dlist *pers, int *sk, int *ek, int *sp, int *ep)
+parse_interval_qualifier(mvc *sql, struct dlist *pers, int *sk, int *ek)
 {
 	*sk = iyear;
 	*ek = isec;
@@ -33,14 +33,12 @@ parse_interval_qualifier(mvc *sql, struct dlist *pers, int *sk, int *ek, int *sp
 
 		assert(s->h->type == type_int);
 		*ek = *sk = s->h->data.i_val;
-		*ep = *sp = s->h->next->data.i_val;
 
 		if (dlist_length(pers) == 2) {
 			dlist *e = pers->h->next->data.lval;
 
 			assert(e->h->type == type_int);
 			*ek = e->h->data.i_val;
-			*ep = e->h->next->data.i_val;
 		}
 	}
 	if (*sk > *ek) {
@@ -72,7 +70,7 @@ qualifier2multiplier( int sk )
 	case ihour:
 		mul *= 60;
 	case imin:
-		mul *= 60000;
+		mul *= 60;
 	case isec:
 		break;
 	default:
@@ -82,7 +80,7 @@ qualifier2multiplier( int sk )
 }
 
 static int
-parse_interval_(mvc *sql, lng sign, char *str, int sk, int ek, int sp, int ep, lng *i)
+parse_interval_(mvc *sql, lng sign, char *str, int sk, int ek, lng *i)
 {
 	char *n = NULL;
 	lng val = 0;
@@ -110,7 +108,7 @@ parse_interval_(mvc *sql, lng sign, char *str, int sk, int ek, int sp, int ep, l
 	case ihour:
 		mul *= 60;
 	case imin:
-		mul *= 60000;
+		mul *= 60;
 	case isec:
 		type = 1;
 		break;
@@ -122,22 +120,6 @@ parse_interval_(mvc *sql, lng sign, char *str, int sk, int ek, int sp, int ep, l
 	}
 
 	val = strtol(str, &n, 10);
-	if (sk == isec) {
-		int msec = 0;
-		val *= 1000;
-		if (n && n[0] == '.') {
-			char *nn;
-			msec = strtol(n+1, &nn, 10);
-			if (msec && nn) {
-				int d = nn-(n+1);
-				for( ;d<3; d++) 
-					msec *= 10;
-				for( ;d>3; d--) 
-					msec /= 10;
-			}
-		}
-		val += msec;
-	}
 	switch (sk) {
 	case imonth:
 		if (val >= 12) {
@@ -158,7 +140,7 @@ parse_interval_(mvc *sql, lng sign, char *str, int sk, int ek, int sp, int ep, l
 		}
 		break;
 	case isec:
-		if (val >= 60000) {
+		if (val >= 60) {
 			snprintf(sql->errstr, ERRSIZE, _("Overflow detected in seconds (" LLFMT ")\n"), val);
 			return -1;
 		}
@@ -172,14 +154,14 @@ parse_interval_(mvc *sql, lng sign, char *str, int sk, int ek, int sp, int ep, l
 				snprintf(sql->errstr, ERRSIZE, _("Interval field seperator \'%c\' missing\n"), sep);
 			return -1;
 		}
-		return parse_interval_(sql, sign, n + 1, sk + 1, ek, sp, ep, i);
+		return parse_interval_(sql, sign, n + 1, sk + 1, ek, i);
 	} else {
 		return type;
 	}
 }
 
 int
-parse_interval(mvc *sql, lng sign, char *str, int sk, int ek, int sp, int ep, lng *i)
+parse_interval(mvc *sql, lng sign, char *str, int sk, int ek, lng *i)
 {
 	char *n = NULL;
 	lng val = 0;
@@ -207,7 +189,7 @@ parse_interval(mvc *sql, lng sign, char *str, int sk, int ek, int sp, int ep, ln
 	case ihour:
 		mul *= 60;
 	case imin:
-		mul *= 60000;
+		mul *= 60;
 	case isec:
 		type = 1;
 		break;
@@ -219,22 +201,6 @@ parse_interval(mvc *sql, lng sign, char *str, int sk, int ek, int sp, int ep, ln
 	}
 
 	val = strtol(str, &n, 10);
-	if (sk == isec) {
-		int msec = 0;
-		val *= 1000;
-		if (n && n[0] == '.') {
-			char *nn;
-			msec = strtol(n+1, &nn, 10);
-			if (msec && nn) {
-				int d = nn-(n+1);
-				for( ;d<3; d++) 
-					msec *= 10;
-				for( ;d>3; d--) 
-					msec /= 10;
-			}
-		}
-		val += msec;
-	}
 	val *= mul;
 	*i += val;
 	if (ek != sk) {
@@ -243,19 +209,21 @@ parse_interval(mvc *sql, lng sign, char *str, int sk, int ek, int sp, int ep, ln
 				snprintf(sql->errstr, ERRSIZE, _("Interval field seperator \'%c\' missing\n"), sep);
 			return -1;
 		}
-		return parse_interval_(sql, sign, n + 1, sk + 1, ek, sp, ep, i);
+		return parse_interval_(sql, sign, n + 1, sk + 1, ek, i);
 	} else {
 		return type;
 	}
 }
 
-int interval_from_str(char *str, int d, int p, lng *val)
+int interval_from_str(char *str, int d, lng *val)
 {
 	int sk = digits2sk(d);
 	int ek = digits2ek(d);
 	*val = 0;
-	return parse_interval(NULL, 1, str, sk, ek, p, p, val);
+	return parse_interval(NULL, 1, str, sk, ek, val);
 }
+
+
 
 char *
 datetime_field(itype f)

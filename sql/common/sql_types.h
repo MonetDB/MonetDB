@@ -48,8 +48,6 @@
 #define EC_TEMP(e)	(e==EC_TIME||e==EC_DATE||e==EC_TIMESTAMP)
 #define EC_EXTERNAL	13
 
-#define EC_TEMP_FRAC(e)	(e==EC_TIME||e==EC_TIMESTAMP)
-
 #define EC_FIXED(e)	(e==EC_BIT||e==EC_CHAR||\
 			 e==EC_NUM||e==EC_INTERVAL||e==EC_DEC||EC_TEMP(e))
 
