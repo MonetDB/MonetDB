@@ -6,11 +6,12 @@ stderr of test 'msqldump--help` in directory 'mapiclient` itself:
 # 16:36:12 >  
 
 
-# 09:44:09 >  
-# 09:44:09 >  Mtimeout -timeout 60 msqldump --help
-# 09:44:09 >  
+# 09:38:34 >  
+# 09:38:34 >  Mtimeout -timeout 60 msqldump --help
+# 09:38:34 >  
 
-Usage: msqldump [ options ]
+Usage: msqldump [ options ] [ dbname ]
+
 Options are:
  -h hostname | --host=hostname    host to connect to
  -p portnr   | --port=portnr      port to connect to

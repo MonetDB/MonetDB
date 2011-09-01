@@ -88,19 +88,19 @@ comment "Recycler marking and code injection";
  * @-
  * The variables are all checked for being eligible as a variable
  * subject to recycling control. A variable may only be assigned
- * a value once. The function is a sql.bind(-,-,-,0) or all arguments
+ * a value once. The target function is a sql.bind(-,-,-,0) or all arguments
  * are already recycle enabled or constant.
  *
- * The arguments of the function cannot be recycled.
+ * The arguments of a function call cannot be recycled.
  * They change with each call. This does not mean
  * that the instructions using them can not be a
  * target of recycling.
  *
- * Just looking at a kept result target is not good enough.
+ * Just looking at a target result kept is not good enough.
  * You have to sure that the arguments are also the same.
  * This rules out function arguments.
  *
- * The recycler is targeted towards a query only database.
+ * The recycler is targeted towards a read-only database.
  * The best effect is obtained for a single-user mode (sql_debug=32 )
  * when the delta-bats are not processed which allows longer instruction
  * chains to be recycled.
@@ -114,8 +114,8 @@ comment "Recycler marking and code injection";
 #include "opt_recycler.h"
 #include "mal_instruction.h"
 
-static lng recycleSeq = 0;
-static bte baseTableMode = 0;
+static lng recycleSeq = 0;		/* should become part of MAL block basics */
+static bte baseTableMode = 0;	/* only recycle base tables */
 
 static int
 OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
@@ -131,7 +131,6 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) cntxt;
 	(void) stk;
 
-	/* watch out, instructions may introduce new variables */
 	limit= mb->stop;
 	old = mb->stmt;
 
@@ -150,7 +149,8 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if ( span == NULL)
 		return 0;
 
-	recycled= GDKzalloc(sizeof(char)*mb->vtop*2);
+	/* watch out, newly created instructions may introduce new variables */
+	recycled= GDKzalloc(sizeof(char)*mb->vtop * 2);
 	if ( recycled == NULL)
 		return 0;
 	if ( newMalBlkStmt(mb, mb->ssize) < 0){
@@ -198,6 +198,7 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 					actions++;
 				}
 			}
+			/* take care of SQL catalog update instructions */
 			if (getModuleId(p) == sqlRef && getFunctionId(p) == catalogRef ){
 				tp = *(int*) getVarValue(mb,getArg(p,1)); 
 				if (tp == 22 || tp == 25) {
@@ -252,14 +253,14 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				p->recycle = recycleMaxInterest; 
 				marks++;
 		}
-		/* In mode of base table recycling skip marking instructions other than octopus.bind */
+		/* During base table recycling skip marking instructions other than octopus.bind */
 		if( baseTableMode ){
 			pushInstruction(mb,p);
 			continue;
 		} 
 
 		/* general rule: all arguments are constants or recycled, 
-		ignore C ponter arguments from mvc*/
+		ignore C pointer arguments from mvc*/
 		cnt = 0;
 		for (j=p->retc; j<p->argc; j++)
 			if( recycled[getArg(p,j)] || isVarConstant(mb, getArg(p,j))
@@ -292,7 +293,7 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		if(( getFunctionId(p)== selectRef || 
 		     getFunctionId(p)== antiuselectRef ||
 		     getFunctionId(p)== likeselectRef ||
-		     getFunctionId(p)== putName("like",4) || 
+		     getFunctionId(p)== likeRef || 
 	         getFunctionId(p)== thetaselectRef ) &&
 	      	 recycled[getArg(p,1)] ){
 			p->recycle = recycleMaxInterest;
@@ -353,7 +354,7 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
  * @-
  * The sql.bind instructions should be handled carefully
  * The delete and update BATs should not be recycled,
- * because they may lead to view dependencies that later interfere
+ * because they may lead to view dependencies that later interferes
  * with the transaction commits.
  */
 /* enable recycling of delta-bats

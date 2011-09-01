@@ -27,6 +27,7 @@
 #include <signal.h> /* kill */
 
 #include <mutils.h> /* MT_lockf */
+#include <mcrypt.h> /* mcrypt_BackendSum */
 #include <utils/utils.h>
 #include <utils/properties.h>
 
@@ -52,23 +53,20 @@ command_help(int argc, char *argv[])
 		printf("  must be a path in the filesystem where a directory can be\n");
 		printf("  created, or a directory that is writable that already exists.\n");
 	} else if (strcmp(argv[1], "start") == 0) {
-		printf("usage: monetdbd start [-n] [dbfarm]\n");
-		printf("  Starts the monetdbd deamon.  When no dbfarm given, it starts\n");
-		printf("  in the default dbfarm (%s).\n", LOCALSTATEDIR "/monetdb5/dbfarm");
+		printf("usage: monetdbd start [-n] <dbfarm>\n");
+		printf("  Starts the monetdbd deamon for the given dbfarm.\n");
 		printf("  When -n is given, monetdbd will not fork into the background.");
 	} else if (strcmp(argv[1], "stop") == 0) {
-		printf("usage: monetdbd stop [dbfarm]\n");
-		printf("  Stops a running monetdbd deamon for the given dbfarm, or\n");
-		printf("  when none given, the default one (%s).\n", LOCALSTATEDIR "/monetdb5/dbfarm");
+		printf("usage: monetdbd stop <dbfarm>\n");
+		printf("  Stops a running monetdbd deamon for the given dbfarm.\n");
 	} else if (strcmp(argv[1], "set") == 0) {
-		printf("usage: monetdbd set property=value [dbfarm]\n");
-		printf("  Sets property to value for the given dbfarm, or when\n");
-		printf("  absent, the default (%s).\n", LOCALSTATEDIR "/monetdb5/dbfarm");
+		printf("usage: monetdbd set property=value <dbfarm>\n");
+		printf("  Sets property to value for the given dbfarm.\n");
 		printf("  For a list of properties, use `monetdbd get all`\n");
 	} else if (strcmp(argv[1], "get") == 0) {
-		printf("usage: monetdbd get <\"all\" | property,...> [dbfarm]\n");
+		printf("usage: monetdbd get <\"all\" | property,...> <dbfarm>\n");
 		printf("  Gets value for property for the given dbfarm, or\n");
-		printf("  retrieves all properties for the given dbfarm\n");
+		printf("  retrieves all properties.\n");
 	} else {
 		printf("help: unknown command: %s\n", argv[1]);
 		exitcode = 1;
@@ -89,7 +87,6 @@ int
 command_create(int argc, char *argv[])
 {
 	char path[2048];
-	char buf[48];
 	char *p;
 	char *dbfarm;
 	struct stat sb;
@@ -130,9 +127,8 @@ command_create(int argc, char *argv[])
 		return(1);
 	}
 
-	generateSalt(buf, sizeof(buf));
-	phrase[0].key = "passphrase";
-	phrase[0].val = buf;
+	phrase[0].key = "control";
+	phrase[0].val = "false";
 	phrase[1].key = NULL;
 	if (writeProps(phrase, dbfarm) != 0) {
 		fprintf(stderr, "unable to create file in directory '%s': %s\n",
@@ -147,7 +143,7 @@ int
 command_get(confkeyval *ckv, int argc, char *argv[])
 {
 	char *p;
-	char *dbfarm = LOCALSTATEDIR "/monetdb5/dbfarm";
+	char *dbfarm;
 	char *property = NULL;
 	char *value;
 	char buf[512];
@@ -155,13 +151,12 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 	confkeyval *kv;
 	int meropid = -1;
 
-	if (argc < 2 || argc > 3) {
+	if (argc != 3) {
 		command_help(2, &argv[-1]);
 		return(1);
 	}
 
-	if (argc == 3)
-		dbfarm = argv[2];
+	dbfarm = argv[2];
 
 	/* read the merovingian properties from the dbfarm */
 	if (readProps(ckv, dbfarm) != 0) {
@@ -241,7 +236,7 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 		} else if (strcmp(p, "controlsock") == 0) {
 			kv = findConfKey(ckv, "sockdir");
 			value = kv->val;
-			kv = findConfKey(ckv, "controlport");
+			kv = findConfKey(ckv, "port");
 			snprintf(buf, sizeof(buf), "%s/" CONTROL_SOCK "%d",
 					value, kv->ival);
 			value = buf;
@@ -278,20 +273,20 @@ int
 command_set(confkeyval *ckv, int argc, char *argv[])
 {
 	char *p = NULL;
+	char h[256];
 	char *property;
-	char *dbfarm = LOCALSTATEDIR "/monetdb5/dbfarm";
+	char *dbfarm;
 	confkeyval *kv;
 	FILE *pfile = NULL;
 	char buf[8];
 	pid_t meropid;
 
-	if (argc < 2 || argc > 3) {
+	if (argc != 3) {
 		command_help(2, &argv[-1]);
 		return(1);
 	}
 
-	if (argc == 3)
-		dbfarm = argv[2];
+	dbfarm = argv[2];
 
 	/* read the merovingian properties from the dbfarm */
 	if (readProps(ckv, dbfarm) != 0) {
@@ -321,7 +316,7 @@ command_set(confkeyval *ckv, int argc, char *argv[])
 			strcmp(property, "controlsock") == 0)
 	{
 		fprintf(stderr, "set: mapisock and controlsock are deduced from "
-				"sockdir, port and controlport, change those instead\n");
+				"sockdir and port, change those instead\n");
 		return(1);
 	}
 
@@ -329,22 +324,28 @@ command_set(confkeyval *ckv, int argc, char *argv[])
 		fprintf(stderr, "set: no such property: %s\n", property);
 		return(1);
 	}
-	/* special trick to make it easy to use a different port with one
-	 * command */
-	if (strcmp(property, "port") == 0) {
-		int oport = kv->ival;
-		char *e;
-		if ((e = setConfVal(kv, p)) != NULL) {
-			fprintf(stderr, "set: failed to set property port: %s\n", e);
-			free(e);
-			return(1);
+	if (strcmp(property, "passphrase") == 0) {
+		char dohash = 1;
+		/* allow to either set a hash ({X}xxx), or convert the given
+		 * string to its hash */
+		if (*p == '{') {
+			char *q;
+			if ((q = strchr(p + 1, '}')) != NULL) {
+				*q = '\0';
+				if (strcmp(p + 1, MONETDB5_PASSWDHASH) != 0) {
+					fprintf(stderr, "set: passphrase hash '%s' incompatible, "
+							"expected '%s'\n",
+							h, MONETDB5_PASSWDHASH);
+					return(1);
+				}
+				*q = '}';
+				dohash = 0;
+			}
 		}
-		kv = findConfKey(ckv, "controlport");
-		if (kv != NULL && kv->ival == oport + 1) {
-			oport = atoi(p);
-			snprintf(buf, sizeof(buf), "%d", oport + 1);
-			property = "controlport";
-			p = buf;
+		if (dohash == 1) {
+			p = mcrypt_BackendSum(p, strlen(p));
+			snprintf(h, sizeof(h), "{%s}%s", MONETDB5_PASSWDHASH, p);
+			p = h;
 		}
 	}
 	if ((p = setConfVal(kv, p)) != NULL) {
@@ -388,19 +389,18 @@ command_set(confkeyval *ckv, int argc, char *argv[])
 int
 command_stop(confkeyval *ckv, int argc, char *argv[])
 {
-	char *dbfarm = LOCALSTATEDIR "/monetdb5/dbfarm";
+	char *dbfarm;
 	char *pidfilename = NULL;
 	FILE *pfile = NULL;
 	char buf[8];
 	pid_t daemon;
 
-	if (argc > 2) {
+	if (argc != 2) {
 		command_help(2, &argv[-1]);
 		return(1);
 	}
 
-	if (argc == 2)
-		dbfarm = argv[1];
+	dbfarm = argv[1];
 
 	/* read the merovingian properties from the dbfarm */
 	if (readProps(ckv, dbfarm) != 0) {

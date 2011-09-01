@@ -16,7 +16,7 @@ import string
 # the files from those libraries that contain functions that happen to
 # be referenced somewhere.
 
-verbose = False
+verbose = os.getenv('WINCOMPILEVERBOSE') is not None
 
 # the splitcommand function is a straight copy of the same function in
 # ../../testing/process.py.

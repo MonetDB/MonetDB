@@ -12,7 +12,7 @@ def remote_server_start(x,s):
     sys.stdout.flush()
     sys.stderr.flush()
     port = os.getenv('MAPIPORT', '50000')
-    srv = process.server('sql', mapiport = int(port) + 1,
+    srv = process.server(mapiport = int(port) + 1,
                          dbname = '%s_test1' % os.getenv('TSTDB'),
                          stdin = process.PIPE,
                          stdout = process.PIPE, stderr = process.PIPE)
@@ -25,7 +25,7 @@ def server_start(x,s):
     sys.stderr.write('#mserver\n')
     sys.stdout.flush()
     sys.stderr.flush()
-    srv = process.server('sql', stdin = process.PIPE,
+    srv = process.server(stdin = process.PIPE,
                          stdout = process.PIPE, stderr = process.PIPE)
     return srv
 

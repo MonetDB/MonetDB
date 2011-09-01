@@ -4432,7 +4432,7 @@ end main;
 [ "flt",			  "command",	  "calc",	  "(x:bte):flt ",															  "CALCbte2flt;"					  ]
 [ "flt",			  "command",	  "calc",	  "(x:dbl):flt ",															  "CALCdbl2flt;"					  ]
 [ "flt",			  "command",	  "calc",	  "(x:flt):flt ",															  "CALCflt2flt;"					  ]
-[ "geometrycollection",	  "function",	  "calc",		  "(wkt:str):wkb;",									  "nil"					  ]
+[ "geomcollection",	  "function",	  "calc",	  "(wkt:str):wkb;",											  "nil"					  ]
 [ "geometry",		  "function",	  "calc",		  "(wkt:str):wkb;",									  "nil"					  ]
 [ "getBAT",			  "command",	  "calc",	  "(b:BAT):bat[:any_1,:any_2] ",													  "CALCbatid2bat;"					  ]
 [ "getBATidentifier",		  "command",	  "calc",	  "(b:bat[:any_1,:any_2]):BAT ",													  "CALCbat2batid;"					  ]

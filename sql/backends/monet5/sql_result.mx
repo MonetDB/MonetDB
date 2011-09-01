@@ -141,7 +141,7 @@ sql_time_tostr(void *TS_RES, char **buf, int *len, int type, ptr A)
 	struct time_res *ts_res = TS_RES;
 	int i, len1, big = 128;
 	char buf1[128], *s1 = buf1, *s;
-	lng val = 0, timezone = ts_res->timezone * 60 * 1000;
+	lng val = 0, timezone = ts_res->timezone;
 	daytime tmp, *a = A;
 	daytime mtime = 24 * 60 * 60 * 1000;
 
@@ -177,8 +177,9 @@ sql_time_tostr(void *TS_RES, char **buf, int *len, int type, ptr A)
 		s[-i+2] = '0';
 
 	if (ts_res->has_tz) {
+		timezone = ts_res->timezone/60000;
 		*s++ = (ts_res->timezone >= 0) ? '+' : '-';
-		sprintf(s, "%02d:%02d", ABS(ts_res->timezone) / 60, ABS(ts_res->timezone) % 60);
+		sprintf(s, "%02d:%02d", ABS(timezone) / 60, ABS(timezone) % 60);
 		s += 5;
 	}
 	return (int) (s - *buf);
@@ -191,7 +192,7 @@ sql_timestamp_tostr(void *TS_RES, char **buf, int *len, int type, ptr A)
 	int i, len1, len2, big = 128;
 	char buf1[128], buf2[128], *s, *s1 = buf1, *s2 = buf2;
 	timestamp tmp, *a = A;
-	lng timezone = ts_res->timezone * 60 * 1000;
+	lng timezone = ts_res->timezone;
 
 	(void) type;
 	if (ts_res->has_tz) {
@@ -225,8 +226,9 @@ sql_timestamp_tostr(void *TS_RES, char **buf, int *len, int type, ptr A)
 		s[-i+2] = '0';
 
 	if (ts_res->has_tz) {
+		timezone = ts_res->timezone/60000;
 		*s++ = (ts_res->timezone >= 0) ? '+' : '-';
-		sprintf(s, "%02d:%02d", ABS(ts_res->timezone) / 60, ABS(ts_res->timezone) % 60);
+		sprintf(s, "%02d:%02d", ABS(timezone) / 60, ABS(timezone) % 60);
 		s += 5;
 	}
 	return (int) (s - *buf);

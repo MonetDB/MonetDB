@@ -110,6 +110,7 @@ str likeselectRef;
 str ilikeselectRef;
 str likeuselectRef;
 str ilikeuselectRef;
+str likeRef;
 str listRef;
 str lockRef;
 str lookupRef;
@@ -331,6 +332,7 @@ void optimizerInit(void){
 		likeuselectRef = putName("like_uselect",12);
 		ilikeuselectRef = putName("ilike_uselect",13);
 		listRef = putName("list",4);
+		likeRef = putName("like",4);
 		lockRef = putName("lock",4);
 		lookupRef = putName("lookup",6);
 		malRef = putName("mal", 3);

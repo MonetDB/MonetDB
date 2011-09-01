@@ -32,7 +32,7 @@ typedef enum inttype {
 	isec
 } itype;
 
-int parse_interval_qualifier(mvc *sql, struct dlist *pers, int *sk, int *ek);
+int parse_interval_qualifier(mvc *sql, struct dlist *pers, int *sk, int *ek, int *sp, int *ep);
 /* returns 0 for month intervals, 
  *         1 for sec intervals, 
  * 	   in both cases sk/ek contain the start and end qualifiers 
@@ -41,12 +41,12 @@ int parse_interval_qualifier(mvc *sql, struct dlist *pers, int *sk, int *ek);
 lng qualifier2multiplier( int sk );
 /* returns the multiplier for the given interval qualifier */
 
-int parse_interval(mvc *sql, lng sign, char *str, int sk, int ek, lng *i);
+int parse_interval(mvc *sql, lng sign, char *str, int sk, int ek, int sp, int ep, lng *i);
 /* returns 0 for month intervals and value in val, 
  *         1 for sec intervals and value in val, 
  *         <0 for errors */
 
-int interval_from_str(char *str, int d, lng *val);
+int interval_from_str(char *str, int d, int p, lng *val);
 /* returns 0 for month intervals and value in val, 
  *         1 for sec intervals and value in val, 
  *         <0 for errors */

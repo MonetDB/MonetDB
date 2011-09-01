@@ -4,10 +4,10 @@ try:
 except ImportError:
     import process
 
-def server_start(lang):
+def server_start():
     sys.stderr.write('#mserver\n')
     sys.stderr.flush()
-    srv = process.server(lang, stdin = process.PIPE,
+    srv = process.server(stdin = process.PIPE,
                          stdout = process.PIPE, stderr = process.PIPE)
     return srv
 
@@ -20,7 +20,7 @@ def client(lang, file, user = 'monetdb', passwd = 'monetdb'):
     return clt.communicate()
 
 def main():
-    srv = server_start('sql')
+    srv = server_start()
     out, err = client('sql',
                       os.path.join(os.getenv('RELSRCDIR'),
                                    'set_a_new_user_password.SF-1844050_create_user.sql'))
@@ -30,7 +30,7 @@ def main():
     sys.stdout.write(out)
     sys.stderr.write(err)
 
-    srv = server_start('sql')
+    srv = server_start()
     out, err = client('sql',
                       os.path.join(os.getenv('RELSRCDIR'),
                                    'set_a_new_user_password.SF-1844050_select.sql'),
@@ -41,7 +41,7 @@ def main():
     sys.stdout.write(out)
     sys.stderr.write(err)
 
-    srv = server_start('sql')
+    srv = server_start()
     out, err = client('sql',
                       os.path.join(os.getenv('RELSRCDIR'),
                                    'set_a_new_user_password.SF-1844050_drop_user.sql'))

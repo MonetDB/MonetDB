@@ -33,7 +33,9 @@ bin_monetdb = {
 		   ../../../monetdb5/misc/libsabaoth \
 		   ../../../common/stream/libstream \
 		   ../../../common/utils/libmutils \
+		   ../../../common/utils/libmcrypt \
 		   $(UUID_LIBS) \
+		   $(openssl_LIBS) \
 		   $(curl_LIBS) \
 		   $(SOCKET_LIBS) \
 		   $(MALLOC_LIBS)

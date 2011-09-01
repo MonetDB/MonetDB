@@ -1,0 +1,67 @@
+stdout of test 'time_precision.Bug-2873` in directory 'test/BugTracker-2011` itself:
+
+
+# 23:49:03 >  
+# 23:49:03 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/export/scratch0/zhang/monet-install/Apr2011/debug/var/MonetDB" --set mapi_open=true --set mapi_port=36158 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_test_BugTracker-2011" --set mal_listing=0 ; echo ; echo Over..
+# 23:49:03 >  
+
+# MonetDB 5 server v11.3.8
+# This is an unreleased version
+# Serving database 'mTests_test_BugTracker-2011', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://jarl.ins.cwi.nl:36158/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+
+Over..
+
+# 23:49:03 >  
+# 23:49:03 >  mclient -lsql -ftest -i -e --host=jarl --port=36158 
+# 23:49:03 >  
+
+#create table t (tm time);
+#insert into t values ('20:04:04.847');
+[ 1	]
+#select tm from t;
+% sys.t # table_name
+% tm # name
+% time # type
+% 8 # length
+[ 20:04:04	]
+#select tm + interval '0' second from t;
+% sys. # table_name
+% sql_add_tm # name
+% time # type
+% 15 # length
+[ 20:04:04.000000	]
+#select tm + interval '0.333' second(5) from t;
+% sys. # table_name
+% sql_add_tm # name
+% time # type
+% 15 # length
+[ 20:04:04.333000	]
+#select time '20:04:04.847' - time '20:04:04.947';
+% . # table_name
+% sql_sub_single_value # name
+% time # type
+% 15 # length
+[ 00:00:00.000000	]
+#select time(5) '20:04:04.947' - time(5) '20:04:04.847';
+% . # table_name
+% sql_sub_single_value # name
+% time # type
+% 15 # length
+[ 00:00:00.100000	]
+#drop table t;
+
+# 23:49:03 >  
+# 23:49:03 >  Done.
+# 23:49:03 >  
+

@@ -1665,8 +1665,23 @@ rel_column_ref(mvc *sql, sql_rel **rel, symbol *column_r, int f)
 		int nr = l->h->data.i_val;
 		atom *a;
 		assert(l->h->type == type_int);
-		if ((a = sql_bind_arg(sql, nr)) != NULL)
-			return exp_atom_ref(sql->sa, nr, atom_type(a));
+		if ((a = sql_bind_arg(sql, nr)) != NULL) {
+			if (EC_TEMP_FRAC(atom_type(a)->type->eclass)) {
+				/* fix fraction */
+				sql_subtype *st = atom_type(a), t;
+				int digits = st->digits;
+				sql_exp *e;
+
+				sql_find_subtype(&t, st->type->sqlname, digits, 0);
+	
+				st->digits = 3;
+				e = exp_atom_ref(sql->sa, nr, st);
+	
+				return exp_convert(sql->sa, e, st, &t); 
+			} else {
+				return exp_atom_ref(sql->sa, nr, atom_type(a));
+			}
+		}
 		return NULL;
 	} else if (dlist_length(l) == 1) {
 		char *name = l->h->data.sval;

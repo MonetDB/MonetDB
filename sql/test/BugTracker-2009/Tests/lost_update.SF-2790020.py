@@ -7,8 +7,7 @@ except ImportError:
     import process
 
 def server():
-    return process.server('sql',
-                          stdin = process.PIPE,
+    return process.server(stdin = process.PIPE,
                           stdout = process.PIPE,
                           stderr = process.PIPE)
 

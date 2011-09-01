@@ -6,7 +6,7 @@
 monetdbd \- the MonetDB Database Server daemon
 .SH SYNOPSIS
 .B monetdbd
-[command [command_args] [dbfarm]]
+command [command_args] dbfarm
 .SH DESCRIPTION
 .B monetdbd
 is the MonetDB Database Server daemon.  The program is mainly meant to
@@ -39,11 +39,9 @@ A
 instance manages one local cluster based, which is a directory in the
 system, referred to as the
 .IR dbfarm .
-Nowadays, it is preferred to always give the dbfarm location as argument
+Nowadays, the dbfarm location always has to be given as argument
 to
 .BR monetdbd .
-For system-wide installs, the default dbfarm location is set to
-@Elocalstatedir@/monetdb5/dbfarm.
 .P
 Within its local cluster
 .B monetdbd
@@ -80,8 +78,7 @@ section below.
 The commands for
 .B monetdbd
 are
-.BR create ", " start ", " stop ", " get ", " set ", " version ", and "
-help .
+.BR create ", " start ", " stop ", " get ", " set ", " version ", and " help .
 The commands facilitate initialising a dbfarm, starting and stopping the
 MonetDB Database Server, and retrieving or setting options.
 .IP "create dbfarm"
@@ -91,33 +88,32 @@ be created, and an initial properties file is created in the directory
 itself.
 .I dbfarm
 must be a location addressable in the local filesystem hierarchy.
-.IP "start [-n] [dbfarm]"
+.IP "start [-n] <dbfarm>"
 Starts
 .BR monetdbd ,
-the MonetDB Database Server, on the given dbfarm, or its default, the
-system-wide location @Elocalstatedir@/monetdb5/dbfarm.  When the
+the MonetDB Database Server, on the given dbfarm.  When the
 .I -n
 flag is given,
 .B monetdbd
 will not fork into the background, but instead remain attached to the
 calling environment, until given a stop signal.
-.IP "stop [dbfarm]"
+.IP "stop <dbfarm>"
 Sends a stop signal to the
 .B monetdbd
-process responsible for the given dbfarm, or the default system-wide
-location @Elocalstatedir@/monetdb5/dbfarm.
-.IP "get <all | property[,property[,..]]> [dbfarm]"
+process responsible for the given dbfarm.
+.IP "get <all | property[,property[,..]]> <dbfarm>"
 Prints the requested properties, or all known properties, for the given
-database.  For each property and its value are printed.  Some properties
+dbfarm.  For each property, its value is printed.  Some properties
 are virtual, and given for information purposes only, they cannot be
 modified using the
 .I set
 command.
-.IP "set property=value [dbfarm]"
+.IP "set property=value <dbfarm>"
 Sets property to value for the given database.  For a list of
 properties, run
 .BR "monetdbd get all" .
-Most properties require a restart of the MonetDB Database Server.  The
+Some properties require a restart of the MonetDB Database Server in
+order to take effect.  The
 .I set
 command, will however always write the property, and tell the running
 .B monetdbd
@@ -138,7 +134,8 @@ command.  The following properties can be set:
 .IP logfile
 This property points to the file where all log messages are written to.
 It is relative to the dbfarm directory, but can be absolute to point to
-e.g. another medium.
+e.g. another medium.  Changing this property takes effect immediately at
+runtime.
 .IP pidfile
 .B monetdbd
 stores the process ID of the background server in the file pointed to by
@@ -157,18 +154,26 @@ setting should not be changed.
 .IP port
 This property specifies which TCP port
 .B monetdbd
-should listen to for regular database connection requests.  Defaults to
-50000.  When this value is changed, controlport is also changed when its
-value is port + 1.  This allows to easily make monetdbd run
-on another port with a single command.
-.IP controlport
+should listen to for connection requests.  Defaults to 50000.
+.IP control
 For remote management of
 .BR monetdbd,
 the
-.I controlport
-property specifies the TCP port that is opened up for listening.  Note
-that for these connections, a passphrase is required, see below.
-Defaults to 50001
+.I control
+property specifies whether or not to enable remote management.  Note
+that for remote management, a passphrase is required, see below.  It
+defaults to false for security reasons.  Changing this property takes
+effect immediately at runtime.
+.IP passphrase
+To control
+.B monetdbd
+from a remote machine, a passphrase is necessary, to be given to
+.BR monetdb (1).
+The passphrase can be either given as hashed value prefixed by the hash
+type in curly braces (e.g. {SHA512}xxx...) or as plain text value which
+will be hashed automatically.  Note that the only hash accepted is the
+one specified at configure time, which is @MONETDB5_PASSWDHASH@.
+Changing this property takes effect immediately at runtime.
 .IP discovery
 Specifies whether neighbour discovery is to be enabled using UDP
 broadcasts or not.  The broadcasts are done on the same portnumber as
@@ -199,7 +204,8 @@ has shut down.  Note that this particular configuration is extremely
 inconvenient.  The default time-out is 60 seconds.  If your databases
 are rather large and find your databases consistently being killed by
 .B monetdbd
-upon shutdown, you may want to increase this time-out.
+upon shutdown, you may want to increase this time-out.  Changing this
+property takes effect immediately at runtime.
 .IP forward
 .B monetdbd
 has two ways in which it can "attach" a connecting client to the target
@@ -230,14 +236,8 @@ local mserver.  This effectively is as efficient as the
 approach, but still hides away the mservers properly behind
 .BR monetdbd .
 Hence, in practice it is only relevant for connections to remote
-databases to use redirects instead of proxies.
-.IP passphrase
-To control
-.B monetdbd
-from a remote machine, a passphrase is necessary, to be given to
-.BR monetdb (1).
-This passphrase is setup for each newly created dbfarm.  It is
-recommended to keep this value long and non-trivial.
+databases to use redirects instead of proxies.  Changing this property
+takes effect immediately at runtime.
 .SH "REMOTE DATABASES"
 The neighbour discovery capabilities of
 .B monetdbd

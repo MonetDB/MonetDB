@@ -48,7 +48,7 @@ Over..
 #group by t1.time
 #order by t1.time;
 % sys.t1,	sys.t2 # table_name
-% time,	L3 # name
+% time,	L7 # name
 % timestamp,	wrd # type
 % 26,	1 # length
 [ 2010-11-17 13:37:55.000000,	2	]

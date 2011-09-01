@@ -110,6 +110,7 @@ opt_export  str ilikeselectRef;
 opt_export  str likeuselectRef;
 opt_export  str ilikeuselectRef;
 opt_export  str listRef;
+opt_export  str likeRef;
 opt_export  str lockRef;
 opt_export  str lookupRef;
 opt_export  str malRef;

@@ -2877,7 +2877,7 @@ rel_uses_part_nr( sql_rel *rel, sql_exp *e, int pnr )
 			return 1;
 	}
 	/* for projects we may need to do a rename! */
-	if (is_project(rel->op) || is_topn(rel->op))
+	if (is_project(rel->op) || is_topn(rel->op) || is_sample(rel->op))
 		return rel_uses_part_nr( rel->l, e, pnr);
 
 	if (is_union(rel->op) || is_join(rel->op) || is_semi(rel->op)) {

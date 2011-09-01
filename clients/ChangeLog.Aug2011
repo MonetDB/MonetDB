@@ -1,6 +1,10 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Wed Aug 31 2011 Sjoerd Mullender <sjoerd@acm.org>
+- msqldump now also accepts the database name as last argument on the
+  command line (i.e. without -d).
+
 * Fri Aug 26 2011 Fabian Groffen <fabian@cwi.nl>
 - Made error messages from the server in mclient go to stderr, instead
   of stdout.

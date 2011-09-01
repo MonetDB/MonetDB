@@ -60,6 +60,7 @@
 #include "monetdb_config.h"
 #include <msabaoth.h>
 #include <mutils.h> /* MT_lockf */
+#include <mcrypt.h> /* mcrypt_BackendSum */
 #include <utils/utils.h>
 #include <utils/properties.h>
 #include <utils/glob.h>
@@ -461,6 +462,72 @@ autoUpgradeDiscoveryPortAug2011Jan2012(confkeyval *mckv)
 	return 1;
 }
 
+/**
+ * Explicitly pulled out functionality that is just implemented to
+ * obtain an automatic upgrade path.
+ *
+ * Starting from the Jan2012? release, the controlport setting has
+ * disappeared.  Instead, a boolean control is available to enable or
+ * disable the (remote) service.  It always uses the same port as the
+ * connections are on, since starting from this release the same handler
+ * is used.
+ *
+ * This function sets control to true if controlport is set to a
+ * non-zero positive value in port range and passphrase is also
+ * non-empty, false otherwise.  A migration of the passphrase is made to
+ * the default password backend hash.
+ *
+ * Returns 0 if controlport is not set (and upgrade probably already
+ * took place).
+ */
+static char
+autoUpgradeControlPortAug2011Jan2012(confkeyval *mckv)
+{
+	char *pwhash;
+	char hstr[256];
+	confkeyval *kv;
+	confkeyval ckv[] = {
+		{"controlport",   NULL, 0,     INT},
+		{"passphrase",    NULL, 0,     STR},
+		{ NULL,           NULL, 0, INVALID}
+	};
+
+	readProps(ckv, ".");
+
+	kv = findConfKey(ckv, "controlport");
+	if (kv->val == NULL) {
+		freeConfFile(ckv);
+		return 0;
+	}
+
+	if (kv->ival <= 0 || kv->ival > 65535) {
+		kv = findConfKey(mckv, "passphrase");
+		setConfVal(kv, NULL);
+		freeConfFile(ckv);
+		return 0;
+	}
+
+	kv = findConfKey(ckv, "passphrase");
+	if (kv->val == NULL || kv->val[0] == '\0') {
+		freeConfFile(ckv);
+		return 0;
+	}
+
+	/* migrate the passphrase to the configured backend hash */
+	pwhash = mcrypt_BackendSum(kv->val, strlen(kv->val));
+	assert(pwhash != NULL); /* only messed with configs hit this */
+	snprintf(hstr, sizeof(hstr), "{%s}%s", MONETDB5_PASSWDHASH, pwhash);
+	free(pwhash);
+	kv = findConfKey(mckv, "passphrase");
+	setConfVal(kv, hstr);
+
+	kv = findConfKey(mckv, "control");
+	setConfVal(kv, "true");
+
+	freeConfFile(ckv);
+	return 1;
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -484,10 +551,8 @@ main(int argc, char *argv[])
 	int sock = -1;
 	int usock = -1;
 	int unsock = -1;
-	int csock = -1;
 	int socku = -1;
 	unsigned short port = 0;
-	unsigned short controlport = 0;
 	char discovery = 0;
 	struct stat sb;
 	FILE *oerr = NULL;
@@ -500,14 +565,16 @@ main(int argc, char *argv[])
 
 		{"sockdir",       strdup("/tmp"),          0,                  STR},
 		{"port",          strdup(MERO_PORT),       atoi(MERO_PORT),    INT},
-		{"controlport",   strdup(CONTROL_PORT),    atoi(CONTROL_PORT), INT},
 
 		{"exittimeout",   strdup("60"),            60,                 INT},
 		{"forward",       strdup("proxy"),         0,                  OTHER},
+
 		{"discovery",     strdup("true"),          1,                  BOOLEAN},
 		{"discoveryttl",  strdup("600"),           600,                INT},
 
+		{"control",       strdup("false"),         0,                  BOOLEAN},
 		{"passphrase",    NULL,                    0,                  STR},
+
 		{ NULL,           NULL,                    0,                  INVALID}
 	};
 	confkeyval *kv;
@@ -546,15 +613,7 @@ main(int argc, char *argv[])
 	kv = findConfKey(_mero_db_props, "readonly");
 	kv->val = strdup("no");
 
-	/* in case of no arguments, we act backwards compatible: start
-	 * merovingian in the hardwired dbfarm location */
-	if (sizeof(LOCALSTATEDIR "/monetdb5/dbfarm") >= sizeof(dbfarm)) {
-		Mfprintf(stderr, "fatal: compiled in dbfarm location exceeds " \
-				"allocated path length, please file a bug at " \
-				"http://bugs.monetdb.org/\n");
-		exit(1);
-	}
-	snprintf(dbfarm, sizeof(dbfarm), "%s", LOCALSTATEDIR "/monetdb5/dbfarm");
+	*dbfarm = '\0';
 	if (argc > 1) {
 		if (strcmp(argv[1], "--help") == 0 ||
 				strcmp(argv[1], "-h") == 0 ||
@@ -573,10 +632,9 @@ main(int argc, char *argv[])
 		} else if (strcmp(argv[1], "set") == 0) {
 			exit(command_set(ckv, argc - 1, &argv[1]));
 		} else if (strcmp(argv[1], "start") == 0) {
-			/* start without path argument just means start hardwired dbfarm */
-			if (argc > 2 && strcmp(argv[2], "-n") == 0)
+			if (argc > 3 && strcmp(argv[2], "-n") == 0)
 					merodontfork = 1;
-			if (argc > 2 + merodontfork) {
+			if (argc == 3 + merodontfork) {
 				int len;
 				len = snprintf(dbfarm, sizeof(dbfarm), "%s",
 						argv[2 + merodontfork]);
@@ -587,6 +645,9 @@ main(int argc, char *argv[])
 							"http://bugs.monetdb.org/\n");
 					exit(1);
 				}
+			} else {
+				command_help(argc, argv);
+				exit(1);
 			}
 		} else if (strcmp(argv[1], "stop") == 0) {
 			exit(command_stop(ckv, argc - 1, &argv[1]));
@@ -595,7 +656,12 @@ main(int argc, char *argv[])
 			command_help(0, NULL);
 			exit(1);
 		}
+	} else {
+		command_help(0, NULL);
+		exit(1);
 	}
+
+	assert(*dbfarm != '\0');
 
 	/* fork into background before doing anything more */
 	if (!merodontfork) {
@@ -722,7 +788,8 @@ main(int argc, char *argv[])
 		writeProps(_mero_props, ".");
 	}
 
-	if (autoUpgradeDiscoveryPortAug2011Jan2012(_mero_props) != 0)
+	if (autoUpgradeDiscoveryPortAug2011Jan2012(_mero_props) != 0 ||
+			autoUpgradeControlPortAug2011Jan2012(_mero_props) != 0)
 		writeProps(_mero_props, ".");
 	/* end upgrades to conf-file in place */
 
@@ -747,24 +814,36 @@ main(int argc, char *argv[])
 		writeProps(_mero_props, ".");
 	}
 	port = (unsigned short)kv->ival;
-	kv = findConfKey(_mero_props, "controlport");
-	if (kv->ival <= 0 || kv->ival > 65535) {
-		Mfprintf(stderr, "invalid control port number: %s, defaulting to %s\n",
-				kv->val, CONTROL_PORT);
-		setConfVal(kv, CONTROL_SOCK);
-		writeProps(_mero_props, ".");
-	}
-	controlport = (unsigned short)kv->ival;
 
 	kv = findConfKey(_mero_props, "discovery");
 	discovery = kv->ival;
 
+	/* check and trim the hash-algo from the passphrase for easy use
+	 * lateron */
+	kv = findConfKey(_mero_props, "passphrase");
+	if (kv->val != NULL) {
+		char *h = kv->val + 1;
+		if ((p = strchr(h, '}')) == NULL) {
+			Mfprintf(stderr, "incompatible passphrase (not hashed), "
+					MONETDB5_PASSWDHASH);
+		} else {
+			*p = '\0';
+			if (strcmp(h, MONETDB5_PASSWDHASH) != 0) {
+				Mfprintf(stderr, "passphrase hash '%s' incompatible, "
+						"expected '%s', disabling passphrase\n",
+						h, MONETDB5_PASSWDHASH);
+			} else {
+				setConfVal(kv, p + 1);
+			}
+		}
+	}
+
 	/* set up UNIX socket paths for control and mapi */
 	p = getConfVal(_mero_props, "sockdir");
 	snprintf(control_usock, sizeof(control_usock), "%s/" CONTROL_SOCK "%d",
-			p, getConfNum(_mero_props, "controlport"));
+			p, port);
 	snprintf(mapi_usock, sizeof(control_usock), "%s/" MERO_SOCK "%d",
-			p, getConfNum(_mero_props, "port"));
+			p, port);
 
 	/* lock such that we are alone on this world */
 	if ((ret = MT_lockf(".merovingian_lock", F_TLOCK, 4, 1)) == -1) {
@@ -941,13 +1020,11 @@ main(int argc, char *argv[])
 			(e = openConnectionTCP(&sock, port, stdout)) == NO_ERR &&
 			(e = openConnectionUNIX(&socku, mapi_usock, 0, stdout)) == NO_ERR &&
 			(discovery == 1 && (e = openConnectionUDP(&usock, port)) == NO_ERR) &&
-			(e = openConnectionUNIX(&unsock, control_usock, S_IRWXO, _mero_ctlout)) == NO_ERR &&
-			(controlport == 0 || (e = openConnectionTCP(&csock, controlport, _mero_ctlout)) == NO_ERR)
+			(e = openConnectionUNIX(&unsock, control_usock, S_IRWXO, _mero_ctlout)) == NO_ERR
 	   )
 	{
 		pthread_t ctid = 0;
 		pthread_t dtid = 0;
-		int csocks[2];
 
 		if (discovery == 1) {
 			_mero_broadcastsock = socket(AF_INET, SOCK_DGRAM, 0);
@@ -977,11 +1054,9 @@ main(int argc, char *argv[])
 		umask(S_IRWXG | S_IRWXO);
 
 		/* handle control commands */
-		csocks[0] = unsock;
-		csocks[1] = csock;
 		if ((thret = pthread_create(&ctid, NULL,
 						(void *(*)(void *))controlRunner,
-						(void *)&csocks)) != 0)
+						(void *)&unsock)) != 0)
 		{
 			Mfprintf(stderr, "unable to create control command thread: %s\n",
 					strerror(thret));
