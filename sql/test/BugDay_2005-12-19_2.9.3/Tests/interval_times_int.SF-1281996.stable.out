@@ -29,12 +29,13 @@ Over..
 % sql_mul_single_value # name
 % sec_interval # type
 % 0 # length
-[ 2	]
+[ 2000	]
+#select interval '1' second * 2;
 % . # table_name
 % sql_mul_single_value # name
 % sec_interval # type
 % 0 # length
-[ 2	]
+[ 2000	]
 
 # 16:27:57 >  
 # 16:27:57 >  Done.

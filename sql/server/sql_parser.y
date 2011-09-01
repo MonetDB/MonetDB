@@ -3675,10 +3675,10 @@ tz:
  | /* empty */		{ $$ = 0; }
  ;
 
-/* note: the maximum precision for both time and timestamp should be equal
+/* note: the maximum precision for interval, time and timestamp should be equal
  *       and at minimum 6.  The SQL standard prescribes that at least two
  *       fractional precisions are supported: 0 and 6, where 0 is the
- *       default for time, and 6 the default precision for timestamp.
+ *       default for time, and 6 the default precision for timestamp and interval.
  *       It might be nice to check for a certain maximum of precision in
  *       the future here.
  */
@@ -3733,7 +3733,7 @@ end_field:
     non_second_datetime_field
 		{ $$ = append_int(
 			 	append_int( L(), $1), 0);  }
- |  SECOND time_precision
+ |  SECOND timestamp_precision
 		{ $$ = append_int(
 			 	append_int( L(), isec), $2-1);  }
  ;
@@ -3742,7 +3742,7 @@ single_datetime_field:
     non_second_datetime_field time_precision
 		{ $$ = append_int(
 			 	append_int( L(), $1), $2-1);  }
- |  SECOND time_precision
+ |  SECOND timestamp_precision
 		{ $$ = append_int(
 			 	append_int( L(), isec), $2-1);  }
  ;
@@ -3757,12 +3757,12 @@ interval_qualifier:
 
 interval_type:
     INTERVAL interval_qualifier	{
-		int sk, ek;
+		int sk, ek, sp, ep;
 		mvc *m = (mvc*)parm;
 	  	int tpe;
 
 		$$.type = NULL;
-	  	if ( (tpe = parse_interval_qualifier( m, $2, &sk, &ek )) < 0){
+	  	if ( (tpe = parse_interval_qualifier( m, $2, &sk, &ek, &sp, &ep )) < 0){
 			yyerror("incorrect interval");
 			YYABORT;
 	  	} else {
@@ -4038,13 +4038,13 @@ literal:
 interval_expression:
    INTERVAL opt_sign string interval_qualifier { 
 		sql_subtype t;
-		int sk, ek, tpe;
+		int sk, ek, sp, ep, tpe;
 		mvc *m = (mvc*)parm;
 	  	lng i = 0;
 		int r = 0;
 
 		$$ = NULL;
-	  	if ( (tpe = parse_interval_qualifier( m, $4, &sk, &ek )) < 0){
+	  	if ( (tpe = parse_interval_qualifier( m, $4, &sk, &ek, &sp, &ep )) < 0){
 			yyerror("incorrect interval");
 			YYABORT;
 	  	} else {
@@ -4055,7 +4055,7 @@ interval_expression:
 				r=sql_find_subtype(&t, "sec_interval", d, 0);
 			}
 	  	}
-	  	if (!r || (tpe = parse_interval( m, $2, $3, sk, ek, &i)) < 0) { 
+	  	if (!r || (tpe = parse_interval( m, $2, $3, sk, ek, sp, ep, &i)) < 0) { 
 			yyerror("incorrect interval");
 			$$ = NULL;
 			YYABORT;
