@@ -64,7 +64,8 @@ lib_mal = {
 		transaction.c \
 		txtsim.c txtsim.h \
 		urlbox.mx \
-		zorder.mx
+		zorder.mx \
+		sample.c sample.h
 }
 
 headers_mal = {
@@ -79,9 +80,9 @@ headers_mal = {
 		mal_mapi.mx sabaoth.mal remote.mal  \
 		txtsim.mal recycle.mal \
 		cluster.mx trader.mal pma.mx \
-		tokenizer.mx zorder.mx
+		tokenizer.mx zorder.mx sample.mal
 }
 
-EXTRA_DIST = prelude.mx algebraExtensions.mal attach.mal batExtensions.mal chopper.mal constraints.mal groupby.mal histogram.mal mal_init.mal manual.mal mkey.mal pcre.mal profiler.mal recycle.mal remote.mal sabaoth.mal trader.mal transaction.mal txtsim.mal tablet.mal tablet.h
+EXTRA_DIST = prelude.mx algebraExtensions.mal attach.mal batExtensions.mal chopper.mal constraints.mal groupby.mal histogram.mal mal_init.mal manual.mal mkey.mal pcre.mal profiler.mal recycle.mal remote.mal sabaoth.mal trader.mal transaction.mal txtsim.mal tablet.mal tablet.h sample.mal
 
 EXTRA_DIST_DIR = Tests
