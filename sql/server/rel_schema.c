@@ -595,7 +595,7 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 
 (void)ss;
 	if (alter && !isTableOrArray(t)) {
-		sql_error(sql, 02, "ALTER %s: cannot add column to VIEW '%s'\n", isTable(t)?"TABLE":(isARRAY(t)?"ARRAY":"TABLE/ARRAY"), t->base.name);
+		sql_error(sql, 02, "ALTER %s: cannot add column to VIEW '%s'\n", isTable(t)?"TABLE":(isArray(t)?"ARRAY":"TABLE/ARRAY"), t->base.name);
 		return SQL_ERR;
 	}
 	if (l->h->next->next)
@@ -764,7 +764,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 			break;
 		}
 		sql_error(sql, 02, "ALTER %s: cannot %s %s '%s'\n",
-				isTable(t)?"TABLE":(isARRAY(t)?"ARRAY":"TABLE/ARRAY"),
+				isTable(t)?"TABLE":(isArray(t)?"ARRAY":"TABLE/ARRAY"),
 				msg, 
 				isMergeTable(t)?"MERGE TABLE":"VIEW",
 				t->base.name);
