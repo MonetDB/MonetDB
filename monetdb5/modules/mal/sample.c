@@ -141,8 +141,6 @@ SAMPLEuniform(bat *r, bat *b, ptr s) {
 	BATseqbase(br, bb->hseqbase);
 	BATsetcount(br, sz);
 
-	BATprint(br);
-
 	BBPunfix(bb->batCacheid);
 	BBPkeepref(*r = br->batCacheid);
 	return MAL_SUCCEED;
