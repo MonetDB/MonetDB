@@ -23,7 +23,7 @@ Over..
 % single_value # name
 % sec_interval # type
 % 0 # length
-[ 60000	]
+[ 60.000	]
 #select cast(interval '60' second as time);
 % . # table_name
 % single_value # name
