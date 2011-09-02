@@ -93,49 +93,7 @@ malBootstrap(void)
  * introduced.
  */
 
-void
-MSinitClientPrg(Client cntxt, str mod, str nme)
-{
-	InstrPtr p;
-	MalBlkPtr mb;
-
-	if (cntxt->curprg && idcmp(nme, cntxt->curprg->name) == 0) {
-		MSresetClientPrg(cntxt);
-		return;
-/*
-	int i, cnt = 1;
-		mb = cntxt->curprg->def;
-		cntxt->itrace = 0;
-		getInstrPtr(mb,0)->gc = 0;
-		for (i = 1; i < mb->stop; i++)
-			if (mb->stmt[i]->token == REMsymbol)
-				cnt++;
-		if (mb->stop <= cnt + 1) {
-			mb->typefixed = 0;
-			mb->flowfixed = 0;
-			mb->stop = cnt;
-			return;
-		}
-		if( mb->history){
-			freeMalBlk(mb->history);
-			mb->history=0;
-		}
-*/
-	}
-	cntxt->curprg = newFunction(putName("user",4), putName(nme, strlen(nme)), FUNCTIONsymbol);
-	mb = cntxt->curprg->def;
-	p = getSignature(cntxt->curprg);
-	if( mod )
-		setModuleId(p,mod);
-	else
-		setModuleScope(p, cntxt->nspace);
-	setVarType(mb, findVariable(mb, nme), TYPE_void);
-	insertSymbol(cntxt->nspace, cntxt->curprg);
-	cntxt->glb = 0;
-	assert(cntxt->curprg->def != NULL);
-}
-
-void
+static void
 MSresetClientPrg(Client cntxt)
 {
 	MalBlkPtr mb;
@@ -148,8 +106,7 @@ MSresetClientPrg(Client cntxt)
 	mb->stop = 1;
 	mb->errors=0;
 	p= mb->stmt[0];
-	setModuleId(p,putName("user",4));
-	setFunctionId(p,putName("main",4));
+
 	p->gc = 0;
 	p->retc=1;
 	p->argc=1;
@@ -158,6 +115,30 @@ MSresetClientPrg(Client cntxt)
 		freeMalBlk(mb->history);
 		mb->history=0;
 	}
+}
+
+
+void
+MSinitClientPrg(Client cntxt, str mod, str nme)
+{
+	InstrPtr p;
+	MalBlkPtr mb;
+
+	if (cntxt->curprg && idcmp(nme, cntxt->curprg->name) == 0) {
+		MSresetClientPrg(cntxt);
+		return;
+	}
+	cntxt->curprg = newFunction(putName("user",4), putName(nme, strlen(nme)), FUNCTIONsymbol);
+	mb = cntxt->curprg->def;
+	p = getSignature(cntxt->curprg);
+	if( mod )
+		setModuleId(p,mod);
+	else
+		setModuleScope(p, cntxt->nspace);
+	setVarType(mb, findVariable(mb, nme), TYPE_void);
+	insertSymbol(cntxt->nspace, cntxt->curprg);
+	cntxt->glb = 0;
+	assert(cntxt->curprg->def != NULL);
 }
 
 /*

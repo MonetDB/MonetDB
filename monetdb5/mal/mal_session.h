@@ -25,7 +25,6 @@
 mal_export int malBootstrap(void);
 mal_export void MSserveClient(void *dummy);
 mal_export void MSinitClientPrg(Client cntxt, str mod, str nme);
-mal_export void MSresetClientPrg(Client cntxt);
 mal_export void MSscheduleClient(str command, str challenge, bstream *fin, stream *fout);
 
 mal_export str MALreader(Client c);
