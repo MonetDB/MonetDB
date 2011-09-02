@@ -135,71 +135,53 @@ SQLPrepare_(ODBCStmt *stmt,
 		if (concise_type == SQL_INTERVAL_MONTH) {
 			switch (length) {
 			case 1:
-				assert(scale == 1);
 				concise_type = SQL_INTERVAL_YEAR;
 				break;
 			case 2:
-				if (scale == 1)
-					concise_type = SQL_INTERVAL_YEAR_TO_MONTH;
-				else {
-					assert(scale == 2);
-					concise_type = SQL_INTERVAL_MONTH;
-				}
+				concise_type = SQL_INTERVAL_YEAR_TO_MONTH;
 				break;
+			case 3:
+				concise_type = SQL_INTERVAL_MONTH;
+				break;
+			default:
+				assert(0);
 			}
 			rec->sql_desc_scale = 0;
 			rec->sql_desc_length = 0;
 		} else if (concise_type == SQL_INTERVAL_SECOND) {
 			switch (length) {
-			case 3:
-				assert(scale == 3);
+			case 4:
 				concise_type = SQL_INTERVAL_DAY;
 				break;
-			case 4:
-				switch (scale) {
-				case 3:
-					concise_type = SQL_INTERVAL_DAY_TO_HOUR;
-					break;
-				case 4:
-					concise_type = SQL_INTERVAL_HOUR;
-					break;
-				default:
-					assert(0);
-				}
-				break;
 			case 5:
-				switch (scale) {
-				case 3:
-					concise_type = SQL_INTERVAL_DAY_TO_MINUTE;
-					break;
-				case 4:
-					concise_type = SQL_INTERVAL_HOUR_TO_MINUTE;
-					break;
-				case 5:
-					concise_type = SQL_INTERVAL_MINUTE;
-					break;
-				default:
-					assert(0);
-				}
+				concise_type = SQL_INTERVAL_DAY_TO_HOUR;
 				break;
 			case 6:
-				switch (scale) {
-				case 3:
-					concise_type = SQL_INTERVAL_DAY_TO_SECOND;
-					break;
-				case 4:
-					concise_type = SQL_INTERVAL_HOUR_TO_SECOND;
-					break;
-				case 5:
-					concise_type = SQL_INTERVAL_MINUTE_TO_SECOND;
-					break;
-				case 6:
-					concise_type = SQL_INTERVAL_SECOND;
-					break;
-				default:
-					assert(0);
-				}
+				concise_type = SQL_INTERVAL_DAY_TO_MINUTE;
 				break;
+			case 7:
+				concise_type = SQL_INTERVAL_DAY_TO_SECOND;
+				break;
+			case 8:
+				concise_type = SQL_INTERVAL_HOUR;
+				break;
+			case 9:
+				concise_type = SQL_INTERVAL_HOUR_TO_MINUTE;
+				break;
+			case 10:
+				concise_type = SQL_INTERVAL_HOUR_TO_SECOND;
+				break;
+			case 11:
+				concise_type = SQL_INTERVAL_MINUTE;
+				break;
+			case 12:
+				concise_type = SQL_INTERVAL_MINUTE_TO_SECOND;
+				break;
+			case 13:
+				concise_type = SQL_INTERVAL_SECOND;
+				break;
+			default:
+				assert(0);
 			}
 			rec->sql_desc_scale = 0;
 			rec->sql_desc_length = 0;
