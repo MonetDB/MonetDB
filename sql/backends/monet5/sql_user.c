@@ -106,7 +106,7 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 
 	if (!enc) {
 		pwd = mcrypt_BackendSum(passwd, strlen(passwd));
-		if (pwd != NULL) {
+		if (pwd == NULL) {
 			BBPunfix(bid);
 			throw(MAL, "sql.create_user", "crypt backend hash not found");
 		}
