@@ -176,8 +176,7 @@ def mFilter (FILE, IGNORE) :
                 al = al + 1
                 aw = aw + w
                 ac = ac + c
-                if ln != os.linesep  and  \
-                   not re.match(IGNORE,ln, re.MULTILINE):
+                if ln != '\n' and not re.match(IGNORE,ln, re.MULTILINE):
                     el = el + 1
                     ew = ew + w
                     ec = ec + c
