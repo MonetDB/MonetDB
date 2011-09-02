@@ -121,8 +121,7 @@ def mFilter (FILE, IGNORE) :
     ftmp = []
     ig = n = 0
     il = iw = ic = el = ew = ec = al = aw = ac = 0
-    for iline in open(FILE):
-        iline = iline.replace('\r', '')
+    for iline in open(FILE, 'rU'):
         iline = iline.replace('\033[?1034h','')
         oline = xline = ""
         if iline == "#~BeginVariableOutput~#\n"  or  iline == "#~BeginProfilingOutput~#\n":
@@ -176,8 +175,7 @@ def mFilter (FILE, IGNORE) :
                 al = al + 1
                 aw = aw + w
                 ac = ac + c
-                if ln != os.linesep  and  \
-                   not re.match(IGNORE,ln, re.MULTILINE):
+                if ln != '\n' and not re.match(IGNORE,ln, re.MULTILINE):
                     el = el + 1
                     ew = ew + w
                     ec = ec + c

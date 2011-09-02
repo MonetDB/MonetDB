@@ -127,11 +127,6 @@ parseint(const char *data, bignum_t *nval)
 			return 0;
 		data++;
 	}
-	/* normalize scale */
-	while (scale > 0 && nval->val % 10 == 0) {
-		scale--;
-		nval->val /= 10;
-	}
 	if (*data == 'e' || *data == 'E') {
 		char *p;
 		long i;
@@ -194,11 +189,6 @@ parsesecondinterval(bignum_t *nval, SQL_INTERVAL_STRUCT *ival, int type)
 		}
 		nval->val /= 10;
 		nval->scale--;
-	}
-	/* normalize scale */
-	while (ivalscale > 0 && ival->intval.day_second.fraction % 10 != 0) {
-		ivalscale--;
-		ival->intval.day_second.fraction /= 10;
 	}
 	ival->interval_type = SQL_IS_DAY_TO_SECOND;
 	ival->interval_sign = !nval->sign;
@@ -1102,7 +1092,18 @@ ODBCFetch(ODBCStmt *stmt,
 	case SQL_SMALLINT:
 	case SQL_INTEGER:
 	case SQL_BIGINT:
+	case SQL_INTERVAL_YEAR:
+	case SQL_INTERVAL_YEAR_TO_MONTH:
 	case SQL_INTERVAL_MONTH:
+	case SQL_INTERVAL_DAY:
+	case SQL_INTERVAL_DAY_TO_HOUR:
+	case SQL_INTERVAL_DAY_TO_MINUTE:
+	case SQL_INTERVAL_DAY_TO_SECOND:
+	case SQL_INTERVAL_HOUR:
+	case SQL_INTERVAL_HOUR_TO_MINUTE:
+	case SQL_INTERVAL_HOUR_TO_SECOND:
+	case SQL_INTERVAL_MINUTE:
+	case SQL_INTERVAL_MINUTE_TO_SECOND:
 	case SQL_INTERVAL_SECOND:
 		if (!parseint(data, &nval)) {
 			/* shouldn't happen: getting here means SQL
@@ -1115,10 +1116,27 @@ ODBCFetch(ODBCStmt *stmt,
 
 		/* interval types are transferred as ints but need to
 		 * be converted to the internal interval formats */
-		if (sql_type == SQL_INTERVAL_SECOND)
-			ivalprec = parsesecondinterval(&nval, &ival, sql_type);
-		else if (sql_type == SQL_INTERVAL_MONTH)
+		switch (sql_type) {
+		case SQL_INTERVAL_YEAR:
+		case SQL_INTERVAL_YEAR_TO_MONTH:
+		case SQL_INTERVAL_MONTH:
 			parsemonthinterval(&nval, &ival, sql_type);
+			break;
+		case SQL_INTERVAL_DAY:
+		case SQL_INTERVAL_DAY_TO_HOUR:
+		case SQL_INTERVAL_DAY_TO_MINUTE:
+		case SQL_INTERVAL_DAY_TO_SECOND:
+		case SQL_INTERVAL_HOUR:
+		case SQL_INTERVAL_HOUR_TO_MINUTE:
+		case SQL_INTERVAL_HOUR_TO_SECOND:
+		case SQL_INTERVAL_MINUTE:
+		case SQL_INTERVAL_MINUTE_TO_SECOND:
+		case SQL_INTERVAL_SECOND:
+			ivalprec = parsesecondinterval(&nval, &ival, SQL_INTERVAL_SECOND);
+			break;
+		default:
+			break;
+		}
 		break;
 	case SQL_DOUBLE:
 	case SQL_REAL:
@@ -1448,7 +1466,32 @@ ODBCFetch(ODBCStmt *stmt,
 				}
 			}
 			break;
-		case SQL_INTERVAL_MONTH: {
+		case SQL_INTERVAL_YEAR: {
+			unsigned f;
+
+			for (i = 1, f = 10; ival.intval.year_month.year >= f; f *= 10, i++)
+				;
+			sz = snprintf((char *) ptr, buflen,
+				      "INTERVAL %s'%u' YEAR(%d)",
+				      ival.interval_sign ? "-" : "",
+				      (unsigned int) ival.intval.year_month.year,
+				      i);
+
+			if (sz < 0 || sz >= buflen) {
+				/* Numeric value out of range */
+				addStmtError(stmt, "22003", NULL, 0);
+
+#ifdef WITH_WCHAR
+				if (type == SQL_C_WCHAR)
+					free(ptr);
+#endif
+				return SQL_ERROR;
+			}
+			if (lenp)
+				*lenp = sz;
+			break;
+		}
+		case SQL_INTERVAL_YEAR_TO_MONTH: {
 			unsigned f;
 
 			for (i = 1, f = 10; ival.intval.year_month.year >= f; f *= 10, i++)
@@ -1474,7 +1517,113 @@ ODBCFetch(ODBCStmt *stmt,
 				*lenp = sz;
 			break;
 		}
-		case SQL_INTERVAL_SECOND: {
+		case SQL_INTERVAL_MONTH: {
+			unsigned f;
+			unsigned months = (unsigned int)
+				(12 * ival.intval.year_month.year +
+				 ival.intval.year_month.month);
+
+			for (i = 1, f = 10; months >= f; f *= 10, i++)
+				;
+			sz = snprintf((char *) ptr, buflen,
+				      "INTERVAL %s'%u' MONTH(%d)",
+				      ival.interval_sign ? "-" : "",
+				      months,
+				      i);
+
+			if (sz < 0 || sz >= buflen) {
+				/* Numeric value out of range */
+				addStmtError(stmt, "22003", NULL, 0);
+
+#ifdef WITH_WCHAR
+				if (type == SQL_C_WCHAR)
+					free(ptr);
+#endif
+				return SQL_ERROR;
+			}
+			if (lenp)
+				*lenp = sz;
+			break;
+		}
+		case SQL_INTERVAL_DAY: {
+			unsigned f;
+
+			for (i = 1, f = 10; ival.intval.day_second.day >= f; f *= 10, i++)
+				;
+			sz = snprintf((char *) ptr, buflen,
+				      "INTERVAL %s'%u' DAY(%d)",
+				      ival.interval_sign ? "-" : "",
+				      (unsigned int) ival.intval.day_second.day,
+				      i);
+
+			if (sz < 0 || sz >= buflen) {
+				/* Numeric value out of range */
+				addStmtError(stmt, "22003", NULL, 0);
+
+#ifdef WITH_WCHAR
+				if (type == SQL_C_WCHAR)
+					free(ptr);
+#endif
+				return SQL_ERROR;
+			}
+			if (lenp)
+				*lenp = sz;
+			break;
+		}
+		case SQL_INTERVAL_DAY_TO_HOUR: {
+			unsigned f;
+
+			for (i = 1, f = 10; ival.intval.day_second.day >= f; f *= 10, i++)
+				;
+			sz = snprintf((char *) ptr, buflen,
+				      "INTERVAL %s'%u %02u' DAY(%d) TO HOUR",
+				      ival.interval_sign ? "-" : "",
+				      (unsigned int) ival.intval.day_second.day,
+				      (unsigned int) ival.intval.day_second.hour,
+				      i);
+
+			if (sz < 0 || sz >= buflen) {
+				/* Numeric value out of range */
+				addStmtError(stmt, "22003", NULL, 0);
+
+#ifdef WITH_WCHAR
+				if (type == SQL_C_WCHAR)
+					free(ptr);
+#endif
+				return SQL_ERROR;
+			}
+			if (lenp)
+				*lenp = sz;
+			break;
+		}
+		case SQL_INTERVAL_DAY_TO_MINUTE: {
+			unsigned f;
+
+			for (i = 1, f = 10; ival.intval.day_second.day >= f; f *= 10, i++)
+				;
+			sz = snprintf((char *) ptr, buflen,
+				      "INTERVAL %s'%u %02u:%02u' DAY(%d) TO MINUTE",
+				      ival.interval_sign ? "-" : "",
+				      (unsigned int) ival.intval.day_second.day,
+				      (unsigned int) ival.intval.day_second.hour,
+				      (unsigned int) ival.intval.day_second.minute,
+				      i);
+
+			if (sz < 0 || sz >= buflen) {
+				/* Numeric value out of range */
+				addStmtError(stmt, "22003", NULL, 0);
+
+#ifdef WITH_WCHAR
+				if (type == SQL_C_WCHAR)
+					free(ptr);
+#endif
+				return SQL_ERROR;
+			}
+			if (lenp)
+				*lenp = sz;
+			break;
+		}
+		case SQL_INTERVAL_DAY_TO_SECOND: {
 			unsigned f;
 			int w;
 
@@ -1482,14 +1631,8 @@ ODBCFetch(ODBCStmt *stmt,
 
 			for (i = 1, f = 10; ival.intval.day_second.day >= f; f *= 10, i++)
 				;
-			if (i < 10)
-				w = 17;	/* space needed for "'DAY(n) TO SECOND" */
-			else
-				w = 18;	/* space needed for "'DAY(nn) TO SECOND" */
-			if (ivalprec < 10)
-				w += 3;	/* space for additional (n) */
-			else
-				w += 4;	/* space for additional (nn) */
+			w = 17 + (i >= 10);	/* space needed for "'DAY(N) TO SECOND" */
+			w += 3 + (ivalprec >= 10); /* space for additional (N) */
 
 			sz = snprintf(data, buflen, "INTERVAL %s'%u %02u:%02u:%02u",
 				      ival.interval_sign ? "-" : "",
@@ -1509,10 +1652,10 @@ ODBCFetch(ODBCStmt *stmt,
 			}
 			data += sz;
 			buflen -= sz;
-			
+
 			if (lenp)
 				*lenp = sz;
-			if (ival.intval.day_second.fraction) {
+			if (ivalprec > 0) {
 				if (lenp)
 					*lenp += ivalprec + 1;
 				if (buflen > w + 2)
@@ -1527,6 +1670,250 @@ ODBCFetch(ODBCStmt *stmt,
 			}
 			/* this should now fit */
 			sz = snprintf(data, buflen, "' DAY(%d) TO SECOND(%d)", i, ivalprec);
+			if (lenp && sz > 0)
+				*lenp += sz;
+			break;
+		}
+		case SQL_INTERVAL_HOUR: {
+			unsigned f;
+			unsigned hours = (unsigned)
+				(24 * ival.intval.day_second.day +
+				 ival.intval.day_second.hour);
+
+			for (i = 1, f = 10; hours >= f; f *= 10, i++)
+				;
+			sz = snprintf((char *) ptr, buflen,
+				      "INTERVAL %s'%u' HOUR(%d)",
+				      ival.interval_sign ? "-" : "",
+				      hours,
+				      i);
+
+			if (sz < 0 || sz >= buflen) {
+				/* Numeric value out of range */
+				addStmtError(stmt, "22003", NULL, 0);
+
+#ifdef WITH_WCHAR
+				if (type == SQL_C_WCHAR)
+					free(ptr);
+#endif
+				return SQL_ERROR;
+			}
+			if (lenp)
+				*lenp = sz;
+			break;
+		}
+		case SQL_INTERVAL_HOUR_TO_MINUTE: {
+			unsigned f;
+			unsigned hours = (unsigned)
+				(24 * ival.intval.day_second.day +
+				 ival.intval.day_second.hour);
+
+			for (i = 1, f = 10; hours >= f; f *= 10, i++)
+				;
+			sz = snprintf((char *) ptr, buflen,
+				      "INTERVAL %s'%u:%02u' HOUR(%d) TO MINUTE",
+				      ival.interval_sign ? "-" : "",
+				      hours,
+				      (unsigned int) ival.intval.day_second.minute,
+				      i);
+
+			if (sz < 0 || sz >= buflen) {
+				/* Numeric value out of range */
+				addStmtError(stmt, "22003", NULL, 0);
+
+#ifdef WITH_WCHAR
+				if (type == SQL_C_WCHAR)
+					free(ptr);
+#endif
+				return SQL_ERROR;
+			}
+			if (lenp)
+				*lenp = sz;
+			break;
+		}
+		case SQL_INTERVAL_HOUR_TO_SECOND: {
+			unsigned f;
+			int w;
+			unsigned hours = (unsigned)
+				(24 * ival.intval.day_second.day +
+				 ival.intval.day_second.hour);
+
+			data = (char *) ptr;
+
+			for (i = 1, f = 10; hours >= f; f *= 10, i++)
+				;
+			w = 18 + (i >= 10);	/* space needed for "'HOUR(N) TO SECOND" */
+			w += 3 + (ivalprec >= 10); /* space for additional (N) */
+
+			sz = snprintf(data, buflen, "INTERVAL %s'%u:%02u:%02u",
+				      ival.interval_sign ? "-" : "",
+				      hours,
+				      (unsigned int) ival.intval.day_second.minute,
+				      (unsigned int) ival.intval.day_second.second);
+			if (sz < 0 || sz + w >= buflen) {
+				/* Numeric value out of range */
+				addStmtError(stmt, "22003", NULL, 0);
+
+#ifdef WITH_WCHAR
+				if (type == SQL_C_WCHAR)
+					free(ptr);
+#endif
+				return SQL_ERROR;
+			}
+			data += sz;
+			buflen -= sz;
+
+			if (lenp)
+				*lenp = sz;
+			if (ivalprec > 0) {
+				if (lenp)
+					*lenp += ivalprec + 1;
+				if (buflen > w + 2)
+					sz = snprintf(data, buflen, ".%0*u", ivalprec, (unsigned int) ival.intval.day_second.fraction);
+				if (buflen <= w + 2 || sz < 0 || sz + w >= buflen) {
+					sz = buflen - w - 1;
+					/* String data, right-truncated */
+					addStmtError(stmt, "01004", NULL, 0);
+				}
+				data += sz;
+				buflen -= sz;
+			}
+			/* this should now fit */
+			sz = snprintf(data, buflen, "' HOUR(%d) TO SECOND(%d)", i, ivalprec);
+			if (lenp && sz > 0)
+				*lenp += sz;
+			break;
+		}
+		case SQL_INTERVAL_MINUTE: {
+			unsigned f;
+			unsigned mins = (unsigned)
+				(60 * (24 * ival.intval.day_second.day +
+				       ival.intval.day_second.hour) +
+				 ival.intval.day_second.minute);
+
+			for (i = 1, f = 10; mins >= f; f *= 10, i++)
+				;
+			sz = snprintf((char *) ptr, buflen,
+				      "INTERVAL %s'%u' MINUTE(%d)",
+				      ival.interval_sign ? "-" : "",
+				      mins,
+				      i);
+
+			if (sz < 0 || sz >= buflen) {
+				/* Numeric value out of range */
+				addStmtError(stmt, "22003", NULL, 0);
+
+#ifdef WITH_WCHAR
+				if (type == SQL_C_WCHAR)
+					free(ptr);
+#endif
+				return SQL_ERROR;
+			}
+			if (lenp)
+				*lenp = sz;
+			break;
+		}
+		case SQL_INTERVAL_MINUTE_TO_SECOND: {
+			unsigned f;
+			int w;
+			unsigned mins = (unsigned)
+				(60 * (24 * ival.intval.day_second.day +
+				       ival.intval.day_second.hour) +
+				 ival.intval.day_second.minute);
+
+			data = (char *) ptr;
+
+			for (i = 1, f = 10; mins >= f; f *= 10, i++)
+				;
+			w = 20 + (i >= 10);	/* space needed for "'MINUTE(N) TO SECOND" */
+			w += 3 + (ivalprec >= 10); /* space for additional (N) */
+
+			sz = snprintf(data, buflen, "INTERVAL %s'%u:%02u",
+				      ival.interval_sign ? "-" : "",
+				      mins,
+				      (unsigned int) ival.intval.day_second.second);
+			if (sz < 0 || sz + w >= buflen) {
+				/* Numeric value out of range */
+				addStmtError(stmt, "22003", NULL, 0);
+
+#ifdef WITH_WCHAR
+				if (type == SQL_C_WCHAR)
+					free(ptr);
+#endif
+				return SQL_ERROR;
+			}
+			data += sz;
+			buflen -= sz;
+
+			if (lenp)
+				*lenp = sz;
+			if (ivalprec > 0) {
+				if (lenp)
+					*lenp += ivalprec + 1;
+				if (buflen > w + 2)
+					sz = snprintf(data, buflen, ".%0*u", ivalprec, (unsigned int) ival.intval.day_second.fraction);
+				if (buflen <= w + 2 || sz < 0 || sz + w >= buflen) {
+					sz = buflen - w - 1;
+					/* String data, right-truncated */
+					addStmtError(stmt, "01004", NULL, 0);
+				}
+				data += sz;
+				buflen -= sz;
+			}
+			/* this should now fit */
+			sz = snprintf(data, buflen, "' MINUTE(%d) TO SECOND(%d)", i, ivalprec);
+			if (lenp && sz > 0)
+				*lenp += sz;
+			break;
+		}
+		case SQL_INTERVAL_SECOND: {
+			unsigned f;
+			int w;
+			unsigned secs = (unsigned)
+				(60 * (60 * (24 * ival.intval.day_second.day +
+					     ival.intval.day_second.hour) +
+				       ival.intval.day_second.minute) +
+				 ival.intval.day_second.second);
+
+			data = (char *) ptr;
+
+			for (i = 1, f = 10; secs >= f; f *= 10, i++)
+				;
+			w = 12 + (i >= 10) + (ivalprec >= 10);	/* space needed for "'SECOND(N,N)" */
+
+			sz = snprintf(data, buflen, "INTERVAL %s'%u",
+				      ival.interval_sign ? "-" : "",
+				      secs);
+			if (sz < 0 || sz + w >= buflen) {
+				/* Numeric value out of range */
+				addStmtError(stmt, "22003", NULL, 0);
+
+#ifdef WITH_WCHAR
+				if (type == SQL_C_WCHAR)
+					free(ptr);
+#endif
+				return SQL_ERROR;
+			}
+			data += sz;
+			buflen -= sz;
+
+			if (lenp)
+				*lenp = sz;
+			if (ivalprec > 0) {
+				if (lenp)
+					*lenp += ivalprec + 1;
+				if (buflen > w + 2)
+					sz = snprintf(data, buflen, ".%0*u", ivalprec, (unsigned int) ival.intval.day_second.fraction);
+				if (buflen <= w + 2 || sz < 0 || sz + w >= buflen) {
+					sz = buflen - w - 1;
+					/* String data, right-truncated */
+					addStmtError(stmt, "01004", NULL, 0);
+				}
+				data += sz;
+				buflen -= sz;
+			}
+			/* this should now fit */
+			sz = snprintf(data, buflen, "' SECOND(%d,%d)", i, ivalprec);
 			if (lenp && sz > 0)
 				*lenp += sz;
 			break;
@@ -1567,7 +1954,18 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_TYPE_DATE:
 		case SQL_TYPE_TIME:
 		case SQL_TYPE_TIMESTAMP:
+		case SQL_INTERVAL_YEAR:
+		case SQL_INTERVAL_YEAR_TO_MONTH:
 		case SQL_INTERVAL_MONTH:
+		case SQL_INTERVAL_DAY:
+		case SQL_INTERVAL_DAY_TO_HOUR:
+		case SQL_INTERVAL_DAY_TO_MINUTE:
+		case SQL_INTERVAL_DAY_TO_SECOND:
+		case SQL_INTERVAL_HOUR:
+		case SQL_INTERVAL_HOUR_TO_MINUTE:
+		case SQL_INTERVAL_HOUR_TO_SECOND:
+		case SQL_INTERVAL_MINUTE:
+		case SQL_INTERVAL_MINUTE_TO_SECOND:
 		case SQL_INTERVAL_SECOND:
 		default:
 			/* Restricted data type attribute violation */
@@ -2108,6 +2506,8 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_BIGINT:
 			parsemonthinterval(&nval, &ival, type);
 			break;
+		case SQL_INTERVAL_YEAR:
+		case SQL_INTERVAL_YEAR_TO_MONTH:
 		case SQL_INTERVAL_MONTH:
 			break;
 		default:
@@ -2183,6 +2583,15 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_BIGINT:
 			ivalprec = parsesecondinterval(&nval, &ival, type);
 			break;
+		case SQL_INTERVAL_DAY:
+		case SQL_INTERVAL_DAY_TO_HOUR:
+		case SQL_INTERVAL_DAY_TO_MINUTE:
+		case SQL_INTERVAL_DAY_TO_SECOND:
+		case SQL_INTERVAL_HOUR:
+		case SQL_INTERVAL_HOUR_TO_MINUTE:
+		case SQL_INTERVAL_HOUR_TO_SECOND:
+		case SQL_INTERVAL_MINUTE:
+		case SQL_INTERVAL_MINUTE_TO_SECOND:
 		case SQL_INTERVAL_SECOND:
 			break;
 		default:
