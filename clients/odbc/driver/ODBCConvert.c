@@ -1120,7 +1120,7 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_INTERVAL_YEAR:
 		case SQL_INTERVAL_YEAR_TO_MONTH:
 		case SQL_INTERVAL_MONTH:
-			parsemonthinterval(&nval, &ival, sql_type);
+			parsemonthinterval(&nval, &ival, SQL_INTERVAL_MONTH);
 			break;
 		case SQL_INTERVAL_DAY:
 		case SQL_INTERVAL_DAY_TO_HOUR:
