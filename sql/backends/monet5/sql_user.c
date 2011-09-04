@@ -117,7 +117,7 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 	if ((ret = AUTHaddUser(&uid, &c, &user, &pwd)) != MAL_SUCCEED)
 		return ret;
 	if (!enc)
-		GDKfree(pwd);
+		free(pwd);
 
 	user_id = store_next_oid();
 	db_user_info = find_sql_table(s, "db_user_info");
