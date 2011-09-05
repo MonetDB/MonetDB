@@ -79,10 +79,10 @@ stderr of test 'inserting_invalid_timestamp.SF-1363557` in directory 'test/BugTr
 # 19:33:06 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=33470 
 # 19:33:06 >  
 
-MAPI  = monetdb@alf:32535
+MAPI  = monetdb@ottar:32630
 QUERY = insert into foo values('12:12:12:99');
 ERROR = !SQLException:timestamp:timestamp (12:12:12:99) has incorrect format
-MAPI  = monetdb@alf:32535
+MAPI  = monetdb@ottar:32630
 QUERY = insert into foo values(timestamp '12:12:12:99');
 ERROR = !incorrect timestamp value (12:12:12:99) in: "insert into foo values(timestamp '12:12:12:99')"
 

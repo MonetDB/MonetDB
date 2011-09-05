@@ -573,7 +573,7 @@ str CLTbackendsum(str *ret, str *pw) {
 }
 
 @mal
-pattern addUser(nme:str, pw:str, scen:bat[:str,:any_1]):oid
+pattern addUser(nme:str, pw:str):oid
 address CLTaddUser
 comment "Allow user with password access to the given scenarios";
 @h
@@ -583,11 +583,10 @@ str CLTaddUser(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	oid *ret = (oid *)getArgReference(stk, pci, 0);
 	str *usr = (str *)getArgReference(stk, pci, 1);
 	str *pw = (str *)getArgReference(stk, pci, 2);
-	bat *sc = (bat *)getArgReference(stk, pci, 3);
 
 	(void)mb;
 	
-	return AUTHaddUser(ret, &cntxt, usr, pw, sc);
+	return AUTHaddUser(ret, &cntxt, usr, pw);
 }
 
 @mal
@@ -694,7 +693,6 @@ clients_export str CLTcheckPermission(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 str CLTcheckPermission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str *usr = (str *)getArgReference(stk, pci, 1);
 	str *pw = (str *)getArgReference(stk, pci, 2);
-	str *sc = (str *)getArgReference(stk, pci, 3);
 	str ch = "";
 	str algo = "SHA1";
 	oid id;
@@ -703,60 +701,27 @@ str CLTcheckPermission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 	(void)mb;
 
 	pwd = mcrypt_SHA1Sum(*pw, strlen(*pw));
-	msg = AUTHcheckCredentials(&id, &cntxt, usr, &pwd, &ch, &algo, sc);
+	msg = AUTHcheckCredentials(&id, &cntxt, usr, &pwd, &ch, &algo);
 	free(pwd);
 	return msg;
 }
 
 @mal
-pattern addScenario(usr:str, sc:str):void
-address CLTaddScenario
-comment "add the given scenario to the allowed scenarios for the given user";
-@h
-clients_export str CLTaddScenario(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-@c
-str CLTaddScenario(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	str *usr = (str *)getArgReference(stk, pci, 1);
-	str *sc = (str *)getArgReference(stk, pci, 2);
-
-	(void)mb;
-
-	return AUTHaddScenario(&cntxt, usr, sc);
-}
-
-@mal
-pattern removeScenario(usr:str, sc:str):void
-address CLTremoveScenario
-comment "remove the given scenario from the allowed scenarios for the given user";
-@h
-clients_export str CLTremoveScenario(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-@c
-str CLTremoveScenario(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	str *usr = (str *)getArgReference(stk, pci, 1);
-	str *sc = (str *)getArgReference(stk, pci, 2);
-
-	(void)mb;
-
-	return  AUTHremoveScenario(&cntxt, usr, sc);
-}
-
-@mal
-pattern getUsers(s:bat[:str,:any_1]):bat[:oid,:str]
+pattern getUsers():bat[:oid,:str]
 address CLTgetUsers
-comment "return a BAT with user id and name available in the system with access to the given scenario(s)";
+comment "return a BAT with user id and name available in the system";
 @h
 clients_export str CLTgetUsers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
 str CLTgetUsers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	bat *ret = (bat *)getArgReference(stk, pci, 0);
-	bat *scens = (bat *)getArgReference(stk, pci, 1);
 	BAT *r = NULL;
 	str tmp;
 
 	(void)mb;
 
-	tmp= AUTHgetUsers(&r, &cntxt, scens);
-	if( tmp)
+	tmp = AUTHgetUsers(&r, &cntxt);
+	if (tmp)
 		return tmp;
 	BBPkeepref(*ret = r->batCacheid);
 	return(MAL_SUCCEED);

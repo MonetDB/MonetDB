@@ -175,12 +175,11 @@ AUTHinitTables(void) {
 		str user = "monetdb";
 		str pw; /* will become the right hash for "monetdb" */
 		int len = (int) strlen(user);
-		bat b = 0;
 		oid uid;
 		Client c = &mal_clients[0];
 
 		pw = mcrypt_BackendSum(user /* because user == pass */, len);
-		msg = AUTHaddUser(&uid, &c, &user, &pw, &b);
+		msg = AUTHaddUser(&uid, &c, &user, &pw);
 		free(pw);
 		if (msg)
 			return msg;
@@ -195,8 +194,6 @@ AUTHinitTables(void) {
 /**
  * Checks the credentials supplied and throws an exception if invalid.
  * The user id of the authenticated user is returned upon success.
- * The scenario argument is ignored and should be removed on the next
- * ABI bump.
  */
 str
 AUTHcheckCredentials(
@@ -205,8 +202,7 @@ AUTHcheckCredentials(
 		str *username,
 		str *passwd,
 		str *challenge,
-		str *algo,
-		str *scenario)
+		str *algo)
 {
 	str tmp;
 	str pwd = NULL;
@@ -257,20 +253,16 @@ AUTHcheckCredentials(
 	}
 	free(hash);
 
-	/* scenario restrictions are legacy from the past, we don't check
-	 * this any more, so all is good */
-	(void)scenario;
 	*uid = *id;
 	return(MAL_SUCCEED);
 }
 
 /**
- * Adds the given user with password to the administration.  The scens
- * BAT is ignored, and should be removed on the next ABI bump.  The
+ * Adds the given user with password to the administration.  The
  * return value of this function is the user id of the added user.
  */
 str
-AUTHaddUser(oid *uid, Client *c, str *username, str *passwd, bat *scenarios) {
+AUTHaddUser(oid *uid, Client *c, str *username, str *passwd) {
 	BUN p;
 	oid *id;
 	str tmp;
@@ -304,9 +296,6 @@ AUTHaddUser(oid *uid, Client *c, str *username, str *passwd, bat *scenarios) {
 	assert (p != BUN_NONE);
 	useri = bat_iterator(user);
 	id = (oid*)(BUNhead(useri, p));
-
-	/* scenarios are no longer checked */
-	(void)scenarios;
 
 	/* make the stuff persistent */
 	AUTHcommit();
@@ -505,32 +494,6 @@ AUTHsetPassword(Client *c, str *username, str *passwd) {
 }
 
 /**
- * Obsolete function.  Retained for ABI compatibility.  Should be
- * removed with next ABI bump.
- */
-str
-AUTHaddScenario(Client *c, str *username, str *scenario) {
-	(void)c;
-	(void)username;
-	(void)scenario;
-
-	throw(MAL, "addScenario", "scenario-based authorisation is no longer supported");
-}
-
-/**
- * Obsolete function.  Retained for ABI compatibility.  Should be
- * removed with next ABI bump.
- */
-str
-AUTHremoveScenario(Client *c, str *username, str *scenario) {
-	(void)c;
-	(void)username;
-	(void)scenario;
-
-	throw(MAL, "removeScenario", "scenario-based authorisation is no longer supported");
-}
-
-/**
  * Resolves the given user id and returns the associated username.  If
  * the id is invalid, an exception is thrown.  The given pointer to the
  * username char buffer should be NULL if this function is supposed to
@@ -589,17 +552,13 @@ AUTHgetUsername(str *username, Client *c) {
 
 /**
  * Returns a BAT with user names in the tail, and user ids in the head.
- * The scenarios argument is ignored.  It should be removed upon the
- * next ABI change.
  */
 str
-AUTHgetUsers(BAT **ret, Client *c, bat *scenarios) {
+AUTHgetUsers(BAT **ret, Client *c) {
 	str tmp;
 
 	rethrow("getUsers", tmp, AUTHrequireAdmin(c));
 
-	/* scenarios are no longer checked */
-	(void)scenarios;
 	*ret = BATcopy(user, user->htype, user->ttype, FALSE);
 	return(NULL);
 }

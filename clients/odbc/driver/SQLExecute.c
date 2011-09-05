@@ -188,6 +188,56 @@ ODBCInitResult(ODBCStmt *stmt)
 			s = "";
 		rec->sql_desc_type_name = (SQLCHAR *) strdup(s);
 		concise_type = ODBCConciseType(s);
+		if (concise_type == SQL_INTERVAL_MONTH) {
+			switch (mapi_get_digits(hdl, i)) {
+			case 1:
+				concise_type = SQL_INTERVAL_YEAR;
+				break;
+			case 2:
+				concise_type = SQL_INTERVAL_YEAR_TO_MONTH;
+				break;
+			case 3:
+				concise_type = SQL_INTERVAL_MONTH;
+				break;
+			default:
+				assert(0);
+			}
+		} else if (concise_type == SQL_INTERVAL_SECOND) {
+			switch (mapi_get_digits(hdl, i)) {
+			case 4:
+				concise_type = SQL_INTERVAL_DAY;
+				break;
+			case 5:
+				concise_type = SQL_INTERVAL_DAY_TO_HOUR;
+				break;
+			case 6:
+				concise_type = SQL_INTERVAL_DAY_TO_MINUTE;
+				break;
+			case 7:
+				concise_type = SQL_INTERVAL_DAY_TO_SECOND;
+				break;
+			case 8:
+				concise_type = SQL_INTERVAL_HOUR;
+				break;
+			case 9:
+				concise_type = SQL_INTERVAL_HOUR_TO_MINUTE;
+				break;
+			case 10:
+				concise_type = SQL_INTERVAL_HOUR_TO_SECOND;
+				break;
+			case 11:
+				concise_type = SQL_INTERVAL_MINUTE;
+				break;
+			case 12:
+				concise_type = SQL_INTERVAL_MINUTE_TO_SECOND;
+				break;
+			case 13:
+				concise_type = SQL_INTERVAL_SECOND;
+				break;
+			default:
+				assert(0);
+			}
+		}
 		for (tp = ODBC_sql_types; tp->concise_type; tp++)
 			if (concise_type == tp->concise_type)
 				break;
@@ -230,7 +280,8 @@ ODBCInitResult(ODBCStmt *stmt)
 			}
 		}
 
-		if ((rec->sql_desc_length = mapi_get_digits(hdl, i)) == 0)
+		if (rec->sql_desc_type != SQL_INTERVAL &&
+		    (rec->sql_desc_length = mapi_get_digits(hdl, i)) == 0)
 			rec->sql_desc_length = mapi_get_len(hdl, i);
 
 		rec->sql_desc_local_type_name = NULL;

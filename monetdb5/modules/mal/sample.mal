@@ -15,25 +15,14 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = HAVE_JAVAJDBC?tests
+#
+# @a Lefteris Sidirourgos
+# @d 30/08/2011
+# @+ The sampling facilities
+#
 
-EXTRA_DIST = build.xml build.properties release.txt
+module sample;
 
-EXTRA_DIST_DIR = src \
-		 example
-
-JAVA_HOME = @JAVA_HOME@
-
-ant_distjdbc = {
-	COND = HAVE_JAVAJDBC
-	DIR = datadir/monetdb/lib
-	FILES = monetdb-1.6-mcl.jar monetdb-1.23-jdbc.jar jdbcclient.jar
-}
-
-ant_distmerocontrol = {
-	COND = HAVE_JAVAMEROCONTROL
-	DIR = datadir/monetdb/lib
-	FILES = merocontrol.jar
-}
-
-# vim: ft=automake :
+command uniform(b:bat[:oid,:any],s:wrd):bat[:oid,:any]
+address SAMPLEuniform
+comment "Returns a uniform sample of size s"

@@ -17,24 +17,30 @@
  * All Rights Reserved.
  */
 
-#ifndef _MAL_SESSION_H
-#define _MAL_SESSION_H
+/*
+ * @a Lefteris Sidirourgos
+ * @d 30/08/2011
+ * @+ The sampling facilities
+ */
 
-#include "mal_scenario.h"
+#ifndef _SAMPLE_H_
+#define _SAMPLE_H_
 
-mal_export int malBootstrap(void);
-mal_export void MSserveClient(void *dummy);
-mal_export void MSinitClientPrg(Client cntxt, str mod, str nme);
-mal_export void MSscheduleClient(str command, str challenge, bstream *fin, stream *fout);
+/* #define _DEBUG_SAMPLE_ */
 
-mal_export str MALreader(Client c);
-mal_export str MALinitClient(Client c);
-mal_export str MALexitClient(Client c);
-mal_export str MALparser(Client c);
-mal_export str MALengine(Client c);
-mal_export void MSresetInstructions(MalBlkPtr mb, int start);
-mal_export void MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start);
-mal_export int MALcommentsOnly(MalBlkPtr mb);
+#ifdef WIN32
+#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
+#define sample_export extern __declspec(dllimport)
+#else
+#define sample_export extern __declspec(dllexport)
+#endif
+#else
+#define sample_export extern
+#endif
 
-#endif /*  _MAL_SESSION_H */
+#define DRAND ((double)rand()/(double)RAND_MAX)
 
+sample_export str
+SAMPLEuniform(bat *r, bat *b, ptr s);
+
+#endif

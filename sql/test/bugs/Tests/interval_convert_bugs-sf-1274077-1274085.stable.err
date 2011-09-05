@@ -10,7 +10,7 @@ stderr of test 'interval_convert_bugs-sf-1274077-1274085` in directory 'test/bug
 # 14:19:19 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=40835  < interval_convert_bugs-sf-1274077-1274085.sql
 # 14:19:19 >  
 
-MAPI  = monetdb@volund:38056
+MAPI  = monetdb@ottar:32630
 QUERY = select interval '1' year = interval '12' second;
 ERROR = !types month_interval(1,0) and sec_interval(13,0) are not equal
 

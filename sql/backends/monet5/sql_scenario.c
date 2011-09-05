@@ -624,9 +624,8 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 	 */
 	c->state[MAL_SCENARIO_PARSER] = sql;
 	while( m->scanner.rs->pos < m->scanner.rs->len ){
-		int oldvtop = c->curprg->def->vtop;
-		int oldstop = c->curprg->def->stop;
-		MSinitClientPrg(c,"user",nme);
+		stmt *s;
+		int oldvtop, oldstop;
 
 		if (!m->sa)
 			m->sa = sa_create();
@@ -640,14 +639,12 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 				msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 			*m->errstr = 0;
 			sqlcleanup(m, err);
-			/* restore the state */
-			resetMalBlk(c->curprg->def, oldstop);
-			freeVariables(c,c->curprg->def, c->glb, oldvtop);
-			c->curprg->def->errors = 0;
+			execute = 0;
 			if (!err)
 				continue;
 			goto endofcompile;
 		}
+
 		/*
 		 * @-
 		 * We have dealt with the first parsing step and advanced the input reader
@@ -656,53 +653,53 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 		 * optimize and produce code.
 		 * We don;t search the cache for a previous incarnation yet.
 		 */
-		{
-			stmt *s = sql_symbol2stmt(m, m->sym);
-
+		MSinitClientPrg(c,"user",nme);
+		oldvtop = c->curprg->def->vtop;
+		oldstop = c->curprg->def->stop;
+		s = sql_symbol2stmt(m, m->sym);
 #ifdef _SQL_COMPILE
 		mnstr_printf(c->fdout,"#SQLstatement:\n");
 #endif
-			scanner_query_processed(&(m->scanner));
-			if (s==0 || (err = mvc_status(m))) {
-				msg = createException(PARSE, "SQLparser", "%s", m->errstr);
-				handle_error(m, c->fdout, status);
-				sqlcleanup(m, err);
-				/* restore the state */
-				resetMalBlk(c->curprg->def, oldstop);
-				freeVariables(c,c->curprg->def, c->glb, oldvtop);
-				c->curprg->def->errors = 0;
-				goto endofcompile;
-			}
-			/* generate MAL code */
-			backend_callinline(sql, c, s );
-			addQueryToCache(c);
+		scanner_query_processed(&(m->scanner));
+		if (s==0 || (err = mvc_status(m))) {
+			msg = createException(PARSE, "SQLparser", "%s", m->errstr);
+			handle_error(m, c->fdout, status);
+			sqlcleanup(m, err);
+			/* restore the state */
+			resetMalBlk(c->curprg->def, oldstop);
+			freeVariables(c,c->curprg->def, c->glb, oldvtop);
+			c->curprg->def->errors = 0;
+			goto endofcompile;
+		}
+		/* generate MAL code */
+		backend_callinline(sql, c, s );
+		addQueryToCache(c);
 
-			if( c->curprg->def->errors){
-				/* restore the state */
-				resetMalBlk(c->curprg->def, oldstop);
-				freeVariables(c,c->curprg->def, c->glb, oldvtop);
-				c->curprg->def->errors = 0;
-				goto endofcompile;
-			}
+		if( c->curprg->def->errors){
+			/* restore the state */
+			resetMalBlk(c->curprg->def, oldstop);
+			freeVariables(c,c->curprg->def, c->glb, oldvtop);
+			c->curprg->def->errors = 0;
+			goto endofcompile;
+		}
 
 #ifdef _SQL_COMPILE
 		mnstr_printf(c->fdout,"#result of sql.eval()\n");
 		printFunction(c->fdout, c->curprg->def, 0, c->listing);
 #endif
 
-			if ( execute) {
-				if (!output)
-					sql->out = NULL; /* no output */
-				msg = (str) runMAL(c, c->curprg->def, 1, 0, 0, 0);
-				/*MSresetInstructions(c->curprg->def, 1);*/
-				resetMalBlk(c->curprg->def, oldstop);
-				/*freeVariables(c,c->curprg->def, 0, 0);*/
-				freeVariables(c,c->curprg->def, c->glb, oldvtop);
-			}
-			sqlcleanup(m, 0);
-			if (!execute)
-				goto endofcompile;
+		if ( execute) {
+			if (!output)
+				sql->out = NULL; /* no output */
+			msg = (str) runMAL(c, c->curprg->def, 1, 0, 0, 0);
+			/*MSresetInstructions(c->curprg->def, 1);*/
+			resetMalBlk(c->curprg->def, oldstop);
+			/*freeVariables(c,c->curprg->def, 0, 0);*/
+			freeVariables(c,c->curprg->def, c->glb, oldvtop);
 		}
+		sqlcleanup(m, 0);
+		if (!execute)
+			goto endofcompile;
 #ifdef _SQL_COMPILE
 	mnstr_printf(c->fdout, "#parse/execute result %d\n", err);
 #endif

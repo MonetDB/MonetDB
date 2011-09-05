@@ -285,6 +285,9 @@ mcrypt_hashPassword(
 	char ret[64 * 2 + 1];
 	int len;
 
+	/* make valgrind happy, prevent us from printing garbage afterwards */
+	memset(md, 0, 64);
+
 	if (strcmp(algo, "RIPEMD160") == 0) {
 		RIPEMD160_CTX c;
 

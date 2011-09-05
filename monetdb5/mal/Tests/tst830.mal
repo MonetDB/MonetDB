@@ -1,59 +1,30 @@
 # a simple functional test for the access control table
 
-	scens := bat.new(:str, :oid);
-	bat.insert(scens, "sql", nil:oid);
-	bat.insert(scens, "mal", nil:oid);
-
 	# this should fail, the monetdb user is already there
 	pw := clients.backendsum("Pmonetdb");
-	id := clients.addUser("monetdb", pw, scens);
+	id := clients.addUser("monetdb", pw);
 catch MALException:str;
 	io.printf("%s\n",MALException);
 exit MALException;
 
 	# should print 1@0 or something
-	id := clients.addUser("test", pw, scens);
+	id := clients.addUser("test", pw);
 	io.print(id);
 
 	# this should work also
-	# don't use nil:bat[:str, :oid] here, it results in a crash
-	t := bat.new(:str, :oid);
-	id := clients.addUser("checkpoint", pw, t);
+	id := clients.addUser("checkpoint", pw);
 	io.print(id);
 
 	# do a simple listing of users known
-	u := clients.getUsers(t);
-	io.print(u);
-	bat.insert(t, "mal", nil:oid);
-	bat.insert(t, "sql", nil:oid);
-	u := clients.getUsers(t);
+	u := clients.getUsers();
 	io.print(u);
 
 	# should work, we're the admin here
 	clients.removeUser("checkpoint");
 
 	# do a simple listing of users known
-	u := clients.getUsers(t);
+	u := clients.getUsers();
 	io.print(u);
-
-	# just remove the scenarios one by one, should work
-	clients.removeScenario("test", "mal");
-	clients.removeScenario("test", "sql");
-	# this one should fail: it's not there
-	clients.removeScenario("test", "mil");
-catch MALException:str;
-	io.printf("%s\n",MALException);
-	MALException:= nil:str;
-exit MALException;
-
-	# and add a scenario again
-	clients.addScenario("test", "mal");
-	# do it again, see what happens (should fail)
-	clients.addScenario("test", "mal");
-catch MALException:str;
-	io.printf("%s\n",MALException);
-	MALException:= nil:str;
-exit MALException;
 
 	# forcefully set the password of the user test
 	clients.setPassword("test", pw);
@@ -74,22 +45,17 @@ catch InvalidCredentialsException:str;
 exit InvalidCredentialsException;
 
 	# all should fail
-	clients.checkPermission("monetdb","Pmonetdb","sql");
+	clients.checkPermission("monetdb","Pmonetdb");
 catch InvalidCredentialsException:str;
 	io.printf("%s\n",InvalidCredentialsException);
 	InvalidCredentialsException:= nil:str;
 exit InvalidCredentialsException;
-	clients.checkPermission("monetdb","x","sql");
+	clients.checkPermission("monetdb","x");
 catch InvalidCredentialsException:str;
 	io.printf("%s\n",InvalidCredentialsException);
 	InvalidCredentialsException:= nil:str;
 exit InvalidCredentialsException;
-	clients.checkPermission("monetdb","Pmonetdb","x");
-catch InvalidCredentialsException:str;
-	io.printf("%s\n",InvalidCredentialsException);
-	InvalidCredentialsException:= nil:str;
-exit InvalidCredentialsException;
-	clients.checkPermission("x","Pmonetdb","sql");
+	clients.checkPermission("x","Pmonetdb");
 catch InvalidCredentialsException:str;
 	io.printf("%s\n",InvalidCredentialsException);
 	InvalidCredentialsException:= nil:str;
