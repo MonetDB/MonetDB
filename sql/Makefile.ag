@@ -15,7 +15,7 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = include common storage server backends sql NATIVE_WIN32?NT
+SUBDIRS = include common storage server backends scripts NATIVE_WIN32?NT
 
 EXTRA_DIST = RunMtest.in RunMtest.bat.in \
 		RunMapprove.in RunMapprove.bat.in \
