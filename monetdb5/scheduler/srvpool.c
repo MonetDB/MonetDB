@@ -230,7 +230,7 @@ SRVPOOLdiscover(Client cntxt)
 		srvbaseline = 2; /* for debugging */
 
 	dbname= GDKgetenv("gdk_dbname");
-	snprintf(buf,BUFSIZ,"*/srvpool/%s",dbname);
+	snprintf(buf,BUFSIZ,"*/%s/srvpool",dbname);
 	if ( srvpattern == 0)
 		/* set default pattern */
 		srvpattern = GDKstrdup(buf);
