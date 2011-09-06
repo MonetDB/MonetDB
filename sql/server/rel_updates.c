@@ -298,6 +298,45 @@ rel_insert_table(mvc *sql, sql_table *t, char *name, sql_rel *inserts)
 	return rel_insert(sql, rel_basetable(sql, t, name), inserts);
 }
 
+/* collist: base array columns addressed by the INSERT INTO stmt
+ * ins: tmp columns with all values to be inserted, to be joined with the base array on the dimensional columns
+ */
+static sql_rel *
+rel_insert_array(mvc *sql, sql_table *t, list *collist, sql_rel *ins)
+{
+	sql_rel *r = NULL, *jn = NULL;
+	sql_exp **updates = table_update_array(sql,t);
+	/* columns needed for the update, i.e., %TID% and all non-dimensional columns */
+	list *exps= new_exp_list(sql->sa);
+	/* copy all columns addressed in the INSERT INTO stmt */
+	list *exps_ins = rel_projections(sql, ins, NULL, 0, 1);
+	node *m = NULL, *n = NULL;
+
+	/* join the to be inserted columns with the base array */
+	r = rel_basetable(sql, t, t->base.name);
+	jn = rel_crossproduct(sql->sa, r, ins, op_join);
+
+	/* Initialise the list with the %TID% column */
+	append(exps, exp_column(sql->sa, t->base.name, "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
+	/* walk through all columns in the INSERT INTO statement.  if its a dimensional column, add a join condition; otherwise add it to 'updates' */
+	for(m = collist->h, n = exps_ins->h; m && n; m = m->next, n = n->next) {
+		sql_column *c = m->data; /* column from base array */
+		sql_exp *be = NULL, *pe = n->data; /* column exp in INSERT stmt */
+
+		be = exp_column(sql->sa, c->t->base.name, c->base.name, &c->type, CARD_MULTI, 0, 0);
+		if (c->dim) {
+			rel_join_add_exp(sql->sa, jn, exp_compare(sql->sa, be, pe, cmp_equal));
+		} else {
+			exp_setname(sql->sa, pe, c->t->base.name, c->base.name);
+			updates[c->colnr] = pe;
+			append(exps, be);
+		}
+	}
+
+	r = rel_project(sql->sa, jn, append(new_exp_list(sql->sa), exp_column(sql->sa, t->base.name, "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1)));
+ 	return rel_update(sql, rel_basetable(sql, t, t->base.name), r, updates, exps);	
+}
+
 static sql_rel *
 insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 {
@@ -458,7 +497,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 	_DELETE(inserts);
 	list_destroy(r->exps);
 	r->exps = exps;
-	return rel_insert_table(sql, t, tname, r);
+	return isArray(t)?rel_insert_array(sql, t, collist, r):rel_insert_table(sql, t, tname, r);
 }
 
 static int
