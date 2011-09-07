@@ -1479,7 +1479,7 @@ main(int argc, char *argv[])
 		do {
 			/* first try the port given (or else its default) */
 			snprintf(buf, sizeof(buf), "%s/.s.merovingian.%d",
-					mero_host, mero_port == -1 ? 50001 : mero_port);
+					mero_host, mero_port == -1 ? 50000 : mero_port);
 			if (control_ping(buf, -1, NULL) == 0) {
 				mero_host = buf;
 				break;
@@ -1523,7 +1523,7 @@ main(int argc, char *argv[])
 	}
 	/* for TCP connections */
 	if (mero_host != NULL && *mero_host != '/' && mero_port == -1)
-		mero_port = 50001;
+		mero_port = 50000;
 
 	/* handle regular commands */
 	if (strcmp(argv[i], "create") == 0) {
