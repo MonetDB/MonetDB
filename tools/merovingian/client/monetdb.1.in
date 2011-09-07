@@ -30,7 +30,7 @@ to connect to a remote
 .BR monetdbd (1).
 The use of this option requires \-P (see below).
 .IP "\-p port"
-Connects to the given portnumber instead of the default (50001).
+Connects to the given portnumber instead of the default (50000).
 Requires \-h to be given as option too.
 .IP "\-P passphrase"
 Specifies the passphrase necessary to login to a remote
