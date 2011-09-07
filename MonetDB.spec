@@ -27,7 +27,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Apr2011-SP2/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Aug2011/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -617,6 +617,110 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Wed Sep 07 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.5.1-20110907
+- Rebuilt.
+
+* Wed Aug 31 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.5.1-20110907
+- clients: msqldump now also accepts the database name as last argument on the
+  command line (i.e. without -d).
+
+* Fri Aug 26 2011 Fabian Groffen <fabian@cwi.nl> - 11.5.1-20110907
+- clients: Made error messages from the server in mclient go to stderr, instead
+  of stdout.
+
+* Thu Aug 25 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.5.1-20110907
+- gdk: Removed conversion code for databases that still used the (more than
+  two year) old format of "string heaps".
+
+* Tue Aug 23 2011 Fabian Groffen <fabian@cwi.nl> - 11.5.1-20110907
+- merovingian: Fixed confusing 'Success' error message for monetdb commands where an
+  invalid hostname was given
+
+* Fri Aug 19 2011 Fabian Groffen <fabian@cwi.nl> - 11.5.1-20110907
+- merovingian: The path to the mserver5 binary is no longer returned for the mserver
+  property with monetdbd get for a dbfarm which is currently served by
+  a monetdbd.  Since the called monetdbd needs not to be the same as
+  the running monetdbd, the reported mserver5 binary may be incorrect,
+  and obviously lead to confusing situations.  Refer to the running
+  monetdbd's logfile to determine the mserver5 binary location instead.
+
+* Thu Aug 18 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.5.1-20110907
+- clients: Implemented SQL_ATTR_METADATA_ID attribute.  The attribute is used
+  in SQLColumns, SQLProcedures, and SQLTablePrivileges.
+- clients: Implemented SQLTablePrivileges in the ODBC driver.
+
+* Wed Aug 17 2011 Fabian Groffen <fabian@cwi.nl> - 11.5.1-20110907
+- merovingian: Added -n option to monetdbd start command, which prevents monetdbd
+  from forking into the background.
+
+* Wed Aug 10 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.5.1-20110907
+- gdk: On Windows and Linux/Unix we can now read databases built on the other
+  O/S, as long as the hardware-related architecture (bit size, floating
+  point format, etc.) is identical.
+
+* Sat Aug  6 2011 Fabian Groffen <fabian@cwi.nl> - 11.5.1-20110907
+- merovingian: Fix incorrect (misleading) path for pidfile in pidfile error message,
+  bug #2851
+
+* Sat Aug  6 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.5.1-20110907
+- buildtools: Fixed Fedora 15 (and presumably later) configuration that uses a tmpfs
+  file system for /var/run.  This fixes bug 2850.
+
+* Fri Aug  5 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.5.1-20110907
+- clients: mclient now automatically sets the SQL `TIME ZONE' variable to its
+  (the client's) time zone.
+
+* Fri Jul 29 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.5.1-20110907
+- geom: Implemented NULL checks in the geom module.  Now when given NULL
+  as input, the module functions return NULL instead of an exception.
+  This fixes bug 2814.
+
+* Tue Jul 26 2011 Fabian Groffen <fabian@cwi.nl> - 11.5.1-20110907
+- clients: Removed perl/Cimpl, MonetDB-CLI-MapiLib and MonetDB-CLI-MapiXS
+- clients: Switched implementation of MonetDB::CLI::MapiPP to Mapi.pm, and made
+  it the default MonetDB::CLI provider.
+
+* Tue Jul 26 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.5.1-20110907
+- buildtools: The default OID size for 64-bit Windows is now 64 bits.  Databases with
+  32 bit OIDs are converted automatically.
+
+* Tue Jul 26 2011 Fabian Groffen <fabian@cwi.nl> - 11.5.1-20110907
+- clients: Made Mapi.pm usable with current versions of MonetDB again
+
+* Tue Jul 26 2011 Fabian Groffen <fabian@cwi.nl> - 11.5.1-20110907
+- monetdb5: Make crackers optional and disable by default, since it wasn't used
+  normally
+
+* Tue Jul 26 2011 Fabian Groffen <fabian@cwi.nl> - 11.5.1-20110907
+- java: Add so_timeout Driver property to specify a SO_TIMEOUT value for the
+  socket in use to the database.  Setting this property to a value in
+  milliseconds defines the timeout for read calls, which may 'unlock'
+  the driver if the server hangs, bug #2828
+
+* Tue Jul 26 2011 Fabian Groffen <fabian@cwi.nl> - 11.5.1-20110907
+- java: Added a naive implementation for PreparedStatement.setCharacterStream
+
+* Tue Jul 26 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.5.1-20110907
+- gdk: Implemented automatic conversion of a 64-bit database with 32-bit OIDs
+  to one with 64-bit OIDs.
+
+* Tue Jul 26 2011 Fabian Groffen <fabian@cwi.nl> - 11.5.1-20110907
+- merovingian: added status property to get command
+
+* Tue Jul 26 2011 Fabian Groffen <fabian@cwi.nl> - 11.5.1-20110907
+- monetdb5: Authorisation no longer takes scenarios into account.  Access for only
+  sql or mal is no longer possible.  Any credentials now mean access to
+  all scenarios that the server has available.
+
+* Tue Jul 26 2011 Fabian Groffen <fabian@cwi.nl> - 11.5.1-20110907
+- clients: When the first non-option argument of mclient does not refer to an
+  exising file, it now is taken as database name.  This allows to simply
+  do `mclient mydb`.
+
+* Tue Jul 26 2011 Fabian Groffen <fabian@cwi.nl> - 11.5.1-20110907
+- java: The obsolete Java-based implementation for PreparedStatements (formerly
+  activated using the java_prepared_statements property) has been dropped
+
 * Tue Jul 26 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.3.7-20110726
 - Rebuilt.
 
