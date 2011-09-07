@@ -1,3 +1,179 @@
+monetdb (11.5.1-20110907) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 07 Sep 2011 09:13:40 +0200
+
+monetdb (11.5.1-20110907) unstable; urgency=low
+
+  * clients: msqldump now also accepts the database name as last argument on the
+    command line (i.e. without -d).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 31 Aug 2011 09:13:39 +0200
+
+monetdb (11.5.1-20110907) unstable; urgency=low
+
+  * clients: Made error messages from the server in mclient go to stderr, instead
+    of stdout.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Fri, 26 Aug 2011 09:13:39 +0200
+
+monetdb (11.5.1-20110907) unstable; urgency=low
+
+  * gdk: Removed conversion code for databases that still used the (more than
+    two year) old format of "string heaps".
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 25 Aug 2011 09:13:39 +0200
+
+monetdb (11.5.1-20110907) unstable; urgency=low
+
+  * merovingian: Fixed confusing 'Success' error message for monetdb commands where an
+    invalid hostname was given
+
+ -- Fabian Groffen <fabian@cwi.nl>  Tue, 23 Aug 2011 09:13:39 +0200
+
+monetdb (11.5.1-20110907) unstable; urgency=low
+
+  * merovingian: The path to the mserver5 binary is no longer returned for the mserver
+    property with monetdbd get for a dbfarm which is currently served by
+    a monetdbd.  Since the called monetdbd needs not to be the same as
+    the running monetdbd, the reported mserver5 binary may be incorrect,
+    and obviously lead to confusing situations.  Refer to the running
+    monetdbd's logfile to determine the mserver5 binary location instead.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Fri, 19 Aug 2011 09:13:39 +0200
+
+monetdb (11.5.1-20110907) unstable; urgency=low
+
+  * clients: Implemented SQL_ATTR_METADATA_ID attribute.  The attribute is used
+    in SQLColumns, SQLProcedures, and SQLTablePrivileges.
+  * clients: Implemented SQLTablePrivileges in the ODBC driver.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 18 Aug 2011 09:13:39 +0200
+
+monetdb (11.5.1-20110907) unstable; urgency=low
+
+  * merovingian: Added -n option to monetdbd start command, which prevents monetdbd
+    from forking into the background.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Wed, 17 Aug 2011 09:13:39 +0200
+
+monetdb (11.5.1-20110907) unstable; urgency=low
+
+  * gdk: On Windows and Linux/Unix we can now read databases built on the other
+    O/S, as long as the hardware-related architecture (bit size, floating
+    point format, etc.) is identical.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 10 Aug 2011 09:13:39 +0200
+
+monetdb (11.5.1-20110907) unstable; urgency=low
+
+  * merovingian: Fix incorrect (misleading) path for pidfile in pidfile error message,
+    bug #2851
+
+ -- Fabian Groffen <fabian@cwi.nl>  Sat, 6 Aug 2011 09:13:39 +0200
+
+monetdb (11.5.1-20110907) unstable; urgency=low
+
+  * buildtools: Fixed Fedora 15 (and presumably later) configuration that uses a tmpfs
+    file system for /var/run.  This fixes bug 2850.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Sat, 6 Aug 2011 09:13:39 +0200
+
+monetdb (11.5.1-20110907) unstable; urgency=low
+
+  * clients: mclient now automatically sets the SQL `TIME ZONE' variable to its
+    (the client's) time zone.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 5 Aug 2011 09:13:39 +0200
+
+monetdb (11.5.1-20110907) unstable; urgency=low
+
+  * geom: Implemented NULL checks in the geom module.  Now when given NULL
+    as input, the module functions return NULL instead of an exception.
+    This fixes bug 2814.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 29 Jul 2011 09:13:39 +0200
+
+monetdb (11.5.1-20110907) unstable; urgency=low
+
+  * clients: Removed perl/Cimpl, MonetDB-CLI-MapiLib and MonetDB-CLI-MapiXS
+  * clients: Switched implementation of MonetDB::CLI::MapiPP to Mapi.pm, and made
+    it the default MonetDB::CLI provider.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Tue, 26 Jul 2011 09:13:39 +0200
+
+monetdb (11.5.1-20110907) unstable; urgency=low
+
+  * buildtools: The default OID size for 64-bit Windows is now 64 bits.  Databases with
+    32 bit OIDs are converted automatically.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 26 Jul 2011 09:13:39 +0200
+
+monetdb (11.5.1-20110907) unstable; urgency=low
+
+  * clients: Made Mapi.pm usable with current versions of MonetDB again
+
+ -- Fabian Groffen <fabian@cwi.nl>  Tue, 26 Jul 2011 09:13:39 +0200
+
+monetdb (11.5.1-20110907) unstable; urgency=low
+
+  * monetdb5: Make crackers optional and disable by default, since it wasn't used
+    normally
+
+ -- Fabian Groffen <fabian@cwi.nl>  Tue, 26 Jul 2011 09:13:39 +0200
+
+monetdb (11.5.1-20110907) unstable; urgency=low
+
+  * java: Add so_timeout Driver property to specify a SO_TIMEOUT value for the
+    socket in use to the database.  Setting this property to a value in
+    milliseconds defines the timeout for read calls, which may 'unlock'
+    the driver if the server hangs, bug #2828
+
+ -- Fabian Groffen <fabian@cwi.nl>  Tue, 26 Jul 2011 09:13:39 +0200
+
+monetdb (11.5.1-20110907) unstable; urgency=low
+
+  * java: Added a naive implementation for PreparedStatement.setCharacterStream
+
+ -- Fabian Groffen <fabian@cwi.nl>  Tue, 26 Jul 2011 09:13:39 +0200
+
+monetdb (11.5.1-20110907) unstable; urgency=low
+
+  * gdk: Implemented automatic conversion of a 64-bit database with 32-bit OIDs
+    to one with 64-bit OIDs.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 26 Jul 2011 09:13:39 +0200
+
+monetdb (11.5.1-20110907) unstable; urgency=low
+
+  * merovingian: added status property to get command
+
+ -- Fabian Groffen <fabian@cwi.nl>  Tue, 26 Jul 2011 09:13:39 +0200
+
+monetdb (11.5.1-20110907) unstable; urgency=low
+
+  * monetdb5: Authorisation no longer takes scenarios into account.  Access for only
+    sql or mal is no longer possible.  Any credentials now mean access to
+    all scenarios that the server has available.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Tue, 26 Jul 2011 09:13:39 +0200
+
+monetdb (11.5.1-20110907) unstable; urgency=low
+
+  * clients: When the first non-option argument of mclient does not refer to an
+    exising file, it now is taken as database name.  This allows to simply
+    do `mclient mydb`.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Tue, 26 Jul 2011 09:13:39 +0200
+
+monetdb (11.5.1-20110907) unstable; urgency=low
+
+  * java: The obsolete Java-based implementation for PreparedStatements (formerly
+    activated using the java_prepared_statements property) has been dropped
+
+ -- Fabian Groffen <fabian@cwi.nl>  Tue, 26 Jul 2011 09:13:39 +0200
+
 monetdb (11.3.7-20110726) unstable; urgency=low
 
   * Rebuilt.

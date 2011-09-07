@@ -1,11 +1,3 @@
 # ChangeLog file for buildtools
 # This file is updated with Maddlog
 
-* Sat Aug  6 2011 Sjoerd Mullender <sjoerd@acm.org>
-- Fixed Fedora 15 (and presumably later) configuration that uses a tmpfs
-  file system for /var/run.  This fixes bug 2850.
-
-* Wed Jul 20 2011 Sjoerd Mullender <sjoerd@acm.org>
-- The default OID size for 64-bit Windows is now 64 bits.  Databases with
-  32 bit OIDs are converted automatically.
-
