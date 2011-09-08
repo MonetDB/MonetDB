@@ -3012,10 +3012,6 @@ esac
 
 dnl  CFLAGS for our code are stricter than what autoconf can cope with.
 CFLAGS="$CFLAGS \$(X_CFLAGS)"
-case "$GCC-$CC-$gcc_ver" in
-yes-*clang*-*|yes-*-3.[[4-9]].*|yes-*-[[4-9]].*)
-	CFLAGS="$CFLAGS -Wno-declaration-after-statement";;
-esac
 
 dnl bootstrap adds a (long) list of file names inside the
 dnl AC_CONFIG_FILES command
