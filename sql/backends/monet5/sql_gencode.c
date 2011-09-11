@@ -998,6 +998,20 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					cmd = s->type == st_select ?
 						"thetaselect" : "thetauselect";
 
+				if (s->flag == cmp_filter) {
+					char *mod, *fimp;
+
+					backend_create_func(sql, s->op4.funcval->func);
+					mod  = sql_func_mod(s->op4.funcval->func);
+					fimp = sql_func_imp(s->op4.funcval->func);
+
+					q = newStmt(mb, mod, convertOperator(fimp));
+					q = pushArgument(mb, q, l);
+					q = pushArgument(mb, q, r);
+					s->nr = getDestVar(q);
+					break;
+				}
+					
 				switch (s->flag) {
 				case cmp_like:
 				case cmp_ilike:
@@ -1569,12 +1583,12 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			} else {
 				fimp = convertOperator(fimp);
 				q = newStmt(mb, mod, fimp);
-				/* first dynamic output of copy* functions */
-				if (f->res.comp_type) 
-					q = table_func_create_result(mb, q, f->res.comp_type);
-				else if (f->func->res.comp_type) 
-					q = table_func_create_result(mb, q, f->func->res.comp_type);
 			}
+			/* first dynamic output of copy* functions */
+			if (f->res.comp_type) 
+				q = table_func_create_result(mb, q, f->res.comp_type);
+			else if (f->func->res.comp_type) 
+				q = table_func_create_result(mb, q, f->func->res.comp_type);
 			if (list_length(s->op1->op4.lval))
 				tpe = tail_type(s->op1->op4.lval->h->data);
 			if (strcmp(fimp, "round")==0 && tpe &&
@@ -2156,8 +2170,8 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 
 	if (m->history == 1) {
 		sql_schema *sys = mvc_bind_schema(m, "sys");
-		sql_subfunc *kq = sql_find_func(m->sa, sys, "keepquery", NR_KEEPQUERY_ARGS);
-		sql_subfunc *cq = sql_find_func(m->sa, sys, "keepcall", NR_KEEPCALL_ARGS);
+		sql_subfunc *kq = sql_find_func(m->sa, sys, "keepquery", NR_KEEPQUERY_ARGS, F_PROC);
+		sql_subfunc *cq = sql_find_func(m->sa, sys, "keepcall", NR_KEEPCALL_ARGS, F_PROC);
 
 		assert(kq && cq);
 		backend_create_func(be, kq->func);

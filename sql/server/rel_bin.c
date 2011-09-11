@@ -435,6 +435,8 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 		sql_exp *re = e->r, *re2 = e->f;
 		prop *p;
 
+		if (e->flag == cmp_filter)
+			re2 = NULL;
 		if (e->flag == cmp_in || e->flag == cmp_notin) {
 			return handle_in_exps(sql, e->l, e->r, left, right, grp, (e->flag == cmp_in), 0);
 		}
@@ -467,7 +469,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 			}
 			if (sel1->nrcols == 0 && sel2->nrcols == 0) {
 				sql_subtype *bt = sql_bind_localtype("bit");
-				sql_subfunc *f = sql_bind_func(sql->sa, sql->session->schema, "or", bt, bt);
+				sql_subfunc *f = sql_bind_func(sql->sa, sql->session->schema, "or", bt, bt, F_FUNC);
 				assert(f);
 				return stmt_binop(sql->sa, sel1, sel2, f);
 			}
@@ -545,7 +547,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 				char *likef = (e->flag == cmp_notilike || e->flag == cmp_ilike ?
 					"ilike" : "like");
 				sql_subtype *s = sql_bind_localtype("str");
-				sql_subfunc *like = sql_bind_func3(sql->sa, sql->session->schema, likef, s, s, s);
+				sql_subfunc *like = sql_bind_func3(sql->sa, sql->session->schema, likef, s, s, s, F_FUNC);
 				list *ops = list_new(sql->sa);
 
 				assert(s && like);
@@ -556,8 +558,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 				lstmt = stmt_Nop(sql->sa, stmt_list(sql->sa, ops), like);
 				if (e->flag == cmp_notlike || e->flag == cmp_notilike) {
 					sql_subtype *bt = sql_bind_localtype("bit");
-					sql_subfunc *not = sql_bind_func(sql->sa, sql->session->schema,
-							"not", bt, NULL);
+					sql_subfunc *not = sql_bind_func(sql->sa, sql->session->schema, "not", bt, NULL, F_FUNC);
 					lstmt = stmt_unop(sql->sa, lstmt, not);
 				}
 				return lstmt;
@@ -567,7 +568,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
                                 char *like = (e->flag == cmp_like || e->flag == cmp_notlike)?"like":"ilike";
                                 int anti = (e->flag == cmp_notlike || e->flag == cmp_notilike);
                                 sql_subtype *s = sql_bind_localtype("str");
-                                sql_subfunc *f = sql_bind_func3(sql->sa, sql->session->schema, like, s, s, s);
+                                sql_subfunc *f = sql_bind_func3(sql->sa, sql->session->schema, like, s, s, s, F_FUNC);
 
                                 stmt *j = stmt_joinN(sql->sa, stmt_list(sql->sa, append(list_new(sql->sa),l)), stmt_list(sql->sa, append(append(list_new(sql->sa),r),r2)), f);
                                 if (is_anti(e) || anti)
@@ -576,6 +577,9 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
                         }
 			return stmt_likeselect(sql->sa, l, r, r2, (comp_type)e->flag);
 		}
+		/* TODO general predicate, select and join */
+		if (e->flag == cmp_filter) 
+			return stmt_genselect(sql->sa, l, r, e->f);
 		if (left && right && !is_select &&
 		   ((l->nrcols && (r->nrcols || (r2 && r2->nrcols))) || 
 		     re->card > CARD_ATOM || 
@@ -599,12 +603,12 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 					sql_subtype *bt = sql_bind_localtype("bit");
 					sql_subfunc *lf = sql_bind_func(sql->sa, sql->session->schema,
 							compare_func(range2lcompare(e->flag)),
-							tail_type(l), tail_type(r));
+							tail_type(l), tail_type(r), F_FUNC);
 					sql_subfunc *rf = sql_bind_func(sql->sa, sql->session->schema,
 							compare_func(range2rcompare(e->flag)),
-							tail_type(l), tail_type(r));
+							tail_type(l), tail_type(r), F_FUNC);
 					sql_subfunc *a = sql_bind_func(sql->sa, sql->session->schema,
-							"and", bt, bt);
+							"and", bt, bt, F_FUNC);
 					assert(lf && rf && a);
 					s = stmt_binop(sql->sa, 
 						stmt_binop(sql->sa, l, r, lf), 
@@ -621,7 +625,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 				if (l->nrcols == 0 && r->nrcols == 0) {
 					sql_subfunc *f = sql_bind_func(sql->sa, sql->session->schema,
 							compare_func((comp_type)e->flag),
-							tail_type(l), tail_type(r));
+							tail_type(l), tail_type(r), F_FUNC);
 					assert(f);
 					s = stmt_binop(sql->sa, l, r, f);
 				} else {
@@ -1009,7 +1013,7 @@ rel2bin_semijoin( mvc *sql, sql_rel *rel, list *refs)
 				stmt *le = stmt_join(sql->sa, l, ld, cmp_equal);
 				stmt *re = stmt_join(sql->sa, r, rd, cmp_equal);
 
-				sql_subfunc *f = sql_bind_func(sql->sa, sql->session->schema, compare_func((comp_type)s->flag), tail_type(le), tail_type(le));
+				sql_subfunc *f = sql_bind_func(sql->sa, sql->session->schema, compare_func((comp_type)s->flag), tail_type(le), tail_type(le), F_FUNC);
 				stmt * cmp;
 
 				assert(f);
@@ -1224,7 +1228,7 @@ rel2bin_except( mvc *sql, sql_rel *rel, list *refs)
 		ls = stmt_join(sql->sa, lm,ls,cmp_equal);
 		rs = stmt_join(sql->sa, stmt_mark(sql->sa, s,0),rs,cmp_equal);
 
- 		sub = sql_bind_func(sql->sa, sql->session->schema, "sql_sub", tail_type(ls), tail_type(rs));
+ 		sub = sql_bind_func(sql->sa, sql->session->schema, "sql_sub", tail_type(ls), tail_type(rs), F_FUNC);
 		/*s = sql_binop_(sql, NULL, "sql_sub", ls, rs);*/
 		s = stmt_binop(sql->sa, ls, rs, sub);
 		s = stmt_select(sql->sa, s, stmt_atom_wrd(sql->sa, 0), cmp_gt);
@@ -1348,7 +1352,7 @@ rel2bin_inter( mvc *sql, sql_rel *rel, list *refs)
 		ls = stmt_join(sql->sa, lm,ls,cmp_equal);
 		rs = stmt_join(sql->sa, stmt_mark(sql->sa, s,0),rs,cmp_equal);
 
- 		min = sql_bind_func(sql->sa, sql->session->schema, "sql_min", tail_type(ls), tail_type(rs));
+ 		min = sql_bind_func(sql->sa, sql->session->schema, "sql_min", tail_type(ls), tail_type(rs), F_FUNC);
 		/*s = sql_binop_(sql, NULL, "sql_min", ls, rs);*/
 		s = stmt_binop(sql->sa, ls, rs, min);
 		/* A ids */
@@ -2203,7 +2207,7 @@ sql_insert_check_null(mvc *sql, sql_table *t, list *inserts, list *l)
 				s = stmt_uselect(sql->sa, i->op1, s, cmp_equal);
 				s = stmt_aggr(sql->sa, s, NULL, cnt, 1);
 			} else {
-				sql_subfunc *isnil = sql_bind_func(sql->sa, sql->session->schema, "isnull", &c->type, NULL);
+				sql_subfunc *isnil = sql_bind_func(sql->sa, sql->session->schema, "isnull", &c->type, NULL, F_FUNC);
 
 				s = stmt_unop(sql->sa, i->op1, isnil);
 			}
@@ -3023,7 +3027,7 @@ sql_update_check_null(mvc *sql, sql_table *t, stmt **updates, list *l)
 				s = stmt_uselect(sql->sa, updates[c->colnr]->op1, s, cmp_equal);
 				s = stmt_aggr(sql->sa, s, NULL, cnt, 1);
 			} else {
-				sql_subfunc *isnil = sql_bind_func(sql->sa, sql->session->schema, "isnull", &c->type, NULL);
+				sql_subfunc *isnil = sql_bind_func(sql->sa, sql->session->schema, "isnull", &c->type, NULL, F_FUNC);
 
 				s = stmt_unop(sql->sa, updates[c->colnr]->op1, isnil);
 			}

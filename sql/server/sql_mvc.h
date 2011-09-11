@@ -155,7 +155,7 @@ extern int mvc_release(mvc *c, char *name);
 extern sql_type *mvc_bind_type(mvc *sql, char *name);
 extern sql_type *schema_bind_type(mvc *sql, sql_schema * s, char *name);
 extern sql_func *mvc_bind_func(mvc *sql, char *name);
-extern list *schema_bind_func(mvc *sql, sql_schema * s, char *name, int is_func);
+extern list *schema_bind_func(mvc *sql, sql_schema * s, char *name, int type);
 
 extern sql_schema *mvc_bind_schema(mvc *c, char *sname);
 extern sql_table *mvc_bind_table(mvc *c, sql_schema *s, char *tname);
@@ -167,7 +167,7 @@ extern sql_key *mvc_bind_ukey(sql_table *t, list *cols);
 extern sql_trigger *mvc_bind_trigger(mvc *c, sql_schema *s, char *tname);
 
 extern sql_type *mvc_create_type(mvc *sql, sql_schema *s, char *sqlname, int digits, int scale, int radix, char *impl);
-extern sql_func *mvc_create_func(mvc *sql, sql_schema *s, char *name, list *args, sql_subtype *res, bit aggr, char *mod, char *impl, char *query, int is_func);
+extern sql_func *mvc_create_func(mvc *sql, sql_schema *s, char *name, list *args, sql_subtype *res, int type, char *mod, char *impl, char *query);
 extern void mvc_drop_func(mvc *c, sql_schema *s, sql_func * func, int drop_action);
 extern void mvc_drop_all_func(mvc *c, sql_schema *s, list *list_func, int drop_action);
 

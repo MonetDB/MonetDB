@@ -296,7 +296,7 @@ find_sql_func(sql_schema * s, char *tname)
 }
 
 list *
-find_all_sql_func(sql_schema * s, char *name, int is_func)
+find_all_sql_func(sql_schema * s, char *name, int type)
 {
 	list *l = s->funcs.set, *res = NULL;
 	node *n = NULL;
@@ -307,7 +307,7 @@ find_all_sql_func(sql_schema * s, char *name, int is_func)
 			sql_func *f = n->data;
 
 			/* check if names match */
-			if (f->is_func == is_func && name[0] == b->name[0] && strcmp(name, b->name) == 0) {
+			if (f->type == type && name[0] == b->name[0] && strcmp(name, b->name) == 0) {
 				if (!res)
 					res = list_create((fdestroy)NULL);
 				list_append(res, n->data);

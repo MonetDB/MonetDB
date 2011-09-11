@@ -755,13 +755,12 @@ load_func(sql_trans *tr, sql_schema *s, oid rid)
 	t->mod = table_funcs.column_find_value(tr, find_sql_column(funcs, "mod"), rid);
 	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "sql"), rid);
 	t->sql = *(bit *)v;			_DELETE(v);
-	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "aggr"), rid);
-	t->aggr = *(bit *)v;			_DELETE(v);
+	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "type"), rid);
+	t->type = *(int *)v;			_DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "side_effect"), rid);
 	t->side_effect = *(bit *)v;		_DELETE(v);
 	t->res.scale = t->res.digits = 0;
 	t->res.type = NULL;
-	t->is_func = 0;
 	t->s = s;
 	if (t->sql) {
 		t->query = t->imp;
@@ -783,7 +782,6 @@ load_func(sql_trans *tr, sql_schema *s, oid rid)
 			first = 0;
 			if (strcmp(a->name, "result") == 0) {
 				t -> res = a->type;
-				t->is_func = 1;
 				arg_destroy(a);
 			} else {
 				list_append(t->ops, a);
@@ -1365,8 +1363,8 @@ store_init(int debug, store_type store, char *logdir, char *dbname, backend_stac
 	bootstrap_create_column(tr, t, "mod", "varchar", 8196);
 	/* sql or database internal */
 	bootstrap_create_column(tr, t, "sql", "boolean", 1);
-	/* aggr or func */
-	bootstrap_create_column(tr, t, "aggr", "boolean", 1);
+	/* func, proc, aggr or filter */
+	bootstrap_create_column(tr, t, "type", "int", 32);
 	bootstrap_create_column(tr, t, "side_effect", "boolean", 1);
 	bootstrap_create_column(tr, t, "schema_id", "int", 32);
 
@@ -2054,9 +2052,9 @@ func_dup(sql_trans *tr, int flag, sql_func *of, sql_schema * s)
 
 	f->imp = (of->imp)?_strdup(of->imp):NULL;
 	f->mod = (of->mod)?_strdup(of->mod):NULL;
+	f->type = of->type;
 	f->query = (of->query)?_strdup(of->query):NULL;
 	f->sql = of->sql;
-	f->aggr = of->aggr;
 	f->side_effect = of->side_effect;
 	f->ops = list_create(of->ops->destroy);
 	for(n=of->ops->h; n; n = n->next) 
@@ -2071,7 +2069,6 @@ func_dup(sql_trans *tr, int flag, sql_func *of, sql_schema * s)
 	}
 
 	f->s = s;
-	f->is_func = of->is_func;
 	return f;
 }
 
@@ -3496,7 +3493,7 @@ sys_drop_func(sql_trans *tr, sql_func *func, int drop_action)
 	sql_table *sys_tab_func = find_sql_table(syss, "functions");
 	sql_column *sys_func_col = find_sql_column(sys_tab_func, "id");
 	oid rid_func = table_funcs.column_find_row(tr, sys_func_col, &func->base.id, NULL);
-	if (func->aggr) {
+	if (IS_AGGR(func)) {
 		sql_table *sys_tab_args = find_sql_table(syss, "args");
 		sql_column *sys_args_col = find_sql_column(sys_tab_args, "func_id");
 		oid rid_args = table_funcs.column_find_row(tr, sys_args_col, &func->base.id, NULL);
@@ -3512,7 +3509,7 @@ sys_drop_func(sql_trans *tr, sql_func *func, int drop_action)
 	tr->schema_updates ++;
 
 	if (drop_action)
-		sql_trans_drop_all_dependencies(tr, func->s, func->base.id, func->is_func ? FUNC_DEPENDENCY : PROC_DEPENDENCY);
+		sql_trans_drop_all_dependencies(tr, func->s, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY);
 }
 
 static void
@@ -3598,7 +3595,7 @@ sql_trans_create_type(sql_trans *tr, sql_schema * s, char *sqlname, int digits, 
 }
 
 sql_func *
-sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, sql_subtype *res, bit aggr, char *mod, char *impl, char *query, int is_func)
+sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, sql_subtype *res, int type, char *mod, char *impl, char *query)
 {
 	sql_func *t = ZNEW(sql_func);
 	sql_table *sysfunc = find_sql_table(find_sql_schema(tr, "sys"), "functions");
@@ -3611,20 +3608,19 @@ sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, sql
 	assert(impl && mod);
 	t->imp = (impl)?_strdup(impl):NULL;
 	t->mod = (mod)?_strdup(mod):NULL; 
+	t->type = type;
 	sql = t->sql = (query)?1:0;
-	t->aggr = aggr;
 	se = t->side_effect = res?FALSE:TRUE;
 	t->ops = list_dup(args, (fdup)&arg_dup);
 	t->res.scale = t->res.digits = 0;
 	t->res.type = NULL;
-	t->is_func = is_func;
 	t->query = (query)?_strdup(query):NULL;
 	if (res)
 		t->res = *res;
 	t->s = s;
 
 	cs_add(&s->funcs, t, TR_NEW);
-	table_funcs.table_insert(tr, sysfunc, &t->base.id, t->base.name, query?query:t->imp, t->mod, &sql, &aggr, &se, &s->base.id);
+	table_funcs.table_insert(tr, sysfunc, &t->base.id, t->base.name, query?query:t->imp, t->mod, &sql, &type, &se, &s->base.id);
 	if (t->res.type) {
 		char *name = "result";
 		sqlid id = next_oid();
@@ -3638,14 +3634,6 @@ sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, sql
 
 		table_funcs.table_insert(tr, sysarg, &id, &t->base.id, a->name, a->type.type->sqlname, &a->type.digits, &a->type.scale, &number);
 	}
-/*
-	if (!aggr && list_length(args) > 0) {
-		node *n = t->ops->h;
-		sql_arg *a = n->data;
-		t->res = a->type;
-		list_remove_node(t->ops, n);
-	}
-*/
 
 	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
 	tr->schema_updates ++;

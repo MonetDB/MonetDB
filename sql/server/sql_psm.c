@@ -491,7 +491,7 @@ create_type_list(dlist *params, int param)
 }
 
 static stmt *
-create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name, dlist *body, int is_func, int is_aggr)
+create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name, dlist *body, int type)
 {
 	char *fname = qname_table(qname);
 	char *sname = qname_schema(qname);
@@ -504,19 +504,23 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 	int instantiate = (sql->emode == m_instantiate);
 	int deps = (sql->emode == m_deps);
 	int create = (!instantiate && !deps);
+
+	char is_aggr = (type == F_AGGR);
+	char is_func = (type != F_PROC);
 	char *F = is_aggr?"AGGREGATE":(is_func?"FUNCTION":"PROCEDURE");
+	char *KF = type==F_FILT?"FILTER ": type==F_UNION?"UNION ": "";
 
 	if (STORE_READONLY(active_store_type) && create) 
 		return sql_error(sql, 06, "schema statements cannot be executed on a readonly database.");
 			
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, "CREATE %s: no such schema '%s'", F, sname);
+		return sql_error(sql, 02, "CREATE %s%s: no such schema '%s'", KF, F, sname);
 	if (s == NULL)
 		s = cur_schema(sql);
 
 	type_list = create_type_list(params, 1);
 	
-	if ((sf = sql_bind_func_(sql->sa, s, fname, type_list)) != NULL && create) {
+	if ((sf = sql_bind_func_(sql->sa, s, fname, type_list, type)) != NULL && create) {
 		if (params) {
 			char *arg_list = NULL;
 			node *n;
@@ -533,19 +537,19 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 			}
 			list_destroy(type_list);
 				
-			(void)sql_error(sql, 02, "CREATE %s: name '%s' (%s) already in use", F, fname, arg_list);
+			(void)sql_error(sql, 02, "CREATE %s%s: name '%s' (%s) already in use", KF, F, fname, arg_list);
 			_DELETE(arg_list);
 			return NULL;
 		} else {
-			return sql_error(sql, 02, "CREATE %s: name '%s' already in use", F, fname);
+			return sql_error(sql, 02, "CREATE %s%s: name '%s' already in use", KF, F, fname);
 		}
 	} else {
 		if (type_list)
 			list_destroy(type_list);
 	
 		if (create && !schema_privs(sql->role_id, s)) {
-			return sql_error(sql, 02, "CREATE %s: insufficient privileges "
-					"for user '%s' in schema '%s'", F,
+			return sql_error(sql, 02, "CREATE %s%s: insufficient privileges "
+					"for user '%s' in schema '%s'", KF, F,
 					stack_get_string(sql, "current_user"), s->base.name);
 		} else {
 			char *q = QUERY(sql->scanner);
@@ -581,11 +585,11 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 				/* check if we have a return statement */
 				if (is_func && restype && !has_return(b)) {
 					return sql_error(sql, 01,
-							"CREATE %s: missing return statement", F);
+							"CREATE %s%s: missing return statement", KF, F);
 				}
 				if (!is_func && !restype && has_return(b)) {
-					return sql_error(sql, 01, "CREATE %s: procedures "
-							"cannot have return statements", F);
+					return sql_error(sql, 01, "CREATE %s%s: procedures "
+							"cannot have return statements", KF, F);
 				}
 	
 				/* in execute mode we instantiate the function */
@@ -593,18 +597,18 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 				if (instantiate) {
 					return b;
 				} else if (create) {
-					f = mvc_create_func(sql, s, fname, l, restype, is_aggr, "user", q, q, is_func);
+					f = mvc_create_func(sql, s, fname, l, restype, type, "user", q, q);
 					if (b) {
 						id_col_l = stmt_list_dependencies(sql->sa, b, COLUMN_DEPENDENCY);
 						id_func_l = stmt_list_dependencies(sql->sa, b, FUNC_DEPENDENCY);
 						view_id_l = stmt_list_dependencies(sql->sa, b, VIEW_DEPENDENCY);
 						
 						mvc_create_dependencies(sql, id_col_l, f->base.id,
-								f->is_func ? FUNC_DEPENDENCY : PROC_DEPENDENCY);
+								!IS_PROC(f) ? FUNC_DEPENDENCY : PROC_DEPENDENCY);
 						mvc_create_dependencies(sql, id_func_l, f->base.id,
-								f->is_func ? FUNC_DEPENDENCY : PROC_DEPENDENCY);
+								!IS_PROC(f) ? FUNC_DEPENDENCY : PROC_DEPENDENCY);
 						mvc_create_dependencies(sql, view_id_l, f->base.id,
-								f->is_func ? FUNC_DEPENDENCY : PROC_DEPENDENCY);
+								!IS_PROC(f) ? FUNC_DEPENDENCY : PROC_DEPENDENCY);
 	
 					}
 				}
@@ -614,11 +618,11 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 
 				sql->params = NULL;
 				if (create) {
-					sql_func *f = mvc_create_func(sql, s, fname, l, restype, is_aggr, fmod, fnme, q, is_func);
+					sql_func *f = mvc_create_func(sql, s, fname, l, restype, type, fmod, fnme, q);
 					if (!backend_resolve_function(sql, f)) 
-						return sql_error(sql, 01, "CREATE %s: external name %s.%s not bound", F, fmod, fnme);
+						return sql_error(sql, 01, "CREATE %s%s: external name %s.%s not bound", KF, F, fmod, fnme);
 				} else if (!sf) {
-					return sql_error(sql, 01, "CREATE %s: external name %s.%s not bound (%s,%s)", F, fmod, fnme, s->base.name, fname );
+					return sql_error(sql, 01, "CREATE %s%s: external name %s.%s not bound (%s,%s)", KF, F, fmod, fnme, s->base.name, fname );
 				} else {
 					sql_func *f = sf->func;
 					f->mod = _strdup(fmod);
@@ -634,7 +638,7 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 }
 
 static stmt* 
-drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int is_func)
+drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int type)
 {
 	char *name = qname_table(qname);
 	char *sname = qname_schema(qname);
@@ -643,29 +647,32 @@ drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int is_func)
 	sql_subfunc *sub_func = NULL;
 	sql_func *func = NULL;
 
-	char *F = is_func?"FUNCTION":"PROCEDURE";
-	char *f = is_func?"function":"procedure";
-
+	char is_aggr = (type == F_AGGR);
+	char is_func = (type != F_PROC);
+	char *F = is_aggr?"AGGREGATE":(is_func?"FUNCTION":"PROCEDURE");
+	char *f = is_aggr?"aggregate":(is_func?"function":"procedure");
+	char *KF = type==F_FILT?"FILTER ": type==F_UNION?"UNION ": "";
+	char *kf = type==F_FILT?"filter ": type==F_UNION?"union ": "";
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, "DROP %s: no such schema '%s'", F, sname);
+		return sql_error(sql, 02, "DROP %s%s: no such schema '%s'", KF, F, sname);
 
 	if (s == NULL) 
 		s =  cur_schema(sql);
 	
 	if (typelist) {	
 		type_list = create_type_list(typelist, 0);
-		sub_func = sql_bind_func_(sql->sa, s,name, type_list);
+		sub_func = sql_bind_func_(sql->sa, s, name, type_list, type);
 		if (!sub_func && !sname) {
 			s = tmp_schema(sql);
-			sub_func = sql_bind_func_(sql->sa, s, name, type_list);
+			sub_func = sql_bind_func_(sql->sa, s, name, type_list, type);
 		}
-		if ( sub_func && sub_func->func->is_func == is_func)
+		if ( sub_func && sub_func->func->type == type)
 			func = sub_func->func;
 	} else {
-		list_func = schema_bind_func(sql,s,name, is_func);
+		list_func = schema_bind_func(sql,s,name, type);
 		if (list_func && list_func->cnt > 1)
-			return sql_error(sql, 02, "DROP %s: there are more than one %s called '%s', please use the full signature", F, f,name);
+			return sql_error(sql, 02, "DROP %s%s: there are more than one %s%s called '%s', please use the full signature", KF, F, kf, f,name);
 		if (list_func && list_func->cnt == 1)
 			func = (sql_func*) list_func->h->data;
 	}
@@ -688,27 +695,27 @@ drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int is_func)
 				}
 				list_destroy(type_list);
 				
-				return sql_error(sql, 02, "DROP %s: no such %s '%s' (%s)", F, f, name, arg_list);
+				return sql_error(sql, 02, "DROP %s%s: no such %s%s '%s' (%s)", KF, F, kf, f, name, arg_list);
 			}
 			list_destroy(type_list);
-			return sql_error(sql, 02, "DROP %s: no such %s '%s' ()", F, f, name);
+			return sql_error(sql, 02, "DROP %s%s: no such %s%s '%s' ()", KF, F, kf, f, name);
 
 		} else {
-			return sql_error(sql, 02, "DROP %s: no such %s '%s'", F, f, name);
+			return sql_error(sql, 02, "DROP %s%s: no such %s%s '%s'", KF, F, kf, f, name);
 		}
 	} else if ((is_func && !func->res.type) || 
 		   (!is_func && func->res.type)) {
-		return sql_error(sql, 02, "DROP %s: cannot drop %s '%s'", F, is_func?"procedure":"function", name);
+		return sql_error(sql, 02, "DROP %s%s: cannot drop %s '%s'", KF, F, is_func?"procedure":"function", name);
 	}
 	
 	list_destroy(type_list);
 
 	if (!schema_privs(sql->role_id, s)) {
-		return sql_error(sql, 02, "DROP %s: access denied for %s to schema ;'%s'", F, stack_get_string(sql, "current_user"), s->base.name);
+		return sql_error(sql, 02, "DROP %s%s: access denied for %s to schema ;'%s'", KF, F, stack_get_string(sql, "current_user"), s->base.name);
 	}
 	
-	if (!drop_action && mvc_check_dependency(sql, func->base.id, func->is_func ? FUNC_DEPENDENCY : PROC_DEPENDENCY, NULL))
-		return sql_error(sql, 02, "DROP %s: there are database objects dependent on %s %s;", F, f, func->base.name);
+	if (!drop_action && mvc_check_dependency(sql, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, NULL))
+		return sql_error(sql, 02, "DROP %s%s: there are database objects dependent on %s%s %s;", KF, F, kf, f, func->base.name);
 	
 	if (is_func && func->res.comp_type) 
 		mvc_drop_table(sql, func->res.comp_type->s, func->res.comp_type, 0);
@@ -718,7 +725,7 @@ drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int is_func)
 }
 
 static stmt* 
-drop_all_func(mvc *sql, dlist *qname, int drop_action, int is_func)
+drop_all_func(mvc *sql, dlist *qname, int drop_action, int type)
 {
 	char *name = qname_table(qname);
 	char *sname = qname_schema(qname);
@@ -727,31 +734,35 @@ drop_all_func(mvc *sql, dlist *qname, int drop_action, int is_func)
 	sql_func *func = NULL;
 	node *n = NULL;
 
-	char *F = is_func?"FUNCTION":"PROCEDURE";
-	char *f = is_func?"function":"procedure";
+	char is_aggr = (type == F_AGGR);
+	char is_func = (type != F_PROC);
+	char *F = is_aggr?"AGGREGATE":(is_func?"FUNCTION":"PROCEDURE");
+	char *f = is_aggr?"aggregate":(is_func?"function":"procedure");
+	char *KF = type==F_FILT?"FILTER ": type==F_UNION?"UNION ": "";
+	char *kf = type==F_FILT?"filter ": type==F_UNION?"union ": "";
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, "DROP %s: no such schema '%s'", F, sname);
+		return sql_error(sql, 02, "DROP %s%s: no such schema '%s'", KF, F, sname);
 
 	if (s == NULL) 
 		s =  cur_schema(sql);
 	
-	list_func = schema_bind_func(sql,s,name, is_func);
+	list_func = schema_bind_func(sql,s,name, type);
 	
 	if (!list_func) { 
-			return sql_error(sql, 02, "DROP ALL %s: no such %s '%s'", F, f, name);
+			return sql_error(sql, 02, "DROP ALL %s%s: no such %s%s '%s'", KF, F, kf, f, name);
 	} 
 	
 	if (!schema_privs(sql->role_id, s)) {
-		return sql_error(sql, 02, "DROP %s: access denied for %s to schema ;'%s'", F, stack_get_string(sql, "current_user"), s->base.name);
+		return sql_error(sql, 02, "DROP %s%s: access denied for %s to schema ;'%s'", KF, F, stack_get_string(sql, "current_user"), s->base.name);
 	}
 	
 	
 	for( n = list_func->h ; n; n = n->next) {
 		func = (sql_func *) n->data;
 
-		if (!drop_action && mvc_check_dependency(sql, func->base.id, func->is_func ? FUNC_DEPENDENCY : PROC_DEPENDENCY, list_func))
-			return sql_error(sql, 02, "DROP %s: there are database objects dependent on %s %s;", F, f, func->base.name);
+		if (!drop_action && mvc_check_dependency(sql, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, list_func))
+			return sql_error(sql, 02, "DROP %s%s: there are database objects dependent on %s%s %s;", KF, F, kf, f, func->base.name);
 	}
 		
 	mvc_drop_all_func(sql, s, list_func, drop_action);
@@ -768,22 +779,18 @@ psm(mvc *sql, symbol *s)
 
 	switch (s->token) {
 
-	case SQL_CREATE_PROC:
 	case SQL_CREATE_FUNC:
-	case SQL_CREATE_AGGR:
 	{
 		dlist *l = s->data.lval;
-		int is_func = (s->token == SQL_CREATE_FUNC);
-		int is_aggr = (s->token == SQL_CREATE_AGGR);
+		int type = l->h->next->next->next->next->next->data.i_val;
 
-		ret = create_func(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.lval, is_func, is_aggr);
+		ret = create_func(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.lval, type);
 		sql->type = Q_SCHEMA;
 	} 	break;
 	case SQL_DROP_FUNC:
-	case SQL_DROP_PROC:
 	{
 		dlist *l = s->data.lval;
-		int is_func = (s->token == SQL_DROP_FUNC);
+		int type = l->h->next->next->next->next->data.i_val;
 
 		if (STORE_READONLY(active_store_type)) 
 			return sql_error(sql, 06, "schema statements cannot be executed on a readonly database.");
@@ -791,9 +798,9 @@ psm(mvc *sql, symbol *s)
 		assert(l->h->next->type == type_int);
 		assert(l->h->next->next->next->type == type_int);
 		if (l->h->next->data.i_val) /*?l_val?*/
-			ret = drop_all_func(sql, l->h->data.lval, l->h->next->next->next->data.i_val, is_func);
+			ret = drop_all_func(sql, l->h->data.lval, l->h->next->next->next->data.i_val, type);
 		else
-			ret = drop_func(sql, l->h->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.i_val, is_func);
+			ret = drop_func(sql, l->h->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.i_val, type);
 
 		sql->type = Q_SCHEMA;
 	}	break;

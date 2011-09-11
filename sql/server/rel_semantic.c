@@ -208,10 +208,7 @@ rel_semantic(mvc *sql, symbol *s)
 	case SQL_DISCONNECT:
 
 	case SQL_CREATE_FUNC:
-	case SQL_CREATE_PROC:
-	case SQL_CREATE_AGGR:
 	case SQL_DROP_FUNC:
-	case SQL_DROP_PROC:
 	case SQL_DECLARE:
 	case SQL_CALL:
 	case SQL_SET:

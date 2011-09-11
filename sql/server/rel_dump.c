@@ -165,6 +165,13 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, int comma, int alias)
 			exps_print(sql, fout, e->l, depth, alias, 1);
 			cmp_print(sql, fout, e->flag );
 			exps_print(sql, fout, e->r, depth, alias, 1);
+		} else if (e->flag == cmp_filter) {
+			sql_subfunc *f = e->f;
+
+			exp_print(sql, fout, e->l, depth+1, 0, 0);
+			mnstr_printf(fout, " FILTER %s ", f->func->base.name);
+			/* TODO later it maybe a list */
+			exp_print(sql, fout, e->r, depth+1, 0, 0);
 		} else if (e->f) {
 			exp_print(sql, fout, e->r, depth+1, 0, 0);
 			if (is_anti(e))
@@ -812,7 +819,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, char *r, int *pos, int grp)
 			list *ops = list_new(sql->sa);
 			for( n = exps->h; n; n = n->next)
 				append(ops, exp_subtype(n->data));
-			f = sql_bind_func_(sql->sa, s, cname, ops);
+			f = sql_bind_func_(sql->sa, s, cname, ops, F_FUNC);
 			exp = exp_op( sql->sa, exps, f);
 		}
 	}

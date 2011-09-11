@@ -561,9 +561,9 @@ mvc_bind_func(mvc *sql, char *name)
 }
 
 list *
-schema_bind_func(mvc *sql, sql_schema * s, char *name, int is_func)
+schema_bind_func(mvc *sql, sql_schema * s, char *name, int type)
 {
-	list *func_list = find_all_sql_func(s, name, is_func);
+	list *func_list = find_all_sql_func(s, name, type);
 
 	(void) sql;
 	if (!func_list)
@@ -773,14 +773,14 @@ mvc_create_type(mvc *sql, sql_schema * s, char *name, int digits, int scale, int
 }
 
 sql_func *
-mvc_create_func(mvc *sql, sql_schema * s, char *name, list *args, sql_subtype *res, bit aggr, char *mod, char *impl, char *query, int is_func)
+mvc_create_func(mvc *sql, sql_schema * s, char *name, list *args, sql_subtype *res, int type, char *mod, char *impl, char *query)
 {
 	sql_func *f = NULL;
 
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_create_func %s\n", name);
 
-	f = sql_trans_create_func(sql->session->tr, s, name, args, res, aggr, mod, impl, query, is_func);
+	f = sql_trans_create_func(sql->session->tr, s, name, args, res, type, mod, impl, query);
 	return f;
 }
 

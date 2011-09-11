@@ -412,9 +412,9 @@ fix_scale(mvc *sql, sql_subtype *ct, stmt *s, int both, int always)
 			if (scale_diff < 0) {
 				if (!both)
 					return s;
-				c = sql_bind_func(sql->sa, sql->session->schema, "scale_down", st, it);
+				c = sql_bind_func(sql->sa, sql->session->schema, "scale_down", st, it, F_FUNC);
 			} else {
-				c = sql_bind_func(sql->sa, sql->session->schema, "scale_up", st, it);
+				c = sql_bind_func(sql->sa, sql->session->schema, "scale_up", st, it, F_FUNC);
 			}
 			if (c) {
 				lng val = scale2value(scale_diff);
@@ -427,7 +427,7 @@ fix_scale(mvc *sql, sql_subtype *ct, stmt *s, int both, int always)
 	} else if (always && st->scale) {	/* scale down */
 		int scale_diff = -(int) st->scale;
 		sql_subtype *it = sql_bind_localtype(st->type->base.name);
-		sql_subfunc *c = sql_bind_func(sql->sa, sql->session->schema, "scale_down", st, it);
+		sql_subfunc *c = sql_bind_func(sql->sa, sql->session->schema, "scale_down", st, it, F_FUNC);
 
 		if (c) {
 			lng val = scale2value(scale_diff);
@@ -906,10 +906,7 @@ semantic(mvc *sql, symbol *s)
 		res = schemas(sql, s);
 		break;
 	case SQL_CREATE_FUNC:
-	case SQL_CREATE_PROC:
-	case SQL_CREATE_AGGR:
 	case SQL_DROP_FUNC:
-	case SQL_DROP_PROC:
 	case SQL_DECLARE:
 	case SQL_CALL:
 	case SQL_SET:

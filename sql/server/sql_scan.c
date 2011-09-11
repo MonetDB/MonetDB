@@ -26,6 +26,7 @@
 #include "sql_parser.tab.h"
 #include "sql_statement.h"
 #include "sql_mvc.h"
+#include "sql_semantic.h"
 #include "sql_parser.h"		/* for sql_error() */
 
 #include <stream.h>
@@ -270,6 +271,7 @@ scanner_init_keywords(void)
 	keywords_insert("TYPE", TYPE);
 	keywords_insert("PROCEDURE", PROCEDURE);
 	keywords_insert("FUNCTION", FUNCTION);
+	keywords_insert("FILTER", FILTER);
 	keywords_insert("AGGREGATE", AGGREGATE);
 	keywords_insert("RETURNS", RETURNS);
 	keywords_insert("EXTERNAL", EXTERNAL);
@@ -605,8 +607,9 @@ scanner_string(mvc *c, int quote)
 }
 
 static int 
-keyword_or_ident(struct scanner * lc, int cur)
+keyword_or_ident(mvc * c, int cur)
 {
+	struct scanner *lc = &c->scanner;
 	keyword *k = NULL;
 	int s;
 
@@ -621,6 +624,9 @@ keyword_or_ident(struct scanner * lc, int cur)
 			k = find_keyword_bs(lc,s);
 			if (k) 
 				lc->yyval = k->token;
+			/* find keyword in SELECT/JOIN/UNION FUNCTIONS */
+			else if (sql_find_func(c->sa, cur_schema(c), lc->rs->buf+lc->rs->pos+s, -1, F_FILT)) 
+				lc->yyval = FILTER_FUNC;
 			return lc->yyval;
 		}
 	}
@@ -628,6 +634,9 @@ keyword_or_ident(struct scanner * lc, int cur)
 	k = find_keyword_bs(lc,s);
 	if (k) 
 		lc->yyval = k->token;
+	/* find keyword in SELECT/JOIN/UNION FUNCTIONS */
+	else if (sql_find_func(c->sa, cur_schema(c), lc->rs->buf+lc->rs->pos+s, -1, F_FILT)) 
+		lc->yyval = FILTER_FUNC;
 	return lc->yyval;
 }
 
@@ -859,7 +868,7 @@ tokenize(mvc * c, int cur)
 		} else if (isdigit(cur)) {
 			return number(c, cur);
 		} else if (isalpha(cur) || cur == '_') {
-			return keyword_or_ident(lc, cur);
+			return keyword_or_ident(c, cur);
 		} else if (ispunct(cur)) {
 			return scanner_symbol(c, cur);
 		}
@@ -942,7 +951,7 @@ sql_get_next_token(YYSTYPE *yylval, void *parm) {
 	if (token == KW_TYPE)
 		token = aTYPE;
 
-	if (token == IDENT || token == COMPARISON || token == AGGR || token == RANK || token == aTYPE || token == ALIAS)
+	if (token == IDENT || token == COMPARISON || token == FILTER_FUNC || token == AGGR || token == RANK || token == aTYPE || token == ALIAS)
 		yylval->sval = sa_strndup(c->sa, yylval->sval, lc->yycur-lc->yysval);
 	else if (token == STRING) {
 		char quote = *yylval->sval;

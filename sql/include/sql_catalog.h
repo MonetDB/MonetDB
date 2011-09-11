@@ -205,21 +205,32 @@ typedef struct sql_arg {
 	sql_subtype type;
 } sql_arg;
 
+#define F_FUNC 1
+#define F_PROC 2
+#define F_AGGR 3
+#define F_FILT 4
+#define F_UNION 5
+
+#define IS_FUNC(f) (f->type == F_FUNC)
+#define IS_PROC(f) (f->type == F_PROC)
+#define IS_AGGR(f) (f->type == F_AGGR)
+#define IS_FILT(f) (f->type == F_FILT)
+#define IS_UNION(f) (f->type == F_UNION)
+
 typedef struct sql_func {
 	sql_base base;
 
 	char *imp;
 	char *mod;
+	int type;
 	list *ops;	/* param list */
 	sql_subtype res;
 	int nr;
-	int is_func;
 	int sql;	/* 0 native implementation
 			   1 sql 
 			   2 sql instantiated proc 
 			*/
 	char *query;	/* sql code */
-	int aggr;
 	int side_effect;
 	int fix_scale;
 			/*
@@ -489,7 +500,7 @@ extern sql_type *sql_trans_bind_type(sql_trans *tr, sql_schema *s, char *name);
 
 extern node *find_sql_func_node(sql_schema * s, char *tname, int id);
 extern sql_func *find_sql_func(sql_schema * s, char *tname);
-extern list *find_all_sql_func(sql_schema * s, char *tname, int is_func);
+extern list *find_all_sql_func(sql_schema * s, char *tname, int type);
 extern sql_func *sql_trans_bind_func(sql_trans *tr, char *name);
 
 #endif /* SQL_CATALOG_H */

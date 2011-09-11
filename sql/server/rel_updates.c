@@ -187,7 +187,7 @@ rel_insert_join_idx(mvc *sql, sql_idx *i, sql_rel *inserts)
 	for (m = i->columns->h, o = rk->columns->h; m && o; m = m->next, o = o->next) {
 		sql_kc *c = m->data;
 		sql_kc *rc = o->data;
-		sql_subfunc *isnil = sql_bind_func(sql->sa, sql->session->schema, "isnull", &c->c->type, NULL);
+		sql_subfunc *isnil = sql_bind_func(sql->sa, sql->session->schema, "isnull", &c->c->type, NULL, F_FUNC);
 		sql_exp *_is = nth(ins->exps, c->c->colnr), *nl, *je; 
 		sql_exp *rtc = exp_column(sql->sa, rel_name(rt), rc->c->base.name, &rc->c->type, CARD_MULTI, rc->c->null, 0);
 		char *ename = exp_name(_is);
@@ -393,6 +393,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 				i = rel_project(sql->sa, inner, exps);
 				if (r) {
 					r = rel_setop(sql->sa, r, i, op_union);
+					r->exps = rel_projections(sql, i, NULL, 1, 1);
 				} else {
 					r = i;
 				}
@@ -590,7 +591,7 @@ rel_update_join_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 	for (m = i->columns->h, o = rk->columns->h; m && o; m = m->next, o = o->next) {
 		sql_kc *c = m->data;
 		sql_kc *rc = o->data;
-		sql_subfunc *isnil = sql_bind_func(sql->sa, sql->session->schema, "isnull", &c->c->type, NULL);
+		sql_subfunc *isnil = sql_bind_func(sql->sa, sql->session->schema, "isnull", &c->c->type, NULL, F_FUNC);
 		sql_exp *upd = nth(get_inserts(updates), c->c->colnr + 1), *nl, *je;
 		sql_exp *rtc = exp_column(sql->sa, rel_name(rt), rc->c->base.name, &rc->c->type, CARD_MULTI, rc->c->null, 0);
 
@@ -978,7 +979,7 @@ rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns,
 	sql_exp *import;
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
 	int len = 7 + (filename?1:0);
-	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", len); 
+	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", len, F_FUNC); 
 	
 	f->res.comp_type = t;
  	sql_find_subtype(&tpe, "varchar", 0, 0);
@@ -1129,7 +1130,7 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *files)
 	sql_subtype tpe;
 	sql_exp *import;
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
-	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", 2); 
+	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", 2, F_FUNC); 
 
 	if (sql->user_id != USER_MONETDB) {
 		(void) sql_error(sql, 02, "COPY INTO: insufficient privileges: "

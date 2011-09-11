@@ -104,18 +104,18 @@ e_cmp
         		cmp_lt = 3,
         		cmp_equal = 4,
         		cmp_notequal = 5,
+
         		cmp_notlike = 6,
         		cmp_like = 7,
-        		cmp_all = 8,		cross product
+        		cmp_notilike = 8,
+        		cmp_ilike = 9,
 
-        		cmp_or = 9,		or handling  
-						->l/r are both lists
-
-			cmp_in = 10,		in list handling 
-			cmp_notin = 11		not in list handling
-
-						cmp_in/cmp_notin
-						->r is a list of values
+        		cmp_filter = 10,	->r is a list of values
+        		cmp_or = 11,		or handling  	->l/r are both lists
+			cmp_in = 12,		in list handling 
+			cmp_notin = 13		not in list handling
+						cmp_in/cmp_notin ->r is a list of values
+        		cmp_all = 14,		cross product
 		)
 
 e_func

@@ -23,6 +23,33 @@
 #include "sql_statement.h"
 #include <string.h>
 
+static sql_subtype*
+dup_subtype(sql_allocator *sa, sql_subtype *st)
+{
+	sql_subtype *res = SA_NEW(sa, sql_subtype);
+
+	*res = *st;
+	return res;
+}
+
+static sql_subfunc*
+dup_subfunc(sql_allocator *sa, sql_subfunc *f)
+{
+	sql_subfunc *res = SA_NEW(sa, sql_subfunc);
+
+	*res = *f;
+	return res;
+}
+
+static sql_subaggr*
+dup_subaggr(sql_allocator *sa, sql_subaggr *f)
+{
+	sql_subaggr *res = SA_NEW(sa, sql_subaggr);
+
+	*res = *f;
+	return res;
+}
+
 const char *
 st_type2string(st_type type)
 {
@@ -1022,6 +1049,22 @@ stmt_likeselect(sql_allocator *sa, stmt *op1, stmt *op2, stmt *op3, comp_type cm
 }
 
 stmt *
+stmt_genselect(sql_allocator *sa, stmt *op1, stmt *op2, sql_subfunc *f)
+{
+	stmt *s = stmt_create(sa, st_select);
+
+	s->op1 = op1;
+	s->op2 = op2;
+	s->op4.funcval = dup_subfunc(sa, f);
+	s->flag = cmp_filter;
+        s->nrcols = (op1->nrcols==2)?2:1;
+	s->h = s->op1->h;
+	s->t = s->op1->t;
+	return s;
+}
+
+
+stmt *
 stmt_select2(sql_allocator *sa, stmt *op1, stmt *op2, stmt *op3, int cmp)
 {
 	stmt *s = stmt_create(sa, st_select2);
@@ -1458,33 +1501,6 @@ stmt_exception(sql_allocator *sa, stmt *cond, char *errstr, int errcode)
 	s->op3 = stmt_atom_int(sa, errcode);
 	s->nrcols = 0;
 	return s;
-}
-
-static sql_subtype*
-dup_subtype(sql_allocator *sa, sql_subtype *st)
-{
-	sql_subtype *res = SA_NEW(sa, sql_subtype);
-
-	*res = *st;
-	return res;
-}
-
-static sql_subfunc*
-dup_subfunc(sql_allocator *sa, sql_subfunc *f)
-{
-	sql_subfunc *res = SA_NEW(sa, sql_subfunc);
-
-	*res = *f;
-	return res;
-}
-
-static sql_subaggr*
-dup_subaggr(sql_allocator *sa, sql_subaggr *f)
-{
-	sql_subaggr *res = SA_NEW(sa, sql_subaggr);
-
-	*res = *f;
-	return res;
 }
 
 stmt *
@@ -2095,7 +2111,7 @@ stmt *stmt_if(sql_allocator *sa, stmt *cond, stmt *ifstmts, stmt *elsestmts)
 	list *l = list_new(sa);
 	stmt *cstmt;
 	sql_subtype *bt = sql_bind_localtype("bit");
-	sql_subfunc *not = sql_bind_func(sa, NULL, "not", bt, NULL);
+	sql_subfunc *not = sql_bind_func(sa, NULL, "not", bt, NULL, F_FUNC);
 
 	list_append(l, cstmt = stmt_cond(sa, cond, NULL, 0));
 	list_append(l, ifstmts);
