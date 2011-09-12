@@ -58,6 +58,10 @@ address PCRElike_select_pcre;
 command ilike_select(s:bat[:any_1,:str], pat:str, esc:str):bat[:any_1,:str]
 address PCREilike_select_pcre;
 
+function ilike_filter(s:bat[:any_1,:str], pat:str) :bat[:any_1,:str];
+	return ilike_select(s, pat, "");
+end ilike_filter;
+
 command match(s:str, pat:str):bit
 address PCREmatch
 comment "Perl Compatible Regular Expression pattern matching against a string";

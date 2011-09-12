@@ -135,12 +135,13 @@ typedef enum comp_type {
 	cmp_like = 7,
 	cmp_notilike = 8,
 	cmp_ilike = 9,
-	cmp_or = 10,
-	cmp_in = 11,
-	cmp_notin = 12,
+	cmp_filter = 10,
+	cmp_or = 11,
+	cmp_in = 12,
+	cmp_notin = 13,
 
-	cmp_all = 13,		/* special case for crossproducts */
-	cmp_project = 14	/* special case for projection joins */
+	cmp_all = 14,		/* special case for crossproducts */
+	cmp_project = 15	/* special case for projection joins */
 } comp_type;
 
 #define is_theta_exp(e) (e == cmp_gt || e == cmp_gte || e == cmp_lte ||\
@@ -239,6 +240,7 @@ extern stmt *stmt_uselect2(sql_allocator *sa, stmt *op1, stmt *op2, stmt *op3, i
 extern stmt *stmt_selectN(sql_allocator *sa, stmt *l, stmt *r, sql_subfunc *op);
 extern stmt *stmt_uselectN(sql_allocator *sa, stmt *l, stmt *r, sql_subfunc *op);
 extern stmt *stmt_likeselect(sql_allocator *sa, stmt *op1, stmt *op2, stmt *op3, comp_type cmptype);
+extern stmt *stmt_genselect(sql_allocator *sa, stmt *op1, stmt *op2, sql_subfunc *f);
 
 #define isEqJoin(j) \
 	(j->type == st_join && (j->flag == cmp_equal || j->flag == cmp_project))

@@ -359,7 +359,10 @@ exp_copy( sql_allocator *sa, sql_exp * e)
 		} else {
 			l = exp_copy(sa, e->l);
 			r = exp_copy(sa, e->r);
-			if (e->f) {
+			if (e->flag == cmp_filter) {
+				ne = exp_compare(sa, l, r, e->flag);
+				ne->f = e->f;
+			} else if (e->f) {
 				r2 = exp_copy(sa, e->f);
 				if (l && r && r2)
 					ne = exp_compare2(sa, l, r, r2, e->flag);
@@ -438,7 +441,7 @@ exp_count(int *cnt, int seqnr, sql_exp *e)
 		if (!is_complex_exp(e->flag)) {
 			exp_count(cnt, seqnr, e->l); 
 			exp_count(cnt, seqnr, e->r);
-			if (e->f)
+			if (e->flag != cmp_filter && e->f)
 				exp_count(cnt, seqnr, e->f);
 		}
 		switch (e->flag) {
@@ -462,6 +465,7 @@ exp_count(int *cnt, int seqnr, sql_exp *e)
 		case cmp_notlike:
 		case cmp_ilike:
 		case cmp_notilike:
+		case cmp_filter:
 			*cnt += 2;
 			return 2;
 		case cmp_in: 
@@ -1133,7 +1137,10 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		} else {
 			l = exp_rename(sql, e->l, f, t);
 			r = exp_rename(sql, e->r, f, t);
-			if (e->f) {
+			if (e->flag == cmp_filter) {
+				ne = exp_compare(sql->sa, l, r, e->flag);
+				ne->f = e->f;
+			} else if (e->f) {
 				r2 = exp_rename(sql, e->f, f, t);
 				if (l && r && r2)
 					ne = exp_compare2(sql->sa, l, r, r2, e->flag);
@@ -1254,7 +1261,11 @@ _exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		} else {
 			l = _exp_push_down(sql, e->l, f, t);
 			r = _exp_push_down(sql, e->r, f, t);
-			if (e->f) {
+			if (e->flag == cmp_filter) {
+				sql_exp *ne = exp_compare(sql->sa, l, r, e->flag);
+				ne->f = e->f;
+				return ne;
+			} else if (e->f) {
 				r2 = _exp_push_down(sql, e->f, f, t);
 				if (l && r && r2)
 					return exp_compare2(sql->sa, l, r, r2, e->flag);
@@ -1673,7 +1684,11 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		} else {
 			l = exp_push_down_prj(sql, e->l, f, t);
 			r = exp_push_down_prj(sql, e->r, f, t);
-			if (e->f) {
+			if (e->flag == cmp_filter) {
+				sql_exp *ne = exp_compare(sql->sa, l, r, e->flag);
+				ne->f = e->f;
+				return ne;
+			} else if (e->f) {
 				r2 = exp_push_down_prj(sql, e->f, f, t);
 				if (l && r && r2)
 					return exp_compare2(sql->sa, l, r, r2, e->flag);
@@ -1785,7 +1800,7 @@ find_func( mvc *sql, char *name, list *exps )
 
 	for(n = exps->h; n; n = n->next)
 		append(l, exp_subtype(n->data)); 
-	return sql_bind_func_(sql->sa, sql->session->schema, name, l);
+	return sql_bind_func_(sql->sa, sql->session->schema, name, l, F_FUNC);
 }
 
 static sql_exp *
@@ -2228,8 +2243,8 @@ exps_merge_rse( mvc *sql, list *l, list *r )
 				fnd = exp_in(sql->sa, le->l, exps, cmp_in);
 			} else if (le->f && re->f && 
 				   le->flag == re->flag) {
-				sql_subfunc *min = sql_bind_func(sql->sa, sql->session->schema, "sql_min", exp_subtype(le->r), exp_subtype(re->r));
-				sql_subfunc *max = sql_bind_func(sql->sa, sql->session->schema, "sql_max", exp_subtype(le->f), exp_subtype(re->f));
+				sql_subfunc *min = sql_bind_func(sql->sa, sql->session->schema, "sql_min", exp_subtype(le->r), exp_subtype(re->r), F_FUNC);
+				sql_subfunc *max = sql_bind_func(sql->sa, sql->session->schema, "sql_max", exp_subtype(le->f), exp_subtype(re->f), F_FUNC);
 				sql_exp *mine, *maxe;
 
 				if (!min || !max)
@@ -2615,7 +2630,6 @@ rel_push_select_down_join(int *changes, mvc *sql, sql_rel *rel)
 
 				if (re->card >= CARD_AGGR) {
 					rel->l = rel_push_join(sql->sa, r, e->l, re, e);
-
 				} else {
 					rel->l = rel_push_select(sql->sa, r, e->l, e);
 				}
@@ -3212,6 +3226,9 @@ rel_push_project_down_union(int *changes, mvc *sql, sql_rel *rel)
 		sql_rel *ur = u->r;
 
 		if (!u || !is_union(u->op) || need_distinct(u) || !u->exps || rel_is_ref(u))
+			return rel;
+		/* don't push project down union of single values */
+		if ((is_project(ul->op) && !ul->l) || (is_project(ur->op) && !ur->l))
 			return rel;
 
 		rel->subquery = 0;
@@ -3896,7 +3913,7 @@ exp_mark_used(sql_rel *subrel, sql_exp *e)
 		} else {
 			exp_mark_used(subrel, e->l);
 			exp_mark_used(subrel, e->r);
-			if (e->f)
+			if (e->flag != cmp_filter && e->f)
 				exp_mark_used(subrel, e->f);
 		}
 		break;

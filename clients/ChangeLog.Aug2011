@@ -1,33 +1,3 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
-* Wed Aug 31 2011 Sjoerd Mullender <sjoerd@acm.org>
-- msqldump now also accepts the database name as last argument on the
-  command line (i.e. without -d).
-
-* Fri Aug 26 2011 Fabian Groffen <fabian@cwi.nl>
-- Made error messages from the server in mclient go to stderr, instead
-  of stdout.
-
-* Thu Aug 18 2011 Sjoerd Mullender <sjoerd@acm.org>
-- Implemented SQL_ATTR_METADATA_ID attribute.  The attribute is used
-  in SQLColumns, SQLProcedures, and SQLTablePrivileges.
-- Implemented SQLTablePrivileges in the ODBC driver.
-
-* Fri Aug  5 2011 Sjoerd Mullender <sjoerd@acm.org>
-- mclient now automatically sets the SQL `TIME ZONE' variable to its
-  (the client's) time zone.
-
-* Sun Jul 24 2011 Fabian Groffen <fabian@cwi.nl>
-- Removed perl/Cimpl, MonetDB-CLI-MapiLib and MonetDB-CLI-MapiXS
-- Switched implementation of MonetDB::CLI::MapiPP to Mapi.pm, and made
-  it the default MonetDB::CLI provider.
-
-* Sun Jul 17 2011 Fabian Groffen <fabian@cwi.nl>
-- Made Mapi.pm usable with current versions of MonetDB again
-
-* Mon Apr 18 2011 Fabian Groffen <fabian@cwi.nl>
-- When the first non-option argument of mclient does not refer to an
-  exising file, it now is taken as database name.  This allows to simply
-  do `mclient mydb`.
-

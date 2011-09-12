@@ -139,6 +139,7 @@ bl_postversion( void *lg)
 		BUN bs;
 		BATiter iiname, itname, isname;
 
+		/* TODO funcs.aggr (boolean) -> funcs.type (int) */
 		fprintf(stdout, "# upgrading catalog from Apr2011\n");
 		fflush(stdout);
 

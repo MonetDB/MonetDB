@@ -1,4 +1,4 @@
-create table htm( id lng);
+create table htm( id BIGINT);
 insert into htm values (100), (101), (102), (103);
 insert into htm values (110), (111), (112), (113);
 insert into htm values (120), (121), (122), (123);

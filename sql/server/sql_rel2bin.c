@@ -688,7 +688,7 @@ releqjoin( mvc *sql, list *l1, list *l2 )
 		stmt *re = stmt_project(sql->sa, r, rd );
 		/* intentional both tail_type's of le (as re sometimes is a
 		   find for bulk loading */
-		sql_subfunc *f=sql_bind_func(sql->sa, sql->session->schema, "=", tail_type(le), tail_type(le));
+		sql_subfunc *f=sql_bind_func(sql->sa, sql->session->schema, "=", tail_type(le), tail_type(le), F_FUNC);
 
 		stmt * cmp;
 
@@ -913,9 +913,10 @@ push_semijoin( mvc *sql, stmt *select, stmt *s )
 		comp_type cmp = (comp_type)select->flag;
 		stmt *op2 = select->op2;
 
-		if (cmp == cmp_like || cmp == cmp_notlike ||
-		    cmp == cmp_ilike || cmp == cmp_notilike)
-		{
+		if (cmp == cmp_filter) {
+			return stmt_genselect(sql->sa, s, op2, select->op4.funcval);
+		} else if (cmp == cmp_like || cmp == cmp_notlike ||
+		    	   cmp == cmp_ilike || cmp == cmp_notilike) {
 			stmt *op3 = select->op3;
 
 			return stmt_likeselect(sql->sa, s, op2, op3, cmp);

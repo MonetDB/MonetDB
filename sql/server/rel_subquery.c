@@ -35,11 +35,11 @@ sql_unop_(mvc *sql, sql_schema *s, char *fname, stmt *rs)
 	if (!s)
 		s = sql->session->schema;
 	rt = tail_type(rs);
-	f = sql_bind_func(sql->sa, s, fname, rt, NULL);
+	f = sql_bind_func(sql->sa, s, fname, rt, NULL, F_FUNC);
 	/* try to find the function without a type, and convert
 	 * the value to the type needed by this function!
 	 */
-	if (!f && (f = sql_find_func(sql->sa, s, fname, 1)) != NULL) {
+	if (!f && (f = sql_find_func(sql->sa, s, fname, 1, F_FUNC)) != NULL) {
 		sql_arg *a = f->func->ops->h->data;
 
 		rs = check_types(sql, &a->type, rs, type_equal);
@@ -72,9 +72,9 @@ sql_binop_(mvc *sql, sql_schema *s, char *fname, stmt *ls, stmt *rs)
 
 	if (!s)
 		s = sql->session->schema;
-	f = sql_bind_func(sql->sa, s, fname, t1, t2);
+	f = sql_bind_func(sql->sa, s, fname, t1, t2, F_FUNC);
 	if (!f && is_commutative(fname)) {
-		f = sql_bind_func(sql->sa, s, fname, t2, t1);
+		f = sql_bind_func(sql->sa, s, fname, t2, t1, F_FUNC);
 		if (f) {
 			sql_subtype *tmp = t1;
 			t1 = t2;	
@@ -124,7 +124,7 @@ sql_binop_(mvc *sql, sql_schema *s, char *fname, stmt *ls, stmt *rs)
 			/* try operators */
 			t1 = tail_type(ls);
 			t2 = tail_type(rs);
-			f = sql_bind_func(sql->sa, s, fname, t1, t2);
+			f = sql_bind_func(sql->sa, s, fname, t1, t2, F_FUNC);
 			if (f) {
 				if (f->func->fix_scale == SCALE_FIX) {
 					ls = fix_scale(sql, t2, ls, 0, 0);
@@ -146,7 +146,7 @@ sql_binop_(mvc *sql, sql_schema *s, char *fname, stmt *ls, stmt *rs)
 		ls = ols;
 		rs = ors;
 		/* everything failed, fall back to bind on function name only */
-		if ((f = sql_find_func(sql->sa, s, fname, 2)) != NULL) {
+		if ((f = sql_find_func(sql->sa, s, fname, 2, F_FUNC)) != NULL) {
 			node *m = f->func->ops->h;
 			sql_arg *a = m->data;
 
@@ -180,7 +180,7 @@ sql_Nop_(mvc *sql, char *fname, stmt *a1, stmt *a2, stmt *a3, stmt *a4)
 		list_append(tl, tail_type(a4));
 	}
 
-	f = sql_bind_func_(sql->sa, sql->session->schema, fname, tl);
+	f = sql_bind_func_(sql->sa, sql->session->schema, fname, tl, F_FUNC);
 	list_destroy(tl);
 	if (f)
 		return stmt_Nop(sql->sa, stmt_list(sql->sa, sl), f);

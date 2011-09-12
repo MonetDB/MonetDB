@@ -137,6 +137,7 @@ int yydebug=1;
 	opt_having_clause
 	opt_group_by_clause
 	predicate
+	filter_exp
 	joined_table
 	join_spec
 	search_condition
@@ -517,6 +518,7 @@ int yydebug=1;
 %token XMLPARSE STRIP WHITESPACE XMLPI XMLQUERY PASSING XMLTEXT
 %token NIL REF ABSENT EMPTY DOCUMENT ELEMENT CONTENT XMLNAMESPACES NAMESPACE
 %token XMLVALIDATE RETURNING LOCATION ID ACCORDING XMLSCHEMA URI XMLAGG
+%token FILTER
 
 /* SciQL tokens */
 %token ARRAY DIMENSION
@@ -530,6 +532,7 @@ int yydebug=1;
 %left <operation> NOT
 %left <operation> '(' ')'
 %left <sval> COMPARISON /* <> < > <= >= */
+%left <sval> FILTER_FUNC 
 %left <operation> '='
 %left <operation> '&' '|' '^' LEFT_SHIFT RIGHT_SHIFT
 %left <operation> '+' '-'
@@ -1888,6 +1891,20 @@ func_def:
 				append_symbol(f, $8);
 				append_list(f, $11);
 				append_list(f, NULL);
+				append_int(f, F_FUNC);
+			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
+ /* table in / table out functions */
+ |  create UNION FUNCTION qname
+	'(' opt_paramlist ')'
+    RETURNS func_data_type
+    EXTERNAL sqlNAME external_function_name 	
+			{ dlist *f = L();
+				append_list(f, $4);
+				append_list(f, $6);
+				append_symbol(f, $9);
+				append_list(f, $12);
+				append_list(f, NULL);
+				append_int(f, F_UNION);
 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
  |  create FUNCTION qname
 	'(' opt_paramlist ')'
@@ -1899,6 +1916,19 @@ func_def:
 				append_symbol(f, $8);
 				append_string(f, NULL);
 				append_list(f, $9);
+				append_int(f, F_FUNC);
+			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
+  | create FILTER FUNCTION qname
+	'(' opt_paramlist ')'
+    EXTERNAL sqlNAME external_function_name 	
+			{ dlist *f = L();
+				append_list(f, $4);
+				append_list(f, $6); 
+				/* no returns - use OID */
+				append_symbol(f, NULL); 
+				append_list(f, $10);
+				append_list(f, NULL);
+				append_int(f, F_FILT);
 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
   | create AGGREGATE qname
 	'(' opt_paramlist ')'
@@ -1910,7 +1940,8 @@ func_def:
 				append_symbol(f, $8);
 				append_list(f, $11);
 				append_list(f, NULL);
-			  $$ = _symbol_create_list( SQL_CREATE_AGGR, f ); }
+				append_int(f, F_AGGR);
+			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
  | /* proc ie no result */
     create PROCEDURE qname
 	'(' opt_paramlist ')'
@@ -1921,7 +1952,8 @@ func_def:
 				append_symbol(f, NULL); /* no result */
 				append_list(f, $9);
 				append_list(f, NULL);
-			  $$ = _symbol_create_list( SQL_CREATE_PROC, f ); }
+				append_int(f, F_PROC);
+			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
   | create PROCEDURE qname
 	'(' opt_paramlist ')'
     routine_body
@@ -1931,7 +1963,8 @@ func_def:
 				append_symbol(f, NULL); /* no result */
 				append_string(f, NULL); /* no mil-impl */
 				append_list(f, $7);
-			  $$ = _symbol_create_list( SQL_CREATE_PROC, f ); }
+				append_int(f, F_PROC);
+			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
  ;
 
 routine_body:
@@ -2330,8 +2363,7 @@ triggered_statement:
  ;
 
 drop_statement:
-    DROP TABLE qname drop_action
-
+   DROP TABLE qname drop_action
 	{ dlist *l = L();
 	  append_list(l, $3 );
 	  append_int(l, $4 );
@@ -2347,6 +2379,31 @@ drop_statement:
 	  append_int(l, 0 );
 	  append_list(l, $4 );
 	  append_int(l, $5 );
+	  append_int(l, F_FUNC );
+	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
+ | DROP UNION FUNCTION qname opt_typelist drop_action
+	{ dlist *l = L();
+	  append_list(l, $4 );
+	  append_int(l, 0 );
+	  append_list(l, $5 );
+	  append_int(l, $6 );
+	  append_int(l, F_UNION );
+	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
+ | DROP FILTER FUNCTION qname opt_typelist drop_action
+	{ dlist *l = L();
+	  append_list(l, $4 );
+	  append_int(l, 0 );
+	  append_list(l, $5 );
+	  append_int(l, $6 );
+	  append_int(l, F_FILT );
+	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
+ | DROP AGGREGATE qname opt_typelist drop_action
+	{ dlist *l = L();
+	  append_list(l, $3 );
+	  append_int(l, 0 );
+	  append_list(l, $4 );
+	  append_int(l, $5 );
+	  append_int(l, F_AGGR );
 	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
  | DROP PROCEDURE qname opt_typelist drop_action
 	{ dlist *l = L();
@@ -2354,13 +2411,39 @@ drop_statement:
 	  append_int(l, 0 );
 	  append_list(l, $4 );
 	  append_int(l, $5 );
-	  $$ = _symbol_create_list( SQL_DROP_PROC, l ); }
+	  append_int(l, F_PROC );
+	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
  | DROP ALL FUNCTION qname drop_action
 	{ dlist *l = L();
 	  append_list(l, $4 );
 	  append_int(l, 1 );
 	  append_list(l, NULL );
 	  append_int(l, $5 );
+	  append_int(l, F_FUNC );
+	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
+ | DROP ALL UNION FUNCTION qname drop_action
+	{ dlist *l = L();
+	  append_list(l, $5 );
+	  append_int(l, 1 );
+	  append_list(l, NULL );
+	  append_int(l, $6 );
+	  append_int(l, F_UNION );
+	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
+ | DROP ALL FILTER FUNCTION qname drop_action
+	{ dlist *l = L();
+	  append_list(l, $5 );
+	  append_int(l, 1 );
+	  append_list(l, NULL );
+	  append_int(l, $6 );
+	  append_int(l, F_FILT );
+	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
+ | DROP ALL AGGREGATE qname drop_action
+	{ dlist *l = L();
+	  append_list(l, $4 );
+	  append_int(l, 1 );
+	  append_list(l, NULL );
+	  append_int(l, $5 );
+	  append_int(l, F_AGGR );
 	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
  | DROP ALL PROCEDURE qname drop_action
 	{ dlist *l = L();
@@ -2368,7 +2451,8 @@ drop_statement:
 	  append_int(l, 1 );
 	  append_list(l, NULL );
 	  append_int(l, $5 );
-	  $$ = _symbol_create_list( SQL_DROP_PROC, l ); }
+	  append_int(l, F_PROC );
+	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
  |  DROP VIEW qname drop_action
 	{ dlist *l = L();
 	  append_list(l, $3 );
@@ -3278,6 +3362,7 @@ predicate:
  |  in_predicate
  |  all_or_any_predicate
  |  existence_test
+ |  filter_exp
  |  scalar_exp
  ;
 
@@ -3410,6 +3495,22 @@ any_all_some:
 existence_test:
     EXISTS subquery 	{ $$ = _symbol_create_symbol( SQL_EXISTS, $2 ); }
 /*|  NOT EXISTS subquery { $$ = _symbol_create_symbol( SQL_NOT_EXISTS, $3 ); }*/
+ ;
+
+filter_exp:
+    pred_exp FILTER_FUNC pred_exp
+		{ dlist *l = L();
+		  append_symbol(l, $1);
+		  append_string(l, $2);
+		  append_symbol(l, $3);
+		  $$ = _symbol_create_list(SQL_FILTER, l ); }
+ |  pred_exp FILTER_FUNC '(' pred_exp ')'  pred_exp 
+		{ dlist *l = L();
+		  append_symbol(l, $1);
+		  append_string(l, $2);
+		  append_symbol(l, $6);
+		  append_symbol(l, $4);	/* option last */
+		  $$ = _symbol_create_list(SQL_FILTER, l ); }
  ;
 
 subquery:
@@ -3791,6 +3892,11 @@ column_exp:
  |  ident '.' '*'
 		{ dlist *l = L();
   		  append_string(l, $1);
+  		  append_string(l, NULL);
+  		  $$ = _symbol_create_list( SQL_TABLE, l ); }
+ |  func_ref '.' '*'
+		{ dlist *l = L();
+  		  append_symbol(l, $1);
   		  append_string(l, NULL);
   		  $$ = _symbol_create_list( SQL_TABLE, l ); }
  |  null opt_alias_name
@@ -4812,6 +4918,7 @@ non_reserved_word:  /* (lexicographically sorted for convenience) */
 |  ID		{ $$ = sa_strdup(SA, "id"); }
 |  ACCORDING	{ $$ = sa_strdup(SA, "according"); }
 |  URI		{ $$ = sa_strdup(SA, "uri"); }
+|  FILTER	{ $$ = sa_strdup(SA, "filter"); }
 ;
 
 name_commalist:
@@ -5432,7 +5539,6 @@ char *token2string(int token)
 	SQL(CREATE_USER);
 	SQL(CREATE_TYPE);
 	SQL(CREATE_FUNC);
-	SQL(CREATE_AGGR);
 	SQL(CREATE_SEQ);
 	SQL(CREATE_TRIGGER);
 	SQL(DROP_SCHEMA);
@@ -5444,7 +5550,6 @@ char *token2string(int token)
 	SQL(DROP_USER);
 	SQL(DROP_TYPE);
 	SQL(DROP_FUNC);
-	SQL(DROP_PROC);
 	SQL(DROP_SEQ);
 	SQL(DROP_TRIGGER);
 	SQL(ALTER_TABLE);
@@ -5538,6 +5643,7 @@ char *token2string(int token)
 	SQL(AGGR);
 	SQL(RANK);
 	SQL(COMPARE);
+	SQL(FILTER);
 	SQL(TEMP_LOCAL);
 	SQL(TEMP_GLOBAL);
 	SQL(INT_VALUE);

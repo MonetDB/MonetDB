@@ -100,8 +100,12 @@ char* control_send(
 			return(strdup(sbuf));
 		}
 		
+		/* try reading length */
+		len = recv(sock, sbuf, 2, 0);
+		if (len == 2)
+			len += recv(sock, sbuf + len, sizeof(sbuf) - len, 0);
 		/* perform login ritual */
-		if ((len = recv(sock, sbuf, sizeof(sbuf), 0)) <= 0) {
+		if (len <= 0) {
 			snprintf(sbuf, sizeof(sbuf), "no response from merovingian");
 			return(strdup(sbuf));
 		}

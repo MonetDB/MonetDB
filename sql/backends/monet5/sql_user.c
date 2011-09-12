@@ -212,7 +212,7 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	l = list_create((fdestroy) &arg_destroy);
 	/* following funcion returns a table (single column) of user names
 	   with the approriate scenario (sql) */
-	mvc_create_func(m, s, "db_users", l, &tpe, FALSE, "sql", "db_users", "CREATE FUNCTION db_users () RETURNS TABLE( name varchar(2048)) EXTERNAL NAME sql.db_users;", 1);
+	mvc_create_func(m, s, "db_users", l, &tpe, F_FUNC, "sql", "db_users", "CREATE FUNCTION db_users () RETURNS TABLE( name varchar(2048)) EXTERNAL NAME sql.db_users;");
 	list_destroy(l);
 
 	t = mvc_create_view(m, s, "users", SQL_PERSIST,

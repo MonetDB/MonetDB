@@ -70,7 +70,7 @@ Over..
 [ NULL,	"sys",	"functions",	"func",	"varchar",	8196,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	3,	NULL,	NULL,	NULL	]
 [ NULL,	"sys",	"functions",	"mod",	"varchar",	8196,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	4,	NULL,	NULL,	NULL	]
 [ NULL,	"sys",	"functions",	"sql",	"boolean",	1,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	5,	NULL,	NULL,	NULL	]
-[ NULL,	"sys",	"functions",	"aggr",	"boolean",	1,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	6,	NULL,	NULL,	NULL	]
+[ NULL,	"sys",	"functions",	"type",	"int",	32,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	6,	NULL,	NULL,	NULL	]
 [ NULL,	"sys",	"functions",	"side_effect",	"boolean",	1,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	7,	NULL,	NULL,	NULL	]
 [ NULL,	"sys",	"functions",	"schema_id",	"int",	32,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	8,	NULL,	NULL,	NULL	]
 [ NULL,	"sys",	"keys",	"id",	"int",	32,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	1,	NULL,	NULL,	NULL	]
