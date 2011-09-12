@@ -1,0 +1,97 @@
+stdout of test 'operands-not-synced.Bug-2346` in directory 'test/BugTracker-2011` itself:
+
+
+# 13:48:56 >  
+# 13:48:56 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/ufs/sjoerd/Monet-candidate/var/MonetDB" --set mapi_open=true --set mapi_port=32123 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_test_BugTracker-2011" --set mal_listing=0 ; echo ; echo Over..
+# 13:48:56 >  
+
+# MonetDB 5 server v11.5.2
+# This is an unreleased version
+# Serving database 'mTests_test_BugTracker-2011', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://ottar.ins.cwi.nl:32123/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/10_math.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/11_times.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/12_url.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/13_date.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/14_inet.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/15_history.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/16_tracelog.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/17_compress.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/18_dictionary.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/19_cluster.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/20_vacuum.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/21_dependency_functions.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/22_clients.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/23_skyserver.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/24_zorder.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/25_debug.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/40_geom.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/80_udf.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/99_system.sql
+
+Over..
+
+# 13:48:57 >  
+# 13:48:57 >  mclient -lsql -ftest -i -e --host=ottar --port=32123 
+# 13:48:57 >  
+
+#START TRANSACTION;
+#CREATE TABLE "sys"."applied_credit" (
+#	"directory"    VARCHAR(512)  NOT NULL,
+#	"passed"       INTEGER,
+#	"allowed"      INTEGER       NOT NULL,
+#	"multiplicity" INTEGER       NOT NULL       DEFAULT 0,
+#	CONSTRAINT "applied_credit_directory_allowed_multiplicity_pkey" PRIMARY KEY ("directory", "allowed", "multiplicity")
+#);
+#CREATE TABLE "sys"."success_credit" (
+#	"directory" VARCHAR(512)  NOT NULL,
+#	"passed"    INTEGER,
+#	"allowed"   INTEGER       NOT NULL,
+#	CONSTRAINT "success_credit_directory_allowed_pkey" PRIMARY KEY ("directory", "allowed")
+#);
+#COPY 2 RECORDS INTO "sys"."success_credit" FROM stdin USING DELIMITERS '\t','\n','"';
+#"foo"	1270047915	0
+#"bar"	1270047915	0
+#CREATE TABLE "sys"."success_setting" (
+#	"directory"         VARCHAR(512)  NOT NULL,
+#	"rate"              INTEGER,
+#	"heartbeat"         INTEGER,
+#	"success_rate"      INTEGER,
+#	"success_heartbeat" INTEGER,
+#	"concurrency"       INTEGER,
+#	CONSTRAINT "success_setting_directory_pkey" PRIMARY KEY ("directory")
+#);
+[ 2	]
+#COPY 2 RECORDS INTO "sys"."success_credit" FROM stdin USING DELIMITERS '\t','\n','"';
+#"foo"	1270047915	0
+#"bar"	1270047915	0
+#CREATE TABLE "sys"."success_setting" (
+#	"directory"         VARCHAR(512)  NOT NULL,
+#	"rate"              INTEGER,
+#	"heartbeat"         INTEGER,
+#	"success_rate"      INTEGER,
+#	"success_heartbeat" INTEGER,
+#	"concurrency"       INTEGER,
+#	CONSTRAINT "success_setting_directory_pkey" PRIMARY KEY ("directory")
+#);
+#COPY 2 RECORDS INTO "sys"."success_setting" FROM stdin USING DELIMITERS '\t','\n','"';
+#"foo"	341	300	341	300	5
+#"bar"	341	300	341	300	5
+#
+[ 2	]
+#ROLLBACK;
+
+# 13:48:57 >  
+# 13:48:57 >  Done.
+# 13:48:57 >  
+

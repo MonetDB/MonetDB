@@ -1668,8 +1668,11 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 			char *uname = mapi_fetch_field(hdl, 0);
 			char *rname = mapi_fetch_field(hdl, 1);
 
-			mnstr_printf(toConsole, "GRANT \"%s\" TO \"%s\"",
-				     rname, uname);
+			mnstr_printf(toConsole, "GRANT \"%s\" TO ", rname);
+			if (strcmp(uname, "public") == 0)
+				mnstr_printf(toConsole, "PUBLIC");
+			else
+				mnstr_printf(toConsole, "\"%s\"", uname);
 			/* optional WITH ADMIN OPTION and FROM
 			   (CURRENT_USER|CURRENT_ROLE) are ignored by
 			   server, so we can't dump them */

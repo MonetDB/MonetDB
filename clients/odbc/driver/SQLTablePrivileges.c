@@ -76,44 +76,50 @@ SQLTablePrivileges_(ODBCStmt *stmt,
 	query_end = query;
 
 	/* SQLTablePrivileges returns a table with the following columns:
-	   VARCHAR      table_cat
-	   VARCHAR      table_schem
-	   VARCHAR      table_name NOT NULL
-	   VARCHAR      grantor
-	   VARCHAR      grantee NOT NULL
-	   VARCHAR      privilege NOT NULL
-	   VARCHAR      is_grantable
+	   table_cat    VARCHAR
+	   table_schem  VARCHAR
+	   table_name   VARCHAR NOT NULL
+	   grantor      VARCHAR
+	   grantee      VARCHAR NOT NULL
+	   privilege    VARCHAR NOT NULL
+	   is_grantable VARCHAR
 	 */
 
 	sprintf(query_end,
 		"select"
-		" cast(NULL as varchar(1)) as table_cat,"
-		" s.name as table_schem,"
-		" t.name as table_name,"
-		" g.name as grantor,"
-		" a.name as grantee,"
-		" case p.privileges"
+		" cast(NULL as varchar(128)) as \"table_cat\","
+		" \"s\".\"name\" as \"table_schem\","
+		" \"t\".\"name\" as \"table_name\","
+		" case \"a\".\"id\""
+		"      when \"s\".\"owner\" then '_SYSTEM'"
+		"      else \"g\".\"name\""
+		"      end as \"grantor\","
+		" case \"a\".\"name\""
+		"      when 'public' then 'PUBLIC'"
+		"      else \"a\".\"name\""
+		"      end as \"grantee\","
+		" case \"p\".\"privileges\""
 		"      when 1 then 'SELECT'"
 		"      when 2 then 'UPDATE'"
 		"      when 4 then 'INSERT'"
 		"      when 8 then 'DELETE'"
 		"      when 16 then 'EXECUTE'"
 		"      when 32 then 'GRANT'"
-		"      end as privilege,"
-		" case p.grantable"
+		"      end as \"privilege\","
+		" case \"p\".\"grantable\""
 		"      when 1 then 'YES'"
 		"      when 0 then 'NO'"
-		"      end as grantable "
-		"from schemas s,"
-		" tables t,"
-		" auths a,"
-		" privileges p,"
-		" auths g "
-		"where p.obj_id = t.id"
-		" and p.auth_id = a.id"
-		" and t.schema_id = s.id"
-		" and t.system = false"
-		" and p.grantor = g.id");
+		"      end as \"is_grantable\" "
+		"from \"sys\".\"schemas\" \"s\","
+		" \"sys\".\"_tables\" \"t\","
+		" \"sys\".\"auths\" \"a\","
+		" \"sys\".\"privileges\" \"p\","
+		" \"sys\".\"auths\" \"g\" "
+		"where \"p\".\"obj_id\" = \"t\".\"id\""
+		" and \"p\".\"auth_id\" = \"a\".\"id\""
+		" and \"t\".\"schema_id\" = \"s\".\"id\""
+		" and \"t\".\"system\" = false"
+		" and \"p\".\"grantor\" = \"g\".\"id\"");
 	query_end += strlen(query_end);
 
 	/* Construct the selection condition query part */
@@ -127,14 +133,14 @@ SQLTablePrivileges_(ODBCStmt *stmt,
 		       isspace((int) TableName[NameLength3 - 1]))
 			NameLength3--;
 		if (NameLength2 > 0) {
-			sprintf(query_end, " and s.\"name\" = '");
+			sprintf(query_end, " and \"s\".\"name\" = '");
 			query_end += strlen(query_end);
 			while (NameLength2-- > 0)
 				*query_end++ = tolower(*SchemaName++);
 			*query_end++ = '\'';
 		}
 		if (NameLength3 > 0) {
-			sprintf(query_end, " and t.\"name\" = '");
+			sprintf(query_end, " and \"t\".\"name\" = '");
 			query_end += strlen(query_end);
 			while (NameLength3-- > 0)
 				*query_end++ = tolower(*TableName++);
@@ -144,7 +150,7 @@ SQLTablePrivileges_(ODBCStmt *stmt,
 		int escape;
 		if (NameLength2 > 0) {
 			escape = 0;
-			sprintf(query_end, " and s.\"name\" like '");
+			sprintf(query_end, " and \"s\".\"name\" like '");
 			query_end += strlen(query_end);
 			while (NameLength2-- > 0) {
 				if (*SchemaName == '\\') {
@@ -161,7 +167,7 @@ SQLTablePrivileges_(ODBCStmt *stmt,
 		}
 		if (NameLength3 > 0) {
 			escape = 0;
-			sprintf(query_end, " and t.\"name\" like '");
+			sprintf(query_end, " and \"t\".\"name\" like '");
 			query_end += strlen(query_end);
 			while (NameLength3-- > 0) {
 				if (*TableName == '\\') {
@@ -180,8 +186,9 @@ SQLTablePrivileges_(ODBCStmt *stmt,
 
 	/* add the ordering */
 	strcpy(query_end,
-	       " order by table_cat, table_schem, table_name, privilege, grantee");
+	       " order by \"table_cat\", \"table_schem\", \"table_name\", \"privilege\", \"grantee\"");
 	query_end += strlen(query_end);
+	assert((int) (query_end - query) < 1200 + NameLength2 + NameLength3);
 
 	/* query the MonetDB data dictionary tables */
         rc = SQLExecDirect_(stmt, (SQLCHAR *) query,

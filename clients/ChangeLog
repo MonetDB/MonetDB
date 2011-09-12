@@ -1,6 +1,9 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Mon Sep 12 2011 Sjoerd Mullender <sjoerd@acm.org>
+- ODBC: Implemented SQLColumnPrivileges function.
+
 * Sat Aug 27 2011 Fabian Groffen <fabian@cwi.nl>
 - Install new program, mnc, which provides netcat functionality, but
   based on MonetDB's communication libraries
