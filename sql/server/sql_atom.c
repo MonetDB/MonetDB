@@ -314,10 +314,13 @@ atom2string(sql_allocator *sa, atom *a)
 char *
 atom2sql(atom *a)
 {
+	int ec = a->tpe.type->eclass;
 	char buf[BUFSIZ];
 
+	if (a->data.vtype == TYPE_str && ec == EC_INTERVAL)
+		ec = EC_STRING; 
 	/* todo handle NULL's early */
-	switch (a->tpe.type->eclass) {
+	switch (ec) {
 	case EC_BIT:
 		assert( a->data.vtype == TYPE_bit);
 		if (a->data.val.cval[0])
@@ -325,7 +328,6 @@ atom2sql(atom *a)
 		return _strdup("false");
 	case EC_CHAR:
 	case EC_STRING:
-	case EC_INTERVAL:
 		assert (a->data.vtype == TYPE_str);
 		if (a->data.val.sval)
 			sprintf(buf, "'%s'", a->data.val.sval);
@@ -335,6 +337,7 @@ atom2sql(atom *a)
 	case EC_BLOB:
 		/* TODO atom to string */
 		break;
+	case EC_INTERVAL:
 	case EC_NUM:
 		switch (a->data.vtype) {
 		case TYPE_lng:
