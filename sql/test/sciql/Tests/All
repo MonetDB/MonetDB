@@ -26,6 +26,7 @@
 01_create_20
 01_create_21
 01_create_22
+01_create_23
 
 02_update_01
 02_update_02
@@ -40,6 +41,8 @@
 04_insert_03
 04_insert_04
 04_insert_05
+04_insert_06
+04_insert_07
 
 05_select_01
 05_select_02

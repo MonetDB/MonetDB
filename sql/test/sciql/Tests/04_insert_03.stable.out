@@ -1,0 +1,114 @@
+stdout of test '04_insert_03` in directory 'test/sciql` itself:
+
+
+# 22:42:48 >  
+# 22:42:48 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/export/scratch0/zhang/monet-install/sciql/debug/var/MonetDB" --set mapi_open=true --set mapi_port=37015 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_test_sciql" --set mal_listing=0 ; echo ; echo Over..
+# 22:42:48 >  
+
+# MonetDB 5 server v11.6.0
+# This is an unreleased version
+# Serving database 'mTests_test_sciql', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://jarl.ins.cwi.nl:37015/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# SQL loading sql scripts /export/scratch0/zhang/monet-install/sciql/debug/lib/monetdb5/createdb/10_math.sql
+# SQL loading sql scripts /export/scratch0/zhang/monet-install/sciql/debug/lib/monetdb5/createdb/11_times.sql
+# SQL loading sql scripts /export/scratch0/zhang/monet-install/sciql/debug/lib/monetdb5/createdb/12_url.sql
+# SQL loading sql scripts /export/scratch0/zhang/monet-install/sciql/debug/lib/monetdb5/createdb/13_date.sql
+# SQL loading sql scripts /export/scratch0/zhang/monet-install/sciql/debug/lib/monetdb5/createdb/14_inet.sql
+# SQL loading sql scripts /export/scratch0/zhang/monet-install/sciql/debug/lib/monetdb5/createdb/15_history.sql
+# SQL loading sql scripts /export/scratch0/zhang/monet-install/sciql/debug/lib/monetdb5/createdb/16_tracelog.sql
+# SQL loading sql scripts /export/scratch0/zhang/monet-install/sciql/debug/lib/monetdb5/createdb/17_compress.sql
+# SQL loading sql scripts /export/scratch0/zhang/monet-install/sciql/debug/lib/monetdb5/createdb/18_dictionary.sql
+# SQL loading sql scripts /export/scratch0/zhang/monet-install/sciql/debug/lib/monetdb5/createdb/19_cluster.sql
+# SQL loading sql scripts /export/scratch0/zhang/monet-install/sciql/debug/lib/monetdb5/createdb/20_vacuum.sql
+# SQL loading sql scripts /export/scratch0/zhang/monet-install/sciql/debug/lib/monetdb5/createdb/21_dependency_functions.sql
+# SQL loading sql scripts /export/scratch0/zhang/monet-install/sciql/debug/lib/monetdb5/createdb/22_clients.sql
+# SQL loading sql scripts /export/scratch0/zhang/monet-install/sciql/debug/lib/monetdb5/createdb/23_skyserver.sql
+# SQL loading sql scripts /export/scratch0/zhang/monet-install/sciql/debug/lib/monetdb5/createdb/24_zorder.sql
+# SQL loading sql scripts /export/scratch0/zhang/monet-install/sciql/debug/lib/monetdb5/createdb/25_debug.sql
+# SQL loading sql scripts /export/scratch0/zhang/monet-install/sciql/debug/lib/monetdb5/createdb/29_array.sql
+# SQL loading sql scripts /export/scratch0/zhang/monet-install/sciql/debug/lib/monetdb5/createdb/40_geom.sql
+# SQL loading sql scripts /export/scratch0/zhang/monet-install/sciql/debug/lib/monetdb5/createdb/80_udf.sql
+# SQL loading sql scripts /export/scratch0/zhang/monet-install/sciql/debug/lib/monetdb5/createdb/99_system.sql
+
+Over..
+
+# 22:42:48 >  
+# 22:42:48 >  mclient -lsql -ftest -i -e --host=jarl --port=37015 
+# 22:42:48 >  
+
+#CREATE ARRAY matrix_0403 (x INT DIMENSION[4], y INT DIMENSION[4], v FLOAT DEFAULT 0.0);
+#CREATE ARRAY stripes (x INT DIMENSION[4], y INT DIMENSION[4] CHECK(MOD(y,2) = 1), v FLOAT DEFAULT 6.6);
+#SELECT * FROM matrix_0403;
+% sys.matrix_0403,	sys.matrix_0403,	sys.matrix_0403 # table_name
+% x,	y,	v # name
+% int,	int,	double # type
+% 1,	1,	22 # length
+[ 0,	0,	0	]
+[ 0,	1,	0	]
+[ 0,	2,	0	]
+[ 0,	3,	0	]
+[ 1,	0,	0	]
+[ 1,	1,	0	]
+[ 1,	2,	0	]
+[ 1,	3,	0	]
+[ 2,	0,	0	]
+[ 2,	1,	0	]
+[ 2,	2,	0	]
+[ 2,	3,	0	]
+[ 3,	0,	0	]
+[ 3,	1,	0	]
+[ 3,	2,	0	]
+[ 3,	3,	0	]
+#SELECT * FROM stripes;
+% sys.stripes,	sys.stripes,	sys.stripes # table_name
+% x,	y,	v # name
+% int,	int,	double # type
+% 1,	1,	22 # length
+[ 0,	1,	6.6	]
+[ 0,	3,	6.6	]
+[ 1,	1,	6.6	]
+[ 1,	3,	6.6	]
+[ 2,	1,	6.6	]
+[ 2,	3,	6.6	]
+[ 3,	1,	6.6	]
+[ 3,	3,	6.6	]
+#INSERT INTO matrix_0403(v) SELECT v FROM stripes;
+[ 8	]
+#SELECT * FROM matrix_0403;
+% sys.matrix_0403,	sys.matrix_0403,	sys.matrix_0403 # table_name
+% x,	y,	v # name
+% int,	int,	double # type
+% 1,	1,	22 # length
+[ 0,	0,	6.6	]
+[ 0,	1,	6.6	]
+[ 0,	2,	6.6	]
+[ 0,	3,	6.6	]
+[ 1,	0,	6.6	]
+[ 1,	1,	6.6	]
+[ 1,	2,	6.6	]
+[ 1,	3,	6.6	]
+[ 2,	0,	0	]
+[ 2,	1,	0	]
+[ 2,	2,	0	]
+[ 2,	3,	0	]
+[ 3,	0,	0	]
+[ 3,	1,	0	]
+[ 3,	2,	0	]
+[ 3,	3,	0	]
+#DROP ARRAY matrix_0403;
+#DROP ARRAY stripes;
+
+# 22:42:48 >  
+# 22:42:48 >  Done.
+# 22:42:48 >  
+

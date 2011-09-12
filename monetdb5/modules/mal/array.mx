@@ -402,7 +402,37 @@ ARRAYfiller(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	BATsetcount(bn, cnt);
 	bn->tsorted = 1;
-	bn->T->nonil = TRUE;
+	switch(type){
+		case TYPE_bit:
+			bn->T->nonil = *(bit*)val==bit_nil?FALSE:TRUE;
+			break;
+		case TYPE_bte:
+			bn->T->nonil = *(bte*)val==bte_nil?FALSE:TRUE;
+			break;
+		case TYPE_sht:
+			bn->T->nonil = *(sht*)val==sht_nil?FALSE:TRUE;
+			break;
+		case TYPE_int:
+			bn->T->nonil = *(int*)val==int_nil?FALSE:TRUE;
+			break;
+		case TYPE_flt:
+			bn->T->nonil = *(flt*)val==flt_nil?FALSE:TRUE;
+			break;
+		case TYPE_dbl:
+			bn->T->nonil = *(dbl*)val==dbl_nil?FALSE:TRUE;
+			break;
+		case TYPE_lng:
+			bn->T->nonil = *(lng*)val==lng_nil?FALSE:TRUE;
+			break;
+		case TYPE_chr:
+			bn->T->nonil = *(chr*)val==chr_nil?FALSE:TRUE;
+			break;
+		case TYPE_str:
+			bn->T->nonil = (strcmp(*(str*)val, str_nil) == 0)?FALSE:TRUE;
+			break;
+		default:
+			throw(MAL, "array.filler", "Unsupported data type");
+	}
 	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
 }
