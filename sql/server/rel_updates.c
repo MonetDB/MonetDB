@@ -300,16 +300,30 @@ rel_insert_table(mvc *sql, sql_table *t, char *name, sql_rel *inserts)
 
 /* collist: base array columns addressed by the INSERT INTO stmt
  * ins: tmp columns with all values to be inserted, to be joined with the base array on the dimensional columns
+ * 
+ * This function walks through the already aligned columns from the base ARRAY
+ * 't' and in the INSERT INTO stmt 'ins->exps'.
+ * For all columns explicitly addressed in the INSERT INTO stmt
+ * (i.e., '!(e->type == e_atom && !e->name && ((atom*)e->l)->isnull)'):
+ * if its a dimension, add a join condition; otherwise add it to 'updates'.
+ *
+ * Note that, omitting a dimensional column in the INSERT INTO stmt causes
+ * _all_ cells on this dimension to be updated; while omitting a
+ * non-dimensional column in the INSERT INTO stmt means that the existing
+ * values of this column may not be changed.
+ *
+ * Also note that, if only one set of new values are given with a NULL value as
+ * the new cell value(s), it is also represented by an sql_exp *e, where
+ * 'e->type == e_atom && !e->name && ((atom*)e->l)->isnull'.  This NULL value
+ * should overwrite existing value(s) of the qualified cell value(s).
  */
 static sql_rel *
-rel_insert_array(mvc *sql, sql_table *t, list *collist, sql_rel *ins)
+rel_insert_array(mvc *sql, sql_table *t, sql_rel *ins)
 {
 	sql_rel *r = NULL, *jn = NULL;
 	sql_exp **updates = table_update_array(sql,t);
-	/* columns needed for the update, i.e., %TID% and all non-dimensional columns */
+	/* to be updated columns, i.e., %TID% and all non-dimensional columns */
 	list *exps= new_exp_list(sql->sa);
-	/* copy all columns addressed in the INSERT INTO stmt */
-	list *exps_ins = rel_projections(sql, ins, NULL, 0, 1);
 	node *m = NULL, *n = NULL;
 
 	/* join the to be inserted columns with the base array */
@@ -318,23 +332,30 @@ rel_insert_array(mvc *sql, sql_table *t, list *collist, sql_rel *ins)
 
 	/* Initialise the list with the %TID% column */
 	append(exps, exp_column(sql->sa, t->base.name, "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
-	/* walk through all columns in the INSERT INTO statement.  if its a dimensional column, add a join condition; otherwise add it to 'updates' */
-	for(m = collist->h, n = exps_ins->h; m && n; m = m->next, n = n->next) {
+	for(m = t->columns.set->h, n = ins->exps->h; m && n; m = m->next, n = n->next) {
 		sql_column *c = m->data; /* column from base array */
-		sql_exp *be = NULL, *pe = n->data; /* column exp in INSERT stmt */
+		sql_exp *eOld = NULL, *eNew = NULL, *e = n->data; /* column exp in INSERT stmt */
 
-		be = exp_column(sql->sa, c->t->base.name, c->base.name, &c->type, CARD_MULTI, 0, 0);
-		if (c->dim) {
-			rel_join_add_exp(sql->sa, jn, exp_compare(sql->sa, be, pe, cmp_equal));
-		} else {
-			exp_setname(sql->sa, pe, c->t->base.name, c->base.name);
-			updates[c->colnr] = pe;
-			append(exps, be);
+		if (!(e->type == e_atom && !e->name && ((atom*)e->l)->isnull)) {
+			eOld = exp_column(sql->sa, c->t->base.name, c->base.name, &c->type, CARD_MULTI, 0, 0);
+			eNew = exp_column(sql->sa, NULL, exp_name(e), exp_subtype(e), ins->card, has_nil(e), is_intern(e));
+
+			if (c->dim) {
+				rel_join_add_exp(sql->sa, jn, exp_compare(sql->sa, eOld, eNew, cmp_equal));
+			} else {
+				/* tell rel_project to rename an L??? column to the corresponding
+				 * column name in the base ARRAY */
+				exp_setname(sql->sa, eNew, c->t->base.name, c->base.name);
+				updates[c->colnr] = eNew;
+				append(exps, eOld);
+			}
 		}
 	}
+	assert(!m && !n); /* the two list must be the same length */
 
+	/* Don't add columns in 'updates' to rel_project here, this will be done later by rel_update */
 	r = rel_project(sql->sa, jn, append(new_exp_list(sql->sa), exp_column(sql->sa, t->base.name, "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1)));
- 	return rel_update(sql, rel_basetable(sql, t, t->base.name), r, updates, exps);	
+ 	return rel_update(sql, rel_basetable(sql, t, t->base.name), r, updates, exps);
 }
 
 static sql_rel *
@@ -473,7 +494,8 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 				if (c->colnr == i) {
 					sql_exp *e = NULL;
 
-					if (c->def) {
+					/* In case of an ARRAY, don't use the (non-dimensional) column default to overwrite the existing cell value(s) */
+					if (c->def && !isArray(t)) {
 						char *q = sql_message( "select %s;", c->def);
 						e = rel_parse_val(sql, q, sql->emode);
 						_DELETE(q);
@@ -498,7 +520,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 	_DELETE(inserts);
 	list_destroy(r->exps);
 	r->exps = exps;
-	return isArray(t)?rel_insert_array(sql, t, collist, r):rel_insert_table(sql, t, tname, r);
+	return isArray(t)?rel_insert_array(sql, t, r):rel_insert_table(sql, t, tname, r);
 }
 
 static int
