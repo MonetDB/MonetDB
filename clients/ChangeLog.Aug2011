@@ -1,3 +1,7 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Tue Sep 13 2011 Sjoerd Mullender <sjoerd@acm.org>
+- Fixed a bug in mclient/msqldump where an internal error occurred during
+  dump when there are GLOBAL TEMPORARY tables.
+
