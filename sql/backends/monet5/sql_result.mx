@@ -274,8 +274,9 @@ bat_max_@1length(BAT *b)
 
 	if ((-min * 10) > max) 
 		max = (-min * 10);
-	while (max /= 10) ret++;
+	while (max /= 10)
 		ret++;
+	ret++;
 	return ret;
 }
 @
