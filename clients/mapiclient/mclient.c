@@ -1061,9 +1061,15 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 		char *s;
 
 		len[i] = mapi_get_len(hdl, i);
-		if (len[i] == 0) {
-			/* no table width known, use maximum, rely on squeezing
-			 * lateron to fix it to whatever is available */
+		if (len[i] == 0 &&
+		    ((s = mapi_get_type(hdl, i)) == NULL ||
+		     strcmp(s, "varchar") != 0)) {
+			/* no table width known, use maximum, rely on
+			 * squeezing later on to fix it to whatever is
+			 * available; note that for a column type of
+			 * varchar, 0 means the complete column is
+			 * NULL or empty string, so MINCOLSIZE (below)
+			 * will work great */
 			len[i] = pagewidth <= 0 ? DEFWIDTH : pagewidth;
 		}
 		if (len[i] < MINCOLSIZE)
