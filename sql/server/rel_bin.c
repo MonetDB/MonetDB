@@ -546,7 +546,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
                         if (left && right && re->card > CARD_ATOM && !is_select) {
 				/* find predicate function */
                                 sql_subfunc *f = e->f;
-				stmt *j;
+				stmt *j = NULL;
 
 				if (r2)
 					f = sql_bind_func3(sql->sa, sql->session->schema, f->func->base.name, tail_type(l), tail_type(r), tail_type(r2), F_FUNC);
