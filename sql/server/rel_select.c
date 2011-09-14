@@ -2043,7 +2043,6 @@ rel_filter_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, 
 	sql_exp *L = ls, *R = rs, *e = NULL;
 	sql_subfunc *f = NULL;
 
-	(void)rs2;
 	/* find filter function */
 	if (rs2)
 		f = sql_bind_func3(sql->sa, sql->session->schema, filter_op, exp_subtype(ls), exp_subtype(rs), exp_subtype(rs2), F_FILT);
@@ -2059,7 +2058,7 @@ rel_filter_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, 
 			a = m->next->data;
 			rs = rel_check_type(sql, &a->type, rs, type_equal);
 			if (rs2) {
-				a = m->next->data;
+				a = m->next->next->data;
 				rs2 = rel_check_type(sql, &a->type, rs2, type_equal);
 				if (!rs2) 
 					rs = NULL;

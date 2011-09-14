@@ -1253,14 +1253,15 @@ stmt_join2(sql_allocator *sa, stmt *l, stmt *ra, stmt *rb, int cmp)
 }
 
 stmt *
-stmt_joinN(sql_allocator *sa, stmt *l, stmt *r, sql_subfunc *op)
+stmt_joinN(sql_allocator *sa, stmt *l, stmt *r, stmt *opt, sql_subfunc *op)
 {
 	stmt *s = stmt_create(sa, st_joinN);
 
 	s->op1 = l;
 	s->op2 = r;
+	s->op3 = opt;
 	s->op4.funcval = op;
-	s->nrcols = 2;
+	s->nrcols = (opt)?3:2;
 	s->h = l->h;
 	s->t = r->h;
 	return s;

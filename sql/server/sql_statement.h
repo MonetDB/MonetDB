@@ -255,7 +255,7 @@ extern stmt *stmt_releqjoin2(sql_allocator *sa, list *l1, list *l2);
 extern stmt *stmt_join(sql_allocator *sa, stmt *op1, stmt *op2, comp_type cmptype);
 
 /* generic join operator, with a left and right statement list */
-extern stmt *stmt_joinN(sql_allocator *sa, stmt *l, stmt *r, sql_subfunc *op);
+extern stmt *stmt_joinN(sql_allocator *sa, stmt *l, stmt *r, stmt *opt, sql_subfunc *op);
 
 extern stmt *stmt_join2(sql_allocator *sa, stmt *l, stmt *ra, stmt *rb, int cmp);
 extern stmt *stmt_project(sql_allocator *sa, stmt *op1, stmt *op2);

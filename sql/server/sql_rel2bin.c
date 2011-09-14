@@ -749,17 +749,13 @@ reljoin( mvc *sql, stmt *rj, list *l2 )
 		}
 
 		if (j->type == st_joinN) {
-			list *ol,*nl = list_new(sql->sa);
-			node *m;
+			stmt *op1 = j->op1;
+			stmt *op2 = j->op2;
+			stmt *op3 = j->op3;
 
-			ol = j->op1->op4.lval;
-			for (m = ol->h; m; m = m->next) 
-				list_append(nl, _project(sql, l, m->data));
-			ol = j->op2->op4.lval;
-			for (m = ol->h; m; m = m->next) 
-				list_append(nl, _project(sql, r, m->data));
-			/* find function */
-			cmp = stmt_uselect(sql->sa, stmt_Nop(sql->sa, stmt_list(sql->sa, nl), j->op4.funcval), stmt_bool(sql->sa, 1), cmp_equal);
+			op1 = _project(sql, l, op1);
+			op2 = _project(sql, r, op2);
+			cmp = stmt_genselect(sql->sa, op1, op2, op3, j->op4.funcval);
 		} else if (j->type == st_join2) {
 			stmt *le = stmt_project(sql->sa, l, ld );
 			stmt *re = stmt_project(sql->sa, r, rd );

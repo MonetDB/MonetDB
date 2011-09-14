@@ -546,15 +546,8 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
                         if (left && right && re->card > CARD_ATOM && !is_select) {
 				/* find predicate function */
                                 sql_subfunc *f = e->f;
-				stmt *j = NULL;
+				stmt *j = stmt_joinN(sql->sa, l, r, r2, f);
 
-				if (r2)
-					f = sql_bind_func3(sql->sa, sql->session->schema, f->func->base.name, tail_type(l), tail_type(r), tail_type(r2), F_FUNC);
-				else
-					f = sql_bind_func(sql->sa, sql->session->schema, f->func->base.name, tail_type(l), tail_type(r), F_FUNC);
-
-				if (f) 
-                                	j = stmt_joinN(sql->sa, stmt_list(sql->sa, append(list_new(sql->sa),l)), stmt_list(sql->sa, append(append(list_new(sql->sa),r),r2)), f);
                                 if (j && is_anti(e))
                                         j->flag |= ANTI;
                                 return j;

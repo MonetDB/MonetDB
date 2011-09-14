@@ -398,76 +398,22 @@ dump_joinN(backend *sql, MalBlkPtr mb, stmt *s)
 {
 	char *mod = sql_func_mod(s->op4.funcval->func);
 	char *fimp = sql_func_imp(s->op4.funcval->func);
-	node *n;
 	InstrPtr q;
-	int l, r, k;
-	int need_not = (s->flag & ANTI);
+	int k, op1, op2, op3;
 
 	/* dump left and right operands */
-	(void)_dumpstmt(sql, mb, s->op1);
-	(void)_dumpstmt(sql, mb, s->op2);
-
-	/* find left and right columns (need more work) */
-	l = ((stmt*)s->op1->op4.lval->h->data)->nr;
-	r = ((stmt*)s->op2->op4.lval->h->data)->nr;
-
-	q = dump_crossproduct(mb, l, r);
-	k = getDestVar(q);
-
-	/* split */
-	q = newStmt2(mb, algebraRef, markHRef);
-	q = pushArgument(mb, q, k);
-	q = pushOid(mb, q, 0);
-	r = getDestVar(q);
-
-	q = newStmt2(mb, algebraRef, markTRef);
-	q = pushArgument(mb, q, k);
-	q = pushOid(mb, q, 0);
-	l = getDestVar(q);
-
-	l = _dump_1(mb, batRef, reverseRef, l );
-
-	/* join left columns */
-	for (n = s->op1->op4.lval->h; n; n = n->next) {
-		stmt *op = n->data;
-
-		if (op->nrcols)
-			op->nr = _dump_2(mb, algebraRef, joinRef, l, op->nr);
-	}
-	/* join right columns */
-	for (n = s->op2->op4.lval->h; n; n = n->next) {
-		stmt *op = n->data;
-
-		if (op->nrcols)
-			op->nr = _dump_2(mb, algebraRef, joinRef, r, op->nr);
-	}
-
-	/* execute multiplexed function */
-	q = newStmt(mb, "mal","multiplex");
-	setVarType(mb,getArg(q,0), newBatType(TYPE_oid, TYPE_bit));
-	setVarUDFtype(mb,getArg(q,0));
-	q = pushStr(mb, q, mod);
-	q = pushStr(mb, q, fimp);
-	for (n = s->op1->op4.lval->h; n; n = n->next) {
-		stmt *op = n->data;
-		q = pushArgument(mb, q, op->nr);
-	}
-	for (n = s->op2->op4.lval->h; n; n = n->next) {
-		stmt *op = n->data;
-		q = pushArgument(mb, q, op->nr);
-	}
-	k = getDestVar(q);
+	op1 = _dumpstmt(sql, mb, s->op1);
+	op2 = _dumpstmt(sql, mb, s->op2);
+	if (s->op3)
+		op3 = _dumpstmt(sql, mb, s->op3);
 
 	/* filter qualifying tuples, return oids of h and tail */
-	q = newStmt2(mb, algebraRef, uselectRef);
-	q = pushArgument(mb, q, k);
-	q = pushBit(mb, q, !need_not);
+	q = newStmt(mb, mod, fimp);
+	q = pushArgument(mb, q, op1);
+	q = pushArgument(mb, q, op2);
+	if (s->op3)
+		q = pushArgument(mb, q, op3);
 	k = getDestVar(q);
-
-	k = _dump_1(mb, batRef, mirrorRef, k);
-	k = _dump_2(mb, algebraRef, joinRef, k, l);
-	k = _dump_1(mb, batRef, reverseRef, k);
-	k = _dump_2(mb, algebraRef, joinRef, k, r);
 	return k;
 }
 
