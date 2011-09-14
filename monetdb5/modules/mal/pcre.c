@@ -716,6 +716,10 @@ pcre_match_with_flags(bit *ret, str val, str pat, str flags)
 					": unsupported flag character '%c'\n", flags[i]);
 		}
 	}
+	if (strcmp(val, (char*)str_nil) == 0) {
+		*ret = FALSE;
+		return MAL_SUCCEED;
+	}
 
 	if ((re = pcre_compile(pat, options, &err_p, &errpos, NULL)) == NULL) {
 		throw(MAL, "pcre.match", OPERATION_FAILED
