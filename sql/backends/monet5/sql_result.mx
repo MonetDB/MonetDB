@@ -274,10 +274,13 @@ bat_max_@1length(BAT *b)
 		if (m < min) min = m;
 	}
 
-	if ((-min * 10) > max) 
-		max = (-min * 10);
-	while (max /= 10) ret++;
+	if (-min > max / 10) {
+		max = -min;
+		ret++;		/* '-' */
+	}
+	while (max /= 10)
 		ret++;
+	ret++;
 	return ret;
 }
 @

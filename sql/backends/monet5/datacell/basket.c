@@ -123,7 +123,7 @@ BSKTnewbasket(sql_schema *s, sql_table *t, sql_trans *tr)
 {
 	int idx, i;
 	node *o;
-	str msg = MAL_SUCCEED;;
+	str msg = MAL_SUCCEED;
 	BAT *b;
 	sql_column  *c;
 	char buf[BUFSIZ];
