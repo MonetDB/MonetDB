@@ -410,6 +410,8 @@ SQLinitClient(Client c)
 		mvc_reset(m, c->fdin, c->fdout, SQLdebug, NR_GLOBAL_VARS);
 		backend_reset(be);
 	}
+	if (m->session->tr)
+		reset_functions(m->session->tr);
 	/* pass through credentials of the user if not console */
 	schema = monet5_user_get_def_schema(m, c->user);
 	if (!schema) {
@@ -500,10 +502,6 @@ SQLexitClient(Client c)
 		res_tables_destroy(m->results);
 		m->results= NULL;
 
-		/*
-		if (m->session->tr)
-			reset_functions(m->session->tr);
-		*/
 		{
 			backend *be = c->state[MAL_SCENARIO_PARSER];
 

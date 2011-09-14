@@ -435,8 +435,14 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 		sql_exp *re = e->r, *re2 = e->f;
 		prop *p;
 
-		if (e->flag == cmp_filter)
+		if (e->flag == cmp_filter) {
+			list *r = e->r;
+
 			re2 = NULL;
+			re = r->h->data;
+			if (r->h->next)
+				re2 = r->h->next->data;
+		}
 		if (e->flag == cmp_in || e->flag == cmp_notin) {
 			return handle_in_exps(sql, e->l, e->r, left, right, grp, (e->flag == cmp_in), 0);
 		}
@@ -514,72 +520,47 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 			swapped = 1;
 		}
 		if (swapped || !right)
- 			r = exp_bin(sql, e->r, left, NULL, grp, sel);
+ 			r = exp_bin(sql, re, left, NULL, grp, sel);
 		else
- 			r = exp_bin(sql, e->r, right, NULL, grp, sel);
+ 			r = exp_bin(sql, re, right, NULL, grp, sel);
 		if (!r && !swapped) {
- 			r = exp_bin(sql, e->r, left, NULL, grp, sel);
+ 			r = exp_bin(sql, re, left, NULL, grp, sel);
 			is_select = 1;
 		}
 		if (!r && swapped) {
- 			r = exp_bin(sql, e->r, right, NULL, grp, sel);
+ 			r = exp_bin(sql, re, right, NULL, grp, sel);
 			is_select = 1;
 		}
 		if (re2)
- 			r2 = exp_bin(sql, e->f, left, right, grp, sel);
+ 			r2 = exp_bin(sql, re2, left, right, grp, sel);
 		if (!l || !r || (re2 && !r2)) {
 			assert(0);
 			return NULL;
 		}
 
-		/* the escape character of like is in the right expression */
-		if (e->flag == cmp_notlike || e->flag == cmp_like ||
-		    e->flag == cmp_notilike || e->flag == cmp_ilike)
-		{
-			if (!e->f)
-				r2 = stmt_atom_string(sql->sa, sa_strdup(sql->sa, ""));
-			if (!l || !r || !r2) {
-				assert(0);
-				return NULL;
-			}
-			if (l->nrcols == 0) {
-				stmt *lstmt;
-				char *likef = (e->flag == cmp_notilike || e->flag == cmp_ilike ?
-					"ilike" : "like");
-				sql_subtype *s = sql_bind_localtype("str");
-				sql_subfunc *like = sql_bind_func3(sql->sa, sql->session->schema, likef, s, s, s, F_FUNC);
-				list *ops = list_new(sql->sa);
+		/* general predicate, select and join */
+		if (e->flag == cmp_filter) {
+			if (l->nrcols == 0)
+				l = stmt_const(sql->sa, bin_first_column(sql->sa, swapped?right:left), l); 
 
-				assert(s && like);
-				
-				list_append(ops, l);
-				list_append(ops, r);
-				list_append(ops, r2);
-				lstmt = stmt_Nop(sql->sa, stmt_list(sql->sa, ops), like);
-				if (e->flag == cmp_notlike || e->flag == cmp_notilike) {
-					sql_subtype *bt = sql_bind_localtype("bit");
-					sql_subfunc *not = sql_bind_func(sql->sa, sql->session->schema, "not", bt, NULL, F_FUNC);
-					lstmt = stmt_unop(sql->sa, lstmt, not);
-				}
-				return lstmt;
-			}
                         if (left && right && re->card > CARD_ATOM && !is_select) {
-                                /* create l and r, gen operator func */
-                                char *like = (e->flag == cmp_like || e->flag == cmp_notlike)?"like":"ilike";
-                                int anti = (e->flag == cmp_notlike || e->flag == cmp_notilike);
-                                sql_subtype *s = sql_bind_localtype("str");
-                                sql_subfunc *f = sql_bind_func3(sql->sa, sql->session->schema, like, s, s, s, F_FUNC);
+				/* find predicate function */
+                                sql_subfunc *f = e->f;
+				stmt *j;
 
-                                stmt *j = stmt_joinN(sql->sa, stmt_list(sql->sa, append(list_new(sql->sa),l)), stmt_list(sql->sa, append(append(list_new(sql->sa),r),r2)), f);
-                                if (is_anti(e) || anti)
+				if (r2)
+					f = sql_bind_func3(sql->sa, sql->session->schema, f->func->base.name, tail_type(l), tail_type(r), tail_type(r2), F_FUNC);
+				else
+					f = sql_bind_func(sql->sa, sql->session->schema, f->func->base.name, tail_type(l), tail_type(r), F_FUNC);
+
+				if (f) 
+                                	j = stmt_joinN(sql->sa, stmt_list(sql->sa, append(list_new(sql->sa),l)), stmt_list(sql->sa, append(append(list_new(sql->sa),r),r2)), f);
+                                if (j && is_anti(e))
                                         j->flag |= ANTI;
                                 return j;
                         }
-			return stmt_likeselect(sql->sa, l, r, r2, (comp_type)e->flag);
+			return stmt_genselect(sql->sa, l, r, r2, e->f);
 		}
-		/* TODO general predicate, select and join */
-		if (e->flag == cmp_filter) 
-			return stmt_genselect(sql->sa, l, r, e->f);
 		if (left && right && !is_select &&
 		   ((l->nrcols && (r->nrcols || (r2 && r2->nrcols))) || 
 		     re->card > CARD_ATOM || 

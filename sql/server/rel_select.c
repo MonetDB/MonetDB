@@ -1075,8 +1075,7 @@ rel_push_join(sql_allocator *sa, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp
 				 lrel->op != op_left))
 			break;
 		/* pushing through left head of a left join is allowed */
-		if (lrel->op == op_left && (
-					!ln->next || lrel->l != ln->next->data))
+		if (lrel->op == op_left && (!ln->next || lrel->l != ln->next->data))
 			break;
 		p = lrel;
 	}
@@ -2034,22 +2033,12 @@ compare_str2type( char *compare_op)
 		if (compare_op[1] != '\0')
 			if (compare_op[1] == '=')
 				type = cmp_gte;
-	} else if (strcmp(compare_op, "like") == 0) {
-		type = cmp_like;
-	} else if (strcmp(compare_op, "ilike") == 0) {
-		type = cmp_ilike;
-	} else if (compare_op[0] == 'n') {
-		if (strcmp(compare_op, "not_like") == 0) {
-			type = cmp_notlike;
-		} else {
-			type = cmp_notilike;
-		}
 	}
 	return type;
 }
 
 static sql_rel *
-rel_filter_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, int type, char *filter_op, int anti )
+rel_filter_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, char *filter_op, int anti )
 {
 	sql_exp *L = ls, *R = rs, *e = NULL;
 	sql_subfunc *f = NULL;
@@ -2079,8 +2068,7 @@ rel_filter_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, 
 	}
 	if (!f || !ls || !rs)
 		return NULL;
-	e = exp_compare(sql->sa, ls, rs, type);
-	e->f = f;
+	e = exp_filter2(sql->sa, ls, rs, rs2, f);
 
 	if (anti)
 		set_anti(e);
@@ -2122,9 +2110,7 @@ rel_compare_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2,
 	if (rel_convert_types(sql, &ls, &rs, 1, type_equal) < 0 ||
 	   (rs2 && rel_convert_types(sql, &ls, &rs2, 1, type_equal) < 0)) 
 		return NULL;
-	if (!rs2 && type != cmp_like && type != cmp_notlike &&
-			type != cmp_ilike && type != cmp_notilike)
-	{
+	if (!rs2) {
 		if (ls->card < rs->card) {
 			sql_exp *swap = ls;
 	
@@ -2207,7 +2193,7 @@ rel_compare_exp(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs,
 	}
 	type = compare_str2type(compare_op);
 	if (type == cmp_filter) 
-		return rel_filter_exp_(sql, rel, ls, rs, esc, type, compare_op, 0);
+		return rel_filter_exp_(sql, rel, ls, rs, esc, compare_op, 0);
 	return rel_compare_exp_(sql, rel, ls, rs, esc, type, 0);
 }
 
@@ -2976,6 +2962,8 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		if (dlist_length(ro->data.lval) == 2) {
 			char *escape = ro->data.lval->h->next->data.sval;
 			ee = exp_atom(sql->sa, atom_string(sql->sa, st, sa_strdup(sql->sa, escape)));
+		} else {
+			ee = exp_atom(sql->sa, atom_string(sql->sa, st, sa_strdup(sql->sa, "")));
 		}
 		ro = ro->data.lval->h->data.sym;
 		re = rel_value_exp(sql, &rel, ro, f, ek);

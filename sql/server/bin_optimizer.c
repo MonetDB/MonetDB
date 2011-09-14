@@ -68,26 +68,6 @@ eliminate_semijoin(sql_allocator *sa, stmt *s)
 			} else if (PSEL(s1) && s1->flag == cmp_notequal) {
 				/* do notequal select last */
 				swap = 1;
-			} else if (PSEL(s2) &&
-					(s2->flag == cmp_notlike || s2->flag == cmp_notilike))
-			{
-				/* do notequal select last */
-				swap = 0;
-			} else if (PSEL(s1) &&
-					(s1->flag == cmp_notlike || s1->flag == cmp_notilike))
-			{
-				/* do notequal select last */
-				swap = 1;
-			} else if (PSEL(s2) &&
-					(s2->flag == cmp_like || s2->flag == cmp_ilike))
-			{
-				/* do like select last */
-				swap = 0;
-			} else if (PSEL(s1) &&
-					(s1->flag == cmp_like || s1->flag == cmp_ilike))
-			{
-				/* do like select last */
-				swap = 1;
 			} else if (PSEL(s1)) {
 				/* single-sided range before double-sided range */
 				swap = 0;
@@ -174,14 +154,8 @@ push_select( sql_allocator *sa, stmt *select, stmt *s )
 	if (select->type == st_uselect2) 
 		return stmt_uselect2(sa,  s, select->op2, select->op3, (comp_type)select->flag);
 
-	if (select->type == st_select) {
-		if (select->flag == cmp_like || select->flag == cmp_notlike ||
-		    select->flag == cmp_ilike || select->flag == cmp_notilike)
-			return stmt_likeselect(sa, s, select->op2,
-					select->op3, (comp_type)select->flag);
-		else
-			return stmt_select(sa, s, select->op2, (comp_type)select->flag);
-	}
+	if (select->type == st_select) 
+		return stmt_select(sa, s, select->op2, (comp_type)select->flag);
 
 	if (select->type == st_uselect) 
 		return stmt_uselect(sa,  s, select->op2, (comp_type)select->flag);

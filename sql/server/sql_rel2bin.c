@@ -414,8 +414,8 @@ shrink_select_ranges(mvc *sql, list *oldsels)
 			node *n;
 			int flg, len = 0;
 
-			/* separate all single-range, equal, notequal, notlike, & like selects and eliminate duplicates
-			 * (notequal, notlike, & like selects are saved and re-added at the end) */
+			/* separate all single-range, equal, notequal selects and eliminate duplicates
+			 * (notequal selects are saved and re-added at the end) */
 			for (ct = cmp_gt; ct < cmp_all; ct++) {
 				list *l = list_select(colsels, (void *) &ct, (fcmp) &cmp_sel_comp_type, NULL);
 
@@ -571,10 +571,8 @@ shrink_select_ranges(mvc *sql, list *oldsels)
 				}
 			}
 
-			/* finally collect all saved like, notlike, and notequal selects */
-			for (ct = cmp_ilike; ct >= cmp_notequal; ct--) {
-				list_merge(newsels, sels1[ct], NULL);
-			}
+			/* finally collect all saved notequal selects */
+			list_merge(newsels, sels1[cmp_notequal], NULL);
 		}
 	}
 	/* re-add the skipped statements without basecolumn */
@@ -914,12 +912,9 @@ push_semijoin( mvc *sql, stmt *select, stmt *s )
 		stmt *op2 = select->op2;
 
 		if (cmp == cmp_filter) {
-			return stmt_genselect(sql->sa, s, op2, select->op4.funcval);
-		} else if (cmp == cmp_like || cmp == cmp_notlike ||
-		    	   cmp == cmp_ilike || cmp == cmp_notilike) {
 			stmt *op3 = select->op3;
 
-			return stmt_likeselect(sql->sa, s, op2, op3, cmp);
+			return stmt_genselect(sql->sa, s, op2, op3, select->op4.funcval);
 		} else {
 			return stmt_select(sql->sa,  s, op2, cmp);
 		}

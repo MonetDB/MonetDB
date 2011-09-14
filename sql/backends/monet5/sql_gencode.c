@@ -900,24 +900,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				case cmp_gte:
 					op = ">=";
 					break;
-				case cmp_like:
-					op = "like";
-					mod = strRef;
-					break;
-				case cmp_ilike:
-					op = "ilike";
-					mod = strRef;
-					break;
-				case cmp_notlike:
-					need_not = TRUE;
-					op = "like";
-					mod = strRef;
-					break;
-				case cmp_notilike:
-					need_not = TRUE;
-					op = "ilike";
-					mod = strRef;
-					break;
 				default:
 					showException(SQL,"sql","Unknown operator");
 				}
@@ -1000,7 +982,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 				if (s->flag == cmp_filter) {
 					char *mod, *fimp;
+					int r2 = -1;
 
+					if (s->op3)
+						r2 = _dumpstmt(sql, mb, s->op3);
 					backend_create_func(sql, s->op4.funcval->func);
 					mod  = sql_func_mod(s->op4.funcval->func);
 					fimp = sql_func_imp(s->op4.funcval->func);
@@ -1008,44 +993,13 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					q = newStmt(mb, mod, convertOperator(fimp));
 					q = pushArgument(mb, q, l);
 					q = pushArgument(mb, q, r);
+					if (s->op3)
+						q = pushArgument(mb, q, r2);
 					s->nr = getDestVar(q);
 					break;
 				}
 					
 				switch (s->flag) {
-				case cmp_like:
-				case cmp_ilike:
-				{
-					int e = _dumpstmt(sql, mb, s->op3);
-					q = newStmt1(mb, pcreRef,
-							(s->flag == cmp_like ? "like_uselect" : "ilike_uselect"));
-					q = pushArgument(mb, q, l);
-					q = pushArgument(mb, q, r);
-					q = pushArgument(mb, q, e);
-					break;
-				}
-				case cmp_notlike:
-				case cmp_notilike:
-				{
-					int e = _dumpstmt(sql, mb, s->op3);
-					int k;
-
-					q = newStmt1(mb, pcreRef,
-							(s->flag == cmp_notlike ? "like_uselect" : "ilike_uselect"));
-					q = pushArgument(mb, q, l);
-					q = pushArgument(mb, q, r);
-					q = pushArgument(mb, q, e);
-					k = getDestVar(q);
-
-					q = newStmt2(mb, algebraRef, projectRef);
-					q = pushArgument(mb, q, l);
-					q = pushNil(mb, q, TYPE_void);
-					l = getDestVar(q);
-					q = newStmt2(mb, algebraRef, kdifferenceRef);
-					q = pushArgument(mb, q, l);
-					q = pushArgument(mb, q, k);
-					break;
-				}
 				case cmp_equal:{
 					q = newStmt1(mb, algebraRef, cmd);
 					q = pushArgument(mb, q, l);

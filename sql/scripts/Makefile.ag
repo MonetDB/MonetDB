@@ -20,7 +20,7 @@ MT_SAFE
 headers_sql = {
 	HEADERS = sql
 	DIR = libdir/monetdb5/createdb
-	SOURCES = 10_math.sql 11_times.sql 12_url.sql 13_date.sql 14_inet.sql 15_history.sql 16_tracelog.sql 17_compress.sql 18_dictionary.sql 19_cluster.sql 20_vacuum.sql 21_dependency_functions.sql 22_clients.sql 23_skyserver.sql 24_zorder.sql 25_debug.sql 99_system.sql
+	SOURCES = 09_like.sql 10_math.sql 11_times.sql 12_url.sql 13_date.sql 14_inet.sql 15_history.sql 16_tracelog.sql 17_compress.sql 18_dictionary.sql 19_cluster.sql 20_vacuum.sql 21_dependency_functions.sql 22_clients.sql 23_skyserver.sql 24_zorder.sql 25_debug.sql 99_system.sql
 }
 
 headers_moresql = {

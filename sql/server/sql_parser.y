@@ -3229,13 +3229,13 @@ like_predicate:
 		  append_symbol(l, $1);
 		  append_symbol(l, $4);
 		  append_int(l, FALSE);  /* case sensitive */
-		  $$ = _symbol_create_list( SQL_NOT_LIKE, l ); }
+		  $$ = _symbol_create_symbol(SQL_NOT, _symbol_create_list( SQL_LIKE, l )); }
  |  pred_exp NOT ILIKE like_exp
 		{ dlist *l = L();
 		  append_symbol(l, $1);
 		  append_symbol(l, $4);
 		  append_int(l, TRUE);  /* case insensitive */
-		  $$ = _symbol_create_list( SQL_NOT_LIKE, l ); }
+		  $$ = _symbol_create_symbol(SQL_NOT, _symbol_create_list( SQL_LIKE, l )); }
  |  pred_exp LIKE like_exp
 		{ dlist *l = L();
 		  append_symbol(l, $1);
@@ -4581,6 +4581,7 @@ restricted_ident:
 ident:
     IDENT	{ $$ = $1; }
  |  aTYPE	{ $$ = $1; }
+ |  FILTER_FUNC	{ $$ = $1; }
  |  ALIAS	{ $$ = $1; }
  |  AGGR	{ $$ = $1; } 	/* without '(' */
  |  RANK	{ $$ = $1; }	/* without '(' */
@@ -5348,7 +5349,6 @@ char *token2string(int token)
 	SQL(BETWEEN);
 	SQL(NOT_BETWEEN);
 	SQL(LIKE);
-	SQL(NOT_LIKE);
 	SQL(IN);
 	SQL(NOT_IN);
 	SQL(GRANT);

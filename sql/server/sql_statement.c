@@ -1034,27 +1034,13 @@ stmt_select(sql_allocator *sa, stmt *op1, stmt *op2, comp_type cmptype)
 }
 
 stmt *
-stmt_likeselect(sql_allocator *sa, stmt *op1, stmt *op2, stmt *op3, comp_type cmptype)
+stmt_genselect(sql_allocator *sa, stmt *op1, stmt *op2, stmt *op3, sql_subfunc *f)
 {
 	stmt *s = stmt_create(sa, st_select);
 
 	s->op1 = op1;
 	s->op2 = op2;
 	s->op3 = op3;
-	s->flag = cmptype;
-        s->nrcols = (op1->nrcols==2)?2:1;
-	s->h = s->op1->h;
-	s->t = s->op1->t;
-	return s;
-}
-
-stmt *
-stmt_genselect(sql_allocator *sa, stmt *op1, stmt *op2, sql_subfunc *f)
-{
-	stmt *s = stmt_create(sa, st_select);
-
-	s->op1 = op1;
-	s->op2 = op2;
 	s->op4.funcval = dup_subfunc(sa, f);
 	s->flag = cmp_filter;
         s->nrcols = (op1->nrcols==2)?2:1;
@@ -1062,7 +1048,6 @@ stmt_genselect(sql_allocator *sa, stmt *op1, stmt *op2, sql_subfunc *f)
 	s->t = s->op1->t;
 	return s;
 }
-
 
 stmt *
 stmt_select2(sql_allocator *sa, stmt *op1, stmt *op2, stmt *op3, int cmp)
@@ -1098,8 +1083,6 @@ stmt_uselect(sql_allocator *sa, stmt *op1, stmt *op2, comp_type cmptype)
 {
 	stmt *s = stmt_create(sa, st_uselect);
 
-	assert(cmptype != cmp_like && cmptype != cmp_notlike &&
-	       cmptype != cmp_ilike && cmptype != cmp_notilike);
 	s->op1 = op1;
 	s->op2 = op2;
 	s->flag = cmptype;

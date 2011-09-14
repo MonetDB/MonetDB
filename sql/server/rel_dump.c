@@ -60,14 +60,11 @@ cmp_print(mvc *sql, stream *fout, int cmp)
 	case cmp_lt: 		r = "<"; break;
 	case cmp_equal: 	r = "="; break;
 	case cmp_notequal: 	r = "!="; break;
-	case cmp_notlike: 	r = "notlike"; break;
-	case cmp_like: 		r = "like"; break;
-	case cmp_notilike: 	r = "notilike"; break;
-	case cmp_ilike: 	r = "ilike"; break;
 	case cmp_all: 		r = "all"; break;
 	case cmp_or: 		r = "or"; break;
 	case cmp_in: 		r = "in"; break;
 	case cmp_notin: 	r = "notin"; break;
+	case cmp_filter: 	r = "filter"; break;
 	default:
 		r = "";
 	}
