@@ -2045,11 +2045,11 @@ rel_filter_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, 
 
 	/* find filter function */
 	if (rs2)
-		f = sql_bind_func3(sql->sa, sql->session->schema, filter_op, exp_subtype(ls), exp_subtype(rs), exp_subtype(rs2), F_FILT);
+		f = sql_bind_func3(sql->sa, mvc_bind_schema(sql,"sys"), filter_op, exp_subtype(ls), exp_subtype(rs), exp_subtype(rs2), F_FILT);
 	else
-		f = sql_bind_func(sql->sa, sql->session->schema, filter_op, exp_subtype(ls), exp_subtype(rs), F_FILT);
+		f = sql_bind_func(sql->sa, mvc_bind_schema(sql,"sys"), filter_op, exp_subtype(ls), exp_subtype(rs), F_FILT);
 	if (!f) {
-		f = sql_find_func(sql->sa, sql->session->schema, filter_op, (rs2)?3:2, F_FILT);
+		f = sql_find_func(sql->sa, mvc_bind_schema(sql,"sys"), filter_op, (rs2)?3:2, F_FILT);
 		if (f) {
 			node *m = f->func->ops->h;
 			sql_arg *a = m->data;
@@ -2510,7 +2510,6 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 		return NULL;
 	}
 	case SQL_LIKE:
-	case SQL_NOT_LIKE:
 	{
 		symbol *lo = sc->data.lval->h->data.sym;
 		symbol *ro = sc->data.lval->h->next->data.sym;
@@ -2518,6 +2517,7 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 		sql_subtype *st = sql_bind_localtype("str");
 		sql_exp *le = rel_value_exp(sql, rel, lo, f, ek);
 		sql_exp *re, *ee = NULL;
+		char *like = insensitive ? "ilike" : "like";
 
 		if (!le)
 			return NULL;
@@ -2543,19 +2543,9 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 			char *escape = ro->data.lval->h->next->data.sval;
 			ee = exp_atom(sql->sa, atom_string(sql->sa, st, sa_strdup(sql->sa, escape)));
 		}
-		if (sc->token == SQL_LIKE) {
-			char *like = insensitive ? "ilike" : "like";
-			if (ee)
-				return rel_nop_(sql, le, re, ee, NULL, NULL, like, card_value);
-			return rel_binop_(sql, le, re, NULL, like, card_value);
-		} else {
-			char *like = insensitive ? "ilike" : "like";
-			if (ee)
-				le = rel_nop_(sql, le, re, ee, NULL, NULL, like, card_value);
-			else
-				le = rel_binop_(sql, le, re, NULL, like, card_value);
-			return rel_unop_(sql, le, NULL, "not", card_value);
-		}
+		if (ee)
+			return rel_nop_(sql, le, re, ee, NULL, NULL, like, card_value);
+		return rel_binop_(sql, le, re, NULL, like, card_value);
 	}
 	case SQL_BETWEEN:
 	case SQL_NOT_BETWEEN:
@@ -2941,7 +2931,6 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		return rel;
 	}
 	case SQL_LIKE:
-	case SQL_NOT_LIKE:
 	{
 		symbol *lo = sc->data.lval->h->data.sym;
 		symbol *ro = sc->data.lval->h->next->data.sym;
@@ -2976,11 +2965,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		}
 		if ((le = rel_check_type(sql, st, le, type_equal)) == NULL) 
 			return sql_error(sql, 02, "LIKE: wrong type, should be string");
-		if (sc->token == SQL_LIKE)
-			return rel_compare_exp(sql, rel, le, re,
-					(insensitive ? "ilike" : "like"), ee, TRUE);
-		return rel_compare_exp(sql, rel, le, re,
-				(insensitive ? "not_ilike" : "not_like"), ee, TRUE);
+		return rel_compare_exp(sql, rel, le, re, (insensitive ? "ilike" : "like"), ee, TRUE);
 	}
 	case SQL_BETWEEN:
 	case SQL_NOT_BETWEEN:
@@ -4527,8 +4512,11 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 
 	if (sn->where) {
 		sql_rel *r = rel_logical_exp(sql, rel, sn->where, sql_where);
-		if (!r)
-			return sql_error(sql, 02, "Subquery result missing");
+		if (!r) {
+			if (sql->errstr[0] == 0)
+				return sql_error(sql, 02, "Subquery result missing");
+			return NULL;
+		}
 		rel = r;
 	}
 

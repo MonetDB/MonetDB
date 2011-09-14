@@ -399,7 +399,7 @@ dump_joinN(backend *sql, MalBlkPtr mb, stmt *s)
 	char *mod = sql_func_mod(s->op4.funcval->func);
 	char *fimp = sql_func_imp(s->op4.funcval->func);
 	InstrPtr q;
-	int k, op1, op2, op3;
+	int k, op1, op2, op3 = 0;
 
 	/* dump left and right operands */
 	op1 = _dumpstmt(sql, mb, s->op1);
