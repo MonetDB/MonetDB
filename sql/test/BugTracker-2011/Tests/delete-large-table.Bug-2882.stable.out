@@ -1,0 +1,316 @@
+stdout of test 'delete-large-table.Bug-2882` in directory 'test/BugTracker-2011` itself:
+
+
+# 11:01:08 >  
+# 11:01:08 >   mserver5  --debug=10 --set gdk_nr_threads=1  --set "gdk_dbfarm=/ufs/sjoerd/Monet-candidate/var/MonetDB" --set mapi_open=true --set mapi_port=37694 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_test_BugTracker-2011" --set mal_listing=0 ; echo ; echo Over..
+# 11:01:08 >  
+
+# MonetDB 5 server v11.5.2
+# This is an unreleased version
+# Serving database 'mTests_test_BugTracker-2011', using 1 thread
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://ottar.ins.cwi.nl:37694/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/10_math.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/11_times.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/12_url.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/13_date.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/14_inet.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/15_history.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/16_tracelog.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/17_compress.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/18_dictionary.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/19_cluster.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/20_vacuum.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/21_dependency_functions.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/22_clients.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/23_skyserver.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/24_zorder.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/25_debug.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/40_geom.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/80_udf.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/99_system.sql
+
+Over..
+
+# 11:01:09 >  
+# 11:01:09 >  mclient -lsql -ftest -i -e --host=ottar --port=37694 
+# 11:01:09 >  
+
+#create table bigtable2882 (i int);
+#insert into bigtable2882 values (1);
+[ 1	]
+#select count(*) from bigtable2882;
+% sys.bigtable2882 # table_name
+% L2 # name
+% wrd # type
+% 1 # length
+[ 1	]
+#insert into bigtable2882 (select * from bigtable2882);
+[ 1	]
+#select count(*) from bigtable2882;
+% sys.bigtable2882 # table_name
+% L3 # name
+% wrd # type
+% 1 # length
+[ 2	]
+#insert into bigtable2882 (select * from bigtable2882);
+[ 2	]
+#select count(*) from bigtable2882;
+% sys.bigtable2882 # table_name
+% L4 # name
+% wrd # type
+% 1 # length
+[ 4	]
+#insert into bigtable2882 (select * from bigtable2882);
+[ 4	]
+#select count(*) from bigtable2882;
+% sys.bigtable2882 # table_name
+% L5 # name
+% wrd # type
+% 1 # length
+[ 8	]
+#insert into bigtable2882 (select * from bigtable2882);
+[ 8	]
+#select count(*) from bigtable2882;
+% sys.bigtable2882 # table_name
+% L6 # name
+% wrd # type
+% 2 # length
+[ 16	]
+#insert into bigtable2882 (select * from bigtable2882);
+[ 16	]
+#select count(*) from bigtable2882;
+% sys.bigtable2882 # table_name
+% L7 # name
+% wrd # type
+% 2 # length
+[ 32	]
+#insert into bigtable2882 (select * from bigtable2882);
+[ 32	]
+#select count(*) from bigtable2882;
+% sys.bigtable2882 # table_name
+% L10 # name
+% wrd # type
+% 2 # length
+[ 64	]
+#insert into bigtable2882 (select * from bigtable2882);
+[ 64	]
+#select count(*) from bigtable2882;
+% sys.bigtable2882 # table_name
+% L11 # name
+% wrd # type
+% 3 # length
+[ 128	]
+#insert into bigtable2882 (select * from bigtable2882);
+[ 128	]
+#select count(*) from bigtable2882;
+% sys.bigtable2882 # table_name
+% L12 # name
+% wrd # type
+% 3 # length
+[ 256	]
+#insert into bigtable2882 (select * from bigtable2882);
+[ 256	]
+#select count(*) from bigtable2882;
+% sys.bigtable2882 # table_name
+% L13 # name
+% wrd # type
+% 3 # length
+[ 512	]
+#insert into bigtable2882 (select * from bigtable2882);
+[ 512	]
+#select count(*) from bigtable2882;
+% sys.bigtable2882 # table_name
+% L14 # name
+% wrd # type
+% 4 # length
+[ 1024	]
+#insert into bigtable2882 (select * from bigtable2882);
+[ 1024	]
+#select count(*) from bigtable2882;
+% sys.bigtable2882 # table_name
+% L15 # name
+% wrd # type
+% 4 # length
+[ 2048	]
+#insert into bigtable2882 (select * from bigtable2882);
+[ 2048	]
+#select count(*) from bigtable2882;
+% sys.bigtable2882 # table_name
+% L16 # name
+% wrd # type
+% 4 # length
+[ 4096	]
+#insert into bigtable2882 (select * from bigtable2882);
+[ 4096	]
+#select count(*) from bigtable2882;
+% sys.bigtable2882 # table_name
+% L17 # name
+% wrd # type
+% 4 # length
+[ 8192	]
+#insert into bigtable2882 (select * from bigtable2882);
+[ 8192	]
+#select count(*) from bigtable2882;
+% sys.bigtable2882 # table_name
+% L20 # name
+% wrd # type
+% 5 # length
+[ 16384	]
+#insert into bigtable2882 (select * from bigtable2882);
+[ 16384	]
+#select count(*) from bigtable2882;
+% sys.bigtable2882 # table_name
+% L21 # name
+% wrd # type
+% 5 # length
+[ 32768	]
+#insert into bigtable2882 (select * from bigtable2882);
+[ 32768	]
+#select count(*) from bigtable2882;
+% sys.bigtable2882 # table_name
+% L22 # name
+% wrd # type
+% 5 # length
+[ 65536	]
+#insert into bigtable2882 (select * from bigtable2882);
+[ 65536	]
+#select count(*) from bigtable2882;
+% sys.bigtable2882 # table_name
+% L23 # name
+% wrd # type
+% 6 # length
+[ 131072	]
+#insert into bigtable2882 (select * from bigtable2882);
+[ 131072	]
+#select count(*) from bigtable2882;
+% sys.bigtable2882 # table_name
+% L24 # name
+% wrd # type
+% 6 # length
+[ 262144	]
+#insert into bigtable2882 (select * from bigtable2882);
+[ 262144	]
+#select count(*) from bigtable2882;
+% sys.bigtable2882 # table_name
+% L25 # name
+% wrd # type
+% 6 # length
+[ 524288	]
+#insert into bigtable2882 (select * from bigtable2882);
+[ 524288	]
+#select count(*) from bigtable2882;
+% sys.bigtable2882 # table_name
+% L26 # name
+% wrd # type
+% 7 # length
+[ 1048576	]
+#insert into bigtable2882 (select * from bigtable2882);
+[ 1048576	]
+#select count(*) from bigtable2882;
+% sys.bigtable2882 # table_name
+% L27 # name
+% wrd # type
+% 7 # length
+[ 2097152	]
+#insert into bigtable2882 (select * from bigtable2882);
+[ 2097152	]
+#select count(*) from bigtable2882;
+% sys.bigtable2882 # table_name
+% L30 # name
+% wrd # type
+% 7 # length
+[ 4194304	]
+#insert into bigtable2882 (select * from bigtable2882);
+[ 4194304	]
+#select count(*) from bigtable2882;
+% sys.bigtable2882 # table_name
+% L31 # name
+% wrd # type
+% 7 # length
+[ 8388608	]
+#insert into bigtable2882 (select * from bigtable2882);
+[ 8388608	]
+#select count(*) from bigtable2882;
+% sys.bigtable2882 # table_name
+% L32 # name
+% wrd # type
+% 8 # length
+[ 16777216	]
+#insert into bigtable2882 (select * from bigtable2882);
+[ 16777216	]
+#select count(*) from bigtable2882;
+% sys.bigtable2882 # table_name
+% L33 # name
+% wrd # type
+% 8 # length
+[ 33554432	]
+#create table test2882(id bigint);
+#insert into test2882(id) SELECT ROW_NUMBER () OVER () FROM bigtable2882 limit 20000000;
+[ 20000000	]
+#select count(*) from test2882;
+% sys.test2882 # table_name
+% L35 # name
+% wrd # type
+% 8 # length
+[ 20000000	]
+#select * from test2882 where id = 1;
+% sys.test2882 # table_name
+% id # name
+% bigint # type
+% 1 # length
+[ 1	]
+#select * from test2882 where id = 20000000;
+% sys.test2882 # table_name
+% id # name
+% bigint # type
+% 8 # length
+[ 20000000	]
+#select * from test2882 where id in (1, 20000000);
+% sys.test2882 # table_name
+% id # name
+% bigint # type
+% 8 # length
+[ 1	]
+[ 20000000	]
+#delete from test2882 where id = 1;
+[ 1	]
+#delete from test2882 where id = 20000000;
+[ 1	]
+#select count(*) from test2882;
+% sys.test2882 # table_name
+% L41 # name
+% wrd # type
+% 8 # length
+[ 19999998	]
+#select * from test2882 where id = 1;
+% sys.test2882 # table_name
+% id # name
+% bigint # type
+% 1 # length
+#select * from test2882 where id = 20000000;
+% sys.test2882 # table_name
+% id # name
+% bigint # type
+% 1 # length
+#select * from test2882 where id in (1, 20000000);
+% sys.test2882 # table_name
+% id # name
+% bigint # type
+% 1 # length
+#drop table bigtable2882;
+#drop table test2882;
+
+# 11:01:24 >  
+# 11:01:24 >  Done.
+# 11:01:24 >  
+
