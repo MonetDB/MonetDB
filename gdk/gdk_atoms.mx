@@ -1923,7 +1923,7 @@ strPut(Heap *h, var_t *dst, const char *v)
 		memset(h->base + h->free, 0, h->size - h->free);
 #endif
 
-		/* make bucket point into the enw heap */
+		/* make bucket point into the new heap */
 		bucket = ((stridx_t *) h->base) + off;
 	}
 
