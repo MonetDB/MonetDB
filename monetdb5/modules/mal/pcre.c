@@ -100,6 +100,8 @@ pcre_export str PCREselectDef(int *res, str *pattern, int *bid);
 pcre_export str PCREuselectDef(int *res, str *pattern, int *bid);
 pcre_export str PCRElike_uselect_pcre(int *ret, int *b, str *pat, str *esc);
 pcre_export str PCREilike_uselect_pcre(int *ret, int *b, str *pat, str *esc);
+pcre_export str PCRElike_join_pcre(int *ret, int *b, int *pat, str *esc);
+pcre_export str PCREilike_join_pcre(int *ret, int *b, int *pat, str *esc);
 pcre_export str PCRElike_select_pcre(int *ret, int *b, str *pat, str *esc);
 pcre_export str PCREilike_select_pcre(int *ret, int *b, str *pat, str *esc);
 pcre_export str pcre_init(void);
@@ -1479,4 +1481,51 @@ str
 PCREilike_select_pcre(int *ret, int *b, str *pat, str *esc)
 {
 	return PCRElike_pcre(ret,b,pat,esc,FALSE,TRUE);
+}
+
+static str
+PCRElike_join(int *ret, int *b, int *pat, str *esc, int case_sensitive)
+{
+	BUN p;
+	BAT *B = BATdescriptor(*b);
+	BAT *Bpat = BATdescriptor(*pat);
+	BAT *tr, *x, *res = BATnew(TYPE_oid, TYPE_oid, BATcount(B) * BATcount(Bpat));
+	BATiter pati = bat_iterator(Bpat);
+	
+	for(p = 0; p < BATcount(Bpat); p++) {
+		str ppat = (str)BUNtail(pati, p);
+		int r;
+		str err;
+
+		if (case_sensitive) {
+			if ((err = PCRElike_uselect_pcre( &r, b, &ppat, esc)) != MAL_SUCCEED)
+				return err;
+		} else {
+			if ((err = PCREilike_uselect_pcre( &r, b, &ppat, esc)) != MAL_SUCCEED)
+				return err;
+		}
+		
+		tr = BATdescriptor(r);
+		x = BATconst(tr, TYPE_oid, BUNhead(pati, p));
+		BATins(res, x, TRUE);
+		BBPreleaseref(tr->batCacheid);
+		BBPreleaseref(x->batCacheid);
+	}
+	BBPreleaseref(B->batCacheid);
+	BBPreleaseref(Bpat->batCacheid);
+	*ret = res->batCacheid;
+	BBPkeepref(res->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+PCRElike_join_pcre(int *ret, int *b, int *pat, str *esc)
+{
+	return PCRElike_join(ret, b, pat, esc, 1);
+}
+
+str
+PCREilike_join_pcre(int *ret, int *b, int *pat, str *esc)
+{
+	return PCRElike_join(ret, b, pat, esc, 0);
 }
