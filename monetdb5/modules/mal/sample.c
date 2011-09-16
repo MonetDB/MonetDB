@@ -151,3 +151,23 @@ SAMPLEuniform(bat *r, bat *b, ptr s) {
 	throw(MAL, "sample.uniform", OPERATION_FAILED "bunfastins");
 }
 
+sample_export str
+SAMPLEuniform_dbl(bat *r, bat *b, ptr p) {
+	BAT *bb;
+	double pr = *(double *)p;
+	wrd s;
+
+	if ( pr < 0.0 || pr > 1.0 ) {
+		throw(MAL, "sample.uniform", ILLEGAL_ARGUMENT " p should be between 0 and 1.0" );
+	} else if (pr == 0) {/* special case */
+		s = 0;
+		return SAMPLEuniform(r, b, (ptr)&s);
+	}
+
+	if ((bb = BATdescriptor(*b)) == NULL) {
+		throw(MAL, "sample.uniform", INTERNAL_BAT_ACCESS);
+	}
+	s = (wrd) (pr*(double)BATcount(bb));
+	BBPunfix(bb->batCacheid);
+	return SAMPLEuniform(r, b, (ptr) &s);
+}

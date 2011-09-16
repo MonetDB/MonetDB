@@ -4787,10 +4787,9 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 	}
 
 	if (sn->sample) {
-		sql_subtype *wrd = sql_bind_localtype("wrd");
 		list *exps = new_exp_list(sql->sa);
 		sql_exp *o = rel_value_exp( sql, NULL, sn->sample, 0, ek);
-		if (!o || !(o=rel_check_type(sql, wrd, o, type_equal)))
+		if (!o)
 			return NULL;
 		append(exps, o);
 		rel = rel_sample(sql->sa, rel, exps);

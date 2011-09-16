@@ -43,4 +43,7 @@
 sample_export str
 SAMPLEuniform(bat *r, bat *b, ptr s);
 
+sample_export str
+SAMPLEuniform_dbl(bat *r, bat *b, ptr p);
+
 #endif

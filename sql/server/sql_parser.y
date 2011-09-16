@@ -3141,9 +3141,13 @@ opt_offset:
 
 opt_sample:
 	/* empty */	{ $$ = NULL; }
- |  SAMPLE poswrd	{ 
+ |  SAMPLE poswrd	{
 		  	  sql_subtype *t = sql_bind_localtype("wrd");
-			  $$ = _newAtomNode( atom_int(SA, t, (lng)$2)); 
+			  $$ = _newAtomNode( atom_int(SA, t, (lng)$2));
+			}
+ |  SAMPLE INTNUM	{
+		  	  sql_subtype *t = sql_bind_localtype("dbl");
+			  $$ = _newAtomNode( atom_float(SA, t, strtod($2,NULL)));
 			}
  |  SAMPLE param	{ $$ = $2; }
  ;
