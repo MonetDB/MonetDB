@@ -826,6 +826,11 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				char *op = "=";
 				int k;
 				int j,hml,tmr,mhj,mtj;
+				int op3 = 0;
+
+
+				if (s->op3)
+					op3 = _dumpstmt(sql, mb, s->op3);
 
 				switch (s->flag) {
 				case cmp_equal:
@@ -845,6 +850,20 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					break;
 				case cmp_gte:
 					op = ">=";
+					break;
+				case cmp_filter: {
+					sql_subfunc *f;
+					char *fname = s->op4.funcval->func->base.name;
+					
+					op = sql_func_imp(s->op4.funcval->func);
+					mod  = sql_func_mod(s->op4.funcval->func);
+			
+ 					if ((!s->op3 && (f = sql_bind_func (sql->mvc->sa, mvc_bind_schema(sql->mvc,"sys"), fname, tail_type(s->op1), tail_type(s->op2), F_FUNC)) != NULL) ||
+ 					     (s->op3 && (f = sql_bind_func3(sql->mvc->sa, mvc_bind_schema(sql->mvc,"sys"), fname, tail_type(s->op1), tail_type(s->op2), tail_type(s->op3), F_FUNC)) != NULL)) {
+						op = sql_func_imp(f->func);
+						mod  = sql_func_mod(f->func);
+					}
+				}
 					break;
 				default:
 					showException(SQL,"sql","Unknown operator");
@@ -889,6 +908,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				r = getDestVar(q);
 
 				q = multiplex2(mb,mod,convertOperator(op),l,r,TYPE_bit);
+				if (s->op3) 
+					q = pushArgument(mb, q, op3);
 				k = getDestVar(q);
 
 				q = newStmt2(mb, algebraRef, uselectRef);
