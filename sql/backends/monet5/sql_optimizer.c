@@ -369,6 +369,17 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 					}
 					rows = (wrd) cnt;
 				}
+			} else if (s && f == binddbatRef) {
+				size_t cnt;
+				sql_table *t = mvc_bind_table(m, s, tname);
+				sql_column *c = NULL;
+
+				if (t->columns.set->h) {
+					c = t->columns.set->h->data;
+
+					cnt = store_funcs.count_col(c);
+					rows = (wrd) cnt;
+				}
 			}
 			if (rows > 1 && mode != RD_INS)
 				varSetProp(mb, k, rowsProp, op_eq, VALset(&vr, TYPE_wrd, &rows));
