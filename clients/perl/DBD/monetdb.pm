@@ -233,10 +233,11 @@ SQL
 
 
 my $ttp = {
- 'TABLE'           => 't."type" = 0  and t."system" = false and t."temporary" = 0'
-,'SYSTEM TABLE'    => 't."type" = 0  and t."system" = true  and t."temporary" = 0'
-,'LOCAL TEMPORARY' => 't."type" = 0  and t."system" = false and t."temporary" = 1'
-,'VIEW'            => 't."type" = 1                                             '
+ 'TABLE'            => 't."type" = 0  and t."system" = false and t."temporary" = 0 and s.name <> \'tmp\''
+,'GLOBAL TEMPORARY' => 't."type" = 0  and t."system" = false and t."temporary" = 0 and s.name = \'tmp\''
+,'SYSTEM TABLE'     => 't."type" = 0  and t."system" = true  and t."temporary" = 0'
+,'LOCAL TEMPORARY'  => 't."type" = 0  and t."system" = false and t."temporary" = 1'
+,'VIEW'             => 't."type" = 1                                              '
 };
 
 
@@ -248,14 +249,16 @@ select distinct
      , cast( null as varchar( 128 ) ) as table_schem
      , cast( null as varchar( 128 ) ) as table_name
      , case
-         when $ttp->{'TABLE'          } then cast('TABLE'               as varchar( 254 ) )
-         when $ttp->{'SYSTEM TABLE'   } then cast('SYSTEM TABLE'        as varchar( 254 ) )
-         when $ttp->{'LOCAL TEMPORARY'} then cast('LOCAL TEMPORARY'     as varchar( 254 ) )
-         when $ttp->{'VIEW'           } then cast('VIEW'                as varchar( 254 ) )
-         else                                cast('INTERNAL TABLE TYPE' as varchar( 254 ) )
+         when $ttp->{'TABLE'           } then cast('TABLE'               as varchar( 254 ) )
+         when $ttp->{'SYSTEM TABLE'    } then cast('SYSTEM TABLE'        as varchar( 254 ) )
+         when $ttp->{'LOCAL TEMPORARY' } then cast('LOCAL TEMPORARY'     as varchar( 254 ) )
+         when $ttp->{'GLOBAL TEMPORARY'} then cast('GLOBAL TEMPORARY'    as varchar( 254 ) )
+         when $ttp->{'VIEW'            } then cast('VIEW'                as varchar( 254 ) )
+         else                                 cast('INTERNAL TABLE TYPE' as varchar( 254 ) )
        end                            as table_type
      , cast( null as varchar( 254 ) ) as remarks
-  from sys."tables" t
+  from sys."tables" t, sys."schemas" s
+  where t."schema_id" = s."id"
  order by table_type
 SQL
     my $sth = $dbh->prepare($sql) or return;
@@ -271,11 +274,12 @@ select cast( null as varchar( 128 ) ) as table_cat
      , s."name"                       as table_schem
      , t."name"                       as table_name
      , case
-         when $ttp->{'TABLE'          } then cast('TABLE'               as varchar( 254 ) )
-         when $ttp->{'SYSTEM TABLE'   } then cast('SYSTEM TABLE'        as varchar( 254 ) )
-         when $ttp->{'LOCAL TEMPORARY'} then cast('LOCAL TEMPORARY'     as varchar( 254 ) )
-         when $ttp->{'VIEW'           } then cast('VIEW'                as varchar( 254 ) )
-         else                                cast('INTERNAL TABLE TYPE' as varchar( 254 ) )
+         when $ttp->{'TABLE'           } then cast('TABLE'               as varchar( 254 ) )
+         when $ttp->{'SYSTEM TABLE'    } then cast('SYSTEM TABLE'        as varchar( 254 ) )
+         when $ttp->{'LOCAL TEMPORARY' } then cast('LOCAL TEMPORARY'     as varchar( 254 ) )
+         when $ttp->{'GLOBAL TEMPORARY'} then cast('GLOBAL TEMPORARY'    as varchar( 254 ) )
+         when $ttp->{'VIEW'            } then cast('VIEW'                as varchar( 254 ) )
+         else                                 cast('INTERNAL TABLE TYPE' as varchar( 254 ) )
        end                            as table_type
      , cast( null as varchar( 254 ) ) as remarks
   from sys."schemas" s

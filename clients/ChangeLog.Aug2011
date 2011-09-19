@@ -2,6 +2,8 @@
 # This file is updated with Maddlog
 
 * Mon Sep 19 2011 Sjoerd Mullender <sjoerd@acm.org>
+- Perl: We now distinguish properly between TABLE and GLOBAL TEMPORARY
+  (the latter are recognized by being in the "tmp" schema).
 - Perl: fixed a bunch of syntax errors.  This fixes bug 2884.  With thanks
   to Rémy Chibois.
 - Perl: Fixed DBD::monetdb table_info and tabletype_info.  This fixes
