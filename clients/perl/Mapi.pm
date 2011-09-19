@@ -25,8 +25,8 @@ use Digest::SHA qw(sha1_hex sha256_hex sha512_hex);
 
 sub pass_chal {
   my ($passwd, @challenge) = @_;
-  if (@challenge[2] == 9) {
-    my $pwhash = @challenge[5];
+  if ($challenge[2] == 9) {
+    my $pwhash = $challenge[5];
     if ($pwhash eq 'SHA512') {
       $passwd = sha512_hex($passwd);
     } elsif ($pwhash eq 'SHA256') {
@@ -39,33 +39,33 @@ sub pass_chal {
       warn "unsupported password hash: ".$pwhash;
       return;
     }
-  } elsif (@challenge[2] == 8) {
+  } elsif ($challenge[2] == 8) {
     # can leave passwd cleartext
   } else {
-    warn "unsupported protocol version: ".@challenge[2];
+    warn "unsupported protocol version: ".$challenge[2];
     return;
   }
 
-  my @cyphers = split(/,/, @challenge[3]);
+  my @cyphers = split(/,/, $challenge[3]);
   my $chal;
   foreach (@cyphers) {
     if ($_ eq 'SHA512') {
-      $chal = "{$_}".sha512_hex($passwd.@challenge[0]);
+      $chal = "{$_}".sha512_hex($passwd.$challenge[0]);
       last;
     } elsif ($_ eq 'SHA256') {
-      $chal = "{$_}".sha256_hex($passwd.@challenge[0]);
+      $chal = "{$_}".sha256_hex($passwd.$challenge[0]);
       last;
     } elsif ($_ eq 'SHA1') {
-      $chal = "{$_}".sha1_hex($passwd.@challenge[0]);
+      $chal = "{$_}".sha1_hex($passwd.$challenge[0]);
       last;
     } elsif ($_ eq 'MD5') {
-      $chal = "{$_}".md5_hex($passwd.@challenge[0]);
+      $chal = "{$_}".md5_hex($passwd.$challenge[0]);
       last;
     }
   }
   if (!$chal) {
     # we assume v8's "plain"
-    $chal = "{plain}".$passwd.@challenge[0];
+    $chal = "{plain}".$passwd.$challenge[0];
   }
 
   return $chal;
@@ -118,7 +118,7 @@ sub new {
     $self->{socket}->close;
     print "Following redirect: $prompt\n" if ($self->{trace});
     my @tokens = split(/[\n\/:\?]+/, $prompt); # dirty, but it's Perl anyway
-    return new Mapi(@tokens[3], @tokens[4], $user, $passwd, $lang, @tokens[5], $trace);
+    return new Mapi($tokens[3], $tokens[4], $user, $passwd, $lang, $tokens[5], $trace);
   } elsif ($prompt =~ /^\^mapi:merovingian:\/\/proxy/) {
     # proxied redirect
     do {
@@ -240,7 +240,7 @@ sub getRow {
   my $row = $self->{lines}[$self->{next}++];
   my @chars = split(//, $row);
 
-  if (@chars[0] eq '!') { 
+  if ($chars[0] eq '!') { 
     $self->error($row);
     my $i = 1;
     while ($self->{lines}[$i] =~ '!') {
@@ -249,11 +249,11 @@ sub getRow {
     }
     $self->{active} = 0;
     return -1
-  } elsif (@chars[0] eq '&') {
+  } elsif ($chars[0] eq '&') {
     # not expected
-  } elsif (@chars[0] eq '%') {
+  } elsif ($chars[0] eq '%') {
     # header line
-  } elsif (@chars[0] eq '[') {
+  } elsif ($chars[0] eq '[') {
     # row result
     $self->{row} = $row;
     if ($self->{nrcols} < 0) {
@@ -261,13 +261,13 @@ sub getRow {
       $self->{nrcols}++;
     }
     $self->{active} = 1;
-  } elsif (@chars[0] eq '=') {
+  } elsif ($chars[0] eq '=') {
     # xml result line
     $self->{row} = substr($row, 1); # skip = 
     $self->{active} = 1;
-  } elsif (@chars[0] eq '^') {
+  } elsif ($chars[0] eq '^') {
     # ^ redirect, ie use different server
-  } elsif (@chars[0] eq '#') {
+  } elsif ($chars[0] eq '#') {
     # warnings etc, skip, and return what follows
     return $self->getRow;
   }
@@ -293,9 +293,9 @@ sub getBlock {
   $self->{offset} = 0;
   $self->{hdrs} = [];
 
-  if (@chars[0] eq '&') {
-    if (@chars[1] eq '1' || @chars[1] eq 6) {
-      if (@chars[1] eq '1') {
+  if ($chars[0] eq '&') {
+    if ($chars[1] eq '1' || $chars[1] eq 6) {
+      if ($chars[1] eq '1') {
         # &1 id result-count nr-cols rows-in-this-block
         my ($dummy,$id,$cnt,$nrcols,$replysize) = split(' ', $header);
         $self->{id} = $id;
@@ -321,7 +321,7 @@ sub getBlock {
       $self->{row} = $self->{lines}[$self->{next}++];
 
       $self->{active} = 1;
-    } elsif (@chars[1] eq '2') { # updates
+    } elsif ($chars[1] eq '2') { # updates
       my ($dummy,$cnt) = split(' ', $header);
       $self->{count} = $cnt;
       $self->{nrcols} = 1;
@@ -329,16 +329,16 @@ sub getBlock {
       $self->{row} = "" . $cnt;
       $self->{next} = $cnt; # all done
       return -2;
-    } elsif (@chars[1] eq '3') { # transaction 
+    } elsif ($chars[1] eq '3') { # transaction 
       # nothing todo
-    } elsif (@chars[1] eq '4') { # auto_commit 
+    } elsif ($chars[1] eq '4') { # auto_commit 
       my ($dummy,$ac) = split(' ', $header);
       if ($ac eq 't') {
         $self->{auto_commit} = 1;
       } else {
         $self->{auto_commit} = 0;
       }
-    } elsif (@chars[1] eq '5') { # prepare 
+    } elsif ($chars[1] eq '5') { # prepare 
       my ($dummy,$id,$cnt,$nrcols,$replysize) = split(' ', $header);
       # TODO parse result, rows (type, digits, scale)
       $self->{count} = $cnt;
