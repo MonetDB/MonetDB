@@ -380,7 +380,7 @@ sub getblock {
   my ($self) = @_;
 
   # now read back the same way
-  my $result;
+  my $result = "";
   my $last_block = 0;
   do {
     my $flag;
