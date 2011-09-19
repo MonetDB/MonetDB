@@ -22,7 +22,7 @@ use DBD::monetdb();
 
 my $sql_driver = 'monetdb';
 my $sql_ver_fmt = '%02d.%02d.%04d';   # ODBC version string: ##.##.#####
-my $sql_driver_ver = sprintf $sql_ver_fmt, split(/\./, $DBD::monetdb::VERSION);
+my $sql_driver_ver = sprintf $sql_ver_fmt, split(/\./, $DBD::monetdb::VERSION), 0;
 
 my @Keywords = qw(
 BOOLEAN

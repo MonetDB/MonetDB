@@ -2,6 +2,8 @@
 # This file is updated with Maddlog
 
 * Mon Sep 19 2011 Sjoerd Mullender <sjoerd@acm.org>
+- Perl: fixed a bunch of syntax errors.  This fixes bug 2884.  With thanks
+  to Rémy Chibois.
 - Perl: Fixed DBD::monetdb table_info and tabletype_info.  This fixes
   bug 2885.  With thanks to Rémy Chibois.
 
