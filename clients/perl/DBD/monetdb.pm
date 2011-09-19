@@ -233,10 +233,10 @@ SQL
 
 
 my $ttp = {
- 'TABLE'           => 't."istable" = true  and t."system" = false and t."temporary" = 0'
-,'SYSTEM TABLE'    => 't."istable" = true  and t."system" = true  and t."temporary" = 0'
-,'LOCAL TEMPORARY' => 't."istable" = true  and t."system" = false and t."temporary" = 1'
-,'VIEW'            => 't."istable" = false                                             '
+ 'TABLE'           => 't."type" = 0  and t."system" = false and t."temporary" = 0'
+,'SYSTEM TABLE'    => 't."type" = 0  and t."system" = true  and t."temporary" = 0'
+,'LOCAL TEMPORARY' => 't."type" = 0  and t."system" = false and t."temporary" = 1'
+,'VIEW'            => 't."type" = 1                                             '
 };
 
 

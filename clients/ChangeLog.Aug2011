@@ -1,6 +1,10 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Mon Sep 19 2011 Sjoerd Mullender <sjoerd@acm.org>
+- Perl: Fixed DBD::monetdb table_info and tabletype_info.  This fixes
+  bug 2885.  With thanks to Rémy Chibois.
+
 * Tue Sep 13 2011 Sjoerd Mullender <sjoerd@acm.org>
 - mclient: fix display of varchar columns with only NULL values.
 - Fixed a bug in mclient/msqldump where an internal error occurred during
