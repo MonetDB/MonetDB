@@ -35,4 +35,5 @@ multicolumn_constraints.Bug-2849
 CASE_nested_functions.Bug-2852
 FK_self_reference.Bug-2862
 time_precision.Bug-2873
+multiple-joins.Bug-2879
 delete-large-table.Bug-2882
