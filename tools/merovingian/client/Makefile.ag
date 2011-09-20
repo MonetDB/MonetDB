@@ -27,8 +27,7 @@ INCLUDES = ../../../monetdb5/misc \
 EXTRA_DIST = $(man_MANS)
 
 bin_monetdb = {
-	# hack: include monetdb.1.in here to get it expanded
-	SOURCES = monetdb.c monetdb.1.in
+	SOURCES = monetdb.c
 	LIBS = ../utils/libmeroutil \
 		   ../../../monetdb5/misc/libsabaoth \
 		   ../../../common/stream/libstream \
