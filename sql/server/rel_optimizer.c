@@ -1914,6 +1914,24 @@ exp_case_fixup( mvc *sql, sql_exp *e )
 		exp_setname(sql->sa, ne, e->rname, e->name);
 		return ne;
 	} 
+	if (e->type == e_aggr) {
+		list *l = NULL, *args = e->l;
+		node *n;
+		sql_exp *ne;
+		sql_subaggr *f = e->f;
+
+		/* first fixup arguments */
+		if (args) {
+ 			l = new_exp_list(sql->sa);
+			for (n=args->h; n; n=n->next) {
+				sql_exp *a = exp_case_fixup(sql, n->data);
+				list_append(l, a);
+			}
+		}
+		ne = exp_aggr(sql->sa, l, f, need_distinct(e), need_no_nil(e), e->card, has_nil(e));
+		exp_setname(sql->sa, ne, e->rname, e->name );
+		return ne;
+	}
 	return e;
 }
 
@@ -1922,7 +1940,7 @@ rel_case_fixup(int *changes, mvc *sql, sql_rel *rel)
 {
 	
 	(void)changes; /* only go through it once, ie don't mark for changes */
-	if (rel->op == op_project && rel->exps) {
+	if (is_project(rel->op) && rel->exps) {
 		list *exps = rel->exps;
 		node *n;
 
@@ -3669,7 +3687,7 @@ split_aggr_and_project(mvc *sql, list *aexps, sql_exp *e)
 		}
 		return exp_column(sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
 	case e_cmp:
-		/* e_cmp's should exist in an aggr expression list */
+		/* e_cmp's shouldn't exist in an aggr expression list */
 		assert(0);
 	case e_convert:
 		e->l = split_aggr_and_project(sql, aexps, e->l);
@@ -3835,8 +3853,9 @@ rel_push_project_up(int *changes, mvc *sql, sql_rel *rel)
 		for (n = rel->exps->h; n && !fnd; n = n->next) {
 			sql_exp *e = n->data;
 
-			if (e->type != e_aggr && e->type != e_column)
+			if (e->type != e_aggr && e->type != e_column) {
 				fnd = 1;
+			}
 		}
 		/* only aggr, no rewrite needed */
 		if (!fnd) 

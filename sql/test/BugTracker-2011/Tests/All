@@ -38,3 +38,4 @@ time_precision.Bug-2873
 multiple-joins.Bug-2879
 delete-large-table.Bug-2882
 HAVE_PERL?perl-table_info.Bug-2885
+div_by_zero.Bug-2887
