@@ -1356,6 +1356,7 @@ clearVariable(MalBlkPtr mb, int varid)
 	v->flags = 0;
 	v->tmpindex = 0;
 	v->propc = 0;
+	v->eolife = 0;
 }
 
 void
