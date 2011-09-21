@@ -1177,7 +1177,7 @@ DFLOWinit(DataFlow flow, Client cntxt, MalBlkPtr mb, MalStkPtr stk, int size)
 
 				flow->status[n].blocks++;
 			}
-			
+
 			/* list of instructions to be woken up explicitly */
 			if ( !isVarConstant(mb, getArg(p, j)) ) {
 				/* be careful, watch out for garbage collection interference */
@@ -1337,26 +1337,26 @@ DFLOWscheduler(DataFlow flow)
 
 		oldq = queued;
 		if ( f->pc > 0 )
-		for (; last >= 0 && (i = flow->nodes[last]) > 0; last = flow->edges[last])
-			if (flow->status[i].state == DFLOWpending) {
-				flow->status[i].argclaim += f->hotclaim;
-				if (flow->status[i].blocks == 1 && ret == MAL_SUCCEED) {
+			for (; last >= 0 && (i = flow->nodes[last]) > 0; last = flow->edges[last])
+				if (flow->status[i].state == DFLOWpending) {
+					flow->status[i].argclaim += f->hotclaim;
+					if (flow->status[i].blocks == 1 && ret == MAL_SUCCEED) {
+						queued++;
+						q_enqueue_(flow->todo, flow->status + i);
+						flow->status[i].state = DFLOWrunning;
+						flow->status[i].blocks--;
+						PARDEBUG
+							mnstr_printf(GDKstdout, "#enqueue pc=%d claim= " LLFMT " queued= %d\n", flow->status[i].pc, flow->status[i].argclaim, queued);
+					} else {
+						if (ret == MAL_SUCCEED)
+							PARDEBUG mnstr_printf(GDKstdout, "#await   pc %d block %d claim= " LLFMT "\n", flow->start + i, flow->status[i].blocks, flow->status[i].argclaim);
+						flow->status[i].blocks--;
+					}
+				} else { /* worker stole the candidate */
+					PARDEBUG mnstr_printf(GDKstdout, "#woke up pc %d block %d claim " LLFMT "\n", flow->start + i, flow->status[i].blocks, flow->status[i].argclaim);
 					queued++;
-					q_enqueue_(flow->todo, flow->status + i);
-					flow->status[i].state = DFLOWrunning;
-					flow->status[i].blocks--;
-					PARDEBUG
-					mnstr_printf(GDKstdout, "#enqueue pc=%d claim= " LLFMT " queued= %d\n", flow->status[i].pc, flow->status[i].argclaim, queued);
-				} else {
-					 if (ret == MAL_SUCCEED)
-						PARDEBUG mnstr_printf(GDKstdout, "#await   pc %d block %d claim= " LLFMT "\n", flow->start + i, flow->status[i].blocks, flow->status[i].argclaim);
-					flow->status[i].blocks--;
+					oldq++;
 				}
-			} else { /* worker stole the candidate */
-				PARDEBUG mnstr_printf(GDKstdout, "#woke up pc %d block %d claim " LLFMT "\n", flow->start + i, flow->status[i].blocks, flow->status[i].argclaim);
-				queued++;
-				oldq++;
-			}
 		if (0 && oldq != queued) /* invalidate */
 			queue_sort(flow->todo);
 		MT_lock_unset(&flow->todo->l, "q_enqueue");
