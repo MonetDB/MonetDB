@@ -1158,6 +1158,7 @@ DFLOWinit(DataFlow flow, Client cntxt, MalBlkPtr mb, MalStkPtr stk, int size)
 		for (j = p->retc; j < p->argc; j++) {
 			/* list of instructions that wake n-th instruction up */
 			if (!isVarConstant(mb, getArg(p, j)) && (k = assign[getArg(p, j)])) {
+				assert(k < pc);	/* only dependencies on earlier instructions */
 				/* add edge to the target instruction for wakeup call */
 				k -= flow->start;
 				if (flow->nodes[k]) {
@@ -1186,6 +1187,7 @@ DFLOWinit(DataFlow flow, Client cntxt, MalBlkPtr mb, MalStkPtr stk, int size)
 				if (l != pc && l < flow->stop && l > flow->start) {
 					/* add edge to the target instruction for wakeup call */
 					PARDEBUG mnstr_printf(GDKstdout, "endoflife for %s is %d -> %d\n", getVarName(mb, getArg(p,j)), n + flow->start, l);
+					assert(pc < l);	/* only dependencies on earlier instructions */
 					l -= flow->start;
 					if (flow->nodes[n]) {
 						/* add wakeup to tail of list */
