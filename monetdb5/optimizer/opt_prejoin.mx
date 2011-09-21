@@ -87,7 +87,7 @@ ALGprejoin(int *rl, int *rr, int *l, int *r){
 		return MAL_SUCCEED;
 	}
 	ALGODEBUG{
-	mnstr_printf(GDKout,"Prejoin tuples=" BUNFMT "pages" BUNFMT "," BUNFMT"\n",
+	mnstr_printf(GDKstdout,"Prejoin tuples=" BUNFMT "pages" BUNFMT "," BUNFMT"\n",
 		BATcount(bl), lpages, rpages);
 	}
 	bn= BATmirror(BATsort(BATmirror(bl)));
@@ -106,6 +106,7 @@ OPTprejoinImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 
 	(void) pci;
 	(void) stk;		/* to fool compilers */
+	(void) cntxt;
 
 	limit= mb->stop;
 	if ( newMalBlkStmt(mb, mb->ssize) < 0 )
@@ -130,7 +131,7 @@ OPTprejoinImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	}
 	/* we may have uncovered new use-less operations */
 	DEBUGoptimizers
-		mnstr_printf(cntxt->fdout,"#opt_prejoin: %d statements removed\n", actions);
+		mnstr_printf(GDKstdout,"#opt_prejoin: %d statements removed\n", actions);
 	/*chkProgram(cntxt->nspace,mb);*/
 	GDKfree(old);
 	return actions;

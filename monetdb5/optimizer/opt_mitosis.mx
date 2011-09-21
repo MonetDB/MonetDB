@@ -170,7 +170,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (pieces <= 1)
 		return 0;
 	OPTDEBUGmitosis
-		mnstr_printf(cntxt->fdout,"#opt_mitosis: target is %s.%s "
+		mnstr_printf(GDKstdout,"#opt_mitosis: target is %s.%s "
 			" with " SSZFMT " rows into " SSZFMT " rows/piece %d threads %d pieces\n",
 				getVarConstant(mb, getArg(target,2)).val.sval,
 				getVarConstant(mb, getArg(target,3)).val.sval,

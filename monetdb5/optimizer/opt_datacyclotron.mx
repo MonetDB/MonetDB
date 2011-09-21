@@ -284,8 +284,8 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 		goto out;
 
 	OPTDEBUGdatacyclotron {
-		mnstr_printf(cntxt->fdout,"ENTERING DATA CYCLOTRON \n");
-		printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
+		mnstr_printf(GDKstdout,"ENTERING DATA CYCLOTRON \n");
+		printFunction(GDKstdout,mb,0,LIST_MAL_ALL);
 	}
 	limit= mb->stop;
 	old = mb->stmt;
@@ -458,11 +458,11 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 out:
 	OPTDEBUGdatacyclotron {
 		if (errors && mb->errors)
-			mnstr_printf(cntxt->fdout,"DATA CYCLOTRON FAILED\n");
+			mnstr_printf(GDKstdout,"DATA CYCLOTRON FAILED\n");
 		else
-			mnstr_printf(cntxt->fdout,"LEAVING DATA CYCLOTRON \n");
+			mnstr_printf(GDKstdout,"LEAVING DATA CYCLOTRON \n");
 		chkProgram(cntxt->nspace,mb);
-		printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
+		printFunction(GDKstdout,mb,0,LIST_MAL_ALL);
 	}
 
 	if (old && (errors || mb->errors) ) {

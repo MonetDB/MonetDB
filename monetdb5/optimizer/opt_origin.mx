@@ -67,6 +67,7 @@ OPToriginImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) pci;
 	(void) stk;		/* to fool compilers */
+	(void) cntxt;
 
 	for (i = 1; i < mb->stop; i++) {
 		p= getInstrPtr(mb,i);
@@ -79,8 +80,8 @@ OPToriginImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			VALset(&val, TYPE_str, GDKstrdup(buf));
 			varSetProp(mb, getArg(p,0), horiginProp, op_eq, &val);
 #ifdef _DEBUG_OPT_ORIGIN_
-			mnstr_printf(cntxt->fdout,"#%s\n",buf);
-			printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_ALL);
+			mnstr_printf(GDKstdout,"#%s\n",buf);
+			printInstruction(GDKstdout,mb, 0, p, LIST_MAL_ALL);
 #endif
 		}
 		if ( getModuleId(p) == algebraRef) {
@@ -133,7 +134,7 @@ OPToriginImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 	DEBUGoptimizers
-		mnstr_printf(cntxt->fdout,"#opt_origin: %d statements marked\n", actions);
+		mnstr_printf(GDKstdout,"#opt_origin: %d statements marked\n", actions);
 	return actions;
 }
 @include optimizerWrapper.mx

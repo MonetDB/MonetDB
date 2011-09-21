@@ -171,10 +171,10 @@ STevaluate(Client cntxt, MalBlkPtr mb, int cnt, int *vars)
 	for (i = 0; i < cnt; i++)
 		STnewTuple(mb, vars[i], &top, tuples);
 	OPTDEBUGsingleton{
-		mnstr_printf(cntxt->fdout, "START SINGLETON OPTIMIZER %d:", cnt);
+		mnstr_printf(GDKstdout, "START SINGLETON OPTIMIZER %d:", cnt);
 		for (i = 0; i < top; i++)
-			mnstr_printf(cntxt->fdout, "[%d,%d,%d] ", vars[i], tuples[i].hidx, tuples[i].tidx);
-		mnstr_printf(cntxt->fdout, "\n");
+			mnstr_printf(GDKstdout, "[%d,%d,%d] ", vars[i], tuples[i].hidx, tuples[i].tidx);
+		mnstr_printf(GDKstdout, "\n");
 	}
 	if ( newMalBlkStmt(mb, mb->ssize) < 0){
 		GDKfree(tuples);
@@ -329,15 +329,15 @@ STevaluate(Client cntxt, MalBlkPtr mb, int cnt, int *vars)
 	OPTDEBUGsingleton
 	if (actions) {
 		printf("FINAL STAGE actions=%d\n", actions);
-		printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
+		printFunction(GDKstdout, mb, 0, LIST_MAL_ALL);
 		for (i = 0; i < top; i++)
-			mnstr_printf(cntxt->fdout, "[%d,%d:%s,%d:%s] ", tuples[i].vidx, tuples[i].hidx, getTypeName(tuples[i].htpe), tuples[i].tidx, getTypeName(tuples[i].ttpe));
-		mnstr_printf(cntxt->fdout, "\n");
+			mnstr_printf(GDKstdout, "[%d,%d:%s,%d:%s] ", tuples[i].vidx, tuples[i].hidx, getTypeName(tuples[i].htpe), tuples[i].tidx, getTypeName(tuples[i].ttpe));
+		mnstr_printf(GDKstdout, "\n");
 	}
 
 	OPTDEBUGsingleton{
 		printf("FINAL STAGE SINGLETON errors=%d\n", mb->errors);
-		printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
+		printFunction(GDKstdout, mb, 0, LIST_MAL_ALL);
 	}
 	GDKfree(tuples);
 	return actions;

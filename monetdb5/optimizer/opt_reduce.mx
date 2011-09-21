@@ -73,7 +73,7 @@ OPTreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	trimMalVariables(mb);
 	actions = actions - mb->vtop;
 	DEBUGoptimizers
-		mnstr_printf(cntxt->fdout,"#opt_reduce: %d variables removed\n",actions);
+		mnstr_printf(GDKstdout,"#opt_reduce: %d variables removed\n",actions);
 	return actions;
 }
 @include optimizerWrapper.mx
