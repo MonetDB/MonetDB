@@ -5255,7 +5255,7 @@ second_interval_str( lng *res, str *s, int *d, int *sk )
 @= c_interval
 str
 month_interval_@1( int *ret, @1 *s, int *d, int *sk ){
-	int k = digits2sk(*d);
+	int k = digits2ek(*d);
 	int r = (int)*s;
 
 	(void)sk;
@@ -5272,7 +5272,7 @@ month_interval_@1( int *ret, @1 *s, int *d, int *sk ){
 }
 str
 second_interval_@1( lng *res, @1 *s, int *d, int *sk ){
-	int k = digits2sk(*d);
+	int k = digits2ek(*d);
 	lng r = *s;
 
 	(void)sk;

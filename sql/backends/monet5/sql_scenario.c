@@ -44,6 +44,7 @@
 #include "sql_mvc.h"
 #include "sql_readline.h"
 #include "sql_user.h"
+#include "sql_datetime.h"
 #include "mal_io.h"
 #include "mal_parser.h"
 #include "mal_builder.h"
@@ -301,7 +302,7 @@ global_variables(mvc *sql, char *user, char *schema)
 	SQLglobal("trace","show,ticks,stmt");
 
 	typename = "sec_interval";
-	sql_find_subtype(&ctype, typename, 0, 0);
+	sql_find_subtype(&ctype, typename, inttype2digits(ihour, isec), 0);
 	SQLglobal("current_timezone", &sec);
 
 	typename = "boolean";

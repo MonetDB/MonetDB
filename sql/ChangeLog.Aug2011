@@ -1,6 +1,9 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Wed Sep 21 2011 Sjoerd Mullender <sjoerd@acm.org>
+- Fixed a bug when using default values for interval columns.  Bug 2877.
+
 * Fri Sep 16 2011 Sjoerd Mullender <sjoerd@acm.org>
 - A bug was fixed where deleted rows weren't properly accounted for in
   all operations.  This was bug 2882.
