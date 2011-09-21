@@ -157,8 +157,8 @@ OPTpeepholeImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 					getEndLifespan(span,getArg(p,0)) == i + 1) {
 			OPTDEBUGpeephole {
 				printf("PEEPHOLE reverse-reverse\n");
-				printInstruction(cntxt->fdout, mb, 0,  p, LIST_MAL_ALL);
-				printInstruction(cntxt->fdout, mb, 0,  q, LIST_MAL_ALL);
+				printInstruction(GDKstdout, mb, 0,  p, LIST_MAL_ALL);
+				printInstruction(GDKstdout, mb, 0,  q, LIST_MAL_ALL);
 			}
 			r = newInstruction(mb,ASSIGNsymbol);
 			getArg(r, 0) = getArg(q, 0);

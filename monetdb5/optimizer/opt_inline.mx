@@ -94,17 +94,17 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			 * They are produced by SQL compiler.
 			 */
 			OPTDEBUGinline {
-				mnstr_printf(cntxt->fdout,"#check inline statement\n");
-				printInstruction(cntxt->fdout,mb,0,q,LIST_MAL_ALL);
-				printInstruction(cntxt->fdout,q->blk,0,sig,LIST_MAL_ALL);
+				mnstr_printf(GDKstdout,"#check inline statement\n");
+				printInstruction(GDKstdout,mb,0,q,LIST_MAL_ALL);
+				printInstruction(GDKstdout,q->blk,0,sig,LIST_MAL_ALL);
 			}
 			if( getModuleId(q) == malRef &&
 				getFunctionId(q)== multiplexRef &&
 				OPTinlineMultiplex(cntxt,mb,q)){
 
 				OPTDEBUGinline {
-					mnstr_printf(cntxt->fdout,"#multiplex inline function\n");
-					printInstruction(cntxt->fdout,mb,0,q,LIST_MAL_ALL);
+					mnstr_printf(GDKstdout,"#multiplex inline function\n");
+					printInstruction(GDKstdout,mb,0,q,LIST_MAL_ALL);
 				}
 
 			    varSetProp(mb, getArg(q,0), inlineProp, op_eq, NULL);
@@ -120,8 +120,8 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				i--;
 				actions++;
 				OPTDEBUGinline {
-					mnstr_printf(cntxt->fdout,"#inline function at %d\n",i);
-					printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
+					mnstr_printf(GDKstdout,"#inline function at %d\n",i);
+					printFunction(GDKstdout, mb, 0, LIST_MAL_ALL);
 				}
 			} else 
 			/*
@@ -133,18 +133,18 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				i--;
 				actions++;
 				OPTDEBUGinline {
-					mnstr_printf(cntxt->fdout,"#inlined called at %d\n",i);
-					printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
+					mnstr_printf(GDKstdout,"#inlined called at %d\n",i);
+					printFunction(GDKstdout, mb, 0, LIST_MAL_ALL);
 				}
 			} 
 		}
 	}
 	(void)stk;
 	OPTDEBUGinline
-		mnstr_printf(cntxt->fdout,"#mal program: %d MAL instr %d vars (" SZFMT " K)\n",mb->stop,mb->vtop, 
+		mnstr_printf(GDKstdout,"#mal program: %d MAL instr %d vars (" SZFMT " K)\n",mb->stop,mb->vtop, 
 		((sizeof( MalBlkRecord) +mb->ssize * sizeof(InstrRecord)+ mb->vtop* sizeof(VarRecord) + mb->vsize*sizeof(VarPtr)+1023)/1024));
 	DEBUGoptimizers
-		mnstr_printf(cntxt->fdout,"#opt_inline: actions %d MAL %d->%d\n",actions,limit,mb->stop);
+		mnstr_printf(GDKstdout,"#opt_inline: actions %d MAL %d->%d\n",actions,limit,mb->stop);
 	return actions;
 }
 

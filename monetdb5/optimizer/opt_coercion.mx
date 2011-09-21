@@ -112,7 +112,7 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	 * structure. A cheaper optimizer is sufficient.
 	 */
 	DEBUGoptimizers
-		mnstr_printf(cntxt->fdout,"#opt_coercion: %d coersions applied\n",actions);
+		mnstr_printf(GDKstdout,"#opt_coercion: %d coersions applied\n",actions);
 	return actions;
 }
 @include optimizerWrapper.mx

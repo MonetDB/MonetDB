@@ -783,10 +783,10 @@ malGarbageCollector(MalBlkPtr mb)
 		return ;
 
 	for (i = 0; i < mb->vtop; i++)
-	if( isVarCleanup(mb,i) && getEndLifespan(span,i) >= 0) {
-		mb->var[i]->eolife = getEndLifespan(span,i);
-		mb->stmt[mb->var[i]->eolife]->gc |= GARBAGECONTROL;
-	}
+		if( isVarCleanup(mb,i) && getEndLifespan(span,i) >= 0) {
+			mb->var[i]->eolife = getEndLifespan(span,i);
+			mb->stmt[mb->var[i]->eolife]->gc |= GARBAGECONTROL;
+		}
 	GDKfree(span);
 }
 /*

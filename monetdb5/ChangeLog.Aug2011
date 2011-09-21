@@ -1,3 +1,10 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Wed Sep 21 2011 Sjoerd Mullender <sjoerd@acm.org>
+- Fixed a problem where MAL variables weren't properly cleared before
+  reuse of the data strucutre.  This problem could cause the data flow
+  scheduler to generate dependencies between instructions that didn't
+  actually exist, which in turn could cause circular dependencies among
+  instructions with deadlock as a result.  Bugs 2865 and 2888.
+

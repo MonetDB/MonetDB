@@ -222,8 +222,8 @@ OPTdictionaryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	old = mb->stmt;
 	
 	OPTDEBUGdictionary{
-		mnstr_printf(cntxt->fdout,"#dictionary optimizer\n");
-		printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
+		mnstr_printf(GDKstdout,"#dictionary optimizer\n");
+		printFunction(GDKstdout,mb,0,LIST_MAL_ALL);
 	}
 
     if ( newMalBlkStmt(mb, mb->ssize) < 0)
@@ -267,7 +267,7 @@ OPTdictionaryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				x = *(int*) BUNhead(bidx, p);
 				v = *(int*) BUNhead(bval, BUNfnd(BATmirror(dictValue), (ptr) buf ) );
 				OPTDEBUGdictionary
-					mnstr_printf(GDKout, "#Located a dictionary %s ? %s %d %d\n",buf, (p?"ok":"no"), x,v);
+					mnstr_printf(GDKstdout, "#Located a dictionary %s ? %s %d %d\n",buf, (p?"ok":"no"), x,v);
 				/* replace the sql.bind */
 				bi = BATdescriptor(x);
 				if ( bi == NULL){
@@ -293,7 +293,7 @@ OPTdictionaryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				idx[getArg(q,0)] = getArg(qq,0);
 				val[getArg(q,0)] = getArg(qq,1);
 				OPTDEBUGdictionary
-					mnstr_printf(GDKout, "#Assigned %s to  %d %d\n",buf, idx[getArg(q,0)], val[getArg(q,0)]);
+					mnstr_printf(GDKstdout, "#Assigned %s to  %d %d\n",buf, idx[getArg(q,0)], val[getArg(q,0)]);
 				actions++;
 				continue;
 			} else  
@@ -329,7 +329,7 @@ OPTdictionaryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 					 getFunctionId(q) == thetaselectRef ) &&
 					isDiction(getArg(q,1))  ){
 #ifdef DEBUG_OPT_DICTIONARY 
-						mnstr_printf(GDKout,"#select dictionary %d %s %s\n", getArg(q,1), getTypeName(getVarType(mb, idx[getArg(q,1)])), getTypeName(getVarType(mb, val[getArg(q,1)])));
+						mnstr_printf(GDKstdout,"#select dictionary %d %s %s\n", getArg(q,1), getTypeName(getVarType(mb, idx[getArg(q,1)])), getTypeName(getVarType(mb, val[getArg(q,1)])));
 #endif
 						j = getArg(q,0);
 						idx[j] = idx[getArg(q,1)];
@@ -340,8 +340,8 @@ OPTdictionaryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 						setVarUDFtype(mb,val[j]);
 						pushInstruction(mb,q);
 #ifdef DEBUG_OPT_DICTIONARY 
-						mnstr_printf(GDKout,"dictionary %d %s -> %d %d\n", j, getVarName(mb,j), idx[j],val[j]);
-						mnstr_printf(GDKout,"#dictionary %d %s %s\n", j, getTypeName(getVarType(mb, idx[j])), getTypeName(getVarType(mb, val[j])));
+						mnstr_printf(GDKstdout,"dictionary %d %s -> %d %d\n", j, getVarName(mb,j), idx[j],val[j]);
+						mnstr_printf(GDKstdout,"#dictionary %d %s %s\n", j, getTypeName(getVarType(mb, idx[j])), getTypeName(getVarType(mb, val[j])));
 #endif
 						actions++;
 						continue;
@@ -352,7 +352,7 @@ OPTdictionaryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 						/* case : r:bat[:oid,:void] := algebra.uselect(dict,arg) */
 						/* become: k:= algebra.select(val,arg) ; v:= join(idx,k); r:= algebra.project(v);  */
 						OPTDEBUGdictionary{
-							mnstr_printf(GDKout,"#uselect dictionary %d %s %s\n", getArg(q,1), 
+							mnstr_printf(GDKstdout,"#uselect dictionary %d %s %s\n", getArg(q,1), 
 								getTypeName(getVarType(mb, idx[getArg(q,1)])), getTypeName(getVarType(mb, val[getArg(q,1)])));
 						}
 						setFunctionId(q, (getFunctionId(q)== uselectRef?selectRef:putName("thetaselect",11)));
@@ -372,8 +372,8 @@ OPTdictionaryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 						q= pushArgument(mb,q, getArg(qq,0));
 						getArg(q,0) = j;
 						OPTDEBUGdictionary{
-							mnstr_printf(GDKout,"#dictionary %d %s -> %d %d\n", j, getVarName(mb,j), idx[j],val[j]);
-							mnstr_printf(GDKout,"#dictionary %d %s %s\n", j, getTypeName(getVarType(mb, idx[j])), getTypeName(getVarType(mb, val[j])));
+							mnstr_printf(GDKstdout,"#dictionary %d %s -> %d %d\n", j, getVarName(mb,j), idx[j],val[j]);
+							mnstr_printf(GDKstdout,"#dictionary %d %s %s\n", j, getTypeName(getVarType(mb, idx[j])), getTypeName(getVarType(mb, val[j])));
 						}
 						actions++;
 						continue;
@@ -436,7 +436,7 @@ OPTdictionaryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 					setVarUDFtype(mb,idx[j]);
 					setVarUDFtype(mb,val[j]);
 					OPTDEBUGdictionary
-						mnstr_printf(GDKout,"#dictionary %d %s -> %d %d\n", j, getVarName(mb,j), idx[j],val[j]);
+						mnstr_printf(GDKstdout,"#dictionary %d %s -> %d %d\n", j, getVarName(mb,j), idx[j],val[j]);
 					continue;
 				}
 				/*
@@ -742,7 +742,7 @@ str DICTbind(int *idx, int *val, str * nme)
 	BBPkeepref(*val);
 	(void) base;
 #ifdef DEBUG_OPT_DICTIONARY 
-	mnstr_printf(GDKout,"#dictionary.bind %d %d\n",*idx, *val);
+	mnstr_printf(GDKstdout,"#dictionary.bind %d %d\n",*idx, *val);
 #endif
 	return MAL_SUCCEED;
 }
@@ -804,7 +804,7 @@ str DICTcompress(int *ret, str *nme, int *bid)
 		ratio = (double) BATcount(bh) / (double) BATcount(bs);
 #ifdef DEBUG_OPT_DICTIONARY 
 	if ( bs && bh )
-		mnstr_printf(GDKout,"#dictionary.compress sample " BUNFMT " " BUNFMT" %f %f\n", BATcount(bs), BATcount(bh),ratio, ratio * BATcount(b));
+		mnstr_printf(GDKstdout,"#dictionary.compress sample " BUNFMT " " BUNFMT" %f %f\n", BATcount(bs), BATcount(bh),ratio, ratio * BATcount(b));
 #endif
 	if ( bs) BBPreleaseref(bs->batCacheid);
 	if ( bh) BBPreleaseref(bh->batCacheid);
@@ -825,13 +825,13 @@ str DICTcompress(int *ret, str *nme, int *bid)
 	if( typ == TYPE_lng || typ == b->ttype ){
 		/* don't create a new dictionary */
 #ifdef DEBUG_OPT_DICTIONARY 
-	mnstr_printf(GDKout,"#dictionary.new %s not compressed\n",*nme);
+	mnstr_printf(GDKstdout,"#dictionary.new %s not compressed\n",*nme);
 #endif
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(bo->batCacheid);
 		return MAL_SUCCEED;
 	}
-	mnstr_printf(GDKout,"#dictionary.new %s compressed from type %s to %s " SZFMT" elm\n", *nme, getTypeName(b->ttype), getTypeName(typ), cnt);
+	mnstr_printf(GDKstdout,"#dictionary.new %s compressed from type %s to %s " SZFMT" elm\n", *nme, getTypeName(b->ttype), getTypeName(typ), cnt);
 	bv =  BATnew(typ, b->ttype, BATcount(b));
 	/* create the dictionary representation */
 	/*
@@ -862,7 +862,7 @@ str DICTcompress(int *ret, str *nme, int *bid)
 	bx = BATjoin(b,BATmirror(bv), BUN_NONE);
 	BATpropcheck(bx, BATPROPS_QUICK);
 #ifdef DEBUG_OPT_DICTIONARY 
-	mnstr_printf(GDKout,"#dictionary.new values table " BUNFMT " \n", BATcount(bv));
+	mnstr_printf(GDKstdout,"#dictionary.new values table " BUNFMT " \n", BATcount(bv));
 #endif
 
 	if (!(bx->batDirty&2)) bx = BATsetaccess(bx, BAT_READ);
@@ -883,7 +883,7 @@ str DICTcompress(int *ret, str *nme, int *bid)
 	   render the SQL catalog inconsistent, unless you leave an empty 
 	   persistent BAT behind. */
 #ifdef DEBUG_OPT_DICTIONARY 
-	mnstr_printf(GDKout,"#dictionary.new  %d->%d %d\n",typ,bx->batCacheid, bv->batCacheid);
+	mnstr_printf(GDKstdout,"#dictionary.new  %d->%d %d\n",typ,bx->batCacheid, bv->batCacheid);
 #endif
 	(void) ret;
 	return MAL_SUCCEED;
@@ -913,8 +913,8 @@ DICTexpand(int *rval, int *val, int *bid)
 	/* check how many new elements should be added to the encoding table */
 	bn = BATsemijoin(BATmirror(b), BATmirror(rv));
 #ifdef DEBUG_OPT_DICTIONARY 
-	mnstr_printf(GDKout,"#dictionary.expand %d %d\n",*val,*bid);
-	mnstr_printf(GDKout,"#dictionary.expand " BUNFMT " " BUNFMT " " BUNFMT "\n", 
+	mnstr_printf(GDKstdout,"#dictionary.expand %d %d\n",*val,*bid);
+	mnstr_printf(GDKstdout,"#dictionary.expand " BUNFMT " " BUNFMT " " BUNFMT "\n", 
 		BATcount(rv), BATcount(b), BATcount(bn));
 #endif
 	if ( BATcount(bn) == 0){
@@ -935,7 +935,7 @@ DICTexpand(int *rval, int *val, int *bid)
 			o++;
 		}
 #ifdef DEBUG_OPT_DICTIONARY 
-	mnstr_printf(GDKout,"#dictionary.new values in encoding table" BUNFMT " \n", BATcount(bv));
+	mnstr_printf(GDKstdout,"#dictionary.new values in encoding table" BUNFMT " \n", BATcount(bv));
 #endif
 	} break;
 @
@@ -969,12 +969,12 @@ DICTencode(int *ridx, int *vid, int *bid)
         throw(MAL,"dictionary.expand",RUNTIME_OBJECT_MISSING);
 	}
 #ifdef DEBUG_OPT_DICTIONARY 
-	mnstr_printf(GDKout,"#dictionary.encode %d %d\n",*vid,*bid);
+	mnstr_printf(GDKstdout,"#dictionary.encode %d %d\n",*vid,*bid);
 #endif
 
 	bx = BATjoin(b,BATmirror(bv), BUN_NONE);
 #ifdef DEBUG_OPT_DICTIONARY 
-	mnstr_printf(GDKout,"#dictionary.encode index in encoding table" BUNFMT " \n", BATcount(bx));
+	mnstr_printf(GDKstdout,"#dictionary.encode index in encoding table" BUNFMT " \n", BATcount(bx));
 #endif
 	BBPkeepref(*ridx= bx->batCacheid);
 	BBPreleaseref(b->batCacheid);
@@ -991,7 +991,7 @@ str DICTdecompress(int *ret, str *nme)
 	if( DICTinit() == 0 )
 		throw(MAL,"dictionary.decompress","No catalog table");
 #ifdef DEBUG_OPT_DICTIONARY 
-	mnstr_printf(GDKout,"#dictionary.decompress %s\n",*nme);
+	mnstr_printf(GDKstdout,"#dictionary.decompress %s\n",*nme);
 #endif
 	if ( DICTfind(&idx,&val,&base,*nme) == 0)
 		return MAL_SUCCEED;
@@ -1036,7 +1036,7 @@ str DICTdecompress(int *ret, str *nme)
 			BUNins(b, &o, BUNtail(bvi,p), FALSE);
 		}
 #ifdef DEBUG_OPT_DICTIONARY 
-	mnstr_printf(GDKout,"#dictionary.new values in encoding table" BUNFMT " \n", BATcount(bv));
+	mnstr_printf(GDKstdout,"#dictionary.new values in encoding table" BUNFMT " \n", BATcount(bv));
 #endif
 	} break;
 @

@@ -337,7 +337,53 @@ atom2sql(atom *a)
 	case EC_BLOB:
 		/* TODO atom to string */
 		break;
-	case EC_INTERVAL:
+	case EC_INTERVAL: {
+		lng v;
+		switch (a->data.vtype) {
+		case TYPE_lng:
+			v = a->data.val.lval;
+			break;
+		case TYPE_int:
+			v = a->data.val.ival;
+			break;
+		case TYPE_sht:
+			v = a->data.val.shval;
+			break;
+		case TYPE_bte:
+			v = a->data.val.btval;
+			break;
+		default:
+			v = 0;
+			break;
+		}
+		switch (a->tpe.digits) {
+		case 1:		/* year */
+			v /= 12;
+			break;
+		case 2:		/* year to month */
+		case 3:		/* month */
+			break;
+		case 4:		/* day */
+			v /= 60 * 60 * 24;
+			break;
+		case 5:		/* day to hour */
+		case 8:		/* hour */
+			v /= 60 * 60;
+			break;
+		case 6:		/* day to minute */
+		case 9:		/* hour to minute */
+		case 11:	/* minute */
+			v /= 60;
+			break;
+		case 7:		/* day to second */
+		case 10:	/* hour to second */
+		case 12:	/* minute to second */
+		case 13:	/* second */
+			break;
+		}
+		sprintf(buf, LLFMT, v);
+		break;
+	}
 	case EC_NUM:
 		switch (a->data.vtype) {
 		case TYPE_lng:
@@ -355,6 +401,7 @@ atom2sql(atom *a)
 		default:
 			break;
 		}
+		break;
 	case EC_DEC: {
 		lng v = 0;
 		switch (a->data.vtype) {

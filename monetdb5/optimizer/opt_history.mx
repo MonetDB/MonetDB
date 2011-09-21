@@ -259,7 +259,7 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		freeInstruction(old[i]);
 	GDKfree(old);
 	DEBUGoptimizers
-		mnstr_printf(cntxt->fdout,"#opt_history: code added\n");
+		mnstr_printf(GDKstdout,"#opt_history: code added\n");
 	return 1;
 }
 @include optimizerWrapper.mx

@@ -46,7 +46,7 @@ str OPT@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	optimizerInit();
 	if( p )
 		removeInstruction(mb, p);
-	OPTDEBUG@1 mnstr_printf(cntxt->fdout,"=APPLY OPTIMIZER @1\n");
+	OPTDEBUG@1 mnstr_printf(GDKstdout,"=APPLY OPTIMIZER @1\n");
 	if( p && p->argc > 1 ){
 		if( getArgType(mb,p,1) != TYPE_str ||
 			getArgType(mb,p,2) != TYPE_str ||
@@ -80,11 +80,11 @@ str OPT@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	actions= OPT@1Implementation(cntxt, mb,stk,p);
 	msg= optimizerCheck(cntxt, mb, "optimizer.@1", actions, t=(GDKusec() - clk),@2);
 	OPTDEBUG@1 {
-		mnstr_printf(cntxt->fdout,"=FINISHED @1 %d\n",actions);
-		printFunction(cntxt->fdout,mb,0,LIST_MAL_STMT | LIST_MAPI);
+		mnstr_printf(GDKstdout,"=FINISHED @1 %d\n",actions);
+		printFunction(GDKstdout,mb,0,LIST_MAL_STMT | LIST_MAPI);
 	}
 	DEBUGoptimizers
-		mnstr_printf(cntxt->fdout,"#opt_reduce: " LLFMT " ms\n",t);
+		mnstr_printf(GDKstdout,"#opt_reduce: " LLFMT " ms\n",t);
 	QOTupdateStatistics("@1",actions,t);
 	addtoMalBlkHistory(mb,"@1");
 	return msg;
