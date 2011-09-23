@@ -455,13 +455,18 @@ SQLinitClient(Client c)
 		fullname = MSP_locate_sqlscript(path, 1);
 		if (fullname) {
 			str filename = fullname;
-			str p;
+			str p, n;
 			fprintf(stdout, "# SQL catalog created, loading sql scripts once\n");
 			do {
 				p = strchr(filename, PATH_SEP);
 				if (p)
 					*p = '\0';
-				fprintf(stdout, "# SQL loading sql scripts %s\n",filename);
+				if ((n = strrchr(filename, DIR_SEP)) == NULL) {
+					n = filename;
+				} else {
+					n++;
+				}
+				fprintf(stdout, "# loading sql script: %s\n", n);
 				fd = open_rastream(filename);
 				if (p)
 					filename = p + 1;
