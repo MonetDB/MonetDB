@@ -51,6 +51,7 @@ malBootstrap(void)
 	str bootfile = "mal_init", s;
 
 	c = MCinitClient((oid)0, 0, 0);
+	assert(c != NULL);
 	c->nspace = newModule(NULL, putName("user", 4));
 	initLibraries();
 	if (defaultScenario(c)) {
