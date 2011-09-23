@@ -32,3 +32,5 @@ bin_odbcinstall = {
 	SOURCES = install.c
 	LIBS = -lodbc32 -lodbccp32 -lversion -lshlwapi -luser32
 }
+
+EXTRA_DIST = banner.bmp

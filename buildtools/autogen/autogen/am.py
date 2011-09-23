@@ -1268,7 +1268,7 @@ AUTOMAKE_OPTIONS = no-dependencies 1.4 foreign
     fd.write("BUILT_SOURCES =%s\n" % am_list2string(am['BUILT_SOURCES'], " ", ""))
     fd.write("MOSTLYCLEANFILES =%s\n" % am_list2string(am['CLEAN'], ' ', ''))
 
-    fd.write("EXTRA_DIST = Makefile.msc%s\n" % \
+    fd.write("EXTRA_DIST = Makefile.ag Makefile.msc%s\n" % \
           am_list2string(am['EXTRA_DIST'], " ", ""))
 ##     fd.write(" $(BUILT_SOURCES)\n")
 
