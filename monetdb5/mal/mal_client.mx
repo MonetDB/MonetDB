@@ -444,11 +444,8 @@ MCfindClient(oid user, str scen, bstream *fin, stream *fout)
 	}
 	mal_unset_lock(mal_contextLock, "newClient");
 
-	if (c == mal_clients + MAL_MAXCLIENTS) {
-		mnstr_printf(fout, "!maximum concurrent clients limit reached (%d), please try again later\n", MAL_MAXCLIENTS);
-		mnstr_flush(fout);
+	if (c == mal_clients + MAL_MAXCLIENTS)
 		return NULL;
-	}
 #ifdef MAL_CLIENT_DEBUG
 	printf("Client found %d\n", c->idx);
 #endif
