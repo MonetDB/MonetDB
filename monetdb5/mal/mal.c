@@ -188,6 +188,7 @@ int nrservers = 0;
 #include "mal_parser.h"
 #include "mal_interpreter.h"
 #include "mal_namespace.h"  /* for initNamespace() */
+#include "mal_debugger.h" /* for mdbInit() */
 #include "mal_client.h"
 #include "mal_sabaoth.h"
 #include "mal_recycle.h"
@@ -236,7 +237,8 @@ int mal_init(void){
 
 	GDKprotect();
 	tstAligned();
-	memset((char*)mal_clients, 0, sizeof(ClientRec)*MAL_MAXCLIENTS);
+	MCinit();
+	mdbInit();
 	if (monet_memory == 0)
 		monet_memory = MT_npages() * MT_pagesize();
 	initNamespace();

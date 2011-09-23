@@ -76,7 +76,6 @@ All Rights Reserved.
 #include "mal_profiler.h"
 #include "mal.h"
 
-#define MAL_MAXCLIENTS  64
 #define CONSOLE     0
 #define isAdministrator(X) (X==mal_clients)
 
@@ -261,7 +260,10 @@ typedef struct CLIENT {
 	int exception_buf_initialized;
 } *Client, ClientRec;
 
-mal_export ClientRec mal_clients[MAL_MAXCLIENTS+1];
+mal_export void    MCinit(void);
+
+mal_export int MAL_MAXCLIENTS;
+mal_export ClientRec *mal_clients;
 mal_export int MCdefault;
 
 mal_export Client  MCgetClient(int id);
@@ -321,9 +323,31 @@ int bstreamClient(Client c, str prompt);
 
 static void     freeClient  (Client c);
 
-ClientRec   mal_clients[MAL_MAXCLIENTS+1];
+int MAL_MAXCLIENTS = 0;
+ClientRec   *mal_clients;
 /*int MCdefault= threadFlag | bigfootFlag;*/
 int MCdefault= 0;
+
+void
+MCinit(void)
+{
+	char *max_clients = GDKgetenv("max_clients");
+	int threads = GDKnr_threads;
+	int maxclients = 0;
+
+	if (max_clients != NULL)
+		maxclients = atoi(max_clients);
+	if (maxclients <= 0) {
+		maxclients = 64;
+		GDKsetenv("max_clients", "64");
+	}
+
+	MAL_MAXCLIENTS =
+		/* console */ 1 +
+		/* workers */ threads +
+		/* client connections */ maxclients;
+	mal_clients = GDKzalloc(sizeof(ClientRec) * MAL_MAXCLIENTS);
+}
 
 int MCpushClientInput(Client c, bstream *new_input, int listing, char *prompt)
 {
