@@ -442,25 +442,21 @@ MCfindClient(oid user, str scen, bstream *fin, stream *fout)
 #ifdef MAL_CLIENT_DEBUG
 	printf("Client found %d\n", c->idx);
 #endif
-	if (c) {
-		/* TODO reset client */
-		c->user = user;
-		c->fdin = fin ? fin : bstream_create(GDKin, 0);
-		c->yycur = 0;
-		c->bak = NULL;
+	c->user = user;
+	c->fdin = fin ? fin : bstream_create(GDKin, 0);
+	c->yycur = 0;
+	c->bak = NULL;
 
-		c->listing = 0;
-		c->flags = MCdefault;
-		c->fdout = fout ? fout : GDKstdout;
-		c->mdb = 0;
-		c->login = time(0);
-		memset((char *) c->rcc, 0, sizeof(RecStat));
-		c->rcc->curQ = -1;
-		/* (re)activate thread */
-		MT_sema_up(&c->s, "MCfindClient");
-		return c;
-	}
-	return NULL;
+	c->listing = 0;
+	c->flags = MCdefault;
+	c->fdout = fout ? fout : GDKstdout;
+	c->mdb = 0;
+	c->login = time(0);
+	memset((char *) c->rcc, 0, sizeof(RecStat));
+	c->rcc->curQ = -1;
+	/* (re)activate thread */
+	MT_sema_up(&c->s, "MCfindClient");
+	return c;
 }
 
 static void
