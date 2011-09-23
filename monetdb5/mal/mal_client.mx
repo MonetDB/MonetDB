@@ -415,13 +415,20 @@ MCfindClient(oid user, str scen, bstream *fin, stream *fout)
 	Client c = NULL;
 	Scenario s = findScenario(scen);
 
-	if (!s)
+	if (!s) {
+		showException(MAL, "findClient",
+				"findScenario returned NULL for '%s'", scen);
+		mnstr_printf(fout, "!could not find scenario '%s'\n", scen);
+		mnstr_flush(fout);
 		return NULL;
+	}
 
 	mal_set_lock(mal_contextLock, "newClient");
 	if (mal_clients[CONSOLE].user && mal_clients[CONSOLE].mode == FINISHING) {
 		showException(MAL, "newClient", "system shutdown in progress");
 		mal_unset_lock(mal_contextLock, "newClient");
+		mnstr_printf(fout, "!system shutdown in progress, please try again later\n");
+		mnstr_flush(fout);
 		return NULL;
 	}
 	for (c = mal_clients; c < mal_clients + MAL_MAXCLIENTS; c++) {
@@ -437,8 +444,11 @@ MCfindClient(oid user, str scen, bstream *fin, stream *fout)
 	}
 	mal_unset_lock(mal_contextLock, "newClient");
 
-	if (c == mal_clients + MAL_MAXCLIENTS)
+	if (c == mal_clients + MAL_MAXCLIENTS) {
+		mnstr_printf(fout, "!maximum concurrent clients limit reached (%d), please try again later\n", MAL_MAXCLIENTS);
+		mnstr_flush(fout);
 		return NULL;
+	}
 #ifdef MAL_CLIENT_DEBUG
 	printf("Client found %d\n", c->idx);
 #endif
