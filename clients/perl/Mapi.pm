@@ -284,9 +284,8 @@ sub getBlock {
   my @chars = split(//, $header);
 
   $self->{id} = -1;
-  $self->{count} = scalar(@{$self->{lines}}); 
   $self->{nrcols} = -1;
-  $self->{replysize} = $self->{count};
+  $self->{replysize} = scalar(@{$self->{lines}});
   $self->{active} = 0;
   $self->{skip} = 0; # next+skip is current result row
   $self->{next} = 0; # all done

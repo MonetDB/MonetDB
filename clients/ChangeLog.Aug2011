@@ -1,6 +1,9 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Fri Sep 23 2011 Fabian Groffen <fabian@cwi.nl>
+- Fixed Perl DBD rowcount for larger results, bug #2889
+
 * Mon Sep 19 2011 Sjoerd Mullender <sjoerd@acm.org>
 - Perl: We now distinguish properly between TABLE and GLOBAL TEMPORARY
   (the latter are recognized by being in the "tmp" schema).
