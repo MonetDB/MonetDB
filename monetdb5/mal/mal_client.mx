@@ -265,7 +265,6 @@ mal_export ClientRec mal_clients[MAL_MAXCLIENTS+1];
 mal_export int MCdefault;
 
 mal_export Client  MCgetClient(int id);
-mal_export Client  MCfindClient(oid user, str scen, bstream *fin, stream *fout);
 mal_export Client  MCinitClient(oid user, bstream *fin, stream *fout);
 mal_export int     MCinitClientThread(Client c);
 mal_export void    MCcloseClient    (Client c);
@@ -274,9 +273,7 @@ mal_export int	   MCcountClients(void);
 mal_export int     MCreadClient  (Client c);
 mal_export str	   MCsuspendClient(int id, unsigned int timeout);
 mal_export str	   MCawakeClient(int id);
-mal_export int     MCwait(Client c);
 mal_export void    MCcleanupClients(void);
-mal_export void    MCexitPending(void);
 mal_export void    MCtraceAllClients(int flag);
 mal_export void    MCtraceClient(oid which, int flag);
 mal_export int     MCpushClientInput(Client c, bstream *new_input, int listing, char *prompt);
@@ -409,17 +406,6 @@ Client MCgetClient(int id)
 	return(mal_clients + id);
 }
 
-Client
-MCfindClient(oid user, str scen, bstream *fin, stream *fout)
-{
-	/* can't break ABI in release branch */
-	(void) user;
-	(void) scen;
-	(void) fin;
-	(void) fout;
-	return NULL;
-}
-
 static void
 MCexitClient(Client c)
 {
@@ -440,14 +426,6 @@ MCexitClient(Client c)
 		c->fdout = NULL;
 		c->fdin= NULL;
 	} 
-}
-
-int
-MCwait(Client c) 
-{
-	/* can't break ABI in release branch */
-	(void) c;
-	return 1;
 }
 
 Client MCinitClient(oid user, bstream *fin, stream *fout) 
@@ -691,12 +669,6 @@ void MCcleanupClients(void){
 		assert(c->bak==NULL);
 		MCexitClient(c);
 	}
-}
-void 
-MCexitPending(void)
-{
-	/* can't break ABI in release branch */
-	return;
 }
 
 str
