@@ -249,7 +249,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 	{
 		mnstr_printf(fout, "!request for database '%s', "
 				"but this is database '%s', "
-				"did you mean to connect to merovingian instead?\n",
+				"did you mean to connect to monetdbd instead?\n",
 				database, GDKgetenv("gdk_dbname"));
 		/* flush the error to the client, and abort further execution */
 		mnstr_flush(fout);
