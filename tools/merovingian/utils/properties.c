@@ -41,6 +41,7 @@ static confkeyval _internal_prop_keys[] = {
 	{"master",   NULL, 0, STR},
 	{"slave",    NULL, 0, MURI},
 	{"readonly", NULL, 0, BOOLEAN},
+	{"nclients", NULL, 0, INT},
 	{ NULL,      NULL, 0, INVALID}
 };
 

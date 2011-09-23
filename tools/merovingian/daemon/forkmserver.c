@@ -172,6 +172,7 @@ forkMserver(char *database, sabdb** stats, int force)
 		char usock[512];
 		char mydoproxy;
 		char nthreads[24];
+		char nclients[24];
 		char master[512]; /* possibly undersized */
 		char slave[512]; /* possibly undersized */
 		char pipeline[512];
@@ -189,17 +190,22 @@ forkMserver(char *database, sabdb** stats, int force)
 		mydoproxy = strcmp(getConfVal(_mero_props, "forward"), "proxy") == 0;
 
 		kv = findConfKey(ckv, "nthreads");
-		if (kv->val == NULL)
-			kv = findConfKey(_mero_db_props, "nthreads");
 		if (kv->val != NULL) {
 			snprintf(nthreads, sizeof(nthreads), "gdk_nr_threads=%s", kv->val);
 		} else {
 			nthreads[0] = '\0';
 		}
 
-		kv = findConfKey(ckv, "optpipe");
+		kv = findConfKey(ckv, "nclients");
 		if (kv->val == NULL)
-			kv = findConfKey(_mero_db_props, "optpipe");
+			kv = findConfKey(_mero_db_props, "nclients");
+		if (kv->val != NULL) {
+			snprintf(nclients, sizeof(nclients), "max_clients=%s", kv->val);
+		} else {
+			nclients[0] = '\0';
+		}
+
+		kv = findConfKey(ckv, "optpipe");
 		if (kv->val != NULL) {
 			snprintf(pipeline, sizeof(pipeline), "sql_optimizer=%s", kv->val);
 		} else {
@@ -286,6 +292,9 @@ forkMserver(char *database, sabdb** stats, int force)
 		argv[c++] = "--set"; argv[c++] = vaultkey;
 		if (nthreads[0] != '\0') {
 			argv[c++] = "--set"; argv[c++] = nthreads;
+		}
+		if (nclients[0] != '\0') {
+			argv[c++] = "--set"; argv[c++] = nclients;
 		}
 		if (pipeline[0] != '\0') {
 			argv[c++] = "--set"; argv[c++] = pipeline;

@@ -1,6 +1,10 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
+* Fri Sep 23 2011 Fabian Groffen <fabian@cwi.nl>
+- Add nclients property that controls the maximum number of concurrent
+  clients allowed to access the database
+
 * Wed Aug 31 2011 Fabian Groffen <fabian@cwi.nl>
 - Starting monetdbd without any arguments or without dbfarm is no longer
   supported.  A dbfarm now must be provided for each command.

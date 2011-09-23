@@ -612,6 +612,8 @@ main(int argc, char *argv[])
 	kv->val = NULL; /* MURI */
 	kv = findConfKey(_mero_db_props, "readonly");
 	kv->val = strdup("no");
+	kv = findConfKey(_mero_db_props, "nclients");
+	kv->val = strdup("64");
 
 	*dbfarm = '\0';
 	if (argc > 1) {
