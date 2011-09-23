@@ -16,6 +16,7 @@
 # All Rights Reserved.
 
 import os
+import posixpath
 from codegen import find_org
 import re
 
@@ -292,7 +293,7 @@ def am_dep(fd, t, deplist, am, pref = ''):
     fd.write(pref + n + ":")
     rv.append(pref + n)
     for d in deplist:
-        if not os.path.isabs(d):
+        if not posixpath.isabs(d):
             fd.write(" " + am_translate_dir(d, am))
         else:
             print("!WARNING: dropped absolute dependency " + d)
@@ -994,12 +995,12 @@ def am_gem(fd, var, gem, am):
         dirs = []
         for src in srcs:
             if '/' in src:
-                d = os.path.dirname(src)
+                d = posixpath.dirname(src)
                 if d not in dirs:
-                    fd.write("\t[ '$(srcdir)' -ef . ] || mkdir -p '%s'\n" % os.path.dirname(src))
+                    fd.write("\t[ '$(srcdir)' -ef . ] || mkdir -p '%s'\n" % posixpath.dirname(src))
                     dirs.append(d)
                     while '/' in d:
-                        d = os.path.dirname(d)
+                        d = posixpath.dirname(d)
                         dirs.append(d)
             fd.write("\t[ '$(srcdir)' -ef . ] || cp -p '$(srcdir)/%s' '%s'\n" % (src, src))
         fd.write("\tgem build '%s'\n" % f)
@@ -1040,7 +1041,7 @@ def am_python(fd, var, python, am):
                    pyre.search(open(os.path.join(am['CWDRAW'], f)).read()).group(1).split(', '))
         pkgnams.append(pynmre.search(open(os.path.join(am['CWDRAW'], f)).read()).group(2))
         for pkg in pkgs:
-            pkgdir = apply(os.path.join, pkg.split('.'))
+            pkgdir = apply(posixpath.join, pkg.split('.'))
             pkgdirs.append(pkgdir)
             fd.write("\t[ '$(srcdir)' -ef . ] || mkdir -p '%s'\n" % pkgdir)
             fd.write("\t[ '$(srcdir)' -ef . ] || cp -p '$(srcdir)/%s'/*.py '%s'\n" % (pkgdir, pkgdir))
@@ -1128,7 +1129,7 @@ def am_add_srcdir(path, am, prefix =""):
     dir = path
     if dir[0] == '$':
         return ""
-    elif not os.path.isabs(dir):
+    elif not posixpath.isabs(dir):
         dir = "$(srcdir)/" + dir
     else:
         return ""

@@ -83,7 +83,7 @@ All Rights Reserved.
 #define FREECLIENT  0
 #define FINISHING   1   
 #define CLAIMED     2
-#define AWAITING    4
+#define AWAITING    4   /* not used, see bug #1939 */
 
 #define TIMEOUT     (5*60)  /* seconds */
 #define PROCESSTIMEOUT  2   /* seconds */
@@ -409,57 +409,14 @@ Client MCgetClient(int id)
 	return(mal_clients + id);
 }
 
-Client MCfindClient(oid user, str scen, bstream *fin, stream *fout) 
+Client
+MCfindClient(oid user, str scen, bstream *fin, stream *fout)
 {
-	Client c = NULL;
-	Scenario s = findScenario(scen);
-
-	if (!s) 
-		return NULL;
-
-	mal_set_lock(mal_contextLock, "newClient");
-	if (mal_clients[CONSOLE].user &&
-	    mal_clients[CONSOLE].mode == FINISHING) {
-		showException(MAL,"newClient", "system shutdown in progress");
-		mal_unset_lock(mal_contextLock, "newClient");
-		return NULL;
-	}
-	for (c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++) {
-		if (c->mode == AWAITING && c->scenario == s->name) {
-			/* remove garbage from previous session */
-			if( c->nspace) {
-				freeModule(c->nspace);
-				c->nspace=0;
-			}
-			c->mode = CLAIMED;
-			break;
-		}
-	}
-	mal_unset_lock(mal_contextLock, "newClient");
-
-	if (c == mal_clients+MAL_MAXCLIENTS) 
-		return NULL;
-#ifdef MAL_CLIENT_DEBUG
-	printf("Client found %d\n", c->idx);
-#endif
-	if (c) {
-		/* TODO reset client */
-		c->user = user; 
-		c->fdin = fin ? fin : bstream_create(GDKin,0);
-		c->yycur = 0;
-		c->bak = NULL;
-
-		c->listing = 0;
-		c->flags= MCdefault;
-		c->fdout = fout ? fout : GDKstdout;
-		c->mdb = 0;
-		c->login = time(0);
-		memset((char *)c->rcc, 0, sizeof(RecStat));
-		c->rcc->curQ = -1;
-		/* (re)activate thread */
-		MT_sema_up(&c->s, "MCfindClient");
-      return c;
-	}
+	/* can't break ABI in release branch */
+	(void) user;
+	(void) scen;
+	(void) fin;
+	(void) fout;
 	return NULL;
 }
 
@@ -488,24 +445,8 @@ MCexitClient(Client c)
 int
 MCwait(Client c) 
 {
-	if (c != mal_clients && c->mode == FINISHING) {
-		mal_set_lock(mal_contextLock, "wait");
-		c->mode = AWAITING;
-		/* close streams */
-		mal_unset_lock(mal_contextLock, "wait");
-		MCexitClient(c);
-		/* wait for work */
-#ifdef MAL_DEBUG_CLIENT
-		mnstr_printf(c->fdout,"Put client into pool %d\n",c->idx);
-#endif
-		MT_sema_down(&c->s, "MSserveClient");
-#ifdef MAL_DEBUG_CLIENT
-		mnstr_printf(c->fdout,"Awake client in pool %d\n",c->idx);
-#endif
-		c->mythread->data[1] = c->fdin;
-		c->mythread->data[0] = c->fdout;
-		return (c->mode == CLAIMED);
-	}
+	/* can't break ABI in release branch */
+	(void) c;
 	return 1;
 }
 
@@ -754,17 +695,8 @@ void MCcleanupClients(void){
 void 
 MCexitPending(void)
 {
-	Client c;
-
-	mal_set_lock(mal_contextLock, "MCexitPending");
-	for (c = mal_clients+1; c < mal_clients+MAL_MAXCLIENTS; c++) {
-		if (c->mode == AWAITING) {
-			c->mode = FINISHING;
-			/* (re)activate thread */
-			MT_sema_up(&c->s, "MCfindClient");
-		}
-	}
-	mal_unset_lock(mal_contextLock, "MCexitPending");
+	/* can't break ABI in release branch */
+	return;
 }
 
 str

@@ -230,7 +230,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 	{
 		mnstr_printf(fout, "!request for database '%s', "
 				"but this is database '%s', "
-				"did you mean to connect to merovingian instead?\n",
+				"did you mean to connect to monetdbd instead?\n",
 				database, GDKgetenv("gdk_dbname"));
 		/* flush the error to the client, and abort further execution */
 		mnstr_flush(fout);
@@ -281,16 +281,6 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 				}
 			}
 			SABAOTHfreeStatus(&stats);
-		}
-
-		/* find and reactivate client */
-		c = MCfindClient(uid, lang, fin, fout);
-		if (c != NULL) {
-			mnstr_printf(fout, "!internal server error (findClient), "
-					"please try again later\n");
-			mnstr_flush(fout);
-			GDKfree(command);
-			return;
 		}
 
 		c = MCinitClient(uid, fin, fout);
@@ -430,7 +420,7 @@ MSserveClient(void *dummy)
 		c->glb = newGlobalStack(MAXGLOBALS + mb->vsize);
 	if ( c->glb == NULL){
 		showException(MAL, "serveClient", MAL_MALLOC_FAIL);
-		c->mode = FINISHING + 1;
+		c->mode = FINISHING + 1; /* == CLAIMED */
 	} else {
 		c->glb->stktop = mb->vtop;
 		c->glb->blk = mb;
@@ -440,7 +430,7 @@ MSserveClient(void *dummy)
 		msg = defaultScenario(c);
 	if (msg) {
 		showException(MAL, "serveClient", "could not initialize default scenario");
-		c->mode = FINISHING + 1;
+		c->mode = FINISHING + 1; /* == CLAIMED */
 	} else {
 		do {
 			do {
@@ -449,10 +439,6 @@ MSserveClient(void *dummy)
 					break;
 				resetScenario(c);
 			} while (c->scenario);
-#ifdef BUG_2581675_FIXED		/* when client record reinitialized properly, this code can be reinstated */
-			if (!MCwait(c))
-				break;
-#endif
 		} while(c->scenario && c->mode != FINISHING);
 	}
 	/*
