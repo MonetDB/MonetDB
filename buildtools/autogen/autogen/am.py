@@ -131,8 +131,6 @@ def am_extra_dist_dir(fd, var, values, am):
     for i in values:
         fd.write("\tmkdir -p $(distdir)/%s\n" % i)
         fd.write("\tcp -pR $(srcdir)/%s/* $(distdir)/%s\n" % (i, i))
-        fd.write("\tfind $(distdir)/%s -depth -name CVS -exec rm -rf {} \\;\n" % i)
-        fd.write("\tfind $(distdir)/%s -perm -0100 -type f ! -name \\*.bat ! -name \\*.sh ! -exec grep -q '^#!' {} \\; -exec chmod a-x {} \\;\n" % i)
 
 def am_extra_headers(fd, var, values, am):
     for i in values:
