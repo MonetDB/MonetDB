@@ -443,7 +443,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 		if (e->flag == cmp_in || e->flag == cmp_notin) {
 			return handle_in_exps(sql, e->l, e->r, left, right, grp, (e->flag == cmp_in), 0);
 		}
-		if (e->flag == cmp_or) {
+		if (e->flag == cmp_or && !right) {
 			list *l = e->l;
 			node *n;
 			stmt *sel1, *sel2;
@@ -476,8 +476,24 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 				assert(f);
 				return stmt_binop(sql->sa, sel1, sel2, f);
 			}
-			return stmt_union(sql->sa, sel1,sel2);
+			if (sel1->nrcols == 0) {
+				stmt *predicate = bin_first_column(sql->sa, left);
+				
+				predicate = stmt_const(sql->sa, predicate, stmt_bool(sql->sa, 1));
+				sel1 = stmt_select(sql->sa, predicate, sel1, cmp_equal);
+			}
+			if (sel2->nrcols == 0) {
+				stmt *predicate = bin_first_column(sql->sa, left);
+				
+				predicate = stmt_const(sql->sa, predicate, stmt_bool(sql->sa, 1));
+				sel2 = stmt_select(sql->sa, predicate, sel2, cmp_equal);
+			}
+			sel1 = stmt_mark_tail(sql->sa, sel1, 0); 
+			sel2 = stmt_mark_tail(sql->sa, sel2, 0); 
+			return stmt_union(sql->sa, sel1, sel2);
 		}
+		if (e->flag == cmp_or && right)  /* join */
+			assert(0);
 		/* here we handle join indices */
 		if ((p=find_prop(e->p, PROP_JOINIDX)) != NULL) {
 			sql_idx *i = p->value;
@@ -806,27 +822,11 @@ rel2bin_table( mvc *sql, sql_rel *rel, list *refs)
 	return sub;
 }
 
-static int
-equi_join(stmt *j)
-{
-	if (j->flag == cmp_equal)
-		return 0;
-	return -1;
-}
-
-static int
-not_equi_join(stmt *j)
-{
-	if (j->flag != cmp_equal)
-		return 0;
-	return -1;
-}
-
 static stmt *
 rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 {
 	list *l; 
-	node *en, *n;
+	node *en = NULL, *n;
 	stmt *left = NULL, *right = NULL, *join = NULL, *jl, *jr;
 	stmt *ld = NULL, *rd = NULL;
 
@@ -838,15 +838,26 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 		return NULL;	
 	left = row2cols(sql, left);
 	right = row2cols(sql, right);
+	/* 
+ 	 * split in 2 steps, 
+ 	 * 	first cheap join(s) (equality or idx) 
+ 	 * 	second selects/filters 
+         */
 	if (rel->exps) {
 		int idx = 0;
 		list *jns = list_new(sql->sa);
 
-		/* generate a stmt_reljoin */
+		/* generate a relational join */
 		for( en = rel->exps->h; en; en = en->next ) {
 			int join_idx = sql->opt_stats[0];
-			stmt *s = exp_bin(sql, en->data, left, right, NULL, NULL);
+			sql_exp *e = en->data;
+			stmt *s = NULL;
 
+			/* only handle simple joins here */		
+			if (list_length(jns) && (idx || !e->type == e_cmp || e->flag != cmp_equal))
+				break;
+
+			s = exp_bin(sql, en->data, left, right, NULL, NULL);
 			if (!s) {
 				assert(0);
 				return NULL;
@@ -855,6 +866,7 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 				idx = 1;
 			if (!join) {
 				join = s;
+			/* stop on first non equality join */
 			} else if (s->type != st_join && 
 				   s->type != st_join2 && 
 				   s->type != st_joinN) {
@@ -863,13 +875,14 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 
 					if (rs->type == st_join || 
 				   	    rs->type == st_join2 || 
-				   	    rs->type == st_joinN) {
+				   	    rs->type == st_joinN) { 
 						list_append(jns, s);
 						continue;
 					}
 				}
 				/* handle select expressions */
 				/*assert(0);*/
+				/* should be handled by join list (reljoin) */
 				if (s->h == join->h) {
 					join = stmt_semijoin(sql->sa, join,s);
 				} else {
@@ -882,15 +895,7 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 			list_append(jns, s);
 		}
 		if (list_length(jns) > 1) {
-			int o = 1, *O = &o;
-			/* move all equi joins into a releqjoin */
-			list *eqjns = list_select(jns, O, (fcmp)&equi_join, NULL);
-			if (!idx && list_length(eqjns) > 1) {
-				list *neqjns = list_select(jns, O, (fcmp)&not_equi_join, NULL);
-				join = stmt_reljoin(sql->sa, stmt_releqjoin1(sql->sa, eqjns), neqjns);
-			} else {
-				join = stmt_reljoin(sql->sa, NULL, jns);
-			}
+			join = stmt_releqjoin(sql->sa, jns);
 		} else {
 			join = jns->h->data; 
 		}
@@ -899,17 +904,61 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 		stmt *r = bin_first_column(sql->sa, right);
 		join = stmt_join(sql->sa, l, stmt_reverse(sql->sa, r), cmp_all); 
 	}
+	jl = stmt_reverse(sql->sa, stmt_mark_tail(sql->sa, join,0));
+	jr = stmt_reverse(sql->sa, stmt_mark_tail(sql->sa, stmt_reverse(sql->sa, join),0));
+	if (en) {
+		stmt *sub, *sel;
+		list *nl;
+
+		/* construct relation */
+		nl = list_new(sql->sa);
+
+		/* first project using equi-joins */
+		for( n = left->op4.lval->h; n; n = n->next ) {
+			stmt *c = n->data;
+			char *rnme = table_name(sql->sa, c);
+			char *nme = column_name(sql->sa, c);
+			stmt *s = stmt_project(sql->sa, jl, column(sql->sa, c) );
+	
+			s = stmt_alias(sql->sa, s, rnme, nme);
+			list_append(nl, s);
+		}
+		for( n = right->op4.lval->h; n; n = n->next ) {
+			stmt *c = n->data;
+			char *rnme = table_name(sql->sa, c);
+			char *nme = column_name(sql->sa, c);
+			stmt *s = stmt_project(sql->sa, jr, column(sql->sa, c) );
+
+			s = stmt_alias(sql->sa, s, rnme, nme);
+			list_append(nl, s);
+		}
+		sub = stmt_list(sql->sa, nl);
+
+		/* continue with non equi-joins */
+		sel = stmt_relselect_init(sql->sa);
+		for( ; en; en = en->next ) {
+			stmt *s = exp_bin(sql, en->data, sub, NULL, NULL, NULL);
+
+			if (!s) {
+				assert(0);
+				return NULL;
+			}
+			stmt_relselect_fill(sel, s);
+		}
+		/* recreate join output */
+		sel = stmt_reverse(sql->sa, stmt_mark_tail(sql->sa, sel, 0));
+		jl = stmt_project(sql->sa, sel, jl); 
+		jr = stmt_project(sql->sa, sel, jr); 
+	}
 
 	/* construct relation */
 	l = list_new(sql->sa);
 
-	jl = stmt_reverse(sql->sa, stmt_mark_tail(sql->sa, join,0));
 	if (rel->op == op_left || rel->op == op_full) {
 		/* we need to add the missing oid's */
 		ld = stmt_diff(sql->sa, bin_first_column(sql->sa, left), stmt_reverse(sql->sa, jl));
 		ld = stmt_mark(sql->sa, stmt_reverse(sql->sa, ld), 0);
 	}
-	jr = stmt_reverse(sql->sa, stmt_mark_tail(sql->sa, stmt_reverse(sql->sa, join),0));
 	if (rel->op == op_right || rel->op == op_full) {
 		/* we need to add the missing oid's */
 		rd = stmt_diff(sql->sa, bin_first_column(sql->sa, right), stmt_reverse(sql->sa, jr));

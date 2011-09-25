@@ -144,6 +144,8 @@ typedef enum operator_type {
 
 #define is_atom(et) \
 	(et == e_atom)
+#define is_func(et) \
+	(et == e_func)
 #define is_column(et) \
 	(et != e_cmp)
 #define is_rank_op(e) \

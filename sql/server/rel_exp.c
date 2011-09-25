@@ -748,8 +748,13 @@ exp_is_join(sql_exp *e)
 int
 exp_is_eqjoin(sql_exp *e)
 {
-	if (e->flag == cmp_equal)
-		return 0;
+	if (e->flag == cmp_equal) {
+		sql_exp *l = e->l;
+		sql_exp *r = e->r;
+
+		if (!is_func(l->type) && !is_func(r->type)) 
+			return 0;
+	}
 	return -1; 
 }
 

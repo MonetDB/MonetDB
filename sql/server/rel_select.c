@@ -742,7 +742,7 @@ rel_find_lastexp(sql_rel *rel )
 void
 rel_select_add_exp(sql_rel *l, sql_exp *e)
 {
-	assert(l->op == op_select);
+	assert(l->op == op_select || is_outerjoin(l->op));
 	append(l->exps, e);
 }
 
@@ -751,6 +751,15 @@ rel_select(sql_allocator *sa, sql_rel *l, sql_exp *e)
 {
 	sql_rel *rel;
 	
+	if (l && is_outerjoin(l->op) && !is_processed(l)) {
+		if (e) {
+			if (!l->exps)
+				l->exps = new_exp_list(sa);
+			append(l->exps, e);
+		}
+		return l;
+	}
+		
 	if (l && l->op == op_select && !rel_is_ref(l)) { /* refine old select */
 		if (e)
 			rel_select_add_exp(l, e);
@@ -1989,13 +1998,18 @@ rel_compare_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2,
 		if (ls->card == rs->card && !rs2)  /* bin compare op */
 			return rel_select(sql->sa, rel, e);
 
-		/* push select into the given relation */
-		return rel_push_select(sql->sa, rel, L, e);
-	} else { /* join */
-		if (is_semi(rel->op)) {
+		if (/*is_semi(rel->op) ||*/ is_outerjoin(rel->op)) {
 			rel_join_add_exp(sql->sa, rel, e);
 			return rel;
 		}
+		/* push select into the given relation */
+		return rel_push_select(sql->sa, rel, L, e);
+	} else { /* join */
+		if (is_semi(rel->op) || is_outerjoin(rel->op)) {
+			rel_join_add_exp(sql->sa, rel, e);
+			return rel;
+		}
+		/* push join into the given relation */
 		return rel_push_join(sql->sa, rel, L, R, e);
 	}
 }
@@ -2098,10 +2112,29 @@ rel_compare(mvc *sql, sql_rel *rel, symbol *lo, symbol *ro,
 }
 
 static sql_rel *
-rel_or(mvc *sql, sql_rel *l, sql_rel *r, int f)
+rel_or(mvc *sql, sql_rel *l, sql_rel *r, list *oexps, list *lexps, list *rexps, int f)
 {
-	sql_rel *rel;
+	sql_rel *rel, *ll = l->l, *rl = r->l;
 
+	if (l == r && is_outerjoin(l->op)) { /* merge both lists */
+		sql_exp *e = exp_or(sql->sa, lexps, rexps);
+		list *nl = oexps?oexps:new_exp_list(sql->sa); 
+		
+		rel_destroy(r);
+		append(nl, e);
+		l->exps = nl;
+		return l;
+	}
+
+	if (l->op == r->op && ll == rl) {
+		sql_exp *e = exp_or(sql->sa, l->exps, r->exps);
+		list *nl = new_exp_list(sql->sa); 
+		
+		rel_destroy(r);
+		append(nl, e);
+		l->exps = nl;
+		return l;
+	}
 	(void)f;
 	l = rel_project(sql->sa, l, rel_projections(sql, l, NULL, 1, 1));
 	r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
@@ -2324,6 +2357,7 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 				p->l = left;
 			}
 			left->op = op_left;
+			set_processed(left);
 			e = exp_compare(sql->sa, l, r, cmp_equal );
 			rel_join_add_exp(sql->sa, left, e);
 			if (!p) {
@@ -2525,6 +2559,8 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 	switch (sc->token) {
 	case SQL_OR:
 	{
+		list *exps = NULL, *lexps = NULL, *rexps = NULL;
+
 		symbol *lo = sc->data.lval->h->data.sym;
 		symbol *ro = sc->data.lval->h->next->data.sym;
 
@@ -2532,15 +2568,28 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 
 		if (!rel)
 			return NULL;
+
 		lr = rel;
 		rr = rel_dup(lr);
 
-		lr = rel_logical_exp(sql, lr, lo, f);
-		rr = rel_logical_exp(sql, rr, ro, f);
+		if (is_outerjoin(rel->op)) {
+			exps = rel->exps;
+
+			lr -> exps = NULL;
+			lr = rel_logical_exp(sql, lr, lo, f);
+			lexps = lr?lr->exps:NULL;
+
+			rr -> exps = NULL;
+			rr = rel_logical_exp(sql, rr, ro, f);
+			rexps = rr?rr->exps:NULL;
+		} else {
+			lr = rel_logical_exp(sql, lr, lo, f);
+			rr = rel_logical_exp(sql, rr, ro, f);
+		}
 
 		if (!lr || !rr)
 			return NULL;
-		return rel_or(sql, lr, rr, f);
+		return rel_or(sql, lr, rr, exps, lexps, rexps, f);
 	}
 	case SQL_AND:
 	{
@@ -2692,6 +2741,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 				rel->op = (sc->token == SQL_IN)?op_semi:op_anti;
 			} else if (sc->token == SQL_NOT_IN) {
 				rel->op = op_left;
+				set_processed(rel);
 				e = rel_unop_(sql, r, NULL, "isnull", card_value);
 				r = exp_atom_bool(sql->sa, 1);
 				e = exp_compare(sql->sa,  e, r, cmp_equal);
@@ -4777,6 +4827,7 @@ rel_joinquery_(mvc *sql, sql_rel *rel, symbol *tab1, int natural, jt jointype, s
 		return NULL;
 	}
 	inner = rel = rel_crossproduct(sql->sa, t1, t2, op_join);
+	inner->op = op;
 
 	if (js && natural) {
 		return sql_error(sql, 02, "SELECT: cannot have a NATURAL JOIN with a join specification (ON or USING);");
@@ -4878,7 +4929,8 @@ rel_joinquery_(mvc *sql, sql_rel *rel, symbol *tab1, int natural, jt jointype, s
 	}
 	if (!rel)
 		return NULL;
-	inner->op = op;
+	if (inner && is_outerjoin(inner->op))
+		set_processed(inner);
 	set_processed(rel);
 	return rel;
 }
