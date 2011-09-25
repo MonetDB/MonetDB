@@ -385,29 +385,29 @@ void MCpopClientInput(Client c)
 	GDKfree(x);
 }
 
-static Client MCnewClient(void)
+static Client
+MCnewClient(void)
 {
-	Client  c;
+	Client c;
 	mal_set_lock(mal_contextLock, "newClient");
-	if (mal_clients[CONSOLE].user &&
-	    mal_clients[CONSOLE].mode == FINISHING) {
-		showException(MAL,"newClient", "system shutdown in progress");
+	if (mal_clients[CONSOLE].user && mal_clients[CONSOLE].mode == FINISHING) {
+		showException(MAL, "newClient", "system shutdown in progress");
 		mal_unset_lock(mal_contextLock, "newClient");
 		return NULL;
 	}
-	for (c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++) {
+	for (c = mal_clients; c < mal_clients + MAL_MAXCLIENTS; c++) {
 		if (c->mode == FREECLIENT) {
-			c->mode= CLAIMED;
+			c->mode = CLAIMED;
 			break;
 		}
 	}
 	mal_unset_lock(mal_contextLock, "newClient");
 
-	if (c == mal_clients+MAL_MAXCLIENTS) 
+	if (c == mal_clients + MAL_MAXCLIENTS)
 		return NULL;
-	c->idx= (int)(c - mal_clients);
+	c->idx = (int) (c - mal_clients);
 #ifdef MAL_CLIENT_DEBUG
-	printf("New client created %d\n", (int)(c-mal_clients));
+	printf("New client created %d\n", (int) (c - mal_clients));
 #endif
 	return c;
 }

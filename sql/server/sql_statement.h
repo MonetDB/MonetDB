@@ -85,7 +85,6 @@ typedef enum stmt_type {
 	st_outerjoin,
 	st_diff,
 	st_union,
-	st_reljoin,
 
 	st_export,
 	st_append,
@@ -250,8 +249,7 @@ extern void stmt_relselect_fill(stmt *relselect, stmt *select);
 
 extern stmt *stmt_releqjoin_init(sql_allocator *sa);
 extern void stmt_releqjoin_fill(stmt *releqjoin, stmt *lc, stmt *rc);
-extern stmt *stmt_releqjoin1(sql_allocator *sa, list *joins);
-extern stmt *stmt_releqjoin2(sql_allocator *sa, list *l1, list *l2);
+extern stmt *stmt_releqjoin(sql_allocator *sa, list *joins);
 extern stmt *stmt_join(sql_allocator *sa, stmt *op1, stmt *op2, comp_type cmptype);
 
 /* generic join operator, with a left and right statement list */
@@ -260,7 +258,6 @@ extern stmt *stmt_joinN(sql_allocator *sa, stmt *l, stmt *r, stmt *opt, sql_subf
 extern stmt *stmt_join2(sql_allocator *sa, stmt *l, stmt *ra, stmt *rb, int cmp);
 extern stmt *stmt_project(sql_allocator *sa, stmt *op1, stmt *op2);
 extern stmt *stmt_outerjoin(sql_allocator *sa, stmt *op1, stmt *op2, comp_type cmptype);
-extern stmt *stmt_reljoin(sql_allocator *sa, stmt *op1, list *neqjoins);
 
 extern stmt *stmt_diff(sql_allocator *sa, stmt *op1, stmt *op2);
 extern stmt *stmt_union(sql_allocator *sa, stmt *op1, stmt *op2);

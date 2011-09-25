@@ -1970,7 +1970,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		case st_basetable:
 		case st_relselect:
 		case st_releqjoin:
-		case st_reljoin:
 			mnstr_printf(GDKout, "not implemented stmt\n");
 			assert(0);
 

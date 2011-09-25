@@ -131,8 +131,6 @@ def am_extra_dist_dir(fd, var, values, am):
     for i in values:
         fd.write("\tmkdir -p $(distdir)/%s\n" % i)
         fd.write("\tcp -pR $(srcdir)/%s/* $(distdir)/%s\n" % (i, i))
-        fd.write("\tfind $(distdir)/%s -depth -name CVS -exec rm -rf {} \\;\n" % i)
-        fd.write("\tfind $(distdir)/%s -perm -0100 -type f ! -name \\*.bat ! -name \\*.sh ! -exec grep -q '^#!' {} \\; -exec chmod a-x {} \\;\n" % i)
 
 def am_extra_headers(fd, var, values, am):
     for i in values:
@@ -1270,7 +1268,7 @@ AUTOMAKE_OPTIONS = no-dependencies 1.4 foreign
     fd.write("BUILT_SOURCES =%s\n" % am_list2string(am['BUILT_SOURCES'], " ", ""))
     fd.write("MOSTLYCLEANFILES =%s\n" % am_list2string(am['CLEAN'], ' ', ''))
 
-    fd.write("EXTRA_DIST = Makefile.msc%s\n" % \
+    fd.write("EXTRA_DIST = Makefile.ag Makefile.msc%s\n" % \
           am_list2string(am['EXTRA_DIST'], " ", ""))
 ##     fd.write(" $(BUILT_SOURCES)\n")
 

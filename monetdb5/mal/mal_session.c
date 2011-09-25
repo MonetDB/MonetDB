@@ -51,6 +51,7 @@ malBootstrap(void)
 	str bootfile = "mal_init", s;
 
 	c = MCinitClient((oid)0, 0, 0);
+	assert(c != NULL);
 	c->nspace = newModule(NULL, putName("user", 4));
 	initLibraries();
 	if (defaultScenario(c)) {
@@ -285,8 +286,8 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 
 		c = MCinitClient(uid, fin, fout);
 		if (c == NULL) {
-			mnstr_printf(fout, "!internal server error (out of client slots), "
-					"please try again later\n");
+			mnstr_printf(fout, "!maximum concurrent client limit reached "
+					"(%d), please try again later\n", MAL_MAXCLIENTS);
 			mnstr_flush(fout);
 			GDKfree(command);
 			return;

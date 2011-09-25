@@ -26,7 +26,9 @@ Over..
 # 08:39:58 >  
 
 [ 1	]
-% .htest # table_name
+#select count(*) from htest group by links having count(links) > 0 or
+#count(links) < 3;
+% sys.htest # table_name
 % L3 # name
 % wrd # type
 % 1 # length

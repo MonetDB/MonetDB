@@ -28,12 +28,14 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-% .p1409824,	.p1409824,	.p1409824 # table_name
+#select * from p1409824 where 0 = 1 or name = 'name4';
+% sys.p1409824,	sys.p1409824,	sys.p1409824 # table_name
 % id,	name,	val # name
 % int,	clob,	int # type
 % 1,	5,	1 # length
 [ 1,	"name4",	4	]
-% .p1409824,	.p1409824,	.p1409824 # table_name
+#select * from p1409824 where name = 'name4' or 0 = 1;
+% sys.p1409824,	sys.p1409824,	sys.p1409824 # table_name
 % id,	name,	val # name
 % int,	clob,	int # type
 % 1,	5,	1 # length

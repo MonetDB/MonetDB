@@ -2481,6 +2481,8 @@ rel_push_aggr_down(int *changes, mvc *sql, sql_rel *rel)
  * Push select down, pushes the selects through (simple) projections. Also
  * it cleans up the projections which become useless.
  */
+
+/* TODO push select expressions in outer joins down */
 static sql_rel *
 rel_push_select_down(int *changes, mvc *sql, sql_rel *rel) 
 {
@@ -4842,9 +4844,8 @@ rel_project_reduce_casts(int *changes, mvc *sql, sql_rel *rel)
 static sql_rel *
 rel_reduce_casts(int *changes, mvc *sql, sql_rel *rel) 
 {
-	*changes = 0; 
-
 	(void)sql;
+	(void)changes;
 	if ((is_join(rel->op) || is_semi(rel->op) || is_select(rel->op)) && 
 			rel->exps && list_length(rel->exps)) {
 		list *exps = rel->exps;
@@ -5302,10 +5303,11 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 		rel = rewrite(sql, rel, &rel_reduce_casts, &changes);
 	}
 
-	if (gp.cnt[op_union]) {
+	if (gp.cnt[op_union]) 
 		rel = rewrite(sql, rel, &rel_merge_union, &changes); 
+
+	if (gp.cnt[op_select]) 
 		rel = rewrite(sql, rel, &rel_select_cse, &changes); 
-	}
 
 	/* Remove unused expressions */
 	rel = rel_dce(sql, rel);
