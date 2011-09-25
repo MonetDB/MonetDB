@@ -27,7 +27,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Aug2011/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Aug2011-SP1/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -624,6 +624,43 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Sun Sep 25 2011 Fabian Groffen <fabian@cwi.nl> - 11.5.3-20110925
+- Rebuilt.
+
+* Fri Sep 23 2011 Fabian Groffen <fabian@cwi.nl> - 11.5.3-20110925
+- clients: Fixed Perl DBD rowcount for larger results, bug #2889
+
+* Wed Sep 21 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.5.3-20110925
+- monetdb5: Fixed a problem where MAL variables weren't properly cleared before
+  reuse of the data strucutre.  This problem could cause the data flow
+  scheduler to generate dependencies between instructions that didn't
+  actually exist, which in turn could cause circular dependencies among
+  instructions with deadlock as a result.  Bugs 2865 and 2888.
+
+* Wed Sep 21 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.5.3-20110925
+- sql: Fixed a bug when using default values for interval columns.  Bug 2877.
+
+* Mon Sep 19 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.5.3-20110925
+- clients: Perl: We now distinguish properly between TABLE and GLOBAL TEMPORARY
+  (the latter are recognized by being in the "tmp" schema).
+- clients: Perl: fixed a bunch of syntax errors.  This fixes bug 2884.  With thanks
+  to Rémy Chibois.
+- clients: Perl: Fixed DBD::monetdb table_info and tabletype_info.  This fixes
+  bug 2885.  With thanks to Rémy Chibois.
+
+* Fri Sep 16 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.5.3-20110925
+- sql: A bug was fixed where deleted rows weren't properly accounted for in
+  all operations.  This was bug 2882.
+- sql: A bug was fixed which caused an update to an internal table to
+  happen too soon.  The bug could be observed on a multicore system
+  with a query INSERT INTO t (SELECT * FROM t) when the table t is
+  "large enough".  This was bug 2883.
+
+* Tue Sep 13 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.5.3-20110925
+- clients: mclient: fix display of varchar columns with only NULL values.
+- clients: Fixed a bug in mclient/msqldump where an internal error occurred during
+  dump when there are GLOBAL TEMPORARY tables.
+
 * Wed Sep 07 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.5.1-20110907
 - Rebuilt.
 

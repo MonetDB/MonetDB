@@ -1,3 +1,61 @@
+monetdb (11.5.3-20110925) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Sun, 25 Sep 2011 14:14:49 +0200
+
+monetdb (11.5.3-20110925) unstable; urgency=low
+
+  * clients: Fixed Perl DBD rowcount for larger results, bug #2889
+
+ -- Fabian Groffen <fabian@cwi.nl>  Fri, 23 Sep 2011 14:14:49 +0200
+
+monetdb (11.5.3-20110925) unstable; urgency=low
+
+  * monetdb5: Fixed a problem where MAL variables weren't properly cleared before
+    reuse of the data strucutre.  This problem could cause the data flow
+    scheduler to generate dependencies between instructions that didn't
+    actually exist, which in turn could cause circular dependencies among
+    instructions with deadlock as a result.  Bugs 2865 and 2888.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 21 Sep 2011 14:14:49 +0200
+
+monetdb (11.5.3-20110925) unstable; urgency=low
+
+  * sql: Fixed a bug when using default values for interval columns.  Bug 2877.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 21 Sep 2011 14:14:49 +0200
+
+monetdb (11.5.3-20110925) unstable; urgency=low
+
+  * clients: Perl: We now distinguish properly between TABLE and GLOBAL TEMPORARY
+    (the latter are recognized by being in the "tmp" schema).
+  * clients: Perl: fixed a bunch of syntax errors.  This fixes bug 2884.  With thanks
+    to Rémy Chibois.
+  * clients: Perl: Fixed DBD::monetdb table_info and tabletype_info.  This fixes
+    bug 2885.  With thanks to Rémy Chibois.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 19 Sep 2011 14:14:49 +0200
+
+monetdb (11.5.3-20110925) unstable; urgency=low
+
+  * sql: A bug was fixed where deleted rows weren't properly accounted for in
+    all operations.  This was bug 2882.
+  * sql: A bug was fixed which caused an update to an internal table to
+    happen too soon.  The bug could be observed on a multicore system
+    with a query INSERT INTO t (SELECT * FROM t) when the table t is
+    "large enough".  This was bug 2883.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 16 Sep 2011 14:14:49 +0200
+
+monetdb (11.5.3-20110925) unstable; urgency=low
+
+  * clients: mclient: fix display of varchar columns with only NULL values.
+  * clients: Fixed a bug in mclient/msqldump where an internal error occurred during
+    dump when there are GLOBAL TEMPORARY tables.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 13 Sep 2011 14:14:49 +0200
+
 monetdb (11.5.1-20110907) unstable; urgency=low
 
   * Rebuilt.
