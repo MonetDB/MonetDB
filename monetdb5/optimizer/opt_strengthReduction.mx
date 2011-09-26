@@ -164,7 +164,7 @@ OPTstrengthReductionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, In
 					blkexit = getBlockExit(mb,i);
 				}
 				OPTDEBUGstrengthReduction
-					mnstr_printf(GDKstdout, "#check block %d-%d\n", blkbegin, blkexit);
+					mnstr_printf(cntxt->fdout, "#check block %d-%d\n", blkbegin, blkexit);
 			}
 			within[ik++] = p;
 			blk++;
@@ -176,7 +176,7 @@ OPTstrengthReductionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, In
 				blkexit= blkbegin = 0;
 			/* move the saved instruction into place */
 			OPTDEBUGstrengthReduction
-				mnstr_printf(GDKstdout, "#combine both %d %d\n", bk, ik);
+				mnstr_printf(cntxt->fdout, "#combine both %d %d\n", bk, ik);
 			for (k = 0; k < ik; k++)
 				before[bk++] = within[k];
 			ik = 0;
@@ -219,7 +219,7 @@ OPTstrengthReductionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, In
 				if (SRoverwritten(p, getArg(q, k))) {
 					se = TRUE;
 					OPTDEBUGstrengthReduction
-						mnstr_printf(GDKstdout, "variable is set in loop %d\n", getArg(p, k));
+						mnstr_printf(cntxt->fdout, "variable is set in loop %d\n", getArg(p, k));
 					goto noreduction;
 				}
 		}
@@ -233,15 +233,15 @@ OPTstrengthReductionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, In
 				 getEndLifespan(span, getArg(p, k))> blkexit) {
 				se = TRUE;
 				OPTDEBUGstrengthReduction
-					mnstr_printf(GDKstdout, "variable %d may not be moved %d-%d\n",
+					mnstr_printf(cntxt->fdout, "variable %d may not be moved %d-%d\n",
 					getArg(p, k),getBeginLifespan(span, getArg(p, k)), getEndLifespan(span, getArg(p, k)));
 				goto noreduction;
 			}
 
   noreduction:
 		OPTDEBUGstrengthReduction{
-			mnstr_printf(GDKstdout,"move %d to stack %s\n", i, (se ?"within":"before"));
-			printInstruction(GDKstdout, mb, 0, p, LIST_MAL_ALL);
+			mnstr_printf(cntxt->fdout,"move %d to stack %s\n", i, (se ?"within":"before"));
+			printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
 		}
 		if (blkexit && se == FALSE && !hasSideEffects(p, TRUE) && !isUpdateInstruction(p) )
 			before[bk++] = p;
@@ -264,7 +264,7 @@ OPTstrengthReductionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, In
 	mb->stop = 0;
 
 	OPTDEBUGstrengthReduction
-		mnstr_printf(GDKstdout,"stop= %d bk=%d\n",mb->stop,bk);
+		mnstr_printf(cntxt->fdout,"stop= %d bk=%d\n",mb->stop,bk);
 
 	for (i = 0; i < bk; i++)
 	if( before[i])

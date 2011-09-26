@@ -353,7 +353,7 @@ MRdistributework(
 
 #if defined(_DEBUG_OPT_MAPREDUCE) && _DEBUG_OPT_MAPREDUCE == 0
 	chkProgram(cntxt->nspace, reduce);
-	printFunction(GDKstdout, reduce, 0, LIST_MAL_STMT | LIST_MAPI);
+	printFunction(cntxt->fdout, reduce, 0, LIST_MAL_STMT | LIST_MAPI);
 #endif
 
 	GDKfree(packs);
@@ -581,7 +581,7 @@ OPTmapreduceImplementation(
 	(void)pc;
 
 #if defined(_DEBUG_OPT_MAPREDUCE) && _DEBUG_OPT_MAPREDUCE == 0
-	printFunction(GDKstdout, reduce, 0, LIST_MAL_ALL);
+	printFunction(cntxt->fdout, reduce, 0, LIST_MAL_ALL);
 #endif
 
 	/* For now we assume that the default ritual of the SQL compiler is
@@ -985,13 +985,13 @@ OPTmapreduceImplementation(
 	}
 
 #if defined(_DEBUG_OPT_MAPREDUCE) && _DEBUG_OPT_MAPREDUCE == 10
-	mnstr_printf(GDKstdout, "MAP program\n");
+	mnstr_printf(cntxt->fdout, "MAP program\n");
 	chkProgram(cntxt->nspace, map);
-	printFunction(GDKstdout, map, 0, LIST_MAL_STMT | LIST_MAPI);
+	printFunction(cntxt->fdout, map, 0, LIST_MAL_STMT | LIST_MAPI);
 
-	mnstr_printf(GDKstdout, "REDUCE program\n");
+	mnstr_printf(cntxt->fdout, "REDUCE program\n");
 	chkProgram(cntxt->nspace, reduce);
-	printFunction(GDKstdout, reduce, 0, LIST_MAL_STMT | LIST_MAPI);
+	printFunction(cntxt->fdout, reduce, 0, LIST_MAL_STMT | LIST_MAPI);
 #endif
 
 	lastcol = col;

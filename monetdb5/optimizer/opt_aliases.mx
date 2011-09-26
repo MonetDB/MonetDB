@@ -175,7 +175,7 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	GDKfree(span);
 	GDKfree(alias);
 	DEBUGoptimizers
-		mnstr_printf(GDKstdout,"#opt_aliases: %d removed\n",actions);
+		mnstr_printf(cntxt->fdout,"#opt_aliases: %d removed\n",actions);
 	return actions;
 }
 @include optimizerWrapper.mx

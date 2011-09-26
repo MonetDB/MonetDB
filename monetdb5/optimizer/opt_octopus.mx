@@ -265,7 +265,7 @@ OCTaddResult(int cl, int residx, int iidx)
 	int i, found = 0;
 
 	if ( cl <= 0 || cl >= octClCnt ) {
-		mnstr_printf(GDKstdout, "Illegal instruction partition index \n");
+		mnstr_printf(GDKout, "Illegal instruction partition index \n");
 		return;
 	}
 	c = &octCluster[cl];
@@ -279,7 +279,7 @@ OCTaddResult(int cl, int residx, int iidx)
 				c->top = iidx;
 		}
 		else 
-			mnstr_printf(GDKstdout, "No room for more results \n");
+			mnstr_printf(GDKout, "No room for more results \n");
 	}
 }
 
@@ -504,8 +504,8 @@ OCTnewTentacle(Client cntxt, MalBlkPtr mb, bte tidx, int v2, int *cl)
 	clrDeclarations(tmb);
 	chkProgram(cntxt->nspace,tmb);
 	OPTDEBUGoctopus{
-	printFunction(GDKstdout, tmb, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAL_PROPS);
-	/*		printFunction(GDKstdout, tmb, 0, LIST_MAL_ALL); */
+	printFunction(cntxt->fdout, tmb, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAL_PROPS);
+	/*		printFunction(cntxt->fdout, tmb, 0, LIST_MAL_ALL); */
 	}
 	GDKfree(alias);
 
@@ -827,7 +827,7 @@ OCTnewBidding(Client cntxt, int tcnt)
 	clrDeclarations(sm);
 	chkProgram(cntxt->nspace,sm);
 	OPTDEBUGoctopus{
-		/*		printFunction(GDKstdout, sm, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAL_PROPS ); */
+		/*		printFunction(cntxt->fdout, sm, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAL_PROPS ); */
 	}
 }
 
@@ -956,7 +956,7 @@ OCTnewExec(Client cntxt, MalBlkPtr mb, MalBlkPtr t, int tno)
 	clrDeclarations(sm);
 	chkProgram(cntxt->nspace,sm);
 	OPTDEBUGoctopus{
-				printFunction(GDKstdout, sm, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAL_PROPS );
+				printFunction(cntxt->fdout, sm, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAL_PROPS );
 	}
 }
 
@@ -977,9 +977,9 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 
 	optDebug |= 1 << DEBUG_OPT_OCTOPUS;
 	OPTDEBUGoctopus{ 
-		mnstr_printf(GDKstdout, "#Octopus optimizer called\n");
+		mnstr_printf(cntxt->fdout, "#Octopus optimizer called\n");
 		chkProgram(cntxt->nspace,mb);  
-		/*		printFunction(GDKstdout, mb, 0, LIST_MAL_STMT | LIST_MAL_TYPE | LIST_MAPI);*/
+		/*		printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT | LIST_MAL_TYPE | LIST_MAPI);*/
 	}
 
 	(void) fixModule(cntxt->nspace,octopusRef);
@@ -1155,11 +1155,11 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	OPTDEBUGoctopus{
 		for (i = 0; i < limit; i++) {
 			p = old[i];
-			mnstr_printf(GDKstdout, "%3d\t", malPart[getArg(p,0)]); 
-			printInstruction(GDKstdout,mb,0,p, LIST_MAL_STMT);
+			mnstr_printf(cntxt->fdout, "%3d\t", malPart[getArg(p,0)]); 
+			printInstruction(cntxt->fdout,mb,0,p, LIST_MAL_STMT);
 		}
 		for (i = 0; i < octClCnt; i++){
-			mnstr_printf(GDKstdout, "Cluster %3d\n", i);
+			mnstr_printf(cntxt->fdout, "Cluster %3d\n", i);
 			k = 0;
 			if (octCluster[i].retcnt > 0 )
 				for ( j = 0; j< octCluster[i].retcnt; j++ ){
@@ -1168,18 +1168,18 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 					if ( vrows > 0 )
 						octCluster[i].rows += vrows;
 					else k++;
-					mnstr_printf(GDKstdout, "%3d\t", v);
+					mnstr_printf(cntxt->fdout, "%3d\t", v);
 				}
-			mnstr_printf(GDKstdout, "\nIntermediate size "LLFMT" tuples\n\n", (lng) octCluster[i].rows);
+			mnstr_printf(cntxt->fdout, "\nIntermediate size "LLFMT" tuples\n\n", (lng) octCluster[i].rows);
 			if ( k )
-				mnstr_printf(GDKstdout, "No estimate for %d results\n", k);
+				mnstr_printf(cntxt->fdout, "No estimate for %d results\n", k);
 		}
 	}
 
 	/* check cluster results */
 	for (i = 1; i < octClCnt; i++){
 		if ( octCluster[i].retcnt == 0 ){
-			mnstr_printf(GDKstdout, "Tentacle %d without result\n", i); 
+			mnstr_printf(cntxt->fdout, "Tentacle %d without result\n", i); 
 			goto cleanup;
 		}
 	}
@@ -1240,7 +1240,7 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 								getArg(p,j) = findVariable (mb, rname);
 							}
 							else 
-								mnstr_printf(GDKstdout, "mat.pack argument %2d outside cluster %d\n", getArg(p,j),cl);
+								mnstr_printf(cntxt->fdout, "mat.pack argument %2d outside cluster %d\n", getArg(p,j),cl);
 					}
 				}
 			}
@@ -1261,7 +1261,7 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	clrDeclarations(mb);
 	OPTDEBUGoctopus{
 		chkProgram(cntxt->nspace,mb); 
-		/*		printFunction(GDKstdout, mb, 0,  LIST_MAL_STMT | LIST_MAL_TYPE | LIST_MAPI);*/
+		/*		printFunction(cntxt->fdout, mb, 0,  LIST_MAL_STMT | LIST_MAL_TYPE | LIST_MAPI);*/
 	}
 
 	GDKfree(old);
