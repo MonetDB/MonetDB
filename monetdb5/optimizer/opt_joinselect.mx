@@ -64,10 +64,8 @@ OPTjoinselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	int xx = sizeof(int);
 	int pivot = -1;
 
-	(void) cntxt;
-
 	OPTDEBUGjoinselect
-		mnstr_printf(GDKstdout, "Joinselect optimizer started\n");
+		mnstr_printf(cntxt->fdout, "Joinselect optimizer started\n");
 
 	ps= scr_s = (int*) GDKmalloc(scr_size * sizeof(int));
 	pi= scr_i = (int*) GDKmalloc(scr_size * sizeof(int));
@@ -307,7 +305,7 @@ OPTjoinselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 end:
 
 	OPTDEBUGjoinselect
-		printFunction(GDKstdout, mb,0, LIST_MAL_ALL);
+		printFunction(cntxt->fdout, mb,0, LIST_MAL_ALL);
 	GDKfree(old);
 	GDKfree(ps);
 	GDKfree(pi);

@@ -142,15 +142,15 @@ OPTdependencies(Client cntxt, MalBlkPtr mb, int **Ulist){
 	}
 	/*
 	 * @-
-	 * 	mnstr_printf(GDKstdout,"DEPENDENCY TABLE\n");
+	 * 	mnstr_printf(cntxt->fdout,"DEPENDENCY TABLE\n");
 	 * 	for(i=0;i<mb->stop; i++)
 	 * 		if( list[i]->cnt){
-	 * 			mnstr_printf(GDKstdout,"%s.%s [%d,%d]",
+	 * 			mnstr_printf(cntxt->fdout,"%s.%s [%d,%d]",
 	 * 				mb->stmt[i]->modname,
 	 * 				mb->stmt[i]->fcnname, i, list[i]->used);
 	 * 			for(j=p->retc; j< list[i]->cnt; j++)
-	 * 				mnstr_printf(GDKstdout, " %d", list[i]->stmt[j]);
-	 * 			mnstr_printf(GDKstdout,"\n");
+	 * 				mnstr_printf(cntxt->fdout, " %d", list[i]->stmt[j]);
+	 * 			mnstr_printf(cntxt->fdout,"\n");
 	 * 		}
 	 */
 	for(i=0;i<mb->stop; i++) {
@@ -172,10 +172,10 @@ OPTdependencies(Client cntxt, MalBlkPtr mb, int **Ulist){
 	/*
 	 * @-
 	 * 	for(i=0, sz = 0; i<mb->stop; i++) {
-	 * 		mnstr_printf(GDKstdout,"%d is used by", i);
+	 * 		mnstr_printf(cntxt->fdout,"%d is used by", i);
 	 * 		for(j=0; j<list[i]->used; j++, sz++)
-	 * 			mnstr_printf(GDKstdout," %d", uselist[sz]);
-	 * 		mnstr_printf(GDKstdout,"\n");
+	 * 			mnstr_printf(cntxt->fdout," %d", uselist[sz]);
+	 * 		mnstr_printf(cntxt->fdout,"\n");
 	 * 	}
 	 */
 
@@ -276,8 +276,8 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			/* since p has side-effects, we should secure all seen sofar */
 			for(j=i-1; j>=start;j--) {
 				OPTDEBUGreorder if( old[j]){
-					mnstr_printf(GDKstdout,"leftover: %d",start+1);
-					printInstruction(GDKstdout,mb,0,old[j],LIST_MAL_STMT | LIST_MAPI);
+					mnstr_printf(cntxt->fdout,"leftover: %d",start+1);
+					printInstruction(cntxt->fdout,mb,0,old[j],LIST_MAL_STMT | LIST_MAPI);
 				}
 				OPTbreadthfirst(cntxt, mb, j, i, old, dep, uselist);
 			}

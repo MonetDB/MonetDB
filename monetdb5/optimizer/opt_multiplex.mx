@@ -151,10 +151,10 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								"Iterator BAT type is missing");
 
 	OPTDEBUGmultiplex {
-		mnstr_printf(GDKstdout,"#calling the optimize multiplex script routine\n");
-		printFunction(GDKstdout,mb, 0, LIST_MAL_ALL );
-		mnstr_printf(GDKstdout,"#multiplex against operator %d %s\n",iter, getTypeName(getVarType(mb,iter)));
-		printInstruction(GDKstdout,mb, 0, pci,LIST_MAL_ALL);
+		mnstr_printf(cntxt->fdout,"#calling the optimize multiplex script routine\n");
+		printFunction(cntxt->fdout,mb, 0, LIST_MAL_ALL );
+		mnstr_printf(cntxt->fdout,"#multiplex against operator %d %s\n",iter, getTypeName(getVarType(mb,iter)));
+		printInstruction(cntxt->fdout,mb, 0, pci,LIST_MAL_ALL);
 	}
 	/*
 	 * @-
@@ -316,8 +316,8 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		freeInstruction(old[i]);
 	GDKfree(old);
 	DEBUGoptimizers {
-		mnstr_printf(GDKstdout,"#opt_multiplex: %d expansions\n", actions);
-		mnstr_printf(GDKstdout,"#mal program: %d MAL instr %d vars (" SZFMT " K)\n",mb->stop,mb->vtop,
+		mnstr_printf(cntxt->fdout,"#opt_multiplex: %d expansions\n", actions);
+		mnstr_printf(cntxt->fdout,"#mal program: %d MAL instr %d vars (" SZFMT " K)\n",mb->stop,mb->vtop,
 		((sizeof( MalBlkRecord) +mb->ssize * sizeof(InstrRecord)+ mb->vtop* sizeof(VarRecord) + mb->vsize*sizeof(VarPtr)+1023)/1024));
 	}
 	if (mb->errors){

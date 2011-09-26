@@ -168,7 +168,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		return 0;
 
 	(void)cntxt;
-	OPTDEBUGevaluate mnstr_printf(GDKstdout, "Constant expression optimizer started\n");
+	OPTDEBUGevaluate mnstr_printf(cntxt->fdout, "Constant expression optimizer started\n");
 
 	span = setLifespan(mb);
 	if (span == NULL)
@@ -186,7 +186,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		for (k = p->retc; k < p->argc; k++)
 			if (alias[getArg(p, k)])
 				getArg(p, k) = alias[getArg(p, k)];
-		OPTDEBUGevaluate printInstruction(GDKstdout, mb, 0, p, LIST_MAL_ALL);
+		OPTDEBUGevaluate printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
 		/* be aware that you only assign once to a variable */
 		if (p->retc == 1 && OPTallConstant(cntxt, mb, p) && !isUnsafeFunction(p)) {
 			if (assignedOnce(mb, span, getArg(p, 0)) == FALSE)
@@ -197,8 +197,8 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			msg = reenterMAL(cntxt, mb, i, i + 1, env, 0, 0);
 			p->barrier = barrier;
 			OPTDEBUGevaluate {
-				mnstr_printf(GDKstdout, "#retc var %s\n", getVarName(mb, getArg(p, 0)));
-				mnstr_printf(GDKstdout, "#result:%s\n", msg == MAL_SUCCEED ? "ok" : msg);
+				mnstr_printf(cntxt->fdout, "#retc var %s\n", getVarName(mb, getArg(p, 0)));
+				mnstr_printf(cntxt->fdout, "#result:%s\n", msg == MAL_SUCCEED ? "ok" : msg);
 			}
 			if (msg == MAL_SUCCEED) {
 				ValRecord cst;
@@ -222,13 +222,13 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				setVarFixed(mb,getArg(p,1));
 				setVarUDFtype(mb,getArg(p,1));
 				OPTDEBUGevaluate {
-					mnstr_printf(GDKstdout, "Evaluated new constant=%d -> %d:%s\n",
+					mnstr_printf(cntxt->fdout, "Evaluated new constant=%d -> %d:%s\n",
 						getArg(p, 0), getArg(p, 1), getTypeName(getArgType(mb, p, 1)));
 				}
 			} else {
 				/* if there is an error, we should postpone message handling,
 					as the actual error (eg. division by zero ) may not happen) */
-				OPTDEBUGevaluate mnstr_printf(GDKstdout, "Evaluated %s\n", msg);
+				OPTDEBUGevaluate mnstr_printf(cntxt->fdout, "Evaluated %s\n", msg);
 				GDKfree(msg);
 				mb->errors = 0;
 			}
@@ -236,7 +236,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	}
 	actions += OPTremoveUnusedBlocks(cntxt, mb);
 	DEBUGoptimizers
-		mnstr_printf(GDKstdout, "#opt_evaluate: %d constant expressions\n", actions);
+		mnstr_printf(cntxt->fdout, "#opt_evaluate: %d constant expressions\n", actions);
 	GDKfree(span);
 	GDKfree(alias);
 	freeStack(env);

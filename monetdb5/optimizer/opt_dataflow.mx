@@ -246,7 +246,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	GDKfree(span);
 	GDKfree(init);
 	DEBUGoptimizers
-		mnstr_printf(GDKstdout,"#opt_dataflow: %d flow blocks created\n",actions);
+		mnstr_printf(cntxt->fdout,"#opt_dataflow: %d flow blocks created\n",actions);
 	return actions;
 }
 @include optimizerWrapper.mx

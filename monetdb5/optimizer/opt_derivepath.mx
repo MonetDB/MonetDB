@@ -127,8 +127,8 @@ OPTderivePathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				pc[getArg(p,1)] = i;
 				actions++;
 				OPTDEBUGderivePath {
-					mnstr_printf(GDKstdout,"#new derivePath instruction\n");
-					printInstruction(GDKstdout,mb, 0, p, LIST_MAL_ALL);
+					mnstr_printf(cntxt->fdout,"#new derivePath instruction\n");
+					printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_ALL);
 				}
 		}
 		if (getModuleId(p) == groupRef && p->argc == 5 && (getFunctionId(p) == deriveRef || getFunctionId(p) == doneRef)){
@@ -147,8 +147,8 @@ OPTderivePathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				freeInstruction(p);
 				p= q;
 				OPTDEBUGderivePath{
-					mnstr_printf(GDKstdout,"#new derivePath instruction extension\n");
-					printInstruction(GDKstdout,mb, 0, p, LIST_MAL_ALL);
+					mnstr_printf(cntxt->fdout,"#new derivePath instruction extension\n");
+					printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_ALL);
 				}
 			}
 		} 
@@ -160,7 +160,7 @@ OPTderivePathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	GDKfree(old);
 	GDKfree(pc);
 	DEBUGoptimizers
-		mnstr_printf(GDKstdout,"#opt_derivepath: %d statements glued\n",actions);
+		mnstr_printf(cntxt->fdout,"#opt_derivepath: %d statements glued\n",actions);
 	return actions;
 }
 @include optimizerWrapper.mx

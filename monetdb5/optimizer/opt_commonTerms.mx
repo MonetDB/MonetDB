@@ -189,15 +189,15 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		barrier |= getFunctionId(p) == assertRef;
 		if (p->token == NOOPsymbol || p->token == ASSIGNsymbol || barrier /* || p->retc == p->argc */) {
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
-				mnstr_printf(GDKstdout, "COMMON SKIPPED[%d] %d %d\n",i, barrier, p->retc == p->argc);
+				mnstr_printf(cntxt->fdout, "COMMON SKIPPED[%d] %d %d\n",i, barrier, p->retc == p->argc);
 #endif
 			continue;
 		}
 
 		/* from here we have a candidate to look for a match */
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
-		mnstr_printf(GDKstdout,"#CANDIDATE[%d] ",i);
-		printInstruction(GDKstdout, mb, 0, p, LIST_MAL_ALL);
+		mnstr_printf(cntxt->fdout,"#CANDIDATE[%d] ",i);
+		printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
 #endif
 		prop = hasSideEffects(p,TRUE) || isUpdateInstruction(p);
 		j =	isVarConstant(mb, getArg(p,p->argc-1))? cstlist: candidate;
@@ -206,11 +206,11 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		for (; j ; j = list[j]) 
 			if ( (q=getInstrPtr(mb,j))->fcn == p->fcn  && !isUnsafeFunction(q)){
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
-			mnstr_printf(GDKstdout,"#CANDIDATE %d, %d  %d %d ", i, j, 
+			mnstr_printf(cntxt->fdout,"#CANDIDATE %d, %d  %d %d ", i, j, 
 				hasSameSignature(mb, p, q, p->retc), 
 				hasSameArguments(mb, p, q));
-				printInstruction(GDKstdout, mb, 0, q, LIST_MAL_ALL);
-				mnstr_printf(GDKstdout," :%d %d %d=%d %d %d %d %d %d\n", 
+				printInstruction(cntxt->fdout, mb, 0, q, LIST_MAL_ALL);
+				mnstr_printf(cntxt->fdout," :%d %d %d=%d %d %d %d %d %d\n", 
 					q->token != ASSIGNsymbol ,
 					list[getArg(q,q->argc-1)],i,
 					!hasCommonResults(p, q), 
@@ -232,13 +232,13 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 				   ) {
 						if (safetyBarrier(p, q) ){
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
-						mnstr_printf(GDKstdout,"#safetybarrier reached\n");
+						mnstr_printf(cntxt->fdout,"#safetybarrier reached\n");
 #endif
 						break;
 					}
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
-						mnstr_printf(GDKstdout, "Found a common expression " "%d <-> %d\n", j, i);
-						printInstruction(GDKstdout, mb, 0, q, LIST_MAL_ALL);
+						mnstr_printf(cntxt->fdout, "Found a common expression " "%d <-> %d\n", j, i);
+						printInstruction(cntxt->fdout, mb, 0, q, LIST_MAL_ALL);
 #endif
 					clrFunction(p);
 					p->argc = p->retc;
@@ -247,8 +247,8 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 						p= pushArgument(mb,p, getArg(q,k));
 					}
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
-					mnstr_printf(GDKstdout, "COMMON MODIFIED EXPRESSION %d -> %d\n",i,j);
-					printInstruction(GDKstdout, mb, 0, p, LIST_MAL_ALL);
+					mnstr_printf(cntxt->fdout, "COMMON MODIFIED EXPRESSION %d -> %d\n",i,j);
+					printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
 #endif
 					actions++;
 					break; /* end of search */
@@ -256,8 +256,8 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 			}
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
 			else if ( hasSideEffects(q, TRUE) || isUpdateInstruction(p)){
-				mnstr_printf(GDKstdout, "COMMON SKIPPED %d %d\n", hasSideEffects(q, TRUE) , isUpdateInstruction(p));
-				printInstruction(GDKstdout, mb, 0, q, LIST_MAL_ALL);
+				mnstr_printf(cntxt->fdout, "COMMON SKIPPED %d %d\n", hasSideEffects(q, TRUE) , isUpdateInstruction(p));
+				printInstruction(cntxt->fdout, mb, 0, q, LIST_MAL_ALL);
 			}
 #endif
 	}
@@ -269,9 +269,9 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	GDKfree(old);
 	GDKfree(alias);
 	DEBUGoptimizers
-		mnstr_printf(GDKstdout,"#opt_commonTerms: %d statements catched\n",actions);
+		mnstr_printf(cntxt->fdout,"#opt_commonTerms: %d statements catched\n",actions);
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
-		mnstr_printf(GDKstdout,"#opt_commonTerms: %d statements catched\n",actions);
+		mnstr_printf(cntxt->fdout,"#opt_commonTerms: %d statements catched\n",actions);
 #endif
 	return actions;
 }
