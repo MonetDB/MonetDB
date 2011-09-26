@@ -267,7 +267,7 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 
 
 	OPTDEBUGremoteQueries
-	mnstr_printf(GDKstdout, "RemoteQueries optimizer started\n");
+	mnstr_printf(cntxt->fdout, "RemoteQueries optimizer started\n");
 	(void) cntxt;
 	(void) stk;
 	(void) pci;
@@ -468,8 +468,8 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	GDKfree(old);
 #ifdef DEBUG_OPT_REMOTE
 	if (doit) {
-		mnstr_printf(GDKstdout, "remoteQueries %d\n", doit);
-		printFunction(GDKstdout, mb, 0, LIST_MAL_ALL);
+		mnstr_printf(cntxt->fdout, "remoteQueries %d\n", doit);
+		printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
 	}
 #endif
 	GDKfree(location);

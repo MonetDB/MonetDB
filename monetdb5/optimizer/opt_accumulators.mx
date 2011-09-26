@@ -107,7 +107,7 @@ OPTaccumulatorsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 			continue;
 		}
 		OPTDEBUGaccumulators
-			printInstruction(GDKstdout, mb, 0, p, LIST_MAL_ALL);
+			printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
 		if (p->retc==1 && p->argc == 2) {
 			/* unary operation, avoid clash with binary */
 			pushInstruction(mb,p);
@@ -134,8 +134,8 @@ OPTaccumulatorsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 			typeChecker(scope, mb, p, TRUE);
 			if (mb->errors || p->typechk == TYPE_UNKNOWN) {
 				OPTDEBUGaccumulators{
-					mnstr_printf(GDKstdout,"# Failed typecheck");
-					printInstruction(GDKstdout, mb, 0, p, LIST_MAL_ALL);
+					mnstr_printf(cntxt->fdout,"# Failed typecheck");
+					printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
 				}
 				/* reset instruction error buffer */
 				cntxt->errbuf[0]=0;
@@ -144,15 +144,15 @@ OPTaccumulatorsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 				p=q; /* restore */
 			} else  {
 				OPTDEBUGaccumulators{
-					mnstr_printf(GDKstdout, "#Found accumulation candidate ");
-					mnstr_printf(GDKstdout, "%d: %d(%d)\n", i, getArg(p,0),getArg(p,2));
-					printInstruction(GDKstdout, mb, 0, p, LIST_MAL_ALL);
+					mnstr_printf(cntxt->fdout, "#Found accumulation candidate ");
+					mnstr_printf(cntxt->fdout, "%d: %d(%d)\n", i, getArg(p,0),getArg(p,2));
+					printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
 				}
 				freeInstruction(q);
 				actions++;  
 			}
 			OPTDEBUGaccumulators
-				printInstruction(GDKstdout, mb, 0, p, LIST_MAL_ALL);
+				printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
 		}
 		pushInstruction(mb,p);
 	} 
@@ -162,7 +162,7 @@ OPTaccumulatorsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	GDKfree(old);
 	GDKfree(span);
 	DEBUGoptimizers
-		mnstr_printf(GDKstdout,"#opt_accumulators:%d accumulations\n",actions);
+		mnstr_printf(cntxt->fdout,"#opt_accumulators:%d accumulations\n",actions);
 	return actions;
 }
 

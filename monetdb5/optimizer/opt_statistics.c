@@ -130,7 +130,7 @@ QOTupdateStatistics(str nme, int actions, lng val)
 	p = BUNfnd(qotStat[QOTcalls],&idx);
 	if (p == BUN_NONE) {
 #ifdef _Q_STATISTICS_DEBUG
-		mnstr_printf(GDKstdout,"#Could not access 'calls'\n");
+		mnstr_printf(GDKout,"#Could not access 'calls'\n");
 #endif
 		mal_unset_lock(qotlock,"QOT statistics");
 		return;
@@ -142,7 +142,7 @@ QOTupdateStatistics(str nme, int actions, lng val)
 	p = BUNfnd(qotStat[QOTactions],&idx);
 	if (p == BUN_NONE){
 #ifdef _Q_STATISTICS_DEBUG
-		mnstr_printf(GDKstdout,"#Could not access 'actions'\n");
+		mnstr_printf(GDKout,"#Could not access 'actions'\n");
 #endif
 		mal_unset_lock(qotlock,"QOT statistics");
 		return;
@@ -154,7 +154,7 @@ QOTupdateStatistics(str nme, int actions, lng val)
 	p = BUNfnd(qotStat[QOTtimings],&idx);
 	if (p == BUN_NONE){
 #ifdef _Q_STATISTICS_DEBUG
-		mnstr_printf(GDKstdout, "#Could not access 'timings'\n");
+		mnstr_printf(GDKout, "#Could not access 'timings'\n");
 #endif
 		mal_unset_lock(qotlock,"QOT statistics");
 		return ;

@@ -97,15 +97,14 @@ typedef struct RANGE{
 static void 
 printRange(Client cntxt, MalBlkPtr mb, Range rng, int idx){
 	(void) rng;
-	(void) cntxt;
-	mnstr_printf(GDKstdout,"[%3d] %5s used=%d\tlcst=%s\t ", 
+	mnstr_printf(cntxt->fdout,"[%3d] %5s used=%d\tlcst=%s\t ", 
 		idx, getVarName(mb,idx), rng[idx].used,
 		(rng[idx].lcst? getVarName(mb,rng[idx].lcst):""));
-	mnstr_printf(GDKstdout,"hcst=%s\tsource %s ", 
+	mnstr_printf(cntxt->fdout,"hcst=%s\tsource %s ", 
 		(rng[idx].hcst? getVarName(mb,rng[idx].hcst):""), 
 		(rng[idx].srcvar?getVarName(mb,rng[idx].srcvar):""));
-	mnstr_printf(GDKstdout,"\tlu=%d\tr=%d", rng[idx].lastupdate, rng[idx].lastrange);
-	mnstr_printf(GDKstdout,"\n");
+	mnstr_printf(cntxt->fdout,"\tlu=%d\tr=%d", rng[idx].lastupdate, rng[idx].lastrange);
+	mnstr_printf(cntxt->fdout,"\n");
 }
 
 static int
@@ -123,7 +122,7 @@ OPTpushrangesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	if (range == NULL)
 		return 0;
 	OPTDEBUGpushranges
-		mnstr_printf(GDKstdout,"#Range select optimizer started\n");
+		mnstr_printf(cntxt->fdout,"#Range select optimizer started\n");
 	(void) stk;
 	(void) pci;
 	
