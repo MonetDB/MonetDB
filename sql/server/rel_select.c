@@ -2161,13 +2161,18 @@ rel_compare_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2,
 		if (ls->card == rs->card && !rs2)  /* bin compare op */
 			return rel_select(sql->sa, rel, e);
 
-		/* push select into the given relation */
-		return rel_push_select(sql->sa, rel, L, e);
-	} else { /* join */
-		if (is_semi(rel->op)) {
+		if (/*is_semi(rel->op) ||*/ is_outerjoin(rel->op)) {
 			rel_join_add_exp(sql->sa, rel, e);
 			return rel;
 		}
+		/* push select into the given relation */
+		return rel_push_select(sql->sa, rel, L, e);
+	} else { /* join */
+		if (is_semi(rel->op) || is_outerjoin(rel->op)) {
+			rel_join_add_exp(sql->sa, rel, e);
+			return rel;
+		}
+		/* push join into the given relation */
 		return rel_push_join(sql->sa, rel, L, R, e);
 	}
 }

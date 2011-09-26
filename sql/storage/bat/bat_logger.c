@@ -29,6 +29,7 @@ bl_preversion( int oldversion, int newversion)
 #define CATALOG_FEB2010 50000
 #define CATALOG_OCT2010 51000
 #define CATALOG_APR2011 51100
+#define CATALOG_AUG2011 51101
 
 	(void)newversion;
 	if (oldversion == CATALOG_OCT2010) {
@@ -36,6 +37,10 @@ bl_preversion( int oldversion, int newversion)
 		return 0;
 	}
 	if (oldversion == CATALOG_APR2011) {
+		catalog_version = oldversion;
+		return 0;
+	}
+	if (oldversion == CATALOG_AUG2011) {
 		catalog_version = oldversion;
 		return 0;
 	}
@@ -197,6 +202,37 @@ bl_postversion( void *lg)
 		bat_destroy(iname);
 		bat_destroy(tname);
 		bat_destroy(sname);
+	}
+
+	if (catalog_version == CATALOG_AUG2011) {
+		char *s = "sys", n[64];
+		BUN i;
+		BAT *b, *b1;
+
+		while (s) {
+			b = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "functions_aggr")));
+			if (!b)
+				return;
+			b1 = BATnew(TYPE_void, TYPE_int, BATcount(b));
+			if (!b1)
+				return;
+        		BATseqbase(b1, b->hseqbase);
+			for (i=0;i<BATcount(b); i++) {
+				bit aggr = *(bit*)Tloc(b, i);
+				int func = aggr?F_AGGR:F_FUNC;
+				BUNappend(b1, &func, TRUE);
+			}
+			b1 = BATsetaccess(b1, BAT_READ);
+			logger_del_bat(lg, b->batCacheid);
+			logger_add_bat(lg, b1, N(n, NULL, s, "functions_type"));
+			bat_destroy(b);
+			bat_destroy(b1);
+
+			if (strcmp(s, "sys") == 0)
+				s = "tmp";
+			else
+				s = NULL;
+		}
 	}
 }
 
