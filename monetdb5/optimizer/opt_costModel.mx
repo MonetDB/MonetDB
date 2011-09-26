@@ -110,8 +110,8 @@ comment "Estimate the cost of a relational expression";
 		k = (@3);
 		varSetProp(mb, getArg(p,@4), rowsProp, op_eq, VALset(&v,TYPE_wrd,&k));
 		OPTDEBUGcostModel {
-			mnstr_printf(GDKstdout,"COST of @1 @2 into @4: " SSZFMT "\n",k);
-			printInstruction(GDKstdout,mb,0,p,0);
+			mnstr_printf(cntxt->fdout,"COST of @1 @2 into @4: " SSZFMT "\n",k);
+			printInstruction(cntxt->fdout,mb,0,p,0);
 		}
 }
 @= newRows1
@@ -290,7 +290,7 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		}
 	}
 	DEBUGoptimizers
-		mnstr_printf(GDKstdout,"#opt_costModel: processed\n");
+		mnstr_printf(cntxt->fdout,"#opt_costModel: processed\n");
 	return 1;
 }
 @include optimizerWrapper.mx

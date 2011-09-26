@@ -307,7 +307,7 @@ ESevaluate(Client cntxt, MalBlkPtr mb, char *empty)
 	GDKfree(old);
 	if (actions) {
 		DEBUGoptimizers
-		mnstr_printf(GDKstdout,"#opt_emptyset: %d empty sets statements removed\n",actions);
+		mnstr_printf(cntxt->fdout,"#opt_emptyset: %d empty sets statements removed\n",actions);
 		clrAllTypes(mb);	 /* force a complete resolve */
 	}
 	GDKfree(constraints);
@@ -335,11 +335,11 @@ OPTemptySetImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	for (i = 0; i < mb->vtop; i++) {
 		if (getVarRows(mb, i) == 0) {
 			OPTDEBUGemptySet
-				mnstr_printf(GDKstdout, "#START emptyset optimizer %d", i);
+				mnstr_printf(cntxt->fdout, "#START emptyset optimizer %d", i);
 			empty[i] = 1;
 		} 
 	}
-	OPTDEBUGemptySet mnstr_printf(GDKstdout, "\n");
+	OPTDEBUGemptySet mnstr_printf(cntxt->fdout, "\n");
 	i= ESevaluate(cntxt, mb, empty);
 	GDKfree(empty);
 	return i;

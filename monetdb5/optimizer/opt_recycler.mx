@@ -268,8 +268,8 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				cnt++;
 		if (cnt == p->argc-p->retc) {
 		OPTDEBUGrecycle {
-			mnstr_printf(GDKstdout,"#recycle instruction\n");
-			printInstruction(GDKstdout,mb, 0, p,LIST_MAL_ALL);
+			mnstr_printf(cntxt->fdout,"#recycle instruction\n");
+			printInstruction(cntxt->fdout,mb, 0, p,LIST_MAL_ALL);
 		}
 			marks++;
 			p->recycle = recycleMaxInterest; /* this instruction is to be monitored */

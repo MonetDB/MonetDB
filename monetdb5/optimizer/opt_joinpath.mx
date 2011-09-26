@@ -224,9 +224,9 @@ OPTjoinSubPath(Client cntxt, MalBlkPtr mb)
 						}
 						actions ++;
 						OPTDEBUGjoinPath {
-							mnstr_printf(GDKstdout,"re-use pair\n");
-							printInstruction(GDKstdout,mb,0,candidate[k].p,0);
-							printInstruction(GDKstdout,mb,0,p,0);
+							mnstr_printf(cntxt->fdout,"re-use pair\n");
+							printInstruction(cntxt->fdout,mb,0,candidate[k].p,0);
+							printInstruction(cntxt->fdout,mb,0,p,0);
 						}
 						goto breakout;
 					}
@@ -310,15 +310,15 @@ OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				 */
 				if (r && varcnt[getArg(p,j)] > 1){
 					OPTDEBUGjoinPath {
-						mnstr_printf(GDKstdout,"#double use %d %d\n", getArg(p,j), varcnt[getArg(p,j)]);
-						printInstruction(GDKstdout,mb, 0, p, LIST_MAL_ALL);
+						mnstr_printf(cntxt->fdout,"#double use %d %d\n", getArg(p,j), varcnt[getArg(p,j)]);
+						printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_ALL);
 					}
 					r = 0;
 				}
 				OPTDEBUGjoinPath {
-					mnstr_printf(GDKstdout,"#expand list \n");
-					printInstruction(GDKstdout,mb, 0, p, LIST_MAL_ALL);
-					printInstruction(GDKstdout,mb, 0, q, LIST_MAL_ALL);
+					mnstr_printf(cntxt->fdout,"#expand list \n");
+					printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_ALL);
+					printInstruction(cntxt->fdout,mb, 0, q, LIST_MAL_ALL);
 				}
 				if ( getFunctionId(p) == joinRef){
 					if( r &&  getModuleId(r)== algebraRef && ( getFunctionId(r)== joinRef  || getFunctionId(r)== joinPathRef) ){
@@ -342,8 +342,8 @@ OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			}
 			OPTDEBUGjoinPath {
 				chkTypes(cntxt->nspace,mb,TRUE);
-				mnstr_printf(GDKstdout,"#new [left]joinPath instruction\n");
-				printInstruction(GDKstdout,mb, 0, q, LIST_MAL_ALL);
+				mnstr_printf(cntxt->fdout,"#new [left]joinPath instruction\n");
+				printInstruction(cntxt->fdout,mb, 0, q, LIST_MAL_ALL);
 			}
 			if(q->argc<= p->argc){
 				/* no change */
@@ -393,7 +393,7 @@ OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	GDKfree(pc);
 	if (varcnt ) GDKfree(varcnt);
 	DEBUGoptimizers
-		mnstr_printf(GDKstdout,"#opt_joinpath: %d statements glued\n",actions);
+		mnstr_printf(cntxt->fdout,"#opt_joinpath: %d statements glued\n",actions);
 	return actions;
 }
 @include optimizerWrapper.mx
@@ -439,7 +439,6 @@ ALGjoinCost(Client cntxt, BAT *l, BAT *r, int flag)
 #endif
 
 	(void) flag;
-	(void) cntxt;
 	lc = BATcount(l);
 	rc = BATcount(r);
 #if 0	
@@ -531,7 +530,7 @@ ALGjoinCost(Client cntxt, BAT *l, BAT *r, int flag)
 		cost /= 1;
 
 	DEBUGoptimizers
-		mnstr_printf(GDKstdout,"#batjoin cost ?"BUNFMT"\n",cost);
+		mnstr_printf(cntxt->fdout,"#batjoin cost ?"BUNFMT"\n",cost);
 	return cost;
 }
 @h
@@ -564,12 +563,12 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag)
 		j = 0;
 		estimate = ALGjoinCost(cntxt,joins[0],joins[1],flag);
 		OPTDEBUGjoinPath
-			mnstr_printf(GDKstdout,"#joinPath estimate join(%d,%d) %d\n", joins[0]->batCacheid, 
+			mnstr_printf(cntxt->fdout,"#joinPath estimate join(%d,%d) %d\n", joins[0]->batCacheid, 
 				joins[1]->batCacheid,(int)estimate);
 		for (i = 1; i < top - 1; i++) {
 			e = ALGjoinCost(cntxt,joins[i], joins[i + 1],flag);
 			OPTDEBUGjoinPath
-				mnstr_printf(GDKstdout,"#joinPath estimate join(%d,%d) %d\n", joins[i]->batCacheid, 
+				mnstr_printf(cntxt->fdout,"#joinPath estimate join(%d,%d) %d\n", joins[i]->batCacheid, 
 					joins[i+1]->batCacheid,(int)e);
 			if (e < estimate &&  ( !(postpone[i] && postpone[i+1]) || postponed<top)) {
 				estimate = e;
@@ -621,7 +620,7 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag)
 		}
 		OPTDEBUGjoinPath
 			if (b )
-				mnstr_printf(GDKstdout, "#joinPath %d:= join(%d,%d)\n", 
+				mnstr_printf(cntxt->fdout, "#joinPath %d:= join(%d,%d)\n", 
 					b->batCacheid, joins[j]->batCacheid, joins[j + 1]->batCacheid);
 
 		BBPdecref(joins[j]->batCacheid, FALSE);
