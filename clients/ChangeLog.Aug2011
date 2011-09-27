@@ -1,3 +1,7 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Tue Sep 27 2011 Fabian Groffen <fabian@cwi.nl>
+- Fixed a bug in mclient where processing queries from files could result
+  in ghost empty results to be reported in the output
+
