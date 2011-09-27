@@ -1,0 +1,53 @@
+stdout of test '06` in directory 'benchmarks/ssbm` itself:
+
+
+# 17:32:51 >  
+# 17:32:51 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/HG/Apr2011/prefix/_/var/MonetDB" --set mapi_open=true --set mapi_port=37793 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_benchmarks_ssbm" --set mal_listing=0 ; echo ; echo Over..
+# 17:32:51 >  
+
+# MonetDB 5 server v11.3.1 "Apr2011"
+# Serving database 'mTests_benchmarks_ssbm', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:37793/
+# MonetDB/SQL module loaded
+# MonetDB/GIS module loaded
+
+Ready.
+
+Over..
+
+# 17:32:51 >  
+# 17:32:51 >  mclient -lsql -ftest -i -e --host=rig --port=37793 
+# 17:32:51 >  
+
+#select sum(lo_revenue), d_year, p_brand1
+#	from lineorder, dwdate, part, supplier
+#	where lo_orderdate = d_datekey
+#		and lo_partkey = p_partkey
+#		and lo_suppkey = s_suppkey
+#		-- OK to add p_mfgr=’MFGR#2’
+#		-- OK to add p_category=’MFGR#22’
+#		and p_brand1 = 'MFGR#2221'
+#		and s_region = 'EUROPE'
+#	group by d_year, p_brand1
+#	order by d_year, p_brand1;
+% sys.lineorder,	sys.dwdate,	sys.part # table_name
+% L1,	d_year,	p_brand1 # name
+% bigint,	int,	clob # type
+% 8,	4,	9 # length
+[ 2535744,	1992,	"MFGR#2221"	]
+[ 5646414,	1993,	"MFGR#2221"	]
+[ 9516564,	1994,	"MFGR#2221"	]
+[ 11180484,	1995,	"MFGR#2221"	]
+[ 6838192,	1996,	"MFGR#2221"	]
+[ 4605666,	1997,	"MFGR#2221"	]
+[ 9102972,	1998,	"MFGR#2221"	]
+
+# 17:32:51 >  
+# 17:32:51 >  Done.
+# 17:32:51 >  
+

@@ -1,0 +1,143 @@
+stdout of test 'load` in directory 'benchmarks/ssbm` itself:
+
+
+# 17:32:45 >  
+# 17:32:45 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/HG/Apr2011/prefix/_/var/MonetDB" --set mapi_open=true --set mapi_port=37793 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_benchmarks_ssbm" --set mal_listing=0 ; echo ; echo Over..
+# 17:32:45 >  
+
+# MonetDB 5 server v11.3.1 "Apr2011"
+# Serving database 'mTests_benchmarks_ssbm', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:37793/
+# MonetDB/SQL module loaded
+# MonetDB/GIS module loaded
+
+Ready.
+
+Over..
+
+# 17:32:46 >  
+# 17:32:46 >  /usr/bin/python load.SQL.py load 
+# 17:32:46 >  
+
+#START TRANSACTION;
+#COPY    2556 RECORDS INTO DWDATE    FROM '/net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/HG/Aug2011/source/MonetDB/sql/benchmarks/ssbm/Tests/SF-0.01/date.tbl'      USING DELIMITERS '|', '|\n';
+[ 2556	]
+#COPY     100 RECORDS INTO SUPPLIER  FROM '/net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/HG/Aug2011/source/MonetDB/sql/benchmarks/ssbm/Tests/SF-0.01/supplier.tbl'  USING DELIMITERS '|', '|\n';
+[ 100	]
+#COPY     300 RECORDS INTO CUSTOMER  FROM '/net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/HG/Aug2011/source/MonetDB/sql/benchmarks/ssbm/Tests/SF-0.01/customer.tbl'  USING DELIMITERS '|', '|\n';
+[ 300	]
+#COPY    2000 RECORDS INTO PART      FROM '/net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/HG/Aug2011/source/MonetDB/sql/benchmarks/ssbm/Tests/SF-0.01/part.tbl'      USING DELIMITERS '|', '|\n';
+[ 2000	]
+#COPY   60175 RECORDS INTO LINEORDER FROM '/net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/HG/Aug2011/source/MonetDB/sql/benchmarks/ssbm/Tests/SF-0.01/lineorder.tbl' USING DELIMITERS '|', '|\n';
+[ 60175	]
+#COMMIT;
+#select count(*) from DWDATE;
+% sys.dwdate # table_name
+% L1 # name
+% wrd # type
+% 4 # length
+[ 2556	]
+#select count(*) from SUPPLIER;
+% sys.supplier # table_name
+% L2 # name
+% wrd # type
+% 3 # length
+[ 100	]
+#select count(*) from CUSTOMER;
+% sys.customer # table_name
+% L3 # name
+% wrd # type
+% 3 # length
+[ 300	]
+#select count(*) from PART;
+% sys.part # table_name
+% L4 # name
+% wrd # type
+% 4 # length
+[ 2000	]
+#select count(*) from LINEORDER;
+% sys.lineorder # table_name
+% L5 # name
+% wrd # type
+% 5 # length
+[ 60175	]
+#select * from DWDATE    limit 9;
+% sys.dwdate,	sys.dwdate,	sys.dwdate,	sys.dwdate,	sys.dwdate,	sys.dwdate,	sys.dwdate,	sys.dwdate,	sys.dwdate,	sys.dwdate,	sys.dwdate,	sys.dwdate,	sys.dwdate,	sys.dwdate,	sys.dwdate,	sys.dwdate,	sys.dwdate # table_name
+% d_datekey,	d_date,	d_dayofweek,	d_month,	d_year,	d_yearmonthnum,	d_yearmonth,	d_daynuminweek,	d_daynuminmonth,	d_daynuminyear,	d_monthnuminyear,	d_weeknuminyear,	d_sellingseason,	d_lastdayinweekfl,	d_lastdayinmonthfl,	d_holidayfl,	d_weekdayfl # name
+% int,	clob,	clob,	clob,	int,	int,	clob,	int,	int,	int,	int,	int,	clob,	int,	int,	int,	int # type
+% 8,	15,	9,	7,	4,	6,	7,	1,	1,	1,	1,	1,	6,	1,	1,	1,	1 # length
+[ 19920101,	"January 1, 1992",	"Thursday",	"January",	1992,	199201,	"Jan1992",	5,	1,	1,	1,	1,	"Winter",	0,	1,	1,	1	]
+[ 19920102,	"January 2, 1992",	"Friday",	"January",	1992,	199201,	"Jan1992",	6,	2,	2,	1,	1,	"Winter",	0,	1,	0,	1	]
+[ 19920103,	"January 3, 1992",	"Saturday",	"January",	1992,	199201,	"Jan1992",	7,	3,	3,	1,	1,	"Winter",	1,	1,	0,	0	]
+[ 19920104,	"January 4, 1992",	"Sunday",	"January",	1992,	199201,	"Jan1992",	1,	4,	4,	1,	1,	"Winter",	0,	1,	0,	0	]
+[ 19920105,	"January 5, 1992",	"Monday",	"January",	1992,	199201,	"Jan1992",	2,	5,	5,	1,	1,	"Winter",	0,	1,	0,	1	]
+[ 19920106,	"January 6, 1992",	"Tuesday",	"January",	1992,	199201,	"Jan1992",	3,	6,	6,	1,	1,	"Winter",	0,	1,	0,	1	]
+[ 19920107,	"January 7, 1992",	"Wednesday",	"January",	1992,	199201,	"Jan1992",	4,	7,	7,	1,	2,	"Winter",	0,	1,	0,	1	]
+[ 19920108,	"January 8, 1992",	"Thursday",	"January",	1992,	199201,	"Jan1992",	5,	8,	8,	1,	2,	"Winter",	0,	1,	0,	1	]
+[ 19920109,	"January 9, 1992",	"Friday",	"January",	1992,	199201,	"Jan1992",	6,	9,	9,	1,	2,	"Winter",	0,	1,	0,	1	]
+#select * from SUPPLIER  limit 9;
+% sys.supplier,	sys.supplier,	sys.supplier,	sys.supplier,	sys.supplier,	sys.supplier,	sys.supplier # table_name
+% s_suppkey,	s_name,	s_address,	s_city,	s_nation,	s_region,	s_phone # name
+% int,	clob,	clob,	clob,	clob,	clob,	clob # type
+% 1,	18,	21,	10,	14,	11,	15 # length
+[ 1,	"Supplier#000000001",	"sdrGnXCDRcfriBvY0KL,i",	"PERU     0",	"PERU",	"AMERICA",	"27-989-741-2988"	]
+[ 2,	"Supplier#000000002",	"TRMhVHz3XiFu",	"ETHIOPIA 1",	"ETHIOPIA",	"AFRICA",	"15-768-687-3665"	]
+[ 3,	"Supplier#000000003",	"BZ0kXcHUcHjx62L7CjZS",	"ARGENTINA7",	"ARGENTINA",	"AMERICA",	"11-719-748-3364"	]
+[ 4,	"Supplier#000000004",	"qGTQJXogS83a7MB",	"MOROCCO  4",	"MOROCCO",	"AFRICA",	"25-128-190-5944"	]
+[ 5,	"Supplier#000000005",	"lONEYAh9sF",	"IRAQ     5",	"IRAQ",	"MIDDLE EAST",	"21-750-942-6364"	]
+[ 6,	"Supplier#000000006",	"zaux5FT",	"KENYA    2",	"KENYA",	"AFRICA",	"24-114-968-4951"	]
+[ 7,	"Supplier#000000007",	" 0W7IPdkpWycU",	"UNITED KI0",	"UNITED KINGDOM",	"EUROPE",	"33-190-982-9759"	]
+[ 8,	"Supplier#000000008",	"S8AWPqjYlanEQlcDO2",	"PERU     6",	"PERU",	"AMERICA",	"27-147-574-9335"	]
+[ 9,	"Supplier#000000009",	",gJ6K2MKveYxQT",	"IRAN     6",	"IRAN",	"MIDDLE EAST",	"20-338-906-3675"	]
+#select * from CUSTOMER  limit 9;
+% sys.customer,	sys.customer,	sys.customer,	sys.customer,	sys.customer,	sys.customer,	sys.customer,	sys.customer # table_name
+% c_custkey,	c_name,	c_address,	c_city,	c_nation,	c_region,	c_phone,	c_mktsegment # name
+% int,	clob,	clob,	clob,	clob,	clob,	clob,	clob # type
+% 1,	18,	22,	10,	12,	11,	15,	10 # length
+[ 1,	"Customer#000000001",	"j5JsirBM9P",	"MOROCCO  0",	"MOROCCO",	"AFRICA",	"25-989-741-2988",	"BUILDING"	]
+[ 2,	"Customer#000000002",	"487LW1dovn6Q4dMVym",	"JORDAN   1",	"JORDAN",	"MIDDLE EAST",	"23-768-687-3665",	"AUTOMOBILE"	]
+[ 3,	"Customer#000000003",	"fkRGN8n",	"ARGENTINA7",	"ARGENTINA",	"AMERICA",	"11-719-748-3364",	"AUTOMOBILE"	]
+[ 4,	"Customer#000000004",	"4u58h f",	"EGYPT    4",	"EGYPT",	"MIDDLE EAST",	"14-128-190-5944",	"MACHINERY"	]
+[ 5,	"Customer#000000005",	"hwBtxkoBF qSW4KrI",	"CANADA   5",	"CANADA",	"AMERICA",	"13-750-942-6364",	"HOUSEHOLD"	]
+[ 6,	"Customer#000000006",	" g1s,pzDenUEBW3O,2 pxu",	"SAUDI ARA2",	"SAUDI ARABIA",	"MIDDLE EAST",	"30-114-968-4951",	"AUTOMOBILE"	]
+[ 7,	"Customer#000000007",	"8OkMVLQ1dK6Mbu6WG9",	"CHINA    0",	"CHINA",	"ASIA",	"28-190-982-9759",	"AUTOMOBILE"	]
+[ 8,	"Customer#000000008",	"j,pZ,Qp,qtFEo0r0c 92qo",	"PERU     6",	"PERU",	"AMERICA",	"27-147-574-9335",	"BUILDING"	]
+[ 9,	"Customer#000000009",	"vgIql8H6zoyuLMFN",	"INDIA    6",	"INDIA",	"ASIA",	"18-338-906-3675",	"FURNITURE"	]
+#select * from PART      limit 9;
+% sys.part,	sys.part,	sys.part,	sys.part,	sys.part,	sys.part,	sys.part,	sys.part,	sys.part # table_name
+% p_partkey,	p_name,	p_mfgr,	p_category,	p_brand1,	p_color,	p_type,	p_size,	p_container # name
+% int,	clob,	clob,	clob,	clob,	clob,	clob,	int,	clob # type
+% 1,	14,	6,	7,	9,	9,	23,	2,	9 # length
+[ 1,	"lace spring",	"MFGR#1",	"MFGR#11",	"MFGR#1121",	"goldenrod",	"PROMO BURNISHED COPPER",	7,	"JUMBO PKG"	]
+[ 2,	"rosy metallic",	"MFGR#4",	"MFGR#43",	"MFGR#4318",	"blush",	"LARGE BRUSHED BRASS",	1,	"LG CASE"	]
+[ 3,	"green antique",	"MFGR#3",	"MFGR#32",	"MFGR#3210",	"dark",	"STANDARD POLISHED BRASS",	21,	"WRAP CASE"	]
+[ 4,	"metallic smoke",	"MFGR#1",	"MFGR#14",	"MFGR#1426",	"chocolate",	"SMALL PLATED BRASS",	14,	"MED DRUM"	]
+[ 5,	"blush chiffon",	"MFGR#4",	"MFGR#45",	"MFGR#4510",	"forest",	"STANDARD POLISHED TIN",	15,	"SM PKG"	]
+[ 6,	"ivory azure",	"MFGR#2",	"MFGR#23",	"MFGR#2325",	"white",	"PROMO PLATED STEEL",	4,	"MED BAG"	]
+[ 7,	"blanched tan",	"MFGR#5",	"MFGR#51",	"MFGR#513",	"blue",	"SMALL PLATED COPPER",	45,	"SM BAG"	]
+[ 8,	"khaki cream",	"MFGR#1",	"MFGR#13",	"MFGR#1328",	"ivory",	"PROMO BURNISHED TIN",	41,	"LG DRUM"	]
+[ 9,	"rose moccasin",	"MFGR#4",	"MFGR#41",	"MFGR#4117",	"thistle",	"SMALL BURNISHED STEEL",	12,	"WRAP CASE"	]
+#select * from LINEORDER limit 9;
+% sys.lineorder,	sys.lineorder,	sys.lineorder,	sys.lineorder,	sys.lineorder,	sys.lineorder,	sys.lineorder,	sys.lineorder,	sys.lineorder,	sys.lineorder,	sys.lineorder,	sys.lineorder,	sys.lineorder,	sys.lineorder,	sys.lineorder,	sys.lineorder,	sys.lineorder # table_name
+% lo_orderkey,	lo_linenumber,	lo_custkey,	lo_partkey,	lo_suppkey,	lo_orderdate,	lo_orderpriority,	lo_shippriority,	lo_quantity,	lo_extendedprice,	lo_ordtotalprice,	lo_discount,	lo_revenue,	lo_supplycost,	lo_tax,	lo_commitdate,	lo_shipmode # name
+% int,	int,	int,	int,	int,	int,	clob,	clob,	int,	int,	int,	int,	int,	int,	int,	int,	clob # type
+% 1,	1,	3,	4,	2,	8,	8,	1,	2,	7,	8,	2,	7,	5,	1,	8,	7 # length
+[ 1,	1,	74,	1552,	42,	19960102,	"5-LOW",	"0",	17,	2471035,	17279949,	4,	2372193,	87213,	2,	19960212,	"TRUCK"	]
+[ 1,	2,	74,	674,	9,	19960102,	"5-LOW",	"0",	36,	5668812,	17279949,	9,	5158618,	94480,	6,	19960228,	"MAIL"	]
+[ 1,	3,	74,	637,	4,	19960102,	"5-LOW",	"0",	8,	1230104,	17279949,	10,	1107093,	92257,	2,	19960305,	"REG AIR"	]
+[ 1,	4,	74,	22,	48,	19960102,	"5-LOW",	"0",	28,	2581656,	17279949,	9,	2349306,	55321,	6,	19960330,	"AIR"	]
+[ 1,	5,	74,	241,	82,	19960102,	"5-LOW",	"0",	24,	2738976,	17279949,	10,	2465078,	68474,	4,	19960314,	"FOB"	]
+[ 1,	6,	74,	157,	69,	19960102,	"5-LOW",	"0",	32,	3382880,	17279949,	7,	3146078,	63429,	2,	19960207,	"MAIL"	]
+[ 2,	1,	157,	1062,	54,	19961201,	"1-URGENT",	"0",	38,	3659628,	3842609,	0,	3659628,	57783,	5,	19970114,	"RAIL"	]
+[ 3,	1,	247,	43,	98,	19931014,	"5-LOW",	"0",	45,	4243680,	20565430,	6,	3989059,	56582,	0,	19940104,	"AIR"	]
+[ 3,	2,	247,	191,	84,	19931014,	"5-LOW",	"0",	49,	5346831,	20565430,	10,	4812147,	65471,	0,	19931220,	"RAIL"	]
+
+# 17:32:49 >  
+# 17:32:49 >  Done.
+# 17:32:49 >  
+

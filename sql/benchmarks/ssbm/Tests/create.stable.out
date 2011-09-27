@@ -1,0 +1,74 @@
+stdout of test 'create` in directory 'benchmarks/ssbm` itself:
+
+
+# 17:32:45 >  
+# 17:32:45 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/HG/Apr2011/prefix/_/var/MonetDB" --set mapi_open=true --set mapi_port=37793 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_benchmarks_ssbm" --set mal_listing=0 ; echo ; echo Over..
+# 17:32:45 >  
+
+# MonetDB 5 server v11.3.1 "Apr2011"
+# Serving database 'mTests_benchmarks_ssbm', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:37793/
+# MonetDB/SQL module loaded
+# MonetDB/GIS module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+
+Over..
+
+# 17:32:45 >  
+# 17:32:45 >  mclient -lsql -ftest -i -e --host=rig --port=37793 
+# 17:32:45 >  
+
+#create table DWDATE (
+#D_DATEKEY int, --identifier, unique id -- e.g. 19980327 (what we use)
+#D_DATE string, --varchar(18), --fixed text, size 18, longest: December 22, 1998
+#D_DAYOFWEEK string, --varchar(8), --fixed text, size 8, Sunday, Monday, ..., Saturday)
+#D_MONTH string, --varchar(9), --fixed text, size 9: January, ..., December
+#D_YEAR int, --unique value 1992-1998
+#D_YEARMONTHNUM int, --numeric (YYYYMM) -- e.g. 199803
+#D_YEARMONTH string, --varchar(7), --fixed text, size 7: Mar1998 for example
+#D_DAYNUMINW
+#create table SUPPLIER (
+#S_SUPPKEY int, --identifier
+#S_NAME string, --varchar(25), --fixed text, size 25: 'Supplier'||SUPPKEY
+#S_ADDRESS string, --varchar(25), --variable text, size 25 (city below)
+#S_CITY string, --varchar(10), --fixed text, size 10 (10/nation: nation_prefix||(0-9))
+#S_NATION string, --varchar(15), --fixed text(15) (25 values, longest UNITED KINGDOM)
+#S_REGION string, --varchar(12), --fixed text, size 12 (5 values: longest MIDDLE EAST)
+#S_PHONE string, --varchar(15) --fixed text, size 15 (many v
+#create table CUSTOMER (
+#C_CUSTKEY int, --numeric identifier
+#C_NAME string, --varchar(25), --variable text, size 25 'Customer'||CUSTKEY
+#C_ADDRESS string, --varchar(25), --variable text, size 25 (city below)
+#C_CITY string, --varchar(10), --fixed text, size 10 (10/nation: NATION_PREFIX||(0-9)
+#C_NATION string, --varchar(15), --fixed text(15) (25 values, longest UNITED KINGDOM)
+#C_REGION string, --varchar(12), --fixed text, size 12 (5 values: longest MIDDLE EAST)
+#C_PHONE string, --varchar(15), --fixed text, size 
+#create table PART (
+#P_PARTKEY int, --identifier
+#P_NAME string, --varchar(22), --variable text, size 22 (Not unique per PART but never was)
+#P_MFGR string, --varchar(6), --fixed text, size 6 (MFGR#1-5, CARD = 5)
+#P_CATEGORY string, --varchar(7), --fixed text, size 7 ('MFGR#'||1-5||1-5: CARD = 25)
+#P_BRAND1 string, --varchar(9), --fixed text, size 9 (CATEGORY||1-40: CARD = 1000)
+#P_COLOR string, --varchar(11), --variable text, size 11 (CARD = 94)
+#P_TYPE string, --varchar(25), --variable text, size 25 (CARD = 150)
+#create table LINEORDER (
+#LO_ORDERKEY int, --numeric (int up to SF 300) first 8 of each 32 keys used
+#LO_LINENUMBER int, -- numeric 1-7
+#LO_CUSTKEY int, -- numeric identifier foreign key reference to C_CUSTKEY
+#LO_PARTKEY int, --identifier foreign key reference to P_PARTKEY
+#LO_SUPPKEY int, --numeric identifier foreign key reference to S_SUPPKEY
+#LO_ORDERDATE int, --identifier foreign key reference to D_DATEKEY
+#LO_ORDERPRIORITY string, --varchar(15), --fixed text, size 15 (5 Priorities: 1-URGENT, etc.)
+#LO_SHIPPRI
+
+# 17:32:45 >  
+# 17:32:45 >  Done.
+# 17:32:45 >  
+
