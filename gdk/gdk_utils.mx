@@ -1143,29 +1143,33 @@ GDKmemfail(str s, size_t len, size_t memtarget, size_t vmtarget)
 #define GLIBC_BUG 0
 #endif
 
+/* we allocate extra space and return a pointer offset by this amount */
+#define MALLOC_EXTRA_SPACE	8
+
 #ifndef GDK_MEM_MISALIGN
 
-/* allocate 8 bytes extra (so it stays 8-bytes aligned) and put realsize in front */
+/* allocate 8 bytes extra (so it stays 8-bytes aligned) and put
+ * realsize in front */
 #define GDKmalloc_prefixsize(s,size) {					\
-	s = (ssize_t *) malloc(size + 8 + GLIBC_BUG);			\
+	s = (ssize_t *) malloc(size + MALLOC_EXTRA_SPACE + GLIBC_BUG);	\
 	if (s != NULL) {						\
 		assert((((size_t) s)&7) == 0); /* no MISALIGN */	\
-		s = (ssize_t*) ((char*) s + 8);				\
-		s[-1] = (ssize_t) (size + 8);				\
+		s = (ssize_t*) ((char*) s + MALLOC_EXTRA_SPACE);	\
+		s[-1] = (ssize_t) (size + MALLOC_EXTRA_SPACE);		\
 	}								\
 }
 
 #else
 /* work around old stupid libc mallocs that give 4-byte aligned pointers */
 #define GDKmalloc_prefixsize(s,size) {					\
-	s = (ssize_t *) malloc(size+8);					\
+	s = (ssize_t *) malloc(size + MALLOC_EXTRA_SPACE);		\
 	if (((size_t) s) & 4) { /* misaligned */			\
 		assert(sizeof(size_t) == 4); /* not on 64-bits */	\
 		s = (ssize_t*) ((char*) s + 4);				\
-		s[-1] = (ssize_t) (size + 9);  /* 1-bit is a marker */	\
+		s[-1] = (ssize_t) (size + MALLOC_EXTRA_SPACE + 1);  /* 1-bit is a marker */ \
 	} else if (s != NULL) {						\
-		s = (ssize_t*) ((char*) s + 8);				\
-		s[-1] = (ssize_t) (size + 8);				\
+		s = (ssize_t*) ((char*) s + MALLOC_EXTRA_SPACE);	\
+		s[-1] = (ssize_t) (size + MALLOC_EXTRA_SPACE);		\
 	}								\
 }
 #endif
@@ -1222,7 +1226,7 @@ GDKmallocmax(size_t size, size_t *maxsize, int emergency)
 		}
 	}
 	*maxsize = size;
-	@:heapinc(size+8,s)@
+	@:heapinc(size+MALLOC_EXTRA_SPACE,s)@
 	return (void *) s;
 }
 
@@ -1287,14 +1291,14 @@ GDKfree_(void *blk)
 		 * when configured with --enable-assert).
 		 * Disable at command line using --debug=33554432
 		 */
-		DEADBEEFCHK memset(s, 0xDB, size - (8 + (size & 1)));	/* 0xDeadBeef */
+		DEADBEEFCHK memset(s, 0xDB, size - (MALLOC_EXTRA_SPACE + (size & 1)));	/* 0xDeadBeef */
 #endif
 #ifdef GDK_MEM_MISALIGN
 		if (size & 1)
 			free(((char *) s) - 4);
 		else
 #endif
-			free(((char *) s) - 8);
+			free(((char *) s) - MALLOC_EXTRA_SPACE);
 		@:heapdec(size,s)@
 	}
 }
@@ -1347,13 +1351,13 @@ GDKreallocmax(void *blk, size_t size, size_t *maxsize, int emergency)
 	}
 #ifndef GDK_MEM_MISALIGN
 	else if (size <= GDK_mem_bigsize) {
-		size_t newsize = size + 8;
+		size_t newsize = size + MALLOC_EXTRA_SPACE;
 
 		CHKMEM(newsize, 0);
-		blk = realloc(((char *) blk) - 8, newsize + GLIBC_BUG);
+		blk = realloc(((char *) blk) - MALLOC_EXTRA_SPACE, newsize + GLIBC_BUG);
 		if (blk == NULL) {
 			GDKmemfail("GDKrealloc", newsize, BBPTRIM_ALL, 0);
-			blk = realloc(((char *) oldblk) - 8, newsize);
+			blk = realloc(((char *) oldblk) - MALLOC_EXTRA_SPACE, newsize);
 			if (blk == NULL) {
 				if (emergency == 0) {
 					GDKerror("GDKreallocmax: failed for " SZFMT " bytes", newsize);
@@ -1366,9 +1370,9 @@ GDKreallocmax(void *blk, size_t size, size_t *maxsize, int emergency)
 			}
 		}
 		if (blk != NULL) {
-			/* place 8 bytes before it */
+			/* place MALLOC_EXTRA_SPACE bytes before it */
 			assert((((size_t) blk) & 4) == 0);
-			blk = ((char *) blk) + 8;
+			blk = ((char *) blk) + MALLOC_EXTRA_SPACE;
 			((ssize_t *) blk)[-1] = (ssize_t) newsize;
 
 			/* adapt statistics */
@@ -1385,7 +1389,7 @@ GDKreallocmax(void *blk, size_t size, size_t *maxsize, int emergency)
 		oldsize = MIN((ssize_t) size, oldsize - 5);
 	else
 #endif
-		oldsize = MIN((ssize_t) size, oldsize - 8);
+		oldsize = MIN((ssize_t) size, oldsize - MALLOC_EXTRA_SPACE);
 	blk = GDKmallocmax(size, maxsize, emergency);
 	if (blk) {
 		memcpy(blk, oldblk, oldsize);
