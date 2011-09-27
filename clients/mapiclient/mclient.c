@@ -1501,9 +1501,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 				break;
 			}
 		}
-	} while (!mnstr_errnr(toConsole) &&
-		 (rc = mapi_needmore(hdl)) == MOK &&
-		 (rc = mapi_next_result(hdl)) == 1);
+	} while (!mnstr_errnr(toConsole) && (rc = mapi_next_result(hdl)) == 1);
 	if (mnstr_errnr(toConsole)) {
 		mnstr_clearerr(toConsole);
 		fprintf(stderr, "write error\n");
