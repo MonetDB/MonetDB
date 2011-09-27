@@ -1144,7 +1144,7 @@ GDKmemfail(str s, size_t len, size_t memtarget, size_t vmtarget)
 #endif
 
 /* we allocate extra space and return a pointer offset by this amount */
-#define MALLOC_EXTRA_SPACE	8
+#define MALLOC_EXTRA_SPACE	(2 * SIZEOF_VOID_P)
 
 #ifndef GDK_MEM_MISALIGN
 
