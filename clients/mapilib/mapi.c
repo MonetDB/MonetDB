@@ -4291,7 +4291,7 @@ mapi_query_part(MapiHdl hdl, const char *query, size_t size)
 		mnstr_flush(mid->tracelog);
 	}
 	check_stream(mid, mid->to, "write error on stream", "mapi_query_part", mid->error);
-	return MOK;
+	return mid->error;
 }
 
 MapiMsg
