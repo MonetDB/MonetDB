@@ -31,27 +31,27 @@ my $dbh = DBI->connect(
 
 my $query = qq{
 SELECT
-    name
+    *
 FROM
     functions
 UNION ALL
 SELECT
-    name
+    *
 FROM
     functions
 UNION ALL
 SELECT
-    name
+    *
 FROM
     functions
 UNION ALL
 SELECT
-    name
+    *
 FROM
     functions
 UNION ALL
 SELECT
-    name
+    *
 FROM
     functions
 ;
