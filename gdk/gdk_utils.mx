@@ -1080,13 +1080,6 @@ del_mem(BAT *b, mem_t mem)
  * of the outstanding blocks on the log2 of the block size (similarly for virtual.
  * memory blocks; define GDK_VM_KEEPHISTO).
  *
- * @item ensuring 8-byte alignment
- * While doing the resource tracking, we can in one go solve the problem
- * of 32-bit systems that return non-8 bytes aligned pointers. This is
- * encoded by storing a size + 1 (we always normalize sizes to multiples of
- * 8, so this is easily recognized). This check only done if
- * GDK_MEM_MISALIGN is @strong{not} enabled.
- *
  * @item redirection to anonymous VM
  * Sometimes, fragmentation problems arise on mallocs that are not tunable.
  * In that case, it makes sense to redirect large block requests (taken to be
@@ -1146,8 +1139,6 @@ GDKmemfail(str s, size_t len, size_t memtarget, size_t vmtarget)
 /* we allocate extra space and return a pointer offset by this amount */
 #define MALLOC_EXTRA_SPACE	(2 * SIZEOF_VOID_P)
 
-#ifndef GDK_MEM_MISALIGN
-
 /* allocate 8 bytes extra (so it stays 8-bytes aligned) and put
  * realsize in front */
 #define GDKmalloc_prefixsize(s,size) {					\
@@ -1158,22 +1149,6 @@ GDKmemfail(str s, size_t len, size_t memtarget, size_t vmtarget)
 		s[-1] = (ssize_t) (size + MALLOC_EXTRA_SPACE);		\
 	}								\
 }
-
-#else
-/* work around old stupid libc mallocs that give 4-byte aligned pointers */
-#define GDKmalloc_prefixsize(s,size) {					\
-	s = (ssize_t *) malloc(size + MALLOC_EXTRA_SPACE);		\
-	if (((size_t) s) & 4) { /* misaligned */			\
-		assert(sizeof(size_t) == 4); /* not on 64-bits */	\
-		s = (ssize_t*) ((char*) s + 4);				\
-		s[-1] = (ssize_t) (size + MALLOC_EXTRA_SPACE + 1);  /* 1-bit is a marker */ \
-	} else if (s != NULL) {						\
-		s = (ssize_t*) ((char*) s + MALLOC_EXTRA_SPACE);	\
-		s[-1] = (ssize_t) (size + MALLOC_EXTRA_SPACE);		\
-	}								\
-}
-#endif
-
 
 /*
  * @-
@@ -1293,12 +1268,7 @@ GDKfree_(void *blk)
 		 */
 		DEADBEEFCHK memset(s, 0xDB, size - (MALLOC_EXTRA_SPACE + (size & 1)));	/* 0xDeadBeef */
 #endif
-#ifdef GDK_MEM_MISALIGN
-		if (size & 1)
-			free(((char *) s) - 4);
-		else
-#endif
-			free(((char *) s) - MALLOC_EXTRA_SPACE);
+		free(((char *) s) - MALLOC_EXTRA_SPACE);
 		@:heapdec(size,s)@
 	}
 }
@@ -1349,7 +1319,6 @@ GDKreallocmax(void *blk, size_t size, size_t *maxsize, int emergency)
 			return (ptr) (s + 2);
 		}
 	}
-#ifndef GDK_MEM_MISALIGN
 	else if (size <= GDK_mem_bigsize) {
 		size_t newsize = size + MALLOC_EXTRA_SPACE;
 
@@ -1383,13 +1352,7 @@ GDKreallocmax(void *blk, size_t size, size_t *maxsize, int emergency)
 		}
 	}
 	/* alloc&copy due to failed realloc (may be very big heap that needs vm) */
-#else
-	/* alloc&copy because we cannot trust realloc due to misalignment */
-	if (oldsize & 1)
-		oldsize = MIN((ssize_t) size, oldsize - 5);
-	else
-#endif
-		oldsize = MIN((ssize_t) size, oldsize - MALLOC_EXTRA_SPACE);
+	oldsize = MIN((ssize_t) size, oldsize - MALLOC_EXTRA_SPACE);
 	blk = GDKmallocmax(size, maxsize, emergency);
 	if (blk) {
 		memcpy(blk, oldblk, oldsize);
