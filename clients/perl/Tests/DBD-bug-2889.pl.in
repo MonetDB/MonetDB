@@ -1,3 +1,5 @@
+#!@PERL@
+
 # The contents of this file are subject to the MonetDB Public License
 # Version 1.1 (the "License"); you may not use this file except in
 # compliance with the License. You may obtain a copy of the License at
@@ -15,13 +17,54 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-MTSAFE
+use strict;
+use warnings;
 
-scripts_pl = {
-	COND = HAVE_TESTING
-	DIR = bindir
-	SOURCES = sqlsample.pl.in malsample.pl.in DBD-bug-2889.pl.in
-}
+$|++;
 
-EXTRA_DIST = client.pl smack00.pl smack01.pl
+use DBI();
+
+my $dsn = "dbi:monetdb:database=$ARGV[1];host=localhost;port=$ARGV[0]";
+my $dbh = DBI->connect(
+    $dsn, 'monetdb', 'monetdb'
+);
+
+my $query = qq{
+SELECT
+    name
+FROM
+    functions
+UNION ALL
+SELECT
+    name
+FROM
+    functions
+UNION ALL
+SELECT
+    name
+FROM
+    functions
+UNION ALL
+SELECT
+    name
+FROM
+    functions
+UNION ALL
+SELECT
+    name
+FROM
+    functions
+;
+};
+
+my $sth = $dbh->prepare($query);
+$sth->execute;
+
+# Here we tell DBI to fetch at most 1000 lines (out of ~5000 available)
+my $r = $sth->fetchall_arrayref(undef, 1000);
+
+# Print "200 rows" in my case, should print "1000 rows"
+print scalar(@{$r}) . " rows\n";
+
+$dbh->disconnect();
 
