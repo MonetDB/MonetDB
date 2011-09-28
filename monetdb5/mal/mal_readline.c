@@ -1,23 +1,22 @@
-@/
-The contents of this file are subject to the MonetDB Public License
-Version 1.1 (the "License"); you may not use this file except in
-compliance with the License. You may obtain a copy of the License at
-http://www.monetdb.org/Legal/MonetDBLicense
+/*
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.monetdb.org/Legal/MonetDBLicense
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * The Original Code is the MonetDB Database System.
+ *
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2011 MonetDB B.V.
+ * All Rights Reserved.
+ */
 
-Software distributed under the License is distributed on an "AS IS"
-basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-License for the specific language governing rights and limitations
-under the License.
-
-The Original Code is the MonetDB Database System.
-
-The Initial Developer of the Original Code is CWI.
-Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2011 MonetDB B.V.
-All Rights Reserved.
-@
-
-@c
 /*
  * @- Online help
  * The textual interface @sc{mclient} supports a limited
@@ -70,16 +69,6 @@ All Rights Reserved.
  * This means that the user has history access and some other
  * features to assemble a command before it is being interpreted.
  */
-@h
-#ifndef READLINETOOLS_H_INCLUDED
-#define READLINETOOLS_H_INCLUDED
-
-#include "mal_client.h"
-mal_export int readConsole(Client cntxt);
-mal_export char * getConsoleInput(Client c, const char *prompt, int linemode, int exit_on_error);
-
-#endif /* READLINETOOLS_H_INCLUDED */
-@c
 #include "monetdb_config.h"
 #include "mal.h"
 #undef PATHLENGTH
@@ -164,14 +153,9 @@ static void mal_help_display(char **msg, int a, int b){
 /*
  * @-
  */
-@= tst
-#ifdef HAVE_STRNCASECMP
-		(strncasecmp(@1, @2, @3) == 0)
-#else
-		(strncmp(@1, @2, @3) == 0)
+#ifndef HAVE_STRNCASECMP
+#define strncasecmp strncmp
 #endif
-@
-@c
 
 static char *
 mal_command_generator(const char *text, int state)
@@ -201,13 +185,13 @@ mal_command_generator(const char *text, int state)
 	}
 	if( mdbSession() ){
 		while ( (name = mdb_commands[index++]) ){
-				if( @:tst(name,text,len)@ ) 
+				if (strncasecmp(name,text,len) == 0)
 					return strdup(name);
 		}
 		return NULL;
 	}
 	while (index < malcommandlimit && (name = mal_commands[index++])) {
-			if( @:tst(name,text,len)@ ) 
+			if (strncasecmp(name,text,len) == 0)
 				return strdup(name);
 	}
 	if( msg == 0 && *text){
@@ -221,7 +205,7 @@ mal_command_generator(const char *text, int state)
 		else
 			snprintf(cmd,BUFSIZ,"%s(",text);
 		msg= getHelp(mal_clients->nspace,(str)cmd,1);
-		for(last=0; msg[last]; last++) 
+		for(last=0; msg[last]; last++)
 			;
 	}
 	if(msg && last && msg[--last]){
@@ -370,7 +354,7 @@ getConsoleInput(Client c, const char *prompt, int linemode, int exit_on_error)
 				buf= malloc(BUFSIZ);
 			line = fgets(buf, BUFSIZ, stdin);
 		}
-		
+
 		if (line == NULL) {
 			/* end of file */
 			if (buf)
@@ -432,7 +416,7 @@ getConsoleInput(Client c, const char *prompt, int linemode, int exit_on_error)
 				else if ((c->fdout = open_wastream(line)) == NULL) {
 					c->fdout = GDKout;
 					mnstr_printf(GDKerr, "Cannot open %s\n", line);
-				} 
+				}
 				line = NULL;
 				continue;
 			case 'c':	/* cd command? */
@@ -484,7 +468,7 @@ getConsoleInput(Client c, const char *prompt, int linemode, int exit_on_error)
 	return line;
 }
 
-int 
+int
 readConsole(Client cntxt)
 {
 	/* execute from stdin */
@@ -492,7 +476,7 @@ readConsole(Client cntxt)
 	char *buf;
 
 	assert(cntxt == mal_clients);
-	if (cntxt->promptlength == 0 || 
+	if (cntxt->promptlength == 0 ||
 	   !(fstat(fileno(stdin), &statb) == 0 && S_ISCHR(statb.st_mode))  )
 		return -1;
 
@@ -512,7 +496,7 @@ readConsole(Client cntxt)
 			/* extremly dirty inplace buffer overwriting */
 			cntxt->fdin->buf= realloc(cntxt->fdin->buf, len+1);
 			cntxt->fdin->size = len;
-		} 
+		}
 		strcpy(cntxt->fdin->buf, buf);
 		cntxt->fdin->pos = 0;
 		cntxt->fdin->len = len;
