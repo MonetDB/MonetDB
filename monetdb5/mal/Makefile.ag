@@ -28,11 +28,11 @@ lib_mal = {
 	NOINST
 	SOURCES = \
 		mal.c mal.h \
-		mal_atom.mx \
+		mal_atom.c mal_atom.h \
 		mal_authorize.c mal_authorize.h \
-		mal_box.mx \
+		mal_box.c mal_box.h \
 		mal_builder.c mal_builder.h \
-		mal_client.mx \
+		mal_client.c mal_client.h \
 		mal_debugger.mx \
 		mal_errors.h \
 		mal_exception.c mal_exception.h \
@@ -42,12 +42,12 @@ lib_mal = {
 		mal_instruction.mx \
 		mal_interpreter.mx \
 		mal_linker.c mal_linker.h \
-		mal_module.mx \
+		mal_module.c mal_module.h \
 		mal_namespace.c mal_namespace.h \
 		mal_parser.mx \
 		mal_profiler.mx \
 		mal_properties.c mal_properties.h \
-		mal_readline.mx \
+		mal_readline.c mal_readline.h \
 		mal_recycle.c mal_recycle.h \
 		mal_resolve.mx \
 		mal_sabaoth.c mal_sabaoth.h \

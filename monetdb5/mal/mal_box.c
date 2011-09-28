@@ -1,23 +1,22 @@
-@/
-The contents of this file are subject to the MonetDB Public License
-Version 1.1 (the "License"); you may not use this file except in
-compliance with the License. You may obtain a copy of the License at
-http://www.monetdb.org/Legal/MonetDBLicense
+/*
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.monetdb.org/Legal/MonetDBLicense
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * The Original Code is the MonetDB Database System.
+ *
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2011 MonetDB B.V.
+ * All Rights Reserved.
+ */
 
-Software distributed under the License is distributed on an "AS IS"
-basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-License for the specific language governing rights and limitations
-under the License.
-
-The Original Code is the MonetDB Database System.
-
-The Initial Developer of the Original Code is CWI.
-Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2011 MonetDB B.V.
-All Rights Reserved.
-@
-
-@c
 /*
  * @a M.L. Kersten
  * @+ Boxed Variables
@@ -203,61 +202,12 @@ All Rights Reserved.
  * io.print(f);
  * @end example
  */
-@h
-#ifndef _MAL_BOX_H
-#define _MAL_BOX_H
-#include "mal_stack.h"
-#include "mal_instruction.h"
-
-/*#define DEBUG_MAL_BOX */
-
-typedef struct BOX {
-	MT_Lock lock;		/* provide exclusive access */
-	str name;
-	MalBlkPtr sym;
-	MalStkPtr val;
-	int dirty;		/* don't save if it hasn't been changed */
-} *Box, BoxRecord;
-
-mal_export Box findBox(str name);
-mal_export Box openBox(str name);
-mal_export int closeBox(str name, int flag);
-mal_export void destroyBox(str name);
-mal_export int saveBox(Box box, int flag);
-mal_export void loadBox(str nme);
-mal_export int releaseAllBox(Box box);
-
-mal_export int depositBox(Box box, str name, int type, ValPtr val);
-mal_export void insertToBox(Box box, str name, str val);
-mal_export int takeBox(Box box, str name, ValPtr val, int tpe);
-mal_export int bindBAT(Box box, str name, str location);
-mal_export int releaseBox(Box box, str name);
-mal_export int discardBox(Box box, str name);
-mal_export str getBoxName(Box box, lng i);
-mal_export str getBoxNames(int *bid);
-mal_export str toString(Box box, lng i);
-mal_export int nextBoxElement(Box box, lng *cursor, ValPtr v);
-
-#endif /* _MAL_BOX_H */
 /*
- * @-
  * The hierarchy of object spaces ends at the root of the tree.
  * This is a dummy element and should contain system-wide objects
  * only.
  */
-@= newBOX
-	obj= (Box) GDKzalloc(sizeof(BoxRecord));
-	obj->name= GDKstrdup(name);
-	obj->sym=  newMalBlk(MAXVARS,STMT_INCREMENT);
-	obj->val = newGlobalStack(MAXVARS);
-	if ( obj->val == NULL)
-		showException(MAL,"box.new", MAL_MALLOC_FAIL);
-	MT_lock_init(&obj->lock,"M5_box_lock");
-@
-@c
-/*
- * @-
- */
+
 #include "monetdb_config.h"
 #include "mal_box.h"
 #include "mal_interpreter.h"	/* for garbageCollector() & garbageElement() */
@@ -294,14 +244,26 @@ newBox(str name)
 		}
 	for (i = 0; i < topbox; i++)
 		if (malbox[i] == NULL) {
-			@:newBOX@
+			obj= (Box) GDKzalloc(sizeof(BoxRecord));
+			obj->name= GDKstrdup(name);
+			obj->sym=  newMalBlk(MAXVARS,STMT_INCREMENT);
+			obj->val = newGlobalStack(MAXVARS);
+			if ( obj->val == NULL)
+				showException(MAL,"box.new", MAL_MALLOC_FAIL);
+			MT_lock_init(&obj->lock,"M5_box_lock");
 			malbox[i] = obj;
 			break;
 		}
 	mal_unset_lock(mal_contextLock, "newBox");
-	if (i == topbox) { 
+	if (i == topbox) {
 		if ( topbox < MAXSPACES){
-			@:newBOX@
+			obj= (Box) GDKzalloc(sizeof(BoxRecord));
+			obj->name= GDKstrdup(name);
+			obj->sym=  newMalBlk(MAXVARS,STMT_INCREMENT);
+			obj->val = newGlobalStack(MAXVARS);
+			if ( obj->val == NULL)
+				showException(MAL,"box.new", MAL_MALLOC_FAIL);
+			MT_lock_init(&obj->lock,"M5_box_lock");
 			malbox[topbox++] = obj;
 		} else
 			return NULL;
@@ -425,7 +387,7 @@ depositBox(Box box, str name, int type, ValPtr val)
 		return 0;
 	if (i < 0) {
 		i = newVariable(box->sym, GDKstrdup(name), type);
-		if (box->val->stksize <= i) 
+		if (box->val->stksize <= i)
 			box->val =reallocStack(box->val, STACKINCR);
 	}
 	v = &box->val->stk[i];
@@ -464,7 +426,7 @@ takeBox(Box box, str name, ValPtr val, int tpe)
 	i = findVariable(box->sym, name);
 	if ( box->val == NULL)
 		return 0;
-	
+
 #ifdef DEBUG_MAL_BOX
 	mnstr_printf(GDKout, "takeBox: found '%s' at %d\n", name, i);
 #endif
@@ -556,7 +518,7 @@ discardBox(Box box, str name)
 		return i;
 	if ( box->val == NULL)
 		return 0;
-	
+
 	garbageElement(NULL, &box->val->stk[i]);
 	for (j = i; j < box->sym->vtop - 2; j++) {
 		box->sym->var[j] = box->sym->var[j + 1];
@@ -666,7 +628,7 @@ prepareSaveBox(Box box, str *boxfile, str *boxfilebak)
 	*boxfile = boxFileName(box, 0);
 	*boxfilebak = boxFileName(box, "backup");
 
-	if (*boxfile == 0) 
+	if (*boxfile == 0)
 		return 0;
 	if (access(*boxfile,R_OK)==0 &&
 		(unlink(*boxfilebak), rename(*boxfile, *boxfilebak) < 0)) {
@@ -718,7 +680,7 @@ saveBox(Box box, int flag)
 	mnstr_printf(GDKout, "saveBox:created %s\n", boxfile);
 #endif
 	for (i = 0; i < box->sym->vtop; i++) {
-		str tnme; 
+		str tnme;
 		v = &box->val->stk[i];
 		if (v->vtype == TYPE_bat) {
 			BAT *b = (BAT *) BATdescriptor(v->val.bval);
@@ -726,13 +688,13 @@ saveBox(Box box, int flag)
 				if (b->batPersistence == PERSISTENT){
 					str ht = getTypeName(getHeadType(getVarType(box->sym,i)));
 					str tt = getTypeName(getTailType(getVarType(box->sym,i)));
-					mnstr_printf(f, "%s:bat[:%s,:%s]:= %s.bind(%d);\n", 
+					mnstr_printf(f, "%s:bat[:%s,:%s]:= %s.bind(%d);\n",
 						getVarName(box->sym, i),  ht, tt,
 						box->name, b->batCacheid);
 					GDKfree(ht);
 					GDKfree(tt);
 					BATsave(b);
-				} 
+				}
 				BBPreleaseref(b->batCacheid);
 			}
 		} else {
@@ -740,7 +702,7 @@ saveBox(Box box, int flag)
 			mnstr_printf(f, "%s := ", getVarName(box->sym, i));
 			ATOMprint(v->vtype, VALptr(v), f);
 			mnstr_printf(f, ":%s;\n", tnme);
-			mnstr_printf(f, "%s.deposit(\"%s\",%s);\n", 
+			mnstr_printf(f, "%s.deposit(\"%s\",%s);\n",
 				box->name, getVarName(box->sym, i), getVarName(box->sym, i));
 			GDKfree(tnme);
 		}

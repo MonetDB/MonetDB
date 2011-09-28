@@ -1,23 +1,22 @@
-@/
-The contents of this file are subject to the MonetDB Public License
-Version 1.1 (the "License"); you may not use this file except in
-compliance with the License. You may obtain a copy of the License at
-http://www.monetdb.org/Legal/MonetDBLicense
+/*
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.monetdb.org/Legal/MonetDBLicense
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * The Original Code is the MonetDB Database System.
+ *
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2011 MonetDB B.V.
+ * All Rights Reserved.
+ */
 
-Software distributed under the License is distributed on an "AS IS"
-basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-License for the specific language governing rights and limitations
-under the License.
-
-The Original Code is the MonetDB Database System.
-
-The Initial Developer of the Original Code is CWI.
-Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2011 MonetDB B.V.
-All Rights Reserved.
-@
-
-@c
 /*
  * @a M. L. Kersten
  * @+ Module Management
@@ -46,85 +45,13 @@ All Rights Reserved.
  * anymore.
  * Care should be taken not to generate many unique function names.
  */
-@h
-#ifndef _MAL_SCOPE_H_
-#define _MAL_SCOPE_H_
-#include "mal_box.h"
-#include "mal_xml.h"
-
-/* #define MAL_SCOPE_DEBUG  */
-
-#define MAXSCOPE 256
-
-typedef struct SCOPEDEF {
-	struct SCOPEDEF   *outer; /* outer level in the scope tree */
-	struct SCOPEDEF   *sibling; /* module with same start */
-	str	    name;			/* index in namespace */
-	int		inheritance; 	/* set when it plays a role in inheritance */
-	Symbol *subscope; 		/* type dispatcher table */
-	Box box;    			/* module related objects */
-	int isAtomModule; 		/* atom module definition ? */
-	void *dll;				/* dlopen handle */
-	str help;   			/* short description of module functionality*/
-} *Module, ModuleRecord;
-
-
-mal_export void     setModuleJump(str nme, Module cur);
-mal_export Module   newModule(Module scope, str nme);
-mal_export Module   fixModule(Module scope, str nme);
-mal_export void		deriveModule(Module scope, str nme);
-mal_export void     freeModule(Module cur);
-mal_export void     freeModuleList(Module cur);
-mal_export void     insertSymbol(Module scope, Symbol prg);
-mal_export void     deleteSymbol(Module scope, Symbol prg);
-mal_export void		setInheritanceMode(Module head,int flag);
-mal_export Module	setInheritance(Module head,Module first, Module second);
-mal_export Module   findModule(Module scope, str name);
-mal_export Symbol   findSymbol(Module nspace, str mod, str fcn);
-mal_export int 		isModuleDefined(Module scope, str name);
-mal_export Symbol   findSymbolInModule(Module v, str fcn);
-mal_export int		findInstruction(Module scope, MalBlkPtr mb, InstrPtr pci);
-mal_export int      displayModule(stream *f, Module v, str fcn,int listing);
-mal_export void     showModules(stream *f, Module v);
-mal_export void     debugModule(stream *f, Module v, str nme);
-mal_export void     dumpManual(stream *f, Module v, int recursive);
-mal_export void     dumpManualSection(stream *f, Module v);
-mal_export void 	dumpManualHelp(stream *f, Module s, int recursive);
-mal_export void 	dumpHelpTable(stream *f, Module s, str text, int flag);
-mal_export void 	dumpSearchTable(stream *f, str text);
-mal_export void     dumpManualOverview(stream *f, Module v, int recursive);
-mal_export void     dumpManualHeader(stream *f);
-mal_export void     dumpManualFooter(stream *f);
-mal_export void     showModuleStatistics(stream *f,Module s); /* used in src/mal/mal_debugger.c */
-mal_export char **getHelp(Module m, str pat, int flag);
-mal_export char **getHelpMatch(char *pat);
-mal_export void showHelp(Module m, str txt,stream *fs);
-
-#define getSubScope(N)  (*(N))
-
-#endif /* _MAL_SCOPE_H_ */
 /*
  * @+ Module scope management
  * Upon system restart, the global scope is created. It is called "root" and
  * does not contain any symbol definitions. It merely functions as an anchor
  * point for the modules to be added later.
  */
-@= newscope
-	assert(nme != NULL);
-	cur = (Module) GDKzalloc(sizeof(ModuleRecord));
-	if( cur == NULL){
-		GDKerror("@1:"MAL_MALLOC_FAIL);
-	} else {
-		cur->name = nme;
-		cur->outer = NULL;
-		cur->sibling = NULL;
-		cur->inheritance = TRUE;
-		cur->subscope = NULL; 
-		cur->isAtomModule = FALSE;
-	}
 
-@
-@c
 #include "monetdb_config.h"
 #include "mal_module.h"
 #include "mal_function.h"   /* for printFunction() */
@@ -160,7 +87,18 @@ void setModuleJump(str nme, Module cur){
 Module newModule(Module scope, str nme){
 	Module cur;
 	nme = putName(nme,strlen(nme));
-	@:newscope(newModule)@
+	assert(nme != NULL);
+	cur = (Module) GDKzalloc(sizeof(ModuleRecord));
+	if( cur == NULL){
+		GDKerror("newModule:"MAL_MALLOC_FAIL);
+	} else {
+		cur->name = nme;
+		cur->outer = NULL;
+		cur->sibling = NULL;
+		cur->inheritance = TRUE;
+		cur->subscope = NULL;
+		cur->isAtomModule = FALSE;
+	}
 	if ( cur == NULL)
 		return scope;
 	newSubScope(cur);
@@ -168,7 +106,7 @@ Module newModule(Module scope, str nme){
 		cur->outer = scope->outer;
 		scope->outer= cur;
 		setModuleJump(nme,cur);
-	} 
+	}
 	return cur;
 }
 #if 0
@@ -178,7 +116,18 @@ Module cpyModule(Module scope){
 	str nme;
 	if( scope->outer) nxt= cpyModule(scope->outer);
 	nme= GDKstrdup(scope->name);
-	@:newscope(newModule)@
+	assert(nme != NULL);
+	cur = (Module) GDKzalloc(sizeof(ModuleRecord));
+	if( cur == NULL){
+		GDKerror("cpyModule:"MAL_MALLOC_FAIL);
+	} else {
+		cur->name = nme;
+		cur->outer = NULL;
+		cur->sibling = NULL;
+		cur->inheritance = TRUE;
+		cur->subscope = NULL;
+		cur->isAtomModule = FALSE;
+	}
 	if ( cur == NULL)
 		return scope;
 	newSubScope(cur);
@@ -197,7 +146,7 @@ Module cpyModule(Module scope){
  */
 Module fixModule(Module scope, str nme){
 	Module s= scope;
-	if( scopeJump[(int)(*nme)][(int)(*(nme+1))]) 
+	if( scopeJump[(int)(*nme)][(int)(*(nme+1))])
 		s= scopeJump[(int)(*nme)][(int)(*(nme+1))];
 	while(s != NULL){
 		if( nme == s->name )
@@ -301,7 +250,7 @@ void insertSymbol(Module scope, Symbol prg){
 	 } else  {
 		prg->peer= scope->subscope[t];
 		scope->subscope[t] = prg;
-		if( prg->peer && 
+		if( prg->peer &&
 			idcmp(prg->name,prg->peer->name) == 0)
 			prg->skip = prg->peer->skip;
 		else
@@ -392,7 +341,7 @@ Module setInheritance(Module h, Module f, Module s){
 	if( j<i) return h;
 
 	if(h==s){
-		h= s->outer; 
+		h= s->outer;
 		s->outer= f->outer;
 		f->outer=s;
 	} else {
@@ -478,11 +427,11 @@ findInstruction(Module scope, MalBlkPtr mb, InstrPtr pci){
 			for( fnd=1, i = 0; i < pci->argc; i++)
 				if ( getArgType(mb,pci,i) != getArgType(s->def,getSignature(s),i))
 					fnd = 0;
-			if( fnd) 
+			if( fnd)
 				return 1;
 		}
 	}
-	
+
 	return 0;
 }
 
@@ -510,7 +459,7 @@ static void  printModuleScope(stream *fd, Module scope, int tab, int outer)
 	Module s=scope;
 	Symbol t;
 
-	mnstr_printf(fd,"%smodule %s", 
+	mnstr_printf(fd,"%smodule %s",
 		(scope->isAtomModule?"atom ":""),s->name);
 	mnstr_printf(fd,"\n");
 	if( s->subscope)
@@ -522,7 +471,7 @@ static void  printModuleScope(stream *fd, Module scope, int tab, int outer)
 			if( getSignature(t)==NULL ||
 			    (getSignature(t)->fcn==0 &&
 			     getSignature(t)->token == COMMANDsymbol &&
-			     getSignature(t)->blk==0) ) 
+			     getSignature(t)->blk==0) )
 			    mnstr_printf(fd,"(?)");
 		}
 		mnstr_printf(fd,"\n");
@@ -590,12 +539,12 @@ void dumpManual(stream *f, Module s, int recursive){
 	list[top++]=s;
 	while(s->outer && recursive){ list[top++]= s->outer;s=s->outer;}
 
-	if(top>1) qsort(list, top, sizeof(Module), 
+	if(top>1) qsort(list, top, sizeof(Module),
 		(int(*)(const void *, const void *))cmpModName);
 
 	for(k=0;k<top;k++){
 	s= list[k];
-	mnstr_printf(f,"<%smodule name=\"%s\">\n", 
+	mnstr_printf(f,"<%smodule name=\"%s\">\n",
 		(s->isAtomModule?"atom":""),xmlChr(s->name));
 	if(s->help)
 		mnstr_printf(f,"%s\n",s->help);
@@ -688,7 +637,7 @@ void dumpManualOverview(stream *f, Module s, int recursive){
 	list[top++]=s;
 	while(s->outer && recursive){ list[top++]= s->outer;s=s->outer;}
 
-	if(top>1) qsort(list, top, sizeof(Module), 
+	if(top>1) qsort(list, top, sizeof(Module),
 		(int(*)(const void *, const void *))cmpModName);
 
 	cols = 4;
@@ -734,7 +683,7 @@ void dumpManualOverview(stream *f, Module s, int recursive){
 		for (c = 1; c < cols; c++) {
 			for (r = 0; r < rows; r++) {
 				int i = (cols * r) + c - 1;
-				if (z < ftop && 
+				if (z < ftop &&
 				    (x[i] < 0 || strlen(getModuleId(fcn[x[i]])) + strlen(getFunctionId(fcn[x[i]])) < (size_t)(80 / cols))) {
 					x[i+1] = z++;
 				} else {
@@ -782,7 +731,7 @@ void dumpManualHelp(stream *f, Module s, int recursive){
 	list[top++]=s;
 	while(s->outer && recursive){ list[top++]= s->outer;s=s->outer;}
 
-	if(top>1) qsort(list, top, sizeof(Module), 
+	if(top>1) qsort(list, top, sizeof(Module),
 		(int(*)(const void *, const void *))cmpModName);
 
 	mnstr_printf(f,"@multitable @columnfractions .2 .8 \n");
@@ -906,9 +855,9 @@ static int tstDuplicate(char **msg, char *s){
 	size_t len;
 	len= strlen(s);
 	for(i=0; msg[i]; i++)
-		if( strncmp(s, msg[i], MAX(len,strlen(msg[i]))) == 0 && 
+		if( strncmp(s, msg[i], MAX(len,strlen(msg[i]))) == 0 &&
 			strlen(s) == strlen(msg[i]) )
-			return 1; 
+			return 1;
 	return 0;
 }
 
@@ -924,7 +873,7 @@ char **getHelp(Module m, str inputpat, int completion)
 	int top=0, i,j,k, sig = 0, doc = 0;
 	int maxhelp= MAXHELP;
 
-#ifdef MAL_SCOPE_DEBUG 
+#ifdef MAL_SCOPE_DEBUG
 	printf("showHelp: %s",pat);
 #endif
 	msg= (char **) GDKmalloc( MAXHELP * sizeof(str));
@@ -962,7 +911,7 @@ char **getHelp(Module m, str inputpat, int completion)
 
 	if( fcnnme && *fcnnme){
 		len2 = strlen(fcnnme);
-	} 
+	}
 
 	len1 = (int)strlen(modnme);
 
@@ -994,8 +943,8 @@ char **getHelp(Module m, str inputpat, int completion)
 		return msg;
 	}
 	if( m1 ) m = m1;
-	
-#ifdef MAL_SCOPE_DEBUG 
+
+#ifdef MAL_SCOPE_DEBUG
 	printf("showHelp: %s %s [" SZFMT "] %s %s\n",
 			modnme,fcnnme,len2, (doc?"doc":""), (sig?"sig":""));
 #endif
@@ -1012,7 +961,7 @@ char **getHelp(Module m, str inputpat, int completion)
 			if( strncmp(fcnnme,s->name,len2)==0 || *fcnnme=='*') {
 				fnd=0;
 				if( completion ) {
-					snprintf(buf,BUFSIZ," %s.%s", 
+					snprintf(buf,BUFSIZ," %s.%s",
 						((*modnme=='*' || *modnme==0)? m->name:modnme),s->name);
 					if( tstDuplicate(msg,buf+1) ) {
 						fnd=1;
@@ -1057,7 +1006,7 @@ char **getHelp(Module m, str inputpat, int completion)
 					buf[0]=' ';
 					t= strstr(buf,"address");
 					if( t) *t= 0;
-				} 
+				}
 				if( fnd == 0 && buf[1]){
 					msg[top++] = GDKstrdup(buf+1);
 					msg[top] = 0;
