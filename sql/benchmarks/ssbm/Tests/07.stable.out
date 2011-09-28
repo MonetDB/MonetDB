@@ -1,0 +1,195 @@
+stdout of test '07` in directory 'benchmarks/ssbm` itself:
+
+
+# 17:32:51 >  
+# 17:32:51 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/HG/Apr2011/prefix/_/var/MonetDB" --set mapi_open=true --set mapi_port=37793 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_benchmarks_ssbm" --set mal_listing=0 ; echo ; echo Over..
+# 17:32:51 >  
+
+# MonetDB 5 server v11.3.1 "Apr2011"
+# Serving database 'mTests_benchmarks_ssbm', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:37793/
+# MonetDB/SQL module loaded
+# MonetDB/GIS module loaded
+
+Ready.
+
+Over..
+
+# 17:32:51 >  
+# 17:32:51 >  mclient -lsql -ftest -i -e --host=rig --port=37793 
+# 17:32:51 >  
+
+#select c_nation, s_nation, d_year, sum(lo_revenue) as revenue
+#	from customer, lineorder, supplier, dwdate
+#	where lo_custkey = c_custkey
+#		and lo_suppkey = s_suppkey
+#		and lo_orderdate = d_datekey
+#		and c_region = 'ASIA'
+#		and s_region = 'ASIA'
+#		and d_year >= 1992 and d_year <= 1997
+#	group by c_nation, s_nation, d_year
+#	order by d_year asc, revenue desc;
+% sys.customer,	sys.supplier,	sys.dwdate,	sys.lineorder # table_name
+% c_nation,	s_nation,	d_year,	revenue # name
+% clob,	clob,	int,	bigint # type
+% 9,	9,	4,	9 # length
+[ "INDONESIA",	"VIETNAM",	1992,	172784923	]
+[ "INDONESIA",	"INDIA",	1992,	121272321	]
+[ "VIETNAM",	"VIETNAM",	1992,	116846322	]
+[ "CHINA",	"VIETNAM",	1992,	105383218	]
+[ "INDONESIA",	"INDONESIA",	1992,	96566652	]
+[ "INDONESIA",	"CHINA",	1992,	92251585	]
+[ "CHINA",	"INDIA",	1992,	83126967	]
+[ "VIETNAM",	"INDIA",	1992,	79112303	]
+[ "CHINA",	"CHINA",	1992,	72681328	]
+[ "VIETNAM",	"CHINA",	1992,	71505221	]
+[ "INDONESIA",	"JAPAN",	1992,	68661048	]
+[ "CHINA",	"INDONESIA",	1992,	67197002	]
+[ "INDIA",	"CHINA",	1992,	65583175	]
+[ "CHINA",	"JAPAN",	1992,	62226114	]
+[ "VIETNAM",	"JAPAN",	1992,	61894943	]
+[ "INDIA",	"VIETNAM",	1992,	59819419	]
+[ "JAPAN",	"INDIA",	1992,	56751348	]
+[ "INDIA",	"INDONESIA",	1992,	55637439	]
+[ "INDIA",	"JAPAN",	1992,	49558176	]
+[ "INDIA",	"INDIA",	1992,	48849419	]
+[ "VIETNAM",	"INDONESIA",	1992,	47838667	]
+[ "JAPAN",	"VIETNAM",	1992,	44269137	]
+[ "JAPAN",	"CHINA",	1992,	42183228	]
+[ "JAPAN",	"INDONESIA",	1992,	28041654	]
+[ "JAPAN",	"JAPAN",	1992,	26509605	]
+[ "INDONESIA",	"CHINA",	1993,	182426844	]
+[ "INDONESIA",	"VIETNAM",	1993,	136511542	]
+[ "INDONESIA",	"INDONESIA",	1993,	133046814	]
+[ "CHINA",	"VIETNAM",	1993,	132740933	]
+[ "CHINA",	"INDONESIA",	1993,	130804709	]
+[ "INDONESIA",	"INDIA",	1993,	103329006	]
+[ "VIETNAM",	"INDIA",	1993,	100433752	]
+[ "JAPAN",	"CHINA",	1993,	100244771	]
+[ "CHINA",	"CHINA",	1993,	93076520	]
+[ "VIETNAM",	"INDONESIA",	1993,	86075637	]
+[ "VIETNAM",	"VIETNAM",	1993,	83636193	]
+[ "VIETNAM",	"CHINA",	1993,	79839586	]
+[ "CHINA",	"INDIA",	1993,	75476522	]
+[ "INDIA",	"CHINA",	1993,	73358891	]
+[ "CHINA",	"JAPAN",	1993,	72859116	]
+[ "INDIA",	"INDIA",	1993,	62417109	]
+[ "JAPAN",	"INDIA",	1993,	51402586	]
+[ "INDONESIA",	"JAPAN",	1993,	49099054	]
+[ "JAPAN",	"JAPAN",	1993,	48470872	]
+[ "VIETNAM",	"JAPAN",	1993,	47136044	]
+[ "JAPAN",	"INDONESIA",	1993,	46575202	]
+[ "JAPAN",	"VIETNAM",	1993,	41104620	]
+[ "INDIA",	"VIETNAM",	1993,	39181293	]
+[ "INDIA",	"INDONESIA",	1993,	36383474	]
+[ "INDIA",	"JAPAN",	1993,	25046025	]
+[ "INDONESIA",	"CHINA",	1994,	149657390	]
+[ "INDONESIA",	"INDONESIA",	1994,	139096654	]
+[ "VIETNAM",	"CHINA",	1994,	128092591	]
+[ "INDONESIA",	"INDIA",	1994,	125691779	]
+[ "CHINA",	"CHINA",	1994,	117704661	]
+[ "INDONESIA",	"VIETNAM",	1994,	110447941	]
+[ "VIETNAM",	"VIETNAM",	1994,	104634280	]
+[ "INDONESIA",	"JAPAN",	1994,	94202309	]
+[ "INDIA",	"INDIA",	1994,	87559304	]
+[ "CHINA",	"VIETNAM",	1994,	79257773	]
+[ "INDIA",	"VIETNAM",	1994,	74763775	]
+[ "CHINA",	"JAPAN",	1994,	74223281	]
+[ "CHINA",	"INDIA",	1994,	73710746	]
+[ "JAPAN",	"INDIA",	1994,	73084308	]
+[ "CHINA",	"INDONESIA",	1994,	71058355	]
+[ "JAPAN",	"CHINA",	1994,	66486212	]
+[ "VIETNAM",	"INDIA",	1994,	65195504	]
+[ "INDIA",	"JAPAN",	1994,	61964866	]
+[ "INDIA",	"CHINA",	1994,	54001697	]
+[ "JAPAN",	"VIETNAM",	1994,	52353726	]
+[ "JAPAN",	"JAPAN",	1994,	49841356	]
+[ "INDIA",	"INDONESIA",	1994,	48115599	]
+[ "VIETNAM",	"JAPAN",	1994,	44189643	]
+[ "VIETNAM",	"INDONESIA",	1994,	36735867	]
+[ "JAPAN",	"INDONESIA",	1994,	35787387	]
+[ "INDONESIA",	"VIETNAM",	1995,	124703211	]
+[ "INDONESIA",	"CHINA",	1995,	117855042	]
+[ "INDONESIA",	"INDIA",	1995,	109188170	]
+[ "INDONESIA",	"JAPAN",	1995,	108783269	]
+[ "INDIA",	"CHINA",	1995,	97134968	]
+[ "CHINA",	"CHINA",	1995,	93816347	]
+[ "INDONESIA",	"INDONESIA",	1995,	93576365	]
+[ "INDIA",	"INDIA",	1995,	91123995	]
+[ "CHINA",	"VIETNAM",	1995,	90475804	]
+[ "INDIA",	"INDONESIA",	1995,	69534495	]
+[ "VIETNAM",	"JAPAN",	1995,	68797666	]
+[ "VIETNAM",	"VIETNAM",	1995,	66580589	]
+[ "CHINA",	"JAPAN",	1995,	66302585	]
+[ "VIETNAM",	"INDIA",	1995,	62102121	]
+[ "JAPAN",	"CHINA",	1995,	61193429	]
+[ "JAPAN",	"VIETNAM",	1995,	58603113	]
+[ "CHINA",	"INDONESIA",	1995,	58187663	]
+[ "JAPAN",	"INDONESIA",	1995,	49743113	]
+[ "JAPAN",	"JAPAN",	1995,	44550237	]
+[ "VIETNAM",	"CHINA",	1995,	41392680	]
+[ "JAPAN",	"INDIA",	1995,	41310627	]
+[ "INDIA",	"JAPAN",	1995,	39744126	]
+[ "VIETNAM",	"INDONESIA",	1995,	36856824	]
+[ "INDIA",	"VIETNAM",	1995,	26912726	]
+[ "CHINA",	"INDIA",	1995,	26410808	]
+[ "INDONESIA",	"CHINA",	1996,	170564179	]
+[ "INDONESIA",	"VIETNAM",	1996,	132832962	]
+[ "INDIA",	"CHINA",	1996,	125561517	]
+[ "CHINA",	"CHINA",	1996,	125063673	]
+[ "INDONESIA",	"INDIA",	1996,	113425624	]
+[ "CHINA",	"VIETNAM",	1996,	107966382	]
+[ "CHINA",	"INDONESIA",	1996,	90778317	]
+[ "CHINA",	"INDIA",	1996,	90587354	]
+[ "INDONESIA",	"JAPAN",	1996,	83945841	]
+[ "JAPAN",	"INDIA",	1996,	79834486	]
+[ "VIETNAM",	"INDIA",	1996,	76217556	]
+[ "INDONESIA",	"INDONESIA",	1996,	75239402	]
+[ "JAPAN",	"CHINA",	1996,	70068123	]
+[ "VIETNAM",	"CHINA",	1996,	68126043	]
+[ "VIETNAM",	"VIETNAM",	1996,	62083854	]
+[ "INDIA",	"VIETNAM",	1996,	59632099	]
+[ "JAPAN",	"VIETNAM",	1996,	57798460	]
+[ "JAPAN",	"INDONESIA",	1996,	56821991	]
+[ "CHINA",	"JAPAN",	1996,	55813462	]
+[ "VIETNAM",	"INDONESIA",	1996,	47757057	]
+[ "JAPAN",	"JAPAN",	1996,	47539552	]
+[ "VIETNAM",	"JAPAN",	1996,	46963772	]
+[ "INDIA",	"INDIA",	1996,	45565344	]
+[ "INDIA",	"JAPAN",	1996,	43954767	]
+[ "INDIA",	"INDONESIA",	1996,	38874394	]
+[ "INDONESIA",	"VIETNAM",	1997,	135976970	]
+[ "INDONESIA",	"CHINA",	1997,	132991130	]
+[ "VIETNAM",	"VIETNAM",	1997,	121862533	]
+[ "INDONESIA",	"JAPAN",	1997,	104037763	]
+[ "CHINA",	"INDIA",	1997,	94813262	]
+[ "CHINA",	"CHINA",	1997,	91303155	]
+[ "INDONESIA",	"INDONESIA",	1997,	90786987	]
+[ "CHINA",	"VIETNAM",	1997,	83798439	]
+[ "INDONESIA",	"INDIA",	1997,	79939537	]
+[ "JAPAN",	"CHINA",	1997,	77980070	]
+[ "VIETNAM",	"INDONESIA",	1997,	70148929	]
+[ "INDIA",	"INDONESIA",	1997,	65059235	]
+[ "CHINA",	"INDONESIA",	1997,	60725848	]
+[ "JAPAN",	"VIETNAM",	1997,	59928838	]
+[ "JAPAN",	"INDONESIA",	1997,	58928479	]
+[ "CHINA",	"JAPAN",	1997,	56743739	]
+[ "INDIA",	"VIETNAM",	1997,	53785095	]
+[ "INDIA",	"INDIA",	1997,	51362167	]
+[ "VIETNAM",	"CHINA",	1997,	51118956	]
+[ "INDIA",	"CHINA",	1997,	46625339	]
+[ "VIETNAM",	"JAPAN",	1997,	37131543	]
+[ "VIETNAM",	"INDIA",	1997,	36662875	]
+[ "JAPAN",	"INDIA",	1997,	33111440	]
+[ "JAPAN",	"JAPAN",	1997,	26883620	]
+[ "INDIA",	"JAPAN",	1997,	15498069	]
+
+# 17:32:51 >  
+# 17:32:51 >  Done.
+# 17:32:51 >  
+

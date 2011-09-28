@@ -1,0 +1,123 @@
+stdout of test '12` in directory 'benchmarks/ssbm` itself:
+
+
+# 17:32:52 >  
+# 17:32:52 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/HG/Apr2011/prefix/_/var/MonetDB" --set mapi_open=true --set mapi_port=37793 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_benchmarks_ssbm" --set mal_listing=0 ; echo ; echo Over..
+# 17:32:52 >  
+
+# MonetDB 5 server v11.3.1 "Apr2011"
+# Serving database 'mTests_benchmarks_ssbm', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:37793/
+# MonetDB/SQL module loaded
+# MonetDB/GIS module loaded
+
+Ready.
+
+Over..
+
+# 17:32:52 >  
+# 17:32:52 >  mclient -lsql -ftest -i -e --host=rig --port=37793 
+# 17:32:52 >  
+
+#select d_year, s_nation, p_category, sum(lo_revenue-lo_supplycost) as profit1
+#	from dwdate, customer, supplier, part, lineorder
+#	where lo_custkey = c_custkey
+#		and lo_suppkey = s_suppkey
+#		and lo_partkey = p_partkey
+#		and lo_orderdate = d_datekey
+#		and c_region = 'AMERICA'
+#		and s_region = 'AMERICA'
+#		and (d_year = 1997 or d_year = 1998)
+#		and (p_mfgr = 'MFGR#1' or p_mfgr = 'MFGR#2')
+#	group by d_year, s_nation, p_category
+#	order by d_year, s_nation, p_category;
+% sys.dwdate,	sys.supplier,	sys.part,	sys. # table_name
+% d_year,	s_nation,	p_category,	profit1 # name
+% int,	clob,	clob,	bigint # type
+% 4,	13,	7,	8 # length
+[ 1997,	"ARGENTINA",	"MFGR#11",	6011959	]
+[ 1997,	"ARGENTINA",	"MFGR#12",	10930453	]
+[ 1997,	"ARGENTINA",	"MFGR#13",	7326904	]
+[ 1997,	"ARGENTINA",	"MFGR#15",	9178983	]
+[ 1997,	"ARGENTINA",	"MFGR#22",	4054952	]
+[ 1997,	"ARGENTINA",	"MFGR#23",	446826	]
+[ 1997,	"ARGENTINA",	"MFGR#24",	5812266	]
+[ 1997,	"ARGENTINA",	"MFGR#25",	3775371	]
+[ 1997,	"BRAZIL",	"MFGR#11",	14560154	]
+[ 1997,	"BRAZIL",	"MFGR#13",	4608821	]
+[ 1997,	"BRAZIL",	"MFGR#15",	6905625	]
+[ 1997,	"BRAZIL",	"MFGR#21",	3245284	]
+[ 1997,	"BRAZIL",	"MFGR#22",	7989912	]
+[ 1997,	"BRAZIL",	"MFGR#23",	2350639	]
+[ 1997,	"BRAZIL",	"MFGR#24",	5426027	]
+[ 1997,	"BRAZIL",	"MFGR#25",	8673663	]
+[ 1997,	"CANADA",	"MFGR#12",	2235973	]
+[ 1997,	"CANADA",	"MFGR#13",	11852524	]
+[ 1997,	"CANADA",	"MFGR#14",	3537619	]
+[ 1997,	"CANADA",	"MFGR#15",	19768006	]
+[ 1997,	"CANADA",	"MFGR#21",	529875	]
+[ 1997,	"CANADA",	"MFGR#22",	5832162	]
+[ 1997,	"CANADA",	"MFGR#23",	4225150	]
+[ 1997,	"CANADA",	"MFGR#24",	1169920	]
+[ 1997,	"PERU",	"MFGR#11",	13469329	]
+[ 1997,	"PERU",	"MFGR#12",	9877074	]
+[ 1997,	"PERU",	"MFGR#13",	2144336	]
+[ 1997,	"PERU",	"MFGR#14",	7772794	]
+[ 1997,	"PERU",	"MFGR#15",	2684121	]
+[ 1997,	"PERU",	"MFGR#21",	8676879	]
+[ 1997,	"PERU",	"MFGR#22",	4211661	]
+[ 1997,	"PERU",	"MFGR#23",	5841679	]
+[ 1997,	"PERU",	"MFGR#24",	4164126	]
+[ 1997,	"PERU",	"MFGR#25",	1726140	]
+[ 1997,	"UNITED STATES",	"MFGR#11",	13695414	]
+[ 1997,	"UNITED STATES",	"MFGR#12",	1570892	]
+[ 1997,	"UNITED STATES",	"MFGR#13",	7934509	]
+[ 1997,	"UNITED STATES",	"MFGR#14",	10506122	]
+[ 1997,	"UNITED STATES",	"MFGR#15",	13962239	]
+[ 1997,	"UNITED STATES",	"MFGR#21",	11608519	]
+[ 1997,	"UNITED STATES",	"MFGR#22",	1580597	]
+[ 1997,	"UNITED STATES",	"MFGR#23",	12019786	]
+[ 1997,	"UNITED STATES",	"MFGR#24",	2306608	]
+[ 1997,	"UNITED STATES",	"MFGR#25",	3766152	]
+[ 1998,	"ARGENTINA",	"MFGR#11",	6899027	]
+[ 1998,	"ARGENTINA",	"MFGR#15",	370411	]
+[ 1998,	"ARGENTINA",	"MFGR#23",	3551367	]
+[ 1998,	"ARGENTINA",	"MFGR#24",	4336186	]
+[ 1998,	"ARGENTINA",	"MFGR#25",	1685570	]
+[ 1998,	"BRAZIL",	"MFGR#11",	5658181	]
+[ 1998,	"BRAZIL",	"MFGR#22",	6949723	]
+[ 1998,	"BRAZIL",	"MFGR#23",	4321193	]
+[ 1998,	"BRAZIL",	"MFGR#25",	467968	]
+[ 1998,	"CANADA",	"MFGR#11",	2364615	]
+[ 1998,	"CANADA",	"MFGR#12",	4435133	]
+[ 1998,	"CANADA",	"MFGR#14",	9800212	]
+[ 1998,	"CANADA",	"MFGR#21",	2472544	]
+[ 1998,	"CANADA",	"MFGR#23",	3513299	]
+[ 1998,	"CANADA",	"MFGR#25",	5291352	]
+[ 1998,	"PERU",	"MFGR#12",	11097433	]
+[ 1998,	"PERU",	"MFGR#13",	4421179	]
+[ 1998,	"PERU",	"MFGR#15",	5199023	]
+[ 1998,	"PERU",	"MFGR#21",	16677298	]
+[ 1998,	"PERU",	"MFGR#22",	1765905	]
+[ 1998,	"PERU",	"MFGR#23",	4453957	]
+[ 1998,	"PERU",	"MFGR#24",	9196951	]
+[ 1998,	"PERU",	"MFGR#25",	8748774	]
+[ 1998,	"UNITED STATES",	"MFGR#11",	3987678	]
+[ 1998,	"UNITED STATES",	"MFGR#12",	6531198	]
+[ 1998,	"UNITED STATES",	"MFGR#14",	2347354	]
+[ 1998,	"UNITED STATES",	"MFGR#15",	5297506	]
+[ 1998,	"UNITED STATES",	"MFGR#21",	2829259	]
+[ 1998,	"UNITED STATES",	"MFGR#22",	13322385	]
+[ 1998,	"UNITED STATES",	"MFGR#23",	11917571	]
+[ 1998,	"UNITED STATES",	"MFGR#24",	8482069	]
+[ 1998,	"UNITED STATES",	"MFGR#25",	3295629	]
+
+# 17:32:52 >  
+# 17:32:52 >  Done.
+# 17:32:52 >  
+

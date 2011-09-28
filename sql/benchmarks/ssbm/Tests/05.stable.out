@@ -1,0 +1,91 @@
+stdout of test '05` in directory 'benchmarks/ssbm` itself:
+
+
+# 17:32:50 >  
+# 17:32:50 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/HG/Apr2011/prefix/_/var/MonetDB" --set mapi_open=true --set mapi_port=37793 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_benchmarks_ssbm" --set mal_listing=0 ; echo ; echo Over..
+# 17:32:50 >  
+
+# MonetDB 5 server v11.3.1 "Apr2011"
+# Serving database 'mTests_benchmarks_ssbm', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:37793/
+# MonetDB/SQL module loaded
+# MonetDB/GIS module loaded
+
+Ready.
+
+Over..
+
+# 17:32:51 >  
+# 17:32:51 >  mclient -lsql -ftest -i -e --host=rig --port=37793 
+# 17:32:51 >  
+
+#select sum(lo_revenue), d_year, p_brand1
+#	from lineorder, dwdate, part, supplier
+#	where lo_orderdate = d_datekey
+#		and lo_partkey = p_partkey
+#		and lo_suppkey = s_suppkey
+#		-- OK to add p_mfgr=’MFGR#2’
+#		-- OK to add p_category=’MFGR#22’
+#		and p_brand1 between 'MFGR#2221' and 'MFGR#2228'
+#		and s_region = 'ASIA'
+#	group by d_year, p_brand1
+#	order by d_year, p_brand1;
+% sys.lineorder,	sys.dwdate,	sys.part # table_name
+% L1,	d_year,	p_brand1 # name
+% bigint,	int,	clob # type
+% 8,	4,	9 # length
+[ 10306232,	1992,	"MFGR#2221"	]
+[ 7096296,	1992,	"MFGR#2222"	]
+[ 13538169,	1992,	"MFGR#2224"	]
+[ 588657,	1992,	"MFGR#2225"	]
+[ 2064857,	1992,	"MFGR#2226"	]
+[ 19175615,	1992,	"MFGR#2227"	]
+[ 5597060,	1993,	"MFGR#2221"	]
+[ 1012379,	1993,	"MFGR#2222"	]
+[ 13096133,	1993,	"MFGR#2223"	]
+[ 8200828,	1993,	"MFGR#2224"	]
+[ 880669,	1993,	"MFGR#2225"	]
+[ 6530070,	1993,	"MFGR#2226"	]
+[ 8174486,	1993,	"MFGR#2227"	]
+[ 20407818,	1994,	"MFGR#2221"	]
+[ 288819,	1994,	"MFGR#2222"	]
+[ 6642402,	1994,	"MFGR#2223"	]
+[ 13970991,	1994,	"MFGR#2224"	]
+[ 11207503,	1994,	"MFGR#2226"	]
+[ 14038987,	1994,	"MFGR#2227"	]
+[ 9206253,	1995,	"MFGR#2222"	]
+[ 10583880,	1995,	"MFGR#2223"	]
+[ 4168114,	1995,	"MFGR#2224"	]
+[ 4480694,	1995,	"MFGR#2226"	]
+[ 5318366,	1995,	"MFGR#2227"	]
+[ 7037757,	1996,	"MFGR#2221"	]
+[ 4626343,	1996,	"MFGR#2222"	]
+[ 6680802,	1996,	"MFGR#2223"	]
+[ 7899650,	1996,	"MFGR#2224"	]
+[ 3943542,	1996,	"MFGR#2225"	]
+[ 8618649,	1996,	"MFGR#2226"	]
+[ 21285135,	1996,	"MFGR#2227"	]
+[ 14925990,	1997,	"MFGR#2221"	]
+[ 9139251,	1997,	"MFGR#2222"	]
+[ 307521,	1997,	"MFGR#2223"	]
+[ 8791563,	1997,	"MFGR#2224"	]
+[ 5652967,	1997,	"MFGR#2225"	]
+[ 10920254,	1997,	"MFGR#2226"	]
+[ 3463448,	1997,	"MFGR#2227"	]
+[ 3697632,	1998,	"MFGR#2221"	]
+[ 17884495,	1998,	"MFGR#2222"	]
+[ 6450682,	1998,	"MFGR#2223"	]
+[ 8158474,	1998,	"MFGR#2224"	]
+[ 4449696,	1998,	"MFGR#2225"	]
+[ 5931644,	1998,	"MFGR#2226"	]
+[ 18442636,	1998,	"MFGR#2227"	]
+
+# 17:32:51 >  
+# 17:32:51 >  Done.
+# 17:32:51 >  
+

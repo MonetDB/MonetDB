@@ -1,0 +1,56 @@
+stdout of test 'check0` in directory 'benchmarks/ssbm` itself:
+
+
+# 17:32:45 >  
+# 17:32:45 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/HG/Apr2011/prefix/_/var/MonetDB" --set mapi_open=true --set mapi_port=37793 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_benchmarks_ssbm" --set mal_listing=0 ; echo ; echo Over..
+# 17:32:45 >  
+
+# MonetDB 5 server v11.3.1 "Apr2011"
+# Serving database 'mTests_benchmarks_ssbm', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:37793/
+# MonetDB/SQL module loaded
+# MonetDB/GIS module loaded
+
+Ready.
+
+Over..
+
+# 17:32:45 >  
+# 17:32:45 >  mclient -lsql -ftest -i -e --host=rig --port=37793 
+# 17:32:45 >  
+
+#select * from DWDATE;
+% sys.dwdate,	sys.dwdate,	sys.dwdate,	sys.dwdate,	sys.dwdate,	sys.dwdate,	sys.dwdate,	sys.dwdate,	sys.dwdate,	sys.dwdate,	sys.dwdate,	sys.dwdate,	sys.dwdate,	sys.dwdate,	sys.dwdate,	sys.dwdate,	sys.dwdate # table_name
+% d_datekey,	d_date,	d_dayofweek,	d_month,	d_year,	d_yearmonthnum,	d_yearmonth,	d_daynuminweek,	d_daynuminmonth,	d_daynuminyear,	d_monthnuminyear,	d_weeknuminyear,	d_sellingseason,	d_lastdayinweekfl,	d_lastdayinmonthfl,	d_holidayfl,	d_weekdayfl # name
+% int,	clob,	clob,	clob,	int,	int,	clob,	int,	int,	int,	int,	int,	clob,	int,	int,	int,	int # type
+% 1,	0,	0,	0,	1,	1,	0,	1,	1,	1,	1,	1,	0,	1,	1,	1,	1 # length
+#select * from SUPPLIER;
+% sys.supplier,	sys.supplier,	sys.supplier,	sys.supplier,	sys.supplier,	sys.supplier,	sys.supplier # table_name
+% s_suppkey,	s_name,	s_address,	s_city,	s_nation,	s_region,	s_phone # name
+% int,	clob,	clob,	clob,	clob,	clob,	clob # type
+% 1,	0,	0,	0,	0,	0,	0 # length
+#select * from CUSTOMER;
+% sys.customer,	sys.customer,	sys.customer,	sys.customer,	sys.customer,	sys.customer,	sys.customer,	sys.customer # table_name
+% c_custkey,	c_name,	c_address,	c_city,	c_nation,	c_region,	c_phone,	c_mktsegment # name
+% int,	clob,	clob,	clob,	clob,	clob,	clob,	clob # type
+% 1,	0,	0,	0,	0,	0,	0,	0 # length
+#select * from PART;
+% sys.part,	sys.part,	sys.part,	sys.part,	sys.part,	sys.part,	sys.part,	sys.part,	sys.part # table_name
+% p_partkey,	p_name,	p_mfgr,	p_category,	p_brand1,	p_color,	p_type,	p_size,	p_container # name
+% int,	clob,	clob,	clob,	clob,	clob,	clob,	int,	clob # type
+% 1,	0,	0,	0,	0,	0,	0,	1,	0 # length
+#select * from LINEORDER;
+% sys.lineorder,	sys.lineorder,	sys.lineorder,	sys.lineorder,	sys.lineorder,	sys.lineorder,	sys.lineorder,	sys.lineorder,	sys.lineorder,	sys.lineorder,	sys.lineorder,	sys.lineorder,	sys.lineorder,	sys.lineorder,	sys.lineorder,	sys.lineorder,	sys.lineorder # table_name
+% lo_orderkey,	lo_linenumber,	lo_custkey,	lo_partkey,	lo_suppkey,	lo_orderdate,	lo_orderpriority,	lo_shippriority,	lo_quantity,	lo_extendedprice,	lo_ordtotalprice,	lo_discount,	lo_revenue,	lo_supplycost,	lo_tax,	lo_commitdate,	lo_shipmode # name
+% int,	int,	int,	int,	int,	int,	clob,	clob,	int,	int,	int,	int,	int,	int,	int,	int,	clob # type
+% 1,	1,	1,	1,	1,	1,	0,	0,	1,	1,	1,	1,	1,	1,	1,	1,	0 # length
+
+# 17:32:45 >  
+# 17:32:45 >  Done.
+# 17:32:45 >  
+

@@ -1,0 +1,45 @@
+stdout of test '08` in directory 'benchmarks/ssbm` itself:
+
+
+# 17:32:51 >  
+# 17:32:51 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/HG/Apr2011/prefix/_/var/MonetDB" --set mapi_open=true --set mapi_port=37793 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_benchmarks_ssbm" --set mal_listing=0 ; echo ; echo Over..
+# 17:32:51 >  
+
+# MonetDB 5 server v11.3.1 "Apr2011"
+# Serving database 'mTests_benchmarks_ssbm', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:37793/
+# MonetDB/SQL module loaded
+# MonetDB/GIS module loaded
+
+Ready.
+
+Over..
+
+# 17:32:51 >  
+# 17:32:51 >  mclient -lsql -ftest -i -e --host=rig --port=37793 
+# 17:32:51 >  
+
+#select c_city, s_city, d_year, sum(lo_revenue) as revenue
+#	from customer, lineorder, supplier, dwdate
+#	where lo_custkey = c_custkey
+#		and lo_suppkey = s_suppkey
+#		and lo_orderdate = d_datekey
+#		and c_nation = 'UNITED STATES'
+#		and s_nation = 'UNITED STATES'
+#		and d_year >= 1992 and d_year <= 1997
+#	group by c_city, s_city, d_year
+#	order by d_year asc, revenue desc;
+% sys.customer,	sys.supplier,	sys.dwdate,	sys.lineorder # table_name
+% c_city,	s_city,	d_year,	revenue # name
+% clob,	clob,	int,	bigint # type
+% 0,	0,	1,	1 # length
+
+# 17:32:51 >  
+# 17:32:51 >  Done.
+# 17:32:51 >  
+

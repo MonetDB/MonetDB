@@ -1,0 +1,74 @@
+stdout of test '11` in directory 'benchmarks/ssbm` itself:
+
+
+# 17:32:52 >  
+# 17:32:52 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/HG/Apr2011/prefix/_/var/MonetDB" --set mapi_open=true --set mapi_port=37793 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_benchmarks_ssbm" --set mal_listing=0 ; echo ; echo Over..
+# 17:32:52 >  
+
+# MonetDB 5 server v11.3.1 "Apr2011"
+# Serving database 'mTests_benchmarks_ssbm', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:37793/
+# MonetDB/SQL module loaded
+# MonetDB/GIS module loaded
+
+Ready.
+
+Over..
+
+# 17:32:52 >  
+# 17:32:52 >  mclient -lsql -ftest -i -e --host=rig --port=37793 
+# 17:32:52 >  
+
+#select d_year, c_nation, sum(lo_revenue-lo_supplycost) as profit1
+#	from dwdate, customer, supplier, part, lineorder
+#	where lo_custkey = c_custkey
+#		and lo_suppkey = s_suppkey
+#		and lo_partkey = p_partkey
+#		and lo_orderdate = d_datekey
+#		and c_region = 'AMERICA'
+#		and s_region = 'AMERICA'
+#		and (p_mfgr = 'MFGR#1' or p_mfgr = 'MFGR#2')
+#	group by d_year, c_nation
+#	order by d_year, c_nation;
+% sys.dwdate,	sys.customer,	sys. # table_name
+% d_year,	c_nation,	profit1 # name
+% int,	clob,	bigint # type
+% 4,	9,	9 # length
+[ 1992,	"ARGENTINA",	60236596	]
+[ 1992,	"BRAZIL",	50116740	]
+[ 1992,	"CANADA",	158594332	]
+[ 1992,	"PERU",	122782525	]
+[ 1993,	"ARGENTINA",	101488494	]
+[ 1993,	"BRAZIL",	18300780	]
+[ 1993,	"CANADA",	220466287	]
+[ 1993,	"PERU",	138221761	]
+[ 1994,	"ARGENTINA",	96762374	]
+[ 1994,	"BRAZIL",	41192541	]
+[ 1994,	"CANADA",	142838983	]
+[ 1994,	"PERU",	81585186	]
+[ 1995,	"ARGENTINA",	77733294	]
+[ 1995,	"BRAZIL",	48321419	]
+[ 1995,	"CANADA",	132723304	]
+[ 1995,	"PERU",	120699540	]
+[ 1996,	"ARGENTINA",	77775674	]
+[ 1996,	"BRAZIL",	30868579	]
+[ 1996,	"CANADA",	227015896	]
+[ 1996,	"PERU",	82556019	]
+[ 1997,	"ARGENTINA",	70072123	]
+[ 1997,	"BRAZIL",	33222386	]
+[ 1997,	"CANADA",	118280072	]
+[ 1997,	"PERU",	68393464	]
+[ 1998,	"ARGENTINA",	29902049	]
+[ 1998,	"BRAZIL",	17035775	]
+[ 1998,	"CANADA",	93061401	]
+[ 1998,	"PERU",	41688725	]
+
+# 17:32:52 >  
+# 17:32:52 >  Done.
+# 17:32:52 >  
+
