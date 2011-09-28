@@ -20,7 +20,7 @@ MTSAFE
 scripts_pl = {
 	COND = HAVE_TESTING
 	DIR = bindir
-	SOURCES = sqlsample.pl.in malsample.pl.in DBD-bug-2889.pl.in
+	SOURCES = sqlsample.pl.in malsample.pl.in
 }
 
 EXTRA_DIST = client.pl smack00.pl smack01.pl
