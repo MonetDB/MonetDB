@@ -740,13 +740,17 @@ access_heap(str id, str hp, Heap *h, char *base, size_t sz, size_t touch, int pr
 		if (preload > 0) {
 			size_t alignskip = (page - (((size_t) base) & (page - 1))) & (page - 1);
 			size_t alignedsz = (size_t) (((sz < alignskip) ? 0 : ((size_t) (sz - alignskip))) & ~(page - 1));
-			int ret = posix_madvise(base + alignskip, alignedsz, adv);
-			if (ret)
-				THRprintf(GDKerr,
-					  "#MT_mmap_inform: posix_madvise(file=%s, base=" PTRFMT ", len=" SZFMT "MB, advice=%s) = %d\n",
-					  h->filename,
-					  PTRFMTCAST(base + alignskip),
-					  alignedsz >> 20, advice, errno);
+			int ret;
+			
+			if (alignedsz > 0) {
+				if ((ret = posix_madvise(base + alignskip, alignedsz, adv)) != 0)
+					THRprintf(GDKerr,
+						  "#MT_mmap_inform: posix_madvise(file=%s, base=" PTRFMT ", len=" SZFMT "MB, advice=%s) = %d, errno = %d (%s)\n",
+						  h->filename,
+						  PTRFMTCAST(base + alignskip),
+						  alignedsz >> 20, advice, ret,
+						  errno, strerror(errno));
+			}
 		}
 	}
 	if (touch && preload > 0 && adv != MMAP_DONTNEED) {
