@@ -1008,7 +1008,7 @@ aggr_phase2(char *aggr)
 {
 	if (aggr == countRef || aggr == count_no_nilRef)
 		return sumRef;
-	/* min/max/sum/prod are fine */
+	/* min/max/sum/prod and unique are fine */
 	return aggr;
 }
 
@@ -1417,7 +1417,8 @@ static void
 mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 {
 	int tp = getArgType(mb,p,0), k;
-	int v = newTmpVariable(mb, newBatType(TYPE_void,tp));
+	int battp = (getModuleId(p)==aggrRef)?newBatType(TYPE_void,tp):tp;
+	int v = newTmpVariable(mb, battp);
 	InstrPtr r = NULL, s = NULL, q = NULL;
 
 	OPTDEBUGmergetable {
@@ -1432,7 +1433,7 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 	getArg(r,0) = v;
 	for(k=1; k< mat[m].mi->argc; k++) {
 		q = newInstruction(mb,ASSIGNsymbol);
-		setModuleId(q,aggrRef);
+		setModuleId(q,getModuleId(p));
 		setFunctionId(q,getFunctionId(p));
 		getArg(q,0) = newTmpVariable(mb, tp);
 		q = pushArgument(mb,q,getArg(mat[m].mi,k));
@@ -1442,16 +1443,18 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 	}
 	pushInstruction(mb,r);
 
-	s = newInstruction(mb,ASSIGNsymbol);
-	setModuleId(s, algebraRef);
-	setFunctionId(s, selectNotNilRef);
-	getArg(s,0) = newTmpVariable(mb, newBatType(TYPE_void,tp));
-	s = pushArgument(mb, s, getArg(r,0));
-	pushInstruction(mb, s);
-	r = s;
+	if (getModuleId(p) == aggrRef) {
+		s = newInstruction(mb,ASSIGNsymbol);
+		setModuleId(s, algebraRef);
+		setFunctionId(s, selectNotNilRef);
+		getArg(s,0) = newTmpVariable(mb, newBatType(TYPE_void,tp));
+		s = pushArgument(mb, s, getArg(r,0));
+		pushInstruction(mb, s);
+		r = s;
+	}
 
 	s = newInstruction(mb,ASSIGNsymbol);
-	setModuleId(s,aggrRef);
+	setModuleId(s,getModuleId(p));
 	setFunctionId(s, aggr_phase2(getFunctionId(p)));
 	getArg(s,0) = getArg(p,0);
 	s = pushArgument(mb, s, getArg(r,0));
@@ -2117,14 +2120,17 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		 * Handle the rewrite v:=aggr.count(b) and sum()
 		 * And the min/max is as easy
 		 */
-		if( getModuleId(p)==aggrRef && p->argc == 2 &&
+		if (match == 1 && p->argc == 2 &&
+		   ((getModuleId(p)==aggrRef &&
 			(getFunctionId(p)== countRef || 
 			 getFunctionId(p)== count_no_nilRef || 
 			 getFunctionId(p)== minRef ||
 			 getFunctionId(p)== maxRef ||
 			 getFunctionId(p)== sumRef ||
-		    	 getFunctionId(p) == prodRef) &&
-			(m=isMATalias(getArg(p,1), mat, mtop)) >= 0){
+		    	 getFunctionId(p) == prodRef)) ||
+		    (getModuleId(p) == algebraRef &&
+		     getFunctionId(p) == kuniqueRef)) &&
+			(m=isMATalias(getArg(p,1), mat, mtop)) >= 0) {
 			mat_aggr(mb, p, mat, m);
 			actions++;
 			continue;

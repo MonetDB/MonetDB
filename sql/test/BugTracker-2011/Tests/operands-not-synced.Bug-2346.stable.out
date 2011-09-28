@@ -89,6 +89,16 @@ Over..
 #"bar"	341	300	341	300	5
 #
 [ 2	]
+#INSERT INTO applied_credit (directory, allowed, multiplicity)
+#SELECT success_credit.directory,
+#       success_credit.allowed,
+#       count(applied_credit.directory)
+#FROM success_credit
+#     LEFT OUTER JOIN applied_credit
+#     ON applied_credit.directory = success_credit.directory
+#     AND applied_credit.allowed >= success_credit.allowed
+#GROUP BY success_credit.directory, success_credit.allowed;
+[ 2	]
 #ROLLBACK;
 
 # 13:48:57 >  
