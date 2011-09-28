@@ -43,6 +43,16 @@ MX = $(top_builddir)/buildtools/Mx/Mx
 	[ ! -f y.tab.c ] || $(RM) y.tab.c
 	$(RM) waiting
 
+%.yy.c: %.l
+	$(LOCKFILE) waiting
+	$(LEX) $(LFLAGS) $(AM_LFLAGS) $< || { $(RM) waiting ; exit 1 ; }
+	if [ -f $(LEX_OUTPUT_ROOT).c ]; then $(MV) $(LEX_OUTPUT_ROOT).c $*.yy.c ; fi
+	$(MV) $*.yy.c $*.yy.c.tmp
+	echo '#include <'"$(CONFIG_H)"'>' > $*.yy.c
+	grep -v '^#include.*[<"]'"$(CONFIG_H)"'[">]' $*.yy.c.tmp >> $*.yy.c
+	$(RM) $*.yy.c.tmp
+	$(RM) waiting
+
 %.def: %.syms
 	case `(uname -s) 2> /dev/null || echo unknown` in CYGWIN*) cat $<;; *) grep -v DllMain $<;; esac > $@
 
