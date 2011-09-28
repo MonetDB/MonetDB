@@ -3,4 +3,4 @@
 prompt # $t $g  
 echo on
 
-DBD-bug-2889.pl %MAPIPORT% %TSTDB%
+perl "%TSTSRCDIR%\DBD-manyrows.Bug-2889.pl" %MAPIPORT% %TSTDB%

@@ -1,3 +1,3 @@
 #!/bin/sh
 
-Mlog -x "DBD-bug-2889.pl $MAPIPORT $TSTDB"
+Mlog -x "perl $TSTSRCDIR/DBD-manyrows.Bug-2889.pl $MAPIPORT $TSTDB"
