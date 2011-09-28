@@ -41,6 +41,7 @@ Over..
 [ "mapi_autosense"	]
 [ "mapi_open"	]
 [ "mapi_port"	]
+[ "max_clients"	]
 [ "monet_daemon"	]
 [ "monet_mod_path"	]
 [ "monet_pid"	]

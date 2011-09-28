@@ -292,9 +292,6 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 	for (n = 0; n < mc->vtop; n++) {
 		VarPtr ov, v;
 
-/*
-		nv[n]= cloneVariable(mb,mc,n);
-*/
 		if (isExceptionVariable(mc->var[n]->name)) {
 			nv[n] = newVariable(mb,GDKstrdup(mc->var[n]->name),TYPE_str);
 			if (isVarUDFtype(mc,n))

@@ -2408,7 +2408,7 @@ backend_create_func(backend *be, sql_func *f)
 		     p->barrier == RETURNsymbol || p->barrier == YIELDsymbol)
 			retseen++;
 	}
-	if (i == curBlk->stop && retseen == 1)
+	if (i == curBlk->stop && retseen == 1 && !f->res.comp_type)
 		varSetProp(curBlk, getArg(curInstr, 0), inlineProp, op_eq, NULL);
 	if ( sideeffects)
 		varSetProp(curBlk, getArg(curInstr, 0), unsafeProp, op_eq, NULL);
