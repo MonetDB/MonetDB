@@ -27,7 +27,7 @@ MX = $(top_builddir)/buildtools/Mx/Mx
 # to prevent inconsistent (re-)definitions of macros.
 %.tab.c: %.y
 	$(LOCKFILE) waiting
-	$(YACC) $(YFLAGS) $< || { $(RM) waiting ; exit 1 ; }
+	$(YACC) $(YFLAGS) $(AM_YFLAGS) $< || { $(RM) waiting ; exit 1 ; }
 	if [ -f y.tab.c ]; then $(MV) y.tab.c $*.tab.c ; fi
 	$(MV) $*.tab.c $*.tab.c.tmp
 	echo '#include <'"$(CONFIG_H)"'>' > $*.tab.c
@@ -38,7 +38,7 @@ MX = $(top_builddir)/buildtools/Mx/Mx
 
 %.tab.h: %.y
 	$(LOCKFILE) waiting
-	$(YACC) $(YFLAGS) $< || { $(RM) waiting ; exit 1 ; }
+	$(YACC) $(YFLAGS) $(AM_YFLAGS) $< || { $(RM) waiting ; exit 1 ; }
 	if [ -f y.tab.h ]; then $(MV) y.tab.h $*.tab.h ; fi
 	[ ! -f y.tab.c ] || $(RM) y.tab.c
 	$(RM) waiting
