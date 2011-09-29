@@ -71,14 +71,11 @@ typedef struct SCENARIO {
 
 mal_export str setScenario(Client c, str nme);
 mal_export str runScenario(Client c);
-mal_export str fillScenario(Client c, Scenario scen);
-mal_export void clrScenario(Client c);
 mal_export str getScenarioLanguage(Client c);
 mal_export Scenario getFreeScenario(void);
 
 mal_export str defaultScenario(Client c);	/* used in src/mal/mal_session.c */
 mal_export void exitScenario(Client c);	/* used in src/mal/mal_session.c */
-mal_export str initScenario(Client c, Scenario s);
 
 mal_export void showCurrentScenario(void);
 mal_export void showScenarioByName(stream *f, str s);
