@@ -895,10 +895,8 @@ mvc_export_table(mvc *m, stream *s, res_table *t, BAT *order, BUN offset, BUN nr
 	as.nr_attrs = t->nr_cols + 1;	/* for the leader */
 	as.nr = nr;
 	as.offset = offset;
-	fmt = as.format = (Column *) GDKmalloc(sizeof(Column) * (as.nr_attrs + 1));
+	fmt = as.format = (Column *) GDKzalloc(sizeof(Column) * (as.nr_attrs + 1));
 	tres = GDKmalloc(sizeof(struct time_res) * (as.nr_attrs));
-
-	memset(fmt, 0, (as.nr_attrs + 1) * sizeof(Column));
 
 	fmt[0].c[0] = NULL;
 	fmt[0].sep = _strdup(btag);
@@ -1058,12 +1056,14 @@ export_length( stream *s, int mtype, int eclass, int digits, int scale, int tz, 
 	   value, instead of the maximum values taken now, which
 	   include the optional sign */
 	} else if (eclass == EC_FLT) {
-		/* [sign]+digit+period+[max 6 digits]+E+[sign]+[max 2 digits] */
+		/* floats are printed using "%.9g":
+		 * [sign]+digit+period+[max 8 digits]+E+[sign]+[max 2 digits] */
 		if (mtype == TYPE_flt) {
-			ok = mvc_send_int(s, 13);
-		/* [sign]+digit+period+[max 14 digits]+E+[sign]+[max 3 digits] */
+			ok = mvc_send_int(s, 15);
+		/* doubles are printed using "%.17g":
+		 * [sign]+digit+period+[max 16 digits]+E+[sign]+[max 3 digits] */
 		} else { /* TYPE_dbl */
-			ok = mvc_send_int(s, 22);
+			ok = mvc_send_int(s, 24);
 		}
 	} else if (eclass == EC_DEC) {
 		count = 1 + digits;
