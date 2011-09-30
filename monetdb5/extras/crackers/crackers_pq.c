@@ -53,9 +53,9 @@ unsigned int Random (unsigned int const range)
 	return (unsigned int) rand () % range;
 }
 
-static PQ_Key PQ_minKey () { return (PQ_Key) 0; }
-static PQ_Key PQ_maxKey () { return ~ PQ_minKey (); }
-static PQ_Index PQ_badIndex () { return (PQ_Index) ~0; }
+static PQ_Key PQ_minKey (void) { return (PQ_Key) 0; }
+static PQ_Key PQ_maxKey (void) { return ~ PQ_minKey (); }
+static PQ_Index PQ_badIndex (void) { return (PQ_Index) ~0; }
 
 #ifdef PriQue_DEBUG
 static void PQ_AssertConsistency (
@@ -73,7 +73,7 @@ static int /* deferred */ PQ_adjust_normkey (
 
 static void PQ_reduce_keys (PQ_state * const m);
 
-static PQ_Shift PQ_bitsRunNo () { return 3; }
+static PQ_Shift PQ_bitsRunNo (void) { return 3; }
 
 static PQ_Key PQ_early_sentinel (PQ_Index const index)
 {
@@ -109,7 +109,7 @@ static inline PQ_Index PQ_leaf (
 	return entry;
 }
 
-static inline PQ_Index PQ_root ()
+static inline PQ_Index PQ_root (void)
 {
 	return (PQ_Index) 0;
 }
