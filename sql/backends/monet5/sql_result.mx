@@ -979,12 +979,14 @@ export_length( stream *s, int mtype, int eclass, int digits, int scale, int tz, 
 	   value, instead of the maximum values taken now, which
 	   include the optional sign */
 	} else if (eclass == EC_FLT) {
-		/* [sign]+digit+period+[max 6 digits]+E+[sign]+[max 2 digits] */
+		/* floats are printed using "%.9g":
+		 * [sign]+digit+period+[max 8 digits]+E+[sign]+[max 2 digits] */
 		if (mtype == TYPE_flt) {
-			ok = mvc_send_int(s, 13);
-		/* [sign]+digit+period+[max 14 digits]+E+[sign]+[max 3 digits] */
+			ok = mvc_send_int(s, 15);
+		/* doubles are printed using "%.17g":
+		 * [sign]+digit+period+[max 16 digits]+E+[sign]+[max 3 digits] */
 		} else { /* TYPE_dbl */
-			ok = mvc_send_int(s, 22);
+			ok = mvc_send_int(s, 24);
 		}
 	} else if (eclass == EC_DEC) {
 		count = 1 + digits;
