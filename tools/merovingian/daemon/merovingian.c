@@ -850,7 +850,7 @@ main(int argc, char *argv[])
 	/* lock such that we are alone on this world */
 	if ((ret = MT_lockf(".merovingian_lock", F_TLOCK, 4, 1)) == -1) {
 		/* locking failed */
-		Mfprintf(stderr, "another merovingian is already running\n");
+		Mfprintf(stderr, "another monetdbd is already running\n");
 		MERO_EXIT_CLEAN(1);
 	} else if (ret == -2) {
 		/* directory or something doesn't exist */

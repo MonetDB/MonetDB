@@ -470,7 +470,7 @@ createView:
 	if (CrackerIndex[m].mergeDeletions >= 0){
 		str msg = selectMergeDeletionsPart_@1(bid, low, inclusiveLow, hgh, inclusiveHgh, &rippledDeletions, m);
 		if (msg != NULL)
-			throw(MAL, "crackers.crackRange",msg);
+			throw(MAL, "crackers.crackRange", "%s", msg);
 	}
 	
 	if (CrackerIndex[m].mergeDeletions == 2 && rippledDeletions == FALSE){
@@ -496,7 +496,7 @@ createView:
 		str msg;
 		msg = selectMergeInsertionsPart_@1(bid, low, inclusiveLow, hgh, inclusiveHgh, m);
                 if (msg != NULL)
-                        throw(MAL, "crackers.crackRange",msg);
+                        throw(MAL, "crackers.crackRange", "%s", msg);
 	}
 
 	/* find out where in the index the low falls */

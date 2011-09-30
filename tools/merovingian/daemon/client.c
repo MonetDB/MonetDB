@@ -130,7 +130,7 @@ handleClient(int sock, char isusock)
 		/* we didn't get a terminated block :/ */
 		e = newErr("client %s sent challenge in incomplete block: %s",
 				host, buf);
-		mnstr_printf(fout, "!merovingian: client sent something this "
+		mnstr_printf(fout, "!monetdbd: client sent something this "
 				"server could not understand, sorry\n");
 		mnstr_flush(fout);
 		close_stream(fout);
@@ -151,7 +151,7 @@ handleClient(int sock, char isusock)
 		user = s + 1;
 	} else {
 		e = newErr("client %s challenge error: %s", host, buf);
-		mnstr_printf(fout, "!merovingian: incomplete challenge '%s'\n", buf);
+		mnstr_printf(fout, "!monetdbd: incomplete challenge '%s'\n", user);
 		mnstr_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
@@ -166,7 +166,7 @@ handleClient(int sock, char isusock)
 		/* decode algorithm, i.e. {plain}mypasswordchallenge */
 		if (*passwd != '{') {
 			e = newErr("client %s challenge error: %s", host, buf);
-			mnstr_printf(fout, "!merovingian: invalid password entry\n");
+			mnstr_printf(fout, "!monetdbd: invalid password entry\n");
 			mnstr_flush(fout);
 			close_stream(fout);
 			close_stream(fdin);
@@ -176,7 +176,7 @@ handleClient(int sock, char isusock)
 		s = strchr(algo, '}');
 		if (!s) {
 			e = newErr("client %s challenge error: %s", host, buf);
-			mnstr_printf(fout, "!merovingian: invalid password entry\n");
+			mnstr_printf(fout, "!monetdbd: invalid password entry\n");
 			mnstr_flush(fout);
 			close_stream(fout);
 			close_stream(fdin);
@@ -186,7 +186,7 @@ handleClient(int sock, char isusock)
 		passwd = s + 1;
 	} else {
 		e = newErr("client %s challenge error: %s", host, buf);
-		mnstr_printf(fout, "!merovingian: incomplete challenge, missing password after '%s'\n", user);
+		mnstr_printf(fout, "!monetdbd: incomplete challenge '%s'\n", user);
 		mnstr_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
@@ -200,7 +200,7 @@ handleClient(int sock, char isusock)
 		lang = s + 1;
 	} else {
 		e = newErr("client %s challenge error: %s", host, buf);
-		mnstr_printf(fout, "!merovingian: incomplete challenge, missing language after '%s'\n", passwd);
+		mnstr_printf(fout, "!monetdbd: incomplete challenge, missing language\n");
 		mnstr_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
@@ -217,7 +217,7 @@ handleClient(int sock, char isusock)
 		s = strchr(database, ':');
 		if (s == NULL) {
 			e = newErr("client %s challenge error: %s", host, buf);
-			mnstr_printf(fout, "!merovingian: incomplete challenge, missing trailing colon\n");
+			mnstr_printf(fout, "!monetdbd: incomplete challenge, missing trailing colon\n");
 			mnstr_flush(fout);
 			close_stream(fout);
 			close_stream(fdin);
@@ -230,7 +230,7 @@ handleClient(int sock, char isusock)
 	if (*database == '\0') {
 		/* we need to have a database, if we haven't gotten one,
 		 * complain */
-		mnstr_printf(fout, "!merovingian: please specify a database\n");
+		mnstr_printf(fout, "!monetdbd: please specify a database\n");
 		mnstr_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
@@ -252,7 +252,7 @@ handleClient(int sock, char isusock)
 			w->next = mero_multiplex_funnel;
 			if ((merr = multiplexInit(&w->mpf, database)) != NO_ERR) {
 				free(w);
-				mnstr_printf(fout, "!merovingian: failed to create "
+				mnstr_printf(fout, "!monetdbd: failed to create "
 						"multiplex-funnel: %s\n", merr);
 				mnstr_flush(fout);
 				close_stream(fout);
@@ -264,7 +264,7 @@ handleClient(int sock, char isusock)
 					NULL, (void *(*)(void *))multiplexThread,
 					(void *)w->mpf)) != 0)
 			{
-				mnstr_printf(fout, "!merovingian: internal failure while "
+				mnstr_printf(fout, "!monetdbd: internal failure while "
 						"creating multiplex-funnel: unable to start thread: %s\n",
 						strerror(ret));
 				mnstr_flush(fout);
@@ -306,9 +306,9 @@ handleClient(int sock, char isusock)
 
 	if ((e = forkMserver(database, &top, 0)) != NO_ERR) {
 		if (top == NULL) {
-			mnstr_printf(fout, "!merovingian: no such database '%s', please create it first\n", database);
+			mnstr_printf(fout, "!monetdbd: no such database '%s', please create it first\n", database);
 		} else {
-			mnstr_printf(fout, "!merovingian: internal error while starting mserver, please refer to the logs\n");
+			mnstr_printf(fout, "!monetdbd: internal error while starting mserver, please refer to the logs\n");
 		}
 		mnstr_flush(fout);
 		close_stream(fout);
@@ -337,7 +337,7 @@ handleClient(int sock, char isusock)
 		} else {
 			e = newErr("there are no available connections for '%s'", database);
 		}
-		mnstr_printf(fout, "!merovingian: %s\n", e);
+		mnstr_printf(fout, "!monetdbd: %s\n", e);
 		mnstr_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
@@ -404,7 +404,7 @@ handleClient(int sock, char isusock)
 			mnstr_printf(fout, "void:merovingian:8:plain:BIG");
 			mnstr_flush(fout);
 			mnstr_read_block(fdin, buf, 8095, 1); /* eat away client response */
-			mnstr_printf(fout, "!merovingian: an internal error has occurred, refer to the logs for details, please try again later\n");
+			mnstr_printf(fout, "!monetdbd: an internal error has occurred, refer to the logs for details, please try again later\n");
 			mnstr_flush(fout);
 			close_stream(fout);
 			close_stream(fdin);

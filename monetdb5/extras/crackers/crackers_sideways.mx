@@ -1245,7 +1245,7 @@ CRKclearReferencesFullMaps(int* res){
 	return MAL_SUCCEED;
 }
 
-bit
+static bit
 isThisFullMapUsedInTheCurrentQuery(int batId, int tailBatId){
 	struct referencesNodeFM *cur;
 	if (StorageInfo == NULL)
@@ -1263,8 +1263,8 @@ isThisFullMapUsedInTheCurrentQuery(int batId, int tailBatId){
 	return FALSE;
 }
 	
-int 
-getLeastUsedMap(){
+static int 
+getLeastUsedMap(void){
 	int i;
 	lng accesses = 0;
 	int res = -1;
@@ -1289,7 +1289,7 @@ getLeastUsedMap(){
 	return res;
 }	
 
-str removeFullMap(int MapToDropIndex){
+static str removeFullMap(int MapToDropIndex){
 	int i, TapeIndex = -1;
 	bit moreMaps = FALSE;
 	BAT *cbat,*cindex;
@@ -1380,7 +1380,7 @@ heapfree(Heap *src, Heap *dst)
 
 @
 @= NewIndexSidewaysCracking_0
-int
+static int
 newCrackerIndexHistorySideways(int bid, int chid, int hiid){
         int i, j, freemap = -1, units = 100;
 
