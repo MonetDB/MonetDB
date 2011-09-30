@@ -72,7 +72,6 @@ void printAVLTree(struct Node * current, BAT *b, BUN base);
 void printAVLTreeIncrementalSideways(struct Node * current, BAT *b, BUN base);
 struct Node * getFirstNode(struct Node * node);
 struct Node * getLastNode(struct Node * node);
-struct Node * getPreviousNodeAny(struct Node * current);
 struct Node * getPreviousNonLocalNode(struct Node * current);
 struct Node * getNextNonLocalNode(struct Node * current);
 @
