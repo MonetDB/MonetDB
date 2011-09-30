@@ -1,0 +1,49 @@
+stdout of test 'cast-crash.Bug-2678` in directory 'test/BugTracker-2011` itself:
+
+
+# 12:29:59 >  
+# 12:29:59 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/net/volund.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-Aug2011-volund.ins.cwi.nl/sql/dbfarm" --set mapi_open=true --set mapi_port=36981 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_test_BugTracker-2011" --set mal_listing=0 ; echo ; echo Over..
+# 12:29:59 >  
+
+# MonetDB 5 server v11.5.4 "Aug2011-58ba9e3940e6"
+# Serving database 'mTests_test_BugTracker-2011', using 4 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://volund.ins.cwi.nl:36981/
+
+Ready.
+
+Over..
+
+# 12:29:59 >  
+# 12:29:59 >  mclient -lsql -ftest -i -e --host=volund --port=36981 
+# 12:29:59 >  
+
+#CREATE TABLE "sensor_readings_2678" (
+#        "src_ip"    VARCHAR(15),
+#        "recv_time" TIMESTAMP,
+#        "emit_time" TIMESTAMP,
+#        "location"  VARCHAR(30),
+#        "type"      VARCHAR(30),
+#        "value"     VARCHAR(30)
+#);
+#SELECT
+#	CAST(emit_time AS date) AS "date",
+#	CAST(avg(CAST(value AS numeric(5,2))) AS numeric(5,2)) AS avgtemperature
+#FROM sensor_readings_2678
+#WHERE "type" LIKE 'temperature'
+#	AND location LIKE 'L318'
+#GROUP BY "date"
+#ORDER BY "date";
+% sys.sensor_readings_2678,	sys. # table_name
+% date,	avgtemperature # name
+% date,	decimal # type
+% 10,	7 # length
+
+# 12:29:59 >  
+# 12:29:59 >  Done.
+# 12:29:59 >  
+

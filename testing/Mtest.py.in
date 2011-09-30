@@ -2503,7 +2503,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
 
     segfaulted = False
     # Try to detect segfaults and the like
-    TO = re.compile("((^|^[^#]*[\t ])(Memory [Ff]ault|Segmentation [Ff]ault|Bus [Ee]rror|Abort(|ed)|Assertion failed:|!FATAL: BATSIGabort:)([ \t]|$)|(^ERROR = !Connection terminated$))", re.MULTILINE)
+    TO = re.compile("((^|^[^#]*[\t ])(Memory [Ff]ault|Segmentation [Ff]ault|Bus [Ee]rror|Abort(|ed)|Assertion failed:|!FATAL: BATSIGabort:)([ \t]|$))", re.MULTILINE)
     # FIXME: this begs for a much nicer solution (100% copy of below)
     if os.path.isfile(TestErrFile):
         for l in open(TestErrFile):
