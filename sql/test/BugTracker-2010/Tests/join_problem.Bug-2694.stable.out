@@ -96,7 +96,7 @@ Over..
 % .t1,	.t1,	.t1,	. # table_name
 % opr_date,	opr_hr,	svalue,	sql_sub_yyyymmddhh # name
 % date,	int,	varchar,	double # type
-% 10,	2,	3,	22 # length
+% 10,	2,	3,	24 # length
 [ 2009-04-01,	1,	"OFF",	-2.5	]
 [ 2009-04-01,	2,	"OFF",	-1.5	]
 [ 2009-04-01,	3,	"OFF",	-0.5	]
@@ -119,7 +119,7 @@ Over..
 % sys.t1,	sys.t1,	sys.t1,	sys. # table_name
 % opr_date,	opr_hr,	svalue,	sql_sub_yyyymmddhh # name
 % date,	int,	varchar,	double # type
-% 10,	2,	3,	22 # length
+% 10,	2,	3,	24 # length
 [ 2009-04-01,	1,	"OFF",	-2.5	]
 [ 2009-04-01,	2,	"OFF",	-1.5	]
 [ 2009-04-01,	3,	"OFF",	-0.5	]

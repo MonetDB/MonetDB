@@ -32,12 +32,12 @@ Over..
 % sys.f2774,	sys.f2774 # table_name
 % i,	f # name
 % int,	double # type
-% 1,	22 # length
+% 1,	24 # length
 #select * from d2774;
 % sys.d2774,	sys.d2774 # table_name
 % i,	d # name
 % int,	double # type
-% 1,	22 # length
+% 1,	24 # length
 #insert into f2774 values (300,1e-300);
 [ 1	]
 #insert into d2774 values (300,1e-300);
@@ -78,7 +78,7 @@ Over..
 % sys.f2774,	sys.f2774 # table_name
 % i,	f # name
 % int,	double # type
-% 3,	22 # length
+% 3,	24 # length
 [ 300,	1e-300	]
 [ 302,	1e-302	]
 [ 304,	1e-304	]
@@ -91,7 +91,7 @@ Over..
 % sys.d2774,	sys.d2774 # table_name
 % i,	d # name
 % int,	double # type
-% 3,	22 # length
+% 3,	24 # length
 [ 300,	1e-300	]
 [ 302,	1e-302	]
 [ 304,	1e-304	]
@@ -108,12 +108,12 @@ Over..
 % sys.f2774,	sys.f2774 # table_name
 % i,	f # name
 % int,	double # type
-% 1,	22 # length
+% 1,	24 # length
 #select * from d2774;
 % sys.d2774,	sys.d2774 # table_name
 % i,	d # name
 % int,	double # type
-% 1,	22 # length
+% 1,	24 # length
 #copy 18 records into f2774 from stdin using delimiters ',','\n';
 #300,1e-300
 #302,1e-302
@@ -156,7 +156,7 @@ Over..
 % sys.f2774,	sys.f2774 # table_name
 % i,	f # name
 % int,	double # type
-% 1,	22 # length
+% 1,	24 # length
 
 ! to be checked & approved !
 
@@ -164,7 +164,7 @@ Over..
 % sys.d2774,	sys.d2774 # table_name
 % i,	d # name
 % int,	double # type
-% 1,	22 # length
+% 1,	24 # length
 
 ! to be checked & approved !
 
@@ -176,12 +176,12 @@ Over..
 % sys.f2774,	sys.f2774 # table_name
 % i,	f # name
 % int,	double # type
-% 1,	22 # length
+% 1,	24 # length
 #select * from d2774;
 % sys.d2774,	sys.d2774 # table_name
 % i,	d # name
 % int,	double # type
-% 1,	22 # length
+% 1,	24 # length
 #copy 9 records into f2774 from stdin using delimiters ',','\n';
 #300,1e-300
 #302,1e-302
@@ -230,7 +230,7 @@ Over..
 % sys.f2774,	sys.f2774 # table_name
 % i,	f # name
 % int,	double # type
-% 3,	22 # length
+% 3,	24 # length
 [ 300,	1e-300	]
 [ 302,	1e-302	]
 [ 304,	1e-304	]
@@ -243,7 +243,7 @@ Over..
 % sys.d2774,	sys.d2774 # table_name
 % i,	d # name
 % int,	double # type
-% 3,	22 # length
+% 3,	24 # length
 [ 300,	1e-300	]
 [ 302,	1e-302	]
 [ 304,	1e-304	]

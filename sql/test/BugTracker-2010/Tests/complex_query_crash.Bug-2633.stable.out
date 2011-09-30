@@ -29,7 +29,7 @@ Over..
 % sys.rank_doc_bm250_retrieve_result,	sys.rank_doc_bm250_retrieve_result # table_name
 % a1,	prob # name
 % int,	double # type
-% 1,	22 # length
+% 1,	24 # length
 
 # 22:59:43 >  
 # 22:59:43 >  Done.

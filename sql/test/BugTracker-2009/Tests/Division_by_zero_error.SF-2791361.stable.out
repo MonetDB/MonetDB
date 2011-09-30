@@ -31,21 +31,24 @@ Over..
 % sys. # table_name
 % isnull_>_sql_sub_bla1 # name
 % double # type
-% 22 # length
+% 24 # length
 [ 0	]
 [ 0	]
 [ 0	]
 % sys. # table_name
 % isnull_>_sql_sub_bla1 # name
 % double # type
-% 22 # length
+% 24 # length
 [ 0	]
 [ 0	]
 [ 0	]
 % sys.n1,	sys.n1,	sys.n2,	sys.n2,	sys. # table_name
 % lat,	long,	lat,	long,	isnull_>_sql_sub_lat # name
 % double,	double,	double,	double,	double # type
-% 22,	22,	22,	22,	22 # length
+% 24,	24,	24,	24,	24 # length
+#drop table "sys"."segments";
+#drop table "sys"."nodes_legacy";
+#select case when (2 - 2) > 0 then (3 - 2)/(2 - 2) else 0 end as "test";
 % . # table_name
 % test # name
 % tinyint # type

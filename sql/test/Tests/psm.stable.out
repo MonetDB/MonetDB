@@ -96,7 +96,7 @@ Over..
 % .fla,	.fla,	.fla # table_name
 % x,	y,	z # name
 % double,	double,	double # type
-% 22,	22,	22 # length
+% 24,	24,	24 # length
 [ 0,	0,	0	]
 
 # 14:40:48 >  

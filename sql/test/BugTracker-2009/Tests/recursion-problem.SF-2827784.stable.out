@@ -28,9 +28,11 @@ Over..
 % .cabact,	.cabact,	.cabact,	.cabact,	.cabact,	.cabact,	.cabact,	.cabact,	.cabact,	.cabact,	.cabact,	.cabact,	.cabact,	.cabact,	.cabact,	.cabact,	.cabact,	.cabact,	.cabact,	.cabact,	.cabact,	.cabact,	.cabact,	.cabact,	.cabact,	.cabact,	.cabact,	.cabact,	.cabact,	.cabact,	.cabact,	.cabact,	.cabact,	.cabact,	.cabact,	.cabact,	.cabact,	.cabact,	.cabact,	.cabact # table_name
 % cabactcsu,	cabact___rforefide,	cabact___rteprcide,	cabact___rtestdide,	cabact___rfovsnide,	cabactlil,	cabactlic,	cabacttxt,	cabact___rfontride,	cabact_f1rfodstide,	cabact_f2rfodstide,	cabact_f3rfodstide,	cabact_f4rfodstide,	cabact_f5rfodstide,	cabact_f6rfodstide,	cabact_f7rfodstide,	cabact_f8rfodstide,	cabact_f9rfodstide,	cabact_c1rfodstide,	cabact_c2rfodstide,	cabact_c3rfodstide,	cabact_c4rfodstide,	cabact_c5rfodstide,	cabact_c6rfodstide,	cabact_c7rfodstide,	cabact_c8rfodstide,	cabact_c9rfodstide,	cabactqte,	cabact___rfountide,	cabactdtd,	cabactdtf,	cabactax1,	cabactax2,	cabactax3,	cabactax4,	cabactax5,	cabactax6,	cabactax7,	cabactax8,	cabactax9 # name
 % int,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	double,	varchar,	timestamptz,	timestamptz,	int,	int,	int,	int,	int,	int,	int,	int,	int # type
-% 1,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	22,	0,	32,	32,	1,	1,	1,	1,	1,	1,	1,	1,	1 # length
+% 1,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	24,	0,	32,	32,	1,	1,	1,	1,	1,	1,	1,	1,	1 # length
+#drop table cabact;
+#drop table rfoade;
 
-# 14:37:36 >  
-# 14:37:36 >  Done.
-# 14:37:36 >  
+# 23:33:01 >  
+# 23:33:01 >  Done.
+# 23:33:01 >  
 

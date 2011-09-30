@@ -27,9 +27,12 @@ Over..
 % .n,	.n # table_name
 % fieldid,	distance # name
 % bigint,	double # type
-% 1,	22 # length
+% 1,	24 # length
+#drop function f31;
+#drop table t31;
+#drop function fHtm;
 
-# 17:22:53 >  
-# 17:22:53 >  Done.
-# 17:22:53 >  
+# 23:24:10 >  
+# 23:24:10 >  Done.
+# 23:24:10 >  
 

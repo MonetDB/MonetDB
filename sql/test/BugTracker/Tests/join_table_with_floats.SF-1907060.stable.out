@@ -32,9 +32,11 @@ Over..
 % sys.t1907060_1 # table_name
 % age # name
 % double # type
-% 22 # length
+% 24 # length
+#drop table t1907060_1;
+#drop table t1907060_2;
 
-# 00:15:27 >  
-# 00:15:27 >  Done.
-# 00:15:27 >  
+# 23:23:57 >  
+# 23:23:57 >  Done.
+# 23:23:57 >  
 

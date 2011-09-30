@@ -75,12 +75,12 @@ Over..
 % sys. # table_name
 % L6 # name
 % double # type
-% 22 # length
+% 24 # length
 [ 2.059259259	]
 % sys. # table_name
 % L11 # name
 % double # type
-% 22 # length
+% 24 # length
 [ 2.376068376	]
 % sys.aircraft,	sys.aircraft,	sys.aircraft # table_name
 % L14,	L15,	L16 # name
@@ -115,12 +115,12 @@ Over..
 % sys.flight,	sys.flight,	sys. # table_name
 % from_airport,	to_airport,	L26 # name
 % char,	char,	double # type
-% 3,	3,	22 # length
+% 3,	3,	24 # length
 [ "ATL",	"BOS",	154.3684211	]
 % sys.ground_service,	sys. # table_name
 % city_code,	L31 # name
 % char,	double # type
-% 4,	22 # length
+% 4,	24 # length
 [ "MATL",	9	]
 [ "BBOS",	5	]
 [ "DDFW",	6	]
@@ -762,7 +762,7 @@ Over..
 % sys.fare,	sys.fare,	sys.fare,	sys.compound_class,	sys.fare,	sys.fare,	sys.compound_class # table_name
 % from_airport,	to_airport,	fare_class,	night,	one_way_cost,	rnd_trip_cost,	class_days # name
 % char,	char,	char,	char,	real,	real,	char # type
-% 3,	3,	3,	3,	13,	13,	7 # length
+% 3,	3,	3,	3,	15,	15,	7 # length
 [ "SFO",	"DFW",	"B",	"NO",	328,	0,	"1234567"	]
 [ "SFO",	"DFW",	"Y",	"NO",	328,	0,	"1234567"	]
 [ "SFO",	"DFW",	"YN",	"YES",	381,	762,	"1234567"	]

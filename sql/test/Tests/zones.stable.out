@@ -47,7 +47,7 @@ Over..
 % sys. # table_name
 % err # name
 % double # type
-% 22 # length
+% 24 # length
 #create table photoobj (
 #    objID       bigint      not null, -- object Identifier in table
 #    ra          float       not null, 
@@ -108,7 +108,26 @@ Over..
 % .s,	.s,	sys.t # table_name
 % objid,	distance,	expected # name
 % bigint,	double,	double # type
-% 1,	22,	22 # length
+% 1,	24,	24 # length
+#create function GetNearestObject(
+#                         pra double, pdec double) -- in degrees
+#returns Table (objID bigint, distance double) 
+#begin
+#	return TABLE(select objID,distance
+#	from GetNearbyObjects(pra,pdec,0.1) G
+#	where distance = (select min(distance) 
+#	from GetNearbyObjects(pra,pdec,0.1) G1));
+#end;
+#create function fGetNearestObjIdAllEq(
+#                         pra double, pdec double, pr double)
+#returns bigint
+#begin
+#	declare ob bigint;
+#	set ob= (select G.objID
+#	from GetNearestObject(pra,pdec) G);
+#        return ob;
+#end;
+#select fGetNearestObjIdAllEq(193.75,1.48,0.1) - nearest;
 % . # table_name
 % fgetnearestobjidalleq_single_value # name
 % bigint # type

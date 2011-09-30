@@ -31,9 +31,11 @@ Over..
 % sys.a,	sys.a,	sys.b,	sys.b # table_name
 % i,	f,	i,	j # name
 % int,	double,	int,	int # type
-% 1,	22,	1,	1 # length
+% 1,	24,	1,	1 # length
+#drop table case_tbl;
+#drop table case2_tbl;
 
-# 18:25:24 >  
-# 18:25:24 >  Done.
-# 18:25:24 >  
+# 23:23:43 >  
+# 23:23:43 >  Done.
+# 23:23:43 >  
 

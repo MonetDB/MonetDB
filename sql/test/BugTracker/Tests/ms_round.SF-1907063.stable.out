@@ -27,7 +27,8 @@ Over..
 % sys. # table_name
 % round_id # name
 % double # type
-% 22 # length
+% 24 # length
+#drop table t23;
 
 # 00:07:58 >  
 # 00:07:58 >  Done.

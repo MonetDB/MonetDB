@@ -71,7 +71,7 @@ Over..
 % sys.fare,	sys.fare,	sys.fare,	sys.fare,	sys.fare,	sys.fare,	sys.fare,	sys.fare # table_name
 % fare_code,	from_airport,	to_airport,	fare_class,	fare_airline,	restrict_code,	one_way_cost,	rnd_trip_cost # name
 % char,	char,	char,	char,	char,	char,	real,	real # type
-% 8,	3,	3,	3,	2,	5,	13,	13 # length
+% 8,	3,	3,	3,	2,	5,	15,	15 # length
 [ "7100001",	"ATL",	"BOS",	"F",	"",	"",	497,	994	]
 [ "7100002",	"ATL",	"BOS",	"FN",	"",	"",	348,	696	]
 [ "7100003",	"ATL",	"BOS",	"Y",	"",	"",	331,	662	]

@@ -61,7 +61,7 @@ end s0_1;
 % sys.tab_2826 # table_name
 % d # name
 % double # type
-% 22 # length
+% 24 # length
 #drop function func_2826;
 #drop table tab_2826;
 

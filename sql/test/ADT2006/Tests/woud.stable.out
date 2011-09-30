@@ -68,7 +68,7 @@ Over..
 % . # table_name
 % L5 # name
 % double # type
-% 22 # length
+% 24 # length
 [ NULL	]
 % sys.victim,	sys.victim # table_name
 % name,	features # name

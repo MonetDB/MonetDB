@@ -28,7 +28,7 @@ Over..
 % sys.media,	sys.media,	sys.media,	sys.media,	sys.media,	sys.media,	sys.media,	sys.media # table_name
 % media_id,	event_id,	media_description_id,	identifier,	quid,	preferred,	frame_rate,	frame_count # name
 % int,	int,	int,	varchar,	bigint,	boolean,	real,	int # type
-% 1,	1,	1,	11,	1,	5,	13,	3 # length
+% 1,	1,	1,	11,	1,	5,	15,	3 # length
 [ 1,	5,	1,	"identifier1",	1,	false,	25,	125	]
 [ 2,	2,	1,	"identifier2",	1,	false,	25,	125	]
 [ 3,	1,	2,	"identifier3",	1,	false,	25,	125	]

@@ -28,7 +28,7 @@ Over..
 % sys.s1,	sys. # table_name
 % framenumber,	L1 # name
 % int,	double # type
-% 2,	22 # length
+% 2,	24 # length
 [ 0,	0.3069530136	]
 [ 10,	0.3421598259	]
 [ 1,	0.3113380553	]

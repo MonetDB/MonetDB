@@ -33,7 +33,7 @@ Over..
 % sys. # table_name
 % L7 # name
 % double # type
-% 22 # length
+% 24 # length
 [ 0	]
 #drop table bug2739;
 
