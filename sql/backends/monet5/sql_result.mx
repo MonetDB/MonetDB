@@ -823,10 +823,8 @@ mvc_export_table(mvc *m, stream *s, res_table *t, BAT *order, BUN offset, BUN nr
 	as.nr_attrs = t->nr_cols + 1;	/* for the leader */
 	as.nr = nr;
 	as.offset = offset;
-	fmt = as.format = (Column *) GDKmalloc(sizeof(Column) * (as.nr_attrs + 1));
+	fmt = as.format = (Column *) GDKzalloc(sizeof(Column) * (as.nr_attrs + 1));
 	tres = GDKmalloc(sizeof(struct time_res) * (as.nr_attrs));
-
-	memset(fmt, 0, (as.nr_attrs + 1) * sizeof(Column));
 
 	fmt[0].c[0] = NULL;
 	fmt[0].sep = _strdup(btag);
