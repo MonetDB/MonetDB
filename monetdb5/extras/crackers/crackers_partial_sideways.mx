@@ -487,7 +487,8 @@ getTheLeastUsedMapPiece(int CBindex, int *batId, int *tailBatId){
 	return res;
 }
 
-void printStorageInfo(){
+#if 0
+static void printStorageInfo(void){
 	struct mapSetNode *curMapSet;	
 	struct mapNode *curMap;
 	struct Node *curPiece;
@@ -514,6 +515,7 @@ void printStorageInfo(){
 	}
 	printf("\n\n");
 }
+#endif
 
 static void
 removePieceFromStorageInfo(int batId, int tailBatId, int pieceId){
