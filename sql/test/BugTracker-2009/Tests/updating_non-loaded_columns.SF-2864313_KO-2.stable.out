@@ -40,25 +40,25 @@ Over..
 % sys.t1,	sys.t1,	sys.t1 # table_name
 % d1,	v2,	v1 # name
 % double,	varchar,	varchar # type
-% 22,	0,	0 # length
+% 24,	0,	0 # length
 [ 0,	"",	""	]
 [ 1025	]
 % sys.t1,	sys.t1,	sys.t1 # table_name
 % d1,	v2,	v1 # name
 % double,	varchar,	varchar # type
-% 22,	2,	0 # length
+% 24,	2,	0 # length
 [ 0,	"AA",	""	]
 [ 1025	]
 % sys.t1,	sys.t1,	sys.t1 # table_name
 % d1,	v2,	v1 # name
 % double,	varchar,	varchar # type
-% 22,	2,	0 # length
+% 24,	2,	0 # length
 [ -1.2,	"AA",	""	]
 [ 1025	]
 % sys.t1,	sys.t1,	sys.t1 # table_name
 % d1,	v2,	v1 # name
 % double,	varchar,	varchar # type
-% 22,	2,	2 # length
+% 24,	2,	2 # length
 [ -1.2,	"AA",	"BB"	]
 
 # 15:32:36 >  

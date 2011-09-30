@@ -43,7 +43,7 @@ Over..
 % sys.r,	. # table_name
 % groupid,	medianvalue # name
 % int,	double # type
-% 1,	22 # length
+% 1,	24 # length
 [ 1,	6	]
 [ 2,	5	]
 [ 3,	34.5	]
@@ -52,7 +52,7 @@ Over..
 % sys.r,	sys. # table_name
 % groupid,	stdev # name
 % int,	double # type
-% 1,	22 # length
+% 1,	24 # length
 [ 1,	5.314132102	]
 [ 2,	2.598076211	]
 [ 3,	23.41340428	]

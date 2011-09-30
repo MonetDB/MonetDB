@@ -48,7 +48,7 @@ Over..
 	writable      false
 2.	mTests_jdbc_tests
 	classname     java.lang.Double
-	displaysize   22
+	displaysize   24
 	label         mydouble
 	name          mydouble
 	type          8

@@ -29,17 +29,17 @@ Over..
 % sys.car,	sys.car,	sys.car,	sys. # table_name
 % L51,	gender,	L52,	L53 # name
 % wrd,	char,	bigint,	double # type
-% 1,	1,	2,	22 # length
+% 1,	1,	2,	24 # length
 [ 5,	"m",	23,	4.6	]
 % sys.car,	sys.car,	sys.car,	sys. # table_name
 % L56,	gender,	L57,	L60 # name
 % wrd,	char,	bigint,	double # type
-% 1,	1,	2,	22 # length
+% 1,	1,	2,	24 # length
 [ 5,	"m",	23,	4.6	]
 % sys.car,	sys.car,	sys.car,	sys.,	sys. # table_name
 % gender,	L63,	L64,	L65,	L66 # name
 % char,	wrd,	bigint,	double,	double # type
-% 1,	1,	2,	22,	22 # length
+% 1,	1,	2,	24,	24 # length
 [ "m",	5,	13,	123,	2.6	]
 
 # 21:47:28 >  

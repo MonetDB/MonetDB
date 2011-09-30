@@ -28,7 +28,7 @@ Over..
 % sys.o,	sys.,	sys. # table_name
 % lid,	avg_prijs,	current_prijs # name
 % int,	double,	double # type
-% 1,	22,	22 # length
+% 1,	24,	24 # length
 
 # 11:55:47 >  
 # 11:55:47 >  Done.

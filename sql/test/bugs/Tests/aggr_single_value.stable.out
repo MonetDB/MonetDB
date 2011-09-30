@@ -42,12 +42,12 @@ Over..
 % . # table_name
 % L4 # name
 % double # type
-% 22 # length
+% 24 # length
 [ 1	]
 % . # table_name
 % L7 # name
 % double # type
-% 22 # length
+% 24 # length
 [ NULL	]
 % . # table_name
 % L12 # name

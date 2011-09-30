@@ -36,110 +36,110 @@ Over..
 % sys.t,	sys.t # table_name
 % i,	f # name
 % int,	double # type
-% 1,	22 # length
+% 1,	24 # length
 [ 1,	0.1	]
 % sys.t,	sys.t # table_name
 % i,	f # name
 % int,	double # type
-% 1,	22 # length
+% 1,	24 # length
 [ 1,	0.1	]
 % sys.t,	sys.t # table_name
 % i,	f # name
 % int,	double # type
-% 1,	22 # length
+% 1,	24 # length
 [ 1,	0.1	]
 % sys.t,	sys.t # table_name
 % i,	f # name
 % int,	double # type
-% 1,	22 # length
+% 1,	24 # length
 [ 1,	0.1	]
 % sys.t,	sys.t # table_name
 % i,	f # name
 % int,	double # type
-% 1,	22 # length
-[ 1,	0.1	]
-[ 2,	0.2	]
-% sys.t,	sys.t # table_name
-% i,	f # name
-% int,	double # type
-% 1,	22 # length
+% 1,	24 # length
 [ 1,	0.1	]
 [ 2,	0.2	]
 % sys.t,	sys.t # table_name
 % i,	f # name
 % int,	double # type
-% 1,	22 # length
+% 1,	24 # length
 [ 1,	0.1	]
 [ 2,	0.2	]
 % sys.t,	sys.t # table_name
 % i,	f # name
 % int,	double # type
-% 1,	22 # length
+% 1,	24 # length
 [ 1,	0.1	]
 [ 2,	0.2	]
 % sys.t,	sys.t # table_name
 % i,	f # name
 % int,	double # type
-% 1,	22 # length
+% 1,	24 # length
+[ 1,	0.1	]
 [ 2,	0.2	]
 % sys.t,	sys.t # table_name
 % i,	f # name
 % int,	double # type
-% 1,	22 # length
+% 1,	24 # length
 [ 2,	0.2	]
 % sys.t,	sys.t # table_name
 % i,	f # name
 % int,	double # type
-% 1,	22 # length
+% 1,	24 # length
 [ 2,	0.2	]
 % sys.t,	sys.t # table_name
 % i,	f # name
 % int,	double # type
-% 1,	22 # length
+% 1,	24 # length
 [ 2,	0.2	]
 % sys.t,	sys.t # table_name
 % i,	f # name
 % int,	double # type
-% 1,	22 # length
+% 1,	24 # length
+[ 2,	0.2	]
+% sys.t,	sys.t # table_name
+% i,	f # name
+% int,	double # type
+% 1,	24 # length
 [ 2,	0.2	]
 [ 3,	0.3	]
 % sys.t,	sys.t # table_name
 % i,	f # name
 % int,	double # type
-% 1,	22 # length
+% 1,	24 # length
 [ 2,	0.2	]
 [ 3,	0.3	]
 % sys.t,	sys.t # table_name
 % i,	f # name
 % int,	double # type
-% 1,	22 # length
+% 1,	24 # length
 [ 2,	0.2	]
 [ 3,	0.3	]
 % sys.t,	sys.t # table_name
 % i,	f # name
 % int,	double # type
-% 1,	22 # length
+% 1,	24 # length
 [ 2,	0.2	]
 [ 3,	0.3	]
 % sys.t,	sys.t # table_name
 % i,	f # name
 % int,	double # type
-% 1,	22 # length
+% 1,	24 # length
 [ 3,	0.3	]
 % sys.t,	sys.t # table_name
 % i,	f # name
 % int,	double # type
-% 1,	22 # length
+% 1,	24 # length
 [ 3,	0.3	]
 % sys.t,	sys.t # table_name
 % i,	f # name
 % int,	double # type
-% 1,	22 # length
+% 1,	24 # length
 [ 3,	0.3	]
 % sys.t,	sys.t # table_name
 % i,	f # name
 % int,	double # type
-% 1,	22 # length
+% 1,	24 # length
 [ 3,	0.3	]
 
 # 12:36:53 >  

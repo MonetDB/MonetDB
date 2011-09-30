@@ -32,7 +32,8 @@ Over..
 % sys.sub,	sys.sub # table_name
 % x3,	y3 # name
 % double,	double # type
-% 22,	22 # length
+% 24,	24 # length
+#drop table div0;
 
 # 22:43:30 >  
 # 22:43:30 >  Done.

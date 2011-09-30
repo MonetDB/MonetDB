@@ -29,13 +29,13 @@ Over..
 % .L1,	sys.n8,	.,	sys.,	.,	sys. # table_name
 % L1,	L2,	single_value,	L3,	single_value,	L4 # name
 % char,	wrd,	char,	double,	char,	double # type
-% 22,	9,	15,	22,	20,	22 # length
+% 22,	9,	15,	24,	20,	24 # length
 [ "count(n8) == 100000000",	100000000,	"avg(n8) == 1.21",	1.210000001,	"avg(sqrt(n8)) == 1.1",	1.099999998	]
 #select 'avg(sqrt(n8)) == 1.1', avg(sqrt(a)) from n8;
 % .L11,	sys. # table_name
 % L11,	L12 # name
 % char,	double # type
-% 20,	22 # length
+% 20,	24 # length
 [ "avg(sqrt(n8)) == 1.1",	1.099999998	]
 
 # 13:13:03 >  

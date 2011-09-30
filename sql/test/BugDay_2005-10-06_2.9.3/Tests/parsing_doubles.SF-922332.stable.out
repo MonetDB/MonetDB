@@ -23,7 +23,7 @@ Over..
 % sys.test_dbl # table_name
 % val # name
 % double # type
-% 22 # length
+% 24 # length
 [ 1e+308	]
 
 # 12:38:01 >  

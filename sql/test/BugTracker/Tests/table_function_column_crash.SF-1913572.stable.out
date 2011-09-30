@@ -27,9 +27,11 @@ Over..
 % sys.s,	.n,	.n,	.n,	.n,	.n,	.n,	.n,	.n,	.n,	.n,	.n # table_name
 % objid,	objid,	run,	camcol,	field,	rerun,	type,	cx,	cy,	cz,	htmid,	distance # name
 % bigint,	bigint,	int,	int,	int,	int,	int,	double,	double,	double,	bigint,	double # type
-% 1,	1,	1,	1,	1,	1,	1,	22,	22,	22,	1,	22 # length
+% 1,	1,	1,	1,	1,	1,	1,	24,	24,	24,	1,	24 # length
+#drop function fGetNearbyObjEq;
+#drop table t1913572;
 
-# 09:16:15 >  
-# 09:16:15 >  Done.
-# 09:16:15 >  
+# 23:23:59 >  
+# 23:23:59 >  Done.
+# 23:23:59 >  
 

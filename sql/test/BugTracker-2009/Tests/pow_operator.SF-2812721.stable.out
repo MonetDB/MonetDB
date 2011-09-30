@@ -28,12 +28,12 @@ Over..
 % . # table_name
 % power_single_value # name
 % double # type
-% 22 # length
+% 24 # length
 [ 4	]
 % . # table_name
 % power_single_value # name
 % double # type
-% 22 # length
+% 24 # length
 [ 7.84	]
 
 # 23:30:53 >  

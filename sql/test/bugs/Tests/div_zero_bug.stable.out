@@ -31,7 +31,7 @@ Over..
 % sys.div_zero_bug,	sys. # table_name
 % grp,	L3 # name
 % int,	double # type
-% 1,	22 # length
+% 1,	24 # length
 [ NULL,	1	]
 [ 0,	NULL	]
 [ 1,	NULL	]

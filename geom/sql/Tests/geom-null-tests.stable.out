@@ -37,39 +37,39 @@ Over..
 % sys.geom,	sys. # table_name
 % id,	area_g # name
 % int,	double # type
-% 1,	22 # length
+% 1,	24 # length
 [ 1,	0	]
 [ 2,	0	]
 #SELECT id, Area(g) FROM geom WHERE id = 3; -- null argument, throws exception
 % sys.geom,	sys. # table_name
 % id,	area_g # name
 % int,	double # type
-% 1,	22 # length
+% 1,	24 # length
 [ 3,	NULL	]
 #SELECT id, Length(g) FROM geom WHERE id < 3;
 % sys.geom,	sys. # table_name
 % id,	length_g # name
 % int,	double # type
-% 1,	22 # length
+% 1,	24 # length
 [ 1,	0	]
 [ 2,	0	]
 #SELECT id, Length(g) FROM geom WHERE id = 3; -- null argument, throws exception
 % sys.geom,	sys. # table_name
 % id,	length_g # name
 % int,	double # type
-% 1,	22 # length
+% 1,	24 # length
 [ 3,	NULL	]
 #SELECT Distance(g1.g, g2.g) FROM geom g1, geom g2 WHERE g1.id = 1 AND g2.id = 2;
 % sys. # table_name
 % distance_g # name
 % double # type
-% 22 # length
+% 24 # length
 [ 1.414213562	]
 #SELECT Distance(g1.g, g2.g) FROM geom g1, geom g2 WHERE g1.id = 2 AND g2.id = 3; -- null argument, throws exception
 % sys. # table_name
 % distance_g # name
 % double # type
-% 22 # length
+% 24 # length
 [ NULL	]
 #SELECT id, Buffer(g, 10) FROM geom WHERE id < 3;
 % sys.geom,	sys. # table_name
@@ -336,27 +336,27 @@ Over..
 % sys.geom,	sys. # table_name
 % id,	x_g # name
 % int,	double # type
-% 1,	22 # length
+% 1,	24 # length
 [ 1,	1	]
 [ 2,	2	]
 #SELECT id, X(g) FROM geom WHERE id = 3; -- null argument, throws exception
 % sys.geom,	sys. # table_name
 % id,	x_g # name
 % int,	double # type
-% 1,	22 # length
+% 1,	24 # length
 [ 3,	NULL	]
 #SELECT id, Y(g) FROM geom WHERE id < 3;
 % sys.geom,	sys. # table_name
 % id,	y_g # name
 % int,	double # type
-% 1,	22 # length
+% 1,	24 # length
 [ 1,	1	]
 [ 2,	2	]
 #SELECT id, Y(g) FROM geom WHERE id = 3; -- null argument, throws exception
 % sys.geom,	sys. # table_name
 % id,	y_g # name
 % int,	double # type
-% 1,	22 # length
+% 1,	24 # length
 [ 3,	NULL	]
 #DROP TABLE geom;
 

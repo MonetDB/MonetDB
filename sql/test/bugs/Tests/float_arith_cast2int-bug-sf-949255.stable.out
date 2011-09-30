@@ -32,7 +32,7 @@ Over..
 % sys. # table_name
 % sql_div_f # name
 % double # type
-% 22 # length
+% 24 # length
 [ 1	]
 % . # table_name
 % sql_div_single_value # name

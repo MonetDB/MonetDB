@@ -50,7 +50,7 @@ Over..
 % .databasetest # table_name
 % currencyfloat # name
 % double # type
-% 22 # length
+% 24 # length
 [ 99989206.4	]
 
 # 00:27:23 >  
@@ -70,7 +70,7 @@ Over..
 % .databasetest # table_name
 % currencyfloat # name
 % double # type
-% 22 # length
+% 24 # length
 [ 99989206.4	]
 
 # 00:27:23 >  

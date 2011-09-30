@@ -49,11 +49,13 @@ Over..
 % sys.model,	sys.model,	sys.model,	sys.model # table_name
 % model_id,	is_mutagen,	lumo,	logp # name
 % int,	char,	double,	double # type
-% 1,	3,	22,	22 # length
+% 1,	3,	24,	24 # length
+#select * from atom;
 % sys.atom,	sys.atom,	sys.atom,	sys.atom,	sys.atom # table_name
 % atom_id,	model_id,	element,	type,	charge # name
 % varchar,	int,	char,	char,	double # type
-% 0,	1,	2,	3,	22 # length
+% 0,	1,	2,	3,	24 # length
+#select * from bond;
 % sys.bond,	sys.bond,	sys.bond,	sys.bond,	sys.bond # table_name
 % bond_id,	model_id,	atom1,	atom2,	type # name
 % int,	int,	varchar,	varchar,	char # type
@@ -10405,7 +10407,7 @@ Over..
 % sys.model,	sys.model,	sys.model,	sys.model # table_name
 % model_id,	is_mutagen,	lumo,	logp # name
 % int,	char,	double,	double # type
-% 3,	3,	22,	22 # length
+% 3,	3,	24,	24 # length
 [ 1,	"T",	-1.246,	4.23	]
 [ 2,	"F",	-1.429,	1.44	]
 [ 3,	"F",	-1.456,	1.86	]
@@ -10597,7 +10599,7 @@ Over..
 % sys.atom,	sys.atom,	sys.atom,	sys.atom,	sys.atom # table_name
 % atom_id,	model_id,	element,	type,	charge # name
 % varchar,	int,	char,	char,	double # type
-% 7,	3,	2,	3,	22 # length
+% 7,	3,	2,	3,	24 # length
 [ "d1_1",	1,	"c",	"22",	2.534771726e-09	]
 [ "d1_2",	1,	"c",	"22",	2.534771726e-09	]
 [ "d1_3",	1,	"c",	"22",	2.534771726e-09	]
