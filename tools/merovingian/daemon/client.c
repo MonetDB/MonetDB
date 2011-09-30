@@ -151,7 +151,7 @@ handleClient(int sock, char isusock)
 		user = s + 1;
 	} else {
 		e = newErr("client %s challenge error: %s", host, buf);
-		mnstr_printf(fout, "!monetdbd: incomplete challenge '%s'\n", user);
+		mnstr_printf(fout, "!monetdbd: incomplete challenge '%s'\n", buf);
 		mnstr_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
@@ -186,7 +186,7 @@ handleClient(int sock, char isusock)
 		passwd = s + 1;
 	} else {
 		e = newErr("client %s challenge error: %s", host, buf);
-		mnstr_printf(fout, "!monetdbd: incomplete challenge '%s'\n", user);
+		mnstr_printf(fout, "!monetdbd: incomplete challenge, missing password after '%s'\n", user);
 		mnstr_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
@@ -200,7 +200,7 @@ handleClient(int sock, char isusock)
 		lang = s + 1;
 	} else {
 		e = newErr("client %s challenge error: %s", host, buf);
-		mnstr_printf(fout, "!monetdbd: incomplete challenge, missing language\n");
+		mnstr_printf(fout, "!monetdbd: incomplete challenge, missing language after '%s'\n", passwd);
 		mnstr_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
