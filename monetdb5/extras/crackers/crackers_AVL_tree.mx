@@ -106,14 +106,14 @@ struct NodeSimple * InsertTreeSimple_@1(struct NodeSimple ** head, oid position,
 
 /* Functions shared within the crackers module/library */
 @:AVLtreeSharedFunctions_impl_0()@
-@:AVLtreeSharedFunctions_impl_0(Simple)@
+@:AVLtreeSharedFunctions_impl_0(Simple,static)@
 @:AVLtreeSharedFunctions_impl_2@
 @:TypeSwitch(AVLtreeSharedFunctions_impl_1)@
 /*
  * @-Functions shared within the crackers module/library
  */
 @= AVLtreeSharedFunctions_impl_0
-int
+ @2 int
 Height@1(struct Node@1 * x){
         if( x == NULL )
                 return -1;
@@ -121,7 +121,7 @@ Height@1(struct Node@1 * x){
                 return x->height;
 }
 
-struct Node@1 *
+ @2 struct Node@1 *
 SingleRotateLeft@1(struct Node@1 ** head, struct Node@1 * node){
         struct Node@1 * l, *lr;
 	int nodeLh,nodeRh,lh;
@@ -160,7 +160,7 @@ SingleRotateLeft@1(struct Node@1 ** head, struct Node@1 * node){
         return l;
 }
 
-struct Node@1 *
+ @2 struct Node@1 *
 SingleRotateRight@1(struct Node@1 ** head, struct Node@1 * node){
         struct Node@1 * r, *rl;
 	int nodeLh,nodeRh,rh;
@@ -201,13 +201,13 @@ SingleRotateRight@1(struct Node@1 ** head, struct Node@1 * node){
         return r;
 }
 
-struct Node@1 *
+ @2 struct Node@1 *
 DoubleRotateLeft@1(struct Node@1 **head, struct Node@1 * node){
             node->left = SingleRotateRight@1(head, node->left);
             return SingleRotateLeft@1(head, node);
 }
 
-struct Node@1 *
+ @2 struct Node@1 *
 DoubleRotateRight@1(struct Node@1 **head, struct Node@1 * node){
             node->right = SingleRotateLeft@1(head, node->right);
             return SingleRotateRight@1(head, node);
@@ -1230,7 +1230,7 @@ getN@1(struct Node@1 * current){
 }
 
 /* Get the previous node in the tree (in terms of value), the result can be any node, deleted or no */
-struct Node@1 *
+static struct Node@1 *
 getPreviousNodeAny@1(struct Node@1 * current){
 	struct Node@1 *res = NULL;
 

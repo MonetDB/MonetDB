@@ -281,7 +281,7 @@ crackers_export str CRKsortBandJoin_@1(int *resid, int *bidL, int *bidR, @1 *c1,
 @
 @c
 /* serves both normal equi-join (nil_on_miss==NULL) and outerjoin (nil_on_miss=nil) */
-lng
+static lng
 CRKmergejoin(BAT *bn,BAT *l, BAT *r){
 	ptr nil_on_miss=NULL;
 	BUN *limit =NULL;
@@ -408,7 +408,7 @@ CRKmergejoin(BAT *bn,BAT *l, BAT *r){
 @
 @c
 
-lng
+static lng
 CRKjoin(BAT *bn, BAT *l, BAT *r) {
 	ptr v, nil = ATOMnilptr(r->htype);
 	BUN p, q;
@@ -4320,7 +4320,7 @@ str CRKsortBandJoin_@1(int *resid, int *bidL, int *bidR, @1 *c1, @1 *c2, bit *in
 	return MAL_SUCCEED;
 }
 
-void cacheConsciousAlignStep_@1(BAT *mapLeft, struct Node *curNodeRight, oid startPos, oid endPos, BAT *indexRight, BUN baseRight, BAT * indexLeft, int mapLpos, oid cacheThreshold, oid RightStartPos, oid RightEndPos){
+static void cacheConsciousAlignStep_@1(BAT *mapLeft, struct Node *curNodeRight, oid startPos, oid endPos, BAT *indexRight, BUN baseRight, BAT * indexLeft, int mapLpos, oid cacheThreshold, oid RightStartPos, oid RightEndPos){
 	oid newPosition=0;
 	@1 bound = *(@1*)Tloc(indexRight, baseRight + curNodeRight->position);
 	
