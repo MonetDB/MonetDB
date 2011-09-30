@@ -399,19 +399,19 @@ forkMserver(char *database, sabdb** stats, int force)
 									"database '%s' has inconsistent state "
 									"(sabaoth administration reports running, "
 									"but process seems gone), "
-									"review merovingian's "
+									"review monetdbd's "
 									"logfile for any peculiarities", database));
 					case SABdbCrashed:
 						return(newErr(
 									"database '%s' has crashed after starting, "
 									"manual intervention needed, "
-									"check merovingian's logfile for details",
+									"check monetdbd's logfile for details",
 									database));
 					case SABdbInactive:
 						return(newErr(
 									"database '%s' appears to shut "
 									"itself down after starting, "
-									"check merovingian's logfile for possible "
+									"check monetdbd's logfile for possible "
 									"hints", database));
 					default:
 						return(newErr("unknown state: %d", (int)(*stats)->state));
@@ -434,7 +434,7 @@ forkMserver(char *database, sabdb** stats, int force)
 					return(newErr(
 								"database '%s' has crashed after starting, "
 								"manual intervention needed, "
-								"check merovingian's logfile for details",
+								"check monetdbd's logfile for details",
 								database));
 				case SABdbInactive:
 					/* due to GDK only locking once it has loaded all
@@ -447,7 +447,7 @@ forkMserver(char *database, sabdb** stats, int force)
 								"database '%s' either needs a longer timeout "
 								"to start up, or appears to shut "
 								"itself down after starting, "
-								"review merovingian's logfile for any "
+								"review monetdbd's logfile for any "
 								"peculiarities", database));
 				default:
 					return(newErr("unknown state: %d", (int)(*stats)->state));

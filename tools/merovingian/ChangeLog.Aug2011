@@ -1,3 +1,7 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
+* Fri Sep 30 2011 Fabian Groffen <fabian@cwi.nl>
+- To avoid confusion, all occurrences of merovingian were changed into
+  monetdbd for error messages sent to a client.
+
