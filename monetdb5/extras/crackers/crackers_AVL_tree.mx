@@ -100,6 +100,7 @@ struct NodeSimple * InsertTreeSimple_@1(struct NodeSimple ** head, oid position,
 #include "crackers.h"
 
 /* Local support functions and macros */
+@:AVLtreeLocalFunctions3()@
 @:AVLtreeLocalFunctions2()@
 @:AVLtreeLocalFunctions2(Simple)@
 @:AVLtreeLocalFunctions@
@@ -107,6 +108,7 @@ struct NodeSimple * InsertTreeSimple_@1(struct NodeSimple ** head, oid position,
 /* Functions shared within the crackers module/library */
 @:AVLtreeSharedFunctions_impl_0()@
 @:AVLtreeSharedFunctions_impl_0(Simple,static)@
+@:AVLtreeSharedFunctions_impl_3()@
 @:AVLtreeSharedFunctions_impl_2@
 @:TypeSwitch(AVLtreeSharedFunctions_impl_1)@
 /*
@@ -212,16 +214,18 @@ DoubleRotateRight@1(struct Node@1 **head, struct Node@1 * node){
             node->right = SingleRotateLeft@1(head, node->right);
             return SingleRotateRight@1(head, node);
 }
+@
 
-struct Node@1 *
-findPreviousPieceWalkingBack@1(struct Node@1 * node){
-	struct Node@1 * res = NULL, *current = node;
+@= AVLtreeSharedFunctions_impl_3
+struct Node *
+findPreviousPieceWalkingBack(struct Node * node){
+	struct Node * res = NULL, *current = node;
 
 	if (current == NULL)
 		return NULL;
 
 	if (current->left != NULL)
-                res= getP@1(current->left);
+                res= getP(current->left);
 	if (res != NULL)
 		return res;
 
@@ -239,21 +243,21 @@ findPreviousPieceWalkingBack@1(struct Node@1 * node){
 		if (current->deleted == FALSE)
 			res = current;
 		else if (current->left != NULL)
-                	res= getP@1(current->left);
+                	res= getP(current->left);
 	}
 	
 	return res;
 }
 
-struct Node@1 *
-findNextPiece@1(struct Node@1 * node){
-	struct Node@1 * res = NULL, *current = node;
+struct Node *
+findNextPiece(struct Node * node){
+	struct Node * res = NULL, *current = node;
 
 	if (current == NULL)
 		return NULL;
 
 	if (current->right != NULL)
-                res= getN@1(current->right);
+                res= getN(current->right);
 	if (res != NULL)
 		return res;
 
@@ -271,20 +275,20 @@ findNextPiece@1(struct Node@1 * node){
 		if (current->deleted == FALSE)
 			res = current;
 		else if (current->right != NULL)
-                	res= getN@1(current->right);
+                	res= getN(current->right);
 	}
 	
 	return res;
 }
 
 void
-FreeAVLTree@1(struct Node@1 * current){
+FreeAVLTree(struct Node * current){
 
 	if (current->left != NULL)
-		FreeAVLTree@1(current->left);
+		FreeAVLTree(current->left);
 
 	if (current->right != NULL)
-		FreeAVLTree@1(current->right);
+		FreeAVLTree(current->right);
 
 	GDKfree(current);
 		
@@ -293,9 +297,9 @@ FreeAVLTree@1(struct Node@1 * current){
 
 
 /* Get the piece that holds the lowest values */
-struct Node@1 *
-getFirstNode@1(struct Node@1 * node){
-        struct Node@1 *res=NULL, *cur;
+struct Node *
+getFirstNode(struct Node * node){
+        struct Node *res=NULL, *cur;
         cur = node;
         while(cur != NULL){
                 res = cur;
@@ -309,9 +313,9 @@ getFirstNode@1(struct Node@1 * node){
 }
 
 /* Get the piece that holds the highest values */
-struct Node@1 *
-getLastNode@1(struct Node@1 * node){
-        struct Node@1 *res=NULL, *cur;
+struct Node *
+getLastNode(struct Node * node){
+        struct Node *res=NULL, *cur;
         cur = node;
         while(cur != NULL){
                 res = cur;
@@ -1189,7 +1193,7 @@ getNextNonLocalNode(struct Node * current){
 }
 
 @
-@= AVLtreeLocalFunctions2
+@= AVLtreeLocalFunctions3
 
 static struct Node@1 *
 getP@1(struct Node@1 * current){
@@ -1228,6 +1232,9 @@ getN@1(struct Node@1 * current){
 	}
 	return res;
 }
+
+@
+@= AVLtreeLocalFunctions2
 
 /* Get the previous node in the tree (in terms of value), the result can be any node, deleted or no */
 static struct Node@1 *
