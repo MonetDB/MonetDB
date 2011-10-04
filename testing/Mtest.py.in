@@ -1729,6 +1729,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
                 if TIMEOUT < 1 and par['TIMEOUT'] > 0:
                     TIMEOUT = 1
         if env['exe']['Mtimeout'][0]:
+            # set timeout
             env['exe']['Mtimeout'] = env['exe']['Mtimeout'][0], 'Mtimeout -timeout %s ' % str(TIMEOUT)
             SetExecEnv(env['exe'],0)
         CTIMEOUT = 0
@@ -1893,6 +1894,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
             Warn("Flushing STDOUT in RunTest failed with #%d: '%s'." % (IOerrNo, IOerrStr))
 
         if env['exe']['Mtimeout'][0]:
+            # reset timeout
             env['exe']['Mtimeout'] = env['exe']['Mtimeout'][0], 'Mtimeout -timeout %s ' % str(par['TIMEOUT'])
             SetExecEnv(env['exe'],0)
 
@@ -1906,25 +1908,10 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
                 Warn("mFilter failed\n")
                 pass
 
-            MDIFF0 = env['exe']['Mdiff'][1]
-            MDIFF1 = MDIFF0+' -d'
-
-            #TODO:
-            #timedout = 1
-            #while timedout and ACCURACY >= 0:
-            #       timedout = 0
-            #       signal.alarm(par['TIMEOUT'])
-            #       try:
-            #               os.system(MDIFF+' -I"'+par['IGNORE']+'" -C'+par['CONTEXT']+' -A'+str(ACCURACY)+' -r"'+REV+'" '+TST+STABLEout+'.FILTERED '+TST+'.test.out.FILTERED '+TST+'.out.diff.html')
-            #       except TimeoutError, t:
-            #               timedout = 1
-            #       signal.alarm(0)
-            #       ACCURACY = ACCURACY - 1
-            MDIFF = MDIFF1
             diff_html = open('%s.out.diff.html' % TST,"w")
             diff_html.write('<!--MajorDiffs-->\n')
             diff_html.close()
-            timedout = 1
+            timedout = True
             if timeout == F_TIME or recursion == F_RECU or killed == F_KILL or segfaulted == F_SEGV:
                 # test run timed out or orphan processes were killed => expect major differences!
                 ACCURACYout = -1
@@ -1938,10 +1925,9 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
                 if szt < szs*0.5 or szt > szs*1.5:
                     # filesizes differ significantly => expect major differences!
                     ACCURACYout = -1
-            while timedout and MDIFF == MDIFF1:
+            while timedout:
                 cmd = ['Mdiff']
                 if ACCURACYout == -1:
-                    MDIFF = MDIFF0
                     ACCURACYout = 0
                 else:
                     cmd.append('-d')
@@ -1972,6 +1958,8 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
                     raise
                 timedout = proc.killed
                 ACCURACYout = ACCURACYout - 1
+                if ACCURACYout < 0:
+                    timedout = False # don't try again
             if env.get('ECHO_DIFF'):
                 cmd = ['diff']
                 if ACCURACYout >= 0:
@@ -1983,22 +1971,10 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
                 proc = subprocess.Popen(cmd)
                 proc.wait()
 
-            #TODO:
-            #timedout = 1
-            #while timedout and ACCURACY >= 0:
-            #       timedout = 0
-            #       signal.alarm(par['TIMEOUT'])
-            #       try:
-            #               os.system(MDIFF+' -I"'+par['IGNORE']+'" -C'+par['CONTEXT']+' -A'+str(ACCURACY)+' -r"'+REV+'" '+TST+STABLEerr+'.FILTERED '+TST+'.test.err.FILTERED '+TST+'.err.diff.html')
-            #       except TimeoutError, t:
-            #               timedout = 1
-            #       signal.alarm(0)
-            #       ACCURACY = ACCURACY - 1
-            MDIFF = MDIFF1
             diff_html = open('%s.err.diff.html' % TST,"w")
             diff_html.write('<!--MajorDiffs-->\n')
             diff_html.close()
-            timedout = 1
+            timedout = True
             if timeout == F_TIME or recursion == F_RECU or killed == F_KILL or segfaulted == F_SEGV:
                 # test run timed out or orphan processes were killed => expect major differences!
                 ACCURACYerr = -1
@@ -2012,10 +1988,9 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
                 if szt < szs*0.5 or szt > szs*1.5:
                     # filesizes differ significantly => expect major differences!
                     ACCURACYerr = -1
-            while timedout and MDIFF == MDIFF1:
+            while timedout:
                 cmd = ['Mdiff']
                 if ACCURACYerr == -1:
-                    MDIFF = MDIFF0
                     ACCURACYerr = 0
                 else:
                     cmd.append('-d')
@@ -2046,6 +2021,8 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
                     raise
                 timedout = proc.killed
                 ACCURACYerr = ACCURACYerr - 1
+                if ACCURACYerr < 0:
+                    timedout = False # don't try again
             if env.get('ECHO_DIFF'):
                 cmd = ['diff']
                 if ACCURACYerr >= 0:
