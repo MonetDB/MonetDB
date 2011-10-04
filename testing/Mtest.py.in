@@ -3331,6 +3331,8 @@ def main(argv) :
     if proc.returncode == 0:
         REV = out.strip()
         hgid = REV.split()[0].rstrip('+')
+    else:
+        hgid = None
     proc = None
     # fix up URLPREFIX
     global URLPREFIX
