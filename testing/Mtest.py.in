@@ -126,6 +126,32 @@ except ImportError:
             p = p + os.pathsep + os.environ['PYTHONPATH']
         os.environ['PYTHONPATH'] = p
 
+import string                   # for whitespace
+def splitcommand(cmd):
+    '''Like string.split, except take quotes into account.'''
+    q = None
+    w = []
+    command = []
+    for c in cmd:
+        if q:
+            if c == q:
+                q = None
+            else:
+                w.append(c)
+        elif c in string.whitespace:
+            if w:
+                command.append(''.join(w))
+            w = []
+        elif c == '"' or c == "'":
+            q = c
+        else:
+            w.append(c)
+    if w:
+        command.append(''.join(w))
+    if len(command) > 1 and command[0] == 'call':
+        del command[0]
+    return command
+
 def isexecutable(TST, ext = '.sh') :
     if   os.name == "nt":
         for ext in ".exe", ".com", ".bat", ".cmd":
@@ -407,6 +433,7 @@ class Timer:
 
 STDOUT = sys.stdout
 STDERR = sys.stdout     # err
+REV = ''                # revision (output of hg id), default unknown
 
 black = 'black'                         # #000000
 white = 'white'                         # #ffffff
@@ -533,7 +560,7 @@ def CreateHtmlIndex (env, *body) :
             if URLPREFIX:
                 header = Element('a',
                                  {'href': '%s%s/%s' % (URLPREFIX, url(TSTDIR), TSTSUFF),
-                                  'target': '%s%s_%s_body' % (URLSUFFIX_D, DISTVER, TSTDIR),
+                                  'target': '%s_%s_body' % (DISTVER, TSTDIR),
                                   'class': 'black'},
                                  header)
         else:
@@ -607,19 +634,6 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT, SockTime) :
     TSTDIR    = env['TSTDIR']
     TSTSRCDIR = env['TSTSRCDIR']
 
-    testT = re.compile("^/"+TST+EXT+"/([^/]*)/", re.MULTILINE)
-    testS = re.compile("^/"+TST+stableWHAT+"/([^/]*)/", re.MULTILINE)
-    REVt="?"
-    REVs="?"
-    entries = os.path.join(TSTSRCDIR,"CVS","Entries")
-    if os.path.isfile(entries):
-        for l in open(entries):
-            mT = testT.match(l)
-            if mT:
-                REVt=mT.group(1)
-            mS = testS.match(l)
-            if mS:
-                REVs=mS.group(1)
     l = ''
     for l in open(TST+WHAT+".diff.html"):
         pass
@@ -691,11 +705,13 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT, SockTime) :
     f.close()
     f = open(".%s%s.head.html" % (TST, WHAT),"w")
     target = '%s_%s_%s_%s_body' % (DISTVER, TSTDIR, TST, WHAT[1:])
-    cvs = Text('cvs')
-    if URLPREFIX:
-        cvs = Element('a', {'href': '%s%s/%s%s' % (URLPREFIX, url(TSTDIR), TSTSUFF, URLSUFFIX_D),
-                            'target': target},
-                      cvs)
+    if REV:                     # implies URLPREFIX is not None
+        urlpref = '%s%s/%s' % (URLPREFIX, url(TSTDIR), TSTSUFF)
+        hg = Element('a', {'href': urlpref,
+                           'target': target},
+                     Text('hg'))
+    else:
+        hg = None
     text = Element('div', {'class': 'header'},
                    Text(SYSTEM),
                    Text(' '),
@@ -706,24 +722,40 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT, SockTime) :
                    Text(' between '),
                    Element('a', {'href': '%s%s' % (TST, stableWHAT),
                                  'target': target},
-                           Text('%s (r%s)' % (stableWHAT[1:], REVs))),
-                   Text(' and '),
-                   Element('a', {'href': '%s.test%s' % (TST, WHAT),
-                                 'target': target},
-                           Text('test%s' % WHAT)),
-                   Text(' of '),
-                   Element('a', {'href': TST + EXT, 'target': target},
-                           Text('%s%s (r%s)' % (TST, EXT, REVt))),
-                   Text(' in '),
-                   Element('a', {'href': './', 'target': target},
-                           Text(TSTDIR)),
-                   Text(' ('),
-                   cvs,
-                   Text(', '),
-                   Element('a', {'href': url(env['RELSRCDIR']),
-                                 'target': target},
-                           Text('src')))
-    text.addchild(Text(')'))
+                           Text(stableWHAT[1:])))
+    if REV:
+        text.addchildren([
+                Text(' (id '),
+                Element('a', {'href': '%s/%s%s' % (urlpref, TST, stableWHAT),
+                              'target': target}, Text(REV)),
+                Text(')')])
+    text.addchildren([
+            Text(' and '),
+            Element('a', {'href': '%s.test%s' % (TST, WHAT),
+                          'target': target},
+                    Text('test%s' % WHAT)),
+            Text(' of '),
+            Element('a', {'href': TST + EXT, 'target': target},
+                    Text('%s%s' % (TST, EXT)))])
+    if REV:
+        text.addchildren([
+                Text(' (id '),
+                Element('a', {'href': '%s/%s%s' % (urlpref, TST, EXT),
+                              'target': target}, Text(REV)),
+                Text(')')])
+    text.addchildren([
+            Text(' in '),
+            Element('a', {'href': './', 'target': target},
+                    Text(TSTDIR)),
+            Text(' (')])
+    if hg:
+        text.addchild(hg)
+        text.addchild(Text(', '))
+    text.addchildren([
+            Element('a', {'href': url(env['RELSRCDIR']),
+                          'target': target},
+                    Text('src')),
+            Text(')')])
     html = Element('html', {},
                    Element('head', {},
                            Element('title', {},
@@ -748,7 +780,7 @@ def CreateSrcIndex (env, TST, EXT) :
     TSTDIR    = env['TSTDIR']
 
     if URLPREFIX:
-        framesrc = '%s%s/%s/%s%s%s' % (URLPREFIX, url(TSTDIR), TSTSUFF, TST, EXT, URLSUFFIX_F)
+        framesrc = '%s%s/%s/%s%s' % (URLPREFIX, url(TSTDIR), TSTSUFF, TST, EXT)
     else:
         f = open("."+TST+".nosrc.index.html","w")
         html = Element('html', {},
@@ -803,7 +835,7 @@ def CreateSrcIndex (env, TST, EXT) :
             slink = Text(s)
             if URLPREFIX:
                 slink = Element('a',
-                                {'href': '%s%s/%s/%s%s' % (URLPREFIX, url(TSTDIR), TSTSUFF, s, URLSUFFIX_F),
+                                {'href': '%s%s/%s/%s' % (URLPREFIX, url(TSTDIR), TSTSUFF, s),
                                  'target': '%s_%s_%s_body' % (DISTVER, TSTDIR, TST)},
                                 slink)
             tr.addchild(Element('td', {'class': 'header'},
@@ -1169,7 +1201,12 @@ def ApproveOutput (env, TST) :
             else:
                 patch = os.path.join(os.sep, 'tmp')
             patch = os.path.join(patch, "%s.patch-%s" % (os.path.basename(stableOUTPUT), str(os.getpid())))
-            os.system('diff -Bb "-I^[#=]" -U0 "%s" "%s" > "%s"' % (stableOUTPUT,testOUTPUT,patch+".0"))
+            f = open(patch + '.0', 'w')
+            proc = subprocess.Popen(['diff', '-Bb', '-I^[#=]', '-U0',
+                                     stableOUTPUT, testOUTPUT],
+                                    stdout = f)
+            proc.wait()
+            f.close()
             if os.path.getsize(patch+".0"):
                 print "Approving  %s  ->  stable.%s%s   (%s file)" % (os.path.join(TSTDIR,TST+".test."+WHAT), WHAT, SYSTEM, oc)
 
@@ -1191,8 +1228,12 @@ def ApproveOutput (env, TST) :
                 f.flush()
                 f.close()
                 shutil.copy(stableOUTPUT,stableOUTPUT+".ORG")
-                os.system('patch "%s" "%s"' % (stableOUTPUT,patch+".1"))
-                os.system('diff -u "%s" "%s" > "%s"' % (stableOUTPUT+".ORG",stableOUTPUT,patch))
+                proc = subprocess.Popen(['patch', stableOUTPUT, patch + '.1'])
+                proc.wait()
+                f = open(patch, 'w')
+                proc = subprocess.Popen(['diff', '-u', stableOUTPUT + '.ORG', stableOUTPUT], stdout = f)
+                proc.wait()
+                f.close()
                 os.remove(stableOUTPUT+".ORG")
                 os.remove(patch+".1")
             else:
@@ -1265,10 +1306,11 @@ def expandvars(path, environ = os.environ):
 def GetBitsAndOIDsAndModsAndStaticAndThreads(env) :
     rtrn = 0
     TSTPREF = env['TSTPREF']
-    cmd = '%s --dbname=%s' % (env['exe']['Mserver'][1], TSTPREF)
+    cmd = splitcommand(env['exe']['Mserver'][1])
+    cmd.append('--dbname=%s' % TSTPREF)
     if verbose:
-        print 'GetBitsAndOIDsAndModsAndStaticAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % cmd
-    proc = subprocess.Popen(cmd, shell = True, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True)
+        print 'GetBitsAndOIDsAndModsAndStaticAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd)
+    proc = subprocess.Popen(cmd, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True)
     t = Timer(float(par['TIMEOUT']), killProc, args = [proc, proc.stderr, cmd])
     try:
         t.start()
@@ -1294,12 +1336,12 @@ def GetBitsAndOIDsAndModsAndStaticAndThreads(env) :
         qOut, qErr = proc.communicate(input = input)
         t.cancel()
         if verbose:
-            print 'GetBitsAndOIDsAndModsAndStaticAndThreads: process exited "%s" (%s)\n' % (cmd, proc.returncode)
+            print 'GetBitsAndOIDsAndModsAndStaticAndThreads: process exited "%s" (%s)\n' % ('" "'.join(cmd), proc.returncode)
     except KeyboardInterrupt:
         t.cancel()
         killProc(proc, proc.stderr, cmd)
         if verbose:
-            print 'GetBitsAndOIDsAndModsAndStaticAndThreads: process killed "%s"\n' % cmd
+            print 'GetBitsAndOIDsAndModsAndStaticAndThreads: process killed "%s"\n' % '" "'.join(cmd)
         raise
     env['TST_MODS'] = []
     env['TST_BITS'] = ""
@@ -1339,7 +1381,7 @@ def GetBitsAndOIDsAndModsAndStaticAndThreads(env) :
         if not env['TST_MODS']:
             ErrMsg("Checking for Modules failed!")
         if not env['TST_BITS'] or not env['TST_OIDS'] or not env['TST_MODS']:
-            STDERR.write(cmd + "\n\n")
+            STDERR.write(' '.join(cmd) + "\n\n")
             STDERR.write(qOut)
             STDERR.write("\n")
             STDERR.write(qErr)
@@ -1350,7 +1392,7 @@ def GetBitsAndOIDsAndModsAndStaticAndThreads(env) :
         rtrn = 1
         ErrMsg("No output from Mserver/mserver5 when checking for Bits, OIDs, Modules & Threads!?")
         if qErr:
-            STDERR.write(cmd + "\n\n")
+            STDERR.write(' '.join(cmd) + "\n\n")
             STDERR.write(qErr)
             STDERR.write("\n")
             STDERR.flush()
@@ -1385,10 +1427,11 @@ def CheckBATs(env, TST, TSTDB) :
         # Warn("MonetDB/5: Check, whether required BATs do exist, is not possible, yet!")
         return missing
 
-    cmd = '%s --dbname=%s' % (env['exe']['Mserver'][1], TSTDB)
+    cmd = splitcommand(env['exe']['Mserver'][1])
+    cmd.append('--dbname=%s' % TSTDB)
     if verbose:
-        print 'CheckBATs: starting process "%s" (inpipe, outpipe, errpipe)\n' % cmd
-    proc = subprocess.Popen(cmd, shell = True, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True)
+        print 'CheckBATs: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd)
+    proc = subprocess.Popen(cmd, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True)
     t = Timer(float(par['TIMEOUT']), killProc, args = [proc, proc.stderr, cmd])
     try:
         t.start()
@@ -1409,12 +1452,12 @@ def CheckBATs(env, TST, TSTDB) :
         ''')
         t.cancel()
         if verbose:
-            print 'CheckBATs: process exited "%s" (%s)\n' % (cmd, proc.returncode)
+            print 'CheckBATs: process exited "%s" (%s)\n' % ('" "'.join(cmd), proc.returncode)
     except KeyboardInterrupt:
         t.cancel()
         killProc(proc, proc.stderr, cmd)
         if verbose:
-            print 'CheckBATs: process killed "%s"\n' % cmd
+            print 'CheckBATs: process killed "%s"\n' % '" "'.join(cmd)
         raise
     TST_BATS = []
     if qOut:
@@ -1426,7 +1469,7 @@ def CheckBATs(env, TST, TSTDB) :
     else:
         Warn("No output from Mserver when checking for Bats!?")
         if qErr:
-            STDERR.write(cmd + "\n\n")
+            STDERR.write(' '.join(cmd) + "\n\n")
             STDERR.write(qErr)
             STDERR.write("\n")
             STDERR.flush()
@@ -1706,6 +1749,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
                 if TIMEOUT < 1 and par['TIMEOUT'] > 0:
                     TIMEOUT = 1
         if env['exe']['Mtimeout'][0]:
+            # set timeout
             env['exe']['Mtimeout'] = env['exe']['Mtimeout'][0], 'Mtimeout -timeout %s ' % str(TIMEOUT)
             SetExecEnv(env['exe'],0)
         CTIMEOUT = 0
@@ -1870,6 +1914,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
             Warn("Flushing STDOUT in RunTest failed with #%d: '%s'." % (IOerrNo, IOerrStr))
 
         if env['exe']['Mtimeout'][0]:
+            # reset timeout
             env['exe']['Mtimeout'] = env['exe']['Mtimeout'][0], 'Mtimeout -timeout %s ' % str(par['TIMEOUT'])
             SetExecEnv(env['exe'],0)
 
@@ -1883,41 +1928,14 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
                 Warn("mFilter failed\n")
                 pass
 
-            testO = re.compile("^/"+TST+STABLEout+"/([^/]*)/", re.MULTILINE)
-            testE = re.compile("^/"+TST+STABLEerr+"/([^/]*)/", re.MULTILINE)
-            REVo="?"
-            REVe="?"
-            entries = os.path.join(TSTSRCDIR,"CVS","Entries")
-            if os.path.isfile(entries):
-                for l in open(entries):
-                    mO = testO.match(l)
-                    if mO:
-                        REVo=mO.group(1)
-                    mE = testE.match(l)
-                    if mE:
-                        REVe=mE.group(1)
-            REVo=" (r"+REVo+")"
-            REVe=" (r"+REVe+")"
-
-            MDIFF0 = env['exe']['Mdiff'][1]
-            MDIFF1 = MDIFF0+' -d'
-
-            #TODO:
-            #timedout = 1
-            #while timedout and ACCURACY >= 0:
-            #       timedout = 0
-            #       signal.alarm(par['TIMEOUT'])
-            #       try:
-            #               os.system(MDIFF+' -I"'+par['IGNORE']+'" -C'+par['CONTEXT']+' -A'+str(ACCURACY)+' -r"'+REVo+'" '+TST+STABLEout+'.FILTERED '+TST+'.test.out.FILTERED '+TST+'.out.diff.html')
-            #       except TimeoutError, t:
-            #               timedout = 1
-            #       signal.alarm(0)
-            #       ACCURACY = ACCURACY - 1
-            MDIFF = MDIFF1
+            if REV:
+                hglink = ' (id <a href="%s%s/%s/%s%s">%s</a>)' % (URLPREFIX, url(TSTDIR), TSTSUFF, TST, EXT, REV)
+            else:
+                hglink = ''
             diff_html = open('%s.out.diff.html' % TST,"w")
             diff_html.write('<!--MajorDiffs-->\n')
             diff_html.close()
-            timedout = 1
+            timedout = True
             if timeout == F_TIME or recursion == F_RECU or killed == F_KILL or segfaulted == F_SEGV:
                 # test run timed out or orphan processes were killed => expect major differences!
                 ACCURACYout = -1
@@ -1931,21 +1949,23 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
                 if szt < szs*0.5 or szt > szs*1.5:
                     # filesizes differ significantly => expect major differences!
                     ACCURACYout = -1
-            while timedout and MDIFF == MDIFF1:
+            while timedout:
                 cmd = ['Mdiff']
                 if ACCURACYout == -1:
-                    MDIFF = MDIFF0
                     ACCURACYout = 0
                 else:
                     cmd.append('-d')
                 if quiet:
                     cmd.append('-q')
+                cmd.extend(['-F^#', '-I%s' % par['IGNORE'],
+                            '-C%s' % par['CONTEXT'], '-A%d' % ACCURACYout,
+                            '-tTest <a href="%s%s">%s%s</a>%s' % (TST, EXT, TST, EXT, hglink),
+                            '%s%s.FILTERED' % (TST, STABLEout),
+                            '%s.test.out.FILTERED' % TST,
+                            '%s.out.diff.html' % TST])
                 if verbose:
-                    print 'RunTest: starting process',
-                    for a in cmd + ['-F^#', '-I%s' % par['IGNORE'], '-C%s' % par['CONTEXT'], '-A%d' % ACCURACYout, '-r%s' % REVe, '%s%s.FILTERED' % (TST, STABLEout), '%s.test.out.FILTERED' % TST, '%s.out.diff.html' % TST]:
-                        print '"%s"' % a,
-                    print '\n'
-                proc = subprocess.Popen(cmd + ['-F^#', '-I%s' % par['IGNORE'], '-C%s' % par['CONTEXT'], '-A%d' % ACCURACYout, '-r%s' % REVe, '%s%s.FILTERED' % (TST, STABLEout), '%s.test.out.FILTERED' % TST, '%s.out.diff.html' % TST])
+                    print 'RunTest: starting process "%s"\n' % '" "'.join(cmd)
+                proc = subprocess.Popen(cmd)
                 proc.killed = False
                 t = Timer(float(par['TIMEOUT']), killProc, args = [proc])
                 try:
@@ -1953,43 +1973,33 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
                     proc.wait()
                     t.cancel()
                     if verbose:
-                        print 'RunTest: process exited',
-                        for a in cmd + ['-F^#', '-I%s' % par['IGNORE'], '-C%s' % par['CONTEXT'], '-A%d' % ACCURACYout, '-r%s' % REVe, '%s%s.FILTERED' % (TST, STABLEout), '%s.test.out.FILTERED' % TST, '%s.out.diff.html' % TST]:
-                            print '"%s"' % a,
-                        print '(%s)\n' % proc.returncode
+                        print 'RunTest: process exited "%s" (%s)\n' % \
+                            ('" "'.join(cmd), proc.returncode)
                 except KeyboardInterrupt:
                     t.cancel()
                     killProc(proc)
                     if verbose:
-                        print 'RunTest: process killed',
-                        for a in cmd + ['-F^#', '-I%s' % par['IGNORE'], '-C%s' % par['CONTEXT'], '-A%d' % ACCURACYout, '-r%s' % REVe, '%s%s.FILTERED' % (TST, STABLEout), '%s.test.out.FILTERED' % TST, '%s.out.diff.html' % TST]:
-                            print '"%s"' % a,
-                        print '\n'
+                        print 'RunTest: process killed "%s"\n' % '" "'.join(cmd)
                     raise
                 timedout = proc.killed
                 ACCURACYout = ACCURACYout - 1
+                if ACCURACYout < 0:
+                    timedout = False # don't try again
             if env.get('ECHO_DIFF'):
-                cmd = 'diff'
+                cmd = ['diff']
                 if ACCURACYout >= 0:
-                    cmd += ' -d'
-                os.system('%s -Bb -F"^#" -I"%s" -U%s "%s%s.FILTERED" "%s.test.out.FILTERED"' % (cmd, par['IGNORE'], par['CONTEXT'], TST, STABLEout, TST))
+                    cmd.append('-d')
+                cmd.extend(['-Bb', '-F^#', '-I%s' % par['IGNORE'],
+                            '-U%s' % par['CONTEXT'],
+                            '%s%s.FILTERED' % (TST, STABLEout),
+                            '%s.test.out.FILTERED' % TST])
+                proc = subprocess.Popen(cmd)
+                proc.wait()
 
-            #TODO:
-            #timedout = 1
-            #while timedout and ACCURACY >= 0:
-            #       timedout = 0
-            #       signal.alarm(par['TIMEOUT'])
-            #       try:
-            #               os.system(MDIFF+' -I"'+par['IGNORE']+'" -C'+par['CONTEXT']+' -A'+str(ACCURACY)+' -r"'+REVe+'" '+TST+STABLEerr+'.FILTERED '+TST+'.test.err.FILTERED '+TST+'.err.diff.html')
-            #       except TimeoutError, t:
-            #               timedout = 1
-            #       signal.alarm(0)
-            #       ACCURACY = ACCURACY - 1
-            MDIFF = MDIFF1
             diff_html = open('%s.err.diff.html' % TST,"w")
             diff_html.write('<!--MajorDiffs-->\n')
             diff_html.close()
-            timedout = 1
+            timedout = True
             if timeout == F_TIME or recursion == F_RECU or killed == F_KILL or segfaulted == F_SEGV:
                 # test run timed out or orphan processes were killed => expect major differences!
                 ACCURACYerr = -1
@@ -2003,20 +2013,52 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
                 if szt < szs*0.5 or szt > szs*1.5:
                     # filesizes differ significantly => expect major differences!
                     ACCURACYerr = -1
-            while timedout and MDIFF == MDIFF1:
+            while timedout:
+                cmd = ['Mdiff']
                 if ACCURACYerr == -1:
-                    MDIFF = MDIFF0
                     ACCURACYerr = 0
-                if not quiet:
-                    timedout = os.system('%s -F"^#" -I"%s" -C%s -A%d -r"%s" "%s%s.FILTERED" "%s.test.err.FILTERED" "%s.err.diff.html"' % (MDIFF, par['IGNORE'], par['CONTEXT'], ACCURACYerr, REVe, TST, STABLEerr, TST, TST))
                 else:
-                    timedout = os.system('%s -q -F"^#" -I"%s" -C%s -A%d -r"%s" "%s%s.FILTERED" "%s.test.err.FILTERED" "%s.err.diff.html"' % (MDIFF, par['IGNORE'], par['CONTEXT'], ACCURACYerr, REVe, TST, STABLEerr, TST, TST))
+                    cmd.append('-d')
+                if quiet:
+                    cmd.append('-q')
+                cmd.extend(['-F^#', '-I%s' % par['IGNORE'],
+                            '-C%s' % par['CONTEXT'], '-A%d' % ACCURACYerr,
+                            '-tTest <a href="%s%s">%s%s</a>%s' % (TST, EXT, TST, EXT, hglink),
+                            '%s%s.FILTERED' % (TST, STABLEerr),
+                            '%s.test.err.FILTERED' % TST,
+                            '%s.err.diff.html' % TST])
+                if verbose:
+                    print 'RunTest: starting process "%s"\n' % '" "'.join(cmd)
+                proc = subprocess.Popen(cmd)
+                proc.killed = False
+                t = Timer(float(par['TIMEOUT']), killProc, args = [proc])
+                try:
+                    t.start()
+                    proc.wait()
+                    t.cancel()
+                    if verbose:
+                        print 'RunTest: process exited "%s" (%s)\n' % \
+                            ('" "'.join(cmd), proc.returncode)
+                except KeyboardInterrupt:
+                    t.cancel()
+                    killProc(proc)
+                    if verbose:
+                        print 'RunTest: process killed "%s"\n' % '" "'.join(cmd)
+                    raise
+                timedout = proc.killed
                 ACCURACYerr = ACCURACYerr - 1
+                if ACCURACYerr < 0:
+                    timedout = False # don't try again
             if env.get('ECHO_DIFF'):
-                cmd = 'diff'
+                cmd = ['diff']
                 if ACCURACYerr >= 0:
-                    cmd += ' -d'
-                os.system('%s -Bb -F"^#" -I"%s" -U%s "%s%s.FILTERED" "%s.test.err.FILTERED"' % (cmd, par['IGNORE'], par['CONTEXT'], TST, STABLEerr, TST))
+                    cmd.append('-d')
+                cmd.extend(['-Bb', '-F^#', '-I%s' % par['IGNORE'],
+                            '-U%s' % par['CONTEXT'],
+                            '%s%s.FILTERED' % (TST, STABLEerr),
+                            '%s.test.err.FILTERED' % TST])
+                proc = subprocess.Popen(cmd)
+                proc.wait()
 
             FailedOut, FailedErr, elem = AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT, max(sockerr, timeout, recursion, killed, segfaulted))
 
@@ -2144,6 +2186,8 @@ def Prompt(cmd) :
 
 def killProc(proc, outfile = None, cmd = None):
     if outfile is not None and cmd is not None:
+        if type(cmd) is type([]):
+            cmd = ' '.join(cmd)
         try:
             outfile.write('\n!Mtimeout: Timeout: %s\n' % cmd)
         except ValueError:
@@ -2854,17 +2898,7 @@ else:
         HTMLTITLE = " for "+COMPBITSOIDSLINK
     HTMLTITLE = ""+THISFILE+" results"+HTMLTITLE+" on "+DISTVER       #"+ ("`date`")"
 
-URLPREFIXMAP = {
-    'MonetDB': 'http://monetdb.cvs.sourceforge.net/monetdb/MonetDB/',
-    'sql': 'http://monetdb.cvs.sourceforge.net/monetdb/sql/',
-    'xml': 'http://monetdb.cvs.sourceforge.net/monetdb/xml/',
-    'buildtools': 'http://monetdb.cvs.sourceforge.net/monetdb/buildtools/',
-    }
-URLPREFIX   = None
-##URLSUFFIX_F = '?cvsroot=Monet-4.3'
-URLSUFFIX_F = ''
-##URLSUFFIX_D = '?cvsroot=Monet-4.3'
-URLSUFFIX_D = ''
+URLPREFIX = 'http://dev.monetdb.org/hg/MonetDB/file/'
 
 par = {}
 # the default; only used for usage information in case -p/--package has not been given
@@ -2943,6 +2977,8 @@ def main(argv) :
          "use mserver5 of MonetDB Version 5 (default)"),
         ('recursive', 'r', 'recursive', None,
          "recurse into subdirectories (implies 'All')"),
+        ('revision', None, 'revision', '<hgid>',
+         'use given revision as the HG short hash'),
         ('TSTSRCBASE', None, 'TSTSRCBASE', '<path>',
          'default: "%s"' % os.path.join(_configure('@QXSOURCE@'),par['PACKAGE'])),
         ('TSTTRGBASE', None, 'TSTTRGBASE', '<path>',
@@ -3028,7 +3064,7 @@ def main(argv) :
         if par['PACKAGE'] == 'none':
             if par['M5']:
                 par['PACKAGE'] = 'monetdb5'
-            Warn('No (suitable) ./CVS/Repository found and no -p/--package specified. Using default package="%s". Please use -p/--package to overrule.' % par['PACKAGE'])
+            Warn('No -p/--package specified. Using default package="%s". Please use -p/--package to overrule.' % par['PACKAGE'])
     else:
         par['PACKAGE'] = pkg
 
@@ -3239,14 +3275,6 @@ def main(argv) :
     if THISFILE == "Mtest.py":
         env['SQL_TRACE'] = ""
 
-    # fix up URLPREFIX
-    global URLPREFIX
-    if os.path.exists(os.path.join(env['TSTSRCBASE'], 'CVS', 'Repository')):
-        repo = open(os.path.join(env['TSTSRCBASE'], 'CVS', 'Repository')).read()[:-1]
-        i = repo.find('/')
-        if i > 0:
-            repo = repo[:i]
-        URLPREFIX = URLPREFIXMAP.get(repo) # None if unknown
     # export and display env
     STDERR.flush()
     if THISFILE == "Mtest.py":
@@ -3301,6 +3329,22 @@ def main(argv) :
         Warn("Current directory "+os.getcwd()+" is no descendant of TSTSRCBASE="+env['TSTSRCBASE']+";")
         Warn("changing to TSTSRCBASE="+env['TSTSRCBASE']+", now.")
         os.chdir(env['TSTSRCBASE'])
+
+    global REV
+    global URLPREFIX
+    REV = opts.get('revision')
+    if REV is None:             # no --revision option: try to find out
+        proc = subprocess.Popen(['hg', 'id', '-i'], stdout = subprocess.PIPE)
+        out, err = proc.communicate()
+        if proc.returncode == 0:
+            REV = out.strip()
+    proc = None
+    # fix up URLPREFIX
+    if REV:
+        URLPREFIX += '%s/%s/' % (REV.split()[0].rstrip('+'), par['PACKAGE'])
+    else:
+        # if no revision known, can't refer to repository
+        URLPREFIX = None
 
     # check for executables, set their standard options and export them
     if THISFILE == "Mtest.py":
