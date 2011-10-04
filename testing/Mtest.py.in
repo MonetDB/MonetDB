@@ -431,7 +431,7 @@ class Timer:
 
 STDOUT = sys.stdout
 STDERR = sys.stdout     # err
-REV = '?'               # revision (output if hg id)
+REV = ''                # revision (output of hg id), default unknown
 
 black = 'black'                         # #000000
 white = 'white'                         # #ffffff
@@ -703,11 +703,13 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT, SockTime) :
     f.close()
     f = open(".%s%s.head.html" % (TST, WHAT),"w")
     target = '%s_%s_%s_%s_body' % (DISTVER, TSTDIR, TST, WHAT[1:])
-    hg = Text('hg')
-    if URLPREFIX:
-        hg = Element('a', {'href': '%s%s/%s' % (URLPREFIX, url(TSTDIR), TSTSUFF),
+    if REV:                     # implies URLPREFIX is not None
+        urlpref = '%s%s/%s' % (URLPREFIX, url(TSTDIR), TSTSUFF)
+        hg = Element('a', {'href': urlpref,
                            'target': target},
-                     hg)
+                     Text('hg'))
+    else:
+        hg = None
     text = Element('div', {'class': 'header'},
                    Text(SYSTEM),
                    Text(' '),
@@ -718,24 +720,40 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT, SockTime) :
                    Text(' between '),
                    Element('a', {'href': '%s%s' % (TST, stableWHAT),
                                  'target': target},
-                           Text('%s (id %s)' % (stableWHAT[1:], REV))),
-                   Text(' and '),
-                   Element('a', {'href': '%s.test%s' % (TST, WHAT),
-                                 'target': target},
-                           Text('test%s' % WHAT)),
-                   Text(' of '),
-                   Element('a', {'href': TST + EXT, 'target': target},
-                           Text('%s%s (id %s)' % (TST, EXT, REV))),
-                   Text(' in '),
-                   Element('a', {'href': './', 'target': target},
-                           Text(TSTDIR)),
-                   Text(' ('),
-                   hg,
-                   Text(', '),
-                   Element('a', {'href': url(env['RELSRCDIR']),
-                                 'target': target},
-                           Text('src')))
-    text.addchild(Text(')'))
+                           Text(stableWHAT[1:])))
+    if REV:
+        text.addchildren([
+                Text(' (id '),
+                Element('a', {'href': '%s/%s%s' % (urlpref, TST, stableWHAT),
+                              'target': target}, Text(REV)),
+                Text(')')])
+    text.addchildren([
+            Text(' and '),
+            Element('a', {'href': '%s.test%s' % (TST, WHAT),
+                          'target': target},
+                    Text('test%s' % WHAT)),
+            Text(' of '),
+            Element('a', {'href': TST + EXT, 'target': target},
+                    Text('%s%s' % (TST, EXT)))])
+    if REV:
+        text.addchildren([
+                Text(' (id '),
+                Element('a', {'href': '%s/%s%s' % (urlpref, TST, EXT),
+                              'target': target}, Text(REV)),
+                Text(')')])
+    text.addchildren([
+            Text(' in '),
+            Element('a', {'href': './', 'target': target},
+                    Text(TSTDIR)),
+            Text(' (')])
+    if hg:
+        text.addchild(hg)
+        text.addchild(Text(', '))
+    text.addchildren([
+            Element('a', {'href': url(env['RELSRCDIR']),
+                          'target': target},
+                    Text('src')),
+            Text(')')])
     html = Element('html', {},
                    Element('head', {},
                            Element('title', {},
@@ -1908,6 +1926,10 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
                 Warn("mFilter failed\n")
                 pass
 
+            if REV:
+                hglink = ' (id <a href="%s%s/%s/%s%s">%s</a>)' % (URLPREFIX, url(TSTDIR), TSTSUFF, TST, EXT, REV)
+            else:
+                hglink = ''
             diff_html = open('%s.out.diff.html' % TST,"w")
             diff_html.write('<!--MajorDiffs-->\n')
             diff_html.close()
@@ -1935,7 +1957,8 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
                     cmd.append('-q')
                 cmd.extend(['-F^#', '-I%s' % par['IGNORE'],
                             '-C%s' % par['CONTEXT'], '-A%d' % ACCURACYout,
-                            '-r (%s)' % REV, '%s%s.FILTERED' % (TST, STABLEout),
+                            '-tTest <a href="%s%s">%s%s</a>%s' % (TST, EXT, TST, EXT, hglink),
+                            '%s%s.FILTERED' % (TST, STABLEout),
                             '%s.test.out.FILTERED' % TST,
                             '%s.out.diff.html' % TST])
                 if verbose:
@@ -1998,7 +2021,8 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
                     cmd.append('-q')
                 cmd.extend(['-F^#', '-I%s' % par['IGNORE'],
                             '-C%s' % par['CONTEXT'], '-A%d' % ACCURACYerr,
-                            '-r (%s)' % REV, '%s%s.FILTERED' % (TST, STABLEerr),
+                            '-tTest <a href="%s%s">%s%s</a>%s' % (TST, EXT, TST, EXT, hglink),
+                            '%s%s.FILTERED' % (TST, STABLEerr),
                             '%s.test.err.FILTERED' % TST,
                             '%s.err.diff.html' % TST])
                 if verbose:
@@ -2951,6 +2975,8 @@ def main(argv) :
          "use mserver5 of MonetDB Version 5 (default)"),
         ('recursive', 'r', 'recursive', None,
          "recurse into subdirectories (implies 'All')"),
+        ('revision', None, 'revision', '<hgid>',
+         'use given revision as the HG short hash'),
         ('TSTSRCBASE', None, 'TSTSRCBASE', '<path>',
          'default: "%s"' % os.path.join(_configure('@QXSOURCE@'),par['PACKAGE'])),
         ('TSTTRGBASE', None, 'TSTTRGBASE', '<path>',
@@ -3303,19 +3329,19 @@ def main(argv) :
         os.chdir(env['TSTSRCBASE'])
 
     global REV
-    proc = subprocess.Popen(['hg', 'id', '-i'], stdout = subprocess.PIPE)
-    out, err = proc.communicate()
-    if proc.returncode == 0:
-        REV = out.strip()
-        hgid = REV.split()[0].rstrip('+')
-    else:
-        hgid = None
+    global URLPREFIX
+    REV = opts.get('revision')
+    if REV is None:             # no --revision option: try to find out
+        proc = subprocess.Popen(['hg', 'id', '-i'], stdout = subprocess.PIPE)
+        out, err = proc.communicate()
+        if proc.returncode == 0:
+            REV = out.strip()
     proc = None
     # fix up URLPREFIX
-    global URLPREFIX
-    if hgid:
-        URLPREFIX += '/%s/%s/' % (hgid, par['PACKAGE'])
+    if REV:
+        URLPREFIX += '%s/%s/' % (REV.split()[0].rstrip('+'), par['PACKAGE'])
     else:
+        # if no revision known, can't refer to repository
         URLPREFIX = None
 
     # check for executables, set their standard options and export them
