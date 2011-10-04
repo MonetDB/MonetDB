@@ -51,7 +51,9 @@ import select
 import Mfilter
 import fnmatch
 
+procdebug = False
 verbose = False
+quiet = False
 
 # Python 2.3 doesn't know about os.devnull...
 try:
@@ -979,13 +981,19 @@ def AddSubToHtmlIndex (env, TSTDIR, diff) :
     return td
 ### AddSubToHtmlIndex (env, TSTDIR, diff) #
 
-def SkipTest(env, TST, EXT, REASON) :
+def SkipTest(env, TST, EXT, REASON, length) :
     TSTDIR = env['TSTDIR']
     TEXT = "Skipping test %s%s %s" % (TST, EXT, REASON)
-    if not env['QUIET']:
+    if quiet:
+        STDOUT.write("-")
+    elif verbose:
         Warn(TEXT)
     else:
-        STDOUT.write("-")
+        if REASON.startswith('as '):
+            REASON = REASON[3:]
+        if REASON.endswith('.'):
+            REASON = REASON[:-1]
+        STDOUT.write('%s%-*s skipped (%s)\n' % (prompt(), length, TST, REASON))
     f = open("."+TST+".SKIPPED","w")
     f.write("\n%s  Warning:  %s\n\n" % (THISFILE, TEXT))
     f.close()
@@ -1058,6 +1066,12 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
         Warn("No tests found in '"+TSTSRCDIR+"`; skipping directory!")
         return td, elem
 
+    # find length of longest test name
+    length = 0
+    for tst in testlist:
+        if len(tst[0]) > length:
+            length = len(tst[0])
+
     env['TSTDB']     = TSTDB
     env['TSTDIR']    = TSTDIR
     env['TSTSRCDIR'] = TSTSRCDIR
@@ -1099,9 +1113,11 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
 
         body = []
         oktests = []
+        if not verbose and not quiet:
+            print '\nRunning in %s' % TSTDIR
         for TST,COND in testlist:
             os.environ['TST'] = TST
-            tt, FtOut, FtErr, bodyline = RunTest(env, TST, BusyPorts, COND, oktests)
+            tt, FtOut, FtErr, bodyline = RunTest(env, TST, BusyPorts, COND, oktests, length)
             if tt:
                 t = "%7.3f" % tt
             else:
@@ -1306,7 +1322,7 @@ def GetBitsAndOIDsAndModsAndStaticAndThreads(env) :
     TSTPREF = env['TSTPREF']
     cmd = splitcommand(env['exe']['Mserver'][1])
     cmd.append('--dbname=%s' % TSTPREF)
-    if verbose:
+    if procdebug:
         print 'GetBitsAndOIDsAndModsAndStaticAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd)
     proc = subprocess.Popen(cmd, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True)
     t = Timer(float(par['TIMEOUT']), killProc, args = [proc, proc.stderr, cmd])
@@ -1333,12 +1349,12 @@ def GetBitsAndOIDsAndModsAndStaticAndThreads(env) :
         ##module("NoModule");
         qOut, qErr = proc.communicate(input = input)
         t.cancel()
-        if verbose:
+        if procdebug:
             print 'GetBitsAndOIDsAndModsAndStaticAndThreads: process exited "%s" (%s)\n' % ('" "'.join(cmd), proc.returncode)
     except KeyboardInterrupt:
         t.cancel()
         killProc(proc, proc.stderr, cmd)
-        if verbose:
+        if procdebug:
             print 'GetBitsAndOIDsAndModsAndStaticAndThreads: process killed "%s"\n' % '" "'.join(cmd)
         raise
     env['TST_MODS'] = []
@@ -1427,7 +1443,7 @@ def CheckBATs(env, TST, TSTDB) :
 
     cmd = splitcommand(env['exe']['Mserver'][1])
     cmd.append('--dbname=%s' % TSTDB)
-    if verbose:
+    if procdebug:
         print 'CheckBATs: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd)
     proc = subprocess.Popen(cmd, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True)
     t = Timer(float(par['TIMEOUT']), killProc, args = [proc, proc.stderr, cmd])
@@ -1449,12 +1465,12 @@ def CheckBATs(env, TST, TSTDB) :
             quit();
         ''')
         t.cancel()
-        if verbose:
+        if procdebug:
             print 'CheckBATs: process exited "%s" (%s)\n' % ('" "'.join(cmd), proc.returncode)
     except KeyboardInterrupt:
         t.cancel()
         killProc(proc, proc.stderr, cmd)
-        if verbose:
+        if procdebug:
             print 'CheckBATs: process killed "%s"\n' % '" "'.join(cmd)
         raise
     TST_BATS = []
@@ -1496,11 +1512,11 @@ def CheckTests(env, TST, oktests):
 ### CheckTests(env, TST, oktests) #
 
 def StartAt(cmd) :
-    if verbose:
+    if procdebug:
         print 'StartAt: starting process "%s" (inpipe, outpipe, errpipe)\n' % cmd
     proc = subprocess.Popen(cmd, shell = True, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True)
     qOut, qErr = proc.communicate()
-    if verbose:
+    if procdebug:
         print 'StartAt: starting exited "%s"\n' % cmd
     return qOut.split('\n', 1)[0].strip()
 ### StartAt(cmd) #
@@ -1551,7 +1567,7 @@ def StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION) :
     return STABLEout, STABLEerr
 ### StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION) #
 
-def RunTest(env, TST, BusyPorts, COND, oktests) :
+def RunTest(env, TST, BusyPorts, COND, oktests, length) :
     Failed = F_SKIP
     FailedOut = F_SKIP
     FailedErr = F_SKIP
@@ -1563,8 +1579,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
     TSTTRGBASE = env['TSTTRGBASE']
     os.chdir(TSTSRCDIR)
     elem = None
-
-    quiet = env['QUIET']
 
     TX = 0
     EXT = CALL = SERVER = ""
@@ -1609,12 +1623,12 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
     else:
         i = TST.rfind('.')
         if i > 0:
-            return RunTest(env, TST[:i], BusyPorts, COND, oktests)
+            return RunTest(env, TST[:i], BusyPorts, COND, oktests, length)
         EXT = CALL = SERVER = ""
         if   COND and not CONDITIONALS.has_key(COND):
-            elem = SkipTest(env, TST, EXT, "as conditional '%s' is unknown." % COND)
+            elem = SkipTest(env, TST, EXT, "as conditional '%s' is unknown." % COND, length)
         elif COND and not CONDITIONALS[COND]:
-            elem = SkipTest(env, TST, EXT, "as conditional '%s' does not hold." % COND)
+            elem = SkipTest(env, TST, EXT, "as conditional '%s' does not hold." % COND, length)
         elif os.name == "nt":
             ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+".(exe|com|bat|cmd|py|mal|malC|sql)`")
             #TODO:
@@ -1634,36 +1648,36 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
     os.chdir(TSTTRGDIR)
 
     if   COND and not CONDITIONALS.has_key(COND):
-        elem = SkipTest(env, TST, EXT, "as conditional '%s' is unknown." % COND)
+        elem = SkipTest(env, TST, EXT, "as conditional '%s' is unknown." % COND, length)
     elif COND and not CONDITIONALS[COND]:
-        elem = SkipTest(env, TST, EXT, "as conditional '%s' does not hold." % COND)
+        elem = SkipTest(env, TST, EXT, "as conditional '%s' does not hold." % COND, length)
     elif MissingTests:
-        elem = SkipTest(env, TST, EXT, "as required test%s '%s' failed." % (len(MissingTests) != 1 and 's' or '', "', '".join(MissingTests)))
+        elem = SkipTest(env, TST, EXT, "as required test%s '%s' failed." % (len(MissingTests) != 1 and 's' or '', "', '".join(MissingTests)), length)
     elif EXT == ".malC" and  not env['exe']['MAL_Client'][0]:
-        elem = SkipTest(env, TST, EXT, "as "+env['MALCLIENT'].split(None, 1)[0]+" is not available.")
+        elem = SkipTest(env, TST, EXT, "as "+env['MALCLIENT'].split(None, 1)[0]+" is not available.", length)
     elif EXT == ".sql" and  not env['exe']['SQL_Client'][0]:
-        elem = SkipTest(env, TST, EXT, "as "+env['SQLCLIENT'].split(None, 1)[0]+" is not available.")
+        elem = SkipTest(env, TST, EXT, "as "+env['SQLCLIENT'].split(None, 1)[0]+" is not available.", length)
     elif EXT == ".sql" and  not env['exe']['SQL_Dump'][0]:
-        elem = SkipTest(env, TST, EXT, "as "+env['SQLDUMP'].split(None, 1)[0]+" is not available.")
+        elem = SkipTest(env, TST, EXT, "as "+env['SQLDUMP'].split(None, 1)[0]+" is not available.", length)
     elif SERVER in ["MAL", "SQL"] and not env['exe']['Mserver'][0]:
-        elem = SkipTest(env, TST, EXT, "as "+env['MSERVER'].split(None, 1)[0]+" is not available.")
+        elem = SkipTest(env, TST, EXT, "as "+env['MSERVER'].split(None, 1)[0]+" is not available.", length)
     elif EXT == ".malS" and not env['exe']['Mserver'][0]:
-        elem = SkipTest(env, TST, EXT, "as "+env['MSERVER'].split(None, 1)[0]+" is not available.")
+        elem = SkipTest(env, TST, EXT, "as "+env['MSERVER'].split(None, 1)[0]+" is not available.", length)
     elif CALL == "python"  and  not env['exe']['python'][0]:
-        elem = SkipTest(env, TST, EXT, "as python is not available.")
+        elem = SkipTest(env, TST, EXT, "as python is not available.", length)
         #TODO:
         #elif [ "$EXT" = "java"  -a  ! "`type -path java`" ] ; then
-        #elem = SkipTest(env, TST, EXT, "as java is not in $PATH.")
+        #elem = SkipTest(env, TST, EXT, "as java is not in $PATH.", length)
     elif MissingMods:
-        elem = SkipTest(env, TST, EXT, "as modules '"+str(MissingMods)+"` are missing.")
+        elem = SkipTest(env, TST, EXT, "as modules '"+str(MissingMods)+"` are missing.", length)
     elif MissingBATs:
-        elem = SkipTest(env, TST, EXT, "as BATs '"+str(MissingBATs)+"` are missing in database '"+TSTDB+"`.")
+        elem = SkipTest(env, TST, EXT, "as BATs '"+str(MissingBATs)+"` are missing in database '"+TSTDB+"`.", length)
     elif CALL == "malCXp":
-        elem = SkipTest(env, TST, EXT, "as multiple MAL clients in parallel are currently not supported by "+THISFILE+".")
+        elem = SkipTest(env, TST, EXT, "as multiple MAL clients in parallel are currently not supported by "+THISFILE+".", length)
     elif CALL == "sqlXp":
-        elem = SkipTest(env, TST, EXT, "as multiple SQL clients in parallel are currently not supported by "+THISFILE+".")
+        elem = SkipTest(env, TST, EXT, "as multiple SQL clients in parallel are currently not supported by "+THISFILE+".", length)
     elif SERVER in ["MAL", "SQL"] and "MAPI" in BusyPorts:
-        elem = SkipTest(env, TST, EXT, "as MAPIPORT=%s is not available." % (env['MAPIPORT']))
+        elem = SkipTest(env, TST, EXT, "as MAPIPORT=%s is not available." % (env['MAPIPORT']), length)
     else:
         test = re.compile("^"+TST+"((_[sp][0-9][0-9])?\..*)?$", re.MULTILINE)
         for f in os.listdir(RELSRCDIR):
@@ -1677,7 +1691,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
         # Check for available sockets and block them until we're ready to run the actual test
         MAPIsockets, reason = CheckSocket2(env, "MAPI")   #, SrvrErr)
         if MAPIsockets is None:
-            elem = SkipTest(env, TST, EXT, "as "+reason)
+            elem = SkipTest(env, TST, EXT, "as "+reason, length)
             return TX,Failed,Failed,elem
 
         if os.path.isfile(TST+EXT+".src")  and not os.path.isfile(TST+EXT):
@@ -1691,7 +1705,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
                     ErrMsg("SymlinkOrCopy('%s','%s') in '%s' failed with #%d: '%s'."
                            % (TSTSRC,TST+EXT,os.getcwd(),IOerrNo, IOerrStr))
             else:
-                elem = SkipTest(env, TST, EXT+".src", "as source file '"+TSTSRC+"` is missing.")
+                elem = SkipTest(env, TST, EXT+".src", "as source file '"+TSTSRC+"` is missing.", length)
                 # Release reserved sockets before bailing out
                 MAPIsockets[0].close()
                 MAPIsockets[1].close()
@@ -1804,7 +1818,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
             MkillUsers = (WHAT0+" "+WHAT1).replace('\\','')
             MkillUsersAT = "echo  "+WHAT+"  2>/dev/null | at now + 1 minute 2>&1 | awk '/^[Jj]ob/{print $2}'"
 
-        #if THISFILE == "Mtest.py":
         TestOutFile = TST+".test.out"
         TestErrFile = TST+".test.err"
         TestOut = open(TestOutFile,"w")
@@ -1815,7 +1828,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
         TestErr.close()
 
         t0 = time.time()
-        tres = DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsersAT, ME, MAPIsockets)
+        tres = DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsersAT, ME, MAPIsockets, length)
 
         t1 = time.time()
         TX = t1 - t0
@@ -1882,28 +1895,28 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
         if timeout == F_TIME:
             if quiet:
                 STDOUT.write("\n%s : Timeout!\n" % TST)
-            else:
+            elif verbose:
                 STDOUT.write("(Timeout!) ")
 
         if recursion == F_RECU:
             if quiet:
                 STDOUT.write("\n%s : Recursion!\n" % TST)
-            else:
+            elif verbose:
                 STDOUT.write("(Recursion!) ")
 
         if killed == F_KILL:
             if quiet:
                 STDOUT.write("\n%s : Killed!\n" % TST)
-            else:
+            elif verbose:
                 STDOUT.write("(Killed!) ")
 
         if segfaulted == F_SEGV:
             if quiet:
                 STDOUT.write("\n%s : Crashed!\n" % TST)
-            else:
+            elif verbose:
                 STDOUT.write("(Crashed!) ")
 
-        if not quiet:
+        if verbose:
             STDOUT.write("\n")
 
         try:
@@ -1916,149 +1929,184 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
             env['exe']['Mtimeout'] = env['exe']['Mtimeout'][0], 'Mtimeout -timeout %s ' % str(par['TIMEOUT'])
             SetExecEnv(env['exe'],0)
 
-        if THISFILE == "Mtest.py":
-            try:
-                Mfilter.mFilter(TST+STABLEout,par['IGNORE'])
-                Mfilter.mFilter(TST+STABLEerr,par['IGNORE'])
-                Mfilter.mFilter(TST+".test.out",par['IGNORE'])
-                Mfilter.mFilter(TST+".test.err",par['IGNORE'])
-            except:
-                Warn("mFilter failed\n")
-                pass
+        try:
+            Mfilter.mFilter(TST+STABLEout,par['IGNORE'])
+            Mfilter.mFilter(TST+STABLEerr,par['IGNORE'])
+            Mfilter.mFilter(TST+".test.out",par['IGNORE'])
+            Mfilter.mFilter(TST+".test.err",par['IGNORE'])
+        except:
+            Warn("mFilter failed\n")
+            pass
 
-            if REV:
-                hglink = ' (id <a href="%s%s/%s/%s%s">%s</a>)' % (URLPREFIX, url(TSTDIR), TSTSUFF, TST, EXT, REV)
-            else:
-                hglink = ''
-            diff_html = open('%s.out.diff.html' % TST,"w")
-            diff_html.write('<!--MajorDiffs-->\n')
-            diff_html.close()
-            timedout = True
-            if timeout == F_TIME or recursion == F_RECU or killed == F_KILL or segfaulted == F_SEGV:
-                # test run timed out or orphan processes were killed => expect major differences!
+        if REV:
+            hglink = ' (id <a href="%s%s/%s/%s%s">%s</a>)' % (URLPREFIX, url(TSTDIR), TSTSUFF, TST, EXT, REV)
+        else:
+            hglink = ''
+        diff_html = open('%s.out.diff.html' % TST,"w")
+        diff_html.write('<!--MajorDiffs-->\n')
+        diff_html.close()
+        timedout = True
+        if timeout == F_TIME or recursion == F_RECU or killed == F_KILL or segfaulted == F_SEGV:
+            # test run timed out or orphan processes were killed => expect major differences!
+            ACCURACYout = -1
+        else:
+            fs = open("%s%s.FILTERED" % (TST, STABLEout))
+            ft = open("%s.test.out.FILTERED" % TST)
+            szs = os.fstat(fs.fileno())[6]
+            szt = os.fstat(ft.fileno())[6]
+            fs.close()
+            ft.close()
+            if szt < szs*0.5 or szt > szs*1.5:
+                # filesizes differ significantly => expect major differences!
                 ACCURACYout = -1
+        out = err = ''
+        while timedout:
+            cmd = ['Mdiff']
+            if ACCURACYout == -1:
+                ACCURACYout = 0
             else:
-                fs = open("%s%s.FILTERED" % (TST, STABLEout))
-                ft = open("%s.test.out.FILTERED" % TST)
-                szs = os.fstat(fs.fileno())[6]
-                szt = os.fstat(ft.fileno())[6]
-                fs.close()
-                ft.close()
-                if szt < szs*0.5 or szt > szs*1.5:
-                    # filesizes differ significantly => expect major differences!
-                    ACCURACYout = -1
-            while timedout:
-                cmd = ['Mdiff']
-                if ACCURACYout == -1:
-                    ACCURACYout = 0
-                else:
-                    cmd.append('-d')
-                if quiet:
-                    cmd.append('-q')
-                cmd.extend(['-F^#', '-I%s' % par['IGNORE'],
-                            '-C%s' % par['CONTEXT'], '-A%d' % ACCURACYout,
-                            '-tTest <a href="%s%s">%s%s</a>%s' % (TST, EXT, TST, EXT, hglink),
-                            '%s%s.FILTERED' % (TST, STABLEout),
-                            '%s.test.out.FILTERED' % TST,
-                            '%s.out.diff.html' % TST])
-                if verbose:
-                    print 'RunTest: starting process "%s"\n' % '" "'.join(cmd)
-                proc = subprocess.Popen(cmd)
-                proc.killed = False
-                t = Timer(float(par['TIMEOUT']), killProc, args = [proc])
-                try:
-                    t.start()
-                    proc.wait()
-                    t.cancel()
-                    if verbose:
-                        print 'RunTest: process exited "%s" (%s)\n' % \
-                            ('" "'.join(cmd), proc.returncode)
-                except KeyboardInterrupt:
-                    t.cancel()
-                    killProc(proc)
-                    if verbose:
-                        print 'RunTest: process killed "%s"\n' % '" "'.join(cmd)
-                    raise
-                timedout = proc.killed
-                ACCURACYout = ACCURACYout - 1
-                if ACCURACYout < 0:
-                    timedout = False # don't try again
-            if env.get('ECHO_DIFF'):
-                cmd = ['diff']
-                if ACCURACYout >= 0:
-                    cmd.append('-d')
-                cmd.extend(['-Bb', '-F^#', '-I%s' % par['IGNORE'],
-                            '-U%s' % par['CONTEXT'],
-                            '%s%s.FILTERED' % (TST, STABLEout),
-                            '%s.test.out.FILTERED' % TST])
-                proc = subprocess.Popen(cmd)
-                proc.wait()
+                cmd.append('-d')
+            if not verbose:
+                cmd.append('-q')
+            cmd.extend(['-F^#', '-I%s' % par['IGNORE'],
+                        '-C%s' % par['CONTEXT'], '-A%d' % ACCURACYout,
+                        '-tTest <a href="%s%s">%s%s</a>%s' % (TST, EXT, TST, EXT, hglink),
+                        '%s%s.FILTERED' % (TST, STABLEout),
+                        '%s.test.out.FILTERED' % TST,
+                        '%s.out.diff.html' % TST])
+            if procdebug:
+                print 'RunTest: starting process "%s"\n' % '" "'.join(cmd)
+            proc = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+            proc.killed = False
+            t = Timer(float(par['TIMEOUT']), killProc, args = [proc])
+            try:
+                t.start()
+                out, err = proc.communicate()
+                t.cancel()
+                if verbose or quiet:
+                    if out:
+                        STDOUT.write(out)
+                    if err:
+                        sys.stderr.write(err)
+                if procdebug:
+                    print 'RunTest: process exited "%s" (%s)\n' % \
+                        ('" "'.join(cmd), proc.returncode)
+            except KeyboardInterrupt:
+                t.cancel()
+                killProc(proc)
+                if procdebug:
+                    print 'RunTest: process killed "%s"\n' % '" "'.join(cmd)
+                raise
+            timedout = proc.killed
+            ACCURACYout = ACCURACYout - 1
+            if ACCURACYout < 0:
+                timedout = False # don't try again
+        if env.get('ECHO_DIFF'):
+            cmd = ['diff']
+            if ACCURACYout >= 0:
+                cmd.append('-d')
+            cmd.extend(['-Bb', '-F^#', '-I%s' % par['IGNORE'],
+                        '-U%s' % par['CONTEXT'],
+                        '%s%s.FILTERED' % (TST, STABLEout),
+                        '%s.test.out.FILTERED' % TST])
+            proc = subprocess.Popen(cmd)
+            proc.wait()
 
-            diff_html = open('%s.err.diff.html' % TST,"w")
-            diff_html.write('<!--MajorDiffs-->\n')
-            diff_html.close()
-            timedout = True
-            if timeout == F_TIME or recursion == F_RECU or killed == F_KILL or segfaulted == F_SEGV:
-                # test run timed out or orphan processes were killed => expect major differences!
+        diff_html = open('%s.err.diff.html' % TST,"w")
+        diff_html.write('<!--MajorDiffs-->\n')
+        diff_html.close()
+        timedout = True
+        if timeout == F_TIME or recursion == F_RECU or killed == F_KILL or segfaulted == F_SEGV:
+            # test run timed out or orphan processes were killed => expect major differences!
+            ACCURACYerr = -1
+        else:
+            fs = open("%s%s.FILTERED" % (TST, STABLEerr))
+            ft = open("%s.test.err.FILTERED" % TST)
+            szs = os.fstat(fs.fileno())[6]
+            szt = os.fstat(ft.fileno())[6]
+            fs.close()
+            ft.close()
+            if szt < szs*0.5 or szt > szs*1.5:
+                # filesizes differ significantly => expect major differences!
                 ACCURACYerr = -1
+        while timedout:
+            cmd = ['Mdiff']
+            if ACCURACYerr == -1:
+                ACCURACYerr = 0
             else:
-                fs = open("%s%s.FILTERED" % (TST, STABLEerr))
-                ft = open("%s.test.err.FILTERED" % TST)
-                szs = os.fstat(fs.fileno())[6]
-                szt = os.fstat(ft.fileno())[6]
-                fs.close()
-                ft.close()
-                if szt < szs*0.5 or szt > szs*1.5:
-                    # filesizes differ significantly => expect major differences!
-                    ACCURACYerr = -1
-            while timedout:
-                cmd = ['Mdiff']
-                if ACCURACYerr == -1:
-                    ACCURACYerr = 0
-                else:
-                    cmd.append('-d')
-                if quiet:
-                    cmd.append('-q')
-                cmd.extend(['-F^#', '-I%s' % par['IGNORE'],
-                            '-C%s' % par['CONTEXT'], '-A%d' % ACCURACYerr,
-                            '-tTest <a href="%s%s">%s%s</a>%s' % (TST, EXT, TST, EXT, hglink),
-                            '%s%s.FILTERED' % (TST, STABLEerr),
-                            '%s.test.err.FILTERED' % TST,
-                            '%s.err.diff.html' % TST])
-                if verbose:
-                    print 'RunTest: starting process "%s"\n' % '" "'.join(cmd)
-                proc = subprocess.Popen(cmd)
-                proc.killed = False
-                t = Timer(float(par['TIMEOUT']), killProc, args = [proc])
-                try:
-                    t.start()
-                    proc.wait()
-                    t.cancel()
-                    if verbose:
-                        print 'RunTest: process exited "%s" (%s)\n' % \
-                            ('" "'.join(cmd), proc.returncode)
-                except KeyboardInterrupt:
-                    t.cancel()
-                    killProc(proc)
-                    if verbose:
-                        print 'RunTest: process killed "%s"\n' % '" "'.join(cmd)
-                    raise
-                timedout = proc.killed
-                ACCURACYerr = ACCURACYerr - 1
-                if ACCURACYerr < 0:
-                    timedout = False # don't try again
-            if env.get('ECHO_DIFF'):
-                cmd = ['diff']
-                if ACCURACYerr >= 0:
-                    cmd.append('-d')
-                cmd.extend(['-Bb', '-F^#', '-I%s' % par['IGNORE'],
-                            '-U%s' % par['CONTEXT'],
-                            '%s%s.FILTERED' % (TST, STABLEerr),
-                            '%s.test.err.FILTERED' % TST])
-                proc = subprocess.Popen(cmd)
-                proc.wait()
+                cmd.append('-d')
+            if quiet:
+                cmd.append('-q')
+            cmd.extend(['-F^#', '-I%s' % par['IGNORE'],
+                        '-C%s' % par['CONTEXT'], '-A%d' % ACCURACYerr,
+                        '-tTest <a href="%s%s">%s%s</a>%s' % (TST, EXT, TST, EXT, hglink),
+                        '%s%s.FILTERED' % (TST, STABLEerr),
+                        '%s.test.err.FILTERED' % TST,
+                        '%s.err.diff.html' % TST])
+            if procdebug:
+                print 'RunTest: starting process "%s"\n' % '" "'.join(cmd)
+            proc = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+            proc.killed = False
+            t = Timer(float(par['TIMEOUT']), killProc, args = [proc])
+            try:
+                t.start()
+                out, err = proc.communicate()
+                t.cancel()
+                if verbose or quiet:
+                    if out:
+                        STDOUT.write(out)
+                    if err:
+                        sys.stderr.write(err)
+                if procdebug:
+                    print 'RunTest: process exited "%s" (%s)\n' % \
+                        ('" "'.join(cmd), proc.returncode)
+            except KeyboardInterrupt:
+                t.cancel()
+                killProc(proc)
+                if procdebug:
+                    print 'RunTest: process killed "%s"\n' % '" "'.join(cmd)
+                raise
+            timedout = proc.killed
+            ACCURACYerr = ACCURACYerr - 1
+            if ACCURACYerr < 0:
+                timedout = False # don't try again
+        if env.get('ECHO_DIFF'):
+            cmd = ['diff']
+            if ACCURACYerr >= 0:
+                cmd.append('-d')
+            cmd.extend(['-Bb', '-F^#', '-I%s' % par['IGNORE'],
+                        '-U%s' % par['CONTEXT'],
+                        '%s%s.FILTERED' % (TST, STABLEerr),
+                        '%s.test.err.FILTERED' % TST])
+            proc = subprocess.Popen(cmd)
+            proc.wait()
 
-            FailedOut, FailedErr, elem = AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT, max(sockerr, timeout, recursion, killed, segfaulted))
+        FailedOut, FailedErr, elem = AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT, max(sockerr, timeout, recursion, killed, segfaulted))
+
+        if not verbose and not quiet:
+            if timeout == F_TIME:
+                STDOUT.write("TIMEOUT")
+            elif recursion == F_RECU:
+                STDOUT.write("RECURSION")
+            elif killed == F_KILL:
+                STDOUT.write("KILLED")
+            elif segfaulted == F_SEGV:
+                STDOUT.write("CRASHED")
+            else:
+                if FailedOut == F_OK:
+                    STDOUT.write('OK   ')
+                elif FailedOut == F_WARN:
+                    STDOUT.write('minor')
+                else:
+                    STDOUT.write('MAJOR')
+                STDOUT.write(' ')
+                if FailedErr == F_OK:
+                    STDOUT.write('OK')
+                elif FailedErr == F_WARN:
+                    STDOUT.write('minor')
+                else:
+                    STDOUT.write('MAJOR')
+            STDOUT.write('\n')
 
     return TX,FailedOut,FailedErr,elem
 ### RunTest(env, TST, BusyPorts, COND, oktests) #
@@ -2194,10 +2242,10 @@ def killProc(proc, outfile = None, cmd = None):
     try:
         os.kill(-proc.pid, signal.SIGKILL)
     except AttributeError:
-        if verbose:
+        if procdebug:
             print 'killProc: starting process "taskkill" "/F" "/T" "/PID" "%s"\n' % str(proc.pid)
         subprocess.Popen(['taskkill','/F','/T','/PID',str(proc.pid)]).wait()
-        if verbose:
+        if procdebug:
             print 'killProc: process exited "taskkill" "/F" "/T" "/PID" "%s" (%s)\n' % (str(proc.pid), proc.returncode)
     except OSError:
         pass
@@ -2211,7 +2259,7 @@ def LaunchIt(cmd, TestInput, TestOut, TestErr, TimeOut, SrvrOut = None) :
     TestErr.write(Prompt(cmd))
     TestErr.flush()
 
-    if verbose:
+    if procdebug:
         print 'LaunchIt: starting process "%s" (inpipe)\n' % cmd
     proc = subprocess.Popen(cmd, shell = True, stdin = subprocess.PIPE, stdout = SrvrOut, stderr = TestErr, universal_newlines = True)
     proc.killed = False
@@ -2247,7 +2295,7 @@ def RunIt(cmd, TestIn, TestOut, TestErr, TimeOut) :
     TestOut.flush()
     TestErr.write(Prompt(cmd))
     TestErr.flush()
-    if verbose:
+    if procdebug:
         print 'RunIt: starting process "%s"\n' % cmd
     proc = subprocess.Popen(cmd, shell = True, stdin = TestIn, stdout = TestOut, stderr = TestErr, universal_newlines = True)
     proc.killed = False
@@ -2258,12 +2306,12 @@ def RunIt(cmd, TestIn, TestOut, TestErr, TimeOut) :
         # communicate will not return any useful data
         proc.communicate(input = TestInput)
         t.cancel()
-        if verbose:
+        if procdebug:
             print 'RunIt: process exited "%s" (%s)\n' % (cmd, proc.returncode)
     except KeyboardInterrupt:
         t.cancel()
         killProc(proc, TestErr, cmd)
-        if verbose:
+        if procdebug:
             print 'RunIt: process killed "%s"\n' % cmd
         raise
     return proc.killed
@@ -2294,15 +2342,17 @@ def mapi_ping(port,lang) :
     return False
 ### mapi_ping() #
 
-def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsersAT, ME, MAPIsockets) :
-    quiet = env['QUIET']
+def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsersAT, ME, MAPIsockets, length) :
     ATJOB2 = ""
-    LogLine = os.path.join(env['TSTDIR'],TST+EXT)+' '+PRELUDE+' (<=%d,%d,%d) ...' % (TIMEOUT,CTIMEOUT,STIMEOUT)
     STDERR.flush()
-    if not quiet:
-        STDOUT.write(prompt()+LogLine)
-    else:
+    if quiet:
         STDOUT.write(".")
+    elif verbose:
+        STDOUT.write('%s%s %s (<=%d,%d,%d) ...' %
+                     (prompt(), os.path.join(env['TSTDIR'], TST + EXT),
+                      PRELUDE, TIMEOUT, CTIMEOUT, STIMEOUT))
+    else:
+        STDOUT.write('%s%-*s ' % (prompt(), length, TST))
 
     try:
         STDOUT.flush()
@@ -2491,7 +2541,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             CollectIt(pSrvr.stdout, SrvrOut)
             pSrvr.wait()
             pSrvrTimer.cancel()
-            if verbose:
+            if procdebug:
                 print 'DoIt: process exited "%s" (%s)\n' % (Srvr, pSrvr.returncode)
             pSrvrTimer = None
             timedout = timedout or pSrvr.killed
@@ -2593,7 +2643,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
 ### DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsersAT, ME, MAPIsockets) #
 
 def Check(command, input) :
-    if verbose:
+    if procdebug:
         print 'Check: starting process "%s" (inpipe,outpipe,errpipe)\n' % command
     proc = subprocess.Popen(command, shell = True, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True)
     t = Timer(float(par['TIMEOUT']), killProc, args = [proc])
@@ -2601,12 +2651,12 @@ def Check(command, input) :
         t.start()
         qOut, qErr = proc.communicate(input = input)
         t.cancel()
-        if verbose:
+        if procdebug:
             print 'Check: process exited "%s" (%s)\n' % (command, proc.returncode)
     except KeyboardInterrupt:
         t.cancel()
         killProc(proc)
-        if verbose:
+        if procdebug:
             print 'Check: process killed "%s"\n' % command
         raise
     qOut = qOut.split('\n')
@@ -2642,7 +2692,7 @@ def Check(command, input) :
     return 0
 ### Check(command, input) #
 
-def CheckClassPath(quiet) :
+def CheckClassPath() :
     if os.environ.has_key('CLASSPATH'):
         cp = os.environ['CLASSPATH']
         cpx = cp + os.pathsep
@@ -2697,7 +2747,7 @@ def CheckClassPath(quiet) :
        ( ( CONDITIONALS.has_key('HAVE_JDBCTESTS_JAR') and CONDITIONALS['HAVE_JDBCTESTS_JAR'] ) or \
          ( CONDITIONALS.has_key('HAVE_JDBCTESTS_DIR') and CONDITIONALS['HAVE_JDBCTESTS_DIR'] ) ):
         CONDITIONALS['HAVE_JDBCTESTS'] = '#'
-### CheckClassPath(quiet) #
+### CheckClassPath() #
 
 def SetExecEnv(exe,verbose) :
     if os.name == "nt":
@@ -2718,7 +2768,7 @@ def SetExecEnv(exe,verbose) :
             print "%s = %s : %s" % (V, exe[v][0], exe[v][1])
     if verbose:
         STDOUT.flush()
-### SetExecEnv(exe,verbose) #
+### SetExecEnv(exe,procdebug) #
 
 def ReadMapproveRc(f) :
     v = {}
@@ -2779,11 +2829,11 @@ if os.name == "nt":
     SYST    = "Windows"
     RELEASE = "5.0"
     r = re.compile('^Microsoft Windows (.*)\[Version ([0-9]+\.[0-9]+)([^\[0-9].*)\]$')
-    if verbose:
+    if procdebug:
         print 'starting process "cmd" "/c" "ver" (inpipe,outpipe)\n'
     proc = subprocess.Popen('cmd /c ver', stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True)
     qOut, qErr = proc.communicate()
-    if verbose:
+    if procdebug:
         print 'process exited "cmd" "/c" "ver" (%s)\n' % proc.returncode
     for l in qOut.split('\n'):
         m = r.match(l.strip())
@@ -2904,11 +2954,11 @@ par['PACKAGE'] = 'none'
 # try to be "smart"
 repo = ''
 try:
-    if verbose:
+    if procdebug:
         print 'starting process "hg" "root" (inpipe,outpipe)\n'
     proc = subprocess.Popen(['hg','root'], stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True)
     out,err = proc.communicate()
-    if verbose:
+    if procdebug:
         print 'process exited "hg" "root" (%s)\n' % proc.returncode
     if out:
         hgr = os.path.normcase(os.path.normpath(os.path.realpath(out.strip())))
@@ -2932,7 +2982,6 @@ if repo:
 dft = {}
 
 def main(argv) :
-    global verbose
     #TODO:
     #signal.signal(signal.SIGALRM, AlarmHandler)
 
@@ -2983,7 +3032,10 @@ def main(argv) :
          'default: "%s"' % _configure('@QXprefix@')),
         ('quiet', 'q', 'quiet', None,
          "suppress messages on stdout"),
-        ('verbose', None, 'verbose', None, 'be verbose'),
+        ('verbose', 'v', 'verbose', None,
+         "more verbose test output"),
+        ('procdebug', None, 'procdebug', None,
+         'process debugging (Mtest developers only'),
         ]
 
     if THISFILE == "Mtest.py":
@@ -3074,8 +3126,14 @@ def main(argv) :
         config = ' "--config=%s"' % config
 
     par['RECURSIVE'] = opts.get('recursive', 0)
-    par['QUIET'] = opts.get('quiet', 0)
-    verbose = opts.get('verbose', 0)
+    global quiet
+    quiet = opts.get('quiet', 0)
+    global verbose
+    verbose = opts.get('verbose', False)
+    if quiet and verbose:
+        ErrExit('--verbose and --quiet are mutually exclusive')
+    global procdebug
+    procdebug = opts.get('procdebug', 0)
     if THISFILE == "Mtest.py":
         _IGNORE = dftIGNORE
         par['IGNORE'] = opts.get('ignore', _IGNORE)
@@ -3136,8 +3194,6 @@ def main(argv) :
         if a is not None:
             env[v] = a
 
-    quiet = par['QUIET']
-
     # display par's
     STDERR.flush()
     if not quiet:
@@ -3159,7 +3215,7 @@ def main(argv) :
         CONDITIONALS['HAVE_MONETDB5'] = '#'
     else:
         CONDITIONALS['HAVE_MONETDB5'] = ''
-    CheckClassPath(quiet)
+    CheckClassPath()
 
     # tidy-up and fall-back to defaults where necessary
     if THISFILE == "Mtest.py":
