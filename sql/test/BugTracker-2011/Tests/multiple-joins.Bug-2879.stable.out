@@ -39,7 +39,6 @@ Ready.
 # SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/80_udf.sql
 # SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/99_system.sql
 
-Over..
 
 # 15:53:53 >  
 # 15:53:53 >  mclient -lsql -ftest -i -e --host=ottar --port=30655 

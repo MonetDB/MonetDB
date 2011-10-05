@@ -13,7 +13,6 @@ stdout of test 'convert_dec2varchar.SF-1774312` in directory 'test/BugTracker` i
 
 Ready.
 
-Over..
 
 # 23:35:37 >  
 # 23:35:37 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=koala --port=33233 

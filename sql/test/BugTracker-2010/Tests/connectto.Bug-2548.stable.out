@@ -17,7 +17,6 @@ stdout of test 'connectto.Bug-2548` in directory 'test/BugTracker-2010` itself:
 
 Ready.
 
-Over..
 
 # 13:12:55 >  
 # 13:12:55 >  mclient -lsql -ftest -i -e --host=rig --port=39884 

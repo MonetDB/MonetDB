@@ -17,7 +17,6 @@ stdout of test 'copy_into_crash.SF-1975402` in directory 'BugTracker` itself:
 Ready.
 !ERROR: ParseException: Unknown type: ''POINT'
 
-Over..
 
 # 11:37:42 >  
 # 11:37:42 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=30423 

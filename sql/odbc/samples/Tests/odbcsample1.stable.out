@@ -13,7 +13,6 @@ stdout of test 'odbcsample1` in directory 'odbc/samples` itself:
 
 Ready.
 
-Over..
 
 # 14:55:35 >  
 # 14:55:35 >  Mtimeout -timeout 60 ./odbcsample1.SQL odbcsample1 

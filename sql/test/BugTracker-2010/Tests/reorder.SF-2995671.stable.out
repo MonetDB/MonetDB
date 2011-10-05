@@ -17,7 +17,6 @@ stdout of test 'reorder.SF-2995671` in directory 'test/BugTracker-2010` itself:
 
 Ready.
 
-Over..
 
 # 21:47:09 >  
 # 21:47:09 >  mclient -lsql -ftest -i -e --host=eir --port=37491 

@@ -18,7 +18,6 @@ stdout of test 'vacuum` in directory 'test/BugTracker-2010` itself:
 
 Ready.
 
-Over..
 
 # 21:53:58 >  
 # 21:53:58 >  mclient -lsql -ftest -i -e --host=alf --port=35108 

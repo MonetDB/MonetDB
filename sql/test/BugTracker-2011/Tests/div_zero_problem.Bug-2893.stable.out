@@ -1,0 +1,97 @@
+stdout of test 'div_zero_problem.Bug-2893` in directory 'test/BugTracker-2011` itself:
+
+
+# 16:46:26 >  
+# 16:46:26 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB" --set mapi_open=true --set mapi_port=33988 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_test_BugTracker-2011" --set mal_listing=0 ; echo ; echo Over..
+# 16:46:26 >  
+
+# MonetDB 5 server v11.5.4
+# This is an unreleased version
+# Serving database 'mTests_test_BugTracker-2011', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 3.780 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://niels.nesco.mine.nu:33988/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+Over..
+
+# 16:46:27 >  
+# 16:46:27 >  mclient -lsql -ftest -i -e --host=niels --port=33988 
+# 16:46:27 >  
+
+#create table catalog ( n int );
+#insert into catalog values (1);
+[ 1	]
+#insert into catalog values (2);
+[ 1	]
+#select * from catalog;
+% sys.catalog # table_name
+% n # name
+% int # type
+% 1 # length
+[ 1	]
+[ 2	]
+#select * from catalog where n > 1;
+% sys.catalog # table_name
+% n # name
+% int # type
+% 1 # length
+[ 2	]
+#select t.n from (select * from catalog where n > 1) as t;
+% sys.t # table_name
+% n # name
+% int # type
+% 1 # length
+[ 2	]
+#select t.n from (select * from catalog where n > 1) as t where 1/(t.n-1) > 0;
+% sys.t # table_name
+% n # name
+% int # type
+% 1 # length
+[ 2	]
+#select t.n from (select * from catalog where n > 1) as t where t.n/(t.n-1) > 0;
+% sys.t # table_name
+% n # name
+% int # type
+% 1 # length
+[ 2	]
+#select t.n from (select * from catalog where n > 1) as t where 1/(t.n-1) > 0
+#and t.n/(t.n-1) > 0;
+% sys.t # table_name
+% n # name
+% int # type
+% 1 # length
+[ 2	]
+#select t.n from (select * from catalog where n > 1) as t where t.n/(t.n-1) > 0
+#and 1/(t.n-1) > 0;
+% sys.t # table_name
+% n # name
+% int # type
+% 1 # length
+[ 2	]
+#select t.n from (select * from catalog where n > 1) as t where t.n/(t.n-1) > 0
+#or 1/(t.n-1) > 0;
+% sys.t # table_name
+% n # name
+% int # type
+% 1 # length
+[ 2	]
+#select t.n from (select * from catalog where n > 1) as t where 1/(t.n-1) > 0 or
+#t.n/(t.n-1) > 0;
+% sys.t # table_name
+% n # name
+% int # type
+% 1 # length
+[ 2	]
+#drop table catalog;
+
+# 16:46:27 >  
+# 16:46:27 >  Done.
+# 16:46:27 >  
+

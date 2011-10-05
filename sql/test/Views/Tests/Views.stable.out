@@ -12,7 +12,6 @@ stdout of test 'Views` in directory 'test/Views` itself:
 
 Ready.
 
-Over..
 
 # 15:59:37 >  
 # 15:59:37 >  Mtimeout -timeout 60 ./Views.SQL Views 

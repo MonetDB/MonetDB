@@ -8,7 +8,6 @@ stdout of test 'create_table_with_data.SF-1715679` in directory 'test/BugTracker
 
 Ready.
 
-Over..
 
 # 14:16:53 >  
 # 14:16:53 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=39662 

@@ -19,7 +19,6 @@ stdout of test 'mat.slice_limit1.Bug-2645` in directory 'test/BugTracker-2010` i
 
 Ready.
 
-Over..
 
 # 15:04:12 >  
 # 15:04:12 >  mclient -lsql -ftest -i -e --host=halfdan --port=37776 

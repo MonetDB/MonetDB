@@ -13,7 +13,6 @@ stdout of test 'crash_on_insert.SF-1639113` in directory 'test/BugTracker` itsel
 
 Ready.
 
-Over..
 
 # 13:42:07 >  
 # 13:42:07 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30839  < crash_on_insert.SF-1639113.sql

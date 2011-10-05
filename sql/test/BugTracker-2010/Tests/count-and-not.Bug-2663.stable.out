@@ -19,7 +19,6 @@ stdout of test 'count-and-not.Bug-2663` in directory 'test/BugTracker-2010` itse
 
 Ready.
 
-Over..
 
 # 17:35:13 >  
 # 17:35:13 >  mclient -lsql -ftest -i -e --host=ottar --port=35150 

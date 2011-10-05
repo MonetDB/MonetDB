@@ -21,7 +21,6 @@ stdout of test 'linearroad` in directory 'backends/monet5/datacell` itself:
 Ready.
 # SQL catalog created, loading sql scripts once
 
-Over..
 
 # 16:58:42 >  
 # 16:58:42 >  mclient -lsql -ftest -i -e --host=rig --port=31723 

@@ -13,7 +13,6 @@ stdout of test 'not_null.SF-933194` in directory 'test/BugDay_2005-10-06_2.9.3` 
 
 Ready.
 
-Over..
 
 # 12:39:55 >  
 # 12:39:55 >  Mtimeout -timeout 180 ./not_null.SF-933194.SQL not_null.SF-933194 

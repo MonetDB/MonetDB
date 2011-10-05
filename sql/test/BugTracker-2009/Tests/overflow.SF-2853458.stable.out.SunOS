@@ -19,7 +19,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 22:44:14 >  
 # 22:44:14 >  mclient -lsql -ftest -i -e --host=build-t1000-sol10 --port=31931 

@@ -20,7 +20,6 @@ stdout of test 'operation-successful.Bug-2589` in directory 'test/BugTracker-201
 Ready.
 # SQL catalog created, loading sql scripts once
 
-Over..
 
 # 10:20:48 >  
 # 10:20:48 >  /usr/bin/python operation-successful.Bug-2589.SQL.py operation-successful.Bug-2589 

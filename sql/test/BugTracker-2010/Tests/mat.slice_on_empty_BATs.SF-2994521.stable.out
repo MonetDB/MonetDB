@@ -17,7 +17,6 @@ stdout of test 'mat.slice_on_empty_BATs.SF-2994521` in directory 'test/BugTracke
 
 Ready.
 
-Over..
 
 # 10:18:32 >  
 # 10:18:32 >  mclient -lsql -ftest -i -e --host=rig --port=39508 

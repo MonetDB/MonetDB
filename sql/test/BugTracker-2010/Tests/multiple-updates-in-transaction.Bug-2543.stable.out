@@ -17,7 +17,6 @@ stdout of test 'multiple-updates-in-transaction.Bug-2543` in directory 'test/Bug
 
 Ready.
 
-Over..
 
 # 20:02:18 >  
 # 20:02:18 >  mclient -lsql -ftest -i -e --host=alf --port=34067 

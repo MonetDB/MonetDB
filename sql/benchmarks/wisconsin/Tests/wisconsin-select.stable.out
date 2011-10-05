@@ -13,7 +13,6 @@ stdout of test 'wisconsin-select` in directory 'benchmarks/wisconsin` itself:
 
 Ready.
 
-Over..
 
 # 12:35:43 >  
 # 12:35:43 >  Mtimeout -timeout 480 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < wisconsin-select.sql

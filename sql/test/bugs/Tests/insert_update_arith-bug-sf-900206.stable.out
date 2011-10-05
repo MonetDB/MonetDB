@@ -13,7 +13,6 @@ stdout of test 'insert_update_arith-bug-sf-900206` in directory 'test/bugs` itse
 
 Ready.
 
-Over..
 
 # 12:48:02 >  
 # 12:48:02 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < insert_update_arith-bug-sf-900206.sql

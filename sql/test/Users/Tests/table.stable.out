@@ -13,7 +13,6 @@ stdout of test 'table` in directory 'test/Users` itself:
 
 Ready.
 
-Over..
 
 # 15:42:20 >  
 # 15:42:20 >  Mtimeout -timeout 60 ./table.SQL table 

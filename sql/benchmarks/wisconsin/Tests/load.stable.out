@@ -30,7 +30,6 @@ end main;
 
 Ready.
 
-Over..
 
 # 12:35:12 >  
 # 12:35:12 >  Mtimeout -timeout 9600 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < load.sql

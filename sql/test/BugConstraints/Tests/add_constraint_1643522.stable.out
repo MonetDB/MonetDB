@@ -13,7 +13,6 @@ stdout of test 'add_constraint_1643522` in directory 'test/BugConstraints` itsel
 
 Ready.
 
-Over..
 
 # 16:28:34 >  
 # 16:28:34 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=33925  < add_constraint_1643522.sql

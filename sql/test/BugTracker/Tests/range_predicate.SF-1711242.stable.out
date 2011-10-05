@@ -14,7 +14,6 @@ stdout of test 'range_predicate.SF-1711242` in directory 'test/BugTracker` itsel
 Ready.
 
 
-Over..
 
 # 00:17:02 >  
 # 00:17:02 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=36932 

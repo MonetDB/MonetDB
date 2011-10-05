@@ -384,7 +384,7 @@ forkMserver(char *database, sabdb** stats, int force)
 		/* if we've never found a connection, try to figure out why */
 		if (i >= 20) {
 			int state = (*stats)->state;
-			dpair pdp;
+			int hasconn = (*stats)->conns != NULL && (*stats)->conns->val != NULL;
 
 			/* starting failed */
 			msab_freeStatus(stats);
@@ -392,14 +392,13 @@ forkMserver(char *database, sabdb** stats, int force)
 			/* in the meanwhile the list may have changed so refetch the
 			 * parent and self */
 			pthread_mutex_lock(&_mero_topdp_lock);
-			dp = NULL;
-			pdp = _mero_topdp;
-			while (pdp != NULL && pdp->next != NULL && pdp->next->pid != pid)
-				pdp = pdp->next;
+			dp = _mero_topdp;
+			while (dp != NULL && dp->pid != pid)
+				dp = dp->next;
 
-			/* pdp is NULL when the database terminated somehow while
+			/* dp is NULL when the database terminated somehow while
 			 * starting */
-			if (pdp != NULL) {
+			if (dp == NULL) {
 				pthread_mutex_unlock(&_mero_topdp_lock);
 				switch (state) {
 					case SABdbRunning:
@@ -429,16 +428,22 @@ forkMserver(char *database, sabdb** stats, int force)
 
 			/* in this case something seems still to be running, which
 			 * we don't want */
-			dp = pdp->next;
 			terminateProcess(dp);
 			pthread_mutex_unlock(&_mero_topdp_lock);
 
 			switch (state) {
 				case SABdbRunning:
-					return(newErr(
-								"timeout when waiting for database '%s' to "
-								"open up a communication channel or to "
-								"initialise the sql scenario", database));
+					if (hasconn) {
+						return(newErr(
+									"timeout while waiting for database '%s' "
+									"to initialise the sql scenario",
+									database));
+					} else {
+						return(newErr(
+									"timeout while waiting for database '%s' "
+									"to open up a communication channel",
+									database));
+					}
 				case SABdbCrashed:
 					return(newErr(
 								"database '%s' has crashed after starting, "

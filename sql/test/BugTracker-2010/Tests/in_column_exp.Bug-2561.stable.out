@@ -17,7 +17,6 @@ stdout of test 'in_column_exp.Bug-2561` in directory 'test/BugTracker-2010` itse
 
 Ready.
 
-Over..
 
 # 18:47:51 >  
 # 18:47:51 >  mclient -lsql -ftest -i -e --host=alf --port=39317 

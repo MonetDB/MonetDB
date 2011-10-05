@@ -13,7 +13,6 @@ stdout of test 'updating_views.SF-1023645` in directory 'test/BugDay_2005-11-09_
 
 Ready.
 
-Over..
 
 # 12:45:02 >  
 # 12:45:02 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < updating_views.SF-1023645.sql

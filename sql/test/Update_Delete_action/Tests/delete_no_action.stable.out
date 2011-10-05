@@ -13,7 +13,6 @@ stdout of test 'delete_no_action` in directory 'test/Update_Delete_action` itsel
 
 Ready.
 
-Over..
 
 # 16:59:19 >  
 # 16:59:19 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=33148 

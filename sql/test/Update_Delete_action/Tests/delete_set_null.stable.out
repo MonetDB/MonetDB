@@ -13,7 +13,6 @@ stdout of test 'delete_set_null` in directory 'test/Update_Delete_action` itself
 
 Ready.
 
-Over..
 
 # 15:55:30 >  
 # 15:55:30 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35380 

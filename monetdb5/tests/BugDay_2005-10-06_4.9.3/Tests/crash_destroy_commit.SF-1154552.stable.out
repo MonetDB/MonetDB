@@ -13,7 +13,6 @@ stdout of test 'crash_destroy_commit.SF-1154552` in directory 'tests/BugDay_2005
 
 Ready.
 
-Over..
 
 # 13:11:39 >  
 # 13:11:39 >  Mtimeout -timeout 60 MapiClient -lmil -u monetdb -P monetdb "--config=/ufs/fabian/scratch/monetdb/current/program/etc/MonetDB.conf" --host=localhost --port=34569 < crash_destroy_commit.SF-1154552_s00.milC

@@ -13,7 +13,6 @@ stdout of test 'integer_overflow.SF-1048671` in directory 'test/BugDay_2005-11-0
 
 Ready.
 
-Over..
 
 # 12:45:19 >  
 # 12:45:19 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < integer_overflow.SF-1048671.sql

@@ -13,7 +13,6 @@ stdout of test 'parsing_doubles.SF-922332` in directory 'test/BugDay_2005-10-06_
 
 Ready.
 
-Over..
 
 # 12:38:01 >  
 # 12:38:01 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < parsing_doubles.SF-922332.sql

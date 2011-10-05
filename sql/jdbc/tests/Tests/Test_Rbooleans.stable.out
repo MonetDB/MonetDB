@@ -13,7 +13,6 @@ stdout of test 'Test_Rbooleans` in directory 'jdbc/tests` itself:
 
 Ready.
 
-Over..
 
 # 21:59:12 >  
 # 21:59:12 >  Mtimeout -timeout 60 ./Test_Rbooleans.SQL Test_Rbooleans 

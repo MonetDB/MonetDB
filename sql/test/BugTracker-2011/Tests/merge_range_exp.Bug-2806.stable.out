@@ -19,7 +19,6 @@ stdout of test 'merge_range_exp.Bug-2806` in directory 'test/BugTracker-2011` it
 
 Ready.
 
-Over..
 
 # 15:52:06 >  
 # 15:52:06 >  mclient -lsql -ftest -i -e --host=alf --port=31260 

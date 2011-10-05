@@ -19,7 +19,6 @@ stdout of test 'COPY_INTO_with_backslashes.Bug-2748` in directory 'test/BugTrack
 
 Ready.
 
-Over..
 
 # 22:10:58 >  
 # 22:10:58 >  mclient -lsql -ftest -i -e --host=alf --port=34775 

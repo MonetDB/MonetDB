@@ -13,7 +13,6 @@ stdout of test 'string2float_coercions.SF-928850` in directory 'test/BugDay_2005
 
 Ready.
 
-Over..
 
 # 12:39:03 >  
 # 12:39:03 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < string2float_coercions.SF-928850.sql

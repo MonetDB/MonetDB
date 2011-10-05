@@ -13,7 +13,6 @@ stdout of test 'parser_crashes_server.SF-921996` in directory 'test/BugDay_2005-
 
 Ready.
 
-Over..
 
 # 12:37:49 >  
 # 12:37:49 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < parser_crashes_server.SF-921996.sql

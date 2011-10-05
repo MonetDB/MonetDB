@@ -19,7 +19,6 @@ stdout of test 'create` in directory 'benchmarks/ssbm` itself:
 Ready.
 # SQL catalog created, loading sql scripts once
 
-Over..
 
 # 17:32:45 >  
 # 17:32:45 >  mclient -lsql -ftest -i -e --host=rig --port=37793 

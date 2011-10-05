@@ -19,7 +19,6 @@ stdout of test 'topbasket` in directory 'test/datacell` itself:
 
 Ready.
 
-Over..
 
 # 12:42:08 >  
 # 12:42:08 >  mclient -lsql -ftest -i -e --host=alf --port=36031 

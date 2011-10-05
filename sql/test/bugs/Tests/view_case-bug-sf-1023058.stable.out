@@ -13,7 +13,6 @@ stdout of test 'view_case-bug-sf-1023058` in directory 'test/bugs` itself:
 
 Ready.
 
-Over..
 
 # 11:55:42 >  
 # 11:55:42 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < view_case-bug-sf-1023058.sql

@@ -15,7 +15,6 @@ stdout of test 'set_default_value.SF-1715553` in directory 'test/BugTracker` its
 
 Ready.
 
-Over..
 
 # 00:12:35 >  
 # 00:12:35 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35378 

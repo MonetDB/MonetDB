@@ -13,7 +13,6 @@ stdout of test 'alter-default.SF-1695290` in directory 'test/BugTracker` itself:
 
 Ready.
 
-Over..
 
 # 22:50:17 >  
 # 22:50:17 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35426 

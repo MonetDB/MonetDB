@@ -41,7 +41,6 @@ Ready.
 # SQL loading sql scripts /net/volund.ins.cwi.nl/export/scratch1/fabian/monetdb/Aug2011/program-x86_64/lib/monetdb5/createdb/80_udf.sql
 # SQL loading sql scripts /net/volund.ins.cwi.nl/export/scratch1/fabian/monetdb/Aug2011/program-x86_64/lib/monetdb5/createdb/99_system.sql
 
-Over..
 
 # 16:17:35 >  
 # 16:17:35 >  ./DBD-manyrows.Bug-2889.SQL.sh DBD-manyrows.Bug-2889 

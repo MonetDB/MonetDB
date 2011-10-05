@@ -18,7 +18,6 @@ stdout of test 'values_type_cast.Bug-2735` in directory 'test/BugTracker-2010` i
 
 Ready.
 
-Over..
 
 # 20:48:21 >  
 # 20:48:21 >  mclient -lsql -ftest -i -e --host=alf --port=37366 

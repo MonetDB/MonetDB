@@ -19,7 +19,6 @@ stdout of test 'unicode-bom.Bug-2641` in directory 'test/BugTracker-2010` itself
 
 Ready.
 
-Over..
 
 # 11:21:04 >  
 # 11:21:04 >  mclient -lsql -ftest -i -e --host=volund --port=33351 

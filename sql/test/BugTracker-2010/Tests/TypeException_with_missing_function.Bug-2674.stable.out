@@ -19,7 +19,6 @@ stdout of test 'TypeException_with_missing_function.Bug-2674` in directory 'test
 Ready.
 # SQL catalog created, loading sql scripts once
 
-Over..
 
 # 11:02:36 >  
 # 11:02:36 >  mclient -lsql -ftest -i -e --host=rig --port=33682 

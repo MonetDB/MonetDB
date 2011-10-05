@@ -13,7 +13,6 @@ stdout of test 'drop_foreignkey_selfreferencing` in directory 'test/bugs` itself
 
 Ready.
 
-Over..
 
 # 12:47:54 >  
 # 12:47:54 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < drop_foreignkey_selfreferencing.sql

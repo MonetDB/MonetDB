@@ -13,7 +13,6 @@ stdout of test 'select_id_not_in_another_select.SF-1737777` in directory 'test/B
 
 Ready.
 
-Over..
 
 # 19:38:49 >  
 # 19:38:49 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=37754 

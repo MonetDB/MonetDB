@@ -13,7 +13,6 @@ stdout of test 'select_distinct` in directory 'benchmarks/ATIS` itself:
 
 Ready.
 
-Over..
 
 # 12:30:42 >  
 # 12:30:42 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < select_distinct.sql

@@ -13,7 +13,6 @@ stdout of test 'last_line_without_newline.SF-922390` in directory 'test/BugDay_2
 
 Ready.
 
-Over..
 
 # 12:38:04 >  
 # 12:38:04 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < last_line_without_newline.SF-922390_s00.sql

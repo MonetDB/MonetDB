@@ -13,7 +13,6 @@ stdout of test 'role1` in directory 'test/Users` itself:
 
 Ready.
 
-Over..
 
 # 15:30:50 >  
 # 15:30:50 >  Mtimeout -timeout 60 ./role1.SQL role1 

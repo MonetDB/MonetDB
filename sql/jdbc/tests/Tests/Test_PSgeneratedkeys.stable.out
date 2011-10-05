@@ -19,7 +19,6 @@ stdout of test 'Test_PSgeneratedkeys` in directory 'jdbc/tests` itself:
 Ready.
 # SQL catalog created, loading sql scripts once
 
-Over..
 
 # 10:40:26 >  
 # 10:40:26 >  ./Test_PSgeneratedkeys.SQL.sh Test_PSgeneratedkeys 

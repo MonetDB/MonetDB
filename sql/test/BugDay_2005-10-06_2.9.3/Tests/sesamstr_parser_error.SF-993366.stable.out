@@ -13,7 +13,6 @@ stdout of test 'sesamstr_parser_error.SF-993366` in directory 'test/BugDay_2005-
 
 Ready.
 
-Over..
 
 # 12:41:56 >  
 # 12:41:56 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < sesamstr_parser_error.SF-993366.sql

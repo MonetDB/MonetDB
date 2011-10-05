@@ -13,7 +13,6 @@ stdout of test 'double_commit.SF-916584` in directory 'test/BugDay_2005-10-06_2.
 
 Ready.
 
-Over..
 
 # 12:37:23 >  
 # 12:37:23 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < double_commit.SF-916584.sql

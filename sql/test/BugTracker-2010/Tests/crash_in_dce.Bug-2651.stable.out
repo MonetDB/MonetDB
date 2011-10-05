@@ -18,7 +18,6 @@ stdout of test 'crash_in_dce.Bug-2651` in directory 'test/BugTracker-2010` itsel
 
 Ready.
 
-Over..
 
 # 00:36:24 >  
 # 00:36:24 >  mclient -lsql -ftest -i -e --host=alf --port=33475 

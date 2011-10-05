@@ -13,7 +13,6 @@ stdout of test 'bogus_prepare.SF-1377079` in directory 'test/BugDay_2005-12-19_2
 
 Ready.
 
-Over..
 
 # 14:23:30 >  
 # 14:23:30 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=49012  < bogus_prepare.SF-1377079.sql

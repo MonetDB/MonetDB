@@ -13,7 +13,6 @@ stdout of test 'Test_Rpositioning` in directory 'jdbc/tests` itself:
 
 Ready.
 
-Over..
 
 # 22:23:25 >  
 # 22:23:25 >  Mtimeout -timeout 60 ./Test_Rpositioning.SQL Test_Rpositioning 

@@ -20,7 +20,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 23:32:56 >  
 # 23:32:56 >  mclient -lsql -i -umonetdb -Pmonetdb --host=alviss --port=33231 

@@ -13,7 +13,6 @@ stdout of test 'create` in directory 'benchmarks/tpch/LOCKED` itself:
 
 Ready.
 
-Over..
 
 # 12:34:17 >  
 # 12:34:17 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < create.sql

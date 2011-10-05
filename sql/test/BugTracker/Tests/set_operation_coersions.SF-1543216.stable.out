@@ -13,7 +13,6 @@ stdout of test 'set_operation_coersions.SF-1543216` in directory 'test/BugTracke
 
 Ready.
 
-Over..
 
 # 11:19:45 >  
 # 11:19:45 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=36646  < set_operation_coersions.SF-1543216.sql

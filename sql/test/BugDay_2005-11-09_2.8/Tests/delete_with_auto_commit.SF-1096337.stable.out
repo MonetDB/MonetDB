@@ -13,7 +13,6 @@ stdout of test 'delete_with_auto_commit.SF-1096337` in directory 'test/BugDay_20
 
 Ready.
 
-Over..
 
 # 12:45:05 >  
 # 12:45:05 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < delete_with_auto_commit.SF-1096337.sql

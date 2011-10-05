@@ -19,7 +19,6 @@ stdout of test 'subquery_in_from_clause.Bug-2812` in directory 'test/BugTracker-
 
 Ready.
 
-Over..
 
 # 14:00:30 >  
 # 14:00:30 >  mclient -lsql -ftest -i -e --host=alf --port=31068 

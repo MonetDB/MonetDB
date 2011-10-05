@@ -13,7 +13,6 @@ stdout of test 'default_next_value_for_non_ex_seq.SF.1246631` in directory 'test
 
 Ready.
 
-Over..
 
 # 13:41:25 >  
 # 13:41:25 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=40245  < default_next_value_for_non_ex_seq.SF.1246631.sql

@@ -13,7 +13,6 @@ stdout of test 'string_quotes.SF-919539` in directory 'test/BugDay_2005-10-06_2.
 
 Ready.
 
-Over..
 
 # 11:50:17 >  
 # 11:50:17 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < string_quotes.SF-919539.sql

@@ -18,7 +18,6 @@ stdout of test 'not-in-union-except-union.Bug-2577` in directory 'test/BugTracke
 
 Ready.
 
-Over..
 
 # 13:07:28 >  
 # 13:07:28 >  mclient -lsql -ftest -i -e --host=volund --port=39783 

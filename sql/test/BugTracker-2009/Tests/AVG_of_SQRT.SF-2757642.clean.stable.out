@@ -19,7 +19,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 10:14:16 >  
 # 10:14:16 >  mclient -lsql -umonetdb -Pmonetdb --host=ottar --port=32636 

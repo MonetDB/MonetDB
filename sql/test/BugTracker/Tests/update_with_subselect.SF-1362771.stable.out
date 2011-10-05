@@ -13,7 +13,6 @@ stdout of test 'update_with_subselect.SF-1362771` in directory 'test/BugTracker`
 
 Ready.
 
-Over..
 
 # 12:47:32 >  
 # 12:47:32 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < update_with_subselect.SF-1362771.sql

@@ -13,7 +13,6 @@ stdout of test 'schema` in directory 'test/Users` itself:
 
 Ready.
 
-Over..
 
 # 14:00:57 >  
 # 14:00:57 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35107  < schema.sql

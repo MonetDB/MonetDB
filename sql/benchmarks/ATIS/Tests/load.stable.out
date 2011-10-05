@@ -27,7 +27,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 10:33:58 >  
 # 10:33:58 >  Mtimeout -timeout 180 MapiClient --language=sql -u monetdb -P monetdb --host=pictor --port=58607  < load.sql

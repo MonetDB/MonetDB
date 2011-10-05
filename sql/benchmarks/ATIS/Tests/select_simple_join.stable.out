@@ -17,7 +17,6 @@ stdout of test 'select_simple_join` in directory 'benchmarks/ATIS` itself:
 Ready.
 
 
-Over..
 
 # 12:30:37 >  
 # 12:30:37 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < select_simple_join.sql

@@ -18,7 +18,6 @@ stdout of test 'LIMIT_OFFSET_big-endian.Bug-2622` in directory 'test/BugTracker-
 
 Ready.
 
-Over..
 
 # 21:05:24 >  
 # 21:05:24 >  mclient -lsql -ftest -i -e --host=rig --port=38140 

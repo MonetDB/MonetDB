@@ -13,7 +13,6 @@ stdout of test 'index_management.SF-927326` in directory 'test/BugDay_2005-10-06
 
 Ready.
 
-Over..
 
 # 12:38:52 >  
 # 12:38:52 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < index_management.SF-927326.sql

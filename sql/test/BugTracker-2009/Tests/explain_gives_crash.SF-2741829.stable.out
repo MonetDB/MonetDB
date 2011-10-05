@@ -19,7 +19,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 21:13:40 >  
 # 21:13:40 >  mclient -lsql -i --host=alf --port=39638 

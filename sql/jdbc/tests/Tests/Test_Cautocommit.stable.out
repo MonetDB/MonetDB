@@ -13,7 +13,6 @@ stdout of test 'Test_Cautocommit` in directory 'jdbc/tests` itself:
 
 Ready.
 
-Over..
 
 # 21:04:30 >  
 # 21:04:30 >  Mtimeout -timeout 60 ./Test_Cautocommit.SQL Test_Cautocommit 

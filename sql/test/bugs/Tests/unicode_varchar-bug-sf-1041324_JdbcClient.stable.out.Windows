@@ -20,7 +20,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 12:55:12 >  
 # 12:55:12 >  Mtimeout -timeout 180 ./unicode_varchar-bug-sf-1041324_JdbcClient.SQL unicode_varchar-bug-sf-1041324_JdbcClient 

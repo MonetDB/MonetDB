@@ -13,7 +13,6 @@ stdout of test 'update_pkey_bug.SF-1733712` in directory 'test/BugTracker` itsel
 
 Ready.
 
-Over..
 
 # 13:12:17 >  
 # 13:12:17 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=koala --port=33483 

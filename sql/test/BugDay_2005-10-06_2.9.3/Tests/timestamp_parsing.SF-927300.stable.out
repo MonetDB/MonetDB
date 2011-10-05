@@ -13,7 +13,6 @@ stdout of test 'timestamp_parsing.SF-927300` in directory 'test/BugDay_2005-10-0
 
 Ready.
 
-Over..
 
 # 11:50:28 >  
 # 11:50:28 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < timestamp_parsing.SF-927300.sql

@@ -15,7 +15,6 @@ stdout of test 'decimal_copy_into_bug` in directory 'test/bugs` itself:
 
 Ready.
 
-Over..
 
 # 23:07:21 >  
 # 23:07:21 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=35940 

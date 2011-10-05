@@ -13,7 +13,6 @@ stdout of test 'crash_on_cast.SF-1357271` in directory 'test/BugTracker` itself:
 
 Ready.
 
-Over..
 
 # 11:53:58 >  
 # 11:53:58 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < crash_on_cast.SF-1357271.sql

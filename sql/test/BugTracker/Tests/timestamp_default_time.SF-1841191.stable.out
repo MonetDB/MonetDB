@@ -15,7 +15,6 @@ stdout of test 'timestamp_default_time.SF-1841191` in directory 'test/BugTracker
 
 Ready.
 
-Over..
 
 # 23:44:02 >  
 # 23:44:02 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=37692 

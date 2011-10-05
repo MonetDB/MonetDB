@@ -13,7 +13,6 @@ stdout of test 'Recursive_module_load.SF-853867` in directory 'tests/BugDay_2005
 
 Ready.
 
-Over..
 
 # 15:25:07 >  
 # 15:25:07 >  Mtimeout -timeout 60 MapiClient -lmil -u monetdb -P monetdb "--config=/ufs/niels/scratch/Linux-x86_64/etc/MonetDB.conf" --host=localhost --port=39306 < Recursive_module_load.SF-853867_s00.milC

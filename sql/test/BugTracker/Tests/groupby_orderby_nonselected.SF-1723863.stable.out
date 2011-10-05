@@ -13,7 +13,6 @@ stdout of test 'groupby_orderby_nonselected.SF-1723863` in directory 'test/BugTr
 
 Ready.
 
-Over..
 
 # 23:24:26 >  
 # 23:24:26 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35962 

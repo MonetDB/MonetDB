@@ -19,7 +19,6 @@ stdout of test 'drop-sequence-crash.SF-2854195` in directory 'test/BugTracker-20
 Ready.
 # SQL catalog created, loading sql scripts once
 
-Over..
 
 # 14:55:13 >  
 # 14:55:13 >  mclient -lsql -ftest -i -e --host=volund --port=33166 

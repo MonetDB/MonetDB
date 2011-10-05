@@ -13,7 +13,6 @@ stdout of test 'type_dump_test.SF-989257` in directory 'test/BugDay_2005-10-06_2
 
 Ready.
 
-Over..
 
 # 12:41:41 >  
 # 12:41:41 >  Mtimeout -timeout 180 ./type_dump_test.SF-989257.SQL type_dump_test.SF-989257 

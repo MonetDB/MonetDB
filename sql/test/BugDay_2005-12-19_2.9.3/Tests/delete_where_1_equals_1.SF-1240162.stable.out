@@ -13,7 +13,6 @@ stdout of test 'delete_where_1_equals_1.SF-1240162` in directory 'test/BugDay_20
 
 Ready.
 
-Over..
 
 # 13:11:30 >  
 # 13:11:30 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=44694  < delete_where_1_equals_1.SF-1240162.sql

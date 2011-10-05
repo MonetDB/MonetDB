@@ -13,7 +13,6 @@ stdout of test 'nil_null.SF-919528` in directory 'test/BugDay_2005-10-06_2.8` it
 
 Ready.
 
-Over..
 
 # 12:37:29 >  
 # 12:37:29 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < nil_null.SF-919528.sql

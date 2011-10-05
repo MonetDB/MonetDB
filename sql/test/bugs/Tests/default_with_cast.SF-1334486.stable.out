@@ -13,7 +13,6 @@ stdout of test 'default_with_cast.SF-1334486` in directory 'test/bugs` itself:
 
 Ready.
 
-Over..
 
 # 12:59:30 >  
 # 12:59:30 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < default_with_cast.SF-1334486.sql

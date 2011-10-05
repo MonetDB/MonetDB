@@ -15,7 +15,6 @@ stdout of test 'broken_delete_3` in directory 'test/broken_delete` itself:
 
 Ready.
 
-Over..
 
 # 14:14:50 >  
 # 14:14:50 >  Mtimeout -timeout 60 mclient -lsql -umonetdb -Pmonetdb --host=koala --port=38850 

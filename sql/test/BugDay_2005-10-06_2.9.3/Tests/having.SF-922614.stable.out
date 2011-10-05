@@ -13,7 +13,6 @@ stdout of test 'having.SF-922614` in directory 'test/BugDay_2005-10-06_2.9.3` it
 
 Ready.
 
-Over..
 
 # 12:38:21 >  
 # 12:38:21 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < having.SF-922614.sql

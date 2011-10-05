@@ -18,7 +18,6 @@ stdout of test 'in_query_missing_columns.Bug-2652` in directory 'test/BugTracker
 
 Ready.
 
-Over..
 
 # 23:35:14 >  
 # 23:35:14 >  mclient -lsql -ftest -i -e --host=alf --port=37638 

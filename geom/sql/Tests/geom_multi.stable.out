@@ -20,7 +20,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 13:49:29 >  
 # 13:49:29 >  Mtimeout -timeout 60 mclient -lsql -umonetdb -Pmonetdb --host=koala --port=30470 

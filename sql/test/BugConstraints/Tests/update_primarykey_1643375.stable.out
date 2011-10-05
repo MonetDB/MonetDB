@@ -13,7 +13,6 @@ stdout of test 'update_primarykey_1643375` in directory 'test/BugConstraints` it
 
 Ready.
 
-Over..
 
 # 12:55:04 >  
 # 12:55:04 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=33669  < update_primarykey_1643375.sql

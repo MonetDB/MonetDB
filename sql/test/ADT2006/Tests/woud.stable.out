@@ -47,7 +47,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 17:57:17 >  
 # 17:57:17 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=31795  < woud.sql

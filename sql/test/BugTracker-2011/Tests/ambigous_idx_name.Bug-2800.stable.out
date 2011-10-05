@@ -19,7 +19,6 @@ stdout of test 'ambigous_idx_name.Bug-2800` in directory 'test/BugTracker-2011` 
 
 Ready.
 
-Over..
 
 # 13:01:42 >  
 # 13:01:42 >  mclient -lsql -ftest -i -e --host=alf --port=37221 

@@ -13,7 +13,6 @@ stdout of test 'delete_primarykey_1643845` in directory 'test/BugConstraints` it
 
 Ready.
 
-Over..
 
 # 12:55:04 >  
 # 12:55:04 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=33669  < delete_primarykey_1643845.sql

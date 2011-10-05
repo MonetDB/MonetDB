@@ -18,7 +18,6 @@ stdout of test 'error-truncated.Bug-2615` in directory 'test/BugTracker-2010` it
 
 Ready.
 
-Over..
 
 # 17:25:18 >  
 # 17:25:18 >  mclient -lsql -ftest -i -e --host=ottar --port=38866 

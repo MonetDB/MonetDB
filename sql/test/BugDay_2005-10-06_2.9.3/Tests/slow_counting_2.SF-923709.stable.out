@@ -13,7 +13,6 @@ stdout of test 'slow_counting_2.SF-923709` in directory 'test/BugDay_2005-10-06_
 
 Ready.
 
-Over..
 
 # 19:06:11 >  
 # 19:06:11 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=37689  < slow_counting_2.SF-923709.sql

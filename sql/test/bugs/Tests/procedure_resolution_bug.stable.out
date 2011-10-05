@@ -19,7 +19,6 @@ stdout of test 'procedure_resolution_bug` in directory 'test/bugs` itself:
 
 Ready.
 
-Over..
 
 # 23:43:49 >  
 # 23:43:49 >  mclient -lsql -ftest -i -e --host=alf --port=32645 

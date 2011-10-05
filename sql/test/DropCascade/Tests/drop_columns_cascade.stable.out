@@ -19,7 +19,6 @@ Ready.
 #01 #BBPdir: writing BBP.dir (12 bats).
 #01 #BBPdir: writing BBP.dir (676 bats).
 
-Over..
 
 # 19:39:56 >  
 # 19:39:56 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=31946 

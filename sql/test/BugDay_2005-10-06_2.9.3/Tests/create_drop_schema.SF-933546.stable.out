@@ -13,7 +13,6 @@ stdout of test 'create_drop_schema.SF-933546` in directory 'test/BugDay_2005-10-
 
 Ready.
 
-Over..
 
 # 12:40:03 >  
 # 12:40:03 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < create_drop_schema.SF-933546.sql

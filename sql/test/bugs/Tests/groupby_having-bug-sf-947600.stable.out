@@ -13,7 +13,6 @@ stdout of test 'groupby_having-bug-sf-947600` in directory 'test/bugs` itself:
 
 Ready.
 
-Over..
 
 # 08:38:05 >  
 # 08:38:05 >  mclient -lsql -ftest -i -e --host=alf --port=34631 

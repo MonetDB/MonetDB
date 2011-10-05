@@ -13,7 +13,6 @@ stdout of test 'cast_select` in directory 'test/snodgrass` itself:
 
 Ready.
 
-Over..
 
 # 10:11:50 >  
 # 10:11:50 >  Mtimeout -timeout 180 ./cast_select.SQL cast_select 

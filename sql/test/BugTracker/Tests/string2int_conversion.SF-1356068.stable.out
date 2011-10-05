@@ -13,7 +13,6 @@ stdout of test 'string2int_conversion.SF-1356068` in directory 'test/BugTracker`
 
 Ready.
 
-Over..
 
 # 12:47:35 >  
 # 12:47:35 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < string2int_conversion.SF-1356068.sql

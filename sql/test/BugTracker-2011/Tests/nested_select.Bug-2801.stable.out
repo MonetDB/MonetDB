@@ -19,7 +19,6 @@ stdout of test 'nested_select.Bug-2801` in directory 'test/BugTracker-2011` itse
 
 Ready.
 
-Over..
 
 # 12:30:57 >  
 # 12:30:57 >  mclient -lsql -ftest -i -e --host=alf --port=37103 

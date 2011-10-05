@@ -13,7 +13,6 @@ stdout of test 'delete_cascade.SF-1296395` in directory 'test/BugDay_2005-12-19_
 
 Ready.
 
-Over..
 
 # 23:32:59 >  
 # 23:32:59 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=42937  < delete_cascade.SF-1296395.sql

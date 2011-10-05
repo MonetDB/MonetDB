@@ -13,7 +13,6 @@ stdout of test 'sample2` in directory 'test/mapi` itself:
 
 Ready.
 
-Over..
 
 # 21:24:03 >  
 # 21:24:03 >  Mtimeout -timeout 60 ./sample2.SQL sample2 

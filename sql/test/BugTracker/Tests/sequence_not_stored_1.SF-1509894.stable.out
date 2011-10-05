@@ -13,7 +13,6 @@ stdout of test 'sequence_not_stored_1.SF-1509894` in directory 'test/BugTracker`
 
 Ready.
 
-Over..
 
 # 21:26:30 >  
 # 21:26:30 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35900  < sequence_not_stored_1.SF-1509894.sql

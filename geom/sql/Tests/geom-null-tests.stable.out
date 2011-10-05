@@ -20,7 +20,6 @@ stdout of test 'geom-null-tests` in directory 'sql` itself:
 Ready.
 # SQL catalog created, loading sql scripts once
 
-Over..
 
 # 15:05:38 >  
 # 15:05:38 >  mclient -lsql -ftest -i -e --host=ottar --port=32886 

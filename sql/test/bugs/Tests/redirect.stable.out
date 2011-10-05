@@ -15,7 +15,6 @@ stdout of test 'redirect` in directory 'test/bugs` itself:
 
 Ready.
 
-Over..
 
 # 11:02:02 >  
 # 11:02:02 >  Mtimeout -timeout 60 mclient -lsql -umonetdb -Pmonetdb --host=koala --port=39183 

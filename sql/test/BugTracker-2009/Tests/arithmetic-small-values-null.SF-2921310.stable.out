@@ -19,7 +19,6 @@ stdout of test 'arithmetic-small-values-null.SF-2921310` in directory 'test/BugT
 Ready.
 # SQL catalog created, loading sql scripts once
 
-Over..
 
 # 15:12:22 >  
 # 15:12:22 >  mclient -lsql -ftest -i -e --host=volund --port=38846 

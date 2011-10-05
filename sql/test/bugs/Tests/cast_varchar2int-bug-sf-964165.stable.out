@@ -13,7 +13,6 @@ stdout of test 'cast_varchar2int-bug-sf-964165` in directory 'test/bugs` itself:
 
 Ready.
 
-Over..
 
 # 12:50:50 >  
 # 12:50:50 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < cast_varchar2int-bug-sf-964165.sql

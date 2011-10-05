@@ -19,7 +19,6 @@ stdout of test 'call_function_without_warning.Bug-2752` in directory 'test/BugTr
 
 Ready.
 
-Over..
 
 # 20:43:24 >  
 # 20:43:24 >  mclient -lsql -ftest -i -e --host=alf --port=39246 

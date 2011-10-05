@@ -1,0 +1,80 @@
+stdout of test 'non-stable-select-bug.Bug-2894` in directory 'test/BugTracker-2011` itself:
+
+
+# 12:37:01 >  
+# 12:37:01 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/ufs/sjoerd/Monet-candidate/var/MonetDB" --set mapi_open=true --set mapi_port=31974 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_test_BugTracker-2011" --set mal_listing=0 ; echo ; echo Over..
+# 12:37:01 >  
+
+# MonetDB 5 server v11.5.4
+# This is an unreleased version
+# Serving database 'mTests_test_BugTracker-2011', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://ottar.ins.cwi.nl:31974/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/10_math.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/11_times.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/12_url.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/13_date.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/14_inet.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/15_history.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/16_tracelog.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/17_compress.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/18_dictionary.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/19_cluster.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/20_vacuum.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/21_dependency_functions.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/22_clients.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/23_skyserver.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/24_zorder.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/25_debug.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/40_geom.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/80_udf.sql
+# SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/99_system.sql
+
+
+# 12:37:02 >  
+# 12:37:02 >  mclient -lsql -ftest -i -e --host=ottar --port=31974 
+# 12:37:02 >  
+
+#start transaction;
+#create table table2894 (i int, d double);
+#insert into table2894 values (1,1.0),(2,2.0),(3,3.0),(4,4.0);
+[ 4	]
+#select i,1/(i-1) from table2894 where i > 1;
+% sys.table2894,	. # table_name
+% i,	sql_div_single_value # name
+% int,	decimal # type
+% 1,	21 # length
+[ 2,	1.000	]
+[ 3,	0.500	]
+[ 4,	0.333	]
+#select i,1/(i-1.0) from table2894 where i > 1;
+% sys.table2894,	. # table_name
+% i,	sql_div_single_value # name
+% int,	decimal # type
+% 1,	21 # length
+[ 2,	1.000	]
+[ 3,	0.500	]
+[ 4,	0.333	]
+#select i,1/(i-1) from table2894 where i > 1;
+% sys.table2894,	. # table_name
+% i,	sql_div_single_value # name
+% int,	decimal # type
+% 1,	21 # length
+[ 2,	1.000	]
+[ 3,	0.500	]
+[ 4,	0.333	]
+#rollback;
+
+# 12:37:02 >  
+# 12:37:02 >  Done.
+# 12:37:02 >  
+

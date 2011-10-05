@@ -345,7 +345,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 16:22:22 >  
 # 16:22:22 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=33126  < caching.SF-1651599.sql

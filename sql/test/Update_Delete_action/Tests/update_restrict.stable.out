@@ -15,7 +15,6 @@ stdout of test 'update_restrict` in directory 'test/Update_Delete_action` itself
 
 Ready.
 
-Over..
 
 # 16:03:19 >  
 # 16:03:19 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=33465 

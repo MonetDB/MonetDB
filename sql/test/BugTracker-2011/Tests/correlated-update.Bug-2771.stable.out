@@ -19,7 +19,6 @@ stdout of test 'correlated-update.Bug-2771` in directory 'test/BugTracker-2011` 
 Ready.
 # SQL catalog created, loading sql scripts once
 
-Over..
 
 # 11:21:47 >  
 # 11:21:47 >  mclient -lsql -ftest -i -e --host=ottar --port=36696 

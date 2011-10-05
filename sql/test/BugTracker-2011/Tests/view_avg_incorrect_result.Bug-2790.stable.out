@@ -19,7 +19,6 @@ stdout of test 'view_avg_incorrect_result.Bug-2790` in directory 'test/BugTracke
 
 Ready.
 
-Over..
 
 # 16:41:01 >  
 # 16:41:01 >  mclient -lsql -ftest -i -e --host=alf --port=31900 

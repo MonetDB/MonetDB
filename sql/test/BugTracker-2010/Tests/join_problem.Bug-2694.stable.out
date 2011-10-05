@@ -19,7 +19,6 @@ stdout of test 'join_problem.Bug-2694` in directory 'test/BugTracker-2010` itsel
 Ready.
 # SQL catalog created, loading sql scripts once
 
-Over..
 
 # 10:39:58 >  
 # 10:39:58 >  mclient -lsql -ftest -i -e --host=rig --port=35126 

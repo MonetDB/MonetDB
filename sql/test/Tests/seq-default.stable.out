@@ -28,7 +28,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 12:37:18 >  
 # 12:37:18 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < seq-default.sql

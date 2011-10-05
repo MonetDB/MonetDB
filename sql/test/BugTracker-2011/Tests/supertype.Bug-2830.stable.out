@@ -19,7 +19,6 @@ stdout of test 'supertype.Bug-2830` in directory 'test/BugTracker-2011` itself:
 
 Ready.
 
-Over..
 
 # 22:35:24 >  
 # 22:35:24 >  mclient -lsql -ftest -i -e --host=alf --port=38266 

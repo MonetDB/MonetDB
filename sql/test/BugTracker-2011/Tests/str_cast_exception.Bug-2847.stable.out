@@ -20,7 +20,6 @@ stdout of test 'str_cast_exception.Bug-2847` in directory 'test/BugTracker-2011`
 Ready.
 # SQL catalog created, loading sql scripts once
 
-Over..
 
 # 17:24:33 >  
 # 17:24:33 >  mclient -lsql -ftest -i -e --host=ottar --port=35537 

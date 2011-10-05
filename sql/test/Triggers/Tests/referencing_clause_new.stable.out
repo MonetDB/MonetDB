@@ -15,7 +15,6 @@ stdout of test 'referencing_clause_new` in directory 'test/Triggers` itself:
 
 Ready.
 
-Over..
 
 # 16:00:56 >  
 # 16:00:56 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35011  < referencing_clause_new.sql

@@ -19,7 +19,6 @@ stdout of test 'count-count-distinct.Bug-2808` in directory 'test/BugTracker-201
 
 Ready.
 
-Over..
 
 # 10:05:42 >  
 # 10:05:42 >  mclient -lsql -ftest -i -e --host=alf --port=30195 

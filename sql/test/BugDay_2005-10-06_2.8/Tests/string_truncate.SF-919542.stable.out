@@ -13,7 +13,6 @@ stdout of test 'string_truncate.SF-919542` in directory 'test/BugDay_2005-10-06_
 
 Ready.
 
-Over..
 
 # 11:50:18 >  
 # 11:50:18 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < string_truncate.SF-919542.sql

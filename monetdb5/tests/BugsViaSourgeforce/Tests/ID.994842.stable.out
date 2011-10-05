@@ -13,7 +13,6 @@ stdout of test 'ID.994842` in directory 'tests/BugsViaSourgeforce` itself:
 
 Ready.
 
-Over..
 
 # 00:30:01 >  
 # 00:30:01 >  Mtimeout -timeout 60 MapiClient -u monetdb -P monetdb "--config=/var/tmp/_PREFIX__GNU_32_d__/etc/monet.conf" --host=draco --port=48978 < ID.994842.milC

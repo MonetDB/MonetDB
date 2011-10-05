@@ -13,7 +13,6 @@ stdout of test 'phantom_rows.SF-1044534` in directory 'test/BugDay_2005-11-09_2.
 
 Ready.
 
-Over..
 
 # 12:45:17 >  
 # 12:45:17 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < phantom_rows.SF-1044534.sql

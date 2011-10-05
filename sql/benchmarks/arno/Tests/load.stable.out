@@ -11,7 +11,6 @@ stdout of test 'load` in directory 'benchmarks/arno` itself:
 
 Ready.
 
-Over..
 
 # 20:22:01 >  
 # 20:22:01 >  Mtimeout -timeout 21 MapiClient -everything  < load.milC
