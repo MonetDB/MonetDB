@@ -541,14 +541,23 @@ main(int argc, char **av)
 			}
 			fclose(secretf);
 		}
-		if ((err = AUTHunlockVault(&secretp)) != MAL_SUCCEED)
+		if ((err = AUTHunlockVault(&secretp)) != MAL_SUCCEED) {
+			/* don't show this as a crash */
+			msab_registerStop();
 			GDKfatal("%s", err);
+		}
 	}
 	/* make sure the authorisation BATs are loaded */
-	if ((err = AUTHinitTables()) != MAL_SUCCEED)
+	if ((err = AUTHinitTables()) != MAL_SUCCEED) {
+		/* don't show this as a crash */
+		msab_registerStop();
 		GDKfatal("%s", err);
-	if (mal_init())
+	}
+	if (mal_init()) {
+		/* don't show this as a crash */
+		msab_registerStop();
 		return 0;
+	}
 
 	if (GDKgetenv("mal_listing"))
 		sscanf(GDKgetenv("mal_listing"), "%d", &listing);
@@ -563,9 +572,12 @@ main(int argc, char **av)
 	if (monet_script) for (i = 0; monet_script[i]; i++) {
 		str msg = evalFile(mal_clients, monet_script[i], listing);
 		/* check for internal exception message to terminate */
-		if (msg && strcmp(msg, "MALException:client.quit:Server stopped.") == 0)
-			mal_exit();
-		if (msg) GDKfree(msg);
+		if (msg) {
+			if (strcmp(msg, "MALException:client.quit:Server stopped.") == 0)
+				mal_exit();
+			fprintf(stderr, "#%s: %s\n", monet_script[i], msg);
+			GDKfree(msg);
+		}
 		GDKfree(monet_script[i]);
 		monet_script[i] = 0;
 	}
