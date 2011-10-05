@@ -1430,72 +1430,6 @@ def CheckMods(env, TST, SERVER, CALL) :
     return missing
 ### CheckMods(env, TST, SERVER, CALL) #
 
-def CheckBATs(env, TST, TSTDB) :
-    missing = []
-
-    if not os.path.isfile(TST+".BATs"):
-        # no BATs required => no check required
-        return missing
-
-    if par['M5']:
-        # Warn("MonetDB/5: Check, whether required BATs do exist, is not possible, yet!")
-        return missing
-
-    cmd = splitcommand(env['exe']['Mserver'][1])
-    cmd.append('--dbname=%s' % TSTDB)
-    if procdebug:
-        print 'CheckBATs: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd)
-    proc = subprocess.Popen(cmd, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True)
-    t = Timer(float(par['TIMEOUT']), killProc, args = [proc, proc.stderr, cmd])
-    try:
-        t.start()
-        qOut, qErr = proc.communicate('''\
-            {
-                # print a list of all persistent BATs
-                # "BATs: bat1, bat2, ..."
-                var BATs := view_bbp_name();
-                printf("\\nBATs: ");
-                var x := "";
-                BATs@batloop(){
-                    printf("%s\'%s\'",x,$t);
-                    x:=",";
-                }
-                printf("\\n");
-            }
-            quit();
-        ''')
-        t.cancel()
-        if procdebug:
-            print 'CheckBATs: process exited "%s" (%s)\n' % ('" "'.join(cmd), proc.returncode)
-    except KeyboardInterrupt:
-        t.cancel()
-        killProc(proc, proc.stderr, cmd)
-        if procdebug:
-            print 'CheckBATs: process killed "%s"\n' % '" "'.join(cmd)
-        raise
-    TST_BATS = []
-    if qOut:
-        tb = re.compile("^BATs: (.+)$", re.MULTILINE)
-        for l in qOut.split('\n'):
-            b = tb.match(l)
-            if b:
-                TST_BATS = eval(b.group(1))
-    else:
-        Warn("No output from Mserver when checking for Bats!?")
-        if qErr:
-            STDERR.write(' '.join(cmd) + "\n\n")
-            STDERR.write(qErr)
-            STDERR.write("\n")
-            STDERR.flush()
-
-    if os.path.isfile(TST+".BATs"):
-        for b in open(TST+".BATs"):
-            b = b.strip()
-            if b  and  b[0] != "#"  and  b not in TST_BATS:
-                missing.append(b)
-    return missing
-### CheckBATs(env, TST, TSTDB) #
-
 def CheckTests(env, TST, oktests):
     missing = []
     if not os.path.isfile(TST+'.reqtests'):
@@ -1639,10 +1573,8 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
 
     if par['PACKAGE'] not in ('common', 'clients', 'gdk', 'java'):
         MissingMods = CheckMods(env, TST, SERVER, CALL)
-        MissingBATs = CheckBATs(env, TST, TSTDB)
     else:
         MissingMods = []
-        MissingBATs = []
     MissingTests = CheckTests(env, TST, oktests)
 
     os.chdir(TSTTRGDIR)
@@ -1670,8 +1602,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
         #elem = SkipTest(env, TST, EXT, "as java is not in $PATH.", length)
     elif MissingMods:
         elem = SkipTest(env, TST, EXT, "as modules '"+str(MissingMods)+"` are missing.", length)
-    elif MissingBATs:
-        elem = SkipTest(env, TST, EXT, "as BATs '"+str(MissingBATs)+"` are missing in database '"+TSTDB+"`.", length)
     elif CALL == "malCXp":
         elem = SkipTest(env, TST, EXT, "as multiple MAL clients in parallel are currently not supported by "+THISFILE+".", length)
     elif CALL == "sqlXp":
