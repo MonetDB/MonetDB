@@ -1678,10 +1678,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
             if os.path.isfile(TST+".prelude5")  and  par['M5']:
                 PRELUDE = TST+".prelude5"
 
-        TIMEOUTED = "Mtimeout"
-        for v in env['exe'].keys():
-            TIMEOUTED = TIMEOUTED+"|"+v.upper()
-        test = re.compile("^[^#]*("+TIMEOUTED+")[^#]*(# ([0-9]+)x|#.*)?$", re.MULTILINE)
         TIMEOUT = par['TIMEOUT']
         if os.path.isfile(TST+".timeout"):
             for f in open(TST+".timeout"):
@@ -1698,15 +1694,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
         if   CALL in ["other", "python"]:
             if TIMEOUT > 0:
                 CTIMEOUT = CTIMEOUT + min(TIMEOUT, par['TIMEOUT'])
-            for l in open(TST+EXT):
-                TOm = test.match(l)
-                if TOm:
-                    TOx = TOm.group(3)
-                    if TOx and (int(TOx) > 1):
-                        TOx = int(TOx)
-                    else:
-                        TOx = 1
-                    CTIMEOUT = CTIMEOUT + ( TOx * TIMEOUT )
         elif CALL in ["malXs", "sqlXs"]:
             test = re.compile("^"+TST+"_s[0-9][0-9]"+EXT+"$", re.MULTILINE)
             d = os.listdir(os.getcwd())
