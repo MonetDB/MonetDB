@@ -383,9 +383,9 @@ SQLinitClient(Client c)
 	if (SQLinitialized == 0 )
 		SQLprelude();
 	/*
-	 * @-
-	 * Based on the initialization retun value we can prepare a SQLinit string with all information needed
-	 * to initialize the catalog based on the mandatory scripts to be executed.
+	 * Based on the initialization return value we can prepare a SQLinit
+	 * string with all information needed to initialize the catalog
+	 * based on the mandatory scripts to be executed.
 	 */
 	if (sqlinit) { /* add sqlinit to the fdin stack */
 		buffer *b = (buffer*)GDKmalloc(sizeof(buffer));
