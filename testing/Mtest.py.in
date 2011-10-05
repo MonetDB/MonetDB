@@ -3128,7 +3128,7 @@ def main(argv) :
     if config:
         config = ' "--config=%s"' % config
 
-    par['RECURSIVE'] = opts.get('recursive', 0)
+    recursive = opts.get('recursive', False)
     global quiet
     quiet = opts.get('quiet', 0)
     global verbose
@@ -3477,9 +3477,13 @@ def main(argv) :
                     # Warn: dirlist => ignore testlist, assume All
                 #else:
                     # Warn: All => ignore testlist
+    else:
+        # len(args) == 0: no explicit tests specified so do all
+        recursive = True
+
     if not dirlist:
         dirlist.append(os.getcwd())
-    if par['RECURSIVE']:
+    if recursive:
         #TODO
         #if testlist:
             # WARNING
