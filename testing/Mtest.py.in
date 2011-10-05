@@ -3391,11 +3391,14 @@ def main(argv) :
     global URLPREFIX
     REV = opts.get('revision')
     if REV is None:             # no --revision option: try to find out
-        proc = subprocess.Popen(['hg', 'id', '-i'], stdout = subprocess.PIPE)
-        out, err = proc.communicate()
-        if proc.returncode == 0:
-            REV = out.strip()
-    proc = None
+        try:
+            proc = subprocess.Popen(['hg', 'id', '-i'], stdout = subprocess.PIPE)
+            out, err = proc.communicate()
+            if proc.returncode == 0:
+                REV = out.strip()
+            proc = None
+        except:
+            pass
     # fix up URLPREFIX
     if REV:
         URLPREFIX += '%s/%s/' % (REV.split()[0].rstrip('+'), par['PACKAGE'])
