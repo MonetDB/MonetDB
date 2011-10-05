@@ -2353,6 +2353,9 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                       PRELUDE, TIMEOUT, CTIMEOUT, STIMEOUT))
     else:
         STDOUT.write('%s%-*s ' % (prompt(), length, TST))
+        if os.isatty(STDOUT.fileno()):
+            s = '(<=%d,%d,%d)' % (TIMEOUT, CTIMEOUT, STIMEOUT)
+            STDOUT.write(s + '\b' * len(s))
 
     try:
         STDOUT.flush()
