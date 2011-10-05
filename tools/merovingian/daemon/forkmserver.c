@@ -375,6 +375,7 @@ forkMserver(char *database, sabdb** stats, int force)
 		/* if we've never found a connection, try to figure out why */
 		if (i >= 20) {
 			int state = (*stats)->state;
+			int hasconn = (*stats)->conns != NULL && (*stats)->conns->val != NULL;
 
 			/* starting failed */
 			msab_freeStatus(stats);
@@ -423,10 +424,17 @@ forkMserver(char *database, sabdb** stats, int force)
 
 			switch (state) {
 				case SABdbRunning:
-					return(newErr(
-								"timeout when waiting for database '%s' to "
-								"open up a communication channel or to "
-								"initialise the sql scenario", database));
+					if (hasconn) {
+						return(newErr(
+									"timeout while waiting for database '%s' "
+									"to initialise the sql scenario",
+									database));
+					} else {
+						return(newErr(
+									"timeout while waiting for database '%s' "
+									"to open up a communication channel",
+									database));
+					}
 				case SABdbCrashed:
 					return(newErr(
 								"database '%s' has crashed after starting, "
