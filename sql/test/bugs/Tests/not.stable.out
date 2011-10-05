@@ -15,7 +15,6 @@ stdout of test 'not` in directory 'test/bugs` itself:
 
 Ready.
 
-Over..
 
 # 14:04:18 >  
 # 14:04:18 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=beo-14 --port=32956 

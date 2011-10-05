@@ -19,7 +19,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 22:20:45 >  
 # 22:20:45 >  Mtimeout -timeout 60 ./sample0.MAPI sample0 

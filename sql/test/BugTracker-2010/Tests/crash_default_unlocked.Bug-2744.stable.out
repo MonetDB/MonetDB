@@ -19,7 +19,6 @@ stdout of test 'crash_default_unlocked.Bug-2744` in directory 'test/BugTracker-2
 Ready.
 # SQL catalog created, loading sql scripts once
 
-Over..
 
 # 14:51:06 >  
 # 14:51:06 >  mclient -lsql -ftest -i -e --host=alf --port=37519 

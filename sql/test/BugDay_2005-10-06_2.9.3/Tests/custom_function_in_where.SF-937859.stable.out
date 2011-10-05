@@ -13,7 +13,6 @@ stdout of test 'custom_function_in_where.SF-937859` in directory 'test/BugDay_20
 
 Ready.
 
-Over..
 
 # 12:40:51 >  
 # 12:40:51 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < custom_function_in_where.SF-937859.sql

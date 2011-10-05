@@ -17,7 +17,6 @@ stdout of test 'keycheck_crash.Bug-2583` in directory 'test/BugTracker-2010` its
 
 Ready.
 
-Over..
 
 # 09:16:38 >  
 # 09:16:38 >  mclient -lsql -ftest -i -e --host=alf --port=31811 

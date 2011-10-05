@@ -17,7 +17,6 @@ stdout of test 'prepare_on_boolean_bug.Bug-2581` in directory 'test/BugTracker-2
 
 Ready.
 
-Over..
 
 # 09:34:27 >  
 # 09:34:27 >  mclient -lsql -ftest -i -e --host=alf --port=30431 

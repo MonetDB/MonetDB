@@ -13,7 +13,6 @@ stdout of test 'select_null` in directory 'test/BugDay_2005-10-06_2.8` itself:
 
 Ready.
 
-Over..
 
 # 11:50:14 >  
 # 11:50:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < select_null.sql

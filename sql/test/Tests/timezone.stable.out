@@ -25,7 +25,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 12:37:13 >  
 # 12:37:13 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < timezone.sql

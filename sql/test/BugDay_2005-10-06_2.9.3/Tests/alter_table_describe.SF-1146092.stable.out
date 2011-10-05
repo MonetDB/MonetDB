@@ -13,7 +13,6 @@ stdout of test 'alter_table_describe.SF-1146092` in directory 'test/BugDay_2005-
 
 Ready.
 
-Over..
 
 # 12:43:33 >  
 # 12:43:33 >  Mtimeout -timeout 180 ./alter_table_describe.SF-1146092.SQL alter_table_describe.SF-1146092 

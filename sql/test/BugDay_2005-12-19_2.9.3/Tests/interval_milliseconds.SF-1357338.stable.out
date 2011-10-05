@@ -16,7 +16,6 @@ Ready.
 # falling back to direct mode 
 # semantic relational algebra
 
-Over..
 
 # 08:11:16 >  
 # 08:11:16 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=48076  < interval_milliseconds.SF-1357338.sql

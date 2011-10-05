@@ -18,7 +18,6 @@ stdout of test 'multiple-common-table-expressions.Bug-2664` in directory 'test/B
 
 Ready.
 
-Over..
 
 # 14:25:13 >  
 # 14:25:13 >  mclient -lsql -ftest -i -e --host=ottar --port=34782 

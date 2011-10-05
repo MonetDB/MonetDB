@@ -19,7 +19,6 @@ stdout of test 'insert_queue` in directory 'test/ssqq` itself:
 
 Ready.
 
-Over..
 
 # 15:07:52 >  
 # 15:07:52 >  mclient -lsql -ftest -i -e --host=yngling --port=35482 

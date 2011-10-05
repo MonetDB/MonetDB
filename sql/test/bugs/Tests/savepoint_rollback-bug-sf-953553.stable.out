@@ -13,7 +13,6 @@ stdout of test 'savepoint_rollback-bug-sf-953553` in directory 'test/bugs` itsel
 
 Ready.
 
-Over..
 
 # 12:49:57 >  
 # 12:49:57 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < savepoint_rollback-bug-sf-953553.sql

@@ -13,7 +13,6 @@ stdout of test 'like_join.SF-1684798` in directory 'test/BugTracker` itself:
 
 Ready.
 
-Over..
 
 # 11:22:29 >  
 # 11:22:29 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=32360 

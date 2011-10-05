@@ -41,7 +41,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 12:47:55 >  
 # 12:47:55 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < create_insert_select_aggr-bug-00001.sql

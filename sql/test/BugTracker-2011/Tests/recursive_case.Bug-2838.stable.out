@@ -19,7 +19,6 @@ stdout of test 'recursive_case.Bug-2838` in directory 'test/BugTracker-2011` its
 
 Ready.
 
-Over..
 
 # 20:25:42 >  
 # 20:25:42 >  mclient -lsql -ftest -i -e --host=alf --port=32631 

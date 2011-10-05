@@ -19,7 +19,6 @@ stdout of test 'distinct-order-by-limit.Bug-2691` in directory 'test/BugTracker-
 Ready.
 # SQL catalog created, loading sql scripts once
 
-Over..
 
 # 14:06:04 >  
 # 14:06:04 >  mclient -lsql -ftest -i -e --host=volund --port=34497 

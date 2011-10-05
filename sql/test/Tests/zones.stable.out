@@ -18,7 +18,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 16:01:34 >  
 # 16:01:34 >  mclient -lsql -ftest -i -e --host=volund --port=35971 

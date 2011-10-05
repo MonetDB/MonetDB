@@ -13,7 +13,6 @@ stdout of test 'prepare_doesnot_like_LIKE.SF-1234205` in directory 'test/BugDay_
 
 Ready.
 
-Over..
 
 # 09:15:18 >  
 # 09:15:18 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=36877  < prepare_doesnot_like_LIKE.SF-1234205.sql

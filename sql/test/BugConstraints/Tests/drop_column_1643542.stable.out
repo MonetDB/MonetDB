@@ -13,7 +13,6 @@ stdout of test 'drop_column_1643542` in directory 'test/BugConstraints` itself:
 
 Ready.
 
-Over..
 
 # 12:57:28 >  
 # 12:57:28 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=31322  < drop_column_1643542.sql

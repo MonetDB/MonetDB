@@ -15,7 +15,6 @@ stdout of test 'benesamo` in directory 'test/ADT2006` itself:
 
 Ready.
 
-Over..
 
 # 17:58:24 >  
 # 17:58:24 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=34617  < benesamo.sql

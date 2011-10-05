@@ -30,7 +30,6 @@ end main;
 
 Ready.
 
-Over..
 
 # 12:33:58 >  
 # 12:33:58 >  Mtimeout -timeout 2220 ./init.SQL init 

@@ -17,7 +17,6 @@ stdout of test 'drop_function_cascade` in directory 'test/DropCascade` itself:
 
 Ready.
 
-Over..
 
 # 18:06:32 >  
 # 18:06:32 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=31889 

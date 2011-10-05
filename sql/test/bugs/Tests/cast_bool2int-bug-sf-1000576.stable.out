@@ -13,7 +13,6 @@ stdout of test 'cast_bool2int-bug-sf-1000576` in directory 'test/bugs` itself:
 
 Ready.
 
-Over..
 
 # 11:55:40 >  
 # 11:55:40 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < cast_bool2int-bug-sf-1000576.sql

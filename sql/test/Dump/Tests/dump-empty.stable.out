@@ -20,7 +20,6 @@ stdout of test 'dump-empty` in directory 'test/Dump` itself:
 Ready.
 # SQL catalog created, loading sql scripts once
 
-Over..
 
 # 10:50:27 >  
 # 10:50:27 >  /usr/bin/python dump-empty.SQL.py dump-empty 

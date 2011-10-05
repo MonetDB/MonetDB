@@ -13,7 +13,6 @@ stdout of test 'viss` in directory 'test/ADT2006` itself:
 
 Ready.
 
-Over..
 
 # 17:52:28 >  
 # 17:52:28 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30733  < viss.sql

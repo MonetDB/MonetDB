@@ -20,7 +20,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 17:04:51 >  
 # 17:04:51 >  mclient -lsql -umonetdb -Pmonetdb --host=butters --port=30080 

@@ -13,7 +13,6 @@ stdout of test 'subquery_syntax.SF-1296390` in directory 'test/BugDay_2005-12-19
 
 Ready.
 
-Over..
 
 # 16:48:23 >  
 # 16:48:23 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=49501  < subquery_syntax.SF-1296390.sql

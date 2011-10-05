@@ -13,7 +13,6 @@ stdout of test 'affected_rows_count.SF-1149757` in directory 'test/BugDay_2005-1
 
 Ready.
 
-Over..
 
 # 12:43:52 >  
 # 12:43:52 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < affected_rows_count.SF-1149757.sql

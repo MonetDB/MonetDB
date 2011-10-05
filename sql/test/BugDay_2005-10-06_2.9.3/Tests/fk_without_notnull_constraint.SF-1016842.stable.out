@@ -13,7 +13,6 @@ stdout of test 'fk_without_notnull_constraint.SF-1016842` in directory 'test/Bug
 
 Ready.
 
-Over..
 
 # 12:42:34 >  
 # 12:42:34 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < fk_without_notnull_constraint.SF-1016842.sql

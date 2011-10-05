@@ -11,7 +11,6 @@ stdout of test '06a` in directory 'benchmarks/tpch` itself:
 
 Ready.
 
-Over..
 
 # 20:04:52 >  
 # 20:04:52 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=draco --port=54813 --trace < 06a.sql

@@ -13,7 +13,6 @@ stdout of test 'drop_index.SF-929243` in directory 'test/BugDay_2005-10-06_2.9.3
 
 Ready.
 
-Over..
 
 # 12:39:25 >  
 # 12:39:25 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < drop_index.SF-929243.sql

@@ -13,7 +13,6 @@ stdout of test 'update_with_correlated_subselect.SF-1284791` in directory 'test/
 
 Ready.
 
-Over..
 
 # 12:47:36 >  
 # 12:47:36 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < update_with_correlated_subselect.SF-1284791.sql

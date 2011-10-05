@@ -13,7 +13,6 @@ stdout of test 'prepare-where.SF-1238867.1238959.1238965.1240124` in directory '
 
 Ready.
 
-Over..
 
 # 11:51:01 >  
 # 11:51:01 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < prepare-where.SF-1238867.1238959.1238965.1240124.sql

@@ -13,7 +13,6 @@ stdout of test 'delete_x_2.SF-1082915` in directory 'test/BugDay_2005-11-09_2.9.
 
 Ready.
 
-Over..
 
 # 12:45:42 >  
 # 12:45:42 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < delete_x_2.SF-1082915.sql

@@ -27,7 +27,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 11:54:18 >  
 # 11:54:18 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < case_in_aggr_bug.SF-1506545.sql

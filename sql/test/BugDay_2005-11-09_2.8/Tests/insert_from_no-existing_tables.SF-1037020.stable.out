@@ -13,7 +13,6 @@ stdout of test 'insert_from_no-existing_tables.SF-1037020` in directory 'test/Bu
 
 Ready.
 
-Over..
 
 # 12:45:03 >  
 # 12:45:03 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < insert_from_no-existing_tables.SF-1037020.sql

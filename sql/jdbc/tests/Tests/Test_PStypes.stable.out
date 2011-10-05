@@ -18,7 +18,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 16:35:35 >  
 # 16:35:35 >  Mtimeout -timeout 60 ./Test_PStypes.SQL Test_PStypes 

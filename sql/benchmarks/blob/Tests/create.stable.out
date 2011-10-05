@@ -13,7 +13,6 @@ stdout of test 'create` in directory 'benchmarks/blob` itself:
 
 Ready.
 
-Over..
 
 # 12:34:06 >  
 # 12:34:06 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < create.sql

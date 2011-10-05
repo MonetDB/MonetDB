@@ -21,7 +21,6 @@ stdout of test 'mclient-lsql-d.Bug-2861` in directory 'test/BugTracker-2011` its
 Ready.
 # SQL catalog created, loading sql scripts once
 
-Over..
 
 # 10:06:13 >  
 # 10:06:13 >  ./mclient-lsql-d.Bug-2861.SQL.sh mclient-lsql-d.Bug-2861 

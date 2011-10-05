@@ -1357,6 +1357,10 @@ def GetBitsAndOIDsAndModsAndStaticAndThreads(env) :
         if procdebug:
             print 'GetBitsAndOIDsAndModsAndStaticAndThreads: process killed "%s"\n' % '" "'.join(cmd)
         raise
+    if proc.returncode < 0 or proc.returncode >= 256:
+        ErrExit('GetBitsAndOIDsAndModsAndStaticAndThreads: subcommand crashed')
+    elif proc.returncode != 0:
+        ErrExit('GetBitsAndOIDsAndModsAndStaticAndThreads: subcommand exited with error code %d' % proc.returncode)
     env['TST_MODS'] = []
     env['TST_BITS'] = ""
     env['TST_OIDS'] = ""
@@ -1673,10 +1677,10 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
             open(TST+STABLEerr,"w").close()
             ACCURACYerr = 0
 
-        PRELUDE = ""
+        PRELUDE = []
         if EXT !=  '.sql':
             if os.path.isfile(TST+".prelude5")  and  par['M5']:
-                PRELUDE = TST+".prelude5"
+                PRELUDE = [TST+".prelude5"]
 
         TIMEOUT = par['TIMEOUT']
         if os.path.isfile(TST+".timeout"):
@@ -2143,8 +2147,10 @@ def prompt() :
 ### prompt() #
 
 def Prompt(cmd) :
+    if type(cmd) is type([]):
+        cmd = '" "'.join(cmd)
     prmpt = time.strftime('\n# %H:%M:%S >  ',time.localtime(time.time()))
-    return prmpt+prmpt+cmd+prmpt+"\n\n"
+    return '%s%s"%s"%s\n\n' % (prmpt, prmpt, cmd, prmpt)
 ### Prompt(cmd) #
 
 def killProc(proc, outfile = None, cmd = None):
@@ -2177,8 +2183,8 @@ def LaunchIt(cmd, TestInput, TestOut, TestErr, TimeOut, SrvrOut = None) :
     TestErr.flush()
 
     if procdebug:
-        print 'LaunchIt: starting process "%s" (inpipe)\n' % cmd
-    proc = subprocess.Popen(cmd, shell = True, stdin = subprocess.PIPE, stdout = SrvrOut, stderr = TestErr, universal_newlines = True)
+        print 'LaunchIt: starting process "%s" (inpipe)\n' % '" "'.join(cmd)
+    proc = subprocess.Popen(cmd, stdin = subprocess.PIPE, stdout = SrvrOut, stderr = TestErr, universal_newlines = True)
     proc.killed = False
     t = Timer(TimeOut, killProc, args = [proc, TestErr, cmd])
     t.start()
@@ -2213,8 +2219,8 @@ def RunIt(cmd, TestIn, TestOut, TestErr, TimeOut) :
     TestErr.write(Prompt(cmd))
     TestErr.flush()
     if procdebug:
-        print 'RunIt: starting process "%s"\n' % cmd
-    proc = subprocess.Popen(cmd, shell = True, stdin = TestIn, stdout = TestOut, stderr = TestErr, universal_newlines = True)
+        print 'RunIt: starting process "%s"\n' % '" "'.join(cmd)
+    proc = subprocess.Popen(cmd, stdin = TestIn, stdout = TestOut, stderr = TestErr, universal_newlines = True)
     proc.killed = False
     t = Timer(TimeOut, killProc, args = [proc, TestErr, cmd])
     try:
@@ -2224,12 +2230,12 @@ def RunIt(cmd, TestIn, TestOut, TestErr, TimeOut) :
         proc.communicate(input = TestInput)
         t.cancel()
         if procdebug:
-            print 'RunIt: process exited "%s" (%s)\n' % (cmd, proc.returncode)
+            print 'RunIt: process exited "%s" (%s)\n' % ('" "'.join(cmd), proc.returncode)
     except KeyboardInterrupt:
         t.cancel()
         killProc(proc, TestErr, cmd)
         if procdebug:
-            print 'RunIt: process killed "%s"\n' % cmd
+            print 'RunIt: process killed "%s"\n' % '" "'.join(cmd)
         raise
     return proc.killed
 ### RunIt(cmd, TestIn, TestOut, TestErr) #
@@ -2267,7 +2273,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
     elif verbose:
         STDOUT.write('%s%s %s (<=%d,%d,%d) ...' %
                      (prompt(), os.path.join(env['TSTDIR'], TST + EXT),
-                      PRELUDE, TIMEOUT, CTIMEOUT, STIMEOUT))
+                      PRELUDE and PRELUDE[0] or '', TIMEOUT, CTIMEOUT, STIMEOUT))
     else:
         STDOUT.write('%s%-*s ' % (prompt(), length, TST))
         if os.isatty(STDOUT.fileno()):
@@ -2281,11 +2287,12 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
     TSTDB = env['TSTDB']
     exe = env['exe']
 
-    LOCAL_CONF = ""
     if os.path.isfile(TST+".conf"):
-        LOCAL_CONF = ' "--config=%s"' % TST+".conf"
+        LOCAL_CONF = ['--config=%s.conf' % TST ]
     elif os.path.isfile(os.path.join(env['TSTSRCDIR'],"All.conf")):
-        LOCAL_CONF = ' "--config=%s"' % os.path.join(env['TSTSRCDIR'],"All.conf")
+        LOCAL_CONF = ['--config=%s' % os.path.join(env['TSTSRCDIR'],"All.conf")]
+    else:
+        LOCAL_CONF = []
 
     if par['M5']:
         PRINTF = "io.printf"
@@ -2308,36 +2315,33 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             ClntErrFile = TST+".client.err"
             ClntOut = open(ClntOutFile,"w")
             ClntErr = open(ClntErrFile,"w")
-            PROLOGUE = ""
-            if os.path.isfile(TST+".prologue5") and par['M5']:
-                PROLOGUE = " "+TST+".prologue5"
-            DBINIT=""
-            if os.path.isfile(TST+".dbinit5") and par['M5']:
-                dbinit = TST+".dbinit5"
-                DBINIT = open(dbinit).readline().strip()
+            PROLOGUE = []
+            DBINIT = []
+            if par['M5']:
+                if os.path.isfile(TST + ".prologue5"):
+                    PROLOGUE = [TST + ".prologue5"]
+                if os.path.isfile(TST + ".dbinit5"):
+                    dbinit = open(TST + ".dbinit5").readline().strip()
+                    if dbinit:
+                        DBINIT = ['--dbinit=%s' % dbinit]
 
-            Srvr = '%s%s "--dbname=%s"' % (exe['Mserver'][1], LOCAL_CONF, TSTDB)
+            Srvr = splitcommand(exe['Mserver'][1]) + LOCAL_CONF + ['--dbname=%s' % TSTDB]
             lang=""
 
             if SERVER == "MAL":
                 lang="mal"
-                Srvr = '%s --set mal_listing=2 "--dbinit=%s"' % (Srvr, DBINIT)
+                Srvr.extend(['--set', 'mal_listing=2'])
+                Srvr.extend(DBINIT)
             if SERVER == "SQL":
                 lang="sql"
                 if par['M5']:
-                    Srvr = '%s --set mal_listing=0' % Srvr
-                    if DBINIT:
-                        Srvr = '%s "--dbinit=%s"' % (Srvr, DBINIT)
-            Srvr = Srvr+PROLOGUE
-            if os.name == "nt":
-                Srvr = Srvr+' & echo.& '
-            else:
-                Srvr = Srvr+' ; echo ; '
-            Srvr = Srvr+'echo Over..'
+                    Srvr.extend(['--set', 'mal_listing=0'])
+                    Srvr.extend(DBINIT)
+            Srvr.extend(PROLOGUE)
 
             pSrvr, pSrvrTimer = LaunchIt(Srvr, '\n%s("\\nReady.\\n");\n' % PRINTF, SrvrOut, SrvrErr, TIMEOUT)
             ln="dummy"
-            while 0 < len(ln) and ln[:6] not in ['Ready.','Over..']:
+            while 0 < len(ln) and ln[:6] != 'Ready.':
                 ln=pSrvr.stdout.readline()
                 SrvrOut.write(ln)
                 SrvrOut.flush()
@@ -2354,13 +2358,13 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
 
         if ServerReady:
             if   CALL == "other":
-                cmd = os.path.join(".",TST+EXT)+" "+TST+" "+PRELUDE
+                cmd = [os.path.join(".", TST + EXT), TST] + PRELUDE
                 timedout = RunIt(cmd, "", ClntOut, ClntErr, CTIMEOUT)
             elif CALL == "python":
-                cmd = exe['python'][1]+" "+TST+EXT+" "+TST+" "+PRELUDE
+                cmd = splitcommand(exe['python'][1]) + [TST + EXT, TST] + PRELUDE
                 timedout = RunIt(cmd, "", ClntOut, ClntErr, CTIMEOUT)
             elif CALL in ["mal", "malXs"]:
-                cmd = '%s%s --dbname=%s %s ' % (exe['Mserver'][1], LOCAL_CONF, TSTDB, PRELUDE)
+                cmd = splitcommand(exe['Mserver'][1]) + LOCAL_CONF + ['--dbname=%s' % TSTDB] + PRELUDE
                 if CALL == "mal":
                     X=""
                 else:
@@ -2371,9 +2375,12 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 for f in d:
                     if test.match(f):
                         if CALL[:3] == "mal":
-                            timedout = RunIt(cmd + f, open(os.devnull), ClntOut, ClntErr, TIMEOUT)
+                            cmd.append(f)
+                            timedout = RunIt(cmd, open(os.devnull), ClntOut, ClntErr, TIMEOUT)
                         elif par['M5']:
-                            timedout = RunIt(cmd+" --dbinit=\"include mil_scenario; mil();\" "+f, open(os.devnull), ClntOut, ClntErr, TIMEOUT)
+                            cmd.extend(['--dbinit=include mil_scenario; mil();',
+                                        f])
+                            timedout = RunIt(cmd, open(os.devnull), ClntOut, ClntErr, TIMEOUT)
                     if timedout:
                         break
             elif CALL in ["malC", "malCXs"]:
@@ -2390,9 +2397,9 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                         TSTs.append(f)
 
                 if CALL[:3] == "mal":
-                    Clnt = exe['MAL_Client'][1]
+                    Clnt = splitcommand(exe['MAL_Client'][1])
                 else:
-                    Clnt = ''               # cannot happen
+                    Clnt = []   # cannot happen
                 for f in TSTs:
                     timedout = RunIt(Clnt, open(f), ClntOut, ClntErr, TIMEOUT)
                     if timedout:
@@ -2411,7 +2418,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                     if test.match(f):
                         TSTs.append(f)
 
-                Clnt = exe['SQL_Client'][1]
+                Clnt = splitcommand(exe['SQL_Client'][1])
                 for f in TSTs:
                     timedout = RunIt(Clnt, open(f), ClntOut, ClntErr, TIMEOUT)
                     if timedout:
@@ -2437,7 +2444,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                     EpiFailed = EpiFailed+"\n! Executing "+TST+".epilogue failed with #"+str(IOerrNo)+": '"+IOerrStr+"'. !"
                     EpiFailed = EpiFailed+"\n! Probably, Mserver/mserver5 has died before or during. !\n"
                 ln="dummy"
-                while 0 < len(ln) and ln[:6] not in ['Done..','Over..']:
+                while 0 < len(ln) and ln[:6] != 'Done..':
                     ln=pSrvr.stdout.readline()
                     SrvrOut.write(ln)
                     SrvrOut.flush()
@@ -2462,7 +2469,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             pSrvr.wait()
             pSrvrTimer.cancel()
             if procdebug:
-                print 'DoIt: process exited "%s" (%s)\n' % (Srvr, pSrvr.returncode)
+                print 'DoIt: process exited "%s" (%s)\n' % ('" "'.join(Srvr), pSrvr.returncode)
             pSrvrTimer = None
             timedout = timedout or pSrvr.killed
             if MkillUsersAT:
@@ -2564,20 +2571,20 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
 
 def Check(command, input) :
     if procdebug:
-        print 'Check: starting process "%s" (inpipe,outpipe,errpipe)\n' % command
-    proc = subprocess.Popen(command, shell = True, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True)
+        print 'Check: starting process "%s" (inpipe,outpipe,errpipe)\n' % '" "'.join(command)
+    proc = subprocess.Popen(command, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True)
     t = Timer(float(par['TIMEOUT']), killProc, args = [proc])
     try:
         t.start()
         qOut, qErr = proc.communicate(input = input)
         t.cancel()
         if procdebug:
-            print 'Check: process exited "%s" (%s)\n' % (command, proc.returncode)
+            print 'Check: process exited "%s" (%s)\n' % ('" "'.join(command), proc.returncode)
     except KeyboardInterrupt:
         t.cancel()
         killProc(proc)
         if procdebug:
-            print 'Check: process killed "%s"\n' % command
+            print 'Check: process killed "%s"\n' % '" "'.join(command)
         raise
     qOut = qOut.split('\n')
     qErr = qErr.split('\n')
@@ -2595,7 +2602,7 @@ def Check(command, input) :
                 if l[:10] != "!WARNING: ":
                     noErr.append(l+"\n")
             else:
-                ErrMsg("'"+command+"` failed:")
+                ErrMsg('"%s" failed:' % '" "'.join(command))
                 if qOut and len(qOut[-1]) >= 8 and qOut[-1][:8] == "! Exit 1":
                     qErr.append(qOut.pop())
                 for l in qOut+qErr:
@@ -3488,7 +3495,7 @@ def main(argv) :
             elif CONDITIONALS.has_key('BITS64') and CONDITIONALS['BITS64']:
                 env['TST_BITS'] = "64bit"
         else:
-            if Check('%s --dbname=%s' % (env['exe']['Mserver'][1], TSTPREF), QUIT):
+            if Check(splitcommand(env['exe']['Mserver'][1]) + ['--dbname=%s' % TSTPREF], QUIT):
                 sys.exit(1)
             if GetBitsAndOIDsAndModsAndStaticAndThreads(env):
                 sys.exit(1)

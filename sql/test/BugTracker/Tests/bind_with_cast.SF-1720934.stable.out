@@ -13,7 +13,6 @@ stdout of test 'bind_with_cast.SF-1720934` in directory 'test/BugTracker` itself
 
 Ready.
 
-Over..
 
 # 14:16:53 >  
 # 14:16:53 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=32953 

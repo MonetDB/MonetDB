@@ -18,7 +18,6 @@ stdout of test 'foreign_key_type_mismatch.Bug-2745` in directory 'test/BugTracke
 
 Ready.
 
-Over..
 
 # 16:05:38 >  
 # 16:05:38 >  mclient -lsql -ftest -i -e --host=alf --port=37743 

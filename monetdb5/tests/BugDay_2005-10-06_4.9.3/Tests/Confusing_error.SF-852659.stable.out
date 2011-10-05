@@ -13,7 +13,6 @@ stdout of test 'Confusing_error.SF-852659` in directory 'tests/BugDay_2005-10-06
 
 Ready.
 
-Over..
 
 # 15:03:44 >  
 # 15:03:44 >  Mtimeout -timeout 60 MapiClient -lmil -u monetdb -P monetdb "--config=/ufs/niels/scratch/Linux-x86_64/etc/MonetDB.conf" --host=localhost --port=35927 < Confusing_error.SF-852659.milC

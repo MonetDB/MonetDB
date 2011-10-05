@@ -13,7 +13,6 @@ stdout of test '05` in directory 'benchmarks/tpch` itself:
 
 Ready.
 
-Over..
 
 # 11:47:56 >  
 # 11:47:56 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < 05.sql

@@ -13,7 +13,6 @@ stdout of test 'crash_on_incorrect_SQL.SF-1314904` in directory 'test/BugDay_200
 
 Ready.
 
-Over..
 
 # 16:53:01 >  
 # 16:53:01 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=47799  < crash_on_incorrect_SQL.SF-1314904.sql

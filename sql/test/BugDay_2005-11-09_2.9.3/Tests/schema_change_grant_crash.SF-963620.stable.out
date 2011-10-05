@@ -13,7 +13,6 @@ stdout of test 'schema_change_grant_crash.SF-963620` in directory 'test/BugDay_2
 
 Ready.
 
-Over..
 
 # 12:45:11 >  
 # 12:45:11 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < schema_change_grant_crash.SF-963620.sql

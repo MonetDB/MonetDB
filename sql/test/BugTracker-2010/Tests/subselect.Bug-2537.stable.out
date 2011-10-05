@@ -18,7 +18,6 @@ stdout of test 'subselect.Bug-2537` in directory 'test/BugTracker-2010` itself:
 
 Ready.
 
-Over..
 
 # 09:57:59 >  
 # 09:57:59 >  mclient -lsql -ftest -i -e --host=rig --port=38583 

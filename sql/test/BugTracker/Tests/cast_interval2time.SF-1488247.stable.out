@@ -13,7 +13,6 @@ stdout of test 'cast_interval2time.SF-1488247` in directory 'test/BugTracker` it
 
 Ready.
 
-Over..
 
 # 11:54:14 >  
 # 11:54:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < cast_interval2time.SF-1488247.sql

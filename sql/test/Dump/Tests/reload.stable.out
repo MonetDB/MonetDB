@@ -19,7 +19,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 17:36:22 >  
 # 17:36:22 >  Mtimeout -timeout 60 /ufs/sjoerd/bin/x86_64/python reload.SQL.py reload 

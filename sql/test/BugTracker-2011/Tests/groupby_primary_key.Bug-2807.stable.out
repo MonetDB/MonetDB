@@ -19,7 +19,6 @@ stdout of test 'groupby_primary_key.Bug-2807` in directory 'test/BugTracker-2011
 
 Ready.
 
-Over..
 
 # 13:55:01 >  
 # 13:55:01 >  mclient -lsql -ftest -i -e --host=alf --port=31577 

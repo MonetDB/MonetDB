@@ -13,7 +13,6 @@ stdout of test 'create_table_default.SF-931573` in directory 'test/BugDay_2005-1
 
 Ready.
 
-Over..
 
 # 12:39:35 >  
 # 12:39:35 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < create_table_default.SF-931573.sql

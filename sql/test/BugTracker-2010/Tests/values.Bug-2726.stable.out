@@ -18,7 +18,6 @@ stdout of test 'values.Bug-2726` in directory 'test/BugTracker-2010` itself:
 
 Ready.
 
-Over..
 
 # 16:36:04 >  
 # 16:36:04 >  mclient -lsql -ftest -i -e --host=alf --port=33705 

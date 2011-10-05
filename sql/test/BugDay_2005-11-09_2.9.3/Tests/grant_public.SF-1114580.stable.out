@@ -13,7 +13,6 @@ stdout of test 'grant_public.SF-1114580` in directory 'test/BugDay_2005-11-09_2.
 
 Ready.
 
-Over..
 
 # 12:46:10 >  
 # 12:46:10 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < grant_public.SF-1114580.sql

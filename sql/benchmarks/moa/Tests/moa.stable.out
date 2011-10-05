@@ -13,7 +13,6 @@ stdout of test 'moa` in directory 'benchmarks/moa` itself:
 
 Ready.
 
-Over..
 
 # 16:07:45 >  
 # 16:07:45 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=draco --port=53186  < moa.sql

@@ -20,7 +20,6 @@ Ready.
 # falling back to direct mode 
 # semantic relational algebra
 
-Over..
 
 # 20:55:30 >  
 # 20:55:30 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=42509  < timestamp_fraction.SF-1357342.sql

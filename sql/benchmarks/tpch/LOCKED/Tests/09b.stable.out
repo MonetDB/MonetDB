@@ -11,7 +11,6 @@ stdout of test '09b` in directory 'benchmarks/tpch/LOCKED` itself:
 
 Ready.
 
-Over..
 
 # 02:58:00 >  
 # 02:58:00 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=db1 --port=54772 --trace < 09b.sql

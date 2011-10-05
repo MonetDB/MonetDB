@@ -22,7 +22,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 18:25:24 >  
 # 18:25:24 >  mclient -lsql -umonetdb -Pmonetdb --host=amelia --port=32992 

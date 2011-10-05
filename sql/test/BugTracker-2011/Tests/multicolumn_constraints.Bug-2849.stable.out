@@ -20,7 +20,6 @@ stdout of test 'multicolumn_constraints.Bug-2849` in directory 'test/BugTracker-
 
 Ready.
 
-Over..
 
 # 16:14:18 >  
 # 16:14:18 >  mclient -lsql -ftest -i -e --host=alf --port=34629 

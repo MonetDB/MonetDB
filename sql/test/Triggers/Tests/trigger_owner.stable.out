@@ -19,7 +19,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 14:14:18 >  
 # 14:14:18 >  Mtimeout -timeout 60 ./trigger_owner.SQL trigger_owner 

@@ -13,7 +13,6 @@ stdout of test 'create_column_name_data.SF-1440214` in directory 'test/BugTracke
 
 Ready.
 
-Over..
 
 # 20:09:22 >  
 # 20:09:22 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=35014  < create_column_name_data.SF-1440214.sql

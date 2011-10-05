@@ -18,7 +18,6 @@ stdout of test 'insert-into-except.Bug-2569` in directory 'test/BugTracker-2010`
 
 Ready.
 
-Over..
 
 # 11:22:03 >  
 # 11:22:03 >  mclient -lsql -ftest -i -e --host=volund --port=30054 

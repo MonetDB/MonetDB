@@ -19,7 +19,6 @@ Ready.
 #01 #BBPdir: writing BBP.dir (12 bats).
 #01 #BBPdir: writing BBP.dir (676 bats).
 
-Over..
 
 # 18:02:49 >  
 # 18:02:49 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=37174 

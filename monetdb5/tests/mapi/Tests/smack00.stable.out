@@ -17,7 +17,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 22:38:32 >  
 # 22:38:32 >  Mtimeout -timeout 60 ./smack00.MAPI smack00 

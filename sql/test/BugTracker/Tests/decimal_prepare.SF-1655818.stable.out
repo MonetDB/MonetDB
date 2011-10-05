@@ -8,7 +8,6 @@ stdout of test 'decimal_prepare.SF-1655818` in directory 'test/BugTracker` itsel
 
 Ready.
 
-Over..
 
 # 11:47:08 >  
 # 11:47:08 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=33419  < decimal_prepare.SF-1655818.sql

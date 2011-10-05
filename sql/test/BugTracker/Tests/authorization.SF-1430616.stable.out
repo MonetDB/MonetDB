@@ -18,7 +18,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 10:24:37 >  
 # 10:24:37 >  Mtimeout -timeout 300 ./authorization.SF-1430616.SQL authorization.SF-1430616 

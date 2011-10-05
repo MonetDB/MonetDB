@@ -13,7 +13,6 @@ stdout of test 'Test_Rmetadata` in directory 'jdbc/tests` itself:
 
 Ready.
 
-Over..
 
 # 22:17:15 >  
 # 22:17:15 >  Mtimeout -timeout 120 ./Test_Rmetadata.SQL Test_Rmetadata 

@@ -24,7 +24,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 12:43:19 >  
 # 12:43:19 >  Mtimeout -timeout 60 ./Test_Clargequery.SQL Test_Clargequery 

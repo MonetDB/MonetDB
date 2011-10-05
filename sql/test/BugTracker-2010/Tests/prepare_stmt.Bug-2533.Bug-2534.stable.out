@@ -18,7 +18,6 @@ stdout of test 'prepare_stmt.Bug-2533.Bug-2534` in directory 'test/BugTracker-20
 
 Ready.
 
-Over..
 
 # 09:32:45 >  
 # 09:32:45 >  mclient -lsql -ftest -i -e --host=rig --port=33580 

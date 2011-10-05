@@ -13,7 +13,6 @@ stdout of test 'trimtest-bug-sf-1023588` in directory 'test/bugs` itself:
 
 Ready.
 
-Over..
 
 # 12:54:07 >  
 # 12:54:07 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < trimtest-bug-sf-1023588.sql

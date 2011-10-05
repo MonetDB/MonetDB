@@ -13,7 +13,6 @@ stdout of test 'div_by_zero.SF-987304` in directory 'test/BugDay_2005-10-06_2.9.
 
 Ready.
 
-Over..
 
 # 12:41:33 >  
 # 12:41:33 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < div_by_zero.SF-987304.sql

@@ -13,7 +13,6 @@ stdout of test 'rand_not_executed_for_every_row.SF-1723791` in directory 'test/B
 
 Ready.
 
-Over..
 
 # 23:24:26 >  
 # 23:24:26 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35962 

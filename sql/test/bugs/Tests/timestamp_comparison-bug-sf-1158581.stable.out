@@ -23,7 +23,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 12:56:12 >  
 # 12:56:12 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < timestamp_comparison-bug-sf-1158581.sql

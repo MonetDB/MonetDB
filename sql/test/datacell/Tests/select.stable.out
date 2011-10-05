@@ -19,7 +19,6 @@ stdout of test 'select` in directory 'test/datacell` itself:
 
 Ready.
 
-Over..
 
 # 12:42:55 >  
 # 12:42:55 >  mclient -lsql -ftest -i -e --host=alf --port=31795 

@@ -13,7 +13,6 @@ stdout of test 'limit_timestampz.SF-1774217` in directory 'test/BugTracker` itse
 
 Ready.
 
-Over..
 
 # 23:35:36 >  
 # 23:35:36 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=koala --port=33233 

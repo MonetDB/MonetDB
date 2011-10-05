@@ -13,7 +13,6 @@ stdout of test 'inserting_invalid_timestamp.SF-1363557` in directory 'test/BugTr
 
 Ready.
 
-Over..
 
 # 11:53:57 >  
 # 11:53:57 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < inserting_invalid_timestamp.SF-1363557.sql

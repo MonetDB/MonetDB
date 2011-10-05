@@ -17,7 +17,6 @@ stdout of test 'number_null_first_row.SF-1833286` in directory 'test/BugTracker`
 
 Ready.
 
-Over..
 
 # 21:23:57 >  
 # 21:23:57 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=33754 

@@ -20,7 +20,6 @@ Ready.
 #Client 1 1
 #MALexit: clients still active
 
-Over..
 
 # 11:54:20 >  
 # 11:54:20 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < groupby_with_alias.SF-1520575.sql

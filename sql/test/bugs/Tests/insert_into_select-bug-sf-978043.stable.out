@@ -15,7 +15,6 @@ stdout of test 'insert_into_select-bug-sf-978043` in directory 'test/bugs` itsel
 
 Ready.
 
-Over..
 
 # 21:42:27 >  
 # 21:42:27 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=34895  < insert_into_select-bug-sf-978043.sql

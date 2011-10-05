@@ -13,7 +13,6 @@ stdout of test 'view_join-bug-sf-990096` in directory 'test/bugs` itself:
 
 Ready.
 
-Over..
 
 # 12:52:14 >  
 # 12:52:14 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < view_join-bug-sf-990096.sql

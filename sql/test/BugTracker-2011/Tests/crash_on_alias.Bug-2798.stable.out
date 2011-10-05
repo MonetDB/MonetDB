@@ -18,7 +18,6 @@ stdout of test 'crash_on_alias.Bug-2798` in directory 'test/BugTracker-2011` its
 
 Ready.
 
-Over..
 
 # 14:09:56 >  
 # 14:09:56 >  mclient -lsql -ftest -i -e --host=volund --port=31436 

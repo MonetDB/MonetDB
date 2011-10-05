@@ -13,7 +13,6 @@ stdout of test 'drop_system_tables.SF-1550768` in directory 'test/BugTracker` it
 
 Ready.
 
-Over..
 
 # 10:53:33 >  
 # 10:53:33 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=34124  < drop_system_tables.SF-1550768.sql

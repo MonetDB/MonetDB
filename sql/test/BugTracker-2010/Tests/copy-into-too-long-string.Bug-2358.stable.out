@@ -18,7 +18,6 @@ stdout of test 'copy-into-too-long-string.Bug-2358` in directory 'test/BugTracke
 
 Ready.
 
-Over..
 
 # 15:34:26 >  
 # 15:34:26 >  mclient -lsql -ftest -i -e --host=volund --port=32555 

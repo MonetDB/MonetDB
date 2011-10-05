@@ -17,7 +17,6 @@ stdout of test 'delete_insert.Bug-2529` in directory 'test/BugTracker-2010` itse
 
 Ready.
 
-Over..
 
 # 20:59:20 >  
 # 20:59:20 >  mclient -lsql -ftest -i -e --host=alf --port=32448 

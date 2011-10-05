@@ -18,7 +18,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 12:35:08 >  
 # 12:35:08 >  Mtimeout -timeout 1380 ./01-22.SQL 01-22 

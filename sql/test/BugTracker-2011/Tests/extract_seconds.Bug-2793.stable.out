@@ -19,7 +19,6 @@ stdout of test 'extract_seconds.Bug-2793` in directory 'test/BugTracker-2011` it
 
 Ready.
 
-Over..
 
 # 11:57:21 >  
 # 11:57:21 >  mclient -lsql -ftest -i -e --host=alf --port=36602 

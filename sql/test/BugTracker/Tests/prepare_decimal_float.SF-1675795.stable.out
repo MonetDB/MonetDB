@@ -13,7 +13,6 @@ stdout of test 'prepare_decimal_float.SF-1675795` in directory 'test/BugTracker`
 
 Ready.
 
-Over..
 
 # 16:00:53 >  
 # 16:00:53 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=32565 

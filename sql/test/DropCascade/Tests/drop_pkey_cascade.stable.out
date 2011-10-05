@@ -14,7 +14,6 @@ stdout of test 'drop_pkey_cascade` in directory 'test/DropCascade` itself:
 Ready.
 #01 #BBPdir: writing BBP.dir (515 bats).
 
-Over..
 
 # 18:05:38 >  
 # 18:05:38 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=32855 

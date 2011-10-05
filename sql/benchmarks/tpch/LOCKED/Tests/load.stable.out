@@ -13,7 +13,6 @@ stdout of test 'load` in directory 'benchmarks/tpch/LOCKED` itself:
 
 Ready.
 
-Over..
 
 # 12:34:20 >  
 # 12:34:20 >  Mtimeout -timeout 3660 python load.SQL.py load 

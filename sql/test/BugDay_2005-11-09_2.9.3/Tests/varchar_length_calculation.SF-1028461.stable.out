@@ -13,7 +13,6 @@ stdout of test 'varchar_length_calculation.SF-1028461` in directory 'test/BugDay
 
 Ready.
 
-Over..
 
 # 12:45:14 >  
 # 12:45:14 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < varchar_length_calculation.SF-1028461.sql

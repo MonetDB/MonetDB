@@ -18,7 +18,6 @@ stdout of test 'second_function_existing_signature.Bug-2611` in directory 'test/
 
 Ready.
 
-Over..
 
 # 09:47:40 >  
 # 09:47:40 >  mclient -lsql -ftest -i -e --host=yngling --port=33720 

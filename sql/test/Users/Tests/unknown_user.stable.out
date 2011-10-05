@@ -13,7 +13,6 @@ stdout of test 'unknown_user` in directory 'test/Users` itself:
 
 Ready.
 
-Over..
 
 # 14:12:51 >  
 # 14:12:51 >  Mtimeout -timeout 120 /usr/bin/python unknown_user.SQL.py unknown_user 

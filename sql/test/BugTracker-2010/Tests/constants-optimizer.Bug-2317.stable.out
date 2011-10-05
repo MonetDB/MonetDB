@@ -19,7 +19,6 @@ stdout of test 'constants-optimizer.Bug-2317` in directory 'test/BugTracker-2010
 
 Ready.
 
-Over..
 
 # 00:10:51 >  
 # 00:10:51 >  mclient -lsql -ftest -i -e --host=eir --port=37160 

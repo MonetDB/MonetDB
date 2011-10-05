@@ -18,7 +18,6 @@ stdout of test 'group-by_ordered_column.Bug-2564` in directory 'test/BugTracker-
 
 Ready.
 
-Over..
 
 # 19:36:51 >  
 # 19:36:51 >  mclient -lsql -ftest -i -e --host=rig --port=30272 

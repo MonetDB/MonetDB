@@ -16,7 +16,6 @@ stdout of test 'cast-crash.Bug-2678` in directory 'test/BugTracker-2011` itself:
 
 Ready.
 
-Over..
 
 # 12:29:59 >  
 # 12:29:59 >  mclient -lsql -ftest -i -e --host=volund --port=36981 

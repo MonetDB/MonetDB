@@ -13,7 +13,6 @@ stdout of test 'create_insert_select-bug-sf-900198` in directory 'test/bugs` its
 
 Ready.
 
-Over..
 
 # 12:48:00 >  
 # 12:48:00 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < create_insert_select-bug-sf-900198.sql

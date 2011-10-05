@@ -15,7 +15,6 @@ stdout of test 'view_on_deleted_table.SF-938583` in directory 'test/BugDay_2005-
 
 Ready.
 
-Over..
 
 # 20:09:57 >  
 # 20:09:57 >  mclient -lsql -ftest -i -e --host=alf --port=38886 

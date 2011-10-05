@@ -17,7 +17,6 @@ stdout of test 'garbagecollect` in directory 'test/datacell` itself:
 
 Ready.
 
-Over..
 
 # 17:22:45 >  
 # 17:22:45 >  mclient -lsql -ftest -i -e --host=eir --port=36905 

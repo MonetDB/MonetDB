@@ -18,7 +18,6 @@ stdout of test '12` in directory 'benchmarks/ssbm` itself:
 
 Ready.
 
-Over..
 
 # 17:32:52 >  
 # 17:32:52 >  mclient -lsql -ftest -i -e --host=rig --port=37793 

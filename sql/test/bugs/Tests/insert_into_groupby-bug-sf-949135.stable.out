@@ -13,7 +13,6 @@ stdout of test 'insert_into_groupby-bug-sf-949135` in directory 'test/bugs` itse
 
 Ready.
 
-Over..
 
 # 12:48:55 >  
 # 12:48:55 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < insert_into_groupby-bug-sf-949135.sql

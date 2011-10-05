@@ -13,7 +13,6 @@ stdout of test 'unique-bug-sf-1043512` in directory 'test/bugs` itself:
 
 Ready.
 
-Over..
 
 # 12:55:33 >  
 # 12:55:33 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < unique-bug-sf-1043512.sql

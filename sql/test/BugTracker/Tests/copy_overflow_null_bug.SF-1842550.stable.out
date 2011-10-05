@@ -19,7 +19,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 08:13:34 >  
 # 08:13:34 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=38956 

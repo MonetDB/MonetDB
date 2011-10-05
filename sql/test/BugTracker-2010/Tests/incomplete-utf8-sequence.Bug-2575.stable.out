@@ -19,7 +19,6 @@ stdout of test 'incomplete-utf8-sequence.Bug-2575` in directory 'test/BugTracker
 
 Ready.
 
-Over..
 
 # 14:47:29 >  
 # 14:47:29 >  mclient -lsql -ftest -i -e --host=ottar --port=36476 

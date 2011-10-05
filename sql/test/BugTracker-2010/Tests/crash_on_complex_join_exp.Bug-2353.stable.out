@@ -18,7 +18,6 @@ stdout of test 'crash_on_complex_join_exp.Bug-2353` in directory 'test/BugTracke
 
 Ready.
 
-Over..
 
 # 21:49:44 >  
 # 21:49:44 >  mclient -lsql -ftest -i -e --host=alf --port=33178 

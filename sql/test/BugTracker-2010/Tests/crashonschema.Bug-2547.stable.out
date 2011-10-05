@@ -17,7 +17,6 @@ stdout of test 'crashonschema.Bug-2547` in directory 'test/BugTracker-2010` itse
 
 Ready.
 
-Over..
 
 # 18:47:50 >  
 # 18:47:50 >  mclient -lsql -ftest -i -e --host=alf --port=39317 

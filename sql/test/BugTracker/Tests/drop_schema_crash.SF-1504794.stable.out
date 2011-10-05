@@ -15,7 +15,6 @@ stdout of test 'drop_schema_crash.SF-1504794` in directory 'test/BugTracker` its
 
 Ready.
 
-Over..
 
 # 11:12:03 >  
 # 11:12:03 >  Mtimeout -timeout 180 ./drop_schema_crash.SF-1504794.SQL drop_schema_crash.SF-1504794 

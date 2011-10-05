@@ -13,7 +13,6 @@ stdout of test 'BugConcurrent_clients_SF_1504657` in directory 'jdbc/tests` itse
 
 Ready.
 
-Over..
 
 # 18:38:06 >  
 # 18:38:06 >  Mtimeout -timeout 60 ./BugConcurrent_clients_SF_1504657.SQL BugConcurrent_clients_SF_1504657 

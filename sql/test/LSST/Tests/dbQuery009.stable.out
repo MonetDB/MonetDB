@@ -19,7 +19,6 @@ stdout of test 'dbQuery009` in directory 'test/LSST` itself:
 
 Ready.
 
-Over..
 
 # 09:59:33 >  
 # 09:59:33 >  mclient -lsql -ftest -i -e --host=eir --port=36749 

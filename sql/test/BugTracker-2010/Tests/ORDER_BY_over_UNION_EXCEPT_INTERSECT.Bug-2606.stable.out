@@ -18,7 +18,6 @@ stdout of test 'ORDER_BY_over_UNION_EXCEPT_INTERSECT.Bug-2606` in directory 'tes
 
 Ready.
 
-Over..
 
 # 11:34:36 >  
 # 11:34:36 >  mclient -lsql -ftest -i -e --host=rig --port=33404 

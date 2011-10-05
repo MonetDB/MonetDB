@@ -13,7 +13,6 @@ stdout of test 'cast_interval.SF.1280682` in directory 'test/BugDay_2005-12-19_2
 
 Ready.
 
-Over..
 
 # 11:51:15 >  
 # 11:51:15 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < cast_interval.SF.1280682.sql

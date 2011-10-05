@@ -13,7 +13,6 @@ stdout of test 'select_extract.SF-1263796` in directory 'test/BugTracker` itself
 
 Ready.
 
-Over..
 
 # 12:47:39 >  
 # 12:47:39 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < select_extract.SF-1263796.sql

@@ -17,7 +17,6 @@ stdout of test 'limit_in_prepare.Bug-2552` in directory 'test/BugTracker-2010` i
 
 Ready.
 
-Over..
 
 # 08:45:11 >  
 # 08:45:11 >  mclient -lsql -ftest -i -e --host=alf --port=35663 
