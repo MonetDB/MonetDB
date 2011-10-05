@@ -49,10 +49,10 @@
 #include "mal_parser.h"
 #include "mal_builder.h"
 #include "mal_namespace.h"
-#include "mal_sabaoth.h"
 #include "mal_debugger.h"
 #include "mal_linker.h"
 #include "bat5.h"
+#include "msabaoth.h"
 #include <mtime.h>
 #include "optimizer.h"
 #include "opt_statistics.h"
@@ -125,7 +125,6 @@ static str SQLinit(void);
 str
 SQLprelude(void)
 {
-	int res = 0;
 	str tmp;
 	Scenario ms, s = getFreeScenario();
 	if (!s)
@@ -170,18 +169,17 @@ SQLprelude(void)
 
 	/* only register availability of scenarios AFTER we are inited! */
 	s->name = "sql";
-	tmp = SABAOTHmarchScenario(&res, &s->name);
+	tmp = msab_marchScenario(s->name);
 	if (tmp != MAL_SUCCEED)
 		return(tmp);
 	ms->name = "msql";
-	tmp = SABAOTHmarchScenario(&res, &ms->name);
+	tmp = msab_marchScenario(ms->name);
 	return tmp;
 }
 
 str
 SQLepilogue(void)
 {
-	int res = 0;
 	char *s = "sql";
 
 	if( SQLinitialized){
@@ -193,7 +191,7 @@ SQLepilogue(void)
 	/* this function is never called, but for the style of it, we clean
 	 * up our own mess */
 	if (!GDKembedded)
-		return SABAOTHretreatScenario(&res, &s);
+		return msab_retreatScenario(s);
 	return MAL_SUCCEED;
 }
 
