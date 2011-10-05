@@ -792,6 +792,13 @@ push_semijoin( mvc *sql, stmt *select, stmt *s )
 		op2 = push_semijoin(sql, op2, s);
 		return stmt_union(sql->sa, op1, op2);
 	}
+	if (select->type == st_mark) {
+		stmt *op1 = select->op1;
+		stmt *op2 = select->op2;
+
+		op1 = push_semijoin(sql, op1, s);
+		return stmt_mark_tail(sql->sa, op1, op2->op4.aval->data.val.oval);
+	}
 
 	/* semijoin(reverse(semijoin(reverse(x)),s) */
 	if (select->type == st_reverse &&

@@ -42,4 +42,5 @@ delete-large-table.Bug-2882
 HAVE_PERL?perl-table_info.Bug-2885
 div_by_zero.Bug-2887
 cast-crash.Bug-2678
+div_zero_problem.Bug-2893
 non-stable-select-bug.Bug-2894

@@ -449,7 +449,7 @@ exp_count(int *cnt, int seqnr, sql_exp *e)
 			*cnt += c;
 			return c;
 		}
-		case cmp_or: /* prefer union over like */
+		case cmp_or: /* prefer or over functions */
 			*cnt += 3;
 			return 3;
 		default:
@@ -465,6 +465,10 @@ exp_count(int *cnt, int seqnr, sql_exp *e)
 		/* functions are more expensive, depending on the number of columns involved. */ 
 		*cnt -= 5*list_length(e->l);
 		return 5*list_length(e->l);
+	case e_convert:
+		/* functions are more expensive, depending on the number of columns involved. */ 
+		if (e->card == CARD_ATOM)
+			return 0;
 	default:
 		*cnt -= 5;
 		return -5;
