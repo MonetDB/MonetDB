@@ -30,7 +30,7 @@
  *
  * @verbatim
  * barrier parallel:= scheduler.srvpool();
- * (s1,...,sn) :=  srvpool.server("queryplan");
+ * (s1,...,sn) :=  srvpool.query("queryplan");
  * a:= user.S0_1_stub(s1,arg...);
  * ...
  * b:= srvpool.S0_1_stub(sn,arg...);
@@ -83,7 +83,7 @@ static Server servers[MAXSITES];	/* registry of servers */
 static int srvtop = 0;
 static int srvbaseline= 0;
 static str srvpattern = NULL;
-static int localExecution= FALSE;
+static int localExecution= TRUE;
 
 /* 
  * The partition optimizer requires the number of peers.
@@ -125,6 +125,7 @@ SRVPOOLnewServer(str uri)
 	return srvtop-1;
 }
 
+
 static int
 SRVPOOLgetServer(str uri)
 {
@@ -139,7 +140,8 @@ SRVPOOLgetServer(str uri)
 
 /* Clean function registry of non-active servers */
 
-static void SRVPOOLcleanup(int i)
+static void
+SRVPOOLcleanup(int i)
 {
 	Registry r, q;
 	r = servers[i].nxt;
@@ -150,6 +152,28 @@ static void SRVPOOLcleanup(int i)
 			r = q;
 	}
 	servers[i].nxt = NULL;
+}
+
+
+/* remove a server from the pool */
+static void
+SRVPOOLdropServer(int idx)
+{
+	int j;
+	SRVPOOLcleanup(idx);
+	if ( servers[idx].uri ) GDKfree(servers[idx].uri);
+	servers[idx].uri = NULL;
+	if ( servers[idx].usr ) GDKfree(servers[idx].usr);
+	servers[idx].pwd = NULL;
+	if ( servers[idx].pwd ) GDKfree(servers[idx].pwd);
+	servers[idx].pwd = NULL;
+	if ( servers[idx].conn ) GDKfree(servers[idx].conn);
+	servers[idx].conn = NULL;
+	for ( j = idx; j <srvtop -1; j++)
+		servers[j]= servers[idx + 1];
+	servers[j].uri = servers[j].usr = servers[j].pwd = servers[j].conn =  NULL;
+	servers[j].nxt = NULL;
+	srvtop --;
 }
 
 /* logically disconnect from all servers */
@@ -213,7 +237,16 @@ SRVPOOLconnect(str *c, str *uri)
 	return msg;
 }
 
-/* Look up the servers available for processing , guarantee a minimum number of servers */
+/* switch local/remote execution */
+str
+SRVPOOLlocal(int *ret, int *flag)
+{
+	(void) ret;
+	localExecution= *flag != 0;
+	return MAL_SUCCEED;
+}
+
+/* Look up the servers available for processing */
 static str
 SRVPOOLdiscover(Client cntxt)
 {
@@ -258,12 +291,16 @@ SRVPOOLdiscover(Client cntxt)
 #ifdef DEBUG_RUN_SRVPOOL
 						mnstr_printf(cntxt->fdout,"#Worker site %d reports %s \n", j, msg);
 #endif
-						break;
+						/* Upon receiving an initialization error, the entry should be ignored */
+						SRVPOOLdropServer(j);
+						GDKfree(msg);
+						msg = MAL_SUCCEED;
 					}
 				}
 
 #ifdef DEBUG_RUN_SRVPOOL
-				mnstr_printf(cntxt->fdout,"#Worker site %d alias %s %s\n", j, (servers[j].conn?servers[j].conn:""), t);
+				else 
+					mnstr_printf(cntxt->fdout,"#Worker site %d alias %s %s\n", j, (servers[j].conn?servers[j].conn:""), t);
 #endif
 				assert(srvtop <MAXSITES);
 			}
@@ -402,14 +439,16 @@ SRVPOOLscheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( localExecution) {
 		*res = -1; /* skip this one */
 	} else {
-		SRVPOOLdiscover(cntxt);
+		/* only discover workers once */
+		if ( srvtop == 0)
+			SRVPOOLdiscover(cntxt);
 		*res = localExecution;
 	}
 	return MAL_SUCCEED;
 }
 
 str
-SRVPOOLserver(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+SRVPOOLquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i,j, fnd =0;
 	str plan = *(str*) getArgReference(stk,pci,pci->retc);

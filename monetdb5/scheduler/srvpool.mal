@@ -32,8 +32,8 @@ pattern srvpool.reset(dbname:str):str
 address SRVPOOLreset
 comment "Clear the server cache";
 
-pattern srvpool.server(plan:str):str...
-address SRVPOOLserver
+pattern srvpool.query(plan:str):str...
+address SRVPOOLquery
 comment "Allocate a list of servers for query execution";
 
 pattern scheduler.pattern( pat:str)
@@ -43,3 +43,7 @@ comment "Activate the peers matching the pattern and return number found.";
 pattern scheduler.peers( N:int)
 address SRVsetServers
 comment "Simulate N peers";
+
+command srvpool.local(b:bit)
+address SRVPOOLlocal
+comment "Change location from remote to local execution";

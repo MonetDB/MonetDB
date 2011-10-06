@@ -43,9 +43,10 @@
 mpool_export str SRVPOOLscheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mpool_export str SRVPOOLexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mpool_export str SRVPOOLregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mpool_export str SRVPOOLserver(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mpool_export str SRVPOOLquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mpool_export str SRVPOOLreset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mpool_export str SRVPOOLconnect(str *c, str *dbname);
+mpool_export str SRVPOOLlocal(int *res, int *flag);
 mpool_export str SRVsetServers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif /* MAL_RUN_SRVPOOL */
 
