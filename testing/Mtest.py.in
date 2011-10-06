@@ -3042,13 +3042,13 @@ def main(argv) :
 
     recursive = opts.get('recursive', False)
     global quiet
-    quiet = opts.get('quiet', 0)
+    quiet = opts.get('quiet', False)
     global verbose
     verbose = opts.get('verbose', False)
     if quiet and verbose:
         ErrExit('--verbose and --quiet are mutually exclusive')
     global procdebug
-    procdebug = opts.get('procdebug', 0)
+    procdebug = opts.get('procdebug', False)
     if THISFILE == "Mtest.py":
         _IGNORE = dftIGNORE
         par['IGNORE'] = opts.get('ignore', _IGNORE)
@@ -3350,7 +3350,7 @@ def main(argv) :
             #else:
                 # WARNING/ERROR
         elif args[0].find(os.sep) != -1:
-            ErrXit("'"+args[0]+"` is neither a valid directory in "+os.getcwd()+" nor a valid test-name!")
+            ErrXit("'%s` is neither a valid directory in %s nor a valid test-name!" % (args[0], os.getcwd()))
         elif args[0] != "All":
             #TODO:
             # check, whether args[0] in All
@@ -3408,14 +3408,14 @@ def main(argv) :
             elif os.path.isdir(os.path.join(d,TSTSUFF))  and  os.path.isfile(os.path.join(d,TSTSUFF,"All")):
                 testdirs.append(os.path.realpath(d))
             else:
-                Warn("No tests found in '"+d+"`; skipping directory!")
+                Warn("No tests found in '%s`; skipping directory!" % d)
 
     if len(testdirs) > 1  and  testlist:
         testlist = []
         #TODO
         # WARNING
     if not testdirs:
-        Warn("No tests found in "+str(dirlist)+"!")
+        Warn("No tests found in %s!" % ', '.join(dirlist))
         sys.exit(1)
 
     BusyPorts = []
