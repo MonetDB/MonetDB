@@ -65,6 +65,10 @@ pattern pack2(b:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
 address MATpack2
 comment "Materialize the MAT into a BAT (by an append all)";
 
+pattern pack3(b:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
+address MATpack3
+comment "Materialize the MAT into a BAT by considering the heads as void. (used in centipede)";
+
 pattern slice(first:wrd, last:wrd, b:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
 address MATpackSlice
 comment "Materialize a sliced MAT into a BAT";
@@ -143,6 +147,7 @@ comment "retrieve the definition from the partition catalogue";
 
 mat_export str MATpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mat_export str MATpack2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mat_export str MATpack3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mat_export str MATpackValues(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mat_export str MATpackSlice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mat_export str MATnewIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
@@ -433,6 +438,59 @@ MATpack2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) cntxt;
 	(void) mb;
 	return MATpack2Internal(stk,p);
+}
+
+/*
+ * the next one is specific to the centipede, where we carve out
+ * a portion of table based on the value ids. They are simply glued
+ * together in a void-headed bat.
+*/
+static str
+MATpack3Internal(MalStkPtr stk, InstrPtr p)
+{
+	int i,*ret;
+	BAT *b, *bn;
+	BUN cap=0;
+
+	b= BATdescriptor(stk->stk[getArg(p,1)].val.ival);
+	if( b == NULL)
+		throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
+	bn = BATcopy(b, TYPE_void, b->ttype, TRUE);
+	BATseqbase(bn,0);
+	BBPunfix(b->batCacheid);
+	if( bn == NULL)
+		throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
+
+	for(i = 2; i < p->argc; i++){
+		b= BATdescriptor(stk->stk[getArg(p,i)].val.ival);
+		if( b == NULL){
+			BBPreleaseref(bn->batCacheid);
+			throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
+		}
+		cap += BATcount(b);
+		BBPunfix(b->batCacheid);
+	}
+	bn = BATextend(bn, cap);
+	for( i = 2; i < p->argc; i++){
+		b= BATdescriptor(stk->stk[getArg(p,i)].val.ival);
+		if( b == NULL){
+			BBPreleaseref(bn->batCacheid);
+			throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
+		}
+		BATappend(bn,b,FALSE);
+		BBPunfix(b->batCacheid);
+	}
+	ret= (int*) getArgReference(stk,p,0);
+	BBPkeepref(*ret = bn->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+MATpack3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	(void) cntxt;
+	(void) mb;
+	return MATpack3Internal(stk,p);
 }
 
 str

@@ -147,7 +147,7 @@ OPTplanCntrl(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices, oid plan
 		for ( k=0  ;k < nrpack ; k++){
 			pack[k] = newInstruction(cmb,ASSIGNsymbol);
 			getModuleId(pack[k]) = matRef;
-			getFunctionId(pack[k]) = packRef;
+			getFunctionId(pack[k]) = putName("pack3",5);
 			getArg(pack[k],0) = newTmpVariable(cmb, newBatType(TYPE_oid, getTailType(getArgType(cmb,p,k))) );
 		}
 	}

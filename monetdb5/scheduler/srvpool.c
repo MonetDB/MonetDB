@@ -83,7 +83,7 @@ static Server servers[MAXSITES];	/* registry of servers */
 static int srvtop = 0;
 static int srvbaseline= 0;
 static str srvpattern = NULL;
-static int localExecution= TRUE;
+static int localExecution= FALSE;
 
 /* 
  * The partition optimizer requires the number of peers.
