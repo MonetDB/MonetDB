@@ -370,18 +370,29 @@ forkMserver(char *database, sabdb** stats, int force)
 				} while ((scen = scen->next) != NULL);
 				if (scen != NULL)
 					break;
+			} else {
+				/* in the meanwhile, if the server has stopped, it will
+				 * have been removed from the dpair list, so check if
+				 * it's still there. */
+				pthread_mutex_lock(&_mero_topdp_lock);
+				dp = _mero_topdp;
+				while (dp != NULL && dp->pid != pid)
+					dp = dp->next;
+				pthread_mutex_unlock(&_mero_topdp_lock);
+				if (dp == NULL)
+					break; /* server doesn't run, no need to wait any longer */
 			}
 		}
 		/* if we've never found a connection, try to figure out why */
-		if (i >= 20) {
+		if (i >= 20 || dp == NULL) {
 			int state = (*stats)->state;
 			int hasconn = (*stats)->conns != NULL && (*stats)->conns->val != NULL;
 
 			/* starting failed */
 			msab_freeStatus(stats);
 
-			/* in the meanwhile the list may have changed so refetch the
-			 * parent and self */
+			/* in the meanwhile the list may have changed (again) so
+			 * refetch dp */
 			pthread_mutex_lock(&_mero_topdp_lock);
 			dp = _mero_topdp;
 			while (dp != NULL && dp->pid != pid)
