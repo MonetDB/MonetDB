@@ -1,6 +1,10 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
+* Thu Oct  6 2011 Fabian Groffen <fabian@cwi.nl>
+- Improved response time of 'monetdb start' when the database fails
+  to start.
+
 * Wed Oct  5 2011 Fabian Groffen <fabian@cwi.nl>
 - Fixed a bug in monetdbd where starting a failing database could
   incorrectly be reported as a 'running but dead' database.

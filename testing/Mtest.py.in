@@ -209,9 +209,8 @@ F_WARN = 1
 F_SOCK = 2
 F_TIME = 3
 F_RECU = 4
-F_KILL = 5
-F_SEGV = 6
-F_ERROR = 7
+F_SEGV = 5
+F_ERROR = 6
 
 FAILURES = {
     F_SKIP  : "F_SKIP",
@@ -220,7 +219,6 @@ FAILURES = {
     F_SOCK  : "F_SOCK",
     F_TIME  : "F_TIME",
     F_RECU  : "F_RECU",
-    F_KILL  : "F_KILL",
     F_SEGV  : "F_SEGV",
     F_ERROR : "F_ERROR"
 }
@@ -419,7 +417,8 @@ class Comment:
         f.write(str(self))
 
 class Timer:
-    # interface to the threading.Timer function that interprets a timeout of 0 as no timeout
+    # interface to the threading.Timer function that interprets a
+    # timeout of 0 as no timeout
     def __init__(self, interval, function, args):
         self.timer = None
         if interval > 0:
@@ -448,7 +447,6 @@ purple = '#aa00aa'
 stylesheet = Element('style', None, Text('''
 .error     { font-weight: bold; font-style: italic; color: red; }
 .segfault  { font-weight: bold; font-style: italic; color: purple; }
-.killed    { font-weight: bold; font-style: italic; color: purple; }
 .recursion { font-weight: bold; font-style: italic; color: purple; }
 .timeout   { font-weight: bold; font-style: italic; color: purple; }
 .socket    { font-weight: bold; font-style: italic; color: purple; }
@@ -655,7 +653,7 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT, SockTime) :
         f.close()
         diffclass = 'error'
         difftext = 'Major differences'
-    if diffclass == 'error' and SockTime in (F_SOCK, F_TIME, F_RECU, F_KILL, F_SEGV):
+    if diffclass == 'error' and SockTime in (F_SOCK, F_TIME, F_RECU, F_SEGV):
         if SockTime == F_SOCK:
             diffclass = 'socket'
             difftext = difftext + ' (Socket)'
@@ -665,9 +663,6 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT, SockTime) :
         if SockTime == F_RECU:
             diffclass = 'recursion'
             difftext = difftext + ' (Recursion)'
-        if SockTime == F_KILL:
-            diffclass = 'killed'
-            difftext = difftext + ' (Killed)'
         if SockTime == F_SEGV:
             diffclass = 'segfault'
             difftext = difftext + ' (Crash)'
@@ -868,8 +863,6 @@ def CreateSrcIndex (env, TST, EXT) :
 def AddHref (href, target, linktext, diff) :
     if   diff == F_ERROR:
         klass = 'error'
-    elif diff == F_KILL:
-        klass = 'killed'
     elif diff == F_RECU:
         klass = 'recursion'
     elif diff == F_TIME:
@@ -924,12 +917,10 @@ def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT, SockTime) :
         ff.write("\n<!--MajorDiffs-->\n")
         ff.close()
         e = F_ERROR
-    if e == F_ERROR and SockTime in (F_SOCK, F_TIME, F_RECU, F_KILL, F_SEGV):
+    if e == F_ERROR and SockTime in (F_SOCK, F_TIME, F_RECU, F_SEGV):
         e = SockTime
     if o == F_ERROR or e == F_ERROR:
         tstclass = 'error'
-    elif e == F_KILL:
-        tstclass = 'killed'
     elif e == F_RECU:
         tstclass = 'recursion'
     elif e == F_TIME:
@@ -1330,8 +1321,7 @@ def GetBitsAndOIDsAndModsAndStaticAndThreads(env) :
     t = Timer(float(par['TIMEOUT']), killProc, args = [proc, proc.stderr, cmd])
     try:
         t.start()
-        if par['M5']:
-            input = '''\
+        input = '''\
                 c := mdb.modules();
                 mods := algebra.kunique(c);
                 s := "\\nModules: ";
@@ -1428,8 +1418,7 @@ def CheckMods(env, TST, SERVER, CALL) :
             if m  and  m[0] != "#"  and  m not in env['TST_MODS']:
                 missing.append(m)
     if SERVER == "SQL":
-        if par['M5']:
-            sql_mods = ["sql"]
+        sql_mods = ["sql"]
         for m in sql_mods:
             if m not in env['TST_MODS']:
                 missing.append(m)
@@ -1450,30 +1439,6 @@ def CheckTests(env, TST, oktests):
             missing.append(test)
     return missing
 ### CheckTests(env, TST, oktests) #
-
-def StartAt(cmd) :
-    if procdebug:
-        print 'StartAt: starting process "%s" (inpipe, outpipe, errpipe)\n' % cmd
-    proc = subprocess.Popen(cmd, shell = True, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True)
-    qOut, qErr = proc.communicate()
-    if procdebug:
-        print 'StartAt: starting exited "%s"\n' % cmd
-    return qOut.split('\n', 1)[0].strip()
-### StartAt(cmd) #
-
-def StopAt(ATJOB,ME) :
-    while  os.path.isfile(path("/tmp/.MkillUsers."+ME)):
-        time.sleep(9)
-    if SYST in ("IRIX", "IRIX64", "Darwin", "HPUX") or SYSTVER[:-1] == "SunOS5.1":
-        ATRM = 'at -r '
-    elif SYST == "SunOS":
-        ATRM = 'atrm -f '
-    else:
-        ATRM = 'atrm '
-    os.system(ATRM+ATJOB)
-    #TODO:
-    #LOG1x at -l >&2
-### StopAt(ATJOB,ME) #
 
 def StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION) :
     BITS = env['TST_BITS']
@@ -1681,7 +1646,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
 
         PRELUDE = []
         if EXT !=  '.sql':
-            if os.path.isfile(TST+".prelude5")  and  par['M5']:
+            if os.path.isfile(TST+".prelude5"):
                 PRELUDE = [TST+".prelude5"]
 
         TIMEOUT = par['TIMEOUT']
@@ -1715,31 +1680,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
             STIMEOUT = STIMEOUT + TIMEOUT + min(TIMEOUT, par['TIMEOUT'])
 
         ME = ""
-        ATJOB1 = ""
-        MkillUsers = ""
-        MkillUsersAT = ""
-        if TIMEOUT and os.name != "nt" and sys.platform != 'cygwin' and env.get('USE_AT'):
-            for f in TST+".KILLED.out", TST+".KILLED.err":
-                if os.path.isfile(f):
-                    os.remove(f)
-            ME = str(os.getpid())
-            WAIT = str(int(STIMEOUT / 60) + 2)
-            FILES = os.path.join(TSTTRGDIR,TST)+" "+os.path.join(TSTTRGDIR,TST)+".*"
-            for f in ["bat/\\*", '.gdk_lock']:
-                FILES = FILES+" "+os.path.join(env['GDK_DBFARM'],TSTDB,path(f))
-            WHAT0 = os.path.join(THISPATH,"MkillUsers")
-            if env.get('CONCURRENT'):
-                 WHAT0 = WHAT0+" --concurrent"
-            WHAT0 = WHAT0+" -l"+ME
-            WHAT1 = FILES+r" \>\>"+os.path.join(TSTTRGDIR,TST+".KILLED.out")+r" 2\>\>"+os.path.join(TSTTRGDIR,TST+".KILLED.err")
-            WHAT = WHAT0+" -p"+ME+" "+WHAT1
-            WHEN = "now + "+WAIT+" minutes"
-            cmd  = "echo  "+WHAT+"  2>/dev/null | at "+WHEN+" 2>&1 | awk '/^[Jj]ob/{print $2}'"
-            ATJOB1 = StartAt(cmd)
-            #TODO:
-            #LOG1x at -l >&2
-            MkillUsers = (WHAT0+" "+WHAT1).replace('\\','')
-            MkillUsersAT = "echo  "+WHAT+"  2>/dev/null | at now + 1 minute 2>&1 | awk '/^[Jj]ob/{print $2}'"
 
         TestOutFile = TST+".test.out"
         TestErrFile = TST+".test.err"
@@ -1751,7 +1691,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
         TestErr.close()
 
         t0 = time.time()
-        tres = DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsersAT, ME, MAPIsockets, length)
+        tres = DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length)
 
         t1 = time.time()
         TX = t1 - t0
@@ -1760,7 +1700,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
 
         timeout = F_OK
         recursion = F_OK
-        killed = F_OK
         segfaulted = F_OK
 
         if tres == 'timeout':
@@ -1769,33 +1708,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
             recursion = F_RECU
         elif tres == 'segfault':
             segfaulted = F_SEGV
-
-        if ATJOB1:
-            StopAt(ATJOB1,ME)
-            os.system(WHAT.replace('\\', '').replace(" -p"+ME+" ", ' '))
-        else:
-            while os.path.exists(os.path.join(TSTTRGBASE,".KILLED.lck")):
-                time.sleep(1)
-
-        if MkillUsers:
-            os.system(MkillUsers)
-
-        n = TST+".KILLED."
-        for (x,txf) in [("out",TestOutFile),("err",TestErrFile)]:
-            f = n+x
-            if os.name == "nt":
-                for t in os.path.join(TSTTRGBASE,f), os.path.join(TSTTRGBASE,".KILLED."+x):
-                    if os.path.isfile(t):
-                        shutil.copy(t,f)
-                        os.remove(t)
-                        break
-            if os.path.isfile(f) and os.path.getsize(f):
-                p = try_open(txf, 'a')
-                if p is not None:
-                    for l in open(f):
-                        p.write("! "+l)
-                        killed = F_KILL
-                    p.close()
 
         sockerr = F_OK
         sockerr = max(sockerr, CheckSocket3(env, "MAPI", TestErrFile))
@@ -1826,12 +1738,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                 STDOUT.write("\n%s : Recursion!\n" % TST)
             elif verbose:
                 STDOUT.write("(Recursion!) ")
-
-        if killed == F_KILL:
-            if quiet:
-                STDOUT.write("\n%s : Killed!\n" % TST)
-            elif verbose:
-                STDOUT.write("(Killed!) ")
 
         if segfaulted == F_SEGV:
             if quiet:
@@ -1869,8 +1775,8 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
         diff_html.write('<!--MajorDiffs-->\n')
         diff_html.close()
         timedout = True
-        if timeout == F_TIME or recursion == F_RECU or killed == F_KILL or segfaulted == F_SEGV:
-            # test run timed out or orphan processes were killed => expect major differences!
+        if timeout == F_TIME or recursion == F_RECU or segfaulted == F_SEGV:
+            # test run timed out or crashed => expect major differences!
             ACCURACYout = -1
         else:
             fs = open("%s%s.FILTERED" % (TST, STABLEout))
@@ -1939,8 +1845,8 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
         diff_html.write('<!--MajorDiffs-->\n')
         diff_html.close()
         timedout = True
-        if timeout == F_TIME or recursion == F_RECU or killed == F_KILL or segfaulted == F_SEGV:
-            # test run timed out or orphan processes were killed => expect major differences!
+        if timeout == F_TIME or recursion == F_RECU or segfaulted == F_SEGV:
+            # test run timed out or crashed => expect major differences!
             ACCURACYerr = -1
         else:
             fs = open("%s%s.FILTERED" % (TST, STABLEerr))
@@ -2004,15 +1910,13 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
             proc = subprocess.Popen(cmd)
             proc.wait()
 
-        FailedOut, FailedErr, elem = AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT, max(sockerr, timeout, recursion, killed, segfaulted))
+        FailedOut, FailedErr, elem = AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT, max(sockerr, timeout, recursion, segfaulted))
 
         if not verbose and not quiet:
             if timeout == F_TIME:
                 STDOUT.write("TIMEOUT")
             elif recursion == F_RECU:
                 STDOUT.write("RECURSION")
-            elif killed == F_KILL:
-                STDOUT.write("KILLED")
             elif segfaulted == F_SEGV:
                 STDOUT.write("CRASHED")
             else:
@@ -2267,7 +2171,7 @@ def mapi_ping(port,lang) :
     return False
 ### mapi_ping() #
 
-def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsersAT, ME, MAPIsockets, length) :
+def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length) :
     ATJOB2 = ""
     STDERR.flush()
     if quiet:
@@ -2296,9 +2200,6 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
     else:
         LOCAL_CONF = []
 
-    if par['M5']:
-        PRINTF = "io.printf"
-
     # Release reserved sockets and run the actual test
     MAPIsockets[0].close()
     MAPIsockets[1].close()
@@ -2319,13 +2220,12 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             ClntErr = open(ClntErrFile,"w")
             PROLOGUE = []
             DBINIT = []
-            if par['M5']:
-                if os.path.isfile(TST + ".prologue5"):
-                    PROLOGUE = [TST + ".prologue5"]
-                if os.path.isfile(TST + ".dbinit5"):
-                    dbinit = open(TST + ".dbinit5").readline().strip()
-                    if dbinit:
-                        DBINIT = ['--dbinit=%s' % dbinit]
+            if os.path.isfile(TST + ".prologue5"):
+                PROLOGUE = [TST + ".prologue5"]
+            if os.path.isfile(TST + ".dbinit5"):
+                dbinit = open(TST + ".dbinit5").readline().strip()
+                if dbinit:
+                    DBINIT = ['--dbinit=%s' % dbinit]
 
             Srvr = splitcommand(exe['Mserver'][1]) + LOCAL_CONF + ['--dbname=%s' % TSTDB]
             lang=""
@@ -2336,12 +2236,11 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 Srvr.extend(DBINIT)
             if SERVER == "SQL":
                 lang="sql"
-                if par['M5']:
-                    Srvr.extend(['--set', 'mal_listing=0'])
-                    Srvr.extend(DBINIT)
+                Srvr.extend(['--set', 'mal_listing=0'])
+                Srvr.extend(DBINIT)
             Srvr.extend(PROLOGUE)
 
-            pSrvr, pSrvrTimer = LaunchIt(Srvr, '\n%s("\\nReady.\\n");\n' % PRINTF, SrvrOut, SrvrErr, TIMEOUT)
+            pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
             ln="dummy"
             while 0 < len(ln) and ln[:6] != 'Ready.':
                 ln=pSrvr.stdout.readline()
@@ -2376,13 +2275,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 d.sort()
                 for f in d:
                     if test.match(f):
-                        if CALL[:3] == "mal":
-                            cmd.append(f)
-                            timedout = RunIt(cmd, open(os.devnull), ClntOut, ClntErr, TIMEOUT)
-                        elif par['M5']:
-                            cmd.extend(['--dbinit=include mil_scenario; mil();',
-                                        f])
-                            timedout = RunIt(cmd, open(os.devnull), ClntOut, ClntErr, TIMEOUT)
+                        cmd.append(f)
+                        timedout = RunIt(cmd, open(os.devnull), ClntOut, ClntErr, TIMEOUT)
                     if timedout:
                         break
             elif CALL in ["malC", "malCXs"]:
@@ -2433,14 +2327,14 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
 
         if SERVER in ["MAL", "SQL"]:
             EPILOGUE = None
-            if os.path.isfile(TST+".epilogue5") and par['M5']:
+            if os.path.isfile(TST+".epilogue5"):
                 EPILOGUE = open(TST+".epilogue5",'r')
             if EPILOGUE:
                 EpiFailed = ""
                 try:
                     pSrvr.stdin.write(EPILOGUE.read())
                     pSrvr.stdin.flush()
-                    pSrvr.stdin.write(';\n%s("\\nDone..\\n");\n' % PRINTF)
+                    pSrvr.stdin.write(';\nio.printf("\\nDone..\\n");\n')
                     pSrvr.stdin.flush()
                 except IOError, (IOerrNo, IOerrStr):
                     EpiFailed = EpiFailed+"\n! Executing "+TST+".epilogue failed with #"+str(IOerrNo)+": '"+IOerrStr+"'. !"
@@ -2455,8 +2349,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 EPILOGUE.close()
 
             try:
-                if par['M5']:
-                    pSrvr.stdin.write('clients.quit();\n')
+                pSrvr.stdin.write('clients.quit();\n')
                 pSrvr.stdin.flush()
             except IOError:
                 pass
@@ -2465,8 +2358,6 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             except IOError, (IOerrNo, IOerrStr):
                 Warn("Closing input pipe in DoIt failed with #%d: '%s'." % (IOerrNo, IOerrStr))
 
-            if MkillUsersAT:
-                ATJOB2 = StartAt(MkillUsersAT)
             CollectIt(pSrvr.stdout, SrvrOut)
             pSrvr.wait()
             pSrvrTimer.cancel()
@@ -2474,8 +2365,6 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 print 'DoIt: process exited "%s" (%s)\n' % ('" "'.join(Srvr), pSrvr.returncode)
             pSrvrTimer = None
             timedout = timedout or pSrvr.killed
-            if MkillUsersAT:
-                StopAt(ATJOB2,ME)
 
             AllOut = [SrvrOut, ClntOutFile]
             AllErr = [SrvrErr, ClntErrFile]
@@ -2569,7 +2458,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
 
     return None
 
-### DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsersAT, ME, MAPIsockets) #
+### DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets) #
 
 def Check(command, input) :
     if procdebug:
@@ -2979,13 +2868,13 @@ def main(argv) :
              "timeout: kill (hanging) tests after <sec> seconds;\n"
              "-t0 means no timeout (default: -t60)"),
             ('debug', 'd', 'debug', '<num>',
-             ("debug value to be used by Mserver/mserver5 (default: -d%s)\n"
-              "(see `Mserver --help' / `mserver5 --help' for details)") % TSTDBG),
+             ("debug value to be used by mserver5 (default: -d%s)\n"
+              "(see `mserver5 --help' for details)") % TSTDBG),
             ('nr_threads', 'n', 'nr_threads', '<num>',
              ("number of threads for mserver5 (default: -n%s)\n"
               "-n0 => mserver5 automatically determines the number of CPU cores") % TSTTHREADS),
             ('monet_mod_path', None, 'monet_mod_path', '<pathlist>',
-             "override Mserver's/mserver5's default module search path"),
+             "override mserver5's default module search path"),
             ('dbfarm', None, 'gdk_dbfarm', '<directory>',
              "override default location of database directory"),
             ('MALCLIENT', None, 'MALCLIENT', '<mal-client program>',
@@ -2994,7 +2883,6 @@ def main(argv) :
              'default: %s' % dft['SQLCLIENT']),
             ('SQLDUMP', None, 'SQLDUMP', '<sql-dump program>',
              'default: %s' % dft['SQLDUMP']),
-            ('at', None, 'use_at', None, 'Use at command as watchdog'),
             ('concurrent', None, 'concurrent', None,
              'There are concurrent Mtest runs using the same MonetDB installation'),
             ('dbg', None, 'dbg', '<debugger/valgrind>',
@@ -3036,19 +2924,19 @@ def main(argv) :
     except monet_options.Error:
         sys.exit(1)
 
-    par['M5'] = opts.get('monetdb5', 0)
+    m5 = opts.get('monetdb5', False)
 
     pkg = opts.get('package')
     if pkg is None:
         if par['PACKAGE'] == 'none':
-            if par['M5']:
+            if m5:
                 par['PACKAGE'] = 'monetdb5'
             Warn('No -p/--package specified. Using default package="%s". Please use -p/--package to overrule.' % par['PACKAGE'])
     else:
         par['PACKAGE'] = pkg
 
-    if not par['M5'] and par['PACKAGE'] not in ('common', 'clients', 'gdk', 'java'):
-        par['M5'] = True
+    if not m5 and par['PACKAGE'] not in ('common', 'clients', 'gdk', 'java'):
+        m5 = True
 
     config = opts.get('config', '')
     if config:
@@ -3056,13 +2944,13 @@ def main(argv) :
 
     recursive = opts.get('recursive', False)
     global quiet
-    quiet = opts.get('quiet', 0)
+    quiet = opts.get('quiet', False)
     global verbose
     verbose = opts.get('verbose', False)
     if quiet and verbose:
         ErrExit('--verbose and --quiet are mutually exclusive')
     global procdebug
-    procdebug = opts.get('procdebug', 0)
+    procdebug = opts.get('procdebug', False)
     if THISFILE == "Mtest.py":
         _IGNORE = dftIGNORE
         par['IGNORE'] = opts.get('ignore', _IGNORE)
@@ -3084,9 +2972,6 @@ def main(argv) :
         a = opts.get('gdk_dbfarm')
         if a is not None:
             env['GDK_DBFARM'] = a
-        a = opts.get('use_at')
-        if a is not None:
-            env['USE_AT'] = a
         a = opts.get('concurrent')
         if a is not None:
             env['CONCURRENT'] = a
@@ -3140,7 +3025,7 @@ def main(argv) :
         CONDITIONALS['HAVE_PHP'] = '#'
 #     else:
 #         CONDITIONALS['HAVE_PHP'] = ''
-    if par['M5']:
+    if m5:
         CONDITIONALS['HAVE_MONETDB5'] = '#'
     else:
         CONDITIONALS['HAVE_MONETDB5'] = ''
@@ -3254,10 +3139,6 @@ def main(argv) :
     env['BINDIR'] = _configure('@bindir@')
     vars_ = vars_ + ['PERLLIB', 'PHP_INCPATH', 'BINDIR']
 
-    # find mil script for MIL and SQL server
-    if THISFILE == "Mtest.py":
-        env['SQL_TRACE'] = ""
-
     # export and display env
     STDERR.flush()
     if THISFILE == "Mtest.py":
@@ -3336,14 +3217,13 @@ def main(argv) :
     if THISFILE == "Mtest.py":
         exe = {}
         exe['Mtimeout']      = CheckExec('Mtimeout')     , 'Mtimeout -timeout %d ' % par['TIMEOUT']
-        if par['M5']:
-            exe['Mserver']       = CheckExec('mserver5')     , '%s mserver5 %s --debug=%s --set gdk_nr_threads=%s %s %s --set mapi_open=true --set mapi_port=%s --set monet_prompt= --trace --forcemito --set mal_listing=2 %s' % \
+        exe['Mserver']       = CheckExec('mserver5')     , '%s mserver5 %s --debug=%s --set gdk_nr_threads=%s %s %s --set mapi_open=true --set mapi_port=%s --set monet_prompt= --trace --forcemito --set mal_listing=2 %s' % \
                                                                (env['setDBG'], config, env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['MAPIPORT'], env['MSERVER_SET'])
         exe['Mdiff']         = CheckExec('Mdiff')        , 'Mdiff'
         exe['python']        = CheckExec(sys.executable) , sys.executable
         exe['MAL_Client']    = CheckExec(env['MALCLIENT'].split(None, 1)[0])  , '%s -i -e --host=%s --port=%s' % (env['MALCLIENT'], HOST, env['MAPIPORT'])
-        exe['SQL_Client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -i -e --host=%s --port=%s %s' % (env['SQLCLIENT'], HOST, env['MAPIPORT'], env['SQL_TRACE'])
-        exe['SQL_Dump']      = CheckExec(env['SQLDUMP'].split(None, 1)[0])     , '%s --host=%s --port=%s %s' % (env['SQLDUMP'], HOST, env['MAPIPORT'], env['SQL_TRACE'])
+        exe['SQL_Client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -i -e --host=%s --port=%s' % (env['SQLCLIENT'], HOST, env['MAPIPORT'])
+        exe['SQL_Dump']      = CheckExec(env['SQLDUMP'].split(None, 1)[0])     , '%s --host=%s --port=%s' % (env['SQLDUMP'], HOST, env['MAPIPORT'])
         if par['TIMEOUT'] == 0 or not exe['Mtimeout'][0]:
             exe['Mtimeout'] = '', ''
         env['exe'] = exe
@@ -3369,7 +3249,7 @@ def main(argv) :
             #else:
                 # WARNING/ERROR
         elif args[0].find(os.sep) != -1:
-            ErrXit("'"+args[0]+"` is neither a valid directory in "+os.getcwd()+" nor a valid test-name!")
+            ErrXit("'%s` is neither a valid directory in %s nor a valid test-name!" % (args[0], os.getcwd()))
         elif args[0] != "All":
             #TODO:
             # check, whether args[0] in All
@@ -3427,27 +3307,19 @@ def main(argv) :
             elif os.path.isdir(os.path.join(d,TSTSUFF))  and  os.path.isfile(os.path.join(d,TSTSUFF,"All")):
                 testdirs.append(os.path.realpath(d))
             else:
-                Warn("No tests found in '"+d+"`; skipping directory!")
+                Warn("No tests found in '%s`; skipping directory!" % d)
 
     if len(testdirs) > 1  and  testlist:
         testlist = []
         #TODO
         # WARNING
     if not testdirs:
-        Warn("No tests found in "+str(dirlist)+"!")
+        Warn("No tests found in %s!" % ', '.join(dirlist))
         sys.exit(1)
 
     BusyPorts = []
 
     if THISFILE == "Mtest.py":
-
-        if os.name == "nt":
-            n = os.path.join(THISPATH,"MkillNT.")
-            for x in "bat", "py":
-                f = n+x
-                if os.path.isfile(f):
-                    shutil.copy(f,"C:"+os.sep+"Tools")
-
         if not env.get('NOCLEAN') and os.path.exists(os.path.join(env['TSTTRGBASE'],TSTPREF)):
             try:
                 shutil.rmtree(os.path.join(env['TSTTRGBASE'],TSTPREF))
@@ -3483,9 +3355,6 @@ def main(argv) :
         # and make mclient find it
         os.environ['DOTMONETDBFILE'] = dotmonetdbfile;
 
-        if par['M5']:
-            QUIT = 'clients.quit();\n'
-
         env['TST_MODS'] = []
         env['TST_BITS'] = ""
         env['TST_OIDS'] = ""
@@ -3497,7 +3366,7 @@ def main(argv) :
             elif CONDITIONALS.has_key('BITS64') and CONDITIONALS['BITS64']:
                 env['TST_BITS'] = "64bit"
         else:
-            if Check(splitcommand(env['exe']['Mserver'][1]) + ['--dbname=%s' % TSTPREF], QUIT):
+            if Check(splitcommand(env['exe']['Mserver'][1]) + ['--dbname=%s' % TSTPREF], 'clients.quit();\n'):
                 sys.exit(1)
             if GetBitsAndOIDsAndModsAndStaticAndThreads(env):
                 sys.exit(1)
@@ -3626,7 +3495,7 @@ def main(argv) :
         # pages, for readability
         Fcodes = ['o', 'x', 'S', 'T', 'R', 'X', 'C', '-']
 
-        # we are not interested in the compiler, not its path, nor its
+        # we are not interested in the compiler, nor its path, nor its
         # options.  We do store the options separately, though
         hasSpace = compiler.find(' ')
         if hasSpace != -1:
@@ -3677,7 +3546,6 @@ VALUES (%s, '%s', '%s', '%s',
                         (F_WARN, "produced slightly different output", "slightly"),
                         (F_SOCK, "did not properly release socket(s)", "SIGNIFICANTLY"),
                         (F_TIME, "ran into timeout", "SIGNIFICANTLY"),
-                        (F_KILL, "had orphan processes killed", "SIGNIFICANTLY"),
                         (F_SEGV, "resulted in a crash", "SIGNIFICANTLY"),
                         (F_RECU, "ran into too deep recursion", "SIGNIFICANTLY"),
                         (F_ERROR, "produced SIGNIFICANTLY different output", "SIGNIFICANTLY")]:
