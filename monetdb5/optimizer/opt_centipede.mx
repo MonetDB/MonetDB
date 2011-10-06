@@ -169,7 +169,7 @@ OPTplanCntrl(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices, oid plan
 	setVarType(cmb,x,TYPE_int);
 
 	/* get servers to execute the query */
-	q= newStmt(cmb,srvpoolRef,putName("server",6));
+	q= newStmt(cmb,srvpoolRef,putName("query",5));
 	q->retc= q->argc = 0;
 	for( i = 0; i < nrservers; i++)
 		q= pushReturn(cmb,q, newTmpVariable(cmb,TYPE_str));
