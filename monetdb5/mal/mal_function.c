@@ -943,11 +943,9 @@ void chkDeclarations(MalBlkPtr mb){
 	GDKfree(decl);
 }
 /*
- * @-
  * Data flow analysis.
  * Flow graph display is handy for debugging and analysis.
- * A better flow analysis is needed, which takes into account
- * loops and side-effect functions.
+ * A better flow analysis is needed, which takes into account barrier blocks 
  */
 static void
 showOutFlow(MalBlkPtr mb, int pc, int varid, stream *f)
@@ -955,11 +953,12 @@ showOutFlow(MalBlkPtr mb, int pc, int varid, stream *f)
 	InstrPtr p;
 	int i, k,found;
 
+
 	for (i = pc + 1; i < mb->stop - 1; i++) {
 		p = getInstrPtr(mb, i);
 		found=0;
-		for (k = p->retc; k < p->argc; k++) {
-			if (p->argv[k] == varid ) {
+		for (k = 0; k < p->argc; k++) {
+			if (p->argv[k] == varid  ){
 				mnstr_printf(f, "n%d -> n%d\n", pc, i);
 				found++;
 			}
@@ -980,19 +979,18 @@ showInFlow(MalBlkPtr mb, int pc, int varid, stream *f)
 {
 	InstrPtr p;
 	int i, k;
+
 	/* find last use, needed for operations with side effects */
 	for (i = pc -1; i >= 0; i-- ){
 		p = getInstrPtr(mb, i);
 		for (k = 0; k < p->argc; k++)
-			if (p->argv[k] == varid  ){
+			if (p->argv[k] == varid )
 				mnstr_printf(f, "n%d -> n%d\n",i, pc);
 				return;
 			}
-	}
 }
 
 /*
- * @-
  * We only display the minimal debugging information. The remainder
  * can be obtained through the profiler.
  */
