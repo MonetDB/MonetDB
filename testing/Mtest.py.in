@@ -3421,14 +3421,6 @@ def main(argv) :
     BusyPorts = []
 
     if THISFILE == "Mtest.py":
-
-        if os.name == "nt":
-            n = os.path.join(THISPATH,"MkillNT.")
-            for x in "bat", "py":
-                f = n+x
-                if os.path.isfile(f):
-                    shutil.copy(f,"C:"+os.sep+"Tools")
-
         if not env.get('NOCLEAN') and os.path.exists(os.path.join(env['TSTTRGBASE'],TSTPREF)):
             try:
                 shutil.rmtree(os.path.join(env['TSTTRGBASE'],TSTPREF))
