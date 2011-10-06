@@ -2363,8 +2363,6 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 print 'DoIt: process exited "%s" (%s)\n' % ('" "'.join(Srvr), pSrvr.returncode)
             pSrvrTimer = None
             timedout = timedout or pSrvr.killed
-            if MkillUsersAT:
-                StopAt(ATJOB2,ME)
 
             AllOut = [SrvrOut, ClntOutFile]
             AllErr = [SrvrErr, ClntErrFile]
