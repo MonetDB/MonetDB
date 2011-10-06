@@ -417,7 +417,8 @@ class Comment:
         f.write(str(self))
 
 class Timer:
-    # interface to the threading.Timer function that interprets a timeout of 0 as no timeout
+    # interface to the threading.Timer function that interprets a
+    # timeout of 0 as no timeout
     def __init__(self, interval, function, args):
         self.timer = None
         if interval > 0:
@@ -3624,7 +3625,7 @@ def main(argv) :
         # pages, for readability
         Fcodes = ['o', 'x', 'S', 'T', 'R', 'X', 'C', '-']
 
-        # we are not interested in the compiler, not its path, nor its
+        # we are not interested in the compiler, nor its path, nor its
         # options.  We do store the options separately, though
         hasSpace = compiler.find(' ')
         if hasSpace != -1:
