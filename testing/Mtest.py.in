@@ -1329,8 +1329,7 @@ def GetBitsAndOIDsAndModsAndStaticAndThreads(env) :
     t = Timer(float(par['TIMEOUT']), killProc, args = [proc, proc.stderr, cmd])
     try:
         t.start()
-        if par['M5']:
-            input = '''\
+        input = '''\
                 c := mdb.modules();
                 mods := algebra.kunique(c);
                 s := "\\nModules: ";
@@ -1427,8 +1426,7 @@ def CheckMods(env, TST, SERVER, CALL) :
             if m  and  m[0] != "#"  and  m not in env['TST_MODS']:
                 missing.append(m)
     if SERVER == "SQL":
-        if par['M5']:
-            sql_mods = ["sql"]
+        sql_mods = ["sql"]
         for m in sql_mods:
             if m not in env['TST_MODS']:
                 missing.append(m)
@@ -1680,7 +1678,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
 
         PRELUDE = []
         if EXT !=  '.sql':
-            if os.path.isfile(TST+".prelude5")  and  par['M5']:
+            if os.path.isfile(TST+".prelude5"):
                 PRELUDE = [TST+".prelude5"]
 
         TIMEOUT = par['TIMEOUT']
@@ -2295,9 +2293,6 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
     else:
         LOCAL_CONF = []
 
-    if par['M5']:
-        PRINTF = "io.printf"
-
     # Release reserved sockets and run the actual test
     MAPIsockets[0].close()
     MAPIsockets[1].close()
@@ -2318,13 +2313,12 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             ClntErr = open(ClntErrFile,"w")
             PROLOGUE = []
             DBINIT = []
-            if par['M5']:
-                if os.path.isfile(TST + ".prologue5"):
-                    PROLOGUE = [TST + ".prologue5"]
-                if os.path.isfile(TST + ".dbinit5"):
-                    dbinit = open(TST + ".dbinit5").readline().strip()
-                    if dbinit:
-                        DBINIT = ['--dbinit=%s' % dbinit]
+            if os.path.isfile(TST + ".prologue5"):
+                PROLOGUE = [TST + ".prologue5"]
+            if os.path.isfile(TST + ".dbinit5"):
+                dbinit = open(TST + ".dbinit5").readline().strip()
+                if dbinit:
+                    DBINIT = ['--dbinit=%s' % dbinit]
 
             Srvr = splitcommand(exe['Mserver'][1]) + LOCAL_CONF + ['--dbname=%s' % TSTDB]
             lang=""
@@ -2335,12 +2329,11 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 Srvr.extend(DBINIT)
             if SERVER == "SQL":
                 lang="sql"
-                if par['M5']:
-                    Srvr.extend(['--set', 'mal_listing=0'])
-                    Srvr.extend(DBINIT)
+                Srvr.extend(['--set', 'mal_listing=0'])
+                Srvr.extend(DBINIT)
             Srvr.extend(PROLOGUE)
 
-            pSrvr, pSrvrTimer = LaunchIt(Srvr, '\n%s("\\nReady.\\n");\n' % PRINTF, SrvrOut, SrvrErr, TIMEOUT)
+            pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
             ln="dummy"
             while 0 < len(ln) and ln[:6] != 'Ready.':
                 ln=pSrvr.stdout.readline()
@@ -2375,13 +2368,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 d.sort()
                 for f in d:
                     if test.match(f):
-                        if CALL[:3] == "mal":
-                            cmd.append(f)
-                            timedout = RunIt(cmd, open(os.devnull), ClntOut, ClntErr, TIMEOUT)
-                        elif par['M5']:
-                            cmd.extend(['--dbinit=include mil_scenario; mil();',
-                                        f])
-                            timedout = RunIt(cmd, open(os.devnull), ClntOut, ClntErr, TIMEOUT)
+                        cmd.append(f)
+                        timedout = RunIt(cmd, open(os.devnull), ClntOut, ClntErr, TIMEOUT)
                     if timedout:
                         break
             elif CALL in ["malC", "malCXs"]:
@@ -2432,14 +2420,14 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
 
         if SERVER in ["MAL", "SQL"]:
             EPILOGUE = None
-            if os.path.isfile(TST+".epilogue5") and par['M5']:
+            if os.path.isfile(TST+".epilogue5"):
                 EPILOGUE = open(TST+".epilogue5",'r')
             if EPILOGUE:
                 EpiFailed = ""
                 try:
                     pSrvr.stdin.write(EPILOGUE.read())
                     pSrvr.stdin.flush()
-                    pSrvr.stdin.write(';\n%s("\\nDone..\\n");\n' % PRINTF)
+                    pSrvr.stdin.write(';\nio.printf("\\nDone..\\n");\n')
                     pSrvr.stdin.flush()
                 except IOError, (IOerrNo, IOerrStr):
                     EpiFailed = EpiFailed+"\n! Executing "+TST+".epilogue failed with #"+str(IOerrNo)+": '"+IOerrStr+"'. !"
@@ -2454,8 +2442,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 EPILOGUE.close()
 
             try:
-                if par['M5']:
-                    pSrvr.stdin.write('clients.quit();\n')
+                pSrvr.stdin.write('clients.quit();\n')
                 pSrvr.stdin.flush()
             except IOError:
                 pass
@@ -2978,13 +2965,13 @@ def main(argv) :
              "timeout: kill (hanging) tests after <sec> seconds;\n"
              "-t0 means no timeout (default: -t60)"),
             ('debug', 'd', 'debug', '<num>',
-             ("debug value to be used by Mserver/mserver5 (default: -d%s)\n"
-              "(see `Mserver --help' / `mserver5 --help' for details)") % TSTDBG),
+             ("debug value to be used by mserver5 (default: -d%s)\n"
+              "(see `mserver5 --help' for details)") % TSTDBG),
             ('nr_threads', 'n', 'nr_threads', '<num>',
              ("number of threads for mserver5 (default: -n%s)\n"
               "-n0 => mserver5 automatically determines the number of CPU cores") % TSTTHREADS),
             ('monet_mod_path', None, 'monet_mod_path', '<pathlist>',
-             "override Mserver's/mserver5's default module search path"),
+             "override mserver5's default module search path"),
             ('dbfarm', None, 'gdk_dbfarm', '<directory>',
              "override default location of database directory"),
             ('MALCLIENT', None, 'MALCLIENT', '<mal-client program>',
@@ -3035,19 +3022,19 @@ def main(argv) :
     except monet_options.Error:
         sys.exit(1)
 
-    par['M5'] = opts.get('monetdb5', 0)
+    m5 = opts.get('monetdb5', False)
 
     pkg = opts.get('package')
     if pkg is None:
         if par['PACKAGE'] == 'none':
-            if par['M5']:
+            if m5:
                 par['PACKAGE'] = 'monetdb5'
             Warn('No -p/--package specified. Using default package="%s". Please use -p/--package to overrule.' % par['PACKAGE'])
     else:
         par['PACKAGE'] = pkg
 
-    if not par['M5'] and par['PACKAGE'] not in ('common', 'clients', 'gdk', 'java'):
-        par['M5'] = True
+    if not m5 and par['PACKAGE'] not in ('common', 'clients', 'gdk', 'java'):
+        m5 = True
 
     config = opts.get('config', '')
     if config:
@@ -3139,7 +3126,7 @@ def main(argv) :
         CONDITIONALS['HAVE_PHP'] = '#'
 #     else:
 #         CONDITIONALS['HAVE_PHP'] = ''
-    if par['M5']:
+    if m5:
         CONDITIONALS['HAVE_MONETDB5'] = '#'
     else:
         CONDITIONALS['HAVE_MONETDB5'] = ''
@@ -3335,8 +3322,7 @@ def main(argv) :
     if THISFILE == "Mtest.py":
         exe = {}
         exe['Mtimeout']      = CheckExec('Mtimeout')     , 'Mtimeout -timeout %d ' % par['TIMEOUT']
-        if par['M5']:
-            exe['Mserver']       = CheckExec('mserver5')     , '%s mserver5 %s --debug=%s --set gdk_nr_threads=%s %s %s --set mapi_open=true --set mapi_port=%s --set monet_prompt= --trace --forcemito --set mal_listing=2 %s' % \
+        exe['Mserver']       = CheckExec('mserver5')     , '%s mserver5 %s --debug=%s --set gdk_nr_threads=%s %s %s --set mapi_open=true --set mapi_port=%s --set monet_prompt= --trace --forcemito --set mal_listing=2 %s' % \
                                                                (env['setDBG'], config, env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['MAPIPORT'], env['MSERVER_SET'])
         exe['Mdiff']         = CheckExec('Mdiff')        , 'Mdiff'
         exe['python']        = CheckExec(sys.executable) , sys.executable
@@ -3482,9 +3468,6 @@ def main(argv) :
         # and make mclient find it
         os.environ['DOTMONETDBFILE'] = dotmonetdbfile;
 
-        if par['M5']:
-            QUIT = 'clients.quit();\n'
-
         env['TST_MODS'] = []
         env['TST_BITS'] = ""
         env['TST_OIDS'] = ""
@@ -3496,7 +3479,7 @@ def main(argv) :
             elif CONDITIONALS.has_key('BITS64') and CONDITIONALS['BITS64']:
                 env['TST_BITS'] = "64bit"
         else:
-            if Check(splitcommand(env['exe']['Mserver'][1]) + ['--dbname=%s' % TSTPREF], QUIT):
+            if Check(splitcommand(env['exe']['Mserver'][1]) + ['--dbname=%s' % TSTPREF], 'clients.quit();\n'):
                 sys.exit(1)
             if GetBitsAndOIDsAndModsAndStaticAndThreads(env):
                 sys.exit(1)
