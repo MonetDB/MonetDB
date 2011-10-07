@@ -19,8 +19,6 @@ stdout of test 'div_zero_problem.Bug-2893` in directory 'test/BugTracker-2011` i
 
 Ready.
 
-Over..
-
 # 16:46:27 >  
 # 16:46:27 >  mclient -lsql -ftest -i -e --host=niels --port=33988 
 # 16:46:27 >  

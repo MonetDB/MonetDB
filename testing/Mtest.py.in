@@ -207,20 +207,22 @@ F_SKIP = -1
 F_OK = 0
 F_WARN = 1
 F_SOCK = 2
-F_TIME = 3
-F_RECU = 4
-F_SEGV = 5
-F_ERROR = 6
+F_ERROR = 3
+F_TIME = 4
+F_ABRT = 5
+F_RECU = 6
+F_SEGV = 7
 
 FAILURES = {
-    F_SKIP  : "F_SKIP",
-    F_OK    : "F_OK",
-    F_WARN  : "F_WARN",
-    F_SOCK  : "F_SOCK",
-    F_TIME  : "F_TIME",
-    F_RECU  : "F_RECU",
-    F_SEGV  : "F_SEGV",
-    F_ERROR : "F_ERROR"
+    F_SKIP  : ("F_SKIP",  '-'),
+    F_OK    : ("F_OK",    'o'),
+    F_WARN  : ("F_WARN",  'x'),
+    F_SOCK  : ("F_SOCK",  'S'),
+    F_ERROR : ("F_ERROR", 'X'),
+    F_TIME  : ("F_TIME",  'T'),
+    F_ABRT  : ("F_ABRT",  'A'),
+    F_RECU  : ("F_RECU",  'R'),
+    F_SEGV  : ("F_SEGV",  'C'),
 }
 
 CONDITIONALS = {
@@ -447,6 +449,7 @@ purple = '#aa00aa'
 stylesheet = Element('style', None, Text('''
 .error     { font-weight: bold; font-style: italic; color: red; }
 .segfault  { font-weight: bold; font-style: italic; color: purple; }
+.abort     { font-weight: bold; font-style: italic; color: purple; }
 .recursion { font-weight: bold; font-style: italic; color: purple; }
 .timeout   { font-weight: bold; font-style: italic; color: purple; }
 .socket    { font-weight: bold; font-style: italic; color: purple; }
@@ -653,7 +656,7 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT, SockTime) :
         f.close()
         diffclass = 'error'
         difftext = 'Major differences'
-    if diffclass == 'error' and SockTime in (F_SOCK, F_TIME, F_RECU, F_SEGV):
+    if diffclass == 'error' and SockTime in (F_SOCK, F_TIME, F_RECU, F_ABRT, F_SEGV):
         if SockTime == F_SOCK:
             diffclass = 'socket'
             difftext = difftext + ' (Socket)'
@@ -663,6 +666,9 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT, SockTime) :
         if SockTime == F_RECU:
             diffclass = 'recursion'
             difftext = difftext + ' (Recursion)'
+        if SockTime == F_ABRT:
+            diffclass = 'abort'
+            difftext = difftext + ' (Aborted)'
         if SockTime == F_SEGV:
             diffclass = 'segfault'
             difftext = difftext + ' (Crash)'
@@ -869,6 +875,8 @@ def AddHref (href, target, linktext, diff) :
         klass = 'timeout'
     elif diff == F_SOCK:
         klass = 'socket'
+    elif diff == F_ABRT:
+        klass = 'abort'
     elif diff == F_SEGV:
         klass = 'segfault'
     elif diff == F_WARN:
@@ -917,7 +925,7 @@ def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT, SockTime) :
         ff.write("\n<!--MajorDiffs-->\n")
         ff.close()
         e = F_ERROR
-    if e == F_ERROR and SockTime in (F_SOCK, F_TIME, F_RECU, F_SEGV):
+    if e == F_ERROR and SockTime in (F_SOCK, F_TIME, F_RECU, F_ABRT, F_SEGV):
         e = SockTime
     if o == F_ERROR or e == F_ERROR:
         tstclass = 'error'
@@ -927,6 +935,8 @@ def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT, SockTime) :
         tstclass = 'timeout'
     elif e == F_SOCK:
         tstclass = 'socket'
+    elif e == F_ABRT:
+        tstclass = 'abort'
     elif e == F_SEGV:
         tstclass = 'segfault'
     elif o == F_WARN or e == F_WARN:
@@ -1310,6 +1320,61 @@ def expandvars(path, environ = os.environ):
             i = j
     return path
 
+def returnCode(proc, f = None):
+    '''Interpret the return code of a process.
+    If second arg sepcified, write a message to it.'''
+    if proc.killed:
+        # don't write for timeout, killProc did that already
+        return 'timeout'
+    if os.name == 'nt':
+        if proc.returncode == 3:
+            # heuristic: abort() causes exit code 3
+            if f is not None:
+                f.write('\nAborted\n')
+                f.flush()
+            return 'abort'
+        if proc.returncode == -1073741819: # 0xC0000005
+            if f is not None:
+                f.write('\nSegmentation fault\n')
+                f.flush()
+            return 'segfault'
+        if proc.returncode == -1073741510: # 0xC000013A
+            if f is not None:
+                f.write('\nInterrupt\n')
+                f.flush()
+            return 'interrupt'  # Interrupt
+        if proc.returncode != 0:
+            return 'error'
+    else:
+        if proc.returncode == -signal.SIGSEGV:
+            if f is not None:
+                f.write('\nSegmentation fault\n')
+                f.flush()
+            return 'segfault'   # Segmentation fault
+        if proc.returncode == -signal.SIGBUS:
+            if f is not None:
+                f.write('\nBus error\n')
+                f.flush()
+            return 'segfault'   # Bus error, treat as segfault
+        if proc.returncode == -signal.SIGABRT:
+            if f is not None:
+                f.write('\nAborted\n')
+                f.flush()
+            return 'abort'      # Aborted
+        if proc.returncode == -signal.SIGINT:
+            if f is not None:
+                f.write('\nInterrupt\n')
+                f.flush()
+            return 'interrupt'  # Interrupt
+        if proc.returncode < 0:
+            if f is not None:
+                f.write('\nSignal %d\n' % -proc.returncode)
+                f.flush()
+            return 'signal'     # some other signal
+        if proc.returncode > 0:
+            return 'error'
+    return None                 # no error
+
 def GetBitsAndOIDsAndModsAndStaticAndThreads(env) :
     rtrn = 0
     TSTPREF = env['TSTPREF']
@@ -1318,6 +1383,7 @@ def GetBitsAndOIDsAndModsAndStaticAndThreads(env) :
     if procdebug:
         print 'GetBitsAndOIDsAndModsAndStaticAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd)
     proc = subprocess.Popen(cmd, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True)
+    proc.killed = False
     t = Timer(float(par['TIMEOUT']), killProc, args = [proc, proc.stderr, cmd])
     try:
         t.start()
@@ -1349,10 +1415,9 @@ def GetBitsAndOIDsAndModsAndStaticAndThreads(env) :
         if procdebug:
             print 'GetBitsAndOIDsAndModsAndStaticAndThreads: process killed "%s"\n' % '" "'.join(cmd)
         raise
-    if proc.returncode < 0 or proc.returncode >= 256:
-        ErrExit('GetBitsAndOIDsAndModsAndStaticAndThreads: subcommand crashed')
-    elif proc.returncode != 0:
-        ErrExit('GetBitsAndOIDsAndModsAndStaticAndThreads: subcommand exited with error code %d' % proc.returncode)
+    returncode = returnCode(proc)
+    if returncode is not None:
+        ErrExit('GetBitsAndOIDsAndModsAndStaticAndThreads: subcommand failed: %s' % returncode)
     env['TST_MODS'] = []
     env['TST_BITS'] = ""
     env['TST_OIDS'] = ""
@@ -1698,19 +1763,21 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
         if not quiet:
             STDOUT.write(" %7.3fs " % TX)
 
-        timeout = F_OK
-        recursion = F_OK
-        segfaulted = F_OK
-
+        errcode = F_OK
         if tres == 'timeout':
-            timeout = F_TIME
+            errcode = F_TIME
         elif tres == 'recursion':
-            recursion = F_RECU
+            errcode = F_RECU
         elif tres == 'segfault':
-            segfaulted = F_SEGV
+            errcode = F_SEGV
+        elif tres == 'abort':
+            errcode = F_ABRT
+        elif tres == 'error':
+            errcode = F_WARN
+        elif tres is not None:
+            errcode = F_ERROR
 
-        sockerr = F_OK
-        sockerr = max(sockerr, CheckSocket3(env, "MAPI", TestErrFile))
+        sockerr = CheckSocket3(env, "MAPI", TestErrFile)
 
         #TODO:
         ##if [ ! -f $TSTTRGBASE/Tests/.old.left-over.tmp.bats. ] ; then  touch $TSTTRGBASE/Tests/.old.left-over.tmp.bats. ; fi
@@ -1727,23 +1794,29 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
         ##rm -f .new.left-over.tmp.bats. $TSTTRGBASE/Tests/.old.left-over.tmp.bats.
         ##if [ -f .all.left-over.tmp.bats. ] ; then  mv -f .all.left-over.tmp.bats. $TSTTRGBASE/Tests/.old.left-over.tmp.bats. ; fi
 
-        if timeout == F_TIME:
+        if tres == 'timeout':
             if quiet:
                 STDOUT.write("\n%s : Timeout!\n" % TST)
             elif verbose:
                 STDOUT.write("(Timeout!) ")
 
-        if recursion == F_RECU:
+        if tres == 'recursion':
             if quiet:
                 STDOUT.write("\n%s : Recursion!\n" % TST)
             elif verbose:
                 STDOUT.write("(Recursion!) ")
 
-        if segfaulted == F_SEGV:
+        if tres == 'segfault':
             if quiet:
                 STDOUT.write("\n%s : Crashed!\n" % TST)
             elif verbose:
                 STDOUT.write("(Crashed!) ")
+
+        if tres == 'signal':
+            if quiet:
+                STDOUT.write("\n%s : Signaled!\n" % TST)
+            elif verbose:
+                STDOUT.write("(Signaled!) ")
 
         if verbose:
             STDOUT.write("\n")
@@ -1775,8 +1848,8 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
         diff_html.write('<!--MajorDiffs-->\n')
         diff_html.close()
         timedout = True
-        if timeout == F_TIME or recursion == F_RECU or segfaulted == F_SEGV:
-            # test run timed out or crashed => expect major differences!
+        if tres is not None:
+            # test program exited with error => expect major differences!
             ACCURACYout = -1
         else:
             fs = open("%s%s.FILTERED" % (TST, STABLEout))
@@ -1845,8 +1918,8 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
         diff_html.write('<!--MajorDiffs-->\n')
         diff_html.close()
         timedout = True
-        if timeout == F_TIME or recursion == F_RECU or segfaulted == F_SEGV:
-            # test run timed out or crashed => expect major differences!
+        if tres is not None:
+            # test program exited with error => expect major differences!
             ACCURACYerr = -1
         else:
             fs = open("%s%s.FILTERED" % (TST, STABLEerr))
@@ -1910,15 +1983,19 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
             proc = subprocess.Popen(cmd)
             proc.wait()
 
-        FailedOut, FailedErr, elem = AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT, max(sockerr, timeout, recursion, segfaulted))
+        FailedOut, FailedErr, elem = AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT, max(sockerr, errcode))
 
         if not verbose and not quiet:
-            if timeout == F_TIME:
+            if tres == 'timeout':
                 STDOUT.write("TIMEOUT")
-            elif recursion == F_RECU:
+            elif tres == 'recursion':
                 STDOUT.write("RECURSION")
-            elif segfaulted == F_SEGV:
+            elif tres == 'segfault':
                 STDOUT.write("CRASHED")
+            elif tres == 'abort':
+                STDOUT.write('ABORTED')
+            elif tres == 'signal':
+                STDOUT.write('SIGNALED')
             else:
                 if FailedOut == F_OK:
                     STDOUT.write('OK   ')
@@ -2073,7 +2150,9 @@ def killProc(proc, outfile = None, cmd = None):
     except AttributeError:
         if procdebug:
             print 'killProc: starting process "taskkill" "/F" "/T" "/PID" "%s"\n' % str(proc.pid)
-        subprocess.Popen(['taskkill','/F','/T','/PID',str(proc.pid)]).wait()
+        p = subprocess.Popen(['taskkill','/F','/T','/PID',str(proc.pid)],
+                             stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+        out, err = p.communicate()
         if procdebug:
             print 'killProc: process exited "taskkill" "/F" "/T" "/PID" "%s" (%s)\n' % (str(proc.pid), proc.returncode)
     except OSError:
@@ -2143,7 +2222,10 @@ def RunIt(cmd, TestIn, TestOut, TestErr, TimeOut) :
         if procdebug:
             print 'RunIt: process killed "%s"\n' % '" "'.join(cmd)
         raise
-    return proc.killed
+    rc = returnCode(proc, TestErr)
+    if rc == 'interrupt':
+        raise KeyboardInterrupt
+    return rc
 ### RunIt(cmd, TestIn, TestOut, TestErr) #
 
 def Log() :
@@ -2204,7 +2286,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
     MAPIsockets[0].close()
     MAPIsockets[1].close()
 
-    timedout = False
+    returncode = None
+    pSrvrCode = None
     ServerReady = True
     pSrvr = None
     pSrvrTimer = None
@@ -2260,10 +2343,10 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         if ServerReady:
             if   CALL == "other":
                 cmd = [os.path.join(".", TST + EXT), TST] + PRELUDE
-                timedout = RunIt(cmd, "", ClntOut, ClntErr, CTIMEOUT)
+                returncode = RunIt(cmd, "", ClntOut, ClntErr, CTIMEOUT)
             elif CALL == "python":
                 cmd = splitcommand(exe['python'][1]) + [TST + EXT, TST] + PRELUDE
-                timedout = RunIt(cmd, "", ClntOut, ClntErr, CTIMEOUT)
+                returncode = RunIt(cmd, "", ClntOut, ClntErr, CTIMEOUT)
             elif CALL in ["mal", "malXs"]:
                 cmd = splitcommand(exe['Mserver'][1]) + LOCAL_CONF + ['--dbname=%s' % TSTDB] + PRELUDE
                 if CALL == "mal":
@@ -2276,8 +2359,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 for f in d:
                     if test.match(f):
                         cmd.append(f)
-                        timedout = RunIt(cmd, open(os.devnull), ClntOut, ClntErr, TIMEOUT)
-                    if timedout:
+                        returncode = RunIt(cmd, open(os.devnull), ClntOut, ClntErr, TIMEOUT)
+                    if returncode:
                         break
             elif CALL in ["malC", "malCXs"]:
                 TSTs = []
@@ -2297,8 +2380,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 else:
                     Clnt = []   # cannot happen
                 for f in TSTs:
-                    timedout = RunIt(Clnt, open(f), ClntOut, ClntErr, TIMEOUT)
-                    if timedout:
+                    returncode = RunIt(Clnt, open(f), ClntOut, ClntErr, TIMEOUT)
+                    if returncode:
                         break
 
             elif CALL in ["sql", "sqlXs"]:
@@ -2316,8 +2399,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
 
                 Clnt = splitcommand(exe['SQL_Client'][1])
                 for f in TSTs:
-                    timedout = RunIt(Clnt, open(f), ClntOut, ClntErr, TIMEOUT)
-                    if timedout:
+                    returncode = RunIt(Clnt, open(f), ClntOut, ClntErr, TIMEOUT)
+                    if returncode:
                         break
         else:
             for fp in ClntOut,ClntErr:
@@ -2364,7 +2447,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             if procdebug:
                 print 'DoIt: process exited "%s" (%s)\n' % ('" "'.join(Srvr), pSrvr.returncode)
             pSrvrTimer = None
-            timedout = timedout or pSrvr.killed
+            pSrvrCode = returnCode(pSrvr, SrvrErr)
 
             AllOut = [SrvrOut, ClntOutFile]
             AllErr = [SrvrErr, ClntErrFile]
@@ -2409,52 +2492,38 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         if pSrvrTimer is not None:
             pSrvrTimer.cancel()
             killProc(pSrvr, SrvrErr, Srvr)
-            raise
+        raise
 
-    segfaulted = False
+    if returncode is not None or pSrvrCode is not None:
+        # something failed
+        if returncode == 'interrupt' or pSrvrCode == 'interrupt':
+            raise KeyboardInterrupt
+        for err in ('timeout', 'segfault', 'abort', 'signal', 'error'):
+            if pSrvrCode == err or returncode == err:
+                return err
+        return returncode or pSrvrCode # remaining error (shouldn't get here)
+
+    if CALL not in ('python', 'other'):
+        # running mserver/mclient directly, so we know they didn't fail
+        return None
+
     # Try to detect segfaults and the like
     TO = re.compile("((^|^[^#]*[\t ])(Memory [Ff]ault|Segmentation [Ff]ault|Bus [Ee]rror|Abort(|ed)|Assertion failed:|!FATAL: BATSIGabort:)([ \t]|$))", re.MULTILINE)
     # FIXME: this begs for a much nicer solution (100% copy of below)
-    if os.path.isfile(TestErrFile):
-        for l in open(TestErrFile):
-            if TO.search(l):
-                segfaulted = True
-    if not segfaulted and os.path.isfile(TestOutFile):
-        for l in open(TestOutFile):
-            if TO.search(l):
-                segfaulted = True
-
-    recursion = False
-    if not segfaulted:
-        # Try to detect aborts due to too deep recursion
-        TO = re.compile("aborted too deep recursion", re.MULTILINE)
-        # FIXME: this begs for a much nicer solution (100% copy of below)
-        if os.path.isfile(TestErrFile):
-            for l in open(TestErrFile):
+    for f in (TestErrFile, TestOutFile):
+        if os.path.isfile(f):
+            for l in open(f):
                 if TO.search(l):
-                    recursion = True
-        if not recursion and os.path.isfile(TestOutFile):
-            for l in open(TestOutFile):
+                    return 'segfault'
+
+    # Try to detect aborts due to too deep recursion
+    TO = re.compile("aborted too deep recursion", re.MULTILINE)
+    # FIXME: this begs for a much nicer solution (100% copy of above)
+    for f in (TestErrFile, TestOutFile):
+        if os.path.isfile(f):
+            for l in open(f):
                 if TO.search(l):
-                    recursion = True
-
-    if not segfaulted and not recursion and not timedout:
-        TO = re.compile("^!.*Mtimeout.*: Timeout: ", re.MULTILINE)
-        if os.path.isfile(TestErrFile):
-            for l in open(TestErrFile):
-                if TO.match(l):
-                    timedout = True
-        if not timedout and os.path.isfile(TestOutFile):
-            for l in open(TestOutFile):
-                if TO.match(l):
-                    timedout = True
-
-    if segfaulted:
-        return "segfault"
-    elif recursion:
-        return "recursion"
-    elif timedout:
-        return "timeout"
+                    return 'recursion'
 
     return None
 
@@ -2464,6 +2533,7 @@ def Check(command, input) :
     if procdebug:
         print 'Check: starting process "%s" (inpipe,outpipe,errpipe)\n' % '" "'.join(command)
     proc = subprocess.Popen(command, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True)
+    proc.killed = False
     t = Timer(float(par['TIMEOUT']), killProc, args = [proc])
     try:
         t.start()
@@ -3440,11 +3510,11 @@ def main(argv) :
     if THISFILE == "Mtest.py":
         fn = os.path.join(env['TSTTRGBASE'],TSTPREF,"times.")
         fl = open(fn+"lst","w")
-        Failure = [[],[],[],[],[],[],[],[],[]]
+        Failure = [[] for i in range(len(FAILURES))]
         for TSTDIR,TST,tt,ms,FtOut,FtErr in TIMES:
-            fl.write(url(os.path.join(TSTDIR,TST))+":\t"+tt+
-                        "\t"+FAILURES[FtOut]+
-                        "\t"+FAILURES[FtErr]+"\t\n")
+            fl.write('%s:\t%s\t%s\t%s\t\n' % (url(os.path.join(TSTDIR,TST)), tt,
+                                              FAILURES[FtOut][0],
+                                              FAILURES[FtErr][0]))
             if TST != '':
                 Failure[max(FtOut,FtErr)].append(os.path.join(TSTDIR,TST))
         fl.write(":\t%7.3f\t\n" % t_)
@@ -3493,7 +3563,6 @@ def main(argv) :
 
         # we write in SQL the same codes as testweb uses in the HTML
         # pages, for readability
-        Fcodes = ['o', 'x', 'S', 'T', 'R', 'X', 'C', '-']
 
         # we are not interested in the compiler, nor its path, nor its
         # options.  We do store the options separately, though
@@ -3513,7 +3582,7 @@ def main(argv) :
 
             if TST != '':
                 # target is a platform and compilation options etc
-                sql = """
+                fl.write("""
 INSERT INTO mtest (\"date\", \"machine\", \"os\", \"release\",
     \"compiler\", \"compiler_opts\", \"bits\", \"oid\", \"single\", \"static\",
     \"product\", \"dir\", \"test\",
@@ -3522,11 +3591,10 @@ VALUES (%s, '%s', '%s', '%s',
     '%s', '%s', %s, %s, %s, %s,
     '%s', '%s', '%s',
     %s, '%s', '%s');
-""" %(now, host, env['SYST'], env['RELEASE'],
-        ccname, ccopts, bits, oids, isSingle, isStatic,
-        product, TSTDIR, TST,
-        tms, Fcodes[FtOut], Fcodes[FtErr])
-                fl.write(sql)
+""" % (now, host, env['SYST'], env['RELEASE'],
+       ccname, ccopts, bits, oids, isSingle, isStatic,
+       product, TSTDIR, TST,
+       tms, FAILURES[FtOut][1], FAILURES[FtErr][1]))
         fl.close()
 
     if THISFILE == "Mtest.py":
@@ -3546,6 +3614,7 @@ VALUES (%s, '%s', '%s', '%s',
                         (F_WARN, "produced slightly different output", "slightly"),
                         (F_SOCK, "did not properly release socket(s)", "SIGNIFICANTLY"),
                         (F_TIME, "ran into timeout", "SIGNIFICANTLY"),
+                        (F_ABRT, "caused an abort (assertion failure)", "SIGNIFICANTLY"),
                         (F_SEGV, "resulted in a crash", "SIGNIFICANTLY"),
                         (F_RECU, "ran into too deep recursion", "SIGNIFICANTLY"),
                         (F_ERROR, "produced SIGNIFICANTLY different output", "SIGNIFICANTLY")]:
