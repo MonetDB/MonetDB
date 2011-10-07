@@ -275,7 +275,7 @@ BATSIGignore(int nr)
 static void
 BATSIGabort(int nr)
 {
-	GDKfatal("BATSIGabort: signal %d caught by thread " SZFMT "\n", nr, (size_t) MT_getpid());
+	GDKexit(3);		/* emulate Windows exit code without pop-up */
 }
 #endif
 
@@ -1709,6 +1709,7 @@ GDKinit(opt *set, int setlen)
 #ifdef WIN32
 	(void) signal(SIGABRT, BATSIGabort);
 	_set_abort_behavior(0, _CALL_REPORTFAULT | _WRITE_ABORT_MSG);
+	_set_error_mode(_OUT_TO_STDERR);
 #endif
 	GDKlockHome();
 
