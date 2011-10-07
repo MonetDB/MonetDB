@@ -207,22 +207,22 @@ F_SKIP = -1
 F_OK = 0
 F_WARN = 1
 F_SOCK = 2
-F_TIME = 3
-F_ABRT = 4
-F_RECU = 5
-F_SEGV = 6
-F_ERROR = 7
+F_ERROR = 3
+F_TIME = 4
+F_ABRT = 5
+F_RECU = 6
+F_SEGV = 7
 
 FAILURES = {
     F_SKIP  : ("F_SKIP",  '-'),
     F_OK    : ("F_OK",    'o'),
     F_WARN  : ("F_WARN",  'x'),
     F_SOCK  : ("F_SOCK",  'S'),
+    F_ERROR : ("F_ERROR", 'X'),
     F_TIME  : ("F_TIME",  'T'),
     F_ABRT  : ("F_ABRT",  'A'),
     F_RECU  : ("F_RECU",  'R'),
     F_SEGV  : ("F_SEGV",  'C'),
-    F_ERROR : ("F_ERROR", 'X')
 }
 
 CONDITIONALS = {
@@ -3508,7 +3508,7 @@ def main(argv) :
     if THISFILE == "Mtest.py":
         fn = os.path.join(env['TSTTRGBASE'],TSTPREF,"times.")
         fl = open(fn+"lst","w")
-        Failure = [[],[],[],[],[],[],[],[],[]]
+        Failure = [[] for i in range(len(FAILURES))]
         for TSTDIR,TST,tt,ms,FtOut,FtErr in TIMES:
             fl.write('%s:\t%s\t%s\t%s\t\n' % (url(os.path.join(TSTDIR,TST)), tt,
                                               FAILURES[FtOut][0],
@@ -3612,7 +3612,7 @@ VALUES (%s, '%s', '%s', '%s',
                         (F_WARN, "produced slightly different output", "slightly"),
                         (F_SOCK, "did not properly release socket(s)", "SIGNIFICANTLY"),
                         (F_TIME, "ran into timeout", "SIGNIFICANTLY"),
-                        (F_ABRT, "caused an abort (assertion)", "SIGNIFICANTLY"),
+                        (F_ABRT, "caused an abort (assertion failure)", "SIGNIFICANTLY"),
                         (F_SEGV, "resulted in a crash", "SIGNIFICANTLY"),
                         (F_RECU, "ran into too deep recursion", "SIGNIFICANTLY"),
                         (F_ERROR, "produced SIGNIFICANTLY different output", "SIGNIFICANTLY")]:
