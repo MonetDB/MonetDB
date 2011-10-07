@@ -30,6 +30,7 @@
 #include <mcrypt.h> /* mcrypt_BackendSum */
 #include <utils/utils.h>
 #include <utils/properties.h>
+#include <utils/control.h>
 
 #include "merovingian.h"
 #include "argvcmds.h"
@@ -242,8 +243,33 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 			value = buf;
 		} else if (strcmp(p, "status") == 0) {
 			if (meropid > 0) {
+				char *res;
+
+				/* try to retrieve running merovingian version */
+				kv = findConfKey(ckv, "sockdir");
+				value = kv->val;
+				kv = findConfKey(ckv, "controlport");
+				if (kv == NULL)
+					kv = findConfKey(ckv, "port"); /* forward compat */
+				snprintf(buf, sizeof(buf), "%s/" CONTROL_SOCK "%d",
+						value, kv->ival);
+				value = control_send(&res, buf, -1, "", "version", 0, NULL);
+				if (value != NULL) {
+					free(value);
+					value = NULL;
+				} else {
+					if (strncmp(res, "OK\n", 3) != 0) {
+						free(res);
+					} else {
+						value = res + 3;
+					}
+				}
+
 				snprintf(buf, sizeof(buf),
-						"monetdbd[%d] is serving this dbfarm", meropid);
+						"monetdbd[%d] %s is serving this dbfarm",
+						meropid, value == NULL ? "(unknown version)" : value);
+				if (value != NULL)
+					free(res);
 				value = buf;
 			} else if (meropid < 0) {
 				value = "a monetdbd is serving this dbfarm, "
