@@ -1,6 +1,11 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Fri Oct  7 2011 Sjoerd Mullender <sjoerd@acm.org>
+- Fixed bug 2897 where slow (network) reads could cause blocks to not
+  be fully read in one go, causing errors in the subsequent use of
+  those blocks.  With thanks to Rémy Chibois.
+
 * Tue Sep 27 2011 Fabian Groffen <fabian@cwi.nl>
 - Fixed a bug in mclient where processing queries from files could result
   in ghost empty results to be reported in the output
