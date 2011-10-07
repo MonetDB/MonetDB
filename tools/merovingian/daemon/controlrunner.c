@@ -628,6 +628,13 @@ controlRunner(void *d)
 
 	/* comands below this point are multi line and hence you can't
 	 * combine them, so they disconnect the client afterwards */
+				} else if (strcmp(p, "version") == 0) {
+					len = snprintf(buf2, sizeof(buf2), "OK\n");
+					send(msgsock, buf2, len, 0);
+					len = snprintf(buf2, sizeof(buf2), "%s (%s)\n",
+							MERO_VERSION, MONETDB_RELEASE);
+					send(msgsock, buf2, len, 0);
+					break;
 				} else if (strcmp(p, "get") == 0) {
 					confkeyval *props = getDefaultProps();
 					char *pbuf;

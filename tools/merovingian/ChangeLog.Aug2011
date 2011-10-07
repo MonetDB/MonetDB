@@ -1,6 +1,9 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
+* Fri Oct  7 2011 Fabian Groffen <fabian@cwi.nl>
+- monetdbd get status now also reports the version of the running monetdbd
+
 * Thu Oct  6 2011 Fabian Groffen <fabian@cwi.nl>
 - Improved response time of 'monetdb start' when the database fails
   to start.
