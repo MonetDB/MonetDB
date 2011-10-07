@@ -3707,7 +3707,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 	for (i = pci->retc + 2, n = t->columns.set->h; i<pci->argc && n; i++, n = n->next) {
 		sql_column *col = n->data;
-		BAT *c;
+		BAT *c= NULL;
 
 		/* handle the various cases */
 		switch(col->type.type->localtype){
@@ -3744,6 +3744,9 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			}
 			fclose(f);
 			GDKfree(buf);
+			break;
+		default:
+			throw(SQL, "sql", "failed to attach file %s", *(str*)getArgReference(stk, pci, i));
 		}
 		if (i!=(pci->retc + 2) && cnt != BATcount(c)) 
 			throw(SQL, "sql", "table %s not found", tname);
