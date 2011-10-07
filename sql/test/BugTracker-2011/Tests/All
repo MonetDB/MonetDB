@@ -44,3 +44,4 @@ div_by_zero.Bug-2887
 cast-crash.Bug-2678
 div_zero_problem.Bug-2893
 non-stable-select-bug.Bug-2894
+HAVE_PERL?perl-short-read-bug.Bug-2897
