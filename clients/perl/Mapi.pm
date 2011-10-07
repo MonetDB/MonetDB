@@ -375,6 +375,24 @@ sub getReply {
 
 }
 
+sub readFromSocket {
+  my ($self, $ref, $count) = @_;
+
+  die "invalid buffer reference" unless (ref($ref) eq 'SCALAR');
+
+  my $rcount = 0;
+  $$ref ||= "";
+
+  while ($count > 0) {
+    $rcount = $self->{socket}->sysread($$ref, $count, length($$ref));
+
+    die "read error: $!" unless (defined($rcount));
+    die "no more data on socket" if ($rcount == 0);
+
+    $count -= $rcount;
+  }
+}
+
 sub getblock {
   my ($self) = @_;
 
@@ -384,7 +402,7 @@ sub getblock {
   do {
     my $flag;
 
-    $self->{socket}->sysread( $flag, 2 );  # read block info
+    $self->readFromSocket(\$flag, 2); # read block info
 
     my $unpacked = unpack( 'v', $flag );  # unpack (little endian short)
     my $len = ( $unpacked >> 1 );    # get length
@@ -393,7 +411,7 @@ sub getblock {
     print "getblock: $last_block $len\n" if ($self->{trace});
     if ($len > 0 ) {
       my $data;
-      $self->{socket}->sysread( $data, $len );# read
+      $self->readFromSocket(\$data, $len); # read
       $result .= $data;
       print "getblock: $data\n" if ($self->{trace});
     }
