@@ -3723,11 +3723,14 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			c = BATattach(col->type.type->localtype, *(str*)getArgReference(stk, pci, i));
 			if (c == NULL) 
 				throw(SQL, "sql", "failed to attach file %s", *(str*)getArgReference(stk, pci, i));
-			BBPkeepref(c->batCacheid);
+			BATsetaccess(c, BAT_READ);
+			BATpropcheck(c, BATPROPS_ALL);
+			BATpropcheck(BATmirror(c), BATPROPS_ALL);
 			break;
 		case TYPE_str:
 			/* get the BAT and fill it with the strings */
 			c = BATnew(TYPE_void,TYPE_str,0); 
+			BATseqbase(c,0);
 			/* this code should be extended to deal with larger text strings. */
 			f = fopen( *(str*) getArgReference(stk,pci,i),"r");
 			if ( f == NULL)
@@ -3741,16 +3744,12 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			}
 			fclose(f);
 			GDKfree(buf);
-			BBPkeepref(c->batCacheid);
-			break;
 		}
-		BATsetaccess(c, BAT_READ);
-		BATpropcheck(c, BATPROPS_ALL);
-		BATpropcheck(BATmirror(c), BATPROPS_ALL);
 		if (i!=(pci->retc + 2) && cnt != BATcount(c)) 
 			throw(SQL, "sql", "table %s not found", tname);
 		cnt = BATcount(c);
 		*(int*)getArgReference(stk, pci, i-(2+pci->retc)) = c->batCacheid;
+		BBPkeepref(c->batCacheid);
 	}
 	return MAL_SUCCEED;
 }
