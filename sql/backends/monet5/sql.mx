@@ -3660,7 +3660,12 @@ mvc_import_table_stdin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-/* str mvc_bin_import_table_wrap(.., str *sname, str *tname, str *fname..); */
+/* str mvc_bin_import_table_wrap(.., str *sname, str *tname, str *fname..);
+ * binary attachment only works for simple binary types. 
+ * Non-simple types require each line to contain a valid ascii representation
+ * of the text terminate by a new-line. These strings are passed to the corresponding
+ * atom conversion routines to fill the column.
+*/
 str
 mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -3673,6 +3678,9 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	sql_schema *s = mvc_bind_schema(m, sname);
 	sql_table *t;
 	node *n;
+	FILE *f;
+	char *buf;
+	int bufsiz= 128 * BLOCK;
 
 	if (msg)
 		return msg;
@@ -3688,20 +3696,54 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	for (i = pci->retc + 2, n = t->columns.set->h; i<pci->argc && n; i++, n = n->next) {
 		sql_column *col = n->data;
 
-		if (ATOMvarsized(col->type.type->localtype )) 
+		if (ATOMvarsized(col->type.type->localtype ) && col->type.type->localtype != TYPE_str) 
 			throw(SQL, "sql", "failed to attach file %s",
 			      *(str*)getArgReference(stk, pci, i));
+		f = fopen( *(str*) getArgReference(stk,pci,i),"r");
+		if ( f == NULL)
+			throw(SQL, "sql", "failed to open file %s", *(str*)getArgReference(stk, pci, i));
+		fclose(f);
 	}
 
 	for (i = pci->retc + 2, n = t->columns.set->h; i<pci->argc && n; i++, n = n->next) {
 		sql_column *col = n->data;
 		BAT *c;
 
-		c = BATattach(col->type.type->localtype, *(str*)getArgReference(stk, pci, i));
-		if (c == NULL) 
-			throw(SQL, "sql", "failed to attach file %s",
-			      *(str*)getArgReference(stk, pci, i));
+		/* handle the various cases */
+		switch(col->type.type->localtype){
+		case TYPE_chr:
+		case TYPE_bit:
+		case TYPE_oid:
+		case TYPE_sht:
+		case TYPE_int:
+		case TYPE_lng:
+		case TYPE_wrd:
+		case TYPE_flt:
+		case TYPE_dbl:
+			c = BATattach(col->type.type->localtype, *(str*)getArgReference(stk, pci, i));
+			if (c == NULL) 
+				throw(SQL, "sql", "failed to attach file %s", *(str*)getArgReference(stk, pci, i));
+			BBPkeepref(c->batCacheid);
+			break;
+		case TYPE_str:
+			/* get the BAT and fill it with the strings */
+			c = BATnew(TYPE_void,TYPE_str,0); 
+			/* this code should be extended to deal with larger text strings. */
+			f = fopen( *(str*) getArgReference(stk,pci,i),"r");
+			if ( f == NULL)
+				throw(SQL, "sql", "failed to re-open file %s", *(str*)getArgReference(stk, pci, i));
 
+			buf = GDKmalloc(bufsiz);
+			while ( fgets(buf, bufsiz,f) != NULL) {
+				char *t = strrchr(buf,'\n');
+				if ( t) *t = 0;
+				BUNappend(c,buf, FALSE);
+			}
+			fclose(f);
+			GDKfree(buf);
+			BBPkeepref(c->batCacheid);
+			break;
+		}
 		BATsetaccess(c, BAT_READ);
 		BATpropcheck(c, BATPROPS_ALL);
 		BATpropcheck(BATmirror(c), BATPROPS_ALL);
@@ -3709,7 +3751,6 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			throw(SQL, "sql", "table %s not found", tname);
 		cnt = BATcount(c);
 		*(int*)getArgReference(stk, pci, i-(2+pci->retc)) = c->batCacheid;
-		BBPkeepref(c->batCacheid);
 	}
 	return MAL_SUCCEED;
 }
