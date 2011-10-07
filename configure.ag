@@ -1392,7 +1392,6 @@ AM_CONDITIONAL(HAVE_RUBYGEM, test x"$have_rubygem" != xno -a x"$have_rubygem_dir
 
 AC_PROG_YACC
 AC_DEFINE(YYENABLE_NLS, 0, [Needed to compile bison-generated code.])
-AC_DEFINE(YYLTYPE_IS_TRIVIAL, 0, [Needed to compile bison-generated code.])
 case "$YACC" in
 	bison*)  YACC="$YACC"  ;;
 	*)
