@@ -246,12 +246,11 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 				char *res;
 				confkeyval cport[] = {
 					{"controlport",  NULL, -1,     INT},
-					{"port",         NULL, -1,     INT},
 					{ NULL,          NULL,  0, INVALID}
 				};
 
 				/* re-read, this time with empty defaults, so we can see
-				 * what's available (forward/backwards compatability */
+				 * what's available (backwards compatability) */
 				if (readProps(cport, dbfarm) != 0) {
 					fprintf(stderr, "unable to read properties from %s: %s\n",
 							dbfarm, strerror(errno));
@@ -261,12 +260,12 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 				/* try to retrieve running merovingian version */
 				kv = findConfKey(ckv, "sockdir");
 				value = kv->val;
-				kv = findConfKey(cport, "controlport");
+				kv = findConfKey(cport, "controlport"); /* backwards compat */
 				if (kv->ival == -1)
-					kv = findConfKey(cport, "port"); /* forward compat */
-				freeConfFile(cport);
+					kv = findConfKey(ckv, "port");
 				snprintf(buf, sizeof(buf), "%s/" CONTROL_SOCK "%d",
 						value, kv->ival);
+				freeConfFile(cport);
 				value = control_send(&res, buf, -1, "", "version", 0, NULL);
 				if (value != NULL) {
 					free(value);
