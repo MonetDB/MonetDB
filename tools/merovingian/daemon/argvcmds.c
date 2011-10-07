@@ -220,10 +220,29 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 			value = dbfarm;
 		} else if (strcmp(p, "mserver") == 0) {
 			if (meropid == 0) {
-				value = _mero_mserver;
+				value = "unknown (monetdbd not running)";
 			} else {
-				value = "binary in use cannot be determined "
-					"for a running monetdbd";
+				char *res;
+				/* get binpath from running merovingian */
+				kv = findConfKey(ckv, "sockdir");
+				value = kv->val;
+				kv = findConfKey(ckv, "port");
+				snprintf(buf, sizeof(buf), "%s/" CONTROL_SOCK "%d",
+						value, kv->ival);
+				value = control_send(&res, buf, -1, "", "mserver", 0, NULL);
+				if (value != NULL) {
+					free(value);
+					value = "unknown (failed to connect to monetdbd)";
+				} else {
+					if (strncmp(res, "OK\n", 3) != 0) {
+						free(res);
+						value = "unknown (unsupported monetdbd)";
+					} else {
+						snprintf(buf, sizeof(buf), "%s", res + 3);
+						value = buf;
+						free(res);
+					}
+				}
 			}
 		} else if (strcmp(p, "hostname") == 0) {
 			value = _mero_hostname;

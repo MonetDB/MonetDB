@@ -511,6 +511,12 @@ static void ctl_handle_client(int msgsock, const char *origin) {
 						MERO_VERSION, MONETDB_RELEASE);
 				send(msgsock, buf2, len, 0);
 				break;
+			} else if (strcmp(p, "mserver") == 0) {
+				len = snprintf(buf2, sizeof(buf2), "OK\n");
+				send(msgsock, buf2, len, 0);
+				len = snprintf(buf2, sizeof(buf2), "%s\n", _mero_mserver);
+				send(msgsock, buf2, len, 0);
+				break;
 			} else if (strcmp(p, "get") == 0) {
 				confkeyval *props = getDefaultProps();
 				char *pbuf;

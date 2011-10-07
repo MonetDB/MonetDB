@@ -1,6 +1,11 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
+* Fri Oct  7 2011 Fabian Groffen <fabian@cwi.nl>
+- Unlike in previous releases, 'monetdbd get mserver' now returns the path
+  to the mserver5 binary only for dbfarms that have a running monetdbd,
+  instead of only for those that are not served by a monetdbd.
+
 * Fri Sep 23 2011 Fabian Groffen <fabian@cwi.nl>
 - Add nclients property that controls the maximum number of concurrent
   clients allowed to access the database
