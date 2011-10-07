@@ -2240,8 +2240,8 @@ GDKfatal(const char *format, ...)
 		abort();
 #else
 		GDKexit(1);
-	}
 #endif
+	}
 	return -1;
 }
 
