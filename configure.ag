@@ -1391,9 +1391,17 @@ AC_SUBST(RUBYGEM)
 AM_CONDITIONAL(HAVE_RUBYGEM, test x"$have_rubygem" != xno -a x"$have_rubygem_dir" != xno)
 
 AC_PROG_YACC
-AC_DEFINE(YYENABLE_NLS, 0, [Needed to compile bison-generated code.])
 case "$YACC" in
-	bison*)  YACC="$YACC"  ;;
+	bison*)
+		# Ubuntu still comes with an ancient bison that uses defines
+		# without checking if they are defined.  This triggers a warning
+		# from gcc with -Wundef.  If we have a bison < 2.4.3, then
+		# disable the warning.
+		BISON_VER=`$YACC --version | head -n1 | sed -e 's/^.* //'`
+		if test MONETDB_VERSION_TO_NUMBER(echo $BISON_VER) -lt MONETDB_VERSION_TO_NUMBER(echo 2.4.3); then
+			X_CFLAGS="`echo ${X_CFLAGS} | sed -e 's/-Wundef//g'`"
+		fi
+	;;
 	*)
 		if test "x$enable_sql" = xyes; then
 			AC_MSG_ERROR([MonetDB/SQL requires bison])
