@@ -245,7 +245,7 @@ mal_export str openProfilerStream(stream *fd);
 mal_export str closeProfilerStream(void);
 
 mal_export void initProfiler(MalBlkPtr mb);
-mal_export void profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc);
+mal_export void profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, str status);
 mal_export str setLogFile(stream *fd, Module cntxt, str fname);
 mal_export str setLogStream(Module cntxt, str host, int port);
 mal_export str setLogStreamStream(Module cntxt, stream *s);
@@ -318,7 +318,7 @@ profilerAvailable(void)
 {
 	return 1;
 }
-static void offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc);
+static void offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc,str status);
 static void cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc);
 static int initTrace(void);
 
@@ -430,7 +430,7 @@ deactivateCounter(str name)
  * Note that the profiler itself should lead to event generations.
  */
 void
-profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
+profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, str status)
 {
 	if (mb->profiler == NULL) return;
 	if (profileCounter[PROFstart].status == 0 && mb->profiler[pc].ticks == 0)
@@ -440,7 +440,7 @@ profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 	if (getModuleId(getInstrPtr(mb, pc)) == myname)
 		return;
 	if (offlineProfiling)
-		offlineProfilerEvent(idx, mb, stk, pc);
+		offlineProfilerEvent(idx, mb, stk, pc,status);
 	if (cachedProfiling)
 		cachedProfilerEvent(idx, mb, stk, pc);
 }
@@ -451,7 +451,7 @@ offlineProfilerHeader(void)
 	@:getEventStream()@   /* profilerEvent -> void */
 	log0("# ");
 	if (profileCounter[PROFevent].status) {
-		log0("event,\t");
+		log0("event,\tstatus,\t");
 	}
 	if (profileCounter[PROFtime].status) {
 		log0("time,\t");
@@ -460,7 +460,10 @@ offlineProfilerHeader(void)
 		log0("thread,\t");
 	}
 	if (profileCounter[PROFpc].status) {
-		log0("function,\tline,\t");
+		log0("function,\tpc,\t");
+	}
+	if (profileCounter[PROFoper].status) {
+		log0("operation,\t");
 	}
 	if (profileCounter[PROFticks].status) {
 		log0("usec,\t");
@@ -511,7 +514,7 @@ offlineProfilerHeader(void)
 }
 
 void
-offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
+offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, str status)
 {
 	static struct Mallinfo prevMalloc;
 	InstrPtr pci = getInstrPtr(mb, pc);
@@ -552,6 +555,7 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 	log0("[ ");
 	if (profileCounter[PROFevent].status) {
 		log("%d,\t", eventcounter);
+		log("\"%s\",\t", status);
 	}
 	if (profileCounter[PROFtime].status) {
 		char *tbuf, *c;
@@ -652,9 +656,9 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 			c++;
 		stmtq = mal_quote(c, strlen(c));
 		if (stmtq != NULL) {
-			log(" \"%s\"", stmtq);
+			log(" \"%s\",\t", stmtq);
 			GDKfree(stmtq);
-		}
+		} else log0(" ,\t");
 		GDKfree(stmt);
 	}
 	if (profileCounter[PROFtype].status) {
@@ -668,7 +672,7 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 				snprintf(abuf + j, BUFSIZ - j, "%s:%s%s", getVarName(mb, getArg(pci, i)), tpe, (i < pci->retc - 1 ? ", " : ""));
 				GDKfree(tpe);
 			}
-		log("%s", abuf);
+		log("\"%s\",\t", abuf);
 	}
 	if (profileCounter[PROFuser].status) {
 		log(" %d", idx);
