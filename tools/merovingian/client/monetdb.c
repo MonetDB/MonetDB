@@ -266,7 +266,7 @@ printStatus(sabdb *stats, int mode, int twidth)
 		char *state;
 		char uptime[12];
 		char avg[8];
-		char crash[20];
+		char crash[32];
 		char *dbname;
 
 		switch (stats->state) {
@@ -288,11 +288,11 @@ printStatus(sabdb *stats, int mode, int twidth)
 			state = "locked ";
 
 		if (uplog.lastcrash == -1) {
-			snprintf(crash, sizeof(crash), "-");
+			crash[0] = '\0';
 		} else {
 			struct tm *t;
 			t = localtime(&uplog.lastcrash);
-			strftime(crash, sizeof(crash), "%Y-%m-%d %H:%M:%S", t);
+			strftime(crash, sizeof(crash), "crash %Y-%m-%d %H:%M:%S", t);
 		}
 
 		if (stats->state != SABdbRunning) {
@@ -721,7 +721,7 @@ command_status(int argc, char *argv[])
 		printf("%*sname%*s  ",
 				twidth - 4 /* name */ - ((twidth - 4) / 2), "",
 				(twidth - 4) / 2, "");
-		printf(" state     uptime       health       last crash\n");
+		printf(" state     uptime       health\n");
 	}
 
 	for (p = state; *p != '\0'; p++) {
