@@ -2579,7 +2579,7 @@ main(int argc, char **argv)
 				q = NULL;
 			} else if (strcmp(buf, "language") == 0) {
 				language = strdup(q);	/* leak */
-				if (strstr(language, "sql") == language) {
+				if (strcmp(language, "sql") == 0) {
 					mode = SQL;
 					q = NULL;
 				} else if (strcmp(language, "mal") == 0) {
@@ -2659,7 +2659,7 @@ main(int argc, char **argv)
 			/* accept unambiguous prefix of language */
 			if (strcmp(optarg, "sql") == 0 ||
 			    strcmp(optarg, "sq") == 0 || strcmp(optarg, "s") == 0 ||
-				strstr(optarg, "sql") == optarg) {
+				strcmp(optarg, "sql") == optarg) {
 				language = optarg;
 				mode = SQL;
 			} else if (strcmp(optarg, "mal") == 0 ||
