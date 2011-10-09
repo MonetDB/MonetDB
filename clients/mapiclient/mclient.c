@@ -2659,7 +2659,7 @@ main(int argc, char **argv)
 			/* accept unambiguous prefix of language */
 			if (strcmp(optarg, "sql") == 0 ||
 			    strcmp(optarg, "sq") == 0 || strcmp(optarg, "s") == 0 ||
-				strcmp(optarg, "sql") == optarg) {
+				strcmp(optarg, "sql") == 0) {
 				language = optarg;
 				mode = SQL;
 			} else if (strcmp(optarg, "mal") == 0 ||
