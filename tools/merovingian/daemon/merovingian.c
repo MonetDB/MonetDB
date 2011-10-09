@@ -92,6 +92,7 @@
 #include "discoveryrunner.h"
 #include "handlers.h"
 #include "argvcmds.h"
+#include "multiplex-funnel.h"
 
 
 /* private structs */
@@ -601,7 +602,7 @@ main(int argc, char *argv[])
 				_mero_mserver = NULL;
 		}
 	}
-	/* setup default database properties, constants: unlike previous
+	/* setup default database properties, constants: unlike historical
 	 * versions, we do not want changing defaults any more */
 	_mero_db_props = getDefaultProps();
 	kv = findConfKey(_mero_db_props, "shared");
@@ -614,6 +615,8 @@ main(int argc, char *argv[])
 	kv->val = strdup("no");
 	kv = findConfKey(_mero_db_props, "nclients");
 	kv->val = strdup("64");
+	kv = findConfKey(_mero_db_props, "type");
+	kv->val = strdup("database");
 
 	*dbfarm = '\0';
 	if (argc > 1) {
@@ -1117,26 +1120,27 @@ shutdown:
 		dpair t;
 		threadlist tl = NULL, tlw = tl;
 
-		/* we don't need merovingian itself */
-		d = d->next;
-
 		pthread_mutex_lock(&_mero_topdp_lock);
 		t = d;
 		while (t != NULL) {
-			if (tl == NULL) {
-				tl = tlw = malloc(sizeof(struct _threadlist));
-			} else {
-				tlw = tlw->next = malloc(sizeof(struct _threadlist));
-			}
+			if (t->type == MERODB) {
+				if (tl == NULL) {
+					tl = tlw = malloc(sizeof(struct _threadlist));
+				} else {
+					tlw = tlw->next = malloc(sizeof(struct _threadlist));
+				}
 
-			tlw->next = NULL;
-			if ((thret = pthread_create(&(tlw->tid), NULL,
-						(void *(*)(void *))terminateProcess, (void *)t)) != 0)
-			{
-				Mfprintf(stderr, "%s: unable to create thread to terminate "
-						"database '%s': %s\n",
-						argv[0], d->dbname, strerror(thret));
-				tlw->tid = 0;
+				tlw->next = NULL;
+				if ((thret = pthread_create(&(tlw->tid), NULL,
+							(void *(*)(void *))terminateProcess, (void *)t)) != 0)
+				{
+					Mfprintf(stderr, "%s: unable to create thread to terminate "
+							"database '%s': %s\n",
+							argv[0], d->dbname, strerror(thret));
+					tlw->tid = 0;
+				}
+			} else if (t->type == MEROFUN) {
+				multiplexDestroy(t->dbname);
 			}
 
 			t = t->next;

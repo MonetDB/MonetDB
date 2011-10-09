@@ -1,7 +1,7 @@
 .\" Process this file with
 .\" groff -man -Tascii foo.1
 .\"
-.TH MONETDB 1 "APRIL 2011" MonetDB "MonetDB Applications"
+.TH MONETDB 1 "OCTOBRE 2011" MonetDB "MonetDB Applications"
 .SH NAME
 monetdb \- control a MonetDB Database Server instance
 .SH SYNOPSIS
@@ -52,7 +52,7 @@ stopping a database inside the MonetDB Database Server.
 For all commands, database arguments can be glob-like expressions.
 This allows to do wildcard matches.  For details on the syntax, see
 .IR EXPRESSIONS .
-.IP "create database [database ...]"
+.IP "create [\-m pattern] database [database ...]"
 Initialises a new database in the MonetDB Database Server.  A database
 created with this command makes it available under its database name,
 but not yet for use by clients, as the database is put into maintenance
@@ -60,6 +60,20 @@ mode.  This allows the database administrator to perform initialisation
 steps before releasing it to users.  See also
 .BR "monetdb lock" .
 The name of the database must match the expression [A\-Za\-z0\-9\-_]+.
+.IP "  \-m pattern"
+With the
+.I \-m
+flag, instead of creating a database, a multiplex-funnel is created.
+See section
+.I MULTIPLEX-FUNNEL
+in
+.BR monetdbd (1).
+The pattern argument is not fully the same as a pattern for connecting
+or discovery.  Each parallel target for the multiplex-funnel is given as
+.IR username + password @ pattern
+sequence, separated by commas.  Here the pattern is an ordinary pattern
+as would be used for connecting to a database, and can hence also be
+just the name of a database.
 .IP "destroy [\-f] database [database ...]"
 Removes the given database, including all its data and logfiles.  Once
 destroy has completed, all data is lost.  Be careful when using this

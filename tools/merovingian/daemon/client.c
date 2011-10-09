@@ -45,13 +45,6 @@
 #include "controlrunner.h"
 #include "client.h"
 
-typedef struct _mplist {
-	multiplex *mpf;
-	struct _mplist *next;
-} mplist;
-
-static mplist *mero_multiplex_funnel = NULL;
-
 static err
 handleClient(int sock, char isusock)
 {
@@ -237,48 +230,6 @@ handleClient(int sock, char isusock)
 		return(newErr("client %s specified no database", host));
 	}
 
-	if (strcmp(lang, "sql+mf") == 0) {
-		/* SQL multiplexer with funnelling capabilities */
-		/* find/start/attach funnel */
-		mplist *w;
-		for (w = mero_multiplex_funnel; w != NULL; w = w->next) {
-			if (strcmp(w->mpf->pool, database) == 0)
-				break;
-		}
-		if (w == NULL) {
-			char *merr;
-			int ret;
-			w = malloc(sizeof(mplist));
-			w->next = mero_multiplex_funnel;
-			if ((merr = multiplexInit(&w->mpf, database)) != NO_ERR) {
-				free(w);
-				mnstr_printf(fout, "!monetdbd: failed to create "
-						"multiplex-funnel: %s\n", merr);
-				mnstr_flush(fout);
-				close_stream(fout);
-				close_stream(fdin);
-				return(merr);
-			}
-			mero_multiplex_funnel = w;
-			if ((ret = pthread_create(&w->mpf->tid,
-					NULL, (void *(*)(void *))multiplexThread,
-					(void *)w->mpf)) != 0)
-			{
-				mnstr_printf(fout, "!monetdbd: internal failure while "
-						"creating multiplex-funnel: unable to start thread: %s\n",
-						strerror(ret));
-				mnstr_flush(fout);
-				close_stream(fout);
-				close_stream(fdin);
-				return(newErr("starting thread for multiplex-funnel %s failed: %s",
-							database, strerror(ret)));
-			}
-		}
-		multiplexAddClient(w->mpf, sock, fout, fdin, host);
-
-		return(NO_ERR);
-	}
-
 	if (strcmp(lang, "control") == 0) {
 		/* handle control client */
 		if (control_authorise(host, chal, algo, passwd, sock))
@@ -316,6 +267,16 @@ handleClient(int sock, char isusock)
 		return(e);
 	}
 	stat = top;
+
+	/* a multiplex-funnel is a database which has no connections, but a
+	 * scenario "mfunnel" */
+	if ((top->conns == NULL || top->conns->val == NULL) &&
+			top->scens != NULL && strcmp(top->scens->val, "mfunnel") == 0)
+	{
+		multiplexAddClient(top->dbname, sock, fout, fdin, host);
+		msab_freeStatus(&top);
+		return(NO_ERR);
+	}
 
 	/* collect possible redirects */
 	for (stat = top; stat != NULL; stat = stat->next) {

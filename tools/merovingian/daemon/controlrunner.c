@@ -44,6 +44,7 @@
 #include "discoveryrunner.h" /* broadcast, remotedb */
 #include "forkmserver.h"
 #include "controlrunner.h"
+#include "multiplex-funnel.h"
 
 
 static void
@@ -264,7 +265,7 @@ static void ctl_handle_client(int msgsock, const char *origin) {
 				} else {
 					len = snprintf(buf2, sizeof(buf2), "OK\n");
 					send(msgsock, buf2, len, 0);
-					Mfprintf(_mero_ctlout, "%s: started database '%s'\n",
+					Mfprintf(_mero_ctlout, "%s: started '%s'\n",
 							origin, q);
 				}
 
@@ -292,7 +293,13 @@ static void ctl_handle_client(int msgsock, const char *origin) {
 						len = snprintf(buf2, sizeof(buf2), "OK\n");
 						send(msgsock, buf2, len, 0);
 						break;
+					} else if (dp->type == MEROFUN && strcmp(dp->dbname, q) == 0) {
+						multiplexDestroy(dp->dbname);
+						len = snprintf(buf2, sizeof(buf2), "OK\n");
+						send(msgsock, buf2, len, 0);
+						break;
 					}
+
 					dp = dp->next;
 				}
 				if (dp == NULL) {
@@ -317,6 +324,85 @@ static void ctl_handle_client(int msgsock, const char *origin) {
 							origin, q);
 					len = snprintf(buf2, sizeof(buf2), "OK\n");
 					send(msgsock, buf2, len, 0);
+				}
+			} else if (strncmp(p, "create mfunnel=", strlen("create mfunnel=")) == 0) {
+				err e = NO_ERR;
+				char *r;
+
+				/* check mfunnel definition for correctness first */
+				p += strlen("create mfunnel=");
+				/* user+pass@pattern,user+pass@pattern,... */
+				r = p;
+				do {
+					for (; *r != '\0' && *r != '+'; r++)
+						;
+					if (*r == '\0' || *(r - 1) == ',' || (*(r - 1) == '=')) {
+						e = "missing user";
+						break;
+					}
+					for (r++; *r != '\0' && *r != '@'; r++)
+						;
+					if (*r == '\0' || *(r - 1) == '+') {
+						e = "missing password";
+						break;
+					}
+					for (r++; *r != '\0' && *r != ','; r++)
+						;
+					if (*(r - 1) == '@') {
+						e = "missing pattern";
+						break;
+					}
+					if (*r == '\0')
+						break;
+					r++;
+				} while(1);
+				if (e != NO_ERR) {
+					Mfprintf(_mero_ctlerr, "%s: invalid multiplex-funnel "
+							"specification '%s': %s at char " SZFMT "\n",
+							origin, p, getErrMsg(e), r - p);
+					len = snprintf(buf2, sizeof(buf2),
+							"invalid pattern: %s\n", getErrMsg(e));
+					send(msgsock, buf2, len, 0);
+				} else if ((e = db_create(q)) != NO_ERR) {
+					Mfprintf(_mero_ctlerr, "%s: failed to create "
+							"multiplex-funnel '%s': %s\n",
+							origin, q, getErrMsg(e));
+					len = snprintf(buf2, sizeof(buf2),
+							"%s\n", getErrMsg(e));
+					send(msgsock, buf2, len, 0);
+					free(e);
+				} else {
+					confkeyval *props = getDefaultProps();
+					confkeyval *kv;
+					char *dbfarm;
+					/* write the funnel config */
+					kv = findConfKey(props, "type");
+					setConfVal(kv, "mfunnel");
+					kv = findConfKey(props, "mfunnel");
+					setConfVal(kv, p);
+					if ((e = msab_getDBfarm(&dbfarm)) != NULL) {
+						Mfprintf(_mero_ctlerr, "%s: failed to retrieve "
+								"dbfarm: %s\n", origin, e);
+						free(e);
+						/* try, hopefully this succeeds */
+						if ((e = db_destroy(q)) != NO_ERR) {
+							Mfprintf(_mero_ctlerr, "%s: could not destroy: "
+									"%s\n", origin, getErrMsg(e));
+							free(e);
+						}
+						len = snprintf(buf2, sizeof(buf2),
+								"failed to prepare multiplex-funnel\n");
+						send(msgsock, buf2, len, 0);
+					} else {
+						snprintf(buf2, sizeof(buf2), "%s/%s", dbfarm, q);
+						free(dbfarm);
+						writeProps(props, buf2);
+						Mfprintf(_mero_ctlout,
+								"%s: created multiplex-funnel '%s'\n",
+								origin, q);
+						len = snprintf(buf2, sizeof(buf2), "OK\n");
+						send(msgsock, buf2, len, 0);
+					}
 				}
 			} else if (strcmp(p, "destroy") == 0) {
 				err e = db_destroy(q);

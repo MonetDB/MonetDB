@@ -1,7 +1,7 @@
 .\" Process this file with
 .\" groff -man -Tascii foo.1
 .\"
-.TH MONETDBD 1 "AUGUST 2011" MonetDB "MonetDB Applications"
+.TH MONETDBD 1 "OCTOBRE 2011" MonetDB "MonetDB Applications"
 .SH NAME
 monetdbd \- the MonetDB Database Server daemon
 .SH SYNOPSIS
@@ -328,6 +328,44 @@ slaves could be changed to
 .IR slaveX " or " slave/X
 and use the necessary pattern to match them.  It is up to the user to
 decide how to use the tags.
+.SH "MULTIPLEX-FUNNELS"
+.B monetdbd
+implements multiplex-funnel capabilities.  As the name suggests two
+techniques are combined, the multiplexer and the funnel.
+.P
+The
+.I funnel
+capability limits the access to the database to one client at a time.
+That is, if multiple clients connect to the funnel, their queries will
+be serialised such that they are executed one after the other.  An
+effect of this approach is that clients no longer have an exclusive
+channel to the database, which means that individual queries from one
+client may have been interleaved with queries from others.  This most
+notably makes SQL transaction blocks unreliable with a funnel.  The
+funnel, hence, is meant to scale down a large amount of clients that
+perform short-running (read-only) queries, as typically seen in
+web-based query loads.
+.P
+When a funnel is defined to use multiple databases, the funnel adds a
+.I multiplexer
+to its query channel.  A multiplex-funnel sends each query to all of
+the defined databases.  This behaviour can be quite confusing at first,
+but proves to be useful in typical sharding configurations, where in
+particular simple selection queries have to be performed on each of the
+shards.  The multiplexer combines the answers from all defined databases
+in one single answer that it sends back to the client.  However, this
+combining is without any smart logic, that is, the multiplexer does not
+evaluate the query it is running, but just combines all answers it
+receives from the databases.  This results in e.g. as many return tuples
+for a
+.I SELECT COUNT(*)
+query, as there are databases defined.
+.P
+See the
+.I create
+command in the
+.BR monetdb (1)
+man-page for details on how to setup a multiplex-funnel.
 .SH SIGNALS
 .B monetdbd
 acts upon a number of signals as is common for a daemon.

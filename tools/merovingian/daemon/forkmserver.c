@@ -36,11 +36,12 @@
 
 #include "merovingian.h"
 #include "discoveryrunner.h" /* remotedb */
+#include "multiplex-funnel.h" /* multiplexInit */
 #include "forkmserver.h"
 
 
 /**
- * Fork an Mserver and detach.  Before forking off, Sabaoth is consulted
+ * Fork an mserver and detach.  Before forking off, Sabaoth is consulted
  * to see if forking makes sense, or whether it is necessary at all, or
  * forbidden by restart policy, e.g. when in maintenance.
  */
@@ -60,6 +61,7 @@ forkMserver(char *database, sabdb** stats, int force)
 	char upmin[8];
 	char upavg[8];
 	char upmax[8];
+	confkeyval *ckv, *kv;
 
 	er = msab_getStatus(stats, database);
 	if (er != NULL) {
@@ -84,6 +86,23 @@ forkMserver(char *database, sabdb** stats, int force)
 	 * more than one entry in the list, so we assume we have the right
 	 * one here. */
 
+	ckv = getDefaultProps();
+	readProps(ckv, (*stats)->path);
+	kv = findConfKey(ckv, "type");
+	if (kv->val == NULL)
+		kv = findConfKey(_mero_db_props, "type");
+
+	if ((*stats)->locked == 1) {
+		if (force == 0) {
+			Mfprintf(stdout, "%s '%s' is under maintenance\n",
+					kv->val, database);
+			return(NO_ERR);
+		} else {
+			Mfprintf(stdout, "startup of %s under maintenance "
+					"'%s' forced\n", kv->val, database);
+		}
+	}
+
 	/* retrieve uplog information to print a short conclusion */
 	er = msab_getUplogInfo(&info, *stats);
 	if (er != NULL) {
@@ -91,12 +110,6 @@ forkMserver(char *database, sabdb** stats, int force)
 		free(er);
 		msab_freeStatus(stats);
 		return(e);
-	}
-
-	if ((*stats)->locked == 1) {
-		Mfprintf(stdout, "database '%s' is under maintenance\n", database);
-		if (force == 0)
-			return(NO_ERR);
 	}
 
 	switch ((*stats)->state) {
@@ -109,11 +122,11 @@ forkMserver(char *database, sabdb** stats, int force)
 			secondsToString(upmin, info.minuptime, 1);
 			secondsToString(upavg, info.avguptime, 1);
 			secondsToString(upmax, info.maxuptime, 1);
-			Mfprintf(stdout, "database '%s' has crashed after start on %s, "
+			Mfprintf(stdout, "%s '%s' has crashed after start on %s, "
 					"attempting restart, "
 					"up min/avg/max: %s/%s/%s, "
 					"crash average: %d.00 %.2f %.2f (%d-%d=%d)\n",
-					database, tstr,
+					kv->val, database, tstr,
 					upmin, upavg, upmax,
 					info.crashavg1, info.crashavg10, info.crashavg30,
 					info.startcntr, info.stopcntr, info.crashcntr);
@@ -122,10 +135,10 @@ forkMserver(char *database, sabdb** stats, int force)
 			secondsToString(upmin, info.minuptime, 1);
 			secondsToString(upavg, info.avguptime, 1);
 			secondsToString(upmax, info.maxuptime, 1);
-			Mfprintf(stdout, "starting database '%s', "
+			Mfprintf(stdout, "starting %s '%s', "
 					"up min/avg/max: %s/%s/%s, "
 					"crash average: %d.00 %.2f %.2f (%d-%d=%d)\n",
-					database,
+					kv->val, database,
 					upmin, upavg, upmax,
 					info.crashavg1, info.crashavg10, info.crashavg30,
 					info.startcntr, info.stopcntr, info.crashcntr);
@@ -133,20 +146,6 @@ forkMserver(char *database, sabdb** stats, int force)
 		default:
 			msab_freeStatus(stats);
 			return(newErr("unknown state: %d", (int)(*stats)->state));
-	}
-
-	if ((*stats)->locked == 1 && force == 1)
-		Mfprintf(stdout, "startup of database under maintenance "
-				"'%s' forced\n", database);
-
-	/* check if the vaultkey is there, otherwise abort early (value
-	 * lateron reused when server is started) */
-	snprintf(vaultkey, sizeof(vaultkey), "%s/.vaultkey", (*stats)->path);
-	if (stat(vaultkey, &statbuf) == -1) {
-		msab_freeStatus(stats);
-		return(newErr("cannot start database '%s': no .vaultkey found "
-					"(did you create the database with `monetdb create %s`?)",
-					database, database));
 	}
 
 	/* create the pipes (filedescriptors) now, such that we and the
@@ -160,6 +159,46 @@ forkMserver(char *database, sabdb** stats, int force)
 		close(pfdo[1]);
 		msab_freeStatus(stats);
 		return(newErr("unable to create pipe: %s", strerror(errno)));
+	}
+
+	/* a multiplex-funnel means starting a separate thread */
+	if (strcmp(kv->val, "mfunnel") == 0) {
+		/* create a dpair entry */
+		pthread_mutex_lock(&_mero_topdp_lock);
+
+		dp = _mero_topdp;
+		while (dp->next != NULL)
+			dp = dp->next;
+		dp = dp->next = malloc(sizeof(struct _dpair));
+		dp->out = pfdo[0];
+		dp->err = pfde[0];
+		dp->next = NULL;
+		dp->type = MEROFUN;
+		dp->pid = getpid();
+		dp->dbname = strdup(database);
+
+		pthread_mutex_unlock(&_mero_topdp_lock);
+
+		kv = findConfKey(ckv, "mfunnel");
+		if ((er = multiplexInit(database, kv->val,
+						fdopen(pfdo[1], "a"), fdopen(pfde[1], "a"))) != NO_ERR)
+		{
+			Mfprintf(stderr, "failed to create multiplex-funnel: %s\n",
+					getErrMsg(er));
+			return(er);
+		}
+
+		return(NO_ERR);
+	}
+
+	/* check if the vaultkey is there, otherwise abort early (value
+	 * lateron reused when server is started) */
+	snprintf(vaultkey, sizeof(vaultkey), "%s/.vaultkey", (*stats)->path);
+	if (stat(vaultkey, &statbuf) == -1) {
+		msab_freeStatus(stats);
+		return(newErr("cannot start database '%s': no .vaultkey found "
+					"(did you create the database with `monetdb create %s`?)",
+					database, database));
 	}
 
 	pid = fork();
@@ -178,14 +217,10 @@ forkMserver(char *database, sabdb** stats, int force)
 		char pipeline[512];
 		char *readonly = NULL;
 		char *argv[28];	/* for the exec arguments */
-		confkeyval *ckv, *kv;
 		int c = 0;
 		unsigned int mport;
 
 		msab_getDBfarm(&sabdbfarm);
-
-		ckv = getDefaultProps();
-		readProps(ckv, (*stats)->path);
 
 		mydoproxy = strcmp(getConfVal(_mero_props, "forward"), "proxy") == 0;
 

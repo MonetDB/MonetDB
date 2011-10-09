@@ -1,6 +1,9 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
+* Sat Oct  8 2011 Fabian Groffen <fabian@cwi.nl>
+- monetdb get output is now grouped by database instead of by property
+
 * Fri Oct  7 2011 Fabian Groffen <fabian@cwi.nl>
 - Unlike in previous releases, 'monetdbd get mserver' now returns the path
   to the mserver5 binary only for dbfarms that have a running monetdbd,

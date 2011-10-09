@@ -36,6 +36,7 @@
 
 /* these are the properties used for starting an mserver */
 static confkeyval _internal_prop_keys[] = {
+	{"type",     NULL, 0, STR},
 	{"shared",   NULL, 0, STR},
 	{"nthreads", NULL, 0, INT},
 	{"optpipe",  NULL, 0, STR},
@@ -43,6 +44,7 @@ static confkeyval _internal_prop_keys[] = {
 	{"slave",    NULL, 0, MURI},
 	{"readonly", NULL, 0, BOOLEAN},
 	{"nclients", NULL, 0, INT},
+	{"mfunnel",  NULL, 0, STR},
 	{ NULL,      NULL, 0, INVALID}
 };
 

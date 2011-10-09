@@ -1110,6 +1110,7 @@ command_get(int argc, char *argv[])
 	char doall = 1;
 	char *p;
 	char *property = NULL;
+	char propall = 0;
 	char vbuf[512];
 	char *buf;
 	char *e;
@@ -1155,17 +1156,8 @@ command_get(int argc, char *argv[])
 			/* first non-option is property, rest is database */
 			property = argv[i];
 			argv[i] = NULL;
-			if (strcmp(property, "all") == 0) {
-				size_t off = 0;
-				property = vbuf;
-				kv = defprops;
-				off += snprintf(property, sizeof(vbuf), "name");
-				while (kv->key != NULL) {
-					off += snprintf(property + off, sizeof(vbuf) - off,
-							",%s", kv->key);
-					kv++;
-				}
-			}
+			if (strcmp(property, "all") == 0)
+				propall = 1;
 		} else {
 			doall = 0;
 		}
@@ -1176,21 +1168,6 @@ command_get(int argc, char *argv[])
 		command_help(2, &argv[-1]);
 		exit(1);
 	}
-
-	e = control_send(&buf, mero_host, mero_port,
-			"#defaults", "get", 1, mero_pass);
-	if (e != NULL) {
-		fprintf(stderr, "get: internal error: %s\n", e);
-		free(e);
-		exit(2);
-	} else if (strncmp(buf, "OK\n", 3) != 0) {
-		fprintf(stderr, "get: %s\n", buf);
-		free(buf);
-		exit(1);
-	}
-	readPropsBuf(defprops, buf + 3);
-	free(buf);
-
 	if ((e = MEROgetStatus(&orig, NULL)) != NULL) {
 		fprintf(stderr, "get: internal error: %s\n", e);
 		free(e);
@@ -1211,6 +1188,20 @@ command_get(int argc, char *argv[])
 		return;
 	}
 
+	e = control_send(&buf, mero_host, mero_port,
+			"#defaults", "get", 1, mero_pass);
+	if (e != NULL) {
+		fprintf(stderr, "get: internal error: %s\n", e);
+		free(e);
+		exit(2);
+	} else if (strncmp(buf, "OK\n", 3) != 0) {
+		fprintf(stderr, "get: %s\n", buf);
+		free(buf);
+		exit(1);
+	}
+	readPropsBuf(defprops, buf + 3);
+	free(buf);
+
 	/* name = 15 */
 	/* prop = 8 */
 	/* source = 7 */
@@ -1219,28 +1210,53 @@ command_get(int argc, char *argv[])
 		twidth = 6;
 	value = malloc(sizeof(char) * twidth + 1);
 	printf("     name          prop     source           value\n");
-	while ((p = strtok(property, ",")) != NULL) {
-		property = NULL;
-		stats = orig;
-		while (stats != NULL) {
+	stats = orig;
+	while (stats != NULL) {
+		e = control_send(&buf, mero_host, mero_port,
+				stats->dbname, "get", 1, mero_pass);
+		if (e != NULL) {
+			fprintf(stderr, "get: internal error: %s\n", e);
+			free(e);
+			exit(2);
+		} else if (strncmp(buf, "OK\n", 3) != 0) {
+			fprintf(stderr, "get: %s\n", buf);
+			free(buf);
+			exit(1);
+		}
+		readPropsBuf(props, buf + 3);
+		free(buf);
+
+		if (propall == 1) {
+			kv = findConfKey(props, "type");
+			if (kv != NULL && kv->val != NULL &&
+					strcmp(kv->val, "mfunnel") == 0)
+			{
+				snprintf(vbuf, sizeof(vbuf), "name,type,mfunnel,shared");
+			} else {
+				size_t off = 0;
+				kv = props;
+				off += snprintf(vbuf, sizeof(vbuf), "name");
+				while (kv->key != NULL) {
+					if (strcmp(kv->key, "mfunnel") != 0 &&
+							strcmp(kv->key, "type") != 0)
+						off += snprintf(vbuf + off, sizeof(vbuf) - off,
+								",%s", kv->key);
+					kv++;
+				}
+			}
+		} else {
+			snprintf(vbuf, sizeof(vbuf), "%s", property);
+		}
+		buf = vbuf;
+
+		while ((p = strtok(buf, ",")) != NULL) {
+			buf = NULL;
+
 			/* special virtual case */
 			if (strcmp(p, "name") == 0) {
 				source = "-";
 				abbreviateString(value, stats->dbname, twidth);
 			} else {
-				e = control_send(&buf, mero_host, mero_port,
-						stats->dbname, "get", 1, mero_pass);
-				if (e != NULL) {
-					fprintf(stderr, "get: internal error: %s\n", e);
-					free(e);
-					exit(2);
-				} else if (strncmp(buf, "OK\n", 3) != 0) {
-					fprintf(stderr, "get: %s\n", buf);
-					free(buf);
-					exit(1);
-				}
-				readPropsBuf(props, buf + 3);
-				free(buf);
 				kv = findConfKey(props, p);
 				if (kv == NULL) {
 					fprintf(stderr, "get: no such property: %s\n", p);
@@ -1257,12 +1273,15 @@ command_get(int argc, char *argv[])
 					abbreviateString(value, kv->val, twidth);
 				}
 			}
+
 			printf("%-15s  %-8s  %-7s  %s\n",
 					stats->dbname, p, source, value);
-			freeConfFile(props);
-			stats = stats->next;
 		}
+
+		freeConfFile(props);
+		stats = stats->next;
 	}
+
 
 	free(value);
 	msab_freeStatus(&orig);
@@ -1272,7 +1291,70 @@ command_get(int argc, char *argv[])
 static void
 command_create(int argc, char *argv[])
 {
-	simple_command(argc, argv, "create", "created database in maintenance mode", 0);
+	int i;
+	char *mfunnel = NULL;
+	sabdb *orig = NULL;
+	sabdb *stats = NULL;
+
+	if (argc == 1) {
+		/* print help message for this command */
+		command_help(argc + 1, &argv[-1]);
+		exit(1);
+	}
+
+	/* walk through the arguments and hunt for "options" */
+	for (i = 1; i < argc; i++) {
+		if (strcmp(argv[i], "--") == 0) {
+			argv[i] = NULL;
+			break;
+		}
+		if (argv[i][0] == '-') {
+			if (argv[i][1] == 'm') {
+				if (argv[i][2] != '\0') {
+					mfunnel = &argv[i][2];
+					argv[i] = NULL;
+				} else if (i + 1 < argc && argv[i + 1][0] != '-') {
+					argv[i] = NULL;
+					mfunnel = argv[++i];
+					argv[i] = NULL;
+				} else {
+					fprintf(stderr, "create: -m needs an argument\n");
+					command_help(2, &argv[-1]);
+					exit(1);
+				}
+			} else {
+				fprintf(stderr, "create: unknown option: %s\n", argv[i]);
+				command_help(argc + 1, &argv[-1]);
+				exit(1);
+			}
+		}
+	}
+
+	for (i = 1; i < argc; i++) {
+		if (argv[i] != NULL) {
+			/* maintain input order */
+			if (orig == NULL) {
+				stats = orig = malloc(sizeof(sabdb));
+			} else {
+				stats = stats->next = malloc(sizeof(sabdb));
+			}
+			memset(stats, 0, sizeof(sabdb));
+			stats->dbname = strdup(argv[i]);
+		}
+	}
+
+	if (mfunnel != NULL) {
+		size_t len = strlen("create mfunnel=") + strlen(mfunnel) + 1;
+		char *cmd = malloc(len);
+		snprintf(cmd, len, "create mfunnel=%s", mfunnel);
+		simple_argv_cmd(argv[0], orig, cmd, 
+				"created multiplex-funnel in maintenance mode", NULL);
+		free(cmd);
+	} else {
+		simple_argv_cmd(argv[0], orig, "create", 
+				"created database in maintenance mode", NULL);
+	}
+	msab_freeStatus(&orig);
 }
 
 static void
