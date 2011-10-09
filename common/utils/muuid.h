@@ -17,39 +17,10 @@
  * All Rights Reserved.
  */
 
-#ifndef _SEEN_UTILS_H
-#define _SEEN_UTILS_H 1
+#ifndef _SEEN_MUUID_H
+#define _SEEN_MUUID_H 1
 
-#include <stdio.h>  /* FILE* */
-#include <sys/types.h>   /* time_t */
-
-enum valtype {
-	INVALID = 0,
-	INT,
-	BOOLEAN,
-	STR,
-	MURI,
-	OTHER
-};
-
-typedef struct _confkeyval {
-	char *key;
-	char *val;
-	int ival;
-	enum valtype type;
-} confkeyval;
-
-void readConfFile(confkeyval *list, FILE *cnf);
-void freeConfFile(confkeyval *list);
-confkeyval *findConfKey(confkeyval *list, char *key);
-char *getConfVal(confkeyval *list, char *key);
-int getConfNum(confkeyval *list, char *key);
-char *setConfVal(confkeyval *ckv, char *val);
-void secondsToString(char *buf, time_t t, int longness);
-void abbreviateString(char *ret, const char *in, size_t width);
-void generateSalt(char *buf, unsigned int len);
-char *generatePassphraseFile(char *path);
-void sleep_ms(size_t ms);
+char *generateUUID(void);
 
 #endif
 

@@ -23,10 +23,15 @@ INCLUDES = $(openssl_CFLAGS)
 
 lib_mutils  =  {
 	NOINST
-	SOURCES = mutils.c mutils.h
+	SOURCES = mutils.h mutils.c
 }
 
 lib_mcrypt = {
 	NOINST
 	SOURCES = mcrypt.h mcrypt.c
+}
+
+lib_muuid = {
+	NOINST
+	SOURCES = muuid.h muuid.c
 }

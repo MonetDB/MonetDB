@@ -33,6 +33,7 @@ bin_monetdb = {
 		   ../../../common/stream/libstream \
 		   ../../../common/utils/libmutils \
 		   ../../../common/utils/libmcrypt \
+		   ../../../common/utils/libmuuid \
 		   $(UUID_LIBS) \
 		   $(openssl_LIBS) \
 		   $(curl_LIBS) \
