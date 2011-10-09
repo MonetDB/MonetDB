@@ -403,7 +403,7 @@ controlRunner(void *d)
 					pthread_mutex_lock(&_mero_topdp_lock);
 					dp = _mero_topdp->next; /* don't need the console/log */
 					while (dp != NULL) {
-						if (strcmp(dp->dbname, q) == 0) {
+						if (dp->type == MERODB && strcmp(dp->dbname, q) == 0) {
 							if (strcmp(p, "stop") == 0) {
 								terminateProcess(dp);
 								Mfprintf(_mero_ctlout, "%s: stopped "

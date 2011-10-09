@@ -336,6 +336,7 @@ forkMserver(char *database, sabdb** stats, int force)
 		dp->err = pfde[0];
 		close(pfde[1]);
 		dp->next = NULL;
+		dp->type = MERODB;
 		dp->pid = pid;
 		dp->dbname = strdup(database);
 
