@@ -1063,7 +1063,10 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 		len[i] = mapi_get_len(hdl, i);
 		if (len[i] == 0 &&
 		    ((s = mapi_get_type(hdl, i)) == NULL ||
-		     strcmp(s, "varchar") != 0)) {
+		     (strcmp(s, "varchar") != 0 &&
+		      strcmp(s, "clob") != 0 &&
+		      strcmp(s, "char") != 0 &&
+		      strcmp(s, "str") != 0))) {
 			/* no table width known, use maximum, rely on
 			 * squeezing later on to fix it to whatever is
 			 * available; note that for a column type of
