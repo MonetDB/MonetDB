@@ -861,6 +861,7 @@ main(int argc, char *argv[])
 
 	_mero_topdp = &dpcons;
 	_mero_topdp->pid = 0;
+	_mero_topdp->type = MERO;
 	_mero_topdp->dbname = NULL;
 
 	/* where should our msg output go to? */
@@ -902,6 +903,7 @@ main(int argc, char *argv[])
 	close(pfd[1]);
 
 	d->pid = getpid();
+	d->type = MERO;
 	d->dbname = "merovingian";
 
 	/* separate entry for the neighbour discovery service */
@@ -921,6 +923,7 @@ main(int argc, char *argv[])
 	d->err = pfd[0];
 	_mero_discerr = fdopen(pfd[1], "a");
 	d->pid = getpid();
+	d->type = MERO;
 	d->dbname = "discovery";
 	d->next = NULL;
 
@@ -941,6 +944,7 @@ main(int argc, char *argv[])
 	d->err = pfd[0];
 	_mero_ctlerr = fdopen(pfd[1], "a");
 	d->pid = getpid();
+	d->type = MERO;
 	d->dbname = "control";
 	d->next = NULL;
 

@@ -1,6 +1,10 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
+* Sun Oct  9 2011 Fabian Groffen <fabian@cwi.nl>
+- Resolved problem where monetdbd would terminate abnormally when
+  databases named 'control', 'discovery' or 'merovingian' were stopped.
+
 * Fri Oct  7 2011 Fabian Groffen <fabian@cwi.nl>
 - monetdbd get status now also reports the version of the running monetdbd
 

@@ -54,9 +54,15 @@ char *newErr(_In_z_ _Printf_format_string_ const char *fmt, ...)
 void terminateProcess(void *p);
 void logFD(int fd, char *type, char *dbname, long long int pid, FILE *stream);
 
+typedef enum _mtype {
+	MERO = 1,
+	MERODB,
+} mtype;
+
 typedef struct _dpair {
 	int out;          /* where to read stdout messages from */
 	int err;          /* where to read stderr messages from */
+	mtype type;       /* type of process */
 	pid_t pid;        /* this process' id */
 	char *dbname;     /* the database that this server serves */
 	struct _dpair* next;
