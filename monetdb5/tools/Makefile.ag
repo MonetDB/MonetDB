@@ -32,7 +32,8 @@ lib_monetdb5 = {
 		../../clients/mapilib/libmapi \
 		../../common/stream/libstream \
 		../../common/utils/libmcrypt \
-		$(curl_LIBS) \
+		../../common/utils/libmuuid \
+		$(UUID_LIBS) $(curl_LIBS) \
 		$(MATH_LIBS) $(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) \
 		$(DL_LIBS) $(READLINE_LIBS) $(openssl_LIBS) $(pcre_LIBS) \
 		$(LTLIBICONV) $(zlib_LIBS) $(libxml2_LIBS)

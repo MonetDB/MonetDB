@@ -44,6 +44,7 @@
 
 #include "msabaoth.h"
 #include "mutils.h"
+#include "muuid.h"
 
 #if defined(_MSC_VER) && _MSC_VER >= 1400
 #define close _close
@@ -54,6 +55,8 @@
 char *_sabaoth_internal_dbfarm = NULL;
 /** the database which is "active" */
 char *_sabaoth_internal_dbname = NULL;
+/** identifier of the current process */
+char *_sabaoth_internal_uuid = NULL;
 
 /**
  * Retrieves the dbfarm path plus an optional extra component added
@@ -114,6 +117,12 @@ msab_init(char *dbfarm, char *dbname)
 		free(_sabaoth_internal_dbfarm);
 	if (_sabaoth_internal_dbname != NULL)
 		free(_sabaoth_internal_dbname);
+
+	/* this UUID is supposed to be unique per-process, we use it lateron
+	 * to determine if a database is (started by) the current process,
+	 * since locking always succeeds for the same process */
+	if (_sabaoth_internal_uuid == NULL)
+		_sabaoth_internal_uuid = generateUUID();
 
 	len = strlen(dbfarm);
 	_sabaoth_internal_dbfarm = strdup(dbfarm);
@@ -348,13 +357,19 @@ msab_wildRetreat(void)
 		return(tmp);
 	unlink(path);
 
+	if ((tmp = getDBPath(&path, PATHLENGTH, _sabaoth_internal_uuid)) != NULL)
+		return(tmp);
+	unlink(path);
+
 	return(NULL);
 }
 
 #define UPLOGFILE ".uplog"
 /**
  * Writes a start attempt to the sabaoth start/stop log.  Examination of
- * the log at a later stage reveals crashes of the server.
+ * the log at a later stage reveals crashes of the server.  In addition
+ * to updating the uplog file, it also leaves the unique signature of
+ * the current process behind.
  */
 char *
 msab_registerStart(void)
@@ -378,13 +393,23 @@ msab_registerStart(void)
 		fprintf(f, LLFMT "\t", (lng)time(NULL));
 		(void)fflush(f);
 		(void)fclose(f);
-		return(NULL);
 	} else {
 		char buf[PATHLENGTH];
 		snprintf(buf, sizeof(buf), "failed to open file: %s (%s)",
 				strerror(errno), path);
 		return(strdup(buf));
 	}
+
+	/* we treat errors here (albeit being quite unlikely) as non-fatal,
+	 * since they will cause wrong state information in the worst case
+	 * lateron */
+	if ((tmp = getDBPath(&path, PATHLENGTH, _sabaoth_internal_uuid)) != NULL) {
+		free(tmp);
+		return(NULL);
+	}
+	fclose(fopen(path, "w"));
+
+	return(NULL);
 }
 
 /**
@@ -414,6 +439,12 @@ msab_registerStop(void)
 				strerror(errno), path);
 		return(strdup(buf));
 	}
+
+	/* remove server signature, it's no problem when it's left behind,
+	 * but for the sake of keeping things clean ... */
+	if ((tmp = getDBPath(&path, PATHLENGTH, _sabaoth_internal_uuid)) != NULL)
+		return(tmp);
+	unlink(path);
 }
 
 /**
@@ -543,21 +574,38 @@ msab_getStatus(sabdb** ret, char *dbname)
 			(void)fclose(f);
 		}
 
+
 		/* check the state of the server by looking at its gdk lock:
 		 * - if we can lock it, the server has crashed or isn't running
 		 * - if we can't open it because it's locked, the server is
 		 *   running
 		 * - to distinguish between a crash and proper shutdown, consult
 		 *   the uplog
+		 * - one exception to all above; if this is the same process, we
+		 *   cannot lock (it always succeeds), hence, if we have the
+		 *   same signature, we assume running if the uplog states so.
 		 */
-		snprintf(buf, sizeof(buf), "%s/%s/%s", path, e->d_name, ".gdk_lock");
-		if (_sabaoth_internal_dbname != NULL &&
-				strcmp(_sabaoth_internal_dbname, e->d_name) == 0)
+		snprintf(buf, sizeof(buf), "%s/%s/%s", path, e->d_name,
+				_sabaoth_internal_uuid);
+		if (stat(buf, &statbuf) != -1) {
+			/* database has the same process signature as ours, which
+			 * means, it must be us, rely on the uplog state */
+			snprintf(log, sizeof(log), "%s/%s/%s", path, e->d_name, UPLOGFILE);
+			if ((f = fopen(log, "r")) != NULL) {
+				(void)fseek(f, -1, SEEK_END);
+				if (fread(data, 1, 1, f) != 1) {
+					/* the log is empty, assume no crash */
+					sdb->state = SABdbInactive;
+				} else if (data[0] == '\t') {
+					sdb->state = SABdbRunning;
+				} else { /* should be \n */
+					sdb->state = SABdbInactive;
+				}
+				(void)fclose(f);
+			}
+		} else if ((snprintf(buf, sizeof(buf), "%s/%s/%s", path, e->d_name, ".gdk_lock") > 0) & /* no typo */
+				((fd = MT_lockf(buf, F_TLOCK, 4, 1)) == -2))
 		{
-			/* if we are the mserver that is running this database,
-			 * don't touch the lock! */
-			sdb->state = SABdbRunning;
-		} else if ((fd = MT_lockf(buf, F_TLOCK, 4, 1)) == -2) {
 			/* Locking failed; this can be because the lockfile couldn't
 			 * be created.  Probably there is no Mserver running for
 			 * that case also.
@@ -572,7 +620,7 @@ msab_getStatus(sabdb** ret, char *dbname)
 			if ((f = fopen(log, "r")) != NULL) {
 				(void)fseek(f, -1, SEEK_END);
 				if (fread(data, 1, 1, f) != 1) {
-					/* the log is corrupt/wrong, assume no crash */
+					/* the log is empty, assume no crash */
 					sdb->state = SABdbInactive;
 				} else if (data[0] == '\n') {
 					sdb->state = SABdbInactive;
@@ -580,21 +628,17 @@ msab_getStatus(sabdb** ret, char *dbname)
 					sdb->state = SABdbCrashed;
 				}
 				(void)fclose(f);
-			} else {
-				/* no uplog file? assume no crash */
-				sdb->state = SABdbInactive;
-			}
+			} /* cannot happen, we checked it before */
 
 			/* release the lock */
 			close(fd);
 		}
-		snprintf(buf, sizeof(buf), "%s/%s/%s", path, e->d_name, MAINTENANCEFILE);
-		f = fopen(buf, "r");
-		if (f != NULL) {
-			(void)fclose(f);
-			sdb->locked = 1;
-		} else {
+		snprintf(buf, sizeof(buf), "%s/%s/%s", path, e->d_name,
+				MAINTENANCEFILE);
+		if (stat(buf, &statbuf) == -1) {
 			sdb->locked = 0;
+		} else {
+			sdb->locked = 1;
 		}
 	}
 	(void)closedir(d);
