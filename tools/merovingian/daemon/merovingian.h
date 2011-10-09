@@ -57,7 +57,7 @@ void logFD(int fd, char *type, char *dbname, long long int pid, FILE *stream);
 
 typedef enum _mtype {
 	MERO = 1,
-	MERODB,
+	MERODB
 } mtype;
 
 typedef struct _dpair {
