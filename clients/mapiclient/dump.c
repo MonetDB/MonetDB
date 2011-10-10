@@ -1900,17 +1900,18 @@ void
 dump_version(Mapi mid, stream *toConsole, const char *prefix)
 {
 	MapiHdl hdl;
-	char *dbname = NULL, m5ver[24];
+	char *dbname = NULL, *dbver = NULL, *dbrel = NULL;
 	char *name, *val;
 
 	if ((hdl = mapi_query(mid,
 			      "SELECT \"name\", \"value\" "
 			      "FROM sys.env() AS env "
-			      "WHERE \"name\" IN ('gdk_dbname', 'monet_version')")) == NULL ||
-	    mapi_error(mid))
+			      "WHERE \"name\" IN ('gdk_dbname', "
+				       "'monet_version', "
+					   "'monet_release')")) == NULL ||
+			mapi_error(mid))
 		goto cleanup;
 
-	m5ver[0] = '\0';
 	while ((mapi_fetch_row(hdl)) != 0) {
 		name = mapi_fetch_field(hdl, 0);
 		val = mapi_fetch_field(hdl, 1);
@@ -1920,18 +1921,30 @@ dump_version(Mapi mid, stream *toConsole, const char *prefix)
 
 		if (name != NULL && val != NULL) {
 			if (strcmp(name, "gdk_dbname") == 0)
-				dbname = strdup(val);
+				dbname = *val == '\0' ? NULL : strdup(val);
 			else if (strcmp(name, "monet_version") == 0)
-				snprintf(m5ver, sizeof(m5ver), "%s", val);
+				dbver = *val == '\0' ? NULL : strdup(val);
+			else if (strcmp(name, "monet_release") == 0)
+				dbrel = *val == '\0' ? NULL : strdup(val);
 		}
 	}
-	if (dbname != NULL && *dbname != '\0' && m5ver[0] != '\0')
-		mnstr_printf(toConsole, "%s MonetDB v%s, '%s'\n",
-			     prefix, m5ver, dbname);
+	if (dbname != NULL && dbver != NULL) {
+		mnstr_printf(toConsole, "%s MonetDB v%s%s%s%s, '%s'\n",
+			     prefix,
+				 dbver,
+				 dbrel != NULL ? " (" : "",
+				 dbrel != NULL ? dbrel : "",
+				 dbrel != NULL ? ")" : "",
+				 dbname);
+	}
 
   cleanup:
 	if (dbname != NULL)
 		free(dbname);
+	if (dbver != NULL)
+		free(dbver);
+	if (dbrel != NULL)
+		free(dbrel);
 	if (hdl)
 		mapi_close_handle(hdl);
 }
