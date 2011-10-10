@@ -1,145 +1,378 @@
 stdout of test 'bram` in directory 'test/ADT2006` itself:
 
 
-# 11:56:15 >  
-# 11:56:15 >   mserver5 "--config=/ufs/goncalve/scratch/MonetDB/stable/debug/MonetDB5/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/stable/debug/MonetDB5//lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/stable/debug/MonetDB5//lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/stable/debug/MonetDB5//lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/stable/debug/MonetDB5//var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/stable/debug/MonetDB5//var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=30364 --set xrpc_port=49769 --set monet_prompt= --trace  "--dbname=mTests_src_test_ADT2006" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
-# 11:56:15 >  
+# 14:44:20 >  
+# 14:44:20 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "gdk_dbfarm=/ufs/sjoerd/Monet-candidate/var/MonetDB" "--set" "mapi_open=true" "--set" "mapi_port=33320" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbname=mTests_test_ADT2006" "--set" "mal_listing=0"
+# 14:44:20 >  
 
-# MonetDB server v5.6.1, based on kernel v1.24.1
-# Serving database 'mTests_src_test_ADT2006'
+# MonetDB 5 server v11.5.4
+# This is an unreleased version
+# Serving database 'mTests_test_ADT2006', using 4 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Copyright (c) 1993-2008 CWI, all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://alviss.ins.cwi.nl:30364/
-# MonetDB/SQL module v2.24.1 loaded
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://ottar.ins.cwi.nl:33320/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
 
 Ready.
-#function user.main():void;
-#    clients.quit();
-#end main;
 
+# 14:44:21 >  
+# 14:44:21 >  "mclient" "-lsql" "-ftest" "-i" "-e" "--host=ottar" "--port=33320"
+# 14:44:21 >  
 
-# 16:54:49 >  
-# 16:54:49 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=37395  < bram.sql
-# 16:54:49 >  
-
+#CREATE TABLE victim (
+#name VARCHAR(50) PRIMARY KEY NOT NULL,
+#date_of_birth VARCHAR(10),
+#length CHAR(8),
+#eyes CHAR(20),
+#hair VARCHAR(30),
+#date DATE,
+#location VARCHAR(250),
+#picture VARCHAR(150),
+#features TEXT,
+#survived BOOLEAN DEFAULT FALSE
+#);
+#CREATE TABLE suspect (
+#name VARCHAR(50) PRIMARY KEY NOT NULL,
+#picture VARCHAR(150),
+#notes TEXT
+#);
+#CREATE TABLE inspector (
+#name VARCHAR(50) PRIMARY KEY NOT NULL,
+#picture VARCHAR(150)
+#);
+#CREATE TABLE witness (
+#name VARCHAR(50),
+#victim VARCHAR(50),
+#time VARCHAR(50),
+#appearence TEXT,
+#diction TEXT,
+#CONSTRAINT "witness_pkey" PRIMARY KEY (name, victim),
+#CONSTRAINT "witness_victim_fkey" FOREIGN KEY (victim) REFERENCES victim (name) ON UPDATE CASCADE ON DELETE CASCADE
+#);
+#CREATE TABLE doctor (
+#name VARCHAR(50) NOT NULL,
+#victim VARCHAR(50) NOT NULL,
+#CONSTRAINT "doctor_pkey" PRIMARY KEY (name, victim),
+#CONSTRAINT "doctor_victim_fkey" FOREIGN KEY (victim) REFERENCES victim (name) ON UPDATE CASCADE ON DELETE CASCADE
+#);
+#CREATE TABLE event (
+#id INTEGER AUTO_INCREMENT,
+#victim VARCHAR(50) NOT NULL,
+#time VARCHAR(50),
+#description TEXT,
+#CONSTRAINT "event_pkey" PRIMARY KEY (id, victim),
+#CONSTRAINT "event_victim_fkey" FOREIGN KEY (victim) REFERENCES victim (name) ON UPDATE CASCADE ON DELETE CASCADE
+#);
+#CREATE TABLE suspect_victim (
+#suspect VARCHAR(50) NOT NULL,
+#victim VARCHAR(50) NOT NULL,
+#CONSTRAINT "suspect_victim_pkey" PRIMARY KEY (suspect, victim),
+#CONSTRAINT "suspect_victim_victim_fkey" FOREIGN KEY (victim) REFERENCES victim (name) ON UPDATE CASCADE ON DELETE CASCADE,
+#CONSTRAINT "suspect_suspect_victim_fkey" FOREIGN KEY (suspect) REFERENCES suspect (name) ON UPDATE CASCADE ON DELETE CASCADE
+#);
+#CREATE TABLE inspector_victim (
+#inspector VARCHAR(50) NOT NULL,
+#victim VARCHAR(50) NOT NULL,
+#CONSTRAINT "inspector_victim_pkey" PRIMARY KEY (inspector, victim),
+#CONSTRAINT "inspector_victim_victim_fkey" FOREIGN KEY (victim) REFERENCES victim (name) ON UPDATE CASCADE ON DELETE CASCADE,
+#CONSTRAINT "inspector_victim_inspector_fkey" FOREIGN KEY (inspector) REFERENCES inspector (name) ON UPDATE CASCADE ON DELETE CASCADE
+#);
+#INSERT INTO inspector VALUES ('Inspector Frederick Abberline', 'http://www.casebook.org/images/police_abb1.jpg');
 [ 1	]
+#INSERT INTO inspector VALUES ('Sir Robert Anderson', 'http://www.casebook.org/images/police_and.jpg');
 [ 1	]
+#INSERT INTO inspector VALUES ('Inspector Walter Andrews', 'http://www.casebook.org/images/police_walter_andrews.jpg');
 [ 1	]
+#INSERT INTO inspector VALUES ('Superintendent Thomas Arnold', 'http://www.casebook.org/images/police_thomas_arnold.jpg');
 [ 1	]
+#INSERT INTO inspector VALUES ('Detective Constable Walter Dew', 'http://www.casebook.org/images/police_dew.jpg');
 [ 1	]
+#INSERT INTO inspector VALUES ('Detective Sergeant George Godley', 'http://www.casebook.org/images/police_god.jpg');
 [ 1	]
+#INSERT INTO inspector VALUES ('P.C. James Harvey', 'http://www.casebook.org/images/police_sag.jpg');
 [ 1	]
+#INSERT INTO inspector VALUES ('Inspector Joseph Henry Helson', 'http://www.casebook.org/images/police_helson.jpg');
 [ 1	]
+#INSERT INTO inspector VALUES ('Chief Inspector John George', 'http://www.casebook.org/images/police_lc.jpg');
 [ 1	]
+#INSERT INTO inspector VALUES ('Sir Melville Macnaghten', 'http://www.casebook.org/images/police_mac.jpg');
 [ 1	]
+#INSERT INTO inspector VALUES ('James Monro', 'http://www.casebook.org/images/police_mon.jpg');
 [ 1	]
+#INSERT INTO inspector VALUES ('Chief Inspector Henry Moore', 'http://www.casebook.org/images/police_henry_moore.jpg');
 [ 1	]
+#INSERT INTO inspector VALUES ('P.C. John Neil', 'http://www.casebook.org/images/police_john_neil.jpg');
 [ 1	]
+#INSERT INTO inspector VALUES ('Inspector Edmund Reid', 'http://www.casebook.org/images/police_edmund_reid.jpg');
 [ 1	]
+#INSERT INTO inspector VALUES ('Detective Constable Robert Sagar', 'http://www.casebook.org/images/police_sag.jpg');
 [ 1	]
+#INSERT INTO inspector VALUES ('Major Henry Smith', 'http://www.casebook.org/images/police_smi.jpg');
 [ 1	]
+#INSERT INTO inspector VALUES ('P.C. William Smith', 'http://www.casebook.org/images/police_william_smith.jpg');
 [ 1	]
+#INSERT INTO inspector VALUES ('Inspector John Spratling', 'http://www.casebook.org/images/police_sag.jpg');
 [ 1	]
+#INSERT INTO inspector VALUES ('Chief Inspector Donald Swanson', 'http://www.casebook.org/images/police_sut.jpg');
 [ 1	]
+#INSERT INTO inspector VALUES ('Sergeant William Thick', 'http://www.casebook.org/images/police_thi.jpg');
 [ 1	]
+#INSERT INTO inspector VALUES ('P.C. Ernest Thompson', 'http://www.casebook.org/images/police_ernest_thompson.jpg');
 [ 1	]
+#INSERT INTO inspector VALUES ('Sir Charles Warren', 'http://www.casebook.org/images/police_war.jpg');
 [ 1	]
+#INSERT INTO inspector VALUES ('P.C. Edward Watkins', 'http://www.casebook.org/images/police_edward_watkins.jpg');
 [ 1	]
+#INSERT INTO inspector VALUES ('Sergeant Stephen White', 'http://www.casebook.org/images/police_steven_white.jpg');
 [ 1	]
+#INSERT INTO inspector VALUES ('Chief Constable Adolphus Frederick Williamson', 'http://www.casebook.org/images/police_frederick_williamson.jpg');
 [ 1	]
+#INSERT INTO inspector VALUES ('P.C. Neil', 'http://www.casebook.org/images/neil.jpg');
 [ 1	]
+#INSERT INTO suspect VALUES ('Prince Albert Victor', 'http://www.casebook.org/images/ed1890b.jpg', 'one of the most famous suspects');
 [ 1	]
+#INSERT INTO suspect VALUES ('Joseph Barnett', 'http://www.casebook.org/images/barnett2.jpg', 'was not described as a Ripper suspect until the 1970s');
 [ 1	]
+#INSERT INTO suspect VALUES ('Alfred Napier Blanchard', 'http://www.casebook.org/images/suspect_lodge.jpg', 'made a false confession');
 [ 1	]
+#INSERT INTO suspect VALUES ('William Henry Bury', 'http://www.casebook.org/images/whbury.jpg', 'Police at the time investigated the matter but did not seem to consider Bury a viable suspect');
 [ 1	]
+#INSERT INTO suspect VALUES ('Lewis Carroll', 'http://www.casebook.org/images/suspect_carroll.jpg', 'a very unlikely suspect');
 [ 1	]
+#INSERT INTO suspect VALUES ('David Cohen', 'http://www.casebook.org/images/suspect_lodge.jpg', 'a poor Polish Jew, living in Whitechapel and who had "homocidal tendensies and a great hatred of women", and was confined to a lunatic asylum at the right time for the murders to stop and died shortly afterwards');
 [ 1	]
+#INSERT INTO suspect VALUES ('Dr. Thomas Neill Cream', 'http://www.casebook.org/suspects/cream.html', 'did commit murders, but by poisoning');
 [ 1	]
+#INSERT INTO suspect VALUES ('Frederick Bailey Deeming', 'http://www.casebook.org/images/suspect_deem.jpg', 'The only two links he may have had with the Whitechapel murders were (1) his insanity and (2) his method of killing his family');
 [ 1	]
+#INSERT INTO suspect VALUES ('Montague John Druitt', 'http://www.casebook.org/images/suspect_druitt.jpg', 'He is considered by many to be the number one suspect in the case, yet there is little evidence');
 [ 1	]
+#INSERT INTO suspect VALUES ('Fogelma', 'http://www.casebook.org/images/suspect_lodge.jpg', 'no outside evidence to corroborate the story told by the Empire News');
 [ 1	]
+#INSERT INTO suspect VALUES ('George Hutchinson (Br.)', 'http://www.casebook.org/images/suspect_lodge.jpg', 'Police at the time interviewed him but did not seem to consider him a suspect');
 [ 1	]
+#INSERT INTO suspect VALUES ('Mrs. Mary Pearcey', 'http://www.casebook.org/images/suspect_jill.jpg', 'Not very likely "Jill the Ripper"-theory, first published in 1939');
 [ 1	]
+#INSERT INTO suspect VALUES ('James Kelly', 'http://www.casebook.org/images/suspect_jkell.jpg', 'there are some reasons in favour of and some against suspecting him');
 [ 1	]
+#INSERT INTO suspect VALUES ('Severin Klosowski (George Chapman)', 'http://www.casebook.org/images/suspect_klos.jpg', 'there are some reasons in favour of and some against suspecting him');
 [ 1	]
+#INSERT INTO suspect VALUES ('Aaron Kosminski', 'http://www.casebook.org/images/suspect_kosm.jpg', 'According to Anderson and Swanson, identified by a witness as the Ripper, but no charges were brought against him due to the witness\'s reluctance to testify against "a fellow Jew." Known to have been insane.');
 [ 1	]
+#INSERT INTO suspect VALUES ('Jacob Levy', 'http://www.casebook.org/images/suspect_lodge.jpg', 'a butcher, and the cuts inflicted upon Catharine Eddowes were suggestive of a butcher');
 [ 1	]
+#INSERT INTO suspect VALUES ('The Lodger (Frances Tumblety)', 'http://www.casebook.org/images/suspect_lodge.jpg', 'a very strong suspect');
 [ 1	]
+#INSERT INTO suspect VALUES ('James Maybrick', 'http://www.casebook.org/images/suspect_may.jpg', 'The mysterious emergence of the so-called Maybrick journal in 1992 however, immediately thrust him to the forefront of credible Ripper suspects.');
 [ 1	]
+#INSERT INTO suspect VALUES ('Michael Ostrog', 'http://www.casebook.org/images/suspect_ost.jpg', 'Mentioned for the first time as a suspect in 1894,in 1994 a lot of information was published making him a prime suspect');
 [ 1	]
+#INSERT INTO suspect VALUES ('Dr. Alexander Pedachenko', 'http://www.casebook.org/images/suspect_lodge.jpg', 'may never have existed');
 [ 1	]
+#INSERT INTO suspect VALUES ('The Royal Conspiracy', 'http://www.casebook.org/images/suspec\'_royal.jpg', 'a fascinating tapestry of conspiracy involving virtually every person who has ever been a Ripper suspect plus a few new ones');
 [ 1	]
+#INSERT INTO suspect VALUES ('Walter Sickert', 'http://www.casebook.org/images/suspect_sickert.jpg', 'a valid suspect since the 1990s');
 [ 1	]
+#INSERT INTO suspect VALUES ('James Kenneth Stephen', 'http://www.casebook.org/images/suspect_jkstep.jpg', 'Known misogynist and lunatic but no connections with the East End');
 [ 1	]
+#INSERT INTO suspect VALUES ('R. D´Onston Stephenson', 'http://www.casebook.org/images/suspect_dons.jpg', 'Known to have had an extraordinary interest in the murders. Wrote numerous articles and letters on the matter. Resided in the East End.');
 [ 1	]
+#INSERT INTO suspect VALUES ('Alois Szemeredy', 'http://www.casebook.org/images/suspect_szemeredy.jpg', 'from Buenos Aires, suspected of the Jack the Ripper- and other murders');
 [ 1	]
+#INSERT INTO suspect VALUES ('Francis Thompson', 'http://www.casebook.org/images/suspect_thompson.jpg', 'At 29, Thompson was the right age to fit the Ripper descriptions, and we know he had some medical training. He was also said to carry a dissecting scalpel around with him, which he claimed he used to shave');
 [ 1	]
+#INSERT INTO suspect VALUES ('Frances Tumblety', 'http://www.casebook.org/images/suspect_tumb.jpg', 'There is a strong case to be made that he was indeed the Batty Street Lodger');
 [ 1	]
+#INSERT INTO suspect VALUES ('Nikolay Vasiliev', 'http://www.casebook.org/images/suspect_lodge.jpg', 'an elusive legend, which probably had some basis in reality, but was mostly embellished by the journalists who wrote it up');
 [ 1	]
+#INSERT INTO suspect VALUES ('Dr. John Williams', 'http://www.casebook.org/images/dr-john-williams.jpg', 'there is very little to suggest that he was Jack the Ripper');
 [ 1	]
+#INSERT INTO victim VALUES ('Mary Ann Walker', NULL, '5\'12"', 'brown', 'brown hair turning grey', '1888-08-31', 'Buck\'s Row by Charles Cross', 'http://www.casebook.org/images/victims_nichols.jpg', '
+#				five front teeth missing (Rumbelow); two bottom-one top
+#				front (Fido), her teeth are slightly discoloured. She is
+#				described as having small, delicate features with high
+#				cheekbones and grey eyes. She has a small scar on her
+#				forehead from a childhood injury.  She is described by
+#				Emily Holla
 [ 1	]
+#INSERT INTO victim VALUES ('Annie Chapman', NULL, '5\'', 'blue', 'dark brown, wavy', '1888-09-08', '29 Hanbury Street', 'http://www.casebook.org/images/victims_chapman.jpg', 'Pallid complexion, excellent teeth (possibly two missing in lower jaw), strongly built (stout), thick nose', NULL);
 [ 1	]
+#INSERT INTO victim VALUES ('Elisabeth Stride', NULL, '5\'5"', 'light gray', 'curly dark brown', '1888-09-30', 'Berner Street (Henriques Street today)', 'http://www.casebook.org/images/victims_stride.jpg', 'pale complexion, all the teeth in her lower left jaw were missing
+#			', NULL);
 [ 1	]
+#INSERT INTO victim VALUES ('Catherine Eddowes', NULL, '5\'', 'hazel', 'dark auburn', '1888-09-30', 'Mitre Square', 'http://www.casebook.org/images/eddowes1.jpg', 'She has a tattoo in blue ink on her left forearm "TC."', NULL);
 [ 1	]
+#INSERT INTO victim VALUES ('Mary Jane Kelly', NULL, '5\'7"', 'blue', 'blonde', '1888-11-09', '13 Miller\'s Court', 'http://www.casebook.org/images/victims_kelly.jpg', 'a fair complexion. "Said to have been possessed of considerable personal attractions." (McNaughten) She was last seen wearing a linsey frock and a red shawl pulled around her shoulders. She was bare headed. Detective Constable Walter Dew claimed to know Kelly well by sight and says that she was attractive and paraded around, usually in the co
 [ 1	]
+#INSERT INTO victim VALUES ('"Fairy Fay"', NULL, 'unknown', 'unknown', 'unknown', '1887-12-26', 'the alleys of Commercial Road', 'http://www.casebook.org/images/victims_fairy.jpg', 'not recorded
+#			', NULL);
 [ 1	]
+#INSERT INTO victim VALUES ('Annie Millwood', NULL, NULL, NULL, NULL, '1888-02-15', 'White\'s Row, Spitalfields', 'http://www.casebook.org/images/victims_millwood.jpg', NULL, NULL);
 [ 1	]
+#INSERT INTO victim VALUES ('Ada Wilson', NULL, NULL, NULL, NULL, '1888-03-28', '19 Maidman Street', 'http://www.casebook.org/images/victims_wilson.jpg', NULL, NULL);
 [ 1	]
+#INSERT INTO victim VALUES ('Emma Smith', NULL, NULL, NULL, NULL, '1888-03-03', 'just outside Taylor Brothers Mustard and Cocoa Mill which was on the north-east corner of the Wentworth/Old Montague Street crossroads', 'http://www.casebook.org/images/victims_smith.jpg', NULL, NULL);
 [ 1	]
+#INSERT INTO victim VALUES ('Martha Tabram', NULL, NULL, NULL, NULL, '1888-08-07', 'George Yard, a narrow north-south alley connecting Wentworth Street and Whitechapel High Street', 'http://www.casebook.org/images/victims_tabram.jpg', NULL, NULL);
 [ 1	]
+#INSERT INTO victim VALUES ('Whitehall Mystery', NULL, NULL, NULL, NULL, '1888-10-03', 'a vault soon to become a section of the cellar of New Scotland Yard', 'http://www.casebook.org/images/victims_whitehall.jpg', 'the headless and limbless torso of a woman', NULL);
 [ 1	]
+#INSERT INTO victim VALUES ('Annie Farmer', NULL, NULL, NULL, NULL, '1888-11-20', NULL, 'http://www.casebook.org/images/victims_farmer.jpg', NULL, NULL);
 [ 1	]
+#INSERT INTO victim VALUES ('Rose Mylett', NULL, NULL, NULL, NULL, '1888-12-20', 'the yard between 184 and 186 Poplar High Street, in Clarke\'s Yard', 'http://www.casebook.org/images/victims_mylett.jpg', NULL, NULL);
 [ 1	]
+#INSERT INTO victim VALUES ('Elisabeth Jackson', NULL, NULL, NULL, NULL, '1889-06-01', 'the Thames', 'http://www.casebook.org/images/victims_jackson.jpg', NULL, NULL);
 [ 1	]
+#INSERT INTO victim VALUES ('Alice MacKenzie', NULL, NULL, NULL, NULL, '1889-07-17', 'Castle Alley', 'http://www.casebook.org/images/victims_mckenzie.jpg', 'as a freckle-faced woman with a penchant for both smoke and drink. Her left thumb was also injured in what was no doubt some sort of industrial accident.', NULL);
 [ 1	]
+#INSERT INTO victim VALUES ('Pinchin Street Murder, possibly Lydia Hart', NULL, NULL, NULL, NULL, '1889-09-10', 'under a railway arch in Pinchin Street', 'http://www.casebook.org/images/victims_pinchin.jpg', 'body, missing both head and legs
+#			', NULL);
 [ 1	]
+#INSERT INTO victim VALUES ('Frances Coles', NULL, NULL, NULL, NULL, '1891-02-13', 'Swallow Gardens', 'http://www.casebook.org/images/victims_coles.jpg', 'is often heralded as the prettiest of all the murder victims
+#			', NULL);
 [ 1	]
+#INSERT INTO victim VALUES ('Carrie Brown', NULL, '5\'8"', NULL, NULL, '1891-04-24', 'the room of the East River Hotel on the Manhattan waterfront of New York, U.S.A.', 'http://www.casebook.org/images/victims_brown.jpg', NULL, NULL);
 [ 1	]
+#INSERT INTO witness VALUES ('Patrick Mulshaw', 'Mary Ann Walker', '4:00AM', 'suspicious', 'Watchman, old man, I believe somebody is murdered down the street.');
 [ 1	]
+#INSERT INTO witness VALUES ('Emily Walter', 'Annie Chapman', '2:00 A.M.', 'Foreigner aged 37, dark beard and moustache. Wearing short dark jacket, dark vest and trousers, black scarf and black felt hat.', 'Asked witness to enter the backyard of 29 Hanbury Street.');
 [ 1	]
+#INSERT INTO witness VALUES ('Elizabeth Long', 'Annie Chapman', '5:30 A.M.', 'Dark complexion, brown deerstalker hat, possibly a dark overcoat. Aged over 40, somewhat taller than Chapman. A foreigner of "shabby genteel."', '"Will you?"');
 [ 1	]
+#INSERT INTO witness VALUES ('J. Best and John Gardner', 'Elisabeth Stride', '11 P.M.', '5\'5" tall, English, black moustache, sandy eyelashes, weak, wearing a morning suit and a billycock hat.', '(none)');
 [ 1	]
+#INSERT INTO witness VALUES ('William Marshall', 'Elisabeth Stride', '11:45 P.M.', 'Small, black coat, dark trousers, middle aged, round cap with a small sailor-like peak. 5\'6", stout, appearance of a clerk. No moustache, no gloves, with a cutaway coat.', '"You would say anything but your prayers." Spoken mildly, with an English accent, and in an educated manner.');
 [ 1	]
+#INSERT INTO witness VALUES ('Matthew Packer', 'Elisabeth Stride', '12:00 - 12:30 P.M.', 'Aged 25-30, 5\'7", long black coat buttoned up, soft felt hawker hat, broad shoulders. Maybe a young clerk, frock coat, no gloves.', 'Quiet in speaking, with a rough voice');
 [ 1	]
+#INSERT INTO witness VALUES ('P.C. William Smith', 'Elisabeth Stride', '12:30 A.M.', 'Aged 28, cleanshaven and respectable appearance, 5\'7", hard dark felt deerstalker hat, dark clothes. Carrying a newspaper parcel 18 x 7 inches.', '(none)');
 [ 1	]
+#INSERT INTO witness VALUES ('James Brown', 'Elisabeth Stride', '12:45 A.M.', '5\'7", stout, long black diagonal coat which reached almost to his heels.', '(none)');
 [ 1	]
+#INSERT INTO witness VALUES ('Israel Schwartz', 'Elisabeth Stride', '12:45 A.M.', 'First man: Aged 30, 5\'5", brown haired, fair complexion, small brown moustache, full face, broad shoulders, dark jacket and trousers, black cap with peak. Second man: Aged 35, 5\'11", fresh complexion, light brown hair, dark overcoat, old black hard felt hat with a wide brim, clay pipe.', '"Lipski!"');
 [ 1	]
+#INSERT INTO witness VALUES ('Joseph Lawende', 'Catherine Eddowes', '1:30 A.M', 'Aged 30, 5\'7", fair complexion, brown moustache, salt-and-pepper coat, red neckerchief, grey peaked cloth cap. Sailor-like.', '(none)');
 [ 1	]
+#INSERT INTO witness VALUES ('James Blenkinsop', 'Catherine Eddowes', '1:30 A.M.', 'Well-dressed.', '"Have you seen a man and a woman go through here?"');
 [ 1	]
+#INSERT INTO witness VALUES ('Mary Ann Cox', 'Mary Jane Kelly', '11:45 P.M.', 'Short, stout man, shabbily dressed. Billycock hat, blotchy face, carroty moustache, holding quart can of beer', '(none)');
 [ 1	]
+#INSERT INTO witness VALUES ('George Hutchinson', 'Mary Jane Kelly', '2:00 A.M.', 'Aged 34-35, 5\'6", pale complexion, dark hair, slight moustached curled at each end, long dark coat, collar cuffs of astrakhan, dark jacket underneath. Light waistcoat, thick gold chain with a red stone seal, dark trousers an\' button boots, gaiters, white buttons. White shirt, black tie fastened with a horseshoe pin. Dark hat, turned down in middle. Red kerchief. Jewish and respectable in appearance.', '(none)');
 [ 1	]
+#INSERT INTO witness VALUES ('Ada Wilson herself', 'Ada Wilson', NULL, 'a man of about 30 years of age, 5ft 6ins in height, with a sunburnt face and a fair moustache. He was wearing a dark coat, light trousers and a wideawake hat.', '.');
 [ 1	]
+#INSERT INTO witness VALUES ('Rose Bierman', 'Ada Wilson', NULL, 'a young fair man with a light coat on', NULL);
 [ 1	]
+#INSERT INTO witness VALUES ('"Jumbo" Friday', 'Frances Coles', NULL, NULL, '.');
 [ 1	]
+#INSERT INTO witness VALUES ('Duncan Campnell', 'Frances Coles', NULL, NULL, '.');
 [ 1	]
+#INSERT INTO witness VALUES ('Mary Miniter', 'Carrie Brown', 'between 10:30 and 11:00', 'About 32 years of age. Five feet, eight inches tall. Slim build. Long, sharp nose. Heavy moustache of light color. Foreign in appearance, possibly German. Dark-brown cutaway coat. Black trousers. Old black derby hat with dented crown.', '.');
 [ 1	]
+#INSERT INTO inspector_victim VALUES ('P.C. Neil', 'Mary Ann Walker');
 [ 1	]
+#INSERT INTO inspector_victim VALUES ('Inspector Edmund Reid', '"Fairy Fay"');
 [ 1	]
+#INSERT INTO inspector_victim VALUES ('Inspector Edmund Reid', 'Martha Tabram');
 [ 1	]
+#INSERT INTO inspector_victim VALUES ('Inspector Edmund Reid', 'Alice MacKenzie');
 [ 1	]
+#INSERT INTO inspector_victim VALUES ('Sir Robert Anderson', 'Alice MacKenzie');
 [ 1	]
+#INSERT INTO inspector_victim VALUES ('James Monro', 'Alice MacKenzie');
 [ 1	]
+#INSERT INTO inspector_victim VALUES ('James Monro', 'Pinchin Street Murder, possibly Lydia Hart');
 [ 1	]
+#INSERT INTO inspector_victim VALUES ('Sir Melville Macnaghten', 'Pinchin Street Murder, possibly Lydia Hart');
 [ 1	]
+#INSERT INTO inspector_victim VALUES ('Chief Inspector Donald Swanson', 'Pinchin Street Murder, possibly Lydia Hart');
 [ 1	]
+#INSERT INTO inspector_victim VALUES ('Sir Melville Macnaghten', 'Frances Coles');
 [ 1	]
+#INSERT INTO suspect_victim VALUES ('Joseph Barnett',  'Mary Jane Kelly');
 [ 1	]
+#INSERT INTO suspect_victim VALUES ('William Henry Bury', 'Mary Ann Walker');
 [ 1	]
+#INSERT INTO suspect_victim VALUES ('David Cohen', 'Catherine Eddowes');
 [ 1	]
+#INSERT INTO suspect_victim VALUES ('Mrs. Mary Pearcey', 'Mary Jane Kelly');
 [ 1	]
+#INSERT INTO suspect_victim VALUES ('Severin Klosowski (George Chapman)', 'Carrie Brown');
 [ 1	]
+#INSERT INTO suspect_victim VALUES ('Jacob Levy', 'Catherine Eddowes');
 [ 1	]
+#INSERT INTO event(victim, time, description) VALUES ('Mary Ann Walker', '11:00 PM', '
+#					
+#					Polly is seen walking down Whitechapel Road, she is
+#					probably soliciting trade.
+#				');
 [ 1	]
+#INSERT INTO event(victim, time, description) VALUES ('Mary Ann Walker', '12:30 AM', '
+#					
+#					She is seen leaving the Frying Pan Public House at
+#					the corner of Brick Lane and Thrawl Street. She
+#					returns to the lodging house at 18 Thrawl Street.
+#				');
 [ 1	]
+#INSERT INTO event(victim, time, description) VALUES ('Mary Ann Walker', '1:20 or 1:40 AM', '
+#					
+#					She is told by the deputy to leave the kitchen of
+#					the lodging house because she could not produce her
+#					doss money. Polly, on leaving, asks him to save a
+#					bed for her. "Never Mind!" She says, "I\'ll soon get
+#					my doss money. See what a jolly bonnet I\'ve got
+#					now." She indicates a little black bonnet which no
+#					one had seen before.
+#				');
 [ 1	]
+#INSERT INTO event(victim, time, description) VALUES ('Mary Ann Walker', '2:30 AM', '
+#					
+#					She meets Emily Holland, who was returning from
+#					watching the Shadwell Dry Dock fire, outside of a
+#					grocer\'s shop on the corner of Whitechapel Road and
+#					Osborn Street. Polly had come down Osborn Street.
+#					Holland describes her as "very drunk and staggered
+#					against the wall." Holland calls attention to the
+#					church clock striking 2:30. Polly tells Emily that
+#					she had had her doss money t
 [ 1	]
+#INSERT INTO event(victim, time, description) VALUES ('Mary Ann Walker', '3:15 AM', '
+#					
+#					P.C. John Thain, 96J, passes down Buck\'s Row on his
+#					beat. He sees nothing unusual. At approximately the
+#					same time Sgt. Kerby passes down Bucks Row and
+#					reports the same.
+#				');
 [ 1	]
+#INSERT INTO event(victim, time, description) VALUES ('Mary Ann Walker', '3:40 or 3:45 AM', '
+#					
+#					Polly Nichols\' body is discovered in Buck\'s Row by
+#					Charles Cross, a carman, on his way to work at
+#					Pickfords in the City Road., and Robert Paul who
+#					joins him at his request. "Come and look over here,
+#					there\'s a woman." Cross calls to Paul. Cross
+#believes she is dead. Her hands and face are cold
+#					but the arms above the elbow and legs are still
+#					warm. Paul believes he feels a fa
 [ 1	]
+#select name, date from victim where survived = true;
 % sys.victim,	sys.victim # table_name
 % name,	date # name
 % varchar,	date # type
 % 0,	10 # length
+#(select 1 AS mon, count(v.name) AS murders from victim v where extract(month from v.date) = 1)
+#UNION ALL
+#(select 2 AS mon, count(v.name) AS murders from victim v where extract(month from v.date) = 2)
+#UNION ALL
+#(select 3 AS mon, count(v.name) AS murders from victim v where extract(month from v.date) = 3)
+#UNION ALL
+#(select 4 AS mon, count(v.name) AS murders from victim v where extract(month from v.date) = 4)
+#UNION ALL
+#(select 5 AS mon, count(v.name) AS murders from victim v where extract(month from v.date) = 
 % .,	.v # table_name
 % mon,	murders # name
 % tinyint,	wrd # type
@@ -156,6 +389,17 @@ Ready.
 [ 10,	1	]
 [ 11,	2	]
 [ 12,	2	]
+#(select 1 AS mon, v.name AS victim from victim v where extract(month from v.date) = 1)
+#UNION ALL
+#(select 2 AS mon, v.name AS victim from victim v where extract(month from v.date) = 2)
+#UNION ALL
+#(select 3 AS mon, v.name AS victim from victim v where extract(month from v.date) = 3)
+#UNION ALL
+#(select 4 AS mon, v.name AS victim from victim v where extract(month from v.date) = 4)
+#UNION ALL
+#(select 5 AS mon, v.name AS victim from victim v where extract(month from v.date) = 5)
+#UNION ALL
+#(select 6 AS mon, v.name AS
 % .,	.v # table_name
 % mon,	victim # name
 % tinyint,	varchar # type
@@ -178,6 +422,8 @@ Ready.
 [ 11,	"Annie Farmer"	]
 [ 12,	"\"Fairy Fay\""	]
 [ 12,	"Rose Mylett"	]
+#select v.name, count(w.name) as witness_count from victim v JOIN witness w ON (w.victim = v.name)
+#GROUP BY v.name HAVING count(w.name) >= 2;
 % sys.v,	sys.w # table_name
 % name,	witness_count # name
 % varchar,	wrd # type
@@ -188,6 +434,8 @@ Ready.
 [ "Mary Jane Kelly",	2	]
 [ "Ada Wilson",	2	]
 [ "Frances Coles",	2	]
+#select i.name, count(v.victim) AS cases from inspector i JOIN inspector_victim v ON (v.inspector = i.name)
+#GROUP BY i.name HAVING count(v.victim) > 1 order by i.name;
 % sys.i,	sys.v # table_name
 % name,	cases # name
 % varchar,	wrd # type
@@ -195,6 +443,19 @@ Ready.
 [ "Inspector Edmund Reid",	3	]
 [ "James Monro",	2	]
 [ "Sir Melville Macnaghten",	2	]
+#(SELECT 'Detective' as grade, count(name) AS inspectors FROM inspector
+#    WHERE name LIKE '%Detective%')
+#    UNION ALL
+#(SELECT 'Constable' AS grade, count(name) AS inspectors FROM inspector
+#    WHERE name LIKE '%Constable%')
+#    UNION ALL
+#(SELECT 'Sergeant' AS grade, count(name) AS inspectors FROM inspector
+#    WHERE name LIKE '%Sergeant%')
+#    UNION ALL
+#(SELECT 'Inspector' AS grade, count(name) AS inspectors FROM inspector
+#    WHERE name LIKE '%Inspector%')
+#    UNION ALL
+#(SELECT 'Major' AS grade, count(na
 % .,	.inspector # table_name
 % grade,	inspectors # name
 % char,	wrd # type
@@ -218,6 +479,7 @@ Ready.
 % 6,	4 # length
 [ "blonde",	"5'7\""	]
 [ "brown",	"5'5\""	]
+#SELECT name as victim FROM victim WHERE date_of_birth is null or date_of_birth = 'unknown';
 % sys.victim # table_name
 % victim # name
 % varchar # type
@@ -240,12 +502,22 @@ Ready.
 [ "Pinchin Street Murder, possibly Lydia Hart"	]
 [ "Frances Coles"	]
 [ "Carrie Brown"	]
+#select d.name as doctor, d.victim, v.date from doctor d JOIN victim v ON (d.victim = v.name)
+#WHERE not exists (select doc.name from doctor doc where doc.victim = v.name and doc.name <> d.name);
 % sys.d,	sys.d,	sys.v # table_name
 % doctor,	victim,	date # name
 % varchar,	varchar,	date # type
 % 0,	0,	10 # length
+#DROP TABLE suspect_victim;
+#DROP TABLE inspector_victim;
+#DROP TABLE suspect;
+#DROP TABLE inspector;
+#DROP TABLE witness;
+#DROP TABLE doctor;
+#DROP TABLE event;
+#DROP TABLE victim;
 
-# 16:54:49 >  
-# 16:54:49 >  Done.
-# 16:54:49 >  
+# 14:44:21 >  
+# 14:44:21 >  "Done."
+# 14:44:21 >  
 
