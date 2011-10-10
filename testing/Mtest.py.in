@@ -1864,7 +1864,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
             pass
 
         if REV:
-            d = '%s/%s' % (url(TSTDIR), TSTSUFF)
+            d = '%s%s/%s' % (URLPREFIX, url(TSTDIR), TSTSUFF)
             if os.path.isfile(TST + EXT + '.src'):
                 f = open(TST + EXT + '.src').readline().strip()
                 if f.startswith('$RELSRCDIR/'):
@@ -1877,7 +1877,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                 f = '%s/%s%s.in' % (d, TST, EXT)
             else:
                 f = '%s/%s%s' % (d, TST, EXT)
-            hglink = ' (id <a href="%s%s">%s</a>)' % (URLPREFIX, f, REV)
+            hglink = ' (id <a href="%s">%s</a>)' % (f, REV)
         else:
             hglink = ''
         diff_html = open('%s.out.diff.html' % TST,"w")
