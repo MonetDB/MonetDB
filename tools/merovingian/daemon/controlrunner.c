@@ -359,7 +359,7 @@ static void ctl_handle_client(int msgsock, const char *origin) {
 				if (e != NO_ERR) {
 					Mfprintf(_mero_ctlerr, "%s: invalid multiplex-funnel "
 							"specification '%s': %s at char " SZFMT "\n",
-							origin, p, getErrMsg(e), r - p);
+							origin, p, getErrMsg(e), (size_t)(r - p));
 					len = snprintf(buf2, sizeof(buf2),
 							"invalid pattern: %s\n", getErrMsg(e));
 					send(msgsock, buf2, len, 0);
