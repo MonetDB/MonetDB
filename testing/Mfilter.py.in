@@ -49,6 +49,8 @@ test = (
         re.compile('(?:'+')|(?:'.join([
                 # MAPI port numbers
                     r"^MAPI  = .*@.*:[0-9]*$",
+                # SPHINX is optional in monetdb5/modules/mal/inspec05
+                    r'\[\s+"[^"]*",\s+"(?:command|function|pattern)",\s+"sphinx",\s+"[^"]*",\s+"[^"]*"\s+\]',
                  ])+')',  re.MULTILINE),
         # differences (e.g., due to property-checking), which we want to treat as "minor differences"
         re.compile('(?:'+')|(?:'.join([
