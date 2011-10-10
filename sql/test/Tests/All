@@ -95,5 +95,3 @@ median_stdev
 trace
 
 HAVE_JDBCCLIENT_JAR?bogus-auto-generated-keys
-
-mclient-t-s
