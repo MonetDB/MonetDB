@@ -303,6 +303,17 @@ terminateProcess(void *p)
 			return;
 	}
 
+	if (d->type == MEROFUN) {
+		multiplexDestroy(dbname);
+		free(dbname);
+		return;
+	} else if (d->type != MERODB) {
+		/* barf */
+		Mfprintf(stderr, "cannot stop merovingian process role: %s\n", dbname);
+		free(dbname);
+		return;
+	}
+
 	/* ok, once we get here, we'll be shutting down the server */
 	Mfprintf(stdout, "sending process " LLFMT " (database '%s') the "
 			"TERM signal\n", (long long int)pid, dbname);
@@ -1123,24 +1134,20 @@ shutdown:
 		pthread_mutex_lock(&_mero_topdp_lock);
 		t = d;
 		while (t != NULL) {
-			if (t->type == MERODB) {
-				if (tl == NULL) {
-					tl = tlw = malloc(sizeof(struct _threadlist));
-				} else {
-					tlw = tlw->next = malloc(sizeof(struct _threadlist));
-				}
+			if (tl == NULL) {
+				tl = tlw = malloc(sizeof(struct _threadlist));
+			} else {
+				tlw = tlw->next = malloc(sizeof(struct _threadlist));
+			}
 
-				tlw->next = NULL;
-				if ((thret = pthread_create(&(tlw->tid), NULL,
-							(void *(*)(void *))terminateProcess, (void *)t)) != 0)
-				{
-					Mfprintf(stderr, "%s: unable to create thread to terminate "
-							"database '%s': %s\n",
-							argv[0], d->dbname, strerror(thret));
-					tlw->tid = 0;
-				}
-			} else if (t->type == MEROFUN) {
-				multiplexDestroy(t->dbname);
+			tlw->next = NULL;
+			if ((thret = pthread_create(&(tlw->tid), NULL,
+						(void *(*)(void *))terminateProcess, (void *)t)) != 0)
+			{
+				Mfprintf(stderr, "%s: unable to create thread to terminate "
+						"database '%s': %s\n",
+						argv[0], d->dbname, strerror(thret));
+				tlw->tid = 0;
 			}
 
 			t = t->next;

@@ -479,6 +479,7 @@ multiplexDestroy(char *mp)
 
 	/* signal the thread to stop and cleanup */
 	m->shutdown = 1;
+	pthread_join(m->tid, NULL);
 }
 
 static void
@@ -756,6 +757,8 @@ multiplexThread(void *d)
 		}
 	}
 
+	Mfprintf(stdout, "stopping mfunnel '%s'\n", m->name);
+
 	/* free, cleanup, etc. */
 	while (m->clients != NULL) {
 		c = m->clients;
@@ -808,6 +811,7 @@ multiplexThread(void *d)
 	pthread_mutex_unlock(&_mero_topdp_lock);
 
 	free(m->name);
+	free(m);
 }
 
 void
