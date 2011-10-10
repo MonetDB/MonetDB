@@ -427,6 +427,7 @@ main(int argc, char **av)
 	mo_free_options(set, setlen);
 
 	GDKsetenv("monet_version", VERSION);
+	GDKsetenv("monet_release", MONETDB_RELEASE);
 
 	if ((modpath = GDKgetenv("monet_mod_path")) == NULL) {
 		/* start probing based on some heuristics given the binary

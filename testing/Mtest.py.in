@@ -121,7 +121,11 @@ except ImportError:
         if os.name != "nt" and os.uname()[0] + os.uname()[2][:1] == "Darwin9" and sys.version[:5] == "2.5.1":
             p = _configure(os.path.join('@QXprefix@',distutils.sysconfig.get_python_lib(0,1,""),'site-packages'))
         else:
-            p = _configure(os.path.join('@QXprefix@',distutils.sysconfig.get_python_lib(0,0,"")))
+            p = distutils.sysconfig.get_python_lib(0, 0, '')
+            if p.endswith('dist-packages'):
+                # Ubuntu
+                sys.path.insert(0, _configure(os.path.join('QXprefix@', p.replace('dist-packages', 'site-packages'))))
+            p = _configure(os.path.join('@QXprefix@', p))
         sys.path.insert(0, p)
         import MonetDBtesting.subprocess26 as subprocess
         if os.environ.has_key('PYTHONPATH'):
@@ -1866,7 +1870,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
             pass
 
         if REV:
-            d = '%s/%s' % (url(TSTDIR), TSTSUFF)
+            d = '%s%s/%s' % (URLPREFIX, url(TSTDIR), TSTSUFF)
             if os.path.isfile(TST + EXT + '.src'):
                 f = open(TST + EXT + '.src').readline().strip()
                 if f.startswith('$RELSRCDIR/'):
@@ -1879,7 +1883,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                 f = '%s/%s%s.in' % (d, TST, EXT)
             else:
                 f = '%s/%s%s' % (d, TST, EXT)
-            hglink = ' (id <a href="%s%s">%s</a>)' % (URLPREFIX, f, REV)
+            hglink = ' (id <a href="%s">%s</a>)' % (f, REV)
         else:
             hglink = ''
         diff_html = open('%s.out.diff.html' % TST,"w")
