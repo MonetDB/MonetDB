@@ -727,9 +727,21 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT, SockTime) :
                                  'target': target},
                            Text(stableWHAT[1:])))
     if REV:
+        d = urlpref
+        if os.path.isfile(TST + stableWHAT + '.src'):
+            # there's only one file like this...
+            fl = open(TST + EXT + '.src').readline().strip()
+            if fl.startswith('$RELSRCDIR/'):
+                fl = fl[11:]
+                while fl.startswith('../'):
+                    fl = fl[3:]
+                    d = d[:d.rindex('/')]
+            fl = '%s/%s' % (d, fl)
+        else:
+            fl = '%s/%s%s' % (d, TST, stableWHAT)
         text.addchildren([
                 Text(' (id '),
-                Element('a', {'href': '%s/%s%s' % (urlpref, TST, stableWHAT),
+                Element('a', {'href': fl,
                               'target': target}, Text(REV)),
                 Text(')')])
     text.addchildren([
@@ -741,9 +753,22 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT, SockTime) :
             Element('a', {'href': TST + EXT, 'target': target},
                     Text('%s%s' % (TST, EXT)))])
     if REV:
+        d = urlpref
+        if os.path.isfile(TST + EXT + '.src'):
+            fl = open(TST + EXT + '.src').readline().strip()
+            if fl.startswith('$RELSRCDIR/'):
+                fl = fl[11:]
+                while fl.startswith('../'):
+                    fl = fl[3:]
+                    d = d[:d.rindex('/')]
+            fl = '%s/%s' % (d, fl)
+        elif os.path.isfile(TST + EXT + '.in'):
+            fl = '%s/%s%s.in' % (d, TST, EXT)
+        else:
+            fl = '%s/%s%s' % (d, TST, EXT)
         text.addchildren([
                 Text(' (id '),
-                Element('a', {'href': '%s/%s%s' % (urlpref, TST, EXT),
+                Element('a', {'href': fl,
                               'target': target}, Text(REV)),
                 Text(')')])
     text.addchildren([
@@ -1841,7 +1866,20 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
             pass
 
         if REV:
-            hglink = ' (id <a href="%s%s/%s/%s%s">%s</a>)' % (URLPREFIX, url(TSTDIR), TSTSUFF, TST, EXT, REV)
+            d = '%s/%s' % (url(TSTDIR), TSTSUFF)
+            if os.path.isfile(TST + EXT + '.src'):
+                f = open(TST + EXT + '.src').readline().strip()
+                if f.startswith('$RELSRCDIR/'):
+                    f = f[11:]
+                    while f.startswith('../'):
+                        f = f[3:]
+                        d = d[:d.rindex('/')]
+                f = '%s/%s' % (d, f)
+            elif os.path.isfile(TST + EXT + '.in'):
+                f = '%s/%s%s.in' % (d, TST, EXT)
+            else:
+                f = '%s/%s%s' % (d, TST, EXT)
+            hglink = ' (id <a href="%s%s">%s</a>)' % (URLPREFIX, f, REV)
         else:
             hglink = ''
         diff_html = open('%s.out.diff.html' % TST,"w")
