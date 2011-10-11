@@ -2874,19 +2874,14 @@ main(int argc, char **argv)
 	if (optind < argc) {
 		/* execute from file(s) */
 		while (optind < argc) {
-			if (echoquery &&
-			    strcmp(argv[optind], "-") != 0 &&
-			    stat(argv[optind], &statb) == 0 &&
-			    S_ISREG(statb.st_mode) &&
-			    statb.st_size < 1024*1024) {
+			if (echoquery && strcmp(argv[optind], "-") != 0) {
 				/* a bit of a hack: process file
-				   line-by-line if using -e (--echo)
-				   and the input file isn't "too
-				   large" so that the queries that are
-				   echoed have something to do with
-				   the output that follows (otherwise
-				   we just echo the start of the file
-				   for each query) */
+				 * line-by-line if using -e (--echo)
+				 * so that the queries that are echoed
+				 * have something to do with the
+				 * output that follows (otherwise we
+				 * just echo the start of the file for
+				 * each query) */
 				FILE *fp;
 				if ((fp = fopen(argv[optind], "r")) == NULL) {
 					fprintf(stderr, "%s: cannot open\n", argv[optind]);
