@@ -124,7 +124,12 @@ except ImportError:
             p = distutils.sysconfig.get_python_lib(0, 0, '')
             if p.endswith('dist-packages'):
                 # Ubuntu
-                sys.path.insert(0, _configure(os.path.join('QXprefix@', p.replace('dist-packages', 'site-packages'))))
+                p = p.replace('dist-packages', 'site-packages')
+                sys.path.insert(0, _configure(os.path.join('QXprefix@', p)))
+                if os.environ.has_key('PYTHONPATH'):
+                    p = p + os.pathsep + os.environ['PYTHONPATH']
+                os.environ['PYTHONPATH'] = p
+                p = distutils.sysconfig.get_python_lib(0, 0, '')
             p = _configure(os.path.join('@QXprefix@', p))
         sys.path.insert(0, p)
         import MonetDBtesting.subprocess26 as subprocess
@@ -734,7 +739,7 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT, SockTime) :
         d = urlpref
         if os.path.isfile(TST + stableWHAT + '.src'):
             # there's only one file like this...
-            fl = open(TST + EXT + '.src').readline().strip()
+            fl = open(TST + stableWHAT + '.src').readline().strip()
             if fl.startswith('$RELSRCDIR/'):
                 fl = fl[11:]
                 while fl.startswith('../'):

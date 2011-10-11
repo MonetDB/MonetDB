@@ -4147,22 +4147,14 @@ mapi_query_part(MapiHdl hdl, const char *query, size_t size)
 	mid->active = hdl;
 	/* remember the query just for the error messages */
 	if (hdl->query == NULL) {
-		size_t sz = size;
-
-		sz = 512;
-		hdl->query = malloc(sz + 1);
-		assert(hdl->query);
-		hdl->query[0] = '\0';
-		strncpy(hdl->query, query, sz);
-		hdl->query[sz] = '\0';
+		hdl->query = strdup(query);
 	} else {
-		size_t ln = strlen(hdl->query), sz = 512 - ln;
-		if (sz > 0) {
-			if (size < sz)
-				sz = size;
-			assert(hdl->query);
-			strncat(hdl->query, query, sz);
-		}
+		size_t sz = strlen(hdl->query);
+		char *q;
+
+		if (sz < 512 &&
+		    (q = realloc(hdl->query, sz + size + 1)) != NULL)
+			hdl->query = strcat(q, query);
 	}
 
 	if (mid->trace == MAPI_TRACE) {

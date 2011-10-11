@@ -45,6 +45,7 @@ Ready.
 [ "monet_mod_path"	]
 [ "monet_pid"	]
 [ "monet_prompt"	]
+[ "monet_release"	]
 [ "monet_version"	]
 [ "sql_debug"	]
 [ "sql_optimizer"	]
