@@ -73,7 +73,7 @@ stderr of test 'dbQuery036` in directory 'test/LSST` itself:
 # 05:57:35 >  mclient -lsql -ftest -i -e --host=eir --port=39691 
 # 05:57:35 >  
 
-MAPI  = monetdb@eir:39691
+MAPI  = monetdb@ottar:39647
 QUERY = SELECT  ROUND(uMag-gMag,0) AS UG, 
                 ROUND(gMag-rMag,0) AS GR, 
                 ROUND(rMag-iMag,0) AS RI, 
@@ -85,7 +85,7 @@ QUERY = SELECT  ROUND(uMag-gMag,0) AS UG,
           AND DiaSource.diaSourceId = MovingObject.movingObjectId
           AND   (uMag+gMag+rMag+iMag+zMag+yMag) < 150 -- exclude bogus magnitudes (== 999) 
         GROUP BY UG, GR, RI, IZ, ZY
-        HAVING pop > 500    -- Common bucktes have 500 or more members
+        HAVING pop > 500    -- Common bucktes have 500 or more members, so delete them
 ERROR = !SELECT: identifier 'pop' unknown
 
 # 05:57:35 >  
