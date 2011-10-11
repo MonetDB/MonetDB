@@ -587,17 +587,28 @@ listFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int si
 		mnstr_printf(fd, "# function definition missing\n");
 		return;
 	}
+	first = first<0?0:first;
+	size = size < 0?-size:size;
 	if (flg & LIST_MAPI) {
+		size_t len = 0;
+		str ps;
 		/* a bit dirty, but only here we have the number of lines */
 		mnstr_printf(fd, "&1 0 %d 1 %d\n", /* type id rows columns tuples */
 				mb->stop, mb->stop);
 		mnstr_printf(fd, "%% .explain # table_name\n");
 		mnstr_printf(fd, "%% mal # name\n");
 		mnstr_printf(fd, "%% clob # type\n");
-		mnstr_printf(fd, "%% 0 # length\n");	/* unknown */
+		for (i = first; i < first +size && i < mb->stop; i++) {
+			ps = instruction2str(mb, stk, getInstrPtr(mb, i), flg);
+			if (ps) {
+				size_t l = strlen(ps);
+				if (l > len)
+					len = l;
+				GDKfree(ps);
+			}
+		}
+		mnstr_printf(fd, "%% " SZFMT " # length\n", len);	/* unknown */
 	}
-	first = first<0?0:first;
-	size = size < 0?-size:size;
 	for (i = first; i < first +size && i < mb->stop; i++)
 		printInstruction(fd, mb, stk, getInstrPtr(mb, i), flg);
 }
