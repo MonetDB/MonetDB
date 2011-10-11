@@ -76,7 +76,7 @@ stderr of test 'hang_on_copy_into.SF-1100504` in directory 'test/BugDay_2005-11-
 # 23:26:36 >  mclient -lsql -i --host=eir --port=38510 
 # 23:26:36 >  
 
-MAPI  = monetdb@ottar:34319
+MAPI  = monetdb@ottar:39647
 QUERY = COPY 1 RECORDS INTO "news" FROM stdin USING DELIMITERS '\t', '\n', '''';
         1	'dwerg.net word volwassen, er is eindelijk content
         en het voicemail archief begint al aardig vol te lopen.
@@ -88,7 +88,7 @@ QUERY = COPY 1 RECORDS INTO "news" FROM stdin USING DELIMITERS '\t', '\n', '''';
         tijd heb en het helemaal verkeerd indeel dat het
         allemaal nogal lang duurt, maar in principe is het nog
         maar een uurtje of 6 werk om het goed te krijgen. Zoals
-        je kan zie
+        je kan zien heb ik bij de voicemails al wat leuke
 ERROR = !SQLException:importTable:failed to import table
         !ERROR: Incomplete record at end of file.
 

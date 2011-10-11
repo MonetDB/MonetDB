@@ -80,7 +80,7 @@ stderr of test 'rollback_bug` in directory 'test/BugTracker-2009` itself:
 # 11:34:05 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=32901 
 # 11:34:05 >  
 
-MAPI  = monetdb@volund:34492
+MAPI  = monetdb@ottar:39647
 QUERY = CREATE TABLE phpbb_attachments (
         	attach_id integer DEFAULT next value for "sys"."phpbb_attachments_seq",
         	post_msg_id integer DEFAULT '0' NOT NULL ,
@@ -95,7 +95,7 @@ ERROR = !type (long) unknown in: "create table phpbb_attachments (
         !	in_message smallint default '0' not null ,
         !	poster_id integer default '0' not null ,
         !	is_orphan long default"
-MAPI  = monetdb@volund:34492
+MAPI  = monetdb@ottar:39647
 QUERY = CREATE TABLE phpbb_attachments (
         	attach_id integer DEFAULT next value for "sys"."phpbb_attachments_seq",
         	post_msg_id integer DEFAULT '0' NOT NULL ,
@@ -106,9 +106,9 @@ QUERY = CREATE TABLE phpbb_attachments (
         	physical_filename varchar(255) DEFAULT '' NOT NULL,
         	real_filename varchar(255) DEFAULT '' NOT NULL,
         	download_count integer DEFAULT '0' NOT NULL ,
-        	attach_comment varchar(4000) DEFAULT '' NOT NU
+        	attach_comment varchar(4000) DEFAULT '' NOT NULL,
 ERROR = !current transaction is aborted (please ROLLBACK)
-MAPI  = monetdb@volund:34492
+MAPI  = monetdb@ottar:39647
 QUERY = CREATE TABLE phpbb_acl_groups (
         	group_id integer DEFAULT '0' NOT NULL ,
         	forum_id integer DEFAULT '0' NOT NULL ,
@@ -117,7 +117,7 @@ QUERY = CREATE TABLE phpbb_acl_groups (
         	auth_setting smallint DEFAULT '0' NOT NULL
         );
 ERROR = !current transaction is aborted (please ROLLBACK)
-MAPI  = monetdb@volund:34492
+MAPI  = monetdb@ottar:39647
 QUERY = COMMIT;
 ERROR = !SQLException:sql.trans:COMMIT: failed
 
