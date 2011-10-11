@@ -321,13 +321,14 @@ updateScenario(str nme, str fnme, MALfcn fcn)
 	if (phase != -1) {
 		Client c1;
 
-    		for(c1 = mal_clients; c1 < mal_clients+MAL_MAXCLIENTS; c1++)
-    			if (c1->scenario &&
+		for (c1 = mal_clients; c1 < mal_clients + MAL_MAXCLIENTS; c1++) {
+			if (c1->scenario &&
 			    strcmp(c1->scenario, scen->name) == 0)
 				c1->phase[phase] = fcn;
 			if (c1->oldscenario &&
 			    strcmp(c1->oldscenario, scen->name) == 0)
 				c1->oldphase[phase] = fcn;
+		}
 	}
 }
 
