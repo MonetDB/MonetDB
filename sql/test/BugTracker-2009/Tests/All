@@ -52,9 +52,7 @@ parallel_bulk-load.SF-2771052.unpack_csv
 parallel_bulk-load.SF-2771052.test
 parallel_bulk-load.SF-2771052.clean
 wrong_error_message.SF-2637051
-AVG_of_SQRT.SF-2757642.unpack_csv
-AVG_of_SQRT.SF-2757642.test
-AVG_of_SQRT.SF-2757642.clean
+AVG_of_SQRT.SF-2757642
 missing_column_name.SF-2776100
 dumping_tables.SF-2776908
 dumping_tables.SF-2776908--performance

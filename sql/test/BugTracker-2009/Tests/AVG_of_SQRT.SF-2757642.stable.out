@@ -1,0 +1,56 @@
+stdout of test 'AVG_of_SQRT.SF-2757642` in directory 'test/BugTracker-2009` itself:
+
+
+# 15:20:08 >  
+# 15:20:08 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "gdk_dbfarm=/ufs/sjoerd/Monet-candidate/var/MonetDB" "--set" "mapi_open=true" "--set" "mapi_port=37142" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbname=mTests_test_BugTracker-2009" "--set" "mal_listing=0"
+# 15:20:08 >  
+
+# MonetDB 5 server v11.5.4
+# This is an unreleased version
+# Serving database 'mTests_test_BugTracker-2009', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://ottar.ins.cwi.nl:37142/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_history.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_compress.sql
+# loading sql script: 18_dictionary.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 99_system.sql
+
+# 15:20:08 >  
+# 15:20:08 >  "/usr/bin/python" "AVG_of_SQRT.SF-2757642.SQL.py" "AVG_of_SQRT.SF-2757642"
+# 15:20:08 >  
+
+[ 100000000	]
+% .L1,	sys. # table_name
+% L1,	L2 # name
+% char,	double # type
+% 20,	24 # length
+[ "avg(sqrt(n8)) == 1.1",	1.099999998	]
+
+# 15:21:14 >  
+# 15:21:14 >  "Done."
+# 15:21:14 >  
+
