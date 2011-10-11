@@ -732,7 +732,7 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT, SockTime) :
         d = urlpref
         if os.path.isfile(TST + stableWHAT + '.src'):
             # there's only one file like this...
-            fl = open(TST + EXT + '.src').readline().strip()
+            fl = open(TST + stableWHAT + '.src').readline().strip()
             if fl.startswith('$RELSRCDIR/'):
                 fl = fl[11:]
                 while fl.startswith('../'):
