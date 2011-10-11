@@ -15,7 +15,7 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-# This loads the MonetDB/DataCell module
+# This loads the MonetDB/Crackers module
 include opt_crack;
 include opt_sidcrack;
 include opt_selcrack;
