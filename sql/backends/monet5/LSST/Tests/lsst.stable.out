@@ -40,7 +40,6 @@ Ready.
 # SQL loading sql scripts /home/niels/scratch/monetdb/Linux-x86_64/lib/monetdb5/createdb/80_udf.sql
 # SQL loading sql scripts /home/niels/scratch/monetdb/Linux-x86_64/lib/monetdb5/createdb/99_system.sql
 
-Over..
 
 # 19:55:25 >  
 # 19:55:25 >  mclient -lsql -ftest -i -e --host=niels --port=37236 

@@ -20,7 +20,6 @@ stdout of test 'lsst_htmxmatch` in directory 'backends/monet5/LSST` itself:
 Ready.
 # SQL catalog created, loading sql scripts once
 
-Over..
 
 # 21:23:59 >  
 # 21:23:59 >  mclient -lsql -ftest -i -e --host=niels --port=37399 
