@@ -218,7 +218,8 @@ class Popen(subprocess.Popen):
 
 def client(lang, args = [], stdin = None, stdout = None, stderr = None,
            port = os.getenv('MAPIPORT'), dbname = os.getenv('TSTDB'), host = None,
-           user = 'monetdb', passwd = 'monetdb', log = False):
+           user = 'monetdb', passwd = 'monetdb', log = False,
+           interactive = None, echo = None):
     '''Start a client process.'''
     if lang == 'mal':
         cmd = _mal_client[:]
@@ -230,6 +231,16 @@ def client(lang, args = [], stdin = None, stdout = None, stderr = None,
     # no -i if input from -s or /dev/null
     if '-i' in cmd and ('-s' in args or stdin is None):
         cmd.remove('-i')
+    if interactive is not None:
+        if '-i' in cmd and not interactive:
+            cmd.remove('-i')
+        elif '-i' not in cmd and interactive:
+            cmd.append('-i')
+    if echo is not None:
+        if '-e' in cmd and not echo:
+            cmd.remove('-e')
+        elif '-e' not in cmd and echo:
+            cmd.append('-e')
 
     env = None
 
