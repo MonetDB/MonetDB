@@ -128,7 +128,7 @@ top N (
 % .explain # table_name
 % mal # name
 % clob # type
-% 0 # length
+% 61 # length
 function user.s1_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     X_9:bat[:oid,:oid]  := sql.bind_dbat(X_2,"sys","oblo",1);
@@ -149,7 +149,7 @@ end s1_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 0 # length
+% 62 # length
 function user.s2_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     X_11:bat[:oid,:oid]  := sql.bind_dbat(X_2,"sys","oblo",1);
@@ -177,7 +177,7 @@ end s2_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 0 # length
+% 62 # length
 function user.s3_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     X_11:bat[:oid,:oid]  := sql.bind_dbat(X_2,"sys","oblo",1);
@@ -205,7 +205,7 @@ end s3_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 0 # length
+% 62 # length
 function user.s4_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     X_11:bat[:oid,:oid]  := sql.bind_dbat(X_2,"sys","oblo",1);
@@ -233,7 +233,7 @@ end s4_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 0 # length
+% 62 # length
 function user.s5_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     X_11:bat[:oid,:oid]  := sql.bind_dbat(X_2,"sys","oblo",1);
@@ -261,7 +261,7 @@ end s5_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 0 # length
+% 62 # length
 function user.s6_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     X_11:bat[:oid,:oid]  := sql.bind_dbat(X_2,"sys","oblo",1);
@@ -287,7 +287,7 @@ end s6_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 0 # length
+% 62 # length
 function user.s7_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     X_13:bat[:oid,:oid]  := sql.bind_dbat(X_2,"sys","oblo",1);
@@ -320,7 +320,7 @@ end s7_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 0 # length
+% 62 # length
 function user.s8_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     X_11:bat[:oid,:oid]  := sql.bind_dbat(X_2,"sys","oblo",1);
@@ -354,7 +354,7 @@ end s8_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 0 # length
+% 62 # length
 function user.s9_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     X_11:bat[:oid,:oid]  := sql.bind_dbat(X_2,"sys","oblo",1);
@@ -390,7 +390,7 @@ end s9_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 0 # length
+% 62 # length
 function user.s10_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     X_11:bat[:oid,:oid]  := sql.bind_dbat(X_2,"sys","oblo",1);
