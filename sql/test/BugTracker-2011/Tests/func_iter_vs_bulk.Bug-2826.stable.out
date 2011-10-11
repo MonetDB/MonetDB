@@ -33,7 +33,7 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 0 # length
+% 66 # length
 function user.s0_1{autoCommit=true}():void;
     X_23 := nil:bat[:oid,:dbl];
 barrier X_55 := language.dataflow();
