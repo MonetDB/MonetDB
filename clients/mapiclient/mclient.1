@@ -349,7 +349,9 @@ zero or more, and exactly one character respectively.  An object
 name is converted to lowercase, unless the object name is quoted by
 double quotes (\fB"\fP).  Examples of this, are e.g. \fI*.mytable\fP,
 \fItabletype*\fP or \fI"myschema.FOO"\fP.  Note that wildcard characters
-do not work in quoted objects.
+do not work in quoted objects.  Quoting follows SQL quoting rules.
+Arbitrary parts can be quoted, and two quotes following each other in a
+quoted string represent the quote itself.
 .TP
 \fB\eA\fP
 Enable auto commit mode.

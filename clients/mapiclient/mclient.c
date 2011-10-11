@@ -1914,7 +1914,8 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 					char hasSchema = 0;
 					char wantsSystem = 0; 
 					unsigned int x = 0;
-					char *p;
+					char *p, *q;
+					char escaped = 0;
 					if (mode != SQL)
 						break;
 					while (isascii((int) line[length - 1]) &&
@@ -1955,43 +1956,47 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 					for ( ; *line && isascii((int) *line) && isspace((int) *line); line++)
 						;
 
-					/* is the object quoted? we only support fully
-					 * quoted objects, not partial ones */
-					if (line[0] == '"' || line[0] == '\'') {
-						for (p = line; *p; p++)
-							;
-						if (--p == line) {
-							fprintf(stderr, "unmatched %c\n", line[0]);
-							continue;
-						} else if ((*p == '"' || *p == '\'') && *p != line[0]) {
-							fprintf(stderr, "unexpected %c, expecting %c\n",
-									*p, line[0]);
-							continue;
-						} else if (*p != line[0]) {
-							fprintf(stderr, "unexpected end of string while "
-									"looking for matching %c\n", line[0]);
-							continue;
-						}
-						/* remove the quotes */
-						line++;
-						*p = '\0';
-					} else {
-						/* not quoted: lowercase it, and search for
-						 * wildcards * and ?, replace them with SQL
-						 * variants */
-						for (p = line; *p; p++) {
-							*p = tolower((int) *p);
-							if (*p == '*') {
-								*p = '%';
-								hasWildcard = 1;
-							} else if (*p == '?') {
-								*p = '_';
-								hasWildcard = 1;
-							} else if (*p == '.') {
-								hasSchema = 1;
-							}
+					/* lowercase the object, except for quoted parts */
+					q = line;
+					for (p = line; *p != '\0'; p++) {
+						switch (*p) {
+							case '"':
+								if (escaped) {
+									if (*(p + 1) == '"') {
+										/* SQL escape */
+										*q++ = *p++;
+									} else {
+										escaped = 0;
+									}
+								} else {
+									escaped = 1;
+								}
+								break;
+							default:
+								if (!escaped) {
+									*q++ = tolower((int) *p);
+									if (*p == '*') {
+										*p = '%';
+										hasWildcard = 1;
+									} else if (*p == '?') {
+										*p = '_';
+										hasWildcard = 1;
+									} else if (*p == '.') {
+										hasSchema = 1;
+									}
+								} else {
+									*q++ = *p;
+								}
+								break;
 						}
 					}
+					*q = '\0';
+					if (escaped) {
+						fprintf(stderr, "unexpected end of string while "
+								"looking for matching \"\n");
+						continue;
+					}
+
 					if (*line && !hasWildcard) {
 #ifdef HAVE_POPEN
 						stream *saveFD, *saveFD_raw;
