@@ -47,15 +47,16 @@ refs_find_rel(list *refs, sql_rel *rel)
 }
 
 static void 
-print_stmtlist(sql_allocator *sa, stmt *l )
+print_stmtlist(sql_allocator *sa, stmt *l)
 {
 	node *n;
-	if (l)
-	for (n = l->op4.lval->h; n; n = n->next) {
-		char *rnme = table_name(sa, n->data);
-		char *nme = column_name(sa, n->data);
+	if (l) {
+		for (n = l->op4.lval->h; n; n = n->next) {
+			char *rnme = table_name(sa, n->data);
+			char *nme = column_name(sa, n->data);
 
-		printf("%s.%s\n", rnme, nme);
+			printf("%s.%s\n", rnme ? rnme : "(null!)", nme ? nme : "(null!)");
+		}
 	}
 }
 
