@@ -71,9 +71,9 @@ stderr of test 'error-truncated.Bug-2615` in directory 'test/BugTracker-2010` it
 # 17:25:18 >  mclient -lsql -ftest -i -e --host=ottar --port=38866 
 # 17:25:18 >  
 
-MAPI  = monetdb@LAB03:39710
+MAPI  = monetdb@LAB03:37797
 QUERY = COPY 2 RECORDS INTO uitspraken FROM STDIN DELIMITERS '\t', '\n' NULL as '';
-        277351	AA7351	1	Rechtbank 's-Gravenhage	2000-08-04		AWB 00/6928, 00/6929, 00/6930	Arrondissementsrechtbank te 's-Gravenhage\nzittinghoudende te Haarlem\nfungerend president\nenkelvoudige kamer voor Vreemdelingenzaken\n\nU I T S P R A A K\n\nartikel 8:81 en 8:86 Algemene Wet Bestuursrecht (Awb)\nartikel 33a, 34a en 34j Vreemdelingenwet (Vw)\n\nreg.nr: AWB 00/6928 VRWET H (voorlopige voorziening)\nAWB 00/6929 VRWET H (beroepszaak)\nAW
+        277351	AA7351	1	Rechtbank 's-Gravenhage	2000-08-04		AWB 00/6928, 00/6929, 00/6930	Arrondissementsrechtbank te 's-Gravenhage\nzittinghoudende te Haarlem\nfungerend president\nenkelvoudige kamer voor Vreemdelingenzaken\n\nU I T S P R A A K\n\nartikel 8:81 en 8:86 Algemene Wet Bestuursrecht (Awb)\nartikel 33a, 34a en 34j Vreemdelingenwet (Vw)\n\nreg.nr: AWB 00/6928 VRWET H (voorlopige voorziening)\nAWB 00/6929 VRWET H (beroepszaak)\nAWB 00/6930 VRWET H (vrijheidsontneming)\n\ninzake: A, geboren op [...] 1964,
 ERROR = !SQLException:importTable:value 'Arrondissementsrechtbank te 's-Gravenhage\nzittinghoudende te Haarlem\nfungerend president\nenkelvoudige kamer voor Vreemdelingenzaken\n\nU I T S P R A A K\n\nartikel 8:81 en 8:86 Algemene Wet Bestuursrecht (Awb)\nartikel 33a, 34a en 34j Vreemdelingenwet (Vw)\n\nreg.nr: AWB 00/6928 VRWET H (voorlopige voorzieni...' from line 2 field 8 not inserted, expecting type clob
         !failed to import table
 
