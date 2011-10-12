@@ -3139,7 +3139,7 @@ def main(argv) :
     #env['par'] = par
 
     # unknown at compile time, as Mtest.py is compiled with MonetDB;
-    # hence, we set then at runtime.
+    # hence, we set them at runtime.
     # X == true   =>  @X_TRUE@='',  @X_FALSE@='#'
     # X == false  =>  @X_TRUE@='#', @X_FALSE@=''
     if CheckExec('php'):
