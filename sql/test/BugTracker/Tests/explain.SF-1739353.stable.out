@@ -25,14 +25,9 @@ Ready.
 # 15:15:36 >  ./explain.SF-1739353.SQL.sh explain.SF-1739353 
 # 15:15:36 >  
 
-
-# 15:15:36 >  
-# 15:15:36 >  Mtimeout -timeout 60  java nl.cwi.monetdb.client.JdbcClient -h rig -p 33159 -d mTests_src_test_BugTracker -f "../../../../../source/sql/src/test/BugTracker/Tests/explain.SF-1739353-data.sql"
-# 15:15:36 >  
-
-+--------+
++---------------------------------------------------------------------+
 | mal    |
-+========+
++=====================================================================+
 | function user.s2_1{autoCommit=true}():void; |
 |     X_48:bat[:oid,:str]  := bat.new(nil:oid,nil:str); |
 |     X_2 := sql.mvc(); |
@@ -73,7 +68,7 @@ Ready.
 |     X_60 := io.stdout(); |
 |     sql.exportResult(X_60,X_54); |
 | end s2_1; |
-+--------+
++---------------------------------------------------------------------+
 40 rows
 
 

@@ -102,10 +102,16 @@ def _configure(str):
         ('${prefix}', '@QXprefix@'),
         ('${Qprefix}', '@QXprefix@'),
         ]
+    if os.name == 'nt':
+        str = str.replace('%prefix%', '${prefix}')
+        str = str.replace('%exec_prefix%', '${exec_prefix}')
     changed = True
     while '$' in str and changed:
         changed = False
         for key, val in config:
+            if os.name == 'nt':
+                val = val.replace('%prefix%', '${prefix}')
+                val = val.replace('%exec_prefix%', '${exec_prefix}')
             nstr = str.replace(key, val)
             changed = changed or str != nstr
             str = nstr
@@ -1919,7 +1925,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                 cmd.append('-q')
             cmd.extend(['-F^#', '-I%s' % par['IGNORE'],
                         '-C%s' % par['CONTEXT'], '-A%d' % ACCURACYout,
-                        '-tTest <a href="%s%s">%s%s</a>%s' % (TST, EXT, TST, EXT, hglink),
+                        '-tTest <a href="%s%s">%s%s</a>%s (<a href="%s.err.diff.html">err</a>)' % (TST, EXT, TST, EXT, hglink, TST),
                         '%s%s.FILTERED' % (TST, STABLEout),
                         '%s.test.out.FILTERED' % TST,
                         '%s.out.diff.html' % TST])
@@ -1988,7 +1994,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                 cmd.append('-q')
             cmd.extend(['-F^#', '-I%s' % par['IGNORE'],
                         '-C%s' % par['CONTEXT'], '-A%d' % ACCURACYerr,
-                        '-tTest <a href="%s%s">%s%s</a>%s' % (TST, EXT, TST, EXT, hglink),
+                        '-tTest <a href="%s%s">%s%s</a>%s (<a href="%s.out.diff.html">out</a>)' % (TST, EXT, TST, EXT, hglink, TST),
                         '%s%s.FILTERED' % (TST, STABLEerr),
                         '%s.test.err.FILTERED' % TST,
                         '%s.err.diff.html' % TST])
@@ -3135,7 +3141,7 @@ def main(argv) :
     #env['par'] = par
 
     # unknown at compile time, as Mtest.py is compiled with MonetDB;
-    # hence, we set then at runtime.
+    # hence, we set them at runtime.
     # X == true   =>  @X_TRUE@='',  @X_FALSE@='#'
     # X == false  =>  @X_TRUE@='#', @X_FALSE@=''
     if CheckExec('php'):

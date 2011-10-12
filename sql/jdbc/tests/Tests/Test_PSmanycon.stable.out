@@ -1,0 +1,157 @@
+stdout of test 'Test_PSmanycon` in directory 'jdbc/tests` itself:
+
+
+# 11:28:52 >  
+# 11:28:52 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "gdk_dbfarm=/net/volund.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-Aug2011-volund.ins.cwi.nl/sql/dbfarm" "--set" "mapi_open=true" "--set" "mapi_port=39865" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbname=mTests_jdbc_tests" "--set" "mal_listing=0"
+# 11:28:52 >  
+
+# MonetDB 5 server v11.5.4 "Aug2011-41b19066710b"
+# Serving database 'mTests_jdbc_tests', using 4 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://volund.ins.cwi.nl:39865/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/DataCell module not loaded
+# SQLException:mvc:SQL module not initialized
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_history.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_compress.sql
+# loading sql script: 18_dictionary.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 50_datacell.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 99_system.sql
+
+# 11:28:52 >  
+# 11:28:52 >  "./Test_PSmanycon.SQL.sh" "Test_PSmanycon"
+# 11:28:52 >  
+
+
+# 11:28:52 >  
+# 11:28:52 >  java Test_PSmanycon "jdbc:monetdb://volund:39865/mTests_jdbc_tests?user=monetdb&password=monetdb"
+# 11:28:52 >  
+
+Establishing Connection 0... done... alive
+Establishing Connection 1... done... alive
+Establishing Connection 2... done... alive
+Establishing Connection 3... done... alive
+Establishing Connection 4... done... alive
+Establishing Connection 5... done... alive
+Establishing Connection 6... done... alive
+Establishing Connection 7... done... alive
+Establishing Connection 8... done... alive
+Establishing Connection 9... done... alive
+Establishing Connection 10... done... alive
+Establishing Connection 11... done... alive
+Establishing Connection 12... done... alive
+Establishing Connection 13... done... alive
+Establishing Connection 14... done... alive
+Establishing Connection 15... done... alive
+Establishing Connection 16... done... alive
+Establishing Connection 17... done... alive
+Establishing Connection 18... done... alive
+Establishing Connection 19... done... alive
+Establishing Connection 20... done... alive
+Establishing Connection 21... done... alive
+Establishing Connection 22... done... alive
+Establishing Connection 23... done... alive
+Establishing Connection 24... done... alive
+Establishing Connection 25... done... alive
+Establishing Connection 26... done... alive
+Establishing Connection 27... done... alive
+Establishing Connection 28... done... alive
+Establishing Connection 29... done... alive
+Establishing Connection 30... done... alive
+Establishing Connection 31... done... alive
+Establishing Connection 32... done... alive
+Establishing Connection 33... done... alive
+Establishing Connection 34... done... alive
+Establishing Connection 35... done... alive
+Establishing Connection 36... done... alive
+Establishing Connection 37... done... alive
+Establishing Connection 38... done... alive
+Establishing Connection 39... done... alive
+Establishing Connection 40... done... alive
+Establishing Connection 41... done... alive
+Establishing Connection 42... done... alive
+Establishing Connection 43... done... alive
+Establishing Connection 44... done... alive
+Establishing Connection 45... done... alive
+Establishing Connection 46... done... alive
+Establishing Connection 47... done... alive
+Establishing Connection 48... done... alive
+Establishing Connection 49... done... alive
+Executing PreparedStatement 0... result: 0, done
+Executing PreparedStatement 1... result: 1, done
+Executing PreparedStatement 2... result: 2, done
+Executing PreparedStatement 3... result: 3, done
+Executing PreparedStatement 4... result: 4, done
+Executing PreparedStatement 5... result: 5, done
+Executing PreparedStatement 6... result: 6, done
+Executing PreparedStatement 7... result: 7, done
+Executing PreparedStatement 8... result: 8, done
+Executing PreparedStatement 9... result: 9, done
+Executing PreparedStatement 10... result: 10, done
+Executing PreparedStatement 11... result: 11, done
+Executing PreparedStatement 12... result: 12, done
+Executing PreparedStatement 13... result: 13, done
+Executing PreparedStatement 14... result: 14, done
+Executing PreparedStatement 15... result: 15, done
+Executing PreparedStatement 16... result: 16, done
+Executing PreparedStatement 17... result: 17, done
+Executing PreparedStatement 18... result: 18, done
+Executing PreparedStatement 19... result: 19, done
+Executing PreparedStatement 20... result: 20, done
+Executing PreparedStatement 21... result: 21, done
+Executing PreparedStatement 22... result: 22, done
+Executing PreparedStatement 23... result: 23, done
+Executing PreparedStatement 24... result: 24, done
+Executing PreparedStatement 25... result: 25, done
+Executing PreparedStatement 26... result: 26, done
+Executing PreparedStatement 27... result: 27, done
+Executing PreparedStatement 28... result: 28, done
+Executing PreparedStatement 29... result: 29, done
+Executing PreparedStatement 30... result: 30, done
+Executing PreparedStatement 31... result: 31, done
+Executing PreparedStatement 32... result: 32, done
+Executing PreparedStatement 33... result: 33, done
+Executing PreparedStatement 34... result: 34, done
+Executing PreparedStatement 35... result: 35, done
+Executing PreparedStatement 36... result: 36, done
+Executing PreparedStatement 37... result: 37, done
+Executing PreparedStatement 38... result: 38, done
+Executing PreparedStatement 39... result: 39, done
+Executing PreparedStatement 40... result: 40, done
+Executing PreparedStatement 41... result: 41, done
+Executing PreparedStatement 42... result: 42, done
+Executing PreparedStatement 43... result: 43, done
+Executing PreparedStatement 44... result: 44, done
+Executing PreparedStatement 45... result: 45, done
+Executing PreparedStatement 46... result: 46, done
+Executing PreparedStatement 47... result: 47, done
+Executing PreparedStatement 48... result: 48, done
+Executing PreparedStatement 49... result: 49, done
+
+# 11:28:53 >  
+# 11:28:53 >  "Done."
+# 11:28:53 >  
+
