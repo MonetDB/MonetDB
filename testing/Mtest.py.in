@@ -102,10 +102,16 @@ def _configure(str):
         ('${prefix}', '@QXprefix@'),
         ('${Qprefix}', '@QXprefix@'),
         ]
+    if os.name == 'nt':
+        str = str.replace('%prefix%', '${prefix}')
+        str = str.replace('%exec_prefix%', '${exec_prefix}')
     changed = True
     while '$' in str and changed:
         changed = False
         for key, val in config:
+            if os.name == 'nt':
+                val = val.replace('%prefix%', '${prefix}')
+                val = val.replace('%exec_prefix%', '${exec_prefix}')
             nstr = str.replace(key, val)
             changed = changed or str != nstr
             str = nstr
