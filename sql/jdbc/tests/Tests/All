@@ -9,6 +9,7 @@ HAVE_JDBCTESTS?Test_PSlargeamount
 HAVE_JDBCTESTS?Test_PStimedate
 HAVE_JDBCTESTS?Test_PStimezone
 HAVE_JDBCTESTS?Test_PStypes
+HAVE_JDBCTESTS?Test_PSmanycon
 HAVE_JDBCTESTS?Test_Rbooleans
 HAVE_JDBCTESTS?Test_Rmetadata
 HAVE_JDBCTESTS?Test_Rpositioning

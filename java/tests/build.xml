@@ -115,6 +115,7 @@ All Rights Reserved.
     <antcall target="Test_PStimedate" />
     <antcall target="Test_PStimezone" />
     <antcall target="Test_PStypes" />
+    <antcall target="Test_PSmanycon" />
     <antcall target="Test_Rbooleans" />
     <antcall target="Test_Rmetadata" />
     <antcall target="Test_Rpositioning" />
@@ -226,6 +227,12 @@ All Rights Reserved.
   <target name="Test_PStypes">
     <antcall target="test_class">
       <param name="test.class" value="Test_PStypes" />
+    </antcall>
+  </target>
+
+  <target name="Test_PSmanycon">
+    <antcall target="test_class">
+      <param name="test.class" value="Test_PSmanycon" />
     </antcall>
   </target>
 
