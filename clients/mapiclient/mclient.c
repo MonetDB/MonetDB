@@ -1720,6 +1720,8 @@ showCommands(void)
 
 enum hmyesno { UNKNOWN, YES, NO };
 
+#define READBLOCK 8192
+
 static int
 doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 {
@@ -1734,7 +1736,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 #ifdef HAVE_LIBREADLINE
 	if (prompt == NULL)
 #endif
-		oldbuf = buf = malloc(BUFSIZ);
+		oldbuf = buf = malloc(READBLOCK);
 
 	do {
 		if (prompt) {
@@ -1781,7 +1783,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 				free(buf);
 			buf = oldbuf;
 			line = buf;
-			while (line < buf + BUFSIZ - 1 &&
+			while (line < buf + READBLOCK - 1 &&
 			       (c = getc(fp)) != EOF) {
 				if (c == 0) {
 					fprintf(stderr, "NULL byte in input on line %d of input\n", lineno);
