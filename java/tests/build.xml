@@ -58,6 +58,7 @@ All Rights Reserved.
       optimize="false"
       target="${javac_version}"
       source="${javac_version}"
+      includeantruntime="false"
       >
       <include name="**/*.java" />
       <classpath>
