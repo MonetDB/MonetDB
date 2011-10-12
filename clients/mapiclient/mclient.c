@@ -1736,6 +1736,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 	char *line = NULL;
 	char *oldbuf = NULL, *buf = NULL;
 	size_t length;
+	size_t bufsiz = 0;
 	MapiHdl hdl = mapi_get_active(mid);
 	MapiMsg rc = MOK;
 	int lineno = 1;
@@ -1744,7 +1745,10 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 #ifdef HAVE_LIBREADLINE
 	if (prompt == NULL)
 #endif
-		oldbuf = buf = malloc(READBLOCK);
+	{
+		bufsiz = READBLOCK;
+		oldbuf = buf = malloc(bufsiz);
+	}
 
 	do {
 		if (prompt) {
@@ -1791,8 +1795,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 				free(buf);
 			buf = oldbuf;
 			line = buf;
-			while (line < buf + READBLOCK - 1 &&
-			       (c = getc(fp)) != EOF) {
+			while ((c = getc(fp)) != EOF) {
 				if (c == 0) {
 					fprintf(stderr, "NULL byte in input on line %d of input\n", lineno);
 					/* read away rest of line */
@@ -1806,6 +1809,11 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 						hdl = NULL;
 					}
 					break;
+				}
+				if (line == buf + bufsiz - 1) {
+					bufsiz += READBLOCK;
+					buf = realloc(buf, bufsiz);
+					line = buf + bufsiz - 1 - READBLOCK;
 				}
 				*line++ = c;
 				if (c == '\n')
@@ -1824,23 +1832,52 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 		if (line != NULL && encoding != NULL && cd_in != (iconv_t) -1) {
 			ICONV_CONST char *from = line;
 			size_t fromlen = strlen(from);
-			size_t tolen = 4 * fromlen + 1;
+			int factor = 4;
+			size_t tolen = factor * fromlen + 1;
 			char *to = malloc(tolen);
 
+		  try_again:
 			line = to;
-			iconv(cd_in, &from, &fromlen, &to, &tolen);
+			if (iconv(cd_in, &from, &fromlen, &to, &tolen) == (size_t) -1) {
+				/* error */
+				switch (errno) {
+				case EILSEQ:
+					/* invalid multibyte sequence */
+					fprintf(stderr, "Illegal input sequence on line %d of input\n", lineno);
+					errseen = 1;
+					free(line);
+					continue;
+				case E2BIG:
+					/* output buffer too small */
+					from = buf;
+					fromlen = strlen(from);
+					factor *= 2;
+					tolen = factor * fromlen + 1;
+					free(line);
+					to = malloc(tolen);
+					goto try_again;
+				case EINVAL:
+					/* incomplete multibyte sequence */
+					/* shouldn't happen since we
+					 * grow the input buffer */
+					break;
+				default:
+					/* cannot happen according to docs */
+					break;
+				}
+			}
 			*to = 0;
-			if (!oldbuf)
+			if (oldbuf == NULL)
 				free(buf);
 			buf = line;
 		} else
 #endif
-			if (line != NULL &&
+		if (line != NULL &&
 #ifdef HAVE_ICONV
-			    encoding == NULL &&
+		    encoding == NULL &&
 #endif
-			    lineno == 1 &&
-			    strncmp(line, UTF8BOM, UTF8BOMLENGTH) == 0)
+		    lineno == 1 &&
+		    strncmp(line, UTF8BOM, UTF8BOMLENGTH) == 0)
 			line += UTF8BOMLENGTH;	/* skip Byte Order Mark (BOM) */
 		lineno++;
 		if (line == NULL) {
@@ -2878,13 +2915,38 @@ main(int argc, char **argv)
 	if (command != NULL) {
 #ifdef HAVE_ICONV
 		if (encoding != NULL && cd_in != (iconv_t) -1) {
+			char *savecommand = command;
 			ICONV_CONST char *from = command;
 			size_t fromlen = strlen(from);
-			size_t tolen = 4 * fromlen + 1;
+			int factor = 4;
+			size_t tolen = factor * fromlen + 1;
 			char *to = malloc(tolen);
 
+		  try_again:
 			command = to;
-			iconv(cd_in, &from, &fromlen, &to, &tolen);
+			if (iconv(cd_in, &from, &fromlen, &to, &tolen) == (size_t) -1) {
+				switch (errno) {
+				case EILSEQ:
+					/* invalid multibyte sequence */
+					fprintf(stderr, "Illegal input sequence in command line\n");
+					exit(-1);
+				case E2BIG:
+					/* output buffer too small */
+					from = savecommand;
+					fromlen = strlen(from);
+					factor *= 2;
+					tolen = factor * fromlen + 1;
+					free(command);
+					to = malloc(tolen);
+					goto try_again;
+				case EINVAL:
+					/* incomplete multibyte sequence */
+					fprintf(stderr, "Incomplete input sequence on command line\n");
+					exit(-1);
+				default:
+					break;
+				}
+			}
 			*to = 0;
 		}
 #endif

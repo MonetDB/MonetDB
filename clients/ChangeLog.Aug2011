@@ -1,6 +1,10 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Wed Oct 12 2011 Sjoerd Mullender <sjoerd@acm.org>
+- mclient now checks the result of encoding conversions using the iconv
+  library.
+
 * Mon Oct 10 2011 Sjoerd Mullender <sjoerd@acm.org>
 - Fixed a source of crashes in mclient when a query on the command line
   using the -s option is combined with input on standard input (e.g. in

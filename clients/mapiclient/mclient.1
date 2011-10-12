@@ -91,6 +91,22 @@ to the empty string in the environment.
 .SS
 General Options
 .TP
+\fB\-\-help\fP (\fB\-?\fP)
+Print usage information and exit.
+.TP
+\fB\-\-encoding=\fP\fIencoding\fP (\fB\-E\fP \fIencoding\fP)
+Specify the character encoding of the input.  The option applies to
+both the standard input of
+.I mclient
+and to the argument of the
+.B \-\-statement
+.RB ( \-s )
+option but not to the contents of files specified on the command line
+or files specified using the
+.B \e<
+command (those must be encoded using UTF-8).  The default encoding is
+taken from the locale.
+.TP
 \fB\-\-language=\fP\fIlanguage\fP (\fB\-l\fP \fIlanguage\fP)
 Specify the query language.  The following languages are recognized:
 .B mal
@@ -102,11 +118,6 @@ When the
 option is omitted, the default of
 .B sql
 is assumed.
-.TP
-\fB\-\-help\fP (\fB\-?\fP)
-Print usage information and exit.  If preceded by the
-.B \-\-language
-option, give language-specific help and continue.
 .TP
 \fB\-\-database=\fP\fIdatabase\fP (\fB\-d\fP \fIdatabase\fP)
 Specify the name of the database to connect to.  The \fB-d\fP can be
