@@ -1,6 +1,10 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Wed Oct 12 2011 Fabian Groffen <fabian@cwi.nl>
+- Quoting of object names for mclient's \d command is now more flexible
+  and consistent with standard SQL quoting rules, bug #2846.
+
 * Mon Sep 12 2011 Sjoerd Mullender <sjoerd@acm.org>
 - ODBC: Implemented SQLColumnPrivileges function.
 
