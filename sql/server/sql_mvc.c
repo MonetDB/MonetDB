@@ -284,7 +284,7 @@ mvc_rollback(mvc *m, int chain, char *name)
 		while (tr && (!tr->name || strcmp(tr->name, name) != 0))
 			tr = tr->parent;
 		if (!tr) {
-			(void)sql_error(m, 010, "rollback savepoint %s doesn't exists", name);
+			(void)sql_error(m, 010, "ROLLBACK: no such savepoint: '%s'", name);
 			m->session->status = -1;
 			store_unlock();
 			return -1;
