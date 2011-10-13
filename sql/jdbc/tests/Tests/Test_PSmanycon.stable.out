@@ -123,6 +123,7 @@ Executing PreparedStatement 19... result: 19, done
 Executing PreparedStatement 20... result: 20, done
 Executing PreparedStatement 21... result: 21, done
 Executing PreparedStatement 22... result: 22, done
+Forced transaction failure
 Executing PreparedStatement 23... result: 23, done
 Executing PreparedStatement 24... result: 24, done
 Executing PreparedStatement 25... result: 25, done
@@ -146,6 +147,7 @@ Executing PreparedStatement 42... result: 42, done
 Executing PreparedStatement 43... result: 43, done
 Executing PreparedStatement 44... result: 44, done
 Executing PreparedStatement 45... result: 45, done
+Forced transaction failure
 Executing PreparedStatement 46... result: 46, done
 Executing PreparedStatement 47... result: 47, done
 Executing PreparedStatement 48... result: 48, done
