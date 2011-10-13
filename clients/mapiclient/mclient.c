@@ -1814,6 +1814,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 					bufsiz += READBLOCK;
 					buf = realloc(buf, bufsiz);
 					line = buf + bufsiz - 1 - READBLOCK;
+					oldbuf = buf;
 				}
 				*line++ = c;
 				if (c == '\n')
@@ -2793,6 +2794,14 @@ main(int argc, char **argv)
 #ifdef HAVE_LIBREADLINE
 			mnstr_printf(toConsole,
 					"support for command-line editing compiled-in\n");
+#endif
+#ifdef HAVE_ICONV
+#ifdef HAVE_NL_LANGINFO
+			if (encoding == NULL)
+				encoding = nl_langinfo(CODESET);
+#endif
+			mnstr_printf(toConsole,
+				     "character encoding: %s\n", encoding ? encoding : "utf-8 (default)");
 #endif
 			return(0);
 		case 'z':

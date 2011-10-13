@@ -1,6 +1,10 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Wed Oct 12 2011 Fabian Groffen <fabian@cwi.nl>
+- Python DB API connect() function now supports PEP 249-style arguments
+  user and host, bug #2901
+
 * Wed Oct 12 2011 Sjoerd Mullender <sjoerd@acm.org>
 - mclient now checks the result of encoding conversions using the iconv
   library.

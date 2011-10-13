@@ -2943,8 +2943,8 @@ def main(argv) :
         dft['setMONETDB_MOD_PATH'] = "'--set \"monet_mod_path='+env['MONETDB_MOD_PATH']+'\"'"
         dft['setGDK_DBFARM']     = "'--set \"gdk_dbfarm='+env['GDK_DBFARM']+'\"'"
         dft['MAPIPORT']       = "str(randomPort(30000,39999))"
-        dft['MALCLIENT']      = "'mclient -lmal -ftest'"
-        dft['SQLCLIENT']      = "'mclient -lsql -ftest'"
+        dft['MALCLIENT']      = "'mclient -lmal -ftest -Eutf-8'"
+        dft['SQLCLIENT']      = "'mclient -lsql -ftest -Eutf-8'"
         dft['SQLDUMP']        = "'msqldump -q'"
 
     #par = {}

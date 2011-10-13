@@ -33,7 +33,7 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 0 # length
+% 66 # length
 function user.s0_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     X_10:bat[:oid,:dbl]  := sql.bind(X_2,"sys","tab_2826","d",0);
