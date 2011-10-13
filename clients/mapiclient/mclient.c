@@ -2773,6 +2773,14 @@ main(int argc, char **argv)
 			mnstr_printf(toConsole,
 					"support for command-line editing compiled-in\n");
 #endif
+#ifdef HAVE_ICONV
+#ifdef HAVE_NL_LANGINFO
+			if (encoding == NULL)
+				encoding = nl_langinfo(CODESET);
+#endif
+			mnstr_printf(toConsole,
+				     "character encoding: %s\n", encoding ? encoding : "utf-8 (default)");
+#endif
 			return(0);
 		case 'z':
 			settz = 0;
