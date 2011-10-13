@@ -1806,6 +1806,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 					bufsiz += READBLOCK;
 					buf = realloc(buf, bufsiz);
 					line = buf + bufsiz - 1 - READBLOCK;
+					oldbuf = buf;
 				}
 				*line++ = c;
 				if (c == '\n')
