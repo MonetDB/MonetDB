@@ -47,3 +47,4 @@ non-stable-select-bug.Bug-2894
 HAVE_PERL?perl-short-read-bug.Bug-2897
 device-self-ref-fk
 rand-with-seed.Bug-2900
+alter-table-set-read-only.bug-2906
