@@ -2226,8 +2226,11 @@ rel_rename_exps( mvc *sql, list *exps1, list *exps2)
 	for (n = exps1->h, m = exps2->h; n && m; n = n->next, m = m->next) {
 		sql_exp *e1 = n->data;
 		sql_exp *e2 = m->data;
+		char *rname = e1->rname;
 
-		exp_setname(sql->sa, e2, e1->rname, e1->name );
+		if (!rname && e2->rname)
+			rname = e2->rname;
+		exp_setname(sql->sa, e2, rname, e1->name );
 	}
 }
 
