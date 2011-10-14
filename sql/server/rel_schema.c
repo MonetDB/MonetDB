@@ -1061,7 +1061,7 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 		sql_table *nt = dup_sql_table(sql->sa, t);
 		sql_exp ** updates, *e;
 
-		if (nt && te->token == SQL_DROP_CONSTRAINT) {
+		if (nt && te && te->token == SQL_DROP_CONSTRAINT) {
 			dlist *l = te->data.lval;
 			char *kname = l->h->data.sval;
 			int drop_action = l->h->next->data.i_val;
