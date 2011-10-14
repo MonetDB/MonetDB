@@ -52,14 +52,16 @@ def extract(f):
 
 def findfiles(dirlist, skipfiles = [], skipdirs = []):
     decls = []
+    done = {}
     for d in dirlist:
         for root, dirs, files in os.walk(d):
             for d in skipdirs:
                 if d in dirs:
                     dirs.remove(d)
             for f in files:
-                if (f.endswith('.c') or f.endswith('.h')) and f not in skipfiles:
+                if not done.has_key(f) and (f.endswith('.c') or f.endswith('.h')) and f not in skipfiles:
                     decls.extend(extract(os.path.join(root, f)))
+                    done[f] = True
     decls.sort()
     names, decls = zip(*decls)
     return decls
