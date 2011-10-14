@@ -119,7 +119,6 @@ batmtime_export str MTIMEbat_@1_cst_@2(int *ret, @1 *cst, int *l);
 batmtime_export str MTIMEaccum_@1_@2(int *ret, int *d, int *l, int *r);
 batmtime_export str MTIMEaccum_@1_@2_cst(int *ret, int *r, int *l, @1 *cst);
 batmtime_export str MTIMEaccum_@1_cst_@2(int *ret, int *r, @1 *cst, int *l);
-batmtime_export str MTIMEunaryISNIL(int *ret, int *bid);
 
 @
  * @- Comparison operator implementation for temporal objects
@@ -457,6 +456,7 @@ str MTIMEaccum_@1_cst_@2(int *ret, int *r, @1 *cst, int *l)
 @:implCmpGrpDef(date)@
 @:implCmpGrpDef(daytime)@
 @:implCmpGrpDef(timestamp)@
+batmtime_export str MTIMEunaryISNIL(int *ret, int *bid);
 @c
 @:baselineCode(date,EQ)@
 @:baselineCode(date,NEQ)@
