@@ -1,0 +1,12 @@
+stderr of test 'exports` in directory '.` itself:
+
+
+# 15:10:42 >  
+# 15:10:42 >  "/usr/bin/python" "exports.py" "exports"
+# 15:10:42 >  
+
+
+# 15:11:17 >  
+# 15:11:17 >  "Done."
+# 15:11:17 >  
+

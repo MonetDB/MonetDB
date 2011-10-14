@@ -1119,7 +1119,10 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
     env['TSTDIR']    = TSTDIR
     env['TSTSRCDIR'] = TSTSRCDIR
     env['TSTTRGDIR'] = TSTTRGDIR
-    env['RELSRCDIR'] = os.path.join(((os.pardir+os.sep)*(len(TSTDIR.split(os.sep))+1))+env['RELSRCBASE'],TSTDIR,TSTSUFF).replace(os.sep+os.sep,os.sep)
+    if TSTDIR == os.curdir:
+        env['RELSRCDIR'] = os.path.join(os.pardir+os.sep+env['RELSRCBASE'],TSTSUFF).replace(os.sep+os.sep,os.sep)
+    else:
+        env['RELSRCDIR'] = os.path.join(((os.pardir+os.sep)*(len(TSTDIR.split(os.sep))+1))+env['RELSRCBASE'],TSTDIR,TSTSUFF).replace(os.sep+os.sep,os.sep)
     os.environ['TSTDB']     = TSTDB
     os.environ['TSTDIR']    = TSTDIR
     os.environ['TSTSRCDIR'] = TSTSRCDIR
@@ -3245,7 +3248,7 @@ def main(argv) :
         RELSRCBASE = os.curdir
     else:
         TSTBASE = os.path.dirname(os.path.commonprefix([os.path.normcase(env['TSTSRCBASE']),os.path.normcase(env['TSTTRGBASE'])]))
-        RELBASE = ((os.pardir+os.sep)*len(env['TSTTRGBASE'][len(TSTBASE+os.sep):].split(os.sep)))
+        RELBASE = (os.pardir+os.sep)*len(env['TSTTRGBASE'][len(TSTBASE+os.sep):].split(os.sep))
         RELSRCBASE = RELBASE+env['TSTSRCBASE'][len(TSTBASE):]
     env['RELSRCBASE'] = RELSRCBASE
 

@@ -447,7 +447,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 		if (e->flag == cmp_in || e->flag == cmp_notin) {
 			return handle_in_exps(sql, e->l, e->r, left, right, grp, (e->flag == cmp_in), 0);
 		}
-		if (e->flag == cmp_or && !right) {
+		if (e->flag == cmp_or && (!right || right->nrcols == 1)) {
 			list *l = e->l;
 			node *n;
 			stmt *sel1, *sel2;
@@ -3157,7 +3157,7 @@ rel2bin_update( mvc *sql, sql_rel *rel, list *refs)
 	updcol = first_updated_col(updates, list_length(t->columns.set));
 	for (m = rel->exps->h; m; m = m->next) {
 		sql_exp *ce = m->data;
-		sql_idx *i = find_sql_idx(t, ce->name);
+		sql_idx *i = find_sql_idx(t, ce->name+1);
 
 		if (i) {
 			stmt *is = bin_find_column(sql->sa, update, ce->l, ce->r);

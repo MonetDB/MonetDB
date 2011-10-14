@@ -1,0 +1,56 @@
+stdout of test 'rand-with-seed.Bug-2900` in directory 'test/BugTracker-2011` itself:
+
+
+# 09:17:38 >  
+# 09:17:38 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "gdk_dbfarm=/net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/HG/Aug2011/prefix/_/var/MonetDB" "--set" "mapi_open=true" "--set" "mapi_port=35012" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbname=mTests_test_BugTracker-2011" "--set" "mal_listing=0"
+# 09:17:38 >  
+
+# MonetDB 5 server v11.5.4
+# This is an unreleased version
+# Serving database 'mTests_test_BugTracker-2011', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:35012/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_history.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_compress.sql
+# loading sql script: 18_dictionary.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 99_system.sql
+
+# 09:17:38 >  
+# 09:17:38 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=rig" "--port=35012"
+# 09:17:38 >  
+
+#select rand(100) is null , rand() is null ;
+% .,	. # table_name
+% rand_single_value,	isnull_rand # name
+% boolean,	boolean # type
+% 5,	5 # length
+[ false,	false	]
+
+# 09:17:38 >  
+# 09:17:38 >  "Done."
+# 09:17:38 >  
+

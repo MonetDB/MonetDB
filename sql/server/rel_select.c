@@ -2273,9 +2273,14 @@ rel_compare(mvc *sql, sql_rel *rel, symbol *lo, symbol *ro, symbol *ro2,
 			rel_setsubquery(r);
 			rs = rel_lastexp(sql, r);
 			if (r->card > CARD_ATOM) {
-				sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(rs));
+				/* if single value (independed of relations), rewrite */
+				if (is_project(r->op) && !r->l && r->exps && list_length(r->exps) == 1) {
+					return rel_compare_exp(sql, rel, ls, r->exps->h->data, compare_op, NULL, k.reduce);
+				} else { 
+					sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(rs));
 
-				rs = exp_aggr1(sql->sa, rs, zero_or_one, 0, 0, CARD_ATOM, 0);
+					rs = exp_aggr1(sql->sa, rs, zero_or_one, 0, 0, CARD_ATOM, 0);
+				}
 			}
 			rel = rel_crossproduct(sql->sa, rel, r, op_semi);
 		}

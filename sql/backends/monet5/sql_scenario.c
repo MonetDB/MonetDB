@@ -409,25 +409,8 @@ SQLinitClient(Client c)
 		mvc_reset(m, c->fdin, c->fdout, SQLdebug, NR_GLOBAL_VARS);
 		backend_reset(be);
 	}
-	if (m->session->tr) {
-		node *n = ((sql_schema *) m->session->tr->schemas.set->h->data)->funcs.set->h;
-		sql_func *f;
-		Symbol s;
-		while (n) {
-			f = (sql_func *) n->data;
-			if (f->sql > 1) {
-				s = c->nspace->subscope[((unsigned char *) f->base.name)[0]];
-				while (s) {
-					if (strcmp(s->name, f->base.name) == 0)
-						break;
-					s = s->skip;
-				}
-				if (s == 0)
-					f->sql = 1;
-			}
-			n = n->next;
-		}
-	}
+	if (m->session->tr)
+		reset_functions(m->session->tr);
 	/* pass through credentials of the user if not console */
 	schema = monet5_user_get_def_schema(m, c->user);
 	if (!schema) {

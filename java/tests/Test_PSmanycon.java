@@ -56,6 +56,18 @@ public class Test_PSmanycon {
 				System.out.print(" result: " + rs.getString(1));
 				pstmt.getConnection().close();
 				System.out.println(", done");
+
+				if ((i + 1) % 23 == 0) {
+					// inject a failed transaction
+					Connection con = DriverManager.getConnection(args[0]);
+					Statement stmt = con.createStatement();
+					try {
+						int affrows = stmt.executeUpdate("update foo where bar is wrong");
+						System.out.println("oops, faulty statement just got through :(");
+					} catch (SQLException e) {
+						System.out.println("Forced transaction failure");
+					}
+				}
 			}
 		} catch (SQLException e) {
 			System.out.println("FAILED! " + e.getMessage());
