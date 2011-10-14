@@ -48,9 +48,6 @@ import nl.cwi.monetdb.mcl.parser.*;
  * <br /><br />
  * The current state of this connection is that it nearly implements the
  * whole Connection interface.<br />
- * Additionally, the static method getEmbeddedInstanceConnection()
- * provides a Connection for embedded situations, where an embedded
- * Mserver is started and used.
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
  * @version 1.2
@@ -66,7 +63,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	private final String username;
 	/** The password to use when authenticating */
 	private final String password;
-	/** A connection to Mserver using a TCP socket */
+	/** A connection to mserver5 using a TCP socket */
 	private final MapiSocket server;
 	/** The Reader from the server */
 	private final BufferedMCLReader in;
@@ -1785,6 +1782,31 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		}
 
 		/**
+		 * Close this Response if it still needs some data from the
+		 * server.  This method is intended for the situation where the
+		 * server invalidates all handles.
+		 *
+		 * @return true if this Response was closed, false otherwise
+		 */
+		boolean closeIfOutstandingResults() {
+			int block = ((tuplecount + 1) - blockOffset) / cacheSize;
+			if (resultBlocks[block] == null &&
+					parent.rstype == ResultSet.TYPE_FORWARD_ONLY)
+			{
+				close();
+				return(true);
+			} else if (parent.rstype != ResultSet.TYPE_FORWARD_ONLY) {
+				for (int i = block; i >= 0; i--) {
+					if (resultBlocks[i] == null) {
+						close();
+						return(true);
+					}
+				}
+			}
+			return(false);
+		}
+
+		/**
 		 * Closes this Response by sending an Xclose to the server indicating
 		 * that the result can be closed at the server side as well.
 		 */
@@ -2007,12 +2029,29 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * <tt>&amp;4 (t|f)</tt>
 	 */
 	// {{{ AutoCommitResponse class implementation
-	class AutoCommitResponse extends SchemaResponse {
+	class AutoCommitResponse implements Response {
+		public final int state = Statement.SUCCESS_NO_INFO;
 		public final boolean autocommit;
 		
 		public AutoCommitResponse(boolean ac) {
 			// fill the blank final
 			this.autocommit = ac;
+		}
+
+		public String addLine(String line, int linetype) {
+			return("Header lines are not supported for a AutoCommitResponse");
+		}
+
+		public boolean wantsMore() {
+			return(false);
+		}
+
+		public void complete() {
+			// empty, because there is nothing to check
+		}
+
+		public void close() {
+			// nothing to do here...
 		}
 	}
 	// }}}
@@ -2120,6 +2159,27 @@ public class MonetConnection extends MonetWrapper implements Connection {
 			for (int i = curResponse; i >= 0; i--) {
 				closeResponse(i);
 			}
+		}
+
+		/**
+		 * Close all ResultSetResponses that still need the server for
+		 * obtaining all results.  This is intended for when the server
+		 * invalidates all open handles.
+		 *
+		 * @return true when ResultSets were closed, false otherwise
+		 */
+		boolean closeUnfinishedResultSets() {
+			// optimal case, no ResultSets at all to check
+			if (rsresponses == null)
+				return(false);
+
+			boolean didClose = false;
+			Iterator it = rsresponses.keySet().iterator();
+			while (it.hasNext()) {
+				ResultSetResponse rsr = (ResultSetResponse)(it.next());
+				didClose |= rsr.closeIfOutstandingResults();
+			}
+			return(didClose);
 		}
 
 		/**
@@ -2255,6 +2315,11 @@ public class MonetConnection extends MonetWrapper implements Connection {
 												);
 									break;
 									case StartOfHeaderParser.Q_SCHEMA:
+										// schema updates invalidate all
+										// open handles for result sets
+										// as well as prepared
+										// statements
+										invalidateHandles();
 										res = new SchemaResponse();
 									break;
 									case StartOfHeaderParser.Q_TRANS:
@@ -2389,6 +2454,39 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		}
 	}
 	// }}}
+	
+	/**
+	 * Invalidate all outstanding ResultSet and PreparedStatement
+	 * handles.  Whenever a schema update occurs, the server discards
+	 * all outstanding handles, since they might have become
+	 * incompatible with the current situation.  Hence, we have to close
+	 * all open handles, such that the user knows the (most notably
+	 * PreparedStatement) handles cannot be used any longer.  We emit a
+	 * warning in case anything is invalidated.
+	 */
+	private void invalidateHandles() {
+		boolean didClose = false;
+		Iterator it = statements.keySet().iterator();
+		while (it.hasNext()) {
+			try {
+				Object o = it.next();
+				if (o instanceof PreparedStatement) {
+					// we can always close this, since it always keeps a
+					// handle on the server
+					((PreparedStatement)o).close();
+					didClose = true;
+				} else if (o instanceof Statement) {
+					// don't close the entire Statement, only the
+					// ResultSets that really have to be closed
+					didClose |= ((MonetStatement)o).closeUnfinishedResultSets();
+				}
+			} catch (SQLException e) {
+				// better luck next time!
+			}
+		}
+		if (didClose)
+			addWarning("Invalidated ResultSets and PreparedStatements due to schema update");
+	}
 
 	/**
 	 * A thread to send a query to the server.  When sending large

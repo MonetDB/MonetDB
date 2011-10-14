@@ -315,6 +315,17 @@ public class MonetStatement extends MonetWrapper implements Statement {
 	}
 
 	/**
+	 * Closes all ResultSets that might still need the server for more
+	 * data.  This method is intended for the situation where the server
+	 * invalidates all handles, and hence makes it impossible to
+	 * retrieve more data for ResultSets that haven't yet received all
+	 * data they need.
+	 */
+	boolean closeUnfinishedResultSets() {
+		return(lastResponseList.closeUnfinishedResultSets());
+	}
+
+	/**
 	 * Retrieves whether this Statement object has been closed. A
 	 * Statement is closed if the method close has been called on it, or
 	 * if it is automatically closed.
@@ -899,6 +910,8 @@ public class MonetStatement extends MonetWrapper implements Statement {
 			ret = ((MonetConnection.UpdateResponse)header).count;
 		} else if (header instanceof MonetConnection.SchemaResponse) {
 			ret = ((MonetConnection.SchemaResponse)header).state;
+		} else if (header instanceof MonetConnection.AutoCommitResponse) {
+			ret = ((MonetConnection.AutoCommitResponse)header).state;
 		}
 
 		return(ret);
