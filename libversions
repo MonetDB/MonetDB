@@ -19,14 +19,16 @@
 #      public release, then set AGE to 0.
 
 # In other words
-# - if there are no code changes, don't change version numbers;
-# - if there are changes to the code (bug fixes) but no API changes,
-#   just increment REVISION;
-# - if there are only backward compatible API changes (new
-#   interfaces), increment both CURRENT and AGE, and set REVISION to
-#   0;
-# - if there are also incompatible API changes (interfaces removed or
-#   changed), increment CURRENT, and set AGE and REVISION to 0.
+# X   if there are no code changes, don't change version numbers;
+# FIX if there are changes to the code (bug fixes) but no API changes,
+#     just increment REVISION;
+# NEW if there are only backward compatible API changes (new
+#     interfaces), increment both CURRENT and AGE, and set REVISION to
+#     0;
+# BRK if there are also incompatible API changes (interfaces removed or
+#     changed), increment CURRENT, and set AGE and REVISION to 0.
+
+# the numbers are: <CURRENT>:<REVISION>:<AGE>
 
 # version of the GDK library (subdirectory gdk; also includes
 # common/options and common/mutils)
@@ -36,6 +38,7 @@ GDK_VERSION=4:1:0
 MAPI_VERSION=4:0:1
 
 # version of the MONETDB5 library (subdirectory monetdb5, not including extras)
+# 26cb61b1604b: NEW
 MONETDB5_VERSION=8:1:0
 
 # version of the STREAM library (subdirectory common/stream)
