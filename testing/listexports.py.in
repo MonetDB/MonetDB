@@ -1,0 +1,76 @@
+import os
+import re
+
+dirlist = {
+    'gdk': ['gdk', 'common/options', 'common/utils'],
+    'mapi': ['clients/mapilib'],
+    'monetdb5': ['monetdb5'],
+    'stream': ['common/stream'],
+    }
+libs = sorted(dirlist.keys())
+skipdirs = ['extras']
+skipfiles = ['monet_getopt.h']
+srcdir = r'@SOURCE@'
+blddir = r'@BUILD@'
+
+comre = re.compile(r'/\*.*?\*/|//[^\n]*', re.DOTALL)
+expre = re.compile(r'^[ \t]*[a-zA-Z_0-9]*export\s+(?P<decl>[^;]*;)', re.MULTILINE)
+spcre = re.compile(r'\s+')
+nmere = re.compile(r'\b(?P<name>[a-zA-Z_][a-zA-Z_0-9]*)\s*[[(;]')
+strre = re.compile(r'([^ *])\*')
+
+def extract(f):
+    decls = []
+    data = open(f).read()
+    # remove C comments
+    res = comre.search(data)
+    while res is not None:
+        data = data[:res.start(0)] + ' ' + data[res.end(0):]
+        res = comre.search(data, res.start(0))
+    # remove \ <newline> combo's
+    data = data.replace('\\\n', '')
+    res = expre.search(data)
+    while res is not None:
+        pos = res.end(0)
+        decl = res.group('decl')
+        decl = spcre.sub(' ', decl) \
+            .replace(' ;', ';') \
+            .replace(' (', '(') \
+            .replace('( ', '(') \
+            .replace(' )', ')') \
+            .replace(') ', ')') \
+            .replace('* ', '*') \
+            .replace(' ,', ',')
+        decl = strre.sub(r'\1 *', decl)
+        res = nmere.search(decl)
+        if res is not None:
+            decls.append((res.group('name'), decl))
+        else:
+            decls.append(('', decl))
+        res = expre.search(data, pos)
+    return decls
+
+def findfiles(dirlist, skipfiles = [], skipdirs = []):
+    decls = []
+    for d in dirlist:
+        for root, dirs, files in os.walk(d):
+            for d in skipdirs:
+                if d in dirs:
+                    dirs.remove(d)
+            for f in files:
+                if (f.endswith('.c') or f.endswith('.h')) and f not in skipfiles:
+                    decls.extend(extract(os.path.join(root, f)))
+    decls.sort()
+    names, decls = zip(*decls)
+    return decls
+
+for lib in libs:
+    dirs = dirlist[lib]
+    dl = [os.path.join(srcdir, d) for d in dirs]
+    if srcdir != blddir:
+        dl.extend([os.path.join(blddir, d) for d in dirs])
+    decls = findfiles(dl, skipfiles = skipfiles, skipdirs = skipdirs)
+    print '# %s' % lib
+    for d in decls:
+        print d
+    print
