@@ -1393,7 +1393,7 @@ sqltypeinit(void)
 	sql_create_func("pi", "mmath", "pi", NULL, NULL, DBL, SCALE_NONE);
 
 	sql_create_funcSE("rand", "mmath", "rand", NULL, NULL, INT, SCALE_NONE);
-	sql_create_funcSE("rand", "mmath", "srand", INT, NULL, INT, SCALE_NONE);
+	sql_create_funcSE("rand", "mmath", "sqlrand", INT, NULL, INT, SCALE_NONE);
 
 	/* Date functions */
 	sql_create_func("curdate", "mtime", "current_date", NULL, NULL, DTE, SCALE_NONE);
