@@ -164,6 +164,7 @@ rel_insert_hash_idx(mvc *sql, sql_idx *i, sql_rel *inserts)
 static sql_rel *
 rel_insert_join_idx(mvc *sql, sql_idx *i, sql_rel *inserts)
 {
+	char *iname = sa_strconcat( sql->sa, "%", i->base.name);
 	int need_nulls = 0;
 	node *m, *o;
 	sql_key *rk = &((sql_fkey *) i->key)->rkey->k;
@@ -218,7 +219,7 @@ rel_insert_join_idx(mvc *sql, sql_idx *i, sql_rel *inserts)
 		_nlls = rel_project(sql->sa, _nlls, rel_projections(sql, _nlls, NULL, 1, 1));
 		/* add constant value for NULLS */
 		e = exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("oid"), NULL));
-		exp_setname(sql->sa, e, i->t->base.name, i->base.name);
+		exp_setname(sql->sa, e, i->t->base.name, iname);
 		append(_nlls->exps, e);
 	} else {
 		nnlls = ins;
@@ -230,7 +231,7 @@ rel_insert_join_idx(mvc *sql, sql_idx *i, sql_rel *inserts)
 	nnlls = rel_project(sql->sa, nnlls, pexps);
 	/* add row numbers */
 	e = exp_column(sql->sa, rel_name(rt), "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
-	exp_setname(sql->sa, e, i->t->base.name, i->base.name);
+	exp_setname(sql->sa, e, i->t->base.name, iname);
 	append(nnlls->exps, e);
 
 	if (need_nulls) {
@@ -486,6 +487,7 @@ is_idx_updated(sql_idx * i, list *exps)
 static sql_rel *
 rel_update_hash_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 {
+	char *iname = sa_strconcat( sql->sa, "%", i->base.name);
 	node *m;
 	sql_subtype *it, *wrd = 0; /* is not set in first if below */
 	int bits = 1 + ((sizeof(wrd)*8)-1)/(list_length(i->columns)+1);
@@ -529,11 +531,11 @@ rel_update_hash_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 	}
 	/* append hash to updates */
 	append(get_inserts(updates), h);
-	exp_setname(sql->sa, h, i->t->base.name, i->base.name);
+	exp_setname(sql->sa, h, i->t->base.name, iname);
 
 	if (!updates->exps)
 		updates->exps = new_exp_list(sql->sa);
-	append(updates->exps, exp_column(sql->sa, i->t->base.name, i->base.name, wrd, CARD_MULTI, 0, 0));
+	append(updates->exps, exp_column(sql->sa, i->t->base.name, iname, wrd, CARD_MULTI, 0, 0));
 	return updates;
 }
 
@@ -568,6 +570,7 @@ rel_update_join_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 {
 	int nr = ++sql->label;
 	char name[16], *nme = number2name(name, 16, nr);
+	char *iname = sa_strconcat( sql->sa, "%", i->base.name);
 
 	int need_nulls = 0;
 	node *m, *o;
@@ -619,7 +622,7 @@ rel_update_join_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 		_nlls = rel_project(sql->sa, _nlls, rel_projections(sql, _nlls, NULL, 1, 1));
 		/* add constant value for NULLS */
 		e = exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("oid"), NULL));
-		exp_setname(sql->sa, e, i->t->base.name, i->base.name);
+		exp_setname(sql->sa, e, i->t->base.name, iname);
 		append(_nlls->exps, e);
 	} else {
 		nnlls = ups;
@@ -630,7 +633,7 @@ rel_update_join_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 	nnlls = rel_project(sql->sa, nnlls, rel_projections(sql, nnlls->l, NULL, 1, 1));
 	/* add row numbers */
 	e = exp_column(sql->sa, rel_name(rt), "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
-	exp_setname(sql->sa, e, i->t->base.name, i->base.name);
+	exp_setname(sql->sa, e, i->t->base.name, iname);
 	append(nnlls->exps, e);
 
 	if (need_nulls) {
@@ -642,7 +645,7 @@ rel_update_join_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 	}
 	if (!updates->exps)
 		updates->exps = new_exp_list(sql->sa);
-	append(updates->exps, exp_column(sql->sa, i->t->base.name, i->base.name, sql_bind_localtype("oid"), CARD_MULTI, 0, 0));
+	append(updates->exps, exp_column(sql->sa, i->t->base.name, iname, sql_bind_localtype("oid"), CARD_MULTI, 0, 0));
 	return updates;
 }
 
@@ -657,19 +660,6 @@ rel_update_idxs(mvc *sql, sql_table *t, sql_rel *relup)
 
 	if (!t->idxs.set)
 		return relup;
-
-	for (n = t->idxs.set->h; n; n = n->next) {
-		sql_idx *i = n->data;
-		sql_subtype *tpe = sql_bind_localtype("wrd"); /* hash "wrd" */
-		char *iname = sa_strconcat( sql->sa, "%", i->base.name);
-		sql_exp *v;
-
-		if (i->type == join_idx)
-			tpe = sql_bind_localtype("oid"); 
-		/* index names are prefixed, to make them independent */
-		v = exp_column(sql->sa, t->base.name, iname, tpe, CARD_MULTI, 0, 1);
-		rel_project_add_exp(sql, p, v);
-	}
 
 	for (n = t->idxs.set->h; n; n = n->next) {
 		sql_idx *i = n->data;
