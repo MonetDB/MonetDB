@@ -123,7 +123,7 @@ Ready.
 #( SELECT count(*) AS mat_slice FROM GetTrace() WHERE stmt LIKE '% := mat.slice(%' ) as ms
 #WHERE ( mat = 0 AND mat_slice = 0 ) OR ( mat > 0 AND mat_slice > 0 );
 % .m # table_name
-% L7 # name
+% L13 # name
 % wrd # type
 % 1 # length
 [ 1	]

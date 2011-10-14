@@ -155,7 +155,7 @@ param_cmp(sql_subtype *t1, sql_subtype *t2)
 }
 
 static int
-param_list_cmp(sql_subtype *typelist, atom **atoms, int plen)
+param_list_cmp(sql_subtype *typelist, atom **atoms, int plen, int type)
 {
 	int i;
 
@@ -172,6 +172,8 @@ param_list_cmp(sql_subtype *typelist, atom **atoms, int plen)
 		if (!atom_null(a) && param_cmp(tp, atom_type(a)) != 0) {
 			sql_subtype *at = atom_type(a);
 
+			if (type != Q_UPDATE)
+				return -1;
 			/* FLT == DEC/NUM and DEC/NUM are equal */
 			if ((!((at->type->eclass == EC_DEC ||
 			        at->type->eclass == EC_NUM) &&
@@ -220,7 +222,7 @@ qc_match(qc *cache, symbol *s, atom **params, int  plen, int key)
 
 	for (q = cache->q; q; q = q->next) {
 		if (q->key == key) {
-			if (q->paramlen == plen && param_list_cmp(q->params, params, plen) == 0 && symbol_cmp(q->s, s) == 0) {
+			if (q->paramlen == plen && param_list_cmp(q->params, params, plen, q->type) == 0 && symbol_cmp(q->s, s) == 0) {
 				q->count++;
 				return q;
 			}
