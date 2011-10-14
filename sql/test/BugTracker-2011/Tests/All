@@ -46,5 +46,6 @@ div_zero_problem.Bug-2893
 non-stable-select-bug.Bug-2894
 HAVE_PERL?perl-short-read-bug.Bug-2897
 device-self-ref-fk
-rand-with-seed.Bug-2900
 missing_refine_reverse.Bug-2898
+rand-with-seed.Bug-2900
+alter-table-set-read-only.bug-2906

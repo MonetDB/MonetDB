@@ -5383,6 +5383,7 @@ end main;
 [ "round",			  "command",	  "mmath",	  "(x:flt,y:int):flt ",															  "MATHbinary_ROUNDflt;"				  ]
 [ "radians",		  "command",	  "mmath",		  "(x:dbl):dbl ",											  "MATHunary_RADIANSdbl;"		  ]
 [ "radians",		  "command",	  "mmath",		  "(x:flt):flt ",											  "MATHunary_RADIANSflt;"		  ]
+[ "sqlrand",			  "command",	  "mmath",	  "(seed:int):int ",											  "MATHsqlrandint;"				  ]
 [ "srand",			  "command",	  "mmath",	  "(seed:int):void ",															  "MATHsrandint;"					  ]
 [ "sqrt",			  "command",	  "mmath",	  "(y:dbl):dbl ",															  "MATHunary_SQRTdbl;"					  ]
 [ "sqrt",			  "command",	  "mmath",	  "(y:flt):flt ",															  "MATHunary_SQRTflt;"					  ]

@@ -1737,7 +1737,7 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst )
 			/* free old value */
 			ft= getTypeName(otype);
 			tt= getTypeName(type);
-			showException(SYNTAX, "defConstant", "constant coercion error from %s to %s: %s", ft, tt, msg);
+			showException(SYNTAX, "defConstant", "constant coercion error from %s to %s", ft,tt);
 			GDKfree(ft);
 			GDKfree(tt);
 			mb->errors++;
