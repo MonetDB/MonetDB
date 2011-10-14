@@ -1362,7 +1362,7 @@ mat_pack_sort(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int mirror_mid, in
 
 		if (s->argc == 2) /* sort */
 			stpe = tpe;
-		/* mat sortTail/sortTailReverse and refine/refine_rev */
+		/* mat sortTail/sortTailReverse and refine/refine_reverse */
 		setModuleId(pck,matRef);
 		setFunctionId(pck,getFunctionId(s)); 
 		/* double outputs (sorted values and map) */

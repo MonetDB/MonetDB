@@ -96,7 +96,7 @@ pattern refine(sorted:bat[:void,:any_2], map:bat[:void,:bte], b:bat[:any_1,:any_
 address MATrefine
 comment "refine map.";
 
-pattern refine_rev(sorted:bat[:void,:any_2], map:bat[:void,:bte], b:bat[:any_1,:any_3]...)
+pattern refine_reverse(sorted:bat[:void,:any_2], map:bat[:void,:bte], b:bat[:any_1,:any_3]...)
 	(rsorted:bat[:void,:oid], rmap:bat[:void,:bte]) 
 address MATrefineReverse
 comment "refine map.";
