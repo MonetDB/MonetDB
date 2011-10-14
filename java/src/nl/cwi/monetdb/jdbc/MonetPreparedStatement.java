@@ -137,6 +137,9 @@ public class MonetPreparedStatement
 			scale[i] = rs.getInt("scale");
 		}
 		rs.close();
+
+		// PreparedStatements are by default poolable
+		poolable = true;
 	}
 
 	/**
@@ -298,6 +301,8 @@ public class MonetPreparedStatement
 		return(null);
 	}
 
+	/* helper class for the anonymous class in getParameterMetaData */
+	private abstract class pmdw extends MonetWrapper implements ParameterMetaData {}
     /**
 	 * Retrieves the number, types and properties of this
 	 * PreparedStatement object's parameters.
@@ -308,7 +313,7 @@ public class MonetPreparedStatement
 	 * @throws SQLException if a database access error occurs
 	 */
 	public ParameterMetaData getParameterMetaData() throws SQLException {
-		return(new ParameterMetaData() {
+		return(new pmdw() {
 			/**
 			 * Retrieves the number of parameters in the
 			 * PreparedStatement object for which this ParameterMetaData
@@ -498,13 +503,61 @@ public class MonetPreparedStatement
 	 *
 	 * @param parameterIndex the first parameter is 1, the second is 2, ...
 	 * @param x the Java input stream that contains the ASCII parameter value
+	 * @throws SQLException if a database access error occurs
+	 * @throws SQLFeatureNotSupportedException the JDBC driver does
+	 *         not support this method
+	 */
+	public void setAsciiStream(int parameterIndex, InputStream x)
+		throws SQLException
+	{
+		throw new SQLFeatureNotSupportedException("Operation setAsciiStream(int, InputStream x) currently not supported!");
+	}
+
+	/**
+	 * Sets the designated parameter to the given input stream, which will have
+	 * the specified number of bytes. When a very large ASCII value is input to
+	 * a LONGVARCHAR parameter, it may be more practical to send it via a
+	 * java.io.InputStream. Data will be read from the stream as needed until
+	 * end-of-file is reached. The JDBC driver will do any necessary conversion
+	 * from ASCII to the database char format.
+	 * <br /><br />
+	 * Note: This stream object can either be a standard Java stream object or
+	 * your own subclass that implements the standard interface.
+	 *
+	 * @param parameterIndex the first parameter is 1, the second is 2, ...
+	 * @param x the Java input stream that contains the ASCII parameter value
 	 * @param length the number of bytes in the stream
 	 * @throws SQLException if a database access error occurs
 	 */
 	public void setAsciiStream(int parameterIndex, InputStream x, int length)
 		throws SQLException
 	{
-		throw new SQLException("Operation setAsciiStream(int parameterIndex, InputStream x, int length) currently not supported!");
+		setAsciiStream(parameterIndex, x, (long)length);
+	}
+
+	/**
+	 * Sets the designated parameter to the given input stream, which
+	 * will have the specified number of bytes. When a very large ASCII
+	 * value is input to a LONGVARCHAR parameter, it may be more
+	 * practical to send it via a java.io.InputStream. Data will be read
+	 * from the stream as needed until end-of-file is reached. The JDBC
+	 * driver will do any necessary conversion from ASCII to the
+	 * database char format.
+	 * <br /><br />
+	 * Note: This stream object can either be a standard Java stream object or
+	 * your own subclass that implements the standard interface.
+	 *
+	 * @param parameterIndex the first parameter is 1, the second is 2, ...
+	 * @param x the Java input stream that contains the ASCII parameter value
+	 * @param length the number of bytes in the stream
+	 * @throws SQLException if a database access error occurs
+	 * @throws SQLFeatureNotSupportedException the JDBC driver does
+	 *         not support this method
+	 */
+	public void setAsciiStream(int parameterIndex, InputStream x, long length)
+		throws SQLException
+	{
+		throw new SQLFeatureNotSupportedException("Operation setAsciiStream(int parameterIndex, InputStream x, long length) currently not supported!");
 	}
 
 	/**
@@ -536,11 +589,59 @@ public class MonetPreparedStatement
 	 * @param x the java input stream which contains the binary parameter value
 	 * @param length the number of bytes in the stream
 	 * @throws SQLException if a database access error occurs
+	 * @throws SQLFeatureNotSupportedException the JDBC driver does
+	 *         not support this method
+	 */
+	public void setBinaryStream(int parameterIndex, InputStream x)
+		throws SQLException
+	{
+		throw new SQLFeatureNotSupportedException("Operation setBinaryStream(int parameterIndex, InputStream x) currently not supported!");
+	}
+
+	/**
+	 * Sets the designated parameter to the given input stream, which will have
+	 * the specified number of bytes. When a very large binary value is input
+	 * to a LONGVARBINARY parameter, it may be more practical to send it via a
+	 * java.io.InputStream object. The data will be read from the stream as
+	 * needed until end-of-file is reached.
+	 * <br /><br />
+	 * Note: This stream object can either be a standard Java stream object or
+	 * your own subclass that implements the standard interface.
+	 *
+	 * @param parameterIndex the first parameter is 1, the second is 2, ...
+	 * @param x the java input stream which contains the binary parameter value
+	 * @param length the number of bytes in the stream
+	 * @throws SQLException if a database access error occurs
+	 * @throws SQLFeatureNotSupportedException the JDBC driver does
+	 *         not support this method
 	 */
 	public void setBinaryStream(int parameterIndex, InputStream x, int length)
 		throws SQLException
 	{
-		throw new SQLException("Operation setBinaryStream(int parameterIndex, InputStream x, int length) currently not supported!");
+		setBinaryStream(parameterIndex, x, (long)length);
+	}
+
+	/**
+	 * Sets the designated parameter to the given input stream, which will have
+	 * the specified number of bytes. When a very large binary value is input
+	 * to a LONGVARBINARY parameter, it may be more practical to send it via a
+	 * java.io.InputStream object. The data will be read from the stream as
+	 * needed until end-of-file is reached.
+	 * <br /><br />
+	 * Note: This stream object can either be a standard Java stream object or
+	 * your own subclass that implements the standard interface.
+	 *
+	 * @param parameterIndex the first parameter is 1, the second is 2, ...
+	 * @param x the java input stream which contains the binary parameter value
+	 * @param length the number of bytes in the stream
+	 * @throws SQLException if a database access error occurs
+	 * @throws SQLFeatureNotSupportedException the JDBC driver does
+	 *         not support this method
+	 */
+	public void setBinaryStream(int parameterIndex, InputStream x, long length)
+		throws SQLException
+	{
+		throw new SQLFeatureNotSupportedException("Operation setBinaryStream(int parameterIndex, InputStream x, long length) currently not supported!");
 	}
 
 	/**
@@ -550,9 +651,48 @@ public class MonetPreparedStatement
 	 * @param i the first parameter is 1, the second is 2, ...
 	 * @param x a Blob object that maps an SQL BLOB value
 	 * @throws SQLException if a database access error occurs
+	 * @throws SQLFeatureNotSupportedException the JDBC driver does
+	 *         not support this method
+	 */
+	public void setBlob(int i, InputStream x) throws SQLException {
+		throw new SQLFeatureNotSupportedException("Operation setBlob(int, InputStream) currently not supported!");
+	}
+
+	/**
+	 * Sets the designated parameter to the given Blob object. The driver
+	 * converts this to an SQL BLOB value when it sends it to the database.
+	 *
+	 * @param i the first parameter is 1, the second is 2, ...
+	 * @param x a Blob object that maps an SQL BLOB value
+	 * @throws SQLException if a database access error occurs
+	 * @throws SQLFeatureNotSupportedException the JDBC driver does
+	 *         not support this method
 	 */
 	public void setBlob(int i, Blob x) throws SQLException {
-		throw new SQLException("Operation setBlob(int i, Blob x) currently not supported!");
+		throw new SQLFeatureNotSupportedException("Operation setBlob(int i, Blob x) currently not supported!");
+	}
+
+	/**
+	 * Sets the designated parameter to a InputStream object. The
+	 * inputstream must contain the number of characters specified by
+	 * length otherwise a SQLException will be generated when the
+	 * PreparedStatement is executed. This method differs from the
+	 * setBinaryStream (int, InputStream, int) method because it informs
+	 * the driver that the parameter value should be sent to the server
+	 * as a BLOB. When the setBinaryStream method is used, the driver
+	 * may have to do extra work to determine whether the parameter data
+	 * should be sent to the server as a LONGVARBINARY or a BLOB.
+	 *
+	 * @param i the first parameter is 1, the second is 2, ...
+	 * @param is an object that contains the data to set the parameter
+	 *           value to
+	 * @param length the number of bytes in the parameter data
+	 * @throws SQLException if a database access error occurs
+	 * @throws SQLFeatureNotSupportedException the JDBC driver does
+	 *         not support this method
+	 */
+	public void setBlob(int i, InputStream is, long length) throws SQLException {
+		throw new SQLFeatureNotSupportedException("Operation setBlob(int, InputStream, long) currently not supported!");
 	}
 
 	/**
@@ -639,6 +779,56 @@ public class MonetPreparedStatement
 	}
 
 	/**
+	 * Sets the designated parameter to the given Reader object, which is the
+	 * given number of characters long. When a very large UNICODE value is
+	 * input to a LONGVARCHAR parameter, it may be more practical to send it
+	 * via a java.io.Reader object. The data will be read from the stream as
+	 * needed until end-of-file is reached. The JDBC driver will do any
+	 * necessary conversion from UNICODE to the database char format.
+	 * <br /><br />
+	 * Note: This stream object can either be a standard Java stream object or
+	 * your own subclass that implements the standard interface.
+	 * <br /><br />
+	 * @param parameterIndex the first parameter is 1, the second is 2, ...
+	 * @param reader the java.io.Reader object that contains the Unicode data
+	 * @param length the number of characters in the stream
+	 * @throws SQLException if a database access error occurs
+	 * @throws SQLFeatureNotSupportedException the JDBC driver does
+	 *         not support this method
+	 */
+	public void setCharacterStream(int parameterIndex, Reader reader)
+		throws SQLException
+	{
+		throw new SQLFeatureNotSupportedException("setCharacterStream(int, Reader) not supported");
+	}
+
+	/**
+	 * Sets the designated parameter to the given Reader object, which is the
+	 * given number of characters long. When a very large UNICODE value is
+	 * input to a LONGVARCHAR parameter, it may be more practical to send it
+	 * via a java.io.Reader object. The data will be read from the stream as
+	 * needed until end-of-file is reached. The JDBC driver will do any
+	 * necessary conversion from UNICODE to the database char format.
+	 * <br /><br />
+	 * Note: This stream object can either be a standard Java stream object or
+	 * your own subclass that implements the standard interface.
+	 * <br /><br />
+	 * @param parameterIndex the first parameter is 1, the second is 2, ...
+	 * @param reader the java.io.Reader object that contains the Unicode data
+	 * @param length the number of characters in the stream
+	 * @throws SQLException if a database access error occurs
+	 */
+	public void setCharacterStream(
+		int parameterIndex,
+		Reader reader,
+		long length)
+		throws SQLException
+	{
+		// given the implementation of the int-version, downcast is ok
+		setCharacterStream(parameterIndex, reader, (int)length);
+	}
+
+	/**
 	 * Sets the designated parameter to the given Clob object. The driver
 	 * converts this to an SQL CLOB value when it sends it to the database.
 	 *
@@ -651,6 +841,51 @@ public class MonetPreparedStatement
 		// efficient, but might work for a few cases...
 		// be on your marks: we have to cast the length down!
 		setString(i, x.getSubString(1L, (int)(x.length())));
+	}
+
+	/**
+	 * Sets the designated parameter to the given Clob object. The driver
+	 * converts this to an SQL CLOB value when it sends it to the database.
+	 *
+	 * @param i the first parameter is 1, the second is 2, ...
+	 * @param x an object that contains the data to set the parameter
+	 *          value to
+	 * @throws SQLException if a database access error occurs
+	 * @throws SQLFeatureNotSupportedException the JDBC driver does
+	 *         not support this method
+	 */
+	public void setClob(int i, Reader x) throws SQLException {
+		throw new SQLFeatureNotSupportedException("setClob(int, Reader) not supported");
+	}
+
+	/**
+	 * Sets the designated parameter to a Reader object. The reader must
+	 * contain the number of characters specified by length otherwise a
+	 * SQLException will be generated when the PreparedStatement is
+	 * executed. This method differs from the setCharacterStream (int,
+	 * Reader, int) method because it informs the driver that the
+	 * parameter value should be sent to the server as a CLOB. When the
+	 * setCharacterStream method is used, the driver may have to do
+	 * extra work to determine whether the parameter data should be sent
+	 * to the server as a LONGVARCHAR or a CLOB.
+	 *
+	 * @param i the first parameter is 1, the second is 2, ...
+	 * @param reader An object that contains the data to set the
+	 *        parameter value to.
+	 * @param length the number of characters in the parameter data.
+	 * @throws SQLException if a database access error occurs
+	 */
+	public void setClob(int i, Reader reader, long length) throws SQLException {
+		// simply serialise the CLOB into a variable for now... far from
+		// efficient, but might work for a few cases...
+		CharBuffer buf = CharBuffer.allocate((int)length); // have to down cast :(
+		try {
+			reader.read(buf);
+		} catch (IOException e) {
+			throw new SQLException("failed to read from stream: " +
+					e.getMessage());
+		}
+		setString(i, buf.toString());
 	}
 
 	/**
@@ -739,6 +974,110 @@ public class MonetPreparedStatement
 	 */
 	public void setLong(int parameterIndex, long x) throws SQLException {
 		setValue(parameterIndex, "" + x);
+	}
+
+	/**
+	 * Sets the designated parameter to a Reader object. The Reader
+	 * reads the data till end-of-file is reached. The driver does the
+	 * necessary conversion from Java character format to the national
+	 * character set in the database.
+	 *
+	 * @param i the first parameter is 1, the second is 2, ...
+	 * @param value the parameter value
+	 * @throws SQLException if a database access error occurs
+	 * @throws SQLFeatureNotSupportedException the JDBC driver does
+	 *         not support this method
+	 */
+	public void setNCharacterStream(int i, Reader value) throws SQLException {
+		throw new SQLFeatureNotSupportedException("Operation setNCharacterStream currently not supported!");
+	}
+
+	/**
+	 * Sets the designated parameter to a Reader object. The Reader
+	 * reads the data till end-of-file is reached. The driver does the
+	 * necessary conversion from Java character format to the national
+	 * character set in the database.
+	 *
+	 * @param i the first parameter is 1, the second is 2, ...
+	 * @param value the parameter value
+	 * @param length the number of characters in the parameter data.
+	 * @throws SQLException if a database access error occurs
+	 * @throws SQLFeatureNotSupportedException the JDBC driver does
+	 *         not support this method
+	 */
+	public void setNCharacterStream(int i, Reader value, long length)
+		throws SQLException
+	{
+		setNCharacterStream(i, value);
+	}
+
+	/**
+	 * Sets the designated parameter to a java.sql.NClob object. The
+	 * driver converts this to a SQL NCLOB value when it sends it to the
+	 * database.
+	 *
+	 * @param i the first parameter is 1, the second is 2, ...
+	 * @param value the parameter value
+	 * @throws SQLException if a database access error occurs
+	 * @throws SQLFeatureNotSupportedException the JDBC driver does
+	 *         not support this method
+	 */
+	public void setNClob(int i, Reader value) throws SQLException {
+		throw new SQLFeatureNotSupportedException("Operation setNClob(int, Reader) currently not supported!");
+	}
+
+	/**
+	 * Sets the designated parameter to a java.sql.NClob object. The
+	 * driver converts this to a SQL NCLOB value when it sends it to the
+	 * database.
+	 *
+	 * @param i the first parameter is 1, the second is 2, ...
+	 * @param value the parameter value
+	 * @throws SQLException if a database access error occurs
+	 * @throws SQLFeatureNotSupportedException the JDBC driver does
+	 *         not support this method
+	 */
+	public void setNClob(int i, NClob value) throws SQLException {
+		throw new SQLFeatureNotSupportedException("Operation setNClob(int, NClob) currently not supported!");
+	}
+
+	/**
+	 * Sets the designated parameter to a Reader object. The reader must
+	 * contain the number of characters specified by length otherwise a
+	 * SQLException will be generated when the PreparedStatement is
+	 * executed. This method differs from the setCharacterStream (int,
+	 * Reader, int) method because it informs the driver that the
+	 * parameter value should be sent to the server as a NCLOB. When the
+	 * setCharacterStream method is used, the driver may have to do
+	 * extra work to determine whether the parameter data should be sent
+	 * to the server as a LONGNVARCHAR or a NCLOB.
+	 *
+	 * @param i the first parameter is 1, the second is 2, ...
+	 * @param r An object that contains the data to set the parameter
+	 *          value to
+	 * @param length the number of characters in the parameter data
+	 * @throws SQLException if a database access error occurs
+	 * @throws SQLFeatureNotSupportedException the JDBC driver does
+	 *         not support this method
+	 */
+	public void setNClob(int i, Reader r, long length) throws SQLException {
+		throw new SQLFeatureNotSupportedException("Operation setNClob(int, Reader, long) currently not supported!");
+	}
+
+	/**
+	 * Sets the designated paramter to the given String object. The
+	 * driver converts this to a SQL NCHAR or NVARCHAR or LONGNVARCHAR
+	 * value (depending on the argument's size relative to the driver's
+	 * limits on NVARCHAR values) when it sends it to the database.
+	 *
+	 * @param i the first parameter is 1, the second is 2, ...
+	 * @param value the parameter value
+	 * @throws SQLException if a database access error occurs
+	 * @throws SQLFeatureNotSupportedException the JDBC driver does
+	 *         not support this method
+	 */
+	public void setNString(int i, String value) throws SQLException {
+		throw new SQLFeatureNotSupportedException("Operation setNString(int i, String x) currently not supported!");
 	}
 
 	/**
@@ -862,8 +1201,11 @@ public class MonetPreparedStatement
 	 *                      be sent to the database. The scale argument may
 	 *                      further qualify this type.
 	 * @param scale for java.sql.Types.DECIMAL or java.sql.Types.NUMERIC types,
-	 *              this is the number of digits after the decimal point. For
-	 *              all other types, this value will be ignored.
+	 *              this is the number of digits after the decimal
+	 *              point. For Java Object types InputStream and Reader,
+	 *              this is the length of the data in the stream or
+	 *              reader.  For all other types, this value will be
+	 *              ignored.
 	 * @throws SQLException if a database access error occurs
 	 * @see Types
 	 */
@@ -980,6 +1322,10 @@ public class MonetPreparedStatement
 					}
 					setTimestamp(parameterIndex, val);
 				} break;
+				case Types.NCHAR:
+				case Types.NVARCHAR:
+				case Types.LONGNVARCHAR:
+					throw new SQLFeatureNotSupportedException("N CHAR types not supported");
 				default:
 					throw new SQLException("Conversion not allowed");
 			}
@@ -1156,20 +1502,26 @@ public class MonetPreparedStatement
 			setBlob(parameterIndex, (Blob)x);
 		} else if (x instanceof Clob) {
 			setClob(parameterIndex, (Clob)x);
+		} else if (x instanceof NClob) {
+			throw new SQLFeatureNotSupportedException("Operation setObject() with object of type NClob currently not supported!");
 		} else if (x instanceof Struct) {
 			// I have no idea how to do this...
-			throw new SQLException("Operation setObject() with object of type Struct currently not supported!");
+			throw new SQLFeatureNotSupportedException("Operation setObject() with object of type Struct currently not supported!");
 		} else if (x instanceof Ref) {
 			setRef(parameterIndex, (Ref)x);
+		} else if (x instanceof RowId) {
+			setRowId(parameterIndex, (RowId)x);
 		} else if (x instanceof java.net.URL) {
 			setURL(parameterIndex, (java.net.URL)x);
 		} else if (x instanceof SQLData) {
 			// do something with:
 			// ((SQLData)x).writeSQL( [java.sql.SQLOutput] );
 			// needs an SQLOutput stream... bit too far away from reality
-			throw new SQLException("Operation setObject() with object of type SQLData currently not supported!");
+			throw new SQLFeatureNotSupportedException("Operation setObject() with object of type SQLData currently not supported!");
+		} else if (x instanceof SQLXML) {
+			throw new SQLFeatureNotSupportedException("Operation setObject() with object of type SQLXML currently not supported!");
 		} else {	// java Class
-			throw new SQLException("Operation setObject() with object of type Class currently not supported!");
+			throw new SQLFeatureNotSupportedException("Operation setObject() with object of type Class currently not supported!");
 		}
 	}
 
@@ -1181,9 +1533,26 @@ public class MonetPreparedStatement
 	 * @param i the first parameter is 1, the second is 2, ...
 	 * @param x an SQL REF value
 	 * @throws SQLException if a database access error occurs
+	 * @throws SQLFeatureNotSupportedException the JDBC driver does
+	 *         not support this method
 	 */
 	public void setRef(int i, Ref x) throws SQLException {
-		throw new SQLException("Operation setRef(int i, Ref x) currently not supported!");
+		throw new SQLFeatureNotSupportedException("Operation setRef(int i, Ref x) currently not supported!");
+	}
+
+	/**
+	 * Sets the designated parameter to the given java.sql.RowId object.
+	 * The driver converts this to a SQL ROWID value when it sends it to
+	 * the database.
+	 *
+	 * @param i the first parameter is 1, the second is 2, ...
+	 * @param x the parameter value
+	 * @throws SQLException if a database access error occurs
+	 * @throws SQLFeatureNotSupportedException the JDBC driver does
+	 *         not support this method
+	 */
+	public void setRowId(int i, RowId x) throws SQLException {
+		throw new SQLFeatureNotSupportedException("Operation setRowId(int i, RowId x) currently not supported!");
 	}
 
 	/**
@@ -1213,6 +1582,21 @@ public class MonetPreparedStatement
 			parameterIndex,
 			"'" + x.replaceAll("\\\\", "\\\\\\\\").replaceAll("'", "\\\\'") + "'"
 		);
+	}
+
+	/**
+	 * Sets the designated parameter to the given java.sql.SQLXML
+	 * object. The driver converts this to an SQL XML value when it
+	 * sends it to the database.
+	 *
+	 * @param parameterIndex the first parameter is 1, the second is 2, ...
+	 * @param x a SQLXML object that maps an SQL XML value
+	 * @throws SQLException if a database access error occurs
+	 * @throws SQLFeatureNotSupportedException the JDBC driver does
+	 *         not support this method
+	 */
+	public void setSQLXML(int parameterIndex, SQLXML x) throws SQLException {
+		throw new SQLFeatureNotSupportedException("setSQLXML(int, SQLXML) not supported");
 	}
 
 	/**

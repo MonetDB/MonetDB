@@ -38,7 +38,7 @@ import java.io.*;
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
  * @version 0.1
  */
-public class MonetDataSource implements DataSource {
+public class MonetDataSource extends MonetWrapper implements DataSource {
 	private String description;
 	private int loginTimeout = 0;
 	private String user;

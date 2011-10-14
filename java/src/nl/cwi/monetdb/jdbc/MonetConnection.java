@@ -55,7 +55,7 @@ import nl.cwi.monetdb.mcl.parser.*;
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
  * @version 1.2
  */
-public class MonetConnection implements Connection {
+public class MonetConnection extends MonetWrapper implements Connection {
 	/** The hostname to connect to */
 	private final String hostname;
 	/** The port to connect on the host to */
@@ -336,6 +336,43 @@ public class MonetConnection implements Connection {
 	}
 
 	/**
+	 * Factory method for creating Array objects.
+	 * <br /><br />
+	 * Note: When createArrayOf is used to create an array object that
+	 * maps to a primitive data type, then it is implementation-defined
+	 * whether the Array object is an array of that primitive data type
+	 * or an array of Object.
+	 * <br /><br />
+	 * Note: The JDBC driver is responsible for mapping the elements
+	 * Object array to the default JDBC SQL type defined in
+	 * java.sql.Types for the given class of Object. The default mapping
+	 * is specified in Appendix B of the JDBC specification. If the
+	 * resulting JDBC type is not the appropriate type for the given
+	 * typeName then it is implementation defined whether an
+	 * SQLException is thrown or the driver supports the resulting
+	 * conversion. 
+	 *
+	 * @param typeName the SQL name of the type the elements of the
+	 *        array map to. The typeName is a database-specific name
+	 *        which may be the name of a built-in type, a user-defined
+	 *        type or a standard SQL type supported by this database.
+	 *        This is the value returned by Array.getBaseTypeName
+	 * @return an Array object whose elements map to the specified SQL
+	 *         type
+	 * @throws SQLException if a database error occurs, the JDBC type
+	 *         is not appropriate for the typeName and the conversion is
+	 *         not supported, the typeName is null or this method is
+	 *         called on a closed connection
+	 * @throws SQLFeatureNotSupportedException the JDBC driver does
+	 *         not support this data type
+	 */
+	public Array createArrayOf(String typeName, Object[] elements)
+		throws SQLException
+	{
+		throw new SQLFeatureNotSupportedException("createArrayOf(String, Object[]) not supported");
+	}
+
+	/**
 	 * Creates a Statement object for sending SQL statements to the
 	 * database.  SQL statements without parameters are normally
 	 * executed using Statement objects. If the same SQL statement is
@@ -430,6 +467,84 @@ public class MonetConnection implements Connection {
 	}
 
 	/**
+	 * Constructs an object that implements the Clob interface. The
+	 * object returned initially contains no data. The setAsciiStream,
+	 * setCharacterStream and setString methods of the Clob interface
+	 * may be used to add data to the Clob.
+	 *
+	 * @return a MonetClob instance
+	 * @throws SQLFeatureNotSupportedException the JDBC driver does
+	 *         not support MonetClob objects that can be filled in
+	 */
+	public Clob createClob() throws SQLException {
+		throw new SQLFeatureNotSupportedException("createClob() not supported");
+	}
+
+	/**
+	 * Constructs an object that implements the Blob interface. The
+	 * object returned initially contains no data. The setBinaryStream
+	 * and setBytes methods of the Blob interface may be used to add
+	 * data to the Blob.
+	 *
+	 * @return a MonetBlob instance
+	 * @throws SQLFeatureNotSupportedException the JDBC driver does
+	 *         not support MonetBlob objects that can be filled in
+	 */
+	public Blob createBlob() throws SQLException {
+		throw new SQLFeatureNotSupportedException("createBlob() not supported");
+	}
+
+	/**
+	 * Constructs an object that implements the NClob interface. The
+	 * object returned initially contains no data. The setAsciiStream,
+	 * setCharacterStream and setString methods of the NClob interface
+	 * may be used to add data to the NClob.
+	 *
+	 * @return an NClob instance
+	 * @throws SQLFeatureNotSupportedException the JDBC driver does
+	 *         not support MonetClob objects that can be filled in
+	 */
+	public NClob createNClob() throws SQLException {
+		throw new SQLFeatureNotSupportedException("createNClob() not supported");
+	}
+
+	/**
+	 * Factory method for creating Struct objects.
+	 *
+	 * @param typeName the SQL type name of the SQL structured type that
+	 *        this Struct object maps to. The typeName is the name of a
+	 *        user-defined type that has been defined for this database.
+	 *        It is the value returned by Struct.getSQLTypeName.
+	 * @param attributes the attributes that populate the returned
+	 *        object
+	 * @return a Struct object that maps to the given SQL type and is
+	 *         populated with the given attributes
+	 * @throws SQLException if a database error occurs, the typeName
+	 *         is null or this method is called on a closed connection
+	 * @throws SQLFeatureNotSupportedException the JDBC driver does
+	 *         not support this data type
+	 */
+	public Struct createStruct(String typeName, Object[] attributes)
+		throws SQLException
+	{
+		throw new SQLFeatureNotSupportedException("createStruct() not supported");
+	}
+
+	/**
+	 * Constructs an object that implements the SQLXML interface. The
+	 * object returned initially contains no data. The
+	 * createXmlStreamWriter object and setString method of the SQLXML
+	 * interface may be used to add data to the SQLXML object.
+	 *
+	 * @return An object that implements the SQLXML interface
+	 * @throws SQLFeatureNotSupportedException the JDBC driver does
+	 *         not support this data type
+	 */
+	public SQLXML createSQLXML() throws SQLException {
+		throw new SQLFeatureNotSupportedException("createSQLXML() not supported");
+	}
+
+	/**
 	 * Retrieves the current auto-commit mode for this Connection
 	 * object.
 	 *
@@ -464,6 +579,29 @@ public class MonetConnection implements Connection {
 		}
 	}
 	
+	/**
+	 * Not implemented by MonetDB's JDBC driver.
+	 *
+	 * @param name The name of the client info property to retrieve
+	 * @return The value of the client info property specified
+	 */
+	public String getClientInfo(String name) {
+		// This method will also return null if the specified client
+		// info property name is not supported by the driver.
+		return(null);
+	}
+
+	/**
+	 * Not implemented by MonetDB's JDBC driver.
+	 *
+	 * @return A Properties object that contains the name and current
+	 *         value of each of the client info properties supported by
+	 *         the driver.
+	 */
+	public Properties getClientInfo() {
+		return(new Properties());
+	}
+
 	/**
 	 * Retrieves the current holdability of ResultSet objects created
 	 * using this Connection object.
@@ -572,6 +710,42 @@ public class MonetConnection implements Connection {
 	 * @return true if this Connection object is read-only; false otherwise
 	 */
 	public boolean isReadOnly() {
+		return(false);
+	}
+
+	/**
+	 * Returns true if the connection has not been closed and is still
+	 * valid. The driver shall submit a query on the connection or use
+	 * some other mechanism that positively verifies the connection is
+	 * still valid when this method is called.
+	 * <br /><br />
+	 * The query submitted by the driver to validate the connection
+	 * shall be executed in the context of the current transaction.
+	 *
+	 * @param timeout The time in seconds to wait for the database
+	 *        operation used to validate the connection to complete. If
+	 *        the timeout period expires before the operation completes,
+	 *        this method returns false. A value of 0 indicates a
+	 *        timeout is not applied to the database operation.
+	 * @return true if the connection is valid, false otherwise
+	 * @throws SQLException if the value supplied for timeout is less
+	 *         than 0
+	 */
+	public boolean isValid(int timeout) throws SQLException {
+		if (timeout < 0)
+			throw new SQLException("timeout is less than 0");
+		if (closed)
+			return(false);
+		// ping db using select 1;
+		try {
+			Statement stmt = createStatement();
+			ResultSet rs = stmt.executeQuery("SELECT 1");
+			stmt.close();
+			return(true);
+		} catch (SQLException e) {
+			// close this connection
+			close();
+		}
 		return(false);
 	}
 
@@ -898,6 +1072,32 @@ public class MonetConnection implements Connection {
 	 */
 	public void setCatalog(String catalog) throws SQLException {
 		// silently ignore this request
+	}
+
+	/**
+	 * Not implemented by MonetDB's JDBC driver.
+	 *
+	 * @param name The name of the client info property to set
+	 * @param value The value to set the client info property to. If the
+	 *        value is null, the current value of the specified property
+	 *        is cleared.
+	 */
+	public void setClientInfo(String name, String value) {
+		addWarning("clientInfo: " + name + "is not a recognised property");
+	}
+
+	/**
+	 * Not implemented by MonetDB's JDBC driver.
+	 *
+	 * @param properties the list of client info properties to set
+	 */
+	public void setClientInfo(Properties props) {
+		Set entries = props.entrySet();
+		for (Iterator it = entries.iterator(); it.hasNext(); ) {
+			Map.Entry entry = (Map.Entry)(it.next());
+			setClientInfo(entry.getKey().toString(),
+					entry.getValue().toString());
+		}
 	}
 
 	public void setHoldability(int holdability) {}

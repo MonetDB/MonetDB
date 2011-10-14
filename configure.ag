@@ -1619,14 +1619,14 @@ no-*)
 	fi
 	;;
 *)
-	if test MONETDB_VERSION_TO_NUMBER(echo $JAVA_VERSION) = MONETDB_VERSION_TO_NUMBER(echo "1.5") ; then
+	if test MONETDB_VERSION_TO_NUMBER(echo $JAVA_VERSION) -ge MONETDB_VERSION_TO_NUMBER(echo "1.6") ; then
 		have_java_jdbc=yes
 	else
 		if test "x$enable_jdbc" = xyes; then
-			AC_MSG_ERROR([MonetDB JDBC requires ant and Java 1.5])
+			AC_MSG_ERROR([MonetDB JDBC requires ant and Java 6 or higher])
 		else
 			enable_jdbc=no
-			disable_jdbc="(MonetDB JDBC currently requires Java 1.5 to build)"
+			disable_jdbc="(MonetDB JDBC currently requires Java 6 or higher to build)"
 		fi
 	fi
 	;;

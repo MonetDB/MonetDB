@@ -42,12 +42,60 @@ public class MonetClob implements Clob {
 
 	//== begin interface Clob
 	
-	public InputStream getAsciiStream() throws SQLException {
-		throw new SQLException("Operation getAsciiStream() currently not supported");
+	/**
+	 * This method frees the Clob object and releases the resources the
+	 * resources that it holds. The object is invalid once the free
+	 * method is called.
+	 *
+	 * After free has been called, any attempt to invoke a method other
+	 * than free will result in a SQLException being thrown. If free is
+	 * called multiple times, the subsequent calls to free are treated
+	 * as a no-op.
+	 */
+	public void free() {
+		buf = null;
 	}
 
+	/**
+	 * Retrieves the CLOB value designated by this Clob object as an
+	 * ascii stream.
+	 *
+	 * @return a java.io.InputStream object containing the CLOB data
+	 * @throws SQLFeatureNotSupportedException this JDBC driver does
+	 *         not support this method
+	 */
+	public InputStream getAsciiStream() throws SQLException {
+		throw new SQLFeatureNotSupportedException("Operation getAsciiStream() currently not supported");
+	}
+
+	/**
+	 * Retrieves the CLOB value designated by this Clob object as a
+	 * java.io.Reader object (or as a stream of characters).
+	 *
+	 * @return a java.io.Reader object containing the CLOB data
+	 * @throws SQLFeatureNotSupportedException this JDBC driver does
+	 *         not support this method
+	 */
 	public Reader getCharacterStream() throws SQLException {
-		throw new SQLException("Operation getCharacterStream() currently not supported");
+		throw new SQLFeatureNotSupportedException("Operation getCharacterStream() currently not supported");
+	}
+
+	/**
+	 * Returns a Reader object that contains a partial Clob value,
+	 * starting with the character specified by pos, which is length
+	 * characters in length.
+	 *
+	 * @param pos the offset to the first character of the partial value
+	 *        to be retrieved. The first character in the Clob is at
+	 *        position 1.
+	 * @param length the length in characters of the partial value to be
+	 *        retrieved.
+	 * @return Reader through which the partial Clob value can be read.
+	 * @throws SQLFeatureNotSupportedException this JDBC driver does
+	 *         not support this method
+	 */
+	public Reader getCharacterStream(long pos, long length) throws SQLException {
+		throw new SQLFeatureNotSupportedException("Operation getCharacterStream(long, long) currently not supported");
 	}
 
 	/**
@@ -64,6 +112,8 @@ public class MonetClob implements Clob {
 	 *         CLOB value
 	 */
 	public String getSubString(long pos, int length) throws SQLException {
+		if (buf == null)
+			throw new SQLException("This Clob has been freed");
 		try {
 			return(buf.substring((int)(pos - 1), (int)(pos - 1 + length)));
 		} catch (IndexOutOfBoundsException e) {
@@ -80,6 +130,8 @@ public class MonetClob implements Clob {
 	 *         of the CLOB value
 	 */
 	public long length() throws SQLException {
+		if (buf == null)
+			throw new SQLException("This Clob has been freed");
 		return((long)buf.length());
 	}
 
@@ -114,14 +166,20 @@ public class MonetClob implements Clob {
 	 *         CLOB value
 	 */
 	public long position(String searchstr, long start) throws SQLException {
+		if (buf == null)
+			throw new SQLException("This Clob has been freed");
 		return((long)(buf.indexOf(searchstr, (int)(start - 1))));
 	}
 
 	public OutputStream setAsciiStream(long pos) throws SQLException {
+		if (buf == null)
+			throw new SQLException("This Clob has been freed");
 		throw new SQLException("Operation setAsciiStream(long pos) currently not supported");
 	}
 
 	public Writer setCharacterStream(long pos) throws SQLException {
+		if (buf == null)
+			throw new SQLException("This Clob has been freed");
 		throw new SQLException("Operation setCharacterStream(long pos) currently not supported");
 	}
 
@@ -159,6 +217,9 @@ public class MonetClob implements Clob {
 	public int setString(long pos, String str, int offset, int len)
 		throws SQLException
 	{
+		if (buf == null)
+			throw new SQLException("This Clob has been freed");
+
 		int buflen = buf.length();
 		int retlen = Math.min(buflen, (int)(pos - 1 + len));
 		
@@ -179,7 +240,9 @@ public class MonetClob implements Clob {
 	 * @throws SQLException if there is an error accessing the
 	 *         CLOB value
 	 */
-	public void truncate(long len) {
+	public void truncate(long len) throws SQLException {
+		if (buf == null)
+			throw new SQLException("This Clob has been freed");
 		// this command is a no-op
 	}
 
@@ -191,6 +254,8 @@ public class MonetClob implements Clob {
 	 * @return the String this Clob wraps.
 	 */
 	public String toString() {
+		if (buf == null)
+			return("<a freed MonetClob instance>");
 		return(buf.toString());
 	}
 }

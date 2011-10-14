@@ -1,8 +1,8 @@
 RELEASE NOTES
-MonetDB JDBC driver version 1.23 (Magnistipula/MCL-1.6)
+MonetDB JDBC driver version 2.0 (Liberica/MCL-1.6)
 Fabian Groffen <Fabian.Groffen@cwi.nl>
 
-Release date: 2011-09-01
+Release date: 2011-10-14
 
 
 This JDBC driver is designed for use with MonetDB, a main-memory
@@ -12,8 +12,8 @@ Within the current implementation not all functionalities of the JDBC
 interface are available.  It is believed, however, that this
 implementation is rich enough to be suitable for a majority of
 application settings.
-Most notably, JDBC4 is not implemented at the moment.  This disallows
-Java 1.6 and up to compile the driver from source.
+Note that this driver is JDBC4 compatible, and hence cannot be compiled
+with Java 1.5 and earlier.
 
 Below a list of supported features can be found.  Please read this list
 if you intend to use this driver.  If you feel some features are

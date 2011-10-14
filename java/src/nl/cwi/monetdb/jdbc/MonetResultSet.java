@@ -48,7 +48,7 @@ import nl.cwi.monetdb.mcl.parser.*;
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
  * @version 0.7
  */
-public class MonetResultSet implements ResultSet {
+public class MonetResultSet extends MonetWrapper implements ResultSet {
 	/** The last column read using some getXXX function */
 	private int lastColumnRead = -1;
 	// the following have default access modifier for the MonetVirtualResultSet
@@ -281,15 +281,15 @@ public class MonetResultSet implements ResultSet {
 		return(absolute(1));
 	}
 
-	public Array getArray(int i) throws SQLException { throw new SQLException("Method getArray not implemented yet, sorry!"); }
-	public Array getArray(String colName) throws SQLException { throw new SQLException("Method getArray not implemented yet, sorry!"); }
+	public Array getArray(int i) throws SQLException { throw new SQLFeatureNotSupportedException("Method getArray not implemented yet, sorry!"); }
+	public Array getArray(String colName) throws SQLException { throw new SQLFeatureNotSupportedException("Method getArray not implemented yet, sorry!"); }
 
 	/* Mapi doesn't allow something for streams at the moment, thus all
 	   not implemented for now */
-	public InputStream getAsciiStream(int columnIndex) throws SQLException { throw new SQLException("Method getAsciiStream not implemented yet, sorry!"); }
-	public InputStream getAsciiStream(String columnName) throws SQLException { throw new SQLException("Method getAsciiStream not implemented yet, sorry!"); }
-	public InputStream getUnicodeStream(int columnIndex) throws SQLException { throw new SQLException("Method getUnicodeStream not implemented yet, sorry!"); }
-	public InputStream getUnicodeStream(String columnName) throws SQLException { throw new SQLException("Method getUnicodeStream not implemented yet, sorry!"); }
+	public InputStream getAsciiStream(int columnIndex) throws SQLException { throw new SQLFeatureNotSupportedException("Method getAsciiStream not implemented yet, sorry!"); }
+	public InputStream getAsciiStream(String columnName) throws SQLException { throw new SQLFeatureNotSupportedException("Method getAsciiStream not implemented yet, sorry!"); }
+	public InputStream getUnicodeStream(int columnIndex) throws SQLException { throw new SQLFeatureNotSupportedException("Method getUnicodeStream not implemented yet, sorry!"); }
+	public InputStream getUnicodeStream(String columnName) throws SQLException { throw new SQLFeatureNotSupportedException("Method getUnicodeStream not implemented yet, sorry!"); }
 
 	/**
 	 * Retrieves the value of the designated column in the current row
@@ -389,6 +389,42 @@ public class MonetResultSet implements ResultSet {
 
 	/**
 	 * Retrieves the value of the designated column in the current row
+	 * of this ResultSet object as a java.io.Reader object. It is
+	 * intended for use when accessing NCHAR,NVARCHAR and LONGNVARCHAR
+	 * columns.
+	 *
+	 * @param columnIndex the first column is 1, the second is 2, ...
+	 * @return a java.io.Reader object that contains the column value;
+	 *         if the value is SQL NULL, the value returned is null in
+	 *         the Java programming language. 
+	 * @throws SQLException if a database access error occurs
+	 * @throws SQLFeatureNotSupportedException the JDBC driver does
+	 *         not support this method
+	 */
+	public Reader getNCharacterStream(int columnIndex) throws SQLException {
+		throw new SQLFeatureNotSupportedException("getNCharacterStream() not supported");
+	}
+
+	/**
+	 * Retrieves the value of the designated column in the current row
+	 * of this ResultSet object as a java.io.Reader object. It is
+	 * intended for use when accessing NCHAR,NVARCHAR and LONGNVARCHAR
+	 * columns.
+	 *
+	 * @param columnName the name of the column
+	 * @return a java.io.Reader object that contains the column value;
+	 *         if the value is SQL NULL, the value returned is null in
+	 *         the Java programming language. 
+	 * @throws SQLException if a database access error occurs
+	 * @throws SQLFeatureNotSupportedException the JDBC driver does
+	 *         not support this method
+	 */
+	public Reader getNCharacterStream(String columnName) throws SQLException {
+		return(getNCharacterStream(findColumn(columnName)));
+	}
+
+	/**
+	 * Retrieves the value of the designated column in the current row
 	 * of this ResultSet object as a Blob object in the Java programming
 	 * language.
 	 *
@@ -442,6 +478,22 @@ public class MonetResultSet implements ResultSet {
 
 	/**
 	 * Retrieves the value of the designated column in the current row
+	 * of this ResultSet object as a NClob object in the
+	 * Java programming language.
+	 *
+	 * @param i the first column is 1, the second is 2, ...
+	 * @return a NClob object representing the SQL NCLOB value in the
+	 *         specified column
+	 * @throws SQLException if a database access error occurs
+	 * @throws SQLFeatureNotSupportedException the JDBC driver does
+	 *         not support this method
+	 */
+	public NClob getNClob(int i) throws SQLException {
+		throw new SQLFeatureNotSupportedException("getNClob() not supported");
+	}
+
+	/**
+	 * Retrieves the value of the designated column in the current row
 	 * of this ResultSet object as a Clob object in the
 	 * Java programming language.
 	 *
@@ -453,6 +505,23 @@ public class MonetResultSet implements ResultSet {
 	 */
 	public Clob getClob(String colName) throws SQLException {
 		return(getClob(findColumn(colName)));
+	}
+
+	/**
+	 * Retrieves the value of the designated column in the current row
+	 * of this ResultSet object as a NClob object in the
+	 * Java programming language.
+	 *
+	 * @param colName the name of the column from which to retrieve
+	 *        the value
+	 * @return a NClob object representing the SQL NCLOB value in the
+	 *         specified column
+	 * @throws SQLException if a database access error occurs
+	 * @throws SQLFeatureNotSupportedException the JDBC driver does
+	 *         not support this method
+	 */
+	public NClob getNClob(String colName) throws SQLException {
+		return(getNClob(findColumn(colName)));
 	}
 
 	/**
@@ -764,6 +833,17 @@ public class MonetResultSet implements ResultSet {
 	}
 
 	/**
+	 * Retrieves the holdability of this ResultSet object.
+	 *
+	 * @return either ResultSet.HOLD_CURSORS_OVER_COMMIT or
+	 *         ResultSet.CLOSE_CURSORS_AT_COMMIT
+	 * @throws SQLException if a database access error occurs
+	 */
+	public int getHoldability() throws SQLException {
+		return(getStatement().getConnection().getHoldability());
+	}
+
+	/**
 	 * Retrieves the fetch direction for this ResultSet object.
 	 * <b>currently not implemented</b>
 	 *
@@ -892,6 +972,8 @@ public class MonetResultSet implements ResultSet {
 		return(getLong(findColumn(columnName)));
 	}
 
+	/* helper for the anonymous class inside getMetaData */
+	private abstract class rsmdw extends MonetWrapper implements ResultSetMetaData {}
 	/**
 	 * Retrieves the number, types and properties of this ResultSet object's
 	 * columns.
@@ -900,7 +982,7 @@ public class MonetResultSet implements ResultSet {
 	 */
 	public ResultSetMetaData getMetaData() {
 		// return inner class which implements the ResultSetMetaData interface
-		return(new ResultSetMetaData() {
+		return(new rsmdw() {
 			// for the more expensive methods, we provide a simple cache
 			// for the most expensive part; getting the ResultSet which
 			// contains the data
@@ -1507,6 +1589,38 @@ public class MonetResultSet implements ResultSet {
 	}
 
 	/**
+	 * Retrieves the value of the designated column in the current row
+	 * of this ResultSet object as a java.sql.RowId object in the Java
+	 * programming language.
+	 *
+	 * @param columnIndex the first column is 1, the second is 2, ...
+	 * @return the column value; if the value is SQL NULL, the value returned
+	 *         is null
+	 * @throws SQLException if there is no such column
+	 * @throws SQLFeatureNotSupportedException the JDBC driver does
+	 *         not support this method
+	 */
+	public RowId getRowId(int columnIndex) throws SQLException {
+		throw new SQLFeatureNotSupportedException("getRowId() not supported");
+	}
+
+	/**
+	 * Retrieves the value of the designated column in the current row
+	 * of this ResultSet object as a java.sql.RowId object in the Java
+	 * programming language.
+	 *
+	 * @param columnName the SQL name of the column
+	 * @return the column value; if the value is SQL NULL, the value returned
+	 *         is null
+	 * @throws SQLException if the ResultSet object does not contain columnName
+	 * @throws SQLFeatureNotSupportedException the JDBC driver does
+	 *         not support this method
+	 */
+	public RowId getRowId(String columnName) throws SQLException {
+		return(getRowId(findColumn(columnName)));
+	}
+
+	/**
 	 * Retrieves the value of the designated column in the current row of this
 	 * ResultSet object as a short in the Java programming language.
 	 *
@@ -1585,6 +1699,72 @@ public class MonetResultSet implements ResultSet {
 	 */
 	public String getString(String columnName) throws SQLException {
 		return(getString(findColumn(columnName)));
+	}
+
+	/**
+	 * Retrieves the value of the designated column in the current row
+	 * of this ResultSet object as a String in the Java programming
+	 * language. It is intended for use when accessing NCHAR,NVARCHAR
+	 * and LONGNVARCHAR columns.
+	 *
+	 * @param columnIndex the first column is 1, the second is 2, ...
+	 * @return the column value; if the value is SQL NULL, the value returned
+	 *         is null
+	 * @throws SQLException if there is no such column
+	 * @throws SQLFeatureNotSupportedException the JDBC driver does
+	 *         not support this method
+	 */
+	public String getNString(int columnIndex) throws SQLException {
+		throw new SQLFeatureNotSupportedException("getNString not supported");
+	}
+
+	/**
+	 * Retrieves the value of the designated column in the current row
+	 * of this ResultSet object as a String in the Java programming
+	 * language. It is intended for use when accessing NCHAR,NVARCHAR
+	 * and LONGNVARCHAR columns.
+	 *
+	 * @param columnName the SQL name of the column
+	 * @return the column value; if the value is SQL NULL, the value returned
+	 *         is null
+	 * @throws SQLException if the ResultSet object does not contain columnName
+	 * @throws SQLFeatureNotSupportedException the JDBC driver does
+	 *         not support this method
+	 */
+	public String getNString(String columnName) throws SQLException {
+		return(getNString(findColumn(columnName)));
+	}
+
+	/**
+	 * Retrieves the value of the designated column in the current row
+	 * of this ResultSet as a java.sql.SQLXML object in the Java
+	 * programming language.
+	 *
+	 * @param i the first column is 1, the second is 2, ...
+	 * @return a SQLXML object that maps an SQL XML value
+	 * @throws SQLException if a database access error occurs
+	 * @throws SQLFeatureNotSupportedException the JDBC driver does
+	 *         not support this method
+	 */
+	public SQLXML getSQLXML(int i) throws SQLException {
+		throw new SQLFeatureNotSupportedException("getSQLXML() not supported");
+	}
+
+	/**
+	 * Retrieves the value of the designated column in the current row
+	 * of this ResultSet as a java.sql.SQLXML object in the Java
+	 * programming language. 
+	 *
+	 * @param colName the label for the column specified with the SQL AS
+	 *        clause. If the SQL AS clause was not specified, then the
+	 *        label is the name of the column
+	 * @return a SQLXML object that maps an SQL XML value
+	 * @throws SQLException if a database access error occurs
+	 * @throws SQLFeatureNotSupportedException the JDBC driver does
+	 *         not support this method
+	 */
+	public SQLXML getSQLXML(String colName) throws SQLException {
+		return(getSQLXML(findColumn(colName)));
 	}
 
 	// This behaviour is according table B-6 of Sun JDBC Specification 3.0
@@ -2067,6 +2247,18 @@ public class MonetResultSet implements ResultSet {
 	}
 
 	/**
+	 * Retrieves whether this ResultSet object has been closed. A
+	 * ResultSet is closed if the method close has been called on it, or
+	 * if it is automatically closed.
+	 *
+	 * @return true if this ResultSet object is closed; false if it is
+	 *         still open
+	 */
+	public boolean isClosed() {
+		return(header.isClosed());
+	}
+
+	/**
 	 * Retrieves whether the cursor is on the first row of this ResultSet
 	 * object.
 	 *
@@ -2151,64 +2343,102 @@ public class MonetResultSet implements ResultSet {
 
 	/* these methods are all related to updateable result sets, which we
 	   currently do not support */
-	public void cancelRowUpdates() throws SQLException { throw new SQLException("Method cancelRowUpdates not implemented yet, sorry!"); }
-	public void deleteRow() throws SQLException { throw new SQLException("Method deleteRow not implemented yet, sorry!"); }
-	public void insertRow() throws SQLException { throw new SQLException("Method insertRow not implemented yet, sorry!"); }
-	public void moveToCurrentRow() throws SQLException { throw new SQLException("Method moveToCurrentRow not implemented yet, sorry!"); }
-	public void moveToInsertRow() throws SQLException { throw new SQLException("Method moveToInsertRow not implemented yet, sorry!"); }
-	public void refreshRow() throws SQLException { throw new SQLException("Method refreshRow not implemented yet, sorry!"); }
-	public boolean rowDeleted() throws SQLException { throw new SQLException("Method rowDeleted not implemented yet, sorry!"); }
-	public boolean rowInserted() throws SQLException { throw new SQLException("Method rowInserted not implemented yet, sorry!"); }
-	public boolean rowUpdated() throws SQLException { throw new SQLException("Method rowUpdated not implemented yet, sorry!"); }
-	public void setFetchDirection(int direction) throws SQLException { throw new SQLException("Method setFetchDirection not implemented yet, sorry!"); }
-	public void setFetchSize(int rows) throws SQLException { throw new SQLException("Method setFetchSize not implemented yet, sorry!"); }
-	public void updateArray(int columnIndex, Array x) throws SQLException { throw new SQLException("Method updateArray not implemented yet, sorry!"); }
-	public void updateArray(String columnName, Array x) throws SQLException { throw new SQLException("Method updateArray not implemented yet, sorry!"); }
-	public void updateAsciiStream(int columnIndex, InputStream x, int length) throws SQLException { throw new SQLException("Method updateAsciiStream not implemented yet, sorry!"); }
-	public void updateAsciiStream(String columnName, InputStream x, int length) throws SQLException { throw new SQLException("Method updateAsciiStream not implemented yet, sorry!"); }
-	public void updateBigDecimal(int columnIndex, BigDecimal x) throws SQLException { throw new SQLException("Method updateBigDecimal not implemented yet, sorry!"); }
-	public void updateBigDecimal(String columnName, BigDecimal x) throws SQLException { throw new SQLException("Method updateBigDecimal not implemented yet, sorry!"); }
-	public void updateBinaryStream(int columnIndex, InputStream x, int length) throws SQLException { throw new SQLException("Method updateBinaryStream not implemented yet, sorry!"); }
-	public void updateBinaryStream(String columnName, InputStream x, int length) throws SQLException { throw new SQLException("Method updateBinaryStream not implemented yet, sorry!"); }
-	public void updateBlob(int columnIndex, Blob x) throws SQLException { throw new SQLException("Method updateBlob not implemented yet, sorry!"); }
-	public void updateBlob(String columnName, Blob x) throws SQLException { throw new SQLException("Method updateBlob not implemented yet, sorry!"); }
-	public void updateBoolean(int columnIndex, boolean x) throws SQLException { throw new SQLException("Method updateBoolean not implemented yet, sorry!"); }
-	public void updateBoolean(String columnName, boolean x) throws SQLException { throw new SQLException("Method updateBoolean not implemented yet, sorry!"); }
-	public void updateByte(int columnIndex, byte x) throws SQLException { throw new SQLException("Method updateByte not implemented yet, sorry!"); }
-	public void updateByte(String columnName, byte x) throws SQLException { throw new SQLException("Method updateByte not implemented yet, sorry!"); }
-	public void updateBytes(int columnIndex, byte[] x) throws SQLException { throw new SQLException("Method updateBytes not implemented yet, sorry!"); }
-	public void updateBytes(String columnName, byte[] x) throws SQLException { throw new SQLException("Method updateBytes not implemented yet, sorry!"); }
-	public void updateCharacterStream(int columnIndex, Reader x, int length) throws SQLException { throw new SQLException("Method updateCharacterStream not implemented yet, sorry!"); }
-	public void updateCharacterStream(String columnName, Reader reader, int length) throws SQLException { throw new SQLException("Method updateCharacterStream not implemented yet, sorry!"); }
-	public void updateClob(int columnIndex, Clob x) throws SQLException { throw new SQLException("Method updateClob not implemented yet, sorry!"); }
-	public void updateClob(String columnName, Clob x) throws SQLException { throw new SQLException("Method updateClob not implemented yet, sorry!"); }
-	public void updateDate(int columnIndex, java.sql.Date x) throws SQLException { throw new SQLException("Method updateDate not implemented yet, sorry!"); }
-	public void updateDate(String columnName, java.sql.Date x) throws SQLException { throw new SQLException("Method updateDate not implemented yet, sorry!"); }
-	public void updateDouble(int columnIndex, double x) throws SQLException { throw new SQLException("Method updateDouble not implemented yet, sorry!"); }
-	public void updateDouble(String columnName, double x) throws SQLException { throw new SQLException("Method updateDouble not implemented yet, sorry!"); }
-	public void updateFloat(int columnIndex, float x) throws SQLException { throw new SQLException("Method updateFloat not implemented yet, sorry!"); }
-	public void updateFloat(String columnName, float x) throws SQLException { throw new SQLException("Method updateFloat not implemented yet, sorry!"); }
-	public void updateInt(int columnIndex, int x) throws SQLException { throw new SQLException("Method updateInt not implemented yet, sorry!"); }
-	public void updateInt(String columnName, int x) throws SQLException { throw new SQLException("Method updateInt not implemented yet, sorry!"); }
-	public void updateLong(int columnIndex, long x) throws SQLException { throw new SQLException("Method updateLong not implemented yet, sorry!"); }
-	public void updateLong(String columnName, long x) throws SQLException { throw new SQLException("Method updateLong not implemented yet, sorry!"); }
-	public void updateNull(int columnIndex) throws SQLException { throw new SQLException("Method updateNull not implemented yet, sorry!"); }
-	public void updateNull(String columnName) throws SQLException { throw new SQLException("Method updateNull not implemented yet, sorry!"); }
-	public void updateObject(int columnIndex, Object x) throws SQLException { throw new SQLException("Method updateObject not implemented yet, sorry!"); }
-	public void updateObject(int columnIndex, Object x, int scale) throws SQLException { throw new SQLException("Method updateObject not implemented yet, sorry!"); }
-	public void updateObject(String columnName, Object x) throws SQLException { throw new SQLException("Method updateObject not implemented yet, sorry!"); }
-	public void updateObject(String columnName, Object x, int scale) throws SQLException { throw new SQLException("Method updateObject not implemented yet, sorry!"); }
-	public void updateRef(int columnIndex, Ref x) throws SQLException { throw new SQLException("Method updateRef not implemented yet, sorry!"); }
-	public void updateRef(String columnName, Ref x) throws SQLException { throw new SQLException("Method updateRef not implemented yet, sorry!"); }
-	public void updateRow() throws SQLException { throw new SQLException("Method updateRow not implemented yet, sorry!"); }
-	public void updateShort(int columnIndex, short x) throws SQLException { throw new SQLException("Method updateShort not implemented yet, sorry!"); }
-	public void updateShort(String columnName, short x) throws SQLException { throw new SQLException("Method updateShort not implemented yet, sorry!"); }
-	public void updateString(int columnIndex, String x) throws SQLException { throw new SQLException("Method updateString not implemented yet, sorry!"); }
-	public void updateString(String columnName, String x) throws SQLException { throw new SQLException("Method updateString not implemented yet, sorry!"); }
-	public void updateTime(int columnIndex, Time x) throws SQLException { throw new SQLException("Method updateTime not implemented yet, sorry!"); }
-	public void updateTime(String columnName, Time x) throws SQLException { throw new SQLException("Method updateTime not implemented yet, sorry!"); }
-	public void updateTimestamp(int columnIndex, Timestamp x) throws SQLException { throw new SQLException("Method updateTimestamp not implemented yet, sorry!"); }
-	public void updateTimestamp(String columnName, Timestamp x) throws SQLException { throw new SQLException("Method updateTimestamp not implemented yet, sorry!"); }
+	public void cancelRowUpdates() throws SQLException { throw new SQLFeatureNotSupportedException("Method cancelRowUpdates not implemented yet, sorry!"); }
+	public void deleteRow() throws SQLException { throw new SQLFeatureNotSupportedException("Method deleteRow not implemented yet, sorry!"); }
+	public void insertRow() throws SQLException { throw new SQLFeatureNotSupportedException("Method insertRow not implemented yet, sorry!"); }
+	public void moveToCurrentRow() throws SQLException { throw new SQLFeatureNotSupportedException("Method moveToCurrentRow not implemented yet, sorry!"); }
+	public void moveToInsertRow() throws SQLException { throw new SQLFeatureNotSupportedException("Method moveToInsertRow not implemented yet, sorry!"); }
+	public void refreshRow() throws SQLException { throw new SQLFeatureNotSupportedException("Method refreshRow not implemented yet, sorry!"); }
+	public boolean rowDeleted() throws SQLException { throw new SQLFeatureNotSupportedException("Method rowDeleted not implemented yet, sorry!"); }
+	public boolean rowInserted() throws SQLException { throw new SQLFeatureNotSupportedException("Method rowInserted not implemented yet, sorry!"); }
+	public boolean rowUpdated() throws SQLException { throw new SQLFeatureNotSupportedException("Method rowUpdated not implemented yet, sorry!"); }
+	public void setFetchDirection(int direction) throws SQLException { throw new SQLFeatureNotSupportedException("Method setFetchDirection not implemented yet, sorry!"); }
+	public void setFetchSize(int rows) throws SQLException { throw new SQLFeatureNotSupportedException("Method setFetchSize not implemented yet, sorry!"); }
+	public void updateArray(int columnIndex, Array x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateArray not implemented yet, sorry!"); }
+	public void updateArray(String columnName, Array x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateArray not implemented yet, sorry!"); }
+	public void updateAsciiStream(int columnIndex, InputStream xh) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateAsciiStream not implemented yet, sorry!"); }
+	public void updateAsciiStream(int columnIndex, InputStream x, int length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateAsciiStream not implemented yet, sorry!"); }
+	public void updateAsciiStream(int columnIndex, InputStream x, long length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateAsciiStream not implemented yet, sorry!"); }
+	public void updateAsciiStream(String columnName, InputStream x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateAsciiStream not implemented yet, sorry!"); }
+	public void updateAsciiStream(String columnName, InputStream x, int length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateAsciiStream not implemented yet, sorry!"); }
+	public void updateAsciiStream(String columnName, InputStream x, long length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateAsciiStream not implemented yet, sorry!"); }
+	public void updateBigDecimal(int columnIndex, BigDecimal x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBigDecimal not implemented yet, sorry!"); }
+	public void updateBigDecimal(String columnName, BigDecimal x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBigDecimal not implemented yet, sorry!"); }
+	public void updateBinaryStream(int columnIndex, InputStream x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBinaryStream not implemented yet, sorry!"); }
+	public void updateBinaryStream(int columnIndex, InputStream x, int length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBinaryStream not implemented yet, sorry!"); }
+	public void updateBinaryStream(int columnIndex, InputStream x, long length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBinaryStream not implemented yet, sorry!"); }
+	public void updateBinaryStream(String columnName, InputStream x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBinaryStream not implemented yet, sorry!"); }
+	public void updateBinaryStream(String columnName, InputStream x, int length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBinaryStream not implemented yet, sorry!"); }
+	public void updateBinaryStream(String columnName, InputStream x, long length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBinaryStream not implemented yet, sorry!"); }
+	public void updateBlob(int columnIndex, Blob x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBlob not implemented yet, sorry!"); }
+	public void updateBlob(int columnIndex, InputStream s) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBlob not implemented yet, sorry!"); }
+	public void updateBlob(int columnIndex, InputStream s, long length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBlob not implemented yet, sorry!"); }
+	public void updateBlob(String columnName, Blob x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBlob not implemented yet, sorry!"); }
+	public void updateBlob(String columnName, InputStream s) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBlob not implemented yet, sorry!"); }
+	public void updateBlob(String columnName, InputStream s, long length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBlob not implemented yet, sorry!"); }
+	public void updateBoolean(int columnIndex, boolean x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBoolean not implemented yet, sorry!"); }
+	public void updateBoolean(String columnName, boolean x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBoolean not implemented yet, sorry!"); }
+	public void updateByte(int columnIndex, byte x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateByte not implemented yet, sorry!"); }
+	public void updateByte(String columnName, byte x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateByte not implemented yet, sorry!"); }
+	public void updateBytes(int columnIndex, byte[] x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBytes not implemented yet, sorry!"); }
+	public void updateBytes(String columnName, byte[] x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBytes not implemented yet, sorry!"); }
+	public void updateCharacterStream(int columnIndex, Reader x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateCharacterStream not implemented yet, sorry!"); }
+	public void updateCharacterStream(int columnIndex, Reader x, int length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateCharacterStream not implemented yet, sorry!"); }
+	public void updateCharacterStream(int columnIndex, Reader x, long length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateCharacterStream not implemented yet, sorry!"); }
+	public void updateCharacterStream(String columnName, Reader reader) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateCharacterStream not implemented yet, sorry!"); }
+	public void updateCharacterStream(String columnName, Reader reader, int length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateCharacterStream not implemented yet, sorry!"); }
+	public void updateCharacterStream(String columnName, Reader reader, long length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateCharacterStream not implemented yet, sorry!"); }
+	public void updateNCharacterStream(int columnIndex, Reader x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNCharacterStream not implemented yet, sorry!"); }
+	public void updateNCharacterStream(int columnIndex, Reader x, int length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNCharacterStream not implemented yet, sorry!"); }
+	public void updateNCharacterStream(int columnIndex, Reader x, long length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNCharacterStream not implemented yet, sorry!"); }
+	public void updateNCharacterStream(String columnName, Reader reader) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNCharacterStream not implemented yet, sorry!"); }
+	public void updateNCharacterStream(String columnName, Reader reader, int length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNCharacterStream not implemented yet, sorry!"); }
+	public void updateNCharacterStream(String columnName, Reader reader, long length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNCharacterStream not implemented yet, sorry!"); }
+	public void updateClob(int columnIndex, Clob x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateClob not implemented yet, sorry!"); }
+	public void updateClob(int columnIndex, Reader r) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateClob not implemented yet, sorry!"); }
+	public void updateClob(int columnIndex, Reader r, long length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateClob not implemented yet, sorry!"); }
+	public void updateClob(String columnName, Clob x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateClob not implemented yet, sorry!"); }
+	public void updateClob(String columnName, Reader r) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateClob not implemented yet, sorry!"); }
+	public void updateClob(String columnName, Reader r, long length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateClob not implemented yet, sorry!"); }
+	public void updateNClob(int columnIndex, NClob x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNClob not implemented yet, sorry!"); }
+	public void updateNClob(int columnIndex, Reader r) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNClob not implemented yet, sorry!"); }
+	public void updateNClob(int columnIndex, Reader r, long length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNClob not implemented yet, sorry!"); }
+	public void updateNClob(String columnName, NClob x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNClob not implemented yet, sorry!"); }
+	public void updateNClob(String columnName, Reader r) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNClob not implemented yet, sorry!"); }
+	public void updateNClob(String columnName, Reader r, long length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNClob not implemented yet, sorry!"); }
+	public void updateDate(int columnIndex, java.sql.Date x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateDate not implemented yet, sorry!"); }
+	public void updateDate(String columnName, java.sql.Date x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateDate not implemented yet, sorry!"); }
+	public void updateDouble(int columnIndex, double x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateDouble not implemented yet, sorry!"); }
+	public void updateDouble(String columnName, double x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateDouble not implemented yet, sorry!"); }
+	public void updateFloat(int columnIndex, float x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateFloat not implemented yet, sorry!"); }
+	public void updateFloat(String columnName, float x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateFloat not implemented yet, sorry!"); }
+	public void updateInt(int columnIndex, int x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateInt not implemented yet, sorry!"); }
+	public void updateInt(String columnName, int x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateInt not implemented yet, sorry!"); }
+	public void updateLong(int columnIndex, long x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateLong not implemented yet, sorry!"); }
+	public void updateLong(String columnName, long x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateLong not implemented yet, sorry!"); }
+	public void updateNull(int columnIndex) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNull not implemented yet, sorry!"); }
+	public void updateNull(String columnName) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNull not implemented yet, sorry!"); }
+	public void updateObject(int columnIndex, Object x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateObject not implemented yet, sorry!"); }
+	public void updateObject(int columnIndex, Object x, int scale) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateObject not implemented yet, sorry!"); }
+	public void updateObject(String columnName, Object x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateObject not implemented yet, sorry!"); }
+	public void updateObject(String columnName, Object x, int scale) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateObject not implemented yet, sorry!"); }
+	public void updateRef(int columnIndex, Ref x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateRef not implemented yet, sorry!"); }
+	public void updateRef(String columnName, Ref x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateRef not implemented yet, sorry!"); }
+	public void updateRow() throws SQLException { throw new SQLFeatureNotSupportedException("Method updateRow not implemented yet, sorry!"); }
+	public void updateRowId(int columnIndex, RowId x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateRowId not implemented yet, sorry"); }
+	public void updateRowId(String columnLabel, RowId x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateRowId not implemented yet, sorry"); }
+	public void updateShort(int columnIndex, short x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateShort not implemented yet, sorry!"); }
+	public void updateShort(String columnName, short x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateShort not implemented yet, sorry!"); }
+	public void updateString(int columnIndex, String x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateString not implemented yet, sorry!"); }
+	public void updateString(String columnName, String x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateString not implemented yet, sorry!"); }
+	public void updateNString(int columnIndex, String x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNString not implemented yet, sorry!"); }
+	public void updateNString(String columnName, String x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNString not implemented yet, sorry!"); }
+	public void updateSQLXML(String columnName, SQLXML x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateSQLXML not implemented yet, sorry!"); }
+	public void updateSQLXML(int columnIndex, SQLXML x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateSQLXML not implemented yet, sorry!"); }
+	public void updateTime(int columnIndex, Time x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateTime not implemented yet, sorry!"); }
+	public void updateTime(String columnName, Time x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateTime not implemented yet, sorry!"); }
+	public void updateTimestamp(int columnIndex, Timestamp x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateTimestamp not implemented yet, sorry!"); }
+	public void updateTimestamp(String columnName, Timestamp x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateTimestamp not implemented yet, sorry!"); }
 
 	// Chapter 14.2.3.3 Sun JDBC 3.0 Specification
 	/**
