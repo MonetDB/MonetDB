@@ -596,7 +596,7 @@ end main;
 [ "pack2",			  "pattern",	  "mat",		  "(b:bat[:any_1,:any_2]...):bat[:any_1,:any_2] ",										  "MATpack2;"					  ]
 [ "pack",			  "pattern",	  "mat",	  "(b:bat[:any_1,:any_2]...):bat[:any_1,:any_2] ",											  "MATpack;"						  ]
 [ "pack",				  "pattern",	  "mat",	  "(_1:any_2...):bat[:void,:any_2] ",											  "MATpackValues;"					  ]
-[ "refine_rev",				  "pattern",	  "mat",		  "(sorted:bat[:void,:any_2],map:bat[:void,:bte],b:bat[:any_1,:any_3]...) (rsorted:bat[:void,:oid],rmap:bat[:void,:bte]) ",			  "MATrefineReverse;"					  ]
+[ "refine_reverse",	  "pattern",	  "mat",		  "(sorted:bat[:void,:any_2],map:bat[:void,:bte],b:bat[:any_1,:any_3]...) (rsorted:bat[:void,:oid],rmap:bat[:void,:bte]) ", "MATrefineReverse;"			  ]
 [ "refine",				  "pattern",	  "mat",		  "(sorted:bat[:void,:any_2],map:bat[:void,:bte],b:bat[:any_1,:any_3]...) (rsorted:bat[:void,:oid],rmap:bat[:void,:bte]) ",			  "MATrefine;"						  ]
 [ "sortReverseTail",			  "pattern",	  "mat",		  "(b:bat[:any_1,:any_2]...) (sorted:bat[:void,:any_2],map:bat[:void,:bte]) ",									  "MATsortReverseTail;"					  ]
 [ "sortTail",				  "pattern",	  "mat",		  "(b:bat[:any_1,:any_2]...) (sorted:bat[:void,:any_2],map:bat[:void,:bte]) ",									  "MATsortTail;"					  ]
