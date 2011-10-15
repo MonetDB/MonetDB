@@ -1649,7 +1649,7 @@ no-*)
 	fi
 	;;
 *)
-	req_java_ver_min=1.5 # >= $req_java_ver_min required
+	req_java_ver_min=1.6 # >= $req_java_ver_min required
 	if test MONETDB_VERSION_TO_NUMBER(echo $JAVA_VERSION) -ge MONETDB_VERSION_TO_NUMBER(echo "$req_java_ver_min"); then
 		have_java_control=yes
 	else
