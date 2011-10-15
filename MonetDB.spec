@@ -226,6 +226,7 @@ Summary: MonetDB perl interface
 Group: Applications/Databases
 Requires: %{name}-client = %{version}-%{release}
 Requires: perl
+Requires: perl(DBI)
 
 %description client-perl
 MonetDB is a database management system that is developed from a
