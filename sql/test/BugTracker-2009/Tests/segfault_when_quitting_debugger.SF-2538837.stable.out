@@ -25,7 +25,7 @@ Ready.
 # 12:13:20 >  
 
 mdb>#    mdb.start();
-mdb>#    user.s1_1();
+mdb>#    X_2:void  := user.s1_1();
 
 # 12:13:21 >  
 # 12:13:21 >  Done.
