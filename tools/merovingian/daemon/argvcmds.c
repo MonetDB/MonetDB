@@ -270,7 +270,7 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 
 				/* re-read, this time with empty defaults, so we can see
 				 * what's available (backwards compatability) */
-				if (readProps(cport, dbfarm) != 0) {
+				if (readProps(cport, ".") != 0) {
 					fprintf(stderr, "unable to read properties from %s: %s\n",
 							dbfarm, strerror(errno));
 					return(1);
