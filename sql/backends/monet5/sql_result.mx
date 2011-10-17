@@ -157,6 +157,8 @@ sql_time_tostr(void *TS_RES, char **buf, int *len, int type, ptr A)
 	tmp = (daytime) val;
 
 	len1 = daytime_tostr(&s1, &big, &tmp);
+	if (len1 == 3 && strcmp(s1, "nil") == 0) 
+		return len1;
 
 	/* fixup the fraction, default is 3 */
 	len1 += (ts_res->fraction-3);
