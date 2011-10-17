@@ -1,0 +1,16 @@
+# ChangeLog file for java
+# This file is updated with Maddlog
+
+* Fri Oct 14 2011 Fabian Groffen <fabian@cwi.nl>
+- Schema updates now close PreparedStatements and ResultSets that still
+  need the server, to make behaviour of the server explicit to the client.
+  When this happens, a message is put on the Connection's warning stack.
+- The embedded monet instance capability of MonetConnection was removed.
+- Bump JDBC version to 2.0 (Liberica).  JDBC now implements JDBC4 which
+  makes it possible to be built with Java 6 and up.  Java 5 and before
+  are no longer supported, and can use the 1.x releases of the driver.
+
+* Thu Sep  1 2011 Fabian Groffen <fabian@cwi.nl>
+- INTERVAL columns are now treated as decimals, since they can have
+  sub-second precision.
+
