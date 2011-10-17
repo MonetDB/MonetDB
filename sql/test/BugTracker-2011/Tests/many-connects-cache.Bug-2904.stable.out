@@ -1,0 +1,370 @@
+stdout of test 'many-connects-cache.Bug-2904` in directory 'test/BugTracker-2011` itself:
+
+
+# 14:18:16 >  
+# 14:18:16 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "gdk_dbfarm=/ufs/sjoerd/Monet-stable/var/MonetDB" "--set" "mapi_open=true" "--set" "mapi_port=33580" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbname=mTests_test_BugTracker-2011" "--set" "mal_listing=0"
+# 14:18:16 >  
+
+# MonetDB 5 server v11.5.4
+# This is an unreleased version
+# Serving database 'mTests_test_BugTracker-2011', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://ottar.ins.cwi.nl:33580/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_history.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_compress.sql
+# loading sql script: 18_dictionary.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 99_system.sql
+
+# 14:18:16 >  
+# 14:18:16 >  "/usr/bin/python" "many-connects-cache.Bug-2904.SQL.py" "many-connects-cache.Bug-2904"
+# 14:18:16 >  
+
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#SELECT rad(55.81689)
+% . # table_name
+% rad_single_value # name
+% double # type
+% 24 # length
+[ 0.9741885087	]
+#CREATE USER "testuser" WITH ENCRYPTED PASSWORD 'e9e633097ab9ceb3e48ec3f70ee2beba41d05d5420efee5da85f97d97005727587fda33ef4ff2322088f4c79e8133cc9cd9f3512f4d3a303cbdb5bc585415a00' NAME 'Test User' SCHEMA "sys";
+#CREATE SCHEMA "testschema" AUTHORIZATION "testuser";
+#ALTER USER "testuser" SET SCHEMA "testschema"
+#CREATE USER "testuser" WITH ENCRYPTED PASSWORD 'e9e633097ab9ceb3e48ec3f70ee2beba41d05d5420efee5da85f97d97005727587fda33ef4ff2322088f4c79e8133cc9cd9f3512f4d3a303cbdb5bc585415a00' NAME 'Test User' SCHEMA "sys";
+#CREATE SCHEMA "testschema" AUTHORIZATION "testuser";
+#ALTER USER "testuser" SET SCHEMA "testschema"
+#CREATE USER "testuser" WITH ENCRYPTED PASSWORD 'e9e633097ab9ceb3e48ec3f70ee2beba41d05d5420efee5da85f97d97005727587fda33ef4ff2322088f4c79e8133cc9cd9f3512f4d3a303cbdb5bc585415a00' NAME 'Test User' SCHEMA "sys";
+#CREATE SCHEMA "testschema" AUTHORIZATION "testuser";
+#ALTER USER "testuser" SET SCHEMA "testschema"
+#CREATE FUNCTION rad(d DOUBLE) RETURNS DOUBLE BEGIN RETURN d * PI() / 180; END
+#DROP FUNCTION rad
+#ALTER USER "testuser" SET SCHEMA "sys";
+#DROP SCHEMA "testschema";
+#DROP USER "testuser"
+#ALTER USER "testuser" SET SCHEMA "sys";
+#DROP SCHEMA "testschema";
+#DROP USER "testuser"
+#ALTER USER "testuser" SET SCHEMA "sys";
+#DROP SCHEMA "testschema";
+#DROP USER "testuser"
+
+# 14:18:17 >  
+# 14:18:17 >  "Done."
+# 14:18:17 >  
+
