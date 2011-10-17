@@ -1100,12 +1100,11 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 			 strcmp(s, "decimal") == 0);
 
 		if (rows == 0) {
-			vartotal += len[i];
-			minvartotal += MINCOLSIZE;
+			minvartotal += len[i]; /* don't wrap column headers if no data */
 		} else if (!numeric[i]) {
-			vartotal += len[i];
 			minvartotal += len[i] > MINVARCOLSIZE ? MINVARCOLSIZE : len[i];
 		}
+		vartotal += len[i];
 		total += len[i];
 
 		/* do a very pessimistic calculation to determine if more

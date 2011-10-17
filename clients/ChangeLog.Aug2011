@@ -1,6 +1,11 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Mon Oct 17 2011 Fabian Groffen <fabian@cwi.nl>
+- Small improvement to mclient's table rendering for tables without
+  any rows.  Previously, the column names in the header could be
+  squeezed to very small widths, degrading readability.
+
 * Wed Oct 12 2011 Fabian Groffen <fabian@cwi.nl>
 - Python DB API connect() function now supports PEP 249-style arguments
   user and host, bug #2901
