@@ -131,7 +131,8 @@ except ImportError:
             if p.endswith('dist-packages'):
                 # Ubuntu
                 p = p.replace('dist-packages', 'site-packages')
-                sys.path.insert(0, _configure(os.path.join('QXprefix@', p)))
+                _configure(os.path.join('@QXprefix@', p))
+                sys.path.insert(0, p)
                 if os.environ.has_key('PYTHONPATH'):
                     p = p + os.pathsep + os.environ['PYTHONPATH']
                 os.environ['PYTHONPATH'] = p
@@ -3258,12 +3259,12 @@ def main(argv) :
     #STDOUT.flush()
 
     # inject vars that tell various languages where to find their libs
-    env['PERLLIB'] = _configure(os.path.join('@QXprefix@', '@PERL_LIBDIR@'))
+    env['PERL5LIB'] = _configure(os.path.join('@QXprefix@', '@PERL_LIBDIR@'))
 # set dynamically for python test lib
 #    env['PYTHONPATH'] = _configure(os.path.join('@QXprefix@', '@PYTHON_LIBDIR@'));
     env['PHP_INCPATH'] = _configure(os.path.join('@datadir@', 'php'))
     env['BINDIR'] = _configure('@bindir@')
-    vars_ = vars_ + ['PERLLIB', 'PHP_INCPATH', 'BINDIR']
+    vars_ = vars_ + ['PERL5LIB', 'PHP_INCPATH', 'BINDIR']
 
     # export and display env
     STDERR.flush()
