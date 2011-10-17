@@ -48,4 +48,5 @@ HAVE_PERL?perl-short-read-bug.Bug-2897
 device-self-ref-fk
 missing_refine_reverse.Bug-2898
 rand-with-seed.Bug-2900
+many-connects-cache.Bug-2904
 alter-table-set-read-only.bug-2906
