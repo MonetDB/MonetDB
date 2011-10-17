@@ -131,7 +131,8 @@ except ImportError:
             if p.endswith('dist-packages'):
                 # Ubuntu
                 p = p.replace('dist-packages', 'site-packages')
-                sys.path.insert(0, _configure(os.path.join('QXprefix@', p)))
+                _configure(os.path.join('@QXprefix@', p))
+                sys.path.insert(0, p)
                 if os.environ.has_key('PYTHONPATH'):
                     p = p + os.pathsep + os.environ['PYTHONPATH']
                 os.environ['PYTHONPATH'] = p
