@@ -1,30 +1,3 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
-* Mon Oct 17 2011 Fabian Groffen <fabian@cwi.nl>
-- Small improvement to mclient's table rendering for tables without
-  any rows.  Previously, the column names in the header could be
-  squeezed to very small widths, degrading readability.
-
-* Wed Oct 12 2011 Fabian Groffen <fabian@cwi.nl>
-- Python DB API connect() function now supports PEP 249-style arguments
-  user and host, bug #2901
-
-* Wed Oct 12 2011 Sjoerd Mullender <sjoerd@acm.org>
-- mclient now checks the result of encoding conversions using the iconv
-  library.
-
-* Mon Oct 10 2011 Sjoerd Mullender <sjoerd@acm.org>
-- Fixed a source of crashes in mclient when a query on the command line
-  using the -s option is combined with input on standard input (e.g. in
-  the construct mclient -s 'COPY INTO t FROM STDIN ...' < file.csv).
-
-* Fri Oct  7 2011 Sjoerd Mullender <sjoerd@acm.org>
-- Fixed bug 2897 where slow (network) reads could cause blocks to not
-  be fully read in one go, causing errors in the subsequent use of
-  those blocks.  With thanks to Rémy Chibois.
-
-* Tue Sep 27 2011 Fabian Groffen <fabian@cwi.nl>
-- Fixed a bug in mclient where processing queries from files could result
-  in ghost empty results to be reported in the output
-
