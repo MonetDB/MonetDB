@@ -27,7 +27,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Aug2011-SP1/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Aug2011-SP2/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -618,6 +618,55 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Tue Oct 18 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.5.5-20111018
+- Rebuilt.
+
+* Mon Oct 17 2011 Fabian Groffen <fabian@cwi.nl> - 11.5.5-20111018
+- clients: Small improvement to mclient's table rendering for tables without
+  any rows.  Previously, the column names in the header could be
+  squeezed to very small widths, degrading readability.
+
+* Wed Oct 12 2011 Fabian Groffen <fabian@cwi.nl> - 11.5.5-20111018
+- clients: Python DB API connect() function now supports PEP 249-style arguments
+  user and host, bug #2901
+
+* Wed Oct 12 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.5.5-20111018
+- clients: mclient now checks the result of encoding conversions using the iconv
+  library.
+
+* Mon Oct 10 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.5.5-20111018
+- clients: Fixed a source of crashes in mclient when a query on the command line
+  using the -s option is combined with input on standard input (e.g. in
+  the construct mclient -s 'COPY INTO t FROM STDIN ...' < file.csv).
+
+* Sun Oct  9 2011 Fabian Groffen <fabian@cwi.nl> - 11.5.5-20111018
+- merovingian: Resolved problem where monetdbd would terminate abnormally when
+  databases named 'control', 'discovery' or 'merovingian' were stopped.
+
+* Fri Oct  7 2011 Fabian Groffen <fabian@cwi.nl> - 11.5.5-20111018
+- merovingian: monetdbd get status now also reports the version of the running monetdbd
+
+* Fri Oct  7 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.5.5-20111018
+- clients: Fixed bug 2897 where slow (network) reads could cause blocks to not
+  be fully read in one go, causing errors in the subsequent use of
+  those blocks.  With thanks to Rémy Chibois.
+
+* Thu Oct  6 2011 Fabian Groffen <fabian@cwi.nl> - 11.5.5-20111018
+- merovingian: Improved response time of 'monetdb start' when the database fails
+  to start.
+
+* Wed Oct  5 2011 Fabian Groffen <fabian@cwi.nl> - 11.5.5-20111018
+- merovingian: Fixed a bug in monetdbd where starting a failing database could
+  incorrectly be reported as a 'running but dead' database.
+
+* Fri Sep 30 2011 Fabian Groffen <fabian@cwi.nl> - 11.5.5-20111018
+- merovingian: To avoid confusion, all occurrences of merovingian were changed into
+  monetdbd for error messages sent to a client.
+
+* Tue Sep 27 2011 Fabian Groffen <fabian@cwi.nl> - 11.5.5-20111018
+- clients: Fixed a bug in mclient where processing queries from files could result
+  in ghost empty results to be reported in the output
+
 * Sun Sep 25 2011 Fabian Groffen <fabian@cwi.nl> - 11.5.3-20110925
 - Rebuilt.
 

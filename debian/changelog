@@ -1,3 +1,88 @@
+monetdb (11.5.5-20111018) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 18 Oct 2011 09:33:46 +0200
+
+monetdb (11.5.5-20111018) unstable; urgency=low
+
+  * clients: Small improvement to mclient's table rendering for tables without
+    any rows.  Previously, the column names in the header could be
+    squeezed to very small widths, degrading readability.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Mon, 17 Oct 2011 09:33:45 +0200
+
+monetdb (11.5.5-20111018) unstable; urgency=low
+
+  * clients: Python DB API connect() function now supports PEP 249-style arguments
+    user and host, bug #2901
+
+ -- Fabian Groffen <fabian@cwi.nl>  Wed, 12 Oct 2011 09:33:45 +0200
+
+monetdb (11.5.5-20111018) unstable; urgency=low
+
+  * clients: mclient now checks the result of encoding conversions using the iconv
+    library.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 12 Oct 2011 09:33:45 +0200
+
+monetdb (11.5.5-20111018) unstable; urgency=low
+
+  * clients: Fixed a source of crashes in mclient when a query on the command line
+    using the -s option is combined with input on standard input (e.g. in
+    the construct mclient -s 'COPY INTO t FROM STDIN ...' < file.csv).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 10 Oct 2011 09:33:45 +0200
+
+monetdb (11.5.5-20111018) unstable; urgency=low
+
+  * merovingian: Resolved problem where monetdbd would terminate abnormally when
+    databases named 'control', 'discovery' or 'merovingian' were stopped.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Sun, 9 Oct 2011 09:33:45 +0200
+
+monetdb (11.5.5-20111018) unstable; urgency=low
+
+  * merovingian: monetdbd get status now also reports the version of the running monetdbd
+
+ -- Fabian Groffen <fabian@cwi.nl>  Fri, 7 Oct 2011 09:33:45 +0200
+
+monetdb (11.5.5-20111018) unstable; urgency=low
+
+  * clients: Fixed bug 2897 where slow (network) reads could cause blocks to not
+    be fully read in one go, causing errors in the subsequent use of
+    those blocks.  With thanks to Rémy Chibois.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 7 Oct 2011 09:33:45 +0200
+
+monetdb (11.5.5-20111018) unstable; urgency=low
+
+  * merovingian: Improved response time of 'monetdb start' when the database fails
+    to start.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Thu, 6 Oct 2011 09:33:45 +0200
+
+monetdb (11.5.5-20111018) unstable; urgency=low
+
+  * merovingian: Fixed a bug in monetdbd where starting a failing database could
+    incorrectly be reported as a 'running but dead' database.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Wed, 5 Oct 2011 09:33:45 +0200
+
+monetdb (11.5.5-20111018) unstable; urgency=low
+
+  * merovingian: To avoid confusion, all occurrences of merovingian were changed into
+    monetdbd for error messages sent to a client.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Fri, 30 Sep 2011 09:33:45 +0200
+
+monetdb (11.5.5-20111018) unstable; urgency=low
+
+  * clients: Fixed a bug in mclient where processing queries from files could result
+    in ghost empty results to be reported in the output
+
+ -- Fabian Groffen <fabian@cwi.nl>  Tue, 27 Sep 2011 09:33:45 +0200
+
 monetdb (11.5.3-20110925) unstable; urgency=low
 
   * Rebuilt.
