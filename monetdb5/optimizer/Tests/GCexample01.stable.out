@@ -34,25 +34,25 @@ function user.main():void;
     mdb.List("user","qry");
 end main;
 function user.qry():void;               #  0 qry:void := user.qry() {G}
-    b := bat.new(:int,:int);            #  1 b:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
-    c := bat.new(:int,:int);            #  2 c:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
-    d := bat.new(:int,:int);            #  3 d:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
+    b:bat[:int,:int]  := bat.new(:int,:int);#  1 b:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
+    c:bat[:int,:int]  := bat.new(:int,:int);#  2 c:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
+    d:bat[:int,:int]  := bat.new(:int,:int);#  3 d:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
     bat.insert(b,1,1);                  #  4 _5:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _6:int, _6:int) {G}
 barrier (x,y,z) := bat.newIterator(b);  #  5 (x:lng, y:int, z:int) := CHPbunIterator(b:bat[:int,:int]) {GJ7}
     io.print(x);                        #  6 _10:void := IOprint_val(x:lng) 
 exit (x,y,z);                           #  7 (x:lng, y:int, z:int) 
-    b := nil:BAT;                       #  8 b:bat[:int,:int] := _17:BAT {G}
+    b:bat[:int,:int]  := nil:bat[:int,:int];#  8 b:bat[:int,:int] := _17:bat[:int,:int] {G}
 barrier (x,y,z) := bat.newIterator(c);  #  9 (x:lng, y:int, z:int) := CHPbunIterator(c:bat[:int,:int]) {GJ12}
     io.print(x);                        # 10 _11:void := IOprint_val(x:lng) 
     redo (x,y,z) := bat.hasMoreElements(c);# 11 (x:lng, y:int, z:int) := CHPbunHasMoreElements(c:bat[:int,:int]) {GJ10}
 exit (x,y,z);                           # 12 (x:lng, y:int, z:int) 
-    c := nil:BAT;                       # 13 c:bat[:int,:int] := _17:BAT {G}
+    c:bat[:int,:int]  := nil:bat[:int,:int];# 13 c:bat[:int,:int] := _19:bat[:int,:int] {G}
 # do not close d, it may be reused 
 barrier go := true;                     # 15 go:bit := _14:bit {J18}
     io.print(d);                        # 16 _15:void := IOprint_val(d:bat[:int,:int]) {G}
     redo go := true;                    # 17 go:bit := _14:bit {J16}
 exit go;                                # 18 go:bit 
-    d := nil:BAT;                       # 19 d:bat[:int,:int] := _17:BAT {G}
+    d:bat[:int,:int]  := nil:bat[:int,:int];# 19 d:bat[:int,:int] := _21:bat[:int,:int] {G}
 end qry;                                # 20  
 
 # 23:17:49 >  
