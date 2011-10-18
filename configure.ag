@@ -21,7 +21,7 @@ dnl All Rights Reserved.
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.60)
-AC_INIT([MonetDB], [11.5.4], [info@monetdb.org], [MonetDB])
+AC_INIT([MonetDB], [11.5.5], [info@monetdb.org], [MonetDB])
 AC_CONFIG_AUX_DIR([buildtools/conf])
 AC_CONFIG_MACRO_DIR([buildtools/conf])
 AC_CANONICAL_HOST
@@ -133,7 +133,7 @@ case "$CC" in
 	;;
 esac
 
-AC_DEFINE(MONETDB_RELEASE, "unreleased", [Release name or "unreleased"])
+AC_DEFINE(MONETDB_RELEASE, "Aug2011-SP2", [Release name or "unreleased"])
 
 dft_gdk=auto
 AC_ARG_ENABLE(gdk,
