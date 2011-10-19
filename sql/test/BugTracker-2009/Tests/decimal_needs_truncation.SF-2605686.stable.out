@@ -33,7 +33,7 @@ Ready.
 % .prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale # name
 % varchar,	int,	int # type
-% 0,	0,	0 # length
+% 7,	1,	1 # length
 [ "decimal",	5,	4	]
 [ 1	]
 % sys.testdec # table_name

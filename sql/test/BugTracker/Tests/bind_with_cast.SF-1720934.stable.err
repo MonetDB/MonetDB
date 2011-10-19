@@ -79,7 +79,7 @@ stderr of test 'bind_with_cast.SF-1720934` in directory 'test/BugTracker` itself
 # 19:38:47 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=37754 
 # 19:38:47 >  
 
-MAPI  = monetdb@rig:37922
+MAPI  = monetdb@ottar:34070
 QUERY = exec 0('100');
 ERROR = !SQLException:sql.prepare:wrong type for argument 1 of prepared statement: char, expected int
 

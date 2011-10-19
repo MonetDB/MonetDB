@@ -1,22 +1,3 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
-* Sun Oct  9 2011 Fabian Groffen <fabian@cwi.nl>
-- Resolved problem where monetdbd would terminate abnormally when
-  databases named 'control', 'discovery' or 'merovingian' were stopped.
-
-* Fri Oct  7 2011 Fabian Groffen <fabian@cwi.nl>
-- monetdbd get status now also reports the version of the running monetdbd
-
-* Thu Oct  6 2011 Fabian Groffen <fabian@cwi.nl>
-- Improved response time of 'monetdb start' when the database fails
-  to start.
-
-* Wed Oct  5 2011 Fabian Groffen <fabian@cwi.nl>
-- Fixed a bug in monetdbd where starting a failing database could
-  incorrectly be reported as a 'running but dead' database.
-
-* Fri Sep 30 2011 Fabian Groffen <fabian@cwi.nl>
-- To avoid confusion, all occurrences of merovingian were changed into
-  monetdbd for error messages sent to a client.
-

@@ -189,7 +189,7 @@ SQLTables_(ODBCStmt *stmt,
 			char buf[17];	/* the longest string is "GLOBAL TEMPORARY" */
 			int i, j;
 
-			strcpy(query_end, " and (1 = 0");
+			strcpy(query_end, " and (");
 			query_end += strlen(query_end);
 			for (i = j = 0; i < NameLength4 + 1; i++) {
 				if (i == NameLength4 || TableType[i] == ',') {
@@ -199,20 +199,28 @@ SQLTables_(ODBCStmt *stmt,
 					}
 					buf[j] = 0;
 					if (strcmp(buf, "VIEW") == 0)
-						strcpy(query_end, " or t.\"type\" = 1");
+						strcpy(query_end, "t.\"type\" = 1 or ");
 					else if (strcmp(buf, "TABLE") == 0)
-						strcpy(query_end, " or (t.\"type\" = 0 and t.\"system\" = false and t.\"temporary\" = 0)");
+						strcpy(query_end, "(t.\"type\" = 0 and t.\"system\" = false and t.\"temporary\" = 0) or ");
 					else if (strcmp(buf, "SYSTEM TABLE") == 0)
-						strcpy(query_end, " or (t.\"type\" = 0 and t.\"system\" = true and t.\"temporary\" = 0)");
+						strcpy(query_end, "(t.\"type\" = 0 and t.\"system\" = true and t.\"temporary\" = 0) or ");
 					else if (strcmp(buf, "LOCAL TEMPORARY") == 0)
-						strcpy(query_end, " or (t.\"type\" = 0 and t.\"system\" = false and t.\"temporary\" = 1)");
+						strcpy(query_end, "(t.\"type\" = 0 and t.\"system\" = false and t.\"temporary\" = 1) or ");
 					query_end += strlen(query_end);
 					j = 0;
 				} else if (j < 17 && TableType[i] != '\'' && (j > 0 || TableType[i] != ' '))
 					buf[j++] = TableType[i];
 			}
-			strcpy(query_end, ")");
-			query_end += strlen(query_end);
+			if (query_end[-1] == '(') {
+				/* no extra tests added, so remove " and (" */
+				query_end -= 6;
+				*query_end = 0;
+			} else {
+				/* remove extra " or " at end */
+				query_end -= 4;
+				*query_end++ = ')';
+				*query_end = 0;
+			}
 		}
 
 		/* add the ordering */

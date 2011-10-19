@@ -27,7 +27,7 @@ Ready.
 % .prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale # name
 % varchar,	int,	int # type
-% 0,	0,	0 # length
+% 7,	2,	1 # length
 [ "bigint",	64,	0	]
 [ "decimal",	5,	5	]
 [ "decimal",	5,	5	]
