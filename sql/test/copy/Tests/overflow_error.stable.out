@@ -26,7 +26,34 @@ Ready.
 # 16:19:38 >  
 
 
-# 16:19:39 >  
-# 16:19:39 >  Done.
-# 16:19:39 >  
+# 13:56:49 >  
+# 13:56:49 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=ottar" "--port=31045"
+# 13:56:49 >  
+
+#CREATE TABLE QsoTarget( 
+#	"targetObjID" bigint	NOT NULL,
+#	"headObjID" bigint	NOT NULL,
+#	"targetRa" float	NOT NULL,
+#	"targetDec" float	NOT NULL,
+#	"targetCx" float	NOT NULL,
+#	"targetCy" float	NOT NULL,
+#	"targetCz" float	NOT NULL,
+#	"targetPsfMag_u" real	NOT NULL,
+#	"targetPsfMag_g" real	NOT NULL,
+#	"targetPsfMag_r" real	NOT NULL,
+#	"targetPsfMag_i" real	NOT NULL,
+#	"targetPsfMag_z" real	NOT NULL,
+#	"targetPsfMagErr_u" real	NOT NULL,
+#	"targetPsfMagErr_g" real	NOT NULL,
+#	"targetPsfMagErr_r" real	NOT NULL,
+#	"targetPsfMagErr_i" real	NOT NULL,
+#COPY 876 RECORDS INTO QsoTarget FROM STDIN USING DELIMITERS '|','\n';
+#0|0|0.0|0.0|0.0|0.0|0.0|0.0|0.0|0.0|0.0|0.0|0.0|0.0|0.0|0.0|0.0|0.0|0.0|0.0|0.0|0.0|0|0|0|0|0|0|0|0|0|0.0|0.0|0|0|0|0|0|0|0.0|0|0|0|0|0.0|0|0.0|0.0|0|0
+#5738613965003|758883005492166990|251.20187814942599|64.114106169010896|-0.14068130783209601|-0.41329303428041902|0.89966529189578903|23.722553|20.361975|19.059278|17.726887|17.066248|0.82791549|3.0251695E-2|0.01541957|7.8433193E-3|2.2619713E-2|0.32992938|0.2427589|0.17606901|0.1335078|9.4658695E-2|6|1|9843|268435712|142639361|268468224|268468224|268468224|402685952|198.04427|605.53674|0|0|0|0|0|5738613964800|51638.385234200003|3|0|0|0|0.0|0|0.0|0.0|0|0
+[ 876	]
+#drop table QsoTarget;
+
+# 13:56:49 >  
+# 13:56:49 >  "Done."
+# 13:56:49 >  
 

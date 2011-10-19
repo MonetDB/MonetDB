@@ -1571,13 +1571,15 @@ dblFromStr(char *src, int *len, dbl **dst)
 		**dst = dbl_nil;
 		p += 3;
 	} else {
-		/* on overflow, strtod returns HUGE_VAL and sets errno to
-		   ERANGE; on underflow, it returns 0 and also sets errno to
-		   ERANGE.  We accept 0, but not HUGE_VAL. */
+		/* on overflow, strtod returns HUGE_VAL and sets
+		 * errno to ERANGE; on underflow, it returns a value
+		 * whose magnitude is no greater than the smallest
+		 * normalized double, and may or may not set errno to
+		 * ERANGE.  We accept underflow, but not overflow. */
 		errno = 0;
 		d = strtod(src, &p);
-		if (p == src || (errno == ERANGE && d != 0)) {
-			**dst = dbl_nil;	/* default return value is nil */
+		if (p == src || (errno == ERANGE && (d < -1 || d > 1))) {
+			**dst = dbl_nil; /* default return value is nil */
 			p = src;
 		} else
 			**dst = (dbl) d;
@@ -1605,13 +1607,15 @@ fltFromStr(char *src, int *len, flt **dst)
 		p += 3;
 	} else {
 #ifdef HAVE_STRTOF
-		/* on overflow, strtof returns HUGE_VALF and sets errno to
-		   ERANGE; on underflow, it returns 0 and also sets errno to
-		   ERANGE.  We accept 0, but not HUGE_VALF. */
+		/* on overflow, strtof returns HUGE_VALF and sets
+		 * errno to ERANGE; on underflow, it returns a value
+		 * whose magnitude is no greater than the smallest
+		 * normalized float, and may or may not set errno to
+		 * ERANGE.  We accept underflow, but not overflow. */
 		errno = 0;
 		f = strtof(src, &p);
 		n = (int) (p - src);
-		if (n == 0 || (errno == ERANGE && f != 0)
+		if (n == 0 || (errno == ERANGE && (f < -1 || f > 1))
 #ifdef INFINITY
 		    || f == INFINITY
 #endif
@@ -1634,7 +1638,7 @@ fltFromStr(char *src, int *len, flt **dst)
 		    )
 #endif
 		{
-			**dst = flt_nil;	/* default return value is nil */
+			**dst = flt_nil; /* default return value is nil */
 			n = 0;
 		} else
 			**dst = (flt) f;

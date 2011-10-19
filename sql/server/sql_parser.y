@@ -3828,12 +3828,23 @@ literal:
 		  	if (*s == '+' || *s == '-')
 				digits --;
 		  	sql_find_subtype(&t, "decimal", digits, scale );
-		  	$$ = _newAtomNode( atom_dec(SA, &t, value, val)); 
-		   } else { 
-		  	double val = strtod($1,NULL);
+		  	$$ = _newAtomNode( atom_dec(SA, &t, value, val));
+		   } else {
+			char *p = $1;
+			double val;
 
+			errno = 0;
+			val = strtod($1,&p);
+			if (p == $1 || (errno == ERANGE && (val < -1 || val > 1))) {
+				char *msg = sql_message("Double value too large or not a number (%s)", $1);
+
+				yyerror(msg);
+				_DELETE(msg);
+				$$ = NULL;
+				YYABORT;
+			}
 		  	sql_find_subtype(&t, "double", 51, 0 );
-		  	$$ = _newAtomNode(atom_float(SA, &t, val)); 
+		  	$$ = _newAtomNode(atom_float(SA, &t, val));
 		   }
 		}
  |  APPROXNUM
@@ -3843,7 +3854,7 @@ literal:
 
 		  errno = 0;
  		  val = strtod($1,&p);
-		  if (p == $1 || (errno == ERANGE && val != 0)) {
+		  if (p == $1 || (errno == ERANGE && (val < -1 || val > 1))) {
 			char *msg = sql_message("Double value too large or not a number (%s)", $1);
 
 			yyerror(msg);
