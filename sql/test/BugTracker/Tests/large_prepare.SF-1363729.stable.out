@@ -30,7 +30,7 @@ Ready.
 % .prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale # name
 % varchar,	int,	int # type
-% 0,	0,	0 # length
+% 6,	2,	1 # length
 [ "time",	1,	0	]
 [ "bigint",	64,	0	]
 [ "bigint",	64,	0	]

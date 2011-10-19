@@ -22,7 +22,7 @@ Ready.
 % .prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale # name
 % varchar,	int,	int # type
-% 0,	0,	0 # length
+% 4,	1,	1 # length
 [ "char",	0,	0	]
 % sys.t1234205 # table_name
 % name # name
@@ -34,7 +34,8 @@ Ready.
 % .prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale # name
 % varchar,	int,	int # type
-% 0,	0,	0 # length
+% 0,	1,	1 # length
+#execute 2 ();
 % sys.t1234205 # table_name
 % name # name
 % varchar # type

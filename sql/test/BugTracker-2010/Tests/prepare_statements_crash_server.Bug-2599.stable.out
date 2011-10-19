@@ -27,25 +27,25 @@ Ready.
 % .prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale # name
 % varchar,	int,	int # type
-% 0,	0,	0 # length
+% 7,	1,	1 # length
 [ "tinyint",	8,	0	]
 #prepare select * from t_2599 where a>2*?+1;
 % .prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale # name
 % varchar,	int,	int # type
-% 0,	0,	0 # length
+% 7,	1,	1 # length
 [ "tinyint",	8,	0	]
 #prepare select * from t_2599 where a>?+1;
 % .prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale # name
 % varchar,	int,	int # type
-% 0,	0,	0 # length
+% 7,	1,	1 # length
 [ "tinyint",	8,	0	]
 #prepare select * from t_2599 where a>1+?*2;
 % .prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale # name
 % varchar,	int,	int # type
-% 0,	0,	0 # length
+% 7,	1,	1 # length
 [ "tinyint",	8,	0	]
 
 # 15:41:23 >  

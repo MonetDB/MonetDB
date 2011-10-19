@@ -1898,9 +1898,12 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                 f = '%s/%s%s.in' % (d, TST, EXT)
             else:
                 f = '%s/%s%s' % (d, TST, EXT)
-            hglink = ' (id <a href="%s">%s</a>)' % (f, REV)
+            if has_rev_opt:
+                titlefmt = '-tTest %s%s (id <a href="%s">%s</a>) (<a href="%s.%%s.diff.html">%%s</a>)' % (TST, EXT, f, REV, TST)
+            else:
+                titlefmt = '-tTest <a href="%s%s">%s%s</a> (id <a href="%s">%s</a>) (<a href="%s.%%s.diff.html">%%s</a>)' % (TST, EXT, TST, EXT, f, REV, TST)
         else:
-            hglink = ''
+            titlefmt = '-tTest <a href="%s%s">%s%s</a> (<a href="%s.%%s.diff.html">%%s</a>)' % (TST, EXT, TST, EXT, TST)
         diff_html = open('%s.out.diff.html' % TST,"w")
         diff_html.write('<!--MajorDiffs-->\n')
         diff_html.close()
@@ -1929,7 +1932,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                 cmd.append('-q')
             cmd.extend(['-F^#', '-I%s' % par['IGNORE'],
                         '-C%s' % par['CONTEXT'], '-A%d' % ACCURACYout,
-                        '-tTest <a href="%s%s">%s%s</a>%s (<a href="%s.err.diff.html">err</a>)' % (TST, EXT, TST, EXT, hglink, TST),
+                        titlefmt % ('err', 'err'),
                         '%s%s.FILTERED' % (TST, STABLEout),
                         '%s.test.out.FILTERED' % TST,
                         '%s.out.diff.html' % TST])
@@ -1998,7 +2001,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                 cmd.append('-q')
             cmd.extend(['-F^#', '-I%s' % par['IGNORE'],
                         '-C%s' % par['CONTEXT'], '-A%d' % ACCURACYerr,
-                        '-tTest <a href="%s%s">%s%s</a>%s (<a href="%s.out.diff.html">out</a>)' % (TST, EXT, TST, EXT, hglink, TST),
+                        titlefmt % ('out', 'out'),
                         '%s%s.FILTERED' % (TST, STABLEerr),
                         '%s.test.err.FILTERED' % TST,
                         '%s.err.diff.html' % TST])
@@ -3323,7 +3326,9 @@ def main(argv) :
 
     global REV
     global URLPREFIX
+    global has_rev_opt
     REV = opts.get('revision')
+    has_rev_opt = REV is not None
     if REV is None:             # no --revision option: try to find out
         try:
             proc = subprocess.Popen(['hg', 'id', '-i'], stdout = subprocess.PIPE)

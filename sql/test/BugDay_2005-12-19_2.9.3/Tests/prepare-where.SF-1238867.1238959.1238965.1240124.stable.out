@@ -21,12 +21,12 @@ Ready.
 % .prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale # name
 % varchar,	int,	int # type
-% 0,	0,	0 # length
+% 7,	1,	1 # length
 [ "tinyint",	8,	0	]
 % .prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale # name
 % varchar,	int,	int # type
-% 0,	0,	0 # length
+% 7,	4,	1 # length
 [ "varchar",	1024,	0	]
 
 # 13:00:07 >  
