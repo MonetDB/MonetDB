@@ -605,18 +605,45 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 {
 	node *n;
 	int len = c->params ? list_length(c->params) : 0;
+	size_t len1 = 0;	/* column widths */
+	int len2 = 1, len3 = 1;
+	sql_arg *a;
+	sql_subtype *t;
 
 	if (!out)
 		return 0;
 
+	/* calculate column widths */
+	if (c->params) {
+		unsigned int max2 = 10, max3 = 10; /* to help calculate widths */
+
+		for (n = c->params->h; n; n = n->next) {
+			size_t slen;
+
+			a = n->data;
+			t = &a->type;
+			slen = strlen(t->type->sqlname);
+			if (slen > len1)
+				len1 = slen;
+			while (t->digits >= max2) {
+				len2++;
+				max2 *= 10;
+			}
+			while (t->scale >= max3) {
+				len3++;
+				max3 *= 10;
+			}
+		}
+	}
+
 	/* write header, query type: Q_PREPARE */
 	if (mnstr_printf(out,
 		"&5 %d %d 3 %d\n" /* TODO: add type here: r(esult) or u(pdate) */
-		"%% .prepare,	.prepare,	.prepare # table_name\n"
-		"%% type,	digits,	scale # name\n"
-		"%% varchar,	int,	int # type\n"
-		"%% 0,	0,	0 # length\n",
-		q->id, len, len) < 0) {
+		"%% .prepare,\t.prepare,\t.prepare # table_name\n"
+		"%% type,\tdigits,\tscale # name\n"
+		"%% varchar,\tint,\tint # type\n"
+		"%% " SZFMT ",\t%d,\t%d # length\n",
+		q->id, len, len, len1, len2, len3) < 0) {
 		return -1;
 	}
 
@@ -626,12 +653,12 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 		q->paramlen = len;
 		q->params = SA_NEW_ARRAY(q->sa, sql_subtype, len);
 		for (n = c->params->h, i=0; n; n = n->next, i++) {
-			sql_arg *a = n->data;
-			sql_subtype *t = &a->type;
+			a = n->data;
+			t = &a->type;
 
 			if (t) {
 				if (mnstr_printf(out,
-					"[ \"%s\",	%d,	%d	]\n",
+					"[ \"%s\",\t%d,\t%d\t]\n",
 					t->type->sqlname,
 					t->digits,
 					t->scale

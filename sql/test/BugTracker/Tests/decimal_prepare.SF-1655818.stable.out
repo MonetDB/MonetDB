@@ -16,7 +16,7 @@ Ready.
 % .prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale # name
 % varchar,	int,	int # type
-% 0,	0,	0 # length
+% 9,	1,	1 # length
 [ "timestamp",	7,	0	]
 [ "decimal",	5,	2	]
 [ "decimal",	5,	2	]
