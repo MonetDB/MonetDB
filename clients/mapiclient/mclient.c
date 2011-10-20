@@ -1101,7 +1101,11 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 
 		if (rows == 0) {
 			minvartotal += len[i]; /* don't wrap column headers if no data */
-		} else if (!numeric[i]) {
+		} else if (numeric[i]) {
+			/* minimum size is equal to maximum size */
+			minvartotal += len[i];
+		} else {
+			/* minimum size for wide columns is MINVARCOLSIZE */
 			minvartotal += len[i] > MINVARCOLSIZE ? MINVARCOLSIZE : len[i];
 		}
 		vartotal += len[i];
