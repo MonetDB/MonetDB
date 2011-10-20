@@ -1,17 +1,17 @@
 # SQL
 # (Must be first as otherwise creation of schema datacell via
-#  50_datacell.sql is not triggered, as first SQL-clients does not connect
+#  50_datacell
 #  on "virgin" database!???)
-ENABLE_DATACELL?scenario00.sql
-ENABLE_DATACELL?scenario01.sql
-ENABLE_DATACELL?scenario02.sql
-ENABLE_DATACELL?scenario03.sql
-ENABLE_DATACELL?scenario04.sql
-ENABLE_DATACELL?scenario05.sql
-ENABLE_DATACELL?scenario06.sql
-ENABLE_DATACELL?datacell00.sql
-ENABLE_DATACELL?dctemper00.sql
-ENABLE_DATACELL?linearroad.sql
+ENABLE_DATACELL?scenario00
+ENABLE_DATACELL?scenario01
+ENABLE_DATACELL?scenario02
+ENABLE_DATACELL?scenario03
+ENABLE_DATACELL?scenario04
+ENABLE_DATACELL?scenario05
+ENABLE_DATACELL?scenario06
+ENABLE_DATACELL?datacell00
+ENABLE_DATACELL?dctemper00
+ENABLE_DATACELL?linearroad
 # MAL
 ENABLE_DATACELL?basket00
 ENABLE_DATACELL?receptor00
