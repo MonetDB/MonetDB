@@ -33,12 +33,9 @@ Ready.
 % .,	.s,	.t,	.,	. # table_name
 % table_cat,	table_schem,	table_name,	table_type,	remarks # name
 % varchar,	varchar,	varchar,	varchar,	varchar # type
-% 0,	3,	20,	5,	0 # length
-[ NULL,	"sys",	"sensor_readings_2678",	"TABLE",	""	]
-[ NULL,	"sys",	"table1_bug2771",	"TABLE",	""	]
-[ NULL,	"sys",	"table2_bug2771",	"TABLE",	""	]
+% 0,	0,	0,	0,	0 # length
 
-# 14:49:53 >  
-# 14:49:53 >  "Done."
-# 14:49:53 >  
+# 17:24:21 >  
+# 17:24:21 >  "Done."
+# 17:24:21 >  
 
