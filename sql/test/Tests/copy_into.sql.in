@@ -5,11 +5,11 @@ insert into copyouttest values ('','');
 insert into copyouttest values (' Test ','');
 select * from copyouttest;
 
-copy select * from copyouttest into '$QTSTTRGBASE/mTests/x.dat' delimiters '[]', '\n';
+copy select * from copyouttest into '$QTSTTRGDIR/x.dat' delimiters '[]', '\n';
 drop table copyouttest;
 
 create table copyintest ( str VARCHAR(20), str2 VARCHAR(20));
-copy into copyintest from '$QTSTTRGBASE/mTests/x.dat' delimiters '[]', '\n', '"';
+copy into copyintest from '$QTSTTRGDIR/x.dat' delimiters '[]', '\n', '"';
 
 select * from copyintest;
 drop table copyintest;
