@@ -484,13 +484,13 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 				stmt *predicate = bin_first_column(sql->sa, left);
 				
 				predicate = stmt_const(sql->sa, predicate, stmt_bool(sql->sa, 1));
-				sel1 = stmt_select(sql->sa, predicate, sel1, cmp_equal);
+				sel1 = stmt_uselect(sql->sa, predicate, sel1, cmp_equal);
 			}
 			if (sel2->nrcols == 0) {
 				stmt *predicate = bin_first_column(sql->sa, left);
 				
 				predicate = stmt_const(sql->sa, predicate, stmt_bool(sql->sa, 1));
-				sel2 = stmt_select(sql->sa, predicate, sel2, cmp_equal);
+				sel2 = stmt_uselect(sql->sa, predicate, sel2, cmp_equal);
 			}
 			sel1 = stmt_mark_tail(sql->sa, sel1, 0); 
 			sel2 = stmt_mark_tail(sql->sa, sel2, 0); 
