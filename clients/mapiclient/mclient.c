@@ -2742,7 +2742,10 @@ main(int argc, char **argv)
 					itimemode = T_SECS;
 				} else if (strcmp(optarg, "m") == 0) {
 					itimemode = T_MINSECS;
-				} /* else: fall back to default (human) */
+				} else if (*optarg != '\0') {
+					fprintf(stderr, "warning: invalid argument to -i: %s\n",
+							optarg);
+				}
 			}
 			break;
 		case 'h':
