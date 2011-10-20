@@ -784,6 +784,13 @@ push_semijoin( mvc *sql, stmt *select, stmt *s )
 		op1 = push_semijoin(sql, op1, s);
 		return stmt_diff(sql->sa, op1, op2);
 	}
+	if (select->type == st_const) {
+		stmt *op1 = select->op1;
+		stmt *op2 = select->op2;
+
+		op1 = push_semijoin(sql, op1, s);
+		return stmt_const(sql->sa, op1, op2);
+	}
 	if (select->type == st_union) {
 		stmt *op1 = select->op1;
 		stmt *op2 = select->op2;
@@ -862,7 +869,10 @@ push_select_stmt( mvc *c, list *l, stmt *sel )
 	for (n = l->h; n; n = n->next) {
 		stmt *s = rel2bin(c, n->data);
 
-		sel = push_semijoin(c, s, sel);
+		if (!s->nrcols) /* predicate */
+			stmt_uselect(c->sa, stmt_const(c->sa, sel, stmt_bool(c->sa, 1)), s, cmp_equal); 
+		else
+			sel = push_semijoin(c, s, sel);
 	}
 	return sel;
 }

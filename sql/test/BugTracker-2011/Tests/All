@@ -51,3 +51,4 @@ rand-with-seed.Bug-2900
 python-connections-Bug.2901
 many-connects-cache.Bug-2904
 alter-table-set-read-only.bug-2906
+predicate.Bug-2908
