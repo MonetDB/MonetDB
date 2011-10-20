@@ -1,0 +1,44 @@
+stdout of test 'predicate.Bug-2908` in directory 'test/BugTracker-2011` itself:
+
+
+# 14:49:53 >  
+# 14:49:53 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "gdk_dbfarm=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB" "--set" "mapi_open=true" "--set" "mapi_port=34243" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbname=mTests_test_BugTracker-2011" "--set" "mal_listing=0"
+# 14:49:53 >  
+
+# MonetDB 5 server v11.5.4
+# This is an unreleased version
+# Serving database 'mTests_test_BugTracker-2011', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 3.788 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2011 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://niels.nesco.mine.nu:34243/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 14:49:53 >  
+# 14:49:53 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=34243"
+# 14:49:53 >  
+
+#select cast(null as varchar(1)) as table_cat, s."name" as table_schem, t."name"
+#as table_name, case when t."type" = 0 and t."system" = false and t."temporary"
+#= 0 then cast('TABLE' as varchar(20)) when t."type" = 0 and t."system" = true
+#and t."temporary" = 0 then cast('SYSTEM TABLE' as varchar(20)) when t."type" =
+#1 then cast('VIEW' as varchar(20)) when t."type" = 0 and t."system" = false and
+#t."temporary" = 1 then cast('LOCAL TEMPORARY' as varchar(20)) else
+#cast('INTERNAL TABLE TYPE' as varchar(20)) end as table_type, cast('' as
+% .,	.s,	.t,	.,	. # table_name
+% table_cat,	table_schem,	table_name,	table_type,	remarks # name
+% varchar,	varchar,	varchar,	varchar,	varchar # type
+% 0,	3,	20,	5,	0 # length
+[ NULL,	"sys",	"sensor_readings_2678",	"TABLE",	""	]
+[ NULL,	"sys",	"table1_bug2771",	"TABLE",	""	]
+[ NULL,	"sys",	"table2_bug2771",	"TABLE",	""	]
+
+# 14:49:53 >  
+# 14:49:53 >  "Done."
+# 14:49:53 >  
+
