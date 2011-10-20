@@ -2592,7 +2592,7 @@ void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid)
 	}
 
 @= timingHndlr
-if (cntxt->flags && stk->cmd != 't' && stk->cmd != 'C') {
+if (cntxt->flags && stk->cmd && stk->cmd != 't' && stk->cmd != 'C') {
 	if (lock)
 		MT_lock_set(&*lock, "timing");
 	mnstr_printf(cntxt->fdout, "= ");    /* single column rendering */
