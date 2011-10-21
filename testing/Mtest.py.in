@@ -170,6 +170,12 @@ def splitcommand(cmd):
         del command[0]
     return command
 
+def remove(file):
+    try:
+        os.remove(file)
+    except:
+        pass
+
 def isexecutable(TST, ext = '.sh') :
     if   os.name == "nt":
         for ext in ".exe", ".com", ".bat", ".cmd":
@@ -1140,10 +1146,7 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
         if testweb:
             os.chdir(TSTTRGDIR)
             for f in alllinks:
-                try:
-                    os.remove(f)
-                except:
-                    pass
+                remove(f)
 
         if THISFILE == "Mtest.py":
             if not testweb:
@@ -1170,7 +1173,7 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
                 if fnmatch.fnmatch(f, pat):
                     break
             else:
-                os.remove(ff)
+                remove(ff)
 
         if testweb:
             try:
@@ -1268,11 +1271,11 @@ def ApproveOutput (env, TST) :
                 proc = subprocess.Popen(['diff', '-u', stableOUTPUT + '.ORG', stableOUTPUT], stdout = f)
                 proc.wait()
                 f.close()
-                os.remove(stableOUTPUT + ".ORG")
-                os.remove(patch + ".1")
+                remove(stableOUTPUT + ".ORG")
+                remove(patch + ".1")
             else:
                 print "No differences detected between  %s and  stable.%s%s  that are not ignored by Mtest.py." % (os.path.join(TSTDIR, "%s.test.%s" % (TST, WHAT)), WHAT, SYSTEM)
-            os.remove(patch + ".0")
+            remove(patch + ".0")
 
             thefile = os.path.split(stableOUTPUT)[1]
             dir,file = os.path.split(stableOUT)
@@ -2105,10 +2108,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                       '%s.server.err' % TST, '%s.client.err' % TST,
                       '%s.test.err.FILTERED' % TST,
                       '%s%s.FILTERED' % (TST, STABLEerr)]:
-                try:
-                    os.remove(f)
-                except:
-                    pass
+                remove(f)
 
         if not testweb:
             elem = AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT,
@@ -3650,10 +3650,7 @@ def main(argv) :
             # some more cleanup
             # note that we create the file so that os.removedirs in PerformDir
             # doesn't remove os.path.join(TSTTRGBASE, TSTPREF)
-            try:
-                os.remove(os.path.join(TSTTRGBASE, TSTPREF, '.Mapprove.rc'))
-            except:
-                pass
+            remove(os.path.join(TSTTRGBASE, TSTPREF, '.Mapprove.rc'))
         fn = os.path.join(TSTTRGBASE, TSTPREF, "times.")
         fl = open(fn+"lst","w")
         Failure = [[] for i in range(len(FAILURES))]
