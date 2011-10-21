@@ -20,7 +20,7 @@
 from distutils.core import setup
 
 setup(name='python-monetdb',
-      version='11.5.6',
+      version='11.5.7',
       description='Native MonetDB client Python API',
       long_description='''\
 MonetDB is a database management system that is developed from a
@@ -35,6 +35,6 @@ program.
       author_email='info@monetdb.org',
       url='http://www.monetdb.org/',
       packages=['monetdb', 'monetdb.sql'],
-      download_url='<will be filled in before a release>/python-monetdb-11.5.6.tar.gz',
+      download_url='http://dev.monetdb.org/downloads/sources/Aug2011-SP2/python-monetdb-11.5.7.tar.gz',
      )
 
