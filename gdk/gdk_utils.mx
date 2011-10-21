@@ -86,6 +86,8 @@ BAT *GDKenv = NULL;
 #endif
 
 static int GDKstopped = 1;
+static void GDKunlockHome(void);
+static int GDKgetHome(void);
 
 /*
  * @+ Monet configuration file
@@ -1774,6 +1776,7 @@ gdk_export int GDKnr_threads;
 
 @c
 int GDKnr_threads = 0;
+static int GDKnrofthreads;
 
 @h
 gdk_export void GDKexit(int status);
@@ -1910,7 +1913,7 @@ GDKlockHome(void)
 	GDKstopped = 0;
 }
 
-void
+static void
 GDKunlockHome(void)
 {
 	if (GDKlockFile) {
@@ -1924,7 +1927,7 @@ GDKunlockHome(void)
  * @-
  * Really really get the lock. Now!!
  */
-int
+static int
 GDKgetHome(void)
 {
 	if (MT_pagesize() == 0 || GDKlockFile)
@@ -2018,7 +2021,7 @@ doGDKaddbuf(const char *prefix, const char *message, size_t messagelen, const ch
    It would probably also not be quite as bad if we could write in the
    message buffer.
  */
-void
+static void
 GDKaddbuf(const char *message)
 {
 	const char *p, *q;
@@ -2225,7 +2228,6 @@ GDKfatal(const char *format, ...)
  * Its file descriptors are the same as for the server and should be
  * subsequently reset.
  */
-int GDKnrofthreads;
 ThreadRec GDKthreads[THREADS];
 void *THRdata[THREADDATA] = { 0 };
 

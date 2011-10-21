@@ -135,19 +135,19 @@ gdk_export int escapedStr(char *dst, const char *src, int dstlen);
 #include "gdk_private.h"
 #include <math.h>		/* for INFINITY and NAN */
 
-int
+static int
 chrCmp(chr *l, chr *r)
 {
 	return simple_CMP(l, r, chr);
 }
 
-int
+static int
 bteCmp(bte *l, bte *r)
 {
 	return simple_CMP(l, r, bte);
 }
 
-int
+static int
 shtCmp(sht *l, sht *r)
 {
 	return simple_CMP(l, r, sht);
@@ -159,7 +159,7 @@ intCmp(int *l, int *r)
 	return simple_CMP(l, r, int);
 }
 
-int
+static int
 fltCmp(flt *l, flt *r)
 {
 	return simple_CMP(l, r, flt);
@@ -171,7 +171,7 @@ lngCmp(lng *l, lng *r)
 	return simple_CMP(l, r, lng);
 }
 
-int
+static int
 dblCmp(dbl *l, dbl *r)
 {
 	return simple_CMP(l, r, dbl);
@@ -181,31 +181,31 @@ dblCmp(dbl *l, dbl *r)
  * @- inline hash routines
  * Return some positive integer derived from one atom value.
  */
-BUN
+static BUN
 chrHash(chr *v)
 {
 	return (BUN) *(unsigned char *) v;
 }
 
-BUN
+static BUN
 bteHash(bte *v)
 {
 	return (BUN) *(unsigned char *) v;
 }
 
-BUN
+static BUN
 shtHash(sht *v)
 {
 	return (BUN) mix_sht(*(unsigned short *) v);
 }
 
-BUN
+static BUN
 intHash(int *v)
 {
 	return (BUN) mix_int(*(unsigned int *) v);
 }
 
-BUN
+static BUN
 lngHash(lng *v)
 {
 	return (BUN) mix_int(((unsigned int *) v)[0] ^ ((unsigned int *) v)[1]);
@@ -243,173 +243,6 @@ batUnfix(bat *b)
 {
 	return BBPdecref(*b, TRUE);
 }
-
-atomDesc BATatoms[MAXATOMS] = {
-	{"void",
-#if SIZEOF_OID == SIZEOF_INT
-	 TYPE_void, 1, 0, /* sizeof(void) */ 0, 0, 1, (ptr) &int_nil,
-	 (int (*)(str, int *, ptr *)) OIDfromStr, (int (*)(str *, int *, ptr)) OIDtoStr,
-	 (void *(*)(void *, stream *, size_t)) voidRead, (int (*)(void *, stream *, size_t)) voidWrite,
-	 (int (*)(ptr, ptr)) intCmp,
-	 (BUN (*)(ptr)) intHash, 0,
-#else
-	 TYPE_void, 1, 0, /* sizeof(void) */ 0, 0, 1, (ptr) &lng_nil,
-	 (int (*)(str, int *, ptr *)) OIDfromStr, (int (*)(str *, int *, ptr)) OIDtoStr,
-	 (void *(*)(void *, stream *, size_t)) voidRead, (int (*)(void *, stream *, size_t)) voidWrite,
-	 (int (*)(ptr, ptr)) lngCmp,
-	 (BUN (*)(ptr)) lngHash, 0,
-#endif
-	 0, 0,
-	 0, 0,
-	 0, 0,
-	 0, 0},
-	{"bit", TYPE_chr, 1, sizeof(bit), sizeof(bit), 0, 0, (ptr) &chr_nil,
-	 (int (*)(str, int *, ptr *)) bitFromStr, (int (*)(str *, int *, ptr)) bitToStr,
-	 (void *(*)(void *, stream *, size_t)) bitRead, (int (*)(void *, stream *, size_t)) bitWrite,
-	 (int (*)(ptr, ptr)) chrCmp,
-	 (BUN (*)(ptr)) chrHash, 0,
-	 0, 0,
-	 0, 0,
-	 0, 0,
-	 0, 0},
-	{"chr", TYPE_chr, 1, sizeof(chr), sizeof(chr), 0, 0, (ptr) &chr_nil,
-	 (int (*)(str, int *, ptr *)) chrFromStr, (int (*)(str *, int *, ptr)) chrToStr,
-	 (void *(*)(void *, stream *, size_t)) chrRead, (int (*)(void *, stream *, size_t)) chrWrite,
-	 (int (*)(ptr, ptr)) chrCmp,
-	 (BUN (*)(ptr)) chrHash, 0,
-	 0, 0,
-	 0, 0,
-	 0, 0,
-	 0, 0},
-	{"bte", TYPE_bte, 1, sizeof(bte), sizeof(bte), 0, 0, (ptr) &bte_nil,
-	 (int (*)(str, int *, ptr *)) bteFromStr, (int (*)(str *, int *, ptr)) bteToStr,
-	 (void *(*)(void *, stream *, size_t)) bteRead, (int (*)(void *, stream *, size_t)) bteWrite,
-	 (int (*)(ptr, ptr)) bteCmp,
-	 (BUN (*)(ptr)) bteHash, 0,
-	 0, 0,
-	 0, 0,
-	 0, 0,
-	 0, 0},
-	{"sht", TYPE_sht, 1, sizeof(sht), sizeof(sht), 0, 0, (ptr) &sht_nil,
-	 (int (*)(str, int *, ptr *)) shtFromStr, (int (*)(str *, int *, ptr)) shtToStr,
-	 (void *(*)(void *, stream *, size_t)) shtRead, (int (*)(void *, stream *, size_t)) shtWrite,
-	 (int (*)(ptr, ptr)) shtCmp,
-	 (BUN (*)(ptr)) shtHash, (void (*)(ptr, int)) shtConvert,
-	 0, 0,
-	 0, 0,
-	 0, 0,
-	 0, 0},
-	{"BAT", TYPE_int, 1, sizeof(bat), sizeof(bat), 0, 0, (ptr) &int_nil,
-	 (int (*)(str, int *, ptr *)) batFromStr, (int (*)(str *, int *, ptr)) batToStr,
-	 (void *(*)(void *, stream *, size_t)) batRead, (int (*)(void *, stream *, size_t)) batWrite,
-	 (int (*)(ptr, ptr)) intCmp,
-	 (BUN (*)(ptr)) intHash, (void (*)(ptr, int)) intConvert,
-	 (int (*)(ptr)) batFix, (int (*)(ptr)) batUnfix,
-	 0, 0,
-	 0, 0,
-	 0, 0},
-	{"int", TYPE_int, 1, sizeof(int), sizeof(int), 0, 0, (ptr) &int_nil,
-	 (int (*)(str, int *, ptr *)) intFromStr, (int (*)(str *, int *, ptr)) intToStr,
-	 (void *(*)(void *, stream *, size_t)) intRead, (int (*)(void *, stream *, size_t)) intWrite,
-	 (int (*)(ptr, ptr)) intCmp,
-	 (BUN (*)(ptr)) intHash, (void (*)(ptr, int)) intConvert,
-	 0, 0,
-	 0, 0,
-	 0, 0,
-	 0, 0},
-	{"oid",
-#if SIZEOF_OID == SIZEOF_INT
-	 TYPE_int, 1, sizeof(oid), sizeof(oid), 0, 0, (ptr) &int_nil,
-	 (int (*)(str, int *, ptr *)) OIDfromStr, (int (*)(str *, int *, ptr)) OIDtoStr,
-	 (void *(*)(void *, stream *, size_t)) intRead, (int (*)(void *, stream *, size_t)) intWrite,
-	 (int (*)(ptr, ptr)) intCmp,
-	 (BUN (*)(ptr)) intHash, (void (*)(ptr, int)) intConvert,
-#else
-	 TYPE_lng, 1, sizeof(oid), sizeof(oid), 0, 0, (ptr) &lng_nil,
-	 (int (*)(str, int *, ptr *)) OIDfromStr, (int (*)(str *, int *, ptr)) OIDtoStr,
-	 (void *(*)(void *, stream *, size_t)) lngRead, (int (*)(void *, stream *, size_t)) lngWrite,
-	 (int (*)(ptr, ptr)) lngCmp,
-	 (BUN (*)(ptr)) lngHash, (void (*)(ptr, int)) lngConvert,
-#endif
-	 0, 0,
-	 0, 0,
-	 0, 0,
-	 0, 0},
-	{"wrd",
-#if SIZEOF_WRD == SIZEOF_INT
-	 TYPE_int, 1, sizeof(wrd), sizeof(wrd), 0, 0, (ptr) &int_nil,
-	 (int (*)(str, int *, ptr *)) intFromStr, (int (*)(str *, int *, ptr)) intToStr,
-	 (void *(*)(void *, stream *, size_t)) intRead, (int (*)(void *, stream *, size_t)) intWrite,
-	 (int (*)(ptr, ptr)) intCmp,
-	 (BUN (*)(ptr)) intHash, (void (*)(ptr, int)) intConvert,
-#else
-	 TYPE_lng, 1, sizeof(wrd), sizeof(wrd), 0, 0, (ptr) &lng_nil,
-	 (int (*)(str, int *, ptr *)) lngFromStr, (int (*)(str *, int *, ptr)) lngToStr,
-	 (void *(*)(void *, stream *, size_t)) lngRead, (int (*)(void *, stream *, size_t)) lngWrite,
-	 (int (*)(ptr, ptr)) lngCmp,
-	 (BUN (*)(ptr)) lngHash, (void (*)(ptr, int)) lngConvert,
-#endif
-	 0, 0,
-	 0, 0,
-	 0, 0,
-	 0, 0},
-	{"ptr",
-#if SIZEOF_VOID_P == SIZEOF_INT
-	 TYPE_ptr, 1, sizeof(ptr), sizeof(ptr), 0, 0, (ptr) &ptr_nil,
-	 (int (*)(str, int *, ptr *)) ptrFromStr, (int (*)(str *, int *, ptr)) ptrToStr,
-	 (void *(*)(void *, stream *, size_t)) ptrRead, (int (*)(void *, stream *, size_t)) ptrWrite,
-	 (int (*)(ptr, ptr)) intCmp,
-	 (BUN (*)(ptr)) intHash, (void (*)(ptr, int)) intConvert,
-#else /* SIZEOF_VOID_P == SIZEOF_LNG */
-	 TYPE_ptr, 1, sizeof(ptr), sizeof(ptr), 0, 0, (ptr) &ptr_nil,
-	 (int (*)(str, int *, ptr *)) ptrFromStr, (int (*)(str *, int *, ptr)) ptrToStr,
-	 (void *(*)(void *, stream *, size_t)) ptrRead, (int (*)(void *, stream *, size_t)) ptrWrite,
-	 (int (*)(ptr, ptr)) lngCmp,
-	 (BUN (*)(ptr)) lngHash, (void (*)(ptr, int)) lngConvert,
-#endif
-	 0, 0,
-	 0, 0,
-	 0, 0,
-	 0, 0},
-	{"flt", TYPE_flt, 1, sizeof(flt), sizeof(flt), 0, 0, (ptr) &flt_nil,
-	 (int (*)(str, int *, ptr *)) fltFromStr, (int (*)(str *, int *, ptr)) fltToStr,
-	 (void *(*)(void *, stream *, size_t)) fltRead, (int (*)(void *, stream *, size_t)) fltWrite,
-	 (int (*)(ptr, ptr)) fltCmp,
-	 (BUN (*)(ptr)) intHash, (void (*)(ptr, int)) intConvert,
-	 0, 0,
-	 0, 0,
-	 0, 0,
-	 0, 0},
-	{"dbl", TYPE_dbl, 1, sizeof(dbl), sizeof(dbl), 0, 0, (ptr) &dbl_nil,
-	 (int (*)(str, int *, ptr *)) dblFromStr, (int (*)(str *, int *, ptr)) dblToStr,
-	 (void *(*)(void *, stream *, size_t)) dblRead, (int (*)(void *, stream *, size_t)) dblWrite,
-	 (int (*)(ptr, ptr)) dblCmp,
-	 (BUN (*)(ptr)) lngHash, (void (*)(ptr, int)) lngConvert,
-	 0, 0,
-	 0, 0,
-	 0, 0,
-	 0, 0},
-	{"lng", TYPE_lng, 1, sizeof(lng), sizeof(lng), 0, 0, (ptr) &lng_nil,
-	 (int (*)(str, int *, ptr *)) lngFromStr, (int (*)(str *, int *, ptr)) lngToStr,
-	 (void *(*)(void *, stream *, size_t)) lngRead, (int (*)(void *, stream *, size_t)) lngWrite,
-	 (int (*)(ptr, ptr)) lngCmp,
-	 (BUN (*)(ptr)) lngHash, (void (*)(ptr, int)) lngConvert,
-	 0, 0,
-	 0, 0,
-	 0, 0,
-	 0, 0},
-	{"str", TYPE_str, 1, sizeof(var_t), sizeof(var_t), 0, 1, (ptr) str_nil,
-	 (int (*)(str, int *, ptr *)) strFromStr, (int (*)(str *, int *, ptr)) strToStr,
-	 (void *(*)(void *, stream *, size_t)) strRead, (int (*)(void *, stream *, size_t)) strWrite,
-	 (int (*)(ptr, ptr)) strCmp,
-	 (BUN (*)(ptr)) strHash, 0,
-	 0, 0,
-	 (var_t (*)(Heap *, var_t *, ptr)) strPut, 0,
-	 (int (*)(ptr)) strLen, strHeap,
-	 (void (*)(Heap *, int)) 0, 0},
-};
-
-int GDKatomcnt = TYPE_str + 1;
 
 /*
  * @+ Atomic Type Interface
@@ -1012,6 +845,7 @@ int
 #define mult10(x)	((x) + (x) + ((x) << 3))
 #define mult7(x)	(((x) << 3) - (x))
 
+#if 0
 int
 voidFromStr(str src, int *len, void **dst)
 {
@@ -1030,8 +864,9 @@ voidToStr(str *dst, int *len, void *src)
 	strncpy(*dst, "nil", *len);
 	return 3;
 }
+#endif
 
-void *
+static void *
 voidRead(void *a, stream *s, size_t cnt)
 {
 	(void) s;
@@ -1039,7 +874,7 @@ voidRead(void *a, stream *s, size_t cnt)
 	return a;
 }
 
-int
+static int
 voidWrite(void *a, stream *s, size_t cnt)
 {
 	(void) a;
@@ -1267,7 +1102,7 @@ chrToStr(str *dst, int *len, chr *src)
 	}
 }
 
-chr *
+static chr *
 chrRead(chr *a, stream *s, size_t cnt)
 {
 	mnstr_read(s, (char *) a, 1, cnt);
@@ -1280,7 +1115,7 @@ chrRead(chr *a, stream *s, size_t cnt)
 #endif
 }
 
-int
+static int
 chrWrite(chr *a, stream *s, size_t cnt)
 {
 	if (mnstr_write(s, (char *) a, 1, cnt) == (ssize_t) cnt)
@@ -1333,14 +1168,14 @@ bitToStr(char **dst, int *len, bit *src)
 	return 5;
 }
 
-bit *
+static bit *
 bitRead(bit *a, stream *s, size_t cnt)
 {
 	mnstr_read(s, (char *) a, 1, cnt);
 	return mnstr_errnr(s) ? NULL : a;
 }
 
-int
+static int
 bitWrite(bit *a, stream *s, size_t cnt)
 {
 	if (mnstr_write(s, (char *) a, 1, cnt) == (ssize_t) cnt)
@@ -1402,14 +1237,14 @@ batToStr(char **dst, int *len, bat *src)
 	return (int) strlen(*dst);
 }
 
-bat *
+static bat *
 batRead(bat *a, stream *s, size_t cnt)
 {
 	mnstr_readIntArray(s, (int *) a, cnt);	/* bat==int */
 	return mnstr_errnr(s) ? NULL : a;
 }
 
-int
+static int
 batWrite(bat *a, stream *s, size_t cnt)
 {
 	/* bat==int */
@@ -1472,12 +1307,12 @@ int
 @c
 
 @= atom_io
- @1 *@1Read(@1 *a, stream *s, size_t cnt)
+static @1 *@1Read(@1 *a, stream *s, size_t cnt)
 {
 	mnstr_read@2Array(s, (@3 *) a, cnt);
 	return mnstr_errnr(s) ? NULL : a;
 }
-int @1Write(@1 *a, stream *s, size_t cnt)
+static int @1Write(@1 *a, stream *s, size_t cnt)
 {
 	return mnstr_write@2Array(s, (@3 *) a, cnt) ? GDK_SUCCEED : GDK_FAIL;
 }
@@ -1750,7 +1585,7 @@ strLen(const char *s)
 	return (int) GDK_STRLEN(s);
 }
 
-int
+static int
 strCmp(const char *l, const char *r)
 {
 	return GDK_STRCMP(l, r);
@@ -2285,7 +2120,7 @@ strToStr(char **dst, int *len, char *src)
 	return l;
 }
 
-str
+static str
 strRead(str a, stream *s, size_t cnt)
 {
 	int len;
@@ -2304,7 +2139,7 @@ strRead(str a, stream *s, size_t cnt)
 	return a;
 }
 
-int
+static int
 strWrite(str a, stream *s, size_t cnt)
 {
 	size_t len = strlen(a);
@@ -2342,7 +2177,7 @@ OIDinit(void)
  * @-
  * Make up some new OID for a specified database, based on the current time.
  */
-oid
+static oid
 OIDrand(void)
 {
 	return 1000000;
@@ -2498,6 +2333,173 @@ OIDtoStr(char **dst, int *len, oid *src)
 	snprintf(*dst, *len, OIDFMT "@0", *src);
 	return (int) strlen(*dst);
 }
+
+atomDesc BATatoms[MAXATOMS] = {
+	{"void",
+#if SIZEOF_OID == SIZEOF_INT
+	 TYPE_void, 1, 0, /* sizeof(void) */ 0, 0, 1, (ptr) &int_nil,
+	 (int (*)(str, int *, ptr *)) OIDfromStr, (int (*)(str *, int *, ptr)) OIDtoStr,
+	 (void *(*)(void *, stream *, size_t)) voidRead, (int (*)(void *, stream *, size_t)) voidWrite,
+	 (int (*)(ptr, ptr)) intCmp,
+	 (BUN (*)(ptr)) intHash, 0,
+#else
+	 TYPE_void, 1, 0, /* sizeof(void) */ 0, 0, 1, (ptr) &lng_nil,
+	 (int (*)(str, int *, ptr *)) OIDfromStr, (int (*)(str *, int *, ptr)) OIDtoStr,
+	 (void *(*)(void *, stream *, size_t)) voidRead, (int (*)(void *, stream *, size_t)) voidWrite,
+	 (int (*)(ptr, ptr)) lngCmp,
+	 (BUN (*)(ptr)) lngHash, 0,
+#endif
+	 0, 0,
+	 0, 0,
+	 0, 0,
+	 0, 0},
+	{"bit", TYPE_chr, 1, sizeof(bit), sizeof(bit), 0, 0, (ptr) &chr_nil,
+	 (int (*)(str, int *, ptr *)) bitFromStr, (int (*)(str *, int *, ptr)) bitToStr,
+	 (void *(*)(void *, stream *, size_t)) bitRead, (int (*)(void *, stream *, size_t)) bitWrite,
+	 (int (*)(ptr, ptr)) chrCmp,
+	 (BUN (*)(ptr)) chrHash, 0,
+	 0, 0,
+	 0, 0,
+	 0, 0,
+	 0, 0},
+	{"chr", TYPE_chr, 1, sizeof(chr), sizeof(chr), 0, 0, (ptr) &chr_nil,
+	 (int (*)(str, int *, ptr *)) chrFromStr, (int (*)(str *, int *, ptr)) chrToStr,
+	 (void *(*)(void *, stream *, size_t)) chrRead, (int (*)(void *, stream *, size_t)) chrWrite,
+	 (int (*)(ptr, ptr)) chrCmp,
+	 (BUN (*)(ptr)) chrHash, 0,
+	 0, 0,
+	 0, 0,
+	 0, 0,
+	 0, 0},
+	{"bte", TYPE_bte, 1, sizeof(bte), sizeof(bte), 0, 0, (ptr) &bte_nil,
+	 (int (*)(str, int *, ptr *)) bteFromStr, (int (*)(str *, int *, ptr)) bteToStr,
+	 (void *(*)(void *, stream *, size_t)) bteRead, (int (*)(void *, stream *, size_t)) bteWrite,
+	 (int (*)(ptr, ptr)) bteCmp,
+	 (BUN (*)(ptr)) bteHash, 0,
+	 0, 0,
+	 0, 0,
+	 0, 0,
+	 0, 0},
+	{"sht", TYPE_sht, 1, sizeof(sht), sizeof(sht), 0, 0, (ptr) &sht_nil,
+	 (int (*)(str, int *, ptr *)) shtFromStr, (int (*)(str *, int *, ptr)) shtToStr,
+	 (void *(*)(void *, stream *, size_t)) shtRead, (int (*)(void *, stream *, size_t)) shtWrite,
+	 (int (*)(ptr, ptr)) shtCmp,
+	 (BUN (*)(ptr)) shtHash, (void (*)(ptr, int)) shtConvert,
+	 0, 0,
+	 0, 0,
+	 0, 0,
+	 0, 0},
+	{"BAT", TYPE_int, 1, sizeof(bat), sizeof(bat), 0, 0, (ptr) &int_nil,
+	 (int (*)(str, int *, ptr *)) batFromStr, (int (*)(str *, int *, ptr)) batToStr,
+	 (void *(*)(void *, stream *, size_t)) batRead, (int (*)(void *, stream *, size_t)) batWrite,
+	 (int (*)(ptr, ptr)) intCmp,
+	 (BUN (*)(ptr)) intHash, (void (*)(ptr, int)) intConvert,
+	 (int (*)(ptr)) batFix, (int (*)(ptr)) batUnfix,
+	 0, 0,
+	 0, 0,
+	 0, 0},
+	{"int", TYPE_int, 1, sizeof(int), sizeof(int), 0, 0, (ptr) &int_nil,
+	 (int (*)(str, int *, ptr *)) intFromStr, (int (*)(str *, int *, ptr)) intToStr,
+	 (void *(*)(void *, stream *, size_t)) intRead, (int (*)(void *, stream *, size_t)) intWrite,
+	 (int (*)(ptr, ptr)) intCmp,
+	 (BUN (*)(ptr)) intHash, (void (*)(ptr, int)) intConvert,
+	 0, 0,
+	 0, 0,
+	 0, 0,
+	 0, 0},
+	{"oid",
+#if SIZEOF_OID == SIZEOF_INT
+	 TYPE_int, 1, sizeof(oid), sizeof(oid), 0, 0, (ptr) &int_nil,
+	 (int (*)(str, int *, ptr *)) OIDfromStr, (int (*)(str *, int *, ptr)) OIDtoStr,
+	 (void *(*)(void *, stream *, size_t)) intRead, (int (*)(void *, stream *, size_t)) intWrite,
+	 (int (*)(ptr, ptr)) intCmp,
+	 (BUN (*)(ptr)) intHash, (void (*)(ptr, int)) intConvert,
+#else
+	 TYPE_lng, 1, sizeof(oid), sizeof(oid), 0, 0, (ptr) &lng_nil,
+	 (int (*)(str, int *, ptr *)) OIDfromStr, (int (*)(str *, int *, ptr)) OIDtoStr,
+	 (void *(*)(void *, stream *, size_t)) lngRead, (int (*)(void *, stream *, size_t)) lngWrite,
+	 (int (*)(ptr, ptr)) lngCmp,
+	 (BUN (*)(ptr)) lngHash, (void (*)(ptr, int)) lngConvert,
+#endif
+	 0, 0,
+	 0, 0,
+	 0, 0,
+	 0, 0},
+	{"wrd",
+#if SIZEOF_WRD == SIZEOF_INT
+	 TYPE_int, 1, sizeof(wrd), sizeof(wrd), 0, 0, (ptr) &int_nil,
+	 (int (*)(str, int *, ptr *)) intFromStr, (int (*)(str *, int *, ptr)) intToStr,
+	 (void *(*)(void *, stream *, size_t)) intRead, (int (*)(void *, stream *, size_t)) intWrite,
+	 (int (*)(ptr, ptr)) intCmp,
+	 (BUN (*)(ptr)) intHash, (void (*)(ptr, int)) intConvert,
+#else
+	 TYPE_lng, 1, sizeof(wrd), sizeof(wrd), 0, 0, (ptr) &lng_nil,
+	 (int (*)(str, int *, ptr *)) lngFromStr, (int (*)(str *, int *, ptr)) lngToStr,
+	 (void *(*)(void *, stream *, size_t)) lngRead, (int (*)(void *, stream *, size_t)) lngWrite,
+	 (int (*)(ptr, ptr)) lngCmp,
+	 (BUN (*)(ptr)) lngHash, (void (*)(ptr, int)) lngConvert,
+#endif
+	 0, 0,
+	 0, 0,
+	 0, 0,
+	 0, 0},
+	{"ptr",
+#if SIZEOF_VOID_P == SIZEOF_INT
+	 TYPE_ptr, 1, sizeof(ptr), sizeof(ptr), 0, 0, (ptr) &ptr_nil,
+	 (int (*)(str, int *, ptr *)) ptrFromStr, (int (*)(str *, int *, ptr)) ptrToStr,
+	 (void *(*)(void *, stream *, size_t)) ptrRead, (int (*)(void *, stream *, size_t)) ptrWrite,
+	 (int (*)(ptr, ptr)) intCmp,
+	 (BUN (*)(ptr)) intHash, (void (*)(ptr, int)) intConvert,
+#else /* SIZEOF_VOID_P == SIZEOF_LNG */
+	 TYPE_ptr, 1, sizeof(ptr), sizeof(ptr), 0, 0, (ptr) &ptr_nil,
+	 (int (*)(str, int *, ptr *)) ptrFromStr, (int (*)(str *, int *, ptr)) ptrToStr,
+	 (void *(*)(void *, stream *, size_t)) ptrRead, (int (*)(void *, stream *, size_t)) ptrWrite,
+	 (int (*)(ptr, ptr)) lngCmp,
+	 (BUN (*)(ptr)) lngHash, (void (*)(ptr, int)) lngConvert,
+#endif
+	 0, 0,
+	 0, 0,
+	 0, 0,
+	 0, 0},
+	{"flt", TYPE_flt, 1, sizeof(flt), sizeof(flt), 0, 0, (ptr) &flt_nil,
+	 (int (*)(str, int *, ptr *)) fltFromStr, (int (*)(str *, int *, ptr)) fltToStr,
+	 (void *(*)(void *, stream *, size_t)) fltRead, (int (*)(void *, stream *, size_t)) fltWrite,
+	 (int (*)(ptr, ptr)) fltCmp,
+	 (BUN (*)(ptr)) intHash, (void (*)(ptr, int)) intConvert,
+	 0, 0,
+	 0, 0,
+	 0, 0,
+	 0, 0},
+	{"dbl", TYPE_dbl, 1, sizeof(dbl), sizeof(dbl), 0, 0, (ptr) &dbl_nil,
+	 (int (*)(str, int *, ptr *)) dblFromStr, (int (*)(str *, int *, ptr)) dblToStr,
+	 (void *(*)(void *, stream *, size_t)) dblRead, (int (*)(void *, stream *, size_t)) dblWrite,
+	 (int (*)(ptr, ptr)) dblCmp,
+	 (BUN (*)(ptr)) lngHash, (void (*)(ptr, int)) lngConvert,
+	 0, 0,
+	 0, 0,
+	 0, 0,
+	 0, 0},
+	{"lng", TYPE_lng, 1, sizeof(lng), sizeof(lng), 0, 0, (ptr) &lng_nil,
+	 (int (*)(str, int *, ptr *)) lngFromStr, (int (*)(str *, int *, ptr)) lngToStr,
+	 (void *(*)(void *, stream *, size_t)) lngRead, (int (*)(void *, stream *, size_t)) lngWrite,
+	 (int (*)(ptr, ptr)) lngCmp,
+	 (BUN (*)(ptr)) lngHash, (void (*)(ptr, int)) lngConvert,
+	 0, 0,
+	 0, 0,
+	 0, 0,
+	 0, 0},
+	{"str", TYPE_str, 1, sizeof(var_t), sizeof(var_t), 0, 1, (ptr) str_nil,
+	 (int (*)(str, int *, ptr *)) strFromStr, (int (*)(str *, int *, ptr)) strToStr,
+	 (void *(*)(void *, stream *, size_t)) strRead, (int (*)(void *, stream *, size_t)) strWrite,
+	 (int (*)(ptr, ptr)) strCmp,
+	 (BUN (*)(ptr)) strHash, 0,
+	 0, 0,
+	 (var_t (*)(Heap *, var_t *, ptr)) strPut, 0,
+	 (int (*)(ptr)) strLen, strHeap,
+	 (void (*)(Heap *, int)) 0, 0},
+};
+
+int GDKatomcnt = TYPE_str + 1;
 
 /*
  * @-

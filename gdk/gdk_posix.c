@@ -2007,6 +2007,7 @@ MT_alloc_print(void)
 	return 0;
 }
 
+#if 0
 int
 MT_alloc_table(void)
 {
@@ -2061,4 +2062,5 @@ MT_alloc_table(void)
 #endif
 	return 0;
 }
+#endif
 
