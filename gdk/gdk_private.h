@@ -88,9 +88,7 @@ int BBPrecover(void);
 void BBPunshare(bat b);
 void BBPdump(void);		/* never called: for debugging only */
 void BBPdumpcache(void);	/* never called: for debugging only */
-int MT_alloc_register(void *p, size_t size, char mode);
-int MT_alloc_print(void);
-void MT_init_posix(int alloc_map);
+void MT_init_posix(void);
 int MT_madvise(void *p, size_t len, int advice);
 int MT_mmap_trim(size_t lim, void *err);
 void MT_mmap_inform(void *p, size_t len, int preload, int pattern, int writable);

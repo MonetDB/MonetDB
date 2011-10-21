@@ -45,7 +45,6 @@ gdk_export BAT *GDKenv;
 #include "gdk_private.h"
 #include "mutils.h"
 
-static int gdk_alloc_map = 0;
 static char GDKdbfarmStr[PATHLENGTH] = { "dbfarm" };
 static char GDKdbnameStr[PATHLENGTH] = { 0 };
 
@@ -1179,7 +1178,6 @@ GDKmallocmax(size_t size, size_t *maxsize, int emergency)
 		s = (ssize_t *) GDKvmalloc(newsize, &newmax, emergency);
 		if (s == 0)
 			return s;
-		MT_alloc_register(s, *maxsize, 'S');
 		s += 2;
 		s[-2] = (ssize_t) newmax;
 		s[-1] = -((ssize_t) newsize);
@@ -1196,7 +1194,6 @@ GDKmallocmax(size_t size, size_t *maxsize, int emergency)
 				GDKerror("GDKmallocmax: failed for " SZFMT " bytes", size);
 				return NULL;
 			}
-			MT_alloc_print();
 			GDKfatal("GDKmallocmax: failed for " SZFMT " bytes", size);
 		} else {
 			THRprintf(GDKout, "#GDKmallocmax: recovery ok. Continuing..\n");
@@ -1250,7 +1247,6 @@ GDKfree_(void *blk)
 		size_t maxsize = (size_t) s[-2];
 
 		size = -size;
-		MT_alloc_register((char *) (s - 2), maxsize, 's');
 		GDKvmfree((char *) (s - 2), (size_t) size, maxsize);
 	} else {
 #ifndef NDEBUG
@@ -1334,7 +1330,6 @@ GDKreallocmax(void *blk, size_t size, size_t *maxsize, int emergency)
 					GDKerror("GDKreallocmax: failed for " SZFMT " bytes", newsize);
 					return NULL;
 				}
-				MT_alloc_print();
 				GDKfatal("GDKreallocmax: failed for " SZFMT " bytes", newsize);
 			} else {
 				THRprintf(GDKout, "#GDKremallocmax: recovery ok. Continuing..\n");
@@ -1413,7 +1408,6 @@ GDKmmap(char *path, int mode, off_t off, size_t len)
 	if (ret != (void *) -1L) {
 		/* since mmap directly have content we say its zero-ed memory */
 		VALGRIND_MALLOCLIKE_BLOCK(ret, len, 0, 1);
-		MT_alloc_register(ret, len, 'M');
 		GDKvminc(len);
 	}
 	return (void *) ret;
@@ -1425,7 +1419,6 @@ GDKmunmap(void *addr, size_t size)
 	int ret;
 
 	ALLOCDEBUG fprintf(stderr, "#GDKmunmap " SZFMT " " PTRFMT "\n", size, PTRFMTCAST addr);
-	MT_alloc_register(addr, size, 'm');
 	ret = MT_munmap(addr, size);
 	VALGRIND_FREELIKE_BLOCK(addr, 0);
 	if (ret == 0) {
@@ -1454,7 +1447,6 @@ GDKvmalloc(size_t size, size_t *maxsize, int emergency)
 				ALLOCDEBUG fprintf(stderr, "#GDKvmalloc " SZFMT " " SZFMT " " PTRFMT "\n", size, *maxsize, PTRFMTCAST ret);
 				return NULL;
 			}
-			MT_alloc_print();
 			GDKfatal("GDKvmalloc: failed for " SZFMT " bytes", size);
 		} else {
 			THRprintf(GDKstdout, "#GDKvmalloc(" SZFMT "): recovery ok. Continuing..\n", size);
@@ -1481,7 +1473,6 @@ GDKvmrealloc(void *pold, size_t oldsize, size_t newsize, size_t oldmax, size_t *
 				ALLOCDEBUG fprintf(stderr, "#GDKvmrealloc " SZFMT " " SZFMT " " PTRFMT " " PTRFMT "\n", newsize, *newmax, PTRFMTCAST pold, PTRFMTCAST ret);
 				return NULL;
 			}
-			MT_alloc_print();
 			GDKfatal("GDKvmrealloc: failed for " SZFMT " bytes (from " SZFMT ")", newsize, oldsize);
 		} else {
 			THRprintf(GDKstdout, "#GDKvmrealloc(" SZFMT "): recovery ok. Continuing..\n", newsize);
@@ -1629,7 +1620,6 @@ GDKinit(opt *set, int setlen)
 {
 	char *dbname = mo_find_option(set, setlen, "gdk_dbname");
 	char *dbfarm = mo_find_option(set, setlen, "gdk_dbfarm");
-	char *alloc_map = mo_find_option(set, setlen, "gdk_alloc_map");
 	char *p;
 	opt *n;
 	int i, j, nlen = 0;
@@ -1651,7 +1641,6 @@ GDKinit(opt *set, int setlen)
 #ifndef PTHREAD_MUTEX_INITIALIZER
 	MT_lock_init(&MT_system_lock,"GDKinit");
 #endif
-	gdk_alloc_map = strcasecmp(alloc_map, "yes") == 0;
 	errno = 0;
 	if (!GDKenvironment(dbname, dbfarm))
 		return 0;
@@ -1666,7 +1655,7 @@ GDKinit(opt *set, int setlen)
 		GDK_vm_trim = strcasecmp(p, "yes") == 0;
 
 	mnstr_init();
-	MT_init_posix(gdk_alloc_map);
+	MT_init_posix();
 	THRinit();
 #ifndef NATIVE_WIN32
 	BATSIGinit();
@@ -2300,7 +2289,6 @@ THRnew(MT_Id pid, str name)
 		PARDEBUG THRprintf(GDKout, "#nrofthreads %d\n", GDKnrofthreads);
 
 		GDKnrofthreads++;
-		MT_alloc_register(&tid, 1, (char) ('0' + ((int) tid) - 1));
 	}
 	s->name = name;
 	gdk_unset_lock(GDKthreadLock, "THRnew");

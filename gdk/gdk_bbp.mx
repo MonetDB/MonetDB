@@ -1283,12 +1283,10 @@ BBPinit(void)
 
 		BBP = GDKvmalloc(size, &maxsize, 1);
 		assert(BBP != NULL);	/* GDKvmalloc panics if it can't allocate */
-		MT_alloc_register(BBP, maxsize, 'P');
 		if (maxsize >= BBPmaxsize * sizeof(BBPrec)) {
 			BBPmaxsize = (bat) (maxsize / sizeof(BBPrec));
 			break;
 		}
-		MT_alloc_register(BBP, maxsize, 'p');
 		GDKvmfree(BBP, size, maxsize);
 		if ((BBPmaxsize /= 2) < BBPlimit)
 			GDKfatal("BBPinit: could not alloc arena");
