@@ -700,39 +700,6 @@ MT_mmap(char *path, int mode, off_t off, size_t len)
 	return ret;
 }
 
-#ifdef DEBUG_ALLOC
-static unsigned char MT_alloc_map[65536] = { 0 };
-
-static void
-MT_alloc_init(void)
-{
-	char *p = NULL;
-	int i;
-
-	for (i = 0; i < 65536; i++, p += MT_VMUNITSIZE) {
-		int mode = '.';
-
-#ifdef WIN32
-		if (!VirtualAlloc(p, MT_VMUNITSIZE, MEM_RESERVE, PAGE_NOACCESS)) {
-			mode |= 128;
-		} else {
-			VirtualFree(p, 0, MEM_RELEASE);
-		}
-#else
-		MMAP_OPEN_DEV_ZERO;
-		void *q = (char *) mmap(p, MT_VMUNITSIZE, PROT_NONE, MMAP_FLAGS(MAP_NORESERVE), MMAP_FD, 0);
-
-		MMAP_CLOSE_DEV_ZERO;
-		if (q != p)
-			mode |= 128;
-		if (q != (char *) -1L)
-			munmap(q, MT_VMUNITSIZE);
-#endif
-		MT_alloc_map[i] = mode;
-	}
-}
-#endif
-
 #ifndef NATIVE_WIN32
 #ifdef HAVE_POSIX_FADVISE
 #ifdef HAVE_UNAME
@@ -741,7 +708,7 @@ MT_alloc_init(void)
 #endif
 
 void
-MT_init_posix(int alloc_map)
+MT_init_posix(void)
 {
 #ifdef HAVE_POSIX_FADVISE
 #ifdef HAVE_UNAME
@@ -754,12 +721,6 @@ MT_init_posix(int alloc_map)
 #endif
 	MT_heapbase = (char *) sbrk(0);
 
-#ifdef DEBUG_ALLOC
-	if (alloc_map)
-		MT_alloc_init();
-#else
-	(void) alloc_map;
-#endif
 	MT_mmap_init();
 }
 
@@ -934,9 +895,6 @@ MT_mallinfo(void)
 #else
 	memset(&_ret, 0, sizeof(_ret));
 #endif
-	if (_ret.uordblks + _ret.fordblks > _ret.arena) {
-		MT_alloc_register(MT_heapbase, _ret.arena, 'H');
-	}
 	return _ret;
 }
 
@@ -988,15 +946,9 @@ MT_ignore_exceptions(struct _EXCEPTION_POINTERS *ExceptionInfo)
 }
 
 void
-MT_init_posix(int alloc_map)
+MT_init_posix(void)
 {
 	MT_heapbase = 0;
-#ifdef DEBUG_ALLOC
-	if (alloc_map)
-		MT_alloc_init();
-#else
-	(void) alloc_map;
-#endif
 	MT_mmap_init();
 	SetUnhandledExceptionFilter(MT_ignore_exceptions);
 }
@@ -1266,19 +1218,15 @@ MT_mallinfo(void)
 			_ret.smblks++;
 			if (hinfo._useflag == _USEDENTRY) {
 				_ret.usmblks += hinfo._size;
-				MT_alloc_register(hinfo._pentry, hinfo._size, 'H');
 			} else {
 				_ret.fsmblks += hinfo._size;
-				MT_alloc_register(hinfo._pentry, hinfo._size, 'h');
 			}
 		} else {
 			_ret.ordblks++;
 			if (hinfo._useflag == _USEDENTRY) {
 				_ret.uordblks += hinfo._size;
-				MT_alloc_register(hinfo._pentry, hinfo._size, 'H');
 			} else {
 				_ret.fordblks += hinfo._size;
-				MT_alloc_register(hinfo._pentry, hinfo._size, 'h');
 			}
 		}
 	}
@@ -1862,203 +1810,3 @@ sem_post(sem_t * sem)
 }
 #endif
 #endif
-
-/*
- * @+ Memory fragmentation monitoring
- * On 32-bits systems, MonetDB's aggressive use of virtual memory may bring it into
- * trouble as the limits of what is addressable in a 32-bits system are reached
- * (an 32-bits OS only allows 2 to 4GB of memory to be used). In order to aid debugging
- * situations where VM allocs fail (due to memory fragmentation), a monitoring
- * system was established. To this purpose, a map is made for the VM addresses
- * between 0 and 3GB, in tiles of MT_VMUNITSIZE (64KB). These tiles have a byte
- * value from the following domain:
- *
- * @table @samp
- * @item 0-9
- * thread stack space of thread <num>
- * @item H
- * in use for a large BAT heap.
- * @item h
- * free (last usage was B)
- * @item S
- * in use for a malloc block
- * @item s
- * free (last usage was S)
- * @item P
- * in use for the BBP array
- * @item p
- * free (last usage was P)
- * @item M
- * in use as memory mapped region
- * @item m
- * free (last usage was M)
- * @end table
- *
- * The MT_alloc_printmap condenses the map by printing a char for each MB,
- * hence combining info from 16 tiles. On NT, we can check in real-time which
- * tiles are actually in use (in case our own tile administration is out-of-sync
- * with reality, eg due to a memory leak). This real-life usage is printed in a
- * second line with encoding .=free, *=inuse, X=unusable. On Unix systems,
- * *=inuse is not testable (unless with complicated signal stuff). On 64-bits
- * systems, this administration is dysfunctional.
- */
-#ifdef DEBUG_ALLOC
-#define INUSEMODE(x) ((x >= '0' && x <= ('9'+4)) || (x >= 'A' && x <= 'Z'))
-
-/* The memory table dump can also be produced in tuple format to enable
- * front-ends to analyze it more easily.
- */
-struct {
-	char tag;
-	char *color;
-	char *info;
-} Encoding[] = {
-	{'.', "0x00FFFDFE", "free"},
-	{'0', "0x000035FC", "thread stack space of thread 0"},
-	{'1', "0x000067FE", "thread stack space of thread 1"},
-	{'2', "0x000095FE", "thread stack space of thread 2"},
-	{'3', "0x0000BDFC", "thread stack space of thread 3"},
-	{'4', "0x0000DCF8", "thread stack space of thread 4"},
-	{'5', "0x002735FC", "thread stack space of thread 5"},
-	{'6', "0x002767FE", "thread stack space of thread 6"},
-	{'7', "0x002795FE", "thread stack space of thread 7"},
-	{'8', "0x0027BDFC", "thread stack space of thread 8"},
-	{'9', "0x0027DCF8", "thread stack space of thread 9"},
-	{'B', "0x0000672D", "in use for a large BAT heap."},
-	{'b', "0x004EF2A7", "free (last usage was B)"},
-	{'S', "0x00B4006E", "in use for a malloc block"},
-	{'s', "0x00F2BDE0", "free (last usage was S)"},
-	{'P', "0x00F26716", "in use for the BBP array"},
-	{'p', "0x00F2BD16", "free (last usage was P)"},
-	{'M', "0x00959516", "in use as memory mapped region"},
-	{'m', "0x00CEDC16", "free (last usage was M)"},
-	{'c', "0x00FFFD2D", "free (last usage was M)"},
-	{0, "0x00FFFDFE", "free"}
-};
-#endif
-
-int
-MT_alloc_register(void *addr, size_t size, char mode)
-{
-#ifdef DEBUG_ALLOC
-	if (MT_alloc_map[0]) {
-		size_t p = (size_t) addr;
-
-		if (size > 0) {
-			size_t i, base = p >> 16;
-
-			size = (size - 1) >> 16;
-			assert(p && ((long long) p) + size < (LL_CONSTANT(1) << 32));
-			for (i = 0; i <= size; i++)
-				MT_alloc_map[base + i] = (MT_alloc_map[base + i] & 128) | mode;
-		}
-	}
-#else
-	(void) addr;
-	(void) size;
-	(void) mode;
-#endif
-	return 0;
-}
-
-
-int
-MT_alloc_print(void)
-{
-#ifdef DEBUG_ALLOC
-#ifdef WIN32
-	char *p = NULL;
-#endif
-	int i, j, k;
-
-	if (MT_alloc_map[0] == 0)
-		return 0;
-
-	for (i = 0; i < 40; i++) {
-		mnstr_printf(GDKout, "%02d00MB ", i);
-		for (j = 0; j < 100; j++) {
-			int mode = '.';
-
-			for (k = 0; k < 16; k++) {
-				int m = MT_alloc_map[k + 16 * (j + 100 * i)] & 127;
-
-				if (mode == '.' || INUSEMODE(m))
-					mode = m;
-			}
-			mnstr_printf(GDKout, "%c", mode);
-		}
-#ifdef WIN32
-		mnstr_printf(GDKout, "\n       ");
-		for (j = 0; j < 100; j++) {
-			int mode = '.';
-
-			for (k = 0; k < 16; k++, p += 1 << 16)
-				if (!IsBadReadPtr(p, 1)) {
-					mode = '*';
-				} else if (MT_alloc_map[k + 16 * (j + 100 * i)] & 128) {
-					mode = 'X';
-				}
-			mnstr_printf(GDKout, "%c", mode);
-		}
-#endif
-		mnstr_printf(GDKout, "\n");
-	}
-#endif
-	return 0;
-}
-
-int
-MT_alloc_table(void)
-{
-#ifdef DEBUG_ALLOC
-#ifdef WIN32
-	char *p = NULL;
-#endif
-	int i, j, k;
-
-	if (MT_alloc_map[0] == 0)
-		return 0;
-
-	mnstr_printf(GDKout, "# addr\tX\tY\tcolor\tmode\tcomment\t# name\n");
-	mnstr_printf(GDKout, "# str\tint\tint\tcolor\tstr\tstr\t# type\n");
-	for (i = 0; i < 40; i++) {
-		for (j = 0; j < 100; j++) {
-			int mode = '.';
-
-			for (k = 0; k < 16; k++) {
-				int m = MT_alloc_map[k + 16 * (j + 100 * i)] & 127;
-
-				if (mode == '.' || INUSEMODE(m))
-					mode = m;
-			}
-			for (k = 0; k >= 0; k++)
-				if (Encoding[k].tag == mode || Encoding[k].tag == 0) {
-					if (mode == 0)
-						mode = ' ';
-					mnstr_printf(GDKout, "[ \"%d\",\t%d,\t%d,\t", k + 16 * (j + 100 * i), j, i);
-					mnstr_printf(GDKout, "\"%s\",\t", Encoding[k].color);
-
-					mnstr_printf(GDKout, "\"%c\",\t\"%s\"\t]\n", mode, Encoding[k].info);
-					break;
-				}
-		}
-#ifdef WIN32
-		mnstr_printf(GDKout, "\n       ");
-		for (j = 0; j < 100; j++) {
-			int mode = '.';
-
-			for (k = 0; k < 16; k++, p += 1 << 16)
-				if (!IsBadReadPtr(p, 1)) {
-					mode = '*';
-				} else if (MT_alloc_map[k + 16 * (j + 100 * i)] & 128) {
-					mode = 'X';
-				}
-			mnstr_printf(GDKout, "%c", mode);
-		}
-		mnstr_printf(GDKout, "\n");
-#endif
-	}
-#endif
-	return 0;
-}
-
