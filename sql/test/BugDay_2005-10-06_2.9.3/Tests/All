@@ -1,7 +1,7 @@
 jdbc_crashes_on_getTables.SF_944316
 variable_arg_substring.SF_942981
 UNION_JOIN_vs_plain_set_UNION-2.SF-920585
-huge_expression_and_column_name.SF-921173
+# huge_expression_and_column_name.SF-921173 # won't be fixed in Aug2011
 CrashMe_SQL_server_crash-2.SF-921673
 CrashMe_SQL_server_crash-1.SF-921673
 inserts_with_defaults.SF-921977

@@ -35,7 +35,7 @@ case-when-alias.Bug-2848
 multicolumn_constraints.Bug-2849
 CASE_nested_functions.Bug-2852
 FK_self_reference.Bug-2862
-time_precision.Bug-2873
+# time_precision.Bug-2873 # won't be fixed in Aug2011
 default-interval.Bug-2877
 multiple-joins.Bug-2879
 delete-large-table.Bug-2882

@@ -1,1 +1,1 @@
-HAVE_JDBCCLIENT_JAR?cast_select
+# HAVE_JDBCCLIENT_JAR?cast_select # won't be fixed in Aug2011
