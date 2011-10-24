@@ -108,6 +108,15 @@ SQLBrowseConnect_(ODBCDbc *dbc,
 		} else if (strcasecmp(key, "database") == 0 && dbname == NULL) {
 			dbname = attr;
 			allocated |= 16;
+#ifdef ODBCDEBUG
+		} else if (strcasecmp(key, "logfile") == 0 &&
+			   getenv("ODBCDEBUG") == NULL) {
+			/* environment trumps everything */
+			if (ODBCdebug)
+				free((void *) ODBCdebug); /* discard const */
+			ODBCdebug = attr;
+			allocated |= 32;
+#endif
 		} else
 			free(attr);
 		free(key);
@@ -148,6 +157,15 @@ SQLBrowseConnect_(ODBCDbc *dbc,
 				allocated |= 16;
 			}
 		}
+#ifdef ODBCDEBUG
+		if ((allocated & 32) == 0 && getenv("ODBCDEBUG") == NULL) {
+			/* if not set from InConnectionString argument
+			 * or environment, look in profile */
+			n = SQLGetPrivateProfileString(dsn, "logfile", "", buf, sizeof(buf), "odbc.ini");
+			if (n > 0 && buf[0])
+				ODBCdebug = strdup(buf);
+		}
+#endif
 	}
 
 	if (uid != NULL && pwd != NULL) {
@@ -188,6 +206,15 @@ SQLBrowseConnect_(ODBCDbc *dbc,
 			OutConnectionString += 21;
 			BufferLength -= 21;
 		}
+#ifdef ODBCDEBUG
+		if (ODBCdebug == NULL) {
+			if (BufferLength > 0)
+				strncpy((char *) OutConnectionString, "*LOGFILE:Debug log file=?;", BufferLength);
+			len += 26;
+			OutConnectionString += 26;
+			BufferLength -= 26;
+		}
+#endif
 
 		if (StringLength2Ptr)
 			*StringLength2Ptr = len;

@@ -163,6 +163,13 @@ SQLDriverConnect_(ODBCDbc *dbc,
 		else if (strcasecmp(key, "port") == 0 && port == 0) {
 			port = atoi(attr);
 			free(attr);
+#ifdef ODBCDEBUG
+		} else if (strcasecmp(key, "logfile") == 0 &&
+			   getenv("ODBCDEBUG") == NULL) {
+			if (ODBCdebug)
+				free((void *) ODBCdebug); /* discard const */
+			ODBCdebug = strdup(attr);
+#endif
 		} else
 			free(attr);
 		free(key);
@@ -261,6 +268,21 @@ SQLDriverConnect_(ODBCDbc *dbc,
 				BufferLength = -1;
 			}
 		}
+#ifdef ODBCDEBUG
+		if (ODBCdebug) {
+			if (BufferLength > 0) {
+				n = snprintf((char *) OutConnectionString,
+					     BufferLength,
+					     "LOGFILE=%s;", ODBCdebug);
+				if (n < 0)
+					n = BufferLength + 1;
+				BufferLength -= n;
+				OutConnectionString += n;
+			} else {
+				BufferLength = -1;
+			}
+		}
+#endif
 
 		/* calculate how much space was needed */
 		if (StringLength2Ptr)
