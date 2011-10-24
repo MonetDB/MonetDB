@@ -74,6 +74,7 @@
 #undef PATHLENGTH
 #include "mal_client.h"
 #include "mal_scenario.h"
+#include "mal_readline.h"
 
 /* #define _MAL_READLINE_DEBUG  */
 
@@ -81,7 +82,6 @@
 
 #include <readline/readline.h>
 #include <readline/history.h>
-#include "mal_readline.h"
 #include "mal_debugger.h"
 
 void init_readline(void);
