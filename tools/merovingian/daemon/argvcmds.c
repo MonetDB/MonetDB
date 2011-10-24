@@ -41,13 +41,12 @@ command_help(int argc, char *argv[])
 	int exitcode = 0;
 
 	if (argc < 2) {
-		printf("usage: monetdbd [ command [ command-options ] ]\n");
+		printf("usage: monetdbd [ command [ command-options ] ] <dbfarm>\n");
 		printf("  where command is one of:\n");
 		printf("    create, start, stop, get, set, version or help\n");
 		printf("  use the help command to get help for a particular command\n");
-		printf("  For backwards compatability, when monetdbd is ran without\n");
-		printf("  options, it will start the daemon in the default dbfarm\n");
-		printf("  location (%s).\n", LOCALSTATEDIR "/monetdb5/dbfarm");
+		printf("  The dbfarm to operate on must always be given to\n");
+		printf("  monetdbd explicitly.\n");
 	} else if (strcmp(argv[1], "create") == 0) {
 		printf("usage: monetdbd create <dbfarm>\n");
 		printf("  Initialises a new dbfarm for a MonetDB Server.  dbfarm\n");
