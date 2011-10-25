@@ -1139,7 +1139,14 @@ SQLparser(Client c)
 
 	be = ((backend *) c->state[MAL_SCENARIO_PARSER]);
 	if (be == 0) {
-		showException(SQL, "sql", "SQL state descriptor missing\n");
+		/* tell the client */
+		mnstr_printf(out, "!SQL state descriptor missing, aborting\n");
+		mnstr_flush(out);
+		/* leave a message in the log */
+		fprintf(stderr, "SQL state descriptor missing, cannot handle client!\n");
+		/* stop here, instead of printing the exception below to the
+		 * client in an endless loop */
+		c->mode = FINISHING;
 		throw(SQL, "SQLparser", "State descriptor missing");
 	}
 	oldvtop = c->curprg->def->vtop;
@@ -1172,8 +1179,8 @@ SQLparser(Client c)
 		if (n == 2 || n == 3) {
 			mvc_export_chunk(m, out, v, off, n == 3 ? len : m->reply_size);
 
-			in->pos = in->len;  /* HACK: should use parsed lenght */
-			return NULL;
+			in->pos = in->len;  /* HACK: should use parsed length */
+			return MAL_SUCCEED;
 		}
 		if (strncmp(in->buf + in->pos, "close ", 6) == 0) {
 			res_table *t;
@@ -1182,8 +1189,8 @@ SQLparser(Client c)
 			t = res_tables_find(m->results, v);
 			if (t)
 				m->results = res_tables_remove(m->results, t);
-			in->pos = in->len;  /* HACK: should use parsed lenght */
-			return NULL;
+			in->pos = in->len;  /* HACK: should use parsed length */
+			return MAL_SUCCEED;
 		}
 		if (strncmp(in->buf + in->pos, "release ", 8) == 0) {
 			cq *q = NULL;
@@ -1191,8 +1198,8 @@ SQLparser(Client c)
 			v = (int) strtol(in->buf + in->pos + 8, NULL, 0);
 			if ((q = qc_find(m->qc, v)) != NULL)
 				qc_delete(m->qc, q);
-			in->pos = in->len;  /* HACK: should use parsed lenght */
-			return NULL;
+			in->pos = in->len;  /* HACK: should use parsed length */
+			return MAL_SUCCEED;
 		}
 		if (strncmp(in->buf + in->pos, "auto_commit ", 12) == 0) {
 			int commit;
@@ -1201,34 +1208,52 @@ SQLparser(Client c)
 			m->session->auto_commit = (v) ? 1 : 0;
 			m->session->ac_on_commit = m->session->auto_commit;
 			if (m->session->active) {
-				if (commit && mvc_commit(m, 0, NULL) < 0)
-					throw(SQL, "SQLparser", "Xauto_commit (commit) failed");
-				else if (!commit && mvc_rollback(m, 0, NULL) < 0)
-					throw(SQL, "SQLparser", "Xauto_commit (rollback) failed");
+				if (commit && mvc_commit(m, 0, NULL) < 0) {
+					mnstr_printf(out, "!COMMIT: commit failed while "
+							"enabling auto_commit\n");
+					mnstr_flush(out);
+					msg = createException(SQL, "SQLparser",
+							"Xauto_commit (commit) failed");
+				} else if (!commit && mvc_rollback(m, 0, NULL) < 0) {
+					mnstr_printf(out, "!COMMIT: rollback failed while "
+							"disabling auto_commit\n");
+					mnstr_flush(out);
+					msg = createException(SQL, "SQLparser",
+							"Xauto_commit (rollback) failed");
+				}
 			}
-			in->pos = in->len;  /* HACK: should use parsed lenght */
-			return NULL;
+			in->pos = in->len;  /* HACK: should use parsed length */
+			if (msg != NULL)
+				goto finalize;
+			return MAL_SUCCEED;
 		}
 		if (strncmp(in->buf + in->pos, "reply_size ", 11) == 0) {
 			v = (int) strtol(in->buf + in->pos + 11, NULL, 10);
 			m->reply_size = v;
-			in->pos = in->len;  /* HACK: should use parsed lenght */
-			return NULL;
+			in->pos = in->len;  /* HACK: should use parsed length */
+			return MAL_SUCCEED;
 		}
 		if (strncmp(in->buf + in->pos, "sizeheader", 10) == 0) {
 			v = (int) strtol(in->buf + in->pos + 10, NULL, 10);
 			m->sizeheader = v != 0;
-			in->pos = in->len;  /* HACK: should use parsed lenght */
-			return NULL;
+			in->pos = in->len;  /* HACK: should use parsed length */
+			return MAL_SUCCEED;
 		}
 		if (strncmp(in->buf + in->pos, "quit", 4) == 0) {
 			c->mode = FINISHING;
-			return NULL;
+			return MAL_SUCCEED;
 		}
-		throw(SQL, "SQLparser", "Unrecognized X command");
+		mnstr_printf(out, "!unrecognized X command: %s\n", in->buf + in->pos);
+		mnstr_flush(out);
+		msg = createException(SQL, "SQLparser", "unrecognized X command");
+		goto finalize;
 	}
 	if (be->language != 'S') {
-		throw(SQL, "SQLparser", "Unrecognized language prefix");
+		mnstr_printf(out, "!unrecognized language prefix: %ci\n", be->language);
+		mnstr_flush(out);
+		msg = createException(SQL, "SQLparser",
+				"unrecognized language prefix: %c", be->language);
+		goto finalize;
 	}
 
 	if ((err = sqlparse(m)) && m->debug & 1) {
@@ -1263,6 +1288,9 @@ SQLparser(Client c)
 		be->q = qc_find(m->qc, m->sym->data.lval->h->data.i_val);
 		if (!be->q) {
 			err = -1;
+			mnstr_printf(out, "!EXEC: no prepared statement with id: %d\n",
+					m->sym->data.lval->h->data.i_val);
+			mnstr_flush(out);
 			msg = createException(SQL, "PREPARE",
 					"no prepared statement with id: %d",
 					m->sym->data.lval->h->data.i_val);
