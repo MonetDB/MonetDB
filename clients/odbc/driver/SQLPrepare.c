@@ -100,11 +100,16 @@ SQLPrepare_(ODBCStmt *stmt,
 	free(s);
 	s = NULL;
 	if (ret != MOK) {
+		const char *e;
+
 		/* XXX more fine-grained control required */
 		/* Syntax error or access violation */
 		if ((s = mapi_result_error(hdl)) == NULL)
 			s = mapi_error_str(stmt->Dbc->mid);
-		addStmtError(stmt, "42000", s, 0);
+		if (s && (e = ODBCErrorType(s)) != NULL)
+			addStmtError(stmt, e, s, 0);
+		else
+			addStmtError(stmt, "42000", s, 0);
 		return SQL_ERROR;
 	}
 	if (mapi_rows_affected(hdl) > (1 << 16)) {
