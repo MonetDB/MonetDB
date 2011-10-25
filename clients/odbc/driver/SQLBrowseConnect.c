@@ -170,6 +170,13 @@ SQLBrowseConnect_(ODBCDbc *dbc,
 
 	if (uid != NULL && pwd != NULL) {
 		rc = SQLConnect_(dbc, (SQLCHAR *) dsn, SQL_NTS, (SQLCHAR *) uid, SQL_NTS, (SQLCHAR *) pwd, SQL_NTS, host, port, dbname);
+		if (SQL_SUCCEEDED(rc)) {
+			rc = ODBCConnectionString(rc, dbc, OutConnectionString,
+						  BufferLength,
+						  StringLength2Ptr,
+						  dsn, uid, pwd, host, port,
+						  dbname);
+		}
 	} else {
 		if (uid == NULL) {
 			if (BufferLength > 0)
@@ -291,10 +298,12 @@ SQLBrowseConnectW(SQLHDBC ConnectionHandle,
 
 	clearDbcErrors(dbc);
 
-	fixWcharIn(InConnectionString, StringLength1, SQLCHAR, in, addDbcError, dbc, return SQL_ERROR);
-	out = malloc(100);	/* max 80 needed */
-	rc = SQLBrowseConnect_(dbc, in, SQL_NTS, out, 100, &n);
-	fixWcharOut(rc, out, n, OutConnectionString, BufferLength, StringLength2Ptr, 1, addDbcError, dbc);
+	fixWcharIn(InConnectionString, StringLength1, SQLCHAR, in,
+		   addDbcError, dbc, return SQL_ERROR);
+	out = malloc(1024);
+	rc = SQLBrowseConnect_(dbc, in, SQL_NTS, out, 1024, &n);
+	fixWcharOut(rc, out, n, OutConnectionString, BufferLength,
+		    StringLength2Ptr, 1, addDbcError, dbc);
 	if (in)
 		free(in);
 	return rc;

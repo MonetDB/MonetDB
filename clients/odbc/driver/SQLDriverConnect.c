@@ -102,6 +102,144 @@ ODBCGetKeyAttr(SQLCHAR **conn, SQLSMALLINT *nconn, char **key, char **attr)
 	return 1;
 }
 
+SQLRETURN
+ODBCConnectionString(SQLRETURN rc,
+		     ODBCDbc *dbc,
+		     SQLCHAR *OutConnectionString,
+		     SQLSMALLINT BufferLength,
+		     SQLSMALLINT *StringLength2Ptr,
+		     const char *dsn,
+		     const char *uid,
+		     const char *pwd,
+		     const char *host,
+		     int port,
+		     const char *database)
+{
+	int n;
+#ifdef ODBCDEBUG
+	SQLCHAR *buf = OutConnectionString;
+	int buflen = BufferLength;
+#endif
+
+	if (OutConnectionString == NULL)
+		BufferLength = -1;
+	if (BufferLength > 0) {
+		n = snprintf((char *) OutConnectionString, BufferLength,
+			     "DSN=%s;", dsn ? dsn : "DEFAULT");
+		/* some snprintf's return -1 if buffer too small */
+		if (n < 0)
+			n = BufferLength + 1;	/* make sure it becomes < 0 */
+		BufferLength -= n;
+		OutConnectionString += n;
+	} else {
+		BufferLength = -1;
+	}
+	if (uid) {
+		if (BufferLength > 0) {
+			n = snprintf((char *) OutConnectionString,
+				     BufferLength, "UID=%s;", uid);
+			if (n < 0)
+				n = BufferLength + 1;
+			BufferLength -= n;
+			OutConnectionString += n;
+		} else {
+			BufferLength = -1;
+		}
+	}
+	if (pwd) {
+		if (BufferLength > 0) {
+			n = snprintf((char *) OutConnectionString,
+				     BufferLength, "PWD=%s;", pwd);
+			if (n < 0)
+				n = BufferLength + 1;
+			BufferLength -= n;
+			OutConnectionString += n;
+		} else {
+			BufferLength = -1;
+		}
+	}
+	if (host) {
+		if (BufferLength > 0) {
+			n = snprintf((char *) OutConnectionString,
+				     BufferLength, "HOST=%s;", host);
+			if (n < 0)
+				n = BufferLength + 1;
+			BufferLength -= n;
+			OutConnectionString += n;
+		} else {
+			BufferLength = -1;
+		}
+	}
+	if (port) {
+		char portbuf[10];
+
+		if (BufferLength > 0) {
+			n = snprintf((char *) OutConnectionString,
+				     BufferLength, "PORT=%d;", port);
+			if (n < 0)
+				n = BufferLength + 1;
+			BufferLength -= n;
+			OutConnectionString += n;
+		} else {
+			BufferLength = -1;
+		}
+		port = snprintf(portbuf, sizeof(portbuf), "%d", port);
+	}
+	if (database) {
+		if (BufferLength > 0) {
+			n = snprintf((char *) OutConnectionString,
+				     BufferLength,
+				     "DATABASE=%s;", database);
+			if (n < 0)
+				n = BufferLength + 1;
+			BufferLength -= n;
+			OutConnectionString += n;
+		} else {
+			BufferLength = -1;
+		}
+	}
+#ifdef ODBCDEBUG
+	if (ODBCdebug && getenv("ODBCDEBUG") == NULL) {
+		if (BufferLength > 0) {
+			n = snprintf((char *) OutConnectionString,
+				     BufferLength,
+				     "LOGFILE=%s;", ODBCdebug);
+			if (n < 0)
+				n = BufferLength + 1;
+			BufferLength -= n;
+			OutConnectionString += n;
+		} else {
+			BufferLength = -1;
+		}
+	}
+#endif
+
+	/* calculate how much space was needed */
+	if (StringLength2Ptr)
+		*StringLength2Ptr = (int) (strlen(dsn ? dsn : "DEFAULT") + 5 +
+					   (uid ? strlen(uid) + 5 : 0) +
+					   (pwd ? strlen(pwd) + 5 : 0) +
+					   (host ? strlen(host) + 6 : 0) +
+					   (port ? port + 6 : 0) +
+					   (database ? strlen(database) + 10 : 0)
+#ifdef ODBCDEBUG
+					   + (ODBCdebug && getenv("ODBCDEBUG") == NULL ? strlen(ODBCdebug) + 9 : 0)
+#endif
+			);
+
+#ifdef ODBCDEBUG
+	ODBCLOG("ConnectionString: \"%.*s\" %d\n", buf ? buflen : 6, buf ? buf : "(null)", buflen);
+#endif
+
+	/* if it didn't fit, say so */
+	if (BufferLength < 0) {
+		/* String data, right-truncated */
+		addDbcError(dbc, "01004", NULL, 0);
+		return SQL_SUCCESS_WITH_INFO;
+	}
+	return rc;
+}
+
 static SQLRETURN
 SQLDriverConnect_(ODBCDbc *dbc,
 		  SQLHWND WindowHandle,
@@ -189,117 +327,11 @@ SQLDriverConnect_(ODBCDbc *dbc,
 	}
 
 	if (SQL_SUCCEEDED(rc)) {
-		int n;
-
-		if (OutConnectionString == NULL)
-			BufferLength = -1;
-		if (BufferLength > 0) {
-			n = snprintf((char *) OutConnectionString, BufferLength,
-				     "DSN=%s;", dsn ? dsn : "DEFAULT");
-			/* some snprintf's return -1 if buffer too small */
-			if (n < 0)
-				n = BufferLength + 1;	/* make sure it becomes < 0 */
-			BufferLength -= n;
-			OutConnectionString += n;
-		} else {
-			BufferLength = -1;
-		}
-		if (uid) {
-			if (BufferLength > 0) {
-				n = snprintf((char *) OutConnectionString,
-					     BufferLength, "UID=%s;", uid);
-				if (n < 0)
-					n = BufferLength + 1;
-				BufferLength -= n;
-				OutConnectionString += n;
-			} else {
-				BufferLength = -1;
-			}
-		}
-		if (pwd) {
-			if (BufferLength > 0) {
-				n = snprintf((char *) OutConnectionString,
-					     BufferLength, "PWD=%s;", pwd);
-				if (n < 0)
-					n = BufferLength + 1;
-				BufferLength -= n;
-				OutConnectionString += n;
-			} else {
-				BufferLength = -1;
-			}
-		}
-		if (host) {
-			if (BufferLength > 0) {
-				n = snprintf((char *) OutConnectionString,
-					     BufferLength, "HOST=%s;", host);
-				if (n < 0)
-					n = BufferLength + 1;
-				BufferLength -= n;
-				OutConnectionString += n;
-			} else {
-				BufferLength = -1;
-			}
-		}
-		if (port) {
-			char portbuf[10];
-
-			if (BufferLength > 0) {
-				n = snprintf((char *) OutConnectionString,
-					     BufferLength, "PORT=%d;", port);
-				if (n < 0)
-					n = BufferLength + 1;
-				BufferLength -= n;
-				OutConnectionString += n;
-			} else {
-				BufferLength = -1;
-			}
-			port = snprintf(portbuf, sizeof(portbuf), "%d", port);
-		}
-		if (database) {
-			if (BufferLength > 0) {
-				n = snprintf((char *) OutConnectionString,
-					     BufferLength,
-					     "DATABASE=%s;", database);
-				if (n < 0)
-					n = BufferLength + 1;
-				BufferLength -= n;
-				OutConnectionString += n;
-			} else {
-				BufferLength = -1;
-			}
-		}
-#ifdef ODBCDEBUG
-		if (ODBCdebug) {
-			if (BufferLength > 0) {
-				n = snprintf((char *) OutConnectionString,
-					     BufferLength,
-					     "LOGFILE=%s;", ODBCdebug);
-				if (n < 0)
-					n = BufferLength + 1;
-				BufferLength -= n;
-				OutConnectionString += n;
-			} else {
-				BufferLength = -1;
-			}
-		}
-#endif
-
-		/* calculate how much space was needed */
-		if (StringLength2Ptr)
-			*StringLength2Ptr = (int) (strlen(dsn ? dsn : "DEFAULT") + 5 +
-					       (uid ? strlen(uid) + 5 : 0) +
-					       (pwd ? strlen(pwd) + 5 : 0) +
-					       (host ? strlen(host) + 6 : 0) +
-					       (port ? port + 6 : 0) +
-					       (database ? strlen(database) + 10 : 0));
-
-		/* if it didn't fit, say so */
-		if (BufferLength < 0) {
-			/* String data, right-truncated */
-			addDbcError(dbc, "01004", NULL, 0);
-			rc = SQL_SUCCESS_WITH_INFO;
-		}
+		rc = ODBCConnectionString(rc, dbc, OutConnectionString,
+					  BufferLength, StringLength2Ptr,
+					  dsn, uid, pwd, host, port, database);
 	}
+
 	if (dsn)
 		free(dsn);
 	if (uid)
