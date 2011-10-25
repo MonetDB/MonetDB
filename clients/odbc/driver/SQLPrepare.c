@@ -99,9 +99,11 @@ SQLPrepare_(ODBCStmt *stmt,
 	ret = mapi_query_handle(hdl, s);
 	free(s);
 	s = NULL;
-	if (ret != MOK || (s = mapi_result_error(hdl)) != NULL) {
+	if (ret != MOK) {
 		/* XXX more fine-grained control required */
 		/* Syntax error or access violation */
+		if ((s = mapi_result_error(hdl)) == NULL)
+			s = mapi_error_str(stmt->Dbc->mid);
 		addStmtError(stmt, "42000", s, 0);
 		return SQL_ERROR;
 	}
