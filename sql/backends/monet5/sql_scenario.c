@@ -1133,13 +1133,13 @@ SQLparser(Client c)
 	str msg = NULL;
 	backend *be;
 	mvc *m;
-	int oldvtop,oldstop;
+	int oldvtop, oldstop;
 	int pstatus = 0;
 	int err = 0;
 
 	be = ((backend *) c->state[MAL_SCENARIO_PARSER]);
 	if (be == 0) {
-		showException(SQL,"sql","SQL state descriptor missing\n");
+		showException(SQL, "sql", "SQL state descriptor missing\n");
 		throw(SQL, "SQLparser", "State descriptor missing");
 	}
 	oldvtop = c->curprg->def->vtop;
@@ -1147,7 +1147,7 @@ SQLparser(Client c)
 	be->vtop = oldvtop;
 #ifdef _SQL_PARSER_DEBUG
 	mnstr_printf(GDKout, "#SQL compilation \n");
-	printf("debugger? %d(%d)\n", (int)be->mvc->emode, (int)be->mvc->emod);
+	printf("debugger? %d(%d)\n", (int) be->mvc->emode, (int) be->mvc->emod);
 #endif
 	m = be->mvc;
 	m->type = Q_PARSE;
@@ -1166,81 +1166,81 @@ SQLparser(Client c)
 	if (be->language == 'X') {
 		int n = 0, v, off, len;
 
-		if( strncmp(in->buf + in->pos,"export ",7)==0 )
-			n = sscanf(in->buf + in->pos+7, "%d %d %d", &v, &off, &len);
+		if (strncmp(in->buf + in->pos, "export ", 7) == 0)
+			n = sscanf(in->buf + in->pos + 7, "%d %d %d", &v, &off, &len);
 
 		if (n == 2 || n == 3) {
 			mvc_export_chunk(m, out, v, off, n == 3 ? len : m->reply_size);
 
-			in->pos = in->len;	/* HACK: should use parsed lenght */
+			in->pos = in->len;  /* HACK: should use parsed lenght */
 			return NULL;
 		}
-		if( strncmp(in->buf+in->pos,"close ",6)==0 ){
+		if (strncmp(in->buf + in->pos, "close ", 6) == 0) {
 			res_table *t;
 
-			v = (int) strtol(in->buf+in->pos+6,NULL,0);
- 			t = res_tables_find(m->results, v);
+			v = (int) strtol(in->buf + in->pos + 6, NULL, 0);
+			t = res_tables_find(m->results, v);
 			if (t)
 				m->results = res_tables_remove(m->results, t);
-			in->pos = in->len;	/* HACK: should use parsed lenght */
+			in->pos = in->len;  /* HACK: should use parsed lenght */
 			return NULL;
 		}
-		if( strncmp(in->buf+in->pos,"release ", 8)==0 ){
+		if (strncmp(in->buf + in->pos, "release ", 8) == 0) {
 			cq *q = NULL;
 
-			v = (int) strtol(in->buf+in->pos+ 8,NULL,0);
+			v = (int) strtol(in->buf + in->pos + 8, NULL, 0);
 			if ((q = qc_find(m->qc, v)) != NULL)
-					qc_delete(m->qc, q);
-			in->pos = in->len;	/* HACK: should use parsed lenght */
+				qc_delete(m->qc, q);
+			in->pos = in->len;  /* HACK: should use parsed lenght */
 			return NULL;
 		}
-		if( strncmp(in->buf+in->pos,"auto_commit ", 12)==0 ){
+		if (strncmp(in->buf + in->pos, "auto_commit ", 12) == 0) {
 			int commit;
-			v= (int) strtol(in->buf+in->pos+12,NULL,10);
+			v = (int) strtol(in->buf + in->pos + 12, NULL, 10);
 			commit = (!m->session->auto_commit && v);
-			m->session->auto_commit = (v)?1:0;
+			m->session->auto_commit = (v) ? 1 : 0;
 			m->session->ac_on_commit = m->session->auto_commit;
 			if (m->session->active) {
-				if (commit && mvc_commit(m, 0, NULL)< 0)
+				if (commit && mvc_commit(m, 0, NULL) < 0)
 					throw(SQL, "SQLparser", "Xauto_commit (commit) failed");
 				else if (!commit && mvc_rollback(m, 0, NULL) < 0)
 					throw(SQL, "SQLparser", "Xauto_commit (rollback) failed");
 			}
-			in->pos = in->len;	/* HACK: should use parsed lenght */
+			in->pos = in->len;  /* HACK: should use parsed lenght */
 			return NULL;
 		}
-		if( strncmp(in->buf+in->pos,"reply_size ", 11)==0 ){
-			v= (int) strtol(in->buf+in->pos+11,NULL,10);
+		if (strncmp(in->buf + in->pos, "reply_size ", 11) == 0) {
+			v = (int) strtol(in->buf + in->pos + 11, NULL, 10);
 			m->reply_size = v;
-			in->pos = in->len;	/* HACK: should use parsed lenght */
+			in->pos = in->len;  /* HACK: should use parsed lenght */
 			return NULL;
 		}
 		if (strncmp(in->buf + in->pos, "sizeheader", 10) == 0) {
 			v = (int) strtol(in->buf + in->pos + 10, NULL, 10);
 			m->sizeheader = v != 0;
-			in->pos = in->len;	/* HACK: should use parsed lenght */
+			in->pos = in->len;  /* HACK: should use parsed lenght */
 			return NULL;
 		}
-		if( strncmp(in->buf + in->pos,"quit",4)==0 ) {
+		if (strncmp(in->buf + in->pos, "quit", 4) == 0) {
 			c->mode = FINISHING;
 			return NULL;
 		}
 		throw(SQL, "SQLparser", "Unrecognized X command");
 	}
-	if (be->language != 'S' ) {
+	if (be->language != 'S') {
 		throw(SQL, "SQLparser", "Unrecognized language prefix");
 	}
 
-	if ((err = sqlparse(m)) && m->debug&1){
+	if ((err = sqlparse(m)) && m->debug & 1) {
 		/* switch to different language mode */
-		char oldlang= be->language;
-		be->language= 'D';
-		runMALDebugger(c,c->curprg);
-		be->language= oldlang;
+		char oldlang = be->language;
+		be->language = 'D';
+		runMALDebugger(c, c->curprg);
+		be->language = oldlang;
 	}
-	if( err ||
+	if (err ||
 	    /* Only forget old errors on transaction boundaries */
-	    (mvc_status(m) && m->type != Q_TRANS) || !m->sym) {
+		(mvc_status(m) && m->type != Q_TRANS) || !m->sym) {
 		if (!err && m->scanner.started) /* repeat old errors, with a parsed query */
 			err = mvc_status(m);
 		if (err) {
@@ -1263,7 +1263,10 @@ SQLparser(Client c)
 		be->q = qc_find(m->qc, m->sym->data.lval->h->data.i_val);
 		if (!be->q) {
 			err = -1;
-			sql_error(m, 2, "no prepared statement with the given id\n");
+			msg = createException(SQL, "PREPARE",
+					"no prepared statement with id: %d",
+					m->sym->data.lval->h->data.i_val);
+			handle_error(m, c->fdout, pstatus);
 			sqlcleanup(m, err);
 			goto finalize;
 		}
@@ -1274,13 +1277,13 @@ SQLparser(Client c)
 			SQLsetDebugger(c, m, TRUE);
 		if (m->emod & mod_trace)
 			SQLsetTrace(be, c, TRUE);
-		if (m->emode != m_explain && !(m->emod & (mod_debug|mod_trace)))
+		if (m->emode != m_explain && !(m->emod & (mod_debug | mod_trace)))
 			m->emode = m_inplace;
 		scanner_query_processed(&(m->scanner));
 	} else {
 		stmt *s = sql_symbol2stmt(m, m->sym);
 
-		if (s==0 || (err = mvc_status(m) && m->type != Q_TRANS)) {
+		if (s == 0 || (err = mvc_status(m) && m->type != Q_TRANS)) {
 			msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 			handle_error(m, c->fdout, pstatus);
 			sqlcleanup(m, err);
@@ -1299,7 +1302,7 @@ SQLparser(Client c)
 			MalBlkPtr curBlk;
 
 			scanner_query_processed(&(m->scanner));
-			backend_callinline(be, c, s );
+			backend_callinline(be, c, s);
 
 			curBlk = c->curprg->def;
 			p = newFcnCall(curBlk, "optimizer", "remap");
@@ -1309,22 +1312,22 @@ SQLparser(Client c)
 			optimizeMALBlock(c, curBlk);
 			c->curprg->def = curBlk;
 
-			if( m->emode == m_inplace)
+			if (m->emode == m_inplace)
 				m->emode = m_normal;
 		} else {
 			/* generate a factory instantiation */
 			be->q = qc_insert(m->qc,
-					  m->sa,      /* the allocator */
-					  m->sym,     /* the sql symbol tree */
-					  m->args,    /* the argument list */
-					  m->argc,
-					  m->scanner.key ^ m->session->schema->base.id,/* the statement hash key */
-					  (m->emode == m_prepare)?Q_PREPARE:
-					  m->type,/* the type of the statement */
-					  sql_escape_str(QUERY(m->scanner)));
+					m->sa,        /* the allocator */
+					m->sym,       /* the sql symbol tree */
+					m->args,      /* the argument list */
+					m->argc,
+					m->scanner.key ^ m->session->schema->base.id,  /* the statement hash key */
+					(m->emode == m_prepare) ? Q_PREPARE :
+					m->type,  /* the type of the statement */
+					sql_escape_str(QUERY(m->scanner)));
 			scanner_query_processed(&(m->scanner));
 			be->q->code =
-				(backend_code)backend_dumpproc(be, c, be->q, s);
+				(backend_code) backend_dumpproc(be, c, be->q, s);
 			be->q->stk = 0;
 
 			/* passed over to query cache, used during dumpproc */
@@ -1337,10 +1340,10 @@ SQLparser(Client c)
 				m->emode = m_inplace;
 		}
 	}
-	if (be->q){
+	if (be->q) {
 		if (m->emode == m_prepare)
 			err = mvc_export_prepare(m, c->fdout, be->q, "");
-		else if (m->emode == m_inplace ){
+		else if (m->emode == m_inplace) {
 			/* everything ready for a fast call */
 		} else /* call procedure generation (only in cache mode) */
 			backend_call(be, c, be->q);
@@ -1366,19 +1369,19 @@ SQLparser(Client c)
 
 		chkTypes(c->nspace, c->curprg->def, TRUE); /* resolve types */
 		/* we know more in this case then
-			chkProgram(c->nspace, c->curprg->def); */
+		    chkProgram(c->nspace, c->curprg->def); */
 		if (c->curprg->def->errors) {
 			if (m->emod & mod_debug) {
 				/* switch to differnt language mode */
-				char oldlang= be->language;
-				be->language= 'D';
-				runMALDebugger(c,c->curprg);
-				be->language= oldlang;
+				char oldlang = be->language;
+				be->language = 'D';
+				runMALDebugger(c, c->curprg);
+				be->language = oldlang;
 			}
 			showErrors(c);
 			/* restore the state */
 			resetMalBlk(c->curprg->def, oldstop);
-			freeVariables(c,c->curprg->def, c->glb, oldvtop);
+			freeVariables(c, c->curprg->def, c->glb, oldvtop);
 			c->curprg->def->errors = 0;
 			msg = createException(PARSE, "SQLparser", "Semantic errors");
 		}
@@ -1388,8 +1391,8 @@ SQLparser(Client c)
  * Inspect the variables for post code-generation actions.
  */
 finalize:
-	if (m->emode == m_explain  && be->q && be->q->code)
-		printFunction(GDKout, ((Symbol)(be->q->code))->def, 0, LIST_MAL_STMT  | LIST_MAL_UDF | LIST_MAPI);
+	if (m->emode == m_explain && be->q && be->q->code)
+		printFunction(GDKout, ((Symbol) (be->q->code))->def, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAPI);
 	/*
 	 * @-
 	 * Gather the statistics for post analysis. It should preferably
