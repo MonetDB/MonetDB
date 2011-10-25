@@ -235,9 +235,22 @@ SQLSetStmtAttr_(ODBCStmt *stmt,
 		stmt->Dbc->sql_attr_metadata_id = (SQLUINTEGER) (size_t) ValuePtr;
 		break;
 
+	case SQL_ATTR_CONCURRENCY:
+		switch ((SQLULEN) (size_t) ValuePtr) {
+		case SQL_CONCUR_READ_ONLY:
+			/* the only value we support */
+			break;
+		case SQL_CONCUR_LOCK:
+		case SQL_CONCUR_ROWVER:
+		case SQL_CONCUR_VALUES:
+			/* Optional feature not implemented */
+			addStmtError(stmt, "HYC00", NULL, 0);
+			return SQL_ERROR;
+		}
+		break;
+
 		/* TODO: implement requested behavior */
 	case SQL_ATTR_ASYNC_ENABLE:
-	case SQL_ATTR_CONCURRENCY:
 	case SQL_ATTR_CURSOR_SENSITIVITY:
 	case SQL_ATTR_ENABLE_AUTO_IPD:
 	case SQL_ATTR_FETCH_BOOKMARK_PTR:
