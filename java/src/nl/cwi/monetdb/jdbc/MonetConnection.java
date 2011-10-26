@@ -48,9 +48,6 @@ import nl.cwi.monetdb.mcl.parser.*;
  * <br /><br />
  * The current state of this connection is that it nearly implements the
  * whole Connection interface.<br />
- * Additionally, the static method getEmbeddedInstanceConnection()
- * provides a Connection for embedded situations, where an embedded
- * Mserver is started and used.
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
  * @version 1.2
@@ -66,7 +63,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	private final String username;
 	/** The password to use when authenticating */
 	private final String password;
-	/** A connection to Mserver using a TCP socket */
+	/** A connection to mserver5 using a TCP socket */
 	private final MapiSocket server;
 	/** The Reader from the server */
 	private final BufferedMCLReader in;
