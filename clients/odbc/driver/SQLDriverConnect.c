@@ -228,7 +228,7 @@ ODBCConnectionString(SQLRETURN rc,
 			);
 
 #ifdef ODBCDEBUG
-	ODBCLOG("ConnectionString: \"%.*s\" %d\n", buf ? buflen : 6, buf ? buf : "(null)", buflen);
+	ODBCLOG("ConnectionString: \"%.*s\" %d\n", buf ? buflen : 6, buf ? (char *) buf : "(null)", buflen);
 #endif
 
 	/* if it didn't fit, say so */
