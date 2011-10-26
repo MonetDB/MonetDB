@@ -1297,6 +1297,18 @@ SQLparser(Client c)
 			handle_error(m, c->fdout, pstatus);
 			sqlcleanup(m, err);
 			goto finalize;
+		} else if (be->q->type != Q_PREPARE) {
+			err = -1;
+			mnstr_printf(out, "!EXEC: given handle id is not for a "
+					"prepared statement: %d\n",
+					m->sym->data.lval->h->data.i_val);
+			mnstr_flush(out);
+			msg = createException(SQL, "PREPARE",
+					"is not a prepared statement: %d",
+					m->sym->data.lval->h->data.i_val);
+			handle_error(m, c->fdout, pstatus);
+			sqlcleanup(m, err);
+			goto finalize;
 		}
 		m->emode = m_inplace;
 		scanner_query_processed(&(m->scanner));
