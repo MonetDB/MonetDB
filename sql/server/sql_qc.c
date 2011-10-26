@@ -54,11 +54,11 @@
 #include "sql_atom.h"
 
 qc *
-qc_create(int clientid)
+qc_create(int clientid, int seqnr)
 {
 	qc *r = NEW(qc);
 	r->clientid = clientid;
-	r->id = 0;
+	r->id = seqnr;
 	r->nr = 0;
 
 	r->q = NULL;
