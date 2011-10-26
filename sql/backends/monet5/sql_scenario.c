@@ -1211,13 +1211,11 @@ SQLparser(Client c)
 				if (commit && mvc_commit(m, 0, NULL) < 0) {
 					mnstr_printf(out, "!COMMIT: commit failed while "
 							"enabling auto_commit\n");
-					mnstr_flush(out);
 					msg = createException(SQL, "SQLparser",
 							"Xauto_commit (commit) failed");
 				} else if (!commit && mvc_rollback(m, 0, NULL) < 0) {
 					mnstr_printf(out, "!COMMIT: rollback failed while "
 							"disabling auto_commit\n");
-					mnstr_flush(out);
 					msg = createException(SQL, "SQLparser",
 							"Xauto_commit (rollback) failed");
 				}
@@ -1244,13 +1242,11 @@ SQLparser(Client c)
 			return MAL_SUCCEED;
 		}
 		mnstr_printf(out, "!unrecognized X command: %s\n", in->buf + in->pos);
-		mnstr_flush(out);
 		msg = createException(SQL, "SQLparser", "unrecognized X command");
 		goto finalize;
 	}
 	if (be->language != 'S') {
 		mnstr_printf(out, "!unrecognized language prefix: %ci\n", be->language);
-		mnstr_flush(out);
 		msg = createException(SQL, "SQLparser",
 				"unrecognized language prefix: %c", be->language);
 		goto finalize;
@@ -1290,7 +1286,6 @@ SQLparser(Client c)
 			err = -1;
 			mnstr_printf(out, "!EXEC: no prepared statement with id: %d\n",
 					m->sym->data.lval->h->data.i_val);
-			mnstr_flush(out);
 			msg = createException(SQL, "PREPARE",
 					"no prepared statement with id: %d",
 					m->sym->data.lval->h->data.i_val);
@@ -1302,7 +1297,6 @@ SQLparser(Client c)
 			mnstr_printf(out, "!EXEC: given handle id is not for a "
 					"prepared statement: %d\n",
 					m->sym->data.lval->h->data.i_val);
-			mnstr_flush(out);
 			msg = createException(SQL, "PREPARE",
 					"is not a prepared statement: %d",
 					m->sym->data.lval->h->data.i_val);
