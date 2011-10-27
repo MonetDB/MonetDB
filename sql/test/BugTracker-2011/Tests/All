@@ -53,3 +53,5 @@ many-connects-cache.Bug-2904
 alter-table-set-read-only.bug-2906
 predicate.Bug-2908
 history.Bug-2909
+interrupted-initialization.Bug-2875
+case-overflow.Bug-2239
