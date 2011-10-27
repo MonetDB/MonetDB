@@ -6472,7 +6472,6 @@ stream *open_rstream(const char *filename);
 stream *open_urlstream(const char *url);
 stream *open_wastream(const char *filename);
 stream *open_wstream(const char *filename);
-int rendezvous_streams(stream **in, stream **out, const char *name);
 stream *socket_rastream(SOCKET socket, const char *name);
 stream *socket_rstream(SOCKET socket, const char *name);
 stream *socket_wastream(SOCKET socket, const char *name);

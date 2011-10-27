@@ -177,8 +177,6 @@ stream_export stream *dupFileStream(stream *s);
 stream_export stream *iconv_rstream(stream *ss, const char *charset, const char *name);
 stream_export stream *iconv_wstream(stream *ss, const char *charset, const char *name);
 
-stream_export int rendezvous_streams(stream **in, stream **out, const char *name);
-
 typedef struct buffer {
 	char *buf;
 	size_t pos;
