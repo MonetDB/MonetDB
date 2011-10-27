@@ -428,6 +428,15 @@ SQLinitClient(Client c)
 
 	initSQLreferences();
 	/* initialize the database with predefined SQL functions */
+	if (SQLnewcatalog == 0) {
+		/* check whether table sys.systemfunctions exists: if
+		 * it doesn't, this is probably a restart of the
+		 * server after an incomplete initialization */
+		sql_schema *s = mvc_bind_schema(m, "sys");
+		sql_table *t = s ? mvc_bind_table(m, s, "systemfunctions") : NULL;
+		if (t == NULL)
+			SQLnewcatalog = 1;
+	}
 	if (SQLnewcatalog > 0) {
 		char path[PATHLENGTH];
 		str fullname;
