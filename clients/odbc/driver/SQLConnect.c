@@ -109,9 +109,9 @@ SQLConnect_(ODBCDbc *dbc,
 	    SQLSMALLINT NameLength2,
 	    SQLCHAR *Authentication,
 	    SQLSMALLINT NameLength3,
-	    char *host,
+	    const char *host,
 	    int port,
-	    char *schema)
+	    const char *schema)
 {
 	SQLRETURN rc = SQL_SUCCESS;
 	char *dsn = NULL;

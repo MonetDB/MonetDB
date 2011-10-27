@@ -452,6 +452,9 @@ struct sql_types ODBC_c_types[] = {
 };
 
 #ifdef ODBCDEBUG
+
+const char *ODBCdebug;
+
 #if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 199901
 #include <stdarg.h>
 
@@ -459,13 +462,18 @@ void
 ODBCLOG(const char *fmt, ...)
 {
 	va_list ap;
-	char *s = getenv("ODBCDEBUG");
 
 	va_start(ap, fmt);
-	if (s && *s) {
+	if (ODBCdebug == NULL) {
+		if ((ODBCdebug = getenv("ODBCDEBUG")) == NULL)
+			ODBCdebug = strdup("");
+		else
+			ODBCdebug = strdup(ODBCdebug);
+	}
+	if (ODBCdebug != NULL && *ODBCdebug != 0) {
 		FILE *f;
 
-		f = fopen(s, "a");
+		f = fopen(ODBCdebug, "a");
 		if (f) {
 			vfprintf(f, fmt, ap);
 			fclose(f);

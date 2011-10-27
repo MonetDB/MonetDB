@@ -99,10 +99,17 @@ SQLPrepare_(ODBCStmt *stmt,
 	ret = mapi_query_handle(hdl, s);
 	free(s);
 	s = NULL;
-	if (ret != MOK || (s = mapi_result_error(hdl)) != NULL) {
+	if (ret != MOK) {
+		const char *e;
+
 		/* XXX more fine-grained control required */
 		/* Syntax error or access violation */
-		addStmtError(stmt, "42000", s, 0);
+		if ((s = mapi_result_error(hdl)) == NULL)
+			s = mapi_error_str(stmt->Dbc->mid);
+		if (s && (e = ODBCErrorType(s)) != NULL)
+			addStmtError(stmt, e, s, 0);
+		else
+			addStmtError(stmt, "42000", s, 0);
 		return SQL_ERROR;
 	}
 	if (mapi_rows_affected(hdl) > (1 << 16)) {

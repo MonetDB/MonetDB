@@ -1,6 +1,14 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Mon Oct 24 2011 Sjoerd Mullender <sjoerd@acm.org>
+- ODBC: Implemented an easier way to create a log file of interactions
+  with the ODBC driver.  You can now add a connection attribute
+  "LOGFILE=filename" to the connection string parameter of
+  SQLBrowseConnect and SQLDriverConnect, and to the relevant part of
+  the Windows registry or odbc.ini file.  This value is only used if
+  there is no environment variable ODBCDEBUG.
+
 * Wed Oct 12 2011 Fabian Groffen <fabian@cwi.nl>
 - Quoting of object names for mclient's \d command is now more flexible
   and consistent with standard SQL quoting rules, bug #2846.

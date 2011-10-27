@@ -108,6 +108,15 @@ SQLBrowseConnect_(ODBCDbc *dbc,
 		} else if (strcasecmp(key, "database") == 0 && dbname == NULL) {
 			dbname = attr;
 			allocated |= 16;
+#ifdef ODBCDEBUG
+		} else if (strcasecmp(key, "logfile") == 0 &&
+			   getenv("ODBCDEBUG") == NULL) {
+			/* environment trumps everything */
+			if (ODBCdebug)
+				free((void *) ODBCdebug); /* discard const */
+			ODBCdebug = attr;
+			allocated |= 32;
+#endif
 		} else
 			free(attr);
 		free(key);
@@ -148,10 +157,26 @@ SQLBrowseConnect_(ODBCDbc *dbc,
 				allocated |= 16;
 			}
 		}
+#ifdef ODBCDEBUG
+		if ((allocated & 32) == 0 && getenv("ODBCDEBUG") == NULL) {
+			/* if not set from InConnectionString argument
+			 * or environment, look in profile */
+			n = SQLGetPrivateProfileString(dsn, "logfile", "", buf, sizeof(buf), "odbc.ini");
+			if (n > 0 && buf[0])
+				ODBCdebug = strdup(buf);
+		}
+#endif
 	}
 
 	if (uid != NULL && pwd != NULL) {
 		rc = SQLConnect_(dbc, (SQLCHAR *) dsn, SQL_NTS, (SQLCHAR *) uid, SQL_NTS, (SQLCHAR *) pwd, SQL_NTS, host, port, dbname);
+		if (SQL_SUCCEEDED(rc)) {
+			rc = ODBCConnectionString(rc, dbc, OutConnectionString,
+						  BufferLength,
+						  StringLength2Ptr,
+						  dsn, uid, pwd, host, port,
+						  dbname);
+		}
 	} else {
 		if (uid == NULL) {
 			if (BufferLength > 0)
@@ -188,6 +213,15 @@ SQLBrowseConnect_(ODBCDbc *dbc,
 			OutConnectionString += 21;
 			BufferLength -= 21;
 		}
+#ifdef ODBCDEBUG
+		if (ODBCdebug == NULL) {
+			if (BufferLength > 0)
+				strncpy((char *) OutConnectionString, "*LOGFILE:Debug log file=?;", BufferLength);
+			len += 26;
+			OutConnectionString += 26;
+			BufferLength -= 26;
+		}
+#endif
 
 		if (StringLength2Ptr)
 			*StringLength2Ptr = len;
@@ -264,10 +298,12 @@ SQLBrowseConnectW(SQLHDBC ConnectionHandle,
 
 	clearDbcErrors(dbc);
 
-	fixWcharIn(InConnectionString, StringLength1, SQLCHAR, in, addDbcError, dbc, return SQL_ERROR);
-	out = malloc(100);	/* max 80 needed */
-	rc = SQLBrowseConnect_(dbc, in, SQL_NTS, out, 100, &n);
-	fixWcharOut(rc, out, n, OutConnectionString, BufferLength, StringLength2Ptr, 1, addDbcError, dbc);
+	fixWcharIn(InConnectionString, StringLength1, SQLCHAR, in,
+		   addDbcError, dbc, return SQL_ERROR);
+	out = malloc(1024);
+	rc = SQLBrowseConnect_(dbc, in, SQL_NTS, out, 1024, &n);
+	fixWcharOut(rc, out, n, OutConnectionString, BufferLength,
+		    StringLength2Ptr, 1, addDbcError, dbc);
 	if (in)
 		free(in);
 	return rc;

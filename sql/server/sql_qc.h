@@ -48,7 +48,7 @@ typedef struct qc {
 	cq *q;
 } qc;
 
-extern qc *qc_create(int clientid);
+extern qc *qc_create(int clientid, int seqnr);
 extern void qc_destroy(qc *cache);
 extern void qc_clean(qc *cache);
 extern cq *qc_find(qc *cache, int id);
