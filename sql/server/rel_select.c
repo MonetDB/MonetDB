@@ -521,6 +521,21 @@ rel_table_func(sql_allocator *sa, sql_rel *l, sql_exp *f, list *exps)
 }
 
 sql_rel *
+rel_relational_func(sql_allocator *sa, sql_rel *l, list *exps)
+{
+	sql_rel *rel = rel_create(sa);
+
+	rel->flag = 1;
+	rel->l = l;
+	rel->op = op_table;
+	rel->exps = exps;
+	rel->card = CARD_MULTI;
+	rel->nrcols = list_length(exps);
+	return rel;
+}
+
+
+sql_rel *
 rel_recursive_func(sql_allocator *sa, list *exps)
 {
 	sql_rel *rel = rel_create(sa);
@@ -1413,13 +1428,16 @@ rel_named_table_operator(mvc *sql, sql_rel *rel, symbol *query)
 {
 	exp_kind ek = {type_value, card_relation, TRUE};
 	sql_rel *sq = rel_subquery(sql, rel, query->data.lval->h->data.sym, ek);
+	/*
 	sql_table *t;
 	sql_func *f;
 	sql_subfunc *sf;
 	sql_exp *e;
+	node *m;
+	*/
 	list *exps;
 	dlist *column_spec = NULL;
-	node *m;
+	node *en;
 	int nr = ++sql->label;
 	char *tname = NULL, name[16], *nme;
 
@@ -1431,9 +1449,18 @@ rel_named_table_operator(mvc *sql, sql_rel *rel, symbol *query)
 	if (query->data.lval->h->next->data.sym) {
 		tname = query->data.lval->h->next->data.sym->data.lval->h->data.sval;
 		column_spec = query->data.lval->h->next->data.sym->data.lval->h->next->data.lval;
+		if (column_spec) {
+			dnode *n = column_spec->h;
+
+			if (!is_project(sq->op))
+				sq = rel_project(sql->sa, sq, rel_projections(sql, sq, NULL, 1, 1));
+			for (en = sq->exps->h; n && en; n = n->next, en = en->next) 
+				exp_setname(sql->sa, en->data, tname, n->data.sval );
+		}
 	}
 
 	/* TODO niels this needs a cleanup, shouldn't be needed anymore */
+	/*
 	if ((t = mvc_create_table_as_subquery(sql, sq, sql->session->schema, tname, column_spec, tt_stream, CA_COMMIT)) == NULL) {
 		rel_destroy(sq);
 		return NULL;
@@ -1456,12 +1483,14 @@ rel_named_table_operator(mvc *sql, sql_rel *rel, symbol *query)
 	sf->func = f;
 	sf->res = f->res;
 	e = exp_op(sql->sa, NULL, sf);
+	*/
 	exps = new_exp_list(sql->sa);
-	for (m = t->columns.set->h; m; m = m->next) {
-		sql_column *c = m->data;
-		append(exps, exp_column(sql->sa, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0));
+	for (en = sq->exps->h; en; en = en->next) {
+		sql_exp *e = en->data;
+		append(exps, exp_column(sql->sa, tname, exp_name(e), exp_subtype(e), CARD_MULTI, has_nil(e), 0));
 	}
-	return rel_table_func(sql->sa, sq, e, exps);
+	//return rel_table_func(sql->sa, sq, e, exps);
+	return rel_relational_func(sql->sa, sq, exps);
 }
 
 static sql_rel *

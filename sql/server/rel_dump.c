@@ -315,8 +315,10 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs)
 	case op_table:
 		print_indent(sql, fout, depth);
 		mnstr_printf(fout, "table ");
+		/*
 		if (rel->l)
 			rel_print_(sql, fout, rel->l, depth+1, refs);
+		*/
 		if (rel->r)
 			exp_print(sql, fout, rel->r, depth, 1, 0);
 		if (rel->exps) 
@@ -451,6 +453,12 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs)
 	} 	break;
 	default:
 		assert(0);
+	}
+	if (rel->p) {
+		prop *p = rel->p;
+
+		for (; p; p = p->p) 
+			mnstr_printf(fout, " %s %s", propkind2string(p), propvalue2string(p));
 	}
 }
 

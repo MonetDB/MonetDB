@@ -183,6 +183,7 @@ head_column(stmt *st)
 	case st_temp:
 	case st_single:
 	case st_idxbat:
+	case st_func:
 
 	case st_rs_column:
 		return NULL;

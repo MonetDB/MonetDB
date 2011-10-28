@@ -127,6 +127,7 @@ st_type2string(st_type type)
 		ST(unop);
 		ST(binop);
 		ST(Nop);
+		ST(func);
 		ST(aggr);
 
 		ST(alias);
@@ -458,6 +459,7 @@ stmt_deps(list *dep_list, stmt *s, int depend_type, int dir)
 		case st_unop:
 		case st_binop:
 		case st_Nop:
+		case st_func:
 			if (s->op1)
 				push(s->op1);
 			if (s->op2)
@@ -729,7 +731,7 @@ push_project(sql_allocator *sa, stmt *rows, stmt *val)
 	case st_convert:
 		val->op1 = push_project(sa, rows, val->op1);
 		break;
-	case st_Nop:
+	case st_func:
 		if (val->op4.funcval->func->side_effect) {
 			stmt *l = val->op1;
 			node *n = l->op4.lval->h;
@@ -1541,6 +1543,36 @@ stmt_Nop(sql_allocator *sa, stmt *ops, sql_subfunc *op)
 	assert(op);
 	s->op4.funcval = dup_subfunc(sa, op);
 	if (list_length(ops->op4.lval)) {
+		for (n = ops->op4.lval->h, o = n->data; n; n = n->next) {
+			stmt *c = n->data;
+	
+			if (o->nrcols < c->nrcols)
+				o = c;
+		}
+	}
+
+	if (o) {
+		s->h = o->h;
+		s->nrcols = o->nrcols;
+		s->key = o->key;
+		s->aggr = o->aggr;
+	} else {
+		s->nrcols = 0;
+		s->key = 1;
+	}
+	return s;
+}
+
+stmt *
+stmt_func(sql_allocator *sa, stmt *ops, char *name, sql_rel *rel)
+{
+	node *n;
+	stmt *o = NULL, *s = stmt_create(sa, st_func);
+
+	s->op1 = ops;
+	s->op2 = stmt_atom_string(sa, name);
+	s->op4.rel = rel;
+	if (ops && list_length(ops->op4.lval)) {
 		for (n = ops->op4.lval->h, o = n->data; n; n = n->next) {
 			stmt *c = n->data;
 	

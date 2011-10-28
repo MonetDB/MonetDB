@@ -50,9 +50,11 @@
 #include <sql_rel2bin.h>
 #include <rel_optimizer.h>
 #include <rel_subquery.h>
+#include <rel_exp.h>
 #include <rel_bin.h>
 
 static int _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s);
+static void backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s);
 
 /*
  * @+ MAL code support
@@ -229,6 +231,87 @@ table_func_create_result( MalBlkPtr mb, InstrPtr q, sql_table *f)
 	return q;
 }
 
+static InstrPtr
+relational_func_create_result( MalBlkPtr mb, InstrPtr q, sql_rel *f)
+{
+	node *n;
+	int i;
+
+	for (i = 0, n = f->exps->h; n; n = n->next, i++ ) {
+		sql_exp *e = n->data;
+		int type = exp_subtype(e)->type->localtype;
+
+		type = newBatType(TYPE_oid,type);
+		if (i)
+			q = pushReturn(mb, q, newTmpVariable(mb, type));
+		else
+			setVarType(mb,getArg(q,0), type);
+	}
+	return q;
+}
+
+static void
+monet5_create_relational_function(mvc *m, char *name, sql_rel *rel, stmt *call)
+{
+	sql_rel *r;
+	Client c = MCgetClient(m->clientid);
+	backend *be = ((backend *) c->state[MAL_SCENARIO_PARSER]);
+	MalBlkPtr curBlk = 0;
+	InstrPtr curInstr = 0;
+	Symbol backup = NULL;
+	stmt *s, *opt;
+
+	r = rel_optimizer(m, rel);
+	s = rel_bin(m, r);
+
+	if (s->type == st_list && s->nrcols == 0 && s->key) {
+		/* row to columns */
+		node *n;
+		list *l = list_new(m->sa);
+
+		for(n=s->op4.lval->h; n; n = n->next)
+			list_append(l, const_column(m->sa, n->data));
+		s = stmt_list(m->sa, l);
+	}
+	s = stmt_table(m->sa, s, 1);
+	s = stmt_return(m->sa, s, 0);
+	opt = rel2bin(m, s);
+	s = bin_optimizer(m, opt);
+
+	backup = c->curprg;
+	c->curprg = newFunction(userRef,putName(name,strlen(name)), FUNCTIONsymbol);
+
+	curBlk = c->curprg->def;
+	curInstr = getInstrPtr(curBlk, 0);
+
+	curInstr = relational_func_create_result(curBlk, curInstr, rel);
+	setVarUDFtype(curBlk,0);
+
+	/* ops */
+	if (call->op1->type == st_list) {
+		node *n;
+
+		for(n=call->op1->op4.lval->h; n; n = n->next) {
+			stmt *op = n->data;
+			sql_subtype *t = tail_type(op);
+			int type = t->type->localtype;
+			int varid = 0;
+			char *nme = op->op3->op4.aval->data.val.sval;
+
+			varid = newVariable(curBlk, _strdup(nme), type);
+			curInstr = pushArgument(curBlk, curInstr, varid);
+			setVarType(curBlk, varid, type);
+			setVarUDFtype(curBlk,varid);
+		}
+	}
+
+	backend_dumpstmt(be, curBlk, s);
+	/* SQL function definitions meant for inlineing should not be optimized before */
+	varSetProp(curBlk, getArg(curInstr, 0), sqlfunctionProp, op_eq, NULL);
+	addQueryToCache(c);
+	if (backup)
+		c->curprg = backup;
+}
 /*
  * @-
  * Some utility routines to generate code
@@ -1529,6 +1612,29 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				}
 				special = 0;
 			}
+			s->nr = getDestVar(q);
+			/* keep reference to instruction */
+			s->rewritten = (void*)q;
+		} break;
+		case st_func:{
+			char *mod = "user";
+			char *fimp = s->op2->op4.aval->data.val.sval;
+			sql_rel *rel = s->op4.rel;
+			node *n;
+
+			/* dump args */
+			if (s->op1) 
+				_dumpstmt(sql, mb, s->op1);
+			monet5_create_relational_function(sql->mvc, fimp, rel, s);
+
+			q = newStmt(mb, mod, fimp);
+			q = relational_func_create_result(mb, q, rel);
+			if (s->op1)
+				for (n = s->op1->op4.lval->h; n; n = n->next) {
+					stmt *op = n->data;
+
+					q = pushArgument(mb, q, op->nr);
+				}
 			s->nr = getDestVar(q);
 			/* keep reference to instruction */
 			s->rewritten = (void*)q;

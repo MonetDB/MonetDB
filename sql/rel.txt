@@ -5,9 +5,13 @@ BASETABLE
 	-> l		(sql_table)
 
 TABLE 	(card MULTI)
+	-> flags	(1) TABLE query 
+			(2) RELATIONAL subquery (ie wrap function around subquery)
 	-> exps		is list of column expressions (also used for aliases)
 	-> l 		optional input relation
-	-> r		table function expression
+	-> r		(1) table function expression
+			(2) list of input expressions
+		
 
 /* Wrapping relational operator, is a big complex top level only 
    operator, which only does DDL kind of statements

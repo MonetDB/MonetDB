@@ -173,7 +173,6 @@ mvc_create_table_as_subquery( mvc *sql, sql_rel *sq, sql_schema *s, char *tname,
 	return t;
 }
 
-
 static char *
 table_constraint_name(symbol *s, sql_table *t)
 {

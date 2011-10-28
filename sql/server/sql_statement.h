@@ -38,6 +38,7 @@ typedef union stmtdata {
 	struct sql_subaggr *aggrval;
 	struct sql_subfunc *funcval;
 	struct group *grp;
+	sql_rel *rel;
 } stmtdata;
 
 typedef enum stmt_type {
@@ -107,6 +108,7 @@ typedef enum stmt_type {
 	st_unop,
 	st_binop,
 	st_Nop,
+	st_func,
 	st_aggr,
 
 	st_alias,
@@ -288,6 +290,7 @@ extern stmt *stmt_convert(sql_allocator *sa, stmt *v, sql_subtype *from, sql_sub
 extern stmt *stmt_unop(sql_allocator *sa, stmt *op1, sql_subfunc *op);
 extern stmt *stmt_binop(sql_allocator *sa, stmt *op1, stmt *op2, sql_subfunc *op);
 extern stmt *stmt_Nop(sql_allocator *sa, stmt *ops, sql_subfunc *op);
+extern stmt *stmt_func(sql_allocator *sa, stmt *ops, char *name, sql_rel *imp);
 extern stmt *stmt_aggr(sql_allocator *sa, stmt *op1, group *grp, sql_subaggr *op, int reduce);
 extern stmt *stmt_aggr2(sql_allocator *sa, stmt *op1, stmt *op2, sql_subaggr *op);
 extern stmt *stmt_unique(sql_allocator *sa, stmt *s, group *grp);

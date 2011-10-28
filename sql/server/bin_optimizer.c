@@ -430,6 +430,7 @@ _bin_optimizer(mvc *c, stmt *s)
 	case st_unop:
 	case st_binop:
 	case st_Nop:
+	case st_func:
 	case st_convert:
 
 	case st_affected_rows:

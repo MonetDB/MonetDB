@@ -770,34 +770,70 @@ rel2bin_table( mvc *sql, sql_rel *rel, list *refs)
 	list *l; 
 	stmt *sub = NULL;
 	node *en, *n;
-	int i;
 	sql_exp *op = rel->r;
-	sql_subfunc *f = op->f;
-	sql_table *t = f->res.comp_type;
+
+	if (op) {
+		int i;
+		sql_subfunc *f = op->f;
+		sql_table *t = f->res.comp_type;
 			
-	if (!t)
-		t = f->func->res.comp_type;
-	if (rel->l)
-		sub = subrel_bin(sql, rel->l, refs);
-	sub = exp_bin(sql, rel->r, sub, NULL, NULL, NULL); /* table function */
-	if (!sub || !t) { 
+		if (!t)
+			t = f->func->res.comp_type;
+		sub = exp_bin(sql, op, sub, NULL, NULL, NULL); /* table function */
+		if (!t || !sub) { 
+			assert(0);
+			return NULL;	
+		}
+		l = list_new(sql->sa);
+		for(i = 0, n = t->columns.set->h; n; n = n->next, i++ ) {
+			sql_column *c = n->data;
+			stmt *s = stmt_rs_column(sql->sa, sub, i, &c->type); 
+			char *nme = c->base.name;
+			char *rnme = exp_find_rel_name(op);
+
+			rnme = (rnme)?sa_strdup(sql->sa, rnme):NULL;
+			s = stmt_alias(sql->sa, s, rnme, sa_strdup(sql->sa, nme));
+			list_append(l, s);
+		}
+		sub = stmt_list(sql->sa, l);
+	} else if (rel->l) {
+		int i, argc;
+		char name[16], *nme;
+		/* handle sub query via function */
+		(void)refs;
+
+		nme = number2name(name, 16, ++sql->label);
+
+		/* arguments (todo check which are used) */
+		l = list_new(sql->sa);
+		for (argc = 0; argc < sql->argc; argc++) {
+			atom *a = sql->args[argc];
+			stmt *s = stmt_atom(sql->sa, a);
+			char nme[16];
+
+			snprintf(nme, 16, "A%d", argc);
+			s = stmt_alias(sql->sa, s, NULL, sa_strdup(sql->sa, nme));
+			list_append(l, s);
+		}
+		sub = stmt_list(sql->sa, l);
+		sub = stmt_func(sql->sa, sub, sa_strdup(sql->sa, nme), rel->l);
+		l = list_new(sql->sa);
+		for(i = 0, n = rel->exps->h; n; n = n->next, i++ ) {
+			sql_exp *c = n->data;
+			stmt *s = stmt_rs_column(sql->sa, sub, i, exp_subtype(c)); 
+			char *nme = exp_name(c);
+			char *rnme = op?exp_find_rel_name(op):NULL;
+
+			rnme = (rnme)?sa_strdup(sql->sa, rnme):NULL;
+			s = stmt_alias(sql->sa, s, rnme, sa_strdup(sql->sa, nme));
+			list_append(l, s);
+		}
+		sub = stmt_list(sql->sa, l);
+	}
+	if (!sub) { 
 		assert(0);
 		return NULL;	
 	}
-
-	l = list_new(sql->sa);
-	for(i = 0, n = t->columns.set->h; n; n = n->next, i++ ) {
-		sql_column *c = n->data;
-		stmt *s = stmt_rs_column(sql->sa, sub, i, &c->type); 
-		char *nme = c->base.name;
-		char *rnme = exp_find_rel_name(op);
-
-		rnme = (rnme)?sa_strdup(sql->sa, rnme):NULL;
-		s = stmt_alias(sql->sa, s, rnme, sa_strdup(sql->sa, nme));
-		list_append(l, s);
-	}
-	sub = stmt_list(sql->sa, l);
-
 	l = list_new(sql->sa);
 	for( en = rel->exps->h; en; en = en->next ) {
 		sql_exp *exp = en->data;
