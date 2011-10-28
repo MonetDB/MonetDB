@@ -100,7 +100,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	oid slice;
 	wrd r = 0, rowcnt=0;	/* table should be sizeable to consider parallel execution*/
 	InstrPtr q,*old, target= 0, matq;
-	size_t typewidth= 3 *sizeof(lng); /* 2 arguments and a result */
+	size_t argsize= 3 *sizeof(lng); /* 2 arguments and a result */
 	int threads = GDKnr_threads ? GDKnr_threads:1;
 	ValRecord vr;
 	VarPtr loc,rows;
@@ -137,23 +137,22 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (target == 0)
 		return 0;
 	/*
-	 * @-
 	 * The number of pieces should be based on the footprint of the queryplan,
 	 * such that preferrably it can be handled without swapping intermediates.
-	 * For the time being we just go for small pieces compared to memory detected upon start.
-	 * A fictive rowcount is derived based on TYPE_lng, such that all pieces
+	 * For the time being we just go for pieces that fit into memory in isolation.
+	 * A fictive rowcount is derived based on argument types, such that all pieces
 	 * would fit into memory conveniently for processing. We attempt to use
-	 * at least all threads.
+	 * not more threads then strictly needed.
 	 * Experience shows that the pieces should not be too small.
-	 * To keep the threads working, we create more pieces than threads.
+	 * If we should limit to |threads| is still an open issue.
 	 */
 	if ( (i = OPTlegAdviceInternal(mb,stk,p)) > 0 )
 		pieces = i;
 	else {
 		/* ensure that GDKnr_threads partitions fit into main memory */
-		r = (BUN) (monet_memory / typewidth / threads);
-		if (rowcnt > r)
-			pieces = (int) MAX ( (r  ? rowcnt/r :1) , (wrd) threads );
+		r = (BUN) (monet_memory / argsize / 4);
+		if ( (r?  (int) rowcnt/r:1) < (wrd) threads && r > MINPARTCNT)
+			pieces = (r?  (int) rowcnt/r:1);
 		else
 		/* exploit parallelism, but ensure minimal partition size to limit overhead */
 		if (rowcnt > MINPARTCNT)

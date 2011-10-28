@@ -80,10 +80,12 @@ static void displayVolume(Client cntxt, lng vol);
 
 #define MEMORY_THRESHOLD  0.8
 
+#define USE_DFLOW_ADMISSION
 #ifdef USE_DFLOW_ADMISSION
 /* does not seem to have a major impact */
 static lng memorypool;      /* memory claimed by concurrent threads */
 static int memoryclaims = 0;    /* number of threads active with expensive operations */
+mal_export int DFLOWadmission(lng argclaim, lng hotclaim);
 #endif
 
 #define heapinfo(X) if ((X) && (X)->base) vol = (X)->free; else vol = 0;
@@ -706,6 +708,8 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag)
 			return 0;
 		}
 		@:calcFootprint@
+		if ( b->T->hash == 0  || b->H->hash ==0)	/* assume one hash claim */
+			total+= BATcount(b) * sizeof(lng);
 		total = total > (lng)(MEMORY_THRESHOLD * monet_memory) ? (lng)(MEMORY_THRESHOLD * monet_memory) : total;
 		BBPunfix(b->batCacheid);
 	}
