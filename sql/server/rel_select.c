@@ -1428,27 +1428,17 @@ rel_named_table_operator(mvc *sql, sql_rel *rel, symbol *query)
 {
 	exp_kind ek = {type_value, card_relation, TRUE};
 	sql_rel *sq = rel_subquery(sql, rel, query->data.lval->h->data.sym, ek);
-	/*
-	sql_table *t;
-	sql_func *f;
-	sql_subfunc *sf;
-	sql_exp *e;
-	node *m;
-	*/
 	list *exps;
-	dlist *column_spec = NULL;
 	node *en;
-	int nr = ++sql->label;
-	char *tname = NULL, name[16], *nme;
-
-	nme = number2name(name, 16, nr);
+	char *tname = NULL;
 
 	if (!sq)
 		return NULL;
 	
 	if (query->data.lval->h->next->data.sym) {
+		dlist *column_spec = query->data.lval->h->next->data.sym->data.lval->h->next->data.lval;
+
 		tname = query->data.lval->h->next->data.sym->data.lval->h->data.sval;
-		column_spec = query->data.lval->h->next->data.sym->data.lval->h->next->data.lval;
 		if (column_spec) {
 			dnode *n = column_spec->h;
 
@@ -1459,37 +1449,11 @@ rel_named_table_operator(mvc *sql, sql_rel *rel, symbol *query)
 		}
 	}
 
-	/* TODO niels this needs a cleanup, shouldn't be needed anymore */
-	/*
-	if ((t = mvc_create_table_as_subquery(sql, sq, sql->session->schema, tname, column_spec, tt_stream, CA_COMMIT)) == NULL) {
-		rel_destroy(sq);
-		return NULL;
-	}
-	backend_create_table_function(sql, nme, sq, t);
-
-	f = SA_NEW(sql->sa, sql_func);
-	base_init(sql->sa, &f->base, store_next_oid(), TR_OLD, nme);
-	f->mod = sa_strdup(sql->sa, "user");
-	f->imp = sa_strdup(sql->sa, nme);
-	f->ops = NULL;
-	f->res = *sql_bind_localtype("bat");
-	f->res.comp_type = t;
-	f->nr = 0;
-	f->sql = 0;
-	f->side_effect = 0;
-	f->fix_scale = 0;
-	f->s = NULL;
-	sf = SA_NEW(sql->sa, sql_subfunc);
-	sf->func = f;
-	sf->res = f->res;
-	e = exp_op(sql->sa, NULL, sf);
-	*/
 	exps = new_exp_list(sql->sa);
 	for (en = sq->exps->h; en; en = en->next) {
 		sql_exp *e = en->data;
 		append(exps, exp_column(sql->sa, tname, exp_name(e), exp_subtype(e), CARD_MULTI, has_nil(e), 0));
 	}
-	//return rel_table_func(sql->sa, sq, e, exps);
 	return rel_relational_func(sql->sa, sq, exps);
 }
 
