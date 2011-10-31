@@ -96,8 +96,6 @@ distribute(mvc *sql, sql_rel *rel)
 static sql_rel *
 rel_remote_func(mvc *sql, sql_rel *rel)
 {
-	prop *p;
-
 	if (!rel)
 		return rel;
 
@@ -125,7 +123,7 @@ rel_remote_func(mvc *sql, sql_rel *rel)
 	case op_topn: 
 	case op_sample: 
 		rel->l = rel_remote_func(sql, rel->l);
-		if ((p = find_prop(rel->p, PROP_REMOTE)) != NULL) {
+		if (find_prop(rel->p, PROP_REMOTE) != NULL) {
 			list *exps = rel_projections(sql, rel, NULL, 1, 1);
 			rel = rel_relational_func(sql->sa, rel, exps);
 		}
