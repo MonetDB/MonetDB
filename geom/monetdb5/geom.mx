@@ -1072,18 +1072,16 @@ wkbcreatepoint_bat(int *out, int *ix, int *iy)
 	throw(MAL, "geom.point", "bunins failed");
 }
 
-geom_export str mbroverlaps(bit *out, mbr *b1, mbr *b2);
+geom_export str mbroverlaps(bit *out, mbr **b1, mbr **b2);
 
 str
-mbroverlaps(bit *out, mbr *b1, mbr *b2)
+mbroverlaps(bit *out, mbr **b1, mbr **b2)
 {
-	if (mbr_isnil(b1) || mbr_isnil(b2))
+	if (mbr_isnil(*b1) || mbr_isnil(*b2))
 		*out = 0;
 	else
-		*out = ((b1->ymax >= b2->ymax && b1->xmin <= b2->ymax) ||
-			(b2->ymax >= b1->ymax && b2->xmin <= b1->ymax)) &&
-		       ((b1->xmax >= b2->xmax && b1->ymin <= b2->xmax) ||
-			(b2->xmax >= b1->xmax && b2->ymin <= b1->xmax));
+		*out = !(((*b2)->ymax < (*b1)->ymin) || ((*b2)->ymin > (*b1)->ymax) ||
+		         ((*b2)->xmax < (*b1)->xmin) || ((*b2)->xmin > (*b1)->xmax));
 	return MAL_SUCCEED;
 }
 
