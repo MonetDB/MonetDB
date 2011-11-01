@@ -55,3 +55,4 @@ predicate.Bug-2908
 history.Bug-2909
 interrupted-initialization.Bug-2875
 case-overflow.Bug-2239
+sqltables.Bug-2921
