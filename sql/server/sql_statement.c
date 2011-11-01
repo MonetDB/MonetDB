@@ -732,6 +732,7 @@ push_project(sql_allocator *sa, stmt *rows, stmt *val)
 		val->op1 = push_project(sa, rows, val->op1);
 		break;
 	case st_func:
+	case st_Nop:
 		if (val->op4.funcval->func->side_effect) {
 			stmt *l = val->op1;
 			node *n = l->op4.lval->h;
