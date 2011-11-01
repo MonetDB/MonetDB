@@ -410,7 +410,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 	/* In case of missing project, order by or distinct, we need to add	
 	   and projection */
 	if (r->op != op_project || r->r || need_distinct(r))
-		r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 0, 0));
+		r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 0));
 	if ((r->exps && list_length(r->exps) != list_length(collist)) ||
 	   (!r->exps && collist)) 
 		return sql_error(sql, 02, "INSERT INTO: query result doesn't match number of columns in table '%s'", tname);
