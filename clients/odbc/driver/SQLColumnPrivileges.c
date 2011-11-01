@@ -54,6 +54,7 @@ SQLColumnPrivileges_(ODBCStmt *stmt,
 	RETCODE rc;
 	char *query = NULL;
 	char *query_end = NULL;
+	char *cat = NULL, *sch = NULL, *tab = NULL, *col = NULL;
 
 	fixODBCstring(CatalogName, NameLength1, SQLSMALLINT
 		      , addStmtError, stmt, return SQL_ERROR);
@@ -72,8 +73,54 @@ SQLColumnPrivileges_(ODBCStmt *stmt,
 		(int) NameLength4, (char *) ColumnName);
 #endif
 
+	if (stmt->Dbc->sql_attr_metadata_id == SQL_FALSE) {
+		if (NameLength1 > 0) {
+			cat = ODBCParseOA("e", "value",
+					  (const char *) CatalogName,
+					  (size_t) NameLength1);
+		}
+		if (NameLength2 > 0) {
+			sch = ODBCParseOA("s", "name",
+					  (const char *) SchemaName,
+					  (size_t) NameLength2);
+		}
+		if (NameLength3 > 0) {
+			tab = ODBCParseOA("t", "name",
+					  (const char *) TableName,
+					  (size_t) NameLength3);
+		}
+		if (NameLength4 > 0) {
+			col = ODBCParsePV("c", "name",
+					  (const char *) ColumnName,
+					  (size_t) NameLength4);
+		}
+	} else {
+		if (NameLength1 > 0) {
+			cat = ODBCParseID("e", "value",
+					  (const char *) CatalogName,
+					  (size_t) NameLength1);
+		}
+		if (NameLength2 > 0) {
+			sch = ODBCParseID("s", "name",
+					  (const char *) SchemaName,
+					  (size_t) NameLength2);
+		}
+		if (NameLength3 > 0) {
+			tab = ODBCParseID("t", "name",
+					  (const char *) TableName,
+					  (size_t) NameLength3);
+		}
+		if (NameLength4 > 0) {
+			col = ODBCParseID("c", "name",
+					  (const char *) ColumnName,
+					  (size_t) NameLength4);
+		}
+	}
+
 	/* construct the query now */
-	query = malloc(1200 + NameLength2 + NameLength3 + NameLength4);
+	query = malloc(1200 + (cat ? strlen(cat) : 0) +
+		       (sch ? strlen(sch) : 0) + (tab ? strlen(tab) : 0) +
+		       (col ? strlen(col) : 0));
 	query_end = query;
 
 	/* SQLColumnPrivileges returns a table with the following columns:
@@ -87,139 +134,78 @@ SQLColumnPrivileges_(ODBCStmt *stmt,
 	   is_grantable VARCHAR
 	 */
 
-	sprintf(query_end,
-		"select cast(null as varchar(128)) as \"table_cat\","
-		" \"s\".\"name\" as \"table_schem\","
-		" \"t\".\"name\" as \"table_name\","
-		" \"c\".\"name\" as \"column_name\","
-		" case \"a\".\"id\""
-		"      when \"s\".\"owner\" then '_SYSTEM'"
-		"      else \"g\".\"name\""
-		"      end as \"grantor\","
-		" case \"a\".\"name\""
-		"      when 'public' then 'PUBLIC'"
-		"      else \"a\".\"name\""
-		"      end as \"grantee\","
-		" case \"p\".\"privileges\""
-		"      when 1 then 'SELECT'"
-		"      when 2 then 'UPDATE'"
-		"      when 4 then 'INSERT'"
-		"      when 8 then 'DELETE'"
-		"      when 16 then 'EXECUTE'"
-		"      when 32 then 'GRANT'"
-		"      end as \"privilege\","
-		" case \"p\".\"grantable\""
-		"      when 1 then 'YES'"
-		"      when 0 then 'NO'"
-		"      end as \"is_grantable\" "
-		"from \"sys\".\"schemas\" \"s\","
-		" \"sys\".\"_tables\" \"t\","
-		" \"sys\".\"_columns\" \"c\","
-		" \"sys\".\"auths\" \"a\","
-		" \"sys\".\"privileges\" \"p\","
-		" \"sys\".\"auths\" \"g\" "
-		"where \"p\".\"obj_id\" = \"c\".\"id\" and"
-		" \"c\".\"table_id\" = \"t\".\"id\" and"
-		" \"p\".\"auth_id\" = \"a\".\"id\" and"
-		" \"t\".\"schema_id\" = \"s\".\"id\" and"
-		" \"t\".\"system\" = false and"
-		" \"p\".\"grantor\" = \"g\".\"id\"");
+	strcpy(query_end,
+	       "select \"e\".\"value\" as \"table_cat\","
+	       " \"s\".\"name\" as \"table_schem\","
+	       " \"t\".\"name\" as \"table_name\","
+	       " \"c\".\"name\" as \"column_name\","
+	       " case \"a\".\"id\""
+	       "      when \"s\".\"owner\" then '_SYSTEM'"
+	       "      else \"g\".\"name\""
+	       "      end as \"grantor\","
+	       " case \"a\".\"name\""
+	       "      when 'public' then 'PUBLIC'"
+	       "      else \"a\".\"name\""
+	       "      end as \"grantee\","
+	       " case \"p\".\"privileges\""
+	       "      when 1 then 'SELECT'"
+	       "      when 2 then 'UPDATE'"
+	       "      when 4 then 'INSERT'"
+	       "      when 8 then 'DELETE'"
+	       "      when 16 then 'EXECUTE'"
+	       "      when 32 then 'GRANT'"
+	       "      end as \"privilege\","
+	       " case \"p\".\"grantable\""
+	       "      when 1 then 'YES'"
+	       "      when 0 then 'NO'"
+	       "      end as \"is_grantable\" "
+	       "from \"sys\".\"schemas\" \"s\","
+	       " \"sys\".\"_tables\" \"t\","
+	       " \"sys\".\"_columns\" \"c\","
+	       " \"sys\".\"auths\" \"a\","
+	       " \"sys\".\"privileges\" \"p\","
+	       " \"sys\".\"auths\" \"g\","
+	       " \"sys\".\"env\"() \"e\" "
+	       "where \"p\".\"obj_id\" = \"c\".\"id\" and"
+	       " \"c\".\"table_id\" = \"t\".\"id\" and"
+	       " \"p\".\"auth_id\" = \"a\".\"id\" and"
+	       " \"t\".\"schema_id\" = \"s\".\"id\" and"
+	       " \"t\".\"system\" = false and"
+	       " \"p\".\"grantor\" = \"g\".\"id\" and"
+	       " \"e\".\"name\" = 'gdk_dbname'");
+	assert(strlen(query) < 1100);
 	query_end += strlen(query_end);
 
 	/* Construct the selection condition query part */
-	if (stmt->Dbc->sql_attr_metadata_id == SQL_TRUE) {
-		/* treat arguments as identifiers */
-		/* remove trailing blanks */
-		while (NameLength2 > 0 &&
-		       isspace((int) SchemaName[NameLength2 - 1]))
-			NameLength2--;
-		while (NameLength3 > 0 &&
-		       isspace((int) TableName[NameLength3 - 1]))
-			NameLength3--;
-		while (NameLength4 > 0 &&
-		       isspace((int) ColumnName[NameLength4 - 1]))
-			NameLength4--;
-		if (NameLength2 > 0) {
-			sprintf(query_end, " and \"s\".\"name\" = '");
-			query_end += strlen(query_end);
-			while (NameLength2-- > 0)
-				*query_end++ = tolower(*SchemaName++);
-			*query_end++ = '\'';
-		}
-		if (NameLength3 > 0) {
-			sprintf(query_end, " and \"t\".\"name\" = '");
-			query_end += strlen(query_end);
-			while (NameLength3-- > 0)
-				*query_end++ = tolower(*TableName++);
-			*query_end++ = '\'';
-		}
-		if (NameLength4 > 0) {
-			sprintf(query_end, " and \"c\".\"name\" = '");
-			query_end += strlen(query_end);
-			while (NameLength4-- > 0)
-				*query_end++ = tolower(*ColumnName++);
-			*query_end++ = '\'';
-		}
-	} else {
-		int escape;
-		if (NameLength2 > 0) {
-			escape = 0;
-			sprintf(query_end, " and \"s\".\"name\" like '");
-			query_end += strlen(query_end);
-			while (NameLength2-- > 0) {
-				if (*SchemaName == '\\') {
-					escape = 1;
-					*query_end++ = '\\';
-				}
-				*query_end++ = *SchemaName++;
-			}
-			*query_end++ = '\'';
-			if (escape) {
-				sprintf(query_end, " escape '\\\\'");
-				query_end += strlen(query_end);
-			}
-		}
-		if (NameLength3 > 0) {
-			escape = 0;
-			sprintf(query_end, " and \"t\".\"name\" like '");
-			query_end += strlen(query_end);
-			while (NameLength3-- > 0) {
-				if (*TableName == '\\') {
-					escape = 1;
-					*query_end++ = '\\';
-				}
-				*query_end++ = *TableName++;
-			}
-			*query_end++ = '\'';
-			if (escape) {
-				sprintf(query_end, " escape '\\\\'");
-				query_end += strlen(query_end);
-			}
-		}
-		if (NameLength4 > 0) {
-			escape = 0;
-			sprintf(query_end, " and \"t\".\"name\" like '");
-			query_end += strlen(query_end);
-			while (NameLength4-- > 0) {
-				if (*ColumnName == '\\') {
-					escape = 1;
-					*query_end++ = '\\';
-				}
-				*query_end++ = *ColumnName++;
-			}
-			*query_end++ = '\'';
-			if (escape) {
-				sprintf(query_end, " escape '\\\\'");
-				query_end += strlen(query_end);
-			}
-		}
+	if (cat) {
+		/* filtering requested on catalog name */
+		sprintf(query_end, " and %s", cat);
+		query_end += strlen(query_end);
+		free(cat);
+	}
+	if (sch) {
+		/* filtering requested on schema name */
+		sprintf(query_end, " and %s", sch);
+		query_end += strlen(query_end);
+		free(sch);
+	}
+	if (tab) {
+		/* filtering requested on table name */
+		sprintf(query_end, " and %s", tab);
+		query_end += strlen(query_end);
+		free(tab);
+	}
+	if (col) {
+		/* filtering requested on column name */
+		sprintf(query_end, " and %s", col);
+		query_end += strlen(query_end);
+		free(col);
 	}
 
 	/* add the ordering */
 	strcpy(query_end,
 	       " order by \"table_cat\", \"table_schem\", \"table_name\", \"column_name\", \"privilege\"");
 	query_end += strlen(query_end);
-	assert((int) (query_end - query) < 1200 + NameLength2 + NameLength3 + NameLength4);
 
 	/* query the MonetDB data dictionary tables */
         rc = SQLExecDirect_(stmt, (SQLCHAR *) query,

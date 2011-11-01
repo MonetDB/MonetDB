@@ -285,7 +285,7 @@ ODBCInitResult(ODBCStmt *stmt)
 			rec->sql_desc_length = mapi_get_len(hdl, i);
 
 		rec->sql_desc_local_type_name = NULL;
-		rec->sql_desc_catalog_name = NULL;
+		rec->sql_desc_catalog_name = stmt->Dbc->dbname ? (SQLCHAR *) strdup(stmt->Dbc->dbname) : NULL;
 		rec->sql_desc_literal_prefix = NULL;
 		rec->sql_desc_literal_suffix = NULL;
 

@@ -371,6 +371,98 @@ ODBCTranslateSQL(const SQLCHAR *query, size_t length, SQLUINTEGER noscan)
 	return nquery;
 }
 
+char *
+ODBCParseOA(const char *tab, const char *col, const char *arg, size_t len)
+{
+	size_t i;
+	char *res;
+	const char *s;
+
+	/* count length, counting ' and \ double */
+	for (i = 0, s = arg; s < arg + len; i++, s++) {
+		if (*s == '\'' || *s == '\\')
+			i++;
+	}
+	i += strlen(tab) + strlen(col) + 10; /* ""."" = '' */
+	res = malloc(i + 1);
+	snprintf(res, i, "\"%s\".\"%s\" = '", tab, col);
+	for (i = strlen(res), s = arg; s < arg + len; s++) {
+		if (*s == '\'' || *s == '\\')
+			res[i++] = *s;
+		res[i++] = *s;
+	}
+	res[i++] = '\'';
+	res[i] = 0;
+	return res;
+}
+
+char *
+ODBCParsePV(const char *tab, const char *col, const char *arg, size_t len)
+{
+	size_t i;
+	char *res;
+	const char *s;
+
+	/* count length, counting ' and \ double */
+	for (i = 0, s = arg; s < arg + len; i++, s++) {
+		if (*s == '\'' || *s == '\\')
+			i++;
+	}
+	i += strlen(tab) + strlen(col) + 25; /* ""."" like '' escape '\\' */
+	res = malloc(i + 1);
+	snprintf(res, i, "\"%s\".\"%s\" like '", tab, col);
+	for (i = strlen(res), s = arg; s < arg + len; s++) {
+		if (*s == '\'' || *s == '\\')
+			res[i++] = *s;
+		res[i++] = *s;
+	}
+	for (s = "' escape '\\\\'"; *s; s++)
+		res[i++] = *s;
+	res[i] = 0;
+	return res;
+}
+
+char *
+ODBCParseID(const char *tab, const char *col, const char *arg, size_t len)
+{
+	size_t i;
+	char *res;
+	const char *s;
+	int fold = 1;
+
+	while (len > 0 && (arg[--len] == ' ' || arg[len] == '\t'))
+		;
+	len++;
+	if (len >= 2 && *arg == '"' && arg[len - 1] == '"') {
+		arg++;
+		len -= 2;
+		fold = 0;
+	}
+
+	for (i = 0, s = arg; s < arg + len; i++, s++) {
+		if (*s == '\'' || *s == '\\')
+			i++;
+	}
+	i += strlen(tab) + strlen(col) + 10; /* ""."" = '' */
+	if (fold)
+		i += 14;	/* 2 times upper() */
+	res = malloc(i + 1);
+	if (fold)
+		snprintf(res, i, "upper(\"%s\".\"%s\") = upper('", tab, col);
+	else
+		snprintf(res, i, "\"%s\".\"%s\" = '", tab, col);
+	for (i = strlen(res); len != 0; len--, arg++) {
+		if (*arg == '\'' || *arg == '\\')
+			res[i++] = *arg;
+		res[i++] = *arg;
+	}
+	res[i++] = '\'';
+	if (fold)
+		res[i++] = ')';
+	res[i] = 0;
+	return res;
+}
+
 struct sql_types ODBC_sql_types[] = {
 	{SQL_CHAR, SQL_CHAR, 0, 0, UNAFFECTED, 1, UNAFFECTED, 0, SQL_FALSE},
 	{SQL_VARCHAR, SQL_VARCHAR, 0, 0, UNAFFECTED, 1, UNAFFECTED, 0, SQL_FALSE},

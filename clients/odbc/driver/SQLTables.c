@@ -90,15 +90,14 @@ SQLTables_(ODBCStmt *stmt,
 	    CatalogName &&
 	    strcmp((char *) CatalogName, SQL_ALL_CATALOGS) == 0) {
 		/* Special case query to fetch all Catalog names. */
-		/* Note: Catalogs are not supported so the result set
-		   will be empty. */
 		query = strdup("select "
-			       "cast('' as varchar(1)) as table_cat, "
-			       "cast('' as varchar(1)) as table_schem, "
-			       "cast('' as varchar(1)) as table_name, "
-			       "cast('' as varchar(1)) as table_type, "
-			       "cast('' as varchar(1)) as remarks "
-			       "where 0 = 1");
+			       "\"e\".\"value\" as table_cat, "
+			       "cast(null as varchar(1)) as table_schem, "
+			       "cast(null as varchar(1)) as table_name, "
+			       "cast(null as varchar(1)) as table_type, "
+			       "cast(null as varchar(1)) as remarks "
+			       "from \"sys\".\"env\"() \"e\" "
+			       "where \"e\".\"name\" = 'gdk_dbname'");
 	} else if (NameLength1 == 0 &&
 		   NameLength3 == 0 &&
 		   SchemaName &&
@@ -106,9 +105,9 @@ SQLTables_(ODBCStmt *stmt,
 		/* Special case query to fetch all Schema names. */
 		query = strdup("select cast(null as varchar(1)) as table_cat, "
 			       "name as table_schem, "
-			       "cast('' as varchar(1)) as table_name, "
-			       "cast('' as varchar(1)) as table_type, "
-			       "cast('' as varchar(1)) as remarks "
+			       "cast(null as varchar(1)) as table_name, "
+			       "cast(null as varchar(1)) as table_type, "
+			       "cast(null as varchar(1)) as remarks "
 			       "from sys.\"schemas\" order by table_schem");
 	} else if (NameLength1 == 0 &&
 		   NameLength2 == 0 &&
@@ -118,70 +117,100 @@ SQLTables_(ODBCStmt *stmt,
 		/* Special case query to fetch all Table type names. */
 		query = strdup("select distinct "
 			       "cast(null as varchar(1)) as table_cat, "
-			       "cast('' as varchar(1)) as table_schem, "
-			       "cast('' as varchar(1)) as table_name, "
+			       "cast(null as varchar(1)) as table_schem, "
+			       "cast(null as varchar(1)) as table_name, "
 			       "case when t.\"type\" = 0 and t.\"system\" = false and t.\"temporary\" = 0 then cast('TABLE' as varchar(20)) "
 			       "when t.\"type\" = 0 and t.\"system\" = true and t.\"temporary\" = 0 then cast('SYSTEM TABLE' as varchar(20)) "
 			       "when t.\"type\" = 1 then cast('VIEW' as varchar(20)) "
 			       "when t.\"type\" = 0 and t.\"system\" = false and t.\"temporary\" = 1 then cast('LOCAL TEMPORARY' as varchar(20)) "
 			       "else cast('INTERNAL TABLE TYPE' as varchar(20)) end as table_type, "
-			       "cast('' as varchar(1)) as remarks "
+			       "cast(null as varchar(1)) as remarks "
 			       "from sys.\"tables\" t order by table_type");
 	} else {
 		/* no special case argument values */
 		char *query_end;
+		char *cat = NULL, *sch = NULL, *tab = NULL;
+
+		if (stmt->Dbc->sql_attr_metadata_id == SQL_FALSE) {
+			if (NameLength1 > 0) {
+				cat = ODBCParsePV("e", "value",
+						  (const char *) CatalogName,
+						  (size_t) NameLength1);
+			}
+			if (NameLength2 > 0) {
+				sch = ODBCParsePV("s", "name",
+						  (const char *) SchemaName,
+						  (size_t) NameLength2);
+			}
+			if (NameLength3 > 0) {
+				tab = ODBCParsePV("t", "name",
+						  (const char *) TableName,
+						  (size_t) NameLength3);
+			}
+		} else {
+			if (NameLength1 > 0) {
+				cat = ODBCParseID("e", "value",
+						  (const char *) CatalogName,
+						  (size_t) NameLength1);
+			}
+			if (NameLength2 > 0) {
+				sch = ODBCParseID("s", "name",
+						  (const char *) SchemaName,
+						  (size_t) NameLength2);
+			}
+			if (NameLength3 > 0) {
+				tab = ODBCParseID("t", "name",
+						  (const char *) TableName,
+						  (size_t) NameLength3);
+			}
+		}
 
 		/* construct the query now */
-		query = (char *) malloc(1000 + NameLength2 + NameLength3 + ((NameLength4 + 1) / 5) * 67);
+		query = (char *) malloc(1000 + (cat ? strlen(cat) : 0) + (sch ? strlen(sch) : 0) + (tab ? strlen(tab) : 0) + ((NameLength4 + 1) / 5) * 67);
 		assert(query);
 		query_end = query;
 
 		strcpy(query_end,
 		       "select "
-		       "cast(null as varchar(1)) as table_cat, "
+		       "e.\"value\" as table_cat, "
 		       "s.\"name\" as table_schem, "
 		       "t.\"name\" as table_name, "
-		       "case when t.\"type\" = 0 and t.\"system\" = false and t.\"temporary\" = 0 then cast('TABLE' as varchar(20)) "
+		       "case when t.\"type\" = 0 and t.\"system\" = false and t.\"temporary\" = 0 and s.\"name\" <> 'tmp' then cast('TABLE' as varchar(20)) "
+		       "when t.\"type\" = 0 and t.\"system\" = false and t.\"temporary\" = 0 and s.\"name\" = 'tmp' then cast('GLOBAL TEMPORARY' as varchar(20)) "
 		       "when t.\"type\" = 0 and t.\"system\" = true and t.\"temporary\" = 0 then cast('SYSTEM TABLE' as varchar(20)) "
 		       "when t.\"type\" = 1 then cast('VIEW' as varchar(20)) "
 		       "when t.\"type\" = 0 and t.\"system\" = false and t.\"temporary\" = 1 then cast('LOCAL TEMPORARY' as varchar(20)) "
 		       "else cast('INTERNAL TABLE TYPE' as varchar(20)) end as table_type, "
-		       "cast('' as varchar(1)) as remarks "
-		       "from sys.\"schemas\" s, sys.\"tables\" t "
-		       "where s.\"id\" = t.\"schema_id\"");
+		       "cast(null as varchar(1)) as remarks "
+		       "from sys.\"schemas\" s, "
+		       "sys.\"tables\" t, "
+		       "sys.\"env\"() e "
+		       "where s.\"id\" = t.\"schema_id\""
+		       " and e.name = 'gdk_dbname'");
+		assert(strlen(query) < 900);
 		query_end += strlen(query_end);
 
 		/* dependent on the input parameter values we must add a
 		   variable selection condition dynamically */
 
 		/* Construct the selection condition query part */
-		if (NameLength1 > 0) {
+		if (cat) {
 			/* filtering requested on catalog name */
-			/* we do not support catalog names, so ignore it */
+			sprintf(query_end, " and %s", cat);
+			query_end += strlen(query_end);
+			free(cat);
 		}
-
-		if (NameLength2 > 0) {
+		if (sch) {
 			/* filtering requested on schema name */
-			/* use LIKE when it contains a wildcard '%' or a '_' */
-			/* TODO: the wildcard may be escaped. Check it
-			   and maybe convert it. */
-			sprintf(query_end, " and s.\"name\" %s '%.*s'",
-				memchr(SchemaName, '%', NameLength2) || memchr(SchemaName, '_', NameLength2) ? "like" : "=",
-				NameLength2,
-				(char*)SchemaName);
+			sprintf(query_end, " and %s", sch);
 			query_end += strlen(query_end);
+			free(sch);
 		}
-
-		if (NameLength3 > 0) {
+		if (tab) {
 			/* filtering requested on table name */
-			/* use LIKE when it contains a wildcard '%' or a '_' */
-			/* TODO: the wildcard may be escaped.  Check
-			 * it and may be convert it. */
-			sprintf(query_end, " and t.\"name\" %s '%.*s'",
-				memchr(TableName, '%', NameLength3) || memchr(TableName, '_', NameLength3) ? "like" : "=",
-				NameLength3,
-				(char*)TableName);
+			sprintf(query_end, " and %s", tab);
 			query_end += strlen(query_end);
+			free(tab);
 		}
 
 		if (NameLength4 > 0) {
@@ -198,14 +227,22 @@ SQLTables_(ODBCStmt *stmt,
 						continue;
 					}
 					buf[j] = 0;
-					if (strcmp(buf, "VIEW") == 0)
-						strcpy(query_end, "t.\"type\" = 1 or ");
-					else if (strcmp(buf, "TABLE") == 0)
-						strcpy(query_end, "(t.\"type\" = 0 and t.\"system\" = false and t.\"temporary\" = 0) or ");
-					else if (strcmp(buf, "SYSTEM TABLE") == 0)
-						strcpy(query_end, "(t.\"type\" = 0 and t.\"system\" = true and t.\"temporary\" = 0) or ");
-					else if (strcmp(buf, "LOCAL TEMPORARY") == 0)
-						strcpy(query_end, "(t.\"type\" = 0 and t.\"system\" = false and t.\"temporary\" = 1) or ");
+					if (strcmp(buf, "VIEW") == 0) {
+						strcpy(query_end,
+						       "t.\"type\" = 1 or ");
+					} else if (strcmp(buf, "TABLE") == 0) {
+						strcpy(query_end,
+						       "(t.\"type\" = 0 and t.\"system\" = false and t.\"temporary\" = 0 and s.\"name\" <> 'tmp') or ");
+					} else if (strcmp(buf, "GLOBAL TEMPORARY") == 0) {
+						strcpy(query_end,
+						       "(t.\"type\" = 0 and t.\"system\" = false and t.\"temporary\" = 0 and s.\"name\" = 'tmp') or ");
+					} else if (strcmp(buf, "SYSTEM TABLE") == 0) {
+						strcpy(query_end,
+						       "(t.\"type\" = 0 and t.\"system\" = true and t.\"temporary\" = 0) or ");
+					} else if (strcmp(buf, "LOCAL TEMPORARY") == 0) {
+						strcpy(query_end,
+						       "(t.\"type\" = 0 and t.\"system\" = false and t.\"temporary\" = 1) or ");
+					}
 					query_end += strlen(query_end);
 					j = 0;
 				} else if (j < 17 && TableType[i] != '\'' && (j > 0 || TableType[i] != ' '))
@@ -227,7 +264,6 @@ SQLTables_(ODBCStmt *stmt,
 		strcpy(query_end,
 		       " order by table_type, table_schem, table_name");
 		query_end += strlen(query_end);
-		assert(query_end - query < 1000 + NameLength2 + NameLength3 + NameLength4);
 	}
 
 	/* query the MonetDB data dictionary tables */
