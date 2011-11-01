@@ -1,6 +1,11 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Fri Oct 28 2011 Sjoerd Mullender <sjoerd@acm.org>
+- ODBC: The database name is now used as the catalog name throughout.
+  Functions that return a catalog name return the database name, and
+  functions that match on catalog name match it with the database name.
+
 * Mon Oct 24 2011 Sjoerd Mullender <sjoerd@acm.org>
 - ODBC: Implemented an easier way to create a log file of interactions
   with the ODBC driver.  You can now add a connection attribute

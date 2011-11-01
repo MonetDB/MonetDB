@@ -144,6 +144,10 @@ extern char *ODBCutf82wchar(const SQLCHAR *s, SQLINTEGER length, SQLWCHAR *buf, 
 	} while (0)
 #endif /* WITH_WCHAR */
 
+char *ODBCParseOA(const char *tab, const char *col, const char *arg, size_t len);
+char *ODBCParsePV(const char *tab, const char *col, const char *arg, size_t len);
+char *ODBCParseID(const char *tab, const char *col, const char *arg, size_t len);
+
 /* SQL_DESC_CONCISE_TYPE, SQL_DESC_DATETIME_INTERVAL_CODE, and
  * SQL_DESC_TYPE are interdependent and setting one affects the other.
  * Also, setting them affect other fields.  This is all encoded in

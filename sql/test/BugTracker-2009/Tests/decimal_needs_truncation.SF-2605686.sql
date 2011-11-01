@@ -7,7 +7,7 @@ insert into testdec values (0.12345);
 select * from testdec;
 
 PREPARE INSERT INTO testdec (testdec) values (?);
-exec 0(0.12345);
+exec 6(0.12345);
 
 select * from testdec;
 

@@ -223,12 +223,12 @@ SQLPrepare_(ODBCStmt *stmt,
 		rec->sql_desc_parameter_type = SQL_PARAM_INPUT;
 		rec->sql_desc_rowver = SQL_FALSE;
 		rec->sql_desc_unnamed = SQL_UNNAMED;
+		rec->sql_desc_catalog_name = stmt->Dbc->dbname ? (SQLCHAR *) strdup(stmt->Dbc->dbname) : NULL;
 
 		/* unused fields */
 		rec->sql_desc_auto_unique_value = 0;
 		rec->sql_desc_base_column_name = NULL;
 		rec->sql_desc_base_table_name = NULL;
-		rec->sql_desc_catalog_name = NULL;
 		rec->sql_desc_data_ptr = NULL;
 		rec->sql_desc_display_size = 0;
 		rec->sql_desc_indicator_ptr = NULL;

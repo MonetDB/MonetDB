@@ -418,7 +418,7 @@ SQLGetInfo_(ODBCDbc *dbc,
 		sValue = MONETDB_SERVER_NAME;
 		break;
 	case SQL_SEARCH_PATTERN_ESCAPE:
-		sValue = "";	/* No search-char. escape char. */
+		sValue = "\\";
 		break;
 	case SQL_ODBC_SQL_CONFORMANCE:
 		nValue = SQL_OSC_CORE;
