@@ -16,6 +16,7 @@
 # All Rights Reserved.
 
 # This loads the MonetDB/Crackers module
+library crackers;
 include opt_crack;
 include opt_sidcrack;
 include opt_selcrack;
