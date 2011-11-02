@@ -28,7 +28,7 @@ Ready.
 % mal # name
 % clob # type
 % 67 # length
-function user.s0_1{autoCommit=true}():void;
+function user.s3_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     X_13:bat[:oid,:dbl]  := sql.bind(X_2,"sys","sf_2596114","x",0);
     X_11:bat[:oid,:dbl]  := sql.bind(X_2,"sys","sf_2596114","x",2);
@@ -44,12 +44,13 @@ function user.s0_1{autoCommit=true}():void;
     sql.rsColumn(X_20,"sys.","power_x","double",53,0,X_19);
     X_25 := io.stdout();
     sql.exportResult(X_25,X_20);
-end s0_1;
+end s3_1;
+#explain select x*x from SF_2596114;
 % .explain # table_name
 % mal # name
 % clob # type
 % 67 # length
-function user.s1_1{autoCommit=true}():void;
+function user.s4_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     X_13:bat[:oid,:dbl]  := sql.bind(X_2,"sys","sf_2596114","x",0);
     X_11:bat[:oid,:dbl]  := sql.bind(X_2,"sys","sf_2596114","x",2);
@@ -65,7 +66,8 @@ function user.s1_1{autoCommit=true}():void;
     sql.rsColumn(X_20,"sys.","sql_mul_x","double",53,0,X_19);
     X_25 := io.stdout();
     sql.exportResult(X_25,X_20);
-end s1_1;
+end s4_1;
+#drop table SF_2596114;
 
 # 23:02:30 >  
 # 23:02:30 >  Done.
