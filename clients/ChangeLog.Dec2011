@@ -1,6 +1,12 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Wed Nov  2 2011 Sjoerd Mullender <sjoerd@acm.org>
+- ODBC: Improved internal query for SQLSpecialColumns.  Before, the query
+  returned all columns taking part in a PRIMARY KEY *and* all columns
+  taking part in a UNIQUE constraint.  Now it returns only one or the
+  other set.
+
 * Fri Oct 28 2011 Sjoerd Mullender <sjoerd@acm.org>
 - ODBC: The database name is now used as the catalog name throughout.
   Functions that return a catalog name return the database name, and
