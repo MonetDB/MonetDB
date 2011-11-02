@@ -34,7 +34,7 @@ Ready.
 % mal # name
 % clob # type
 % 66 # length
-function user.s0_1{autoCommit=true}():void;
+function user.s3_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     X_10:bat[:oid,:dbl]  := sql.bind(X_2,"sys","tab_2826","d",0);
     X_8:bat[:oid,:dbl]  := sql.bind(X_2,"sys","tab_2826","d",2);
@@ -55,7 +55,7 @@ function user.s0_1{autoCommit=true}():void;
     sql.rsColumn(X_24,"sys.tab_2826","d","double",53,0,X_23);
     X_30 := io.stdout();
     sql.exportResult(X_30,X_24);
-end s0_1;
+end s3_1;
 #select * from tab_2826 where func_2826(d) > 1;   
 % sys.tab_2826 # table_name
 % d # name

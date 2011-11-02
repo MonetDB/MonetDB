@@ -34,9 +34,9 @@ Ready.
 % mal # name
 % clob # type
 % 66 # length
-function user.s0_1{autoCommit=true}():void;
+function user.s3_1{autoCommit=true}():void;
     X_23 := nil:bat[:oid,:dbl];
-barrier X_55 := language.dataflow();
+barrier X_61 := language.dataflow();
     X_2 := sql.mvc();
     X_10:bat[:oid,:dbl]  := sql.bind(X_2,"sys","tab_2826","d",0);
     X_8:bat[:oid,:dbl]  := sql.bind(X_2,"sys","tab_2826","d",2);
@@ -53,12 +53,12 @@ barrier X_55 := language.dataflow();
     X_21 := algebra.markT(X_19,0@0:oid);
     X_22 := bat.reverse(X_21);
     X_23 := algebra.leftjoin(X_22,X_14);
-exit X_55;
+exit X_61;
     X_24 := sql.resultSet(1,1,X_23);
     sql.rsColumn(X_24,"sys.tab_2826","d","double",53,0,X_23);
     X_30 := io.stdout();
     sql.exportResult(X_30,X_24);
-end s0_1;
+end s3_1;
 #select * from tab_2826 where func_2826(d) > 1;   
 % sys.tab_2826 # table_name
 % d # name
