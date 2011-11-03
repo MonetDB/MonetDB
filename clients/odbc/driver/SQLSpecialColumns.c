@@ -172,7 +172,9 @@ SQLSpecialColumns_(ODBCStmt *stmt,
 		/* Note: SCOPE is SQL_SCOPE_TRANSACTION */
 		/* Note: PSEUDO_COLUMN is SQL_PC_NOT_PSEUDO */
 		sprintf(query_end,
-			"select cast(%d as smallint) as scope,"
+			"with sc as ("
+			"select t.id as table_id, k.type as type,"
+			      " cast(%d as smallint) as scope,"
 			      " c.\"name\" as column_name,"
 			      " case c.\"type\""
 				   " when 'bigint' then %d"
@@ -354,8 +356,10 @@ SQLSpecialColumns_(ODBCStmt *stmt,
 					" end"
 			      " end as decimal_digits,"
 			      " cast(%d as smallint) as pseudo_column"
-			" from sys.\"schemas\" s, sys.\"tables\" t,"
-			     " sys.\"columns\" c, sys.\"keys\" k,"
+			" from sys.\"schemas\" s,"
+			     " sys.\"tables\" t,"
+			     " sys.\"columns\" c,"
+			     " sys.\"keys\" k,"
 			     " sys.\"objects\" kc,"
 			     " sys.\"env\"() e "
 			" where s.\"id\" = t.\"schema_id\" and"
@@ -363,7 +367,7 @@ SQLSpecialColumns_(ODBCStmt *stmt,
 			      " t.\"id\" = k.\"table_id\" and"
 			      " c.\"name\" = kc.\"name\" and"
 			      " kc.\"id\" = k.\"id\" and"
-			      " k.\"type\" in (0, 1) and"
+			      " k.\"type\" = 0 and"
 			      " e.\"name\" = 'gdk_dbname'",
 			/* scope: */
 			SQL_SCOPE_TRANSACTION,
@@ -382,7 +386,7 @@ SQLSpecialColumns_(ODBCStmt *stmt,
 			SQL_VARCHAR, SQL_INTEGER, SQL_BIGINT,
 			/* pseudo_column: */
 			SQL_PC_NOT_PSEUDO);
-		assert(strlen(query) < 4800);
+		assert(strlen(query) < 4300);
 		query_end += strlen(query_end);
 		/* TODO: improve the SQL to get the correct result:
 		   - only one set of columns should be returned, also
@@ -422,6 +426,39 @@ SQLSpecialColumns_(ODBCStmt *stmt,
 			strcpy(query_end, " and c.\"null\" = false");
 			query_end += strlen(query_end);
 		}
+
+		/* we don't actually need a UNION.  Except for a bug
+		 * in the server, we could use instead: "select
+		 * sk.scope, sk.column_name, sk.data_type,
+		 * sk.type_name, sk.column_size, sk.buffer_length,
+		 * sk.decimal_digits, sk.pseudo_column from sk where
+		 * (sk.type = 0 and sk.table_id in (select tid from
+		 * tid)) or (sk.type = 1 and sk.table_id not in
+		 * (select tid from tid))" as SELECT query after the
+		 * definition of "tid". */
+		strcpy(query_end,
+		       "),"
+		       " tid as ("
+			   "select t.id as tid"
+			   " from sys._tables t, sys.keys k"
+			   " where t.id = k.table_id and k.type = 0"
+		       ")"
+		       " select sc.scope, sc.column_name, sc.data_type,"
+		              " sc.type_name, sc.column_size,"
+		              " sc.buffer_length, sc.decimal_digits,"
+		              " sc.pseudo_column"
+		       " from sc"
+		       " where sc.type = 0 and"
+		             " sc.table_id in (select tid from tid)"
+		       " union"
+		       " select sc.scope, sc.column_name, sc.data_type,"
+		              " sc.type_name, sc.column_size,"
+		              " sc.buffer_length, sc.decimal_digits,"
+		              " sc.pseudo_column"
+		       " from sc"
+		       " where sc.type = 1 and"
+		             " sc.table_id not in (select tid from tid)");
+		query_end += strlen(query_end);
 
 		/* no ordering needed */
 	} else {
