@@ -172,6 +172,10 @@ to the client),
 is a pretty format which is meant for human consumption, and
 .B xml
 is a valid (in the XML sense) document.
+In addition to plain \fBcsv\fP, two other forms are possible.
+\fBcsv=\fP\fIc\fP uses \fIc\fP as column separator; \fBcsv+\fP\fIc\fP
+uses \fIc\fP as column separator, but produces a single header line in
+addition to the data.
 .TP
 \fB\-\-echo\fP (\fB\-e\fP)
 Echo the query.
@@ -288,13 +292,10 @@ Echo the query in SQL formatting mode.
 Use the specified
 .I format
 mode to format the output.
-Possible modes are
-.BR csv ,
-.BR tab ,
-.BR raw ,
-.BR sql ,
-and
-.BR xml .
+Possible modes the same as for the
+.B \-\-format
+.RB ( \-f )
+option.
 .TP
 \fB\ew\fP \fIwidth\fP
 Set the maximum page width for rendering in the

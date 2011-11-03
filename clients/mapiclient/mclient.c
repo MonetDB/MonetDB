@@ -111,12 +111,13 @@ enum formatters {
 	RAWformatter,
 	TABLEformatter,
 	CSVformatter,
-	TABformatter,
 	XMLformatter,
 	TESTformatter
 };
 static enum formatters formatter = NOformatter;
 char *output = NULL;		/* output format as string */
+char *separator = NULL;		/* column separator for CSV/TAB format */
+int csvheader = 0;		/* include header line in CSV format */
 
 #define DEFWIDTH 80
 
@@ -634,9 +635,20 @@ CSVrenderer(MapiHdl hdl)
 {
 	int fields;
 	char *s;
-	char *sep = formatter == CSVformatter ? "," : "\t";
+	char *sep = separator;
 	int i;
 
+	if (csvheader) {
+		fields = mapi_get_field_count(hdl);
+		for (i = 0; i < fields; i++) {
+			s = mapi_get_name(hdl, i);
+			if (s == NULL)
+				s = "";
+			mnstr_printf(toConsole, "%s%s",
+				     i == 0 ? "" : sep, s ? s : "");
+		}
+		mnstr_printf(toConsole, "\n");
+	}
 	while (!mnstr_errnr(toConsole) && (fields = fetch_row(hdl)) != 0) {
 		for (i = 0; i < fields; i++) {
 			s = mapi_fetch_field(hdl, i);
@@ -660,7 +672,7 @@ CSVrenderer(MapiHdl hdl)
 						mnstr_write(toConsole, "\\\\", 1, 2);
 						break;
 					case '"':
-						mnstr_write(toConsole, "\\\"", 1, 2);
+						mnstr_write(toConsole, "\"\"", 1, 2);
 						break;
 					default:
 						if (*s == *sep)
@@ -1280,27 +1292,41 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 static void
 setFormatter(char *s)
 {
+	if (separator)
+		free(separator);
+	separator = NULL;
+	csvheader = 0;
 #ifdef WIN32
 	if (formatter == TESTformatter)
 		_set_output_format(0);
 #endif
-	if (strcmp(s, "sql") == 0)
+	if (strcmp(s, "sql") == 0) {
 		formatter = TABLEformatter;
-	else if (strcmp(s, "csv") == 0)
+	} else if (strcmp(s, "csv") == 0) {
 		formatter = CSVformatter;
-	else if (strcmp(s, "tab") == 0)
-		formatter = TABformatter;
-	else if (strcmp(s, "raw") == 0)
+		separator = strdup(",");
+	} else if (strncmp(s, "csv=", 4) == 0) {
+		formatter = CSVformatter;
+		separator = strdup(s + 4);
+	} else if (strncmp(s, "csv+", 4) == 0) {
+		formatter = CSVformatter;
+		separator = strdup(s + 4);
+		csvheader = 1;
+	} else if (strcmp(s, "tab") == 0) {
+		formatter = CSVformatter;
+		separator = strdup("\t");
+	} else if (strcmp(s, "raw") == 0) {
 		formatter = RAWformatter;
-	else if (strcmp(s, "xml") == 0)
+	} else if (strcmp(s, "xml") == 0) {
 		formatter = XMLformatter;
-	else if (strcmp(s, "test") == 0) {
+	} else if (strcmp(s, "test") == 0) {
 #ifdef WIN32
 		_set_output_format(_TWO_DIGIT_EXPONENT);
 #endif
 		formatter = TESTformatter;
-	} else
+	} else {
 		mnstr_printf(toConsole, "unsupported formatter\n");
+	}
 }
 
 static void
@@ -1494,7 +1520,6 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 				XMLrenderer(hdl);
 				break;
 			case CSVformatter:
-			case TABformatter:
 				CSVrenderer(hdl);
 				break;
 			case TESTformatter:
@@ -2349,10 +2374,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 							mnstr_printf(toConsole, "sql\n");
 							break;
 						case CSVformatter:
-							mnstr_printf(toConsole, "csv\n");
-							break;
-						case TABformatter:
-							mnstr_printf(toConsole, "tab\n");
+							mnstr_printf(toConsole, "%s\n", separator[0] == '\t' ? "tab" : "csv");
 							break;
 						case TESTformatter:
 							mnstr_printf(toConsole, "test\n");
