@@ -196,25 +196,41 @@ static stmt *
 handle_in_exps( mvc *sql, sql_exp *ce, list *nl, stmt *left, stmt *right, group *grp, int in, int use_r) 
 {
 	node *n;
-	stmt *s, *c;
+	stmt *s = NULL, *c = exp_bin(sql, ce, left, right, grp, NULL);
 
-	/* create bat append values */
-	s = stmt_temp(sql->sa, exp_subtype(ce));
-	for( n = nl->h; n; n = n->next) {
-		sql_exp *e = n->data;
-		stmt *i = exp_bin(sql, use_r?e->r:e, left, right, grp, NULL);
-		
-		s = stmt_append(sql->sa, s, i);
+	if (c->nrcols == 0) {
+		sql_subtype *bt = sql_bind_localtype("bit");
+		sql_subfunc *cmp = sql_bind_func(sql->sa, sql->session->schema, "=", tail_type(c), tail_type(c));
+		sql_subfunc *a = (in)?sql_bind_func(sql->sa, sql->session->schema, "or", bt, bt)
+				     :sql_bind_func(sql->sa, sql->session->schema, "and", bt, bt);
+
+		for( n = nl->h; n; n = n->next) {
+			sql_exp *e = n->data;
+			stmt *i = exp_bin(sql, use_r?e->r:e, left, right, grp, NULL);
+			
+			i = stmt_binop(sql->sa, c, i, cmp); 
+			if (s)
+				s = stmt_binop(sql->sa, s, i, a);
+			else
+				s = i;
+		}
+	} else {
+		/* create bat append values */
+		s = stmt_temp(sql->sa, exp_subtype(ce));
+		for( n = nl->h; n; n = n->next) {
+			sql_exp *e = n->data;
+			stmt *i = exp_bin(sql, use_r?e->r:e, left, right, grp, NULL);
+			
+			s = stmt_append(sql->sa, s, i);
+		}
+		/*s = stmt_mark_tail(sql->sa, stmt_reverse(sql->sa, stmt_semijoin(sql->sa, stmt_reverse(sql->sa, c), stmt_reverse(sql->sa, s))), 0);*/
+		/* not really a projection join, therefore make sure left values are unique !! */
+		if (in)
+			s = stmt_project(sql->sa, c, stmt_reverse(sql->sa, stmt_unique(sql->sa, s, NULL)));
+		else 
+			s = stmt_reverse(sql->sa, stmt_diff(sql->sa, stmt_reverse(sql->sa, c), stmt_reverse(sql->sa, stmt_unique(sql->sa, s, NULL))));
+		s = stmt_const(sql->sa, s, NULL);
 	}
-	c = exp_bin(sql, ce, left, right, grp, NULL);
-	/*s = stmt_mark_tail(sql->sa, stmt_reverse(sql->sa, stmt_semijoin(sql->sa, stmt_reverse(sql->sa, c), stmt_reverse(sql->sa, s))), 0);*/
-	/* not really a projection join, therefore make sure left values are unique !! */
-	c = column(sql->sa, c);
-	if (in)
-		s = stmt_project(sql->sa, c, stmt_reverse(sql->sa, stmt_unique(sql->sa, s, NULL)));
-	else 
-		s = stmt_reverse(sql->sa, stmt_diff(sql->sa, stmt_reverse(sql->sa, c), stmt_reverse(sql->sa, stmt_unique(sql->sa, s, NULL))));
-	s = stmt_const(sql->sa, s, NULL);
 	return s;
 }
 
