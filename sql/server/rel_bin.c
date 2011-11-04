@@ -201,10 +201,10 @@ handle_in_exps( mvc *sql, sql_exp *ce, list *nl, stmt *left, stmt *right, group 
 	if (c->nrcols == 0) {
 		sql_subtype *bt = sql_bind_localtype("bit");
 		sql_subfunc *cmp = (in)
-			?sql_bind_func(sql->sa, sql->session->schema, "=", tail_type(c), tail_type(c))
-			:sql_bind_func(sql->sa, sql->session->schema, "!=", tail_type(c), tail_type(c));
-		sql_subfunc *a = (in)?sql_bind_func(sql->sa, sql->session->schema, "or", bt, bt)
-				     :sql_bind_func(sql->sa, sql->session->schema, "and", bt, bt);
+			?sql_bind_func(sql->sa, sql->session->schema, "=", tail_type(c), tail_type(c), F_FUNC)
+			:sql_bind_func(sql->sa, sql->session->schema, "!=", tail_type(c), tail_type(c), F_FUNC);
+		sql_subfunc *a = (in)?sql_bind_func(sql->sa, sql->session->schema, "or", bt, bt, F_FUNC)
+				     :sql_bind_func(sql->sa, sql->session->schema, "and", bt, bt, F_FUNC);
 
 		for( n = nl->h; n; n = n->next) {
 			sql_exp *e = n->data;
