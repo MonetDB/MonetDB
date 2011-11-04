@@ -200,7 +200,9 @@ handle_in_exps( mvc *sql, sql_exp *ce, list *nl, stmt *left, stmt *right, group 
 
 	if (c->nrcols == 0) {
 		sql_subtype *bt = sql_bind_localtype("bit");
-		sql_subfunc *cmp = sql_bind_func(sql->sa, sql->session->schema, "=", tail_type(c), tail_type(c));
+		sql_subfunc *cmp = (in)
+			?sql_bind_func(sql->sa, sql->session->schema, "=", tail_type(c), tail_type(c))
+			:sql_bind_func(sql->sa, sql->session->schema, "!=", tail_type(c), tail_type(c));
 		sql_subfunc *a = (in)?sql_bind_func(sql->sa, sql->session->schema, "or", bt, bt)
 				     :sql_bind_func(sql->sa, sql->session->schema, "and", bt, bt);
 
