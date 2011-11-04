@@ -4827,7 +4827,7 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 	if ( b->T->nonil){
 		if (scale)
 			for (; p<q; p++, o++)
-				*o = (@1) ((*p +  (*p<0)?-5:5) / scales[scale]);
+				*o = (@1) ((*p +  ((*p<0)?-5:5)) / scales[scale]);
 		else
 			for (; p<q; p++, o++)
 				*o = (@1) (*p);
@@ -4837,7 +4837,7 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 				*o = @1_nil;
 				bn->T->nonil= FALSE;
 			} else if (scale) {
-				*o = (@1) ((*p +  (*p<0)?-5:5) / scales[scale]);
+				*o = (@1) ((*p +  ((*p<0)?-5:5)) / scales[scale]);
 			} else {
 				*o = (@1) (*p);
 			}
@@ -5325,7 +5325,7 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 	if ( b->T->nonil){
 		for (; p<q; p++, o++) {
 			if (scale) 
-				val = (@2) ((*p+ (*p<0)?-5:5)/scales[scale]);
+				val = (@2) ((*p+ ((*p<0)?-5:5))/scales[scale]);
 			else
 				val = (@2) (*p);
 			/* see if the number fits in the data type */
@@ -5345,7 +5345,7 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 				bn->T->nonil= FALSE;
 			} else {
 				if (scale)
-					val = (@2) (( *p + ( *p<0)?-5:5)/scales[scale]);
+					val = (@2) (( *p + ((*p<0)?-5:5))/scales[scale]);
 				else
 					val = (@2) (*p);
 				/* see if the number fits in the data type */
