@@ -5345,7 +5345,7 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 				bn->T->nonil= FALSE;
 			} else {
 				if (scale)
-					val = (@2) (( *p + ((*p<0)?-5:5))/scales[scale]);
+					val = (@2) (( *p + (( *p<0)?-5:5))/scales[scale]);
 				else
 					val = (@2) (*p);
 				/* see if the number fits in the data type */

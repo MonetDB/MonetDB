@@ -250,7 +250,7 @@ rel_semantic(mvc *sql, symbol *s)
 				node *ne = nrel->exps->h;
 	
 				for (; ne; ne = ne->next) 
-					exp_setname(sql->sa, ne->data, name, NULL );
+					noninternexp_setname(sql->sa, ne->data, name, NULL );
 			}
 		}
 		rel = rel_semantic(sql, select);
