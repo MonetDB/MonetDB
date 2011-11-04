@@ -1069,8 +1069,8 @@ rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname)
 		if (!columnrefs && sq->exps) {
 			node *ne = sq->exps->h;
 
-			for (; ne; ne = ne->next)
-				exp_setname(sql->sa, ne->data, tname, NULL );
+			for (; ne; ne = ne->next) 
+				noninternexp_setname(sql->sa, ne->data, tname, NULL );
 		}
 	}
 	rel_add_intern(sql, sq);
@@ -1499,7 +1499,7 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 			temp_table = rel_project(sql->sa, temp_table, exps);
 			set_processed(temp_table);
 			for (n = exps->h; n; n = n->next)
-				exp_setname(sql->sa, n->data, tname, NULL);
+				noninternexp_setname(sql->sa, n->data, tname, NULL);
 			return temp_table;
 		} else if (isView(t) /*&& sql->emode != m_instantiate */) {
 			/* instantiate base view */
@@ -1520,7 +1520,7 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 				for (n = t->columns.set->h, m = rel->exps->h; n && m; n = n->next, m = m->next) {
 					sql_column *c = n->data;
 					sql_exp *e = m->data;
-	
+
 					exp_setname(sql->sa, e, tname, c->base.name);
 				}
 			}

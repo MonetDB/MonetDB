@@ -316,6 +316,13 @@ exp_setname(sql_allocator *sa, sql_exp *e, char *rname, char *name )
 	e->rname = (rname)?sa_strdup(sa, rname):NULL;
 }
 
+void 
+noninternexp_setname(sql_allocator *sa, sql_exp *e, char *rname, char *name )
+{
+	if (!is_intern(e))
+		exp_setname(sa, e, rname, name);
+}
+
 str
 number2name(str s, int len, int i)
 {
