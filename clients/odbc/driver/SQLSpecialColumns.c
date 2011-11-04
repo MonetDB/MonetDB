@@ -427,15 +427,6 @@ SQLSpecialColumns_(ODBCStmt *stmt,
 			query_end += strlen(query_end);
 		}
 
-		/* we don't actually need a UNION.  Except for a bug
-		 * in the server, we could use instead: "select
-		 * sk.scope, sk.column_name, sk.data_type,
-		 * sk.type_name, sk.column_size, sk.buffer_length,
-		 * sk.decimal_digits, sk.pseudo_column from sk where
-		 * (sk.type = 0 and sk.table_id in (select tid from
-		 * tid)) or (sk.type = 1 and sk.table_id not in
-		 * (select tid from tid))" as SELECT query after the
-		 * definition of "tid". */
 		strcpy(query_end,
 		       "),"
 		       " tid as ("
@@ -448,19 +439,13 @@ SQLSpecialColumns_(ODBCStmt *stmt,
 		              " sc.buffer_length, sc.decimal_digits,"
 		              " sc.pseudo_column"
 		       " from sc"
-		       " where sc.type = 0 and"
-		             " sc.table_id in (select tid from tid)"
-		       " union"
-		       " select sc.scope, sc.column_name, sc.data_type,"
-		              " sc.type_name, sc.column_size,"
-		              " sc.buffer_length, sc.decimal_digits,"
-		              " sc.pseudo_column"
-		       " from sc"
-		       " where sc.type = 1 and"
-		             " sc.table_id not in (select tid from tid)");
+		       " where (sc.type = 0 and"
+		              " sc.table_id in (select tid from tid)) or"
+		             " (sc.type = 1 and"
+		              " sc.table_id not in (select tid from tid))");
 		query_end += strlen(query_end);
 
-		/* no ordering needed */
+		/* ordering on SCOPE not needed (since it is constant) */
 	} else {
 		assert(IdentifierType == SQL_ROWVER);
 		/* The backend does not have such info available */

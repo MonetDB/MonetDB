@@ -56,3 +56,4 @@ history.Bug-2909
 interrupted-initialization.Bug-2875
 case-overflow.Bug-2239
 sqltables.Bug-2921
+Multiplication_and_cast.Bug-2923
