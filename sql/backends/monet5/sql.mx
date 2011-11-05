@@ -5510,8 +5510,9 @@ second_interval_@1( lng *res, @1 *s, int *d, int *sk ){
 	case ihour:
 		r *= 60;
 	case imin:
-		r *= 60000;
+		r *= 60;
 	case isec:
+		r *= 1000;
 		break;
 	default:
 		throw(ILLARG, "calc.second_interval","illegal argument");
