@@ -381,7 +381,13 @@ atom2sql(atom *a)
 		case 13:	/* second */
 			break;
 		}
-		sprintf(buf, LLFMT, v);
+		if (a->tpe.digits < 4) {
+			sprintf(buf, LLFMT, v);
+		} else {
+			lng sec = v/1000;
+			lng msec = v%1000;
+			sprintf(buf, LLFMT "." LLFMT, sec, msec);
+		}
 		break;
 	}
 	case EC_NUM:
