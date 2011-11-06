@@ -888,8 +888,6 @@ main(int argc, char *argv[])
 
 	msab_init(dbfarm, NULL);
 
-	unlink(control_usock);
-	unlink(mapi_usock);
 
 	/* write out the pid */
 	Mfprintf(pidfile, "%d\n", (int)d->pid);
@@ -902,6 +900,7 @@ main(int argc, char *argv[])
 	/* open up connections */
 	if (
 			(e = openConnectionTCP(&sock, port, stdout)) == NO_ERR &&
+			(unlink(control_usock) | unlink(mapi_usock) | 1) &&
 			(e = openConnectionUNIX(&socku, mapi_usock, 0, stdout)) == NO_ERR &&
 			(e = openConnectionUDP(&usock, discoveryport)) == NO_ERR &&
 			(e = openConnectionUNIX(&unsock, control_usock, S_IRWXO, _mero_ctlout)) == NO_ERR &&
@@ -976,10 +975,10 @@ main(int argc, char *argv[])
 	}
 
 	/* control channel is already closed at this point */
-	if (unlink(control_usock) == -1)
+	if (unsock != -1 && unlink(control_usock) == -1)
 		Mfprintf(stderr, "unable to unlink control socket '%s': %s\n",
 				control_usock, strerror(errno));
-	if (unlink(mapi_usock) == -1)
+	if (socku != -1 && unlink(mapi_usock) == -1)
 		Mfprintf(stderr, "unable to unlink mapi socket '%s': %s\n",
 				mapi_usock, strerror(errno));
 
