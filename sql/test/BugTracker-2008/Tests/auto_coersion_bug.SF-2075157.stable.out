@@ -38,7 +38,7 @@ Ready.
 [ 1	]
 % sys. # table_name
 % sql_add_sql_neg_col2 # name
-% int # type
+% bigint # type
 % 4 # length
 [ 3000	]
 

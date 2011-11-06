@@ -3238,6 +3238,9 @@ rel_unop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 }
 
 
+#define is_addition(fname) (strcmp(fname, "sql_add") == 0)
+#define is_substraction(fname) (strcmp(fname, "sql_sub") == 0)
+
 sql_exp *
 rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s,
 		char *fname, int card)
@@ -3260,7 +3263,18 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s,
 	}
 	if (!t1 || !t2)
 		return sql_error(sql, 01, "Cannot have a parameter (?) on both sides of an expression");
-		
+
+	if ((is_addition(fname) || is_substraction(fname)) && t1->type->eclass == EC_NUM && t2->type->eclass == EC_NUM) {
+		sql_subtype ntp;
+
+		sql_find_numeric(&ntp, t1->type->localtype, t1->digits+1);
+		l = rel_check_type(sql, &ntp, l, type_equal);
+		sql_find_numeric(&ntp, t2->type->localtype, t2->digits+1);
+		r = rel_check_type(sql, &ntp, r, type_equal);
+		t1 = exp_subtype(l);
+		t2 = exp_subtype(r);
+	}
+
 	f = sql_bind_func(sql->sa, s, fname, t1, t2, type);
 	if (!f && is_commutative(fname)) {
 		f = sql_bind_func(sql->sa, s, fname, t2, t1, type);
