@@ -100,7 +100,7 @@ typedef struct mvc {
 	lng last_id;
 
 	/* current session variables */
-	int timezone;		/* minutes west of UTC */
+	int timezone;		/* milliseconds west of UTC */
 	int cache;		/* some queries should not be cached ! */
 	int caching;		/* cache current query ? */
 	int history;		/* queries statistics are kept  */

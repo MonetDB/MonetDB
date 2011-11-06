@@ -381,7 +381,13 @@ atom2sql(atom *a)
 		case 13:	/* second */
 			break;
 		}
-		sprintf(buf, LLFMT, v);
+		if (a->tpe.digits < 4) {
+			sprintf(buf, LLFMT, v);
+		} else {
+			lng sec = v/1000;
+			lng msec = v%1000;
+			sprintf(buf, LLFMT "." LLFMT, sec, msec);
+		}
 		break;
 	}
 	case EC_NUM:
@@ -649,6 +655,52 @@ atom_cast(atom *a, sql_subtype *tp)
 					a->data.val.btval /= (bte) mul;
 				else
 					a->data.val.btval *= (bte) mul;
+			}
+			return 1;
+		}
+		/* truncating decimals */
+		if (at->type->eclass == EC_DEC && tp->type->eclass == EC_DEC &&
+		    at->type->localtype >= tp->type->localtype &&
+		    at->digits >= tp->digits && 
+			(at->digits - tp->digits) == (at->scale - tp->scale)) {
+			lng mul = 1, div = 0, rnd = 0, val = 0;
+
+			/* fix scale */
+
+			/* only round when going to a lower scale */
+			mul = scales[at->scale-tp->scale];
+			rnd = mul>>1;
+			div = 1;
+
+			if (a->data.vtype == TYPE_lng) {
+				val = a->data.val.lval;
+			} else if (a->data.vtype == TYPE_int) {
+				val = a->data.val.ival;
+			} else if (a->data.vtype == TYPE_sht) {
+				val = a->data.val.shval;
+			} else if (a->data.vtype == TYPE_bte) {
+				val = a->data.val.btval;
+			}
+
+			val += rnd;
+			if (div)
+				val /= mul;
+			else
+				val *= mul;
+
+			a->tpe = *tp;
+			a->data.vtype = tp->type->localtype;
+			if (a->data.vtype == TYPE_lng) {
+				a->data.val.lval = (int) val;
+			} else if (a->data.vtype == TYPE_int) {
+				assert( ((lng) GDK_int_min <= val && val <= (lng) GDK_int_max));
+				a->data.val.ival = (int) val;
+			} else if (a->data.vtype == TYPE_sht) {
+				assert( ((lng) GDK_sht_min <= val && val <= (lng) GDK_sht_max));
+				a->data.val.shval = (int) val;
+			} else if (a->data.vtype == TYPE_bte) {
+				assert( ((lng) GDK_bte_min <= val && val <= (lng) GDK_bte_max));
+				a->data.val.btval = (int) val;
 			}
 			return 1;
 		}

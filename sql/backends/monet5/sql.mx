@@ -518,6 +518,10 @@ command sql.round( v:@1, d:int, s:int, r:bte) :@1
 address @1_round_wrap
 comment "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)";
 
+command calc.second_interval( sc:int, v:@1, ek:int, sk:int ) :lng
+address @1_dec2second_interval
+comment "cast @1 decimal to a second_interval";
+
 @
 @mal
 @:mal_round(bte)@
@@ -1289,6 +1293,7 @@ sql5_export str str_2dec_@1( @1 *res, str *val, int *d, int *sc );
 sql5_export str str_2num_@1( @1 *res, str *v, int *len );
 sql5_export str batstr_2dec_@1( int *res, int *val, int *d, int *sc );
 sql5_export str batstr_2num_@1( int *res, int *v, int *len );
+sql5_export str @1_dec2second_interval( lng *res, int *sc, @1 *dec, int *ek, int *sk );
 @
 @h
 @:round_export(bte)@
@@ -4143,6 +4148,28 @@ batstr_2num_@1( int *res, int *bid, int *len )
 	BBPunfix(b->batCacheid);
 	return msg;
 }
+
+str 
+@1_dec2second_interval( lng *res, int *sc, @1 *dec, int *ek, int *sk )
+{
+	lng value = *dec;
+
+	(void)ek;
+	(void)sk;
+	if (*sc < 3) {
+		int d = 3 - *sc;
+		value *= scales[d];
+	} else if (*sc > 3 ) {
+		int d = *sc - 3;
+		lng rnd = scales[d]>>1;
+
+		value += rnd;
+		value /= scales[d];
+	}
+	*res = value;
+	return MAL_SUCCEED;
+}
+
 @
 @c
 
@@ -5512,8 +5539,9 @@ second_interval_@1( lng *res, @1 *s, int *d, int *sk ){
 	case ihour:
 		r *= 60;
 	case imin:
-		r *= 60000;
+		r *= 60;
 	case isec:
+		r *= 1000;
 		break;
 	default:
 		throw(ILLARG, "calc.second_interval","illegal argument");

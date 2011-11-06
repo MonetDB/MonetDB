@@ -57,7 +57,7 @@ Ready.
 % i,	c1,	c2 # name
 % int,	sec_interval,	sec_interval # type
 % 1,	0,	0 # length
-[ 1,	3600,	3600	]
+[ 1,	3600.000,	3600.000	]
 #rollback;
 
 # 12:40:50 >  
