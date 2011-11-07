@@ -1355,7 +1355,6 @@ sql5_export str second_interval_@1( lng *res, @1 *s, int *ek, int *sk );
 @:c_interval_export(wrd)@
 @:c_interval_export(lng)@
 @:c_interval_export(daytime)@
-sql5_export str second_interval_2_daytime( daytime *res, lng *s, int *d);
 @= simpleupcast_export
 sql5_export str @2_2_@1( @1 *res, @2 *v );
 sql5_export str bat@2_2_@1( int *res, int *v );
@@ -4216,6 +4215,30 @@ str_2time_daytime( daytime *res, str *v, int *digits )
 }
 
 str
+timestamp_2_daytime( daytime *res, timestamp *v, int *digits )
+{
+	int d = (*digits)?*digits-1:0;
+	int msec = v->msecs;
+
+	/* correct fraction */
+	if (d < 3 && msec) {
+		msec /= scales[3-d];
+		msec *= scales[3-d];
+	}
+	*res = msec;
+	return MAL_SUCCEED;
+}
+
+str
+date_2_timestamp( timestamp *res, date *v, int *digits )
+{
+	(void)digits; /* no precision needed */
+	res->days = *v;
+	res->msecs = 0;
+	return MAL_SUCCEED;
+}
+
+str
 timestamp_2time_timestamp( timestamp *res, timestamp *v, int *digits )
 {
 	int d = (*digits)?*digits-1:0;
@@ -5565,8 +5588,19 @@ comment "cast daytime to a second_interval and check for overflow";
 command calc.daytime( v:lng, d:int) :daytime
 address second_interval_2_daytime
 comment "cast second_interval to a daytime and check for overflow";
+
+command calc.daytime( v:timestamp, d:int) :daytime
+address timestamp_2_daytime
+comment "cast timestamp to a daytime and check for overflow";
+
+command calc.timestamp( v:date, d:int) :timestamp
+address date_2_timestamp
+comment "cast date to a timestamp and check for overflow";
 @h
 sql5_export str second_interval_daytime( lng *res, daytime *s, int *ek, int *sk );
+sql5_export str second_interval_2_daytime( daytime *res, lng *s, int *d);
+sql5_export str timestamp_2_daytime( daytime *res, timestamp *v, int *d);
+sql5_export str date_2_timestamp( timestamp *res, date *v, int *d);
 @c
 str
 second_interval_daytime( lng *res, daytime *s, int *d, int *sk )
