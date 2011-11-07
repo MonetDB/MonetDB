@@ -341,7 +341,7 @@ comment "Concatenate two strings";
 		comment "negative value";
 		command sizeof(x:@1):int
 		address CALCsizeof@1;
-		command sign(x:@1) :int
+		command sign(x:@1) :@1 
 		address CALCunary@1SIGN 
 		comment "Returns +1, 0, -1 based on the sign of the given expression";
 @= unary_ops
