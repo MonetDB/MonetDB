@@ -17,9 +17,6 @@
 
 SUBDIRS = NOT_WIN32?vaults UDF NOT_WIN32?LSST ENABLE_DATACELL?datacell
 
-# force sql.o to not depend on .../rdf/rdf.h since it only optionally created
-RDF_INC = -I../../../monetdb5/extras/rdf
-
 INCLUDES = ../../include ../../common ../../storage ../../server \
 		   ../../../monetdb5/misc \
 		   ../../../monetdb5/modules/atoms \
@@ -33,7 +30,7 @@ INCLUDES = ../../include ../../common ../../storage ../../server \
 		   ../../../common/stream \
 		   ../../../common/utils \
 		   ../../../gdk \
-		   $(RDF_INC) \
+		   ../../../monetdb5/extras/rdf \
 		   $(READLINE_INCS)
 
 lib__sql = {
