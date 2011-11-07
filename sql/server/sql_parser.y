@@ -4182,6 +4182,7 @@ interval_expression:
 			YYABORT;
 	  	} else {
 			/* count the number of digits in the input */
+/*
 			lng cpyval = i, inlen = 1;
 
 			cpyval /= qualifier2multiplier(ek);
@@ -4193,6 +4194,7 @@ interval_expression:
 				$$ = NULL;
 				YYABORT;
 			}
+*/
 	  		$$ = _newAtomNode( atom_int(SA, &t, i));
 	  	}
 	}
