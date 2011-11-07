@@ -758,7 +758,6 @@ DFLOWadmission(lng argclaim, lng hotclaim)
 	PARDEBUG
 	mnstr_printf(GDKstdout, "#DFLOWadmit %3d thread %d pool " LLFMT " claims " LLFMT "," LLFMT "\n",
 				 memoryclaims, THRgettid(), memorypool, argclaim, hotclaim);
-	assert(memoryclaims >= 0);
 	mal_unset_lock(mal_contextLock, "DFLOWdelay");
 	return 0;
 }
