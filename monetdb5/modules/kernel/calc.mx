@@ -620,7 +620,7 @@ str CALCsizeof@1(int *res , @1 *a ) {
 @:calc_unop(ABS,calc_abs,@1)@
 @:check_unop(INV,calc_inv,@1)@
 @:calc_unop(NEG,calc_neg,@1)@
-@:calc_unopint(SIGN,calc_sign,@1)@
+@:calc_unop(SIGN,calc_sign,@1)@
 @:calc_length(@1)@
 @
 @c
@@ -1184,20 +1184,6 @@ str CALCunary@3@1(@3 *res , @3 *a ) {
 	   *res = @3_nil;
    } else {   
 		   *res = (@3) (@2 (*a));
-   }
-   return(MAL_SUCCEED);
-}
-@
-@= calc_unopint
-calc_export str CALCunary@3@1(int *res , @3 *a );
-str CALCunary@3@1(int *res , @3 *a ) {
-#ifdef DEBUG
-	printf( "CALCunary@3@1\n");
-#endif
-   if (*a == @3_nil) {
-	   *res = int_nil;
-   } else {
-		   *res = (int) (@2 (*a));
    }
    return(MAL_SUCCEED);
 }
