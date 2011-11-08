@@ -60,7 +60,9 @@ public class Test_PStimezone {
 
 			// make sure this test is reproducable regardless timezone
 			// setting, by overriding the VM's default
-			TimeZone.setDefault(TimeZone.getTimeZone("Africa/Windhoek"));
+			// we have to make sure that one doesn't have daylight
+			// savings corrections
+			TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
 
 			SimpleDateFormat tsz =
 				new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSZ");
@@ -146,7 +148,7 @@ public class Test_PStimezone {
 						rs.getTime("t", c) + "              \t" +
 						rs.getTime("tz", c) + "      ");
 
-				c.setTimeZone(TimeZone.getTimeZone("UTC"));
+				c.setTimeZone(TimeZone.getTimeZone("Africa/Windhoek"));
 				System.out.println(c.getTimeZone().getID() + ":\n\t" +
 						rs.getTimestamp("ts", c) + "      \t" +
 						rs.getTimestamp("tsz", c) + "           \t" +
