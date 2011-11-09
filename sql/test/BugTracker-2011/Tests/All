@@ -57,3 +57,5 @@ interrupted-initialization.Bug-2875
 case-overflow.Bug-2239
 sqltables.Bug-2921
 Multiplication_and_cast.Bug-2923
+like_or.Bug-2924
+alter_table_add_column.Bug-2919

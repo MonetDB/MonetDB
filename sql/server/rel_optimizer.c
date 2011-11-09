@@ -2270,7 +2270,7 @@ exps_merge_rse( mvc *sql, list *l, list *r )
 				list_merge(exps, le->r, NULL);
 				list_merge(exps, re->r, NULL);
 				fnd = exp_in(sql->sa, le->l, exps, cmp_in);
-			} else if (le->f && re->f && 
+			} else if (le->f && re->f && /* merge ranges */
 				   le->flag == re->flag) {
 				sql_subfunc *min = sql_bind_func(sql->sa, sql->session->schema, "sql_min", exp_subtype(le->r), exp_subtype(re->r), F_FUNC);
 				sql_subfunc *max = sql_bind_func(sql->sa, sql->session->schema, "sql_max", exp_subtype(le->f), exp_subtype(re->f), F_FUNC);
