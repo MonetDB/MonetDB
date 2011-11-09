@@ -1609,7 +1609,7 @@ doFile(Mapi mid, const char *file)
 	FILE *fp;
 	char *buf = NULL;
 	size_t length;
-	MapiHdl hdl = NULL;
+	MapiHdl hdl = mapi_get_active(mid);
 	MapiMsg rc = MOK;
 	int bufsize = 0;
 	int first = 1;		/* first line processing */
