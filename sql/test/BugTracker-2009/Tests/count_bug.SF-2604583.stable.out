@@ -36,7 +36,7 @@ Ready.
 [ 7,	5	]
 % . # table_name
 % L14 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 2	]
 [ 3	]

@@ -192,6 +192,8 @@ sql_find_numeric(sql_subtype *r, int localtype, unsigned int digits)
 		localtype = TYPE_dbl;
 	} else {
 		localtype = TYPE_lng;
+		if (digits > 64)
+			digits = 64;
 	}
 
 	for (n = types->h; n; n = n->next) {

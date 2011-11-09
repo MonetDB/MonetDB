@@ -62,7 +62,7 @@ Ready.
 % 0,	0 # length
 % sys. # table_name
 % substring_murderdate # name
-% int # type
+% bigint # type
 % 1 # length
 % . # table_name
 % L5 # name

@@ -31,7 +31,7 @@ Ready.
 #SELECT CASE WHEN (c = 0) THEN 0 ELSE (c / c + 1) END FROM bug_2822;
 % sys. # table_name
 % ifthenelse_isnull_=_c # name
-% int # type
+% bigint # type
 % 1 # length
 [ 0	]
 #DROP TABLE bug_2822;

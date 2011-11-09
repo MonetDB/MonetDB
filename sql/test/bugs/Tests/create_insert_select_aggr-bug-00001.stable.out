@@ -68,7 +68,7 @@ Ready.
 [ 2,	"Jochem"	]
 % . # table_name
 % sql_sub_single_value # name
-% smallint # type
+% int # type
 % 2 # length
 [ 15	]
 % sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables # table_name

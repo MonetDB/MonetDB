@@ -33,7 +33,7 @@ Ready.
 [ false	]
 % sys. # table_name
 % sql_add_<_i # name
-% int # type
+% bigint # type
 % 1 # length
 [ 2	]
 [ 1	]

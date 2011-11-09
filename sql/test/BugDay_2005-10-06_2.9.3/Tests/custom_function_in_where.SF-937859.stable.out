@@ -21,7 +21,7 @@ Ready.
 [ 4	]
 % sys. # table_name
 % sql_sub_char_length_s # name
-% int # type
+% bigint # type
 % 1 # length
 [ 0	]
 [ 0	]
