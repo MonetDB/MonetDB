@@ -935,18 +935,18 @@ pqueue_export str PQtopn2_@1@2(int *ret, int *aid, int *bid, wrd *N);
 str
 PQtopn2_@1@2(int *ret, int *aid, int *bid, wrd *N)
 {
-	BUN n, i,j;
+	BUN n, i,j, cnt;
 	BAT *a, *b,*bn = NULL;
 	if ((a=BATdescriptor(*aid)) == NULL || (b=BATdescriptor(*bid)) == NULL)
 		throw(MAL, "pqueue.topN", RUNTIME_OBJECT_MISSING);
 
-	n = BATcount(a);
+	cnt = n = BATcount(a);
   	if (*N != wrd_nil && *N >= 0 && *N <= (wrd) BUN_MAX && (BUN) *N < n)
 		  n = (BUN) *N;
 	bn = BATnew(TYPE_oid, TYPE_oid, n);
 	for(i=0; i<n; ) {
 		oid ov = * (oid *) Tloc(a, i);
-		for (j = i; j < n && * (oid *) Tloc(a, j) == ov; j++)
+		for (j = i; j < cnt && * (oid *) Tloc(a, j) == ov; j++)
 			;
 		if (j == i+1) {
 			BUNins(bn, Hloc(a,i), &ov, FALSE);
@@ -978,18 +978,18 @@ pqueue_export str PQutopn2_@1@2(int *ret, int *aid, int *bid, wrd *N);
 str
 PQutopn2_@1@2(int *ret, int *aid, int *bid, wrd *N)
 {
-	BUN n, i,j;
+	BUN n, i,j, cnt;
 	BAT *a, *b,*bn = NULL;
 
 	if ((a=BATdescriptor(*aid)) == NULL || (b=BATdescriptor(*bid)) == NULL)
 		throw(MAL, "pqueue.topN", RUNTIME_OBJECT_MISSING);
-	n = BATcount(a);
+	cnt = n = BATcount(a);
   	if (*N != wrd_nil && *N >= 0 && *N <= (wrd) BUN_MAX && (BUN) *N < n)
 		  n = (BUN) *N;
 	bn = BATnew(TYPE_oid, TYPE_oid, n);
 	for(i=0; i<n; ) {
 		oid ov = * (oid *) Tloc(a, i);
-		for (j = i; j < n && * (oid *) Tloc(a, j) == ov; j++)
+		for (j = i; j < cnt && * (oid *) Tloc(a, j) == ov; j++)
 			;
 		if (j == i+1) {
 			BUNins(bn, Hloc(a,i), &ov, FALSE);
