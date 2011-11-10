@@ -19,7 +19,6 @@ stdout of test 'shift_with_cast.Bug-2638` in directory 'test/BugTracker-2010` it
 
 Ready.
 
-Over..
 
 # 23:40:19 >  
 # 23:40:19 >  mclient -lsql -ftest -i -e --host=jarl --port=39470 

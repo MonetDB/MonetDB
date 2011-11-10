@@ -56,6 +56,7 @@ SQLTablePrivileges_(ODBCStmt *stmt,
 	RETCODE rc;
 	char *query = NULL;
 	char *query_end = NULL;
+	char *cat = NULL, *sch = NULL, *tab = NULL;
 
 	fixODBCstring(CatalogName, NameLength1, SQLSMALLINT,
 		      addStmtError, stmt, return SQL_ERROR);
@@ -71,8 +72,43 @@ SQLTablePrivileges_(ODBCStmt *stmt,
 		(int) NameLength3, (char *) TableName);
 #endif
 
+	if (stmt->Dbc->sql_attr_metadata_id == SQL_FALSE) {
+		if (NameLength1 > 0) {
+			cat = ODBCParseOA("e", "value",
+					  (const char *) CatalogName,
+					  (size_t) NameLength1);
+		}
+		if (NameLength2 > 0) {
+			sch = ODBCParsePV("s", "name",
+					  (const char *) SchemaName,
+					  (size_t) NameLength2);
+		}
+		if (NameLength3 > 0) {
+			tab = ODBCParsePV("t", "name",
+					  (const char *) TableName,
+					  (size_t) NameLength3);
+		}
+	} else {
+		if (NameLength1 > 0) {
+			cat = ODBCParseID("e", "value",
+					  (const char *) CatalogName,
+					  (size_t) NameLength1);
+		}
+		if (NameLength2 > 0) {
+			sch = ODBCParseID("s", "name",
+					  (const char *) SchemaName,
+					  (size_t) NameLength2);
+		}
+		if (NameLength3 > 0) {
+			tab = ODBCParseID("t", "name",
+					  (const char *) TableName,
+					  (size_t) NameLength3);
+		}
+	}
+
 	/* construct the query now */
-	query = malloc(1200 + NameLength2 + NameLength3);
+	query = malloc(1200 + (cat ? strlen(cat) : 0) +
+		       (sch ? strlen(sch) : 0) + (tab ? strlen(tab) : 0));
 	query_end = query;
 
 	/* SQLTablePrivileges returns a table with the following columns:
@@ -87,7 +123,7 @@ SQLTablePrivileges_(ODBCStmt *stmt,
 
 	sprintf(query_end,
 		"select"
-		" cast(NULL as varchar(128)) as \"table_cat\","
+		" e.\"value\" as \"table_cat\","
 		" \"s\".\"name\" as \"table_schem\","
 		" \"t\".\"name\" as \"table_name\","
 		" case \"a\".\"id\""
@@ -114,81 +150,41 @@ SQLTablePrivileges_(ODBCStmt *stmt,
 		" \"sys\".\"_tables\" \"t\","
 		" \"sys\".\"auths\" \"a\","
 		" \"sys\".\"privileges\" \"p\","
-		" \"sys\".\"auths\" \"g\" "
+		" \"sys\".\"auths\" \"g\","
+		" \"sys\".\"env\"() \"e\" "
 		"where \"p\".\"obj_id\" = \"t\".\"id\""
 		" and \"p\".\"auth_id\" = \"a\".\"id\""
 		" and \"t\".\"schema_id\" = \"s\".\"id\""
 		" and \"t\".\"system\" = false"
-		" and \"p\".\"grantor\" = \"g\".\"id\"");
+		" and \"p\".\"grantor\" = \"g\".\"id\""
+		" and \"e\".\"name\" = 'gdk_dbname'");
+	assert(strlen(query) < 1000);
 	query_end += strlen(query_end);
 
 	/* Construct the selection condition query part */
-	if (stmt->Dbc->sql_attr_metadata_id == SQL_TRUE) {
-		/* treat arguments as identifiers */
-		/* remove trailing blanks */
-		while (NameLength2 > 0 &&
-		       isspace((int) SchemaName[NameLength2 - 1]))
-			NameLength2--;
-		while (NameLength3 > 0 &&
-		       isspace((int) TableName[NameLength3 - 1]))
-			NameLength3--;
-		if (NameLength2 > 0) {
-			sprintf(query_end, " and \"s\".\"name\" = '");
-			query_end += strlen(query_end);
-			while (NameLength2-- > 0)
-				*query_end++ = tolower(*SchemaName++);
-			*query_end++ = '\'';
-		}
-		if (NameLength3 > 0) {
-			sprintf(query_end, " and \"t\".\"name\" = '");
-			query_end += strlen(query_end);
-			while (NameLength3-- > 0)
-				*query_end++ = tolower(*TableName++);
-			*query_end++ = '\'';
-		}
-	} else {
-		int escape;
-		if (NameLength2 > 0) {
-			escape = 0;
-			sprintf(query_end, " and \"s\".\"name\" like '");
-			query_end += strlen(query_end);
-			while (NameLength2-- > 0) {
-				if (*SchemaName == '\\') {
-					escape = 1;
-					*query_end++ = '\\';
-				}
-				*query_end++ = *SchemaName++;
-			}
-			*query_end++ = '\'';
-			if (escape) {
-				sprintf(query_end, " escape '\\\\'");
-				query_end += strlen(query_end);
-			}
-		}
-		if (NameLength3 > 0) {
-			escape = 0;
-			sprintf(query_end, " and \"t\".\"name\" like '");
-			query_end += strlen(query_end);
-			while (NameLength3-- > 0) {
-				if (*TableName == '\\') {
-					escape = 1;
-					*query_end++ = '\\';
-				}
-				*query_end++ = *TableName++;
-			}
-			*query_end++ = '\'';
-			if (escape) {
-				sprintf(query_end, " escape '\\\\'");
-				query_end += strlen(query_end);
-			}
-		}
+	if (cat) {
+		/* filtering requested on catalog name */
+		sprintf(query_end, " and %s", cat);
+		query_end += strlen(query_end);
+		free(cat);
+	}
+	if (sch) {
+		/* filtering requested on schema name */
+		sprintf(query_end, " and %s", sch);
+		query_end += strlen(query_end);
+		free(sch);
+	}
+	if (tab) {
+		/* filtering requested on table name */
+		sprintf(query_end, " and %s", tab);
+		query_end += strlen(query_end);
+		free(tab);
 	}
 
 	/* add the ordering */
 	strcpy(query_end,
 	       " order by \"table_cat\", \"table_schem\", \"table_name\", \"privilege\", \"grantee\"");
 	query_end += strlen(query_end);
-	assert((int) (query_end - query) < 1200 + NameLength2 + NameLength3);
 
 	/* query the MonetDB data dictionary tables */
         rc = SQLExecDirect_(stmt, (SQLCHAR *) query,

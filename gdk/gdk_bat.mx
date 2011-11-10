@@ -2005,24 +2005,24 @@ BUNfnd(BAT *b, ptr v)
 	return r;
 }
 
-@= swap
-	{
-		int (*_cmp) (ptr, ptr);
-		ptr _p;
+#define usemirror()				\
+	do {					\
+		int (*_cmp) (ptr, ptr);		\
+		ptr _p;				\
+						\
+		_cmp = hcmp;			\
+		hcmp = tcmp;			\
+		tcmp = _cmp;			\
+		_p = x;				\
+		x = y;				\
+		y = _p;				\
+		bi.b = b = BATmirror(b);	\
+	} while (0)
 
-		_cmp = hcmp;
-		hcmp = tcmp;
-		tcmp = _cmp;
-		_p = x;
-		x = y;
-		y = _p;
-		bi.b = b = BATmirror(b);
-	}	
-			    
-@= dohash
-        ATOMstorage(@1->@2->type) != TYPE_chr && (ATOMstorage(@1->@2->type) != TYPE_str || !GDK_ELIMDOUBLES(@1->@2->vheap)) 
-@
-@c
+#define dohash(hp)        (ATOMstorage(hp->type) != TYPE_chr &&		\
+			   (ATOMstorage(hp->type) != TYPE_str ||	\
+			    !GDK_ELIMDOUBLES(hp->vheap)))
+
 BUN
 BUNlocate(BAT *b, ptr x, ptr y)
 {
@@ -2051,7 +2051,7 @@ BUNlocate(BAT *b, ptr x, ptr y)
 	    ((BAThordered(b) & 1) &&
 	     (*hcmp) (x, BUNhead(bi, p)) == 0 &&
 	     (*hcmp) (x, BUNhead(bi, q - 1)) == 0))
-		@:swap()@
+		usemirror();
 	if (y == NULL ||
 	    ((BATtordered(b) & 1) &&
 	     (*tcmp) (y, BUNtail(bi, p)) == 0 &&
@@ -2061,7 +2061,7 @@ BUNlocate(BAT *b, ptr x, ptr y)
 
 	/* positional lookup is always the best choice */
 	if (BATtdense(b))
-		@:swap()@
+		usemirror();
 	if (BAThdense(b)) {
 		BUN i = (BUN) (*(oid *) x - b->hseqbase);
 
@@ -2093,19 +2093,22 @@ BUNlocate(BAT *b, ptr x, ptr y)
 
 	/* if the range is still larger than 32 BUNs, consider investing in a hash table */
 	if ((q - p) > (1 << 5)) {
-		/* regrettably MonetDB support only single-column hashes 
-		 * strategy: create a hash on both columns, and select the column with the best distribution
+		/* regrettably MonetDB support only single-column hashes
+		 * strategy: create a hash on both columns, and select
+		 * the column with the best distribution
 		 */
-		if ((b->T->hash && b->H->hash == NULL) || !(@:dohash(b,H)@))
-			@:swap()@
+		if ((b->T->hash && b->H->hash == NULL) || !dohash(b->H))
+			usemirror();
 		if (b->H->hash == NULL && (v = VIEWcreate_(b, b, TRUE)) != NULL) {
-			/* As we are going to remove the worst hash table later, we must do everything 
-			 * in a view, as it is not permitted to remove a hash table from a read-only 
-			 * operation (like BUNlocate). Other threads might then crash. 
+			/* As we are going to remove the worst hash
+			 * table later, we must do everything in a
+			 * view, as it is not permitted to remove a
+			 * hash table from a read-only operation (like
+			 * BUNlocate). Other threads might then crash.
 			 */
-			if (@:dohash(v,H)@)
+			if (dohash(v->H))
 				(void) BATprepareHash(v);
-			if (@:dohash(v,T)@)
+			if (dohash(v->T))
 				(void) BATprepareHash(BATmirror(v));
 			if (v->H->hash && v->T->hash) {	/* we can choose between two hash tables */
 				BUN hcnt = 0, tcnt = 0;
@@ -2116,14 +2119,14 @@ BUNlocate(BAT *b, ptr x, ptr y)
 				for (i = 0; i <= v->T->hash->mask; i++)
 					tcnt += (v->T->hash->hash[i] != BUN_NONE);
 				if (hcnt < tcnt) {
-					@:swap()@
+					usemirror();
 					v = BATmirror(v);
 				}
 				/* remove the least selective hash table */
 				HASHremove(BATmirror(v));
 			}
 			if (v->H->hash == NULL) {
-				@:swap()@
+				usemirror();
 				v = BATmirror(v);
 			}
 			if (v->H->hash) {

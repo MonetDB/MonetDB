@@ -27,7 +27,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 11:50:11 >  
 # 11:50:11 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < psm.sql
@@ -96,7 +95,7 @@ Over..
 % .fla,	.fla,	.fla # table_name
 % x,	y,	z # name
 % double,	double,	double # type
-% 22,	22,	22 # length
+% 24,	24,	24 # length
 [ 0,	0,	0	]
 
 # 14:40:48 >  

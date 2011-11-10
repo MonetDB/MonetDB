@@ -13,7 +13,6 @@ stdout of test 'subselect_union-bug-sf-941826` in directory 'test/bugs` itself:
 
 Ready.
 
-Over..
 
 # 11:55:30 >  
 # 11:55:30 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < subselect_union-bug-sf-941826.sql

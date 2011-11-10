@@ -193,9 +193,10 @@ mvc_trans(mvc *m)
 	schema_changed = sql_trans_begin(m->session);
 	if (m->qc && (schema_changed || m->qc->nr > 20000 || err)){
 		if (schema_changed || err) {
+			int seqnr = m->qc->id;
 			if (m->qc)
 				qc_destroy(m->qc);
-			m->qc = qc_create(m->clientid);
+			m->qc = qc_create(m->clientid, seqnr);
 		} else { /* clean all but the prepared statements */
 			qc_clean(m->qc);
 		}
@@ -313,7 +314,7 @@ mvc_rollback(mvc *m, int chain, char *name)
 		while (tr && (!tr->name || strcmp(tr->name, name) != 0))
 			tr = tr->parent;
 		if (!tr) {
-			(void)sql_error(m, 010, "rollback savepoint %s doesn't exists", name);
+			(void)sql_error(m, 010, "ROLLBACK: no such savepoint: '%s'", name);
 			m->session->status = -1;
 			store_unlock();
 			return -1;
@@ -408,7 +409,7 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 	/* if an error exceeds the buffer we don't want garbage at the end */
 	m->errstr[ERRSIZE-1] = '\0';
 
-	m->qc = qc_create(clientid);
+	m->qc = qc_create(clientid, 0);
 	m->sa = sa_create();
 
 	m->params = NULL;

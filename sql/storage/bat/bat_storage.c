@@ -948,7 +948,7 @@ destroy_delta(sql_delta *b)
 	if (b->bid) 
 		temp_destroy(b->bid);
 	if (b->cached)
-		temp_destroy(b->cached->batCacheid);
+		bat_destroy(b->cached);
 	b->bid = b->ibid = b->ubid = 0;
 	b->name = NULL;
 	b->cached = NULL;

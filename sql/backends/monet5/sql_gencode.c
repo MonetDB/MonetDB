@@ -50,9 +50,11 @@
 #include <sql_rel2bin.h>
 #include <rel_optimizer.h>
 #include <rel_subquery.h>
+#include <rel_exp.h>
 #include <rel_bin.h>
 
 static int _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s);
+static void backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s);
 
 /*
  * @+ MAL code support
@@ -229,6 +231,87 @@ table_func_create_result( MalBlkPtr mb, InstrPtr q, sql_table *f)
 	return q;
 }
 
+static InstrPtr
+relational_func_create_result( MalBlkPtr mb, InstrPtr q, sql_rel *f)
+{
+	node *n;
+	int i;
+
+	for (i = 0, n = f->exps->h; n; n = n->next, i++ ) {
+		sql_exp *e = n->data;
+		int type = exp_subtype(e)->type->localtype;
+
+		type = newBatType(TYPE_oid,type);
+		if (i)
+			q = pushReturn(mb, q, newTmpVariable(mb, type));
+		else
+			setVarType(mb,getArg(q,0), type);
+	}
+	return q;
+}
+
+static void
+monet5_create_relational_function(mvc *m, char *name, sql_rel *rel, stmt *call)
+{
+	sql_rel *r;
+	Client c = MCgetClient(m->clientid);
+	backend *be = ((backend *) c->state[MAL_SCENARIO_PARSER]);
+	MalBlkPtr curBlk = 0;
+	InstrPtr curInstr = 0;
+	Symbol backup = NULL;
+	stmt *s, *opt;
+
+	r = rel_optimizer(m, rel);
+	s = rel_bin(m, r);
+
+	if (s->type == st_list && s->nrcols == 0 && s->key) {
+		/* row to columns */
+		node *n;
+		list *l = list_new(m->sa);
+
+		for(n=s->op4.lval->h; n; n = n->next)
+			list_append(l, const_column(m->sa, n->data));
+		s = stmt_list(m->sa, l);
+	}
+	s = stmt_table(m->sa, s, 1);
+	s = stmt_return(m->sa, s, 0);
+	opt = rel2bin(m, s);
+	s = bin_optimizer(m, opt);
+
+	backup = c->curprg;
+	c->curprg = newFunction(userRef,putName(name,strlen(name)), FUNCTIONsymbol);
+
+	curBlk = c->curprg->def;
+	curInstr = getInstrPtr(curBlk, 0);
+
+	curInstr = relational_func_create_result(curBlk, curInstr, rel);
+	setVarUDFtype(curBlk,0);
+
+	/* ops */
+	if (call->op1->type == st_list) {
+		node *n;
+
+		for(n=call->op1->op4.lval->h; n; n = n->next) {
+			stmt *op = n->data;
+			sql_subtype *t = tail_type(op);
+			int type = t->type->localtype;
+			int varid = 0;
+			char *nme = op->op3->op4.aval->data.val.sval;
+
+			varid = newVariable(curBlk, _strdup(nme), type);
+			curInstr = pushArgument(curBlk, curInstr, varid);
+			setVarType(curBlk, varid, type);
+			setVarUDFtype(curBlk,varid);
+		}
+	}
+
+	backend_dumpstmt(be, curBlk, s);
+	/* SQL function definitions meant for inlineing should not be optimized before */
+	varSetProp(curBlk, getArg(curInstr, 0), sqlfunctionProp, op_eq, NULL);
+	addQueryToCache(c);
+	if (backup)
+		c->curprg = backup;
+}
 /*
  * @-
  * Some utility routines to generate code
@@ -396,78 +479,27 @@ multiplexN(MalBlkPtr mb, char *mod, char *name)
 static int
 dump_joinN(backend *sql, MalBlkPtr mb, stmt *s)
 {
-	char *mod = sql_func_mod(s->op4.funcval->func);
-	char *fimp = sql_func_imp(s->op4.funcval->func);
-	node *n;
+	char *mod, *fimp; 
 	InstrPtr q;
-	int l, r, k;
-	int need_not = (s->flag & ANTI);
+	int k, op1, op2, op3 = 0;
+
+	backend_create_func(sql, s->op4.funcval->func);
+	mod = sql_func_mod(s->op4.funcval->func);
+	fimp = sql_func_imp(s->op4.funcval->func);
 
 	/* dump left and right operands */
-	(void)_dumpstmt(sql, mb, s->op1);
-	(void)_dumpstmt(sql, mb, s->op2);
-
-	/* find left and right columns (need more work) */
-	l = ((stmt*)s->op1->op4.lval->h->data)->nr;
-	r = ((stmt*)s->op2->op4.lval->h->data)->nr;
-
-	q = dump_crossproduct(mb, l, r);
-	k = getDestVar(q);
-
-	/* split */
-	q = newStmt2(mb, algebraRef, markHRef);
-	q = pushArgument(mb, q, k);
-	q = pushOid(mb, q, 0);
-	r = getDestVar(q);
-
-	q = newStmt2(mb, algebraRef, markTRef);
-	q = pushArgument(mb, q, k);
-	q = pushOid(mb, q, 0);
-	l = getDestVar(q);
-
-	l = _dump_1(mb, batRef, reverseRef, l );
-
-	/* join left columns */
-	for (n = s->op1->op4.lval->h; n; n = n->next) {
-		stmt *op = n->data;
-
-		if (op->nrcols)
-			op->nr = _dump_2(mb, algebraRef, joinRef, l, op->nr);
-	}
-	/* join right columns */
-	for (n = s->op2->op4.lval->h; n; n = n->next) {
-		stmt *op = n->data;
-
-		if (op->nrcols)
-			op->nr = _dump_2(mb, algebraRef, joinRef, r, op->nr);
-	}
-
-	/* execute multiplexed function */
-	q = newStmt(mb, "mal","multiplex");
-	setVarType(mb,getArg(q,0), newBatType(TYPE_oid, TYPE_bit));
-	setVarUDFtype(mb,getArg(q,0));
-	q = pushStr(mb, q, mod);
-	q = pushStr(mb, q, fimp);
-	for (n = s->op1->op4.lval->h; n; n = n->next) {
-		stmt *op = n->data;
-		q = pushArgument(mb, q, op->nr);
-	}
-	for (n = s->op2->op4.lval->h; n; n = n->next) {
-		stmt *op = n->data;
-		q = pushArgument(mb, q, op->nr);
-	}
-	k = getDestVar(q);
+	op1 = _dumpstmt(sql, mb, s->op1);
+	op2 = _dumpstmt(sql, mb, s->op2);
+	if (s->op3)
+		op3 = _dumpstmt(sql, mb, s->op3);
 
 	/* filter qualifying tuples, return oids of h and tail */
-	q = newStmt2(mb, algebraRef, uselectRef);
-	q = pushArgument(mb, q, k);
-	q = pushBit(mb, q, !need_not);
+	q = newStmt(mb, mod, fimp);
+	q = pushArgument(mb, q, op1);
+	q = pushArgument(mb, q, op2);
+	if (s->op3)
+		q = pushArgument(mb, q, op3);
 	k = getDestVar(q);
-
-	k = _dump_1(mb, batRef, mirrorRef, k);
-	k = _dump_2(mb, algebraRef, joinRef, k, l);
-	k = _dump_1(mb, batRef, reverseRef, k);
-	k = _dump_2(mb, algebraRef, joinRef, k, r);
 	return k;
 }
 
@@ -880,6 +912,11 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				char *op = "=";
 				int k;
 				int j,hml,tmr,mhj,mtj;
+				int op3 = 0;
+
+
+				if (s->op3)
+					op3 = _dumpstmt(sql, mb, s->op3);
 
 				switch (s->flag) {
 				case cmp_equal:
@@ -900,23 +937,19 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				case cmp_gte:
 					op = ">=";
 					break;
-				case cmp_like:
-					op = "like";
-					mod = strRef;
-					break;
-				case cmp_ilike:
-					op = "ilike";
-					mod = strRef;
-					break;
-				case cmp_notlike:
-					need_not = TRUE;
-					op = "like";
-					mod = strRef;
-					break;
-				case cmp_notilike:
-					need_not = TRUE;
-					op = "ilike";
-					mod = strRef;
+				case cmp_filter: {
+					sql_subfunc *f;
+					char *fname = s->op4.funcval->func->base.name;
+					
+					op = sql_func_imp(s->op4.funcval->func);
+					mod  = sql_func_mod(s->op4.funcval->func);
+			
+ 					if ((!s->op3 && (f = sql_bind_func (sql->mvc->sa, mvc_bind_schema(sql->mvc,"sys"), fname, tail_type(s->op1), tail_type(s->op2), F_FUNC)) != NULL) ||
+ 					     (s->op3 && (f = sql_bind_func3(sql->mvc->sa, mvc_bind_schema(sql->mvc,"sys"), fname, tail_type(s->op1), tail_type(s->op2), tail_type(s->op3), F_FUNC)) != NULL)) {
+						op = sql_func_imp(f->func);
+						mod  = sql_func_mod(f->func);
+					}
+				}
 					break;
 				default:
 					showException(SQL,"sql","Unknown operator");
@@ -961,6 +994,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				r = getDestVar(q);
 
 				q = multiplex2(mb,mod,convertOperator(op),l,r,TYPE_bit);
+				if (s->op3) 
+					q = pushArgument(mb, q, op3);
 				k = getDestVar(q);
 
 				q = newStmt2(mb, algebraRef, uselectRef);
@@ -1000,7 +1035,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 				if (s->flag == cmp_filter) {
 					char *mod, *fimp;
+					int r2 = -1;
 
+					if (s->op3)
+						r2 = _dumpstmt(sql, mb, s->op3);
 					backend_create_func(sql, s->op4.funcval->func);
 					mod  = sql_func_mod(s->op4.funcval->func);
 					fimp = sql_func_imp(s->op4.funcval->func);
@@ -1008,44 +1046,13 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					q = newStmt(mb, mod, convertOperator(fimp));
 					q = pushArgument(mb, q, l);
 					q = pushArgument(mb, q, r);
+					if (s->op3)
+						q = pushArgument(mb, q, r2);
 					s->nr = getDestVar(q);
 					break;
 				}
 					
 				switch (s->flag) {
-				case cmp_like:
-				case cmp_ilike:
-				{
-					int e = _dumpstmt(sql, mb, s->op3);
-					q = newStmt1(mb, pcreRef,
-							(s->flag == cmp_like ? "like_uselect" : "ilike_uselect"));
-					q = pushArgument(mb, q, l);
-					q = pushArgument(mb, q, r);
-					q = pushArgument(mb, q, e);
-					break;
-				}
-				case cmp_notlike:
-				case cmp_notilike:
-				{
-					int e = _dumpstmt(sql, mb, s->op3);
-					int k;
-
-					q = newStmt1(mb, pcreRef,
-							(s->flag == cmp_notlike ? "like_uselect" : "ilike_uselect"));
-					q = pushArgument(mb, q, l);
-					q = pushArgument(mb, q, r);
-					q = pushArgument(mb, q, e);
-					k = getDestVar(q);
-
-					q = newStmt2(mb, algebraRef, projectRef);
-					q = pushArgument(mb, q, l);
-					q = pushNil(mb, q, TYPE_void);
-					l = getDestVar(q);
-					q = newStmt2(mb, algebraRef, kdifferenceRef);
-					q = pushArgument(mb, q, l);
-					q = pushArgument(mb, q, k);
-					break;
-				}
 				case cmp_equal:{
 					q = newStmt1(mb, algebraRef, cmd);
 					q = pushArgument(mb, q, l);
@@ -1609,6 +1616,29 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			/* keep reference to instruction */
 			s->rewritten = (void*)q;
 		} break;
+		case st_func:{
+			char *mod = "user";
+			char *fimp = s->op2->op4.aval->data.val.sval;
+			sql_rel *rel = s->op4.rel;
+			node *n;
+
+			/* dump args */
+			if (s->op1) 
+				_dumpstmt(sql, mb, s->op1);
+			monet5_create_relational_function(sql->mvc, fimp, rel, s);
+
+			q = newStmt(mb, mod, fimp);
+			q = relational_func_create_result(mb, q, rel);
+			if (s->op1)
+				for (n = s->op1->op4.lval->h; n; n = n->next) {
+					stmt *op = n->data;
+
+					q = pushArgument(mb, q, op->nr);
+				}
+			s->nr = getDestVar(q);
+			/* keep reference to instruction */
+			s->rewritten = (void*)q;
+		} break;
 		case st_aggr:{
 			int l = _dumpstmt(sql, mb, s->op1);
 			char *mod, *aggrfunc;
@@ -2049,7 +2079,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		case st_basetable:
 		case st_relselect:
 		case st_releqjoin:
-		case st_reljoin:
 			mnstr_printf(GDKout, "not implemented stmt\n");
 			assert(0);
 
@@ -2488,7 +2517,7 @@ backend_create_func(backend *be, sql_func *f)
 		     p->barrier == RETURNsymbol || p->barrier == YIELDsymbol)
 			retseen++;
 	}
-	if (i == curBlk->stop && retseen == 1)
+	if (i == curBlk->stop && retseen == 1 && !f->res.comp_type)
 		varSetProp(curBlk, getArg(curInstr, 0), inlineProp, op_eq, NULL);
 	if ( sideeffects)
 		varSetProp(curBlk, getArg(curInstr, 0), unsafeProp, op_eq, NULL);

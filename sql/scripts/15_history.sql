@@ -23,13 +23,6 @@
 -- Whenever a query is compiled and added to the cache, it is also entered
 -- into the 'queryHistory' table using a hardwired call to 'keepQuery'.
 
--- Temporary and locally disable mitosis to prevent yet undiscoved deadlock;
--- cf., bug 2865 (http://bugs.monetdb.org/show_bug.cgi?id=2865)
-declare dft_opt string;
-set dft_opt = ( select optimizer );
-set optimizer = 'no_mitosis_pipe';
--- cf., `set optimizer = dft_opt` at the end of this script
-
 create table queryHistory(
 	id wrd primary key,
 	defined timestamp,	-- when entered into the cache
@@ -116,8 +109,5 @@ begin
 	delete from callHistory;
 	delete from queryHistory;
 end;
-
--- cf., top of this script
-set optimizer = dft_opt;
 
 -- set history=true;

@@ -21,7 +21,7 @@ dnl All Rights Reserved.
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.60)
-AC_INIT([MonetDB], [11.6.0], [info@monetdb.org], [MonetDB])
+AC_INIT([MonetDB], [11.8.0], [info@monetdb.org], [MonetDB])
 AC_CONFIG_AUX_DIR([buildtools/conf])
 AC_CONFIG_MACRO_DIR([buildtools/conf])
 AC_CANONICAL_HOST
@@ -1391,10 +1391,17 @@ AC_SUBST(RUBYGEM)
 AM_CONDITIONAL(HAVE_RUBYGEM, test x"$have_rubygem" != xno -a x"$have_rubygem_dir" != xno)
 
 AC_PROG_YACC
-AC_DEFINE(YYENABLE_NLS, 0, [Needed to compile bison-generated code.])
-AC_DEFINE(YYLTYPE_IS_TRIVIAL, 0, [Needed to compile bison-generated code.])
 case "$YACC" in
-	bison*)  YACC="$YACC"  ;;
+	bison*)
+		# Ubuntu still comes with an ancient bison that uses defines
+		# without checking if they are defined.  This triggers a warning
+		# from gcc with -Wundef.  If we have a bison < 2.4.3, then
+		# disable the warning.
+		BISON_VER=`$YACC --version | head -n1 | sed -e 's/^.* //'`
+		if test MONETDB_VERSION_TO_NUMBER(echo $BISON_VER) -lt MONETDB_VERSION_TO_NUMBER(echo 2.4.3); then
+			X_CFLAGS="`echo ${X_CFLAGS} | sed -e 's/-Wundef//g'`"
+		fi
+	;;
 	*)
 		if test "x$enable_sql" = xyes; then
 			AC_MSG_ERROR([MonetDB/SQL requires bison])
@@ -1612,14 +1619,14 @@ no-*)
 	fi
 	;;
 *)
-	if test MONETDB_VERSION_TO_NUMBER(echo $JAVA_VERSION) = MONETDB_VERSION_TO_NUMBER(echo "1.5") ; then
+	if test MONETDB_VERSION_TO_NUMBER(echo $JAVA_VERSION) -ge MONETDB_VERSION_TO_NUMBER(echo "1.6") ; then
 		have_java_jdbc=yes
 	else
 		if test "x$enable_jdbc" = xyes; then
-			AC_MSG_ERROR([MonetDB JDBC requires ant and Java 1.5])
+			AC_MSG_ERROR([MonetDB JDBC requires ant and Java 6 or higher])
 		else
 			enable_jdbc=no
-			disable_jdbc="(MonetDB JDBC currently requires Java 1.5 to build)"
+			disable_jdbc="(MonetDB JDBC currently requires Java 6 or higher to build)"
 		fi
 	fi
 	;;
@@ -1642,7 +1649,7 @@ no-*)
 	fi
 	;;
 *)
-	req_java_ver_min=1.5 # >= $req_java_ver_min required
+	req_java_ver_min=1.6 # >= $req_java_ver_min required
 	if test MONETDB_VERSION_TO_NUMBER(echo $JAVA_VERSION) -ge MONETDB_VERSION_TO_NUMBER(echo "$req_java_ver_min"); then
 		have_java_control=yes
 	else

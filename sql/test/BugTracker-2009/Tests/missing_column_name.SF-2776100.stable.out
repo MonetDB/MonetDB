@@ -16,7 +16,6 @@ stdout of test 'missing_column_name.SF-2776100` in directory 'test/BugTracker-20
 
 Ready.
 
-Over..
 
 # 21:15:27 >  
 # 21:15:27 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=30773 

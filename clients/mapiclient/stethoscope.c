@@ -391,14 +391,9 @@ main(int argc, char **argv)
 			portnr = atol(optarg);
 			break;
 		case 'h':
-			if (strcmp(long_options[option_index].name, "help") == 0) {
-				usage();
-				break;
-			}
-			if (strcmp(long_options[option_index].name, "host") == 0) {
-				host = optarg;
-				break;
-			}
+			host = optarg;
+			break;
+		case '?':
 		default:
 			usage();
 			exit(0);

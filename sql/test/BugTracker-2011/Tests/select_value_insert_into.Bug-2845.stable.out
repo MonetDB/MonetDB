@@ -19,7 +19,6 @@ stdout of test 'select_value_insert_into.Bug-2845` in directory 'test/BugTracker
 
 Ready.
 
-Over..
 
 # 16:50:48 >  
 # 16:50:48 >  mclient -lsql -ftest -i -e --host=alf --port=38292 

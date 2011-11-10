@@ -13,7 +13,6 @@ stdout of test 'view_error_limit.SF-1345861` in directory 'test/bugs` itself:
 
 Ready.
 
-Over..
 
 # 12:58:48 >  
 # 12:58:48 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < view_error_limit.SF-1345861.sql

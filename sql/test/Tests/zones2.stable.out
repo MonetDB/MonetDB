@@ -19,7 +19,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 20:47:05 >  
 # 20:47:05 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=38081 
@@ -28,12 +27,12 @@ Over..
 % . # table_name
 % degrees_single_value # name
 % double # type
-% 22 # length
+% 24 # length
 [ -5.729577951	]
 % . # table_name
 % degrees_single_value # name
 % double # type
-% 22 # length
+% 24 # length
 [ -5.729577951	]
 
 # 21:09:18 >  

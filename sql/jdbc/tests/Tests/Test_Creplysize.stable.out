@@ -13,7 +13,6 @@ stdout of test 'Test_Creplysize` in directory 'jdbc/tests` itself:
 
 Ready.
 
-Over..
 
 # 22:03:07 >  
 # 22:03:07 >  Mtimeout -timeout 60 ./Test_Creplysize.SQL Test_Creplysize 

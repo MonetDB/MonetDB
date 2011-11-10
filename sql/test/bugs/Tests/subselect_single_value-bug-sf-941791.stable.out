@@ -13,7 +13,6 @@ stdout of test 'subselect_single_value-bug-sf-941791` in directory 'test/bugs` i
 
 Ready.
 
-Over..
 
 # 11:55:30 >  
 # 11:55:30 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < subselect_single_value-bug-sf-941791.sql

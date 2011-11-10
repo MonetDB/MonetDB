@@ -22,7 +22,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 12:37:53 >  
 # 12:37:53 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < basic_arithmetics.SF-922252.sql

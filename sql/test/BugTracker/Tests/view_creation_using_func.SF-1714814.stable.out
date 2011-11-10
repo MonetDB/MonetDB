@@ -13,7 +13,6 @@ stdout of test 'view_creation_using_func.SF-1714814` in directory 'test/BugTrack
 
 Ready.
 
-Over..
 
 # 18:25:58 >  
 # 18:25:58 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=36305 

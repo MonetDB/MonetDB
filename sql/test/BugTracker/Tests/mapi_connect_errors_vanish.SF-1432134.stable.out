@@ -13,7 +13,6 @@ stdout of test 'mapi_connect_errors_vanish.SF-1432134` in directory 'test/BugTra
 
 Ready.
 
-Over..
 
 # 14:02:05 >  
 # 14:02:05 >  Mtimeout -timeout 120 ./mapi_connect_errors_vanish.SF-1432134.SQL mapi_connect_errors_vanish.SF-1432134 

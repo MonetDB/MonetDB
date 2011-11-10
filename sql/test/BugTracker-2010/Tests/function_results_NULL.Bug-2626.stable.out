@@ -19,7 +19,6 @@ stdout of test 'function_results_NULL.Bug-2626` in directory 'test/BugTracker-20
 
 Ready.
 
-Over..
 
 # 19:45:02 >  
 # 19:45:02 >  mclient -lsql -ftest -i -e --host=rig --port=33097 

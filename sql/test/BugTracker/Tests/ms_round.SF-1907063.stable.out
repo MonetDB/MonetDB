@@ -18,7 +18,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 00:07:58 >  
 # 00:07:58 >  mclient -lsql -umonetdb -Pmonetdb --host=amelia --port=36386 
@@ -27,7 +26,8 @@ Over..
 % sys. # table_name
 % round_id # name
 % double # type
-% 22 # length
+% 24 # length
+#drop table t23;
 
 # 00:07:58 >  
 # 00:07:58 >  Done.

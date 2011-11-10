@@ -84,12 +84,23 @@ SQLSetConnectAttr_(ODBCDbc *dbc,
 			return SQL_ERROR;
 		}
 		return SQL_SUCCESS;
+	case SQL_ATTR_CURRENT_CATALOG:
+		fixODBCstring(ValuePtr, StringLength, SQLINTEGER,
+			      addDbcError, dbc, return SQL_ERROR);
+		if (dbc->Connected) {
+			/* Driver does not support this functions */
+			addDbcError(dbc, "IM001", NULL, 0);
+			return SQL_ERROR;
+		}
+		if (dbc->dbname)
+			free(dbc->dbname);
+		dbc->dbname = dupODBCstring(ValuePtr, StringLength);
+		break;
 
 		/* TODO: implement connection attribute behavior */
 	case SQL_ATTR_ACCESS_MODE:
 	case SQL_ATTR_ASYNC_ENABLE:
 	case SQL_ATTR_CONNECTION_TIMEOUT:
-	case SQL_ATTR_CURRENT_CATALOG:
 	case SQL_ATTR_LOGIN_TIMEOUT:
 	case SQL_ATTR_ODBC_CURSORS:
 	case SQL_ATTR_PACKET_SIZE:
@@ -102,7 +113,7 @@ SQLSetConnectAttr_(ODBCDbc *dbc,
 		/* Optional feature not implemented */
 		addDbcError(dbc, "HYC00", NULL, 0);
 		return SQL_ERROR;
-	case SQL_ATTR_AUTO_IPD:	/* read-only attribute */
+	case SQL_ATTR_AUTO_IPD:	       /* read-only attribute */
 	case SQL_ATTR_CONNECTION_DEAD:
 	default:
 		/* Invalid attribute/option identifier */

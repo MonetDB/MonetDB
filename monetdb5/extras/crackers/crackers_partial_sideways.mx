@@ -169,7 +169,7 @@ CRKMaxTailIncrementalSideways_@1_@2(int *res, int *bid, int *pbid, @1 *low1, @1 
 @
  * @- Local support functions and macros
 @= pieceReferencesManagement
-void
+static void
 newReference(int m, int batid){
 	struct referencesNode *newNode, *cur;
 
@@ -227,7 +227,7 @@ CRKclearReferences(int* res, int *bid){
 	return MAL_SUCCEED;
 }
 
-void 
+static void 
 registerMapReference(struct Node *CBnode, int batId){
 	struct referencesNode *newNode, *cur;
 
@@ -248,7 +248,7 @@ registerMapReference(struct Node *CBnode, int batId){
         return;
 }
 
-void 
+static void 
 clearMapReference(struct Node *CBnode, int batId){
 	struct referencesNode *prev, *cur;
 /*	struct Node *temp;*/
@@ -309,7 +309,7 @@ printf("\n\n Trying to remove a piece that is not registered \n\n");
         return;
 }
 
-oid getTapeCursor(struct Node *CBnode, int batId){
+static oid getTapeCursor(struct Node *CBnode, int batId){
 	struct referencesNode *cur;
 
 	cur = CBnode->references;
@@ -323,7 +323,7 @@ oid getTapeCursor(struct Node *CBnode, int batId){
 	return 0;
 } 
 
-oid getMaxTapeCursorForRefsInCurrentQuery(struct Node *CBnode, int m){
+static oid getMaxTapeCursorForRefsInCurrentQuery(struct Node *CBnode, int m){
 	struct referencesNode *cur;
 	oid max = 0, curCursor;
 
@@ -338,7 +338,7 @@ oid getMaxTapeCursorForRefsInCurrentQuery(struct Node *CBnode, int m){
 	return max;
 }
 
-void increaseLocalCursor(struct Node *CBnode, int batId, oid increase){
+static void increaseLocalCursor(struct Node *CBnode, int batId, oid increase){
 	struct referencesNode *cur;
 
         cur = CBnode->references;
@@ -351,7 +351,7 @@ void increaseLocalCursor(struct Node *CBnode, int batId, oid increase){
         }         
 }
 
-bit isThisMapUsedInCurrentQuery(int CBindex, int batId, int tailBatId){
+static bit isThisMapUsedInCurrentQuery(int CBindex, int batId, int tailBatId){
 	struct referencesNode *cur;
 	
 	if (CrackerIndex[CBindex].bid != batId)
@@ -366,7 +366,7 @@ bit isThisMapUsedInCurrentQuery(int CBindex, int batId, int tailBatId){
 	return FALSE;
 }
 
-void 
+static void 
 registerPieceForStorageManagement(int batId, int tailBatId, struct Node * localFirst, oid tuples){
 	struct mapSetNode *curMapSet, *prevMapSet, *newMapSet;	
 	struct mapNode *curMap, *newMap, *prevMap;
@@ -436,7 +436,7 @@ registerPieceForStorageManagement(int batId, int tailBatId, struct Node * localF
 		prevMapSet->nextMapSet = newMapSet;
 }
 
-struct Node *
+static struct Node *
 getTheLeastUsedMapPiece(int CBindex, int *batId, int *tailBatId){
 	struct mapSetNode *curMapSet;	
 	struct mapNode *curMap;
@@ -487,7 +487,8 @@ getTheLeastUsedMapPiece(int CBindex, int *batId, int *tailBatId){
 	return res;
 }
 
-void printStorageInfo(){
+#if 0
+static void printStorageInfo(void){
 	struct mapSetNode *curMapSet;	
 	struct mapNode *curMap;
 	struct Node *curPiece;
@@ -514,8 +515,9 @@ void printStorageInfo(){
 	}
 	printf("\n\n");
 }
+#endif
 
-void
+static void
 removePieceFromStorageInfo(int batId, int tailBatId, int pieceId){
 	struct mapSetNode *curMapSet, *prevMapSet;	
 	struct mapNode *curMap, *prevMap;
@@ -592,7 +594,7 @@ removePieceFromStorageInfo(int batId, int tailBatId, int pieceId){
 	}
 }
 
-void
+static void
 removePieceFromAVLtree(struct Node *localFirst){
 	struct Node *temp;
 	
@@ -625,7 +627,7 @@ removePieceFromAVLtree(struct Node *localFirst){
 @
 @= PieceMaps
 
-BAT * 
+static BAT * 
 createPieceMap_@1_@2(BAT * crackerBAT, BAT *tailBAT, struct Node *nodeLow, struct Node *nodeHgh, int CBindex){
 	BAT *pieceMap;
 	@1 *mapHead, *crackerBATTail ;
@@ -690,7 +692,7 @@ createPieceMap_@1_@2(BAT * crackerBAT, BAT *tailBAT, struct Node *nodeLow, struc
 
 
 @= DroppingPieces
-str 
+static str 
 dropPiece_@1(int batId, int tailBatId, struct Node *localFirst){
 	int CBindex, Lindex;
 	BAT *ci, *li, *piece;
@@ -881,7 +883,7 @@ dropPiece_@1(int batId, int tailBatId, struct Node *localFirst){
                 Instead we want the first bun of the right piece*/
 @
 @= SyncOperation
-lng
+static lng
 SyncPiece_@1_@2(int m, BAT * b, struct Node * cur, int CBindex, int tailBatId, bit force){
 	BAT *h,*c;
 	@1 *hhead;

@@ -18,7 +18,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 11:43:38 >  
 # 11:43:38 >  mclient -lmal -umonetdb -Pmonetdb --host=rig --port=38528

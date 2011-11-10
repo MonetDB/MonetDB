@@ -13,7 +13,6 @@ stdout of test 'testgetinfo` in directory 'odbc/samples` itself:
 
 Ready.
 
-Over..
 
 # 11:43:58 >  
 # 11:43:58 >  Mtimeout -timeout 60 ./testgetinfo.SQL testgetinfo 

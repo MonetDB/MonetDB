@@ -19,7 +19,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 11:55:47 >  
 # 11:55:47 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < interval_data_commutative_add_bug-sf-1263928.sql

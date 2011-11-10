@@ -13,7 +13,6 @@ stdout of test 'crash_with_wrong_nesting.SF-1097883` in directory 'test/BugDay_2
 
 Ready.
 
-Over..
 
 # 12:45:10 >  
 # 12:45:10 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < crash_with_wrong_nesting.SF-1097883.sql

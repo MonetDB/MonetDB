@@ -19,7 +19,6 @@ stdout of test 'store_function_argument_correctly.Bug-2750` in directory 'test/B
 
 Ready.
 
-Over..
 
 # 19:52:59 >  
 # 19:52:59 >  mclient -lsql -ftest -i -e --host=alf --port=32379 

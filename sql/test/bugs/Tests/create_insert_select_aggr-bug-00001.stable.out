@@ -41,7 +41,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 12:47:55 >  
 # 12:47:55 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < create_insert_select_aggr-bug-00001.sql
@@ -69,7 +68,7 @@ Over..
 [ 2,	"Jochem"	]
 % . # table_name
 % sql_sub_single_value # name
-% smallint # type
+% int # type
 % 2 # length
 [ 15	]
 % sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables # table_name

@@ -105,16 +105,6 @@ sub query
       }
       # TODO: table_name
     }
-    do {
-      my @cols = split(/,\t */, $h->{row});
-      my $i = -1;
-      while (++$i < @cols) {
-        $cols[$i] =~ s/^\[ //;
-        $cols[$i] =~ s/[ \t]+\]$//;
-        $cols[$i] = MonetDB::CLI::MapiPP->unquote($cols[$i]);
-      }
-      push(@{$self->{rows}}, [@cols]);
-    } while (($tpe = $h->getReply()) > 0);
   } elsif ($tpe == -1) {
     # error
     die $h->{errstr};
@@ -176,8 +166,20 @@ sub length
 sub fetch
 {
   my ($self) = @_;
-
-  return if ++$self->{i} > $#{$self->{rows}};
+  
+  return if ++$self->{i} >= $self->{affrows};
+  
+  my @cols = split(/,\t */, $self->{h}->{row});
+  my $i = -1;
+  while (++$i < @cols) {
+    $cols[$i] =~ s/^\[ //;
+    $cols[$i] =~ s/[ \t]+\]$//;
+    $cols[$i] = MonetDB::CLI::MapiPP->unquote($cols[$i]);
+  }
+  $self->{currow} = [@cols];
+  
+  $self->{h}->getReply();
+  
   return $self->{colcnt};
 }
 
@@ -185,7 +187,7 @@ sub field
 {
   my ($self, $fnr) = @_;
 
-  return $self->{rows}[$self->{i}][$fnr];
+  return $self->{currow}[$fnr];
 }
 
 sub finish

@@ -19,7 +19,6 @@ stdout of test 'crashonundefined` in directory 'test/datacell` itself:
 
 Ready.
 
-Over..
 
 # 12:41:35 >  
 # 12:41:35 >  mclient -lsql -ftest -i -e --host=alf --port=35517 

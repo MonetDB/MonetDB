@@ -13,7 +13,6 @@ stdout of test 'check_constraint.SF-1714829` in directory 'test/BugConstraints` 
 
 Ready.
 
-Over..
 
 # 18:38:29 >  
 # 18:38:29 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=33981 

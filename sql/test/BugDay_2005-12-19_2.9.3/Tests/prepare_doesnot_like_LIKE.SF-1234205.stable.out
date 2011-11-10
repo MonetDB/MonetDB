@@ -13,7 +13,6 @@ stdout of test 'prepare_doesnot_like_LIKE.SF-1234205` in directory 'test/BugDay_
 
 Ready.
 
-Over..
 
 # 09:15:18 >  
 # 09:15:18 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=36877  < prepare_doesnot_like_LIKE.SF-1234205.sql
@@ -23,7 +22,7 @@ Over..
 % .prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale # name
 % varchar,	int,	int # type
-% 0,	0,	0 # length
+% 4,	1,	1 # length
 [ "char",	0,	0	]
 % sys.t1234205 # table_name
 % name # name
@@ -35,7 +34,8 @@ Over..
 % .prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale # name
 % varchar,	int,	int # type
-% 0,	0,	0 # length
+% 0,	1,	1 # length
+#execute 2 ();
 % sys.t1234205 # table_name
 % name # name
 % varchar # type

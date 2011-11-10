@@ -3326,9 +3326,13 @@ opt_offset:
 
 opt_sample:
 	/* empty */	{ $$ = NULL; }
- |  SAMPLE poswrd	{ 
+ |  SAMPLE poswrd	{
 		  	  sql_subtype *t = sql_bind_localtype("wrd");
-			  $$ = _newAtomNode( atom_int(SA, t, (lng)$2)); 
+			  $$ = _newAtomNode( atom_int(SA, t, (lng)$2));
+			}
+ |  SAMPLE INTNUM	{
+		  	  sql_subtype *t = sql_bind_localtype("dbl");
+			  $$ = _newAtomNode( atom_float(SA, t, strtod($2,NULL)));
 			}
  |  SAMPLE param	{ $$ = $2; }
  ;
@@ -3414,13 +3418,13 @@ like_predicate:
 		  append_symbol(l, $1);
 		  append_symbol(l, $4);
 		  append_int(l, FALSE);  /* case sensitive */
-		  $$ = _symbol_create_list( SQL_NOT_LIKE, l ); }
+		  $$ = _symbol_create_symbol(SQL_NOT, _symbol_create_list( SQL_LIKE, l )); }
  |  pred_exp NOT ILIKE like_exp
 		{ dlist *l = L();
 		  append_symbol(l, $1);
 		  append_symbol(l, $4);
 		  append_int(l, TRUE);  /* case insensitive */
-		  $$ = _symbol_create_list( SQL_NOT_LIKE, l ); }
+		  $$ = _symbol_create_symbol(SQL_NOT, _symbol_create_list( SQL_LIKE, l )); }
  |  pred_exp LIKE like_exp
 		{ dlist *l = L();
 		  append_symbol(l, $1);
@@ -4212,12 +4216,23 @@ literal:
 		  	if (*s == '+' || *s == '-')
 				digits --;
 		  	sql_find_subtype(&t, "decimal", digits, scale );
-		  	$$ = _newAtomNode( atom_dec(SA, &t, value, val)); 
-		   } else { 
-		  	double val = strtod($1,NULL);
+		  	$$ = _newAtomNode( atom_dec(SA, &t, value, val));
+		   } else {
+			char *p = $1;
+			double val;
 
+			errno = 0;
+			val = strtod($1,&p);
+			if (p == $1 || (errno == ERANGE && (val < -1 || val > 1))) {
+				char *msg = sql_message("Double value too large or not a number (%s)", $1);
+
+				yyerror(msg);
+				_DELETE(msg);
+				$$ = NULL;
+				YYABORT;
+			}
 		  	sql_find_subtype(&t, "double", 51, 0 );
-		  	$$ = _newAtomNode(atom_float(SA, &t, val)); 
+		  	$$ = _newAtomNode(atom_float(SA, &t, val));
 		   }
 		}
  |  APPROXNUM
@@ -4227,7 +4242,7 @@ literal:
 
 		  errno = 0;
  		  val = strtod($1,&p);
-		  if (p == $1 || (errno == ERANGE && val != 0)) {
+		  if (p == $1 || (errno == ERANGE && (val < -1 || val > 1))) {
 			char *msg = sql_message("Double value too large or not a number (%s)", $1);
 
 			yyerror(msg);
@@ -4394,6 +4409,7 @@ interval_expression:
 			YYABORT;
 	  	} else {
 			/* count the number of digits in the input */
+/*
 			lng cpyval = i, inlen = 1;
 
 			cpyval /= qualifier2multiplier(ek);
@@ -4405,6 +4421,7 @@ interval_expression:
 				$$ = NULL;
 				YYABORT;
 			}
+*/
 	  		$$ = _newAtomNode( atom_int(SA, &t, i));
 	  	}
 	}
@@ -4858,6 +4875,7 @@ restricted_ident:
 ident:
     IDENT	{ $$ = $1; }
  |  aTYPE	{ $$ = $1; }
+ |  FILTER_FUNC	{ $$ = $1; }
  |  ALIAS	{ $$ = $1; }
  |  AGGR	{ $$ = $1; } 	/* without '(' */
  |  RANK	{ $$ = $1; }	/* without '(' */
@@ -5628,7 +5646,6 @@ char *token2string(int token)
 	SQL(BETWEEN);
 	SQL(NOT_BETWEEN);
 	SQL(LIKE);
-	SQL(NOT_LIKE);
 	SQL(IN);
 	SQL(NOT_IN);
 	SQL(GRANT);

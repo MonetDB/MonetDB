@@ -92,6 +92,7 @@
 #include "discoveryrunner.h"
 #include "handlers.h"
 #include "argvcmds.h"
+#include "multiplex-funnel.h"
 
 
 /* private structs */
@@ -300,6 +301,17 @@ terminateProcess(void *p)
 			msab_freeStatus(&stats);
 			free(dbname);
 			return;
+	}
+
+	if (d->type == MEROFUN) {
+		multiplexDestroy(dbname);
+		free(dbname);
+		return;
+	} else if (d->type != MERODB) {
+		/* barf */
+		Mfprintf(stderr, "cannot stop merovingian process role: %s\n", dbname);
+		free(dbname);
+		return;
 	}
 
 	/* ok, once we get here, we'll be shutting down the server */
@@ -601,7 +613,7 @@ main(int argc, char *argv[])
 				_mero_mserver = NULL;
 		}
 	}
-	/* setup default database properties, constants: unlike previous
+	/* setup default database properties, constants: unlike historical
 	 * versions, we do not want changing defaults any more */
 	_mero_db_props = getDefaultProps();
 	kv = findConfKey(_mero_db_props, "shared");
@@ -612,6 +624,10 @@ main(int argc, char *argv[])
 	kv->val = NULL; /* MURI */
 	kv = findConfKey(_mero_db_props, "readonly");
 	kv->val = strdup("no");
+	kv = findConfKey(_mero_db_props, "nclients");
+	kv->val = strdup("64");
+	kv = findConfKey(_mero_db_props, "type");
+	kv->val = strdup("database");
 
 	*dbfarm = '\0';
 	if (argc > 1) {
@@ -848,7 +864,7 @@ main(int argc, char *argv[])
 	/* lock such that we are alone on this world */
 	if ((ret = MT_lockf(".merovingian_lock", F_TLOCK, 4, 1)) == -1) {
 		/* locking failed */
-		Mfprintf(stderr, "another merovingian is already running\n");
+		Mfprintf(stderr, "another monetdbd is already running\n");
 		MERO_EXIT_CLEAN(1);
 	} else if (ret == -2) {
 		/* directory or something doesn't exist */
@@ -859,6 +875,7 @@ main(int argc, char *argv[])
 
 	_mero_topdp = &dpcons;
 	_mero_topdp->pid = 0;
+	_mero_topdp->type = MERO;
 	_mero_topdp->dbname = NULL;
 
 	/* where should our msg output go to? */
@@ -900,6 +917,7 @@ main(int argc, char *argv[])
 	close(pfd[1]);
 
 	d->pid = getpid();
+	d->type = MERO;
 	d->dbname = "merovingian";
 
 	/* separate entry for the neighbour discovery service */
@@ -919,6 +937,7 @@ main(int argc, char *argv[])
 	d->err = pfd[0];
 	_mero_discerr = fdopen(pfd[1], "a");
 	d->pid = getpid();
+	d->type = MERO;
 	d->dbname = "discovery";
 	d->next = NULL;
 
@@ -939,6 +958,7 @@ main(int argc, char *argv[])
 	d->err = pfd[0];
 	_mero_ctlerr = fdopen(pfd[1], "a");
 	d->pid = getpid();
+	d->type = MERO;
 	d->dbname = "control";
 	d->next = NULL;
 
@@ -1004,8 +1024,6 @@ main(int argc, char *argv[])
 
 	msab_init(dbfarm, NULL);
 
-	unlink(control_usock);
-	unlink(mapi_usock);
 
 	/* write out the pid */
 	Mfprintf(pidfile, "%d\n", (int)d->pid);
@@ -1018,6 +1036,7 @@ main(int argc, char *argv[])
 	/* open up connections */
 	if (
 			(e = openConnectionTCP(&sock, port, stdout)) == NO_ERR &&
+			(unlink(control_usock) | unlink(mapi_usock) | 1) &&
 			(e = openConnectionUNIX(&socku, mapi_usock, 0, stdout)) == NO_ERR &&
 			(discovery == 1 && (e = openConnectionUDP(&usock, port)) == NO_ERR) &&
 			(e = openConnectionUNIX(&unsock, control_usock, S_IRWXO, _mero_ctlout)) == NO_ERR
@@ -1088,10 +1107,10 @@ main(int argc, char *argv[])
 	}
 
 	/* control channel is already closed at this point */
-	if (unlink(control_usock) == -1)
+	if (unsock != -1 && unlink(control_usock) == -1)
 		Mfprintf(stderr, "unable to unlink control socket '%s': %s\n",
 				control_usock, strerror(errno));
-	if (unlink(mapi_usock) == -1)
+	if (socku != -1 && unlink(mapi_usock) == -1)
 		Mfprintf(stderr, "unable to unlink mapi socket '%s': %s\n",
 				mapi_usock, strerror(errno));
 
@@ -1110,9 +1129,6 @@ shutdown:
 	if (d != NULL && atoi(kv->val) > 0) {
 		dpair t;
 		threadlist tl = NULL, tlw = tl;
-
-		/* we don't need merovingian itself */
-		d = d->next;
 
 		pthread_mutex_lock(&_mero_topdp_lock);
 		t = d;

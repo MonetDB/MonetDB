@@ -442,7 +442,10 @@ doChallenge(stream *in, stream *out) {
 			/* in embedded mode we allow just one client */
 			(GDKembedded && MCcountClients() > 1))
 	{
-		/* FIXME: tell the client in a normal way! */
+		if (GDKembedded) {
+			mnstr_printf(fdout, "!only one client allowed in embedded mode\n");
+			mnstr_flush(fdout);
+		} /* else the client must have gone away, so no reason to write something */
 		mnstr_close(fdin);
 		mnstr_destroy(fdin);
 		mnstr_close(fdout);

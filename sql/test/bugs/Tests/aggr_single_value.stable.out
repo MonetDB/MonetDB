@@ -18,7 +18,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 19:26:22 >  
 # 19:26:22 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=35679 
@@ -42,12 +41,12 @@ Over..
 % . # table_name
 % L4 # name
 % double # type
-% 22 # length
+% 24 # length
 [ 1	]
 % . # table_name
 % L7 # name
 % double # type
-% 22 # length
+% 24 # length
 [ NULL	]
 % . # table_name
 % L12 # name

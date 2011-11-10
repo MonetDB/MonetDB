@@ -13,7 +13,6 @@ stdout of test 'multiple_select_cast.SF-938419` in directory 'test/BugDay_2005-1
 
 Ready.
 
-Over..
 
 # 11:50:35 >  
 # 11:50:35 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < multiple_select_cast.SF-938419.sql

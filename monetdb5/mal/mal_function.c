@@ -588,17 +588,28 @@ listFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int si
 		mnstr_printf(fd, "# function definition missing\n");
 		return;
 	}
+	first = first<0?0:first;
+	size = size < 0?-size:size;
 	if (flg & LIST_MAPI) {
+		size_t len = 0;
+		str ps;
 		/* a bit dirty, but only here we have the number of lines */
 		mnstr_printf(fd, "&1 0 %d 1 %d\n", /* type id rows columns tuples */
 				mb->stop, mb->stop);
 		mnstr_printf(fd, "%% .explain # table_name\n");
 		mnstr_printf(fd, "%% mal # name\n");
 		mnstr_printf(fd, "%% clob # type\n");
-		mnstr_printf(fd, "%% 0 # length\n");	/* unknown */
+		for (i = first; i < first +size && i < mb->stop; i++) {
+			ps = instruction2str(mb, stk, getInstrPtr(mb, i), flg);
+			if (ps) {
+				size_t l = strlen(ps);
+				if (l > len)
+					len = l;
+				GDKfree(ps);
+			}
+		}
+		mnstr_printf(fd, "%% " SZFMT " # length\n", len);	/* unknown */
 	}
-	first = first<0?0:first;
-	size = size < 0?-size:size;
 	for (i = first; i < first +size && i < mb->stop; i++)
 		printInstruction(fd, mb, stk, getInstrPtr(mb, i), flg);
 }
@@ -783,10 +794,10 @@ malGarbageCollector(MalBlkPtr mb)
 		return ;
 
 	for (i = 0; i < mb->vtop; i++)
-	if( isVarCleanup(mb,i) && getEndLifespan(span,i) >= 0) {
-		mb->var[i]->eolife = getEndLifespan(span,i);
-		mb->stmt[mb->var[i]->eolife]->gc |= GARBAGECONTROL;
-	}
+		if( isVarCleanup(mb,i) && getEndLifespan(span,i) >= 0) {
+			mb->var[i]->eolife = getEndLifespan(span,i);
+			mb->stmt[mb->var[i]->eolife]->gc |= GARBAGECONTROL;
+		}
 	GDKfree(span);
 }
 /*
@@ -943,11 +954,9 @@ void chkDeclarations(MalBlkPtr mb){
 	GDKfree(decl);
 }
 /*
- * @-
  * Data flow analysis.
  * Flow graph display is handy for debugging and analysis.
- * A better flow analysis is needed, which takes into account
- * loops and side-effect functions.
+ * A better flow analysis is needed, which takes into account barrier blocks 
  */
 static void
 showOutFlow(MalBlkPtr mb, int pc, int varid, stream *f)
@@ -955,11 +964,12 @@ showOutFlow(MalBlkPtr mb, int pc, int varid, stream *f)
 	InstrPtr p;
 	int i, k,found;
 
+
 	for (i = pc + 1; i < mb->stop - 1; i++) {
 		p = getInstrPtr(mb, i);
 		found=0;
-		for (k = p->retc; k < p->argc; k++) {
-			if (p->argv[k] == varid ) {
+		for (k = 0; k < p->argc; k++) {
+			if (p->argv[k] == varid  ){
 				mnstr_printf(f, "n%d -> n%d\n", pc, i);
 				found++;
 			}
@@ -980,19 +990,18 @@ showInFlow(MalBlkPtr mb, int pc, int varid, stream *f)
 {
 	InstrPtr p;
 	int i, k;
+
 	/* find last use, needed for operations with side effects */
 	for (i = pc -1; i >= 0; i-- ){
 		p = getInstrPtr(mb, i);
 		for (k = 0; k < p->argc; k++)
-			if (p->argv[k] == varid  ){
+			if (p->argv[k] == varid )
 				mnstr_printf(f, "n%d -> n%d\n",i, pc);
 				return;
 			}
-	}
 }
 
 /*
- * @-
  * We only display the minimal debugging information. The remainder
  * can be obtained through the profiler.
  */

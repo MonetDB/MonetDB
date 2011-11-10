@@ -13,7 +13,6 @@ stdout of test 'limit_in_create_view.SF-924448` in directory 'test/BugDay_2005-1
 
 Ready.
 
-Over..
 
 # 12:38:28 >  
 # 12:38:28 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < limit_in_create_view.SF-924448.sql

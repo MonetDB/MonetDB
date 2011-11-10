@@ -14,7 +14,6 @@ stdout of test 'function_syntax` in directory 'test` itself:
 
 Ready.
 
-Over..
 
 # 13:04:59 >  
 # 13:04:59 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=36428 

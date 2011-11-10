@@ -40,7 +40,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 11:50:09 >  
 # 11:50:09 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < create_in_schema.sql

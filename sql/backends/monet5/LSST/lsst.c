@@ -443,7 +443,7 @@ str qserv_ptInSphPoly(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 */
 
 str
-xmatch(int *ret, int *lid, int *rid, int *delta)
+LSSTxmatch(int *ret, int *lid, int *rid, int *delta)
 {
     BAT *bn, *bl, *br;
 	lng *l, *r;

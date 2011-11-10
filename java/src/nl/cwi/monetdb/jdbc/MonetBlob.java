@@ -44,8 +44,68 @@ public class MonetBlob implements Blob {
 
 	//== begin interface Blob
 	
+	/**
+	 * This method frees the Blob object and releases the resources that
+	 * it holds. The object is invalid once the free method is called.
+	 * <br /><br />
+	 * After free has been called, any attempt to invoke a method other
+	 * than free will result in a SQLException being thrown. If free is
+	 * called multiple times, the subsequent calls to free are treated
+	 * as a no-op.
+	 *
+	 * @throws SQLException if an error occurs releasing the Blob's
+	 *         resources
+	 * @throws SQLFeatureNotSupportedException - if the JDBC driver does
+	 *         not support this method
+	 */
+	public void free() throws SQLException {
+		buf = null;
+	}
+	
+	/**
+	 * Retrieves the BLOB value designated by this Blob instance as a
+	 * stream.
+	 *
+	 * @return a stream containing the BLOB data
+	 * @throws SQLException if there is an error accessing the BLOB value
+	 * @throws SQLFeatureNotSupportedException if the JDBC driver does
+	 *         not support this method
+	 */
 	public InputStream getBinaryStream() throws SQLException {
+		if (buf == null)
+			throw new SQLException("This Blob object has been freed");
 		return(new ByteArrayInputStream(buf));
+	}
+
+	/**
+	 * Returns an InputStream object that contains a partial Blob value,
+	 * starting with the byte specified by pos, which is length bytes in
+	 * length.
+	 *
+	 * @param pos the offset to the first byte of the partial value to
+	 *        be retrieved. The first byte in the Blob is at position 1
+	 * @param length the length in bytes of the partial value to be
+	 *        retrieved
+	 * @return InputStream through which the partial Blob value can be
+	 *         read.
+	 * @throws SQLException if pos is less than 1 or if pos is
+	 *         greater than the number of bytes in the Blob or if pos +
+	 *         length is greater than the number of bytes in the Blob 
+	 * @throws SQLFeatureNotSupportedException if the JDBC driver does
+	 *         not support this method
+	 */
+	public InputStream getBinaryStream(long pos, long length)
+		throws SQLException
+	{
+		if (buf == null)
+			throw new SQLException("This Blob object has been freed");
+		if (pos < 1)
+			throw new SQLException("pos is less than 1");
+		if (pos - 1 > buf.length)
+			throw new SQLException("pos is greater than the number of bytes in the Blob");
+		if (pos - 1 + length > buf.length)
+			throw new SQLException("pos + length is greater than the number of bytes in the Blob");
+		return(new ByteArrayInputStream(buf, (int)(pos - 1), (int)length));
 	}
 
 	/**
@@ -63,6 +123,8 @@ public class MonetBlob implements Blob {
 	 *         BLOB value
 	 */
 	public byte[] getBytes(long pos, int length) throws SQLException {
+		if (buf == null)
+			throw new SQLException("This Blob object has been freed");
 		try {
 			byte[] r = new byte[length];
 			for (int i = 0; i < length; i++)
@@ -82,6 +144,8 @@ public class MonetBlob implements Blob {
 	 *         of the BLOB value
 	 */
 	public long length() throws SQLException {
+		if (buf == null)
+			throw new SQLException("This Blob object has been freed");
 		return((long)buf.length);
 	}
 
@@ -115,6 +179,8 @@ public class MonetBlob implements Blob {
 	 *         BLOB value
 	 */
 	public long position(byte[] pattern, long start) throws SQLException {
+		if (buf == null)
+			throw new SQLException("This Blob object has been freed");
 		try {
 			for (int i = (int)(start - 1); i < buf.length - pattern.length; i++) {
 				int j;
@@ -131,8 +197,30 @@ public class MonetBlob implements Blob {
 		return(-1);
 	}
 
+	/**
+	 * Retrieves a stream that can be used to write to the BLOB value
+	 * that this Blob object represents. The stream begins at position
+	 * pos. The bytes written to the stream will overwrite the existing
+	 * bytes in the Blob object starting at the position pos. If the end
+	 * of the Blob value is reached while writing to the stream, then
+	 * the length of the Blob value will be increased to accomodate the
+	 * extra bytes.
+	 *
+	 * @param pos the position in the BLOB value at which to start
+	 *            writing; the first position is 1
+	 * @return a java.io.OutputStream object to which data can be
+	 *         written
+	 * @throws SQLException if there is an error accessing the BLOB
+	 *         value or if pos is less than 1
+	 * @throws SQLFeatureNotSupportedException if the JDBC driver does
+	 *         not support this method
+	 */
 	public OutputStream setBinaryStream(long pos) throws SQLException {
-		throw new SQLException("Operation setBinaryStream(long pos) currently not supported");
+		if (buf == null)
+			throw new SQLException("This Blob object has been freed");
+		if (pos < 1)
+			throw new SQLException("pos is less than 1");
+		throw new SQLFeatureNotSupportedException("Operation setBinaryStream(long pos) currently not supported");
 	}
 
 	/**
@@ -173,6 +261,8 @@ public class MonetBlob implements Blob {
 	public int setBytes(long pos, byte[] bytes, int offset, int len)
 		throws SQLException
 	{
+		if (buf == null)
+			throw new SQLException("This Blob object has been freed");
 		try {
 			/* transactions? what are you talking about? */
 			for (int i = (int)pos; i < len; i++)
@@ -192,7 +282,9 @@ public class MonetBlob implements Blob {
 	 * @throws SQLException if there is an error accessing the
 	 *         BLOB value
 	 */
-	public void truncate(long len) {
+	public void truncate(long len) throws SQLException {
+		if (buf == null)
+			throw new SQLException("This Blob object has been freed");
 		if (buf.length > len) {
 			byte[] newbuf = new byte[(int)len];
 			for (int i = 0; i < len; i++)

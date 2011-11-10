@@ -58,6 +58,7 @@ SQLProcedures_(ODBCStmt *stmt,
 	/* buffer for the constructed query to do meta data retrieval */
 	char *query = NULL;
 	char *query_end;
+	char *cat = NULL, *sch = NULL, *pro = NULL;
 
 	/* convert input string parameters to normal null terminated C strings */
 	fixODBCstring(CatalogName, NameLength1, SQLSMALLINT,
@@ -85,12 +86,47 @@ SQLProcedures_(ODBCStmt *stmt,
 	   SMALLINT     procedure_type
 	 */
 
-	query = (char *) malloc(1000 + NameLength2 + NameLength3);
+	if (stmt->Dbc->sql_attr_metadata_id == SQL_FALSE) {
+		if (NameLength1 > 0) {
+			cat = ODBCParseOA("e", "value",
+					  (const char *) CatalogName,
+					  (size_t) NameLength1);
+		}
+		if (NameLength2 > 0) {
+			sch = ODBCParsePV("s", "name",
+					  (const char *) SchemaName,
+					  (size_t) NameLength2);
+		}
+		if (NameLength3 > 0) {
+			pro = ODBCParsePV("p", "name",
+					  (const char *) ProcName,
+					  (size_t) NameLength3);
+		}
+	} else {
+		if (NameLength1 > 0) {
+			cat = ODBCParseID("e", "value",
+					  (const char *) CatalogName,
+					  (size_t) NameLength1);
+		}
+		if (NameLength2 > 0) {
+			sch = ODBCParseID("s", "name",
+					  (const char *) SchemaName,
+					  (size_t) NameLength2);
+		}
+		if (NameLength3 > 0) {
+			pro = ODBCParseID("p", "name",
+					  (const char *) ProcName,
+					  (size_t) NameLength3);
+		}
+	}
+
+	query = malloc(1000 + (cat ? strlen(cat) : 0) +
+		       (sch ? strlen(sch) : 0) + (pro ? strlen(pro) : 0));
 	assert(query);
 	query_end = query;
 
 	snprintf(query_end, 1000,
-		 "select cast(null as varchar(1)) as \"procedure_cat\","
+		 "select \"e\".\"value\" as \"procedure_cat\","
 		 "       \"s\".\"name\" as \"procedure_schem\","
 		 "       \"p\".\"name\" as \"procedure_name\","
 		 "       0 as \"num_input_params\","
@@ -99,79 +135,34 @@ SQLProcedures_(ODBCStmt *stmt,
 		 "       cast('' as varchar(1)) as \"remarks\","
 		 "       cast(case when \"a\".\"name\" is null then %d else %d end as smallint) as \"procedure_type\""
 		 "from \"sys\".\"schemas\" as \"s\","
+		 "     \"sys\".\"env\"() as \"e\","
 		 "     \"sys\".\"functions\" as \"p\" left outer join \"sys\".\"args\" as \"a\""
 		 "     	       on \"p\".\"id\" = \"a\".\"func_id\" and \"a\".\"name\" = 'result'"
 		 "where \"p\".\"schema_id\" = \"s\".\"id\" and"
-		 "      \"p\".\"sql\" = true",
+		 "      \"p\".\"sql\" = true and"
+		 "      \"e\".\"name\" = 'gdk_dbname'",
 		 SQL_PT_PROCEDURE, SQL_PT_FUNCTION);
+	assert(strlen(query) < 800);
 	query_end += strlen(query_end);
 
 	/* Construct the selection condition query part */
-	if (NameLength1 > 0) {
+	if (cat) {
 		/* filtering requested on catalog name */
-		/* we do not support catalog names, so ignore it */
+		sprintf(query_end, " and %s", cat);
+		query_end += strlen(query_end);
+		free(cat);
 	}
-
-	/* Construct the selection condition query part */
-	if (stmt->Dbc->sql_attr_metadata_id == SQL_TRUE) {
-		/* treat arguments as identifiers */
-		/* remove trailing blanks */
-		while (NameLength2 > 0 &&
-		       isspace((int) SchemaName[NameLength2 - 1]))
-			NameLength2--;
-		while (NameLength3 > 0 &&
-		       isspace((int) ProcName[NameLength3 - 1]))
-			NameLength3--;
-		if (NameLength2 > 0) {
-			sprintf(query_end, " and s.\"name\" = '");
-			query_end += strlen(query_end);
-			while (NameLength2-- > 0)
-				*query_end++ = tolower(*SchemaName++);
-			*query_end++ = '\'';
-		}
-		if (NameLength3 > 0) {
-			sprintf(query_end, " and p.\"name\" = '");
-			query_end += strlen(query_end);
-			while (NameLength3-- > 0)
-				*query_end++ = tolower(*ProcName++);
-			*query_end++ = '\'';
-		}
-	} else {
-		int escape;
-		if (NameLength2 > 0) {
-			escape = 0;
-			sprintf(query_end, " and s.\"name\" like '");
-			query_end += strlen(query_end);
-			while (NameLength2-- > 0) {
-				if (*SchemaName == '\\') {
-					escape = 1;
-					*query_end++ = '\\';
-				}
-				*query_end++ = *SchemaName++;
-			}
-			*query_end++ = '\'';
-			if (escape) {
-				sprintf(query_end, " escape '\\\\'");
-				query_end += strlen(query_end);
-			}
-		}
-		if (NameLength3 > 0) {
-			escape = 0;
-			sprintf(query_end, " and p.\"name\" like '");
-			query_end += strlen(query_end);
-			while (NameLength3-- > 0) {
-				if (*ProcName == '\\') {
-					escape = 1;
-					*query_end++ = '\\';
-				}
-				*query_end++ = *ProcName++;
-			}
-			*query_end++ = '\'';
-			if (escape) {
-				sprintf(query_end, " escape '\\\\'");
-				query_end += strlen(query_end);
-			}
-		}
+	if (sch) {
+		/* filtering requested on schema name */
+		sprintf(query_end, " and %s", sch);
+		query_end += strlen(query_end);
+		free(sch);
+	}
+	if (pro) {
+		/* filtering requested on procedure name */
+		sprintf(query_end, " and %s", pro);
+		query_end += strlen(query_end);
+		free(pro);
 	}
 
 	/* add the ordering */

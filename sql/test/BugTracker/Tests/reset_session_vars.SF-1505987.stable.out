@@ -13,7 +13,6 @@ stdout of test 'reset_session_vars.SF-1505987` in directory 'test/BugTracker` it
 
 Ready.
 
-Over..
 
 # 10:38:14 >  
 # 10:38:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30346  < reset_session_vars.SF-1505987.sql

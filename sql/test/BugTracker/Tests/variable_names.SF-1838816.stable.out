@@ -19,7 +19,6 @@ Ready.
 #end main;
 #MALexit: clients still active
 
-Over..
 
 # 00:15:33 >  
 # 00:15:33 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=31634 

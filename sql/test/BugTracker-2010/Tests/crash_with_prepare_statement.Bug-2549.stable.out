@@ -20,7 +20,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 00:21:12 >  
 # 00:21:12 >  mclient -lsql -ftest -i -e --host=rig --port=38530 
@@ -30,7 +29,7 @@ Over..
 % .prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale # name
 % varchar,	int,	int # type
-% 0,	0,	0 # length
+% 7,	2,	1 # length
 [ "int",	32,	0	]
 [ "decimal",	8,	0	]
 [ "int",	32,	0	]

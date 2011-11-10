@@ -21,7 +21,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 11:50:53 >  
 # 11:50:53 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < like_doesnot_like_strings.SF-1076605.sql

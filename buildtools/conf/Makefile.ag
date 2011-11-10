@@ -57,4 +57,4 @@ headers_systemd = {
 	SOURCES = monetdbd.conf
 }
 
-EXTRA_DIST = rules.mk
+EXTRA_DIST = rules.mk banner.bmp license.rtf monetdb.ico website.html

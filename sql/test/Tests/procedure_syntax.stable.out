@@ -14,7 +14,6 @@ stdout of test 'procedure_syntax` in directory 'test` itself:
 
 Ready.
 
-Over..
 
 # 01:17:48 >  
 # 01:17:48 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=34904 

@@ -31,9 +31,6 @@
  * SQLStatistics()
  * CLI Compliance: ISO 92
  *
- * Note: catalogs are not supported, we ignore any value set for
- * szCatalogName.
- *
  * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 aug 2002
  *
@@ -60,6 +57,7 @@ SQLStatistics_(ODBCStmt *stmt,
 	/* buffer for the constructed query to do meta data retrieval */
 	char *query = NULL;
 	char *query_end = NULL;
+	char *cat = NULL, *sch = NULL, *tab = NULL;
 
 	fixODBCstring(TableName, NameLength3, SQLSMALLINT,
 		      addStmtError, stmt, return SQL_ERROR);
@@ -111,8 +109,43 @@ SQLStatistics_(ODBCStmt *stmt,
 		return SQL_ERROR;
 	}
 
+	if (stmt->Dbc->sql_attr_metadata_id == SQL_FALSE) {
+		if (NameLength1 > 0) {
+			cat = ODBCParseOA("e", "value",
+					  (const char *) CatalogName,
+					  (size_t) NameLength1);
+		}
+		if (NameLength2 > 0) {
+			sch = ODBCParseOA("s", "name",
+					  (const char *) SchemaName,
+					  (size_t) NameLength2);
+		}
+		if (NameLength3 > 0) {
+			tab = ODBCParseOA("t", "name",
+					  (const char *) TableName,
+					  (size_t) NameLength3);
+		}
+	} else {
+		if (NameLength1 > 0) {
+			cat = ODBCParseID("e", "value",
+					  (const char *) CatalogName,
+					  (size_t) NameLength1);
+		}
+		if (NameLength2 > 0) {
+			sch = ODBCParseID("s", "name",
+					  (const char *) SchemaName,
+					  (size_t) NameLength2);
+		}
+		if (NameLength3 > 0) {
+			tab = ODBCParseID("t", "name",
+					  (const char *) TableName,
+					  (size_t) NameLength3);
+		}
+	}
+
 	/* construct the query now */
-	query = (char *) malloc(1200 + NameLength3 + NameLength2);
+	query = malloc(1200 + (cat ? strlen(cat) : 0) +
+		       (sch ? strlen(sch) : 0) + (tab ? strlen(tab) : 0));
 	assert(query);
 	query_end = query;
 
@@ -134,7 +167,7 @@ SQLStatistics_(ODBCStmt *stmt,
 	/* TODO: finish the SQL query */
 	sprintf(query_end,
 		"select "
-		"cast(null as varchar(1)) as table_cat, "
+		"e.\"value\" as table_cat, "
 		"s.\"name\" as table_schem, "
 		"t.\"name\" as table_name, "
 		"case when k.\"name\" is null then cast(1 as smallint) "
@@ -150,28 +183,37 @@ SQLStatistics_(ODBCStmt *stmt,
 		"cast(null as integer) as pages, "
 		"cast(null as varchar(1)) as filter_condition "
 		"from sys.\"idxs\" i, sys.\"schemas\" s, sys.\"tables\" t, "
-		"sys.\"columns\" c,  sys.\"objects\" kc, sys.\"keys\" k "
+		"sys.\"columns\" c,  sys.\"objects\" kc, sys.\"keys\" k, "
+		"sys.\"env\"() e "
 		"where i.\"table_id\" = t.\"id\" and "
 		"t.\"schema_id\" = s.\"id\" and "
 		"i.\"id\" = kc.\"id\" and "
 		"t.\"id\" = c.\"table_id\" and "
 		"kc.\"name\" = c.\"name\" and "
-		"(k.\"type\" is null or k.\"type\" = 1)",
+		"(k.\"type\" is null or k.\"type\" = 1) and "
+		"e.\"name\" = 'gdk_dbname'",
 		SQL_INDEX_HASHED, SQL_INDEX_OTHER);
+	assert(strlen(query) < 1000);
 	query_end += strlen(query_end);
 
 	/* Construct the selection condition query part */
-	/* search pattern is not allowed for table name so use = and not LIKE */
-	sprintf(query_end, " and t.\"name\" = '%.*s'",
-		NameLength3, (char*)TableName);
-	query_end += strlen(query_end);
-
-	if (SchemaName != NULL) {
-		/* filtering requested on schema name */
-		/* search pattern is not allowed so use = and not LIKE */
-		sprintf(query_end, " and s.\"name\" = '%.*s'",
-			NameLength2, (char*)SchemaName);
+	if (cat) {
+		/* filtering requested on catalog name */
+		sprintf(query_end, " and %s", cat);
 		query_end += strlen(query_end);
+		free(cat);
+	}
+	if (sch) {
+		/* filtering requested on schema name */
+		sprintf(query_end, " and %s", sch);
+		query_end += strlen(query_end);
+		free(sch);
+	}
+	if (tab) {
+		/* filtering requested on table name */
+		sprintf(query_end, " and %s", tab);
+		query_end += strlen(query_end);
+		free(tab);
 	}
 
 	/* add the ordering */
@@ -179,7 +221,6 @@ SQLStatistics_(ODBCStmt *stmt,
 	       " order by non_unique, type, index_qualifier, index_name, "
 	       "ordinal_position");
 	query_end += strlen(query_end);
-	assert(query_end - query < 1200 + NameLength3 + NameLength2);
 
 	/* query the MonetDB data dictionary tables */
 	rc = SQLExecDirect_(stmt,

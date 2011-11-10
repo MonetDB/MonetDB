@@ -19,7 +19,6 @@ stdout of test 'crash_in_modulo_rand.Bug-2766` in directory 'test/BugTracker-201
 
 Ready.
 
-Over..
 
 # 12:43:05 >  
 # 12:43:05 >  mclient -lsql -ftest -i -e --host=alf --port=37300 

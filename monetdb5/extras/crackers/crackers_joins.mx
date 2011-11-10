@@ -281,7 +281,7 @@ crackers_export str CRKsortBandJoin_@1(int *resid, int *bidL, int *bidR, @1 *c1,
 @
 @c
 /* serves both normal equi-join (nil_on_miss==NULL) and outerjoin (nil_on_miss=nil) */
-lng
+static lng
 CRKmergejoin(BAT *bn,BAT *l, BAT *r){
 	ptr nil_on_miss=NULL;
 	BUN *limit =NULL;
@@ -408,7 +408,7 @@ CRKmergejoin(BAT *bn,BAT *l, BAT *r){
 @
 @c
 
-lng
+static lng
 CRKjoin(BAT *bn, BAT *l, BAT *r) {
 	ptr v, nil = ATOMnilptr(r->htype);
 	BUN p, q;
@@ -4055,7 +4055,8 @@ str CRKFullAlignment_@1_@5(int *res, int *bidL, int *bidR1, int *bidR2){
 @
 @= JoinFunctions_impl_2
 
-str SinglePassJoinPutTuple_@1(@1 *value, oid *id, struct Node *current, BUN baseLeft, BAT * indexLeft, BAT *firstPieceBAT, struct Node *prevNode){
+#if 0
+static str SinglePassJoinPutTuple_@1(@1 *value, oid *id, struct Node *current, BUN baseLeft, BAT * indexLeft, BAT *firstPieceBAT, struct Node *prevNode){
 
 	@1 *bound;  
 	if (current == NULL){
@@ -4078,8 +4079,9 @@ str SinglePassJoinPutTuple_@1(@1 *value, oid *id, struct Node *current, BUN base
 		
 	return MAL_SUCCEED;
 }
+#endif
 
-str cacheConsciousAlignJoinStep_@1(BAT *mapLeft, BAT *mapRight, struct Node *curNodeRight, oid startPos, oid endPos, BAT *indexRight, BUN baseRight, BAT * indexLeft, int mapLpos, oid cacheThreshold, struct Node *firstNodeRight, struct Node *lastNodeRight, BAT *res){
+static str cacheConsciousAlignJoinStep_@1(BAT *mapLeft, BAT *mapRight, struct Node *curNodeRight, oid startPos, oid endPos, BAT *indexRight, BUN baseRight, BAT * indexLeft, int mapLpos, oid cacheThreshold, struct Node *firstNodeRight, struct Node *lastNodeRight, BAT *res){
 	oid newPosition=0;
 	struct Node *temp, *prevNodeRight;
 	BAT * viewHeadRight=NULL, *viewRight=NULL, *viewLeft=NULL, *markedViewRight=NULL;
@@ -4320,7 +4322,7 @@ str CRKsortBandJoin_@1(int *resid, int *bidL, int *bidR, @1 *c1, @1 *c2, bit *in
 	return MAL_SUCCEED;
 }
 
-void cacheConsciousAlignStep_@1(BAT *mapLeft, struct Node *curNodeRight, oid startPos, oid endPos, BAT *indexRight, BUN baseRight, BAT * indexLeft, int mapLpos, oid cacheThreshold, oid RightStartPos, oid RightEndPos){
+static void cacheConsciousAlignStep_@1(BAT *mapLeft, struct Node *curNodeRight, oid startPos, oid endPos, BAT *indexRight, BUN baseRight, BAT * indexLeft, int mapLpos, oid cacheThreshold, oid RightStartPos, oid RightEndPos){
 	oid newPosition=0;
 	@1 bound = *(@1*)Tloc(indexRight, baseRight + curNodeRight->position);
 	
@@ -4341,7 +4343,8 @@ void cacheConsciousAlignStep_@1(BAT *mapLeft, struct Node *curNodeRight, oid sta
 	}
 }
 
-void alignStep_@1(BAT *mapLeft, struct Node *curNodeRight, oid startPos, oid endPos, BAT *indexRight, BUN baseRight, BAT * indexLeft, int mapLpos){
+#if 0
+static void alignStep_@1(BAT *mapLeft, struct Node *curNodeRight, oid startPos, oid endPos, BAT *indexRight, BUN baseRight, BAT * indexLeft, int mapLpos){
 	oid newPosition=0;
 	@1 bound = *(@1*)Tloc(indexRight, baseRight + curNodeRight->position);
 	
@@ -4358,4 +4361,5 @@ void alignStep_@1(BAT *mapLeft, struct Node *curNodeRight, oid startPos, oid end
 			alignStep_@1(mapLeft, curNodeRight->right, newPosition+1, endPos, indexRight, baseRight, indexLeft, mapLpos);
 	}
 }
+#endif
 @

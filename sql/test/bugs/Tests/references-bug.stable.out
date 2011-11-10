@@ -15,7 +15,6 @@ stdout of test 'references-bug` in directory 'test/bugs` itself:
 
 Ready.
 
-Over..
 
 # 21:47:19 >  
 # 21:47:19 >  Mtimeout -timeout 60 mclient -lsql -umonetdb -Pmonetdb --host=koala --port=33191 

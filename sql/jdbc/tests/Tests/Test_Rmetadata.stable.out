@@ -13,7 +13,6 @@ stdout of test 'Test_Rmetadata` in directory 'jdbc/tests` itself:
 
 Ready.
 
-Over..
 
 # 22:17:15 >  
 # 22:17:15 >  Mtimeout -timeout 120 ./Test_Rmetadata.SQL Test_Rmetadata 
@@ -48,7 +47,7 @@ Over..
 	writable      false
 2.	mTests_jdbc_tests
 	classname     java.lang.Double
-	displaysize   22
+	displaysize   24
 	label         mydouble
 	name          mydouble
 	type          8

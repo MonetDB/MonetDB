@@ -15,7 +15,6 @@ stdout of test 'BETWEEN_error.SF-1911991` in directory 'test/BugTracker` itself:
 
 Ready.
 
-Over..
 
 # 09:22:38 >  
 # 09:22:38 >  mclient -lsql -umonetdb -Pmonetdb --host=corona --port=31237 

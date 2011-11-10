@@ -116,18 +116,27 @@ SQLRETURN SQLFreeHandle_(SQLSMALLINT handleType, SQLHANDLE handle);
 SQLRETURN SQLGetDiagRec_(SQLSMALLINT handleType, SQLHANDLE handle, SQLSMALLINT recNumber, SQLCHAR *sqlState, SQLINTEGER *nativeErrorPtr, SQLCHAR *messageText, SQLSMALLINT bufferLength, SQLSMALLINT *textLengthPtr);
 
 #ifdef ODBCDEBUG
+extern const char *ODBCdebug;
+
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901
-#define ODBCLOG(...)	do {						\
-				char *_s = getenv("ODBCDEBUG");		\
-				if (_s && *_s) {			\
-					FILE *_f;			\
-					_f = fopen(_s, "a");		\
-					if (_f) {			\
-						fprintf(_f, __VA_ARGS__); \
-						fclose(_f);		\
-					}				\
-				}					\
-			} while (0)
+#define ODBCLOG(...)							\
+	do {								\
+		if (ODBCdebug == NULL) {				\
+			if ((ODBCdebug = getenv("ODBCDEBUG")) == NULL)	\
+				ODBCdebug = strdup("");			\
+			else						\
+				ODBCdebug = strdup(ODBCdebug);		\
+		}							\
+		if (ODBCdebug != NULL && *ODBCdebug != 0) {		\
+			FILE *_f;					\
+			_f = fopen(ODBCdebug, "a");			\
+			if (_f == NULL)					\
+				_f = stderr;				\
+			fprintf(_f, __VA_ARGS__);			\
+			if (_f != stderr)				\
+				fclose(_f);				\
+		}							\
+	} while (0)
 #else
 extern void ODBCLOG(_In_z_ _Printf_format_string_ const char *fmt, ...)
 	__attribute__((__format__(__printf__, 1, 2)));

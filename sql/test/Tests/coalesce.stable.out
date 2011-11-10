@@ -36,7 +36,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 17:28:20 >  
 # 17:28:20 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=34169  < coalesce.sql
@@ -49,7 +48,7 @@ Over..
 % sys. # table_name
 % L11 # name
 % double # type
-% 22 # length
+% 24 # length
 [ 30.5	]
 % sys.coalescetest,	sys. # table_name
 % id,	isnull_not_isnull_name # name

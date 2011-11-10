@@ -15,7 +15,6 @@ stdout of test 'recursive_triggers` in directory 'test/Triggers` itself:
 
 Ready.
 
-Over..
 
 # 17:29:28 >  
 # 17:29:28 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=amelia --port=35946 

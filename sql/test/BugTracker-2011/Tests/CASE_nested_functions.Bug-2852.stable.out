@@ -20,7 +20,6 @@ stdout of test 'CASE_nested_functions.Bug-2852` in directory 'test/BugTracker-20
 Ready.
 # SQL catalog created, loading sql scripts once
 
-Over..
 
 # 16:37:21 >  
 # 16:37:21 >  mclient -lsql -ftest -i -e --host=rig --port=39719 
@@ -50,7 +49,7 @@ Over..
 #  ;
 % sys. # table_name
 % not_isnull_sql_div_c # name
-% int # type
+% bigint # type
 % 1 # length
 [ 0	]
 #DROP TABLE t2852;

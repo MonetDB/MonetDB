@@ -13,7 +13,6 @@ stdout of test 'insert_delete-bug-sf-904025` in directory 'test/bugs` itself:
 
 Ready.
 
-Over..
 
 # 21:30:34 >  
 # 21:30:34 >  mclient -lsql -ftest -i -e --host=alf --port=30040 

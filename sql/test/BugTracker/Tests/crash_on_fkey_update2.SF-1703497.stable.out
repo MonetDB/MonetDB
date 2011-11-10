@@ -13,7 +13,6 @@ stdout of test 'crash_on_fkey_update2.SF-1703497` in directory 'test/BugTracker`
 
 Ready.
 
-Over..
 
 # 22:42:12 >  
 # 22:42:12 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=33006 

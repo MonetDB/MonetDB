@@ -20,7 +20,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 15:24:41 >  
 # 15:24:41 >  mclient -lsql -ftest -i -e --host=ottar --port=31369 

@@ -13,7 +13,6 @@ stdout of test 'alter_view` in directory 'test/bugs` itself:
 
 Ready.
 
-Over..
 
 # 10:54:20 >  
 # 10:54:20 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=34930  < alter_view.sql

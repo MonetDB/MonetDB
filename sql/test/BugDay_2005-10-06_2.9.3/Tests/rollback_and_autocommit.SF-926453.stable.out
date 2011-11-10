@@ -13,7 +13,6 @@ stdout of test 'rollback_and_autocommit.SF-926453` in directory 'test/BugDay_200
 
 Ready.
 
-Over..
 
 # 12:38:34 >  
 # 12:38:34 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < rollback_and_autocommit.SF-926453.sql

@@ -36,11 +36,12 @@
 
 #include "merovingian.h"
 #include "discoveryrunner.h" /* remotedb */
+#include "multiplex-funnel.h" /* multiplexInit */
 #include "forkmserver.h"
 
 
 /**
- * Fork an Mserver and detach.  Before forking off, Sabaoth is consulted
+ * Fork an mserver and detach.  Before forking off, Sabaoth is consulted
  * to see if forking makes sense, or whether it is necessary at all, or
  * forbidden by restart policy, e.g. when in maintenance.
  */
@@ -60,6 +61,7 @@ forkMserver(char *database, sabdb** stats, int force)
 	char upmin[8];
 	char upavg[8];
 	char upmax[8];
+	confkeyval *ckv, *kv;
 
 	er = msab_getStatus(stats, database);
 	if (er != NULL) {
@@ -84,6 +86,23 @@ forkMserver(char *database, sabdb** stats, int force)
 	 * more than one entry in the list, so we assume we have the right
 	 * one here. */
 
+	ckv = getDefaultProps();
+	readProps(ckv, (*stats)->path);
+	kv = findConfKey(ckv, "type");
+	if (kv->val == NULL)
+		kv = findConfKey(_mero_db_props, "type");
+
+	if ((*stats)->locked == 1) {
+		if (force == 0) {
+			Mfprintf(stdout, "%s '%s' is under maintenance\n",
+					kv->val, database);
+			return(NO_ERR);
+		} else {
+			Mfprintf(stdout, "startup of %s under maintenance "
+					"'%s' forced\n", kv->val, database);
+		}
+	}
+
 	/* retrieve uplog information to print a short conclusion */
 	er = msab_getUplogInfo(&info, *stats);
 	if (er != NULL) {
@@ -91,12 +110,6 @@ forkMserver(char *database, sabdb** stats, int force)
 		free(er);
 		msab_freeStatus(stats);
 		return(e);
-	}
-
-	if ((*stats)->locked == 1) {
-		Mfprintf(stdout, "database '%s' is under maintenance\n", database);
-		if (force == 0)
-			return(NO_ERR);
 	}
 
 	switch ((*stats)->state) {
@@ -109,11 +122,11 @@ forkMserver(char *database, sabdb** stats, int force)
 			secondsToString(upmin, info.minuptime, 1);
 			secondsToString(upavg, info.avguptime, 1);
 			secondsToString(upmax, info.maxuptime, 1);
-			Mfprintf(stdout, "database '%s' has crashed after start on %s, "
+			Mfprintf(stdout, "%s '%s' has crashed after start on %s, "
 					"attempting restart, "
 					"up min/avg/max: %s/%s/%s, "
 					"crash average: %d.00 %.2f %.2f (%d-%d=%d)\n",
-					database, tstr,
+					kv->val, database, tstr,
 					upmin, upavg, upmax,
 					info.crashavg1, info.crashavg10, info.crashavg30,
 					info.startcntr, info.stopcntr, info.crashcntr);
@@ -122,10 +135,10 @@ forkMserver(char *database, sabdb** stats, int force)
 			secondsToString(upmin, info.minuptime, 1);
 			secondsToString(upavg, info.avguptime, 1);
 			secondsToString(upmax, info.maxuptime, 1);
-			Mfprintf(stdout, "starting database '%s', "
+			Mfprintf(stdout, "starting %s '%s', "
 					"up min/avg/max: %s/%s/%s, "
 					"crash average: %d.00 %.2f %.2f (%d-%d=%d)\n",
-					database,
+					kv->val, database,
 					upmin, upavg, upmax,
 					info.crashavg1, info.crashavg10, info.crashavg30,
 					info.startcntr, info.stopcntr, info.crashcntr);
@@ -133,20 +146,6 @@ forkMserver(char *database, sabdb** stats, int force)
 		default:
 			msab_freeStatus(stats);
 			return(newErr("unknown state: %d", (int)(*stats)->state));
-	}
-
-	if ((*stats)->locked == 1 && force == 1)
-		Mfprintf(stdout, "startup of database under maintenance "
-				"'%s' forced\n", database);
-
-	/* check if the vaultkey is there, otherwise abort early (value
-	 * lateron reused when server is started) */
-	snprintf(vaultkey, sizeof(vaultkey), "%s/.vaultkey", (*stats)->path);
-	if (stat(vaultkey, &statbuf) == -1) {
-		msab_freeStatus(stats);
-		return(newErr("cannot start database '%s': no .vaultkey found "
-					"(did you create the database with `monetdb create %s`?)",
-					database, database));
 	}
 
 	/* create the pipes (filedescriptors) now, such that we and the
@@ -162,6 +161,46 @@ forkMserver(char *database, sabdb** stats, int force)
 		return(newErr("unable to create pipe: %s", strerror(errno)));
 	}
 
+	/* a multiplex-funnel means starting a separate thread */
+	if (strcmp(kv->val, "mfunnel") == 0) {
+		/* create a dpair entry */
+		pthread_mutex_lock(&_mero_topdp_lock);
+
+		dp = _mero_topdp;
+		while (dp->next != NULL)
+			dp = dp->next;
+		dp = dp->next = malloc(sizeof(struct _dpair));
+		dp->out = pfdo[0];
+		dp->err = pfde[0];
+		dp->next = NULL;
+		dp->type = MEROFUN;
+		dp->pid = getpid();
+		dp->dbname = strdup(database);
+
+		pthread_mutex_unlock(&_mero_topdp_lock);
+
+		kv = findConfKey(ckv, "mfunnel");
+		if ((er = multiplexInit(database, kv->val,
+						fdopen(pfdo[1], "a"), fdopen(pfde[1], "a"))) != NO_ERR)
+		{
+			Mfprintf(stderr, "failed to create multiplex-funnel: %s\n",
+					getErrMsg(er));
+			return(er);
+		}
+
+		return(NO_ERR);
+	}
+
+	/* check if the vaultkey is there, otherwise abort early (value
+	 * lateron reused when server is started) */
+	snprintf(vaultkey, sizeof(vaultkey), "%s/.vaultkey", (*stats)->path);
+	if (stat(vaultkey, &statbuf) == -1) {
+		msab_freeStatus(stats);
+		return(newErr("cannot start database '%s': no .vaultkey found "
+					"(did you create the database with `monetdb create %s`?)",
+					database, database));
+	}
+
 	pid = fork();
 	if (pid == 0) {
 		char *sabdbfarm;
@@ -172,34 +211,36 @@ forkMserver(char *database, sabdb** stats, int force)
 		char usock[512];
 		char mydoproxy;
 		char nthreads[24];
+		char nclients[24];
 		char master[512]; /* possibly undersized */
 		char slave[512]; /* possibly undersized */
 		char pipeline[512];
 		char *readonly = NULL;
 		char *argv[28];	/* for the exec arguments */
-		confkeyval *ckv, *kv;
 		int c = 0;
 		unsigned int mport;
 
 		msab_getDBfarm(&sabdbfarm);
 
-		ckv = getDefaultProps();
-		readProps(ckv, (*stats)->path);
-
 		mydoproxy = strcmp(getConfVal(_mero_props, "forward"), "proxy") == 0;
 
 		kv = findConfKey(ckv, "nthreads");
-		if (kv->val == NULL)
-			kv = findConfKey(_mero_db_props, "nthreads");
 		if (kv->val != NULL) {
 			snprintf(nthreads, sizeof(nthreads), "gdk_nr_threads=%s", kv->val);
 		} else {
 			nthreads[0] = '\0';
 		}
 
-		kv = findConfKey(ckv, "optpipe");
+		kv = findConfKey(ckv, "nclients");
 		if (kv->val == NULL)
-			kv = findConfKey(_mero_db_props, "optpipe");
+			kv = findConfKey(_mero_db_props, "nclients");
+		if (kv->val != NULL) {
+			snprintf(nclients, sizeof(nclients), "max_clients=%s", kv->val);
+		} else {
+			nclients[0] = '\0';
+		}
+
+		kv = findConfKey(ckv, "optpipe");
 		if (kv->val != NULL) {
 			snprintf(pipeline, sizeof(pipeline), "sql_optimizer=%s", kv->val);
 		} else {
@@ -287,6 +328,9 @@ forkMserver(char *database, sabdb** stats, int force)
 		if (nthreads[0] != '\0') {
 			argv[c++] = "--set"; argv[c++] = nthreads;
 		}
+		if (nclients[0] != '\0') {
+			argv[c++] = "--set"; argv[c++] = nclients;
+		}
 		if (pipeline[0] != '\0') {
 			argv[c++] = "--set"; argv[c++] = pipeline;
 		}
@@ -336,6 +380,7 @@ forkMserver(char *database, sabdb** stats, int force)
 		dp->err = pfde[0];
 		close(pfde[1]);
 		dp->next = NULL;
+		dp->type = MERODB;
 		dp->pid = pid;
 		dp->dbname = strdup(database);
 
@@ -370,27 +415,37 @@ forkMserver(char *database, sabdb** stats, int force)
 				} while ((scen = scen->next) != NULL);
 				if (scen != NULL)
 					break;
+			} else {
+				/* in the meanwhile, if the server has stopped, it will
+				 * have been removed from the dpair list, so check if
+				 * it's still there. */
+				pthread_mutex_lock(&_mero_topdp_lock);
+				dp = _mero_topdp;
+				while (dp != NULL && dp->pid != pid)
+					dp = dp->next;
+				pthread_mutex_unlock(&_mero_topdp_lock);
+				if (dp == NULL)
+					break; /* server doesn't run, no need to wait any longer */
 			}
 		}
 		/* if we've never found a connection, try to figure out why */
-		if (i >= 20) {
+		if (i >= 20 || dp == NULL) {
 			int state = (*stats)->state;
-			dpair pdp;
+			int hasconn = (*stats)->conns != NULL && (*stats)->conns->val != NULL;
 
 			/* starting failed */
 			msab_freeStatus(stats);
 
-			/* in the meanwhile the list may have changed so refetch the
-			 * parent and self */
+			/* in the meanwhile the list may have changed (again) so
+			 * refetch dp */
 			pthread_mutex_lock(&_mero_topdp_lock);
-			dp = NULL;
-			pdp = _mero_topdp;
-			while (pdp != NULL && pdp->next != NULL && pdp->next->pid != pid)
-				pdp = pdp->next;
+			dp = _mero_topdp;
+			while (dp != NULL && dp->pid != pid)
+				dp = dp->next;
 
-			/* pdp is NULL when the database terminated somehow while
+			/* dp is NULL when the database terminated somehow while
 			 * starting */
-			if (pdp != NULL) {
+			if (dp == NULL) {
 				pthread_mutex_unlock(&_mero_topdp_lock);
 				switch (state) {
 					case SABdbRunning:
@@ -399,19 +454,19 @@ forkMserver(char *database, sabdb** stats, int force)
 									"database '%s' has inconsistent state "
 									"(sabaoth administration reports running, "
 									"but process seems gone), "
-									"review merovingian's "
+									"review monetdbd's "
 									"logfile for any peculiarities", database));
 					case SABdbCrashed:
 						return(newErr(
 									"database '%s' has crashed after starting, "
 									"manual intervention needed, "
-									"check merovingian's logfile for details",
+									"check monetdbd's logfile for details",
 									database));
 					case SABdbInactive:
 						return(newErr(
 									"database '%s' appears to shut "
 									"itself down after starting, "
-									"check merovingian's logfile for possible "
+									"check monetdbd's logfile for possible "
 									"hints", database));
 					default:
 						return(newErr("unknown state: %d", (int)(*stats)->state));
@@ -420,21 +475,27 @@ forkMserver(char *database, sabdb** stats, int force)
 
 			/* in this case something seems still to be running, which
 			 * we don't want */
-			dp = pdp->next;
 			terminateProcess(dp);
 			pthread_mutex_unlock(&_mero_topdp_lock);
 
 			switch (state) {
 				case SABdbRunning:
-					return(newErr(
-								"timeout when waiting for database '%s' to "
-								"open up a communication channel or to "
-								"initialise the sql scenario", database));
+					if (hasconn) {
+						return(newErr(
+									"timeout while waiting for database '%s' "
+									"to initialise the sql scenario",
+									database));
+					} else {
+						return(newErr(
+									"timeout while waiting for database '%s' "
+									"to open up a communication channel",
+									database));
+					}
 				case SABdbCrashed:
 					return(newErr(
 								"database '%s' has crashed after starting, "
 								"manual intervention needed, "
-								"check merovingian's logfile for details",
+								"check monetdbd's logfile for details",
 								database));
 				case SABdbInactive:
 					/* due to GDK only locking once it has loaded all
@@ -447,7 +508,7 @@ forkMserver(char *database, sabdb** stats, int force)
 								"database '%s' either needs a longer timeout "
 								"to start up, or appears to shut "
 								"itself down after starting, "
-								"review merovingian's logfile for any "
+								"review monetdbd's logfile for any "
 								"peculiarities", database));
 				default:
 					return(newErr("unknown state: %d", (int)(*stats)->state));

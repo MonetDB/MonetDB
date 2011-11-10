@@ -5,7 +5,7 @@
  * http://www.monetdb.org/Legal/MonetDBLicense
  *
  * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * basis, WITHOUT WARRANTY OF ANY 1KIND, either express or implied. See the
  * License for the specific language governing rights and limitations
  * under the License.
  *
@@ -46,6 +46,13 @@
  * anymore.
  * Care should be taken not to generate many unique function names.
  */
+/*
+ * @+ Module scope management
+ * Upon system restart, the global scope is created. It is called "root" and
+ * does not contain any symbol definitions. It merely functions as an anchor
+ * point for the modules to be added later.
+ */
+
 #include "monetdb_config.h"
 #include "mal_module.h"
 #include "mal_function.h"   /* for printFunction() */
@@ -98,7 +105,7 @@ Module newModule(Module scope, str nme){
 		cur->outer = NULL;
 		cur->sibling = NULL;
 		cur->inheritance = TRUE;
-		cur->subscope = NULL; 
+		cur->subscope = NULL;
 		cur->isAtomModule = FALSE;
 	}
 	if ( cur == NULL)
@@ -108,7 +115,7 @@ Module newModule(Module scope, str nme){
 		cur->outer = scope->outer;
 		scope->outer= cur;
 		setModuleJump(nme,cur);
-	} 
+	}
 	return cur;
 }
 /*
@@ -122,7 +129,7 @@ Module newModule(Module scope, str nme){
  */
 Module fixModule(Module scope, str nme){
 	Module s= scope;
-	if( scopeJump[(int)(*nme)][(int)(*(nme+1))]) 
+	if( scopeJump[(int)(*nme)][(int)(*(nme+1))])
 		s= scopeJump[(int)(*nme)][(int)(*(nme+1))];
 	while(s != NULL){
 		if( nme == s->name )
@@ -234,7 +241,7 @@ void insertSymbol(Module scope, Symbol prg){
 	 } else  {
 		prg->peer= scope->subscope[t];
 		scope->subscope[t] = prg;
-		if( prg->peer && 
+		if( prg->peer &&
 			idcmp(prg->name,prg->peer->name) == 0)
 			prg->skip = prg->peer->skip;
 		else
@@ -325,7 +332,7 @@ Module setInheritance(Module h, Module f, Module s){
 	if( j<i) return h;
 
 	if(h==s){
-		h= s->outer; 
+		h= s->outer;
 		s->outer= f->outer;
 		f->outer=s;
 	} else {
@@ -411,11 +418,11 @@ findInstruction(Module scope, MalBlkPtr mb, InstrPtr pci){
 			for( fnd=1, i = 0; i < pci->argc; i++)
 				if ( getArgType(mb,pci,i) != getArgType(s->def,getSignature(s),i))
 					fnd = 0;
-			if( fnd) 
+			if( fnd)
 				return 1;
 		}
 	}
-	
+
 	return 0;
 }
 
@@ -443,7 +450,7 @@ static void  printModuleScope(stream *fd, Module scope, int tab, int outer)
 	Module s=scope;
 	Symbol t;
 
-	mnstr_printf(fd,"%smodule %s", 
+	mnstr_printf(fd,"%smodule %s",
 		(scope->isAtomModule?"atom ":""),s->name);
 	mnstr_printf(fd,"\n");
 	if( s->subscope)
@@ -455,7 +462,7 @@ static void  printModuleScope(stream *fd, Module scope, int tab, int outer)
 			if( getSignature(t)==NULL ||
 			    (getSignature(t)->fcn==0 &&
 			     getSignature(t)->token == COMMANDsymbol &&
-			     getSignature(t)->blk==0) ) 
+			     getSignature(t)->blk==0) )
 			    mnstr_printf(fd,"(?)");
 		}
 		mnstr_printf(fd,"\n");
@@ -523,12 +530,12 @@ void dumpManual(stream *f, Module s, int recursive){
 	list[top++]=s;
 	while(s->outer && recursive){ list[top++]= s->outer;s=s->outer;}
 
-	if(top>1) qsort(list, top, sizeof(Module), 
+	if(top>1) qsort(list, top, sizeof(Module),
 		(int(*)(const void *, const void *))cmpModName);
 
 	for(k=0;k<top;k++){
 	s= list[k];
-	mnstr_printf(f,"<%smodule name=\"%s\">\n", 
+	mnstr_printf(f,"<%smodule name=\"%s\">\n",
 		(s->isAtomModule?"atom":""),xmlChr(s->name));
 	if(s->help)
 		mnstr_printf(f,"%s\n",s->help);
@@ -621,7 +628,7 @@ void dumpManualOverview(stream *f, Module s, int recursive){
 	list[top++]=s;
 	while(s->outer && recursive){ list[top++]= s->outer;s=s->outer;}
 
-	if(top>1) qsort(list, top, sizeof(Module), 
+	if(top>1) qsort(list, top, sizeof(Module),
 		(int(*)(const void *, const void *))cmpModName);
 
 	cols = 4;
@@ -667,7 +674,7 @@ void dumpManualOverview(stream *f, Module s, int recursive){
 		for (c = 1; c < cols; c++) {
 			for (r = 0; r < rows; r++) {
 				int i = (cols * r) + c - 1;
-				if (z < ftop && 
+				if (z < ftop &&
 				    (x[i] < 0 || strlen(getModuleId(fcn[x[i]])) + strlen(getFunctionId(fcn[x[i]])) < (size_t)(80 / cols))) {
 					x[i+1] = z++;
 				} else {
@@ -715,7 +722,7 @@ void dumpManualHelp(stream *f, Module s, int recursive){
 	list[top++]=s;
 	while(s->outer && recursive){ list[top++]= s->outer;s=s->outer;}
 
-	if(top>1) qsort(list, top, sizeof(Module), 
+	if(top>1) qsort(list, top, sizeof(Module),
 		(int(*)(const void *, const void *))cmpModName);
 
 	mnstr_printf(f,"@multitable @columnfractions .2 .8 \n");
@@ -839,9 +846,9 @@ static int tstDuplicate(char **msg, char *s){
 	size_t len;
 	len= strlen(s);
 	for(i=0; msg[i]; i++)
-		if( strncmp(s, msg[i], MAX(len,strlen(msg[i]))) == 0 && 
+		if( strncmp(s, msg[i], MAX(len,strlen(msg[i]))) == 0 &&
 			strlen(s) == strlen(msg[i]) )
-			return 1; 
+			return 1;
 	return 0;
 }
 
@@ -857,7 +864,7 @@ char **getHelp(Module m, str inputpat, int completion)
 	int top=0, i,j,k, sig = 0, doc = 0;
 	int maxhelp= MAXHELP;
 
-#ifdef MAL_SCOPE_DEBUG 
+#ifdef MAL_SCOPE_DEBUG
 	printf("showHelp: %s",pat);
 #endif
 	msg= (char **) GDKmalloc( MAXHELP * sizeof(str));
@@ -895,7 +902,7 @@ char **getHelp(Module m, str inputpat, int completion)
 
 	if( fcnnme && *fcnnme){
 		len2 = strlen(fcnnme);
-	} 
+	}
 
 	len1 = (int)strlen(modnme);
 
@@ -927,8 +934,8 @@ char **getHelp(Module m, str inputpat, int completion)
 		return msg;
 	}
 	if( m1 ) m = m1;
-	
-#ifdef MAL_SCOPE_DEBUG 
+
+#ifdef MAL_SCOPE_DEBUG
 	printf("showHelp: %s %s [" SZFMT "] %s %s\n",
 			modnme,fcnnme,len2, (doc?"doc":""), (sig?"sig":""));
 #endif
@@ -945,7 +952,7 @@ char **getHelp(Module m, str inputpat, int completion)
 			if( strncmp(fcnnme,s->name,len2)==0 || *fcnnme=='*') {
 				fnd=0;
 				if( completion ) {
-					snprintf(buf,BUFSIZ," %s.%s", 
+					snprintf(buf,BUFSIZ," %s.%s",
 						((*modnme=='*' || *modnme==0)? m->name:modnme),s->name);
 					if( tstDuplicate(msg,buf+1) ) {
 						fnd=1;
@@ -990,7 +997,7 @@ char **getHelp(Module m, str inputpat, int completion)
 					buf[0]=' ';
 					t= strstr(buf,"address");
 					if( t) *t= 0;
-				} 
+				}
 				if( fnd == 0 && buf[1]){
 					msg[top++] = GDKstrdup(buf+1);
 					msg[top] = 0;

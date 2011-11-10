@@ -19,7 +19,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 15:00:14 >  
 # 15:00:14 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=30796 
@@ -28,7 +27,7 @@ Over..
 % .prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale # name
 % varchar,	int,	int # type
-% 0,	0,	0 # length
+% 4,	2,	1 # length
 [ "int",	32,	0	]
 [ "clob",	0,	0	]
 [ 1	]

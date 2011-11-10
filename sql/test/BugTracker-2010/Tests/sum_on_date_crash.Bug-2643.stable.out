@@ -18,7 +18,6 @@ stdout of test 'sum_on_date_crash.Bug-2643` in directory 'test/BugTracker-2010` 
 
 Ready.
 
-Over..
 
 # 00:48:05 >  
 # 00:48:05 >  mclient -lsql -ftest -i -e --host=alf --port=38743 

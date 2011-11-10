@@ -13,7 +13,6 @@ stdout of test 'alter_table.SF-1040057` in directory 'test/BugDay_2005-11-09_2.9
 
 Ready.
 
-Over..
 
 # 12:45:16 >  
 # 12:45:16 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < alter_table.SF-1040057.sql

@@ -31,9 +31,6 @@
  * SQLForeignKeys()
  * CLI Compliance: ODBC (Microsoft)
  *
- * Note: catalogs are not supported, we ignore any value set for
- * PKCatalogName and FKCatalogName.
- *
  * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 aug 2002
  *
@@ -63,6 +60,8 @@ SQLForeignKeys_(ODBCStmt *stmt,
 	/* buffer for the constructed query to do meta data retrieval */
 	char *query = NULL;
 	char *query_end = NULL;	/* pointer to end of built-up query */
+	char *pcat = NULL, *psch = NULL, *ptab = NULL;
+	char *fcat = NULL, *fsch = NULL, *ftab = NULL;
 
 	/* deal with SQL_NTS and SQL_NULL_DATA */
 	fixODBCstring(PKCatalogName, NameLength1, SQLSMALLINT,
@@ -90,9 +89,76 @@ SQLForeignKeys_(ODBCStmt *stmt,
 	/* dependent on the input parameter values we must add a
 	   variable selection condition dynamically */
 
+	if (stmt->Dbc->sql_attr_metadata_id == SQL_FALSE) {
+		if (NameLength1 > 0) {
+			pcat = ODBCParseOA("e", "value",
+					   (const char *) PKCatalogName,
+					   (size_t) NameLength1);
+		}
+		if (NameLength2 > 0) {
+			psch = ODBCParseOA("pks", "name",
+					   (const char *) PKSchemaName,
+					   (size_t) NameLength2);
+		}
+		if (NameLength3 > 0) {
+			ptab = ODBCParseOA("pkt", "name",
+					   (const char *) PKTableName,
+					   (size_t) NameLength3);
+		}
+		if (NameLength4 > 0) {
+			fcat = ODBCParseOA("e", "value",
+					   (const char *) FKCatalogName,
+					   (size_t) NameLength4);
+		}
+		if (NameLength5 > 0) {
+			fsch = ODBCParseOA("fks", "name",
+					   (const char *) FKSchemaName,
+					   (size_t) NameLength5);
+		}
+		if (NameLength6 > 0) {
+			ftab = ODBCParseOA("fkt", "name",
+					   (const char *) FKTableName,
+					   (size_t) NameLength6);
+		}
+	} else {
+		if (NameLength1 > 0) {
+			pcat = ODBCParseID("e", "value",
+					   (const char *) PKCatalogName,
+					   (size_t) NameLength1);
+		}
+		if (NameLength2 > 0) {
+			psch = ODBCParseID("pks", "name",
+					   (const char *) PKSchemaName,
+					   (size_t) NameLength2);
+		}
+		if (NameLength3 > 0) {
+			ptab = ODBCParseID("pkt", "name",
+					   (const char *) PKTableName,
+					   (size_t) NameLength3);
+		}
+		if (NameLength4 > 0) {
+			fcat = ODBCParseID("e", "value",
+					   (const char *) FKCatalogName,
+					   (size_t) NameLength4);
+		}
+		if (NameLength5 > 0) {
+			fsch = ODBCParseID("fks", "name",
+					   (const char *) FKSchemaName,
+					   (size_t) NameLength5);
+		}
+		if (NameLength6 > 0) {
+			ftab = ODBCParseID("fkt", "name",
+					   (const char *) FKTableName,
+					   (size_t) NameLength6);
+		}
+	}
+
 	/* first create a string buffer (1200 extra bytes is plenty:
 	   we actually need just over 1000) */
-	query = (char *) malloc(1200 + NameLength2 + NameLength3 + NameLength5 + NameLength6);
+	query = malloc(1200 + (pcat ? strlen(pcat) : 0) +
+		       (psch ? strlen(psch) : 0) + (ptab ? strlen(ptab) : 0) +
+		       (fcat ? strlen(fcat) : 0) + (fsch ? strlen(fsch) : 0) +
+		       (ftab ? strlen(ftab) : 0));
 	assert(query);
 	query_end = query;
 
@@ -115,11 +181,11 @@ SQLForeignKeys_(ODBCStmt *stmt,
 
 	sprintf(query_end,
 		"select "
-		"cast(null as varchar(1)) as pktable_cat, "
+		"e.\"value\" as pktable_cat, "
 		"pks.\"name\" as pktable_schem, "
 		"pkt.\"name\" as pktable_name, "
 		"pkkc.\"name\" as pkcolumn_name, "
-		"cast(null as varchar(1)) as fktable_cat, "
+		"e.\"value\" as fktable_cat, "
 		"fks.\"name\" as fktable_schem, "
 		"fkt.\"name\" as fktable_name, "
 		"fkkc.\"name\" as fkcolumn_name, "
@@ -132,7 +198,8 @@ SQLForeignKeys_(ODBCStmt *stmt,
 		"from sys.\"schemas\" fks, sys.\"tables\" fkt, "
 		"sys.\"objects\" fkkc, sys.\"keys\" as fkk, "
 		"sys.\"schemas\" pks, sys.\"tables\" pkt, "
-		"sys.\"objects\" pkkc, sys.\"keys\" as pkk "
+		"sys.\"objects\" pkkc, sys.\"keys\" as pkk, "
+		"sys.\"env\"() e "
 		"where fkt.\"id\" = fkk.\"table_id\" and "
 		"pkt.\"id\" = pkk.\"table_id\" and "
 		"fkk.\"id\" = fkkc.\"id\" and "
@@ -140,43 +207,49 @@ SQLForeignKeys_(ODBCStmt *stmt,
 		"fks.\"id\" = fkt.\"schema_id\" and "
 		"pks.\"id\" = pkt.\"schema_id\" and "
 		"fkk.\"rkey\" = pkk.\"id\" and "
-		"fkkc.\"nr\" = pkkc.\"nr\"",
+		"fkkc.\"nr\" = pkkc.\"nr\" and "
+		"e.\"name\" = 'gdk_dbname'",
 		SQL_NO_ACTION, SQL_NO_ACTION, SQL_NOT_DEFERRABLE);
+	assert(strlen(query) < 1100);
 	query_end += strlen(query_end);
 
 	/* Construct the selection condition query part */
-	if (PKSchemaName != NULL && NameLength2 > 0) {
+	if (pcat) {
+		/* filtering requested on catalog name */
+		sprintf(query_end, " and %s", pcat);
+		query_end += strlen(query_end);
+		free(pcat);
+	}
+	if (psch) {
 		/* filtering requested on schema name */
-		/* search pattern is not allowed so use = and not LIKE */
-		sprintf(query_end, " and pks.\"name\" = '%.*s'",
-			NameLength2, (char*)PKSchemaName);
+		sprintf(query_end, " and %s", psch);
 		query_end += strlen(query_end);
+		free(psch);
 	}
-
-	if (PKTableName != NULL && NameLength3 > 0) {
+	if (ptab) {
 		/* filtering requested on table name */
-		/* search pattern is not allowed so use = and not LIKE */
-		sprintf(query_end, " and pkt.\"name\" = '%.*s'",
-			NameLength3, (char*)PKTableName);
+		sprintf(query_end, " and %s", ptab);
 		query_end += strlen(query_end);
+		free(ptab);
 	}
-
-	if (FKSchemaName != NULL && NameLength5 > 0) {
+	if (fcat) {
+		/* filtering requested on catalog name */
+		sprintf(query_end, " and %s", fcat);
+		query_end += strlen(query_end);
+		free(fcat);
+	}
+	if (fsch) {
 		/* filtering requested on schema name */
-		/* search pattern is not allowed so use = and not LIKE */
-		sprintf(query_end, " and fks.\"name\" = '%.*s'",
-			NameLength5, (char*)FKSchemaName);
+		sprintf(query_end, " and %s", fsch);
 		query_end += strlen(query_end);
+		free(fsch);
 	}
-
-	if (FKTableName != NULL && NameLength6 > 0) {
+	if (ftab) {
 		/* filtering requested on table name */
-		/* search pattern is not allowed so use = and not LIKE */
-		sprintf(query_end, " and fkt.\"name\" = '%.*s'",
-			NameLength6, (char*)FKTableName);
+		sprintf(query_end, " and %s", ftab);
 		query_end += strlen(query_end);
+		free(ftab);
 	}
-
 
 /* TODO finish the FROM and WHERE clauses */
 
@@ -187,7 +260,6 @@ SQLForeignKeys_(ODBCStmt *stmt,
 		PKTableName != NULL ? "fk" : "pk",
 		PKTableName != NULL ? "fk" : "pk");
 	query_end += strlen(query_end);
-	assert(query_end - query < 1200 + NameLength2 + NameLength3 + NameLength5 + NameLength6);
 
 	/* query the MonetDB data dictionary tables */
 	rc = SQLExecDirect_(stmt, (SQLCHAR *) query,

@@ -157,6 +157,8 @@ sql_time_tostr(void *TS_RES, char **buf, int *len, int type, ptr A)
 	tmp = (daytime) val;
 
 	len1 = daytime_tostr(&s1, &big, &tmp);
+	if (len1 == 3 && strcmp(s1, "nil") == 0) 
+		return len1;
 
 	/* fixup the fraction, default is 3 */
 	len1 += (ts_res->fraction-3);
@@ -274,10 +276,13 @@ bat_max_@1length(BAT *b)
 		if (m < min) min = m;
 	}
 
-	if ((-min * 10) > max) 
-		max = (-min * 10);
-	while (max /= 10) ret++;
+	if (-min > max / 10) {
+		max = -min;
+		ret++;		/* '-' */
+	}
+	while (max /= 10)
 		ret++;
+	ret++;
 	return ret;
 }
 @
@@ -668,18 +673,45 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 {
 	node *n;
 	int len = c->params ? list_length(c->params) : 0;
+	size_t len1 = 0;	/* column widths */
+	int len2 = 1, len3 = 1;
+	sql_arg *a;
+	sql_subtype *t;
 
 	if (!out)
 		return 0;
 
+	/* calculate column widths */
+	if (c->params) {
+		unsigned int max2 = 10, max3 = 10; /* to help calculate widths */
+
+		for (n = c->params->h; n; n = n->next) {
+			size_t slen;
+
+			a = n->data;
+			t = &a->type;
+			slen = strlen(t->type->sqlname);
+			if (slen > len1)
+				len1 = slen;
+			while (t->digits >= max2) {
+				len2++;
+				max2 *= 10;
+			}
+			while (t->scale >= max3) {
+				len3++;
+				max3 *= 10;
+			}
+		}
+	}
+
 	/* write header, query type: Q_PREPARE */
 	if (mnstr_printf(out,
 		"&5 %d %d 3 %d\n" /* TODO: add type here: r(esult) or u(pdate) */
-		"%% .prepare,	.prepare,	.prepare # table_name\n"
-		"%% type,	digits,	scale # name\n"
-		"%% varchar,	int,	int # type\n"
-		"%% 0,	0,	0 # length\n",
-		q->id, len, len) < 0) {
+		"%% .prepare,\t.prepare,\t.prepare # table_name\n"
+		"%% type,\tdigits,\tscale # name\n"
+		"%% varchar,\tint,\tint # type\n"
+		"%% " SZFMT ",\t%d,\t%d # length\n",
+		q->id, len, len, len1, len2, len3) < 0) {
 		return -1;
 	}
 
@@ -689,12 +721,12 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 		q->paramlen = len;
 		q->params = SA_NEW_ARRAY(q->sa, sql_subtype, len);
 		for (n = c->params->h, i=0; n; n = n->next, i++) {
-			sql_arg *a = n->data;
-			sql_subtype *t = &a->type;
+			a = n->data;
+			t = &a->type;
 
 			if (t) {
 				if (mnstr_printf(out,
-					"[ \"%s\",	%d,	%d	]\n",
+					"[ \"%s\",\t%d,\t%d\t]\n",
 					t->type->sqlname,
 					t->digits,
 					t->scale
@@ -892,10 +924,8 @@ mvc_export_table(mvc *m, stream *s, res_table *t, BAT *order, BUN offset, BUN nr
 	as.nr_attrs = t->nr_cols + 1;	/* for the leader */
 	as.nr = nr;
 	as.offset = offset;
-	fmt = as.format = (Column *) GDKmalloc(sizeof(Column) * (as.nr_attrs + 1));
+	fmt = as.format = (Column *) GDKzalloc(sizeof(Column) * (as.nr_attrs + 1));
 	tres = GDKmalloc(sizeof(struct time_res) * (as.nr_attrs));
-
-	memset(fmt, 0, (as.nr_attrs + 1) * sizeof(Column));
 
 	fmt[0].c[0] = NULL;
 	fmt[0].sep = _strdup(btag);
@@ -1055,12 +1085,14 @@ export_length( stream *s, int mtype, int eclass, int digits, int scale, int tz, 
 	   value, instead of the maximum values taken now, which
 	   include the optional sign */
 	} else if (eclass == EC_FLT) {
-		/* [sign]+digit+period+[max 6 digits]+E+[sign]+[max 2 digits] */
+		/* floats are printed using "%.9g":
+		 * [sign]+digit+period+[max 8 digits]+E+[sign]+[max 2 digits] */
 		if (mtype == TYPE_flt) {
-			ok = mvc_send_int(s, 13);
-		/* [sign]+digit+period+[max 14 digits]+E+[sign]+[max 3 digits] */
+			ok = mvc_send_int(s, 15);
+		/* doubles are printed using "%.17g":
+		 * [sign]+digit+period+[max 16 digits]+E+[sign]+[max 3 digits] */
 		} else { /* TYPE_dbl */
-			ok = mvc_send_int(s, 22);
+			ok = mvc_send_int(s, 24);
 		}
 	} else if (eclass == EC_DEC) {
 		count = 1 + digits;

@@ -192,6 +192,8 @@ sql_find_numeric(sql_subtype *r, int localtype, unsigned int digits)
 		localtype = TYPE_dbl;
 	} else {
 		localtype = TYPE_lng;
+		if (digits > 64)
+			digits = 64;
 	}
 
 	for (n = types->h; n; n = n->next) {
@@ -1307,7 +1309,7 @@ sqltypeinit(void)
 		sql_create_func("sql_neg", "calc", "-", *t, NULL, *t, INOUT);
 		sql_create_func("sql_pos", "calc", "+", *t, NULL, *t, INOUT);
 		sql_create_func("abs", "calc", "abs", *t, NULL, *t, SCALE_FIX);
-		sql_create_func("sign", "calc", "sign", *t, NULL, *t, SCALE_FIX);
+		sql_create_func("sign", "calc", "sign", *t, NULL, INT, SCALE_NONE);
 		/* scale fixing for all numbers */
 		sql_create_func("scale_up", "calc", "*", *t, lt->type, *t, SCALE_NONE);
 		sql_create_func("scale_down", "sql", "dec_round", *t, lt->type, *t, SCALE_NONE);
@@ -1373,7 +1375,7 @@ sqltypeinit(void)
 	sql_create_func("pi", "mmath", "pi", NULL, NULL, DBL, SCALE_NONE);
 
 	sql_create_funcSE("rand", "mmath", "rand", NULL, NULL, INT, SCALE_NONE);
-	sql_create_funcSE("rand", "mmath", "srand", INT, NULL, INT, SCALE_NONE);
+	sql_create_funcSE("rand", "mmath", "sqlrand", INT, NULL, INT, SCALE_NONE);
 
 	/* Date functions */
 	sql_create_func("curdate", "mtime", "current_date", NULL, NULL, DTE, SCALE_NONE);

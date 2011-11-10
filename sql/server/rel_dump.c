@@ -60,14 +60,11 @@ cmp_print(mvc *sql, stream *fout, int cmp)
 	case cmp_lt: 		r = "<"; break;
 	case cmp_equal: 	r = "="; break;
 	case cmp_notequal: 	r = "!="; break;
-	case cmp_notlike: 	r = "notlike"; break;
-	case cmp_like: 		r = "like"; break;
-	case cmp_notilike: 	r = "notilike"; break;
-	case cmp_ilike: 	r = "ilike"; break;
 	case cmp_all: 		r = "all"; break;
 	case cmp_or: 		r = "or"; break;
 	case cmp_in: 		r = "in"; break;
 	case cmp_notin: 	r = "notin"; break;
+	case cmp_filter: 	r = "filter"; break;
 	default:
 		r = "";
 	}
@@ -318,8 +315,10 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs)
 	case op_table:
 		print_indent(sql, fout, depth);
 		mnstr_printf(fout, "table ");
+		/*
 		if (rel->l)
 			rel_print_(sql, fout, rel->l, depth+1, refs);
+		*/
 		if (rel->r)
 			exp_print(sql, fout, rel->r, depth, 1, 0);
 		if (rel->exps) 
@@ -454,6 +453,12 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs)
 	} 	break;
 	default:
 		assert(0);
+	}
+	if (rel->p) {
+		prop *p = rel->p;
+
+		for (; p; p = p->p) 
+			mnstr_printf(fout, " %s %s", propkind2string(p), propvalue2string(p));
 	}
 }
 

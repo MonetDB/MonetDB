@@ -21,7 +21,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 12:36:49 >  
 # 12:36:49 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < example.sql
@@ -35,7 +34,7 @@ Over..
 % sys.example,	sys.example,	sys.example # table_name
 % val1,	val2,	val3 # name
 % int,	varchar,	double # type
-% 1,	6,	22 # length
+% 1,	6,	24 # length
 [ 0,	"texst",	99999.1	]
 [ 1,	"test",	0.1	]
 [ 5,	"xtest",	0.9	]
@@ -44,7 +43,7 @@ Over..
 % sys.example_view,	sys.example_view,	sys.example_view # table_name
 % val1,	val2,	val3 # name
 % int,	varchar,	double # type
-% 1,	6,	22 # length
+% 1,	6,	24 # length
 [ 0,	"texst",	99999.1	]
 [ 1,	"test",	0.1	]
 [ 5,	"xtest",	0.9	]

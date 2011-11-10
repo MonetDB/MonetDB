@@ -13,7 +13,6 @@ stdout of test 'quoted_keywords.SF-922288` in directory 'test/BugDay_2005-10-06_
 
 Ready.
 
-Over..
 
 # 12:37:57 >  
 # 12:37:57 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < quoted_keywords.SF-922288.sql

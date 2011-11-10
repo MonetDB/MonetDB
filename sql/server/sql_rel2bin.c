@@ -37,7 +37,6 @@ tail_column(stmt *st)
 
 	case st_join2:
 	case st_joinN:
-	case st_reljoin:
 		return tail_column(st->op2);
 	case st_releqjoin:
 		return tail_column(st->op4.lval->h->data);
@@ -156,7 +155,6 @@ head_column(stmt *st)
 
 	case st_relselect:
 	case st_releqjoin:
-	case st_reljoin:
 		if (st->op2)
 			return head_column(st->op2);
 		if (st->op1)
@@ -185,6 +183,7 @@ head_column(stmt *st)
 	case st_temp:
 	case st_single:
 	case st_idxbat:
+	case st_func:
 
 	case st_rs_column:
 		return NULL;
@@ -414,8 +413,8 @@ shrink_select_ranges(mvc *sql, list *oldsels)
 			node *n;
 			int flg, len = 0;
 
-			/* separate all single-range, equal, notequal, notlike, & like selects and eliminate duplicates
-			 * (notequal, notlike, & like selects are saved and re-added at the end) */
+			/* separate all single-range, equal, notequal selects and eliminate duplicates
+			 * (notequal selects are saved and re-added at the end) */
 			for (ct = cmp_gt; ct < cmp_all; ct++) {
 				list *l = list_select(colsels, (void *) &ct, (fcmp) &cmp_sel_comp_type, NULL);
 
@@ -571,10 +570,8 @@ shrink_select_ranges(mvc *sql, list *oldsels)
 				}
 			}
 
-			/* finally collect all saved like, notlike, and notequal selects */
-			for (ct = cmp_ilike; ct >= cmp_notequal; ct--) {
-				list_merge(newsels, sels1[ct], NULL);
-			}
+			/* finally collect all saved notequal selects */
+			list_merge(newsels, sels1[cmp_notequal], NULL);
 		}
 	}
 	/* re-add the skipped statements without basecolumn */
@@ -699,93 +696,12 @@ releqjoin( mvc *sql, list *l1, list *l2 )
 
 		cmp = stmt_uselect(sql->sa, cmp, stmt_bool(sql->sa, 1), cmp_equal);
 
+		//cmp = stmt_reverse(sql->sa, stmt_mark_tail(sql->sa, cmp, 0));
+		//l = stmt_project(sql->sa, cmp, l);
+		//r = stmt_project(sql->sa, cmp, r);
 		/* TODO the semijoin may break the order!! */
 		l = stmt_semijoin(sql->sa, l, cmp);
 		r = stmt_semijoin(sql->sa, r, cmp);
-	}
-	res = stmt_join(sql->sa, stmt_reverse(sql->sa, l), r, cmp_equal);
-	return res;
-}
-
-static stmt *
-_project(mvc *sql, stmt *o, stmt *v )
-{
-	if (v->nrcols == 0)
-		return v;
-	return stmt_project(sql->sa, o, v);
-}
-
-static stmt *
-reljoin( mvc *sql, stmt *rj, list *l2 )
-{
-	node *n = l2?l2->h:NULL;
-	stmt *l, *r, *res;
-
-	if (!rj && list_length(l2) == 1) 
-		return l2->h->data;
-	if (rj) {
-		l = stmt_mark(sql->sa, stmt_reverse(sql->sa, rj), 50);
-		r = stmt_mark(sql->sa, rj, 50);
-	} else {
-		res = n->data;
-		l = stmt_mark(sql->sa, stmt_reverse(sql->sa, res), 4);
-		r = stmt_mark(sql->sa, res, 4);
-		n = n->next;
-	}
-	/* TODO also handle joinN */
-	for (; n; n = n->next) {
-		stmt *j = n->data, *ld, *o2, *rd, *cmp;
-		if (j->type == st_reverse) {
-			stmt *sw;
-			j = j->op1;
-			ld = j->op1;
-			o2 = j->op2;
-			rd = (j->type == st_join)?stmt_reverse(sql->sa, o2):o2;
-			sw = l;
-			l = r;
-			r = sw;
-		} else {
-			ld = j->op1;
-			o2 = j->op2;
-			rd = (j->type == st_join)?stmt_reverse(sql->sa, o2):o2;
-		}
-
-		if (j->type == st_joinN) {
-			list *ol,*nl = list_new(sql->sa);
-			node *m;
-
-			ol = j->op1->op4.lval;
-			for (m = ol->h; m; m = m->next) 
-				list_append(nl, _project(sql, l, m->data));
-			ol = j->op2->op4.lval;
-			for (m = ol->h; m; m = m->next) 
-				list_append(nl, _project(sql, r, m->data));
-			/* find function */
-			cmp = stmt_uselect(sql->sa, stmt_Nop(sql->sa, stmt_list(sql->sa, nl), j->op4.funcval), stmt_bool(sql->sa, 1), cmp_equal);
-		} else if (j->type == st_join2) {
-			stmt *le = stmt_project(sql->sa, l, ld );
-			stmt *re = stmt_project(sql->sa, r, rd );
-			comp_type c1 = range2lcompare(j->flag);
-			comp_type c2 = range2rcompare(j->flag);
-			stmt *r2 = stmt_project(sql->sa, r, j->op3);
-			stmt *cmp1 = stmt_uselect(sql->sa, le, re, c1);
-			stmt *cmp2 = stmt_uselect(sql->sa, le, r2, c2);
-
-			cmp = stmt_semijoin(sql->sa, cmp1, cmp2);
-		} else {
-			stmt *le = stmt_project(sql->sa, l, ld );
-			stmt *re = stmt_project(sql->sa, r, rd );
-			/* TODO force scan select ? */
-			cmp = stmt_uselect(sql->sa, le, re, (comp_type)j->flag);
-		}
-		cmp = stmt_mark(sql->sa, stmt_reverse(sql->sa, cmp), 50);
-		l = stmt_project(sql->sa, cmp, l);
-		r = stmt_project(sql->sa, cmp, r);
-		if (j != n->data) { /* reversed */
-			stmt *sw = l;
-			l = r;
-			r = sw;
-		}
 	}
 	res = stmt_join(sql->sa, stmt_reverse(sql->sa, l), r, cmp_equal);
 	return res;
@@ -869,6 +785,13 @@ push_semijoin( mvc *sql, stmt *select, stmt *s )
 		op1 = push_semijoin(sql, op1, s);
 		return stmt_diff(sql->sa, op1, op2);
 	}
+	if (select->type == st_const) {
+		stmt *op1 = select->op1;
+		stmt *op2 = select->op2;
+
+		op1 = push_semijoin(sql, op1, s);
+		return stmt_const(sql->sa, op1, op2);
+	}
 	if (select->type == st_union) {
 		stmt *op1 = select->op1;
 		stmt *op2 = select->op2;
@@ -876,6 +799,13 @@ push_semijoin( mvc *sql, stmt *select, stmt *s )
 		op1 = push_semijoin(sql, op1, s);
 		op2 = push_semijoin(sql, op2, s);
 		return stmt_union(sql->sa, op1, op2);
+	}
+	if (select->type == st_mark) {
+		stmt *op1 = select->op1;
+		stmt *op2 = select->op2;
+
+		op1 = push_semijoin(sql, op1, s);
+		return stmt_mark_tail(sql->sa, op1, op2->op4.aval->data.val.oval);
 	}
 
 	/* semijoin(reverse(semijoin(reverse(x)),s) */
@@ -914,12 +844,9 @@ push_semijoin( mvc *sql, stmt *select, stmt *s )
 		stmt *op2 = select->op2;
 
 		if (cmp == cmp_filter) {
-			return stmt_genselect(sql->sa, s, op2, select->op4.funcval);
-		} else if (cmp == cmp_like || cmp == cmp_notlike ||
-		    	   cmp == cmp_ilike || cmp == cmp_notilike) {
 			stmt *op3 = select->op3;
 
-			return stmt_likeselect(sql->sa, s, op2, op3, cmp);
+			return stmt_genselect(sql->sa, s, op2, op3, select->op4.funcval);
 		} else {
 			return stmt_select(sql->sa,  s, op2, cmp);
 		}
@@ -943,67 +870,13 @@ push_select_stmt( mvc *c, list *l, stmt *sel )
 	for (n = l->h; n; n = n->next) {
 		stmt *s = rel2bin(c, n->data);
 
-		sel = push_semijoin(c, s, sel);
+		if (!s->nrcols) /* predicate */
+			stmt_uselect(c->sa, stmt_const(c->sa, sel, stmt_bool(c->sa, 1)), s, cmp_equal); 
+		else
+			sel = push_semijoin(c, s, sel);
 	}
 	return sel;
 }
-
-#if 0
-/* warning: ‘use_ukey’ defined but not used */
-static list *
-use_ukey( mvc *sql, list *l )
-{
-	sql_table *t;
-	node *n;
-	stmt *s;
-
-	for( n = l->h; n; n = n->next) {
-		s = n->data;
-
-		/* we can only use hash indices for lookups, not for ranges */
-		if (!(PSEL(s) && s->flag == cmp_equal))
-			return l;
-		/* we only want selects on base columns */
-		if (s->op1->type != st_bat)
-			return l;
-	}
-
-	s = l->h->data;
-	if (!s->h || s->h->type != st_basetable)
-		return l;
-	t = s->h->op1.tval;
-	
-	if (t->idxs.set) {
-		int cnt = 0;
-		node *in;
-		sql_idx *i;
-	   	for(in = t->idxs.set->h; in; in = in->next){
- 			i = in->data;
-			if (hash_index(i->type) && 
-			    list_length(l) == list_length(i->columns)) {
-				node *icn;
-
-				cnt = 0;
-              			for(icn = i->columns->h; icn; icn = icn->next, cnt++) {
-					sql_kc *kc = icn->data;
-					node *n = list_find(l, kc, (fcmp)&sel_find_keycolumn);
-					if (!n)
-						break;
-				}
-              			if (list_length(i->columns) == cnt) {
-					break;
-				}
-				cnt = 0;
-			}
-		}
-		if (cnt) { /* result can only be one row! */
-			stmt *hash = select_hash_key(sql, i, l);
-			list_prepend(l, hash);
-		}
-	}
-	return l;
-}
-#endif
 
 stmt *
 rel2bin(mvc *c, stmt *s)
@@ -1036,36 +909,16 @@ rel2bin(mvc *c, stmt *s)
 		return s;
 
 	case st_releqjoin:{
-
+		stmt *res;
 		list *l1 = list_new(c->sa);
 		list *l2 = list_new(c->sa);
 		node *n1, *n2;
-		stmt *res;
-
+	
 		for (n1 = s->op1->op4.lval->h, n2 = s->op2->op4.lval->h; n1 && n2; n1 = n1->next, n2 = n2->next) {
 			list_append(l1, rel2bin(c, n1->data));
 			list_append(l2, rel2bin(c, n2->data));
 		}
 		res = releqjoin(c, l1, l2);
-		s->optimized = res->optimized = 2;
-		if (res != s) {
-			assert(s->rewritten==NULL);
-			s->rewritten = res;
-		}
-		return res;
-	}
-
-	case st_reljoin:{
-
-		stmt *rj = NULL, *rjr = NULL;
-		stmt *res;
-
-		if (s->op1)
-			rj = rel2bin(c, s->op1);
-		if (s->op2)
-			rjr = rel2bin(c, s->op2);
-
-		res = reljoin(c, rj, (rjr)?rjr->op4.lval:NULL);
 		s->optimized = res->optimized = 2;
 		if (res != s) {
 			assert(s->rewritten==NULL);
@@ -1091,8 +944,6 @@ rel2bin(mvc *c, stmt *s)
 			if (!mvc_debug_on(c, 4096)) {
 				l = shrink_select_ranges(c, l);
 			}
-			/* check if we have a unique index */
-			/*l = use_ukey(c, l);*/
 			n = list_find(l, (void*)1, (fcmp) &find_unique);
 			if (!n) {
 				/* TODO reorder select list 

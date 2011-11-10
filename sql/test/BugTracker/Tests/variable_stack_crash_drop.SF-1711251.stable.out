@@ -13,7 +13,6 @@ stdout of test 'variable_stack_crash_drop.SF-1711251` in directory 'test/BugTrac
 
 Ready.
 
-Over..
 
 # 10:56:20 >  
 # 10:56:20 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=31258 

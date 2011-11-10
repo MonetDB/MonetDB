@@ -92,10 +92,6 @@ public class JdbcClient {
 		copts.addOption(null, "Xoutput", CmdLineOpts.CAR_ONE, null,
 				"The output mode when dumping.  Default is sql, xml may " +
 				"be used for an experimental XML output.");
-		copts.addOption(null, "Xembedded", CmdLineOpts.CAR_ONE, null,
-				"Uses an \"embedded\" Mserver instance.  The argument to " +
-				"this option should be in the form of path/to/mserver:dbname" +
-				"[:dbfarm[:dbinit]].");
 		copts.addOption(null, "Xhash", CmdLineOpts.CAR_ONE, null,
 				"Use the given hash algorithm during challenge response.  " +
 				"Supported algorithm names: SHA1, MD5, plain.");
@@ -189,11 +185,6 @@ copts.produceHelpMessage()
 		boolean scolonterm = true;
 		boolean xmlMode =
 				"xml".equals(copts.getOption("Xoutput").getArgument());
-		boolean isEmbedded = copts.getOption("Xembedded").isPresent();
-		if (isEmbedded) {
-			// user and password don't matter for embedded
-			pass = "";
-		}
 
 		// we need the password from the user, fetch it with a pseudo
 		// password protector
@@ -248,31 +239,11 @@ copts.produceHelpMessage()
 		con = null;
 		String database = copts.getOption("database").getArgument();
 		try {
-			if (!isEmbedded) {
-				con = DriverManager.getConnection(
-						"jdbc:monetdb://" + host + "/" + database + attr,
-						user,
-						pass
-				);
-			} else {
-				String[] eargs =
-					copts.getOption("Xembedded").getArgument().split(":");
-				if (eargs.length < 2 || eargs.length > 4) {
-					System.err.println("Expecting path/to/mserver:dbname" +
-							"[:dbfarm[:dbinit]]");
-					System.exit(-1);
-				}
-				Properties p = new Properties();
-				p.setProperty("executable", eargs[0]);
-				p.setProperty("dbname", eargs[1]);
-				if (args.length > 2) p.setProperty("dbfarm", eargs[2]);
-				if (args.length > 3) p.setProperty("dbinit", eargs[3]);
-				nl.cwi.monetdb.jdbc.MonetConnection.setEmbeddedProperties(p);
-				// what do you mean? "descriptive names suck" ?!?
-				out.println("Starting embedded instance...");
-				out.flush();
-				con = nl.cwi.monetdb.jdbc.MonetConnection.getEmbeddedInstanceConnection();
-			}
+			con = DriverManager.getConnection(
+					"jdbc:monetdb://" + host + "/" + database + attr,
+					user,
+					pass
+			);
 			SQLWarning warn = con.getWarnings();
 			while (warn != null) {
 				System.err.println("Connection warning: " +

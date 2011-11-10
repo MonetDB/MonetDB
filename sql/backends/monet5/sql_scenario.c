@@ -44,14 +44,15 @@
 #include "sql_mvc.h"
 #include "sql_readline.h"
 #include "sql_user.h"
+#include "sql_datetime.h"
 #include "mal_io.h"
 #include "mal_parser.h"
 #include "mal_builder.h"
 #include "mal_namespace.h"
-#include "mal_sabaoth.h"
 #include "mal_debugger.h"
 #include "mal_linker.h"
 #include "bat5.h"
+#include "msabaoth.h"
 #include <mtime.h>
 #include "optimizer.h"
 #include "opt_statistics.h"
@@ -124,7 +125,6 @@ static str SQLinit(void);
 str
 SQLprelude(void)
 {
-	int res = 0;
 	str tmp;
 	Scenario ms, s = getFreeScenario();
 	if (!s)
@@ -169,18 +169,17 @@ SQLprelude(void)
 
 	/* only register availability of scenarios AFTER we are inited! */
 	s->name = "sql";
-	tmp = SABAOTHmarchScenario(&res, &s->name);
+	tmp = msab_marchScenario(s->name);
 	if (tmp != MAL_SUCCEED)
 		return(tmp);
 	ms->name = "msql";
-	tmp = SABAOTHmarchScenario(&res, &ms->name);
+	tmp = msab_marchScenario(ms->name);
 	return tmp;
 }
 
 str
 SQLepilogue(void)
 {
-	int res = 0;
 	char *s = "sql";
 
 	if( SQLinitialized){
@@ -192,7 +191,7 @@ SQLepilogue(void)
 	/* this function is never called, but for the style of it, we clean
 	 * up our own mess */
 	if (!GDKembedded)
-		return SABAOTHretreatScenario(&res, &s);
+		return msab_retreatScenario(s);
 	return MAL_SUCCEED;
 }
 
@@ -301,7 +300,7 @@ global_variables(mvc *sql, char *user, char *schema)
 	SQLglobal("trace","show,ticks,stmt");
 
 	typename = "sec_interval";
-	sql_find_subtype(&ctype, typename, 0, 0);
+	sql_find_subtype(&ctype, typename, inttype2digits(ihour, isec), 0);
 	SQLglobal("current_timezone", &sec);
 
 	typename = "boolean";
@@ -367,6 +366,53 @@ handle_error(mvc *m, stream *out, int pstatus)
 	return go;
 }
 
+static str
+sql_update_dec2010( Client c, mvc *m )
+{
+	node *nsch, *ntab, *ncol;
+	sql_trans *tr;
+	char *buf = GDKmalloc(1024), *err = NULL;
+	int bufsize = 1024, pos = 0;
+
+	buf[0] = 0;
+ 	tr = m->session->tr;
+	for( nsch = tr->schemas.set->h; nsch; nsch= nsch->next) {
+		sql_schema *s = nsch->data;
+
+		if ( isalpha((int)s->base.name[0]) ) {
+			if (!s->tables.set) 
+				continue;
+			for( ntab = (s)->tables.set->h ;ntab; ntab = ntab->next){
+				sql_table *t = ntab->data;
+
+				if (!isTable(t) || !t->columns.set) 
+					continue;
+				for ( ncol = (t)->columns.set->h; ncol; ncol= ncol->next){
+					sql_column *c = (sql_column *) ncol->data;
+			
+					if (c->type.type->eclass == EC_INTERVAL && 
+					    strcmp(c->type.type->base.name, "sec_interval") == 0) {
+						if (bufsize < pos + 100) 
+							buf = GDKrealloc(buf, bufsize += 1024);
+						pos += snprintf(buf+pos, bufsize-pos, "update \"%s\".\"%s\" set \"%s\"=1000*\"%s\"\n",
+							s->base.name, t->base.name, c->base.name, c->base.name);
+					}
+				}
+			}
+		}
+	}
+	if (bufsize < pos + 256) 
+		buf = GDKrealloc(buf, bufsize += 1024);
+	pos += snprintf(buf+pos, bufsize-pos, "create filter function \"like\"(val string, pat string, esc string) external name pcre.like_filter;\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create filter function \"ilike\"(val string, pat string, esc string) external name pcre.ilike_filter;\n");
+	printf("%s\n", buf);
+	if ((err = SQLstatementIntern(c, &buf, "update", 1, 0)) != MAL_SUCCEED) {
+		GDKfree(buf);
+		return err;
+	}
+	GDKfree(buf);
+	return NULL;
+}
 
 str
 SQLinitClient(Client c)
@@ -384,9 +430,9 @@ SQLinitClient(Client c)
 	if (SQLinitialized == 0 )
 		SQLprelude();
 	/*
-	 * @-
-	 * Based on the initialization retun value we can prepare a SQLinit string with all information needed
-	 * to initialize the catalog based on the mandatory scripts to be executed.
+	 * Based on the initialization return value we can prepare a SQLinit
+	 * string with all information needed to initialize the catalog
+	 * based on the mandatory scripts to be executed.
 	 */
 	if (sqlinit) { /* add sqlinit to the fdin stack */
 		buffer *b = (buffer*)GDKmalloc(sizeof(buffer));
@@ -410,6 +456,8 @@ SQLinitClient(Client c)
 		mvc_reset(m, c->fdin, c->fdout, SQLdebug, NR_GLOBAL_VARS);
 		backend_reset(be);
 	}
+	if (m->session->tr)
+		reset_functions(m->session->tr);
 	/* pass through credentials of the user if not console */
 	schema = monet5_user_get_def_schema(m, c->user);
 	if (!schema) {
@@ -427,6 +475,15 @@ SQLinitClient(Client c)
 
 	initSQLreferences();
 	/* initialize the database with predefined SQL functions */
+	if (SQLnewcatalog == 0) {
+		/* check whether table sys.systemfunctions exists: if
+		 * it doesn't, this is probably a restart of the
+		 * server after an incomplete initialization */
+		sql_schema *s = mvc_bind_schema(m, "sys");
+		sql_table *t = s ? mvc_bind_table(m, s, "systemfunctions") : NULL;
+		if (t == NULL)
+			SQLnewcatalog = 1;
+	}
 	if (SQLnewcatalog > 0) {
 		char path[PATHLENGTH];
 		str fullname;
@@ -437,13 +494,18 @@ SQLinitClient(Client c)
 		fullname = MSP_locate_sqlscript(path, 1);
 		if (fullname) {
 			str filename = fullname;
-			str p;
+			str p, n;
 			fprintf(stdout, "# SQL catalog created, loading sql scripts once\n");
 			do {
 				p = strchr(filename, PATH_SEP);
 				if (p)
 					*p = '\0';
-				fprintf(stdout, "# SQL loading sql scripts %s\n",filename);
+				if ((n = strrchr(filename, DIR_SEP)) == NULL) {
+					n = filename;
+				} else {
+					n++;
+				}
+				fprintf(stdout, "# loading sql script: %s\n", n);
 				fd = open_rastream(filename);
 				if (p)
 					filename = p + 1;
@@ -463,6 +525,15 @@ SQLinitClient(Client c)
 			GDKfree(fullname);
 		} else
 			fprintf(stderr, "!could not read createdb.sql\n");
+	} else { /* handle upgrades */
+		sql_subtype clob; 
+
+        	sql_find_subtype(&clob, "clob", 0, 0);
+		if (!sql_bind_func3(m->sa, mvc_bind_schema(m,"sys"), "like", &clob, &clob, &clob, F_FILT )) {
+			char *err;
+			if ((err = sql_update_dec2010(c, m)) != NULL)
+				fprintf(stderr, "!%s\n", err);
+		}
 	}
 	fflush(stdout);
 	fflush(stderr);
@@ -500,10 +571,6 @@ SQLexitClient(Client c)
 		res_tables_destroy(m->results);
 		m->results= NULL;
 
-		/*
-		if (m->session->tr)
-			reset_functions(m->session->tr);
-		*/
 		{
 			backend *be = c->state[MAL_SCENARIO_PARSER];
 
@@ -1124,13 +1191,20 @@ SQLparser(Client c)
 	str msg = NULL;
 	backend *be;
 	mvc *m;
-	int oldvtop,oldstop;
+	int oldvtop, oldstop;
 	int pstatus = 0;
 	int err = 0;
 
 	be = ((backend *) c->state[MAL_SCENARIO_PARSER]);
 	if (be == 0) {
-		showException(SQL,"sql","SQL state descriptor missing\n");
+		/* tell the client */
+		mnstr_printf(out, "!SQL state descriptor missing, aborting\n");
+		mnstr_flush(out);
+		/* leave a message in the log */
+		fprintf(stderr, "SQL state descriptor missing, cannot handle client!\n");
+		/* stop here, instead of printing the exception below to the
+		 * client in an endless loop */
+		c->mode = FINISHING;
 		throw(SQL, "SQLparser", "State descriptor missing");
 	}
 	oldvtop = c->curprg->def->vtop;
@@ -1138,7 +1212,7 @@ SQLparser(Client c)
 	be->vtop = oldvtop;
 #ifdef _SQL_PARSER_DEBUG
 	mnstr_printf(GDKout, "#SQL compilation \n");
-	printf("debugger? %d(%d)\n", (int)be->mvc->emode, (int)be->mvc->emod);
+	printf("debugger? %d(%d)\n", (int) be->mvc->emode, (int) be->mvc->emod);
 #endif
 	m = be->mvc;
 	m->type = Q_PARSE;
@@ -1157,81 +1231,95 @@ SQLparser(Client c)
 	if (be->language == 'X') {
 		int n = 0, v, off, len;
 
-		if( strncmp(in->buf + in->pos,"export ",7)==0 )
-			n = sscanf(in->buf + in->pos+7, "%d %d %d", &v, &off, &len);
+		if (strncmp(in->buf + in->pos, "export ", 7) == 0)
+			n = sscanf(in->buf + in->pos + 7, "%d %d %d", &v, &off, &len);
 
 		if (n == 2 || n == 3) {
 			mvc_export_chunk(m, out, v, off, n == 3 ? len : m->reply_size);
 
-			in->pos = in->len;	/* HACK: should use parsed lenght */
-			return NULL;
+			in->pos = in->len;  /* HACK: should use parsed length */
+			return MAL_SUCCEED;
 		}
-		if( strncmp(in->buf+in->pos,"close ",6)==0 ){
+		if (strncmp(in->buf + in->pos, "close ", 6) == 0) {
 			res_table *t;
 
-			v = (int) strtol(in->buf+in->pos+6,NULL,0);
- 			t = res_tables_find(m->results, v);
+			v = (int) strtol(in->buf + in->pos + 6, NULL, 0);
+			t = res_tables_find(m->results, v);
 			if (t)
 				m->results = res_tables_remove(m->results, t);
-			in->pos = in->len;	/* HACK: should use parsed lenght */
-			return NULL;
+			in->pos = in->len;  /* HACK: should use parsed length */
+			return MAL_SUCCEED;
 		}
-		if( strncmp(in->buf+in->pos,"release ", 8)==0 ){
+		if (strncmp(in->buf + in->pos, "release ", 8) == 0) {
 			cq *q = NULL;
 
-			v = (int) strtol(in->buf+in->pos+ 8,NULL,0);
+			v = (int) strtol(in->buf + in->pos + 8, NULL, 0);
 			if ((q = qc_find(m->qc, v)) != NULL)
-					qc_delete(m->qc, q);
-			in->pos = in->len;	/* HACK: should use parsed lenght */
-			return NULL;
+				qc_delete(m->qc, q);
+			in->pos = in->len;  /* HACK: should use parsed length */
+			return MAL_SUCCEED;
 		}
-		if( strncmp(in->buf+in->pos,"auto_commit ", 12)==0 ){
+		if (strncmp(in->buf + in->pos, "auto_commit ", 12) == 0) {
 			int commit;
-			v= (int) strtol(in->buf+in->pos+12,NULL,10);
+			v = (int) strtol(in->buf + in->pos + 12, NULL, 10);
 			commit = (!m->session->auto_commit && v);
-			m->session->auto_commit = (v)?1:0;
+			m->session->auto_commit = (v) ? 1 : 0;
 			m->session->ac_on_commit = m->session->auto_commit;
 			if (m->session->active) {
-				if (commit && mvc_commit(m, 0, NULL)< 0)
-					throw(SQL, "SQLparser", "Xauto_commit (commit) failed");
-				else if (!commit && mvc_rollback(m, 0, NULL) < 0)
-					throw(SQL, "SQLparser", "Xauto_commit (rollback) failed");
+				if (commit && mvc_commit(m, 0, NULL) < 0) {
+					mnstr_printf(out, "!COMMIT: commit failed while "
+							"enabling auto_commit\n");
+					msg = createException(SQL, "SQLparser",
+							"Xauto_commit (commit) failed");
+				} else if (!commit && mvc_rollback(m, 0, NULL) < 0) {
+					mnstr_printf(out, "!COMMIT: rollback failed while "
+							"disabling auto_commit\n");
+					msg = createException(SQL, "SQLparser",
+							"Xauto_commit (rollback) failed");
+				}
 			}
-			in->pos = in->len;	/* HACK: should use parsed lenght */
-			return NULL;
+			in->pos = in->len;  /* HACK: should use parsed length */
+			if (msg != NULL)
+				goto finalize;
+			return MAL_SUCCEED;
 		}
-		if( strncmp(in->buf+in->pos,"reply_size ", 11)==0 ){
-			v= (int) strtol(in->buf+in->pos+11,NULL,10);
+		if (strncmp(in->buf + in->pos, "reply_size ", 11) == 0) {
+			v = (int) strtol(in->buf + in->pos + 11, NULL, 10);
 			m->reply_size = v;
-			in->pos = in->len;	/* HACK: should use parsed lenght */
-			return NULL;
+			in->pos = in->len;  /* HACK: should use parsed length */
+			return MAL_SUCCEED;
 		}
 		if (strncmp(in->buf + in->pos, "sizeheader", 10) == 0) {
 			v = (int) strtol(in->buf + in->pos + 10, NULL, 10);
 			m->sizeheader = v != 0;
-			in->pos = in->len;	/* HACK: should use parsed lenght */
-			return NULL;
+			in->pos = in->len;  /* HACK: should use parsed length */
+			return MAL_SUCCEED;
 		}
-		if( strncmp(in->buf + in->pos,"quit",4)==0 ) {
+		if (strncmp(in->buf + in->pos, "quit", 4) == 0) {
 			c->mode = FINISHING;
-			return NULL;
+			return MAL_SUCCEED;
 		}
-		throw(SQL, "SQLparser", "Unrecognized X command");
+		mnstr_printf(out, "!unrecognized X command: %s\n", in->buf + in->pos);
+		msg = createException(SQL, "SQLparser", "unrecognized X command");
+		goto finalize;
 	}
-	if (be->language != 'S' ) {
-		throw(SQL, "SQLparser", "Unrecognized language prefix");
+	if (be->language != 'S') {
+		mnstr_printf(out, "!unrecognized language prefix: %ci\n", be->language);
+		msg = createException(SQL, "SQLparser",
+				"unrecognized language prefix: %c", be->language);
+		goto finalize;
 	}
 
-	if ((err = sqlparse(m)) && m->debug&1){
+	if ((err = sqlparse(m)) && m->debug & 1) {
 		/* switch to different language mode */
-		char oldlang= be->language;
-		be->language= 'D';
-		runMALDebugger(c,c->curprg);
-		be->language= oldlang;
+		char oldlang = be->language;
+		be->language = 'D';
+		runMALDebugger(c, c->curprg);
+		be->language = oldlang;
 	}
-	if( err ||
+	if (err ||
 	    /* Only forget old errors on transaction boundaries */
-	    (mvc_status(m) && m->type != Q_TRANS) || !m->sym) {
+		(mvc_status(m) && m->type != Q_TRANS) || !m->sym) {
 		if (!err && m->scanner.started) /* repeat old errors, with a parsed query */
 			err = mvc_status(m);
 		if (err) {
@@ -1254,7 +1342,23 @@ SQLparser(Client c)
 		be->q = qc_find(m->qc, m->sym->data.lval->h->data.i_val);
 		if (!be->q) {
 			err = -1;
-			sql_error(m, 2, "no prepared statement with the given id\n");
+			mnstr_printf(out, "!EXEC: no prepared statement with id: %d\n",
+					m->sym->data.lval->h->data.i_val);
+			msg = createException(SQL, "PREPARE",
+					"no prepared statement with id: %d",
+					m->sym->data.lval->h->data.i_val);
+			handle_error(m, c->fdout, pstatus);
+			sqlcleanup(m, err);
+			goto finalize;
+		} else if (be->q->type != Q_PREPARE) {
+			err = -1;
+			mnstr_printf(out, "!EXEC: given handle id is not for a "
+					"prepared statement: %d\n",
+					m->sym->data.lval->h->data.i_val);
+			msg = createException(SQL, "PREPARE",
+					"is not a prepared statement: %d",
+					m->sym->data.lval->h->data.i_val);
+			handle_error(m, c->fdout, pstatus);
 			sqlcleanup(m, err);
 			goto finalize;
 		}
@@ -1265,13 +1369,13 @@ SQLparser(Client c)
 			SQLsetDebugger(c, m, TRUE);
 		if (m->emod & mod_trace)
 			SQLsetTrace(be, c, TRUE);
-		if (m->emode != m_explain && !(m->emod & (mod_debug|mod_trace)))
+		if (m->emode != m_explain && !(m->emod & (mod_debug | mod_trace)))
 			m->emode = m_inplace;
 		scanner_query_processed(&(m->scanner));
 	} else {
 		stmt *s = sql_symbol2stmt(m, m->sym);
 
-		if (s==0 || (err = mvc_status(m) && m->type != Q_TRANS)) {
+		if (s == 0 || (err = mvc_status(m) && m->type != Q_TRANS)) {
 			msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 			handle_error(m, c->fdout, pstatus);
 			sqlcleanup(m, err);
@@ -1290,7 +1394,7 @@ SQLparser(Client c)
 			MalBlkPtr curBlk;
 
 			scanner_query_processed(&(m->scanner));
-			backend_callinline(be, c, s );
+			backend_callinline(be, c, s);
 
 			curBlk = c->curprg->def;
 			p = newFcnCall(curBlk, "optimizer", "remap");
@@ -1300,22 +1404,22 @@ SQLparser(Client c)
 			optimizeMALBlock(c, curBlk);
 			c->curprg->def = curBlk;
 
-			if( m->emode == m_inplace)
+			if (m->emode == m_inplace)
 				m->emode = m_normal;
 		} else {
 			/* generate a factory instantiation */
 			be->q = qc_insert(m->qc,
-					  m->sa,      /* the allocator */
-					  m->sym,     /* the sql symbol tree */
-					  m->args,    /* the argument list */
-					  m->argc,
-					  m->scanner.key ^ m->session->schema->base.id,/* the statement hash key */
-					  (m->emode == m_prepare)?Q_PREPARE:
-					  m->type,/* the type of the statement */
-					  sql_escape_str(QUERY(m->scanner)));
+					m->sa,        /* the allocator */
+					m->sym,       /* the sql symbol tree */
+					m->args,      /* the argument list */
+					m->argc,
+					m->scanner.key ^ m->session->schema->base.id,  /* the statement hash key */
+					(m->emode == m_prepare) ? Q_PREPARE :
+					m->type,  /* the type of the statement */
+					sql_escape_str(QUERY(m->scanner)));
 			scanner_query_processed(&(m->scanner));
 			be->q->code =
-				(backend_code)backend_dumpproc(be, c, be->q, s);
+				(backend_code) backend_dumpproc(be, c, be->q, s);
 			be->q->stk = 0;
 
 			/* passed over to query cache, used during dumpproc */
@@ -1328,10 +1432,10 @@ SQLparser(Client c)
 				m->emode = m_inplace;
 		}
 	}
-	if (be->q){
+	if (be->q) {
 		if (m->emode == m_prepare)
 			err = mvc_export_prepare(m, c->fdout, be->q, "");
-		else if (m->emode == m_inplace ){
+		else if (m->emode == m_inplace) {
 			/* everything ready for a fast call */
 		} else /* call procedure generation (only in cache mode) */
 			backend_call(be, c, be->q);
@@ -1357,19 +1461,19 @@ SQLparser(Client c)
 
 		chkTypes(c->nspace, c->curprg->def, TRUE); /* resolve types */
 		/* we know more in this case then
-			chkProgram(c->nspace, c->curprg->def); */
+		    chkProgram(c->nspace, c->curprg->def); */
 		if (c->curprg->def->errors) {
 			if (m->emod & mod_debug) {
 				/* switch to differnt language mode */
-				char oldlang= be->language;
-				be->language= 'D';
-				runMALDebugger(c,c->curprg);
-				be->language= oldlang;
+				char oldlang = be->language;
+				be->language = 'D';
+				runMALDebugger(c, c->curprg);
+				be->language = oldlang;
 			}
 			showErrors(c);
 			/* restore the state */
 			resetMalBlk(c->curprg->def, oldstop);
-			freeVariables(c,c->curprg->def, c->glb, oldvtop);
+			freeVariables(c, c->curprg->def, c->glb, oldvtop);
 			c->curprg->def->errors = 0;
 			msg = createException(PARSE, "SQLparser", "Semantic errors");
 		}
@@ -1379,8 +1483,8 @@ SQLparser(Client c)
  * Inspect the variables for post code-generation actions.
  */
 finalize:
-	if (m->emode == m_explain  && be->q && be->q->code)
-		printFunction(GDKout, ((Symbol)(be->q->code))->def, 0, LIST_MAL_STMT  | LIST_MAL_UDF | LIST_MAPI);
+	if (m->emode == m_explain && be->q && be->q->code)
+		printFunction(GDKout, ((Symbol) (be->q->code))->def, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAPI);
 	/*
 	 * @-
 	 * Gather the statistics for post analysis. It should preferably

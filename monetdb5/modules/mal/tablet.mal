@@ -17,6 +17,10 @@
 
 module tablet;
 
+command prelude():void
+address TABprelude
+comment "initialise the tablet module";
+
 command load( names:bat[:oid,:str], seps:bat[:oid,:str],
 		types:bat[:oid,:str], datafile:str, nr:int ) :bat[:str,:bat]
 address CMDtablet_load
@@ -133,4 +137,6 @@ comment "Return the size in number of pages";
 command getPage(i:int):void
 address TABgetPage
 comment "Produce the i-th page of output";
-# @-
+
+# initialise our tblrecord
+tablet.prelude();

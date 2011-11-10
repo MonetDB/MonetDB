@@ -17,7 +17,6 @@ stdout of test 'in_query_with_constants_fails.Bug-2582` in directory 'test/BugTr
 
 Ready.
 
-Over..
 
 # 09:27:06 >  
 # 09:27:06 >  mclient -lsql -ftest -i -e --host=alf --port=38169 

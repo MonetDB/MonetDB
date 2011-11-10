@@ -47,15 +47,16 @@ refs_find_rel(list *refs, sql_rel *rel)
 }
 
 static void 
-print_stmtlist(sql_allocator *sa, stmt *l )
+print_stmtlist(sql_allocator *sa, stmt *l)
 {
 	node *n;
-	if (l)
-	for (n = l->op4.lval->h; n; n = n->next) {
-		char *rnme = table_name(sa, n->data);
-		char *nme = column_name(sa, n->data);
+	if (l) {
+		for (n = l->op4.lval->h; n; n = n->next) {
+			char *rnme = table_name(sa, n->data);
+			char *nme = column_name(sa, n->data);
 
-		printf("%s.%s\n", rnme, nme);
+			printf("%s.%s\n", rnme ? rnme : "(null!)", nme ? nme : "(null!)");
+		}
 	}
 }
 
@@ -195,25 +196,43 @@ static stmt *
 handle_in_exps( mvc *sql, sql_exp *ce, list *nl, stmt *left, stmt *right, group *grp, int in, int use_r) 
 {
 	node *n;
-	stmt *s, *c;
+	stmt *s = NULL, *c = exp_bin(sql, ce, left, right, grp, NULL);
 
-	/* create bat append values */
-	s = stmt_temp(sql->sa, exp_subtype(ce));
-	for( n = nl->h; n; n = n->next) {
-		sql_exp *e = n->data;
-		stmt *i = exp_bin(sql, use_r?e->r:e, left, right, grp, NULL);
-		
-		s = stmt_append(sql->sa, s, i);
+	if (c->nrcols == 0) {
+		sql_subtype *bt = sql_bind_localtype("bit");
+		sql_subfunc *cmp = (in)
+			?sql_bind_func(sql->sa, sql->session->schema, "=", tail_type(c), tail_type(c), F_FUNC)
+			:sql_bind_func(sql->sa, sql->session->schema, "!=", tail_type(c), tail_type(c), F_FUNC);
+		sql_subfunc *a = (in)?sql_bind_func(sql->sa, sql->session->schema, "or", bt, bt, F_FUNC)
+				     :sql_bind_func(sql->sa, sql->session->schema, "and", bt, bt, F_FUNC);
+
+		for( n = nl->h; n; n = n->next) {
+			sql_exp *e = n->data;
+			stmt *i = exp_bin(sql, use_r?e->r:e, left, right, grp, NULL);
+			
+			i = stmt_binop(sql->sa, c, i, cmp); 
+			if (s)
+				s = stmt_binop(sql->sa, s, i, a);
+			else
+				s = i;
+		}
+	} else {
+		/* create bat append values */
+		s = stmt_temp(sql->sa, exp_subtype(ce));
+		for( n = nl->h; n; n = n->next) {
+			sql_exp *e = n->data;
+			stmt *i = exp_bin(sql, use_r?e->r:e, left, right, grp, NULL);
+			
+			s = stmt_append(sql->sa, s, i);
+		}
+		/*s = stmt_mark_tail(sql->sa, stmt_reverse(sql->sa, stmt_semijoin(sql->sa, stmt_reverse(sql->sa, c), stmt_reverse(sql->sa, s))), 0);*/
+		/* not really a projection join, therefore make sure left values are unique !! */
+		if (in)
+			s = stmt_project(sql->sa, c, stmt_reverse(sql->sa, stmt_unique(sql->sa, s, NULL)));
+		else 
+			s = stmt_reverse(sql->sa, stmt_diff(sql->sa, stmt_reverse(sql->sa, c), stmt_reverse(sql->sa, stmt_unique(sql->sa, s, NULL))));
+		s = stmt_const(sql->sa, s, NULL);
 	}
-	c = exp_bin(sql, ce, left, right, grp, NULL);
-	/*s = stmt_mark_tail(sql->sa, stmt_reverse(sql->sa, stmt_semijoin(sql->sa, stmt_reverse(sql->sa, c), stmt_reverse(sql->sa, s))), 0);*/
-	/* not really a projection join, therefore make sure left values are unique !! */
-	c = column(sql->sa, c);
-	if (in)
-		s = stmt_project(sql->sa, c, stmt_reverse(sql->sa, stmt_unique(sql->sa, s, NULL)));
-	else 
-		s = stmt_reverse(sql->sa, stmt_diff(sql->sa, stmt_reverse(sql->sa, c), stmt_reverse(sql->sa, stmt_unique(sql->sa, s, NULL))));
-	s = stmt_const(sql->sa, s, NULL);
 	return s;
 }
 
@@ -435,12 +454,18 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 		sql_exp *re = e->r, *re2 = e->f;
 		prop *p;
 
-		if (e->flag == cmp_filter)
+		if (e->flag == cmp_filter) {
+			list *r = e->r;
+
 			re2 = NULL;
+			re = r->h->data;
+			if (r->h->next)
+				re2 = r->h->next->data;
+		}
 		if (e->flag == cmp_in || e->flag == cmp_notin) {
 			return handle_in_exps(sql, e->l, e->r, left, right, grp, (e->flag == cmp_in), 0);
 		}
-		if (e->flag == cmp_or) {
+		if (e->flag == cmp_or && (!right || right->nrcols == 1)) {
 			list *l = e->l;
 			node *n;
 			stmt *sel1, *sel2;
@@ -473,8 +498,24 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 				assert(f);
 				return stmt_binop(sql->sa, sel1, sel2, f);
 			}
-			return stmt_union(sql->sa, sel1,sel2);
+			if (sel1->nrcols == 0) {
+				stmt *predicate = bin_first_column(sql->sa, left);
+				
+				predicate = stmt_const(sql->sa, predicate, stmt_bool(sql->sa, 1));
+				sel1 = stmt_uselect(sql->sa, predicate, sel1, cmp_equal);
+			}
+			if (sel2->nrcols == 0) {
+				stmt *predicate = bin_first_column(sql->sa, left);
+				
+				predicate = stmt_const(sql->sa, predicate, stmt_bool(sql->sa, 1));
+				sel2 = stmt_uselect(sql->sa, predicate, sel2, cmp_equal);
+			}
+			sel1 = stmt_mark_tail(sql->sa, sel1, 0); 
+			sel2 = stmt_mark_tail(sql->sa, sel2, 0); 
+			return stmt_union(sql->sa, sel1, sel2);
 		}
+		if (e->flag == cmp_or && right)  /* join */
+			assert(0);
 		/* here we handle join indices */
 		if ((p=find_prop(e->p, PROP_JOINIDX)) != NULL) {
 			sql_idx *i = p->value;
@@ -514,72 +555,40 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 			swapped = 1;
 		}
 		if (swapped || !right)
- 			r = exp_bin(sql, e->r, left, NULL, grp, sel);
+ 			r = exp_bin(sql, re, left, NULL, grp, sel);
 		else
- 			r = exp_bin(sql, e->r, right, NULL, grp, sel);
+ 			r = exp_bin(sql, re, right, NULL, grp, sel);
 		if (!r && !swapped) {
- 			r = exp_bin(sql, e->r, left, NULL, grp, sel);
+ 			r = exp_bin(sql, re, left, NULL, grp, sel);
 			is_select = 1;
 		}
 		if (!r && swapped) {
- 			r = exp_bin(sql, e->r, right, NULL, grp, sel);
+ 			r = exp_bin(sql, re, right, NULL, grp, sel);
 			is_select = 1;
 		}
 		if (re2)
- 			r2 = exp_bin(sql, e->f, left, right, grp, sel);
+ 			r2 = exp_bin(sql, re2, left, right, grp, sel);
 		if (!l || !r || (re2 && !r2)) {
 			assert(0);
 			return NULL;
 		}
 
-		/* the escape character of like is in the right expression */
-		if (e->flag == cmp_notlike || e->flag == cmp_like ||
-		    e->flag == cmp_notilike || e->flag == cmp_ilike)
-		{
-			if (!e->f)
-				r2 = stmt_atom_string(sql->sa, sa_strdup(sql->sa, ""));
-			if (!l || !r || !r2) {
-				assert(0);
-				return NULL;
-			}
-			if (l->nrcols == 0) {
-				stmt *lstmt;
-				char *likef = (e->flag == cmp_notilike || e->flag == cmp_ilike ?
-					"ilike" : "like");
-				sql_subtype *s = sql_bind_localtype("str");
-				sql_subfunc *like = sql_bind_func3(sql->sa, sql->session->schema, likef, s, s, s, F_FUNC);
-				list *ops = list_new(sql->sa);
+		/* general predicate, select and join */
+		if (e->flag == cmp_filter) {
+			if (l->nrcols == 0)
+				l = stmt_const(sql->sa, bin_first_column(sql->sa, swapped?right:left), l); 
 
-				assert(s && like);
-				
-				list_append(ops, l);
-				list_append(ops, r);
-				list_append(ops, r2);
-				lstmt = stmt_Nop(sql->sa, stmt_list(sql->sa, ops), like);
-				if (e->flag == cmp_notlike || e->flag == cmp_notilike) {
-					sql_subtype *bt = sql_bind_localtype("bit");
-					sql_subfunc *not = sql_bind_func(sql->sa, sql->session->schema, "not", bt, NULL, F_FUNC);
-					lstmt = stmt_unop(sql->sa, lstmt, not);
-				}
-				return lstmt;
-			}
                         if (left && right && re->card > CARD_ATOM && !is_select) {
-                                /* create l and r, gen operator func */
-                                char *like = (e->flag == cmp_like || e->flag == cmp_notlike)?"like":"ilike";
-                                int anti = (e->flag == cmp_notlike || e->flag == cmp_notilike);
-                                sql_subtype *s = sql_bind_localtype("str");
-                                sql_subfunc *f = sql_bind_func3(sql->sa, sql->session->schema, like, s, s, s, F_FUNC);
+				/* find predicate function */
+                                sql_subfunc *f = e->f;
+				stmt *j = stmt_joinN(sql->sa, l, r, r2, f);
 
-                                stmt *j = stmt_joinN(sql->sa, stmt_list(sql->sa, append(list_new(sql->sa),l)), stmt_list(sql->sa, append(append(list_new(sql->sa),r),r2)), f);
-                                if (is_anti(e) || anti)
+                                if (j && is_anti(e))
                                         j->flag |= ANTI;
                                 return j;
                         }
-			return stmt_likeselect(sql->sa, l, r, r2, (comp_type)e->flag);
+			return stmt_genselect(sql->sa, l, r, r2, e->f);
 		}
-		/* TODO general predicate, select and join */
-		if (e->flag == cmp_filter) 
-			return stmt_genselect(sql->sa, l, r, e->f);
 		if (left && right && !is_select &&
 		   ((l->nrcols && (r->nrcols || (r2 && r2->nrcols))) || 
 		     re->card > CARD_ATOM || 
@@ -779,34 +788,70 @@ rel2bin_table( mvc *sql, sql_rel *rel, list *refs)
 	list *l; 
 	stmt *sub = NULL;
 	node *en, *n;
-	int i;
 	sql_exp *op = rel->r;
-	sql_subfunc *f = op->f;
-	sql_table *t = f->res.comp_type;
+
+	if (op) {
+		int i;
+		sql_subfunc *f = op->f;
+		sql_table *t = f->res.comp_type;
 			
-	if (!t)
-		t = f->func->res.comp_type;
-	if (rel->l)
-		sub = subrel_bin(sql, rel->l, refs);
-	sub = exp_bin(sql, rel->r, sub, NULL, NULL, NULL); /* table function */
-	if (!sub || !t) { 
+		if (!t)
+			t = f->func->res.comp_type;
+		sub = exp_bin(sql, op, sub, NULL, NULL, NULL); /* table function */
+		if (!t || !sub) { 
+			assert(0);
+			return NULL;	
+		}
+		l = list_new(sql->sa);
+		for(i = 0, n = t->columns.set->h; n; n = n->next, i++ ) {
+			sql_column *c = n->data;
+			stmt *s = stmt_rs_column(sql->sa, sub, i, &c->type); 
+			char *nme = c->base.name;
+			char *rnme = exp_find_rel_name(op);
+
+			rnme = (rnme)?sa_strdup(sql->sa, rnme):NULL;
+			s = stmt_alias(sql->sa, s, rnme, sa_strdup(sql->sa, nme));
+			list_append(l, s);
+		}
+		sub = stmt_list(sql->sa, l);
+	} else if (rel->l) {
+		int i, argc;
+		char name[16], *nme;
+		/* handle sub query via function */
+		(void)refs;
+
+		nme = number2name(name, 16, ++sql->label);
+
+		/* arguments (todo check which are used) */
+		l = list_new(sql->sa);
+		for (argc = 0; argc < sql->argc; argc++) {
+			atom *a = sql->args[argc];
+			stmt *s = stmt_atom(sql->sa, a);
+			char nme[16];
+
+			snprintf(nme, 16, "A%d", argc);
+			s = stmt_alias(sql->sa, s, NULL, sa_strdup(sql->sa, nme));
+			list_append(l, s);
+		}
+		sub = stmt_list(sql->sa, l);
+		sub = stmt_func(sql->sa, sub, sa_strdup(sql->sa, nme), rel->l);
+		l = list_new(sql->sa);
+		for(i = 0, n = rel->exps->h; n; n = n->next, i++ ) {
+			sql_exp *c = n->data;
+			stmt *s = stmt_rs_column(sql->sa, sub, i, exp_subtype(c)); 
+			char *nme = exp_name(c);
+			char *rnme = op?exp_find_rel_name(op):NULL;
+
+			rnme = (rnme)?sa_strdup(sql->sa, rnme):NULL;
+			s = stmt_alias(sql->sa, s, rnme, sa_strdup(sql->sa, nme));
+			list_append(l, s);
+		}
+		sub = stmt_list(sql->sa, l);
+	}
+	if (!sub) { 
 		assert(0);
 		return NULL;	
 	}
-
-	l = list_new(sql->sa);
-	for(i = 0, n = t->columns.set->h; n; n = n->next, i++ ) {
-		sql_column *c = n->data;
-		stmt *s = stmt_rs_column(sql->sa, sub, i, &c->type); 
-		char *nme = c->base.name;
-		char *rnme = exp_find_rel_name(op);
-
-		rnme = (rnme)?sa_strdup(sql->sa, rnme):NULL;
-		s = stmt_alias(sql->sa, s, rnme, sa_strdup(sql->sa, nme));
-		list_append(l, s);
-	}
-	sub = stmt_list(sql->sa, l);
-
 	l = list_new(sql->sa);
 	for( en = rel->exps->h; en; en = en->next ) {
 		sql_exp *exp = en->data;
@@ -832,27 +877,11 @@ rel2bin_table( mvc *sql, sql_rel *rel, list *refs)
 	return sub;
 }
 
-static int
-equi_join(stmt *j)
-{
-	if (j->flag == cmp_equal)
-		return 0;
-	return -1;
-}
-
-static int
-not_equi_join(stmt *j)
-{
-	if (j->flag != cmp_equal)
-		return 0;
-	return -1;
-}
-
 static stmt *
 rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 {
 	list *l; 
-	node *en, *n;
+	node *en = NULL, *n;
 	stmt *left = NULL, *right = NULL, *join = NULL, *jl, *jr;
 	stmt *ld = NULL, *rd = NULL;
 
@@ -864,15 +893,26 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 		return NULL;	
 	left = row2cols(sql, left);
 	right = row2cols(sql, right);
+	/* 
+ 	 * split in 2 steps, 
+ 	 * 	first cheap join(s) (equality or idx) 
+ 	 * 	second selects/filters 
+         */
 	if (rel->exps) {
 		int idx = 0;
 		list *jns = list_new(sql->sa);
 
-		/* generate a stmt_reljoin */
+		/* generate a relational join */
 		for( en = rel->exps->h; en; en = en->next ) {
 			int join_idx = sql->opt_stats[0];
-			stmt *s = exp_bin(sql, en->data, left, right, NULL, NULL);
+			sql_exp *e = en->data;
+			stmt *s = NULL;
 
+			/* only handle simple joins here */		
+			if (list_length(jns) && (idx || !e->type == e_cmp || e->flag != cmp_equal))
+				break;
+
+			s = exp_bin(sql, en->data, left, right, NULL, NULL);
 			if (!s) {
 				assert(0);
 				return NULL;
@@ -881,6 +921,7 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 				idx = 1;
 			if (!join) {
 				join = s;
+			/* stop on first non equality join */
 			} else if (s->type != st_join && 
 				   s->type != st_join2 && 
 				   s->type != st_joinN) {
@@ -889,13 +930,14 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 
 					if (rs->type == st_join || 
 				   	    rs->type == st_join2 || 
-				   	    rs->type == st_joinN) {
+				   	    rs->type == st_joinN) { 
 						list_append(jns, s);
 						continue;
 					}
 				}
 				/* handle select expressions */
 				/*assert(0);*/
+				/* should be handled by join list (reljoin) */
 				if (s->h == join->h) {
 					join = stmt_semijoin(sql->sa, join,s);
 				} else {
@@ -908,15 +950,7 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 			list_append(jns, s);
 		}
 		if (list_length(jns) > 1) {
-			int o = 1, *O = &o;
-			/* move all equi joins into a releqjoin */
-			list *eqjns = list_select(jns, O, (fcmp)&equi_join, NULL);
-			if (!idx && list_length(eqjns) > 1) {
-				list *neqjns = list_select(jns, O, (fcmp)&not_equi_join, NULL);
-				join = stmt_reljoin(sql->sa, stmt_releqjoin1(sql->sa, eqjns), neqjns);
-			} else {
-				join = stmt_reljoin(sql->sa, NULL, jns);
-			}
+			join = stmt_releqjoin(sql->sa, jns);
 		} else {
 			join = jns->h->data; 
 		}
@@ -925,17 +959,61 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 		stmt *r = bin_first_column(sql->sa, right);
 		join = stmt_join(sql->sa, l, stmt_reverse(sql->sa, r), cmp_all); 
 	}
+	jl = stmt_reverse(sql->sa, stmt_mark_tail(sql->sa, join,0));
+	jr = stmt_reverse(sql->sa, stmt_mark_tail(sql->sa, stmt_reverse(sql->sa, join),0));
+	if (en) {
+		stmt *sub, *sel;
+		list *nl;
+
+		/* construct relation */
+		nl = list_new(sql->sa);
+
+		/* first project using equi-joins */
+		for( n = left->op4.lval->h; n; n = n->next ) {
+			stmt *c = n->data;
+			char *rnme = table_name(sql->sa, c);
+			char *nme = column_name(sql->sa, c);
+			stmt *s = stmt_project(sql->sa, jl, column(sql->sa, c) );
+	
+			s = stmt_alias(sql->sa, s, rnme, nme);
+			list_append(nl, s);
+		}
+		for( n = right->op4.lval->h; n; n = n->next ) {
+			stmt *c = n->data;
+			char *rnme = table_name(sql->sa, c);
+			char *nme = column_name(sql->sa, c);
+			stmt *s = stmt_project(sql->sa, jr, column(sql->sa, c) );
+
+			s = stmt_alias(sql->sa, s, rnme, nme);
+			list_append(nl, s);
+		}
+		sub = stmt_list(sql->sa, nl);
+
+		/* continue with non equi-joins */
+		sel = stmt_relselect_init(sql->sa);
+		for( ; en; en = en->next ) {
+			stmt *s = exp_bin(sql, en->data, sub, NULL, NULL, NULL);
+
+			if (!s) {
+				assert(0);
+				return NULL;
+			}
+			stmt_relselect_fill(sel, s);
+		}
+		/* recreate join output */
+		sel = stmt_reverse(sql->sa, stmt_mark_tail(sql->sa, sel, 0));
+		jl = stmt_project(sql->sa, sel, jl); 
+		jr = stmt_project(sql->sa, sel, jr); 
+	}
 
 	/* construct relation */
 	l = list_new(sql->sa);
 
-	jl = stmt_reverse(sql->sa, stmt_mark_tail(sql->sa, join,0));
 	if (rel->op == op_left || rel->op == op_full) {
 		/* we need to add the missing oid's */
 		ld = stmt_diff(sql->sa, bin_first_column(sql->sa, left), stmt_reverse(sql->sa, jl));
 		ld = stmt_mark(sql->sa, stmt_reverse(sql->sa, ld), 0);
 	}
-	jr = stmt_reverse(sql->sa, stmt_mark_tail(sql->sa, stmt_reverse(sql->sa, join),0));
 	if (rel->op == op_right || rel->op == op_full) {
 		/* we need to add the missing oid's */
 		rd = stmt_diff(sql->sa, bin_first_column(sql->sa, right), stmt_reverse(sql->sa, jr));
@@ -3133,7 +3211,7 @@ rel2bin_update( mvc *sql, sql_rel *rel, list *refs)
 	updcol = first_updated_col(updates, list_length(t->columns.set));
 	for (m = rel->exps->h; m; m = m->next) {
 		sql_exp *ce = m->data;
-		sql_idx *i = find_sql_idx(t, ce->name);
+		sql_idx *i = find_sql_idx(t, ce->name+1);
 
 		if (i) {
 			stmt *is = bin_find_column(sql->sa, update, ce->l, ce->r);

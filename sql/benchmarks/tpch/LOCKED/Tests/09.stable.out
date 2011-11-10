@@ -13,7 +13,6 @@ stdout of test '09` in directory 'benchmarks/tpch/LOCKED` itself:
 
 Ready.
 
-Over..
 
 # 11:48:00 >  
 # 11:48:00 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < 09.sql

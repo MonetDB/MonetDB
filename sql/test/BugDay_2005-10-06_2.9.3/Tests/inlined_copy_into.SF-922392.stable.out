@@ -13,7 +13,6 @@ stdout of test 'inlined_copy_into.SF-922392` in directory 'test/BugDay_2005-10-0
 
 Ready.
 
-Over..
 
 # 12:38:12 >  
 # 12:38:12 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < inlined_copy_into.SF-922392.sql

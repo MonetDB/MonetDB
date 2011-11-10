@@ -1,0 +1,42 @@
+# ChangeLog file for clients
+# This file is updated with Maddlog
+
+* Wed Nov  2 2011 Sjoerd Mullender <sjoerd@acm.org>
+- ODBC: Improved internal query for SQLSpecialColumns.  Before, the query
+  returned all columns taking part in a PRIMARY KEY *and* all columns
+  taking part in a UNIQUE constraint.  Now it returns only one or the
+  other set.
+
+* Fri Oct 28 2011 Sjoerd Mullender <sjoerd@acm.org>
+- ODBC: The database name is now used as the catalog name throughout.
+  Functions that return a catalog name return the database name, and
+  functions that match on catalog name match it with the database name.
+
+* Mon Oct 24 2011 Sjoerd Mullender <sjoerd@acm.org>
+- ODBC: Implemented an easier way to create a log file of interactions
+  with the ODBC driver.  You can now add a connection attribute
+  "LOGFILE=filename" to the connection string parameter of
+  SQLBrowseConnect and SQLDriverConnect, and to the relevant part of
+  the Windows registry or odbc.ini file.  This value is only used if
+  there is no environment variable ODBCDEBUG.
+
+* Wed Oct 12 2011 Fabian Groffen <fabian@cwi.nl>
+- Quoting of object names for mclient's \d command is now more flexible
+  and consistent with standard SQL quoting rules, bug #2846.
+
+* Mon Sep 12 2011 Sjoerd Mullender <sjoerd@acm.org>
+- ODBC: Implemented SQLColumnPrivileges function.
+
+* Sat Aug 27 2011 Fabian Groffen <fabian@cwi.nl>
+- Install new program, mnc, which provides netcat functionality, but
+  based on MonetDB's communication libraries
+
+* Tue Aug 23 2011 Fabian Groffen <fabian@cwi.nl>
+- Report full URI to database instead of just database when available
+  in mclient.
+
+* Thu Aug 18 2011 Fabian Groffen <fabian@cwi.nl>
+- The time format of the timer output can now be controlled with an
+  optional argument to the -i option.  ms, s and m force the time to be
+  formatted as milliseconds, seconds or minutes + seconds respectively.
+

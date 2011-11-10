@@ -309,14 +309,22 @@ static int setTabwidth(Column *c);
 		while(n-->0)							\
 			mnstr_printf(s, "\t");				\
 	} while (0)
-/*
- * @+
- * The table formatting information is stored in a system wide table.
- * Access is granted to a single client thread only.
- * The table structure depends on the columns to be printed,
- * it will be dynamically extended to accommodate the space.
- */
-static Tablet *tableReports[MAL_MAXCLIENTS];
+
+static Tablet **tableReports;
+
+str
+TABprelude(int *ret)
+{
+	/*
+	 * The table formatting information is stored in a system wide table.
+	 * Access is granted to a single client thread only.
+	 * The table structure depends on the columns to be printed,
+	 * it will be dynamically extended to accommodate the space.
+	 */
+	tableReports = GDKzalloc(sizeof(Tablet *) * MAL_MAXCLIENTS);
+	*ret = 0;
+	return MAL_SUCCEED;
+}
 
 
 static void

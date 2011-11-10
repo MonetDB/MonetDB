@@ -13,7 +13,6 @@ stdout of test 'savepoint_release-bug-sf-953560` in directory 'test/bugs` itself
 
 Ready.
 
-Over..
 
 # 11:55:35 >  
 # 11:55:35 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < savepoint_release-bug-sf-953560.sql

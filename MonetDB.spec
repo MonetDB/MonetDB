@@ -1,5 +1,5 @@
 %define name MonetDB
-%define version 11.6.0
+%define version 11.8.0
 %{!?buildno: %define buildno %(date +%Y%m%d)}
 
 # groups of related archs
@@ -27,7 +27,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Aug2011/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Aug2011-SP2/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -228,6 +228,7 @@ Summary: MonetDB perl interface
 Group: Applications/Databases
 Requires: %{name}-client = %{version}-%{release}
 Requires: perl
+Requires: perl(DBI)
 
 %description client-perl
 MonetDB is a database management system that is developed from a
@@ -624,6 +625,98 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Fri Oct 21 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.5.7-20111021
+- Rebuilt.
+
+* Thu Oct 20 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.5.7-20111021
+- clients: ODBC: Implemented a workaround in SQLTables for bug 2908.
+
+* Tue Oct 18 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.5.5-20111018
+- Rebuilt.
+
+* Mon Oct 17 2011 Fabian Groffen <fabian@cwi.nl> - 11.5.5-20111018
+- clients: Small improvement to mclient's table rendering for tables without
+  any rows.  Previously, the column names in the header could be
+  squeezed to very small widths, degrading readability.
+
+* Wed Oct 12 2011 Fabian Groffen <fabian@cwi.nl> - 11.5.5-20111018
+- clients: Python DB API connect() function now supports PEP 249-style arguments
+  user and host, bug #2901
+
+* Wed Oct 12 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.5.5-20111018
+- clients: mclient now checks the result of encoding conversions using the iconv
+  library.
+
+* Mon Oct 10 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.5.5-20111018
+- clients: Fixed a source of crashes in mclient when a query on the command line
+  using the -s option is combined with input on standard input (e.g. in
+  the construct mclient -s 'COPY INTO t FROM STDIN ...' < file.csv).
+
+* Sun Oct  9 2011 Fabian Groffen <fabian@cwi.nl> - 11.5.5-20111018
+- merovingian: Resolved problem where monetdbd would terminate abnormally when
+  databases named 'control', 'discovery' or 'merovingian' were stopped.
+
+* Fri Oct  7 2011 Fabian Groffen <fabian@cwi.nl> - 11.5.5-20111018
+- merovingian: monetdbd get status now also reports the version of the running monetdbd
+
+* Fri Oct  7 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.5.5-20111018
+- clients: Fixed bug 2897 where slow (network) reads could cause blocks to not
+  be fully read in one go, causing errors in the subsequent use of
+  those blocks.  With thanks to Rémy Chibois.
+
+* Thu Oct  6 2011 Fabian Groffen <fabian@cwi.nl> - 11.5.5-20111018
+- merovingian: Improved response time of 'monetdb start' when the database fails
+  to start.
+
+* Wed Oct  5 2011 Fabian Groffen <fabian@cwi.nl> - 11.5.5-20111018
+- merovingian: Fixed a bug in monetdbd where starting a failing database could
+  incorrectly be reported as a 'running but dead' database.
+
+* Fri Sep 30 2011 Fabian Groffen <fabian@cwi.nl> - 11.5.5-20111018
+- merovingian: To avoid confusion, all occurrences of merovingian were changed into
+  monetdbd for error messages sent to a client.
+
+* Tue Sep 27 2011 Fabian Groffen <fabian@cwi.nl> - 11.5.5-20111018
+- clients: Fixed a bug in mclient where processing queries from files could result
+  in ghost empty results to be reported in the output
+
+* Sun Sep 25 2011 Fabian Groffen <fabian@cwi.nl> - 11.5.3-20110925
+- Rebuilt.
+
+* Fri Sep 23 2011 Fabian Groffen <fabian@cwi.nl> - 11.5.3-20110925
+- clients: Fixed Perl DBD rowcount for larger results, bug #2889
+
+* Wed Sep 21 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.5.3-20110925
+- monetdb5: Fixed a problem where MAL variables weren't properly cleared before
+  reuse of the data strucutre.  This problem could cause the data flow
+  scheduler to generate dependencies between instructions that didn't
+  actually exist, which in turn could cause circular dependencies among
+  instructions with deadlock as a result.  Bugs 2865 and 2888.
+
+* Wed Sep 21 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.5.3-20110925
+- sql: Fixed a bug when using default values for interval columns.  Bug 2877.
+
+* Mon Sep 19 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.5.3-20110925
+- clients: Perl: We now distinguish properly between TABLE and GLOBAL TEMPORARY
+  (the latter are recognized by being in the "tmp" schema).
+- clients: Perl: fixed a bunch of syntax errors.  This fixes bug 2884.  With thanks
+  to Rémy Chibois.
+- clients: Perl: Fixed DBD::monetdb table_info and tabletype_info.  This fixes
+  bug 2885.  With thanks to Rémy Chibois.
+
+* Fri Sep 16 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.5.3-20110925
+- sql: A bug was fixed where deleted rows weren't properly accounted for in
+  all operations.  This was bug 2882.
+- sql: A bug was fixed which caused an update to an internal table to
+  happen too soon.  The bug could be observed on a multicore system
+  with a query INSERT INTO t (SELECT * FROM t) when the table t is
+  "large enough".  This was bug 2883.
+
+* Tue Sep 13 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.5.3-20110925
+- clients: mclient: fix display of varchar columns with only NULL values.
+- clients: Fixed a bug in mclient/msqldump where an internal error occurred during
+  dump when there are GLOBAL TEMPORARY tables.
+
 * Wed Sep 07 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.5.1-20110907
 - Rebuilt.
 

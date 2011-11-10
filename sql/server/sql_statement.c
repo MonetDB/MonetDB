@@ -104,7 +104,6 @@ st_type2string(st_type type)
 		ST(outerjoin);
 		ST(diff);
 		ST(union);
-		ST(reljoin);
 
 		ST(export);
 		ST(append);
@@ -128,6 +127,7 @@ st_type2string(st_type type)
 		ST(unop);
 		ST(binop);
 		ST(Nop);
+		ST(func);
 		ST(aggr);
 
 		ST(alias);
@@ -372,7 +372,6 @@ stmt_deps(list *dep_list, stmt *s, int depend_type, int dir)
 		/* simple case of statements of only statements */
 		case st_relselect:
 		case st_releqjoin: 
-		case st_reljoin:
 		case st_diff:
 		case st_alias:
 		case st_union:
@@ -460,6 +459,7 @@ stmt_deps(list *dep_list, stmt *s, int depend_type, int dir)
 		case st_unop:
 		case st_binop:
 		case st_Nop:
+		case st_func:
 			if (s->op1)
 				push(s->op1);
 			if (s->op2)
@@ -731,6 +731,7 @@ push_project(sql_allocator *sa, stmt *rows, stmt *val)
 	case st_convert:
 		val->op1 = push_project(sa, rows, val->op1);
 		break;
+	case st_func:
 	case st_Nop:
 		if (val->op4.funcval->func->side_effect) {
 			stmt *l = val->op1;
@@ -1034,27 +1035,13 @@ stmt_select(sql_allocator *sa, stmt *op1, stmt *op2, comp_type cmptype)
 }
 
 stmt *
-stmt_likeselect(sql_allocator *sa, stmt *op1, stmt *op2, stmt *op3, comp_type cmptype)
+stmt_genselect(sql_allocator *sa, stmt *op1, stmt *op2, stmt *op3, sql_subfunc *f)
 {
 	stmt *s = stmt_create(sa, st_select);
 
 	s->op1 = op1;
 	s->op2 = op2;
 	s->op3 = op3;
-	s->flag = cmptype;
-        s->nrcols = (op1->nrcols==2)?2:1;
-	s->h = s->op1->h;
-	s->t = s->op1->t;
-	return s;
-}
-
-stmt *
-stmt_genselect(sql_allocator *sa, stmt *op1, stmt *op2, sql_subfunc *f)
-{
-	stmt *s = stmt_create(sa, st_select);
-
-	s->op1 = op1;
-	s->op2 = op2;
 	s->op4.funcval = dup_subfunc(sa, f);
 	s->flag = cmp_filter;
         s->nrcols = (op1->nrcols==2)?2:1;
@@ -1062,7 +1049,6 @@ stmt_genselect(sql_allocator *sa, stmt *op1, stmt *op2, sql_subfunc *f)
 	s->t = s->op1->t;
 	return s;
 }
-
 
 stmt *
 stmt_select2(sql_allocator *sa, stmt *op1, stmt *op2, stmt *op3, int cmp)
@@ -1098,8 +1084,6 @@ stmt_uselect(sql_allocator *sa, stmt *op1, stmt *op2, comp_type cmptype)
 {
 	stmt *s = stmt_create(sa, st_uselect);
 
-	assert(cmptype != cmp_like && cmptype != cmp_notlike &&
-	       cmptype != cmp_ilike && cmptype != cmp_notilike);
 	s->op1 = op1;
 	s->op2 = op2;
 	s->flag = cmptype;
@@ -1152,21 +1136,6 @@ stmt_semijoin(sql_allocator *sa, stmt *op1, stmt *op2)
 }
 
 stmt *
-stmt_reljoin(sql_allocator *sa, stmt *op1, list *neqjoins )
-{
-	stmt *s = stmt_create(sa, st_reljoin);
-
-	s->op1 = op1;
-	s->op2 = stmt_list(sa, neqjoins);
-	s->nrcols = 2;
-	if (!op1)
-		op1 = neqjoins->h->data;
-	s->h = op1->h;
-	s->t = op1->t;
-	return s;
-}
-
-stmt *
 stmt_releqjoin_init(sql_allocator *sa)
 {
 	stmt *s = stmt_create(sa, st_releqjoin);
@@ -1188,8 +1157,8 @@ stmt_releqjoin_fill(stmt *rj, stmt *lc, stmt *rc)
 		rj->t = ((stmt *) (rj->op2->op4.lval->h->data))->h;
 }
 
-stmt *
-stmt_releqjoin2(sql_allocator *sa, list *l1, list *l2)
+static stmt *
+stmt_releqjoin__(sql_allocator *sa, list *l1, list *l2)
 {
 	stmt *s = stmt_create(sa, st_releqjoin);
 
@@ -1202,7 +1171,7 @@ stmt_releqjoin2(sql_allocator *sa, list *l1, list *l2)
 }
 
 stmt *
-stmt_releqjoin1(sql_allocator *sa, list *joins)
+stmt_releqjoin(sql_allocator *sa, list *joins)
 {
 	list *l1 = list_new(sa);
 	list *l2 = list_new(sa);
@@ -1230,7 +1199,7 @@ stmt_releqjoin1(sql_allocator *sa, list *joins)
 		l1 = list_append(l1, l);
 		l2 = list_append(l2, r);
 	}
-	return stmt_releqjoin2(sa, l1, l2);
+	return stmt_releqjoin__(sa, l1, l2);
 }
 
 stmt *
@@ -1270,14 +1239,15 @@ stmt_join2(sql_allocator *sa, stmt *l, stmt *ra, stmt *rb, int cmp)
 }
 
 stmt *
-stmt_joinN(sql_allocator *sa, stmt *l, stmt *r, sql_subfunc *op)
+stmt_joinN(sql_allocator *sa, stmt *l, stmt *r, stmt *opt, sql_subfunc *op)
 {
 	stmt *s = stmt_create(sa, st_joinN);
 
 	s->op1 = l;
 	s->op2 = r;
+	s->op3 = opt;
 	s->op4.funcval = op;
-	s->nrcols = 2;
+	s->nrcols = (opt)?3:2;
 	s->h = l->h;
 	s->t = r->h;
 	return s;
@@ -1595,6 +1565,36 @@ stmt_Nop(sql_allocator *sa, stmt *ops, sql_subfunc *op)
 }
 
 stmt *
+stmt_func(sql_allocator *sa, stmt *ops, char *name, sql_rel *rel)
+{
+	node *n;
+	stmt *o = NULL, *s = stmt_create(sa, st_func);
+
+	s->op1 = ops;
+	s->op2 = stmt_atom_string(sa, name);
+	s->op4.rel = rel;
+	if (ops && list_length(ops->op4.lval)) {
+		for (n = ops->op4.lval->h, o = n->data; n; n = n->next) {
+			stmt *c = n->data;
+	
+			if (o->nrcols < c->nrcols)
+				o = c;
+		}
+	}
+
+	if (o) {
+		s->h = o->h;
+		s->nrcols = o->nrcols;
+		s->key = o->key;
+		s->aggr = o->aggr;
+	} else {
+		s->nrcols = 0;
+		s->key = 1;
+	}
+	return s;
+}
+
+stmt *
 stmt_aggr(sql_allocator *sa, stmt *op1, group *grp, sql_subaggr *op, int reduce)
 {
 	stmt *s = stmt_create(sa, st_aggr);
@@ -1668,11 +1668,6 @@ tail_type(stmt *st)
 		/* The tail type of a releqjoin is the head of the second list!,
 		   ie should be 'oid' */
 		return head_type(st->op4.lval->h->data);
-	case st_reljoin:
-		if (st->op1)
-			return tail_type(st->op1);
-		else
-			return tail_type(st->op2);
 
 	case st_diff:
 	case st_select:
@@ -1780,12 +1775,6 @@ head_type(stmt *st)
 	case st_relselect:
 	case st_releqjoin:
 		return head_type(st->op1);
-
-	case st_reljoin:
-		if (st->op1)
-			return head_type(st->op1);
-		else
-			return head_type(st->op2);
 
 	case st_list:
 		return head_type(st->op4.lval->h->data);
@@ -1934,7 +1923,6 @@ column_name(sql_allocator *sa, stmt *st)
 
 	case st_relselect:
 	case st_releqjoin:
-	case st_reljoin:
 		return column_name(sa, st->op1);
 	case st_list:
 		if (list_length(st->op4.lval))
@@ -2004,7 +1992,6 @@ table_name(sql_allocator *sa, stmt *st)
 	case st_single:
 	case st_relselect:
 	case st_releqjoin:
-	case st_reljoin:
 	default:
 		return NULL;
 	}
@@ -2061,7 +2048,6 @@ schema_name(sql_allocator *sa, stmt *st)
 		return NULL;
 	case st_relselect:
 	case st_releqjoin:
-	case st_reljoin:
 		return schema_name(sa, st->op1);
 	case st_list:
 		if (list_length(st->op4.lval))
@@ -2265,7 +2251,6 @@ print_stmt( sql_allocator *sa, stmt *s )
 		printf(");\n");
 	}	break;
 	case st_basetable:
-	case st_reljoin:
 	case st_releqjoin:
 		/*assert(0);*/
 	default:

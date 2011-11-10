@@ -1,3 +1,158 @@
+monetdb (11.5.7-20111021) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 21 Oct 2011 09:32:09 +0200
+
+monetdb (11.5.7-20111021) unstable; urgency=low
+
+  * clients: ODBC: Implemented a workaround in SQLTables for bug 2908.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 20 Oct 2011 09:32:09 +0200
+
+monetdb (11.5.5-20111018) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 18 Oct 2011 09:33:46 +0200
+
+monetdb (11.5.5-20111018) unstable; urgency=low
+
+  * clients: Small improvement to mclient's table rendering for tables without
+    any rows.  Previously, the column names in the header could be
+    squeezed to very small widths, degrading readability.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Mon, 17 Oct 2011 09:33:45 +0200
+
+monetdb (11.5.5-20111018) unstable; urgency=low
+
+  * clients: Python DB API connect() function now supports PEP 249-style arguments
+    user and host, bug #2901
+
+ -- Fabian Groffen <fabian@cwi.nl>  Wed, 12 Oct 2011 09:33:45 +0200
+
+monetdb (11.5.5-20111018) unstable; urgency=low
+
+  * clients: mclient now checks the result of encoding conversions using the iconv
+    library.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 12 Oct 2011 09:33:45 +0200
+
+monetdb (11.5.5-20111018) unstable; urgency=low
+
+  * clients: Fixed a source of crashes in mclient when a query on the command line
+    using the -s option is combined with input on standard input (e.g. in
+    the construct mclient -s 'COPY INTO t FROM STDIN ...' < file.csv).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 10 Oct 2011 09:33:45 +0200
+
+monetdb (11.5.5-20111018) unstable; urgency=low
+
+  * merovingian: Resolved problem where monetdbd would terminate abnormally when
+    databases named 'control', 'discovery' or 'merovingian' were stopped.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Sun, 9 Oct 2011 09:33:45 +0200
+
+monetdb (11.5.5-20111018) unstable; urgency=low
+
+  * merovingian: monetdbd get status now also reports the version of the running monetdbd
+
+ -- Fabian Groffen <fabian@cwi.nl>  Fri, 7 Oct 2011 09:33:45 +0200
+
+monetdb (11.5.5-20111018) unstable; urgency=low
+
+  * clients: Fixed bug 2897 where slow (network) reads could cause blocks to not
+    be fully read in one go, causing errors in the subsequent use of
+    those blocks.  With thanks to Rémy Chibois.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 7 Oct 2011 09:33:45 +0200
+
+monetdb (11.5.5-20111018) unstable; urgency=low
+
+  * merovingian: Improved response time of 'monetdb start' when the database fails
+    to start.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Thu, 6 Oct 2011 09:33:45 +0200
+
+monetdb (11.5.5-20111018) unstable; urgency=low
+
+  * merovingian: Fixed a bug in monetdbd where starting a failing database could
+    incorrectly be reported as a 'running but dead' database.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Wed, 5 Oct 2011 09:33:45 +0200
+
+monetdb (11.5.5-20111018) unstable; urgency=low
+
+  * merovingian: To avoid confusion, all occurrences of merovingian were changed into
+    monetdbd for error messages sent to a client.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Fri, 30 Sep 2011 09:33:45 +0200
+
+monetdb (11.5.5-20111018) unstable; urgency=low
+
+  * clients: Fixed a bug in mclient where processing queries from files could result
+    in ghost empty results to be reported in the output
+
+ -- Fabian Groffen <fabian@cwi.nl>  Tue, 27 Sep 2011 09:33:45 +0200
+
+monetdb (11.5.3-20110925) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Sun, 25 Sep 2011 14:14:49 +0200
+
+monetdb (11.5.3-20110925) unstable; urgency=low
+
+  * clients: Fixed Perl DBD rowcount for larger results, bug #2889
+
+ -- Fabian Groffen <fabian@cwi.nl>  Fri, 23 Sep 2011 14:14:49 +0200
+
+monetdb (11.5.3-20110925) unstable; urgency=low
+
+  * monetdb5: Fixed a problem where MAL variables weren't properly cleared before
+    reuse of the data strucutre.  This problem could cause the data flow
+    scheduler to generate dependencies between instructions that didn't
+    actually exist, which in turn could cause circular dependencies among
+    instructions with deadlock as a result.  Bugs 2865 and 2888.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 21 Sep 2011 14:14:49 +0200
+
+monetdb (11.5.3-20110925) unstable; urgency=low
+
+  * sql: Fixed a bug when using default values for interval columns.  Bug 2877.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 21 Sep 2011 14:14:49 +0200
+
+monetdb (11.5.3-20110925) unstable; urgency=low
+
+  * clients: Perl: We now distinguish properly between TABLE and GLOBAL TEMPORARY
+    (the latter are recognized by being in the "tmp" schema).
+  * clients: Perl: fixed a bunch of syntax errors.  This fixes bug 2884.  With thanks
+    to Rémy Chibois.
+  * clients: Perl: Fixed DBD::monetdb table_info and tabletype_info.  This fixes
+    bug 2885.  With thanks to Rémy Chibois.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 19 Sep 2011 14:14:49 +0200
+
+monetdb (11.5.3-20110925) unstable; urgency=low
+
+  * sql: A bug was fixed where deleted rows weren't properly accounted for in
+    all operations.  This was bug 2882.
+  * sql: A bug was fixed which caused an update to an internal table to
+    happen too soon.  The bug could be observed on a multicore system
+    with a query INSERT INTO t (SELECT * FROM t) when the table t is
+    "large enough".  This was bug 2883.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 16 Sep 2011 14:14:49 +0200
+
+monetdb (11.5.3-20110925) unstable; urgency=low
+
+  * clients: mclient: fix display of varchar columns with only NULL values.
+  * clients: Fixed a bug in mclient/msqldump where an internal error occurred during
+    dump when there are GLOBAL TEMPORARY tables.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 13 Sep 2011 14:14:49 +0200
+
 monetdb (11.5.1-20110907) unstable; urgency=low
 
   * Rebuilt.

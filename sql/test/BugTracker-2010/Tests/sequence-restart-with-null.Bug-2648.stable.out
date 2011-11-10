@@ -19,7 +19,6 @@ stdout of test 'sequence-restart-with-null.Bug-2648` in directory 'test/BugTrack
 Ready.
 # SQL catalog created, loading sql scripts once
 
-Over..
 
 # 20:20:11 >  
 # 20:20:11 >  mclient -lsql -ftest -i -e --host=volund --port=34184 

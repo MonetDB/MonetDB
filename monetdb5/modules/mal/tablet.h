@@ -125,6 +125,8 @@ typedef struct Table_t {
 	Column columns[1];			/* at least one column, enlarged upon need */
 } Tablet;
 
+tablet_export str TABprelude(int *ret);
+
 tablet_export BAT *TABLETload(Tablet *as, char *datafile);
 tablet_export BUN TABLEToutput(BAT *order, BAT *seps, BAT *bats, stream *s);
 tablet_export void TABLETdump(BAT *names, BAT *seps, BAT *bats, char *datafile, BUN nr);

@@ -337,7 +337,59 @@ atom2sql(atom *a)
 	case EC_BLOB:
 		/* TODO atom to string */
 		break;
-	case EC_INTERVAL:
+	case EC_INTERVAL: {
+		lng v;
+		switch (a->data.vtype) {
+		case TYPE_lng:
+			v = a->data.val.lval;
+			break;
+		case TYPE_int:
+			v = a->data.val.ival;
+			break;
+		case TYPE_sht:
+			v = a->data.val.shval;
+			break;
+		case TYPE_bte:
+			v = a->data.val.btval;
+			break;
+		default:
+			v = 0;
+			break;
+		}
+		switch (a->tpe.digits) {
+		case 1:		/* year */
+			v /= 12;
+			break;
+		case 2:		/* year to month */
+		case 3:		/* month */
+			break;
+		case 4:		/* day */
+			v /= 60 * 60 * 24;
+			break;
+		case 5:		/* day to hour */
+		case 8:		/* hour */
+			v /= 60 * 60;
+			break;
+		case 6:		/* day to minute */
+		case 9:		/* hour to minute */
+		case 11:	/* minute */
+			v /= 60;
+			break;
+		case 7:		/* day to second */
+		case 10:	/* hour to second */
+		case 12:	/* minute to second */
+		case 13:	/* second */
+			break;
+		}
+		if (a->tpe.digits < 4) {
+			sprintf(buf, LLFMT, v);
+		} else {
+			lng sec = v/1000;
+			lng msec = v%1000;
+			sprintf(buf, LLFMT "." LLFMT, sec, msec);
+		}
+		break;
+	}
 	case EC_NUM:
 		switch (a->data.vtype) {
 		case TYPE_lng:
@@ -355,6 +407,7 @@ atom2sql(atom *a)
 		default:
 			break;
 		}
+		break;
 	case EC_DEC: {
 		lng v = 0;
 		switch (a->data.vtype) {
@@ -602,6 +655,52 @@ atom_cast(atom *a, sql_subtype *tp)
 					a->data.val.btval /= (bte) mul;
 				else
 					a->data.val.btval *= (bte) mul;
+			}
+			return 1;
+		}
+		/* truncating decimals */
+		if (at->type->eclass == EC_DEC && tp->type->eclass == EC_DEC &&
+		    at->type->localtype >= tp->type->localtype &&
+		    at->digits >= tp->digits && 
+			(at->digits - tp->digits) == (at->scale - tp->scale)) {
+			lng mul = 1, div = 0, rnd = 0, val = 0;
+
+			/* fix scale */
+
+			/* only round when going to a lower scale */
+			mul = scales[at->scale-tp->scale];
+			rnd = mul>>1;
+			div = 1;
+
+			if (a->data.vtype == TYPE_lng) {
+				val = a->data.val.lval;
+			} else if (a->data.vtype == TYPE_int) {
+				val = a->data.val.ival;
+			} else if (a->data.vtype == TYPE_sht) {
+				val = a->data.val.shval;
+			} else if (a->data.vtype == TYPE_bte) {
+				val = a->data.val.btval;
+			}
+
+			val += rnd;
+			if (div)
+				val /= mul;
+			else
+				val *= mul;
+
+			a->tpe = *tp;
+			a->data.vtype = tp->type->localtype;
+			if (a->data.vtype == TYPE_lng) {
+				a->data.val.lval = (int) val;
+			} else if (a->data.vtype == TYPE_int) {
+				assert( ((lng) GDK_int_min <= val && val <= (lng) GDK_int_max));
+				a->data.val.ival = (int) val;
+			} else if (a->data.vtype == TYPE_sht) {
+				assert( ((lng) GDK_sht_min <= val && val <= (lng) GDK_sht_max));
+				a->data.val.shval = (int) val;
+			} else if (a->data.vtype == TYPE_bte) {
+				assert( ((lng) GDK_bte_min <= val && val <= (lng) GDK_bte_max));
+				a->data.val.btval = (int) val;
 			}
 			return 1;
 		}

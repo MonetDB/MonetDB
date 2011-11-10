@@ -47,7 +47,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 17:57:17 >  
 # 17:57:17 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=31795  < woud.sql
@@ -63,12 +62,12 @@ Over..
 % 0,	0 # length
 % sys. # table_name
 % substring_murderdate # name
-% int # type
+% bigint # type
 % 1 # length
 % . # table_name
 % L5 # name
 % double # type
-% 22 # length
+% 24 # length
 [ NULL	]
 % sys.victim,	sys.victim # table_name
 % name,	features # name

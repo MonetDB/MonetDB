@@ -13,7 +13,6 @@ stdout of test 'auto_commit.SF-1724151` in directory 'test/BugTracker` itself:
 
 Ready.
 
-Over..
 
 # 13:54:46 >  
 # 13:54:46 >  Mtimeout -timeout 120 /usr/bin/python auto_commit.SF-1724151.SQL.py auto_commit.SF-1724151 

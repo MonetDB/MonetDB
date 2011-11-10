@@ -38,6 +38,7 @@ typedef union stmtdata {
 	struct sql_subaggr *aggrval;
 	struct sql_subfunc *funcval;
 	struct group *grp;
+	sql_rel *rel;
 } stmtdata;
 
 typedef enum stmt_type {
@@ -85,7 +86,6 @@ typedef enum stmt_type {
 	st_outerjoin,
 	st_diff,
 	st_union,
-	st_reljoin,
 
 	st_export,
 	st_append,
@@ -108,6 +108,7 @@ typedef enum stmt_type {
 	st_unop,
 	st_binop,
 	st_Nop,
+	st_func,
 	st_aggr,
 
 	st_alias,
@@ -131,22 +132,21 @@ typedef enum comp_type {
 	cmp_lt = 3,
 	cmp_equal = 4,
 	cmp_notequal = 5,
-	cmp_notlike = 6,
-	cmp_like = 7,
-	cmp_notilike = 8,
-	cmp_ilike = 9,
-	cmp_filter = 10,
-	cmp_or = 11,
-	cmp_in = 12,
-	cmp_notin = 13,
 
-	cmp_all = 14,		/* special case for crossproducts */
-	cmp_project = 15	/* special case for projection joins */
+	cmp_filter = 6,
+	cmp_or = 7,
+	cmp_in = 8,
+	cmp_notin = 9,
+
+	/* cmp_all and cmp_project are only used within stmt (not sql_exp) */
+	cmp_all = 10,		/* special case for crossproducts */
+	cmp_project = 11	/* special case for projection joins */
 } comp_type;
 
 #define is_theta_exp(e) (e == cmp_gt || e == cmp_gte || e == cmp_lte ||\
 		         e == cmp_lt || e == cmp_equal || e == cmp_notequal)
-#define is_complex_exp(e) (e == cmp_or || e == cmp_in || e == cmp_notin)
+
+#define is_complex_exp(e) (e == cmp_or || e == cmp_in || e == cmp_notin || e == cmp_filter)
 
 /* flag to indicate anti join/select */
 #define ANTI 16
@@ -239,8 +239,7 @@ extern stmt *stmt_select2(sql_allocator *sa, stmt *op1, stmt *op2, stmt *op3, in
 extern stmt *stmt_uselect2(sql_allocator *sa, stmt *op1, stmt *op2, stmt *op3, int cmp);
 extern stmt *stmt_selectN(sql_allocator *sa, stmt *l, stmt *r, sql_subfunc *op);
 extern stmt *stmt_uselectN(sql_allocator *sa, stmt *l, stmt *r, sql_subfunc *op);
-extern stmt *stmt_likeselect(sql_allocator *sa, stmt *op1, stmt *op2, stmt *op3, comp_type cmptype);
-extern stmt *stmt_genselect(sql_allocator *sa, stmt *op1, stmt *op2, sql_subfunc *f);
+extern stmt *stmt_genselect(sql_allocator *sa, stmt *op1, stmt *op2, stmt *op3, sql_subfunc *f);
 
 #define isEqJoin(j) \
 	(j->type == st_join && (j->flag == cmp_equal || j->flag == cmp_project))
@@ -252,17 +251,15 @@ extern void stmt_relselect_fill(stmt *relselect, stmt *select);
 
 extern stmt *stmt_releqjoin_init(sql_allocator *sa);
 extern void stmt_releqjoin_fill(stmt *releqjoin, stmt *lc, stmt *rc);
-extern stmt *stmt_releqjoin1(sql_allocator *sa, list *joins);
-extern stmt *stmt_releqjoin2(sql_allocator *sa, list *l1, list *l2);
+extern stmt *stmt_releqjoin(sql_allocator *sa, list *joins);
 extern stmt *stmt_join(sql_allocator *sa, stmt *op1, stmt *op2, comp_type cmptype);
 
 /* generic join operator, with a left and right statement list */
-extern stmt *stmt_joinN(sql_allocator *sa, stmt *l, stmt *r, sql_subfunc *op);
+extern stmt *stmt_joinN(sql_allocator *sa, stmt *l, stmt *r, stmt *opt, sql_subfunc *op);
 
 extern stmt *stmt_join2(sql_allocator *sa, stmt *l, stmt *ra, stmt *rb, int cmp);
 extern stmt *stmt_project(sql_allocator *sa, stmt *op1, stmt *op2);
 extern stmt *stmt_outerjoin(sql_allocator *sa, stmt *op1, stmt *op2, comp_type cmptype);
-extern stmt *stmt_reljoin(sql_allocator *sa, stmt *op1, list *neqjoins);
 
 extern stmt *stmt_diff(sql_allocator *sa, stmt *op1, stmt *op2);
 extern stmt *stmt_union(sql_allocator *sa, stmt *op1, stmt *op2);
@@ -293,6 +290,7 @@ extern stmt *stmt_convert(sql_allocator *sa, stmt *v, sql_subtype *from, sql_sub
 extern stmt *stmt_unop(sql_allocator *sa, stmt *op1, sql_subfunc *op);
 extern stmt *stmt_binop(sql_allocator *sa, stmt *op1, stmt *op2, sql_subfunc *op);
 extern stmt *stmt_Nop(sql_allocator *sa, stmt *ops, sql_subfunc *op);
+extern stmt *stmt_func(sql_allocator *sa, stmt *ops, char *name, sql_rel *imp);
 extern stmt *stmt_aggr(sql_allocator *sa, stmt *op1, group *grp, sql_subaggr *op, int reduce);
 extern stmt *stmt_aggr2(sql_allocator *sa, stmt *op1, stmt *op2, sql_subaggr *op);
 extern stmt *stmt_unique(sql_allocator *sa, stmt *s, group *grp);

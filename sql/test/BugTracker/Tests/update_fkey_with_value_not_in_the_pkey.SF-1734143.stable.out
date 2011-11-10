@@ -13,7 +13,6 @@ stdout of test 'update_fkey_with_value_not_in_the_pkey.SF-1734143` in directory 
 
 Ready.
 
-Over..
 
 # 20:17:19 >  
 # 20:17:19 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=koala --port=36235 

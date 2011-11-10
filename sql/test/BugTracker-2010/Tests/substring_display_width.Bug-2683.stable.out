@@ -19,7 +19,6 @@ stdout of test 'substring_display_width.Bug-2683` in directory 'test/BugTracker-
 
 Ready.
 
-Over..
 
 # 21:48:05 >  
 # 21:48:05 >  mclient -lsql -ftest -i -e --host=alf --port=30286 

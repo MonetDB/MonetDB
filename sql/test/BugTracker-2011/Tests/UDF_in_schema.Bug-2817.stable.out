@@ -20,7 +20,6 @@ stdout of test 'UDF_in_schema.Bug-2817` in directory 'test/BugTracker-2011` itse
 Ready.
 # SQL catalog created, loading sql scripts once
 
-Over..
 
 # 15:41:16 >  
 # 15:41:16 >  mclient -lsql -ftest -i -e --host=rig --port=39969 

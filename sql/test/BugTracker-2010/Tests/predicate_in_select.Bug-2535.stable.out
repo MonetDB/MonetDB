@@ -18,7 +18,6 @@ stdout of test 'predicate_in_select.Bug-2535` in directory 'test/BugTracker-2010
 
 Ready.
 
-Over..
 
 # 09:50:32 >  
 # 09:50:32 >  mclient -lsql -ftest -i -e --host=rig --port=39893 

@@ -13,7 +13,6 @@ stdout of test 'foreign_key_in_frontend_crashes_backend.SF-935578` in directory 
 
 Ready.
 
-Over..
 
 # 12:40:23 >  
 # 12:40:23 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < foreign_key_in_frontend_crashes_backend.SF-935578.sql

@@ -217,7 +217,8 @@ CRKmergeInsertionsB_OnNeed@1(int *k, int *bid, int *new){
         return MAL_SUCCEED;
 }
 
-str
+#if 0
+static str
 CRKmergeInsertions_OnNeed@1(int *k, int *bid, int *new, bit *deleteNodes){
 	int position = existsCrackerIndex(*bid);
         (void) k;
@@ -231,6 +232,7 @@ CRKmergeInsertions_OnNeed@1(int *k, int *bid, int *new, bit *deleteNodes){
 
         return MAL_SUCCEED;
 }
+#endif
 
 str
 CRKmergeDeletions_OnNeed@1(int *k, int *bid, int *del){

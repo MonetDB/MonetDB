@@ -30,6 +30,7 @@
 #include <mcrypt.h> /* mcrypt_BackendSum */
 #include <utils/utils.h>
 #include <utils/properties.h>
+#include <utils/control.h>
 
 #include "merovingian.h"
 #include "argvcmds.h"
@@ -40,13 +41,12 @@ command_help(int argc, char *argv[])
 	int exitcode = 0;
 
 	if (argc < 2) {
-		printf("usage: monetdbd [ command [ command-options ] ]\n");
+		printf("usage: monetdbd [ command [ command-options ] ] <dbfarm>\n");
 		printf("  where command is one of:\n");
 		printf("    create, start, stop, get, set, version or help\n");
 		printf("  use the help command to get help for a particular command\n");
-		printf("  For backwards compatability, when monetdbd is ran without\n");
-		printf("  options, it will start the daemon in the default dbfarm\n");
-		printf("  location (%s).\n", LOCALSTATEDIR "/monetdb5/dbfarm");
+		printf("  The dbfarm to operate on must always be given to\n");
+		printf("  monetdbd explicitly.\n");
 	} else if (strcmp(argv[1], "create") == 0) {
 		printf("usage: monetdbd create <dbfarm>\n");
 		printf("  Initialises a new dbfarm for a MonetDB Server.  dbfarm\n");
@@ -219,10 +219,29 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 			value = dbfarm;
 		} else if (strcmp(p, "mserver") == 0) {
 			if (meropid == 0) {
-				value = _mero_mserver;
+				value = "unknown (monetdbd not running)";
 			} else {
-				value = "binary in use cannot be determined "
-					"for a running monetdbd";
+				char *res;
+				/* get binpath from running merovingian */
+				kv = findConfKey(ckv, "sockdir");
+				value = kv->val;
+				kv = findConfKey(ckv, "port");
+				snprintf(buf, sizeof(buf), "%s/" CONTROL_SOCK "%d",
+						value, kv->ival);
+				value = control_send(&res, buf, -1, "", "mserver", 0, NULL);
+				if (value != NULL) {
+					free(value);
+					value = "unknown (failed to connect to monetdbd)";
+				} else {
+					if (strncmp(res, "OK\n", 3) != 0) {
+						free(res);
+						value = "unknown (unsupported monetdbd)";
+					} else {
+						snprintf(buf, sizeof(buf), "%s", res + 3);
+						value = buf;
+						free(res);
+					}
+				}
 			}
 		} else if (strcmp(p, "hostname") == 0) {
 			value = _mero_hostname;
@@ -242,8 +261,46 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 			value = buf;
 		} else if (strcmp(p, "status") == 0) {
 			if (meropid > 0) {
+				char *res;
+				confkeyval cport[] = {
+					{"controlport",  NULL, -1,     INT},
+					{ NULL,          NULL,  0, INVALID}
+				};
+
+				/* re-read, this time with empty defaults, so we can see
+				 * what's available (backwards compatability) */
+				if (readProps(cport, ".") != 0) {
+					fprintf(stderr, "unable to read properties from %s: %s\n",
+							dbfarm, strerror(errno));
+					return(1);
+				}
+
+				/* try to retrieve running merovingian version */
+				kv = findConfKey(ckv, "sockdir");
+				value = kv->val;
+				kv = findConfKey(cport, "controlport"); /* backwards compat */
+				if (kv->ival == -1)
+					kv = findConfKey(ckv, "port");
+				snprintf(buf, sizeof(buf), "%s/" CONTROL_SOCK "%d",
+						value, kv->ival);
+				freeConfFile(cport);
+				value = control_send(&res, buf, -1, "", "version", 0, NULL);
+				if (value != NULL) {
+					free(value);
+					value = NULL;
+				} else {
+					if (strncmp(res, "OK\n", 3) != 0) {
+						free(res);
+					} else {
+						value = res + 3;
+					}
+				}
+
 				snprintf(buf, sizeof(buf),
-						"monetdbd[%d] is serving this dbfarm", meropid);
+						"monetdbd[%d] %s is serving this dbfarm",
+						meropid, value == NULL ? "(unknown version)" : value);
+				if (value != NULL)
+					free(res);
 				value = buf;
 			} else if (meropid < 0) {
 				value = "a monetdbd is serving this dbfarm, "

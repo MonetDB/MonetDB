@@ -13,7 +13,6 @@ stdout of test 'view_case-bug-sf-1023058` in directory 'test/bugs` itself:
 
 Ready.
 
-Over..
 
 # 11:55:42 >  
 # 11:55:42 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < view_case-bug-sf-1023058.sql
@@ -21,7 +20,7 @@ Over..
 
 % sys.metadata,	sys.metadata,	sys.metadata,	sys.metadata,	sys.metadata,	sys.metadata # table_name
 % artist,	album,	track,	tracknum,	duration,	weightindex # name
-% varchar,	varchar,	varchar,	int,	int,	tinyint # type
+% varchar,	varchar,	varchar,	int,	int,	bigint # type
 % 0,	0,	0,	1,	1,	1 # length
 
 # 11:55:42 >  

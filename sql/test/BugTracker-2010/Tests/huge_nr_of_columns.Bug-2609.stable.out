@@ -19,7 +19,6 @@ stdout of test 'huge_nr_of_columns.Bug-2609` in directory 'test/BugTracker-2010`
 Ready.
 # SQL catalog created, loading sql scripts once
 
-Over..
 
 # 22:47:33 >  
 # 22:47:33 >  mclient -lsql -ftest -i -e --host=alf --port=39106 

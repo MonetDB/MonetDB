@@ -17,7 +17,6 @@ stdout of test 'dump` in directory 'benchmarks/viam` itself:
 
 Ready.
 
-Over..
 
 # 14:38:03 >  
 # 14:38:03 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=30088 

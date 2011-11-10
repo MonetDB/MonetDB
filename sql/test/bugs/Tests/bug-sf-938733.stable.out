@@ -13,7 +13,6 @@ stdout of test 'bug-sf-938733` in directory 'test/bugs` itself:
 
 Ready.
 
-Over..
 
 # 12:48:19 >  
 # 12:48:19 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < bug-sf-938733.sql

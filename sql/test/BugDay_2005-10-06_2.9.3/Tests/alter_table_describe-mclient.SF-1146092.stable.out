@@ -19,7 +19,6 @@ stdout of test 'alter_table_describe-mclient.SF-1146092` in directory 'test/BugD
 
 Ready.
 
-Over..
 
 # 16:01:58 >  
 # 16:01:58 >  ./alter_table_describe-mclient.SF-1146092.SQL.sh alter_table_describe-mclient.SF-1146092 

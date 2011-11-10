@@ -13,7 +13,6 @@ stdout of test 'wisconsin-update` in directory 'benchmarks/wisconsin` itself:
 
 Ready.
 
-Over..
 
 # 12:36:07 >  
 # 12:36:07 >  Mtimeout -timeout 120 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < wisconsin-update.sql

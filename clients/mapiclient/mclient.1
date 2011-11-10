@@ -91,6 +91,22 @@ to the empty string in the environment.
 .SS
 General Options
 .TP
+\fB\-\-help\fP (\fB\-?\fP)
+Print usage information and exit.
+.TP
+\fB\-\-encoding=\fP\fIencoding\fP (\fB\-E\fP \fIencoding\fP)
+Specify the character encoding of the input.  The option applies to
+both the standard input of
+.I mclient
+and to the argument of the
+.B \-\-statement
+.RB ( \-s )
+option but not to the contents of files specified on the command line
+or files specified using the
+.B \e<
+command (those must be encoded using UTF-8).  The default encoding is
+taken from the locale.
+.TP
 \fB\-\-language=\fP\fIlanguage\fP (\fB\-l\fP \fIlanguage\fP)
 Specify the query language.  The following languages are recognized:
 .B mal
@@ -102,11 +118,6 @@ When the
 option is omitted, the default of
 .B sql
 is assumed.
-.TP
-\fB\-\-help\fP (\fB\-?\fP)
-Print usage information and exit.  If preceded by the
-.B \-\-language
-option, give language-specific help and continue.
 .TP
 \fB\-\-database=\fP\fIdatabase\fP (\fB\-d\fP \fIdatabase\fP)
 Specify the name of the database to connect to.  The \fB-d\fP can be
@@ -161,6 +172,10 @@ to the client),
 is a pretty format which is meant for human consumption, and
 .B xml
 is a valid (in the XML sense) document.
+In addition to plain \fBcsv\fP, two other forms are possible.
+\fBcsv=\fP\fIc\fP uses \fIc\fP as column separator; \fBcsv+\fP\fIc\fP
+uses \fIc\fP as column separator, but produces a single header line in
+addition to the data.
 .TP
 \fB\-\-echo\fP (\fB\-e\fP)
 Echo the query.
@@ -277,13 +292,10 @@ Echo the query in SQL formatting mode.
 Use the specified
 .I format
 mode to format the output.
-Possible modes are
-.BR csv ,
-.BR tab ,
-.BR raw ,
-.BR sql ,
-and
-.BR xml .
+Possible modes the same as for the
+.B \-\-format
+.RB ( \-f )
+option.
 .TP
 \fB\ew\fP \fIwidth\fP
 Set the maximum page width for rendering in the
@@ -349,7 +361,9 @@ zero or more, and exactly one character respectively.  An object
 name is converted to lowercase, unless the object name is quoted by
 double quotes (\fB"\fP).  Examples of this, are e.g. \fI*.mytable\fP,
 \fItabletype*\fP or \fI"myschema.FOO"\fP.  Note that wildcard characters
-do not work in quoted objects.
+do not work in quoted objects.  Quoting follows SQL quoting rules.
+Arbitrary parts can be quoted, and two quotes following each other in a
+quoted string represent the quote itself.
 .TP
 \fB\eA\fP
 Enable auto commit mode.

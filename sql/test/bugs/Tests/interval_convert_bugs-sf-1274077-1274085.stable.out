@@ -13,7 +13,6 @@ stdout of test 'interval_convert_bugs-sf-1274077-1274085` in directory 'test/bug
 
 Ready.
 
-Over..
 
 # 11:55:48 >  
 # 11:55:48 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < interval_convert_bugs-sf-1274077-1274085.sql

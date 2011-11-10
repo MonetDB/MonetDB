@@ -13,7 +13,6 @@ stdout of test 'start_transaction-bug-sf-952755` in directory 'test/bugs` itself
 
 Ready.
 
-Over..
 
 # 12:49:32 >  
 # 12:49:32 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < start_transaction-bug-sf-952755.sql

@@ -64,4 +64,12 @@ headers_mal = {
 			  opt_sidcrack.mx
 }
 
+headers_crackersautoload = {
+	HEADERS = mal
+	DIR = libdir/monetdb5/autoload
+	SOURCES = 60_crackers.mal
+}
+
+EXTRA_DIST = 60_crackers.mal
+
 EXTRA_DIST_DIR = Tests

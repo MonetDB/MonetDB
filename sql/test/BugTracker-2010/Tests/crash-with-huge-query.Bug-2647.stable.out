@@ -18,7 +18,6 @@ stdout of test 'crash-with-huge-query.Bug-2647` in directory 'test/BugTracker-20
 
 Ready.
 
-Over..
 
 # 19:47:18 >  
 # 19:47:18 >  mclient -lsql -ftest -i -e --host=alf --port=31197 

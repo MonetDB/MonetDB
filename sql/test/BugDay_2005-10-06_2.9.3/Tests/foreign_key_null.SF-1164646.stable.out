@@ -13,7 +13,6 @@ stdout of test 'foreign_key_null.SF-1164646` in directory 'test/BugDay_2005-10-0
 
 Ready.
 
-Over..
 
 # 12:44:25 >  
 # 12:44:25 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < foreign_key_null.SF-1164646.sql

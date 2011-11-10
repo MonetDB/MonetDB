@@ -15,7 +15,6 @@ stdout of test 'delete_cascade` in directory 'test/Update_Delete_action` itself:
 
 Ready.
 
-Over..
 
 # 16:59:17 >  
 # 16:59:17 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=33148 

@@ -481,6 +481,7 @@ typedef struct MDBSTATE{
 	int pc;
 } MdbState;
 
+mal_export void mdbInit(void);
 mal_export void mdbSetBreakpoint(Client cntxt, MalBlkPtr mb, int pc, char cmd);
 mal_export void mdbSetBreakRequest(Client cntxt, MalBlkPtr mb, str request, char cmd);
 mal_export void mdbClrBreakRequest(Client cntxt, str name);
@@ -538,13 +539,19 @@ int MDBdelay;			/* do not immediately react */
 static void printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first);
 static void printStackHdr(stream *f, MalBlkPtr mb, ValPtr v, int index);
 
-/*
- * @-
- * Each client has its own breakpoint administration, kept in a global table.
- * Although a little space consumptive, it is the easiest to maintain
- * and much less expensive as reserving debugger space in each instruction.
- */
-mdbStateRecord mdbTable[MAL_MAXCLIENTS];
+static mdbStateRecord *mdbTable;
+
+void
+mdbInit(void)
+{
+	/*
+	 * Each client has its own breakpoint administration, kept in a
+	 * global table.  Although a little space consumptive, it is the
+	 * easiest to maintain and much less expensive as reserving debugger
+	 * space in each instruction.
+	 */
+	mdbTable = GDKzalloc(sizeof(mdbStateRecord) * MAL_MAXCLIENTS);
+}
 
 static char
 isBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)

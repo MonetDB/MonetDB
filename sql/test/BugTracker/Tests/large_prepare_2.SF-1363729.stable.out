@@ -13,7 +13,6 @@ stdout of test 'large_prepare_2.SF-1363729` in directory 'test/BugTracker` itsel
 
 Ready.
 
-Over..
 
 # 16:41:06 >  
 # 16:41:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30269  < large_prepare_2.SF-1363729.sql
@@ -22,7 +21,7 @@ Over..
 % .prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale # name
 % varchar,	int,	int # type
-% 0,	0,	0 # length
+% 3,	2,	1 # length
 [ "int",	32,	0	]
 [ "int",	32,	0	]
 [ "int",	32,	0	]

@@ -573,35 +573,6 @@ HASHprobe(Hash *h, ptr v)
 	}
 }
 
-BAT *
-HASHprint(BAT *b)
-{
-	BATiter bi = bat_iterator(b);
-	BAT *bn;
-	BUN p, q;
-
-	if (!(b && b->H->hash))
-		return NULL;
-#if SIZEOF_OID == SIZEOF_INT
-	bn = BATnew(BAThtype(b), TYPE_int, BATcount(b));
-#else
-	bn = BATnew(BAThtype(b), TYPE_lng, BATcount(b));
-#endif
-	if (bn == NULL)
-		return NULL;
-	BATloop(b, p, q) {
-		BUN i = HASHprobe(b->H->hash, BUNhead(bi, p));
-
-		bunfastins(bn, BUNhead(bi, p), &i);
-	}
-	bn->hsorted = BAThordered(b);
-	bn->tsorted = FALSE;
-	return bn;
-      bunins_failed:
-	BBPreclaim(bn);
-	return NULL;
-}
-
 BUN
 HASHlist(Hash *h, BUN i)
 {

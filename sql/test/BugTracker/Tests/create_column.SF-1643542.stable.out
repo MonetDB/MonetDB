@@ -13,7 +13,6 @@ stdout of test 'create_column.SF-1643542` in directory 'test/BugTracker` itself:
 
 Ready.
 
-Over..
 
 # 12:47:21 >  
 # 12:47:21 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=31435  < create_column.SF-1643542.sql

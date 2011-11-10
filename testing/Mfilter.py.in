@@ -49,6 +49,8 @@ test = (
         re.compile('(?:'+')|(?:'.join([
                 # MAPI port numbers
                     r"^MAPI  = .*@.*:[0-9]*$",
+                # SPHINX is optional in monetdb5/modules/mal/inspec05
+                    r'\[\s+"[^"]*",\s+"(?:command|function|pattern)",\s+"sphinx",\s+"[^"]*",\s+"[^"]*"\s+\]',
                  ])+')',  re.MULTILINE),
         # differences (e.g., due to property-checking), which we want to treat as "minor differences"
         re.compile('(?:'+')|(?:'.join([
@@ -86,7 +88,8 @@ norm_in  = re.compile('(?:'+')|(?:'.join([
     r"^(QUERY|ERROR)( =.* connect)( to|)( ')(localhost)(' port )([0-9]+)( .*)\n",                                                               # 21: 8
     r"^([Uu]sage: )(/.*/\.libs/|/.*/lt-|)([A-Za-z0-9_]+:?[ \t].*)\n",                                                                           # 22: 3
     r'^(!.*Exception:remote\.[^:]*:\(mapi:monetdb://monetdb@)([^/]*)(/mTests_.*\).*)\n',                                                        # 25: 3
-    r'^(ERROR REPORTED: DBD:|SyntaxException:parseError)(:.+ at )([\./].+|[A-Z]:\\.+)(/[^/]+\.pm line [0-9]+\.)\n',                             # 28: 4
+    r"^(DBD::monetdb::db table_info warning: Catalog parameter '' ignored at )([\./].+/|[A-Z]:\\.+[/\\])([^/\\]+\.pl line [0-9]+\.)\n",         # 27: 3
+    r'^(ERROR REPORTED: DBD:|SyntaxException:parseError)(:.+ at )([\./].+/|[A-Z]:\\.+[/\\])([^/\\]+\.pm line [0-9]+\.)\n',                      # 28: 3
 # filter for geos 3.3 vs. geos 3.2, can be removed if we have 3.3 everywhere
     r"^(ERROR = !MALException:wkb.FromText:ParseException: Expected )('EMPTY' or '\(')( but encountered : '\)')\n",                             # 29: 3
 ])+')',  re.MULTILINE)
@@ -97,6 +100,7 @@ norm_out = (
     None, None, None, None, '<HOST>', None, '<MAPIPORT>', None,                                         # 21: 8
     None, '', None,                                                                                     # 22: 3
     None, 'localhost', None,                                                                            # 25: 3
+    None, '...', None,                                                                                  # 27: 3
     None, None, '...', None,                                                                            # 28: 3
     None, "'Z', 'M', 'ZM', 'EMPTY' or '('", None,                                                       # 29: 3
 )

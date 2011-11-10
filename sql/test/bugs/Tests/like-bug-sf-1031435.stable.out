@@ -13,7 +13,6 @@ stdout of test 'like-bug-sf-1031435` in directory 'test/bugs` itself:
 
 Ready.
 
-Over..
 
 # 12:54:45 >  
 # 12:54:45 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < like-bug-sf-1031435

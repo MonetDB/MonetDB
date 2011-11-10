@@ -111,12 +111,13 @@ enum formatters {
 	RAWformatter,
 	TABLEformatter,
 	CSVformatter,
-	TABformatter,
 	XMLformatter,
 	TESTformatter
 };
 static enum formatters formatter = NOformatter;
 char *output = NULL;		/* output format as string */
+char *separator = NULL;		/* column separator for CSV/TAB format */
+int csvheader = 0;		/* include header line in CSV format */
 
 #define DEFWIDTH 80
 
@@ -634,9 +635,20 @@ CSVrenderer(MapiHdl hdl)
 {
 	int fields;
 	char *s;
-	char *sep = formatter == CSVformatter ? "," : "\t";
+	char *sep = separator;
 	int i;
 
+	if (csvheader) {
+		fields = mapi_get_field_count(hdl);
+		for (i = 0; i < fields; i++) {
+			s = mapi_get_name(hdl, i);
+			if (s == NULL)
+				s = "";
+			mnstr_printf(toConsole, "%s%s",
+				     i == 0 ? "" : sep, s ? s : "");
+		}
+		mnstr_printf(toConsole, "\n");
+	}
 	while (!mnstr_errnr(toConsole) && (fields = fetch_row(hdl)) != 0) {
 		for (i = 0; i < fields; i++) {
 			s = mapi_fetch_field(hdl, i);
@@ -660,7 +672,7 @@ CSVrenderer(MapiHdl hdl)
 						mnstr_write(toConsole, "\\\\", 1, 2);
 						break;
 					case '"':
-						mnstr_write(toConsole, "\\\"", 1, 2);
+						mnstr_write(toConsole, "\"\"", 1, 2);
 						break;
 					default:
 						if (*s == *sep)
@@ -1069,9 +1081,18 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 		char *s;
 
 		len[i] = mapi_get_len(hdl, i);
-		if (len[i] == 0) {
-			/* no table width known, use maximum, rely on squeezing
-			 * lateron to fix it to whatever is available */
+		if (len[i] == 0 &&
+		    ((s = mapi_get_type(hdl, i)) == NULL ||
+		     (strcmp(s, "varchar") != 0 &&
+		      strcmp(s, "clob") != 0 &&
+		      strcmp(s, "char") != 0 &&
+		      strcmp(s, "str") != 0))) {
+			/* no table width known, use maximum, rely on
+			 * squeezing later on to fix it to whatever is
+			 * available; note that for a column type of
+			 * varchar, 0 means the complete column is
+			 * NULL or empty string, so MINCOLSIZE (below)
+			 * will work great */
 			len[i] = pagewidth <= 0 ? DEFWIDTH : pagewidth;
 		}
 		if (len[i] < MINCOLSIZE)
@@ -1099,12 +1120,15 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 			 strcmp(s, "decimal") == 0);
 
 		if (rows == 0) {
-			vartotal += len[i];
-			minvartotal += MINCOLSIZE;
-		} else if (!numeric[i]) {
-			vartotal += len[i];
+			minvartotal += len[i]; /* don't wrap column headers if no data */
+		} else if (numeric[i]) {
+			/* minimum size is equal to maximum size */
+			minvartotal += len[i];
+		} else {
+			/* minimum size for wide columns is MINVARCOLSIZE */
 			minvartotal += len[i] > MINVARCOLSIZE ? MINVARCOLSIZE : len[i];
 		}
+		vartotal += len[i];
 		total += len[i];
 
 		/* do a very pessimistic calculation to determine if more
@@ -1268,27 +1292,41 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 static void
 setFormatter(char *s)
 {
+	if (separator)
+		free(separator);
+	separator = NULL;
+	csvheader = 0;
 #ifdef WIN32
 	if (formatter == TESTformatter)
 		_set_output_format(0);
 #endif
-	if (strcmp(s, "sql") == 0)
+	if (strcmp(s, "sql") == 0) {
 		formatter = TABLEformatter;
-	else if (strcmp(s, "csv") == 0)
+	} else if (strcmp(s, "csv") == 0) {
 		formatter = CSVformatter;
-	else if (strcmp(s, "tab") == 0)
-		formatter = TABformatter;
-	else if (strcmp(s, "raw") == 0)
+		separator = strdup(",");
+	} else if (strncmp(s, "csv=", 4) == 0) {
+		formatter = CSVformatter;
+		separator = strdup(s + 4);
+	} else if (strncmp(s, "csv+", 4) == 0) {
+		formatter = CSVformatter;
+		separator = strdup(s + 4);
+		csvheader = 1;
+	} else if (strcmp(s, "tab") == 0) {
+		formatter = CSVformatter;
+		separator = strdup("\t");
+	} else if (strcmp(s, "raw") == 0) {
 		formatter = RAWformatter;
-	else if (strcmp(s, "xml") == 0)
+	} else if (strcmp(s, "xml") == 0) {
 		formatter = XMLformatter;
-	else if (strcmp(s, "test") == 0) {
+	} else if (strcmp(s, "test") == 0) {
 #ifdef WIN32
 		_set_output_format(_TWO_DIGIT_EXPONENT);
 #endif
 		formatter = TESTformatter;
-	} else
+	} else {
 		mnstr_printf(toConsole, "unsupported formatter\n");
+	}
 }
 
 static void
@@ -1482,7 +1520,6 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 				XMLrenderer(hdl);
 				break;
 			case CSVformatter:
-			case TABformatter:
 				CSVrenderer(hdl);
 				break;
 			case TESTformatter:
@@ -1503,9 +1540,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 				break;
 			}
 		}
-	} while (!mnstr_errnr(toConsole) &&
-		 (rc = mapi_needmore(hdl)) == MOK &&
-		 (rc = mapi_next_result(hdl)) == 1);
+	} while (!mnstr_errnr(toConsole) && (rc = mapi_next_result(hdl)) == 1);
 	if (mnstr_errnr(toConsole)) {
 		mnstr_clearerr(toConsole);
 		fprintf(stderr, "write error\n");
@@ -1721,12 +1756,15 @@ showCommands(void)
 
 enum hmyesno { UNKNOWN, YES, NO };
 
+#define READBLOCK 8192
+
 static int
 doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 {
 	char *line = NULL;
 	char *oldbuf = NULL, *buf = NULL;
 	size_t length;
+	size_t bufsiz = 0;
 	MapiHdl hdl = mapi_get_active(mid);
 	MapiMsg rc = MOK;
 	int lineno = 1;
@@ -1735,7 +1773,10 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 #ifdef HAVE_LIBREADLINE
 	if (prompt == NULL)
 #endif
-		oldbuf = buf = malloc(BUFSIZ);
+	{
+		bufsiz = READBLOCK;
+		oldbuf = buf = malloc(bufsiz);
+	}
 
 	do {
 		if (prompt) {
@@ -1782,8 +1823,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 				free(buf);
 			buf = oldbuf;
 			line = buf;
-			while (line < buf + BUFSIZ - 1 &&
-			       (c = getc(fp)) != EOF) {
+			while ((c = getc(fp)) != EOF) {
 				if (c == 0) {
 					fprintf(stderr, "NULL byte in input on line %d of input\n", lineno);
 					/* read away rest of line */
@@ -1797,6 +1837,12 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 						hdl = NULL;
 					}
 					break;
+				}
+				if (line == buf + bufsiz - 1) {
+					bufsiz += READBLOCK;
+					buf = realloc(buf, bufsiz);
+					line = buf + bufsiz - 1 - READBLOCK;
+					oldbuf = buf;
 				}
 				*line++ = c;
 				if (c == '\n')
@@ -1815,23 +1861,52 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 		if (line != NULL && encoding != NULL && cd_in != (iconv_t) -1) {
 			ICONV_CONST char *from = line;
 			size_t fromlen = strlen(from);
-			size_t tolen = 4 * fromlen + 1;
+			int factor = 4;
+			size_t tolen = factor * fromlen + 1;
 			char *to = malloc(tolen);
 
+		  try_again:
 			line = to;
-			iconv(cd_in, &from, &fromlen, &to, &tolen);
+			if (iconv(cd_in, &from, &fromlen, &to, &tolen) == (size_t) -1) {
+				/* error */
+				switch (errno) {
+				case EILSEQ:
+					/* invalid multibyte sequence */
+					fprintf(stderr, "Illegal input sequence on line %d of input\n", lineno);
+					errseen = 1;
+					free(line);
+					continue;
+				case E2BIG:
+					/* output buffer too small */
+					from = buf;
+					fromlen = strlen(from);
+					factor *= 2;
+					tolen = factor * fromlen + 1;
+					free(line);
+					to = malloc(tolen);
+					goto try_again;
+				case EINVAL:
+					/* incomplete multibyte sequence */
+					/* shouldn't happen since we
+					 * grow the input buffer */
+					break;
+				default:
+					/* cannot happen according to docs */
+					break;
+				}
+			}
 			*to = 0;
-			if (!oldbuf)
+			if (oldbuf == NULL)
 				free(buf);
 			buf = line;
 		} else
 #endif
-			if (line != NULL &&
+		if (line != NULL &&
 #ifdef HAVE_ICONV
-			    encoding == NULL &&
+		    encoding == NULL &&
 #endif
-			    lineno == 1 &&
-			    strncmp(line, UTF8BOM, UTF8BOMLENGTH) == 0)
+		    lineno == 1 &&
+		    strncmp(line, UTF8BOM, UTF8BOMLENGTH) == 0)
 			line += UTF8BOMLENGTH;	/* skip Byte Order Mark (BOM) */
 		lineno++;
 		if (line == NULL) {
@@ -1907,7 +1982,8 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 					char hasSchema = 0;
 					char wantsSystem = 0; 
 					unsigned int x = 0;
-					char *p;
+					char *p, *q;
+					char escaped = 0;
 					if (mode != SQL)
 						break;
 					while (isascii((int) line[length - 1]) &&
@@ -1948,43 +2024,47 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 					for ( ; *line && isascii((int) *line) && isspace((int) *line); line++)
 						;
 
-					/* is the object quoted? we only support fully
-					 * quoted objects, not partial ones */
-					if (line[0] == '"' || line[0] == '\'') {
-						for (p = line; *p; p++)
-							;
-						if (--p == line) {
-							fprintf(stderr, "unmatched %c\n", line[0]);
-							continue;
-						} else if ((*p == '"' || *p == '\'') && *p != line[0]) {
-							fprintf(stderr, "unexpected %c, expecting %c\n",
-									*p, line[0]);
-							continue;
-						} else if (*p != line[0]) {
-							fprintf(stderr, "unexpected end of string while "
-									"looking for matching %c\n", line[0]);
-							continue;
-						}
-						/* remove the quotes */
-						line++;
-						*p = '\0';
-					} else {
-						/* not quoted: lowercase it, and search for
-						 * wildcards * and ?, replace them with SQL
-						 * variants */
-						for (p = line; *p; p++) {
-							*p = tolower((int) *p);
-							if (*p == '*') {
-								*p = '%';
-								hasWildcard = 1;
-							} else if (*p == '?') {
-								*p = '_';
-								hasWildcard = 1;
-							} else if (*p == '.') {
-								hasSchema = 1;
-							}
+					/* lowercase the object, except for quoted parts */
+					q = line;
+					for (p = line; *p != '\0'; p++) {
+						switch (*p) {
+							case '"':
+								if (escaped) {
+									if (*(p + 1) == '"') {
+										/* SQL escape */
+										*q++ = *p++;
+									} else {
+										escaped = 0;
+									}
+								} else {
+									escaped = 1;
+								}
+								break;
+							default:
+								if (!escaped) {
+									*q++ = tolower((int) *p);
+									if (*p == '*') {
+										*p = '%';
+										hasWildcard = 1;
+									} else if (*p == '?') {
+										*p = '_';
+										hasWildcard = 1;
+									} else if (*p == '.') {
+										hasSchema = 1;
+									}
+								} else {
+									*q++ = *p;
+								}
+								break;
 						}
 					}
+					*q = '\0';
+					if (escaped) {
+						fprintf(stderr, "unexpected end of string while "
+								"looking for matching \"\n");
+						continue;
+					}
+
 					if (*line && !hasWildcard) {
 #ifdef HAVE_POPEN
 						stream *saveFD, *saveFD_raw;
@@ -2294,10 +2374,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 							mnstr_printf(toConsole, "sql\n");
 							break;
 						case CSVformatter:
-							mnstr_printf(toConsole, "csv\n");
-							break;
-						case TABformatter:
-							mnstr_printf(toConsole, "tab\n");
+							mnstr_printf(toConsole, "%s\n", separator[0] == '\t' ? "tab" : "csv");
 							break;
 						case TESTformatter:
 							mnstr_printf(toConsole, "test\n");
@@ -2575,7 +2652,7 @@ main(int argc, char **argv)
 				q = NULL;
 			} else if (strcmp(buf, "language") == 0) {
 				language = strdup(q);	/* leak */
-				if (strstr(language, "sql") == language) {
+				if (strcmp(language, "sql") == 0) {
 					mode = SQL;
 					q = NULL;
 				} else if (strcmp(language, "mal") == 0) {
@@ -2655,7 +2732,7 @@ main(int argc, char **argv)
 			/* accept unambiguous prefix of language */
 			if (strcmp(optarg, "sql") == 0 ||
 			    strcmp(optarg, "sq") == 0 || strcmp(optarg, "s") == 0 ||
-				strstr(optarg, "sql") == optarg) {
+				strcmp(optarg, "sql") == 0) {
 				language = optarg;
 				mode = SQL;
 			} else if (strcmp(optarg, "mal") == 0 ||
@@ -2691,7 +2768,10 @@ main(int argc, char **argv)
 					itimemode = T_SECS;
 				} else if (strcmp(optarg, "m") == 0) {
 					itimemode = T_MINSECS;
-				} /* else: fall back to default (human) */
+				} else if (*optarg != '\0') {
+					fprintf(stderr, "warning: invalid argument to -i: %s\n",
+							optarg);
+				}
 			}
 			break;
 		case 'h':
@@ -2742,6 +2822,14 @@ main(int argc, char **argv)
 #ifdef HAVE_LIBREADLINE
 			mnstr_printf(toConsole,
 					"support for command-line editing compiled-in\n");
+#endif
+#ifdef HAVE_ICONV
+#ifdef HAVE_NL_LANGINFO
+			if (encoding == NULL)
+				encoding = nl_langinfo(CODESET);
+#endif
+			mnstr_printf(toConsole,
+				     "character encoding: %s\n", encoding ? encoding : "utf-8 (default)");
 #endif
 			return(0);
 		case 'z':
@@ -2864,13 +2952,38 @@ main(int argc, char **argv)
 	if (command != NULL) {
 #ifdef HAVE_ICONV
 		if (encoding != NULL && cd_in != (iconv_t) -1) {
+			char *savecommand = command;
 			ICONV_CONST char *from = command;
 			size_t fromlen = strlen(from);
-			size_t tolen = 4 * fromlen + 1;
+			int factor = 4;
+			size_t tolen = factor * fromlen + 1;
 			char *to = malloc(tolen);
 
+		  try_again:
 			command = to;
-			iconv(cd_in, &from, &fromlen, &to, &tolen);
+			if (iconv(cd_in, &from, &fromlen, &to, &tolen) == (size_t) -1) {
+				switch (errno) {
+				case EILSEQ:
+					/* invalid multibyte sequence */
+					fprintf(stderr, "Illegal input sequence in command line\n");
+					exit(-1);
+				case E2BIG:
+					/* output buffer too small */
+					from = savecommand;
+					fromlen = strlen(from);
+					factor *= 2;
+					tolen = factor * fromlen + 1;
+					free(command);
+					to = malloc(tolen);
+					goto try_again;
+				case EINVAL:
+					/* incomplete multibyte sequence */
+					fprintf(stderr, "Incomplete input sequence on command line\n");
+					exit(-1);
+				default:
+					break;
+				}
+			}
 			*to = 0;
 		}
 #endif
@@ -2884,19 +2997,14 @@ main(int argc, char **argv)
 	if (optind < argc) {
 		/* execute from file(s) */
 		while (optind < argc) {
-			if (echoquery &&
-			    strcmp(argv[optind], "-") != 0 &&
-			    stat(argv[optind], &statb) == 0 &&
-			    S_ISREG(statb.st_mode) &&
-			    statb.st_size < 1024*1024) {
+			if (echoquery && strcmp(argv[optind], "-") != 0) {
 				/* a bit of a hack: process file
-				   line-by-line if using -e (--echo)
-				   and the input file isn't "too
-				   large" so that the queries that are
-				   echoed have something to do with
-				   the output that follows (otherwise
-				   we just echo the start of the file
-				   for each query) */
+				 * line-by-line if using -e (--echo)
+				 * so that the queries that are echoed
+				 * have something to do with the
+				 * output that follows (otherwise we
+				 * just echo the start of the file for
+				 * each query) */
 				FILE *fp;
 				if ((fp = fopen(argv[optind], "r")) == NULL) {
 					fprintf(stderr, "%s: cannot open\n", argv[optind]);

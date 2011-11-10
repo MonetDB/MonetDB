@@ -45,6 +45,22 @@ prop_copy( sql_allocator *sa, prop *p )
 }
 
 prop *
+prop_remove( prop *plist, prop *p )
+{
+	prop *op = plist;
+
+	if (plist == p)
+		return p->p;
+	for(; op; op = op->p) {
+		if (op->p == p) {
+			op->p = p->p;
+			break;
+		}
+	}
+	return plist;
+}
+
+prop *
 find_prop( prop *p, int kind)
 {
 	while(p) {
@@ -65,6 +81,7 @@ propkind2string( prop *p)
 		PT(HASHIDX);
 		PT(SORTIDX);
 		PT(FETCH);
+		PT(REMOTE);
 		PT(USED);
 	}
 	return "UNKNOWN";
@@ -82,6 +99,12 @@ propvalue2string( prop *p)
 
 			   snprintf(buf, BUFSIZ, "%s.%s.%s", i->t->s->base.name, i->t->base.name, i->base.name);
 			   return _strdup(buf);
+			}
+			break;
+		case PROP_REMOTE: {
+			   char *uri = p->value;
+
+			   return _strdup(uri);
 			}
 			break;
 		default:

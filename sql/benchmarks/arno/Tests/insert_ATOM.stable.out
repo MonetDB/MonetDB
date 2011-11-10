@@ -26,7 +26,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 12:30:48 >  
 # 12:30:48 >  Mtimeout -timeout 540 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < insert_ATOM.sql

@@ -13,7 +13,6 @@ stdout of test 'variable_arg_substring.SF_942981` in directory 'test/BugDay_2005
 
 Ready.
 
-Over..
 
 # 12:37:35 >  
 # 12:37:35 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < variable_arg_substring.SF_942981.sql

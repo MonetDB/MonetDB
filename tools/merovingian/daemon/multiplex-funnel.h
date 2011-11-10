@@ -21,6 +21,8 @@
 #define _MULTIPLEX_H 1
 
 #include <pthread.h>
+#include <stdio.h> /* FILE */
+
 #include <mapi.h>
 #include <stream.h>
 
@@ -46,15 +48,20 @@ typedef struct _multiplex_client {
 
 typedef struct _multiplex {
 	pthread_t            tid;
+	int                  gdklock;
+	char                 shutdown;
+	char                *name;
 	char                *pool;
+	FILE                *sout;
+	FILE                *serr;
 	int                  dbcc;
 	multiplex_database **dbcv;
 	multiplex_client    *clients;
 } multiplex;
 
-err multiplexInit(multiplex **ret, char *database);
-void multiplexThread(void *d);
-void multiplexAddClient(multiplex *m, int sock, stream *fout, stream *fdin, char *name);
+err multiplexInit(char *name, char *pattern, FILE *sout, FILE *serr);
+void multiplexDestroy(char *mp);
+void multiplexAddClient(char *mp, int sock, stream *fout, stream *fdin, char *name);
 void multiplexRemoveClient(multiplex *m, multiplex_client *c);
 void multiplexNotifyAddedDB(const char *database);
 void multiplexNotifyRemovedDB(const char *database);

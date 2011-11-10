@@ -19,7 +19,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 22:07:51 >  
 # 22:07:51 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=31814 

@@ -13,7 +13,6 @@ stdout of test 'create_view_with_check_options.SF-1314951` in directory 'test/Bu
 
 Ready.
 
-Over..
 
 # 12:45:01 >  
 # 12:45:01 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < create_view_with_check_options.SF-1314951.sql

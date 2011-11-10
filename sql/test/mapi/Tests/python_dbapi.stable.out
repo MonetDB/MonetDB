@@ -19,7 +19,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 22:24:36 >  
 # 22:24:36 >  Mtimeout -timeout 180 ./python_dbapi.SQL.sh python_dbapi 

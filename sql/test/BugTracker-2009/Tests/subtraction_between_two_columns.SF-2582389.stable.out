@@ -19,7 +19,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 21:45:24 >  
 # 21:45:24 >  mclient -lsql -umonetdb -Pmonetdb --host=alviss --port=30663 
@@ -30,7 +29,7 @@ Over..
 % sys.l,	sys.r,	sys.l,	sys. # table_name
 % id,	inst,	inst,	diff # name
 % int,	double,	double,	double # type
-% 1,	22,	22,	22 # length
+% 1,	24,	24,	24 # length
 [ 1,	0.2,	0.2,	0	]
 [ 1,	0.2,	0.4,	-0.2	]
 

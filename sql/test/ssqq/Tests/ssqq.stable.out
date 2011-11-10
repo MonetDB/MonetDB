@@ -21,7 +21,6 @@ stdout of test 'ssqq` in directory 'test/ssqq` itself:
 Ready.
 # SQL catalog created, loading sql scripts once
 
-Over..
 
 # 16:05:54 >  
 # 16:05:54 >  mclient -lsql -ftest -i -e --host=yngling --port=30483 

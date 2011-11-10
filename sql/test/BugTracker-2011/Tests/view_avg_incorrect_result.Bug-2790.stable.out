@@ -19,7 +19,6 @@ stdout of test 'view_avg_incorrect_result.Bug-2790` in directory 'test/BugTracke
 
 Ready.
 
-Over..
 
 # 16:41:01 >  
 # 16:41:01 >  mclient -lsql -ftest -i -e --host=alf --port=31900 
@@ -32,14 +31,14 @@ Over..
 % sys.,	sys.,	sys. # table_name
 % avg_d,	avg_d2,	avg2_d_mult # name
 % double,	double,	double # type
-% 22,	22,	22 # length
+% 24,	24,	24 # length
 [ 2.5,	6.5,	6.25	]
 #create view tv2790 as select avg(d) as avg_d, avg(d*d) as avg_d2, avg(d)*avg(d) as avg2_d_mult from t2790;
 #select * from tv2790;
 % sys.tv2790,	sys.tv2790,	sys.tv2790 # table_name
 % avg_d,	avg_d2,	avg2_d_mult # name
 % double,	double,	double # type
-% 22,	22,	22 # length
+% 24,	24,	24 # length
 [ 2.5,	6.5,	6.25	]
 #drop view tv2790;
 #drop table t2790;

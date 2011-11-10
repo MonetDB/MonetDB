@@ -17,7 +17,6 @@ stdout of test 'null_as_string` in directory 'test/copy` itself:
 
 Ready.
 
-Over..
 
 # 18:52:45 >  
 # 18:52:45 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=33682 

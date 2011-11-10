@@ -182,10 +182,11 @@ bat BBP_mask = 0;		/* number of buckets = & mask */
 static void BBPspin(bat bid, str debug, int event);
 static int BBPfree(BAT *b, str calledFrom);
 static int BBPdestroy(BAT *b);
-static void BBPuncacheit_(bat bid, int unloaddesc);
+static void BBPuncacheit(bat bid, int unloaddesc);
 static void BBPinitcache(void);
 static int BBPprepare(bit subcommit);
 static BAT *getBBPdescriptor(bat i, int lock);
+static int BBPbackup(BAT *b, bit subcommit);
 
 
 static int stamp = 0;
@@ -406,7 +407,7 @@ BBPinithash(void)
  * locks are held and it will allocate memory. This could trigger a
  * BBPtrim, causing deadlock.
  */
-void
+static void
 BBPextend(dbl factor, int buildhash)
 {
 	int newsize;
@@ -1282,12 +1283,10 @@ BBPinit(void)
 
 		BBP = GDKvmalloc(size, &maxsize, 1);
 		assert(BBP != NULL);	/* GDKvmalloc panics if it can't allocate */
-		MT_alloc_register(BBP, maxsize, 'P');
 		if (maxsize >= BBPmaxsize * sizeof(BBPrec)) {
 			BBPmaxsize = (bat) (maxsize / sizeof(BBPrec));
 			break;
 		}
-		MT_alloc_register(BBP, maxsize, 'p');
 		GDKvmfree(BBP, size, maxsize);
 		if ((BBPmaxsize /= 2) < BBPlimit)
 			GDKfatal("BBPinit: could not alloc arena");
@@ -1341,6 +1340,8 @@ BBPinit(void)
  * interference in a parallel session.
  */
 
+static wrd BBPrecycle_minsize(wrd val);
+
 void
 BBPexit(void)
 {
@@ -1391,7 +1392,7 @@ BBPexit(void)
 					else
 						BATfree(b);
 				}
-				BBPuncacheit_(i, TRUE);
+				BBPuncacheit(i, TRUE);
 				if (BBP[i].nme[0] != BBP[i].bak[0])
 					GDKfree(BBP[i].bak[0]);
 				BBP[i].bak[0] = NULL;
@@ -1655,6 +1656,7 @@ BBPdir(int cnt, bat *subcommit)
 	return -1;
 }
 
+/* function used for debugging */
 void
 BBPdump(void)
 {
@@ -2010,14 +2012,8 @@ BBPcacheit(BATstore *bs, int lock)
  * forever).
  */
 
-void
-BBPuncacheit(bat i)
-{
-	BBPuncacheit_(i, FALSE);
-}
-
 static void
-BBPuncacheit_(bat i, int unloaddesc)
+BBPuncacheit(bat i, int unloaddesc)
 {
 	if (i < 0)
 		i = -i;
@@ -2051,7 +2047,7 @@ bbpclear(bat i, int idx, str lock)
 	BATDEBUG {
 		THRprintf(GDKout, "#clear %d (%s)\n", (int) i, BBPname(i));
 	}
-	BBPuncacheit_(i, TRUE);
+	BBPuncacheit(i, TRUE);
 	BATDEBUG {
 		mnstr_printf(GDKout, "#BBPclear set to unloading %d\n", i);
 	}
@@ -2752,7 +2748,7 @@ BBPfree(BAT *b, str calledFrom)
 			if (BBP_cache(bid))
 				BATfree(b);	/* free memory */
 		}
-		BBPuncacheit_(bid, FALSE);
+		BBPuncacheit(bid, FALSE);
 	}
 	/* clearing bits can be done without the lock */
 	BATDEBUG {
@@ -3760,7 +3756,7 @@ BBPrecycle(int ht, int tt, size_t cap)
 }
 
 /* query and change the minimum bat size to cache */
-wrd
+static wrd
 BBPrecycle_minsize(wrd val)
 {
 	if (val != wrd_nil) {
@@ -4023,7 +4019,7 @@ do_backup(const char *srcdir, const char *nme, const char *extbase,
 	return 0;
 }
 
-int
+static int
 BBPbackup(BAT *b, bit subcommit)
 {
 	long_str srcdir, nme;
@@ -4504,6 +4500,7 @@ BBPdiskscan(const char *parent)
 	return 0;
 }
 
+#if 0
 void
 BBPatom_drop(int atom)
 {
@@ -4553,6 +4550,7 @@ BBPatom_load(int atom)
 	}
 	BBPunlock("BBPatom_load");
 }
+#endif
 
 @h
 #endif /* _GDK_BBP_H_ */

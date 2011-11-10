@@ -46,7 +46,7 @@ import nl.cwi.monetdb.mcl.net.*;
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
  * @version 0.7
  */
-public class MonetStatement implements Statement {
+public class MonetStatement extends MonetWrapper implements Statement {
 	/** the default value of maxRows, 0 indicates unlimited */
 	static final int DEF_MAXROWS = 0;
 
@@ -60,6 +60,8 @@ public class MonetStatement implements Statement {
 	private SQLWarning warnings;
 	/** Whether this Statement object is closed or not */
 	protected boolean closed;
+	/** Whether the application wants this Statement object to be pooled */
+	protected boolean poolable;
 	/** The size of the blocks of results to ask for at the server */
 	private int fetchSize = 0;
 	/** The maximum number of rows to return in a ResultSet */
@@ -118,6 +120,7 @@ public class MonetStatement implements Statement {
 		}
 
 		closed = false;
+		poolable = false;
 	}
 
 	//== methods of interface Statement
@@ -309,6 +312,28 @@ public class MonetStatement implements Statement {
 		// close previous ResultSet, if not closed already
 		if (lastResponseList != null) lastResponseList.close();
 		closed = true;
+	}
+
+	/**
+	 * Retrieves whether this Statement object has been closed. A
+	 * Statement is closed if the method close has been called on it, or
+	 * if it is automatically closed.
+	 *
+	 * @return true if this Statement object is closed; false if it is
+	 *         still open
+	 */
+	public boolean isClosed() {
+		return(closed);
+	}
+
+	/**
+	 * Returns a value indicating whether the Statement is poolable or
+	 * not.
+	 *
+	 * @return true if the Statement is poolable; false otherwise
+	 */
+	public boolean isPoolable() {
+		return(poolable);
 	}
 
 	// Chapter 13.1.2.3 of Sun's JDBC 3.0 Specification
@@ -1032,6 +1057,28 @@ public class MonetStatement implements Statement {
 		if (max < 0)
 			throw new SQLException("Illegal max value: " + max);
 		maxRows = max;
+	}
+
+	/**
+	 * Requests that a Statement be pooled or not pooled. The value
+	 * specified is a hint to the statement pool implementation
+	 * indicating whether the applicaiton wants the statement to be
+	 * pooled. It is up to the statement pool manager as to whether the
+	 * hint is used. 
+	 * <br /><br />
+	 * The poolable value of a statement is applicable to both internal
+	 * statement caches implemented by the driver and external statement
+	 * caches implemented by application servers and other applications.
+	 * <br /><br />
+	 * By default, a Statement is not poolable when created, and a
+	 * PreparedStatement and CallableStatement are poolable when
+	 * created.
+	 *
+	 * @param poolable requests that the statement be pooled if true
+	 *        and that the statement not be pooled if false
+	 */
+	public void setPoolable(boolean poolable) {
+		this.poolable = poolable;
 	}
 
 	/**

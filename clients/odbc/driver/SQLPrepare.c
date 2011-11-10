@@ -99,10 +99,17 @@ SQLPrepare_(ODBCStmt *stmt,
 	ret = mapi_query_handle(hdl, s);
 	free(s);
 	s = NULL;
-	if (ret != MOK || (s = mapi_result_error(hdl)) != NULL) {
+	if (ret != MOK) {
+		const char *e;
+
 		/* XXX more fine-grained control required */
 		/* Syntax error or access violation */
-		addStmtError(stmt, "42000", s, 0);
+		if ((s = mapi_result_error(hdl)) == NULL)
+			s = mapi_error_str(stmt->Dbc->mid);
+		if (s && (e = ODBCErrorType(s)) != NULL)
+			addStmtError(stmt, e, s, 0);
+		else
+			addStmtError(stmt, "42000", s, 0);
 		return SQL_ERROR;
 	}
 	if (mapi_rows_affected(hdl) > (1 << 16)) {
@@ -216,12 +223,12 @@ SQLPrepare_(ODBCStmt *stmt,
 		rec->sql_desc_parameter_type = SQL_PARAM_INPUT;
 		rec->sql_desc_rowver = SQL_FALSE;
 		rec->sql_desc_unnamed = SQL_UNNAMED;
+		rec->sql_desc_catalog_name = stmt->Dbc->dbname ? (SQLCHAR *) strdup(stmt->Dbc->dbname) : NULL;
 
 		/* unused fields */
 		rec->sql_desc_auto_unique_value = 0;
 		rec->sql_desc_base_column_name = NULL;
 		rec->sql_desc_base_table_name = NULL;
-		rec->sql_desc_catalog_name = NULL;
 		rec->sql_desc_data_ptr = NULL;
 		rec->sql_desc_display_size = 0;
 		rec->sql_desc_indicator_ptr = NULL;

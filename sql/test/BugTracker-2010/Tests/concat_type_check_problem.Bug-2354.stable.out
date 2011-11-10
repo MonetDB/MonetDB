@@ -18,7 +18,6 @@ stdout of test 'concat_type_check_problem.Bug-2354` in directory 'test/BugTracke
 
 Ready.
 
-Over..
 
 # 19:31:52 >  
 # 19:31:52 >  mclient -lsql -ftest -i -e --host=alf --port=37015 

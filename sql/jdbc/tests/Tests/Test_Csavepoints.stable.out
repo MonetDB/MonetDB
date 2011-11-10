@@ -13,7 +13,6 @@ stdout of test 'Test_Csavepoints` in directory 'jdbc/tests` itself:
 
 Ready.
 
-Over..
 
 # 21:41:21 >  
 # 21:41:21 >  Mtimeout -timeout 60 ./Test_Csavepoints.SQL Test_Csavepoints 

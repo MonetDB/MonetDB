@@ -13,7 +13,6 @@ stdout of test 'Test_PStimezone` in directory 'jdbc/tests` itself:
 
 Ready.
 
-Over..
 
 # 15:11:19 >  
 # 15:11:19 >  Mtimeout -timeout 60 ./Test_PStimezone.SQL Test_PStimezone 

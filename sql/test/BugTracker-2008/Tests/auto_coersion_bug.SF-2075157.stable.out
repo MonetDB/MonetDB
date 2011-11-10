@@ -18,7 +18,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 12:25:51 >  
 # 12:25:51 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=30598 
@@ -39,7 +38,7 @@ Over..
 [ 1	]
 % sys. # table_name
 % sql_add_sql_neg_col2 # name
-% int # type
+% bigint # type
 % 4 # length
 [ 3000	]
 

@@ -20,7 +20,6 @@ stdout of test 'insert_query` in directory 'test/ssqq` itself:
 
 Ready.
 
-Over..
 
 # 11:37:20 >  
 # 11:37:20 >  mclient -lsql -ftest -i -e --host=yngling --port=35016 

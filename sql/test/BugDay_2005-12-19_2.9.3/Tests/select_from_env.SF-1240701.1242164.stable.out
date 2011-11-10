@@ -19,7 +19,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 11:51:03 >  
 # 11:51:03 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < select_from_env.SF-1240701.1242164.sql
@@ -41,10 +40,12 @@ Over..
 [ "mapi_autosense"	]
 [ "mapi_open"	]
 [ "mapi_port"	]
+[ "max_clients"	]
 [ "monet_daemon"	]
 [ "monet_mod_path"	]
 [ "monet_pid"	]
 [ "monet_prompt"	]
+[ "monet_release"	]
 [ "monet_version"	]
 [ "sql_debug"	]
 [ "sql_optimizer"	]

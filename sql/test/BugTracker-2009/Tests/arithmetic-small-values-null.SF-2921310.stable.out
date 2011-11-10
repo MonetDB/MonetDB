@@ -19,7 +19,6 @@ stdout of test 'arithmetic-small-values-null.SF-2921310` in directory 'test/BugT
 Ready.
 # SQL catalog created, loading sql scripts once
 
-Over..
 
 # 15:12:22 >  
 # 15:12:22 >  mclient -lsql -ftest -i -e --host=volund --port=38846 
@@ -29,13 +28,13 @@ Over..
 % . # table_name
 % sql_sub_single_value # name
 % double # type
-% 22 # length
+% 24 # length
 [ 1.060188673e-06	]
 #select cast((4.4054292 - 4.40572025343667)^2 as double) + cast((52.0903881 - 52.091375762174)^2 as double);
 % . # table_name
 % sql_sub_single_value # name
 % double # type
-% 22 # length
+% 24 # length
 [ 1.060188673e-06	]
 
 # 15:12:22 >  

@@ -26,6 +26,7 @@
 #include "monetdb_config.h"
 #include "properties.h"
 #include "utils.h"
+#include "muuid.h"
 #include <stdio.h> /* fprintf, fgets */
 #include <string.h> /* memcpy */
 
@@ -35,12 +36,15 @@
 
 /* these are the properties used for starting an mserver */
 static confkeyval _internal_prop_keys[] = {
+	{"type",     NULL, 0, STR},
 	{"shared",   NULL, 0, STR},
 	{"nthreads", NULL, 0, INT},
 	{"optpipe",  NULL, 0, STR},
 	{"master",   NULL, 0, STR},
 	{"slave",    NULL, 0, MURI},
 	{"readonly", NULL, 0, BOOLEAN},
+	{"nclients", NULL, 0, INT},
+	{"mfunnel",  NULL, 0, STR},
 	{ NULL,      NULL, 0, INVALID}
 };
 

@@ -13,7 +13,6 @@ stdout of test 'limits_of_decimal.SF-1685357` in directory 'test/BugTracker` its
 
 Ready.
 
-Over..
 
 # 10:32:42 >  
 # 10:32:42 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=34802 

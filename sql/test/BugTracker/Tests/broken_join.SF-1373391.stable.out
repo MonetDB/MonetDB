@@ -13,7 +13,6 @@ stdout of test 'broken_join.SF-1373391` in directory 'test/BugTracker` itself:
 
 Ready.
 
-Over..
 
 # 12:47:50 >  
 # 12:47:50 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < broken_join.SF-1373391.sql

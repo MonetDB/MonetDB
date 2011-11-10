@@ -48,14 +48,11 @@ import nl.cwi.monetdb.mcl.parser.*;
  * <br /><br />
  * The current state of this connection is that it nearly implements the
  * whole Connection interface.<br />
- * Additionally, the static method getEmbeddedInstanceConnection()
- * provides a Connection for embedded situations, where an embedded
- * Mserver is started and used.
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
  * @version 1.2
  */
-public class MonetConnection implements Connection {
+public class MonetConnection extends MonetWrapper implements Connection {
 	/** The hostname to connect to */
 	private final String hostname;
 	/** The port to connect on the host to */
@@ -66,7 +63,7 @@ public class MonetConnection implements Connection {
 	private final String username;
 	/** The password to use when authenticating */
 	private final String password;
-	/** A connection to Mserver using a TCP socket */
+	/** A connection to mserver5 using a TCP socket */
 	private final MapiSocket server;
 	/** The Reader from the server */
 	private final BufferedMCLReader in;
@@ -109,11 +106,6 @@ public class MonetConnection implements Connection {
 	final static int LANG_UNKNOWN = -1;
 	/** The language which is used */
 	final int lang;
-
-	/** Embedded instance */
-	private static MonetEmbeddedInstance embeddedInstance = null;
-	/** Embedded properties */
-	private static Properties embeddedProps = null;
 
 	/** Whether or not BLOB is mapped to BINARY within the driver */
 	private final boolean blobIsBinary;
@@ -224,7 +216,7 @@ public class MonetConnection implements Connection {
 
 		// we seem to have managed to log in, let's store the
 		// language used
-		if (language.startsWith("sql")) {
+		if ("sql".equals(language)) {
 			lang = LANG_SQL;
 		} else if ("mal".equals(language)) {
 			lang = LANG_MAL;
@@ -336,6 +328,43 @@ public class MonetConnection implements Connection {
 	}
 
 	/**
+	 * Factory method for creating Array objects.
+	 * <br /><br />
+	 * Note: When createArrayOf is used to create an array object that
+	 * maps to a primitive data type, then it is implementation-defined
+	 * whether the Array object is an array of that primitive data type
+	 * or an array of Object.
+	 * <br /><br />
+	 * Note: The JDBC driver is responsible for mapping the elements
+	 * Object array to the default JDBC SQL type defined in
+	 * java.sql.Types for the given class of Object. The default mapping
+	 * is specified in Appendix B of the JDBC specification. If the
+	 * resulting JDBC type is not the appropriate type for the given
+	 * typeName then it is implementation defined whether an
+	 * SQLException is thrown or the driver supports the resulting
+	 * conversion. 
+	 *
+	 * @param typeName the SQL name of the type the elements of the
+	 *        array map to. The typeName is a database-specific name
+	 *        which may be the name of a built-in type, a user-defined
+	 *        type or a standard SQL type supported by this database.
+	 *        This is the value returned by Array.getBaseTypeName
+	 * @return an Array object whose elements map to the specified SQL
+	 *         type
+	 * @throws SQLException if a database error occurs, the JDBC type
+	 *         is not appropriate for the typeName and the conversion is
+	 *         not supported, the typeName is null or this method is
+	 *         called on a closed connection
+	 * @throws SQLFeatureNotSupportedException the JDBC driver does
+	 *         not support this data type
+	 */
+	public Array createArrayOf(String typeName, Object[] elements)
+		throws SQLException
+	{
+		throw new SQLFeatureNotSupportedException("createArrayOf(String, Object[]) not supported");
+	}
+
+	/**
 	 * Creates a Statement object for sending SQL statements to the
 	 * database.  SQL statements without parameters are normally
 	 * executed using Statement objects. If the same SQL statement is
@@ -430,6 +459,84 @@ public class MonetConnection implements Connection {
 	}
 
 	/**
+	 * Constructs an object that implements the Clob interface. The
+	 * object returned initially contains no data. The setAsciiStream,
+	 * setCharacterStream and setString methods of the Clob interface
+	 * may be used to add data to the Clob.
+	 *
+	 * @return a MonetClob instance
+	 * @throws SQLFeatureNotSupportedException the JDBC driver does
+	 *         not support MonetClob objects that can be filled in
+	 */
+	public Clob createClob() throws SQLException {
+		throw new SQLFeatureNotSupportedException("createClob() not supported");
+	}
+
+	/**
+	 * Constructs an object that implements the Blob interface. The
+	 * object returned initially contains no data. The setBinaryStream
+	 * and setBytes methods of the Blob interface may be used to add
+	 * data to the Blob.
+	 *
+	 * @return a MonetBlob instance
+	 * @throws SQLFeatureNotSupportedException the JDBC driver does
+	 *         not support MonetBlob objects that can be filled in
+	 */
+	public Blob createBlob() throws SQLException {
+		throw new SQLFeatureNotSupportedException("createBlob() not supported");
+	}
+
+	/**
+	 * Constructs an object that implements the NClob interface. The
+	 * object returned initially contains no data. The setAsciiStream,
+	 * setCharacterStream and setString methods of the NClob interface
+	 * may be used to add data to the NClob.
+	 *
+	 * @return an NClob instance
+	 * @throws SQLFeatureNotSupportedException the JDBC driver does
+	 *         not support MonetClob objects that can be filled in
+	 */
+	public NClob createNClob() throws SQLException {
+		throw new SQLFeatureNotSupportedException("createNClob() not supported");
+	}
+
+	/**
+	 * Factory method for creating Struct objects.
+	 *
+	 * @param typeName the SQL type name of the SQL structured type that
+	 *        this Struct object maps to. The typeName is the name of a
+	 *        user-defined type that has been defined for this database.
+	 *        It is the value returned by Struct.getSQLTypeName.
+	 * @param attributes the attributes that populate the returned
+	 *        object
+	 * @return a Struct object that maps to the given SQL type and is
+	 *         populated with the given attributes
+	 * @throws SQLException if a database error occurs, the typeName
+	 *         is null or this method is called on a closed connection
+	 * @throws SQLFeatureNotSupportedException the JDBC driver does
+	 *         not support this data type
+	 */
+	public Struct createStruct(String typeName, Object[] attributes)
+		throws SQLException
+	{
+		throw new SQLFeatureNotSupportedException("createStruct() not supported");
+	}
+
+	/**
+	 * Constructs an object that implements the SQLXML interface. The
+	 * object returned initially contains no data. The
+	 * createXmlStreamWriter object and setString method of the SQLXML
+	 * interface may be used to add data to the SQLXML object.
+	 *
+	 * @return An object that implements the SQLXML interface
+	 * @throws SQLFeatureNotSupportedException the JDBC driver does
+	 *         not support this data type
+	 */
+	public SQLXML createSQLXML() throws SQLException {
+		throw new SQLFeatureNotSupportedException("createSQLXML() not supported");
+	}
+
+	/**
 	 * Retrieves the current auto-commit mode for this Connection
 	 * object.
 	 *
@@ -464,6 +571,29 @@ public class MonetConnection implements Connection {
 		}
 	}
 	
+	/**
+	 * Not implemented by MonetDB's JDBC driver.
+	 *
+	 * @param name The name of the client info property to retrieve
+	 * @return The value of the client info property specified
+	 */
+	public String getClientInfo(String name) {
+		// This method will also return null if the specified client
+		// info property name is not supported by the driver.
+		return(null);
+	}
+
+	/**
+	 * Not implemented by MonetDB's JDBC driver.
+	 *
+	 * @return A Properties object that contains the name and current
+	 *         value of each of the client info properties supported by
+	 *         the driver.
+	 */
+	public Properties getClientInfo() {
+		return(new Properties());
+	}
+
 	/**
 	 * Retrieves the current holdability of ResultSet objects created
 	 * using this Connection object.
@@ -572,6 +702,42 @@ public class MonetConnection implements Connection {
 	 * @return true if this Connection object is read-only; false otherwise
 	 */
 	public boolean isReadOnly() {
+		return(false);
+	}
+
+	/**
+	 * Returns true if the connection has not been closed and is still
+	 * valid. The driver shall submit a query on the connection or use
+	 * some other mechanism that positively verifies the connection is
+	 * still valid when this method is called.
+	 * <br /><br />
+	 * The query submitted by the driver to validate the connection
+	 * shall be executed in the context of the current transaction.
+	 *
+	 * @param timeout The time in seconds to wait for the database
+	 *        operation used to validate the connection to complete. If
+	 *        the timeout period expires before the operation completes,
+	 *        this method returns false. A value of 0 indicates a
+	 *        timeout is not applied to the database operation.
+	 * @return true if the connection is valid, false otherwise
+	 * @throws SQLException if the value supplied for timeout is less
+	 *         than 0
+	 */
+	public boolean isValid(int timeout) throws SQLException {
+		if (timeout < 0)
+			throw new SQLException("timeout is less than 0");
+		if (closed)
+			return(false);
+		// ping db using select 1;
+		try {
+			Statement stmt = createStatement();
+			ResultSet rs = stmt.executeQuery("SELECT 1");
+			stmt.close();
+			return(true);
+		} catch (SQLException e) {
+			// close this connection
+			close();
+		}
 		return(false);
 	}
 
@@ -898,6 +1064,32 @@ public class MonetConnection implements Connection {
 	 */
 	public void setCatalog(String catalog) throws SQLException {
 		// silently ignore this request
+	}
+
+	/**
+	 * Not implemented by MonetDB's JDBC driver.
+	 *
+	 * @param name The name of the client info property to set
+	 * @param value The value to set the client info property to. If the
+	 *        value is null, the current value of the specified property
+	 *        is cleared.
+	 */
+	public void setClientInfo(String name, String value) {
+		addWarning("clientInfo: " + name + "is not a recognised property");
+	}
+
+	/**
+	 * Not implemented by MonetDB's JDBC driver.
+	 *
+	 * @param properties the list of client info properties to set
+	 */
+	public void setClientInfo(Properties props) {
+		Set entries = props.entrySet();
+		for (Iterator it = entries.iterator(); it.hasNext(); ) {
+			Map.Entry entry = (Map.Entry)(it.next());
+			setClientInfo(entry.getKey().toString(),
+					entry.getValue().toString());
+		}
 	}
 
 	public void setHoldability(int holdability) {}
@@ -2323,190 +2515,6 @@ public class MonetConnection implements Connection {
 		}
 	}
 	// }}}
-
-	//=== embedded stuff (shouldn't hurt normal use)
-	
-	/**
-	 * Sets the properties for the embedded connection.  The properties
-	 * can only be set as long as there is no embedded connection made,
-	 * afterwards calling this method will result in an SQLException.
-	 *
-	 * @param props the properties for the embedded server
-	 * @throws SQLException if the embedded connection has already been
-	 *         started
-	 */
-	public static synchronized void setEmbeddedProperties(Properties props)
-		throws SQLException
-	{
-		if (embeddedInstance != null) throw
-			new SQLException("embedded connection has already been started");
-
-		embeddedProps = props;
-	}
-
-	/**
-	 * Returns a Connection to an embedded Mserver instance.  The
-	 * embedded instance is started if not running yet.  The
-	 * specification for the to be started embedded Mserver instance can
-	 * given via the setEmbeddedProperties() method.  Note that this
-	 * method is synchronized to avoid race conditions.
-	 *
-	 * @return a Connection to an embedded instance
-	 * @throws SQLException if a problem occurred while making the
-	 *         connection
-	 */
-	public static synchronized Connection getEmbeddedInstanceConnection()
-		throws SQLException
-	{
-		if (embeddedInstance == null || !embeddedInstance.isAlive())
-			embeddedInstance = new MonetEmbeddedInstance(embeddedProps);
-
-		return(embeddedInstance.getConnection());
-	}
-
 }
-
-/**
- * The MonetEmbeddedInstance is a Thread wrapper around an Mserver
- * process, that is started by this Thread.  When the process dies, the
- * thread dies as well, printing the reason for dying to the standard
- * error stream.
- */
-// {{{
-class MonetEmbeddedInstance extends Thread {
-	private String error;
-	private final String[] cmdarray;
-	private final String dbname;
-	private final Process mserver;
-
-	/**
-	 * Constructor of a MonetEmbeddedInstance that requires a property
-	 * value map to be given.  The properties are used to start the
-	 * Mserver, and required.  The following two properties need to be
-	 * available in the Properties map: <tt>executable</tt> and
-	 * <tt>dbname</tt>.  The first one should be an (absolute) path to
-	 * the Mserver executable, while the latter one should be a database
-	 * name that will be used.  Optionally, the <tt>dbfarm</tt> and
-	 * <tt>dbinit</tt> arguments can be present and will be passed to
-	 * the Mserver invocation.
-	 *
-	 * @param props the Properties map
-	 * @throws SQLException if executable or dbname is not present
-	 */
-	public MonetEmbeddedInstance(Properties props) throws SQLException {
-		// check we get what we want
-		String executable = props.getProperty("executable");
-		if (executable == null) throw
-			new SQLException("executable missing");
-		dbname = props.getProperty("dbname");
-		if (dbname == null) throw
-			new SQLException("dbname missing");
-
-		// see what we got more
-		int cnt = 2;
-		String dbfarm = props.getProperty("dbfarm");
-		if (dbfarm != null) cnt++;
-		String dbinit = props.getProperty("dbinit");
-		if (dbinit != null) cnt++;
-
-		cmdarray = new String[cnt];
-		switch (cnt) {
-			case 4:
-				cmdarray[3] = "--dbinit=" + dbinit;
-			case 3:	
-				if (dbfarm != null) {
-					cmdarray[2] = "--dbfarm=" + dbfarm;
-				} else {
-					cmdarray[2] = "--dbinit=" + dbinit;
-				}
-			default:
-				cmdarray[1] = "--dbname=" + dbname;
-				cmdarray[0] = executable;
-		}
-
-		// start the server and wait for its hello
-		try {
-			mserver = Runtime.getRuntime().exec(cmdarray);
-			BufferedReader in =
-				new BufferedReader(
-						new InputStreamReader(mserver.getInputStream()));
-			if (in.readLine() == null) throw
-				new SQLException("embedded process died immediately");
-		} catch (Exception e) {
-			throw new SQLException(e.toString());
-		}
-		setDaemon(true);
-		start();
-		try {
-			// hopefully this enough for the server to set up its socket
-			Thread.sleep(1000);
-		} catch (InterruptedException e) {
-			// ok, too bad
-		}
-	}
-
-	/**
-	 * Main execution.  This function starts the Mserver using the given
-	 * command array, and waits for it to terminate.  If there are
-	 * errors written to the standard error pipe, they are written to
-	 * the standard error channel of the console.
-	 */
-	public void run() {
-		try {
-			BufferedReader err =
-				new BufferedReader(
-						new InputStreamReader(mserver.getErrorStream()));
-			
-			// wait for the beast to die
-			mserver.waitFor();
-			String msg;
-			while ((msg = err.readLine()) != null) {
-				if (error == null) {
-					error = msg + "\n";
-				} else {
-					error += msg + "\n";
-				}
-			}
-		} catch (InterruptedException e) {
-			// waitFor
-			error = "caught interrupt while waiting for Mserver to crash";
-		} catch (Exception e) {
-			if (error == null) error = "";
-			error += e.toString();
-		}
-
-		// Where to go with the error?
-		System.err.println("embedded Mserver died:\n" + error);
-	}
-
-	/**
-	 * Returns a Connection for the embedded Mserver instance.  This
-	 * method "just" creates a TCP connection to the running Mserver,
-	 * using administrator privileges.
-	 *
-	 * @return a Connection for the embedded Mserver instance
-	 * @throws SQLException if making a connection fails
-	 */
-	public Connection getConnection() throws SQLException {
-		try {
-			Properties conProps = new Properties();
-			conProps.setProperty("host", "localhost");
-			conProps.setProperty("port", "50000");
-			conProps.setProperty("language", "sql");
-			conProps.setProperty("database", dbname);
-			conProps.setProperty("user", "monetdb");
-			conProps.setProperty("password", "monetdb");
-
-			return(new MonetConnection(conProps));
-		} catch (SQLException e) {
-			// this is just to avoid the SQLException to be
-			// rewrapped into another SQLException
-			throw e;
-		} catch (Exception e) {
-			throw new SQLException(e.toString());
-		}
-	}
-}
-// }}}
 
 // vim: foldmethod=marker:

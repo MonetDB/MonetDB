@@ -49,8 +49,20 @@ comment "Select tuples based on the pattern, only returning the head";
 command like_uselect(s:bat[:any_1,:str], pat:str, esc:str):bat[:any_1,:void]
 address PCRElike_uselect_pcre;
 
+command like_filter(s:bat[:any_1,:str], pat:str, esc:str):bat[:any_1,:void]
+address PCRElike_uselect_pcre;
+
+command like_filter(s:bat[:any_1,:str], pat:bat[:any_2,:str], esc:str):bat[:any_1,:any_2]
+address PCRElike_join_pcre;
+
 command ilike_uselect(s:bat[:any_1,:str], pat:str, esc:str):bat[:any_1,:void]
 address PCREilike_uselect_pcre;
+
+command ilike_filter(s:bat[:any_1,:str], pat:str, esc:str):bat[:any_1,:void]
+address PCREilike_uselect_pcre;
+
+command ilike_filter(s:bat[:any_1,:str], pat:bat[:any_2,:str], esc:str):bat[:any_1,:any_2]
+address PCREilike_join_pcre;
 
 command like_select(s:bat[:any_1,:str], pat:str, esc:str):bat[:any_1,:str]
 address PCRElike_select_pcre;

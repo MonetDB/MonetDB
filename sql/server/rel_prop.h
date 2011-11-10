@@ -32,12 +32,14 @@ typedef struct prop {
 #define PROP_HASHIDX	2	/* could use hash idx */
 #define PROP_SORTIDX	3	/* could use sortedness */
 #define PROP_FETCH	4	/* fetchjoin */
+#define PROP_REMOTE     5	/* uri for remote execution */
 #define PROP_USED	10	/* number of times exp is used */
 
 #define prop_list() 	list_create((fdestroy)&prop_destroy)
 
 extern prop * prop_create( sql_allocator *sa, int kind, prop *pre );
 extern prop * prop_copy( sql_allocator *sa, prop *p);
+extern prop * prop_remove( prop *plist, prop *p);
 extern prop * find_prop( prop *p, int kind);
 extern char * propkind2string( prop *p);
 extern char * propvalue2string( prop *p);

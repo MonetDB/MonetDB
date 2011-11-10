@@ -67,6 +67,30 @@ exp_compare2(sql_allocator *sa, sql_exp *l, sql_exp *r, sql_exp *h, int cmptype)
 }
 
 sql_exp *
+exp_filter(sql_allocator *sa, sql_exp *l, list *r, sql_subfunc *f) 
+{
+	sql_exp *e = exp_create(sa, e_cmp);
+
+	e->card = l->card;
+	e->l = l;
+	e->r = r;
+	e->f = f;
+	e->flag = cmp_filter;
+	return e;
+}
+
+sql_exp *
+exp_filter2(sql_allocator *sa, sql_exp *l, sql_exp *r1, sql_exp *r2, sql_subfunc *f) 
+{
+	list *r = list_new(sa);
+
+	append(r, r1);
+	if (r2)
+		append(r, r2);
+	return exp_filter(sa, l, r, f);
+}
+
+sql_exp *
 exp_or(sql_allocator *sa, list *l, list *r)
 {
 	sql_exp *f = NULL;
@@ -314,6 +338,13 @@ exp_setname(sql_allocator *sa, sql_exp *e, char *rname, char *name )
 	if (name) 
 		e->name = sa_strdup(sa, name);
 	e->rname = (rname)?sa_strdup(sa, rname):NULL;
+}
+
+void 
+noninternexp_setname(sql_allocator *sa, sql_exp *e, char *rname, char *name )
+{
+	if (!is_intern(e))
+		exp_setname(sa, e, rname, name);
 }
 
 str
@@ -753,6 +784,8 @@ exp_is_join(sql_exp *e)
 	 */ 
 	if (e->type == e_cmp && !is_complex_exp(e->flag) && e->l && e->r && !e->f && e->card >= CARD_AGGR && !complex_select(e))
 		return 0;
+	if (e->type == e_cmp && e->flag == cmp_filter && e->l && e->r && e->card >= CARD_AGGR)
+		return 0;
 	/* range expression */
 	if (e->type == e_cmp && !is_complex_exp(e->flag) && e->l && e->r && e->f && e->card >= CARD_AGGR && !complex_select(e)) 
 		return exp_is_rangejoin(e);
@@ -762,8 +795,13 @@ exp_is_join(sql_exp *e)
 int
 exp_is_eqjoin(sql_exp *e)
 {
-	if (e->flag == cmp_equal)
-		return 0;
+	if (e->flag == cmp_equal) {
+		sql_exp *l = e->l;
+		sql_exp *r = e->r;
+
+		if (!is_func(l->type) && !is_func(r->type)) 
+			return 0;
+	}
 	return -1; 
 }
 

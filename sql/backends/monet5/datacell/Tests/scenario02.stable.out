@@ -21,7 +21,6 @@ stdout of test 'scenario02` in directory 'backends/monet5/datacell` itself:
 Ready.
 # SQL catalog created, loading sql scripts once
 
-Over..
 
 # 16:48:27 >  
 # 16:48:27 >  mclient -lsql -ftest -i -e --host=rig --port=34492 

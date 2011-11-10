@@ -13,7 +13,6 @@ stdout of test 'local_global_temporary_table.SF-1715672` in directory 'test/BugT
 
 Ready.
 
-Over..
 
 # 09:35:57 >  
 # 09:35:57 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=32868 

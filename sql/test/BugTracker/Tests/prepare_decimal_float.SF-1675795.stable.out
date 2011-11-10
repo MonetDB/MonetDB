@@ -13,7 +13,6 @@ stdout of test 'prepare_decimal_float.SF-1675795` in directory 'test/BugTracker`
 
 Ready.
 
-Over..
 
 # 16:00:53 >  
 # 16:00:53 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=32565 
@@ -22,7 +21,7 @@ Over..
 % .prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale # name
 % varchar,	int,	int # type
-% 0,	0,	0 # length
+% 9,	1,	1 # length
 [ "timestamp",	7,	0	]
 [ "decimal",	6,	4	]
 [ "decimal",	6,	4	]

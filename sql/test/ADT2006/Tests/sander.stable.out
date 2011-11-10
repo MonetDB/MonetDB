@@ -13,7 +13,6 @@ stdout of test 'sander` in directory 'test/ADT2006` itself:
 
 Ready.
 
-Over..
 
 # 09:51:47 >  
 # 09:51:47 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=33719  < sander.sql

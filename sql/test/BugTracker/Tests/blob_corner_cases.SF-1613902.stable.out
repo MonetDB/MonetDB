@@ -13,7 +13,6 @@ stdout of test 'blob_corner_cases.SF-1613902` in directory 'test/BugTracker` its
 
 Ready.
 
-Over..
 
 # 17:03:24 >  
 # 17:03:24 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30168  < blob_corner_cases.SF-1613902.sql

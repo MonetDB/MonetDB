@@ -19,7 +19,6 @@ stdout of test 'alter_incorrect_syntax_crash.Bug-2795` in directory 'test/BugTra
 
 Ready.
 
-Over..
 
 # 12:32:37 >  
 # 12:32:37 >  mclient -lsql -ftest -i -e --host=alf --port=38195 

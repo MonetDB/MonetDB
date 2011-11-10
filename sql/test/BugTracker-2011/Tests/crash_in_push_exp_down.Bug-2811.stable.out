@@ -19,7 +19,6 @@ stdout of test 'crash_in_push_exp_down.Bug-2811` in directory 'test/BugTracker-2
 
 Ready.
 
-Over..
 
 # 14:31:53 >  
 # 14:31:53 >  mclient -lsql -ftest -i -e --host=alf --port=34980 

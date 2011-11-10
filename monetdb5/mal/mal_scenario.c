@@ -142,6 +142,8 @@ struct SCENARIO scenarioRec[MAXSCEN] = {
 	 }
 };
 
+static str fillScenario(Client c, Scenario scen);
+
 /*
  * @-
  * Currently each user can define a new scenario, provided we have a free slot.
@@ -177,7 +179,7 @@ getFreeScenario(void)
  * malInclude also needs a scenario. To break this cycle, the system should
  * call once the routine default scenario for each client first.
  */
-str
+static str
 initScenario(Client c, Scenario s)
 {
 	str l = s->language;
@@ -319,13 +321,14 @@ updateScenario(str nme, str fnme, MALfcn fcn)
 	if (phase != -1) {
 		Client c1;
 
-    		for(c1 = mal_clients; c1 < mal_clients+MAL_MAXCLIENTS; c1++)
-    			if (c1->scenario &&
+		for (c1 = mal_clients; c1 < mal_clients + MAL_MAXCLIENTS; c1++) {
+			if (c1->scenario &&
 			    strcmp(c1->scenario, scen->name) == 0)
 				c1->phase[phase] = fcn;
 			if (c1->oldscenario &&
 			    strcmp(c1->oldscenario, scen->name) == 0)
 				c1->oldphase[phase] = fcn;
+		}
 	}
 }
 
@@ -369,7 +372,7 @@ str getScenarioLanguage(Client c){
  * All client records should be initialized with a default
  * scenario, i.e. the first described in the scenario table.
  */
-str
+static str
 fillScenario(Client c, Scenario scen)
 {
 	c->scenario = scen->name;
@@ -389,28 +392,6 @@ fillScenario(Client c, Scenario scen)
 	c->state[MAL_SCENARIO_INITCLIENT] = 0;
 	c->state[MAL_SCENARIO_EXITCLIENT] = 0;
 	return(MAL_SUCCEED);
-}
-
-void
-clrScenario(Client c)
-{
-	if (c->scenario == 0)
-		return;
-	c->scenario = 0;
-	c->phase[MAL_SCENARIO_READER] = 0;
-	c->phase[MAL_SCENARIO_PARSER] = 0;
-	c->phase[MAL_SCENARIO_OPTIMIZE] = 0;
-	c->phase[MAL_SCENARIO_SCHEDULER] = 0;
-	c->phase[MAL_SCENARIO_ENGINE] = 0;
-	c->phase[MAL_SCENARIO_INITCLIENT] = 0;
-	c->phase[MAL_SCENARIO_EXITCLIENT] = 0;
-	c->state[MAL_SCENARIO_READER] = 0;
-	c->state[MAL_SCENARIO_PARSER] = 0;
-	c->state[MAL_SCENARIO_OPTIMIZE] = 0;
-	c->state[MAL_SCENARIO_SCHEDULER] = 0;
-	c->state[MAL_SCENARIO_ENGINE] = 0;
-	c->state[MAL_SCENARIO_INITCLIENT] = 0;
-	c->state[MAL_SCENARIO_EXITCLIENT] = 0;
 }
 
 /*

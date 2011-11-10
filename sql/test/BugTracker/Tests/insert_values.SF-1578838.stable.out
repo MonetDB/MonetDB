@@ -13,7 +13,6 @@ stdout of test 'insert_values.SF-1578838` in directory 'test/BugTracker` itself:
 
 Ready.
 
-Over..
 
 # 16:05:55 >  
 # 16:05:55 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30410  < insert_values.SF-1578838.sql

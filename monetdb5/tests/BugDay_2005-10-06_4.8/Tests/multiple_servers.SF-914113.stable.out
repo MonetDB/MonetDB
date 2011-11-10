@@ -13,7 +13,6 @@ stdout of test 'multiple_servers.SF-914113` in directory 'tests/BugDay_2005-10-0
 
 Ready.
 
-Over..
 
 # 10:16:20 >  
 # 10:16:20 >  Mtimeout -timeout 120 ./multiple_servers.SF-914113.MAPI multiple_servers.SF-914113 

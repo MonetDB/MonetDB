@@ -13,7 +13,6 @@ stdout of test 'error_in_sql_parser.SF-1019122` in directory 'test/BugDay_2005-1
 
 Ready.
 
-Over..
 
 # 11:50:40 >  
 # 11:50:40 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < error_in_sql_parser.SF-1019122.sql

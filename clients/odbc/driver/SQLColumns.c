@@ -31,8 +31,6 @@
  * SQLColumns()
  * CLI Compliance: X/Open
  *
- * Note: catalogs are not supported, we ignore any value set for szCatalogName
- *
  * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 aug 2002
  *
@@ -60,6 +58,7 @@ SQLColumns_(ODBCStmt *stmt,
 	/* buffer for the constructed query to do meta data retrieval */
 	char *query = NULL;
 	char *query_end = NULL;
+	char *cat = NULL, *sch = NULL, *tab = NULL, *col = NULL;
 
 	/* null pointers not allowed if arguments are identifiers */
 	if (stmt->Dbc->sql_attr_metadata_id == SQL_TRUE &&
@@ -85,8 +84,54 @@ SQLColumns_(ODBCStmt *stmt,
 		(int) NameLength4, (char *) ColumnName);
 #endif
 
+	if (stmt->Dbc->sql_attr_metadata_id == SQL_FALSE) {
+		if (NameLength1 > 0) {
+			cat = ODBCParseOA("e", "value",
+					  (const char *) CatalogName,
+					  (size_t) NameLength1);
+		}
+		if (NameLength2 > 0) {
+			sch = ODBCParsePV("s", "name",
+					  (const char *) SchemaName,
+					  (size_t) NameLength2);
+		}
+		if (NameLength3 > 0) {
+			tab = ODBCParsePV("t", "name",
+					  (const char *) TableName,
+					  (size_t) NameLength3);
+		}
+		if (NameLength4 > 0) {
+			col = ODBCParsePV("c", "name",
+					  (const char *) ColumnName,
+					  (size_t) NameLength4);
+		}
+	} else {
+		if (NameLength1 > 0) {
+			cat = ODBCParseID("e", "value",
+					  (const char *) CatalogName,
+					  (size_t) NameLength1);
+		}
+		if (NameLength2 > 0) {
+			sch = ODBCParseID("s", "name",
+					  (const char *) SchemaName,
+					  (size_t) NameLength2);
+		}
+		if (NameLength3 > 0) {
+			tab = ODBCParseID("t", "name",
+					  (const char *) TableName,
+					  (size_t) NameLength3);
+		}
+		if (NameLength4 > 0) {
+			col = ODBCParseID("c", "name",
+					  (const char *) ColumnName,
+					  (size_t) NameLength4);
+		}
+	}
+
 	/* construct the query now */
-	query = (char *) malloc(12000 + NameLength2 + NameLength3 + NameLength4);
+	query = malloc(6500 + (cat ? strlen(cat) : 0) +
+		       (sch ? strlen(sch) : 0) + (tab ? strlen(tab) : 0) +
+		       (col ? strlen(col) : 0));
 	assert(query);
 	query_end = query;
 
@@ -112,256 +157,285 @@ SQLColumns_(ODBCStmt *stmt,
 	 */
 
 	sprintf(query_end,
-		"select cast(NULL as varchar(1)) as table_cat,"
-		"       s.\"name\" as table_schem,"
-		"       t.\"name\" as table_name,"
-		"       c.\"name\" as column_name,"
-		"       case c.\"type\""
-		"            when 'bigint' then %d"
-		"            when 'blob' then %d"
-		"            when 'boolean' then %d"
-		"            when 'char' then %d"
-		"            when 'clob' then %d"
-		"            when 'date' then %d"
-		"            when 'decimal' then %d"
-		"            when 'double' then %d"
-		"            when 'int' then %d"
-		"            when 'month_interval' then"
-		"                 case c.type_digits"
-		"                      when 1 then %d"
-		"                      when 2 then %d"
-		"                      when 3 then %d"
-		"                 end"
-		"            when 'real' then %d"
-		"            when 'sec_interval' then"
-		"                 case c.type_digits"
-		"                      when 4 then %d"
-		"                      when 5 then %d"
-		"                      when 6 then %d"
-		"                      when 7 then %d"
-		"                      when 8 then %d"
-		"                      when 9 then %d"
-		"                      when 10 then %d"
-		"                      when 11 then %d"
-		"                      when 12 then %d"
-		"                      when 13 then %d"
-		"                 end"
-		"            when 'smallint' then %d"
-		"            when 'timestamp' then %d"
-		"            when 'timestamptz' then %d"
-		"            when 'time' then %d"
-		"            when 'timetz' then %d"
-		"            when 'tinyint' then %d"
-		"            when 'varchar' then %d"
-		"       end as data_type,"
-		"       case c.\"type\""
-		"            when 'bigint' then 'BIGINT'"
-		"            when 'blob' then 'BINARY LARGE OBJECT'"
-		"            when 'boolean' then 'BOOLEAN'"
-		"            when 'char' then 'CHARACTER'"
-		"            when 'clob' then 'CHARACTER LARGE OBJECT'"
-		"            when 'date' then 'DATE'"
-		"            when 'decimal' then 'DECIMAL'"
-		"            when 'double' then 'DOUBLE'"
-		"            when 'int' then 'INTEGER'"
-		"            when 'month_interval' then"
-		"                 case c.type_digits"
-		"                      when 1 then 'INTERVAL YEAR'"
-		"                      when 2 then 'INTERVAL YEAR TO MONTH'"
-		"                      when 3 then 'INTERVAL MONTH'"
-		"                 end"
-		"            when 'real' then 'REAL'"
-		"            when 'sec_interval' then"
-		"                 case c.type_digits"
-		"                      when 4 then 'INTERVAL DAY'"
-		"                      when 5 then 'INTERVAL DAY TO HOUR'"
-		"                      when 6 then 'INTERVAL DAY TO MINUTE'"
-		"                      when 7 then 'INTERVAL DAY TO SECOND'"
-		"                      when 8 then 'INTERVAL HOUR'"
-		"                      when 9 then 'INTERVAL HOUR TO MINUTE'"
-		"                      when 10 then 'INTERVAL HOUR TO SECOND'"
-		"                      when 11 then 'INTERVAL MINUTE'"
-		"                      when 12 then 'INTERVAL MINUTE TO SECOND'"
-		"                      when 13 then 'INTERVAL SECOND'"
-		"                 end"
-		"            when 'smallint' then 'SMALLINT'"
-		"            when 'timestamp' then 'TIMESTAMP'"
-		"            when 'timestamptz' then 'TIMESTAMP'"
-		"            when 'time' then 'TIME'"
-		"            when 'timetz' then 'TIME'"
-		"            when 'tinyint' then 'TINYINT'"
-		"            when 'varchar' then 'VARCHAR'"
-		"       end as type_name,"
-		"       case c.\"type\""
-		"            when 'month_interval' then"
-		"                 case c.type_digits"
-		"                      when 1 then 26"
-		"                      when 2 then 38"
-		"                      when 3 then 27"
-		"                 end"
-		"            when 'sec_interval' then"
-		"                 case c.type_digits"
-		"                      when 4 then 25"
-		"                      when 5 then 36"
-		"                      when 6 then 41"
-		"                      when 7 then 47"
-		"                      when 8 then 26"
-		"                      when 9 then 39"
-		"                      when 10 then 45"
-		"                      when 11 then 28"
-		"                      when 12 then 44"
-		"                      when 13 then 30"
-		"                 end"
-		"            when 'date' then 10"
-		"            when 'time' then 12"
-		"            when 'timetz' then 12"
-		"            when 'timestamp' then 23"
-		"            when 'timestamptz' then 23"
-		"            else c.type_digits"
-		"       end as column_size,"
-		"       case c.\"type\""
-		"            when 'month_interval' then"
-		"                 case c.type_digits"
-		"                      when 1 then 26"
-		"                      when 2 then 38"
-		"                      when 3 then 27"
-		"                 end"
-		"            when 'sec_interval' then"
-		"                 case c.type_digits"
-		"                      when 4 then 25"
-		"                      when 5 then 36"
-		"                      when 6 then 41"
-		"                      when 7 then 47"
-		"                      when 8 then 26"
-		"                      when 9 then 39"
-		"                      when 10 then 45"
-		"                      when 11 then 28"
-		"                      when 12 then 44"
-		"                      when 13 then 30"
-		"                 end"
-		"            when 'date' then 10"
-		"            when 'time' then 12"
-		"            when 'timetz' then 12"
-		"            when 'timestamp' then 23"
-		"            when 'timestamptz' then 23"
-		"            when 'bigint' then 20"
-		"            when 'int' then 11"
-		"            when 'smallint' then 6"
-		"            when 'tinyint' then 4"
-		"            when 'char' then 6 * c.type_digits"
-		"            when 'varchar' then 6 * c.type_digits"
-		"            when 'double' then 24"
-		"            when 'real' then 14"
-		"            else c.type_digits"
-		"       end as buffer_length,"
-		"       case c.\"type\""
-		"            when 'time' then c.type_digits - 1"
-		"            when 'timetz' then c.type_digits - 1"
-		"            when 'timestamp' then c.type_digits - 1"
-		"            when 'timestamptz' then c.type_digits - 1"
-		"            when 'sec_interval' then 0"
-		"            when 'month_interval' then 0"
-		"            when 'real' then"
-		"                 case when c.type_digits = 24 and c.type_scale = 0 then 7"
-		"                 else c.type_digits"
-		"                 end"
-		"            when 'double' then"
-		"                 case when c.type_digits = 53 and c.type_scale = 0 then 15"
-		"                 else c.type_digits"
-		"                 end"
-		"            when 'decimal' then c.type_digits"
-		"            when 'bigint' then 19"
-		"            when 'int' then 10"
-		"            when 'smallint' then 5"
-		"            when 'tinyint' then 3"
-		"       end as decimal_digits,"
-		"       case c.\"type\""
-		"            when 'double' then"
-		"                 case when c.type_digits = 53 and c.type_scale = 0 then 2"
-		"                 else 10"
-		"                 end"
-		"            when 'real' then"
-		"                 case when c.type_digits = 24 and c.type_scale = 0 then 2"
-		"                 else 10"
-		"                 end"
-		"            when 'bigint' then 2"
-		"            when 'int' then 2"
-		"            when 'smallint' then 2"
-		"            when 'tinyint' then 2"
-		"            when 'decimal' then 10"
-		"            else cast(null as smallint)"
-		"       end as num_prec_radix,"
-		"       case c.\"null\""
-		"            when true then cast(%d as smallint)"
-		"            when false then cast(%d as smallint)"
-		"       end as nullable,"
-		"       cast('' as varchar(1)) as remarks,"
-		"       c.\"default\" as column_def,"
-		"       case c.\"type\""
-		"            when 'bigint' then %d"
-		"            when 'blob' then %d"
-		"            when 'boolean' then %d"
-		"            when 'char' then %d"
-		"            when 'clob' then %d"
-		"            when 'date' then %d"
-		"            when 'decimal' then %d"
-		"            when 'double' then %d"
-		"            when 'int' then %d"
-		"            when 'month_interval' then %d"
-		"            when 'real' then %d"
-		"            when 'sec_interval' then %d"
-		"            when 'smallint' then %d"
-		"            when 'timestamp' then %d"
-		"            when 'timestamptz' then %d"
-		"            when 'time' then %d"
-		"            when 'timetz' then %d"
-		"            when 'tinyint' then %d"
-		"            when 'varchar' then %d"
-		"       end as sql_data_type,"
-		"       case c.\"type\""
-		"            when 'date' then %d"
-		"            when 'month_interval' then"
-		"                 case c.type_digits"
-		"                      when 1 then %d"
-		"                      when 2 then %d"
-		"                      when 3 then %d"
-		"                 end"
-		"            when 'sec_interval' then"
-		"                 case c.type_digits"
-		"                      when 4 then %d"
-		"                      when 5 then %d"
-		"                      when 6 then %d"
-		"                      when 7 then %d"
-		"                      when 8 then %d"
-		"                      when 9 then %d"
-		"                      when 10 then %d"
-		"                      when 11 then %d"
-		"                      when 12 then %d"
-		"                      when 13 then %d"
-		"                 end"
-		"            when 'timestamp' then %d"
-		"            when 'timestamptz' then %d"
-		"            when 'time' then %d"
-		"            when 'timetz' then %d"
-		"            else cast(null as smallint)"
-		"       end as sql_datetime_sub,"
-		"       case c.\"type\""
-		"            when 'char' then 6 * c.type_digits"
-		"            when 'varchar' then 6 * c.type_digits"
-		"            when 'clob' then 6 * c.type_digits"
-		"            when 'blob' then c.type_digits"
-		"            else cast(null as integer)"
-		"       end as char_octet_length,"
-		"       cast(c.\"number\" + 1 as integer) as ordinal_position,"
-		"       case c.\"null\""
-		"            when true then cast('yes' as varchar(3))"
-		"            when false then cast('no' as varchar(3))"
-		"       end as is_nullable"
+		"select e.\"value\" as table_cat,"
+		      " s.\"name\" as table_schem,"
+		      " t.\"name\" as table_name,"
+		      " c.\"name\" as column_name,"
+		      " case c.\"type\""
+			   " when 'bigint' then %d"
+			   " when 'blob' then %d"
+			   " when 'boolean' then %d"
+			   " when 'char' then %d"
+			   " when 'clob' then %d"
+			   " when 'date' then %d"
+			   " when 'decimal' then %d"
+			   " when 'double' then %d"
+			   " when 'int' then %d"
+			   " when 'month_interval' then"
+				" case c.type_digits"
+				     " when 1 then %d"
+				     " when 2 then %d"
+				     " when 3 then %d"
+				" end"
+			   " when 'real' then %d"
+			   " when 'sec_interval' then"
+				" case c.type_digits"
+				     " when 4 then %d"
+				     " when 5 then %d"
+				     " when 6 then %d"
+				     " when 7 then %d"
+				     " when 8 then %d"
+				     " when 9 then %d"
+				     " when 10 then %d"
+				     " when 11 then %d"
+				     " when 12 then %d"
+				     " when 13 then %d"
+				" end"
+			   " when 'smallint' then %d"
+			   " when 'timestamp' then %d"
+			   " when 'timestamptz' then %d"
+			   " when 'time' then %d"
+			   " when 'timetz' then %d"
+			   " when 'tinyint' then %d"
+			   " when 'varchar' then %d"
+			   " when 'wrd' then"
+				" case c.type_digits"
+				     " when 32 then %d"
+				     " when 64 then %d"
+				" end"
+		      " end as data_type,"
+		      " case c.\"type\""
+			   " when 'bigint' then 'BIGINT'"
+			   " when 'blob' then 'BINARY LARGE OBJECT'"
+			   " when 'boolean' then 'BOOLEAN'"
+			   " when 'char' then 'CHARACTER'"
+			   " when 'clob' then 'CHARACTER LARGE OBJECT'"
+			   " when 'date' then 'DATE'"
+			   " when 'decimal' then 'DECIMAL'"
+			   " when 'double' then 'DOUBLE'"
+			   " when 'int' then 'INTEGER'"
+			   " when 'month_interval' then"
+				" case c.type_digits"
+				     " when 1 then 'INTERVAL YEAR'"
+				     " when 2 then 'INTERVAL YEAR TO MONTH'"
+				     " when 3 then 'INTERVAL MONTH'"
+				" end"
+			   " when 'real' then 'REAL'"
+			   " when 'sec_interval' then"
+				" case c.type_digits"
+				     " when 4 then 'INTERVAL DAY'"
+				     " when 5 then 'INTERVAL DAY TO HOUR'"
+				     " when 6 then 'INTERVAL DAY TO MINUTE'"
+				     " when 7 then 'INTERVAL DAY TO SECOND'"
+				     " when 8 then 'INTERVAL HOUR'"
+				     " when 9 then 'INTERVAL HOUR TO MINUTE'"
+				     " when 10 then 'INTERVAL HOUR TO SECOND'"
+				     " when 11 then 'INTERVAL MINUTE'"
+				     " when 12 then 'INTERVAL MINUTE TO SECOND'"
+				     " when 13 then 'INTERVAL SECOND'"
+				" end"
+			   " when 'smallint' then 'SMALLINT'"
+			   " when 'timestamp' then 'TIMESTAMP'"
+			   " when 'timestamptz' then 'TIMESTAMP'"
+			   " when 'time' then 'TIME'"
+			   " when 'timetz' then 'TIME'"
+			   " when 'tinyint' then 'TINYINT'"
+			   " when 'varchar' then 'VARCHAR'"
+			   " when 'wrd' then"
+				" case c.type_digits"
+				     " when 32 then 'INTEGER'"
+				     " when 64 then 'BIGINT'"
+				" end"
+		      " end as type_name,"
+		      " case c.\"type\""
+			   " when 'month_interval' then"
+				" case c.type_digits"
+				     " when 1 then 26"
+				     " when 2 then 38"
+				     " when 3 then 27"
+				" end"
+			   " when 'sec_interval' then"
+				" case c.type_digits"
+				     " when 4 then 25"
+				     " when 5 then 36"
+				     " when 6 then 41"
+				     " when 7 then 47"
+				     " when 8 then 26"
+				     " when 9 then 39"
+				     " when 10 then 45"
+				     " when 11 then 28"
+				     " when 12 then 44"
+				     " when 13 then 30"
+				" end"
+			   " when 'date' then 10"
+			   " when 'time' then 12"
+			   " when 'timetz' then 12"
+			   " when 'timestamp' then 23"
+			   " when 'timestamptz' then 23"
+			   " else c.type_digits"
+		      " end as column_size,"
+		      " case c.\"type\""
+			   " when 'month_interval' then"
+				" case c.type_digits"
+				     " when 1 then 26"
+				     " when 2 then 38"
+				     " when 3 then 27"
+				" end"
+			   " when 'sec_interval' then"
+				" case c.type_digits"
+				     " when 4 then 25"
+				     " when 5 then 36"
+				     " when 6 then 41"
+				     " when 7 then 47"
+				     " when 8 then 26"
+				     " when 9 then 39"
+				     " when 10 then 45"
+				     " when 11 then 28"
+				     " when 12 then 44"
+				     " when 13 then 30"
+				" end"
+			   " when 'date' then 10"
+			   " when 'time' then 12"
+			   " when 'timetz' then 12"
+			   " when 'timestamp' then 23"
+			   " when 'timestamptz' then 23"
+			   " when 'bigint' then 20"
+			   " when 'int' then 11"
+			   " when 'smallint' then 6"
+			   " when 'tinyint' then 4"
+			   " when 'char' then 6 * c.type_digits"
+			   " when 'varchar' then 6 * c.type_digits"
+			   " when 'double' then 24"
+			   " when 'real' then 14"
+			   " when 'wrd' then"
+				" case c.type_digits"
+				     " when 32 then 11"
+				     " when 64 then 20"
+				" end"
+			   " else c.type_digits"
+		      " end as buffer_length,"
+		      " case c.\"type\""
+			   " when 'time' then c.type_digits - 1"
+			   " when 'timetz' then c.type_digits - 1"
+			   " when 'timestamp' then c.type_digits - 1"
+			   " when 'timestamptz' then c.type_digits - 1"
+			   " when 'sec_interval' then 0"
+			   " when 'month_interval' then 0"
+			   " when 'real' then"
+				" case when c.type_digits = 24 and c.type_scale = 0 then 7"
+				" else c.type_digits"
+				" end"
+			   " when 'double' then"
+				" case when c.type_digits = 53 and c.type_scale = 0 then 15"
+				" else c.type_digits"
+				" end"
+			   " when 'decimal' then c.type_digits"
+			   " when 'bigint' then 19"
+			   " when 'int' then 10"
+			   " when 'smallint' then 5"
+			   " when 'tinyint' then 3"
+			   " when 'wrd' then"
+				" case c.type_digits"
+				     " when 32 then 10"
+				     " when 64 then 19"
+				" end"
+		      " end as decimal_digits,"
+		      " case c.\"type\""
+			   " when 'double' then"
+				" case when c.type_digits = 53 and c.type_scale = 0 then 2"
+				" else 10"
+				" end"
+			   " when 'real' then"
+				" case when c.type_digits = 24 and c.type_scale = 0 then 2"
+				" else 10"
+				" end"
+			   " when 'bigint' then 2"
+			   " when 'int' then 2"
+			   " when 'smallint' then 2"
+			   " when 'tinyint' then 2"
+			   " when 'decimal' then 10"
+			   " when 'wrd' then 2"
+			   " else cast(null as smallint)"
+		      " end as num_prec_radix,"
+		      " case c.\"null\""
+			   " when true then cast(%d as smallint)"
+			   " when false then cast(%d as smallint)"
+		      " end as nullable,"
+		      " cast('' as varchar(1)) as remarks,"
+		      " c.\"default\" as column_def,"
+		      " case c.\"type\""
+			   " when 'bigint' then %d"
+			   " when 'blob' then %d"
+			   " when 'boolean' then %d"
+			   " when 'char' then %d"
+			   " when 'clob' then %d"
+			   " when 'date' then %d"
+			   " when 'decimal' then %d"
+			   " when 'double' then %d"
+			   " when 'int' then %d"
+			   " when 'month_interval' then %d"
+			   " when 'real' then %d"
+			   " when 'sec_interval' then %d"
+			   " when 'smallint' then %d"
+			   " when 'timestamp' then %d"
+			   " when 'timestamptz' then %d"
+			   " when 'time' then %d"
+			   " when 'timetz' then %d"
+			   " when 'tinyint' then %d"
+			   " when 'varchar' then %d"
+			   " when 'wrd' then"
+				" case c.type_digits"
+				     " when 32 then %d"
+				     " when 64 then %d"
+				" end"
+		      " end as sql_data_type,"
+		      " case c.\"type\""
+			   " when 'date' then %d"
+			   " when 'month_interval' then"
+				" case c.type_digits"
+				     " when 1 then %d"
+				     " when 2 then %d"
+				     " when 3 then %d"
+				" end"
+			   " when 'sec_interval' then"
+				" case c.type_digits"
+				     " when 4 then %d"
+				     " when 5 then %d"
+				     " when 6 then %d"
+				     " when 7 then %d"
+				     " when 8 then %d"
+				     " when 9 then %d"
+				     " when 10 then %d"
+				     " when 11 then %d"
+				     " when 12 then %d"
+				     " when 13 then %d"
+				" end"
+			   " when 'timestamp' then %d"
+			   " when 'timestamptz' then %d"
+			   " when 'time' then %d"
+			   " when 'timetz' then %d"
+			   " else cast(null as smallint)"
+		      " end as sql_datetime_sub,"
+		      " case c.\"type\""
+			   " when 'char' then 6 * c.type_digits"
+			   " when 'varchar' then 6 * c.type_digits"
+			   " when 'clob' then 6 * c.type_digits"
+			   " when 'blob' then c.type_digits"
+			   " else cast(null as integer)"
+		      " end as char_octet_length,"
+		      " cast(c.\"number\" + 1 as integer) as ordinal_position,"
+		      " case c.\"null\""
+			   " when true then cast('yes' as varchar(3))"
+			   " when false then cast('no' as varchar(3))"
+		      " end as is_nullable"
 		" from sys.\"schemas\" s,"
-		"      sys.\"tables\" t,"
-		"      sys.\"columns\" c"
+		     " sys.\"tables\" t,"
+		     " sys.\"columns\" c,"
+		     " sys.\"env\"() e"
 		" where s.\"id\" = t.\"schema_id\" and"
-		"       t.\"id\" = c.\"table_id\"",
+		      " t.\"id\" = c.\"table_id\" and"
+		      " e.\"name\" = 'gdk_dbname'",
+		/* data_type: */
 		SQL_BIGINT, SQL_LONGVARBINARY, SQL_BIT, SQL_CHAR,
 		SQL_LONGVARCHAR, SQL_TYPE_DATE, SQL_DECIMAL, SQL_DOUBLE,
 		SQL_INTEGER, SQL_INTERVAL_YEAR, SQL_INTERVAL_YEAR_TO_MONTH,
@@ -372,111 +446,55 @@ SQLColumns_(ODBCStmt *stmt,
 		SQL_INTERVAL_MINUTE, SQL_INTERVAL_MINUTE_TO_SECOND,
 		SQL_INTERVAL_SECOND, SQL_SMALLINT, SQL_TYPE_TIMESTAMP,
 		SQL_TYPE_TIMESTAMP, SQL_TYPE_TIME, SQL_TYPE_TIME,
-		SQL_TINYINT, SQL_VARCHAR, SQL_NULLABLE, SQL_NO_NULLS,
+		SQL_TINYINT, SQL_VARCHAR, SQL_INTEGER, SQL_BIGINT,
+		/* nullable: */
+		SQL_NULLABLE, SQL_NO_NULLS,
+		/* sql_data_type: */
 		SQL_BIGINT, SQL_LONGVARBINARY, SQL_BIT, SQL_CHAR,
 		SQL_LONGVARCHAR, SQL_DATETIME, SQL_DECIMAL, SQL_DOUBLE,
 		SQL_INTEGER, SQL_INTERVAL, SQL_REAL, SQL_INTERVAL,
 		SQL_SMALLINT, SQL_DATETIME, SQL_DATETIME, SQL_DATETIME,
-		SQL_DATETIME, SQL_TINYINT, SQL_VARCHAR, SQL_CODE_DATE,
-		SQL_CODE_YEAR, SQL_CODE_YEAR_TO_MONTH, SQL_CODE_MONTH,
-		SQL_CODE_DAY, SQL_CODE_DAY_TO_HOUR, SQL_CODE_DAY_TO_MINUTE,
-		SQL_CODE_DAY_TO_SECOND, SQL_CODE_HOUR, SQL_CODE_HOUR_TO_MINUTE,
+		SQL_DATETIME, SQL_TINYINT, SQL_VARCHAR, SQL_INTEGER,
+		SQL_BIGINT,
+		/* sql_datetime_sub: */
+		SQL_CODE_DATE, SQL_CODE_YEAR, SQL_CODE_YEAR_TO_MONTH,
+		SQL_CODE_MONTH, SQL_CODE_DAY, SQL_CODE_DAY_TO_HOUR,
+		SQL_CODE_DAY_TO_MINUTE, SQL_CODE_DAY_TO_SECOND,
+		SQL_CODE_HOUR, SQL_CODE_HOUR_TO_MINUTE,
 		SQL_CODE_HOUR_TO_SECOND, SQL_CODE_MINUTE,
 		SQL_CODE_MINUTE_TO_SECOND, SQL_CODE_SECOND,
 		SQL_CODE_TIMESTAMP, SQL_CODE_TIMESTAMP, SQL_CODE_TIME,
 		SQL_CODE_TIME);
+	assert(strlen(query) < 6300);
 	query_end += strlen(query_end);
 
 	/* depending on the input parameter values we must add a
 	   variable selection condition dynamically */
 
 	/* Construct the selection condition query part */
-	if (stmt->Dbc->sql_attr_metadata_id == SQL_TRUE) {
-		/* treat arguments as identifiers */
-		/* remove trailing blanks */
-		while (NameLength2 > 0 &&
-		       isspace((int) SchemaName[NameLength2 - 1]))
-			NameLength2--;
-		while (NameLength3 > 0 &&
-		       isspace((int) TableName[NameLength3 - 1]))
-			NameLength3--;
-		while (NameLength4 > 0 &&
-		       isspace((int) ColumnName[NameLength4 - 1]))
-			NameLength4--;
-		if (NameLength2 > 0) {
-			sprintf(query_end, " and s.\"name\" = '");
-			query_end += strlen(query_end);
-			while (NameLength2-- > 0)
-				*query_end++ = tolower(*SchemaName++);
-			*query_end++ = '\'';
-		}
-		if (NameLength3 > 0) {
-			sprintf(query_end, " and t.\"name\" = '");
-			query_end += strlen(query_end);
-			while (NameLength3-- > 0)
-				*query_end++ = tolower(*TableName++);
-			*query_end++ = '\'';
-		}
-		if (NameLength4 > 0) {
-			sprintf(query_end, " and c.\"name\" = '");
-			query_end += strlen(query_end);
-			while (NameLength4-- > 0)
-				*query_end++ = tolower(*ColumnName++);
-			*query_end++ = '\'';
-		}
-	} else {
-		int escape;
-		if (NameLength2 > 0) {
-			escape = 0;
-			sprintf(query_end, " and s.\"name\" like '");
-			query_end += strlen(query_end);
-			while (NameLength2-- > 0) {
-				if (*SchemaName == '\\') {
-					escape = 1;
-					*query_end++ = '\\';
-				}
-				*query_end++ = *SchemaName++;
-			}
-			*query_end++ = '\'';
-			if (escape) {
-				sprintf(query_end, " escape '\\\\'");
-				query_end += strlen(query_end);
-			}
-		}
-		if (NameLength3 > 0) {
-			escape = 0;
-			sprintf(query_end, " and t.\"name\" like '");
-			query_end += strlen(query_end);
-			while (NameLength3-- > 0) {
-				if (*TableName == '\\') {
-					escape = 1;
-					*query_end++ = '\\';
-				}
-				*query_end++ = *TableName++;
-			}
-			*query_end++ = '\'';
-			if (escape) {
-				sprintf(query_end, " escape '\\\\'");
-				query_end += strlen(query_end);
-			}
-		}
-		if (NameLength4 > 0) {
-			escape = 0;
-			sprintf(query_end, " and c.\"name\" like '");
-			query_end += strlen(query_end);
-			while (NameLength4-- > 0) {
-				if (*ColumnName == '\\') {
-					escape = 1;
-					*query_end++ = '\\';
-				}
-				*query_end++ = *ColumnName++;
-			}
-			*query_end++ = '\'';
-			if (escape) {
-				sprintf(query_end, " escape '\\\\'");
-				query_end += strlen(query_end);
-			}
-		}
+	if (cat) {
+		/* filtering requested on catalog name */
+		sprintf(query_end, " and %s", cat);
+		query_end += strlen(query_end);
+		free(cat);
+	}
+	if (sch) {
+		/* filtering requested on schema name */
+		sprintf(query_end, " and %s", sch);
+		query_end += strlen(query_end);
+		free(sch);
+	}
+	if (tab) {
+		/* filtering requested on table name */
+		sprintf(query_end, " and %s", tab);
+		query_end += strlen(query_end);
+		free(tab);
+	}
+	if (col) {
+		/* filtering requested on column name */
+		sprintf(query_end, " and %s", col);
+		query_end += strlen(query_end);
+		free(col);
 	}
 
 	/* add the ordering */
@@ -484,7 +502,6 @@ SQLColumns_(ODBCStmt *stmt,
 	       " order by table_cat, table_schem, "
 	       "table_name, ordinal_position");
 	query_end += strlen(query_end);
-	assert(query_end - query < 12000 + NameLength2 + NameLength3 + NameLength4);
 
 	/* query the MonetDB data dictionary tables */
 	rc = SQLExecDirect_(stmt, (SQLCHAR *) query,

@@ -18,7 +18,6 @@ stdout of test 'alter` in directory 'benchmarks/tpch/LOCKED` itself:
 
 Ready.
 
-Over..
 
 # 10:53:23 >  
 # 10:53:23 >  mclient -lsql -ftest -i -e --host=mane-3 --port=33497 

@@ -13,7 +13,6 @@ stdout of test 'crash_on_delete.SF-1651567` in directory 'test/BugTracker` itsel
 
 Ready.
 
-Over..
 
 # 09:59:58 >  
 # 09:59:58 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30619  < crash_on_delete.SF-1651567.sql

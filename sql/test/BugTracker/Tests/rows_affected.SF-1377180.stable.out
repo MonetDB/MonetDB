@@ -13,7 +13,6 @@ stdout of test 'rows_affected.SF-1377180` in directory 'test/BugTracker` itself:
 
 Ready.
 
-Over..
 
 # 12:47:47 >  
 # 12:47:47 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < rows_affected.SF-1377180.sql

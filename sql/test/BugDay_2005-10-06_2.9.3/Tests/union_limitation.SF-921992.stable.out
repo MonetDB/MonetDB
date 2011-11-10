@@ -13,7 +13,6 @@ stdout of test 'union_limitation.SF-921992` in directory 'test/BugDay_2005-10-06
 
 Ready.
 
-Over..
 
 # 12:37:48 >  
 # 12:37:48 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < union_limitation.SF-921992.sql

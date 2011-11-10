@@ -17,7 +17,6 @@ stdout of test 'select_star.Bug-2563` in directory 'test/BugTracker-2010` itself
 
 Ready.
 
-Over..
 
 # 08:53:38 >  
 # 08:53:38 >  mclient -lsql -ftest -i -e --host=alf --port=33997 

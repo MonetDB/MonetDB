@@ -12,7 +12,6 @@ stdout of test 'ID.853867` in directory 'tests/BugsViaSourgeforce` itself:
 
 Ready.
 
-Over..
 
 # 16:19:48 >  
 # 16:19:48 >  Mtimeout -timeout 660 ./ID.853867.MAPI ID.853867 

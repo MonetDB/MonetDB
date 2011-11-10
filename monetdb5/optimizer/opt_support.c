@@ -1205,7 +1205,7 @@ hasSideEffects(InstrPtr p, int strict)
 		/* the update instructions for SQL has side effects.
 		   whether this is relevant should be explicitly checked
 		   in the environment of the call */
-		if (isUpdateInstruction(p)) return FALSE;
+		if (isUpdateInstruction(p)) return TRUE;
 		return TRUE;
 	}
 	if( getModuleId(p) == languageRef){

@@ -18,7 +18,6 @@ stdout of test 'prepare_statements_crash_server.Bug-2599` in directory 'test/Bug
 
 Ready.
 
-Over..
 
 # 15:41:23 >  
 # 15:41:23 >  mclient -lsql -ftest -i -e --host=rig --port=38276 
@@ -28,25 +27,25 @@ Over..
 % .prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale # name
 % varchar,	int,	int # type
-% 0,	0,	0 # length
+% 7,	1,	1 # length
 [ "tinyint",	8,	0	]
 #prepare select * from t_2599 where a>2*?+1;
 % .prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale # name
 % varchar,	int,	int # type
-% 0,	0,	0 # length
+% 7,	1,	1 # length
 [ "tinyint",	8,	0	]
 #prepare select * from t_2599 where a>?+1;
 % .prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale # name
 % varchar,	int,	int # type
-% 0,	0,	0 # length
+% 7,	1,	1 # length
 [ "tinyint",	8,	0	]
 #prepare select * from t_2599 where a>1+?*2;
 % .prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale # name
 % varchar,	int,	int # type
-% 0,	0,	0 # length
+% 7,	1,	1 # length
 [ "tinyint",	8,	0	]
 
 # 15:41:23 >  

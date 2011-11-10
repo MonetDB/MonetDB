@@ -13,7 +13,6 @@ stdout of test 'relation` in directory 'sql` itself:
 
 Ready.
 
-Over..
 
 # 22:42:46 >  
 # 22:42:46 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=koala --port=32262 

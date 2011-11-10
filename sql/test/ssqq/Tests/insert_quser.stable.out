@@ -20,7 +20,6 @@ stdout of test 'insert_quser` in directory 'test/ssqq` itself:
 
 Ready.
 
-Over..
 
 # 16:29:57 >  
 # 16:29:57 >  mclient -lsql -ftest -i -e --host=yngling --port=31832 

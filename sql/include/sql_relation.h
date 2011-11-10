@@ -149,6 +149,8 @@ typedef enum operator_type {
 
 #define is_atom(et) \
 	(et == e_atom)
+#define is_func(et) \
+	(et == e_func)
 #define is_column(et) \
 	(et != e_cmp)
 #define is_rank_op(e) \
@@ -259,7 +261,7 @@ typedef struct relation {
 	char card;	/* 0, 1 (row), 2 aggr, 3 */
 	char processed; /* fully processed or still in the process of building */
 	char subquery;	/* is this part a subquery, this is needed for proper name binding */
-	void *p;	/* properties for the optimizer */
+	void *p;	/* properties for the optimizer, distribution */
 } sql_rel;
 
 #endif /* SQL_RELATION_H */

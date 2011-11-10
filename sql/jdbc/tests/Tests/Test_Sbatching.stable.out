@@ -13,7 +13,6 @@ stdout of test 'Test_Sbatching` in directory 'jdbc/tests` itself:
 
 Ready.
 
-Over..
 
 # 09:09:12 >  
 # 09:09:12 >  Mtimeout -timeout 240 ./Test_Sbatching.SQL Test_Sbatching 

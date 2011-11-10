@@ -19,7 +19,6 @@ Ready.
 #    clients.quit();
 #end main;
 
-Over..
 
 # 16:05:51 >  
 # 16:05:51 >  ./old_views_incorrectly_reused.SF-2863804.SQL.sh old_views_incorrectly_reused.SF-2863804 
@@ -135,7 +134,7 @@ Over..
 % sys.a,	.,	.a # table_name
 % value,	type,	prob # name
 % varchar,	char,	double # type
-% 2,	4,	22 # length
+% 2,	4,	24 # length
 [ "A2",	"term",	1	]
 [ "A1",	"term",	1	]
 
@@ -146,7 +145,7 @@ Over..
 % sys.a,	.,	.a # table_name
 % value,	type,	prob # name
 % varchar,	char,	double # type
-% 4,	4,	22 # length
+% 4,	4,	24 # length
 [ "2001",	"term",	1	]
 [ "2000",	"term",	1	]
 

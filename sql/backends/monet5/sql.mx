@@ -518,6 +518,10 @@ command sql.round( v:@1, d:int, s:int, r:bte) :@1
 address @1_round_wrap
 comment "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)";
 
+command calc.second_interval( sc:int, v:@1, ek:int, sk:int ) :lng
+address @1_dec2second_interval
+comment "cast @1 decimal to a second_interval";
+
 @
 @mal
 @:mal_round(bte)@
@@ -1289,6 +1293,7 @@ sql5_export str str_2dec_@1( @1 *res, str *val, int *d, int *sc );
 sql5_export str str_2num_@1( @1 *res, str *v, int *len );
 sql5_export str batstr_2dec_@1( int *res, int *val, int *d, int *sc );
 sql5_export str batstr_2num_@1( int *res, int *v, int *len );
+sql5_export str @1_dec2second_interval( lng *res, int *sc, @1 *dec, int *ek, int *sk );
 @
 @h
 @:round_export(bte)@
@@ -1350,7 +1355,6 @@ sql5_export str second_interval_@1( lng *res, @1 *s, int *ek, int *sk );
 @:c_interval_export(wrd)@
 @:c_interval_export(lng)@
 @:c_interval_export(daytime)@
-sql5_export str second_interval_2_daytime( daytime *res, lng *s, int *d);
 @= simpleupcast_export
 sql5_export str @2_2_@1( @1 *res, @2 *v );
 sql5_export str bat@2_2_@1( int *res, int *v );
@@ -1460,6 +1464,7 @@ sql5_export void freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start)
 #include <sql_optimizer.h>
 #include <sql_datetime.h>
 #include <rel_optimizer.h>
+#include <rel_distribute.h>
 #include <rel_select.h>
 #include <rel_exp.h>
 #include <rel_dump.h>
@@ -1631,6 +1636,7 @@ sql_symbol2stmt(mvc *c, symbol *sym)
 
 		/* TODO: do we need to optimise anything for SciQL? */
 		r = rel_optimizer(c, r);
+		r = rel_distribute(c, r);
 		pq = rel_is_point_query(r);
 		if (!pq)
 			pq = rel_need_distinct_query(r);
@@ -3663,7 +3669,12 @@ mvc_import_table_stdin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-/* str mvc_bin_import_table_wrap(.., str *sname, str *tname, str *fname..); */
+/* str mvc_bin_import_table_wrap(.., str *sname, str *tname, str *fname..);
+ * binary attachment only works for simple binary types. 
+ * Non-simple types require each line to contain a valid ascii representation
+ * of the text terminate by a new-line. These strings are passed to the corresponding
+ * atom conversion routines to fill the column.
+*/
 str
 mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -3676,6 +3687,9 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	sql_schema *s = mvc_bind_schema(m, sname);
 	sql_table *t;
 	node *n;
+	FILE *f;
+	char *buf;
+	int bufsiz= 128 * BLOCK;
 
 	if (msg)
 		return msg;
@@ -3691,23 +3705,58 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	for (i = pci->retc + 2, n = t->columns.set->h; i<pci->argc && n; i++, n = n->next) {
 		sql_column *col = n->data;
 
-		if (ATOMvarsized(col->type.type->localtype )) 
+		if (ATOMvarsized(col->type.type->localtype ) && col->type.type->localtype != TYPE_str) 
 			throw(SQL, "sql", "failed to attach file %s",
 			      *(str*)getArgReference(stk, pci, i));
+		f = fopen( *(str*) getArgReference(stk,pci,i),"r");
+		if ( f == NULL)
+			throw(SQL, "sql", "failed to open file %s", *(str*)getArgReference(stk, pci, i));
+		fclose(f);
 	}
 
 	for (i = pci->retc + 2, n = t->columns.set->h; i<pci->argc && n; i++, n = n->next) {
 		sql_column *col = n->data;
-		BAT *c;
+		BAT *c= NULL;
 
-		c = BATattach(col->type.type->localtype, *(str*)getArgReference(stk, pci, i));
-		if (c == NULL) 
-			throw(SQL, "sql", "failed to attach file %s",
-			      *(str*)getArgReference(stk, pci, i));
+		/* handle the various cases */
+		switch(col->type.type->localtype){
+		case TYPE_chr:
+		case TYPE_bit:
+		case TYPE_oid:
+		case TYPE_sht:
+		case TYPE_int:
+		case TYPE_lng:
+		case TYPE_wrd:
+		case TYPE_flt:
+		case TYPE_dbl:
+			c = BATattach(col->type.type->localtype, *(str*)getArgReference(stk, pci, i));
+			if (c == NULL) 
+				throw(SQL, "sql", "failed to attach file %s", *(str*)getArgReference(stk, pci, i));
+			BATsetaccess(c, BAT_READ);
+			BATpropcheck(c, BATPROPS_ALL);
+			BATpropcheck(BATmirror(c), BATPROPS_ALL);
+			break;
+		case TYPE_str:
+			/* get the BAT and fill it with the strings */
+			c = BATnew(TYPE_void,TYPE_str,0); 
+			BATseqbase(c,0);
+			/* this code should be extended to deal with larger text strings. */
+			f = fopen( *(str*) getArgReference(stk,pci,i),"r");
+			if ( f == NULL)
+				throw(SQL, "sql", "failed to re-open file %s", *(str*)getArgReference(stk, pci, i));
 
-		BATsetaccess(c, BAT_READ);
-		BATpropcheck(c, BATPROPS_ALL);
-		BATpropcheck(BATmirror(c), BATPROPS_ALL);
+			buf = GDKmalloc(bufsiz);
+			while ( fgets(buf, bufsiz,f) != NULL) {
+				char *t = strrchr(buf,'\n');
+				if ( t) *t = 0;
+				BUNappend(c,buf, FALSE);
+			}
+			fclose(f);
+			GDKfree(buf);
+			break;
+		default:
+			throw(SQL, "sql", "failed to attach file %s", *(str*)getArgReference(stk, pci, i));
+		}
 		if (i!=(pci->retc + 2) && cnt != BATcount(c)) 
 			throw(SQL, "sql", "table %s not found", tname);
 		cnt = BATcount(c);
@@ -4101,6 +4150,28 @@ batstr_2num_@1( int *res, int *bid, int *len )
 	BBPunfix(b->batCacheid);
 	return msg;
 }
+
+str 
+@1_dec2second_interval( lng *res, int *sc, @1 *dec, int *ek, int *sk )
+{
+	lng value = *dec;
+
+	(void)ek;
+	(void)sk;
+	if (*sc < 3) {
+		int d = 3 - *sc;
+		value *= scales[d];
+	} else if (*sc > 3 ) {
+		int d = *sc - 3;
+		lng rnd = scales[d]>>1;
+
+		value += rnd;
+		value /= scales[d];
+	}
+	*res = value;
+	return MAL_SUCCEED;
+}
+
 @
 @c
 
@@ -4144,6 +4215,30 @@ str_2time_daytime( daytime *res, str *v, int *digits )
 	if (!pos)
 		throw(SQL,"daytime", "daytime (%s) has incorrect format", *v);
 	return daytime_2time_daytime( res, res, digits);
+}
+
+str
+timestamp_2_daytime( daytime *res, timestamp *v, int *digits )
+{
+	int d = (*digits)?*digits-1:0;
+	int msec = v->msecs;
+
+	/* correct fraction */
+	if (d < 3 && msec) {
+		msec /= scales[3-d];
+		msec *= scales[3-d];
+	}
+	*res = msec;
+	return MAL_SUCCEED;
+}
+
+str
+date_2_timestamp( timestamp *res, date *v, int *digits )
+{
+	(void)digits; /* no precision needed */
+	res->days = *v;
+	res->msecs = 0;
+	return MAL_SUCCEED;
 }
 
 str
@@ -4787,7 +4882,7 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 	if ( b->T->nonil){
 		if (scale)
 			for (; p<q; p++, o++)
-				*o = (@1) ((*p +  (*p<0)?-5:5) / scales[scale]);
+				*o = (@1) ((*p +  ((*p<0)?-5:5)) / scales[scale]);
 		else
 			for (; p<q; p++, o++)
 				*o = (@1) (*p);
@@ -4797,7 +4892,7 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 				*o = @1_nil;
 				bn->T->nonil= FALSE;
 			} else if (scale) {
-				*o = (@1) ((*p +  (*p<0)?-5:5) / scales[scale]);
+				*o = (@1) ((*p +  ((*p<0)?-5:5)) / scales[scale]);
 			} else {
 				*o = (@1) (*p);
 			}
@@ -5285,7 +5380,7 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 	if ( b->T->nonil){
 		for (; p<q; p++, o++) {
 			if (scale) 
-				val = (@2) ((*p+ (*p<0)?-5:5)/scales[scale]);
+				val = (@2) ((*p+ ((*p<0)?-5:5))/scales[scale]);
 			else
 				val = (@2) (*p);
 			/* see if the number fits in the data type */
@@ -5305,7 +5400,7 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 				bn->T->nonil= FALSE;
 			} else {
 				if (scale)
-					val = (@2) (( *p + ( *p<0)?-5:5)/scales[scale]);
+					val = (@2) (( *p + (( *p<0)?-5:5))/scales[scale]);
 				else
 					val = (@2) (*p);
 				/* see if the number fits in the data type */
@@ -5443,7 +5538,7 @@ second_interval_str( lng *res, str *s, int *d, int *sk )
 @= c_interval
 str
 month_interval_@1( int *ret, @1 *s, int *d, int *sk ){
-	int k = digits2sk(*d);
+	int k = digits2ek(*d);
 	int r = (int)*s;
 
 	(void)sk;
@@ -5460,7 +5555,7 @@ month_interval_@1( int *ret, @1 *s, int *d, int *sk ){
 }
 str
 second_interval_@1( lng *res, @1 *s, int *d, int *sk ){
-	int k = digits2sk(*d);
+	int k = digits2ek(*d);
 	lng r = *s;
 
 	(void)sk;
@@ -5470,8 +5565,9 @@ second_interval_@1( lng *res, @1 *s, int *d, int *sk ){
 	case ihour:
 		r *= 60;
 	case imin:
-		r *= 60000;
+		r *= 60;
 	case isec:
+		r *= 1000;
 		break;
 	default:
 		throw(ILLARG, "calc.second_interval","illegal argument");
@@ -5495,8 +5591,19 @@ comment "cast daytime to a second_interval and check for overflow";
 command calc.daytime( v:lng, d:int) :daytime
 address second_interval_2_daytime
 comment "cast second_interval to a daytime and check for overflow";
+
+command calc.daytime( v:timestamp, d:int) :daytime
+address timestamp_2_daytime
+comment "cast timestamp to a daytime and check for overflow";
+
+command calc.timestamp( v:date, d:int) :timestamp
+address date_2_timestamp
+comment "cast date to a timestamp and check for overflow";
 @h
 sql5_export str second_interval_daytime( lng *res, daytime *s, int *ek, int *sk );
+sql5_export str second_interval_2_daytime( daytime *res, lng *s, int *d);
+sql5_export str timestamp_2_daytime( daytime *res, timestamp *v, int *d);
+sql5_export str date_2_timestamp( timestamp *res, date *v, int *d);
 @c
 str
 second_interval_daytime( lng *res, daytime *s, int *d, int *sk )
@@ -6484,11 +6591,12 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		sql_base *b= nsch->data;
 		sql_schema *s= (sql_schema*) nsch->data;
 		if ( isalpha((int)b->name[0]) )
-		for(ntab= (s)->tables.set->h ;ntab; ntab= ntab->next){
+
+		if (s->tables.set) for(ntab= (s)->tables.set->h ;ntab; ntab= ntab->next){
 			sql_base *bt= ntab->data;
 			sql_table *t= (sql_table*) bt;
 			if (isTableOrArray(t))
-			for (ncol= (t)->columns.set->h; ncol; ncol= ncol->next){
+			if (t->columns.set) for (ncol= (t)->columns.set->h; ncol; ncol= ncol->next){
 				sql_base *bc = ncol->data;
 				sql_column *c= (sql_column *) ncol->data;
 				BAT *bn = store_funcs.bind_col(tr, c, 0);

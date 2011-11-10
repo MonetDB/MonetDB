@@ -19,7 +19,6 @@ stdout of test 'functions` in directory 'test/LSST` itself:
 
 Ready.
 
-Over..
 
 # 10:44:52 >  
 # 10:44:52 >  mclient -lsql -ftest -i -e --host=eir --port=35569 

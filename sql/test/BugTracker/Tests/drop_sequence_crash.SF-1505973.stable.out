@@ -13,7 +13,6 @@ stdout of test 'drop_sequence_crash.SF-1505973` in directory 'test/BugTracker` i
 
 Ready.
 
-Over..
 
 # 16:02:32 >  
 # 16:02:32 >  mclient -lsql -ftest -i -e --host=volund --port=35971 

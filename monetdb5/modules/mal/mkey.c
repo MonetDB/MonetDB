@@ -232,7 +232,7 @@ MKEYbathash(bat *res, bat *bid )
 	assert(BAThvoid(b) || BAThrestricted(b));
 
 	msg = voidbathash(&dst, b);
-	if (!BAThvoid(b)) {
+	if (dst->htype != b->htype) {
 		BAT *x = VIEWcreate(b, dst);
 		BBPreleaseref(dst->batCacheid);
 		dst = x;
