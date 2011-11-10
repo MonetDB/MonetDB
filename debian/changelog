@@ -1,3 +1,23 @@
+monetdb (11.5.9-20111110) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Thu, 10 Nov 2011 11:25:24 +0100
+
+monetdb (11.5.9-20111110) unstable; urgency=low
+
+  * merovingian: Fixed a bug where monetdbd's socket files from /tmp were removed when
+    a second monetdbd was attempted to be started using the same port.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Sun, 6 Nov 2011 11:25:24 +0100
+
+monetdb (11.5.9-20111110) unstable; urgency=low
+
+  * sql: Added a fix for bug #2834, which caused weird (failing) behaviour
+    with PreparedStatements.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Wed, 26 Oct 2011 11:25:24 +0100
+
 monetdb (11.5.7-20111021) unstable; urgency=low
 
   * Rebuilt.
