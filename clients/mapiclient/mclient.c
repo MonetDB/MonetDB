@@ -150,7 +150,6 @@ static char *pager = 0;		/* use external pager */
 static int rowsperpage = 0;	/* for SQL pagination */
 static int pagewidth = -1;	/* -1: take whatever is necessary, >0: limit */
 static int pagewidthset = 0;	/* whether the user set the width explicitly */
-static int interactive_stdin = 0;
 static int croppedfields = 0;  /* whatever got cropped/truncated */
 static char firstcrop = 1;     /* first time we see cropping/truncation */
 
@@ -1554,7 +1553,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 }
 
 static int
-doRequest(Mapi mid, const char *buf, int interactive)
+doRequest(Mapi mid, const char *buf)
 {
 	MapiHdl hdl;
 
@@ -1569,7 +1568,7 @@ doRequest(Mapi mid, const char *buf, int interactive)
 
 	format_result(mid, hdl, 0);
 
-	if (mapi_get_active(mid) == NULL || !interactive)
+	if (mapi_get_active(mid) == NULL)
 		mapi_close_handle(hdl);
 	return 0;
 }
@@ -1604,9 +1603,8 @@ doRequest(Mapi mid, const char *buf, int interactive)
 		}
 
 static int
-doFile(Mapi mid, const char *file)
+doFileBulk(Mapi mid, FILE *fp)
 {
-	FILE *fp;
 	char *buf = NULL;
 	size_t length;
 	MapiHdl hdl = mapi_get_active(mid);
@@ -1615,18 +1613,11 @@ doFile(Mapi mid, const char *file)
 	int first = 1;		/* first line processing */
 	size_t skip;
 
-	if (file == NULL || strcmp(file, "-") == 0)
-		fp = stdin;
-	else if ((fp = fopen(file, "r")) == NULL) {
-		fprintf(stderr, "%s: cannot open\n", file);
-		return 1;
-	}
-
 	bufsize = BLOCK - 1;
 	buf = malloc(bufsize + 1);
 	if (!buf) {
 		fprintf(stderr, "cannot allocate memory for send buffer\n");
-		if (file != NULL)
+		if (fp != stdin)
 			fclose(fp);
 		return 1;
 	}
@@ -1636,9 +1627,9 @@ doFile(Mapi mid, const char *file)
 		timerPause();
 		if ((length = fread(buf, 1, bufsize, fp)) == 0) {
 			/* end of file */
-			if (file != NULL) {
+			if (fp != stdin) {
 				fclose(fp);
-				file = NULL;
+				fp = NULL;
 			}
 			if (hdl == NULL)
 				break;	/* nothing more to do */
@@ -1706,7 +1697,7 @@ doFile(Mapi mid, const char *file)
 	timerEnd();
 
 	free(buf);
-	if (file != NULL)
+	if (fp != NULL && fp != stdin)
 		fclose(fp);
 	mnstr_flush(toConsole);
 	return errseen;
@@ -1759,7 +1750,7 @@ enum hmyesno { UNKNOWN, YES, NO };
 #define READBLOCK 8192
 
 static int
-doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
+doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_history)
 {
 	char *line = NULL;
 	char *oldbuf = NULL, *buf = NULL;
@@ -1769,6 +1760,30 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 	MapiMsg rc = MOK;
 	int lineno = 1;
 	enum hmyesno hassysfuncs = UNKNOWN;
+	FILE *fp;
+	char *prompt = NULL;
+
+	(void) save_history;	/* not used if no readline */
+	if (strcmp(file, "-") == 0) {
+		fp = stdin;
+		if (isatty(fileno(fp))) {
+			interactive = 1;
+			setPrompt();
+			prompt = promptbuf;
+#ifdef HAVE_LIBREADLINE
+			init_readline(mid, language, save_history);
+#endif
+			fromConsole = stdin;
+		}
+	} else if ((fp = fopen(file, "r")) == NULL) {
+		fprintf(stderr, "%s: cannot open\n", file);
+		return 1;
+	}
+
+	if (!interactive && !echoquery)
+		return doFileBulk(mid, fp);
+
+	hdl = mapi_get_active(mid);
 
 #ifdef HAVE_LIBREADLINE
 	if (prompt == NULL)
@@ -1858,7 +1873,8 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 			}
 		}
 #ifdef HAVE_ICONV
-		if (line != NULL && encoding != NULL && cd_in != (iconv_t) -1) {
+		if (line != NULL && fp == stdin &&
+		    encoding != NULL && cd_in != (iconv_t) -1) {
 			ICONV_CONST char *from = line;
 			size_t fromlen = strlen(from);
 			int factor = 4;
@@ -1915,7 +1931,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 				if (line != NULL)
 					continue;
 				/* nothing more to do */
-				return errseen;
+				goto bailout;
 			}
 
 			/* hdl != NULL, we should finish the current query */
@@ -1927,7 +1943,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 		   special for files that were passed on the command
 		   line with -e in effect (see near the bottom of
 		   main()) */
-		if (hdl == NULL && length > 0 && line[length - 1] == '\n' && fp == stdin) {
+		if (hdl == NULL && length > 0 && line[length - 1] == '\n' && interactive) {
 			/* test for special commands */
 			if (mode != MAL)
 				while (length > 0 &&
@@ -1947,7 +1963,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 				switch (line[1]) {
 				case 'q':
 					free(buf);
-					return errseen;
+					goto bailout;
 #if 0
 				case 't':
 					mark = mark ? NULL : "Timer";
@@ -2267,7 +2283,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 						line[--length] = 0;
 					for (line += 2; *line && isascii((int) *line) && isspace((int) *line); line++)
 						;
-					doFile(mid, line);
+					doFile(mid, line, 0, 0, 0);
 					continue;
 				case '>':
 					/* redirect output to file */
@@ -2428,7 +2444,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 		}
 		CHECK_RESULT(mid, hdl, buf, continue);
 
-		rc = format_result(mid, hdl, 1);
+		rc = format_result(mid, hdl, interactive);
 
 		if (rc == MMORE && (line != NULL || mapi_query_done(hdl) != MOK))
 			continue;	/* get more data */
@@ -2441,6 +2457,13 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, const char useinserts)
 	} while (line != NULL);
 	/* reached on end of file */
 	assert(hdl == NULL);
+  bailout:
+#ifdef HAVE_LIBREADLINE
+	if (prompt)
+		deinit_readline();
+#endif
+	if (fp != stdin)
+		fclose(fp);
 	return errseen;
 }
 
@@ -2592,10 +2615,6 @@ main(int argc, char **argv)
 	toConsole = stdout_stream = file_wastream(stdout, "stdout");
 	toConsole_raw = toConsole;
 	stderr_stream = file_wastream(stderr, "stderr");
-
-	/* execute from stdin? */
-	if (fstat(fileno(stdin), &statb) == 0 && S_ISCHR(statb.st_mode))
-		interactive_stdin = 1;
 
 #if 0
 	mark = NULL;
@@ -2880,7 +2899,8 @@ main(int argc, char **argv)
 	c = 0;
 	has_fileargs = optind != argc;
 
-	if (dbname == NULL && has_fileargs && stat(argv[optind], &statb) != 0) {
+	if (dbname == NULL && has_fileargs &&
+	    (stat(argv[optind], &statb) != 0 || !S_ISREG(statb.st_mode))) {
 		dbname = argv[optind];
 		optind++;
 		has_fileargs = optind != argc;
@@ -2925,7 +2945,7 @@ main(int argc, char **argv)
 	}
 
 	/* give the user a welcome message with some general info */
-	if ((interactive || (!has_fileargs && command == NULL)) && interactive_stdin) {
+	if (!has_fileargs && command == NULL && isatty(fileno(stdin))) {
 		char *lang;
 
 		if (mode == SQL)
@@ -2990,62 +3010,21 @@ main(int argc, char **argv)
 		/* execute from command-line, need interactive to know whether
 		 * to keep the mapi handle open */
 		timerStart();
-		c = doRequest(mid, command, (interactive || (!has_fileargs && command == NULL)));
+		c = doRequest(mid, command);
 		timerEnd();
 	}
 
 	if (optind < argc) {
 		/* execute from file(s) */
 		while (optind < argc) {
-			if (echoquery && strcmp(argv[optind], "-") != 0) {
-				/* a bit of a hack: process file
-				 * line-by-line if using -e (--echo)
-				 * so that the queries that are echoed
-				 * have something to do with the
-				 * output that follows (otherwise we
-				 * just echo the start of the file for
-				 * each query) */
-				FILE *fp;
-				if ((fp = fopen(argv[optind], "r")) == NULL) {
-					fprintf(stderr, "%s: cannot open\n", argv[optind]);
-					c |= 1;
-				} else {
-					/* note that since fp != stdin,
-					   we don't treat \ special */
-					c |= doFileByLines(mid, fp, NULL, useinserts);
-					fclose(fp);
-				}
-			} else
-				c |= doFile(mid, argv[optind]);
+			c |= doFile(mid, argv[optind], useinserts, interactive, save_history);
 			optind++;
 		}
 	}
 
-	if (interactive || (!has_fileargs && interactive_stdin && command == NULL)) {
-		char *prompt = NULL;
+	if (!has_fileargs && command == NULL)
+		c = doFile(mid, "-", useinserts, interactive, save_history);
 
-		if (interactive_stdin) {
-#ifdef HAVE_LIBREADLINE
-			init_readline(mid, language, save_history);
-#else
-			(void) save_history;	/* pacify compiler */
-#endif
-			/* reading from terminal, prepare prompt */
-			setPrompt();
-			prompt = promptbuf;
-			fromConsole = stdin;
-		}
-		/* use default rendering if not overruled at commandline */
-		c = doFileByLines(mid, stdin, prompt, useinserts);
-
-#ifdef HAVE_LIBREADLINE
-		if (interactive_stdin) {
-			deinit_readline();
-		}
-#endif
-	} else if (!has_fileargs && command == NULL) {
-		c = doFile(mid, NULL);
-	}
 	mapi_destroy(mid);
 	mnstr_destroy(stdout_stream);
 	mnstr_destroy(stderr_stream);
