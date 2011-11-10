@@ -618,17 +618,6 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
-* Thu Nov 10 2011 Fabian Groffen <fabian@cwi.nl> - 11.5.9-20111110
-- Rebuilt.
-
-* Sun Nov  6 2011 Fabian Groffen <fabian@cwi.nl> - 11.5.9-20111110
-- merovingian: Fixed a bug where monetdbd's socket files from /tmp were removed when
-  a second monetdbd was attempted to be started using the same port.
-
-* Wed Oct 26 2011 Fabian Groffen <fabian@cwi.nl> - 11.5.9-20111110
-- sql: Added a fix for bug #2834, which caused weird (failing) behaviour
-  with PreparedStatements.
-
 * Fri Oct 21 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.5.7-20111021
 - Rebuilt.
 

@@ -1,3 +1,7 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
+* Sun Nov  6 2011 Fabian Groffen <fabian@cwi.nl>
+- Fixed a bug where monetdbd's socket files from /tmp were removed when
+  a second monetdbd was attempted to be started using the same port.
+
