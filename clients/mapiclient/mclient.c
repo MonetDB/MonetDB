@@ -2899,7 +2899,8 @@ main(int argc, char **argv)
 	c = 0;
 	has_fileargs = optind != argc;
 
-	if (dbname == NULL && has_fileargs && stat(argv[optind], &statb) != 0) {
+	if (dbname == NULL && has_fileargs &&
+	    (stat(argv[optind], &statb) != 0 || !S_ISREG(statb.st_mode))) {
 		dbname = argv[optind];
 		optind++;
 		has_fileargs = optind != argc;
