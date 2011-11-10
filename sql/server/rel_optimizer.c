@@ -284,7 +284,8 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 	switch (rel->op) {
 	case op_basetable:
 	case op_table:
-		rel->p = prop_create(sql->sa, PROP_COUNT, rel->p);
+		if (!find_prop(rel->p, PROP_COUNT))
+			rel->p = prop_create(sql->sa, PROP_COUNT, rel->p);
 		break;
 	case op_join: 
 		join_properties(sql, rel);
@@ -2271,7 +2272,7 @@ exps_merge_rse( mvc *sql, list *l, list *r )
 				list_merge(exps, re->r, NULL);
 				fnd = exp_in(sql->sa, le->l, exps, cmp_in);
 			} else if (le->f && re->f && /* merge ranges */
-				   le->flag == re->flag) {
+				   le->flag == re->flag && le->flag <= cmp_lt) {
 				sql_subfunc *min = sql_bind_func(sql->sa, sql->session->schema, "sql_min", exp_subtype(le->r), exp_subtype(re->r), F_FUNC);
 				sql_subfunc *max = sql_bind_func(sql->sa, sql->session->schema, "sql_max", exp_subtype(le->f), exp_subtype(re->f), F_FUNC);
 				sql_exp *mine, *maxe;
