@@ -1,6 +1,18 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Wed Nov  9 2011 Sjoerd Mullender <sjoerd@acm.org>
+- mclient: The exact interpretation of the -i (--interactive) option
+  and the - filename argument have changed.  The - filename argument
+  means read from standard input and no longer implies that no \
+  interpretation is done on the input.  Instead, \ interpretation is done
+  if either standard input is a terminal, or if the -i option is given.
+  The -i option no longer causes mclient to read from standard input.
+  It only means to do \ interpretation when reading from standard input.
+  Use the - filename argument to read from standard input.  Note that
+  if no -s option is specified and no filename arguments are present,
+  mclient still reads from standard input.
+
 * Wed Nov  2 2011 Sjoerd Mullender <sjoerd@acm.org>
 - ODBC: Improved internal query for SQLSpecialColumns.  Before, the query
   returned all columns taking part in a PRIMARY KEY *and* all columns
