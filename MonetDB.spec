@@ -27,7 +27,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Aug2011-SP2/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Aug2011-SP3/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -625,6 +625,17 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Fri Nov 11 2011 Fabian Groffen <fabian@cwi.nl> - 11.5.9-20111111
+- Rebuilt.
+
+* Sun Nov  6 2011 Fabian Groffen <fabian@cwi.nl> - 11.5.9-20111111
+- merovingian: Fixed a bug where monetdbd's socket files from /tmp were removed when
+  a second monetdbd was attempted to be started using the same port.
+
+* Wed Oct 26 2011 Fabian Groffen <fabian@cwi.nl> - 11.5.9-20111111
+- sql: Added a fix for bug #2834, which caused weird (failing) behaviour
+  with PreparedStatements.
+
 * Fri Oct 21 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.5.7-20111021
 - Rebuilt.
 
